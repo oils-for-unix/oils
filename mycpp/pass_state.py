@@ -228,6 +228,23 @@ class Assignment(Fact):
 class Use(Fact):
     """
     The use of a reference.
+
+    In the last assignment below, we would emit Use(foo) and Use(x). We would,
+    however, not emit Use(foo.a) since it is an lvalue and would instead be
+    covered by the Assign fact. Similarly, the first two assignments do not
+    generate Use facts.
+
+        foo = Foo()
+        x = Bar()
+        foo.a = x
+
+    Any time a reference appears in an expression (or expression-statement) it
+    will be considered used.
+
+        some_function(a) => Use(a)
+        a + b => Use(a), Use(b)
+        print(thing.dict[key]) => Use(thing), Use(thing.dict), Use(key)
+        obj.func() => Use(obj)
     """
 
     def __init__(self, ref: SymbolPath) -> None:
