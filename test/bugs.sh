@@ -66,6 +66,8 @@ trap-2() {
   echo "$sh status=$?"
 }
 
+# ODD RESULTS in spec tests: the handler is NOT run in bash or other shells
+# The handler IS run in manual testing
 spec-sig() {
   ### Run spec test outside the sh-spec framework
 

@@ -439,14 +439,14 @@ You can also request the loop index:
 
 To iterate over lines of `stdin`, use:
 
-    for line in (stdin) {
+    for line in (io.stdin) {
       echo $line
     }
     # lines are buffered, so it's much faster than `while read --rawline`
 
 Ask for the loop index:
 
-    for i, line in (stdin) {
+    for i, line in (io.stdin) {
       echo "$i $line"
     }
 

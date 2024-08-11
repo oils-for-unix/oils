@@ -11,7 +11,7 @@ from _devbuild.gen.option_asdl import option_i, builtin_i
 from _devbuild.gen.runtime_asdl import scope_e
 from _devbuild.gen.syntax_asdl import (loc, source, source_t, IntParamBox,
                                        debug_frame, debug_frame_t)
-from _devbuild.gen.value_asdl import (value, value_e)
+from _devbuild.gen.value_asdl import (value, value_e, value_t, Obj)
 from core import alloc
 from core import comp_ui
 from core import dev
@@ -563,7 +563,15 @@ def Main(
     # PromptEvaluator rendering is needed in non-interactive shells for @P.
     prompt_ev = prompt.Evaluator(lang, version_str, parse_ctx, mem)
     global_io = value.IO(cmd_ev, prompt_ev)
-    global_guts = value.Guts(None)
+
+    io_methods = {
+        '__mut_eval': value.BuiltinFunc(method_io.Eval(cmd_ev)),
+        'captureStdout': value.BuiltinFunc(method_io.CaptureStdout(shell_ex)),
+
+        # TODO: glob, etc.
+    }  # type: Dict[str, value_t]
+    io_props = {'stdin': value.Stdin}  # type: Dict[str, value_t]
+    io_obj = Obj(io_props, Obj(io_methods, None))
 
     # Wire up circular dependencies.
     vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
@@ -902,10 +910,13 @@ def Main(
     _SetGlobalFunc(mem, '_a2sp', func_misc.BashArrayToSparse())
     _SetGlobalFunc(mem, '_opsp', func_misc.SparseOp())
 
+    # TODO: remove this
     mem.SetNamed(location.LName('_io'), global_io, scope_e.GlobalOnly)
-    mem.SetNamed(location.LName('_guts'), global_guts, scope_e.GlobalOnly)
 
-    mem.SetNamed(location.LName('stdin'), value.Stdin, scope_e.GlobalOnly)
+    # TODO: 'io' can be in the builtin module, and then hidden in functions
+    mem.SetNamed(location.LName('io'), io_obj, scope_e.GlobalOnly)
+
+    #mem.SetNamed(location.LName('stdin'), value.Stdin, scope_e.GlobalOnly)
 
     #
     # Is the shell interactive?

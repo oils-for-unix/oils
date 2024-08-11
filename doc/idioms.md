@@ -231,7 +231,7 @@ Yes:
 
 Yes:
 
-    for line in (stdin) {
+    for line in (io.stdin) {
       echo $line
     }
     # this reads buffered lines, which is much faster
