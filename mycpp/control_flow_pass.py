@@ -548,26 +548,11 @@ class Build(SimpleVisitor):
                     self.current_statement_id,
                     pass_state.FunctionCall(join_name(full_callee, delim='.')))
 
-                callee_t = self.types.get(o.callee)
-                arg_offset = None
-                if (callee_t and getattr(callee_t, 'definition', None) and
-                        len(callee_t.definition.arg_names)):
-                    arg_offset = 0
-                    if callee_t.definition.arg_names[0] == 'self':
-                        arg_offset = 1
-
                 for i, arg in enumerate(o.args):
                     arg_ref = self.get_ref_name(arg)
-                    param_name = None
-                    if (arg_offset is not None and
-                        (i + arg_offset) < len(callee_t.definition.arg_names)):
-                        param_name = callee_t.definition.arg_names[i +
-                                                                   arg_offset]
-
-                    if arg_ref and callee_t:
-                        cfg.AddFact(
-                            self.current_statement_id,
-                            pass_state.Bind(arg_ref, full_callee, param_name))
+                    if arg_ref:
+                        cfg.AddFact(self.current_statement_id,
+                                    pass_state.Bind(arg_ref, full_callee, i))
 
         self.accept(o.callee)
         for arg in o.args:

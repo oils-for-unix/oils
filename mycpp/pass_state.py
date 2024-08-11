@@ -243,14 +243,14 @@ class Use(Fact):
 
 class Bind(Fact):
     """
-    Binding a reference to a function parameter.
+    Binding a reference to a positional function parameter.
     """
 
     def __init__(self, ref: SymbolPath, callee: SymbolPath,
-                 param: str) -> None:
+                 arg_pos: int) -> None:
         self.ref = ref
         self.callee = callee
-        self.param = param
+        self.arg_pos = arg_pos
 
     def name(self) -> str:
         return 'bind'
@@ -258,7 +258,7 @@ class Bind(Fact):
     def Generate(self, func: str, statement: int) -> str:
         return '{}\t{}\t{}\t{}\t{}\n'.format(
             func, statement, SymbolPathToReference(func, self.ref),
-            join_name(self.callee, delim='.'), self.param)
+            join_name(self.callee, delim='.'), self.arg_pos)
 
 
 class ControlFlowGraph(object):

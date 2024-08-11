@@ -29,8 +29,8 @@
 .decl use(f:Function, s:Statement, r:Reference)
 .input use
 
-// `caller` binds `r` to `param` of `callee` in statement `s`.
-.decl bind(caller:Function, s:Statement, r:Reference, callee:Function, param:symbol)
+// `caller` binds `r` to positional argument `arg_pos` of `callee` in statement `s`.
+.decl bind(caller:Function, s:Statement, r:Reference, callee:Function, arg_pos:number)
 .input bind
 
 // The set of variables considered live on the way in to a statement.
