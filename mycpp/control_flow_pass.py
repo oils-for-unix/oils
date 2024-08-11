@@ -518,9 +518,9 @@ class Build(SimpleVisitor):
     def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> T:
         self.accept(o.expr)
         cfg = self.current_cfg()
-        if cfg and not isinstance(
-                self.dot_exprs[o],
-                pass_state.ModuleMember) and o != self.current_lval:
+        if (cfg and
+                not isinstance(self.dot_exprs[o], pass_state.ModuleMember) and
+                o != self.current_lval):
             ref = self.get_ref_name(o)
             if ref:
                 cfg.AddFact(self.current_statement_id, pass_state.Use(ref))
@@ -550,8 +550,8 @@ class Build(SimpleVisitor):
 
                 callee_t = self.types.get(o.callee)
                 arg_offset = None
-                if callee_t and getattr(callee_t, 'definition', None) and len(
-                        callee_t.definition.arg_names):
+                if (callee_t and getattr(callee_t, 'definition', None) and
+                        len(callee_t.definition.arg_names)):
                     arg_offset = 0
                     if callee_t.definition.arg_names[0] == 'self':
                         arg_offset = 1
@@ -559,8 +559,8 @@ class Build(SimpleVisitor):
                 for i, arg in enumerate(o.args):
                     arg_ref = self.get_ref_name(arg)
                     param_name = None
-                    if arg_offset is not None and (i + arg_offset) < len(
-                            callee_t.definition.arg_names):
+                    if (arg_offset is not None and
+                        (i + arg_offset) < len(callee_t.definition.arg_names)):
                         param_name = callee_t.definition.arg_names[i +
                                                                    arg_offset]
 

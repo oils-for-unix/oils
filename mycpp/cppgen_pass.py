@@ -13,8 +13,8 @@ from mypy.types import (Type, AnyType, NoneTyp, TupleType, Instance, NoneType,
                         PartialType, TypeAliasType)
 from mypy.nodes import (Expression, Statement, NameExpr, IndexExpr, MemberExpr,
                         TupleExpr, ExpressionStmt, IfStmt, StrExpr, SliceExpr,
-                        FuncDef, UnaryExpr, OpExpr, CallExpr,
-                        ListExpr, DictExpr, ListComprehension)
+                        FuncDef, UnaryExpr, OpExpr, CallExpr, ListExpr,
+                        DictExpr, ListComprehension)
 
 from mycpp import format_strings
 from mycpp.crash import catch_errors
@@ -681,7 +681,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if isinstance(dot_expr, pass_state.StackObjectMember):
                 op = '.'
 
-            elif isinstance(dot_expr, pass_state.StaticObjectMember) or isinstance(dot_expr, pass_state.ModuleMember):
+            elif isinstance(dot_expr,
+                            pass_state.StaticObjectMember) or isinstance(
+                                dot_expr, pass_state.ModuleMember):
                 op = '::'
 
             elif isinstance(dot_expr, pass_state.HeapObjectMember):
@@ -1880,6 +1882,16 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             else:
                 self.def_write(' = it.Value();\n')
 
+            # Register loop variable as a stack root.
+            # Note we have mylib.Collect() in CommandEvaluator::_Execute(), and
+            # it's called in a loop by _ExecuteList().  Although the 'child'
+            # variable is already live by other means.
+            # TODO: Test how much this affects performance.
+            if CTypeIsManaged(c_item_type) and not self.stack_roots:
+                self.def_write_ind('  StackRoot _for(&')
+                self.accept(index_expr)
+                self.def_write_ind(');\n')
+
         elif isinstance(item_type, TupleType):  # for x, y in pairs
             if over_dict:
                 assert isinstance(o.index, TupleExpr), o.index
@@ -2850,8 +2862,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             for lval_name, c_type, is_param in self.prepend_to_block:
                 #self.log('%s %s %s', lval_name, c_type, is_param)
                 if lval_name not in roots and CTypeIsManaged(c_type):
-                    if not self.stack_roots or self.stack_roots.needs_root(
-                            full_func_name, split_py_name(lval_name)):
+                    if (not self.stack_roots or self.stack_roots.needs_root(
+                            full_func_name, split_py_name(lval_name))):
                         roots.append(lval_name)
 
             #self.log('roots %s', roots)
