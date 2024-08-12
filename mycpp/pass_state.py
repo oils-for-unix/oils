@@ -4,12 +4,14 @@ pass_state.py
 from __future__ import print_function
 
 import os
+import re
+import subprocess
 from collections import defaultdict
 
 from mypy.types import Type
 from mypy.nodes import Expression
 
-from mycpp.util import join_name, log, SymbolPath
+from mycpp.util import join_name, log, split_py_name, SymbolPath
 
 from typing import Optional
 
@@ -49,7 +51,7 @@ class HeapObjectMember(object):
 
     def __init__(self, object_expr: Expression, object_type: Type,
                  member: str) -> None:
-        self.ojbect_expr = object_expr
+        self.object_expr = object_expr
         self.object_type = object_type
         self.member = member
 
@@ -152,11 +154,12 @@ class Virtual(object):
             return True  # by default they can be reordered
 
 
-def SymbolPathToSouffle(p: SymbolPath) -> str:
+def SymbolPathToReference(func: str, p: SymbolPath) -> str:
     if len(p) > 1:
-        return '$Member({}, {})'.format(join_name(p[:-1], delim='.'), p[-1])
+        return '$ObjectMember({}, {})'.format(join_name(p[:-1], delim='.'),
+                                              p[-1])
 
-    return '$Variable({})'.format(p[0])
+    return '$LocalVariable({}, {})'.format(func, p[0])
 
 
 class Fact(object):
@@ -191,15 +194,17 @@ class Definition(Fact):
     The definition of a variable. This corresponds to an allocation.
     """
 
-    def __init__(self, variable: SymbolPath) -> None:
-        self.variable = variable
+    def __init__(self, ref: SymbolPath, obj: str) -> None:
+        self.ref = ref
+        self.obj = obj
 
     def name(self) -> str:
-        return 'define'
+        return 'assign'
 
     def Generate(self, func: str, statement: int) -> str:
-        return '{}\t{}\t{}\n'.format(func, statement,
-                                     SymbolPathToSouffle(self.variable))
+        return '{}\t{}\t{}\t{}\n'.format(func, statement,
+                                         SymbolPathToReference(func, self.ref),
+                                         self.obj)
 
 
 class Assignment(Fact):
@@ -215,9 +220,62 @@ class Assignment(Fact):
         return 'assign'
 
     def Generate(self, func: str, statement: int) -> str:
-        return '{}\t{}\t{}\t{}\n'.format(func, statement,
-                                         SymbolPathToSouffle(self.lhs),
-                                         SymbolPathToSouffle(self.rhs))
+        return '{}\t{}\t{}\t$Ref({})\n'.format(
+            func, statement, SymbolPathToReference(func, self.lhs),
+            SymbolPathToReference(func, self.rhs))
+
+
+class Use(Fact):
+    """
+    The use of a reference.
+
+    In the last assignment below, we would emit Use(foo) and Use(x). We would,
+    however, not emit Use(foo.a) since it is an lvalue and would instead be
+    covered by the Assign fact. Similarly, the first two assignments do not
+    generate Use facts.
+
+        foo = Foo()
+        x = Bar()
+        foo.a = x
+
+    Any time a reference appears in an expression (or expression-statement) it
+    will be considered used.
+
+        some_function(a) => Use(a)
+        a + b => Use(a), Use(b)
+        print(thing.dict[key]) => Use(thing), Use(thing.dict), Use(key)
+        obj.func() => Use(obj)
+    """
+
+    def __init__(self, ref: SymbolPath) -> None:
+        self.ref = ref
+
+    def name(self) -> str:
+        return 'use'
+
+    def Generate(self, func: str, statement: int) -> str:
+        return '{}\t{}\t{}\n'.format(func, statement,
+                                     SymbolPathToReference(func, self.ref))
+
+
+class Bind(Fact):
+    """
+    Binding a reference to a positional function parameter.
+    """
+
+    def __init__(self, ref: SymbolPath, callee: SymbolPath,
+                 arg_pos: int) -> None:
+        self.ref = ref
+        self.callee = callee
+        self.arg_pos = arg_pos
+
+    def name(self) -> str:
+        return 'bind'
+
+    def Generate(self, func: str, statement: int) -> str:
+        return '{}\t{}\t{}\t{}\t{}\n'.format(
+            func, statement, SymbolPathToReference(func, self.ref),
+            join_name(self.callee, delim='.'), self.arg_pos)
 
 
 class ControlFlowGraph(object):
@@ -458,6 +516,21 @@ class CfgLoopContext(object):
             self.cfg.predecessors.add(b)
 
 
+class StackRoots(object):
+    """
+    Output of the souffle stack roots solver.
+    """
+
+    def __init__(self, tuples: set[tuple[SymbolPath, SymbolPath]]) -> None:
+        self.root_tuples = tuples
+
+    def needs_root(self, func: SymbolPath, reference: SymbolPath) -> bool:
+        """
+        Returns true if the given reference should have a stack root.
+        """
+        return (func, reference) in self.root_tuples
+
+
 def DumpControlFlowGraphs(cfgs: dict[str, ControlFlowGraph],
                           facts_dir='_tmp/mycpp-facts') -> None:
     """
@@ -485,3 +558,40 @@ def DumpControlFlowGraphs(cfgs: dict[str, ControlFlowGraph],
 
     for f in fact_files.values():
         f.close()
+
+
+def ComputeMinimalStackRoots(cfgs: dict[str, ControlFlowGraph],
+                      facts_dir: str = '_tmp/mycpp-facts',
+                      souffle_output_dir: str = '_tmp') -> StackRoots:
+    """
+    Run the the souffle stack roots solver and translate its output in a format
+    that can be queried by cppgen_pass.
+    """
+    DumpControlFlowGraphs(cfgs, facts_dir=facts_dir)
+    subprocess.check_call([
+        '_bin/datalog/dataflow',
+        '-F',
+        facts_dir,
+        '-D',
+        souffle_output_dir,
+    ])
+
+    tuples: set[tuple[SymbolPath, SymbolPath]] = set({})
+    with open('{}/stack_root_vars.tsv'.format(souffle_output_dir),
+              'r') as roots_f:
+        pat = re.compile(r'\$(.*)\((.*), (.*)\)')
+        for line in roots_f:
+            function, ref = line.split('\t')
+            m = pat.match(ref)
+            assert m.group(1) in ('LocalVariable', 'ObjectMember')
+            if m.group(1) == 'LocalVariable':
+                _, ref_func, var_name = m.groups()
+                assert ref_func == function
+                tuples.add((split_py_name(function), (var_name, )))
+
+            if m.group(1) == 'ObjectMember':
+                _, base_obj, member_name = m.groups()
+                tuples.add((split_py_name(function),
+                            split_py_name(base_obj) + (member_name, )))
+
+    return StackRoots(tuples)

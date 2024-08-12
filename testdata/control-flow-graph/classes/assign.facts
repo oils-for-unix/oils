@@ -1,13 +1,68 @@
-examples.classes.Base.__init__	2	$Member(examples.classes.Base, next)	$Variable(n)
-examples.classes.BenchmarkSimpleNode	6	$Variable(next_)	$Variable(node)
-examples.classes.BenchmarkVirtualNodes	10	$Variable(next_)	$Variable(node3)
-examples.classes.BenchmarkVirtualNodes	12	$Variable(current)	$Variable(node3)
-examples.classes.ColorOutput.__init__	1	$Member(examples.classes.ColorOutput, f)	$Variable(f)
-examples.classes.DerivedI.__init__	2	$Member(examples.classes.DerivedI, i)	$Variable(i)
-examples.classes.DerivedSS.__init__	2	$Member(examples.classes.DerivedSS, t)	$Variable(t)
-examples.classes.DerivedSS.__init__	3	$Member(examples.classes.DerivedSS, u)	$Variable(u)
-examples.classes.Node.__init__	1	$Member(examples.classes.Node, next)	$Variable(n)
-examples.classes.Node.__init__	2	$Member(examples.classes.Node, i)	$Variable(i)
-examples.classes.PrintLength	1	$Variable(current)	$Variable(node)
-examples.classes.PrintLength	6	$Variable(current)	$Member(examples.classes.Node, next)
-examples.classes.PrintLengthBase	5	$Variable(current)	$Member(examples.classes.Base, next)
+examples.classes.Abstract.TypeString	0	$LocalVariable(examples.classes.Abstract.TypeString, self)	$Empty
+examples.classes.Abstract.__init__	0	$LocalVariable(examples.classes.Abstract.__init__, self)	$Empty
+examples.classes.Base.TypeString	0	$LocalVariable(examples.classes.Base.TypeString, self)	$Empty
+examples.classes.Base.__init__	0	$LocalVariable(examples.classes.Base.__init__, self)	$Empty
+examples.classes.Base.__init__	0	$LocalVariable(examples.classes.Base.__init__, n)	$Empty
+examples.classes.Base.__init__	2	$ObjectMember(self, next)	$Ref($LocalVariable(examples.classes.Base.__init__, n))
+examples.classes.BenchmarkSimpleNode	0	$LocalVariable(examples.classes.BenchmarkSimpleNode, n)	$Empty
+examples.classes.BenchmarkSimpleNode	3	$LocalVariable(examples.classes.BenchmarkSimpleNode, next_)	$HeapObject(h13)
+examples.classes.BenchmarkSimpleNode	5	$LocalVariable(examples.classes.BenchmarkSimpleNode, node)	$HeapObject(h14)
+examples.classes.BenchmarkSimpleNode	6	$LocalVariable(examples.classes.BenchmarkSimpleNode, next_)	$Ref($LocalVariable(examples.classes.BenchmarkSimpleNode, node))
+examples.classes.BenchmarkVirtualNodes	0	$LocalVariable(examples.classes.BenchmarkVirtualNodes, n)	$Empty
+examples.classes.BenchmarkVirtualNodes	3	$LocalVariable(examples.classes.BenchmarkVirtualNodes, next_)	$HeapObject(h16)
+examples.classes.BenchmarkVirtualNodes	5	$LocalVariable(examples.classes.BenchmarkVirtualNodes, node1)	$HeapObject(h17)
+examples.classes.BenchmarkVirtualNodes	6	$LocalVariable(examples.classes.BenchmarkVirtualNodes, s1)	$HeapObject(h18)
+examples.classes.BenchmarkVirtualNodes	7	$LocalVariable(examples.classes.BenchmarkVirtualNodes, s2)	$HeapObject(h19)
+examples.classes.BenchmarkVirtualNodes	8	$LocalVariable(examples.classes.BenchmarkVirtualNodes, node2)	$HeapObject(h20)
+examples.classes.BenchmarkVirtualNodes	9	$LocalVariable(examples.classes.BenchmarkVirtualNodes, node3)	$HeapObject(h21)
+examples.classes.BenchmarkVirtualNodes	10	$LocalVariable(examples.classes.BenchmarkVirtualNodes, next_)	$Ref($LocalVariable(examples.classes.BenchmarkVirtualNodes, node3))
+examples.classes.BenchmarkVirtualNodes	11	$LocalVariable(examples.classes.BenchmarkVirtualNodes, current)	$HeapObject(h22)
+examples.classes.BenchmarkVirtualNodes	12	$LocalVariable(examples.classes.BenchmarkVirtualNodes, current)	$Ref($LocalVariable(examples.classes.BenchmarkVirtualNodes, node3))
+examples.classes.BenchmarkWriter	0	$LocalVariable(examples.classes.BenchmarkWriter, n)	$Empty
+examples.classes.BenchmarkWriter	3	$LocalVariable(examples.classes.BenchmarkWriter, f)	$HeapObject(h9)
+examples.classes.BenchmarkWriter	4	$LocalVariable(examples.classes.BenchmarkWriter, out)	$HeapObject(h10)
+examples.classes.BenchmarkWriter	5	$LocalVariable(examples.classes.BenchmarkWriter, i)	$HeapObject(h11)
+examples.classes.ColorOutput.__init__	0	$LocalVariable(examples.classes.ColorOutput.__init__, self)	$Empty
+examples.classes.ColorOutput.__init__	0	$LocalVariable(examples.classes.ColorOutput.__init__, f)	$Empty
+examples.classes.ColorOutput.__init__	1	$ObjectMember(self, f)	$Ref($LocalVariable(examples.classes.ColorOutput.__init__, f))
+examples.classes.ColorOutput.__init__	2	$ObjectMember(self, num_chars)	$HeapObject(h0)
+examples.classes.ColorOutput.write	0	$LocalVariable(examples.classes.ColorOutput.write, self)	$Empty
+examples.classes.ColorOutput.write	0	$LocalVariable(examples.classes.ColorOutput.write, s)	$Empty
+examples.classes.DerivedI.Integer	0	$LocalVariable(examples.classes.DerivedI.Integer, self)	$Empty
+examples.classes.DerivedI.TypeString	0	$LocalVariable(examples.classes.DerivedI.TypeString, self)	$Empty
+examples.classes.DerivedI.__init__	0	$LocalVariable(examples.classes.DerivedI.__init__, self)	$Empty
+examples.classes.DerivedI.__init__	0	$LocalVariable(examples.classes.DerivedI.__init__, n)	$Empty
+examples.classes.DerivedI.__init__	0	$LocalVariable(examples.classes.DerivedI.__init__, i)	$Empty
+examples.classes.DerivedI.__init__	2	$ObjectMember(self, i)	$Ref($LocalVariable(examples.classes.DerivedI.__init__, i))
+examples.classes.DerivedSS.TypeString	0	$LocalVariable(examples.classes.DerivedSS.TypeString, self)	$Empty
+examples.classes.DerivedSS.__init__	0	$LocalVariable(examples.classes.DerivedSS.__init__, self)	$Empty
+examples.classes.DerivedSS.__init__	0	$LocalVariable(examples.classes.DerivedSS.__init__, n)	$Empty
+examples.classes.DerivedSS.__init__	0	$LocalVariable(examples.classes.DerivedSS.__init__, t)	$Empty
+examples.classes.DerivedSS.__init__	0	$LocalVariable(examples.classes.DerivedSS.__init__, u)	$Empty
+examples.classes.DerivedSS.__init__	2	$ObjectMember(self, t)	$Ref($LocalVariable(examples.classes.DerivedSS.__init__, t))
+examples.classes.DerivedSS.__init__	3	$ObjectMember(self, u)	$Ref($LocalVariable(examples.classes.DerivedSS.__init__, u))
+examples.classes.Node.__init__	0	$LocalVariable(examples.classes.Node.__init__, self)	$Empty
+examples.classes.Node.__init__	0	$LocalVariable(examples.classes.Node.__init__, n)	$Empty
+examples.classes.Node.__init__	0	$LocalVariable(examples.classes.Node.__init__, i)	$Empty
+examples.classes.Node.__init__	1	$ObjectMember(self, next)	$Ref($LocalVariable(examples.classes.Node.__init__, n))
+examples.classes.Node.__init__	2	$ObjectMember(self, i)	$Ref($LocalVariable(examples.classes.Node.__init__, i))
+examples.classes.PrintLength	0	$LocalVariable(examples.classes.PrintLength, node)	$Empty
+examples.classes.PrintLength	1	$LocalVariable(examples.classes.PrintLength, current)	$Ref($LocalVariable(examples.classes.PrintLength, node))
+examples.classes.PrintLength	2	$LocalVariable(examples.classes.PrintLength, linked_list_len)	$HeapObject(h12)
+examples.classes.PrintLength	6	$LocalVariable(examples.classes.PrintLength, current)	$Ref($ObjectMember(current, next))
+examples.classes.PrintLengthBase	0	$LocalVariable(examples.classes.PrintLengthBase, current)	$Empty
+examples.classes.PrintLengthBase	1	$LocalVariable(examples.classes.PrintLengthBase, linked_list_len)	$HeapObject(h15)
+examples.classes.PrintLengthBase	5	$LocalVariable(examples.classes.PrintLengthBase, current)	$Ref($ObjectMember(current, next))
+examples.classes.TestInheritance	1	$LocalVariable(examples.classes.TestInheritance, b)	$HeapObject(h6)
+examples.classes.TestInheritance	2	$LocalVariable(examples.classes.TestInheritance, di)	$HeapObject(h7)
+examples.classes.TestInheritance	3	$LocalVariable(examples.classes.TestInheritance, dss)	$HeapObject(h8)
+examples.classes.TestMethods	1	$LocalVariable(examples.classes.TestMethods, stdout_)	$HeapObject(h4)
+examples.classes.TestMethods	2	$LocalVariable(examples.classes.TestMethods, out)	$HeapObject(h5)
+examples.classes.TextOutput.MutateFields	0	$LocalVariable(examples.classes.TextOutput.MutateFields, self)	$Empty
+examples.classes.TextOutput.MutateFields	1	$ObjectMember(self, num_chars)	$HeapObject(h2)
+examples.classes.TextOutput.MutateFields	2	$ObjectMember(self, i)	$HeapObject(h3)
+examples.classes.TextOutput.PrintFields	0	$LocalVariable(examples.classes.TextOutput.PrintFields, self)	$Empty
+examples.classes.TextOutput.__init__	0	$LocalVariable(examples.classes.TextOutput.__init__, self)	$Empty
+examples.classes.TextOutput.__init__	0	$LocalVariable(examples.classes.TextOutput.__init__, f)	$Empty
+examples.classes.TextOutput.__init__	3	$ObjectMember(self, i)	$HeapObject(h1)
+examples.classes.f	0	$LocalVariable(examples.classes.f, obj)	$Empty

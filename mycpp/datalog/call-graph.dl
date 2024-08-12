@@ -11,5 +11,6 @@
 .decl might_collect(f: Function, s: Statement)
 .output might_collect
 
+might_collect("mylib.MaybeCollect", 0).
 might_collect(f, s) :- call(f, s, "mylib.MaybeCollect").
 might_collect(f, s) :- call(f, s, g), might_collect(g, _).
