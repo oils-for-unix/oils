@@ -403,12 +403,16 @@ pp test_ ('aa'.split('a', count=1))
 pp test_ ('a<>b<>c<d'.split('<>', count=10))
 pp test_ ('a;b;;c'.split(';', count=2))
 pp test_ (''.split('foo', count=3))
+pp test_ ('a,b,c'.split(',', count=0))
+pp test_ (''.split(',', count=0))
 ## STDOUT:
 (List)   ["a","b","c"]
 (List)   ["a","b","c"]
 (List)   ["","a"]
 (List)   ["a","b","c<d"]
 (List)   ["a","b",";c"]
+(List)   []
+(List)   ["a,b,c"]
 (List)   []
 ## END
 
@@ -417,10 +421,7 @@ try { pp test_ ('abc'.split(''))           } # Sep cannot be ""
 echo status=$[_error.code]
 try { pp test_ ('abc'.split())             } # Sep must be present
 echo status=$[_error.code]
-try { pp test_ ('abc'.split('b', count=0)) } # Count cannot be 0
-echo status=$[_error.code]
 ## STDOUT:
-status=3
 status=3
 status=3
 ## END

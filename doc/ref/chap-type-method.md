@@ -264,17 +264,15 @@ Split a string by a `Str` separator `sep` into a `List` of chunks.
     pp ('a<>b<>c<d'.split('<>'))   # => ["a","b","c<d"]
     pp ('🌞🌝🌞🌝🌞'.split('🌝'))  # => ["🌞", "🌞", "🌞"]
 
-Optionally, provide a `count` to split on `sep` at most count times. A `count`
-less than zero will split on all occurrences of `sep`. `count` cannot equal
-zero.
+Optionally, provide a `count` to split on `sep` at most `count` times. A
+negative `count` will split on all occurrences of `sep`.
 
     pp ('a;b;;c'.split(';', count=2))   # => ["a", "b", ";c"]
     pp ('a;b;;c'.split(';', count=-1))  # => ["a", "b", "", "c"]
 
-Passing an empty `sep` or a zero `count` will result in an error:
+Passing an empty `sep` will result in an error:
 
     pp test_ ('abc'.split(''))            # => Error: Sep cannot be ""
-    pp test_ ('abc'.split('b', count=0))  # => Error: Count cannot be 0
 
 ## List
 

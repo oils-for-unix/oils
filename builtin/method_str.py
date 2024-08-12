@@ -491,17 +491,13 @@ class Split(vm._Callable):
         s.split(sep, count=-1)
 
         Count behaves like in replace() in that:
-        - A negative `count` => ignore
-        - A positive `count` => there will be at most `count` splits
-        - Exception: `count = 0` is an error
+        - `count` <  0 -> ignore
+        - `count` >= 0 -> there will be at most `count` splits
         """
         string = rd.PosStr()
         sep = rd.PosStr()
         count = mops.BigTruncate(rd.NamedInt("count", -1))
         rd.Done()
-
-        if count == 0:
-            raise error.Structured(3, "count cannot be zero", rd.LeftParenToken())
 
         if len(sep) == 0:
             raise error.Structured(3, "sep must be non-empty", rd.LeftParenToken())
