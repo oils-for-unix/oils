@@ -477,3 +477,49 @@ class Replace(vm._Callable):
             return value.Str("".join(parts))
 
         raise AssertionError()
+
+
+class Split(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        """
+        s.split(sep, count=-1)
+
+        Count behaves like in replace() in that:
+        - `count` <  0 -> ignore
+        - `count` >= 0 -> there will be at most `count` splits
+        """
+        string = rd.PosStr()
+        sep = rd.PosStr()
+        count = mops.BigTruncate(rd.NamedInt("count", -1))
+        rd.Done()
+
+        if len(sep) == 0:
+            raise error.Structured(3, "sep must be non-empty", rd.LeftParenToken())
+
+        if len(string) == 0:
+            return value.List([])
+
+        cursor = 0
+        chunks = []  # type: List[value_t]
+        while cursor < len(string) and count != 0:
+            next = string.find(sep, cursor)
+            if next == -1:
+                break
+
+            chunks.append(value.Str(string[cursor:next]))
+            cursor = next + len(sep)
+            count -= 1
+
+        if cursor == len(string):
+            # An instance of sep was against the end of the string
+            chunks.append(value.Str(""))
+        else:
+            chunks.append(value.Str(string[cursor:]))
+
+        return value.List(chunks)

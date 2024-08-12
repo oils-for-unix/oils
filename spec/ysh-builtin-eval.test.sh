@@ -109,7 +109,7 @@ foo bar baz
 #### eval lines with argv bindings
 proc my-split (;;; block) {
   while read --raw-line {
-    var cols = _reply => split()
+    var cols = split(_reply)
     eval (block, pos_args=cols)
   }
 }
@@ -148,7 +148,7 @@ d c local2
 
 proc my-split (;;; block) {
   while read --raw-line {
-    var cols = _reply => split()
+    var cols = split(_reply)
     eval (block, vars={_line: _reply, _first: cols[0]})
   }
 }
