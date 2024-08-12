@@ -1,0 +1,19 @@
+proc shvar (...args;;; block) {
+  var vars = {}
+  if (len(args) === 0) {
+    error ('Expected name=value', code=3)
+  }
+
+  for i, arg in (args) {
+    var name, s = arg.split("=", count=1)
+    if (not s) {
+      error ('Expected name=value', code=3)
+    }
+
+    setvar vars[name] = s
+  }
+
+  eval (block, vars=vars)
+}
+
+# vim: sw=2

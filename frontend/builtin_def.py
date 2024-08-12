@@ -59,7 +59,6 @@ _NORMAL_BUILTINS = [
     # push-registers added below
     'fork', 'forkwait',
     'fopen',
-    'shvar',
     'ctx',
 
     'runproc',

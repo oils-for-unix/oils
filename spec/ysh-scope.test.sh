@@ -570,6 +570,8 @@ echo $x $y $z
 shopt --set parse_proc
 shopt --set parse_brace
 
+source --builtin ysh/shvar.ysh
+
 s='xzx zxz'
 
 myfunc() {
@@ -619,6 +621,8 @@ myproc IFS= x
 shopt --set oil:upgrade
 shopt --unset errexit
 
+source --builtin ysh/shvar.ysh
+
 # no block
 shvar
 echo status=$?
@@ -641,6 +645,8 @@ status=2
 #### shvar global
 shopt --set oil:upgrade
 shopt --unset nounset
+
+source --builtin ysh/shvar.ysh
 
 echo _ESCAPER=$_ESCAPER
 echo _DIALECT=$_DIALECT
@@ -697,6 +703,8 @@ _DIALECT=bar
 shopt --set oil:upgrade  # blocks
 shopt --unset simple_word_eval  # test word splitting
 
+source --builtin ysh/shvar.ysh
+
 proc foo {
   shvar IFS=x MYTEMP=foo {
     echo IFS="$IFS"
@@ -720,6 +728,8 @@ MYTEMP=undef
 
 #### shvar IFS
 shopt --set oil:upgrade
+
+source --builtin ysh/shvar.ysh
 
 proc myproc() {
   echo "$IFS" | od -A n -t x1

@@ -28,7 +28,9 @@ builtin sub
 ## END
 
 #### $[x] with _ESCAPER
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
+
+source --builtin ysh/shvar.ysh
 
 x='echo hi 2>&1'
 

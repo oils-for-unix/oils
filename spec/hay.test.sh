@@ -23,6 +23,8 @@ bin status=0
 #### use dialect
 shopt --set parse_brace
 
+source --builtin ysh/shvar.ysh
+
 use dialect
 echo status=$?
 
@@ -586,6 +588,8 @@ OK
 
 #### Code Blocks: parseHay() then shvar _DIALECT= { evalHay() }
 shopt --set parse_brace parse_proc
+
+source --builtin ysh/shvar.ysh
 
 hay define TASK
 

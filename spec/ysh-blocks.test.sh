@@ -237,6 +237,8 @@ while true {
 echo shopt continue $?
 
 eval '
+source --builtin ysh/shvar.ysh
+
 while true {
   shvar FOO=foo {
     echo shvar
@@ -272,6 +274,8 @@ try break 1
 
 #### Consistency: Exit Status and Blocks
 shopt --set parse_brace
+
+source --builtin ysh/shvar.ysh
 
 cd / {
   false 

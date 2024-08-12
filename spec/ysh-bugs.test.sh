@@ -140,6 +140,7 @@ pp test_ (pipe())
 
 
 #### shvar then replace - bug #1986 context manager crash
+source --builtin ysh/shvar.ysh
 
 shvar FOO=bar {
   for x in (1 .. 500) {

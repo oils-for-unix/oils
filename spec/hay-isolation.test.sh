@@ -1,6 +1,8 @@
 #### Turn off external binaries with shvar PATH='' {}
 shopt --set parse_brace parse_proc
 
+source --builtin ysh/shvar.ysh
+
 echo hi > file
 
 # Note: this CACHES the lookup, so shvar has to clear cache when modifying it
@@ -34,6 +36,8 @@ status=0
 
 #### More shvar PATH=''
 shopt --set parse_brace command_sub_errexit parse_proc
+
+source --builtin ysh/shvar.ysh
 
 shvar PATH='' {
   ( cp -v file /tmp >&2 )
