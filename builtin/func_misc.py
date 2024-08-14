@@ -60,8 +60,7 @@ class Object(vm._Callable):
                 raise error.TypeErr(prototype, 'Object() expected Obj or Null',
                                     rd.BlamePos())
 
-        # Opposite order
-        return Obj(props, chain)
+        return Obj(chain, props)
 
 
 class Prototype(vm._Callable):
@@ -73,9 +72,28 @@ class Prototype(vm._Callable):
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
+        obj = rd.PosObj()
+        rd.Done()
 
-        # TODO
-        return value.Null
+        if obj.prototype is None:
+            return value.Null
+
+        return obj.prototype
+
+
+class PropView(vm._Callable):
+    """Get a Dict view of an object's properties."""
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        obj = rd.PosObj()
+        rd.Done()
+
+        return value.Dict(obj.d)
 
 
 class Len(vm._Callable):

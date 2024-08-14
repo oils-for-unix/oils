@@ -224,6 +224,38 @@ It's usually better to make an approximate comparison:
     = abs(float1 - float2) < 0.001
     (Bool)   false
 
+## Obj
+
+### Object
+
+Construct an object with a prototype and properties:
+
+    var obj = Object(null, {x: 42}}
+
+An object with methods:
+
+    func mymethod(self) { return (self.x) }
+    var cls = Object(null, {mymethod: mymethod})
+    var obj = Object(cls, {x: 42}}
+
+### prototype()
+
+Get the prototype of an object.  May be null:
+
+     ysh$ = prototype(obj)
+    (Null)  null
+
+### propView()
+
+Get a Dict that aliases an object's properties.
+
+    ysh andy@hoover:~/git/oilshell/oil$ = propView(obj)
+    (Dict)  {x: 42}
+
+This means that if the Dict is modified, then the object is too.
+
+If you want to copy it, use `dict(obj)`.
+
 ## Word
 
 ### glob() 

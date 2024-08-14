@@ -571,7 +571,7 @@ def Main(
         # TODO: glob, etc.
     }  # type: Dict[str, value_t]
     io_props = {'stdin': value.Stdin}  # type: Dict[str, value_t]
-    io_obj = Obj(io_props, Obj(io_methods, None))
+    io_obj = Obj(Obj(None, io_methods), io_props)
 
     # Wire up circular dependencies.
     vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
@@ -868,6 +868,7 @@ def Main(
 
     _SetGlobalFunc(mem, 'Object', func_misc.Object())
     _SetGlobalFunc(mem, 'prototype', func_misc.Prototype())
+    _SetGlobalFunc(mem, 'propView', func_misc.PropView())
 
     # type conversions
     _SetGlobalFunc(mem, 'bool', func_misc.Bool())

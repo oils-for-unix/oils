@@ -58,8 +58,8 @@ module value
     No
   | Yes %RegexMatch
 
-  # prototype is for the attribute lookup chain
-  Obj = (Dict[str, value] d, Obj? prototype)
+  # Arbitrary objects, where attributes are looked up on the prototype chain.
+  Obj = (Obj? prototype, Dict[str, value] d)
 
   # Commands, words, and expressions from syntax.asdl are evaluated to a VALUE.
   # value_t instances are stored in state.Mem().

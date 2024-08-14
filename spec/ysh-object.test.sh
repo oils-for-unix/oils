@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 3
+## oils_failures_allowed: 2
 
 #### Object() creates prototype chain
 
@@ -52,6 +52,28 @@ pp test_ (prototype(Rect))
 pp test_ (prototype(obj))
 
 ## STDOUT:
+(Null)   null
+(Obj)   {"area":<Func>}
+## END
+
+#### attributes() 
+
+var obj = Object(null, {x: 3, y: 4})
+var props = propView(obj)
+
+pp test_ (props)
+
+# object can be mutated
+setvar props.x = 99
+
+pp test_ (props)
+
+var e = propView(null)  # error
+
+## status: 3
+## STDOUT:
+(Dict)   {"x":3,"y":4}
+(Dict)   {"x":99,"y":4}
 ## END
 
 #### Copy to Dict with dict(), and mutate
