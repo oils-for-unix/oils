@@ -980,7 +980,7 @@ class ExprEvaluator(object):
         UP_obj = obj
         with tagswitch(obj) as case:
             if case(value_e.Dict):
-                obj = cast(Obj, UP_obj)
+                obj = cast(value.Dict, UP_obj)
                 attr_name = node.attr_name
 
                 # Dict key / normal attribute lookup
