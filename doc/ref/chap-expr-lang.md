@@ -472,9 +472,39 @@ The ternary operator is borrowed from Python:
 
 ### ysh-attr
 
-The expression `mydict.key` is short for `mydict['key']`.
+The `.` operator performs attribute lookup.
 
-(Like JavaScript, but unlike Python.)
+On `Dict` instances, the expression `mydict.key` is short for `mydict['key']`
+(like JavaScript, but unlike Python.)
+
+On `Obj` instances, the expression `obj.attr` does two things, in order:
+
+1. Searches in the object's properties for a field named `attr`. 
+   - If it exists, return the value literally.
+2. Searches up the prototype chain for `attr`
+   - If it exists, return a **bound method**, which is an (object, function)
+     pair.
+
+Later, when the bound method is called, the object is passed as the first
+argument to the function, making it a method call.  The method can then use the
+object's properties.
+
+Example of first rule:
+
+    func Free(i) {
+      return (i + 1)
+    }
+    var module = Object(null, {Free})
+    var x = module.Free(42)  # => 43
+
+Example of second rule:
+
+    func method(self, i) {
+      return (self.n + i)
+    }
+    var methods = Object(null, {method})
+    var obj = Object(methods, {n: 1})
+    var x = obj.method(42)  # => 43
 
 ### ysh-slice
 
@@ -525,11 +555,24 @@ The thin arrow is for mutating methods:
     var mylist = ['bar']
     call mylist->pop()
 
-<!--
-TODO
     var mydict = {name: 'foo'}
     call mydict->erase('name')
--->
+
+On `Obj` instances, `obj->mymethod` looks up the prototype chain for a function
+named `M/mymethod`.  The `M/` prefix signals mutation.
+
+Example:
+
+    func inc(self, n) {
+      setvar self.i += n
+    }
+    var Counter_methods = Object(null, {'M/inc': inc})
+    var c = Object(Counter_methods, {i: 0})
+
+    call c->inc(5)
+    echo $[c.i]  # => 5
+
+It does **not** look in the properties of an object.
 
 ### fat-arrow
 

@@ -265,11 +265,11 @@ X [External Lang] BEGIN   END   when (awk)
                   ysh-bitwise   ~  &  |  ^  <<  >>
                   ysh-ternary   '+' if x >= 0 else '-'
                   ysh-index     s[0]  mylist[3]  mydict['key']
-                  ysh-attr      mydict.key
+                  ysh-attr      mydict.key  mystr.startsWith('x')
                   ysh-slice     a[1:-1]  s[1:-1]
                   func-call     f(x, y; ...named)
                   thin-arrow    mylist->pop()
-                  fat-arrow     mystr => startsWith('prefix')
+                  fat-arrow     mylist => join() => upper()
                   match-ops     ~   !~   ~~   !~~
   [Eggex]         re-literal    / d+ ; re-flags ; ERE /
                   re-primitive  %zero    'sq'

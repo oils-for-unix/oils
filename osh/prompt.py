@@ -9,7 +9,7 @@ import time as time_
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (loc, command_t, source, CompoundWord)
-from _devbuild.gen.value_asdl import (value, value_e, value_t)
+from _devbuild.gen.value_asdl import (value, value_e, value_t, Obj)
 from core import alloc
 from core import main_loop
 from core import error
@@ -104,7 +104,7 @@ class Evaluator(object):
         # type: (str, str, ParseContext, Mem) -> None
         self.word_ev = None  # type: word_eval.AbstractWordEvaluator
         self.expr_ev = None  # type: expr_eval.ExprEvaluator
-        self.global_io = None  # type: value.IO
+        self.global_io = None  # type: Obj
 
         assert lang in ('osh', 'ysh'), lang
         self.lang = lang

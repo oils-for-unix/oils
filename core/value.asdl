@@ -90,7 +90,6 @@ module value
   | Null
   | Bool(bool b)
   | Int(BigInt i)
-  #| Int(int i)
   | Float(float f)
   | List(List[value] items)
   | Dict(Dict[str, value] d)
@@ -135,21 +134,11 @@ module value
     # The frame MUST be lower on the stack at the time of use.
   | Place(y_lvalue lval, Dict[str, Cell] frame)
 
+    # TODO: Remove this, could be value.Obj
     # for Flags/flag and Flags/arg?
     # for json read/write ?
     # Possibly unify Hay and modules/namespaces
   | Module(Dict[str, value] defs)
-
-    # The ability to use operating system functions.  Right now some functions
-    # leak, like glob().
-    # TODO: Removed 'unused' after ASDL in Python makes value.IO a type
-  | IO(any unused)
-
-    # Do we need this?
-    # _guts->heapId() can be used to detect object cycles.
-    # It's considered impure; it depends on VM implementation details.  The =
-    # operator and 'pp value' also print the heap ID.
-  | Guts(any vm)
 
     # callable is vm._Callable.
     # TODO: ASDL needs some kind of "extern" to declare vm._Callable and
@@ -172,11 +161,13 @@ module value
          List[value] pos_defaults, Dict[str, value] named_defaults,
          Dict[str, Cell]? module_)
 
+    # for i in (1:n) { echo $i }  # both ends are required
+  | Range(int lower, int upper)
+
+    # internal detail - can't be instantied by users
     # a[3:5] a[:10] a[3:] a[:]  # both ends are optional
   | Slice(IntBox? lower, IntBox? upper)
 
-    # for i in (1:n) { echo $i }  # both ends are required
-  | Range(int lower, int upper)
 }
 
 # vim: sw=2

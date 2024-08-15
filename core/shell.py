@@ -562,20 +562,19 @@ def Main(
 
     # PromptEvaluator rendering is needed in non-interactive shells for @P.
     prompt_ev = prompt.Evaluator(lang, version_str, parse_ctx, mem)
-    global_io = value.IO(None)
 
     io_methods = {
+        'promptVal': value.BuiltinFunc(method_io.PromptVal(prompt_ev)),
+
         # The M/ prefix means it's io->eval()
-        # This
         'M/eval': value.BuiltinFunc(method_io.Eval(cmd_ev)),
 
-        # identical to command sub
+        # Identical to command sub
         'captureStdout': value.BuiltinFunc(method_io.CaptureStdout(shell_ex)),
-        'eval': value.BuiltinFunc(method_io.CaptureStdout(shell_ex)),
-        'time': value.BuiltinFunc(method_io.Time()),
-        'strftime': value.BuiltinFunc(method_io.Strftime()),
 
         # TODO:
+        'time': value.BuiltinFunc(method_io.Time()),
+        'strftime': value.BuiltinFunc(method_io.Strftime()),
         'glob': None,
     }  # type: Dict[str, value_t]
     io_props = {'stdin': value.Stdin}  # type: Dict[str, value_t]
@@ -583,7 +582,7 @@ def Main(
 
     # Wire up circular dependencies.
     vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
-                        prompt_ev, global_io, tracer)
+                        prompt_ev, io_obj, tracer)
 
     unsafe_arith = sh_expr_eval.UnsafeArith(mem, exec_opts, mutable_opts,
                                             parse_ctx, arith_ev, errfmt)
@@ -820,11 +819,6 @@ def Main(
         'end': func_eggex.MatchMethod(func_eggex.E, None),
     }
 
-    methods[value_e.IO] = {
-        'promptVal': method_io.PromptVal(prompt_ev),
-        'eval': method_io.Eval(cmd_ev),
-    }
-
     methods[value_e.Place] = {
         # __mut_setValue()
 
@@ -907,9 +901,6 @@ def Main(
     # Demos
     _SetGlobalFunc(mem, '_a2sp', func_misc.BashArrayToSparse())
     _SetGlobalFunc(mem, '_opsp', func_misc.SparseOp())
-
-    # TODO: remove this
-    mem.SetNamed(location.LName('_io'), global_io, scope_e.GlobalOnly)
 
     # TODO: 'io' can be in the builtin module, and then hidden in functions
     mem.SetNamed(location.LName('io'), io_obj, scope_e.GlobalOnly)

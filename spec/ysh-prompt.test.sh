@@ -4,12 +4,12 @@
 
 shopt -s ysh:upgrade
 
-var x = _io->promptVal('$')
+var x = io.promptVal('$')
 
 # We're not root, so it should be $
 echo x=$x
 
-var x = _io->promptVal('w')
+var x = io.promptVal('w')
 if (x === PWD) {
   echo pass
 } else {
@@ -24,14 +24,14 @@ pass
 #### promptVal() with invalid chars
 
 # \D{} will be supported with date and time functions
-var x = _io->promptVal('D')
+var x = io.promptVal('D')
 echo x=$x
 
 # something else
-var x = _io->promptVal('/')
+var x = io.promptVal('/')
 echo x=$x
 
-var x = _io->promptVal('ZZ')
+var x = io.promptVal('ZZ')
 echo x=$x
 
 ## status: 3
@@ -60,7 +60,7 @@ cat >yshrc <<'EOF'
 func renderPrompt(io) {
   var parts = []
   call parts->append('hi')
-  call parts->append(io->promptVal('$'))
+  call parts->append(io.promptVal('$'))
   call parts->append(' ')
   return (join(parts))
 }

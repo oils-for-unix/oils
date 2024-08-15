@@ -1042,11 +1042,17 @@ class ExprEvaluator(object):
                     if result is not None:
                         return result
 
+                # TODO: we could have different errors for:
+                # - no prototype
+                # - found in the properties, not in the prototype chain (not
+                #   sure if this error is common.)
                 raise error.Expr(
-                    "Mutating method %r not found on Obj" % mut_name,
+                    "Mutating method %r not found on Obj prototype chain" % mut_name,
                     node.attr)
             else:
                 # Look up methods on builtin types
+                # TODO: These should also be called M/append, M/erase, etc.
+
                 type_methods = self.methods.get(val.tag())
                 vm_callable = (type_methods.get(name)
                                if type_methods is not None else None)
@@ -1064,20 +1070,6 @@ class ExprEvaluator(object):
 
         val = self._EvalExpr(node.obj)
         with switch(node.op.id) as case:
-            # TODO:
-            # ->   add value.Obj rule - mut_mymethod()
-            #      then change value.List to have __mut_append()?
-            #      this means you can no longer do call foo => end(), which we want
-            #
-            # =>   eventually remove method lookup - it's only the chaining
-            #      operator
-            #        s => upper() => strip() might be OK though
-            # versus s.upper().strip()
-
-            # Right now => is a synonym for ->
-            # Later we may enforce that => is pure, and -> is for mutation and
-            # I/O.
-
             if case(Id.Expr_Dot):  # d.key is like d['key']
                 return self._EvalDot(node, val)
 
@@ -1086,7 +1078,13 @@ class ExprEvaluator(object):
 
             elif case(Id.Expr_RDArrow):  # chaining s => split()
                 name = node.attr_name
-                # Look up builtin methods
+
+                # Look up builtin methods, e.g.
+                #   s => strip() is like s.strip()
+                # Note:
+                #   m => group(1) is worse than m.group(1)
+                #   This is not a transformation, but more like an attribute
+
                 type_methods = self.methods.get(val.tag())
                 vm_callable = (type_methods.get(name)
                                if type_methods is not None else None)

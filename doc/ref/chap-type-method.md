@@ -546,7 +546,7 @@ Though this runs in the same VM, not a new one.
 Capture stdout of a command a string.
 
     var c = ^(echo hi)
-    var stdout_str = _io->captureStdout(c)  # => "hi"
+    var stdout_str = _io.captureStdout(c)  # => "hi"
 
 It's like `$()`, but useful in pure functions.  Trailing newlines `\n` are
 removed.
@@ -564,8 +564,8 @@ An API the wraps the `$PS1` language.  For example, to simulate `PS1='\w\$ '`:
 
     func renderPrompt(io) {
       var parts = []
-      call parts->append(io->promptval('w'))  # pass 'w' for \w
-      call parts->append(io->promptval('$'))  # pass '$' for \$
+      call parts->append(io.promptval('w'))  # pass 'w' for \w
+      call parts->append(io.promptval('$'))  # pass '$' for \$
       call parts->append(' ')
       return (join(parts))
     }

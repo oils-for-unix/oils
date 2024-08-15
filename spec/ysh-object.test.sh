@@ -94,6 +94,20 @@ echo $[c.i]
 8
 ## END
 
+#### Mutating method must be up the prototype chain, not on the object
+
+func inc(self, n) {
+  setvar self.i += n
+}
+var c = Object(null, {'M/inc': inc, i: 0})
+
+call c->inc(3)
+
+## status: 3
+## STDOUT:
+## END
+
+
 #### Copy to Dict with dict(), and mutate
 
 var rect = Object(null, {x: 3, y: 4})
