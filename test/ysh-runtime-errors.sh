@@ -438,6 +438,36 @@ test-func-error-locs() {
   '
 }
 
+test-attr-error-locs() {
+  _ysh-expr-error '= {}.key'
+  _ysh-expr-error '= {}->method'
+
+  _ysh-expr-error 'var obj = Object(null, {}); = obj.attr'
+  _ysh-expr-error 'var obj = Object(null, {}); = obj->method'
+
+}
+
+# TODO:
+test-error-loc-bugs() {
+  _ysh-expr-error '
+func id(x) {
+  return (x)
+}
+
+#pp test_ (id(len(42)))
+
+# This should point at ( in len, not id(
+pp test_ (len(id(42)))
+  '
+
+  _ysh-expr-error '
+var methods = {}
+
+# Should point at methods, not {}
+var o = Object(methods, {})
+  '
+}
+
 test-var-decl() {
   _ysh-expr-error 'var x, y = 1, 2, 3'
   _ysh-expr-error 'setvar x, y = 1, 2, 3'

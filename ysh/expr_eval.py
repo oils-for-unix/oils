@@ -970,21 +970,21 @@ class ExprEvaluator(object):
 
         return None
 
-    def _EvalDot(self, node, obj):
+    def _EvalDot(self, node, val):
         # type: (Attribute, value_t) -> value_t
-        """ obj.attr on RHS or LHS
+        """ foo.attr on RHS or LHS
 
-        setvar x = obj.attr
-        setglobal g[obj.attr] = 42
+        setvar x = foo.attr
+        setglobal g[foo.attr] = 42
         """
-        UP_obj = obj
-        with tagswitch(obj) as case:
+        UP_val = val
+        with tagswitch(val) as case:
             if case(value_e.Dict):
-                obj = cast(value.Dict, UP_obj)
+                val = cast(value.Dict, UP_val)
                 attr_name = node.attr_name
 
                 # Dict key / normal attribute lookup
-                result = obj.d.get(attr_name)
+                result = val.d.get(attr_name)
                 if result is not None:
                     return result
 
@@ -992,7 +992,7 @@ class ExprEvaluator(object):
                                  node.op)
 
             elif case(value_e.Obj):
-                obj = cast(Obj, UP_obj)
+                obj = cast(Obj, UP_val)
                 attr_name = node.attr_name
 
                 # Dict key / normal attribute lookup
@@ -1006,33 +1006,63 @@ class ExprEvaluator(object):
                     if result is not None:
                         return result
 
-                raise error.Expr('Obj attribute %r not found' % attr_name,
+                raise error.Expr('Attribute %r not found on Obj' % attr_name,
                                  node.op)
 
             else:
                 # Method lookup on builtin types.
                 # They don't have attributes or prototype chains -- we only
                 # have a flat dict.
-                type_methods = self.methods.get(obj.tag())
+                type_methods = self.methods.get(val.tag())
                 name = node.attr_name
                 vm_callable = (type_methods.get(name)
                                if type_methods is not None else None)
                 if vm_callable:
                     func_val = value.BuiltinFunc(vm_callable)
-                    return value.BoundFunc(obj, func_val)
+                    return value.BoundFunc(val, func_val)
 
                 raise error.TypeErrVerbose(
-                    'Method %r does not exist on builtin type %s' %
-                    (name, ui.ValType(obj)), node.attr)
+                    "Method %r not found on builtin type %s" %
+                    (name, ui.ValType(val)), node.attr)
 
+        raise AssertionError()
+
+    def _EvalRArrow(self, node, val):
+        # type: (Attribute, value_t) -> value_t
+        name = node.attr_name
+
+        UP_val = val
+        with tagswitch(val) as case:
+            if case(value_e.Obj):
+                obj = cast(Obj, UP_val)
+                mut_name = 'M/' + name
+
+                if obj.prototype is not None:
+                    result = self._ChainedLookup(obj, obj.prototype, mut_name)
+                    if result is not None:
+                        return result
+
+                raise error.Expr(
+                    "Mutating method %r not found on Obj" % mut_name,
+                    node.attr)
+            else:
+                # Look up methods on builtin types
+                type_methods = self.methods.get(val.tag())
+                vm_callable = (type_methods.get(name)
+                               if type_methods is not None else None)
+                if vm_callable:
+                    func_val = value.BuiltinFunc(vm_callable)
+                    return value.BoundFunc(val, func_val)
+
+                raise error.TypeErrVerbose(
+                    "Method %r not found on builtin type %s" %
+                    (name, ui.ValType(val)), node.attr)
         raise AssertionError()
 
     def _EvalAttribute(self, node):
         # type: (Attribute) -> value_t
 
-        o = self._EvalExpr(node.obj)
-        UP_o = o
-
+        val = self._EvalExpr(node.obj)
         with switch(node.op.id) as case:
             # TODO:
             # ->   add value.Obj rule - mut_mymethod()
@@ -1047,30 +1077,22 @@ class ExprEvaluator(object):
             # Right now => is a synonym for ->
             # Later we may enforce that => is pure, and -> is for mutation and
             # I/O.
-            if case(Id.Expr_RArrow):
+
+            if case(Id.Expr_Dot):  # d.key is like d['key']
+                return self._EvalDot(node, val)
+
+            elif case(Id.Expr_RArrow):  # e.g. mylist->append(42)
+                return self._EvalRArrow(node, val)
+
+            elif case(Id.Expr_RDArrow):  # chaining s => split()
                 name = node.attr_name
                 # Look up builtin methods
-                type_methods = self.methods.get(o.tag())
+                type_methods = self.methods.get(val.tag())
                 vm_callable = (type_methods.get(name)
                                if type_methods is not None else None)
                 if vm_callable:
                     func_val = value.BuiltinFunc(vm_callable)
-                    return value.BoundFunc(o, func_val)
-                #return self._EvalRArrow(node, o)
-
-                raise error.TypeErrVerbose(
-                    'Method %r does not exist on type %s' %
-                    (name, ui.ValType(o)), node.attr)
-
-            elif case(Id.Expr_RDArrow):
-                name = node.attr_name
-                # Look up builtin methods
-                type_methods = self.methods.get(o.tag())
-                vm_callable = (type_methods.get(name)
-                               if type_methods is not None else None)
-                if vm_callable:
-                    func_val = value.BuiltinFunc(vm_callable)
-                    return value.BoundFunc(o, func_val)
+                    return value.BoundFunc(val, func_val)
 
                 # Operator is =>, so try function chaining.
 
@@ -1081,18 +1103,15 @@ class ExprEvaluator(object):
                 #     f() => str() => upper()
 
                 # Could improve error message: may give "Undefined variable"
-                val = self._LookupVar(name, node.attr)
+                val2 = self._LookupVar(name, node.attr)
 
                 with tagswitch(val) as case2:
                     if case2(value_e.Func, value_e.BuiltinFunc):
-                        return value.BoundFunc(o, val)
+                        return value.BoundFunc(val, val2)
                     else:
                         raise error.TypeErr(
-                            val, 'Fat arrow => expects method or function',
+                            val2, 'Fat arrow => expects method or function',
                             node.attr)
-
-            elif case(Id.Expr_Dot):  # d.key is like d['key']
-                return self._EvalDot(node, o)
 
             else:
                 raise AssertionError(node.op)

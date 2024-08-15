@@ -91,15 +91,6 @@ seq 3 | for line in (io.stdin) {
 3
 ## END
 
-
-#### Old _io builtin
-
-echo $[_io=>captureStdout(^(echo hi))]
-
-## STDOUT:
-hi
-## END
-
 #### s.upper(), not s => upper()
 
 echo $['foo' => upper()]

@@ -32,10 +32,10 @@ var x = io.captureStdout(c)
 (Dict)   {"status":1,"code":4,"message":"captureStdout(): command failed with status 1"}
 ## END
 
-#### _io->eval() is like eval builtin
+#### io->eval() is like eval builtin
 
 var c = ^(echo one; echo two)
-var status = _io->eval(c)
+var status = io->eval(c)
 
 # doesn't return anything
 echo status=$status
@@ -46,16 +46,16 @@ two
 status=null
 ## END
 
-#### _io->eval() with failing command - caller must handle
+#### io->eval() with failing command - caller must handle
 
 var c = ^(echo one; false; echo two)
 
 try {
-  call _io->eval(c)
+  call io->eval(c)
 }
 pp test_ (_error)
 
-call _io->eval(c)
+call io->eval(c)
 
 ## status: 1
 ## STDOUT:
@@ -64,12 +64,12 @@ one
 one
 ## END
 
-#### _io->eval() with exit
+#### io->eval() with exit
 
 var c = ^(echo one; exit; echo two)
 
 try {
-  call _io->eval(c)
+  call io->eval(c)
 }
 echo 'we do not get here'
 pp test_ (_error)

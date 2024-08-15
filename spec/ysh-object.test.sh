@@ -56,7 +56,7 @@ pp test_ (prototype(obj))
 (Obj)   {"area":<Func>}
 ## END
 
-#### attributes() 
+#### propView() 
 
 var obj = Object(null, {x: 3, y: 4})
 var props = propView(obj)
@@ -74,6 +74,24 @@ var e = propView(null)  # error
 ## STDOUT:
 (Dict)   {"x":3,"y":4}
 (Dict)   {"x":99,"y":4}
+## END
+
+#### Mutating method lookup with ->
+
+func inc(self, n) {
+  setvar self.i += n
+}
+var Counter_methods = Object(null, {'M/inc': inc})
+
+var c = Object(Counter_methods, {i: 5})
+
+echo $[c.i]
+call c->inc(3)
+echo $[c.i]
+
+## STDOUT:
+5
+8
 ## END
 
 #### Copy to Dict with dict(), and mutate
