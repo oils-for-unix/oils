@@ -1105,7 +1105,7 @@ class ExprEvaluator(object):
                 # Could improve error message: may give "Undefined variable"
                 val2 = self._LookupVar(name, node.attr)
 
-                with tagswitch(val) as case2:
+                with tagswitch(val2) as case2:
                     if case2(value_e.Func, value_e.BuiltinFunc):
                         return value.BoundFunc(val, val2)
                     else:
