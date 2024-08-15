@@ -5,7 +5,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (CommandStatus, StatusArray, flow_e,
                                         flow_t)
 from _devbuild.gen.syntax_asdl import Token
-from _devbuild.gen.value_asdl import value, value_t, Obj
+from _devbuild.gen.value_asdl import value_t, Obj
 from core import error
 from core import pyos
 from mycpp.mylib import log
