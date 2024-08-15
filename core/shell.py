@@ -562,13 +562,21 @@ def Main(
 
     # PromptEvaluator rendering is needed in non-interactive shells for @P.
     prompt_ev = prompt.Evaluator(lang, version_str, parse_ctx, mem)
-    global_io = value.IO(cmd_ev, prompt_ev)
+    global_io = value.IO(None)
 
     io_methods = {
-        '__mut_eval': value.BuiltinFunc(method_io.Eval(cmd_ev)),
-        'captureStdout': value.BuiltinFunc(method_io.CaptureStdout(shell_ex)),
+        # The M/ prefix means it's io->eval()
+        # This
+        'M/eval': value.BuiltinFunc(method_io.Eval(cmd_ev)),
 
-        # TODO: glob, etc.
+        # identical to command sub
+        'captureStdout': value.BuiltinFunc(method_io.CaptureStdout(shell_ex)),
+        'eval': value.BuiltinFunc(method_io.CaptureStdout(shell_ex)),
+        'time': value.BuiltinFunc(method_io.Time()),
+        'strftime': value.BuiltinFunc(method_io.Strftime()),
+
+        # TODO:
+        'glob': None,
     }  # type: Dict[str, value_t]
     io_props = {'stdin': value.Stdin}  # type: Dict[str, value_t]
     io_obj = Obj(Obj(None, io_methods), io_props)
@@ -813,19 +821,8 @@ def Main(
     }
 
     methods[value_e.IO] = {
-        # TODO: io.eval() or io->eval()?
-        # We are not mutating the object itself - we are mutating the system.
-        # That is already captured by io, so let's make it io.eval().
-
-        # io->eval(myblock) is the functional version of eval (myblock)
-        # Should we also have expr->eval() instead of evalExpr?
+        'promptVal': method_io.PromptVal(prompt_ev),
         'eval': method_io.Eval(cmd_ev),
-
-        # identical to command sub
-        'captureStdout': method_io.CaptureStdout(shell_ex),
-        'promptVal': method_io.PromptVal(),
-        'time': method_io.Time(),
-        'strftime': method_io.Strftime(),
     }
 
     methods[value_e.Place] = {

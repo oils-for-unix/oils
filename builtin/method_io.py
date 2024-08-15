@@ -9,7 +9,7 @@ from core import vm
 from mycpp.mylib import log
 from osh import prompt
 
-from typing import Dict, cast, TYPE_CHECKING
+from typing import Dict, TYPE_CHECKING
 if TYPE_CHECKING:
     from frontend import typed_args
     from osh import cmd_eval
@@ -28,13 +28,14 @@ class Eval(vm._Callable):
 
     The CALLER must handle errors.
     """
+
     def __init__(self, cmd_ev):
         # type: (cmd_eval.CommandEvaluator) -> None
         self.cmd_ev = cmd_ev
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
-        io = rd.PosIO()
+        unused = rd.PosValue()
         cmd = rd.PosCommand()
         rd.Done()  # no more args
 
@@ -52,7 +53,7 @@ class CaptureStdout(vm._Callable):
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        io = rd.PosIO()
+        unused = rd.PosValue()
         cmd = rd.PosCommand()
         rd.Done()  # no more args
 
@@ -77,15 +78,15 @@ class PromptVal(vm._Callable):
     It expands to $ or # when root
     """
 
-    def __init__(self):
-        # type: () -> None
-        pass
+    def __init__(self, prompt_ev):
+        # type: (prompt.Evaluator) -> None
+        self.prompt_ev = prompt_ev
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
         # "self" param is guaranteed to succeed
-        io = rd.PosIO()
+        unused = rd.PosValue()
         what = rd.PosStr()
         rd.Done()  # no more args
 
@@ -95,8 +96,7 @@ class PromptVal(vm._Callable):
                 'promptVal() expected a single char, got %r' % what,
                 rd.LeftParenToken())
 
-        prompt_ev = cast(prompt.Evaluator, io.prompt_ev)
-        return value.Str(prompt_ev.PromptVal(what))
+        return value.Str(self.prompt_ev.PromptVal(what))
 
 
 class Time(vm._Callable):

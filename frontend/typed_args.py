@@ -309,14 +309,6 @@ class Reader(object):
                             'Arg %d should be an Eggex' % self.pos_consumed,
                             self.BlamePos())
 
-    def _ToIO(self, val):
-        # type: (value_t) -> value.IO
-        if val.tag() == value_e.IO:
-            return cast(value.IO, val)
-
-        raise error.TypeErr(val, 'Arg %d should be IO' % self.pos_consumed,
-                            self.BlamePos())
-
     def _ToExpr(self, val):
         # type: (value_t) -> expr_t
         if val.tag() == value_e.Expr:
@@ -434,11 +426,6 @@ class Reader(object):
         # type: () -> RegexMatch
         val = self.PosValue()
         return self._ToMatch(val)
-
-    def PosIO(self):
-        # type: () -> value.IO
-        val = self.PosValue()
-        return self._ToIO(val)
 
     def PosCommand(self):
         # type: () -> command_t

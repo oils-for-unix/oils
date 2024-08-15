@@ -142,7 +142,8 @@ module value
 
     # The ability to use operating system functions.  Right now some functions
     # leak, like glob().
-  | IO(any cmd_ev, any prompt_ev)
+    # TODO: Removed 'unused' after ASDL in Python makes value.IO a type
+  | IO(any unused)
 
     # Do we need this?
     # _guts->heapId() can be used to detect object cycles.

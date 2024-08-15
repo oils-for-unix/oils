@@ -1047,7 +1047,7 @@ class ExprEvaluator(object):
             # Right now => is a synonym for ->
             # Later we may enforce that => is pure, and -> is for mutation and
             # I/O.
-            if case(Id.Expr_RArrow, Id.Expr_RDArrow):
+            if case(Id.Expr_RArrow):
                 name = node.attr_name
                 # Look up builtin methods
                 type_methods = self.methods.get(o.tag())
@@ -1056,13 +1056,21 @@ class ExprEvaluator(object):
                 if vm_callable:
                     func_val = value.BuiltinFunc(vm_callable)
                     return value.BoundFunc(o, func_val)
+                #return self._EvalRArrow(node, o)
 
-                # If the operator is ->, fail because we don't have any
-                # user-defined methods
-                if node.op.id == Id.Expr_RArrow:
-                    raise error.TypeErrVerbose(
-                        'Method %r does not exist on type %s' %
-                        (name, ui.ValType(o)), node.attr)
+                raise error.TypeErrVerbose(
+                    'Method %r does not exist on type %s' %
+                    (name, ui.ValType(o)), node.attr)
+
+            elif case(Id.Expr_RDArrow):
+                name = node.attr_name
+                # Look up builtin methods
+                type_methods = self.methods.get(o.tag())
+                vm_callable = (type_methods.get(name)
+                               if type_methods is not None else None)
+                if vm_callable:
+                    func_val = value.BuiltinFunc(vm_callable)
+                    return value.BoundFunc(o, func_val)
 
                 # Operator is =>, so try function chaining.
 
@@ -1088,6 +1096,7 @@ class ExprEvaluator(object):
 
             else:
                 raise AssertionError(node.op)
+        raise AssertionError()
 
     def _EvalExpr(self, node):
         # type: (expr_t) -> value_t
