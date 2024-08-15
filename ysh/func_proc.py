@@ -558,6 +558,9 @@ def CallUserFunc(
     # type: (...) -> value_t
 
     # Push a new stack frame
+
+    # TODO: ctx_Eval() can replace io with DummyIO type!  It can possibly
+    # implement __getattr__ and __get_mutating__?
     with state.ctx_FuncCall(mem, func):
         _BindFuncArgs(func, rd, mem)
 

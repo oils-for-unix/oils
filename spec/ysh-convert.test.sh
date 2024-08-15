@@ -10,7 +10,7 @@ echo "$[bool([])]"
 echo "$[bool({})]"
 echo "$[bool(null)]"
 echo "$[bool(len)]"
-echo "$[bool('foo'->startsWith)]"
+echo "$[bool('foo'=>startsWith)]"
 echo "$[bool(1..3)]"
 ## STDOUT:
 true

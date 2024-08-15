@@ -273,7 +273,7 @@ g1 0 2 hi
 g2 2 3 5
 ## END
 
-#### Str->leftMatch() can implement lexer pattern
+#### Str=>leftMatch() can implement lexer pattern
 
 shopt -s ysh:upgrade
 
@@ -286,7 +286,7 @@ proc show-tokens (s) {
   while (true) {
     echo "pos=$pos"
 
-    var m = s->leftMatch(lexer, pos=pos)
+    var m = s=>leftMatch(lexer, pos=pos)
     if (not m) {
       break
     }

@@ -776,8 +776,7 @@ def Main(
         'fullMatch': None,
     }
     methods[value_e.Dict] = {
-        # TODO: __mut_erase
-        'erase': method_dict.Erase(),
+        'M/erase': method_dict.Erase(),
 
         # Dict.get()
         # Dict.keys()
@@ -793,19 +792,19 @@ def Main(
         #
         # call d->inc('mycounter')
         # call d->inc('mycounter', 3)
-        'inc': None,
+        'M/inc': None,
 
         # call d->accum('mygroup', 'value')
-        'accum': None,
+        'M/accum': None,
     }
     methods[value_e.List] = {
         # TODO: __mut_{reverse,append,extend,pop,insert,remove}
-        'reverse': method_list.Reverse(),
-        'append': method_list.Append(),
-        'extend': method_list.Extend(),
-        'pop': method_list.Pop(),
-        'insert': None,  # insert object before index
-        'remove': None,  # insert object before index
+        'M/reverse': method_list.Reverse(),
+        'M/append': method_list.Append(),
+        'M/extend': method_list.Extend(),
+        'M/pop': method_list.Pop(),
+        'M/insert': None,  # insert object before index
+        'M/remove': None,  # insert object before index
         'indexOf': method_list.IndexOf(),  # return first index of value, or -1
         # Python list() has index(), which raises ValueError
         # But this is consistent with Str->find(), and doesn't
@@ -823,7 +822,7 @@ def Main(
         # __mut_setValue()
 
         # instead of setplace keyword
-        'setValue': method_other.SetValue(mem),
+        'M/setValue': method_other.SetValue(mem),
     }
 
     methods[value_e.Command] = {

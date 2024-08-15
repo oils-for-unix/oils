@@ -362,7 +362,7 @@ var unimpl = [
     myexpr,  # Expr
     ^(echo hello),  # Block
     f,  # Func
-    mydict->keys,  # BoundFunc
+    mydict=>keys,  # BoundFunc
     # These cannot be constructed
     # - Proc
     # - Slice

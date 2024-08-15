@@ -1029,13 +1029,12 @@ class ExprEvaluator(object):
 
     def _EvalRArrow(self, node, val):
         # type: (Attribute, value_t) -> value_t
-        name = node.attr_name
+        mut_name = 'M/' + node.attr_name
 
         UP_val = val
         with tagswitch(val) as case:
             if case(value_e.Obj):
                 obj = cast(Obj, UP_val)
-                mut_name = 'M/' + name
 
                 if obj.prototype is not None:
                     result = self._ChainedLookup(obj, obj.prototype, mut_name)
@@ -1054,15 +1053,15 @@ class ExprEvaluator(object):
                 # TODO: These should also be called M/append, M/erase, etc.
 
                 type_methods = self.methods.get(val.tag())
-                vm_callable = (type_methods.get(name)
+                vm_callable = (type_methods.get(mut_name)
                                if type_methods is not None else None)
                 if vm_callable:
                     func_val = value.BuiltinFunc(vm_callable)
                     return value.BoundFunc(val, func_val)
 
                 raise error.TypeErrVerbose(
-                    "Method %r not found on builtin type %s" %
-                    (name, ui.ValType(val)), node.attr)
+                    "Mutating method %r not found on builtin type %s" %
+                    (mut_name, ui.ValType(val)), node.attr)
         raise AssertionError()
 
     def _EvalAttribute(self, node):

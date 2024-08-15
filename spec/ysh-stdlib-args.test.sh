@@ -172,7 +172,7 @@ print(result)
 '''
 
 for args in (argsCases) {
-  var args_str = args->join(" ")
+  var args_str = args=>join(" ")
   echo "----------  $args_str  ----------"
   echo "\$ bin/ysh example.sh $args_str"
   pp test_ (parseArgs(spec, args))
