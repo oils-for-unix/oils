@@ -48,7 +48,7 @@ error handling, and more.
                    search()       leftMatch()
   [List]           List/append()  pop()         extend()    indexOf()
                  X insert()     X remove()      reverse()
-  [Dict]           keys()         values()    X get()       erase()
+  [Dict]           keys()         values()      get()       erase()
                  X inc()        X accum()
   [Range] 
   [Eggex] 

@@ -79,36 +79,10 @@ fi
 OIL
 ## END
 
-
-#### stdin is now io.stdin
-
-seq 3 | for line in (io.stdin) {
-  echo $line
-}
-## STDOUT:
-1
-2
-3
-## END
-
-#### s.upper(), not s => upper()
+#### s.upper(), not s => upper() (might keep this)
 
 echo $['foo' => upper()]
 
 ## STDOUT:
 FOO
 ## END
-
-
-#### Mutating methods must be ->, not => or .
-
-var mylist = []
-call mylist=>append('foo')
-call mylist.append('bar')
-
-pp test_ (mylist)
-
-## STDOUT:
-(List)   ["foo","bar"]
-## END
-
