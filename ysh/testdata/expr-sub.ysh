@@ -41,7 +41,7 @@ simple-demo() {
   echo '  Notes:'
   echo '  - the Dict->reverse() method is from Python.'
   echo
-  write -- @[mydict->keys()]
+  write -- @[mydict=>keys()]
   echo
 
   # But this is a syntax error
