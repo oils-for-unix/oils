@@ -91,10 +91,6 @@ osh-bugs() {
   run-file osh-bugs "$@"
 }
 
-TODO-deprecate() {
-  run-file TODO-deprecate "$@"
-}
-
 blog1() {
   sh-spec spec/blog1.test.sh \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
@@ -673,6 +669,10 @@ hay-meta() {
 #
 # YSH
 #
+
+ysh-TODO-deprecate() {
+  run-file ysh-TODO-deprecate "$@"
+}
 
 ysh-convert() {
   run-file ysh-convert "$@"
