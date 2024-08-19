@@ -148,13 +148,11 @@ background() {
 }
 
 subshell() {
-  sh-spec spec/subshell.test.sh \
-    ${REF_SHELLS[@]} $OSH_LIST "$@" 
+  run-file subshell "$@"
 }
 
 quote() {
-  sh-spec spec/quote.test.sh \
-    ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
+  run-file quote "$@"
 }
 
 unicode() {
@@ -170,8 +168,7 @@ case_() {
 }
 
 if_() {
-  sh-spec spec/if_.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file if_ "$@"
 }
 
 builtin-misc() {

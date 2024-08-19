@@ -1,4 +1,5 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
+## compare_shells: dash bash mksh ash
 
 #### Unquoted words
 echo unquoted    words
