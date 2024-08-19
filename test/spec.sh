@@ -216,10 +216,8 @@ builtin-history() {
   run-file builtin-history "$@"
 }
 
-# dash and mksh don't implement 'dirs'
 builtin-dirs() {
-  sh-spec spec/builtin-dirs.test.sh \
-    $BASH $ZSH $OSH_LIST "$@"
+  run-file builtin-dirs "$@"
 }
 
 builtin-vars() {
@@ -277,15 +275,15 @@ builtin-special() {
 }
 
 builtin-times() {
-  sh-spec spec/builtin-times.test.sh $BASH $ZSH $OSH_LIST "$@"
+  run-file builtin-times "$@"
 }
 
 command-parsing() {
-  sh-spec spec/command-parsing.test.sh ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file command-parsing "$@"
 }
 
 func-parsing() {
-  sh-spec spec/func-parsing.test.sh ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file func-parsing "$@"
 }
 
 sh-func() {

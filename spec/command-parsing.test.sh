@@ -1,4 +1,5 @@
-#
+## compare_shells: dash bash mksh
+
 # Some nonsensical combinations which can all be detected at PARSE TIME.
 # All shells allow these, but right now OSH disallowed.
 # TODO: Run the parser on your whole corpus, and then if there are no errors,

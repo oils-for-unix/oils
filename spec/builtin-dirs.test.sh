@@ -1,3 +1,6 @@
+## compare_shells: bash zsh
+
+# dash and mksh don't implement 'dirs'
 
 #### pushd/popd
 set -o errexit

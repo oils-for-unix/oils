@@ -1,3 +1,4 @@
+## compare_shells: bash zsh
 
 #### times shows two formatted lines
 output=$(times)
