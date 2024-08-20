@@ -78,12 +78,15 @@ class TrapState(object):
         """ e.g. SIGUSR1 """
         self.traps[sig_num] = handler
 
-        if sig_num == SIGINT:
-            # Don't disturb the runtime signal handlers:
-            # 1. from CPython
-            # 2. pyos::InitSignalSafe() calls RegisterSignalInterest(SIGINT)
-            self.signal_safe.SetSigIntTrapped(True)
-        elif sig_num == SIGWINCH:
+        #if sig_num == SIGINT:
+            # Don't disturb the underlying runtime's SIGINT handllers
+            # 1. CPython has one for KeyboardInterrupt
+            # 2. mycpp runtime simulates KeyboardInterrupt:
+            #    pyos::InitSignalSafe() calls RegisterSignalInterest(SIGINT),
+            #    then we PollSigInt() in the osh/cmd_eval.py main loop
+            #self.signal_safe.SetSigIntTrapped(True)
+        #    pass
+        if sig_num == SIGWINCH:
             self.signal_safe.SetSigWinchCode(SIGWINCH)
         else:
             pyos.RegisterSignalInterest(sig_num)
@@ -94,7 +97,8 @@ class TrapState(object):
         mylib.dict_erase(self.traps, sig_num)
 
         if sig_num == SIGINT:
-            self.signal_safe.SetSigIntTrapped(False)
+            #self.signal_safe.SetSigIntTrapped(False)
+            pass
         elif sig_num == SIGWINCH:
             self.signal_safe.SetSigWinchCode(pyos.UNTRAPPED_SIGWINCH)
         else:
