@@ -488,38 +488,86 @@ class Split(vm._Callable):
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
         """
-        s.split(sep, count=-1)
+        s.split(delim, count=-1)
+        s.split(eggex, count=-1)
 
         Count behaves like in replace() in that:
         - `count` <  0 -> ignore
         - `count` >= 0 -> there will be at most `count` splits
         """
         string = rd.PosStr()
-        sep = rd.PosStr()
+
+        string_sep = None  # type: value.Str
+        eggex_sep = None  # type: value.Eggex
+
+        sep = rd.PosValue()
+        with tagswitch(sep) as case:
+            if case(value_e.Eggex):
+                eggex_sep_ = cast(value.Eggex, sep)
+                eggex_sep = eggex_sep_
+
+            elif case(value_e.Str):
+                string_sep_ = cast(value.Str, sep)
+                string_sep = string_sep_.s
+
+            else:
+                raise error.TypeErr(sep, 'expected sep to be Eggex or Str',
+                                    rd.LeftParenToken())
+
         count = mops.BigTruncate(rd.NamedInt("count", -1))
         rd.Done()
-
-        if len(sep) == 0:
-            raise error.Structured(3, "sep must be non-empty", rd.LeftParenToken())
 
         if len(string) == 0:
             return value.List([])
 
-        cursor = 0
-        chunks = []  # type: List[value_t]
-        while cursor < len(string) and count != 0:
-            next = string.find(sep, cursor)
-            if next == -1:
-                break
+        if string_sep is not None:
+            if len(string_sep) == 0:
+                raise error.Structured(3, "sep must be non-empty",
+                                       rd.LeftParenToken())
 
-            chunks.append(value.Str(string[cursor:next]))
-            cursor = next + len(sep)
-            count -= 1
+            cursor = 0
+            chunks = []  # type: List[value_t]
+            while cursor < len(string) and count != 0:
+                next = string.find(string_sep, cursor)
+                if next == -1:
+                    break
 
-        if cursor == len(string):
-            # An instance of sep was against the end of the string
-            chunks.append(value.Str(""))
-        else:
+                chunks.append(value.Str(string[cursor:next]))
+                cursor = next + len(string_sep)
+                count -= 1
+
             chunks.append(value.Str(string[cursor:]))
 
-        return value.List(chunks)
+            return value.List(chunks)
+
+        if eggex_sep is not None:
+            regex = regex_translate.AsPosixEre(eggex_sep)
+
+            anchor = 0
+            cursor = 0
+            chunks = []  # type: List[value_t]
+            while cursor < len(string) and count != 0:
+                m = libc.regex_first_group_match(regex, string, cursor)
+                if m is None:
+                    break
+                start, end = m
+
+                # We want to ignore zero-width matches. This is why we have a
+                # separate anchor/cursor. The anchor remembers the end of the
+                # last delimiter (or the start of the string) while the cursor
+                # moves forward to find the next non-empty match for the regex.
+                if start == end:
+                    cursor += 1
+                    continue
+
+                chunks.append(value.Str(string[anchor:start]))
+                anchor = end
+                cursor = end
+
+                count -= 1
+
+            chunks.append(value.Str(string[anchor:]))
+
+            return value.List(chunks)
+
+        raise AssertionError()

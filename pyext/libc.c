@@ -264,8 +264,8 @@ func_regex_first_group_match(PyObject *self, PyObject *args) {
   }
 
   // Assume there is a match
-  regoff_t start = m[1].rm_so;
-  regoff_t end = m[1].rm_eo;
+  regoff_t start = m[0].rm_so;  // Why was this 1 before?
+  regoff_t end = m[0].rm_eo;
   return Py_BuildValue("(i,i)", pos + start, pos + end);
 }
 
