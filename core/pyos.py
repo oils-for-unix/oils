@@ -312,6 +312,13 @@ class SignalSafe(object):
         """Return the number of the last signal that fired."""
         return self.last_sig_num
 
+    def PollUntrappedSigInt(self):
+        # type: () -> bool
+        """Has SIGINT received since the last time PollSigInt() was called?"""
+        result = self.received_sigint
+        self.received_sigint = False
+        return result
+
     def PollSigInt(self):
         # type: () -> bool
         """Has SIGINT received since the last time PollSigInt() was called?"""
@@ -353,7 +360,7 @@ class SignalSafe(object):
         # exclusivity should be maintained by the atomic nature of pointer
         # assignment (i.e. word-sized writes) on most modern platforms.
         # The replacement run list is allocated before the swap, so it can be
-        # interuppted at any point without consequence.
+        # interrupted at any point without consequence.
         # This means the signal handler always has exclusive access to
         # `self.pending_signals`. In the worst case the signal handler might write to
         # `new_queue` and the corresponding trap handler won't get executed
@@ -381,6 +388,9 @@ def InitSignalSafe():
     """Set global instance so the signal handler can access it."""
     global gSignalSafe
     gSignalSafe = SignalSafe()
+
+    RegisterSignalInterest(signal.SIGINT)
+
     return gSignalSafe
 
 
@@ -399,6 +409,8 @@ def sigaction(sig_num, handler):
 def RegisterSignalInterest(sig_num):
     # type: (int) -> None
     """Have the kernel notify the main loop about the given signal."""
+    #log('RegisterSignalInterest %d', sig_num)
+
     assert gSignalSafe is not None
     signal.signal(sig_num, gSignalSafe.UpdateFromSignalHandler)
 

@@ -48,7 +48,10 @@ do-child() {
 compare-shells() {
   local do_child=${1:-}
 
-  local -a shells=(bash dash mksh zsh bin/osh)
+  local osh_cpp=_bin/cxx-dbg/osh
+  ninja $osh_cpp
+
+  local -a shells=(bash dash mksh zsh bin/osh $osh_cpp)
 
   # Hm non-interactive shells have consistency.
   # SIGCHLD and SIGINT are caught in bash, dash, zsh, mksh.  mksh catches
@@ -68,6 +71,9 @@ compare-shells() {
 
   echo
   echo
+
+  # -i messes things up
+  return
 
   for sh in ${shells[@]}; do
     echo

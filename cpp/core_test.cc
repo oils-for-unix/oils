@@ -5,6 +5,7 @@
 #include <signal.h>       // SIG*, kill()
 #include <sys/stat.h>     // stat
 #include <sys/utsname.h>  // uname
+#include <sys/wait.h>     // waitpid
 #include <unistd.h>       // getpid(), getuid(), environ
 
 #include "cpp/embedded_file.h"
@@ -384,6 +385,35 @@ TEST asan_global_leak_test() {
   PASS();
 }
 
+// manual demo
+TEST waitpid_demo() {
+  pyos::InitSignalSafe();
+  pyos::RegisterSignalInterest(SIGINT);
+
+  int result = fork();
+  if (result < 0) {
+    FAIL();
+  } else if (result == 0) {
+    // child
+
+    log("sleeping in child, pid = %d", getpid());
+    char* argv[] = {"sleep", "5", nullptr};
+    char* env[] = {nullptr};
+    int e = execvpe("sleep", argv, env);
+    log("execve failed %d", e);
+
+  } else {
+    // parent
+
+    int wstatus;
+    log("waiting in parent");
+    int result = ::waitpid(-1, &wstatus, 0);
+    log("waitpid = %d, status = %d", result, wstatus);
+  }
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -409,6 +439,8 @@ int main(int argc, char** argv) {
   RUN_TEST(passwd_test);
   RUN_TEST(dir_cache_key_test);
   RUN_TEST(asan_global_leak_test);
+
+  // RUN_TEST(waitpid_demo);
 
   gHeap.CleanProcessExit();
 

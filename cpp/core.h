@@ -182,14 +182,12 @@ class SignalSafe {
     return result;
   }
 
-#if 0
   // Used by osh/cmd_eval.py.  Main loop wants to know if SIGINT was received
   // since the last time PollSigInt was called.
   bool PollUntrappedSigInt() {
     bool received = PollSigInt();  // clears a flag
-    return received && sigint_trapped_;
+    return received && !sigint_trapped_;
   }
-#endif
 
   // Main thread tells us whether SIGWINCH is trapped.
   void SetSigWinchCode(int code) {
