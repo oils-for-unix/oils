@@ -82,7 +82,7 @@ class TrapState(object):
             # Don't disturb the runtime signal handlers:
             # 1. from CPython
             # 2. pyos::InitSignalSafe() calls RegisterSignalInterest(SIGINT)
-            pass
+            self.signal_safe.SetSigIntTrapped(True)
         elif sig_num == SIGWINCH:
             self.signal_safe.SetSigWinchCode(SIGWINCH)
         else:
@@ -94,17 +94,23 @@ class TrapState(object):
         mylib.dict_erase(self.traps, sig_num)
 
         if sig_num == SIGINT:
-            # Same reason as above
-            pass
+            self.signal_safe.SetSigIntTrapped(False)
         elif sig_num == SIGWINCH:
             self.signal_safe.SetSigWinchCode(pyos.UNTRAPPED_SIGWINCH)
         else:
+            # TODO: In process.InitInteractiveShell(), 4 signals are set to
+            # SIG_IGN, not SIG_DFL:
+            #
+            # SIGQUIT SIGTSTP SIGTTOU SIGTTIN
+            #
+            # Should we restore them?  It's rare that you type 'trap' in
+            # interactive shells, but it might be more correct.  See what other
+            # shells do.
             pyos.sigaction(sig_num, SIG_DFL)
 
     def GetPendingTraps(self):
         # type: () -> Optional[List[command_t]]
-        """Transfer ownership of the current queue of pending trap handlers to
-        the caller."""
+        """Transfer ownership of queue of pending trap handlers to caller."""
         signals = self.signal_safe.TakePendingSignals()
         if 0:
             log('*** GetPendingTraps')

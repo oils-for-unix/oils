@@ -319,6 +319,14 @@ class SignalSafe(object):
         self.received_sigint = False
         return result
 
+    def SetSigIntTrapped(self, b):
+        # type: (bool) -> None
+        """Set a flag to tell us whether sigint is trapped by the user.
+
+        Only needed in C++
+        """
+        pass
+
     def SetSigWinchCode(self, code):
         # type: (int) -> None
         """Depending on whether or not SIGWINCH is trapped by a user, it is
@@ -378,9 +386,13 @@ def InitSignalSafe():
 
 def sigaction(sig_num, handler):
     # type: (int, Any) -> None
-    """Register a signal handler."""
-    # SIGINT must be registered through SignalSafe
+    """
+    Handle a signal with SIG_DFL or SIG_IGN, not our own signal handler.
+    """
+
+    # SIGINT and SIGWINCH must be registered through SignalSafe
     assert sig_num != signal.SIGINT
+    assert sig_num != signal.SIGWINCH
     signal.signal(sig_num, handler)
 
 

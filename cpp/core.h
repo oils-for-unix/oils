@@ -171,13 +171,25 @@ class SignalSafe {
 #endif
   }
 
-  // Main thread wants to know if SIGINT was received since the last time
-  // PollSigInt was called.
+  void SetSigIntTrapped(bool b) {
+    sigint_trapped_ = b;
+  }
+
+  // Used by pyos.WaitPid, Read, ReadByte.
   bool PollSigInt() {
     bool result = received_sigint_;
     received_sigint_ = false;
     return result;
   }
+
+#if 0
+  // Used by osh/cmd_eval.py.  Main loop wants to know if SIGINT was received
+  // since the last time PollSigInt was called.
+  bool PollUntrappedSigInt() {
+    bool received = PollSigInt();  // clears a flag
+    return received && sigint_trapped_;
+  }
+#endif
 
   // Main thread tells us whether SIGWINCH is trapped.
   void SetSigWinchCode(int code) {
@@ -221,6 +233,7 @@ class SignalSafe {
 #endif
   // Not sufficient: volatile sig_atomic_t last_sig_num_;
 
+  bool sigint_trapped_;
   int received_sigint_;
   int received_sigwinch_;
   int sigwinch_code_;

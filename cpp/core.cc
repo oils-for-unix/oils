@@ -276,8 +276,9 @@ SignalSafe* InitSignalSafe() {
 // signal.signal(), which calls PyOS_setsig(), which calls sigaction() #ifdef
 // HAVE_SIGACTION.
 void sigaction(int sig_num, void (*handler)(int)) {
-  // SIGINT must be registered through SignalSafe
+  // SIGINT and SIGWINCH must be registered through SignalSafe
   DCHECK(sig_num != SIGINT);
+  DCHECK(sig_num != SIGWINCH);
 
   struct sigaction act = {};
   act.sa_handler = handler;

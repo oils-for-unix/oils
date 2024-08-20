@@ -266,7 +266,7 @@ TEST signal_test() {
     signal_safe->ReuseEmptyList(q);
   }
 
-  pyos::Sigaction(SIGUSR1, SIG_IGN);
+  pyos::sigaction(SIGUSR1, SIG_IGN);
   kill(mypid, SIGUSR1);
   {
     List<int>* q = signal_safe->TakePendingSignals();
@@ -274,7 +274,7 @@ TEST signal_test() {
     ASSERT(len(q) == 0);
     signal_safe->ReuseEmptyList(q);
   }
-  pyos::Sigaction(SIGUSR2, SIG_IGN);
+  pyos::sigaction(SIGUSR2, SIG_IGN);
 
   pyos::RegisterSignalInterest(SIGWINCH);
 
