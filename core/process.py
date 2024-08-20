@@ -70,6 +70,7 @@ if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import command_t
     from builtin import trap_osh
     from core import optview
+    from core import pyos
     from core.util import _DebugFile
     from osh.cmd_eval import CommandEvaluator
 
@@ -107,21 +108,21 @@ class ctx_FileCloser(object):
         self.f.close()
 
 
-def InitInteractiveShell():
-    # type: () -> None
+def InitInteractiveShell(signal_safe):
+    # type: (pyos.SignalSafe) -> None
     """Called when initializing an interactive shell."""
 
     # The shell itself should ignore Ctrl-\.
-    pyos.Sigaction(SIGQUIT, SIG_IGN)
+    pyos.sigaction(SIGQUIT, SIG_IGN)
 
     # This prevents Ctrl-Z from suspending OSH in interactive mode.
-    pyos.Sigaction(SIGTSTP, SIG_IGN)
+    pyos.sigaction(SIGTSTP, SIG_IGN)
 
     # More signals from
     # https://www.gnu.org/software/libc/manual/html_node/Initializing-the-Shell.html
     # (but not SIGCHLD)
-    pyos.Sigaction(SIGTTOU, SIG_IGN)
-    pyos.Sigaction(SIGTTIN, SIG_IGN)
+    pyos.sigaction(SIGTTOU, SIG_IGN)
+    pyos.sigaction(SIGTTIN, SIG_IGN)
 
     # Register a callback to receive terminal width changes.
     # NOTE: In line_input.c, we turned off rl_catch_sigwinch.
@@ -1065,23 +1066,23 @@ class Process(Job):
             # shouldn't have this.
             # https://docs.python.org/2/library/signal.html
             # See Python/pythonrun.c.
-            pyos.Sigaction(SIGPIPE, SIG_DFL)
+            pyos.sigaction(SIGPIPE, SIG_DFL)
 
             # Respond to Ctrl-\ (core dump)
-            pyos.Sigaction(SIGQUIT, SIG_DFL)
+            pyos.sigaction(SIGQUIT, SIG_DFL)
 
             # Only standalone children should get Ctrl-Z. Pipelines remain in the
             # foreground because suspending them is difficult with our 'lastpipe'
             # semantics.
             pid = posix.getpid()
             if posix.getpgid(0) == pid and self.parent_pipeline is None:
-                pyos.Sigaction(SIGTSTP, SIG_DFL)
+                pyos.sigaction(SIGTSTP, SIG_DFL)
 
             # More signals from
             # https://www.gnu.org/software/libc/manual/html_node/Launching-Jobs.html
             # (but not SIGCHLD)
-            pyos.Sigaction(SIGTTOU, SIG_DFL)
-            pyos.Sigaction(SIGTTIN, SIG_DFL)
+            pyos.sigaction(SIGTTOU, SIG_DFL)
+            pyos.sigaction(SIGTTIN, SIG_DFL)
 
             self.tracer.OnNewProcess(pid)
             # clear foreground pipeline for subshells

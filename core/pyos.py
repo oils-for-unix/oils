@@ -376,9 +376,11 @@ def InitSignalSafe():
     return gSignalSafe
 
 
-def Sigaction(sig_num, handler):
+def sigaction(sig_num, handler):
     # type: (int, Any) -> None
     """Register a signal handler."""
+    # SIGINT must be registered through SignalSafe
+    assert sig_num != signal.SIGINT
     signal.signal(sig_num, handler)
 
 

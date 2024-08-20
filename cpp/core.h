@@ -232,7 +232,7 @@ extern SignalSafe* gSignalSafe;
 // Allocate global and return it.
 SignalSafe* InitSignalSafe();
 
-void Sigaction(int sig_num, void (*handler)(int));
+void sigaction(int sig_num, void (*handler)(int));
 
 void RegisterSignalInterest(int sig_num);
 

@@ -1063,7 +1063,7 @@ def Main(
             display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state,
                                              debug_f)
 
-        process.InitInteractiveShell()  # Set signal handlers
+        process.InitInteractiveShell(signal_safe)  # Set signal handlers
 
         # The interactive shell leads a process group which controls the terminal.
         # It MUST give up the terminal afterward, otherwise we get SIGTTIN /

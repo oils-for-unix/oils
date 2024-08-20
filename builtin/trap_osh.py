@@ -75,13 +75,15 @@ class TrapState(object):
 
     def AddUserTrap(self, sig_num, handler):
         # type: (int, command_t) -> None
-        """E.g.
-
-        SIGUSR1.
-        """
+        """ e.g. SIGUSR1 """
         self.traps[sig_num] = handler
 
-        if sig_num == SIGWINCH:
+        if sig_num == SIGINT:
+            # Don't disturb the runtime signal handlers:
+            # 1. from CPython
+            # 2. pyos::InitSignalSafe() calls RegisterSignalInterest(SIGINT)
+            pass
+        elif sig_num == SIGWINCH:
             self.signal_safe.SetSigWinchCode(SIGWINCH)
         else:
             pyos.RegisterSignalInterest(sig_num)
@@ -92,14 +94,12 @@ class TrapState(object):
         mylib.dict_erase(self.traps, sig_num)
 
         if sig_num == SIGINT:
-            # Don't disturb the runtime signal handlers:
-            # 1. from CPython
-            # 2. pyos::InitSignalSafe() calls RegisterSignalInterest(SIGINT)
+            # Same reason as above
             pass
         elif sig_num == SIGWINCH:
             self.signal_safe.SetSigWinchCode(pyos.UNTRAPPED_SIGWINCH)
         else:
-            pyos.Sigaction(sig_num, SIG_DFL)
+            pyos.sigaction(sig_num, SIG_DFL)
 
     def GetPendingTraps(self):
         # type: () -> Optional[List[command_t]]

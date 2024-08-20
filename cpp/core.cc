@@ -272,7 +272,13 @@ SignalSafe* InitSignalSafe() {
   return gSignalSafe;
 }
 
-void Sigaction(int sig_num, void (*handler)(int)) {
+// Note that the Python implementation of pyos.sigaction() calls
+// signal.signal(), which calls PyOS_setsig(), which calls sigaction() #ifdef
+// HAVE_SIGACTION.
+void sigaction(int sig_num, void (*handler)(int)) {
+  // SIGINT must be registered through SignalSafe
+  DCHECK(sig_num != SIGINT);
+
   struct sigaction act = {};
   act.sa_handler = handler;
   if (sigaction(sig_num, &act, nullptr) != 0) {
@@ -280,15 +286,17 @@ void Sigaction(int sig_num, void (*handler)(int)) {
   }
 }
 
-static void signal_handler(int sig_num) {
+static void OurSignalHandler(int sig_num) {
   assert(gSignalSafe != nullptr);
   gSignalSafe->UpdateFromSignalHandler(sig_num);
 }
 
 void RegisterSignalInterest(int sig_num) {
   struct sigaction act = {};
-  act.sa_handler = signal_handler;
-  assert(sigaction(sig_num, &act, nullptr) == 0);
+  act.sa_handler = OurSignalHandler;
+  if (sigaction(sig_num, &act, nullptr) != 0) {
+    throw Alloc<OSError>(errno);
+  }
 }
 
 Tuple2<BigStr*, int>* MakeDirCacheKey(BigStr* path) {
