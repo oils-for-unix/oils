@@ -122,4 +122,67 @@ survey-trim() {
   nodejs -e 'var s = process.argv[1]; var t = s.trim(); console.log(`[${s}] [${t}]`);' "$str"
 }
 
+survey-split() {
+  echo '============== PYTHON'
+  echo
+
+  python3 << EOF
+print('a,b,c'.split(','))
+print('aa'.split('a'))
+print('a<>b<>c<d'.split('<>'))
+print('a;b;;c'.split(';'))
+print(''.split('foo'))
+
+import re
+
+print(re.split(',|;', 'a,b;c'))
+print(re.split('.*', 'aa'))
+print(re.split('.', 'aa'))
+print(re.split('<>|@@', 'a<>b@@c<d'))
+print(re.split('\\s*', 'a b cd'))
+print(re.split('\\s+', 'a b cd'))
+print(re.split('.', ''))
+EOF
+
+  echo
+  echo '============== NODE'
+  echo
+
+  node << EOF
+console.log('a,b,c'.split(','))
+console.log('aa'.split('a'))
+console.log('a<>b<>c<d'.split('<>'))
+console.log('a;b;;c'.split(';'))
+console.log(''.split('foo'))
+
+console.log('a,b;c'.split(/,|;/))
+console.log('aa'.split(/.*/))
+console.log('aa'.split(/./))
+console.log('a<>b@@c<d'.split(/<>|@@/))
+console.log('a b  cd'.split(/\s*/))
+console.log('a b  cd'.split(/\s+/))
+console.log(''.split(/./))
+EOF
+
+  echo
+  echo '============== YSH'
+  echo
+
+  bin/ysh << EOF
+pp test_ ('a,b,c'.split(','))
+pp test_ ('aa'.split('a'))
+pp test_ ('a<>b<>c<d'.split('<>'))
+pp test_ ('a;b;;c'.split(';'))
+pp test_ (''.split('foo'))
+
+pp test_ ('a,b;c'.split(/ ',' | ';' /))
+pp test_ ('aa'.split(/ dot* /))
+pp test_ ('aa'.split(/ dot /))
+pp test_ ('a<>b@@c<d'.split(/ '<>' | '@@' /))
+pp test_ ('a b  cd'.split(/ space* /))
+pp test_ ('a b  cd'.split(/ space+ /))
+pp test_ (''.split(/ dot /))
+EOF
+}
+
 "$@"
