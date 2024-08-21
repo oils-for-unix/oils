@@ -497,7 +497,7 @@ class Split(vm._Callable):
         """
         string = rd.PosStr()
 
-        string_sep = None  # type: value.Str
+        string_sep = None  # type: str
         eggex_sep = None  # type: value.Eggex
 
         sep = rd.PosValue()
@@ -545,7 +545,7 @@ class Split(vm._Callable):
 
             anchor = 0
             cursor = 0
-            chunks = []  # type: List[value_t]
+            chunks = []
             while cursor < len(string) and count != 0:
                 m = libc.regex_first_group_match(regex, string, cursor)
                 if m is None:
