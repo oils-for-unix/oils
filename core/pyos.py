@@ -389,7 +389,11 @@ def InitSignalSafe():
     global gSignalSafe
     gSignalSafe = SignalSafe()
 
-    RegisterSignalInterest(signal.SIGINT)
+    # Note: we only need this in C++ because of the way Python's signal module
+    # works?  See
+    # - demo/cpython/keyboard_interrupt.py
+    # - pyos::InitSignalSafe()
+    #RegisterSignalInterest(signal.SIGINT)
 
     return gSignalSafe
 
