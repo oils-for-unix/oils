@@ -210,6 +210,26 @@ class InteractiveLineReader(_Reader):
         """Called after command execution."""
         self.render_ps1 = True
 
+    def _ReadlinePromptInput(self):
+        # type: () -> str
+        if mylib.CPP:
+            line = self.line_input.prompt_input(self.prompt_str)
+        else:
+            # Hack to restore CPython's signal handling behavior while
+            # raw_input() is called.
+            #
+            # A cleaner way to do this would be to fork CPython's raw_input()
+            # so it handles EINTR.  It's called in frontend/pyreadline.py
+            import signal
+            from core import pyos
+
+            tmp = signal.signal(signal.SIGINT, pyos.gOrigSigIntHandler)
+            try:
+                line = self.line_input.prompt_input(self.prompt_str)
+            finally:
+                signal.signal(signal.SIGINT, tmp)
+        return line
+
     def _GetLine(self):
         # type: () -> Optional[str]
 
@@ -229,7 +249,7 @@ class InteractiveLineReader(_Reader):
                     not mylib.Stdin().isatty()):
                 line = _PlainPromptInput(self.prompt_str)
             else:
-                line = self.line_input.prompt_input(self.prompt_str)
+                line = self._ReadlinePromptInput()
         except EOFError:
             print('^D')  # bash prints 'exit'; mksh prints ^D.
 

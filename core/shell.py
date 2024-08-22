@@ -473,6 +473,9 @@ def Main(
                         multi_trace)
     fd_state.tracer = tracer  # circular dep
 
+    # RegisterSignalInterest should return old sigint handler
+    # then InteractiveLineReader can use it
+    # InteractiveLineReader
     signal_safe = pyos.InitSignalSafe()
     trap_state = trap_osh.TrapState(signal_safe)
 

@@ -5,7 +5,7 @@ Like py{error,util}.py, it won't be translated to C++.
 """
 from __future__ import print_function
 
-#from errno import EINTR
+from errno import EINTR
 import pwd
 import resource
 import signal
@@ -61,8 +61,8 @@ def WaitPid(waitpid_options):
         # - waitpid_options can be WNOHANG
         pid, status = posix.waitpid(-1, WUNTRACED | waitpid_options)
     except OSError as e:
-        #if e.errno == EINTR and gSignalSafe.PollUntrappedSigInt():
-        #    raise KeyboardInterrupt()
+        if e.errno == EINTR and gSignalSafe.PollUntrappedSigInt():
+            raise KeyboardInterrupt()
         return -1, e.errno
 
     return pid, status
@@ -95,6 +95,8 @@ def Read(fd, n, chunks):
     try:
         chunk = posix.read(fd, n)
     except OSError as e:
+        if e.errno == EINTR and gSignalSafe.PollUntrappedSigInt():
+            raise KeyboardInterrupt()
         return -1, e.errno
     else:
         length = len(chunk)
@@ -116,6 +118,8 @@ def ReadByte(fd):
     try:
         b = posix.read(fd, 1)
     except OSError as e:
+        if e.errno == EINTR and gSignalSafe.PollUntrappedSigInt():
+            raise KeyboardInterrupt()
         return -1, e.errno
     else:
         if len(b):
@@ -392,6 +396,8 @@ class SignalSafe(object):
 
 gSignalSafe = None  #  type: SignalSafe
 
+gOrigSigIntHandler = None  # type: Any
+
 
 def InitSignalSafe():
     # type: () -> SignalSafe
@@ -399,11 +405,16 @@ def InitSignalSafe():
     global gSignalSafe
     gSignalSafe = SignalSafe()
 
-    # Note: we only need this in C++ because of the way Python's signal module
-    # works?  See
+    # See
     # - demo/cpython/keyboard_interrupt.py
     # - pyos::InitSignalSafe()
-    #RegisterSignalInterest(signal.SIGINT)
+
+    # In C++, we do
+    # RegisterSignalInterest(signal.SIGINT)
+
+    global gOrigSigIntHandler
+    gOrigSigIntHandler = signal.signal(signal.SIGINT,
+                                       gSignalSafe.UpdateFromSignalHandler)
 
     return gSignalSafe
 

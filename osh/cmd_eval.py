@@ -1795,7 +1795,8 @@ class CommandEvaluator(object):
 
         # We only need this somewhat hacky check in osh-cpp since python's runtime
         # handles SIGINT for us in osh.
-        if mylib.CPP:
+        #if mylib.CPP:
+        if 1:
             if self.signal_safe.PollUntrappedSigInt():
                 raise KeyboardInterrupt()
 
