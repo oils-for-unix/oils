@@ -7,9 +7,9 @@
 
 kill=$(command -v kill)
 
-$SH -c 'trap "echo int" INT; sleep 0.1' &
+$SH -c 'trap "echo int" INT; sleep 0.2' &
 
-sleep 0.05
+sleep 0.1
 
 $kill -INT $!
 
