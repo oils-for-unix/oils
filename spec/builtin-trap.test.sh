@@ -1,13 +1,13 @@
 ## compare_shells: dash bash mksh ash
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 
 # builtin-trap.test.sh
 
 #### trap accepts/ignores --
 trap -- 'echo hi' EXIT
-echo done
+echo ok
 ## STDOUT:
-done
+ok
 hi
 ## END
 
@@ -295,6 +295,14 @@ status=0
 
 ## OK mksh STDOUT:
 mksh
+## END
+
+# Not sure why other shells differ here, but running the trap is consistent
+# with interactive cases in test/bugs.sh
+
+## OK osh STDOUT:
+int
+status=0
 ## END
 
 #### trap EXIT, sleep, SIGINT: non-interactively
