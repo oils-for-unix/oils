@@ -1548,11 +1548,16 @@ class CommandEvaluator(object):
                 cmd_st.check_errexit = True
                 status = self._DoSimple(node, cmd_st)
 
-            elif case(command_e.ExpandedAlias):
-                node = cast(command.ExpandedAlias, UP_node)
-                status = self._DoExpandedAlias(node)
+            elif case(command_e.ShAssignment):  # LEAF command
+                node = cast(command.ShAssignment, UP_node)
 
-            elif case(command_e.Sentence):
+                self.mem.SetTokenForLine(node.pairs[0].left)
+                self._MaybeRunDebugTrap()
+
+                # Only unqualified assignment a=b
+                status = self._DoShAssignment(node, cmd_st)
+
+            elif case(command_e.Sentence):  # NOT leaf, but put it up front
                 node = cast(command.Sentence, UP_node)
 
                 # Don't check_errexit since this isn't a leaf command
@@ -1560,31 +1565,6 @@ class CommandEvaluator(object):
                     status = self._Execute(node.child)
                 else:
                     status = self.shell_ex.RunBackgroundJob(node.child)
-
-            elif case(command_e.Redirect):
-                node = cast(command.Redirect, UP_node)
-
-                # set -e affects redirect error, like mksh and bash 5.2, but unlike
-                # dash/ash
-                cmd_st.check_errexit = True
-                status = self._DoRedirect(node, cmd_st)
-
-            elif case(command_e.Pipeline):
-                node = cast(command.Pipeline, UP_node)
-                status = self._DoPipeline(node, cmd_st)
-
-            elif case(command_e.Subshell):
-                node = cast(command.Subshell, UP_node)
-
-                # This is a leaf from the parent process POV
-                cmd_st.check_errexit = True
-
-                if node.is_last_cmd:
-                    # If the subshell is the last command in the process, just
-                    # run it in this process.  See _MarkLastCommands().
-                    status = self._Execute(node.child)
-                else:
-                    status = self.shell_ex.RunSubshell(node.child)
 
             elif case(command_e.DBracket):  # LEAF command
                 node = cast(command.DBracket, UP_node)
@@ -1620,28 +1600,22 @@ class CommandEvaluator(object):
 
                 status = self._DoControlFlow(node)
 
-            elif case(command_e.VarDecl):  # LEAF command
+            elif case(command_e.NoOp):  # LEAF
+                status = 0  # make it true
+
+            elif case(command_e.VarDecl):  # YSH LEAF command
                 node = cast(command.VarDecl, UP_node)
 
                 # Point to var name (bare assignment has no keyword)
                 self.mem.SetTokenForLine(node.lhs[0].left)
                 status = self._DoVarDecl(node)
 
-            elif case(command_e.Mutation):  # LEAF command
+            elif case(command_e.Mutation):  # YSH LEAF command
                 node = cast(command.Mutation, UP_node)
 
                 self.mem.SetTokenForLine(node.keyword)  # point to setvar/set
                 self._DoMutation(node)
                 status = 0  # if no exception is thrown, it succeeds
-
-            elif case(command_e.ShAssignment):  # LEAF command
-                node = cast(command.ShAssignment, UP_node)
-
-                self.mem.SetTokenForLine(node.pairs[0].left)
-                self._MaybeRunDebugTrap()
-
-                # Only unqualified assignment a=b
-                status = self._DoShAssignment(node, cmd_st)
 
             elif case(command_e.Expr):  # YSH LEAF command
                 node = cast(command.Expr, UP_node)
@@ -1661,6 +1635,14 @@ class CommandEvaluator(object):
                 val = self.expr_ev.EvalExpr(node.val, node.keyword)
                 raise vm.ValueControlFlow(node.keyword, val)
 
+            #
+            # More commands that involve recursive calls
+            #
+
+            elif case(command_e.ExpandedAlias):
+                node = cast(command.ExpandedAlias, UP_node)
+                status = self._DoExpandedAlias(node)
+
             # Note CommandList and DoGroup have no redirects, but BraceGroup does.
             # DoGroup has 'do' and 'done' spids for translation.
             elif case(command_e.CommandList):
@@ -1678,6 +1660,23 @@ class CommandEvaluator(object):
             elif case(command_e.AndOr):
                 node = cast(command.AndOr, UP_node)
                 status = self._DoAndOr(node, cmd_st)
+
+            elif case(command_e.If):
+                node = cast(command.If, UP_node)
+
+                # No SetTokenForLine() because
+                # - $LINENO can't appear directly in 'if'
+                # - 'if' doesn't directly cause errors
+                # It will be taken care of by command.Simple, condition, etc.
+                status = self._DoIf(node)
+
+            elif case(command_e.Case):
+                node = cast(command.Case, UP_node)
+
+                # Must set location for 'case $LINENO'
+                self.mem.SetTokenForLine(node.case_kw)
+                self._MaybeRunDebugTrap()
+                status = self._DoCase(node)
 
             elif case(command_e.WhileUntil):
                 node = cast(command.WhileUntil, UP_node)
@@ -1697,6 +1696,31 @@ class CommandEvaluator(object):
                 self.mem.SetTokenForLine(node.keyword)  # for x in $LINENO
                 status = self._DoForExpr(node)
 
+            elif case(command_e.Redirect):
+                node = cast(command.Redirect, UP_node)
+
+                # set -e affects redirect error, like mksh and bash 5.2, but unlike
+                # dash/ash
+                cmd_st.check_errexit = True
+                status = self._DoRedirect(node, cmd_st)
+
+            elif case(command_e.Pipeline):
+                node = cast(command.Pipeline, UP_node)
+                status = self._DoPipeline(node, cmd_st)
+
+            elif case(command_e.Subshell):
+                node = cast(command.Subshell, UP_node)
+
+                # This is a leaf from the parent process POV
+                cmd_st.check_errexit = True
+
+                if node.is_last_cmd:
+                    # If the subshell is the last command in the process, just
+                    # run it in this process.  See _MarkLastCommands().
+                    status = self._Execute(node.child)
+                else:
+                    status = self.shell_ex.RunSubshell(node.child)
+
             elif case(command_e.ShFunction):
                 node = cast(command.ShFunction, UP_node)
                 self._DoShFunction(node)
@@ -1715,26 +1739,6 @@ class CommandEvaluator(object):
 
                 self._DoFunc(node)
                 status = 0
-
-            elif case(command_e.If):
-                node = cast(command.If, UP_node)
-
-                # No SetTokenForLine() because
-                # - $LINENO can't appear directly in 'if'
-                # - 'if' doesn't directly cause errors
-                # It will be taken care of by command.Simple, condition, etc.
-                status = self._DoIf(node)
-
-            elif case(command_e.NoOp):
-                status = 0  # make it true
-
-            elif case(command_e.Case):
-                node = cast(command.Case, UP_node)
-
-                # Must set location for 'case $LINENO'
-                self.mem.SetTokenForLine(node.case_kw)
-                self._MaybeRunDebugTrap()
-                status = self._DoCase(node)
 
             elif case(command_e.TimeBlock):
                 node = cast(command.TimeBlock, UP_node)
@@ -1792,13 +1796,8 @@ class CommandEvaluator(object):
         # call self.DoTick()?  That will RunPendingTraps and check the Ctrl-C flag,
         # and maybe throw an exception.
         self.RunPendingTraps()
-
-        # We only need this somewhat hacky check in osh-cpp since python's runtime
-        # handles SIGINT for us in osh.
-        #if mylib.CPP:
-        if 1:
-            if self.signal_safe.PollUntrappedSigInt():
-                raise KeyboardInterrupt()
+        if self.signal_safe.PollUntrappedSigInt():
+            raise KeyboardInterrupt()
 
         # Manual GC point before every statement
         mylib.MaybeCollect()
