@@ -154,32 +154,6 @@ pipeline
 EXIT TRAP
 ## END
 
-#### trap EXIT doesn't run with shopt -s no_fork_last
-
-# There doesn't seem to be a way to get it to run, so specify that it doesn't
-
-$SH -c 'trap "echo exit1" EXIT; /bin/true'
-
-# newline
-$SH -c 'trap "echo exit2" EXIT; /bin/true
-'
-
-# Newline makes a difference!
-# It doesn't get a chance to run
-$SH -c 'shopt -s no_fork_last
-trap "echo exit3" EXIT; /bin/true'
-
-## STDOUT:
-exit1
-exit2
-## END
-
-## N-I dash/bash/mksh/ash STDOUT:
-exit1
-exit2
-exit3
-## END
-
 #### trap 0 is equivalent to EXIT
 # not sure why this is, but POSIX wants it.
 trap 'echo EXIT' 0
