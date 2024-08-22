@@ -5,11 +5,13 @@
 
 # We need some other way to kill it with SIGINT
 
+kill=$(command -v kill)
+
 $SH -c 'trap "echo int" INT; sleep 0.1' &
 
-sleep 0.02
+sleep 0.05
 
-$(command -v kill) -INT $!
+$kill -INT $!
 
 wait
 
