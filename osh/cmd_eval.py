@@ -1523,6 +1523,27 @@ class CommandEvaluator(object):
 
         return status
 
+    def _LeafTick(self):
+        # type: () -> None
+        """Do periodic work while executing shell.
+
+        We may run traps, check for Ctrl-C, or garbage collect.
+        """
+        # TODO: Do this in "leaf" nodes?  SimpleCommand, DBracket, DParen should
+        # call self.DoTick()?  That will RunPendingTraps and check the Ctrl-C flag,
+        # and maybe throw an exception.
+        self.RunPendingTraps()
+        if self.signal_safe.PollUntrappedSigInt():
+            raise KeyboardInterrupt()
+
+        # TODO: Does this mess up control flow analysis?  If so, we can move it
+        # back to the top of _Execute(), so there are fewer conditionals
+        # involved.  This function gets called in SOME branches of
+        # self._Dispatch().
+
+        # Manual GC point before every statement
+        mylib.MaybeCollect()
+
     def _Dispatch(self, node, cmd_st):
         # type: (command_t, CommandStatus) -> int
         """Switch on the command_t variants and execute them."""
@@ -1547,6 +1568,7 @@ class CommandEvaluator(object):
                 self._MaybeRunDebugTrap()
                 cmd_st.check_errexit = True
                 status = self._DoSimple(node, cmd_st)
+                self._LeafTick()
 
             elif case(command_e.ShAssignment):  # LEAF command
                 node = cast(command.ShAssignment, UP_node)
@@ -1556,6 +1578,7 @@ class CommandEvaluator(object):
 
                 # Only unqualified assignment a=b
                 status = self._DoShAssignment(node, cmd_st)
+                self._LeafTick()
 
             elif case(command_e.Sentence):  # NOT leaf, but put it up front
                 node = cast(command.Sentence, UP_node)
@@ -1578,6 +1601,7 @@ class CommandEvaluator(object):
                 cmd_st.show_code = True  # this is a "leaf" for errors
                 result = self.bool_ev.EvalB(node.expr)
                 status = 0 if result else 1
+                self._LeafTick()
 
             elif case(command_e.DParen):  # LEAF command
                 node = cast(command.DParen, UP_node)
@@ -1591,6 +1615,7 @@ class CommandEvaluator(object):
                 cmd_st.show_code = True  # this is a "leaf" for errors
                 i = self.arith_ev.EvalToBigInt(node.child)
                 status = 1 if mops.Equal(i, mops.ZERO) else 0
+                self._LeafTick()
 
             elif case(command_e.ControlFlow):  # LEAF command
                 node = cast(command.ControlFlow, UP_node)
@@ -1599,6 +1624,7 @@ class CommandEvaluator(object):
                 self._MaybeRunDebugTrap()
 
                 status = self._DoControlFlow(node)
+                # Omit _LeafTick() since we likely raise an exception above
 
             elif case(command_e.NoOp):  # LEAF
                 status = 0  # make it true
@@ -1609,6 +1635,7 @@ class CommandEvaluator(object):
                 # Point to var name (bare assignment has no keyword)
                 self.mem.SetTokenForLine(node.lhs[0].left)
                 status = self._DoVarDecl(node)
+                self._LeafTick()
 
             elif case(command_e.Mutation):  # YSH LEAF command
                 node = cast(command.Mutation, UP_node)
@@ -1616,6 +1643,7 @@ class CommandEvaluator(object):
                 self.mem.SetTokenForLine(node.keyword)  # point to setvar/set
                 self._DoMutation(node)
                 status = 0  # if no exception is thrown, it succeeds
+                self._LeafTick()
 
             elif case(command_e.Expr):  # YSH LEAF command
                 node = cast(command.Expr, UP_node)
@@ -1624,6 +1652,7 @@ class CommandEvaluator(object):
                 # YSH debug trap?
 
                 status = self._DoExpr(node)
+                self._LeafTick()
 
             elif case(command_e.Retval):  # YSH LEAF command
                 node = cast(command.Retval, UP_node)
@@ -1633,6 +1662,8 @@ class CommandEvaluator(object):
                 # dialect, for speed?
 
                 val = self.expr_ev.EvalExpr(node.val, node.keyword)
+                self._LeafTick()
+
                 raise vm.ValueControlFlow(node.keyword, val)
 
             #
@@ -1788,19 +1819,7 @@ class CommandEvaluator(object):
 
     def _Execute(self, node):
         # type: (command_t) -> int
-        """Call _Dispatch(), and performs the errexit check.
-
-        Also runs trap handlers.
-        """
-        # TODO: Do this in "leaf" nodes?  SimpleCommand, DBracket, DParen should
-        # call self.DoTick()?  That will RunPendingTraps and check the Ctrl-C flag,
-        # and maybe throw an exception.
-        self.RunPendingTraps()
-        if self.signal_safe.PollUntrappedSigInt():
-            raise KeyboardInterrupt()
-
-        # Manual GC point before every statement
-        mylib.MaybeCollect()
+        """Call _Dispatch(), and perform the errexit check."""
 
         # Optimization: These 2 records have rarely-used lists, so we don't pass
         # alloc_lists=True.  We create them on demand.
