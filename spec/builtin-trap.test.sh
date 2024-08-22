@@ -1,5 +1,5 @@
 ## compare_shells: dash bash mksh ash
-## oils_failures_allowed: 3
+## oils_failures_allowed: 2
 
 # builtin-trap.test.sh
 
