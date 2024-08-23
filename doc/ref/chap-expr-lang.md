@@ -472,22 +472,28 @@ The ternary operator is borrowed from Python:
 
 ### ysh-attr
 
-The `.` operator performs attribute lookup.
+The `.` operator looks up values on either `Dict` or `Obj` instances.
 
-On `Dict` instances, the expression `mydict.key` is short for `mydict['key']`
-(like JavaScript, but unlike Python.)
+On dicts, it looks for the value associated with a key.  That is, the
+expression `mydict.key` is short for `mydict['key']` (like JavaScript, but
+unlike Python.)
 
-On `Obj` instances, the expression `obj.attr` does two things, in order:
+---
 
-1. Searches in the object's properties for a field named `attr`. 
-   - If it exists, return the value literally.
-2. Searches up the prototype chain for `attr`
-   - If it exists, return a **bound method**, which is an (object, function)
-     pair.
+On objects, the expression `obj.x` looks for attributes, with a special rule
+for bound methods.  The rules are:
+
+1. Search the properties of `obj` for a field named `x`. 
+   - If it exists, return the value literally.  (It can be of any type: `Func`, `Int`,
+     `Str`, ...)
+2. Search up the prototype chain for a field named `x`.
+   - If it exists, and is **not** a `Func`, return the value literally.
+   - If it **is** a `Func`, return **bound method**, which is an (object,
+     function) pair.
 
 Later, when the bound method is called, the object is passed as the first
-argument to the function, making it a method call.  The method can then use the
-object's properties.
+argument to the function (`self`), making it a method call.  This is how a
+method has access to the object's properties.
 
 Example of first rule:
 
@@ -495,7 +501,7 @@ Example of first rule:
       return (i + 1)
     }
     var module = Object(null, {Free})
-    var x = module.Free(42)  # => 43
+    echo $[module.Free(42)]  # => 43
 
 Example of second rule:
 
@@ -503,8 +509,8 @@ Example of second rule:
       return (self.n + i)
     }
     var methods = Object(null, {method})
-    var obj = Object(methods, {n: 1})
-    var x = obj.method(42)  # => 43
+    var obj = Object(methods, {n: 10})
+    echo $[obj.method(42)]  # => 52
 
 ### ysh-slice
 

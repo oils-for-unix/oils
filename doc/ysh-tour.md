@@ -772,13 +772,14 @@ These are like the "standard library" for the expression language.  Examples:
 <!-- TODO: Make a comprehensive list of func builtins. -->
 
 
-### Data Types: `Int`, `Str`, `List`, `Dict`, ...
+### Data Types: `Int`, `Str`, `List`, `Dict`, `Obj`, ...
 
 YSH has data types, each with an expression syntax and associated methods.
 
 ### Methods
 
-Mutating methods are looked up with a thin arrow `->`:
+YSH adds mutable data structures to shell, so we have a special syntax for
+mutating methods.  They are looked up with a thin arrow `->`:
 
     var foods = ['ale', 'bean']
     var last = foods->pop()  # bean
@@ -788,13 +789,17 @@ You can ignore the return value with the `call` keyword:
 
     call foods->pop()
 
-Transforming methods use a fat arrow `=>`:
+Regular methods are looked up with the `.` operator:
 
     var line = ' ale bean '
+    var caps = last.trim().upper()  # 'ALE BEAN'
+
+You can also use the "chaining" style, with a fat arrow `=>`:
+
     var trimmed = line => trim() => upper()  # 'ALE BEAN'
 
-If the `=>` operator doesn't find a method with the given name in the object's
-type, it looks for free functions:
+The `=>` operator lets you mix methods and free functions.  If it doesn't find
+a method with the given name, it looks for a `Func`:
 
     # list() is a free function taking one arg
     # join() is a free function taking two args
