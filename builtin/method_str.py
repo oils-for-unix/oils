@@ -18,6 +18,7 @@ from ysh import val_ops
 
 import libc
 from libc import REG_NOTBOL
+import fastfunc
 
 from typing import cast, Dict, List, Tuple
 
@@ -541,33 +542,40 @@ class Split(vm._Callable):
             return value.List(chunks)
 
         if eggex_sep is not None:
+            if '\0' in string:
+                raise error.Structured(3, "cannot split a string with a nul-byte",
+                                       rd.LeftParenToken())
+
             regex = regex_translate.AsPosixEre(eggex_sep)
 
             anchor = 0
             cursor = 0
             chunks = []
-            while cursor < len(string) and count != 0:
+            while cursor <= len(string) and count != 0:
                 m = libc.regex_first_group_match(regex, string, cursor)
                 if m is None:
                     break
+
                 start, end = m
-
-                # We want to ignore zero-width matches. This is why we have a
-                # separate anchor/cursor. The anchor remembers the end of the
-                # last delimiter (or the start of the string) while the cursor
-                # moves forward to find the next non-empty match for the regex.
-                if start == end:
-                    cursor += 1
-                    continue
-
                 chunks.append(value.Str(string[anchor:start]))
                 anchor = end
                 cursor = end
 
+                # If we found a zero-width match, we need to "bump" our cursor
+                # forward so that we don't loop indefinitely. We want to bump
+                # one codepoint ahead, or if the next byte(s) aren't valid
+                # unicode, one byte ahead.
+                if start == end:
+                    codepoint_or_error, bytes_read = fastfunc.Utf8DecodeOne(string, cursor)
+
+                    bump = bytes_read if codepoint_or_error >= 0 else 1
+                    cursor += bump
+
                 count -= 1
 
-            chunks.append(value.Str(string[anchor:]))
+            chunks.append(value.Str(string[cursor:]))
 
             return value.List(chunks)
 
         raise AssertionError()
+

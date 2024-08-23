@@ -406,10 +406,10 @@ pp test_ ('a b  cd'.split(/ space+ /))
 pp test_ (''.split(/ dot /))
 ## STDOUT:
 (List)   ["a","b","c"]
-(List)   ["",""]
+(List)   ["","",""]
 (List)   ["","",""]
 (List)   ["a","b","c<d"]
-(List)   ["a","b","cd"]
+(List)   ["","a","","b","","c","d",""]
 (List)   ["a","b","cd"]
 (List)   []
 ## END
@@ -453,11 +453,14 @@ pp test_ (''.split(/ dot /, count=1))
 ## END
 
 #### Str => split(), usage errors
-try { pp test_ ('abc'.split(''))           } # Sep cannot be ""
+try { pp test_ ('abc'.split(''))             } # Sep cannot be ""
 echo status=$[_error.code]
-try { pp test_ ('abc'.split())             } # Sep must be present
+try { pp test_ ('abc'.split())               } # Sep must be present
+echo status=$[_error.code]
+try { pp test_ (b'\y00a\y01'.split(/ 'a' /)) } # Cannot split by eggex when str has nul-byte
 echo status=$[_error.code]
 ## STDOUT:
+status=3
 status=3
 status=3
 ## END
@@ -466,10 +469,12 @@ status=3
 pp test_ ('🌞🌝🌞🌝🌞'.split('🌝'))
 pp test_ ('🌞🌝🌞🌝🌞'.split(/ '🌝' /))
 pp test_ ('🌞 🌞 🌝🌞'.split(/ space* /))
+pp test_ (b'\yf0\ya0 \yf5'.split(/ space* /))
 ## STDOUT:
 (List)   ["🌞","🌞","🌞"]
 (List)   ["🌞","🌞","🌞"]
-(List)   ["🌞","🌞","🌝🌞"]
+(List)   ["","🌞","","🌞","","🌝","🌞",""]
+(List)   ["",b'\yf0',b'\ya0',"",b'\yf5',""]
 ## END
 
 #### Dict => values()
