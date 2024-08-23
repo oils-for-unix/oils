@@ -34,7 +34,7 @@ Tuple2<int, int> WaitPid(int waitpid_options) {
   int status;
   int result = ::waitpid(-1, &status, WUNTRACED | waitpid_options);
   if (result < 0) {
-    if (errno == EINTR && gSignalSafe->PollSigInt()) {
+    if (errno == EINTR && gSignalSafe->PollUntrappedSigInt()) {
       throw Alloc<KeyboardInterrupt>();
     }
     return Tuple2<int, int>(-1, errno);
@@ -47,7 +47,7 @@ Tuple2<int, int> Read(int fd, int n, List<BigStr*>* chunks) {
 
   int length = ::read(fd, s->data(), n);
   if (length < 0) {
-    if (errno == EINTR && gSignalSafe->PollSigInt()) {
+    if (errno == EINTR && gSignalSafe->PollUntrappedSigInt()) {
       throw Alloc<KeyboardInterrupt>();
     }
     return Tuple2<int, int>(-1, errno);
@@ -67,7 +67,7 @@ Tuple2<int, int> ReadByte(int fd) {
   unsigned char buf[1];
   ssize_t n = read(fd, &buf, 1);
   if (n < 0) {  // read error
-    if (errno == EINTR && gSignalSafe->PollSigInt()) {
+    if (errno == EINTR && gSignalSafe->PollUntrappedSigInt()) {
       throw Alloc<KeyboardInterrupt>();
     }
     return Tuple2<int, int>(-1, errno);

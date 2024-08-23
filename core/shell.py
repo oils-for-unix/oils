@@ -473,6 +473,9 @@ def Main(
                         multi_trace)
     fd_state.tracer = tracer  # circular dep
 
+    # RegisterSignalInterest should return old sigint handler
+    # then InteractiveLineReader can use it
+    # InteractiveLineReader
     signal_safe = pyos.InitSignalSafe()
     trap_state = trap_osh.TrapState(signal_safe)
 
@@ -1168,6 +1171,9 @@ def Main(
                                      cmd_flags=cmd_eval.IsMainProgram)
         except util.UserExit as e:
             status = e.status
+        except KeyboardInterrupt:
+            # The interactive shell handles this in main_loop.Interactive
+            status = 130  # 128 + 2
     mut_status = IntParamBox(status)
     cmd_ev.RunTrapsOnExit(mut_status)
 

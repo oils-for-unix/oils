@@ -5,6 +5,7 @@ Like py{error,util}.py, it won't be translated to C++.
 """
 from __future__ import print_function
 
+from errno import EINTR
 import pwd
 import resource
 import signal
@@ -60,6 +61,8 @@ def WaitPid(waitpid_options):
         # - waitpid_options can be WNOHANG
         pid, status = posix.waitpid(-1, WUNTRACED | waitpid_options)
     except OSError as e:
+        if e.errno == EINTR and gSignalSafe.PollUntrappedSigInt():
+            raise KeyboardInterrupt()
         return -1, e.errno
 
     return pid, status
@@ -79,8 +82,9 @@ class ReadError(Exception):
 def Read(fd, n, chunks):
     # type: (int, int, List[str]) -> Tuple[int, int]
     """C-style wrapper around Python's posix.read() that uses return values
-    instead of exceptions for errors.  We will implement this directly in C++
-    and not use exceptions at all.
+    instead of exceptions for errors.
+
+    We will implement this directly in C++ and not use exceptions at all.
 
     It reads n bytes from the given file descriptor and appends it to chunks.
 
@@ -91,6 +95,8 @@ def Read(fd, n, chunks):
     try:
         chunk = posix.read(fd, n)
     except OSError as e:
+        if e.errno == EINTR and gSignalSafe.PollUntrappedSigInt():
+            raise KeyboardInterrupt()
         return -1, e.errno
     else:
         length = len(chunk)
@@ -101,8 +107,9 @@ def Read(fd, n, chunks):
 
 def ReadByte(fd):
     # type: (int) -> Tuple[int, int]
-    """Another low level interface with a return value interface.  Used by
-    _ReadUntilDelim() and _ReadLineSlowly().
+    """Low-level interface that returns values rather than raising exceptions.
+
+    Used by _ReadUntilDelim() and _ReadLineSlowly().
 
     Returns:
       failure: (-1, errno) on failure
@@ -111,6 +118,8 @@ def ReadByte(fd):
     try:
         b = posix.read(fd, 1)
     except OSError as e:
+        if e.errno == EINTR and gSignalSafe.PollUntrappedSigInt():
+            raise KeyboardInterrupt()
         return -1, e.errno
     else:
         if len(b):
@@ -286,6 +295,7 @@ class SignalSafe(object):
         # type: () -> None
         self.pending_signals = []  # type: List[int]
         self.last_sig_num = 0  # type: int
+        self.sigint_trapped = False
         self.received_sigint = False
         self.received_sigwinch = False
         self.sigwinch_code = UNTRAPPED_SIGWINCH
@@ -309,7 +319,7 @@ class SignalSafe(object):
 
     def LastSignal(self):
         # type: () -> int
-        """Return the number of the last signal that fired."""
+        """Return the number of the last signal received."""
         return self.last_sig_num
 
     def PollSigInt(self):
@@ -319,20 +329,29 @@ class SignalSafe(object):
         self.received_sigint = False
         return result
 
+    def PollUntrappedSigInt(self):
+        # type: () -> bool
+        """Has SIGINT received since the last time PollSigInt() was called?"""
+        received = self.PollSigInt()
+        return received and not self.sigint_trapped
+
+    if 0:
+
+        def SigIntTrapped(self):
+            # type: () -> bool
+            return self.sigint_trapped
+
     def SetSigIntTrapped(self, b):
         # type: (bool) -> None
-        """Set a flag to tell us whether sigint is trapped by the user.
-
-        Only needed in C++
-        """
-        pass
+        """Set a flag to tell us whether sigint is trapped by the user."""
+        self.sigint_trapped = b
 
     def SetSigWinchCode(self, code):
         # type: (int) -> None
         """Depending on whether or not SIGWINCH is trapped by a user, it is
         expected to report a different code to `wait`.
 
-        SetSigwinchCode() lets us set which code is reported.
+        SetSigWinchCode() lets us set which code is reported.
         """
         self.sigwinch_code = code
 
@@ -346,6 +365,8 @@ class SignalSafe(object):
 
     def TakePendingSignals(self):
         # type: () -> List[int]
+        """Transfer ownership of queue of pending signals to caller."""
+
         # A note on signal-safety here. The main loop might be calling this function
         # at the same time a signal is firing and appending to
         # `self.pending_signals`. We can forgoe using a lock here
@@ -353,7 +374,7 @@ class SignalSafe(object):
         # exclusivity should be maintained by the atomic nature of pointer
         # assignment (i.e. word-sized writes) on most modern platforms.
         # The replacement run list is allocated before the swap, so it can be
-        # interuppted at any point without consequence.
+        # interrupted at any point without consequence.
         # This means the signal handler always has exclusive access to
         # `self.pending_signals`. In the worst case the signal handler might write to
         # `new_queue` and the corresponding trap handler won't get executed
@@ -375,12 +396,26 @@ class SignalSafe(object):
 
 gSignalSafe = None  #  type: SignalSafe
 
+gOrigSigIntHandler = None  # type: Any
+
 
 def InitSignalSafe():
     # type: () -> SignalSafe
     """Set global instance so the signal handler can access it."""
     global gSignalSafe
     gSignalSafe = SignalSafe()
+
+    # See
+    # - demo/cpython/keyboard_interrupt.py
+    # - pyos::InitSignalSafe()
+
+    # In C++, we do
+    # RegisterSignalInterest(signal.SIGINT)
+
+    global gOrigSigIntHandler
+    gOrigSigIntHandler = signal.signal(signal.SIGINT,
+                                       gSignalSafe.UpdateFromSignalHandler)
+
     return gSignalSafe
 
 
@@ -399,6 +434,8 @@ def sigaction(sig_num, handler):
 def RegisterSignalInterest(sig_num):
     # type: (int) -> None
     """Have the kernel notify the main loop about the given signal."""
+    #log('RegisterSignalInterest %d', sig_num)
+
     assert gSignalSafe is not None
     signal.signal(sig_num, gSignalSafe.UpdateFromSignalHandler)
 

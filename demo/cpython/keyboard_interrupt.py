@@ -22,7 +22,9 @@ def main(argv):
 
   # This suppresses KeyboardInterrupt.  You can still do Ctrl-\ or check a flag
   # and throw your own exception.
-  signal.signal(signal.SIGINT, SigInt)
+  old = signal.signal(signal.SIGINT, SigInt)
+  # We may want to restore the old handler!
+  print(old)
 
   while True:
     print('----')

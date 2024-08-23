@@ -50,7 +50,7 @@ trap-1() {
   set +o errexit
 
   # This fails to run the trap
-  $sh -x -c 'echo pid=$$; trap "echo int" INT; sleep 5'
+  $sh -x -c 'echo shell=$$; trap "echo int" INT; sleep 5'
 
   echo "$sh status=$?"
 }
@@ -61,9 +61,29 @@ trap-2() {
   set +o errexit
 
   # This runs it
-  $sh -x -c 'echo pid=$$; trap "echo int" INT; sleep 5; echo last'
+  $sh -x -c 'echo shell=$$; trap "echo int" INT; sleep 5; echo last'
 
   echo "$sh status=$?"
+}
+
+# Does Ctrl-C cause both signal handlers to run?  Yes.
+sigint-parent-child() {
+  local sh=${1:-bin/osh}
+
+  cat > _tmp/sigint.py <<EOF
+import os
+import signal
+import time
+
+def SigInt(x, y):
+  print('CHILD SIGINT')
+
+print("child=%d" % os.getpid())
+signal.signal(signal.SIGINT, SigInt)
+time.sleep(3)
+EOF
+
+  $sh -c 'echo shell=$$; trap "echo SHELL SIGINT" INT; python2 _tmp/sigint.py; echo status=$?'
 }
 
 # ODD RESULTS in spec tests: the handler is NOT run in bash or other shells

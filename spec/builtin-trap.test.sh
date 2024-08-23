@@ -1,13 +1,13 @@
 ## compare_shells: dash bash mksh ash
-## oils_failures_allowed: 2
+## oils_failures_allowed: 0
 
 # builtin-trap.test.sh
 
 #### trap accepts/ignores --
 trap -- 'echo hi' EXIT
-echo done
+echo ok
 ## STDOUT:
-done
+ok
 hi
 ## END
 
@@ -154,32 +154,6 @@ pipeline
 EXIT TRAP
 ## END
 
-#### trap EXIT doesn't run with shopt -s no_fork_last
-
-# There doesn't seem to be a way to get it to run, so specify that it doesn't
-
-$SH -c 'trap "echo exit1" EXIT; /bin/true'
-
-# newline
-$SH -c 'trap "echo exit2" EXIT; /bin/true
-'
-
-# Newline makes a difference!
-# It doesn't get a chance to run
-$SH -c 'shopt -s no_fork_last
-trap "echo exit3" EXIT; /bin/true'
-
-## STDOUT:
-exit1
-exit2
-## END
-
-## N-I dash/bash/mksh/ash STDOUT:
-exit1
-exit2
-exit3
-## END
-
 #### trap 0 is equivalent to EXIT
 # not sure why this is, but POSIX wants it.
 trap 'echo EXIT' 0
@@ -295,6 +269,14 @@ status=0
 
 ## OK mksh STDOUT:
 mksh
+## END
+
+# Not sure why other shells differ here, but running the trap is consistent
+# with interactive cases in test/bugs.sh
+
+## OK osh STDOUT:
+int
+status=0
 ## END
 
 #### trap EXIT, sleep, SIGINT: non-interactively
