@@ -217,3 +217,29 @@ echo ${#x-default}
 0
 3
 ## END
+
+#### Length of every byte
+case $SH in dash) exit ;; esac
+
+#for i in $(seq 1 255); do
+
+# 0 byte causes issues
+# non-ASCII bytes cause issues
+
+for i in $(seq 1 127); do
+  hex=$(printf '%02x' "$i")
+  c="$(printf "\\x$hex")"
+
+  # length of string with newline is 0?  why?
+  len="${#c}"
+  if test $len != 1; then
+    echo "i=$i hex=$hex c=$c len=$len"
+  fi
+done
+
+## STDOUT:
+i=10 hex=0a c= len=0
+## END
+
+## BUG dash STDOUT:
+## END
