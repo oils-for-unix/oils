@@ -12,14 +12,14 @@ set -o errexit
 readonly THIS_DIR=$(dirname $(readlink -f $0))
 readonly REPO_ROOT=$THIS_DIR/..
 
-source $THIS_DIR/common.sh  # MYPY_REPO
+source build/dev-shell.sh
 
 #
 # Utilities
 #
 
 gen-ctags() {
-  ctags -R $MYPY_REPO
+  ctags -R $TODO_MYPY_REPO
 }
 
 "$@"

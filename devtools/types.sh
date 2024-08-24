@@ -63,4 +63,7 @@ soil-run() {
   check-all
 }
 
-task-five "$@"
+name=$(basename $0)
+if test "$name" = 'types.sh'; then
+  task-five "$@"
+fi

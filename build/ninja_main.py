@@ -58,7 +58,6 @@ def TarballManifest(cc_h_files):
         'build/py2.sh',
         'build/dev-shell.sh',
         'build/ninja-rules-cpp.sh',
-        'mycpp/common.sh',
 
         # Generated
         '_build/oils.sh',

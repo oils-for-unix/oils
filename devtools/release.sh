@@ -350,8 +350,14 @@ _install() {
 
 _build-oils-benchmark-data() {
   pushd $BENCHMARK_DATA_OILS
-  _build/oils.sh '' opt SKIP_REBUILD
-  _build/oils.sh '' dbg SKIP_REBUILD  # for metrics/native-code.sh
+  ./configure
+  for variant in dbg opt; do
+    # DWARF version 4 is a hack for bloaty, which doesn't support version 5.
+    # I don't think this should affect benchmarks besides
+    # metrics/native-code.sh, so we don't bother building a separate binary.
+    # The Soil CI runs without this flag.
+    CXXFLAGS=-gdwarf-4 _build/oils.sh '' $variant SKIP_REBUILD
+  done
   popd
 }
 

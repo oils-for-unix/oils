@@ -4,7 +4,7 @@ all_docs_url: -
 version_url: -
 ---
 
-Oils 0.22.0 Quality
+Oils 0.23.0 Quality
 ===================
 
 <!-- NOTE: This file is published to /release/$VERSION/quality.html -->
@@ -163,8 +163,5 @@ the "experimental" version of Oils.
   - [src-bin-ratio-with-opy](pub/metrics.wwz/bytecode/src-bin-ratio-with-opy.txt) -
     How big is the compiled output?
 - OVM / CPython
-  - [overview](pub/metrics.wwz/ovm/overview.txt) - An analysis of GCC's
-    compilation of [OVM][] (a subset of CPython).  [Bloaty][] provides the
-    underlying data.
   - [cpython-defs/overview](pub/metrics.wwz/cpython-defs/overview.txt) - We try to
     ship as little of CPython as possible, and this is what's left.

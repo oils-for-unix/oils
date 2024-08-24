@@ -92,8 +92,11 @@ extract-for-benchmarks() {
   rm -v _bin/cxx-{dbg,opt}-sh/* || true
 
   ./configure
-  _build/oils.sh '' dbg
-  _build/oils.sh '' opt
+
+  # devtools/release.sh also has this DWARF 4 hack, for bloaty
+  for variant in dbg opt; do
+    CXXFLAGS=-gdwarf-4 _build/oils.sh '' $variant
+  done
 
   build/native.sh tarball-demo
 

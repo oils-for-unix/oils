@@ -282,6 +282,7 @@ MODULES_TO_FILTER = [
     'signalmodule.c',
     'timemodule.c',
     'termios.c',
+    'mathmodule.c',
 ]
 
 
@@ -371,6 +372,10 @@ class OilMethodFilter(object):
     # This one is called from C.
     if basename == 'signalmodule.c' and method_name == 'default_int_handler':
       return True
+
+    # Name collisions
+    if basename == 'mathmodule.c' and method_name in ('exp', 'log'):
+      return False
 
     # segfault without this
     if basename == 'typeobject.c' and method_name == '__new__':
