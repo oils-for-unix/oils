@@ -144,7 +144,9 @@ no
 no
 ## END
 
-#### matching the byte 0xff against empty string - bug in CI only?
+#### matching the byte 0xff against empty string - DISABLED - CI only bug?
+
+case $SH in *osh) echo soil-ci-buster-slim-bug; exit ;; esac
 
 # This doesn't make a difference on my local machine?
 # Is the underlying issue how libc fnmatch() respects Unicode?
@@ -172,13 +174,14 @@ b
 b
 ## END
 
+## OK osh STDOUT:
+soil-ci-buster-slim-bug
+## END
+
 #### matching every byte against itself
 
 # Why does OSH on the CI machine behave differently?  Probably a libc bug fix
 # I'd guess?
-
-#LC_ALL=C
-#LC_ALL=C.UTF-8
 
 sum=0
 
