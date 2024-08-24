@@ -464,6 +464,17 @@ mirror-pyflakes() {
     oilshell.org:oilshell.org/blob/
 }
 
+mirror-python() {
+  ### Can't reach python.org from some machines
+  scp \
+    $DEPS_SOURCE_DIR/python2/"$(basename $PY2_URL)" \
+    oilshell.org:oilshell.org/blob/
+
+  scp \
+    $DEPS_SOURCE_DIR/python3/"$(basename $PY3_URL)" \
+    oilshell.org:oilshell.org/blob/
+}
+
 wedge-exists() {
   ### Does an installed wedge already exist?
 
