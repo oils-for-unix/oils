@@ -144,7 +144,7 @@ no
 no
 ## END
 
-#### matching the byte 0xff
+#### matching the byte 0xff against empty string - bug in CI only?
 
 # This doesn't make a difference on my local machine?
 # Is the underlying issue how libc fnmatch() respects Unicode?
@@ -172,7 +172,7 @@ b
 b
 ## END
 
-#### matching every byte against empty string, then itself 
+#### matching every byte against itself
 
 # Why does OSH on the CI machine behave differently?  Probably a libc bug fix
 # I'd guess?
@@ -185,13 +185,7 @@ sum=0
 # note: NUL byte crashes OSH!
 for i in $(seq 1 255); do
   hex=$(printf '%x' "$i")
-  c="$(printf "\\x$hex")"
-
-  # bash, zsh, mksh: length of string with newline is 
-  len=${#c}
-  if test $len != 1; then
-    echo i=$i len=$len
-  fi
+  c="$(printf "\\x$hex")"  # printf quirk: \n or \x0a turns into empty string?
 
   #echo -n $c | od -A n -t x1
   #echo ${#c}
@@ -199,8 +193,7 @@ for i in $(seq 1 255); do
   case "$c" in
     # Newline matches empty string somehow.  All shells agree.  I guess
     # fnmatch() ignores trailing newline?
-
-    '')   echo "[empty i=$i hex=$hex c=$c]" ;;
+    #'')   echo "[empty i=$i hex=$hex c=$c]" ;;
     "$c") sum=$(( sum + 1 )) ;;
     *)   echo "[bug i=$i hex=$hex c=$c]" ;;
   esac
@@ -209,7 +202,7 @@ done
 echo sum=$sum
 
 ## STDOUT:
-sum=256
+sum=255
 ## END
 
 #### \(\) in pattern (regression)
