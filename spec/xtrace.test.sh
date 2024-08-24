@@ -4,6 +4,8 @@
 ## compare_shells: bash dash mksh
 
 #### unset PS4
+case $SH in dash) echo 'weird bug'; exit ;; esac
+
 set -x
 echo 1
 unset PS4
@@ -15,6 +17,12 @@ echo 2
 + echo 1
 + unset PS4
 echo 2
+## END
+
+## BUG dash STDOUT:
+weird bug
+## END
+## BUG dash STDERR:
 ## END
 
 #### set -o verbose prints unevaluated code

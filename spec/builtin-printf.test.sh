@@ -413,7 +413,7 @@ printf '%d\n' \"
 ## END
 
 #### Unicode char with ' 
-#env
+case $SH in mksh) echo 'weird bug'; exit ;; esac
 
 # the mu character is U+03BC
 
@@ -480,7 +480,7 @@ echo
 47011
 
 ## END
-## BUG dash/ash/mksh STDOUT:
+## BUG dash/ash STDOUT:
 ce
 206
 316
@@ -489,6 +489,10 @@ e4
 228
 344
 
+## END
+
+## BUG mksh STDOUT:
+weird bug
 ## END
 
 #### Invalid UTF-8
@@ -549,6 +553,7 @@ e0
 
 
 #### Too large
+case $SH in mksh) echo 'weird bug'; exit ;; esac
 
 echo too large
 too_large=$(python2 -c 'print("\xF4\x91\x84\x91")')
@@ -565,12 +570,16 @@ too large
 
 ## END
 
-## BUG dash/ash/mksh STDOUT:
+## BUG dash/ash STDOUT:
 too large
 f4
 244
 364
 
+## END
+
+## BUG mksh STDOUT:
+weird bug
 ## END
 
 # osh rejects code points that are too large for a DIFFERENT reason
