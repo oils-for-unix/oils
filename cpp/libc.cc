@@ -188,8 +188,8 @@ Tuple2<int, int>* regex_first_group_match(BigStr* pattern, BigStr* str,
   }
 
   // Assume there is a match
-  regoff_t start = m[0].rm_so;
-  regoff_t end = m[0].rm_eo;
+  regoff_t start = m[1].rm_so;
+  regoff_t end = m[1].rm_eo;
   Tuple2<int, int>* tup = Alloc<Tuple2<int, int>>(pos + start, pos + end);
 
   return tup;

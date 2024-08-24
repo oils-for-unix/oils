@@ -555,11 +555,12 @@ class Split(vm._Callable):
             cursor = 0
             chunks = []
             while cursor < len(string) and count != 0:
-                m = libc.regex_first_group_match(regex, string, cursor)
+                m = libc.regex_search(regex, cflags, string, 0, cursor)
                 if m is None:
                     break
 
-                start, end = m
+                start = m[0]
+                end = m[1]
                 assert start != end, "We should have guarded against zero-width matches"
 
                 chunks.append(value.Str(string[cursor:start]))
