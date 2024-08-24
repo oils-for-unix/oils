@@ -543,7 +543,7 @@ class Split(vm._Callable):
 
         if eggex_sep is not None:
             if '\0' in string:
-                raise error.Structured(3, "cannot split a string with a nul-byte",
+                raise error.Structured(3, "cannot split a string with a NUL byte",
                                        rd.LeftParenToken())
 
             regex = regex_translate.AsPosixEre(eggex_sep)
