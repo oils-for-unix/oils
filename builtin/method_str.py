@@ -542,8 +542,9 @@ class Split(vm._Callable):
 
         if eggex_sep is not None:
             if '\0' in string:
-                raise error.Structured(3, "cannot split a string with a NUL byte",
-                                       rd.LeftParenToken())
+                raise error.Structured(
+                    3, "cannot split a string with a NUL byte",
+                    rd.LeftParenToken())
 
             regex = regex_translate.AsPosixEre(eggex_sep)
             cflags = regex_translate.LibcFlags(eggex_sep.canonical_flags)
@@ -551,7 +552,9 @@ class Split(vm._Callable):
             # TODO: Could we cache this into the eggex?
             zero_width_match = libc.regex_search(regex, cflags, "", 0)
             if zero_width_match is not None:
-                raise error.Structured(3, "cannot split by eggex which accepts the empty string", rd.LeftParenToken())
+                raise error.Structured(
+                    3, "cannot split by eggex which accepts the empty string",
+                    rd.LeftParenToken())
 
             cursor = 0
             chunks = []
@@ -574,4 +577,3 @@ class Split(vm._Callable):
             return value.List(chunks)
 
         raise AssertionError()
-
