@@ -28,8 +28,8 @@ env | grep PWD
 
 # WORKAROUND for Python version of bin/osh -- we can't run bin/oils_for_unix.py
 # because it a shebang #!/usr/bin/env python2
+# This test is still useful for the C++ oils-for-unix.
 
-# This test is still useful in C++.
 case $SH in
   */bin/osh)
     echo yes
