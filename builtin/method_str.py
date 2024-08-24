@@ -18,7 +18,6 @@ from ysh import val_ops
 
 import libc
 from libc import REG_NOTBOL
-import fastfunc
 
 from typing import cast, Dict, List, Tuple
 
@@ -547,29 +546,24 @@ class Split(vm._Callable):
                                        rd.LeftParenToken())
 
             regex = regex_translate.AsPosixEre(eggex_sep)
+            cflags = regex_translate.LibcFlags(eggex_sep.canonical_flags)
 
-            anchor = 0
+            zero_width_match = libc.regex_search(regex, cflags, "", 0)
+            if zero_width_match is not None:
+                raise error.Structured(3, "cannot split by eggex which accepts the empty string", rd.LeftParenToken())
+
             cursor = 0
             chunks = []
-            while cursor <= len(string) and count != 0:
+            while cursor < len(string) and count != 0:
                 m = libc.regex_first_group_match(regex, string, cursor)
                 if m is None:
                     break
 
                 start, end = m
-                chunks.append(value.Str(string[anchor:start]))
-                anchor = end
+                assert start != end, "We should have guarded against zero-width matches"
+
+                chunks.append(value.Str(string[cursor:start]))
                 cursor = end
-
-                # If we found a zero-width match, we need to "bump" our cursor
-                # forward so that we don't loop indefinitely. We want to bump
-                # one codepoint ahead, or if the next byte(s) aren't valid
-                # unicode, one byte ahead.
-                if start == end:
-                    codepoint_or_error, bytes_read = fastfunc.Utf8DecodeOne(string, cursor)
-
-                    bump = bytes_read if codepoint_or_error >= 0 else 1
-                    cursor += bump
 
                 count -= 1
 

@@ -398,18 +398,14 @@ pp test_ (''.split('foo'))
 
 #### Str => split(sep), eggex sep
 pp test_ ('a,b;c'.split(/ ',' | ';' /))
-pp test_ ('aa'.split(/ dot* /))
 pp test_ ('aa'.split(/ dot /))
 pp test_ ('a<>b@@c<d'.split(/ '<>' | '@@' /))
-pp test_ ('a b  cd'.split(/ space* /))
 pp test_ ('a b  cd'.split(/ space+ /))
 pp test_ (''.split(/ dot /))
 ## STDOUT:
 (List)   ["a","b","c"]
 (List)   ["","",""]
-(List)   ["","",""]
 (List)   ["a","b","c<d"]
-(List)   ["","a","","b","","c","d",""]
 (List)   ["a","b","cd"]
 (List)   []
 ## END
@@ -436,18 +432,14 @@ pp test_ (''.split(',', count=0))
 
 #### Str => split(sep, count), eggex sep
 pp test_ ('a,b;c'.split(/ ',' | ';' /, count=-1))
-pp test_ ('aa'.split(/ dot* /, count=1))
 pp test_ ('aa'.split(/ dot /, count=1))
 pp test_ ('a<>b@@c<d'.split(/ '<>' | '@@' /, count=50))
-pp test_ ('a b  c'.split(/ space* /, count=0))
 pp test_ ('a b  c'.split(/ space+ /, count=0))
 pp test_ (''.split(/ dot /, count=1))
 ## STDOUT:
 (List)   ["a","b","c"]
-(List)   ["",""]
 (List)   ["","a"]
 (List)   ["a","b","c<d"]
-(List)   ["a b  c"]
 (List)   ["a b  c"]
 (List)   []
 ## END
@@ -457,9 +449,15 @@ try { pp test_ ('abc'.split(''))             } # Sep cannot be ""
 echo status=$[_error.code]
 try { pp test_ ('abc'.split())               } # Sep must be present
 echo status=$[_error.code]
-try { pp test_ (b'\y00a\y01'.split(/ 'a' /)) } # Cannot split by eggex when str has nul-byte
+try { pp test_ (b'\y00a\y01'.split(/ 'a' /)) } # Cannot split by eggex when str has NUL-byte
+echo status=$[_error.code]
+try { pp test_ (b'abc'.split(/ space* /))    } # Eggex cannot accept empty string
+echo status=$[_error.code]
+try { pp test_ (b'abc'.split(/ dot* /))      } # ...even without a zero-width match
 echo status=$[_error.code]
 ## STDOUT:
+status=3
+status=3
 status=3
 status=3
 status=3
@@ -468,13 +466,9 @@ status=3
 #### Str => split(), non-ascii
 pp test_ ('🌞🌝🌞🌝🌞'.split('🌝'))
 pp test_ ('🌞🌝🌞🌝🌞'.split(/ '🌝' /))
-pp test_ ('🌞 🌞 🌝🌞'.split(/ space* /))
-pp test_ (b'\yf0\ya0 \yf5'.split(/ space* /))
 ## STDOUT:
 (List)   ["🌞","🌞","🌞"]
 (List)   ["🌞","🌞","🌞"]
-(List)   ["","🌞","","🌞","","🌝","🌞",""]
-(List)   ["",b'\yf0',b'\ya0',"",b'\yf5',""]
 ## END
 
 #### Dict => values()
