@@ -1,6 +1,5 @@
-
 ## compare_shells: bash dash mksh zsh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 # Note: zsh passes most of these tests too
 
@@ -145,9 +144,13 @@ no
 no
 ## END
 
-#### case with single byte LC_ALL=C
+#### case matching the byte 0xff
 
-LC_ALL=C
+# This doesn't make a difference on my local machine?
+# Is the underlying issue how libc fnmatch() respects Unicode?
+
+#LC_ALL=C
+#LC_ALL=C.UTF-8
 
 c=$(printf \\377)
 
@@ -159,7 +162,13 @@ case $c in
   "$c") echo b ;;
 esac
 
+case "$c" in
+  '')   echo a ;;
+  "$c") echo b ;;
+esac
+
 ## STDOUT:
+b
 b
 ## END
 
