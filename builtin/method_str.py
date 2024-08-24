@@ -548,6 +548,7 @@ class Split(vm._Callable):
             regex = regex_translate.AsPosixEre(eggex_sep)
             cflags = regex_translate.LibcFlags(eggex_sep.canonical_flags)
 
+            # TODO: Could we cache this into the eggex?
             zero_width_match = libc.regex_search(regex, cflags, "", 0)
             if zero_width_match is not None:
                 raise error.Structured(3, "cannot split by eggex which accepts the empty string", rd.LeftParenToken())
