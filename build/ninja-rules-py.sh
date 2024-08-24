@@ -15,7 +15,7 @@ set -o errexit
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source build/dev-shell.sh  # python2 in $PATH
-source mycpp/common-vars.sh  # MYPY_REPO
+#source devtools/types.sh  # typecheck-files
 source $REPO_ROOT/test/tsv-lib.sh  # time-tsv
 
 example-main-wrapper() {
@@ -209,14 +209,14 @@ benchmark-table() {
   } > $out
 }
 
-# TODO: No longer works.  This is called by ninja mycpp-check
-# I think it's giving strict warnings.
-mypy() {
-  ( source $MYCPP_VENV/bin/activate
-    # Don't need this since the virtualenv we created with it?
-    # source build/dev-shell.sh
-    PYTHONPATH=$MYPY_REPO python3 -m mypy "$@";
-  )
+# Copied from devtools/types.sh
+
+MYPY_FLAGS='--strict --no-strict-optional'
+typecheck-files() {
+  echo "MYPY $@"
+
+  # TODO: Adjust path for mcypp/examples/modules.py
+  time MYPYPATH='.:pyext' python3 -m mypy --py2 --follow-imports=silent $MYPY_FLAGS "$@"
 }
 
 typecheck() {
@@ -231,9 +231,21 @@ typecheck() {
     local more_flags=''
   fi
 
-  # $more_flags can be empty
-  MYPYPATH="$REPO_ROOT:$REPO_ROOT/mycpp" \
-    mypy --py2 --strict $more_flags $main_py > $out
+  # Similar to devtools/types.sh
+
+  local status=0
+
+  set +o errexit
+  typecheck-files $main_py > $out
+  status=$?
+  set -o errexit
+
+  if test $status != 0; then
+    echo "FAIL $main_py"
+    cat $out
+  fi
+
+  return $status
 }
 
 logs-equal() {
@@ -286,7 +298,7 @@ shift 2
 
 tmp=$out.tmp  # avoid creating partial files
 
-PYTHONPATH="$REPO_ROOT:$MYPY_REPO" MYPYPATH="$MYPYPATH" \
+PYTHONPATH="$REPO_ROOT:$TODO_MYPY_REPO" MYPYPATH="$MYPYPATH" \
   python3 pea/pea_main.py cpp "$@" > $tmp
 status=$?
 

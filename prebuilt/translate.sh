@@ -11,7 +11,6 @@ source $LIB_OSH/task-five.sh
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
-source mycpp/common.sh       # MYPY_REPO
 source build/ninja-rules-cpp.sh
 
 readonly TEMP_DIR=_build/tmp

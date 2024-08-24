@@ -11,8 +11,6 @@ set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
-source mycpp/common.sh  # $MYPY_REPO
-
 readonly PY_PATH='.:vendor/'
 
 # Temporary
@@ -173,17 +171,29 @@ write-mycpp() {
   local dir=prebuilt/ninja/$module
   mkdir -p $dir
 
-  ( source $MYCPP_VENV/bin/activate
-    PYTHONPATH=$REPO_ROOT:$REPO_ROOT/mycpp:$MYPY_REPO maybe-our-python3 \
-      build/dynamic_deps.py py-manifest $module > $dir/all-pairs.txt
-  )
+  if false; then
+    ( source $MYCPP_VENV/bin/activate
+      PYTHONPATH=$REPO_ROOT:$REPO_ROOT/mycpp:$MYPY_REPO maybe-our-python3 \
+        build/dynamic_deps.py py-manifest $module > $dir/all-pairs.txt
+    )
+  fi
 
+  # TODO: it would be nicer to put this at the top of the file, but we get
+  # READONLY errors.
+  source build/dev-shell.sh
+
+  python3 build/dynamic_deps.py py-manifest $module > $dir/all-pairs.txt
+
+  local deps=$dir/deps.txt
   cat $dir/all-pairs.txt \
     | grep -v oilshell/oil_DEPS \
     | repo-filter \
     | exclude-filter py-tool \
     | mysort \
-    | tee $dir/deps.txt
+    | tee $deps
+
+  # EXTRA FILE
+  echo '_bin/datalog/dataflow' >> $deps
 
   echo
   echo $dir/*
