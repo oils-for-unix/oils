@@ -350,6 +350,7 @@ _install() {
 
 _build-oils-benchmark-data() {
   pushd $BENCHMARK_DATA_OILS
+  ./configure
   for variant in dbg opt; do
     # DWARF version 4 is a hack for bloaty, which doesn't support version 5.
     # I don't think this should affect benchmarks besides
