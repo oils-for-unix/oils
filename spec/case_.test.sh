@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh zsh
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 
 # Note: zsh passes most of these tests too
 
@@ -144,7 +144,7 @@ no
 no
 ## END
 
-#### case matching the byte 0xff
+#### matching the byte 0xff
 
 # This doesn't make a difference on my local machine?
 # Is the underlying issue how libc fnmatch() respects Unicode?
@@ -170,6 +170,37 @@ esac
 ## STDOUT:
 b
 b
+## END
+
+#### matching every byte against itself 
+
+# Why does OSH on the CI machine behave differently?  Probably a libc bug fix
+# I'd guess?
+
+#LC_ALL=C
+#LC_ALL=C.UTF-8
+
+sum=0
+
+for i in $(seq 256); do
+  hex=$(printf '%x' $i)
+  c=$(printf "\\x$hex")
+  #echo -n $c | od -A n -t x1
+
+  case $c in
+    # Newline matches empty string somehow.  All shells agree.  I guess
+    # fnmatch() ignores trailing newline?
+
+    #'')   echo "[bug i=$i hex=$hex c=$c]" ;;
+    "$c") sum=$(( sum + 1 )) ;;
+    *)   echo "[bug i=$i hex=$hex c=$c]" ;;
+  esac
+done
+
+echo sum=$sum
+
+## STDOUT:
+sum=256
 ## END
 
 #### \(\) in pattern (regression)
