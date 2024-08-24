@@ -10,10 +10,14 @@ readonly __BENCHMARKS_COMMON_SH=1
 #readonly MACHINE1=flanders
 #readonly MACHINE2=lenny
 
-# 2023-11-29: machine1 is still lenny because it has bloaty, which doesn't
-#             work with ELF data emitted by newer GCC on Debian 12
-readonly MACHINE1=lenny
-readonly MACHINE2=hoover
+# 2023-11-29: MACHINE1=lenny MACHINE2=hoover
+
+# 2024-08-23: MACHINE1=hoover MACHINE2=mercer
+# Because we gained a Souffle dependency, which requires C++17.  And the base
+# image on lenny doesn't support C++17.
+
+readonly MACHINE1=hoover
+readonly MACHINE2=mercer
 
 OIL_VERSION=$(head -n 1 oil-version.txt)
 
