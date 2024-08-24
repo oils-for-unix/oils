@@ -673,6 +673,7 @@ extra-wedges() {
 
   # Test both outside the contianer, as well as inside?
   echo uftrace $UFTRACE_VERSION $ROOT_WEDGE_DIR
+  echo bloaty $BLOATY_VERSION $ROOT_WEDGE_DIR
 
   #echo souffle $SOUFFLE_VERSION $USER_WEDGE_DIR
 }
