@@ -1107,3 +1107,30 @@ printf $'\U0z'
 ## stdout-json: "x"
 ## OK zsh stdout-repr: "x\0z\0z"
 ## N-I dash/ash stdout-json: ""
+
+#### printf quirk - printf '\n' or '\x0a' is empty string?
+case $SH in dash) exit ;; esac
+
+#for i in $(seq 1 255); do
+
+# 0 byte causes issues
+# non-ASCII bytes cause issues
+
+for i in $(seq 1 127); do
+  hex=$(printf '%02x' "$i")
+  c="$(printf "\\x$hex")"
+
+  # length of string with newline is 0?  why?
+  len="${#c}"
+  if test $len != 1; then
+    echo -n "$c" | od -A n -t x1
+    echo "i=$i hex=$hex c=$c len=$len"
+  fi
+done
+
+## STDOUT:
+i=10 hex=0a c= len=0
+## END
+
+## BUG dash STDOUT:
+## END

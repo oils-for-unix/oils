@@ -172,7 +172,7 @@ b
 b
 ## END
 
-#### matching every byte against itself 
+#### matching every byte against empty string, then itself 
 
 # Why does OSH on the CI machine behave differently?  Probably a libc bug fix
 # I'd guess?
@@ -182,16 +182,25 @@ b
 
 sum=0
 
-for i in $(seq 256); do
-  hex=$(printf '%x' $i)
-  c=$(printf "\\x$hex")
-  #echo -n $c | od -A n -t x1
+# note: NUL byte crashes OSH!
+for i in $(seq 1 255); do
+  hex=$(printf '%x' "$i")
+  c="$(printf "\\x$hex")"
 
-  case $c in
+  # bash, zsh, mksh: length of string with newline is 
+  len=${#c}
+  if test $len != 1; then
+    echo i=$i len=$len
+  fi
+
+  #echo -n $c | od -A n -t x1
+  #echo ${#c}
+
+  case "$c" in
     # Newline matches empty string somehow.  All shells agree.  I guess
     # fnmatch() ignores trailing newline?
 
-    #'')   echo "[bug i=$i hex=$hex c=$c]" ;;
+    '')   echo "[empty i=$i hex=$hex c=$c]" ;;
     "$c") sum=$(( sum + 1 )) ;;
     *)   echo "[bug i=$i hex=$hex c=$c]" ;;
   esac
