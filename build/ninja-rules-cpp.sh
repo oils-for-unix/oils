@@ -320,7 +320,9 @@ link() {
   setglobal_cxx $compiler
 
   if test "$compiler" = 'clang'; then
-    link_flags="$link_flags -stdlib=libc++"
+    if test $variant != 'coverage'; then
+      link_flags="$link_flags -stdlib=libc++"
+    fi
   fi
 
   local prefix=''
