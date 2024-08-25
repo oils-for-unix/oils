@@ -271,13 +271,12 @@ compile_one() {
     # https://stackoverflow.com/questions/26333823/clang-doesnt-see-basic-headers
     # https://stackoverflow.com/questions/19774778/when-is-it-necessary-to-use-the-flag-stdlib-libstdc
 
-    # But don't do it for clang-coverage binary, because the CI machine doesn't
-    # like it?
-    # It fails on the release machine - sigh
-
-    if test $variant != 'coverage'; then
-      flags="$flags -stdlib=libc++"
-    fi
+    # But don't do it for clang-coverage* builds, because the CI machine
+    # doesn't like it?  This makes it fail on the release machine - sigh
+    case $variant in
+      coverage*) ;;  # include coverage+bumpleak
+      *)         flags="$flags -stdlib=libc++" ;;
+    esac
 
     # TODO: exactly when is -fPIC needed?  Clang needs it sometimes?
     if test $variant != 'opt'; then
@@ -320,9 +319,10 @@ link() {
   setglobal_cxx $compiler
 
   if test "$compiler" = 'clang'; then
-    if test $variant != 'coverage'; then
-      link_flags="$link_flags -stdlib=libc++"
-    fi
+    case $variant in
+      coverage*) ;;  # include coverage+bumpleak
+      *)         link_flags="$link_flags -stdlib=libc++"
+    esac
   fi
 
   local prefix=''
