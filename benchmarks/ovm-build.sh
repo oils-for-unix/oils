@@ -58,7 +58,6 @@ tarballs() {
   cat <<EOF
 bash-4.4.tar.gz
 dash-0.5.9.1.tar.gz
-mksh-R56c.tgz
 EOF
 }
 
@@ -471,10 +470,6 @@ soil-run() {
 
   local job_id
   job_id=$(print-job-id)
-
-  # Like benchmarks/auto.sh
-  #local build_prov
-  #build_prov=$(benchmarks/id.sh compiler-provenance $job_id)
 
   compiler-provenance-2 \
     $single_machine $job_id _tmp

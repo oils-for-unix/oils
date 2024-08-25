@@ -454,41 +454,6 @@ compiler-provenance-2() {
   log "Wrote $out_txt and $out_tsv"
 }
 
-compiler-provenance() {
-  local job_id=$1
-
-  local host
-  host=$(hostname)
-
-  # Filename
-  local out=_tmp/${host}.${job_id}.compiler-provenance.txt
-
-  local tmp_dir=_tmp/host-id/$host
-  dump-host-id $tmp_dir
-
-  local host_hash
-  host_hash=$(publish-host-id $tmp_dir)
-
-  local compiler_hash
-
-  # gcc is assumed to be in the $PATH.
-  for compiler_path in $(which gcc) $CLANG; do
-    local name=$(basename $compiler_path)
-
-    tmp_dir=_tmp/compiler-id/$name
-    dump-compiler-id $compiler_path $tmp_dir
-
-    compiler_hash=$(publish-compiler-id $tmp_dir)
-
-    echo "$job_id $host $host_hash $compiler_path $compiler_hash"
-  done > $out
-
-  log "Wrote $out"
-
-  # Return value used in command sub
-  echo $out
-}
-
 out-param() {
   declare -n out=$1
 
