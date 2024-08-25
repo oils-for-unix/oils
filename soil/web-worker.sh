@@ -48,7 +48,7 @@ sshq() {
   #
   # This is Bernstein chaining through ssh.
 
-  ssh $SOIL_USER@$SOIL_HOST "$(printf '%q ' "$@")"
+  my-ssh $SOIL_USER_HOST "$(printf '%q ' "$@")"
 }
 
 remote-rewrite-jobs-index() {
@@ -252,9 +252,9 @@ test-collect-json() {
 deploy-job-results() {
   ### Copy .wwz, .tsv, and .json to a new dir
 
-  local prefix=$1  # e.g. example.com/github-jobs/
-  local subdir=$2  # e.g. example.com/github-jobs/1234/  # make this dir
-  local job_name=$3  # e.g. example.com/github-jobs/1234/foo.wwz
+  local prefix=$1  # e.g. github- for example.com/github-jobs/
+  local run_dir=$2  # e.g. 1234  # make this dir
+  local job_name=$3  # e.g. cpp-small for example.com/github-jobs/1234/cpp-small.wwz
   shift 2
   # rest of args are more env vars
 
@@ -273,17 +273,28 @@ deploy-job-results() {
   # So we don't have to unzip it
   cp _tmp/soil/INDEX.tsv $job_name.tsv
 
-  local remote_dest_dir="$SOIL_REMOTE_DIR/${prefix}jobs/$subdir"
-  my-ssh $SOIL_USER_HOST "mkdir -p $remote_dest_dir"
+  if false; then
+    local remote_dest_dir="$SOIL_REMOTE_DIR/${prefix}jobs/$run_dir"
+    my-ssh $SOIL_USER_HOST "mkdir -p $remote_dest_dir"
 
-  # Do JSON last because that's what 'list-json' looks for
-  my-scp $job_name.{wwz,tsv,json} "$SOIL_USER_HOST:$remote_dest_dir"
+    # Do JSON last because that's what 'list-json' looks for
+    my-scp $job_name.{wwz,tsv,json} "$SOIL_USER_HOST:$remote_dest_dir"
+  else
+    curl \
+      --verbose \
+      --form "payload-type=${prefix}jobs" \
+      --form "subdir=$run_dir" \
+      --form "file1=@${job_name}.wwz" \
+      --form "file2=@${job_name}.tsv" \
+      --form "file3=@${job_name}.json" \
+      $WWUP_URL
+  fi
 
   log ''
   log 'View CI results here:'
   log ''
-  log "http://$SOIL_HOST/${prefix}jobs/$subdir/"
-  log "http://$SOIL_HOST/${prefix}jobs/$subdir/$job_name.wwz/"
+  log "https://$SOIL_HOST/${prefix}jobs/$run_dir/"
+  log "https://$SOIL_HOST/${prefix}jobs/$run_dir/$job_name.wwz/"
   log ''
 }
 
@@ -342,6 +353,8 @@ remote-event-job-done() {
   ### "Client side" handler: a job calls this when it's done
 
   log "remote-event-job-done"
+
+  #set -x
 
   # Deployed code dir
   sshq soil-web/soil/web.sh event-job-done "$@"

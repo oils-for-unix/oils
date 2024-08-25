@@ -26,7 +26,7 @@ source soil/common.sh  # for SOIL_USER and SOIL_HOST
 home-page() {
   ### travis-ci.oilshell.org home page
 
-  local domain=${1:-'travis-ci.oilshell.org'}
+  local domain=${1:-$SOIL_HOST}
   local title="Soil on $domain"
   soil-html-head "$title"
 

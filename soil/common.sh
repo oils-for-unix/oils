@@ -22,9 +22,9 @@ dump-env() {
 
 if true; then
   readonly SOIL_USER='travis_admin'
-  readonly SOIL_HOST='travis-ci.oilshell.org'
-  readonly SOIL_HOST_DIR=~/travis-ci.oilshell.org  # used on server
-  readonly SOIL_REMOTE_DIR=travis-ci.oilshell.org  # used on client
+  readonly SOIL_HOST='uuu.oilshell.org'
+  readonly SOIL_HOST_DIR=~/uuu.oilshell.org  # used on server
+  readonly SOIL_REMOTE_DIR=uuu.oilshell.org  # used on client
 elif false; then
   readonly SOIL_USER='oils'
   readonly SOIL_HOST='mb.oils.pub'
@@ -39,6 +39,8 @@ else
 fi
 
 readonly SOIL_USER_HOST="$SOIL_USER@$SOIL_HOST"
+
+readonly WWUP_URL="https://$SOIL_HOST/wwup.cgi"
 
 html-head() {
   # TODO: Shebang line should change too
