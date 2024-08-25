@@ -4,7 +4,7 @@
 # different machines, and measure the binary size.
 #
 # Usage:
-#   ./ovm-build.sh <function name>
+#   benchmarks/ovm-build.sh <function name>
 #
 # Run on its own:
 #   1. Follow common instructions in benchmarks/osh-parser.sh
@@ -34,12 +34,12 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-REPO_ROOT=$(cd $(dirname $0)/..; pwd)
-readonly REPO_ROOT
-
-source test/tsv-lib.sh  # uses REPO_ROOT
 source benchmarks/common.sh  # for log, etc.
+source benchmarks/id.sh  # print-job-id
 source build/common.sh  # for $CLANG
+
+REPO_ROOT=$(cd $(dirname $0)/..; pwd)
+source test/tsv-lib.sh  # uses REPO_ROOT
 
 readonly BASE_DIR=_tmp/ovm-build
 readonly TAR_DIR=$PWD/_deps/ovm-build  # Make it absolute
@@ -48,9 +48,10 @@ readonly TAR_DIR=$PWD/_deps/ovm-build  # Make it absolute
 # Dependencies
 #
 
-# Leave out mksh for now, because it doesn't follow ./configure make.  It just
-# has Build.sh.
-readonly -a TAR_SUBDIRS=( bash-4.4 dash-0.5.9.1 )  # mksh )
+readonly -a TAR_SUBDIRS=( 
+  dash-0.5.9.1 
+  bash-4.4 
+)
 
 # NOTE: Same list in oilshell.org/blob/run.sh.
 tarballs() {
@@ -75,14 +76,9 @@ extract-other() {
 }
 
 # Done automatically by 'measure' function.
-#
-# NOTE: We assume that _release/oil.tar exists.  It should be made by
-# scripts/release.sh build-and-test or benchmark-build.
-extract-oil() {
-  # This is different than the others tarballs.
-  rm -r -f -v $TAR_DIR/oil-*
-  tar -x --directory $TAR_DIR --file _release/oil.tar
 
+# TODO: CI should download this from previous
+extract-oils() {
   # To run on multiple machines, use the one in the benchmarks-data repo.
   cp --recursive --no-target-directory \
     ../benchmark-data/src/oils-for-unix-$OIL_VERSION/ \
@@ -108,7 +104,7 @@ sizes-tsv() {
 # NOTE: This should be the same on all x64 machines.  But I want to run it on
 # x64 machines.
 measure-sizes() {
-  local prefix=${1:-$BASE_DIR/raw/demo}
+  local raw_out_dir=$1
 
   # PROBLEM: Do I need provenance for gcc/clang here?  I can just join it later
   # in R.
@@ -118,18 +114,13 @@ measure-sizes() {
   # gcc/oils-for-unix
   # gcc/oils-for-unix.stripped
   sizes-tsv $BASE_DIR/bin/*/{oils-for-unix,oils-for-unix.stripped} \
-    > ${prefix}.native-sizes.tsv
+    > ${raw_out_dir}/native-sizes.tsv
 
-  sizes-tsv $TAR_DIR/oil-$OIL_VERSION/_build/oil/bytecode-opy.zip \
-    > ${prefix}.bytecode-size.tsv
-
-  sizes-tsv $BASE_DIR/bin/*/oil.* \
-    > ${prefix}.bin-sizes.tsv
-
+  # Not used - we're not stripping these, etc.
   sizes-tsv $BASE_DIR/bin/*/*sh \
-    > ${prefix}.other-shell-sizes.tsv
+    > ${raw_out_dir}/other-shell-sizes.tsv
 
-  log "Wrote ${prefix}.*.tsv"
+  log "Wrote ${raw_out_dir}/*.tsv"
 }
 
 #
@@ -165,7 +156,7 @@ clang-oil-dbg() {
 # It would be possible, but it complicates the makefile.
 
 build-task() {
-  local out_dir=$1
+  local raw_out_dir=$1
   local job_id=$2
   local host=$3
   local host_hash=$4
@@ -174,7 +165,7 @@ build-task() {
   local src_dir=$7
   local action=$8
 
-  local times_out="$PWD/$out_dir/$host.$job_id.times.tsv"
+  local times_out="$PWD/$raw_out_dir/times.tsv"
 
   # Definitions that depends on $PWD.
   local -a TIME_PREFIX=(
@@ -274,21 +265,13 @@ build-task() {
   log "DONE BUILD TASK $action $src_dir __ status=$?"
 }
 
-oil-tasks() {
+oils-tasks() {
   local provenance=$1
 
-  # NOTE: it MUST be a tarball and not the git repo, because we don't build
-  # bytecode-*.zip!  We care about the "packager's experience".
-  local oil_dir="$TAR_DIR/oil-$OIL_VERSION"
   local ofu_dir="$TAR_DIR/oils-for-unix-$OIL_VERSION"
 
   # Add 1 field for each of 5 fields.
   cat $provenance | while read line; do
-    # NOTE: configure is independent of compiler.
-    echo "$line" $oil_dir configure
-    echo "$line" $oil_dir _bin/oil.ovm
-    echo "$line" $oil_dir _bin/oil.ovm-dbg
-
     echo "$line" $ofu_dir oils-for-unix
     echo "$line" $ofu_dir oils-for-unix.stripped
   done
@@ -296,10 +279,6 @@ oil-tasks() {
 
 other-shell-tasks() {
   local provenance=$1
-
-  # NOTE: it MUST be a tarball and not the git repo, because we do the build
-  # of bytecode.zip!  We care about the "package experience".
-  local tarball='_release/oil.0.5.alpha1.gz'
 
   # Add 1 field for each of 5 fields.
   cat $provenance | while read line; do
@@ -326,19 +305,32 @@ oil-historical-tasks() {
 # action is 'configure', a target name, etc.
 readonly NUM_COLUMNS=7  # 5 from provenence, then tarball/target
 
+print-tasks() {
+  local build_prov=$1
+
+  local t1=$BASE_DIR/oils-tasks.txt
+  local t2=$BASE_DIR/other-shell-tasks.txt
+
+  oils-tasks $build_prov > $t1
+  other-shell-tasks $build_prov > $t2
+
+  if test -n "${QUICKLY:-}"; then
+    head -n 2 $t1  # debug and opt binary
+    head -n 2 $t2  # do dash configure make
+  else
+    cat $t1 $t2
+  fi
+}
+
 measure() {
-  local provenance=$1  # from benchmarks/id.sh compiler-provenance
-  local out_dir=${2:-$BASE_DIR/raw}
+  local build_prov=$1  # from benchmarks/id.sh compiler-provenance
+  local raw_out_dir=$2  # _tmp/ovm-build/$X or ../../benchmark-data/ovm-build/$X
 
-  extract-oil
+  extract-oils
 
-  # Job ID is everything up to the first dot in the filename.
-  local name=$(basename $provenance)
-  local prefix=${name%.compiler-provenance.txt}  # strip suffix
-
-  local times_out="$out_dir/$prefix.times.tsv"
+  local times_out="$raw_out_dir/times.tsv"
   # NOTE: Do we need two raw dirs?
-  mkdir -p $BASE_DIR/{raw,stage1,bin} $out_dir
+  mkdir -p $BASE_DIR/{stage1,bin} $raw_out_dir
 
   # TODO: the $times_out calculation is duplicated in build-task()
 
@@ -348,16 +340,13 @@ measure() {
     host_name host_hash compiler_path compiler_hash \
     src_dir action > $times_out
 
-  local t1=$BASE_DIR/oil-tasks.txt
-  local t2=$BASE_DIR/other-shell-tasks.txt
+  # TODO: remove xargs
+  # - print-tasks | run-tasks with a loop
+  # - exit code is more reliable, and we're not running in parallel anyway
 
-  oil-tasks $provenance > $t1
-  other-shell-tasks $provenance > $t2
-
-  #grep dash $t2 |
-  #time cat $t1 |
   set +o errexit
-  time cat $t1 $t2 | xargs --verbose -n $NUM_COLUMNS -- $0 build-task $out_dir 
+  time print-tasks $build_prov \
+    | xargs --verbose -n $NUM_COLUMNS -- $0 build-task $raw_out_dir 
   local status=$?
   set -o errexit
 
@@ -365,9 +354,7 @@ measure() {
     die "*** Some tasks failed. (xargs status=$status) ***"
   fi
 
-  measure-sizes $out_dir/$prefix
-
-  cp -v $provenance $out_dir
+  measure-sizes $raw_out_dir
 }
 
 #
@@ -375,35 +362,36 @@ measure() {
 #
 
 stage1() {
-  local raw_dir=${1:-$BASE_DIR/raw}
+  local base_dir=${1:-$BASE_DIR}  # _tmp/ovm-build or ../benchmark-data/ovm-build
+  local single_machine=${2:-}
 
-  local out=$BASE_DIR/stage1
-  mkdir -p $out
+  local out_dir=$BASE_DIR/stage1
+  mkdir -p $out_dir
 
-  local x
-  local -a a b
+  local -a raw_times=()
+  local -a raw_sizes=()
 
-  # Globs are in lexicographical order, which works for our dates.
-  x=$out/times.tsv
-  a=($raw_dir/$MACHINE1.*.times.tsv)
-  b=($raw_dir/$MACHINE2.*.times.tsv)
-  tsv-concat ${a[-1]} ${b[-1]} > $x
+  if test -n "$single_machine"; then
+    # find dir in _tmp/ovm-build
+    local -a a=( $base_dir/raw.$single_machine.* )
 
-  x=$out/bytecode-size.tsv
-  a=($raw_dir/$MACHINE1.*.bytecode-size.tsv)
-  b=($raw_dir/$MACHINE2.*.bytecode-size.tsv)
-  tsv-concat ${a[-1]} ${b[-1]} > $x
+    raw_times+=( ${a[-1]}/times.tsv )
+    raw_sizes+=( ${a[-1]}/native-sizes.tsv )
 
-  x=$out/bin-sizes.tsv
-  a=($raw_dir/$MACHINE1.*.bin-sizes.tsv)
-  b=($raw_dir/$MACHINE2.*.bin-sizes.tsv)
-  tsv-concat ${a[-1]} ${b[-1]} > $x
+  else
+    # find last dirs in ../benchmark-data/ovm-build
+    # Globs are in lexicographical order, which works for our dates.
+    local -a a=( $base_dir/raw.$MACHINE1.* )
+    local -a b=( $base_dir/raw.$MACHINE2.* )
 
-  x=$out/native-sizes.tsv
-  a=($raw_dir/$MACHINE1.*.native-sizes.tsv)
-  b=($raw_dir/$MACHINE2.*.native-sizes.tsv)
-  #tsv-concat ${b[-1]} > $x
-  tsv-concat ${a[-1]} ${b[-1]} > $x
+    raw_times+=( ${a[-1]}/times.tsv ${b[-1]}/times.tsv )
+    raw_sizes+=( ${a[-1]}/native-sizes.tsv ${b[-1]}/native-sizes.tsv )
+  fi
+
+  tsv-concat "${raw_times[@]}" > $out_dir/times.tsv
+  tsv-concat "${raw_sizes[@]}" > $out_dir/native-sizes.tsv
+
+  return
 
   # NOTE: unused
   # Construct a one-column TSV file
@@ -452,18 +440,6 @@ EOF
   tsv2html --css-class-pattern 'special ^gcc' $in_dir/native-sizes.tsv
 
   cmark << 'EOF'
-### OVM Binary Size
-
-The oil binary has two portions:
-
-- Architecture-independent `bytecode.zip`
-- Architecture- and compiler- dependent native code (`_build/oil/ovm*`)
-
-EOF
-  # Highlight the "default" production build
-  tsv2html --css-class-pattern 'special /gcc/oil.ovm$' $in_dir/sizes.tsv
-
-  cmark << 'EOF'
 
 ### Host and Compiler Details
 EOF
@@ -474,6 +450,47 @@ EOF
   </body>
 </html>
 EOF
+}
+
+soil-run() {
+  rm -r -f $BASE_DIR
+  mkdir -p $BASE_DIR
+
+  download
+  extract-other
+
+  # Copied from benchmarks/osh-runtime.sh soil-run
+
+  # could add _bin/cxx-bumpleak/oils-for-unix, although sometimes it's slower
+  local -a osh_bin=( $OSH_CPP_NINJA_BUILD )
+  ninja "${osh_bin[@]}"
+
+  local single_machine='no-host'
+
+  local single_machine='no-host'
+
+  local job_id
+  job_id=$(print-job-id)
+
+  # Like benchmarks/auto.sh
+  #local build_prov
+  #build_prov=$(benchmarks/id.sh compiler-provenance $job_id)
+
+  compiler-provenance-2 \
+    $single_machine $job_id _tmp
+
+  local host_job_id="$single_machine.$job_id"
+  local raw_out_dir="$BASE_DIR/raw.$host_job_id"
+  mkdir -p $raw_out_dir $BASE_DIR/stage1
+
+  measure _tmp/compiler-provenance.txt $raw_out_dir
+
+  # Trivial concatenation for 1 machine
+  stage1 '' $single_machine
+
+  benchmarks/report.sh stage2 $BASE_DIR
+
+  benchmarks/report.sh stage3 $BASE_DIR
 }
 
 "$@"

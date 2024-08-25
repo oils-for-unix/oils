@@ -64,7 +64,7 @@ measure-builds() {
 
   # TODO: Use new provenance style, like measure-shells
   local build_prov
-  build_prov=$(benchmarks/id.sh compiler-provenance)  # capture the filename
+  build_prov=$(benchmarks/id.sh compiler-provenance $job_id)  # capture the filename
 
   benchmarks/ovm-build.sh measure $build_prov $out_dir/ovm-build
 }
