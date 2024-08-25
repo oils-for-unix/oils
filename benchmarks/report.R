@@ -253,9 +253,9 @@ ParserReport = function(in_dir, out_dir) {
     spread(key = host_label, value = lines_per_ms) ->
     times_summary
 
-  # Sort by parsing rate on the fast machine
-  if ("host lenny" %in% colnames(times_summary)) {
-    times_summary %>% arrange(desc(`host lenny`)) -> times_summary
+  # Sort by parsing rate on machine 1
+  if ("host hoover" %in% colnames(times_summary)) {
+    times_summary %>% arrange(desc(`host hoover`)) -> times_summary
   } else {
     times_summary %>% arrange(desc(`host no-host`)) -> times_summary
   }
