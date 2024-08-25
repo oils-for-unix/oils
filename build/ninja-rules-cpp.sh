@@ -270,7 +270,14 @@ compile_one() {
     # 2024-08 - Clang needs -stdlib=libc++ for some reason
     # https://stackoverflow.com/questions/26333823/clang-doesnt-see-basic-headers
     # https://stackoverflow.com/questions/19774778/when-is-it-necessary-to-use-the-flag-stdlib-libstdc
-    flags="$flags -stdlib=libc++"
+
+    # But don't do it for clang-coverage binary, because the CI machine doesn't
+    # like it?
+    # It fails on the release machine - sigh
+
+    if test $variant != 'coverage'; then
+      flags="$flags -stdlib=libc++"
+    fi
 
     # TODO: exactly when is -fPIC needed?  Clang needs it sometimes?
     if test $variant != 'opt'; then
