@@ -70,7 +70,7 @@ remote-cleanup-status-api() {
   if false; then
     sshq soil-web/soil/web.sh cleanup-status-api true
   else
-    curl --include \
+    curl --include --fail-with-body \
       --form 'run-hook=soil-cleanup-status-api' \
       --form 'arg1=true' \
       $WWUP_URL
@@ -104,7 +104,7 @@ scp-status-api() {
   else
     # Note: we don't need to change the name of the file, because we just glob
     # the dir
-    curl --include \
+    curl --include --fail-with-body \
       --form 'payload-type=status-api' \
       --form "subdir=github/$run_id" \
       --form "file1=@$status_file" \
@@ -300,8 +300,7 @@ deploy-job-results() {
     # Do JSON last because that's what 'list-json' looks for
     my-scp $job_name.{wwz,tsv,json} "$SOIL_USER_HOST:$remote_dest_dir"
   else
-    curl \
-      --include \
+    curl --include --fail-with-body \
       --form "payload-type=${prefix}jobs" \
       --form "subdir=$run_dir" \
       --form "file1=@${job_name}.wwz" \
@@ -313,8 +312,8 @@ deploy-job-results() {
   log ''
   log 'View CI results here:'
   log ''
-  log "https://$SOIL_HOST/${prefix}jobs/$run_dir/"
-  log "https://$SOIL_HOST/${prefix}jobs/$run_dir/$job_name.wwz/"
+  log "https://$SOIL_HOST/uuu/${prefix}jobs/$run_dir/"
+  log "https://$SOIL_HOST/uuu/${prefix}jobs/$run_dir/$job_name.wwz/"
   log ''
 }
 
@@ -344,7 +343,7 @@ publish-cpp-tarball() {
     commit_hash=$(cat _tmp/soil/commit-hash.txt)
 
     local tar=_release/oils-for-unix.tar 
-    curl --include \
+    curl --include --fail-with-body \
       --form 'payload-type=github-jobs' \
       --form "subdir=git-$commit_hash" \
       --form "file1=@$tar" \
@@ -403,7 +402,7 @@ remote-event-job-done() {
     sshq soil-web/soil/web.sh event-job-done "$@"
   else
     # Note: I think curl does URL escaping of arg1= arg2= ?
-    curl --include \
+    curl --include --fail-with-body \
       --form 'run-hook=soil-event-job-done' \
       --form "arg1=$prefix" \
       --form "arg2=$run_id" \
