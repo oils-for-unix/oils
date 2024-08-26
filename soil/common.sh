@@ -87,7 +87,7 @@ git-commit-url() {
   local commit_hash
   commit_hash=$(cat _tmp/soil/commit-hash.txt)
 
-  # https:// not working on Github Actions?
+  # https:// not working on Github Actions because of cert issues?
   local url="http://$SOIL_HOST/${prefix}jobs/git-$commit_hash"
 
   echo $url

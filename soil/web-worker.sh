@@ -63,8 +63,18 @@ remote-cleanup-jobs-index() {
 
 remote-cleanup-status-api() {
   #sshq soil-web/soil/web.sh cleanup-status-api false
-  # 2024-07 - work around bug.  The logic in soil/web.sh doesn't seem right
-  sshq soil-web/soil/web.sh cleanup-status-api true
+  # 2024-07 - work around bug by doing dry_run only.
+  #
+  # TODO: Fix the logic in soil/web.sh
+
+  if false; then
+    sshq soil-web/soil/web.sh cleanup-status-api true
+  else
+    curl --include \
+      --form 'run-hook=soil-cleanup-status-api' \
+      --form 'arg1=true' \
+      $WWUP_URL
+  fi
 }
 
 my-scp() {
@@ -85,11 +95,21 @@ scp-status-api() {
   # We could make this one invocation of something like:
   # cat $status_file | sshq soil/web.sh PUT $remote_path
 
-  my-ssh $SOIL_USER_HOST "mkdir -p $(dirname $remote_path)"
+  if false; then
+    my-ssh $SOIL_USER_HOST "mkdir -p $(dirname $remote_path)"
 
-  # the consumer should check if these are all zero
-  # note: the file gets RENAMED
-  my-scp $status_file "$SOIL_USER_HOST:$remote_path"
+    # the consumer should check if these are all zero
+    # note: the file gets RENAMED
+    my-scp $status_file "$SOIL_USER_HOST:$remote_path"
+  else
+    # Note: we don't need to change the name of the file, because we just glob
+    # the dir
+    curl --include \
+      --form 'payload-type=status-api' \
+      --form "subdir=github/$run_id" \
+      --form "file1=@$status_file" \
+      $WWUP_URL
+  fi
 }
 
 scp-results() {
@@ -281,7 +301,7 @@ deploy-job-results() {
     my-scp $job_name.{wwz,tsv,json} "$SOIL_USER_HOST:$remote_dest_dir"
   else
     curl \
-      --verbose \
+      --include \
       --form "payload-type=${prefix}jobs" \
       --form "subdir=$run_dir" \
       --form "file1=@${job_name}.wwz" \
@@ -352,12 +372,22 @@ publish-cpp-tarball() {
 remote-event-job-done() {
   ### "Client side" handler: a job calls this when it's done
 
-  log "remote-event-job-done"
+  local prefix=$1  # 'github-' or 'srht-'
+  local run_id=$2  # $GITHUB_RUN_NUMBER or git-$hash
 
-  #set -x
+  log "remote-event-job-done $prefix $run_id"
 
   # Deployed code dir
-  sshq soil-web/soil/web.sh event-job-done "$@"
+  if false; then
+    sshq soil-web/soil/web.sh event-job-done "$@"
+  else
+    # Note: I think curl does URL escaping of arg1= arg2= ?
+    curl --include \
+      --form 'run-hook=soil-event-job-done' \
+      --form "arg1=$prefix" \
+      --form "arg2=$run_id" \
+      $WWUP_URL
+  fi
 }
 
 filename=$(basename $0)

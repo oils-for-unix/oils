@@ -21,7 +21,15 @@ source $REPO_ROOT/soil/common.sh
 readonly NUM_JOBS=4000
 
 soil-web() {
-  PYTHONPATH=$REPO_ROOT $REPO_ROOT/soil/web.py "$@"
+  # We may be executed by a wwup.cgi on the server, which doesn't have
+  # PATH=~/bin, and the shebang is /usr/bin/env python2
+
+  local -a prefix=()
+  if test -n "${CONTENT_LENGTH:-}"; then
+    prefix=( ~/bin/python2 )
+  fi
+
+  PYTHONPATH=$REPO_ROOT "${prefix[@]}" $REPO_ROOT/soil/web.py "$@"
 }
 
 # Bug fix for another race:
@@ -129,7 +137,7 @@ cleanup-status-api() {
   popd
 }
 
-event-job-done() {
+_event-job-done() {
   ### "Server side" handler
 
   local prefix=$1  # 'github-' or 'srht-'
@@ -139,6 +147,26 @@ event-job-done() {
 
   # note: we could speed jobs up by doing this separately?
   cleanup-jobs-index $prefix false
+}
+
+event-job-done() {
+  ### Hook for wwup.cgi to execute
+
+  # As long as the CGI script shows output, I don't think we need any wrappers
+  # The scripts are written so we don't need to 'cd'
+  _event-job-done "$@" 
+  return
+
+  # This is the directory that soil/web-init.sh deploys to, and it's shaped
+  # like the Oils repo
+  cd ~/soil-web
+
+  # Figure out why exit code is 127
+  # Oh probably because it's not started in the home dir?
+
+  # TODO: I guess wwup.cgi can buffer this entire response or something?
+  # You POST and you get of status, stdout, stderr back?
+  _event-job-done "$@" > ~/event-job-done.$$.log 2>&1
 }
 
 #
@@ -180,6 +208,15 @@ local-test() {
 hello() {
   echo "hi from $0"
   echo
+
+  echo ARGS
+  local i=0
+  for arg in "$@"; do
+    echo "[$i] $arg"
+    i=$(( i + 1 ))
+  done
+  echo
+    
   whoami
   hostname
 }

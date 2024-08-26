@@ -15,5 +15,14 @@ keygen() {
   ssh-keygen -t rsa -b 4096 -C "$comment" -f $file
 }
 
+enable-fast-subset() {
+  git mv .github/workflows/all-builds.yml{,_DISABLED}
+  git mv .github/workflows/fast-subset.yml{_DISABLED,}
+}
+
+disable-fast-subset() {
+  git mv .github/workflows/all-builds.yml{_DISABLED,}
+  git mv .github/workflows/fast-subset.yml{,_DISABLED}
+}
 
 "$@"

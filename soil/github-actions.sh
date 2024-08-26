@@ -27,6 +27,9 @@ publish-html-assuming-ssh-key() {
     # Recommended by the docs
     export JOB_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
+    # Note $GITHUB_RUN_NUMBER is a different sequence for all-builds.yml vs.
+    # fast-subset.yml
+
     soil/web-worker.sh deploy-job-results 'github-' $GITHUB_RUN_NUMBER $job_name \
       JOB_URL \
       GITHUB_WORKFLOW	\

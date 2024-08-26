@@ -1,0 +1,131 @@
+# Soil wrapped in Github Actions.
+
+name: oil
+on:
+  # We are running into the pitfall here
+  # https://fusectore.dev/2022/09/25/github-actions-pitfalls.html
+  # We only run for members now, not external contributors
+  # But I think their solution of push: branches: [soil-staging] would prevent
+  # us from testing dev / feature branches.  We would have to create a PR
+  # first?
+  pull_request:
+  # Run on PR merge to soil-staging, so that it will get auto-merged to master
+  push:
+    branches: ['soil-staging']
+  #push:
+  #  branches: ['soil-staging', 'dev*', 'jesse*']
+  #
+  # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
+  # I think that is sufficient for dev branches.
+
+  # don't run CI on master because we test soil-staging and auto-merge.
+  #push:
+  #  branches-ignore:
+  #    - master
+env:
+  # Only set for PR runs.
+  # https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#pull_request
+  GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
+  GITHUB_PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+  GITHUB_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+jobs:
+  # The perf tool depends on a specific version of a kernel, so run it outside
+  # a container.
+  raw-vm:
+    runs-on: ubuntu-22.04
+    env:
+      REPO_ROOT: ${{ github.workspace }}
+    needs: ['cpp-tarball']
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: raw-vm
+        run: |
+          soil/worker.sh JOB-raw-vm
+
+      - name: publish-html
+        env:
+          # for deploying to dashboard
+          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
+        run: |
+          soil/github-actions.sh publish-and-exit raw-vm T
+
+  dummy:
+    runs-on: ubuntu-22.04
+    # container: oilshell/soil-dummy
+    env:
+      REPO_ROOT: ${{ github.workspace }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+        # UPGRADED to podman
+      - name: dummy
+        run: |
+          soil/github-actions.sh run-job dummy podman
+
+      - name: publish-html
+        env:
+          # for deploying to dashboard
+          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
+        run: |
+          soil/github-actions.sh publish-and-exit dummy T
+
+  cpp-tarball:
+    runs-on: ubuntu-22.04
+    env:
+      REPO_ROOT: ${{ github.workspace }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Fix kernel mmap rnd bits
+      # Asan in llvm 14 provided in ubuntu 22.04 is incompatible with
+      # high-entropy ASLR in much newer kernels that GitHub runners are
+      # using leading to random crashes: https://reviews.llvm.org/D148280
+        run: sudo sysctl vm.mmap_rnd_bits=28
+
+      - name: cpp-tarball
+        run: |
+          soil/github-actions.sh run-job cpp-tarball
+
+      # can't be done inside container
+      - name: publish-cpp-tarball
+        env:
+          # auth for web server
+          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
+        run: |
+          soil/github-actions.sh publish-cpp-tarball
+
+      - name: publish-html
+        env:
+          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
+        run: |
+          soil/github-actions.sh publish-and-exit cpp-tarball T
+
+  maybe-merge-to-master:
+    runs-on: ubuntu-22.04
+    env:
+      REPO_ROOT: ${{ github.workspace }}
+    # List of tasks to wait on.  Copied from soil/worker.sh list-jobs
+    needs: ['dummy', 'cpp-tarball', 'raw-vm']
+    #needs: ['dummy', 'pea', 'other-tests']
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: maybe-merge
+        env:
+          SOIL_GITHUB_API_TOKEN: ${{ secrets.SOIL_GITHUB_API_TOKEN }}
+        run: |
+          # STUBBED OUT
+          soil/worker.sh JOB-dummy
+
+      - name: publish-html
+        env:
+          # for deploying to dashboard
+          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
+        run: |
+          # NOTE: does not publish to status API
+          soil/github-actions.sh publish-and-exit maybe-merge
