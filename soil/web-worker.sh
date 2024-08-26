@@ -336,37 +336,55 @@ publish-cpp-tarball() {
   # 2. Get the OLDEST commit dates, e.g. all except for 50
   # 3. Delete all commit hash dirs not associated with them
 
-  # Fix subtle problem here !!!
-  shopt -s inherit_errexit
+  if true; then
+    local commit_hash
+    commit_hash=$(cat _tmp/soil/commit-hash.txt)
 
-  local git_commit_dir
-  git_commit_dir=$(git-commit-dir "$prefix")
+    local tar=_release/oils-for-unix.tar 
+    curl --include \
+      --form 'payload-type=github-jobs' \
+      --form "subdir=git-$commit_hash" \
+      --form "file1=@$tar" \
+      $WWUP_URL
 
-  my-ssh $SOIL_USER_HOST "mkdir -p $git_commit_dir"
+    log 'Tarball:'
+    log ''
+    log "http://$SOIL_HOST/github-jobs/git-$commit_hash/"
 
-  # Do JSON last because that's what 'list-json' looks for
+  else
+    # Fix subtle problem here !!!
+    shopt -s inherit_errexit
 
-  local tar=_release/oils-for-unix.tar 
+    local git_commit_dir
+    git_commit_dir=$(git-commit-dir "$prefix")
 
-  # Permission denied because of host/guest issue
-  #local tar_gz=$tar.gz
-  #gzip -c $tar > $tar_gz
+    my-ssh $SOIL_USER_HOST "mkdir -p $git_commit_dir"
 
-  # Avoid race condition
-  # Crappy UUID: seconds since epoch, plus PID
-  local timestamp
-  timestamp=$(date +%s)
+    # Do JSON last because that's what 'list-json' looks for
 
-  local temp_name="tmp-$timestamp-$$.tar"
+    local tar=_release/oils-for-unix.tar 
 
-  my-scp $tar "$SOIL_USER_HOST:$git_commit_dir/$temp_name"
+    # Permission denied because of host/guest issue
+    #local tar_gz=$tar.gz
+    #gzip -c $tar > $tar_gz
 
-  my-ssh $SOIL_USER_HOST \
-    "mv -v $git_commit_dir/$temp_name $git_commit_dir/oils-for-unix.tar"
+    # Avoid race condition
+    # Crappy UUID: seconds since epoch, plus PID
+    local timestamp
+    timestamp=$(date +%s)
 
-  log 'Tarball:'
-  log ''
-  log "http://$git_commit_dir"
+    local temp_name="tmp-$timestamp-$$.tar"
+
+    my-scp $tar "$SOIL_USER_HOST:$git_commit_dir/$temp_name"
+
+    my-ssh $SOIL_USER_HOST \
+      "mv -v $git_commit_dir/$temp_name $git_commit_dir/oils-for-unix.tar"
+
+    log 'Tarball:'
+    log ''
+    log "http://$git_commit_dir"
+  fi
+
 }
 
 remote-event-job-done() {
