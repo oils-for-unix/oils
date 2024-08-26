@@ -31,7 +31,7 @@ How to test changes to this file:
 
   $ soil/web-init.sh deploy-code
   $ soil/web-worker.sh remote-rewrite-jobs-index github- ${GITHUB_RUN_NUMBER}
-  $ soil/web-worker.sh remote-rewrite-jobs-index srht- git-${commit_hash}
+  $ soil/web-worker.sh remote-rewrite-jobs-index sourcehut- git-${commit_hash}
 
 """
 from __future__ import print_function
@@ -347,7 +347,7 @@ def ParseJobs(stdin):
       meta['sourcehut-commit-link'] = commit_link
 
       # sourcehut doesn't have RUN ID, so we're in
-      # srht-jobs/git-ab01cd/index.html, and need to find srht-jobs/123/foo.wwz
+      # sourcehut-jobs/git-ab01cd/index.html, and need to find sourcehut-jobs/123/foo.wwz
       run_url_prefix = '../%s/' % sourcehut_job_id
 
     # For Github, we construct $JOB_URL in soil/github-actions.sh
@@ -670,7 +670,7 @@ def ByGithubRun(row):
 def main(argv):
   action = argv[1]
 
-  if action == 'srht-index':
+  if action == 'sourcehut-index':
     index_out = argv[2]
     run_index_out = argv[3]
     run_id = argv[4]  # looks like git-0101abab
@@ -743,7 +743,7 @@ def main(argv):
     #   git-$hash/
     #     oils-for-unix.tar
     #
-    # srht-jobs/
+    # sourcehut-jobs/
     #   1234/
     #     cpp-tarball.{json,wwz,tsv}
     #   1235/

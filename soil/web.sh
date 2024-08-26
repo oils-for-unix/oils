@@ -140,7 +140,7 @@ cleanup-status-api() {
 _event-job-done() {
   ### "Server side" handler
 
-  local prefix=$1  # 'github-' or 'srht-'
+  local prefix=$1  # 'github-' or 'sourcehut-'
   local run_id=$2  # $GITHUB_RUN_NUMBER or git-$hash
 
   rewrite-jobs-index $prefix $run_id

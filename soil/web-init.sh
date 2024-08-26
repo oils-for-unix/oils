@@ -53,12 +53,14 @@ home-page() {
 
       <tr>
         <td>
-          <a href="srht-jobs/">sr.ht</a> 
+          <a href="sourcehut-jobs/">sr.ht</a> 
         </td>
         <td>
           <a href="https://builds.sr.ht/~andyc">builds.sr.ht</a>
         </td>
-        <td></td>
+        <td>
+          <a href="https://github.com/oils-for-unix/oils/tree/master/.builds">.builds</a>
+        </td>
       </tr>
 
       <tr>
@@ -68,9 +70,14 @@ home-page() {
         <td>
           <a href="https://github.com/oilshell/oil/actions/workflows/all-builds.yml">github.com</a>
         </td>
-        <td></td>
+        <td>
+          <a href="https://github.com/oils-for-unix/oils/tree/master/.github/workflows">.github/workflows</a>
+        </td>
       </tr>
+EOF
 
+  if false; then
+    echo '
       <tr>
         <td>
           <a href="circle-jobs/">Circle CI</a> 
@@ -100,7 +107,10 @@ home-page() {
         </td>
         <td></td>
       </tr>
+      '
+  fi
 
+  echo '
     </table>
 
     <h1>Links</h1>
@@ -113,7 +123,7 @@ home-page() {
 
   </body>
 </html>
-EOF
+'
 }
 
 deploy-data() {
@@ -125,7 +135,7 @@ deploy-data() {
 
   # TODO: Better to put HTML in www/$host/uuu/github-jobs, etc.
   ssh $user@$host mkdir -v -p \
-    $host_dir/{travis-jobs,srht-jobs,github-jobs,circle-jobs,cirrus-jobs,web,status-api/github} \
+    $host_dir/{travis-jobs,sourcehut-jobs,github-jobs,circle-jobs,cirrus-jobs,web,status-api/github} \
     $host_dir/web/table
 
   home-page "$host" > _tmp/index.html

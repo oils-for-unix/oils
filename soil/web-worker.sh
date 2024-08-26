@@ -35,7 +35,7 @@ source web/table/html.sh  # table-sort-{begin,end}
 #       3619/  # $GITHUB_RUN_NUMBER
 #         dev-minimal.wwz
 #         cpp-small.wwz
-#     srht-jobs/
+#     sourcehut-jobs/
 #       index.html
 #       22/  # $JOB_ID
 #         dev-minimal.wwz
@@ -114,7 +114,7 @@ scp-status-api() {
 
 scp-results() {
   # could also use Travis known_hosts addon?
-  local prefix=$1  # srht- or ''
+  local prefix=$1  # sourcehut- or ''
   shift
 
   my-scp "$@" "$SOIL_USER_HOST:$SOIL_REMOTE_DIR/${prefix}jobs/"
@@ -323,7 +323,7 @@ publish-cpp-tarball() {
 
   # Example of dir structure we need to cleanup:
   #
-  # srht-jobs/
+  # sourcehut-jobs/
   #   git-$hash/
   #     index.html
   #     oils-for-unix.tar
@@ -336,7 +336,10 @@ publish-cpp-tarball() {
   # 2. Get the OLDEST commit dates, e.g. all except for 50
   # 3. Delete all commit hash dirs not associated with them
 
-  if true; then
+  if false; then
+    # Note: don't upload code without auth
+    # TODO: Move it to a different dir.
+
     local commit_hash
     commit_hash=$(cat _tmp/soil/commit-hash.txt)
 
@@ -390,7 +393,7 @@ publish-cpp-tarball() {
 remote-event-job-done() {
   ### "Client side" handler: a job calls this when it's done
 
-  local prefix=$1  # 'github-' or 'srht-'
+  local prefix=$1  # 'github-' or 'sourcehut-'
   local run_id=$2  # $GITHUB_RUN_NUMBER or git-$hash
 
   log "remote-event-job-done $prefix $run_id"
