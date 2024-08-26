@@ -93,8 +93,6 @@ jobs:
           soil/github-actions.sh publish-cpp-tarball
 
       - name: publish-html
-        env:
-          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
         run: |
           soil/github-actions.sh publish-and-exit cpp-tarball T
 
