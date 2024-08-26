@@ -45,9 +45,6 @@ jobs:
           soil/worker.sh JOB-raw-vm
 
       - name: publish-html
-        env:
-          # for deploying to dashboard
-          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
         run: |
           soil/github-actions.sh publish-and-exit raw-vm T
 
@@ -85,9 +82,6 @@ jobs:
           soil/github-actions.sh run-job dummy podman
 
       - name: publish-html
-        env:
-          # for deploying to dashboard
-          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
         run: |
           soil/github-actions.sh publish-and-exit dummy T
 
@@ -412,9 +406,6 @@ jobs:
           soil/worker.sh JOB-maybe-merge
 
       - name: publish-html
-        env:
-          # for deploying to dashboard
-          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
         run: |
           # NOTE: does not publish to status API
           soil/github-actions.sh publish-and-exit maybe-merge

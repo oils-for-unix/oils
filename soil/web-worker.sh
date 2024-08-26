@@ -352,7 +352,7 @@ publish-cpp-tarball() {
 
     log 'Tarball:'
     log ''
-    log "http://$SOIL_HOST/github-jobs/git-$commit_hash/"
+    log "http://$SOIL_HOST/code/github-jobs/git-$commit_hash/"
 
   else
     # Fix subtle problem here !!!

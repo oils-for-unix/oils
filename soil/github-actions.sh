@@ -88,7 +88,7 @@ load-secret-key() {
 publish-html() {
   ### Publish job HTML, and optionally status-api
 
-  load-secret-key
+  #load-secret-key
 
   set -x
   # $1 can be the job name

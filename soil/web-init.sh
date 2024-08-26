@@ -53,7 +53,7 @@ home-page() {
 
       <tr>
         <td>
-          <a href="sourcehut-jobs/">sr.ht</a> 
+          <a href="uuu/sourcehut-jobs/">sr.ht</a> 
         </td>
         <td>
           <a href="https://builds.sr.ht/~andyc">builds.sr.ht</a>
@@ -65,7 +65,7 @@ home-page() {
 
       <tr>
         <td>
-          <a href="github-jobs/">Github Actions</a> 
+          <a href="uuu/github-jobs/">Github Actions</a> 
         </td>
         <td>
           <a href="https://github.com/oilshell/oil/actions/workflows/all-builds.yml">github.com</a>
@@ -117,7 +117,10 @@ EOF
 
     <ul>
       <li>
-        <a href="status-api/github/">static-api/github/</a>
+        <a href="code/github-jobs/">code/github-jobs/</a> - tarballs at every commit
+      </li>
+      <li>
+        <a href="uuu/status-api/github/">uuu/static-api/github/</a> - files used by the CI
       </li>
     </ul>
 
@@ -130,20 +133,20 @@ deploy-data() {
   local user=${1:-$SOIL_USER}
   local host=${2:-$SOIL_HOST}
 
-  # www/ prefix for Mythic beasts
-  local host_dir=$SOIL_REMOTE_DIR
+  local host_dir=$SOIL_REMOTE_DIR/uuu
 
   # TODO: Better to put HTML in www/$host/uuu/github-jobs, etc.
   ssh $user@$host mkdir -v -p \
-    $host_dir/{travis-jobs,sourcehut-jobs,github-jobs,circle-jobs,cirrus-jobs,web,status-api/github} \
+    $host_dir/{sourcehut-jobs,github-jobs,status-api/github} \
     $host_dir/web/table
 
-  home-page "$host" > _tmp/index.html
-
   # note: duplicating CSS
-  scp _tmp/index.html $user@$host:$host_dir/
   scp web/{base.css,soil.css,ajax.js} $user@$host:$host_dir/web
   scp web/table/*.{js,css} $user@$host:$host_dir/web/table
+
+  home-page "$host" > _tmp/index.html
+  # Home page goes in the domain root
+  scp _tmp/index.html $user@$host:$SOIL_REMOTE_DIR/
 }
 
 soil-web-manifest() {

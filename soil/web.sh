@@ -48,9 +48,9 @@ rewrite-jobs-index() {
   local prefix=$1
   local run_id=$2   # pass GITHUB_RUN_NUMBER or git-$hash
 
-  local dir=$SOIL_HOST_DIR/${prefix}jobs
+  local dir=$SOIL_HOST_DIR/uuu/${prefix}jobs
 
-  log "soil-web: Rewriting ${prefix}jobs/index.html"
+  log "soil-web: Rewriting uuu/${prefix}jobs/index.html"
 
   # Fix for bug #1169: don't create the temp file on a different file system,
   # which /tmp may be.
@@ -82,7 +82,7 @@ cleanup-jobs-index() {
   local prefix=$1
   local dry_run=${2:-true}
 
-  local dir=$SOIL_HOST_DIR/${prefix}jobs
+  local dir=$SOIL_HOST_DIR/uuu/${prefix}jobs
 
   # Pass it all JSON, and then it figures out what files to delete (TSV, etc.)
   case $dry_run in
@@ -120,7 +120,7 @@ cleanup-status-api() {
 
   local dry_run=${1:-true}
 
-  local dir=$SOIL_HOST_DIR/status-api/github
+  local dir=$SOIL_HOST_DIR/uuu/status-api/github
 
   pushd $dir
   case $dry_run in
@@ -137,7 +137,7 @@ cleanup-status-api() {
   popd
 }
 
-_event-job-done() {
+event-job-done() {
   ### "Server side" handler
 
   local prefix=$1  # 'github-' or 'sourcehut-'
@@ -149,7 +149,7 @@ _event-job-done() {
   cleanup-jobs-index $prefix false
 }
 
-event-job-done() {
+DISABLED-event-job-done() {
   ### Hook for wwup.cgi to execute
 
   # As long as the CGI script shows output, I don't think we need any wrappers
