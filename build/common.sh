@@ -14,8 +14,11 @@ set -o nounset
 set -o errexit
 #eval 'set -o pipefail'
 
+#LLVM_VERSION=18.1.8
+LLVM_VERSION=14.0.0
+
 # New version is slightly slower -- 13 seconds vs. 11.6 seconds on oils-for-unix
-readonly CLANG_DIR_RELATIVE='../oil_DEPS/clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04'
+readonly CLANG_DIR_RELATIVE="../oil_DEPS/clang+llvm-$LLVM_VERSION-x86_64-linux-gnu-ubuntu-18.04"
 
 CLANG_DIR_1=$REPO_ROOT/$CLANG_DIR_RELATIVE
 CLANG_DIR_FALLBACK=~/git/oilshell/oil/$CLANG_DIR_RELATIVE

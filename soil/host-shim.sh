@@ -27,12 +27,12 @@ live-image-tag() {
       echo 'v-2023-10-05'
       ;;
     (wild)
-      # rebuild with curl, then g++
-      echo 'v-2023-10-05a'
+      # rebuild with ca-certificates
+      echo 'v-2024-08-26'
       ;;
     (bloaty)
-      # new image and task
-      echo 'v-2024-06-08'
+      # rebuild with ca-certificates
+      echo 'v-2024-08-26'
       ;;
     (benchmarks)
       # freshen up

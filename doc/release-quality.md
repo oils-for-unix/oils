@@ -66,7 +66,7 @@ This is a supplement to the [main release page](index.html).
 - [osh-usage](more-tests.wwz/suite-logs/osh-usage.txt).  Misc tests of the `osh` binary.
 - [tools-deps](more-tests.wwz/suite-logs/tools-deps.txt).  Tests for a subcommand in
   progress.
-- [syscall](more-tests.wwz/syscall/-wwz-index) How many syscalls do we make,
+- [syscall](more-tests.wwz/syscall/-wwz-index). How many syscalls do we make,
   and how many processes do we start?
 - [ysh-ify Tests](more-tests.wwz/suite-logs/ysh-ify.txt).  Test OSH to YSH
   translation.

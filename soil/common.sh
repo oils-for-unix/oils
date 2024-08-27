@@ -22,9 +22,9 @@ dump-env() {
 
 if true; then
   readonly SOIL_USER='travis_admin'
-  readonly SOIL_HOST='travis-ci.oilshell.org'
-  readonly SOIL_HOST_DIR=~/travis-ci.oilshell.org  # used on server
-  readonly SOIL_REMOTE_DIR=travis-ci.oilshell.org  # used on client
+  readonly SOIL_HOST='ci.oilshell.org'
+  readonly SOIL_HOST_DIR=~/ci.oilshell.org  # used on server
+  readonly SOIL_REMOTE_DIR=ci.oilshell.org  # used on client
 elif false; then
   readonly SOIL_USER='oils'
   readonly SOIL_HOST='mb.oils.pub'
@@ -39,6 +39,8 @@ else
 fi
 
 readonly SOIL_USER_HOST="$SOIL_USER@$SOIL_HOST"
+
+readonly WWUP_URL="https://$SOIL_HOST/uuu/wwup.cgi"
 
 html-head() {
   # TODO: Shebang line should change too
@@ -73,7 +75,7 @@ git-commit-dir() {
   local commit_hash
   commit_hash=$(cat _tmp/soil/commit-hash.txt)
 
-  local git_commit_dir="$SOIL_REMOTE_DIR/${prefix}jobs/git-$commit_hash"
+  local git_commit_dir="$SOIL_REMOTE_DIR/code/${prefix}jobs/git-$commit_hash"
 
   echo $git_commit_dir
 }
@@ -85,8 +87,8 @@ git-commit-url() {
   local commit_hash
   commit_hash=$(cat _tmp/soil/commit-hash.txt)
 
-  # https:// not working on Github Actions?
-  local url="http://$SOIL_HOST/${prefix}jobs/git-$commit_hash"
+  # https:// not working on Github Actions because of cert issues?
+  local url="https://$SOIL_HOST/code/${prefix}jobs/git-$commit_hash"
 
   echo $url
 }

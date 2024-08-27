@@ -1,6 +1,5 @@
-
 ## compare_shells: bash dash mksh zsh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 # Note: zsh passes most of these tests too
 
@@ -145,9 +144,15 @@ no
 no
 ## END
 
-#### case with single byte LC_ALL=C
+#### matching the byte 0xff against empty string - DISABLED - CI only bug?
 
-LC_ALL=C
+case $SH in *osh) echo soil-ci-buster-slim-bug; exit ;; esac
+
+# This doesn't make a difference on my local machine?
+# Is the underlying issue how libc fnmatch() respects Unicode?
+
+#LC_ALL=C
+#LC_ALL=C.UTF-8
 
 c=$(printf \\377)
 
@@ -159,8 +164,48 @@ case $c in
   "$c") echo b ;;
 esac
 
+case "$c" in
+  '')   echo a ;;
+  "$c") echo b ;;
+esac
+
 ## STDOUT:
 b
+b
+## END
+
+## OK osh STDOUT:
+soil-ci-buster-slim-bug
+## END
+
+#### matching every byte against itself
+
+# Why does OSH on the CI machine behave differently?  Probably a libc bug fix
+# I'd guess?
+
+sum=0
+
+# note: NUL byte crashes OSH!
+for i in $(seq 1 255); do
+  hex=$(printf '%x' "$i")
+  c="$(printf "\\x$hex")"  # command sub quirk: \n or \x0a turns into empty string
+
+  #echo -n $c | od -A n -t x1
+  #echo ${#c}
+
+  case "$c" in
+    # Newline matches empty string somehow.  All shells agree.  I guess
+    # fnmatch() ignores trailing newline?
+    #'')   echo "[empty i=$i hex=$hex c=$c]" ;;
+    "$c") sum=$(( sum + 1 )) ;;
+    *)   echo "[bug i=$i hex=$hex c=$c]" ;;
+  esac
+done
+
+echo sum=$sum
+
+## STDOUT:
+sum=255
 ## END
 
 #### \(\) in pattern (regression)

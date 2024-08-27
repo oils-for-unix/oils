@@ -29,7 +29,7 @@ Continuous testing on many platforms.
           cpp-small.{tsv,json}
         commits/
 
-      srht-jobs/
+      sourcehut-jobs/
         index.html
         raw.html
         345/  # JOB_ID
@@ -106,7 +106,7 @@ TODO:
     - github-jobs/tmp-$$.{index,raw}.html - shell script does mv
     - github-jobs/commits/tmp-$$.$HASH.html - shell script does mv
       - this is based on github-jobs/$RUN/*.tsv -- similar to format-wwz-index
-      - or srht-jobs/*/*.tsv and filtered by commit
+      - or sourcehut-jobs/*/*.tsv and filtered by commit
     - github-jobs/tmp-$$.remove.txt - shell script does rm
   - status-api/github-jobs/$RUN/$job -- PUT this
 

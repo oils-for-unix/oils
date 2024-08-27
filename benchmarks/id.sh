@@ -73,6 +73,8 @@ _dump-if-exists() {
 #
 
 dump-shell-id() {
+  ### Write files that identify the shell
+
   local sh_path=$1
   local out_dir=$2
 
@@ -199,6 +201,8 @@ publish-shell-id() {
 # How to calculate the hash though?
 
 dump-host-id() {
+  ### Write files that identify the host
+
   local out_dir=${1:-_tmp/host-id/$(hostname)}
 
   mkdir -p $out_dir
@@ -287,6 +291,8 @@ publish-host-id() {
 # 
 
 dump-compiler-id() {
+  ### Write files that identify the compiler
+
   local cc=$1  # path to the compiler
   local out_dir=${2:-_tmp/compiler-id/$(basename $cc)}
 
@@ -344,7 +350,7 @@ publish-compiler-id() {
 # is recorded.
 
 shell-provenance-2() {
-  ### Write to _tmp/provenance.{txt,tsv} and $out_dir/{shell,host-id}
+  ### Write to _tmp/provenance.{txt,tsv} and $out_dir/{shell-id,host-id}
 
   local maybe_host=$1  # if it exists, it overrides the host
   local job_id=$2
@@ -353,8 +359,6 @@ shell-provenance-2() {
 
   # log "*** shell-provenance"
 
-  mkdir -p _tmp/provenance
-
   local host_name
   if test -n "$maybe_host"; then  # label is often 'no-host'
     host_name=$maybe_host
@@ -362,17 +366,18 @@ shell-provenance-2() {
     host_name=$(hostname)
   fi
 
-  log "*** $maybe_host $host_name $job_id $out_dir"
+  log "*** shell-provenance-2 $maybe_host $host_name $job_id $out_dir"
 
   local tmp_dir=_tmp/prov-tmp/$host_name
   dump-host-id $tmp_dir
 
   local host_hash
   host_hash=$(publish-host-id $tmp_dir "$out_dir/host-id")
+
   local shell_hash
 
   local out_txt=_tmp/provenance.txt  # Legacy text file
-  echo -n '' > $out_txt  # trunacte, no header
+  echo -n '' > $out_txt  # truncated, no header
 
   local out_tsv=_tmp/provenance.tsv
   tsv-row job_id host_name host_hash sh_path shell_hash > $out_tsv
@@ -400,40 +405,53 @@ shell-provenance-2() {
   log "Wrote $out_txt and $out_tsv"
 }
 
-compiler-provenance() {
-  local job_id
-  job_id=$(print-job-id)
+compiler-provenance-2() {
+  # Write to _tmp/compiler-provenance.txt and $out_dir/{compiler-id,host-id}
 
-  local host
-  host=$(hostname)
+  local maybe_host=$1  # if it exists, it overrides the host
+  local job_id=$2
+  local out_dir=$3
 
-  # Filename
-  local out=_tmp/provenance/${host}.${job_id}.compiler-provenance.txt
+  local host_name
+  if test -n "$maybe_host"; then  # label is often 'no-host'
+    host_name=$maybe_host
+  else
+    host_name=$(hostname)
+  fi
 
-  local tmp_dir=_tmp/host-id/$host
+  log "*** compiler-provenance-2 $maybe_host $host_name $job_id $out_dir"
+
+  local tmp_dir=_tmp/prov-tmp/$host_name
   dump-host-id $tmp_dir
 
   local host_hash
-  host_hash=$(publish-host-id $tmp_dir)
+  host_hash=$(publish-host-id $tmp_dir "$out_dir/host-id")
 
   local compiler_hash
 
-  # gcc is assumed to be in the $PATH.
+  local out_txt=_tmp/compiler-provenance.txt  # Legacy text file
+  echo -n '' > $out_txt  # truncated, no header
+
+  local out_tsv=_tmp/compiler-provenance.tsv
+  tsv-row job_id host_name host_hash compiler_path compiler_hash > $out_tsv
+
   for compiler_path in $(which gcc) $CLANG; do
     local name=$(basename $compiler_path)
 
-    tmp_dir=_tmp/compiler-id/$name
+    tmp_dir=_tmp/prov-tmp/$name
     dump-compiler-id $compiler_path $tmp_dir
 
-    compiler_hash=$(publish-compiler-id $tmp_dir)
+    compiler_hash=$(publish-compiler-id $tmp_dir "$out_dir/compiler-id")
 
-    echo "$job_id $host $host_hash $compiler_path $compiler_hash"
-  done > $out
+    echo "$job_id $host_name $host_hash $compiler_path $compiler_hash" \
+      >> $out_txt
 
-  log "Wrote $out"
+    tsv-row \
+      "$job_id" "$host_name" "$host_hash" "$compiler_path" "$compiler_hash" \
+      >> $out_tsv
+  done
 
-  # Return value used in command sub
-  echo $out
+  log "Wrote $out_txt and $out_tsv"
 }
 
 out-param() {

@@ -18,7 +18,7 @@
 #
 # (3) Push image and common, including latest
 #
-#     deps/images.sh push cpp v-2024-06-08
+#     deps/images.sh push soil-cpp-small v-2024-06-08
 #
 #     deps/images.sh push soil-common v-2024-06-08
 #     sudo docker tag oilshell/soil-common:{v-2024-06-08,latest}
@@ -47,7 +47,7 @@ source deps/podman.sh
 DOCKER=${DOCKER:-docker}
 
 # Build with this tag
-readonly LATEST_TAG='v-2024-06-09b'
+readonly LATEST_TAG='v-2024-08-26'
 
 # BUGS in Docker.
 #
@@ -185,6 +185,8 @@ for name in python python2 python3; do
 done
 
 echo PATH=$PATH
+
+curl https://ci.oilshell.org/
 '
 
   # Python 2.7 build/prepare.sh requires this

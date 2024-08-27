@@ -305,6 +305,8 @@ EOF
 cpp-coverage-tasks() {
   # dep notes: hnode_asdl.h required by expr_asdl.h in mycpp/examples
 
+  # TODO: make this work
+#tar-compile             benchmarks/ovm-build.sh soil-run                -
   cat <<EOF
 os-info                 soil/diagnose.sh os-info    -
 dump-env                soil/diagnose.sh dump-env   -
