@@ -453,14 +453,16 @@ try { pp test_ (b'\y00a\y01'.split(/ 'a' /)) } # Cannot split by eggex when str 
 echo status=$[_error.code]
 try { pp test_ (b'abc'.split(/ space* /))    } # Eggex cannot accept empty string
 echo status=$[_error.code]
-try { pp test_ (b'abc'.split(/ dot* /))      } # ...even without a zero-width match
+try { pp test_ (b'abc'.split(/ dot* /))      } # But in some cases the input doesn't cause an
+                                               # infinite loop, so we actually allow it!
 echo status=$[_error.code]
 ## STDOUT:
 status=3
 status=3
 status=3
 status=3
-status=3
+(List)   ["",""]
+status=0
 ## END
 
 #### Str => split(), non-ascii
