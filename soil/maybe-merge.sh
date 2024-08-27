@@ -125,7 +125,7 @@ soil-run() {
   mkdir -p $dir
 
   # These tiny files are written by each Soil task
-  local url_base="http://$SOIL_HOST/uuu/status-api/github/$run_id"
+  local url_base="https://$SOIL_HOST/uuu/status-api/github/$run_id"
 
   #local jobs='dummy pea other-tests'  # minimal set of jobs to wait for
   local jobs=$(soil/worker.sh list-jobs)

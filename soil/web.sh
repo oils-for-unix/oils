@@ -213,6 +213,13 @@ hello() {
   local i=0
   for arg in "$@"; do
     echo "[$i] $arg"
+
+    # For testing wwup.cgi
+    if test "$arg" = 'FAIL'; then
+      echo 'failing early'
+      return 42
+    fi
+
     i=$(( i + 1 ))
   done
   echo

@@ -44,7 +44,7 @@ source web/table/html.sh  # table-sort-{begin,end}
 
 sshq() {
   # Don't need commands module as I said here!
-  # http://www.oilshell.org/blog/2017/01/31.html
+  # https://www.oilshell.org/blog/2017/01/31.html
   #
   # This is Bernstein chaining through ssh.
 
@@ -351,7 +351,7 @@ publish-cpp-tarball() {
 
     log 'Tarball:'
     log ''
-    log "http://$SOIL_HOST/code/github-jobs/git-$commit_hash/"
+    log "https://$SOIL_HOST/code/github-jobs/git-$commit_hash/"
 
   else
     # Fix subtle problem here !!!
@@ -384,7 +384,7 @@ publish-cpp-tarball() {
 
     log 'Tarball:'
     log ''
-    log "http://$git_commit_dir"
+    log "https://$git_commit_dir"
   fi
 
 }
