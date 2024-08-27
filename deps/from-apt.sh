@@ -149,6 +149,7 @@ wild() {
     python2-dev
     libreadline-dev
     curl  # wait for cpp-tarball
+    ca-certificates  # curl https - could do this outside container
   )
 
   apt-install "${packages[@]}"
@@ -281,6 +282,7 @@ bloaty() {
   local -a packages=(
     g++  # for C++ tarball
     curl  # wait for cpp-tarball
+    ca-certificates  # curl https - could do this outside container
   )
 
   apt-install "${packages[@]}"
