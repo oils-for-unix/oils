@@ -261,8 +261,13 @@ The `%start` or `^` metacharacter will only match when `pos` is zero.
 Split a string by a `Str` separator `sep` into a `List` of chunks.
 
     pp ('a;b;;c'.split(';'))       # => ["a", "b", "", "c"]
-    pp ('a<>b<>c<d'.split('<>'))   # => ["a","b","c<d"]
+    pp ('a<>b<>c<d'.split('<>'))   # => ["a", "b", "c<d"]
     pp ('🌞🌝🌞🌝🌞'.split('🌝'))  # => ["🌞", "🌞", "🌞"]
+
+Or split using an `Eggex`.
+
+    pp ('a b  cd'.split(/ space+ /))   # => ["a", "b", "cd"]
+    pp ('a,b;c'.split(/ ',' | ';' /))  # => ["a", "b", "c"]
 
 Optionally, provide a `count` to split on `sep` at most `count` times. A
 negative `count` will split on all occurrences of `sep`.
@@ -270,9 +275,16 @@ negative `count` will split on all occurrences of `sep`.
     pp ('a;b;;c'.split(';', count=2))   # => ["a", "b", ";c"]
     pp ('a;b;;c'.split(';', count=-1))  # => ["a", "b", "", "c"]
 
-Passing an empty `sep` will result in an error:
+Passing an empty `sep` will result in an error.
 
-    pp test_ ('abc'.split(''))            # => Error: Sep cannot be ""
+    pp ('abc'.split(''))  # => Error: Sep cannot be ""
+
+Splitting by an `Eggex` has some limitations:
+
+- If a `search()` results in an empty string match, eg.
+  `'abc'.split(/ space* /)`, then we raise an error to avoid an infinite loop.
+- The string to split cannot contain NUL bytes because we use the libc regex
+  engine.
 
 ## List
 
