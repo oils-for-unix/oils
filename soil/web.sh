@@ -24,12 +24,17 @@ soil-web() {
   # We may be executed by a wwup.cgi on the server, which doesn't have
   # PATH=~/bin, and the shebang is /usr/bin/env python2
 
-  local -a prefix=()
-  if test -n "${CONTENT_LENGTH:-}"; then
-    prefix=( ~/bin/python2 )
+  # OpalStack doesn't need this
+  # Also it still uses bash 4.2 with the empty array bug!
+
+  local py2=~/bin/python2
+  local prefix=''
+  if test -f $py2; then
+    prefix=$py2
   fi
 
-  PYTHONPATH=$REPO_ROOT "${prefix[@]}" $REPO_ROOT/soil/web.py "$@"
+  # Relies on empty elision of $prefix
+  PYTHONPATH=$REPO_ROOT $prefix $REPO_ROOT/soil/web.py "$@"
 }
 
 # Bug fix for another race:
