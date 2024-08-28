@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh zsh ash
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 
 #### echo keyword
 echo done
@@ -387,4 +387,19 @@ yes
 ## END
 
 ## N-I dash/ash STDOUT:
+## END
+
+#### autotools as_fn_arith bug in configure
+
+# Causes 'grep -e' check to infinite loop.
+# Reduced from a configure script.
+
+as_fn_arith() {
+  as_val=$(( $* ))
+}
+
+as_fn_arith 0 + 1
+echo as_val=$as_val
+## STDOUT:
+as_val=1
 ## END
