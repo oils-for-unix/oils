@@ -141,11 +141,11 @@ proc test-part() {
   for s in (PART_CASES) {
     js-decode-part $s | json read (&js)
     echo 'JS'
-    pp line (js)
+    pp test_ (js)
 
     echo 'YSH'
     var y = unquote(s)
-    pp line (y)
+    pp test_ (y)
 
     assert [y === js]
 
