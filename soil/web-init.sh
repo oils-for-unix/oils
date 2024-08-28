@@ -28,7 +28,7 @@ home-page() {
 
   local domain=${1:-$SOIL_HOST}
   local title="Soil on $domain"
-  soil-html-head "$title"
+  soil-html-head "$title" 'uuu/web'
 
   cat <<EOF
   <body class="width40">
@@ -134,20 +134,22 @@ deploy-data() {
   local user=${1:-$SOIL_USER}
   local host=${2:-$SOIL_HOST}
 
-  local host_dir=$SOIL_REMOTE_DIR/uuu
+  local host_dir=$SOIL_REMOTE_DIR
 
   # TODO: Better to put HTML in www/$host/uuu/github-jobs, etc.
   ssh $user@$host mkdir -v -p \
-    $host_dir/{sourcehut-jobs,github-jobs,status-api/github} \
-    $host_dir/web/table
+    $host_dir/uuu/{sourcehut-jobs,github-jobs,status-api/github} \
+    $host_dir/uuu/web/table
 
+  # Soil HTML has relative links like ../web/base.css, so we want
+  # uuu/web/base.css
+  #
   # note: duplicating CSS
-  scp web/{base.css,soil.css,ajax.js} $user@$host:$host_dir/web
-  scp web/table/*.{js,css} $user@$host:$host_dir/web/table
+  scp web/{base.css,soil.css,ajax.js} $user@$host:$host_dir/uuu/web
+  scp web/table/*.{js,css} $user@$host:$host_dir/uuu/web/table
 
   home-page "$host" > _tmp/index.html
-  # Home page goes in the domain root
-  scp _tmp/index.html $user@$host:$SOIL_REMOTE_DIR/
+  scp _tmp/index.html $user@$host:$host_dir/
 }
 
 soil-web-manifest() {

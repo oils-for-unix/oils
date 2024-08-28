@@ -21,8 +21,8 @@ dump-env() {
 }
 
 # dh, mb, op
-#_soil_service=mb
-_soil_service=dh
+_soil_service=mb
+#_soil_service=dh
 
 case $_soil_service in
   dh)
@@ -33,10 +33,10 @@ case $_soil_service in
     ;;
   mb)
     readonly SOIL_USER='oils'
-    readonly SOIL_HOST='mb.oils.pub'
+    readonly SOIL_HOST='mb.oilshell.org'
     # Extra level
-    readonly SOIL_HOST_DIR=~/www/mb.oils.pub  # used on server
-    readonly SOIL_REMOTE_DIR=www/mb.oils.pub  # used on client
+    readonly SOIL_HOST_DIR=~/www/mb.oilshell.org  # used on server
+    readonly SOIL_REMOTE_DIR=www/mb.oilshell.org  # used on client
     ;;
   op)
     readonly SOIL_USER='oils'
@@ -63,8 +63,8 @@ html-head() {
 # collide with <td> styling and so forth
 
 soil-html-head() {
-  local title="$1"
-  local web_base_url=${2:-'/web'}
+  local title=$1
+  local web_base_url=$2
 
   html-head --title "$title" \
     "$web_base_url/base.css?cache=0" "$web_base_url/soil.css?cache=0"
