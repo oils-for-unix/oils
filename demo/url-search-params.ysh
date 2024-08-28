@@ -35,10 +35,6 @@
 #
 # - Eggex can use multiline /// syntax, though you can use \ for line continuation
 # - Eggex could use "which" match
-# - m=>group('lit') sorta bothers me, it should be 
-#   - m.group('lit')
-#   - $lit - probably!
-#   - with vars(m.groupDict()) { ... }
 # - Alternative to printf -v probably needed, or at least wrap it in the YSH
 #   stdlib
 #
@@ -78,14 +74,14 @@ func unquote (s) {
   var pos = 0
   var parts = []
   while (true) {
-    var m = s => leftMatch(Quoted, pos=pos)
+    var m = s.leftMatch(Quoted, pos=pos)
     if (not m) {
       break
     }
 
-    var lit = m => group('lit')
-    var plus = m => group('plus')
-    var two_hex = m => group('two_hex')
+    var lit = m.group('lit')
+    var plus = m.group('plus')
+    var two_hex = m.group('two_hex')
 
     var part
     if (lit) {
@@ -102,7 +98,7 @@ func unquote (s) {
     }
     call parts->append(part)
 
-    setvar pos = m => end(0)
+    setvar pos = m.end(0)
     #echo
   }
   if (pos !== len(s)) {
@@ -174,24 +170,24 @@ func URLSearchParams(s) {
 
   var pairs = []
   while (true) {
-    var m = s => leftMatch(Pairs, pos=pos)
+    var m = s.leftMatch(Pairs, pos=pos)
     if (not m) {
       break
     }
     #pp test_ (m)
     #pp test_ (m => group(0))
-    var k = m => group('key')
-    var v = m => group('value')
+    var k = m.group('key')
+    var v = m.group('value')
 
     #pp test_ (k)
     #pp test_ (v)
 
     call pairs->append([unquote(k), unquote(v)])
 
-    setvar pos = m => end(0)
+    setvar pos = m.end(0)
     #pp test_ (pos)
 
-    var sep = m => group('sep')
+    var sep = m.group('sep')
     if (not sep) {
       break
     }
