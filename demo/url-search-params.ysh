@@ -178,18 +178,18 @@ func URLSearchParams(s) {
     if (not m) {
       break
     }
-    #pp line (m)
-    #pp line (m => group(0))
+    #pp test_ (m)
+    #pp test_ (m => group(0))
     var k = m => group('key')
     var v = m => group('value')
 
-    #pp line (k)
-    #pp line (v)
+    #pp test_ (k)
+    #pp test_ (v)
 
     call pairs->append([unquote(k), unquote(v)])
 
     setvar pos = m => end(0)
-    #pp line (pos)
+    #pp test_ (pos)
 
     var sep = m => group('sep')
     if (not sep) {
@@ -256,11 +256,11 @@ proc test-query() {
 
     js-decode-query $s | json read (&js)
     echo 'JS'
-    pp line (js)
+    pp test_ (js)
 
     echo 'YSH'
     var pairs = URLSearchParams(s)
-    pp line (pairs)
+    pp test_ (pairs)
 
     assert [pairs === js]
 
