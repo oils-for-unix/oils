@@ -53,6 +53,18 @@ home-page() {
 
       <tr>
         <td>
+          <a href="uuu/github-jobs/">Github Actions</a> 
+        </td>
+        <td>
+          <a href="https://github.com/oilshell/oil/actions/workflows/all-builds.yml">github.com</a>
+        </td>
+        <td>
+          <a href="https://github.com/oils-for-unix/oils/tree/master/.github/workflows">.github/workflows</a>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
           <a href="uuu/sourcehut-jobs/">sr.ht</a> 
         </td>
         <td>
@@ -63,17 +75,6 @@ home-page() {
         </td>
       </tr>
 
-      <tr>
-        <td>
-          <a href="uuu/github-jobs/">Github Actions</a> 
-        </td>
-        <td>
-          <a href="https://github.com/oilshell/oil/actions/workflows/all-builds.yml">github.com</a>
-        </td>
-        <td>
-          <a href="https://github.com/oils-for-unix/oils/tree/master/.github/workflows">.github/workflows</a>
-        </td>
-      </tr>
 EOF
 
   if false; then
