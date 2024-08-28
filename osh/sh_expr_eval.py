@@ -392,51 +392,44 @@ class ArithEvaluator(object):
             # doesn't look like an integer
 
             # note: 'test' and '[' never evaluate recursively
-            if self.parse_ctx:
-                arena = self.parse_ctx.arena
+            assert self.parse_ctx is not None
 
-                # Special case so we don't get EOF error
-                if len(s.strip()) == 0:
-                    return mops.ZERO
+            arena = self.parse_ctx.arena
 
-                # For compatibility: Try to parse it as an expression and evaluate it.
-                a_parser = self.parse_ctx.MakeArithParser(s)
+            # Special case so we don't get EOF error
+            if len(s.strip()) == 0:
+                return mops.ZERO
 
-                # TODO: Fill in the variable name
-                with alloc.ctx_SourceCode(arena,
-                                          source.Variable(None, blame_loc)):
-                    try:
-                        node2 = a_parser.Parse()  # may raise error.Parse
-                    except error.Parse as e:
-                        self.errfmt.PrettyPrintError(e)
-                        e_die('Parse error in recursive arithmetic',
-                              e.location)
+            # For compatibility: Try to parse it as an expression and evaluate it.
+            a_parser = self.parse_ctx.MakeArithParser(s)
 
-                # Prevent infinite recursion of $(( 1x )) -- it's a word that evaluates
-                # to itself, and you don't want to reparse it as a word.
-                if node2.tag() == arith_expr_e.Word:
-                    e_die("Invalid integer constant %r" % s, blame_loc)
+            # TODO: Fill in the variable name
+            with alloc.ctx_SourceCode(arena,
+                                      source.Variable(None, blame_loc)):
+                try:
+                    node2 = a_parser.Parse()  # may raise error.Parse
+                except error.Parse as e:
+                    self.errfmt.PrettyPrintError(e)
+                    e_die('Parse error in recursive arithmetic',
+                          e.location)
 
-                if self.exec_opts.eval_unsafe_arith():
-                    integer = self.EvalToBigInt(node2)
-                else:
-                    # BoolEvaluator doesn't have parse_ctx or mutable_opts
-                    assert self.mutable_opts is not None
+            # Prevent infinite recursion of $(( 1x )) -- it's a word that evaluates
+            # to itself, and you don't want to reparse it as a word.
+            if node2.tag() == arith_expr_e.Word:
+                e_die("Invalid integer constant %r" % s, blame_loc)
 
-                    # We don't need to flip _allow_process_sub, because they can't be
-                    # parsed.  See spec/bugs.test.sh.
-                    with state.ctx_Option(self.mutable_opts,
-                                          [option_i._allow_command_sub],
-                                          False):
-                        integer = self.EvalToBigInt(node2)
-
+            if self.exec_opts.eval_unsafe_arith():
+                integer = self.EvalToBigInt(node2)
             else:
-                if len(s.strip()) == 0 or match.IsValidVarName(s):
-                    # x42 could evaluate to 0
-                    e_strict("Invalid integer constant %r" % s, blame_loc)
-                else:
-                    # 42x is always fatal!
-                    e_die("Invalid integer constant %r" % s, blame_loc)
+                # BoolEvaluator doesn't have parse_ctx or mutable_opts
+                assert self.mutable_opts is not None
+
+                # We don't need to flip _allow_process_sub, because they can't be
+                # parsed.  See spec/bugs.test.sh.
+                with state.ctx_Option(self.mutable_opts,
+                                      [option_i._allow_command_sub],
+                                      False):
+                    integer = self.EvalToBigInt(node2)
 
         return integer
 
