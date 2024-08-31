@@ -488,8 +488,8 @@ class Split(vm._Callable):
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
         """
-        s.split(delim, count=-1)
-        s.split(eggex, count=-1)
+        s.split(string_sep, count=-1)
+        s.split(eggex_sep, count=-1)
 
         Count behaves like in replace() in that:
         - `count` <  0 -> ignore
@@ -511,7 +511,7 @@ class Split(vm._Callable):
                 string_sep = string_sep_.s
 
             else:
-                raise error.TypeErr(sep, 'expected sep to be Eggex or Str',
+                raise error.TypeErr(sep, 'expected separator to be Eggex or Str',
                                     rd.LeftParenToken())
 
         count = mops.BigTruncate(rd.NamedInt("count", -1))
@@ -522,7 +522,7 @@ class Split(vm._Callable):
 
         if string_sep is not None:
             if len(string_sep) == 0:
-                raise error.Structured(3, "sep must be non-empty",
+                raise error.Structured(3, "separator must be non-empty",
                                        rd.LeftParenToken())
 
             cursor = 0
@@ -561,7 +561,7 @@ class Split(vm._Callable):
                 if start == end:
                     raise error.Structured(
                         3,
-                        "got a zero-width match, bailing to prevent an infinite loop",
+                        "eggex separators should never match the empty string",
                         rd.LeftParenToken())
 
                 chunks.append(value.Str(string[cursor:start]))
