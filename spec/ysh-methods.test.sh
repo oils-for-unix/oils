@@ -382,7 +382,7 @@ pp test_ (en2fr => keys())
 (List)   ["hello","friend","cat"]
 ## END
 
-#### Str => split(sep), non-empty sep
+#### Str => split(sep), non-empty str sep
 pp test_ ('a,b,c'.split(','))
 pp test_ ('aa'.split('a'))
 pp test_ ('a<>b<>c<d'.split('<>'))
@@ -396,7 +396,21 @@ pp test_ (''.split('foo'))
 (List)   []
 ## END
 
-#### Str => split(sep, count), non-empty sep
+#### Str => split(sep), eggex sep
+pp test_ ('a,b;c'.split(/ ',' | ';' /))
+pp test_ ('aa'.split(/ dot /))
+pp test_ ('a<>b@@c<d'.split(/ '<>' | '@@' /))
+pp test_ ('a b  cd'.split(/ space+ /))
+pp test_ (''.split(/ dot /))
+## STDOUT:
+(List)   ["a","b","c"]
+(List)   ["","",""]
+(List)   ["a","b","c<d"]
+(List)   ["a","b","cd"]
+(List)   []
+## END
+
+#### Str => split(sep, count), non-empty str sep
 pp test_ ('a,b,c'.split(',', count=-1))
 pp test_ ('a,b,c'.split(',', count=-2))  # Any negative count means "ignore count"
 pp test_ ('aa'.split('a', count=1))
@@ -416,19 +430,46 @@ pp test_ (''.split(',', count=0))
 (List)   []
 ## END
 
+#### Str => split(sep, count), eggex sep
+pp test_ ('a,b;c'.split(/ ',' | ';' /, count=-1))
+pp test_ ('aa'.split(/ dot /, count=1))
+pp test_ ('a<>b@@c<d'.split(/ '<>' | '@@' /, count=50))
+pp test_ ('a b  c'.split(/ space+ /, count=0))
+pp test_ (''.split(/ dot /, count=1))
+## STDOUT:
+(List)   ["a","b","c"]
+(List)   ["","a"]
+(List)   ["a","b","c<d"]
+(List)   ["a b  c"]
+(List)   []
+## END
+
 #### Str => split(), usage errors
-try { pp test_ ('abc'.split(''))           } # Sep cannot be ""
+try { pp test_ ('abc'.split(''))             } # Sep cannot be ""
 echo status=$[_error.code]
-try { pp test_ ('abc'.split())             } # Sep must be present
+try { pp test_ ('abc'.split())               } # Sep must be present
+echo status=$[_error.code]
+try { pp test_ (b'\y00a\y01'.split(/ 'a' /)) } # Cannot split by eggex when str has NUL-byte
+echo status=$[_error.code]
+try { pp test_ (b'abc'.split(/ space* /))    } # Eggex cannot accept empty string
+echo status=$[_error.code]
+try { pp test_ (b'abc'.split(/ dot* /))      } # But in some cases the input doesn't cause an
+                                               # infinite loop, so we actually allow it!
 echo status=$[_error.code]
 ## STDOUT:
 status=3
 status=3
+status=3
+status=3
+(List)   ["",""]
+status=0
 ## END
 
 #### Str => split(), non-ascii
 pp test_ ('🌞🌝🌞🌝🌞'.split('🌝'))
+pp test_ ('🌞🌝🌞🌝🌞'.split(/ '🌝' /))
 ## STDOUT:
+(List)   ["🌞","🌞","🌞"]
 (List)   ["🌞","🌞","🌞"]
 ## END
 
