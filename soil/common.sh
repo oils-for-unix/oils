@@ -20,23 +20,36 @@ dump-env() {
   env | grep -v '^encrypted_' | sort
 }
 
-if true; then
-  readonly SOIL_USER='travis_admin'
-  readonly SOIL_HOST='ci.oilshell.org'
-  readonly SOIL_HOST_DIR=~/ci.oilshell.org  # used on server
-  readonly SOIL_REMOTE_DIR=ci.oilshell.org  # used on client
-elif false; then
-  readonly SOIL_USER='oils'
-  readonly SOIL_HOST='mb.oils.pub'
-  # Extra level
-  readonly SOIL_HOST_DIR=~/www/mb.oils.pub  # used on server
-  readonly SOIL_REMOTE_DIR=www/mb.oils.pub  # used on client
-else
-  readonly SOIL_USER='oils'
-  readonly SOIL_HOST='op.oils.pub'
-  readonly SOIL_HOST_DIR=~/op.oils.pub  # used on server
-  readonly SOIL_REMOTE_DIR=op.oils.pub  # used on client
-fi
+# dh, mb, op
+#_soil_service=op
+#_soil_service=mb
+_soil_service=dh
+
+case $_soil_service in
+  dh)
+    readonly SOIL_USER='travis_admin'
+    readonly SOIL_HOST='ci.oilshell.org'
+    readonly SOIL_HOST_DIR=~/ci.oilshell.org  # used on server
+    readonly SOIL_REMOTE_DIR=ci.oilshell.org  # used on client
+    ;;
+  mb)
+    readonly SOIL_USER='oils'
+    readonly SOIL_HOST='mb.oilshell.org'
+    # Extra level
+    readonly SOIL_HOST_DIR=~/www/mb.oilshell.org  # used on server
+    readonly SOIL_REMOTE_DIR=www/mb.oilshell.org  # used on client
+    ;;
+  op)
+    readonly SOIL_USER='oils'
+    readonly SOIL_HOST='op.oilshell.org'
+    readonly SOIL_HOST_DIR=~/op.oilshell.org  # used on server
+    readonly SOIL_REMOTE_DIR=op.oilshell.org  # used on client
+    ;;
+  *)
+    echo "Invalid Soil service $_soil_service" >& 2
+    exit 1
+    ;;
+esac
 
 readonly SOIL_USER_HOST="$SOIL_USER@$SOIL_HOST"
 
@@ -51,8 +64,8 @@ html-head() {
 # collide with <td> styling and so forth
 
 soil-html-head() {
-  local title="$1"
-  local web_base_url=${2:-'/web'}
+  local title=$1
+  local web_base_url=$2
 
   html-head --title "$title" \
     "$web_base_url/base.css?cache=0" "$web_base_url/soil.css?cache=0"
