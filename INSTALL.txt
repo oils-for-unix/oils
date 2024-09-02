@@ -9,7 +9,7 @@ Quick Start
 
 If you haven't already done so, extract the tarball:
  
-    tar -x --gz < oil-for-unix-0.23.0.tar.gz
+    tar -x --gz < oils-for-unix-0.23.0.tar.gz
     cd oils-for-unix-0.23.0
 
 This is the traditional way to install it:
