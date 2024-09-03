@@ -96,6 +96,85 @@ should not get here
 ## END
 ## N-I bash/mksh/zsh status: 0
 
+#### Integer constant parsing
+echo $(( 0x12A ))
+echo $(( 0x0A ))
+echo $(( 0777 ))
+echo $(( 0010 ))
+echo $(( 24#ag7 ))
+## STDOUT:
+298
+10
+511
+8
+6151
+## END
+
+## N-I dash status: 2
+## N-I dash STDOUT:
+298
+10
+511
+8
+## END
+
+## BUG zsh STDOUT:
+298
+10
+777
+10
+6151
+## END
+
+## BUG mksh STDOUT:
+298
+10
+777
+10
+6151
+## END
+
+#### Integer constant validation
+$SH -c 'echo $(( 0x1X ))'
+echo status=$?
+$SH -c 'echo $(( 09 ))'
+echo status=$?
+$SH -c 'echo $(( 2#A ))'
+echo status=$?
+$SH -c 'echo $(( 02#0110 ))'
+echo status=$?
+## STDOUT:
+status=1
+status=1
+status=1
+status=1
+## END
+
+## OK dash STDOUT:
+status=2
+status=2
+status=2
+status=2
+## END
+
+## BUG zsh STDOUT:
+status=1
+9
+status=0
+status=1
+6
+status=0
+## END
+
+## BUG mksh STDOUT:
+status=1
+9
+status=0
+status=1
+6
+status=0
+## END
+
 #### Newline in the middle of expression
 echo $((1
 + 2))
