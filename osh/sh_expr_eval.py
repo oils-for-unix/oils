@@ -56,6 +56,7 @@ from frontend import lexer
 from frontend import location
 from frontend import match
 from frontend import reader
+from frontend import lexer_def
 from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch, switch, str_cmp
@@ -337,25 +338,25 @@ class ArithEvaluator(object):
         bare word: variable
         quoted word: string (not done?)
         """
-        m = util.RegexSearch('^0x([0-9A-Fa-f]+)$', s)
+        m = util.RegexSearch(r'^\s*0x([0-9A-Fa-f]+)\s*$', s)
         if m is not None:
             try:
                 integer = mops.FromStr(m[1], 16)
             except ValueError:
-                e_strict('Invalid hex constant %r' % s, blame_loc)
+                e_strict('Invalid hex constant %' % s, blame_loc)
             # TODO: don't truncate
             return integer
 
-        m = util.RegexSearch('^0([0-7]+)$', s)
+        m = util.RegexSearch(r'^\s*0([0-7]+)\s*$', s)
         if m is not None:
             try:
                 integer = mops.FromStr(s, 8)
             except ValueError:
-                e_strict('Invalid octal constant %r' % s, blame_loc)
+                e_strict('Invalid octal constant %' % s, blame_loc)
             return integer
 
         # Base specifier cannot start with a zero
-        m = util.RegexSearch('^([1-9][0-9]*)#([0-9a-zA-Z@_]+)$', s)
+        m = util.RegexSearch(r'^\s*([1-9][0-9]*)#([0-9a-zA-Z@_]+)\s*$', s)
         if m is not None:
             b = m[1]
             try:
@@ -392,10 +393,10 @@ class ArithEvaluator(object):
             return integer
 
         # Note: decimal integers cannot have a leading zero
-        m = util.RegexSearch('^([1-9][0-9]*|0)$', s)
+        m = util.RegexSearch(r'^\s*(([1-9][0-9]*)|0)\s*$', s)
         if m is not None:
             # Normal base 10 integer.
-            return mops.FromStr(s)
+            return mops.FromStr(m[1])
 
         # Doesn't look like an integer
 
