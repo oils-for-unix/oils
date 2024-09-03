@@ -56,7 +56,6 @@ from frontend import lexer
 from frontend import location
 from frontend import match
 from frontend import reader
-from frontend import lexer_def
 from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch, switch, str_cmp
