@@ -407,8 +407,6 @@ class ArithEvaluator(object):
                 # 42x is always fatal!
                 e_die("Invalid integer constant %r" % s, blame_loc)
 
-        arena = self.parse_ctx.arena
-
         # Special case so we don't get EOF error
         if len(s.strip()) == 0:
             return mops.ZERO
@@ -416,15 +414,12 @@ class ArithEvaluator(object):
         # For compatibility: Try to parse it as an expression and evaluate it.
         a_parser = self.parse_ctx.MakeArithParser(s)
 
-        # TODO: Fill in the variable name
-        with alloc.ctx_SourceCode(arena,
-                                  source.Variable(None, blame_loc)):
-            try:
-                node2 = a_parser.Parse()  # may raise error.Parse
-            except error.Parse as e:
-                self.errfmt.PrettyPrintError(e)
-                e_die('Parse error in recursive arithmetic',
-                      e.location)
+        try:
+            node2 = a_parser.Parse()  # may raise error.Parse
+        except error.Parse as e:
+            self.errfmt.PrettyPrintError(e)
+            e_die('Parse error in recursive arithmetic',
+                  e.location)
 
         # Prevent infinite recursion of $(( 1x )) -- it's a word that evaluates
         # to itself, and you don't want to reparse it as a word.
