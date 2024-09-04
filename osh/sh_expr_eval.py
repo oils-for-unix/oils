@@ -343,7 +343,7 @@ class ArithEvaluator(object):
             try:
                 integer = mops.FromStr(m[1], 16)
             except ValueError:
-                e_strict('Invalid hex constant %' % s, blame_loc)
+                e_strict('Invalid hex constant %r' % s, blame_loc)
             # TODO: don't truncate
             return integer
 
@@ -352,7 +352,7 @@ class ArithEvaluator(object):
             try:
                 integer = mops.FromStr(s, 8)
             except ValueError:
-                e_strict('Invalid octal constant %' % s, blame_loc)
+                e_strict('Invalid octal constant %r' % s, blame_loc)
             return integer
 
         # Base specifier cannot start with a zero
