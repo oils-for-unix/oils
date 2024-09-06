@@ -288,3 +288,14 @@ on exit
 status=0
 ## END
 
+#### Remove trap with an unsigned integer
+
+trap 'echo noprint' EXIT
+trap 1 EXIT
+echo printed
+
+## STDOUT:
+printed
+## END
+
+
