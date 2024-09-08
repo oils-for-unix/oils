@@ -294,6 +294,74 @@ class UnsafeArith(object):
         return bvs_part
 
 
+def _MaybeParseInt(s, blame_loc):
+    # type: (str, loc_t) -> mops.BigInt
+    """
+    0xAB -- hex constant
+    042  -- octal constant
+    42   -- decimal constant
+    64#z -- arbitrary base constant
+    """
+    m = util.RegexSearch(r'^\s*0x([0-9A-Fa-f]+)\s*$', s)
+    if m is not None:
+        try:
+            integer = mops.FromStr(m[1], 16)
+        except ValueError:
+            e_strict('Invalid hex constant %r' % s, blame_loc)
+        return integer
+
+    m = util.RegexSearch(r'^\s*0([0-7]+)\s*$', s)
+    if m is not None:
+        try:
+            integer = mops.FromStr(s, 8)
+        except ValueError:
+            e_strict('Invalid octal constant %r' % s, blame_loc)
+        return integer
+
+    # Base specifier cannot start with a zero
+    m = util.RegexSearch(r'^\s*([1-9][0-9]*)#([0-9a-zA-Z@_]+)\s*$', s)
+    if m is not None:
+        b = m[1]
+        try:
+            base = int(b)  # machine integer, not BigInt
+        except ValueError:
+            # Unreachable per the regex validation above
+            raise AssertionError()
+
+        integer = mops.ZERO
+        digits = m[2]
+        for ch in digits:
+            if IsLower(ch):
+                digit = ord(ch) - ord('a') + 10
+            elif IsUpper(ch):
+                digit = ord(ch) - ord('A') + 36
+            elif ch == '@':  # horrible syntax
+                digit = 62
+            elif ch == '_':
+                digit = 63
+            elif ch.isdigit():
+                digit = int(ch)
+            else:
+                # Unreachable per the regex validation above
+                raise AssertionError()
+
+            if digit >= base:
+                e_strict(
+                    'Digits %r out of range for base %d' % (digits, base),
+                    blame_loc)
+
+            #integer = integer * base + digit
+            integer = mops.Add(mops.Mul(integer, mops.BigInt(base)),
+                               mops.BigInt(digit))
+        return integer
+
+    # Note: decimal integers cannot have a leading zero
+    m = util.RegexSearch(r'^\s*(([1-9][0-9]*)|0)\s*$', s)
+    if m is not None:
+        # Normal base 10 integer.
+        return mops.FromStr(m[1])
+
+
 class ArithEvaluator(object):
     """Shared between arith and bool evaluators.
 
@@ -329,72 +397,12 @@ class ArithEvaluator(object):
 
         Runtime parsing enables silly stuff like $(( $(echo 1)$(echo 2) + 1 )) => 13
 
-        0xAB -- hex constant
-        042  -- octal constant
-        42   -- decimal constant
-        64#z -- arbitrary base constant
-
         bare word: variable
         quoted word: string (not done?)
         """
-        m = util.RegexSearch(r'^\s*0x([0-9A-Fa-f]+)\s*$', s)
-        if m is not None:
-            try:
-                integer = mops.FromStr(m[1], 16)
-            except ValueError:
-                e_strict('Invalid hex constant %r' % s, blame_loc)
-            return integer
-
-        m = util.RegexSearch(r'^\s*0([0-7]+)\s*$', s)
-        if m is not None:
-            try:
-                integer = mops.FromStr(s, 8)
-            except ValueError:
-                e_strict('Invalid octal constant %r' % s, blame_loc)
-            return integer
-
-        # Base specifier cannot start with a zero
-        m = util.RegexSearch(r'^\s*([1-9][0-9]*)#([0-9a-zA-Z@_]+)\s*$', s)
-        if m is not None:
-            b = m[1]
-            try:
-                base = int(b)  # machine integer, not BigInt
-            except ValueError:
-                # Unreachable per the regex validation above
-                raise AssertionError()
-
-            integer = mops.ZERO
-            digits = m[2]
-            for ch in digits:
-                if IsLower(ch):
-                    digit = ord(ch) - ord('a') + 10
-                elif IsUpper(ch):
-                    digit = ord(ch) - ord('A') + 36
-                elif ch == '@':  # horrible syntax
-                    digit = 62
-                elif ch == '_':
-                    digit = 63
-                elif ch.isdigit():
-                    digit = int(ch)
-                else:
-                    # Unreachable per the regex validation above
-                    raise AssertionError()
-
-                if digit >= base:
-                    e_die(
-                        'Digits %r out of range for base %d' % (digits, base),
-                        blame_loc)
-
-                #integer = integer * base + digit
-                integer = mops.Add(mops.Mul(integer, mops.BigInt(base)),
-                                   mops.BigInt(digit))
-            return integer
-
-        # Note: decimal integers cannot have a leading zero
-        m = util.RegexSearch(r'^\s*(([1-9][0-9]*)|0)\s*$', s)
-        if m is not None:
-            # Normal base 10 integer.
-            return mops.FromStr(m[1])
+        i = _MaybeParseInt(s, blame_loc)
+        if i is not None:
+            return i
 
         # Doesn't look like an integer
 
