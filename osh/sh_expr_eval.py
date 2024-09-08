@@ -295,31 +295,32 @@ class UnsafeArith(object):
 
 
 def _MaybeParseInt(s, blame_loc):
-    # type: (str, loc_t) -> mops.BigInt
+    # type: (str, loc_t) -> Tuple[bool, mops.BigInt]
     """
     0xAB -- hex constant
     042  -- octal constant
     42   -- decimal constant
     64#z -- arbitrary base constant
+
+    Returns the tuple (err, value) where err is true if this string is not an integer literal.
     """
-    m = util.RegexSearch(r'^\s*0x([0-9A-Fa-f]+)\s*$', s)
+    m = util.RegexSearch(consts.ARITH_INT_HEX_RE, s)
     if m is not None:
         try:
             integer = mops.FromStr(m[1], 16)
         except ValueError:
             e_strict('Invalid hex constant %r' % s, blame_loc)
-        return integer
+        return (False, integer)
 
-    m = util.RegexSearch(r'^\s*0([0-7]+)\s*$', s)
+    m = util.RegexSearch(consts.ARITH_INT_OCT_RE, s)
     if m is not None:
         try:
             integer = mops.FromStr(s, 8)
         except ValueError:
             e_strict('Invalid octal constant %r' % s, blame_loc)
-        return integer
+        return (False, integer)
 
-    # Base specifier cannot start with a zero
-    m = util.RegexSearch(r'^\s*([1-9][0-9]*)#([0-9a-zA-Z@_]+)\s*$', s)
+    m = util.RegexSearch(consts.ARITH_INT_ARB_RE, s)
     if m is not None:
         b = m[1]
         try:
@@ -358,13 +359,14 @@ def _MaybeParseInt(s, blame_loc):
             #integer = integer * base + digit
             integer = mops.Add(mops.Mul(integer, mops.BigInt(base)),
                                mops.BigInt(digit))
-        return integer
+        return (False, integer)
 
-    # Note: decimal integers cannot have a leading zero
-    m = util.RegexSearch(r'^\s*(([1-9][0-9]*)|0)\s*$', s)
+    m = util.RegexSearch(consts.ARITH_INT_DEC_RE, s)
     if m is not None:
         # Normal base 10 integer.
-        return mops.FromStr(m[1])
+        return (False, mops.FromStr(m[1]))
+
+    return (True, mops.BigInt(0))
 
 
 class ArithEvaluator(object):
@@ -405,8 +407,8 @@ class ArithEvaluator(object):
         bare word: variable
         quoted word: string (not done?)
         """
-        i = _MaybeParseInt(s, blame_loc)
-        if i is not None:
+        err, i = _MaybeParseInt(s, blame_loc)
+        if not err:
             return i
 
         # Doesn't look like an integer

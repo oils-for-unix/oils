@@ -352,6 +352,19 @@ def IfsEdge(state, ch):
 
 ASSIGN_ARG_RE = '^(' + lexer_def.VAR_NAME_RE + r')((=|\+=)(.*))?$'
 
+# Patterns for validating integer constants in arithmetic substitutions.
+#  0xAB -- hex constant
+#  042  -- octal constant
+#  42   -- decimal constant
+#  64#z -- arbitrary base constant
+
+_ARITH_WS = '[ \t\r\n]*'
+
+ARITH_INT_HEX_RE = r'^' + _ARITH_WS + '0x([0-9A-Fa-f]+)' + _ARITH_WS + '$'
+ARITH_INT_OCT_RE = r'^' + _ARITH_WS + '0([0-7]+)' + _ARITH_WS + '$'
+ARITH_INT_DEC_RE = r'^' + _ARITH_WS + '([1-9][0-9]*|0)' + _ARITH_WS + '$'
+ARITH_INT_ARB_RE = r'^' + _ARITH_WS + '([1-9][0-9]*)#([0-9a-zA-Z@_]+)' + _ARITH_WS + '$'
+
 # Eggex equivalent:
 #
 # VarName = /
