@@ -135,14 +135,15 @@ echo $(( 24#ag7 ))
 ## END
 
 #### Integer constant validation
-$SH -c 'echo $(( 0x1X ))'
-echo status=$?
-$SH -c 'echo $(( 09 ))'
-echo status=$?
-$SH -c 'echo $(( 2#A ))'
-echo status=$?
-$SH -c 'echo $(( 02#0110 ))'
-echo status=$?
+check() {
+  $SH -c "shopt --set strict_arith; echo $1"
+  echo status=$?
+}
+
+check '$(( 0x1X ))'
+check '$(( 09 ))'
+check '$(( 2#A ))'
+check '$(( 02#0110 ))'
 ## STDOUT:
 status=1
 status=1
