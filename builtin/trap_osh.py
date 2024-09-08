@@ -19,6 +19,7 @@ from frontend import signal_def
 from frontend import reader
 from mycpp import mylib
 from mycpp.mylib import iteritems, print_stderr
+from mycpp import mops
 
 from typing import Dict, List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -152,6 +153,15 @@ class TrapState(object):
         return len(self.traps) != 0 or len(self.hooks) != 0
 
 
+def _IsUnsignedInteger(s):
+    # type: (str) -> bool
+
+    try:
+        intval = mops.FromStr(s)
+    except ValueError:
+        return False
+    return not mops.Greater(mops.ZERO, intval)
+
 def _GetSignalNumber(sig_spec):
     # type: (str) -> int
 
@@ -262,7 +272,10 @@ class Trap(vm._Builtin):
             return 1
 
         # NOTE: sig_spec isn't validated when removing handlers.
-        if code_str == '-':
+        # Per POSIX, if the first argument to trap is an unsigned integer
+        # then reset every condition
+        # https://pubs.opengroup.org/onlinepubs/9699919799.2018edition/utilities/V3_chap02.html#tag_18_28
+        if code_str == '-' or _IsUnsignedInteger(code_str):
             if sig_key in _HOOK_NAMES:
                 self.trap_state.RemoveUserHook(sig_key)
                 return 0
