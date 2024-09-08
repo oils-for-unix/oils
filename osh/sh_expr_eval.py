@@ -328,6 +328,11 @@ def _MaybeParseInt(s, blame_loc):
             # Unreachable per the regex validation above
             raise AssertionError()
 
+        if base > 64:
+            e_strict('Base %d cannot be larger than 64' % base, blame_loc)
+        if base < 2:
+            e_strict('Base %d must be larger than 2' % base, blame_loc)
+
         integer = mops.ZERO
         digits = m[2]
         for ch in digits:
