@@ -388,3 +388,18 @@ yes
 
 ## N-I dash/ash STDOUT:
 ## END
+
+#### autotools as_fn_arith bug in configure
+
+# Causes 'grep -e' check to infinite loop.
+# Reduced from a configure script.
+
+as_fn_arith() {
+  as_val=$(( $* ))
+}
+
+as_fn_arith 0 + 1
+echo as_val=$as_val
+## STDOUT:
+as_val=1
+## END
