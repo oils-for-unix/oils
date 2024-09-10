@@ -302,6 +302,10 @@ arith() {
   run-file arith "$@"
 }
 
+arith-dynamic() {
+  run-file arith-dynamic "$@"
+}
+
 command-sub() {
   sh-spec spec/command-sub.test.sh \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
