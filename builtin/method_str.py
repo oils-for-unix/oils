@@ -405,6 +405,12 @@ class Replace(vm._Callable):
             return value.Str(result)
 
         if eggex_val:
+            if '\0' in string:
+                raise error.Structured(
+                    3,
+                    "cannot replace by eggex on a string with NUL bytes",
+                    rd.LeftParenToken())
+
             ere = regex_translate.AsPosixEre(eggex_val)
             cflags = regex_translate.LibcFlags(eggex_val.canonical_flags)
 
