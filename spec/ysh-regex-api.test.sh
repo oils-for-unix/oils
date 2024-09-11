@@ -836,3 +836,12 @@ write $[mystr => replace(/ space* /, ' ')]
 ## status: 3
 ## STDOUT:
 ## END
+
+#### Str => replace(Eggex, *), str cannot contain NUL bytes
+shopt --set ysh:all
+
+var mystr = b'foo bar  baz\y00'
+write $[mystr => replace(/ space+ /, ' ')]
+## status: 3
+## STDOUT:
+## END
