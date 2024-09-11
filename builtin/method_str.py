@@ -464,6 +464,12 @@ class Replace(vm._Callable):
 
                 start = indices[0]
                 end = indices[1]
+                if pos == end:
+                    raise error.Structured(
+                        3,
+                        "eggex should never match the empty string",
+                        rd.LeftParenToken())
+
                 parts.append(string[pos:start])  # Unmatched substring
                 parts.append(s)  # Replacement
                 pos = end  # Move to end of match
