@@ -143,6 +143,13 @@ The following matrix of signatures are supported by `replace()`:
     s => replace(eggex_val, subst_str)
     s => replace(eggex_val, subst_expr)
 
+Replacing by an `Eggex` has some limitations:
+
+- If a `search()` results in an empty string match, eg.
+  `'abc'.split(/ space* /)`, then we raise an error to avoid an infinite loop.
+- The string to replace on cannot contain NUL bytes because we use the libc
+  regex engine.
+
 ### startsWith()
 
 Checks if a string starts with a pattern, returning true if it does or false if
