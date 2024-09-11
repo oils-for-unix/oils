@@ -827,3 +827,12 @@ write $[mystr => replace(/ ^ d+ ; reg_newline /, ^"[$0]")]
 [1]-2-3
 [4]-5
 ## END
+
+#### Str => replace(Eggex, *), guard against infinite loop
+shopt --set ysh:all
+
+var mystr = 'foo bar  baz'
+write $[mystr => replace(/ space* /, ' ')]
+## status: 3
+## STDOUT:
+## END
