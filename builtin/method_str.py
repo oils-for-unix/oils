@@ -405,6 +405,12 @@ class Replace(vm._Callable):
             return value.Str(result)
 
         if eggex_val:
+            if '\0' in string:
+                raise error.Structured(
+                    3,
+                    "cannot replace by eggex on a string with NUL bytes",
+                    rd.LeftParenToken())
+
             ere = regex_translate.AsPosixEre(eggex_val)
             cflags = regex_translate.LibcFlags(eggex_val.canonical_flags)
 
@@ -464,6 +470,12 @@ class Replace(vm._Callable):
 
                 start = indices[0]
                 end = indices[1]
+                if pos == end:
+                    raise error.Structured(
+                        3,
+                        "eggex should never match the empty string",
+                        rd.LeftParenToken())
+
                 parts.append(string[pos:start])  # Unmatched substring
                 parts.append(s)  # Replacement
                 pos = end  # Move to end of match
