@@ -234,3 +234,30 @@ case (WEIGHT) {
 ## status: 2
 ## STDOUT:
 ## END
+
+#### Crash due to incorrect of context manager rooting - issue #1986
+
+proc p {
+  var s = "hi"
+  for q in (1..50) {
+    shvar Q="whatever" {
+      setvar s = "." ++ s
+    }
+  }
+}
+
+for i in (1..10) {
+  p
+}
+
+if false {
+  echo 'testing for longer'
+  for i in (1 .. 1000) {
+    p
+  }
+}
+
+## STDOUT:
+## END
+
+

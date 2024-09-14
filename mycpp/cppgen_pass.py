@@ -2501,7 +2501,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             for name in sorted_member_names:
                 _, c_type, _ = self.current_member_vars[name]
-                self.always_write_ind('%s %s;\n', c_type, name)
+                # use default zero initialization for all members
+                # (context managers may be on the stack)
+                self.always_write_ind('%s %s{};\n', c_type, name)
 
         if _IsContextManager(self.current_class_name):
             # Copy ctx member vars out of this class

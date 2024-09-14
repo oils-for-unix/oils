@@ -1019,6 +1019,56 @@ TEST asdl_namespace_demo() {
   PASS();
 }
 
+class C1 {
+ public:
+  int i_;
+};
+
+class C2 {
+ public:
+  C2() {
+  }
+  C2(int i) : i_(i) {
+  }
+  int i_ = 42;
+};
+
+// Demo: we can use {} initialization for all fields
+//
+// Later, if we turn self.i = i into a initialization list, this will be
+// cheaper than memset() in theory
+class C3 {
+ public:
+  C3() {
+  }
+  C3(int i) : i_(i) {
+  }
+  int i_{};
+  double f_{};
+  C2* c2_{};
+  C2* uninitialized;
+};
+
+TEST member_init_demo() {
+  C1 c1;
+  // Uninitialized
+  log("c1.i_ = %d", c1.i_);
+
+  C2 c2;
+  log("c2.i_ = %d", c2.i_);  // from in-class initialization
+
+  C2 cc2(99);
+  log("cc2.i_ = %d", cc2.i_);  // from constructor
+
+  C3 c3;
+  log("c3.i_ = %d", c3.i_);                        // in-class
+  log("c3.f_ = %f", c3.f_);                        // in-class
+  log("c3.c2_ = %p", c3.c2_);                      // in-class
+  log("c3.uninitialized = %p", c3.uninitialized);  // in-class
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -1049,6 +1099,8 @@ int main(int argc, char** argv) {
   RUN_TEST(tea_interface);
 
   RUN_TEST(asdl_namespace_demo);
+
+  RUN_TEST(member_init_demo);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;
