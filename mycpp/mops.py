@@ -74,6 +74,31 @@ def ToHexLower(b):
     return '%x' % b.i
 
 
+# Notes on FromStr() and recognizing integers
+#
+# - mops.FromStr should not use exceptions?  That is consistent with mops.FromFloat
+#   - under the hood it uses StringToInt64, which uses strtoll
+#   - problem: we DO NOT want to rely on strtoll() to define a language, to
+#   reject user-facing strings - we want to use something like
+#   match.LooksLikeInteger() usually.  This is part of our spec-driven
+#   philosophy.
+#
+# - a problem though is if we support 00, because sometimes that is OCTAL
+#   - int("00") is zero
+#   - match.LooksLikeInteger returns it
+
+# uses LooksLikeInteger and then FromStr()
+# - YSH int()
+# - printf builtin
+# - YSH expression conversion
+
+# Uses only FromStr()
+# - j8 - uses its own regex though
+# - ulimit
+# - trap - NON-NEGATIVE only
+# - arg parser
+
+
 def FromStr(s, base=10):
     # type: (str, int) -> BigInt
     return BigInt(int(s, base))

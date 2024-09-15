@@ -304,6 +304,11 @@ def _MaybeParseInt(s, blame_loc):
 
     Returns the tuple (err, value) where err is true if this string is not an integer literal.
     """
+    m = util.RegexSearch(consts.ARITH_INT_DEC_RE, s)
+    if m is not None:
+        # Normal base 10 integer.
+        return (False, mops.FromStr(m[1]))
+
     m = util.RegexSearch(consts.ARITH_INT_HEX_RE, s)
     if m is not None:
         try:
@@ -360,11 +365,7 @@ def _MaybeParseInt(s, blame_loc):
                                mops.BigInt(digit))
         return (False, integer)
 
-    m = util.RegexSearch(consts.ARITH_INT_DEC_RE, s)
-    if m is not None:
-        # Normal base 10 integer.
-        return (False, mops.FromStr(m[1]))
-
+    # not an integer
     return (True, mops.BigInt(0))
 
 
