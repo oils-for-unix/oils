@@ -105,8 +105,8 @@ def ShellFunctions(cc_sources, f, argv0):
 # Usage:
 #   _build/oils.sh COMPILER? VARIANT? SKIP_REBUILD?
 #
-#   COMPILER: 'cxx' for system compiler, or 'clang' [default cxx]
-#   VARIANT: 'dbg' or 'opt' [default dbg]
+#   COMPILER: 'cxx' for system compiler, 'clang' or custom one [default cxx]
+#   VARIANT: 'dbg' or 'opt' [default opt]
 #   SKIP_REBUILD: if non-empty, checks if the output exists before building
 
 . build/ninja-rules-cpp.sh
