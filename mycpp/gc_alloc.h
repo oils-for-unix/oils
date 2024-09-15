@@ -137,7 +137,9 @@ T* Alloc(Args&&... args) {
   #endif
 #endif
   void* obj = header->ObjectAddress();
-  // mycpp doesn't generated constructors that initialize every field
+  // TODO: now that mycpp generates code to initialize every field, we should
+  // get rid of this.  I saw a failure in benchmarks/uftrace in Soil though.
+  // We may need to check the hand-written classes?
   memset(obj, 0, sizeof(T));
   return new (obj) T(std::forward<Args>(args)...);
 }

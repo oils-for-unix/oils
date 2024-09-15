@@ -122,7 +122,7 @@ class PrettyPrinter {
   PrettyPrinter(int max_width);
   bool _Fits(int prefix_len, doc::Group* group, pretty_asdl::Measure* suffix_measure);
   void PrintDoc(pretty_asdl::MeasuredDoc* document, mylib::BufWriter* buf);
-  int max_width;
+  int max_width{};
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassScanned(0, sizeof(PrettyPrinter));

@@ -36,8 +36,8 @@ hnode::Leaf* NewLeaf(BigStr* s, hnode_asdl::color_t e_color);
 class TraversalState {
  public:
   TraversalState();
-  Dict<int, bool>* seen;
-  Dict<int, int>* ref_count;
+  Dict<int, bool>* seen{};
+  Dict<int, int>* ref_count{};
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassScanned(2, sizeof(TraversalState));

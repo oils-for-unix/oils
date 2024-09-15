@@ -60,8 +60,8 @@ hnode::Leaf* NewLeaf(BigStr* s, hnode_asdl::color_t e_color);
 class TraversalState {
  public:
   TraversalState();
-  Dict<int, bool>* seen;
-  Dict<int, int>* ref_count;
+  Dict<int, bool>* seen{};
+  Dict<int, int>* ref_count{};
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassScanned(2, sizeof(TraversalState));
@@ -91,8 +91,8 @@ class ColorOutput {
   void WriteRaw(Tuple2<BigStr*, int>* raw);
   int NumChars();
   Tuple2<BigStr*, int> GetRaw();
-  mylib::Writer* f;
-  int num_chars;
+  mylib::Writer* f{};
+  int num_chars{};
   
   static constexpr uint32_t field_mask() {
     return maskbit(offsetof(ColorOutput, f));
@@ -170,7 +170,7 @@ class _PrettyPrinter {
   bool _PrintWholeArray(List<hnode_asdl::hnode_t*>* array, int prefix_len, format::ColorOutput* f, int indent);
   void _PrintRecord(hnode::Record* node, format::ColorOutput* f, int indent);
   void PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f, int indent);
-  int max_col;
+  int max_col{};
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassScanned(0, sizeof(_PrettyPrinter));
@@ -198,12 +198,12 @@ class _Attributes {
   _Attributes(Dict<BigStr*, value_asdl::value_t*>* defaults);
   void SetTrue(BigStr* name);
   void Set(BigStr* name, value_asdl::value_t* val);
-  Dict<BigStr*, value_asdl::value_t*>* attrs;
-  List<Tuple2<BigStr*, bool>*>* opt_changes;
-  List<Tuple2<BigStr*, bool>*>* shopt_changes;
-  List<BigStr*>* actions;
-  bool show_options;
-  bool saw_double_dash;
+  Dict<BigStr*, value_asdl::value_t*>* attrs{};
+  List<Tuple2<BigStr*, bool>*>* opt_changes{};
+  List<Tuple2<BigStr*, bool>*>* shopt_changes{};
+  List<BigStr*>* actions{};
+  bool show_options{};
+  bool saw_double_dash{};
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassScanned(4, sizeof(_Attributes));
@@ -226,10 +226,10 @@ class Reader {
   void Done();
   syntax_asdl::loc_t* _FirstLocation();
   syntax_asdl::loc_t* Location();
-  List<BigStr*>* argv;
-  List<syntax_asdl::CompoundWord*>* locs;
-  int n;
-  int i;
+  List<BigStr*>* argv{};
+  List<syntax_asdl::CompoundWord*>* locs{};
+  int n{};
+  int i{};
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassScanned(2, sizeof(Reader));
@@ -260,9 +260,9 @@ class _ArgAction : public ::args::_Action {
   virtual value_asdl::value_t* _Value(BigStr* arg, syntax_asdl::loc_t* location);
   virtual bool OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out);
 
-  BigStr* name;
-  bool quit_parsing_flags;
-  List<BigStr*>* valid;
+  BigStr* name{};
+  bool quit_parsing_flags{};
+  List<BigStr*>* valid{};
   
   static constexpr uint32_t field_mask() {
     return ::args::_Action::field_mask()
@@ -330,7 +330,7 @@ class SetAttachedBool : public ::args::_Action {
   SetAttachedBool(BigStr* name);
   virtual bool OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out);
 
-  BigStr* name;
+  BigStr* name{};
   
   static constexpr uint32_t field_mask() {
     return ::args::_Action::field_mask()
@@ -349,7 +349,7 @@ class SetToTrue : public ::args::_Action {
   SetToTrue(BigStr* name);
   virtual bool OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out);
 
-  BigStr* name;
+  BigStr* name{};
   
   static constexpr uint32_t field_mask() {
     return ::args::_Action::field_mask()
@@ -368,7 +368,7 @@ class SetOption : public ::args::_Action {
   SetOption(BigStr* name);
   virtual bool OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out);
 
-  BigStr* name;
+  BigStr* name{};
   
   static constexpr uint32_t field_mask() {
     return ::args::_Action::field_mask()
@@ -388,8 +388,8 @@ class SetNamedOption : public ::args::_Action {
   void ArgName(BigStr* name);
   virtual bool OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out);
 
-  List<BigStr*>* names;
-  bool shopt;
+  List<BigStr*>* names{};
+  bool shopt{};
   
   static constexpr uint32_t field_mask() {
     return ::args::_Action::field_mask()
@@ -408,7 +408,7 @@ class SetAction : public ::args::_Action {
   SetAction(BigStr* name);
   virtual bool OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out);
 
-  BigStr* name;
+  BigStr* name{};
   
   static constexpr uint32_t field_mask() {
     return ::args::_Action::field_mask()
@@ -428,7 +428,7 @@ class SetNamedAction : public ::args::_Action {
   void ArgName(BigStr* name);
   virtual bool OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out);
 
-  List<BigStr*>* names;
+  List<BigStr*>* names{};
   
   static constexpr uint32_t field_mask() {
     return ::args::_Action::field_mask()

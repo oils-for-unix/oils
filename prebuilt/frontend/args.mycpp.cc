@@ -207,7 +207,7 @@ class PrettyPrinter {
   PrettyPrinter(int max_width);
   bool _Fits(int prefix_len, doc::Group* group, pretty_asdl::Measure* suffix_measure);
   void PrintDoc(pretty_asdl::MeasuredDoc* document, mylib::BufWriter* buf);
-  int max_width;
+  int max_width{};
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassScanned(0, sizeof(PrettyPrinter));
@@ -244,8 +244,8 @@ class _ErrorWithLocation {
   _ErrorWithLocation(BigStr* msg, syntax_asdl::loc_t* location);
   bool HasLocation();
   BigStr* UserErrorString();
-  syntax_asdl::loc_t* location;
-  BigStr* msg;
+  syntax_asdl::loc_t* location{};
+  BigStr* msg{};
   
   static constexpr uint32_t field_mask() {
     return maskbit(offsetof(_ErrorWithLocation, location))
@@ -324,7 +324,7 @@ class FatalRuntime : public ::error::_ErrorWithLocation {
   FatalRuntime(int exit_status, BigStr* msg, syntax_asdl::loc_t* location);
   int ExitStatus();
 
-  int exit_status;
+  int exit_status{};
   
   static constexpr uint32_t field_mask() {
     return ::error::_ErrorWithLocation::field_mask();
@@ -356,7 +356,7 @@ class ErrExit : public ::error::FatalRuntime {
  public:
   ErrExit(int exit_status, BigStr* msg, syntax_asdl::loc_t* location, bool show_code = false);
 
-  bool show_code;
+  bool show_code{};
   
   static constexpr uint32_t field_mask() {
     return ::error::FatalRuntime::field_mask();
@@ -389,7 +389,7 @@ class Structured : public ::error::FatalRuntime {
   Structured(int status, BigStr* msg, syntax_asdl::loc_t* location, Dict<BigStr*, value_asdl::value_t*>* properties = nullptr);
   value::Dict* ToDict();
 
-  Dict<BigStr*, value_asdl::value_t*>* properties;
+  Dict<BigStr*, value_asdl::value_t*>* properties{};
   
   static constexpr uint32_t field_mask() {
     return ::error::FatalRuntime::field_mask()
@@ -452,7 +452,7 @@ class Runtime {
  public:
   Runtime(BigStr* msg);
   BigStr* UserErrorString();
-  BigStr* msg;
+  BigStr* msg{};
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassScanned(1, sizeof(Runtime));
@@ -466,11 +466,11 @@ class Decode {
   Decode(BigStr* msg, BigStr* s, int start_pos, int end_pos, int line_num);
   BigStr* Message();
   BigStr* __str__();
-  BigStr* msg;
-  BigStr* s;
-  int start_pos;
-  int end_pos;
-  int line_num;
+  BigStr* msg{};
+  BigStr* s{};
+  int start_pos{};
+  int end_pos{};
+  int line_num{};
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassScanned(2, sizeof(Decode));
@@ -483,7 +483,7 @@ class Encode {
  public:
   Encode(BigStr* msg);
   BigStr* Message();
-  BigStr* msg;
+  BigStr* msg{};
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassScanned(1, sizeof(Encode));

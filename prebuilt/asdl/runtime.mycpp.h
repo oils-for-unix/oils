@@ -37,8 +37,8 @@ hnode::Leaf* NewLeaf(BigStr* s, hnode_asdl::color_t e_color);
 class TraversalState {
  public:
   TraversalState();
-  Dict<int, bool>* seen;
-  Dict<int, int>* ref_count;
+  Dict<int, bool>* seen{};
+  Dict<int, int>* ref_count{};
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassScanned(2, sizeof(TraversalState));
@@ -68,8 +68,8 @@ class ColorOutput {
   void WriteRaw(Tuple2<BigStr*, int>* raw);
   int NumChars();
   Tuple2<BigStr*, int> GetRaw();
-  mylib::Writer* f;
-  int num_chars;
+  mylib::Writer* f{};
+  int num_chars{};
   
   static constexpr uint32_t field_mask() {
     return maskbit(offsetof(ColorOutput, f));
@@ -147,7 +147,7 @@ class _PrettyPrinter {
   bool _PrintWholeArray(List<hnode_asdl::hnode_t*>* array, int prefix_len, format::ColorOutput* f, int indent);
   void _PrintRecord(hnode::Record* node, format::ColorOutput* f, int indent);
   void PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f, int indent);
-  int max_col;
+  int max_col{};
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassScanned(0, sizeof(_PrettyPrinter));
