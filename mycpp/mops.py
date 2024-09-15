@@ -76,6 +76,12 @@ def ToHexLower(b):
 
 # Notes on FromStr() and recognizing integers
 #
+# 3 similar but DIFFERENT cases:
+#
+# 1. trap ' 42 ' x  - unsigned, including 09, but not -1
+# 2. echo $(( x )) - 0123 is octal, but no -0123 because that's separate I think
+# 3. int(), j8 - 077 is decimal
+#
 # - mops.FromStr should not use exceptions?  That is consistent with mops.FromFloat
 #   - under the hood it uses StringToInt64, which uses strtoll
 #   - problem: we DO NOT want to rely on strtoll() to define a language, to

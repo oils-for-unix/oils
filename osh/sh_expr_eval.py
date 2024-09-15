@@ -302,12 +302,14 @@ def _MaybeParseInt(s, blame_loc):
     42   -- decimal constant
     64#z -- arbitrary base constant
 
-    Returns the tuple (err, value) where err is true if this string is not an integer literal.
+    Returns:
+      (True, value) when the string looks like an integer
+      (False, ...)  when it doesn't
     """
     m = util.RegexSearch(consts.ARITH_INT_DEC_RE, s)
     if m is not None:
         # Normal base 10 integer.
-        return (False, mops.FromStr(m[1]))
+        return (True, mops.FromStr(m[1]))
 
     m = util.RegexSearch(consts.ARITH_INT_HEX_RE, s)
     if m is not None:
@@ -315,7 +317,7 @@ def _MaybeParseInt(s, blame_loc):
             integer = mops.FromStr(m[1], 16)
         except ValueError:
             e_strict('Invalid hex constant %r' % s, blame_loc)
-        return (False, integer)
+        return (True, integer)
 
     m = util.RegexSearch(consts.ARITH_INT_OCT_RE, s)
     if m is not None:
@@ -323,7 +325,7 @@ def _MaybeParseInt(s, blame_loc):
             integer = mops.FromStr(s, 8)
         except ValueError:
             e_strict('Invalid octal constant %r' % s, blame_loc)
-        return (False, integer)
+        return (True, integer)
 
     m = util.RegexSearch(consts.ARITH_INT_ARB_RE, s)
     if m is not None:
@@ -363,10 +365,9 @@ def _MaybeParseInt(s, blame_loc):
             #integer = integer * base + digit
             integer = mops.Add(mops.Mul(integer, mops.BigInt(base)),
                                mops.BigInt(digit))
-        return (False, integer)
+        return (True, integer)
 
-    # not an integer
-    return (True, mops.BigInt(0))
+    return (False, mops.BigInt(0))  # not an integer
 
 
 class ArithEvaluator(object):
@@ -407,8 +408,8 @@ class ArithEvaluator(object):
         bare word: variable
         quoted word: string (not done?)
         """
-        err, i = _MaybeParseInt(s, blame_loc)
-        if not err:
+        ok, i = _MaybeParseInt(s, blame_loc)
+        if ok:
             return i
 
         # Doesn't look like an integer

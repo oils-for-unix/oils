@@ -11,14 +11,14 @@ from core import alloc
 from core import dev
 from core import error
 from core import main_loop
-from mycpp.mylib import log
 from core import pyos
 from core import vm
 from frontend import flag_util
-from frontend import signal_def
+from frontend import match
 from frontend import reader
+from frontend import signal_def
 from mycpp import mylib
-from mycpp.mylib import iteritems, print_stderr
+from mycpp.mylib import iteritems, print_stderr, log
 from mycpp import mops
 
 from typing import Dict, List, Optional, TYPE_CHECKING
@@ -155,12 +155,14 @@ class TrapState(object):
 
 def _IsUnsignedInteger(s):
     # type: (str) -> bool
-
-    try:
-        intval = mops.FromStr(s)
-    except ValueError:
+    if not match.LooksLikeInteger(s):
         return False
-    return not mops.Greater(mops.ZERO, intval)
+
+    # Note: could simplify this by making match.LooksLikeUnsigned()
+
+    # not (0 > s) is (s >= 0)
+    return not mops.Greater(mops.ZERO, mops.FromStr(s))
+
 
 def _GetSignalNumber(sig_spec):
     # type: (str) -> int
