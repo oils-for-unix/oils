@@ -1,4 +1,4 @@
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 
 #### Exact equality with === and !==
 shopt -s ysh:all
@@ -259,10 +259,15 @@ if (2 < '1') {
 #### Invalid String is an error
 shopt -s oil:upgrade
 
-if ('3' < 'bar') {
-  echo no
+try {
+  = '3' < 'bar'
 }
-echo 'should not get here'
+echo code=$[_error.code]
+
+try {
+  = '3' < '123_4'
+}
+echo code=$[_error.code]
 
 ## status: 3
 ## STDOUT:

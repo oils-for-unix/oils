@@ -78,8 +78,9 @@ Tuple2<Id_t, int> MatchJsonStrToken(BigStr* s, int pos);
 bool IsValidVarName(BigStr* s);
 bool ShouldHijack(BigStr* s);
 bool CanOmitQuotes(BigStr* s);
-bool LooksLikeFloat(BigStr* s);
 bool LooksLikeInteger(BigStr* s);
+bool LooksLikeYshInt(BigStr* s);
+bool LooksLikeYshFloat(BigStr* s);
 
 // StringToInt
 

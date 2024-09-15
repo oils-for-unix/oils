@@ -14,6 +14,7 @@ static PyMethodDef methods[] = {
   {"IsValidVarName", fastlex_IsValidVarName, METH_VARARGS},
   {"ShouldHijack", fastlex_ShouldHijack, METH_VARARGS},
   {"LooksLikeInteger", fastlex_LooksLikeInteger, METH_VARARGS},
-  {"LooksLikeFloat", fastlex_LooksLikeFloat, METH_VARARGS},
+  {"LooksLikeYshInt", fastlex_LooksLikeYshInt, METH_VARARGS},
+  {"LooksLikeYshFloat", fastlex_LooksLikeYshFloat, METH_VARARGS},
   {0},
 };

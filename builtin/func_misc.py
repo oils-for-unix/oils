@@ -234,11 +234,12 @@ class Int(vm._Callable):
 
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
-                if not match.LooksLikeInteger(val.s):
+                if not match.LooksLikeYshInt(val.s):
                     raise error.Expr("Can't convert %s to Int" % val.s,
                                      rd.BlamePos())
 
-                return value.Int(mops.FromStr(val.s))
+                s = val.s.replace('_', '')
+                return value.Int(mops.FromStr(s))
 
         raise error.TypeErr(val, 'int() expected Bool, Int, Float, or Str',
                             rd.BlamePos())
@@ -267,7 +268,7 @@ class Float(vm._Callable):
 
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
-                if not match.LooksLikeFloat(val.s):
+                if not match.LooksLikeYshFloat(val.s):
                     raise error.Expr('Cannot convert %s to Float' % val.s,
                                      rd.BlamePos())
 

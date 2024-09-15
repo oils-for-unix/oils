@@ -97,9 +97,9 @@ def _ConvertToInt(val, msg, blame_loc):
 
         elif case(value_e.Str):
             val = cast(value.Str, UP_val)
-            if match.LooksLikeInteger(val.s):
-                # TODO: Handle ValueError
-                return mops.FromStr(val.s)
+            if match.LooksLikeYshInt(val.s):
+                s = val.s.replace('_', '')
+                return mops.FromStr(s)
 
     raise error.TypeErr(val, msg, blame_loc)
 
@@ -118,12 +118,14 @@ def _ConvertToNumber(val):
 
         elif case(value_e.Str):
             val = cast(value.Str, UP_val)
-            if match.LooksLikeInteger(val.s):
-                # TODO: Handle ValueError
-                return coerced_e.Int, mops.FromStr(val.s), -1.0
 
-            if match.LooksLikeFloat(val.s):
-                return coerced_e.Float, mops.MINUS_ONE, float(val.s)
+            if match.LooksLikeYshInt(val.s):
+                s = val.s.replace('_', '')
+                return coerced_e.Int, mops.FromStr(s), -1.0
+
+            if match.LooksLikeYshFloat(val.s):
+                s = val.s.replace('_', '')
+                return coerced_e.Float, mops.MINUS_ONE, float(s)
 
     return coerced_e.Neither, mops.MINUS_ONE, -1.0
 
@@ -1046,8 +1048,8 @@ class ExprEvaluator(object):
                 # - found in the properties, not in the prototype chain (not
                 #   sure if this error is common.)
                 raise error.Expr(
-                    "Mutating method %r not found on Obj prototype chain" % mut_name,
-                    node.attr)
+                    "Mutating method %r not found on Obj prototype chain" %
+                    mut_name, node.attr)
             else:
                 # Look up methods on builtin types
                 # TODO: These should also be called M/append, M/erase, etc.

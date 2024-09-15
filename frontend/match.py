@@ -165,7 +165,8 @@ if fastlex:
     IsValidVarName = fastlex.IsValidVarName
     ShouldHijack = fastlex.ShouldHijack
     LooksLikeInteger = fastlex.LooksLikeInteger
-    LooksLikeFloat = fastlex.LooksLikeFloat
+    LooksLikeYshInt = fastlex.LooksLikeYshInt
+    LooksLikeYshFloat = fastlex.LooksLikeYshFloat
 else:
     OneToken = _MatchOshToken_Slow(lexer_def.LEXER_DEF)
     ECHO_MATCHER = _MatchTokenSlow(lexer_def.ECHO_E_DEF)
@@ -194,19 +195,28 @@ else:
         # type: (str) -> bool
         return bool(_SHOULD_HIJACK_RE.match(s))
 
+    #
+    # Integer/float
+    #
+
     _LOOKS_LIKE_INTEGER_RE = re.compile(lexer_def.LOOKS_LIKE_INTEGER + '$')  # type: ignore
 
     def LooksLikeInteger(s):
         # type: (str) -> bool
         return bool(_LOOKS_LIKE_INTEGER_RE.match(s))
 
-    _LOOKS_LIKE_FLOAT_RE = re.compile(lexer_def.LOOKS_LIKE_FLOAT + '$')  # type: ignore
-    # yapf: enable
+    _LOOKS_LIKE_YSH_INT_RE = re.compile(lexer_def.LOOKS_LIKE_YSH_INT + '$')  # type: ignore
 
-
-    def LooksLikeFloat(s):
+    def LooksLikeYshInt(s):
         # type: (str) -> bool
-        return bool(_LOOKS_LIKE_FLOAT_RE.match(s))
+        return bool(_LOOKS_LIKE_YSH_INT_RE.match(s))
+
+    _LOOKS_LIKE_YSH_FLOAT_RE = re.compile(lexer_def.LOOKS_LIKE_YSH_FLOAT + '$')  # type: ignore
+
+    def LooksLikeYshFloat(s):
+        # type: (str) -> bool
+        return bool(_LOOKS_LIKE_YSH_FLOAT_RE.match(s))
+    # yapf: enable
 
 
 class SimpleLexer(object):

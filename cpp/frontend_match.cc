@@ -129,14 +129,19 @@ bool ShouldHijack(BigStr* s) {
                         len(s));
 }
 
-bool LooksLikeFloat(BigStr* s) {
-  return ::LooksLikeFloat(reinterpret_cast<const unsigned char*>(s->data_),
-                          len(s));
-}
-
 bool LooksLikeInteger(BigStr* s) {
   return ::LooksLikeInteger(reinterpret_cast<const unsigned char*>(s->data_),
                             len(s));
+}
+
+bool LooksLikeYshInt(BigStr* s) {
+  return ::LooksLikeYshInt(reinterpret_cast<const unsigned char*>(s->data_),
+                           len(s));
+}
+
+bool LooksLikeYshFloat(BigStr* s) {
+  return ::LooksLikeYshFloat(reinterpret_cast<const unsigned char*>(s->data_),
+                             len(s));
 }
 
 }  // namespace match

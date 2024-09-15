@@ -955,23 +955,28 @@ _EXPR_NEWLINE_COMMENT = [
 
 _WHITESPACE = r'[ \t\r\n]*'  # ASCII whitespace doesn't have legacy \f \v
 
+# Note: we often check match.LooksLikeInteger(s), call mops.FromStr(s), and
+# ASSUME it will not throw ValueError
+LOOKS_LIKE_INTEGER = _WHITESPACE + '-?[0-9]+' + _WHITESPACE
+
+# TODO: use for YSH comparison operators > >= < <=
+#
 # Python allows 0 to be written 00 or 0_0_0, which is weird.  But let's be
 # consistent, and avoid '00' turning into a float!
-_DECIMAL_INT_RE = r'[0-9](_?[0-9])*'
+_YSH_DECIMAL_INT_RE = r'[0-9](_?[0-9])*'
 
-# Used for YSH comparison operators > >= < <=
-LOOKS_LIKE_INTEGER = _WHITESPACE + '-?' + _DECIMAL_INT_RE + _WHITESPACE
+LOOKS_LIKE_YSH_INT = _WHITESPACE + '-?' + _YSH_DECIMAL_INT_RE + _WHITESPACE
 
-_FLOAT_RE = (
-    _DECIMAL_INT_RE +
+_YSH_FLOAT_RE = (
+    _YSH_DECIMAL_INT_RE +
     # Unlike Python, exponent can't be like 42e5_000.  There's no use because
     # 1e309 is already inf.  Let's keep our code simple.
-    r'(\.' + _DECIMAL_INT_RE + ')?([eE][+\-]?[0-9]+)?')
+    r'(\.' + _YSH_DECIMAL_INT_RE + ')?([eE][+\-]?[0-9]+)?')
 
-# Ditto, used for comparison operators
+# Ditto, used for YSH comparison operators
 # Added optional Optional -?
 # Example: -3_000_000.000_001e12
-LOOKS_LIKE_FLOAT = _WHITESPACE + '-?' + _FLOAT_RE + _WHITESPACE
+LOOKS_LIKE_YSH_FLOAT = _WHITESPACE + '-?' + _YSH_FLOAT_RE + _WHITESPACE
 
 # Python 3 float literals:
 
@@ -1000,13 +1005,13 @@ LEXER_DEF[lex_mode_e.Expr] = \
     # octdigit     ::=  "0"..."7"
     # hexdigit     ::=  digit | "a"..."f" | "A"..."F"
 
-    R(_DECIMAL_INT_RE, Id.Expr_DecInt),
+    R(_YSH_DECIMAL_INT_RE, Id.Expr_DecInt),
 
     R(r'0[bB](_?[01])+', Id.Expr_BinInt),
     R(r'0[oO](_?[0-7])+', Id.Expr_OctInt),
     R(r'0[xX](_?[0-9a-fA-F])+', Id.Expr_HexInt),
 
-    R(_FLOAT_RE, Id.Expr_Float),
+    R(_YSH_FLOAT_RE, Id.Expr_Float),
 
     # These can be looked up as keywords separately, so you enforce that they have
     # space around them?

@@ -1,5 +1,3 @@
-
-
 #### bool() conversion
 echo "$[bool(1234)]"
 echo "$[bool(0)]"
@@ -47,17 +45,22 @@ echo "$[int(1.234)]"
 ## END
 
 #### int() more
-var a = int("3")
-var b = int("-35")
-write $a $b
+pp test_ (int("3"))
+pp test_ (int("-35"))
+pp test_ (int('5_6'))
 
-var c = int("bad")
-echo 'should not get here'
+shopt -s ysh:upgrade
 
-## status: 3
+try {
+  var c = int("bad")
+}
+echo code=$[_error.code]
+
 ## STDOUT:
-3
--35
+(Int)   3
+(Int)   -35
+(Int)   56
+code=3
 ## END
 
 #### float() conversion

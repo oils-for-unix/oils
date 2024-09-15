@@ -302,14 +302,25 @@ fastlex_LooksLikeInteger(PyObject *self, PyObject *args) {
 }
 
 static PyObject *
-fastlex_LooksLikeFloat(PyObject *self, PyObject *args) {
+fastlex_LooksLikeYshInt(PyObject *self, PyObject *args) {
   unsigned char *name;
   int len;
 
   if (!PyArg_ParseTuple(args, "s#", &name, &len)) {
     return NULL;
   }
-  return PyBool_FromLong(LooksLikeFloat(name, len));
+  return PyBool_FromLong(LooksLikeYshInt(name, len));
+}
+
+static PyObject *
+fastlex_LooksLikeYshFloat(PyObject *self, PyObject *args) {
+  unsigned char *name;
+  int len;
+
+  if (!PyArg_ParseTuple(args, "s#", &name, &len)) {
+    return NULL;
+  }
+  return PyBool_FromLong(LooksLikeYshFloat(name, len));
 }
 
 #ifdef OVM_MAIN
@@ -341,7 +352,8 @@ static PyMethodDef methods[] = {
   // Should we hijack this shebang line?
   {"ShouldHijack", fastlex_ShouldHijack, METH_VARARGS, ""},
   {"LooksLikeInteger", fastlex_LooksLikeInteger, METH_VARARGS, ""},
-  {"LooksLikeFloat", fastlex_LooksLikeFloat, METH_VARARGS, ""},
+  {"LooksLikeYshInt", fastlex_LooksLikeYshInt, METH_VARARGS, ""},
+  {"LooksLikeYshFloat", fastlex_LooksLikeYshFloat, METH_VARARGS, ""},
   {NULL, NULL},
 };
 #endif

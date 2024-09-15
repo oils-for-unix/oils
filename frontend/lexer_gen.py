@@ -444,7 +444,10 @@ def main(argv):
         TranslateRegexToPredicate(lexer_def.SHOULD_HIJACK_RE, 'ShouldHijack')
         TranslateRegexToPredicate(lexer_def.LOOKS_LIKE_INTEGER,
                                   'LooksLikeInteger')
-        TranslateRegexToPredicate(lexer_def.LOOKS_LIKE_FLOAT, 'LooksLikeFloat')
+        TranslateRegexToPredicate(lexer_def.LOOKS_LIKE_YSH_INT,
+                                  'LooksLikeYshInt')
+        TranslateRegexToPredicate(lexer_def.LOOKS_LIKE_YSH_FLOAT,
+                                  'LooksLikeYshFloat')
 
         TranslateBracket('BracketUnary', TEST_UNARY_LOOKUP)
         TranslateBracket('BracketBinary', TEST_BINARY_LOOKUP)
