@@ -14,11 +14,11 @@ class ParsingTest(unittest.TestCase):
     def checkCases(self, cases):
         for s, expected in cases:
             try:
-                err, actual = sh_expr_eval._MaybeParseInt(s, loc.Missing)
+                ok, actual = sh_expr_eval._MaybeParseInt(s, loc.Missing)
             except error.Strict:
-                err = True
+                ok = False
 
-            if err:
+            if not ok:
                 actual = None
 
             #print(expected and expected.i, actual and actual.i)
