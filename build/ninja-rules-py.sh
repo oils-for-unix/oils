@@ -64,12 +64,14 @@ EOF
 
 gen-oils-for-unix() {
   local main_name=$1
-  local out_prefix=$2
-  local preamble=$3
-  shift 3  # rest are inputs
+  local translator=$2
+  local out_prefix=$3
+  local preamble=$4
+  local mycpp_opts=$5
+  shift 5  # rest are inputs
 
   # Put it in _build/tmp so it's not in the tarball
-  local tmp=_build/tmp
+  local tmp=_build/tmp/$translator
   mkdir -p $tmp
 
   local raw_cc=$tmp/${main_name}_raw.cc
@@ -82,13 +84,14 @@ gen-oils-for-unix() {
 
   _bin/shwrap/mycpp_main $mypypath $raw_cc \
     --header-out $raw_header \
+    $mycpp_opts \
     ${EXTRA_MYCPP_ARGS:-} \
     "$@"
 
   # oils_for_unix -> OILS_FOR_UNIX_MYCPP_H'
   local guard=${main_name^^}_MYCPP_H
 
-  { echo "// $main_name.mycpp.h: translated from Python by mycpp"
+  { echo "// $main_name.h: translated from Python by mycpp"
     echo
     echo "#ifndef $guard"
     echo "#define $guard"
@@ -100,7 +103,7 @@ gen-oils-for-unix() {
   } > $header_out
 
   { cat <<EOF
-// $main_name.mycpp.cc: translated from Python by mycpp
+// $main_name.cc: translated from Python by mycpp
 
 // #include "$header_out"
 

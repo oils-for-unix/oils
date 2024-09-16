@@ -60,6 +60,7 @@ def Options():
     p.add_option(
         '--minimize-stack-roots',
         dest='minimize_stack_roots',
+        action='store_true',
         default=False,
         help='Try to minimize the number of GC stack roots.')
 

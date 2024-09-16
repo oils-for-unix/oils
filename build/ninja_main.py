@@ -333,8 +333,8 @@ def InitSteps(n):
     n.rule(
         'gen-oils-for-unix',
         command=
-        'build/ninja-rules-py.sh gen-oils-for-unix $main_name $out_prefix $preamble $in',
-        description='gen-oils-for-unix $main_name $out_prefix $preamble $in')
+        'build/ninja-rules-py.sh gen-oils-for-unix $main_name $translator $out_prefix $preamble $extra_mycpp_opts $in',
+        description='gen-oils-for-unix $main_name $translator $out_prefix $preamble $extra_mycpp_opts $in')
     n.newline()
 
 

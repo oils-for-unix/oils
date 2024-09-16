@@ -73,6 +73,7 @@ GC_PERF_VARIANTS = [
 
 OTHER_VARIANTS = [
     ('cxx', 'opt+bigint'),
+    ('cxx', 'opt+souffle'),
     ('cxx', 'asan+bigint'),
 ]
 
@@ -407,6 +408,12 @@ class Rules(object):
             if c.bin_path:
                 # e.g. _bin/cxx-dbg/oils_for_unix
                 bin_ = '%s/%s' % (bin_dir, c.bin_path)
+                bin_subdir, _, bin_name = c.bin_path.rpartition('/')
+                if bin_subdir:
+                    bin_dir = '%s/%s' % (bin_dir, bin_subdir)
+                else:
+                    bin_name = c.bin_path
+
             else:
                 # e.g. _gen/mycpp/examples/classes.mycpp
                 rel_path, _ = os.path.splitext(c.main_cc)
@@ -427,7 +434,7 @@ class Rules(object):
                 self.n.build(['%s/%s' % (bin_dir, symlink)],
                              'symlink', [bin_],
                              variables=[('dir', bin_dir),
-                                        ('target', c.bin_path),
+                                        ('target', bin_name),
                                         ('new', symlink)])
                 self.n.newline()
 
