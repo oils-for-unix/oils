@@ -679,6 +679,17 @@ JSON_STR_DEF = [
     R(r'[^\\"\x00-\x1F]+', Id.Lit_Chars),
 ]
 
+_WHITESPACE = r'[ \t\r\n]*'  # ASCII whitespace doesn't have legacy \f \v
+
+SH_NUMBER_DEF = [
+    R('0', Id.ShNumber_Dec),  # not octal
+    R(r'[1-9][0-9]*', Id.ShNumber_Dec),
+    R(r'0[0-7]+', Id.ShNumber_Oct),
+    R(r'0x[0-9A-Fa-f]+', Id.ShNumber_Hex),
+    R(r'[1-9][0-9]*#[0-9a-zA-Z@_]+', Id.ShNumber_BaseN),
+    R(r'[^\0]', Id.Unknown_Tok),  # any other char
+]
+
 OCTAL3_RE = r'\\[0-7]{1,3}'
 
 # https://www.gnu.org/software/bash/manual/html_node/Controlling-the-PromptEvaluator.html#Controlling-the-PromptEvaluator
@@ -952,8 +963,6 @@ _EXPR_NEWLINE_COMMENT = [
     # Like lex_mode_e.Arith, \r is whitespace even without \n
     R(r'[ \t\r]+', Id.Ignored_Space),
 ]
-
-_WHITESPACE = r'[ \t\r\n]*'  # ASCII whitespace doesn't have legacy \f \v
 
 # Note: we often check match.LooksLikeInteger(s), call mops.FromStr(s), and
 # ASSUME it will not throw ValueError

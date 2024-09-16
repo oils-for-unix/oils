@@ -439,6 +439,7 @@ def main(argv):
         TranslateSimpleLexer('MatchJ8LinesToken', lexer_def.J8_LINES_DEF)
         TranslateSimpleLexer('MatchJ8StrToken', lexer_def.J8_STR_DEF)
         TranslateSimpleLexer('MatchJsonStrToken', lexer_def.JSON_STR_DEF)
+        TranslateSimpleLexer('MatchShNumberToken', lexer_def.SH_NUMBER_DEF)
 
         TranslateRegexToPredicate(lexer_def.VAR_NAME_RE, 'IsValidVarName')
         TranslateRegexToPredicate(lexer_def.SHOULD_HIJACK_RE, 'ShouldHijack')

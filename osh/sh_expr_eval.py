@@ -297,39 +297,39 @@ class UnsafeArith(object):
 def _MaybeParseInt(s, blame_loc):
     # type: (str, loc_t) -> Tuple[bool, mops.BigInt]
     """
-    0xAB -- hex constant
-    042  -- octal constant
-    42   -- decimal constant
-    64#z -- arbitrary base constant
-
     Returns:
       (True, value) when the string looks like an integer
       (False, ...)  when it doesn't
+
+    Integer formats that are recognized:
+      0xAB    hex
+      042     octal
+      42      decimal
+      64#z    arbitrary base
     """
-    m = util.RegexSearch(consts.ARITH_INT_DEC_RE, s)
-    if m is not None:
+    id_, pos = match.MatchShNumberToken(s, 0)  # use re2c lexer
+    if pos != len(s):
+        # trailing data isn't allowed
+        return (False, mops.BigInt(0))
+
+    # Do conversions
+
+    if id_ == Id.ShNumber_Dec:
         # Normal base 10 integer.
-        return (True, mops.FromStr(m[1]))
+        return (True, mops.FromStr(s))
 
-    m = util.RegexSearch(consts.ARITH_INT_HEX_RE, s)
-    if m is not None:
-        try:
-            integer = mops.FromStr(m[1], 16)
-        except ValueError:
-            e_strict('Invalid hex constant %r' % s, blame_loc)
-        return (True, integer)
+    elif id_ == Id.ShNumber_Oct:
+        # 0123, offset by 1
+        return (True, mops.FromStr(s[1:], 8))
 
-    m = util.RegexSearch(consts.ARITH_INT_OCT_RE, s)
-    if m is not None:
-        try:
-            integer = mops.FromStr(s, 8)
-        except ValueError:
-            e_strict('Invalid octal constant %r' % s, blame_loc)
-        return (True, integer)
+    elif id_ == Id.ShNumber_Hex:
+        # 0xff, offset by 2
+        return (True, mops.FromStr(s[2:], 16))
 
-    m = util.RegexSearch(consts.ARITH_INT_ARB_RE, s)
-    if m is not None:
-        b = m[1]
+    elif id_ == Id.ShNumber_BaseN:
+        b, digits = mylib.split_once(s, '#')
+        assert digits is not None, digits  # assured by lexer
+
         try:
             base = int(b)  # machine integer, not BigInt
         except ValueError:
@@ -342,7 +342,6 @@ def _MaybeParseInt(s, blame_loc):
             e_strict('Base %d must be larger than 2' % base, blame_loc)
 
         integer = mops.ZERO
-        digits = m[2]
         for ch in digits:
             if IsLower(ch):
                 digit = ord(ch) - ord('a') + 10
@@ -362,12 +361,15 @@ def _MaybeParseInt(s, blame_loc):
                 e_strict('Digits %r out of range for base %d' % (digits, base),
                          blame_loc)
 
-            #integer = integer * base + digit
+            # formula is:
+            # integer = integer * base + digit
             integer = mops.Add(mops.Mul(integer, mops.BigInt(base)),
                                mops.BigInt(digit))
         return (True, integer)
 
-    return (False, mops.BigInt(0))  # not an integer
+    else:
+        # Id.Unknown_Tok or Id.Eol_Tok
+        return (False, mops.BigInt(0))  # not an integer
 
 
 class ArithEvaluator(object):
@@ -408,6 +410,8 @@ class ArithEvaluator(object):
         bare word: variable
         quoted word: string (not done?)
         """
+        s = s.strip()
+
         ok, i = _MaybeParseInt(s, blame_loc)
         if ok:
             return i
@@ -416,7 +420,7 @@ class ArithEvaluator(object):
 
         # note: 'test' and '[' never evaluate recursively
         if self.parse_ctx is None:
-            if len(s.strip()) == 0 or match.IsValidVarName(s):
+            if len(s) == 0 or match.IsValidVarName(s):
                 # x42 could evaluate to 0
                 e_strict("Invalid integer constant %r" % s, blame_loc)
             else:
@@ -424,7 +428,7 @@ class ArithEvaluator(object):
                 e_die("Invalid integer constant %r" % s, blame_loc)
 
         # Special case so we don't get EOF error
-        if len(s.strip()) == 0:
+        if len(s) == 0:
             return mops.ZERO
 
         # For compatibility: Try to parse it as an expression and evaluate it.

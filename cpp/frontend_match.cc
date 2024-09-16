@@ -119,6 +119,14 @@ Tuple2<Id_t, int> MatchJsonStrToken(BigStr* s, int pos) {
   return Tuple2<Id_t, int>(static_cast<Id_t>(id), end_pos);
 }
 
+Tuple2<Id_t, int> MatchShNumberToken(BigStr* s, int pos) {
+  int id;
+  int end_pos;
+  ::MatchShNumberToken(reinterpret_cast<const unsigned char*>(s->data_), len(s),
+                       pos, &id, &end_pos);
+  return Tuple2<Id_t, int>(static_cast<Id_t>(id), end_pos);
+}
+
 bool IsValidVarName(BigStr* s) {
   return ::IsValidVarName(reinterpret_cast<const unsigned char*>(s->data_),
                           len(s));

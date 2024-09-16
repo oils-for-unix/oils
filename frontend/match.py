@@ -149,6 +149,12 @@ def _MatchJsonStrToken_Fast(line, start_pos):
     return tok_type, end_pos
 
 
+def _MatchShNumberToken_Fast(line, start_pos):
+    # type: (str, int) -> Tuple[Id_t, int]
+    tok_type, end_pos = fastlex.MatchShNumberToken(line, start_pos)
+    return tok_type, end_pos
+
+
 if fastlex:
     OneToken = _MatchOshToken_Fast
     ECHO_MATCHER = _MatchEchoToken_Fast
@@ -161,6 +167,7 @@ if fastlex:
     MatchJ8LinesToken = _MatchJ8LinesToken_Fast
     MatchJ8StrToken = _MatchJ8StrToken_Fast
     MatchJsonStrToken = _MatchJsonStrToken_Fast
+    MatchShNumberToken = _MatchShNumberToken_Fast
 
     IsValidVarName = fastlex.IsValidVarName
     ShouldHijack = fastlex.ShouldHijack
@@ -179,6 +186,7 @@ else:
     MatchJ8LinesToken = _MatchTokenSlow(lexer_def.J8_LINES_DEF)
     MatchJ8StrToken = _MatchTokenSlow(lexer_def.J8_STR_DEF)
     MatchJsonStrToken = _MatchTokenSlow(lexer_def.JSON_STR_DEF)
+    MatchShNumberToken = _MatchTokenSlow(lexer_def.SH_NUMBER_DEF)
 
     # Used by osh/cmd_parse.py to validate for loop name.  Note it must be
     # anchored on the right.

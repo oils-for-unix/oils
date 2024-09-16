@@ -707,6 +707,8 @@ def AddKinds(spec):
             'Operator',
         ])
 
+    spec.AddKind('ShNumber', ['Dec', 'Hex', 'Oct', 'BaseN'])
+
 
 # Shared between [[ and test/[.
 _UNARY_STR_CHARS = 'zn'  # -z -n

@@ -4,25 +4,39 @@ from __future__ import print_function
 import unittest
 
 from _devbuild.gen.syntax_asdl import loc
+from _devbuild.gen.id_kind_asdl import Id_str
 from core import error
+from frontend import match
 from mycpp import mops
 from osh import sh_expr_eval
 
 
 class ParsingTest(unittest.TestCase):
 
+    def testMatchFunction(self):
+        id_, pos = match.MatchShNumberToken('2#1010', 0)
+        if 0:
+            print('id = %r' % id_)
+            print('id = %r' % Id_str(id_))
+            print('pos = %r' % pos)
+
     def checkCases(self, cases):
         for s, expected in cases:
+            stripped = s.strip()  # also done in caller
             try:
-                ok, actual = sh_expr_eval._MaybeParseInt(s, loc.Missing)
+                ok, actual = sh_expr_eval._MaybeParseInt(stripped, loc.Missing)
             except error.Strict:
                 ok = False
 
             if not ok:
                 actual = None
 
-            #print(expected and expected.i, actual and actual.i)
-            self.assertEqual(expected, actual)
+            if 0:
+                print('s %r' % s)
+                print('expected', expected and expected.i)
+                print('actual', actual and actual.i)
+                print()
+            self.assertEqual(actual, expected)
 
     def testDecimalConst(self):
         CASES = [

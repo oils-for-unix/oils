@@ -385,10 +385,6 @@ Tuple2<runtime_asdl::state_t, runtime_asdl::emit_t> IfsEdge(runtime_asdl::state_
 
 extern BigStr* ASSIGN_ARG_RE;
 extern BigStr* TEST_V_RE;
-extern BigStr* ARITH_INT_HEX_RE;
-extern BigStr* ARITH_INT_OCT_RE;
-extern BigStr* ARITH_INT_DEC_RE;
-extern BigStr* ARITH_INT_ARB_RE;
 
 }  // namespace consts
 
@@ -577,10 +573,6 @@ Tuple2<state_t, emit_t> IfsEdge(state_t state, runtime_asdl::char_kind_t ch) {
             GLOBAL_STRINGS = [
                 'ASSIGN_ARG_RE',
                 'TEST_V_RE',
-                'ARITH_INT_HEX_RE',
-                'ARITH_INT_OCT_RE',
-                'ARITH_INT_DEC_RE',
-                'ARITH_INT_ARB_RE',
             ]
             for var_name in GLOBAL_STRINGS:
                 out('GLOBAL_STR(%s, %s);', var_name,
