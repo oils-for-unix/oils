@@ -137,9 +137,9 @@ T* Alloc(Args&&... args) {
   #endif
 #endif
   void* obj = header->ObjectAddress();
-  // TODO: now that mycpp generates code to initialize every field, we should
-  // get rid of this.  I saw a failure in benchmarks/uftrace in Soil though.
-  // We may need to check the hand-written classes?
+  // Now that mycpp generates code to initialize every field, we should
+  // get rid of this.
+  // TODO: fix uftrace failure, maybe by upgrading, or working around
   memset(obj, 0, sizeof(T));
   return new (obj) T(std::forward<Args>(args)...);
 }

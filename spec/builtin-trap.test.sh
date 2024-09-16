@@ -1,5 +1,5 @@
 ## compare_shells: dash bash mksh ash
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 
 # builtin-trap.test.sh
 
@@ -10,6 +10,61 @@ echo ok
 ok
 hi
 ## END
+
+#### Register invalid trap
+trap 'foo' SIGINVALID
+## status: 1
+
+#### Remove invalid trap
+trap - SIGINVALID
+## status: 1
+
+#### SIGINT and INT are aliases
+trap - SIGINT
+echo $?
+trap - INT
+echo $?
+## STDOUT:
+0
+0
+## END
+## N-I dash STDOUT:
+1
+0
+## END
+
+#### trap without args prints traps, like trap -p
+case $SH in dash) exit ;; esac
+
+if false; then
+  # bash breaks the display across lines
+  trap "true
+false" EXIT
+fi
+
+$SH -c '
+
+trap "true" EXIT
+
+echo status=$?
+trap | grep EXIT
+echo status=$?
+'
+
+## STDOUT:
+status=0
+trap -- 'true' EXIT
+status=0
+## END
+
+## BUG mksh/ash STDOUT:
+status=0
+status=1
+## END
+
+## N-I dash STDOUT:
+## END
+
 
 #### trap 'echo hi' KILL (regression test, caught by smoosh suite)
 trap 'echo hi' 9
@@ -35,28 +90,6 @@ status=1
 status=1
 status=1
 status=0
-## END
-
-#### Register invalid trap
-trap 'foo' SIGINVALID
-## status: 1
-
-#### Remove invalid trap
-trap - SIGINVALID
-## status: 1
-
-#### SIGINT and INT are aliases
-trap - SIGINT
-echo $?
-trap - INT
-echo $?
-## STDOUT:
-0
-0
-## END
-## N-I dash STDOUT:
-1
-0
 ## END
 
 #### Invalid trap invocation
