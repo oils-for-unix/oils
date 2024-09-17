@@ -170,7 +170,7 @@ can't be expressed):
     echo 'c:\Program Files\'        # => c:\Program Files\
 
 If you want C-style backslash **character escapes**, use a J8 string, which is
-like JSON, but with single quotes::
+like JSON, but with single quotes:
 
     echo u' A is \u{41} \n line two, with backslash \\'
     # =>
