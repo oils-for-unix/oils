@@ -1,91 +1,88 @@
 ## our_shell: ysh
-## oils_failures_allowed: 5
 
-#### value.Expr test - positional test
-
-source --builtin testing.ysh
-
-echo 'parens'
-test-expr (42 + 1)
-echo
-
-echo 'brackets'
-test-expr [42 + 1]
-echo
-
-echo 'expr in parens'
-test-expr (^[42 + 1])
-echo
-
-## STDOUT:
-## END
-
-#### value.Expr test - named test
+#### Test framework
 
 source --builtin testing.ysh
+setglobal _test_use_color = false
 
-echo 'parens'
-test-named (n=42 + 1)
-echo
+test-suite "three bad tests" {
+    test-case "the assertion is false" {
+        assert [1 > 0]
+        assert [1 > 1]
+        assert [1 > 2]
+    }
 
-echo 'brackets'
-test-named [n=42 + 1]
-echo
+    test-case "there is an exception while evaluating the assertion" {
+        assert ["Superman" > "Batman"]
+    }
 
-echo 'expr in parens'
-test-named (n=^[42 + 1])
-echo
+    test-case "there is an exception outside of any assertion" {
+        error "oops!"
+    }
+}
 
-echo 'no value'
-test-named
-echo
+test-case "one good test case" {
+    assert [1 === 1]
+    assert [2 === 2]
+}
 
-## STDOUT:
-## END
-
-#### assert builtin
-
-source --builtin testing.ysh  # get rid of this line later?
-
-var x = 42
-
-# how do you get the code string here?
-
-assert [42 === x]
-
-assert [42 < x]
-
-#assert [42 < x; fail_message='message']
-
-#assert (^[(42 < x)], fail_message='passed message')
-
-# BUG
-assert [42 < x, fail_message='passed message']
+run-tests
 
 ## STDOUT:
+begin three bad tests
+    test the assertion is false ...
+        assertion FAILED
+    test there is an exception while evaluating the assertion ...
+        assertion ERRORED: 10
+    test there is an exception outside of any assertion ...
+        ERROR: 10
+end
+test one good test case ... ok
+3 / 4 tests failed
 ## END
 
-#### ysh --tool test file
-
-cat >mytest.ysh <<EOF
-echo hi
-EOF
-
-# which ysh
-
-# the test framework sets $SH to bin/ysh
-# but ysh is already installed on this machine
-
-$SH --tool test mytest.ysh
-
-## STDOUT:
-## END
-
-# Hm can we do this entirely in user code, not as a builtin?
-
-#### Describe Prototype
+#### Test framework: nested test suites
 
 source --builtin testing.ysh
+setglobal _test_use_color = false
+
+test-case "A" { : }
+test-suite "outer test suite" {
+    test-case "B" { : }
+    test-suite "first inner test suite" {
+        test-case "C" { : }
+    }
+    test-case "D" { : }
+    test-suite "second inner test suite" {
+        test-case "E" { : }
+    }
+    test-case "F" { : }
+}
+test-case "G" { : }
+
+run-tests
+
+## STDOUT:
+test A ... ok
+begin outer test suite
+    test B ... ok
+    begin first inner test suite
+        test C ... ok
+    end
+    test D ... ok
+    begin second inner test suite
+        test E ... ok
+    end
+    test F ... ok
+end
+test G ... ok
+7 tests succeeded
+## END
+
+#### Test framework: stdout and stderr
+
+source --builtin testing.ysh
+setglobal _test_use_color = false
 
 proc p {
   echo STDOUT
@@ -93,33 +90,41 @@ proc p {
   return 42
 }
 
-describe p {
+test-case "that it prints to stdout and stderr" {
   # each case changes to a clean directory?
   #
   # and each one is numbered?
 
-  it 'prints to stdout and stderr' {
-    try {
-      p > out 2>& err
-    }
-    assert (_status === 42)
-
-    cat out
-    cat err
-
-    # Oh man the here docs are still useful here because of 'diff' interface
-    # Multiline strings don't quite do it
-
-    diff out - <<< '''
-    STDOUT
-    '''
-
-    diff err - <<< '''
-    STDERR
-    '''
+  try {
+    p > out 2> err
   }
+
+  assert [_status === 42]
+  assert [$(<out) === "STDOUT"]
+  assert [$(<err) === "STDERR"]
 }
 
+run-tests
+
 ## STDOUT:
-TODO
+test that it prints to stdout and stderr ... ok
+1 tests succeeded
 ## END
+
+# #### ysh --tool test file
+# 
+# cat >mytest.ysh <<EOF
+# echo hi
+# EOF
+# 
+# # which ysh
+# 
+# # the test framework sets $SH to bin/ysh
+# # but ysh is already installed on this machine
+# 
+# $SH --tool test mytest.ysh
+# 
+# ## STDOUT:
+# ## END
+# 
+# # Hm can we do this entirely in user code, not as a builtin?

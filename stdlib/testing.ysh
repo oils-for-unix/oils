@@ -1,115 +1,202 @@
-# testing.ysh
-#
-# Usage:
-#   source --builtin testing.sh
-#
-# func f(x) { return (x + 1) }
-#
-# describe foo {
-#   assert (43 === f(42))
-# }
-#
-# if is-main {
-#   run-tests @ARGV   # --filter
-# }
+# TODO:
+# - [x] Renaming a bit for "privacy"
+# - [x] Renaming for public interface: test-case, test-suite, assert (subject to change)
+# - [x] Rename to use "-"s for procs.
+# - [x] Make test-case and test-suite take a word arg so they don't need parens
+# - [x] error if you try to re-enter run-tests
+# - [x] testing testing: assert fail, exn in assert, exn outside of assert
+# - [-] check for both kinds of exceptions (_status and _error)
+# - [x] tests for tests
+# - [ ] question: naming for variables?
+# - [ ] --tool test support (& spec test case for it)
+# - [ ] Turn the assert expression into a string, to print if it fails
+# - [ ] Use ctx instead of globals, wherever possible
+# - [ ] Merge _status and _error. Every exception should set _error, with the
+#       status stored on _error.status. Use _error instead of the icky global
+#       _assertion_result
 
-module stdlib/testing || return 0
+##########
+# Colors #
+##########
 
-source --builtin args.ysh
+const _BOLD = $'\e[1m'
+const _RED = $'\e[31m'
+const _GREEN = $'\e[32m'
+const _YELLOW = $'\e[33m'
+const _PURPLE = $'\e[35m'
+const _CYAN = $'\e[36m'
+const _RESET = $'\e[0;0m'
 
-proc assert ( ; cond ; fail_message='default fail message') {
-  echo 'hi from assert'
-
-  = cond
-
-  # I think this might be ready now?
-
-  var val = evalExpr(cond) 
-
-  echo
-  echo 'value'
-  = val
-  pp line (val)
-
-  = fail_message
-
-  if (val) {
-    echo 'OK'
-  } else {
-    var m = evalExpr(fail_message) 
-    echo "FAIL - this is where we extract the string - $m"
-  }
+func _red(text) {
+    if (_test_use_color) {
+        return ("${_BOLD}${_RED}${text}${_RESET}")
+    } else {
+        return (text)
+    }
+}
+func _yellow(text) {
+    if (_test_use_color) {
+        return ("${_YELLOW}${text}${_RESET}")
+    } else {
+        return (text)
+    }
+}
+func _green(text) {
+    if (_test_use_color) {
+        return ("${_YELLOW}${text}${_RESET}")
+    } else {
+        return (text)
+    }
+}
+func _cyan(text) {
+    if (_test_use_color) {
+        return ("${_YELLOW}${text}${_RESET}")
+    } else {
+        return (text)
+    }
 }
 
-proc test-assert {
-  var x = 42
-  assert [42 === x]
+############
+# Internal #
+############
+
+var _testing_in_progress = false
+var _test_suite_depth = 0
+var _test_suite_stack = []
+var _tests = {}
+
+var _num_test_fail = 0
+var _num_test_succ = 0
+var _test_use_color = true
+
+var _assertion_result = 0 # 0: no assert, 1: failed, 2: errored
+
+proc _start-test-suite (; name) {
+    call _test_suite_stack->append(name)
 }
 
-proc test-expr ( ; expr ) {
-  echo 'expr'
-  pp line (expr)
+proc _end-test-suite {
+    call _test_suite_stack->pop()
 }
 
-proc test-named ( ; ; n=^[99] ) {
-  echo 'n'
-  pp line (n)
+proc _test-print-indented (msg) {
+    for _ in (0 .. _test_suite_depth) {
+        printf "    "
+    }
+    echo "$msg"
 }
 
-# What happens when there are duplicate test IDs?
-#
-# Also I think filter by "$test_id/$case_id"
-
-proc __it (case_id ; ; ; block) {
-  # This uses a clean directory
-  echo TODO
+proc _run-test-suite (; suite) {
+    for name, elem in (suite) {
+        if (type (elem) === "Dict") {
+            # It's another suite.
+            var begin = _cyan("begin")
+            _test-print-indented "$begin $name"
+            setglobal _test_suite_depth += 1;
+            _run-test-suite (elem)
+            setglobal _test_suite_depth -= 1;
+            var end = _cyan("end")
+            _test-print-indented "$end"
+        } else {
+            # It's a test case.
+            _run-test-case (name, elem)
+        }
+    }
 }
 
-# is this accessible to users?
-# It can contain a global list of things to run
-
-# Naming convention: a proc named 'describe' mutates a global named _describe?
-# Or maybe _describe_list ?
-
-var _describe_list = []
-
-proc describe (test_id ; ; ; block) {
-  echo describe
-  #= desc
-
-  # TODO:
-  # - need append
-  # - need ::
-  # _ _describe->append(cmd)
-  #
-  # Need to clean this up
-  # append (_describe, cmd)  # does NOT work!
-
-  call _describe_list->append(block)
+proc _run-test-case (; name, block) {
+    var test = _yellow("test")
+    for _ in (0 .. _test_suite_depth) {
+        printf "    "
+    }
+    printf "$test $name ..."
+    setglobal _assertion_result = 0
+    try {
+        eval (block)
+    }
+    if (_status === 0) {
+        setglobal _num_test_succ += 1
+        var ok = _green(" ok")
+        printf "$ok"
+        printf '\n'
+    } else {
+        setglobal _num_test_fail += 1
+        printf '\n'
+        if (_assertion_result === 1) {
+            # An assertion failed.
+            var fail = _red("assertion FAILED")
+            _test-print-indented "    $fail"
+        } elif (_assertion_result === 2) {
+            # There was an exception while evaluating an assertion.
+            var exn_in_assert = _red("assertion ERRORED:")
+            _test-print-indented "    $exn_in_assert $_status"
+        } else {
+            # There was an exception in the test case outside of any `assert`.
+            var exn = _red("ERROR:")
+            _test-print-indented "    $exn $_status"
+        }
+    }
 }
 
-proc Args {
-  echo TODO
+##########
+# Public #
+##########
+
+proc test-suite (name ; ; ; block) {
+    _start-test-suite (name)
+    eval (block)
+    _end-test-suite
 }
 
-# Problem: this creates a global variable?
-Args (&spec) {
-  flag --filter 'Regex of test descriptions'
+proc test-case (name ; ; ; block) {
+    var test_suite = _tests
+    for suite_name in (_test_suite_stack) {
+        if (not (suite_name in test_suite)) {
+            setvar test_suite[suite_name] = {}
+        }
+        setvar test_suite = test_suite[suite_name]
+    }
+    setvar test_suite[name] = block
+}
+
+proc assert ( ; cond LAZY ) {
+    var success
+    try {
+        setvar success = evalExpr(cond)
+    }
+    if (_status !== 0) {
+        setglobal _assertion_result = 2
+        error "exception in assertion"
+    } elif (not success) {
+        setglobal _assertion_result = 1
+        error "assertion failed"
+    }
 }
 
 proc run-tests {
-  var opt, i = parseArgs(spec, ARGV)
-
-  # TODO:
-  # - parse --filter foo, which you can use eggex for!
-
-  for cmd in (_describe) {
-    # TODO: print filename and 'describe' name?
-    try {
-      eval (cmd)
+    if (_testing_in_progress) {
+        error "Cannot run tests while testing is already in progress"
     }
-    if (_status !== 0) {
-      echo 'failed'
+    setglobal _testing_in_progress = true
+    setglobal _num_test_fail = 0
+    setglobal _num_test_succ = 0
+
+    _run-test-suite (_tests)
+    setglobal _tests = {}
+    setglobal _testing_in_progress = false
+
+    var total = _num_test_fail + _num_test_succ
+    if (total === 0) {
+        var na = _yellow("0 tests ran")
+        printf "$na"
+        printf '\n'
+    } elif (_num_test_fail === 0) {
+        var success = _green("$total tests succeeded")
+        printf "$success"
+        printf '\n'
+    } else {
+        var failure = _red("$_num_test_fail / $total tests failed")
+        printf "$failure"
+        printf '\n'
     }
-  }
 }
