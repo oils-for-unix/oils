@@ -114,9 +114,13 @@ print-tasks() {
     # these have trivial GC stats
     "_bin/cxx-opt/osh${TAB}mut+alloc"
     "_bin/cxx-opt/osh${TAB}mut+alloc+free"
+    "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc"
+    "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc+free"
     # good GC stats
     "_bin/cxx-opt/osh${TAB}mut+alloc+free+gc"
     "_bin/cxx-opt/osh${TAB}mut+alloc+free+gc+exit"
+    "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc+free+gc"
+    "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc+free+gc+exit"
   )
 
   if test -n "${TCMALLOC:-}"; then
@@ -183,6 +187,11 @@ print-cachegrind-tasks() {
     "_bin/cxx-opt/osh${TAB}mut+alloc+free"
     "_bin/cxx-opt/osh${TAB}mut+alloc+free+gc"
     "_bin/cxx-opt/osh${TAB}mut+alloc+free+gc+exit"
+
+    "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc"
+    "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc+free"
+    "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc+free+gc"
+    "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc+free+gc+exit"
   )
 
   local id=0
@@ -389,10 +398,13 @@ build-binaries() {
     soil/cpp-tarball.sh build-like-ninja \
       opt{,+bumpleak,+bumproot,+bumpsmall,+nopool}
 
+    OILS_TRANSLATOR=mycpp-souffle soil/cpp-tarball.sh build-like-ninja opt
+
   else
 
     # Old Ninja build
     local -a bin=( _bin/cxx-opt{,+bumpleak,+bumproot,+bumpsmall,+nopool}/osh )
+    bin+=( _bin/cxx-opt/mycpp-souffle/osh )
 
     if test -n "${TCMALLOC:-}"; then
       bin+=( _bin/cxx-opt+tcmalloc/osh )

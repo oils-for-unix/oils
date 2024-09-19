@@ -65,6 +65,8 @@ GetOshLabel = function(shell_hash, prov_dir) {
       label = 'osh-ovm'
     } else if (length(grep('bin/osh', lines)) > 0) {
       label = 'osh-cpython'
+    } else if (length(grep('_bin/.*/mycpp-souffle/osh', lines)) > 0) {
+      label = 'osh-native-souffle'
     } else if (length(grep('_bin/.*/osh', lines)) > 0) {
       label = 'osh-native'
     } else {
@@ -78,6 +80,8 @@ GetOshLabel = function(shell_hash, prov_dir) {
 
 opt_suffix1 = '_bin/cxx-opt/osh'
 opt_suffix2 = '_bin/cxx-opt-sh/osh'
+opt_suffix3 = '_bin/cxx-opt/mycpp-souffle/osh'
+opt_suffix4 = '_bin/cxx-opt-sh/mycpp-souffle/osh'
 
 ShellLabels = function(shell_name, shell_hash, num_hosts) {
   ### Given 2 vectors, return a vector of readable labels.
@@ -104,6 +108,9 @@ ShellLabels = function(shell_name, shell_hash, num_hosts) {
     } else if (endsWith(sh, opt_suffix1) || endsWith(sh, opt_suffix2)) {
       label = 'opt/osh'
 
+    } else if (endsWith(sh, opt_suffix3) || endsWith(sh, opt_suffix4)) {
+      label = 'opt/osh-souffle'
+
     } else if (endsWith(sh, '_bin/cxx-opt+bumpleak/osh')) {
       label = 'bumpleak/osh'
 
@@ -127,6 +134,10 @@ ShellLabelFromPath = function(sh_path) {
     if (endsWith(sh, opt_suffix1) || endsWith(sh, opt_suffix2)) {
       # the opt binary is osh-native
       label = 'osh-native'
+
+	} else if (endsWith(sh, opt_suffix3) || endsWith(sh, opt_suffix4)) {
+      # the opt binary is osh-native
+      label = 'osh-native-souffle'
 
     } else if (endsWith(sh, '_bin/cxx-opt+bumpleak/osh')) {
       label = 'bumpleak/osh'
@@ -303,7 +314,7 @@ ParserReport = function(in_dir, out_dir) {
       arrange(host_label, num_lines) %>%
       mutate(osh_to_bash_ratio = `osh-native` / bash) %>% 
       select(c(host_label, bash, dash, mksh, zsh,
-               `osh-ovm`, `osh-cpython`, `osh-native`,
+               `osh-ovm`, `osh-cpython`, `osh-native`, `osh-native-souffle`,
                osh_to_bash_ratio, num_lines, filename, filename_HREF)) ->
       elapsed
 
@@ -317,7 +328,7 @@ ParserReport = function(in_dir, out_dir) {
       spread(key = shell_label, value = lines_per_ms) %>%
       arrange(host_label, num_lines) %>%
       select(c(host_label, bash, dash, mksh, zsh,
-               `osh-ovm`, `osh-cpython`, `osh-native`,
+               `osh-ovm`, `osh-cpython`, `osh-native`, `osh-native-souffle`,
                num_lines, filename, filename_HREF)) ->
       rate
 
@@ -331,7 +342,7 @@ ParserReport = function(in_dir, out_dir) {
       spread(key = shell_label, value = max_rss_MB) %>%
       arrange(host_label, num_lines) %>%
       select(c(host_label, bash, dash, mksh, zsh,
-               `osh-ovm`, `osh-cpython`, `osh-native`,
+               `osh-ovm`, `osh-cpython`, `osh-native`, `osh-native-souffle`,
                num_lines, filename, filename_HREF)) ->
       max_rss
 
@@ -350,7 +361,7 @@ ParserReport = function(in_dir, out_dir) {
       select(-c(irefs)) %>%
       spread(key = shell_label, value = thousand_irefs_per_line) %>%
       arrange(num_lines) %>%
-      select(c(bash, dash, mksh, `osh-native`,
+      select(c(bash, dash, mksh, `osh-native`, `osh-native-souffle`,
                num_lines, filename, filename_HREF)) ->
       instructions
 
@@ -537,7 +548,7 @@ RuntimeReport = function(in_dir, out_dir) {
     mutate(native_bash_ratio = `osh-native` / bash) %>%
     arrange(workload, host_name) %>%
     select(c(workload, host_name,
-             bash, dash, `osh-cpython`, `osh-native`,
+             bash, dash, `osh-cpython`, `osh-native`, `osh-native-souffle`,
              py_bash_ratio, native_bash_ratio)) ->
 
     elapsed
@@ -553,7 +564,7 @@ RuntimeReport = function(in_dir, out_dir) {
     mutate(native_bash_ratio = `osh-native` / bash) %>%
     arrange(workload, host_name) %>%
     select(c(workload, host_name,
-             bash, dash, `osh-cpython`, `osh-native`,
+             bash, dash, `osh-cpython`, `osh-native`, `osh-native-souffle`,
              py_bash_ratio, native_bash_ratio)) ->
     page_faults
 
@@ -568,7 +579,7 @@ RuntimeReport = function(in_dir, out_dir) {
     mutate(native_bash_ratio = `osh-native` / bash) %>%
     arrange(workload, host_name) %>%
     select(c(workload, host_name,
-             bash, dash, `osh-cpython`, `osh-native`,
+             bash, dash, `osh-cpython`, `osh-native`, `osh-native-souffle`,
              py_bash_ratio, native_bash_ratio)) ->
     max_rss
 
@@ -610,7 +621,7 @@ RuntimeReport = function(in_dir, out_dir) {
 
   # milliseconds don't need decimal digit
   precision = ColumnPrecision(list(bash = 0, dash = 0, `osh-cpython` = 0,
-                                   `osh-native` = 0, py_bash_ratio = 2,
+                                   `osh-native` = 0, `osh-native-souffle` = 0, py_bash_ratio = 2,
                                    native_bash_ratio = 2))
   writeTsv(elapsed, file.path(out_dir, 'elapsed'), precision)
   writeTsv(page_faults, file.path(out_dir, 'page_faults'), precision)

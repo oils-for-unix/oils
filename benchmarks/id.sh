@@ -159,6 +159,8 @@ _shell-id-hash() {
   # For OSH
   file=$src/git-commit-hash.txt
   test -f $file && cat $file
+  # XXX: Include shell path to help distinguish between versions of OSH
+  echo $src
 
   return 0
 }
