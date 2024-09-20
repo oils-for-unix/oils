@@ -193,4 +193,15 @@ bug-1853() {
   $sh -c 'trap "echo hi" EXIT; $(which true); echo last'
 }
 
+bug-2078() {
+  local n=${1:-150}
+
+  { echo '= {'
+    for i in $(seq $n); do
+      echo '"key'$i'": "val"'
+    done
+    echo '}'
+  } | _bin/cxx-asan/ysh
+}
+
 "$@"

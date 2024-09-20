@@ -4,12 +4,11 @@
 #include "vendor/greatest.h"
 
 TEST allocator_test() {
-#if 0
   pnode::PNodeAllocator p;
   for (int i = 0; i < 1000; ++i) {
     p.NewPNode(1, nullptr);
   }
-#endif
+  p.Clear();
 
   PASS();
 }
