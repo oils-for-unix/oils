@@ -195,6 +195,10 @@ def NinjaGraph(ru):
                       '//frontend/syntax.asdl',
                   ])
 
+    ru.cc_binary('cpp/pgen2_test.cc',
+                 deps=['//cpp/pgen2'],
+                 matrix=ninja_lib.COMPILERS_VARIANTS)
+
     ru.cc_library('//cpp/pylib',
                   srcs=['cpp/pylib.cc'],
                   deps=['//mycpp/runtime'])

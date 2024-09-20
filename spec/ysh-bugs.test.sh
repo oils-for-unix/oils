@@ -261,3 +261,35 @@ if false {
 ## END
 
 
+#### crash due to arbitrary PNode limit - issue #2078
+
+#!/usr/bin/env ysh
+var DelegatedCompName = {
+  "llvm"                 : "x_project",
+  "rocprofiler_register" : "x_rocprofiler_register",
+  "roct_thunk_interface" : "x_roct",
+  "rocr_runtime"         : "x_rocr",
+  "openmp"               : "x_openmp",
+  "offload"              : "x_offload",
+  "aomp_extras"          : "x_extras",
+  "comgr"                : "x_comgr",
+  "rocminfo"             : "x_rocminfo",
+  "rocsmilib"            : "x_rocm_smi_lib",
+  "amdsmi"               : "x_amdsmi",
+  "flang_legacy"         : "x_flang_legacy",
+  "pgmath"               : "x_pgmath",
+  "flang"                : "x_flang",
+  "flang_runtime"        : "x_flang_runtime",
+  "hipcc"                : "x_hipcc",
+  "hipamd"               : "x_hipamd",
+  "rocm_dbgapi"          : "x_rocdbgapi",
+  "rocgdb"               : "x_rocgdb",
+  "roctracer"            : "x_roctracer",
+  "rocprofiler"          : "x_rocprofiler"
+}
+
+echo $[len(DelegatedCompName)]
+
+## STDOUT:
+21
+## END

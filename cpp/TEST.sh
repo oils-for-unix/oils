@@ -65,6 +65,8 @@ unit() {
 
     run-one-test     cpp/osh_test '' $variant
 
+    run-one-test     cpp/pgen2_test '' $variant
+
     run-one-test     cpp/pylib_test '' $variant
 
     run-one-test     cpp/stdlib_test '' $variant
