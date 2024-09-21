@@ -13,6 +13,7 @@ set -o errexit
 #source soil/common.sh
 
 OILS_VERSION=$(head -n 1 oil-version.txt)
+OILS_TRANSLATOR=${OILS_TRANSLATOR:-mycpp}
 
 build-like-ninja() {
   local tar=_release/oils-for-unix.tar
@@ -37,7 +38,9 @@ build-like-ninja() {
     mkdir -p $tmp
     pushd $tmp
 
-    tar -x < ../../$tar
+    if ! test -d oils-for-unix-$OILS_VERSION; then
+      tar -x < ../../$tar
+    fi
 
     # Leaving out version
     pushd oils-for-unix-$OILS_VERSION
@@ -45,7 +48,7 @@ build-like-ninja() {
     ./configure
 
     for variant in "$@"; do
-      time _build/oils.sh '' $variant SKIP_REBUILD
+      time _build/oils.sh '' $variant $OILS_TRANSLATOR SKIP_REBUILD
     done
 
     popd
@@ -53,10 +56,22 @@ build-like-ninja() {
 
     # Hack: copy to NInja location.  So the interface is the same.
     for variant in "$@"; do
-      mkdir -v -p _bin/cxx-$variant
+      local out_bin_dir
+      local tar_bin_dir
+      case $OILS_TRANSLATOR in
+        mycpp)
+          out_bin_dir=_bin/cxx-$variant
+          tar_bin_dir=_bin/cxx-$variant-sh
+          ;;
+        *)
+          out_bin_dir=_bin/cxx-$variant/$OILS_TRANSLATOR
+          tar_bin_dir=_bin/cxx-$variant-sh/$OILS_TRANSLATOR
+          ;;
+      esac
+      mkdir -v -p $out_bin_dir
       cp -v \
-        $tmp/oils-for-unix-$OILS_VERSION/_bin/cxx-$variant-sh/{oils-for-unix,osh,ysh} \
-        _bin/cxx-$variant
+        $tmp/oils-for-unix-$OILS_VERSION/$tar_bin_dir/{oils-for-unix,osh,ysh} \
+        $out_bin_dir
     done
 
   else

@@ -10,6 +10,7 @@ from __future__ import print_function
 import cStringIO
 from glob import glob
 import os
+import re
 import sys
 
 from build import ninja_lib
@@ -129,16 +130,23 @@ _compile_one() {
 main() {
   ### Compile oils-for-unix into _bin/$compiler-$variant-sh/ (not with ninja)
 
-  local compiler=${1:-cxx}   # default is system compiler
-  local variant=${2:-opt}    # default is optimized build
-  local skip_rebuild=${3:-}  # if the output exists, skip build'
+  local compiler=${1:-cxx}        # default is system compiler
+  local variant=${2:-opt}         # default is optimized build
+  local translator=${3:-mycpp}    # default is the translator w/o optimizations
+  local skip_rebuild=${4:-}  # if the output exists, skip build'
 ''' % (argv0),
           file=f)
 
-    out_dir = '_bin/$compiler-$variant-sh'
-    print('  local out_dir=%s' % out_dir, file=f)
-
     print('''\
+  local out_dir
+  case $translator in
+    mycpp)
+      out_dir=_bin/$compiler-$variant-sh
+      ;;
+    *)
+      out_dir=_bin/$compiler-$variant-sh/$translator
+      ;;
+  esac
   local out=$out_dir/oils-for-unix
 
   if test -n "$skip_rebuild" && test -f "$out"; then
@@ -157,14 +165,20 @@ main() {
 
     objects = []
 
-    in_out = []
+    in_out = [
+      ('_gen/bin/oils_for_unix.$translator.cc',
+       '_build/obj/$compiler-$variant-sh/_gen/bin/oils_for_unix.o'),
+    ]
     for src in sorted(cc_sources):
         # e.g. _build/obj/cxx-dbg-sh/posix.o
         prefix, _ = os.path.splitext(src)
+        if prefix.startswith('_gen/bin/oils_for_unix'):
+          continue
         obj = '_build/obj/$compiler-$variant-sh/%s.o' % prefix
         in_out.append((src, obj))
 
-    bin_dir = '_bin/$compiler-$variant-sh'
+
+    bin_dir = '_bin/$compiler-$variant-sh/$translator'
     obj_dirs = sorted(set(os.path.dirname(obj) for _, obj in in_out))
 
     all_dirs = [bin_dir] + obj_dirs
@@ -182,7 +196,7 @@ main() {
         objects.append(obj_quoted)
 
         # Only fork one translation unit that we know to be slow
-        if 'oils_for_unix.mycpp.cc' in src:
+        if re.match('.*oils_for_unix\..*\.cc', src):
             # There should only be one forked translation unit
             # It can be turned off with OILS_PARALLEL_BUILD= _build/oils
             assert do_fork == ''
@@ -427,7 +441,8 @@ def main(argv):
 
     elif action == 'tarball-manifest':
         h = ru.HeadersForBinary('_gen/bin/oils_for_unix.mycpp.cc')
-        TarballManifest(cc_sources + h)
+        tar_cc_sources = cc_sources + ['_gen/bin/oils_for_unix.mycpp-souffle.cc']
+        TarballManifest(tar_cc_sources + h)
 
     else:
         raise RuntimeError('Invalid action %r' % action)

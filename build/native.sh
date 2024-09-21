@@ -19,13 +19,22 @@ source build/common.sh  # log
 # - TODO: do this in the Soil 'cpp' task
 
 tarball-demo() {
+  translator=${1:-mycpp}
   mkdir -p _bin
 
   ./configure
 
-  time _build/oils.sh '' '' SKIP_REBUILD
+  time _build/oils.sh '' '' $translator SKIP_REBUILD
 
-  local bin=_bin/cxx-opt-sh/oils-for-unix.stripped
+  local bin
+  case $translator in
+    mycpp)
+      bin=_bin/cxx-opt-sh/oils-for-unix.stripped
+      ;;
+    *)
+      bin=_bin/cxx-opt-sh/$translator/oils-for-unix.stripped
+      ;;
+  esac
 
   ls -l $bin
 
