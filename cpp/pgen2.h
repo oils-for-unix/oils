@@ -3,6 +3,7 @@
 #ifndef CPP_PGEN2_H
 #define CPP_PGEN2_H
 
+#include <deque>
 #include <vector>
 
 #include "_gen/frontend/syntax.asdl.h"
@@ -77,7 +78,7 @@ class PNodeAllocator {
 
  private:
   // We put this on the heap so we can call its destructor from `Clear()`...
-  std::vector<PNode>* arena_;
+  std::deque<PNode>* arena_;
 };
 
 }  // namespace pnode

@@ -194,13 +194,15 @@ bug-1853() {
 }
 
 bug-2078() {
-  local n=${1:-150}
+  local n=${1:-160}
 
-  { echo '= {'
+  { echo 'var x = {'
     for i in $(seq $n); do
       echo '"key'$i'": "val"'
     done
-    echo '}'
+    echo '}
+    = x
+    = len(x)'
   } | _bin/cxx-asan/ysh
 }
 

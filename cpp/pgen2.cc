@@ -26,16 +26,17 @@ int PNode::NumChildren() {
   return children.size();
 }
 
-PNodeAllocator::PNodeAllocator() : arena_(new std::vector<PNode>()) {
-  arena_->reserve(4096);
+PNodeAllocator::PNodeAllocator() : arena_(new std::deque<PNode>()) {
+  //arena_->reserve(4096);
 }
 
 PNode* PNodeAllocator::NewPNode(int typ, syntax_asdl::Token* tok) {
   // TODO: Remove arbitrary limit, probably by using something other than
   // std::vector, which invalidates pointers on resize
-  CHECK(arena_->size() < arena_->capacity());
+  //CHECK(arena_->size() < arena_->capacity());
   arena_->emplace_back(typ, tok, nullptr);
-  return arena_->data() + (arena_->size() - 1);
+  //return arena_->data() + (arena_->size() - 1);
+  return &arena_->back();
 }
 
 void PNodeAllocator::Clear() {
