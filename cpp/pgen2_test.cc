@@ -4,12 +4,15 @@
 #include "vendor/greatest.h"
 
 TEST allocator_test() {
-  pnode::PNodeAllocator p;
-  for (int i = 0; i < 1000; ++i) {
-    p.NewPNode(1, nullptr);
+  for (int i = 0; i < 6000; i += 100) {
+    pnode::PNodeAllocator p;
+    log("Testing i = %d\n", i);
+    for (int j = 0; j < i; ++j) {
+      p.NewPNode(1, nullptr);
+    }
+    // TODO: it woudl be nicer to reuse the std::deque
+    p.Clear();
   }
-  p.Clear();
-
   PASS();
 }
 
