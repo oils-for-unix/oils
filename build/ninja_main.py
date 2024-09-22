@@ -108,6 +108,7 @@ def ShellFunctions(cc_sources, f, argv0):
 #
 #   COMPILER: 'cxx' for system compiler, 'clang' or custom one [default cxx]
 #   VARIANT: 'dbg' or 'opt' [default opt]
+#   TRANSLATOR: 'mycpp' or 'mycpp-souffle' [default mycpp]
 #   SKIP_REBUILD: if non-empty, checks if the output exists before building
 
 . build/ninja-rules-cpp.sh
