@@ -97,7 +97,12 @@ Features:
 - [Guide to YSH Error Handling](ysh-error.html)
 - [Guide to Procs and Funcs](proc-func.html)
   - [Block Literals](block-literals.html) &dagger;
-- [Streams, Tables, Processes - awk, R, xargs](stream-table-process.html) &dagger;
+
+Designs for "Maximalist YSH":
+
+- [Streams, Tables, and Processes - awk, R, xargs](stream-table-process.html) &dagger;
+- [Document Processing in YSH - Notation, Query, Templating](ysh-doc-processing.html) &dagger;
+
 
 Crosscutting design issues:
 

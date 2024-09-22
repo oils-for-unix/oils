@@ -100,9 +100,10 @@ readonly MARKDOWN_DOCS=(
   qtt
   j8-notation
   # Protocol
-  byo
   pretty-printing
   stream-table-process
+  byo
+  ysh-doc-processing
 
   lib-osh
 
