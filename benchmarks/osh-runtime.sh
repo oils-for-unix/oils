@@ -213,7 +213,8 @@ print-workloads() {
 
 print-tasks() {
   local host_name=$1  
-  local osh_native=$2
+  shift 1
+  local -a osh_native=( "$@" )
 
   if test -n "${QUICKLY:-}"; then
     workloads=(
@@ -226,7 +227,7 @@ print-tasks() {
     workloads=( "${ALL_WORKLOADS[@]}" )
   fi
 
-  for sh_path in bash dash bin/osh $osh_native; do
+  for sh_path in bash dash bin/osh "${osh_native[@]}"; do
     for workload in "${workloads[@]}"; do
       tsv-row $host_name $sh_path $workload
     done
@@ -311,9 +312,10 @@ measure() {
   ### For release and CI
   local host_name=$1  # 'no-host' or 'lenny'
   local raw_out_dir=$2  # _tmp/osh-runtime/$X or ../../benchmark-data/osh-runtime/$X
-  local osh_native=$3  # $OSH_CPP_NINJA_BUILD or $OSH_CPP_BENCHMARK_DATA
+  shift 2
+  local -a osh_native=( "$@" )  # $OSH_CPP_NINJA_BUILD or $OSH_CPP_BENCHMARK_DATA, etc...
 
-  print-tasks "$host_name" "$osh_native" \
+  print-tasks "$host_name" "${osh_native[@]}" \
     | run-tasks-wrapper "$host_name" "$raw_out_dir"
 }
 
@@ -492,7 +494,7 @@ soil-run() {
   extract
 
   # could add _bin/cxx-bumpleak/oils-for-unix, although sometimes it's slower
-  local -a osh_bin=( $OSH_CPP_NINJA_BUILD )
+  local -a osh_bin=( $OSH_CPP_NINJA_BUILD $OSH_SOUFFLE_CPP_NINJA_BUILD )
   ninja "${osh_bin[@]}"
 
   local single_machine='no-host'
@@ -509,7 +511,7 @@ soil-run() {
   local raw_out_dir="$BASE_DIR/raw.$host_job_id"
   mkdir -p $raw_out_dir $BASE_DIR/stage1
 
-  measure $single_machine $raw_out_dir $OSH_CPP_NINJA_BUILD
+  measure $single_machine $raw_out_dir $OSH_CPP_NINJA_BUILD $OSH_SOUFFLE_CPP_NINJA_BUILD
 
   # Trivial concatenation for 1 machine
   stage1 '' $single_machine

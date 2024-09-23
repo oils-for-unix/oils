@@ -44,6 +44,7 @@ cpython-configure-tasks() {
   for v in ${variants[@]}; do
     echo "${v}${TAB}_bin/cxx-$v/osh"
   done
+  echo "opt${TAB}_bin/cxx-opt/mycpp-souffle/osh"
 }
 
 cpython-setup() {
@@ -145,6 +146,7 @@ shell-tasks() {
   echo "bash${TAB}bash"
   echo "dash${TAB}dash"
   echo "osh${TAB}$REPO_ROOT/_bin/cxx-opt/osh"
+  echo "osh${TAB}$REPO_ROOT/_bin/cxx-opt/mycpp-souffle/osh"
 }
 
 measure-syscalls() {
@@ -524,6 +526,8 @@ fork-tasks() {
   # Hm this is noisy, but cxx-opt-sh does seem slower
   echo "osh${TAB}$REPO_ROOT/_bin/cxx-opt/osh"
   echo "osh${TAB}$REPO_ROOT/_bin/cxx-opt-sh/osh"
+  echo "osh${TAB}$REPO_ROOT/_bin/cxx-opt/mycpp-souffle/osh"
+  echo "osh${TAB}$REPO_ROOT/_bin/cxx-opt-sh/mycpp-souffle/osh"
 }
 
 measure-fork() {

@@ -37,6 +37,8 @@ make-tar() {
   gen-oils-sh
   # Build default target to generate code
   ninja
+  # Generate code with the mycpp-souffle translator
+  ninja _gen/bin/oils_for_unix.mycpp-souffle.cc
 
   local sed_expr="s,^,${app_name}-${OILS_VERSION}/,"
   tarball-manifest | xargs -- tar --create --transform "$sed_expr" --file $tar
@@ -49,6 +51,7 @@ make-tar() {
 
 test-tar() {
   local install=${1:-}
+  local translator=${2:-mycpp}
 
   local tmp=_tmp/native-tar-test  # like oil-tar-test
   rm -r -f $tmp
@@ -57,7 +60,7 @@ test-tar() {
   tar -x < ../../_release/oils-for-unix.tar
 
   pushd oils-for-unix-$OILS_VERSION
-  build/native.sh tarball-demo
+  build/native.sh tarball-demo $translator
 
   if test -n "$install"; then
     sudo ./install

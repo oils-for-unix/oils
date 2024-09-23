@@ -411,7 +411,7 @@ soil-run() {
   mkdir -p $BASE_DIR
 
   # Test the one that's IN TREE, NOT in ../benchmark-data
-  local -a osh_bin=( $OSH_CPP_NINJA_BUILD _bin/cxx-opt+bumpleak/osh)
+  local -a osh_bin=( $OSH_CPP_NINJA_BUILD $OSH_SOUFFLE_CPP_NINJA_BUILD _bin/cxx-opt+bumpleak/osh)
   ninja "${osh_bin[@]}"
 
   local single_machine='no-host'

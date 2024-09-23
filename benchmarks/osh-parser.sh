@@ -60,12 +60,19 @@ parser-task() {
   local times_out="$out_dir/$host.$job_id.times.csv"
 
   local shell_name
-  shell_name=$(basename $sh_path)
+  case $sh_path in
+    _bin/*/mycpp-souffle/*)
+      shell_name=osh-native-souffle
+      ;;
+    *)
+      shell_name=$(basename $sh_path)
+      ;;
+  esac
 
   # Can't use array because of set -u bug!!!  Only fixed in bash 4.4.
   extra_args=''
   case "$shell_name" in
-    osh|oils-for-unix.*)
+    osh*|oils-for-unix.*)
       extra_args='--ast-format none'
       ;;
   esac
@@ -106,7 +113,14 @@ cachegrind-task() {
   mkdir -p $out_dir/$cachegrind_out_dir
 
   local shell_name
-  shell_name=$(basename $sh_path)
+  case $sh_path in
+    _bin/*/mycpp-souffle/*)
+      shell_name=osh-native-souffle
+      ;;
+    *)
+      shell_name=$(basename $sh_path)
+      ;;
+  esac
 
   local script_name
   script_name=$(basename $script_path)
@@ -117,7 +131,7 @@ cachegrind-task() {
   # Can't use array because of set -u bug!!!  Only fixed in bash 4.4.
   extra_args=''
   case "$shell_name" in
-    osh|oils-for-unix.*)
+    osh*|oils-for-unix.*)
       extra_args="--ast-format none"
       ;;
   esac
@@ -202,7 +216,8 @@ measure() {
   local provenance=$1
   local host_job_id=$2
   local out_dir=${3:-$BASE_DIR/raw}
-  local osh_cpp=${4:-$OSH_CPP_BENCHMARK_DATA}
+  shift 3
+  local -a osh_cpp=( "${@:-$OSH_CPP_BENCHMARK_DATA}" )
 
   local times_out="$out_dir/$host_job_id.times.csv"
   local lines_out="$out_dir/$host_job_id.lines.csv"
@@ -222,7 +237,7 @@ measure() {
     > $times_out
 
   local tasks=$BASE_DIR/tasks.txt
-  print-tasks $provenance "${SHELLS[@]}" $osh_cpp > $tasks
+  print-tasks $provenance "${SHELLS[@]}" "${osh_cpp[@]}" > $tasks
 
   # Run them all
   cat $tasks | xargs -n $NUM_TASK_COLS -- $0 parser-task $out_dir
@@ -232,7 +247,8 @@ measure-cachegrind() {
   local provenance=$1
   local host_job_id=$2
   local out_dir=${3:-$BASE_DIR/raw}
-  local osh_cpp=${4:-$OSH_CPP_BENCHMARK_DATA}
+  shift 3
+  local -a osh_cpp=( "${@:-$OSH_CPP_BENCHMARK_DATA}" )
 
   local cachegrind_tsv="$out_dir/$host_job_id.cachegrind.tsv"
   local lines_out="$out_dir/$host_job_id.lines.tsv"
@@ -257,7 +273,7 @@ measure-cachegrind() {
   # zsh weirdly forks during zsh -n, which complicates our cachegrind
   # measurement.  So just ignore it.  (This can be seen with
   # strace -e fork -f -- zsh -n $file)
-  print-tasks $provenance bash dash mksh $osh_cpp > $ctasks
+  print-tasks $provenance bash dash mksh "${osh_cpp[@]}" > $ctasks
 
   cat $ctasks | xargs -n $NUM_TASK_COLS -- $0 cachegrind-task $out_dir
 }
@@ -474,7 +490,7 @@ soil-run() {
   rm -r -f $BASE_DIR
   mkdir -p $BASE_DIR
 
-  local -a osh_bin=( $OSH_CPP_NINJA_BUILD )
+  local -a osh_bin=( $OSH_CPP_NINJA_BUILD $OSH_SOUFFLE_CPP_NINJA_BUILD )
   ninja "${osh_bin[@]}"
 
   local single_machine='no-host'
@@ -490,9 +506,9 @@ soil-run() {
   local provenance=_tmp/provenance.txt
   local host_job_id="$single_machine.$job_id"
 
-  measure $provenance $host_job_id '' $OSH_CPP_NINJA_BUILD
+  measure $provenance $host_job_id '' $OSH_CPP_NINJA_BUILD $OSH_SOUFFLE_CPP_NINJA_BUILD
 
-  measure-cachegrind $provenance $host_job_id '' $OSH_CPP_NINJA_BUILD
+  measure-cachegrind $provenance $host_job_id '' $OSH_CPP_NINJA_BUILD $OSH_SOUFFLE_CPP_NINJA_BUILD
 
   # TODO: R can use this TSV file
   cp -v _tmp/provenance.tsv $BASE_DIR/stage1/provenance.tsv

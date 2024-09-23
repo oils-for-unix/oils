@@ -25,11 +25,14 @@ OIL_VERSION=$(head -n 1 oil-version.txt)
 readonly BENCHMARK_DATA_OILS=$PWD/../benchmark-data/src/oils-for-unix-$OIL_VERSION
 
 readonly OSH_CPP_NINJA_BUILD=_bin/cxx-opt/osh
+readonly OSH_SOUFFLE_CPP_NINJA_BUILD=_bin/cxx-opt/mycpp-souffle/osh
 
 readonly OSH_CPP_SH_BUILD=_bin/cxx-opt-sh/osh
+readonly OSH_SOUFFLE_CPP_SH_BUILD=_bin/cxx-opt-sh/mycpp-souffle/osh
 readonly YSH_CPP_SH_BUILD=_bin/cxx-opt-sh/ysh
 
 readonly OSH_CPP_BENCHMARK_DATA=$BENCHMARK_DATA_OILS/$OSH_CPP_SH_BUILD
+readonly OSH_SOUFFLE_CPP_BENCHMARK_DATA=$BENCHMARK_DATA_OILS/$OSH_SOUFFLE_CPP_SH_BUILD
 readonly YSH_CPP_BENCHMARK_DATA=$BENCHMARK_DATA_OILS/$YSH_CPP_SH_BUILD
 
 #
