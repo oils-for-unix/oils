@@ -568,9 +568,11 @@ def ComputeMinimalStackRoots(cfgs: dict[str, ControlFlowGraph],
     that can be queried by cppgen_pass.
     """
     DumpControlFlowGraphs(cfgs, facts_dir=facts_dir)
-    # The facts files can be pretty large. Sync them first to avoid reading
-    # truncated files from the solver.
-    subprocess.run('sync {}/*.facts'.format(facts_dir), shell=True)
+
+    # Work around bug of reading truncated files from the solver?
+    # Could this be a ninja race condition, with a missing dependency?
+    # subprocess.run('sync {}/*.facts'.format(facts_dir), shell=True)
+
     subprocess.check_call([
         '_bin/datalog/dataflow',
         '-F',
