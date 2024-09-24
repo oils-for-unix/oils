@@ -40,57 +40,6 @@ cd { echo $PWD }
 /tmp
 ## END
 
-#### cd with block: fatal error in block
-shopt -s ysh:all
-cd / {
-  echo one
-  false
-  echo two
-}
-## status: 1
-## STDOUT:
-one
-## END
-
-
-#### cd with block: return in block
-shopt -s oil:all
-f() {
-  cd / {
-    echo one
-    return
-    echo two
-  }
-  echo 'end func'
-}
-f
-## STDOUT:
-one
-end func
-## END
-
-#### cd with block: break in block
-shopt -s oil:all
-f() {
-  cd / {
-    echo one
-    for i in 1 2; do
-      echo $i
-      break  # break out of loop
-    done
-
-    break  # break out of block isn't valid
-    echo two
-  }
-  echo end func
-}
-f
-## status: 1
-## STDOUT:
-one
-1
-## END
-
 #### cd with block exits with status 0
 shopt -s ysh:all
 cd / {

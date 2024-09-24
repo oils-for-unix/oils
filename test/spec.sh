@@ -745,6 +745,10 @@ ysh-blocks() {
   run-file ysh-blocks "$@"
 }
 
+ysh-control-flow() {
+  run-file ysh-control-flow "$@"
+}
+
 ysh-bugs() {
   run-file ysh-bugs "$@"
 }
