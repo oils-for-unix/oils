@@ -570,12 +570,15 @@ def DumpControlFlowGraphs(cfgs: dict[str, ControlFlowGraph],
 
 
 def ComputeMinimalStackRoots(cfgs: dict[str, ControlFlowGraph],
-                             facts_dir: str = '_tmp/mycpp-facts',
-                             souffle_output_dir: str = '_tmp') -> StackRoots:
+                             souffle_dir: str = '_tmp') -> StackRoots:
     """
     Run the the souffle stack roots solver and translate its output in a format
     that can be queried by cppgen_pass.
     """
+    facts_dir = '{}/facts'.format(souffle_dir)
+    os.makedirs(facts_dir)
+    output_dir = '{}/outputs'.format(souffle_dir)
+    os.makedirs(output_dir)
     DumpControlFlowGraphs(cfgs, facts_dir=facts_dir)
 
     subprocess.check_call([
@@ -583,11 +586,11 @@ def ComputeMinimalStackRoots(cfgs: dict[str, ControlFlowGraph],
         '-F',
         facts_dir,
         '-D',
-        souffle_output_dir,
+        output_dir,
     ])
 
     tuples: set[tuple[SymbolPath, SymbolPath]] = set({})
-    with open('{}/stack_root_vars.tsv'.format(souffle_output_dir),
+    with open('{}/stack_root_vars.tsv'.format(output_dir),
               'r') as roots_f:
         pat = re.compile(r'\$(.*)\((.*), (.*)\)')
         for line in roots_f:
