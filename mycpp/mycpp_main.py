@@ -7,6 +7,7 @@ from __future__ import print_function
 import optparse
 import os
 import sys
+import tempfile
 
 from typing import List, Optional, Tuple
 
@@ -370,7 +371,12 @@ def main(argv):
     log('\tmycpp pass: DATAFLOW')
     stack_roots = None
     if opts.minimize_stack_roots:
-        stack_roots = pass_state.ComputeMinimalStackRoots(cfgs)
+        souffle_dir = tempfile.TemporaryDirectory()
+        facts_dir = '{}/facts'.format(souffle_dir.name)
+        os.mkdir(facts_dir)
+        stack_roots = pass_state.ComputeMinimalStackRoots(cfgs,
+                                                          facts_dir=facts_dir,
+                                                          souffle_output_dir=souffle_dir.name)
     else:
         pass_state.DumpControlFlowGraphs(cfgs)
 
