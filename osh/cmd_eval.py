@@ -2107,17 +2107,7 @@ class CommandEvaluator(object):
 
         (Should those be more like eval 'mystring'?)
         """
-        status = 0
-        try:
-            status = self._Execute(block)  # can raise FatalRuntimeError, etc.
-        except vm.IntControlFlow as e:  # A block is more like a function.
-            # return in a block
-            if e.IsReturn():
-                status = e.StatusCode()
-            else:
-                e_die('Unexpected control flow in block', e.token)
-
-        return status
+        return self._Execute(block)  # can raise FatalRuntimeError, etc.
 
     def RunTrapsOnExit(self, mut_status):
         # type: (IntParamBox) -> None

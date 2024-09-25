@@ -1,5 +1,5 @@
 ## compare_shells: dash bash-4.4 mksh zsh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 #### Eval
 eval "a=3"

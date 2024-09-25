@@ -21,12 +21,12 @@ f() {
     return
     echo two
   }
+  # not reached, because we're turning out of f
   echo 'end func'
 }
 f
 ## STDOUT:
 one
-end func
 ## END
 
 #### cd builtin: break in block
@@ -80,6 +80,7 @@ f() {
     return
     echo two
   }
+  # this is reached because we're returning of proc-that-runs-block
   echo 'end func'
 }
 f
@@ -144,6 +145,7 @@ f() {
     return
     echo two
   '
+  # this is reached because we're returning of proc-that-evals
   echo 'end func'
 }
 f

@@ -64,7 +64,17 @@ class Eval(vm._Builtin):
 
     def RunTyped(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        """For eval (mycmd)"""
+        """For eval (mycmd)
+
+        Note: this doesn't have the exact same interface as main_loop.Batch().
+        I wonder if it's better to have
+
+        var cmd = parseCommand(s)
+        var expr = parseExpr(s)
+
+        eval-command (cmd)   or   eval-block (b)
+        = evalExpr(expr)
+        """
         rd = typed_args.ReaderForProc(cmd_val)
         cmd = rd.PosCommand()
         dollar0 = rd.NamedStr("dollar0", None)
