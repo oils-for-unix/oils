@@ -545,6 +545,7 @@ def DumpControlFlowGraphs(cfgs: dict[str, ControlFlowGraph],
     """
     edge_facts = '{}/cf_edge.facts'.format(facts_dir)
 
+    os.makedirs(facts_dir, exist_ok=True)
     # Open files for all facts that we might emit even if we don't end up having
     # anything to write to them. Souffle will complain if it can't find the file
     # for anything marked as an input.
@@ -553,7 +554,6 @@ def DumpControlFlowGraphs(cfgs: dict[str, ControlFlowGraph],
         open('{}/{}.facts'.format(facts_dir, fact_type.name()), 'w')
         for fact_type in Fact.__subclasses__()
     }
-    os.makedirs(facts_dir, exist_ok=True)
     with open(edge_facts, 'w') as cfg_f:
         for func, cfg in sorted(cfgs.items()):
             joined = join_name(func, delim='.')
