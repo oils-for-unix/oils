@@ -1,7 +1,7 @@
 # YSH specific features of eval
 
 ## our_shell: ysh
-## oils_failures_allowed: 4
+## oils_failures_allowed: 3
 
 #### Eval does not take a literal block - can restore this later
 
@@ -347,15 +347,22 @@ var d = io->evalToDict(^(var foo = 42; var bar = g;))
 pp test_ (d)
 
 # Same thing in a local frame
-proc p (dummy) {
-  var d = io->evalToDict(^(var foo = 42; var bar = g;))
+proc p (myparam) {
+  var mylocal = 'local'
+  var cmd = ^(
+    var foo = 42
+    var g = "-$g"
+    var p = "-$myparam"
+    var L = "-$mylocal"
+  )
+  var d = io->evalToDict(cmd)
   pp test_ (d)
 }
-p dummy
+p param
 
 ## STDOUT:
-(Dict)   {"foo":42,"bar":"zz"}
-(Dict)   {"foo":42,"bar":"zz"}
+(Dict)   {"foo":42,"bar":"global"}
+(Dict)   {"foo":42,"g":"-global","p":"-param","L":"-local"}
 ## END
 
 #### parseCommand then io->evalToDict() - in global scope

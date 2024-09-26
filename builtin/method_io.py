@@ -7,7 +7,7 @@ from core import error
 from core import num
 from core import state
 from core import vm
-from mycpp.mylib import iteritems, log, NewDict
+from mycpp.mylib import log, NewDict
 from osh import prompt
 
 from typing import Dict, TYPE_CHECKING

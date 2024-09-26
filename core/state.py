@@ -1643,23 +1643,25 @@ class Mem(object):
     # Named Vars
     #
 
-    def _ResolveInFrame(self, frame, name):
-        # type: (Dict[str, Cell], str) -> Optional[Tuple[Cell, Dict[str, Cell]]]
+    def _FrameLookup(self, frame, name):
+        # type: (Dict[str, Cell], str) -> Tuple[Optional[Cell], Dict[str, Cell]]
         """
-        Look in the __rear__ frame
+        Look in the frame itself, then the __rear__ frame if it exists
         """
         cell = frame.get(name)
         if cell:
             return cell, frame
 
-        rear_val = frame.get('__rear__').val  # ctx_FrontFrame() sets this
-        if rear_val and rear_val.tag() == value_e.Frame:
-            frame = cast(value.Frame, rear_val).frame
-            cell = frame.get(name)
-            if cell:
-                return cell, frame
+        rear_cell = frame.get('__rear__')  # ctx_FrontFrame() sets this
+        if rear_cell:
+            rear_val = rear_cell.val
+            if rear_val and rear_val.tag() == value_e.Frame:
+                frame = cast(value.Frame, rear_val).frame
+                cell = frame.get(name)
+                if cell:
+                    return cell, frame
 
-        return None
+        return None, None
 
     def _ResolveNameOnly(self, name, which_scopes):
         # type: (str, scope_t) -> Tuple[Optional[Cell], Dict[str, Cell]]
@@ -1673,30 +1675,40 @@ class Mem(object):
         if which_scopes == scope_e.Dynamic:
             for i in xrange(len(self.var_stack) - 1, -1, -1):
                 var_frame = self.var_stack[i]
-                if name in var_frame:
-                    cell = var_frame[name]
-                    return cell, var_frame
-            no_cell = None  # type: Optional[Cell]
-            return no_cell, self.var_stack[0]  # set in global var_frame
+                cell, result_frame = self._FrameLookup(var_frame, name)
+                if cell:
+                    return cell, result_frame
+            return None, self.var_stack[0]  # set in global var_frame
 
         if which_scopes == scope_e.LocalOnly:
             var_frame = self.var_stack[-1]
-            return var_frame.get(name), var_frame
+            cell, result_frame = self._FrameLookup(var_frame, name)
+            if cell:
+                return cell, result_frame
+            return None, var_frame
 
         if which_scopes == scope_e.GlobalOnly:
             var_frame = self.var_stack[0]
-            return var_frame.get(name), var_frame
+            cell, result_frame = self._FrameLookup(var_frame, name)
+            if cell:
+                return cell, result_frame
+
+            return None, var_frame
 
         if which_scopes == scope_e.LocalOrGlobal:
             # Local
             var_frame = self.var_stack[-1]
-            cell = var_frame.get(name)
+            cell, result_frame = self._FrameLookup(var_frame, name)
             if cell:
-                return cell, var_frame
+                return cell, result_frame
 
             # Global
             var_frame = self.var_stack[0]
-            return var_frame.get(name), var_frame
+            cell, result_frame = self._FrameLookup(var_frame, name)
+            if cell:
+                return cell, result_frame
+
+            return None, var_frame
 
         raise AssertionError()
 
