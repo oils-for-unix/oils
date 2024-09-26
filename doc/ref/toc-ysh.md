@@ -59,11 +59,9 @@ error handling, and more.
                    BuiltinFunc    BoundFunc
 X [Func]           name()         location()     toJson()
 X [Proc]           name()         location()     toJson()
-X [Module]         name()         filename()
   [IO]             eval()         evalToDict()   captureStdout()
                    promptVal()
-                 X time()       X strftime()
-                 X glob()
+                 X time()       X strftime()   X glob()
 ```
 
 <h2 id="builtin-func">

@@ -1737,6 +1737,9 @@ class Mem(object):
 
     def SetLocalName(self, lval, val):
         # type: (LeftName, value_t) -> None
+        """
+        Set a name in the local scope - used for func/proc param binding, etc.
+        """
 
         # Equivalent to
         # self._ResolveNameOnly(lval.name, scope_e.LocalOnly)
@@ -1754,7 +1757,6 @@ class Mem(object):
 
     def SetNamed(self, lval, val, which_scopes, flags=0):
         # type: (LeftName, value_t, scope_t, int) -> None
-
         if flags & SetNameref or flags & ClearNameref:
             # declare -n ref=x  # refers to the ref itself
             cell, name_map = self._ResolveNameOnly(lval.name, which_scopes)
@@ -2130,6 +2132,7 @@ class Mem(object):
                 if cell:
                     return cell.val
 
+                # TODO: Can look in the builtins module, which is a value.Obj
                 return value.Undef
 
     def GetCell(self, name, which_scopes=scope_e.Shopt):
@@ -2532,8 +2535,10 @@ def DynamicGetVar(mem, name, which_scopes):
 
 def GetString(mem, name):
     # type: (Mem, str) -> str
-    """Wrapper around GetValue().  Check that HOME, PWD, OLDPWD, etc. are
-    strings. bash doesn't have these errors because ${array} is ${array[0]}.
+    """Wrapper around GetValue().
+
+    Check that HOME, PWD, OLDPWD, etc. are strings. bash doesn't have these
+    errors because ${array} is ${array[0]}.
 
     TODO: We could also check this when you're storing variables?
     """

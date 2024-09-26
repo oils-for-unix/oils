@@ -6,7 +6,7 @@ from _devbuild.gen.value_asdl import value, value_t
 from core import error
 from core import num
 from core import vm
-from mycpp.mylib import log
+from mycpp.mylib import iteritems, log, NewDict
 from osh import prompt
 
 from typing import Dict, TYPE_CHECKING
@@ -24,14 +24,17 @@ class Eval(vm._Callable):
     """
     These are similar:
 
-        var c = ^(echo hi)
+        var cmd = ^(echo hi)
+        call io->eval(cmd)
 
-        eval (c)
-        call _io->eval(c)
+    Also give the top namespace
+
+        call io->evalToDict(cmd)
+
+    TODO: remove eval (c)
 
     The CALLER must handle errors.
     """
-
     def __init__(self, cmd_ev, which):
         # type: (cmd_eval.CommandEvaluator, int) -> None
         self.cmd_ev = cmd_ev
@@ -45,7 +48,34 @@ class Eval(vm._Callable):
 
         # errors can arise from false' and 'exit'
         unused_status = self.cmd_ev.EvalCommand(cmd)
-        return value.Null
+
+        if self.which == EVAL_NULL:
+            return value.Null
+
+        elif self.which == EVAL_DICT:
+            block_attrs = self.cmd_ev.mem.TopNamespace()
+
+            # Copied from builtin/hay_ysh.py
+            # Hay should be rewritten with YSH reflection primitives.
+            #
+            # Hay pushes a temp frame.
+            # TODO:
+
+            attrs = NewDict()  # type: Dict[str, value_t]
+            for name, cell in iteritems(block_attrs):
+                #log('name %r', name)
+                #log('cell %r', cell)
+
+                # User can hide variables with _ suffix
+                # e.g. for i_ in foo bar { echo $i_ }
+                if name.endswith('_'):
+                    continue
+
+                attrs[name] = cell.val
+            return value.Dict(attrs)
+
+        else:
+            raise AssertionError()
 
 
 class CaptureStdout(vm._Callable):
@@ -103,6 +133,8 @@ class PromptVal(vm._Callable):
         return value.Str(self.prompt_ev.PromptVal(what))
 
 
+# TODO: Implement these
+
 class Time(vm._Callable):
 
     def __init__(self):
@@ -115,6 +147,17 @@ class Time(vm._Callable):
 
 
 class Strftime(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        return value.Null
+
+
+class Glob(vm._Callable):
 
     def __init__(self):
         # type: () -> None

@@ -583,7 +583,7 @@ def Main(
     # TODO:
     io_methods['time'] = value.BuiltinFunc(method_io.Time())
     io_methods['strftime'] = value.BuiltinFunc(method_io.Strftime())
-    io_methods['glob'] = None
+    io_methods['glob'] = value.BuiltinFunc(method_io.Glob())
 
     io_props = {'stdin': value.Stdin}  # type: Dict[str, value_t]
     io_obj = Obj(Obj(None, io_methods), io_props)

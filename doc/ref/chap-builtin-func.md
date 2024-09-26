@@ -396,7 +396,7 @@ distinguish an undefined variable from one that's `null`.
 
 Given a code string, parse it as a command (with the current parse options).
 
-Returns a `value.Command` instance.
+Returns a `value.Command` instance, or raises an error.
 
 ### `parseExpr()`
 
@@ -404,7 +404,7 @@ TODO:
 
 Given a code string, parse it as an expression.
 
-Returns a `value.Expr` instance.
+Returns a `value.Expr` instance, or raises an error.
 
 ### `evalExpr()`
 
@@ -414,6 +414,8 @@ Given a an expression quotation, evaluate it and return its value:
 
     $ = evalExpr(expr)
     3
+
+<!-- TODO: io.evalExpr() -->
 
 ## Hay Config
 

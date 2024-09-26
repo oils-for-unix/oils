@@ -549,7 +549,7 @@ A module is a file with YSH code.
 Evaluate a command, and return `null`.
 
     var c = ^(echo hi)
-    call _io->eval(c)
+    call io->eval(c)
 
 It's like like the `eval` builtin, and meant to be used in pure functions.
 
@@ -559,6 +559,17 @@ shell VM.
 
 Though this runs in the same VM, not a new one.
 -->
+
+### evalToDict()
+
+The `evalToDict()` method is like the `eval()` method, but it also returns a
+Dict of bindings.
+
+TODO:
+
+- Does it push a new frame?  Or is this a new module?
+  - I think we have to change the lookup rules
+- Move functions like `len()` to their own `__builtin__` module?
 
 ### captureStdout()
 

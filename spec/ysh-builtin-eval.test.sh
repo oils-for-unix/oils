@@ -342,6 +342,7 @@ one
 #### parseCommand then io.evalToDict()
 
 var cmd = parseCommand('var x = 42; echo hi; var y = 99')
+#var cmd = parseCommand('echo hi')
 
 pp test_ (cmd)
 #pp asdl_ (cmd)
@@ -351,6 +352,9 @@ var d = io->evalToDict(cmd)
 pp test_ (d)
 
 ## STDOUT:
+<Command>
+hi
+(Dict)
 ## END
 
 #### parseCommand with syntax error
