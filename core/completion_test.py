@@ -204,7 +204,7 @@ class CompletionTest(unittest.TestCase):
                                               arena=arena)
         node = c_parser.ParseLogicalLine()
         proc = value.Proc(node.name, node.name_tok, proc_sig.Open, node.body,
-                          [], True)
+                          [], True, None)
 
         cmd_ev = test_lib.InitCommandEvaluator(arena=arena)
 
