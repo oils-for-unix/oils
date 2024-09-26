@@ -134,11 +134,9 @@ module value
     # The frame MUST be lower on the stack at the time of use.
   | Place(y_lvalue lval, Dict[str, Cell] frame)
 
-    # TODO: Remove this, could be value.Obj
-    # for Flags/flag and Flags/arg?
-    # for json read/write ?
-    # Possibly unify Hay and modules/namespaces
-  | Module(Dict[str, value] defs)
+    # for io->evalToDict(), which uses ctx_FrontFrame(), which is distinct from
+    # ctx_Eval()
+  | Frame(Dict[str, Cell] bindings)
 
     # callable is vm._Callable.
     # TODO: ASDL needs some kind of "extern" to declare vm._Callable and
@@ -154,11 +152,13 @@ module value
     # different @ARGV.
 
   | Proc(str name, Token name_tok, proc_sig sig, command body,
-         ProcDefaults? defaults, bool sh_compat)
+         ProcDefaults? defaults, bool sh_compat,
+         # module is where "global" lookups happen
+         Dict[str, Cell]? module_)
 
-    # module may be a frame where defined
   | Func(str name, Func parsed,
          List[value] pos_defaults, Dict[str, value] named_defaults,
+         # module is where "global" lookups happen
          Dict[str, Cell]? module_)
 
     # for i in (1:n) { echo $i }  # both ends are required

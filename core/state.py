@@ -1127,6 +1127,62 @@ def _MakeArgvCell(argv):
     return Cell(False, False, False, value.List(items))
 
 
+class ctx_FrontFrame(object):
+    """
+    For use by io->evalToDict(), which is a primitive used for Hay and the Dict
+    proc
+
+    var mutated = 'm'
+    var shadowed = 's'
+
+    Dict (&d) {
+      shadowed = 42
+      mutated = 'new'  # this is equivalent to var mutated
+
+      setvar mutated = 'new'
+    }
+    echo $shadowed  # restored to 's'
+    echo $mutated  # new
+
+    Or maybe we disallow the setvar lookup?
+    """
+
+    def __init__(self, mem, out_dict):
+        # type: (Mem, Dict[str, value_t]) -> None
+        self.rear_frame = mem.var_stack[-1]
+
+        # __rear__ gets a lookup rule
+        self.front_frame = NewDict()  # type: Dict[str, Cell]
+        self.front_frame['__rear__'] = Cell(False, False, False,
+                                            value.Frame(self.rear_frame))
+
+        mem.var_stack[-1] = self.front_frame
+
+        self.mem = mem
+        self.out_dict = out_dict
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+
+        for name, cell in iteritems(self.front_frame):
+            #log('name %r', name)
+            #log('cell %r', cell)
+
+            # User can hide variables with _ suffix
+            # e.g. for i_ in foo bar { echo $i_ }
+            if name.endswith('_'):
+                continue
+
+            self.out_dict[name] = cell.val
+
+        # Restore
+        self.mem.var_stack[-1] = self.rear_frame
+
+
 class ctx_Eval(object):
     """Push temporary set of variables, $0, $1, $2, etc."""
 
@@ -1987,7 +2043,7 @@ class Mem(object):
 
         with str_switch(name) as case:
             # "Registers"
-            if case('_status'):
+            if case('_status'):  # deprecated in favor of _error.code
                 return num.ToBig(self.TryStatus())
 
             elif case('_error'):

@@ -1,7 +1,7 @@
 # YSH specific features of eval
 
 ## our_shell: ysh
-## oils_failures_allowed: 2
+## oils_failures_allowed: 4
 
 #### Eval does not take a literal block - can restore this later
 
@@ -338,8 +338,24 @@ one
 (Dict)   {"code":1}
 ## END
 
+#### io->evalToDict() - local and global
 
-#### parseCommand then io.evalToDict()
+# in the global frame
+var d = io->evalToDict(^(var foo = 42; var bar = 'zz';))
+#pp test_ (d)
+
+# Same thing in a local frame
+proc p (dummy) {
+  var d = io->evalToDict(^(var foo = 42; var bar = 'zz';))
+  pp test_ (d)
+}
+p dummy
+
+## STDOUT:
+## END
+
+
+#### parseCommand then io->evalToDict() - in global scope
 
 var cmd = parseCommand('var x = 42; echo hi; var y = 99')
 #var cmd = parseCommand('echo hi')
@@ -347,6 +363,7 @@ var cmd = parseCommand('var x = 42; echo hi; var y = 99')
 pp test_ (cmd)
 #pp asdl_ (cmd)
 
+# problems: env var leakage
 var d = io->evalToDict(cmd)
 
 pp test_ (d)
@@ -366,4 +383,66 @@ pp test_ (_error)
 
 ## STDOUT:
 (Dict)   {"code":3,"message":"Syntax error in parseCommand()"}
+## END
+
+
+#### Dict (&d) { } function - local scope with __pframe__
+
+# pframe is a read-only parent frame
+#
+# I guess we have a value.Frame() wrapper then?  Why not ...
+
+proc Dict ( ; out; ; block) {
+  # Leakage: ARGV, out, block
+  # So we have to create a __pframe__
+
+  var d = io->evalToDict(block)
+  call out->setValue(d)
+}
+
+# it can read f
+
+var myglobal = 'global'
+var k = 'k-shadowed'
+var k2 = 'k2-shadowed'
+
+Dict (&d) {
+  var k = 'k'
+  setvar k = 'k2'
+
+  # is this in the dict?
+  setvar k2 = 'z'  # this is in the dict!  It'slocal to!
+
+  # do we allow this?
+  setvar myglobal = 'global'
+}
+
+pp test_ (d)
+= d
+
+# restored to the shadowed values
+echo $k
+echo $k2
+
+
+## STDOUT:
+## END
+
+#### bindings created shvar persist, which is different than evalToDict()
+
+var a = 'a'
+shvar IFS=: a='b' {
+  echo a=$a
+  inner=z
+  var inner2 = 'z'
+}
+echo a=$a
+echo inner=$inner 
+echo inner2=$inner2
+
+## STDOUT:
+a=b
+a=a
+inner=z
+inner2=z
 ## END

@@ -1301,7 +1301,7 @@ class CommandEvaluator(object):
                 "Function %s was already defined (redefine_proc_func)" %
                 node.name, node.name_tok)
         sh_func = value.Proc(node.name, node.name_tok, proc_sig.Open,
-                             node.body, None, True)
+                             node.body, None, True, None)
         self.procs.SetShFunc(node.name, sh_func)
 
     def _DoProc(self, node):
@@ -1321,7 +1321,7 @@ class CommandEvaluator(object):
 
         # no dynamic scope
         proc = value.Proc(proc_name, node.name, node.sig, node.body,
-                          proc_defaults, False)
+                          proc_defaults, False, None)
         self.procs.SetProc(proc_name, proc)
 
     def _DoFunc(self, node):
