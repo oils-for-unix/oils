@@ -1499,6 +1499,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.def_write(';\n')
         self.def_write_ind('%s %s(&%s);\n', c_type, lval.name, iter_buf[0])
 
+    def _MaybeAddMember(self, lval, current_member_vars):
+        if isinstance(lval.expr, NameExpr) and lval.expr.name == 'self':
+            #log('    lval.name %s', lval.name)
+            lval_type = self.types[lval]
+            c_type = GetCType(lval_type)
+            is_managed = CTypeIsManaged(c_type)
+            current_member_vars[lval.name] = (lval_type, c_type, is_managed)
+
     def visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt') -> T:
         # Declare constant strings.  They have to be at the top level.
         if self.decl and self.indent == 0 and len(o.lvalues) == 1:
@@ -1578,6 +1586,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             if callee.name == 'NewDict':
                 self._AssignNewDictImpl(lval)
+
+                # Bug fix: self.front_frame = NewDict() needs to register member
+                if isinstance(lval, MemberExpr):
+                    self._MaybeAddMember(lval, self.current_member_vars)
                 return
 
             if callee.name == 'cast':
@@ -1628,14 +1640,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 # HACK for WordParser: also include Reset().  We could change them
                 # all up front but I kinda like this.
 
-                if (isinstance(lval.expr, NameExpr) and
-                        lval.expr.name == 'self'):
-                    #log('    lval.name %s', lval.name)
-                    lval_type = self.types[lval]
-                    c_type = GetCType(lval_type)
-                    is_managed = CTypeIsManaged(c_type)
-                    self.current_member_vars[lval.name] = (lval_type, c_type,
-                                                           is_managed)
+                self._MaybeAddMember(lval, self.current_member_vars)
             return
 
         if isinstance(lval, IndexExpr):  # a[x] = 1
