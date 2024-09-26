@@ -170,7 +170,8 @@ class Fact(object):
     def __init__(self) -> None:
         pass
 
-    def name(self) -> str:
+    @staticmethod
+    def name() -> str:
         raise NotImplementedError()
 
     def Generate(self, func: str, statement: int) -> str:
@@ -182,7 +183,8 @@ class FunctionCall(Fact):
     def __init__(self, callee: str) -> None:
         self.callee = callee
 
-    def name(self) -> str:
+    @staticmethod
+    def name() -> str:
         return 'call'
 
     def Generate(self, func: str, statement: int) -> str:
@@ -198,7 +200,8 @@ class Definition(Fact):
         self.ref = ref
         self.obj = obj
 
-    def name(self) -> str:
+    @staticmethod
+    def name() -> str:
         return 'assign'
 
     def Generate(self, func: str, statement: int) -> str:
@@ -216,7 +219,8 @@ class Assignment(Fact):
         self.lhs = lhs
         self.rhs = rhs
 
-    def name(self) -> str:
+    @staticmethod
+    def name() -> str:
         return 'assign'
 
     def Generate(self, func: str, statement: int) -> str:
@@ -250,7 +254,8 @@ class Use(Fact):
     def __init__(self, ref: SymbolPath) -> None:
         self.ref = ref
 
-    def name(self) -> str:
+    @staticmethod
+    def name() -> str:
         return 'use'
 
     def Generate(self, func: str, statement: int) -> str:
@@ -269,7 +274,8 @@ class Bind(Fact):
         self.callee = callee
         self.arg_pos = arg_pos
 
-    def name(self) -> str:
+    @staticmethod
+    def name() -> str:
         return 'bind'
 
     def Generate(self, func: str, statement: int) -> str:
@@ -538,8 +544,16 @@ def DumpControlFlowGraphs(cfgs: dict[str, ControlFlowGraph],
     directory as text files that can be consumed by datalog.
     """
     edge_facts = '{}/cf_edge.facts'.format(facts_dir)
-    fact_files = {}
+
     os.makedirs(facts_dir, exist_ok=True)
+    # Open files for all facts that we might emit even if we don't end up having
+    # anything to write to them. Souffle will complain if it can't find the file
+    # for anything marked as an input.
+    fact_files = {
+        fact_type.name():
+        open('{}/{}.facts'.format(facts_dir, fact_type.name()), 'w')
+        for fact_type in Fact.__subclasses__()
+    }
     with open(edge_facts, 'w') as cfg_f:
         for func, cfg in sorted(cfgs.items()):
             joined = join_name(func, delim='.')
@@ -548,12 +562,7 @@ def DumpControlFlowGraphs(cfgs: dict[str, ControlFlowGraph],
 
             for statement, facts in sorted(cfg.facts.items()):
                 for fact in facts:  # already sorted temporally
-                    fact_f = fact_files.get(fact.name())
-                    if not fact_f:
-                        fact_f = open(
-                            '{}/{}.facts'.format(facts_dir, fact.name()), 'w')
-                        fact_files[fact.name()] = fact_f
-
+                    fact_f = fact_files[fact.name()]
                     fact_f.write(fact.Generate(joined, statement))
 
     for f in fact_files.values():
@@ -561,28 +570,27 @@ def DumpControlFlowGraphs(cfgs: dict[str, ControlFlowGraph],
 
 
 def ComputeMinimalStackRoots(cfgs: dict[str, ControlFlowGraph],
-                      facts_dir: str = '_tmp/mycpp-facts',
-                      souffle_output_dir: str = '_tmp') -> StackRoots:
+                             souffle_dir: str = '_tmp') -> StackRoots:
     """
     Run the the souffle stack roots solver and translate its output in a format
     that can be queried by cppgen_pass.
     """
+    facts_dir = '{}/facts'.format(souffle_dir)
+    os.makedirs(facts_dir)
+    output_dir = '{}/outputs'.format(souffle_dir)
+    os.makedirs(output_dir)
     DumpControlFlowGraphs(cfgs, facts_dir=facts_dir)
-
-    # Work around bug of reading truncated files from the solver?
-    # Could this be a ninja race condition, with a missing dependency?
-    # subprocess.run('sync {}/*.facts'.format(facts_dir), shell=True)
 
     subprocess.check_call([
         '_bin/datalog/dataflow',
         '-F',
         facts_dir,
         '-D',
-        souffle_output_dir,
+        output_dir,
     ])
 
     tuples: set[tuple[SymbolPath, SymbolPath]] = set({})
-    with open('{}/stack_root_vars.tsv'.format(souffle_output_dir),
+    with open('{}/stack_root_vars.tsv'.format(output_dir),
               'r') as roots_f:
         pat = re.compile(r'\$(.*)\((.*), (.*)\)')
         for line in roots_f:
