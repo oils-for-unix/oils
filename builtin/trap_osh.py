@@ -216,7 +216,7 @@ class Trap(vm._Builtin):
         c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
         # TODO: the SPID should be passed through argv.
-        src = source.ArgvWord('trap', loc.Missing)
+        src = source.Dynamic('trap arg', loc.Missing)
         with alloc.ctx_SourceCode(self.arena, src):
             try:
                 node = main_loop.ParseWholeFile(c_parser)

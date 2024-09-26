@@ -234,7 +234,7 @@ class UnsafeArith(object):
         a_parser = self.parse_ctx.MakeArithParser(s)
 
         with alloc.ctx_SourceCode(self.arena,
-                                  source.ArgvWord('dynamic LHS', location)):
+                                  source.Dynamic('dynamic LHS', location)):
             try:
                 anode = a_parser.Parse()
             except error.Parse as e:

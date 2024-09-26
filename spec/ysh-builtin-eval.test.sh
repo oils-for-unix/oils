@@ -1,7 +1,7 @@
 # YSH specific features of eval
 
 ## our_shell: ysh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 
 #### Eval does not take a literal block - can restore this later
 
@@ -336,4 +336,30 @@ one
 (Dict)   {"code":1}
 one
 (Dict)   {"code":1}
+## END
+
+
+#### parseCommand then io.evalToDict()
+
+var cmd = parseCommand('var x = 42; echo hi; var y = 99')
+
+pp test_ (cmd)
+#pp asdl_ (cmd)
+
+var d = io->evalToDict(cmd)
+
+pp test_ (d)
+
+## STDOUT:
+## END
+
+#### parseCommand with syntax error
+
+try {
+  var cmd = parseCommand('echo >')
+}
+pp test_ (_error)
+
+## STDOUT:
+(Dict)   {"code":3,"message":"Syntax error in parseCommand()"}
 ## END

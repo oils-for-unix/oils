@@ -42,25 +42,25 @@ error handling, and more.
   [Atom Types]     Null           Bool
   [Number Types]   Int            Float
   [Str]          X find()         replace()
-                   trim()         trimStart()   trimEnd()
+                   trim()         trimStart()    trimEnd()
                    startsWith()   endsWith()
                    upper()        lower()
                    search()       leftMatch()
-  [List]           List/append()  pop()         extend()    indexOf()
-                 X insert()     X remove()      reverse()
-  [Dict]           keys()         values()      get()       erase()
+  [List]           List/append()  pop()          extend()    indexOf()
+                 X insert()     X remove()       reverse()
+  [Dict]           keys()         values()       get()       erase()
                  X inc()        X accum()
   [Range] 
   [Eggex] 
-  [Match]          group()        start()       end()
+  [Match]          group()        start()        end()
                  X groups()     X groupDict()
   [Place]          setValue()
   [Code Types]     Expr           Command
                    BuiltinFunc    BoundFunc
-X [Func]           name()         location()    toJson()
-X [Proc]           name()         location()    toJson()
+X [Func]           name()         location()     toJson()
+X [Proc]           name()         location()     toJson()
 X [Module]         name()         filename()
-  [IO]             eval()         captureStdout()
+  [IO]             eval()         evalToDict()   captureStdout()
                    promptVal()
                  X time()       X strftime()
                  X glob()
@@ -85,7 +85,8 @@ X [Module]         name()         filename()
                   toJson8()         fromJson8()
 X [J8 Decode]     J8.Bool()         J8.Int()        ...
   [Pattern]       _group()          _start()        _end()
-  [Introspection] shvarGet()        getVar()        evalExpr()
+  [Introspection] shvarGet()        getVar()        
+                  parseCommand()  X parseExpr()     evalExpr()
   [Hay Config]    parseHay()        evalHay()
 X [Hashing]       sha1dc()          sha256()
 ```

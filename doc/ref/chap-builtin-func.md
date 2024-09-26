@@ -392,6 +392,20 @@ scope" rule.)
 If the variable isn't defined, `getVar()` returns `null`.  So there's no way to
 distinguish an undefined variable from one that's `null`.
 
+### `parseCommand()`
+
+Given a code string, parse it as a command (with the current parse options).
+
+Returns a `value.Command` instance.
+
+### `parseExpr()`
+
+TODO:
+
+Given a code string, parse it as an expression.
+
+Returns a `value.Expr` instance.
+
 ### `evalExpr()`
 
 Given a an expression quotation, evaluate it and return its value:

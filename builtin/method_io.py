@@ -16,6 +16,9 @@ if TYPE_CHECKING:
 
 _ = log
 
+EVAL_NULL = 1
+EVAL_DICT = 2
+
 
 class Eval(vm._Callable):
     """
@@ -29,9 +32,10 @@ class Eval(vm._Callable):
     The CALLER must handle errors.
     """
 
-    def __init__(self, cmd_ev):
-        # type: (cmd_eval.CommandEvaluator) -> None
+    def __init__(self, cmd_ev, which):
+        # type: (cmd_eval.CommandEvaluator, int) -> None
         self.cmd_ev = cmd_ev
+        self.which = which
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t

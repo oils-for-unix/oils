@@ -510,7 +510,7 @@ class Printf(vm._Builtin):
             parser = _FormatStringParser(lexer)
 
             with alloc.ctx_SourceCode(arena,
-                                      source.ArgvWord('printf', fmt_loc)):
+                                      source.Dynamic('printf arg', fmt_loc)):
                 try:
                     parts = parser.Parse()
                 except error.Parse as e:

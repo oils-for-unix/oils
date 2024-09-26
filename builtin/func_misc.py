@@ -4,12 +4,10 @@ func_misc.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import (scope_e)
 from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str, Obj)
 
 from core import error
 from core import num
-from core import state
 from display import pp_value
 from display import ui
 from core import vm
@@ -19,7 +17,6 @@ from frontend import typed_args
 from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import NewDict, iteritems, log, tagswitch
-from ysh import expr_eval
 from ysh import val_ops
 
 from typing import TYPE_CHECKING, Dict, List, Optional, cast
@@ -493,52 +490,6 @@ class Glob(vm._Callable):
 
         l = [value.Str(elem) for elem in out]  # type: List[value_t]
         return value.List(l)
-
-
-class Shvar_get(vm._Callable):
-    """Look up with dynamic scope."""
-
-    def __init__(self, mem):
-        # type: (state.Mem) -> None
-        vm._Callable.__init__(self)
-        self.mem = mem
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-        name = rd.PosStr()
-        rd.Done()
-        return state.DynamicGetVar(self.mem, name, scope_e.Dynamic)
-
-
-class GetVar(vm._Callable):
-    """Look up normal scoping rules."""
-
-    def __init__(self, mem):
-        # type: (state.Mem) -> None
-        vm._Callable.__init__(self)
-        self.mem = mem
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-        name = rd.PosStr()
-        rd.Done()
-        return state.DynamicGetVar(self.mem, name, scope_e.LocalOrGlobal)
-
-
-class EvalExpr(vm._Callable):
-
-    def __init__(self, expr_ev):
-        # type: (expr_eval.ExprEvaluator) -> None
-        self.expr_ev = expr_ev
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-        lazy = rd.PosExpr()
-        rd.Done()
-
-        result = self.expr_ev.EvalExpr(lazy, rd.LeftParenToken())
-
-        return result
 
 
 class ToJson8(vm._Callable):

@@ -188,22 +188,22 @@ def GetLineSourceString(line, quote_filename=False):
             if quote_filename:
                 s = j8_lite.EncodeString(s, unquoted_ok=True)
 
-        elif case(source_e.ArgvWord):
-            src = cast(source.ArgvWord, UP_src)
+        elif case(source_e.Dynamic):
+            src = cast(source.Dynamic, UP_src)
 
             # Note: _PrintWithLocation() uses this more specifically
 
             # TODO: check loc.Missing; otherwise get Token from loc_t, then line
             blame_tok = location.TokenFor(src.location)
             if blame_tok is None:
-                s = '[ %s word at ? ]' % src.what
+                s = '[ %s at ? ]' % src.what
             else:
                 line = blame_tok.line
                 line_num = line.line_num
                 outer_source = GetLineSourceString(
                     line, quote_filename=quote_filename)
-                s = '[ %s word at line %d of %s ]' % (src.what, line_num,
-                                                      outer_source)
+                s = '[ %s at line %d of %s ]' % (src.what, line_num,
+                                                 outer_source)
 
         elif case(source_e.Variable):
             src = cast(source.Variable, UP_src)
@@ -316,8 +316,8 @@ def _PrintWithLocation(prefix, msg, blame_loc, show_code):
                 # We overwrite it with the original token.
                 _PrintCodeExcerpt(line2, orig_col + lbracket_col, 1, f)
 
-            elif case(source_e.ArgvWord):
-                src = cast(source.ArgvWord, UP_src)
+            elif case(source_e.Dynamic):
+                src = cast(source.Dynamic, UP_src)
                 # Special case for eval, unset, printf -v, etc.
 
                 # Show errors:

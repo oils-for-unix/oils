@@ -61,6 +61,7 @@ from builtin import trap_osh
 from builtin import func_eggex
 from builtin import func_hay
 from builtin import func_misc
+from builtin import func_reflect
 
 from builtin import method_dict
 from builtin import method_io
@@ -566,20 +567,24 @@ def Main(
     # PromptEvaluator rendering is needed in non-interactive shells for @P.
     prompt_ev = prompt.Evaluator(lang, version_str, parse_ctx, mem)
 
-    io_methods = {
-        'promptVal': value.BuiltinFunc(method_io.PromptVal(prompt_ev)),
+    io_methods = {}  # type: Dict[str, value_t]
+    io_methods['promptVal'] = value.BuiltinFunc(method_io.PromptVal(prompt_ev))
 
-        # The M/ prefix means it's io->eval()
-        'M/eval': value.BuiltinFunc(method_io.Eval(cmd_ev)),
+    # The M/ prefix means it's io->eval()
+    io_methods['M/eval'] = value.BuiltinFunc(
+        method_io.Eval(cmd_ev, method_io.EVAL_NULL))
+    io_methods['M/evalToDict'] = value.BuiltinFunc(
+        method_io.Eval(cmd_ev, method_io.EVAL_DICT))
 
-        # Identical to command sub
-        'captureStdout': value.BuiltinFunc(method_io.CaptureStdout(shell_ex)),
+    # Identical to command sub
+    io_methods['captureStdout'] = value.BuiltinFunc(
+        method_io.CaptureStdout(shell_ex))
 
-        # TODO:
-        'time': value.BuiltinFunc(method_io.Time()),
-        'strftime': value.BuiltinFunc(method_io.Strftime()),
-        'glob': None,
-    }  # type: Dict[str, value_t]
+    # TODO:
+    io_methods['time'] = value.BuiltinFunc(method_io.Time())
+    io_methods['strftime'] = value.BuiltinFunc(method_io.Strftime())
+    io_methods['glob'] = None
+
     io_props = {'stdin': value.Stdin}  # type: Dict[str, value_t]
     io_obj = Obj(Obj(None, io_methods), io_props)
 
@@ -857,7 +862,13 @@ def Main(
                                                        mem))
     _SetGlobalFunc(mem, '_end', func_eggex.MatchFunc(func_eggex.E, None, mem))
 
-    _SetGlobalFunc(mem, 'evalExpr', func_misc.EvalExpr(expr_ev))
+    _SetGlobalFunc(mem, 'parseCommand',
+                   func_reflect.ParseCommand(parse_ctx, errfmt))
+    _SetGlobalFunc(mem, 'parseExpr', func_reflect.ParseExpr(parse_ctx, errfmt))
+    _SetGlobalFunc(mem, 'evalExpr', func_reflect.EvalExpr(expr_ev))
+
+    _SetGlobalFunc(mem, 'shvarGet', func_reflect.Shvar_get(mem))
+    _SetGlobalFunc(mem, 'getVar', func_reflect.GetVar(mem))
 
     _SetGlobalFunc(mem, 'Object', func_misc.Object())
     _SetGlobalFunc(mem, 'prototype', func_misc.Prototype())
@@ -889,9 +900,6 @@ def Main(
     _SetGlobalFunc(mem, 'join', func_misc.Join())
     _SetGlobalFunc(mem, 'maybe', func_misc.Maybe())
     _SetGlobalFunc(mem, 'glob', func_misc.Glob(globber))
-
-    _SetGlobalFunc(mem, 'shvarGet', func_misc.Shvar_get(mem))
-    _SetGlobalFunc(mem, 'getVar', func_misc.GetVar(mem))
 
     # Serialize
     _SetGlobalFunc(mem, 'toJson8', func_misc.ToJson8(True))

@@ -53,8 +53,8 @@ module syntax
   | SourcedFile(str path, loc location)
 
     # code parsed from a word
-    # used for 'eval', 'trap', 'printf', 'complete -W', etc.
-  | ArgvWord(str what, loc location)
+    # used for 'eval', 'trap', 'printf', 'complete -W', parseCommand()
+  | Dynamic(str what, loc location)
 
     # code parsed from the value of a variable
     # used for $PS1 $PROMPT_COMMAND
