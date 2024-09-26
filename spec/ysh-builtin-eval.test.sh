@@ -340,20 +340,23 @@ one
 
 #### io->evalToDict() - local and global
 
+var g = 'global'
+
 # in the global frame
-var d = io->evalToDict(^(var foo = 42; var bar = 'zz';))
-#pp test_ (d)
+var d = io->evalToDict(^(var foo = 42; var bar = g;))
+pp test_ (d)
 
 # Same thing in a local frame
 proc p (dummy) {
-  var d = io->evalToDict(^(var foo = 42; var bar = 'zz';))
+  var d = io->evalToDict(^(var foo = 42; var bar = g;))
   pp test_ (d)
 }
 p dummy
 
 ## STDOUT:
+(Dict)   {"foo":42,"bar":"zz"}
+(Dict)   {"foo":42,"bar":"zz"}
 ## END
-
 
 #### parseCommand then io->evalToDict() - in global scope
 

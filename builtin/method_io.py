@@ -5,6 +5,7 @@ from _devbuild.gen.value_asdl import value, value_t
 
 from core import error
 from core import num
+from core import state
 from core import vm
 from mycpp.mylib import iteritems, log, NewDict
 from osh import prompt
@@ -35,6 +36,7 @@ class Eval(vm._Callable):
 
     The CALLER must handle errors.
     """
+
     def __init__(self, cmd_ev, which):
         # type: (cmd_eval.CommandEvaluator, int) -> None
         self.cmd_ev = cmd_ev
@@ -46,33 +48,16 @@ class Eval(vm._Callable):
         cmd = rd.PosCommand()
         rd.Done()  # no more args
 
-        # errors can arise from false' and 'exit'
-        unused_status = self.cmd_ev.EvalCommand(cmd)
-
         if self.which == EVAL_NULL:
+            # errors can arise from false' and 'exit'
+            unused_status = self.cmd_ev.EvalCommand(cmd)
             return value.Null
 
         elif self.which == EVAL_DICT:
-            block_attrs = self.cmd_ev.mem.TopNamespace()
-
-            # Copied from builtin/hay_ysh.py
-            # Hay should be rewritten with YSH reflection primitives.
-            #
-            # Hay pushes a temp frame.
-            # TODO:
-
-            attrs = NewDict()  # type: Dict[str, value_t]
-            for name, cell in iteritems(block_attrs):
-                #log('name %r', name)
-                #log('cell %r', cell)
-
-                # User can hide variables with _ suffix
-                # e.g. for i_ in foo bar { echo $i_ }
-                if name.endswith('_'):
-                    continue
-
-                attrs[name] = cell.val
-            return value.Dict(attrs)
+            bindings = NewDict()  # type: Dict[str, value_t]
+            with state.ctx_FrontFrame(self.cmd_ev.mem, bindings):
+                unused_status = self.cmd_ev.EvalCommand(cmd)
+            return value.Dict(bindings)
 
         else:
             raise AssertionError()
@@ -134,6 +119,7 @@ class PromptVal(vm._Callable):
 
 
 # TODO: Implement these
+
 
 class Time(vm._Callable):
 

@@ -136,7 +136,8 @@ module value
 
     # for io->evalToDict(), which uses ctx_FrontFrame(), which is distinct from
     # ctx_Eval()
-  | Frame(Dict[str, Cell] bindings)
+    # TODO: ASDL should let us "collapse" this Dict directly into value_t
+  | Frame(Dict[str, Cell] frame)
 
     # callable is vm._Callable.
     # TODO: ASDL needs some kind of "extern" to declare vm._Callable and

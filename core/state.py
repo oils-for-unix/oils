@@ -854,7 +854,7 @@ def _InitDefaults(mem):
     # ' \t\n'
     SetGlobalString(mem, 'IFS', split.DEFAULT_IFS)
 
-    # NOTE: Should we put these in a name_map for Oil?
+    # NOTE: Should we put these in a var_frame for Oil?
     SetGlobalString(mem, 'UID', str(posix.getuid()))
     SetGlobalString(mem, 'EUID', str(posix.geteuid()))
     SetGlobalString(mem, 'PPID', str(posix.getppid()))
@@ -1643,6 +1643,24 @@ class Mem(object):
     # Named Vars
     #
 
+    def _ResolveInFrame(self, frame, name):
+        # type: (Dict[str, Cell], str) -> Optional[Tuple[Cell, Dict[str, Cell]]]
+        """
+        Look in the __rear__ frame
+        """
+        cell = frame.get(name)
+        if cell:
+            return cell, frame
+
+        rear_val = frame.get('__rear__').val  # ctx_FrontFrame() sets this
+        if rear_val and rear_val.tag() == value_e.Frame:
+            frame = cast(value.Frame, rear_val).frame
+            cell = frame.get(name)
+            if cell:
+                return cell, frame
+
+        return None
+
     def _ResolveNameOnly(self, name, which_scopes):
         # type: (str, scope_t) -> Tuple[Optional[Cell], Dict[str, Cell]]
         """Helper for getting and setting variable.
@@ -1650,35 +1668,35 @@ class Mem(object):
         Returns:
           cell: The cell corresponding to looking up 'name' with the given mode, or
             None if it's not found.
-          name_map: The name_map it should be set to or deleted from.
+          var_frame: The frame it should be set to or deleted from.
         """
         if which_scopes == scope_e.Dynamic:
             for i in xrange(len(self.var_stack) - 1, -1, -1):
-                name_map = self.var_stack[i]
-                if name in name_map:
-                    cell = name_map[name]
-                    return cell, name_map
+                var_frame = self.var_stack[i]
+                if name in var_frame:
+                    cell = var_frame[name]
+                    return cell, var_frame
             no_cell = None  # type: Optional[Cell]
-            return no_cell, self.var_stack[0]  # set in global name_map
+            return no_cell, self.var_stack[0]  # set in global var_frame
 
         if which_scopes == scope_e.LocalOnly:
-            name_map = self.var_stack[-1]
-            return name_map.get(name), name_map
+            var_frame = self.var_stack[-1]
+            return var_frame.get(name), var_frame
 
         if which_scopes == scope_e.GlobalOnly:
-            name_map = self.var_stack[0]
-            return name_map.get(name), name_map
+            var_frame = self.var_stack[0]
+            return var_frame.get(name), var_frame
 
         if which_scopes == scope_e.LocalOrGlobal:
             # Local
-            name_map = self.var_stack[-1]
-            cell = name_map.get(name)
+            var_frame = self.var_stack[-1]
+            cell = var_frame.get(name)
             if cell:
-                return cell, name_map
+                return cell, var_frame
 
             # Global
-            name_map = self.var_stack[0]
-            return name_map.get(name), name_map
+            var_frame = self.var_stack[0]
+            return var_frame.get(name), var_frame
 
         raise AssertionError()
 
@@ -1693,10 +1711,10 @@ class Mem(object):
 
         Resolving namerefs does RECURSIVE calls.
         """
-        cell, name_map = self._ResolveNameOnly(name, which_scopes)
+        cell, var_frame = self._ResolveNameOnly(name, which_scopes)
 
         if cell is None or not cell.nameref:
-            return cell, name_map, name  # not a nameref
+            return cell, var_frame, name  # not a nameref
 
         val = cell.val
         UP_val = val
@@ -1708,7 +1726,7 @@ class Mem(object):
                 if self.exec_opts.strict_nameref():
                     e_die('nameref %r is undefined' % name)
                 else:
-                    return cell, name_map, name  # fallback
+                    return cell, var_frame, name  # fallback
 
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
@@ -1729,7 +1747,7 @@ class Mem(object):
                 # Bash has this odd behavior of clearing the nameref bit when
                 # ref=#invalid#.  strict_nameref avoids it.
                 cell.nameref = False
-                return cell, name_map, name  # fallback
+                return cell, var_frame, name  # fallback
 
         # Check for circular namerefs.
         if ref_trail is None:
@@ -1740,10 +1758,9 @@ class Mem(object):
         ref_trail.append(new_name)
 
         # 'declare -n' uses dynamic scope.
-        cell, name_map, cell_name = self._ResolveNameOrRef(new_name,
-                                                           scope_e.Dynamic,
-                                                           ref_trail=ref_trail)
-        return cell, name_map, cell_name
+        cell, var_frame, cell_name = self._ResolveNameOrRef(
+            new_name, scope_e.Dynamic, ref_trail=ref_trail)
+        return cell, var_frame, cell_name
 
     def IsBashAssoc(self, name):
         # type: (str) -> bool
@@ -1799,8 +1816,8 @@ class Mem(object):
 
         # Equivalent to
         # self._ResolveNameOnly(lval.name, scope_e.LocalOnly)
-        name_map = self.var_stack[-1]
-        cell = name_map.get(lval.name)
+        var_frame = self.var_stack[-1]
+        cell = var_frame.get(lval.name)
 
         if cell:
             if cell.readonly:
@@ -1809,13 +1826,13 @@ class Mem(object):
             cell.val = val  # Mutate value_t
         else:
             cell = Cell(False, False, False, val)
-            name_map[lval.name] = cell
+            var_frame[lval.name] = cell
 
     def SetNamed(self, lval, val, which_scopes, flags=0):
         # type: (LeftName, value_t, scope_t, int) -> None
         if flags & SetNameref or flags & ClearNameref:
             # declare -n ref=x  # refers to the ref itself
-            cell, name_map = self._ResolveNameOnly(lval.name, which_scopes)
+            cell, var_frame = self._ResolveNameOnly(lval.name, which_scopes)
             cell_name = lval.name
         else:
             # ref=x  # mutates THROUGH the reference
@@ -1826,7 +1843,7 @@ class Mem(object):
             #    BracedVarSub
             # 3. Turn BracedVarSub into an sh_lvalue, and call
             #    self.unsafe_arith.SetValue() wrapper with ref_trail
-            cell, name_map, cell_name = self._ResolveNameOrRef(
+            cell, var_frame, cell_name = self._ResolveNameOrRef(
                 lval.name, which_scopes)
 
         if cell:
@@ -1863,7 +1880,7 @@ class Mem(object):
 
             cell = Cell(bool(flags & SetExport), bool(flags & SetReadOnly),
                         bool(flags & SetNameref), val)
-            name_map[cell_name] = cell
+            var_frame[cell_name] = cell
 
         # Maintain invariant that only strings and undefined cells can be
         # exported.
@@ -1929,10 +1946,10 @@ class Mem(object):
                 # bash/mksh have annoying behavior of letting you do LHS assignment to
                 # Undef, which then turns into an INDEXED array.  (Undef means that set
                 # -o nounset fails.)
-                cell, name_map, _ = self._ResolveNameOrRef(
+                cell, var_frame, _ = self._ResolveNameOrRef(
                     lval.name, which_scopes)
                 if not cell:
-                    self._BindNewArrayWithEntry(name_map, lval, rval, flags)
+                    self._BindNewArrayWithEntry(var_frame, lval, rval, flags)
                     return
 
                 if cell.readonly:
@@ -1942,7 +1959,7 @@ class Mem(object):
                 # undef[0]=y is allowed
                 with tagswitch(UP_cell_val) as case2:
                     if case2(value_e.Undef):
-                        self._BindNewArrayWithEntry(name_map, lval, rval,
+                        self._BindNewArrayWithEntry(var_frame, lval, rval,
                                                     flags)
                         return
 
@@ -1991,7 +2008,7 @@ class Mem(object):
 
                 left_loc = lval.blame_loc
 
-                cell, name_map, _ = self._ResolveNameOrRef(
+                cell, var_frame, _ = self._ResolveNameOrRef(
                     lval.name, which_scopes)
                 if cell.readonly:
                     e_die("Can't assign to readonly associative array",
@@ -2006,9 +2023,9 @@ class Mem(object):
             else:
                 raise AssertionError(lval.tag())
 
-    def _BindNewArrayWithEntry(self, name_map, lval, val, flags):
+    def _BindNewArrayWithEntry(self, var_frame, lval, val, flags):
         # type: (Dict[str, Cell], sh_lvalue.Indexed, value.Str, int) -> None
-        """Fill 'name_map' with a new indexed array entry."""
+        """Fill 'var_frame' with a new indexed array entry."""
         no_str = None  # type: Optional[str]
         items = [no_str] * lval.index
         items.append(val.s)
@@ -2016,7 +2033,7 @@ class Mem(object):
 
         # arrays can't be exported; can't have BashAssoc flag
         readonly = bool(flags & SetReadOnly)
-        name_map[lval.name] = Cell(False, readonly, False, new_value)
+        var_frame[lval.name] = Cell(False, readonly, False, new_value)
 
     def InternalSetGlobal(self, name, new_val):
         # type: (str, value_t) -> None
@@ -2232,7 +2249,7 @@ class Mem(object):
         if which_scopes == scope_e.Shopt:
             which_scopes = self.ScopesForWriting()
 
-        cell, name_map, cell_name = self._ResolveNameOrRef(
+        cell, var_frame, cell_name = self._ResolveNameOrRef(
             var_name, which_scopes)
         if not cell:
             return False  # 'unset' builtin falls back on functions
@@ -2243,10 +2260,10 @@ class Mem(object):
             if case(sh_lvalue_e.Var):  # unset x
                 # Make variables in higher scopes visible.
                 # example: test/spec.sh builtin-vars -r 24 (ble.sh)
-                mylib.dict_erase(name_map, cell_name)
+                mylib.dict_erase(var_frame, cell_name)
 
                 # alternative that some shells use:
-                #   name_map[cell_name].val = value.Undef
+                #   var_frame[cell_name].val = value.Undef
                 #   cell.exported = False
 
                 # This should never happen because we do recursive lookups of namerefs.
@@ -2322,7 +2339,7 @@ class Mem(object):
         We don't use SetValue() because even if rval is None, it will make an
         Undef value in a scope.
         """
-        cell, name_map = self._ResolveNameOnly(name, self.ScopesForReading())
+        cell, var_frame = self._ResolveNameOnly(name, self.ScopesForReading())
         if cell:
             if flag & ClearExport:
                 cell.exported = False
