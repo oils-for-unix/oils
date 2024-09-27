@@ -1242,6 +1242,27 @@ class ctx_Eval(object):
                 self.mem.SetNamed(lval, old_val, scope_e.LocalOnly)
 
 
+def _FrameLookup(frame, name):
+    # type: (Dict[str, Cell], str) -> Tuple[Optional[Cell], Dict[str, Cell]]
+    """
+    Look in the frame itself, then the __rear__ frame if it exists
+    """
+    cell = frame.get(name)
+    if cell:
+        return cell, frame
+
+    rear_cell = frame.get('__rear__')  # ctx_FrontFrame() sets this
+    if rear_cell:
+        rear_val = rear_cell.val
+        if rear_val and rear_val.tag() == value_e.Frame:
+            frame = cast(value.Frame, rear_val).frame
+            cell = frame.get(name)
+            if cell:
+                return cell, frame
+
+    return None, None
+
+
 class Mem(object):
     """For storing variables.
 
@@ -1643,26 +1664,6 @@ class Mem(object):
     # Named Vars
     #
 
-    def _FrameLookup(self, frame, name):
-        # type: (Dict[str, Cell], str) -> Tuple[Optional[Cell], Dict[str, Cell]]
-        """
-        Look in the frame itself, then the __rear__ frame if it exists
-        """
-        cell = frame.get(name)
-        if cell:
-            return cell, frame
-
-        rear_cell = frame.get('__rear__')  # ctx_FrontFrame() sets this
-        if rear_cell:
-            rear_val = rear_cell.val
-            if rear_val and rear_val.tag() == value_e.Frame:
-                frame = cast(value.Frame, rear_val).frame
-                cell = frame.get(name)
-                if cell:
-                    return cell, frame
-
-        return None, None
-
     def _ResolveNameOnly(self, name, which_scopes):
         # type: (str, scope_t) -> Tuple[Optional[Cell], Dict[str, Cell]]
         """Helper for getting and setting variable.
@@ -1675,21 +1676,21 @@ class Mem(object):
         if which_scopes == scope_e.Dynamic:
             for i in xrange(len(self.var_stack) - 1, -1, -1):
                 var_frame = self.var_stack[i]
-                cell, result_frame = self._FrameLookup(var_frame, name)
+                cell, result_frame = _FrameLookup(var_frame, name)
                 if cell:
                     return cell, result_frame
             return None, self.var_stack[0]  # set in global var_frame
 
         if which_scopes == scope_e.LocalOnly:
             var_frame = self.var_stack[-1]
-            cell, result_frame = self._FrameLookup(var_frame, name)
+            cell, result_frame = _FrameLookup(var_frame, name)
             if cell:
                 return cell, result_frame
             return None, var_frame
 
         if which_scopes == scope_e.GlobalOnly:
             var_frame = self.var_stack[0]
-            cell, result_frame = self._FrameLookup(var_frame, name)
+            cell, result_frame = _FrameLookup(var_frame, name)
             if cell:
                 return cell, result_frame
 
@@ -1698,13 +1699,13 @@ class Mem(object):
         if which_scopes == scope_e.LocalOrGlobal:
             # Local
             var_frame = self.var_stack[-1]
-            cell, result_frame = self._FrameLookup(var_frame, name)
+            cell, result_frame = _FrameLookup(var_frame, name)
             if cell:
                 return cell, result_frame
 
             # Global
             var_frame = self.var_stack[0]
-            cell, result_frame = self._FrameLookup(var_frame, name)
+            cell, result_frame = _FrameLookup(var_frame, name)
             if cell:
                 return cell, result_frame
 
@@ -2508,15 +2509,16 @@ class Procs:
     def GetNames(self):
         # type: () -> List[str]
         """Returns a *sorted* list of all proc names"""
-        names = list(self.sh_funcs.keys())
+        names = self.sh_funcs.keys()
 
-        vars = self.mem.var_stack[0]
-        for name in vars:
-            cell = vars[name]
+        var_frame = self.mem.var_stack[0]
+        for name in var_frame:
+            cell = var_frame[name]
             if cell.val.tag() == value_e.Proc:
                 names.append(name)
 
-        return sorted(names)
+        names.sort()
+        return names
 
 
 #
