@@ -235,7 +235,7 @@ var L = [1, 2, 3]
 setvar L[0] = L
 
 shopt -s ysh:upgrade
-fopen >tmp.txt {
+redir >tmp.txt {
   pp test_ (L)
 }
 fgrep -n -o '[ -->' tmp.txt
@@ -254,7 +254,7 @@ var d = {}
 setvar d.k = d
 
 shopt -s ysh:upgrade
-fopen >tmp.txt {
+redir >tmp.txt {
   pp test_ (d)
 }
 fgrep -n -o '{ -->' tmp.txt

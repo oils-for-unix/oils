@@ -489,14 +489,14 @@ hi
 status=0
 ## END
 
-#### fopen
+#### redir
 shopt --set parse_brace parse_proc
 
 proc p {
   echo 'proc'
 }
 
-fopen >out.txt {
+redir >out.txt {
   p
   echo 'builtin'
 }
@@ -505,12 +505,12 @@ cat out.txt
 
 echo ---
 
-fopen <out.txt {
+redir <out.txt {
   tac
 }
 
 # Awkward bash syntax, but we'll live with it
-fopen {left}>left.txt {right}>right.txt {
+redir {left}>left.txt {right}>right.txt {
   echo 1 >& $left
   echo 1 >& $right
 

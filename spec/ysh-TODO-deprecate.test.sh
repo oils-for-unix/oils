@@ -86,3 +86,18 @@ echo $['foo' => upper()]
 ## STDOUT:
 FOO
 ## END
+
+#### fopen can be spelled redir 
+shopt --set ysh:upgrade
+
+fopen >out {
+  echo 1
+  echo 2
+}
+
+tac out
+
+## STDOUT:
+2
+1
+## END

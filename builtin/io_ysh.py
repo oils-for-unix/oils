@@ -286,8 +286,8 @@ class Write(_Builtin):
         return 0
 
 
-class Fopen(vm._Builtin):
-    """fopen does nothing but run a block.
+class RunBlock(vm._Builtin):
+    """Used for 'redir' builtin
 
     It's used solely for its redirects.
         fopen >out.txt { echo hi }
@@ -303,7 +303,7 @@ class Fopen(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        _, arg_r = flag_util.ParseCmdVal('fopen',
+        _, arg_r = flag_util.ParseCmdVal('redir',
                                          cmd_val,
                                          accept_typed_args=True)
 

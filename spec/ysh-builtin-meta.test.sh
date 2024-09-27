@@ -95,7 +95,7 @@ Block
 
 shopt -s ysh:upgrade
 
-fopen >out.txt {
+redir >out.txt {
   x=42
   setvar y = {foo: x}
 

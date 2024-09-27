@@ -58,7 +58,7 @@ _NORMAL_BUILTINS = [
     # take a block
     # push-registers added below
     'fork', 'forkwait',
-    'fopen',
+    'redir', 'fopen',  # fopen is for backward compat
     'shvar',
     'ctx',
 

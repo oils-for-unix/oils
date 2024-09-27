@@ -506,7 +506,7 @@ if 0:
 
 PUSH_REGISTERS_SPEC = FlagSpec('push-registers')
 
-FOPEN_SPEC = FlagSpec('fopen')
+FOPEN_SPEC = FlagSpec('redir')
 
 #
 # JSON

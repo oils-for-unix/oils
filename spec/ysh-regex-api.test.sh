@@ -46,7 +46,7 @@ got expected status 3
 shopt -s ysh:upgrade
 
 # Hm it's hard to test this, we can't get stderr of YSH from within YSH?
-#fopen 2>err.txt {
+#redir 2>err.txt {
 #  if ('abc' ~ '+') {
 #    echo 'bad'
 #  }

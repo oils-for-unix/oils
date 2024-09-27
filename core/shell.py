@@ -677,7 +677,9 @@ def Main(
     b[builtin_i.printf] = printf_osh.Printf(mem, parse_ctx, unsafe_arith,
                                             errfmt)
     b[builtin_i.write] = io_ysh.Write(mem, errfmt)
-    b[builtin_i.fopen] = io_ysh.Fopen(mem, cmd_ev)
+    redir_builtin = io_ysh.RunBlock(mem, cmd_ev)  # used only for redirects
+    b[builtin_i.redir] = redir_builtin
+    b[builtin_i.fopen] = redir_builtin  # alias for backward compatibility
 
     # (pp output format isn't stable)
     b[builtin_i.pp] = io_ysh.Pp(expr_ev, mem, errfmt, procs, arena)
