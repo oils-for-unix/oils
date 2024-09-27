@@ -8,7 +8,6 @@ import time as time_
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import option_i, builtin_i
-from _devbuild.gen.runtime_asdl import scope_e
 from _devbuild.gen.syntax_asdl import (loc, source, source_t, IntParamBox,
                                        debug_frame, debug_frame_t)
 from _devbuild.gen.value_asdl import (value, value_e, value_t, Obj)
@@ -33,7 +32,6 @@ from frontend import flag_def  # side effect: flags are defined!
 
 unused1 = flag_def
 from frontend import flag_util
-from frontend import location
 from frontend import reader
 from frontend import parse_lib
 

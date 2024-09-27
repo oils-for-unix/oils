@@ -1412,25 +1412,30 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.def_write_ind('}\n')
 
-    def _AssignNewDictImpl(self, lval):
-        """
+    def _AssignNewDictImpl(self, lval, prefix=''):
+        """Translate NewDict() -> Alloc<Dict<K, V>>
+
+        This function is a specal case because the RHS need TYPES from the LHS.
+
+        e.g. here is how we make ORDERED dictionaries, which can't be done with {}:
+
            d = NewDict()  # type: Dict[int, int]
-        -> auto* d = NewDict<int, int>();
-        
-        - NewDict exists in Python, it makes ordered dictionaries
-        - We translate it here because we need type inference
-        
-        I think we could get rid of NewDict in C++, and have it only in
-        Python.
-        
-        We used to have the "allocating in a constructor" rooting
-        problem, but I believe that's gone now.
+
+        -> one of
+
+           auto* d = Alloc<Dict<int, int>>();  # declare
+           d = Alloc<Dict<int, int>>();        # mutate
+
+        We also have:
+
+            self.d = NewDict() 
+        ->
+            this->d = Alloc<Dict<int, int>)();
         """
         lval_type = self.types[lval]
+        #self.log('lval type %s', lval_type)
 
         # Fix for Dict[str, value]? in ASDL
-
-        #self.log('lval type %s', lval_type)
         if (isinstance(lval_type, UnionType) and len(lval_type.items) == 2 and
                 isinstance(lval_type.items[1], NoneTyp)):
             lval_type = lval_type.items[0]
@@ -1440,12 +1445,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.local_var_list.append((lval.name, lval_type))
 
         assert c_type.endswith('*')
-
-        # Hack for declaration vs. definition.  TODO: clean this up
-        prefix = '' if self.current_func_node else 'auto* '
-
-        self.def_write_ind('%s%s = Alloc<%s>();\n', prefix, lval.name,
-                           c_type[:-1])
+        self.def_write('Alloc<%s>()', c_type[:-1])
 
     def _AssignCastImpl(self, o, lval):
         """
@@ -1585,10 +1585,20 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             callee = o.rvalue.callee
 
             if callee.name == 'NewDict':
-                self._AssignNewDictImpl(lval)
+                self.def_write_ind('')
 
-                # Bug fix: self.front_frame = NewDict() needs to register member
+                # Hack for non-members - why does this work?
+                # Tests cases in mycpp/examples/containers.py
+                if not isinstance(lval, MemberExpr) and self.current_func_node is None:
+                    self.def_write('auto* ')
+
+                self.accept(lval)
+                self.def_write(' = ')
+                self._AssignNewDictImpl(lval)  # uses lval, not rval
+                self.def_write(';\n')
+
                 if isinstance(lval, MemberExpr):
+                    # Bug fix: self.front_frame = NewDict() needs to register member
                     self._MaybeAddMember(lval, self.current_member_vars)
                 return
 
