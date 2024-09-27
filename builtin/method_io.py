@@ -1,7 +1,7 @@
 """Methods on IO type"""
 from __future__ import print_function
 
-from _devbuild.gen.value_asdl import value, value_t
+from _devbuild.gen.value_asdl import value, value_e, value_t
 
 from core import error
 from core import num
@@ -10,7 +10,7 @@ from core import vm
 from mycpp.mylib import log, NewDict
 from osh import prompt
 
-from typing import Dict, TYPE_CHECKING
+from typing import Dict, List, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from frontend import typed_args
     from osh import cmd_eval
@@ -46,14 +46,32 @@ class Eval(vm._Callable):
         # type: (typed_args.Reader) -> value_t
         unused = rd.PosValue()
         cmd = rd.PosCommand()
-        rd.Done()  # no more args
+
+        dollar0 = rd.NamedStr("dollar0", None)
+        pos_args_raw = rd.NamedList("pos_args", None)
+        vars_ = rd.NamedDict("vars", None)
+        rd.Done()
+
+        pos_args = None  # type: List[str]
+        if pos_args_raw is not None:
+            pos_args = []
+            for arg in pos_args_raw:
+                if arg.tag() != value_e.Str:
+                    raise error.TypeErr(
+                        arg, "Expected pos_args to be a List of Strs",
+                        rd.LeftParenToken())
+
+                pos_args.append(cast(value.Str, arg).s)
 
         if self.which == EVAL_NULL:
-            # errors can arise from false' and 'exit'
-            unused_status = self.cmd_ev.EvalCommand(cmd)
+            with state.ctx_Eval(self.cmd_ev.mem, dollar0, pos_args, vars_):
+                unused_status = self.cmd_ev.EvalCommand(cmd)
             return value.Null
 
         elif self.which == EVAL_DICT:
+            # TODO: dollar0, pos_args, vars_ not supposed
+            # Does ctx_FrontFrame has different scoping rules?  For "vars"?
+
             bindings = NewDict()  # type: Dict[str, value_t]
             with state.ctx_FrontFrame(self.cmd_ev.mem, bindings):
                 unused_status = self.cmd_ev.EvalCommand(cmd)

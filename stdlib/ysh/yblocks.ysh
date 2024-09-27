@@ -17,7 +17,7 @@ proc yb-capture(; out; ; block) {
 
   var stdout = ''
   try {
-    eval (block) | read --all (&stdout)
+    call io->eval(block) | read --all (&stdout)
   }
   # TODO: if 'block' contains a pipeline, we lose this magic var
   var result = {status: _pipeline_status[0], stdout}
@@ -33,7 +33,7 @@ proc yb-capture-2(; out; ; block) {
 
   var stderr = ''
   try {
-    eval (block) 2>&1 | read --all (&stderr)
+    call io->eval(block) 2>&1 | read --all (&stderr)
   }
   #pp test_ (_pipeline_status)
 

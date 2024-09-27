@@ -789,12 +789,6 @@ issues][].
 
 [security issues]: https://mywiki.wooledge.org/BashFAQ/048
 
-YSH eval:
-
-    var myblock = ^(echo hi)
-    eval (myblock)  # => hi
-
-
 ### trap
 
     trap FLAG* CMD SIGNAL*

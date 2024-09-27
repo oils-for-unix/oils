@@ -22,7 +22,7 @@ command literal
 
 #### Eval a block within a proc
 proc run (;;; block) {
-  eval (block)
+  call io->eval(block)
 }
 
 run {
@@ -43,15 +43,15 @@ lazy-block (&my_block) {
   json write (myglobal)
 }
 
-eval (my_block)
+call io->eval(my_block)
 setvar myglobal = 1
-eval (my_block)
+call io->eval(my_block)
 ## STDOUT:
 0
 1
 ## END
 
-#### eval (block) can read variables like eval ''
+#### io->eval(block) can read variables like eval ''
 
 proc p2(code_str) {
   var mylocal = 42
@@ -62,7 +62,7 @@ p2 'echo mylocal=$mylocal'
 
 proc p (;;; block) {
   var mylocal = 99
-  eval (block)
+  call io->eval(block)
 }
 
 p {
@@ -85,7 +85,7 @@ proc p (;;; block) {
   #
   # I think we want to provide full control over the stack.
   push-frame {
-    eval (block)
+    call io->eval(block)
   }
 }
 
@@ -98,9 +98,9 @@ p {
 TODO
 ## END
 
-#### eval with argv bindings
-eval (^(echo "$@"), pos_args=:| foo bar baz |)
-eval (^(pp test_ (:| $1 $2 $3 |)), pos_args=:| foo bar baz |)
+#### io->eval with argv bindings
+call io->eval(^(echo "$@"), pos_args=:| foo bar baz |)
+call io->eval(^(pp test_ (:| $1 $2 $3 |)), pos_args=:| foo bar baz |)
 ## STDOUT:
 foo bar baz
 (List)   ["foo","bar","baz"]
@@ -110,7 +110,7 @@ foo bar baz
 proc my-split (;;; block) {
   while read --raw-line {
     var cols = split(_reply)
-    eval (block, pos_args=cols)
+    call io->eval(block, pos_args=cols)
   }
 }
 
@@ -149,7 +149,7 @@ d c local2
 proc my-split (;;; block) {
   while read --raw-line {
     var cols = split(_reply)
-    eval (block, vars={_line: _reply, _first: cols[0]})
+    call io->eval(block, vars={_line: _reply, _first: cols[0]})
   }
 }
 
@@ -179,18 +179,18 @@ c d | c local2
 
 #### eval with custom dollar0
 var b = ^(write $0)
-eval (b, dollar0="my arg0")
+call io->eval(b, dollar0="my arg0")
 ## STDOUT:
 my arg0
 ## END
 
 #### eval with vars bindings
 var myVar = "abc"
-eval (^(pp test_ (myVar)))
-eval (^(pp test_ (myVar)), vars={ 'myVar': '123' })
+call io->eval(^(pp test_ (myVar)))
+call io->eval(^(pp test_ (myVar)), vars={ 'myVar': '123' })
 
 # eval doesn't modify it's environment
-eval (^(pp test_ (myVar)))
+call io->eval(^(pp test_ (myVar)))
 
 ## STDOUT:
 (Str)   "abc"
@@ -205,7 +205,7 @@ proc foreach (binding, in_; list ;; block) {
   }
 
   for item in (list) {
-    eval (block, vars={ [binding]: item })
+    call io->eval(block, vars={ [binding]: item })
   }
 }
 
@@ -243,7 +243,7 @@ proc __arg (name) {
 }
 
 proc parser (; spec ;; block) {
-  eval (block, vars={ 'flag': __flag, 'arg': __arg })
+  call io->eval(block, vars={ 'flag': __flag, 'arg': __arg })
 }
 
 parser (&spec) {
@@ -267,7 +267,7 @@ arg file
 
 #### vars initializes the variable frame, but does not remember it
 var vars = { 'foo': 123 }
-eval (^(var bar = 321;), vars=vars)
+call io->eval(^(var bar = 321;), vars=vars)
 pp test_ (vars)
 
 ## STDOUT:
@@ -275,20 +275,20 @@ pp test_ (vars)
 ## END
 
 #### eval pos_args must be strings
-eval (^(true), pos_args=[1, 2, 3])
+call io->eval(^(true), pos_args=[1, 2, 3])
 ## status: 3
 
 #### eval with vars follows same scoping as without
 proc local-scope {
   var myVar = "foo"
-  eval (^(echo $myVar), vars={ someOtherVar: "bar" })
-  eval (^(echo $myVar))
+  call io->eval(^(echo $myVar), vars={ someOtherVar: "bar" })
+  call io->eval(^(echo $myVar))
 }
 
 # In global scope
 var myVar = "baz"
-eval (^(echo $myVar), vars={ someOtherVar: "bar" })
-eval (^(echo $myVar))
+call io->eval(^(echo $myVar), vars={ someOtherVar: "bar" })
+call io->eval (^(echo $myVar))
 
 local-scope
 ## STDOUT:
@@ -298,7 +298,7 @@ foo
 foo
 ## END
 
-#### eval 'mystring' vs. eval (myblock)
+#### eval 'mystring' vs. call io->eval(myblock)
 
 eval 'echo plain'
 echo plain=$?
@@ -322,7 +322,7 @@ pp test_ (_error)
 
 var b = ^(echo one; false; echo two)
 try {
-  eval (b)
+  call io->eval(b)
 }
 pp test_ (_error)
 

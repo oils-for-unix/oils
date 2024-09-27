@@ -203,6 +203,7 @@ class HasDictMember(object):
     """
     based on state.Mem
     """
+
     def __init__(self):
         # type: () -> None
         self.builtins = NewDict()  # type: Dict[str, str]

@@ -548,16 +548,30 @@ A module is a file with YSH code.
 
 Evaluate a command, and return `null`.
 
-    var c = ^(echo hi)
-    call io->eval(c)
+    var cmd = ^(echo hi)
+    call io->eval(cmd)
 
 It's like like the `eval` builtin, and meant to be used in pure functions.
+
+You can also bind:
+
+- positional args `$1 $2 $3`
+- dollar0 `$0`
+- named variables
+
+Examples:
+
+    var cmd = ^(echo "zero $0, one $1, named $x")
+    call io->eval(cmd, dollar0="z", pos_args=['one'], vars={x: "x"})
+    # => zero z, one one, named x
 
 <!--
 TODO: We should be able to bind positional args, env vars, and inspect the
 shell VM.
 
 Though this runs in the same VM, not a new one.
+
+
 -->
 
 ### evalToDict()

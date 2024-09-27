@@ -106,7 +106,7 @@ proc run-tests {
   for cmd in (_describe) {
     # TODO: print filename and 'describe' name?
     try {
-      eval (cmd)
+      call io->eval(cmd)
     }
     if (_status !== 0) {
       echo 'failed'

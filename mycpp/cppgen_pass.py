@@ -1589,7 +1589,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
                 # Hack for non-members - why does this work?
                 # Tests cases in mycpp/examples/containers.py
-                if not isinstance(lval, MemberExpr) and self.current_func_node is None:
+                if not isinstance(
+                        lval, MemberExpr) and self.current_func_node is None:
                     self.def_write('auto* ')
 
                 self.accept(lval)

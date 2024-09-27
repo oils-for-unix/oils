@@ -74,7 +74,7 @@ prefix a
 prefix b
 ## END
 
-#### with parseCommand() then eval vars={out_dict: {}}
+#### with parseCommand() then io->eval(cmd, vars={out_dict: {}})
 
 # This could take the place of evalToDict()?  But evalToDict() is useful in
 # Hay?
@@ -89,10 +89,7 @@ func genProcs() {
     setvar out_dict.echo_$param = echo_$param
     """
     var cmd = parseCommand(s)
-
-    # TODO: io->eval() should support vars=vars
-    #call io->eval(cmd)
-    eval (cmd, vars=vars)
+    call io->eval(cmd, vars=vars)
   }
   return (vars.out_dict)
 }
