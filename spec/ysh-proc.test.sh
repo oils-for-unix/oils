@@ -556,3 +556,28 @@ foo
 bar
 foo
 ## END
+
+
+#### procs are defined in local scope
+shopt -s ysh:upgrade
+
+proc gen-proc {
+  eval 'proc localproc { echo hi }'
+  pp frame_vars_
+
+}
+
+gen-proc
+
+# can't suppress 'grep' failure
+if false {
+  try {
+    pp frame_vars_ | grep localproc
+  }
+  pp test_ (_pipeline_status)
+  #pp test_ (PIPESTATUS)
+}
+
+## STDOUT:
+    [frame_vars_] ARGV localproc
+## END

@@ -882,6 +882,10 @@ ysh-proc() {
   run-file ysh-proc "$@"
 }
 
+ysh-proc-meta() {
+  run-file ysh-proc-meta "$@"
+}
+
 ysh-regex() {
   run-file ysh-regex "$@"
 }
