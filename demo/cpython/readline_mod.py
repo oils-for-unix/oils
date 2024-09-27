@@ -15,11 +15,15 @@ import readline
 
 
 def main(argv):
+  try:
+    prompt_str = argv[1]
+  except IndexError:
+    prompt_str = '! '
   import os
   readline.parse_and_bind("tab: complete")
   print('PID %d' % os.getpid())
   while True:
-    x = raw_input('! ')
+    x = raw_input(prompt_str)
     print(x)
 
 
