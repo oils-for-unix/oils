@@ -3,17 +3,17 @@
 ## our_shell: ysh
 ## oils_failures_allowed: 3
 
-#### Eval does not take a literal block - can restore this later
+#### eval builtin does not take a literal block - can restore this later
 
 var b = ^(echo obj)
-eval (b)
+call io->eval (b)
 
-eval (^(echo command literal))
+call io->eval (^(echo command literal))
 
 # Doesn't work because it's a positional arg
 eval { echo block }
 
-## status: 3
+## status: 2
 ## STDOUT:
 obj
 command literal
@@ -303,7 +303,7 @@ foo
 eval 'echo plain'
 echo plain=$?
 var b = ^(echo plain)
-eval (b)
+call io->eval(b)
 echo plain=$?
 
 echo

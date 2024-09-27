@@ -102,13 +102,13 @@ cat out
 ## END
 
 #### block literal in expression mode: ^(echo $PWD)
-shopt -s oil:all
+shopt -s ysh:all
 
 const myblock = ^(echo $PWD | wc -l)
-eval (myblock)
+call io->eval(myblock)
 
 const b2 = ^(echo one; echo two)
-eval (b2)
+call io->eval(b2)
 
 ## STDOUT:
 1
@@ -259,7 +259,7 @@ shopt --set parse_brace parse_proc parse_paren
 proc task(name ; ; ; b = null) {
   echo "task name=$name"
   if (b) {
-    eval (b)
+    call io->eval(b)
     return 33
   } else {
     echo 'no block'

@@ -17,7 +17,11 @@ proc yb-capture(; out; ; block) {
 
   var stdout = ''
   try {
-    call io->eval(block) | read --all (&stdout)
+    { call io->eval(block) } | read --all (&stdout)
+
+    # Note that this doesn't parse because of expression issue:
+    #     call io->eval(block) | read --all (&stdout)
+    # used to be eval (block)
   }
   # TODO: if 'block' contains a pipeline, we lose this magic var
   var result = {status: _pipeline_status[0], stdout}
@@ -33,7 +37,11 @@ proc yb-capture-2(; out; ; block) {
 
   var stderr = ''
   try {
-    call io->eval(block) 2>&1 | read --all (&stderr)
+    fopen 2>&1 { call io->eval(block); } | read --all (&stderr)
+
+    # Note that this doesn't parse because of expression issue:
+    #     call io->eval(block) 2>&1 | read --all (&stderr)
+    # used to be eval (block) 2>&1
   }
   #pp test_ (_pipeline_status)
 

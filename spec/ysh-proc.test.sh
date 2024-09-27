@@ -175,7 +175,7 @@ proc f(x, y ; ; ; block) {
   echo f word $x $y
 
   if (block) {
-    eval (block)
+    call io->eval(block)
   }
 }
 f a b { echo FFF }
@@ -188,7 +188,7 @@ proc g(x, y, ...rest ; ; ; block) {
   echo g rest @rest
 
   if (block) {
-    eval (block)
+    call io->eval(block)
   }
 }
 g a b c d {
@@ -313,7 +313,7 @@ brace
 shopt --set ysh:upgrade
 
 proc p ( ; ; ; block) {
-  eval (block)
+  call io->eval(block)
 }
 
 p { echo literal }

@@ -55,7 +55,7 @@ one
 shopt -s ysh:all
 
 proc proc-that-runs-block (; ; ; b) {
-  eval (b)
+  call io->eval(b)
 }
 proc-that-runs-block {
   echo one
@@ -71,7 +71,7 @@ one
 shopt -s ysh:all
 
 proc proc-that-runs-block (; ; ; b) {
-  eval (b)
+  call io->eval(b)
 }
 
 f() {
@@ -93,7 +93,7 @@ end func
 shopt -s ysh:all
 
 proc proc-that-runs-block (; ; ; b) {
-  eval (b)
+  call io->eval(b)
 }
 
 f() {
