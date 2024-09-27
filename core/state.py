@@ -2480,7 +2480,7 @@ class Procs:
 
     def SetProc(self, name, proc):
         # type: (str, value.Proc) -> None
-        self.mem.var_stack[0][name] = Cell(False, False, False, proc)
+        self.mem.var_stack[-1][name] = Cell(False, False, False, proc)
 
     def SetShFunc(self, name, proc):
         # type: (str, value.Proc) -> None
