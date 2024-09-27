@@ -651,8 +651,7 @@ At the call site, they can look like any of these forms:
 
     cd /tmp { echo $PWD }        # word arg, then block arg
 
-    var mycmd = ^(echo hi)       # expression for a value.Command
-    eval (mycmd)                 # positional arg 
+    pp value ([1, 2])            # positional, typed arg 
 
 <!-- TODO: lazy arg list: ls8 | where [age > 10] -->
 

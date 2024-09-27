@@ -93,7 +93,7 @@ shopt -s ysh:all
 proc proc_that_evals(; ; ;b) {
   for i in 1 2; do
     echo $i
-    eval (b)
+    call io->eval(b)
   done
   echo 'end func'
 }

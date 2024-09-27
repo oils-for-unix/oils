@@ -6,7 +6,6 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
-from _devbuild.gen.value_asdl import value, value_e
 from _devbuild.gen.syntax_asdl import source, loc
 from core import alloc
 from core import dev
@@ -22,7 +21,6 @@ from data_lang import j8_lite
 from frontend import flag_util
 from frontend import consts
 from frontend import reader
-from frontend import typed_args
 from mycpp.mylib import log, print_stderr
 from pylib import os_path
 from osh import cmd_eval
@@ -32,7 +30,7 @@ from posix_ import X_OK  # translated directly to C macro
 
 _ = log
 
-from typing import Dict, List, Tuple, Optional, cast, TYPE_CHECKING
+from typing import Dict, List, Tuple, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from frontend import args
     from frontend.parse_lib import ParseContext
