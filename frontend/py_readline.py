@@ -106,12 +106,12 @@ def MaybeGetReadline():
 
 if __name__ == '__main__':
     import sys
-    line_input = MaybeGetReadline()
+    readline = MaybeGetReadline()
     try:
         prompt_str = sys.argv[1]
     except IndexError:
         prompt_str = '! '
 
     while True:
-        x = line_input.prompt_input(prompt_str)
+        x = readline.prompt_input(prompt_str)
         print(x)
