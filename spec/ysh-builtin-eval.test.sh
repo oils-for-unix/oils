@@ -1,7 +1,7 @@
 # YSH specific features of eval
 
 ## our_shell: ysh
-## oils_failures_allowed: 3
+## oils_failures_allowed: 4
 
 #### Eval does not take a literal block - can restore this later
 
@@ -367,13 +367,13 @@ p param
 
 #### parseCommand then io->evalToDict() - in global scope
 
-var cmd = parseCommand('var x = 42; echo hi; var y = 99')
+var g = 'global'
+var cmd = parseCommand('var x = 42; echo hi; var y = g')
 #var cmd = parseCommand('echo hi')
 
 pp test_ (cmd)
 #pp asdl_ (cmd)
 
-# problems: env var leakage
 var d = io->evalToDict(cmd)
 
 pp test_ (d)
@@ -381,7 +381,7 @@ pp test_ (d)
 ## STDOUT:
 <Command>
 hi
-(Dict)
+(Dict)   {"x":42,"y":"global"}
 ## END
 
 #### parseCommand with syntax error
@@ -396,16 +396,13 @@ pp test_ (_error)
 ## END
 
 
-#### Dict (&d) { } function - local scope with __pframe__
+#### Dict (&d) { ... } converts frame to dict
 
 # pframe is a read-only parent frame
 #
 # I guess we have a value.Frame() wrapper then?  Why not ...
 
 proc Dict ( ; out; ; block) {
-  # Leakage: ARGV, out, block
-  # So we have to create a __pframe__
-
   var d = io->evalToDict(block)
   call out->setValue(d)
 }
@@ -417,22 +414,99 @@ var k = 'k-shadowed'
 var k2 = 'k2-shadowed'
 
 Dict (&d) {
-  var k = 'k'
-  setvar k = 'k2'
+  var k = 'k-block'
+  setvar k = 'k-block-mutated'
 
-  # is this in the dict?
-  setvar k2 = 'z'  # this is in the dict!  It'slocal to!
+  # this is confusing
+  # because it doesn't find it in the local stack frame
+  # it doesn't have 'var without setvar' bug
+  setvar k2 = 'k2-block'  # this is in the dict!  It'slocal to!
+  setvar k3 = 'k3'
 
   # do we allow this?
   setvar myglobal = 'global'
 }
 
 pp test_ (d)
-= d
 
 # restored to the shadowed values
-echo $k
-echo $k2
+echo k=$k
+echo k2=$k2
+
+proc p {
+  Dict (&d) {
+    var k = 'k-proc'
+    setvar k = 'k-proc-mutated'
+
+    # is this in the dict?
+    setvar k2 = 'k2-proc'  # this is in the dict!  It'slocal to!
+  }
+}
+
+## STDOUT:
+## END
+
+#### Dict (&d) and setvar 
+
+proc Dict ( ; out; ; block) {
+  var d = io->evalToDict(block)
+
+  echo 'proc Dict frame after evalToDict'
+  pp frame_vars_
+
+  echo "Dict outer=$outer"
+  #echo "Dict outer2=$outer2"
+  call out->setValue(d)
+}
+
+var outer = 'xx'
+
+Dict (&d) {
+  # new variable in the front frame
+  outer2 = 'outer2'
+
+  #var v = 'v'
+  #setvar v = 'v-mutated'
+
+  # hm setvar is local ONLY, so it does NOT find the 'outer'
+  # because we're inside Dict!  Gah
+  #
+  # Do we want to say there's no matching 'var', instead of mutating locally?
+  #
+  # And also plain io->eval() should be able to mutate outer...
+  setvar outer = 'zz'
+
+  setvar not_declared = 'yy'
+
+  echo 'inside Dict block'
+  pp frame_vars_
+}
+
+pp test_ (d)
+echo after outer=$outer
+
+echo 'after Dict'
+pp frame_vars_
+
+## STDOUT:
+## END
+
+
+#### Dict (&d) and setglobal
+
+proc Dict ( ; out; ; block) {
+  var d = io->evalToDict(block)
+  call out->setValue(d)
+}
+
+var outer = 'xx'
+
+Dict (&d) {
+  setglobal outer = 'zz'
+}
+
+pp test_ (d)
+echo outer=$outer
 
 
 ## STDOUT:

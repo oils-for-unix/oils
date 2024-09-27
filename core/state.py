@@ -1258,7 +1258,8 @@ def _FrameLookup(frame, name):
             frame = cast(value.Frame, rear_val).frame
             cell = frame.get(name)
             if cell:
-                return cell, frame
+                #return cell, frame
+                return cell, None
 
     return None, None
 
