@@ -1,7 +1,7 @@
 # YSH specific features of eval
 
 ## our_shell: ysh
-## oils_failures_allowed: 4
+## oils_failures_allowed: 3
 
 #### Eval does not take a literal block - can restore this later
 
@@ -398,10 +398,6 @@ pp test_ (_error)
 
 #### Dict (&d) { ... } converts frame to dict
 
-# pframe is a read-only parent frame
-#
-# I guess we have a value.Frame() wrapper then?  Why not ...
-
 proc Dict ( ; out; ; block) {
   var d = io->evalToDict(block)
   call out->setValue(d)
@@ -420,7 +416,7 @@ Dict (&d) {
   # this is confusing
   # because it doesn't find it in the local stack frame
   # it doesn't have 'var without setvar' bug
-  setvar k2 = 'k2-block'  # this is in the dict!  It'slocal to!
+  setvar k2 = 'k2-block'  # global, so not checked
   setvar k3 = 'k3'
 
   # do we allow this?
@@ -439,7 +435,7 @@ proc p {
     setvar k = 'k-proc-mutated'
 
     # is this in the dict?
-    setvar k2 = 'k2-proc'  # this is in the dict!  It'slocal to!
+    setvar k2 = 'k2-proc'  # local, so it's checked
   }
 }
 
@@ -499,17 +495,26 @@ proc Dict ( ; out; ; block) {
   call out->setValue(d)
 }
 
-var outer = 'xx'
+var g = 'xx'
 
 Dict (&d) {
-  setglobal outer = 'zz'
+  setglobal g = 'zz'
+
+  a = 42
+  pp frame_vars_
 }
+echo
 
 pp test_ (d)
-echo outer=$outer
+echo g=$g
 
+#pp frame_vars_
 
 ## STDOUT:
+    [frame_vars_] __rear__ a
+
+(Dict)   {"a":42}
+g=zz
 ## END
 
 #### bindings created shvar persist, which is different than evalToDict()

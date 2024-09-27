@@ -206,4 +206,8 @@ bug-2078() {
   } | _bin/cxx-asan/ysh
 }
 
+py-readline() {
+  PYTHONPATH=.:vendor python2 frontend/py_readline.py "$@"
+}
+
 "$@"

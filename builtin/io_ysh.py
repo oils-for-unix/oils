@@ -192,7 +192,7 @@ class Pp(_Builtin):
 
         if action == 'frame_vars_':  # Print names in current frame, for testing
             top = self.mem.var_stack[-1]
-            print('\tframe_vars_: %s' % ' '.join(top.keys()))
+            print('    [frame_vars_] %s' % ' '.join(top.keys()))
             return 0
 
         if action == 'gc-stats_':
