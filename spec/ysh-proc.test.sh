@@ -1,4 +1,4 @@
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 
 #### Open proc (any number of args)
 shopt --set parse_proc
@@ -238,7 +238,7 @@ p
 ## STDOUT:
 ## END
 
-#### declare -F prints procs and shell-funcs
+#### declare -F only prints shell functions
 shopt --set parse_proc
 
 myfunc() {
@@ -254,7 +254,35 @@ declare -F
 ## status: 0
 ## STDOUT:
 declare -f myfunc
-declare -f myproc
+## END
+
+#### sh-func vs. proc vs. Obj: type -a, pp proc,  runproc, declare -p -F, etc.
+shopt --set ysh:upgrade
+
+myfunc() {
+  echo hi
+}
+
+proc myproc {
+  echo hi
+}
+
+type myfunc
+echo
+
+type myproc
+echo
+
+pp proc
+echo
+
+declare -p
+echo
+
+declare -F
+echo
+
+## STDOUT:
 ## END
 
 #### procs are in same namespace as variables
@@ -476,10 +504,9 @@ proc foo() {
 try { foo }
 echo status=$[_error.code]
 
-# TODO: should we abandon declare -F in favour of `pp proc`?
-declare -F
+pp test_ (foo)
 unset foo
-declare -F
+#pp test_ (foo)
 
 try { foo }
 echo status=$[_error.code]
@@ -487,7 +514,7 @@ echo status=$[_error.code]
 ## STDOUT:
 bar
 status=0
-declare -f foo
+<Proc>
 status=127
 ## END
 

@@ -48,11 +48,7 @@ class _FixedWordsAction(completion.CompletionAction):
 
 
 class _DynamicProcDictAction(completion.CompletionAction):
-    """For completing from proc and aliases dicts, which are mutable.
-
-    Note: this is the same as _FixedWordsAction now, but won't be when the code
-    is statically typed!
-    """
+    """For completing shell functions/procs/invokables."""
 
     def __init__(self, d):
         # type: (state.Procs) -> None
@@ -60,7 +56,7 @@ class _DynamicProcDictAction(completion.CompletionAction):
 
     def Matches(self, comp):
         # type: (Api) -> Iterator[str]
-        for name in self.d.GetNames():
+        for name in self.d.InvokableNames():
             if name.startswith(comp.to_complete):
                 yield name
 
@@ -70,11 +66,7 @@ class _DynamicProcDictAction(completion.CompletionAction):
 
 
 class _DynamicStrDictAction(completion.CompletionAction):
-    """For completing from proc and aliases dicts, which are mutable.
-
-    Note: this is the same as _FixedWordsAction now, but won't be when the code
-    is statically typed!
-    """
+    """For completing from the alias dicts, which is mutable."""
 
     def __init__(self, d):
         # type: (Dict[str, str]) -> None

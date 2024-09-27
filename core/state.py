@@ -2509,10 +2509,27 @@ class Procs:
 
         First, we search for a proc, and then a sh-func. This means that procs
         can shadow the definition of sh-funcs.
+
+        Callers
+          cmd_eval: check for redefining proc or sh-func
+          lookup for runproc - does this find sh-funcs too?
+          type -a - should print a separate entry
+          pp proc
+          complete -F myfunc
+          declare -p   - should not print procs, only shell stuff
         """
         maybe_proc = self.mem.GetValue(name)
         if maybe_proc.tag() == value_e.Proc:
             return cast(value.Proc, maybe_proc)
+
+        if maybe_proc.tag() == value_e.Obj:
+            obj = cast(Obj, maybe_proc)
+            # Now does it have
+
+        # Error cases for proc lookup:
+        # 1. value.Int
+        # 2. value.Obj with __invoke__, but it's not a value.Proc
+        # 2. value.Obj without __invoke__
 
         if name in self.sh_funcs:
             return self.sh_funcs[name]
@@ -2524,16 +2541,34 @@ class Procs:
         """Undefine a sh-func with name `to_del`, if it exists."""
         mylib.dict_erase(self.sh_funcs, to_del)
 
-    def GetNames(self):
+    def ShellFuncNames(self):
         # type: () -> List[str]
-        """Returns a *sorted* list of all proc names"""
+        """Returns a *sorted* list of all shell function names
+
+        Callers:
+          declare -f -F
+        """
+        names = self.sh_funcs.keys()
+        names.sort()
+        return names
+
+    def InvokableNames(self):
+        # type: () -> List[str]
+        """Returns a *sorted* list of all invokable names
+
+        Callers:
+          complete -A function
+        """
         names = self.sh_funcs.keys()
 
+        # TODO: look up the call stack - local and global
         var_frame = self.mem.var_stack[0]
         for name in var_frame:
             cell = var_frame[name]
             if cell.val.tag() == value_e.Proc:
                 names.append(name)
+
+            # TODO: value.Obj
 
         names.sort()
         return names

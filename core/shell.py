@@ -783,6 +783,9 @@ def Main(
     methods[value_e.Dict] = {
         'M/erase': method_dict.Erase(),
 
+        # TODO: names(d) get(d, k) has(d, k) might be better
+        #       values(d) is OK too
+
         # Dict.get()
         # Dict.keys()
         # Dict.values()
@@ -803,7 +806,6 @@ def Main(
         'M/accum': None,
     }
     methods[value_e.List] = {
-        # TODO: __mut_{reverse,append,extend,pop,insert,remove}
         'M/reverse': method_list.Reverse(),
         'M/append': method_list.Append(),
         'M/extend': method_list.Extend(),

@@ -209,7 +209,7 @@ class Pp(_Builtin):
                                            blame_loc=locs[i])
                         return 1
             else:
-                names = self.procs.GetNames()
+                names = self.procs.InvokableNames()
 
             # TSV8 header
             print('proc_name\tdoc_comment')

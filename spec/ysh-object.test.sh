@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 
 #### Object() creates prototype chain
 
@@ -210,3 +210,23 @@ pp test_ (Dict.get(d, 'key', 'default'))
 ## STDOUT:
 ## END
 
+
+#### Bound Proc?
+
+proc p (word1, word2; self, int1, int2) {
+  echo "sum = $[self.x + self.y]"
+  pp test_ (self)
+  pp test_ ([word1, word2, int1, int2])
+}
+
+p a b ({x: 5, y: 6}, 42, 43)
+
+var methods = Object(null, {__invoke__: p})
+
+var callable = Object(methods, {x: 98, y: 99})
+
+# TODO: change this error message
+callable a b (42, 43)
+
+## STDOUT:
+## END

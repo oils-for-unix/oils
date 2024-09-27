@@ -405,7 +405,7 @@ class NewVar(vm._AssignBuiltin):
                 status = self._PrintFuncs(names)
             else:
                 # bash quirk: with no names, they're printed in a different format!
-                for func_name in self.procs.GetNames():
+                for func_name in self.procs.ShellFuncNames():
                     print('declare -f %s' % (func_name))
             return status
 
