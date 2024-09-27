@@ -16,7 +16,7 @@ from _devbuild.gen.runtime_asdl import (scope_e, scope_t, Cell)
 from _devbuild.gen.syntax_asdl import (loc, loc_t, Token, debug_frame,
                                        debug_frame_e, debug_frame_t)
 from _devbuild.gen.types_asdl import opt_group_i
-from _devbuild.gen.value_asdl import (value, value_e, value_t, sh_lvalue,
+from _devbuild.gen.value_asdl import (value, value_e, value_t, Obj, sh_lvalue,
                                       sh_lvalue_e, sh_lvalue_t, LeftName,
                                       y_lvalue_e, regex_match, regex_match_e,
                                       regex_match_t, RegexMatch)
@@ -48,6 +48,7 @@ from typing import Tuple, List, Dict, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.option_asdl import option_t
     from core import alloc
+    from core import vm
     from osh import sh_expr_eval
 
 _ = log
@@ -1336,6 +1337,13 @@ class Mem(object):
         # For the ctx builtin
         self.ctx_stack = []  # type: List[Dict[str, value_t]]
 
+        self.builtins = NewDict()  # type: Dict[str, value_t]
+
+        # Note: Python 2 and 3 have __builtins__
+        # This is just for inspection
+        builtins_module = Obj(None, self.builtins)
+        frame['__builtins__'] = Cell(False, False, False, builtins_module)
+
     def __repr__(self):
         # type: () -> str
         parts = []  # type: List[str]
@@ -1346,6 +1354,10 @@ class Mem(object):
                 parts.append('  %s %s' % (n, v))
         parts.append('>')
         return '\n'.join(parts) + '\n'
+
+    def AddBuiltin(self, name, val):
+        # type: (str, value_t) -> None
+        self.builtins[name] = val
 
     def SetPwd(self, pwd):
         # type: (str) -> None
@@ -2219,6 +2231,10 @@ class Mem(object):
                 if cell:
                     return cell.val
 
+                builtin_val = self.builtins.get(name)
+                if builtin_val:
+                    return builtin_val
+
                 # TODO: Can look in the builtins module, which is a value.Obj
                 return value.Undef
 
@@ -2231,6 +2247,8 @@ class Mem(object):
           - declare -p
           - ${x@a}
           - to test of 'TZ' is exported in printf?  Why?
+
+        Note: consulting __builtins__ doesn't see necessary for any of these
         """
         if which_scopes == scope_e.Shopt:
             which_scopes = self.ScopesForReading()

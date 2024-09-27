@@ -206,19 +206,21 @@ x=
 ## END
 
 #### declare -p respects it
-__g=G
+
+___g=G
+
 show-vars() {
-  local __x=X
-  declare -p | grep '__'
+  local ___x=X
+  declare -p | grep '___'
   echo status=$?
 
   echo -
-  declare -p __y | grep '__'
+  declare -p ___y | grep '___'
   echo status=$?
 }
 
 demo() {
-  local __y=Y
+  local ___y=Y
 
   show-vars
   echo ---
@@ -229,16 +231,16 @@ demo() {
 demo
 
 ## STDOUT:
-declare -- __g=G
-declare -- __x=X
-declare -- __y=Y
+declare -- ___g=G
+declare -- ___x=X
+declare -- ___y=Y
 status=0
 -
-declare -- __y=Y
+declare -- ___y=Y
 status=0
 ---
-declare -- __g=G
-declare -- __x=X
+declare -- ___g=G
+declare -- ___x=X
 status=0
 -
 status=1

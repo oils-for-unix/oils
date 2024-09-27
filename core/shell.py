@@ -201,13 +201,10 @@ class ShellOptHook(state.OptHook):
         return True
 
 
-def _SetGlobalFunc(mem, name, func):
+def _AddBuiltinFunc(mem, name, func):
     # type: (state.Mem, str, vm._Callable) -> None
     assert isinstance(func, vm._Callable), func
-
-    # Note: no location info for builtin functions?
-    mem.SetNamed(location.LName(name), value.BuiltinFunc(func),
-                 scope_e.GlobalOnly)
+    mem.AddBuiltin(name, value.BuiltinFunc(func))
 
 
 def InitAssignmentBuiltins(
@@ -848,74 +845,73 @@ def Main(
     eval_hay = func_hay.EvalHay(hay_state, mutable_opts, mem, cmd_ev)
     hay_func = func_hay.HayFunc(hay_state)
 
-    _SetGlobalFunc(mem, 'parseHay', parse_hay)
-    _SetGlobalFunc(mem, 'evalHay', eval_hay)
-    _SetGlobalFunc(mem, '_hay', hay_func)
+    _AddBuiltinFunc(mem, 'parseHay', parse_hay)
+    _AddBuiltinFunc(mem, 'evalHay', eval_hay)
+    _AddBuiltinFunc(mem, '_hay', hay_func)
 
-    _SetGlobalFunc(mem, 'len', func_misc.Len())
-    _SetGlobalFunc(mem, 'type', func_misc.Type())
+    _AddBuiltinFunc(mem, 'len', func_misc.Len())
+    _AddBuiltinFunc(mem, 'type', func_misc.Type())
 
     g = func_eggex.MatchFunc(func_eggex.G, expr_ev, mem)
-    _SetGlobalFunc(mem, '_group', g)
-    _SetGlobalFunc(mem, '_match', g)  # TODO: remove this backward compat alias
-    _SetGlobalFunc(mem, '_start', func_eggex.MatchFunc(func_eggex.S, None,
-                                                       mem))
-    _SetGlobalFunc(mem, '_end', func_eggex.MatchFunc(func_eggex.E, None, mem))
+    _AddBuiltinFunc(mem, '_group', g)
+    _AddBuiltinFunc(mem, '_match',
+                    g)  # TODO: remove this backward compat alias
+    _AddBuiltinFunc(mem, '_start',
+                    func_eggex.MatchFunc(func_eggex.S, None, mem))
+    _AddBuiltinFunc(mem, '_end', func_eggex.MatchFunc(func_eggex.E, None, mem))
 
-    _SetGlobalFunc(mem, 'parseCommand',
-                   func_reflect.ParseCommand(parse_ctx, errfmt))
-    _SetGlobalFunc(mem, 'parseExpr', func_reflect.ParseExpr(parse_ctx, errfmt))
-    _SetGlobalFunc(mem, 'evalExpr', func_reflect.EvalExpr(expr_ev))
+    _AddBuiltinFunc(mem, 'parseCommand',
+                    func_reflect.ParseCommand(parse_ctx, errfmt))
+    _AddBuiltinFunc(mem, 'parseExpr',
+                    func_reflect.ParseExpr(parse_ctx, errfmt))
+    _AddBuiltinFunc(mem, 'evalExpr', func_reflect.EvalExpr(expr_ev))
 
-    _SetGlobalFunc(mem, 'shvarGet', func_reflect.Shvar_get(mem))
-    _SetGlobalFunc(mem, 'getVar', func_reflect.GetVar(mem))
+    _AddBuiltinFunc(mem, 'shvarGet', func_reflect.Shvar_get(mem))
+    _AddBuiltinFunc(mem, 'getVar', func_reflect.GetVar(mem))
 
-    _SetGlobalFunc(mem, 'Object', func_misc.Object())
-    _SetGlobalFunc(mem, 'prototype', func_misc.Prototype())
-    _SetGlobalFunc(mem, 'propView', func_misc.PropView())
+    _AddBuiltinFunc(mem, 'Object', func_misc.Object())
+    _AddBuiltinFunc(mem, 'prototype', func_misc.Prototype())
+    _AddBuiltinFunc(mem, 'propView', func_misc.PropView())
 
     # type conversions
-    _SetGlobalFunc(mem, 'bool', func_misc.Bool())
-    _SetGlobalFunc(mem, 'int', func_misc.Int())
-    _SetGlobalFunc(mem, 'float', func_misc.Float())
-    _SetGlobalFunc(mem, 'str', func_misc.Str_())
-    _SetGlobalFunc(mem, 'list', func_misc.List_())
-    _SetGlobalFunc(mem, 'dict', func_misc.DictFunc())
+    _AddBuiltinFunc(mem, 'bool', func_misc.Bool())
+    _AddBuiltinFunc(mem, 'int', func_misc.Int())
+    _AddBuiltinFunc(mem, 'float', func_misc.Float())
+    _AddBuiltinFunc(mem, 'str', func_misc.Str_())
+    _AddBuiltinFunc(mem, 'list', func_misc.List_())
+    _AddBuiltinFunc(mem, 'dict', func_misc.DictFunc())
 
-    _SetGlobalFunc(mem, 'runes', func_misc.Runes())
-    _SetGlobalFunc(mem, 'encodeRunes', func_misc.EncodeRunes())
-    _SetGlobalFunc(mem, 'bytes', func_misc.Bytes())
-    _SetGlobalFunc(mem, 'encodeBytes', func_misc.EncodeBytes())
+    _AddBuiltinFunc(mem, 'runes', func_misc.Runes())
+    _AddBuiltinFunc(mem, 'encodeRunes', func_misc.EncodeRunes())
+    _AddBuiltinFunc(mem, 'bytes', func_misc.Bytes())
+    _AddBuiltinFunc(mem, 'encodeBytes', func_misc.EncodeBytes())
 
     # Str
-    #_SetGlobalFunc(mem, 'strcmp', None)
+    #_AddBuiltinFunc(mem, 'strcmp', None)
     # TODO: This should be Python style splitting
-    _SetGlobalFunc(mem, 'split', func_misc.Split(splitter))
-    _SetGlobalFunc(mem, 'shSplit', func_misc.Split(splitter))
+    _AddBuiltinFunc(mem, 'split', func_misc.Split(splitter))
+    _AddBuiltinFunc(mem, 'shSplit', func_misc.Split(splitter))
 
     # Float
-    _SetGlobalFunc(mem, 'floatsEqual', func_misc.FloatsEqual())
+    _AddBuiltinFunc(mem, 'floatsEqual', func_misc.FloatsEqual())
 
     # List
-    _SetGlobalFunc(mem, 'join', func_misc.Join())
-    _SetGlobalFunc(mem, 'maybe', func_misc.Maybe())
-    _SetGlobalFunc(mem, 'glob', func_misc.Glob(globber))
+    _AddBuiltinFunc(mem, 'join', func_misc.Join())
+    _AddBuiltinFunc(mem, 'maybe', func_misc.Maybe())
+    _AddBuiltinFunc(mem, 'glob', func_misc.Glob(globber))
 
     # Serialize
-    _SetGlobalFunc(mem, 'toJson8', func_misc.ToJson8(True))
-    _SetGlobalFunc(mem, 'toJson', func_misc.ToJson8(False))
+    _AddBuiltinFunc(mem, 'toJson8', func_misc.ToJson8(True))
+    _AddBuiltinFunc(mem, 'toJson', func_misc.ToJson8(False))
 
-    _SetGlobalFunc(mem, 'fromJson8', func_misc.FromJson8(True))
-    _SetGlobalFunc(mem, 'fromJson', func_misc.FromJson8(False))
+    _AddBuiltinFunc(mem, 'fromJson8', func_misc.FromJson8(True))
+    _AddBuiltinFunc(mem, 'fromJson', func_misc.FromJson8(False))
 
     # Demos
-    _SetGlobalFunc(mem, '_a2sp', func_misc.BashArrayToSparse())
-    _SetGlobalFunc(mem, '_opsp', func_misc.SparseOp())
+    _AddBuiltinFunc(mem, '_a2sp', func_misc.BashArrayToSparse())
+    _AddBuiltinFunc(mem, '_opsp', func_misc.SparseOp())
 
-    # TODO: 'io' can be in the builtin module, and then hidden in functions
-    mem.SetNamed(location.LName('io'), io_obj, scope_e.GlobalOnly)
-
-    #mem.SetNamed(location.LName('stdin'), value.Stdin, scope_e.GlobalOnly)
+    mem.AddBuiltin('io', io_obj)
 
     #
     # Is the shell interactive?
