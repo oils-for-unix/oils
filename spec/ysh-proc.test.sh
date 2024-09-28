@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 #### Open proc (any number of args)
 shopt --set parse_proc
@@ -256,10 +256,10 @@ declare -F
 declare -f myfunc
 ## END
 
-#### sh-func vs. proc vs. Obj: type -a, pp proc,  runproc, declare -p -F, etc.
+#### compgen -A function completes all invokables - shell funcs, Proc, Obj
 shopt --set ysh:upgrade
 
-myfunc() {
+my-shell-func() {
   echo hi
 }
 
@@ -267,22 +267,25 @@ proc myproc {
   echo hi
 }
 
-type myfunc
-echo
+compgen -A function
 
-type myproc
-echo
+echo ---
 
-pp proc
-echo
-
-declare -p
-echo
-
-declare -F
-echo
+proc p {
+  eval 'proc inner { echo inner }'
+  #eval 'proc myproc { echo inner }'  # shadowed name
+  compgen -A function
+}
+p
 
 ## STDOUT:
+my-shell-func
+myproc
+---
+inner
+my-shell-func
+myproc
+p
 ## END
 
 #### procs are in same namespace as variables

@@ -1302,11 +1302,18 @@ class CommandEvaluator(object):
                 node.name, node.name_tok)
         sh_func = value.Proc(node.name, node.name_tok, proc_sig.Open,
                              node.body, None, True, None)
-        self.procs.SetShFunc(node.name, sh_func)
+        self.procs.DefineShellFunc(node.name, sh_func)
 
     def _DoProc(self, node):
         # type: (Proc) -> None
         proc_name = lexer.TokenVal(node.name)
+
+        # Note: this is similar 'const x = 42' and redefine_const -- it's a
+        # dynamic check that it doesn't already exist
+        # Also modules make this less necessary, because there are fewer name
+        # conflicts
+        # We could also define procs as READ-ONLY, but that means we need
+        # Dict[str, Cell] and not Dict[str, value_t]
         if (self.procs.Get(proc_name) and
                 not self.exec_opts.redefine_proc_func()):
             e_die(
@@ -1322,7 +1329,7 @@ class CommandEvaluator(object):
         # no dynamic scope
         proc = value.Proc(proc_name, node.name, node.sig, node.body,
                           proc_defaults, False, None)
-        self.procs.SetProc(proc_name, proc)
+        self.procs.DefineProc(proc_name, proc)
 
     def _DoFunc(self, node):
         # type: (Func) -> None

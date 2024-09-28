@@ -524,7 +524,7 @@ class Unset(vm._Builtin):
             return False
 
         if proc_fallback and not found:
-            self.procs.Del(arg)
+            self.procs.EraseShellFunc(arg)
 
         return True
 
@@ -538,7 +538,7 @@ class Unset(vm._Builtin):
             location = arg_locs[i]
 
             if arg.f:
-                self.procs.Del(name)
+                self.procs.EraseShellFunc(name)
 
             elif arg.v:
                 if not self._UnsetVar(name, location, False):

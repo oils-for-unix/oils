@@ -2488,6 +2488,14 @@ class Mem(object):
         return self.ctx_stack.pop()
 
 
+def _AddNames(unique, frame):
+    # type: (Dict[str, bool], Dict[str, Cell]) -> None
+    for name in frame:
+        cell = frame[name]
+        if cell.val.tag() == value_e.Proc:
+            unique[name] = True
+
+
 class Procs:
 
     def __init__(self, mem):
@@ -2495,13 +2503,56 @@ class Procs:
         self.mem = mem
         self.sh_funcs = {}  # type: Dict[str, value.Proc]
 
-    def SetProc(self, name, proc):
+    def DefineShellFunc(self, name, proc):
+        # type: (str, value.Proc) -> None
+        self.sh_funcs[name] = proc
+
+    def EraseShellFunc(self, to_del):
+        # type: (str) -> None
+        """Undefine a sh-func with name `to_del`, if it exists."""
+        mylib.dict_erase(self.sh_funcs, to_del)
+
+    def ShellFuncNames(self):
+        # type: () -> List[str]
+        """Returns a *sorted* list of all shell function names
+
+        Callers:
+          declare -f -F
+        """
+        names = self.sh_funcs.keys()
+        names.sort()
+        return names
+
+    def DefineProc(self, name, proc):
         # type: (str, value.Proc) -> None
         self.mem.var_stack[-1][name] = Cell(False, False, False, proc)
 
-    def SetShFunc(self, name, proc):
-        # type: (str, value.Proc) -> None
-        self.sh_funcs[name] = proc
+    def InvokableNames(self):
+        # type: () -> List[str]
+        """Returns a *sorted* list of all invokable names
+
+        Callers:
+          complete -A function
+          pp proc - should deprecate this
+        """
+        unique = {}  # type: Dict[str, bool]
+        for name in self.sh_funcs:
+            unique[name] = True
+
+        top_frame = self.mem.var_stack[-1]
+        _AddNames(unique, top_frame)
+
+        global_frame = self.mem.var_stack[0]
+        #log('%d %d', id(top_frame), id(global_frame))
+        if global_frame is not top_frame:
+            _AddNames(unique, global_frame)
+
+        #log('%s', unique)
+
+        names = unique.keys()
+        names.sort()
+
+        return names
 
     def Get(self, name):
         # type: (str) -> value.Proc
@@ -2536,42 +2587,6 @@ class Procs:
 
         return None
 
-    def Del(self, to_del):
-        # type: (str) -> None
-        """Undefine a sh-func with name `to_del`, if it exists."""
-        mylib.dict_erase(self.sh_funcs, to_del)
-
-    def ShellFuncNames(self):
-        # type: () -> List[str]
-        """Returns a *sorted* list of all shell function names
-
-        Callers:
-          declare -f -F
-        """
-        names = self.sh_funcs.keys()
-        names.sort()
-        return names
-
-    def InvokableNames(self):
-        # type: () -> List[str]
-        """Returns a *sorted* list of all invokable names
-
-        Callers:
-          complete -A function
-        """
-        names = self.sh_funcs.keys()
-
-        # TODO: look up the call stack - local and global
-        var_frame = self.mem.var_stack[0]
-        for name in var_frame:
-            cell = var_frame[name]
-            if cell.val.tag() == value_e.Proc:
-                names.append(name)
-
-            # TODO: value.Obj
-
-        names.sort()
-        return names
 
 
 #
