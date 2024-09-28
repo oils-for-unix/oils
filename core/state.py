@@ -2496,7 +2496,67 @@ def _AddNames(unique, frame):
             unique[name] = True
 
 
-class Procs:
+def _InvokableObj(val):
+    # type: (value_t) -> Optional[Tuple[Obj, value.Proc]]
+    """
+    Returns:
+      None if the value is not invokable
+      (self Obj, __invoke__ Proc) if so
+    """
+    if val.tag() != value_e.Obj:
+        return None
+
+    obj = cast(Obj, val)
+    if not obj.prototype:
+        return None
+
+    invoke_val = obj.prototype.d.get('__invoke__')
+    if invoke_val is None:
+        return None
+
+    # TODO: __invoke__ of wrong type could be fatal error?
+    if invoke_val.tag() != value_e.Proc:
+        return None
+
+    return obj, cast(value.Proc, invoke_val)
+
+
+class Procs(object):
+    """
+    Terminology:
+
+    - invokable - these are INTERIOR
+      - value.Proc - which can be shell function in __sh_funcs__ namespace, or
+                     YSH proc
+      - value.Obj with __invoke__
+    - YSH runproc builtin, shell command/builtin, and type/type -a can be
+      generalized
+      - invoke --builtin
+        - do we need invoke --builtin-special ?  This is POSIX
+      - invoke --proc myproc (42)
+      - invoke --sh-func 
+      - invoke --obj
+      - invoke --external
+      - there is also 'keyword' and 'assign builtin'
+        - those are type- -a
+        - invoke --list-keywords
+        - invoke --list-assign
+
+      - and you can combine the flags
+        - invoke --proc --sh-func --obj
+          - how about invoke --user-defined
+          - could be invoke -u
+
+      - invoke --x-internal --no-builtin?
+        - x-internal can be a mask
+        - --no- can be a negation
+
+      - with no args, print a table
+        - invoke --builtin
+        - invoke --proc
+        - and then you can parse that
+    - exterior - external commands
+    """
 
     def __init__(self, mem):
         # type: (Mem) -> None
@@ -2545,22 +2605,12 @@ class Procs:
         # Could be Undef
         return maybe_proc.tag() == value_e.Proc
 
-    def IsObj(self, name):
+    def IsInvokableObj(self, name):
         # type: (str) -> bool
 
-        UP_obj = self.mem.GetValue(name)
-        if UP_obj.tag() != value_e.Obj:
-            return False
-
-        obj = cast(Obj, UP_obj)
-        if not obj.prototype:
-            return False
-
-        invoke = obj.prototype.d.get('__invoke__')
-        if invoke is None:
-            return False
-
-        return invoke.tag() == value_e.Proc
+        val = self.mem.GetValue(name)
+        result = _InvokableObj(val)
+        return result is not None
 
     def InvokableNames(self):
         # type: () -> List[str]
@@ -2570,7 +2620,7 @@ class Procs:
           complete -A function
           pp proc - should deprecate this
         """
-        unique = {}  # type: Dict[str, bool]
+        unique = NewDict()  # type: Dict[str, bool]
         for name in self.sh_funcs:
             unique[name] = True
 
@@ -2597,11 +2647,10 @@ class Procs:
         can shadow the definition of sh-funcs.
 
         Callers
+          executor.py: running
+          meta_osh.py runproc lookup - this is not 'invoke', because it is
+             INTERIOR shell functions, procs, invokable Obj
           cmd_eval: check for redefining proc or sh-func (remove)
-          lookup for runproc - does this find sh-funcs too?
-          pp proc
-          complete -F myfunc
-          declare -p   - should not print procs, only shell stuff
         """
         maybe_proc = self.mem.GetValue(name)
         if maybe_proc.tag() == value_e.Proc:

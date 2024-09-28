@@ -1,4 +1,4 @@
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 
 #### Open proc (any number of args)
 shopt --set parse_proc
@@ -281,21 +281,33 @@ compgen -A function
 
 echo ---
 
-proc p {
+proc define-inner {
   eval 'proc inner { echo inner }'
   #eval 'proc myproc { echo inner }'  # shadowed name
   compgen -A function
 }
-p
+define-inner
+
+echo ---
+
+proc myinvoke (w; self) {
+  pp test_ ([w, self])
+}
+
+var methods = Object(null, {__invoke__: myinvoke})
+var myobj = Object(methods, {})
+
+compgen -A function
 
 ## STDOUT:
 my-shell-func
 myproc
 ---
+define-inner
 inner
 my-shell-func
 myproc
-p
+---
 ## END
 
 #### type / type -a builtin on invokables - shell func, proc, invokable

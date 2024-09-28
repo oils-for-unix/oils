@@ -383,6 +383,16 @@ def _ResolveName(
         do_all,  # type: bool
 ):
     # type: (...) -> List[Tuple[str, str, Optional[str]]]
+    """
+    TODO: Can this be moved to pure YSH?
+
+    All of these could be in YSH:
+
+    type, type -t, type -a
+    pp proc
+
+    We would have primitive isShellFunc() and isInvokableObj() functions
+    """
 
     # MyPy tuple type
     no_str = None  # type: Optional[str]
@@ -395,7 +405,7 @@ def _ResolveName(
 
         if procs.IsProc(name):
             results.append((name, 'proc', no_str))
-        elif procs.IsObj(name):  # can't be both proc and obj
+        elif procs.IsInvokableObj(name):  # can't be both proc and obj
             results.append((name, 'invokable', no_str))
 
     if name in aliases:

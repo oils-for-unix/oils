@@ -213,3 +213,45 @@ callable a b (42, 43)
 
 ## STDOUT:
 ## END
+
+#### invokable object must be value.Obj with prototype containing __invoke__ of value.Proc
+
+proc p (w; self) {
+  pp test_ ([w, self])
+}
+p a ({x: 5, y: 6})
+echo
+
+var methods = Object(null, {__invoke__: p})
+
+var o1 = Object(methods, {})
+type -t o1
+echo
+
+# errors
+
+var o2 = Object(null, {})
+if ! type -t o2 {
+  echo 'no prototype'
+}
+
+var o3 = Object(Object(null, {}), {})
+if ! type -t o3 {
+  echo 'no __invoke__ method in prototype'
+}
+
+var bad_methods = Object(null, {__invoke__: 42})
+var o4 = Object(bad_methods, {})
+if ! type -t o4 {
+  echo '__invoke__ of wrong type'
+}
+
+## STDOUT:
+(List)   ["a",{"x":5,"y":6}]
+
+invokable
+
+no prototype
+no __invoke__ method in prototype
+__invoke__ of wrong type
+## END
