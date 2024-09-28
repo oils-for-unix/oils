@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 #### Open proc (any number of args)
 shopt --set parse_proc
@@ -266,7 +266,7 @@ status=1
 status=1
 ## END
 
-#### compgen -A function completes all invokables - shell funcs, Proc, Obj
+#### compgen -A function shows user-defined invokables - shell funcs, Proc, Obj
 shopt --set ysh:upgrade
 
 my-shell-func() {
@@ -308,6 +308,11 @@ inner
 my-shell-func
 myproc
 ---
+define-inner
+my-shell-func
+myinvoke
+myobj
+myproc
 ## END
 
 #### type / type -a builtin on invokables - shell func, proc, invokable

@@ -467,6 +467,9 @@ MODULE_SPEC = FlagSpec('source-guard')
 RUNPROC_SPEC = FlagSpec('runproc')
 RUNPROC_SPEC.ShortFlag('-h', args.Bool, help='Show all procs')
 
+INVOKE_SPEC = FlagSpec('invoke')
+EXTERN_SPEC = FlagSpec('extern')
+
 WRITE_SPEC = FlagSpec('write')
 WRITE_SPEC.LongFlag('--sep',
                     args.String,

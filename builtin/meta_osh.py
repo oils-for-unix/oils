@@ -375,6 +375,76 @@ class RunProc(vm._Builtin):
         return self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, run_flags)
 
 
+class Invoke(vm._Builtin):
+    """
+    invoke     - YSH introspection on first word
+    type --all - introspection on variables too?
+               - different than = type(x)
+
+    - invoke --builtin
+      - do we need invoke --builtin-special ?  This is POSIX
+    - invoke --proc myproc (42)
+    - invoke --sh-func 
+    - invoke --obj
+    - invoke --external
+    - there is also 'keyword' and 'assign builtin'
+      - those are type- -a
+      - invoke --list-keywords
+      - invoke --list-assign
+
+    - and you can combine the flags
+      - invoke --proc --sh-func --obj
+        - how about invoke --user-defined
+        - could be invoke -u
+
+    - invoke --x-internal --no-builtin?
+      - x-internal can be a mask
+      - --no- can be a negation
+
+    - with no args, print a table
+      - invoke --builtin
+      - invoke --proc
+      - and then you can parse that
+    """
+
+    def __init__(self, shell_ex, procs, errfmt):
+        # type: (vm._Executor, state.Procs, ui.ErrorFormatter) -> None
+        self.shell_ex = shell_ex
+        self.procs = procs
+        self.errfmt = errfmt
+
+    def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        _, arg_r = flag_util.ParseCmdVal('invoke',
+                                         cmd_val,
+                                         accept_typed_args=True)
+        #argv, locs = arg_r.Rest2()
+
+        print('TODO: invoke')
+        # TODO
+        return 0
+
+
+class Extern(vm._Builtin):
+
+    def __init__(self, shell_ex, procs, errfmt):
+        # type: (vm._Executor, state.Procs, ui.ErrorFormatter) -> None
+        self.shell_ex = shell_ex
+        self.procs = procs
+        self.errfmt = errfmt
+
+    def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        _, arg_r = flag_util.ParseCmdVal('extern',
+                                         cmd_val,
+                                         accept_typed_args=True)
+        #argv, locs = arg_r.Rest2()
+
+        print('TODO: extern')
+
+        return 0
+
+
 def _ResolveName(
         name,  # type: str
         procs,  # type: state.Procs

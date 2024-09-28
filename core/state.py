@@ -2488,14 +2488,6 @@ class Mem(object):
         return self.ctx_stack.pop()
 
 
-def _AddNames(unique, frame):
-    # type: (Dict[str, bool], Dict[str, Cell]) -> None
-    for name in frame:
-        cell = frame[name]
-        if cell.val.tag() == value_e.Proc:
-            unique[name] = True
-
-
 def _InvokableObj(val):
     # type: (value_t) -> Optional[Tuple[Obj, value.Proc]]
     """
@@ -2521,6 +2513,14 @@ def _InvokableObj(val):
     return obj, cast(value.Proc, invoke_val)
 
 
+def _AddNames(unique, frame):
+    # type: (Dict[str, bool], Dict[str, Cell]) -> None
+    for name in frame:
+        val = frame[name].val
+        if val.tag() == value_e.Proc or _InvokableObj(val) is not None:
+            unique[name] = True
+
+
 class Procs(object):
     """
     Terminology:
@@ -2529,35 +2529,11 @@ class Procs(object):
       - value.Proc - which can be shell function in __sh_funcs__ namespace, or
                      YSH proc
       - value.Obj with __invoke__
-    - YSH runproc builtin, shell command/builtin, and type/type -a can be
-      generalized
-      - invoke --builtin
-        - do we need invoke --builtin-special ?  This is POSIX
-      - invoke --proc myproc (42)
-      - invoke --sh-func 
-      - invoke --obj
-      - invoke --external
-      - there is also 'keyword' and 'assign builtin'
-        - those are type- -a
-        - invoke --list-keywords
-        - invoke --list-assign
+    - exterior - external commands, extern builtin
 
-      - and you can combine the flags
-        - invoke --proc --sh-func --obj
-          - how about invoke --user-defined
-          - could be invoke -u
-
-      - invoke --x-internal --no-builtin?
-        - x-internal can be a mask
-        - --no- can be a negation
-
-      - with no args, print a table
-        - invoke --builtin
-        - invoke --proc
-        - and then you can parse that
-    - exterior - external commands
+    Note: the YSH 'invoke' builtin can generalize YSH 'runproc' builtin, shell command/builtin,
+          and also type / type -a
     """
-
     def __init__(self, mem):
         # type: (Mem) -> None
         self.mem = mem
@@ -2655,15 +2631,6 @@ class Procs(object):
         maybe_proc = self.mem.GetValue(name)
         if maybe_proc.tag() == value_e.Proc:
             return cast(value.Proc, maybe_proc)
-
-        if maybe_proc.tag() == value_e.Obj:
-            obj = cast(Obj, maybe_proc)
-            # Now does it have
-
-        # Error cases for proc lookup:
-        # 1. value.Int
-        # 2. value.Obj with __invoke__, but it's not a value.Proc
-        # 2. value.Obj without __invoke__
 
         if name in self.sh_funcs:
             return self.sh_funcs[name]

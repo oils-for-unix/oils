@@ -62,6 +62,7 @@ _NORMAL_BUILTINS = [
     'shvar',
     'ctx',
 
+    'invoke',
     'runproc',
     'boolstatus',
 ]
@@ -124,6 +125,7 @@ def _Init(b):
         b.Add(name, kind='assign')
     b.Add('export', enum_name='export_', kind='assign')  # C++ keyword conflict
 
+    b.Add('extern', enum_name='extern_')
     b.Add('true', enum_name='true_')  # C++ Keywords
     b.Add('false', enum_name='false_')
     b.Add('try', enum_name='try_')

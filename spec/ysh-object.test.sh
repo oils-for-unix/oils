@@ -194,27 +194,7 @@ pp test_ (y)
 (Str)   "--foo"
 ## END
 
-#### Bound Proc?
-
-proc p (word1, word2; self, int1, int2) {
-  echo "sum = $[self.x + self.y]"
-  pp test_ (self)
-  pp test_ ([word1, word2, int1, int2])
-}
-
-p a b ({x: 5, y: 6}, 42, 43)
-
-var methods = Object(null, {__invoke__: p})
-
-var callable = Object(methods, {x: 98, y: 99})
-
-# TODO: change this error message
-callable a b (42, 43)
-
-## STDOUT:
-## END
-
-#### invokable object must be value.Obj with prototype containing __invoke__ of value.Proc
+#### invokable Obj must be have prototype containing __invoke__ of value.Proc - type -t
 
 proc p (w; self) {
   pp test_ ([w, self])
@@ -254,4 +234,24 @@ invokable
 no prototype
 no __invoke__ method in prototype
 __invoke__ of wrong type
+## END
+
+#### Use Invokable Obj
+
+proc p (word1, word2; self, int1, int2) {
+  echo "sum = $[self.x + self.y]"
+  pp test_ (self)
+  pp test_ ([word1, word2, int1, int2])
+}
+
+p a b ({x: 5, y: 6}, 42, 43)
+
+var methods = Object(null, {__invoke__: p})
+
+var callable = Object(methods, {x: 98, y: 99})
+
+# TODO: change this error message
+callable a b (42, 43)
+
+## STDOUT:
 ## END

@@ -628,6 +628,8 @@ def Main(
                                             search_path)
     # Part of YSH, but similar to builtin/command
     b[builtin_i.runproc] = meta_osh.RunProc(shell_ex, procs, errfmt)
+    b[builtin_i.invoke] = meta_osh.Invoke(shell_ex, procs, errfmt)
+    b[builtin_i.extern_] = meta_osh.Extern(shell_ex, procs, errfmt)
 
     # Meta builtins
     source_builtin = meta_osh.Source(parse_ctx, search_path, cmd_ev, fd_state,
