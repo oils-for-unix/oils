@@ -208,10 +208,11 @@ def _PrintFreeForm(row):
     elif kind == 'alias':
         what = ('an alias for %s' %
                 j8_lite.EncodeString(resolved, unquoted_ok=True))
+    elif kind in ('proc', 'invokable'):
+        # Note: haynode should be an invokable
+        what = 'a YSH %s' % kind
     else:  # builtin, function, keyword
         what = 'a shell %s' % kind
-
-    # TODO: Should also print haynode
 
     print('%s is %s' % (name, what))
 
@@ -375,7 +376,7 @@ class RunProc(vm._Builtin):
 
 def _ResolveName(
         name,  # type: str
-        funcs,  # type: state.Procs
+        procs,  # type: state.Procs
         aliases,  # type: Dict[str, str]
         search_path,  # type: state.SearchPath
         do_all,  # type: bool
@@ -387,8 +388,14 @@ def _ResolveName(
 
     results = []  # type: List[Tuple[str, str, Optional[str]]]
 
-    if funcs and funcs.Get(name):
-        results.append((name, 'function', no_str))
+    if procs:
+        if procs.IsShellFunc(name):
+            results.append((name, 'function', no_str))
+
+        if procs.IsProc(name):
+            results.append((name, 'proc', no_str))
+        elif procs.IsObj(name):  # can't be both proc and obj
+            results.append((name, 'invokable', no_str))
 
     if name in aliases:
         results.append((name, 'alias', aliases[name]))

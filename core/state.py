@@ -2507,6 +2507,10 @@ class Procs:
         # type: (str, value.Proc) -> None
         self.sh_funcs[name] = proc
 
+    def IsShellFunc(self, name):
+        # type: (str) -> bool
+        return name in self.sh_funcs
+
     def EraseShellFunc(self, to_del):
         # type: (str) -> None
         """Undefine a sh-func with name `to_del`, if it exists."""
@@ -2525,7 +2529,34 @@ class Procs:
 
     def DefineProc(self, name, proc):
         # type: (str, value.Proc) -> None
+        """
+        procs are defined in the local scope.
+        """
         self.mem.var_stack[-1][name] = Cell(False, False, False, proc)
+
+    def IsProc(self, name):
+        # type: (str) -> bool
+
+        maybe_proc = self.mem.GetValue(name)
+        # Could be Undef
+        return maybe_proc.tag() == value_e.Proc
+
+    def IsObj(self, name):
+        # type: (str) -> bool
+
+        UP_obj = self.mem.GetValue(name)
+        if UP_obj.tag() != value_e.Obj:
+            return False
+
+        obj = cast(Obj, UP_obj)
+        if not obj.prototype:
+            return False
+
+        invoke = obj.prototype.d.get('__invoke__')
+        if invoke is None:
+            return False
+
+        return invoke.tag() == value_e.Proc
 
     def InvokableNames(self):
         # type: () -> List[str]
@@ -2562,9 +2593,8 @@ class Procs:
         can shadow the definition of sh-funcs.
 
         Callers
-          cmd_eval: check for redefining proc or sh-func
+          cmd_eval: check for redefining proc or sh-func (remove)
           lookup for runproc - does this find sh-funcs too?
-          type -a - should print a separate entry
           pp proc
           complete -F myfunc
           declare -p   - should not print procs, only shell stuff
@@ -2586,7 +2616,6 @@ class Procs:
             return self.sh_funcs[name]
 
         return None
-
 
 
 #
