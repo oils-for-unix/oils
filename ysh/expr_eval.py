@@ -863,7 +863,7 @@ class ExprEvaluator(object):
                 to_call = func.func
                 pos_args, named_args = func_proc._EvalArgList(self,
                                                               node.args,
-                                                              me=func.me)
+                                                              self_val=func.me)
                 rd = typed_args.Reader(pos_args,
                                        named_args,
                                        None,

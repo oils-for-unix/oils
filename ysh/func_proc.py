@@ -180,7 +180,7 @@ def _EvalNamedArgs(expr_ev, named_exprs):
 def _EvalArgList(
         expr_ev,  # type: expr_eval.ExprEvaluator
         args,  # type: ArgList
-        me=None  # type: Optional[value_t]
+        self_val=None  # type: Optional[value_t]
 ):
     # type: (...) -> Tuple[List[value_t], Optional[Dict[str, value_t]]]
     """Evaluate arg list for funcs.
@@ -195,8 +195,8 @@ def _EvalArgList(
     """
     pos_args = []  # type: List[value_t]
 
-    if me:  # self/this argument
-        pos_args.append(me)
+    if self_val:  # self/this argument
+        pos_args.append(self_val)
 
     _EvalPosArgs(expr_ev, args.pos_args, pos_args)
 
@@ -451,8 +451,8 @@ def _BindFuncArgs(func, rd, mem):
                     (func.name, num_named), blame_loc)
 
 
-def BindProcArgs(proc, cmd_val, mem):
-    # type: (value.Proc, cmd_value.Argv, state.Mem) -> None
+def BindProcArgs(proc, cmd_val, mem, self_val=None):
+    # type: (value.Proc, cmd_value.Argv, state.Mem, value_t) -> None
 
     proc_args = cmd_val.proc_args
 
@@ -489,7 +489,8 @@ def BindProcArgs(proc, cmd_val, mem):
         blame_loc = proc_args.typed_args.left
 
     pos_args = proc_args.pos_args if proc_args else None
-    if sig.positional:  # or sig.block_param:
+    if sig.positional:
+        # TODO: Add self_val
         _BindTyped(proc.name, sig.positional, proc.defaults.for_typed,
                    pos_args, mem, blame_loc)
     else:

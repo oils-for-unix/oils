@@ -410,6 +410,7 @@ class Invoke(vm._Builtin):
        invoke --builtin
        invoke --builtin true
     """
+
     def __init__(self, shell_ex, procs, errfmt):
         # type: (vm._Executor, state.Procs, ui.ErrorFormatter) -> None
         self.shell_ex = shell_ex
