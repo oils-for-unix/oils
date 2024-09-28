@@ -203,7 +203,7 @@ class Pp(_Builtin):
             names, locs = arg_r.Rest2()
             if len(names):
                 for i, name in enumerate(names):
-                    node = self.procs.Get(name)
+                    node = self.procs.GetInvokable(name)
                     if node is None:
                         self.errfmt.Print_('Invalid proc %r' % name,
                                            blame_loc=locs[i])
@@ -214,7 +214,7 @@ class Pp(_Builtin):
             # TSV8 header
             print('proc_name\tdoc_comment')
             for name in names:
-                proc = self.procs.Get(name)  # must exist
+                proc = self.procs.GetInvokable(name)  # must exist
                 #log('Proc %s', proc)
                 body = proc.body
 

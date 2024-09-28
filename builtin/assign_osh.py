@@ -371,7 +371,7 @@ class NewVar(vm._AssignBuiltin):
         # type: (List[str]) -> int
         status = 0
         for name in names:
-            if self.procs.Get(name):
+            if self.procs.GetShellFunc(name):
                 print(name)
                 # TODO: Could print LST for -f, or render LST.  Bash does this.  'trap'
                 # could use that too.

@@ -131,9 +131,11 @@ class SpecBuilder(object):
         # obviously it's better to check here.
         if arg.F is not None:
             func_name = arg.F
-            func = cmd_ev.procs.Get(func_name)
+            func = cmd_ev.procs.GetShellFunc(func_name)
             if func is None:
-                raise error.Usage('function %r not found' % func_name,
+                # Note: we will have a different protocol for YSH procs and invokables
+                # The ideal thing would be some kind of generator ...
+                raise error.Usage('shell function %r not found' % func_name,
                                   loc.Missing)
             actions.append(
                 completion.ShellFuncAction(cmd_ev, func, self.comp_lookup))

@@ -2511,6 +2511,10 @@ class Procs:
         # type: (str) -> bool
         return name in self.sh_funcs
 
+    def GetShellFunc(self, name):
+        # type: (str) -> Optional[value.Proc]
+        return self.sh_funcs.get(name)
+
     def EraseShellFunc(self, to_del):
         # type: (str) -> None
         """Undefine a sh-func with name `to_del`, if it exists."""
@@ -2585,7 +2589,7 @@ class Procs:
 
         return names
 
-    def Get(self, name):
+    def GetInvokable(self, name):
         # type: (str) -> value.Proc
         """Try to find a proc/sh-func by `name`, or return None if not found.
 

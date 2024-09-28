@@ -238,7 +238,7 @@ p
 ## STDOUT:
 ## END
 
-#### declare -F only prints shell functions
+#### declare -f -F only prints shell functions
 shopt --set parse_proc
 
 myfunc() {
@@ -250,10 +250,20 @@ proc myproc {
 }
 
 declare -F
+echo ---
+
+declare -F myproc
+echo status=$?
+
+declare -f myproc
+echo status=$?
 
 ## status: 0
 ## STDOUT:
 declare -f myfunc
+---
+status=1
+status=1
 ## END
 
 #### compgen -A function completes all invokables - shell funcs, Proc, Obj

@@ -1295,7 +1295,7 @@ class CommandEvaluator(object):
 
     def _DoShFunction(self, node):
         # type: (command.ShFunction) -> None
-        if (self.procs.Get(node.name) and
+        if (self.procs.GetInvokable(node.name) and
                 not self.exec_opts.redefine_proc_func()):
             e_die(
                 "Function %s was already defined (redefine_proc_func)" %
@@ -1314,7 +1314,7 @@ class CommandEvaluator(object):
         # conflicts
         # We could also define procs as READ-ONLY, but that means we need
         # Dict[str, Cell] and not Dict[str, value_t]
-        if (self.procs.Get(proc_name) and
+        if (self.procs.GetInvokable(proc_name) and
                 not self.exec_opts.redefine_proc_func()):
             e_die(
                 "Proc %s was already defined (redefine_proc_func)" % proc_name,

@@ -279,7 +279,7 @@ class ShellExecutor(vm._Executor):
             # Pitfall: What happens if there are two of the same name?  I guess
             # that's why you have = and 'type' inspect them
 
-            proc_node = self.procs.Get(arg0)
+            proc_node = self.procs.GetInvokable(arg0)
             if proc_node is not None:
                 if self.exec_opts.strict_errexit():
                     disabled_tok = self.mutable_opts.ErrExitDisabledToken()

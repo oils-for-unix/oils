@@ -362,8 +362,9 @@ class RunProc(vm._Builtin):
             raise error.Usage('requires arguments', loc.Missing)
 
         name = argv[0]
-        if not self.procs.Get(name):
-            self.errfmt.PrintMessage('runproc: no proc named %r' % name)
+        if not self.procs.GetInvokable(name):
+            # note: should runproc be invoke?
+            self.errfmt.PrintMessage('runproc: no invokable named %r' % name)
             return 1
 
         cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.is_last_cmd,
