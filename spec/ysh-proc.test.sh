@@ -1,4 +1,4 @@
-## oils_failures_allowed: 0
+## oils_failures_allowed: 2
 
 #### Open proc (any number of args)
 shopt --set parse_proc
@@ -236,151 +236,6 @@ proc p {
 p
 ## status: 2
 ## STDOUT:
-## END
-
-#### declare -f -F only prints shell functions
-shopt --set parse_proc
-
-myfunc() {
-  echo hi
-}
-
-proc myproc {
-  echo hi
-}
-
-declare -F
-echo ---
-
-declare -F myproc
-echo status=$?
-
-declare -f myproc
-echo status=$?
-
-## status: 0
-## STDOUT:
-declare -f myfunc
----
-status=1
-status=1
-## END
-
-#### compgen -A function shows user-defined invokables - shell funcs, Proc, Obj
-shopt --set ysh:upgrade
-
-my-shell-func() {
-  echo hi
-}
-
-proc myproc {
-  echo hi
-}
-
-compgen -A function
-
-echo ---
-
-proc define-inner {
-  eval 'proc inner { echo inner }'
-  #eval 'proc myproc { echo inner }'  # shadowed name
-  compgen -A function
-}
-define-inner
-
-echo ---
-
-proc myinvoke (w; self) {
-  pp test_ ([w, self])
-}
-
-var methods = Object(null, {__invoke__: myinvoke})
-var myobj = Object(methods, {})
-
-compgen -A function
-
-## STDOUT:
-my-shell-func
-myproc
----
-define-inner
-inner
-my-shell-func
-myproc
----
-define-inner
-my-shell-func
-myinvoke
-myobj
-myproc
-## END
-
-#### type / type -a builtin on invokables - shell func, proc, invokable
-shopt --set ysh:upgrade
-
-my-shell-func() {
-   echo hi
-}
-
-proc myproc {
-  echo hi
-}
-
-proc boundProc(; self) {
-  echo hi
-}
-
-var methods = Object(null, {__invoke__: boundProc})
-var invokable = Object(methods, {})
-
-type -t my-shell-func
-type -t myproc
-type -t invokable
-try {
-  type -t methods  # not invokable!
-}
-echo $[_error.code]
-
-echo ---
-
-type my-shell-func
-type myproc
-type invokable
-try {
-  type methods  # not invokable!
-}
-echo $[_error.code]
-
-echo ---
-
-type -a my-shell-func
-type -a myproc
-type -a invokable
-
-echo ---
-
-if false {  # can't redefine right now
-  invokable() {
-    echo sh-func
-  }
-  type -a invokable
-}
-
-## STDOUT:
-function
-proc
-invokable
-1
----
-my-shell-func is a shell function
-myproc is a YSH proc
-invokable is a YSH invokable
-1
----
-my-shell-func is a shell function
-myproc is a YSH proc
-invokable is a YSH invokable
----
 ## END
 
 #### procs are in same namespace as variables
@@ -705,4 +560,184 @@ if false {
 
 ## STDOUT:
     [frame_vars_] ARGV localproc
+## END
+
+
+#### declare -f -F only prints shell functions
+shopt --set parse_proc
+
+myfunc() {
+  echo hi
+}
+
+proc myproc {
+  echo hi
+}
+
+declare -F
+echo ---
+
+declare -F myproc
+echo status=$?
+
+declare -f myproc
+echo status=$?
+
+## status: 0
+## STDOUT:
+declare -f myfunc
+---
+status=1
+status=1
+## END
+
+#### compgen -A function shows user-defined invokables - shell funcs, Proc, Obj
+shopt --set ysh:upgrade
+
+my-shell-func() {
+  echo hi
+}
+
+proc myproc {
+  echo hi
+}
+
+compgen -A function
+
+echo ---
+
+proc define-inner {
+  eval 'proc inner { echo inner }'
+  #eval 'proc myproc { echo inner }'  # shadowed name
+  compgen -A function
+}
+define-inner
+
+echo ---
+
+proc myinvoke (w; self) {
+  pp test_ ([w, self])
+}
+
+var methods = Object(null, {__invoke__: myinvoke})
+var myobj = Object(methods, {})
+
+compgen -A function
+
+## STDOUT:
+my-shell-func
+myproc
+---
+define-inner
+inner
+my-shell-func
+myproc
+---
+define-inner
+my-shell-func
+myinvoke
+myobj
+myproc
+## END
+
+#### type / type -a builtin on invokables - shell func, proc, invokable
+shopt --set ysh:upgrade
+
+my-shell-func() {
+   echo hi
+}
+
+proc myproc {
+  echo hi
+}
+
+proc boundProc(; self) {
+  echo hi
+}
+
+var methods = Object(null, {__invoke__: boundProc})
+var invokable = Object(methods, {})
+
+type -t my-shell-func
+type -t myproc
+type -t invokable
+try {
+  type -t methods  # not invokable!
+}
+echo $[_error.code]
+
+echo ---
+
+type my-shell-func
+type myproc
+type invokable
+try {
+  type methods  # not invokable!
+}
+echo $[_error.code]
+
+echo ---
+
+type -a my-shell-func
+type -a myproc
+type -a invokable
+
+echo ---
+
+if false {  # can't redefine right now
+  invokable() {
+    echo sh-func
+  }
+  type -a invokable
+}
+
+## STDOUT:
+function
+proc
+invokable
+1
+---
+my-shell-func is a shell function
+myproc is a YSH proc
+invokable is a YSH invokable
+1
+---
+my-shell-func is a shell function
+myproc is a YSH proc
+invokable is a YSH invokable
+---
+## END
+
+#### call invokable Obj with self
+shopt --set ysh:upgrade
+
+proc boundProc(; self) {
+  echo "sum = $[self.x + self.y]"
+}
+
+var methods = Object(null, {__invoke__: boundProc})
+var invokable = Object(methods, {x: 3, y: 5})
+
+invokable
+
+## STDOUT:
+## END
+
+#### two different objects can share the same __invoke__
+shopt --set ysh:upgrade
+
+proc boundProc(; self) {
+  echo "sum = $[self.x + self.y]"
+}
+
+var methods = Object(null, {__invoke__: boundProc})
+
+var i1 = Object(methods, {x: 3, y: 5})
+var i2 = Object(methods, {x: 10, y: 42})
+
+i1
+i2
+
+## STDOUT:
+
 ## END

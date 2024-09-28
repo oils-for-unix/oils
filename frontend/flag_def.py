@@ -468,6 +468,12 @@ RUNPROC_SPEC = FlagSpec('runproc')
 RUNPROC_SPEC.ShortFlag('-h', args.Bool, help='Show all procs')
 
 INVOKE_SPEC = FlagSpec('invoke')
+
+# 3 coarse-grained categories.
+INVOKE_SPEC.LongFlag('--builtin')    # like 'builtin', which includs special builtins
+INVOKE_SPEC.LongFlag('--proc-like')  # like 'runproc' - proc, sh func, or invokable obj
+INVOKE_SPEC.LongFlag('--extern')     # like 'extern' builtin
+
 EXTERN_SPEC = FlagSpec('extern')
 
 WRITE_SPEC = FlagSpec('write')

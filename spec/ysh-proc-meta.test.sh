@@ -207,6 +207,13 @@ for param in a b {
 var my_echo_a = procs.echo_a
 var my_echo_b = procs.echo_b
 
+if false {
+  = my_echo_a
+  = my_echo_b
+  type -t my_echo_a
+  type -t my_echo_b
+}
+
 # Maybe show an error if this is not value.Obj?
 my_echo_a prefix
 my_echo_b prefix

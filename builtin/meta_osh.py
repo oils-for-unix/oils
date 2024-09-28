@@ -377,36 +377,39 @@ class RunProc(vm._Builtin):
 
 class Invoke(vm._Builtin):
     """
+    Introspection:
+
     invoke     - YSH introspection on first word
     type --all - introspection on variables too?
                - different than = type(x)
 
-    - invoke --builtin
-      - do we need invoke --builtin-special ?  This is POSIX
-    - invoke --proc myproc (42)
-    - invoke --sh-func 
-    - invoke --obj
-    - invoke --external
-    - there is also 'keyword' and 'assign builtin'
-      - those are type- -a
-      - invoke --list-keywords
-      - invoke --list-assign
+    3 Coarsed-grained categories
+    - invoke --builtin     aka builtin
+      - including special builtins
+    - invoke --proc-like   aka runproc
+      - myproc (42)
+      - sh-func
+      - invokable-obj
+    - invoke --extern      aka extern
 
-    - and you can combine the flags
-      - invoke --proc --sh-func --obj
-        - how about invoke --user-defined
-        - could be invoke -u
+    Note: If you don't distinguish between proc, sh-func, and invokable-obj,
+    then 'runproc' suffices.
 
-    - invoke --x-internal --no-builtin?
-      - x-internal can be a mask
-      - --no- can be a negation
+    invoke --proc-like reads more nicely though, and it also combines.
 
-    - with no args, print a table
-      - invoke --builtin
-      - invoke --proc
-      - and then you can parse that
+        invoke --builtin --extern  # this is like 'command'
+
+    You can also negate:
+
+        invoke --no-proc-like --no-builtin --no-extern
+
+    - type -t also has 'keyword' and 'assign builtin'
+
+    With no args, print a table of what's available
+
+       invoke --builtin
+       invoke --builtin true
     """
-
     def __init__(self, shell_ex, procs, errfmt):
         # type: (vm._Executor, state.Procs, ui.ErrorFormatter) -> None
         self.shell_ex = shell_ex

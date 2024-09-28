@@ -2534,6 +2534,7 @@ class Procs(object):
     Note: the YSH 'invoke' builtin can generalize YSH 'runproc' builtin, shell command/builtin,
           and also type / type -a
     """
+
     def __init__(self, mem):
         # type: (Mem) -> None
         self.mem = mem
