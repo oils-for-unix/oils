@@ -210,6 +210,49 @@ It's also often called with the `=>` chaining operator:
     json write (items => join(' '))   # => "1 2 3"
     json write (items => join(', '))  # => "1, 2, 3"
 
+## Dict
+
+### keys()
+
+Returns all existing keys from a dict as a list of strings.
+
+    var en2fr = {
+      hello: "bonjour",
+      friend: "ami",
+      cat: "chat"
+    }
+    = keys(en2fr)
+    # => (List 0x4689)   ["hello","friend","cat"]
+
+### values()
+
+Similar to `keys()`, but returns the values of the dictionary.
+
+    var person = {
+      name: "Foo",
+      age: 25,
+      hobbies: :|walking reading|
+    }
+    = values(en2fr)
+    # => (List 0x4689)   ["Foo",25,["walking","reading"]]
+
+### get()
+
+Return value for given key, falling back to the default value if the key 
+doesn't exist. Default is required.
+
+    var book = {
+      title: "Hitchhiker's Guide",
+      published: 1979,
+    }
+    var published = get(book, "published", null)
+    = published
+    # => (Int 1979)
+
+    var author = get(book, "author", "???")
+    = author
+    # => (Str "???")
+
 ## Float
 
 ### floatsEqual()
@@ -391,6 +434,18 @@ scope" rule.)
 
 If the variable isn't defined, `getVar()` returns `null`.  So there's no way to
 distinguish an undefined variable from one that's `null`.
+
+### `setVar()`
+
+Bind a name to a value, in the local scope.  Returns nothing.
+
+    call setVar('myname', 42)
+
+This is like
+
+    setvar myname = 42
+
+except the name can is a string, which can be constructed at runtime.
 
 ### `parseCommand()`
 

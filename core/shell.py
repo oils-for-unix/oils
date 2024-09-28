@@ -781,21 +781,10 @@ def Main(
         'fullMatch': None,
     }
     methods[value_e.Dict] = {
+        # keys() values() get() are FREE functions, not methods
+        # I think items() isn't as necessary because dicts are ordered?  YSH
+        # code shouldn't use the List of Lists representation.
         'M/erase': method_dict.Erase(),
-
-        # TODO: names(d) get(d, k) has(d, k) might be better
-        #       values(d) is OK too
-
-        # Dict.get()
-        # Dict.keys()
-        # Dict.values()
-        'get': method_dict.Get(),
-        'keys': method_dict.Keys(),
-        'values': method_dict.Values(),
-
-        # I think items() isn't as necessary because dicts are ordered?
-        # YSH code shouldn't use the List of Lists representation.
-
         # could be d->tally() or d->increment(), but inc() is short
         #
         # call d->inc('mycounter')
@@ -804,6 +793,11 @@ def Main(
 
         # call d->accum('mygroup', 'value')
         'M/accum': None,
+
+        # DEPRECATED - use free functions
+        'get': method_dict.Get(),
+        'keys': method_dict.Keys(),
+        'values': method_dict.Values(),
     }
     methods[value_e.List] = {
         'M/reverse': method_list.Reverse(),
@@ -870,6 +864,7 @@ def Main(
 
     _AddBuiltinFunc(mem, 'shvarGet', func_reflect.Shvar_get(mem))
     _AddBuiltinFunc(mem, 'getVar', func_reflect.GetVar(mem))
+    _AddBuiltinFunc(mem, 'setVar', func_reflect.SetVar(mem))
 
     _AddBuiltinFunc(mem, 'Object', func_misc.Object())
     _AddBuiltinFunc(mem, 'prototype', func_misc.Prototype())
@@ -882,6 +877,11 @@ def Main(
     _AddBuiltinFunc(mem, 'str', func_misc.Str_())
     _AddBuiltinFunc(mem, 'list', func_misc.List_())
     _AddBuiltinFunc(mem, 'dict', func_misc.DictFunc())
+
+    # Dict functions
+    _AddBuiltinFunc(mem, 'get', method_dict.Get())
+    _AddBuiltinFunc(mem, 'keys', method_dict.Keys())
+    _AddBuiltinFunc(mem, 'values', method_dict.Values())
 
     _AddBuiltinFunc(mem, 'runes', func_misc.Runes())
     _AddBuiltinFunc(mem, 'encodeRunes', func_misc.EncodeRunes())

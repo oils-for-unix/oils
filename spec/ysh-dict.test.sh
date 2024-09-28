@@ -89,3 +89,23 @@ echo $v2
 456
 ## END
 
+
+#### keys(d), values(d), get(d, key)
+
+var d = {a: 42, b: 99}
+
+pp test_ (keys(d))
+pp test_ (values(d))
+
+pp test_ (get(d, 'a', 'default'))
+pp test_ (get(d, 'key', 'default'))
+
+## STDOUT:
+(List)   ["a","b"]
+(List)   [42,99]
+(Int)   42
+(Str)   "default"
+## END
+
+
+

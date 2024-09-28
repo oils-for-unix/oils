@@ -13,6 +13,7 @@ from core import error
 from core import main_loop
 from core import state
 from core import vm
+from frontend import location
 from frontend import reader
 from frontend import typed_args
 from mycpp.mylib import log
@@ -42,7 +43,7 @@ class Shvar_get(vm._Callable):
 
 
 class GetVar(vm._Callable):
-    """Look up normal scoping rules."""
+    """Look up a variable, with normal scoping rules."""
 
     def __init__(self, mem):
         # type: (state.Mem) -> None
@@ -54,6 +55,26 @@ class GetVar(vm._Callable):
         name = rd.PosStr()
         rd.Done()
         return state.DynamicGetVar(self.mem, name, scope_e.LocalOrGlobal)
+
+
+class SetVar(vm._Callable):
+    """Set a variable in the local scope.
+
+    We could have a separae setGlobal() too.
+    """
+
+    def __init__(self, mem):
+        # type: (state.Mem) -> None
+        vm._Callable.__init__(self)
+        self.mem = mem
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        var_name = rd.PosStr()
+        val = rd.PosValue()
+        rd.Done()
+        self.mem.SetNamed(location.LName(var_name), val, scope_e.LocalOnly)
+        return value.Null
 
 
 class ParseCommand(vm._Callable):

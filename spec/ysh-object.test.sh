@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 3
+## oils_failures_allowed: 2
 
 #### Object() creates prototype chain
 
@@ -193,23 +193,6 @@ pp test_ (y)
 (Str)   "FOO"
 (Str)   "--foo"
 ## END
-
-
-#### Dict.keys(d), Dict.values(d), Dict.get(d, key)
-
-var d = {a: 42, b: 99}
-
-pp test_ (Dict.keys(d))
-pp test_ (Dict.values(d))
-
-pp test_ (Dict.get(d, 'key', 'default'))
-
-# mutating methods are OK?
-#   call d->inc(x)
-
-## STDOUT:
-## END
-
 
 #### Bound Proc?
 

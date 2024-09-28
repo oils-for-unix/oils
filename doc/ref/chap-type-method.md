@@ -352,47 +352,6 @@ Reverses a list in place.
 A Dict contains an ordered sequence of key-value pairs.  Given the key, the
 value can be retrieved efficiently.
 
-### keys()
-
-Returns all existing keys from a dict as a list of strings.
-
-    var en2fr = {
-      hello: "bonjour",
-      friend: "ami",
-      cat: "chat"
-    }
-    = en2fr => keys()
-    # => (List 0x4689)   ["hello","friend","cat"]
-
-### values()
-
-Similar to `keys()`, but returns the values of the dictionary.
-
-    var person = {
-      name: "Foo",
-      age: 25,
-      hobbies: :|walking reading|
-    }
-    = en2fr => values()]
-    # => (List 0x4689)   ["Foo",25,["walking","reading"]]
-
-### get()
-
-Return value for given key, falling back to the default value if the key 
-doesn't exist. Default is required.
-
-    var book = {
-      title: "Hitchhiker's Guide",
-      published: 1979,
-    }
-    var published = book => get("published", null)
-    = published
-    # => (Int 1979)
-
-    var author = book => get("author", "???")
-    = author
-    # => (Str "???")
-
 ### erase()
 
 Ensures that the given key does not exist in the dictionary.

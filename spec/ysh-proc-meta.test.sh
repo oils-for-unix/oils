@@ -46,6 +46,48 @@ prefix a
 prefix b
 ## END
 
+#### with eval builtin command, making them global with names() and setVar()
+
+func genProcs() {
+  var result = {}
+  for param in a b {
+    eval """
+    proc echo_$param(prefix) {
+      echo \$prefix $param
+    }
+    """
+    setvar result["echo_$param"] = getVar("echo_$param")
+  }
+
+  echo 'local'
+  echo_a prefix
+  echo_b prefix
+  echo
+
+  return (result)
+}
+
+var procs = genProcs()
+
+# bind to global scope
+for name in (procs) {
+  call setVar("my_$name", procs[name])
+}
+
+echo 'global'
+my_echo_a prefix
+my_echo_b prefix
+
+## STDOUT:
+local
+prefix a
+prefix b
+
+global
+prefix a
+prefix b
+## END
+
 #### with parseCommand() then io->eval(), in local scope
 
 proc p {

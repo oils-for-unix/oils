@@ -101,3 +101,16 @@ tac out
 2
 1
 ## END
+
+
+#### Dict => keys()
+var en2fr = {}
+setvar en2fr["hello"] = "bonjour"
+setvar en2fr["friend"] = "ami"
+setvar en2fr["cat"] = "chat"
+pp test_ (en2fr => keys())
+## status: 0
+## STDOUT:
+(List)   ["hello","friend","cat"]
+## END
+
