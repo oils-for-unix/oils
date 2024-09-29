@@ -488,13 +488,15 @@ def BindProcArgs(proc, cmd_val, mem, self_val=None):
     if proc_args and proc_args.typed_args:  # blame ( of call site
         blame_loc = proc_args.typed_args.left
 
-    if proc_args:
-        pos_args = proc_args.pos_args
+    if self_val:
+        pos_args = [self_val]
+        if proc_args:
+            pos_args.extend(proc_args.pos_args)
     else:
-        pos_args = []
-
-    if self_val:  # Prepend to beginning
-        pos_args.insert(0, self_val)
+        if proc_args:  # save an allocation in this common case
+            pos_args = proc_args.pos_args
+        else:
+            pos_args = []
 
     if sig.positional:
         _BindTyped(proc.name, sig.positional, proc.defaults.for_typed,
