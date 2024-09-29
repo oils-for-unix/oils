@@ -1,6 +1,14 @@
 #!/usr/bin/env python2
 """
-meta_osh.py - Builtins that call back into the interpreter.
+meta_oils.py - Builtins that call back into the interpreter, or reflect on it.
+
+OSH builtins:
+  builtin command type       
+  source eval
+
+YSH builtins:
+  invoke extern
+  use
 """
 from __future__ import print_function
 

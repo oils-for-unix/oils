@@ -2628,7 +2628,7 @@ class Procs(object):
 
         Callers:
           executor.py: running
-          meta_osh.py runproc lookup - this is not 'invoke', because it is
+          meta_oils.py runproc lookup - this is not 'invoke', because it is
              INTERIOR shell functions, procs, invokable Obj
           cmd_eval: check for redefining proc or sh-func (remove)
         """

@@ -151,7 +151,7 @@ def _DetectMetaBuiltinStr(s):
 
     Fundamentally, assignment builtins have different WORD EVALUATION RULES
     for a=$x (no word splitting), so it seems hard to do this in
-    meta_osh.Builtin() or meta_osh.Command()
+    meta_oils.Builtin() or meta_oils.Command()
     """
     return (consts.LookupNormalBuiltin(s)
             in (builtin_i.builtin, builtin_i.command))

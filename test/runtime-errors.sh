@@ -1085,7 +1085,7 @@ test-control_flow_subshell() {
   '
 }
 
-test-fallback_locations() {
+test-fallback-locations() {
   # Redirect
   _osh-error-1 'echo hi > /'
 
@@ -1105,7 +1105,7 @@ test-fallback_locations() {
   _osh-error-1 '[[ $x =~ $(( 3 ** -2 )) ]]'
 
   _osh-error-2 'type -x'  # correctly points to -x
-  _osh-error-2 'use x'
+  _osh-error-2 'use'
 
   # Assign builtin
   _osh-error-2 'export -f'

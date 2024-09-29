@@ -45,7 +45,7 @@ from builtin import hay_ysh
 from builtin import io_osh
 from builtin import io_ysh
 from builtin import json_ysh
-from builtin import meta_osh
+from builtin import meta_oils
 from builtin import misc_osh
 from builtin import module_ysh
 from builtin import printf_osh
@@ -622,22 +622,22 @@ def Main(
     b[builtin_i.haynode] = hay_ysh.HayNode_(hay_state, mem, cmd_ev)
 
     # Interpreter introspection
-    b[builtin_i.type] = meta_osh.Type(procs, aliases, search_path, errfmt)
-    b[builtin_i.builtin] = meta_osh.Builtin(shell_ex, errfmt)
-    b[builtin_i.command] = meta_osh.Command(shell_ex, procs, aliases,
-                                            search_path)
+    b[builtin_i.type] = meta_oils.Type(procs, aliases, search_path, errfmt)
+    b[builtin_i.builtin] = meta_oils.Builtin(shell_ex, errfmt)
+    b[builtin_i.command] = meta_oils.Command(shell_ex, procs, aliases,
+                                             search_path)
     # Part of YSH, but similar to builtin/command
-    b[builtin_i.runproc] = meta_osh.RunProc(shell_ex, procs, errfmt)
-    b[builtin_i.invoke] = meta_osh.Invoke(shell_ex, procs, errfmt)
-    b[builtin_i.extern_] = meta_osh.Extern(shell_ex, procs, errfmt)
+    b[builtin_i.runproc] = meta_oils.RunProc(shell_ex, procs, errfmt)
+    b[builtin_i.invoke] = meta_oils.Invoke(shell_ex, procs, errfmt)
+    b[builtin_i.extern_] = meta_oils.Extern(shell_ex, procs, errfmt)
 
     # Meta builtins
-    source_builtin = meta_osh.Source(parse_ctx, search_path, cmd_ev, fd_state,
-                                     tracer, errfmt, loader)
+    source_builtin = meta_oils.Source(parse_ctx, search_path, cmd_ev, fd_state,
+                                      tracer, errfmt, loader)
     b[builtin_i.source] = source_builtin
     b[builtin_i.dot] = source_builtin
-    b[builtin_i.eval] = meta_osh.Eval(parse_ctx, exec_opts, cmd_ev, tracer,
-                                      errfmt, mem)
+    b[builtin_i.eval] = meta_oils.Eval(parse_ctx, exec_opts, cmd_ev, tracer,
+                                       errfmt, mem)
 
     # Module builtins
     guards = {}  # type: Dict[str, bool]

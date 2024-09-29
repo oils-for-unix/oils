@@ -182,7 +182,13 @@ osh-counts() {
 }
 
 ysh-files() {
-  ls ysh/*.{py,pgen2} builtin/{func,method}*.py builtin/*_ysh.py | filter-py 
+  # Count meta_oils.py as YSH, not OSH, even though it contains the shell
+  # 'builtin command type' builtins.  We will generalize that a bit
+  ls ysh/*.{py,pgen2} \
+    builtin/{func,method}*.py \
+    builtin/*_ysh.py \
+    builtin/*_oils.py \
+    | filter-py 
 }
 
 ysh-counts() {
