@@ -759,3 +759,24 @@ i2 (1)
 sum = 9
 sum = 53
 ## END
+
+
+#### Stateful proc with counter
+shopt --set ysh:upgrade
+proc invokeCounter(; self, inc) {
+  setvar self.i += inc
+  echo "counter = $[self.i]"
+}
+
+var methods = Object(null, {__invoke__: invokeCounter})
+var counter = Object(methods, {i: 0})
+
+counter (1)
+counter (2)
+counter (3)
+
+## STDOUT:
+counter = 1
+counter = 3
+counter = 6
+## END

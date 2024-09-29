@@ -350,12 +350,12 @@ No:
 
 Yes:
 
-    fopen > out.txt {
+    redir > out.txt {
       echo 1
       echo 2
     }
 
-The `fopen` builtin is syntactic sugar -- it lets you see redirects before the
+The `redir` builtin is syntactic sugar -- it lets you see redirects before the
 code that uses them.
 
 ### Temporarily Set Shell Options
