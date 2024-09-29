@@ -16,6 +16,13 @@ source build/dev-shell.sh  # find python3 in /wedge PATH component
 
 # This is just like the yapf problem in devtools/format.sh !
 # Pea needs a newer version of MyPy -- one that supports 'math'
+
+# 2024-09 - there is a conflict between:
+# parse-all - 'import mypy' for mycpp/pass_state.py
+# check-types - uses a newer version of MyPy
+#
+# The problem is importing MyPy as a LIBRARY vs. using it as a TOOL
+
 unset PYTHONPATH
 export PYTHONPATH=.
 
@@ -73,6 +80,7 @@ all-files() {
 }
 
 parse-all() {
+  #source $MYPY_VENV/bin/activate
   time all-files | xargs --verbose -- $0 pea-main parse
 }
 

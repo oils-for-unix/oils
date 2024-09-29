@@ -22,11 +22,12 @@ builtin/error_ysh.py
 builtin/func_eggex.py
 builtin/func_hay.py
 builtin/func_misc.py
+builtin/func_reflect.py
 builtin/hay_ysh.py
 builtin/io_osh.py
 builtin/io_ysh.py
 builtin/json_ysh.py
-builtin/meta_osh.py
+builtin/meta_oils.py
 builtin/method_dict.py
 builtin/method_io.py
 builtin/method_list.py
