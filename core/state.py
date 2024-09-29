@@ -1186,8 +1186,14 @@ class ctx_FrontFrame(object):
 class ctx_Eval(object):
     """Push temporary set of variables, $0, $1, $2, etc."""
 
-    def __init__(self, mem, dollar0, pos_args, vars):
-        # type: (Mem, Optional[str], Optional[List[str]], Optional[Dict[str, value_t]]) -> None
+    def __init__(
+            self,
+            mem,  # type: Mem
+            dollar0,  # type: Optional[str]
+            pos_args,  # type: Optional[List[str]]
+            vars,  # type: Optional[Dict[str, value_t]]
+    ):
+        # type: (...) -> None
         self.mem = mem
         self.dollar0 = dollar0
         self.pos_args = pos_args

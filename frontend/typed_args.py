@@ -113,13 +113,16 @@ class Reader(object):
       ReaderForProc()
     """
 
-    def __init__(self,
-                 pos_args,
-                 named_args,
-                 block_arg,
-                 arg_list,
-                 is_bound=False):
-        # type: (List[value_t], Dict[str, value_t], Optional[value_t], ArgList, bool) -> None
+    def __init__(
+            self,
+            pos_args,  # type: List[value_t]
+            named_args,  # type: Dict[str, value_t]
+            block_arg,  # type: Optional[value_t]
+            arg_list,  # type: ArgList
+            is_bound=False,  # type: bool
+    ):
+        # type: (...) -> None
+
         self.pos_args = pos_args
         self.pos_consumed = 0
         # TODO: Add LHS of attribute expression to value.BoundFunc and pass

@@ -185,8 +185,14 @@ class Printf(vm._Builtin):
         # this object initialized in main()
         self.shell_start_time = time_.time()
 
-    def _Percent(self, pr, part, varargs, locs):
-        # type: (_PrintfState, printf_part.Percent, List[str], List[CompoundWord]) -> Optional[str]
+    def _Percent(
+            self,
+            pr,  # type: _PrintfState
+            part,  # type: printf_part.Percent
+            varargs,  # type: List[str]
+            locs,  # type: List[CompoundWord]
+    ):
+        # type: (...) -> Optional[str]
 
         num_args = len(varargs)
 
