@@ -2489,35 +2489,38 @@ class Mem(object):
 
 
 def _InvokableObj(val):
-    # type: (value_t) -> Optional[Tuple[Obj, value.Proc]]
+    # type: (value_t) -> Tuple[Optional[value.Proc], Optional[Obj]]
     """
     Returns:
       None if the value is not invokable
       (self Obj, __invoke__ Proc) if so
     """
     if val.tag() != value_e.Obj:
-        return None
+        return None, None
 
     obj = cast(Obj, val)
     if not obj.prototype:
-        return None
+        return None, None
 
     invoke_val = obj.prototype.d.get('__invoke__')
     if invoke_val is None:
-        return None
+        return None, None
 
     # TODO: __invoke__ of wrong type could be fatal error?
     if invoke_val.tag() != value_e.Proc:
-        return None
+        return None, None
 
-    return obj, cast(value.Proc, invoke_val)
+    return cast(value.Proc, invoke_val), obj
 
 
 def _AddNames(unique, frame):
     # type: (Dict[str, bool], Dict[str, Cell]) -> None
     for name in frame:
         val = frame[name].val
-        if val.tag() == value_e.Proc or _InvokableObj(val) is not None:
+        if val.tag() == value_e.Proc:
+            unique[name] = True
+        proc, _ = _InvokableObj(val)
+        if proc is not None:
             unique[name] = True
 
 
@@ -2586,8 +2589,8 @@ class Procs(object):
         # type: (str) -> bool
 
         val = self.mem.GetValue(name)
-        result = _InvokableObj(val)
-        return result is not None
+        proc, self_val = _InvokableObj(val)
+        return proc is not None
 
     def InvokableNames(self):
         # type: () -> List[str]
@@ -2617,26 +2620,31 @@ class Procs(object):
         return names
 
     def GetInvokable(self, name):
-        # type: (str) -> value.Proc
+        # type: (str) -> Tuple[Optional[value.Proc], Optional[Obj]]
         """Try to find a proc/sh-func by `name`, or return None if not found.
 
         First, we search for a proc, and then a sh-func. This means that procs
         can shadow the definition of sh-funcs.
 
-        Callers
+        Callers:
           executor.py: running
           meta_osh.py runproc lookup - this is not 'invoke', because it is
              INTERIOR shell functions, procs, invokable Obj
           cmd_eval: check for redefining proc or sh-func (remove)
         """
-        maybe_proc = self.mem.GetValue(name)
-        if maybe_proc.tag() == value_e.Proc:
-            return cast(value.Proc, maybe_proc)
+        val = self.mem.GetValue(name)
+
+        if val.tag() == value_e.Proc:
+            return cast(value.Proc, val), None
+
+        proc, self_val = _InvokableObj(val)
+        if proc:
+            return proc, self_val
 
         if name in self.sh_funcs:
-            return self.sh_funcs[name]
+            return self.sh_funcs[name], None
 
-        return None
+        return None, None
 
 
 #

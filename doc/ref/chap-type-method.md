@@ -589,3 +589,31 @@ database), and then C strftime().
 TODO: The free function glob() actually does I/O.  Although maybe it doesn't
 fail?
 
+## Obj
+
+### `__invoke__`
+
+<!-- copied from doc/proc-func-md -->
+
+The `__invoke__` method makes an Object "proc-like".
+
+First, define a proc, with the first typed arg named `self`:
+
+    proc myInvoke (word_param; self, int_param) {
+      echo "sum = $[self.x + self.y + int_param]"
+    }
+
+Make it the `__invoke__` method of an `Obj`:
+
+    var methods = Object(null, {__invoke__: myInvoke})
+    var invokable_obj = Object(methods, {x: 1, y: 2})
+
+Then invoke it like a proc:
+
+    invokable_obj myword (3)
+    # sum => 6
+
+### `__call__`
+
+TODO
+

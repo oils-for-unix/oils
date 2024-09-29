@@ -770,6 +770,24 @@ operators:
 - Thin arrow (`->`) looks for mutating methods, which have an `M/` prefix.
   - Reference: [thin-arrow](ref/chap-expr-lang.html#thin-arrow)
 
+## The `__invoke__` method makes an Object "Proc-like"
+
+First, define a proc, with the first typed arg named `self`:
+
+    proc myInvoke (word_param; self, int_param) {
+      echo "sum = $[self.x + self.y + int_param]"
+    }
+
+Make it the `__invoke__` method of an `Obj`:
+
+    var methods = Object(null, {__invoke__: myInvoke})
+    var invokable_obj = Object(methods, {x: 1, y: 2})
+
+Then invoke it like a proc:
+
+    invokable_obj myword (3)
+    # sum => 6
+
 ## Usage Notes
 
 ### 3 Ways to Return a Value

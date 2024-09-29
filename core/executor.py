@@ -279,7 +279,7 @@ class ShellExecutor(vm._Executor):
             # Pitfall: What happens if there are two of the same name?  I guess
             # that's why you have = and 'type' inspect them
 
-            proc_node = self.procs.GetInvokable(arg0)
+            proc_node, self_val = self.procs.GetInvokable(arg0)
             if proc_node is not None:
                 if self.exec_opts.strict_errexit():
                     disabled_tok = self.mutable_opts.ErrExitDisabledToken()
@@ -295,7 +295,9 @@ class ShellExecutor(vm._Executor):
 
                 with dev.ctx_Tracer(self.tracer, 'proc', argv):
                     # NOTE: Functions could call 'exit 42' directly, etc.
-                    status = self.cmd_ev.RunProc(proc_node, cmd_val)
+                    status = self.cmd_ev.RunProc(proc_node,
+                                                 cmd_val,
+                                                 self_val=self_val)
                 return status
 
         # Notes:

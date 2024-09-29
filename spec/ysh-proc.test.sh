@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 0
 
 #### Open proc (any number of args)
 shopt --set parse_proc
@@ -708,6 +708,22 @@ invokable is a YSH invokable
 ---
 ## END
 
+#### invokable Obj that doesn't declare self
+shopt --set ysh:upgrade
+
+proc boundProc(no_self; ) {
+  echo 'bad'
+}
+
+var methods = Object(null, {__invoke__: boundProc})
+var invokable = Object(methods, {x: 3, y: 5})
+
+invokable no_self
+
+## status: 3
+## STDOUT:
+## END
+
 #### call invokable Obj with self
 shopt --set ysh:upgrade
 
@@ -721,13 +737,14 @@ var invokable = Object(methods, {x: 3, y: 5})
 invokable
 
 ## STDOUT:
+sum = 8
 ## END
 
 #### two different objects can share the same __invoke__
 shopt --set ysh:upgrade
 
-proc boundProc(; self) {
-  echo "sum = $[self.x + self.y]"
+proc boundProc(; self, more) {
+  echo "sum = $[self.x + self.y + more]"
 }
 
 var methods = Object(null, {__invoke__: boundProc})
@@ -735,9 +752,10 @@ var methods = Object(null, {__invoke__: boundProc})
 var i1 = Object(methods, {x: 3, y: 5})
 var i2 = Object(methods, {x: 10, y: 42})
 
-i1
-i2
+i1 (1)
+i2 (1)
 
 ## STDOUT:
-
+sum = 9
+sum = 53
 ## END

@@ -483,17 +483,27 @@ def BindProcArgs(proc, cmd_val, mem, self_val=None):
                 "Proc %r takes no word args, but got %d" %
                 (proc.name, num_word - 1), blame_loc)
 
-    ### Handle typed positional args.  This includes a block arg, if any.
+    ### Handle typed positional args.
 
     if proc_args and proc_args.typed_args:  # blame ( of call site
         blame_loc = proc_args.typed_args.left
 
-    pos_args = proc_args.pos_args if proc_args else None
+    if proc_args:
+        pos_args = proc_args.pos_args
+    else:
+        pos_args = []
+
+    if self_val:  # Prepend to beginning
+        pos_args.insert(0, self_val)
+
     if sig.positional:
-        # TODO: Add self_val
         _BindTyped(proc.name, sig.positional, proc.defaults.for_typed,
                    pos_args, mem, blame_loc)
     else:
+        if self_val is not None:
+            raise error.Expr(
+                "Using proc %r as __invoke__ requires a 'self' param" %
+                proc.name, blame_loc)
         if pos_args is not None:
             num_pos = len(pos_args)
             if num_pos != 0:

@@ -61,6 +61,7 @@ X [Proc]           name()         location()     toJson()
   [IO]             eval()         evalToDict()   captureStdout()
                    promptVal()
                  X time()       X strftime()   X glob()
+  [Obj]            __invoke__   X __call__
 ```
 
 <h2 id="builtin-func">
