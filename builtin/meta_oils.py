@@ -95,7 +95,12 @@ class Eval(vm._Builtin):
                                        cmd_flags=cmd_eval.RaiseControlFlow)
 
 
-class Source(vm._Builtin):
+class ShellFile(vm._Builtin):
+    """
+    These share code:
+    - 'source' builtin for OSH
+    - 'use' builtin for YSH
+    """
 
     def __init__(
             self,
@@ -106,6 +111,7 @@ class Source(vm._Builtin):
             tracer,  # type: dev.Tracer
             errfmt,  # type: ui.ErrorFormatter
             loader,  # type: pyutil._ResourceLoader
+            ysh_use=False,  # type: bool
     ):
         # type: (...) -> None
         self.parse_ctx = parse_ctx
@@ -116,10 +122,92 @@ class Source(vm._Builtin):
         self.tracer = tracer
         self.errfmt = errfmt
         self.loader = loader
+        self.ysh_use = ysh_use
 
         self.mem = cmd_ev.mem
 
     def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        """
+        Use is like Source
+        """
+        if self.ysh_use:
+            return self._Use(cmd_val)
+        else:
+            return self._Source(cmd_val)
+
+    def _Use(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        """
+        Module system with all the power of Python, but still a proc
+
+        use util.ysh  # util is a value.Obj
+
+        # Importing a bunch of words
+        use dialect-ninja.ysh { all }  # requires 'provide' in dialect-ninja
+        use dialect-github.ysh { all }
+
+        # This declares some names
+        use --extern grep sed
+
+        # Renaming
+        use util.ysh (&myutil)
+
+        # Ignore
+        use util.ysh (&_)
+
+        # Picking specifics
+        use util.ysh {
+          pick log die
+          pick foo (&myfoo)
+        }
+
+        # A long way to write this is:
+
+        use util.ysh
+        const log = util.log
+        const die = util.die
+        const myfoo = util.foo
+
+        Another way is:
+        for name in log die {
+          call setVar(name, util[name])
+
+          # value.Obj may not support [] though
+          # get(propView(util), name, null) is a long way of writing it
+        }
+
+        Other considerations:
+
+        - Statically parseable subset?  For fine-grained static tree-shaking
+          - We're doing coarse dynamic tree-shaking first though
+
+        - if TYPE_CHECKING is an issue
+          - that can create circular dependencies, especially with gradual typing,
+            when you go dynamic to static (like Oils did)
+          - I guess you can have
+            - use --static parse_lib.ysh { pick ParseContext } 
+        """
+        _, arg_r = flag_util.ParseCmdVal('use', cmd_val)
+
+        mod_path, _ = arg_r.ReadRequired2('requires a module path')
+
+        log('m %s', mod_path)
+
+        arg_r.Done()
+
+        # TODO on usage:
+        # - typed arg is value.Place
+        # - block arg binds 'pick' and 'all'
+
+        # TODO:
+        # with ctx_Module
+        # and then do something very similar to 'source'
+
+        return 0
+        return 0
+
+    def _Source(self, cmd_val):
         # type: (cmd_value.Argv) -> int
         attrs, arg_r = flag_util.ParseCmdVal('source', cmd_val)
         arg = arg_types.source(attrs.attrs)

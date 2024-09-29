@@ -632,8 +632,16 @@ def Main(
     b[builtin_i.extern_] = meta_oils.Extern(shell_ex, procs, errfmt)
 
     # Meta builtins
-    source_builtin = meta_oils.Source(parse_ctx, search_path, cmd_ev, fd_state,
-                                      tracer, errfmt, loader)
+    b[builtin_i.use] = meta_oils.ShellFile(parse_ctx,
+                                           search_path,
+                                           cmd_ev,
+                                           fd_state,
+                                           tracer,
+                                           errfmt,
+                                           loader,
+                                           ysh_use=True)
+    source_builtin = meta_oils.ShellFile(parse_ctx, search_path, cmd_ev,
+                                         fd_state, tracer, errfmt, loader)
     b[builtin_i.source] = source_builtin
     b[builtin_i.dot] = source_builtin
     b[builtin_i.eval] = meta_oils.Eval(parse_ctx, exec_opts, cmd_ev, tracer,
@@ -644,7 +652,6 @@ def Main(
     b[builtin_i.source_guard] = module_ysh.SourceGuard(guards, exec_opts,
                                                        errfmt)
     b[builtin_i.is_main] = module_ysh.IsMain(mem)
-    b[builtin_i.use] = module_ysh.Use(mem, errfmt)
 
     # Errors
     b[builtin_i.error] = error_ysh.Error()
