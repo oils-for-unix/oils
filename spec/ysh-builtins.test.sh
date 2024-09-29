@@ -585,6 +585,6 @@ echo status=$?
 ## STDOUT:
 status=0
 status=0
-status=2
-status=2
+status=1
+status=1
 ## END

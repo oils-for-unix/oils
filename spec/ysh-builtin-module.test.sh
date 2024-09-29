@@ -73,10 +73,16 @@ echo bad-flag=$?
 use too many
 echo too-many=$?
 
+use ///no-builtin
+echo no-builtin=$?
+
+
 ## STDOUT:
 no-arg=2
-one-arg=0
-extern=0
+one-arg=1
+extern=1
 bad-flag=2
 too-many=2
+no-builtin=1
 ## END
+

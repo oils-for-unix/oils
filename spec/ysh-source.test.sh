@@ -20,10 +20,10 @@ source --builtin
 ## STDOUT:
 ## END
 
-#### non-existant path passed to --builtin flag
+#### non-existent path passed to --builtin flag
 shopt --set ysh:upgrade
 
 source --builtin test/this-file-will-never-exist.ysh
-## status: 2
+## status: 1
 ## STDOUT:
 ## END

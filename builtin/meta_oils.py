@@ -14,7 +14,7 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
-from _devbuild.gen.syntax_asdl import source, loc
+from _devbuild.gen.syntax_asdl import source, loc, loc_t
 from core import alloc
 from core import dev
 from core import error
@@ -44,8 +44,9 @@ if TYPE_CHECKING:
     from frontend.parse_lib import ParseContext
     from core import optview
     from display import ui
+    from mycpp import mylib
     from osh.cmd_eval import CommandEvaluator
-    from osh.cmd_parse import CommandParser
+    from osh import cmd_parse
 
 
 class Eval(vm._Builtin):
@@ -124,17 +125,46 @@ class ShellFile(vm._Builtin):
         self.loader = loader
         self.ysh_use = ysh_use
 
+        self.builtin_name = 'use' if ysh_use else 'source'
         self.mem = cmd_ev.mem
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        """
-        Use is like Source
-        """
         if self.ysh_use:
             return self._Use(cmd_val)
         else:
             return self._Source(cmd_val)
+
+    def _LoadBuiltinFile(self, builtin_path, blame_loc):
+        # type: (str, loc_t) -> Tuple[str, cmd_parse.CommandParser]
+        try:
+            load_path = os_path.join("stdlib", builtin_path)
+            contents = self.loader.Get(load_path)
+        except (IOError, OSError):
+            self.errfmt.Print_('%r failed: No builtin file %r' %
+                               (self.builtin_name, load_path),
+                               blame_loc=blame_loc)
+            return None, None  # error
+
+        line_reader = reader.StringLineReader(contents, self.arena)
+        c_parser = self.parse_ctx.MakeOshParser(line_reader)
+        return load_path, c_parser
+
+    def _LoadDiskFile(self, fs_path, blame_loc):
+        # type: (str, loc_t) -> Tuple[mylib.LineReader, cmd_parse.CommandParser]
+        try:
+            # Shell can't use descriptors 3-9
+            f = self.fd_state.Open(fs_path)
+        except (IOError, OSError) as e:
+            self.errfmt.Print_(
+                '%s %r failed: %s' %
+                (self.builtin_name, fs_path, pyutil.strerror(e)),
+                blame_loc=blame_loc)
+            return None, None
+
+        line_reader = reader.FileLineReader(f, self.arena)
+        c_parser = self.parse_ctx.MakeOshParser(line_reader)
+        return f, c_parser
 
     def _Use(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -189,33 +219,46 @@ class ShellFile(vm._Builtin):
             - use --static parse_lib.ysh { pick ParseContext } 
         """
         _, arg_r = flag_util.ParseCmdVal('use', cmd_val)
-
-        mod_path, _ = arg_r.ReadRequired2('requires a module path')
-
-        log('m %s', mod_path)
-
-        arg_r.Done()
-
+        path_arg, path_loc = arg_r.ReadRequired2('requires a module path')
         # TODO on usage:
         # - typed arg is value.Place
         # - block arg binds 'pick' and 'all'
+        # Although ALL these 3 mechanisms can be done with 'const' assignments.
+        # Hm.
+        arg_r.Done()
 
-        # TODO:
-        # with ctx_Module
-        # and then do something very similar to 'source'
+        # I wonder if modules should be FROZEN value.Obj, not mutable?
 
-        return 0
-        return 0
+        # Duplicating logic below
+        if path_arg.startswith('///'):
+            builtin_path = path_arg[3:]
+        else:
+            builtin_path = None
+
+        if builtin_path is not None:
+            load_path, c_parser = self._LoadBuiltinFile(builtin_path, path_loc)
+            if c_parser is None:
+                return 1  # error was already shown
+
+            # TODO: ctx_Module
+            return self._Exec(cmd_val, arg_r, load_path, c_parser)
+        else:
+            f, c_parser = self._LoadDiskFile(path_arg, path_loc)
+            if c_parser is None:
+                return 1  # error was already shown
+
+            # TODO: ctx_Module
+            with process.ctx_FileCloser(f):
+                return self._Exec(cmd_val, arg_r, path_arg, c_parser)
+
+        raise AssertionError()
 
     def _Source(self, cmd_val):
         # type: (cmd_value.Argv) -> int
         attrs, arg_r = flag_util.ParseCmdVal('source', cmd_val)
         arg = arg_types.source(attrs.attrs)
 
-        path_arg = arg_r.Peek()
-        if path_arg is None:
-            e_usage('missing required argument', loc.Missing)
-        arg_r.Next()
+        path_arg, path_loc = arg_r.ReadRequired2('requires a file path')
 
         # Old:
         #     source --builtin two.sh  # looks up stdlib/two.sh
@@ -229,17 +272,10 @@ class ShellFile(vm._Builtin):
             builtin_path = path_arg[3:]
 
         if builtin_path is not None:
-            try:
-                load_path = os_path.join("stdlib", builtin_path)
-                contents = self.loader.Get(load_path)
-            except (IOError, OSError):
-                self.errfmt.Print_('source failed: No builtin file %r' %
-                                   load_path,
-                                   blame_loc=cmd_val.arg_locs[2])
-                return 2
+            load_path, c_parser = self._LoadBuiltinFile(builtin_path, path_loc)
+            if c_parser is None:
+                return 1  # error was already shown
 
-            line_reader = reader.StringLineReader(contents, self.arena)
-            c_parser = self.parse_ctx.MakeOshParser(line_reader)
             return self._Exec(cmd_val, arg_r, load_path, c_parser)
 
         else:
@@ -249,23 +285,17 @@ class ShellFile(vm._Builtin):
             if resolved is None:
                 resolved = path_arg
 
-            try:
-                # Shell can't use descriptors 3-9
-                f = self.fd_state.Open(resolved)
-            except (IOError, OSError) as e:
-                self.errfmt.Print_('source %r failed: %s' %
-                                   (path_arg, pyutil.strerror(e)),
-                                   blame_loc=cmd_val.arg_locs[1])
-                return 1
-
-            line_reader = reader.FileLineReader(f, self.arena)
-            c_parser = self.parse_ctx.MakeOshParser(line_reader)
+            f, c_parser = self._LoadDiskFile(resolved, path_loc)
+            if c_parser is None:
+                return 1  # error was already shown
 
             with process.ctx_FileCloser(f):
                 return self._Exec(cmd_val, arg_r, path_arg, c_parser)
 
+        raise AssertionError()
+
     def _Exec(self, cmd_val, arg_r, path, c_parser):
-        # type: (cmd_value.Argv, args.Reader, str, CommandParser) -> int
+        # type: (cmd_value.Argv, args.Reader, str, cmd_parse.CommandParser) -> int
         call_loc = cmd_val.arg_locs[0]
 
         # A sourced module CAN have a new arguments array, but it always shares
