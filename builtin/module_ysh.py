@@ -1,18 +1,12 @@
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import scope_e
-from _devbuild.gen.syntax_asdl import loc
-from _devbuild.gen.value_asdl import (value, value_e)
-
-from core import error
 from core import state
 from display import ui
 from core import vm
-from frontend import args
 from frontend import flag_util
 from mycpp.mylib import log
 
-from typing import Dict, cast, TYPE_CHECKING
+from typing import Dict, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value
     from core import optview
@@ -63,13 +57,55 @@ class SourceGuard(vm._Builtin):
 
 
 class Use(vm._Builtin):
-    """use bin, use dialect to control the 'first word'.
+    """
+    Module system with all the power of Python, but still a proc
 
-    Examples:
-      use bin grep sed
+    use util.ysh  # util is a value.Obj
 
-      use dialect ninja   # I think it must be in a 'dialect' scope
-      use dialect travis
+    # Importing a bunch of words
+    use dialect-ninja.ysh { all }  # requires 'provide' in dialect-ninja
+    use dialect-github.ysh { all }
+
+    # This declares some names
+    use --extern grep sed
+
+    # Renaming
+    use util.ysh (&myutil)
+
+    # Ignore
+    use util.ysh (&_)
+
+    # Picking specifics
+    use util.ysh {
+      pick log die
+      pick foo (&myfoo)
+    }
+
+    # A long way to write this is:
+
+    use util.ysh
+    const log = util.log
+    const die = util.die
+    const myfoo = util.foo
+
+    Another way is:
+    for name in log die {
+      call setVar(name, util[name])
+
+      # value.Obj may not support [] though
+      # get(propView(util), name, null) is a long way of writing it
+    }
+
+    Other considerations:
+
+    - Statically parseable subset?  For fine-grained static tree-shaking
+      - We're doing coarse dynamic tree-shaking first though
+
+    - if TYPE_CHECKING is an issue
+      - that can create circular dependencies, especially with gradual typing,
+        when you go dynamic to static (like Oils did)
+      - I guess you can have
+        - use --static parse_lib.ysh { pick ParseContext } 
     """
 
     def __init__(self, mem, errfmt):
@@ -79,42 +115,20 @@ class Use(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
-        arg_r.Next()  # skip 'use'
+        _, arg_r = flag_util.ParseCmdVal('use', cmd_val)
 
-        arg, arg_loc = arg_r.Peek2()
-        if arg is None:
-            raise error.Usage("expected 'bin' or 'dialect'", loc.Missing)
-        arg_r.Next()
+        mod_path, _ = arg_r.ReadRequired2('requires a module path')
 
-        if arg == 'dialect':
-            expected, e_loc = arg_r.Peek2()
-            if expected is None:
-                raise error.Usage('expected dialect name', loc.Missing)
+        log('m %s', mod_path)
 
-            UP_actual = self.mem.GetValue('_DIALECT', scope_e.Dynamic)
-            if UP_actual.tag() == value_e.Str:
-                actual = cast(value.Str, UP_actual).s
-                if actual == expected:
-                    return 0  # OK
-                else:
-                    self.errfmt.Print_('Expected dialect %r, got %r' %
-                                       (expected, actual),
-                                       blame_loc=e_loc)
+        arg_r.Done()
 
-                    return 1
-            else:
-                # Not printing expected value
-                self.errfmt.Print_('Expected dialect %r' % expected,
-                                   blame_loc=e_loc)
-                return 1
+        # TODO on usage:
+        # - typed arg is value.Place
+        # - block arg binds 'pick' and 'all'
 
-        # 'use bin' can be used for static analysis.  Although could it also
-        # simplify the SearchPath logic?  Maybe ensure that it is memoized?
-        if arg == 'bin':
-            rest = arg_r.Rest()
-            for name in rest:
-                log('bin %s', name)
-            return 0
+        # TODO:
+        # with ctx_Module
+        # and then do something very similar to 'source'
 
-        raise error.Usage("expected 'bin' or 'dialect'", arg_loc)
+        return 0

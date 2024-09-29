@@ -2,50 +2,6 @@
 
 ## oils_failures_allowed: 2
 
-#### use bin
-use
-echo status=$?
-use z
-echo status=$?
-
-use bin
-echo bin status=$?
-use bin sed grep
-echo bin status=$?
-
-## STDOUT:
-status=2
-status=2
-bin status=0
-bin status=0
-## END
-
-#### use dialect
-shopt --set parse_brace
-
-use dialect
-echo status=$?
-
-use dialect ninja
-echo status=$?
-
-shvar _DIALECT=oops {
-  use dialect ninja
-  echo status=$?
-}
-
-shvar _DIALECT=ninja {
-  use dialect ninja
-  echo status=$?
-}
-
-## STDOUT:
-status=2
-status=1
-status=1
-status=0
-## END
-
 #### hay builtin usage
 
 hay define

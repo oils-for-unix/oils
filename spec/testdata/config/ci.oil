@@ -1,6 +1,6 @@
 # Similar to .builds/cpp.yaml for sourcehut
 
-use dialect sourcehut
+#use dialect sourcehut
 
 const image = 'debian/buster'
 

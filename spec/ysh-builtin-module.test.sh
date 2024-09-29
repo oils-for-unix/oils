@@ -1,5 +1,6 @@
+## oils_failures_allowed: 1
 
-#### source-guard
+#### source-guard is an old way of preventing redefinition - could remove it
 shopt --set ysh:upgrade
 
 source-guard 'main' || return 0
@@ -35,4 +36,47 @@ echo 'echo stdin; is-main; echo status=$?' | $SH
 status=0
 stdin
 status=0
+## END
+
+#### use foo.ysh creates a value.Obj
+
+use $REPO_ROOT/spec/testdata/module2/util.ysh
+
+var methods = Object(null, {})
+var obj = Object(methods, {x: 1})
+pp test_ (obj)
+pp test_ (methods)
+
+
+# This is a value.Obj
+pp test_ (util)
+
+util log 'hello'
+
+## STDOUT:
+## END
+
+#### use builtin usage
+
+use
+echo no-arg=$?
+
+use foo
+echo one-arg=$?
+
+use --extern foo
+echo extern=$?
+
+use --bad-flag
+echo bad-flag=$?
+
+use too many
+echo too-many=$?
+
+## STDOUT:
+no-arg=2
+one-arg=0
+extern=0
+bad-flag=2
+too-many=2
 ## END

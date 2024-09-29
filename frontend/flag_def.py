@@ -462,7 +462,9 @@ FORK_SPEC = FlagSpec('fork')
 FORKWAIT_SPEC = FlagSpec('forkwait')
 
 # Might want --list at some point
-MODULE_SPEC = FlagSpec('source-guard')
+SOURCE_GUARD_SPEC = FlagSpec('source-guard')
+USE_SPEC = FlagSpec('use')
+USE_SPEC.LongFlag('--extern')
 
 RUNPROC_SPEC = FlagSpec('runproc')
 RUNPROC_SPEC.ShortFlag('-h', args.Bool, help='Show all procs')
@@ -470,7 +472,7 @@ RUNPROC_SPEC.ShortFlag('-h', args.Bool, help='Show all procs')
 INVOKE_SPEC = FlagSpec('invoke')
 INVOKE_SPEC.LongFlag('--builtin')  # like 'builtin'
 INVOKE_SPEC.LongFlag('--proc-like')  # like 'runproc'
-INVOKE_SPEC.LongFlag('--extern')   # like 'extern'
+INVOKE_SPEC.LongFlag('--extern')  # like 'extern'
 
 EXTERN_SPEC = FlagSpec('extern')
 
