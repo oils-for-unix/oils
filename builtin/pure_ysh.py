@@ -206,9 +206,9 @@ class Append(vm._Builtin):
         # type: (cmd_value.Argv) -> int
 
         # This means we ignore -- , which is consistent
-        arg, arg_r = flag_util.ParseCmdVal('append',
-                                           cmd_val,
-                                           accept_typed_args=True)
+        _, arg_r = flag_util.ParseCmdVal('append',
+                                         cmd_val,
+                                         accept_typed_args=True)
 
         rd = typed_args.ReaderForProc(cmd_val)
         val = rd.PosValue()

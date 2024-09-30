@@ -105,6 +105,11 @@ class _Attributes(object):
 
         # debug-completion -> debug_completion
         name = name.replace('-', '_')
+
+        # similar hack to avoid C++ keyword in frontend/flag_gen.py
+        if name == 'extern':
+            name = 'extern_'
+
         self.attrs[name] = val
 
         if 0:

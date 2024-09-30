@@ -353,13 +353,22 @@ Use it like this:
 
 ### use
 
-TODO
+Import code from other files, creating an `Obj` that acts like a namespace.
 
-Reuse code from other files, respecting namespaces.
+    use my-dir/my-module.ysh
 
-    use lib/foo.ysh  # foo myproc, $[foo.attr]
-                     # implicit $_this_dir aka relative import
+    echo $[my_module.my_integer]  # the module Obj has attributes
+    my_module myproc              # the module Obj is invokable
 
+The evaluation of such files is cached, so it won't be re-evaluated if `use` is called again.
+
+<!--
+# TODO: implicit $_this_dir aka relative import?
+
+That makes scripts callable from elsewhere?
+-->
+
+<!--
 Bind a specific name:
 
     use lib/foo.ysh (&myvar)  # makes 'myvar' available
@@ -376,10 +385,12 @@ Maybe:
       pick log (&mylog)
       pick die (&mydie)
     }
+-->
 
-Also a declaration
+The `--extern` flag make the invocation do nothing.  It can be used be tools to
+analyze what names are in the file.
 
-    use --extern grep sed
+    use --extern grep sed awk
 
 ## I/O
 

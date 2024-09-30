@@ -40,6 +40,7 @@ class Id(vm._Callable):
 
     I guess only mutable objects can have IDs then
     """
+
     def __init__(self):
         # type: () -> None
         vm._Callable.__init__(self)

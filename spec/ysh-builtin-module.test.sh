@@ -38,6 +38,50 @@ stdin
 status=0
 ## END
 
+#### use builtin usage
+
+use
+echo no-arg=$?
+
+use foo
+echo one-arg=$?
+
+use --extern foo
+echo extern=$?
+
+use --bad-flag
+echo bad-flag=$?
+
+use too many
+echo too-many=$?
+
+use ///no-builtin
+echo no-builtin=$?
+
+
+## STDOUT:
+no-arg=2
+one-arg=1
+extern=0
+bad-flag=2
+too-many=2
+no-builtin=1
+## END
+
+
+#### use --extern is a no-op, for static analysis
+
+use --extern grep sed awk
+echo status=$?
+
+use --extern zzz
+echo status=$?
+
+## STDOUT:
+status=0
+status=0
+## END
+
 #### use foo.ysh creates a value.Obj, and it's cached on later invocations
 
 shopt --set ysh:upgrade
@@ -95,35 +139,5 @@ util log 'hello'
 util die 'hello'
 
 ## STDOUT:
-## END
-
-#### use builtin usage
-
-use
-echo no-arg=$?
-
-use foo
-echo one-arg=$?
-
-use --extern foo
-echo extern=$?
-
-use --bad-flag
-echo bad-flag=$?
-
-use too many
-echo too-many=$?
-
-use ///no-builtin
-echo no-builtin=$?
-
-
-## STDOUT:
-no-arg=2
-one-arg=1
-extern=1
-bad-flag=2
-too-many=2
-no-builtin=1
 ## END
 

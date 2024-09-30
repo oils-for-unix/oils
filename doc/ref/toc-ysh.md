@@ -116,10 +116,13 @@ X [Wok]           _field()
                   shvar                  Temporary modify global settings
                   ctx                    Share and update a temporary "context"
                   push-registers         Save registers like $?, PIPESTATUS
-  [Modules]       runproc                Run a proc; use as main entry point
+  [Introspection] runproc                Run a proc; use as main entry point
+                X extern                 Run an external command, with an ENV
+                X invoke                 Control which "invokables" are run
+  [Modules]       
                   source-guard           guard against duplicate 'source'
                   is-main                false when sourcing a file
-                X use                    use names,
+                  use                    create a module Obj from a source file
   [I/O]           ysh-read               flags --all, -0
                   ysh-echo               no -e -n with simple_echo
                   write                  Like echo, with --, --sep, --end

@@ -368,7 +368,13 @@ class ShellFile(vm._Builtin):
         import $LIB_YSH/stdlib
 
         """
-        _, arg_r = flag_util.ParseCmdVal('use', cmd_val)
+        attrs, arg_r = flag_util.ParseCmdVal('use', cmd_val)
+        arg = arg_types.use(attrs.attrs)
+
+        # Accepts any args
+        if arg.extern_:  # use --extern grep  # no-op for static analysis
+            return 0
+
         path_arg, path_loc = arg_r.ReadRequired2('requires a module path')
         # TODO on usage:
         # - typed arg is value.Place
