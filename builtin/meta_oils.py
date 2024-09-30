@@ -15,6 +15,7 @@ from __future__ import print_function
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
 from _devbuild.gen.syntax_asdl import source, loc, loc_t
+from _devbuild.gen.value_asdl import Obj
 from core import alloc
 from core import dev
 from core import error
@@ -35,6 +36,8 @@ from osh import cmd_eval
 
 import posix_ as posix
 from posix_ import X_OK  # translated directly to C macro
+
+import libc
 
 _ = log
 
@@ -128,6 +131,13 @@ class ShellFile(vm._Builtin):
         self.builtin_name = 'use' if ysh_use else 'source'
         self.mem = cmd_ev.mem
 
+        # Don't load modules more than once
+        # keyed by libc.realpath(arg)
+        self._disk_cache = {}  # type: Dict[str, Obj]
+
+        # keyed by ///
+        self._embed_cache = {}  # type: Dict[str, Obj]
+
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
         if self.ysh_use:
@@ -135,10 +145,10 @@ class ShellFile(vm._Builtin):
         else:
             return self._Source(cmd_val)
 
-    def _LoadBuiltinFile(self, builtin_path, blame_loc):
+    def LoadEmbeddedFile(self, embed_path, blame_loc):
         # type: (str, loc_t) -> Tuple[str, cmd_parse.CommandParser]
         try:
-            load_path = os_path.join("stdlib", builtin_path)
+            load_path = os_path.join("stdlib", embed_path)
             contents = self.loader.Get(load_path)
         except (IOError, OSError):
             self.errfmt.Print_('%r failed: No builtin file %r' %
@@ -165,6 +175,102 @@ class ShellFile(vm._Builtin):
         line_reader = reader.FileLineReader(f, self.arena)
         c_parser = self.parse_ctx.MakeOshParser(line_reader)
         return f, c_parser
+
+    def _SourceExec(self, cmd_val, arg_r, path, c_parser):
+        # type: (cmd_value.Argv, args.Reader, str, cmd_parse.CommandParser) -> int
+        call_loc = cmd_val.arg_locs[0]
+
+        # A sourced module CAN have a new arguments array, but it always shares
+        # the same variable scope as the caller.  The caller could be at either a
+        # global or a local scope.
+
+        # TODO: I wonder if we compose the enter/exit methods more easily.
+
+        with dev.ctx_Tracer(self.tracer, 'source', cmd_val.argv):
+            source_argv = arg_r.Rest()
+            with state.ctx_Source(self.mem, path, source_argv):
+                with state.ctx_ThisDir(self.mem, path):
+                    src = source.SourcedFile(path, call_loc)
+                    with alloc.ctx_SourceCode(self.arena, src):
+                        try:
+                            status = main_loop.Batch(
+                                self.cmd_ev,
+                                c_parser,
+                                self.errfmt,
+                                cmd_flags=cmd_eval.RaiseControlFlow)
+                        except vm.IntControlFlow as e:
+                            if e.IsReturn():
+                                status = e.StatusCode()
+                            else:
+                                raise
+
+        return status
+
+    def _UseExec(self, cmd_val, arg_r, path, c_parser):
+        # type: (cmd_value.Argv, args.Reader, str, cmd_parse.CommandParser) -> int
+        call_loc = cmd_val.arg_locs[0]
+
+        with dev.ctx_Tracer(self.tracer, 'use', None):
+            with state.ctx_ThisDir(self.mem, path):
+
+                # TODO: change the src to source.ShellFile
+
+                src = source.SourcedFile(path, call_loc)
+                with alloc.ctx_SourceCode(self.arena, src):
+                    try:
+                        status = main_loop.Batch(
+                            self.cmd_ev,
+                            c_parser,
+                            self.errfmt,
+                            cmd_flags=cmd_eval.RaiseControlFlow)
+                    except vm.IntControlFlow as e:
+                        if e.IsReturn():
+                            status = e.StatusCode()
+                        else:
+                            raise
+
+        return status
+
+    def _Source(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        attrs, arg_r = flag_util.ParseCmdVal('source', cmd_val)
+        arg = arg_types.source(attrs.attrs)
+
+        path_arg, path_loc = arg_r.ReadRequired2('requires a file path')
+
+        # Old:
+        #     source --builtin two.sh  # looks up stdlib/two.sh
+        # New:
+        #     source $LIB_OSH/two.sh  # looks up stdlib/osh/two.sh
+        #     source ///osh/two.sh  # looks up stdlib/osh/two.sh
+        embed_path = None  # type: Optional[str]
+        if arg.builtin:
+            embed_path = path_arg
+        elif path_arg.startswith('///'):
+            embed_path = path_arg[3:]
+
+        if embed_path is not None:
+            load_path, c_parser = self.LoadEmbeddedFile(embed_path, path_loc)
+            if c_parser is None:
+                return 1  # error was already shown
+
+            return self._SourceExec(cmd_val, arg_r, load_path, c_parser)
+
+        else:
+            # 'source' respects $PATH
+            resolved = self.search_path.LookupOne(path_arg,
+                                                  exec_required=False)
+            if resolved is None:
+                resolved = path_arg
+
+            f, c_parser = self._LoadDiskFile(resolved, path_loc)
+            if c_parser is None:
+                return 1  # error was already shown
+
+            with process.ctx_FileCloser(f):
+                return self._SourceExec(cmd_val, arg_r, path_arg, c_parser)
+
+        raise AssertionError()
 
     def _Use(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -217,6 +323,20 @@ class ShellFile(vm._Builtin):
             when you go dynamic to static (like Oils did)
           - I guess you can have
             - use --static parse_lib.ysh { pick ParseContext } 
+
+        # Crazy idea - pure ysh
+
+        use $LIB_YSH/pick.ysh
+        pick $LIB_YSH/table.ysh {
+          names foo bar
+          name x (&alias)
+
+          all
+          names *  # perhaps, if you turn off globbing
+        }
+
+        import $LIB_YSH/stdlib
+
         """
         _, arg_r = flag_util.ParseCmdVal('use', cmd_val)
         path_arg, path_loc = arg_r.ReadRequired2('requires a module path')
@@ -229,100 +349,43 @@ class ShellFile(vm._Builtin):
 
         # I wonder if modules should be FROZEN value.Obj, not mutable?
 
-        # Duplicating logic below
+        # Similar logic as 'source'
         if path_arg.startswith('///'):
-            builtin_path = path_arg[3:]
+            embed_path = path_arg[3:]
         else:
-            builtin_path = None
+            embed_path = None
 
-        if builtin_path is not None:
-            load_path, c_parser = self._LoadBuiltinFile(builtin_path, path_loc)
+        if embed_path is not None:
+            # TODO: consult _embed_cache = {}
+
+            load_path, c_parser = self.LoadEmbeddedFile(embed_path, path_loc)
             if c_parser is None:
                 return 1  # error was already shown
 
-            # TODO: ctx_Module
-            return self._Exec(cmd_val, arg_r, load_path, c_parser)
+            # TODO:
+            # - ctx_Module is like ctx_FrontFrame, but it fiddles the global
+            #   frame, mem.var_stack[0]
+            #   - it returns value.Obj, and you bind that
+
+            return self._UseExec(cmd_val, arg_r, load_path, c_parser)
         else:
-            f, c_parser = self._LoadDiskFile(path_arg, path_loc)
+            normalized = libc.realpath(path_arg)
+            if normalized is None:
+                self.errfmt.Print_("use: couldn't find %r" % path_arg,
+                                   blame_loc=path_loc)
+                return 1
+
+            # TODO: consult _disk_cache = {}
+
+            f, c_parser = self._LoadDiskFile(normalized, path_loc)
             if c_parser is None:
                 return 1  # error was already shown
 
             # TODO: ctx_Module
             with process.ctx_FileCloser(f):
-                return self._Exec(cmd_val, arg_r, path_arg, c_parser)
+                return self._UseExec(cmd_val, arg_r, path_arg, c_parser)
 
         raise AssertionError()
-
-    def _Source(self, cmd_val):
-        # type: (cmd_value.Argv) -> int
-        attrs, arg_r = flag_util.ParseCmdVal('source', cmd_val)
-        arg = arg_types.source(attrs.attrs)
-
-        path_arg, path_loc = arg_r.ReadRequired2('requires a file path')
-
-        # Old:
-        #     source --builtin two.sh  # looks up stdlib/two.sh
-        # New:
-        #     source $LIB_OSH/two.sh  # looks up stdlib/osh/two.sh
-        #     source ///osh/two.sh  # looks up stdlib/osh/two.sh
-        builtin_path = None  # type: Optional[str]
-        if arg.builtin:
-            builtin_path = path_arg
-        elif path_arg.startswith('///'):
-            builtin_path = path_arg[3:]
-
-        if builtin_path is not None:
-            load_path, c_parser = self._LoadBuiltinFile(builtin_path, path_loc)
-            if c_parser is None:
-                return 1  # error was already shown
-
-            return self._Exec(cmd_val, arg_r, load_path, c_parser)
-
-        else:
-            # 'source' respects $PATH
-            resolved = self.search_path.LookupOne(path_arg,
-                                                  exec_required=False)
-            if resolved is None:
-                resolved = path_arg
-
-            f, c_parser = self._LoadDiskFile(resolved, path_loc)
-            if c_parser is None:
-                return 1  # error was already shown
-
-            with process.ctx_FileCloser(f):
-                return self._Exec(cmd_val, arg_r, path_arg, c_parser)
-
-        raise AssertionError()
-
-    def _Exec(self, cmd_val, arg_r, path, c_parser):
-        # type: (cmd_value.Argv, args.Reader, str, cmd_parse.CommandParser) -> int
-        call_loc = cmd_val.arg_locs[0]
-
-        # A sourced module CAN have a new arguments array, but it always shares
-        # the same variable scope as the caller.  The caller could be at either a
-        # global or a local scope.
-
-        # TODO: I wonder if we compose the enter/exit methods more easily.
-
-        with dev.ctx_Tracer(self.tracer, 'source', cmd_val.argv):
-            source_argv = arg_r.Rest()
-            with state.ctx_Source(self.mem, path, source_argv):
-                with state.ctx_ThisDir(self.mem, path):
-                    src = source.SourcedFile(path, call_loc)
-                    with alloc.ctx_SourceCode(self.arena, src):
-                        try:
-                            status = main_loop.Batch(
-                                self.cmd_ev,
-                                c_parser,
-                                self.errfmt,
-                                cmd_flags=cmd_eval.RaiseControlFlow)
-                        except vm.IntControlFlow as e:
-                            if e.IsReturn():
-                                status = e.StatusCode()
-                            else:
-                                raise
-
-        return status
 
 
 def _PrintFreeForm(row):
