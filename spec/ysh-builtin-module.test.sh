@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 
 #### source-guard is an old way of preventing redefinition - could remove it
 shopt --set ysh:upgrade
@@ -38,20 +38,47 @@ stdin
 status=0
 ## END
 
-#### use foo.ysh creates a value.Obj
+#### use foo.ysh creates a value.Obj, and it's cached on later invocations
+
+shopt --set ysh:upgrade
 
 use $REPO_ROOT/spec/testdata/module2/util.ysh
 
-var methods = Object(null, {})
-var obj = Object(methods, {x: 1})
-pp test_ (obj)
-pp test_ (methods)
+# This is a value.Obj
+pp test_ (util)
 
+var saved_util = util
+
+use $REPO_ROOT/spec/testdata/module2/util.ysh
+
+# These should have the same ID
+= saved_util
+= util
+
+# TODO: also create a symlink
+
+ln -s $REPO_ROOT/spec/testdata/module2/util.ysh symlink.ysh
+
+use symlink.ysh
+echo 'symlink'
+= symlink
+
+
+#util log 'hello'
+
+## STDOUT:
+## END
+
+#### use foo.ysh creates a value.Obj with __invoke__
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/util.ysh
 
 # This is a value.Obj
 pp test_ (util)
 
 util log 'hello'
+util die 'hello'
 
 ## STDOUT:
 ## END

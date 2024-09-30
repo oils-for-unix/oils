@@ -15,22 +15,22 @@ from __future__ import print_function
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
 from _devbuild.gen.syntax_asdl import source, loc, loc_t
-from _devbuild.gen.value_asdl import Obj
+from _devbuild.gen.value_asdl import Obj, value_t
 from core import alloc
 from core import dev
 from core import error
+from core.error import e_usage
 from core import executor
 from core import main_loop
 from core import process
-from core.error import e_usage
 from core import pyutil  # strerror
 from core import state
 from core import vm
 from data_lang import j8_lite
-from frontend import flag_util
 from frontend import consts
+from frontend import flag_util
 from frontend import reader
-from mycpp.mylib import log, print_stderr
+from mycpp.mylib import log, print_stderr, NewDict
 from pylib import os_path
 from osh import cmd_eval
 
@@ -97,6 +97,33 @@ class Eval(vm._Builtin):
                                        c_parser,
                                        self.errfmt,
                                        cmd_flags=cmd_eval.RaiseControlFlow)
+
+
+def _VarName(module_path):
+    # type: (str) -> str
+    """Convert ///path/foo-bar.ysh -> foo_bar
+
+    Design issue: proc vs. func naming conventinos imply treating hyphens
+    differently.
+
+      foo-bar myproc
+      var x = `foo-bar`.myproc
+
+    I guess use this for now:
+
+      foo_bar myproc
+      var x = foo_bar.myproc
+
+    The user can also choose this:
+
+      fooBar myproc
+      var x = fooBar.myproc
+    """
+    basename = os_path.basename(module_path)
+    i = basename.rfind('.')
+    if i != -1:
+        basename = basename[:i]
+    return basename.replace('-', '_')
 
 
 class ShellFile(vm._Builtin):
@@ -207,29 +234,32 @@ class ShellFile(vm._Builtin):
         return status
 
     def _UseExec(self, cmd_val, arg_r, path, c_parser):
-        # type: (cmd_value.Argv, args.Reader, str, cmd_parse.CommandParser) -> int
+        # type: (cmd_value.Argv, args.Reader, str, cmd_parse.CommandParser) -> Obj
         call_loc = cmd_val.arg_locs[0]
 
-        with dev.ctx_Tracer(self.tracer, 'use', None):
-            with state.ctx_ThisDir(self.mem, path):
+        d = NewDict()  # type: Dict[str, value_t]
+        with state.ctx_ModuleEval(self.mem, d):
+            with dev.ctx_Tracer(self.tracer, 'use', None):
+                with state.ctx_ThisDir(self.mem, path):
 
-                # TODO: change the src to source.ShellFile
+                    # TODO: change the src to source.ShellFile
 
-                src = source.SourcedFile(path, call_loc)
-                with alloc.ctx_SourceCode(self.arena, src):
-                    try:
-                        status = main_loop.Batch(
-                            self.cmd_ev,
-                            c_parser,
-                            self.errfmt,
-                            cmd_flags=cmd_eval.RaiseControlFlow)
-                    except vm.IntControlFlow as e:
-                        if e.IsReturn():
-                            status = e.StatusCode()
-                        else:
-                            raise
+                    src = source.SourcedFile(path, call_loc)
+                    with alloc.ctx_SourceCode(self.arena, src):
+                        try:
+                            unused_status = main_loop.Batch(
+                                self.cmd_ev,
+                                c_parser,
+                                self.errfmt,
+                                cmd_flags=cmd_eval.RaiseControlFlow)
+                        except vm.IntControlFlow as e:
+                            if e.IsReturn():
+                                status = e.StatusCode()
+                            else:
+                                raise
 
-        return status
+        module_obj = Obj(None, d)
+        return module_obj
 
     def _Source(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -355,19 +385,29 @@ class ShellFile(vm._Builtin):
         else:
             embed_path = None
 
+        # Important, consider:
+        #     use symlink.ysh  # where symlink.ysh -> realfile.ysh
+        #
+        # Then the cache key would be '/some/path/realfile.ysh'
+        # But the variable name bound is 'symlink'
+        var_name = _VarName(path_arg)
+        #log('var %s', var_name)
+
         if embed_path is not None:
-            # TODO: consult _embed_cache = {}
+            # Embedded modules are cached using /// path as cache key
+            cached_obj = self._embed_cache.get(embed_path)
+            if cached_obj:
+                state.SetLocalValue(self.mem, var_name, cached_obj)
+                return 0
 
             load_path, c_parser = self.LoadEmbeddedFile(embed_path, path_loc)
             if c_parser is None:
                 return 1  # error was already shown
 
-            # TODO:
-            # - ctx_Module is like ctx_FrontFrame, but it fiddles the global
-            #   frame, mem.var_stack[0]
-            #   - it returns value.Obj, and you bind that
+            obj = self._UseExec(cmd_val, arg_r, load_path, c_parser)
+            state.SetLocalValue(self.mem, var_name, obj)
+            self._embed_cache[embed_path] = obj
 
-            return self._UseExec(cmd_val, arg_r, load_path, c_parser)
         else:
             normalized = libc.realpath(path_arg)
             if normalized is None:
@@ -375,17 +415,23 @@ class ShellFile(vm._Builtin):
                                    blame_loc=path_loc)
                 return 1
 
-            # TODO: consult _disk_cache = {}
+            # Disk modules are cached using normalized path as cache key
+            cached_obj = self._disk_cache.get(normalized)
+            if cached_obj:
+                var_name = _VarName(path_arg)
+                state.SetLocalValue(self.mem, var_name, cached_obj)
+                return 0
 
             f, c_parser = self._LoadDiskFile(normalized, path_loc)
             if c_parser is None:
                 return 1  # error was already shown
 
-            # TODO: ctx_Module
             with process.ctx_FileCloser(f):
-                return self._UseExec(cmd_val, arg_r, path_arg, c_parser)
+                obj = self._UseExec(cmd_val, arg_r, path_arg, c_parser)
+            state.SetLocalValue(self.mem, var_name, obj)
+            self._disk_cache[normalized] = obj
 
-        raise AssertionError()
+        return 0
 
 
 def _PrintFreeForm(row):

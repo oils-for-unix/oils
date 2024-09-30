@@ -1183,6 +1183,45 @@ class ctx_FrontFrame(object):
         self.mem.var_stack[-1] = self.rear_frame
 
 
+class ctx_ModuleEval(object):
+
+    def __init__(self, mem, out_dict):
+        # type: (Mem, Dict[str, value_t]) -> None
+        pass
+        self.rear_frame = mem.var_stack[-1]
+
+        # __rear__ gets a lookup rule
+        self.front_frame = NewDict()  # type: Dict[str, Cell]
+        self.front_frame['__rear__'] = Cell(False, False, False,
+                                            value.Frame(self.rear_frame))
+
+        mem.var_stack[-1] = self.front_frame
+
+        self.mem = mem
+        self.out_dict = out_dict
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+
+        for name, cell in iteritems(self.front_frame):
+            #log('name %r', name)
+            #log('cell %r', cell)
+
+            # User can hide variables with _ suffix
+            # e.g. for i_ in foo bar { echo $i_ }
+            if name.endswith('_'):
+                continue
+
+            self.out_dict[name] = cell.val
+
+        # Restore
+        self.mem.var_stack[-1] = self.rear_frame
+
+
 class ctx_Eval(object):
     """Push temporary set of variables, $0, $1, $2, etc."""
 
@@ -2719,6 +2758,12 @@ def _SetGlobalValue(mem, name, val):
     # type: (Mem, str, value_t) -> None
     """Helper for completion, etc."""
     mem.SetNamed(location.LName(name), val, scope_e.GlobalOnly)
+
+
+def SetLocalValue(mem, name, val):
+    # type: (Mem, str, value_t) -> None
+    """For 'use' builtin."""
+    mem.SetNamed(location.LName(name), val, scope_e.LocalOnly)
 
 
 def ExportGlobalString(mem, name, s):

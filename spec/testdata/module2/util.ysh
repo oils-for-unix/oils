@@ -1,0 +1,10 @@
+
+const MY_INTEGER = 42
+
+proc log {
+  echo log @ARGV
+}
+
+proc die {
+  echo die @ARGV
+}
