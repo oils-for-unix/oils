@@ -2,14 +2,15 @@
 
 from __future__ import print_function
 
-from _devbuild.gen.value_asdl import (value, value_t)
+from _devbuild.gen.value_asdl import (value, value_e, value_t, Obj)
 
+from core import error
 from core import vm
 from frontend import typed_args
 from mycpp import mylib
-from mycpp.mylib import log
+from mycpp.mylib import log, tagswitch
 
-from typing import List
+from typing import cast, List
 
 _ = log
 
@@ -72,9 +73,21 @@ class Get(vm._Callable):
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        dictionary = rd.PosDict()
+        obj = rd.PosValue()
         key = rd.PosStr()
         default_value = rd.PosValue()
         rd.Done()
 
-        return dictionary.get(key, default_value)
+        UP_obj = obj
+        with tagswitch(obj) as case:
+            if case(value_e.Dict):
+                obj = cast(value.Dict, UP_obj)
+                d = obj.d
+            elif case(value_e.Obj):
+                obj = cast(Obj, UP_obj)
+                d = obj.d
+            else:
+                raise error.TypeErr(obj, 'get() expected Dict or Obj',
+                                    rd.BlamePos())
+
+        return d.get(key, default_value)

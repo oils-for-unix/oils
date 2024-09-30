@@ -79,6 +79,7 @@ X [Proc]           name()         location()     toJson()
   [Dict]          keys()            values()        get()       
   [Float]         floatsEqual()   X isinf()       X isnan()
   [Obj]           Object()          prototype()     propView()
+                  get()
   [Word]          glob()            maybe()
   [Serialize]     toJson()          fromJson()
                   toJson8()         fromJson8()
@@ -343,6 +344,7 @@ X [External Lang] BEGIN   END   when (awk)
                   OILS_GC_STATS       OILS_GC_STATS_FD
                   LIB_YSH
   [Float]         NAN                 INFINITY
+  [Module]        __export__
 ```
 
 <!-- ideas 

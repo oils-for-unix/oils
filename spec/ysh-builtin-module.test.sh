@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 
 #### source-guard is an old way of preventing redefinition - could remove it
 shopt --set ysh:upgrade
@@ -125,6 +125,46 @@ caller_no_leak = null
 (List)   ["symlink",{"MY_INTEGER":42,"log":<Proc>,"die":<Proc>,"setvar_noleak":"util.ysh","setglobal_noleak":"util.ysh"}]
 setvar_noleak null
 setglobal_noleak null
+## END
+
+#### module scope is respected
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/globals.ysh
+echo
+
+# get() should work on Obj too.  Possibly we should get rid of the default
+var myproc = get(propView(globals), 'mutate-g1', null)
+call setVar('mutate-g1', myproc)
+
+# you can mutate it internally, but the mutation isn't VISIBLE.  GAH!
+# I wonder if you make Cell a value? or something
+mutate-g1
+
+#pp cell_ g1
+echo
+
+# PROBLEM: This is a value.Obj COPY, not the fucking original!!!
+# immutable objects??
+
+#pp test_ ([id(globals.d), globals.d])
+
+call globals.mutateG2()
+echo
+
+#= propView(globals)
+
+# these are not provided
+echo "globals.g1 = $[get(globals, 'g1', null)]"
+echo "globals.g2 = $[get(globals, 'g2', null)]"
+echo
+
+#pp frame_vars_
+# Shouldn't appear here
+echo "importer g1 = $[getVar('g1')]"
+echo "importer g2 = $[getVar('g2')]"
+
+## STDOUT:
 ## END
 
 #### use foo.ysh creates a value.Obj with __invoke__

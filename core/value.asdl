@@ -155,12 +155,12 @@ module value
   | Proc(str name, Token name_tok, proc_sig sig, command body,
          ProcDefaults? defaults, bool sh_compat,
          # module is where "global" lookups happen
-         Dict[str, Cell]? module_)
+         Dict[str, Cell] module_frame)
 
   | Func(str name, Func parsed,
          List[value] pos_defaults, Dict[str, value] named_defaults,
          # module is where "global" lookups happen
-         Dict[str, Cell]? module_)
+         Dict[str, Cell] module_frame)
 
     # for i in (1:n) { echo $i }  # both ends are required
   | Range(int lower, int upper)

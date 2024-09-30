@@ -203,10 +203,13 @@ class CompletionTest(unittest.TestCase):
     """,
                                               arena=arena)
         node = c_parser.ParseLogicalLine()
-        proc = value.Proc(node.name, node.name_tok, proc_sig.Open, node.body,
-                          [], True, None)
 
         cmd_ev = test_lib.InitCommandEvaluator(arena=arena)
+
+        frame = cmd_ev.mem.var_stack[0]
+        assert frame is not None
+        proc = value.Proc(node.name, node.name_tok, proc_sig.Open, node.body,
+                          [], True, frame)
 
         comp_lookup = completion.Lookup()
         a = completion.ShellFuncAction(cmd_ev, proc, comp_lookup)

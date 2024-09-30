@@ -1300,8 +1300,12 @@ class CommandEvaluator(object):
             e_die(
                 "Function %s was already defined (redefine_proc_func)" %
                 node.name, node.name_tok)
+
+        # Note: shell functions can read vars from the file they're defined in
+        # But they don't appear in the module itself -- rather it is __sh_funcs__
+        # Though we could consider disallowing them though on 'import'.
         sh_func = value.Proc(node.name, node.name_tok, proc_sig.Open,
-                             node.body, None, True, None)
+                             node.body, None, True, self.mem.GlobalFrame())
         self.procs.DefineShellFunc(node.name, sh_func)
 
     def _DoProc(self, node):
@@ -1328,7 +1332,7 @@ class CommandEvaluator(object):
 
         # no dynamic scope
         proc = value.Proc(proc_name, node.name, node.sig, node.body,
-                          proc_defaults, False, None)
+                          proc_defaults, False, self.mem.GlobalFrame())
         self.procs.DefineProc(proc_name, proc)
 
     def _DoFunc(self, node):
@@ -1350,7 +1354,8 @@ class CommandEvaluator(object):
 
         pos_defaults, named_defaults = func_proc.EvalFuncDefaults(
             self.expr_ev, node)
-        func_val = value.Func(name, node, pos_defaults, named_defaults, None)
+        func_val = value.Func(name, node, pos_defaults, named_defaults,
+                              self.mem.GlobalFrame())
 
         self.mem.SetNamed(lval,
                           func_val,

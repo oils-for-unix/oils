@@ -970,10 +970,16 @@ class ctx_FuncCall(object):
     def __init__(self, mem, func):
         # type: (Mem, value.Func) -> None
 
+        self.saved_globals = mem.var_stack[0]
+
+        assert func.module_frame is not None
+        mem.var_stack[0] = func.module_frame
+
         frame = NewDict()  # type: Dict[str, Cell]
         mem.var_stack.append(frame)
 
         mem.PushCall(func.name, func.parsed.name)
+
         self.mem = mem
 
     def __enter__(self):
@@ -985,6 +991,8 @@ class ctx_FuncCall(object):
         self.mem.PopCall()
         self.mem.var_stack.pop()
 
+        self.mem.var_stack[0] = self.saved_globals
+
 
 class ctx_ProcCall(object):
     """For proc calls, including shell functions."""
@@ -993,13 +1001,14 @@ class ctx_ProcCall(object):
         # type: (Mem, MutableOpts, value.Proc, List[str]) -> None
 
         # TODO:
-        # - argv stack shouldn't be used for procs
-        #   - we can bind a real variable @A if we want
-        # - procs should be in the var namespace
-        #
         # should we separate procs and shell functions?
         # - dynamic scope is one difference
         # - '$@" shift etc. are another difference
+
+        self.saved_globals = mem.var_stack[0]
+
+        assert proc.module_frame is not None
+        mem.var_stack[0] = proc.module_frame
 
         frame = NewDict()  # type: Dict[str, Cell]
 
@@ -1038,6 +1047,8 @@ class ctx_ProcCall(object):
 
         if self.sh_compat:
             self.mem.argv_stack.pop()
+
+        self.mem.var_stack[0] = self.saved_globals
 
 
 class ctx_Temp(object):
@@ -1612,6 +1623,14 @@ class Mem(object):
 
         # Don't run it inside functions
         return len(self.var_stack) > 1
+
+    def GlobalFrame(self):
+        # type: () -> Dict[str, Cell]
+        """For defining the global scope of modules.
+
+        It's affected by ctx_ModuleEval()
+        """
+        return self.var_stack[0]
 
     def PushSource(self, source_name, argv):
         # type: (str, List[str]) -> None
