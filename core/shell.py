@@ -865,6 +865,7 @@ def Main(
                     func_eggex.MatchFunc(func_eggex.S, None, mem))
     _AddBuiltinFunc(mem, '_end', func_eggex.MatchFunc(func_eggex.E, None, mem))
 
+    _AddBuiltinFunc(mem, 'id', func_reflect.Id())
     _AddBuiltinFunc(mem, 'parseCommand',
                     func_reflect.ParseCommand(parse_ctx, errfmt))
     _AddBuiltinFunc(mem, 'parseExpr',

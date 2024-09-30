@@ -389,6 +389,14 @@ Like `Match => end()`, but accesses the global match created by `~`:
 
 ## Introspection
 
+### `id()`
+
+Returns an integer ID for mutable values like List, Dict, and Obj.
+
+You can use it to test if two names refer to the same instance.
+
+`id()` is undefined on immutable values like Bool, Int, Float, Str, etc.
+
 ### `shvarGet()`
 
 Given a variable name, return its value.  It uses the "dynamic scope" rule,

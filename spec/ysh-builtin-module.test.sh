@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 
 #### source-guard is an old way of preventing redefinition - could remove it
 shopt --set ysh:upgrade
@@ -42,31 +42,45 @@ status=0
 
 shopt --set ysh:upgrade
 
+var caller_no_leak = 42
+
 use $REPO_ROOT/spec/testdata/module2/util.ysh
 
 # This is a value.Obj
-pp test_ (util)
+pp test_ (['util', util])
+var id1 = id(util)
 
 var saved_util = util
 
 use $REPO_ROOT/spec/testdata/module2/util.ysh
+pp test_ (['repeated', util])
+var id2 = id(util)
 
-# These should have the same ID
-= saved_util
-= util
-
-# TODO: also create a symlink
+# Create a symlink to test normalization
 
 ln -s $REPO_ROOT/spec/testdata/module2/util.ysh symlink.ysh
 
 use symlink.ysh
-echo 'symlink'
-= symlink
+pp test_ (['symlink', symlink])
+var id3 = id(symlink)
 
+#pp test_ ([id1, id2, id3])
 
-#util log 'hello'
+# Make sure they are all the same object
+assert [id1 === id2]
+assert [id2 === id3]
+
+# Doesn't leak from util.ysh
+echo "setvar_noleak $[getVar('setvar_noleak')]"
+echo "setglobal_noleak $[getVar('setglobal_noleak')]"
 
 ## STDOUT:
+caller_no_leak = null
+(List)   ["util",{"MY_INTEGER":42,"log":<Proc>,"die":<Proc>,"setvar_noleak":"util.ysh","setglobal_noleak":"util.ysh"}]
+(List)   ["repeated",{"MY_INTEGER":42,"log":<Proc>,"die":<Proc>,"setvar_noleak":"util.ysh","setglobal_noleak":"util.ysh"}]
+(List)   ["symlink",{"MY_INTEGER":42,"log":<Proc>,"die":<Proc>,"setvar_noleak":"util.ysh","setglobal_noleak":"util.ysh"}]
+setvar_noleak null
+setglobal_noleak null
 ## END
 
 #### use foo.ysh creates a value.Obj with __invoke__

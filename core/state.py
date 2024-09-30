@@ -1149,6 +1149,9 @@ class ctx_FrontFrame(object):
 
     def __init__(self, mem, out_dict):
         # type: (Mem, Dict[str, value_t]) -> None
+        self.mem = mem
+        self.out_dict = out_dict
+
         self.rear_frame = mem.var_stack[-1]
 
         # __rear__ gets a lookup rule
@@ -1157,9 +1160,6 @@ class ctx_FrontFrame(object):
                                             value.Frame(self.rear_frame))
 
         mem.var_stack[-1] = self.front_frame
-
-        self.mem = mem
-        self.out_dict = out_dict
 
     def __enter__(self):
         # type: () -> None
@@ -1184,21 +1184,22 @@ class ctx_FrontFrame(object):
 
 
 class ctx_ModuleEval(object):
+    """Evaluate a module with a new global stack frame.
+
+    e.g. setglobal in the new module doesn't leak
+
+    Different from ctx_FrontFrame because the new code can't see variables in
+    the old frame.
+    """
 
     def __init__(self, mem, out_dict):
         # type: (Mem, Dict[str, value_t]) -> None
-        pass
-        self.rear_frame = mem.var_stack[-1]
-
-        # __rear__ gets a lookup rule
-        self.front_frame = NewDict()  # type: Dict[str, Cell]
-        self.front_frame['__rear__'] = Cell(False, False, False,
-                                            value.Frame(self.rear_frame))
-
-        mem.var_stack[-1] = self.front_frame
-
         self.mem = mem
         self.out_dict = out_dict
+
+        self.new_frame = NewDict()  # type: Dict[str, Cell]
+        self.saved_frame = mem.var_stack[0]
+        mem.var_stack[0] = self.new_frame
 
     def __enter__(self):
         # type: () -> None
@@ -1207,7 +1208,7 @@ class ctx_ModuleEval(object):
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
 
-        for name, cell in iteritems(self.front_frame):
+        for name, cell in iteritems(self.new_frame):
             #log('name %r', name)
             #log('cell %r', cell)
 
@@ -1218,8 +1219,7 @@ class ctx_ModuleEval(object):
 
             self.out_dict[name] = cell.val
 
-        # Restore
-        self.mem.var_stack[-1] = self.rear_frame
+        self.mem.var_stack[0] = self.saved_frame
 
 
 class ctx_Eval(object):

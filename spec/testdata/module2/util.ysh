@@ -1,4 +1,7 @@
 
+# should be null
+echo "caller_no_leak = $[getVar('caller_no_leak')]"
+
 const MY_INTEGER = 42
 
 proc log {
@@ -8,3 +11,6 @@ proc log {
 proc die {
   echo die @ARGV
 }
+
+setvar setvar_noleak = 'util.ysh'
+setglobal setglobal_noleak = 'util.ysh'

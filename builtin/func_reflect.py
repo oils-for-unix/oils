@@ -6,17 +6,19 @@ from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import (scope_e)
 from _devbuild.gen.syntax_asdl import source
-from _devbuild.gen.value_asdl import (value, value_t)
+from _devbuild.gen.value_asdl import (value, value_e, value_t)
 
 from core import alloc
 from core import error
 from core import main_loop
 from core import state
 from core import vm
+from data_lang import j8
 from frontend import location
 from frontend import reader
 from frontend import typed_args
-from mycpp.mylib import log
+from mycpp import mops
+from mycpp.mylib import log, tagswitch
 from ysh import expr_eval
 
 from typing import TYPE_CHECKING
@@ -25,6 +27,37 @@ if TYPE_CHECKING:
     from display import ui
 
 _ = log
+
+
+class Id(vm._Callable):
+    """Return an integer object ID, like Python's id().
+
+    Long shot: pointer tagging, boxless value_t, and small string optimization
+    could mean that value.Str is no longer heap-allocated, and thus doesn't
+    have a GC ID?
+
+    What about value.{Bool,Int,Float}?
+
+    I guess only mutable objects can have IDs then
+    """
+    def __init__(self):
+        # type: () -> None
+        vm._Callable.__init__(self)
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        val = rd.PosValue()
+        rd.Done()
+
+        # Select mutable values for now
+        with tagswitch(val) as case:
+            if case(value_e.List, value_e.Dict, value_e.Obj):
+                id_ = j8.HeapValueId(val)
+                return value.Int(mops.IntWiden(id_))
+            else:
+                raise error.TypeErr(val, 'id() expected List, Dict, or Obj',
+                                    rd.BlamePos())
+        raise AssertionError()
 
 
 class Shvar_get(vm._Callable):
