@@ -1232,8 +1232,7 @@ class ctx_ModuleEval(object):
         export_val = cell.val
         with tagswitch(export_val) as case:
             if case(value_e.List):
-                export_list = cast(value.List, export_val)
-                for val in export_list.items:
+                for val in cast(value.List, export_val).items:
                     if val.tag() == value_e.Str:
                         name = cast(value.Str, val).s
 
