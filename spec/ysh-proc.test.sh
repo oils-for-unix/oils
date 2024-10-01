@@ -267,6 +267,35 @@ g  # g is defined in the local scope of f
 G
 ## END
 
+#### All combinations of nested proc/func are allowed too
+shopt --set ysh:all
+
+proc f {
+  proc g {
+    echo g
+  }
+}
+
+func f() {
+  proc g {
+    echo g
+  }
+}
+
+proc f {
+func g() {
+    var g = 1
+  }
+}
+
+func f() {
+  func g() {
+    var g = 1
+  }
+}
+## STDOUT:
+## END
+
 #### Cannot nest procs/funcs inside sh-funcs and vice-versa
 shopt --set ysh:all
 
