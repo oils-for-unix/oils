@@ -348,6 +348,7 @@ X [External Lang] BEGIN   END   when (awk)
 ```
 
 <!-- ideas 
+  [Module] __rear__ - for evalToDict()?
 X [Wok]           _filename   _line   _line_num
 X [Builtin Sub]   _buffer
 -->

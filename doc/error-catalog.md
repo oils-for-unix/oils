@@ -122,6 +122,7 @@ test/ysh-parse-errors.sh ysh_dq_strings (this may move)
 
 - Did you mean `"\\z"`?  Backslashes must be escaped in double-quoted strings.
 - Did you mean something like `"\$"`?  Only valid escapes are accepted in YSH.
+- Did you to use single quotes, like `u'\n'` rather than `u"\n"`?
 
 Related help topics:
 

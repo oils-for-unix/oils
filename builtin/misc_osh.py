@@ -68,6 +68,17 @@ class Help(vm._Builtin):
             util.PrintTopicHeader(topic_id, self.f)
             print('    %s/%s/doc/ref/chap-%s.html#%s' %
                   (prefix, self.version_str, chapter_name, topic_id))
+            print('')
+            return 0
+
+        # Note: this is a heuristic.  Typos will print bad URLs, but let's keep
+        # it simple.
+        lower = topic_id.lower()
+        if lower.startswith('oils-err'):
+            print('')
+            print('    %s/%s/doc/error-catalog.html#%s' %
+                  (prefix, self.version_str, lower))
+            print('')
             return 0
 
         found = util.PrintEmbeddedHelp(self.loader, topic_id, self.f)

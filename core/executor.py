@@ -274,10 +274,16 @@ class ShellExecutor(vm._Executor):
         call_procs = not (run_flags & NO_CALL_PROCS)
         # Builtins like 'true' can be redefined as functions.
         if call_procs:
-            # TODO: Look shell functions in self.sh_funcs, but procs are
-            # value.Proc in the var namespace.
-            # Pitfall: What happens if there are two of the same name?  I guess
-            # that's why you have = and 'type' inspect them
+            # TODO:
+            # - modules are callable value.Obj, but they have no proc_node.
+            # Instead of RunProc(), call RunBuiltin()
+            #
+            # - define InvokeModule(vm._Builtin) - but you to bind self_val in
+            # cmd_val.proc_args
+            #
+            # - Also sort out LookupSpecialBuiltin vs. LookupBuiltin
+            #
+            # Order is: Assign, Special Builtin, Invokable, Builtin, External
 
             proc_node, self_val = self.procs.GetInvokable(arg0)
             if proc_node is not None:

@@ -146,19 +146,21 @@ module value
   | BuiltinFunc(any callable)
   | BoundFunc(value me, value func)
 
+  | Func(str name, Func parsed,
+         List[value] pos_defaults, Dict[str, value] named_defaults,
+         # module is where "global" lookups happen
+         Dict[str, Cell] module_frame)
+
     # command.ShFunction and command.Proc evaluate to value.Proc
     # They each have name, name_tok, and body.
     #
     # YSH procs disable dynamic scope, have default args to evaluate, and
     # different @ARGV.
 
+    # builtin is vm._Builtin, this can be introspected
+  | BuiltinProc(any builtin)
   | Proc(str name, Token name_tok, proc_sig sig, command body,
          ProcDefaults? defaults, bool sh_compat,
-         # module is where "global" lookups happen
-         Dict[str, Cell] module_frame)
-
-  | Func(str name, Func parsed,
-         List[value] pos_defaults, Dict[str, value] named_defaults,
          # module is where "global" lookups happen
          Dict[str, Cell] module_frame)
 
@@ -169,6 +171,22 @@ module value
     # a[3:5] a[:10] a[3:] a[:]  # both ends are optional
   | Slice(IntBox? lower, IntBox? upper)
 
+    # Other introspection
+    # __builtins__ - Dict[str, value_t] - I would like to make this read-only
+    # __modules__  - Dict[str, Obj] - read-only to prevent non-Obj
+    # __sh_funcs__ - Dict[str, value.Proc] - read-only to prevent non-Proc
+    # __traps__    - Dict[str, command_t] ?
+    # __builtin_procs__ - Dict[str, BuiltinProc] - builtin commands - special
+    #                                              and non-special?  and assignment?
+    # __aliases__ - Dict[str, str]
+    # __jobs__    - maybe nicer that jobs -p
+    #
+    # More:
+    # - dir stack pushd/popd - read-only variable
+    # - there is a hidden mem.pwd, in addition to $PWD
+    # - completion hooks and spec
+    # - getopts state
+    # - command cache - hash builtin
 }
 
 # vim: sw=2
