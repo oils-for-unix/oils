@@ -477,14 +477,19 @@ This is a CAT
 Meow
 ## END
 
-#### Functions cannot be nested
+#### Functions can be nested
 proc build {
   func f(x) {
     return (x)
   }
+
+  echo $[f(0)]
 }
-## status: 2
+build
+echo $[f(0)]  # This will fail as f is locally scoped in `proc build`
+## status: 1
 ## STDOUT:
+0
 ## END
 
 #### Functions can be shadowed
