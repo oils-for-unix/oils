@@ -2705,16 +2705,12 @@ class Procs(object):
 
     def GetInvokable(self, name):
         # type: (str) -> Tuple[Optional[value.Proc], Optional[Obj]]
-        """Try to find a proc/sh-func by `name`, or return None if not found.
-
-        First, we search for a proc, and then a sh-func. This means that procs
-        can shadow the definition of sh-funcs.
+        """Find a proc, invokable Obj, or sh-func, in that order
 
         Callers:
-          executor.py: running
+          executor.py: to actually run
           meta_oils.py runproc lookup - this is not 'invoke', because it is
              INTERIOR shell functions, procs, invokable Obj
-          cmd_eval: check for redefining proc or sh-func (remove)
         """
         val = self.mem.GetValue(name)
 
