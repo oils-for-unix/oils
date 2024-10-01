@@ -476,10 +476,10 @@ test-parse-at() {
 }
 
 test-ysh-nested-proc-func() {
-  _ysh-parse-error 'proc p { echo 1; proc f { echo f }; echo 2 }'
-  _ysh-parse-error 'func f() { echo 1; proc f { echo f }; echo 2 }'
-  _ysh-parse-error 'proc p { echo 1; func f() { echo f }; echo 2 }'
-  _ysh-parse-error 'func f() { echo 1; func f2() { echo f }; echo 2 }'
+  _ysh-should-parse 'proc p { echo 1; proc f { echo f }; echo 2 }'
+  _ysh-should-parse 'func f() { echo 1; proc f { echo f }; echo 2 }'
+  _ysh-should-parse 'proc p { echo 1; func f() { echo f }; echo 2 }'
+  _ysh-should-parse 'func f() { echo 1; func f2() { echo f }; echo 2 }'
 
   _ysh-parse-error 'proc p { echo 1; +weird() { echo f; }; echo 2 }'
 
