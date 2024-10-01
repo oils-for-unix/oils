@@ -411,7 +411,8 @@ class VarChecker(object):
         }
 
         In contrast, YSH *allows* nested procs and funcs. However, they don't
-        have the same dynamic scope issues because proc/func definitions use static scoping.
+        have the same dynamic scope issues because proc/func definitions use
+        static scoping.
 
         However, we still don't want to allow sh-func nested inside of ysh
         procs/funcs and vice-versa.
