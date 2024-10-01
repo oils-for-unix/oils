@@ -410,14 +410,21 @@ class VarChecker(object):
           }
         }
 
-        YSH disallows nested procs and funcs.
+        In contrast, YSH *allows* nested procs and funcs. However, they don't
+        have the same dynamic scope issues because proc/func definitions use static scoping.
+
+        However, we still don't want to allow sh-func nested inside of ysh
+        procs/funcs and vice-versa.
         """
         if len(self.tokens) != 0:
-            if blame_tok.id == Id.KW_Proc:
-                p_die("procs must be defined at the top level", blame_tok)
-            if blame_tok.id == Id.KW_Func:
-                p_die("funcs must be defined at the top level", blame_tok)
-            if self.tokens[0].id in (Id.KW_Proc, Id.KW_Func):
+            if self.tokens[0].id not in (Id.KW_Proc, Id.KW_Func):
+                if blame_tok.id == Id.KW_Proc:
+                    p_die("procs can't be defined inside shell functions",
+                          blame_tok)
+                if blame_tok.id == Id.KW_Func:
+                    p_die("funcs can't be defined inside shell functions",
+                          blame_tok)
+            elif blame_tok.id not in (Id.KW_Proc, Id.KW_Func):
                 p_die("shell functions can't be defined inside proc or func",
                       blame_tok)
 
