@@ -157,13 +157,13 @@ The float value for "infinity".  You can negate it to get "negative infinity".
 
 ## Module
 
-### `__export__`
+### `__provide__`
 
-A module is evaluated upon `import`.  After evaluation, the names in the
-`__export__` `List` are put in the resulting module `Obj` instance.
+A module is evaluated upon `use`.  After evaluation, the names in the
+`__provide__` `List` are put in the resulting module `Obj` instance.
 
 <!--
-`__export__` may also be a string, where 'p' stands for --procs, and 'f' stands for funcs.
+`__provide__` may also be a string, where 'p' stands for --procs, and 'f' stands for funcs.
 
 Or we could make it [1, 2] insetad
 -->

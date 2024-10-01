@@ -344,7 +344,7 @@ X [External Lang] BEGIN   END   when (awk)
                   OILS_GC_STATS       OILS_GC_STATS_FD
                   LIB_YSH
   [Float]         NAN                 INFINITY
-  [Module]        __export__
+  [Module]        __provide__
 ```
 
 <!-- ideas 

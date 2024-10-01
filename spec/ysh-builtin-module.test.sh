@@ -1,4 +1,4 @@
-## oils_failures_allowed: 4
+## oils_failures_allowed: 6
 
 #### source-guard is an old way of preventing redefinition - could remove it
 shopt --set ysh:upgrade
@@ -175,28 +175,28 @@ importer g1 = null
 importer g2 = null
 ## END
 
-#### no exported names
+#### no provided names
 shopt --set ysh:upgrade
 
-use $REPO_ROOT/spec/testdata/module2/no-export.ysh
+use $REPO_ROOT/spec/testdata/module2/no-provide.ysh
 
 ## status: 1
 ## STDOUT:
 ## END
 
-#### bad export type
+#### bad provide type
 shopt --set ysh:upgrade
 
-use $REPO_ROOT/spec/testdata/module2/bad-export-type.ysh
+use $REPO_ROOT/spec/testdata/module2/bad-provide-type.ysh
 
 ## status: 1
 ## STDOUT:
 ## END
 
-#### invalid export entries
+#### invalid provide entries
 shopt --set ysh:upgrade
 
-use $REPO_ROOT/spec/testdata/module2/bad-export.ysh
+use $REPO_ROOT/spec/testdata/module2/bad-provide.ysh
 
 ## status: 1
 ## STDOUT:
@@ -231,4 +231,25 @@ echo 'TODO: Dict view of realpath() string -> Obj instance'
 ## STDOUT:
 ## END
 
+#### use foo.ysh --pick a b
 
+echo TODO
+
+## STDOUT:
+## END
+
+
+#### use foo.ysh --all-provided
+
+echo TODO
+
+## STDOUT:
+## END
+
+
+#### use foo.ysh --all-for-testing
+
+echo TODO
+
+## STDOUT:
+## END

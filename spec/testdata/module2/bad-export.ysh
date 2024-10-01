@@ -1,6 +1,0 @@
-
-const __export__ = ['not defined', 42]
-
-proc p {
-  echo hi
-}

@@ -1,3 +1,4 @@
+const __provide__ = :| MY_INTEGER log die setvar_noleak setglobal_noleak |
 
 # should be null
 echo "caller_no_leak = $[getVar('caller_no_leak')]"

@@ -4,9 +4,7 @@
 # export mutate-g1 mutateG2
 # export --funcs --procs  # for convenience
 
-const __export__ = :| mutate-g1 mutateG2 |
-#const __export__ = [ 'mutate-g1', 'mutateG2',3 ]
-#const __export__ = [ 'mutate-g1', 'mutateG2a' ]
+const __provide__ = :| mutate-g1 mutateG2 |
 
 var g1 = 'g1'
 var g2 = 'g2'

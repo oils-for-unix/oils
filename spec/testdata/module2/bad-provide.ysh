@@ -1,0 +1,6 @@
+
+const __provide__ = ['not defined', 42]
+
+proc p {
+  echo hi
+}
