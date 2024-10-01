@@ -390,9 +390,9 @@ class VarChecker(object):
     def __init__(self):
         # type: () -> None
         """
-    Args:
-      oil_proc: Whether to disallow nested proc/function declarations
-    """
+        Args:
+          oil_proc: Whether to disallow nested proc/function declarations
+        """
         # self.tokens for location info: 'proc' or another token
         self.tokens = []  # type: List[Token]
         self.names = []  # type: List[Dict[str, Id_t]]
