@@ -1203,10 +1203,11 @@ class ctx_ModuleEval(object):
     the old frame.
     """
 
-    def __init__(self, mem, out_dict):
-        # type: (Mem, Dict[str, value_t]) -> None
+    def __init__(self, mem, out_dict, out_errors):
+        # type: (Mem, Dict[str, value_t], List[str]) -> None
         self.mem = mem
         self.out_dict = out_dict
+        self.out_errors = out_errors
 
         self.new_frame = NewDict()  # type: Dict[str, Cell]
         self.saved_frame = mem.var_stack[0]
@@ -1216,21 +1217,41 @@ class ctx_ModuleEval(object):
         # type: () -> None
         pass
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, type, value_, traceback):
         # type: (Any, Any, Any) -> None
 
-        for name, cell in iteritems(self.new_frame):
-            #log('name %r', name)
-            #log('cell %r', cell)
-
-            # User can hide variables with _ suffix
-            # e.g. for i_ in foo bar { echo $i_ }
-            if name.endswith('_'):
-                continue
-
-            self.out_dict[name] = cell.val
-
         self.mem.var_stack[0] = self.saved_frame
+
+        # Now look in __export__ for the list of names to expose
+
+        cell = self.new_frame.get('__export__')
+        if cell is None:
+            self.out_errors.append("Module is missing 'export' List")
+            return
+
+        export_val = cell.val
+        with tagswitch(export_val) as case:
+            if case(value_e.List):
+                export_list = cast(value.List, export_val)
+                for val in export_list.items:
+                    if val.tag() == value_e.Str:
+                        name = cast(value.Str, val).s
+
+                        cell = self.new_frame.get(name)
+                        if cell is None:
+                            self.out_errors.append(
+                                "Name %r was exported, but not defined" % name)
+                            continue
+
+                        self.out_dict[name] = cell.val
+                    else:
+                        self.out_errors.append(
+                            "Expected Str in __export__ List, got %s" %
+                            ui.ValType(val))
+
+            else:
+                self.out_errors.append("__export__ should be a List, got %s" %
+                                       ui.ValType(export_val))
 
 
 class ctx_Eval(object):

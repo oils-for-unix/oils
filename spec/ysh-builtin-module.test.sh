@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 4
 
 #### source-guard is an old way of preventing redefinition - could remove it
 shopt --set ysh:upgrade
@@ -127,11 +127,10 @@ setvar_noleak null
 setglobal_noleak null
 ## END
 
-#### module scope is respected
+#### procs in a module can call setglobal on globals in that module
 shopt --set ysh:upgrade
 
 use $REPO_ROOT/spec/testdata/module2/globals.ysh
-echo
 
 # get() should work on Obj too.  Possibly we should get rid of the default
 var myproc = get(propView(globals), 'mutate-g1', null)
@@ -140,8 +139,6 @@ call setVar('mutate-g1', myproc)
 # you can mutate it internally, but the mutation isn't VISIBLE.  GAH!
 # I wonder if you make Cell a value? or something
 mutate-g1
-
-#pp cell_ g1
 echo
 
 # PROBLEM: This is a value.Obj COPY, not the fucking original!!!
@@ -165,6 +162,44 @@ echo "importer g1 = $[getVar('g1')]"
 echo "importer g2 = $[getVar('g2')]"
 
 ## STDOUT:
+g1 = g1
+g1 = proc mutated
+
+g2 = g2
+g2 = func mutated
+
+globals.g1 = null
+globals.g2 = null
+
+importer g1 = null
+importer g2 = null
+## END
+
+#### no exported names
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/no-export.ysh
+
+## status: 1
+## STDOUT:
+## END
+
+#### bad export type
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/bad-export-type.ysh
+
+## status: 1
+## STDOUT:
+## END
+
+#### invalid export entries
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/bad-export.ysh
+
+## status: 1
+## STDOUT:
 ## END
 
 #### use foo.ysh creates a value.Obj with __invoke__
@@ -180,4 +215,20 @@ util die 'hello'
 
 ## STDOUT:
 ## END
+
+#### circular import is an error?
+
+echo hi
+
+## STDOUT:
+## END
+
+
+#### user can inspect __modules__ cache
+
+echo 'TODO: Dict view of realpath() string -> Obj instance'
+
+## STDOUT:
+## END
+
 

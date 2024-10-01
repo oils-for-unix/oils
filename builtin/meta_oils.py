@@ -19,7 +19,7 @@ from _devbuild.gen.value_asdl import Obj, value_t
 from core import alloc
 from core import dev
 from core import error
-from core.error import e_usage
+from core.error import e_usage, e_die
 from core import executor
 from core import main_loop
 from core import process
@@ -233,18 +233,19 @@ class ShellFile(vm._Builtin):
 
         return status
 
-    def _UseExec(self, cmd_val, arg_r, path, c_parser):
-        # type: (cmd_value.Argv, args.Reader, str, cmd_parse.CommandParser) -> Obj
-        call_loc = cmd_val.arg_locs[0]
+    def _UseExec(self, path, path_loc, c_parser):
+        # type: (str, loc_t, cmd_parse.CommandParser) -> Obj
 
         d = NewDict()  # type: Dict[str, value_t]
-        with state.ctx_ModuleEval(self.mem, d):
+        error_strs = []  # type: List[str]
+
+        with state.ctx_ModuleEval(self.mem, d, error_strs):
             with dev.ctx_Tracer(self.tracer, 'use', None):
                 with state.ctx_ThisDir(self.mem, path):
 
                     # TODO: change the src to source.ShellFile
 
-                    src = source.SourcedFile(path, call_loc)
+                    src = source.SourcedFile(path, path_loc)
                     with alloc.ctx_SourceCode(self.arena, src):
                         try:
                             unused_status = main_loop.Batch(
@@ -257,6 +258,12 @@ class ShellFile(vm._Builtin):
                                 status = e.StatusCode()
                             else:
                                 raise
+
+        if len(error_strs):
+            # TODO: show 'export' location, not the 'import' location
+            for s in error_strs:
+                self.errfmt.PrintMessage('Error: %s' % s, path_loc)
+            e_die("Import failed", path_loc)
 
         module_obj = Obj(None, d)
         return module_obj
@@ -410,7 +417,7 @@ class ShellFile(vm._Builtin):
             if c_parser is None:
                 return 1  # error was already shown
 
-            obj = self._UseExec(cmd_val, arg_r, load_path, c_parser)
+            obj = self._UseExec(load_path, path_loc, c_parser)
             state.SetLocalValue(self.mem, var_name, obj)
             self._embed_cache[embed_path] = obj
 
@@ -433,7 +440,7 @@ class ShellFile(vm._Builtin):
                 return 1  # error was already shown
 
             with process.ctx_FileCloser(f):
-                obj = self._UseExec(cmd_val, arg_r, path_arg, c_parser)
+                obj = self._UseExec(path_arg, path_loc, c_parser)
             state.SetLocalValue(self.mem, var_name, obj)
             self._disk_cache[normalized] = obj
 

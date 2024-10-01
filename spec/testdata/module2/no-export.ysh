@@ -1,0 +1,6 @@
+
+# no 'export'
+
+proc p {
+  echo hi
+}

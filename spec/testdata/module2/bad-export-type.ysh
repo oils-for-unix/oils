@@ -1,0 +1,7 @@
+
+# should be List of Str
+const __export__ = 42
+
+proc p {
+  echo hi
+}
