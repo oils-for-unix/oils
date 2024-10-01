@@ -264,8 +264,64 @@ f
 g  # g is defined in the local scope of f
 ## status: 127
 ## STDOUT:
-g
-f
+G
+## END
+
+#### Cannot nest procs/funcs inside sh-funcs and vice-versa
+shopt --set ysh:all
+
+proc check (program) {
+  try { $SH -c $program }
+  echo code=$[_error.code]
+}
+
+# Test the matrix of (proc, func) x (sh-func) and (sh-func) x (proc, func)
+
+check """
+shopt --set parse_proc
+
+f() {
+  proc g {
+    echo G
+  }
+}
+"""
+
+check """
+shopt --set parse_proc
+
+f() {
+  func g {
+    echo G
+  }
+}
+"""
+
+check """
+shopt --set parse_proc
+
+proc f() {
+  g() {
+    echo G
+  }
+}
+"""
+
+check """
+shopt --set parse_proc
+
+fucn f() {
+  g() {
+    echo G
+  }
+}
+"""
+
+## STDOUT:
+code=2
+code=2
+code=2
+code=2
 ## END
 
 #### Procs defined inside compound statements (with redefine_proc)
