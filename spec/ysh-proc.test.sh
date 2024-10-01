@@ -283,7 +283,7 @@ func f() {
 }
 
 proc f {
-func g() {
+  func g() {
     var g = 1
   }
 }
