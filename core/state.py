@@ -2572,8 +2572,8 @@ class Mem(object):
         return self.ctx_stack.pop()
 
 
-def _InvokableObj(val):
-    # type: (value_t) -> Tuple[Optional[value.Proc], Optional[Obj]]
+def IsInvokableObj(val):
+    # type: (value_t) -> Tuple[Optional[value_t], Optional[Obj]]
     """
     Returns:
       None if the value is not invokable
@@ -2591,10 +2591,13 @@ def _InvokableObj(val):
         return None, None
 
     # TODO: __invoke__ of wrong type could be fatal error?
-    if invoke_val.tag() != value_e.Proc:
-        return None, None
+    if invoke_val.tag() in (value_e.Proc, value_e.BuiltinProc):
+        return invoke_val, obj
 
-    return cast(value.Proc, invoke_val), obj
+    return None, None
+
+
+#return cast(value.Proc, invoke_val), obj
 
 
 def _AddNames(unique, frame):
@@ -2603,7 +2606,7 @@ def _AddNames(unique, frame):
         val = frame[name].val
         if val.tag() == value_e.Proc:
             unique[name] = True
-        proc, _ = _InvokableObj(val)
+        proc, _ = IsInvokableObj(val)
         if proc is not None:
             unique[name] = True
 
@@ -2673,7 +2676,7 @@ class Procs(object):
         # type: (str) -> bool
 
         val = self.mem.GetValue(name)
-        proc, self_val = _InvokableObj(val)
+        proc, self_val = IsInvokableObj(val)
         return proc is not None
 
     def InvokableNames(self):
@@ -2704,7 +2707,7 @@ class Procs(object):
         return names
 
     def GetInvokable(self, name):
-        # type: (str) -> Tuple[Optional[value.Proc], Optional[Obj]]
+        # type: (str) -> Tuple[Optional[value_t], Optional[Obj]]
         """Find a proc, invokable Obj, or sh-func, in that order
 
         Callers:
@@ -2717,7 +2720,7 @@ class Procs(object):
         if val.tag() == value_e.Proc:
             return cast(value.Proc, val), None
 
-        proc, self_val = _InvokableObj(val)
+        proc, self_val = IsInvokableObj(val)
         if proc:
             return proc, self_val
 

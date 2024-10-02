@@ -214,7 +214,7 @@ class BoolStatus(vm._Builtin):
 
         argv, locs = arg_r.Rest2()
         cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.is_last_cmd,
-                                  cmd_val.proc_args)
+                                  cmd_val.self_obj, cmd_val.proc_args)
 
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
         run_flags = executor.IS_LAST_CMD if cmd_val.is_last_cmd else 0

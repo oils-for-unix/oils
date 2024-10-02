@@ -122,7 +122,7 @@ def MakeBuiltinArgv(argv1):
     argv = ['']  # dummy for argv[0]
     argv.extend(argv1)
     missing = None  # type: CompoundWord
-    return cmd_value.Argv(argv, [missing] * len(argv), False, None)
+    return cmd_value.Argv(argv, [missing] * len(argv), False, None, None)
 
 
 class Deps(object):
@@ -2212,8 +2212,8 @@ class CommandEvaluator(object):
             with state.ctx_ErrTrap(self.mem):
                 self._Execute(node)
 
-    def RunProc(self, proc, cmd_val, self_val=None):
-        # type: (value.Proc, cmd_value.Argv, value_t) -> int
+    def RunProc(self, proc, cmd_val):
+        # type: (value.Proc, cmd_value.Argv) -> int
         """Run procs aka "shell functions".
 
         For SimpleCommand and registered completion hooks.
@@ -2227,7 +2227,7 @@ class CommandEvaluator(object):
 
         # Hm this sets "$@".  TODO: Set ARGV only
         with state.ctx_ProcCall(self.mem, self.mutable_opts, proc, proc_argv):
-            func_proc.BindProcArgs(proc, cmd_val, self.mem, self_val=self_val)
+            func_proc.BindProcArgs(proc, cmd_val, self.mem)
 
             # Redirects still valid for functions.
             # Here doc causes a pipe and Process(SubProgramThunk).

@@ -1,4 +1,4 @@
-## oils_failures_allowed: 6
+## oils_failures_allowed: 7
 
 #### source-guard is an old way of preventing redefinition - could remove it
 shopt --set ysh:upgrade
@@ -120,9 +120,9 @@ echo "setglobal_noleak $[getVar('setglobal_noleak')]"
 
 ## STDOUT:
 caller_no_leak = null
-(List)   ["util",{"MY_INTEGER":42,"log":<Proc>,"die":<Proc>,"setvar_noleak":"util.ysh","setglobal_noleak":"util.ysh"}]
-(List)   ["repeated",{"MY_INTEGER":42,"log":<Proc>,"die":<Proc>,"setvar_noleak":"util.ysh","setglobal_noleak":"util.ysh"}]
-(List)   ["symlink",{"MY_INTEGER":42,"log":<Proc>,"die":<Proc>,"setvar_noleak":"util.ysh","setglobal_noleak":"util.ysh"}]
+(List)   ["util",{"MY_INTEGER":42,"log":<Proc>,"die":<Proc>,"setvar_noleak":"util.ysh","setglobal_noleak":"util.ysh","invokableObj":{"x":3,"y":4} ==> {"__invoke__":<Proc>}} ==> {"__invoke__":<BuiltinProc>}]
+(List)   ["repeated",{"MY_INTEGER":42,"log":<Proc>,"die":<Proc>,"setvar_noleak":"util.ysh","setglobal_noleak":"util.ysh","invokableObj":{"x":3,"y":4} ==> {"__invoke__":<Proc>}} ==> {"__invoke__":<BuiltinProc>}]
+(List)   ["symlink",{"MY_INTEGER":42,"log":<Proc>,"die":<Proc>,"setvar_noleak":"util.ysh","setglobal_noleak":"util.ysh","invokableObj":{"x":3,"y":4} ==> {"__invoke__":<Proc>}} ==> {"__invoke__":<BuiltinProc>}]
 setvar_noleak null
 setglobal_noleak null
 ## END
@@ -208,12 +208,93 @@ shopt --set ysh:upgrade
 use $REPO_ROOT/spec/testdata/module2/util.ysh
 
 # This is a value.Obj
-pp test_ (util)
+#pp test_ (util)
 
 util log 'hello'
-util die 'hello'
+util die 'hello there'
 
 ## STDOUT:
+caller_no_leak = null
+log hello
+die hello there
+## END
+
+#### module itself is invokable Obj, which can contain invokable obj!
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/util.ysh
+
+util invokableObj (1)
+
+# Usage error
+#util invokableObj 
+
+## STDOUT:
+caller_no_leak = null
+sum = 8
+## END
+
+#### argument binding test
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/util2.ysh
+
+util2 echo-args w1 w2 w3 w4 (3, 4, 5, 6, n1=7, n2=8, n3=9) {
+  echo hi
+}
+
+echo ---
+
+util2 echo-args w1 w2 (3, 4, n3=9) {
+  echo hi
+}
+
+## STDOUT:
+(List)   ["w1","w2"]
+(List)   ["w3","w4"]
+
+(List)   [3,4]
+(List)   [5,6]
+
+(List)   [7,8]
+(Dict)   {"n3":9}
+
+<Block>
+---
+(List)   ["w1","w2"]
+(List)   []
+
+(List)   [3,4]
+(List)   []
+
+(List)   [42,43]
+(Dict)   {"n3":9}
+
+<Block>
+## END
+
+#### module invoked without any arguments is an error
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/util.ysh
+
+util
+
+## status: 2
+## STDOUT:
+caller_no_leak = null
+## END
+
+#### module invoked with nonexistent name is error
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/util.ysh
+
+util zzz
+
+## status: 2
+## STDOUT:
+caller_no_leak = null
 ## END
 
 #### circular import is an error?
@@ -223,6 +304,19 @@ echo hi
 ## STDOUT:
 ## END
 
+#### Module with runtime error
+
+echo TODO
+
+## STDOUT:
+## END
+
+#### Module with parse error
+
+echo TODO
+
+## STDOUT:
+## END
 
 #### user can inspect __modules__ cache
 
@@ -231,7 +325,7 @@ echo 'TODO: Dict view of realpath() string -> Obj instance'
 ## STDOUT:
 ## END
 
-#### use foo.ysh --pick a b
+#### use foo.ysh --names a b
 
 echo TODO
 

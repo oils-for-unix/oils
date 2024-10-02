@@ -15,7 +15,7 @@ from __future__ import print_function
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
 from _devbuild.gen.syntax_asdl import source, loc, loc_t
-from _devbuild.gen.value_asdl import Obj, value_t
+from _devbuild.gen.value_asdl import Obj, value, value_t
 from core import alloc
 from core import dev
 from core import error
@@ -142,9 +142,13 @@ class ShellFile(vm._Builtin):
             tracer,  # type: dev.Tracer
             errfmt,  # type: ui.ErrorFormatter
             loader,  # type: pyutil._ResourceLoader
-            ysh_use=False,  # type: bool
+            invoke_module=None,  # type: vm._Builtin
     ):
         # type: (...) -> None
+        """
+        If invoke_module is passed, this class behaves like 'use'.  Otherwise
+        it behaves like 'source'.
+        """
         self.parse_ctx = parse_ctx
         self.arena = parse_ctx.arena
         self.search_path = search_path
@@ -153,9 +157,9 @@ class ShellFile(vm._Builtin):
         self.tracer = tracer
         self.errfmt = errfmt
         self.loader = loader
-        self.ysh_use = ysh_use
+        self.invoke_module = invoke_module
 
-        self.builtin_name = 'use' if ysh_use else 'source'
+        self.builtin_name = 'use' if invoke_module else 'source'
         self.mem = cmd_ev.mem
 
         # Don't load modules more than once
@@ -167,7 +171,7 @@ class ShellFile(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        if self.ysh_use:
+        if self.invoke_module:
             return self._Use(cmd_val)
         else:
             return self._Source(cmd_val)
@@ -236,10 +240,10 @@ class ShellFile(vm._Builtin):
     def _UseExec(self, path, path_loc, c_parser):
         # type: (str, loc_t, cmd_parse.CommandParser) -> Obj
 
-        d = NewDict()  # type: Dict[str, value_t]
+        attrs = NewDict()  # type: Dict[str, value_t]
         error_strs = []  # type: List[str]
 
-        with state.ctx_ModuleEval(self.mem, d, error_strs):
+        with state.ctx_ModuleEval(self.mem, attrs, error_strs):
             with dev.ctx_Tracer(self.tracer, 'use', None):
                 with state.ctx_ThisDir(self.mem, path):
 
@@ -265,7 +269,10 @@ class ShellFile(vm._Builtin):
                 self.errfmt.PrintMessage('Error: %s' % s, path_loc)
             e_die("Import failed", path_loc)
 
-        module_obj = Obj(None, d)
+        # Builtin proc that serves as __invoke__ - it looks up procs in 'self'
+        methods = Obj(None,
+                      {'__invoke__': value.BuiltinProc(self.invoke_module)})
+        module_obj = Obj(methods, attrs)
         return module_obj
 
     def _Source(self, cmd_val):
@@ -535,7 +542,7 @@ class Command(vm._Builtin):
             return status
 
         cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.is_last_cmd,
-                                  cmd_val.proc_args)
+                                  cmd_val.self_obj, cmd_val.proc_args)
 
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
 
@@ -554,7 +561,8 @@ class Command(vm._Builtin):
 def _ShiftArgv(cmd_val):
     # type: (cmd_value.Argv) -> cmd_value.Argv
     return cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_locs[1:],
-                          cmd_val.is_last_cmd, cmd_val.proc_args)
+                          cmd_val.is_last_cmd, cmd_val.self_obj,
+                          cmd_val.proc_args)
 
 
 class Builtin(vm._Builtin):
@@ -617,7 +625,7 @@ class RunProc(vm._Builtin):
             return 1
 
         cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.is_last_cmd,
-                                  cmd_val.proc_args)
+                                  cmd_val.self_obj, cmd_val.proc_args)
 
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
         run_flags = executor.IS_LAST_CMD if cmd_val.is_last_cmd else 0

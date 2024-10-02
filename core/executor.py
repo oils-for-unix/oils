@@ -14,6 +14,7 @@ from _devbuild.gen.syntax_asdl import (
     loc,
     loc_t,
 )
+from _devbuild.gen.value_asdl import value, value_e
 from builtin import hay_ysh
 from core import dev
 from core import error
@@ -26,7 +27,7 @@ from display import ui
 from core import vm
 from frontend import consts
 from frontend import lexer
-from mycpp.mylib import log, print_stderr
+from mycpp.mylib import log, print_stderr, tagswitch
 
 import posix_ as posix
 
@@ -199,14 +200,19 @@ class ShellExecutor(vm._Executor):
         """
         self.tracer.OnBuiltin(builtin_id, cmd_val.argv)
 
-        builtin_func = self.builtins[builtin_id]
+        builtin_proc = self.builtins[builtin_id]
+
+        return self.RunBuiltinProc(builtin_proc, cmd_val)
+
+    def RunBuiltinProc(self, builtin_proc, cmd_val):
+        # type: (vm._Builtin, cmd_value.Argv) -> int
 
         io_errors = []  # type: List[error.IOError_OSError]
         with vm.ctx_FlushStdout(io_errors):
             # note: could be second word, like 'builtin read'
             with ui.ctx_Location(self.errfmt, cmd_val.arg_locs[0]):
                 try:
-                    status = builtin_func.Run(cmd_val)
+                    status = builtin_proc.Run(cmd_val)
                     assert isinstance(status, int)
                 except (IOError, OSError) as e:
                     self.errfmt.PrintMessage(
@@ -271,22 +277,13 @@ class ShellExecutor(vm._Executor):
             #  e_die_status(status, 'special builtin failed')
             return status
 
-        call_procs = not (run_flags & NO_CALL_PROCS)
         # Builtins like 'true' can be redefined as functions.
+        call_procs = not (run_flags & NO_CALL_PROCS)
         if call_procs:
-            # TODO:
-            # - modules are callable value.Obj, but they have no proc_node.
-            # Instead of RunProc(), call RunBuiltin()
-            #
-            # - define InvokeModule(vm._Builtin) - but you to bind self_val in
-            # cmd_val.proc_args
-            #
-            # - Also sort out LookupSpecialBuiltin vs. LookupBuiltin
-            #
-            # Order is: Assign, Special Builtin, Invokable, Builtin, External
+            proc_val, self_obj = self.procs.GetInvokable(arg0)
+            cmd_val.self_obj = self_obj  # MAYBE bind self
 
-            proc_node, self_val = self.procs.GetInvokable(arg0)
-            if proc_node is not None:
+            if proc_val is not None:
                 if self.exec_opts.strict_errexit():
                     disabled_tok = self.mutable_opts.ErrExitDisabledToken()
                     if disabled_tok:
@@ -299,11 +296,26 @@ class ShellExecutor(vm._Executor):
                             "Use 'try' or wrap it in a process with $0 myproc",
                             arg0_loc)
 
-                with dev.ctx_Tracer(self.tracer, 'proc', argv):
-                    # NOTE: Functions could call 'exit 42' directly, etc.
-                    status = self.cmd_ev.RunProc(proc_node,
-                                                 cmd_val,
-                                                 self_val=self_val)
+                with tagswitch(proc_val) as case:
+                    if case(value_e.BuiltinProc):
+                        # Handle the special case of BUILTIN proc
+                        # module_ysh.InvokeModule, which is returned on the Obj created
+                        # by 'use util.ysh'
+                        with dev.ctx_Tracer(self.tracer, 'module', None):
+                            builtin_proc = cast(value.BuiltinProc,
+                                                proc_val).builtin
+                            status = self.RunBuiltinProc(builtin_proc, cmd_val)
+
+                    elif case(value_e.Proc):
+                        proc = cast(value.Proc, proc_val)
+                        with dev.ctx_Tracer(self.tracer, 'proc', argv):
+                            # NOTE: Functions could call 'exit 42' directly, etc.
+                            status = self.cmd_ev.RunProc(proc, cmd_val)
+
+                    else:
+                        # GetInvokable() should only return 1 of 2 things
+                        raise AssertionError()
+
                 return status
 
         # Notes:

@@ -1,4 +1,4 @@
-const __provide__ = :| MY_INTEGER log die setvar_noleak setglobal_noleak |
+const __provide__ = :| MY_INTEGER log die setvar_noleak setglobal_noleak invokableObj |
 
 # should be null
 echo "caller_no_leak = $[getVar('caller_no_leak')]"
@@ -15,3 +15,14 @@ proc die {
 
 setvar setvar_noleak = 'util.ysh'
 setglobal setglobal_noleak = 'util.ysh'
+
+
+proc myInvoke (; self, param) {
+  echo "sum = $[self.x + self.y + param]"
+}
+
+var methods = Object(null, {'__invoke__': myInvoke})
+
+var invokableObj = Object(methods, {x: 3, y: 4})
+
+#invokableObj (1)
