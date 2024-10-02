@@ -1,4 +1,4 @@
-## oils_failures_allowed: 6
+## oils_failures_allowed: 10
 
 #### source-guard is an old way of preventing redefinition - could remove it
 shopt --set ysh:upgrade
@@ -234,6 +234,19 @@ echo hi
 ## STDOUT:
 ## END
 
+#### Module with runtime error
+
+echo TODO
+
+## STDOUT:
+## END
+
+#### Module with parse error
+
+echo TODO
+
+## STDOUT:
+## END
 
 #### user can inspect __modules__ cache
 
