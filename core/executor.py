@@ -200,14 +200,19 @@ class ShellExecutor(vm._Executor):
         """
         self.tracer.OnBuiltin(builtin_id, cmd_val.argv)
 
-        builtin_func = self.builtins[builtin_id]
+        builtin_proc = self.builtins[builtin_id]
+
+        return self.RunBuiltinProc(builtin_proc, cmd_val)
+
+    def RunBuiltinProc(self, builtin_proc, cmd_val):
+        # type: (vm._Builtin, cmd_value.Argv) -> int
 
         io_errors = []  # type: List[error.IOError_OSError]
         with vm.ctx_FlushStdout(io_errors):
             # note: could be second word, like 'builtin read'
             with ui.ctx_Location(self.errfmt, cmd_val.arg_locs[0]):
                 try:
-                    status = builtin_func.Run(cmd_val)
+                    status = builtin_proc.Run(cmd_val)
                     assert isinstance(status, int)
                 except (IOError, OSError) as e:
                     self.errfmt.PrintMessage(
@@ -306,8 +311,10 @@ class ShellExecutor(vm._Executor):
             if proc_val is not None:
                 with tagswitch(proc_val) as case:
                     if case(value_e.BuiltinProc):
-                        vm_builtin = cast(value.BuiltinProc, proc_val).builtin
-                        print(vm_builtin)
+                        builtin_proc = cast(value.BuiltinProc, proc_val).builtin
+                        print(builtin_proc)
+                        status = self.RunBuiltinProc(builtin_proc, cmd_val)
+                        return status
                         raise AssertionError()
 
                     elif case(value_e.Proc):
