@@ -4,7 +4,7 @@ builtin/pure_ysh.py - YSH builtins that don't do I/O.
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import cmd_value
-from _devbuild.gen.syntax_asdl import command_t, loc, loc_t
+from _devbuild.gen.syntax_asdl import loc
 from _devbuild.gen.value_asdl import value, value_e, value_t
 from core import error
 from core import state
@@ -14,7 +14,7 @@ from frontend import typed_args
 from mycpp import mylib
 from mycpp.mylib import tagswitch, NewDict
 
-from typing import TYPE_CHECKING, cast, Any, Dict, List
+from typing import TYPE_CHECKING, cast, Dict, List
 
 if TYPE_CHECKING:
     from display import ui
