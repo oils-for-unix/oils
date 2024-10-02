@@ -476,17 +476,18 @@ test-parse-at() {
 }
 
 test-ysh-nested-proc-func() {
-  _ysh-parse-error 'proc p { echo 1; proc f { echo f }; echo 2 }'
-  _ysh-parse-error 'func f() { echo 1; proc f { echo f }; echo 2 }'
-  _ysh-parse-error 'proc p { echo 1; func f() { echo f }; echo 2 }'
-  _ysh-parse-error 'func f() { echo 1; func f2() { echo f }; echo 2 }'
+  _ysh-should-parse 'proc p { echo 1; proc f { echo f }; echo 2 }'
+  _ysh-should-parse 'func f() { echo 1; proc f { echo f }; echo 2 }'
+  _ysh-should-parse 'proc p { echo 1; func f() { echo f }; echo 2 }'
+  _ysh-should-parse 'func f() { echo 1; func f2() { echo f }; echo 2 }'
 
   _ysh-parse-error 'proc p { echo 1; +weird() { echo f; }; echo 2 }'
 
-  # ksh function
+  # Test the matrix of (proc, func) x (sh-func) and (sh-func) x (proc, func)
   _ysh-parse-error 'proc p { echo 1; function f { echo f; }; echo 2 }'
-
+  _ysh-parse-error 'func outer() { function f { echo f } }'
   _ysh-parse-error 'f() { echo 1; proc inner { echo inner; }; echo 2; }'
+  _ysh-parse-error 'f() { func inner() { var a = 1 } }'
 
   # shell nesting is still allowed
   _ysh-should-parse 'f() { echo 1; g() { echo g; }; echo 2; }'

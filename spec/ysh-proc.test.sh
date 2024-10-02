@@ -251,10 +251,9 @@ echo "myproc is a $[type(myproc)]"
 myproc is a Proc
 ## END
 
-#### Nested proc is disallowed at parse time
+#### Nested proc is allowed
 shopt --set parse_proc
 
-# NOTE: we can disallow this in Oil statically ...
 proc f {
   proc g {
     echo 'G'
@@ -262,9 +261,11 @@ proc f {
   g
 }
 f
-g
-## status: 2
-## stdout-json: ""
+g  # g is defined in the local scope of f
+## status: 127
+## STDOUT:
+G
+## END
 
 #### Procs defined inside compound statements (with redefine_proc)
 
