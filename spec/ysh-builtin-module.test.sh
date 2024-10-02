@@ -216,6 +216,17 @@ util die 'hello'
 ## STDOUT:
 ## END
 
+#### invokable-module invokable-obj-in-module
+
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/util.ysh
+
+invokableObj
+
+## STDOUT:
+## END
+
 #### circular import is an error?
 
 echo hi
