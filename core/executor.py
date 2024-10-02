@@ -284,6 +284,21 @@ class ShellExecutor(vm._Executor):
             # - Also sort out LookupSpecialBuiltin vs. LookupBuiltin
             #
             # Order is: Assign, Special Builtin, Invokable, Builtin, External
+            #
+            # Notes:
+            # proc args are evaluated in CommandEvaluator::_DoSimple() ->
+            # func_proc.EvalTypedArgsToProc()
+            #
+            # which calls CommandEvaluator::_RunSimpleCommand() then this
+            # function Executor::RunSimpleCommand()
+            #
+            # which calls RunProc(), which calls func_proc.BindProcArgs(self_val)
+            #
+            # We look up the proc, which may return a self_val
+            #
+            # And we have to bind it to pos_args
+            # but pos_args might not EXIST!
+            # So we have to move the self_val thing here
 
             proc_node, self_val = self.procs.GetInvokable(arg0)
             if proc_node is not None:

@@ -231,7 +231,7 @@ echo 'TODO: Dict view of realpath() string -> Obj instance'
 ## STDOUT:
 ## END
 
-#### use foo.ysh --pick a b
+#### use foo.ysh --names a b
 
 echo TODO
 

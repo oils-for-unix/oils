@@ -15,7 +15,8 @@ from __future__ import print_function
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
 from _devbuild.gen.syntax_asdl import source, loc, loc_t
-from _devbuild.gen.value_asdl import Obj, value_t
+from _devbuild.gen.value_asdl import Obj, value, value_t
+from builtin import module_ysh
 from core import alloc
 from core import dev
 from core import error
@@ -236,10 +237,10 @@ class ShellFile(vm._Builtin):
     def _UseExec(self, path, path_loc, c_parser):
         # type: (str, loc_t, cmd_parse.CommandParser) -> Obj
 
-        d = NewDict()  # type: Dict[str, value_t]
+        attrs = NewDict()  # type: Dict[str, value_t]
         error_strs = []  # type: List[str]
 
-        with state.ctx_ModuleEval(self.mem, d, error_strs):
+        with state.ctx_ModuleEval(self.mem, attrs, error_strs):
             with dev.ctx_Tracer(self.tracer, 'use', None):
                 with state.ctx_ThisDir(self.mem, path):
 
@@ -265,7 +266,10 @@ class ShellFile(vm._Builtin):
                 self.errfmt.PrintMessage('Error: %s' % s, path_loc)
             e_die("Import failed", path_loc)
 
-        module_obj = Obj(None, d)
+        # Builtin proc that serves as __invoke__ - it looks up procs in 'self'
+        inv = module_ysh.InvokeModule()
+        methods = Obj(None, {'__invoke__': value.BuiltinProc(inv)})
+        module_obj = Obj(methods, attrs)
         return module_obj
 
     def _Source(self, cmd_val):
