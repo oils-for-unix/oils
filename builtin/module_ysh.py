@@ -95,8 +95,8 @@ class InvokeModule(vm._Builtin):
             proc = cast(value.Proc, val)
 
         # Recursively invokable ???
-        proc, self_val2 = state._InvokableObj(val)
-        if proc:
+        proc_val, self_val2 = state._InvokableObj(val)
+        if proc_val:
             #return proc, self_val
             pass
 

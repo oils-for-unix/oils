@@ -215,6 +215,14 @@ class Pp(_Builtin):
             print('proc_name\tdoc_comment')
             for name in names:
                 proc, _ = self.procs.GetInvokable(name)  # must exist
+
+                # TODO: handle value.BuiltinProc?  Right now those don't live
+                # in a first-class namespace, but we could put them there?
+                #
+                # pp proc?
+                # They won't have docstrings though - we could add them
+                # I guess we could add a __help__
+
                 body = proc.body
 
                 # TODO: not just command.ShFunction, but command.Proc!

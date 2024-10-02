@@ -14,6 +14,7 @@ from _devbuild.gen.syntax_asdl import (
     loc,
     loc_t,
 )
+from _devbuild.gen.value_asdl import value, value_e
 from builtin import hay_ysh
 from core import dev
 from core import error
@@ -26,7 +27,7 @@ from display import ui
 from core import vm
 from frontend import consts
 from frontend import lexer
-from mycpp.mylib import log, print_stderr
+from mycpp.mylib import log, print_stderr, tagswitch
 
 import posix_ as posix
 
@@ -300,8 +301,22 @@ class ShellExecutor(vm._Executor):
             # but pos_args might not EXIST!
             # So we have to move the self_val thing here
 
-            proc_node, self_val = self.procs.GetInvokable(arg0)
-            if proc_node is not None:
+            proc_val, self_val = self.procs.GetInvokable(arg0)
+
+            if proc_val is not None:
+                with tagswitch(proc_val) as case:
+                    if case(value_e.BuiltinProc):
+                        vm_builtin = cast(value.BuiltinProc, proc_val).builtin
+                        print(vm_builtin)
+                        raise AssertionError()
+
+                    elif case(value_e.Proc):
+                        proc_val = cast(value.Proc, proc_val)
+                        #pass
+
+                    else:
+                        pass
+
                 if self.exec_opts.strict_errexit():
                     disabled_tok = self.mutable_opts.ErrExitDisabledToken()
                     if disabled_tok:
@@ -316,7 +331,8 @@ class ShellExecutor(vm._Executor):
 
                 with dev.ctx_Tracer(self.tracer, 'proc', argv):
                     # NOTE: Functions could call 'exit 42' directly, etc.
-                    status = self.cmd_ev.RunProc(proc_node,
+                    tmp = cast(value.Proc, proc_val)
+                    status = self.cmd_ev.RunProc(tmp,
                                                  cmd_val,
                                                  self_val=self_val)
                 return status

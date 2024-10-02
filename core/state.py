@@ -2573,7 +2573,7 @@ class Mem(object):
 
 
 def _InvokableObj(val):
-    # type: (value_t) -> Tuple[Optional[Obj], Optional[Obj]]
+    # type: (value_t) -> Tuple[Optional[value_t], Optional[Obj]]
     """
     Returns:
       None if the value is not invokable
@@ -2705,7 +2705,7 @@ class Procs(object):
         return names
 
     def GetInvokable(self, name):
-        # type: (str) -> Tuple[Optional[value.Proc], Optional[Obj]]
+        # type: (str) -> Tuple[Optional[value_t], Optional[Obj]]
         """Find a proc, invokable Obj, or sh-func, in that order
 
         Callers:
