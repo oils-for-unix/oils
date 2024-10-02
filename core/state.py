@@ -2573,7 +2573,7 @@ class Mem(object):
 
 
 def _InvokableObj(val):
-    # type: (value_t) -> Tuple[Optional[value.Proc], Optional[Obj]]
+    # type: (value_t) -> Tuple[Optional[Obj], Optional[Obj]]
     """
     Returns:
       None if the value is not invokable
@@ -2591,10 +2591,11 @@ def _InvokableObj(val):
         return None, None
 
     # TODO: __invoke__ of wrong type could be fatal error?
-    if invoke_val.tag() != value_e.Proc:
-        return None, None
+    if invoke_val.tag() in (value_e.Proc, value_e.BuiltinProc):
+        return invoke_val, None
 
-    return cast(value.Proc, invoke_val), obj
+    return None, None
+#return cast(value.Proc, invoke_val), obj
 
 
 def _AddNames(unique, frame):
