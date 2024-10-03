@@ -312,6 +312,30 @@ Hi Alice!
 Hi Carter!
 ## END
 
+#### Blocks capture with mutation
+shopt --set ysh:all
+
+proc unless (; cond;; block) {
+  if (not cond) {
+    call io->eval(block)
+  }
+}
+
+proc count(...names) {
+  var count = 0
+  for name in (names) {
+    unless (name === 'Bob') {
+      setvar count += 1
+    }
+  }
+  echo count=$count
+}
+
+count Alice Bob Carter
+## STDOUT:
+count=2
+## END
+
 #### Local variables in the proc do not shadow
 shopt --set ysh:all
 
