@@ -1259,15 +1259,20 @@ class ctx_Eval(object):
     def __init__(
             self,
             mem,  # type: Mem
+            frame,  # type: Optional[Dict[str, Cell]]
             dollar0,  # type: Optional[str]
             pos_args,  # type: Optional[List[str]]
             vars,  # type: Optional[Dict[str, value_t]]
     ):
         # type: (...) -> None
         self.mem = mem
+        self.frame = frame
         self.dollar0 = dollar0
         self.pos_args = pos_args
         self.vars = vars
+
+        if frame is not None:
+            mem.var_stack.append(frame)
 
         # $0 needs to have lexical scoping. So we store it with other locals.
         # As "0" cannot be parsed as an lvalue, we can safely store dollar0 there.
@@ -1297,6 +1302,9 @@ class ctx_Eval(object):
 
         if self.dollar0 is not None:
             self.mem.SetLocalName(self.dollar0_lval, value.Undef)
+
+        if self.frame is not None:
+            self.mem.var_stack.pop()
 
     # Note: _Push and _Pop are separate methods because the C++ translation
     # doesn't like when they are inline in __init__ and __exit__.

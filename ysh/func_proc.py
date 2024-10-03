@@ -261,7 +261,8 @@ def EvalTypedArgsToProc(
     # p { echo hi } is an unevaluated block
     if node.block:
         # TODO: conslidate value.Block (holds LiteralBlock) and value.Command
-        proc_args.block_arg = value.Block(node.block)
+        frame = expr_ev.mem.var_stack[-1]
+        proc_args.block_arg = value.Block(node.block, frame)
 
         # Add location info so the cmd_val looks the same for both:
         #   cd /tmp (; ; ^(echo hi))
