@@ -289,3 +289,55 @@ block
 status=33
 ## END
 
+#### Blocks capture
+shopt --set ysh:all
+
+proc unless (; cond;; block) {
+  if (not cond) {
+    call io->eval(block)
+  }
+}
+
+proc hello(name) {
+  unless (name === 'Bob') {
+    echo "Hi $name!"
+  }
+}
+
+hello Alice
+hello Bob
+hello Carter
+## STDOUT:
+Hi Alice!
+Hi Carter!
+## END
+
+#### Local variables in the proc do not shadow
+shopt --set ysh:all
+
+proc yb-capture-2 (; out;; block) {
+  try {
+    fopen 2>&1 { call io->eval(block) } | read --all (&stderr)
+  }
+
+  call out->setValue({status: _error.code, stderr})
+}
+
+proc ctx-push (;;; block) {
+  # push context
+  yb-capture-2 (&out) { call io->eval(block) }
+  # pop context
+  if (out.status !== 0) {
+    write --end '' -- $[out.stderr]
+  }
+  return $[out.status]
+}
+
+ctx-push {
+  echo 'Some log message' >&2
+  exit 100
+}
+## status: 100
+## STDOUT:
+Some log message
+## END
