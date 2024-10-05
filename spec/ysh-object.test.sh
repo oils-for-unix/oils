@@ -255,3 +255,17 @@ callable a b (42, 43)
 
 ## STDOUT:
 ## END
+
+
+#### Object with longer prototype chain
+
+# prototypal inheritance pattern
+var superClassMethods = Object(null, {foo: 'zz'})
+var methods = Object(superClassMethods, {foo: 42, bar: [1,2]})
+var instance = Object(methods, {foo: 1, bar: 2, x: 3})
+
+pp test_ (instance)
+
+## STDOUT:
+(Obj)   {"foo":1,"bar":2,"x":3} ==> {"foo":42,"bar":[1,2]} ==> {"foo":"zz"}
+## END
