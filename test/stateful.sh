@@ -54,11 +54,16 @@ job-control() {
   spec/stateful/job_control.py $FIRST --oils-failures-allowed 0 "$@"
 }
 
+bind() {
+  spec/stateful/bind.py $FIRST "$@"
+}
+
 # Run on just 2 shells
 
 signals-quick() { signals "${QUICK_SHELLS[@]}" "$@"; }
 interactive-quick() { interactive "${QUICK_SHELLS[@]}" "$@"; }
 job-control-quick() { job-control "${QUICK_SHELLS[@]}" "$@"; }
+bind-quick() { bind "${QUICK_SHELLS[@]}" "$@"; }
 
 # Run on all shells we can
 
@@ -69,6 +74,10 @@ signals-all() { signals "${QUICK_SHELLS[@]}" dash mksh "$@"; }
 interactive-all() { interactive "${QUICK_SHELLS[@]}" dash mksh "$@"; }
 
 job-control-all() { job-control "${QUICK_SHELLS[@]}" dash "$@"; }
+
+# On non-bash shells, bind is either unsupported or the syntax is too different
+bind-all() { bind "${QUICK_SHELLS[@]}" "$@"; }
+
 
 #
 # More automation
@@ -83,6 +92,7 @@ print-tasks() {
   if test -n "${QUICKLY:-}"; then
     echo 'interactive'
   else
+    echo 'bind'
     echo 'interactive'
     echo 'job-control'
     echo 'signals'

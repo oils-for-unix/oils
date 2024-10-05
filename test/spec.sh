@@ -250,6 +250,10 @@ builtin-bash() {
   run-file builtin-bash "$@"
 }
 
+builtin-bind() {
+  run-file builtin-bind "$@"
+}
+
 builtin-type() {
   run-file builtin-type "$@"
 }
