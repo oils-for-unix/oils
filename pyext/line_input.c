@@ -705,7 +705,7 @@ Change what's displayed on the screen to reflect the current\n\
 contents of the line buffer.");
 
 
-/* Binding functions */
+/* List binding functions */
 
 static PyObject*
 list_funmap_names(PyObject *self, PyObject *args)
@@ -717,6 +717,60 @@ list_funmap_names(PyObject *self, PyObject *args)
 PyDoc_STRVAR(doc_list_funmap_names,
 "list_funmap_names() -> None\n\
 Print all of the available readline functions.");
+
+/* Print readline functions and their bindings */
+
+static PyObject*
+function_dumper(PyObject *self, PyObject *args)
+{
+    int print_readably;
+
+    if (!PyArg_ParseTuple(args, "i:function_dumper", &print_readably))
+        return NULL;
+
+    rl_function_dumper(print_readably);
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(doc_list_function_dumper,
+"function_dumper(bool) -> None\n\
+Print all readline functions and their bindings.");
+
+/* Print macros, their bindings, and their string outputs */
+
+static PyObject*
+macro_dumper(PyObject *self, PyObject *args)
+{
+    int print_readably;
+
+    if (!PyArg_ParseTuple(args, "i:macro_dumper", &print_readably))
+        return NULL;
+
+    rl_macro_dumper(print_readably);
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(doc_list_macro_dumper,
+"macro_dumper(bool) -> None\n\
+Print all readline sequences bound to macros and the strings they output.");
+
+/* List readline variables */
+
+static PyObject*
+variable_dumper(PyObject *self, PyObject *args)
+{
+    int print_readably;
+
+    if (!PyArg_ParseTuple(args, "i:variable_dumper", &print_readably))
+        return NULL;
+
+    rl_variable_dumper(print_readably);
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(doc_list_variable_dumper,
+"variable_dumper(bool) -> None\n\
+List readline variables and their values.");
 
 
 /* Table of functions exported by the module */
@@ -766,6 +820,9 @@ static struct PyMethodDef readline_methods[] = {
     {"clear_history", py_clear_history, METH_NOARGS, doc_clear_history},
     {"resize_terminal", py_resize_terminal, METH_NOARGS, ""},
     {"list_funmap_names", list_funmap_names, METH_NOARGS, doc_list_funmap_names},
+    {"function_dumper", function_dumper, METH_VARARGS, doc_list_function_dumper},
+    {"macro_dumper", macro_dumper, METH_VARARGS, doc_list_macro_dumper},
+    {"variable_dumper", variable_dumper, METH_VARARGS, doc_list_variable_dumper},
     {0, 0}
 };
 #endif
