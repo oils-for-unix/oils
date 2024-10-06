@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-builtin_lib.py - Builtins that are bindings to libraries, e.g. GNU readline.
+readline_osh.py - Builtins that are dependent on GNU readline.
 """
 from __future__ import print_function
 
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 
 class Bind(vm._Builtin):
-    """For :, true, false."""
+    """Interactive interface to readline bindings"""
 
     def __init__(self, readline, errfmt):
         # type: (Optional[Readline], ui.ErrorFormatter) -> None
@@ -31,6 +31,24 @@ class Bind(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
+        readline = self.readline
+        if not readline:
+            e_usage("is disabled because Oil wasn't compiled with 'readline'",
+                    loc.Missing)
+        
+        attrs, arg_r = flag_util.ParseCmdVal('bind', cmd_val)
+        
+        # print(attrs)
+        # print(attrs.attrs)
+        # print(arg_r)
+        
+        arg = arg_types.bind(attrs.attrs)
+        # print(arg)
+        # print(arg.l)
+        
+        if arg.l:
+            readline.list_funmap_names()
+            
         self.errfmt.Print_("warning: bind isn't implemented",
                            blame_loc=cmd_val.arg_locs[0])
         return 1

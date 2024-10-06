@@ -705,6 +705,20 @@ Change what's displayed on the screen to reflect the current\n\
 contents of the line buffer.");
 
 
+/* Binding functions */
+
+static PyObject*
+list_funmap_names(PyObject *self, PyObject *args)
+{
+    rl_list_funmap_names();
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(doc_list_funmap_names,
+"list_funmap_names() -> None\n\
+Print all of the available readline functions.");
+
+
 /* Table of functions exported by the module */
 
 #ifdef OVM_MAIN
@@ -751,6 +765,7 @@ static struct PyMethodDef readline_methods[] = {
      METH_VARARGS, doc_set_pre_input_hook},
     {"clear_history", py_clear_history, METH_NOARGS, doc_clear_history},
     {"resize_terminal", py_resize_terminal, METH_NOARGS, ""},
+    {"list_funmap_names", list_funmap_names, METH_NOARGS, doc_list_funmap_names},
     {0, 0}
 };
 #endif

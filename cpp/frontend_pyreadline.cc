@@ -324,6 +324,14 @@ void Readline::resize_terminal() {
 #endif
 }
 
+void Readline::list_funmap_names() {
+#if HAVE_READLINE
+  rl_list_funmap_names();
+#else
+  assert(0);  // not implemented
+#endif
+}
+
 Readline* MaybeGetReadline() {
 #if HAVE_READLINE
   gReadline = Alloc<Readline>();

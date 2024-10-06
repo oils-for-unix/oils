@@ -93,6 +93,10 @@ class Readline(object):
     def resize_terminal(self):
         # type: () -> None
         line_input.resize_terminal()
+        
+    def list_funmap_names(self):
+        # type: () -> None
+        line_input.list_funmap_names()
 
 
 def MaybeGetReadline():
