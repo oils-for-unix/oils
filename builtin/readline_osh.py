@@ -38,16 +38,36 @@ class Bind(vm._Builtin):
         
         attrs, arg_r = flag_util.ParseCmdVal('bind', cmd_val)
         
-        # print(attrs)
-        # print(attrs.attrs)
-        # print(arg_r)
+        print(attrs)
+        print(attrs.attrs)
+        print(arg_r)
         
         arg = arg_types.bind(attrs.attrs)
-        # print(arg)
-        # print(arg.l)
+        print(arg)
+        
+        if arg.m:
+            print("Using keymap: " + arg.m)
         
         if arg.l:
             readline.list_funmap_names()
+            
+        if arg.p:
+            readline.function_dumper(True)
+
+        if arg.P:
+            readline.function_dumper(False)
+
+        if arg.s:
+            readline.macro_dumper(True)
+
+        if arg.S:
+            readline.macro_dumper(False)
+            
+        if arg.v:
+            readline.variable_dumper(True)
+
+        if arg.V:
+            readline.variable_dumper(False)
             
         self.errfmt.Print_("warning: bind isn't implemented",
                            blame_loc=cmd_val.arg_locs[0])
