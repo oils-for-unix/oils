@@ -38,13 +38,15 @@ class Bind(vm._Builtin):
         
         attrs, arg_r = flag_util.ParseCmdVal('bind', cmd_val)
         
-        # print(attrs)
-        # print(attrs.attrs)
-        # print(arg_r)
+        print(attrs)
+        print(attrs.attrs)
+        print(arg_r)
         
         arg = arg_types.bind(attrs.attrs)
-        # print(arg)
-        # print(arg.l)
+        print(arg)
+        
+        if arg.m:
+            print("Using keymap: " + arg.m)
         
         if arg.l:
             readline.list_funmap_names()
