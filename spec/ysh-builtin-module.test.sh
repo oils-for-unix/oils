@@ -320,6 +320,19 @@ echo 'should not get here'
 ## STDOUT:
 ## END
 
+#### Module with runtime error
+
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/runtime-error.ysh
+
+echo 'should not get here'
+
+## status: 1
+## STDOUT:
+runtime-error before
+## END
+
 #### user can inspect __modules__ cache
 
 echo 'TODO: Dict view of realpath() string -> Obj instance'

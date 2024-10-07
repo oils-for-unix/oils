@@ -298,7 +298,7 @@ class ShellExecutor(vm._Executor):
                 with tagswitch(proc_val) as case:
                     if case(value_e.BuiltinProc):
                         # Handle the special case of the BUILTIN proc
-                        # module_ysh.InvokeModule, which is returned on the Obj
+                        # module_ysh.ModuleInvoke, which is returned on the Obj
                         # created by 'use util.ysh'
                         with dev.ctx_Tracer(self.tracer, 'module', None):
                             builtin_proc = cast(value.BuiltinProc, proc_val)

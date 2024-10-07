@@ -1005,7 +1005,7 @@ test-module() {
   _ysh-error-X 3 'use spec/testdata/module2/util2.ysh; util2 echo-args'
 
   # malformed Obj
-  #_ysh-error-X 2 'use spec/testdata/module2/util2.ysh; util2 badObj'
+  _ysh-error-X 3 'use spec/testdata/module2/util2.ysh; util2 badObj otherproc'
 }
 
 soil-run-py() {

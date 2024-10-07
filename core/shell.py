@@ -632,7 +632,7 @@ def Main(
     b[builtin_i.extern_] = meta_oils.Extern(shell_ex, procs, errfmt)
 
     # Meta builtins
-    invoke_module = module_ysh.InvokeModule(cmd_ev, errfmt)
+    module_invoke = module_ysh.ModuleInvoke(cmd_ev, errfmt)
     b[builtin_i.use] = meta_oils.ShellFile(parse_ctx,
                                            search_path,
                                            cmd_ev,
@@ -640,7 +640,7 @@ def Main(
                                            tracer,
                                            errfmt,
                                            loader,
-                                           invoke_module=invoke_module)
+                                           module_invoke=module_invoke)
     source_builtin = meta_oils.ShellFile(parse_ctx, search_path, cmd_ev,
                                          fd_state, tracer, errfmt, loader)
     b[builtin_i.source] = source_builtin
@@ -927,7 +927,7 @@ def Main(
     mem.AddBuiltin('io', io_obj)
 
     # Special case for testing
-    mem.AddBuiltin('invoke_module', value.BuiltinProc(invoke_module))
+    mem.AddBuiltin('module-invoke', value.BuiltinProc(module_invoke))
 
     #
     # Is the shell interactive?

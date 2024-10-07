@@ -60,7 +60,7 @@ class SourceGuard(vm._Builtin):
         return 0
 
 
-class InvokeModule(vm._Builtin):
+class ModuleInvoke(vm._Builtin):
     """
     This is a builtin for the __invoke__ method of Obj my-module
 
@@ -115,10 +115,15 @@ class InvokeModule(vm._Builtin):
             proc_val, self_obj2 = state.ValueIsInvokableObj(val)
             cmd_val2.self_obj = self_obj2
             if proc_val:
-                # must be user-defined proc, not builtin
                 if proc_val.tag() != value_e.Proc:
-                    raise error.TypeErr(proc_val, "expected user-defined proc",
-                                        invokable_loc)
+                    # Technically we can run it like this, but I don't see a
+                    # use case.  It seems confusing.
+                    #return self.cmd_ev.shell_ex.RunBuiltinProc(proc_val.builtin, cmd_val2)
+
+                    raise error.TypeErr(
+                        proc_val,
+                        "__invoke__ on %r should be a user-defined Proc" %
+                        invokable_name, invokable_loc)
                 proc = cast(value.Proc, proc_val)
 
                 status = self.cmd_ev.RunProc(proc, cmd_val2)

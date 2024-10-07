@@ -19,7 +19,7 @@ from _devbuild.gen.value_asdl import Obj, value, value_t
 from core import alloc
 from core import dev
 from core import error
-from core.error import e_usage, e_die
+from core.error import e_usage
 from core import executor
 from core import main_loop
 from core import process
@@ -142,11 +142,11 @@ class ShellFile(vm._Builtin):
             tracer,  # type: dev.Tracer
             errfmt,  # type: ui.ErrorFormatter
             loader,  # type: pyutil._ResourceLoader
-            invoke_module=None,  # type: vm._Builtin
+            module_invoke=None,  # type: vm._Builtin
     ):
         # type: (...) -> None
         """
-        If invoke_module is passed, this class behaves like 'use'.  Otherwise
+        If module_invoke is passed, this class behaves like 'use'.  Otherwise
         it behaves like 'source'.
         """
         self.parse_ctx = parse_ctx
@@ -157,9 +157,9 @@ class ShellFile(vm._Builtin):
         self.tracer = tracer
         self.errfmt = errfmt
         self.loader = loader
-        self.invoke_module = invoke_module
+        self.module_invoke = module_invoke
 
-        self.builtin_name = 'use' if invoke_module else 'source'
+        self.builtin_name = 'use' if module_invoke else 'source'
         self.mem = cmd_ev.mem
 
         # Don't load modules more than once
@@ -171,7 +171,7 @@ class ShellFile(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        if self.invoke_module:
+        if self.module_invoke:
             return self._Use(cmd_val)
         else:
             return self._Source(cmd_val)
@@ -270,11 +270,10 @@ class ShellFile(vm._Builtin):
             for s in error_strs:
                 self.errfmt.PrintMessage('Error: %s' % s, path_loc)
             return 1, None
-            e_die("'use' failed", path_loc)
 
         # Builtin proc that serves as __invoke__ - it looks up procs in 'self'
         methods = Obj(None,
-                      {'__invoke__': value.BuiltinProc(self.invoke_module)})
+                      {'__invoke__': value.BuiltinProc(self.module_invoke)})
         module_obj = Obj(methods, attrs)
         return 0, module_obj
 
