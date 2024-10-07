@@ -2572,12 +2572,12 @@ class Mem(object):
         return self.ctx_stack.pop()
 
 
-def IsInvokableObj(val):
+def ValueIsInvokableObj(val):
     # type: (value_t) -> Tuple[Optional[value_t], Optional[Obj]]
     """
     Returns:
-      None if the value is not invokable
-      (self Obj, __invoke__ Proc) if so
+      (__invoke__ Proc or BuiltinProc, self Obj) if the value is invokable
+      (None, None) otherwise
     """
     if val.tag() != value_e.Obj:
         return None, None
@@ -2606,7 +2606,7 @@ def _AddNames(unique, frame):
         val = frame[name].val
         if val.tag() == value_e.Proc:
             unique[name] = True
-        proc, _ = IsInvokableObj(val)
+        proc, _ = ValueIsInvokableObj(val)
         if proc is not None:
             unique[name] = True
 
@@ -2676,7 +2676,7 @@ class Procs(object):
         # type: (str) -> bool
 
         val = self.mem.GetValue(name)
-        proc, self_val = IsInvokableObj(val)
+        proc, _ = ValueIsInvokableObj(val)
         return proc is not None
 
     def InvokableNames(self):
@@ -2720,7 +2720,7 @@ class Procs(object):
         if val.tag() == value_e.Proc:
             return cast(value.Proc, val), None
 
-        proc, self_val = IsInvokableObj(val)
+        proc, self_val = ValueIsInvokableObj(val)
         if proc:
             return proc, self_val
 

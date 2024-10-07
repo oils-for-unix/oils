@@ -39,7 +39,6 @@ if TYPE_CHECKING:
     from builtin import trap_osh
     from core import optview
     from core import state
-    from core.vm import _Builtin
 
 _ = log
 
@@ -112,7 +111,7 @@ class ShellExecutor(vm._Executor):
             mutable_opts,  # type: state.MutableOpts
             procs,  # type: state.Procs
             hay_state,  # type: hay_ysh.HayState
-            builtins,  # type: Dict[int, _Builtin]
+            builtins,  # type: Dict[int, vm._Builtin]
             search_path,  # type: state.SearchPath
             ext_prog,  # type: process.ExternalProgram
             waiter,  # type: process.Waiter
@@ -298,13 +297,13 @@ class ShellExecutor(vm._Executor):
 
                 with tagswitch(proc_val) as case:
                     if case(value_e.BuiltinProc):
-                        # Handle the special case of BUILTIN proc
-                        # module_ysh.InvokeModule, which is returned on the Obj created
-                        # by 'use util.ysh'
+                        # Handle the special case of the BUILTIN proc
+                        # module_ysh.InvokeModule, which is returned on the Obj
+                        # created by 'use util.ysh'
                         with dev.ctx_Tracer(self.tracer, 'module', None):
-                            builtin_proc = cast(value.BuiltinProc,
-                                                proc_val).builtin
-                            status = self.RunBuiltinProc(builtin_proc, cmd_val)
+                            builtin_proc = cast(value.BuiltinProc, proc_val)
+                            b = cast(vm._Builtin, builtin_proc.builtin)
+                            status = self.RunBuiltinProc(b, cmd_val)
 
                     elif case(value_e.Proc):
                         proc = cast(value.Proc, proc_val)

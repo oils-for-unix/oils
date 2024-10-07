@@ -110,8 +110,9 @@ class InvokeModule(vm._Builtin):
                 status = self.cmd_ev.RunProc(proc, cmd_val2)
                 return status
 
-            # The module itself is an invokable Obj, but it also CONTAINS an invokable Obj
-            proc_val, self_obj2 = state.IsInvokableObj(val)
+            # The module itself is an invokable Obj, but it also CONTAINS an
+            # invokable Obj
+            proc_val, self_obj2 = state.ValueIsInvokableObj(val)
             cmd_val2.self_obj = self_obj2
             if proc_val:
                 # must be user-defined proc, not builtin
