@@ -1,4 +1,4 @@
-## oils_failures_allowed: 7
+## oils_failures_allowed: 5
 
 #### source-guard is an old way of preventing redefinition - could remove it
 shopt --set ysh:upgrade
@@ -189,6 +189,8 @@ shopt --set ysh:upgrade
 
 use $REPO_ROOT/spec/testdata/module2/bad-provide-type.ysh
 
+echo 'should not get here'
+
 ## status: 1
 ## STDOUT:
 ## END
@@ -197,6 +199,8 @@ use $REPO_ROOT/spec/testdata/module2/bad-provide-type.ysh
 shopt --set ysh:upgrade
 
 use $REPO_ROOT/spec/testdata/module2/bad-provide.ysh
+
+echo 'should not get here'
 
 ## status: 1
 ## STDOUT:
@@ -304,17 +308,15 @@ echo hi
 ## STDOUT:
 ## END
 
-#### Module with runtime error
-
-echo TODO
-
-## STDOUT:
-## END
-
 #### Module with parse error
 
-echo TODO
+shopt --set ysh:upgrade
 
+use $REPO_ROOT/spec/testdata/module2/parse-error.ysh
+
+echo 'should not get here'
+
+## status: 2
 ## STDOUT:
 ## END
 

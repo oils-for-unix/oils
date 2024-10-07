@@ -725,7 +725,7 @@ invokable no_self
 ## STDOUT:
 ## END
 
-#### call invokable Obj with self
+#### invokable Obj is called with self
 shopt --set ysh:upgrade
 
 proc boundProc(; self) {
@@ -739,6 +739,37 @@ invokable
 
 ## STDOUT:
 sum = 8
+## END
+
+
+#### invokable Obj with more typed args
+shopt --set ysh:upgrade
+
+proc myInvoke (word1, word2; self, int1, int2) {
+  echo "sum = $[self.x + self.y]"
+  pp test_ (self)
+  pp test_ ([word1, word2, int1, int2])
+}
+
+# call it directly with 'self'
+myInvoke a b ({x: 0, y: 1}, 42, 43)
+echo
+
+var methods = Object(null, {__invoke__: myInvoke})
+
+var callable = Object(methods, {x: 2, y: 3})
+
+# call it through the obj
+callable a b (44, 45)
+
+## STDOUT:
+sum = 1
+(Dict)   {"x":0,"y":1}
+(List)   ["a","b",42,43]
+
+sum = 5
+(Obj)   {"x":2,"y":3} ==> {"__invoke__":<Proc>}
+(List)   ["a","b",44,45]
 ## END
 
 #### two different objects can share the same __invoke__
