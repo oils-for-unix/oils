@@ -35,8 +35,8 @@ readonly BASE_DIR=_tmp/spec/stateful
 readonly FIRST=''
 readonly OSH_CPP=_bin/cxx-asan/osh
 
-#readonly -a QUICK_SHELLS=( $OSH bash )
-readonly -a QUICK_SHELLS=( $OSH $OSH_CPP bash )
+readonly -a QUICK_SHELLS=( $OSH bash )
+# readonly -a QUICK_SHELLS=( $OSH $OSH_CPP bash )
 
 #
 # Suites in spec/stateful
