@@ -300,10 +300,9 @@ class ShellExecutor(vm._Executor):
                         # Handle the special case of the BUILTIN proc
                         # module_ysh.ModuleInvoke, which is returned on the Obj
                         # created by 'use util.ysh'
-                        with dev.ctx_Tracer(self.tracer, 'module', None):
-                            builtin_proc = cast(value.BuiltinProc, proc_val)
-                            b = cast(vm._Builtin, builtin_proc.builtin)
-                            status = self.RunBuiltinProc(b, cmd_val)
+                        builtin_proc = cast(value.BuiltinProc, proc_val)
+                        b = cast(vm._Builtin, builtin_proc.builtin)
+                        status = self.RunBuiltinProc(b, cmd_val)
 
                     elif case(value_e.Proc):
                         proc = cast(value.Proc, proc_val)

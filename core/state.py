@@ -1211,6 +1211,20 @@ class ctx_ModuleEval(object):
 
         self.new_frame = NewDict()  # type: Dict[str, Cell]
         self.saved_frame = mem.var_stack[0]
+
+        # Somewhat of a hack for tracing within a module.
+        # Other solutions:
+        # - PS4 can be __builtin__, but that would break shell compatibility
+        # - We can have a separate YSH mechanism that uses a different settings
+        #   - We probably still want it to be scoped, like shvar PS4=z { ... }
+        #
+        # Note: there's a similar issue with HOSTNAME UID EUID etc.  But those
+        # could be io.hostname() io.getuid(), or lazy constants, etc.
+
+        ps4 = self.saved_frame.get('PS4')
+        if ps4:
+            self.new_frame['PS4'] = ps4
+
         mem.var_stack[0] = self.new_frame
 
     def __enter__(self):

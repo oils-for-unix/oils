@@ -2,6 +2,7 @@ from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.value_asdl import value, value_e
+from core import dev
 from core import error
 from core import state
 from core import vm
@@ -68,9 +69,10 @@ class ModuleInvoke(vm._Builtin):
     my-module my-proc
     """
 
-    def __init__(self, cmd_ev, errfmt):
-        # type: (cmd_eval.CommandEvaluator, ui.ErrorFormatter) -> None
+    def __init__(self, cmd_ev, tracer, errfmt):
+        # type: (cmd_eval.CommandEvaluator, dev.Tracer, ui.ErrorFormatter) -> None
         self.cmd_ev = cmd_ev
+        self.tracer = tracer
         self.errfmt = errfmt
 
     def Run(self, cmd_val):
@@ -107,7 +109,9 @@ class ModuleInvoke(vm._Builtin):
                 proc = cast(value.Proc, val)
                 #log('proc %r', proc.name)
 
-                status = self.cmd_ev.RunProc(proc, cmd_val2)
+                with dev.ctx_Tracer(self.tracer, 'module-invoke',
+                                    cmd_val.argv):
+                    status = self.cmd_ev.RunProc(proc, cmd_val2)
                 return status
 
             # The module itself is an invokable Obj, but it also CONTAINS an
@@ -126,7 +130,9 @@ class ModuleInvoke(vm._Builtin):
                         invokable_name, invokable_loc)
                 proc = cast(value.Proc, proc_val)
 
-                status = self.cmd_ev.RunProc(proc, cmd_val2)
+                with dev.ctx_Tracer(self.tracer, 'module-invoke',
+                                    cmd_val.argv):
+                    status = self.cmd_ev.RunProc(proc, cmd_val2)
                 return status
 
         # Any other type of value

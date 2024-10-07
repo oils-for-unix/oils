@@ -1,7 +1,7 @@
 # Oil xtrace
 
 #### Customize PS4
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 set -x
 
 # Reuse the default
@@ -21,7 +21,7 @@ echo 3
 
 
 #### xtrace_details doesn't show [[ ]] etc.
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 set -x
 
 dir=/
@@ -36,7 +36,7 @@ cd /
 ## END
 
 #### xtrace_details AND xtrace_rich on
-shopt -s oil:upgrade xtrace_details
+shopt -s ysh:upgrade xtrace_details
 shopt --unset errexit
 set -x
 
@@ -80,7 +80,7 @@ p 2
 ## END
 
 #### eval
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 set -x
 
 eval 'echo 1; echo 2'
@@ -98,7 +98,7 @@ eval 'echo 1; echo 2'
 #### source
 echo 'echo "\$1 = $1"' > lib.sh
 
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 set -x
 
 source lib.sh a b c
@@ -121,7 +121,7 @@ $1 = x
 ## END
 
 #### external and builtin
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 shopt --unset errexit
 set -x
 
@@ -143,7 +143,7 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
 ## END
 
 #### subshell
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 shopt --unset errexit
 set -x
 
@@ -178,7 +178,7 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt | LANG=C sort >&2
 ## END
 
 #### command sub
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 set -x
 
 {
@@ -204,7 +204,7 @@ foo=bar
 ## END
 
 #### process sub (nondeterministic)
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 shopt --unset errexit
 set -x
 
@@ -241,7 +241,7 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g; s|/fd/.|/fd/N|g' err.txt |
 ## END
 
 #### pipeline (nondeterministic)
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 set -x
 
 myfunc() {
@@ -290,7 +290,7 @@ fi
 
 # Hm extra tracing
 
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 set -x
 
 : begin
@@ -306,7 +306,7 @@ set -x
 
 #### Background pipeline (separate code path)
 
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 shopt --unset errexit
 set -x
 
@@ -352,14 +352,14 @@ status=0
 ## END
 
 #### Background process with fork and & (nondeterministic)
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 set -x
 
 {
   sleep 0.1 &
   wait
 
-  shopt -s oil:upgrade
+  shopt -s ysh:upgrade
 
   fork {
     sleep 0.1
@@ -380,7 +380,7 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt |
   ; process 12345: status 0
 . builtin fork
 . builtin set '+x'
-. builtin shopt -s 'oil:upgrade'
+. builtin shopt -s 'ysh:upgrade'
 < wait
 < wait
 > wait
@@ -479,7 +479,7 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
 ## END
 
 #### Control Flow
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 set -x
 
 for i in 1 2 3 {
@@ -530,6 +530,50 @@ b z
 > proc zero
   + return 0
 < proc zero
+## END
+
+#### use builtin and invokable module
+shopt --set ysh:upgrade
+
+# make the trace deterministic
+cp $REPO_ROOT/spec/testdata/module2/for-xtrace.ysh .
+
+set -x
+
+source for-xtrace.ysh
+echo
+
+# problem with PS4 here
+use for-xtrace.ysh # --all-provided
+
+for_xtrace increment foo bar
+
+## STDOUT:
+[for-xtrace]
+counter = 5
+
+[for-xtrace]
+counter = 5
+counter = 6
+## END
+
+## STDERR:
+> source for-xtrace.ysh
+  . builtin echo '[for-xtrace]'
+  > proc increment
+    . builtin echo 'counter = 5'
+  < proc increment
+< source for-xtrace.ysh
+. builtin echo
+> use for-xtrace.ysh
+  . builtin echo '[for-xtrace]'
+  > proc increment
+    . builtin echo 'counter = 5'
+  < proc increment
+< use for-xtrace.ysh
+> module-invoke for_xtrace increment foo bar
+  . builtin echo 'counter = 6'
+< module-invoke for_xtrace
 ## END
 
 #### Encoded argv uses shell encoding, not J8

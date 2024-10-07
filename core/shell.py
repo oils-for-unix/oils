@@ -632,7 +632,7 @@ def Main(
     b[builtin_i.extern_] = meta_oils.Extern(shell_ex, procs, errfmt)
 
     # Meta builtins
-    module_invoke = module_ysh.ModuleInvoke(cmd_ev, errfmt)
+    module_invoke = module_ysh.ModuleInvoke(cmd_ev, tracer, errfmt)
     b[builtin_i.use] = meta_oils.ShellFile(parse_ctx,
                                            search_path,
                                            cmd_ev,

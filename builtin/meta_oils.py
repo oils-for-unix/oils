@@ -237,14 +237,14 @@ class ShellFile(vm._Builtin):
 
         return status
 
-    def _UseExec(self, path, path_loc, c_parser):
-        # type: (str, loc_t, cmd_parse.CommandParser) -> Tuple[int, Optional[Obj]]
+    def _UseExec(self, cmd_val, path, path_loc, c_parser):
+        # type: (cmd_value.Argv, str, loc_t, cmd_parse.CommandParser) -> Tuple[int, Optional[Obj]]
 
         attrs = NewDict()  # type: Dict[str, value_t]
         error_strs = []  # type: List[str]
 
-        with state.ctx_ModuleEval(self.mem, attrs, error_strs):
-            with dev.ctx_Tracer(self.tracer, 'use', None):
+        with dev.ctx_Tracer(self.tracer, 'use', cmd_val.argv):
+            with state.ctx_ModuleEval(self.mem, attrs, error_strs):
                 with state.ctx_ThisDir(self.mem, path):
 
                     # TODO: change the src to source.ShellFile
@@ -326,8 +326,8 @@ class ShellFile(vm._Builtin):
         use util.ysh  # util is a value.Obj
 
         # Importing a bunch of words
-        use dialect-ninja.ysh { all }  # requires 'provide' in dialect-ninja
-        use dialect-github.ysh { all }
+        use dialect-ninja.ysh --all-provided
+        use dialect-github.ysh --all-provided
 
         # This declares some names
         use --extern grep sed
@@ -339,50 +339,10 @@ class ShellFile(vm._Builtin):
         use util.ysh (&_)
 
         # Picking specifics
-        use util.ysh {
-          pick log die
-          pick foo (&myfoo)
-        }
+        use util.ysh --names log die
 
-        # A long way to write this is:
-
-        use util.ysh
-        const log = util.log
-        const die = util.die
-        const myfoo = util.foo
-
-        Another way is:
-        for name in log die {
-          call setVar(name, util[name])
-
-          # value.Obj may not support [] though
-          # get(propView(util), name, null) is a long way of writing it
-        }
-
-        Other considerations:
-
-        - Statically parseable subset?  For fine-grained static tree-shaking
-          - We're doing coarse dynamic tree-shaking first though
-
-        - if TYPE_CHECKING is an issue
-          - that can create circular dependencies, especially with gradual typing,
-            when you go dynamic to static (like Oils did)
-          - I guess you can have
-            - use --static parse_lib.ysh { pick ParseContext } 
-
-        # Crazy idea - pure ysh
-
-        use $LIB_YSH/pick.ysh
-        pick $LIB_YSH/table.ysh {
-          names foo bar
-          name x (&alias)
-
-          all
-          names *  # perhaps, if you turn off globbing
-        }
-
-        import $LIB_YSH/stdlib
-
+        # Rename
+        var mylog = log
         """
         attrs, arg_r = flag_util.ParseCmdVal('use', cmd_val)
         arg = arg_types.use(attrs.attrs)
@@ -426,7 +386,7 @@ class ShellFile(vm._Builtin):
             if c_parser is None:
                 return 1  # error was already shown
 
-            status, obj = self._UseExec(load_path, path_loc, c_parser)
+            status, obj = self._UseExec(cmd_val, load_path, path_loc, c_parser)
             if status != 0:
                 return status
             state.SetLocalValue(self.mem, var_name, obj)
@@ -451,7 +411,8 @@ class ShellFile(vm._Builtin):
                 return 1  # error was already shown
 
             with process.ctx_FileCloser(f):
-                status, obj = self._UseExec(path_arg, path_loc, c_parser)
+                status, obj = self._UseExec(cmd_val, path_arg, path_loc,
+                                            c_parser)
             if status != 0:
                 return status
             state.SetLocalValue(self.mem, var_name, obj)
