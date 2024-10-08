@@ -2,7 +2,7 @@
 ## oils_failures_allowed: 0
 
 #### ctx push and set
-source $LIB_YSH/ctx.ysh
+use $LIB_YSH/ctx.ysh
 
 var mydict = {}
 ctx push (mydict) {
@@ -18,7 +18,7 @@ json write (mydict)
 ## END
 
 #### ctx emit
-source $LIB_YSH/ctx.ysh
+use $LIB_YSH/ctx.ysh
 
 var p = {}
 ctx push (p) {
@@ -62,7 +62,7 @@ json write (p)
 ## END
 
 #### nested ctx
-source $LIB_YSH/ctx.ysh
+use $LIB_YSH/ctx.ysh
 
 var a = {}
 var b = {}
@@ -84,7 +84,7 @@ json write (b)
 ## END
 
 #### error in context
-source $LIB_YSH/ctx.ysh
+use $LIB_YSH/ctx.ysh
 
 var a = {}
 try {
@@ -99,7 +99,7 @@ status=100
 ## END
 
 #### no context, set
-source $LIB_YSH/ctx.ysh
+use $LIB_YSH/ctx.ysh
 
 ctx set (bad=true)
 echo status=$_status
@@ -108,7 +108,7 @@ echo status=$_status
 ## END
 
 #### no context, emit
-source $LIB_YSH/ctx.ysh
+use $LIB_YSH/ctx.ysh
 
 ctx emit bad (true)
 echo status=$_status
@@ -117,7 +117,7 @@ echo status=$_status
 ## END
 
 #### mini-parseArgs
-source $LIB_YSH/ctx.ysh
+use $LIB_YSH/ctx.ysh
 
 proc parser (; place ; ; block_def) {
   var p = {}
@@ -173,8 +173,7 @@ json write (spec)
 ## END
 
 #### ctx with value.Place, not List/Dict (error location bug fix)
-source $LIB_YSH/ctx.ysh
-
+use $LIB_YSH/ctx.ysh
 
 ctx push (&p) {
   true

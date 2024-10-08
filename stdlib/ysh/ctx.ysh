@@ -1,84 +1,32 @@
-proc ctx_invoke (verb, ...pos; self, ...args; ...named; block=null) {
-  case (verb) {
-    push {
-      if (len(pos) !== 0) {
-        error "Unexpected word arguments" (code=2)
-      }
-      if (len(args) !== 1) {
-        error "Expected a single Dict argument" (code=2)
-      }
-      if (len(keys(named)) !== 0) {
-        error "Unexpected named arguments" (code=2)
-      }
-      if (block === null) {
-        error "Expected a block argument" (code=2)
-      }
+var contextStack = []
 
-      var context = args[0]
-      if (type(context) !== 'Dict') {
-        error "Expected context to be a Dict" (code=3)
-      }
+proc push (; context;; block) {
+  if (type(context) !== 'Dict') {
+    error "Expected context to be a Dict" (code=3)
+  }
 
-      call self.contextStack->append(context)
-      try { call io->eval(block) }
-      call self.contextStack->pop()
-      return $[_error.code]
-    }
+  call contextStack->append(context)
+  try {
+    use ///ysh/ctx.ysh
+    call io->eval(block, vars={ctx})
+  }
+  call contextStack->pop()
+  return $[_error.code]
+}
 
-    set {
-      if (len(pos) !== 0) {
-        error "Unexpected word arguments" (code=2)
-      }
-      if (len(args) !== 0) {
-        error "Unexpected positional arguments" (code=2)
-      }
-      if (block !== null) {
-        error "Unexpected block argument" (code=2)
-      }
-      if (len(self.contextStack) === 0) {
-        error "Not in a context. Did you forget to ctx push?" (code=3)
-      }
-
-      # Cannot use var here because "context" was already declared in push
-      setvar context = self.contextStack[-1]
-      for k, v in (named) {
-        setvar context[k] = v
-      }
-    }
-
-    emit {
-      if (len(pos) !== 1) {
-        error "Expected a field to emit into" (code=2)
-      }
-      if (len(args) !== 1) {
-        error "Expected an item to push" (code=2)
-      }
-      if (len(keys(named)) !== 0) {
-        error "Unexpected named arguments" (code=2)
-      }
-      if (block !== null) {
-        error "Unexpected block argument" (code=2)
-      }
-      if (len(self.contextStack) === 0) {
-        error "Not in a context. Did you forget to ctx push?" (code=3)
-      }
-
-      var field = pos[0]
-      var item = args[0]
-      setvar context = self.contextStack[-1]
-
-      if (field not in context) {
-        setvar context[field] = []
-      }
-
-      call context[field]->append(item)
-    }
-
-    (else) {
-      error "Expected a verb (push, set, emit)" (code=2)
-    }
+proc set (;; ...named) {
+  var context = contextStack[-1]
+  for k, v in (named) {
+    setvar context[k] = v
   }
 }
 
-var ctx_methods = Object(null, {__invoke__: ctx_invoke})
-var ctx = Object(ctx_methods, {contextStack: []})
+proc emit (field; item) {
+  var context = contextStack[-1]
+  if (field not in context) {
+    setvar context[field] = []
+  }
+  call context[field]->append(item)
+}
+
+var __provide__ = :| push set emit |
