@@ -451,8 +451,8 @@ def _BindFuncArgs(func, rd, mem):
                     (func.name, num_named), blame_loc)
 
 
-def BindProcArgs(proc, cmd_val, mem, self_val=None):
-    # type: (value.Proc, cmd_value.Argv, state.Mem, value_t) -> None
+def BindProcArgs(proc, cmd_val, mem):
+    # type: (value.Proc, cmd_value.Argv, state.Mem) -> None
 
     proc_args = cmd_val.proc_args
 
@@ -488,8 +488,8 @@ def BindProcArgs(proc, cmd_val, mem, self_val=None):
     if proc_args and proc_args.typed_args:  # blame ( of call site
         blame_loc = proc_args.typed_args.left
 
-    if self_val:
-        pos_args = [self_val]
+    if cmd_val.self_obj:
+        pos_args = [cmd_val.self_obj]  # type: List[value_t]
         if proc_args:
             pos_args.extend(proc_args.pos_args)
     else:
@@ -502,7 +502,7 @@ def BindProcArgs(proc, cmd_val, mem, self_val=None):
         _BindTyped(proc.name, sig.positional, proc.defaults.for_typed,
                    pos_args, mem, blame_loc)
     else:
-        if self_val is not None:
+        if cmd_val.self_obj is not None:
             raise error.Expr(
                 "Using proc %r as __invoke__ requires a 'self' param" %
                 proc.name, blame_loc)

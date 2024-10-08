@@ -1211,6 +1211,20 @@ class ctx_ModuleEval(object):
 
         self.new_frame = NewDict()  # type: Dict[str, Cell]
         self.saved_frame = mem.var_stack[0]
+
+        # Somewhat of a hack for tracing within a module.
+        # Other solutions:
+        # - PS4 can be __builtin__, but that would break shell compatibility
+        # - We can have a separate YSH mechanism that uses a different settings
+        #   - We probably still want it to be scoped, like shvar PS4=z { ... }
+        #
+        # Note: there's a similar issue with HOSTNAME UID EUID etc.  But those
+        # could be io.hostname() io.getuid(), or lazy constants, etc.
+
+        ps4 = self.saved_frame.get('PS4')
+        if ps4:
+            self.new_frame['PS4'] = ps4
+
         mem.var_stack[0] = self.new_frame
 
     def __enter__(self):
@@ -1417,7 +1431,9 @@ class Mem(object):
         # Note: Python 2 and 3 have __builtins__
         # This is just for inspection
         builtins_module = Obj(None, self.builtins)
-        frame['__builtins__'] = Cell(False, False, False, builtins_module)
+
+        # Code in any module can see __builtins__
+        self.builtins['__builtins__'] = builtins_module
 
     def __repr__(self):
         # type: () -> str
@@ -2572,12 +2588,12 @@ class Mem(object):
         return self.ctx_stack.pop()
 
 
-def _InvokableObj(val):
-    # type: (value_t) -> Tuple[Optional[value.Proc], Optional[Obj]]
+def ValueIsInvokableObj(val):
+    # type: (value_t) -> Tuple[Optional[value_t], Optional[Obj]]
     """
     Returns:
-      None if the value is not invokable
-      (self Obj, __invoke__ Proc) if so
+      (__invoke__ Proc or BuiltinProc, self Obj) if the value is invokable
+      (None, None) otherwise
     """
     if val.tag() != value_e.Obj:
         return None, None
@@ -2591,10 +2607,13 @@ def _InvokableObj(val):
         return None, None
 
     # TODO: __invoke__ of wrong type could be fatal error?
-    if invoke_val.tag() != value_e.Proc:
-        return None, None
+    if invoke_val.tag() in (value_e.Proc, value_e.BuiltinProc):
+        return invoke_val, obj
 
-    return cast(value.Proc, invoke_val), obj
+    return None, None
+
+
+#return cast(value.Proc, invoke_val), obj
 
 
 def _AddNames(unique, frame):
@@ -2603,7 +2622,7 @@ def _AddNames(unique, frame):
         val = frame[name].val
         if val.tag() == value_e.Proc:
             unique[name] = True
-        proc, _ = _InvokableObj(val)
+        proc, _ = ValueIsInvokableObj(val)
         if proc is not None:
             unique[name] = True
 
@@ -2673,7 +2692,7 @@ class Procs(object):
         # type: (str) -> bool
 
         val = self.mem.GetValue(name)
-        proc, self_val = _InvokableObj(val)
+        proc, _ = ValueIsInvokableObj(val)
         return proc is not None
 
     def InvokableNames(self):
@@ -2704,24 +2723,20 @@ class Procs(object):
         return names
 
     def GetInvokable(self, name):
-        # type: (str) -> Tuple[Optional[value.Proc], Optional[Obj]]
-        """Try to find a proc/sh-func by `name`, or return None if not found.
-
-        First, we search for a proc, and then a sh-func. This means that procs
-        can shadow the definition of sh-funcs.
+        # type: (str) -> Tuple[Optional[value_t], Optional[Obj]]
+        """Find a proc, invokable Obj, or sh-func, in that order
 
         Callers:
-          executor.py: running
+          executor.py: to actually run
           meta_oils.py runproc lookup - this is not 'invoke', because it is
              INTERIOR shell functions, procs, invokable Obj
-          cmd_eval: check for redefining proc or sh-func (remove)
         """
         val = self.mem.GetValue(name)
 
         if val.tag() == value_e.Proc:
             return cast(value.Proc, val), None
 
-        proc, self_val = _InvokableObj(val)
+        proc, self_val = ValueIsInvokableObj(val)
         if proc:
             return proc, self_val
 

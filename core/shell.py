@@ -161,7 +161,7 @@ def SourceStartupFile(
     rc_line_reader = reader.FileLineReader(f, arena)
     rc_c_parser = parse_ctx.MakeOshParser(rc_line_reader)
 
-    with alloc.ctx_SourceCode(arena, source.SourcedFile(rc_path, loc.Missing)):
+    with alloc.ctx_SourceCode(arena, source.MainFile(rc_path)):
         # TODO: handle status, e.g. 2 for ParseError
         unused = main_loop.Batch(cmd_ev, rc_c_parser, errfmt)
 
@@ -631,6 +631,7 @@ def Main(
     b[builtin_i.extern_] = meta_oils.Extern(shell_ex, procs, errfmt)
 
     # Meta builtins
+    module_invoke = module_ysh.ModuleInvoke(cmd_ev, tracer, errfmt)
     b[builtin_i.use] = meta_oils.ShellFile(parse_ctx,
                                            search_path,
                                            cmd_ev,
@@ -638,7 +639,7 @@ def Main(
                                            tracer,
                                            errfmt,
                                            loader,
-                                           ysh_use=True)
+                                           module_invoke=module_invoke)
     source_builtin = meta_oils.ShellFile(parse_ctx, search_path, cmd_ev,
                                          fd_state, tracer, errfmt, loader)
     b[builtin_i.source] = source_builtin
@@ -923,6 +924,9 @@ def Main(
     _AddBuiltinFunc(mem, '_opsp', func_misc.SparseOp())
 
     mem.AddBuiltin('io', io_obj)
+
+    # Special case for testing
+    mem.AddBuiltin('module-invoke', value.BuiltinProc(module_invoke))
 
     #
     # Is the shell interactive?

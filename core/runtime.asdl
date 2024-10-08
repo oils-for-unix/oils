@@ -12,7 +12,7 @@ module runtime
   }
 
   use core value {
-    value
+    value Obj
   }
 
   # Evaluating SimpleCommand results in either an argv array or an assignment.
@@ -34,7 +34,7 @@ module runtime
   cmd_value =
     Argv(List[str] argv, List[CompoundWord] arg_locs,
          bool is_last_cmd,
-         ProcArgs? proc_args)
+         Obj? self_obj, ProcArgs? proc_args)
 
   | Assign(int builtin_id,
            List[str] argv, List[CompoundWord] arg_locs,

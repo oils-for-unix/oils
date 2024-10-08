@@ -214,8 +214,12 @@ class Pp(_Builtin):
             # TSV8 header
             print('proc_name\tdoc_comment')
             for name in names:
-                proc, _ = self.procs.GetInvokable(name)  # must exist
-                body = proc.body
+                proc_val, _ = self.procs.GetInvokable(name)  # must exist
+                if proc_val.tag() != value_e.Proc:
+                    continue  # can't be value.BuiltinProc
+                user_proc = cast(value.Proc, proc_val)
+
+                body = user_proc.body
 
                 # TODO: not just command.ShFunction, but command.Proc!
                 doc = ''

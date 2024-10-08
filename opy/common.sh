@@ -29,6 +29,7 @@ opy_() {
 # NOTES:
 # - Exclude _devbuild/cpython-full, but include _devbuild/gen.
 # - must exclude opy/testdata/, because some of it can't be compiled
+# - exclude spec/ for spec/stateful tests, which are in Python 3
 # Has some similarity to test/lint.sh, but not the same.
 oil-python-sources() {
   local repo_root=$1
@@ -48,6 +49,7 @@ oil-python-sources() {
     -name testdata -a -prune -o \
     -name Python-2.7.13 -a -prune -o \
     -name py-yajl -a -prune -o \
+    -name spec -a -prune -o \
     -name '*.py' -a -printf "$fmt"
 
   # TODO: move type-annotated files to pea/, and get rid of py3_parse.py hack

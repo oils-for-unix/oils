@@ -83,11 +83,6 @@ These styles don't work in YSH:
     echo -e "tab \\t newline \\n"   # NO: -e is printed literally
     echo -e "tab \t newline \n"     #     Error: Invalid char escape
 
-To mix backslash escapes and var substitution, use the concatenation operator
-`++`:
-
-    echo $[u'tab \t' ++ " $year/$month/$day"]
-
 To omit the trailing newline, use the `write` builtin:
 
     write -n       -- $prefix       # YES
@@ -121,6 +116,23 @@ So `echo` is technically superfluous in YSH, but it's also short, familiar, and
 correct.
 
 YSH isn't intended to be compatible with POSIX shell; only OSH is.
+
+### How do I write a string literal with both `$myvar` and `\n`?
+
+In YSH, either use `$[ \n ]` inside a double-quoted string:
+
+    $ echo "$myvar $[ \n ] two"  # expression sub wraps \n
+    value_of_myvar
+    two
+
+Or use the concatenation operator `++` with two styles of string literal:
+
+    echo $[u'newline \n' ++ " $year/$month/$day"]
+
+This POSIX shell behavior is probably not what you want:
+
+    $ echo "\n"
+    \n  # not a newline!
 
 ### How do I find all the `echo` invocations I need to change when using YSH?
 

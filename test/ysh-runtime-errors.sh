@@ -994,6 +994,20 @@ var x = list(1 .. 50);
 pp [x]'
 }
 
+test-module() {
+  # no args
+  _ysh-error-X 2 'use spec/testdata/module2/util.ysh; util'
+
+  # bad arg
+  _ysh-error-X 2 'use spec/testdata/module2/util.ysh; util zz'
+
+  # proc with bad args
+  _ysh-error-X 3 'use spec/testdata/module2/util2.ysh; util2 echo-args'
+
+  # malformed Obj
+  _ysh-error-X 3 'use spec/testdata/module2/util2.ysh; util2 badObj otherproc'
+}
+
 soil-run-py() {
   run-test-funcs
 }

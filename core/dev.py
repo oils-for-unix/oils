@@ -176,9 +176,9 @@ class ctx_Tracer(object):
     def __init__(self, tracer, label, argv):
         # type: (Tracer, str, Optional[List[str]]) -> None
         self.arg = None  # type: Optional[str]
-        if label == 'proc':
+        if label in ('proc', 'module-invoke'):
             self.arg = argv[0]
-        elif label == 'source':
+        elif label in ('source', 'use'):
             self.arg = argv[1]
 
         tracer.PushMessage(label, argv)
@@ -587,9 +587,9 @@ class Tracer(object):
         buf = self._RichTraceBegin('>')
         if buf:
             buf.write(label)
-            if label == 'proc':
+            if label in ('proc', 'module-invoke'):
                 _PrintYshArgv(argv, buf)
-            elif label == 'source':
+            elif label in ('source', 'use'):
                 _PrintYshArgv(argv[1:], buf)
             elif label == 'wait':
                 _PrintYshArgv(argv[1:], buf)
@@ -639,8 +639,9 @@ class Tracer(object):
 
     def OnBuiltin(self, builtin_id, argv):
         # type: (builtin_t, List[str]) -> None
-        if builtin_id in (builtin_i.eval, builtin_i.source, builtin_i.wait):
-            return  # These 3 builtins handled separately
+        if builtin_id in (builtin_i.eval, builtin_i.source, builtin_i.use,
+                          builtin_i.wait):
+            return  # These builtins are handled separately
 
         buf = self._RichTraceBegin('.')
         if not buf:

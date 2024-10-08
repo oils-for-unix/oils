@@ -180,6 +180,7 @@ module value
     #                                              and non-special?  and assignment?
     # __aliases__ - Dict[str, str]
     # __jobs__    - maybe nicer that jobs -p
+    # __stack__   - replaces pp stacks_, frame_vars_
     #
     # More:
     # - dir stack pushd/popd - read-only variable

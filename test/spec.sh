@@ -250,6 +250,10 @@ builtin-bash() {
   run-file builtin-bash "$@"
 }
 
+builtin-bind() {
+  run-file builtin-bind "$@"
+}
+
 builtin-type() {
   run-file builtin-type "$@"
 }
@@ -834,8 +838,8 @@ ysh-method-io() {
   run-file ysh-method-io "$@"
 }
 
-ysh-module() {
-  run-file ysh-module "$@"
+ysh-namespaces() {
+  run-file ysh-namespaces "$@"
 }
 
 ysh-object() {
