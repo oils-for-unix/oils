@@ -1,0 +1,5 @@
+const __provide__ = :| c2 |
+
+use $_this_dir/cycle1.ysh
+
+var c2 = 'c2'

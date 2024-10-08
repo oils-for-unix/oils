@@ -238,14 +238,16 @@ class ShellFile(vm._Builtin):
 
         return status
 
-    def _UseExec(self, cmd_val, path, path_loc, c_parser):
-        # type: (cmd_value.Argv, str, loc_t, cmd_parse.CommandParser) -> Tuple[int, Optional[Obj]]
-
-        attrs = NewDict()  # type: Dict[str, value_t]
+    def _UseExec(self, cmd_val, path, path_loc, c_parser, props):
+        # type: (cmd_value.Argv, str, loc_t, cmd_parse.CommandParser, Dict[str, value_t]) -> int
+        """
+        Args:
+          props: is mutated, and will contain module properties
+        """
         error_strs = []  # type: List[str]
 
         with dev.ctx_Tracer(self.tracer, 'use', cmd_val.argv):
-            with state.ctx_ModuleEval(self.mem, attrs, error_strs):
+            with state.ctx_ModuleEval(self.mem, props, error_strs):
                 with state.ctx_ThisDir(self.mem, path):
                     src = source.OtherFile(path, path_loc)
                     with alloc.ctx_SourceCode(self.arena, src):
@@ -261,19 +263,15 @@ class ShellFile(vm._Builtin):
                             else:
                                 raise
                         if status != 0:
-                            return status, None
+                            return status
                         #e_die("'use' failed 2", path_loc)
 
         if len(error_strs):
             for s in error_strs:
                 self.errfmt.PrintMessage('Error: %s' % s, path_loc)
-            return 1, None
+            return 1
 
-        # Builtin proc that serves as __invoke__ - it looks up procs in 'self'
-        methods = Obj(None,
-                      {'__invoke__': value.BuiltinProc(self.module_invoke)})
-        module_obj = Obj(methods, attrs)
-        return 0, module_obj
+        return 0
 
     def _Source(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -350,14 +348,7 @@ class ShellFile(vm._Builtin):
             return 0
 
         path_arg, path_loc = arg_r.ReadRequired2('requires a module path')
-        # TODO on usage:
-        # - typed arg is value.Place
-        # - block arg binds 'pick' and 'all'
-        # Although ALL these 3 mechanisms can be done with 'const' assignments.
-        # Hm.
         arg_r.Done()
-
-        # I wonder if modules should be FROZEN value.Obj, not mutable?
 
         # Similar logic as 'source'
         if path_arg.startswith('///'):
@@ -376,6 +367,12 @@ class ShellFile(vm._Builtin):
         var_name = _VarName(path_arg)
         #log('var %s', var_name)
 
+        # Builtin proc that serves as __invoke__ - it looks up procs in 'self'
+        methods = Obj(None,
+                      {'__invoke__': value.BuiltinProc(self.module_invoke)})
+        props = NewDict()  # type: Dict[str, value_t]
+        module_obj = Obj(methods, props)
+
         if embed_path is not None:
             # Embedded modules are cached using /// path as cache key
             cached_obj = self._embed_cache.get(embed_path)
@@ -387,11 +384,14 @@ class ShellFile(vm._Builtin):
             if c_parser is None:
                 return 1  # error was already shown
 
-            status, obj = self._UseExec(cmd_val, load_path, path_loc, c_parser)
+            # Cache BEFORE executing, to prevent circular import
+            self._embed_cache[embed_path] = module_obj
+
+            status = self._UseExec(cmd_val, load_path, path_loc, c_parser,
+                                   props)
             if status != 0:
                 return status
-            state.SetGlobalValue(self.mem, var_name, obj)
-            self._embed_cache[embed_path] = obj
+            state.SetGlobalValue(self.mem, var_name, module_obj)
 
         else:
             normalized = libc.realpath(path_arg)
@@ -410,13 +410,16 @@ class ShellFile(vm._Builtin):
             if c_parser is None:
                 return 1  # error was already shown
 
+            # Cache BEFORE executing, to prevent circular import
+            self._disk_cache[normalized] = module_obj
+
             with process.ctx_FileCloser(f):
-                status, obj = self._UseExec(cmd_val, path_arg, path_loc,
-                                            c_parser)
+                status = self._UseExec(cmd_val, path_arg, path_loc, c_parser,
+                                       props)
             if status != 0:
                 return status
-            state.SetGlobalValue(self.mem, var_name, obj)
-            self._disk_cache[normalized] = obj
+
+            state.SetGlobalValue(self.mem, var_name, module_obj)
 
         return 0
 

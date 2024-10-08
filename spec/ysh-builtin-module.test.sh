@@ -1,4 +1,4 @@
-## oils_failures_allowed: 5
+## oils_failures_allowed: 4
 
 #### source-guard is an old way of preventing redefinition - could remove it
 shopt --set ysh:upgrade
@@ -372,11 +372,22 @@ util zzz
 caller_no_leak = null
 ## END
 
-#### circular import is an error?
+#### circular import doesn't result in infinite loop, or crash
+
+use $REPO_ROOT/spec/testdata/module2/cycle1.ysh
+
+# These use each other
+use $REPO_ROOT/spec/testdata/module2/cycle2.ysh
+
+pp test_ (cycle1)
+pp test_ (cycle2)
 
 echo hi
 
 ## STDOUT:
+(Obj)   {"c1":"c1"} ==> {"__invoke__":<BuiltinProc>}
+(Obj)   {"c2":"c2"} ==> {"__invoke__":<BuiltinProc>}
+hi
 ## END
 
 #### Module with parse error
