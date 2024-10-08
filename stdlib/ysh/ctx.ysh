@@ -1,0 +1,32 @@
+var contextStack = []
+
+proc push (; context;; block) {
+  if (type(context) !== 'Dict') {
+    error "Expected context to be a Dict" (code=3)
+  }
+
+  call contextStack->append(context)
+  try {
+    use ///ysh/ctx.ysh
+    call io->eval(block, vars={ctx})
+  }
+  call contextStack->pop()
+  return $[_error.code]
+}
+
+proc set (;; ...named) {
+  var context = contextStack[-1]
+  for k, v in (named) {
+    setvar context[k] = v
+  }
+}
+
+proc emit (field; item) {
+  var context = contextStack[-1]
+  if (field not in context) {
+    setvar context[field] = []
+  }
+  call context[field]->append(item)
+}
+
+var __provide__ = :| push set emit |
