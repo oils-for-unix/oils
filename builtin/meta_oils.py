@@ -123,7 +123,8 @@ def _VarName(module_path):
     i = basename.rfind('.')
     if i != -1:
         basename = basename[:i]
-    return basename.replace('-', '_')
+    #return basename.replace('-', '_')
+    return basename
 
 
 class ShellFile(vm._Builtin):
@@ -399,7 +400,6 @@ class ShellFile(vm._Builtin):
             # Disk modules are cached using normalized path as cache key
             cached_obj = self._disk_cache.get(normalized)
             if cached_obj:
-                var_name = _VarName(path_arg)
                 state.SetLocalValue(self.mem, var_name, cached_obj)
                 return 0
 

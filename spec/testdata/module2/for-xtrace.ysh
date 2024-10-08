@@ -1,4 +1,4 @@
-const __provide__ = :| increment |
+const __provide__ = :| increment counter |
 
 echo '[for-xtrace]'
 

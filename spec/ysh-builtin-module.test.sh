@@ -277,6 +277,50 @@ util2 echo-args w1 w2 (3, 4, n3=9) {
 <Block>
 ## END
 
+#### module-with-hyphens
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/for-xtrace.ysh
+
+for-xtrace increment
+
+var mod = getVar('for-xtrace')
+pp test_ (mod.counter)
+
+## STDOUT:
+[for-xtrace]
+counter = 5
+counter = 6
+(Int)   6
+## END
+
+#### Mutable variables are frozen - beware!
+
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/for-xtrace.ysh
+
+for-xtrace increment
+
+var mod = getVar('for-xtrace')
+pp test_ (mod.counter)
+
+for-xtrace increment
+
+pp test_ (mod.counter)
+
+for-xtrace increment
+
+## STDOUT:
+[for-xtrace]
+counter = 5
+counter = 6
+(Int)   6
+counter = 7
+(Int)   6
+counter = 8
+## END
+
 #### module invoked without any arguments is an error
 shopt --set ysh:upgrade
 

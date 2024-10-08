@@ -546,7 +546,7 @@ echo
 # problem with PS4 here
 use for-xtrace.ysh # --all-provided
 
-for_xtrace increment foo bar
+for-xtrace increment foo bar
 
 ## STDOUT:
 [for-xtrace]
@@ -571,9 +571,9 @@ counter = 6
     . builtin echo 'counter = 5'
   < proc increment
 < use for-xtrace.ysh
-> module-invoke for_xtrace increment foo bar
+> module-invoke for-xtrace increment foo bar
   . builtin echo 'counter = 6'
-< module-invoke for_xtrace
+< module-invoke for-xtrace
 ## END
 
 #### Encoded argv uses shell encoding, not J8
