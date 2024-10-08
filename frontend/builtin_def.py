@@ -60,7 +60,6 @@ _NORMAL_BUILTINS = [
     'fork', 'forkwait',
     'redir', 'fopen',  # fopen is for backward compat
     'shvar',
-    'ctx',
 
     'invoke',
     'runproc',
