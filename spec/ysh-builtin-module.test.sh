@@ -308,6 +308,19 @@ pp test_ (mylen([3,4,5]))
 (Int)   3
 ## END
 
+#### use may only be used a TOP level, not within proc
+shopt --set ysh:upgrade
+
+proc use-it {
+  use $REPO_ROOT/spec/testdata/module2/builtins.ysh
+}
+
+use-it
+
+## status: 2
+## STDOUT:
+## END
+
 #### Mutable variables are frozen - beware!
 
 shopt --set ysh:upgrade

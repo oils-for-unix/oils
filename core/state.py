@@ -949,8 +949,8 @@ def InitMem(mem, environ, version_str):
     # - libc prints the strings 'nan' and 'inf'
     # - Python 3 prints the strings 'nan' and 'inf'
     # - JavaScript prints 'NaN' and 'Infinity', which is more stylized
-    _SetGlobalValue(mem, 'NAN', value.Float(pyutil.nan()))
-    _SetGlobalValue(mem, 'INFINITY', value.Float(pyutil.infinity()))
+    SetGlobalValue(mem, 'NAN', value.Float(pyutil.nan()))
+    SetGlobalValue(mem, 'INFINITY', value.Float(pyutil.infinity()))
 
     _InitDefaults(mem)
 
@@ -1225,6 +1225,7 @@ class ctx_ModuleEval(object):
         if ps4:
             self.new_frame['PS4'] = ps4
 
+        assert len(mem.var_stack) == 1
         mem.var_stack[0] = self.new_frame
 
     def __enter__(self):
@@ -1234,13 +1235,14 @@ class ctx_ModuleEval(object):
     def __exit__(self, type, value_, traceback):
         # type: (Any, Any, Any) -> None
 
+        assert len(self.mem.var_stack) == 1
         self.mem.var_stack[0] = self.saved_frame
 
         # Now look in __export__ for the list of names to expose
 
         cell = self.new_frame.get('__provide__')
         if cell is None:
-            self.out_errors.append("Module is missing 'provide' List")
+            self.out_errors.append("Module is missing __provide__ List")
             return
 
         provide_val = cell.val
@@ -1655,7 +1657,7 @@ class Mem(object):
 
     def InsideFunction(self):
         # type: () -> bool
-        """For the ERR trap"""
+        """For the ERR trap, and use builtin"""
 
         # Don't run it inside functions
         return len(self.var_stack) > 1
@@ -2808,7 +2810,7 @@ def SetGlobalArray(mem, name, a):
     mem.SetNamed(location.LName(name), value.BashArray(a), scope_e.GlobalOnly)
 
 
-def _SetGlobalValue(mem, name, val):
+def SetGlobalValue(mem, name, val):
     # type: (Mem, str, value_t) -> None
     """Helper for completion, etc."""
     mem.SetNamed(location.LName(name), val, scope_e.GlobalOnly)

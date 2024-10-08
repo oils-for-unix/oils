@@ -365,6 +365,9 @@ class ShellFile(vm._Builtin):
         else:
             embed_path = None
 
+        if self.mem.InsideFunction():
+            raise error.Usage("may only be used at the top level", path_loc)
+
         # Important, consider:
         #     use symlink.ysh  # where symlink.ysh -> realfile.ysh
         #
@@ -377,7 +380,7 @@ class ShellFile(vm._Builtin):
             # Embedded modules are cached using /// path as cache key
             cached_obj = self._embed_cache.get(embed_path)
             if cached_obj:
-                state.SetLocalValue(self.mem, var_name, cached_obj)
+                state.SetGlobalValue(self.mem, var_name, cached_obj)
                 return 0
 
             load_path, c_parser = self.LoadEmbeddedFile(embed_path, path_loc)
@@ -387,7 +390,7 @@ class ShellFile(vm._Builtin):
             status, obj = self._UseExec(cmd_val, load_path, path_loc, c_parser)
             if status != 0:
                 return status
-            state.SetLocalValue(self.mem, var_name, obj)
+            state.SetGlobalValue(self.mem, var_name, obj)
             self._embed_cache[embed_path] = obj
 
         else:
@@ -400,7 +403,7 @@ class ShellFile(vm._Builtin):
             # Disk modules are cached using normalized path as cache key
             cached_obj = self._disk_cache.get(normalized)
             if cached_obj:
-                state.SetLocalValue(self.mem, var_name, cached_obj)
+                state.SetGlobalValue(self.mem, var_name, cached_obj)
                 return 0
 
             f, c_parser = self._LoadDiskFile(normalized, path_loc)
@@ -412,7 +415,7 @@ class ShellFile(vm._Builtin):
                                             c_parser)
             if status != 0:
                 return status
-            state.SetLocalValue(self.mem, var_name, obj)
+            state.SetGlobalValue(self.mem, var_name, obj)
             self._disk_cache[normalized] = obj
 
         return 0
