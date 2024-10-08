@@ -1,0 +1,3 @@
+const __provide__ = :| mylen |
+
+var mylen = __builtins__.len

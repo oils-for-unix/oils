@@ -294,6 +294,20 @@ counter = 6
 (Int)   6
 ## END
 
+
+#### modules can access __builtins__ directly
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/builtins.ysh
+
+var mylen = builtins.mylen
+
+pp test_ (mylen([3,4,5]))
+
+## STDOUT:
+(Int)   3
+## END
+
 #### Mutable variables are frozen - beware!
 
 shopt --set ysh:upgrade

@@ -1431,7 +1431,9 @@ class Mem(object):
         # Note: Python 2 and 3 have __builtins__
         # This is just for inspection
         builtins_module = Obj(None, self.builtins)
-        frame['__builtins__'] = Cell(False, False, False, builtins_module)
+
+        # Code in any module can see __builtins__
+        self.builtins['__builtins__'] = builtins_module
 
     def __repr__(self):
         # type: () -> str
