@@ -238,6 +238,15 @@ class ShellFile(vm._Builtin):
 
         return status
 
+    def _NewModule(self):
+        # type: () -> Obj
+        # Builtin proc that serves as __invoke__ - it looks up procs in 'self'
+        methods = Obj(None,
+                      {'__invoke__': value.BuiltinProc(self.module_invoke)})
+        props = NewDict()  # type: Dict[str, value_t]
+        module_obj = Obj(methods, props)
+        return module_obj
+
     def _UseExec(self, cmd_val, path, path_loc, c_parser, props):
         # type: (cmd_value.Argv, str, loc_t, cmd_parse.CommandParser, Dict[str, value_t]) -> int
         """
@@ -314,6 +323,21 @@ class ShellFile(vm._Builtin):
 
         raise AssertionError()
 
+    def _BindNames(self, module_obj, module_name, pick_names, pick_locs):
+        # type: (Obj, str, List[str], List[loc_t]) -> int
+        state.SetGlobalValue(self.mem, module_name, module_obj)
+        for i, name in enumerate(pick_names):
+            val = module_obj.d.get(name)
+            # ctx_ModuleEval ensures this
+            if val is None:
+                # note: could be more precise
+                self.errfmt.Print_("use: module doesn't provide name %r" %
+                                   name,
+                                   blame_loc=pick_locs[i])
+                return 1
+            state.SetGlobalValue(self.mem, name, val)
+        return 0
+
     def _Use(self, cmd_val):
         # type: (cmd_value.Argv) -> int
         """
@@ -348,7 +372,34 @@ class ShellFile(vm._Builtin):
             return 0
 
         path_arg, path_loc = arg_r.ReadRequired2('requires a module path')
-        arg_r.Done()
+
+        pick_names = []  # type: List[str]
+        pick_locs = []  # type: List[loc_t]
+
+        # There is only one flag
+        flag, flag_loc = arg_r.Peek2()
+        if flag is not None:
+            if flag == '--pick':
+                arg_r.Next()
+                p = arg_r.Peek()
+                if p is None:
+                    raise error.Usage('with --pick expects one or more names',
+                                      flag_loc)
+                pick_names, pick_locs = arg_r.Rest2()
+
+            elif flag == '--all-provided':
+                arg_r.Next()
+                arg_r.Done()
+                print('TODO: --all-provided not implemented')
+
+            elif flag == '--all-for-testing':
+                arg_r.Next()
+                arg_r.Done()
+                print('TODO: --all-for testing not implemented')
+
+            else:
+                raise error.Usage(
+                    'expected flag like --pick after module path', flag_loc)
 
         # Similar logic as 'source'
         if path_arg.startswith('///'):
@@ -367,31 +418,28 @@ class ShellFile(vm._Builtin):
         var_name = _VarName(path_arg)
         #log('var %s', var_name)
 
-        # Builtin proc that serves as __invoke__ - it looks up procs in 'self'
-        methods = Obj(None,
-                      {'__invoke__': value.BuiltinProc(self.module_invoke)})
-        props = NewDict()  # type: Dict[str, value_t]
-        module_obj = Obj(methods, props)
-
         if embed_path is not None:
             # Embedded modules are cached using /// path as cache key
             cached_obj = self._embed_cache.get(embed_path)
             if cached_obj:
-                state.SetGlobalValue(self.mem, var_name, cached_obj)
-                return 0
+                return self._BindNames(cached_obj, var_name, pick_names,
+                                       pick_locs)
 
             load_path, c_parser = self.LoadEmbeddedFile(embed_path, path_loc)
             if c_parser is None:
                 return 1  # error was already shown
 
+            module_obj = self._NewModule()
+
             # Cache BEFORE executing, to prevent circular import
             self._embed_cache[embed_path] = module_obj
 
             status = self._UseExec(cmd_val, load_path, path_loc, c_parser,
-                                   props)
+                                   module_obj.d)
             if status != 0:
                 return status
-            state.SetGlobalValue(self.mem, var_name, module_obj)
+
+            return self._BindNames(module_obj, var_name, pick_names, pick_locs)
 
         else:
             normalized = libc.realpath(path_arg)
@@ -403,23 +451,25 @@ class ShellFile(vm._Builtin):
             # Disk modules are cached using normalized path as cache key
             cached_obj = self._disk_cache.get(normalized)
             if cached_obj:
-                state.SetGlobalValue(self.mem, var_name, cached_obj)
-                return 0
+                return self._BindNames(cached_obj, var_name, pick_names,
+                                       pick_locs)
 
             f, c_parser = self._LoadDiskFile(normalized, path_loc)
             if c_parser is None:
                 return 1  # error was already shown
+
+            module_obj = self._NewModule()
 
             # Cache BEFORE executing, to prevent circular import
             self._disk_cache[normalized] = module_obj
 
             with process.ctx_FileCloser(f):
                 status = self._UseExec(cmd_val, path_arg, path_loc, c_parser,
-                                       props)
+                                       module_obj.d)
             if status != 0:
                 return status
 
-            state.SetGlobalValue(self.mem, var_name, module_obj)
+            return self._BindNames(module_obj, var_name, pick_names, pick_locs)
 
         return 0
 
@@ -685,16 +735,13 @@ def _ResolveName(
 ):
     # type: (...) -> List[Tuple[str, str, Optional[str]]]
     """
-    TODO: Can this be moved to pure YSH?
-
-    All of these could be in YSH:
+    TODO: All of these could be in YSH:
 
     type, type -t, type -a
     pp proc
 
-    We would have primitive isShellFunc() and isInvokableObj() functions
+    We could builtin functions like isShellFunc() and isInvokableObj()
     """
-
     # MyPy tuple type
     no_str = None  # type: Optional[str]
 

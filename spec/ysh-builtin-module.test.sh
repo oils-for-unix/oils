@@ -1,4 +1,4 @@
-## oils_failures_allowed: 4
+## oils_failures_allowed: 3
 
 #### source-guard is an old way of preventing redefinition - could remove it
 shopt --set ysh:upgrade
@@ -58,7 +58,6 @@ echo too-many=$?
 use ///no-builtin
 echo no-builtin=$?
 
-
 ## STDOUT:
 no-arg=2
 one-arg=1
@@ -68,6 +67,35 @@ too-many=2
 no-builtin=1
 ## END
 
+#### use usage with --pick etc.
+#shopt --set ysh:upgrade
+
+use foo --bad-flag
+echo bad-flag=$?
+
+use foo --all-provided zz
+echo all-provided=$?
+
+use foo --all-for-testing zz
+echo all-for-testing=$?
+
+echo
+
+use $REPO_ROOT/spec/testdata/module2/cycle1.ysh --pick
+echo no-picked=$?
+
+use $REPO_ROOT/spec/testdata/module2/cycle1.ysh --pick c1 c1
+echo picked=$?
+
+
+## STDOUT:
+bad-flag=2
+all-provided=2
+all-for-testing=2
+
+no-picked=2
+picked=0
+## END
 
 #### use --extern is a no-op, for static analysis
 
@@ -422,10 +450,25 @@ echo 'TODO: Dict view of realpath() string -> Obj instance'
 ## STDOUT:
 ## END
 
-#### use foo.ysh --names a b
+#### use foo.ysh --pick a b
 
-echo TODO
+use $REPO_ROOT/spec/testdata/module2/builtins.ysh --pick mylen mylen2
 
+pp test_ (mylen([3,4,5]))
+
+pp test_ (mylen2([4,5]))
+
+## STDOUT:
+(Int)   3
+(Int)   2
+## END
+
+#### use foo.ysh --pick nonexistent
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/builtins.ysh --pick mylen nonexistent
+
+## status: 1
 ## STDOUT:
 ## END
 
