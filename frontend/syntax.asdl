@@ -46,11 +46,11 @@ module syntax
   | CFlag
   | Stdin(str comment)
 
-    # TODO: if it's not the main script, it's sourced, and you could provide
-    # a chain of locations back to the sourced script!
-    # MainFile(str path) or SourcedFile(str path, loc location)
+    # oshrc/ysh are considered a MainFile - loaded directly by the shell
   | MainFile(str path)
-  | SourcedFile(str path, loc location)
+    # TODO: if it's not the main script, it's sourced or a module/ and you
+    # could provide a chain of locations back to the sourced script!
+  | OtherFile(str path, loc location)
 
     # code parsed from a word
     # used for 'eval', 'trap', 'printf', 'complete -W', parseCommand()

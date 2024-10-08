@@ -181,8 +181,8 @@ def GetLineSourceString(line, quote_filename=False):
             s = src.path
             if quote_filename:
                 s = j8_lite.EncodeString(s, unquoted_ok=True)
-        elif case(source_e.SourcedFile):
-            src = cast(source.SourcedFile, UP_src)
+        elif case(source_e.OtherFile):
+            src = cast(source.OtherFile, UP_src)
             # ditto
             s = src.path
             if quote_filename:

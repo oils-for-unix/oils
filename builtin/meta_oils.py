@@ -221,7 +221,7 @@ class ShellFile(vm._Builtin):
             source_argv = arg_r.Rest()
             with state.ctx_Source(self.mem, path, source_argv):
                 with state.ctx_ThisDir(self.mem, path):
-                    src = source.SourcedFile(path, call_loc)
+                    src = source.OtherFile(path, call_loc)
                     with alloc.ctx_SourceCode(self.arena, src):
                         try:
                             status = main_loop.Batch(
@@ -246,10 +246,7 @@ class ShellFile(vm._Builtin):
         with dev.ctx_Tracer(self.tracer, 'use', cmd_val.argv):
             with state.ctx_ModuleEval(self.mem, attrs, error_strs):
                 with state.ctx_ThisDir(self.mem, path):
-
-                    # TODO: change the src to source.ShellFile
-
-                    src = source.SourcedFile(path, path_loc)
+                    src = source.OtherFile(path, path_loc)
                     with alloc.ctx_SourceCode(self.arena, src):
                         try:
                             status = main_loop.Batch(
