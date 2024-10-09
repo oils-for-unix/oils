@@ -243,16 +243,16 @@ proc test-vs-python3-argparse {
 
     spec = argparse.ArgumentParser()
     spec.add_argument("filename")
-    spec.add_argument("-c", "--count")
+    spec.add_argument("-c", "--count", type=int)
     spec.add_argument("-v", "--verbose",
                       action="store_true")
 
     result = spec.parse_args(sys.argv[1:])
-    print(result)
+    print([result.filename, result.count, result.verbose])
     '''
 
     for args in (argsCases) {
-      var args_str = args=>join(" ")
+      var args_str = args => join(" ")
       echo "----------  $args_str  ----------"
       echo "\$ bin/ysh example.sh $args_str"
       pp test_ (parseArgs(spec, args))
@@ -271,21 +271,21 @@ proc test-vs-python3-argparse {
   (Dict)   {"verbose":true,"count":120,"file":"example.sh"}
   
   $ python3 example.py -v --count 120 example.sh
-  Namespace(filename='example.sh', count='120', verbose=True)
+  ['example.sh', 120, True]
   
   ----------  -v --count 120 example.sh -v  ----------
   $ bin/ysh example.sh -v --count 120 example.sh -v
   (Dict)   {"verbose":true,"count":120,"file":"example.sh"}
   
   $ python3 example.py -v --count 120 example.sh -v
-  Namespace(filename='example.sh', count='120', verbose=True)
+  ['example.sh', 120, True]
   
   ----------  -v --count 120 example.sh -v --count 150  ----------
   $ bin/ysh example.sh -v --count 120 example.sh -v --count 150
   (Dict)   {"verbose":true,"count":150,"file":"example.sh"}
   
   $ python3 example.py -v --count 120 example.sh -v --count 150
-  Namespace(filename='example.sh', count='150', verbose=True)
+  ['example.sh', 150, True]
 
   '''
 

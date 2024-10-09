@@ -693,10 +693,6 @@ ysh-stdlib-args() {
   run-file ysh-stdlib-args "$@"
 }
 
-ysh-stdlib-testing() {
-  run-file ysh-stdlib-testing "$@"
-}
-
 ysh-stdlib-synch() {
   run-file ysh-stdlib-synch "$@"
 }
