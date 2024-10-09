@@ -1,3 +1,5 @@
+#!bin/ysh
+
 use $LIB_YSH/math.ysh --pick max min abs
 
 # Change to 'use'?

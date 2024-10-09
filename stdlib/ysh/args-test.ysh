@@ -1,3 +1,5 @@
+#!bin/ysh
+
 # TODO: you should only have to pick parser
 # and you can use 'args parser' I guess
 
