@@ -59,10 +59,10 @@ test-ysh-word-eval() {
   _ysh-expr-error 'echo $[maybe("foo")]'
 
   # Wrong sigil
-  _ysh-expr-error 'source --builtin funcs.ysh; echo $[identity({key: "val"})]'
+  _ysh-expr-error 'source $LIB_YSH/math.ysh; echo $[identity({key: "val"})]'
 
   # this should be consistent
-  _ysh-expr-error 'source --builtin funcs.ysh; write -- @[identity([{key: "val"}])]'
+  _ysh-expr-error 'source $LIB_YSH/math.ysh; write -- @[identity([{key: "val"}])]'
 
   _ysh-expr-error 'const x = [1, 2]; echo $x'
 
