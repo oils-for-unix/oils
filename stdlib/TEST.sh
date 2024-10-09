@@ -37,8 +37,9 @@ test-byo-protocol() {
 soil-run() {
   test-byo-protocol
 
-  devtools/byo.sh test $YSH stdlib/ysh/math-test.ysh
+  devtools/byo.sh test $YSH stdlib/ysh/args-test.ysh
   devtools/byo.sh test $YSH stdlib/ysh/list-test.ysh
+  devtools/byo.sh test $YSH stdlib/ysh/math-test.ysh
 
   devtools/byo.sh test $YSH stdlib/ysh/yblocks-test.ysh 
   devtools/byo.sh test $YSH stdlib/ysh/stream.ysh 

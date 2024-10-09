@@ -62,6 +62,8 @@ proc test-repeat-list {
 }
 
 proc test-repeat-error {
+  #pp test_ (repeat(null, 3))
+
   try {
     pp test_ (repeat(null, 3))
   }

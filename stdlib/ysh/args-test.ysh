@@ -1,0 +1,39 @@
+# TODO: you should only have to pick parser
+# and you can use 'args parser' I guess
+
+use $LIB_YSH/args.ysh --pick parser flag arg rest parseArgs
+
+# Change to 'use'?
+source $LIB_OSH/byo-server.sh
+
+proc test-basic {
+  parser (&spec) {
+    flag -v --verbose (help="Verbosely")  # default is Bool, false
+  
+    flag -P --max-procs ('int', default=-1, help='''
+      Run at most P processes at a time
+      ''')
+  
+    flag -i --invert ('bool', default=true, help='''
+      Long multiline
+      Description
+      ''')
+  
+    arg src (help='Source')
+    arg dest (help='Dest')
+  
+    rest files
+  }
+  
+  var args = parseArgs(spec, :| mysrc -P 12 mydest a b c |)
+  
+  assert [false === args.verbose]
+
+  # TODO: clean up this JSON
+  var expected = {"src":"mysrc","max-procs":12,"dest":"mydest","files":["a","b","c"],"verbose":false,"invert":true}
+  assert [expected === args]
+}
+
+if is-main {
+  byo-maybe-run
+}
