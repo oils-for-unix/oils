@@ -14,7 +14,7 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
-from _devbuild.gen.syntax_asdl import source, loc, loc_t
+from _devbuild.gen.syntax_asdl import source, loc, loc_t, CompoundWord
 from _devbuild.gen.value_asdl import Obj, value, value_t
 from core import alloc
 from core import dev
@@ -324,8 +324,12 @@ class ShellFile(vm._Builtin):
         raise AssertionError()
 
     def _BindNames(self, module_obj, module_name, pick_names, pick_locs):
-        # type: (Obj, str, List[str], List[loc_t]) -> int
+        # type: (Obj, str, Optional[List[str]], Optional[List[CompoundWord]]) -> int
         state.SetGlobalValue(self.mem, module_name, module_obj)
+
+        if pick_names is None:
+            return 0
+
         for i, name in enumerate(pick_names):
             val = module_obj.d.get(name)
             # ctx_ModuleEval ensures this
@@ -373,8 +377,8 @@ class ShellFile(vm._Builtin):
 
         path_arg, path_loc = arg_r.ReadRequired2('requires a module path')
 
-        pick_names = []  # type: List[str]
-        pick_locs = []  # type: List[loc_t]
+        pick_names = None  # type: Optional[List[str]]
+        pick_locs = None  # type: Optional[List[CompoundWord]]
 
         # There is only one flag
         flag, flag_loc = arg_r.Peek2()
