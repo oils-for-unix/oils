@@ -689,10 +689,6 @@ ysh-stdlib() {
   run-file ysh-stdlib "$@"
 }
 
-ysh-stdlib-2() {
-  run-file ysh-stdlib-2 "$@"
-}
-
 ysh-stdlib-args() {
   run-file ysh-stdlib-args "$@"
 }

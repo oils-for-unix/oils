@@ -147,18 +147,55 @@ true
 false
 ## END
 
+#### more any() and all()
+source $LIB_YSH/list.ysh
+
+var a1 = all( :|yes yes| )
+var a2 = all( :|yes ''| )
+var a3 = all( :|'' ''| )
+# This should be true and false or what?
+write $a1 $a2 $a3
+write __
+
+var x1 = any( :|yes yes| )
+var x2 = any( :|yes ''| )
+var x3 = any( :|'' ''| )
+write $x1 $x2 $x3
+
+## STDOUT:
+true
+false
+false
+__
+true
+true
+false
+## END
+
 #### sum
 source $LIB_YSH/list.ysh
 
 json write (sum([]))
 json write (sum([0]))
 json write (sum([1, 2, 3]))
+
+var start = 42
+
+echo
+
+write $[sum( 0 .. 3 )]
+write $[sum( 0 .. 3; start=42)]
+write $[sum( 0 .. 0, start=42)]
+
 ## STDOUT:
 0
 0
 6
-## END
 
+3
+45
+42
+## END
 
 #### repeat() string
 
@@ -220,3 +257,28 @@ code=10
 code=10
 code=10
 ## END
+
+
+#### smoke test for two.sh
+
+source --builtin osh/two.sh
+
+log 'hi'
+
+set +o errexit
+( die "bad" )
+echo status=$?
+
+## STDOUT:
+status=1
+## END
+
+#### smoke test for stream.ysh and table.ysh 
+
+shopt --set redefine_proc_func   # byo-maybe-main
+
+source $LIB_YSH/stream.ysh
+source $LIB_YSH/table.ysh
+
+## status: 0
+

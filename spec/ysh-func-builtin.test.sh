@@ -1,6 +1,86 @@
 ## oils_failures_allowed: 1
 ## our_shell: ysh
 
+#### join()
+var x = :|a b 'c d'|
+
+var y = join(x)
+argv.py $y
+
+var z = join(x, ":")
+argv.py $z
+## STDOUT:
+['abc d']
+['a:b:c d']
+## END
+
+#### @[split(x)] respects IFS
+setvar IFS = ":"
+var x = "one:two:three"
+argv.py @[split(x)]
+## STDOUT:
+['one', 'two', 'three']
+## END
+
+#### @[maybe(x)]
+setvar empty = ''
+setvar x = 'X'
+argv.py a @[maybe(empty)] @[maybe(x)] b
+
+setvar n = null
+argv.py a @[maybe(n)] b
+
+## STDOUT:
+['a', 'X', 'b']
+['a', 'b']
+## END
+
+#### maybe() on invalid type is fatal error
+
+# not allowed
+setvar marray = :||
+argv.py a @[maybe(marray)] b
+echo done
+## status: 3
+## STDOUT:
+## END
+
+#### split() on invalid type is fatal error
+var myarray = :| --all --long |
+write -- @[myarray]
+write -- @[split(myarray)]
+## status: 3
+## STDOUT:
+--all
+--long
+## END
+
+#### @[glob(x)]
+
+# empty glob
+write -- A @[glob('__nope__')] B
+echo ___
+
+touch -- a.z b.z -.z
+write -- @[glob('?.z')]
+echo ___
+
+# add it back
+shopt -s dashglob
+write -- @[glob('?.z')]
+
+## STDOUT:
+A
+B
+___
+a.z
+b.z
+___
+-.z
+a.z
+b.z
+## END
+
 #### shSplit() respects IFS
 
 var s = ' aa a bb b   '
