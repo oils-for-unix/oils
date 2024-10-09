@@ -13,7 +13,7 @@ source $LIB_OSH/two.sh
 # There is no yb-redir, because you can just use try >$tmp { } and inspect _error.code
 
 proc yb-capture(; out; ; block) {
-  ### capture status and stderr 
+  ### capture status and stdout
 
   var stdout = ''
   try {
@@ -37,7 +37,7 @@ proc yb-capture-2(; out; ; block) {
 
   var stderr = ''
   try {
-    fopen 2>&1 { call io->eval(block); } | read --all (&stderr)
+    redir 2>&1 { call io->eval(block); } | read --all (&stderr)
 
     # Note that this doesn't parse because of expression issue:
     #     call io->eval(block) 2>&1 | read --all (&stderr)
