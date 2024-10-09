@@ -1,4 +1,4 @@
-const __provide__ = :| identity |
+const __provide__ = :| identity max min abs |
 
 func identity(x) {
   ### The identity function. Returns its argument.
