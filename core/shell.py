@@ -1021,7 +1021,7 @@ def Main(
     _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
 
     if flag.headless:
-        state.InitInteractive(mem)
+        state.InitInteractive(mem, lang)
         mutable_opts.set_redefine_proc_func()
         mutable_opts.set_redefine_module()
 
@@ -1053,7 +1053,7 @@ def Main(
     c_parser = parse_ctx.MakeOshParser(line_reader)
 
     if exec_opts.interactive():
-        state.InitInteractive(mem)
+        state.InitInteractive(mem, lang)
         # bash: 'set -o emacs' is the default only in the interactive shell
         mutable_opts.set_emacs()
         mutable_opts.set_redefine_proc_func()

@@ -955,13 +955,29 @@ def InitMem(mem, environ, version_str):
     _InitDefaults(mem)
 
 
-def InitInteractive(mem):
-    # type: (Mem) -> None
+def InitInteractive(mem, lang):
+    # type: (Mem, str) -> None
     """Initialization that's only done in the interactive/headless shell."""
 
-    # Same default PS1 as bash
-    if mem.GetValue('PS1').tag() == value_e.Undef:
-        SetGlobalString(mem, 'PS1', r'\s-\v\$ ')
+    # PS1 is set, and it's YSH, then prepend 'ysh' to it to eliminate confusion
+    ps1_val = mem.GetValue('PS1')
+    with tagswitch(ps1_val) as case:
+        if case(value_e.Undef):
+            # Same default PS1 as bash
+            SetGlobalString(mem, 'PS1', r'\s-\v\$ ')
+
+        elif case(value_e.Str):
+            # Hack so we don't confuse osh and ysh, but we still respect the
+            # PS1.
+
+            # The user can disable this with
+            #
+            # func renderPrompt() {
+            #   return ("${PS1@P}")
+            # }
+            if lang == 'ysh':
+                user_setting = cast(value.Str, ps1_val).s
+                SetGlobalString(mem, 'PS1', 'ysh ' + user_setting)
 
 
 class ctx_FuncCall(object):

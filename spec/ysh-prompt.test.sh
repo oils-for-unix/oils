@@ -1,5 +1,18 @@
 ## our_shell: ysh
 
+#### default prompt doesn't confuse OSH and YSH
+
+# Special ysh prefix if PS1 is set
+PS1='\$ ' $SH -i -c 'echo "[$PS1]"'
+
+# No prefix if it's not set, since we already have \s for YSH
+$SH -i -c 'echo "[$PS1]"'
+
+## STDOUT:
+[ysh \$ ]
+[\s-\v\$ ]
+## END
+
 #### promptVal() with various values
 
 shopt -s ysh:upgrade
@@ -129,5 +142,4 @@ hi
 ^D
 ## END
 ## stderr-json: "<Runtime error: Func 'renderPrompt' takes no positional args, but got 1><Runtime error: Func 'renderPrompt' takes no positional args, but got 1>"
-
 
