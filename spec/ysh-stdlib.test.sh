@@ -2,26 +2,6 @@
 
 ## our_shell: ysh
 
-#### identity
-source --builtin funcs.ysh
-
-for x in (['a', 1, null, { foo: 'bar' }, [40, 2]]) {
-  json write (identity(x))
-}
-
-## STDOUT:
-"a"
-1
-null
-{
-  "foo": "bar"
-}
-[
-  40,
-  2
-]
-## END
-
 #### max
 source $LIB_YSH/math.ysh
 

@@ -1,0 +1,19 @@
+use $LIB_YSH/math.ysh
+
+# Change to 'use'?
+source $LIB_OSH/byo-server.sh
+
+proc test-identity {
+
+  assert [42 === math.identity(42)]
+
+  var mylist = [3, 4, 5]
+  assert [mylist === math.identity(mylist)]
+
+  var mydict = {foo: 'bar'}
+  assert [mydict === math.identity(mydict)]
+}
+
+if is-main {
+  byo-maybe-run
+}
