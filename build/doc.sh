@@ -94,6 +94,8 @@ readonly MARKDOWN_DOCS=(
 
   proc-func
   block-literals
+  objects
+  types
 
   # Data language
   qsn
