@@ -51,28 +51,28 @@ call io->eval(my_block)
 1
 ## END
 
-#### io->eval(block) can read variables like eval ''
-
-proc p2(code_str) {
-  var mylocal = 42
-  eval $code_str
-}
-
-p2 'echo mylocal=$mylocal'
+#### io->eval(block) cannot read variables like eval ''
 
 proc p (;;; block) {
-  var mylocal = 99
+  var mylocal = "inner"
   call io->eval(block)
 }
 
-p {
-  echo mylocal=$mylocal
+proc p2(code_str) {
+  var mylocal = "inner"
+  eval $code_str
 }
 
+proc main {
+  var mylocal="outer"
+  p { echo mylocal=$mylocal }
+  p2 'echo mylocal=$mylocal'
+}
 
+main
 ## STDOUT:
-mylocal=42
-mylocal=99
+mylocal=outer
+mylocal=inner
 ## END
 
 #### eval should have a sandboxed mode

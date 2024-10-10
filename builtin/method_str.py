@@ -396,7 +396,7 @@ class Replace(vm._Callable):
                 s = subst_str.s
             if subst_expr:
                 # Eval with $0 set to string_val (the matched substring)
-                with state.ctx_Eval(self.mem, string_val.s, None, None):
+                with state.ctx_Eval(self.mem, None, string_val.s, None, None):
                     s = self.EvalSubstExpr(subst_expr, rd.LeftParenToken())
             assert s is not None
 
@@ -464,7 +464,7 @@ class Replace(vm._Callable):
                 if subst_str:
                     s = subst_str.s
                 if subst_expr:
-                    with state.ctx_Eval(self.mem, arg0, argv, named_vars):
+                    with state.ctx_Eval(self.mem, None, arg0, argv, named_vars):
                         s = self.EvalSubstExpr(subst_expr, rd.LeftParenToken())
                 assert s is not None
 

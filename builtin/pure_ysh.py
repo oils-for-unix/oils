@@ -57,7 +57,7 @@ class Shvar(vm._Builtin):
             if name == 'PATH':
                 self.search_path.ClearCache()
 
-        with state.ctx_Eval(self.mem, None, None, vars):
+        with state.ctx_Eval(self.mem, None, None, None, vars):
             unused = self.cmd_ev.EvalCommand(cmd)
 
         return 0

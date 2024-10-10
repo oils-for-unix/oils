@@ -1,6 +1,7 @@
 """Methods on IO type"""
 from __future__ import print_function
 
+from _devbuild.gen.syntax_asdl import command_t
 from _devbuild.gen.value_asdl import value, value_e, value_t
 
 from core import error
@@ -45,7 +46,17 @@ class Eval(vm._Callable):
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
         unused = rd.PosValue()
-        cmd = rd.PosCommand()
+
+        val = rd.PosValue()
+        if val.tag() == value_e.Block:
+            block = cast(value.Block, val)
+            cmd = block.block.brace_group  # type: command_t
+            frame = block.frame
+        elif val.tag() == value_e.Command:
+            cmd = cast(value.Command, val).c
+            frame = None
+        else:
+            assert False
 
         dollar0 = rd.NamedStr("dollar0", None)
         pos_args_raw = rd.NamedList("pos_args", None)
@@ -64,7 +75,7 @@ class Eval(vm._Callable):
                 pos_args.append(cast(value.Str, arg).s)
 
         if self.which == EVAL_NULL:
-            with state.ctx_Eval(self.cmd_ev.mem, dollar0, pos_args, vars_):
+            with state.ctx_Eval(self.cmd_ev.mem, frame, dollar0, pos_args, vars_):
                 unused_status = self.cmd_ev.EvalCommand(cmd)
             return value.Null
 
