@@ -1,3 +1,11 @@
+const __provide__ = :| identity max min abs |
+
+func identity(x) {
+  ### The identity function. Returns its argument.
+
+  return (x)
+}
+
 func __math_select(list, cmp) {
   ## Internal helper for `max` and `min`.
   ##

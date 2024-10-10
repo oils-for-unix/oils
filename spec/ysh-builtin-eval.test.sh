@@ -1,7 +1,7 @@
 # YSH specific features of eval
 
 ## our_shell: ysh
-## oils_failures_allowed: 3
+## oils_failures_allowed: 5
 
 #### eval builtin does not take a literal block - can restore this later
 
@@ -441,6 +441,61 @@ proc p {
 
 ## STDOUT:
 ## END
+
+#### block in Dict (&d) { ... } can read from outer scope
+
+proc Dict ( ; out; ; block) {
+  var d = io->evalToDict(block)
+  call out->setValue(d)
+}
+
+func f() {
+  var x = 42
+
+  Dict (&d) {
+    y = x + 1  # x is from outer scope
+  }
+  return (d)
+}
+
+var mydict = f()
+
+pp test_ (mydict)
+
+## STDOUT:
+## END
+
+#### block in yb-capture Dict (&d) can read from outer scope
+
+proc yb-capture(; out; ; block) {
+  # capture status and stdout
+
+  var stdout = ''
+  try {
+    { call io->eval(block) } | read --all (&stdout)
+  }
+  var result = {status: _pipeline_status[0], stdout}
+
+  call out->setValue(result)
+}
+
+func f() {
+  var x = 42
+
+  yb-capture (&r) {
+    echo $[x + 1]
+  }
+
+  return (r)
+}
+
+var result = f()
+
+pp test_ (result)
+
+## STDOUT:
+## END
+
 
 #### Dict (&d) and setvar 
 

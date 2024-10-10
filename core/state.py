@@ -949,19 +949,35 @@ def InitMem(mem, environ, version_str):
     # - libc prints the strings 'nan' and 'inf'
     # - Python 3 prints the strings 'nan' and 'inf'
     # - JavaScript prints 'NaN' and 'Infinity', which is more stylized
-    _SetGlobalValue(mem, 'NAN', value.Float(pyutil.nan()))
-    _SetGlobalValue(mem, 'INFINITY', value.Float(pyutil.infinity()))
+    SetGlobalValue(mem, 'NAN', value.Float(pyutil.nan()))
+    SetGlobalValue(mem, 'INFINITY', value.Float(pyutil.infinity()))
 
     _InitDefaults(mem)
 
 
-def InitInteractive(mem):
-    # type: (Mem) -> None
+def InitInteractive(mem, lang):
+    # type: (Mem, str) -> None
     """Initialization that's only done in the interactive/headless shell."""
 
-    # Same default PS1 as bash
-    if mem.GetValue('PS1').tag() == value_e.Undef:
-        SetGlobalString(mem, 'PS1', r'\s-\v\$ ')
+    # PS1 is set, and it's YSH, then prepend 'ysh' to it to eliminate confusion
+    ps1_val = mem.GetValue('PS1')
+    with tagswitch(ps1_val) as case:
+        if case(value_e.Undef):
+            # Same default PS1 as bash
+            SetGlobalString(mem, 'PS1', r'\s-\v\$ ')
+
+        elif case(value_e.Str):
+            # Hack so we don't confuse osh and ysh, but we still respect the
+            # PS1.
+
+            # The user can disable this with
+            #
+            # func renderPrompt() {
+            #   return ("${PS1@P}")
+            # }
+            if lang == 'ysh':
+                user_setting = cast(value.Str, ps1_val).s
+                SetGlobalString(mem, 'PS1', 'ysh ' + user_setting)
 
 
 class ctx_FuncCall(object):
@@ -1211,6 +1227,21 @@ class ctx_ModuleEval(object):
 
         self.new_frame = NewDict()  # type: Dict[str, Cell]
         self.saved_frame = mem.var_stack[0]
+
+        # Somewhat of a hack for tracing within a module.
+        # Other solutions:
+        # - PS4 can be __builtin__, but that would break shell compatibility
+        # - We can have a separate YSH mechanism that uses a different settings
+        #   - We probably still want it to be scoped, like shvar PS4=z { ... }
+        #
+        # Note: there's a similar issue with HOSTNAME UID EUID etc.  But those
+        # could be io.hostname() io.getuid(), or lazy constants, etc.
+
+        ps4 = self.saved_frame.get('PS4')
+        if ps4:
+            self.new_frame['PS4'] = ps4
+
+        assert len(mem.var_stack) == 1
         mem.var_stack[0] = self.new_frame
 
     def __enter__(self):
@@ -1220,13 +1251,14 @@ class ctx_ModuleEval(object):
     def __exit__(self, type, value_, traceback):
         # type: (Any, Any, Any) -> None
 
+        assert len(self.mem.var_stack) == 1
         self.mem.var_stack[0] = self.saved_frame
 
         # Now look in __export__ for the list of names to expose
 
         cell = self.new_frame.get('__provide__')
         if cell is None:
-            self.out_errors.append("Module is missing 'provide' List")
+            self.out_errors.append("Module is missing __provide__ List")
             return
 
         provide_val = cell.val
@@ -1425,7 +1457,9 @@ class Mem(object):
         # Note: Python 2 and 3 have __builtins__
         # This is just for inspection
         builtins_module = Obj(None, self.builtins)
-        frame['__builtins__'] = Cell(False, False, False, builtins_module)
+
+        # Code in any module can see __builtins__
+        self.builtins['__builtins__'] = builtins_module
 
     def __repr__(self):
         # type: () -> str
@@ -1647,7 +1681,7 @@ class Mem(object):
 
     def InsideFunction(self):
         # type: () -> bool
-        """For the ERR trap"""
+        """For the ERR trap, and use builtin"""
 
         # Don't run it inside functions
         return len(self.var_stack) > 1
@@ -2580,12 +2614,12 @@ class Mem(object):
         return self.ctx_stack.pop()
 
 
-def _InvokableObj(val):
-    # type: (value_t) -> Tuple[Optional[value.Proc], Optional[Obj]]
+def ValueIsInvokableObj(val):
+    # type: (value_t) -> Tuple[Optional[value_t], Optional[Obj]]
     """
     Returns:
-      None if the value is not invokable
-      (self Obj, __invoke__ Proc) if so
+      (__invoke__ Proc or BuiltinProc, self Obj) if the value is invokable
+      (None, None) otherwise
     """
     if val.tag() != value_e.Obj:
         return None, None
@@ -2599,10 +2633,13 @@ def _InvokableObj(val):
         return None, None
 
     # TODO: __invoke__ of wrong type could be fatal error?
-    if invoke_val.tag() != value_e.Proc:
-        return None, None
+    if invoke_val.tag() in (value_e.Proc, value_e.BuiltinProc):
+        return invoke_val, obj
 
-    return cast(value.Proc, invoke_val), obj
+    return None, None
+
+
+#return cast(value.Proc, invoke_val), obj
 
 
 def _AddNames(unique, frame):
@@ -2611,7 +2648,7 @@ def _AddNames(unique, frame):
         val = frame[name].val
         if val.tag() == value_e.Proc:
             unique[name] = True
-        proc, _ = _InvokableObj(val)
+        proc, _ = ValueIsInvokableObj(val)
         if proc is not None:
             unique[name] = True
 
@@ -2681,7 +2718,7 @@ class Procs(object):
         # type: (str) -> bool
 
         val = self.mem.GetValue(name)
-        proc, self_val = _InvokableObj(val)
+        proc, _ = ValueIsInvokableObj(val)
         return proc is not None
 
     def InvokableNames(self):
@@ -2712,7 +2749,7 @@ class Procs(object):
         return names
 
     def GetInvokable(self, name):
-        # type: (str) -> Tuple[Optional[value.Proc], Optional[Obj]]
+        # type: (str) -> Tuple[Optional[value_t], Optional[Obj]]
         """Find a proc, invokable Obj, or sh-func, in that order
 
         Callers:
@@ -2725,7 +2762,7 @@ class Procs(object):
         if val.tag() == value_e.Proc:
             return cast(value.Proc, val), None
 
-        proc, self_val = _InvokableObj(val)
+        proc, self_val = ValueIsInvokableObj(val)
         if proc:
             return proc, self_val
 
@@ -2797,7 +2834,7 @@ def SetGlobalArray(mem, name, a):
     mem.SetNamed(location.LName(name), value.BashArray(a), scope_e.GlobalOnly)
 
 
-def _SetGlobalValue(mem, name, val):
+def SetGlobalValue(mem, name, val):
     # type: (Mem, str, value_t) -> None
     """Helper for completion, etc."""
     mem.SetNamed(location.LName(name), val, scope_e.GlobalOnly)

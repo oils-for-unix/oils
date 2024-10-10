@@ -216,7 +216,7 @@ class Exec(vm._Builtin):
 
         # shift off 'exec', and remove typed args because they don't apply
         c2 = cmd_value.Argv(cmd_val.argv[i:], cmd_val.arg_locs[i:],
-                            cmd_val.is_last_cmd, None)
+                            cmd_val.is_last_cmd, cmd_val.self_obj, None)
 
         self.ext_prog.Exec(argv0_path, c2, environ)  # NEVER RETURNS
         # makes mypy and C++ compiler happy

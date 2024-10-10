@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 
 #### Object() creates prototype chain
 
@@ -236,22 +236,15 @@ no __invoke__ method in prototype
 __invoke__ of wrong type
 ## END
 
-#### Use Invokable Obj
+#### Object with longer prototype chain
 
-proc p (word1, word2; self, int1, int2) {
-  echo "sum = $[self.x + self.y]"
-  pp test_ (self)
-  pp test_ ([word1, word2, int1, int2])
-}
+# prototypal inheritance pattern
+var superClassMethods = Object(null, {foo: 'zz'})
+var methods = Object(superClassMethods, {foo: 42, bar: [1,2]})
+var instance = Object(methods, {foo: 1, bar: 2, x: 3})
 
-p a b ({x: 5, y: 6}, 42, 43)
-
-var methods = Object(null, {__invoke__: p})
-
-var callable = Object(methods, {x: 98, y: 99})
-
-# TODO: change this error message
-callable a b (42, 43)
+pp test_ (instance)
 
 ## STDOUT:
+(Obj)   {"foo":1,"bar":2,"x":3} ==> {"foo":42,"bar":[1,2]} ==> {"foo":"zz"}
 ## END

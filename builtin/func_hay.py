@@ -56,7 +56,7 @@ class ParseHay(vm._Callable):
         c_parser = self.parse_ctx.MakeConfigParser(line_reader)
 
         # TODO: Should there be a separate config file source?
-        src = source.SourcedFile(path, call_loc)
+        src = source.OtherFile(path, call_loc)
         try:
             with alloc.ctx_SourceCode(arena, src):
                 node = main_loop.ParseWholeFile(c_parser)

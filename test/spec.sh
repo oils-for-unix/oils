@@ -250,6 +250,10 @@ builtin-bash() {
   run-file builtin-bash "$@"
 }
 
+builtin-bind() {
+  run-file builtin-bind "$@"
+}
+
 builtin-type() {
   run-file builtin-type "$@"
 }
@@ -685,16 +689,8 @@ ysh-stdlib() {
   run-file ysh-stdlib "$@"
 }
 
-ysh-stdlib-2() {
-  run-file ysh-stdlib-2 "$@"
-}
-
 ysh-stdlib-args() {
   run-file ysh-stdlib-args "$@"
-}
-
-ysh-stdlib-testing() {
-  run-file ysh-stdlib-testing "$@"
 }
 
 ysh-stdlib-synch() {
@@ -834,8 +830,8 @@ ysh-method-io() {
   run-file ysh-method-io "$@"
 }
 
-ysh-module() {
-  run-file ysh-module "$@"
+ysh-namespaces() {
+  run-file ysh-namespaces "$@"
 }
 
 ysh-object() {

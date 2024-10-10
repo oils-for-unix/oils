@@ -59,10 +59,10 @@ test-ysh-word-eval() {
   _ysh-expr-error 'echo $[maybe("foo")]'
 
   # Wrong sigil
-  _ysh-expr-error 'source --builtin funcs.ysh; echo $[identity({key: "val"})]'
+  _ysh-expr-error 'source $LIB_YSH/math.ysh; echo $[identity({key: "val"})]'
 
   # this should be consistent
-  _ysh-expr-error 'source --builtin funcs.ysh; write -- @[identity([{key: "val"}])]'
+  _ysh-expr-error 'source $LIB_YSH/math.ysh; write -- @[identity([{key: "val"}])]'
 
   _ysh-expr-error 'const x = [1, 2]; echo $x'
 
@@ -992,6 +992,20 @@ pp [x]'
   _ysh-should-run '
 var x = list(1 .. 50);
 pp [x]'
+}
+
+test-module() {
+  # no args
+  _ysh-error-X 2 'use spec/testdata/module2/util.ysh; util'
+
+  # bad arg
+  _ysh-error-X 2 'use spec/testdata/module2/util.ysh; util zz'
+
+  # proc with bad args
+  _ysh-error-X 3 'use spec/testdata/module2/util2.ysh; util2 echo-args'
+
+  # malformed Obj
+  _ysh-error-X 3 'use spec/testdata/module2/util2.ysh; util2 badObj otherproc'
 }
 
 soil-run-py() {

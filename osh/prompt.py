@@ -308,19 +308,8 @@ class Evaluator(object):
                     return _ERROR_FMT % msg
 
         # Now try evaluating $PS1
-
         ps1_val = self.mem.GetValue('PS1')
-        prompt_str = self.EvalPrompt(ps1_val)
-
-        # Add string to show it's YSH.  The user can disable this with
-        #
-        # func renderPrompt() {
-        #   return ("${PS1@P}")
-        # }
-        if self.lang == 'ysh':
-            prompt_str = 'ysh ' + prompt_str
-
-        return prompt_str
+        return self.EvalPrompt(ps1_val)
 
 
 PROMPT_COMMAND = 'PROMPT_COMMAND'

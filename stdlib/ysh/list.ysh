@@ -1,3 +1,5 @@
+const __provide__ = :| any all sum repeat |
+
 func any(list) {
   ### Returns true if any value in the list is truthy.
   # Empty list: returns false
@@ -11,7 +13,7 @@ func any(list) {
 }
 
 func all(list) {
-  ## Returns true if all values in the list are truthy.
+  ### Returns true if all values in the list are truthy.
   # Empty list: returns true
 
   for item in (list) {

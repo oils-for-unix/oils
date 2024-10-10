@@ -1,4 +1,4 @@
-## oils_failures_allowed: 6
+## oils_failures_allowed: 3
 
 #### source-guard is an old way of preventing redefinition - could remove it
 shopt --set ysh:upgrade
@@ -58,7 +58,6 @@ echo too-many=$?
 use ///no-builtin
 echo no-builtin=$?
 
-
 ## STDOUT:
 no-arg=2
 one-arg=1
@@ -68,6 +67,35 @@ too-many=2
 no-builtin=1
 ## END
 
+#### use usage with --pick etc.
+#shopt --set ysh:upgrade
+
+use foo --bad-flag
+echo bad-flag=$?
+
+use foo --all-provided zz
+echo all-provided=$?
+
+use foo --all-for-testing zz
+echo all-for-testing=$?
+
+echo
+
+use $REPO_ROOT/spec/testdata/module2/cycle1.ysh --pick
+echo no-picked=$?
+
+use $REPO_ROOT/spec/testdata/module2/cycle1.ysh --pick c1 c1
+echo picked=$?
+
+
+## STDOUT:
+bad-flag=2
+all-provided=2
+all-for-testing=2
+
+no-picked=2
+picked=0
+## END
 
 #### use --extern is a no-op, for static analysis
 
@@ -120,9 +148,9 @@ echo "setglobal_noleak $[getVar('setglobal_noleak')]"
 
 ## STDOUT:
 caller_no_leak = null
-(List)   ["util",{"MY_INTEGER":42,"log":<Proc>,"die":<Proc>,"setvar_noleak":"util.ysh","setglobal_noleak":"util.ysh"}]
-(List)   ["repeated",{"MY_INTEGER":42,"log":<Proc>,"die":<Proc>,"setvar_noleak":"util.ysh","setglobal_noleak":"util.ysh"}]
-(List)   ["symlink",{"MY_INTEGER":42,"log":<Proc>,"die":<Proc>,"setvar_noleak":"util.ysh","setglobal_noleak":"util.ysh"}]
+(List)   ["util",{"MY_INTEGER":42,"log":<Proc>,"die":<Proc>,"setvar_noleak":"util.ysh","setglobal_noleak":"util.ysh","invokableObj":{"x":3,"y":4} ==> {"__invoke__":<Proc>}} ==> {"__invoke__":<BuiltinProc>}]
+(List)   ["repeated",{"MY_INTEGER":42,"log":<Proc>,"die":<Proc>,"setvar_noleak":"util.ysh","setglobal_noleak":"util.ysh","invokableObj":{"x":3,"y":4} ==> {"__invoke__":<Proc>}} ==> {"__invoke__":<BuiltinProc>}]
+(List)   ["symlink",{"MY_INTEGER":42,"log":<Proc>,"die":<Proc>,"setvar_noleak":"util.ysh","setglobal_noleak":"util.ysh","invokableObj":{"x":3,"y":4} ==> {"__invoke__":<Proc>}} ==> {"__invoke__":<BuiltinProc>}]
 setvar_noleak null
 setglobal_noleak null
 ## END
@@ -189,6 +217,8 @@ shopt --set ysh:upgrade
 
 use $REPO_ROOT/spec/testdata/module2/bad-provide-type.ysh
 
+echo 'should not get here'
+
 ## status: 1
 ## STDOUT:
 ## END
@@ -197,6 +227,8 @@ use $REPO_ROOT/spec/testdata/module2/bad-provide-type.ysh
 shopt --set ysh:upgrade
 
 use $REPO_ROOT/spec/testdata/module2/bad-provide.ysh
+
+echo 'should not get here'
 
 ## status: 1
 ## STDOUT:
@@ -208,21 +240,208 @@ shopt --set ysh:upgrade
 use $REPO_ROOT/spec/testdata/module2/util.ysh
 
 # This is a value.Obj
-pp test_ (util)
+#pp test_ (util)
 
 util log 'hello'
-util die 'hello'
+util die 'hello there'
 
+## STDOUT:
+caller_no_leak = null
+log hello
+die hello there
+## END
+
+#### module itself is invokable Obj, which can contain invokable obj!
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/util.ysh
+
+util invokableObj (1)
+
+# Usage error
+#util invokableObj 
+
+## STDOUT:
+caller_no_leak = null
+sum = 8
+## END
+
+#### argument binding test
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/util2.ysh
+
+util2 echo-args w1 w2 w3 w4 (3, 4, 5, 6, n1=7, n2=8, n3=9) {
+  echo hi
+}
+
+echo ---
+
+util2 echo-args w1 w2 (3, 4, n3=9) {
+  echo hi
+}
+
+## STDOUT:
+(List)   ["w1","w2"]
+(List)   ["w3","w4"]
+
+(List)   [3,4]
+(List)   [5,6]
+
+(List)   [7,8]
+(Dict)   {"n3":9}
+
+<Block>
+---
+(List)   ["w1","w2"]
+(List)   []
+
+(List)   [3,4]
+(List)   []
+
+(List)   [42,43]
+(Dict)   {"n3":9}
+
+<Block>
+## END
+
+#### module-with-hyphens
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/for-xtrace.ysh
+
+for-xtrace increment
+
+var mod = getVar('for-xtrace')
+pp test_ (mod.counter)
+
+## STDOUT:
+[for-xtrace]
+counter = 5
+counter = 6
+(Int)   6
+## END
+
+
+#### modules can access __builtins__ directly
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/builtins.ysh
+
+var mylen = builtins.mylen
+
+pp test_ (mylen([3,4,5]))
+
+## STDOUT:
+(Int)   3
+## END
+
+#### use may only be used a TOP level, not within proc
+shopt --set ysh:upgrade
+
+proc use-it {
+  use $REPO_ROOT/spec/testdata/module2/builtins.ysh
+}
+
+use-it
+
+## status: 2
 ## STDOUT:
 ## END
 
-#### circular import is an error?
+#### Mutable variables are frozen - beware!
+
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/for-xtrace.ysh
+
+for-xtrace increment
+
+var mod = getVar('for-xtrace')
+pp test_ (mod.counter)
+
+for-xtrace increment
+
+pp test_ (mod.counter)
+
+for-xtrace increment
+
+## STDOUT:
+[for-xtrace]
+counter = 5
+counter = 6
+(Int)   6
+counter = 7
+(Int)   6
+counter = 8
+## END
+
+#### module invoked without any arguments is an error
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/util.ysh
+
+util
+
+## status: 2
+## STDOUT:
+caller_no_leak = null
+## END
+
+#### module invoked with nonexistent name is error
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/util.ysh
+
+util zzz
+
+## status: 2
+## STDOUT:
+caller_no_leak = null
+## END
+
+#### circular import doesn't result in infinite loop, or crash
+
+use $REPO_ROOT/spec/testdata/module2/cycle1.ysh
+
+# These use each other
+use $REPO_ROOT/spec/testdata/module2/cycle2.ysh
+
+pp test_ (cycle1)
+pp test_ (cycle2)
 
 echo hi
 
 ## STDOUT:
+(Obj)   {"c1":"c1"} ==> {"__invoke__":<BuiltinProc>}
+(Obj)   {"c2":"c2"} ==> {"__invoke__":<BuiltinProc>}
+hi
 ## END
 
+#### Module with parse error
+
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/parse-error.ysh
+
+echo 'should not get here'
+
+## status: 2
+## STDOUT:
+## END
+
+#### Module with runtime error
+
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/runtime-error.ysh
+
+echo 'should not get here'
+
+## status: 1
+## STDOUT:
+runtime-error before
+## END
 
 #### user can inspect __modules__ cache
 
@@ -233,8 +452,23 @@ echo 'TODO: Dict view of realpath() string -> Obj instance'
 
 #### use foo.ysh --pick a b
 
-echo TODO
+use $REPO_ROOT/spec/testdata/module2/builtins.ysh --pick mylen mylen2
 
+pp test_ (mylen([3,4,5]))
+
+pp test_ (mylen2([4,5]))
+
+## STDOUT:
+(Int)   3
+(Int)   2
+## END
+
+#### use foo.ysh --pick nonexistent
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/builtins.ysh --pick mylen nonexistent
+
+## status: 1
 ## STDOUT:
 ## END
 

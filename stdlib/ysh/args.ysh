@@ -2,6 +2,10 @@
 #
 # Usage:
 #   source --builtin args.sh
+
+const __provide__ = :| parser flag arg rest parseArgs |
+
+#
 #
 # parser (&spec) {
 #   flag -v --verbose (help="Verbosely")  # default is Bool, false

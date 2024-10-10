@@ -14,12 +14,12 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
-from _devbuild.gen.syntax_asdl import source, loc, loc_t
-from _devbuild.gen.value_asdl import Obj, value_t
+from _devbuild.gen.syntax_asdl import source, loc, loc_t, CompoundWord
+from _devbuild.gen.value_asdl import Obj, value, value_t
 from core import alloc
 from core import dev
 from core import error
-from core.error import e_usage, e_die
+from core.error import e_usage
 from core import executor
 from core import main_loop
 from core import process
@@ -123,7 +123,8 @@ def _VarName(module_path):
     i = basename.rfind('.')
     if i != -1:
         basename = basename[:i]
-    return basename.replace('-', '_')
+    #return basename.replace('-', '_')
+    return basename
 
 
 class ShellFile(vm._Builtin):
@@ -142,9 +143,13 @@ class ShellFile(vm._Builtin):
             tracer,  # type: dev.Tracer
             errfmt,  # type: ui.ErrorFormatter
             loader,  # type: pyutil._ResourceLoader
-            ysh_use=False,  # type: bool
+            module_invoke=None,  # type: vm._Builtin
     ):
         # type: (...) -> None
+        """
+        If module_invoke is passed, this class behaves like 'use'.  Otherwise
+        it behaves like 'source'.
+        """
         self.parse_ctx = parse_ctx
         self.arena = parse_ctx.arena
         self.search_path = search_path
@@ -153,9 +158,9 @@ class ShellFile(vm._Builtin):
         self.tracer = tracer
         self.errfmt = errfmt
         self.loader = loader
-        self.ysh_use = ysh_use
+        self.module_invoke = module_invoke
 
-        self.builtin_name = 'use' if ysh_use else 'source'
+        self.builtin_name = 'use' if module_invoke else 'source'
         self.mem = cmd_ev.mem
 
         # Don't load modules more than once
@@ -167,7 +172,7 @@ class ShellFile(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        if self.ysh_use:
+        if self.module_invoke:
             return self._Use(cmd_val)
         else:
             return self._Source(cmd_val)
@@ -217,7 +222,7 @@ class ShellFile(vm._Builtin):
             source_argv = arg_r.Rest()
             with state.ctx_Source(self.mem, path, source_argv):
                 with state.ctx_ThisDir(self.mem, path):
-                    src = source.SourcedFile(path, call_loc)
+                    src = source.OtherFile(path, call_loc)
                     with alloc.ctx_SourceCode(self.arena, src):
                         try:
                             status = main_loop.Batch(
@@ -233,22 +238,30 @@ class ShellFile(vm._Builtin):
 
         return status
 
-    def _UseExec(self, path, path_loc, c_parser):
-        # type: (str, loc_t, cmd_parse.CommandParser) -> Obj
+    def _NewModule(self):
+        # type: () -> Obj
+        # Builtin proc that serves as __invoke__ - it looks up procs in 'self'
+        methods = Obj(None,
+                      {'__invoke__': value.BuiltinProc(self.module_invoke)})
+        props = NewDict()  # type: Dict[str, value_t]
+        module_obj = Obj(methods, props)
+        return module_obj
 
-        d = NewDict()  # type: Dict[str, value_t]
+    def _UseExec(self, cmd_val, path, path_loc, c_parser, props):
+        # type: (cmd_value.Argv, str, loc_t, cmd_parse.CommandParser, Dict[str, value_t]) -> int
+        """
+        Args:
+          props: is mutated, and will contain module properties
+        """
         error_strs = []  # type: List[str]
 
-        with state.ctx_ModuleEval(self.mem, d, error_strs):
-            with dev.ctx_Tracer(self.tracer, 'use', None):
+        with dev.ctx_Tracer(self.tracer, 'use', cmd_val.argv):
+            with state.ctx_ModuleEval(self.mem, props, error_strs):
                 with state.ctx_ThisDir(self.mem, path):
-
-                    # TODO: change the src to source.ShellFile
-
-                    src = source.SourcedFile(path, path_loc)
+                    src = source.OtherFile(path, path_loc)
                     with alloc.ctx_SourceCode(self.arena, src):
                         try:
-                            unused_status = main_loop.Batch(
+                            status = main_loop.Batch(
                                 self.cmd_ev,
                                 c_parser,
                                 self.errfmt,
@@ -258,15 +271,16 @@ class ShellFile(vm._Builtin):
                                 status = e.StatusCode()
                             else:
                                 raise
+                        if status != 0:
+                            return status
+                        #e_die("'use' failed 2", path_loc)
 
         if len(error_strs):
-            # TODO: show 'export' location, not the 'import' location
             for s in error_strs:
                 self.errfmt.PrintMessage('Error: %s' % s, path_loc)
-            e_die("Import failed", path_loc)
+            return 1
 
-        module_obj = Obj(None, d)
-        return module_obj
+        return 0
 
     def _Source(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -309,6 +323,25 @@ class ShellFile(vm._Builtin):
 
         raise AssertionError()
 
+    def _BindNames(self, module_obj, module_name, pick_names, pick_locs):
+        # type: (Obj, str, Optional[List[str]], Optional[List[CompoundWord]]) -> int
+        state.SetGlobalValue(self.mem, module_name, module_obj)
+
+        if pick_names is None:
+            return 0
+
+        for i, name in enumerate(pick_names):
+            val = module_obj.d.get(name)
+            # ctx_ModuleEval ensures this
+            if val is None:
+                # note: could be more precise
+                self.errfmt.Print_("use: module doesn't provide name %r" %
+                                   name,
+                                   blame_loc=pick_locs[i])
+                return 1
+            state.SetGlobalValue(self.mem, name, val)
+        return 0
+
     def _Use(self, cmd_val):
         # type: (cmd_value.Argv) -> int
         """
@@ -317,8 +350,8 @@ class ShellFile(vm._Builtin):
         use util.ysh  # util is a value.Obj
 
         # Importing a bunch of words
-        use dialect-ninja.ysh { all }  # requires 'provide' in dialect-ninja
-        use dialect-github.ysh { all }
+        use dialect-ninja.ysh --all-provided
+        use dialect-github.ysh --all-provided
 
         # This declares some names
         use --extern grep sed
@@ -330,50 +363,10 @@ class ShellFile(vm._Builtin):
         use util.ysh (&_)
 
         # Picking specifics
-        use util.ysh {
-          pick log die
-          pick foo (&myfoo)
-        }
+        use util.ysh --names log die
 
-        # A long way to write this is:
-
-        use util.ysh
-        const log = util.log
-        const die = util.die
-        const myfoo = util.foo
-
-        Another way is:
-        for name in log die {
-          call setVar(name, util[name])
-
-          # value.Obj may not support [] though
-          # get(propView(util), name, null) is a long way of writing it
-        }
-
-        Other considerations:
-
-        - Statically parseable subset?  For fine-grained static tree-shaking
-          - We're doing coarse dynamic tree-shaking first though
-
-        - if TYPE_CHECKING is an issue
-          - that can create circular dependencies, especially with gradual typing,
-            when you go dynamic to static (like Oils did)
-          - I guess you can have
-            - use --static parse_lib.ysh { pick ParseContext } 
-
-        # Crazy idea - pure ysh
-
-        use $LIB_YSH/pick.ysh
-        pick $LIB_YSH/table.ysh {
-          names foo bar
-          name x (&alias)
-
-          all
-          names *  # perhaps, if you turn off globbing
-        }
-
-        import $LIB_YSH/stdlib
-
+        # Rename
+        var mylog = log
         """
         attrs, arg_r = flag_util.ParseCmdVal('use', cmd_val)
         arg = arg_types.use(attrs.attrs)
@@ -383,20 +376,43 @@ class ShellFile(vm._Builtin):
             return 0
 
         path_arg, path_loc = arg_r.ReadRequired2('requires a module path')
-        # TODO on usage:
-        # - typed arg is value.Place
-        # - block arg binds 'pick' and 'all'
-        # Although ALL these 3 mechanisms can be done with 'const' assignments.
-        # Hm.
-        arg_r.Done()
 
-        # I wonder if modules should be FROZEN value.Obj, not mutable?
+        pick_names = None  # type: Optional[List[str]]
+        pick_locs = None  # type: Optional[List[CompoundWord]]
+
+        # There is only one flag
+        flag, flag_loc = arg_r.Peek2()
+        if flag is not None:
+            if flag == '--pick':
+                arg_r.Next()
+                p = arg_r.Peek()
+                if p is None:
+                    raise error.Usage('with --pick expects one or more names',
+                                      flag_loc)
+                pick_names, pick_locs = arg_r.Rest2()
+
+            elif flag == '--all-provided':
+                arg_r.Next()
+                arg_r.Done()
+                print('TODO: --all-provided not implemented')
+
+            elif flag == '--all-for-testing':
+                arg_r.Next()
+                arg_r.Done()
+                print('TODO: --all-for testing not implemented')
+
+            else:
+                raise error.Usage(
+                    'expected flag like --pick after module path', flag_loc)
 
         # Similar logic as 'source'
         if path_arg.startswith('///'):
             embed_path = path_arg[3:]
         else:
             embed_path = None
+
+        if self.mem.InsideFunction():
+            raise error.Usage("may only be used at the top level", path_loc)
 
         # Important, consider:
         #     use symlink.ysh  # where symlink.ysh -> realfile.ysh
@@ -410,16 +426,24 @@ class ShellFile(vm._Builtin):
             # Embedded modules are cached using /// path as cache key
             cached_obj = self._embed_cache.get(embed_path)
             if cached_obj:
-                state.SetLocalValue(self.mem, var_name, cached_obj)
-                return 0
+                return self._BindNames(cached_obj, var_name, pick_names,
+                                       pick_locs)
 
             load_path, c_parser = self.LoadEmbeddedFile(embed_path, path_loc)
             if c_parser is None:
                 return 1  # error was already shown
 
-            obj = self._UseExec(load_path, path_loc, c_parser)
-            state.SetLocalValue(self.mem, var_name, obj)
-            self._embed_cache[embed_path] = obj
+            module_obj = self._NewModule()
+
+            # Cache BEFORE executing, to prevent circular import
+            self._embed_cache[embed_path] = module_obj
+
+            status = self._UseExec(cmd_val, load_path, path_loc, c_parser,
+                                   module_obj.d)
+            if status != 0:
+                return status
+
+            return self._BindNames(module_obj, var_name, pick_names, pick_locs)
 
         else:
             normalized = libc.realpath(path_arg)
@@ -431,18 +455,25 @@ class ShellFile(vm._Builtin):
             # Disk modules are cached using normalized path as cache key
             cached_obj = self._disk_cache.get(normalized)
             if cached_obj:
-                var_name = _VarName(path_arg)
-                state.SetLocalValue(self.mem, var_name, cached_obj)
-                return 0
+                return self._BindNames(cached_obj, var_name, pick_names,
+                                       pick_locs)
 
             f, c_parser = self._LoadDiskFile(normalized, path_loc)
             if c_parser is None:
                 return 1  # error was already shown
 
+            module_obj = self._NewModule()
+
+            # Cache BEFORE executing, to prevent circular import
+            self._disk_cache[normalized] = module_obj
+
             with process.ctx_FileCloser(f):
-                obj = self._UseExec(path_arg, path_loc, c_parser)
-            state.SetLocalValue(self.mem, var_name, obj)
-            self._disk_cache[normalized] = obj
+                status = self._UseExec(cmd_val, path_arg, path_loc, c_parser,
+                                       module_obj.d)
+            if status != 0:
+                return status
+
+            return self._BindNames(module_obj, var_name, pick_names, pick_locs)
 
         return 0
 
@@ -535,7 +566,7 @@ class Command(vm._Builtin):
             return status
 
         cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.is_last_cmd,
-                                  cmd_val.proc_args)
+                                  cmd_val.self_obj, cmd_val.proc_args)
 
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
 
@@ -554,7 +585,8 @@ class Command(vm._Builtin):
 def _ShiftArgv(cmd_val):
     # type: (cmd_value.Argv) -> cmd_value.Argv
     return cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_locs[1:],
-                          cmd_val.is_last_cmd, cmd_val.proc_args)
+                          cmd_val.is_last_cmd, cmd_val.self_obj,
+                          cmd_val.proc_args)
 
 
 class Builtin(vm._Builtin):
@@ -617,7 +649,7 @@ class RunProc(vm._Builtin):
             return 1
 
         cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.is_last_cmd,
-                                  cmd_val.proc_args)
+                                  cmd_val.self_obj, cmd_val.proc_args)
 
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
         run_flags = executor.IS_LAST_CMD if cmd_val.is_last_cmd else 0
@@ -707,16 +739,13 @@ def _ResolveName(
 ):
     # type: (...) -> List[Tuple[str, str, Optional[str]]]
     """
-    TODO: Can this be moved to pure YSH?
-
-    All of these could be in YSH:
+    TODO: All of these could be in YSH:
 
     type, type -t, type -a
     pp proc
 
-    We would have primitive isShellFunc() and isInvokableObj() functions
+    We could builtin functions like isShellFunc() and isInvokableObj()
     """
-
     # MyPy tuple type
     no_str = None  # type: Optional[str]
 

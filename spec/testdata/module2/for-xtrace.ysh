@@ -1,0 +1,13 @@
+const __provide__ = :| increment counter |
+
+echo '[for-xtrace]'
+
+var counter = 5
+
+proc increment {
+  echo "counter = $counter"
+  setglobal counter += 1
+}
+
+increment
+

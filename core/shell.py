@@ -161,7 +161,7 @@ def SourceStartupFile(
     rc_line_reader = reader.FileLineReader(f, arena)
     rc_c_parser = parse_ctx.MakeOshParser(rc_line_reader)
 
-    with alloc.ctx_SourceCode(arena, source.SourcedFile(rc_path, loc.Missing)):
+    with alloc.ctx_SourceCode(arena, source.MainFile(rc_path)):
         # TODO: handle status, e.g. 2 for ParseError
         unused = main_loop.Batch(cmd_ev, rc_c_parser, errfmt)
 
@@ -632,6 +632,7 @@ def Main(
     b[builtin_i.extern_] = meta_oils.Extern(shell_ex, procs, errfmt)
 
     # Meta builtins
+    module_invoke = module_ysh.ModuleInvoke(cmd_ev, tracer, errfmt)
     b[builtin_i.use] = meta_oils.ShellFile(parse_ctx,
                                            search_path,
                                            cmd_ev,
@@ -639,7 +640,7 @@ def Main(
                                            tracer,
                                            errfmt,
                                            loader,
-                                           ysh_use=True)
+                                           module_invoke=module_invoke)
     source_builtin = meta_oils.ShellFile(parse_ctx, search_path, cmd_ev,
                                          fd_state, tracer, errfmt, loader)
     b[builtin_i.source] = source_builtin
@@ -925,6 +926,9 @@ def Main(
 
     mem.AddBuiltin('io', io_obj)
 
+    # Special case for testing
+    mem.AddBuiltin('module-invoke', value.BuiltinProc(module_invoke))
+
     #
     # Is the shell interactive?
     #
@@ -1017,7 +1021,7 @@ def Main(
     _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
 
     if flag.headless:
-        state.InitInteractive(mem)
+        state.InitInteractive(mem, lang)
         mutable_opts.set_redefine_proc_func()
         mutable_opts.set_redefine_module()
 
@@ -1049,7 +1053,7 @@ def Main(
     c_parser = parse_ctx.MakeOshParser(line_reader)
 
     if exec_opts.interactive():
-        state.InitInteractive(mem)
+        state.InitInteractive(mem, lang)
         # bash: 'set -o emacs' is the default only in the interactive shell
         mutable_opts.set_emacs()
         mutable_opts.set_redefine_proc_func()
