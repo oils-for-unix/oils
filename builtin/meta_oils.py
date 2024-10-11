@@ -550,12 +550,14 @@ class Command(vm._Builtin):
                 r = _ResolveName(argument, self.funcs, self.aliases,
                                  self.search_path, False)
                 if len(r):
-                    # command -v prints the name (-V is more detailed)
-                    # Print it only once.
+                    # Print only the first occurrence
                     row = r[0]
-                    name, _, _ = row
                     if arg.v:
-                        print(name)
+                        name, _, path = row
+                        if path is not None:
+                            print(path)  # /usr/bin/awk
+                        else:
+                            print(name)  # myfunc
                     else:
                         _PrintFreeForm(row)
                 else:
@@ -739,6 +741,9 @@ def _ResolveName(
 ):
     # type: (...) -> List[Tuple[str, str, Optional[str]]]
     """
+    Returns:
+      A list of (name, type, optional file system path)
+
     TODO: All of these could be in YSH:
 
     type, type -t, type -a

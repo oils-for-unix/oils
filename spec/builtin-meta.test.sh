@@ -38,6 +38,19 @@ for
 0
 ## END
 
+#### command -v executable
+
+#command -v grep ls
+
+command -v grep | egrep -o '/[^/]+$'
+command -v ls | egrep -o '/[^/]+$'
+
+## STDOUT:
+/grep
+/ls
+## END
+
+
 #### command -v with multiple names
 # ALL FOUR SHELLS behave differently here!
 #
