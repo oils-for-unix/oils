@@ -768,7 +768,7 @@ sum = 1
 (List)   ["a","b",42,43]
 
 sum = 5
-(Obj)   {"x":2,"y":3} ==> {"__invoke__":<Proc>}
+(Obj)   ("x":2,"y":3) --> ("__invoke__":<Proc>)
 (List)   ["a","b",44,45]
 ## END
 

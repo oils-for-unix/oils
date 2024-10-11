@@ -341,10 +341,10 @@ var two = [obj, obj]
 pp test_ (two)
 
 ## STDOUT:
-(Obj)   {"z":99} ==> {"__foo__":null}
-(Obj)   {"z":99,"cycle":{...}} ==> {"__foo__":null}
+(Obj)   ("z":99) --> ("__foo__":null)
+(Obj)   ("z":99,"cycle":{...}) --> ("__foo__":null)
 
-(List)   [{"z":99,"cycle":{...}} ==> {"__foo__":null},{"z":99,"cycle":{...}} ==> {"__foo__":null}]
+(List)   [("z":99,"cycle":{...}) --> ("__foo__":null),("z":99,"cycle":{...}) --> ("__foo__":null)]
 ## END
 
 
@@ -376,8 +376,10 @@ pp test_ (two)
 #pp test_ (o2)
 
 ## STDOUT:
-(Obj)   {"z":99} ==> {"__foo__":null}
-(List)   [{"z":99} ==> {"__foo__":null},{"z":99} ==> {"__foo__":null}]
+(Obj)   ("z":99) --> ("__foo__":null)
+(List)   [("z":99) --> ("__foo__":null),("z":99) --> ("__foo__":null)]
 
+(Obj)   ("k":42,"cycle":{"k":42,"cycle":{...}})
+(List)   [("k":42,"cycle":{"k":42,"cycle":{...}}),("k":42,"cycle":{"k":42,"cycle":{...}})]
 ## END
 

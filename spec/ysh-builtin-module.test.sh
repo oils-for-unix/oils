@@ -148,9 +148,9 @@ echo "setglobal_noleak $[getVar('setglobal_noleak')]"
 
 ## STDOUT:
 caller_no_leak = null
-(List)   ["util",{"MY_INTEGER":42,"log":<Proc>,"die":<Proc>,"setvar_noleak":"util.ysh","setglobal_noleak":"util.ysh","invokableObj":{"x":3,"y":4} ==> {"__invoke__":<Proc>}} ==> {"__invoke__":<BuiltinProc>}]
-(List)   ["repeated",{"MY_INTEGER":42,"log":<Proc>,"die":<Proc>,"setvar_noleak":"util.ysh","setglobal_noleak":"util.ysh","invokableObj":{"x":3,"y":4} ==> {"__invoke__":<Proc>}} ==> {"__invoke__":<BuiltinProc>}]
-(List)   ["symlink",{"MY_INTEGER":42,"log":<Proc>,"die":<Proc>,"setvar_noleak":"util.ysh","setglobal_noleak":"util.ysh","invokableObj":{"x":3,"y":4} ==> {"__invoke__":<Proc>}} ==> {"__invoke__":<BuiltinProc>}]
+(List)   ["util",("MY_INTEGER":42,"log":<Proc>,"die":<Proc>,"setvar_noleak":"util.ysh","setglobal_noleak":"util.ysh","invokableObj":("x":3,"y":4) --> ("__invoke__":<Proc>)) --> ("__invoke__":<BuiltinProc>)]
+(List)   ["repeated",("MY_INTEGER":42,"log":<Proc>,"die":<Proc>,"setvar_noleak":"util.ysh","setglobal_noleak":"util.ysh","invokableObj":("x":3,"y":4) --> ("__invoke__":<Proc>)) --> ("__invoke__":<BuiltinProc>)]
+(List)   ["symlink",("MY_INTEGER":42,"log":<Proc>,"die":<Proc>,"setvar_noleak":"util.ysh","setglobal_noleak":"util.ysh","invokableObj":("x":3,"y":4) --> ("__invoke__":<Proc>)) --> ("__invoke__":<BuiltinProc>)]
 setvar_noleak null
 setglobal_noleak null
 ## END
@@ -413,8 +413,8 @@ pp test_ (cycle2)
 echo hi
 
 ## STDOUT:
-(Obj)   {"c1":"c1"} ==> {"__invoke__":<BuiltinProc>}
-(Obj)   {"c2":"c2"} ==> {"__invoke__":<BuiltinProc>}
+(Obj)   ("c1":"c1") --> ("__invoke__":<BuiltinProc>)
+(Obj)   ("c2":"c2") --> ("__invoke__":<BuiltinProc>)
 hi
 ## END
 

@@ -53,7 +53,7 @@ pp test_ (prototype(obj))
 
 ## STDOUT:
 (Null)   null
-(Obj)   {"area":<Func>}
+(Obj)   ("area":<Func>)
 ## END
 
 #### propView() 
@@ -124,9 +124,9 @@ setvar d.x = 100
 pp test_ (rect)
 pp test_ (d)
 ## STDOUT:
-(Obj)   {"x":3,"y":4}
+(Obj)   ("x":3,"y":4)
 (Dict)   {"x":3,"y":4}
-(Obj)   {"x":99,"y":4}
+(Obj)   ("x":99,"y":4)
 (Dict)   {"x":100,"y":4}
 ## END
 
@@ -145,10 +145,10 @@ setvar rect.x *= 5
 pp test_ (rect)
 
 ## STDOUT:
-(Obj)   {"x":3,"y":4}
-(Obj)   {"x":3,"y":99}
-(Obj)   {"x":3,"y":102}
-(Obj)   {"x":15,"y":102}
+(Obj)   ("x":3,"y":4)
+(Obj)   ("x":3,"y":99)
+(Obj)   ("x":3,"y":102)
+(Obj)   ("x":15,"y":102)
 ## END
 
 #### can't encode objects as JSON
@@ -228,5 +228,5 @@ var instance = Object(methods, {foo: 1, bar: 2, x: 3})
 pp test_ (instance)
 
 ## STDOUT:
-(Obj)   {"foo":1,"bar":2,"x":3} ==> {"foo":42,"bar":[1,2]} ==> {"foo":"zz"}
+(Obj)   ("foo":1,"bar":2,"x":3) --> ("foo":42,"bar":[1,2]) --> ("foo":"zz")
 ## END

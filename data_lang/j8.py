@@ -297,12 +297,13 @@ class InstancePrinter(object):
             self._BracketIndent(level)
             self.buf.write(']')
 
-    def _PrintMapping(self, d, level):
-        # type: (Dict[str, value_t], int) -> None
+    def _PrintMapping(self, d, left, right, level):
+        # type: (Dict[str, value_t], str, str, int) -> None
         if len(d) == 0:  # Special case like Python/JS
-            self.buf.write('{}')
+            self.buf.write(left)
+            self.buf.write(right)
         else:
-            self.buf.write('{')
+            self.buf.write(left)
             self._MaybeNewline()
             i = 0
             for k, v in iteritems(d):
@@ -323,19 +324,19 @@ class InstancePrinter(object):
 
             self._MaybeNewline()
             self._BracketIndent(level)
-            self.buf.write('}')
+            self.buf.write(right)
 
     def _PrintDict(self, val, level):
         # type: (value.Dict, int) -> None
-        self._PrintMapping(val.d, level)
+        self._PrintMapping(val.d, '{', '}', level)
 
     def _PrintObj(self, val, level):
         # type: (Obj, int) -> None
 
-        self._PrintMapping(val.d, level)
+        self._PrintMapping(val.d, '(', ')', level)
 
         if val.prototype:
-            self.buf.write(' ==> ')
+            self.buf.write(' --> ')
             self._PrintObj(val.prototype, level)
 
     def _PrintBashPrefix(self, type_str, level):
