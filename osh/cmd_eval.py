@@ -1295,11 +1295,6 @@ class CommandEvaluator(object):
 
     def _DoShFunction(self, node):
         # type: (command.ShFunction) -> None
-        existing, _ = self.procs.GetInvokable(node.name)
-        if existing and not self.exec_opts.redefine_proc_func():
-            e_die(
-                "Function %s was already defined (redefine_proc_func)" %
-                node.name, node.name_tok)
 
         # Note: shell functions can read vars from the file they're defined in
         # But they don't appear in the module itself -- rather it is __sh_funcs__
@@ -1311,18 +1306,6 @@ class CommandEvaluator(object):
     def _DoProc(self, node):
         # type: (Proc) -> None
         proc_name = lexer.TokenVal(node.name)
-
-        # Note: this is similar 'const x = 42' and redefine_const -- it's a
-        # dynamic check that it doesn't already exist
-        # Also modules make this less necessary, because there are fewer name
-        # conflicts
-        # We could also define procs as READ-ONLY, but that means we need
-        # Dict[str, Cell] and not Dict[str, value_t]
-        existing, _ = self.procs.GetInvokable(proc_name)
-        if existing and not self.exec_opts.redefine_proc_func():
-            e_die(
-                "Proc %s was already defined (redefine_proc_func)" % proc_name,
-                node.name)
 
         if node.sig.tag() == proc_sig_e.Closed:
             sig = cast(proc_sig.Closed, node.sig)
@@ -1340,27 +1323,12 @@ class CommandEvaluator(object):
         name = lexer.TokenVal(node.name)
         lval = location.LName(name)
 
-        # Check that we haven't already defined a function
-        cell = self.mem.GetCell(name, scope_e.LocalOnly)
-        if cell and cell.val.tag() == value_e.Func:
-            if self.exec_opts.redefine_proc_func():
-                cell.readonly = False  # Ensure we can unset the value
-                did_unset = self.mem.Unset(lval, scope_e.LocalOnly)
-                assert did_unset, name
-            else:
-                e_die(
-                    "Func %s was already defined (redefine_proc_func)" % name,
-                    node.name)
-
         pos_defaults, named_defaults = func_proc.EvalFuncDefaults(
             self.expr_ev, node)
         func_val = value.Func(name, node, pos_defaults, named_defaults,
                               self.mem.GlobalFrame())
 
-        self.mem.SetNamed(lval,
-                          func_val,
-                          scope_e.LocalOnly,
-                          flags=state.SetReadOnly)
+        self.mem.SetNamed(lval, func_val, scope_e.LocalOnly)
 
     def _DoIf(self, node):
         # type: (command.If) -> int

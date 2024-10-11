@@ -51,7 +51,7 @@ class SourceGuard(vm._Builtin):
         #log('guards %s', self.guards)
         if name in self.guards:
             # already defined
-            if self.exec_opts.redefine_module():
+            if self.exec_opts.redefine_source():
                 self.errfmt.PrintMessage(
                     '(interactive) Reloading source file %r' % name)
                 return 0

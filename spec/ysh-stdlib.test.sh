@@ -18,8 +18,6 @@ status=1
 
 #### smoke test for stream.ysh and table.ysh 
 
-shopt --set redefine_proc_func   # byo-maybe-main
-
 source $LIB_YSH/stream.ysh
 source $LIB_YSH/table.ysh
 

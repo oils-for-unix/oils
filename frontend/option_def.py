@@ -127,10 +127,6 @@ _UPGRADE_RUNTIME_OPTS = [
 
     # Whether status 141 in pipelines is turned into 0
     ('sigpipe_status_ok', False),
-
-    # This applies to shell functions too
-    # It's also turned on in interactive mode
-    ('redefine_proc_func', True),
 ]
 
 # TODO: Add strict_arg_parse?  For example, 'trap 1 2 3' shouldn't be
@@ -304,9 +300,8 @@ def _Init(opt_def):
     opt_def.Add('dynamic_scope', default=True)
 
     # On in interactive shell
-    opt_def.Add('redefine_module', default=False)
-    # Hm these aren't the same?
-    #opt_def.Add('redefine_proc_func', default=False),
+    opt_def.Add('redefine_const', default=False)
+    opt_def.Add('redefine_source', default=False)
 
     # For disabling strict_errexit while running traps.  Because we run in the
     # main loop, the value can be "off".  Prefix with _ because it's undocumented

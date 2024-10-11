@@ -1022,8 +1022,8 @@ def Main(
 
     if flag.headless:
         state.InitInteractive(mem, lang)
-        mutable_opts.set_redefine_proc_func()
-        mutable_opts.set_redefine_module()
+        mutable_opts.set_redefine_const()
+        mutable_opts.set_redefine_source()
 
         # NOTE: rc files loaded AFTER _InitDefaultCompletions.
         for rc_path in rc_paths:
@@ -1056,8 +1056,8 @@ def Main(
         state.InitInteractive(mem, lang)
         # bash: 'set -o emacs' is the default only in the interactive shell
         mutable_opts.set_emacs()
-        mutable_opts.set_redefine_proc_func()
-        mutable_opts.set_redefine_module()
+        mutable_opts.set_redefine_const()
+        mutable_opts.set_redefine_source()
 
         if readline:
             term_width = 0

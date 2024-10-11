@@ -136,43 +136,19 @@ proc t() { return (0) }
 ## STDOUT:
 ## END
 
-#### Redefining functions is not allowed (with shopt -u redefine_proc_func)
-shopt -u redefine_proc_func
-func f() { return (0) }
-func f() { return (1) }
-## status: 1
-## STDOUT:
-## END
-
-#### Redefining functions is allowed (with shopt -s redefine_proc_func)
-shopt -s redefine_proc_func
+#### Redefining functions is allowed
 func f() { return (0) }
 func f() { return (1) }
 ## status: 0
 ## STDOUT:
 ## END
 
-#### Functions cannot redefine readonly vars (even with shopt -s redefine_proc_func)
-shopt -s redefine_proc_func
-const f = 0
-func f() { return (1) }
-## status: 1
-## STDOUT:
-## END
-
-#### Functions can redefine non-readonly vars
+#### Functions can redefine vars
 var f = 0
 func f() { return (1) }
-## status: 0
+pp test_ (f)
 ## STDOUT:
-## END
-
-#### Vars cannot redefine functions (even with shopt -s redefine_proc_func)
-shopt -s redefine_proc_func
-func f() { return (1) }
-const f = 0
-## status: 1
-## STDOUT:
+<Func>
 ## END
 
 #### Multiple func calls
@@ -510,31 +486,11 @@ func inAnotherScope() {
 }
 call inAnotherScope()
 
-# We need a scope otherwise we'd overwrite `mysum` in the global scope
-var mysum = mysum([1, 2, 3])  # will raise status=1
-## status: 1
+var mysum = mysum([0, 1])
+echo mysum=$mysum
+
 ## STDOUT:
 1 + 2 + 3 = 6
 mysum=6
-## END
-
-#### Function names cannot be redeclared
-# Behaves like: const f = ...
-func f(x) {
-  return (x)
-}
-
-var f = "some val"
-## status: 1
-## STDOUT:
-## END
-
-#### Functions cannot be mutated
-func f(x) {
-  return (x)
-}
-
-setvar f = "some val"
-## status: 1
-## STDOUT:
+mysum=1
 ## END

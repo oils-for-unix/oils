@@ -230,3 +230,32 @@ pp test_ (instance)
 ## STDOUT:
 (Obj)   ("foo":1,"bar":2,"x":3) --> ("foo":42,"bar":[1,2]) --> ("foo":"zz")
 ## END
+
+
+#### Closures in a loop idiom
+
+var procs = []
+for i in (0 .. 3) {
+  proc __invoke__ (; self) {
+    echo "i = $[self.i]"
+  }
+  var methods = Object(null, {__invoke__})
+  var obj = Object(methods, {i})
+  call procs->append(obj)
+}
+
+for p in (procs) {
+  p
+}
+
+# TODO: sugar
+#  proc p (; self) capture {i} {
+#    echo "i = $[self.i]"
+#  }
+#  call procs->append(p)
+
+## STDOUT:
+i = 0
+i = 1
+i = 2
+## END

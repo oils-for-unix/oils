@@ -267,10 +267,9 @@ g  # g is defined in the local scope of f
 G
 ## END
 
-#### Procs defined inside compound statements (with redefine_proc)
+#### Procs defined inside compound statements
 
 shopt --set ysh:upgrade
-shopt --set redefine_proc_func
 
 for x in 1 2 {
   proc p {
@@ -473,7 +472,7 @@ status=127
 ## END
 
 #### procs shadow sh-funcs
-shopt -s ysh:upgrade redefine_proc_func
+shopt -s ysh:upgrade
 
 f() {
   echo sh-func
