@@ -1,5 +1,4 @@
-## oils_failures_allowed: 2
-
+## oils_failures_allowed: 1
 
 #### Int
 =  -123
@@ -269,38 +268,116 @@ setvar dict["key_omega"] = omega
 }
 ## END
 
-#### List cycle
+#### pp test_: List cycle
+
+var no_cycle = [5, 6]
+pp test_ (no_cycle)
+
+var two = [no_cycle, no_cycle]
+pp test_ (two)
+#pp value (two)
+
+echo
 
 var L = [42]
 call L->append(L)
-
-# BUG
-#pp test_ (L)
-pp value (L)
+pp test_ (L)
+#pp value (L)
 
 var two = [L, L]
-
-# BUG
-#pp test_ (two)
-pp value (two)
+pp test_ (two)
+#pp value (two)
 
 ## STDOUT:
+(List)   [5,6]
+(List)   [[5,6],[5,6]]
+
+(List)   [42,[...]]
+(List)   [[42,[...]],[42,[...]]]
 ## END
 
+#### pp test_: Dict cycle
 
-#### Dict cycle
+var no_cycle = {z: 99}
+pp test_ (no_cycle)
+
+var two = [no_cycle, no_cycle]
+pp test_ (two)
+
+#pp value (two)
+
+echo
 
 var d = {k: 42}
 setvar d.cycle = d
 pp test_ (d)
-pp value (d)
+#pp value (d)
 
 var two = [d, d]
+pp test_ (two)
+#pp value (two)
 
-# BUG
-#pp test_ (two)
-
-pp value (two)
 
 ## STDOUT:
+(Dict)   {"z":99}
+(List)   [{"z":99},{"z":99}]
+
+(Dict)   {"k":42,"cycle":{...}}
+(List)   [{"k":42,"cycle":{...}},{"k":42,"cycle":{...}}]
 ## END
+
+#### pp test_: Obj cycle
+
+var methods = Object(null, {__foo__: null})
+var obj = Object(methods, {z: 99})
+pp test_ (obj)
+
+setvar obj.cycle = obj
+pp test_ (obj)
+
+echo
+
+var two = [obj, obj]
+pp test_ (two)
+
+## STDOUT:
+(Obj)   {"z":99} ==> {"__foo__":null}
+(Obj)   {"z":99,"cycle":{...}} ==> {"__foo__":null}
+
+(List)   [{"z":99,"cycle":{...}} ==> {"__foo__":null},{"z":99,"cycle":{...}} ==> {"__foo__":null}]
+## END
+
+
+
+#### pp test_: Obj with dict cycle
+
+var methods = Object(null, {__foo__: null})
+var no_cycle = Object(methods, {z: 99})
+pp test_ (no_cycle)
+
+var two = [no_cycle, no_cycle]
+pp test_ (two)
+
+echo
+
+var d = {k: 42}
+setvar d.cycle = d
+
+# This cycle detection doesn't quite work
+# Because we're only considering the object itself
+
+var o = Object(null, d)
+pp test_ (o)
+
+var two = [o, o]
+pp test_ (two)
+
+#var o2 = Object(o, {z: 99})
+#pp test_ (o2)
+
+## STDOUT:
+(Obj)   {"z":99} ==> {"__foo__":null}
+(List)   [{"z":99} ==> {"__foo__":null},{"z":99} ==> {"__foo__":null}]
+
+## END
+

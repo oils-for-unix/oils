@@ -233,19 +233,15 @@ echo 'should have failed'
 
 var L = [1, 2, 3]
 setvar L[0] = L
-
-shopt -s ysh:upgrade
-redir >tmp.txt {
-  pp test_ (L)
-}
-fgrep -n -o '[ -->' tmp.txt
+pp test_ (L)
 
 json write (L)
-echo 'should have failed'
+echo status=$?
 
-## status: 1
+## status: 0
 ## STDOUT:
-1:[ -->
+(List)   [[...],2,3]
+status=1
 ## END
 
 #### json write of Dict in cycle
@@ -253,18 +249,14 @@ echo 'should have failed'
 var d = {}
 setvar d.k = d
 
-shopt -s ysh:upgrade
-redir >tmp.txt {
-  pp test_ (d)
-}
-fgrep -n -o '{ -->' tmp.txt
+pp test_ (d)
 
 json write (d)
-echo 'should have failed'
+echo status=$?
 
-## status: 1
 ## STDOUT:
-1:{ -->
+(Dict)   {"k":{...}}
+status=1
 ## END
 
 #### json write of List/Dict referenced twice (bug fix)

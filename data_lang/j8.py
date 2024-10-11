@@ -141,7 +141,7 @@ def Utf8Encode(code):
 
 SHOW_CYCLES = 1 << 1  # show as [...] or {...} I think, with object ID
 SHOW_NON_DATA = 1 << 2  # non-data objects like Eggex can be <Eggex 0xff>
-LOSSY_JSON = 1 << 3  # JSON is lossy
+LOSSY_JSON = 1 << 3  # JSON may lose data about strings
 INF_NAN_ARE_NULL = 1 << 4  # for JSON
 
 # Hack until we fully translate
@@ -237,12 +237,6 @@ def MaybeEncodeJsonString(s):
     return buf.getvalue()
 
 
-# DFS traversal state
-UNSEEN = 0
-EXPLORING = 1
-FINISHED = 2
-
-
 class InstancePrinter(object):
     """Print a value tree as J8/JSON."""
 
@@ -253,9 +247,7 @@ class InstancePrinter(object):
         self.options = options
 
         # Key is vm.HeapValueId(val)
-        # Value is always True
-        # Dict[int, None] doesn't translate -- it would be nice to have a set()
-        self.visited = {}  # type: Dict[int, int]
+        self.visiting = {}  # type: Dict[int, bool]
 
     def _ItemIndent(self, level):
         # type: (int) -> None
@@ -540,26 +532,24 @@ class InstancePrinter(object):
                 # Cycle detection, only for containers that can be in cycles
                 heap_id = HeapValueId(val)
 
-                node_state = self.visited.get(heap_id, UNSEEN)
-                if node_state == FINISHED:
-                    # Print it AGAIN.  We print a JSON tree, which means we can
-                    # visit and print nodes MANY TIMES, as long as they're not
-                    # in a cycle.
-                    self._PrintList(val, level)
-                    return
-                if node_state == EXPLORING:
+                if self.visiting.get(heap_id, False):
                     if self.options & SHOW_CYCLES:
-                        self.buf.write('[ -->%s ]' % ValueIdString(val))
+                        # Showing the ID would be nice for pretty printing, but
+                        # the problem is we'd have to show it TWICE to make it
+                        # meaningful
+                        #
+                        #self.buf.write('[ -->%s ]' % ValueIdString(val))
+                        self.buf.write('[...]')
                         return
                     else:
                         # node.js prints which index closes the cycle
                         raise error.Encode(
                             "Can't encode List%s in object cycle" %
                             ValueIdString(val))
-
-                self.visited[heap_id] = EXPLORING
-                self._PrintList(val, level)
-                self.visited[heap_id] = FINISHED
+                else:
+                    self.visiting[heap_id] = True
+                    self._PrintList(val, level)
+                    self.visiting[heap_id] = False
 
             elif case(value_e.Dict):
                 val = cast(value.Dict, UP_val)
@@ -567,26 +557,19 @@ class InstancePrinter(object):
                 # Cycle detection, only for containers that can be in cycles
                 heap_id = HeapValueId(val)
 
-                node_state = self.visited.get(heap_id, UNSEEN)
-                if node_state == FINISHED:
-                    # Print it AGAIN.  We print a JSON tree, which means we can
-                    # visit and print nodes MANY TIMES, as long as they're not
-                    # in a cycle.
-                    self._PrintDict(val, level)
-                    return
-                if node_state == EXPLORING:
+                if self.visiting.get(heap_id, False):
                     if self.options & SHOW_CYCLES:
-                        self.buf.write('{ -->%s }' % ValueIdString(val))
+                        self.buf.write('{...}')
                         return
                     else:
                         # node.js prints which key closes the cycle
                         raise error.Encode(
                             "Can't encode Dict%s in object cycle" %
                             ValueIdString(val))
-
-                self.visited[heap_id] = EXPLORING
-                self._PrintDict(val, level)
-                self.visited[heap_id] = FINISHED
+                else:
+                    self.visiting[heap_id] = True
+                    self._PrintDict(val, level)
+                    self.visiting[heap_id] = False
 
             elif case(value_e.Obj):
                 val = cast(Obj, UP_val)
@@ -597,31 +580,19 @@ class InstancePrinter(object):
                 # Cycle detection, only for containers that can be in cycles
                 heap_id = HeapValueId(val)
 
-                node_state = self.visited.get(heap_id, UNSEEN)
-                if node_state == FINISHED:
-                    # Print it AGAIN.  We print a JSON tree, which means we can
-                    # visit and print nodes MANY TIMES, as long as they're not
-                    # in a cycle.
-                    self._PrintObj(val, level)
-                    return
-                if node_state == EXPLORING:
+                if self.visiting.get(heap_id, False):
                     if self.options & SHOW_CYCLES:
-                        self.buf.write('{ -->%s }' % ValueIdString(val))
+                        self.buf.write('{...}')
                         return
                     else:
                         # node.js prints which key closes the cycle
                         raise error.Encode(
                             "Can't encode Obj%s in object cycle" %
                             ValueIdString(val))
-
-                # TODO: cycle detection is a bit wrong, I think because the
-                # properties are a Dict[str, value_t], not something with an
-                # identity
-                #
-                # This is only used for pp test_, because SHOW_NON_DATA.
-                self.visited[heap_id] = EXPLORING
-                self._PrintObj(val, level)
-                self.visited[heap_id] = FINISHED
+                else:
+                    self.visiting[heap_id] = True
+                    self._PrintObj(val, level)
+                    self.visiting[heap_id] = False
 
             elif case(value_e.SparseArray):
                 val = cast(value.SparseArray, UP_val)
