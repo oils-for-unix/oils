@@ -162,16 +162,23 @@ echo 'nope'
 ## STDOUT:
 ## END
 
-#### pretty printing of cycles
+#### pp test_ (obj_with_cycle)
 
 var d = {k: 42}
 setvar d.cycle = d
 
+var two = [d, d]
+pp test_ (two)
+
 pp test_ (d)
 
+# This doesn't quite work
 var o = Object(null, d)
 
 pp test_ (o)
+
+var two = [o, o]
+#pp test_ (two)
 
 var o2 = Object(o, {z: 99})
 

@@ -1,4 +1,5 @@
-# Pretty printing tests
+## oils_failures_allowed: 2
+
 
 #### Int
 =  -123
@@ -266,4 +267,40 @@ setvar dict["key_omega"] = omega
     key_alpha: {omega: {alpha: {...}}},
     key_omega: {alpha: {omega: {...}}}
 }
+## END
+
+#### List cycle
+
+var L = [42]
+call L->append(L)
+
+# BUG
+#pp test_ (L)
+pp value (L)
+
+var two = [L, L]
+
+# BUG
+#pp test_ (two)
+pp value (two)
+
+## STDOUT:
+## END
+
+
+#### Dict cycle
+
+var d = {k: 42}
+setvar d.cycle = d
+pp test_ (d)
+pp value (d)
+
+var two = [d, d]
+
+# BUG
+#pp test_ (two)
+
+pp value (two)
+
+## STDOUT:
 ## END
