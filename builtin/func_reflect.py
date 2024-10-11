@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import (scope_e)
 from _devbuild.gen.syntax_asdl import source
-from _devbuild.gen.value_asdl import (value, value_e, value_t)
+from _devbuild.gen.value_asdl import (value, value_e, value_t, block_val)
 
 from core import alloc
 from core import error
@@ -113,9 +113,10 @@ class SetVar(vm._Callable):
 
 class ParseCommand(vm._Callable):
 
-    def __init__(self, parse_ctx, errfmt):
-        # type: (parse_lib.ParseContext, ui.ErrorFormatter) -> None
+    def __init__(self, parse_ctx, mem, errfmt):
+        # type: (parse_lib.ParseContext, state.Mem, ui.ErrorFormatter) -> None
         self.parse_ctx = parse_ctx
+        self.mem = mem
         self.errfmt = errfmt
 
     def Call(self, rd):
@@ -140,7 +141,21 @@ class ParseCommand(vm._Callable):
                 raise error.Structured(3, "Syntax error in parseCommand()",
                                        rd.LeftParenToken())
 
-        return value.Command(cmd)
+        # TODO: It's a little weird that this captures?
+        # We should have scoping like 'eval $mystr'
+        # Or we should have
+        #
+        # var c = parseCommand('echo hi')  # raw AST
+        # var block = Block(c)  # attachs the current frame
+        #
+        # Yeah we might need this for value.Expr too, to control evaluation of
+        # names
+        #
+        # value.Expr vs. value.BoundExpr - it's bound to the frame it's defined
+        # in
+        # value.Command vs. value.Block - BoundCommand?
+
+        return value.Block(block_val.Expr(cmd), self.mem.CurrentFrame())
 
 
 class ParseExpr(vm._Callable):

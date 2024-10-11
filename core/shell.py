@@ -847,7 +847,7 @@ def Main(
     # Initialize Built-in Funcs
     #
 
-    parse_hay = func_hay.ParseHay(fd_state, parse_ctx, errfmt)
+    parse_hay = func_hay.ParseHay(fd_state, parse_ctx, mem, errfmt)
     eval_hay = func_hay.EvalHay(hay_state, mutable_opts, mem, cmd_ev)
     hay_func = func_hay.HayFunc(hay_state)
 
@@ -868,7 +868,7 @@ def Main(
 
     _AddBuiltinFunc(mem, 'id', func_reflect.Id())
     _AddBuiltinFunc(mem, 'parseCommand',
-                    func_reflect.ParseCommand(parse_ctx, errfmt))
+                    func_reflect.ParseCommand(parse_ctx, mem, errfmt))
     _AddBuiltinFunc(mem, 'parseExpr',
                     func_reflect.ParseExpr(parse_ctx, errfmt))
     _AddBuiltinFunc(mem, 'evalExpr', func_reflect.EvalExpr(expr_ev))

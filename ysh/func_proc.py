@@ -5,12 +5,12 @@ User-defined funcs and procs
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import cmd_value, ProcArgs
+from _devbuild.gen.runtime_asdl import cmd_value, ProcArgs, Cell
 from _devbuild.gen.syntax_asdl import (proc_sig, proc_sig_e, Param, ParamGroup,
                                        NamedArg, Func, loc, ArgList, expr,
                                        expr_e, expr_t)
 from _devbuild.gen.value_asdl import (value, value_e, value_t, ProcDefaults,
-                                      LeftName)
+                                      LeftName, block_val)
 
 from core import error
 from core.error import e_die
@@ -209,6 +209,7 @@ def _EvalArgList(
 
 def EvalTypedArgsToProc(
         expr_ev,  # type: expr_eval.ExprEvaluator
+        current_frame,  # type: Dict[str, Cell]
         mutable_opts,  # type: state.MutableOpts
         node,  # type: command.Simple
         proc_args,  # type: ProcArgs
@@ -260,8 +261,9 @@ def EvalTypedArgsToProc(
 
     # p { echo hi } is an unevaluated block
     if node.block:
-        # TODO: conslidate value.Block (holds LiteralBlock) and value.Command
-        proc_args.block_arg = value.Block(node.block)
+        # Attach current frame to value.Block
+        proc_args.block_arg = value.Block(block_val.Literal(node.block),
+                                          current_frame)
 
         # Add location info so the cmd_val looks the same for both:
         #   cd /tmp (; ; ^(echo hi))

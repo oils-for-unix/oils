@@ -1,4 +1,4 @@
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 ## our_shell: ysh
 
 # dynamically generate procs
@@ -99,7 +99,24 @@ proc p {
     }
     """
     var cmd = parseCommand(s)
+    #pp test_ (cmd)
+    pp asdl_ (cmd)
+
+    # Oh so then echo_a is defined in the front frame
+    # And then the front frame is discarded?
+    #
+    # OK I see
+    #
+    # So you only use evalToDict()?
+    #
+    # Or parseCommand() returns something UNBOUND, so it has the same power
+    # as eval $mystr
+
     call io->eval(cmd)
+
+    #call io->evalToDict(cmd)
+    #pp (echo_a)
+    echo_a zz
   }
 
   echo_a prefix
@@ -108,7 +125,7 @@ proc p {
 
 p
 
-echo_a prefix
+echo_a not_defined
 
 ## status: 127
 ## STDOUT:

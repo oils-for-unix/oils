@@ -1,7 +1,7 @@
 # YSH specific features of eval
 
 ## our_shell: ysh
-## oils_failures_allowed: 5
+## oils_failures_allowed: 3
 
 #### eval builtin does not take a literal block - can restore this later
 
@@ -52,6 +52,8 @@ call io->eval(my_block)
 ## END
 
 #### io->eval(block) can read variables like eval ''
+
+# NO LONGER WORKS, but is this a feature rather than a bug?
 
 proc p2(code_str) {
   var mylocal = 42
@@ -279,6 +281,7 @@ call io->eval(^(true), pos_args=[1, 2, 3])
 ## status: 3
 
 #### eval with vars follows same scoping as without
+
 proc local-scope {
   var myVar = "foo"
   call io->eval(^(echo $myVar), vars={ someOtherVar: "bar" })
@@ -349,6 +352,7 @@ pp test_ (d)
 # Same thing in a local frame
 proc p (myparam) {
   var mylocal = 'local'
+  # TODO: ^() needs to capture
   var cmd = ^(
     var foo = 42
     var g = "-$g"
@@ -379,7 +383,7 @@ var d = io->evalToDict(cmd)
 pp test_ (d)
 
 ## STDOUT:
-<Command>
+<Block>
 hi
 (Dict)   {"x":42,"y":"global"}
 ## END
@@ -410,13 +414,18 @@ var k = 'k-shadowed'
 var k2 = 'k2-shadowed'
 
 Dict (&d) {
+  bare = 42
+
+  # uh these find the wrong one
+  # This is like redeclaring the one above, but WITHOUT the static error
+  # HM HM HM
   var k = 'k-block'
   setvar k = 'k-block-mutated'
 
-  # this is confusing
-  # because it doesn't find it in the local stack frame
-  # it doesn't have 'var without setvar' bug
-  setvar k2 = 'k2-block'  # global, so not checked
+  # Finds the global, so not checked
+  setvar k2 = 'k2-block'
+
+  # This one is allowed
   setvar k3 = 'k3'
 
   # do we allow this?
@@ -424,6 +433,8 @@ Dict (&d) {
 }
 
 pp test_ (d)
+
+exit
 
 # restored to the shadowed values
 echo k=$k
@@ -434,8 +445,8 @@ proc p {
     var k = 'k-proc'
     setvar k = 'k-proc-mutated'
 
-    # is this in the dict?
-    setvar k2 = 'k2-proc'  # local, so it's checked
+    # Not allowed STATICALLY, because o fproc check
+    #setvar k2 = 'k2-proc'  # local, so it's checked
   }
 }
 
@@ -463,6 +474,7 @@ var mydict = f()
 pp test_ (mydict)
 
 ## STDOUT:
+(Dict)   {"y":43}
 ## END
 
 #### block in yb-capture Dict (&d) can read from outer scope
@@ -494,18 +506,19 @@ var result = f()
 pp test_ (result)
 
 ## STDOUT:
+(Dict)   {"status":0,"stdout":"43\n"}
 ## END
 
 
 #### Dict (&d) and setvar 
 
 proc Dict ( ; out; ; block) {
+  echo "Dict proc global outer=$outer"
   var d = io->evalToDict(block)
 
-  echo 'proc Dict frame after evalToDict'
-  pp frame_vars_
+  #echo 'proc Dict frame after evalToDict'
+  #pp frame_vars_
 
-  echo "Dict outer=$outer"
   #echo "Dict outer2=$outer2"
   call out->setValue(d)
 }
@@ -516,32 +529,50 @@ Dict (&d) {
   # new variable in the front frame
   outer2 = 'outer2'
 
-  #var v = 'v'
-  #setvar v = 'v-mutated'
-
-  # hm setvar is local ONLY, so it does NOT find the 'outer'
-  # because we're inside Dict!  Gah
-  #
-  # Do we want to say there's no matching 'var', instead of mutating locally?
-  #
-  # And also plain io->eval() should be able to mutate outer...
+  echo "inside Dict outer=$outer"
   setvar outer = 'zz'
 
   setvar not_declared = 'yy'
 
-  echo 'inside Dict block'
-  pp frame_vars_
+  #echo 'inside Dict block'
+  #pp frame_vars_
 }
 
 pp test_ (d)
-echo after outer=$outer
+echo "after Dict outer=$outer"
 
-echo 'after Dict'
-pp frame_vars_
+echo
+
+
+# Now do the same thing inside a proc
+
+proc p {
+  var outer = 'p-outer'
+
+  Dict (&d) {
+    p = 99
+    setvar outer = 'p-outer-mutated'
+  }
+
+  pp test_ (d)
+  echo "[p] after Dict outer=$outer"
+}
+
+p
+
+echo "after p outer=$outer"
 
 ## STDOUT:
-## END
+Dict proc global outer=xx
+inside Dict outer=xx
+(Dict)   {"outer2":"outer2","not_declared":"yy"}
+after Dict outer=zz
 
+Dict proc global outer=zz
+(Dict)   {"p":99}
+[p] after Dict outer=p-outer-mutated
+after p outer=zz
+## END
 
 #### Dict (&d) and setglobal
 

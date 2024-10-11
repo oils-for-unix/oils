@@ -46,7 +46,7 @@ from _devbuild.gen.runtime_asdl import (
 )
 from _devbuild.gen.value_asdl import (value, value_e, value_t, y_lvalue,
                                       y_lvalue_e, y_lvalue_t, IntBox, LeftName,
-                                      Obj)
+                                      Obj, block_val)
 from core import error
 from core.error import e_die, e_die_status
 from core import num
@@ -1145,8 +1145,9 @@ class ExprEvaluator(object):
 
                 id_ = node.left_token.id
                 if id_ == Id.Left_CaretParen:  # ^(echo block literal)
-                    # TODO: Propgate location info?
-                    return value.Command(node.child)
+                    # TODO: Propagate location info with ^(
+                    return value.Block(block_val.Expr(node.child),
+                                       self.mem.CurrentFrame())
                 else:
                     stdout_str = self.shell_ex.RunCommandSub(node)
                     if id_ == Id.Left_AtParen:  # @(seq 3)

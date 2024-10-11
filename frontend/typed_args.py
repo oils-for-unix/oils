@@ -4,13 +4,14 @@ from __future__ import print_function
 from _devbuild.gen.runtime_asdl import cmd_value, ProcArgs
 from _devbuild.gen.syntax_asdl import (loc, loc_t, ArgList, LiteralBlock,
                                        command_t, expr_t, Token)
-from _devbuild.gen.value_asdl import (value, value_e, value_t, RegexMatch, Obj)
+from _devbuild.gen.value_asdl import (value, value_e, value_t, RegexMatch, Obj,
+                                      block_val, block_val_e, block_val_str)
 from core import error
 from core.error import e_usage
 from frontend import location
 from mycpp import mops
 from mycpp import mylib
-from mycpp.mylib import log
+from mycpp.mylib import log, tagswitch
 
 from typing import Dict, List, Optional, cast
 
@@ -45,6 +46,21 @@ def OptionalLiteralBlock(cmd_val):
         block = r.OptionalLiteralBlock()
         r.Done()
     return block
+
+
+def GetCommand(bound):
+    # type: (value.Block) -> command_t
+
+    block = bound.block
+    with tagswitch(block) as case:
+        if case(block_val_e.Literal):
+            lit = cast(block_val.Literal, block)
+            return lit.b.brace_group
+        elif case(block_val_e.Expr):
+            expr = cast(block_val.Expr, block)
+            return expr.c
+        else:
+            raise AssertionError(block_val_str(block.tag()))
 
 
 def ReaderForProc(cmd_val):
@@ -325,9 +341,10 @@ class Reader(object):
         if val.tag() == value_e.Command:
             return cast(value.Command, val).c
 
-        # eval (myblock) uses this
+        # io.eval(mycmd) uses this
         if val.tag() == value_e.Block:
-            return cast(value.Block, val).block.brace_group
+            bound = cast(value.Block, val)
+            return GetCommand(bound)
 
         raise error.TypeErr(val,
                             'Arg %d should be a Command' % self.pos_consumed,
@@ -341,16 +358,32 @@ class Reader(object):
         # Special case for hay
         # Foo { x = 1 }
         if val.tag() == value_e.Block:
-            return cast(value.Block, val).block.brace_group
+            bound = cast(value.Block, val)
+            return GetCommand(bound)
 
         raise error.TypeErr(val,
-                            'Arg %d should be a Command' % self.pos_consumed,
+                            'Arg %d should be a Block' % self.pos_consumed,
                             self.BlamePos())
+
+    def _ToBoundCommand(self, val):
+        # type: (value_t) -> value.Block
+        if val.tag() == value_e.Block:
+            return cast(value.Block, val)
+        raise error.TypeErr(
+            val, 'Arg %d should be a BoundCommand' % self.pos_consumed,
+            self.BlamePos())
 
     def _ToLiteralBlock(self, val):
         # type: (value_t) -> LiteralBlock
+        """ Used by Hay """
         if val.tag() == value_e.Block:
-            return cast(value.Block, val).block
+            block = cast(value.Block, val).block
+            with tagswitch(block) as case:
+                if case(block_val_e.Literal):
+                    lit = cast(block_val.Literal, block)
+                    return lit.b
+                else:
+                    raise AssertionError()
 
         raise error.TypeErr(
             val, 'Arg %d should be a LiteralBlock' % self.pos_consumed,
@@ -435,6 +468,11 @@ class Reader(object):
         val = self.PosValue()
         return self._ToCommand(val)
 
+    def PosBoundCommand(self):
+        # type: () -> value.Block
+        val = self.PosValue()
+        return self._ToBoundCommand(val)
+
     def PosExpr(self):
         # type: () -> expr_t
         val = self.PosValue()
@@ -459,6 +497,9 @@ class Reader(object):
 
     def OptionalLiteralBlock(self):
         # type: () -> Optional[LiteralBlock]
+        """
+        Used by Hay
+        """
         if self.block_arg is None:
             return None
         return self._ToLiteralBlock(self.block_arg)

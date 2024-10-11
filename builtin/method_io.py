@@ -7,12 +7,12 @@ from core import error
 from core import num
 from core import state
 from core import vm
+from frontend import typed_args
 from mycpp.mylib import log, NewDict
 from osh import prompt
 
 from typing import Dict, List, cast, TYPE_CHECKING
 if TYPE_CHECKING:
-    from frontend import typed_args
     from osh import cmd_eval
 
 _ = log
@@ -45,7 +45,18 @@ class Eval(vm._Callable):
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
         unused = rd.PosValue()
-        cmd = rd.PosCommand()
+
+        # TODO: Can we evaluated both:
+        #   value.BoundCommand
+        #   value.Command (unbound)
+        #cmd, val = rd.PosCommand2()
+
+        bound = rd.PosBoundCommand()
+        captured_frame = bound.captured_frame
+
+        cmd = typed_args.GetCommand(bound)
+
+        #log('CAPTURED %r', captured_frame)
 
         dollar0 = rd.NamedStr("dollar0", None)
         pos_args_raw = rd.NamedList("pos_args", None)
@@ -64,16 +75,21 @@ class Eval(vm._Callable):
                 pos_args.append(cast(value.Str, arg).s)
 
         if self.which == EVAL_NULL:
-            with state.ctx_Eval(self.cmd_ev.mem, dollar0, pos_args, vars_):
-                unused_status = self.cmd_ev.EvalCommand(cmd)
+            # TOOD: don't need bindings
+            bindings = NewDict()  # type: Dict[str, value_t]
+            with state.ctx_FrontFrame(self.cmd_ev.mem, captured_frame,
+                                      bindings):
+                with state.ctx_Eval(self.cmd_ev.mem, dollar0, pos_args, vars_):
+                    unused_status = self.cmd_ev.EvalCommand(cmd)
             return value.Null
 
         elif self.which == EVAL_DICT:
-            # TODO: dollar0, pos_args, vars_ not supposed
+            # TODO: dollar0, pos_args, vars_ not supported
             # Does ctx_FrontFrame has different scoping rules?  For "vars"?
 
-            bindings = NewDict()  # type: Dict[str, value_t]
-            with state.ctx_FrontFrame(self.cmd_ev.mem, bindings):
+            bindings = NewDict()
+            with state.ctx_FrontFrame(self.cmd_ev.mem, captured_frame,
+                                      bindings):
                 unused_status = self.cmd_ev.EvalCommand(cmd)
             return value.Dict(bindings)
 

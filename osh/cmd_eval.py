@@ -810,8 +810,10 @@ class CommandEvaluator(object):
 
             if node.typed_args or node.block:  # guard to avoid allocs
                 cmd_val.proc_args = ProcArgs(node.typed_args, None, None, None)
-                func_proc.EvalTypedArgsToProc(self.expr_ev, self.mutable_opts,
-                                              node, cmd_val.proc_args)
+                func_proc.EvalTypedArgsToProc(self.expr_ev,
+                                              self.mem.CurrentFrame(),
+                                              self.mutable_opts, node,
+                                              cmd_val.proc_args)
         else:
             if node.block:
                 e_die("ShAssignment builtins don't accept blocks",

@@ -3,7 +3,7 @@
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import source, loc, command_t
-from _devbuild.gen.value_asdl import value
+from _devbuild.gen.value_asdl import value, block_val
 from builtin import hay_ysh
 from core import alloc
 from core import error
@@ -28,10 +28,11 @@ if TYPE_CHECKING:
 class ParseHay(vm._Callable):
     """parseHay()"""
 
-    def __init__(self, fd_state, parse_ctx, errfmt):
-        # type: (process.FdState, parse_lib.ParseContext, ui.ErrorFormatter) -> None
+    def __init__(self, fd_state, parse_ctx, mem, errfmt):
+        # type: (process.FdState, parse_lib.ParseContext, state.Mem, ui.ErrorFormatter) -> None
         self.fd_state = fd_state
         self.parse_ctx = parse_ctx
+        self.mem = mem
         self.errfmt = errfmt
 
     def _Call(self, path):
@@ -64,7 +65,7 @@ class ParseHay(vm._Callable):
             self.errfmt.PrettyPrintError(e)
             return None
 
-        return value.Command(node)
+        return value.Block(block_val.Expr(node), self.mem.CurrentFrame())
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t

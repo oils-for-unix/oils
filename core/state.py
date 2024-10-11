@@ -1174,19 +1174,18 @@ class ctx_FrontFrame(object):
     Or maybe we disallow the setvar lookup?
     """
 
-    def __init__(self, mem, out_dict):
-        # type: (Mem, Dict[str, value_t]) -> None
+    def __init__(self, mem, rear_frame, out_dict):
+        # type: (Mem, Dict[str, Cell], Dict[str, value_t]) -> None
         self.mem = mem
+        self.rear_frame = rear_frame
         self.out_dict = out_dict
-
-        self.rear_frame = mem.var_stack[-1]
 
         # __rear__ gets a lookup rule
         self.front_frame = NewDict()  # type: Dict[str, Cell]
         self.front_frame['__rear__'] = Cell(False, False, False,
-                                            value.Frame(self.rear_frame))
+                                            value.Frame(rear_frame))
 
-        mem.var_stack[-1] = self.front_frame
+        mem.var_stack.append(self.front_frame)
 
     def __enter__(self):
         # type: () -> None
@@ -1207,7 +1206,7 @@ class ctx_FrontFrame(object):
             self.out_dict[name] = cell.val
 
         # Restore
-        self.mem.var_stack[-1] = self.rear_frame
+        self.mem.var_stack.pop()
 
 
 class ctx_ModuleEval(object):
@@ -1685,6 +1684,11 @@ class Mem(object):
         It's affected by ctx_ModuleEval()
         """
         return self.var_stack[0]
+
+    def CurrentFrame(self):
+        # type: () -> Dict[str, Cell]
+        """For attaching a stack frame to a value.Block"""
+        return self.var_stack[-1]
 
     def PushSource(self, source_name, argv):
         # type: (str, List[str]) -> None

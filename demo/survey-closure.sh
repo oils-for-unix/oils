@@ -114,18 +114,12 @@ loops() {
   echo 'LOOPS PYTHON'
   echo
 
-  # I think this is the thing that Go and C# changed!
-  # Gah
-  #
   # We would have to test multiple blocks in a loop
   #
   # for i in (0 .. 3) {
   #   cd /tmp {  # this will work
   #     echo $i
   #   }
-  #
-  #   var b = ^(echo $i)
-  #   call blocks->append(b)  # won't work
   # }
 
   python3 -c '
@@ -145,6 +139,73 @@ for i in range(3):
 
 print(functions[2]())
     '
+}
+
+js-while-var() {
+  echo 'WHILE JS'
+  echo
+
+  nodejs -e '
+  function createFunctions() {
+    const funcs = [];
+    let i = 0;  // for let is SPECIAL!
+    while (i < 3) {
+      funcs.push(function() { return i; });
+      i++;
+    }
+    return funcs;
+  }
+
+  const functions = createFunctions();
+
+  console.log(functions[0]())
+  console.log(functions[1]())
+  console.log(functions[2]())
+  '
+
+  echo 'FOR VAR JS'
+  echo
+
+  nodejs -e '
+  function createFunctions() {
+    const funcs = [];
+    // var is not captured
+    for (var i = 0; i < 3; i++) {
+      funcs.push(function() { return i; });
+    }
+    return funcs;
+  }
+
+  const functions = createFunctions();
+
+  console.log(functions[0]())
+  console.log(functions[1]())
+  console.log(functions[2]())
+  '
+
+  echo 'FOR LET'
+  echo
+
+  nodejs -e '
+  function createFunctions() {
+    const funcs = [];
+    for (let i = 0; i < 3; i++) {
+      // This is captured
+      // let j = i + 10;
+
+      // This is not captured, I guess it is "hoisted"
+      var j = i + 10;
+      funcs.push(function() { return j; });
+    }
+    return funcs;
+  }
+
+  const functions = createFunctions();
+
+  console.log(functions[0]())
+  console.log(functions[1]())
+  console.log(functions[2]())
+  '
 }
 
 nested() {
