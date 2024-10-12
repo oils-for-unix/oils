@@ -1,7 +1,7 @@
 # YSH specific features of eval
 
 ## our_shell: ysh
-## oils_failures_allowed: 3
+## oils_failures_allowed: 4
 
 #### eval builtin does not take a literal block - can restore this later
 
@@ -620,4 +620,28 @@ a=b
 a=a
 inner=z
 inner2=z
+## END
+
+#### Block Closures in a Loop !
+
+proc task (; tasks; ; b) {
+  call tasks->append(b)
+}
+
+func makeTasks() {
+  var tasks = []
+  for i in (0 .. 3) {
+    task (tasks) { echo "i = $i" }
+  }
+  return (tasks)
+}
+
+var blocks = makeTasks()
+#= blocks
+
+for b in (blocks) {
+  call io->eval(b)
+}
+
+## STDOUT:
 ## END

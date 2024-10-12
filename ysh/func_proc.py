@@ -124,7 +124,10 @@ def EvalProcDefaults(expr_ev, sig):
         if exp:
             block_default = expr_ev.EvalExpr(exp, sig.block_param.blame_tok)
             # It can only be ^() or null
-            if block_default.tag() not in (value_e.Null, value_e.Command):
+            if block_default.tag() not in (value_e.Null, value_e.Block):
+
+                # TODO: This is a value.Command, not a value.BoundCommand/Block?
+
                 raise error.TypeErr(
                     block_default,
                     "Default value for block should be Command or Null",
