@@ -39,6 +39,7 @@ class Readline {
   void remove_history_item(int pos);
   int get_current_history_length();
   void resize_terminal();
+  void list_funmap_names();
 
   static constexpr uint32_t field_mask() {
     return maskbit(offsetof(Readline, completer_delims_)) |
