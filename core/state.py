@@ -1154,6 +1154,31 @@ def _MakeArgvCell(argv):
     return Cell(False, False, False, value.List(items))
 
 
+class ctx_LoopFrame(object):
+
+    def __init__(self, mem, name1):
+        # type: (Mem, str) -> None
+        self.mem = mem
+        self.name1 = name1
+        self.do_new_frame = name1 == '__hack__'
+
+        if self.do_new_frame:
+            rear_frame = self.mem.var_stack[-1]
+            self.front_frame = NewDict()  # type: Dict[str, Cell]
+            self.front_frame['__rear__'] = Cell(False, False, False,
+                                                value.Frame(rear_frame))
+            mem.var_stack.append(self.front_frame)
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        if self.do_new_frame:
+            self.mem.var_stack.pop()
+
+
 class ctx_FrontFrame(object):
     """
     For use by io->evalToDict(), which is a primitive used for Hay and the Dict
@@ -1353,6 +1378,8 @@ def _FrameLookup(frame, name):
     # type: (Dict[str, Cell], str) -> Tuple[Optional[Cell], Dict[str, Cell]]
     """
     Look in the frame itself, then the __rear__ frame if it exists
+
+    TODO: Need to recursively look at __rear__
     """
     cell = frame.get(name)
     if cell:
@@ -1361,12 +1388,10 @@ def _FrameLookup(frame, name):
     rear_cell = frame.get('__rear__')  # ctx_FrontFrame() sets this
     if rear_cell:
         rear_val = rear_cell.val
-        if rear_val and rear_val.tag() == value_e.Frame:
-            frame = cast(value.Frame, rear_val).frame
-            cell = frame.get(name)
-            if cell:
-                #return cell, frame
-                return cell, None
+        assert rear_val, rear_val
+        if rear_val.tag() == value_e.Frame:
+            rear_frame = cast(value.Frame, rear_val).frame
+            return _FrameLookup(rear_frame, name)  # recursive call
 
     return None, None
 

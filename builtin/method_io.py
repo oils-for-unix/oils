@@ -14,11 +14,24 @@ from osh import prompt
 from typing import Dict, List, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from osh import cmd_eval
+    from _devbuild.gen.runtime_asdl import Cell
 
 _ = log
 
 EVAL_NULL = 1
 EVAL_DICT = 2
+
+
+def _PrintFrame(prefix, frame):
+    # type: (str, Dict[str, Cell]) -> None
+    print('%s %s' % (prefix, ' '.join(frame.keys())))
+
+    rear = frame.get('__rear__')
+    if rear:
+        rear_val = rear.val
+        if rear_val.tag() == value_e.Frame:
+            r = cast(value.Frame, rear_val)
+            _PrintFrame('--> ' + prefix, r.frame)
 
 
 class Eval(vm._Callable):
@@ -75,10 +88,13 @@ class Eval(vm._Callable):
                 pos_args.append(cast(value.Str, arg).s)
 
         if self.which == EVAL_NULL:
+            # _PrintFrame('[captured]', captured_frame)
+
             # TOOD: don't need bindings
             bindings = NewDict()  # type: Dict[str, value_t]
             with state.ctx_FrontFrame(self.cmd_ev.mem, captured_frame,
                                       bindings):
+                # _PrintFrame('[new]', self.cmd_ev.mem.var_stack[-1])
                 with state.ctx_Eval(self.cmd_ev.mem, dollar0, pos_args, vars_):
                     unused_status = self.cmd_ev.EvalCommand(cmd)
             return value.Null

@@ -127,9 +127,11 @@ module value
     # ^[42 + a[i]]
   | Expr(expr e)
 
+    # TODO: this is an UnboundCommand?
     # ^(echo 1; echo 2) and cd { echo 1; echo 2 } 
   | Command(command c)
 
+    # TODO: this is BoundCommand
   | Block(block_val block, Dict[str, Cell] captured_frame)
 
     # A place has an additional stack frame where the value is evaluated.

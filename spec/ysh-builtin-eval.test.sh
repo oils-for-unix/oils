@@ -1,7 +1,7 @@
 # YSH specific features of eval
 
 ## our_shell: ysh
-## oils_failures_allowed: 4
+## oils_failures_allowed: 3
 
 #### eval builtin does not take a literal block - can restore this later
 
@@ -630,8 +630,11 @@ proc task (; tasks; ; b) {
 
 func makeTasks() {
   var tasks = []
-  for i in (0 .. 3) {
-    task (tasks) { echo "i = $i" }
+  var x = 'x'
+  for __hack__ in (0 .. 3) {
+    var i = __hack__
+    var j = i + 2
+    task (tasks) { echo "$x: i = $i, j = $j" }
   }
   return (tasks)
 }
@@ -644,4 +647,7 @@ for b in (blocks) {
 }
 
 ## STDOUT:
+x: i = 0, j = 2
+x: i = 1, j = 3
+x: i = 2, j = 4
 ## END

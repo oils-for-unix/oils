@@ -1231,35 +1231,36 @@ class CommandEvaluator(object):
         status = 0  # in case we loop zero times
         with ctx_LoopLevel(self):
             while True:
-                first = it2.FirstValue()
-                #log('first %s', first)
-                if first is None:  # for StdinIterator
-                    #log('first is None')
-                    break
-
-                if first.tag() == value_e.Interrupted:
-                    self.RunPendingTraps()
-                    #log('Done running traps')
-                    continue
-
-                self.mem.SetLocalName(name1, first)
-                if name2:
-                    self.mem.SetLocalName(name2, it2.SecondValue())
-                if i_name:
-                    self.mem.SetLocalName(i_name, num.ToBig(it2.Index()))
-
-                # increment index before handling continue, etc.
-                it2.Next()
-
-                try:
-                    status = self._Execute(node.body)  # last one wins
-                except vm.IntControlFlow as e:
-                    status = 0
-                    action = e.HandleLoop()
-                    if action == flow_e.Break:
+                with state.ctx_LoopFrame(self.mem, name1.name):
+                    first = it2.FirstValue()
+                    #log('first %s', first)
+                    if first is None:  # for StdinIterator
+                        #log('first is None')
                         break
-                    elif action == flow_e.Raise:
-                        raise
+
+                    if first.tag() == value_e.Interrupted:
+                        self.RunPendingTraps()
+                        #log('Done running traps')
+                        continue
+
+                    self.mem.SetLocalName(name1, first)
+                    if name2:
+                        self.mem.SetLocalName(name2, it2.SecondValue())
+                    if i_name:
+                        self.mem.SetLocalName(i_name, num.ToBig(it2.Index()))
+
+                    # increment index before handling continue, etc.
+                    it2.Next()
+
+                    try:
+                        status = self._Execute(node.body)  # last one wins
+                    except vm.IntControlFlow as e:
+                        status = 0
+                        action = e.HandleLoop()
+                        if action == flow_e.Break:
+                            break
+                        elif action == flow_e.Raise:
+                            raise
 
         return status
 
