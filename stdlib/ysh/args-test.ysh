@@ -7,7 +7,11 @@ use $LIB_YSH/args.ysh --pick parser flag arg rest parseArgs
 
 source $LIB_YSH/yblocks.ysh
 
-# Change to 'use'?
+# TODO: why doesn't this work?  Is there a buffering problem wtih read --all?
+# Why would it not show up with source though?
+#use $LIB_YSH/yblocks.ysh --pick yb-capture
+
+# Can't be 'use' because we're using shell functions?
 source $LIB_OSH/byo-server.sh
 
 proc test-basic {
@@ -77,20 +81,20 @@ proc test-default-values {
 }
 
 proc test-multiple-argv-arrays {
+  parser (&spec) {
+    flag -v --verbose ('bool', default=false)
+    flag -c --count ('int', default=120)
+    arg file
+  }
+
+  # TODO: argCases should go above
+  var argsCases = [
+    :| -v --count 120 example.sh |,
+    :| -v --count 120 example.sh -v |,  # duplicate flags are ignored
+    :| -v --count 120 example.sh -v --count 150 |,  # the last duplicate has precedence
+  ]
+
   yb-capture (&r) {
-    parser (&spec) {
-      flag -v --verbose ('bool', default=false)
-      flag -c --count ('int', default=120)
-      arg file
-    }
-
-    # TODO: argCases should go above
-    var argsCases = [
-      :| -v --count 120 example.sh |,
-      :| -v --count 120 example.sh -v |,  # duplicate flags are ignored
-      :| -v --count 120 example.sh -v --count 150 |,  # the last duplicate has precedence
-    ]
-
     for args in (argsCases) {
       var args_str = join(args, ' ')
       echo "----------  $args_str  ----------"
@@ -179,15 +183,15 @@ proc test-more-errors {
 
 proc test-print-spec {
 
+  parser (&spec) {
+    flag -v --verbose ('bool')
+    arg src
+    arg dst
+
+    rest more  # allow more args
+  }
+
   yb-capture (&r) {
-    parser (&spec) {
-      flag -v --verbose ('bool')
-      arg src
-      arg dst
-
-      rest more  # allow more args
-    }
-
     json write (spec)
   }
 
@@ -221,38 +225,38 @@ proc test-print-spec {
 }
 
 proc test-vs-python3-argparse {
+  var spec = {
+    flags: [
+      {short: '-v', long: '--verbose', name: 'verbose', type: null, default: '', help: 'Enable verbose logging'},
+      {short: '-c', long: '--count', name: 'count', type: 'int', default: 80, help: 'Maximum line length'},
+    ],
+    args: [
+      {name: 'file', type: 'str', help: 'File to check line lengths of'}
+    ],
+    rest: null,
+  }
+
+  var argsCases = [
+    :| -v --count 120 example.sh |,
+    :| -v --count 120 example.sh -v |,  # duplicate flags are ignored
+    :| -v --count 120 example.sh -v --count 150 |,  # the last duplicate has precedence
+  ]
+
+  var argparse_py = '''
+  import argparse
+  import sys
+
+  spec = argparse.ArgumentParser()
+  spec.add_argument("filename")
+  spec.add_argument("-c", "--count", type=int)
+  spec.add_argument("-v", "--verbose",
+                    action="store_true")
+
+  result = spec.parse_args(sys.argv[1:])
+  print([result.filename, result.count, result.verbose])
+  '''
+
   yb-capture (&r) {
-    var spec = {
-      flags: [
-        {short: '-v', long: '--verbose', name: 'verbose', type: null, default: '', help: 'Enable verbose logging'},
-        {short: '-c', long: '--count', name: 'count', type: 'int', default: 80, help: 'Maximum line length'},
-      ],
-      args: [
-        {name: 'file', type: 'str', help: 'File to check line lengths of'}
-      ],
-      rest: null,
-    }
-
-    var argsCases = [
-      :| -v --count 120 example.sh |,
-      :| -v --count 120 example.sh -v |,  # duplicate flags are ignored
-      :| -v --count 120 example.sh -v --count 150 |,  # the last duplicate has precedence
-    ]
-
-    var argparse_py = '''
-    import argparse
-    import sys
-
-    spec = argparse.ArgumentParser()
-    spec.add_argument("filename")
-    spec.add_argument("-c", "--count", type=int)
-    spec.add_argument("-v", "--verbose",
-                      action="store_true")
-
-    result = spec.parse_args(sys.argv[1:])
-    print([result.filename, result.count, result.verbose])
-    '''
-
     for args in (argsCases) {
       var args_str = args => join(" ")
       echo "----------  $args_str  ----------"

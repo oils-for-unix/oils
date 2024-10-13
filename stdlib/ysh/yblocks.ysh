@@ -4,7 +4,7 @@
 #
 # Capture status/stdout/stderr, and nq-assert those values.
 
-#module yblocks || return 0
+const __provide__ = :| yb-capture yb-capture-2 |
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/two.sh
