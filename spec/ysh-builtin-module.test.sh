@@ -291,7 +291,7 @@ util2 echo-args w1 w2 (3, 4, n3=9) {
 (List)   [7,8]
 (Dict)   {"n3":9}
 
-<Block>
+<Command>
 ---
 (List)   ["w1","w2"]
 (List)   []
@@ -302,7 +302,7 @@ util2 echo-args w1 w2 (3, 4, n3=9) {
 (List)   [42,43]
 (Dict)   {"n3":9}
 
-<Block>
+<Command>
 ## END
 
 #### module-with-hyphens

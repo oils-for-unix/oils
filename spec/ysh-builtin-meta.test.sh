@@ -75,19 +75,19 @@ ty
 (Str)   "a"
 (Int)   42
 (Int)   99
-Block
+Command
 
 ty
 (Str)   "a"
 (Int)   42
 (Int)   99
-Block
+Command
 
 ty
 (Str)   "a"
 (Int)   42
 (Int)   99
-Block
+Command
 ## END
 
 

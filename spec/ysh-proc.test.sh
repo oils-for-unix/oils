@@ -347,12 +347,12 @@ p2 a b ('c', 'd'; n=99; block) {
 (List)   ["a","b"]
 (List)   ["c","d"]
 (Dict)   {"n":99}
-Block
+Command
 
 (List)   ["a","b"]
 (List)   ["c","d"]
 (Dict)   {"n":99}
-Block
+Command
 
 ## END
 
@@ -444,7 +444,7 @@ p word (42, n=99) {
 (Str)   "word"
 (Int)   42
 (Int)   99
-Block
+Command
 ## END
 
 #### can unset procs without -f

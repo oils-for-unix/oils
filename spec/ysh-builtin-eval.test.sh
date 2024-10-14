@@ -383,7 +383,7 @@ var d = io->evalToDict(cmd)
 pp test_ (d)
 
 ## STDOUT:
-<Block>
+<Command>
 hi
 (Dict)   {"x":42,"y":"global"}
 ## END
