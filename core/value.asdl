@@ -62,14 +62,10 @@ module value
   # Retain references to lines
   LiteralBlock = (BraceGroup brace_group, List[SourceLine] lines)
 
-  # TODO:
-  # - Consolidate value.Command and value.LiteralBlock.  All Block instances
-  # should have backing lines.
-  # - use LiteralBlock %LiteralBlock, but ASDL doesn't support shared variants
-  # across files.
+  # TODO: should Expr also have backing lines?
   cmd_frag =
-    Literal(LiteralBlock b)  # p { echo hi } has backing lines
-  | Expr(command c)          # var b = ^(echo hi)
+    LiteralBlock %LiteralBlock  # p { echo hi } has backing lines
+  | Expr(command c)             # var b = ^(echo hi)
 
   # Arbitrary objects, where attributes are looked up on the prototype chain.
   Obj = (Obj? prototype, Dict[str, value] d)
@@ -131,12 +127,12 @@ module value
     # ^[42 + a[i]]
   | Expr(expr e)
 
-    # TODO: this is an UnboundCommand?
+    # This is an UNBOUND command, like
     # ^(echo 1; echo 2) and cd { echo 1; echo 2 } 
-  | Command(command c)
+  | CommandFrag(command c)
 
     # TODO: this is BoundCommand
-  | Block(cmd_frag block, Dict[str, Cell] captured_frame)
+  | Block(cmd_frag frag, Dict[str, Cell] captured_frame)
 
     # A place has an additional stack frame where the value is evaluated.
     # The frame MUST be lower on the stack at the time of use.

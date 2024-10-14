@@ -52,16 +52,16 @@ def OptionalLiteralBlock(cmd_val):
 def GetCommand(bound):
     # type: (value.Block) -> command_t
 
-    block = bound.block
-    with tagswitch(block) as case:
-        if case(cmd_frag_e.Literal):
-            lit = cast(cmd_frag.Literal, block)
-            return lit.b.brace_group
+    frag = bound.frag
+    with tagswitch(frag) as case:
+        if case(cmd_frag_e.LiteralBlock):
+            lit = cast(LiteralBlock, frag)
+            return lit.brace_group
         elif case(cmd_frag_e.Expr):
-            expr = cast(cmd_frag.Expr, block)
+            expr = cast(cmd_frag.Expr, frag)
             return expr.c
         else:
-            raise AssertionError(cmd_frag_str(block.tag()))
+            raise AssertionError(cmd_frag_str(frag.tag()))
 
 
 def ReaderForProc(cmd_val):
@@ -337,10 +337,10 @@ class Reader(object):
         raise error.TypeErr(val, 'Arg %d should be a Expr' % self.pos_consumed,
                             self.BlamePos())
 
-    def _ToCommand(self, val):
+    def _ToCommandFrag(self, val):
         # type: (value_t) -> command_t
-        if val.tag() == value_e.Command:
-            return cast(value.Command, val).c
+        if val.tag() == value_e.CommandFrag:
+            return cast(value.CommandFrag, val).c
 
         # io.eval(mycmd) uses this
         if val.tag() == value_e.Block:
@@ -353,8 +353,8 @@ class Reader(object):
 
     def _ToBlock(self, val):
         # type: (value_t) -> command_t
-        if val.tag() == value_e.Command:
-            return cast(value.Command, val).c
+        if val.tag() == value_e.CommandFrag:
+            return cast(value.CommandFrag, val).c
 
         # Special case for hay
         # Foo { x = 1 }
@@ -378,11 +378,11 @@ class Reader(object):
         # type: (value_t) -> LiteralBlock
         """ Used by Hay """
         if val.tag() == value_e.Block:
-            block = cast(value.Block, val).block
-            with tagswitch(block) as case:
-                if case(cmd_frag_e.Literal):
-                    lit = cast(cmd_frag.Literal, block)
-                    return lit.b
+            frag = cast(value.Block, val).frag
+            with tagswitch(frag) as case:
+                if case(cmd_frag_e.LiteralBlock):
+                    lit = cast(LiteralBlock, frag)
+                    return lit
                 else:
                     raise AssertionError()
 
@@ -467,7 +467,7 @@ class Reader(object):
     def PosCommand(self):
         # type: () -> command_t
         val = self.PosValue()
-        return self._ToCommand(val)
+        return self._ToCommandFrag(val)
 
     def PosBoundCommand(self):
         # type: () -> value.Block

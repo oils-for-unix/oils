@@ -836,7 +836,7 @@ def Main(
         'M/setValue': method_other.SetValue(mem),
     }
 
-    methods[value_e.Command] = {
+    methods[value_e.CommandFrag] = {
         # var x = ^(echo hi)
         # Export source code and line number
         # Useful for test frameworks and so forth

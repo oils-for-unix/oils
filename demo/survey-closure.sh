@@ -494,4 +494,8 @@ puts result
 '
 }
 
+ruby-binding() {
+  ruby demo/survey-closure.rb
+}
+
 "$@"
