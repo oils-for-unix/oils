@@ -65,7 +65,7 @@ class ParseHay(vm._Callable):
             self.errfmt.PrettyPrintError(e)
             return None
 
-        return value.Block(cmd_frag.Expr(node), self.mem.CurrentFrame())
+        return value.Command(cmd_frag.Expr(node), self.mem.CurrentFrame())
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
@@ -105,7 +105,7 @@ class EvalHay(vm._Callable):
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        cmd = rd.PosCommand()
+        cmd = rd.PosCommandFrag()
         rd.Done()
         return value.Dict(self._Call(cmd))
 

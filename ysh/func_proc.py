@@ -124,10 +124,7 @@ def EvalProcDefaults(expr_ev, sig):
         if exp:
             block_default = expr_ev.EvalExpr(exp, sig.block_param.blame_tok)
             # It can only be ^() or null
-            if block_default.tag() not in (value_e.Null, value_e.Block):
-
-                # TODO: This is a value.Command, not a value.BoundCommand/Block?
-
+            if block_default.tag() not in (value_e.Null, value_e.Command):
                 raise error.TypeErr(
                     block_default,
                     "Default value for block should be Command or Null",
@@ -264,8 +261,8 @@ def EvalTypedArgsToProc(
 
     # p { echo hi } is an unevaluated block
     if node.block:
-        # Attach current frame to value.Block
-        proc_args.block_arg = value.Block(node.block, current_frame)
+        # Attach current frame to command fragment
+        proc_args.block_arg = value.Command(node.block, current_frame)
 
         # Add location info so the cmd_val looks the same for both:
         #   cd /tmp (; ; ^(echo hi))

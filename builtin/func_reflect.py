@@ -155,7 +155,7 @@ class ParseCommand(vm._Callable):
         # in
         # value.Command vs. value.Block - BoundCommand?
 
-        return value.Block(cmd_frag.Expr(cmd), self.mem.CurrentFrame())
+        return value.Command(cmd_frag.Expr(cmd), self.mem.CurrentFrame())
 
 
 class ParseExpr(vm._Callable):

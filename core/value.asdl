@@ -131,8 +131,8 @@ module value
     # ^(echo 1; echo 2) and cd { echo 1; echo 2 } 
   | CommandFrag(command c)
 
-    # TODO: this is BoundCommand
-  | Block(cmd_frag frag, Dict[str, Cell] captured_frame)
+    # Bound command
+  | Command(cmd_frag frag, Dict[str, Cell] captured_frame)
 
     # A place has an additional stack frame where the value is evaluated.
     # The frame MUST be lower on the stack at the time of use.

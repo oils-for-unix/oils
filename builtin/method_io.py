@@ -67,7 +67,7 @@ class Eval(vm._Callable):
         bound = rd.PosBoundCommand()
         captured_frame = bound.captured_frame
 
-        cmd = typed_args.GetCommand(bound)
+        cmd = typed_args.GetCommandFrag(bound)
 
         #log('CAPTURED %r', captured_frame)
 
@@ -123,7 +123,7 @@ class CaptureStdout(vm._Callable):
         # type: (typed_args.Reader) -> value_t
 
         unused = rd.PosValue()
-        cmd = rd.PosCommand()
+        cmd = rd.PosCommandFrag()  # TODO: Use bound command?
         rd.Done()  # no more args
 
         status, stdout_str = self.shell_ex.CaptureStdout(cmd)

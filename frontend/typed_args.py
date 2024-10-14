@@ -49,8 +49,8 @@ def OptionalLiteralBlock(cmd_val):
     return block
 
 
-def GetCommand(bound):
-    # type: (value.Block) -> command_t
+def GetCommandFrag(bound):
+    # type: (value.Command) -> command_t
 
     frag = bound.frag
     with tagswitch(frag) as case:
@@ -343,13 +343,13 @@ class Reader(object):
             return cast(value.CommandFrag, val).c
 
         # io.eval(mycmd) uses this
-        if val.tag() == value_e.Block:
-            bound = cast(value.Block, val)
-            return GetCommand(bound)
+        if val.tag() == value_e.Command:
+            bound = cast(value.Command, val)
+            return GetCommandFrag(bound)
 
-        raise error.TypeErr(val,
-                            'Arg %d should be a Command' % self.pos_consumed,
-                            self.BlamePos())
+        raise error.TypeErr(
+            val, 'Arg %d should be a CommandFrag' % self.pos_consumed,
+            self.BlamePos())
 
     def _ToBlock(self, val):
         # type: (value_t) -> command_t
@@ -358,27 +358,27 @@ class Reader(object):
 
         # Special case for hay
         # Foo { x = 1 }
-        if val.tag() == value_e.Block:
-            bound = cast(value.Block, val)
-            return GetCommand(bound)
+        if val.tag() == value_e.Command:
+            bound = cast(value.Command, val)
+            return GetCommandFrag(bound)
 
         raise error.TypeErr(val,
                             'Arg %d should be a Block' % self.pos_consumed,
                             self.BlamePos())
 
     def _ToBoundCommand(self, val):
-        # type: (value_t) -> value.Block
-        if val.tag() == value_e.Block:
-            return cast(value.Block, val)
-        raise error.TypeErr(
-            val, 'Arg %d should be a BoundCommand' % self.pos_consumed,
-            self.BlamePos())
+        # type: (value_t) -> value.Command
+        if val.tag() == value_e.Command:
+            return cast(value.Command, val)
+        raise error.TypeErr(val,
+                            'Arg %d should be a Command' % self.pos_consumed,
+                            self.BlamePos())
 
     def _ToLiteralBlock(self, val):
         # type: (value_t) -> LiteralBlock
         """ Used by Hay """
-        if val.tag() == value_e.Block:
-            frag = cast(value.Block, val).frag
+        if val.tag() == value_e.Command:
+            frag = cast(value.Command, val).frag
             with tagswitch(frag) as case:
                 if case(cmd_frag_e.LiteralBlock):
                     lit = cast(LiteralBlock, frag)
@@ -464,13 +464,13 @@ class Reader(object):
         val = self.PosValue()
         return self._ToMatch(val)
 
-    def PosCommand(self):
+    def PosCommandFrag(self):
         # type: () -> command_t
         val = self.PosValue()
         return self._ToCommandFrag(val)
 
     def PosBoundCommand(self):
-        # type: () -> value.Block
+        # type: () -> value.Command
         val = self.PosValue()
         return self._ToBoundCommand(val)
 
