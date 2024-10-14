@@ -93,7 +93,7 @@ class Eval(vm._Callable):
             # TODO: dollar0, pos_args, vars_ not supported
             # Does ctx_FrontFrame has different scoping rules?  For "vars"?
 
-            bindings = NewDict()
+            bindings = NewDict()  # type: Dict[str, value_t]
             with state.ctx_FrontFrame(self.cmd_ev.mem, captured_frame,
                                       bindings):
                 unused_status = self.cmd_ev.EvalCommandFrag(cmd)
