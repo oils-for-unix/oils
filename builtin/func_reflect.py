@@ -61,6 +61,33 @@ class Id(vm._Callable):
         raise AssertionError()
 
 
+class ThisFrame(vm._Callable):
+
+    def __init__(self, mem):
+        # type: (state.Mem) -> None
+        vm._Callable.__init__(self)
+        self.mem = mem
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        rd.Done()
+        return value.Frame(self.mem.CurrentFrame())
+
+
+class BindCommand(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Callable.__init__(self)
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        frag = rd.PosCommandFrag()
+        frame = rd.PosFrame()
+        rd.Done()
+        return value.Command(cmd_frag.Expr(frag), frame)
+
+
 class Shvar_get(vm._Callable):
     """Look up with dynamic scope."""
 

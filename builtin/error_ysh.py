@@ -104,7 +104,7 @@ class Try(vm._Builtin):
         status = 0  # success by default
         try:
             with ctx_Try(self.mutable_opts):
-                unused = self.cmd_ev.EvalCommand(cmd)
+                unused = self.cmd_ev.EvalCommandFrag(cmd)
         except error.Expr as e:
             status = e.ExitStatus()
         except error.ErrExit as e:

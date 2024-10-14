@@ -314,5 +314,5 @@ class RunBlock(vm._Builtin):
         if not cmd:
             raise error.Usage('expected a block', loc.Missing)
 
-        unused = self.cmd_ev.EvalCommand(cmd)
+        unused = self.cmd_ev.EvalCommandFrag(cmd)
         return 0

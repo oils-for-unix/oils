@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import cmd_value, ProcArgs
+from _devbuild.gen.runtime_asdl import cmd_value, ProcArgs, Cell
 from _devbuild.gen.syntax_asdl import (loc, loc_t, ArgList, command_t, expr_t,
                                        Token)
 from _devbuild.gen.value_asdl import (value, value_e, value_t, RegexMatch, Obj,
@@ -337,6 +337,15 @@ class Reader(object):
         raise error.TypeErr(val, 'Arg %d should be a Expr' % self.pos_consumed,
                             self.BlamePos())
 
+    def _ToFrame(self, val):
+        # type: (value_t) -> Dict[str, Cell]
+        if val.tag() == value_e.Frame:
+            return cast(value.Frame, val).frame
+
+        raise error.TypeErr(val,
+                            'Arg %d should be a Frame' % self.pos_consumed,
+                            self.BlamePos())
+
     def _ToCommandFrag(self, val):
         # type: (value_t) -> command_t
         if val.tag() == value_e.CommandFrag:
@@ -448,6 +457,11 @@ class Reader(object):
         # type: () -> RegexMatch
         val = self.PosValue()
         return self._ToMatch(val)
+
+    def PosFrame(self):
+        # type: () -> Dict[str, Cell]
+        val = self.PosValue()
+        return self._ToFrame(val)
 
     def PosCommandFrag(self):
         # type: () -> command_t

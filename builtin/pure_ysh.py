@@ -58,7 +58,7 @@ class Shvar(vm._Builtin):
                 self.search_path.ClearCache()
 
         with state.ctx_Eval(self.mem, None, None, vars):
-            unused = self.cmd_ev.EvalCommand(cmd)
+            unused = self.cmd_ev.EvalCommandFrag(cmd)
 
         return 0
 
@@ -99,7 +99,7 @@ class Ctx(vm._Builtin):
     def _Push(self, context, block):
         # type: (Dict[str, value_t], command_t) -> int
         with ctx_Context(self.mem, context):
-            return self.cmd_ev.EvalCommand(block)
+            return self.cmd_ev.EvalCommandFrag(block)
 
     def _Set(self, updates):
         # type: (Dict[str, value_t]) -> int
@@ -181,7 +181,7 @@ class PushRegisters(vm._Builtin):
             raise error.Usage('expected a block', loc.Missing)
 
         with state.ctx_Registers(self.mem):
-            unused = self.cmd_ev.EvalCommand(cmd)
+            unused = self.cmd_ev.EvalCommandFrag(cmd)
 
         # make it "SILENT" in terms of not mutating $?
         # TODO: Revisit this.  It might be better to provide the headless shell

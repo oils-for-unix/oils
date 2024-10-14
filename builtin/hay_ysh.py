@@ -291,7 +291,7 @@ class Hay(vm._Builtin):
             with ctx_HayEval(self.hay_state, self.mutable_opts, self.mem):
                 # Note: we want all haynode invocations in the block to appear as
                 # our 'children', recursively
-                unused = self.cmd_ev.EvalCommand(cmd)
+                unused = self.cmd_ev.EvalCommandFrag(cmd)
 
             result = self.hay_state.Result()
 
@@ -411,7 +411,7 @@ class HayNode_(vm._Builtin):
                     with ctx_HayNode(self.hay_state, hay_name):
                         # Note: we want all haynode invocations in the block to appear as
                         # our 'children', recursively
-                        self.cmd_ev.EvalCommand(lit_block.brace_group)
+                        self.cmd_ev.EvalCommandFrag(lit_block.brace_group)
 
                     # Treat the vars as a Dict
                     block_attrs = self.mem.TopNamespace()

@@ -181,3 +181,17 @@ echo $[y => lower()]
 ÀÈ
 áé
 ## END
+
+#### thisFrame()
+
+var fr = thisFrame()
+pp test_ (fr)
+#= fr
+
+#var bound = bindCommand(null, fr)
+#pp test_ (bound)
+
+## STDOUT:
+<Frame>
+## END
+

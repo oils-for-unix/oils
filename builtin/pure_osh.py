@@ -256,7 +256,7 @@ class Shopt(vm._Builtin):
                 opt_nums.append(index)
 
             with state.ctx_Option(self.mutable_opts, opt_nums, b):
-                unused = self.cmd_ev.EvalCommand(cmd)
+                unused = self.cmd_ev.EvalCommandFrag(cmd)
             return 0  # cd also returns 0
 
         # Otherwise, set options.

@@ -2074,7 +2074,7 @@ class CommandEvaluator(object):
         self.mem.SetLastStatus(status)
         return is_return, is_fatal
 
-    def EvalCommand(self, block):
+    def EvalCommandFrag(self, block):
         # type: (command_t) -> int
         """For builtins to evaluate command args.
 

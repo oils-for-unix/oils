@@ -877,6 +877,14 @@ def Main(
     _AddBuiltinFunc(mem, 'getVar', func_reflect.GetVar(mem))
     _AddBuiltinFunc(mem, 'setVar', func_reflect.SetVar(mem))
 
+    # TODO: implement
+    # and then parseCommand() and parseHay will not depend on mem; they will
+    # not bind a frame yet
+    #
+    # what about newFrame() and globalFrame()?
+    _AddBuiltinFunc(mem, 'thisFrame', func_reflect.ThisFrame(mem))
+    _AddBuiltinFunc(mem, 'bindCommand', func_reflect.BindCommand())
+
     _AddBuiltinFunc(mem, 'Object', func_misc.Object())
     _AddBuiltinFunc(mem, 'prototype', func_misc.Prototype())
     _AddBuiltinFunc(mem, 'propView', func_misc.PropView())

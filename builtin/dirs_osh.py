@@ -166,7 +166,7 @@ class Cd(vm._Builtin):
             out_errs = []  # type: List[bool]
             with ctx_CdBlock(self.dir_stack, real_dest_dir, self.mem,
                              self.errfmt, out_errs):
-                unused = self.cmd_ev.EvalCommand(cmd)
+                unused = self.cmd_ev.EvalCommandFrag(cmd)
             if len(out_errs):
                 return 1
 
