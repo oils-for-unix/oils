@@ -373,4 +373,125 @@ print(g())
 # - Python didn't change it, but people mostly write blog posts about it, and
 # don't hit it?
 
+
+ruby-blocks() {
+  ruby -e '
+def create_multiplier(factor)
+  ->(x) { x * factor }
+end
+
+double = create_multiplier(2)
+triple = create_multiplier(3)
+
+puts double.call(5)  # Output: 10
+puts triple.call(5)  # Output: 15
+'
+  echo
+
+  ruby -e '
+def use_multiplier(factor)
+  # This method yields to a block
+  yield factor
+end
+
+multiplier = 3
+
+# The block captures the outer multiplier variable
+result = use_multiplier(5) { |x| x * multiplier }
+puts result  # Output: 15
+
+# alternative syntax
+result = use_multiplier(5) do |x|
+    x * multiplier
+end
+
+puts result # Output: 15
+'
+  echo
+
+  ruby -e '
+# alternative syntax
+def use_multiplier(factor, &block)
+  block.call(factor)
+end
+
+multiplier = 3
+
+result = use_multiplier(5) { |x| x * multiplier }
+puts result  # Output: 15
+
+# alterantive syntax
+result = use_multiplier(5) do |x|
+    x * multiplier
+end
+
+puts result  # Output: 15
+'
+}
+
+ruby-mine() {
+  ruby -e '
+# Two styles
+
+# Implicit block arg
+def run_it 
+  yield 2
+end
+
+# explicit proc arg
+def run_it2 (&block)  # interchangeable
+  block.call(2)
+end
+
+# 2 Styles of Block
+
+factor = 3
+
+block1 = ->(x) { x * factor }
+puts block1.call(5)
+
+result = run_it(&block1)
+puts result
+
+puts
+
+block2 = lambda do |x|
+  x * factor
+end
+puts block2.call(5)
+
+result = run_it(&block2)
+puts result
+
+puts
+
+# 2 styles of Proc
+
+proc1 = proc { |x| x * factor }
+puts proc1.call(5)
+
+result = run_it(&proc1)
+puts result
+
+puts
+
+proc2 = Proc.new do |x|
+  x * factor
+end
+puts proc2.call(5)
+
+result = run_it(&proc2)
+puts result
+
+puts
+
+# Now do a literal style
+
+result = run_it do |x|
+  x * factor
+end
+puts result
+'
+}
+
 "$@"
