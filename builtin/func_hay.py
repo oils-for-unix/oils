@@ -92,10 +92,10 @@ class EvalHay(vm._Callable):
         self.cmd_ev = cmd_ev
 
     def _Call(self, cmd):
-        # type: (command_t) -> Dict[str, value_t]
+        # type: (value.Command) -> Dict[str, value_t]
 
         with hay_ysh.ctx_HayEval(self.hay_state, self.mutable_opts, self.mem):
-            unused = self.cmd_ev.EvalCommandFrag(cmd)
+            unused = self.cmd_ev.EvalCommand(cmd)
 
         return self.hay_state.Result()
 
@@ -105,7 +105,7 @@ class EvalHay(vm._Callable):
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        cmd = rd.PosCommandFrag()
+        cmd = rd.PosCommand()
         rd.Done()
         return value.Dict(self._Call(cmd))
 

@@ -111,20 +111,26 @@ i = 42
 stdout i = 42
 ## END
 
-#### block doesn't have its own scope
-shopt -s ysh:all
-var x = 1
-echo "x=$x"
-cd / {
-  #set y = 5  # This would be an error because set doesn't do dynamic lookup
-  var x = 42
-  echo "x=$x"
+#### builtins like shopt with block arg
+shopt --set ysh:upgrade
+
+proc my-eval (; b) {
+  shopt --unset nounset (; ; b)
+  #shopt --unset errexit (; ; b)
 }
-echo "x=$x"
+
+proc p {
+  var i = 42
+  var b = ^(var x = 'x'; echo "i = $i, undef = [$undef]")
+
+  my-eval (b)
+}
+
+p
+
+
 ## STDOUT:
-x=1
-x=42
-x=42
+i = 42, undef = []
 ## END
 
 #### redirects allowed in words, typed args, and after block
