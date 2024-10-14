@@ -3,7 +3,7 @@
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import source, loc, command_t
-from _devbuild.gen.value_asdl import value, block_val
+from _devbuild.gen.value_asdl import value, cmd_frag
 from builtin import hay_ysh
 from core import alloc
 from core import error
@@ -65,7 +65,7 @@ class ParseHay(vm._Callable):
             self.errfmt.PrettyPrintError(e)
             return None
 
-        return value.Block(block_val.Expr(node), self.mem.CurrentFrame())
+        return value.Block(cmd_frag.Expr(node), self.mem.CurrentFrame())
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t

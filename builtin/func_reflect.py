@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import (scope_e)
 from _devbuild.gen.syntax_asdl import source
-from _devbuild.gen.value_asdl import (value, value_e, value_t, block_val)
+from _devbuild.gen.value_asdl import (value, value_e, value_t, cmd_frag)
 
 from core import alloc
 from core import error
@@ -155,7 +155,7 @@ class ParseCommand(vm._Callable):
         # in
         # value.Command vs. value.Block - BoundCommand?
 
-        return value.Block(block_val.Expr(cmd), self.mem.CurrentFrame())
+        return value.Block(cmd_frag.Expr(cmd), self.mem.CurrentFrame())
 
 
 class ParseExpr(vm._Callable):

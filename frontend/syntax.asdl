@@ -28,7 +28,7 @@
 module syntax
 {
   use core value {
-    value
+    value LiteralBlock
   }
 
   # More efficient than the List[bool] pattern we've been using
@@ -356,9 +356,6 @@ module syntax
       ParamGroup? positional, ParamGroup? named,
       command body
   )
-
-  # Retain references to lines
-  LiteralBlock = (BraceGroup brace_group, List[SourceLine] lines)
 
   # Represents all these case:  s=1  s+=1  s[x]=1 ...
   ParsedAssignment = (Token? left, Token? close, int part_offset, CompoundWord w)

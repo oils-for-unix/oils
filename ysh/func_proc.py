@@ -10,7 +10,7 @@ from _devbuild.gen.syntax_asdl import (proc_sig, proc_sig_e, Param, ParamGroup,
                                        NamedArg, Func, loc, ArgList, expr,
                                        expr_e, expr_t)
 from _devbuild.gen.value_asdl import (value, value_e, value_t, ProcDefaults,
-                                      LeftName, block_val)
+                                      LeftName, cmd_frag)
 
 from core import error
 from core.error import e_die
@@ -265,7 +265,7 @@ def EvalTypedArgsToProc(
     # p { echo hi } is an unevaluated block
     if node.block:
         # Attach current frame to value.Block
-        proc_args.block_arg = value.Block(block_val.Literal(node.block),
+        proc_args.block_arg = value.Block(cmd_frag.Literal(node.block),
                                           current_frame)
 
         # Add location info so the cmd_val looks the same for both:

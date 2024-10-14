@@ -8,7 +8,7 @@ module runtime
     expr word command
     CompoundWord DoubleQuoted
     ArgList re redir_loc proc_sig 
-    LiteralBlock Func
+    Func
   }
 
   use core value {

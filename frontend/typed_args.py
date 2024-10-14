@@ -2,10 +2,11 @@
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import cmd_value, ProcArgs
-from _devbuild.gen.syntax_asdl import (loc, loc_t, ArgList, LiteralBlock,
-                                       command_t, expr_t, Token)
+from _devbuild.gen.syntax_asdl import (loc, loc_t, ArgList, command_t, expr_t,
+                                       Token)
 from _devbuild.gen.value_asdl import (value, value_e, value_t, RegexMatch, Obj,
-                                      block_val, block_val_e, block_val_str)
+                                      cmd_frag, cmd_frag_e, cmd_frag_str,
+                                      LiteralBlock)
 from core import error
 from core.error import e_usage
 from frontend import location
@@ -53,14 +54,14 @@ def GetCommand(bound):
 
     block = bound.block
     with tagswitch(block) as case:
-        if case(block_val_e.Literal):
-            lit = cast(block_val.Literal, block)
+        if case(cmd_frag_e.Literal):
+            lit = cast(cmd_frag.Literal, block)
             return lit.b.brace_group
-        elif case(block_val_e.Expr):
-            expr = cast(block_val.Expr, block)
+        elif case(cmd_frag_e.Expr):
+            expr = cast(cmd_frag.Expr, block)
             return expr.c
         else:
-            raise AssertionError(block_val_str(block.tag()))
+            raise AssertionError(cmd_frag_str(block.tag()))
 
 
 def ReaderForProc(cmd_val):
@@ -379,8 +380,8 @@ class Reader(object):
         if val.tag() == value_e.Block:
             block = cast(value.Block, val).block
             with tagswitch(block) as case:
-                if case(block_val_e.Literal):
-                    lit = cast(block_val.Literal, block)
+                if case(cmd_frag_e.Literal):
+                    lit = cast(cmd_frag.Literal, block)
                     return lit.b
                 else:
                     raise AssertionError()
