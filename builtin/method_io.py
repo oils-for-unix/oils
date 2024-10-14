@@ -83,11 +83,7 @@ class Eval(vm._Callable):
 
         if self.which == EVAL_NULL:
             # _PrintFrame('[captured]', captured_frame)
-
-            # TOOD: don't need bindings
-            bindings = NewDict()  # type: Dict[str, value_t]
-            with state.ctx_FrontFrame(self.cmd_ev.mem, captured_frame,
-                                      bindings):
+            with state.ctx_FrontFrame(self.cmd_ev.mem, captured_frame, None):
                 # _PrintFrame('[new]', self.cmd_ev.mem.var_stack[-1])
                 with state.ctx_Eval(self.cmd_ev.mem, dollar0, pos_args, vars_):
                     unused_status = self.cmd_ev.EvalCommandFrag(cmd)

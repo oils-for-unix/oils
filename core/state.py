@@ -1200,7 +1200,7 @@ class ctx_FrontFrame(object):
     """
 
     def __init__(self, mem, rear_frame, out_dict):
-        # type: (Mem, Dict[str, Cell], Dict[str, value_t]) -> None
+        # type: (Mem, Dict[str, Cell], Optional[Dict[str, value_t]]) -> None
         self.mem = mem
         self.rear_frame = rear_frame
         self.out_dict = out_dict
@@ -1219,16 +1219,17 @@ class ctx_FrontFrame(object):
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
 
-        for name, cell in iteritems(self.front_frame):
-            #log('name %r', name)
-            #log('cell %r', cell)
+        if self.out_dict is not None:
+            for name, cell in iteritems(self.front_frame):
+                #log('name %r', name)
+                #log('cell %r', cell)
 
-            # User can hide variables with _ suffix
-            # e.g. for i_ in foo bar { echo $i_ }
-            if name.endswith('_'):
-                continue
+                # User can hide variables with _ suffix
+                # e.g. for i_ in foo bar { echo $i_ }
+                if name.endswith('_'):
+                    continue
 
-            self.out_dict[name] = cell.val
+                self.out_dict[name] = cell.val
 
         # Restore
         self.mem.var_stack.pop()

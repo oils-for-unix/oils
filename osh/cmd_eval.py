@@ -81,6 +81,7 @@ from core import vm
 from frontend import consts
 from frontend import lexer
 from frontend import location
+from frontend import typed_args
 from osh import braces
 from osh import sh_expr_eval
 from osh import word_eval
@@ -2074,7 +2075,7 @@ class CommandEvaluator(object):
         self.mem.SetLastStatus(status)
         return is_return, is_fatal
 
-    def EvalCommandFrag(self, block):
+    def EvalCommandFrag(self, frag):
         # type: (command_t) -> int
         """For builtins to evaluate command args.
 
@@ -2090,7 +2091,13 @@ class CommandEvaluator(object):
 
         (Should those be more like eval 'mystring'?)
         """
-        return self._Execute(block)  # can raise FatalRuntimeError, etc.
+        return self._Execute(frag)  # can raise FatalRuntimeError, etc.
+
+    def EvalCommand(self, cmd):
+        # type: (value.Command) -> int
+        frag = typed_args.GetCommandFrag(cmd)
+        with state.ctx_FrontFrame(self.mem, cmd.captured_frame, None):
+            return self.EvalCommandFrag(frag)
 
     def RunTrapsOnExit(self, mut_status):
         # type: (IntParamBox) -> None

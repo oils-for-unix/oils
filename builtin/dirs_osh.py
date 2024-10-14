@@ -102,7 +102,7 @@ class Cd(vm._Builtin):
         arg = arg_types.cd(attrs.attrs)
 
         # If a block is passed, we do additional syntax checks
-        cmd = typed_args.OptionalBlock(cmd_val)
+        cmd = typed_args.OptionalCommandBlock(cmd_val)
 
         dest_dir, arg_loc = arg_r.Peek2()
         if dest_dir is None:
@@ -166,7 +166,7 @@ class Cd(vm._Builtin):
             out_errs = []  # type: List[bool]
             with ctx_CdBlock(self.dir_stack, real_dest_dir, self.mem,
                              self.errfmt, out_errs):
-                unused = self.cmd_ev.EvalCommandFrag(cmd)
+                unused = self.cmd_ev.EvalCommand(cmd)
             if len(out_errs):
                 return 1
 

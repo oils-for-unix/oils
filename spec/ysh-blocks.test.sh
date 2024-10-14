@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 
 #### cd accepts a block, runs it in different dir
 shopt -s ysh:all
@@ -77,6 +77,7 @@ proc p {
 p
 
 ## STDOUT:
+i = 42
 ## END
 
 #### io->eval() and io.captureStdout() passed a block in different scope
