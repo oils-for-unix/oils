@@ -58,15 +58,9 @@ class Eval(vm._Callable):
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
         unused = rd.PosValue()
+        bound = rd.PosCommand()
 
-        # TODO: Can we evaluated both:
-        #   value.BoundCommand
-        #   value.Command (unbound)
-        #cmd, val = rd.PosCommand2()
-
-        bound = rd.PosBoundCommand()
         captured_frame = bound.captured_frame
-
         cmd = typed_args.GetCommandFrag(bound)
 
         #log('CAPTURED %r', captured_frame)

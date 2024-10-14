@@ -1,3 +1,5 @@
+## oils_failures_allowed: 2
+
 #### cd accepts a block, runs it in different dir
 shopt -s ysh:all
 
@@ -56,6 +58,52 @@ echo 'not reached'
 ## status: 1
 ## STDOUT:
 block
+## END
+
+#### cd passed a block defined in a different scope
+shopt --set ysh:upgrade
+
+proc my-cd (; b) {
+  cd /tmp ( ; ; b)
+}
+
+proc p {
+  var i = 42
+  var b = ^(echo "i = $i")
+
+  my-cd (b)
+}
+
+p
+
+## STDOUT:
+## END
+
+#### io->eval() and io.captureStdout() passed a block in different scope
+shopt --set ysh:upgrade
+
+proc my-cd (; b) {
+  call io->eval(b)
+
+  var d = io->evalToDict(b)
+
+  pp test_ (d)
+
+  # Yup, this is a problem
+  var s = io.captureStdout(b)
+  echo "stdout $s"
+}
+
+proc p {
+  var i = 42
+  var b = ^(var x = 'x'; echo "i = $i")
+
+  my-cd (b)
+}
+
+p
+
+## STDOUT:
 ## END
 
 #### block doesn't have its own scope

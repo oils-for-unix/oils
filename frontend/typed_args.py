@@ -351,22 +351,7 @@ class Reader(object):
             val, 'Arg %d should be a CommandFrag' % self.pos_consumed,
             self.BlamePos())
 
-    def _ToBlock(self, val):
-        # type: (value_t) -> command_t
-        if val.tag() == value_e.CommandFrag:
-            return cast(value.CommandFrag, val).c
-
-        # Special case for hay
-        # Foo { x = 1 }
-        if val.tag() == value_e.Command:
-            bound = cast(value.Command, val)
-            return GetCommandFrag(bound)
-
-        raise error.TypeErr(val,
-                            'Arg %d should be a Block' % self.pos_consumed,
-                            self.BlamePos())
-
-    def _ToBoundCommand(self, val):
+    def _ToCommand(self, val):
         # type: (value_t) -> value.Command
         if val.tag() == value_e.Command:
             return cast(value.Command, val)
@@ -469,10 +454,10 @@ class Reader(object):
         val = self.PosValue()
         return self._ToCommandFrag(val)
 
-    def PosBoundCommand(self):
+    def PosCommand(self):
         # type: () -> value.Command
         val = self.PosValue()
-        return self._ToBoundCommand(val)
+        return self._ToCommand(val)
 
     def PosExpr(self):
         # type: () -> expr_t
@@ -488,13 +473,13 @@ class Reader(object):
         if self.block_arg is None:
             raise error.TypeErrVerbose('Expected a block arg',
                                        self.LeastSpecificLocation())
-        return self._ToBlock(self.block_arg)
+        return self._ToCommandFrag(self.block_arg)
 
     def OptionalBlock(self):
         # type: () -> Optional[command_t]
         if self.block_arg is None:
             return None
-        return self._ToBlock(self.block_arg)
+        return self._ToCommandFrag(self.block_arg)
 
     def OptionalLiteralBlock(self):
         # type: () -> Optional[LiteralBlock]
