@@ -50,8 +50,9 @@ class Eval(vm._Callable):
     The CALLER must handle errors.
     """
 
-    def __init__(self, cmd_ev, which):
-        # type: (cmd_eval.CommandEvaluator, int) -> None
+    def __init__(self, mem, cmd_ev, which):
+        # type: (state.Mem, cmd_eval.CommandEvaluator, int) -> None
+        self.mem = mem
         self.cmd_ev = cmd_ev
         self.which = which
 
@@ -83,9 +84,9 @@ class Eval(vm._Callable):
 
         if self.which == EVAL_NULL:
             # _PrintFrame('[captured]', captured_frame)
-            with state.ctx_FrontFrame(self.cmd_ev.mem, captured_frame, None):
+            with state.ctx_FrontFrame(self.mem, captured_frame, None):
                 # _PrintFrame('[new]', self.cmd_ev.mem.var_stack[-1])
-                with state.ctx_Eval(self.cmd_ev.mem, dollar0, pos_args, vars_):
+                with state.ctx_Eval(self.mem, dollar0, pos_args, vars_):
                     unused_status = self.cmd_ev.EvalCommandFrag(cmd)
             return value.Null
 
@@ -94,8 +95,7 @@ class Eval(vm._Callable):
             # Does ctx_FrontFrame has different scoping rules?  For "vars"?
 
             bindings = NewDict()  # type: Dict[str, value_t]
-            with state.ctx_FrontFrame(self.cmd_ev.mem, captured_frame,
-                                      bindings):
+            with state.ctx_FrontFrame(self.mem, captured_frame, bindings):
                 unused_status = self.cmd_ev.EvalCommandFrag(cmd)
             return value.Dict(bindings)
 
@@ -105,18 +105,21 @@ class Eval(vm._Callable):
 
 class CaptureStdout(vm._Callable):
 
-    def __init__(self, shell_ex):
-        # type: (vm._Executor) -> None
+    def __init__(self, mem, shell_ex):
+        # type: (state.Mem, vm._Executor) -> None
+        self.mem = mem
         self.shell_ex = shell_ex
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
         unused = rd.PosValue()
-        cmd = rd.PosCommandFrag()  # TODO: Use bound command?
+        cmd = rd.PosCommand()
         rd.Done()  # no more args
 
-        status, stdout_str = self.shell_ex.CaptureStdout(cmd)
+        frag = typed_args.GetCommandFrag(cmd)
+        with state.ctx_FrontFrame(self.mem, cmd.captured_frame, None):
+            status, stdout_str = self.shell_ex.CaptureStdout(frag)
         if status != 0:
             # Note that $() raises error.ErrExit with the status.
             # But I think that results in a more confusing error message, so we

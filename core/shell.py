@@ -567,13 +567,13 @@ def Main(
 
     # The M/ prefix means it's io->eval()
     io_methods['M/eval'] = value.BuiltinFunc(
-        method_io.Eval(cmd_ev, method_io.EVAL_NULL))
+        method_io.Eval(mem, cmd_ev, method_io.EVAL_NULL))
     io_methods['M/evalToDict'] = value.BuiltinFunc(
-        method_io.Eval(cmd_ev, method_io.EVAL_DICT))
+        method_io.Eval(mem, cmd_ev, method_io.EVAL_DICT))
 
     # Identical to command sub
     io_methods['captureStdout'] = value.BuiltinFunc(
-        method_io.CaptureStdout(shell_ex))
+        method_io.CaptureStdout(mem, shell_ex))
 
     # TODO:
     io_methods['time'] = value.BuiltinFunc(method_io.Time())

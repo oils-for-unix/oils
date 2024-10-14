@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 #### cd accepts a block, runs it in different dir
 shopt -s ysh:all
@@ -83,7 +83,7 @@ i = 42
 #### io->eval() and io.captureStdout() passed a block in different scope
 shopt --set ysh:upgrade
 
-proc my-cd (; b) {
+proc my-eval (; b) {
   call io->eval(b)
 
   var d = io->evalToDict(b)
@@ -99,12 +99,16 @@ proc p {
   var i = 42
   var b = ^(var x = 'x'; echo "i = $i")
 
-  my-cd (b)
+  my-eval (b)
 }
 
 p
 
 ## STDOUT:
+i = 42
+i = 42
+(Dict)   {"x":"x"}
+stdout i = 42
 ## END
 
 #### block doesn't have its own scope
