@@ -550,8 +550,8 @@ inline FOO=
 bar
 ## END
 
-#### cd blocks introduce new scopes
-shopt --set ysh:upgrade
+#### cd blocks don't introduce new scopes
+shopt --set oil:upgrade
 
 var x = 42
 cd / {
@@ -560,11 +560,12 @@ cd / {
   echo $x $y $z
   setvar y = 43
 }
-echo $x $[getVar('y')] $[getVar('z')]
+setvar z = 44
+echo $x $y $z
 
 ## STDOUT:
 42 0 1
-42 null null
+42 43 44
 ## END
 
 #### IFS=: myproc exports when it doesn't need to

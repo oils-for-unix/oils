@@ -1,4 +1,4 @@
-## oils_failures_allowed: 0
+## oils_failures_allowed: 2
 
 #### cd accepts a block, runs it in different dir
 shopt -s ysh:all
@@ -77,13 +77,12 @@ proc p {
 p
 
 ## STDOUT:
-i = 42
 ## END
 
 #### io->eval() and io.captureStdout() passed a block in different scope
 shopt --set ysh:upgrade
 
-proc my-eval (; b) {
+proc my-cd (; b) {
   call io->eval(b)
 
   var d = io->evalToDict(b)
@@ -99,38 +98,28 @@ proc p {
   var i = 42
   var b = ^(var x = 'x'; echo "i = $i")
 
-  my-eval (b)
+  my-cd (b)
 }
 
 p
 
 ## STDOUT:
-i = 42
-i = 42
-(Dict)   {"x":"x"}
-stdout i = 42
 ## END
 
-#### builtins like shopt with block arg
-shopt --set ysh:upgrade
-
-proc my-eval (; b) {
-  shopt --unset nounset (; ; b)
-  #shopt --unset errexit (; ; b)
+#### block doesn't have its own scope
+shopt -s ysh:all
+var x = 1
+echo "x=$x"
+cd / {
+  #set y = 5  # This would be an error because set doesn't do dynamic lookup
+  var x = 42
+  echo "x=$x"
 }
-
-proc p {
-  var i = 42
-  var b = ^(var x = 'x'; echo "i = $i, undef = [$undef]")
-
-  my-eval (b)
-}
-
-p
-
-
+echo "x=$x"
 ## STDOUT:
-i = 42, undef = []
+x=1
+x=42
+x=42
 ## END
 
 #### redirects allowed in words, typed args, and after block

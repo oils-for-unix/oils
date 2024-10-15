@@ -455,9 +455,16 @@ puts result
 
 puts
 
+g = 9  # visible
+
 block2 = lambda do |x|
-  x * factor
+  x * factor * g
+  h = 20
 end
+
+# Not visible, but in YSH we may want it to be, e.g. for try { } and shopt { }
+# puts h
+
 puts block2.call(5)
 
 result = run_it(&block2)
