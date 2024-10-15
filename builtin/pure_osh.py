@@ -230,8 +230,8 @@ class Shopt(vm._Builtin):
             return 0
 
         # shopt --set x { my-block }
-        cmd = typed_args.OptionalBlock(cmd_val)
-        if cmd:
+        cmd_frag = typed_args.OptionalBlock(cmd_val)
+        if cmd_frag:
             opt_nums = []  # type: List[int]
             for opt_name in opt_names:
                 # TODO: could consolidate with checks in core/state.py and option
@@ -256,7 +256,7 @@ class Shopt(vm._Builtin):
                 opt_nums.append(index)
 
             with state.ctx_Option(self.mutable_opts, opt_nums, b):
-                unused = self.cmd_ev.EvalCommandFrag(cmd)
+                unused = self.cmd_ev.EvalCommandFrag(cmd_frag)
             return 0  # cd also returns 0
 
         # Otherwise, set options.

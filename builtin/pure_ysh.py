@@ -35,11 +35,9 @@ class Shvar(vm._Builtin):
                                          cmd_val,
                                          accept_typed_args=True)
 
-        cmd = typed_args.OptionalBlock(cmd_val)
-        if not cmd:
-            # TODO: I think shvar LANG=C should just mutate
-            # But should there be a whitelist?
-            raise error.Usage('expected a block', loc.Missing)
+        # TODO: I think shvar LANG=C should just mutate
+        # But should there be a whitelist?
+        cmd_frag = typed_args.RequiredBlock(cmd_val)
 
         vars = NewDict()  # type: Dict[str, value_t]
         args, arg_locs = arg_r.Rest2()
@@ -58,7 +56,7 @@ class Shvar(vm._Builtin):
                 self.search_path.ClearCache()
 
         with state.ctx_Eval(self.mem, None, None, vars):
-            unused = self.cmd_ev.EvalCommandFrag(cmd)
+            unused = self.cmd_ev.EvalCommandFrag(cmd_frag)
 
         return 0
 
@@ -176,12 +174,10 @@ class PushRegisters(vm._Builtin):
                                          cmd_val,
                                          accept_typed_args=True)
 
-        cmd = typed_args.OptionalBlock(cmd_val)
-        if not cmd:
-            raise error.Usage('expected a block', loc.Missing)
+        cmd_frag = typed_args.RequiredBlock(cmd_val)
 
         with state.ctx_Registers(self.mem):
-            unused = self.cmd_ev.EvalCommandFrag(cmd)
+            unused = self.cmd_ev.EvalCommandFrag(cmd_frag)
 
         # make it "SILENT" in terms of not mutating $?
         # TODO: Revisit this.  It might be better to provide the headless shell

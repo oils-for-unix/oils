@@ -908,7 +908,7 @@ test-append-usage-error() {
 
 # Bad error location
 test-try-usage-error() {
-  _ysh-expr-error '
+  _ysh-error-X 2 '
 var s = "README"
 case (s) {
   README { echo hi }
@@ -1015,12 +1015,21 @@ test-required-blocks() {
   #
   # Funcs give you type errors though?  Is that inconsistent?
 
+  _ysh-error-X 2 'shvar'
+  _ysh-error-X 2 'push-registers'
+
   _ysh-error-X 2 'redir'
   _ysh-error-X 2 'redir (42)'
   _ysh-error-X 2 'hay eval :myvar'
   _ysh-error-X 2 'hay eval :myvar (42)'
   _ysh-error-X 2 'try'
   _ysh-error-X 2 'ctx push ({})'
+
+  _ysh-error-X 2 'fork'
+  _ysh-error-X 2 'forkwait'
+
+  # OK this is a type error
+  _ysh-error-X 3 'forkwait ( ; ; 42)'
 
   _ysh-error-X 2 'haynode Foo'
 
