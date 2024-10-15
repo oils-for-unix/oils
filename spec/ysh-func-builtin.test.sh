@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 3
 ## our_shell: ysh
 
 #### join()
@@ -182,9 +182,11 @@ echo $[y => lower()]
 áé
 ## END
 
-#### thisFrame()
+#### getFrame()
 
-var fr = thisFrame()
+# TODO: vm.getFrame()
+
+var fr = getFrame(null)
 pp test_ (fr)
 #= fr
 
@@ -195,3 +197,17 @@ pp test_ (fr)
 <Frame>
 ## END
 
+
+#### bindFrame()
+
+var frag = ^(echo $i)
+
+# TODO: should be fragment
+pp test_ (frag)
+
+var cmd = bindFrame(frag, getFrame(0))
+
+pp test_ (cmd)
+
+## STDOUT:
+## END

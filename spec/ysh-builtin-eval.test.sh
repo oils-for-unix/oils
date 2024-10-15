@@ -1,7 +1,7 @@
 # YSH specific features of eval
 
 ## our_shell: ysh
-## oils_failures_allowed: 3
+## oils_failures_allowed: 4
 
 #### eval builtin does not take a literal block - can restore this later
 
@@ -651,3 +651,36 @@ x: i = 0, j = 2
 x: i = 1, j = 3
 x: i = 2, j = 4
 ## END
+
+
+
+#### io->evalInFrame() can express try, cd builtins
+
+var frag = ^(echo $i)
+
+proc my-cd (new_dir; ; ; block) {
+  pushd $new_dir
+
+  # could call this "unbound"?  or unbind()?  What about procs and funcs and
+  # exprs?
+  var frag = getCommandFrag(block)
+
+  var calling_frame = getFrame(-2)
+  call io->evalInFrame(frag, calling_frame)
+
+  popd
+}
+
+var i = 42
+my-cd /tmp {
+  echo $PWD
+  var j = i + 1
+}
+echo "j = $j"
+
+## STDOUT:
+x: i = 0, j = 2
+x: i = 1, j = 3
+x: i = 2, j = 4
+## END
+
