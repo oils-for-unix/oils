@@ -362,7 +362,7 @@ class Reader(object):
         if val.tag() == value_e.CommandFrag:
             return cast(value.CommandFrag, val).c
 
-        # TODO: remove this.  Many builtin commands rely on it.
+        # io.eval(mycmd) uses this
         if val.tag() == value_e.Command:
             bound = cast(value.Command, val)
             return GetCommandFrag(bound)

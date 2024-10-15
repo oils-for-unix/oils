@@ -1,8 +1,7 @@
 #!/usr/bin/env python2
-"""func_hay.py."""
 from __future__ import print_function
 
-from _devbuild.gen.syntax_asdl import source, loc
+from _devbuild.gen.syntax_asdl import source, loc, command_t
 from _devbuild.gen.value_asdl import value, cmd_frag
 from builtin import hay_ysh
 from core import alloc
@@ -92,10 +91,10 @@ class EvalHay(vm._Callable):
         self.cmd_ev = cmd_ev
 
     def _Call(self, cmd):
-        # type: (value.Command) -> Dict[str, value_t]
+        # type: (command_t) -> Dict[str, value_t]
 
         with hay_ysh.ctx_HayEval(self.hay_state, self.mutable_opts, self.mem):
-            unused = self.cmd_ev.EvalCommand(cmd)
+            unused = self.cmd_ev.EvalCommandFrag(cmd)
 
         return self.hay_state.Result()
 
@@ -105,7 +104,7 @@ class EvalHay(vm._Callable):
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        cmd = rd.PosCommand()
+        cmd = rd.PosCommandFrag()
         rd.Done()
         return value.Dict(self._Call(cmd))
 
