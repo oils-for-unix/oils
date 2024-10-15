@@ -570,6 +570,8 @@ def Main(
         method_io.Eval(mem, cmd_ev, method_io.EVAL_NULL))
     io_methods['M/evalToDict'] = value.BuiltinFunc(
         method_io.Eval(mem, cmd_ev, method_io.EVAL_DICT))
+    io_methods['M/evalInFrame'] = value.BuiltinFunc(
+        method_io.EvalInFrame(mem, cmd_ev))
 
     # Identical to command sub
     io_methods['captureStdout'] = value.BuiltinFunc(
@@ -882,8 +884,8 @@ def Main(
     # not bind a frame yet
     #
     # what about newFrame() and globalFrame()?
-    _AddBuiltinFunc(mem, 'thisFrame', func_reflect.ThisFrame(mem))
-    _AddBuiltinFunc(mem, 'bindCommand', func_reflect.BindCommand())
+    _AddBuiltinFunc(mem, 'getFrame', func_reflect.GetFrame(mem))
+    _AddBuiltinFunc(mem, 'bindFrame', func_reflect.BindFrame())
 
     _AddBuiltinFunc(mem, 'Object', func_misc.Object())
     _AddBuiltinFunc(mem, 'prototype', func_misc.Prototype())

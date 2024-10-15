@@ -25,26 +25,37 @@ def DoesNotAccept(proc_args):
         e_usage('got unexpected typed args', proc_args.typed_args.left)
 
 
-def OptionalCommandBlock(cmd_val):
-    # type: (cmd_value.Argv) -> Optional[value.Command]
-
-    cmd = None  # type: Optional[value.Command]
-    if cmd_val.proc_args:
-        r = ReaderForProc(cmd_val)
-        cmd = r.OptionalCommandBlock()
-        r.Done()
-    return cmd
+if 0:
+    def OptionalCommandBlock(cmd_val):
+        # type: (cmd_value.Argv) -> Optional[value.Command]
+        """
+        Unused, the builtins don't take value.Command - they take a command_t CommandFrag
+        """
+        cmd = None  # type: Optional[value.Command]
+        if cmd_val.proc_args:
+            r = ReaderForProc(cmd_val)
+            cmd = r.OptionalCommandBlock()
+            r.Done()
+        return cmd
 
 
 def OptionalBlock(cmd_val):
     # type: (cmd_value.Argv) -> Optional[command_t]
-    """Helper for shopt, etc."""
+    """Helper for cd, etc."""
 
-    cmd = None  # type: Optional[command_t]
-    if cmd_val.proc_args:
-        r = ReaderForProc(cmd_val)
-        cmd = r.OptionalBlock()
-        r.Done()
+    r = ReaderForProc(cmd_val)
+    cmd = r.OptionalBlock()
+    r.Done()
+    return cmd
+
+
+def RequiredBlock(cmd_val):
+    # type: (cmd_value.Argv) -> Optional[command_t]
+    """Helper for try, shopt, etc."""
+
+    r = ReaderForProc(cmd_val)
+    cmd = r.RequiredBlock()
+    r.Done()
     return cmd
 
 
@@ -493,11 +504,12 @@ class Reader(object):
     # Block arg
     #
 
-    def OptionalCommandBlock(self):
-        # type: () -> Optional[value.Command]
-        if self.block_arg is None:
-            return None
-        return self._ToCommand(self.block_arg)
+    if 0:
+        def OptionalCommandBlock(self):
+            # type: () -> Optional[value.Command]
+            if self.block_arg is None:
+                return None
+            return self._ToCommand(self.block_arg)
 
     def RequiredBlock(self):
         # type: () -> command_t

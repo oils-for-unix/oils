@@ -34,6 +34,26 @@ def _PrintFrame(prefix, frame):
             _PrintFrame('--> ' + prefix, r.frame)
 
 
+class EvalInFrame(vm._Callable):
+    """
+    For making "inline procs"
+    """
+
+    def __init__(self, mem, cmd_ev):
+        # type: (state.Mem, cmd_eval.CommandEvaluator) -> None
+        self.mem = mem
+        self.cmd_ev = cmd_ev
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        frag = rd.PosCommandFrag()
+        bound = rd.PosFrame()
+
+        # TODO: EvalCommandFrag()
+
+        return value.Null
+
+
 class Eval(vm._Callable):
     """
     These are similar:
@@ -44,8 +64,6 @@ class Eval(vm._Callable):
     Also give the top namespace
 
         call io->evalToDict(cmd)
-
-    TODO: remove eval (c)
 
     The CALLER must handle errors.
     """

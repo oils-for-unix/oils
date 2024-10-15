@@ -61,7 +61,7 @@ class Id(vm._Callable):
         raise AssertionError()
 
 
-class ThisFrame(vm._Callable):
+class GetFrame(vm._Callable):
 
     def __init__(self, mem):
         # type: (state.Mem) -> None
@@ -70,11 +70,14 @@ class ThisFrame(vm._Callable):
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
+        index = rd.PosInt()
         rd.Done()
+
+        # TODO: 0 is global, -1 is current, -2 is parent
         return value.Frame(self.mem.CurrentFrame())
 
 
-class BindCommand(vm._Callable):
+class BindFrame(vm._Callable):
 
     def __init__(self):
         # type: () -> None

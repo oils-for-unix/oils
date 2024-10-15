@@ -102,11 +102,11 @@ class Cd(vm._Builtin):
         arg = arg_types.cd(attrs.attrs)
 
         # If a block is passed, we do additional syntax checks
-        cmd = typed_args.OptionalBlock(cmd_val)
+        cmd_frag = typed_args.OptionalBlock(cmd_val)
 
         dest_dir, arg_loc = arg_r.Peek2()
         if dest_dir is None:
-            if cmd:
+            if cmd_frag:
                 raise error.Usage(
                     'requires an argument when a block is passed',
                     cmd_val.arg_locs[0])
@@ -162,11 +162,11 @@ class Cd(vm._Builtin):
         # PWD.  Other shells use global variables.
         self.mem.SetPwd(real_dest_dir)
 
-        if cmd:
+        if cmd_frag:
             out_errs = []  # type: List[bool]
             with ctx_CdBlock(self.dir_stack, real_dest_dir, self.mem,
                              self.errfmt, out_errs):
-                unused = self.cmd_ev.EvalCommandFrag(cmd)
+                unused = self.cmd_ev.EvalCommandFrag(cmd_frag)
             if len(out_errs):
                 return 1
 

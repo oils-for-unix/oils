@@ -293,10 +293,7 @@ class RunBlock(vm._Builtin):
     """Used for 'redir' builtin
 
     It's used solely for its redirects.
-        fopen >out.txt { echo hi }
-
-    It's a subset of eval
-        eval >out.txt { echo hi }
+        redir >out.txt { echo hi }
     """
 
     def __init__(self, mem, cmd_ev):
@@ -310,9 +307,6 @@ class RunBlock(vm._Builtin):
                                          cmd_val,
                                          accept_typed_args=True)
 
-        cmd = typed_args.OptionalBlock(cmd_val)
-        if not cmd:
-            raise error.Usage('expected a block', loc.Missing)
-
-        unused = self.cmd_ev.EvalCommandFrag(cmd)
+        cmd_frag = typed_args.RequiredBlock(cmd_val)
+        unused = self.cmd_ev.EvalCommandFrag(cmd_frag)
         return 0
