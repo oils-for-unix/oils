@@ -1165,8 +1165,8 @@ class ctx_LoopFrame(object):
         if self.do_new_frame:
             rear_frame = self.mem.var_stack[-1]
             self.front_frame = NewDict()  # type: Dict[str, Cell]
-            self.front_frame['__rear__'] = Cell(False, False, False,
-                                                value.Frame(rear_frame))
+            self.front_frame['__E'] = Cell(False, False, False,
+                                           value.Frame(rear_frame))
             mem.var_stack.append(self.front_frame)
 
     def __enter__(self):
@@ -1179,10 +1179,13 @@ class ctx_LoopFrame(object):
             self.mem.var_stack.pop()
 
 
-class ctx_FrontFrame(object):
+class ctx_EnclosedFrame(object):
     """
-    For use by io->evalToDict(), which is a primitive used for Hay and the Dict
-    proc
+    Usages:
+
+    - io->evalToDict(), which is a primitive used for Hay and the Dict proc
+    - lexical scope aka static scope for block args to user-defined procs
+      - Including the "closures in a loop" problem, which will be used for Hay
 
     var mutated = 'm'
     var shadowed = 's'
@@ -1205,10 +1208,10 @@ class ctx_FrontFrame(object):
         self.rear_frame = rear_frame
         self.out_dict = out_dict
 
-        # __rear__ gets a lookup rule
+        # __E gets a lookup rule
         self.front_frame = NewDict()  # type: Dict[str, Cell]
-        self.front_frame['__rear__'] = Cell(False, False, False,
-                                            value.Frame(rear_frame))
+        self.front_frame['__E'] = Cell(False, False, False,
+                                       value.Frame(rear_frame))
 
         mem.var_stack.append(self.front_frame)
 
@@ -1240,7 +1243,7 @@ class ctx_ModuleEval(object):
 
     e.g. setglobal in the new module doesn't leak
 
-    Different from ctx_FrontFrame because the new code can't see variables in
+    Different from ctx_EnclosedFrame because the new code can't see variables in
     the old frame.
     """
 
@@ -1378,15 +1381,14 @@ class ctx_Eval(object):
 def _FrameLookup(frame, name):
     # type: (Dict[str, Cell], str) -> Tuple[Optional[Cell], Dict[str, Cell]]
     """
-    Look in the frame itself, then the __rear__ frame if it exists
-
-    TODO: Need to recursively look at __rear__
+    Look for a name in the frame, then recursively into the enclosing __E
+    frame, if it exists
     """
     cell = frame.get(name)
     if cell:
         return cell, frame
 
-    rear_cell = frame.get('__rear__')  # ctx_FrontFrame() sets this
+    rear_cell = frame.get('__E')  # ctx_EnclosedFrame() sets this
     if rear_cell:
         rear_val = rear_cell.val
         assert rear_val, rear_val
