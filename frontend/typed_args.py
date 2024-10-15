@@ -374,7 +374,13 @@ class Reader(object):
         if val.tag() == value_e.CommandFrag:
             return cast(value.CommandFrag, val).c
 
-        # io.eval(mycmd) uses this
+        # Builtins like shopt, cd, try rely on this, because proc argument
+        # evaluation gives you a value.Command, yet they operate on a
+        # CommandFrag.
+        #
+        # In YSH, we do this with the getCommandFrag() builtin, which returns
+        # an UNBOUND version of the command.  Hm.
+
         if val.tag() == value_e.Command:
             bound = cast(value.Command, val)
             return GetCommandFrag(bound)

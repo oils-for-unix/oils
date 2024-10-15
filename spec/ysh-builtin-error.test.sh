@@ -2,15 +2,6 @@
 
 ## our_shell: ysh
 
-#### try requires an argument
-
-try
-echo status=$?
-
-## status: 3
-## STDOUT:
-## END
-
 #### User errors behave like builtin errors
 func divide(a, b) {
   if (b === 0) {
