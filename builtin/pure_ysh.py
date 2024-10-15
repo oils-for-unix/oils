@@ -37,7 +37,7 @@ class Shvar(vm._Builtin):
 
         # TODO: I think shvar LANG=C should just mutate
         # But should there be a whitelist?
-        cmd_frag = typed_args.RequiredBlock(cmd_val)
+        cmd_frag = typed_args.RequiredBlockAsFrag(cmd_val)
 
         vars = NewDict()  # type: Dict[str, value_t]
         args, arg_locs = arg_r.Rest2()
@@ -135,7 +135,7 @@ class Ctx(vm._Builtin):
 
         if verb == "push":
             context = rd.PosDict()
-            block = rd.RequiredBlock()
+            block = rd.RequiredBlockAsFrag()
             rd.Done()
             arg_r.AtEnd()
 
@@ -174,7 +174,7 @@ class PushRegisters(vm._Builtin):
                                          cmd_val,
                                          accept_typed_args=True)
 
-        cmd_frag = typed_args.RequiredBlock(cmd_val)
+        cmd_frag = typed_args.RequiredBlockAsFrag(cmd_val)
 
         with state.ctx_Registers(self.mem):
             unused = self.cmd_ev.EvalCommandFrag(cmd_frag)

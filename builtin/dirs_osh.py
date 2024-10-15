@@ -102,7 +102,7 @@ class Cd(vm._Builtin):
         arg = arg_types.cd(attrs.attrs)
 
         # If a block is passed, we do additional syntax checks
-        cmd_frag = typed_args.OptionalBlock(cmd_val)
+        cmd_frag = typed_args.OptionalBlockAsFrag(cmd_val)
 
         dest_dir, arg_loc = arg_r.Peek2()
         if dest_dir is None:

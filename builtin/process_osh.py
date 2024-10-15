@@ -159,7 +159,7 @@ class Fork(vm._Builtin):
         if arg is not None:
             e_usage('got unexpected argument %r' % arg, location)
 
-        cmd_frag = typed_args.RequiredBlock(cmd_val)
+        cmd_frag = typed_args.RequiredBlockAsFrag(cmd_val)
         return self.shell_ex.RunBackgroundJob(cmd_frag)
 
 
@@ -178,7 +178,7 @@ class ForkWait(vm._Builtin):
         if arg is not None:
             e_usage('got unexpected argument %r' % arg, location)
 
-        cmd_frag = typed_args.RequiredBlock(cmd_val)
+        cmd_frag = typed_args.RequiredBlockAsFrag(cmd_val)
         return self.shell_ex.RunSubshell(cmd_frag)
 
 

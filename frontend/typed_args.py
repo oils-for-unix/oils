@@ -40,22 +40,22 @@ if 0:
         return cmd
 
 
-def OptionalBlock(cmd_val):
+def OptionalBlockAsFrag(cmd_val):
     # type: (cmd_value.Argv) -> Optional[command_t]
     """Helper for cd, etc."""
 
     r = ReaderForProc(cmd_val)
-    cmd = r.OptionalBlock()
+    cmd = r.OptionalBlockAsFrag()
     r.Done()
     return cmd
 
 
-def RequiredBlock(cmd_val):
+def RequiredBlockAsFrag(cmd_val):
     # type: (cmd_value.Argv) -> Optional[command_t]
     """Helper for try, shopt, etc."""
 
     r = ReaderForProc(cmd_val)
-    cmd = r.RequiredBlock()
+    cmd = r.RequiredBlockAsFrag()
     r.Done()
     return cmd
 
@@ -519,14 +519,14 @@ class Reader(object):
                 return None
             return self._ToCommand(self.block_arg)
 
-    def RequiredBlock(self):
+    def RequiredBlockAsFrag(self):
         # type: () -> command_t
         if self.block_arg is None:
             raise error.Usage('expected a block arg',
                               self.LeastSpecificLocation())
         return self._ToCommandFrag(self.block_arg)
 
-    def OptionalBlock(self):
+    def OptionalBlockAsFrag(self):
         # type: () -> Optional[command_t]
         if self.block_arg is None:
             return None

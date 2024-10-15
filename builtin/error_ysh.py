@@ -96,7 +96,7 @@ class Try(vm._Builtin):
                                          accept_typed_args=True)
 
         rd = typed_args.ReaderForProc(cmd_val)
-        cmd = rd.RequiredBlock()
+        cmd = rd.RequiredBlockAsFrag()
         rd.Done()
 
         error_dict = None  # type: value.Dict

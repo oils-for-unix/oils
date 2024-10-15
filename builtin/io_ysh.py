@@ -307,6 +307,6 @@ class RunBlock(vm._Builtin):
                                          cmd_val,
                                          accept_typed_args=True)
 
-        cmd_frag = typed_args.RequiredBlock(cmd_val)
+        cmd_frag = typed_args.RequiredBlockAsFrag(cmd_val)
         unused = self.cmd_ev.EvalCommandFrag(cmd_frag)
         return 0

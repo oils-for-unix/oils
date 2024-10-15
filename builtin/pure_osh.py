@@ -230,7 +230,7 @@ class Shopt(vm._Builtin):
             return 0
 
         # shopt --set x { my-block }
-        cmd_frag = typed_args.OptionalBlock(cmd_val)
+        cmd_frag = typed_args.OptionalBlockAsFrag(cmd_val)
         if cmd_frag:
             opt_nums = []  # type: List[int]
             for opt_name in opt_names:
