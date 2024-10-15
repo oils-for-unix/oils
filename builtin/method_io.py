@@ -26,7 +26,7 @@ def _PrintFrame(prefix, frame):
     # type: (str, Dict[str, Cell]) -> None
     print('%s %s' % (prefix, ' '.join(frame.keys())))
 
-    rear = frame.get('__E')
+    rear = frame.get('__E__')
     if rear:
         rear_val = rear.val
         if rear_val.tag() == value_e.Frame:

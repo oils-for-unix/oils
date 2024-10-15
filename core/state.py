@@ -1165,7 +1165,7 @@ class ctx_LoopFrame(object):
         if self.do_new_frame:
             rear_frame = self.mem.var_stack[-1]
             self.front_frame = NewDict()  # type: Dict[str, Cell]
-            self.front_frame['__E'] = Cell(False, False, False,
+            self.front_frame['__E__'] = Cell(False, False, False,
                                            value.Frame(rear_frame))
             mem.var_stack.append(self.front_frame)
 
@@ -1208,9 +1208,9 @@ class ctx_EnclosedFrame(object):
         self.rear_frame = rear_frame
         self.out_dict = out_dict
 
-        # __E gets a lookup rule
+        # __E__ gets a lookup rule
         self.front_frame = NewDict()  # type: Dict[str, Cell]
-        self.front_frame['__E'] = Cell(False, False, False,
+        self.front_frame['__E__'] = Cell(False, False, False,
                                        value.Frame(rear_frame))
 
         mem.var_stack.append(self.front_frame)
@@ -1381,14 +1381,14 @@ class ctx_Eval(object):
 def _FrameLookup(frame, name):
     # type: (Dict[str, Cell], str) -> Tuple[Optional[Cell], Dict[str, Cell]]
     """
-    Look for a name in the frame, then recursively into the enclosing __E
+    Look for a name in the frame, then recursively into the enclosing __E__
     frame, if it exists
     """
     cell = frame.get(name)
     if cell:
         return cell, frame
 
-    rear_cell = frame.get('__E')  # ctx_EnclosedFrame() sets this
+    rear_cell = frame.get('__E__')  # ctx_EnclosedFrame() sets this
     if rear_cell:
         rear_val = rear_cell.val
         assert rear_val, rear_val

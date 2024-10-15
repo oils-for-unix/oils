@@ -597,7 +597,7 @@ echo g=$g
 #pp frame_vars_
 
 ## STDOUT:
-    [frame_vars_] __rear__ a
+    [frame_vars_] __E__ a
 
 (Dict)   {"a":42}
 g=zz
