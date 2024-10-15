@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value
-from _devbuild.gen.syntax_asdl import command_e, BraceGroup, loc
+from _devbuild.gen.syntax_asdl import command_e, BraceGroup
 from _devbuild.gen.value_asdl import value, value_e, value_t
 from asdl import format as fmt
 from core import error

@@ -1008,6 +1008,31 @@ test-module() {
   _ysh-error-X 3 'use spec/testdata/module2/util2.ysh; util2 badObj otherproc'
 }
 
+test-required-blocks() {
+
+  # These are procs, which normally give usage errors
+  #   The usage error prints the builtin name
+  #
+  # Funcs give you type errors though?  Is that inconsistent?
+
+  _ysh-error-X 2 'redir'
+  _ysh-error-X 2 'redir (42)'
+  _ysh-error-X 2 'hay eval :myvar'
+  _ysh-error-X 2 'hay eval :myvar (42)'
+  _ysh-error-X 2 'try'
+  _ysh-error-X 2 'ctx push ({})'
+
+  _ysh-error-X 2 'haynode Foo'
+
+  # Hm this isn't a usage error
+  _ysh-error-X 3 'haynode Foo (42)'
+
+  # This neither
+  _ysh-error-X 3 'haynode Foo ( ; ; 42)'
+
+  _ysh-should-run 'haynode Foo a { echo hi }'
+}
+
 soil-run-py() {
   run-test-funcs
 }

@@ -26,6 +26,7 @@ def DoesNotAccept(proc_args):
 
 
 if 0:
+
     def OptionalCommandBlock(cmd_val):
         # type: (cmd_value.Argv) -> Optional[value.Command]
         """
@@ -505,6 +506,7 @@ class Reader(object):
     #
 
     if 0:
+
         def OptionalCommandBlock(self):
             # type: () -> Optional[value.Command]
             if self.block_arg is None:
@@ -514,8 +516,8 @@ class Reader(object):
     def RequiredBlock(self):
         # type: () -> command_t
         if self.block_arg is None:
-            raise error.TypeErrVerbose('Expected a block arg',
-                                       self.LeastSpecificLocation())
+            raise error.Usage('expected a block arg',
+                              self.LeastSpecificLocation())
         return self._ToCommandFrag(self.block_arg)
 
     def OptionalBlock(self):

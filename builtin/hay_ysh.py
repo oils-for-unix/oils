@@ -284,9 +284,7 @@ class Hay(vm._Builtin):
                 var_name = var_name[1:]
                 # TODO: This could be fatal?
 
-            cmd = typed_args.OptionalBlock(cmd_val)
-            if not cmd:  # 'package foo' is OK
-                e_usage('eval expected a block', loc.Missing)
+            cmd = typed_args.RequiredBlock(cmd_val)
 
             with ctx_HayEval(self.hay_state, self.mutable_opts, self.mem):
                 # Note: we want all haynode invocations in the block to appear as
