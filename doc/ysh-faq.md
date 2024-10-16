@@ -205,11 +205,22 @@ not `${}`.
 
 -->
 
-## How do I combine conditional commands and expressions: `if (myvar)` versus `if test`?
+## How do I combine conditional commands and expressions: `if (myvar)` and `if test -f`?
 
-TODO: `test --true --false`
+You can use the `--true` and `--false` flags to the [YSH test][ysh-test]
+builtin:
 
-This happens in `while` too.
+    if test --true $[myvar] && test --file x {
+        echo ok
+    }
+
+They test if their argument is literally the string `"true"` or `"false"`.
+
+This works because the boolean `true` *stringifies* to `"true"`, and likewise
+with `false`.
+
+[ysh-test]: ref/chap-builtin-cmd.html#ysh-test
+
 
 ## Why do I lose the value of `p` in `myproc (&p) | grep foo`?
 

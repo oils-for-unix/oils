@@ -1112,6 +1112,10 @@ class BoolEvaluator(ArithEvaluator):
                         return not bool(s)
                     if op_id == Id.BoolUnary_n:
                         return bool(s)
+                    if op_id == Id.BoolUnary_true:
+                        return s == 'true'
+                    if op_id == Id.BoolUnary_false:
+                        return s == 'false'
 
                     raise AssertionError(op_id)  # should never happen
 

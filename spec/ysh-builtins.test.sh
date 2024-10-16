@@ -435,6 +435,92 @@ status=1
 status=2
 ## END
 
+#### test --true; test --false
+shopt --set ysh:upgrade
+
+for expr in (true, false, '', 'other') {
+  pp test_ (expr)
+
+  try {
+    test --true $[expr]
+  }
+  echo true=$[_error.code]
+
+  try {
+    test --false $[expr]
+  }
+  echo false=$[_error.code]
+  echo
+}
+
+## STDOUT:
+(Bool)   true
+true=0
+false=1
+
+(Bool)   false
+true=1
+false=0
+
+(Str)   ""
+true=1
+false=1
+
+(Str)   "other"
+true=1
+false=1
+
+## END
+
+#### More test --true --false
+shopt --set ysh:upgrade
+
+var d = {}
+
+try {
+  test --true $[bool(d)]
+}
+echo dict=$[_error.code]
+
+setvar d.key = 'val'
+
+try {
+  test --true $[bool(d)]
+}
+echo dict=$[_error.code]
+
+echo
+
+if test --true $[bool(d)] && ! test -f / {
+  echo AndOr
+}
+
+## STDOUT:
+dict=1
+dict=0
+
+AndOr
+## END
+
+
+#### Make sure [[ is not affected by --true --false
+
+set +o errexit
+
+$SH +o ysh:all -c '[[ --true ]]; echo dbracket=$?'
+$SH +o ysh:all -c '[[ --false ]]; echo dbracket=$?'
+
+$SH +o ysh:all -c '[[ --true true ]]; echo dbracket=$?'
+echo "parse error $?"
+$SH +o ysh:all -c '[[ --false false ]]; echo dbracket=$?'
+echo "parse error $?"
+
+## STDOUT:
+dbracket=0
+dbracket=0
+parse error 2
+parse error 2
+## END
 
 #### push-registers
 shopt --set ysh:upgrade

@@ -513,6 +513,30 @@ See the [YSH FAQ][echo-en] for details.
 [simple_echo]: chap-option.html#ysh:all
 [echo-en]: ../ysh-faq.html#how-do-i-write-the-equivalent-of-echo-e-or-echo-n
 
+### ysh-test
+
+The YSH [test](#test) builtin supports these long flags:
+
+    --dir            same as -d
+    --exists         same as -e
+    --file           same as -f
+    --symlink        same as -L
+
+    --true           Is the argument equal to the string "true"?
+    --false          Is the argument equal to the string "false"?
+
+The `--true` and `--false` flags can be used to combine commands and
+expressions:
+
+    if test --file a && test --true $[bool(mydict)] {
+      echo ok
+    }
+
+This works because the boolean `true` *stringifies* to `"true"`, and likewise
+with `false`.
+
+That is, `$[true] === "true"` and `$[false] === "false"`.
+
 ### write
 
 write fixes problems with shell's `echo` builtin.
@@ -1108,8 +1132,8 @@ JOB:
 
 Evaluates a conditional expression and returns 0 (true) or 1 (false).
 
-Note that [ is the name of a builtin, not an operator in the language.  Use
-'test' to avoid this confusion.
+Note that `[` is the name of a builtin, not an operator in the language.  Use
+`test` to avoid this confusion.
 
 String expressions:
 
@@ -1168,12 +1192,9 @@ these are discouraged.
 
 <!--    -R VAR     True if the variable VAR has been set and is a nameref variable. -->
 
-Oils supports these long flags:
+---
 
-    --dir            same as -d
-    --exists         same as -e
-    --file           same as -f
-    --symlink        same as -L
+See [ysh-test](#ysh-test) for log flags like `--file` and `--true`.
 
 ### getopts
 

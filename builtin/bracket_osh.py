@@ -127,6 +127,10 @@ def _TwoArgs(w_parser):
             unary_id = Id.BoolUnary_f
         elif s0 == '--symlink':
             unary_id = Id.BoolUnary_L
+        elif s0 == '--true':
+            unary_id = Id.BoolUnary_true
+        elif s0 == '--false':
+            unary_id = Id.BoolUnary_false
 
     if unary_id == Id.Undefined_Tok:
         unary_id = match.BracketUnary(w0.s)
