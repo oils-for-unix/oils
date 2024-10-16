@@ -168,6 +168,14 @@ def _HasManyStatuses(node):
                 # Multiple parts like 'ls | wc' is disallowed
                 return True
 
+        elif case(command_e.AndOr):
+            node = cast(command.AndOr, UP_node)
+            for c in node.children:
+                if _HasManyStatuses(c):
+                    return True
+            return False  # otherwise allow 'if true && true; ...'
+
+
         # - ShAssignment could be allowed, though its exit code will always be
         #   0 without command subs
         # - Naively, (non-singleton) pipelines could be allowed because pipefail.

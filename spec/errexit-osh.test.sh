@@ -123,6 +123,62 @@ fi
 yes
 ## END
 
+#### strict_errexit with && || !
+set -o errexit
+shopt -s strict_errexit || true
+
+if true && true; then
+  echo A
+fi
+
+if true || false; then
+  echo B
+fi
+
+if ! false && ! false; then
+  echo C
+fi
+
+## STDOUT:
+A
+B
+C
+## END
+
+#### strict_errexit detects proc in && || !
+set -o errexit
+shopt -s strict_errexit || true
+
+myfunc() {
+  echo 'failing'
+  false
+  echo 'should not get here'
+}
+
+if true && ! myfunc; then
+  echo B
+fi
+
+if ! myfunc; then
+  echo A
+fi
+
+## status: 1
+## STDOUT:
+## END
+
+# POSIX shell behavior:
+
+## OK bash/dash/mksh/ash status: 0
+## OK bash/dash/mksh/ash STDOUT:
+failing
+should not get here
+failing
+should not get here
+## END
+
+
+
 #### strict_errexit without errexit proc
 myproc() {
   echo myproc

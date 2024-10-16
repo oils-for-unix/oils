@@ -205,6 +205,45 @@ not `${}`.
 
 -->
 
+## How do I combine conditional commands and expressions: `if (myvar)` versus `if test`?
+
+TODO: `test --true --false`
+
+This happens in `while` too.
+
+## Why do I lose the value of `p` in `myproc (&p) | grep foo`?
+
+In a pipeline, most components are **forked**.  This means that `myproc (&p)`
+runs in a different process from the main shell.
+
+The main shell can't see the memory of a subshell.
+
+---
+
+In general, you have to restructure your code to avoid this.  You could use a proc with multiple outputs:
+
+    myproc (&p, &grepped_output)
+
+Or you could use a function:
+
+    var out1, out2 = myfunc(io)
+
+---
+
+[The Unix Shell Process Model - When Are Processes
+Created?](process-model.html) may help.
+
+This issue is similar to the `shopt -s lastpipe` issue:
+
+    $ bash -c 'echo hi | read x; echo x=$x'
+    x=
+
+    $ zsh -c 'echo hi | read x; echo x=$x'
+    x=hi
+
+In bash, `read` runs in a subshell, but in `zsh` and OSH, it runs in the main
+shell.
+
 ## Related
 
 - [Oil Language FAQ]($wiki) on the wiki has more answers.  They may be migrated

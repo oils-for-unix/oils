@@ -2,10 +2,34 @@
 in_progress: yes
 ---
 
-Process Model
+The Unix Shell Process Model - When Are Processes Created?
 =============
 
-Why does a Unix shell start processes?  How many processes are started?
+OSH and YSH are both extensions of POSIX shell, and share its underlying "process model".
+
+Each Unix process has its **own** memory, that is not shared with other
+processes.  (It's created by `fork()`, which means that the memory is
+"copy-on-write".)
+
+Understanding when a shell starts processes will make you a better shell
+programmer.
+
+As a concrete example, here is some code that behaves differently in
+[bash]($xref) and [zsh]($xref):
+
+   
+    $ bash -c 'echo hi | read x; echo x=$x'
+    x=
+
+    $ zsh -c 'echo hi | read x; echo x=$x'
+    x=hi
+
+If you understand why they are different, then that means you understand the
+process model!
+
+(OSH behaves like zsh.)
+
+---
 
 Related: [Interpreter State](interpreter-state.html).  These two docs are the
 missing documentation for shell!
@@ -15,14 +39,14 @@ missing documentation for shell!
 
 ## Shell Constructs That Start Processes
 
-### Pipelines
+### Pipelines `myproc | wc -l`
 
 - `shopt -s lastpipe`
 - `set -o pipefail`
 
-#### Functions Can Be Transparently Put in Pipelines
+Note that functions Can Be Transparently Put in Pipelines:
 
-Implicit subshell:
+Hidden subshell:
 
     { echo 1; echo 2; } | wc -l
 
@@ -44,7 +68,30 @@ Explicit Subshells are Rarely Needed.
 
 - prefer `pushd` / `popd`, or `cd { }` in YSH.
 
+
+## FAQ: "Subshells By Surprise"
+
+Sometimes subshells have no syntax.
+
+Common issues:
+
+### shopt -s lastpipe
+
+Mentioned in the intro:
+
+    $ bash -c 'echo hi | read x; echo x=$x'
+    x=
+
+    $ zsh -c 'echo hi | read x; echo x=$x'
+    x=hi
+
+### Other Pipelines
+
+    myproc (&p) | grep foo
+
 ## Process Optimizations - `noforklast`
+
+Why does a Unix shell start processes?  How many processes are started?
 
 Bugs / issues
 
@@ -64,10 +111,10 @@ Oils/YSH specific:
   - because we don't get to test if it failed
 - stats / tracing - counting exit codes
 
+
 ## Process State
 
 ### Redirects
-
 
 ## Builtins
 
@@ -82,9 +129,11 @@ Oils/YSH specific:
 
 ## Appendix: Non-Shell Tools
 
-- `xargs` and `xargs -P`
+These Unix tools start processes:
+
+- `xargs`
+  - `xargs -P` starts parallel processes (but doesn't buffer output)
 - `find -exec`
-- `make -j`
-  - doesn't do anything smart with output
-- `ninja`
-  - buffers output too
+- `make`
+  - `make -j` starts parallel processes (but doesn't buffer output)
+- `ninja` (buffers output)

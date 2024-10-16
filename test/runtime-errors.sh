@@ -387,7 +387,7 @@ done
 
 # OLD WAY OF BLAMING
 # Note: most of these don't fail
-test-strict_errexit_old() {
+test-strict-errexit-old() {
   # Test out all the location info
 
   # command.Pipeline.
@@ -398,7 +398,7 @@ test-strict_errexit_old() {
   #_strict-errexit-case 'if ! ls; then echo Pipeline; fi'
 
   # command.AndOr
-  _strict-errexit-case 'if echo a && echo b; then echo AndOr; fi'
+  #_strict-errexit-case 'if echo a && echo b; then echo AndOr; fi'
 
   # command.DoGroup
   _strict-errexit-case '! for x in a; do echo $x; done'
