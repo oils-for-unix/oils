@@ -31,9 +31,30 @@ proc test-slurp-by {
   seq 8 | slurp-by (3)
 }
 
-# Note:
-# - these are all the same algorithm
-# - also word, block, etc. are all optional
+### Awk
+
+# Naming
+#
+# TEXT INPUT
+#   each-word  # this doesn't go by lines, it does a global regex split or something?
+#
+# LINE INPUT
+#   each-line --j8 { echo "-- $_line" }  # similar to @()
+#   each-line --j8 (^"-- $_line")  # is this superfluous?
+#
+#   each-split name1 name2
+#               (delim=' ')
+#               (ifs=' ')
+#               (pat=/d+/)
+#               # also assign names for each part?
+#
+#   each-match  # regex match
+#   must-match  # assert that every line matches
+#
+# TABLE INPUT
+#   each-row  # TSV and TSV8 input?
+#
+# They all take templates or blocks?
 
 proc each-line (...words; template=null; ; block=null) {
   # TODO: 
@@ -112,7 +133,9 @@ proc must-split-by (; ; ifs=null; block) {
   echo TODO
 }
 
-proc if-match (; pattern; ; block) {
+# Naming: each-match, each-split?
+
+proc if-match (; pattern, template=null; ; block=null) {
   ### like 'grep' but with submatches
 
   for line in (io.stdin) {
@@ -122,7 +145,14 @@ proc if-match (; pattern; ; block) {
       #var groups = m.groups()
 
       # Should we also pass _line?
-      call io->eval(block, dollar0=m.group(0))
+
+      if (block) {
+        call io->eval(block, dollar0=m.group(0))
+      } elif (template) {
+        echo TEMPLATE
+      } else {
+        echo TSV
+      }
     }
   }
 
@@ -144,6 +174,8 @@ proc line-data {
   /// 42 bar'''
 }
 
+const pat = /<capture d+> s+ <capture w+>/
+
 proc test-if-match {
   var z = 'z'  # test out scoping
   var count = 0  # test out mutation
@@ -153,7 +185,6 @@ proc test-if-match {
   #   sed: print a new line based on submatches
   #   awk: re-arrange the cols, and also accumulate counters
 
-  var pat = /<capture d+> s+ <capture w+>/
   line-data | if-match (pat) {
     echo "$z $0 $z"
     # TODO: need pos_args
@@ -163,6 +194,32 @@ proc test-if-match {
     setvar count += 1
   }
   echo "count = $count"
+}
+
+proc test-if-match-2 {
+  # If there's no block or template, it should print out a TSV with:
+  #
+  # $0  ...
+  # $1 $2
+  # $_line maybe?
+
+  #line-data | if-match (pat)
+
+  var z = 'z'  # scoping
+  line-data | if-match (pat, ^"$z $0 $z")
+  line-data | if-match (pat, ^"-- $0 --")
+}
+
+# might be a nice way to write it, not sure if byo.sh can discover it
+if false {
+tests 'if-match' {
+  proc case-block {
+    echo TODO
+  }
+  proc case-template {
+    echo TODO
+  }
+}
 }
 
 # Protocol:
