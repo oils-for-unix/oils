@@ -10,6 +10,7 @@ from core import error
 from core.error import e_usage, p_die
 from core import vm
 from frontend import match
+from frontend import typed_args
 from mycpp.mylib import log
 from osh import bool_parse
 from osh import sh_expr_eval
@@ -189,6 +190,8 @@ class Test(vm._Builtin):
         The only difference between test and [ is that [ needs a
         matching ].
         """
+        typed_args.DoesNotAccept(cmd_val.proc_args)  # Disallow test (42)
+
         if self.need_right_bracket:  # Preprocess right bracket
             if self.exec_opts.simple_test_builtin():
                 e_usage("should be invoked as 'test' (simple_test_builtin)",

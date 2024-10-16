@@ -15,12 +15,17 @@ source test/sh-assert.sh  # _assert-sh-status
 #
 
 test-no-typed-args() {
-  # Hm these could both be J8 notation
-  #_ysh-error-1 'echo (42)'
-  #_ysh-error-1 'write (42)'
+  _ysh-error-X 2 'echo (42)'
+  _ysh-error-X 2 'echo { echo hi }'
+
+  # Hm write could be J8 notation?  like json8 write (x)?
+  _ysh-error-X 2 'write (42)'
 
   _ysh-error-X 2 'true (42)'
   _ysh-error-X 2 'false { echo hi }'
+
+  _ysh-error-X 2 'test x (42)'
+  _ysh-error-X 2 'test x { echo hi }'
 }
 
 test-undefined-vars() {
