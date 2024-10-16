@@ -794,6 +794,7 @@ sum = 53
 
 #### Stateful proc with counter
 shopt --set ysh:upgrade
+
 proc invokeCounter(; self, inc) {
   setvar self.i += inc
   echo "counter = $[self.i]"

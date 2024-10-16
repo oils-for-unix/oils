@@ -11,10 +11,24 @@ source $LIB_OSH/byo-server.sh
 source $LIB_YSH/args.ysh
 
 proc slurp-by (; num_lines) {
-  # TODO: (stdin)
-  for line in (stdin) {
-    echo TODO
+  var buf = []
+  for line in (io.stdin) {
+    call buf->append(line)
+    if (len(buf) === num_lines) {
+      json write (buf, space=0)
+
+      # TODO:
+      #call buf->clear()
+      setvar buf = []
+    }
   }
+  if (buf) {
+    json write (buf, space=0)
+  }
+}
+
+proc test-slurp-by {
+  seq 8 | slurp-by (3)
 }
 
 # Note:
@@ -46,33 +60,109 @@ proc test-each-line {
   # ysh-tool test stream.ysh
   # 
   # Col
-
-
 }
 
 proc each-row (; ; block) {
   echo TODO
 }
 
-proc split-by (; ifs=null; block) {
-  echo TODO
-}
+proc split-by (; delim; ifs=null; block) {
 
-proc if-split-by (; ifs=null; block) {
-  echo TODO
+  # TODO: provide the option to bind names?  Or is that a separate thing?
+  # The output of this is "ragged"
+
+  for line in (io.stdin) {
+    #pp (line)
+    var parts = line.split(delim)
+    pp (parts)
+
+    # variable number
+    call io->eval(block, dollar0=line, pos_args=parts)
+  }
 }
 
 proc chop () {
-  ### alias for if-split-by
+  ### alias for split-by
   echo TODO
+}
+
+proc test-split-by {
+  var z = 'z'  # test out scoping
+  var count = 0  # test out mutation
+
+  # TODO: need split by space
+  # Where the leading and trailing are split
+  # if-split-by(' ') doesn't work well
+
+  line-data | split-by (/s+/) {
+
+    # how do we deal with nonexistent?
+    # should we also bind _parts or _words?
+
+    echo "$z | $0 | $1 | $z"
+
+    setvar count += 1
+  }
+  echo "count = $count"
+}
+
+proc must-split-by (; ; ifs=null; block) {
+  ### like if-split-by
+
+  echo TODO
+}
+
+proc if-match (; pattern; ; block) {
+  ### like 'grep' but with submatches
+
+  for line in (io.stdin) {
+    var m = line.search(pattern)
+    if (m) {
+      #pp asdl_ (m)
+      #var groups = m.groups()
+
+      # Should we also pass _line?
+      call io->eval(block, dollar0=m.group(0))
+    }
+  }
+
+  # always succeeds - I think must-match is the one that can fail
 }
 
 proc must-match (; pattern; block) {
+  ### like if-match
+
   echo TODO
 }
 
-proc if-match (; pattern; block) {
-  echo TODO
+proc line-data {
+  # note: trailing ''' issue, I should probably get rid of the last line
+
+  echo '''
+  prefix 30 foo  
+  oils
+  /// 42 bar'''
+}
+
+proc test-if-match {
+  var z = 'z'  # test out scoping
+  var count = 0  # test out mutation
+
+  # Test cases should be like:
+  #   grep: print the matches, or just count them
+  #   sed: print a new line based on submatches
+  #   awk: re-arrange the cols, and also accumulate counters
+
+  var pat = /<capture d+> s+ <capture w+>/
+  line-data | if-match (pat) {
+    echo "$z $0 $z"
+    # TODO: need pos_args
+
+    #echo "-- $2 $1 --"
+
+    setvar count += 1
+  }
+  echo "count = $count"
 }
 
 # Protocol:
