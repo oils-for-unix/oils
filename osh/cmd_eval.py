@@ -492,10 +492,6 @@ class CommandEvaluator(object):
 
                     return result
 
-                elif redir_type == redir_arg_type_e.Here:  # here word
-                    # TODO: delete this
-                    raise AssertionError()
-
                 else:
                     raise AssertionError('Unknown redirect op')
 
@@ -508,16 +504,17 @@ class CommandEvaluator(object):
                 assert r.op.id == Id.Redir_TLess, r.op
                 #print(arg_word)
 
-                s = val.s
-                if not arg.is_multiline:
-                    # NOTE: bash and mksh both add \n for
-                    #   read <<< 'hi'
-                    #
-                    # YSH doesn't do this for multi-line strings:
-                    #   read <<< '''
-                    #   read <<< u'''
-                    #   read <<< """
-                    s += '\n'
+                # NOTE: bash and mksh both add \n for
+                #   read <<< 'hi'
+                #
+                # YSH doesn't do this for multi-line strings:
+                #   read <<< '''
+                #   read <<< u'''
+                #   read <<< """
+                if arg.is_multiline:
+                    s = val.s
+                else:
+                    s = val.s + '\n'
 
                 result.arg = redirect_arg.HereDoc(s)
                 return result

@@ -168,10 +168,11 @@ proc must-match (; pattern; block) {
 proc line-data {
   # note: trailing ''' issue, I should probably get rid of the last line
 
-  echo '''
+  write --end '' -- '''
   prefix 30 foo  
   oils
-  /// 42 bar'''
+  /// 42 bar
+  '''
 }
 
 const pat = /<capture d+> s+ <capture w+>/

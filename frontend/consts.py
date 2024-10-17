@@ -105,8 +105,8 @@ REDIR_ARG_TYPES = {
     # descriptor
     Id.Redir_GreatAnd: redir_arg_type_e.Desc,
     Id.Redir_LessAnd: redir_arg_type_e.Desc,
-    Id.Redir_TLess: redir_arg_type_e.Here,  # here word
-    # note: here docs aren't included
+
+    # Note: here docs aren't included
 }
 
 

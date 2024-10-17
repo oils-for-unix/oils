@@ -778,19 +778,18 @@ class CommandParser(object):
             is_multiline = False
             with tagswitch(part0) as case:
                 if case(word_part_e.SingleQuoted):
-                    single = cast(SingleQuoted, part0)
-                    if single.left.id in (Id.Left_TSingleQuote,
-                                          Id.Left_RTSingleQuote,
-                                          Id.Left_UTSingleQuote,
-                                          Id.Left_BTSingleQuote):
+                    sq = cast(SingleQuoted, part0)
+                    if sq.left.id in (Id.Left_TSingleQuote,
+                                      Id.Left_RTSingleQuote,
+                                      Id.Left_UTSingleQuote,
+                                      Id.Left_BTSingleQuote):
                         is_multiline = True
 
                 elif case(word_part_e.DoubleQuoted):
-                    double = cast(DoubleQuoted, part0)
-                    if double.left.id in (Id.Left_TDoubleQuote,
-                                          Id.Left_DollarTDoubleQuote):
+                    dq = cast(DoubleQuoted, part0)
+                    if dq.left.id in (Id.Left_TDoubleQuote,
+                                      Id.Left_DollarTDoubleQuote):
                         is_multiline = True
-            #log('is_multiline %r', is_multiline)
 
             param = redir_param.HereWord(arg_word, is_multiline)
             return Redir(op_tok, where, param)

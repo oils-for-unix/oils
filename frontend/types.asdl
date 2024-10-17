@@ -2,7 +2,7 @@
 
 module types {
   bool_arg_type = Undefined | Path | Int | Str | Other
-  redir_arg_type = Path | Desc | Here
+  redir_arg_type = Path | Desc
 
   opt_group = StrictAll | YshUpgrade | YshAll
               generate [integers]
