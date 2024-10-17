@@ -44,7 +44,11 @@ _print-files() {
   # Remove binary file (probably should delete it altogether, but it's a nice
   # test of UTF-8)
 
-  git ls-files | egrep -v 'Python-2.7.13|^py-yajl|rsa_travis.enc' 
+  # Remove spec/ysh-string.test.sh because it conatins YSH <<<, which messes up
+  # the shell here doc parser.
+  # TODO: ysh needs micro-syntax support
+
+  git ls-files | egrep -v 'Python-2.7.13|^py-yajl|rsa_travis.enc|ysh-string.test.sh' 
 
   return
 
