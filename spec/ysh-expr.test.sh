@@ -8,9 +8,9 @@ echo x=${x:-default} y=${y:-default}
 x=hi y=default
 ## END
 
-#### shell array %(a 'b c')
+#### shell array :| a 'b c' |
 shopt -s parse_at
-var x = %(a 'b c')
+var x = :| a 'b c' |
 var empty = %()
 argv.py / @x @empty /
 
@@ -161,7 +161,7 @@ gt=0
 ## END
 
 #### Parse { var x = 42 }
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 g() { var x = 42 }
 
 var x = 1
@@ -239,7 +239,7 @@ a b c
 
 
 #### null / true / false
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 var n = null
 if (n) {
   echo yes
@@ -510,7 +510,7 @@ array=3
 comsub=6
 ## END
 
-#### obj->method()
+#### obj=>method() - remove?
 var s = 'hi'
 
 # TODO: This does a bound method thing we probably don't want
@@ -520,7 +520,7 @@ echo $s2
 HI
 ## END
 
-#### obj->method does NOT give you a bound method
+#### s->upper does NOT work, should be s.upper() or =>
 var s = 'hi'
 var method = s->upper
 echo $method
@@ -576,7 +576,7 @@ Int Str 3
 ## END
 
 #### s ~~ glob and s !~~ glob
-shopt -s oil:all
+shopt -s ysh:all
 
 if ('foo.py' ~~ '*.py') {
   echo yes

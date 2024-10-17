@@ -228,10 +228,11 @@ class ExprEvaluator(object):
                 with tagswitch(obj) as case:
                     if case(value_e.List):
                         obj = cast(value.List, UP_obj)
-                        # TODO: could be int-looking Str
-                        index = val_ops.ToInt(lval.index,
-                                              'List index should be Int',
-                                              loc.Missing)
+                        i1 = _ConvertToInt(lval.index,
+                                           'List index should be Int',
+                                           loc.Missing)
+                        # TODO: don't truncate
+                        index = mops.BigTruncate(i1)
                         try:
                             lhs_val_ = obj.items[index]
                         except IndexError:
@@ -321,7 +322,7 @@ class ExprEvaluator(object):
                 obj = self._EvalLeftLocalOrGlobal(lhs.obj, which_scopes)
                 index = self._EvalExpr(lhs.index)
 
-                return self._EvalSubscript(obj, index)
+                return self._EvalSubscript(obj, index, lhs.left)
 
             elif case(expr_e.Attribute):
                 lhs = cast(Attribute, UP_lhs)
@@ -874,8 +875,8 @@ class ExprEvaluator(object):
 
         return self._CallFunc(to_call, rd)
 
-    def _EvalSubscript(self, obj, index):
-        # type: (value_t, value_t) -> value_t
+    def _EvalSubscript(self, obj, index, blame_loc):
+        # type: (value_t, value_t, loc_t) -> value_t
 
         UP_obj = obj
         UP_index = index
@@ -899,45 +900,52 @@ class ExprEvaluator(object):
                         try:
                             return value.Str(obj.s[i])
                         except IndexError:
-                            # TODO: expr.Subscript has no error location
-                            raise error.Expr('index out of range', loc.Missing)
+                            raise error.Expr('index out of range', blame_loc)
 
                     else:
                         raise error.TypeErr(index,
                                             'Str index expected Int or Slice',
-                                            loc.Missing)
+                                            blame_loc)
 
             elif case(value_e.List):
                 obj = cast(value.List, UP_obj)
+
+                big_i = mops.ZERO
                 with tagswitch(index) as case2:
                     if case2(value_e.Slice):
                         index = cast(value.Slice, UP_index)
 
-                        lower = index.lower.i if index.lower else 0
-                        upper = index.upper.i if index.upper else len(
-                            obj.items)
+                        lower = (index.lower.i if index.lower else 0)
+                        upper = (index.upper.i
+                                 if index.upper else len(obj.items))
                         return value.List(obj.items[lower:upper])
 
                     elif case2(value_e.Int):
                         index = cast(value.Int, UP_index)
-                        i = mops.BigTruncate(index.i)
-                        try:
-                            return obj.items[i]
-                        except IndexError:
-                            # TODO: expr.Subscript has no error location
-                            raise error.Expr('List index out of range: %d' % i,
-                                             loc.Missing)
+                        big_i = index.i
+
+                    elif case2(value_e.Str):
+                        index = cast(value.Str, UP_index)
+                        big_i = _ConvertToInt(index, 'List index expected Int',
+                                              blame_loc)
 
                     else:
                         raise error.TypeErr(
-                            index, 'List index expected Int or Slice',
-                            loc.Missing)
+                            index, 'List index expected Int, Str, or Slice',
+                            blame_loc)
+
+                i = mops.BigTruncate(big_i)  # TODO: don't truncate
+                try:
+                    return obj.items[i]
+                except IndexError:
+                    raise error.Expr('List index out of range: %d' % i,
+                                     blame_loc)
 
             elif case(value_e.Dict):
                 obj = cast(value.Dict, UP_obj)
                 if index.tag() != value_e.Str:
                     raise error.TypeErr(index, 'Dict index expected Str',
-                                        loc.Missing)
+                                        blame_loc)
 
                 index = cast(value.Str, UP_index)
                 try:
@@ -945,10 +953,10 @@ class ExprEvaluator(object):
                 except KeyError:
                     # TODO: expr.Subscript has no error location
                     raise error.Expr('Dict entry not found: %r' % index.s,
-                                     loc.Missing)
+                                     blame_loc)
 
         raise error.TypeErr(obj, 'Subscript expected Str, List, or Dict',
-                            loc.Missing)
+                            blame_loc)
 
     def _ChainedLookup(self, obj, current, attr_name):
         # type: (Obj, Obj, str) -> Optional[value_t]
@@ -1319,7 +1327,7 @@ class ExprEvaluator(object):
                 node = cast(Subscript, UP_node)
                 obj = self._EvalExpr(node.obj)
                 index = self._EvalExpr(node.index)
-                return self._EvalSubscript(obj, index)
+                return self._EvalSubscript(obj, index, node.left)
 
             elif case(expr_e.Attribute):  # obj->method or mydict.key
                 node = cast(Attribute, UP_node)

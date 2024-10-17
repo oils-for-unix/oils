@@ -762,10 +762,10 @@ class CommandEvaluator(object):
                     with tagswitch(obj) as case:
                         if case(value_e.List):
                             obj = cast(value.List, UP_obj)
-                            index = val_ops.ToInt(lval.index,
-                                                  'List index should be Int',
-                                                  loc.Missing)
-                            obj.items[index] = rval
+                            index = expr_eval._ConvertToInt(
+                                lval.index, 'List index should be Int',
+                                loc.Missing)
+                            obj.items[mops.BigTruncate(index)] = rval
 
                         elif case(value_e.Dict):
                             obj = cast(value.Dict, UP_obj)
