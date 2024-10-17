@@ -110,7 +110,8 @@ X [Unsupported]   enable
   [Concurrency]   pipe |    X pipe-amp |&   ampersand &
   [Redirects]     redir-file  >  >>  >|  <  <>   not impl: &>
                   redir-desc  >&  <&
-                  here-doc    <<  <<-  <<<
+                  here-doc    <<  <<-
+                  here-str    <<<
   [Other Command] dparen ((   time        X coproc       X select
 ```
 

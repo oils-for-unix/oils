@@ -315,6 +315,11 @@ In YSH, use the [fork][] builtin.
 
 ### redir-file
 
+The operators `>` and `>>` redirect the `stdout` of a process to a disk file.  
+The `<` operator redirects `stdin` from a disk file.
+
+---
+
 Examples of redirecting the `stdout` of a command:
 
     echo foo > out.txt   # overwrite out.txt
@@ -362,11 +367,24 @@ There's no real difference.
 
 ### here-doc
 
-TODO: unbalanced HTML if we use \<\<?
+Here documents let you write the `stdin` of a process in the shell program.
+
+Specify a delimiter word (like EOF) after the redir operator (like `<<`).
+
+If it's unquoted, then `$` expansion happens, like a double-quoted string:
 
     cat <<EOF
     here doc with $double ${quoted} substitution
     EOF
+
+If the delimiter is quoted, then `$` expansion does **not** happen, like a
+single-quoted string:
+
+    cat <<'EOF'
+    price is $3.99
+    EOF
+
+Leading tabs can be stripped with the `<<-` operator:
 
     myfunc() {
             cat <<-EOF
@@ -374,10 +392,48 @@ TODO: unbalanced HTML if we use \<\<?
             EOF
     }
 
+### here-str
+
+The `<<<` operator means that the argument is a `stdin` string, not a
+chosen delimiter.
+
     cat <<< 'here string'
 
-<!-- TODO: delimiter can be quoted -->
-<!-- Note: Python's HTML parser thinks <EOF starts a tag -->
+The string **plus a newline** is the `stdin` value, which is consistent with
+GNU bash.
+
+### ysh-here-str
+
+You can also use YSH multi-line strings as "here strings".  For example:
+
+Double-quoted:
+
+    cat <<< """
+    double
+    quoted = $x
+    """
+
+Single-quoted:
+
+    cat <<< '''
+    price is
+    $3.99
+    '''
+
+J8-style with escapes:
+
+    cat <<< u'''
+    j8 style string price is
+    mu = \u{3bc}
+    '''
+
+In these cases, a trailing newline is **not** added.  For example, the first
+example is equivalent to:
+
+    write --end '' -- """
+    double
+    quoted = $x
+    """
 
 ## Other Command
 

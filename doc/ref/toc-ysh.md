@@ -214,13 +214,14 @@ X [External Lang] BEGIN   END   when (awk)
 <!-- linkify_stop_col is 33 -->
 
 ```chapter-links-cmd-lang_33
-  [YSH Simple]    typed-arg     json write (x)
-                  lazy-expr-arg assert [42 === x]
-                  block-arg     cd /tmp { echo $PWD }; cd /tmp (; ; blockexpr)
-  [YSH Cond]      ysh-case      case (x) { *.py { echo 'python' } }
-                  ysh-if        if (x > 0) { echo }
-  [YSH Iter]      ysh-for       for i, item in (mylist) { echo }
-                  ysh-while     while (x > 0) { echo }
+  [Redirect]      ysh-here-str    read <<< '''
+  [YSH Simple]    typed-arg       json write (x)
+                  lazy-expr-arg   assert [42 === x]
+                  block-arg       cd /tmp { echo $PWD }; cd /tmp (; ; blockexpr)
+  [YSH Cond]      ysh-case        case (x) { *.py { echo 'python' } }
+                  ysh-if          if (x > 0) { echo }
+  [YSH Iter]      ysh-for         for i, item in (mylist) { echo }
+                  ysh-while       while (x > 0) { echo }
 ```
 
 <h2 id="ysh-cmd">
