@@ -16,9 +16,8 @@ sum() {
   echo "    YSH for loop"
 
   time $YSH -c '
-  var n = int($1)
   var sum = 0
-  for i in (0 .. n) {
+  for i in (0 .. $1) {
     setvar sum += i
   }
   echo "i = $i"
@@ -30,9 +29,8 @@ sum-closures() {
   echo "    YSH closures"
 
   time $YSH -c '
-  var n = int($1)
   var sum = 0
-  for __hack__ in (0 .. n) {  # trigger allocation
+  for __hack__ in (0 .. $1) {  # trigger allocation
     setvar sum += __hack__
   }
   # Does not leak!
@@ -79,18 +77,34 @@ compare() {
   sum-py $n
   echo
 
-  sum-sh bash $n
-  echo
-
-  sum-sh $OSH $n
-  echo
-
   export OILS_GC_STATS
   sum $n
   echo
 
   sum-closures $n
   echo
+
+  if true; then
+    # 3.9 seconds
+    sum-sh bash $n
+    echo
+
+    # 3.7 seconds
+    sum-sh $OSH $n
+    echo
+
+    # 1.2 seconds
+    sum-sh dash $n
+    echo
+
+    # 2.3 seconds
+    sum-sh zsh $n
+    echo
+
+    # 3.1 seconds
+    sum-sh mksh $n
+    echo
+  fi
 }
 
 "$@"

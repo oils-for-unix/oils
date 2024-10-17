@@ -1,4 +1,4 @@
-## oils_failures_allowed: 3
+## oils_failures_allowed: 1
 
 # Test a[1]
 
@@ -57,27 +57,34 @@ out of bounds
 
 #### Range end points can be int-looking Strings
 
-pp test_ ('3' .. '6')
+pp test_ (list('3' .. '6'))
 
 var i = '5'
 
-pp test_ (i .. 7)
-pp test_ (3 .. i)
+pp test_ (list(i .. 7))
+pp test_ (list(3 .. i))
 
 var i = '-5'
 
-pp test_ (i .. -3)
-pp test_ (-3 .. i)
+pp test_ (list(i .. -3))
+pp test_ (list(-7 .. i))
 
 # Not allowed
 pp test_ ('a' .. 'z')
 
+## status: 3
 ## STDOUT:
+(List)   [3,4,5]
+(List)   [5,6]
+(List)   [3,4]
+(List)   [-5,-4]
+(List)   [-7,-6]
 ## END
 
 #### Slice indices can be int-looking strings
 
-var a = list(1..10)
+var a = list(0..10)
+#pp test_ (a)
 
 pp test_ (a['3': '6'])
 
@@ -89,12 +96,18 @@ pp test_ (a[3 : i])
 var i = '-5'
 
 pp test_ (a[i : -3])
-pp test_ (a[-3 : i])
+pp test_ (a[-7 : i])
 
 # Not allowed
 pp test_ (a['a' : 'z'])
 
+## status: 3
 ## STDOUT:
+(List)   [3,4,5]
+(List)   [5,6]
+(List)   [3,4]
+(List)   [5,6]
+(List)   [3,4]
 ## END
 
 

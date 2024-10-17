@@ -204,8 +204,6 @@ class ExprEvaluator(object):
 
         Called by CommandEvaluator
         """
-        # TODO: It might be nice to do auto d[x] += 1 too
-
         UP_lval = lval
         with tagswitch(lval) as case:
             if case(y_lvalue_e.Local):  # setvar x += 1
@@ -230,6 +228,7 @@ class ExprEvaluator(object):
                 with tagswitch(obj) as case:
                     if case(value_e.List):
                         obj = cast(value.List, UP_obj)
+                        # TODO: could be int-looking Str
                         index = val_ops.ToInt(lval.index,
                                               'List index should be Int',
                                               loc.Missing)
@@ -1219,14 +1218,16 @@ class ExprEvaluator(object):
                 upper = None  # type: Optional[IntBox]
 
                 if node.lower:
-                    msg = 'Slice begin should be Int'
-                    i = val_ops.ToInt(self._EvalExpr(node.lower), msg, node.op)
-                    lower = IntBox(i)
+                    i1 = _ConvertToInt(self._EvalExpr(node.lower),
+                                       'Slice begin should be Int', node.op)
+                    # TODO: don't truncate
+                    lower = IntBox(mops.BigTruncate(i1))
 
                 if node.upper:
-                    msg = 'Slice end should be Int'
-                    i = val_ops.ToInt(self._EvalExpr(node.upper), msg, node.op)
-                    upper = IntBox(i)
+                    i1 = _ConvertToInt(self._EvalExpr(node.upper),
+                                       'Slice end should be Int', node.op)
+                    # TODO: don't truncate
+                    upper = IntBox(mops.BigTruncate(i1))
 
                 return value.Slice(lower, upper)
 
@@ -1236,13 +1237,14 @@ class ExprEvaluator(object):
                 assert node.lower is not None
                 assert node.upper is not None
 
-                msg = 'Range begin should be Int'
-                i = val_ops.ToInt(self._EvalExpr(node.lower), msg, node.op)
+                i1 = _ConvertToInt(self._EvalExpr(node.lower),
+                                   'Range begin should be Int', node.op)
 
-                msg = 'Range end should be Int'
-                j = val_ops.ToInt(self._EvalExpr(node.upper), msg, node.op)
+                i2 = _ConvertToInt(self._EvalExpr(node.upper),
+                                   'Range end should be Int', node.op)
 
-                return value.Range(i, j)
+                # TODO: Don't truncate
+                return value.Range(mops.BigTruncate(i1), mops.BigTruncate(i2))
 
             elif case(expr_e.Compare):
                 node = cast(expr.Compare, UP_node)
