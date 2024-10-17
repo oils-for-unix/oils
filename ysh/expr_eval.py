@@ -1220,14 +1220,12 @@ class ExprEvaluator(object):
 
                 if node.lower:
                     msg = 'Slice begin should be Int'
-                    i = val_ops.ToInt(self._EvalExpr(node.lower), msg,
-                                      loc.Missing)
+                    i = val_ops.ToInt(self._EvalExpr(node.lower), msg, node.op)
                     lower = IntBox(i)
 
                 if node.upper:
                     msg = 'Slice end should be Int'
-                    i = val_ops.ToInt(self._EvalExpr(node.upper), msg,
-                                      loc.Missing)
+                    i = val_ops.ToInt(self._EvalExpr(node.upper), msg, node.op)
                     upper = IntBox(i)
 
                 return value.Slice(lower, upper)
@@ -1239,10 +1237,10 @@ class ExprEvaluator(object):
                 assert node.upper is not None
 
                 msg = 'Range begin should be Int'
-                i = val_ops.ToInt(self._EvalExpr(node.lower), msg, loc.Missing)
+                i = val_ops.ToInt(self._EvalExpr(node.lower), msg, node.op)
 
                 msg = 'Range end should be Int'
-                j = val_ops.ToInt(self._EvalExpr(node.upper), msg, loc.Missing)
+                j = val_ops.ToInt(self._EvalExpr(node.upper), msg, node.op)
 
                 return value.Range(i, j)
 

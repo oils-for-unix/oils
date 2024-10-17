@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 3
 
 # Test a[1]
 
@@ -54,6 +54,49 @@ out of bounds
 (List)   ["1","2","3","4"]
 (List)   ["1","2","3","4"]
 ## END
+
+#### Range end points can be int-looking Strings
+
+pp test_ ('3' .. '6')
+
+var i = '5'
+
+pp test_ (i .. 7)
+pp test_ (3 .. i)
+
+var i = '-5'
+
+pp test_ (i .. -3)
+pp test_ (-3 .. i)
+
+# Not allowed
+pp test_ ('a' .. 'z')
+
+## STDOUT:
+## END
+
+#### Slice indices can be int-looking strings
+
+var a = list(1..10)
+
+pp test_ (a['3': '6'])
+
+var i = '5'
+
+pp test_ (a[i : 7])
+pp test_ (a[3 : i])
+
+var i = '-5'
+
+pp test_ (a[i : -3])
+pp test_ (a[-3 : i])
+
+# Not allowed
+pp test_ (a['a' : 'z'])
+
+## STDOUT:
+## END
+
 
 #### slice subscripts are adjusted like Python
 

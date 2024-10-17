@@ -489,9 +489,12 @@ class Transformer(object):
         if typ0 == grammar_nt.expr:
             if n == 3:  # a[1:2]
                 lower = self.Expr(parent.GetChild(0))
+                op_tok = parent.GetChild(1).tok
                 upper = self.Expr(parent.GetChild(2))
+
             elif n == 2:  # a[1:]
                 lower = self.Expr(parent.GetChild(0))
+                op_tok = parent.GetChild(1).tok
                 upper = None
             else:  # a[1]
                 return self.Expr(parent.GetChild(0))
@@ -499,11 +502,13 @@ class Transformer(object):
             assert typ0 == Id.Arith_Colon
             lower = None
             if n == 1:  # a[:]
+                op_tok = parent.GetChild(0).tok
                 upper = None
             else:  # a[:3]
+                op_tok = parent.GetChild(0).tok
                 upper = self.Expr(parent.GetChild(1))
 
-        return expr.Slice(lower, parent.GetChild(0).tok, upper)
+        return expr.Slice(lower, op_tok, upper)
 
     def Expr(self, pnode):
         # type: (PNode) -> expr_t
