@@ -53,6 +53,8 @@ from _devbuild.gen.syntax_asdl import (
     proc_sig_e,
     Proc,
     Func,
+    SingleQuoted,
+    DoubleQuoted,
 )
 from _devbuild.gen.value_asdl import LiteralBlock
 from core import alloc
@@ -64,7 +66,7 @@ from frontend import lexer
 from frontend import location
 from frontend import match
 from frontend import reader
-from mycpp.mylib import log
+from mycpp.mylib import log, tagswitch
 from osh import braces
 from osh import bool_parse
 from osh import word_
@@ -760,15 +762,40 @@ class CommandParser(object):
             self._SetNext()
             return r
 
-        arg_word = self.cur_word
+        # We should never get Empty, Token, etc.
+        assert self.cur_word.tag() == word_e.Compound, self.cur_word
+        arg_word = cast(CompoundWord, self.cur_word)
+
         tilde = word_.TildeDetect(arg_word)
         if tilde:
             arg_word = tilde
         self._SetNext()
 
-        # We should never get Empty, Token, etc.
-        assert arg_word.tag() == word_e.Compound, arg_word
-        return Redir(op_tok, where, cast(CompoundWord, arg_word))
+        # Special case for <<< 'hi' and <<< ''' multiline '''
+        if op_tok.id == Id.Redir_TLess:
+            part0 = arg_word.parts[0]
+
+            is_multiline = False
+            with tagswitch(part0) as case:
+                if case(word_part_e.SingleQuoted):
+                    single = cast(SingleQuoted, part0)
+                    if single.left.id in (Id.Left_TSingleQuote,
+                                          Id.Left_RTSingleQuote,
+                                          Id.Left_UTSingleQuote,
+                                          Id.Left_BTSingleQuote):
+                        is_multiline = True
+
+                elif case(word_part_e.DoubleQuoted):
+                    double = cast(DoubleQuoted, part0)
+                    if double.left.id in (Id.Left_TDoubleQuote,
+                                          Id.Left_DollarTDoubleQuote):
+                        is_multiline = True
+            #log('is_multiline %r', is_multiline)
+
+            param = redir_param.HereWord(arg_word, is_multiline)
+            return Redir(op_tok, where, param)
+
+        return Redir(op_tok, where, arg_word)
 
     def _ParseRedirectList(self):
         # type: () -> List[Redir]

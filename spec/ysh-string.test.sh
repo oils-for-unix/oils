@@ -235,10 +235,10 @@ echo $double
 
 ## END
 
-#### C strings in %() array literals
-shopt -s oil:upgrade
+#### C strings in :| | array literals
+shopt -s ysh:upgrade
 
-var lines=%($'aa\tbb' $'cc\tdd')
+var lines=:| $'aa\tbb' $'cc\tdd' |
 write @lines
 
 ## STDOUT:
@@ -274,6 +274,52 @@ raw\
 r\
 unset
 r\
+## END
+
+#### Special rule for <<< ''' and <<< """ - no extra newline
+
+read --all <<< unquoted
+pp test_ (_reply)
+
+read --all <<< 'single with newline'
+pp test_ (_reply)
+
+read --all <<< "double with newline"
+pp test_ (_reply)
+
+read --all <<< u'j8 with newline'
+pp test_ (_reply)
+
+echo
+
+read --all <<< '''
+multi
+single
+'''
+pp test_ (_reply)
+
+read --all <<< """
+multi
+double
+"""
+pp test_ (_reply)
+
+read --all <<< u'''
+multi
+j8
+'''
+pp test_ (_reply)
+
+
+## STDOUT:
+(Str)   "unquoted\n"
+(Str)   "single with newline\n"
+(Str)   "double with newline\n"
+(Str)   "j8 with newline\n"
+
+(Str)   "multi\nsingle\n"
+(Str)   "multi\ndouble\n"
+(Str)   "multi\nj8\n"
 ## END
 
 #### $''' isn't a a multiline string (removed)
@@ -546,3 +592,4 @@ double
 """zz
 ## status: 2
 ## stdout-json: ""
+

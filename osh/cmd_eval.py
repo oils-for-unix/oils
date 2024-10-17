@@ -175,7 +175,6 @@ def _HasManyStatuses(node):
                     return True
             return False  # otherwise allow 'if true && true; ...'
 
-
         # - ShAssignment could be allowed, though its exit code will always be
         #   0 without command subs
         # - Naively, (non-singleton) pipelines could be allowed because pipefail.
@@ -494,14 +493,34 @@ class CommandEvaluator(object):
                     return result
 
                 elif redir_type == redir_arg_type_e.Here:  # here word
-                    val = self.word_ev.EvalWordToString(arg_word)
-                    assert val.tag() == value_e.Str, val
-                    # NOTE: bash and mksh both add \n
-                    result.arg = redirect_arg.HereDoc(val.s + '\n')
-                    return result
+                    # TODO: delete this
+                    raise AssertionError()
 
                 else:
                     raise AssertionError('Unknown redirect op')
+
+            elif case(redir_param_e.HereWord):
+                arg = cast(redir_param.HereWord, UP_arg)
+
+                val = self.word_ev.EvalWordToString(arg.w)
+                assert val.tag() == value_e.Str, val
+
+                assert r.op.id == Id.Redir_TLess, r.op
+                #print(arg_word)
+
+                s = val.s
+                if not arg.is_multiline:
+                    # NOTE: bash and mksh both add \n for
+                    #   read <<< 'hi'
+                    #
+                    # YSH doesn't do this for multi-line strings:
+                    #   read <<< '''
+                    #   read <<< u'''
+                    #   read <<< """
+                    s += '\n'
+
+                result.arg = redirect_arg.HereDoc(s)
+                return result
 
             elif case(redir_param_e.HereDoc):
                 arg = cast(redir_param.HereDoc, UP_arg)

@@ -262,6 +262,7 @@ module syntax
 
   redir_param =
     Word %CompoundWord
+  | HereWord(CompoundWord w, bool is_multiline)
   | HereDoc(word here_begin,  # e.g. EOF or 'EOF'
             Token? here_end_tok,  # Token consisting of the whole line
                                   # It's always filled in AFTER creation, but
