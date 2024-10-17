@@ -303,7 +303,7 @@ Shell arithmetic is also discouraged in favor of YSH arithmetic:
 
 ## Appendix: Table of Sigil Pairs
 
-This table is mainly for YSH language designers.  Many constructs aren't
+This table is mainly for YSH language designers.  Some constructs aren't
 implemented, but we reserve space for them.  The [Oils
 Reference](ref/index.html) is more complete.
 
@@ -322,26 +322,32 @@ Reference](ref/index.html) is more complete.
     :|foo $bar|  Array Literal      Words          expr
 
     $[42 + a[i]] Stringify Expr     Expression     cmd,expr
-    @[glob(x)]   Array-ify Expr     Expression     cmd,expr     not implemented
-    ^[42 + a[i]] Unevaluated Expr   Expression     expr         not implemented
+    @[glob(x)]   Array-ify Expr     Expression     cmd,expr
+    ^[42 + a[i]] Unevaluated Expr   Expression     expr
 
-    ^"$1 $2"     Unevaluated Str    DQ String      expr         not implemented
+    ^"$1 $2"     value.Expr         DQ String      expr 
 
     ${x %2d}     Var Sub            Formatting     cmd,expr     not implemented
     ${x|html}    Var Sub            Formatting     cmd,expr     not implemented
 
-    json (x)     Typed Arg List     Argument       cmd
+    pp (x)       Typed Arg List     Argument       cmd
+                                    Expressions
+
+    pp [x]       Lazy Arrg list     Argument       cmd
                                     Expressions
 
     $/d+/        Inline Eggex       Eggex Expr     cmd          not implemented
 
-    r''          Raw String         String         expr         cmd when shopt
+    $"x is $x"   Interpolated       DQ string      cmd,expr     usually "x is $x"
+                 string                                         $ is optional
+
+    r'foo\bar'   Raw String         String         expr         cmd when shopt
                  Literal                                        parse_raw_string
 
-    j""          JSON8 String       String         cmd,expr     not implemented
-                 Literal
+    u''   b''    J8 Literals        String         cmd,expr,data
 
-    #'a'         Char Literal       UTF-8 char     expr
+    j""          JSON8 String       String         data
+                 Literal
 
 Discouraged / Deprecated
 
@@ -362,6 +368,7 @@ Key to "where valid" column:
 
 - `cmd` means `lex_mode_e.ShCommand`
 - `expr` means `lex_mode_e.Expr`
+- `data` means it's valid in J8 Notation
 
 Some unused sigil pairs:
 

@@ -52,6 +52,9 @@ Env vars use `CAP_WORDS`:
 
     my-script.ysh   # runs with YSH
 
+    my-module.ysh   # import with 'use'
+    mymodule.ysh    # also OK
+
 ## YSH Names
 
 Capital Letters are used for types:

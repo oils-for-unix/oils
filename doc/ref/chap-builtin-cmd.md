@@ -353,44 +353,63 @@ Use it like this:
 
 ### use
 
-Import code from other files, creating an `Obj` that acts like a namespace.
+The `use` builtin evaluates a source file in a new `Frame`, and then creates an
+`Obj` that is a namespace.
 
-    use my-dir/my-module.ysh
+    use my-dir/mymodule.ysh
 
-    echo $[my_module.my_integer]  # the module Obj has attributes
-    my_module myproc              # the module Obj is invokable
+    echo $[mymodule.my_integer]   # the module Obj has attributes
+    mymodule my-proc              # the module Obj is invokable
 
-The evaluation of such files is cached, so it won't be re-evaluated if `use` is called again.
+The evaluation of such files is cached, so it won't be re-evaluated if `use` is
+called again.
+
+To import a specific name, use the `--pick` flag:
+
+    use my-dir/mymodule.ysh --pick my-proc other-proc
+
+    my-proc 1 2
+    other-proc 3 4
+
+Note: the `--pick` flag must come *after* the module, so this isn't valid:
+
+    use --pick my-proc mymodule.sh  # INVALID
 
 <!--
-# TODO: implicit $_this_dir aka relative import?
+# TODO:
 
-That makes scripts callable from elsewhere?
+use mod.ysh --all-provided    # relies on __provide__ or provide builtin
+use mod.ysh --all-for-testing
 -->
 
-<!--
-Bind a specific name:
+---
 
-    use lib/foo.ysh (&myvar)  # makes 'myvar' available
-
-Bind multiple names:
-
-    use lib/foo.ysh (&myvar) {
-      pick log die
-    }
-
-Maybe:
-
-    use lib/foo.ysh (&myvar) {
-      pick log (&mylog)
-      pick die (&mydie)
-    }
--->
-
-The `--extern` flag make the invocation do nothing.  It can be used be tools to
-analyze what names are in the file.
+The `--extern` flag means that `use` does nothing.  These commands can be used
+by tools to analyze names.
 
     use --extern grep sed awk
+
+---
+
+Notes:
+
+- To get a reference to `module-with-hyphens`, you may need to use
+  `getVar('module-with-hyphens')`. 
+  - TODO: consider backtick syntax as well
+- `use` must be used at the top level, not within a function.
+  - This behavior is unlike Python.
+
+Warnings:
+
+- `use` **copies** the module bindings into a new `Obj`.  This means that if
+  you rebind `mymodule.my_integer`, it will **not** be visible to code in the
+  module.
+  - This behavior is unlike Python.
+- `use` allows "circular imports".  That is `A.ysh` can `use B.ysh`, and vice
+  versa.
+  - To eliminate confusion over uninitialized names, use **only** `const`,
+    `func`, and `proc` at the top level of `my-module.ysh`.  Don't run
+    commands, use `setvar`, etc.
 
 ## I/O
 
