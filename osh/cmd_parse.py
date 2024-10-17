@@ -1273,6 +1273,9 @@ class CommandParser(object):
                     if len(typed_args.named_args) != 0:
                         p_die("Typed return doesn't take named arguments",
                               typed_loc)
+                    if typed_args.left.id != Id.Op_LParen:
+                        # return [x] is not valid
+                        p_die("Expected ( in typed return", typed_args.left)
                     return command.Retval(kw_token, typed_args.pos_args[0])
 
             # Except for return (x), we shouldn't have typed args

@@ -44,6 +44,29 @@ test-return-args() {
     return (x, x)
   }
   '
+
+  # Bug regression
+
+  if false; then
+    bin/ysh -c '
+    func foo() {
+      return [42]
+    }
+    echo foo=$[foo()]
+    '
+  fi
+
+  _ysh-parse-error '
+  func foo() {
+    return [42]
+  }
+  '
+
+  _ysh-parse-error '
+  func foo() {
+    return [42 + a[i]]
+  }
+  '
 }
 
 test-func-var-checker() {
