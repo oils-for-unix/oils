@@ -585,6 +585,11 @@ def Main(
     io_props = {'stdin': value.Stdin}  # type: Dict[str, value_t]
     io_obj = Obj(Obj(None, io_methods), io_props)
 
+    vm_methods = {}  # type: Dict[str, value_t]
+    vm_methods['getFrame'] = value.BuiltinFunc(func_reflect.GetFrame(mem))
+    vm_props = {}  # type: Dict[str, value_t]
+    vm_obj = Obj(Obj(None, vm_methods), vm_props)
+
     # Wire up circular dependencies.
     vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
                         prompt_ev, io_obj, tracer)
@@ -869,6 +874,7 @@ def Main(
     _AddBuiltinFunc(mem, '_end', func_eggex.MatchFunc(func_eggex.E, None, mem))
 
     _AddBuiltinFunc(mem, 'id', func_reflect.Id())
+    # TODO: should this be parseCommandStr() vs. parseFile() for Hay?
     _AddBuiltinFunc(mem, 'parseCommand',
                     func_reflect.ParseCommand(parse_ctx, mem, errfmt))
     _AddBuiltinFunc(mem, 'parseExpr',
@@ -879,12 +885,11 @@ def Main(
     _AddBuiltinFunc(mem, 'getVar', func_reflect.GetVar(mem))
     _AddBuiltinFunc(mem, 'setVar', func_reflect.SetVar(mem))
 
-    # TODO: implement
-    # and then parseCommand() and parseHay will not depend on mem; they will
-    # not bind a frame yet
+    # TODO: implement bindFrame() to turn CommandFrag -> Command
+    # Then parseCommand() and parseHay() will not depend on mem; they will not
+    # bind a frame yet
     #
     # what about newFrame() and globalFrame()?
-    _AddBuiltinFunc(mem, 'getFrame', func_reflect.GetFrame(mem))
     _AddBuiltinFunc(mem, 'bindFrame', func_reflect.BindFrame())
 
     _AddBuiltinFunc(mem, 'Object', func_misc.Object())
@@ -935,6 +940,7 @@ def Main(
     _AddBuiltinFunc(mem, '_opsp', func_misc.SparseOp())
 
     mem.AddBuiltin('io', io_obj)
+    mem.AddBuiltin('vm', vm_obj)
 
     # Special case for testing
     mem.AddBuiltin('module-invoke', value.BuiltinProc(module_invoke))

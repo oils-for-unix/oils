@@ -54,14 +54,17 @@ error handling, and more.
   [Match]          group()        start()        end()
                  X groups()     X groupDict()
   [Place]          setValue()
-  [Code Types]     Expr           Command
+  [Code Types]     Command        CommandFrag
+                   Expr           ExprFrag
                    BuiltinFunc    BoundFunc
+                   Frame
 X [Func]           name()         location()     toJson()
 X [Proc]           name()         location()     toJson()
   [IO]             eval()         evalToDict()   captureStdout()
                    promptVal()
                  X time()       X strftime()   X glob()
   [Obj]            __invoke__   X __call__
+  [VM]           X getFrame()
 ```
 
 <h2 id="builtin-func">
@@ -88,6 +91,7 @@ X [J8 Decode]     J8.Bool()         J8.Int()        ...
   [Introspection] id()
                   shvarGet()        getVar()        setVar()  
                   parseCommand()  X parseExpr()     evalExpr()
+                X bindFrame()
   [Hay Config]    parseHay()        evalHay()
 X [Hashing]       sha1dc()          sha256()
 ```

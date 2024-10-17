@@ -453,15 +453,6 @@ A Place is used as an "out param" by calling setValue():
 
 ## Code Types
 
-### Expr
-
-An unevaluated expression.  You can create an `Expr` with an expression literal
-([expr-literal][]):
-
-    var expr = ^[42 + a[i]]
-
-[expr-literal]: chap-expr-lang.html#expr-lit
-
 ### Command
 
 An unevaluated command.  You can create a `Command` with a "block expression"
@@ -469,7 +460,32 @@ An unevaluated command.  You can create a `Command` with a "block expression"
 
     var block = ^(echo $PWD; ls *.txt)
 
+The Command is bound to a stack frame.  This frame will be pushed as an
+"enclosed frame" when the command is evaluated.
+
 [block-expr]: chap-expr-lang.html#block-expr
+
+### CommandFrag
+
+A command that's not bound to a stack frame.
+
+### Expr
+
+An unevaluated expression.  You can create an `Expr` with an expression literal
+([expr-literal][]):
+
+    var expr = ^[42 + a[i]]
+
+The Command is bound to a stack frame.  This frame will be pushed as an
+"enclosed frame" when the expression is evaluated.
+
+[expr-literal]: chap-expr-lang.html#expr-lit
+
+### ExprFrag
+
+An expression command that's not bound to a stack frame.
+
+(TODO)
 
 ### BuiltinFunc
 
@@ -485,6 +501,13 @@ The [thin-arrow][] and [fat-arrow][] create bound funcs:
 [thin-arrow]: chap-expr-lang.html#thin-arrow
 [fat-arrow]: chap-expr-lang.html#thin-arrow
 
+### Frame
+
+A value that represents a stack frame.  It can be bound to a `CommandFrag`,
+producing a `Command`.
+
+Likewise, it can be found to a `ExprFrag`, producing an `Expr`.
+
 ## Func
 
 User-defined functions.
@@ -492,14 +515,6 @@ User-defined functions.
 ## Proc
 
 User-defined procs.
-
-## Module
-
-TODO:
-
-A module is a file with YSH code.
-
-<!-- can it be a directory or tree of files too? -->
 
 ## IO
 
@@ -510,7 +525,7 @@ Evaluate a command, and return `null`.
     var cmd = ^(echo hi)
     call io->eval(cmd)
 
-It's like like the `eval` builtin, and meant to be used in pure functions.
+It's similar to the `eval` builtin, and is meant to be used in pure functions.
 
 You can also bind:
 
@@ -529,20 +544,26 @@ TODO: We should be able to bind positional args, env vars, and inspect the
 shell VM.
 
 Though this runs in the same VM, not a new one.
-
-
 -->
 
 ### evalToDict()
 
-The `evalToDict()` method is like the `eval()` method, but it also returns a
+The `evalToDict()` method is like the `eval()` method, but it returns a
 Dict of bindings.
 
-TODO:
+It pushes a new "enclosed frame", and executes the given code.
 
-- Does it push a new frame?  Or is this a new module?
-  - I think we have to change the lookup rules
-- Move functions like `len()` to their own `__builtin__` module?
+Then it copies the frame's bindings into a Dict, and returns it.  Only the
+names that don't end with an underscore `_` are copied.
+
+Example:
+
+    var x = 10  # captured
+    var cmd = ^(var a = 42; var hidden_ = 'h'; var b = x + 1)
+
+    var d = io->evalToDict(cmd)
+
+    pp (d)  # => {a: 42, b: 11}
 
 ### captureStdout()
 

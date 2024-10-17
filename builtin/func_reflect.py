@@ -70,6 +70,7 @@ class GetFrame(vm._Callable):
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
+        unused_self = rd.PosObj()
         index = rd.PosInt()
         rd.Done()
 
@@ -85,6 +86,9 @@ class BindFrame(vm._Callable):
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
+
+        # TODO: also take an ExprFrag -> Expr
+
         frag = rd.PosCommandFrag()
         frame = rd.PosFrame()
         rd.Done()

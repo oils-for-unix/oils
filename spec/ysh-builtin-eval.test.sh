@@ -51,55 +51,6 @@ call io->eval(my_block)
 1
 ## END
 
-#### io->eval(block) can read variables like eval ''
-
-# NO LONGER WORKS, but is this a feature rather than a bug?
-
-proc p2(code_str) {
-  var mylocal = 42
-  eval $code_str
-}
-
-p2 'echo mylocal=$mylocal'
-
-proc p (;;; block) {
-  var mylocal = 99
-  call io->eval(block)
-}
-
-p {
-  echo mylocal=$mylocal
-}
-
-
-## STDOUT:
-mylocal=42
-mylocal=99
-## END
-
-#### eval should have a sandboxed mode
-
-proc p (;;; block) {
-  var this = 42
-
-  # like push-registers?  Not sure
-  # We could use state.ctx_Temp ?  There's also ctx_FuncCall etc.
-  #
-  # I think we want to provide full control over the stack.
-  push-frame {
-    call io->eval(block)
-  }
-}
-
-p {
-  echo $this
-}
-
-## status: 1
-## STDOUT:
-TODO
-## END
-
 #### io->eval with argv bindings
 call io->eval(^(echo "$@"), pos_args=:| foo bar baz |)
 call io->eval(^(pp test_ (:| $1 $2 $3 |)), pos_args=:| foo bar baz |)
@@ -661,11 +612,12 @@ var frag = ^(echo $i)
 proc my-cd (new_dir; ; ; block) {
   pushd $new_dir
 
+  var calling_frame = vm.getFrame(-2)
+
   # could call this "unbound"?  or unbind()?  What about procs and funcs and
   # exprs?
   var frag = getCommandFrag(block)
 
-  var calling_frame = getFrame(-2)
   call io->evalInFrame(frag, calling_frame)
 
   popd
@@ -684,3 +636,58 @@ x: i = 1, j = 3
 x: i = 2, j = 4
 ## END
 
+
+#### parseCommand(), io->evalInFrame(frag, frame) can behave like eval $mystr
+
+# NO LONGER WORKS, but is this a feature rather than a bug?
+
+proc p2(code_str) {
+  var mylocal = 42
+  eval $code_str
+}
+
+p2 'echo mylocal=$mylocal'
+
+proc p (;;; block) {
+  # To behave like eval $code_str, without variable capture:
+  #
+  # var frag = getCommandFrag(block)
+  # var this_frame = vm.getFrame(-1)
+  # call io->evalInFrame(frag, this_frame)
+
+  var mylocal = 99
+  call io->eval(block)
+}
+
+p {
+  echo mylocal=$mylocal
+}
+
+
+## STDOUT:
+mylocal=42
+mylocal=99
+## END
+
+#### eval should have a sandboxed mode
+
+proc p (;;; block) {
+  var this = 42
+
+  # like push-registers?  Not sure
+  # We could use state.ctx_Temp ?  There's also ctx_FuncCall etc.
+  #
+  # I think we want to provide full control over the stack.
+  push-frame {
+    call io->eval(block)
+  }
+}
+
+p {
+  echo $this
+}
+
+## status: 1
+## STDOUT:
+TODO
+## END
