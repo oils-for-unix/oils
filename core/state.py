@@ -1166,7 +1166,7 @@ class ctx_LoopFrame(object):
             rear_frame = self.mem.var_stack[-1]
             self.front_frame = NewDict()  # type: Dict[str, Cell]
             self.front_frame['__E__'] = Cell(False, False, False,
-                                           value.Frame(rear_frame))
+                                             value.Frame(rear_frame))
             mem.var_stack.append(self.front_frame)
 
     def __enter__(self):
@@ -1211,7 +1211,7 @@ class ctx_EnclosedFrame(object):
         # __E__ gets a lookup rule
         self.front_frame = NewDict()  # type: Dict[str, Cell]
         self.front_frame['__E__'] = Cell(False, False, False,
-                                       value.Frame(rear_frame))
+                                         value.Frame(rear_frame))
 
         mem.var_stack.append(self.front_frame)
 
@@ -1958,6 +1958,8 @@ class Mem(object):
                 yval = cast(LeftName, UP_yval)
 
                 # Check that the frame is still alive
+
+                # TODO: This doesn't work with modules
                 found = False
                 for i in xrange(len(self.var_stack) - 1, -1, -1):
                     frame = self.var_stack[i]

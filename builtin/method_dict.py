@@ -75,7 +75,7 @@ class Get(vm._Callable):
 
         obj = rd.PosValue()
         key = rd.PosStr()
-        default_value = rd.PosValue()
+        default_value = rd.OptionalValue()
         rd.Done()
 
         UP_obj = obj
@@ -90,4 +90,6 @@ class Get(vm._Callable):
                 raise error.TypeErr(obj, 'get() expected Dict or Obj',
                                     rd.BlamePos())
 
+        if default_value is None:
+            default_value = value.Null
         return d.get(key, default_value)

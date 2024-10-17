@@ -1,0 +1,7 @@
+const __provide__ = :| Dict |
+
+proc Dict ( ; out; ; block) {
+  var d = io->evalToDict(block)
+  call out->setValue(d)
+}
+

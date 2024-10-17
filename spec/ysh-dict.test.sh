@@ -107,5 +107,14 @@ pp test_ (get(d, 'key', 'default'))
 (Str)   "default"
 ## END
 
+#### get() has default null
+
+var d = {a: 42}
+
+pp test_ (get(d, 'b'))
+
+## STDOUT:
+(Null)   null
+## END
 
 

@@ -239,19 +239,26 @@ Similar to `keys()`, but returns the values of the dictionary.
 ### get()
 
 Return value for given key, falling back to the default value if the key 
-doesn't exist. Default is required.
+doesn't exist.
 
     var book = {
       title: "Hitchhiker's Guide",
       published: 1979,
     }
-    var published = get(book, "published", null)
-    = published
-    # => (Int 1979)
 
-    var author = get(book, "author", "???")
+    var published = get(book, 'published', null)
+    = published
+    # => (Int)   1979
+
+    var author = get(book, 'author', "???")
     = author
-    # => (Str "???")
+    # => (Str)   "???"
+
+If not specified, the default value is `null`:
+
+    var author = get(book, 'author')
+    = author
+    # => (Null)   null
 
 ## Float
 
