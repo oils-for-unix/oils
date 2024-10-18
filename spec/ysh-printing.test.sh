@@ -342,9 +342,9 @@ pp test_ (two)
 
 ## STDOUT:
 (Obj)   ("z":99) --> ("__foo__":null)
-(Obj)   ("z":99,"cycle":{...}) --> ("__foo__":null)
+(Obj)   ("z":99,"cycle":(...)) --> ("__foo__":null)
 
-(List)   [("z":99,"cycle":{...}) --> ("__foo__":null),("z":99,"cycle":{...}) --> ("__foo__":null)]
+(List)   [("z":99,"cycle":(...)) --> ("__foo__":null),("z":99,"cycle":(...)) --> ("__foo__":null)]
 ## END
 
 

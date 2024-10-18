@@ -139,7 +139,7 @@ def Utf8Encode(code):
     return ''.join(tmp)
 
 
-SHOW_CYCLES = 1 << 1  # show as [...] or {...} I think, with object ID
+SHOW_CYCLES = 1 << 1  # show as [...] or {...} or (...), with object ID
 SHOW_NON_DATA = 1 << 2  # non-data objects like Eggex can be <Eggex 0xff>
 LOSSY_JSON = 1 << 3  # JSON may lose data about strings
 INF_NAN_ARE_NULL = 1 << 4  # for JSON
@@ -583,7 +583,7 @@ class InstancePrinter(object):
 
                 if self.visiting.get(heap_id, False):
                     if self.options & SHOW_CYCLES:
-                        self.buf.write('{...}')
+                        self.buf.write('(...)')
                         return
                     else:
                         # node.js prints which key closes the cycle
