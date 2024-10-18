@@ -125,10 +125,6 @@ def Stringify(val, blame_loc, op_desc):
 
         elif case(value_e.Float):
             val = cast(value.Float, UP_val)
-            # TODO: what precision does this have?
-            # The default could be like awk or Python, and then we also allow
-            # ${myfloat %.3f} and more.
-            # Python 3 seems to give a few more digits than Python 2 for str(1.0/3)
             s = str(val.f)
 
         elif case(value_e.Eggex):
@@ -136,6 +132,8 @@ def Stringify(val, blame_loc, op_desc):
             s = regex_translate.AsPosixEre(val)  # lazily converts to ERE
 
         else:
+            pass  # mycpp workaround
+
             if val.tag() == value_e.List:
                 # Special error message for using the wrong sigil, or maybe join
                 raise error.TypeErrVerbose(
