@@ -73,13 +73,23 @@ module value
   # Commands, words, and expressions from syntax.asdl are evaluated to a VALUE.
   # value_t instances are stored in state.Mem().
   value =
-    # Only used for val_ops.StdinIterator.  (It would be nice if we could
-    # express iter_value.{Eof,Interrupted,Str,Int,...} in ASDL)
+    #
+    # Implementation details
+    #
+
+    # Only used for io.stdin aka val_ops.StdinIterator.  (It would be nice if
+    # we could express iter_value.{Eof,Interrupted,Str,Int,...} in ASDL)
     Interrupted
   | Stdin
+    # Can't be instantiated by users
+    # a[3:5] a[:10] a[3:] a[:]  # both ends are optional
+  | Slice(IntBox? lower, IntBox? upper)
+
+    #
+    # OSH/Bash types
+    #
 
     # Methods on state.Mem return value.Undef, but it's not visible in YSH.
-    #
     # A var bound to Undef is different than no binding because of dynamic
     # scope.  Undef can shadow values lower on the stack.
   | Undef
@@ -88,8 +98,8 @@ module value
 
     # "holes" in the array are represented by None
   | BashArray(List[str] strs)
-    # TODO: Switch to this more efficient representation?
-    # max_index makes append-sparse workload faster, and normal append loops too
+    # TODO: Switch to this more efficient representation.  max_index makes
+    # append-sparse workload faster, and normal append loops too
   | SparseArray(Dict[BigInt, str] d, BigInt max_index)
 
   | BashAssoc(Dict[str, str] d)
@@ -107,9 +117,9 @@ module value
     # because they have attributes (functions), methods - not just methods
   | Obj %Obj
 
-  # CODE types
-  #   unevaluated: Eggex, Expr, Template, Command/Block
-  #   callable, in separate namespaces: Func, BoundFunc, Proc
+    # for i in (0 .. n) { echo $i }  # both ends are required
+    # TODO: BigInt
+  | Range(int lower, int upper)
 
     # expr is spliced
     # / d+; ignorecase / -> '[[:digit:]]+' REG_ICASE
@@ -124,16 +134,6 @@ module value
     # provide a nice interface.
   | Match %RegexMatch
 
-    # ^[42 + a[i]]
-  | Expr(expr e)
-
-    # This is an UNBOUND command, like
-    # ^(echo 1; echo 2) and cd { echo 1; echo 2 } 
-  | CommandFrag(command c)
-
-    # Bound command
-  | Command(cmd_frag frag, Dict[str, Cell] captured_frame)
-
     # A place has an additional stack frame where the value is evaluated.
     # The frame MUST be lower on the stack at the time of use.
   | Place(y_lvalue lval, Dict[str, Cell] frame)
@@ -143,12 +143,16 @@ module value
     # TODO: ASDL should let us "collapse" this Dict directly into value_t
   | Frame(Dict[str, Cell] frame)
 
-    # callable is vm._Callable.
-    # TODO: ASDL needs some kind of "extern" to declare vm._Callable and
-    # cmd_eval.CommandEvaluator.  I think it would just generate a forward
-    # declaration.
-  | BuiltinFunc(any callable)
+  #
+  # Code units: BoundFunc, BuiltinFunc, Func, BuiltinProc, Proc
+  #
+
+    # for obj.method and obj->mutatingMethod
   | BoundFunc(value me, value func)
+    # callable is vm._Callable.
+    # TODO: ASDL needs some kind of "extern" to declare vm._Callable,
+    # vm._Builtin.  I think it would just generate a forward declaration.
+  | BuiltinFunc(any callable)
 
   | Func(str name, Func parsed,
          List[value] pos_defaults, Dict[str, value] named_defaults,
@@ -168,12 +172,19 @@ module value
          # module is where "global" lookups happen
          Dict[str, Cell] module_frame)
 
-    # for i in (1:n) { echo $i }  # both ends are required
-  | Range(int lower, int upper)
+  #
+  # Unevaluated CODE types: ExprFrag, Expr, CommandFrag, Command
+  #
 
-    # internal detail - can't be instantied by users
-    # a[3:5] a[:10] a[3:] a[:]  # both ends are optional
-  | Slice(IntBox? lower, IntBox? upper)
+    # ^[42 + a[i]]
+  | Expr(expr e)
+
+    # This is an UNBOUND command, like
+    # ^(echo 1; echo 2) and cd { echo 1; echo 2 } 
+  | CommandFrag(command c)
+
+    # Bound command
+  | Command(cmd_frag frag, Dict[str, Cell] captured_frame)
 
     # Other introspection
     # __builtins__ - Dict[str, value_t] - I would like to make this read-only

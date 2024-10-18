@@ -85,7 +85,13 @@ Example:
       echo 'failed'
     }
 
-## Related 
+## Appendix
+
+### Reserved Names
+
+As in Python, names like `__provide__` are reserved by the interpreter.
+
+### Related 
 
 - [Shell Language Idioms](shell-idioms.html)
 - [A Feel For YSH Syntax](syntax-feelings.html)

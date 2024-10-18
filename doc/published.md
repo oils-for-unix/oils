@@ -18,20 +18,22 @@ See [All Docs](index.html) for links to drafts.
 
 ## More
 
-- OSH:
-  - [Known Differences Between OSH and Other Shells](known-differences.html)
-  | [Quirks](quirks.html)
-  | [Tracing Execution](xtrace.html)
-  | [Headless Mode](headless.html)
-  | [Shell Idioms](shell-idioms.html)
-- YSH:
-  | [A Feel For YSH Syntax](syntax-feelings.html) 
-  | [YSH Style Guide](style-guide.html) 
-  | [What Breaks When You Upgrade to YSH](upgrade-breakage.html)
-  | [YSH Language FAQ](ysh-faq.html)
-  - Comparisons: [YSH vs. Shell](ysh-vs-shell.html) | [YSH Expressions vs.
-    Python](ysh-vs-python.html)
-  - Features: [Egg Expressions (YSH Regexes)](eggex.html)
+OSH:
+
+- [Known Differences Between OSH and Other Shells](known-differences.html) |
+  [Quirks](quirks.html) | [Headless Mode](headless.html) | [Shell
+  Idioms](shell-idioms.html)
+
+YSH:
+
+- [A Feel For YSH Syntax](syntax-feelings.html) | [YSH Style
+  Guide](style-guide.html) | [What Breaks When You Upgrade to
+  YSH](upgrade-breakage.html) | [YSH Language FAQ](ysh-faq.html)
+
+- Comparisons: [YSH vs. Shell](ysh-vs-shell.html) | [YSH Expressions vs.
+  Python](ysh-vs-python.html)
+
+- Features: [Egg Expressions (YSH Regexes)](eggex.html)
   | [YSH Regex API](ysh-regex-api.html)
   | [Guide to YSH Error Handling](ysh-error.html)
   | [Guide to Procs and Funcs](proc-func.html)
@@ -39,14 +41,24 @@ See [All Docs](index.html) for links to drafts.
   | [Simple Word Evaluation](simple-word-eval.html)
   | [Variable Declaration, Mutation, and Scope](variables.html)
   | [Hay - Custom Languages for Unix Systems](hay.html)
-- Data Languages:
-  - [JSON](json.html) | [J8 Notation](j8-notation.html) |
-    [BYO Protocols](byo.html)
-- Language Design:
-  - [Syntactic Concepts](syntactic-concepts.html) 
+
+Data Languages:
+
+- [JSON](json.html) | [J8 Notation](j8-notation.html) | [BYO
+  Protocols](byo.html)
+
+Language Design:
+
+- [Syntactic Concepts](syntactic-concepts.html) 
   | [Command vs. Expression Mode](command-vs-expression-mode.html)
   | [Language Influences](language-influences.html)
   - Notes: [Novelties in OSH and YSH](novelties.html) | [Warts](warts.html)
-- Reference:
-  - [Oils Error Catalog, With Hints](error-catalog.html)
+
+The Shared Oils Runtime
+
+- [Types in the Oils Runtime](types.html) | [Tracing Execution](xtrace.html) 
+
+Reference:
+
+- [Oils Error Catalog, With Hints](error-catalog.html)
 
