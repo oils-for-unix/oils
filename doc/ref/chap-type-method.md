@@ -347,6 +347,15 @@ Reverses a list in place.
     call fruits->reverse()
     echo @fruits  # => pear banana apple
 
+### clear()
+
+TODO:
+
+Remove all entries from the List:
+
+    call mylist->clear()
+  
+
 ## Dict
 
 A Dict contains an ordered sequence of key-value pairs.  Given the key, the
@@ -374,7 +383,19 @@ Ensures that the given key does not exist in the dictionary.
 
 ### inc()
 
+TODO
+
 ### accum()
+
+TODO
+
+### clear()
+
+TODO:
+
+Remove all entries from the Dict:
+
+    call mydict->clear()
 
 ## Range
   
@@ -518,6 +539,17 @@ User-defined procs.
 
 ## IO
 
+### stdin
+
+Returns the singleton `stdin` value, which you can iterate over:
+
+    for line in (io.stdin) {
+       echo $line
+    }
+
+This is buffered line-based I/O, as opposed to the unbuffered I/O of the `read`
+builtin.
+
 ### eval()
 
 Evaluate a command, and return `null`.
@@ -638,3 +670,17 @@ Then invoke it like a proc:
 
 TODO
 
+### `__str__`
+
+TODO
+
+## VM
+
+### getFrame()
+
+TODO
+
+    var frame = vm.getFrame(-1)  # local frame
+    var frame = vm.getFrame(0)   # global frame
+
+    var frame = vm.getFrame(-2)  # calling frame, for my-cd { echo }

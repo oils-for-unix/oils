@@ -608,8 +608,6 @@ def Main(
         type_obj = Obj(type_obj_methods, {'name': value.Str(type_name)})
         mem.AddBuiltin(type_name, type_obj)
 
-    vm_obj = Obj(Obj(None, vm_methods), vm_props)
-
     # Wire up circular dependencies.
     vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
                         prompt_ev, io_obj, tracer)

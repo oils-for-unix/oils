@@ -46,9 +46,9 @@ error handling, and more.
                    startsWith()   endsWith()
                    upper()        lower()
                    search()       leftMatch()
-  [List]           List/append()  pop()          extend()    indexOf()
-                 X insert()     X remove()       reverse()
-  [Dict]           erase()      X inc()        X accum()
+  [List]           List/append()  pop()          extend()      indexOf()
+                 X insert()     X remove()       reverse()   X clear()
+  [Dict]           erase()      X inc()        X accum()     X clear()
   [Range] 
   [Eggex] 
   [Match]          group()        start()        end()
@@ -60,10 +60,11 @@ error handling, and more.
                    Frame
 X [Func]           name()         location()     toJson()
 X [Proc]           name()         location()     toJson()
-  [IO]             eval()         evalToDict()   captureStdout()
+  [IO]             stdin          eval()         evalToDict()
+                   captureStdout()
                    promptVal()
                  X time()       X strftime()   X glob()
-  [Obj]            __invoke__   X __call__
+  [Obj]            __invoke__   X __call__     X __str__
   [VM]           X getFrame()
 ```
 
