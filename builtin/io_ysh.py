@@ -7,7 +7,7 @@ from __future__ import print_function
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import command_e, BraceGroup
-from _devbuild.gen.value_asdl import value, value_e, value_t
+from _devbuild.gen.value_asdl import value, value_e
 from asdl import format as fmt
 from core import error
 from core.error import e_usage
@@ -19,7 +19,7 @@ from frontend import flag_util
 from frontend import match
 from frontend import typed_args
 from mycpp import mylib
-from mycpp.mylib import tagswitch, log, iteritems
+from mycpp.mylib import log, iteritems
 
 from typing import TYPE_CHECKING, cast
 if TYPE_CHECKING:
@@ -67,27 +67,17 @@ class Pp(_Builtin):
 
         blame_tok = rd.LeftParenToken()
 
-        # It might be nice to add a string too, like
-        # pp 'my annotation' (actual)
-        # But the var name should meaningful in most cases
-
-        UP_val = val
-        result = None  # type: value_t
-        with tagswitch(val) as case:
-            if case(value_e.Expr):  # Destructured assert [true === f()]
-                val = cast(value.Expr, UP_val)
-
-                # In this case, we could get the unevaluated code string and
-                # print it.  Although quoting the line seems enough.
-                result = self.expr_ev.EvalExpr(val.e, blame_tok)
-            else:
-                result = val
-
         # Show it with location
+        # It looks like
+        #   pp (42)
+        #      ^
+        # [ stdin ]:5: (Int)   42
+        # We could also print with ! or -^-
+
         self.stdout_.write('\n')
         excerpt, prefix = ui.CodeExcerptAndPrefix(blame_tok)
         self.stdout_.write(excerpt)
-        ui.PrettyPrintValue(prefix, result, self.stdout_)
+        ui.PrettyPrintValue(prefix, val, self.stdout_)
 
         return 0
 
@@ -100,8 +90,7 @@ class Pp(_Builtin):
         action, action_loc = arg_r.Peek2()
 
         # Special cases
-        # pp (x) quotes its code location
-        # pp [x] also evaluates
+        # pp (x) quotes its code location, can also be pp [x]
         if action is None:
             return self._PrettyPrint(cmd_val)
 

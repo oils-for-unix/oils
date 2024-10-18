@@ -201,7 +201,7 @@ pp (42)
 
 shopt --set ysh:upgrade
 
-pp [42]
+pp [42] | sed 's/0x[a-f0-9]\+/[replaced]/'
 
 ## STDOUT:
 
@@ -209,9 +209,9 @@ pp [42]
      ^
 [ stdin ]:1: (Int)   42
 
-  pp [42]
+  pp [42] | sed 's/0x[a-f0-9]\+/[replaced]/'
      ^
-[ stdin ]:5: (Int)   42
+[ stdin ]:5: <Expr [replaced]>
 ## END
 
 #### pp test_ supports BashArray, BashAssoc
