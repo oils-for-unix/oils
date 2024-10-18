@@ -369,6 +369,18 @@ class ExprEvaluator(object):
             else:
                 raise AssertionError()
 
+    def EvalExprClosure(self, expr_val, blame_loc):
+        # type: (value.Expr, loc_t) -> value_t
+        """
+        Used by user-facing APIs that take value.Expr closures:
+
+        var i = 42
+        var x = io->evalExpr(^[i + 1])
+        var x = s.replace(pat, ^"- $0 $i -")
+        """
+        with state.ctx_EnclosedFrame(self.mem, expr_val.captured_frame, None):
+            return self.EvalExpr(expr_val.e, blame_loc)
+
     def EvalExpr(self, node, blame_loc):
         # type: (expr_t, loc_t) -> value_t
         """Public API for _EvalExpr to ensure command_sub_errexit"""

@@ -758,6 +758,10 @@ class _ArgFrame(object):
 
     def GetArgNum(self, arg_num):
         # type: (int) -> value_t
+
+        # $0 is handled elsewhere
+        assert 1 <= arg_num, arg_num
+
         index = self.num_shifted + arg_num - 1
         if index >= len(self.argv):
             return value.Undef
@@ -1332,9 +1336,12 @@ class ctx_Eval(object):
         # $0 needs to have lexical scoping. So we store it with other locals.
         # As "0" cannot be parsed as an lvalue, we can safely store dollar0 there.
         if dollar0 is not None:
-            assert mem.GetValue("0", scope_e.LocalOnly).tag() == value_e.Undef
-            self.dollar0_lval = LeftName("0", loc.Missing)
-            mem.SetLocalName(self.dollar0_lval, value.Str(dollar0))
+            #assert mem.GetValue("0", scope_e.LocalOnly).tag() == value_e.Undef
+            #self.dollar0_lval = LeftName("0", loc.Missing)
+            #mem.SetLocalName(self.dollar0_lval, value.Str(dollar0))
+
+            self.restore_dollar0 = self.mem.dollar0
+            self.mem.dollar0 = dollar0
 
         if pos_args is not None:
             mem.argv_stack.append(_ArgFrame(pos_args))
@@ -1356,7 +1363,8 @@ class ctx_Eval(object):
             self.mem.argv_stack.pop()
 
         if self.dollar0 is not None:
-            self.mem.SetLocalName(self.dollar0_lval, value.Undef)
+            #self.mem.SetLocalName(self.dollar0_lval, value.Undef)
+            self.mem.dollar0 = self.restore_dollar0
 
     # Note: _Push and _Pop are separate methods because the C++ translation
     # doesn't like when they are inline in __init__ and __exit__.
@@ -1777,10 +1785,16 @@ class Mem(object):
     def GetArgNum(self, arg_num):
         # type: (int) -> value_t
         if arg_num == 0:
-            # $0 may be overriden, eg. by Str => replace()
-            vars = self.var_stack[-1]
-            if "0" in vars and vars["0"].val.tag() != value_e.Undef:
-                return vars["0"].val
+            # Disabled
+            if 0:
+                # Problem: Doesn't obey enclosing frame?
+                # Yeah it needs FrameLookup
+                cell, _ = _FrameLookup(self.var_stack[-1], '0')
+                if cell is not None:
+                    val = cell.val
+                    if val.tag() != value_e.Undef:
+                        return val
+
             return value.Str(self.dollar0)
 
         return self.argv_stack[-1].GetArgNum(arg_num)

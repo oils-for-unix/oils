@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 #### Expr Closures in a Loop !
 shopt --set ysh:upgrade
@@ -13,7 +13,7 @@ func makeTasks() {
   for __hack__ in (0 .. 3) {
     var i = __hack__
     var j = i + 2
-    task (tasks, ^["$x: i = $i, j = $j"])
+    task (tasks, ^"$x: i = $i, j = $j")
   }
   return (tasks)
 }
@@ -27,6 +27,9 @@ for ex in (exprs) {
 }
 
 ## STDOUT:
+x: i = 0, j = 2
+x: i = 1, j = 3
+x: i = 2, j = 4
 ## END
 
 #### Block Closures in a Loop !

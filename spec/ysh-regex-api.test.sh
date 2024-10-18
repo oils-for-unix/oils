@@ -708,16 +708,25 @@ write $[mystr.replace(/ 'Foo' /, ^"$0Bar")]
 
 # Edge-cases
 var dollar0 = "$0"
-func f() { return ("$0") }
-write $["foo".replace("o", "$0") === "f$dollar0$dollar0"]
-write $["foo".replace("o", ^[f()]) === "f$dollar0$dollar0"]
-write $[f() === "$dollar0"]
+#echo dollar0=$dollar0
+#echo "0 = $0"
+
+var expected = "f($dollar0)($dollar0)"
+#echo "expected = $expected"
+
+# Eager replacement
+assert [expected === "foo".replace("o", "($0)")]
+
+assert ['f(o)(o)' === "foo".replace("o", ^"($0)")]
+
+func f() { return ( "<$0>" ) }
+assert ["<$dollar0>" === f()]
+
+assert ['f<o><o>' === "foo".replace("o", ^[f()])]
+
 ## STDOUT:
 class FooBar:  # this class is called FooBar
 class FooBar:  # this class is called FooBar
-true
-true
-true
 ## END
 
 #### Str.replace(Eggex, Expr), scopes

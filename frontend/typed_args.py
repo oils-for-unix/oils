@@ -2,8 +2,7 @@
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import cmd_value, ProcArgs, Cell
-from _devbuild.gen.syntax_asdl import (loc, loc_t, ArgList, command_t, expr_t,
-                                       Token)
+from _devbuild.gen.syntax_asdl import (loc, loc_t, ArgList, command_t, Token)
 from _devbuild.gen.value_asdl import (value, value_e, value_t, RegexMatch, Obj,
                                       cmd_frag, cmd_frag_e, cmd_frag_str,
                                       LiteralBlock)
@@ -353,9 +352,9 @@ class Reader(object):
                             self.BlamePos())
 
     def _ToExpr(self, val):
-        # type: (value_t) -> expr_t
+        # type: (value_t) -> value.Expr
         if val.tag() == value_e.Expr:
-            return cast(value.Expr, val).e
+            return cast(value.Expr, val)
 
         raise error.TypeErr(val, 'Arg %d should be a Expr' % self.pos_consumed,
                             self.BlamePos())
@@ -503,7 +502,7 @@ class Reader(object):
         return self._ToCommand(val)
 
     def PosExpr(self):
-        # type: () -> expr_t
+        # type: () -> value.Expr
         val = self.PosValue()
         return self._ToExpr(val)
 

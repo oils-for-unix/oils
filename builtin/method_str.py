@@ -328,7 +328,7 @@ class Replace(vm._Callable):
 
     def EvalSubstExpr(self, expr, blame_loc):
         # type: (value.Expr, loc_t) -> str
-        res = self.expr_ev.EvalExpr(expr.e, blame_loc)
+        res = self.expr_ev.EvalExprClosure(expr, blame_loc)
         if res.tag() == value_e.Str:
             return cast(value.Str, res).s
 

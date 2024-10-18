@@ -219,6 +219,6 @@ class EvalExpr(vm._Callable):
         lazy = rd.PosExpr()
         rd.Done()
 
-        result = self.expr_ev.EvalExpr(lazy, rd.LeftParenToken())
+        result = self.expr_ev.EvalExprClosure(lazy, rd.LeftParenToken())
 
         return result
