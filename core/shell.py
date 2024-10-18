@@ -359,7 +359,8 @@ def Main(
                                  attrs.shopt_changes)
 
     version_str = pyutil.GetVersion(loader)
-    state.InitMem(mem, environ, version_str)
+    state.InitBuiltins(mem, environ, version_str)
+    state.InitDefaultVars(mem)
 
     # TODO: consider turning on no_copy_env in YSH
     if exec_opts.no_copy_env():

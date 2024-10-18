@@ -26,6 +26,8 @@ pp test_ (_pipeline_status)
 
 #### global frame doesn't contain env vars
 
+#pp frame_vars_
+
 try {
   pp frame_vars_ | grep -o TMP
 }
@@ -35,8 +37,6 @@ pp test_ (_pipeline_status)
 ## STDOUT:
 (List)   [0,1]
 ## END
-
-
 
 #### __builtins__ module
 
@@ -53,3 +53,4 @@ assert [2 === len]
 
 ## STDOUT:
 ## END
+

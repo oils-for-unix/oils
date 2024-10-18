@@ -850,7 +850,7 @@ def _AddCallToken(d, token):
     d['call_line'] = value.Str(token.line.content)
 
 
-def _InitDefaults(mem):
+def InitDefaultVars(mem):
     # type: (Mem) -> None
 
     # Default value; user may unset it.
@@ -931,20 +931,20 @@ def InitVarsFromEnv(mem, environ):
         SetGlobalString(mem, 'PATH', '/bin:/usr/bin')
 
 
-def InitMem(mem, environ, version_str):
+def InitBuiltins(mem, environ, version_str):
     # type: (Mem, Dict[str, str], str) -> None
     """Initialize memory with shell defaults.
 
     Other interpreters could have different builtin variables.
     """
     # TODO: REMOVE this legacy.  ble.sh checks it!
-    SetGlobalString(mem, 'OIL_VERSION', version_str)
+    mem.builtins['OIL_VERSION'] = value.Str(version_str)
 
-    SetGlobalString(mem, 'OILS_VERSION', version_str)
+    mem.builtins['OILS_VERSION'] = value.Str(version_str)
 
     # The source builtin understands '///' to mean "relative to embedded stdlib"
-    SetGlobalString(mem, 'LIB_OSH', '///osh')
-    SetGlobalString(mem, 'LIB_YSH', '///ysh')
+    mem.builtins['LIB_OSH'] = value.Str('///osh')
+    mem.builtins['LIB_YSH'] = value.Str('///ysh')
 
     # - C spells it NAN
     # - JavaScript spells it NaN
@@ -953,10 +953,8 @@ def InitMem(mem, environ, version_str):
     # - libc prints the strings 'nan' and 'inf'
     # - Python 3 prints the strings 'nan' and 'inf'
     # - JavaScript prints 'NaN' and 'Infinity', which is more stylized
-    SetGlobalValue(mem, 'NAN', value.Float(pyutil.nan()))
-    SetGlobalValue(mem, 'INFINITY', value.Float(pyutil.infinity()))
-
-    _InitDefaults(mem)
+    mem.builtins['NAN'] = value.Float(pyutil.nan())
+    mem.builtins['INFINITY'] = value.Float(pyutil.infinity())
 
 
 def InitInteractive(mem, lang):
