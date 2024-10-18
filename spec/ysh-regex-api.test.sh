@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 
 #### s ~ regex and s !~ regex
 shopt -s ysh:upgrade
@@ -846,28 +846,76 @@ write $[mystr.replace(/ space+ /, ' ')]
 ## STDOUT:
 ## END
 
-#### Str.replace() lexical scope
+#### Str.replace() at top level
 shopt --set ysh:upgrade
 
+var s = 'mystr'
 var pat = / 's' <capture dot> /
+var template = ^"[$x $0 $1 $x]"
+pp test_ (template)
+
+var x = 'x'
+
+var new = s.replace(pat, template)
+echo 'replace  ' $new
+
+func myreplace(s, template) {
+  return (s.replace(pat, template))
+}
+
+echo myreplace $[myreplace(s, template)]
+
+## STDOUT:
+<Expr>
+replace   my[x st t x]r
+myreplace my[x st t x]r
+## END
+
+#### Str.replace() lexical scope with ^""
+shopt --set ysh:upgrade
+
+var s = 'mystr'
+var pat = / 's' <capture dot> /
+var template = ^"[$x $0 $1 $x]"
+pp test_ (template)
 
 proc p {
   var x = 'x'
   
-  #var template = ^"[$x $0 $x]"
-  var template = ^"[$x $0 $1 $x]"
-  pp test_ (template)
-  
-  var s = 'mystr'
-  
   var new = s.replace(pat, template)
+  echo 'replace  ' $new
   
   func myreplace(s, template) {
     return (s.replace(pat, template))
   }
   
-  echo $new
-  echo $[myreplace(s, template)]
+  echo myreplace $[myreplace(s, template)]
+}
+
+p
+
+## STDOUT:
+## END
+
+#### Str.replace() lexical scope with ^[]
+shopt --set ysh:upgrade
+
+var s = 'mystr'
+var pat = / 's' <capture dot> /
+var template = ^['[' ++ x ++ ' ' ++ $0 ++ ' ' ++ $1 ++ ' ' ++ x ++ ']']
+pp test_ (template)
+
+proc p {
+  var x = 'x'
+  
+  var new = s.replace(pat, template)
+  echo 'replace  ' $new
+  
+  func myreplace(s, template) {
+    return (s.replace(pat, template))
+  }
+  
+  echo myreplace $[myreplace(s, template)]
 }
 
 p

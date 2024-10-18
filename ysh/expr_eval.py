@@ -1311,7 +1311,7 @@ class ExprEvaluator(object):
 
             elif case(expr_e.Literal):  # ^[1 + 2]
                 node = cast(expr.Literal, UP_node)
-                return value.Expr(node.inner)
+                return value.Expr(node.inner, self.mem.CurrentFrame())
 
             elif case(expr_e.Lambda):  # |x| x+1 syntax is reserved
                 # TODO: Location information for |, or func

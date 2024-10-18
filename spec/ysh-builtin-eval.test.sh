@@ -573,38 +573,6 @@ inner=z
 inner2=z
 ## END
 
-#### Block Closures in a Loop !
-
-proc task (; tasks; ; b) {
-  call tasks->append(b)
-}
-
-func makeTasks() {
-  var tasks = []
-  var x = 'x'
-  for __hack__ in (0 .. 3) {
-    var i = __hack__
-    var j = i + 2
-    task (tasks) { echo "$x: i = $i, j = $j" }
-  }
-  return (tasks)
-}
-
-var blocks = makeTasks()
-#= blocks
-
-for b in (blocks) {
-  call io->eval(b)
-}
-
-## STDOUT:
-x: i = 0, j = 2
-x: i = 1, j = 3
-x: i = 2, j = 4
-## END
-
-
-
 #### io->evalInFrame() can express try, cd builtins
 
 var frag = ^(echo $i)

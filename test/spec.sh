@@ -838,6 +838,10 @@ ysh-object() {
   run-file ysh-object "$@"
 }
 
+ysh-closures() {
+  run-file ysh-closures "$@"
+}
+
 ysh-func() {
   run-file ysh-func "$@"
 }

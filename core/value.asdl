@@ -180,8 +180,12 @@ module value
   # Unevaluated CODE types: ExprFrag, Expr, CommandFrag, Command
   #
 
-    # ^[42 + a[i]]
-  | Expr(expr e)
+  # This can be the output of parseExpr()?
+  #| ExprFrag(expr e)
+
+    # var x = ^[42 + a[i]]
+    # my-ls | where [size > 10]
+  | Expr(expr e, Dict[str, Cell] captured_frame)
 
     # This is an UNBOUND command, like
     # ^(echo 1; echo 2) and cd { echo 1; echo 2 } 

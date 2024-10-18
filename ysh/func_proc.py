@@ -231,7 +231,7 @@ def EvalTypedArgsToProc(
             # Defer evaluation by wrapping in value.Expr
 
             for exp in ty.pos_args:
-                proc_args.pos_args.append(value.Expr(exp))
+                proc_args.pos_args.append(value.Expr(exp, current_frame))
             # TODO: ...spread is illegal
 
             n1 = ty.named_args
@@ -239,7 +239,8 @@ def EvalTypedArgsToProc(
                 proc_args.named_args = NewDict()
                 for named_arg in n1:
                     name = lexer.TokenVal(named_arg.name)
-                    proc_args.named_args[name] = value.Expr(named_arg.value)
+                    proc_args.named_args[name] = value.Expr(
+                        named_arg.value, current_frame)
                 # TODO: ...spread is illegal
 
         else:  # json write (x)
