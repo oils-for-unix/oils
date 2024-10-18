@@ -885,7 +885,7 @@ def InitDefaultVars(mem):
     #   set_home_var ();
 
 
-def InitVarsFromEnv(mem, environ):
+def CopyVarsFromEnv(mem, environ):
     # type: (Mem, Dict[str, str]) -> None
 
     # This is the way dash and bash work -- at startup, they turn everything in
@@ -897,11 +897,11 @@ def InitVarsFromEnv(mem, environ):
                      scope_e.GlobalOnly,
                      flags=SetExport)
 
-    # If it's not in the environment, initialize it.  This makes it easier to
-    # update later in MutableOpts.
 
-    # TODO: IFS, etc. should follow this pattern.  Maybe need a SysCall
-    # interface?  self.syscall.getcwd() etc.
+def InitVarsAfterEnv(mem):
+    # type: (Mem) -> None
+
+    # If SHELLOPTS PWD PATH are not in environ, then initialize them.
 
     val = mem.GetValue('SHELLOPTS')
     if val.tag() == value_e.Undef:
@@ -912,22 +912,27 @@ def InitVarsFromEnv(mem, environ):
                  scope_e.GlobalOnly,
                  flags=SetReadOnly)
 
-    # Usually we inherit PWD from the parent shell.  When it's not set, we may
-    # compute it.
     val = mem.GetValue('PWD')
     if val.tag() == value_e.Undef:
         SetGlobalString(mem, 'PWD', GetWorkingDir())
-    # Now mark it exported, no matter what.  This is one of few variables
-    # EXPORTED.  bash and dash both do it.  (e.g. env -i -- dash -c env)
+    # Mark it exported, no matter what.  This is one of few variables EXPORTED.
+    # bash and dash both do it.  (e.g. env -i -- dash -c env)
     mem.SetNamed(location.LName('PWD'),
                  None,
                  scope_e.GlobalOnly,
                  flags=SetExport)
 
+    # MUTABLE GLOBAL that's SEPARATE from $PWD.  Used by the 'pwd' builtin, but
+    # it can't be modified by users.
+    val = mem.GetValue('PWD')
+    assert val.tag() == value_e.Str, val
+    pwd = cast(value.Str, val).s
+    mem.SetPwd(pwd)
+
     val = mem.GetValue('PATH')
     if val.tag() == value_e.Undef:
-        # Setting PATH to these two dirs match what zsh and mksh do.  bash and dash
-        # add {,/usr/,/usr/local}/{bin,sbin}
+        # Setting PATH to these two dirs match what zsh and mksh do.  bash and
+        # dash add {,/usr/,/usr/local}/{bin,sbin}
         SetGlobalString(mem, 'PATH', '/bin:/usr/bin')
 
 

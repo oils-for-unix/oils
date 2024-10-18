@@ -122,21 +122,38 @@ esac
 # bash exports PWD, but not PATH PS4
 
 /usr/bin/env -i PYTHONPATH=$PYTHONPATH $sh_prefix $flags -c 'typeset -p PATH PWD PS4' >&2
-echo status=$?
+echo path pwd ps4 $?
 
 /usr/bin/env -i PYTHONPATH=$PYTHONPATH $sh_prefix $flags -c 'typeset -p SHELLOPTS' >&2
-echo status=$?
+echo shellopts $?
 
-# hm bash doesn't set $HOME
+# bash doesn't set HOME, mksh and zsh do
+/usr/bin/env -i PYTHONPATH=$PYTHONPATH $sh_prefix $flags -c 'typeset -p HOME' >&2
+echo home $?
+
+# bash doesn't set PS1, mksh and zsh do
+/usr/bin/env -i PYTHONPATH=$PYTHONPATH $sh_prefix $flags -c 'typeset -p PS1' >&2
+echo ps1 $?
 
 ## STDOUT:
-status=0
-status=0
+path pwd ps4 0
+shellopts 0
+home 1
+ps1 1
+## END
+
+## OK mksh STDOUT:
+path pwd ps4 0
+shellopts 0
+home 0
+ps1 0
 ## END
 
 ## OK zsh STDOUT:
-status=0
-status=1
+path pwd ps4 0
+shellopts 1
+home 0
+ps1 0
 ## END
 
 ## N-I dash STDOUT:

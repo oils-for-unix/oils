@@ -362,27 +362,11 @@ def Main(
     state.InitBuiltins(mem, environ, version_str)
     state.InitDefaultVars(mem)
 
-    # TODO: consider turning on no_copy_env in YSH
-    #
-    # But we also need a way for $PATH to be set, because
-    # - PATH, PWD, SHELLOPTS could be special cases
-    #   - and then we need to copy them into new modules, like PS4?
-    #   - they are also exported?
+    if not exec_opts.no_copy_env():
+        state.CopyVarsFromEnv(mem, environ)
 
-    if exec_opts.no_copy_env():
-    #if 1:
-        # Don't consult the environment
-        mem.SetPwd(state.GetWorkingDir())
-    else:
-        state.InitVarsFromEnv(mem, environ)
-
-        # MUTABLE GLOBAL that's SEPARATE from $PWD.  Used by the 'pwd' builtin, but
-        # it can't be modified by users.
-        val = mem.GetValue('PWD')
-        # should be true since it's exported
-        assert val.tag() == value_e.Str, val
-        pwd = cast(value.Str, val).s
-        mem.SetPwd(pwd)
+    # PATH PWD SHELLOPTS, etc. must be set after CopyVarsFromEnv()
+    state.InitVarsAfterEnv(mem)
 
     if attrs.show_options:  # special case: sh -o
         mutable_opts.ShowOptions([])
