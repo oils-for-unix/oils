@@ -10,7 +10,7 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import option_i, builtin_i
 from _devbuild.gen.syntax_asdl import (loc, source, source_t, IntParamBox,
                                        debug_frame, debug_frame_t)
-from _devbuild.gen.value_asdl import (value, value_e, value_t, Obj)
+from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str, Obj)
 from core import alloc
 from core import comp_ui
 from core import dev
@@ -588,6 +588,26 @@ def Main(
     vm_methods = {}  # type: Dict[str, value_t]
     vm_methods['getFrame'] = value.BuiltinFunc(func_reflect.GetFrame(mem))
     vm_props = {}  # type: Dict[str, value_t]
+    vm_obj = Obj(Obj(None, vm_methods), vm_props)
+
+    # Add basic type objects for flag parser
+    # flag -v --verbose (Bool, help='foo')
+    #
+    # TODO:
+    # - can add __str__ method
+    # - Add other types like Dict, CommandFlag
+    #   - Dict should have __invoke__
+    #   - List() Dict() Obj() can do shallow copy with __call__
+    #   - Bool() Int() Float() Str() List() Dict() conversions
+    # - type(x) should return these Obj, or perhaps typeObj(x)
+
+    type_obj_methods = Obj(None, {})
+    for tag in (value_e.Bool, value_e.Int, value_e.Float, value_e.Str):
+        type_name = value_str(tag, dot=False)
+        #log('%s %s' , type_name, tag)
+        type_obj = Obj(type_obj_methods, {'name': value.Str(type_name)})
+        mem.AddBuiltin(type_name, type_obj)
+
     vm_obj = Obj(Obj(None, vm_methods), vm_props)
 
     # Wire up circular dependencies.

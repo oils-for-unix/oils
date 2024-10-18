@@ -1,5 +1,32 @@
 ## oils_failures_allowed: 1
 
+#### Builtin types
+
+pp test_ (Bool)
+pp test_ (Int)
+pp test_ (Float)
+pp test_ (Str)
+echo
+
+var b = Bool
+
+pp test_ (b is Bool)
+
+# Objects don't have equality, only identity
+#pp test_ (b === Bool)
+
+pp test_ (id(b) === id(Bool))
+
+## STDOUT:
+(Obj)   ("name":"Bool") --> ()
+(Obj)   ("name":"Int") --> ()
+(Obj)   ("name":"Float") --> ()
+(Obj)   ("name":"Str") --> ()
+
+(Bool)   true
+(Bool)   true
+## END
+
 #### runproc
 shopt --set parse_proc parse_at
 
@@ -270,3 +297,4 @@ pp value (repeat([123], 40)) | cat
     123, 123, 123, 123, 123, 123, 123, 123, 123, 123
 ]
 ## END
+
