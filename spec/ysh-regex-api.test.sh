@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 0
 
 #### s ~ regex and s !~ regex
 shopt -s ysh:upgrade
@@ -885,11 +885,11 @@ shopt --set ysh:upgrade
 
 var s = 'mystr'
 var pat = / 's' <capture dot> /
-var template = ^"[$x $0 $1 $x]"
-pp test_ (template)
 
 proc p {
   var x = 'x'
+  var template = ^"[$x $0 $1 $x]"
+  pp test_ (template)
   
   var new = s.replace(pat, template)
   echo 'replace  ' $new
@@ -904,6 +904,9 @@ proc p {
 p
 
 ## STDOUT:
+<Expr>
+replace   my[x st t x]r
+myreplace my[x st t x]r
 ## END
 
 #### Str.replace() lexical scope with ^[]
@@ -911,11 +914,11 @@ shopt --set ysh:upgrade
 
 var s = 'mystr'
 var pat = / 's' <capture dot> /
-var template = ^['[' ++ x ++ ' ' ++ $0 ++ ' ' ++ $1 ++ ' ' ++ x ++ ']']
-pp test_ (template)
 
 proc p {
   var x = 'x'
+  var template = ^['[' ++ x ++ ' ' ++ $0 ++ ' ' ++ $1 ++ ' ' ++ x ++ ']']
+  pp test_ (template)
   
   var new = s.replace(pat, template)
   echo 'replace  ' $new
@@ -930,4 +933,7 @@ proc p {
 p
 
 ## STDOUT:
+<Expr>
+replace   my[x st t x]r
+myreplace my[x st t x]r
 ## END

@@ -3,13 +3,18 @@
 
 #### captureStdout() is like $()
 
-var c = ^(echo one; echo two)
+proc p {
+  var captured = 'captured'
+  var cmd = ^(echo one; echo $captured)
+  
+  var stdout = io.captureStdout(cmd)
+  pp test_ (stdout)
+}
 
-var y = io.captureStdout(c)
-pp test_ (y)
+p
 
 ## STDOUT:
-(Str)   "one\ntwo"
+(Str)   "one\ncaptured"
 ## END
 
 #### captureStdout() failure
