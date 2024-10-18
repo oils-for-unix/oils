@@ -37,7 +37,8 @@ def ParseAndEval(code_str):
     mem = state.Mem('', [], arena, [])
     parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
     mem.exec_opts = exec_opts
-    state.InitMem(mem, {}, '0.1')
+    #state.InitMem(mem, {}, '0.1')
+    state.InitDefaultVars(mem)
 
     splitter = split.SplitContext(mem)
     errfmt = ui.ErrorFormatter()

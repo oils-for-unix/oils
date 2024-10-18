@@ -57,7 +57,7 @@ def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
     parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
     mem.exec_opts = exec_opts
 
-    state.InitMem(mem, {}, '0.1')
+    state.InitDefaultVars(mem)
     mutable_opts.Init()
 
     if not parse_ctx:

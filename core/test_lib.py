@@ -169,7 +169,7 @@ def InitWordEvaluator(exec_opts=None):
     if exec_opts is None:
         parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
         mem.exec_opts = exec_opts  # circular dep
-        state.InitMem(mem, {}, '0.1')
+        state.InitDefaultVars(mem)
         mutable_opts.Init()
     else:
         mutable_opts = None
@@ -204,7 +204,8 @@ def InitCommandEvaluator(parse_ctx=None,
     exec_opts = optview.Exec(opt0_array, opt_stacks)
     mutable_opts = state.MutableOpts(mem, opt0_array, opt_stacks, None)
     mem.exec_opts = exec_opts
-    state.InitMem(mem, {}, '0.1')
+    #state.InitMem(mem, {}, '0.1')
+    state.InitDefaultVars(mem)
     mutable_opts.Init()
 
     # No 'readline' in the tests.
@@ -323,7 +324,8 @@ def EvalCode(code_str, parse_ctx, comp_lookup=None, mem=None, aliases=None):
     parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
     mem.exec_opts = exec_opts
 
-    state.InitMem(mem, {}, '0.1')
+    #state.InitMem(mem, {}, '0.1')
+    state.InitDefaultVars(mem)
     mutable_opts.Init()
 
     line_reader, _ = InitLexer(code_str, arena)

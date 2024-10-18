@@ -66,7 +66,6 @@ yes
 yes
 ## END
 
-
 #### $HOME is NOT set
 case $SH in *zsh) echo 'zsh sets HOME'; exit ;; esac
 
@@ -88,6 +87,59 @@ status=1
 ## END
 ## BUG zsh STDOUT:
 zsh sets HOME
+## END
+
+#### Some vars are set, even without startup file, or env: PATH, PWD
+
+flags=''
+case $SH in
+  dash) exit ;;
+  bash*)
+    flags='--noprofile --norc --rcfile /devnull'
+    ;;
+  osh)
+    flags='--rcfile /devnull'
+    ;;
+esac
+
+sh_path=$(which $SH)
+
+case $sh_path in
+  */bin/osh)
+    # Hack for running with Python2
+    export PYTHONPATH="$REPO_ROOT:$REPO_ROOT/vendor"
+    sh_prefix="$(which python2) $REPO_ROOT/bin/oils_for_unix.py osh"
+    ;;
+  *)
+    sh_prefix=$sh_path
+    ;;
+esac
+
+#echo PATH=$PATH
+
+
+# mksh has typeset, not declare
+# bash exports PWD, but not PATH PS4
+
+/usr/bin/env -i PYTHONPATH=$PYTHONPATH $sh_prefix $flags -c 'typeset -p PATH PWD PS4' >&2
+echo status=$?
+
+/usr/bin/env -i PYTHONPATH=$PYTHONPATH $sh_prefix $flags -c 'typeset -p SHELLOPTS' >&2
+echo status=$?
+
+# hm bash doesn't set $HOME
+
+## STDOUT:
+status=0
+status=0
+## END
+
+## OK zsh STDOUT:
+status=0
+status=1
+## END
+
+## N-I dash STDOUT:
 ## END
 
 
@@ -643,3 +695,4 @@ seconds=0
 ## N-I dash STDOUT:
 seconds=
 ## END
+

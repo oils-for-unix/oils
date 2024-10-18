@@ -363,7 +363,14 @@ def Main(
     state.InitDefaultVars(mem)
 
     # TODO: consider turning on no_copy_env in YSH
+    #
+    # But we also need a way for $PATH to be set, because
+    # - PATH, PWD, SHELLOPTS could be special cases
+    #   - and then we need to copy them into new modules, like PS4?
+    #   - they are also exported?
+
     if exec_opts.no_copy_env():
+    #if 1:
         # Don't consult the environment
         mem.SetPwd(state.GetWorkingDir())
     else:
