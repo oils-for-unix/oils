@@ -5,52 +5,85 @@ default_highlighter: oils-sh
 Types in the Oils Runtime - OSH and YSH
 ===========
 
-This doc lists the type of values in the Oils runtime.
+Here are all types of values in the Oils runtime, organized for understanding.
 
 <div id="toc">
 </div> 
 
-## Seven Atoms
+## Eight Atoms
 
-These types are immutable:
+Values of these types are immutable:
 
-- `Null Str Int Float`
-- `Range`
-- `Eggex Match`
+- `Null`, `Str Int Float` - data types
+- `Range` - iteration over `3 .. 5`
+- `Eggex Match` - pattern matching
 
-Of these types, OSH only uses `Str`.  That is, the string type is the only type
-shared between OSH and YSH.
+A type with one value:
 
-## Four Mutable Containers
+- `Stdin` - used for buffered line I/O in the YSH `for` loop
 
-For YSH:
+<!--
+It seems like stdin could be a file descriptor, but that doesn't fit with the
+shell I/O model.  You always REDIRECT first, then read from stdin.  And you
+don't read incrementally from multiple files at once.
+-->
 
-- `List Dict`
+The `Str` type is the only type shared between OSH and YSH.
 
-For bash compatibility in OSH:
+<!--
 
-- `BashArray BashAssoc`
+These are variants of VALIDATED strings, with lazily materialized views?
+
+- value.{Htm8,Tsv8,Json8} ?
+
+-->
+
+## Five Mutable Types
+
+YSH containers:
+
+- `List Dict` - arbitrarily recursive
+
+A special YSH type for "out params":
+
+- `Place` - created by `&myvar`, and mutated by `call place->setValue(42)`
+
+Containers for bash compatibility in OSH:
+
+- `BashArray BashAssoc` - flat
 
 ## `Obj` is for User-defined Types
 
-- `Obj` 
+- `Obj` - has a prototype chain
 
 Objects allow **polymorphism**.  See [YSH Objects](objects.html).
 
+Modules and types are represented by `Obj` instances of a certain shape, not by
+primitive types.
+
+1. Modules are `Obj` with attributes, and an `__invoke__` method.
+1. Types are `Obj` with a `__str__` method, and are often compared for
+   identity.
+
+In general, Objects are mutable.  Do not mutate modules or types!
+
 ## Five Units of Code
+
+Values of these types are immutable:
 
 - `BoundFunc` (for methods)
 - `BuiltinFunc Func`
 - `BuiltinProc Proc`
 
-(These types are immutable)
+## Five Types for Reflection
 
-## Six Types for Reflection
+Values of these types are immutable:
 
 - `CommandFrag Command`, `ExprFrag Expr` (TODO)
-- `Place Frame`
 
-(These types are immutable)
+A handle to a stack frame:
+
+- `Frame` - implicitly mutable, by `setvar`, etc.
 
 ## Appendix
 
@@ -59,6 +92,17 @@ Objects allow **polymorphism**.  See [YSH Objects](objects.html).
 These types can be serialized to and from JSON:
 
 - `Null Str Int Float List Dict`
+
+### Why Isn't Everything an Object?
+
+In YSH, the `Obj` type is used for **polymorphism** and reflection.
+
+Polymorphism is when you hide **different** kinds of data behind the **same**
+interface.
+
+But most shell scripts deal with **concrete** textual data, which may be
+JSON-like or TSV-like.  The data is **not** hidden or encapsulated, and
+shouldn't be.
 
 ### Implementation Details
 
@@ -72,4 +116,5 @@ These types used internally:
 
 - [Types and Methods](ref/chap-type-method.html) in the [Oils
   Reference](ref/index.html)
+
 

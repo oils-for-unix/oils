@@ -330,6 +330,32 @@ Floating point numbers shouldn't be tested for equality.  Alternatives:
     = abs(42.0 - x) < 0.1
     = floatEquals(42.0, x) 
 
+### OILS-ERR-203
+
+<!--
+Generated with:
+test/ysh-runtime-errors.sh test-cannot-stringify-list
+-->
+
+```
+  var mylist = [1,2,3]; write $[mylist]
+                              ^~
+[ -c flag ]:1: fatal: Expr sub got a List, which can't be stringified (OILS-ERR-203)
+```
+
+- Did you mean to use `@mylist` instead of `$mylist`?
+- Did you mean to use `@[myfunc()]` instead of `$[myfunc()]`?
+- Did you mean `$[join(mylist)]`?
+
+Or:
+
+- Do you have an element that can't be stringified in a list, like `['good',
+  {bad: true}]`?
+
+
+<!-- TODO -->
+
+
 ## Appendix
 
 ### Kinds of Errors from Oils

@@ -84,14 +84,23 @@ def ToCommandFrag(val, msg, blame_loc):
     raise error.TypeErr(val, msg, blame_loc)
 
 
-def Stringify(val, blame_loc, prefix=''):
+def Stringify(val, blame_loc, op_desc):
     # type: (value_t, loc_t, str) -> str
     """
-    Used by
+    Args:
+      op_desc: could be empty string ''
+               or 'Expr Sub ' or 'Expr Splice ', with trailing space
 
-    $[x]    stringify operator
-    @[x]    expression splice - each element is stringified
-    @x      splice value
+    Used by:
+
+      $[x]    Expr Sub - stringify operator
+      @[x]    Expr splice - each element is stringified
+      @x      Splice value
+
+      str()         Builtin function
+      join()        Each element is stringified, e.g. join([1,2])
+                    Not sure I like join([null, true]), but it's consistent
+      Str.replace() ^"x = $x" after eggex conversion function
     """
     if blame_loc is None:
         blame_loc = loc.Missing
@@ -126,14 +135,16 @@ def Stringify(val, blame_loc, prefix=''):
             val = cast(value.Eggex, UP_val)
             s = regex_translate.AsPosixEre(val)  # lazily converts to ERE
 
-        elif case(value_e.List):
-            raise error.TypeErrVerbose(
-                "%sgot a List, which can't be stringified. Perhaps use @ instead of $, or use join()"
-                % prefix, blame_loc)
-
         else:
+            if val.tag() == value_e.List:
+                # Special error message for using the wrong sigil, or maybe join
+                raise error.TypeErrVerbose(
+                    "%sgot a List, which can't be stringified (OILS-ERR-203)" %
+                    op_desc, blame_loc)
+
             raise error.TypeErr(
-                val, "%sexpected Null, Bool, Int, Float, Eggex" % prefix,
+                val,
+                "%sexpected one of (Null Bool Int Float Str Eggex)" % op_desc,
                 blame_loc)
 
     return s
@@ -158,7 +169,7 @@ def ToShellArray(val, blame_loc, prefix=''):
             # Note: it would be nice to add the index to the error message
             # prefix, WITHOUT allocating a string for every item
             for item in val.items:
-                strs.append(Stringify(item, blame_loc, prefix=prefix))
+                strs.append(Stringify(item, blame_loc, prefix))
 
         # I thought about getting rid of this to keep OSH and YSH separate,
         # but:

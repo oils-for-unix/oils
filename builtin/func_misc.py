@@ -135,6 +135,11 @@ class Type(vm._Callable):
         val = rd.PosValue()
         rd.Done()
 
+        # TODO: assert it's not Undef, Interrupted, Slice
+        # Then return an Obj type
+        #
+        # It would be nice if they were immutable, if we didn't have to create
+        # 23-24 dicts and 23-24 Obj on startup?
         return value.Str(ui.ValType(val))
 
 
@@ -154,7 +159,7 @@ class Join(vm._Callable):
 
         strs = []  # type: List[str]
         for i, el in enumerate(li):
-            strs.append(val_ops.Stringify(el, rd.LeftParenToken()))
+            strs.append(val_ops.Stringify(el, rd.LeftParenToken(), 'join() '))
 
         return value.Str(delim.join(strs))
 
@@ -287,23 +292,13 @@ class Str_(vm._Callable):
         val = rd.PosValue()
         rd.Done()
 
-        # TODO: Should we call Stringify here?  That would handle Eggex.
-
-        UP_val = val
         with tagswitch(val) as case:
-            if case(value_e.Int):
-                val = cast(value.Int, UP_val)
-                return value.Str(mops.ToStr(val.i))
-
-            elif case(value_e.Float):
-                val = cast(value.Float, UP_val)
-                return value.Str(str(val.f))
-
-            elif case(value_e.Str):
+            # Avoid extra allocation
+            if case(value_e.Str):
                 return val
-
-        raise error.TypeErr(val, 'str() expected Str, Int, or Float',
-                            rd.BlamePos())
+            else:
+                s = val_ops.Stringify(val, rd.LeftParenToken(), 'str() ')
+                return value.Str(s)
 
 
 class List_(vm._Callable):

@@ -407,8 +407,7 @@ class Replace(vm._Callable):
         if eggex_val:
             if '\0' in string:
                 raise error.Structured(
-                    3,
-                    "cannot replace by eggex on a string with NUL bytes",
+                    3, "cannot replace by eggex on a string with NUL bytes",
                     rd.LeftParenToken())
 
             ere = regex_translate.AsPosixEre(eggex_val)
@@ -449,7 +448,7 @@ class Replace(vm._Callable):
                     # strings. Furthermore, they can only be used in string
                     # contexts
                     #   eg. "$[1]" != "$1".
-                    val_str = val_ops.Stringify(val, rd.LeftParenToken())
+                    val_str = val_ops.Stringify(val, rd.LeftParenToken(), '')
                     if group == 0:
                         arg0 = val_str
                     else:
@@ -472,8 +471,7 @@ class Replace(vm._Callable):
                 end = indices[1]
                 if pos == end:
                     raise error.Structured(
-                        3,
-                        "eggex should never match the empty string",
+                        3, "eggex should never match the empty string",
                         rd.LeftParenToken())
 
                 parts.append(string[pos:start])  # Unmatched substring
@@ -523,7 +521,8 @@ class Split(vm._Callable):
                 string_sep = string_sep_.s
 
             else:
-                raise error.TypeErr(sep, 'expected separator to be Eggex or Str',
+                raise error.TypeErr(sep,
+                                    'expected separator to be Eggex or Str',
                                     rd.LeftParenToken())
 
         count = mops.BigTruncate(rd.NamedInt("count", -1))

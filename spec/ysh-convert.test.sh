@@ -90,13 +90,29 @@ inf
 ## END
 
 #### str() conversion
-echo "$[str(1234)]"
-echo "$[str(1.234)]"
-echo "$[str('foo')]"
+echo $[str(1234)]
+echo $[str(1.234)]
+echo $[str('foo')]
+
+echo
+
+# Added with Stringify()
+
+echo $[str(true)]
+echo $[str(null)]
+echo $[str(/d+/)]
+
+echo $[str([1,2,3])]
+
+## status: 3
 ## STDOUT:
 1234
 1.234
 foo
+
+true
+null
+[[:digit:]]+
 ## END
 
 #### dict() converts from BashAssoc to Dict

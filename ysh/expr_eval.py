@@ -392,13 +392,12 @@ class ExprEvaluator(object):
 
         with switch(part.left.id) as case:
             if case(Id.Left_DollarBracket):  # $[join(x)]
-                s = val_ops.Stringify(val, loc.WordPart(part))
+                s = val_ops.Stringify(val, loc.WordPart(part), 'Expr sub ')
                 return Piece(s, False, False)
 
             elif case(Id.Lit_AtLBracket):  # @[split(x)]
-                strs = val_ops.ToShellArray(val,
-                                            loc.WordPart(part),
-                                            prefix='Expr splice ')
+                strs = val_ops.ToShellArray(val, loc.WordPart(part),
+                                            'Expr splice ')
                 return part_value.Array(strs)
 
             else:

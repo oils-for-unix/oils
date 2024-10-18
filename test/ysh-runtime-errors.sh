@@ -69,8 +69,6 @@ test-ysh-word-eval() {
   # this should be consistent
   _ysh-expr-error 'source $LIB_YSH/math.ysh; write -- @[identity([{key: "val"}])]'
 
-  _ysh-expr-error 'const x = [1, 2]; echo $x'
-
   _ysh-should-run 'var x = [1, 2]; write @x'
 
   # errors in items
@@ -82,6 +80,24 @@ test-ysh-word-eval() {
   _ysh-expr-error 'var x = /d+/; write @x'
 
   _ysh-expr-error 'var x = /d+/; write @[x]'
+}
+
+# Continuation of above
+test-cannot-stringify-list() {
+  # List can't be stringified
+  _ysh-expr-error 'var mylist = [1,2,3]; write $mylist'
+  _ysh-expr-error 'var mylist = [1,2,3]; write $[mylist]'
+
+  _ysh-should-run '= str(/d+/)'
+
+  _ysh-expr-error '= str([1,2])'
+  _ysh-expr-error '= str({})'
+
+  # Not sure if I like this join() behavior
+  _ysh-should-run '= join([true, null])'
+
+  # Bad error
+  _ysh-expr-error '= join([[1,2], null])'
 }
 
 test-ysh-expr-eval() {

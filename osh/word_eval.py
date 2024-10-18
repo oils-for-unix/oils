@@ -234,10 +234,10 @@ def _ValueToPartValue(val, quoted, part_loc):
             return part_value.Array(val.d.values())
 
         # Cases added for YSH
-        # value_e.List is also here - we use val_ops.stringify()s err message
+        # value_e.List is also here - we use val_ops.Stringify()s err message
         elif case(value_e.Null, value_e.Bool, value_e.Int, value_e.Float,
                   value_e.Eggex, value_e.List):
-            s = val_ops.Stringify(val, loc.Missing)
+            s = val_ops.Stringify(val, loc.Missing, 'Word eval ')
             return Piece(s, quoted, not quoted)
 
         else:

@@ -89,9 +89,9 @@ module value
     # OSH/Bash types
     #
 
-    # Methods on state.Mem return value.Undef, but it's not visible in YSH.
-    # A var bound to Undef is different than no binding because of dynamic
-    # scope.  Undef can shadow values lower on the stack.
+    # Methods on state::Mem return value.Undef, but it's not visible in YSH.
+    # Note: A var bound to Undef is different than no binding because of
+    # dynamic scope.  Undef can shadow values lower on the stack.
   | Undef
 
   | Str(str s)
@@ -104,8 +104,8 @@ module value
 
   | BashAssoc(Dict[str, str] d)
 
-    # DATA model for YSH follows JSON.  Note: YSH doesn't have 'undefined' and
-    # 'null' like JavaScript, just 'null'.
+    # The DATA model for YSH follows JSON.  Note: YSH doesn't have 'undefined'
+    # and 'null' like JavaScript, just 'null'.
   | Null
   | Bool(bool b)
   | Int(BigInt i)
@@ -113,8 +113,12 @@ module value
   | List(List[value] items)
   | Dict(Dict[str, value] d)
 
-    # for polymorphism - should replace value.{IO,Module} too
-    # because they have attributes (functions), methods - not just methods
+    # Possible types
+    # value.Htm8 - a string that can be queried, with lazily materialized "views"
+    # value.Tsv8 - ditto
+    # value.Json8 - some kind of jq or JSONPath query language
+
+    # Objects are for for polymorphism
   | Obj %Obj
 
     # for i in (0 .. n) { echo $i }  # both ends are required
