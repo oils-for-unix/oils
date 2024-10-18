@@ -602,7 +602,7 @@ def Main(
     # - type(x) should return these Obj, or perhaps typeObj(x)
 
     type_obj_methods = Obj(None, {})
-    for tag in (value_e.Bool, value_e.Int, value_e.Float, value_e.Str):
+    for tag in [value_e.Bool, value_e.Int, value_e.Float, value_e.Str]:
         type_name = value_str(tag, dot=False)
         #log('%s %s' , type_name, tag)
         type_obj = Obj(type_obj_methods, {'name': value.Str(type_name)})
