@@ -1,5 +1,45 @@
 ## oils_failures_allowed: 0
 
+#### Simple Expr Closure
+shopt --set ysh:upgrade
+
+proc my-expr (; expr) {
+  echo $[io->evalExpr(expr)]
+}
+
+proc p {
+  var i = 42
+  my-expr [i + 1]
+}
+
+p
+
+## STDOUT:
+43
+## END
+
+#### Simple Block Closure
+shopt --set ysh:upgrade
+
+shopt --set ysh:upgrade
+
+proc my-expr (; ; ; block) {
+  call io->eval(block)
+}
+
+proc p {
+  var i = 42
+  my-expr {
+    echo $[i + 1]
+  }
+}
+
+p
+
+## STDOUT:
+43
+## END
+
 #### Expr Closures in a Loop !
 shopt --set ysh:upgrade
 

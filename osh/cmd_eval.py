@@ -2117,11 +2117,12 @@ class CommandEvaluator(object):
         """
         return self._Execute(frag)  # can raise FatalRuntimeError, etc.
 
-    def EvalCommand(self, cmd):
-        # type: (value.Command) -> int
-        frag = typed_args.GetCommandFrag(cmd)
-        with state.ctx_EnclosedFrame(self.mem, cmd.captured_frame, None):
-            return self.EvalCommandFrag(frag)
+    if 0:
+        def EvalCommandClosure(self, cmd):
+            # type: (value.Command) -> int
+            frag = typed_args.GetCommandFrag(cmd)
+            with state.ctx_EnclosedFrame(self.mem, cmd.captured_frame, None):
+                return self.EvalCommandFrag(frag)
 
     def RunTrapsOnExit(self, mut_status):
         # type: (IntParamBox) -> None
