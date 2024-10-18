@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 ## compare_shells: dash bash-4.4 mksh zsh
 
 
@@ -128,35 +128,88 @@ echo path pwd ps4 $?
 echo shellopts $?
 
 # bash doesn't set HOME, mksh and zsh do
-/usr/bin/env -i PYTHONPATH=$PYTHONPATH $sh_prefix $flags -c 'typeset -p HOME' >&2
-echo home $?
+/usr/bin/env -i PYTHONPATH=$PYTHONPATH $sh_prefix $flags -c 'typeset -p HOME PS4' >&2
+echo home ps1 $?
 
 # bash doesn't set PS1, mksh and zsh do
-/usr/bin/env -i PYTHONPATH=$PYTHONPATH $sh_prefix $flags -c 'typeset -p PS1' >&2
-echo ps1 $?
+/usr/bin/env -i PYTHONPATH=$PYTHONPATH $sh_prefix $flags -c 'typeset -p IFS' >&2
+echo ifs $?
 
 ## STDOUT:
 path pwd ps4 0
 shellopts 0
-home 1
-ps1 1
+home ps1 1
+ifs 0
 ## END
 
 ## OK mksh STDOUT:
 path pwd ps4 0
 shellopts 0
-home 0
-ps1 0
+home ps1 0
+ifs 0
 ## END
 
 ## OK zsh STDOUT:
 path pwd ps4 0
 shellopts 1
-home 0
-ps1 0
+home ps1 0
+ifs 0
 ## END
 
 ## N-I dash STDOUT:
+## END
+
+#### UID EUID PPID can't be changed
+
+# bash makes these 3 read-only
+{
+  UID=xx $SH -c 'echo uid=$UID'
+
+  EUID=xx $SH -c 'echo euid=$EUID'
+
+  PPID=xx $SH -c 'echo ppid=$PPID'
+
+} > out.txt
+
+# bash shows that vars are readonly
+# zsh shows other errors
+# cat out.txt
+#echo
+
+grep '=xx' out.txt
+echo status=$?
+
+## STDOUT:
+status=1
+## END
+## BUG dash/mksh STDOUT:
+uid=xx
+euid=xx
+status=0
+## END
+
+#### HOSTNAME OSTYPE can be changed
+case $SH in zsh) exit ;; esac
+
+#$SH -c 'echo hostname=$HOSTNAME'
+
+HOSTNAME=x $SH -c 'echo hostname=$HOSTNAME'
+OSTYPE=x $SH -c 'echo ostype=$OSTYPE'
+echo
+
+#PS4=x $SH -c 'echo ps4=$PS4'
+
+# OPTIND is special
+#OPTIND=xx $SH -c 'echo optind=$OPTIND'
+
+
+## STDOUT:
+hostname=x
+ostype=x
+
+## END
+
+## BUG zsh STDOUT:
 ## END
 
 

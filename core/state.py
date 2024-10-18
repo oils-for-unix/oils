@@ -853,15 +853,21 @@ def _AddCallToken(d, token):
 def InitDefaultVars(mem):
     # type: (Mem) -> None
 
+    # These 3 are special, can't be changed
+    SetGlobalString(mem, 'UID', str(posix.getuid()))
+    SetGlobalString(mem, 'EUID', str(posix.geteuid()))
+    SetGlobalString(mem, 'PPID', str(posix.getppid()))
+
+    # For getopts builtin - meant to be read, not changed
+    SetGlobalString(mem, 'OPTIND', '1')
+
+    # These can be changed.  Could go AFTER environment, e.g. in
+    # InitVarsAfterEnv().
+
     # Default value; user may unset it.
     # $ echo -n "$IFS" | python -c 'import sys;print repr(sys.stdin.read())'
     # ' \t\n'
     SetGlobalString(mem, 'IFS', split.DEFAULT_IFS)
-
-    # NOTE: Should we put these in a var_frame for Oil?
-    SetGlobalString(mem, 'UID', str(posix.getuid()))
-    SetGlobalString(mem, 'EUID', str(posix.geteuid()))
-    SetGlobalString(mem, 'PPID', str(posix.getppid()))
 
     SetGlobalString(mem, 'HOSTNAME', libc.gethostname())
 
@@ -869,9 +875,6 @@ def InitDefaultVars(mem):
     # for 'darwin' and 'freebsd' too.  They generally don't like at 'gnu' or
     # 'musl'.  We don't have that info, so just make it 'linux'.
     SetGlobalString(mem, 'OSTYPE', pyos.OsType())
-
-    # For getopts builtin
-    SetGlobalString(mem, 'OPTIND', '1')
 
     # When xtrace_rich is off, this is just like '+ ', the shell default
     SetGlobalString(mem, 'PS4', '${SHX_indent}${SHX_punct}${SHX_pid_str} ')
@@ -906,7 +909,7 @@ def InitVarsAfterEnv(mem):
     val = mem.GetValue('SHELLOPTS')
     if val.tag() == value_e.Undef:
         SetGlobalString(mem, 'SHELLOPTS', '')
-    # Now make it readonly
+    # It's readonly, even if it's not set
     mem.SetNamed(location.LName('SHELLOPTS'),
                  None,
                  scope_e.GlobalOnly,
@@ -915,15 +918,15 @@ def InitVarsAfterEnv(mem):
     val = mem.GetValue('PWD')
     if val.tag() == value_e.Undef:
         SetGlobalString(mem, 'PWD', GetWorkingDir())
-    # Mark it exported, no matter what.  This is one of few variables EXPORTED.
-    # bash and dash both do it.  (e.g. env -i -- dash -c env)
+    # It's exported, even if it's not set.  bash and dash both do this:
+    #     env -i -- dash -c env
     mem.SetNamed(location.LName('PWD'),
                  None,
                  scope_e.GlobalOnly,
                  flags=SetExport)
 
-    # MUTABLE GLOBAL that's SEPARATE from $PWD.  Used by the 'pwd' builtin, but
-    # it can't be modified by users.
+    # Set a MUTABLE GLOBAL that's SEPARATE from $PWD.  It's used by the 'pwd'
+    # builtin, and it can't be modified by users.
     val = mem.GetValue('PWD')
     assert val.tag() == value_e.Str, val
     pwd = cast(value.Str, val).s
