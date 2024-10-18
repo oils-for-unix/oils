@@ -476,17 +476,6 @@ Given a code string, parse it as an expression.
 
 Returns a `value.Expr` instance, or raises an error.
 
-### `evalExpr()`
-
-Given a an expression quotation, evaluate it and return its value:
-
-    $ var expr = ^[1 + 2]  
-
-    $ = evalExpr(expr)
-    3
-
-<!-- TODO: io.evalExpr() -->
-
 ## Hay Config
 
 ### parseHay()

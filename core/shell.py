@@ -572,6 +572,8 @@ def Main(
         method_io.Eval(mem, cmd_ev, method_io.EVAL_DICT))
     io_methods['M/evalInFrame'] = value.BuiltinFunc(
         method_io.EvalInFrame(mem, cmd_ev))
+    io_methods['M/evalExpr'] = value.BuiltinFunc(
+        func_reflect.EvalExpr(expr_ev))
 
     # Identical to command sub
     io_methods['captureStdout'] = value.BuiltinFunc(
@@ -897,7 +899,6 @@ def Main(
                     func_reflect.ParseCommand(parse_ctx, mem, errfmt))
     _AddBuiltinFunc(mem, 'parseExpr',
                     func_reflect.ParseExpr(parse_ctx, errfmt))
-    _AddBuiltinFunc(mem, 'evalExpr', func_reflect.EvalExpr(expr_ev))
 
     _AddBuiltinFunc(mem, 'shvarGet', func_reflect.Shvar_get(mem))
     _AddBuiltinFunc(mem, 'getVar', func_reflect.GetVar(mem))

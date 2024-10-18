@@ -639,17 +639,17 @@ echo $x
 var e = ^[1 + 2]
 
 echo type=$[type(e)]
-echo $[evalExpr(e)]
+echo $[io->evalExpr(e)]
 
 var e = ^[2 < 1]
-echo $[evalExpr(e)]
+echo $[io->evalExpr(e)]
 
 var x = 42
 var e = ^[42 === x and true]
-echo $[evalExpr(e)]
+echo $[io->evalExpr(e)]
 
 var mylist = ^[3, 4]
-pp test_ (evalExpr(mylist))
+pp test_ (io->evalExpr(mylist))
 
 ## STDOUT:
 type=Expr
@@ -662,7 +662,7 @@ true
 #### No list comprehension in ^[]
 
 var mylist = ^[x for x in y]  
-pp test_ (evalExpr(mylist))
+pp test_ (io->evalExpr(mylist))
 
 ## status: 2
 ## STDOUT:
@@ -671,7 +671,7 @@ pp test_ (evalExpr(mylist))
 
 #### expression literals, evaluation failure
 var e = ^[1 / 0]
-call evalExpr(e)
+call io->evalExpr(e)
 ## status: 3
 ## STDOUT:
 ## END
@@ -681,7 +681,7 @@ var x = 0
 var e = ^[x]
 
 setvar x = 1
-echo result=$[evalExpr(e)]
+echo result=$[io->evalExpr(e)]
 ## STDOUT:
 result=1
 ## END
@@ -691,7 +691,7 @@ var x = 0
 var e = ^"x is $x"
 
 setvar x = 1
-echo result=$[evalExpr(e)]
+echo result=$[io->evalExpr(e)]
 ## STDOUT:
 result=x is 1
 ## END

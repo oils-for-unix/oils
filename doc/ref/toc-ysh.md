@@ -62,6 +62,7 @@ X [Func]           name()         location()     toJson()
 X [Proc]           name()         location()     toJson()
   [IO]             stdin          eval()         evalToDict()
                    captureStdout()
+                   evalExpr()
                    promptVal()
                  X time()       X strftime()   X glob()
   [Obj]            __invoke__   X __call__     X __str__
@@ -91,8 +92,7 @@ X [J8 Decode]     J8.Bool()         J8.Int()        ...
   [Pattern]       _group()          _start()        _end()
   [Introspection] id()
                   shvarGet()        getVar()        setVar()  
-                  parseCommand()  X parseExpr()     evalExpr()
-                X bindFrame()
+                  parseCommand()  X parseExpr()   X bindFrame()
   [Hay Config]    parseHay()        evalHay()
 X [Hashing]       sha1dc()          sha256()
 ```

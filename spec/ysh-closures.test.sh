@@ -22,7 +22,7 @@ var exprs = makeTasks()
 #= blocks
 
 for ex in (exprs) {
-  var s = evalExpr(ex)
+  var s = io->evalExpr(ex)
   echo $s
 }
 

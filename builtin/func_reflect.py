@@ -215,6 +215,7 @@ class EvalExpr(vm._Callable):
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
+        unused_self = rd.PosObj()
         lazy = rd.PosExpr()
         rd.Done()
 

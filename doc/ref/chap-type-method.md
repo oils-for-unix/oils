@@ -614,6 +614,21 @@ with `try`.
       var s = _io->captureStdout(c)
     }
 
+### evalExpr()
+
+Given an `Expr` value, evaluate it and return its value:
+
+    $ var i = 42
+    $ var expr = ^[i + 1] 
+
+    $ = io->evalExpr(expr)
+    43
+
+Examples of expressions that have effects:
+
+- `^[ myplace->setValue(42) ]` - memory operation
+- `^[ $(echo 42 > hi) ]` - I/O operation
+
 ### promptVal()
 
 An API the wraps the `$PS1` language.  For example, to simulate `PS1='\w\$ '`:
