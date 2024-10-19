@@ -744,7 +744,7 @@ class ExprEvaluator(object):
                 result = left is not right
 
             elif op.id == Id.Expr_DTilde:
-                # no extglob in Oil language; use eggex
+                # no extglob in YSH; use eggex
                 if left.tag() != value_e.Str:
                     raise error.TypeErrVerbose('LHS must be Str', op)
 

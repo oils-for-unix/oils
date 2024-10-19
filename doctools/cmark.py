@@ -467,7 +467,7 @@ def main(argv):
 
     meta = dict(DEFAULT_META)
 
-    if len(argv) == 3:  # It's Oil documentation
+    if len(argv) == 3:  # It's Oils documentation
         with open(argv[1]) as f:
             meta.update(json.load(f))
 

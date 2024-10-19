@@ -226,7 +226,7 @@ class MemTest(unittest.TestCase):
         self.assertEqual(True, mem.var_stack[0]['r2'].readonly)
 
         # export -n PYTHONPATH
-        # Remove the exported property.  NOTE: scope is LocalOnly for Oil?
+        # Remove the exported property.  NOTE: scope is LocalOnly for YSH?
         self.assertEqual(True, mem.var_stack[0]['PYTHONPATH'].exported)
         mem.ClearFlag('PYTHONPATH', state.ClearExport)
         self.assertEqual(False, mem.var_stack[0]['PYTHONPATH'].exported)

@@ -390,7 +390,7 @@ def MakeOpts(mem, opt_hook):
     # Unusual representation: opt0_array + opt_stacks.  For two features:
     #
     # - POSIX errexit disable semantics
-    # - Oil's shopt --set nullglob { ... }
+    # - YSH shopt --set nullglob { ... }
     #
     # We could do it with a single List of stacks.  But because shopt --set
     # random_option { ... } is very uncommon, we optimize and store the ZERO
@@ -435,7 +435,7 @@ def _AnyOptionNum(opt_name):
     if opt_num == 0:
         e_usage('got invalid option %r' % opt_name, loc.Missing)
 
-    # Note: we relaxed this for Oil so we can do 'shopt --unset errexit' consistently
+    # Note: we relaxed this for YSH so we can do 'shopt --unset errexit' consistently
     #if opt_num not in consts.SHOPT_OPTION_NUMS:
     #  e_usage("doesn't own option %r (try 'set')" % opt_name)
 
@@ -471,7 +471,7 @@ class MutableOpts(object):
 
         # This comes after all the 'set' options.
         UP_shellopts = self.mem.GetValue('SHELLOPTS')
-        # Always true in Oil, see Init above
+        # Always true in YSH, see Init above
         if UP_shellopts.tag() == value_e.Str:
             shellopts = cast(value.Str, UP_shellopts)
             self._InitOptionsFromEnv(shellopts.s)
@@ -570,7 +570,7 @@ class MutableOpts(object):
         """Set the errexit flag, possibly deferring it.
 
         Implements the unusual POSIX "defer" behavior.  Callers: set -o
-        errexit, shopt -s oil:all, oil:upgrade
+        errexit, shopt -s ysh:all, ysh:upgrade
         """
         #log('Set %s', b)
 
@@ -663,7 +663,7 @@ class MutableOpts(object):
         # type: (str, bool) -> None
         """For shopt -s/-u and sh -O/+O."""
 
-        # shopt -s all:oil turns on all Oil options, which includes all strict #
+        # shopt -s ysh:all turns on all YSH options, which includes all strict
         # options
         opt_group = consts.OptionGroupNum(opt_name)
         if opt_group == opt_group_i.YshUpgrade:
@@ -2106,7 +2106,7 @@ class Mem(object):
         # STRICTNESS / SANENESS:
         #
         # 1) Don't create arrays automatically, e.g. a[1000]=x
-        # 2) Never change types?  yeah I think that's a good idea, at least for oil
+        # 2) Never change types?  yeah I think that's a good idea, at least for YSH
         # (not sh, for compatibility).  set -o strict_types or something.  That
         # means arrays have to be initialized with let arr = [], which is fine.
         # This helps with stuff like IFS.  It starts off as a string, and assigning
@@ -2133,7 +2133,7 @@ class Mem(object):
                 # There is no syntax 'declare a[x]'
                 assert val is not None, val
 
-                # TODO: relax this for Oil
+                # TODO: relax this for YSH
                 assert val.tag() == value_e.Str, val
                 rval = cast(value.Str, val)
 
@@ -2180,8 +2180,6 @@ class Mem(object):
                             # Fill it in with None.  It could look like this:
                             # ['1', 2, 3, None, None, '4', None]
                             # Then ${#a[@]} counts the entries that are not None.
-                            #
-                            # TODO: strict_array for Oil arrays won't auto-fill.
                             n = index - len(strs) + 1
                             for i in xrange(n):
                                 strs.append(None)
@@ -2267,7 +2265,7 @@ class Mem(object):
                 if len(self.this_dir) == 0:
                     # e.g. osh -c '' doesn't have it set
                     # Should we give a custom error here?
-                    # If you're at the interactive shell, 'source mymodule.oil' will still
+                    # If you're at the interactive shell, 'source mymodule.ysh' will still
                     # work because 'source' sets it.
                     return value.Undef
                 else:

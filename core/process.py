@@ -79,7 +79,7 @@ NO_FD = -1
 # Minimum file descriptor that the shell can use.  Other descriptors can be
 # directly used by user programs, e.g. exec 9>&1
 #
-# Oil uses 100 because users are allowed TWO digits in frontend/lexer_def.py.
+# Oils uses 100 because users are allowed TWO digits in frontend/lexer_def.py.
 # This is a compromise between bash (unlimited, but requires crazy
 # bookkeeping), and dash/zsh (10) and mksh (24)
 _SHELL_MIN_FD = 100

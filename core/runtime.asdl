@@ -70,20 +70,27 @@ module runtime
 
   # Where scopes are used
   # Shopt: to respect shopt -u dynamic_scope.
-  #   Dynamic -> LocalOrGlobal for reading
-  #   Dynamic -> LocalOnly for writing.
+  #   GetValue: Dynamic or LocalOrGlobal
+  #   SetValue: Dynamic or LocalOnly
   # Dynamic:
   #   GetValue: Shell Style
   #   SetValue: Shell Style
   # LocalOrGlobal:
-  #   GetValue: Oil style
+  #   GetValue: YSH style
   #   SetValue: N/A
   # LocalOnly:
   #   GetValue: N/A, we can always READ globals
   #   SetValue: setvar, parameter bindings, for loop iterator vars
   # GlobalOnly:
   #   GetValue: N/A
-  #   SetValue: internal use in COMPREPLY, and Oil's 'setglobal' keyword
+  #   SetValue: internal use in COMPREPLY, and YSH 'setglobal' keyword
+
+  # TODO: Avoid mutating __builtins__?  This could be illegal:
+  #
+  #   setvar io.glob = 'foo'
+  #
+  # Instead of LocalOnly, GlobalOnly, have MutateLocalOnly, MutateGlobalOnly?
+  # So they don't find the 'io' or 'vm' builtin Objs
 
   scope = Shopt | Dynamic | LocalOrGlobal | LocalOnly | GlobalOnly
 

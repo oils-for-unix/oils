@@ -143,7 +143,7 @@ class HtmlOutput(ColorOutput):
         self.f.write("""
 <html>
   <head>
-     <title>oil AST</title>
+     <title>Oils AST</title>
      <style>
       .n { color: brown }
       .s { font-weight: bold }

@@ -291,7 +291,7 @@ def e_usage(msg, location):
     """Convenience wrapper for arg parsing / validation errors.
 
     Usually causes a builtin to fail with status 2, but the script can continue
-    if 'set +o errexit'.  Main programs like bin/oil also use this.
+    if 'set +o errexit'.  Main programs like bin/ysh also use this.
 
     Caught by
 

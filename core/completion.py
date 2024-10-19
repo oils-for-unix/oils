@@ -14,7 +14,7 @@ Completion should run in threads?  For two reasons:
 
 - Completion can be slow -- e.g. completion for distributed resources
 - Because readline has a weird interface, and then you can implement
-  "iterators" in C++ or oil.  They just push onto a PIPE.  Use a netstring
+  "iterators" in C++ or YSH.  They just push onto a PIPE.  Use a netstring
   protocol and self-pipe?
 - completion can be in another process anyway?
 

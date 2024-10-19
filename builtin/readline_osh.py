@@ -59,7 +59,7 @@ class History(vm._Builtin):
         # zsh -c 'history' produces an error.
         readline = self.readline
         if not readline:
-            e_usage("is disabled because Oil wasn't compiled with 'readline'",
+            e_usage("is disabled because Oils wasn't compiled with 'readline'",
                     loc.Missing)
 
         attrs, arg_r = flag_util.ParseCmdVal('history', cmd_val)

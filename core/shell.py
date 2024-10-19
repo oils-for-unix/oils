@@ -1030,7 +1030,7 @@ def Main(
         else:
             rc_paths.append(rc_path)
 
-        # Load all files in ~/.config/oil/oshrc.d or oilrc.d
+        # Load all files in ~/.config/oils/oshrc.d or oilrc.d
         # This way "installers" can avoid mutating oshrc directly
 
         rc_dir = flag.rcdir
