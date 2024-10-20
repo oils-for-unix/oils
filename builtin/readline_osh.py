@@ -64,7 +64,9 @@ class Bind(vm._Builtin):
             
         
         arg = arg_types.bind(attrs.attrs)
-        print(arg)
+        # print("arg:\n", arg)
+        # print("dir(arg):\n", dir(arg))
+        # print("arg.f:\n", arg.f)
         
         if arg.m:
             print("Using keymap: " + arg.m)
@@ -90,9 +92,36 @@ class Bind(vm._Builtin):
         if arg.V:
             readline.variable_dumper(False)
             
-        self.errfmt.Print_("warning: bind isn't implemented",
-                           blame_loc=cmd_val.arg_locs[0])
-        return 1
+        if arg.f:
+            # print("Initializing bind from %s" % arg.f)
+            readline.read_init_file(arg.f)
+
+        if arg.q:
+            self.errfmt.Print_("warning: bind -q isn't implemented",
+                            blame_loc=cmd_val.arg_locs[0])
+            return 1
+
+        if arg.u:
+            self.errfmt.Print_("warning: bind -u isn't implemented",
+                            blame_loc=cmd_val.arg_locs[0])
+            return 1
+
+        if arg.r:
+            self.errfmt.Print_("warning: bind -r isn't implemented",
+                            blame_loc=cmd_val.arg_locs[0])
+            return 1
+
+        if arg.x:
+            self.errfmt.Print_("warning: bind -x isn't implemented",
+                            blame_loc=cmd_val.arg_locs[0])
+            return 1
+        
+        if arg.X:
+            self.errfmt.Print_("warning: bind -X isn't implemented",
+                            blame_loc=cmd_val.arg_locs[0])
+            return 1
+
+        return 0
 
 
 class History(vm._Builtin):
