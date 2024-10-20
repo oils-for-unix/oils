@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.syntax_asdl import loc
-from core.error import e_usage
+from _devbuild.gen.value_asdl import value, value_e
 from core import pyutil
 from core import vm
 from frontend import flag_util
@@ -28,6 +28,7 @@ class Bind(vm._Builtin):
         # type: (Optional[Readline], ui.ErrorFormatter) -> None
         self.readline = readline
         self.errfmt = errfmt
+        self.exclusive_flags = ["q", "u", "r", "x", "f"]
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -38,9 +39,29 @@ class Bind(vm._Builtin):
         
         attrs, arg_r = flag_util.ParseCmdVal('bind', cmd_val)
         
-        print(attrs)
-        print(attrs.attrs)
-        print(arg_r)
+        # print("attrs:\n", attrs)
+        # print("attrs.attrs:\n", attrs.attrs)
+        # print("attrs.attrs.f:\n", attrs.attrs["f"])
+        # print("type(attrs.attrs[f]):\n", type(attrs.attrs["f"]))
+        # print("attrs.attrs[f].tag() :\n", attrs.attrs["f"].tag())
+        # print("attrs.attrs[f].tag() == value_e.Undef:\n", attrs.attrs["f"].tag() == value_e.Undef)
+        # print(arg_r)
+        # print("Reader argv=%s n=%i i=%i" % (arg_r.argv, arg_r.n, arg_r.i))
+        
+        # Check mutually-exclusive flags and non-flag args
+        found = False
+        for flag in self.exclusive_flags:
+            if flag in attrs.attrs and attrs.attrs[flag].tag() != value_e.Undef:
+                print("\tFound flag: {0} with tag: {1}".format(flag, attrs.attrs[flag].tag()))
+                if found:
+                    self.errfmt.Print_("error: can only use one of the following flags at a time: -" + ", -".join(self.exclusive_flags), blame_loc=cmd_val.arg_locs[0])
+                    return 1
+                else:
+                    found = True
+        if found and not arg_r.AtEnd():
+            self.errfmt.Print_("error: cannot mix bind commands with the following flags: -" + ", -".join(self.exclusive_flags), blame_loc=cmd_val.arg_locs[0])
+            return 1
+            
         
         arg = arg_types.bind(attrs.attrs)
         print(arg)
