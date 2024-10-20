@@ -1216,7 +1216,7 @@ class ctx_EnclosedFrame(object):
             self,
             mem,  # type: Mem
             to_enclose,  # type: Dict[str, Cell]
-            module_frame,  # type: Optional[Dict[str, Cell]]
+            module_frame,  # type: Dict[str, Cell]
             out_dict,  # type: Optional[Dict[str, value_t]]
     ):
         # type: (...) -> None

@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 #### Simple Expr Closure
 shopt --set ysh:upgrade
@@ -163,5 +163,17 @@ global!
 global local!
 ## END
 
+#### Closures as default argument
+shopt --set ysh:upgrade
 
+use $REPO_ROOT/spec/testdata/module2/closure.ysh --pick default_{expr,block}
+
+echo $[io->evalExpr(default_expr())]
+
+call io->eval(default_block())
+
+## STDOUT:
+global expr!
+global block!
+## END
 

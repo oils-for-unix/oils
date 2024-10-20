@@ -64,7 +64,8 @@ class ParseHay(vm._Callable):
             self.errfmt.PrettyPrintError(e)
             return None
 
-        return value.Command(cmd_frag.Expr(node), self.mem.CurrentFrame())
+        return value.Command(cmd_frag.Expr(node), self.mem.CurrentFrame(),
+                             self.mem.GlobalFrame())
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t

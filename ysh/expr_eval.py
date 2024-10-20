@@ -1166,7 +1166,8 @@ class ExprEvaluator(object):
                 if id_ == Id.Left_CaretParen:  # ^(echo block literal)
                     # TODO: Propagate location info with ^(
                     return value.Command(cmd_frag.Expr(node.child),
-                                         self.mem.CurrentFrame())
+                                         self.mem.CurrentFrame(),
+                                         self.mem.GlobalFrame())
                 else:
                     stdout_str = self.shell_ex.RunCommandSub(node)
                     if id_ == Id.Left_AtParen:  # @(seq 3)

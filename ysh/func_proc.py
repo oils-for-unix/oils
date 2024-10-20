@@ -265,7 +265,8 @@ def EvalTypedArgsToProc(
     # p { echo hi } is an unevaluated block
     if node.block:
         # Attach current frame to command fragment
-        proc_args.block_arg = value.Command(node.block, current_frame)
+        proc_args.block_arg = value.Command(node.block, current_frame,
+                                            module_frame)
 
         # Add location info so the cmd_val looks the same for both:
         #   cd /tmp (; ; ^(echo hi))

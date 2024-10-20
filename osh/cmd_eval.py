@@ -2123,7 +2123,8 @@ class CommandEvaluator(object):
         def EvalCommandClosure(self, cmd):
             # type: (value.Command) -> int
             frag = typed_args.GetCommandFrag(cmd)
-            with state.ctx_EnclosedFrame(self.mem, cmd.captured_frame, None):
+            with state.ctx_EnclosedFrame(self.mem, cmd.captured_frame,
+                                         cmd.module_frame):
                 return self.EvalCommandFrag(frag)
 
     def RunTrapsOnExit(self, mut_status):

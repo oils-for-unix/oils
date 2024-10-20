@@ -184,14 +184,18 @@ module value
 
     # var x = ^[42 + a[i]]
     # my-ls | where [size > 10]
-  | Expr(expr e, Dict[str, Cell] captured_frame, Dict[str, Cell] module_frame)
+  | Expr(expr e,
+         Dict[str, Cell] captured_frame,
+         Dict[str, Cell] module_frame)
 
     # This is an UNBOUND command, like
     # ^(echo 1; echo 2) and cd { echo 1; echo 2 } 
   | CommandFrag(command c)
 
     # Bound command
-  | Command(cmd_frag frag, Dict[str, Cell] captured_frame)
+  | Command(cmd_frag frag,
+            Dict[str, Cell] captured_frame,
+            Dict[str, Cell] module_frame)
 
     # Other introspection
     # __builtins__ - Dict[str, value_t] - I would like to make this read-only

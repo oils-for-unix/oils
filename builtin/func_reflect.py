@@ -92,7 +92,9 @@ class BindFrame(vm._Callable):
         frag = rd.PosCommandFrag()
         frame = rd.PosFrame()
         rd.Done()
-        return value.Command(cmd_frag.Expr(frag), frame)
+        return value.Null
+        # TODO: I guess you have to bind 2 frames?
+        #return Command(cmd_frag.Expr(frag), frame, None)
 
 
 class Shvar_get(vm._Callable):
@@ -189,7 +191,8 @@ class ParseCommand(vm._Callable):
         # in
         # value.Command vs. value.Block - BoundCommand?
 
-        return value.Command(cmd_frag.Expr(cmd), self.mem.CurrentFrame())
+        return value.Command(cmd_frag.Expr(cmd), self.mem.CurrentFrame(),
+                             self.mem.GlobalFrame())
 
 
 class ParseExpr(vm._Callable):
