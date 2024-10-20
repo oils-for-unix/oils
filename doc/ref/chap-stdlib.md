@@ -245,11 +245,11 @@ Then, create an argument parser **spec**ification:
     parser (&spec) {
       flag -v --verbose (help="Verbosely")  # default is Bool, false
 
-      flag -P --max-procs ('int', default=-1, help='''
+      flag -P --max-procs (Int, default=-1, help='''
         Run at most P processes at a time
         ''')
 
-      flag -i --invert ('bool', default=true, help='''
+      flag -i --invert (Bool, default=true, help='''
         Long multiline
         Description
         ''')
@@ -324,20 +324,22 @@ The above example declares a flag "--verbose" and a short alias "-v".
 Flags can also accept values. For example, if you wanted to accept an integer count:
 
     parser (&spec) {
-      flag -N --count ('int')
+      flag -N --count (Int)
     }
 
 Calling `parseArgs` with `ARGV = :| -n 5 |` or `ARGV = :| --count 5 |` will
 store the integer `5` under `args.count`. If the user passes in a non-integer
 value like `ARGV = :| --count abc |`, `parseArgs` will raise an error.
 
+The supported types are `Bool`, `Int`, `Float`, and `Str`.
+
 Default values for an argument can be set with the `default` named argument.
 
     parser (&spec) {
-      flag -N --count ('int', default=2)
+      flag -N --count (Int, default=2)
 
       # Boolean flags can be given default values too
-      flag -O --optimize ('bool', default=true)
+      flag -O --optimize (Bool, default=true)
     }
 
     var args = parseArgs(spec, :| -n 3 |)
