@@ -52,7 +52,7 @@ It's very hard to tell when and if `/etc/profile`, `~/.bashrc`,
 `~/.bash_profile`, etc. are executed.
 
 OSH and YSH intentionally avoid this.  If you want those files, simply `source`
-them in your `oshrc`.
+them in your `oshrc` (see [Troubleshooting](#troubleshooting) for possible incompatibilities).
 
 [mess]: https://shreevatsa.wordpress.com/2008/03/30/zshbash-startup-files-loading-order-bashrc-zshrc-etc/
 
@@ -73,6 +73,9 @@ OSH](https://github.com/oilshell/oil/wiki/How-To-Test-OSH).
 - On Arch Linux and other distros,`$LANG` may not get set without
   `/etc/profile`.  Adding `source /etc/profile` to your `oshrc` may solve this
   problem.
+- If you use `zoxide`, add `eval "$(zoxide init posix --hook prompt)"` to the
+  end of `oshrc` and remove lines specific to other shells when sourcing their
+  startup files.
 
 ### `sh` and Bash Docs Are Useful for OSH
 
