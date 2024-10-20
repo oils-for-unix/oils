@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 
 #### Simple Expr Closure
 shopt --set ysh:upgrade
@@ -145,7 +145,7 @@ echo $[io->evalExpr(local_expr())]
 
 ## STDOUT:
 global!
-local!
+global local!
 ## END
 
 
@@ -160,7 +160,7 @@ call io->eval(local_block())
 
 ## STDOUT:
 global!
-local!
+global local!
 ## END
 
 

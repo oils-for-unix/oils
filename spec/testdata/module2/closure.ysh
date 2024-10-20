@@ -1,0 +1,18 @@
+
+const __provide__ = :| {global,local}_expr {global,local}_block |
+
+var g = 'global'
+
+var global_expr = ^["$g!"]
+
+func local_expr() {
+  var lo = 'local'
+  return (^["$[g] $[lo]!"])
+}
+
+var global_block = ^(echo "$[g]!")
+
+func local_block() {
+  var lo = 'local'
+  return (^(echo "$[g] $[lo]!"))
+}

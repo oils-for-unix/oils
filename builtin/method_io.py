@@ -79,10 +79,7 @@ class Eval(vm._Callable):
         unused = rd.PosValue()
         bound = rd.PosCommand()
 
-        captured_frame = bound.captured_frame
         cmd = typed_args.GetCommandFrag(bound)
-
-        #log('CAPTURED %r', captured_frame)
 
         dollar0 = rd.NamedStr("dollar0", None)
         pos_args_raw = rd.NamedList("pos_args", None)
@@ -102,7 +99,8 @@ class Eval(vm._Callable):
 
         if self.which == EVAL_NULL:
             # _PrintFrame('[captured]', captured_frame)
-            with state.ctx_EnclosedFrame(self.mem, captured_frame, None):
+            with state.ctx_EnclosedFrame(self.mem, bound.captured_frame, None,
+                                         None):
                 # _PrintFrame('[new]', self.cmd_ev.mem.var_stack[-1])
                 with state.ctx_Eval(self.mem, dollar0, pos_args, vars_):
                     unused_status = self.cmd_ev.EvalCommandFrag(cmd)
@@ -113,7 +111,8 @@ class Eval(vm._Callable):
             # Does ctx_EnclosedFrame has different scoping rules?  For "vars"?
 
             bindings = NewDict()  # type: Dict[str, value_t]
-            with state.ctx_EnclosedFrame(self.mem, captured_frame, bindings):
+            with state.ctx_EnclosedFrame(self.mem, bound.captured_frame, None,
+                                         bindings):
                 unused_status = self.cmd_ev.EvalCommandFrag(cmd)
             return value.Dict(bindings)
 
@@ -136,7 +135,7 @@ class CaptureStdout(vm._Callable):
         rd.Done()  # no more args
 
         frag = typed_args.GetCommandFrag(cmd)
-        with state.ctx_EnclosedFrame(self.mem, cmd.captured_frame, None):
+        with state.ctx_EnclosedFrame(self.mem, cmd.captured_frame, None, None):
             status, stdout_str = self.shell_ex.CaptureStdout(frag)
         if status != 0:
             # Note that $() raises error.ErrExit with the status.

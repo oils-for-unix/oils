@@ -1212,11 +1212,22 @@ class ctx_EnclosedFrame(object):
     Or maybe we disallow the setvar lookup?
     """
 
-    def __init__(self, mem, to_enclose, out_dict):
-        # type: (Mem, Dict[str, Cell], Optional[Dict[str, value_t]]) -> None
+    def __init__(
+            self,
+            mem,  # type: Mem
+            to_enclose,  # type: Dict[str, Cell]
+            module_frame,  # type: Optional[Dict[str, Cell]]
+            out_dict,  # type: Optional[Dict[str, value_t]]
+    ):
+        # type: (...) -> None
         self.mem = mem
         self.to_enclose = to_enclose
+        self.module_frame = module_frame
         self.out_dict = out_dict
+
+        if module_frame is not None:
+            self.saved_globals = self.mem.var_stack[0]
+            self.mem.var_stack[0] = module_frame
 
         # __E__ gets a lookup rule
         self.new_frame = NewDict()  # type: Dict[str, Cell]
@@ -1246,6 +1257,9 @@ class ctx_EnclosedFrame(object):
 
         # Restore
         self.mem.var_stack.pop()
+
+        if self.module_frame is not None:
+            self.mem.var_stack[0] = self.saved_globals
 
 
 class ctx_ModuleEval(object):

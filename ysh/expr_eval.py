@@ -378,7 +378,8 @@ class ExprEvaluator(object):
         var x = io->evalExpr(^[i + 1])
         var x = s.replace(pat, ^"- $0 $i -")
         """
-        with state.ctx_EnclosedFrame(self.mem, expr_val.captured_frame, None):
+        with state.ctx_EnclosedFrame(self.mem, expr_val.captured_frame,
+                                     expr_val.module_frame, None):
             return self.EvalExpr(expr_val.e, blame_loc)
 
     def EvalExpr(self, node, blame_loc):
