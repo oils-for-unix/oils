@@ -1,4 +1,4 @@
-## oils_failures_allowed: 0
+## oils_failures_allowed: 2
 
 #### Simple Expr Closure
 shopt --set ysh:upgrade
@@ -132,3 +132,36 @@ i = 0
 i = 1
 i = 2
 ## END
+
+
+#### Expr Closures in a different module
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/closure.ysh --pick {local,global}_expr
+
+echo $[io->evalExpr(global_expr)]
+
+echo $[io->evalExpr(local_expr())]
+
+## STDOUT:
+global!
+local!
+## END
+
+
+#### Command Closures in a different module
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/closure.ysh --pick {local,global}_block
+
+call io->eval(global_block)
+
+call io->eval(local_block())
+
+## STDOUT:
+global!
+local!
+## END
+
+
+

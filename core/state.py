@@ -1173,11 +1173,11 @@ class ctx_LoopFrame(object):
         self.do_new_frame = name1 == '__hack__'
 
         if self.do_new_frame:
-            rear_frame = self.mem.var_stack[-1]
-            self.front_frame = NewDict()  # type: Dict[str, Cell]
-            self.front_frame['__E__'] = Cell(False, False, False,
-                                             value.Frame(rear_frame))
-            mem.var_stack.append(self.front_frame)
+            to_enclose = self.mem.var_stack[-1]
+            self.new_frame = NewDict()  # type: Dict[str, Cell]
+            self.new_frame['__E__'] = Cell(False, False, False,
+                                           value.Frame(to_enclose))
+            mem.var_stack.append(self.new_frame)
 
     def __enter__(self):
         # type: () -> None
@@ -1212,18 +1212,18 @@ class ctx_EnclosedFrame(object):
     Or maybe we disallow the setvar lookup?
     """
 
-    def __init__(self, mem, rear_frame, out_dict):
+    def __init__(self, mem, to_enclose, out_dict):
         # type: (Mem, Dict[str, Cell], Optional[Dict[str, value_t]]) -> None
         self.mem = mem
-        self.rear_frame = rear_frame
+        self.to_enclose = to_enclose
         self.out_dict = out_dict
 
         # __E__ gets a lookup rule
-        self.front_frame = NewDict()  # type: Dict[str, Cell]
-        self.front_frame['__E__'] = Cell(False, False, False,
-                                         value.Frame(rear_frame))
+        self.new_frame = NewDict()  # type: Dict[str, Cell]
+        self.new_frame['__E__'] = Cell(False, False, False,
+                                       value.Frame(to_enclose))
 
-        mem.var_stack.append(self.front_frame)
+        mem.var_stack.append(self.new_frame)
 
     def __enter__(self):
         # type: () -> None
@@ -1233,7 +1233,7 @@ class ctx_EnclosedFrame(object):
         # type: (Any, Any, Any) -> None
 
         if self.out_dict is not None:
-            for name, cell in iteritems(self.front_frame):
+            for name, cell in iteritems(self.new_frame):
                 #log('name %r', name)
                 #log('cell %r', cell)
 
@@ -1407,8 +1407,8 @@ def _FrameLookup(frame, name):
         rear_val = rear_cell.val
         assert rear_val, rear_val
         if rear_val.tag() == value_e.Frame:
-            rear_frame = cast(value.Frame, rear_val).frame
-            return _FrameLookup(rear_frame, name)  # recursive call
+            to_enclose = cast(value.Frame, rear_val).frame
+            return _FrameLookup(to_enclose, name)  # recursive call
 
     return None, None
 

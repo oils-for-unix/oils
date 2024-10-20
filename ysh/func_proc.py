@@ -210,6 +210,7 @@ def _EvalArgList(
 def EvalTypedArgsToProc(
         expr_ev,  # type: expr_eval.ExprEvaluator
         current_frame,  # type: Dict[str, Cell]
+        module_frame,  # type: Dict[str, Cell]
         mutable_opts,  # type: state.MutableOpts
         node,  # type: command.Simple
         proc_args,  # type: ProcArgs
@@ -231,7 +232,8 @@ def EvalTypedArgsToProc(
             # Defer evaluation by wrapping in value.Expr
 
             for exp in ty.pos_args:
-                proc_args.pos_args.append(value.Expr(exp, current_frame))
+                proc_args.pos_args.append(
+                    value.Expr(exp, current_frame, module_frame))
             # TODO: ...spread is illegal
 
             n1 = ty.named_args
@@ -240,7 +242,7 @@ def EvalTypedArgsToProc(
                 for named_arg in n1:
                     name = lexer.TokenVal(named_arg.name)
                     proc_args.named_args[name] = value.Expr(
-                        named_arg.value, current_frame)
+                        named_arg.value, current_frame, module_frame)
                 # TODO: ...spread is illegal
 
         else:  # json write (x)

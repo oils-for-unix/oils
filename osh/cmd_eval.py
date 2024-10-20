@@ -837,6 +837,7 @@ class CommandEvaluator(object):
                 cmd_val.proc_args = ProcArgs(node.typed_args, None, None, None)
                 func_proc.EvalTypedArgsToProc(self.expr_ev,
                                               self.mem.CurrentFrame(),
+                                              self.mem.GlobalFrame(),
                                               self.mutable_opts, node,
                                               cmd_val.proc_args)
         else:
@@ -2118,6 +2119,7 @@ class CommandEvaluator(object):
         return self._Execute(frag)  # can raise FatalRuntimeError, etc.
 
     if 0:
+
         def EvalCommandClosure(self, cmd):
             # type: (value.Command) -> int
             frag = typed_args.GetCommandFrag(cmd)

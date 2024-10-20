@@ -62,7 +62,6 @@ module value
   # Retain references to lines
   LiteralBlock = (BraceGroup brace_group, List[SourceLine] lines)
 
-  # TODO: should Expr also have backing lines?
   cmd_frag =
     LiteralBlock %LiteralBlock  # p { echo hi } has backing lines
   | Expr(command c)             # var b = ^(echo hi)
@@ -185,7 +184,7 @@ module value
 
     # var x = ^[42 + a[i]]
     # my-ls | where [size > 10]
-  | Expr(expr e, Dict[str, Cell] captured_frame)
+  | Expr(expr e, Dict[str, Cell] captured_frame, Dict[str, Cell] module_frame)
 
     # This is an UNBOUND command, like
     # ^(echo 1; echo 2) and cd { echo 1; echo 2 } 
