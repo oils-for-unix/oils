@@ -1,12 +1,12 @@
 #!/usr/bin/env python2
 """
-builtin_lib.py - Builtins that are bindings to libraries, e.g. GNU readline.
+readline_osh.py - Builtins that are dependent on GNU readline.
 """
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.syntax_asdl import loc
-from core.error import e_usage
+from _devbuild.gen.value_asdl import value, value_e
 from core import pyutil
 from core import vm
 from frontend import flag_util
@@ -22,18 +22,106 @@ if TYPE_CHECKING:
 
 
 class Bind(vm._Builtin):
-    """For :, true, false."""
+    """Interactive interface to readline bindings"""
 
     def __init__(self, readline, errfmt):
         # type: (Optional[Readline], ui.ErrorFormatter) -> None
         self.readline = readline
         self.errfmt = errfmt
+        self.exclusive_flags = ["q", "u", "r", "x", "f"]
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        self.errfmt.Print_("warning: bind isn't implemented",
-                           blame_loc=cmd_val.arg_locs[0])
-        return 1
+        readline = self.readline
+        if not readline:
+            e_usage("is disabled because Oil wasn't compiled with 'readline'",
+                    loc.Missing)
+        
+        attrs, arg_r = flag_util.ParseCmdVal('bind', cmd_val)
+        
+        # print("attrs:\n", attrs)
+        # print("attrs.attrs:\n", attrs.attrs)
+        # print("attrs.attrs.f:\n", attrs.attrs["f"])
+        # print("type(attrs.attrs[f]):\n", type(attrs.attrs["f"]))
+        # print("attrs.attrs[f].tag() :\n", attrs.attrs["f"].tag())
+        # print("attrs.attrs[f].tag() == value_e.Undef:\n", attrs.attrs["f"].tag() == value_e.Undef)
+        # print(arg_r)
+        # print("Reader argv=%s n=%i i=%i" % (arg_r.argv, arg_r.n, arg_r.i))
+        
+        # Check mutually-exclusive flags and non-flag args
+        found = False
+        for flag in self.exclusive_flags:
+            if flag in attrs.attrs and attrs.attrs[flag].tag() != value_e.Undef:
+                print("\tFound flag: {0} with tag: {1}".format(flag, attrs.attrs[flag].tag()))
+                if found:
+                    self.errfmt.Print_("error: can only use one of the following flags at a time: -" + ", -".join(self.exclusive_flags), blame_loc=cmd_val.arg_locs[0])
+                    return 1
+                else:
+                    found = True
+        if found and not arg_r.AtEnd():
+            self.errfmt.Print_("error: cannot mix bind commands with the following flags: -" + ", -".join(self.exclusive_flags), blame_loc=cmd_val.arg_locs[0])
+            return 1
+            
+        
+        arg = arg_types.bind(attrs.attrs)
+        # print("arg:\n", arg)
+        # print("dir(arg):\n", dir(arg))
+        # print("arg.f:\n", arg.f)
+        
+        if arg.m:
+            print("Using keymap: " + arg.m)
+        
+        if arg.l:
+            readline.list_funmap_names()
+            
+        if arg.p:
+            readline.function_dumper(True)
+
+        if arg.P:
+            readline.function_dumper(False)
+
+        if arg.s:
+            readline.macro_dumper(True)
+
+        if arg.S:
+            readline.macro_dumper(False)
+            
+        if arg.v:
+            readline.variable_dumper(True)
+
+        if arg.V:
+            readline.variable_dumper(False)
+            
+        if arg.f:
+            # print("Initializing bind from %s" % arg.f)
+            readline.read_init_file(arg.f)
+
+        if arg.q:
+            self.errfmt.Print_("warning: bind -q isn't implemented",
+                            blame_loc=cmd_val.arg_locs[0])
+            return 1
+
+        if arg.u:
+            self.errfmt.Print_("warning: bind -u isn't implemented",
+                            blame_loc=cmd_val.arg_locs[0])
+            return 1
+
+        if arg.r:
+            self.errfmt.Print_("warning: bind -r isn't implemented",
+                            blame_loc=cmd_val.arg_locs[0])
+            return 1
+
+        if arg.x:
+            self.errfmt.Print_("warning: bind -x isn't implemented",
+                            blame_loc=cmd_val.arg_locs[0])
+            return 1
+        
+        if arg.X:
+            self.errfmt.Print_("warning: bind -X isn't implemented",
+                            blame_loc=cmd_val.arg_locs[0])
+            return 1
+
+        return 0
 
 
 class History(vm._Builtin):
