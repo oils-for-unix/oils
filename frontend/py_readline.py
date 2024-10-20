@@ -34,6 +34,10 @@ class Readline(object):
         # type: (str) -> None
         line_input.parse_and_bind(s)
 
+    def read_init_file(self, s):
+        # type: (str) -> None
+        line_input.read_init_file(s)
+
     def add_history(self, line):
         # type: (str) -> None
         line_input.add_history(line)

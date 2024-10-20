@@ -5,10 +5,12 @@ spec/stateful/bind.py
 from __future__ import print_function
 
 import sys
+import tempfile
 import time
 
 import harness
-from harness import register, expect_prompt
+from harness import expect_prompt, register
+
 from test.spec_lib import log
 
 
@@ -140,6 +142,26 @@ def bind_m(sh):
 
     send_bind(sh, "-q yank", "emacs")
     sh.expect("yank can be invoked via")
+
+
+@register(not_impl_shells=['dash', 'mksh'])
+def bind_f(sh):
+    "test bind -f for setting bindings from an inputrc init file"
+    expect_prompt(sh)
+
+
+    # Create a temporary file for the inputrc content
+    with tempfile.NamedTemporaryFile(mode='w+b', prefix='osh_bind', suffix='.inputrc') as bind_f_inputrc:
+        bind_f_inputrc.write(b'"\C-o\C-s\C-h": magic-space')
+        bind_f_inputrc.flush()
+        
+        # log(f"Made temp file: {bind_f_inputrc.name}")
+        
+        send_bind(sh, f"-f {bind_f_inputrc.name}")
+        expect_prompt(sh)
+
+        send_bind(sh, "-q magic-space")
+        sh.expect('magic-space can be invoked via.*"\\\C-o\\\C-s\\\C-h"')
 
 
 if __name__ == '__main__':
