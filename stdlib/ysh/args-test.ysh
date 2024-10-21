@@ -18,14 +18,18 @@ proc test-basic {
   parser (&spec) {
     flag -v --verbose (help="Verbosely")  # default is Bool, false
   
-    flag -P --max-procs ('int', default=-1, help='''
+    flag -P --max-procs (Int, default=-1, help='''
       Run at most P processes at a time
       ''')
   
-    flag -i --invert ('bool', default=true, help='''
+    flag -i --invert (Bool, default=true, help='''
       Long multiline
       Description
       ''')
+
+    flag -n --name (Str)
+
+    flag -s --scale (Float, default=0.0)
   
     arg src (help='Source')
     arg dest (help='Dest')
@@ -33,12 +37,23 @@ proc test-basic {
     rest files
   }
   
-  var args = parseArgs(spec, :| mysrc -P 12 mydest a b c |)
+  var args = parseArgs(spec, :| -n test --scale 1.0 mysrc -P 12 mydest a b c |)
   
   assert [false === args.verbose]
 
-  # TODO: clean up this JSON
-  var expected = {"src":"mysrc","max-procs":12,"dest":"mydest","files":["a","b","c"],"verbose":false,"invert":true}
+  assert [floatsEqual(args.scale, 1.0)]
+  call args->erase('scale') # remove Float key for subsequent equality check
+
+  var expected = {
+    "name": "test",
+    "src": "mysrc",
+    "max-procs": 12,
+    "dest": "mydest",
+    "files": :| a b c |,
+    "verbose": false,
+    "invert":true,
+  }
+
   assert [expected === args]
 }
 
@@ -46,7 +61,7 @@ proc test-2 {
   ### Bool flag, positional args, more positional
 
   parser (&spec) {
-    flag -v --verbose ('bool')
+    flag -v --verbose (Bool)
     arg src
     arg dst
 
@@ -68,22 +83,26 @@ proc test-2 {
 proc test-default-values {
 
   parser (&spec) {
-    flag -S --sanitize ('bool', default=false)
-    flag -v --verbose ('bool', default=false)
-    flag -P --max-procs ('int')  # Will set to null (the default default)
+    flag -S --sanitize (Bool, default=false)
+    flag -v --verbose (Bool, default=false)
+    flag -P --max-procs (Int)  # Will set to null (the default default)
   }
 
   var args = parseArgs(spec, [])
 
   #pp test_ (args)
-  var expected = {"sanitize":false,"verbose":false,"max-procs":null}
+  var expected = {
+    "sanitize": false,
+    "verbose": false,
+    "max-procs": null,
+  }
   assert [expected === args]
 }
 
 proc test-multiple-argv-arrays {
   parser (&spec) {
-    flag -v --verbose ('bool', default=false)
-    flag -c --count ('int', default=120)
+    flag -v --verbose (Bool, default=false)
+    flag -c --count (Int, default=120)
     arg file
   }
 
@@ -156,7 +175,7 @@ proc test-more-errors {
 
   parser (&spec) {
     flag -v --verbose
-    flag -n --num ('int', required=true)
+    flag -n --num (Int, required=true)
 
     arg action
     arg other (required=false)
@@ -182,53 +201,53 @@ proc test-more-errors {
 }
 
 proc test-print-spec {
-
   parser (&spec) {
-    flag -v --verbose ('bool')
+    flag -v --verbose (Bool)
     arg src
     arg dst
 
     rest more  # allow more args
   }
 
-  yb-capture (&r) {
-    json write (spec)
-  }
-
-  var expected = '''
-  {
-    "flags": [
+  var expected = {
+    flags: [
       {
-        "short": "-v",
-        "long": "--verbose",
-        "name": "verbose",
-        "type": "bool",
-        "default": false,
-        "help": null
+        short: "-v",
+        long: "--verbose",
+        name: "verbose",
+        type: Bool,
+        default: false,
+        help: null
       }
     ],
-    "args": [
+    args: [
       {
-        "name": "src",
-        "help": null
+        name: "src",
+        help: null
       },
       {
-        "name": "dst",
-        "help": null
+        name: "dst",
+        help: null
       }
     ],
-    "rest": "more"
+    rest: "more"
   }
-  '''
 
-  assert [expected === r.stdout]
+  # Type objects cannot be tested for equality, so check them for identity then
+  # erase the keys so the remainder of the Dict can be tested for equality.
+  for i, flag in (expected.flags) {
+    assert [flag.type is spec.flags[i].type]
+    call expected.flags[i]->erase('type')
+    call spec.flags[i]->erase('type')
+  }
+  assert [expected === spec]
 }
 
 proc test-vs-python3-argparse {
   var spec = {
     flags: [
       {short: '-v', long: '--verbose', name: 'verbose', type: null, default: '', help: 'Enable verbose logging'},
-      {short: '-c', long: '--count', name: 'count', type: 'int', default: 80, help: 'Maximum line length'},
+      {short: '-c', long: '--count', name: 'count', type: Int, default: 80, help: 'Maximum line length'},
     ],
     args: [
       {name: 'file', type: 'str', help: 'File to check line lengths of'}

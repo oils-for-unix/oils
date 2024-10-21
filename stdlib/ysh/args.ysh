@@ -10,11 +10,11 @@ const __provide__ = :| parser flag arg rest parseArgs |
 # parser (&spec) {
 #   flag -v --verbose (help="Verbosely")  # default is Bool, false
 #
-#   flag -P --max-procs ('int', default=-1, doc='''
+#   flag -P --max-procs (Int, default=-1, doc='''
 #     Run at most P processes at a time
 #     ''')
 #
-#   flag -i --invert ('bool', default=true, doc='''
+#   flag -i --invert (Bool, default=true, doc='''
 #     Long multiline
 #     Description
 #     ''')
@@ -33,7 +33,6 @@ const __provide__ = :| parser flag arg rest parseArgs |
 # TODO: See list
 # - It would be nice to keep `flag` and `arg` private, injecting them into the
 #   proc namespace only within `Args`
-# - We need "type object" to replace the strings 'int', 'bool', etc.
 # - flag builtin:
 #   - handle only long flag or only short flag
 #   - flag aliases
@@ -45,7 +44,7 @@ proc parser (; place ; ; block_def) {
   ##
   ##   # NOTE: &spec will create a variable named spec
   ##   parser (&spec) {
-  ##     flag -v --verbose ('bool')
+  ##     flag -v --verbose (Bool)
   ##   }
   ##
   ##   var args = parseArgs(spec, ARGV)
@@ -80,26 +79,46 @@ proc parser (; place ; ; block_def) {
   call place->setValue(p)
 }
 
-proc flag (short, long ; type='bool' ; default=null, help=null) {
+const kValidTypes = [Bool, Float, Int, Str]
+const kValidTypeNames = []
+for vt in (kValidTypes) {
+  call kValidTypeNames->append(vt.name)
+}
+
+func isValidType (type) {
+  try {
+    for valid in (kValidTypes) {
+      if (type is valid) {
+        return (true)
+      }
+    }
+  }
+  return (false)
+}
+
+proc flag (short, long ; type=Bool ; default=null, help=null) {
   ## Declare a flag within an `arg-parse`.
   ##
   ## Examples:
   ##
   ##   arg-parse (&spec) {
   ##     flag -v --verbose
-  ##     flag -n --count ('int', default=1)
-  ##     flag -f --file ('str', help="File to process")
+  ##     flag -n --count (Int, default=1)
+  ##     flag -p --percent (Float, default=0.0)
+  ##     flag -f --file (Str, help="File to process")
   ##   }
 
-  # bool has a default of false, not null
-  if (type === 'bool' and default === null) {
+  if (type !== null and not isValidType(type)) {
+    var type_names = ([null] ++ kValidTypeNames) => join(', ')
+    error "Expected flag type to be one of: $type_names" (code=2)
+  }
+
+  # Bool has a default of false, not null
+  if (type is Bool and default === null) {
     setvar default = false
   }
 
-  # TODO: validate `type`
-
-  # TODO: Should use "trimPrefix"
-  var name = long[2:]
+  var name = long => trimStart('--')
 
   ctx emit flags ({short, long, name, type, default, help})
 }
@@ -153,19 +172,35 @@ func parseArgs(spec, argv) {
       for flag in (spec.flags) {
         if ( (flag.short and flag.short === arg) or
              (flag.long and flag.long === arg) ) {
-          case (flag.type) {
-            ('bool') | (null) { setvar value = true }
-            int {
-              setvar i += 1
-              if (i >= len(argv)) {
-                error "Expected integer after '$arg'" (code=2)
-              }
-
-              try { setvar value = int(argv[i]) }
-              if (_status !== 0) {
-                error "Expected integer after '$arg', got '$[argv[i]]'" (code=2)
-              }
+          if (flag.type === null or flag.type is Bool) {
+            setvar value = true
+          } elif (flag.type is Int) {
+            setvar i += 1
+            if (i >= len(argv)) {
+              error "Expected Int after '$arg'" (code=2)
             }
+
+            try { setvar value = int(argv[i]) }
+            if (_status !== 0) {
+              error "Expected Int after '$arg', got '$[argv[i]]'" (code=2)
+            }
+          } elif (flag.type is Float) {
+            setvar i += 1
+            if (i >= len(argv)) {
+              error "Expected Float after '$arg'" (code=2)
+            }
+
+            try { setvar value = float(argv[i]) }
+            if (_status !== 0) {
+              error "Expected Float after '$arg', got '$[argv[i]]'" (code=2)
+            }
+          } elif (flag.type is Str) {
+            setvar i += 1
+            if (i >= len(argv)) {
+              error "Expected Str after '$arg'" (code=2)
+            }
+
+            setvar value = argv[i]
           }
 
           setvar args[flag.name] = value
