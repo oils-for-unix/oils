@@ -45,9 +45,9 @@ proc test-sum {
   assert [0 === sum([0])]
   assert [6 === sum([1, 2, 3])]
 
-  assert [3 === sum( 0 .. 3 )]
-  assert [45 === sum( 0 .. 3; start=42)]
-  assert [42 === sum( 0 .. 0, start=42)]
+  assert [3 === sum( 0 ..< 3 )]
+  assert [45 === sum( 0 ..< 3; start=42)]
+  assert [42 === sum( 0 ..< 0, start=42)]
 }
 
 proc test-repeat-str {
