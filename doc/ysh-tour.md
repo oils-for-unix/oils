@@ -453,7 +453,7 @@ Ask for the loop index:
 To iterate over a typed data, use parentheses around an **expression**.  The
 expression should evaluate to an integer `Range`, `List`, or `Dict`:
 
-    for i in (3 .. 5) {  # range operator ..
+    for i in (3 ..< 5) {  # range operator ..<
       echo "i = $i"
     }
     # =>
