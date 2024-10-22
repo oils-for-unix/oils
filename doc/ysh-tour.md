@@ -740,7 +740,7 @@ Here's a pure function:
 
     func myRepeat(s, n; special=false) {  # positional; named params
       var parts = []
-      for i in (0 .. n) {
+      for i in (0 ..< n) {
         append $s (parts)
       }
       var result = join(parts)
