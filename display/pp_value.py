@@ -412,7 +412,7 @@ class ValueEncoder:
             elif case(value_e.Range):
                 r = cast(value.Range, val)
                 type_name = self._Styled(self.type_style, UText(ValType(r)))
-                mdocs = [UText(str(r.lower)), UText(".."), UText(str(r.upper))]
+                mdocs = [UText(str(r.lower)), UText("..<"), UText(str(r.upper))]
                 return self._SurroundedAndPrefixed("(", type_name, " ",
                                                    self._Join(mdocs, "", " "),
                                                    ")")

@@ -86,6 +86,9 @@ def _Classify(gr, tok):
         p_die("Use 'or' in expression mode (OILS-ERR-15)", tok)
     # Not possible to check '!' as it conflicts with Id.Expr_Bang
 
+    if id_ == Id.Unknown_DDot:
+        p_die('Use 1..<5 for an open range, or 1..=5 for a closed range', tok)
+
     if id_ == Id.Unknown_Tok:
         type_str = ''
     else:
