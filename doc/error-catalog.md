@@ -207,6 +207,32 @@ standard boolean operators are written as `a and b`, `a or b` and `not a`.
 This differs from [command mode](command-vs-expression-mode.html) which uses
 shell-like `||` for "OR", `&&` for "AND" and `!` for "NOT".
 
+### OILS-ERR-16
+
+```
+  for x in (1..5) {
+             ^~
+[ -c flag ]:1: Use 1..<5 for half-open range, or 1..=5 for closed range (OILS-ERR-16)
+```
+
+There are two types of [range syntax](ref/chap-expr-lang#range). The `..<`
+syntax is for half-open ranges and `..=` is for closed ranges:
+
+    for i in (0..<3) {
+      echo $i
+    }
+    => 0
+    => 1
+    => 2
+
+    for i in (0..=3) {
+      echo $i
+    }
+    => 0
+    => 1
+    => 2
+    => 3
+
 ## Runtime Errors - Traditional Shell
 
 These errors may occur in shells like [bash]($xref) and [zsh]($xref).

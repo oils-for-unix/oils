@@ -240,7 +240,7 @@ A range is a sequence of numbers that can be iterated over:
     => 1
     => 2
 
-The `..<` syntax is for open ranges. `..=` can be used for closed ranges:
+The `..<` syntax is for half-open ranges. `..=` is for closed ranges:
 
     for i in (0 ..= 3) {
       echo $i
