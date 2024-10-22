@@ -174,6 +174,35 @@ Examples:
       echo yes
     }
 
+### OILS-ERR-15
+
+Incorrect:
+
+    # Expression mode
+    if (a || b) {
+      echo yes
+    }
+
+    # Command mode
+    if test --dir a or test --dir b { ... }
+
+Correct:
+
+    # Expression mode
+    if (a or b) {
+      echo yes
+    }
+
+    # Command mode
+    if test --dir a || test --dir b { ... }
+
+In general, code within parentheses `()` is parsed as Python-like expressions
+-- referred to as [expression mode](command-vs-expression-mode.html). The
+standard boolean operators are written as `a and b`, `a or b` and `not a`.
+
+This differs from [command mode](command-vs-expression-mode.html) which uses
+`||` for "OR", `&&` for "AND" and `!` for "NOT".
+
 ## Runtime Errors - Traditional Shell
 
 These errors may occur in shells like [bash]($xref) and [zsh]($xref).
