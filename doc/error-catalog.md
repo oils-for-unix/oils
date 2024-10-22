@@ -179,29 +179,33 @@ Examples:
 Incorrect:
 
     # Expression mode
-    if (a || b) {
-      echo yes
+    if (!a || b && c) {
+      echo no
     }
 
     # Command mode
-    if test --dir a or test --dir b { ... }
+    if not test --dir a or test --dir b and test --dir c {
+      echo no
+    }
 
 Correct:
 
     # Expression mode
-    if (a or b) {
+    if (not a or b and c) {
       echo yes
     }
 
     # Command mode
-    if test --dir a || test --dir b { ... }
+    if ! test --dir a || test --dir b && test --dir c {
+      echo yes
+    }
 
 In general, code within parentheses `()` is parsed as Python-like expressions
 -- referred to as [expression mode](command-vs-expression-mode.html). The
 standard boolean operators are written as `a and b`, `a or b` and `not a`.
 
 This differs from [command mode](command-vs-expression-mode.html) which uses
-`||` for "OR", `&&` for "AND" and `!` for "NOT".
+shell-like `||` for "OR", `&&` for "AND" and `!` for "NOT".
 
 ## Runtime Errors - Traditional Shell
 
