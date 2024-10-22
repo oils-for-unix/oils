@@ -1689,6 +1689,12 @@ test-eggex() {
   _osh-parse-error '= /dot{*} /'
 }
 
+test-unknown-boolops() {
+  _osh-parse-error '= a && b'
+  _osh-parse-error '= a || b'
+  _osh-parse-error '= !a'
+}
+
 #
 # Entry Points
 #
