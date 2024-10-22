@@ -45,14 +45,14 @@ func repeat(x, n) {
   case (t) {
     Str {
       var parts = []
-      for i in (0 .. n) {
+      for i in (0 ..< n) {
         call parts->append(x)
       }
       return (join(parts))
     }
     List {
       var result = []
-      for i in (0 .. n) {
+      for i in (0 ..< n) {
         call result->extend(x)
       }
       return (result)

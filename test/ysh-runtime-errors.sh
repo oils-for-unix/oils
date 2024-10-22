@@ -988,10 +988,10 @@ test-assert() {
   _ysh-expr-error 'assert [null === 42]'
 
   # One is long
-  _ysh-expr-error 'assert [null === list(1 .. 50)]'
+  _ysh-expr-error 'assert [null === list(1 ..< 50)]'
 
   # Both are long
-  _ysh-expr-error 'assert [{k: list(3 .. 40)} === list(1 .. 50)]'
+  _ysh-expr-error 'assert [{k: list(3 ..< 40)} === list(1 ..< 50)]'
 }
 
 test-pp() {
@@ -1010,7 +1010,7 @@ var x = 42;
 pp [x]'
 
   _ysh-should-run '
-var x = list(1 .. 50);
+var x = list(1 ..< 50);
 pp [x]'
 }
 

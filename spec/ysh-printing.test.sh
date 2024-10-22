@@ -35,11 +35,11 @@
 ## END
 
 #### Range
-var x = 1..100
+var x = 1..<100
 
 pp value (x)
 
-# TODO: show type here, like (Range 1 .. 100)
+# TODO: show type here, like (Range 1 ..< 100)
 
 pp value ({k: x})
 
@@ -49,8 +49,8 @@ pp test_ (x)
 pp test_ ({k: x})
 
 ## STDOUT:
-(Range 1 .. 100)
-(Dict)  {k: (Range 1 .. 100)}
+(Range 1 ..< 100)
+(Dict)  {k: (Range 1 ..< 100)}
 
 <Range>
 (Dict)   {"k":<Range>}

@@ -584,7 +584,7 @@ pp test_ (c)
 ## END
 
 #### List->reverse() from iterator
-var x = list(0 .. 3)
+var x = list(0 ..< 3)
 call x->reverse()
 write @x
 ## STDOUT:

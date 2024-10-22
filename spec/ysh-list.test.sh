@@ -98,9 +98,9 @@ echo -$x-  # fails with type error
 ## END
 
 #### List->extend()
-var l = list(1..3)
+var l = list(1..<3)
 echo $[len(l)]
-call l->extend(list(3..6))
+call l->extend(list(3..<6))
 echo $[len(l)]
 ## STDOUT:
 2
@@ -109,9 +109,9 @@ echo $[len(l)]
 
 #### List append()/extend() should return null
 shopt -s ysh:all
-var l = list(1..3)
+var l = list(1..<3)
 
-var result = l->extend(list(3..6))
+var result = l->extend(list(3..<6))
 assert [null === result]
 
 setvar result = l->append(6)
@@ -124,7 +124,7 @@ pass
 
 #### List pop()
 shopt -s ysh:all
-var l = list(1..5)
+var l = list(1..<5)
 assert [4 === l->pop()]
 assert [3 === l->pop()]
 assert [2 === l->pop()]
