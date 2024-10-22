@@ -200,7 +200,7 @@ class ExprEvaluator(object):
 
     def EvalAugmented(self, lval, rhs_val, op, which_scopes):
         # type: (y_lvalue_t, value_t, Token, scope_t) -> None
-        """ setvar x +=1, setvar L[0] -= 1 
+        """ setvar x += 1, setvar L[0] -= 1 
 
         Called by CommandEvaluator
         """

@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 #### Splice in array
 shopt -s ysh:upgrade
@@ -110,7 +110,7 @@ echo 'should not get here'
 ## STDOUT:
 ## END
 
-#### Serializing type in a list
+#### Can't serialize type List in an array?  TODO: consider __str__
 shopt -s ysh:upgrade
 
 # If you can serialize the above, then why this?

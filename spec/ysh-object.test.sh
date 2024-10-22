@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 
 #### Object() creates prototype chain
 
@@ -116,8 +116,6 @@ var d = dict(rect)
 pp test_ (rect)
 pp test_ (d)
 
-# Right now, object attributes aren't mutable!  Could change this.
-#
 setvar rect.x = 99
 setvar d.x = 100
 
@@ -149,6 +147,37 @@ pp test_ (rect)
 (Obj)   ("x":3,"y":99)
 (Obj)   ("x":3,"y":102)
 (Obj)   ("x":15,"y":102)
+## END
+
+#### obj['attr'] not allowed (for now)
+
+var rect = Object(null, {x: 3, y: 4})
+
+pp test_ ([rect['x'], rect['y']])
+
+## status: 3
+## STDOUT:
+## END
+
+#### setvar obj['attr'] = 3 ?
+
+var rect = Object(null, {x: 3, y: 4})
+
+setvar rect['x'] = 99
+
+pp test_ (rect)
+
+# The reason this is allowed is because setvar does EvalLhsExpr(), which
+# handles:
+#
+# - y_lhs.SubScript -> y_lvalue.Container
+# - y_lhs.Attribute -> y_lvalue.Container
+#
+# So that means obj['x'] is allowed too?
+# We could possible add y_lvalue.Container(is_subscript)
+
+## status: 3
+## STDOUT:
 ## END
 
 #### can't encode objects as JSON

@@ -588,12 +588,13 @@ def Main(
     # flag -v --verbose (Bool, help='foo')
     #
     # TODO:
-    # - can add __str__ method
     # - Add other types like Dict, CommandFlag
-    #   - Dict should have __invoke__
+    #   - Obj(first, rest)
     #   - List() Dict() Obj() can do shallow copy with __call__
     #   - Bool() Int() Float() Str() List() Dict() conversions
+
     # - type(x) should return these Obj, or perhaps typeObj(x)
+    #   - __str__ method for echo $[type(x)] ?
 
     type_obj_methods = Obj(None, {})
     for tag in [value_e.Bool, value_e.Int, value_e.Float, value_e.Str]:
@@ -601,6 +602,36 @@ def Main(
         #log('%s %s' , type_name, tag)
         type_obj = Obj(type_obj_methods, {'name': value.Str(type_name)})
         mem.AddBuiltin(type_name, type_obj)
+
+    # TODO: __index__, not sure about __invoke__
+    tag = value_e.List
+    type_name = value_str(tag, dot=False)
+    # TODO: ContainerType_index
+    i_func = method_io.Time()
+    list_m = {}  # type: Dict[str, value_t]
+    list_m['__index__'] = value.BuiltinFunc(i_func)
+    type_obj = Obj(Obj(None, list_m), {'name': value.Str(type_name)})
+    mem.AddBuiltin(type_name, type_obj)
+
+    # TODO: __index__, __invoke__
+    tag = value_e.Dict
+    type_name = value_str(tag, dot=False)
+    # TODO: ContainerType_index
+    i_func = method_io.Time()
+    dict_m = {}  # type: Dict[str, value_t]
+    dict_m['__index__'] = value.BuiltinFunc(i_func)
+    type_obj = Obj(Obj(None, dict_m), {'name': value.Str(type_name)})
+    mem.AddBuiltin(type_name, type_obj)
+
+    # TODO: __call__
+    tag = value_e.Obj
+    type_name = value_str(tag, dot=False)
+    # TODO: ObjType_call
+    i_func = method_io.Time()
+    obj_m = {}  # type: Dict[str, value_t]
+    obj_m['__call__'] = value.BuiltinFunc(i_func)
+    type_obj = Obj(Obj(None, obj_m), {'name': value.Str(type_name)})
+    mem.AddBuiltin(type_name, type_obj)
 
     # Wire up circular dependencies.
     vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,

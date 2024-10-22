@@ -6,6 +6,10 @@ pp test_ (Bool)
 pp test_ (Int)
 pp test_ (Float)
 pp test_ (Str)
+
+pp test_ (List)
+pp test_ (Dict)
+pp test_ (Obj)
 echo
 
 var b = Bool
@@ -22,6 +26,9 @@ pp test_ (id(b) === id(Bool))
 (Obj)   ("name":"Int") --> ()
 (Obj)   ("name":"Float") --> ()
 (Obj)   ("name":"Str") --> ()
+(Obj)   ("name":"List") --> ("__index__":<BuiltinFunc>)
+(Obj)   ("name":"Dict") --> ("__index__":<BuiltinFunc>)
+(Obj)   ("name":"Obj") --> ("__call__":<BuiltinFunc>)
 
 (Bool)   true
 (Bool)   true
