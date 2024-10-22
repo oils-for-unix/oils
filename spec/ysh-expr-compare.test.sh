@@ -174,7 +174,7 @@ sf  i true
 ## END
 
 #### Comparison of Int 
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 
 if (1 < 2) {
   echo '<'
@@ -201,7 +201,7 @@ if (2 < 1) {
 ## END
 
 #### Comparison of Str does conversion to Int
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 
 if ('2' < '11') {
   echo '<'
@@ -229,7 +229,7 @@ if ('2' < '1') {
 
 
 #### Mixed Type Comparison does conversion to Int
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 
 if (2 < '11') {
   echo '<'
@@ -257,7 +257,7 @@ if (2 < '1') {
 
 
 #### Invalid String is an error
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 
 try {
   = '3' < 'bar'
@@ -323,7 +323,7 @@ no
 
 #### List / "Tuple" comparison is not allowed
 
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 
 var t1 = 3, 0
 var t2 = 4, 0
@@ -392,3 +392,25 @@ case (myexpr) {
 ## status: 3
 ## STDOUT:
 ## END
+
+#### object identity
+
+var d = {}
+var s = 'str'
+
+pp test_ (d is d)
+pp test_ (d is not {})
+echo
+
+pp test_ (d is s)
+pp test_ (d is not s)
+
+## STDOUT:
+(Bool)   true
+(Bool)   true
+
+(Bool)   false
+(Bool)   true
+## END
+
+

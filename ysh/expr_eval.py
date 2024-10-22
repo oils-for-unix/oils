@@ -735,13 +735,9 @@ class ExprEvaluator(object):
                 result = not val_ops.Contains(left, right)
 
             elif op.id == Id.Expr_Is:
-                if left.tag() != right.tag():
-                    raise error.TypeErrVerbose('Mismatched types', op)
                 result = left is right
 
             elif op.id == Id.Node_IsNot:
-                if left.tag() != right.tag():
-                    raise error.TypeErrVerbose('Mismatched types', op)
                 result = left is not right
 
             elif op.id == Id.Expr_DTilde:
