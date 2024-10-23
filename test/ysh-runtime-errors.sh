@@ -1068,6 +1068,16 @@ test-required-blocks() {
 test-obj-methods() {
   _ysh-error-X 3 'var o = Object(null, {}); pp test_ (o[1])'
   _ysh-error-X 3 'var o = Str; pp test_ (Str[1])'
+
+  _ysh-error-X 3 'pp test_ (Bool[Bool])'
+  _ysh-error-X 3 'pp test_ (Dict[Bool])'
+  _ysh-error-X 3 'pp test_ (List[Str, Bool])'
+
+  # break invariants
+  _ysh-error-X 3 'call propView(List)->erase("name"); pp test_ (List[Str])'
+  _ysh-error-X 3 'call propView(Str)->erase("name"); pp test_ (List[Str])'
+
+  _ysh-error-X 3 'pp test_ (List[Str, 3])'
 }
 
 soil-run-py() {

@@ -7,7 +7,7 @@ from core import error
 from core import vm
 from frontend import typed_args
 from mycpp import mylib
-from mycpp.mylib import log, tagswitch
+from mycpp.mylib import log, tagswitch, str_switch
 
 from typing import Dict, List, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -32,50 +32,70 @@ def _GetStringField(obj, field_name):
 
 class Index__(vm._Callable):
     """
-    These are similar:
+    This maintains the invariants:
 
-        var cmd = ^(echo hi)
-        call io->eval(cmd)
+        List[Int] is List[Int]
+        List[Str] is List[Str]
 
-    Also give the top namespace
-
-        call io->evalToDict(cmd)
-
-    The CALLER must handle errors.
+    i.e. 2 evaluations always yield the same object
     """
 
     def __init__(self):
         # type: () -> None
-        self.cache = {}  # type: Dict[str, Obj]
+        self.unique_instances = {}  # type: Dict[str, Obj]
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
+        val = self._Call(rd)
+        if val is None:
+            raise error.Expr(
+                'Obj __index__ method detected a broken type Obj invariant',
+                rd.LeastSpecificLocation())
+        return val
+
+    def _Call(self, rd):
+        # type: (typed_args.Reader) -> Optional[value_t]
         left_obj = rd.PosObj()
         right = rd.PosValue()
+        rd.Done()
 
         left_name = _GetStringField(left_obj, 'name')
         if left_name is None:
-            raise AssertionError()
+            return None  # all type objects should have 'name'
 
         UP_right = right
-        result = None  # type: Optional[value_t]
 
         objects = []  # type: List[Obj]
-        with tagswitch(right) as case:
-            if case(value_e.Obj):
+        with tagswitch(right) as case2:
+            if case2(value_e.Obj):
                 right = cast(Obj, UP_right)
                 objects.append(right)
 
-            elif case(value_e.List):
+            elif case2(value_e.List):
                 right = cast(value.List, UP_right)
                 for i, val in enumerate(right.items):
                     if val.tag() != value_e.Obj:
-                        raise AssertionError()
+                        # List[Str, 3] is invalid
+                        return None
                     objects.append(cast(Obj, val))
             else:
-                raise error.TypeErr(right,
-                                    'Obj __index__ expected Obj or List',
-                                    rd.LeastSpecificLocation())
+                raise error.TypeErr(
+                    right, 'Obj __index__ method expected Obj or List',
+                    rd.LeastSpecificLocation())
+
+        with str_switch(left_name) as case:
+            if case("List"):
+                expected_params = 1
+            elif case("Dict"):
+                expected_params = 2
+            else:
+                expected_params = 0
+
+        actual = len(objects)
+        if expected_params != actual:
+            raise error.Expr(
+                'Obj __index__ method expected %d params, got %d' %
+                (expected_params, actual), rd.LeastSpecificLocation())
 
         buf = mylib.BufWriter()
         buf.write(left_name)
@@ -93,15 +113,16 @@ class Index__(vm._Callable):
             else:
                 r_name = _GetStringField(r, 'name')
                 if r_name is None:
-                    log('BAD %s', r)
-                    raise AssertionError()
+                    # every param object should have either:
+                    # 'name' - type object
+                    # 'unique_id' - parameterized type object
+                    return None
                 buf.write(r_name)
+
         buf.write(']')
 
-        #children = []  # type: List[value_t]
-
         unique_id = buf.getvalue()
-        obj_with_params = self.cache.get(unique_id)
+        obj_with_params = self.unique_instances.get(unique_id)
         if obj_with_params is None:
             # These are parameterized type objects
             props = {
@@ -109,6 +130,6 @@ class Index__(vm._Callable):
                 #'children': value.List(children)
             }  # type: Dict[str, value_t]
             obj_with_params = Obj(None, props)
-            self.cache[unique_id] = obj_with_params
+            self.unique_instances[unique_id] = obj_with_params
 
         return obj_with_params

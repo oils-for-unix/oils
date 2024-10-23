@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 
 #### Type objects Bool, Int, Float, etc.
 
@@ -64,12 +64,13 @@ pp test_ (Dict[Str, List[Int]])
 ## END
 
 #### Errors for parameterized types
+shopt -s ysh:upgrade
 
-# TODO: errors
-
-pp test_ (Bool[Str])
-pp test_ (List[Str, Str])
-pp test_ (Dict[Str])
+# more in test/ysh-runtime-errors.sh test-obj-methods
+try {
+  pp test_ (Bool[Str])
+}
+echo $[_error.code]
 
 # I think this means
 # TODO: need very low precedence operation
@@ -79,6 +80,7 @@ pp test_ (Dict[Str])
 # Func[Int, Str --> Int]
 
 ## STDOUT:
+3
 ## END
 
 #### runproc
