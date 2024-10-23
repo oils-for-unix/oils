@@ -1,6 +1,6 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 
-#### Builtin types
+#### Type objects Bool, Int, Float, etc.
 
 pp test_ (Bool)
 pp test_ (Int)
@@ -32,6 +32,14 @@ pp test_ (id(b) === id(Bool))
 
 (Bool)   true
 (Bool)   true
+## END
+
+#### List[Int], Dict[Str, Int]
+
+pp test_ (List[Int])
+pp test_ (Dict[Str, Int])
+
+## STDOUT:
 ## END
 
 #### runproc
