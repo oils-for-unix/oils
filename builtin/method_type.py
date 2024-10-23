@@ -6,13 +6,28 @@ from _devbuild.gen.value_asdl import value, value_e, value_t, Obj
 from core import error
 from core import vm
 from frontend import typed_args
+from mycpp import mylib
 from mycpp.mylib import log, tagswitch
 
-from typing import Dict, Optional, TYPE_CHECKING
+from typing import Dict, List, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     pass
 
 _ = log
+
+
+def _GetStringField(obj, field_name):
+    # type: (Obj, str) -> Optional[str]
+
+    val = obj.d.get(field_name)
+
+    # This could happen if a user attaches this BuiltinFunc to another
+    # Object?  A non-type object.  Or the user can mutate the type object.
+    if val is None:
+        return None
+    if val.tag() != value_e.Str:
+        return None
+    return cast(value.Str, val).s
 
 
 class Index__(vm._Callable):
@@ -35,75 +50,64 @@ class Index__(vm._Callable):
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
-        left_obj = rd.PosValue()
+        left_obj = rd.PosObj()
         right = rd.PosValue()
 
+        left_name = _GetStringField(left_obj, 'name')
+        if left_name is None:
+            raise AssertionError()
+
+        UP_right = right
         result = None  # type: Optional[value_t]
+
+        objects = []  # type: List[Obj]
         with tagswitch(right) as case:
             if case(value_e.Obj):
-                result = value.Bool(False)
+                right = cast(Obj, UP_right)
+                objects.append(right)
+
             elif case(value_e.List):
-                result = value.Bool(True)
+                right = cast(value.List, UP_right)
+                for i, val in enumerate(right.items):
+                    if val.tag() != value_e.Obj:
+                        raise AssertionError()
+                    objects.append(cast(Obj, val))
             else:
                 raise error.TypeErr(right,
                                     'Obj __index__ expected Obj or List',
                                     rd.LeastSpecificLocation())
 
-        return result
+        buf = mylib.BufWriter()
+        buf.write(left_name)
+        buf.write('[')
 
+        for i, r in enumerate(objects):
+            if i != 0:
+                buf.write(',')
 
-if 0:
-    """
-                index_method = ObjectNone
-                if obj.prototype:
-                    return None, None
+            #log('OBJ %s', r)
 
-                if index.tag() != value_e.Obj:
-                    raise error.TypeErr(index, 'Obj index expected Obj',
-                                        blame_loc)
+            r_unique_id = _GetStringField(r, 'unique_id')
+            if r_unique_id:
+                buf.write(r_unique_id)
+            else:
+                r_name = _GetStringField(r, 'name')
+                if r_name is None:
+                    log('BAD %s', r)
+                    raise AssertionError()
+                buf.write(r_name)
+        buf.write(']')
 
-                index = cast(Obj, UP_index)
+        children = []  # type: List[value_t]
 
-                # TODO: if index is a List[], then it's not unique?
-                # Do we need a unique object type?
-                id_str = mylib.hex_lower(j8.ValueId(index))
-
-                cached = obj.d.get(id_str)
-
-                # TODO:
-                # - List __index__ allows List[T], but not more?
-                # - Dict __index__ allows Dict[K, V], but not more?
-                #   - does K, V evaluate to a List?
-                #   - or an Obj?
-                # 
-                # Would be nice to have this in YSH
-
-                if cached is None:
-
-                    left_val = obj.d.get('name')
-                    if left_val is None:
-                        raise AssertionError()
-                    if left_val.tag() != value_e.Str:
-                        raise AssertionError()
-                    # Should look like
-
-                    # List[Int] -> ['List', 'Int']
-                    # Dict[Str, Float] -> ['Dict', 'Str', 'Float']
-                    # Dict[Str, List[Int]] -> ['Dict', 'Str', ['List', 'Int']]
-
-                    # where the names are canonical?
-
-                    right_val = index.d.get('name')
-                    if right_val is None:
-                        raise AssertionError()
-                    if right_val.tag() != value_e.Str:
-                        raise AssertionError()
-
-                    #raise AssertionError('yo')
-
-                    cached = value.List([left_val, right_val])
-                    obj.d[id_str] = cached
-                    #log('obj %r', obj.d[id_str])
-
-                return cached
-                """
+        unique_id = buf.getvalue()
+        obj_with_params = self.cache.get(unique_id)
+        if obj_with_params is None:
+            # These are parameterized type objects
+            props = {
+                'unique_id': value.Str(unique_id),
+                #'children': value.List(children)
+            }  # type: Dict[str, value_t]
+            obj_with_params = Obj(None, props)
+            self.cache[unique_id] = obj_with_params
+        return obj_with_params

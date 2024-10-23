@@ -34,10 +34,49 @@ pp test_ (id(b) === id(Bool))
 (Bool)   true
 ## END
 
-#### List[Int], Dict[Str, Int]
+#### Parameterized types - List[Int], Dict[Str, Int]
+shopt -s ysh:upgrade
 
-pp test_ (List[Int])
-pp test_ (Dict[Str, Int])
+var li = List[Int]
+var dsi = Dict[Str, Int]
+
+pp test_ (li)
+pp test_ (dsi)
+
+# test identity
+for i in a b c {
+  assert [li is List[Int]]
+  assert [dsi is Dict[Str,Int]]
+}
+
+assert [li is not dsi]
+
+var lli = List[li]
+pp test_ (lli)
+
+pp test_ (Dict[Str, List[Int]])
+
+## STDOUT:
+(Obj)   ("unique_id":"List[Int]")
+(Obj)   ("unique_id":"Dict[Str,Int]")
+(Obj)   ("unique_id":"List[List[Int]]")
+(Obj)   ("unique_id":"Dict[Str,List[Int]]")
+## END
+
+#### Errors for parameterized types
+
+# TODO: errors
+
+pp test_ (Bool[Str])
+pp test_ (List[Str, Str])
+pp test_ (Dict[Str])
+
+# I think this means
+# TODO: need very low precedence operation
+#
+# Func[Int, Str : Int]
+# Func[Int, Str -> Int]
+# Func[Int, Str --> Int]
 
 ## STDOUT:
 ## END
