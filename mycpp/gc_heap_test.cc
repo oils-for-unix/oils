@@ -355,7 +355,7 @@ TEST global_trace_test() {
   ASSERT_NUM_LIVE_OBJS(2);
 
   // Global pointer doesn't increase the count
-  strings->set(1, str4);
+  strings->set(0, str4);
   ASSERT_NUM_LIVE_OBJS(2);
 
   // Not after GC either
