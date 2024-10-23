@@ -213,12 +213,22 @@ class Transformer(object):
         if typ0 == Id.Op_LBracket:
             p_args = p_trailer.GetChild(1)
             assert p_args.typ == grammar_nt.subscriptlist
-            n = p_args.NumChildren()
-            if n > 1:
-                p_die("Only 1 subscript is accepted", p_args.GetChild(1).tok)
 
-            a = p_args.GetChild(0)
-            return Subscript(tok0, base, self._Subscript(a))
+            n = p_args.NumChildren()
+            if n == 1:  # a[1] a[1:2] a[:] etc.
+                subscript = self._Subscript(p_args.GetChild(0))
+            else:  # a[1, 2] a[1:2, :]
+                slices = []
+                for i in xrange(0, n, 2):
+                    slices.append(self._Subscript(p_args.GetChild(i)))
+                # expr.Tuple evaluates to List in YSH.
+                #
+                # Note that syntactically, a[1:2, 3:4] is the the only way to
+                # get a List[Slice].  [1:2, 3:4] by itself is not allowed.
+                comma_tok = p_args.GetChild(1).tok
+                subscript = expr.Tuple(comma_tok, slices, expr_context_e.Store)
+
+            return Subscript(tok0, base, subscript)
 
         if typ0 in (Id.Expr_Dot, Id.Expr_RArrow, Id.Expr_RDArrow):
             attr = p_trailer.GetChild(1).tok  # will be Id.Expr_Name

@@ -4,7 +4,8 @@ from errno import EINTR
 
 from _devbuild.gen.syntax_asdl import loc, loc_t, command_t
 from _devbuild.gen.value_asdl import (value, value_e, value_t, eggex_ops,
-                                      eggex_ops_t, regex_match, RegexMatch)
+                                      eggex_ops_t, regex_match, RegexMatch,
+                                      Obj)
 from core import error
 from core.error import e_die
 from display import ui
@@ -537,6 +538,23 @@ def MatchRegex(left, right, mem):
         if mem:
             mem.SetRegexMatch(regex_match.No)
         return False
+
+
+def IndexMetaMethod(obj):
+    # type: (Obj) -> Optional[value_t]
+    """
+    Returns value.{BuiltinFunc,Func} -- but not callable Obj?
+    """
+    if not obj.prototype:
+        return None
+    index_val = obj.prototype.d.get('__index__')
+    if not index_val:
+        return None
+
+    if index_val.tag() not in (value_e.BuiltinFunc, value_e.Func):
+        return None
+
+    return index_val
 
 
 # vim: sw=4

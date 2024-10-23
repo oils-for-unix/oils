@@ -22,13 +22,13 @@ pp test_ (b is Bool)
 pp test_ (id(b) === id(Bool))
 
 ## STDOUT:
-(Obj)   ("name":"Bool") --> ()
-(Obj)   ("name":"Int") --> ()
-(Obj)   ("name":"Float") --> ()
-(Obj)   ("name":"Str") --> ()
+(Obj)   ("name":"Bool") --> ("__index__":<BuiltinFunc>)
+(Obj)   ("name":"Int") --> ("__index__":<BuiltinFunc>)
+(Obj)   ("name":"Float") --> ("__index__":<BuiltinFunc>)
+(Obj)   ("name":"Str") --> ("__index__":<BuiltinFunc>)
 (Obj)   ("name":"List") --> ("__index__":<BuiltinFunc>)
 (Obj)   ("name":"Dict") --> ("__index__":<BuiltinFunc>)
-(Obj)   ("name":"Obj") --> ("__call__":<BuiltinFunc>)
+(Obj)   ("name":"Obj") --> ("__index__":<BuiltinFunc>)
 
 (Bool)   true
 (Bool)   true

@@ -1062,6 +1062,11 @@ test-required-blocks() {
   _ysh-should-run 'haynode Foo a { echo hi }'
 }
 
+test-obj-methods() {
+  _ysh-error-X 3 'var o = Object(null, {}); pp test_ (o[1])'
+  _ysh-error-X 3 'var o = Str; pp test_ (Str[1])'
+}
+
 soil-run-py() {
   run-test-funcs
 }

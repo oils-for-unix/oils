@@ -466,6 +466,16 @@ class ExprEvaluator(object):
 
         return val
 
+    def _CallMetaMethod(self, func_val, pos_args, blame_loc):
+        # type: (value_t, List[value_t], loc_t) -> value_t
+
+        named_args = {}  # type: Dict[str, value_t]
+        arg_list = ArgList.CreateNull()  # There's no call site
+        rd = typed_args.Reader(pos_args, named_args, None, arg_list)
+        rd.SetFallbackLocation(blame_loc)
+        # errors propagate
+        return self._CallFunc(func_val, rd)
+
     def SpliceValue(self, val, part):
         # type: (value_t, word_part.Splice) -> List[str]
         """ write -- @myvar """
@@ -963,8 +973,18 @@ class ExprEvaluator(object):
                     raise error.Expr('Dict entry not found: %r' % index.s,
                                      blame_loc)
 
-        raise error.TypeErr(obj, 'Subscript expected Str, List, or Dict',
-                            blame_loc)
+            elif case(value_e.Obj):
+                obj = cast(Obj, UP_obj)
+
+                index_method = val_ops.IndexMetaMethod(obj)
+                if index_method is not None:
+                    pos_args = [obj, index]
+                    return self._CallMetaMethod(index_method, pos_args,
+                                                blame_loc)
+
+        raise error.TypeErr(
+            obj, 'Subscript expected one of (Str List Dict, indexable Obj)',
+            blame_loc)
 
     def _ChainedLookup(self, obj, current, attr_name):
         # type: (Obj, Obj, str) -> Optional[value_t]

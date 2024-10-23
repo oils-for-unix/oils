@@ -1,4 +1,4 @@
-"""Methods on IO type"""
+"""Methods on Obj that is the io type"""
 from __future__ import print_function
 
 from _devbuild.gen.value_asdl import value, value_e, value_t
