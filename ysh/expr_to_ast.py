@@ -218,7 +218,7 @@ class Transformer(object):
             if n == 1:  # a[1] a[1:2] a[:] etc.
                 subscript = self._Subscript(p_args.GetChild(0))
             else:  # a[1, 2] a[1:2, :]
-                slices = []
+                slices = []  # type: List[expr_t]
                 for i in xrange(0, n, 2):
                     slices.append(self._Subscript(p_args.GetChild(i)))
                 # expr.Tuple evaluates to List in YSH.
