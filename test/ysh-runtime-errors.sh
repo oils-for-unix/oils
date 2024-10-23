@@ -123,6 +123,9 @@ test-ysh-expr-eval() {
   _ysh-expr-error 'var d = {}; setvar d[42] = 3'
   _ysh-expr-error 'var L = []; setvar L["key"] = 3'
 
+  # Index out of bounds
+  _ysh-expr-error 'var L = []; setvar L[99] = 3'
+  _ysh-expr-error 'var L = []; pp (L[-99])'
 }
 
 test-ysh-expr-eval-2() {

@@ -239,7 +239,7 @@ json write (d)
 }
 ## END
 
-#### setvar d.key = 42 (setitem)
+#### setvar d.key = 42
 shopt -s ysh:all
 
 var d = {}
@@ -256,7 +256,7 @@ f3=43
 f2=42
 ## END
 
-#### setvar mylist[1] = 42 (setitem)
+#### setvar mylist[1] = 42
 shopt -s ysh:all
 var mylist = [1,2,3]
 setvar mylist[1] = 42
@@ -264,6 +264,27 @@ setvar mylist[1] = 42
 write --sep ' ' @mylist
 ## STDOUT:
 1 42 3
+## END
+
+#### setvar mylist[99] out of range
+shopt -s ysh:all
+var mylist = [4,5,6]
+try {
+  setvar mylist[99] = 42
+}
+echo $[_error.code]
+
+try {
+  setvar mylist[-99] = 42
+}
+echo $[_error.code]
+
+write --sep ' ' @mylist
+
+## STDOUT:
+3
+3
+4 5 6
 ## END
 
 #### mixing assignment builtins and YSH assignment

@@ -478,6 +478,57 @@ TEST test_list_pop_mem_safe() {
   PASS();
 }
 
+TEST test_index_out_of_bounds() {
+  auto l = NewList<int>({1, 2, 3});
+
+  ASSERT_EQ(3, l->at(2));
+  ASSERT_EQ(1, l->at(-3));
+
+  bool caught;
+
+  caught = false;
+  try {
+    l->at(3);
+  } catch (IndexError* e) {
+    caught = true;
+  }
+  ASSERT(caught);
+
+  caught = false;
+  try {
+    l->at(-4);
+  } catch (IndexError* e) {
+    caught = true;
+  }
+  ASSERT(caught);
+
+  // Now test setting it
+
+  l->set(2, 10);
+  l->set(-3, 11);
+
+  ASSERT_EQ(10, l->at(2));
+  ASSERT_EQ(11, l->at(-3));
+
+  caught = false;
+  try {
+    l->set(3, 12);
+  } catch (IndexError* e) {
+    caught = true;
+  }
+  ASSERT(caught);
+
+  caught = false;
+  try {
+    l->set(-4, 13);
+  } catch (IndexError* e) {
+    caught = true;
+  }
+  ASSERT(caught);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -500,6 +551,8 @@ int main(int argc, char** argv) {
   RUN_TEST(test_list_remove);
 
   RUN_TEST(test_list_pop_mem_safe);
+
+  RUN_TEST(test_index_out_of_bounds);
 
   gHeap.CleanProcessExit();
 

@@ -765,7 +765,12 @@ class CommandEvaluator(object):
                             index = expr_eval._ConvertToInt(
                                 lval.index, 'List index should be Int',
                                 loc.Missing)
-                            obj.items[mops.BigTruncate(index)] = rval
+                            i = mops.BigTruncate(index)
+                            try:
+                                obj.items[i] = rval
+                            except IndexError:
+                                raise error.Expr('index out of range',
+                                                 loc.Missing)
 
                         elif case(value_e.Dict):
                             obj = cast(value.Dict, UP_obj)

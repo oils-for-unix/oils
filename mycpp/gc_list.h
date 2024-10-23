@@ -174,7 +174,7 @@ List<T>* NewList(std::initializer_list<T> init) {
 
   int i = 0;
   for (auto item : init) {
-    self->set(i, item);
+    self->slab_->items_[i] = item;
     ++i;
   }
   self->len_ = n;
@@ -283,8 +283,9 @@ void List<T>::set(int i, T item) {
     i = len_ + i;
   }
 
-  DCHECK(i >= 0);
-  DCHECK(i < capacity_);
+  if (0 > i || i >= len_) {
+    throw Alloc<IndexError>();
+  }
 
   slab_->items_[i] = item;
 }
@@ -293,14 +294,10 @@ void List<T>::set(int i, T item) {
 template <typename T>
 T List<T>::at(int i) {
   if (i < 0) {
-    int j = len_ + i;
-    if (j >= len_ || j < 0) {
-      throw Alloc<IndexError>();
-    }
-    return slab_->items_[j];
+    i = len_ + i;
   }
 
-  if (i >= len_ || i < 0) {
+  if (0 > i || i >= len_) {
     throw Alloc<IndexError>();
   }
   return slab_->items_[i];
@@ -388,7 +385,7 @@ void List<T>::extend(List<T>* other) {
   reserve(new_len);
 
   for (int i = 0; i < n; ++i) {
-    set(len_ + i, other->slab_->items_[i]);
+    slab_->items_[len_ + i] = other->slab_->items_[i];
   }
   len_ = new_len;
 }
