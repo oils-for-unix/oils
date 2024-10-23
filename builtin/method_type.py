@@ -88,7 +88,7 @@ class Index__(vm._Callable):
             #log('OBJ %s', r)
 
             r_unique_id = _GetStringField(r, 'unique_id')
-            if r_unique_id:
+            if r_unique_id is not None:
                 buf.write(r_unique_id)
             else:
                 r_name = _GetStringField(r, 'name')
@@ -98,7 +98,7 @@ class Index__(vm._Callable):
                 buf.write(r_name)
         buf.write(']')
 
-        children = []  # type: List[value_t]
+        #children = []  # type: List[value_t]
 
         unique_id = buf.getvalue()
         obj_with_params = self.cache.get(unique_id)
@@ -110,4 +110,5 @@ class Index__(vm._Callable):
             }  # type: Dict[str, value_t]
             obj_with_params = Obj(None, props)
             self.cache[unique_id] = obj_with_params
+
         return obj_with_params
