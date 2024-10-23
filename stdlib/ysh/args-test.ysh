@@ -3,7 +3,7 @@
 # TODO: you should only have to pick parser
 # and you can use 'args parser' I guess
 
-use $LIB_YSH/args.ysh --pick parser flag arg rest parseArgs
+use $LIB_YSH/args.ysh --pick parser parseArgs
 
 source $LIB_YSH/yblocks.ysh
 

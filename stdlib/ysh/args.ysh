@@ -3,7 +3,7 @@
 # Usage:
 #   source --builtin args.sh
 
-const __provide__ = :| parser flag arg rest parseArgs |
+const __provide__ = :| parser parseArgs |
 
 #
 #
@@ -31,11 +31,10 @@ const __provide__ = :| parser flag arg rest parseArgs |
 # echo "Verbose $[args.verbose]"
 
 # TODO: See list
-# - It would be nice to keep `flag` and `arg` private, injecting them into the
-#   proc namespace only within `Args`
 # - flag builtin:
 #   - handle only long flag or only short flag
 #   - flag aliases
+#   - support repeated or character-delimited multi-value flags
 
 proc parser (; place ; ; block_def) {
   ## Create an args spec which can be passed to parseArgs.
@@ -50,7 +49,9 @@ proc parser (; place ; ; block_def) {
   ##   var args = parseArgs(spec, ARGV)
 
   var p = {flags: [], args: []}
-  ctx push (p; ; block_def)
+  ctx push (p) {
+    call io->eval(block_def, vars={flag, arg, rest})
+  }
 
   # Validate that p.rest = [name] or null and reduce p.rest into name or null.
   if ('rest' in p) {
