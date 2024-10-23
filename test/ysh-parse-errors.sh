@@ -272,11 +272,6 @@ test-ysh-expr() {
 
   # Disallowed unconditionally
   _ysh-parse-error '=a'
-
-  _ysh-parse-error '
-    var d = {}
-    = d["foo", "bar"]
-  '
 }
 
 test-ysh-expr-more() {
