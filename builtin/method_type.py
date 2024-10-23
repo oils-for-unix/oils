@@ -63,6 +63,10 @@ class Index__(vm._Callable):
         if left_name is None:
             return None  # all type objects should have 'name'
 
+        # This would mess up the encoding of 'Dict[Str,Int]'
+        assert (',' not in left_name and '[' not in left_name and
+                ']' not in left_name), left_name
+
         UP_right = right
 
         objects = []  # type: List[Obj]
@@ -84,9 +88,9 @@ class Index__(vm._Callable):
                     rd.LeastSpecificLocation())
 
         with str_switch(left_name) as case:
-            if case("List"):
+            if case('List'):
                 expected_params = 1
-            elif case("Dict"):
+            elif case('Dict'):
                 expected_params = 2
             else:
                 expected_params = 0
@@ -117,6 +121,8 @@ class Index__(vm._Callable):
                     # 'name' - type object
                     # 'unique_id' - parameterized type object
                     return None
+                assert (',' not in r_name and '[' not in r_name and
+                        ']' not in r_name), r_name
                 buf.write(r_name)
 
         buf.write(']')

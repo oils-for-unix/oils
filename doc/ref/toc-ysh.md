@@ -65,7 +65,7 @@ X [Proc]           name()         location()     toJson()
                    evalExpr()
                    promptVal()
                  X time()       X strftime()   X glob()
-  [Obj]            __invoke__   X __call__     X __str__
+  [Obj]            __invoke__   X __call__     __index__     X __str__
   [VM]           X getFrame()
 ```
 

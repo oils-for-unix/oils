@@ -663,7 +663,7 @@ fail?
 
 <!-- copied from doc/proc-func-md -->
 
-The `__invoke__` method makes an Object "proc-like".
+The `__invoke__` meta-method makes an Object "proc-like".
 
 First, define a proc, with the first typed arg named `self`:
 
@@ -684,6 +684,15 @@ Then invoke it like a proc:
 ### `__call__`
 
 TODO
+
+### `__index__`
+
+The `__index__` meta-method controls what happens when `obj[x]` is evaluated.
+
+It's currently used for type objects:
+
+    var t = Dict[Str, Int]
+    assert [t is Dict[Str, Int]]  # always evaluates to the same instance
 
 ### `__str__`
 
