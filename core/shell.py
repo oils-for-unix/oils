@@ -10,6 +10,7 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import option_i, builtin_i
 from _devbuild.gen.syntax_asdl import (loc, source, source_t, IntParamBox,
                                        debug_frame, debug_frame_t)
+from _devbuild.gen.runtime_asdl import scope_e
 from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str, Obj)
 from core import alloc
 from core import comp_ui
@@ -32,6 +33,7 @@ from frontend import flag_def  # side effect: flags are defined!
 
 unused1 = flag_def
 from frontend import flag_util
+from frontend import location
 from frontend import reader
 from frontend import parse_lib
 
@@ -78,7 +80,7 @@ from osh import word_eval
 
 from mycpp import mops
 from mycpp import mylib
-from mycpp.mylib import print_stderr, log
+from mycpp.mylib import NewDict, iteritems, print_stderr, log
 from pylib import os_path
 from tools import deps
 from tools import fmt
@@ -344,7 +346,13 @@ def Main(
 
     script_name = arg_r.Peek()  # type: Optional[str]
     arg_r.Next()
-    mem = state.Mem(dollar0, arg_r.Rest(), arena, debug_stack)
+
+    env_dict = NewDict()  # type: Dict[str, value_t]
+    mem = state.Mem(dollar0,
+                    arg_r.Rest(),
+                    arena,
+                    debug_stack,
+                    env_dict=env_dict)
 
     opt_hook = ShellOptHook(readline)
     # Note: only MutableOpts needs mem, so it's not a true circular dep.
@@ -363,7 +371,14 @@ def Main(
     state.InitBuiltins(mem, environ, version_str)
     state.InitDefaultVars(mem)
 
-    if not exec_opts.no_copy_env():
+    if exec_opts.no_copy_env():
+        #if 1:
+        for name, s in iteritems(environ):
+            env_dict[name] = value.Str(s)
+
+        mem.SetNamed(location.LName('ENV'), value.Dict(env_dict),
+                     scope_e.GlobalOnly)
+    else:
         state.CopyVarsFromEnv(mem, environ)
 
     # PATH PWD SHELLOPTS, etc. must be set after CopyVarsFromEnv()
@@ -374,7 +389,7 @@ def Main(
         return 0
 
     # feedback between runtime and parser
-    aliases = {}  # type: Dict[str, str]
+    aliases = NewDict()  # type: Dict[str, str]
 
     ysh_grammar = pyutil.LoadYshGrammar(loader)
 
@@ -528,7 +543,7 @@ def Main(
 
     builtins = {}  # type: Dict[int, vm._Builtin]
 
-    # e.g. s->startswith()
+    # e.g. s.startswith()
     methods = {}  # type: Dict[int, Dict[str, vm._Callable]]
 
     hay_state = hay_ysh.HayState()
@@ -555,7 +570,7 @@ def Main(
     # PromptEvaluator rendering is needed in non-interactive shells for @P.
     prompt_ev = prompt.Evaluator(lang, version_str, parse_ctx, mem)
 
-    io_methods = {}  # type: Dict[str, value_t]
+    io_methods = NewDict()  # type: Dict[str, value_t]
     io_methods['promptVal'] = value.BuiltinFunc(method_io.PromptVal(prompt_ev))
 
     # The M/ prefix means it's io->eval()
@@ -580,9 +595,9 @@ def Main(
     io_props = {'stdin': value.Stdin}  # type: Dict[str, value_t]
     io_obj = Obj(Obj(None, io_methods), io_props)
 
-    vm_methods = {}  # type: Dict[str, value_t]
+    vm_methods = NewDict()  # type: Dict[str, value_t]
     vm_methods['getFrame'] = value.BuiltinFunc(func_reflect.GetFrame(mem))
-    vm_props = {}  # type: Dict[str, value_t]
+    vm_props = NewDict()  # type: Dict[str, value_t]
     vm_obj = Obj(Obj(None, vm_methods), vm_props)
 
     # Add basic type objects for flag parser
@@ -598,7 +613,7 @@ def Main(
     #   - __str__ method for echo $[type(x)] ?
 
     i_func = method_type.Index__()
-    type_m = {}  # type: Dict[str, value_t]
+    type_m = NewDict()  # type: Dict[str, value_t]
     type_m['__index__'] = value.BuiltinFunc(i_func)
     type_obj_methods = Obj(None, type_m)
 
@@ -630,7 +645,7 @@ def Main(
         if help_meta:
             help_data = help_meta.TopicMetadata()
         else:
-            help_data = {}  # minimal build
+            help_data = NewDict()  # minimal build
     else:
         help_data = help_meta.TopicMetadata()
     b[builtin_i.help] = misc_osh.Help(lang, loader, help_data, errfmt)
@@ -678,7 +693,7 @@ def Main(
                                        errfmt, mem)
 
     # Module builtins
-    guards = {}  # type: Dict[str, bool]
+    guards = NewDict()  # type: Dict[str, bool]
     b[builtin_i.source_guard] = module_ysh.SourceGuard(guards, exec_opts,
                                                        errfmt)
     b[builtin_i.is_main] = module_ysh.IsMain(mem)

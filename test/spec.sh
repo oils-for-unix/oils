@@ -790,6 +790,10 @@ ysh-demo() {
   run-file ysh-demo "$@"
 }
 
+ysh-env() {
+  run-file ysh-env "$@"
+}
+
 ysh-expr() {
   run-file ysh-expr "$@"
 }

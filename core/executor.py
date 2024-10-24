@@ -342,7 +342,7 @@ class ShellExecutor(vm._Executor):
             cmd_st.show_code = True  # this is a "leaf" for errors
             return self.RunBuiltin(builtin_id, cmd_val)
 
-        environ = self.mem.GetExported()  # Include temporary variables
+        environ = self.mem.GetEnv()  # Include temporary variables
 
         if cmd_val.proc_args:
             e_die(

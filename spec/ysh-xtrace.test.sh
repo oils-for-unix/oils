@@ -1,4 +1,4 @@
-# Oil xtrace
+# Oils xtrace
 
 #### Customize PS4
 shopt -s ysh:upgrade

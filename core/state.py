@@ -1439,8 +1439,8 @@ class Mem(object):
     Modules: cmd_eval, word_eval, expr_eval, completion
     """
 
-    def __init__(self, dollar0, argv, arena, debug_stack):
-        # type: (str, List[str], alloc.Arena, List[debug_frame_t]) -> None
+    def __init__(self, dollar0, argv, arena, debug_stack, env_dict=None):
+        # type: (str, List[str], alloc.Arena, List[debug_frame_t], Dict[str, value_t]) -> None
         """
         Args:
           arena: currently unused
@@ -1463,6 +1463,11 @@ class Mem(object):
         # for crash dumps and for 3 parallel arrays: BASH_SOURCE, FUNCNAME, and
         # BASH_LINENO.
         self.debug_stack = debug_stack
+
+        if env_dict is None:  # for unit tests only
+            self.env_dict = NewDict()  # type: Dict[str, value_t]
+        else:
+            self.env_dict = env_dict
 
         self.pwd = None  # type: Optional[str]
         self.seconds_start = time_.time()
@@ -2563,6 +2568,20 @@ class Mem(object):
             return True
         else:
             return False
+
+    def GetEnv(self):
+        # type: () -> Dict[str, str]
+        if self.exec_opts.no_copy_env():
+            #if 1:
+            # TODO: env dict
+            result = {}  # type: Dict[str, str]
+            for name, val in iteritems(self.env_dict):
+                if val.tag() != value_e.Str:
+                    continue
+                result[name] = cast(value.Str, val).s
+            return result
+        else:
+            return self.GetExported()
 
     def GetExported(self):
         # type: () -> Dict[str, str]
