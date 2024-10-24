@@ -191,7 +191,7 @@ func parseArgs(spec, argv) {
               error "Expected Int after '$arg'" (code=2)
             }
 
-            setvar value = args[flag.name] if (flag.name in args) else []
+            setvar value = get(args, flag.name, [])
             try { call value->append(int(argv[i])) }
             if (_status !== 0) {
               error "Expected Int after '$arg', got '$[argv[i]]'" (code=2)
@@ -212,7 +212,7 @@ func parseArgs(spec, argv) {
               error "Expected Float after '$arg'" (code=2)
             }
 
-            setvar value = args[flag.name] if (flag.name in args) else []
+            setvar value = get(args, flag.name, [])
             try { call value->append(float(argv[i])) }
             if (_status !== 0) {
               error "Expected Float after '$arg', got '$[argv[i]]'" (code=2)
@@ -230,7 +230,7 @@ func parseArgs(spec, argv) {
               error "Expected Str after '$arg'" (code=2)
             }
 
-            setvar value = args[flag.name] if (flag.name in args) else []
+            setvar value = get(args, flag.name, [])
             call value->append(argv[i])
           }
 
