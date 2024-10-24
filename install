@@ -3,23 +3,15 @@
 # POSIX shell script to install oils-for-unix into the proper directory.
 # Distributed with the source tarball.
 #
+# For usage, run:
+#
+#   ./install --help 
+#
 # Also shared with the old "oil.ovm" build.
 
 # NOTE: 'install' is part of coreutils and busybox.
 
-# The variable DESTDIR allows staged installs, where the installed files are
-# not placed directly into the location they're expected to be executed from.
-# They are placed in a temp dir first, which they are NOT expected to run out of.
-#
-# https://www.gnu.org/prep/standards/html_node/DESTDIR.html
-#
-# Staged installs are the default method of installation by package managers
-# such as gentoo-portage.
-#
-# https://devmanual.gentoo.org/quickstart/index.html
-
 # old tarball
-
 readonly OVM_NAME=oil.ovm
 readonly OVM_PATH=_bin/$OVM_NAME
 
@@ -108,13 +100,63 @@ install_bin_and_links() {
   log "Installed man page"
 }
 
-if test -f "$OVM_PATH"; then
-  # Python tarball keeps 'oil' for compatibility
-  install_bin_and_links "$OVM_PATH" "$OVM_NAME" osh ysh oil
-elif test -f "$OILS_PATH"; then
-  # new name is 'ysh', which points at oils-for-unix
-  install_bin_and_links "$OILS_PATH" 'oils-for-unix' osh ysh
-else
-  die "Couldn't find $OVM_PATH or $OILS_PATH"
-fi
+# TODO: ./install _bin/cxx-opt-sh/oils-for-unix  # or a given binary
 
+show_help() {
+  cat <<'EOF'
+Install the oils-for-unix binary, and symlinks to it, like osh.
+
+Usage:
+
+  ./install                                # install stripped binary
+  ./install --help                         # show this help
+
+  DESTDIR=/tmp/foo ./install
+
+The DESTDIR var allows staged installs, where the installed files are not
+placed directly into the location they're expected to be executed from.  They
+are placed in a temp dir first, which they are NOT expected to run out of.
+
+    https://www.gnu.org/prep/standards/html_node/DESTDIR.html
+
+Staged installs are the default method of installation by package managers such
+as gentoo-portage.
+
+    https://devmanual.gentoo.org/quickstart/index.html
+
+EOF
+}
+
+parse_flags() {
+  while true; do
+    case "$1" in
+      '')
+        break
+        ;;
+      --help)
+        show_help
+        exit 0
+        ;;
+      *)
+        die "Invalid argument '$1'"
+        ;;
+    esac
+    shift
+  done
+}
+
+main() {
+  parse_flags "$@"  # sets FLAG_*
+
+  if test -f "$OVM_PATH"; then
+    # Python tarball keeps 'oil' for compatibility
+    install_bin_and_links "$OVM_PATH" "$OVM_NAME" osh ysh oil
+  elif test -f "$OILS_PATH"; then
+    # new name is 'ysh', which points at oils-for-unix
+    install_bin_and_links "$OILS_PATH" 'oils-for-unix' osh ysh
+  else
+    die "Couldn't find $OVM_PATH or $OILS_PATH"
+  fi
+}
+
+main "$@"
