@@ -34,7 +34,7 @@ const __provide__ = :| parser parseArgs |
 # - flag builtin:
 #   - handle only long flag or only short flag
 #   - flag aliases
-#   - support repeated or character-delimited multi-value flags
+#   - assert that default value has the declared type
 
 proc parser (; place ; ; block_def) {
   ## Create an args spec which can be passed to parseArgs.
@@ -80,18 +80,17 @@ proc parser (; place ; ; block_def) {
   call place->setValue(p)
 }
 
-const kValidTypes = [Bool, Float, Int, Str]
+const kValidTypes = [Bool, Float, List[Float], Int, List[Int], Str, List[Str]]
 const kValidTypeNames = []
 for vt in (kValidTypes) {
-  call kValidTypeNames->append(vt.name)
+  var name = vt.name if ('name' in propView(vt)) else vt.unique_id
+  call kValidTypeNames->append(name)
 }
 
 func isValidType (type) {
-  try {
-    for valid in (kValidTypes) {
-      if (type is valid) {
-        return (true)
-      }
+  for valid in (kValidTypes) {
+    if (type is valid) {
+      return (true)
     }
   }
   return (false)
@@ -107,6 +106,7 @@ proc flag (short, long ; type=Bool ; default=null, help=null) {
   ##     flag -n --count (Int, default=1)
   ##     flag -p --percent (Float, default=0.0)
   ##     flag -f --file (Str, help="File to process")
+  ##     flag -e --exclude (List[Str], help="File to exclude")
   ##   }
 
   if (type !== null and not isValidType(type)) {
@@ -185,6 +185,17 @@ func parseArgs(spec, argv) {
             if (_status !== 0) {
               error "Expected Int after '$arg', got '$[argv[i]]'" (code=2)
             }
+          } elif (flag.type is List[Int]) {
+            setvar i += 1
+            if (i >= len(argv)) {
+              error "Expected Int after '$arg'" (code=2)
+            }
+
+            setvar value = get(args, flag.name, [])
+            try { call value->append(int(argv[i])) }
+            if (_status !== 0) {
+              error "Expected Int after '$arg', got '$[argv[i]]'" (code=2)
+            }
           } elif (flag.type is Float) {
             setvar i += 1
             if (i >= len(argv)) {
@@ -195,6 +206,17 @@ func parseArgs(spec, argv) {
             if (_status !== 0) {
               error "Expected Float after '$arg', got '$[argv[i]]'" (code=2)
             }
+          } elif (flag.type is List[Float]) {
+            setvar i += 1
+            if (i >= len(argv)) {
+              error "Expected Float after '$arg'" (code=2)
+            }
+
+            setvar value = get(args, flag.name, [])
+            try { call value->append(float(argv[i])) }
+            if (_status !== 0) {
+              error "Expected Float after '$arg', got '$[argv[i]]'" (code=2)
+            }
           } elif (flag.type is Str) {
             setvar i += 1
             if (i >= len(argv)) {
@@ -202,6 +224,14 @@ func parseArgs(spec, argv) {
             }
 
             setvar value = argv[i]
+          } elif (flag.type is List[Str]) {
+            setvar i += 1
+            if (i >= len(argv)) {
+              error "Expected Str after '$arg'" (code=2)
+            }
+
+            setvar value = get(args, flag.name, [])
+            call value->append(argv[i])
           }
 
           setvar args[flag.name] = value
