@@ -319,6 +319,34 @@ proc test-vs-python3-argparse {
   #assert [expected === r.stdout]
 }
 
+proc test-multi-value-flags {
+  parser (&spec) {
+    flag -f --float (List[Float])
+    flag -i --int (List[Int])
+    flag -s --str (List[Str])
+  }
+
+  var args = parseArgs(spec, :| -f 1.0 -s one -i 0 --str two --int 1 -s three |)
+
+  assert [type(args.float) === 'List']
+  assert [len(args.float) === 1]
+  assert [floatsEqual(args.float[0], 1.0)]
+
+  call args->erase('float') # remove List[Float] value for subsequent equality check
+
+  var expected = {
+    "int": [0, 1],
+    "str": :| one two three |,
+  }
+
+  assert [expected === args]
+
+  try { call parseArgs(spec, :| -f not_a_float |) }
+  assert [2 === _error.code]
+  try { call parseArgs(spec, :| -i not_an_int |) }
+  assert [2 === _error.code]
+}
+
 if is-main {
   byo-maybe-run
 }

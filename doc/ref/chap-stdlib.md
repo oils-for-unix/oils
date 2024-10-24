@@ -327,11 +327,22 @@ Flags can also accept values. For example, if you wanted to accept an integer co
       flag -N --count (Int)
     }
 
-Calling `parseArgs` with `ARGV = :| -n 5 |` or `ARGV = :| --count 5 |` will
+Calling `parseArgs` with `ARGV = :| -N 5 |` or `ARGV = :| --count 5 |` will
 store the integer `5` under `args.count`. If the user passes in a non-integer
 value like `ARGV = :| --count abc |`, `parseArgs` will raise an error.
 
-The supported types are `Bool`, `Int`, `Float`, and `Str`.
+The supported flag types are `Bool`, `Int`, `List[Int]`, `Float`, `List[Float]`,
+`Str`, and `List[Str]`.
+
+Flags with a `List` type may be provided multiple times. For example, if you
+wanted to accept a list of strings:
+
+    parser (&spec) {
+        flag -f --file (List[Str])
+    }
+
+Calling `parseArgs` with `ARGV = :| -f a --file b -f c |` will store the value
+`['a', 'b', 'c']` under `args.file`.
 
 Default values for an argument can be set with the `default` named argument.
 
