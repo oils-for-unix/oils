@@ -1260,9 +1260,8 @@ class ExprEvaluator(object):
                 i2 = _ConvertToInt(self._EvalExpr(node.upper),
                                    'Range end should be Int', node.op)
 
-                # i2 is a big int so we don't have to worry about overflow
                 if node.op.id == Id.Expr_DDotEqual:  # Closed range
-                    i2 = mops.Add(i2, mops.BigInt(1))
+                    i2 = mops.Add(i2, mops.ONE)
 
                 # TODO: Don't truncate
                 return value.Range(mops.BigTruncate(i1), mops.BigTruncate(i2))
