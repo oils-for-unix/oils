@@ -103,9 +103,9 @@ Install the oils-for-unix binary, and symlinks to it, like osh.
 
 Usage:
 
-  ./install                                       # install the stripped binary
-  ./install --from _bin/cxx-opt-sh/oils-for-unix  # or a given binary
-  ./install --help                                # show this help
+  ./install                                # install the stripped binary
+  ./install _bin/cxx-opt-sh/oils-for-unix  # or a given binary
+  ./install --help                         # show this help
 
   DESTDIR=/tmp/foo ./install
 
@@ -122,47 +122,53 @@ Package managers such as gentoo-portage used staged installs by default.
 EOF
 }
 
-# by default, install the stripped binary
-FLAG_from=_bin/cxx-opt-sh/oils-for-unix.stripped
+
+FLAG_verbose=
+
+ARG_oils_binary=
 
 parse_flags() {
   while true; do
     case "$1" in
-      '')
-        break
-        ;;
       --help)
         show_help
         exit 0
         ;;
-      --from)
-        if test $# -eq 1; then
-          die "--from requires an argument"
-        fi
-        shift
-        FLAG_from=$1
+      -v|--verbose)
+        FLAG_verbose=true
+        ;;
+      -*)
+        die "Invalid flag '$1'"
         ;;
       *)
-        die "Invalid argument '$1'"
+        # No more flags
+        break
         ;;
     esac
     shift
   done
+
+  # by default, install the stripped binary
+  ARG_oils_binary=${1:-_bin/cxx-opt-sh/oils-for-unix.stripped}
 }
 
 main() {
   parse_flags "$@"  # sets FLAG_*, or prints help
 
+  if test -n "$FLAG_verbose"; then
+    log "Installing Oils binary $ARG_oils_binary"
+  fi
+
   if test -f "$OVM_PATH"; then
     # Python tarball keeps 'oil' for compatibility
     install_bin_and_links "$OVM_PATH" "$OVM_NAME" osh ysh oil
 
-  elif test -f "$FLAG_from"; then
+  elif test -f "$ARG_oils_binary"; then
     # 'osh' and 'ysh' point at 'oils-for-unix'
-    install_bin_and_links "$FLAG_from" 'oils-for-unix' osh ysh
+    install_bin_and_links "$ARG_oils_binary" 'oils-for-unix' osh ysh
 
   else
-    die "Couldn't find $OVM_PATH or $FLAG_from"
+    die "Couldn't find $OVM_PATH or $ARG_oils_binary"
   fi
 }
 
