@@ -15,9 +15,6 @@
 readonly OVM_NAME=oil.ovm
 readonly OVM_PATH=_bin/$OVM_NAME
 
-readonly OILS_PATH=_bin/cxx-opt-sh/oils-for-unix.stripped
-
-
 log() {
   # 4 space indent
   echo "    $@" >& 2
@@ -100,32 +97,33 @@ install_bin_and_links() {
   log "Installed man page"
 }
 
-# TODO: ./install _bin/cxx-opt-sh/oils-for-unix  # or a given binary
-
 show_help() {
   cat <<'EOF'
 Install the oils-for-unix binary, and symlinks to it, like osh.
 
 Usage:
 
-  ./install                                # install stripped binary
-  ./install --help                         # show this help
+  ./install                                       # install the stripped binary
+  ./install --from _bin/cxx-opt-sh/oils-for-unix  # or a given binary
+  ./install --help                                # show this help
 
   DESTDIR=/tmp/foo ./install
 
-The DESTDIR var allows staged installs, where the installed files are not
-placed directly into the location they're expected to be executed from.  They
-are placed in a temp dir first, which they are NOT expected to run out of.
+The DESTDIR var allows staged installs.  This means that the installed files
+are placed in a temp dir first, NOT the dir they are run from on the target
+machine.
 
     https://www.gnu.org/prep/standards/html_node/DESTDIR.html
 
-Staged installs are the default method of installation by package managers such
-as gentoo-portage.
+Package managers such as gentoo-portage used staged installs by default.
 
     https://devmanual.gentoo.org/quickstart/index.html
 
 EOF
 }
+
+# by default, install the stripped binary
+FLAG_from=_bin/cxx-opt-sh/oils-for-unix.stripped
 
 parse_flags() {
   while true; do
@@ -137,6 +135,13 @@ parse_flags() {
         show_help
         exit 0
         ;;
+      --from)
+        if test $# -eq 1; then
+          die "--from requires an argument"
+        fi
+        shift
+        FLAG_from=$1
+        ;;
       *)
         die "Invalid argument '$1'"
         ;;
@@ -146,16 +151,18 @@ parse_flags() {
 }
 
 main() {
-  parse_flags "$@"  # sets FLAG_*
+  parse_flags "$@"  # sets FLAG_*, or prints help
 
   if test -f "$OVM_PATH"; then
     # Python tarball keeps 'oil' for compatibility
     install_bin_and_links "$OVM_PATH" "$OVM_NAME" osh ysh oil
-  elif test -f "$OILS_PATH"; then
-    # new name is 'ysh', which points at oils-for-unix
-    install_bin_and_links "$OILS_PATH" 'oils-for-unix' osh ysh
+
+  elif test -f "$FLAG_from"; then
+    # 'osh' and 'ysh' point at 'oils-for-unix'
+    install_bin_and_links "$FLAG_from" 'oils-for-unix' osh ysh
+
   else
-    die "Couldn't find $OVM_PATH or $OILS_PATH"
+    die "Couldn't find $OVM_PATH or $FLAG_from"
   fi
 }
 

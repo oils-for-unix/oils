@@ -176,7 +176,7 @@ parse-flags-osh-runtime() {
         ;;
 
       *)
-        die "Invalid flag '$1'"
+        die "Invalid argument '$1'"
         ;;
     esac
     shift

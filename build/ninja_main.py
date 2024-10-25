@@ -132,7 +132,8 @@ EOF
 
 parse_flags() {
   while true; do
-    case "$1" in
+    # ${1:-} needed for set -u
+    case "${1:-}" in
       '')
         break
         ;;
