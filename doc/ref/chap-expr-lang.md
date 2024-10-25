@@ -231,7 +231,8 @@ the same name:
 
 ### range
 
-A range is a sequence of numbers that can be iterated over:
+A Range is a sequence of numbers that can be iterated over. The `..<` operator
+constructs half-open ranges.
 
     for i in (0 ..< 3) {
       echo $i
@@ -240,7 +241,7 @@ A range is a sequence of numbers that can be iterated over:
     => 1
     => 2
 
-The `..<` syntax is for half-open ranges. `..=` is for closed ranges:
+The `..=` operator constructs closed ranges:
 
     for i in (0 ..= 3) {
       echo $i
