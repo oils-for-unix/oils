@@ -8,7 +8,7 @@ from __future__ import print_function
 import math
 
 from _devbuild.gen.pretty_asdl import (doc, Measure, MeasuredDoc)
-from _devbuild.gen.value_asdl import value, value_e, value_t, value_str
+from _devbuild.gen.value_asdl import Obj, value, value_e, value_t, value_str
 from data_lang import j8
 from data_lang import j8_lite
 from display.pretty import (_Break, _Concat, _Flat, _Group, _IfFlat, _Indent,
@@ -325,16 +325,21 @@ class ValueEncoder:
         mdocs = [self._Value(item) for item in vlist.items]
         return self._Surrounded("[", self._Tabular(mdocs, ","), "]")
 
-    def _YshDict(self, vdict):
-        # type: (value.Dict) -> MeasuredDoc
-        if len(vdict.d) == 0:
-            return UText("{}")
+    def _DictMdocs(self, d):
+        # type: (Dict[str, value_t]) -> List[MeasuredDoc]
         mdocs = []  # type: List[MeasuredDoc]
-        for k, v in iteritems(vdict.d):
+        for k, v in iteritems(d):
             mdocs.append(
                 _Concat([self._DictKey(k),
                          UText(": "),
                          self._Value(v)]))
+        return mdocs
+
+    def _YshDict(self, vdict):
+        # type: (value.Dict) -> MeasuredDoc
+        if len(vdict.d) == 0:
+            return UText("{}")
+        mdocs = self._DictMdocs(vdict.d)
         return self._Surrounded("{", self._Join(mdocs, ",", " "), "}")
 
     def _BashArray(self, varray):
@@ -384,6 +389,19 @@ class ValueEncoder:
                 ]))
         return self._SurroundedAndPrefixed("(", type_name, " ",
                                            self._Join(mdocs, "", " "), ")")
+
+    def _Obj(self, obj):
+        # type: (Obj) -> MeasuredDoc
+        chain = [] # type: List[MeasuredDoc]
+        cur = obj
+        while cur is not None:
+            mdocs = self._DictMdocs(cur.d)
+            chain.append(self._Surrounded("(", self._Join(mdocs, ",", " "), ")"))
+            cur = cur.prototype
+            if cur is not None:
+                chain.append(UText(" --> "))
+
+        return _Concat(chain)
 
     def _Value(self, val):
         # type: (value_t) -> MeasuredDoc
@@ -458,6 +476,21 @@ class ValueEncoder:
             elif case(value_e.BashAssoc):
                 vassoc = cast(value.BashAssoc, val)
                 return self._BashAssoc(vassoc)
+
+            elif case(value_e.Obj):
+                vaobj = cast(Obj, val)
+                heap_id = j8.HeapValueId(vaobj)
+                if self.visiting.get(heap_id, False):
+                    return _Concat([
+                        UText("("),
+                        self._Styled(self.cycle_style, UText("...")),
+                        UText(")")
+                    ])
+                else:
+                    self.visiting[heap_id] = True
+                    result = self._Obj(vaobj)
+                    self.visiting[heap_id] = False
+                    return result
 
             else:
                 type_name = self._Styled(self.type_style, UText(ValType(val)))

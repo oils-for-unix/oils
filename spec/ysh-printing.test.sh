@@ -326,14 +326,17 @@ pp test_ (two)
 (List)   [{"k":42,"cycle":{...}},{"k":42,"cycle":{...}}]
 ## END
 
-#### pp test_: Obj cycle
+#### pp: Obj cycle
 
 var methods = Object(null, {__foo__: null})
 var obj = Object(methods, {z: 99})
 pp test_ (obj)
+pp value (obj)
+echo
 
 setvar obj.cycle = obj
 pp test_ (obj)
+pp value (obj)
 
 echo
 
@@ -342,7 +345,10 @@ pp test_ (two)
 
 ## STDOUT:
 (Obj)   ("z":99) --> ("__foo__":null)
+(Obj)   (z: 99) --> (__foo__: null)
+
 (Obj)   ("z":99,"cycle":(...)) --> ("__foo__":null)
+(Obj)   (z: 99, cycle: (...)) --> (__foo__: null)
 
 (List)   [("z":99,"cycle":(...)) --> ("__foo__":null),("z":99,"cycle":(...)) --> ("__foo__":null)]
 ## END
