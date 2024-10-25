@@ -50,7 +50,7 @@ proc task (; tasks, expr) {
 func makeTasks() {
   var tasks = []
   var x = 'x'
-  for __hack__ in (0 .. 3) {
+  for __hack__ in (0 ..< 3) {
     var i = __hack__
     var j = i + 2
     task (tasks, ^"$x: i = $i, j = $j")
@@ -82,7 +82,7 @@ proc task (; tasks; ; b) {
 func makeTasks() {
   var tasks = []
   var x = 'x'
-  for __hack__ in (0 .. 3) {
+  for __hack__ in (0 ..< 3) {
     var i = __hack__
     var j = i + 2
     task (tasks) { echo "$x: i = $i, j = $j" }
@@ -108,7 +108,7 @@ x: i = 2, j = 4
 shopt --set ysh:upgrade
 
 var procs = []
-for i in (0 .. 3) {
+for i in (0 ..< 3) {
   proc __invoke__ (; self) {
     echo "i = $[self.i]"
   }

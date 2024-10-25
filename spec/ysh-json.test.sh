@@ -1168,10 +1168,10 @@ shopt -s ysh:upgrade
 proc pairs(n) {
   var m = int(n)  # TODO: 1 .. n should auto-convert?
 
-  for i in (1 .. m) {
+  for i in (1 ..< m) {
     write -n -- '['
   }
-  for i in (1 .. m) {
+  for i in (1 ..< m) {
     write -n -- ']'
   }
 }

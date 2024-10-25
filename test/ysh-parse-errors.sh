@@ -1690,6 +1690,12 @@ test-unknown-boolops() {
   _osh-parse-error '= !a'
 }
 
+test-expr-range() {
+  _osh-parse-error '= 1..5'
+  _osh-should-parse '= 1..<5'
+  _osh-should-parse '= 1..=5'
+}
+
 #
 # Entry Points
 #

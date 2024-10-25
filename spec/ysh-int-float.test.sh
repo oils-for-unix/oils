@@ -80,7 +80,7 @@ shopt -s ysh:upgrade
 # 1e-324 == 0.0 in Python
 
 var zeros = []
-for i in (1 .. 324) {
+for i in (1 ..< 324) {
   call zeros->append('0')
 }
 

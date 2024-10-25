@@ -33,7 +33,7 @@ key age
 
 
 #### For loop over range
-var myrange = 0 .. 3
+var myrange = 0 ..< 3
 for i in (myrange) {
   echo "i $i"
 }

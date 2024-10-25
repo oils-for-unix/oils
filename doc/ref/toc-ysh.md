@@ -262,7 +262,7 @@ X [External Lang] BEGIN   END   when (awk)
                   str-template  ^"$a and $b" for Str::replace()
                   list-literal  ['one', 'two', 3]  :| unquoted words |
                   dict-literal  {name: 'bob'}  {a, b}
-                  range         1 .. n+1
+                  range         1 ..< n  1 ..= n
                   block-expr    ^(echo $PWD)
                   expr-literal  ^[1 + 2*3]
                 X expr-sub      $[myobj]

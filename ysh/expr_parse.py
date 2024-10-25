@@ -79,11 +79,15 @@ def _Classify(gr, tok):
 
     if id_ == Id.Unknown_DEqual:
         p_die('Use === to be exact, or ~== to convert types', tok)
+
     if id_ == Id.Unknown_DAmp:
         p_die("Use 'and' in expression mode (OILS-ERR-15)", tok)
     if id_ == Id.Unknown_DPipe:
         p_die("Use 'or' in expression mode (OILS-ERR-15)", tok)
     # Not possible to check '!' as it conflicts with Id.Expr_Bang
+
+    if id_ == Id.Unknown_DDot:
+        p_die('Use ..< for half-open range, or ..= for closed range (OILS-ERR-16)', tok)
 
     if id_ == Id.Unknown_Tok:
         type_str = ''

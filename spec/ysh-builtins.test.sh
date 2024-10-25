@@ -638,7 +638,7 @@ echo $[type(f)]
 echo $[type(len)]
 echo $[type('foo'=>startsWith)]
 echo $[type('foo'=>join)]  # Type error happens later
-echo $[type(1..3)]
+echo $[type(1..<3)]
 ## STDOUT:
 Int
 Str

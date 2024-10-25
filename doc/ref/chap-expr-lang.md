@@ -231,21 +231,25 @@ the same name:
 
 ### range
 
-A range is a sequence of numbers that can be iterated over:
+A Range is a sequence of numbers that can be iterated over. The `..<` operator
+constructs half-open ranges.
 
-    for i in (0 .. 3) {
+    for i in (0 ..< 3) {
       echo $i
     }
     => 0
     => 1
     => 2
 
-As with slices, the last number isn't included.  To iterate from 1 to n, you
-can use this idiom:
+The `..=` operator constructs closed ranges:
 
-    for i in (1 .. n+1) {
+    for i in (0 ..= 3) {
       echo $i
     }
+    => 0
+    => 1
+    => 2
+    => 3
 
 ### block-expr
 

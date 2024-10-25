@@ -1103,10 +1103,12 @@ LEXER_DEF[lex_mode_e.Expr] = \
     C('//', Id.Expr_DSlash),  # For YSH integer division
     C('~==', Id.Expr_TildeDEqual),  # approximate equality
 
-    C('.', Id.Expr_Dot),      # d.key is alias for d['key']
-    C('..', Id.Expr_DDot),    # range 1..5
-    C('->', Id.Expr_RArrow),  # s->startswith()
-    C('$', Id.Expr_Dollar),   # legacy regex end: /d+ $/ (better written /d+ >/
+    C('.', Id.Expr_Dot),             # d.key is alias for d['key']
+    C('..', Id.Unknown_DDot),        # legacy half-open range 1..5
+    C('..<', Id.Expr_DDotLessThan),  # half-open range 1..<5
+    C('..=', Id.Expr_DDotEqual),     # closed range 1..5
+    C('->', Id.Expr_RArrow),         # s->startswith()
+    C('$', Id.Expr_Dollar),          # legacy regex end: /d+ $/ (better written /d+ >/
 
     # Reserved this.  Go uses it for channels, etc.
     # I guess it conflicts with -4<-3, but that's OK -- spaces suffices.

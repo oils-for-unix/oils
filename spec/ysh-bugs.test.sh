@@ -142,7 +142,7 @@ pp test_ (pipe())
 #### shvar then replace - bug #1986 context manager crash
 
 shvar FOO=bar {
-  for x in (1 .. 500) {
+  for x in (1 ..< 500) {
     var Q = "hello"
     setvar Q = Q=>replace("hello","world")
   }
@@ -239,20 +239,20 @@ case (WEIGHT) {
 
 proc p {
   var s = "hi"
-  for q in (1..50) {
+  for q in (1..<50) {
     shvar Q="whatever" {
       setvar s = "." ++ s
     }
   }
 }
 
-for i in (1..10) {
+for i in (1..<10) {
   p
 }
 
 if false {
   echo 'testing for longer'
-  for i in (1 .. 1000) {
+  for i in (1 ..< 1000) {
     p
   }
 }

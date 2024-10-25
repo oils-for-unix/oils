@@ -75,7 +75,8 @@ def main(argv):
     OPS = {
         '!': Id.Expr_Bang,
         '.': Id.Expr_Dot,
-        '..': Id.Expr_DDot,
+        '..=': Id.Expr_DDotEqual,
+        '..<': Id.Expr_DDotLessThan,
         '->': Id.Expr_RArrow,
         '=>': Id.Expr_RDArrow,
         '//': Id.Expr_DSlash,

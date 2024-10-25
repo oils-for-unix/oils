@@ -54,7 +54,10 @@ not_test: 'not' not_test | comparison
 comparison: range_expr (comp_op range_expr)*
 
 # Unlike slice, beginning and end are required
-range_expr: expr ['..' expr]
+range_expr: (
+  expr ['..<' expr] |
+  expr ['..=' expr]
+)
 
 # YSH patch: remove legacy <>, add === and more
 comp_op: (

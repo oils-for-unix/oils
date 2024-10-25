@@ -14,16 +14,16 @@
 # >>> xrange(1,3)  < xrange(1,4)
 # True
 
-= 1..3
+= 1..<3
 
 ## STDOUT:
-(Range 1 .. 3)
+(Range 1 ..< 3)
 ## END
 
 #### precedence of 1:3 vs bitwise operator
-= 3..3|4
+= 3..<3|4
 ## STDOUT:
-(Range 3 .. 7)
+(Range 3 ..< 7)
 ## END
 
 #### subscript and slice :| 1 2 3 4 |
@@ -57,20 +57,20 @@ out of bounds
 
 #### Range end points can be int-looking Strings
 
-pp test_ (list('3' .. '6'))
+pp test_ (list('3' ..< '6'))
 
 var i = '5'
 
-pp test_ (list(i .. 7))
-pp test_ (list(3 .. i))
+pp test_ (list(i ..< 7))
+pp test_ (list(3 ..< i))
 
 var i = '-5'
 
-pp test_ (list(i .. -3))
-pp test_ (list(-7 .. i))
+pp test_ (list(i ..< -3))
+pp test_ (list(-7 ..< i))
 
 # Not allowed
-pp test_ ('a' .. 'z')
+pp test_ ('a' ..< 'z')
 
 ## status: 3
 ## STDOUT:
@@ -83,7 +83,7 @@ pp test_ ('a' .. 'z')
 
 #### Slice indices can be int-looking strings
 
-var a = list(0..10)
+var a = list(0..<10)
 #pp test_ (a)
 
 pp test_ (a['3': '6'])
@@ -215,10 +215,10 @@ pp test_ (b)
 ## END
 
 #### Iterate over range
-for i in (1..5) {
+for i in (1..<5) {
     echo $[i]
 }
-for i, n in (1..4) {
+for i, n in (1..<4) {
     echo "$[i], $[n]"
 }
 ## STDOUT:
@@ -234,7 +234,7 @@ for i, n in (1..4) {
 #### Loops over bogus ranges terminate
 # Regression test for bug found during dev. Loops over backwards ranges should
 # terminate immediately.
-for i in (5..1) {
+for i in (5..<1) {
     echo $[i]
 }
 ## STDOUT:
@@ -262,4 +262,17 @@ var t3 = mytable[:2, %(name age)]
 ## STDOUT:
 (Str)   'TODO: Table Slicing'
 (Str)   'TODO: Table Slicing'
+## END
+
+#### Closed ranges
+
+for x in (1..=2) {
+  echo $x
+}
+
+= 1..=2
+## STDOUT:
+1
+2
+(Range 1 ..< 3)
 ## END
