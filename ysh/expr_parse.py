@@ -87,7 +87,7 @@ def _Classify(gr, tok):
     # Not possible to check '!' as it conflicts with Id.Expr_Bang
 
     if id_ == Id.Unknown_DDot:
-        p_die('Use 1..<5 for half-open range, or 1..=5 for closed range (OILS-ERR-16)', tok)
+        p_die('Use ..< for half-open range, or ..= for closed range (OILS-ERR-16)', tok)
 
     if id_ == Id.Unknown_Tok:
         type_str = ''
