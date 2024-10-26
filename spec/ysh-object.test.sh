@@ -255,7 +255,9 @@ var methods = Object(superClassMethods, {foo: 42, bar: [1,2]})
 var instance = Object(methods, {foo: 1, bar: 2, x: 3})
 
 pp test_ (instance)
+pp value (instance)
 
 ## STDOUT:
 (Obj)   ("foo":1,"bar":2,"x":3) --> ("foo":42,"bar":[1,2]) --> ("foo":"zz")
+(Obj)   (foo: 1, bar: 2, x: 3) --> (foo: 42, bar: [1, 2]) --> (foo: 'zz')
 ## END
