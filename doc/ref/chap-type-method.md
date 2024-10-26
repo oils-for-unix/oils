@@ -550,6 +550,21 @@ Returns the singleton `stdin` value, which you can iterate over:
 This is buffered line-based I/O, as opposed to the unbuffered I/O of the `read`
 builtin.
 
+### evalExpr()
+
+Given an `Expr` value, evaluate it and return its value:
+
+    $ var i = 42
+    $ var expr = ^[i + 1] 
+
+    $ = io->evalExpr(expr)
+    43
+
+Examples of expressions that have effects:
+
+- `^[ myplace->setValue(42) ]` - memory operation
+- `^[ $(echo 42 > hi) ]` - I/O operation
+
 ### eval()
 
 Evaluate a command, and return `null`.
@@ -613,21 +628,6 @@ with `try`.
     try {
       var s = _io->captureStdout(c)
     }
-
-### evalExpr()
-
-Given an `Expr` value, evaluate it and return its value:
-
-    $ var i = 42
-    $ var expr = ^[i + 1] 
-
-    $ = io->evalExpr(expr)
-    43
-
-Examples of expressions that have effects:
-
-- `^[ myplace->setValue(42) ]` - memory operation
-- `^[ $(echo 42 > hi) ]` - I/O operation
 
 ### promptVal()
 

@@ -48,7 +48,7 @@ error handling, and more.
                    search()       leftMatch()
   [List]           List/append()  pop()          extend()      indexOf()
                  X insert()     X remove()       reverse()   X clear()
-  [Dict]           erase()      X inc()        X accum()     X clear()
+  [Dict]           erase()      X clear()      X Dict/append() 
   [Range] 
   [Eggex] 
   [Match]          group()        start()        end()
@@ -60,9 +60,8 @@ error handling, and more.
                    Frame
 X [Func]           name()         location()     toJson()
 X [Proc]           name()         location()     toJson()
-  [IO]             stdin          eval()         evalToDict()
-                   captureStdout()
-                   evalExpr()
+  [IO]             stdin          evalExpr()
+                   eval()         evalToDict()   captureStdout()
                    promptVal()
                  X time()       X strftime()   X glob()
   [Obj]            __invoke__   X __call__     __index__     X __str__

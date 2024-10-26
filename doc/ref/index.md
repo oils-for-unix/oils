@@ -69,6 +69,9 @@ chapters.
 
 </div>
 
+[Topics By Feature](feature-index.html) - Modules, Env Vars, etc.
+
+
 ## `help` command
 
 When you type [`help`][help] in OSH or YSH, it shows a URL to this reference,
