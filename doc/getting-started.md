@@ -52,7 +52,7 @@ It's very hard to tell when and if `/etc/profile`, `~/.bashrc`,
 `~/.bash_profile`, etc. are executed.
 
 OSH and YSH intentionally avoid this.  If you want those files, simply `source`
-them in your `oshrc` (see [OSH Compatibility Tips](https://github.com/oils-for-unix/oils/wiki/OSH-Compatibility-Tips) to resolve possible incompatibilities).
+them in your `oshrc`.
 
 [mess]: https://shreevatsa.wordpress.com/2008/03/30/zshbash-startup-files-loading-order-bashrc-zshrc-etc/
 
@@ -73,7 +73,7 @@ OSH](https://github.com/oilshell/oil/wiki/How-To-Test-OSH).
 - On Arch Linux and other distros,`$LANG` may not get set without
   `/etc/profile`.  Adding `source /etc/profile` to your `oshrc` may solve this
   problem.
-- See [OSH Compatibility Tips](https://github.com/oils-for-unix/oils/wiki/OSH-Compatibility-Tips) to configure programs that rely on `eval` to initialize (e.g., starship, zoxide).
+- See [OSH Compatibility Tips](https://github.com/oils-for-unix/oils/wiki/OSH-Compatibility-Tips) to configure programs that rely on `eval` to initialize (e.g. starship, zoxide).
 
 ### `sh` and Bash Docs Are Useful for OSH
 
