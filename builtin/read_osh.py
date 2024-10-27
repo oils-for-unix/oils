@@ -397,6 +397,10 @@ class Read(vm._Builtin):
         arg = arg_types.read(attrs.attrs)
         names = arg_r.Rest()
 
+        if arg.u != mops.MINUS_ONE:
+            # TODO: could implement this
+            raise error.Usage('-u flag not implemented', cmd_val.arg_locs[0])
+
         if arg.raw_line or arg.all or mops.BigTruncate(arg.num_bytes) != -1:
             return self._ReadYsh(arg, arg_r, cmd_val)
 

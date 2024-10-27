@@ -1,8 +1,8 @@
-# Test set flags, sh flags.
-
 ## compare_shells: bash dash mksh
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 ## tags: interactive
+
+# Test options to set, shopt, $SH.
 
 #### $- with -c
 # dash's behavior seems most sensible here?
@@ -748,7 +748,7 @@ done
 127
 ## END
 
-#### shopt -s nounset works in Oil, not in bash
+#### shopt -s nounset works in YSH, not in bash
 case $SH in
   *dash|*mksh)
     echo N-I
@@ -773,7 +773,42 @@ nounset off
 N-I
 ## END
 
-#### no-ops not in shopt -p output
+#### no-ops allowed - OSH shopt -s allow_unimpl_shopt
+case $SH in dash|mksh) exit ;; esac
+
+shopt -s zzz_unknown  # unknown
+echo status=$?
+
+shopt -s xpg_echo  # unimplemented
+echo status=$?
+
+# allow_unimpl_shopt
+# allow_unimpl_flags
+shopt -s allow_unimpl_shopt
+echo allow=$?
+
+shopt -s xpg_echo
+echo status=$?
+
+## STDOUT:
+status=2
+status=2
+allow=0
+status=0
+## END
+
+## N-I bash STDOUT:
+status=1
+status=0
+allow=1
+status=0
+## END
+
+## N-I dash/mksh STDOUT:
+## END
+
+#### no-ops not shown by shopt -p
+
 shopt -p | grep xpg
 echo --
 ## STDOUT:

@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 
 #### Local place
 
@@ -90,7 +90,7 @@ p x=zzz
 global x=global
 ## END
 
-#### Places can't dangle; they should be passed UP the stakc only
+#### [DISABLED] Places can't dangle; they should passed UP the stack only
 
 func f() {
   var f_local = null

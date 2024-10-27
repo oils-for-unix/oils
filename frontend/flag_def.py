@@ -115,6 +115,8 @@ READ_SPEC.ShortFlag('-N', args.Int)
 READ_SPEC.ShortFlag('-a', args.String)  # name of array to read into
 READ_SPEC.ShortFlag('-d', args.String)
 READ_SPEC.ShortFlag('-p', args.String)  # prompt
+# bash supports -i text for GNU readline.  Different than -p
+# -e
 
 # OSH extension (not really considered YSH!)
 READ_SPEC.ShortFlag('-0')  # until NUL, like IFS= read -r -d ''

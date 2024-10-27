@@ -1996,21 +1996,25 @@ class Mem(object):
             if case(y_lvalue_e.Local):
                 yval = cast(LeftName, UP_yval)
 
-                # Check that the frame is still alive
+                if 0:
+                    # Check that the frame is still alive
+                    # Note: Disabled because it doesn't work with modules.  the
+                    # Place captures a frame in def-test.ysh, which we want to
+                    # mutate while Dict is executing in the module_frame for
+                    # def.ysh.  See ctx_ModuleEval
+                    found = False
+                    for i in xrange(len(self.var_stack) - 1, -1, -1):
+                        frame = self.var_stack[i]
+                        if frame is place.frame:
+                            found = True
+                            #log('FOUND %s', found)
+                            break
+                    if not found:
+                        e_die(
+                            "Can't assign to place that's no longer on the call stack.",
+                            blame_loc)
 
-                # TODO: This doesn't work with modules
-                found = False
-                for i in xrange(len(self.var_stack) - 1, -1, -1):
-                    frame = self.var_stack[i]
-                    if frame is place.frame:
-                        found = True
-                        #log('FOUND %s', found)
-                        break
-                if not found:
-                    e_die(
-                        "Can't assign to place that's no longer on the call stack.",
-                        blame_loc)
-
+                frame = place.frame
                 cell = frame.get(yval.name)
                 if cell is None:
                     cell = Cell(False, False, False, val)
