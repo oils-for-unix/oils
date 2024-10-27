@@ -433,8 +433,7 @@ class Rules(object):
                 assert c.bin_path is not None
                 self.n.build(['%s/%s' % (bin_dir, symlink)],
                              'symlink', [bin_],
-                             variables=[('dir', bin_dir),
-                                        ('target', bin_name),
+                             variables=[('dir', bin_dir), ('target', bin_name),
                                         ('new', symlink)])
                 self.n.newline()
 

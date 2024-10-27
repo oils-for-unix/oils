@@ -137,17 +137,16 @@ main() {
     objects = []
 
     in_out = [
-      ('_gen/bin/oils_for_unix.$translator.cc',
-       '_build/obj/$compiler-$variant-sh/_gen/bin/oils_for_unix.o'),
+        ('_gen/bin/oils_for_unix.$translator.cc',
+         '_build/obj/$compiler-$variant-sh/_gen/bin/oils_for_unix.o'),
     ]
     for src in sorted(cc_sources):
         # e.g. _build/obj/cxx-dbg-sh/posix.o
         prefix, _ = os.path.splitext(src)
         if prefix.startswith('_gen/bin/oils_for_unix'):
-          continue
+            continue
         obj = '_build/obj/$compiler-$variant-sh/%s.o' % prefix
         in_out.append((src, obj))
-
 
     bin_dir = '_bin/$compiler-$variant-sh/$translator'
     obj_dirs = sorted(set(os.path.dirname(obj) for _, obj in in_out))
@@ -181,7 +180,9 @@ main() {
               file=f)
         print('    %s %s' % (src, obj_quoted), file=f)
         if do_fork:
-            print('  _do_fork=  # work around bug in some versions of the dash shell', file=f)
+            print(
+                '  _do_fork=  # work around bug in some versions of the dash shell',
+                file=f)
         print('', file=f)
 
     print('  # wait for the translation unit before linking', file=f)
@@ -321,7 +322,9 @@ def InitSteps(n):
         'gen-oils-for-unix',
         command=
         'build/ninja-rules-py.sh gen-oils-for-unix $main_name $translator $out_prefix $preamble $extra_mycpp_opts $in',
-        description='gen-oils-for-unix $main_name $translator $out_prefix $preamble $extra_mycpp_opts $in')
+        description=
+        'gen-oils-for-unix $main_name $translator $out_prefix $preamble $extra_mycpp_opts $in'
+    )
     n.newline()
 
 
@@ -411,7 +414,9 @@ def main(argv):
 
     elif action == 'tarball-manifest':
         h = ru.HeadersForBinary('_gen/bin/oils_for_unix.mycpp.cc')
-        tar_cc_sources = cc_sources + ['_gen/bin/oils_for_unix.mycpp-souffle.cc']
+        tar_cc_sources = cc_sources + [
+            '_gen/bin/oils_for_unix.mycpp-souffle.cc'
+        ]
         TarballManifest(tar_cc_sources + h)
 
     else:
