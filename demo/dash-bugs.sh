@@ -34,8 +34,15 @@ demo() {
   # Early versions of dash run this incorrectly!
 
   _do_fork=1 _compile_one A
+
+  # Workaround for bug in old version of dash!
+  # The variable should not persist, but it does!
+  _do_fork=
+
   _compile_one B
   _compile_one C
+
+  wait
 }
 
 

@@ -180,6 +180,8 @@ main() {
         print('  %s _compile_one "$compiler" "$variant" "" \\' % do_fork,
               file=f)
         print('    %s %s' % (src, obj_quoted), file=f)
+        if do_fork:
+            print('  _do_fork=  # work around bug in some versions of the dash shell', file=f)
         print('', file=f)
 
     print('  # wait for the translation unit before linking', file=f)
@@ -422,5 +424,3 @@ if __name__ == '__main__':
     except RuntimeError as e:
         print('FATAL: %s' % e, file=sys.stderr)
         sys.exit(1)
-
-# vim: sw=2
