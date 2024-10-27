@@ -147,28 +147,6 @@ See [bool-expr][] for the expression syntax.
 [bool-expr]: chap-mini-lang.html#bool-expr
 
 
-<h3 id="true" class="osh-ysh-topic">true</h3>
-
-Do nothing and return status 0.
-
-    if true; then
-      echo hello
-    fi
-
-<h3 id="false" class="osh-ysh-topic">false</h3>
-
-Do nothing and return status 1.
-
-    if false; then
-      echo 'not reached'
-    else
-      echo hello
-    fi
-
-<h3 id="colon" class="osh-topic">colon :</h3>
-
-Like `true`: do nothing and return status 0.
-
 <h3 id="bang" class="osh-ysh-topic">bang !</h3>
 
 Invert an exit code:

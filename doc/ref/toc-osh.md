@@ -66,6 +66,7 @@ preserve_anchor_case: yes
   [Child Process] jobs        wait
                   fg        X bg      X kill        X disown 
   [External]      test [      getopts
+  [Conditional]   cmd/true    cmd/false               colon :
   [Introspection] help        hash      cmd/type    X caller
   [Word Lookup]   command     builtin
   [Interactive]   alias       unalias   history     X fc     X bind
@@ -102,7 +103,6 @@ X [Unsupported]   enable
 ```chapter-links-cmd-lang
   [Commands]      simple-command            semicolon ;
   [Conditional]   case        if            dbracket [[
-                  true        false         colon :
                   bang !      and &&        or ||
   [Iteration]     while       until         for            for-expr-sh ((
   [Control Flow]  break       continue      return         exit

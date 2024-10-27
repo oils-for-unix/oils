@@ -24,18 +24,38 @@ This is an index of topics in the [Oils Reference](index.html).
 The name `append` can refer to:
 
 - The builtin command [append][cmd/append]
-- The [List method append][List/append]()
+- The [List method append][List/append]
 
 [cmd/append]: chap-builtin-cmd.html#cmd/append
 [List/append]: chap-type-method.html#List/append
+
+### false
+
+The name `false` can refer to:
+
+- The builtin command [false][cmd/false]
+- The expression [false][expr/false]
+
+[cmd/false]: chap-builtin-cmd.html#cmd/false
+[expr/false]: chap-type-method.html#expr/false
+
+### true
+
+The name `true` can refer to:
+
+- The builtin command [true][cmd/true]
+- The expression [true][expr/true]
+
+[cmd/true]: chap-builtin-cmd.html#cmd/true
+[expr/true]: chap-type-method.html#expr/true
+
 
 ### type
 
 The name `type` can refer to:
 
 - The builtin command [type][cmd/type]
-- The builtin function [type][func/type]()
+- The builtin function [type][func/type]
 
 [cmd/type]: chap-builtin-cmd.html#cmd/type
 [func/type]: chap-builtin-func.html#func/type
-

@@ -14,7 +14,8 @@ Here are all types of values in the Oils runtime, organized for understanding.
 
 Values of these types are immutable:
 
-- `Null`, `Str Int Float` - data types
+- `Null`
+- `Str Int Float` - data types
 - `Range` - iteration over `3 .. 5`
 - `Eggex Match` - pattern matching
 
@@ -79,7 +80,8 @@ Values of these types are immutable:
 
 Values of these types are immutable:
 
-- `CommandFrag Command`, `ExprFrag Expr` (TODO)
+- `CommandFrag Command`
+- `Expr` (no `ExprFrag` for now)
 
 A handle to a stack frame:
 

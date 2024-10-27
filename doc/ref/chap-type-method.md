@@ -42,20 +42,51 @@ See [sh-assoc][] for details.  In YSH, prefer to use [Dict](#Dict) instances.
 
 [sh-assoc]: chap-osh-assign.html#sh-assoc
 
-## Atom Types
+## Atoms
+
+<!-- TODO:
+true and false should be SINGLETONS
+null is already a singleton
+-->
 
 ### Null
+
+An `Obj` instance representing the `Null` type.
 
 The `Null` type has a single value spelled `null`.  (Related:
 [atom-literal][]).
 
 [atom-literal]: chap-expr-lang.html#atom-literal
 
+### null
+
+A value that's not equal to any other.  Values that aren't explicitly
+initialized are `null`, e.g.
+
+    var x
+    = x  # => (Null)   null
+
+Its type is `Null`.
+
 ### Bool
 
-The `Bool` type has 2 values: `true` and `false`.  (Related: [atom-literal][]).
+An `Obj` instance representing the boolean type.
 
-## Number Types
+This type has 2 values: `true` and `false`.  (Related: [atom-literal][]).
+
+### expr/true
+
+A single value representing truth, e.g.
+
+    = 42 === 42  # => true
+
+### expr/false
+
+A single value representing the oppoosite of truth, e.g.
+
+    = 42 === 3  # => false
+
+## Numbers
 
 ### Int
 
@@ -80,7 +111,17 @@ See [float-literal][] for how to denote them.
 
 <!-- TODO: reduce from 64-bit to 32-bit -->
 
-## Str
+
+### Range
+  
+A `Range` is a pair of two numbers, like `42 .. 45`.
+
+Ranges are used for iteration; see [ysh-for][].
+
+[ysh-for]: chap-cmd-lang.html#ysh-for
+
+
+## String
 
 In Oils, strings may contains any sequence of bytes, which may be UTF-8
 encoded.
@@ -93,7 +134,13 @@ NUL-terminated strings.
 
 [cd]: chap-builtin-cmd.html#cd
 
+### Str
+
+An `Obj` instance representing the string type.
+
 ### find()
+
+TODO
 
 ### replace()
 
@@ -293,7 +340,66 @@ Splitting by an `Eggex` has some limitations:
 - The string to split cannot contain NUL bytes because we use the libc regex
   engine.
 
-## List
+## Patterns
+
+### Eggex
+
+An `Eggex` is a composable regular expression.  It can be spliced into other
+regular expressions.
+
+### Match
+
+A `Match` is the result searching for an `Eggex` within a `Str`.
+
+### group()
+
+Returns the string that matched a regex capture group.  Group 0 is the entire
+match.
+
+    var m = '10:59' => search(/ ':' <capture d+> /)
+    echo $[m => group(0)]  # => ':59'
+    echo $[m => group(1)]  # => '59'
+
+Matches can be named with `as NAME`:
+
+    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
+
+And then accessed by the same name:
+
+    echo $[m => group('minute')]  # => '59'
+
+<!--
+    var m = '10:59' => search(/ ':' <capture d+ as minutes: int> /)
+-->
+
+### start()
+
+Like `group()`, but returns the **start** position of a regex capture group,
+rather than its value.
+
+    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
+    echo $[m => start(0)]         # => position 2 for ':59'
+    echo $[m => start(1)]         # => position 3 for '59'
+
+    echo $[m => start('minute')]  # => position 3 for '59'
+
+### end()
+
+Like `group()`, but returns the **end** position of a regex capture group,
+rather than its value.
+
+    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
+    echo $[m => end(0)]         # => position 5 for ':59'
+    echo $[m => end(1)]         # => position 5 for '59'
+
+    echo $[m => end('minute')]  # => 5 for '59'
+
+
+## Containers
+
+### List
+
+An `Obj` instance representing the `List` type.
 
 A List contains an ordered sequence of values.
 
@@ -356,7 +462,9 @@ Remove all entries from the List:
     call mylist->clear()
   
 
-## Dict
+### Dict
+
+An `Obj` instance representing the `Dict` type.
 
 A Dict contains an ordered sequence of key-value pairs.  Given the key, the
 value can be retrieved efficiently.
@@ -381,11 +489,7 @@ Ensures that the given key does not exist in the dictionary.
     = book
     # => (Dict)   {title: "The Histories"}
 
-### inc()
-
-TODO
-
-### accum()
+### Dict/append()
 
 TODO
 
@@ -397,67 +501,7 @@ Remove all entries from the Dict:
 
     call mydict->clear()
 
-## Range
-  
-A `Range` is a pair of two numbers, like `42 .. 45`.
-
-Ranges are used for iteration; see [ysh-for][].
-
-[ysh-for]: chap-cmd-lang.html#ysh-for
-
-## Eggex
-
-An `Eggex` is a composable regular expression.  It can be spliced into other
-regular expressions.
-
-## Match
-
-A `Match` is the result searching for an `Eggex` within a `Str`.
-
-### group()
-
-Returns the string that matched a regex capture group.  Group 0 is the entire
-match.
-
-    var m = '10:59' => search(/ ':' <capture d+> /)
-    echo $[m => group(0)]  # => ':59'
-    echo $[m => group(1)]  # => '59'
-
-Matches can be named with `as NAME`:
-
-    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
-
-And then accessed by the same name:
-
-    echo $[m => group('minute')]  # => '59'
-
-<!--
-    var m = '10:59' => search(/ ':' <capture d+ as minutes: int> /)
--->
-
-### start()
-
-Like `group()`, but returns the **start** position of a regex capture group,
-rather than its value.
-
-    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
-    echo $[m => start(0)]         # => position 2 for ':59'
-    echo $[m => start(1)]         # => position 3 for '59'
-
-    echo $[m => start('minute')]  # => position 3 for '59'
-
-### end()
-
-Like `group()`, but returns the **end** position of a regex capture group,
-rather than its value.
-
-    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
-    echo $[m => end(0)]         # => position 5 for ':59'
-    echo $[m => end(1)]         # => position 5 for '59'
-
-    echo $[m => end('minute')]  # => 5 for '59'
-
-## Place
+### Place
 
 ### setValue()
 
@@ -471,8 +515,83 @@ A Place is used as an "out param" by calling setValue():
     p (&x)
     echo x=$x  # => x=hi
 
-
 ## Code Types
+
+### Func
+
+User-defined functions.
+
+### BuiltinFunc
+
+A func that's part of Oils, like `len()`.
+
+### BoundFunc
+
+The [thin-arrow][] and [fat-arrow][] create bound funcs:
+
+    var bound = '' => upper
+    var bound2 = [] -> append
+
+[thin-arrow]: chap-expr-lang.html#thin-arrow
+[fat-arrow]: chap-expr-lang.html#thin-arrow
+
+### Proc
+
+User-defined procs.
+
+### BuiltinProc
+
+A builtin proc, aka builtin command, like `module-invoke`.
+
+## Objects
+
+### Obj
+
+An instance of `Obj`, representing the `Obj` type.
+
+TODO: make it callable.
+
+### `__invoke__`
+
+<!-- copied from doc/proc-func-md -->
+
+The `__invoke__` meta-method makes an Object "proc-like".
+
+First, define a proc, with the first typed arg named `self`:
+
+    proc myInvoke (word_param; self, int_param) {
+      echo "sum = $[self.x + self.y + int_param]"
+    }
+
+Make it the `__invoke__` method of an `Obj`:
+
+    var methods = Object(null, {__invoke__: myInvoke})
+    var invokable_obj = Object(methods, {x: 1, y: 2})
+
+Then invoke it like a proc:
+
+    invokable_obj myword (3)
+    # sum => 6
+
+### `__call__`
+
+TODO
+
+### `__index__`
+
+The `__index__` meta-method controls what happens when `obj[x]` is evaluated.
+
+It's currently used for type objects:
+
+    var t = Dict[Str, Int]
+    assert [t is Dict[Str, Int]]  # always evaluates to the same instance
+
+### `__str__`
+
+TODO
+
+
+## Reflection
 
 ### Command
 
@@ -502,25 +621,15 @@ The Command is bound to a stack frame.  This frame will be pushed as an
 
 [expr-literal]: chap-expr-lang.html#expr-lit
 
+<!--
+
 ### ExprFrag
 
 An expression command that's not bound to a stack frame.
 
 (TODO)
 
-### BuiltinFunc
-
-A func that's part of Oils, like `len()`.
-
-### BoundFunc
-
-The [thin-arrow][] and [fat-arrow][] create bound funcs:
-
-    var bound = '' => upper
-    var bound2 = [] -> append
-
-[thin-arrow]: chap-expr-lang.html#thin-arrow
-[fat-arrow]: chap-expr-lang.html#thin-arrow
+-->
 
 ### Frame
 
@@ -529,15 +638,8 @@ producing a `Command`.
 
 Likewise, it can be found to a `ExprFrag`, producing an `Expr`.
 
-## Func
 
-User-defined functions.
-
-## Proc
-
-User-defined procs.
-
-## IO
+### io
 
 ### stdin
 
@@ -657,48 +759,9 @@ database), and then C strftime().
 TODO: The free function glob() actually does I/O.  Although maybe it doesn't
 fail?
 
-## Obj
+### vm
 
-### `__invoke__`
-
-<!-- copied from doc/proc-func-md -->
-
-The `__invoke__` meta-method makes an Object "proc-like".
-
-First, define a proc, with the first typed arg named `self`:
-
-    proc myInvoke (word_param; self, int_param) {
-      echo "sum = $[self.x + self.y + int_param]"
-    }
-
-Make it the `__invoke__` method of an `Obj`:
-
-    var methods = Object(null, {__invoke__: myInvoke})
-    var invokable_obj = Object(methods, {x: 1, y: 2})
-
-Then invoke it like a proc:
-
-    invokable_obj myword (3)
-    # sum => 6
-
-### `__call__`
-
-TODO
-
-### `__index__`
-
-The `__index__` meta-method controls what happens when `obj[x]` is evaluated.
-
-It's currently used for type objects:
-
-    var t = Dict[Str, Int]
-    assert [t is Dict[Str, Int]]  # always evaluates to the same instance
-
-### `__str__`
-
-TODO
-
-## VM
+An object with functions for introspecting the Oils VM.
 
 ### getFrame()
 

@@ -39,33 +39,36 @@ error handling, and more.
 </h2>
 
 ```chapter-links-type-method
-  [Atom Types]     Null           Bool
-  [Number Types]   Int            Float
-  [Str]          X find()         replace()
-                   trim()         trimStart()    trimEnd()
-                   startsWith()   endsWith()
-                   upper()        lower()
-                   search()       leftMatch()
-  [List]           List/append()  pop()          extend()      indexOf()
-                 X insert()     X remove()       reverse()   X clear()
-  [Dict]           erase()      X clear()      X Dict/append() 
-  [Range] 
-  [Eggex] 
-  [Match]          group()        start()        end()
-                 X groups()     X groupDict()
-  [Place]          setValue()
-  [Code Types]     Command        CommandFrag
-                   Expr           ExprFrag
-                   BuiltinFunc    BoundFunc
+  [Atoms]          Null        null
+                   Bool        expr/true        expr/false
+  [Numbers]        Int
+                   Float
+                   Range
+  [String]         Str       X find()           replace()
+                               trim()           trimStart()    trimEnd()
+                               startsWith()     endsWith()
+                               upper()          lower()
+                               search()         leftMatch()
+  [Patterns]       Eggex
+                   Match       group()          start()        end()
+                             X groups()       X groupDict()
+  [Containers]     List        List/append()    pop()          extend()
+                               indexOf()      X insert()     X remove()
+                               reverse()      X clear()
+                   Dict        erase()        X clear()      X Dict/append() 
+                   Place       setValue()
+  [Code Types]     Func        BuiltinFunc      BoundFunc
+                   Proc        BuiltinProc
+  [Objects]        Obj         __invoke__     X __call__     __index__
+                             X __str__
+  [Reflection]     Command     CommandFrag
+                   Expr
                    Frame
-X [Func]           name()         location()     toJson()
-X [Proc]           name()         location()     toJson()
-  [IO]             stdin          evalExpr()
-                   eval()         evalToDict()   captureStdout()
-                   promptVal()
-                 X time()       X strftime()   X glob()
-  [Obj]            __invoke__   X __call__     __index__     X __str__
-  [VM]           X getFrame()
+                   io          stdin            evalExpr()
+                               eval()           evalToDict()   captureStdout()
+                               promptVal()
+                             X time()         X strftime()   X glob()
+                   vm        X getFrame()
 ```
 
 <h2 id="builtin-func">

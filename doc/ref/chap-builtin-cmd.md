@@ -1140,6 +1140,12 @@ JOB:
   Job ID to be resumed in the background. If none is specified, the latest job
   is chosen. -->
 
+### kill
+
+Unimplemented.
+
+<!-- Note: 'kill' accepts job control syntax -->
+
 ## External
 
 ### test
@@ -1248,11 +1254,30 @@ Notes:
   maintain state between invocations of `getopts`.
 - The characters `:` and `?` can't be flags.
 
-### kill
 
-Unimplemented.
+## Conditional
 
-<!-- Note: 'kill' accepts job control syntax -->
+### cmd/true
+
+Do nothing and return status 0.
+
+    if true; then
+      echo hello
+    fi
+
+### cmd/false
+
+Do nothing and return status 1.
+
+    if false; then
+      echo 'not reached'
+    else
+      echo hello
+    fi
+
+<h3 id="colon" class="osh-topic">colon :</h3>
+
+Like `true`: do nothing and return status 0.
 
 ## Introspection
 
