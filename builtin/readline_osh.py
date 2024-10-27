@@ -52,7 +52,7 @@ class Bind(vm._Builtin):
         found = False
         for flag in self.exclusive_flags:
             if flag in attrs.attrs and attrs.attrs[flag].tag() != value_e.Undef:
-                print("\tFound flag: {0} with tag: {1}".format(flag, attrs.attrs[flag].tag()))
+                # print("\tFound flag: {0} with tag: {1}".format(flag, attrs.attrs[flag].tag()))
                 if found:
                     self.errfmt.Print_("error: can only use one of the following flags at a time: -" + ", -".join(self.exclusive_flags), blame_loc=cmd_val.arg_locs[0])
                     return 1
@@ -97,9 +97,7 @@ class Bind(vm._Builtin):
             readline.read_init_file(arg.f)
 
         if arg.q:
-            self.errfmt.Print_("warning: bind -q isn't implemented",
-                            blame_loc=cmd_val.arg_locs[0])
-            return 1
+            readline.query_bindings(arg.q)
 
         if arg.u:
             self.errfmt.Print_("warning: bind -u isn't implemented",

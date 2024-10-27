@@ -773,6 +773,77 @@ PyDoc_STRVAR(doc_list_variable_dumper,
 List readline variables and their values.");
 
 
+
+/* Query bindings for a function name */
+
+// readline returns null-terminated string arrays
+void _strvec_dispose(char **strvec) {
+    register int i;
+
+    if (strvec == NULL)
+        return;
+    
+    for (i = 0; strvec[i]; i++) {
+        free(strvec[i]);
+    }
+    
+    free(strvec);
+}
+
+// Nicely prints a strvec with commas and an and
+// like '"foo", "bar", and "moop"'
+void _pprint_strvec_list(char **strvec) {
+    int i;
+
+    for (i = 0; strvec[i]; i++) {
+        printf("\"%s\"", strvec[i]);
+        if (strvec[i + 1]) {
+            printf(", ");
+            if (!strvec[i + 2])
+                printf("and ");
+        }
+    }
+}
+
+static PyObject* 
+query_bindings(PyObject *self, PyObject *args)
+{
+    char *fn_name;
+    rl_command_func_t *cmd_fn;
+    char **key_seqs;
+    int i;
+
+    if (!PyArg_ParseTuple(args, "s:query_bindings", &fn_name))
+        return NULL;
+
+    cmd_fn = rl_named_function(fn_name);
+
+    if (cmd_fn == NULL) {
+        PyErr_Format(PyExc_ValueError, "`%s': unknown function name", fn_name);
+        return NULL;
+    }
+
+    key_seqs = rl_invoking_keyseqs(cmd_fn);
+
+    if (!key_seqs) {
+        PyErr_Format(PyExc_ValueError, "%s is not bound to any keys", fn_name);
+        return NULL;
+    }
+
+    printf("%s can be invoked via ", fn_name);
+    _pprint_strvec_list(key_seqs);
+    printf(".\n");
+
+    _strvec_dispose(key_seqs);
+    
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(doc_query_bindings,
+"query_bindings(str) -> None\n\
+Query bindings to see what's bound to a given function.");
+
+
 /* Table of functions exported by the module */
 
 #ifdef OVM_MAIN
@@ -823,6 +894,7 @@ static struct PyMethodDef readline_methods[] = {
     {"function_dumper", function_dumper, METH_VARARGS, doc_list_function_dumper},
     {"macro_dumper", macro_dumper, METH_VARARGS, doc_list_macro_dumper},
     {"variable_dumper", variable_dumper, METH_VARARGS, doc_list_variable_dumper},
+    {"query_bindings", query_bindings, METH_VARARGS, doc_query_bindings},
     {0, 0}
 };
 #endif

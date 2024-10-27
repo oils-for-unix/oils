@@ -114,6 +114,10 @@ class Readline(object):
         # type: (bool) -> None
         line_input.variable_dumper(print_readably)
 
+    def query_bindings(self, fn_name):
+        # type: (str) -> None
+        line_input.query_bindings(fn_name)
+
 
 def MaybeGetReadline():
     # type: () -> Optional[Readline]
