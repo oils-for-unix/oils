@@ -73,6 +73,7 @@ OSH](https://github.com/oilshell/oil/wiki/How-To-Test-OSH).
 - On Arch Linux and other distros,`$LANG` may not get set without
   `/etc/profile`.  Adding `source /etc/profile` to your `oshrc` may solve this
   problem.
+- See [OSH Compatibility Tips](https://github.com/oils-for-unix/oils/wiki/OSH-Compatibility-Tips) to configure programs that rely on `eval` to initialize (e.g. starship, zoxide).
 
 ### `sh` and Bash Docs Are Useful for OSH
 
