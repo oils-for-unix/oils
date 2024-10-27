@@ -226,7 +226,6 @@ def RemoveLeadingSpaceDQ(parts):
     n = len(to_strip)
     for part in parts:
         if part.tag() != word_part_e.Literal:
-            line_ended = False
             continue
 
         lit_tok = cast(Token, part)
@@ -293,7 +292,7 @@ def RemoveLeadingSpaceSQ(tokens):
     n = len(to_strip)
 
     #log('--')
-    for tok in tokens:  # line_ended reset on every iteration
+    for tok in tokens:
         #log('tok %s', tok)
         # Strip leading space on tokens that begin lines, by bumping start col
         if tok.col == 0 and lexer.TokenStartsWith(tok, to_strip):

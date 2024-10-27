@@ -37,6 +37,10 @@ def _IsContextManager(class_name):
     return class_name[-1].startswith('ctx_')
 
 
+def _IsUnusedVar(var_name):
+    return var_name == '_' or var_name.startswith('unused')
+
+
 def _SkipAssignment(var_name):
     """
     Skip at the top level:
@@ -46,7 +50,7 @@ def _SkipAssignment(var_name):
     Always skip:
       x, _ = mytuple  # no second var
     """
-    return var_name == '_' or var_name.startswith('unused')
+    return _IsUnusedVar(var_name)
 
 
 def _GetCTypeForCast(type_expr):
@@ -2868,6 +2872,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                         rhs = ' = nullptr' if CTypeIsManaged(c_type) else ''
                         self.def_write_ind('%s %s%s;\n', c_type, lval_name,
                                            rhs)
+
+                        # TODO: we're not skipping the assignment, because of
+                        # the RHS
+                        if _IsUnusedVar(lval_name):
+                            # suppress C++ unused var compiler warnings!
+                            self.def_write_ind('(void)%s;\n' % lval_name)
 
                     done.add(lval_name)
 

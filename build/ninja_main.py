@@ -176,8 +176,9 @@ main() {
 
         if do_fork:
             print('  # Potentially fork this translation unit with &', file=f)
-        print('  %s _compile_one "$compiler" "$variant" "" \\' % do_fork,
-              file=f)
+            print('  %s \\' % do_fork, file=f)
+        indent = '  ' if do_fork else ''
+        print('  %s_compile_one "$compiler" "$variant" "" \\' % indent, file=f)
         print('    %s %s' % (src, obj_quoted), file=f)
         if do_fork:
             print(

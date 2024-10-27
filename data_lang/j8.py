@@ -372,7 +372,6 @@ class InstancePrinter(object):
             self.buf.write('{')
             self._MaybeNewline()
 
-            first = True
             i = 0
             for k, v in iteritems(val.d):
                 if i != 0:

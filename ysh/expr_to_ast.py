@@ -887,8 +887,7 @@ class Transformer(object):
         """
         ysh_mutation: lhs_list (augassign | '=') testlist end_stmt
         """
-        typ = p_node.typ
-        assert typ == grammar_nt.ysh_mutation
+        assert p_node.typ == grammar_nt.ysh_mutation
 
         lhs_list = self._LhsExprList(p_node.GetChild(0))  # could be a tuple
         op_tok = p_node.GetChild(1).tok
@@ -1224,8 +1223,7 @@ class Transformer(object):
           '{'  # opening { for pgen2
         )
         """
-        typ = p_node.typ
-        assert typ == grammar_nt.ysh_proc
+        assert p_node.typ == grammar_nt.ysh_proc
 
         n = p_node.NumChildren()
         if n == 1:  # proc f {
