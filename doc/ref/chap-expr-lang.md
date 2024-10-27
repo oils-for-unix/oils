@@ -541,7 +541,7 @@ List example:
     ale
     bean
 
-### func-call
+### ysh-func-call
 
 A function call expression looks like Python:
 

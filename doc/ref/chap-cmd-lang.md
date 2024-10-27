@@ -72,6 +72,17 @@ Redirects are also allowed in any part of the command:
     echo 'to file' > out.txt
     echo > out.txt 'to file'
 
+Bindings are allowed before the command:
+
+    PYTHONPATH=. mydir/myscript.py
+
+These bindings set a variable and mark it exported.  This binding is usually
+temporary, but it may persist in the case of certain [special
+builtins][special].
+
+[special]: https://www.gnu.org/software/bash/manual/html_node/Special-Builtins.html
+
+
 <h3 id="semicolon" class="osh-ysh-topic">semicolon ;</h3>
 
 Run two commands in sequence like this:

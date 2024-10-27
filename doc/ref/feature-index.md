@@ -17,94 +17,128 @@ Contents](toc-osh.html).
 <div id="toc">
 </div>
 
-## Errors
+## Where YSH Improves on OSH
 
-- [try](chap-builtin-cmd.html#try)
-- `_error`
-
-Status:
-
-- `_pipeline_status`
-- `_process_sub_status`
-
-OSH:
-
-- `$?` - not idiomatic in YSH
-
-## Environment Variables
+### Errors
 
 YSH:
 
-- `ENV`
-- `simple-command` - for `FOO=bar` bindings
-- TODO: should we have a `envFromDict()` function that goes with `env -i`?
+- [`try`](chap-builtin-cmd.html#try)
+- [`_error`](chap-special-var.html#_error)
+- multiple processes
+  - [`_pipeline_status`](chap-special-var.html#_pipeline_status)
+  - [`_process_sub_status`](chap-special-var.html#_process_sub_status)
 
 OSH:
 
-- `export`
+- [`$?`](chap-special-var.html#POSIX-special) - not idiomatic in YSH
 
-## I/O
+### Environment Variables
 
 YSH:
 
-- `write` 
-  - `echo` is a shortcut for `write`
-- `ysh-read` -- covers `read --all`
-- `redir`
-- the `io` Object
-
-
-## Modules
-
-- use
-- `is-main`
-- provide
-- `__provide__`
-- A module becomes an `Obj` with `__invoke__`
+- [ENV](chap-special-var.html#ENV)
+- `[simple-command][]` - for `NAME=val` env
+  bindings
+  - TODO: should we have a `envFromDict()` function that goes with `env -i`?
 
 OSH:
 
-- `source`
-- `source-guard`
+- [`export`](chap-osh-assign.html#export)
 
-## Objects
+[simple-command]: chap-cmd-lang.html#simple-command
 
-- `Obj`
-- `first() rest()`
-- operator `.`
-- operator `->`
+### I/O
 
-## Closures
+YSH:
 
-- blocks
-- procs and funcs?
+- [`write`](chap-builtin-cmd.html#write)
+  - [`echo`](chap-builtin-cmd.html#ysh-echo) is a shortcut for `write`
+- [`read`](chap-builtin-cmd.html#ysh-read) - `read --all`, etc.
+- [`redir`](chap-builtin-cmd.html#redir)
+- The [`io`](chap-type-method.html#io) object
 
-## Procs
+OSH:
 
-- `proc-def`
-- `__invoke__` and `Obj`
-- simple-command invokes procs
+- [`printf`](chap-builtin-cmd.html#printf)
 
-## Funcs
+### Procs
 
-- `func-def`
-- `__call__` and `Obj`
-- call expression
+YSH:
 
-## Reflection
+- [`proc`](chap-ysh-cmd.html#proc)
+- Invokable objects: [`__invoke__`][__invoke__], [`Obj`][Obj]
+- [`simple-command`][simple-command] is how you invoke procs
 
-- `io` object has `eval` etc.
-- the `vm` object
+OSH:
 
-## Unicode
+- [`sh-func`](chap-cmd-lang.html#sh-func)
+
+### Modules
+
+- [`use`](chap-builtin-cmd.html#use)
+- [`is-main`](chap-builtin-cmd.html#is-main)
+- provide (TODO)
+- [`__provide__`](chap-special-var.html#__provide__)
+- An imported module is an [`Obj`][Obj] with an [`__invoke__`][__invoke__]
+  method
+
+[Obj]: chap-type-method.html#Obj
+[__invoke__]: chap-type-method.html#__invoke__
+
+OSH:
+
+- [`source`](chap-builtin-cmd.html#source)
+- [`source-guard`](chap-builtin-cmd.html#source-guard)
+
+### Unicode
 
 - TODO: which functions respect Unicode?
 
-## Interactive Shell
+Also see [the Unicode doc](../unicode.html).
 
-- `renderPrompt()`
+### Interactive Shell
+
+- [`renderPrompt()`](chap-plugin.html#renderPrompt)
 
 OSH:
 
-- `complete`
-- Oils enhancements: `compexport` `compadjust` 
+- [`complete`][complete]
+- Oils enhancements: [`compexport`][compexport], [`compadjust`][compadjust]
+
+[complete]: chap-builtin-cmd.html#complete
+[compadjust]: chap-builtin-cmd.html#compadjust
+[compexport]: chap-builtin-cmd.html#compexport
+
+
+
+## YSH Only
+
+### Objects
+
+- [`Obj`][Obj]
+- `propView()` and `prototype()` - may be renamed `first() rest()`
+- operator `.` [ysh-attr](chap-expr-lang.html#ysh-attr)
+- operator `->` [thin-arrow](chap-expr-lang.html#thin-arrow)
+
+### Closures
+
+- [block-arg](chap-cmd-lang.html#block-arg)
+- Maybe: proc, func
+
+### Funcs
+
+- [`func`](chap-ysh-cmd.html#func)
+- Callable objects: [`__call__`][__call__] and [`Obj`][Obj] (TODO)
+- [`ysh-func-call`](chap-expr-lang.html#ysh-func-call)
+
+[__call__]: chap-type-method.html#__call__
+
+### Reflection
+
+- The [`io`][io] object has `eval()` methods, etc.
+- The [`vm`][vm] object for inspecting interpreter structures
+
+[io]: chap-type-method.html#io
+[vm]: chap-type-method.html#vm
+

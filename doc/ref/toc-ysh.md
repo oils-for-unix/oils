@@ -281,7 +281,7 @@ X [External Lang] BEGIN   END   when (awk)
                   ysh-index     s[0]  mylist[3]  mydict['key']
                   ysh-attr      mydict.key  mystr.startsWith('x')
                   ysh-slice     a[1:-1]  s[1:-1]
-                  func-call     f(x, y; ...named)
+                  ysh-func-call f(x, y, ...pos; n=1, ...named)
                   thin-arrow    mylist->pop()
                   fat-arrow     mylist => join() => upper()
                   match-ops     ~   !~   ~~   !~~
@@ -341,8 +341,7 @@ X [External Lang] BEGIN   END   when (awk)
 </h2>
 
 ```chapter-links-special-var
-  [YSH Vars]      ARGV              X ENV                 X _ESCAPE
-                  _this_dir
+  [YSH Vars]      ARGV              X ENV                   _this_dir
   [YSH Status]    _error
                   _pipeline_status    _process_sub_status
   [YSH Tracing]   SHX_indent          SHX_punct             SHX_pid_str
