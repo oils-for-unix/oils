@@ -288,7 +288,7 @@ def _Init(opt_def):
     opt_def.Add('eval_unsafe_arith')
 
     opt_def.Add('ignore_flags_not_impl')
-    opt_def.Add('ignore_opts_not_impl')
+    opt_def.Add('ignore_shopt_not_impl')
 
     # For implementing strict_errexit
     # TODO: could be _no_command_sub / _no_process_sub, if we had to discourage
@@ -365,8 +365,26 @@ def ArraySize():
 
 def OptionDict():
     # type: () -> Dict[str, int]
-    """For the slow path in frontend/match.py."""
-    return dict((opt.name, opt.index) for opt in _OPTION_DEF.opts)
+    """Implemented options.
+
+    For the slow path in frontend/consts.py
+    """
+    d = {}
+    for opt in _OPTION_DEF.opts:
+        d[opt.name] = opt.index
+    return d
+
+
+def UnimplOptionDict():
+    # type: () -> Dict[str, int]
+    """Unimplemented options.
+
+    For the slow path in frontend/consts.py."""
+    d = {}
+    for opt in _OPTION_DEF.opts:
+        if not opt.implemented:
+            d[opt.name] = opt.index
+    return d
 
 
 def ParseOptNames():

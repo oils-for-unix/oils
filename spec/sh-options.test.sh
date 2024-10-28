@@ -773,35 +773,75 @@ nounset off
 N-I
 ## END
 
-#### no-ops allowed - OSH shopt -s allow_unimpl_shopt
+#### Unimplemented options - print, query, set, unset
 case $SH in dash|mksh) exit ;; esac
 
-shopt -s zzz_unknown  # unknown
-echo status=$?
+opt_name=xpg_echo
 
-shopt -s xpg_echo  # unimplemented
-echo status=$?
-
-# allow_unimpl_shopt
-# allow_unimpl_flags
-shopt -s allow_unimpl_shopt
-echo allow=$?
+shopt -p xpg_echo
+shopt -q xpg_echo; echo q=$?
 
 shopt -s xpg_echo
-echo status=$?
+shopt -p xpg_echo
+
+shopt -u xpg_echo
+shopt -p xpg_echo
+echo p=$?  # weird, bash also returns a status
+
+shopt xpg_echo >/dev/null
+echo noflag=$?
+
+shopt -o errexit >/dev/null
+echo set=$?
 
 ## STDOUT:
-status=2
-status=2
-allow=0
-status=0
+TODO
 ## END
 
-## N-I bash STDOUT:
-status=1
-status=0
-allow=1
-status=0
+## OK bash STDOUT:
+shopt -u xpg_echo
+q=1
+shopt -s xpg_echo
+shopt -u xpg_echo
+p=1
+noflag=1
+set=1
+## END
+
+## N-I dash/mksh STDOUT:
+## END
+
+#### Unimplemented options - OSH shopt -s ignore_shopt_not_impl
+case $SH in dash|mksh) exit ;; esac
+
+shopt -s ignore_shopt_not_impl
+
+opt_name=xpg_echo
+
+shopt -p xpg_echo
+shopt -q xpg_echo; echo q=$?
+
+shopt -s xpg_echo
+shopt -p xpg_echo
+
+shopt -u xpg_echo
+shopt -p xpg_echo
+echo p=$?  # weird, bash also returns a status
+
+shopt xpg_echo >/dev/null
+echo noflag=$?
+
+shopt -o errexit >/dev/null
+echo set=$?
+
+## STDOUT:
+shopt -u xpg_echo
+q=1
+shopt -s xpg_echo
+shopt -u xpg_echo
+p=1
+noflag=1
+set=1
 ## END
 
 ## N-I dash/mksh STDOUT:

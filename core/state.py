@@ -689,20 +689,24 @@ class MutableOpts(object):
         self._SetArrayByNum(opt_num, b)
 
     def ShowOptions(self, opt_names):
-        # type: (List[str]) -> None
-        """For 'set -o' and 'shopt -p -o'."""
+        # type: (List[str]) -> bool
+        """Show traditional options, for 'set -o' and 'shopt -p -o'."""
         # TODO: Maybe sort them differently?
 
         if len(opt_names) == 0:  # if none, supplied, show all
             opt_names = [consts.OptionName(i) for i in consts.SET_OPTION_NUMS]
 
+        any_false = False
         for opt_name in opt_names:
             opt_num = _SetOptionNum(opt_name)
             b = self.Get(opt_num)
+            if not b:
+                any_false = True
             print('set %so %s' % ('-' if b else '+', opt_name))
+        return any_false
 
     def ShowShoptOptions(self, opt_names):
-        # type: (List[str]) -> None
+        # type: (List[str]) -> bool
         """For 'shopt -p'."""
 
         # Respect option groups.
@@ -716,6 +720,7 @@ class MutableOpts(object):
             elif opt_group == opt_group_i.StrictAll:
                 opt_nums.extend(consts.STRICT_ALL)
             else:
+                # TODO: validate
                 index = consts.OptionNum(opt_name)
                 # Minor incompatibility with bash: we validate everything before
                 # printing.
@@ -724,14 +729,19 @@ class MutableOpts(object):
                 opt_nums.append(index)
 
         if len(opt_names) == 0:
-            # If none supplied, show all>
-            # TODO: Should this show 'set' options too?
+            # If none supplied, show all
+            # Note: the way to show BOTH shopt and set options should be a
+            # __shopt__ Dict
             opt_nums.extend(consts.VISIBLE_SHOPT_NUMS)
 
+        any_false = False
         for opt_num in opt_nums:
             b = self.Get(opt_num)
+            if not b:
+                any_false = True
             print('shopt -%s %s' %
                   ('s' if b else 'u', consts.OptionName(opt_num)))
+        return any_false
 
 
 class _ArgFrame(object):

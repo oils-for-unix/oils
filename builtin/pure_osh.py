@@ -194,11 +194,13 @@ class Shopt(vm._Builtin):
         self.cmd_ev = cmd_ev
 
     def _PrintOptions(self, use_set_opts, opt_names):
-        # type: (bool, List[str]) -> None
+        # type: (bool, List[str]) -> int
         if use_set_opts:
-            self.mutable_opts.ShowOptions(opt_names)
+            any_false = self.mutable_opts.ShowOptions(opt_names)
         else:
-            self.mutable_opts.ShowShoptOptions(opt_names)
+            any_false = self.mutable_opts.ShowShoptOptions(opt_names)
+        # bash behavior: show exit code
+        return 1 if any_false else 0
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -223,11 +225,9 @@ class Shopt(vm._Builtin):
         elif arg.u:
             b = False
         elif arg.p:  # explicit -p
-            self._PrintOptions(arg.o, opt_names)
-            return 0
+            return self._PrintOptions(arg.o, opt_names)
         else:  # otherwise -p is implicit
-            self._PrintOptions(arg.o, opt_names)
-            return 0
+            return self._PrintOptions(arg.o, opt_names)
 
         # shopt --set x { my-block }
         cmd_frag = typed_args.OptionalBlockAsFrag(cmd_val)
