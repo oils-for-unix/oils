@@ -385,7 +385,7 @@ def Main(
     state.InitVarsAfterEnv(mem)
 
     if attrs.show_options:  # special case: sh -o
-        mutable_opts.ShowOptions([])
+        pure_osh.ShowOptions(mutable_opts, [])
         return 0
 
     # feedback between runtime and parser

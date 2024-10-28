@@ -847,6 +847,19 @@ set=1
 ## N-I dash/mksh STDOUT:
 ## END
 
+#### shopt -p exit code (regression)
+case $SH in dash|mksh) exit ;; esac
+
+shopt -p > /dev/null
+echo status=$?
+
+## STDOUT:
+status=0
+## END
+
+## N-I dash/mksh STDOUT:
+## END
+
 #### no-ops not shown by shopt -p
 
 shopt -p | grep xpg

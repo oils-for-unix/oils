@@ -133,6 +133,43 @@ def SetOptionsFromFlags(exec_opts, opt_changes, shopt_changes):
         exec_opts.SetAnyOption(opt_name, b)
 
 
+def ShowOptions(mutable_opts, opt_names):
+    # type: (state.MutableOpts, List[str]) -> bool
+    """Show traditional options, for 'set -o' and 'shopt -p -o'."""
+    # TODO: Maybe sort them differently?
+
+    if len(opt_names) == 0:  # if none, supplied, show all
+        opt_names = [consts.OptionName(i) for i in consts.SET_OPTION_NUMS]
+
+    any_false = False
+    for opt_name in opt_names:
+        opt_num = state._SetOptionNum(opt_name)
+        b = mutable_opts.Get(opt_num)
+        if not b:
+            any_false = True
+        print('set %so %s' % ('-' if b else '+', opt_name))
+    return any_false
+
+
+def _ShowShoptOptions(mutable_opts, opt_nums):
+    # type: (state.MutableOpts, List[int]) -> bool
+    """For 'shopt -p'."""
+
+    if len(opt_nums) == 0:
+        # If none supplied, show all
+        # Note: the way to show BOTH shopt and set options should be a
+        # __shopt__ Dict
+        opt_nums.extend(consts.VISIBLE_SHOPT_NUMS)
+
+    any_false = False
+    for opt_num in opt_nums:
+        b = mutable_opts.Get(opt_num)
+        if not b:
+            any_false = True
+        print('shopt -%s %s' % ('s' if b else 'u', consts.OptionName(opt_num)))
+    return any_false
+
+
 class Set(vm._Builtin):
 
     def __init__(self, exec_opts, mem):
@@ -169,7 +206,7 @@ class Set(vm._Builtin):
         # 'set -o' shows options.  This is actually used by autoconf-generated
         # scripts!
         if arg.show_options:
-            self.exec_opts.ShowOptions([])
+            ShowOptions(self.exec_opts, [])
             return 0
 
         # Note: set -o nullglob is not valid.  The 'shopt' builtin is preferred in
@@ -196,11 +233,42 @@ class Shopt(vm._Builtin):
     def _PrintOptions(self, use_set_opts, opt_names):
         # type: (bool, List[str]) -> int
         if use_set_opts:
-            any_false = self.mutable_opts.ShowOptions(opt_names)
+            any_false = ShowOptions(self.mutable_opts, opt_names)
+
+            if len(opt_names):
+                # bash behavior: behave like -q if options are set
+                return 1 if any_false else 0
+            else:
+                return 0
         else:
-            any_false = self.mutable_opts.ShowShoptOptions(opt_names)
-        # bash behavior: show exit code
-        return 1 if any_false else 0
+            # Respect option groups like ysh:upgrade
+            any_single_names = False
+            opt_nums = []  # type: List[int]
+            for opt_name in opt_names:
+                opt_group = consts.OptionGroupNum(opt_name)
+                if opt_group == opt_group_i.YshUpgrade:
+                    opt_nums.extend(consts.YSH_UPGRADE)
+                elif opt_group == opt_group_i.YshAll:
+                    opt_nums.extend(consts.YSH_ALL)
+                elif opt_group == opt_group_i.StrictAll:
+                    opt_nums.extend(consts.STRICT_ALL)
+                else:
+                    index = consts.OptionNum(opt_name)
+                    # Minor incompatibility with bash: we validate everything
+                    # before printing.
+                    if index == 0:
+                        e_usage('got invalid option %r' % opt_name,
+                                loc.Missing)
+                    opt_nums.append(index)
+                    any_single_names = True
+
+            any_false = _ShowShoptOptions(self.mutable_opts, opt_nums)
+
+            if any_single_names:
+                # bash behavior: behave like -q if options are set
+                return 1 if any_false else 0
+            else:
+                return 0
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
