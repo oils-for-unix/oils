@@ -182,8 +182,6 @@ _YSH_PARSE_OPTS = [
 
 # No-ops for bash compatibility
 _NO_OPS = [
-    'lastpipe',  # this feature is always on
-
     # Handled one by one
     'progcomp',
     'histappend',  # stubbed out for issue #218
@@ -269,6 +267,9 @@ def _Init(opt_def):
 
     # bash --norc -c 'set -o' shows this is on by default
     opt_def.Add('hashall', short_flag='h', builtin='set', default=True)
+
+    # This option is always on
+    opt_def.Add('lastpipe', default=True)
 
     #
     # shopt
