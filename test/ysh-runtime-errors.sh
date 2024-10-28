@@ -1100,11 +1100,9 @@ test-int-overflow() {
   _ysh-error-1 "= '$pos' ~== 42"
   _ysh-error-1 "= '$neg' ~== 42"
 
-if false; then
   # builtins
-  _ysh-error-1 "= int('$pos')"
-  _ysh-error-1 "= int('$neg')"
-fi
+  _ysh-expr-error "= int('$pos')"
+  _ysh-expr-error "= int('$neg')"
 }
 
 soil-run-py() {

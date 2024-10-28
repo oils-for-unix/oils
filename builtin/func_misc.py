@@ -241,7 +241,12 @@ class Int(vm._Callable):
                                      rd.BlamePos())
 
                 s = val.s.replace('_', '')
-                return value.Int(mops.FromStr(s))
+                ok, big_int = mops.FromStr2(s)
+                if not ok:
+                    raise error.Expr("Integer too big: %s" % val.s,
+                                     rd.BlamePos())
+
+                return value.Int(big_int)
 
         raise error.TypeErr(val, 'int() expected Bool, Int, Float, or Str',
                             rd.BlamePos())

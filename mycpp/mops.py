@@ -111,7 +111,7 @@ def FromStr(s, base=10):
 
 
 MAX_POS_INT = 2**63 - 1
-MAX_NEG_INT = 2**63
+MAX_NEG_INT = -(2**63)
 
 
 def FromStr2(s, base=10):
@@ -122,6 +122,8 @@ def FromStr2(s, base=10):
     try:
         big_int = BigInt(int(s, base))
     except ValueError:
+        return (False, MINUS_ONE)
+    else:
         # Simulate C++ overflow
         if big_int.i > MAX_POS_INT:
             return (False, MINUS_ONE)
@@ -129,8 +131,6 @@ def FromStr2(s, base=10):
             return (False, MINUS_ONE)
 
         return (True, big_int)
-    else:
-        return (False, MINUS_ONE)
 
 
 def BigTruncate(b):

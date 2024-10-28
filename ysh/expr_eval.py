@@ -814,13 +814,15 @@ class ExprEvaluator(object):
 
                     elif case(value_e.Int):
                         right = cast(value.Int, UP_right)
+
+                        # Note: this logic is similar to _ConvertToInt(left2)
                         if not match.LooksLikeYshInt(left2):
                             return value.Bool(False)
 
                         left2 = left2.replace('_', '')
                         ok, left_i = mops.FromStr2(left2)
                         if not ok:
-                            e_die('Integer too big', op)
+                            e_die('Integer too big: %s' % left2, op)
 
                         eq = mops.Equal(left_i, right.i)
                         return value.Bool(eq)
