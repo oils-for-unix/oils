@@ -1180,22 +1180,32 @@ test-int-overflow() {
   local pos='18446744073709551616'
   local neg='-18446744073709551616'
 
-  # TODO
-  return
-
-if false; then
   # frontend/args.py
-  _osh-error-1 "read -n $pos"
-  _osh-error-1 "read -n $neg"
+  _osh-error-2 "echo hi | read -n $pos"
+  _osh-error-2 "echo hi | read -n $neg"
 
   # osh/sh_expr_eval.py
   _osh-error-1 "s=$pos;"' echo $(( $s ))'
   _osh-error-1 "s=$neg;"' echo $(( $s ))'
-fi
+
+  # octal
+  local oct_pos='01234567012345670123456701234567'
+  local oct_neg="-$oct_pos"
+  _osh-error-1 "s=$oct_pos;"' echo $(( $s ))'
+  _osh-error-1 "s=$oct_neg;"' echo $(( $s ))'  # treated as negation
+
+  # hex
+  local hex_pos='0x123456789abcdef0123456789'
+  local hex_neg="-$hex_pos"
+  _osh-error-1 "s=$hex_pos;"' echo $(( $s ))'
+  _osh-error-1 "s=$hex_neg;"' echo $(( $s ))'  # treated as negation
 
   # builtins
   _osh-error-1 'printf %d'" $pos"
   _osh-error-1 'printf %d'" $neg"
+
+  # TODO
+  return
 
   _osh-error-1 "trap $pos ERR"
   _osh-error-1 "trap $neg ERR"

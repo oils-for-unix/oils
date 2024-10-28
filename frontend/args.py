@@ -310,7 +310,9 @@ class SetToInt(_ArgAction):
     def _Value(self, arg, location):
         # type: (str, loc_t) -> value_t
         if match.LooksLikeInteger(arg):
-            i = mops.FromStr(arg)
+            ok, i = mops.FromStr2(arg)
+            if not ok:
+                e_usage('Integer too big: %s' % arg, location)
         else:
             e_usage(
                 'expected integer after %s, got %r' % ('-' + self.name, arg),

@@ -316,15 +316,24 @@ def _MaybeParseInt(s, blame_loc):
 
     if id_ == Id.ShNumber_Dec:
         # Normal base 10 integer.
-        return (True, mops.FromStr(s))
+        ok, big_int = mops.FromStr2(s)
+        if not ok:
+            e_die('Integer too big: %s' % s, blame_loc)
+        return (True, big_int)
 
     elif id_ == Id.ShNumber_Oct:
         # 0123, offset by 1
-        return (True, mops.FromStr(s[1:], 8))
+        ok, big_int = mops.FromStr2(s[1:], 8)
+        if not ok:
+            e_die('Octal integer too big: %s' % s, blame_loc)
+        return (True, big_int)
 
     elif id_ == Id.ShNumber_Hex:
         # 0xff, offset by 2
-        return (True, mops.FromStr(s[2:], 16))
+        ok, big_int = mops.FromStr2(s[2:], 16)
+        if not ok:
+            e_die('Hex integer too big: %s' % s, blame_loc)
+        return (True, big_int)
 
     elif id_ == Id.ShNumber_BaseN:
         b, digits = mylib.split_once(s, '#')

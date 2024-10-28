@@ -307,7 +307,9 @@ class Printf(vm._Builtin):
 
             if match.LooksLikeInteger(s):
                 # Note: spaces like ' -42 ' accepted and normalized
-                d = mops.FromStr(s)
+                ok, d = mops.FromStr2(s)
+                if not ok:
+                    e_die("Integer too big: %s" % s, word_loc)
 
             else:
                 # Check for 'a and "a
