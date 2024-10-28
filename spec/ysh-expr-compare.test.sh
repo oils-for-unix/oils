@@ -53,6 +53,15 @@ if (' BAD ' ~== 'foo') {
 if ('3 ' ~== 3) {
   echo Str-Int
 }
+
+if ('-3 ' ~== -3) {
+  echo Str-Negative
+}
+
+if ('-3_456' ~== -3456) {
+  echo Str-Underscore
+}
+
 if ('4 ' ~== '3') {
   echo FAIL
 }
@@ -77,6 +86,8 @@ if (matrix === [true, true]) {
 ## STDOUT:
 Str-Str
 Str-Int
+Str-Negative
+Str-Underscore
 Str-Bool
 bool matrix
 ## END

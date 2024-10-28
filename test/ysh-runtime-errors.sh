@@ -1083,6 +1083,30 @@ test-obj-methods() {
   _ysh-error-X 3 'pp test_ (List[Str, 3])'
 }
 
+test-int-overflow() {
+  local pos='18446744073709551616'
+  local neg='-18446744073709551616'
+
+  # arithmetic
+
+  # _ConvertToInt
+  _ysh-error-1 "var s = '$pos'; = s % 2"
+  _ysh-error-1 "var s = '$neg'; = s % 2"
+
+  # _ConvertToNumber
+  _ysh-error-1 "var s = '$pos'; = s + 1"
+  _ysh-error-1 "var s = '$neg'; = s + 1"
+
+  _ysh-error-1 "= '$pos' ~== 42"
+  _ysh-error-1 "= '$neg' ~== 42"
+
+if false; then
+  # builtins
+  _ysh-error-1 "= int('$pos')"
+  _ysh-error-1 "= int('$neg')"
+fi
+}
+
 soil-run-py() {
   run-test-funcs
 }

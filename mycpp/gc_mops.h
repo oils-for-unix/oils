@@ -30,6 +30,7 @@ BigStr* ToHexUpper(BigInt b);
 BigStr* ToHexLower(BigInt b);
 
 BigInt FromStr(BigStr* s, int base = 10);
+Tuple2<bool, BigInt> FromStr2(BigStr* s, int base = 10);
 Tuple2<bool, BigInt> FromFloat(double f);
 
 inline int BigTruncate(BigInt b) {

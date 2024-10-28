@@ -99,7 +99,10 @@ def _ConvertToInt(val, msg, blame_loc):
             val = cast(value.Str, UP_val)
             if match.LooksLikeYshInt(val.s):
                 s = val.s.replace('_', '')
-                return mops.FromStr(s)
+                ok, i = mops.FromStr2(s)
+                if not ok:
+                    e_die("Integer too big: %s" % s, blame_loc)
+                return i
 
     raise error.TypeErr(val, msg, blame_loc)
 
@@ -121,7 +124,10 @@ def _ConvertToNumber(val):
 
             if match.LooksLikeYshInt(val.s):
                 s = val.s.replace('_', '')
-                return coerced_e.Int, mops.FromStr(s), -1.0
+                ok, i = mops.FromStr2(s)
+                if not ok:
+                    e_die("Integer too big: %s" % s, loc.Missing)
+                return coerced_e.Int, i, -1.0
 
             if match.LooksLikeYshFloat(val.s):
                 s = val.s.replace('_', '')
@@ -808,10 +814,15 @@ class ExprEvaluator(object):
 
                     elif case(value_e.Int):
                         right = cast(value.Int, UP_right)
-                        if not left2.isdigit():
+                        if not match.LooksLikeYshInt(left2):
                             return value.Bool(False)
 
-                        eq = mops.Equal(mops.FromStr(left2), right.i)
+                        left2 = left2.replace('_', '')
+                        ok, left_i = mops.FromStr2(left2)
+                        if not ok:
+                            e_die('Integer too big', op)
+
+                        eq = mops.Equal(left_i, right.i)
                         return value.Bool(eq)
 
                 e_die('~== expects Str, Int, or Bool on the right', op)

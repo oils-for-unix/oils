@@ -1007,8 +1007,8 @@ class BoolEvaluator(ArithEvaluator):
             if case(value_e.BashArray):
                 val = cast(value.BashArray, UP_val)
 
-                # TODO: use mops.BigStr
                 try:
+                    # could use mops.FromStr?
                     index = int(index_str)
                 except ValueError as e:
                     if self.exec_opts.strict_word_eval():

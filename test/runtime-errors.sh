@@ -1176,6 +1176,34 @@ test-long-shell-line() {
   echo
 }
 
+test-int-overflow() {
+  local pos='18446744073709551616'
+  local neg='-18446744073709551616'
+
+  # TODO
+  return
+
+if false; then
+  # frontend/args.py
+  _osh-error-1 "read -n $pos"
+  _osh-error-1 "read -n $neg"
+
+  # osh/sh_expr_eval.py
+  _osh-error-1 "s=$pos;"' echo $(( $s ))'
+  _osh-error-1 "s=$neg;"' echo $(( $s ))'
+fi
+
+  # builtins
+  _osh-error-1 'printf %d'" $pos"
+  _osh-error-1 'printf %d'" $neg"
+
+  _osh-error-1 "trap $pos ERR"
+  _osh-error-1 "trap $neg ERR"
+
+  _osh-error-1 "ulimit $pos"
+  _osh-error-1 "ulimit $neg"
+}
+
 #
 # TEST DRIVER
 #

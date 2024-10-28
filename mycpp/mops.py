@@ -110,6 +110,29 @@ def FromStr(s, base=10):
     return BigInt(int(s, base))
 
 
+MAX_POS_INT = 2**63 - 1
+MAX_NEG_INT = 2**63
+
+
+def FromStr2(s, base=10):
+    # type: (str, int) -> Tuple[bool, BigInt]
+    """
+    Simulate C++
+    """
+    try:
+        big_int = BigInt(int(s, base))
+    except ValueError:
+        # Simulate C++ overflow
+        if big_int.i > MAX_POS_INT:
+            return (False, MINUS_ONE)
+        if big_int.i < MAX_NEG_INT:
+            return (False, MINUS_ONE)
+
+        return (True, big_int)
+    else:
+        return (False, MINUS_ONE)
+
+
 def BigTruncate(b):
     # type: (BigInt) -> int
     """Only truncates in C++"""
