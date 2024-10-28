@@ -160,8 +160,12 @@ def _IsUnsignedInteger(s):
 
     # Note: could simplify this by making match.LooksLikeUnsigned()
 
+    ok, big_int = mops.FromStr2(s)
+    if not ok:
+        raise error.Usage('integer too big: %s' % s, loc.Missing)
+
     # not (0 > s) is (s >= 0)
-    return not mops.Greater(mops.ZERO, mops.FromStr(s))
+    return not mops.Greater(mops.ZERO, big_int)
 
 
 def _GetSignalNumber(sig_spec):

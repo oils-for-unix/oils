@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 0
 ## compare_shells: dash bash mksh zsh ash
 
 # printf
@@ -1121,9 +1121,12 @@ for fmt in '%u\n' '%d\n'; do
   printf "$fmt" '18446744073709551616'
   echo
 done
+
+## status: 1
 ## STDOUT:
 ## END
 
+## OK bash/dash/mksh status: 0
 ## OK bash/dash/mksh STDOUT:
 18446744073709551615
 18446744073709551615
@@ -1133,6 +1136,7 @@ done
 
 ## END
 
+## BUG ash status: 0
 ## BUG ash STDOUT:
 18446744073709551615
 0
@@ -1142,6 +1146,7 @@ done
 
 ## END
 
+## BUG zsh status: 0
 ## BUG zsh STDOUT:
 1844674407370955161
 1844674407370955161
@@ -1165,9 +1170,12 @@ for fmt in '%u\n' '%d\n'; do
   printf "$fmt" '-18446744073709551616'
   echo
 done
+
+## status: 1
 ## STDOUT:
 ## END
 
+## OK bash/dash/mksh status: 0
 ## OK bash/dash/mksh STDOUT:
 1
 18446744073709551615
@@ -1177,6 +1185,7 @@ done
 
 ## END
 
+## BUG zsh status: 0
 ## BUG zsh STDOUT:
 16602069666338596455
 16602069666338596455
@@ -1186,6 +1195,7 @@ done
 
 ## END
 
+## BUG ash status: 0
 ## BUG ash STDOUT:
 0
 0
