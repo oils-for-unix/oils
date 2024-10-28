@@ -520,7 +520,9 @@ class Ulimit(vm._Builtin):
             limit = mops.FromC(RLIM_INFINITY)
         else:
             if match.LooksLikeInteger(s):
-                big_int = mops.FromStr(s)
+                ok, big_int = mops.FromStr2(s)
+                if not ok:
+                    raise error.Usage('Integer too big: %s' % s, s_loc)
             else:
                 raise error.Usage(
                     "expected a number or 'unlimited', got %r" % s, s_loc)

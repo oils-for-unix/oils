@@ -1,12 +1,11 @@
 #!/usr/bin/env python2
-"""Builtin_trap.py."""
 from __future__ import print_function
 
 from signal import SIG_DFL, SIGINT, SIGKILL, SIGSTOP, SIGWINCH
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value
-from _devbuild.gen.syntax_asdl import loc, source
+from _devbuild.gen.syntax_asdl import loc, loc_t, source
 from core import alloc
 from core import dev
 from core import error
@@ -153,8 +152,8 @@ class TrapState(object):
         return len(self.traps) != 0 or len(self.hooks) != 0
 
 
-def _IsUnsignedInteger(s):
-    # type: (str) -> bool
+def _IsUnsignedInteger(s, blame_loc):
+    # type: (str, loc_t) -> bool
     if not match.LooksLikeInteger(s):
         return False
 
@@ -162,7 +161,7 @@ def _IsUnsignedInteger(s):
 
     ok, big_int = mops.FromStr2(s)
     if not ok:
-        raise error.Usage('integer too big: %s' % s, loc.Missing)
+        raise error.Usage('integer too big: %s' % s, blame_loc)
 
     # not (0 > s) is (s >= 0)
     return not mops.Greater(mops.ZERO, big_int)
@@ -254,7 +253,7 @@ class Trap(vm._Builtin):
 
             return 0
 
-        code_str = arg_r.ReadRequired('requires a code string')
+        code_str, code_loc = arg_r.ReadRequired2('requires a code string')
         sig_spec, sig_loc = arg_r.ReadRequired2(
             'requires a signal or hook name')
 
@@ -281,7 +280,7 @@ class Trap(vm._Builtin):
         # Per POSIX, if the first argument to trap is an unsigned integer
         # then reset every condition
         # https://pubs.opengroup.org/onlinepubs/9699919799.2018edition/utilities/V3_chap02.html#tag_18_28
-        if code_str == '-' or _IsUnsignedInteger(code_str):
+        if code_str == '-' or _IsUnsignedInteger(code_str, code_loc):
             if sig_key in _HOOK_NAMES:
                 self.trap_state.RemoveUserHook(sig_key)
                 return 0
