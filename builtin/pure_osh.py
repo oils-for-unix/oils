@@ -30,6 +30,7 @@ from mycpp.mylib import print_stderr, log
 from typing import List, Dict, Tuple, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value
+    from core import optview
     from core.state import MutableOpts, Mem, SearchPath
     from osh.cmd_eval import CommandEvaluator
 
@@ -225,8 +226,9 @@ class Set(vm._Builtin):
 
 class Shopt(vm._Builtin):
 
-    def __init__(self, mutable_opts, cmd_ev):
-        # type: (MutableOpts, CommandEvaluator) -> None
+    def __init__(self, exec_opts, mutable_opts, cmd_ev):
+        # type: (optview.Exec, MutableOpts, CommandEvaluator) -> None
+        self.exec_opts = exec_opts
         self.mutable_opts = mutable_opts
         self.cmd_ev = cmd_ev
 
@@ -257,8 +259,11 @@ class Shopt(vm._Builtin):
                     # Minor incompatibility with bash: we validate everything
                     # before printing.
                     if index == 0:
-                        e_usage('got invalid option %r' % opt_name,
-                                loc.Missing)
+                        if self.exec_opts.ignore_shopt_not_impl():
+                            index = consts.UnimplOptionNum(opt_name)
+                        if index == 0:
+                            e_usage('got invalid option %r' % opt_name,
+                                    loc.Missing)
                     opt_nums.append(index)
                     any_single_names = True
 
@@ -283,9 +288,14 @@ class Shopt(vm._Builtin):
             for name in opt_names:
                 index = consts.OptionNum(name)
                 if index == 0:
-                    return 2  # bash gives 1 for invalid option; 2 is better
+                    if self.exec_opts.ignore_shopt_not_impl():
+                        index = consts.UnimplOptionNum(name)
+                    if index == 0:
+                        return 2  # bash gives 1 for invalid option; 2 is better
+
                 if not self.mutable_opts.opt0_array[index]:
                     return 1  # at least one option is not true
+
             return 0  # all options are true
 
         if arg.s:
@@ -319,8 +329,12 @@ class Shopt(vm._Builtin):
 
                 index = consts.OptionNum(opt_name)
                 if index == 0:
-                    # TODO: location info
-                    e_usage('got invalid option %r' % opt_name, loc.Missing)
+                    if self.exec_opts.ignore_shopt_not_impl():
+                        index = consts.UnimplOptionNum(opt_name)
+                    if index == 0:
+                        # TODO: location info
+                        e_usage('got invalid option %r' % opt_name,
+                                loc.Missing)
                 opt_nums.append(index)
 
             with state.ctx_Option(self.mutable_opts, opt_nums, b):
@@ -328,9 +342,10 @@ class Shopt(vm._Builtin):
             return 0  # cd also returns 0
 
         # Otherwise, set options.
+        ignore_shopt_not_impl = self.exec_opts.ignore_shopt_not_impl()
         for opt_name in opt_names:
             # We allow set -o options here
-            self.mutable_opts.SetAnyOption(opt_name, b)
+            self.mutable_opts.SetAnyOption(opt_name, b, ignore_shopt_not_impl)
 
         return 0
 
@@ -509,13 +524,13 @@ def _GetOpts(
 
 class GetOpts(vm._Builtin):
     """
-  Vars used:
-    OPTERR: disable printing of error messages
-  Vars set:
-    The variable named by the second arg
-    OPTIND - initialized to 1 at startup
-    OPTARG - argument
-  """
+    Vars used:
+      OPTERR: disable printing of error messages
+    Vars set:
+      The variable named by the second arg
+      OPTIND - initialized to 1 at startup
+      OPTARG - argument
+    """
 
     def __init__(self, mem, errfmt):
         # type: (Mem, ui.ErrorFormatter) -> None

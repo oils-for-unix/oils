@@ -652,7 +652,7 @@ def Main(
 
     # Interpreter state
     b[builtin_i.set] = pure_osh.Set(mutable_opts, mem)
-    b[builtin_i.shopt] = pure_osh.Shopt(mutable_opts, cmd_ev)
+    b[builtin_i.shopt] = pure_osh.Shopt(exec_opts, mutable_opts, cmd_ev)
 
     b[builtin_i.hash] = pure_osh.Hash(search_path)  # not really pure
     b[builtin_i.trap] = trap_osh.Trap(trap_state, parse_ctx, tracer, errfmt)

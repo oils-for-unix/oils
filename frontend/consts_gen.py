@@ -493,8 +493,9 @@ Kind GetKind(id_kind_asdl::Id_t id) {
             GenStringLookup('types_asdl::opt_group_t', 'OptionGroupNum', pairs,
                             f)
 
-            #pairs = [(opt.name, opt.index) for opt in option_def.All() if opt.implemented]
-            pairs = [(opt.name, opt.index) for opt in option_def.All()]
+            pairs = [(opt.name, opt.index) for opt in option_def.All()
+                     if opt.implemented]
+            #pairs = [(opt.name, opt.index) for opt in option_def.All()]
             GenStringLookup('option_asdl::option_t', 'OptionNum', pairs, f)
             pairs2 = [(opt.name, opt.index) for opt in option_def.All()
                       if not opt.implemented]

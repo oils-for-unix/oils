@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 from __future__ import print_function
 
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Tuple, Any
 
 
 class Option(object):
@@ -364,26 +364,14 @@ def ArraySize():
 
 
 def OptionDict():
-    # type: () -> Dict[str, int]
+    # type: () -> Dict[str, Tuple[int, bool]]
     """Implemented options.
 
     For the slow path in frontend/consts.py
     """
     d = {}
     for opt in _OPTION_DEF.opts:
-        d[opt.name] = opt.index
-    return d
-
-
-def UnimplOptionDict():
-    # type: () -> Dict[str, int]
-    """Unimplemented options.
-
-    For the slow path in frontend/consts.py."""
-    d = {}
-    for opt in _OPTION_DEF.opts:
-        if not opt.implemented:
-            d[opt.name] = opt.index
+        d[opt.name] = (opt.index, opt.implemented)
     return d
 
 

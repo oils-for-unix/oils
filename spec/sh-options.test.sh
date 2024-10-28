@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh
-## oils_failures_allowed: 3
+## oils_failures_allowed: 2
 ## tags: interactive
 
 # Test options to set, shopt, $SH.
@@ -725,6 +725,7 @@ status=127
 ## END
 
 #### stubbed out bash options
+shopt -s ignore_shopt_not_impl
 for name in foo autocd cdable_vars checkwinsize; do
   shopt -s $name
   echo $?
@@ -795,7 +796,10 @@ shopt -o errexit >/dev/null
 echo set=$?
 
 ## STDOUT:
-TODO
+q=2
+p=2
+noflag=2
+set=1
 ## END
 
 ## OK bash STDOUT:

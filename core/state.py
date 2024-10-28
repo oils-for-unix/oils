@@ -429,11 +429,14 @@ def MakeOilOpts():
     return parse_opts
 
 
-def _AnyOptionNum(opt_name):
-    # type: (str) -> option_t
+def _AnyOptionNum(opt_name, ignore_shopt_not_impl):
+    # type: (str, bool) -> option_t
     opt_num = consts.OptionNum(opt_name)
     if opt_num == 0:
-        e_usage('got invalid option %r' % opt_name, loc.Missing)
+        if ignore_shopt_not_impl:
+            opt_num = consts.UnimplOptionNum(opt_name)
+        if opt_num == 0:
+            e_usage('got invalid option %r' % opt_name, loc.Missing)
 
     # Note: we relaxed this for YSH so we can do 'shopt --unset errexit' consistently
     #if opt_num not in consts.SHOPT_OPTION_NUMS:
@@ -659,8 +662,8 @@ class MutableOpts(object):
                 new_val = value.Str(':'.join(names))
                 self.mem.InternalSetGlobal('SHELLOPTS', new_val)
 
-    def SetAnyOption(self, opt_name, b):
-        # type: (str, bool) -> None
+    def SetAnyOption(self, opt_name, b, ignore_shopt_not_impl=False):
+        # type: (str, bool, bool) -> None
         """For shopt -s/-u and sh -O/+O."""
 
         # shopt -s ysh:all turns on all YSH options, which includes all strict
@@ -680,7 +683,7 @@ class MutableOpts(object):
             _SetGroup(self.opt0_array, consts.STRICT_ALL, b)
             return
 
-        opt_num = _AnyOptionNum(opt_name)
+        opt_num = _AnyOptionNum(opt_name, ignore_shopt_not_impl)
 
         if opt_num == option_i.errexit:
             self.SetDeferredErrExit(b)

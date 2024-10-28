@@ -180,17 +180,27 @@ def OptionGroupNum(s):
 
 
 _OPTION_DICT = option_def.OptionDict()
-_UNIMPL_OPTION_DICT = option_def.UnimplOptionDict()
 
 
 def OptionNum(s):
     # type: (str) -> int
-    return _OPTION_DICT.get(s, 0)  # 0 means not found
+    """
+    Only considers implemented options.
+    """
+    pair = _OPTION_DICT.get(s)
+    if pair is None:
+        return 0
+    num, impl = pair
+    return num if impl else 0  # 0 means not found
 
 
 def UnimplOptionNum(s):
     # type: (str) -> int
-    return _UNIMPL_OPTION_DICT.get(s, 0)  # 0 means not found
+    pair = _OPTION_DICT.get(s)
+    if pair is None:
+        return 0
+    num, impl = pair
+    return 0 if impl else num  # 0 means not found
 
 
 _CONTROL_FLOW_NAMES = [name for _, name, _ in lexer_def.CONTROL_FLOW]
