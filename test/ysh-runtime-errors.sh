@@ -221,7 +221,7 @@ test-more-locations() {
   # - Or nested calls fall back?
 
 #   func repeat(x, y) { return (null) }; var x = fromJson(repeat(123, 20))
-                                                              ^
+#                                                               ^
 # [ -c flag ]:1: fatal: Arg 1 should be a Str, got Null
 
 
