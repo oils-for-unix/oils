@@ -350,6 +350,7 @@ build-stress-test() {
     mycpp/gc_stress_test.cc \
     mycpp/mark_sweep_heap.cc \
     mycpp/gc_builtins.cc \
+    mycpp/gc_iolib.cc \
     mycpp/gc_mylib.cc \
     mycpp/gc_str.cc \
     mycpp/hash.cc \
