@@ -249,8 +249,19 @@ def Interactive(
                 cmd_ev.mem.SetLastStatus(status)
                 quit = True
             except KeyboardInterrupt:  # thrown by InteractiveLineReader._GetLine()
+
+                # TODO: This doesn't look right
+                # - in bin/osh - prints at beginning of line
+                # - in _bin/cxx-asan/osh without GNU readline - prints twice
+                #   sometimes
+                # - with GNU readline - it is more like bin/osh
+
                 # Here we must print a newline BEFORE EraseLines()
                 print('^C')
+                if 0:
+                    from core import pyos
+                    pyos.FlushStdout()
+
                 display.EraseLines()
                 # http://www.tldp.org/LDP/abs/html/exitcodes.html
                 # bash gives 130, dash gives 0, zsh gives 1.

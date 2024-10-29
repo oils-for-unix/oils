@@ -210,4 +210,14 @@ py-readline() {
   PYTHONPATH=.:vendor python2 frontend/py_readline.py "$@"
 }
 
+bug-2108() {
+  ### Ctrl-C leads to I/O
+
+  ./configure --without-readline
+  ninja
+
+  # Hit Ctrl-C
+  # _bin/cxx-asan/osh
+}
+
 "$@"

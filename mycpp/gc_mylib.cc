@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <unistd.h>  // isatty
 
+#include "mycpp/gc_iolib.h"
+
 namespace mylib {
 
 void InitCppOnly() {
@@ -114,14 +116,11 @@ BigStr* CFile::readline() {
     // man page says the buffer should be freed even if getline fails
     free(line);
 
-#if 0
-    // Need to raise KeyboardInterrupt like mylib.Stdin().readline() does in
-    // Python!  This affects _PlainPromptInput() in frontend/reader.py
-    // gSignalSafe.  But the dependency on gSignalSafe is "inverted".
-    if (errno == EINTR && gSignalSafe->PollUntrappedSigInt()) {
+    // Raise KeyboardInterrupt like mylib.Stdin().readline() does in Python!
+    // This affects _PlainPromptInput() in frontend/reader.py.
+    if (errno == EINTR && iolib::gSignalSafe->PollUntrappedSigInt()) {
       throw Alloc<KeyboardInterrupt>();
     }
-#endif
 
     if (errno != 0) {  // Unexpected error
       // log("getline() error: %s", strerror(errno));
