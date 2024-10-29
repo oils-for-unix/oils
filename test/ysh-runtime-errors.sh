@@ -224,12 +224,11 @@ test-more-locations() {
 #                                                               ^
 # [ -c flag ]:1: fatal: Arg 1 should be a Str, got Null
 
-
-  _ysh-expr-error \
+  _ysh-error-X 3 \
     'func repeat(x, y) { return (null) }; var x = fromJson(repeat('123', 20))'
 
   # This blames 'error'
-  _ysh-expr-error \
+  _ysh-error-X 10 \
     'source $LIB_YSH/list.ysh; var x = fromJson(repeat('123', 20))'
 }
 
