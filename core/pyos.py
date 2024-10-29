@@ -13,7 +13,7 @@ import sys
 import termios  # for read -n
 import time
 
-from mycpp.iolib import gSignalSafe
+from mycpp import iolib
 from mycpp import mops
 from mycpp.mylib import log
 
@@ -61,7 +61,7 @@ def WaitPid(waitpid_options):
         # - waitpid_options can be WNOHANG
         pid, status = posix.waitpid(-1, WUNTRACED | waitpid_options)
     except OSError as e:
-        if e.errno == EINTR and gSignalSafe.PollUntrappedSigInt():
+        if e.errno == EINTR and iolib.gSignalSafe.PollUntrappedSigInt():
             raise KeyboardInterrupt()
         return -1, e.errno
 
@@ -95,7 +95,7 @@ def Read(fd, n, chunks):
     try:
         chunk = posix.read(fd, n)
     except OSError as e:
-        if e.errno == EINTR and gSignalSafe.PollUntrappedSigInt():
+        if e.errno == EINTR and iolib.gSignalSafe.PollUntrappedSigInt():
             raise KeyboardInterrupt()
         return -1, e.errno
     else:
@@ -118,7 +118,7 @@ def ReadByte(fd):
     try:
         b = posix.read(fd, 1)
     except OSError as e:
-        if e.errno == EINTR and gSignalSafe.PollUntrappedSigInt():
+        if e.errno == EINTR and iolib.gSignalSafe.PollUntrappedSigInt():
             raise KeyboardInterrupt()
         return -1, e.errno
     else:
