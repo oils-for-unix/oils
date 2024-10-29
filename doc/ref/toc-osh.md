@@ -189,6 +189,7 @@ X [Unsupported]   enable
   [Debugging]      xtrace        X verbose    X extdebug
   [Interactive]    emacs           vi
   [Compat]         eval_unsafe_arith            ignore_flags_not_impl
+                   ignore_shopt_not_impl
 ```
 
 <h2 id="special-var">

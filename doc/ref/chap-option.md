@@ -112,11 +112,22 @@ Allow dynamically parsed `a[$(echo 42)]`  For bash compatibility.
 
 ### ignore_flags_not_impl
 
-Suppress failures from flags not implemented.  Example:
+Suppress failures from unimplemented flags.  Example:
 
     shopt --set ignore_flags_not_impl
 
     declare -i foo=2+3  # not evaluated to 5, but doesn't fail either
+
+This option can be useful for "getting past" errors while testing.
+
+### ignore_shopt_not_impl
+
+Suppress failures from unimplemented shell options.  Example:
+
+    shopt --set ignore_shopt_not_impl
+
+    shopt --set xpg_echo  # exit with status 0, not 1
+                          # this is a bash option that OSH doesn't implement
 
 This option can be useful for "getting past" errors while testing.
 
