@@ -85,6 +85,7 @@ from frontend import typed_args
 from osh import braces
 from osh import sh_expr_eval
 from osh import word_eval
+from mycpp import iolib
 from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log, probe, switch, tagswitch
@@ -271,7 +272,7 @@ class CommandEvaluator(object):
             arena,  # type: Arena
             cmd_deps,  # type: Deps
             trap_state,  # type: trap_osh.TrapState
-            signal_safe,  # type: pyos.SignalSafe
+            signal_safe,  # type: iolib.SignalSafe
     ):
         # type: (...) -> None
         """

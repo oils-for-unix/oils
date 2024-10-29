@@ -14,6 +14,7 @@
 #endif
 
 #include "cpp/core.h"
+#include "mycpp/gc_mylib.h"
 
 namespace py_readline {
 
@@ -117,7 +118,7 @@ BigStr* readline(BigStr* prompt) {
     FD_SET(fileno(rl_instream), &fds);
     int ec = select(FD_SETSIZE, &fds, NULL, NULL, NULL);
     if (ec == -1) {
-      if (errno == EINTR && pyos::gSignalSafe->PollSigInt()) {
+      if (errno == EINTR && iolib::gSignalSafe->PollSigInt()) {
         // User is trying to cancel. Abort and cleanup readline state.
         rl_free_line_state();
         rl_callback_sigcleanup();

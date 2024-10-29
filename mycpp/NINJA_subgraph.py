@@ -24,6 +24,7 @@ def DefineTargets(ru):
         srcs=[
             'mycpp/bump_leak_heap.cc',
             'mycpp/gc_builtins.cc',
+            'mycpp/gc_iolib.cc',
             'mycpp/gc_mops.cc',
             'mycpp/gc_mylib.cc',
             'mycpp/gc_str.cc',
@@ -47,6 +48,7 @@ def DefineTargets(ru):
             'mycpp/gc_heap_test.cc',
             'mycpp/gc_stress_test.cc',
             'mycpp/gc_builtins_test.cc',
+            'mycpp/gc_iolib_test.cc',
             'mycpp/gc_mops_test.cc',
             'mycpp/gc_mylib_test.cc',
             'mycpp/gc_dict_test.cc',
@@ -211,7 +213,7 @@ def TranslatorSubgraph(ru, translator, ex):
         example_matrix = [
             ('cxx', 'opt'),  # for benchmarks
             ('cxx', 'opt-sh'),  # for benchmarks
-            ('cxx', 'asan'), # need this for running the examples in CI
+            ('cxx', 'asan'),  # need this for running the examples in CI
             ('cxx', 'asan+gcalways'),
         ]
     else:
@@ -250,9 +252,10 @@ def NinjaGraph(ru):
     n.newline()
 
     # mycpp and pea have the same interface
-    n.rule('translate-mycpp',
-           command='_bin/shwrap/mycpp_main $mypypath $out $in $extra_mycpp_opts',
-           description='mycpp $mypypath $out $in')
+    n.rule(
+        'translate-mycpp',
+        command='_bin/shwrap/mycpp_main $mypypath $out $in $extra_mycpp_opts',
+        description='mycpp $mypypath $out $in')
     n.newline()
 
     n.rule('translate-pea',

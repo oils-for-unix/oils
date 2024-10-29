@@ -10,12 +10,12 @@ from core import alloc
 from core import dev
 from core import error
 from core import main_loop
-from core import pyos
 from core import vm
 from frontend import flag_util
 from frontend import match
 from frontend import reader
 from frontend import signal_def
+from mycpp import iolib
 from mycpp import mylib
 from mycpp.mylib import iteritems, print_stderr, log
 from mycpp import mops
@@ -42,7 +42,7 @@ class TrapState(object):
     """
 
     def __init__(self, signal_safe):
-        # type: (pyos.SignalSafe) -> None
+        # type: (iolib.SignalSafe) -> None
         self.signal_safe = signal_safe
         self.hooks = {}  # type: Dict[str, command_t]
         self.traps = {}  # type: Dict[int, command_t]
@@ -88,7 +88,7 @@ class TrapState(object):
         elif sig_num == SIGWINCH:
             self.signal_safe.SetSigWinchCode(SIGWINCH)
         else:
-            pyos.RegisterSignalInterest(sig_num)
+            iolib.RegisterSignalInterest(sig_num)
 
     def RemoveUserTrap(self, sig_num):
         # type: (int) -> None
@@ -99,7 +99,7 @@ class TrapState(object):
             self.signal_safe.SetSigIntTrapped(False)
             pass
         elif sig_num == SIGWINCH:
-            self.signal_safe.SetSigWinchCode(pyos.UNTRAPPED_SIGWINCH)
+            self.signal_safe.SetSigWinchCode(iolib.UNTRAPPED_SIGWINCH)
         else:
             # TODO: In process.InitInteractiveShell(), 4 signals are set to
             # SIG_IGN, not SIG_DFL:
@@ -109,7 +109,7 @@ class TrapState(object):
             # Should we restore them?  It's rare that you type 'trap' in
             # interactive shells, but it might be more correct.  See what other
             # shells do.
-            pyos.sigaction(sig_num, SIG_DFL)
+            iolib.sigaction(sig_num, SIG_DFL)
 
     def GetPendingTraps(self):
         # type: () -> Optional[List[command_t]]

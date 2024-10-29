@@ -11,6 +11,7 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from core.error import p_die
+from mycpp import iolib
 from mycpp import mylib
 from mycpp.mylib import log
 
@@ -164,7 +165,11 @@ def _PlainPromptInput(prompt):
     Returns line WITH trailing newline, like Python's f.readline(), and unlike
     raw_input() / GNU readline
 
-    Same interface as readline.prompt_input().
+    Same interface as readline.prompt_input():
+
+    Raises
+      EOFError: on Ctrl-D
+      KeyboardInterrupt: on Ctrl-C
     """
     w = mylib.Stderr()
     w.write(prompt)
@@ -221,9 +226,8 @@ class InteractiveLineReader(_Reader):
             # A cleaner way to do this would be to fork CPython's raw_input()
             # so it handles EINTR.  It's called in frontend/pyreadline.py
             import signal
-            from core import pyos
 
-            tmp = signal.signal(signal.SIGINT, pyos.gOrigSigIntHandler)
+            tmp = signal.signal(signal.SIGINT, iolib.gOrigSigIntHandler)
             try:
                 line = self.line_input.prompt_input(self.prompt_str)
             finally:

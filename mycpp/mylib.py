@@ -1,5 +1,6 @@
 """
-mylib.py
+mylib.py: Python stubs/interfaces that are reimplemented in C++, not directly
+translated.
 """
 from __future__ import print_function
 

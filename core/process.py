@@ -39,6 +39,7 @@ from core import util
 from data_lang import j8_lite
 from frontend import location
 from frontend import match
+from mycpp import iolib
 from mycpp import mylib
 from mycpp.mylib import log, print_stderr, probe, tagswitch, iteritems
 
@@ -109,27 +110,27 @@ class ctx_FileCloser(object):
 
 
 def InitInteractiveShell(signal_safe):
-    # type: (pyos.SignalSafe) -> None
+    # type: (iolib.SignalSafe) -> None
     """Called when initializing an interactive shell."""
 
     # The shell itself should ignore Ctrl-\.
-    pyos.sigaction(SIGQUIT, SIG_IGN)
+    iolib.sigaction(SIGQUIT, SIG_IGN)
 
     # This prevents Ctrl-Z from suspending OSH in interactive mode.
-    pyos.sigaction(SIGTSTP, SIG_IGN)
+    iolib.sigaction(SIGTSTP, SIG_IGN)
 
     # More signals from
     # https://www.gnu.org/software/libc/manual/html_node/Initializing-the-Shell.html
     # (but not SIGCHLD)
-    pyos.sigaction(SIGTTOU, SIG_IGN)
-    pyos.sigaction(SIGTTIN, SIG_IGN)
+    iolib.sigaction(SIGTTOU, SIG_IGN)
+    iolib.sigaction(SIGTTIN, SIG_IGN)
 
     # Register a callback to receive terminal width changes.
     # NOTE: In line_input.c, we turned off rl_catch_sigwinch.
 
     # This is ALWAYS on, which means that it can cause EINTR, and wait() and
     # read() have to handle it
-    pyos.RegisterSignalInterest(SIGWINCH)
+    iolib.RegisterSignalInterest(SIGWINCH)
 
 
 def SaveFd(fd):
@@ -1073,23 +1074,23 @@ class Process(Job):
             # shouldn't have this.
             # https://docs.python.org/2/library/signal.html
             # See Python/pythonrun.c.
-            pyos.sigaction(SIGPIPE, SIG_DFL)
+            iolib.sigaction(SIGPIPE, SIG_DFL)
 
             # Respond to Ctrl-\ (core dump)
-            pyos.sigaction(SIGQUIT, SIG_DFL)
+            iolib.sigaction(SIGQUIT, SIG_DFL)
 
             # Only standalone children should get Ctrl-Z. Pipelines remain in the
             # foreground because suspending them is difficult with our 'lastpipe'
             # semantics.
             pid = posix.getpid()
             if posix.getpgid(0) == pid and self.parent_pipeline is None:
-                pyos.sigaction(SIGTSTP, SIG_DFL)
+                iolib.sigaction(SIGTSTP, SIG_DFL)
 
             # More signals from
             # https://www.gnu.org/software/libc/manual/html_node/Launching-Jobs.html
             # (but not SIGCHLD)
-            pyos.sigaction(SIGTTOU, SIG_DFL)
-            pyos.sigaction(SIGTTIN, SIG_DFL)
+            iolib.sigaction(SIGTTOU, SIG_DFL)
+            iolib.sigaction(SIGTTIN, SIG_DFL)
 
             self.tracer.OnNewProcess(pid)
             # clear foreground pipeline for subshells
@@ -1861,7 +1862,7 @@ class Waiter(object):
     """
 
     def __init__(self, job_list, exec_opts, signal_safe, tracer):
-        # type: (JobList, optview.Exec, pyos.SignalSafe, dev.Tracer) -> None
+        # type: (JobList, optview.Exec, iolib.SignalSafe, dev.Tracer) -> None
         self.job_list = job_list
         self.exec_opts = exec_opts
         self.signal_safe = signal_safe

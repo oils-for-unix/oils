@@ -11,6 +11,7 @@
 #include "cpp/embedded_file.h"
 #include "cpp/stdlib.h"         // posix::getcwd
 #include "mycpp/gc_builtins.h"  // IOError_OSError
+#include "mycpp/gc_iolib.h"     // iolib
 #include "vendor/greatest.h"
 
 TEST for_test_coverage() {
@@ -235,92 +236,6 @@ TEST strerror_test() {
   PASS();
 }
 
-TEST signal_test() {
-  pyos::SignalSafe* signal_safe = pyos::InitSignalSafe();
-
-  {
-    List<int>* q = signal_safe->TakePendingSignals();
-    ASSERT(q != nullptr);
-    ASSERT_EQ(0, len(q));
-    signal_safe->ReuseEmptyList(q);
-  }
-
-  pid_t mypid = getpid();
-
-  pyos::RegisterSignalInterest(SIGUSR1);
-  pyos::RegisterSignalInterest(SIGUSR2);
-
-  kill(mypid, SIGUSR1);
-  ASSERT_EQ(SIGUSR1, signal_safe->LastSignal());
-
-  kill(mypid, SIGUSR2);
-  ASSERT_EQ(SIGUSR2, signal_safe->LastSignal());
-
-  {
-    List<int>* q = signal_safe->TakePendingSignals();
-    ASSERT(q != nullptr);
-    ASSERT_EQ(2, len(q));
-    ASSERT_EQ(SIGUSR1, q->at(0));
-    ASSERT_EQ(SIGUSR2, q->at(1));
-
-    q->clear();
-    signal_safe->ReuseEmptyList(q);
-  }
-
-  pyos::sigaction(SIGUSR1, SIG_IGN);
-  kill(mypid, SIGUSR1);
-  {
-    List<int>* q = signal_safe->TakePendingSignals();
-    ASSERT(q != nullptr);
-    ASSERT(len(q) == 0);
-    signal_safe->ReuseEmptyList(q);
-  }
-  pyos::sigaction(SIGUSR2, SIG_IGN);
-
-  pyos::RegisterSignalInterest(SIGWINCH);
-
-  kill(mypid, SIGWINCH);
-  ASSERT_EQ(pyos::UNTRAPPED_SIGWINCH, signal_safe->LastSignal());
-
-  signal_safe->SetSigWinchCode(SIGWINCH);
-
-  kill(mypid, SIGWINCH);
-  ASSERT_EQ(SIGWINCH, signal_safe->LastSignal());
-  {
-    List<int>* q = signal_safe->TakePendingSignals();
-    ASSERT(q != nullptr);
-    ASSERT_EQ(2, len(q));
-    ASSERT_EQ(SIGWINCH, q->at(0));
-    ASSERT_EQ(SIGWINCH, q->at(1));
-  }
-
-  PASS();
-}
-
-TEST signal_safe_test() {
-  pyos::SignalSafe signal_safe;
-
-  List<int>* received = signal_safe.TakePendingSignals();
-
-  // We got now signals
-  ASSERT_EQ_FMT(0, len(received), "%d");
-
-  // The existing queue is of length 0
-  ASSERT_EQ_FMT(0, len(signal_safe.pending_signals_), "%d");
-
-  // Capacity is a ROUND NUMBER from the allocator's POV
-  // There's no convenient way to test the obj_len we pass to gHeap.Allocate,
-  // but it should be (1022 + 2) * 4.
-  ASSERT_EQ_FMT(1022, signal_safe.pending_signals_->capacity_, "%d");
-
-  // Register too many signals
-  for (int i = 0; i < pyos::kMaxPendingSignals + 10; ++i) {
-    signal_safe.UpdateFromSignalHandler(SIGINT);
-  }
-
-  PASS();
-}
-
 TEST passwd_test() {
   uid_t my_uid = getuid();
   BigStr* username = pyos::GetUserName(my_uid);
@@ -387,8 +302,8 @@ TEST asan_global_leak_test() {
 
 // manual demo
 TEST waitpid_demo() {
-  pyos::InitSignalSafe();
-  pyos::RegisterSignalInterest(SIGINT);
+  iolib::InitSignalSafe();
+  iolib::RegisterSignalInterest(SIGINT);
 
   int result = fork();
   if (result < 0) {
@@ -432,9 +347,6 @@ int main(int argc, char** argv) {
   RUN_TEST(pyos_test);  // non-hermetic
   RUN_TEST(pyutil_test);
   RUN_TEST(strerror_test);
-
-  RUN_TEST(signal_test);
-  RUN_TEST(signal_safe_test);
 
   RUN_TEST(passwd_test);
   RUN_TEST(dir_cache_key_test);

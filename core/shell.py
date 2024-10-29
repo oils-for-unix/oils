@@ -20,7 +20,6 @@ from core import executor
 from core import completion
 from core import main_loop
 from core import optview
-from core import pyos
 from core import process
 from core import pyutil
 from core import state
@@ -78,6 +77,7 @@ from osh import sh_expr_eval
 from osh import split
 from osh import word_eval
 
+from mycpp import iolib
 from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import NewDict, iteritems, print_stderr, log
@@ -477,10 +477,7 @@ def Main(
                         multi_trace)
     fd_state.tracer = tracer  # circular dep
 
-    # RegisterSignalInterest should return old sigint handler
-    # then InteractiveLineReader can use it
-    # InteractiveLineReader
-    signal_safe = pyos.InitSignalSafe()
+    signal_safe = iolib.InitSignalSafe()
     trap_state = trap_osh.TrapState(signal_safe)
 
     waiter = process.Waiter(job_list, exec_opts, signal_safe, tracer)
