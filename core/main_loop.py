@@ -249,23 +249,18 @@ def Interactive(
                 cmd_ev.mem.SetLastStatus(status)
                 quit = True
             except KeyboardInterrupt:  # thrown by InteractiveLineReader._GetLine()
+                # TODO: We probably want to change terminal settings so ^C is printed.
+                # For now, just print a newline.
+                # 
+                # WITHOUT GNU readline, the ^C is printed.  So we need to make
+                # the 2 cases consistent.
+                print('')
 
-                # TODO: This doesn't look right
-                # - in bin/osh - prints at beginning of line
-                # - in _bin/cxx-asan/osh without GNU readline - prints twice
-                #   sometimes
-                # - with GNU readline - it is more like bin/osh
-
-                # Here we must print a newline BEFORE EraseLines()
-                print('^C')
                 if 0:
                     from core import pyos
                     pyos.FlushStdout()
 
                 display.EraseLines()
-                # http://www.tldp.org/LDP/abs/html/exitcodes.html
-                # bash gives 130, dash gives 0, zsh gives 1.
-                # Unless we SET cmd_ev.last_status, scripts see it, so don't bother now.
                 quit = True
 
             if quit:
@@ -283,7 +278,11 @@ def Interactive(
             except KeyboardInterrupt:  # issue 467, Ctrl-C during $(sleep 1)
                 is_return = False
                 display.EraseLines()
+
+                # http://www.tldp.org/LDP/abs/html/exitcodes.html
+                # bash gives 130, dash gives 0, zsh gives 1.
                 status = 130  # 128 + 2
+
                 cmd_ev.mem.SetLastStatus(status)
                 break
 
