@@ -1,5 +1,7 @@
 #include "mycpp/gc_mops.h"
 
+#include <cinttypes>
+
 #include "mycpp/runtime.h"
 #include "vendor/greatest.h"
 
@@ -109,25 +111,42 @@ TEST float_test() {
 }
 
 TEST gcc_clang_overflow_test() {
-  // Compute (1L << 63) - 1L without overflow!
-  int64_t a = 1L << 62;
-  a += (1L << 62) - 1L;
+  bool ok;
 
-  int64_t b = 5;
+  // Compute (1L << 63) - 1L without overflow!
+  int64_t a = INT64_C(1) << 62;
+  a += (INT64_C(1) << 62) - INT64_C(1);
+
+  int64_t b = 0;
   int64_t result = 0;
 
-  if (__builtin_saddl_overflow(a, b, &result)) {
-    printf("%ld + %ld = signed add long overflow!\n", a, b);
-  } else {
-    printf("%ld + %ld = %ld\n", a, b, result);
+  for (b = 0; b <= 1; ++b) {
+#if LONG_MAX == INT64_MAX
+    ok = __builtin_saddl_overflow(a, b, &result);
+#else
+    // 32-bit, we have to use long long?
+    ok = __builtin_saddll_overflow(a, b, &result);
+#endif
+    if (ok) {
+      printf("%" PRId64 " + %" PRId64 " = signed add long overflow!\n", a, b);
+    } else {
+      printf("%" PRId64 " + %" PRId64 " = %" PRId64 "\n", a, b, result);
+    }
   }
 
-  a = 1L << 62;
-  b = 2;
-  if (__builtin_smull_overflow(a, b, &result)) {
-    printf("%ld * %ld = signed mul long overflow!\n", a, b);
-  } else {
-    printf("%ld * %ld = %ld\n", a, b, result);
+  a = INT64_C(1) << 62;
+  for (b = 1; b <= 2; ++b) {
+#if LONG_MAX == INT64_MAX
+    ok = __builtin_smull_overflow(a, b, &result);
+#else
+    ok = __builtin_smulll_overflow(a, b, &result);
+#endif
+
+    if (ok) {
+      printf("%" PRId64 " * %" PRId64 " = signed mul long overflow!\n", a, b);
+    } else {
+      printf("%" PRId64 " * %" PRId64 " = %" PRId64 "\n", a, b, result);
+    }
   }
 
   PASS();
