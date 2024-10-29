@@ -14,12 +14,13 @@ from builtin import trap_osh
 from core import dev
 from core import process  # module under test
 from core import pyos
-from core import test_lib
-from display import ui
-from core import util
-from mycpp.mylib import log
 from core import state
+from core import test_lib
+from core import util
+from display import ui
+from mycpp import iolib
 from mycpp import mylib
+from mycpp.mylib import log
 
 import posix_ as posix
 
@@ -61,7 +62,7 @@ class ProcessTest(unittest.TestCase):
         self.job_control = process.JobControl()
         self.job_list = process.JobList()
 
-        signal_safe = pyos.InitSignalSafe()
+        signal_safe = iolib.InitSignalSafe()
         self.trap_state = trap_osh.TrapState(signal_safe)
 
         fd_state = None

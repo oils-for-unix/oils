@@ -7,8 +7,8 @@ import sys
 import unittest
 
 from core import comp_ui  # module under test
-from core import pyos
 from core import util
+from mycpp import iolib
 
 import line_input
 
@@ -117,7 +117,7 @@ class UiTest(unittest.TestCase):
         comp_ui_state = comp_ui.State()
         prompt_state = comp_ui.PromptState()
         debug_f = util.DebugFile(sys.stdout)
-        signal_safe = pyos.InitSignalSafe()
+        signal_safe = iolib.InitSignalSafe()
 
         # terminal width
         d1 = comp_ui.NiceDisplay(80, comp_ui_state, prompt_state, debug_f,
