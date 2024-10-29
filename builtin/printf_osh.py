@@ -1,5 +1,4 @@
 #!/usr/bin/env python2
-"""Builtin_printf.py."""
 from __future__ import print_function
 
 import time as time_  # avoid name conflict
@@ -23,7 +22,7 @@ from _devbuild.gen.value_asdl import (value, value_e)
 
 from core import alloc
 from core import error
-from core.error import e_die, p_die
+from core.error import p_die
 from core import state
 from core import vm
 from frontend import flag_util
@@ -309,7 +308,9 @@ class Printf(vm._Builtin):
                 # Note: spaces like ' -42 ' accepted and normalized
                 ok, d = mops.FromStr2(s)
                 if not ok:
-                    e_die("Integer too big: %s" % s, word_loc)
+                    self.errfmt.Print_("Integer too big: %s" % s, word_loc)
+                    pr.status = 1
+                    return None
 
             else:
                 # Check for 'a and "a
@@ -396,9 +397,11 @@ class Printf(vm._Builtin):
                 # Disallowed because it depends on 32- or 64- bit
                 if mops.Greater(mops.ZERO, d) and typ in 'ouxX':
                     # TODO: Don't truncate it
-                    e_die(
+                    self.errfmt.Print_(
                         "Can't format negative number with %%%s: %d" %
                         (typ, mops.BigTruncate(d)), part.type)
+                    pr.status = 1
+                    return None
 
                 if typ == 'o':
                     s = mops.ToOctal(d)

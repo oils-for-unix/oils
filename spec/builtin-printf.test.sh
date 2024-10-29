@@ -595,19 +595,35 @@ f4
 
 #### negative numbers with unsigned / octal / hex
 printf '[%u]\n' -42
+echo status=$?
+
 printf '[%o]\n' -42
+echo status=$?
+
 printf '[%x]\n' -42
+echo status=$?
+
 printf '[%X]\n' -42
+echo status=$?
+
 ## STDOUT:
 [18446744073709551574]
+status=0
 [1777777777777777777726]
+status=0
 [ffffffffffffffd6]
+status=0
 [FFFFFFFFFFFFFFD6]
+status=0
 ## END
 
 # osh DISALLOWS this because the output depends on the machine architecture.
-## N-I osh stdout-json: ""
-## N-I osh status: 1
+## N-I osh STDOUT:
+status=1
+status=1
+status=1
+status=1
+## END
 
 #### printf floating point (not required, but they all implement it)
 printf '[%f]\n' 3.14159
@@ -1118,41 +1134,74 @@ for fmt in '%u\n' '%d\n'; do
   # zsh cuts everything off after 19 digits
   # ash truncates everything
   printf "$fmt" '18446744073709551615'
+  echo status=$?
   printf "$fmt" '18446744073709551616'
+  echo status=$?
   echo
 done
 
-## status: 1
 ## STDOUT:
+status=1
+status=1
+
+status=1
+status=1
+
 ## END
 
-## OK bash/dash/mksh status: 0
-## OK bash/dash/mksh STDOUT:
+## OK bash status: 0
+## OK bash STDOUT:
 18446744073709551615
+status=0
 18446744073709551615
+status=0
 
 9223372036854775807
+status=0
 9223372036854775807
+status=0
+
+## END
+
+## OK dash/mksh status: 0
+## OK dash/mksh STDOUT:
+18446744073709551615
+status=0
+18446744073709551615
+status=1
+
+9223372036854775807
+status=1
+9223372036854775807
+status=1
 
 ## END
 
 ## BUG ash status: 0
 ## BUG ash STDOUT:
 18446744073709551615
+status=0
 0
+status=1
 
 0
+status=1
 0
+status=1
 
 ## END
 
 ## BUG zsh status: 0
 ## BUG zsh STDOUT:
 1844674407370955161
+status=0
 1844674407370955161
+status=0
 
 1844674407370955161
+status=0
 1844674407370955161
+status=0
 
 ## END
 
@@ -1162,46 +1211,74 @@ done
 
 for fmt in '%u\n' '%d\n'; do
 
-  #printf "$fmt" '-9223372036854775806'
-  #printf "$fmt" '-9223372036854775807'
-  #printf "$fmt" '-9223372036854775808'
-
   printf "$fmt" '-18446744073709551615'
+  echo status=$?
   printf "$fmt" '-18446744073709551616'
+  echo status=$?
   echo
 done
 
-## status: 1
 ## STDOUT:
+status=1
+status=1
+
+status=1
+status=1
+
 ## END
 
-## OK bash/dash/mksh status: 0
-## OK bash/dash/mksh STDOUT:
+## OK bash status: 0
+## OK bash STDOUT:
 1
+status=0
 18446744073709551615
+status=0
 
 -9223372036854775808
+status=0
 -9223372036854775808
+status=0
+
+## END
+
+## OK dash/mksh status: 0
+## OK dash/mksh STDOUT:
+1
+status=0
+18446744073709551615
+status=1
+
+-9223372036854775808
+status=1
+-9223372036854775808
+status=1
 
 ## END
 
 ## BUG zsh status: 0
 ## BUG zsh STDOUT:
 16602069666338596455
+status=0
 16602069666338596455
+status=0
 
 -1844674407370955161
+status=0
 -1844674407370955161
+status=0
 
 ## END
 
 ## BUG ash status: 0
 ## BUG ash STDOUT:
 0
+status=1
 0
+status=1
 
 0
+status=1
 0
+status=1
 
 ## END
-
