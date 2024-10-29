@@ -1696,6 +1696,13 @@ test-expr-range() {
   _osh-should-parse '= 1..=5'
 }
 
+test-int-overflow() {
+  _ysh-parse-error '= 123456789_123456789_123456789'
+  _ysh-parse-error '= 0b111000000000000000000000000000000000000000000000000000000000000000000000000000000'
+  _ysh-parse-error '= 0o1234567_1234567_1234567_1234567'
+  _ysh-parse-error '= 0x123456789_123456789_123456789'
+}
+
 #
 # Entry Points
 #

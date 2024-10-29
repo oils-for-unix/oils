@@ -1022,9 +1022,8 @@ class Parser(_Parser):
         elif self.tok_id == Id.J8_Int:
             part = self.s[self.start_pos:self.end_pos]
             self._Next()
-            try:
-                big = mops.FromStr(part)
-            except ValueError:
+            ok, big = mops.FromStr2(part)
+            if not ok:
                 raise self._ParseError('Integer is too big')
             return value.Int(big)
 

@@ -74,26 +74,24 @@ def ToHexLower(b):
     return '%x' % b.i
 
 
-# Notes on FromStr() and recognizing integers
+# Notes on recognizing integers:
 #
-# 3 similar but DIFFERENT cases:
+# - mops.FromStr() uses StringToInt64() under the hood, which uses strtoll().
+# But we DO NOT want to rely on strtoll() to define a language, .e. to reject
+# user-facing strings.  We want to use something like match.LooksLikeInteger()
+# This is part of our spec-driven philosophy.
+
+# Regarding leading zeros, these are DIFFERENT:
 #
 # 1. trap ' 42 ' x  - unsigned, including 09, but not -1
 # 2. echo $(( x )) - 0123 is octal, but no -0123 because that's separate I think
 # 3. int(), j8 - 077 is decimal
-#
-# - mops.FromStr should not use exceptions?  That is consistent with mops.FromFloat
-#   - under the hood it uses StringToInt64, which uses strtoll
-#   - problem: we DO NOT want to rely on strtoll() to define a language, to
-#   reject user-facing strings - we want to use something like
-#   match.LooksLikeInteger() usually.  This is part of our spec-driven
-#   philosophy.
-#
+
 # - a problem though is if we support 00, because sometimes that is OCTAL
 #   - int("00") is zero
-#   - match.LooksLikeInteger returns it
-
-# uses LooksLikeInteger and then FromStr()
+#   - match.LooksLikeInteger returns true
+#
+# Uses LooksLikeInteger and then FromStr()
 # - YSH int()
 # - printf builtin
 # - YSH expression conversion
@@ -103,12 +101,6 @@ def ToHexLower(b):
 # - ulimit
 # - trap - NON-NEGATIVE only
 # - arg parser
-
-
-def FromStr(s, base=10):
-    # type: (str, int) -> BigInt
-    return BigInt(int(s, base))
-
 
 MAX_POS_INT = 2**63 - 1
 MAX_NEG_INT = -(2**63)

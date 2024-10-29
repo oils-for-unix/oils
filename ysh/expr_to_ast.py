@@ -730,31 +730,31 @@ class Transformer(object):
         c_under = tok_str.replace('_', '')
 
         if typ == Id.Expr_DecInt:
-            try:
-                cval = value.Int(mops.FromStr(c_under))  # type: value_t
-            except ValueError:
+            ok, big_int = mops.FromStr2(c_under)
+            if not ok:
                 p_die('Decimal int constant is too large', tok)
+            cval = value.Int(big_int)  # type: value_t
 
         elif typ == Id.Expr_BinInt:
             assert c_under[:2] in ('0b', '0B'), c_under
-            try:
-                cval = value.Int(mops.FromStr(c_under[2:], 2))
-            except ValueError:
+            ok, big_int = mops.FromStr2(c_under[2:], 2)
+            if not ok:
                 p_die('Binary int constant is too large', tok)
+            cval = value.Int(big_int)
 
         elif typ == Id.Expr_OctInt:
             assert c_under[:2] in ('0o', '0O'), c_under
-            try:
-                cval = value.Int(mops.FromStr(c_under[2:], 8))
-            except ValueError:
+            ok, big_int = mops.FromStr2(c_under[2:], 8)
+            if not ok:
                 p_die('Octal int constant is too large', tok)
+            cval = value.Int(big_int)
 
         elif typ == Id.Expr_HexInt:
             assert c_under[:2] in ('0x', '0X'), c_under
-            try:
-                cval = value.Int(mops.FromStr(c_under[2:], 16))
-            except ValueError:
+            ok, big_int = mops.FromStr2(c_under[2:], 16)
+            if not ok:
                 p_die('Hex int constant is too large', tok)
+            cval = value.Int(big_int)
 
         elif typ == Id.Expr_Float:
             # Note: float() in mycpp/gc_builtins.cc currently uses strtod

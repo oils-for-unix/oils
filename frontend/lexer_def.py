@@ -964,8 +964,9 @@ _EXPR_NEWLINE_COMMENT = [
     R(r'[ \t\r]+', Id.Ignored_Space),
 ]
 
-# Note: we often check match.LooksLikeInteger(s), call mops.FromStr(s), and
-# ASSUME it will not throw ValueError
+# Note: if you call match.LooksLikeInteger(s), mops.FromStr(s) may still
+# fail.  However you should call BOTH, because we don't rely want to rely on
+# the underlying stroll() to define the language accepted.
 LOOKS_LIKE_INTEGER = _WHITESPACE + '-?[0-9]+' + _WHITESPACE
 
 # TODO: use for YSH comparison operators > >= < <=
