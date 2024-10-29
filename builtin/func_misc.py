@@ -42,6 +42,8 @@ class Object(vm._Callable):
         # type: (typed_args.Reader) -> value_t
 
         prototype = rd.PosValue()
+        proto_loc = rd.BlamePos()
+
         props = rd.PosDict()
         rd.Done()
 
@@ -55,7 +57,7 @@ class Object(vm._Callable):
                 chain = prototype
             else:
                 raise error.TypeErr(prototype, 'Object() expected Obj or Null',
-                                    rd.BlamePos())
+                                    proto_loc)
 
         return Obj(chain, props)
 

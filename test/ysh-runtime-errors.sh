@@ -209,6 +209,30 @@ test-fallback-locations() {
   _ysh-expr-error 'func f(x) { return (x) }; var x = f([1,2])[1](3); echo $x'
 }
 
+test-more-locations() {
+  # Dict instead of Obj
+  # We need to call rd.BlamePos() right afterward
+  _ysh-expr-error \
+    'var Counter_methods = {}; var c = Object(Counter_methods, {i: 5})'
+
+  # This blames the ( after 'repeat' - that seems wrong
+  # Could clarify that it is Arg 1 to fromJson(), not repeat()
+  # - Or we could highlight MULTIPLE tokens, the whole repeat() call
+  # - Or nested calls fall back?
+
+#   func repeat(x, y) { return (null) }; var x = fromJson(repeat(123, 20))
+                                                              ^
+# [ -c flag ]:1: fatal: Arg 1 should be a Str, got Null
+
+
+  _ysh-expr-error \
+    'func repeat(x, y) { return (null) }; var x = fromJson(repeat('123', 20))'
+
+  # This blames 'error'
+  _ysh-expr-error \
+    'source $LIB_YSH/list.ysh; var x = fromJson(repeat('123', 20))'
+}
+
 test-EvalExpr-calls() {
   ### Test everywhere expr_ev.EvalExpr() is invoked
 
@@ -933,7 +957,6 @@ test-append-usage-error() {
   _ysh-expr-error 'append x ([], [])'  # Too many
 }
 
-# Bad error location
 test-try-usage-error() {
   _ysh-error-X 2 '
 var s = "README"
