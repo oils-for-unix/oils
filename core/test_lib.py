@@ -31,7 +31,6 @@ from core import executor
 from core import main_loop
 from core import optview
 from core import process
-from core import pyos
 from core import pyutil
 from core import state
 from display import ui
@@ -47,6 +46,7 @@ from osh import sh_expr_eval
 from osh import split
 from osh import word_eval
 from ysh import expr_eval
+from mycpp import iolib
 from mycpp import mylib
 
 import posix_ as posix
@@ -273,7 +273,7 @@ def InitCommandEvaluator(parse_ctx=None,
     tilde_ev = word_eval.TildeEvaluator(mem, exec_opts)
     word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
                                             tilde_ev, splitter, errfmt)
-    signal_safe = pyos.InitSignalSafe()
+    signal_safe = iolib.InitSignalSafe()
     trap_state = trap_osh.TrapState(signal_safe)
     cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
                                        assign_builtins, arena, cmd_deps,

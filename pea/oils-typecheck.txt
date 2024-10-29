@@ -33,6 +33,7 @@ builtin/method_io.py
 builtin/method_list.py
 builtin/method_other.py
 builtin/method_str.py
+builtin/method_type.py
 builtin/misc_osh.py
 builtin/module_ysh.py
 builtin/printf_osh.py
@@ -82,6 +83,7 @@ frontend/py_readline.py
 frontend/reader.py
 frontend/signal_def.py
 frontend/typed_args.py
+mycpp/iolib.py
 mycpp/mops.py
 osh/arith_parse.py
 osh/bool_parse.py

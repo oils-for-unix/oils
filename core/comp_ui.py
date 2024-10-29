@@ -12,7 +12,7 @@ from typing import Any, List, Optional, Dict, TYPE_CHECKING
 if TYPE_CHECKING:
     from frontend.py_readline import Readline
     from core.util import _DebugFile
-    from core import pyos
+    from mycpp import iolib
 
 # ANSI escape codes affect the prompt!
 # https://superuser.com/questions/301353/escape-non-printing-characters-in-a-function-for-a-bash-prompt
@@ -316,7 +316,7 @@ class NiceDisplay(_IDisplay):
             prompt_state,  # type: PromptState
             debug_f,  # type: _DebugFile
             readline,  # type: Optional[Readline]
-            signal_safe,  # type: pyos.SignalSafe
+            signal_safe,  # type: iolib.SignalSafe
     ):
         # type: (...) -> None
         """

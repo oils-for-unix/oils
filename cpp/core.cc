@@ -23,18 +23,17 @@
 #include "_gen/cpp/build_stamp.h"        // gCommitHash
 #include "_gen/frontend/consts.h"        // gVersion
 #include "cpp/embedded_file.h"
+#include "mycpp/gc_iolib.h"
 
 extern char** environ;
 
 namespace pyos {
 
-SignalSafe* gSignalSafe = nullptr;
-
 Tuple2<int, int> WaitPid(int waitpid_options) {
   int status;
   int result = ::waitpid(-1, &status, WUNTRACED | waitpid_options);
   if (result < 0) {
-    if (errno == EINTR && gSignalSafe->PollUntrappedSigInt()) {
+    if (errno == EINTR && iolib::gSignalSafe->PollUntrappedSigInt()) {
       throw Alloc<KeyboardInterrupt>();
     }
     return Tuple2<int, int>(-1, errno);
@@ -47,7 +46,7 @@ Tuple2<int, int> Read(int fd, int n, List<BigStr*>* chunks) {
 
   int length = ::read(fd, s->data(), n);
   if (length < 0) {
-    if (errno == EINTR && gSignalSafe->PollUntrappedSigInt()) {
+    if (errno == EINTR && iolib::gSignalSafe->PollUntrappedSigInt()) {
       throw Alloc<KeyboardInterrupt>();
     }
     return Tuple2<int, int>(-1, errno);
@@ -67,7 +66,7 @@ Tuple2<int, int> ReadByte(int fd) {
   unsigned char buf[1];
   ssize_t n = read(fd, &buf, 1);
   if (n < 0) {  // read error
-    if (errno == EINTR && gSignalSafe->PollUntrappedSigInt()) {
+    if (errno == EINTR && iolib::gSignalSafe->PollUntrappedSigInt()) {
       throw Alloc<KeyboardInterrupt>();
     }
     return Tuple2<int, int>(-1, errno);
@@ -261,43 +260,6 @@ IOError_OSError* FlushStdout() {
     return Alloc<IOError>(errno);
   }
   return nullptr;
-}
-
-SignalSafe* InitSignalSafe() {
-  gSignalSafe = Alloc<SignalSafe>();
-  gHeap.RootGlobalVar(gSignalSafe);
-
-  RegisterSignalInterest(SIGINT);  // for KeyboardInterrupt checks
-
-  return gSignalSafe;
-}
-
-// Note that the Python implementation of pyos.sigaction() calls
-// signal.signal(), which calls PyOS_setsig(), which calls sigaction() #ifdef
-// HAVE_SIGACTION.
-void sigaction(int sig_num, void (*handler)(int)) {
-  // SIGINT and SIGWINCH must be registered through SignalSafe
-  DCHECK(sig_num != SIGINT);
-  DCHECK(sig_num != SIGWINCH);
-
-  struct sigaction act = {};
-  act.sa_handler = handler;
-  if (sigaction(sig_num, &act, nullptr) != 0) {
-    throw Alloc<OSError>(errno);
-  }
-}
-
-static void OurSignalHandler(int sig_num) {
-  assert(gSignalSafe != nullptr);
-  gSignalSafe->UpdateFromSignalHandler(sig_num);
-}
-
-void RegisterSignalInterest(int sig_num) {
-  struct sigaction act = {};
-  act.sa_handler = OurSignalHandler;
-  if (sigaction(sig_num, &act, nullptr) != 0) {
-    throw Alloc<OSError>(errno);
-  }
 }
 
 Tuple2<BigStr*, int>* MakeDirCacheKey(BigStr* path) {
