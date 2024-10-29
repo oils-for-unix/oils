@@ -108,6 +108,31 @@ TEST float_test() {
   PASS();
 }
 
+TEST gcc_clang_overflow_test() {
+  // Compute (1L << 63) - 1L without overflow!
+  int64_t a = 1L << 62;
+  a += (1L << 62) - 1L;
+
+  int64_t b = 5;
+  int64_t result = 0;
+
+  if (__builtin_saddl_overflow(a, b, &result)) {
+    printf("%ld + %ld = signed add long overflow!\n", a, b);
+  } else {
+    printf("%ld + %ld = %ld\n", a, b, result);
+  }
+
+  a = 1L << 62;
+  b = 2;
+  if (__builtin_smull_overflow(a, b, &result)) {
+    printf("%ld * %ld = signed mul long overflow!\n", a, b);
+  } else {
+    printf("%ld * %ld = %ld\n", a, b, result);
+  }
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -119,6 +144,7 @@ int main(int argc, char** argv) {
   RUN_TEST(static_cast_test);
   RUN_TEST(conversion_test);
   RUN_TEST(float_test);
+  RUN_TEST(gcc_clang_overflow_test);
 
   gHeap.CleanProcessExit();
 
