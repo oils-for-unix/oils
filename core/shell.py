@@ -1076,7 +1076,6 @@ def Main(
             comp_ui.InitReadline(readline, sh_files.HistoryFile(), root_comp,
                                  display, debug_f)
 
-            _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
             if flag.completion_demo:
                 _CompletionDemo(comp_lookup)
 
