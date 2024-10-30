@@ -211,18 +211,19 @@ bash compat: serialized options for the `shopt` builtin.
 
 ### HOME
 
-$HOME is used for:
+The `$HOME` env var is read by the shell, for:
 
-1. ~ expansion 
-2. ~ abbreviation in the UI (the dirs builtin, \W in $PS1).
+1. `~` expansion 
+2. `~` abbreviation in the UI (the dirs builtin, `\W` in `$PS1`).
 
-Note: The shell doesn't set $HOME.  According to POSIX, the program that
-invokes the login shell sets it based on /etc/passwd.
+The shell does not set $HOME.  According to POSIX, the program that invokes the
+login shell should set it, based on `/etc/passwd`.
 
 ### PATH
 
 A colon-separated string that's used to find executables to run.
 
+In YSH, it's `ENV.PATH`.
 
 ## POSIX Special
 

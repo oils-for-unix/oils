@@ -474,6 +474,8 @@ class TildeEvaluator(object):
         Important: the libc call can FAIL, which is why we prefer $HOME.  See issue
         #1578.
         """
+        # TODO: Also ENV.HOME
+
         # First look up the HOME var, then ask the OS.  This is what bash does.
         val = self.mem.GetValue('HOME')
         UP_val = val

@@ -95,33 +95,23 @@ def LookupExecutable(name, path_dirs, exec_required=True):
 
 
 class SearchPath(object):
-    """For looking up files in $PATH."""
+    """For looking up files in $PATH or ENV.PATH"""
 
     def __init__(self, mem, exec_opts):
         # type: (Mem, optview.Exec) -> None
         self.mem = mem
-        self.exec_opts = exec_opts
+        # TODO: remove exec_opts
         self.cache = {}  # type: Dict[str, str]
 
     def _GetPath(self):
         # type: () -> List[str]
 
-        # This condition should work because shopt --set ysh:upgrade
-        # initializes the ENV dict.
-        if self.exec_opts.env_obj():
-            val = self.mem.env_dict.get('PATH')
-            if val is None:
-                val = value.Null
-        else:
-            val = self.mem.GetValue('PATH')
+        s = GetStringFromEnv(self.mem, 'PATH')
+        if s is None:
+            return []  # treat as empty path
 
         # TODO: Could cache this to avoid split() allocating all the time.
-        UP_val = val
-        if val.tag() == value_e.Str:
-            val = cast(value.Str, UP_val)
-            return val.s.split(':')
-        else:
-            return []  # treat as empty path
+        return s.split(':')
 
     def LookupOne(self, name, exec_required=True):
         # type: (str, bool) -> Optional[str]
@@ -2946,9 +2936,36 @@ def ExportGlobalString(mem, name, s):
                  flags=SetExport)
 
 
+def SetStringInEnv(mem, var_name, s):
+    # type: (Mem, str, str) -> None
+
+    if mem.exec_opts.env_obj():  # e.g. ENV.YSH_HISTFILE
+        mem.env_dict[var_name] = value.Str(s)
+    else:  # e.g. $YSH_HISTFILE
+        SetGlobalString(mem, var_name, s)
+
+
 #
 # Wrappers to Get Variables
 #
+
+
+def GetStringFromEnv(mem, name):
+    # type: (Mem, str) -> Optional[str]
+
+    # This condition should work because shopt --set ysh:upgrade initializes
+    # the ENV dict.
+    if mem.exec_opts.env_obj():  # e.g. $[ENV.PATH]
+        val = mem.env_dict.get(name)
+        if val is None:
+            return None
+    else:  # e.g. $PATH
+        val = mem.GetValue(name)
+
+    if val.tag() != value_e.Str:
+        return None
+
+    return cast(value.Str, val).s
 
 
 def DynamicGetVar(mem, name, which_scopes):

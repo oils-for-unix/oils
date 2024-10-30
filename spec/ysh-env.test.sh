@@ -1,4 +1,4 @@
-## oils_failures_allowed: 3
+## oils_failures_allowed: 4
 
 #### Can read from ENV Dict
 shopt -s ysh:upgrade
@@ -103,3 +103,21 @@ env.ysh
 OSH ok
 ## END
 
+
+#### HOME var
+shopt --set ysh:upgrade
+
+#setvar HOME = 'yo'
+
+# TODO: this should consult ENV.HOME
+echo ~
+
+# not set by spec test framework
+echo $[ENV.HOME]
+
+#echo ~root
+
+#echo ~bob/
+
+## STDOUT:
+## END

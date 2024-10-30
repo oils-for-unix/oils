@@ -341,6 +341,7 @@ X [External Lang] BEGIN   END   when (awk)
 </h2>
 
 ```chapter-links-special-var
+  [Other Env]     HOME                PATH
   [YSH Vars]      ARGV                ENV                   _this_dir
   [YSH Status]    _error
                   _pipeline_status    _process_sub_status
@@ -355,10 +356,24 @@ X [External Lang] BEGIN   END   when (awk)
   [Module]        __provide__
 ```
 
-<!-- ideas 
-  [Module] __rear__ - for evalToDict()?
-X [Wok]           _filename   _line   _line_num
+<!-- 
+ENV vars read by interpreter:
+
+ENV.{PS1,PS4,YSH_HISTFILE}
+
+- renderPrompt() takes precedence over PS1
+- SHX_* takes precedence over PS4
+  - TODO: we may want to redo this - it is too confusing
+- HOME is read for ~, but it is not SET
+  - we should read ENV.HOME
+  - should be populate ENV.HOME?
+
+Notes:
+  [Module] __E__ - for evalToDict()?
 X [Builtin Sub]   _buffer
+
+Ideas:
+X [Wok]           _filename   _line   _line_num
 -->
 
 <h2 id="plugin">

@@ -251,9 +251,10 @@ class ShellFiles(object):
 
         hist_var = self._HistVar()
         if self.mem.GetValue(hist_var).tag() == value_e.Undef:
+            default_val = self._DefaultHistoryFile()
             # Note: if the directory doesn't exist, GNU readline ignores
-            state.SetGlobalString(self.mem, hist_var,
-                                  self._DefaultHistoryFile())
+            #state.SetGlobalString(self.mem, hist_var, default_val)
+            state.SetStringInEnv(self.mem, hist_var, default_val)
 
     def HistoryFile(self):
         # type: () -> Optional[str]
