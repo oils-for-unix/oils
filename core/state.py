@@ -438,10 +438,6 @@ class MutableOpts(object):
         # type: () -> None
         self._Set(option_i.emacs, True)
 
-    def set_xtrace(self, b):
-        # type: (bool) -> None
-        self._Set(option_i.xtrace, b)
-
     def _SetArrayByNum(self, opt_num, b):
         # type: (int, bool) -> None
         if (opt_num in consts.PARSE_OPTION_NUMS and
@@ -1434,6 +1430,14 @@ class Mem(object):
 
         return True
 
+    def IsGlobalScope(self):
+        # type: () -> bool
+        """
+        local -g uses this, probably because bash does the wrong thing and
+        prints LOCALS, not globals.
+        """
+        return len(self.var_stack) == 1
+
     def InsideFunction(self):
         # type: () -> bool
         """For the ERR trap, and use builtin"""
@@ -2382,10 +2386,6 @@ class Mem(object):
                 result[name] = cell
         return result
 
-    def IsGlobalScope(self):
-        # type: () -> bool
-        return len(self.var_stack) == 1
-
     def SetRegexMatch(self, match):
         # type: (regex_match_t) -> None
         self.regex_match[-1] = match
@@ -2433,9 +2433,6 @@ def ValueIsInvokableObj(val):
         return invoke_val, obj
 
     return None, None
-
-
-#return cast(value.Proc, invoke_val), obj
 
 
 def _AddNames(unique, frame):

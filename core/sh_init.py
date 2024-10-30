@@ -19,11 +19,44 @@ from typing import Dict, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen import arg_types
 
-# This was derived from bash --norc -c 'argv "$COMP_WORDBREAKS".
-# Python overwrites this to something Python-specific in Modules/readline.c, so
-# we have to set it back!
-# Used in both core/competion.py and osh/state.py
-_READLINE_DELIMS = ' \t\n"\'><=;|&(:'
+
+class EnvConfig(object):
+    """Define a string config var read from the environment.
+
+    And it's default.
+
+    In OSH, it will appear as $PS1 or $PATH or $PWD.  You can't see the
+    default.
+
+    In YSH, it will appear as ENV.PS1 and __default__.PS1.  I guess __default__
+    can be a Dict or Obj.
+
+    Usage:
+
+    env_config.Define('PS1', r'\\s-\\v')
+
+    # YSH: set ENV.PS1
+    # OSH: set PS1
+    env_config.InitFromEnv('PS1')
+
+    # YSH - get from ENV or __default__
+    env_config.Get('PS1')
+
+    # Custom logic for PWD
+    if not env_config.Exists('PWD'):
+        pass
+    """
+
+    def __init__(self, mem):
+        # type: (state.Mem) -> None
+
+        # mutates env_dict
+        self.mem = mem
+
+    def Define(self, var_name, default_s):
+        # type: (str, str) -> None
+        """
+        """
 
 
 class ShellFiles(object):
@@ -85,6 +118,13 @@ def GetWorkingDir():
         return posix.getcwd()
     except (IOError, OSError) as e:
         e_die("Can't determine working directory: %s" % pyutil.strerror(e))
+
+
+# This was derived from bash --norc -c 'argv "$COMP_WORDBREAKS".
+# Python overwrites this to something Python-specific in Modules/readline.c, so
+# we have to set it back!
+# Used in both core/competion.py and osh/state.py
+_READLINE_DELIMS = ' \t\n"\'><=;|&(:'
 
 
 def InitDefaultVars(mem):
