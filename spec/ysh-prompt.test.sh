@@ -3,10 +3,10 @@
 #### default prompt doesn't confuse OSH and YSH
 
 # Special ysh prefix if PS1 is set
-PS1='\$ ' $SH -i -c 'echo "[$PS1]"'
+PS1='\$ ' $[ENV.SH] -i -c 'echo "[$PS1]"'
 
 # No prefix if it's not set, since we already have \s for YSH
-$SH -i -c 'echo "[$PS1]"'
+$[ENV.SH] -i -c 'echo "[$PS1]"'
 
 ## STDOUT:
 [ysh \$ ]
@@ -57,7 +57,7 @@ x=<Error: \/ is invalid or unimplemented in $PS1>
 #### ysh respects PS1
 
 export PS1='myprompt\$ '
-echo 'echo hi' | $SH -i
+echo 'echo hi' | $[ENV.SH] -i
 
 ## STDOUT:
 hi
@@ -79,7 +79,7 @@ func renderPrompt(io) {
 }
 EOF
 
-echo 'echo hi' | $SH -i --rcfile yshrc
+echo 'echo hi' | $[ENV.SH] -i --rcfile yshrc
 
 ## STDOUT:
 hi
@@ -97,7 +97,7 @@ func renderPrompt(io) {
 }
 EOF
 
-echo 'echo hi' | $SH -i --rcfile yshrc
+echo 'echo hi' | $[ENV.SH] -i --rcfile yshrc
 
 ## STDOUT:
 hi
@@ -116,7 +116,7 @@ func renderPrompt(io) {
 }
 EOF
 
-echo 'echo hi' | $SH -i --rcfile yshrc
+echo 'echo hi' | $[ENV.SH] -i --rcfile yshrc
 
 ## STDOUT:
 hi
@@ -135,7 +135,7 @@ func renderPrompt() {
 }
 EOF
 
-echo 'echo hi' | $SH -i --rcfile yshrc
+echo 'echo hi' | $[ENV.SH] -i --rcfile yshrc
 
 ## STDOUT:
 hi

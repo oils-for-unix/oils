@@ -5,7 +5,7 @@
 
 # Work around stdin buffering issue with read --line
 #
-# The framework test/sh_spec.py uses echo "$code_string" | $SH
+# The framework test/sh_spec.py uses echo "$code_string" | $[ENV.SH]
 #
 # But then we have TWO different values of file descriptor 0 (stdin)
 #
@@ -17,8 +17,8 @@
 # TODO: I wonder if we should consider outlawing read --line when stdin has code
 # Only allow it for:
 #
-# $SH -c 'echo hi'
-# $SH myscript.sh
+# $[ENV.SH] -c 'echo hi'
+# $[ENV.SH] myscript.sh
 #
 # There could be a warning like read --line --no-fighting or something.
 
@@ -48,7 +48,7 @@ p
 echo "global x=$x"
 EOF
 
-$SH tmp.sh
+$[ENV.SH] tmp.sh
 
 ## STDOUT:
 f x=f

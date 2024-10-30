@@ -352,10 +352,10 @@ var L = [1,2,3]
 # be the last one ...
 
 run() {
-  $REPO_ROOT/bin/osh -O parse_proc -c "$@"
+  $[ENV.REPO_ROOT]/bin/osh -O parse_proc -c "$@"
 
   # Identical
-  # $SH +O ysh:all -O parse_proc -c "$@"
+  # $[ENV.SH] +O ysh:all -O parse_proc -c "$@"
 }
 
 set +o errexit
@@ -398,7 +398,7 @@ outside4=1
 
 set +o errexit
 
-$SH -c '
+$[ENV.SH] -c '
 var d = {}
 setvar d["key"] = 5
 echo "d.key = $[d.key]"
@@ -407,7 +407,7 @@ echo "should not get here"
 '
 echo outside1=$?
 
-$SH -c '
+$[ENV.SH] -c '
 var L = [42]
 setvar L[0] = 43
 echo "L[0] = $[L[0]]"

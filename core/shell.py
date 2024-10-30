@@ -488,7 +488,7 @@ def Main(
         debug_f.writeln('Writing logs to %r' % debug_path)
 
     interp = environ.get('OILS_HIJACK_SHEBANG', '')
-    search_path = state.SearchPath(mem)
+    search_path = state.SearchPath(mem, exec_opts)
     ext_prog = process.ExternalProgram(interp, fd_state, errfmt, debug_f)
 
     splitter = split.SplitContext(mem)

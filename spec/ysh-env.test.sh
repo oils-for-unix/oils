@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 4
 
 #### Can read from ENV Dict
 shopt -s ysh:upgrade
@@ -17,6 +17,26 @@ if (ENV.SH ~~ '*osh') {
 ## STDOUT:
 (Str)   "Dict"
 ok
+## END
+
+#### YSH doesn't have exported vars (declare -x)
+
+osh=$SH  # this file is run by OSH
+
+case $osh in
+  *osh)
+    echo 'OSH ok'
+    ;;
+esac
+
+var ysh = osh.replace('osh', 'ysh')
+
+# NOT exported
+$ysh -c 'echo sh=$[getVar("SH")]'
+
+## STDOUT:
+OSH ok
+sh=null
 ## END
 
 #### Temp bindings A=a B=b my-command push to ENV dict
@@ -56,5 +76,29 @@ sh -c 'echo pythonpath=$PYTHONPATH'
 
 ## STDOUT:
 pythonpath=foo
+## END
+
+
+#### PS4 environment variable is respected
+shopt -s ysh:upgrade
+
+setglobal ENV.PS4 = '%%% '
+
+$[ENV.SH] -c 'set -x; echo 1; echo 2'
+
+## STDOUT:
+TODO
+## END
+
+
+#### ENV works in different modules
+shopt -s ysh:upgrade
+
+setglobal ENV.PS4 = '%%% '
+
+use $[ENV.REPO_ROOT]/spec/testdata/module2/env.ysh
+
+## STDOUT:
+TODO
 ## END
 

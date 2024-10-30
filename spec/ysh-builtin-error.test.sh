@@ -255,7 +255,7 @@ ok 2
 #### assert on values
 
 try {
-  $SH -c '
+  $[ENV.SH] -c '
   assert (true)
   echo passed
   '
@@ -264,7 +264,7 @@ echo code $[_error.code]
 echo
 
 try {
-  $SH -c '
+  $[ENV.SH] -c '
   func f() { return (false) }
 
   assert (f())
@@ -275,7 +275,7 @@ echo code $[_error.code]
 echo
 
 try {
-  $SH -c '
+  $[ENV.SH] -c '
   assert (null)
   echo "unreachable"
   ' | grep -v Value
@@ -284,7 +284,7 @@ echo code $[_error.code]
 echo
 
 try {
-  $SH -c '
+  $[ENV.SH] -c '
   func f() { return (false) }
 
   assert (true === f())
@@ -295,7 +295,7 @@ echo code $[_error.code]
 echo
 
 try {
-  $SH -c '
+  $[ENV.SH] -c '
   assert (42 === 42)
   echo passed
   '
@@ -325,7 +325,7 @@ code 0
 #### assert on expressions
 
 try {
-  $SH -c '
+  $[ENV.SH] -c '
   assert [true]
   echo passed
   '
@@ -334,7 +334,7 @@ echo code $[_error.code]
 echo
 
 try {
-  $SH -c '
+  $[ENV.SH] -c '
   func f() { return (false) }
 
   assert [f()]
@@ -345,7 +345,7 @@ echo code $[_error.code]
 echo
 
 try {
-  $SH -c '
+  $[ENV.SH] -c '
   assert [null]
   echo "unreachable"
   '
@@ -354,7 +354,7 @@ echo code $[_error.code]
 echo
 
 try {
-  $SH -c '
+  $[ENV.SH] -c '
   func f() { return (false) }
 
   assert [true === f()]
@@ -365,7 +365,7 @@ echo code $[_error.code]
 echo
 
 try {
-  $SH -c '
+  $[ENV.SH] -c '
   assert [42 === 42]
   echo passed
   '
@@ -393,7 +393,7 @@ code 0
 #### assert on expression that fails
 
 try {
-  $SH -c '
+  $[ENV.SH] -c '
   assert [NAN === 1/0]  # not true
   echo unreachable
   '
@@ -402,7 +402,7 @@ echo code $[_error.code]
 echo
 
 try {
-  $SH -c '
+  $[ENV.SH] -c '
   assert ["oof" === $(false)]
   echo unreachable
   '
@@ -421,7 +421,7 @@ code 1
 #### assert on chained comparison expression is not special
 
 try {
-  $SH -c '
+  $[ENV.SH] -c '
   #pp test_ (42 === 42 === 43)
   assert [42 === 42 === 43]
   echo unreachable

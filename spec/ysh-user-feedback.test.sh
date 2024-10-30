@@ -39,7 +39,7 @@ A
 builtin set -u
 
 main() {
-  source $REPO_ROOT/spec/testdata/global-lib.sh
+  source $[ENV.REPO_ROOT]/spec/testdata/global-lib.sh
 }
 
 main
@@ -51,7 +51,7 @@ test_func
 
 #### Julia port
 
-$SH $REPO_ROOT/spec/testdata/ysh-user-feedback.sh
+$[ENV.SH] $[ENV.REPO_ROOT]/spec/testdata/ysh-user-feedback.sh
 
 ## STDOUT:
 git

@@ -97,16 +97,25 @@ def LookupExecutable(name, path_dirs, exec_required=True):
 class SearchPath(object):
     """For looking up files in $PATH."""
 
-    def __init__(self, mem):
-        # type: (Mem) -> None
+    def __init__(self, mem, exec_opts):
+        # type: (Mem, optview.Exec) -> None
         self.mem = mem
+        self.exec_opts = exec_opts
         self.cache = {}  # type: Dict[str, str]
 
     def _GetPath(self):
         # type: () -> List[str]
 
+        # This condition should work because shopt --set ysh:upgrade
+        # initializes the ENV dict.
+        if self.exec_opts.env_obj():
+            val = self.mem.env_dict.get('PATH')
+            if val is None:
+                val = value.Null
+        else:
+            val = self.mem.GetValue('PATH')
+
         # TODO: Could cache this to avoid split() allocating all the time.
-        val = self.mem.GetValue('PATH')
         UP_val = val
         if val.tag() == value_e.Str:
             val = cast(value.Str, UP_val)

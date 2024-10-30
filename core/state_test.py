@@ -61,7 +61,7 @@ class MemTest(unittest.TestCase):
     def testSearchPath(self):
         mem = _InitMem()
         #print(mem)
-        search_path = state.SearchPath(mem)
+        search_path = state.SearchPath(mem, mem.exec_opts)
 
         # Relative path works without $PATH
         self.assertEqual(None, search_path.LookupOne('__nonexistent__'))

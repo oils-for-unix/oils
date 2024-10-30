@@ -137,6 +137,7 @@ _UPGRADE_RUNTIME_OPTS = [
 # checking this.
 
 _YSH_RUNTIME_OPTS = [
+    # ('no_copy_env', False),  # don't initialize or use exported variables
     ('simple_echo', False),  # echo takes 0 or 1 arguments
     ('simple_eval_builtin', False),  # eval takes exactly 1 argument
 
@@ -284,10 +285,6 @@ def _Init(opt_def):
     opt_def.Add('extglob')
     opt_def.Add('nocasematch')
 
-    # Should we copy the environment in to the global stack frame?
-    # TODO: This is in ysh:all group
-    opt_def.Add('no_copy_env')
-
     # recursive parsing and evaluation - for compatibility, ble.sh, etc.
     opt_def.Add('eval_unsafe_arith')
 
@@ -328,6 +325,7 @@ def _Init(opt_def):
     # Options that enable YSH features
     #
 
+    opt_def.Add('no_copy_env')  # TODO: move this
     for name in _UPGRADE_PARSE_OPTS:
         opt_def.Add(name, groups=['ysh:upgrade', 'ysh:all'])
     # shopt -s simple_word_eval, etc.

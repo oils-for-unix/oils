@@ -190,7 +190,7 @@ Details on each option:
       xtrace_rich             Hierarchical and process tracing
       xtrace_details (-u)     Disable most tracing with +
       dashglob (-u)           Disabled to avoid files like -rf
-    X env_dict                Copy environ into ENV dict
+      no_copy_env             Don't copy environ in to exported (-x) vars
 
 
 <h3 id="ysh:all">ysh:all</h3>
@@ -213,11 +213,11 @@ Details on options that are not in `ysh:upgrade` and `strict:all`:
       parse_ignored (-u)      Parse, but ignore, certain redirects
       parse_sh_arith (-u)     Allow legacy shell arithmetic
       expand_aliases (-u)     Whether aliases are expanded
-    X no_env_vars             Use $[ENV.PYTHONPATH], not $PYTHONPATH
     X old_builtins (-u)       local/declare/etc.  pushd/popd/dirs
                               ... source  unset  printf  [un]alias
                               ... getopts
     X old_syntax (-u)         ( )   ${x%prefix}  ${a[@]}   $$
+      env_obj                 Populate the ENV object
       simple_echo             echo doesn't accept flags -e -n
       simple_eval_builtin     eval takes exactly 1 argument
       simple_test_builtin     3 args or fewer; use test not [

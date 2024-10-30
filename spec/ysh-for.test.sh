@@ -156,7 +156,7 @@ for i, file in *.py {README,foo}.md {
 
 # to avoid stdin conflict
 
-$SH $REPO_ROOT/spec/testdata/ysh-for-stdin.ysh
+$[ENV.SH] $[ENV.REPO_ROOT]/spec/testdata/ysh-for-stdin.ysh
 
 ## STDOUT:
 -1-
@@ -182,7 +182,7 @@ hi
 set +o errexit
 
 # EISDIR - stdin descriptor is dir
-$SH -c 'for x in (io.stdin) { echo $x }' < /
+$[ENV.SH] -c 'for x in (io.stdin) { echo $x }' < /
 if test $? -ne 0; then
   echo pass
 fi

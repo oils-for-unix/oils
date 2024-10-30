@@ -4,10 +4,10 @@
 #### fastlex: NUL byte not allowed inside char literal #' '
 
 echo $'var x = #\'\x00\'; echo x=$x' > tmp.oil
-$SH tmp.oil
+$[ENV.SH] tmp.oil
 
 echo $'var x = #\' ' > incomplete.oil
-$SH incomplete.oil
+$[ENV.SH] incomplete.oil
 
 ## status: 2
 ## STDOUT:
@@ -18,7 +18,7 @@ $SH incomplete.oil
 # Hm this test doesn't really tickle the bug
 
 echo $'#! /usr/bin/env \x00 sh \necho hi' > tmp.oil
-env OILS_HIJACK_SHEBANG=1 $SH tmp.oil
+env OILS_HIJACK_SHEBANG=1 $[ENV.SH] tmp.oil
 
 ## STDOUT:
 hi
@@ -158,10 +158,10 @@ world
 
 set +o errexit
 
-$SH -c 'proc y (;x) { return = x }'
+$[ENV.SH] -c 'proc y (;x) { return = x }'
 echo status=$?
 
-$SH -c 'func y (;x) { return = x }'
+$[ENV.SH] -c 'func y (;x) { return = x }'
 echo status=$?
 
 ## STDOUT:
@@ -201,7 +201,7 @@ yy
 #### func call inside proc call - error message attribution
 
 try 2> foo {
-  $SH -c '
+  $[ENV.SH] -c '
 func ident(x) {
   return (x)
 }
