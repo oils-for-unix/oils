@@ -17,7 +17,7 @@ from typing import Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value
     from frontend.py_readline import Readline
-    from core import shell
+    from core import sh_init
     from display import ui
 
 
@@ -42,7 +42,7 @@ class History(vm._Builtin):
     def __init__(
             self,
             readline,  # type: Optional[Readline]
-            sh_files,  # type: shell.ShellFiles
+            sh_files,  # type: sh_init.ShellFiles
             errfmt,  # type: ui.ErrorFormatter
             f,  # type: mylib.Writer
     ):

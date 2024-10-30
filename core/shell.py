@@ -91,7 +91,7 @@ unused2 = log
 import libc
 import posix_ as posix
 
-from typing import List, Dict, Optional, TYPE_CHECKING, cast
+from typing import List, Dict, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from frontend.py_readline import Readline
 
@@ -226,58 +226,6 @@ def InitAssignmentBuiltins(
     assign_b[builtin_i.readonly] = assign_osh.Readonly(mem, errfmt)
 
     return assign_b
-
-
-class ShellFiles(object):
-
-    def __init__(self, lang, home_dir, mem, flag):
-        # type: (str, str, state.Mem, arg_types.main) -> None
-        assert lang in ('osh', 'ysh'), lang
-        self.lang = lang
-        self.home_dir = home_dir
-        self.mem = mem
-        self.flag = flag
-
-    def _HistVar(self):
-        # type: () -> str
-        return 'HISTFILE' if self.lang == 'osh' else 'YSH_HISTFILE'
-
-    def _DefaultHistoryFile(self):
-        # type: () -> str
-        return os_path.join(self.home_dir,
-                            '.local/share/oils/%s_history' % self.lang)
-
-    def InitAfterLoadingEnv(self):
-        # type: () -> None
-
-        hist_var = self._HistVar()
-        if self.mem.GetValue(hist_var).tag() == value_e.Undef:
-            default_val = self._DefaultHistoryFile()
-            # Note: if the directory doesn't exist, GNU readline ignores it
-            # This is like
-            #    HISTFILE=foo
-            #    setglobal HISTFILE = 'foo'
-            # Not like:
-            #    export HISTFILE=foo
-            #    setglobal ENV.HISTFILE = 'foo'
-            #
-            # Note: bash only sets this in interactive shells
-            state.SetGlobalString(self.mem, hist_var, default_val)
-
-    def HistoryFile(self):
-        # type: () -> Optional[str]
-        # TODO: In non-strict mode we should try to cast the HISTFILE value to a
-        # string following bash's rules
-
-        #return state.GetStringFromEnv(self.mem, self._HistVar())
-
-        UP_val = self.mem.GetValue(self._HistVar())
-        if UP_val.tag() == value_e.Str:
-            val = cast(value.Str, UP_val)
-            return val.s
-        else:
-            # Note: if HISTFILE is an array, bash will return ${HISTFILE[0]}
-            return None
 
 
 def Main(
@@ -524,7 +472,7 @@ def Main(
                      lang)
         return 1
 
-    sh_files = ShellFiles(lang, home_dir, mem, flag)
+    sh_files = sh_init.ShellFiles(lang, home_dir, mem, flag)
     sh_files.InitAfterLoadingEnv()
 
     #

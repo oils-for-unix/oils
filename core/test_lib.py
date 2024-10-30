@@ -255,7 +255,7 @@ def InitCommandEvaluator(parse_ctx=None,
     cmd_deps = cmd_eval.Deps()
     cmd_deps.mutable_opts = mutable_opts
 
-    search_path = state.SearchPath(mem, exec_opts)
+    search_path = executor.SearchPath(mem, exec_opts)
 
     ext_prog = \
         ext_prog or process.ExternalProgram('', fd_state, errfmt, debug_f)

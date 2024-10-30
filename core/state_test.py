@@ -10,6 +10,7 @@ from _devbuild.gen.syntax_asdl import source, SourceLine
 from _devbuild.gen.value_asdl import (value, value_e, sh_lvalue)
 from asdl import runtime
 from core import error
+from core import executor
 from core import test_lib
 from core import state  # module under test
 from frontend import lexer
@@ -61,7 +62,7 @@ class MemTest(unittest.TestCase):
     def testSearchPath(self):
         mem = _InitMem()
         #print(mem)
-        search_path = state.SearchPath(mem, mem.exec_opts)
+        search_path = executor.SearchPath(mem, mem.exec_opts)
 
         # Relative path works without $PATH
         self.assertEqual(None, search_path.LookupOne('__nonexistent__'))
