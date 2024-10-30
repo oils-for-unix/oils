@@ -1,4 +1,4 @@
-## oils_failures_allowed: 3
+## oils_failures_allowed: 4
 ## compare_shells: dash bash-4.4 mksh zsh
 
 
@@ -87,6 +87,20 @@ status=1
 ## END
 ## BUG zsh STDOUT:
 zsh sets HOME
+## END
+
+#### Vars set interactively only: $HISTFILE
+case $SH in dash|mksh|zsh) exit ;; esac
+
+$SH --norc --rcfile /dev/null -c 'echo histfile=${HISTFILE:+yes}'
+$SH --norc --rcfile /dev/null -i -c 'echo histfile=${HISTFILE:+yes}'
+
+## STDOUT:
+histfile=
+histfile=yes
+## END
+
+## N-I dash/mksh/zsh STDOUT:
 ## END
 
 #### Some vars are set, even without startup file, or env: PATH, PWD

@@ -252,14 +252,23 @@ class ShellFiles(object):
         hist_var = self._HistVar()
         if self.mem.GetValue(hist_var).tag() == value_e.Undef:
             default_val = self._DefaultHistoryFile()
-            # Note: if the directory doesn't exist, GNU readline ignores
-            #state.SetGlobalString(self.mem, hist_var, default_val)
-            state.SetStringInEnv(self.mem, hist_var, default_val)
+            # Note: if the directory doesn't exist, GNU readline ignores it
+            # This is like
+            #    HISTFILE=foo
+            #    setglobal HISTFILE = 'foo'
+            # Not like:
+            #    export HISTFILE=foo 
+            #    setglobal ENV.HISTFILE = 'foo'
+            #
+            # Note: bash only sets this in interactive shells
+            state.SetGlobalString(self.mem, hist_var, default_val)
 
     def HistoryFile(self):
         # type: () -> Optional[str]
         # TODO: In non-strict mode we should try to cast the HISTFILE value to a
         # string following bash's rules
+
+        #return state.GetStringFromEnv(self.mem, self._HistVar())
 
         UP_val = self.mem.GetValue(self._HistVar())
         if UP_val.tag() == value_e.Str:
@@ -268,11 +277,7 @@ class ShellFiles(object):
         else:
             # Note: if HISTFILE is an array, bash will return ${HISTFILE[0]}
             return None
-            #return self._DefaultHistoryFile()
 
-            # TODO: can we recover line information here?
-            #       might be useful to show where HISTFILE was set
-            #raise error.Strict("$HISTFILE should only ever be a string", loc.Missing)
 
 
 def Main(
