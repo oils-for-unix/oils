@@ -10,7 +10,6 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import option_i, builtin_i
 from _devbuild.gen.syntax_asdl import (loc, source, source_t, IntParamBox,
                                        debug_frame, debug_frame_t)
-from _devbuild.gen.runtime_asdl import scope_e
 from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str, Obj)
 from core import alloc
 from core import comp_ui
@@ -32,7 +31,6 @@ from frontend import flag_def  # side effect: flags are defined!
 
 unused1 = flag_def
 from frontend import flag_util
-from frontend import location
 from frontend import reader
 from frontend import parse_lib
 
@@ -80,7 +78,7 @@ from osh import word_eval
 from mycpp import iolib
 from mycpp import mops
 from mycpp import mylib
-from mycpp.mylib import NewDict, iteritems, print_stderr, log
+from mycpp.mylib import NewDict, print_stderr, log
 from pylib import os_path
 from tools import deps
 from tools import fmt
@@ -356,7 +354,8 @@ def Main(
 
     opt_hook = ShellOptHook(readline)
     # Note: only MutableOpts needs mem, so it's not a true circular dep.
-    parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, opt_hook)
+    parse_opts, exec_opts, mutable_opts = state.MakeOpts(
+        mem, environ, opt_hook)
     mem.exec_opts = exec_opts  # circular dep
     mutable_opts.Init()
 
@@ -368,18 +367,10 @@ def Main(
                                  attrs.shopt_changes)
 
     version_str = pyutil.GetVersion(loader)
-    state.InitBuiltins(mem, environ, version_str)
+    state.InitBuiltins(mem, version_str)
     state.InitDefaultVars(mem)
 
-    if exec_opts.no_copy_env():
-        #if 1:
-        for name, s in iteritems(environ):
-            env_dict[name] = value.Str(s)
-
-        mem.SetNamed(location.LName('ENV'), value.Dict(env_dict),
-                     scope_e.GlobalOnly)
-    else:
-        state.CopyVarsFromEnv(mem, environ)
+    state.CopyVarsFromEnv(exec_opts, environ, mem)
 
     # PATH PWD SHELLOPTS, etc. must be set after CopyVarsFromEnv()
     state.InitVarsAfterEnv(mem)
@@ -649,7 +640,8 @@ def Main(
 
     # Interpreter state
     b[builtin_i.set] = pure_osh.Set(mutable_opts, mem)
-    b[builtin_i.shopt] = pure_osh.Shopt(exec_opts, mutable_opts, cmd_ev)
+    b[builtin_i.shopt] = pure_osh.Shopt(exec_opts, mutable_opts, cmd_ev, mem,
+                                        environ)
 
     b[builtin_i.hash] = pure_osh.Hash(search_path)  # not really pure
     b[builtin_i.trap] = trap_osh.Trap(trap_state, parse_ctx, tracer, errfmt)

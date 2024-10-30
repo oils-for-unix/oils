@@ -127,6 +127,9 @@ _UPGRADE_RUNTIME_OPTS = [
 
     # Whether status 141 in pipelines is turned into 0
     ('sigpipe_status_ok', False),
+
+    # create ENV at startup; read from it when starting processes
+    ('env_obj', False),
 ]
 
 # TODO: Add strict_arg_parse?  For example, 'trap 1 2 3' shouldn't be
@@ -282,7 +285,7 @@ def _Init(opt_def):
     opt_def.Add('nocasematch')
 
     # Should we copy the environment in to the global stack frame?
-    # TODO: This may be off in YSH
+    # TODO: This is in ysh:all group
     opt_def.Add('no_copy_env')
 
     # recursive parsing and evaluation - for compatibility, ble.sh, etc.

@@ -164,6 +164,7 @@ set -o nounset
 set -o pipefail
 shopt -s command_sub_errexit
 shopt -u dashglob
+shopt -s env_obj
 shopt -s errexit
 shopt -s inherit_errexit
 shopt -s nounset

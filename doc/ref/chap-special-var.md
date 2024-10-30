@@ -28,7 +28,22 @@ Replacement for `"$@"`
 
 ### ENV
 
-TODO
+A Dict that's populated with environment variables.  Example usage:
+
+    var x = ENV.PYTHONPATH
+    echo $[ENV.SSH_AUTH_SOCK]
+
+It's initialized exactly **once** per process, in any of these situations:
+
+1. At shell startup, if `shopt --set env_obj` is on.  This is true when invoking
+   `bin/ysh`.
+2. When running `bin/osh -o ysh:upgrade` or `ysh:all`.
+3. When running `shopt --set ysh:upgrade` or `ysh:all`.
+
+Related: [ysh-shopt][], [osh-usage][]
+
+[ysh-shopt]: chap-builtin-cmd.html#ysh-shopt
+[osh-usage]: chap-front-end.html#osh-usage
 
 ### _this_dir
 

@@ -384,8 +384,8 @@ def InitOpts():
     return opt0_array
 
 
-def MakeOpts(mem, opt_hook):
-    # type: (Mem, OptHook) -> Tuple[optview.Parse, optview.Exec, MutableOpts]
+def MakeOpts(mem, environ, opt_hook):
+    # type: (Mem, Dict[str, str], OptHook) -> Tuple[optview.Parse, optview.Exec, MutableOpts]
 
     # Unusual representation: opt0_array + opt_stacks.  For two features:
     #
@@ -405,7 +405,7 @@ def MakeOpts(mem, opt_hook):
 
     parse_opts = optview.Parse(opt0_array, opt_stacks)
     exec_opts = optview.Exec(opt0_array, opt_stacks)
-    mutable_opts = MutableOpts(mem, opt0_array, opt_stacks, opt_hook)
+    mutable_opts = MutableOpts(mem, environ, opt0_array, opt_stacks, opt_hook)
 
     return parse_opts, exec_opts, mutable_opts
 
@@ -459,9 +459,10 @@ def _SetOptionNum(opt_name):
 
 class MutableOpts(object):
 
-    def __init__(self, mem, opt0_array, opt_stacks, opt_hook):
-        # type: (Mem, List[bool], List[List[bool]], OptHook) -> None
+    def __init__(self, mem, environ, opt0_array, opt_stacks, opt_hook):
+        # type: (Mem, Dict[str, str], List[bool], List[List[bool]], OptHook) -> None
         self.mem = mem
+        self.environ = environ
         self.opt0_array = opt0_array
         self.opt_stacks = opt_stacks
         self.errexit_disabled_tok = []  # type: List[Token]
@@ -672,11 +673,15 @@ class MutableOpts(object):
         if opt_group == opt_group_i.YshUpgrade:
             _SetGroup(self.opt0_array, consts.YSH_UPGRADE, b)
             self.SetDeferredErrExit(b)  # Special case
+            if b:  # ENV dict
+                self.mem.MaybeInitEnvDict(self.environ)
             return
 
         if opt_group == opt_group_i.YshAll:
             _SetGroup(self.opt0_array, consts.YSH_ALL, b)
             self.SetDeferredErrExit(b)  # Special case
+            if b:  # ENV dict
+                self.mem.MaybeInitEnvDict(self.environ)
             return
 
         if opt_group == opt_group_i.StrictAll:
@@ -846,17 +851,29 @@ def InitDefaultVars(mem):
     #   set_home_var ();
 
 
-def CopyVarsFromEnv(mem, environ):
-    # type: (Mem, Dict[str, str]) -> None
+def CopyVarsFromEnv(exec_opts, environ, mem):
+    # type: (optview.Exec, Dict[str, str], Mem) -> None
 
-    # This is the way dash and bash work -- at startup, they turn everything in
-    # 'environ' variable into shell variables.  Bash has an export_env
-    # variable.  Dash has a loop through environ in init.c
-    for n, v in iteritems(environ):
-        mem.SetNamed(location.LName(n),
-                     value.Str(v),
-                     scope_e.GlobalOnly,
-                     flags=SetExport)
+    # POSIX shell behavior: env vars become exported global vars
+    if not exec_opts.no_copy_env():
+        # This is the way dash and bash work -- at startup, they turn everything in
+        # 'environ' variable into shell variables.  Bash has an export_env
+        # variable.  Dash has a loop through environ in init.c
+        for n, v in iteritems(environ):
+            mem.SetNamed(location.LName(n),
+                         value.Str(v),
+                         scope_e.GlobalOnly,
+                         flags=SetExport)
+
+    # YSH behavior: env vars go in ENV dict, not exported vars.  Note that
+    # ysh:upgrade can have BOTH ENV and exported vars.  It's OK if they're on
+    # at the same time.
+    if exec_opts.env_obj():
+        # This is for invoking bin/ysh
+        # If you run bin/osh, then exec_opts.env_obj() will be FALSE at this point.
+        # When you write shopt --set ysh:all or ysh:upgrade, then the shopt
+        # builtin will call MaybeInitEnvDict()
+        mem.MaybeInitEnvDict(environ)
 
 
 def InitVarsAfterEnv(mem):
@@ -897,8 +914,8 @@ def InitVarsAfterEnv(mem):
         SetGlobalString(mem, 'PATH', '/bin:/usr/bin')
 
 
-def InitBuiltins(mem, environ, version_str):
-    # type: (Mem, Dict[str, str], str) -> None
+def InitBuiltins(mem, version_str):
+    # type: (Mem, str) -> None
     """Initialize memory with shell defaults.
 
     Other interpreters could have different builtin variables.
@@ -1471,6 +1488,8 @@ class Mem(object):
         # Code in any module can see __builtins__
         self.builtins['__builtins__'] = builtins_module
 
+        self.did_ysh_env = False  # only initialize ENV once per process
+
     def __repr__(self):
         # type: () -> str
         parts = []  # type: List[str]
@@ -1693,6 +1712,9 @@ class Mem(object):
         # type: () -> bool
         """For the ERR trap, and use builtin"""
 
+        # TODO: Should this be unified with ParsingChangesAllowed()?  Slightly
+        # different logic.
+
         # Don't run it inside functions
         return len(self.var_stack) > 1
 
@@ -1818,6 +1840,20 @@ class Mem(object):
             raise NotImplementedError(op_id)
 
         return value.Str(str(n))
+
+    def MaybeInitEnvDict(self, environ):
+        # type: (Dict[str, str]) -> None
+        """
+        """
+        if self.did_ysh_env:
+            return
+
+        for name, s in iteritems(environ):
+            self.env_dict[name] = value.Str(s)
+
+        self.SetNamed(location.LName('ENV'), value.Dict(self.env_dict),
+                      scope_e.GlobalOnly)
+        self.did_ysh_env = True
 
     #
     # Named Vars

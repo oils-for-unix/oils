@@ -59,7 +59,7 @@ error handling, and more.
                    Place       setValue()
   [Code Types]     Func        BuiltinFunc      BoundFunc
                    Proc        BuiltinProc
-  [Objects]        Obj         __invoke__     X __call__     __index__
+  [Objects]        Obj         __invoke__     X __call__       __index__
                              X __str__
   [Reflection]     Command     CommandFrag
                    Expr
@@ -341,7 +341,7 @@ X [External Lang] BEGIN   END   when (awk)
 </h2>
 
 ```chapter-links-special-var
-  [YSH Vars]      ARGV              X ENV                   _this_dir
+  [YSH Vars]      ARGV                ENV                   _this_dir
   [YSH Status]    _error
                   _pipeline_status    _process_sub_status
   [YSH Tracing]   SHX_indent          SHX_punct             SHX_pid_str

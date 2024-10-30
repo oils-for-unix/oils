@@ -215,12 +215,35 @@ It takes a block:
 
 ### ysh-shopt
 
-It takes a block:
+Sets shell options, e.g.
+
+    shopt --unset errexit
+    shopt --set errexit
+
+You can set or unset multiple options with the groups `strict:all`,
+`ysh:upgrade`, and `ysh:all`.  Example:
+
+    shopt --set ysh:upgrade
+
+If a block is passed, then:
+
+1. the mutated options are pushed onto a stack
+2. the block is executed
+3. the options are restored to their original state (even if the block fails to
+   execute)
+
+Example:
 
     shopt --unset errexit {
       false
       echo 'ok'
     }
+
+Note that setting `ysh:upgrade` or `ysh:all` may initialize the [ENV][] dict.
+
+Related: [shopt](#shopt)
+
+[ENV]: chap-special-var.html#ENV
 
 ### shvar
 
@@ -890,19 +913,12 @@ Flags:
 
     -s --set    Turn the named options on
     -u --unset  Turn the named options off
-    -p          Print option values
+    -p          Print option values, and 1 if any option is unset
     -o          Use older set of options, normally controlled by 'set -o'
     -q          Return 0 if the option is true, else 1
 
-Examples: 
-
-    shopt --set errexit
-
-You can set or unset multiple options with the groups `strict:all`,
-`ysh:upgrade`, and `ysh:all`.
-
-If a block is passed, then the mutated options are pushed onto a stack, the
-block is executed, and then options are restored to their original state.
+This command is compatible with `shopt` in bash.  See [ysh-shopt](#ysh-shopt) for
+details on YSH enhancements.
 
 ## Working Dir
 

@@ -226,11 +226,13 @@ class Set(vm._Builtin):
 
 class Shopt(vm._Builtin):
 
-    def __init__(self, exec_opts, mutable_opts, cmd_ev):
-        # type: (optview.Exec, MutableOpts, CommandEvaluator) -> None
+    def __init__(self, exec_opts, mutable_opts, cmd_ev, mem, environ):
+        # type: (optview.Exec, MutableOpts, CommandEvaluator, state.Mem, Dict[str, str]) -> None
         self.exec_opts = exec_opts
         self.mutable_opts = mutable_opts
         self.cmd_ev = cmd_ev
+        self.mem = mem
+        self.environ = environ
 
     def _PrintOptions(self, use_set_opts, opt_names):
         # type: (bool, List[str]) -> int
@@ -254,6 +256,7 @@ class Shopt(vm._Builtin):
                     opt_nums.extend(consts.YSH_ALL)
                 elif opt_group == opt_group_i.StrictAll:
                     opt_nums.extend(consts.STRICT_ALL)
+
                 else:
                     index = consts.OptionNum(opt_name)
                     # Minor incompatibility with bash: we validate everything
@@ -317,10 +320,14 @@ class Shopt(vm._Builtin):
                 opt_group = consts.OptionGroupNum(opt_name)
                 if opt_group == opt_group_i.YshUpgrade:
                     opt_nums.extend(consts.YSH_UPGRADE)
+                    if b:
+                        self.mem.MaybeInitEnvDict(self.environ)
                     continue
 
                 if opt_group == opt_group_i.YshAll:
                     opt_nums.extend(consts.YSH_ALL)
+                    if b:
+                        self.mem.MaybeInitEnvDict(self.environ)
                     continue
 
                 if opt_group == opt_group_i.StrictAll:

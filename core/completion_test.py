@@ -54,7 +54,7 @@ def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
     comp_lookup = comp_lookup or completion.Lookup()
 
     mem = state.Mem('', [], None, [])
-    parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
+    parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
     mem.exec_opts = exec_opts
 
     state.InitDefaultVars(mem)
@@ -125,7 +125,7 @@ class CompletionTest(unittest.TestCase):
 
     def testExternalCommandAction(self):
         mem = state.Mem('dummy', [], None, [])
-        parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
+        parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
         mem.exec_opts = exec_opts
 
         a = completion.ExternalCommandAction(mem)
@@ -756,7 +756,7 @@ class InitCompletionTest(unittest.TestCase):
             arena = test_lib.MakeArena('<InitCompletionTest>')
             parse_ctx = test_lib.InitParseContext(arena=arena)
             mem = state.Mem('', [], arena, [])
-            parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
+            parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
             mem.exec_opts = exec_opts
 
             mutable_opts.Init()

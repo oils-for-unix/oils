@@ -1,16 +1,22 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 
 #### Can read from ENV Dict
 shopt -s ysh:upgrade
 
 pp test_ (type(ENV))
+#pp test_ (ENV)
 
-sh=$[ENV.SH]
-env -i PATH=$[ENV.PATH] ZZ=zz $sh -c 'echo "ZZ is $[ENV.ZZ]"'
+# Set by the spec test harness
+
+if (ENV.SH ~~ '*osh') {
+  echo ok
+}
+
+#echo SH=$[ENV.SH]
 
 ## STDOUT:
 (Str)   "Dict"
-ZZ is zz
+ok
 ## END
 
 #### Temp bindings A=a B=b my-command push to ENV dict
