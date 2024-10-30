@@ -14,6 +14,7 @@ from builtin import trap_osh
 from core import dev
 from core import process  # module under test
 from core import pyos
+from core import sh_init
 from core import state
 from core import test_lib
 from core import util
@@ -57,7 +58,7 @@ class ProcessTest(unittest.TestCase):
         mem.exec_opts = exec_opts
 
         #state.InitMem(mem, {}, '0.1')
-        state.InitDefaultVars(mem)
+        sh_init.InitDefaultVars(mem)
 
         self.job_control = process.JobControl()
         self.job_list = process.JobList()

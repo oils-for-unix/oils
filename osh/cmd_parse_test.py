@@ -1454,7 +1454,8 @@ class ParserInteractionsTest(unittest.TestCase):
         code_str = '{ echo hello } '
 
         c_parser = test_lib.InitCommandParser(code_str)
-        c_parser.parse_opts = state.MakeOilOpts()  # place parser in YSH mode
+        c_parser.parse_opts = state.MakeYshParseOpts(
+        )  # place parser in YSH mode
         lexer = c_parser.lexer
 
         c_parser.ParseBraceGroup()
@@ -1472,7 +1473,8 @@ class ParserInteractionsTest(unittest.TestCase):
         code_str = '{ = hello } '
 
         c_parser = test_lib.InitCommandParser(code_str)
-        c_parser.parse_opts = state.MakeOilOpts()  # place parser in YSH mode
+        c_parser.parse_opts = state.MakeYshParseOpts(
+        )  # place parser in YSH mode
         lexer = c_parser.lexer
 
         c_parser.ParseBraceGroup()

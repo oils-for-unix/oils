@@ -21,6 +21,7 @@ from core import main_loop
 from core import optview
 from core import process
 from core import pyutil
+from core import sh_init
 from core import state
 from display import ui
 from core import util
@@ -257,7 +258,7 @@ class ShellFiles(object):
             #    HISTFILE=foo
             #    setglobal HISTFILE = 'foo'
             # Not like:
-            #    export HISTFILE=foo 
+            #    export HISTFILE=foo
             #    setglobal ENV.HISTFILE = 'foo'
             #
             # Note: bash only sets this in interactive shells
@@ -277,7 +278,6 @@ class ShellFiles(object):
         else:
             # Note: if HISTFILE is an array, bash will return ${HISTFILE[0]}
             return None
-
 
 
 def Main(
@@ -373,13 +373,13 @@ def Main(
                                  attrs.shopt_changes)
 
     version_str = pyutil.GetVersion(loader)
-    state.InitBuiltins(mem, version_str)
-    state.InitDefaultVars(mem)
+    sh_init.InitBuiltins(mem, version_str)
+    sh_init.InitDefaultVars(mem)
 
-    state.CopyVarsFromEnv(exec_opts, environ, mem)
+    sh_init.CopyVarsFromEnv(exec_opts, environ, mem)
 
     # PATH PWD SHELLOPTS, etc. must be set after CopyVarsFromEnv()
-    state.InitVarsAfterEnv(mem)
+    sh_init.InitVarsAfterEnv(mem)
 
     if attrs.show_options:  # special case: sh -o
         pure_osh.ShowOptions(mutable_opts, [])
@@ -1071,7 +1071,7 @@ def Main(
     _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
 
     if flag.headless:
-        state.InitInteractive(mem, lang)
+        sh_init.InitInteractive(mem, lang)
         mutable_opts.set_redefine_const()
         mutable_opts.set_redefine_source()
 
@@ -1103,7 +1103,7 @@ def Main(
     c_parser = parse_ctx.MakeOshParser(line_reader)
 
     if exec_opts.interactive():
-        state.InitInteractive(mem, lang)
+        sh_init.InitInteractive(mem, lang)
         # bash: 'set -o emacs' is the default only in the interactive shell
         mutable_opts.set_emacs()
         mutable_opts.set_redefine_const()

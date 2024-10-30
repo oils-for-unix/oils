@@ -18,6 +18,7 @@ from display import ui
 from osh import sh_expr_eval
 from osh import split
 from osh import word_eval
+from core import sh_init
 from core import state
 
 #from osh import arith_parse
@@ -38,7 +39,7 @@ def ParseAndEval(code_str):
     parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
     mem.exec_opts = exec_opts
     #state.InitMem(mem, {}, '0.1')
-    state.InitDefaultVars(mem)
+    sh_init.InitDefaultVars(mem)
 
     splitter = split.SplitContext(mem)
     errfmt = ui.ErrorFormatter()

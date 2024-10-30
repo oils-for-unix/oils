@@ -23,8 +23,6 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, Obj, sh_lvalue,
 from core import error
 from core.error import e_usage, e_die
 from core import num
-from core import pyos
-from core import pyutil
 from core import optview
 from display import ui
 from core import util
@@ -35,11 +33,9 @@ from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import (log, print_stderr, str_switch, tagswitch, iteritems,
                          NewDict)
-from osh import split
 from pylib import os_path
 from pylib import path_stat
 
-import libc
 import posix_ as posix
 from posix_ import X_OK  # translated directly to C macro
 
@@ -51,12 +47,6 @@ if TYPE_CHECKING:
     from osh import sh_expr_eval
 
 _ = log
-
-# This was derived from bash --norc -c 'argv "$COMP_WORDBREAKS".
-# Python overwrites this to something Python-specific in Modules/readline.c, so
-# we have to set it back!
-# Used in both core/competion.py and osh/state.py
-_READLINE_DELIMS = ' \t\n"\'><=;|&(:'
 
 # flags for mem.SetValue()
 SetReadOnly = 1 << 0
@@ -417,7 +407,7 @@ def _SetGroup(opt0_array, opt_nums, b):
         opt0_array[opt_num] = b2
 
 
-def MakeOilOpts():
+def MakeYshParseOpts():
     # type: () -> optview.Parse
     opt0_array = InitOpts()
     _SetGroup(opt0_array, consts.YSH_ALL, True)
@@ -787,15 +777,6 @@ def _DumpVarFrame(frame):
     return vars_json
 
 
-def GetWorkingDir():
-    # type: () -> str
-    """Fallback for pwd and $PWD when there's no 'cd' and no inherited $PWD."""
-    try:
-        return posix.getcwd()
-    except (IOError, OSError) as e:
-        e_die("Can't determine working directory: %s" % pyutil.strerror(e))
-
-
 def _LineNumber(tok):
     # type: (Optional[Token]) -> str
     """ For $BASH_LINENO """
@@ -811,168 +792,6 @@ def _AddCallToken(d, token):
     d['call_source'] = value.Str(ui.GetLineSourceString(token.line))
     d['call_line_num'] = num.ToBig(token.line.line_num)
     d['call_line'] = value.Str(token.line.content)
-
-
-def InitDefaultVars(mem):
-    # type: (Mem) -> None
-
-    # These 3 are special, can't be changed
-    SetGlobalString(mem, 'UID', str(posix.getuid()))
-    SetGlobalString(mem, 'EUID', str(posix.geteuid()))
-    SetGlobalString(mem, 'PPID', str(posix.getppid()))
-
-    # For getopts builtin - meant to be read, not changed
-    SetGlobalString(mem, 'OPTIND', '1')
-
-    # These can be changed.  Could go AFTER environment, e.g. in
-    # InitVarsAfterEnv().
-
-    # Default value; user may unset it.
-    # $ echo -n "$IFS" | python -c 'import sys;print repr(sys.stdin.read())'
-    # ' \t\n'
-    SetGlobalString(mem, 'IFS', split.DEFAULT_IFS)
-
-    SetGlobalString(mem, 'HOSTNAME', libc.gethostname())
-
-    # In bash, this looks like 'linux-gnu', 'linux-musl', etc.  Scripts test
-    # for 'darwin' and 'freebsd' too.  They generally don't like at 'gnu' or
-    # 'musl'.  We don't have that info, so just make it 'linux'.
-    SetGlobalString(mem, 'OSTYPE', pyos.OsType())
-
-    # When xtrace_rich is off, this is just like '+ ', the shell default
-    SetGlobalString(mem, 'PS4', '${SHX_indent}${SHX_punct}${SHX_pid_str} ')
-
-    # bash-completion uses this.  Value copied from bash.  It doesn't integrate
-    # with 'readline' yet.
-    SetGlobalString(mem, 'COMP_WORDBREAKS', _READLINE_DELIMS)
-
-    # TODO on $HOME: bash sets it if it's a login shell and not in POSIX mode!
-    # if (login_shell == 1 && posixly_correct == 0)
-    #   set_home_var ();
-
-
-def CopyVarsFromEnv(exec_opts, environ, mem):
-    # type: (optview.Exec, Dict[str, str], Mem) -> None
-
-    # POSIX shell behavior: env vars become exported global vars
-    if not exec_opts.no_exported():
-        # This is the way dash and bash work -- at startup, they turn everything in
-        # 'environ' variable into shell variables.  Bash has an export_env
-        # variable.  Dash has a loop through environ in init.c
-        for n, v in iteritems(environ):
-            mem.SetNamed(location.LName(n),
-                         value.Str(v),
-                         scope_e.GlobalOnly,
-                         flags=SetExport)
-
-    # YSH behavior: env vars go in ENV dict, not exported vars.  Note that
-    # ysh:upgrade can have BOTH ENV and exported vars.  It's OK if they're on
-    # at the same time.
-    if exec_opts.env_obj():
-        # This is for invoking bin/ysh
-        # If you run bin/osh, then exec_opts.env_obj() will be FALSE at this point.
-        # When you write shopt --set ysh:all or ysh:upgrade, then the shopt
-        # builtin will call MaybeInitEnvDict()
-        mem.MaybeInitEnvDict(environ)
-
-
-def InitVarsAfterEnv(mem):
-    # type: (Mem) -> None
-
-    # If PATH SHELLOPTS PWD are not in environ, then initialize them.
-    val = mem.GetValue('PATH')
-    if val.tag() == value_e.Undef:
-        # Setting PATH to these two dirs match what zsh and mksh do.  bash and
-        # dash add {,/usr/,/usr/local}/{bin,sbin}
-        SetGlobalString(mem, 'PATH', '/bin:/usr/bin')
-
-    val = mem.GetValue('SHELLOPTS')
-    if val.tag() == value_e.Undef:
-        # Divergence: bash constructs a string here too, it doesn't just read it
-        SetGlobalString(mem, 'SHELLOPTS', '')
-    # It's readonly, even if it's not set
-    mem.SetNamed(location.LName('SHELLOPTS'),
-                 None,
-                 scope_e.GlobalOnly,
-                 flags=SetReadOnly)
-    # NOTE: bash also has BASHOPTS
-
-    val = mem.GetValue('PWD')
-    if val.tag() == value_e.Undef:
-        SetGlobalString(mem, 'PWD', GetWorkingDir())
-    # It's EXPORTED, even if it's not set.  bash and dash both do this:
-    #     env -i -- dash -c env
-    mem.SetNamed(location.LName('PWD'),
-                 None,
-                 scope_e.GlobalOnly,
-                 flags=SetExport)
-
-    # Set a MUTABLE GLOBAL that's SEPARATE from $PWD.  It's used by the 'pwd'
-    # builtin, and it can't be modified by users.
-    val = mem.GetValue('PWD')
-    assert val.tag() == value_e.Str, val
-    pwd = cast(value.Str, val).s
-    mem.SetPwd(pwd)
-
-
-def InitBuiltins(mem, version_str):
-    # type: (Mem, str) -> None
-    """Initialize memory with shell defaults.
-
-    Other interpreters could have different builtin variables.
-    """
-    # TODO: REMOVE this legacy.  ble.sh checks it!
-    mem.builtins['OIL_VERSION'] = value.Str(version_str)
-
-    mem.builtins['OILS_VERSION'] = value.Str(version_str)
-
-    # The source builtin understands '///' to mean "relative to embedded stdlib"
-    mem.builtins['LIB_OSH'] = value.Str('///osh')
-    mem.builtins['LIB_YSH'] = value.Str('///ysh')
-
-    # - C spells it NAN
-    # - JavaScript spells it NaN
-    # - Python 2 has float('nan'), while Python 3 has math.nan.
-    #
-    # - libc prints the strings 'nan' and 'inf'
-    # - Python 3 prints the strings 'nan' and 'inf'
-    # - JavaScript prints 'NaN' and 'Infinity', which is more stylized
-    mem.builtins['NAN'] = value.Float(pyutil.nan())
-    mem.builtins['INFINITY'] = value.Float(pyutil.infinity())
-
-
-def InitInteractive(mem, lang):
-    # type: (Mem, str) -> None
-    """Initialization that's only done in the interactive/headless shell."""
-
-    ps1_str = GetStringFromEnv(mem, 'PS1')
-    if ps1_str is None:
-        SetStringInEnv(mem, 'PS1', r'\s-\v\$ ')
-    else:
-        if lang == 'ysh':
-            SetStringInEnv(mem, 'PS1', 'ysh ' + ps1_str)
-
-    # Old logic:
-    if 0:
-        # PS1 is set, and it's YSH, then prepend 'ysh' to it to eliminate confusion
-        ps1_val = mem.GetValue('PS1')
-        with tagswitch(ps1_val) as case:
-            if case(value_e.Undef):
-                # Same default PS1 as bash
-                SetGlobalString(mem, 'PS1', r'\s-\v\$ ')
-
-            elif case(value_e.Str):
-                # Hack so we don't confuse osh and ysh, but we still respect the
-                # PS1.
-
-                # The user can disable this with
-                #
-                # func renderPrompt() {
-                #   return ("${PS1@P}")
-                # }
-                if lang == 'ysh':
-                    user_setting = cast(value.Str, ps1_val).s
-                    SetGlobalString(mem, 'PS1', 'ysh ' + user_setting)
 
 
 class ctx_FuncCall(object):

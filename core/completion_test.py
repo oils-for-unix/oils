@@ -18,6 +18,7 @@ from _devbuild.gen.syntax_asdl import proc_sig
 from _devbuild.gen.value_asdl import (value, value_e)
 from core import completion  # module under test
 from core import comp_ui
+from core import sh_init
 from core import state
 from core import test_lib
 from core import util
@@ -57,7 +58,7 @@ def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
     parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
     mem.exec_opts = exec_opts
 
-    state.InitDefaultVars(mem)
+    sh_init.InitDefaultVars(mem)
     mutable_opts.Init()
 
     if not parse_ctx:

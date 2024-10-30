@@ -55,6 +55,7 @@ core/optview.py
 core/process.py
 core/pyos.py
 core/pyutil.py
+core/sh_init.py
 core/shell.py
 core/state.py
 core/util.py

@@ -49,7 +49,7 @@ class ParseHay(vm._Callable):
         arena = self.parse_ctx.arena
         line_reader = reader.FileLineReader(f, arena)
 
-        parse_opts = state.MakeOilOpts()
+        parse_opts = state.MakeYshParseOpts()
         # Note: runtime needs these options and totally different memory
 
         # TODO: CommandParser needs parse_opts
