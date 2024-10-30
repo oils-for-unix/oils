@@ -91,12 +91,6 @@ OSH:
 - [`source`](chap-builtin-cmd.html#source)
 - [`source-guard`](chap-builtin-cmd.html#source-guard)
 
-### Unicode
-
-- TODO: which functions respect Unicode?
-
-Also see [the Unicode doc](../unicode.html).
-
 ### Interactive Shell
 
 - [`renderPrompt()`](chap-plugin.html#renderPrompt)
@@ -109,6 +103,21 @@ OSH:
 [complete]: chap-builtin-cmd.html#complete
 [compadjust]: chap-builtin-cmd.html#compadjust
 [compexport]: chap-builtin-cmd.html#compexport
+
+### Tracing
+
+- `set -x` aka `set -o xtrace`
+- [PS4][]
+- `SHX_*`
+
+[PS4]: chap-plugin.html#PS4
+
+### Unicode
+
+- TODO: which functions respect Unicode?
+
+Also see [the Unicode doc](../unicode.html).
+
 
 
 
@@ -141,4 +150,5 @@ OSH:
 
 [io]: chap-type-method.html#io
 [vm]: chap-type-method.html#vm
+
 

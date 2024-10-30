@@ -1276,6 +1276,11 @@ class ctx_ModuleEval(object):
         ps4 = self.saved_frame.get('PS4')
         if ps4:
             self.new_frame['PS4'] = ps4
+        # ENV is not in __builtins__ because it's mutable -- we want
+        # 'setglobal' to work
+        env = self.saved_frame.get('ENV')
+        if env:
+            self.new_frame['ENV'] = env
 
         assert len(mem.var_stack) == 1
         mem.var_stack[0] = self.new_frame

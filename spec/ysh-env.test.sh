@@ -1,4 +1,4 @@
-## oils_failures_allowed: 4
+## oils_failures_allowed: 3
 
 #### Can read from ENV Dict
 shopt -s ysh:upgrade
@@ -99,6 +99,7 @@ setglobal ENV.PS4 = '%%% '
 use $[ENV.REPO_ROOT]/spec/testdata/module2/env.ysh
 
 ## STDOUT:
-TODO
+env.ysh
+OSH ok
 ## END
 

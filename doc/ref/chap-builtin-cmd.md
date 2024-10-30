@@ -421,6 +421,13 @@ Notes:
   - TODO: consider backtick syntax as well
 - `use` must be used at the top level, not within a function.
   - This behavior is unlike Python.
+- The `use` builtin populates the new module with references to these values in
+  the calling module:
+  - [ENV][] - to mutate and set environment vars
+  - [PS4][] - for cross-module tracing in OSH
+
+[ENV]: chap-special-var.html#ENV
+[PS4]: chap-plugin.html#PS4
 
 Warnings:
 
