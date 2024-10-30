@@ -1036,28 +1036,31 @@ def Main(
 
     config_dir = '.config/oils'
     rc_paths = []  # type: List[str]
-    if not flag.norc and (flag.headless or exec_opts.interactive()):
-        # User's rcfile comes FIRST.  Later we can add an 'after-rcdir' hook
-        rc_path = flag.rcfile
-        if rc_path is None:
-            rc_paths.append(
-                os_path.join(home_dir, '%s/%src' % (config_dir, lang)))
+    if flag.headless or exec_opts.interactive():
+        if flag.norc:
+            # bash doesn't have this warning, but it's useful
+            if flag.rcfile is not None:
+                print_stderr('%s warning: --rcfile ignored with --norc' % lang)
+            if flag.rcdir is not None:
+                print_stderr('%s warning: --rcdir ignored with --norc' % lang)
         else:
-            rc_paths.append(rc_path)
+            # User's rcfile comes FIRST.  Later we can add an 'after-rcdir' hook
+            rc_path = flag.rcfile
+            if rc_path is None:
+                rc_paths.append(
+                    os_path.join(home_dir, '%s/%src' % (config_dir, lang)))
+            else:
+                rc_paths.append(rc_path)
 
-        # Load all files in ~/.config/oils/oshrc.d or oilrc.d
-        # This way "installers" can avoid mutating oshrc directly
+            # Load all files in ~/.config/oils/oshrc.d or oilrc.d
+            # This way "installers" can avoid mutating oshrc directly
 
-        rc_dir = flag.rcdir
-        if rc_dir is None:
-            rc_dir = os_path.join(home_dir, '%s/%src.d' % (config_dir, lang))
+            rc_dir = flag.rcdir
+            if rc_dir is None:
+                rc_dir = os_path.join(home_dir,
+                                      '%s/%src.d' % (config_dir, lang))
 
-        rc_paths.extend(libc.glob(os_path.join(rc_dir, '*')))
-    else:
-        if flag.rcfile is not None:  # bash doesn't have this warning, but it's useful
-            print_stderr('%s warning: --rcfile ignored with --norc' % lang)
-        if flag.rcdir is not None:
-            print_stderr('%s warning: --rcdir ignored with --norc' % lang)
+            rc_paths.extend(libc.glob(os_path.join(rc_dir, '*')))
 
     # Initialize even in non-interactive shell, for 'compexport'
     _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)

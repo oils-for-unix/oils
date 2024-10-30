@@ -878,21 +878,28 @@ def CopyVarsFromEnv(exec_opts, environ, mem):
 def InitVarsAfterEnv(mem):
     # type: (Mem) -> None
 
-    # If SHELLOPTS PWD PATH are not in environ, then initialize them.
+    # If PATH SHELLOPTS PWD are not in environ, then initialize them.
+    val = mem.GetValue('PATH')
+    if val.tag() == value_e.Undef:
+        # Setting PATH to these two dirs match what zsh and mksh do.  bash and
+        # dash add {,/usr/,/usr/local}/{bin,sbin}
+        SetGlobalString(mem, 'PATH', '/bin:/usr/bin')
 
     val = mem.GetValue('SHELLOPTS')
     if val.tag() == value_e.Undef:
+        # Divergence: bash constructs a string here too, it doesn't just read it
         SetGlobalString(mem, 'SHELLOPTS', '')
     # It's readonly, even if it's not set
     mem.SetNamed(location.LName('SHELLOPTS'),
                  None,
                  scope_e.GlobalOnly,
                  flags=SetReadOnly)
+    # NOTE: bash also has BASHOPTS
 
     val = mem.GetValue('PWD')
     if val.tag() == value_e.Undef:
         SetGlobalString(mem, 'PWD', GetWorkingDir())
-    # It's exported, even if it's not set.  bash and dash both do this:
+    # It's EXPORTED, even if it's not set.  bash and dash both do this:
     #     env -i -- dash -c env
     mem.SetNamed(location.LName('PWD'),
                  None,
@@ -905,12 +912,6 @@ def InitVarsAfterEnv(mem):
     assert val.tag() == value_e.Str, val
     pwd = cast(value.Str, val).s
     mem.SetPwd(pwd)
-
-    val = mem.GetValue('PATH')
-    if val.tag() == value_e.Undef:
-        # Setting PATH to these two dirs match what zsh and mksh do.  bash and
-        # dash add {,/usr/,/usr/local}/{bin,sbin}
-        SetGlobalString(mem, 'PATH', '/bin:/usr/bin')
 
 
 def InitBuiltins(mem, version_str):
