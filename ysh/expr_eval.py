@@ -1184,7 +1184,7 @@ class ExprEvaluator(object):
 
             elif case(expr_e.Place):
                 node = cast(expr.Place, UP_node)
-                frame = self.mem.TopNamespace()
+                frame = self.mem.CurrentFrame()
                 return value.Place(LeftName(node.var_name, node.blame_tok),
                                    frame)
 

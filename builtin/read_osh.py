@@ -362,7 +362,7 @@ class Read(vm._Builtin):
             #log('VAR %s', var_name)
             blame_loc = cmd_val.arg_locs[0]
             place = value.Place(LeftName(var_name, blame_loc),
-                                self.mem.TopNamespace())
+                                self.mem.CurrentFrame())
 
         next_arg, next_loc = arg_r.Peek2()
         if next_arg is not None:

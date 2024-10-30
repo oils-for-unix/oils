@@ -17,6 +17,7 @@ from mycpp.mylib import tagswitch, NewDict
 from typing import TYPE_CHECKING, cast, Any, Dict, List
 
 if TYPE_CHECKING:
+    from core import executor
     from display import ui
     from osh.cmd_eval import CommandEvaluator
 
@@ -24,7 +25,7 @@ if TYPE_CHECKING:
 class Shvar(vm._Builtin):
 
     def __init__(self, mem, search_path, cmd_ev):
-        # type: (state.Mem, state.SearchPath, CommandEvaluator) -> None
+        # type: (state.Mem, executor.SearchPath, CommandEvaluator) -> None
         self.mem = mem
         self.search_path = search_path  # to clear PATH
         self.cmd_ev = cmd_ev  # To run blocks

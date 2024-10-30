@@ -23,13 +23,17 @@ from core.error import e_die, e_die_status
 from core import pyos
 from core import pyutil
 from core import state
-from display import ui
 from core import vm
+from display import ui
 from frontend import consts
 from frontend import lexer
+from mycpp import mylib
 from mycpp.mylib import log, print_stderr, tagswitch
+from pylib import os_path
+from pylib import path_stat
 
 import posix_ as posix
+from posix_ import X_OK  # translated directly to C macro
 
 from typing import cast, Dict, List, Tuple, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -41,6 +45,112 @@ if TYPE_CHECKING:
     from core import state
 
 _ = log
+
+
+def LookupExecutable(name, path_dirs, exec_required=True):
+    # type: (str, List[str], bool) -> Optional[str]
+    """
+    Returns either
+    - the name if it's a relative path that exists
+    - the executable name resolved against path_dirs
+    - None if not found
+    """
+    if len(name) == 0:  # special case for "$(true)"
+        return None
+
+    if '/' in name:
+        return name if path_stat.exists(name) else None
+
+    for path_dir in path_dirs:
+        full_path = os_path.join(path_dir, name)
+        if exec_required:
+            found = posix.access(full_path, X_OK)
+        else:
+            found = path_stat.exists(full_path)
+
+        if found:
+            return full_path
+
+    return None
+
+
+class SearchPath(object):
+    """For looking up files in $PATH or ENV.PATH"""
+
+    def __init__(self, mem, exec_opts):
+        # type: (state.Mem, optview.Exec) -> None
+        self.mem = mem
+        # TODO: remove exec_opts
+        self.cache = {}  # type: Dict[str, str]
+
+    def _GetPath(self):
+        # type: () -> List[str]
+
+        # In YSH, we read from ENV.PATH
+        s = state.GetStringFromEnv(self.mem, 'PATH')
+        if s is None:
+            return []  # treat as empty path
+
+        # TODO: Could cache this to avoid split() allocating all the time.
+        return s.split(':')
+
+    def LookupOne(self, name, exec_required=True):
+        # type: (str, bool) -> Optional[str]
+        """
+        Returns the path itself (if relative path), the resolved path, or None.
+        """
+        return LookupExecutable(name,
+                                self._GetPath(),
+                                exec_required=exec_required)
+
+    def LookupReflect(self, name, do_all):
+        # type: (str, bool) -> List[str]
+        """
+        Like LookupOne(), with an option for 'type -a' to return all paths.
+        """
+        if len(name) == 0:  # special case for "$(true)"
+            return []
+
+        if '/' in name:
+            if path_stat.exists(name):
+                return [name]
+            else:
+                return []
+
+        results = []  # type: List[str]
+        for path_dir in self._GetPath():
+            full_path = os_path.join(path_dir, name)
+            if path_stat.exists(full_path):
+                results.append(full_path)
+                if not do_all:
+                    return results
+
+        return results
+
+    def CachedLookup(self, name):
+        # type: (str) -> Optional[str]
+        #log('name %r', name)
+        if name in self.cache:
+            return self.cache[name]
+
+        full_path = self.LookupOne(name)
+        if full_path is not None:
+            self.cache[name] = full_path
+        return full_path
+
+    def MaybeRemoveEntry(self, name):
+        # type: (str) -> None
+        """When the file system changes."""
+        mylib.dict_erase(self.cache, name)
+
+    def ClearCache(self):
+        # type: () -> None
+        """For hash -r."""
+        self.cache.clear()
+
+    def CachedCommands(self):
+        # type: () -> List[str]
+        return self.cache.values()
 
 
 class _ProcessSubFrame(object):
@@ -112,7 +222,7 @@ class ShellExecutor(vm._Executor):
             procs,  # type: state.Procs
             hay_state,  # type: hay_ysh.HayState
             builtins,  # type: Dict[int, vm._Builtin]
-            search_path,  # type: state.SearchPath
+            search_path,  # type: SearchPath
             ext_prog,  # type: process.ExternalProgram
             waiter,  # type: process.Waiter
             tracer,  # type: dev.Tracer
@@ -351,7 +461,7 @@ class ShellExecutor(vm._Executor):
 
         # Resolve argv[0] BEFORE forking.
         if run_flags & USE_DEFAULT_PATH:
-            argv0_path = state.LookupExecutable(arg0, DEFAULT_PATH)
+            argv0_path = LookupExecutable(arg0, DEFAULT_PATH)
         else:
             argv0_path = self.search_path.CachedLookup(arg0)
         if argv0_path is None:

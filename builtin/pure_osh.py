@@ -31,7 +31,8 @@ from typing import List, Dict, Tuple, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value
     from core import optview
-    from core.state import MutableOpts, Mem, SearchPath
+    from core.state import MutableOpts, Mem
+    from core import executor
     from osh.cmd_eval import CommandEvaluator
 
 _ = log
@@ -360,7 +361,7 @@ class Shopt(vm._Builtin):
 class Hash(vm._Builtin):
 
     def __init__(self, search_path):
-        # type: (SearchPath) -> None
+        # type: (executor.SearchPath) -> None
         self.search_path = search_path
 
     def Run(self, cmd_val):

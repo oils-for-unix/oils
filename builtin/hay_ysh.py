@@ -412,7 +412,7 @@ class HayNode_(vm._Builtin):
                         self.cmd_ev.EvalCommandFrag(lit_block.brace_group)
 
                     # Treat the vars as a Dict
-                    block_attrs = self.mem.TopNamespace()
+                    block_attrs = self.mem.CurrentFrame()
 
                 attrs = NewDict()  # type: Dict[str, value_t]
                 for name, cell in iteritems(block_attrs):

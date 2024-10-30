@@ -137,7 +137,7 @@ class ShellFile(vm._Builtin):
     def __init__(
             self,
             parse_ctx,  # type: ParseContext
-            search_path,  # type: state.SearchPath
+            search_path,  # type: executor.SearchPath
             cmd_ev,  # type: CommandEvaluator
             fd_state,  # type: process.FdState
             tracer,  # type: dev.Tracer
@@ -525,7 +525,7 @@ class Command(vm._Builtin):
             shell_ex,  # type: vm._Executor
             funcs,  # type: state.Procs
             aliases,  # type: Dict[str, str]
-            search_path,  # type: state.SearchPath
+            search_path,  # type: executor.SearchPath
     ):
         # type: (...) -> None
         self.shell_ex = shell_ex
@@ -736,7 +736,7 @@ def _ResolveName(
         name,  # type: str
         procs,  # type: state.Procs
         aliases,  # type: Dict[str, str]
-        search_path,  # type: state.SearchPath
+        search_path,  # type: executor.SearchPath
         do_all,  # type: bool
 ):
     # type: (...) -> List[Tuple[str, str, Optional[str]]]
@@ -796,7 +796,7 @@ class Type(vm._Builtin):
             self,
             funcs,  # type: state.Procs
             aliases,  # type: Dict[str, str]
-            search_path,  # type: state.SearchPath
+            search_path,  # type: executor.SearchPath
             errfmt,  # type: ui.ErrorFormatter
     ):
         # type: (...) -> None
