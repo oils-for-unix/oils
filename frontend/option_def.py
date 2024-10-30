@@ -137,7 +137,7 @@ _UPGRADE_RUNTIME_OPTS = [
 # checking this.
 
 _YSH_RUNTIME_OPTS = [
-    # ('no_copy_env', False),  # don't initialize or use exported variables
+    # ('no_exported', False),  # don't initialize or use exported variables
     ('simple_echo', False),  # echo takes 0 or 1 arguments
     ('simple_eval_builtin', False),  # eval takes exactly 1 argument
 
@@ -325,7 +325,7 @@ def _Init(opt_def):
     # Options that enable YSH features
     #
 
-    opt_def.Add('no_copy_env')  # TODO: move this
+    opt_def.Add('no_exported')  # TODO: move this
     for name in _UPGRADE_PARSE_OPTS:
         opt_def.Add(name, groups=['ysh:upgrade', 'ysh:all'])
     # shopt -s simple_word_eval, etc.

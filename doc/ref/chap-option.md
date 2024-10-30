@@ -190,7 +190,7 @@ Details on each option:
       xtrace_rich             Hierarchical and process tracing
       xtrace_details (-u)     Disable most tracing with +
       dashglob (-u)           Disabled to avoid files like -rf
-      no_copy_env             Don't copy environ in to exported (-x) vars
+      no_exported             Environ doesn't correspond to exported (-x) vars
 
 
 <h3 id="ysh:all">ysh:all</h3>

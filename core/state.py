@@ -106,6 +106,7 @@ class SearchPath(object):
     def _GetPath(self):
         # type: () -> List[str]
 
+        # In YSH, we read from ENV.PATH
         s = GetStringFromEnv(self.mem, 'PATH')
         if s is None:
             return []  # treat as empty path
@@ -854,7 +855,7 @@ def CopyVarsFromEnv(exec_opts, environ, mem):
     # type: (optview.Exec, Dict[str, str], Mem) -> None
 
     # POSIX shell behavior: env vars become exported global vars
-    if not exec_opts.no_copy_env():
+    if not exec_opts.no_exported():
         # This is the way dash and bash work -- at startup, they turn everything in
         # 'environ' variable into shell variables.  Bash has an export_env
         # variable.  Dash has a loop through environ in init.c
@@ -2574,9 +2575,10 @@ class Mem(object):
 
     def GetEnv(self):
         # type: () -> Dict[str, str]
-        if self.exec_opts.no_copy_env():
-            #if 1:
-            # TODO: env dict
+
+        # TODO: ysh:upgrade can have both of these behaviors
+
+        if self.exec_opts.no_exported():  # Read from ENV dict
             result = {}  # type: Dict[str, str]
             for name, val in iteritems(self.env_dict):
                 if val.tag() != value_e.Str:

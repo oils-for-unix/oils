@@ -38,9 +38,11 @@ OSH:
 YSH:
 
 - [ENV](chap-special-var.html#ENV)
-- `[simple-command][]` - for `NAME=val` env
-  bindings
+- `[simple-command][]` - for `NAME=val` env bindings
   - TODO: should we have a `envFromDict()` function that goes with `env -i`?
+- [Options](chap-option.html):
+  - `shopt --unset no_exported`
+  - `shopt --set env_obj`
 
 OSH:
 
