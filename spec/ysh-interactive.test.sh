@@ -17,10 +17,10 @@ hello
 
 #### YSH_HISTFILE
 
-export YSH_HISTFILE=myhist
+#export YSH_HISTFILE=myhist
 
 # TODO: HISTFILE/YSH_HISTFILE should be looked up in ENV
-#setglobal ENV.YSH_HISTFILE = 'myhist'
+setglobal ENV.YSH_HISTFILE = 'myhist'
 
 rm -f myhist
 

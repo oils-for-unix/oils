@@ -3,14 +3,16 @@
 #### default prompt doesn't confuse OSH and YSH
 
 # Special ysh prefix if PS1 is set
-PS1='\$ ' $[ENV.SH] -i -c 'echo "[$PS1]"'
+setglobal ENV.PS1 = r'\$ ' 
+$[ENV.SH] -i -c 'echo "/$[ENV.PS1]/"'
+call ENV->erase('PS1')
 
 # No prefix if it's not set, since we already have \s for YSH
-$[ENV.SH] -i -c 'echo "[$PS1]"'
+$[ENV.SH] -i -c 'echo "/$[ENV.PS1]/"'
 
 ## STDOUT:
-[ysh \$ ]
-[\s-\v\$ ]
+/ysh \$ /
+/\s-\v\$ /
 ## END
 
 #### promptVal() with various values
@@ -56,7 +58,7 @@ x=<Error: \/ is invalid or unimplemented in $PS1>
 
 #### ysh respects PS1
 
-export PS1='myprompt\$ '
+setglobal ENV.PS1 = r'myprompt\$ '
 echo 'echo hi' | $[ENV.SH] -i
 
 ## STDOUT:

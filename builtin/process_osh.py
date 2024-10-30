@@ -201,7 +201,11 @@ class Exec(vm._Builtin):
             self.fd_state.MakePermanent()
             return 0
 
-        environ = self.mem.GetExported()
+        environ = self.mem.GetEnv()
+        if 0:
+            log('E %r', environ)
+            log('E %r', environ)
+            log('ZZ %r', environ.get('ZZ'))
         i = arg_r.i
         cmd = cmd_val.argv[i]
         argv0_path = self.search_path.CachedLookup(cmd)

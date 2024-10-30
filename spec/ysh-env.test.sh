@@ -1,4 +1,4 @@
-## oils_failures_allowed: 4
+## oils_failures_allowed: 6
 
 #### Can read from ENV Dict
 shopt -s ysh:upgrade
@@ -120,4 +120,20 @@ echo $[ENV.HOME]
 #echo ~bob/
 
 ## STDOUT:
+## END
+
+#### exec builtin respects ENV
+
+shopt --set ysh:upgrade
+
+#export ZZ=zzz
+setglobal ENV.ZZ = 'zz'
+
+env sh -c 'echo child ZZ=$ZZ'
+
+exec env sh -c 'echo exec ZZ=$ZZ'
+
+## STDOUT:
+child ZZ=zz
+exec ZZ=zz
 ## END

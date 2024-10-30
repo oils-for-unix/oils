@@ -308,7 +308,7 @@ class Evaluator(object):
                     return _ERROR_FMT % msg
 
         # Now try evaluating $PS1
-        ps1_val = self.mem.GetValue('PS1')
+        ps1_val = state.GetStringFromEnv2(self.mem, 'PS1')
         return self.EvalPrompt(ps1_val)
 
 

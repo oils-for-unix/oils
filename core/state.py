@@ -945,25 +945,34 @@ def InitInteractive(mem, lang):
     # type: (Mem, str) -> None
     """Initialization that's only done in the interactive/headless shell."""
 
-    # PS1 is set, and it's YSH, then prepend 'ysh' to it to eliminate confusion
-    ps1_val = mem.GetValue('PS1')
-    with tagswitch(ps1_val) as case:
-        if case(value_e.Undef):
-            # Same default PS1 as bash
-            SetGlobalString(mem, 'PS1', r'\s-\v\$ ')
+    ps1_str = GetStringFromEnv(mem, 'PS1')
+    if ps1_str is None:
+        SetStringInEnv(mem, 'PS1', r'\s-\v\$ ')
+    else:
+        if lang == 'ysh':
+            SetStringInEnv(mem, 'PS1', 'ysh ' + ps1_str)
 
-        elif case(value_e.Str):
-            # Hack so we don't confuse osh and ysh, but we still respect the
-            # PS1.
+    # Old logic:
+    if 0:
+        # PS1 is set, and it's YSH, then prepend 'ysh' to it to eliminate confusion
+        ps1_val = mem.GetValue('PS1')
+        with tagswitch(ps1_val) as case:
+            if case(value_e.Undef):
+                # Same default PS1 as bash
+                SetGlobalString(mem, 'PS1', r'\s-\v\$ ')
 
-            # The user can disable this with
-            #
-            # func renderPrompt() {
-            #   return ("${PS1@P}")
-            # }
-            if lang == 'ysh':
-                user_setting = cast(value.Str, ps1_val).s
-                SetGlobalString(mem, 'PS1', 'ysh ' + user_setting)
+            elif case(value_e.Str):
+                # Hack so we don't confuse osh and ysh, but we still respect the
+                # PS1.
+
+                # The user can disable this with
+                #
+                # func renderPrompt() {
+                #   return ("${PS1@P}")
+                # }
+                if lang == 'ysh':
+                    user_setting = cast(value.Str, ps1_val).s
+                    SetGlobalString(mem, 'PS1', 'ysh ' + user_setting)
 
 
 class ctx_FuncCall(object):
@@ -1849,8 +1858,6 @@ class Mem(object):
 
     def MaybeInitEnvDict(self, environ):
         # type: (Dict[str, str]) -> None
-        """
-        """
         if self.did_ysh_env:
             return
 
@@ -2575,10 +2582,11 @@ class Mem(object):
 
     def GetEnv(self):
         # type: () -> Dict[str, str]
-
+        """
+        Get the environment that should be used for launching processes.
+        """
         # TODO: ysh:upgrade can have both of these behaviors
-
-        if self.exec_opts.no_exported():  # Read from ENV dict
+        if self.exec_opts.env_obj():  # Read from ENV dict
             result = {}  # type: Dict[str, str]
             for name, val in iteritems(self.env_dict):
                 if val.tag() != value_e.Str:
@@ -2953,21 +2961,27 @@ def SetStringInEnv(mem, var_name, s):
 #
 
 
-def GetStringFromEnv(mem, name):
-    # type: (Mem, str) -> Optional[str]
-
+def GetStringFromEnv2(mem, name):
+    # type: (Mem, str) -> value_t
+    """
+    Used by EvalFirstPrompt() for PS1
+    """
     # This condition should work because shopt --set ysh:upgrade initializes
     # the ENV dict.
     if mem.exec_opts.env_obj():  # e.g. $[ENV.PATH]
         val = mem.env_dict.get(name)
         if val is None:
-            return None
+            return value.Undef
     else:  # e.g. $PATH
         val = mem.GetValue(name)
+    return val
 
+
+def GetStringFromEnv(mem, name):
+    # type: (Mem, str) -> Optional[str]
+    val = GetStringFromEnv2(mem, name)
     if val.tag() != value_e.Str:
         return None
-
     return cast(value.Str, val).s
 
 
