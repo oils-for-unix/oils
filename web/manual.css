@@ -33,6 +33,17 @@ h3 {
   padding-top: 1em;  /* separate sections */
 }
 
+hr {
+  border: none;
+  height: 1px;
+  background-color: #BBB;
+
+  /* align with surrounding text, add space */
+  margin-left: 2em;
+  margin-top: 2em;
+  margin-bottom: 2em;
+}
+
 /* inline code 
  *
  * BUG FIX: Selector is 'p code' and not 'code' because markdown generates
