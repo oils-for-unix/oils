@@ -42,7 +42,6 @@ from typing import Tuple, List, Dict, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.option_asdl import option_t
     from core import alloc
-    from core import sh_init
     from osh import sh_expr_eval
 
 _ = log
