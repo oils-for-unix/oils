@@ -42,6 +42,7 @@ from typing import Tuple, List, Dict, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.option_asdl import option_t
     from core import alloc
+    from core import sh_init
     from osh import sh_expr_eval
 
 _ = log
@@ -1136,8 +1137,14 @@ class Mem(object):
     Modules: cmd_eval, word_eval, expr_eval, completion
     """
 
-    def __init__(self, dollar0, argv, arena, debug_stack, env_dict=None):
-        # type: (str, List[str], alloc.Arena, List[debug_frame_t], Dict[str, value_t]) -> None
+    def __init__(self,
+                 dollar0,
+                 argv,
+                 arena,
+                 debug_stack,
+                 env_dict,
+                 defaults=None):
+        # type: (str, List[str], alloc.Arena, List[debug_frame_t], Dict[str, value_t], Dict[str, value_t]) -> None
         """
         Args:
           arena: currently unused
@@ -1161,10 +1168,12 @@ class Mem(object):
         # BASH_LINENO.
         self.debug_stack = debug_stack
 
-        if env_dict is None:  # for unit tests only
-            self.env_dict = NewDict()  # type: Dict[str, value_t]
+        self.env_dict = env_dict
+
+        if defaults is None:  # for unit tests only
+            self.defaults = NewDict()  # type: Dict[str, value_t]
         else:
-            self.env_dict = env_dict
+            self.defaults = defaults
 
         self.pwd = None  # type: Optional[str]
         self.seconds_start = time_.time()
@@ -1211,6 +1220,9 @@ class Mem(object):
         self.builtins['__builtins__'] = builtins_module
 
         self.did_ysh_env = False  # only initialize ENV once per process
+
+        from core import sh_init
+        self.env_config = sh_init.EnvConfig(self, defaults)
 
     def __repr__(self):
         # type: () -> str
@@ -2650,9 +2662,9 @@ def ExportGlobalString(mem, name, s):
                  flags=SetExport)
 
 
+# TODO: remove in favor of EnvConfig
 def SetStringInEnv(mem, var_name, s):
     # type: (Mem, str, str) -> None
-
     if mem.exec_opts.env_obj():  # e.g. ENV.YSH_HISTFILE
         mem.env_dict[var_name] = value.Str(s)
     else:  # e.g. $YSH_HISTFILE
@@ -2662,30 +2674,6 @@ def SetStringInEnv(mem, var_name, s):
 #
 # Wrappers to Get Variables
 #
-
-
-def GetStringFromEnv2(mem, name):
-    # type: (Mem, str) -> value_t
-    """
-    Used by EvalFirstPrompt() for PS1
-    """
-    # This condition should work because shopt --set ysh:upgrade initializes
-    # the ENV dict.
-    if mem.exec_opts.env_obj():  # e.g. $[ENV.PATH]
-        val = mem.env_dict.get(name)
-        if val is None:
-            return value.Undef
-    else:  # e.g. $PATH
-        val = mem.GetValue(name)
-    return val
-
-
-def GetStringFromEnv(mem, name):
-    # type: (Mem, str) -> Optional[str]
-    val = GetStringFromEnv2(mem, name)
-    if val.tag() != value_e.Str:
-        return None
-    return cast(value.Str, val).s
 
 
 def DynamicGetVar(mem, name, which_scopes):

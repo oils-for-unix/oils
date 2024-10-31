@@ -4,15 +4,15 @@
 
 # Special ysh prefix if PS1 is set
 setglobal ENV.PS1 = r'\$ ' 
-$[ENV.SH] -i -c 'echo "/$[ENV.PS1]/"'
+$[ENV.SH] -i -c 'echo "/$[get(ENV, "PS1")]/  /$[get(__defaults__, "PS1")]/"'
 call ENV->erase('PS1')
 
 # No prefix if it's not set, since we already have \s for YSH
-$[ENV.SH] -i -c 'echo "/$[ENV.PS1]/"'
+$[ENV.SH] -i -c 'echo "/$[get(ENV, "PS1")]/  /$[get(__defaults__, "PS1")]/"'
 
 ## STDOUT:
-/ysh \$ /
-/\s-\v\$ /
+/ysh \$ /  /null/
+/\s-\v\$ /  /null/
 ## END
 
 #### promptVal() with various values

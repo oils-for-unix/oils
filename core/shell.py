@@ -300,11 +300,13 @@ def Main(
     arg_r.Next()
 
     env_dict = NewDict()  # type: Dict[str, value_t]
+    defaults = NewDict()  # type: Dict[str, value_t]
     mem = state.Mem(dollar0,
                     arg_r.Rest(),
                     arena,
                     debug_stack,
-                    env_dict=env_dict)
+                    env_dict,
+                    defaults=defaults)
 
     opt_hook = ShellOptHook(readline)
     # Note: only MutableOpts needs mem, so it's not a true circular dep.
@@ -321,7 +323,7 @@ def Main(
                                  attrs.shopt_changes)
 
     version_str = pyutil.GetVersion(loader)
-    sh_init.InitBuiltins(mem, version_str)
+    sh_init.InitBuiltins(mem, version_str, defaults)
     sh_init.InitDefaultVars(mem)
 
     sh_init.CopyVarsFromEnv(exec_opts, environ, mem)

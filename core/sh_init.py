@@ -1,14 +1,14 @@
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import scope_e
-from _devbuild.gen.value_asdl import value, value_e
+from _devbuild.gen.value_asdl import value, value_e, value_t
 from core.error import e_die
 from core import pyos
 from core import pyutil
 from core import optview
 from core import state
 from frontend import location
-from mycpp.mylib import tagswitch, iteritems
+from mycpp.mylib import tagswitch, iteritems, log
 from osh import split
 from pylib import os_path
 
@@ -18,6 +18,8 @@ import posix_ as posix
 from typing import Dict, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen import arg_types
+
+_ = log
 
 
 class EnvConfig(object):
@@ -56,16 +58,50 @@ class EnvConfig(object):
       - io.uid() io.euid() io.ppid()
     """
 
-    def __init__(self, mem):
-        # type: (state.Mem) -> None
+    def __init__(self, mem, defaults):
+        # type: (state.Mem, Dict[str, value_t]) -> None
 
         # mutates env_dict
         self.mem = mem
+        self.exec_opts = mem.exec_opts
+        self.defaults = defaults
 
     def Define(self, var_name, default_s):
         # type: (str, str) -> None
         """
         """
+
+    def GetVal(self, var_name):
+        # type: (str) -> value_t
+        """
+        YSH: Look at ENV.PATH, and then __defaults__.PATH
+        OSH: Look at $PATH
+        """
+        if self.mem.exec_opts.env_obj():  # e.g. $[ENV.PATH]
+
+            val = self.mem.env_dict.get(var_name)
+            if val is None:
+                val = self.defaults.get(var_name)
+
+            if val is None:
+                return value.Undef
+
+            #log('**ENV obj val = %s', val)
+
+        else:  # e.g. $PATH
+            val = self.mem.GetValue(var_name)
+
+        return val
+
+    def Get(self, var_name):
+        # type: (str) -> Optional[str]
+        """
+        Like GetVal(), but returns a strin, or None
+        """
+        val = self.GetVal(var_name)
+        if val.tag() != value_e.Str:
+            return None
+        return cast(value.Str, val).s
 
 
 class ShellFiles(object):
@@ -191,11 +227,19 @@ def InitVarsAfterEnv(mem):
     # type: (state.Mem) -> None
 
     # If PATH SHELLOPTS PWD are not in environ, then initialize them.
-    val = mem.GetValue('PATH')
-    if val.tag() == value_e.Undef:
-        # Setting PATH to these two dirs match what zsh and mksh do.  bash and
-        # dash add {,/usr/,/usr/local}/{bin,sbin}
-        state.SetGlobalString(mem, 'PATH', '/bin:/usr/bin')
+    if 0:
+        s = mem.env_config.Get('PATH')
+        if s is None:
+            # Setting PATH to these two dirs match what zsh and mksh do.  bash and
+            # dash add {,/usr/,/usr/local}/{bin,sbin}
+            state.SetStringInEnv(mem, 'PATH', '/bin:/usr/bin')
+
+    if 1:
+        val = mem.GetValue('PATH')
+        if val.tag() == value_e.Undef:
+            # Setting PATH to these two dirs match what zsh and mksh do.  bash and
+            # dash add {,/usr/,/usr/local}/{bin,sbin}
+            state.SetGlobalString(mem, 'PATH', '/bin:/usr/bin')
 
     val = mem.GetValue('SHELLOPTS')
     if val.tag() == value_e.Undef:
@@ -226,42 +270,36 @@ def InitVarsAfterEnv(mem):
     mem.SetPwd(pwd)
 
 
-def InitBuiltins(mem, version_str):
-    # type: (state.Mem, str) -> None
-    """Initialize memory with shell defaults.
-
-    Other interpreters could have different builtin variables.
-    """
-    # TODO: REMOVE this legacy.  ble.sh checks it!
-    mem.builtins['OIL_VERSION'] = value.Str(version_str)
-
-    mem.builtins['OILS_VERSION'] = value.Str(version_str)
-
-    # The source builtin understands '///' to mean "relative to embedded stdlib"
-    mem.builtins['LIB_OSH'] = value.Str('///osh')
-    mem.builtins['LIB_YSH'] = value.Str('///ysh')
-
-    # - C spells it NAN
-    # - JavaScript spells it NaN
-    # - Python 2 has float('nan'), while Python 3 has math.nan.
-    #
-    # - libc prints the strings 'nan' and 'inf'
-    # - Python 3 prints the strings 'nan' and 'inf'
-    # - JavaScript prints 'NaN' and 'Infinity', which is more stylized
-    mem.builtins['NAN'] = value.Float(pyutil.nan())
-    mem.builtins['INFINITY'] = value.Float(pyutil.infinity())
-
-
 def InitInteractive(mem, sh_files, lang):
     # type: (state.Mem, ShellFiles, str) -> None
     """Initialization that's only done in the interactive/headless shell."""
 
-    ps1_str = state.GetStringFromEnv(mem, 'PS1')
+    ps1_str = mem.env_config.Get('PS1')
     if ps1_str is None:
+        # TODO: I don't want to export this default
         state.SetStringInEnv(mem, 'PS1', r'\s-\v\$ ')
     else:
         if lang == 'ysh':
             state.SetStringInEnv(mem, 'PS1', 'ysh ' + ps1_str)
+
+    if 0:
+        ps1_str = state.GetStringFromEnv(mem, 'PS1')
+        if ps1_str is None:
+            state.SetStringInEnv(mem, 'PS1', r'\s-\v\$ ')
+        else:
+            if lang == 'ysh':
+                state.SetStringInEnv(mem, 'PS1', 'ysh ' + ps1_str)
+
+    if 0:
+        mem.env_config.defaults['PS1'] = value.Str(r'\s-\v\$ ')
+        ps1_str = mem.env_config.Get('PS1')
+        #log('ps1 %r', ps1_str)
+        if ps1_str is not None:
+            if lang == 'ysh':  # YSH prepends 'ysh ' to PS1
+                #state.SetStringInEnv(mem, 'PS1', 'ysh ' + ps1_str)
+                #mem.env_config.defaults['PS1'] = value.Str('ysh ' + ps1_str)
+                mem.env_dict['PS1'] = value.Str('ysh ' + ps1_str)
+                #log('YSH %r', ps1_str)
 
     hist_var = sh_files.HistVar()
     hist_val = mem.GetValue(hist_var)
@@ -301,3 +339,31 @@ def InitInteractive(mem, sh_files, lang):
                 if lang == 'ysh':
                     user_setting = cast(value.Str, ps1_val).s
                     state.SetGlobalString(mem, 'PS1', 'ysh ' + user_setting)
+
+
+def InitBuiltins(mem, version_str, defaults):
+    # type: (state.Mem, str, Dict[str, value_t]) -> None
+    """Initialize memory with shell defaults.
+
+    Other interpreters could have different builtin variables.
+    """
+    # TODO: REMOVE this legacy.  ble.sh checks it!
+    mem.builtins['OIL_VERSION'] = value.Str(version_str)
+
+    mem.builtins['OILS_VERSION'] = value.Str(version_str)
+
+    mem.builtins['__defaults__'] = value.Dict(defaults)
+
+    # The source builtin understands '///' to mean "relative to embedded stdlib"
+    mem.builtins['LIB_OSH'] = value.Str('///osh')
+    mem.builtins['LIB_YSH'] = value.Str('///ysh')
+
+    # - C spells it NAN
+    # - JavaScript spells it NaN
+    # - Python 2 has float('nan'), while Python 3 has math.nan.
+    #
+    # - libc prints the strings 'nan' and 'inf'
+    # - Python 3 prints the strings 'nan' and 'inf'
+    # - JavaScript prints 'NaN' and 'Infinity', which is more stylized
+    mem.builtins['NAN'] = value.Float(pyutil.nan())
+    mem.builtins['INFINITY'] = value.Float(pyutil.infinity())

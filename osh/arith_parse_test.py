@@ -35,7 +35,7 @@ def ParseAndEval(code_str):
 
     print('node:', anode)
 
-    mem = state.Mem('', [], arena, [])
+    mem = state.Mem('', [], arena, [], {})
     parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
     mem.exec_opts = exec_opts
     #state.InitMem(mem, {}, '0.1')

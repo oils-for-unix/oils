@@ -25,7 +25,7 @@ def _InitMem():
     length = 1
     line_id = arena.AddLine(1, 'foo')
     arena.NewToken(-1, col, length, line_id)
-    mem = state.Mem('', [], arena, [])
+    mem = state.Mem('', [], arena, [], {})
 
     parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
 
@@ -340,7 +340,7 @@ class MemTest(unittest.TestCase):
         self.assertEqual(['a', 'b'], mem.GetArgv())
 
     def testArgv2(self):
-        mem = state.Mem('', ['x', 'y'], None, [])
+        mem = state.Mem('', ['x', 'y'], None, [], {})
 
         mem.Shift(1)
         self.assertEqual(['y'], mem.GetArgv())

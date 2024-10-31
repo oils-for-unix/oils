@@ -87,7 +87,7 @@ class SearchPath(object):
         # type: () -> List[str]
 
         # In YSH, we read from ENV.PATH
-        s = state.GetStringFromEnv(self.mem, 'PATH')
+        s = self.mem.env_config.Get('PATH')
         if s is None:
             return []  # treat as empty path
 

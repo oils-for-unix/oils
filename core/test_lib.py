@@ -165,7 +165,7 @@ def InitLexer(s, arena):
 
 def InitWordEvaluator(exec_opts=None):
     arena = MakeArena('<InitWordEvaluator>')
-    mem = state.Mem('', [], arena, [])
+    mem = state.Mem('', [], arena, [], {})
 
     if exec_opts is None:
         parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
@@ -201,7 +201,7 @@ def InitCommandEvaluator(parse_ctx=None,
     else:
         parse_ctx = InitParseContext()
 
-    mem = mem or state.Mem('', [], arena, [])
+    mem = mem or state.Mem('', [], arena, [], {})
     exec_opts = optview.Exec(opt0_array, opt_stacks)
     mutable_opts = state.MutableOpts(mem, {}, opt0_array, opt_stacks, None)
     mem.exec_opts = exec_opts
@@ -321,7 +321,7 @@ def EvalCode(code_str, parse_ctx, comp_lookup=None, mem=None, aliases=None):
     errfmt = ui.ErrorFormatter()
 
     comp_lookup = comp_lookup or completion.Lookup()
-    mem = mem or state.Mem('', [], arena, [])
+    mem = mem or state.Mem('', [], arena, [], {})
     parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
     mem.exec_opts = exec_opts
 
@@ -352,7 +352,7 @@ def InitParseContext(arena=None,
     if aliases is None:
         aliases = {}
 
-    mem = state.Mem('', [], arena, [])
+    mem = state.Mem('', [], arena, [], {})
     if parse_opts is None:
         parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
 
@@ -368,7 +368,7 @@ def InitParseContext(arena=None,
 def InitWordParser(word_str, oil_at=False, arena=None):
     arena = arena or MakeArena('<test_lib>')
 
-    mem = state.Mem('', [], arena, [])
+    mem = state.Mem('', [], arena, [], {})
     parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
 
     # CUSTOM SETTING
