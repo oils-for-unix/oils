@@ -1,4 +1,4 @@
-## oils_failures_allowed: 6
+## oils_failures_allowed: 4
 
 #### Can read from ENV Dict
 shopt -s ysh:upgrade
@@ -54,17 +54,17 @@ shopt -s ysh:upgrade
 
 setglobal ENV.PYTHONPATH = 'foo'
 
-pp test_ (ENV)
-
+#pp test_ (ENV)
 #export PYTHONPATH=zz
 
 # execute POSIX shell
 sh -c 'echo pythonpath=$PYTHONPATH'
 
 ## STDOUT:
+pythonpath=foo
 ## END
 
-#### export builtin still works
+#### export builtin is disabled, in favor of setglobal
 shopt -s ysh:upgrade
 
 export PYTHONPATH='foo'

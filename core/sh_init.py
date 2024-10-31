@@ -131,16 +131,17 @@ class ShellFiles(object):
 
         # TODO: In non-strict mode we should try to cast the HISTFILE value to a
         # string following bash's rules
+        if 0:
+            UP_val = self.mem.GetValue(self.HistVar())
+            if UP_val.tag() == value_e.Str:
+                val = cast(value.Str, UP_val)
+                return val.s
+            else:
+                # Note: if HISTFILE is an array, bash will return ${HISTFILE[0]}
+                return None
 
         #return state.GetStringFromEnv(self.mem, self.HistVar())
-
-        UP_val = self.mem.GetValue(self.HistVar())
-        if UP_val.tag() == value_e.Str:
-            val = cast(value.Str, UP_val)
-            return val.s
-        else:
-            # Note: if HISTFILE is an array, bash will return ${HISTFILE[0]}
-            return None
+        return self.mem.env_config.Get(self.HistVar())
 
 
 def GetWorkingDir():
@@ -301,6 +302,7 @@ def InitInteractive(mem, sh_files, lang):
                 mem.env_dict['PS1'] = value.Str('ysh ' + ps1_str)
                 #log('YSH %r', ps1_str)
 
+    # TODO: use env_config
     hist_var = sh_files.HistVar()
     hist_val = mem.GetValue(hist_var)
     if hist_val.tag() == value_e.Undef:
