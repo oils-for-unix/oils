@@ -8,7 +8,11 @@
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
 
-YSH=bin/ysh
+# TODO: byo-server.sh uses $BYO_COMMAND and $BYO_ARG
+# I guess we need a YSH version then?  We could hack it with
+# $(sh -c 'echo $BYO_COMMAND')
+
+YSH='bin/ysh +o no_exported'
 
 test-byo-protocol() {
   return
