@@ -1,4 +1,4 @@
-## oils_failures_allowed: 4
+## oils_failures_allowed: 3
 ## compare_shells: dash bash-4.4 mksh zsh
 
 
@@ -142,10 +142,10 @@ echo path pwd ps4 $?
 echo shellopts $?
 
 # bash doesn't set HOME, mksh and zsh do
-/usr/bin/env -i PYTHONPATH=$PYTHONPATH $sh_prefix $flags -c 'typeset -p HOME PS4' >&2
+/usr/bin/env -i PYTHONPATH=$PYTHONPATH $sh_prefix $flags -c 'typeset -p HOME PS1' >&2
 echo home ps1 $?
 
-# bash doesn't set PS1, mksh and zsh do
+# IFS is set, but not exported
 /usr/bin/env -i PYTHONPATH=$PYTHONPATH $sh_prefix $flags -c 'typeset -p IFS' >&2
 echo ifs $?
 

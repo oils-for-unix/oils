@@ -473,7 +473,6 @@ def Main(
         return 1
 
     sh_files = sh_init.ShellFiles(lang, home_dir, mem, flag)
-    sh_files.InitAfterLoadingEnv()
 
     #
     # Executor and Evaluators (are circularly dependent)
@@ -1019,7 +1018,7 @@ def Main(
     _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
 
     if flag.headless:
-        sh_init.InitInteractive(mem, lang)
+        sh_init.InitInteractive(mem, sh_files, lang)
         mutable_opts.set_redefine_const()
         mutable_opts.set_redefine_source()
 
@@ -1051,7 +1050,7 @@ def Main(
     c_parser = parse_ctx.MakeOshParser(line_reader)
 
     if exec_opts.interactive():
-        sh_init.InitInteractive(mem, lang)
+        sh_init.InitInteractive(mem, sh_files, lang)
         # bash: 'set -o emacs' is the default only in the interactive shell
         mutable_opts.set_emacs()
         mutable_opts.set_redefine_const()

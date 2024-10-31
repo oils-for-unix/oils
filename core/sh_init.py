@@ -45,6 +45,15 @@ class EnvConfig(object):
     # Custom logic for PWD
     if not env_config.Exists('PWD'):
         pass
+
+    More features:
+
+    - On-demand BASHPID
+      - io.thisPid() - is BASHPID
+      - io.pid() - is $$
+    - Init-once UID EUID PPID
+      - maybe this should be a separate Funcs class?
+      - io.uid() io.euid() io.ppid()
     """
 
     def __init__(self, mem):
@@ -69,40 +78,27 @@ class ShellFiles(object):
         self.mem = mem
         self.flag = flag
 
-    def _HistVar(self):
+        self.init_done = False
+
+    def HistVar(self):
         # type: () -> str
         return 'HISTFILE' if self.lang == 'osh' else 'YSH_HISTFILE'
 
-    def _DefaultHistoryFile(self):
+    def DefaultHistoryFile(self):
         # type: () -> str
         return os_path.join(self.home_dir,
                             '.local/share/oils/%s_history' % self.lang)
 
-    def InitAfterLoadingEnv(self):
-        # type: () -> None
-
-        hist_var = self._HistVar()
-        if self.mem.GetValue(hist_var).tag() == value_e.Undef:
-            default_val = self._DefaultHistoryFile()
-            # Note: if the directory doesn't exist, GNU readline ignores it
-            # This is like
-            #    HISTFILE=foo
-            #    setglobal HISTFILE = 'foo'
-            # Not like:
-            #    export HISTFILE=foo
-            #    setglobal ENV.HISTFILE = 'foo'
-            #
-            # Note: bash only sets this in interactive shells
-            state.SetGlobalString(self.mem, hist_var, default_val)
-
     def HistoryFile(self):
         # type: () -> Optional[str]
+        assert self.init_done
+
         # TODO: In non-strict mode we should try to cast the HISTFILE value to a
         # string following bash's rules
 
-        #return state.GetStringFromEnv(self.mem, self._HistVar())
+        #return state.GetStringFromEnv(self.mem, self.HistVar())
 
-        UP_val = self.mem.GetValue(self._HistVar())
+        UP_val = self.mem.GetValue(self.HistVar())
         if UP_val.tag() == value_e.Str:
             val = cast(value.Str, UP_val)
             return val.s
@@ -256,8 +252,8 @@ def InitBuiltins(mem, version_str):
     mem.builtins['INFINITY'] = value.Float(pyutil.infinity())
 
 
-def InitInteractive(mem, lang):
-    # type: (state.Mem, str) -> None
+def InitInteractive(mem, sh_files, lang):
+    # type: (state.Mem, ShellFiles, str) -> None
     """Initialization that's only done in the interactive/headless shell."""
 
     ps1_str = state.GetStringFromEnv(mem, 'PS1')
@@ -266,6 +262,23 @@ def InitInteractive(mem, lang):
     else:
         if lang == 'ysh':
             state.SetStringInEnv(mem, 'PS1', 'ysh ' + ps1_str)
+
+    hist_var = sh_files.HistVar()
+    hist_val = mem.GetValue(hist_var)
+    if hist_val.tag() == value_e.Undef:
+        default_val = sh_files.DefaultHistoryFile()
+        # Note: if the directory doesn't exist, GNU readline ignores it
+        # This is like
+        #    HISTFILE=foo
+        #    setglobal HISTFILE = 'foo'
+        # Not like:
+        #    export HISTFILE=foo
+        #    setglobal ENV.HISTFILE = 'foo'
+        #
+        # Note: bash only sets this in interactive shells
+        state.SetGlobalString(mem, hist_var, default_val)
+
+    sh_files.init_done = True  # sanity check before using sh_files
 
     # Old logic:
     if 0:
