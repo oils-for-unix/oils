@@ -211,33 +211,39 @@ def InitVarsAfterEnv(mem):
         # dash add {,/usr/,/usr/local}/{bin,sbin}
         mem.env_config.SetDefault('PATH', '/bin:/usr/bin')
 
-    val = mem.GetValue('SHELLOPTS')
-    if val.tag() == value_e.Undef:
-        # Divergence: bash constructs a string here too, it doesn't just read it
-        state.SetGlobalString(mem, 'SHELLOPTS', '')
-    # It's readonly, even if it's not set
-    mem.SetNamed(location.LName('SHELLOPTS'),
-                 None,
-                 scope_e.GlobalOnly,
-                 flags=state.SetReadOnly)
-    # NOTE: bash also has BASHOPTS
+    if not mem.exec_opts.no_init_globals():
+        # OSH initialization
+        val = mem.GetValue('SHELLOPTS')
+        if val.tag() == value_e.Undef:
+            # Divergence: bash constructs a string here too, it doesn't just read it
+            state.SetGlobalString(mem, 'SHELLOPTS', '')
+        # It's readonly, even if it's not set
+        mem.SetNamed(location.LName('SHELLOPTS'),
+                     None,
+                     scope_e.GlobalOnly,
+                     flags=state.SetReadOnly)
+        # NOTE: bash also has BASHOPTS
 
-    val = mem.GetValue('PWD')
-    if val.tag() == value_e.Undef:
-        state.SetGlobalString(mem, 'PWD', GetWorkingDir())
-    # It's EXPORTED, even if it's not set.  bash and dash both do this:
-    #     env -i -- dash -c env
-    mem.SetNamed(location.LName('PWD'),
-                 None,
-                 scope_e.GlobalOnly,
-                 flags=state.SetExport)
+        val = mem.GetValue('PWD')
+        if val.tag() == value_e.Undef:
+            state.SetGlobalString(mem, 'PWD', GetWorkingDir())
+        # It's EXPORTED, even if it's not set.  bash and dash both do this:
+        #     env -i -- dash -c env
+        mem.SetNamed(location.LName('PWD'),
+                     None,
+                     scope_e.GlobalOnly,
+                     flags=state.SetExport)
 
-    # Set a MUTABLE GLOBAL that's SEPARATE from $PWD.  It's used by the 'pwd'
-    # builtin, and it can't be modified by users.
-    val = mem.GetValue('PWD')
-    assert val.tag() == value_e.Str, val
-    pwd = cast(value.Str, val).s
-    mem.SetPwd(pwd)
+        # Set a MUTABLE GLOBAL that's SEPARATE from $PWD.  It's used by the 'pwd'
+        # builtin, and it can't be modified by users.
+        val = mem.GetValue('PWD')
+        assert val.tag() == value_e.Str, val
+        pwd = cast(value.Str, val).s
+        mem.SetPwd(pwd)
+
+    else:
+        # YSH initialization
+        mem.SetPwd(GetWorkingDir())
 
 
 def InitInteractive(mem, sh_files, lang):

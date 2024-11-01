@@ -518,29 +518,30 @@ class MutableOpts(object):
         unused = _SetOptionNum(opt_name)  # validate it
         self._SetOldOption(opt_name, b)
 
-        UP_val = self.mem.GetValue('SHELLOPTS')
-        assert UP_val.tag() == value_e.Str, UP_val
-        val = cast(value.Str, UP_val)
-        shellopts = val.s
+        if not self.Get(option_i.no_init_globals):
+            UP_val = self.mem.GetValue('SHELLOPTS')
+            assert UP_val.tag() == value_e.Str, UP_val
+            val = cast(value.Str, UP_val)
+            shellopts = val.s
 
-        # Now check if SHELLOPTS needs to be updated.  It may be exported.
-        #
-        # NOTE: It might be better to skip rewriting SEHLLOPTS in the common case
-        # where it is not used.  We could do it lazily upon GET.
+            # Now check if SHELLOPTS needs to be updated.  It may be exported.
+            #
+            # NOTE: It might be better to skip rewriting SEHLLOPTS in the common case
+            # where it is not used.  We could do it lazily upon GET.
 
-        # Also, it would be slightly more efficient to update SHELLOPTS if
-        # settings were batched, Examples:
-        # - set -eu
-        # - shopt -s foo bar
-        if b:
-            if opt_name not in shellopts:
-                new_val = value.Str('%s:%s' % (shellopts, opt_name))
-                self.mem.InternalSetGlobal('SHELLOPTS', new_val)
-        else:
-            if opt_name in shellopts:
-                names = [n for n in shellopts.split(':') if n != opt_name]
-                new_val = value.Str(':'.join(names))
-                self.mem.InternalSetGlobal('SHELLOPTS', new_val)
+            # Also, it would be slightly more efficient to update SHELLOPTS if
+            # settings were batched, Examples:
+            # - set -eu
+            # - shopt -s foo bar
+            if b:
+                if opt_name not in shellopts:
+                    new_val = value.Str('%s:%s' % (shellopts, opt_name))
+                    self.mem.InternalSetGlobal('SHELLOPTS', new_val)
+            else:
+                if opt_name in shellopts:
+                    names = [n for n in shellopts.split(':') if n != opt_name]
+                    new_val = value.Str(':'.join(names))
+                    self.mem.InternalSetGlobal('SHELLOPTS', new_val)
 
     def SetAnyOption(self, opt_name, b, ignore_shopt_not_impl=False):
         # type: (str, bool, bool) -> None
