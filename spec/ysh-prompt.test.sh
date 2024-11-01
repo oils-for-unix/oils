@@ -3,9 +3,11 @@
 #### default prompt doesn't confuse OSH and YSH
 
 # Special ysh prefix if PS1 is set
+
+# TODO: use PS1= temp binding
 setglobal ENV.PS1 = r'\$ ' 
 $[ENV.SH] -i -c 'echo "/$[get(ENV, "PS1")]/  /$[get(__defaults__, "PS1")]/"'
-call ENV->erase('PS1')
+call propView(ENV)->erase('PS1')
 
 # No prefix if it's not set, since we already have \s for YSH
 $[ENV.SH] -i -c 'echo "/$[get(ENV, "PS1")]/  /$[get(__defaults__, "PS1")]/"'

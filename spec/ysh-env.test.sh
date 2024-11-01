@@ -1,6 +1,6 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 
-#### Can read from ENV Dict
+#### Can read from ENV Obj
 shopt -s ysh:upgrade
 
 pp test_ (type(ENV))
@@ -14,7 +14,7 @@ if (ENV.SH ~~ '*osh') {
 #echo SH=$[ENV.SH]
 
 ## STDOUT:
-(Str)   "Dict"
+(Str)   "Obj"
 ok
 ## END
 
@@ -59,6 +59,54 @@ _A=a _B=b env | grep '^_' | sort
 ## STDOUT:
 _A=a
 _B=b
+## END
+
+#### Nested temp bindings
+
+f2() {
+  echo "  f2 AA=$AA BB=$BB"
+  env | egrep 'AA|BB'
+}
+
+f1() {
+  echo "> f1 AA=$AA"
+  AA=aaaa BB=bb f2
+  echo "< f1 AA=$AA"
+}
+
+AA=a f1
+
+#
+# Now with ysh:upgrade
+#
+
+shopt --set ysh:upgrade
+echo
+
+proc p2 {
+  echo "  p2 AA=$[get(ENV, 'AA')] BB=$[get(ENV, 'BB')]"
+  env | egrep 'AA|BB'
+}
+
+proc p1 {
+  echo "> p1 AA=$[get(ENV, 'AA')]"
+  AA=aaaa BB=bb p2
+  echo "< p1 AA=$[get(ENV, 'AA')]"
+}
+
+AA=a p1
+
+#
+# Now with ysh:all
+#
+
+shopt --set ysh:all
+echo
+
+AA=a p1
+
+
+## STDOUT:
 ## END
 
 #### setglobal ENV.PYTHONPATH = 'foo' changes child process state

@@ -1587,8 +1587,8 @@ class Mem(object):
         for name, s in iteritems(environ):
             self.env_dict[name] = value.Str(s)
 
-        self.SetNamed(location.LName('ENV'), value.Dict(self.env_dict),
-                      scope_e.GlobalOnly)
+        env_obj = Obj(None, self.env_dict)
+        self.SetNamed(location.LName('ENV'), env_obj, scope_e.GlobalOnly)
         self.did_ysh_env = True
 
     #

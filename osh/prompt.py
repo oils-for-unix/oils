@@ -177,10 +177,13 @@ class Evaluator(object):
         elif ch == 'w':
             # HOME doesn't have to exist
             home = state.MaybeString(self.mem, 'HOME')
+
             # Shorten /home/andy/mydir -> ~/mydir
+            # Note: could also call sh_init.GetWorkingDir()?
             r = ui.PrettyDir(self.mem.pwd, home)
 
         elif ch == 'W':
+            # Note: could also call sh_init.GetWorkingDir()?
             r = os_path.basename(self.mem.pwd)
 
         else:
