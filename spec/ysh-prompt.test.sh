@@ -25,11 +25,9 @@ var x = io.promptVal('$')
 echo x=$x
 
 var x = io.promptVal('w')
-if (x === PWD) {
-  echo pass
-} else {
-  echo fail
-}
+
+assert [x === ENV.PWD]
+echo pass
 
 ## STDOUT:
 x=$

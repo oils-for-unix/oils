@@ -176,11 +176,10 @@ class Evaluator(object):
 
         elif ch == 'w':
             try:
-                pwd = state.GetString(self.mem, 'PWD')
                 # doesn't have to exist
                 home = state.MaybeString(self.mem, 'HOME')
                 # Shorten to ~/mydir
-                r = ui.PrettyDir(pwd, home)
+                r = ui.PrettyDir(self.mem.pwd, home)
             except error.Runtime as e:
                 r = _ERROR_FMT % e.UserErrorString()
 
