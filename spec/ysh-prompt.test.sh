@@ -12,7 +12,7 @@ $[ENV.SH] -i -c 'echo "/$[get(ENV, "PS1")]/  /$[get(__defaults__, "PS1")]/"'
 
 ## STDOUT:
 /ysh \$ /  /null/
-/\s-\v\$ /  /null/
+/null/  /\s-\v\$ /
 ## END
 
 #### promptVal() with various values

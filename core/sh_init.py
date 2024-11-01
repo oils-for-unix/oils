@@ -277,30 +277,11 @@ def InitInteractive(mem, sh_files, lang):
 
     ps1_str = mem.env_config.Get('PS1')
     if ps1_str is None:
-        # TODO: I don't want to export this default
-        state.SetStringInEnv(mem, 'PS1', r'\s-\v\$ ')
+        mem.env_config.SetDefault('PS1', r'\s-\v\$ ')
     else:
         if lang == 'ysh':
-            state.SetStringInEnv(mem, 'PS1', 'ysh ' + ps1_str)
-
-    if 0:
-        ps1_str = state.GetStringFromEnv(mem, 'PS1')
-        if ps1_str is None:
-            state.SetStringInEnv(mem, 'PS1', r'\s-\v\$ ')
-        else:
-            if lang == 'ysh':
-                state.SetStringInEnv(mem, 'PS1', 'ysh ' + ps1_str)
-
-    if 0:
-        mem.env_config.defaults['PS1'] = value.Str(r'\s-\v\$ ')
-        ps1_str = mem.env_config.Get('PS1')
-        #log('ps1 %r', ps1_str)
-        if ps1_str is not None:
-            if lang == 'ysh':  # YSH prepends 'ysh ' to PS1
-                #state.SetStringInEnv(mem, 'PS1', 'ysh ' + ps1_str)
-                #mem.env_config.defaults['PS1'] = value.Str('ysh ' + ps1_str)
-                mem.env_dict['PS1'] = value.Str('ysh ' + ps1_str)
-                #log('YSH %r', ps1_str)
+            # If this is bin/ysh, and we got a plain PS1, then prepend 'ysh ' to PS1
+            mem.env_dict['PS1'] = value.Str('ysh ' + ps1_str)
 
     # TODO: use env_config
     hist_var = sh_files.HistVar()
