@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 #### Can read from ENV Obj
 shopt -s ysh:upgrade
@@ -264,8 +264,46 @@ exec ZZ=zz
 ## END
 
 #### setglobal quirk - do we need setenv?
+shopt --set ysh:all
 
-echo TDOO
+proc p {
+  # quirk: MOST visible Dict is mutated
+  setglobal ENV.perm = 'perm'
+}  
+
+FOO=bar p
+
+# quirk: that Dict is gone
+# we could add 'setenv' to work around this
+pp test_ (get(ENV, 'perm'))
+
+p
+pp test_ (get(ENV, 'perm'))
+
 
 ## STDOUT:
+(Null)   null
+(Str)   "perm"
+## END
+
+#### try to corrupt ENV var from user code
+shopt --set ysh:all
+
+setglobal ENV.AA = 'aa'
+
+proc p {
+  # this doesn't do anything, because Mem still have self.env_object
+  setglobal ENV = null
+
+  # TODO: there could be other ways to mess it up, and hit e_die()
+  # Right now, it's not possible to mutate 'prototype'.  But if so we could
+  # mess up ENV.
+}  
+
+FOO=bar p
+
+= ENV.AA
+
+## STDOUT:
+(Str)   'aa'
 ## END

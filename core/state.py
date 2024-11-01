@@ -1553,8 +1553,9 @@ class Mem(object):
         """Pop a Dict of bindings."""
         self.env_object = self.env_object.prototype
         if self.env_object is None:
-            # TODO: Better error, or users shouldn't be able to mutate it
-            e_die('PopEnvObj: ENV.prototype is null', loc.Missing)
+            # Note: there isn't a way to hit this now, but let's be defensive.
+            # See test case in spec/ysh-env.test.sh.
+            e_die('PopEnvObj: env.prototype is null', loc.Missing)
 
         self._BindEnvObj()
 
