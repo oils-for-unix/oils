@@ -103,6 +103,13 @@ class EnvConfig(object):
             return None
         return cast(value.Str, val).s
 
+    def SetDefault(self, var_name, s):
+        # type: (str, str) -> None
+        if self.mem.exec_opts.env_obj():  # e.g. $[ENV.PATH]
+            self.mem.defaults[var_name] = value.Str(s)
+        else:
+            state.SetGlobalString(self.mem, var_name, s)
+
 
 class ShellFiles(object):
 
@@ -228,19 +235,12 @@ def InitVarsAfterEnv(mem):
     # type: (state.Mem) -> None
 
     # If PATH SHELLOPTS PWD are not in environ, then initialize them.
-    if 0:
-        s = mem.env_config.Get('PATH')
-        if s is None:
-            # Setting PATH to these two dirs match what zsh and mksh do.  bash and
-            # dash add {,/usr/,/usr/local}/{bin,sbin}
-            state.SetStringInEnv(mem, 'PATH', '/bin:/usr/bin')
-
-    if 1:
-        val = mem.GetValue('PATH')
-        if val.tag() == value_e.Undef:
-            # Setting PATH to these two dirs match what zsh and mksh do.  bash and
-            # dash add {,/usr/,/usr/local}/{bin,sbin}
-            state.SetGlobalString(mem, 'PATH', '/bin:/usr/bin')
+    s = mem.env_config.Get('PATH')
+    if s is None:
+        # Setting PATH to these two dirs match what zsh and mksh do.  bash and
+        # dash add {,/usr/,/usr/local}/{bin,sbin}
+        mem.env_config.SetDefault('PATH', '/bin:/usr/bin')
+        #state.SetStringInEnv(mem, 'PATH', '/bin:/usr/bin')
 
     val = mem.GetValue('SHELLOPTS')
     if val.tag() == value_e.Undef:
