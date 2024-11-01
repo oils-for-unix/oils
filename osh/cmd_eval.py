@@ -88,7 +88,7 @@ from osh import word_eval
 from mycpp import iolib
 from mycpp import mops
 from mycpp import mylib
-from mycpp.mylib import log, probe, switch, tagswitch
+from mycpp.mylib import log, probe, switch, tagswitch, NewDict
 from ysh import expr_eval
 from ysh import func_proc
 from ysh import val_ops
@@ -861,15 +861,27 @@ class CommandEvaluator(object):
 
         # NOTE: RunSimpleCommand may never return
         if len(node.more_env):  # I think this guard is necessary?
-            is_other_special = False  # TODO: There are other special builtins too!
-            if cmd_val.tag() == cmd_value_e.Assign or is_other_special:
-                # Special builtins have their temp env persisted.
-                self._EvalTempEnv(node.more_env, 0)
-                status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
-            else:
-                with state.ctx_Temp(self.mem):
-                    self._EvalTempEnv(node.more_env, state.SetExport)
+            if self.exec_opts.env_obj():  # YSH
+                bindings = NewDict()  # type: Dict[str, value_t]
+                with state.ctx_EnclosedFrame(self.mem, self.mem.CurrentFrame(),
+                                             self.mem.GlobalFrame(), bindings):
+                    self._EvalTempEnv(node.more_env, 0)
+
+                # Push this on the prototype chain
+                with state.ctx_EnvObj(self.mem, bindings):
                     status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
+
+            else:  # OSH
+                is_other_special = False  # TODO: There are other special builtins too!
+                if cmd_val.tag() == cmd_value_e.Assign or is_other_special:
+                    # Special builtins have their temp env persisted.
+                    self._EvalTempEnv(node.more_env, 0)
+                    status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
+                else:
+                    with state.ctx_Temp(self.mem):
+                        self._EvalTempEnv(node.more_env, state.SetExport)
+                        status = self._RunSimpleCommand(
+                            cmd_val, cmd_st, run_flags)
         else:
             status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
 

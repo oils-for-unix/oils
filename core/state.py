@@ -772,12 +772,12 @@ class ctx_ProcCall(object):
 
 
 class ctx_Temp(object):
-    """For FOO=bar myfunc, etc."""
+    """ POSIX shell FOO=bar mycommand """
 
     def __init__(self, mem):
         # type: (Mem) -> None
-        mem.PushTemp()
         self.mem = mem
+        mem.PushTemp()
 
     def __enter__(self):
         # type: () -> None
@@ -786,6 +786,23 @@ class ctx_Temp(object):
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
         self.mem.PopTemp()
+
+
+class ctx_EnvObj(object):
+    """YSH FOO=bar my-command"""
+
+    def __init__(self, mem, bindings):
+        # type: (Mem, Dict[str, value_t]) -> None
+        self.mem = mem
+        mem.PushEnvObj(bindings)
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        self.mem.PopEnvObj()
 
 
 class ctx_Registers(object):
@@ -1170,6 +1187,7 @@ class Mem(object):
         self.debug_stack = debug_stack
 
         self.env_dict = env_dict
+        self.env_object = Obj(None, env_dict)  # initial state
 
         if defaults is None:  # for unit tests only
             self.defaults = NewDict()  # type: Dict[str, value_t]
@@ -1505,6 +1523,41 @@ class Mem(object):
         # type: () -> None
         self.var_stack.pop()
 
+    def _BindEnvObj(self):
+        # type: () -> None
+        self.SetNamed(location.LName('ENV'), self.env_object,
+                      scope_e.GlobalOnly)
+
+    def MaybeInitEnvDict(self, environ):
+        # type: (Dict[str, str]) -> None
+        if self.did_ysh_env:
+            return
+
+        for name, s in iteritems(environ):
+            self.env_dict[name] = value.Str(s)
+
+        self._BindEnvObj()
+        self.did_ysh_env = True
+
+    def PushEnvObj(self, bindings):
+        # type: (Dict[str, value_t]) -> None
+        """Push "bindings" as the MOST visible part of the ENV Obj 
+
+        i.e. first() / propView()
+        """
+        self.env_object = Obj(self.env_object, bindings)
+        self._BindEnvObj()
+
+    def PopEnvObj(self):
+        # type: () -> None
+        """Pop a Dict of bindings."""
+        self.env_object = self.env_object.prototype
+        if self.env_object is None:
+            # TODO: Better error, or users shouldn't be able to mutate it
+            e_die('PopEnvObj: ENV.prototype is null', loc.Missing)
+
+        self._BindEnvObj()
+
     #
     # Argv
     #
@@ -1578,18 +1631,6 @@ class Mem(object):
             raise NotImplementedError(op_id)
 
         return value.Str(str(n))
-
-    def MaybeInitEnvDict(self, environ):
-        # type: (Dict[str, str]) -> None
-        if self.did_ysh_env:
-            return
-
-        for name, s in iteritems(environ):
-            self.env_dict[name] = value.Str(s)
-
-        env_obj = Obj(None, self.env_dict)
-        self.SetNamed(location.LName('ENV'), env_obj, scope_e.GlobalOnly)
-        self.did_ysh_env = True
 
     #
     # Named Vars
@@ -2303,6 +2344,30 @@ class Mem(object):
         else:
             return False
 
+    def _FillWithExported(self, new_env):
+        # type: (Dict[str, str]) -> None
+
+        # Search from globals up.  Names higher on the stack will overwrite
+        # names lower on the stack.
+        for scope in self.var_stack:
+            for name, cell in iteritems(scope):
+                if cell.exported and cell.val.tag() == value_e.Str:
+                    val = cast(value.Str, cell.val)
+                    new_env[name] = val.s
+
+    def _FillEnvObj(self, new_env, env_object):
+        # type: (Dict[str, str], Obj) -> None
+
+        # Do the LEAST visible parts first
+        if env_object.prototype is not None:
+            self._FillEnvObj(new_env, env_object.prototype)
+
+        # Overwrite with MOST visible parts
+        for name, val in iteritems(env_object.d):
+            if val.tag() != value_e.Str:
+                continue
+            new_env[name] = cast(value.Str, val).s
+
     def GetEnv(self):
         # type: () -> Dict[str, str]
         """
@@ -2324,23 +2389,9 @@ class Mem(object):
 
         # YSH: Consult the ENV dict
         if self.exec_opts.env_obj():
-            for name, val in iteritems(self.env_dict):
-                if val.tag() != value_e.Str:
-                    continue
-                new_env[name] = cast(value.Str, val).s
+            self._FillEnvObj(new_env, self.env_object)
 
         return new_env
-
-    def _FillWithExported(self, new_env):
-        # type: (Dict[str, str]) -> None
-
-        # Search from globals up.  Names higher on the stack will overwrite
-        # names lower on the stack.
-        for scope in self.var_stack:
-            for name, cell in iteritems(scope):
-                if cell.exported and cell.val.tag() == value_e.Str:
-                    val = cast(value.Str, cell.val)
-                    new_env[name] = val.s
 
     def VarNames(self):
         # type: () -> List[str]

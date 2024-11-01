@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 
 #### Can read from ENV Obj
 shopt -s ysh:upgrade
@@ -29,7 +29,6 @@ use $[ENV.REPO_ROOT]/spec/testdata/module2/env.ysh
 env.ysh
 OSH ok
 ## END
-
 
 #### bin/ysh doesn't have exported vars (declare -x)
 
@@ -105,9 +104,61 @@ echo
 
 AA=a p1
 
+## STDOUT:
+> f1 AA=a
+  f2 AA=aaaa BB=bb
+AA=aaaa
+BB=bb
+< f1 AA=a
+
+> p1 AA=a
+  p2 AA=aaaa BB=bb
+AA=aaaa
+BB=bb
+< p1 AA=a
+
+> p1 AA=a
+  p2 AA=aaaa BB=bb
+AA=aaaa
+BB=bb
+< p1 AA=a
+## END
+
+#### Temp bindings can use locals in the same frame,(don't introduce new frame)
+
+# OSH: FOO can use x, but FOO is also bound
+shfunc() {
+  local x='zzz'
+  # There is no FOO here, because the argument to echo is evaluated first
+  FOO=$x echo      "shfunc x=$x FOO=${FOO:-}"
+  FOO=$x eval 'echo shfunc x=$x FOO=$FOO'
+}
+
+shfunc
+echo
+
+shopt --set ysh:upgrade
+
+# YSH: FOO can use x, but FOO is also bound
+proc p {
+  var x = 'zzz'
+  # There is no ENV.FOO here, because the argument to echo is evaluated first
+  FOO=$x echo         "ysh x=$x FOO=${FOO:-} ENV.FOO=$[get(ENV, 'FOO')]"
+  FOO=$x eval    'echo ysh x=$x FOO=${FOO:-} ENV.FOO=$[get(ENV, "FOO")]'
+  FOO=$x redir { echo "ysh x=$x FOO=${FOO:-} ENV.FOO=$[get(ENV, 'FOO')]" }
+}
+
+p
 
 ## STDOUT:
+shfunc x=zzz FOO=
+shfunc x=zzz FOO=zzz
+
+ysh x=zzz FOO= ENV.FOO=null
+ysh x=zzz FOO= ENV.FOO=zzz
+ysh x=zzz FOO= ENV.FOO=zzz
 ## END
+
 
 #### setglobal ENV.PYTHONPATH = 'foo' changes child process state
 shopt -s ysh:upgrade
@@ -210,4 +261,11 @@ exec env sh -c 'echo exec ZZ=$ZZ'
 ## STDOUT:
 child ZZ=zz
 exec ZZ=zz
+## END
+
+#### setglobal quirk - do we need setenv?
+
+echo TDOO
+
+## STDOUT:
 ## END

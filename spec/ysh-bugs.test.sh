@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 3
+## oils_failures_allowed: 2
 
 #### fastlex: NUL byte not allowed inside char literal #' '
 
@@ -172,10 +172,8 @@ status=2
 
 #### proc with IFS= read -r line - dynamic scope - issue #2012
 
-# this is an issue with lack of dynamic scope
-# not sure exactly how to handle it ...
-
-# shvar IFS= { read } is our replacement for dynamic scope
+# 2024-10 - FIXED by the new Env Obj!  Because in YSH, 'line' is NOT created in
+# TEMP stack frame - we use the ENCLOSED frame, and it fixes it.
 
 proc p {
 	read -r line
