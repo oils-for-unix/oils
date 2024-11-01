@@ -439,8 +439,10 @@ class Tracer(object):
     def _EvalPS4(self, punct):
         # type: (str) -> str
         """The prefix of each line."""
-        ps4 = self.mem.env_config.Get('PS4')
-        if ps4 is None:
+        val = self.mem.GetValue('PS4')
+        if val.tag() == value_e.Str:
+            ps4 = cast(value.Str, val).s
+        else:
             ps4 = ''
 
         # NOTE: This cache is slightly broken because aliases are mutable!  I think

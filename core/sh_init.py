@@ -161,6 +161,10 @@ def InitDefaultVars(mem):
     # 'musl'.  We don't have that info, so just make it 'linux'.
     state.SetGlobalString(mem, 'OSTYPE', pyos.OsType())
 
+    # When xtrace_rich is off, this is just like '+ ', the shell default
+    state.SetGlobalString(mem, 'PS4',
+                          '${SHX_indent}${SHX_punct}${SHX_pid_str} ')
+
     # bash-completion uses this.  Value copied from bash.  It doesn't integrate
     # with 'readline' yet.
     state.SetGlobalString(mem, 'COMP_WORDBREAKS', _READLINE_DELIMS)
@@ -197,12 +201,6 @@ def CopyVarsFromEnv(exec_opts, environ, mem):
 
 def InitVarsAfterEnv(mem):
     # type: (state.Mem) -> None
-
-    s = mem.env_config.Get('PS4')
-    if s is None:
-        # When xtrace_rich is off, this is just like '+ ', the shell default
-        mem.env_config.SetDefault('PS4',
-                                  '${SHX_indent}${SHX_punct}${SHX_pid_str} ')
 
     # If PATH SHELLOPTS PWD are not in environ, then initialize them.
     s = mem.env_config.Get('PATH')
