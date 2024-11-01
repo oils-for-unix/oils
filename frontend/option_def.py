@@ -138,6 +138,7 @@ _UPGRADE_RUNTIME_OPTS = [
 
 _YSH_RUNTIME_OPTS = [
     ('no_exported', False),  # don't initialize or use exported variables
+    #('no_init_globals', False),  # don't initialize PWD, COMP_WORDBREAKS, etc.
     ('simple_echo', False),  # echo takes 0 or 1 arguments
     ('simple_eval_builtin', False),  # eval takes exactly 1 argument
 
