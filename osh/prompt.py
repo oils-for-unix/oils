@@ -175,21 +175,13 @@ class Evaluator(object):
             r = time_.strftime(fmt, time_.localtime(now))
 
         elif ch == 'w':
-            try:
-                # doesn't have to exist
-                home = state.MaybeString(self.mem, 'HOME')
-                # Shorten to ~/mydir
-                r = ui.PrettyDir(self.mem.pwd, home)
-            except error.Runtime as e:
-                r = _ERROR_FMT % e.UserErrorString()
+            # HOME doesn't have to exist
+            home = state.MaybeString(self.mem, 'HOME')
+            # Shorten /home/andy/mydir -> ~/mydir
+            r = ui.PrettyDir(self.mem.pwd, home)
 
         elif ch == 'W':
-            val = self.mem.GetValue('PWD')
-            if val.tag() == value_e.Str:
-                str_val = cast(value.Str, val)
-                r = os_path.basename(str_val.s)
-            else:
-                r = _ERROR_FMT % 'PWD is not a string'
+            r = os_path.basename(self.mem.pwd)
 
         else:
             # e.g. \e \r \n \\

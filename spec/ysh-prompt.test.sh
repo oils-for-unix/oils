@@ -26,7 +26,7 @@ echo x=$x
 
 var x = io.promptVal('w')
 
-assert [x === ENV.PWD]
+assert [x === $(pwd)]
 echo pass
 
 ## STDOUT:

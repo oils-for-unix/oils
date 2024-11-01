@@ -122,11 +122,11 @@ class ShellFiles(object):
 
 def GetWorkingDir():
     # type: () -> str
-    """Fallback for pwd and $PWD when there's no 'cd' and no inherited $PWD."""
+    """Fallback for pwd builtin and $PWD when there's no 'cd' and no inherited $PWD."""
     try:
         return posix.getcwd()
     except (IOError, OSError) as e:
-        e_die("Can't determine working directory: %s" % pyutil.strerror(e))
+        e_die("Can't determine the working dir: %s" % pyutil.strerror(e))
 
 
 # This was derived from bash --norc -c 'argv "$COMP_WORDBREAKS".
