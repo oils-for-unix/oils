@@ -67,7 +67,7 @@ hi
 
 #### ysh respects renderPrompt() over PS1
 
-export PS1='myprompt\$ '
+setglobal ENV.PS1 = r'myprompt\$ '
 
 cat >yshrc <<'EOF'
 func renderPrompt(io) {
@@ -89,7 +89,7 @@ hi
 
 #### renderPrompt() doesn't return string
 
-export PS1='myprompt\$ '
+setglobal ENV.PS1 = r'myprompt\$ '
 
 cat >yshrc <<'EOF'
 func renderPrompt(io) {
@@ -108,7 +108,7 @@ hi
 
 #### renderPrompt() raises error
 
-export PS1='myprompt\$ '
+setglobal ENV.PS1 = r'myprompt\$ '
 
 cat >yshrc <<'EOF'
 func renderPrompt(io) {
@@ -127,7 +127,7 @@ hi
 
 #### renderPrompt() has wrong signature
 
-export PS1='myprompt\$ '
+setglobal ENV.PS1 = r'myprompt\$ '
 
 cat >yshrc <<'EOF'
 func renderPrompt() {

@@ -34,7 +34,9 @@ z=1
 #### Shell arrays support tilde detection, static globbing, brace detection
 shopt -s parse_at simple_word_eval
 touch {foo,bar}.py
-HOME=/home/bob
+
+# could this also be __defaults__.HOME or DEF.HOME?
+setglobal ENV.HOME = '/home/bob'
 no_dynamic_glob='*.py'
 
 var x = :| ~/src *.py {andy,bob}@example.com $no_dynamic_glob |
