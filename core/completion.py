@@ -643,7 +643,7 @@ class ShellFuncAction(CompletionAction):
 
 
 class VariablesAction(CompletionAction):
-    """compgen -A variable."""
+    """compgen -v / compgen -A variable."""
 
     def __init__(self, mem):
         # type: (Mem) -> None
@@ -661,7 +661,7 @@ class VariablesAction(CompletionAction):
 
 
 class ExportedVarsAction(CompletionAction):
-    """compgen -e export."""
+    """compgen -e / compgen -A export."""
 
     def __init__(self, mem):
         # type: (Mem) -> None
@@ -669,7 +669,8 @@ class ExportedVarsAction(CompletionAction):
 
     def Matches(self, comp):
         # type: (Api) -> Iterator[str]
-        for var_name in self.mem.GetExported():
+        d = self.mem.GetEnv()
+        for var_name in d:
             yield var_name
 
 

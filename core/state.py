@@ -2317,9 +2317,9 @@ class Mem(object):
                 result[name] = cast(value.Str, val).s
             return result
         else:
-            return self.GetExported()
+            return self.xGetExported()
 
-    def GetExported(self):
+    def xGetExported(self):
         # type: () -> Dict[str, str]
         """Get all the variables that are marked exported."""
         # TODO: This is run on every SimpleCommand.  Should we have a dirty flag?

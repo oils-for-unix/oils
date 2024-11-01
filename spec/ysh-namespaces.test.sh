@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 0
+## oils_failures_allowed: 2
 
 #### global frame doesn't contain builtins like len(), dict(), io
 
@@ -37,6 +37,25 @@ pp test_ (_pipeline_status)
 ## STDOUT:
 (List)   [0,1]
 ## END
+
+#### global frame doesn't have PWD, IFS
+
+echo "IFS=[$IFS]"
+echo "PWD=[$PWD]"
+
+## STDOUT:
+## END
+
+#### __defaults__ is a Dict, showing default PATH, PS1
+
+pp test_ (type(__defaults__))
+
+pp test_ (__defaults__)
+
+## STDOUT:
+(Str)   "Dict"
+## END
+
 
 #### __builtins__ module
 
