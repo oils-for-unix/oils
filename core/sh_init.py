@@ -8,7 +8,7 @@ from core import pyutil
 from core import optview
 from core import state
 from frontend import location
-from mycpp.mylib import tagswitch, iteritems, log
+from mycpp.mylib import iteritems, log
 from osh import split
 from pylib import os_path
 
@@ -105,6 +105,10 @@ class EnvConfig(object):
 
     def SetDefault(self, var_name, s):
         # type: (str, str) -> None
+        """
+        OSH: Set HISTFILE var, which is read by GetVal()
+        YSH: Set __defaults__.YSH_HISTFILE, which is also read by GetVal()
+        """
         if self.mem.exec_opts.env_obj():  # e.g. $[ENV.PATH]
             self.mem.defaults[var_name] = value.Str(s)
         else:
@@ -136,18 +140,6 @@ class ShellFiles(object):
         # type: () -> Optional[str]
         assert self.init_done
 
-        # TODO: In non-strict mode we should try to cast the HISTFILE value to a
-        # string following bash's rules
-        if 0:
-            UP_val = self.mem.GetValue(self.HistVar())
-            if UP_val.tag() == value_e.Str:
-                val = cast(value.Str, UP_val)
-                return val.s
-            else:
-                # Note: if HISTFILE is an array, bash will return ${HISTFILE[0]}
-                return None
-
-        #return state.GetStringFromEnv(self.mem, self.HistVar())
         return self.mem.env_config.Get(self.HistVar())
 
 
@@ -240,7 +232,6 @@ def InitVarsAfterEnv(mem):
         # Setting PATH to these two dirs match what zsh and mksh do.  bash and
         # dash add {,/usr/,/usr/local}/{bin,sbin}
         mem.env_config.SetDefault('PATH', '/bin:/usr/bin')
-        #state.SetStringInEnv(mem, 'PATH', '/bin:/usr/bin')
 
     val = mem.GetValue('SHELLOPTS')
     if val.tag() == value_e.Undef:
@@ -283,45 +274,12 @@ def InitInteractive(mem, sh_files, lang):
             # If this is bin/ysh, and we got a plain PS1, then prepend 'ysh ' to PS1
             mem.env_dict['PS1'] = value.Str('ysh ' + ps1_str)
 
-    # TODO: use env_config
     hist_var = sh_files.HistVar()
-    hist_val = mem.GetValue(hist_var)
-    if hist_val.tag() == value_e.Undef:
-        default_val = sh_files.DefaultHistoryFile()
-        # Note: if the directory doesn't exist, GNU readline ignores it
-        # This is like
-        #    HISTFILE=foo
-        #    setglobal HISTFILE = 'foo'
-        # Not like:
-        #    export HISTFILE=foo
-        #    setglobal ENV.HISTFILE = 'foo'
-        #
-        # Note: bash only sets this in interactive shells
-        state.SetGlobalString(mem, hist_var, default_val)
+    hist_str = mem.env_config.Get(hist_var)
+    if hist_str is None:
+        mem.env_config.SetDefault(hist_var, sh_files.DefaultHistoryFile())
 
     sh_files.init_done = True  # sanity check before using sh_files
-
-    # Old logic:
-    if 0:
-        # PS1 is set, and it's YSH, then prepend 'ysh' to it to eliminate confusion
-        ps1_val = mem.GetValue('PS1')
-        with tagswitch(ps1_val) as case:
-            if case(value_e.Undef):
-                # Same default PS1 as bash
-                state.SetGlobalString(mem, 'PS1', r'\s-\v\$ ')
-
-            elif case(value_e.Str):
-                # Hack so we don't confuse osh and ysh, but we still respect the
-                # PS1.
-
-                # The user can disable this with
-                #
-                # func renderPrompt() {
-                #   return ("${PS1@P}")
-                # }
-                if lang == 'ysh':
-                    user_setting = cast(value.Str, ps1_val).s
-                    state.SetGlobalString(mem, 'PS1', 'ysh ' + user_setting)
 
 
 def InitBuiltins(mem, version_str, defaults):
