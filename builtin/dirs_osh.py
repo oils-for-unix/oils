@@ -131,16 +131,13 @@ class Cd(vm._Builtin):
                 self.errfmt.Print_(e.UserErrorString())
                 return 1
 
-        try:
-            pwd = state.GetString(self.mem, 'PWD')
-        except error.Runtime as e:
-            self.errfmt.Print_(e.UserErrorString())
-            return 1
+        # Save a copy
+        old_pwd = self.mem.pwd
 
         # Calculate new directory, chdir() to it, then set PWD to it.  NOTE: We
         # can't call posix.getcwd() because it can raise OSError if the
         # directory was removed (ENOENT.)
-        abspath = os_path.join(pwd, dest_dir)  # make it absolute, for cd ..
+        abspath = os_path.join(old_pwd, dest_dir)  # make it absolute, for cd ..
         if arg.P:
             # -P means resolve symbolic links, then process '..'
             real_dest_dir = libc.realpath(abspath)
@@ -171,7 +168,7 @@ class Cd(vm._Builtin):
                 return 1
 
         else:  # No block
-            state.ExportGlobalString(self.mem, 'OLDPWD', pwd)
+            state.ExportGlobalString(self.mem, 'OLDPWD', old_pwd)
             self.dir_stack.Replace(real_dest_dir)  # for pushd/popd/dirs
 
         return 0

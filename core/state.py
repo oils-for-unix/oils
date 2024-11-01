@@ -356,11 +356,12 @@ class MutableOpts(object):
         # type: () -> None
 
         # This comes after all the 'set' options.
-        UP_shellopts = self.mem.GetValue('SHELLOPTS')
-        # Always true in YSH, see Init above
-        if UP_shellopts.tag() == value_e.Str:
-            shellopts = cast(value.Str, UP_shellopts)
-            self._InitOptionsFromEnv(shellopts.s)
+        shellopts = self.mem.GetValue('SHELLOPTS')
+
+        # True in OSH, but not in YSH (no_init_globals)
+        if shellopts.tag() == value_e.Str:
+            s = cast(value.Str, shellopts).s
+            self._InitOptionsFromEnv(s)
 
     def _InitOptionsFromEnv(self, shellopts):
         # type: (str) -> None

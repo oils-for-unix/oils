@@ -23,32 +23,15 @@ _ = log
 
 
 class EnvConfig(object):
-    """Define a string config var read from the environment.
+    """Manage shell config from the environment, for OSH and YSH.
 
-    And it's default.
+    Variables managed:
 
-    In OSH, it will appear as $PS1 or $PATH or $PWD.  You can't see the
-    default.
+    PATH aka ENV.PATH     - where to look for executables
+    PS1                   - how to print the prompt
+    HISTFILE YSH_HISTFILE - where to read/write history
 
-    In YSH, it will appear as ENV.PS1 and __default__.PS1.  I guess __default__
-    can be a Dict or Obj.
-
-    Usage:
-
-    env_config.Define('PS1', r'\\s-\\v')
-
-    # YSH: set ENV.PS1
-    # OSH: set PS1
-    env_config.InitFromEnv('PS1')
-
-    # YSH - get from ENV or __default__
-    env_config.Get('PS1')
-
-    # Custom logic for PWD
-    if not env_config.Exists('PWD'):
-        pass
-
-    More features:
+    Features TODO
 
     - On-demand BASHPID
       - io.thisPid() - is BASHPID
@@ -60,16 +43,9 @@ class EnvConfig(object):
 
     def __init__(self, mem, defaults):
         # type: (state.Mem, Dict[str, value_t]) -> None
-
-        # mutates env_dict
         self.mem = mem
         self.exec_opts = mem.exec_opts
         self.defaults = defaults
-
-    def Define(self, var_name, default_s):
-        # type: (str, str) -> None
-        """
-        """
 
     def GetVal(self, var_name):
         # type: (str) -> value_t

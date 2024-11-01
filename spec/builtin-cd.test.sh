@@ -48,6 +48,24 @@ status=0
 status=0
 ## END
 
+#### cd - without OLDPWD
+
+cd - > /dev/null  # silence dash output
+echo status=$?
+#pwd
+
+## STDOUT:
+status=1
+## END
+
+## OK mksh STDOUT:
+status=2
+## END
+
+## BUG dash/zsh STDOUT:
+status=0
+## END
+
 #### $OLDPWD
 cd /
 cd $TMP
@@ -300,5 +318,16 @@ OK
 OK
 OK
 ## END
+
+
+#### unset PWD; cd /tmp is allowed (regression)
+
+unset PWD; cd /tmp
+pwd
+
+## STDOUT:
+/tmp
+## END
+
 
 
