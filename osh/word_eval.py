@@ -474,14 +474,12 @@ class TildeEvaluator(object):
         Important: the libc call can FAIL, which is why we prefer $HOME.  See issue
         #1578.
         """
-        # TODO: Also ENV.HOME
+        # First look up the HOME var, ENV.HOME, ...
+        s = self.mem.env_config.Get('HOME')
+        if s is not None:
+            return s
 
-        # First look up the HOME var, then ask the OS.  This is what bash does.
-        val = self.mem.GetValue('HOME')
-        UP_val = val
-        if val.tag() == value_e.Str:
-            val = cast(value.Str, UP_val)
-            return val.s
+        # Then ask the OS.  This is what bash does.
         return pyos.GetMyHomeDir()
 
     def Eval(self, part):

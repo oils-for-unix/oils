@@ -1,4 +1,4 @@
-## oils_failures_allowed: 4
+## oils_failures_allowed: 3
 
 #### Can read from ENV Dict
 shopt -s ysh:upgrade
@@ -64,18 +64,38 @@ sh -c 'echo pythonpath=$PYTHONPATH'
 pythonpath=foo
 ## END
 
-#### export builtin is disabled, in favor of setglobal
-shopt -s ysh:upgrade
+#### export builtin is disabled in ysh:all, in favor of setglobal
+shopt -s ysh:all
 
-export PYTHONPATH='foo'
-
-#pp test_ (ENV)
+setglobal ENV.ZZ = 'setglobal'
 
 # execute POSIX shell
-sh -c 'echo pythonpath=$PYTHONPATH'
+sh -c 'echo ZZ=$ZZ'
+
+export ZZ='export'  # fails
+
+sh -c 'echo ZZ=$ZZ'  # not reached
+
+## status: 1
+## STDOUT:
+ZZ=setglobal
+## END
+
+#### ysh:upgrade can use both export builtin and setglobal ENV
+shopt -s ysh:upgrade
+
+export ZZ='export'  # fails
+
+sh -c 'echo ZZ=$ZZ'  # not reached
+
+setglobal ENV.ZZ = 'setglobal'  # this takes precedence
+
+# execute POSIX shell
+sh -c 'echo ZZ=$ZZ'
 
 ## STDOUT:
-pythonpath=foo
+ZZ=export
+ZZ=setglobal
 ## END
 
 
@@ -105,21 +125,23 @@ OSH ok
 
 
 #### HOME var
+
+HOME=zz-osh
+echo ~/src
+
 shopt --set ysh:upgrade
 
-#setvar HOME = 'yo'
+setvar ENV.HOME = 'ysh-zz'
 
 # TODO: this should consult ENV.HOME
-echo ~
+echo ~/src
 
 # not set by spec test framework
-echo $[ENV.HOME]
-
-#echo ~root
-
-#echo ~bob/
+#echo $[ENV.HOME]
 
 ## STDOUT:
+zz-osh/src
+ysh-zz/src
 ## END
 
 #### exec builtin respects ENV

@@ -253,6 +253,12 @@ class Export(vm._AssignBuiltin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Assign) -> int
+        if self.mem.exec_opts.no_exported():
+            self.errfmt.Print_(
+                'export builtin is disabled in YSH (shopt --set no_exported)',
+                cmd_val.arg_locs[0])
+            return 1
+
         arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
         arg_r.Next()
         attrs = flag_util.Parse('export_', arg_r)
