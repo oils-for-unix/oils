@@ -2307,37 +2307,40 @@ class Mem(object):
         # type: () -> Dict[str, str]
         """
         Get the environment that should be used for launching processes.
+
+        Note: This is run on every SimpleCommand.  Should we have a dirty
+        flag?  We could notice these things:
+
+        - If an exported variable is changed
+        - If the set of exported variables changes.
         """
-        # TODO: ysh:upgrade can have both of these behaviors
-        if self.exec_opts.env_obj():  # Read from ENV dict
-            result = {}  # type: Dict[str, str]
+        new_env = {}  # type: Dict[str, str]
+
+        # Note: ysh:upgrade has both of these behaviors
+
+        # OSH: Consult exported vars
+        if not self.exec_opts.no_exported():
+            self._FillWithExported(new_env)
+
+        # YSH: Consult the ENV dict
+        if self.exec_opts.env_obj():
             for name, val in iteritems(self.env_dict):
                 if val.tag() != value_e.Str:
                     continue
-                result[name] = cast(value.Str, val).s
-            return result
-        else:
-            return self.xGetExported()
+                new_env[name] = cast(value.Str, val).s
 
-    def xGetExported(self):
-        # type: () -> Dict[str, str]
-        """Get all the variables that are marked exported."""
-        # TODO: This is run on every SimpleCommand.  Should we have a dirty flag?
-        # We have to notice these things:
-        # - If an exported variable is changed.
-        # - If the set of exported variables changes.
+        return new_env
 
-        exported = {}  # type: Dict[str, str]
-        # Search from globals up.  Names higher on the stack will overwrite names
-        # lower on the stack.
+    def _FillWithExported(self, new_env):
+        # type: (Dict[str, str]) -> None
+
+        # Search from globals up.  Names higher on the stack will overwrite
+        # names lower on the stack.
         for scope in self.var_stack:
             for name, cell in iteritems(scope):
-                # TODO: Disallow exporting at assignment time.  If an exported Str is
-                # changed to BashArray, also clear its 'exported' flag.
                 if cell.exported and cell.val.tag() == value_e.Str:
                     val = cast(value.Str, cell.val)
-                    exported[name] = val.s
-        return exported
+                    new_env[name] = val.s
 
     def VarNames(self):
         # type: () -> List[str]

@@ -1,4 +1,4 @@
-## oils_failures_allowed: 3
+## oils_failures_allowed: 1
 
 #### Can read from ENV Dict
 shopt -s ysh:upgrade
@@ -11,7 +11,6 @@ pp test_ (type(ENV))
 if (ENV.SH ~~ '*osh') {
   echo ok
 }
-
 #echo SH=$[ENV.SH]
 
 ## STDOUT:
@@ -19,7 +18,20 @@ if (ENV.SH ~~ '*osh') {
 ok
 ## END
 
-#### YSH doesn't have exported vars (declare -x)
+#### ENV works in different modules
+shopt -s ysh:upgrade
+
+setglobal ENV.PS4 = '%%% '
+
+use $[ENV.REPO_ROOT]/spec/testdata/module2/env.ysh
+
+## STDOUT:
+env.ysh
+OSH ok
+## END
+
+
+#### bin/ysh doesn't have exported vars (declare -x)
 
 osh=$SH  # this file is run by OSH
 
@@ -39,8 +51,8 @@ OSH ok
 sh=null
 ## END
 
-#### Temp bindings A=a B=b my-command push to ENV dict
-shopt -s ysh:upgrade
+#### Temp bindings A=a B=b my-command push to ENV Obj (ysh:all)
+shopt -s ysh:all
 
 _A=a _B=b env | grep '^_' | sort
 
@@ -107,24 +119,16 @@ setglobal ENV.PS4 = '%%% '
 $[ENV.SH] -c 'set -x; echo 1; echo 2'
 
 ## STDOUT:
-TODO
+1
+2
+## END
+## STDERR:
+%%% echo 1
+%%% echo 2
 ## END
 
 
-#### ENV works in different modules
-shopt -s ysh:upgrade
-
-setglobal ENV.PS4 = '%%% '
-
-use $[ENV.REPO_ROOT]/spec/testdata/module2/env.ysh
-
-## STDOUT:
-env.ysh
-OSH ok
-## END
-
-
-#### HOME var
+#### ENV.HOME is respected
 
 HOME=zz-osh
 echo ~/src

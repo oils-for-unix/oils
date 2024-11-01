@@ -29,7 +29,7 @@ class EnvConfig(object):
 
     PATH aka ENV.PATH     - where to look for executables
     PS1                   - how to print the prompt
-    HISTFILE YSH_HISTFILE - where to read/write history
+    HISTFILE YSH_HISTFILE - where to read/write command history
     HOME                  - for ~ expansion (default not set)
 
     Features TODO

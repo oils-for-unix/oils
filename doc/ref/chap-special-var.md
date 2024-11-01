@@ -28,7 +28,7 @@ Replacement for `"$@"`
 
 ### ENV
 
-A Dict that's populated with environment variables.  Example usage:
+An `Obj` that's populated with environment variables.  Example usage:
 
     var x = ENV.PYTHONPATH
     echo $[ENV.SSH_AUTH_SOCK]
@@ -44,6 +44,32 @@ Related: [ysh-shopt][], [osh-usage][]
 
 [ysh-shopt]: chap-builtin-cmd.html#ysh-shopt
 [osh-usage]: chap-front-end.html#osh-usage
+
+---
+
+When launching an external command, the shell creates a Unix `environ` from the
+`ENV` Obj.  This means that mutating it affects all subsequent processes:
+
+    setglobal ENV.PYTHONPATH = '.'
+    ./foo.py
+    ./bar.py
+
+You can also limit the change to a single process, without `ENV`:
+
+    PYTHONPATH=. ./foo.py
+    ./bar.py               # unaffected
+
+---
+
+YSH reads these ENV variables:
+
+- `PATH` - where to look for executables
+- `PS1` - how to print the prompt
+- TODO: `PS4` - how to show execution traces
+- `YSH_HISTFILE` (`HISTFILE` in OSH) - where to read/write command history
+- `HOME` - for tilde substitution ([tilde-sub])
+
+[tilde-sub]: chap-word-lang.html#tilde-sub
 
 ### _this_dir
 
