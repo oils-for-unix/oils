@@ -1324,24 +1324,13 @@ echo ${x|html}               # formatters
 
 echo ${x %.2f}               # statically-parsed printf
 
-var x = j"line\n"
-echo j"line\n"               # JSON-style string literal
-
 var x = "<p>$x</p>"html      
 echo "<p>$x</p>"html         # tagged string
 
 var x = 15 Mi                # units suffix
 ```
 
-Important builtins that aren't implemented:
-
-- `describe` for testing
-- `parseArgs()` to parse flags
-- Builtins for [TSV8]($xref) - selection, projection, sorting
-
 <!--
-
-- To document: Method calls
 - To implement: Capers: stateless coprocesses
 -->
 

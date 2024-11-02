@@ -28,35 +28,51 @@ YSH:
 - multiple processes
   - [`_pipeline_status`](chap-special-var.html#_pipeline_status)
   - [`_process_sub_status`](chap-special-var.html#_process_sub_status)
+- [Options](chap-option.html):
+  - `strict_errexit`, `command_sub_errexit`, ...
 
 OSH:
 
 - [`$?`](chap-special-var.html#POSIX-special) - not idiomatic in YSH
+- [Options](chap-option.html):
+  - `errexit`, `pipefail`, `inherit_errexit`
 
 ### Environment Variables
 
 YSH:
 
-- [ENV](chap-special-var.html#ENV)
-- `[simple-command][]` - for `NAME=val` env bindings
-  - TODO: should we have a `envFromDict()` function that goes with `env -i`?
+- [`ENV`][ENV]
+- [`ysh-prefix-binding`][ysh-prefix-binding] - for `NAME=val` env bindings
+- [`simple-command`][simple-command] - external commands are started with an
+  `environ`
 - [Options](chap-option.html):
   - `shopt --unset no_exported`
   - `shopt --set env_obj`
 
+[ENV]: chap-special-var.html#ENV
+
+<!--
+TODO: should we have a `envFromDict()` function that goes with `env -i`?
+-->
+
 OSH:
 
 - [`export`](chap-osh-assign.html#export)
+- [`prefix-binding`][prefix-binding] - for `NAME=val` env bindings
+
+[prefix-binding]: chap-cmd-lang.html#prefix-binding
+[ysh-prefix-binding]: chap-cmd-lang.html#ysh-prefix-binding
 
 [simple-command]: chap-cmd-lang.html#simple-command
+
 
 ### I/O
 
 YSH:
 
 - [`write`](chap-builtin-cmd.html#write)
-  - [`echo`](chap-builtin-cmd.html#ysh-echo) is a shortcut for `write`
-- [`read`](chap-builtin-cmd.html#ysh-read) - `read --all`, etc.
+  - [`ysh-echo`](chap-builtin-cmd.html#ysh-echo) is a shortcut for `write`
+- [`ysh-read`](chap-builtin-cmd.html#ysh-read) - `read --all`, etc.
 - [`redir`](chap-builtin-cmd.html#redir)
 - The [`io`](chap-type-method.html#io) object
 
@@ -121,14 +137,14 @@ OSH:
 Also see [the Unicode doc](../unicode.html).
 
 
-
-
 ## YSH Only
 
 ### Objects
 
 - [`Obj`][Obj]
-- `propView()` and `prototype()` - may be renamed `first() rest()`
+  - `__invoke__` and `__call__`
+  - `propView()` and `prototype()` - may be renamed `first() rest()`
+  - [`ENV`][ENV] is an `Obj`
 - operator `.` [ysh-attr](chap-expr-lang.html#ysh-attr)
 - operator `->` [thin-arrow](chap-expr-lang.html#thin-arrow)
 
@@ -152,5 +168,3 @@ Also see [the Unicode doc](../unicode.html).
 
 [io]: chap-type-method.html#io
 [vm]: chap-type-method.html#vm
-
-

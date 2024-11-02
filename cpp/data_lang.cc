@@ -262,7 +262,8 @@ int HeapValueId(value_asdl::value_t* val) {
   // ASDL generates headers with HeapTag::Scanned, but HeapTag::FixedSize would
   // also be valid.
   ObjHeader* h = ObjHeader::FromObject(val);
-  DCHECK(h->heap_tag == HeapTag::Scanned || h->heap_tag == HeapTag::FixedSize);
+  DCHECK(h->heap_tag == HeapTag::Global || h->heap_tag == HeapTag::Scanned ||
+         h->heap_tag == HeapTag::FixedSize);
 #endif
 
   return ObjectId(val);

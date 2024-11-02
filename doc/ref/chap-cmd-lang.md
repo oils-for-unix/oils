@@ -505,13 +505,24 @@ Or as an expression:
 Note that `cd` has no typed or named arguments, so the two semicolons are
 preceded by nothing.
 
-Compare with [sh-block](#sh-block).
+When passed to procs, blocks capture the enclosing stack frame:
+
+    var x = 42
+    myproc {
+      # lexical scope is respected
+      echo "x = $x"  # x = 42
+    }
+
+---
 
 Redirects can appear after the block arg:
 
     cd /tmp {
       echo $PWD  # prints /tmp
     } >out.txt
+
+
+- Related: [sh-block](#sh-block) in OSH.
 
 ## YSH Cond
 

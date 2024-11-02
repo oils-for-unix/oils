@@ -291,3 +291,12 @@ echo $[len(DelegatedCompName)]
 ## STDOUT:
 21
 ## END
+
+#### bad assertion when pretty printing
+
+pp value (__builtins__) > /dev/null
+echo status=$?
+
+## STDOUT:
+status=0
+## END
