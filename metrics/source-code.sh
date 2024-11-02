@@ -362,7 +362,10 @@ _overview() {
 
   tools-counts $count "$@"
 
-  ls stdlib/*.ysh | $count \
+  ls stdlib/osh/*.sh | $count \
+    "OSH stdlib" '' "$@"
+
+  ls stdlib/ysh/*.ysh | $count \
     "YSH stdlib" '' "$@"
 
   ls pylib/*.py | filter-py | $count \

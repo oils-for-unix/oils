@@ -392,11 +392,12 @@ class ValueEncoder:
 
     def _Obj(self, obj):
         # type: (Obj) -> MeasuredDoc
-        chain = [] # type: List[MeasuredDoc]
+        chain = []  # type: List[MeasuredDoc]
         cur = obj
         while cur is not None:
             mdocs = self._DictMdocs(cur.d)
-            chain.append(self._Surrounded("(", self._Join(mdocs, ",", " "), ")"))
+            chain.append(
+                self._Surrounded("(", self._Join(mdocs, ",", " "), ")"))
             cur = cur.prototype
             if cur is not None:
                 chain.append(UText(" --> "))
@@ -430,7 +431,11 @@ class ValueEncoder:
             elif case(value_e.Range):
                 r = cast(value.Range, val)
                 type_name = self._Styled(self.type_style, UText(ValType(r)))
-                mdocs = [UText(str(r.lower)), UText("..<"), UText(str(r.upper))]
+                mdocs = [
+                    UText(str(r.lower)),
+                    UText("..<"),
+                    UText(str(r.upper))
+                ]
                 return self._SurroundedAndPrefixed("(", type_name, " ",
                                                    self._Join(mdocs, "", " "),
                                                    ")")
@@ -491,6 +496,13 @@ class ValueEncoder:
                     result = self._Obj(vaobj)
                     self.visiting[heap_id] = False
                     return result
+
+            # Bug fix: these types are GLOBAL singletons in C++.  This means
+            # they have no object ID, so j8.ValueIdString() will CRASH on them.
+
+            elif case(value_e.Stdin, value_e.Interrupted):
+                type_name = self._Styled(self.type_style, UText(ValType(val)))
+                return _Concat([UText("<"), type_name, UText(">")])
 
             else:
                 type_name = self._Styled(self.type_style, UText(ValType(val)))
