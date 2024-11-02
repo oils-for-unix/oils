@@ -14,6 +14,7 @@
 /* h1 is the title
  * h2 is the first level shown in TOC
  * h3 is the second and last level shown in TOC
+ * h4 is occasionally used
  */
 h1 {
   font-size: 1.5em;  /* reduce to what browsers apparently use for h2 */
@@ -26,9 +27,18 @@ h2 {
 }
 
 h3 {
+  color: darkblue;  /* different than blog */
   font-size: large;
   margin-left: 2em;
-  color: darkblue;  /* different than blog */
+
+  padding-top: 1em;  /* separate sections */
+}
+
+h4 {
+  /* color: #0000A0; slightly different shade than h3 */ 
+  color: darkblue;
+  font-size: medium;   /* smaller font than h3 */
+  margin-left: 3em;    /* indented slightly more */
 
   padding-top: 1em;  /* separate sections */
 }

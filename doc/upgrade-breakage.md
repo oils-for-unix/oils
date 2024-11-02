@@ -184,6 +184,8 @@ Shells](known-differences.html).
 
 ## Appendix
 
+Here are some notable **non-breaking** changes.
+
 ### Shell Functions vs. Procs
 
 Procs have truly local variables like Python and JavaScript.  There's no
@@ -191,6 +193,16 @@ Procs have truly local variables like Python and JavaScript.  There's no
 
 This is something to be aware of, but isn't technically a breakage because
 shell functions still work the same way in YSH.
+
+### $EDITOR vs. ENV.EDITOR 
+
+In YSH, env vars live in the [ENV][] dict.  So instead of `$EDITOR`, you should
+use `$[ENV.EDITOR]`.
+
+But doesn't break when you `shopt --set ysh:upgrade`, only when you use
+`bin/ysh`.
+
+[ENV]: ref/chap-special-var.html#ENV
 
 ### Acknowledgments
 
