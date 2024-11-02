@@ -367,26 +367,34 @@ class DictFunc(vm._Callable):
         UP_val = val
         with tagswitch(val) as case:
             if case(value_e.Dict):
-                d = NewDict()  # type: Dict[str, value_t]
                 val = cast(value.Dict, UP_val)
+                d = NewDict()  # type: Dict[str, value_t]
                 for k, v in iteritems(val.d):
                     d[k] = v
 
                 return value.Dict(d)
 
             elif case(value_e.Obj):
-                d = NewDict()
                 val = cast(Obj, UP_val)
+                d = NewDict()
                 for k, v in iteritems(val.d):
                     d[k] = v
 
                 return value.Dict(d)
 
             elif case(value_e.BashAssoc):
-                d = NewDict()
                 val = cast(value.BashAssoc, UP_val)
+                d = NewDict()
                 for k, s in iteritems(val.d):
                     d[k] = value.Str(s)
+
+                return value.Dict(d)
+
+            elif case(value_e.Frame):
+                val = cast(value.Frame, UP_val)
+                d = NewDict()
+                for k, cell in iteritems(val.frame):
+                    d[k] = cell.val
 
                 return value.Dict(d)
 

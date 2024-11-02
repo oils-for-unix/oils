@@ -68,7 +68,7 @@ error handling, and more.
                                eval()           evalToDict()   captureStdout()
                                promptVal()
                              X time()         X strftime()   X glob()
-                   vm        X getFrame()
+                   vm          getFrame()
 ```
 
 <h2 id="builtin-func">

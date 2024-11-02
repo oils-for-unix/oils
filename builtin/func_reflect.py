@@ -71,11 +71,17 @@ class GetFrame(vm._Callable):
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
         unused_self = rd.PosObj()
-        index = rd.PosInt()
+        index = mops.BigTruncate(rd.PosInt())
         rd.Done()
 
-        # TODO: 0 is global, -1 is current, -2 is parent
-        return value.Frame(self.mem.CurrentFrame())
+        length = len(self.mem.var_stack)
+        if index < 0:
+            index += length
+        if 0 <= index and index < length:
+            return value.Frame(self.mem.var_stack[index])
+        else:
+            raise error.Structured(3, "Invalid frame %d" % index,
+                                   rd.LeftParenToken())
 
 
 class BindFrame(vm._Callable):

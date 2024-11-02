@@ -765,9 +765,12 @@ An object with functions for introspecting the Oils VM.
 
 ### getFrame()
 
-TODO
+Given an index, get a handle to a call stack frame.
 
-    var frame = vm.getFrame(-1)  # local frame
     var frame = vm.getFrame(0)   # global frame
+    var frame = vm.getFrame(1)   # first frame pushed on the global frame
 
-    var frame = vm.getFrame(-2)  # calling frame, for my-cd { echo }
+    var frame = vm.getFrame(-1)  # the current frame, aka local frame
+    var frame = vm.getFrame(-2)  # the calling frame
+
+If the index is out of range, an error is raised.
