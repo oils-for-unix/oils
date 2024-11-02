@@ -72,7 +72,7 @@ Given a float, returns the largest integer that is less than its argument (i.e. 
     (Int)    1
 
 Given a string, `Int()` will attempt to convert the string to a base-10
-integer. The base can be overriden by calling with a second argument.
+integer. The base can be overridden by calling with a second argument.
 
     $ = int('10')
     (Int)   10
@@ -85,7 +85,7 @@ integer. The base can be overriden by calling with a second argument.
 
 ### float()
 
-Given an integer, returns the corressponding flaoting point representation.
+Given an integer, returns the corresponding floating point representation.
 
     $ = float(1)
     (Float)   1.0

@@ -217,7 +217,10 @@ X [External Lang] BEGIN   END   when (awk)
 <!-- linkify_stop_col is 33 -->
 
 ```chapter-links-cmd-lang_33
-  [Redirect]      ysh-here-str    read <<< '''
+  [Commands]      simple-command
+                  ysh-prefix-binding
+                  semicolon ;
+  [Redirects]     ysh-here-str    read <<< '''
   [YSH Simple]    typed-arg       json write (x)
                   lazy-expr-arg   assert [42 === x]
                   block-arg       cd /tmp { echo $PWD }; cd /tmp (; ; blockexpr)
@@ -227,20 +230,22 @@ X [External Lang] BEGIN   END   when (awk)
                   ysh-while       while (x > 0) { echo }
 ```
 
+<!-- TODO: move YSH command topics to the chapter below -->
+
 <h2 id="ysh-cmd">
   YSH Command Language Keywords <a class="group-link" href="chap-ysh-cmd.html">ysh-cmd</a>
 </h2>
 
-```chapter-links-ysh-cmd_33
-  [Assignment]    const   var   Declare variables
-                  setvar        setvar a[i] = 42
-                  setglobal     setglobal d.key = 'foo'
-  [Expression]    equal =       = 1 + 2*3
-                  call          call mylist->append(42)
-  [Definitions]   proc          proc p (s, ...rest) {
-                                typed proc p (; typed, ...rest; n=0; b) {
-                  func          func f(x; opt1, opt2) { return (x + 1) }
-                  ysh-return    return (myexpr)
+```chapter-links-ysh-cmd_39
+  [Assignment]    const   var         Declare variables
+                  setvar              setvar a[i] = 42
+                  setglobal           setglobal d.key = 'foo'
+  [Expression]    equal =             = 1 + 2*3
+                  call                call mylist->append(42)
+  [Definitions]   proc                proc p (s, ...rest) {
+                                      typed proc p (; typed, ...rest; n=0; b) {
+                  func                func f(x; opt1, opt2) { return (x + 1) }
+                  ysh-return          return (myexpr)
 ```
 
 <h2 id="expr-lang">
@@ -341,8 +346,8 @@ X [External Lang] BEGIN   END   when (awk)
 </h2>
 
 ```chapter-links-special-var
-  [Other Env]     HOME                PATH
-  [YSH Vars]      ARGV                ENV                   _this_dir
+  [YSH Vars]      ARGV                ENV                   __defaults__
+                  _this_dir
   [YSH Status]    _error
                   _pipeline_status    _process_sub_status
   [YSH Tracing]   SHX_indent          SHX_punct             SHX_pid_str
@@ -354,6 +359,7 @@ X [External Lang] BEGIN   END   when (awk)
                   LIB_YSH
   [Float]         NAN                 INFINITY
   [Module]        __provide__
+  [Other Env]     HOME                PATH
 ```
 
 <!-- 

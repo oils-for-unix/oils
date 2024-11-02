@@ -71,7 +71,18 @@ YSH reads these ENV variables:
 
 [tilde-sub]: chap-word-lang.html#tilde-sub
 
-### _this_dir
+### `__defaults__`
+
+The shell puts some default settings in this `Dict`.  In certain situations, it
+consults `__defaults__` after consulting `ENV`.  For example:
+
+- if `ENV.PATH` is not set, consult `__defaults__.PATH`
+- if `ENV.PS1` is not set, consult `__defaults__.PS1`
+
+<!-- TODO: consider renaming to DEF.PS1 ? -->
+
+
+### `_this_dir`
 
 The directory the current script resides in.  This knows about 3 situations:
 
@@ -209,6 +220,10 @@ A module is evaluated upon `use`.  After evaluation, the names in the
 Or we could make it [1, 2] insetad
 -->
 
+## POSIX Special
+
+`$@  $*  $#     $?  $-     $$  $!   $0  $9`
+
 ## Shell Vars
 
 ### IFS
@@ -233,6 +248,8 @@ bash compat: serialized options for the `set` builtin.
 
 bash compat: serialized options for the `shopt` builtin.
 
+(Not implemented.)
+
 ## Other Env
 
 ### HOME
@@ -250,8 +267,6 @@ login shell should set it, based on `/etc/passwd`.
 A colon-separated string that's used to find executables to run.
 
 In YSH, it's `ENV.PATH`.
-
-## POSIX Special
 
 ## Other Special
 

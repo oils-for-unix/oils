@@ -123,7 +123,7 @@ is returned, it's removed:
     $ echo "/tmp/$(hostname)"
     /tmp/example.com
 
-YSH has spliced command subs, enabled by `shopt --set parse_at`.  The reuslt is
+YSH has spliced command subs, enabled by `shopt --set parse_at`.  The result is
 a **List** of strings, rather than a single string.
 
     $ write -- @(echo foo; echo 'with spaces')
@@ -203,7 +203,7 @@ because it may be slow.
 
 Replace a substring or pattern.
 
-The character after the first `/` can be `/` to replace all occurences:
+The character after the first `/` can be `/` to replace all occurrences:
 
     $ x=food
 

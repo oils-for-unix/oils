@@ -45,7 +45,7 @@ YSH:
 
 <h2 id="Commands">Commands</h2>
 
-<h3 id="simple-command" class="osh-ysh-topic">simple-command</h3>
+### simple-command
 
 Commands are composed of words.  The first word may be the name of
 
@@ -72,15 +72,35 @@ Redirects are also allowed in any part of the command:
     echo 'to file' > out.txt
     echo > out.txt 'to file'
 
-Bindings are allowed before the command:
+### prefix-binding
+
+Bindings are allowed before a simple command:
 
     PYTHONPATH=. mydir/myscript.py
 
 These bindings set a variable and mark it exported.  This binding is usually
-temporary, but it may persist in the case of certain [special
-builtins][special].
+temporary, but when used with certain [special builtins][special], it persists.
 
 [special]: https://www.gnu.org/software/bash/manual/html_node/Special-Builtins.html
+
+- Related: [ysh-prefix-binding](ysh-prefix-binding)
+
+### ysh-prefix-binding
+
+YSH prefix bindings look exactly like they do in shell:
+
+    PYTHONPATH=. mydir/myscript.py
+
+However, they temporarily set `ENV.PYTHONPATH`, not `$PYTHONPATH`.  This is
+done by adding a new `Dict` to the prototype chain of the `Obj`.
+
+The new `ENV` then becomes the environment of the child processes for the
+command.
+
+(In YSH, prefix bindings only mean one thing.  They are temporary; they don't
+persist depending on whether the command is a special builtin.)
+
+- Related: [ENV](chap-special-var.html#ENV), [prefix-binding](chap-cmd-lang.html#prefix-binding)
 
 
 <h3 id="semicolon" class="osh-ysh-topic">semicolon ;</h3>

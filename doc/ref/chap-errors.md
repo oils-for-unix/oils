@@ -70,7 +70,7 @@ are **no encoding errors**.
 1. Escape sequence like `\u{dc00}` should not be in the surrogate range.
    - This means it doesn't represent a real character.  Byte escapes like
      `\yff` should be used instead.
-1. Escape sequence like `\u{110000}` is greater than the maximimum Unicode code
+1. Escape sequence like `\u{110000}` is greater than the maximum Unicode code
    point.
 1. Byte escapes like `\yff` should not be in `u''` string.
    - By design, they're only valid in `b''` strings.
@@ -150,7 +150,7 @@ Implementation-defined limits, i.e. outside the grammar:
 JSON8 has the same encoding errors as JSON.
 
 However, the encoding is lossless by design.  Instead of invalid UTF-8 being
-turned into a Unicode replacment character, it can use J8 strings with byte
+turned into a Unicode replacement character, it can use J8 strings with byte
 escapes like `b'byte \yfe\yff'`.
 
 ### err-json8-decode

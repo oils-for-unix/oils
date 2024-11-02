@@ -101,18 +101,19 @@ X [Unsupported]   enable
 </h2>
 
 ```chapter-links-cmd-lang
-  [Commands]      simple-command            semicolon ;
-  [Conditional]   case        if            dbracket [[
-                  bang !      and &&        or ||
-  [Iteration]     while       until         for            for-expr-sh ((
-  [Control Flow]  break       continue      return         exit
-  [Grouping]      sh-func     sh-block {    subshell (
-  [Concurrency]   pipe |    X pipe-amp |&   ampersand &
-  [Redirects]     redir-file  >  >>  >|  <  <>   not impl: &>
-                  redir-desc  >&  <&
-                  here-doc    <<  <<-
-                  here-str    <<<
-  [Other Command] dparen ((   time        X coproc       X select
+  [Commands]      simple-command               prefix-binding
+                  semicolon ;    
+  [Conditional]   case           if            dbracket [[
+                  bang !         and &&        or ||
+  [Iteration]     while          until         for            for-expr-sh ((
+  [Control Flow]  break          continue      return         exit
+  [Grouping]      sh-func        sh-block {    subshell (
+  [Concurrency]   pipe |       X pipe-amp |&   ampersand &
+  [Redirects]     redir-file     >  >>  >|  <  <>   not impl: &>
+                  redir-desc     >&  <&
+                  here-doc       <<  <<-
+                  here-str       <<<
+  [Other Command] dparen ((      time        X coproc       X select
 ```
 
 <h2 id="osh-assign">
@@ -197,6 +198,7 @@ X [Unsupported]   enable
 </h2>
 
 ```chapter-links-special-var
+  [Oils VM]       OILS_VERSION      LIB_OSH
   [POSIX Special] $@  $*  $#     $?  $-     $$  $!   $0  $9
   [Shell Vars]    IFS             X LANG       X GLOBIGNORE
   [Shell Options] SHELLOPTS       X BASHOPTS
@@ -217,7 +219,6 @@ X [Shell State]   BASH_CMDS        @DIRSTACK
   [getopts]       OPTIND            OPTARG      X OPTERR
   [read]          REPLY
   [Functions]   X RANDOM            SECONDS
-  [Oils VM]       OILS_VERSION      LIB_OSH
 ```
 
 <h2 id="plugin">

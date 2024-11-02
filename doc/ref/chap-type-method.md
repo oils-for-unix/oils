@@ -82,7 +82,7 @@ A single value representing truth, e.g.
 
 ### expr/false
 
-A single value representing the oppoosite of truth, e.g.
+A single value representing the opposite of truth, e.g.
 
     = 42 === 3  # => false
 
