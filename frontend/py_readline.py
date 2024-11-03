@@ -130,6 +130,10 @@ class Readline(object):
         # type: () -> None
         line_input.restore_orig_keymap()
 
+    def print_shell_cmd_map(self):
+        # type: () -> None
+        line_input.print_shell_cmd_map()
+
 
 def MaybeGetReadline():
     # type: () -> Optional[Readline]

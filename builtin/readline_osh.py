@@ -135,9 +135,8 @@ class Bind(vm._Builtin):
                     return 1
                 
                 if arg.X:
-                    self.errfmt.Print_("warning: bind -X isn't implemented",
-                                    blame_loc=cmd_val.arg_locs[0])
-                    return 1
+                    readline.print_shell_cmd_map()
+                    
         except ValueError as e:
             self.errfmt.Print_("bind error: %s" % str(e), loc.Missing)
             return 1

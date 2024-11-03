@@ -705,8 +705,56 @@ Change what's displayed on the screen to reflect the current\n\
 contents of the line buffer.");
 
 
-/* List binding functions */
+/* Bind */
 
+/* -x/-X command keymaps */
+static Keymap emacs_cmd_map;
+static Keymap vi_insert_cmd_map;
+static Keymap vi_movement_cmd_map;
+
+/* 
+    These forcibly cast between a Keymap* and a rl_command_func_t*. Readline 
+    uses an additional `.type` field to keep track of the pointer's true type. 
+*/
+#define RL_KEYMAP_TO_FUNCTION(data) (rl_command_func_t *)(data)
+#define RL_FUNCTION_TO_KEYMAP(map, key) (Keymap)(map[key].function)
+
+static void
+_init_command_maps()
+{
+    emacs_cmd_map = rl_make_bare_keymap();
+    vi_insert_cmd_map = rl_make_bare_keymap();
+    vi_movement_cmd_map = rl_make_bare_keymap();
+
+    /* Ensure that Esc- and Ctrl-X are also keymaps */
+    emacs_cmd_map[CTRL('X')].type = ISKMAP;
+    emacs_cmd_map[CTRL('X')].function = RL_KEYMAP_TO_FUNCTION(rl_make_bare_keymap());
+    emacs_cmd_map[ESC].type = ISKMAP;
+    emacs_cmd_map[ESC].function = RL_KEYMAP_TO_FUNCTION(rl_make_bare_keymap());
+}
+
+static Keymap
+_get_associated_cmd_map(kmap)
+Keymap kmap;
+{
+    if (emacs_cmd_map == NULL)
+        _init_command_maps();
+
+    if (kmap == emacs_standard_keymap)
+        return emacs_cmd_map;
+    else if (kmap == vi_insertion_keymap)
+        return vi_insert_cmd_map;
+    else if (kmap == vi_movement_keymap)
+        return vi_movement_cmd_map;
+    else if (kmap == emacs_meta_keymap)
+        return (RL_FUNCTION_TO_KEYMAP(emacs_cmd_map, ESC));
+    else if (kmap == emacs_ctlx_keymap)
+        return (RL_FUNCTION_TO_KEYMAP(emacs_cmd_map, CTRL('X')));
+
+    return (Keymap) NULL;
+}
+
+/* List binding functions */
 static PyObject*
 list_funmap_names(PyObject *self, PyObject *args)
 {
@@ -868,6 +916,61 @@ PyDoc_STRVAR(doc_unbind_rl_function,
 Unbind all keys bound to the named readline function in the current keymap.");
 
 
+static PyObject*
+unbind_shell_cmd(PyObject *self, PyObject *args)
+{
+    char *kseq;
+    Keymap cmd_map;
+
+    if (!PyArg_ParseTuple(args, "s:unbind_shell_cmd", &kseq))
+        return NULL;
+
+    cmd_map = _get_associated_cmd_map(rl_get_keymap());
+    if (cmd_map == NULL) {
+        PyErr_SetString(PyExc_ValueError, "Could not get command map for current keymap");
+        return NULL;
+    }
+
+    if (rl_bind_keyseq_in_map(kseq, (rl_command_func_t *)NULL, cmd_map) != 0) {
+        PyErr_Format(PyExc_ValueError, "'%s': can't unbind from shell command keymap", kseq);
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(doc_unbind_shell_cmd,
+"unbind_shell_cmd(key_sequence) -> None\n\
+Unbind a key sequence from the current keymap's associated shell command map.");
+
+
+static PyObject*
+print_shell_cmd_map(PyObject *self, PyObject *noarg)
+{
+    Keymap curr_map, cmd_map;
+
+    curr_map = rl_get_keymap();
+    cmd_map = _get_associated_cmd_map(curr_map);
+    
+    if (cmd_map == NULL) {
+        PyErr_SetString(PyExc_ValueError, "Could not get shell command map for current keymap");
+        return NULL;
+    }
+
+    rl_set_keymap(cmd_map);
+    rl_macro_dumper(1); 
+    rl_set_keymap(curr_map);
+
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(doc_print_shell_cmd_map,
+"print_shell_cmd_map() -> None\n\
+Print all bindings for shell commands in the current keymap.");
+
+
+
+
 /* Keymap toggling code */
 static Keymap orig_keymap = NULL;
 
@@ -910,6 +1013,7 @@ restore_orig_keymap(PyObject *self, PyObject *args)
 PyDoc_STRVAR(doc_restore_orig_keymap,
 "restore_orig_keymap() -> None\n\
 Restore the previously saved keymap if one exists.");
+
 
 
 
@@ -967,6 +1071,8 @@ static struct PyMethodDef readline_methods[] = {
     {"unbind_rl_function", unbind_rl_function, METH_VARARGS, doc_unbind_rl_function},
     {"use_temp_keymap", use_temp_keymap, METH_VARARGS, doc_use_temp_keymap},
     {"restore_orig_keymap", restore_orig_keymap, METH_NOARGS, doc_restore_orig_keymap},
+    {"unbind_shell_cmd", unbind_shell_cmd, METH_VARARGS, doc_unbind_shell_cmd},
+    {"print_shell_cmd_map", print_shell_cmd_map, METH_NOARGS, doc_print_shell_cmd_map},
     {0, 0}
 };
 #endif
