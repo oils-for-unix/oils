@@ -465,7 +465,7 @@ proc p3 {
 EOF
 
   cat >$work_dir/demo.py <<EOF
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 print("hi")
 EOF

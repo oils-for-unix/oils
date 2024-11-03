@@ -118,6 +118,8 @@ MarkLastCommands = 1 << 3
 NoDebugTrap = 1 << 4
 NoErrTrap = 1 << 5
 
+_STRICT_ERREXIT_COND_MSG = "Command conditionals should only have one status, not %s (strict_errexit, OILS-ERR-300)"
+
 
 def MakeBuiltinArgv(argv1):
     # type: (List[str]) -> cmd_value.Argv
@@ -137,7 +139,7 @@ class Deps(object):
 
 
 def _HasManyStatuses(node):
-    # type: (command_t) -> bool
+    # type: (command_t) -> Optional[command_t]
     """Code patterns that are bad for POSIX errexit.  For YSH strict_errexit.
 
     Note: strict_errexit also uses
@@ -148,7 +150,7 @@ def _HasManyStatuses(node):
         # Atoms.
         # TODO: Do we need YSH atoms here?
         if case(command_e.Simple, command_e.DBracket, command_e.DParen):
-            return False
+            return None
 
         elif case(command_e.Redirect):
             node = cast(command.Redirect, UP_node)
@@ -167,14 +169,14 @@ def _HasManyStatuses(node):
                 return _HasManyStatuses(node.children[0])
             else:
                 # Multiple parts like 'ls | wc' is disallowed
-                return True
+                return node
 
         elif case(command_e.AndOr):
             node = cast(command.AndOr, UP_node)
             for c in node.children:
                 if _HasManyStatuses(c):
-                    return True
-            return False  # otherwise allow 'if true && true; ...'
+                    return c
+            return None  # otherwise allow 'if true && true; ...'
 
         # - ShAssignment could be allowed, though its exit code will always be
         #   0 without command subs
@@ -182,8 +184,7 @@ def _HasManyStatuses(node):
         #   BUT could be a proc executed inside a child process, which causes a
         #   problem: the strict_errexit check has to occur at runtime and there's
         #   no way to signal it ot the parent.
-
-    return True
+    return node
 
 
 def PlusEquals(old_val, val):
@@ -570,11 +571,10 @@ class CommandEvaluator(object):
         if not (self.exec_opts.errexit() and self.exec_opts.strict_errexit()):
             return
 
-        if _HasManyStatuses(node):
-            node_str = ui.CommandType(node)
-            e_die(
-                "strict_errexit only allows simple commands in conditionals (got %s). "
-                % node_str, loc.Command(node))
+        bad_node = _HasManyStatuses(node)
+        if bad_node:
+            node_str = ui.CommandType(bad_node)
+            e_die(_STRICT_ERREXIT_COND_MSG % node_str, loc.Command(bad_node))
 
     def _StrictErrExitList(self, node_list):
         # type: (List[command_t]) -> None
@@ -592,12 +592,10 @@ class CommandEvaluator(object):
 
         assert len(node_list) > 0
         node = node_list[0]
-        if _HasManyStatuses(node):
-            # TODO: consolidate error message with above
-            node_str = ui.CommandType(node)
-            e_die(
-                "strict_errexit only allows simple commands in conditionals (got %s). "
-                % node_str, loc.Command(node))
+        bad_node = _HasManyStatuses(node)
+        if bad_node:
+            node_str = ui.CommandType(bad_node)
+            e_die(_STRICT_ERREXIT_COND_MSG % node_str, loc.Command(bad_node))
 
     def _EvalCondition(self, cond, blame_tok):
         # type: (condition_t, Token) -> bool

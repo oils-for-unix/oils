@@ -285,20 +285,21 @@ test-errexit-multiple-processes() {
 _strict-errexit-case() {
   local code=$1
 
-  case-banner "[strict_errexit] $code"
+  #case-banner "[strict_errexit] $code"
 
   _osh-error-1 \
     "set -o errexit; shopt -s strict_errexit; $code"
   echo
 }
 
-test-strict_errexit_1() {
+test-strict-errexit-1() {
   # Test out all the location info
 
   _strict-errexit-case '! { echo 1; echo 2; }'
 
   _strict-errexit-case '{ echo 1; echo 2; } && true'
   _strict-errexit-case '{ echo 1; echo 2; } || true'
+  _strict-errexit-case '{ echo 1; echo 2; } >/dev/null || true'
 
   # More chains
   _strict-errexit-case '{ echo 1; echo 2; } && true && true'
@@ -306,6 +307,8 @@ test-strict_errexit_1() {
   _strict-errexit-case 'true && true && { echo 1; echo 2; } || true || true'
 
   _strict-errexit-case 'if { echo 1; echo 2; }; then echo IF; fi'
+  _strict-errexit-case 'if { echo 1; echo 2; } >/dev/null; then echo IF; fi'
+
   _strict-errexit-case 'while { echo 1; echo 2; }; do echo WHILE; done'
   _strict-errexit-case 'until { echo 1; echo 2; }; do echo UNTIL; done'
 
@@ -315,7 +318,7 @@ test-strict_errexit_1() {
                         if p { echo hi }'
 }
 
-test-strict_errexit_conditionals() {
+test-strict-errexit-conditionals() {
   # this works, even though this is a subshell
   _strict-errexit-case '
 myfunc() { return 1; }
@@ -392,7 +395,7 @@ test-strict-errexit-old() {
 
   # command.Pipeline.
   _strict-errexit-case 'if ls | wc -l; then echo Pipeline; fi'
-  _strict-errexit-case 'if ! ls | wc -l; then echo Pipeline; fi'
+  _strict-errexit-case 'if ! ls | wc -l; then echo failed; fi'
 
   # This one is ALLOWED
   #_strict-errexit-case 'if ! ls; then echo Pipeline; fi'

@@ -53,8 +53,8 @@ def CommandType(cmd):
     # type: (command_t) -> str
     """For displaying commands in the UI."""
 
-    # Displays 'command.Simple' for now, maybe change it.
-    return command_str(cmd.tag())
+    # Displays 'Simple', 'BraceGroup', etc.
+    return command_str(cmd.tag(), dot=False)
 
 
 def PrettyId(id_):

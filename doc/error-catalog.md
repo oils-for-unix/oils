@@ -414,6 +414,29 @@ Or:
 
 <!-- TODO -->
 
+## Runtime Errors: `strict:all`
+
+### OILS-ERR-300
+
+```
+  if ! ls | wc -l; then echo failed; fi
+          ^
+[ -c flag ]:1: fatal: Command conditionals should only have one status, not Pipeline (strict_errexit, OILS-ERR-300)
+```
+
+Compound commands can't be used as conditionals because it's ambiguous.
+
+It confuses true/false with pass/fail.  What if part of the pipeline fails?
+What if `ls` doesn't exist?
+
+This YSH idiom is more explicit:
+
+    try {
+      ls | wc -l
+    }
+    if (_error.code !== 0) {
+      echo failed
+    }
 
 ## Appendix
 
