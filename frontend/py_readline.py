@@ -122,6 +122,14 @@ class Readline(object):
         # type: (str) -> None
         line_input.unbind_command(fn_name)
 
+    def use_temp_keymap(self, fn_name):
+        # type: (str) -> None
+        line_input.use_temp_keymap(fn_name)
+
+    def restore_orig_keymap(self):
+        # type: () -> None
+        line_input.restore_orig_keymap()
+
 
 def MaybeGetReadline():
     # type: () -> Optional[Readline]

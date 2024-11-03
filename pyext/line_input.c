@@ -867,6 +867,52 @@ PyDoc_STRVAR(doc_unbind_command,
 "unbind_command(function_name) -> None\n\
 Unbind all keys bound to the named readline function in the current keymap.");
 
+
+/* Keymap toggling code */
+static Keymap orig_keymap = NULL;
+
+static PyObject*
+use_temp_keymap(PyObject *self, PyObject *args)
+{
+    char *keymap_name;
+    Keymap new_keymap;
+
+    if (!PyArg_ParseTuple(args, "s:use_temp_keymap", &keymap_name))
+        return NULL;
+
+    new_keymap = rl_get_keymap_by_name(keymap_name);
+    if (new_keymap == NULL) {
+        PyErr_Format(PyExc_ValueError, "`%s': unknown keymap name", keymap_name);
+        return NULL;
+    }
+
+    orig_keymap = rl_get_keymap();
+    rl_set_keymap(new_keymap);
+    
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(doc_use_temp_keymap,
+"use_temp_keymap(keymap_name) -> None\n\
+Temporarily switch to named keymap, saving the current one.");
+
+static PyObject*
+restore_orig_keymap(PyObject *self, PyObject *args)
+{
+    if (orig_keymap != NULL) {
+        rl_set_keymap(orig_keymap);
+        orig_keymap = NULL;
+    }
+    
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(doc_restore_orig_keymap,
+"restore_orig_keymap() -> None\n\
+Restore the previously saved keymap if one exists.");
+
+
+
 /* Table of functions exported by the module */
 
 #ifdef OVM_MAIN
@@ -919,6 +965,8 @@ static struct PyMethodDef readline_methods[] = {
     {"variable_dumper", variable_dumper, METH_VARARGS, doc_list_variable_dumper},
     {"query_bindings", query_bindings, METH_VARARGS, doc_query_bindings},
     {"unbind_command", unbind_command, METH_VARARGS, doc_unbind_command},
+    {"use_temp_keymap", use_temp_keymap, METH_VARARGS, doc_use_temp_keymap},
+    {"restore_orig_keymap", restore_orig_keymap, METH_NOARGS, doc_restore_orig_keymap},
     {0, 0}
 };
 #endif

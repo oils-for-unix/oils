@@ -21,6 +21,23 @@ if TYPE_CHECKING:
     from core import sh_init
     from display import ui
 
+class ctx_Keymap(object):
+
+    def __init__(self, readline, keymap_name = None):
+        # type: (Readline, str) -> None
+        self.readline = readline
+        self.orig_keymap_name = keymap_name
+
+    def __enter__(self):
+        # type: () -> None
+        if self.orig_keymap_name:
+            self.readline.use_temp_keymap(self.orig_keymap_name)
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        if self.orig_keymap_name:
+            self.readline.restore_orig_keymap()
+        
 
 class Bind(vm._Builtin):
     """Interactive interface to readline bindings"""
@@ -42,12 +59,13 @@ class Bind(vm._Builtin):
         
         # print("attrs:\n", attrs)
         # print("attrs.attrs:\n", attrs.attrs)
-        # print("attrs.attrs.f:\n", attrs.attrs["f"])
-        # print("type(attrs.attrs[f]):\n", type(attrs.attrs["f"]))
-        # print("attrs.attrs[f].tag() :\n", attrs.attrs["f"].tag())
-        # print("attrs.attrs[f].tag() == value_e.Undef:\n", attrs.attrs["f"].tag() == value_e.Undef)
+        # print("attrs.attrs.m:\n", attrs.attrs["m"])
+        # print("type(attrs.attrs.m):\n", type(attrs.attrs["m"]))
+        # print("type(attrs.attrs[m]):\n", type(attrs.attrs["m"]))
+        # print("attrs.attrs[m].tag() :\n", attrs.attrs["m"].tag())
+        # print("attrs.attrs[m].tag() == value_e.Undef:\n", attrs.attrs["m"].tag() == value_e.Undef)
         # print(arg_r)
-        # print("Reader argv=%s n=%i i=%i" % (arg_r.argv, arg_r.n, arg_r.i))
+        # print("Reader argv=%s locs=%s n=%i i=%i" % (arg_r.argv, str(arg_r.locs), arg_r.n, arg_r.i))
         
         # Check mutually-exclusive flags and non-flag args
         found = False
@@ -67,57 +85,61 @@ class Bind(vm._Builtin):
         arg = arg_types.bind(attrs.attrs)
         # print("arg:\n", arg)
         # print("dir(arg):\n", dir(arg))
-        # print("arg.f:\n", arg.f)
+        # print("arg.m:\n", arg.m)
         
-        if arg.m:
-            print("Using keymap: " + arg.m)
         
-        if arg.l:
-            readline.list_funmap_names()
-            
-        if arg.p:
-            readline.function_dumper(True)
+        try:                
+            with ctx_Keymap(readline, arg.m): # Replicates bind's -m behavior
+                
+                # This gauntlet of ifs is meant to replicate bash behavior, in case we 
+                # need to relax the mutual exclusion of flags like bash does
+                
+                if arg.l:
+                    readline.list_funmap_names()
+                    
+                if arg.p:
+                    readline.function_dumper(True)
 
-        if arg.P:
-            readline.function_dumper(False)
+                if arg.P:
+                    readline.function_dumper(False)
 
-        if arg.s:
-            readline.macro_dumper(True)
+                if arg.s:
+                    readline.macro_dumper(True)
 
-        if arg.S:
-            readline.macro_dumper(False)
-            
-        if arg.v:
-            readline.variable_dumper(True)
+                if arg.S:
+                    readline.macro_dumper(False)
+                    
+                if arg.v:
+                    readline.variable_dumper(True)
 
-        if arg.V:
-            readline.variable_dumper(False)
-            
-        if arg.f:
-            # print("Initializing bind from %s" % arg.f)
-            readline.read_init_file(arg.f)
+                if arg.V:
+                    readline.variable_dumper(False)
+                    
+                if arg.f:
+                    readline.read_init_file(arg.f)
 
-        if arg.q:
-            readline.query_bindings(arg.q)
+                if arg.q:
+                    readline.query_bindings(arg.q)
 
-        if arg.u:
-            self.errfmt.Print_("warning: bind -u isn't implemented",
-                            blame_loc=cmd_val.arg_locs[0])
-            return 1
+                if arg.u:
+                    readline.unbind_command(arg.u)
 
-        if arg.r:
-            self.errfmt.Print_("warning: bind -r isn't implemented",
-                            blame_loc=cmd_val.arg_locs[0])
-            return 1
+                if arg.r:
+                    self.errfmt.Print_("warning: bind -r isn't implemented",
+                                    blame_loc=cmd_val.arg_locs[0])
+                    return 1
 
-        if arg.x:
-            self.errfmt.Print_("warning: bind -x isn't implemented",
-                            blame_loc=cmd_val.arg_locs[0])
-            return 1
-        
-        if arg.X:
-            self.errfmt.Print_("warning: bind -X isn't implemented",
-                            blame_loc=cmd_val.arg_locs[0])
+                if arg.x:
+                    self.errfmt.Print_("warning: bind -x isn't implemented",
+                                    blame_loc=cmd_val.arg_locs[0])
+                    return 1
+                
+                if arg.X:
+                    self.errfmt.Print_("warning: bind -X isn't implemented",
+                                    blame_loc=cmd_val.arg_locs[0])
+                    return 1
+        except ValueError as e:
+            self.errfmt.Print_("bind error: %s" % str(e), loc.Missing)
             return 1
 
         return 0
