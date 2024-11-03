@@ -133,6 +133,10 @@ class Readline(object):
     def print_shell_cmd_map(self):
         # type: () -> None
         line_input.print_shell_cmd_map()
+        
+    def unbind_keyseq(self, keyseq):
+        # type: (str) -> None
+        line_input.unbind_keyseq(keyseq)
 
 
 def MaybeGetReadline():

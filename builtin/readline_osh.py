@@ -125,9 +125,7 @@ class Bind(vm._Builtin):
                     readline.unbind_rl_function(arg.u)
 
                 if arg.r:
-                    self.errfmt.Print_("warning: bind -r isn't implemented",
-                                    blame_loc=cmd_val.arg_locs[0])
-                    return 1
+                    readline.unbind_keyseq(arg.r)
 
                 if arg.x:
                     self.errfmt.Print_("warning: bind -x isn't implemented",

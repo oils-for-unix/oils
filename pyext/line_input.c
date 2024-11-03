@@ -919,10 +919,10 @@ Unbind all keys bound to the named readline function in the current keymap.");
 static PyObject*
 unbind_shell_cmd(PyObject *self, PyObject *args)
 {
-    char *kseq;
+    char *keyseq;
     Keymap cmd_map;
 
-    if (!PyArg_ParseTuple(args, "s:unbind_shell_cmd", &kseq))
+    if (!PyArg_ParseTuple(args, "s:unbind_shell_cmd", &keyseq))
         return NULL;
 
     cmd_map = _get_associated_cmd_map(rl_get_keymap());
@@ -931,8 +931,8 @@ unbind_shell_cmd(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    if (rl_bind_keyseq_in_map(kseq, (rl_command_func_t *)NULL, cmd_map) != 0) {
-        PyErr_Format(PyExc_ValueError, "'%s': can't unbind from shell command keymap", kseq);
+    if (rl_bind_keyseq_in_map(keyseq, (rl_command_func_t *)NULL, cmd_map) != 0) {
+        PyErr_Format(PyExc_ValueError, "'%s': can't unbind from shell command keymap", keyseq);
         return NULL;
     }
 
@@ -967,6 +967,56 @@ print_shell_cmd_map(PyObject *self, PyObject *noarg)
 PyDoc_STRVAR(doc_print_shell_cmd_map,
 "print_shell_cmd_map() -> None\n\
 Print all bindings for shell commands in the current keymap.");
+
+
+/* Remove all bindings for a given keyseq */
+
+static PyObject*
+unbind_keyseq(PyObject *self, PyObject *args)
+{
+    char *seq, *keyseq;
+    int kslen, type;
+    rl_command_func_t *fn;
+
+    if (!PyArg_ParseTuple(args, "s:unbind_keyseq", &seq))
+        return NULL;
+
+    keyseq = (char *)malloc((2 * strlen(seq)) + 1);
+    if (rl_translate_keyseq(seq, keyseq, &kslen) != 0) {
+        free(keyseq);
+        PyErr_Format(PyExc_ValueError, "'%s': cannot translate key sequence", seq);
+        return NULL;
+    }
+
+    fn = rl_function_of_keyseq_len(keyseq, kslen, (Keymap)NULL, &type);
+    if (!fn) {
+        free(keyseq);
+        Py_RETURN_NONE;
+    }
+
+    if (type == ISKMAP) {
+        fn = ((Keymap)fn)[ANYOTHERKEY].function;
+    }
+
+    if (rl_bind_keyseq(seq, (rl_command_func_t *)NULL) != 0) {
+        free(keyseq);
+        PyErr_Format(PyExc_ValueError, "'%s': cannot unbind", seq);
+        return NULL;
+    }
+
+    /* 
+    TODO: Handle shell command unbinding if f == bash_execute_unix_command or
+    rather, whatever the osh equivalent will be
+    */
+
+    free(keyseq);
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(doc_unbind_keyseq,
+"unbind_keyseq(sequence) -> None\n\
+Unbind a key sequence from the current keymap.");
+
 
 
 
@@ -1073,6 +1123,7 @@ static struct PyMethodDef readline_methods[] = {
     {"restore_orig_keymap", restore_orig_keymap, METH_NOARGS, doc_restore_orig_keymap},
     {"unbind_shell_cmd", unbind_shell_cmd, METH_VARARGS, doc_unbind_shell_cmd},
     {"print_shell_cmd_map", print_shell_cmd_map, METH_NOARGS, doc_print_shell_cmd_map},
+    {"unbind_keyseq", unbind_keyseq, METH_VARARGS, doc_unbind_keyseq},
     {0, 0}
 };
 #endif
