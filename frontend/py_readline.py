@@ -118,6 +118,10 @@ class Readline(object):
         # type: (str) -> None
         line_input.query_bindings(fn_name)
 
+    def unbind_command(self, fn_name):
+        # type: (str) -> None
+        line_input.unbind_command(fn_name)
+
 
 def MaybeGetReadline():
     # type: () -> Optional[Readline]

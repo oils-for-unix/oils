@@ -9,6 +9,7 @@ from _devbuild.gen.syntax_asdl import loc
 from _devbuild.gen.value_asdl import value, value_e
 from core import pyutil
 from core import vm
+from core.error import e_usage
 from frontend import flag_util
 from mycpp import mops
 from mycpp import mylib

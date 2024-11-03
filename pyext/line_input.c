@@ -844,6 +844,29 @@ PyDoc_STRVAR(doc_query_bindings,
 Query bindings to see what's bound to a given function.");
 
 
+static PyObject*
+unbind_command(PyObject *self, PyObject *args)
+{
+    char *fn_name;
+    rl_command_func_t *cmd_fn;
+
+    if (!PyArg_ParseTuple(args, "s:unbind_command", &fn_name))
+        return NULL;
+
+    cmd_fn = rl_named_function(fn_name);
+    if (cmd_fn == NULL) {
+        PyErr_Format(PyExc_ValueError, "`%s': unknown function name", fn_name);
+        return NULL;
+    }
+
+    rl_unbind_function_in_map(cmd_fn, rl_get_keymap());
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(doc_unbind_command,
+"unbind_command(function_name) -> None\n\
+Unbind all keys bound to the named readline function in the current keymap.");
+
 /* Table of functions exported by the module */
 
 #ifdef OVM_MAIN
@@ -895,6 +918,7 @@ static struct PyMethodDef readline_methods[] = {
     {"macro_dumper", macro_dumper, METH_VARARGS, doc_list_macro_dumper},
     {"variable_dumper", variable_dumper, METH_VARARGS, doc_list_variable_dumper},
     {"query_bindings", query_bindings, METH_VARARGS, doc_query_bindings},
+    {"unbind_command", unbind_command, METH_VARARGS, doc_unbind_command},
     {0, 0}
 };
 #endif
