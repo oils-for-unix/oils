@@ -845,12 +845,12 @@ Query bindings to see what's bound to a given function.");
 
 
 static PyObject*
-unbind_command(PyObject *self, PyObject *args)
+unbind_rl_function(PyObject *self, PyObject *args)
 {
     char *fn_name;
     rl_command_func_t *cmd_fn;
 
-    if (!PyArg_ParseTuple(args, "s:unbind_command", &fn_name))
+    if (!PyArg_ParseTuple(args, "s:unbind_rl_function", &fn_name))
         return NULL;
 
     cmd_fn = rl_named_function(fn_name);
@@ -863,8 +863,8 @@ unbind_command(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(doc_unbind_command,
-"unbind_command(function_name) -> None\n\
+PyDoc_STRVAR(doc_unbind_rl_function,
+"unbind_rl_function(function_name) -> None\n\
 Unbind all keys bound to the named readline function in the current keymap.");
 
 
@@ -964,7 +964,7 @@ static struct PyMethodDef readline_methods[] = {
     {"macro_dumper", macro_dumper, METH_VARARGS, doc_list_macro_dumper},
     {"variable_dumper", variable_dumper, METH_VARARGS, doc_list_variable_dumper},
     {"query_bindings", query_bindings, METH_VARARGS, doc_query_bindings},
-    {"unbind_command", unbind_command, METH_VARARGS, doc_unbind_command},
+    {"unbind_rl_function", unbind_rl_function, METH_VARARGS, doc_unbind_rl_function},
     {"use_temp_keymap", use_temp_keymap, METH_VARARGS, doc_use_temp_keymap},
     {"restore_orig_keymap", restore_orig_keymap, METH_NOARGS, doc_restore_orig_keymap},
     {0, 0}

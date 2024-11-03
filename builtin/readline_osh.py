@@ -122,7 +122,7 @@ class Bind(vm._Builtin):
                     readline.query_bindings(arg.q)
 
                 if arg.u:
-                    readline.unbind_command(arg.u)
+                    readline.unbind_rl_function(arg.u)
 
                 if arg.r:
                     self.errfmt.Print_("warning: bind -r isn't implemented",

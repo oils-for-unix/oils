@@ -118,9 +118,9 @@ class Readline(object):
         # type: (str) -> None
         line_input.query_bindings(fn_name)
 
-    def unbind_command(self, fn_name):
+    def unbind_rl_function(self, fn_name):
         # type: (str) -> None
-        line_input.unbind_command(fn_name)
+        line_input.unbind_rl_function(fn_name)
 
     def use_temp_keymap(self, fn_name):
         # type: (str) -> None
