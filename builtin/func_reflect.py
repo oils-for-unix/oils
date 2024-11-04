@@ -47,6 +47,7 @@ class Id(vm._Callable):
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
+        unused_vm = rd.PosValue()  # vm.id()
         val = rd.PosValue()
         rd.Done()
 

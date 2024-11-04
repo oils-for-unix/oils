@@ -783,3 +783,15 @@ Given an index, get a handle to a call stack frame.
     var frame = vm.getFrame(-2)  # the calling frame
 
 If the index is out of range, an error is raised.
+
+### id()
+
+Returns an integer ID for mutable values like List, Dict, and Obj.
+
+    = vm.id({})
+    (Int)  123
+
+You can use it to test if two names refer to the same instance.
+
+`vm.id()` is undefined on immutable values like Bool, Int, Float, Str, etc.
+

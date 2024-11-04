@@ -68,7 +68,7 @@ error handling, and more.
                                eval()           evalToDict()   captureStdout()
                                promptVal()
                              X time()         X strftime()   X glob()
-                   vm          getFrame()
+                   vm          getFrame()       id() 
 ```
 
 <h2 id="builtin-func">
@@ -91,8 +91,7 @@ error handling, and more.
                   toJson8()         fromJson8()
 X [J8 Decode]     J8.Bool()         J8.Int()        ...
   [Pattern]       _group()          _start()        _end()
-  [Introspection] id()
-                  shvarGet()        getVar()        setVar()  
+  [Introspection] shvarGet()        getVar()        setVar()  
                   parseCommand()  X parseExpr()   X bindFrame()
   [Hay Config]    parseHay()        evalHay()
 X [Hashing]       sha1dc()          sha256()

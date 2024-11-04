@@ -19,7 +19,7 @@ pp test_ (b is Bool)
 # Objects don't have equality, only identity
 #pp test_ (b === Bool)
 
-pp test_ (id(b) === id(Bool))
+pp test_ (vm.id(b) === vm.id(Bool))
 
 ## STDOUT:
 (Obj)   ("name":"Bool") --> ("__index__":<BuiltinFunc>)

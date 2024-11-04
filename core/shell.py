@@ -539,7 +539,10 @@ def Main(
     io_obj = Obj(Obj(None, io_methods), io_props)
 
     vm_methods = NewDict()  # type: Dict[str, value_t]
+    # These are methods, not free functions, because they reflect VM state
     vm_methods['getFrame'] = value.BuiltinFunc(func_reflect.GetFrame(mem))
+    vm_methods['id'] = value.BuiltinFunc(func_reflect.Id())
+
     vm_props = NewDict()  # type: Dict[str, value_t]
     vm_obj = Obj(Obj(None, vm_methods), vm_props)
 
@@ -871,7 +874,6 @@ def Main(
                     func_eggex.MatchFunc(func_eggex.S, None, mem))
     _AddBuiltinFunc(mem, '_end', func_eggex.MatchFunc(func_eggex.E, None, mem))
 
-    _AddBuiltinFunc(mem, 'id', func_reflect.Id())
     # TODO: should this be parseCommandStr() vs. parseFile() for Hay?
     _AddBuiltinFunc(mem, 'parseCommand',
                     func_reflect.ParseCommand(parse_ctx, mem, errfmt))
