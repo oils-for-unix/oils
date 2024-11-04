@@ -8,8 +8,8 @@ try {
   # TODO:
   # - change arg order
   # - second arg optional
-  var obj = Obj.create({x: 4}, null)
-  #var obj = Obj.create(null, {x:4})
+  var obj = Obj.new({x: 4}, null)
+  #var obj = Obj.new(null, {x:4})
   pp test_ (obj)
 }
 echo $[_error.code]

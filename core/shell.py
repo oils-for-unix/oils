@@ -578,11 +578,11 @@ def Main(
     tag = value_e.Obj
     type_name = value_str(tag, dot=False)
 
-    # TODO: change it to __call__
-    obj_create = value.BuiltinFunc(func_misc.Object())
+    # TODO: change Obj.new to __call__
+    obj_new = value.BuiltinFunc(func_misc.Object())
     type_obj = Obj(type_obj_methods, {
         'name': value.Str(type_name),
-        'create': obj_create
+        'new': obj_new
     })
 
     mem.AddBuiltin(type_name, type_obj)
