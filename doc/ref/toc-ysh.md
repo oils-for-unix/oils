@@ -59,8 +59,8 @@ error handling, and more.
                    Place       setValue()
   [Code Types]     Func        BuiltinFunc      BoundFunc
                    Proc        BuiltinProc
-  [Objects]        Obj         __invoke__     X __call__       __index__
-                             X __str__
+  [Objects]        Obj         __invoke__       new
+                             X __call__       __index__      X __str__
   [Reflection]     Command     CommandFrag
                    Expr
                    Frame
@@ -85,8 +85,7 @@ error handling, and more.
   [List]          join()       
   [Dict]          keys()            values()        get()       
   [Float]         floatsEqual()   X isinf()       X isnan()
-  [Obj]           Object()          prototype()     propView()
-                  get()
+  [Obj]           first()           rest()          get()
   [Word]          glob()            maybe()
   [Serialize]     toJson()          fromJson()
                   toJson8()         fromJson8()

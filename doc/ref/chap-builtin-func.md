@@ -276,35 +276,24 @@ It's usually better to make an approximate comparison:
 
 ## Obj
 
-### Object
+### first()
 
-Construct an object with a prototype and properties:
+Get the Dict that contains an object's properties.
 
-    var obj = Object(null, {x: 42}}
-
-An object with methods:
-
-    func mymethod(self) { return (self.x) }
-    var cls = Object(null, {mymethod: mymethod})
-    var obj = Object(cls, {x: 42}}
-
-### prototype()
-
-Get the prototype of an object.  May be null:
-
-     ysh$ = prototype(obj)
-    (Null)  null
-
-### propView()
-
-Get a Dict that aliases an object's properties.
-
-    ysh andy@hoover:~/git/oilshell/oil$ = propView(obj)
+    ysh$ = first(obj)
     (Dict)  {x: 42}
 
-This means that if the Dict is modified, then the object is too.
+The Dict and Obj share the same storage.  So if the Dict is modified, the
+object is too.
 
-If you want to copy it, use `dict(obj)`.
+If you want a copy, use `dict(obj)`.
+
+### rest()
+
+Get the "prototype" of an Obj, which is another Obj, or null:
+
+    ysh$ = rest(obj)
+    (Null)  null
 
 ## Word
 

@@ -573,6 +573,15 @@ Then invoke it like a proc:
     invokable_obj myword (3)
     # sum => 6
 
+### new
+
+Create an object:
+
+    var methods = Obj.new({mymethod: foo}, null)
+    var instance = Obj.new({x: 3, y: 4}, methods)
+
+TODO: This will become `Obj.__call__`, which means it's written `Obj`.
+
 ### `__call__`
 
 TODO

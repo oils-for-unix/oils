@@ -1,15 +1,11 @@
 ## our_shell: ysh
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 
 #### New Obj API
 shopt --set ysh:upgrade
 
 try {
-  # TODO:
-  # - change arg order
-  # - second arg optional
   var obj = Obj.new({x: 4}, null)
-  #var obj = Obj.new(null, {x:4})
   pp test_ (obj)
 }
 echo $[_error.code]
@@ -24,6 +20,10 @@ try {
 }
 echo $[_error.code]
 
+# Second arg is optional
+var obj2 = Obj.new({y: 5})
+pp test_ (obj2)
+
 ## STDOUT:
 (Obj)   ("x":4)
 0
@@ -31,9 +31,8 @@ echo $[_error.code]
 0
 (Null)   null
 0
+(Obj)   ("y":5)
 ## END
-
-
 
 #### Object() creates prototype chain
 

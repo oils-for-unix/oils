@@ -28,7 +28,7 @@ _ = log
 
 
 class Object(vm._Callable):
-    """Create a value.Obj
+    """OLD API to a value.Obj
 
     The order of params follows JavaScript's Object.create():
         var obj = Object(prototype, props)
@@ -58,6 +58,48 @@ class Object(vm._Callable):
             else:
                 raise error.TypeErr(prototype, 'Object() expected Obj or Null',
                                     proto_loc)
+
+        return Obj(chain, props)
+
+
+class Obj_call(vm._Callable):
+    """New API to create a value.Obj
+
+    It has a more natural order
+        var obj = Obj(props, prototype)
+
+    Until we have __call__, it's Obj:
+        var obj = Obj.new(props, prototype)
+    """
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        props = rd.PosDict()
+
+        prototype = rd.OptionalValue()
+        proto_loc = rd.BlamePos()
+
+        rd.Done()
+
+        chain = None  # type: Optional[Obj]
+
+        if prototype is not None:
+            UP_prototype = prototype
+            with tagswitch(prototype) as case:
+                if case(value_e.Null):  # Obj({}, null)
+                    pass
+                elif case(value_e.Obj):
+                    prototype = cast(Obj, UP_prototype)
+                    chain = prototype
+                else:
+                    raise error.TypeErr(prototype,
+                                        'Object() expected Obj or Null',
+                                        proto_loc)
 
         return Obj(chain, props)
 
