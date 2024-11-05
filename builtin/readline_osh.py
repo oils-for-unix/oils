@@ -35,7 +35,7 @@ class ctx_Keymap(object):
 
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
-        if self.orig_keymap_name:
+        if self.orig_keymap_name is not None:
             self.readline.restore_orig_keymap()
         
 
@@ -52,7 +52,7 @@ class Bind(vm._Builtin):
         # type: (cmd_value.Argv) -> int
         readline = self.readline
         if not readline:
-            e_usage("is disabled because Oil wasn't compiled with 'readline'",
+            e_usage("is disabled because Oils wasn't compiled with 'readline'",
                     loc.Missing)
         
         attrs, arg_r = flag_util.ParseCmdVal('bind', cmd_val)
@@ -115,19 +115,19 @@ class Bind(vm._Builtin):
                 if arg.V:
                     readline.variable_dumper(False)
                     
-                if arg.f:
+                if arg.f is not None:
                     readline.read_init_file(arg.f)
 
-                if arg.q:
+                if arg.q is not None:
                     readline.query_bindings(arg.q)
 
-                if arg.u:
+                if arg.u is not None:
                     readline.unbind_rl_function(arg.u)
 
-                if arg.r:
+                if arg.r is not None:
                     readline.unbind_keyseq(arg.r)
 
-                if arg.x:
+                if arg.x is not None:
                     self.errfmt.Print_("warning: bind -x isn't implemented",
                                     blame_loc=cmd_val.arg_locs[0])
                     return 1
