@@ -1998,6 +1998,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         will_glob = not self.exec_opts.noglob()
 
+        if 0:
+            log('---')
+            log('FRAME')
+            for i, piece in enumerate(frame):
+                log('(%d) %s', i, piece)
+            log('')
+
         # Array of strings, some of which are BOTH IFS-escaped and GLOB escaped!
         frags = []  # type: List[str]
         for piece in frame:
@@ -2015,6 +2022,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 frag = self.splitter.Escape(frag)
 
             frags.append(frag)
+
+        if 0:
+            log('---')
+            log('FRAGS')
+            for i, frag in enumerate(frags):
+                log('(%d) %s', i, frag)
+            log('')
 
         flat = ''.join(frags)
         #log('flat: %r', flat)
