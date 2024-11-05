@@ -14,7 +14,7 @@ from frontend import flag_util
 from mycpp import mops
 from mycpp import mylib
 
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value
     from frontend.py_readline import Readline
