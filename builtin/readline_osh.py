@@ -136,7 +136,9 @@ class Bind(vm._Builtin):
                     readline.print_shell_cmd_map()
                     
         except ValueError as e:
-            self.errfmt.Print_("bind error: %s" % str(e), loc.Missing)
+            # temp var to work around mycpp runtime limitation
+            msg = e.message  # type: str
+            self.errfmt.Print_("bind error: %s" % msg, loc.Missing)
             return 1
 
         return 0
