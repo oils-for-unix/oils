@@ -41,6 +41,18 @@ class Readline {
   void resize_terminal();
   void list_funmap_names();
 
+  // These functions were added for the 'bind' builtin
+  void read_init_file(BigStr* s);
+  void function_dumper(bool print_readably);
+  void macro_dumper(bool print_readably);
+  void variable_dumper(bool print_readably);
+  void query_bindings(BigStr* fn_name);
+  void unbind_rl_function(BigStr* fn_name);
+  void use_temp_keymap(BigStr* fn_name);
+  void restore_orig_keymap();
+  void print_shell_cmd_map();
+  void unbind_keyseq(BigStr* keyseq);
+
   static constexpr uint32_t field_mask() {
     return maskbit(offsetof(Readline, completer_delims_)) |
            maskbit(offsetof(Readline, completer_)) |
