@@ -22,7 +22,23 @@
 #
 #     rm -r -f ~/wedge  # would be better
 
+
+# Check if we're in the right directory
+if [[ ! -d "stdlib/osh" ]]; then
+    echo "Error: This script must be run from the root of the Oil project directory"
+    echo "Please cd to the root directory and try again"
+    exit 1
+fi
+
 : ${LIB_OSH=stdlib/osh}
+if [[ ! -f "$LIB_OSH/bash-strict.sh" ]] || [[ ! -f "$LIB_OSH/task-five.sh" ]]; then
+    echo "Error: Required source files not found in $LIB_OSH/"
+    echo "Expected files:"
+    echo "  - $LIB_OSH/bash-strict.sh"
+    echo "  - $LIB_OSH/task-five.sh"
+    exit 1
+fi
+
 source $LIB_OSH/bash-strict.sh
 source $LIB_OSH/task-five.sh
 
@@ -206,6 +222,53 @@ readonly -a WEDGE_DEPS_FEDORA=(
   # glibc-devel
 )
 
+readonly -a WEDGE_DEPS_ARCH=(
+  # https://archlinux.org/packages/core/x86_64/bzip2/
+  bzip2
+
+  # https://archlinux.org/packages/extra/x86_64/wget/
+  wget
+
+  # https://archlinux.org/packages/extra/x86_64/tree/
+  tree
+
+  # https://archlinux.org/packages/core/x86_64/gawk/
+  gawk
+
+  # https://archlinux.org/packages/core/x86_64/gcc/
+  gcc
+
+  # https://archlinux.org/packages/community/x86_64/ninja/
+  ninja
+
+  # https://archlinux.org/packages/extra/x86_64/cmake/
+  cmake
+
+  # https://archlinux.org/packages/core/x86_64/readline/
+  readline
+
+  # https://archlinux.org/packages/core/x86_64/zlib/
+  zlib
+
+  # https://archlinux.org/packages/core/x86_64/libffi/
+  libffi
+
+  # https://archlinux.org/packages/core/x86_64/openssl/
+  openssl
+
+  # https://archlinux.org/packages/core/x86_64/ncurses/
+  ncurses
+
+  # Development headers are included in the main packages on Arch,
+  # unlike other distros that separate them into -dev/-devel packages
+
+  # Python 2 from the AUR
+  # https://aur.archlinux.org/packages/python2
+  base-devel # needed for building packages from the AUR
+
+)
+
+
 install-debian-packages() {
   ### Packages for build/py.sh all, building wedges, etc.
 
@@ -247,6 +310,21 @@ wedge-deps-alpine() {
   # sudo dnf group install --assumeyes 'Development Tools'
 
   sudo apk add "${WEDGE_DEPS_ALPINE[@]}"
+}
+
+wedge-deps-arch() {
+  # Install packages without prompt 
+  
+  # First sync the package database
+  sudo pacman -Sy
+
+  # Then install packages
+  for pkg in "${WEDGE_DEPS_ARCH[@]}"; do
+    # Only install if not already installed
+    if ! pacman -Qi "$pkg" >/dev/null 2>&1; then
+      sudo pacman --noconfirm -S "$pkg"
+    fi
+  done
 }
 
 #
