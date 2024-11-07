@@ -44,7 +44,8 @@ error handling, and more.
   [Numbers]        Int
                    Float
                    Range
-  [String]         Str       X find()           replace()
+  [String]         Str       X find()         X findLast()
+                             X contains()       replace()
                                trim()           trimStart()      trimEnd()
                                startsWith()     endsWith()
                                upper()          lower()
@@ -54,9 +55,11 @@ error handling, and more.
                    Match       group()          start()          end()
                              X groups()       X groupDict()
   [Containers]     List        List/append()    pop()            extend()
-                               indexOf()      X insert()       X remove()
+                               indexOf()      X lastIndexOf()  X includes()
+                             X insert()       X remove()
                                reverse()      X List/clear()
                    Dict        erase()        X Dict/clear()   X accum()
+                             X update()
                    Place       setValue()
   [Code Types]     Func        BuiltinFunc      BoundFunc
                    Proc        BuiltinProc
@@ -345,7 +348,8 @@ X [External Lang] BEGIN   END   when (awk)
 </h2>
 
 ```chapter-links-special-var
-  [YSH Vars]      ARGV                ENV                   __defaults__
+  [YSH Vars]      ARGV                ENV
+                  __defaults__        __builtins__
                   _this_dir
   [YSH Status]    _error
                   _pipeline_status    _process_sub_status
