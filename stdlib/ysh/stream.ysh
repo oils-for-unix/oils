@@ -83,6 +83,29 @@ proc test-each-line {
   # Col
 }
 
+proc each-j8-line (; ; ; block) {
+  for _line in (io.stdin) {
+    # TODO: fromJ8Line() toJ8Line()
+    # var _line = fromJson(_line)
+    call io->eval(block, vars={_line})
+  }
+}
+
+proc test-each-j8-line {
+  var lines = []
+  var prefix = 'z'
+
+  # unquoted
+  seq 3 | each-j8-line {
+    call lines->append(prefix ++ _line)
+  }
+  pp test_ (lines)
+
+  # Note: no trailing new lines, since they aren't significant in Unix
+  var expected = ['z1', 'z2', 'z3']
+  assert [expected === lines]
+}
+
 proc each-row (; ; block) {
   echo TODO
 }
