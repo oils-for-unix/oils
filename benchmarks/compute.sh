@@ -589,15 +589,17 @@ EOF
 EOF
 }
 
-
 control-flow() {
+  ### Reproduce OSH perf bug because of C++ exceptions
+
+  # do_neither:  0.288 dash, 0.872 bash, 0.865 OSH
+  # do_continue: 0.310 dash, 1.065 bash, 2.313 OSH
+  # do_break:    0.222 dash, 0.712 bash, 1.430 OSH
+
   local osh=_bin/cxx-opt/osh
   #set -x
 
   ninja $osh
-
-  # do_neither: dash 296 ms, bash 922, osh 993.  Not bad
-  # 
 
   for func in do_neither do_continue do_break; do
     echo "=== $func"
@@ -606,6 +608,41 @@ control-flow() {
       echo "--- $sh"
       # TIMEFORMAT above
       time $sh benchmarks/compute/control_flow.sh $func 500
+      echo
+    done
+  done
+}
+
+word-split() {
+  ### Test word splitting perf
+  export OILS_GC_STATS=${1:-}
+
+  # do_neither:  0.288 dash, 0.872 bash, 0.865 OSH
+  # do_continue: 0.310 dash, 1.065 bash, 2.313 OSH
+  # do_break:    0.222 dash, 0.712 bash, 1.430 OSH
+
+  local osh=_bin/cxx-opt/osh
+  #set -x
+
+  ninja $osh
+
+  #local filename=README.md
+
+  # Hm our word splitting actually isn't that slow?
+  # TODO: measure allocs too?
+
+  # Hm allocating over a million objects, but it's faster than bash
+  # Most are in the pools
+
+  local filename=benchmarks/testdata/configure-coreutils
+
+  for func in default_ifs other_ifs; do
+    echo "=== $func"
+    echo
+    for sh in dash bash $osh; do
+      echo "--- $sh"
+      # TIMEFORMAT above
+      time $sh benchmarks/compute/word_split.sh $func $filename
       echo
     done
   done
