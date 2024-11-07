@@ -45,29 +45,31 @@ error handling, and more.
                    Float
                    Range
   [String]         Str       X find()           replace()
-                               trim()           trimStart()    trimEnd()
+                               trim()           trimStart()      trimEnd()
                                startsWith()     endsWith()
                                upper()          lower()
                                search()         leftMatch()
+                               split()
   [Patterns]       Eggex
-                   Match       group()          start()        end()
+                   Match       group()          start()          end()
                              X groups()       X groupDict()
-  [Containers]     List        List/append()    pop()          extend()
-                               indexOf()      X insert()     X remove()
-                               reverse()      X clear()
-                   Dict        erase()        X clear()      X Dict/append() 
+  [Containers]     List        List/append()    pop()            extend()
+                               indexOf()      X insert()       X remove()
+                               reverse()      X List/clear()
+                   Dict        erase()        X Dict/clear()   X accum()
                    Place       setValue()
   [Code Types]     Func        BuiltinFunc      BoundFunc
                    Proc        BuiltinProc
   [Objects]        Obj         __invoke__       new
-                             X __call__       __index__      X __str__
+                             X __call__       __index__        X __str__
   [Reflection]     Command     CommandFrag
                    Expr
                    Frame
                    io          stdin            evalExpr()
-                               eval()           evalToDict()   captureStdout()
+                               eval()           evalToDict()
+                               captureStdout()
                                promptVal()
-                             X time()         X strftime()   X glob()
+                             X time()         X strftime()     X glob()
                    vm          getFrame()       id() 
 ```
 
@@ -89,7 +91,6 @@ error handling, and more.
   [Word]          glob()            maybe()
   [Serialize]     toJson()          fromJson()
                   toJson8()         fromJson8()
-X [J8 Decode]     J8.Bool()         J8.Int()        ...
   [Pattern]       _group()          _start()        _end()
   [Introspection] shvarGet()        getVar()        setVar()  
                   parseCommand()  X parseExpr()   X bindFrame()

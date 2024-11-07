@@ -140,7 +140,19 @@ An `Obj` instance representing the string type.
 
 ### find()
 
-TODO
+TODO:
+
+    var i = mystr.find('foo')
+
+Similar to
+
+    = 'foo' in mystr
+
+Both of them do substring search.
+
+Also similar to `mystr.search(eggex)`.
+
+<!-- Python also has start, end indices, to reduce allocations -->
 
 ### replace()
 
@@ -453,7 +465,7 @@ Reverses a list in place.
     call fruits->reverse()
     echo @fruits  # => pear banana apple
 
-### clear()
+### List/clear()
 
 TODO:
 
@@ -489,11 +501,18 @@ Ensures that the given key does not exist in the dictionary.
     = book
     # => (Dict)   {title: "The Histories"}
 
-### Dict/append()
+### accum()
 
-TODO
+TODO:
 
-### clear()
+    call mydict->accum('key', 'string to append')
+
+Similar:
+
+    setvar mydict['k'] += 3  # TODO: default value of 0
+
+
+### Dict/clear()
 
 TODO:
 
