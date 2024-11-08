@@ -28,7 +28,7 @@ pp test_ (vm.id(b) === vm.id(Bool))
 (Obj)   ("name":"Str") --> ("__index__":<BuiltinFunc>)
 (Obj)   ("name":"List") --> ("__index__":<BuiltinFunc>)
 (Obj)   ("name":"Dict") --> ("__index__":<BuiltinFunc>)
-(Obj)   ("new":<BuiltinFunc>,"name":"Obj") --> ("__index__":<BuiltinFunc>)
+(Obj)   ("name":"Obj","new":<BuiltinFunc>) --> ("__index__":<BuiltinFunc>)
 
 (Bool)   true
 (Bool)   true

@@ -582,11 +582,10 @@ def Main(
     type_name = value_str(tag, dot=False)
 
     # TODO: change Obj.new to __call__
-    obj_new = value.BuiltinFunc(func_misc.Obj_call())
-    type_obj = Obj(type_obj_methods, {
-        'name': value.Str(type_name),
-        'new': obj_new
-    })
+    type_props = NewDict()  # type: Dict[str, value_t]
+    type_props['name'] = value.Str(type_name)
+    type_props['new'] = value.BuiltinFunc(func_misc.Obj_call())
+    type_obj = Obj(type_obj_methods, type_props)
 
     mem.AddBuiltin(type_name, type_obj)
 
