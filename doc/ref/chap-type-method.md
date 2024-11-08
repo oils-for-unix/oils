@@ -103,23 +103,20 @@ integers.  But you can use a "real" integer type in YSH.
 
 ### Float
 
-Floats are at least 32 bits wide.
-
-See [float-literal][] for how to denote them.
+YSH has 64-bit floating point numbers.  See [float-literal][] for how to denote
+them.
 
 [float-literal]: chap-expr-lang.html#float-literal
 
-<!-- TODO: reduce from 64-bit to 32-bit -->
-
-
 ### Range
   
-A `Range` is a pair of two numbers, like `42 .. 45`.
+A `Range` is a pair of two numbers, used for iteration.  See [range][] for how
+to denote them.
 
 Ranges are used for iteration; see [ysh-for][].
 
+[range]: chap-expr-lang.html#range
 [ysh-for]: chap-cmd-lang.html#ysh-for
-
 
 ## String
 

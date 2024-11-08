@@ -162,22 +162,6 @@ Given a List of integer byte values, return a string.
 
 TODO
 
-### split()
-
-TODO
-
-If no argument is passed, splits by whitespace 
-
-<!-- respecting Unicode space? -->
-
-If a delimiter Str with a single byte is given, splits by that byte.
-
-Modes:
-
-- Python-like algorithm
-- Is awk any different?
-- Split by eggex
-
 ### shSplit()
 
 Split a string into a List of strings, using the shell algorithm that respects
@@ -383,7 +367,7 @@ Like `Match => end()`, but accesses the global match created by `~`:
       echo $[_end(0)]  # => 5
     }
 
-## Introspection
+## Introspect
 
 ### `shvarGet()`
 

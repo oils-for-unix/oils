@@ -86,7 +86,7 @@ error handling, and more.
                   str()             list()          dict()
                 X runes()         X encodeRunes()
                 X bytes()         X encodeBytes()
-  [Str]         X strcmp()        X split()         shSplit()
+  [Str]         X strcmp()          shSplit()
   [List]          join()       
   [Dict]          keys()            values()        get()       
   [Float]         floatsEqual()   X isinf()       X isnan()
@@ -94,8 +94,9 @@ error handling, and more.
   [Word]          glob()            maybe()
   [Serialize]     toJson()          fromJson()
                   toJson8()         fromJson8()
+                X toJ8Line()      X fromJ8Line()
   [Pattern]       _group()          _start()        _end()
-  [Introspection] shvarGet()        getVar()        setVar()  
+  [Introspect]    shvarGet()        getVar()        setVar()  
                   parseCommand()  X parseExpr()   X bindFrame()
   [Hay Config]    parseHay()        evalHay()
 X [Hashing]       sha1dc()          sha256()
@@ -260,20 +261,20 @@ X [External Lang] BEGIN   END   when (awk)
   [Assignment]    assign        =
                   aug-assign    +=   -=   *=   /=   **=   //=   %=
                                 &=   |=   ^=   <<=   >>=
-  [Literals]      atom-literal  true   false   null
+  [Literals]      atom-literal  null   true   false
                   int-literal   42  65_536  0xFF  0o755  0b10
-                  float-lit     3.14  1.5e-10
-                  char-literal  \\ \t \"   \y00   \u{3bc}
+                  float-literal 3.14  1.5e-10
                 X num-suffix    42 K Ki M Mi G Gi T Ti / ms us
+                  char-literal  \\ \t \"   \y00   \u{3bc}
                   ysh-string    "x is $x"  $"x is $x"   r'[a-z]\n'
                                 u'line\n'  b'byte \yff'
                   triple-quoted """  $"""  r'''  u'''  b'''
-                  str-template  ^"$a and $b" for Str::replace()
                   list-literal  ['one', 'two', 3]  :| unquoted words |
                   dict-literal  {name: 'bob'}  {a, b}
                   range         1 ..< n  1 ..= n
                   block-expr    ^(echo $PWD)
                   expr-literal  ^[1 + 2*3]
+                  str-template  ^"$a and $b" for Str.replace()
                 X expr-sub      $[myobj]
                 X expr-splice   @[myobj]
   [Operators]     op-precedence Like Python
