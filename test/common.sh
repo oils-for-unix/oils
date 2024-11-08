@@ -248,7 +248,7 @@ export-osh-cpp() {
     local repo_like=$tar_root/oils-for-unix-$OIL_VERSION
 
     pushd $repo_like
-    _build/oils.sh '' $variant SKIP_REBUILD
+    _build/oils.sh '' $variant '' SKIP_REBUILD
     osh=$PWD/_bin/cxx-$variant-sh/osh
     popd
 
