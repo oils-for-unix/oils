@@ -421,9 +421,11 @@ build-binaries() {
 }
 
 measure-all() {
+  local tsv_out=${1:-$BASE_DIR/raw/times.tsv}
+  local mycpp_souffle=${2:-}
+
   build-binaries
 
-  local tsv_out=${1:-$BASE_DIR/raw/times.tsv}
   mkdir -p $(dirname $tsv_out)
 
   # Make the header
@@ -431,7 +433,7 @@ measure-all() {
     --rusage --field join_id --field task --field sh_path --field shell_runtime_opts
 
   # Pass through args, which may include mycpp-souffle
-  time print-tasks "$@" | run-tasks $tsv_out
+  time print-tasks "$mycpp_souffle" | run-tasks $tsv_out
 
   if command -v pretty-tsv; then
     pretty-tsv $tsv_out
@@ -569,13 +571,13 @@ make-report() {
 soil-run() {
   ### Run in soil/benchmarks
 
-  measure-all mycpp-souffle
+  measure-all '' mycpp-souffle
 
   make-report
 }
 
 run-for-release() {
-  measure-all
+  measure-all ''
 
   make-report
 }
