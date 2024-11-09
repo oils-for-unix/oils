@@ -48,7 +48,8 @@ build-like-ninja() {
     ./configure
 
     for variant in "$@"; do
-      time _build/oils.sh '' $variant $OILS_TRANSLATOR SKIP_REBUILD
+      time _build/oils.sh \
+        --variant "$variant" --translator "$OILS_TRANSLATOR" --skip-rebuild
     done
 
     popd
