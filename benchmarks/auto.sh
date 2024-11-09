@@ -38,7 +38,7 @@ measure-shells() {
 
   raw_out_dir="$out_dir/osh-runtime/raw.$host_job_id"
   benchmarks/osh-runtime.sh measure \
-    $host_name $raw_out_dir $OSH_CPP_BENCHMARK_DATA $out_dir
+    $host_name $raw_out_dir $OSH_CPP_BENCHMARK_DATA
 
   # Old style uses provenance.txt.  TODO: use raw_out_dir everywhere
   local provenance=_tmp/provenance.txt
