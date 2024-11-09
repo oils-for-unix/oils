@@ -83,7 +83,7 @@ all() {
     benchmarks/uftrace.sh soil-run
     benchmarks/mycpp.sh soil-run
     benchmarks/gc.sh run-for-release
-    benchmarks/gc-cachegrind.sh soil-run
+    benchmarks/gc-cachegrind.sh run-for-release
 
     benchmarks/osh-parser.sh measure-cachegrind \
       _tmp/provenance.txt $host_job_id $out_dir/osh-parser $OSH_CPP_BENCHMARK_DATA

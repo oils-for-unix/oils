@@ -170,6 +170,8 @@ print-tasks() {
 }
 
 print-cachegrind-tasks() {
+  local mycpp_souffle=${1:-}
+
   local -a workloads=(
     # coreutils is on osh-parser
     #parse.configure-coreutils
@@ -194,12 +196,16 @@ print-cachegrind-tasks() {
     "_bin/cxx-opt/osh${TAB}mut+alloc+free"
     "_bin/cxx-opt/osh${TAB}mut+alloc+free+gc"
     "_bin/cxx-opt/osh${TAB}mut+alloc+free+gc+exit"
-
-    "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc"
-    "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc+free"
-    "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc+free+gc"
-    "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc+free+gc+exit"
   )
+
+  if test -n "$mycpp_souffle"; then
+    shells+=(
+      "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc"
+      "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc+free"
+      "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc+free+gc"
+      "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc+free+gc+exit"
+    )
+  fi
 
   local id=0
   for workload in "${workloads[@]}"; do
@@ -441,9 +447,10 @@ measure-all() {
 }
 
 measure-cachegrind() {
-  build-binaries
-
   local tsv_out=${1:-$BASE_DIR_CACHEGRIND/raw/times.tsv}
+  local mycpp_souffle=${2:-}
+
+  build-binaries
 
   mkdir -p $(dirname $tsv_out)
 
@@ -451,7 +458,7 @@ measure-cachegrind() {
   time-tsv -o $tsv_out --print-header \
     --rusage --field join_id --field task --field sh_path --field shell_runtime_opts
 
-  print-cachegrind-tasks | run-tasks $tsv_out cachegrind
+  print-cachegrind-tasks "$mycpp_souffle" | run-tasks $tsv_out cachegrind
 
   # TODO: join cachegrind columns
 
