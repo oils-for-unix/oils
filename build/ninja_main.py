@@ -104,10 +104,11 @@ main() {
 
   parse_flags "$@"
 
-  local compiler=${1:-cxx}        # default is system compiler
-  local variant=${2:-opt}         # default is optimized build
-  local translator=${3:-mycpp}    # default is the translator w/o optimizations
-  local skip_rebuild=${4:-}  # if the output exists, skip build'
+  # Copy into locals
+  local compiler=$FLAG_cxx
+  local variant=$FLAG_variant
+  local translator=$FLAG_translator
+  local skip_rebuild=$FLAG_skip_rebuild
 
   local out_dir
   case $translator in
@@ -120,6 +121,16 @@ main() {
   esac
   local out=$out_dir/oils-for-unix
 
+  echo
+  echo "$0: Building oils-for-unix: $out"
+  echo "    PWD = $PWD"
+  echo "    cxx = $compiler"
+  echo "    variant = $variant"
+  echo "    translator = $translator"
+  if test -n "$skip_rebuild"; then
+    echo "    skip_rebuild = $skip_rebuild"
+  fi
+
   if test -n "$skip_rebuild" && test -f "$out"; then
     echo
     echo "$0: SKIPPING build because $out exists"
@@ -127,9 +138,6 @@ main() {
     return
   fi
 
-  echo
-  echo "$0: Building oils-for-unix: $out"
-  echo "$0: PWD = $PWD"
   echo
 ''',
           file=f)
