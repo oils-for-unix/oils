@@ -1,7 +1,8 @@
 ## compare_shells: bash dash mksh zsh ash
 ## oils_failures_allowed: 0
-## oils_cpp_failures_allowed: 1
-# TODO: fix C++ failure
+
+# TODO: case #25 need this locally, but not in CI?
+# oils_cpp_failures_allowed: 1
 
 #### echo keyword
 echo done
