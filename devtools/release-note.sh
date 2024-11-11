@@ -58,6 +58,8 @@ contrib-commit-table() {
 
 fetch-issues() {
   local url='https://api.github.com/repos/oils-for-unix/oils/issues?labels=pending-release'
+  # For Oils 0.24.0
+  #local url='https://api.github.com/repos/oils-for-unix/oils/issues?labels=pending-release-2'
   curl "$url" > _tmp/issues.json
 }
 

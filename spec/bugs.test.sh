@@ -403,3 +403,11 @@ echo as_val=$as_val
 ## STDOUT:
 as_val=1
 ## END
+
+#### osh-native duplicates stdin - is this a test harness issue?
+
+echo $0 | grep -o sh
+
+## STDOUT:
+sh
+## END
