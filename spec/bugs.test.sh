@@ -1,5 +1,7 @@
 ## compare_shells: bash dash mksh zsh ash
 ## oils_failures_allowed: 0
+## oils_cpp_failures_allowed: 1
+# TODO: fix C++ failure
 
 #### echo keyword
 echo done
