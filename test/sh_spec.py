@@ -1347,15 +1347,16 @@ def main(argv):
 
         # Always run with the Python version
         our_shell = file_metadata.get('our_shell', 'osh')  # default is OSH
-        shells.append(os.path.join(opts.oils_bin_dir, our_shell))
+        if our_shell != '-':
+            shells.append(os.path.join(opts.oils_bin_dir, our_shell))
 
-        # Legacy OVM/CPython build
-        if opts.ovm_bin_dir:
-            shells.append(os.path.join(opts.ovm_bin_dir, our_shell))
+            # Legacy OVM/CPython build
+            if opts.ovm_bin_dir:
+                shells.append(os.path.join(opts.ovm_bin_dir, our_shell))
 
-        # New C++ build
-        if opts.oils_cpp_bin_dir:
-            shells.append(os.path.join(opts.oils_cpp_bin_dir, our_shell))
+            # New C++ build
+            if opts.oils_cpp_bin_dir:
+                shells.append(os.path.join(opts.oils_cpp_bin_dir, our_shell))
 
         # Overwrite it when --oils-bin-dir is set
         # It's no longer a flag
@@ -1446,5 +1447,3 @@ if __name__ == '__main__':
     except RuntimeError as e:
         print('FATAL: %s' % e, file=sys.stderr)
         sys.exit(1)
-
-# vim: sw=2

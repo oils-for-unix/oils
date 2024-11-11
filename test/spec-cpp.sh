@@ -80,14 +80,12 @@ osh-all() {
 
   local spec_subdir=osh-cpp 
 
-  # TODO: test/spec-cpp.sh runfile X fails, where X=let,assign-deferred,assoc-zsh
-  # This is because they are using the old style.
-  # But also spec/nul-bytes passes when it should probably fail -- we get 1
+  # TODO: spec/nul-bytes passes when it should probably fail -- we get 1
   # failure instead of 2.
 
   # $suite $compare_mode
   test/spec-runner.sh all-parallel \
-    osh compare-cpp $spec_subdir "$@" || true  # OK if it fails
+    osh compare-cpp $spec_subdir "$@"
 
   write-compare-html $spec_subdir
 }

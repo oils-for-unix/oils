@@ -1,4 +1,6 @@
-#
+## compare_shells: zsh
+## our_shell: -
+
 # Differences from bash:
 # - literal syntax alternates key-value
 # - (@k) syntax for keys.  Although this is sort of like my ${@array} syntax
@@ -30,7 +32,11 @@ assoc=(k1 v1 k2 v2 k3 v3)
 for k in "${(@k)assoc}"; do
   echo "$k: $assoc[$k]"
 done
-## stdout-json: "k1: v1\nk2: v2\nk3: v3\n"
+## STDOUT:
+k1: v1
+k2: v2
+k3: v3
+## END
 
 #### iterate over both keys and values
 typeset -A assoc

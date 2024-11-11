@@ -1,4 +1,6 @@
-#
+## compare_shells: bash mksh
+## our_shell: -
+
 # Corner cases for assignment that we're not handling now.
 
 #### typeset a[3]=4 
