@@ -5,14 +5,15 @@ Like py{error,util}.py, it won't be translated to C++.
 """
 from __future__ import print_function
 
+from errno import EINTR
 import pwd
 import resource
-import signal
 import select
 import sys
 import termios  # for read -n
 import time
 
+from mycpp import iolib
 from mycpp import mops
 from mycpp.mylib import log
 
@@ -60,6 +61,8 @@ def WaitPid(waitpid_options):
         # - waitpid_options can be WNOHANG
         pid, status = posix.waitpid(-1, WUNTRACED | waitpid_options)
     except OSError as e:
+        if e.errno == EINTR and iolib.gSignalSafe.PollUntrappedSigInt():
+            raise KeyboardInterrupt()
         return -1, e.errno
 
     return pid, status
@@ -79,8 +82,9 @@ class ReadError(Exception):
 def Read(fd, n, chunks):
     # type: (int, int, List[str]) -> Tuple[int, int]
     """C-style wrapper around Python's posix.read() that uses return values
-    instead of exceptions for errors.  We will implement this directly in C++
-    and not use exceptions at all.
+    instead of exceptions for errors.
+
+    We will implement this directly in C++ and not use exceptions at all.
 
     It reads n bytes from the given file descriptor and appends it to chunks.
 
@@ -91,6 +95,8 @@ def Read(fd, n, chunks):
     try:
         chunk = posix.read(fd, n)
     except OSError as e:
+        if e.errno == EINTR and iolib.gSignalSafe.PollUntrappedSigInt():
+            raise KeyboardInterrupt()
         return -1, e.errno
     else:
         length = len(chunk)
@@ -101,8 +107,9 @@ def Read(fd, n, chunks):
 
 def ReadByte(fd):
     # type: (int) -> Tuple[int, int]
-    """Another low level interface with a return value interface.  Used by
-    _ReadUntilDelim() and _ReadLineSlowly().
+    """Low-level interface that returns values rather than raising exceptions.
+
+    Used by _ReadUntilDelim() and _ReadLineSlowly().
 
     Returns:
       failure: (-1, errno) on failure
@@ -111,6 +118,8 @@ def ReadByte(fd):
     try:
         b = posix.read(fd, 1)
     except OSError as e:
+        if e.errno == EINTR and iolib.gSignalSafe.PollUntrappedSigInt():
+            raise KeyboardInterrupt()
         return -1, e.errno
     else:
         if len(b):
@@ -271,122 +280,6 @@ def InputAvailable(fd):
     # read, write, except
     r, w, exc = select.select([fd], [], [fd], 0)
     return len(r) != 0
-
-
-UNTRAPPED_SIGWINCH = -1
-
-
-class SignalSafe(object):
-    """State that is shared between the main thread and signal handlers.
-
-    See C++ implementation in cpp/core.h
-    """
-
-    def __init__(self):
-        # type: () -> None
-        self.pending_signals = []  # type: List[int]
-        self.last_sig_num = 0  # type: int
-        self.received_sigint = False
-        self.received_sigwinch = False
-        self.sigwinch_code = UNTRAPPED_SIGWINCH
-
-    def UpdateFromSignalHandler(self, sig_num, unused_frame):
-        # type: (int, Any) -> None
-        """Receive the given signal, and update shared state.
-
-        This method is registered as a Python signal handler.
-        """
-        self.pending_signals.append(sig_num)
-
-        if sig_num == signal.SIGINT:
-            self.received_sigint = True
-
-        if sig_num == signal.SIGWINCH:
-            self.received_sigwinch = True
-            sig_num = self.sigwinch_code  # mutate param
-
-        self.last_sig_num = sig_num
-
-    def LastSignal(self):
-        # type: () -> int
-        """Return the number of the last signal that fired."""
-        return self.last_sig_num
-
-    def PollSigInt(self):
-        # type: () -> bool
-        """Has SIGINT received since the last time PollSigInt() was called?"""
-        result = self.received_sigint
-        self.received_sigint = False
-        return result
-
-    def SetSigWinchCode(self, code):
-        # type: (int) -> None
-        """Depending on whether or not SIGWINCH is trapped by a user, it is
-        expected to report a different code to `wait`.
-
-        SetSigwinchCode() lets us set which code is reported.
-        """
-        self.sigwinch_code = code
-
-    def PollSigWinch(self):
-        # type: () -> bool
-        """Has SIGWINCH been received since the last time PollSigWinch() was
-        called?"""
-        result = self.received_sigwinch
-        self.received_sigwinch = False
-        return result
-
-    def TakePendingSignals(self):
-        # type: () -> List[int]
-        # A note on signal-safety here. The main loop might be calling this function
-        # at the same time a signal is firing and appending to
-        # `self.pending_signals`. We can forgoe using a lock here
-        # (which would be problematic for the signal handler) because mutual
-        # exclusivity should be maintained by the atomic nature of pointer
-        # assignment (i.e. word-sized writes) on most modern platforms.
-        # The replacement run list is allocated before the swap, so it can be
-        # interuppted at any point without consequence.
-        # This means the signal handler always has exclusive access to
-        # `self.pending_signals`. In the worst case the signal handler might write to
-        # `new_queue` and the corresponding trap handler won't get executed
-        # until the main loop calls this function again.
-        # NOTE: It's important to distinguish between signal-safety an
-        # thread-safety here. Signals run in the same process context as the main
-        # loop, while concurrent threads do not and would have to worry about
-        # cache-coherence and instruction reordering.
-        new_queue = []  #  type: List[int]
-        ret = self.pending_signals
-        self.pending_signals = new_queue
-        return ret
-
-    def ReuseEmptyList(self, empty_list):
-        # type: (List[int]) -> None
-        """This optimization only happens in C++."""
-        pass
-
-
-gSignalSafe = None  #  type: SignalSafe
-
-
-def InitSignalSafe():
-    # type: () -> SignalSafe
-    """Set global instance so the signal handler can access it."""
-    global gSignalSafe
-    gSignalSafe = SignalSafe()
-    return gSignalSafe
-
-
-def Sigaction(sig_num, handler):
-    # type: (int, Any) -> None
-    """Register a signal handler."""
-    signal.signal(sig_num, handler)
-
-
-def RegisterSignalInterest(sig_num):
-    # type: (int) -> None
-    """Have the kernel notify the main loop about the given signal."""
-    assert gSignalSafe is not None
-    signal.signal(sig_num, gSignalSafe.UpdateFromSignalHandler)
 
 
 def MakeDirCacheKey(path):

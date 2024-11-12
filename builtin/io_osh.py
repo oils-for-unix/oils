@@ -23,7 +23,7 @@ import posix_ as posix
 from typing import List, Dict, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value
-    from core import ui
+    from display import ui
     from osh import cmd_eval
 
 _ = log
@@ -58,7 +58,7 @@ class Echo(vm._Builtin):
         argv = cmd_val.argv[1:]
 
         if self.exec_opts.simple_echo():
-            typed_args.DoesNotAccept(cmd_val.typed_args)  # Disallow echo (42)
+            typed_args.DoesNotAccept(cmd_val.proc_args)  # Disallow echo (42)
             arg = self._SimpleFlag()  # Avoid parsing -e -n
         else:
             attrs, arg_r = flag_util.ParseLikeEcho('echo', cmd_val)
@@ -131,8 +131,7 @@ class MapFile(vm._Builtin):
         while True:
             # bash uses this slow algorithm; YSH could provide read --all-lines
             try:
-                line, _ = read_osh.ReadLineSlowly(self.cmd_ev,
-                                                  with_eol=not arg.t)
+                line = read_osh.ReadLineSlowly(self.cmd_ev, with_eol=not arg.t)
             except pyos.ReadError as e:
                 self.errfmt.PrintMessage("mapfile: read() error: %s" %
                                          posix.strerror(e.err_num))

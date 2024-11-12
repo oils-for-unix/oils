@@ -21,6 +21,14 @@ def EncodeString(s, unquoted_ok=False):
     return fastfunc.J8EncodeString(s, 1)  # j8_fallback is true
 
 
+def YshEncodeString(s):
+    # type: (str) -> str
+
+    # Possibilities:
+    # - '' then b'' - simplest logic
+    return fastfunc.ShellEncodeString(s, 1)  # ysh_fallback
+
+
 def MaybeShellEncode(s):
     # type: (str) -> str
     """

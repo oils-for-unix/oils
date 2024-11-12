@@ -82,6 +82,11 @@ called `-rf`.
     $ echo *
     myfile
 
+## Other Option
+
+    noclobber -C  # Redirects can't overwrite files
+    errtrace -E   # Enable ERR trap is both shell functions and subshells
+
 ## Debugging
 
 These options are from POSIX shell:
@@ -98,9 +103,6 @@ These options are from bash.
 
     emacs   vi
 
-## Other Option
-
-    noclobber   # Redirects don't overwrite files
 
 ## Compat
 
@@ -110,11 +112,22 @@ Allow dynamically parsed `a[$(echo 42)]`  For bash compatibility.
 
 ### ignore_flags_not_impl
 
-Suppress failures from flags not implemented.  Example:
+Suppress failures from unimplemented flags.  Example:
 
     shopt --set ignore_flags_not_impl
 
     declare -i foo=2+3  # not evaluated to 5, but doesn't fail either
+
+This option can be useful for "getting past" errors while testing.
+
+### ignore_shopt_not_impl
+
+Suppress failures from unimplemented shell options.  Example:
+
+    shopt --set ignore_shopt_not_impl
+
+    shopt --set xpg_echo  # exit with status 0, not 1
+                          # this is a bash option that OSH doesn't implement
 
 This option can be useful for "getting past" errors while testing.
 
@@ -177,7 +190,7 @@ Details on each option:
       xtrace_rich             Hierarchical and process tracing
       xtrace_details (-u)     Disable most tracing with +
       dashglob (-u)           Disabled to avoid files like -rf
-    X env_dict                Copy environ into ENV dict
+      no_exported             Environ doesn't correspond to exported (-x) vars
 
 
 <h3 id="ysh:all">ysh:all</h3>
@@ -200,11 +213,12 @@ Details on options that are not in `ysh:upgrade` and `strict:all`:
       parse_ignored (-u)      Parse, but ignore, certain redirects
       parse_sh_arith (-u)     Allow legacy shell arithmetic
       expand_aliases (-u)     Whether aliases are expanded
-    X no_env_vars             Use $[ENV.PYTHONPATH], not $PYTHONPATH
     X old_builtins (-u)       local/declare/etc.  pushd/popd/dirs
                               ... source  unset  printf  [un]alias
                               ... getopts
     X old_syntax (-u)         ( )   ${x%prefix}  ${a[@]}   $$
+      env_obj                 Populate the ENV object
+      no_init_globals         At startup, don't set vars like PWD, SHELLOPTS
       simple_echo             echo doesn't accept flags -e -n
       simple_eval_builtin     eval takes exactly 1 argument
       simple_test_builtin     3 args or fewer; use test not [
@@ -217,8 +231,7 @@ Details on options that are not in `ysh:upgrade` and `strict:all`:
 
 In the interactive shell, you can redefine procs and funcs.
 
-      redefine_module           'module' builtin always returns 0
-      redefine_proc_func (-u)   Can shell func, proc and func be redefined?
+      redefine_source          'source-guard' builtin always returns 0
     X redefine_const            Can consts be redefined?
 
 ### opts-internal

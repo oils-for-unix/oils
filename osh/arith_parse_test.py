@@ -14,10 +14,11 @@ import unittest
 from _devbuild.gen.types_asdl import lex_mode_e
 from core import error
 from core import test_lib
-from core import ui
+from display import ui
 from osh import sh_expr_eval
 from osh import split
 from osh import word_eval
+from core import sh_init
 from core import state
 
 #from osh import arith_parse
@@ -34,10 +35,11 @@ def ParseAndEval(code_str):
 
     print('node:', anode)
 
-    mem = state.Mem('', [], arena, [])
-    parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
+    mem = state.Mem('', [], arena, [], {})
+    parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
     mem.exec_opts = exec_opts
-    state.InitMem(mem, {}, '0.1')
+    #state.InitMem(mem, {}, '0.1')
+    sh_init.InitDefaultVars(mem)
 
     splitter = split.SplitContext(mem)
     errfmt = ui.ErrorFormatter()

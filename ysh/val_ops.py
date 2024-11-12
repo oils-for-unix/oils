@@ -4,10 +4,11 @@ from errno import EINTR
 
 from _devbuild.gen.syntax_asdl import loc, loc_t, command_t
 from _devbuild.gen.value_asdl import (value, value_e, value_t, eggex_ops,
-                                      eggex_ops_t, regex_match, RegexMatch)
+                                      eggex_ops_t, regex_match, RegexMatch,
+                                      Obj)
 from core import error
 from core.error import e_die
-from core import ui
+from display import ui
 from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import tagswitch, log
@@ -74,24 +75,33 @@ def ToDict(val, msg, blame_loc):
     raise error.TypeErr(val, msg, blame_loc)
 
 
-def ToCommand(val, msg, blame_loc):
+def ToCommandFrag(val, msg, blame_loc):
     # type: (value_t, str, loc_t) -> command_t
     UP_val = val
-    if val.tag() == value_e.Command:
-        val = cast(value.Command, UP_val)
+    if val.tag() == value_e.CommandFrag:
+        val = cast(value.CommandFrag, UP_val)
         return val.c
 
     raise error.TypeErr(val, msg, blame_loc)
 
 
-def Stringify(val, blame_loc, prefix=''):
+def Stringify(val, blame_loc, op_desc):
     # type: (value_t, loc_t, str) -> str
     """
-    Used by
+    Args:
+      op_desc: could be empty string ''
+               or 'Expr Sub ' or 'Expr Splice ', with trailing space
 
-    $[x]    stringify operator
-    @[x]    expression splice - each element is stringified
-    @x      splice value
+    Used by:
+
+      $[x]    Expr Sub - stringify operator
+      @[x]    Expr splice - each element is stringified
+      @x      Splice value
+
+      str()         Builtin function
+      join()        Each element is stringified, e.g. join([1,2])
+                    Not sure I like join([null, true]), but it's consistent
+      Str.replace() ^"x = $x" after eggex conversion function
     """
     if blame_loc is None:
         blame_loc = loc.Missing
@@ -116,24 +126,24 @@ def Stringify(val, blame_loc, prefix=''):
 
         elif case(value_e.Float):
             val = cast(value.Float, UP_val)
-            # TODO: what precision does this have?
-            # The default could be like awk or Python, and then we also allow
-            # ${myfloat %.3f} and more.
-            # Python 3 seems to give a few more digits than Python 2 for str(1.0/3)
             s = str(val.f)
 
         elif case(value_e.Eggex):
             val = cast(value.Eggex, UP_val)
             s = regex_translate.AsPosixEre(val)  # lazily converts to ERE
 
-        elif case(value_e.List):
-            raise error.TypeErrVerbose(
-                "%sgot a List, which can't be stringified. Perhaps use @ instead of $, or use join()"
-                % prefix, blame_loc)
-
         else:
+            pass  # mycpp workaround
+
+            if val.tag() == value_e.List:
+                # Special error message for using the wrong sigil, or maybe join
+                raise error.TypeErrVerbose(
+                    "%sgot a List, which can't be stringified (OILS-ERR-203)" %
+                    op_desc, blame_loc)
+
             raise error.TypeErr(
-                val, "%sexpected Null, Bool, Int, Float, Eggex" % prefix,
+                val,
+                "%sexpected one of (Null Bool Int Float Str Eggex)" % op_desc,
                 blame_loc)
 
     return s
@@ -158,7 +168,7 @@ def ToShellArray(val, blame_loc, prefix=''):
             # Note: it would be nice to add the index to the error message
             # prefix, WITHOUT allocating a string for every item
             for item in val.items:
-                strs.append(Stringify(item, blame_loc, prefix=prefix))
+                strs.append(Stringify(item, blame_loc, prefix))
 
         # I thought about getting rid of this to keep OSH and YSH separate,
         # but:
@@ -373,6 +383,11 @@ def ToBool(val):
 
 def ExactlyEqual(left, right, blame_loc):
     # type: (value_t, value_t, loc_t) -> bool
+
+    if left.tag() == value_e.Float or right.tag() == value_e.Float:
+        raise error.TypeErrVerbose(
+            "Equality isn't defined on Float values (OILS-ERR-202)", blame_loc)
+
     if left.tag() != right.tag():
         return False
 
@@ -396,10 +411,7 @@ def ExactlyEqual(left, right, blame_loc):
             return mops.Equal(left.i, right.i)
 
         elif case(value_e.Float):
-            # Note: could provide floatEquals(), and suggest it
-            # Suggested idiom is abs(f1 - f2) < 0.1
-            raise error.TypeErrVerbose("Equality isn't defined on Float",
-                                       blame_loc)
+            raise AssertionError()
 
         elif case(value_e.Str):
             left = cast(value.Str, UP_left)
@@ -526,6 +538,23 @@ def MatchRegex(left, right, mem):
         if mem:
             mem.SetRegexMatch(regex_match.No)
         return False
+
+
+def IndexMetaMethod(obj):
+    # type: (Obj) -> Optional[value_t]
+    """
+    Returns value.{BuiltinFunc,Func} -- but not callable Obj?
+    """
+    if not obj.prototype:
+        return None
+    index_val = obj.prototype.d.get('__index__')
+    if not index_val:
+        return None
+
+    if index_val.tag() not in (value_e.BuiltinFunc, value_e.Func):
+        return None
+
+    return index_val
 
 
 # vim: sw=4

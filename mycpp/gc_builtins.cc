@@ -22,33 +22,36 @@ BigStr* str(int i) {
   return s;
 }
 
-// TODO:
-// - This could use a fancy exact algorithm, not libc
-// - Does libc depend on locale?
 BigStr* str(double d) {
   char buf[64];  // overestimate, but we use snprintf() to be safe
+
+  int n = sizeof(buf) - 2;  // in case we add '.0'
+
+  // The round tripping test in mycpp/float_test.cc tells us:
+  // %.9g - FLOAT round trip
+  // %.17g - DOUBLE round trip
+  // But this causes problems in practice, e.g. for 3.14, or 1/3
+  // int length = snprintf(buf, n, "%.17g", d);
+
+  // So use 1 less digit, which happens to match Python 3 and node.js (but not
+  // Python 2)
+  int length = snprintf(buf, n, "%.16g", d);
+
+  // TODO: This may depend on LC_NUMERIC locale!
+
+  // We may return the strings:
+  //    inf  -inf   nan
+  // But this shouldn't come up much, because Python code changes it to:
+  //    INFINITY   -INFINITY   NAN
+  if (strchr(buf, 'i') || strchr(buf, 'n')) {
+    return StrFromC(buf);  // don't add .0
+  }
 
   // Problem:
   // %f prints 3.0000000 and 3.500000
   // %g prints 3 and 3.5
   //
-  // We want literal syntax to indicate float, so add '.'
-
-  int n = sizeof(buf) - 2;  // in case we add '.0'
-
-  // %.9g digits for string that can be converted back to the same FLOAT
-  // (not double)
-  // https://stackoverflow.com/a/21162120
-  // https://en.cppreference.com/w/cpp/types/numeric_limits/max_digits10
-  int length = snprintf(buf, n, "%.9g", d);
-
-  // %a is a hexfloat form, could use that somewhere
-  // int length = snprintf(buf, n, "%a", d);
-
-  if (strchr(buf, 'i')) {  // inf or -inf
-    return StrFromC(buf);
-  }
-
+  // We want 3.0 and 3.5, so add '.0' in some cases
   if (!strchr(buf, '.')) {  // 12345 -> 12345.0
     buf[length] = '.';
     buf[length + 1] = '0';
@@ -57,6 +60,8 @@ BigStr* str(double d) {
 
   return StrFromC(buf);
 }
+// %a is a hexfloat form, probably don't need that
+// int length = snprintf(buf, n, "%a", d);
 
 // Do we need this API?  Or is mylib.InternedStr(BigStr* s, int start, int end)
 // better for getting values out of Token.line without allocating?

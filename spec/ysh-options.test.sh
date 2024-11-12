@@ -164,6 +164,7 @@ set -o nounset
 set -o pipefail
 shopt -s command_sub_errexit
 shopt -u dashglob
+shopt -s env_obj
 shopt -s errexit
 shopt -s inherit_errexit
 shopt -s nounset
@@ -179,7 +180,6 @@ shopt -s parse_triple_quote
 shopt -s parse_ysh_string
 shopt -s pipefail
 shopt -s process_sub_fail
-shopt -u redefine_proc_func
 shopt -s sigpipe_status_ok
 shopt -s simple_word_eval
 shopt -s verbose_errexit
@@ -661,53 +661,6 @@ echo finished
 finished
 ## END
 
-#### Shell functions can't be refined with YSH (redefine_proc_func off)
-
-f() {
-  echo 1
-}
-echo 'first'
-
-f() {
-  echo 2
-}
-echo 'second'
-
-shopt --set ysh:upgrade
-f() {
-  echo 3
-}
-echo 'third'
-## STDOUT:
-first
-second
-## END
-## status: 1
-
-#### redefine_proc for procs
-shopt --set parse_proc
-
-proc p {
-  echo 1
-}
-echo 'first'
-
-proc p {
-  echo 2
-}
-echo 'second'
-
-shopt --set oil:upgrade
-proc p {
-  echo 3
-}
-echo 'third'
-## STDOUT:
-first
-second
-## END
-## status: 1
-
 #### redefine_proc is on in interactive shell
 
 $SH -O oil:all -i --rcfile /dev/null -c "
@@ -724,7 +677,7 @@ hi
 ## END
 
 
-#### redefine_module is on in interactive shell
+#### redefine_source is on in interactive shell
 
 $SH -O oil:all -i --rcfile /dev/null -c "
 source $REPO_ROOT/spec/testdata/module/common.ysh

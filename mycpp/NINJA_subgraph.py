@@ -7,7 +7,7 @@ from __future__ import print_function
 import os
 import sys
 
-from build.ninja_lib import log, COMPILERS_VARIANTS
+from build.ninja_lib import log, COMPILERS_VARIANTS, OTHER_VARIANTS
 
 _ = log
 
@@ -24,6 +24,7 @@ def DefineTargets(ru):
         srcs=[
             'mycpp/bump_leak_heap.cc',
             'mycpp/gc_builtins.cc',
+            'mycpp/gc_iolib.cc',
             'mycpp/gc_mops.cc',
             'mycpp/gc_mylib.cc',
             'mycpp/gc_str.cc',
@@ -47,6 +48,7 @@ def DefineTargets(ru):
             'mycpp/gc_heap_test.cc',
             'mycpp/gc_stress_test.cc',
             'mycpp/gc_builtins_test.cc',
+            'mycpp/gc_iolib_test.cc',
             'mycpp/gc_mops_test.cc',
             'mycpp/gc_mylib_test.cc',
             'mycpp/gc_dict_test.cc',
@@ -57,7 +59,7 @@ def DefineTargets(ru):
     ]:
         ru.cc_binary(test_main,
                      deps=['//mycpp/runtime'],
-                     matrix=COMPILERS_VARIANTS,
+                     matrix=(COMPILERS_VARIANTS + OTHER_VARIANTS),
                      phony_prefix='mycpp-unit')
 
     ru.cc_binary(
@@ -162,16 +164,28 @@ def TranslatorSubgraph(ru, translator, ex):
 
     # Implicit dependency: if the translator changes, regenerate source code.
     # But don't pass it on the command line.
-    translator_wrapper = '_bin/shwrap/%s_main' % translator
+    if translator == 'pea':
+        translator_wrapper = '_bin/shwrap/pea_main'
+        base_translator = 'pea'
+        translate_rule = 'translate-pea'
+    else:
+        translate_rule = 'translate-mycpp'
+        base_translator = 'mycpp'
+        translator_wrapper = '_bin/shwrap/mycpp_main'
+
+    translator_vars = [
+        ('mypypath', '$NINJA_REPO_ROOT/mycpp:$NINJA_REPO_ROOT/pyext'),
+    ]
+    if translator == 'mycpp-souffle':
+        translator_vars.append(('extra_mycpp_opts', '--minimize-stack-roots'))
 
     n.build(
         raw,
-        'translate-%s' % translator,
+        translate_rule,
         to_translate,
         implicit=[translator_wrapper],
         # examples/parse uses pyext/fastfunc.pyi
-        variables=[('mypypath',
-                    '$NINJA_REPO_ROOT/mycpp:$NINJA_REPO_ROOT/pyext')])
+        variables=translator_vars)
 
     p = 'mycpp/examples/%s_preamble.h' % ex
     # Ninja empty string!
@@ -185,7 +199,7 @@ def TranslatorSubgraph(ru, translator, ex):
             raw,
             implicit=[RULES_PY],
             variables=[('name', ex), ('preamble_path', preamble_path),
-                       ('translator', translator)])
+                       ('translator', base_translator)])
 
     n.newline()
 
@@ -194,6 +208,14 @@ def TranslatorSubgraph(ru, translator, ex):
 
     if translator == 'mycpp':
         example_matrix = COMPILERS_VARIANTS
+    elif translator == 'mycpp-souffle':
+        # mycpp-souffle only has three variants for now
+        example_matrix = [
+            ('cxx', 'opt'),  # for benchmarks
+            ('cxx', 'opt-sh'),  # for benchmarks
+            ('cxx', 'asan'),  # need this for running the examples in CI
+            ('cxx', 'asan+gcalways'),
+        ]
     else:
         # pea just has one variant for now
         example_matrix = [('cxx', 'asan+gcalways')]
@@ -230,9 +252,10 @@ def NinjaGraph(ru):
     n.newline()
 
     # mycpp and pea have the same interface
-    n.rule('translate-mycpp',
-           command='_bin/shwrap/mycpp_main $mypypath $out $in',
-           description='mycpp $mypypath $out $in')
+    n.rule(
+        'translate-mycpp',
+        command='_bin/shwrap/mycpp_main $mypypath $out $in $extra_mycpp_opts',
+        description='mycpp $mypypath $out $in')
     n.newline()
 
     n.rule('translate-pea',
@@ -356,7 +379,7 @@ def NinjaGraph(ru):
 
             n.newline()
 
-        for translator in ['mycpp', 'pea']:
+        for translator in ['mycpp', 'mycpp-souffle', 'pea']:
             TranslatorSubgraph(ru, translator, ex)
 
             # Don't run it for now; just compile
@@ -395,10 +418,14 @@ def NinjaGraph(ru):
                 # Only test cxx- variant
                 b_example = '_bin/cxx-%s/mycpp/examples/%s.%s' % (variant, ex,
                                                                   translator)
+                impl = 'C++'
+                if translator == 'mycpp-souffle':
+                    impl = 'C++-Souffle'
+
                 n.build([task_out, cc_log_out],
                         'example-task', [b_example],
                         variables=[('bin', b_example), ('name', ex),
-                                   ('impl', 'C++')])
+                                   ('impl', impl)])
                 n.newline()
 
     # Compare the log of all examples
@@ -415,4 +442,5 @@ def NinjaGraph(ru):
     n.newline()
 
     ru.souffle_binary('prebuilt/datalog/call-graph.cc')
+    ru.souffle_binary('prebuilt/datalog/dataflow.cc')
     ru.souffle_binary('prebuilt/datalog/smoke-test.cc')

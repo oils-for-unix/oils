@@ -28,7 +28,7 @@
 module syntax
 {
   use core value {
-    value
+    value LiteralBlock
   }
 
   # More efficient than the List[bool] pattern we've been using
@@ -46,15 +46,15 @@ module syntax
   | CFlag
   | Stdin(str comment)
 
-    # TODO: if it's not the main script, it's sourced, and you could provide
-    # a chain of locations back to the sourced script!
-    # MainFile(str path) or SourcedFile(str path, loc location)
+    # oshrc/ysh are considered a MainFile - loaded directly by the shell
   | MainFile(str path)
-  | SourcedFile(str path, loc location)
+    # TODO: if it's not the main script, it's sourced or a module/ and you
+    # could provide a chain of locations back to the sourced script!
+  | OtherFile(str path, loc location)
 
     # code parsed from a word
-    # used for 'eval', 'trap', 'printf', 'complete -W', etc.
-  | ArgvWord(str what, loc location)
+    # used for 'eval', 'trap', 'printf', 'complete -W', parseCommand()
+  | Dynamic(str what, loc location)
 
     # code parsed from the value of a variable
     # used for $PS1 $PROMPT_COMMAND
@@ -262,6 +262,7 @@ module syntax
 
   redir_param =
     Word %CompoundWord
+  | HereWord(CompoundWord w, bool is_multiline)
   | HereDoc(word here_begin,  # e.g. EOF or 'EOF'
             Token? here_end_tok,  # Token consisting of the whole line
                                   # It's always filled in AFTER creation, but
@@ -357,9 +358,6 @@ module syntax
       command body
   )
 
-  # Retain references to lines
-  LiteralBlock = (BraceGroup brace_group, List[SourceLine] lines)
-
   # Represents all these case:  s=1  s+=1  s[x]=1 ...
   ParsedAssignment = (Token? left, Token? close, int part_offset, CompoundWord w)
 
@@ -373,8 +371,8 @@ module syntax
            List[EnvPair] more_env,
            List[word] words,
            ArgList? typed_args, LiteralBlock? block,
-           # do_fork is semantic, not syntactic
-           bool do_fork)
+           # is_last_cmd is used for fork() optimizations
+           bool is_last_cmd)
 
     # This doesn't technically belong in the LST, but it's convenient for
     # execution
@@ -396,7 +394,7 @@ module syntax
     # A brace group is a compound command, with redirects.
   | BraceGroup %BraceGroup
     # Contains a single child, like CommandSub
-  | Subshell(Token left, command child, Token right)
+  | Subshell(Token left, command child, Token right, bool is_last_cmd)
   | DParen(Token left, arith_expr child, Token right)
   | DBracket(Token left, bool_expr expr, Token right)
 

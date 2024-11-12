@@ -1,15 +1,70 @@
 ## compare_shells: dash bash mksh ash
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 
 # builtin-trap.test.sh
 
 #### trap accepts/ignores --
 trap -- 'echo hi' EXIT
-echo done
+echo ok
 ## STDOUT:
-done
+ok
 hi
 ## END
+
+#### Register invalid trap
+trap 'foo' SIGINVALID
+## status: 1
+
+#### Remove invalid trap
+trap - SIGINVALID
+## status: 1
+
+#### SIGINT and INT are aliases
+trap - SIGINT
+echo $?
+trap - INT
+echo $?
+## STDOUT:
+0
+0
+## END
+## N-I dash STDOUT:
+1
+0
+## END
+
+#### trap without args prints traps, like trap -p
+case $SH in dash) exit ;; esac
+
+if false; then
+  # bash breaks the display across lines
+  trap "true
+false" EXIT
+fi
+
+$SH -c '
+
+trap "true" EXIT
+
+echo status=$?
+trap | grep EXIT
+echo status=$?
+'
+
+## STDOUT:
+status=0
+trap -- 'true' EXIT
+status=0
+## END
+
+## BUG mksh/ash STDOUT:
+status=0
+status=1
+## END
+
+## N-I dash STDOUT:
+## END
+
 
 #### trap 'echo hi' KILL (regression test, caught by smoosh suite)
 trap 'echo hi' 9
@@ -35,28 +90,6 @@ status=1
 status=1
 status=1
 status=0
-## END
-
-#### Register invalid trap
-trap 'foo' SIGINVALID
-## status: 1
-
-#### Remove invalid trap
-trap - SIGINVALID
-## status: 1
-
-#### SIGINT and INT are aliases
-trap - SIGINT
-echo $?
-trap - INT
-echo $?
-## STDOUT:
-0
-0
-## END
-## N-I dash STDOUT:
-1
-0
 ## END
 
 #### Invalid trap invocation
@@ -244,4 +277,90 @@ SIGURG
 begin child
 end child
 wait status 0
+## END
+
+#### trap USR1, sleep, SIGINT: non-interactively
+
+$REPO_ROOT/spec/testdata/builtin-trap-usr1.sh
+
+## STDOUT:
+usr1
+status=0
+## END
+
+#### trap INT, sleep, SIGINT: non-interactively
+
+# mksh behaves differently in CI -- maybe when it's not connected to a
+# terminal?
+case $SH in mksh) echo mksh; exit ;; esac
+
+$REPO_ROOT/spec/testdata/builtin-trap-int.sh
+
+## STDOUT:
+status=0
+## END
+
+## OK mksh STDOUT:
+mksh
+## END
+
+# Not sure why other shells differ here, but running the trap is consistent
+# with interactive cases in test/bugs.sh
+
+## OK osh STDOUT:
+int
+status=0
+## END
+
+#### trap EXIT, sleep, SIGINT: non-interactively
+
+$REPO_ROOT/spec/testdata/builtin-trap-exit.sh
+
+## STDOUT:
+on exit
+status=0
+## END
+
+#### Remove trap with an unsigned integer
+
+$SH -e -c '
+trap "echo noprint" EXIT
+trap 0 EXIT
+echo ok0
+'
+echo
+
+$SH -e -c '
+trap "echo noprint" EXIT
+trap " 42 " EXIT
+echo ok42space
+'
+echo
+
+# corner case: sometimes 07 is treated as octal, but not here
+$SH -e -c '
+trap "echo noprint" EXIT
+trap 07 EXIT
+echo ok07
+'
+echo
+
+$SH -e -c '
+trap "echo trap-exit" EXIT
+trap -1 EXIT
+echo bad
+'
+if test $? -ne 0; then
+  echo failure
+fi
+
+## STDOUT:
+ok0
+
+ok42space
+
+ok07
+
+trap-exit
+failure
 ## END

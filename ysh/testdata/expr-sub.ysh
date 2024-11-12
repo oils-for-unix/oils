@@ -5,7 +5,7 @@
 
 shopt -s ysh:upgrade
 
-source --builtin list.ysh
+source $LIB_YSH/list.ysh
 
 simple-demo() {
   var myarray = %(spam eggs ham)
@@ -41,7 +41,7 @@ simple-demo() {
   echo '  Notes:'
   echo '  - the Dict->reverse() method is from Python.'
   echo
-  write -- @[mydict->keys()]
+  write -- @[mydict=>keys()]
   echo
 
   # But this is a syntax error

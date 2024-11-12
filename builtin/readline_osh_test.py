@@ -14,7 +14,7 @@ from builtin import readline_osh  # module under test
 from core import test_lib
 from core import state
 from core import alloc
-from core import ui
+from display import ui
 from frontend import flag_def  # side effect: flags are defined!
 
 _ = flag_def
@@ -88,7 +88,7 @@ echo bye
 def _TestHistory(argv):
     f = cStringIO.StringIO()
     arena = alloc.Arena()
-    mem = state.Mem('', [], arena, [])
+    mem = state.Mem('', [], arena, [], {})
     errfmt = ui.ErrorFormatter()
     b = readline_osh.History(readline, mem, errfmt, f)
     cmd_val = test_lib.MakeBuiltinArgv(argv)

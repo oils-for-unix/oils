@@ -22,7 +22,7 @@ import posix_ as posix
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from core.ui import ErrorFormatter
+    from display import ui
 
 _ = log
 
@@ -37,7 +37,7 @@ class Json(vm._Builtin):
     """
 
     def __init__(self, mem, errfmt, is_j8):
-        # type: (state.Mem, ErrorFormatter, bool) -> None
+        # type: (state.Mem, ui.ErrorFormatter, bool) -> None
         self.mem = mem
         self.errfmt = errfmt
 
@@ -96,12 +96,12 @@ class Json(vm._Builtin):
             attrs = flag_util.Parse('json_read', arg_r)
             #arg_jr = arg_types.json_read(attrs.attrs)
 
-            if cmd_val.typed_args:  # json read (&x)
+            if cmd_val.proc_args:  # json read (&x)
                 rd = typed_args.ReaderForProc(cmd_val)
                 place = rd.PosPlace()
                 rd.Done()
 
-                blame_loc = cmd_val.typed_args.left  # type: loc_t
+                blame_loc = cmd_val.proc_args.typed_args.left  # type: loc_t
 
             else:  # json read
                 var_name = '_reply'
@@ -109,7 +109,7 @@ class Json(vm._Builtin):
                 #log('VAR %s', var_name)
                 blame_loc = cmd_val.arg_locs[0]
                 place = value.Place(LeftName(var_name, blame_loc),
-                                    self.mem.TopNamespace())
+                                    self.mem.CurrentFrame())
 
             if not arg_r.AtEnd():
                 e_usage('read got too many args', arg_r.Location())

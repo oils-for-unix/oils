@@ -1,0 +1,87 @@
+#!bin/ysh
+
+use $LIB_YSH/list.ysh --pick any all sum repeat
+
+# Change to 'use'?
+source $LIB_OSH/byo-server.sh
+
+proc test-any {
+  assert [false === any([])]
+  assert [true === any([true])]
+  assert [false === any([false])]
+  assert [true === any([true, false])]
+  assert [true === any([false, true])]
+  assert [false === any([false, false])]
+  assert [true === any([false, true, false])]
+  assert [false === any([false, false, null, ""])]  # null and "" are falsey
+  assert [true === any(["foo"])]  # "foo" is truthy
+}
+
+proc test-all {
+  assert [true === all([])]
+  assert [true === all([true])]
+  assert [false === all([false])]
+  assert [true === all([true, true])]
+  assert [false === all([true, false])]
+  assert [false === all([false, true])]
+  assert [false === all([false, false])]
+  assert [false === all([false, true, false])]
+  assert [true === all(["foo"])]
+  assert [false === all([""])]
+}
+
+proc test-more-any-all {
+  assert [true === all( :|yes yes| ) ]
+  assert [false === all( :|yes ''| ) ]
+  assert [false === all( :|'' ''| ) ]
+  
+  assert [true === any( :|yes yes| ) ]
+  assert [true === any( :|yes ''| ) ]
+  assert [false === any( :|'' ''| ) ]
+}
+
+proc test-sum {
+  assert [0 === sum([])]
+  assert [0 === sum([0])]
+  assert [6 === sum([1, 2, 3])]
+
+  assert [3 === sum( 0 ..< 3 )]
+  assert [45 === sum( 0 ..< 3; start=42)]
+  assert [42 === sum( 0 ..< 0, start=42)]
+}
+
+proc test-repeat-str {
+  assert ['foofoofoo' === repeat('foo', 3)]
+  assert ['' === repeat('foo', 0)]
+  assert ['' === repeat('foo',-1)]
+}
+
+proc test-repeat-list {
+  var L = ['foo', 'bar']
+  assert [ :|foo bar foo bar foo bar| === repeat(L, 3) ]
+  assert [ :|| === repeat(L, 0) ]
+  assert [ :|| === repeat(L, -1) ]
+}
+
+proc test-repeat-error {
+  #pp test_ (repeat(null, 3))
+
+  try {
+    pp test_ (repeat(null, 3))
+  }
+  assert [10 === _error.code]
+
+  try {
+    pp test_ (repeat({}, 3))
+  }
+  assert [10 === _error.code]
+
+  try {
+    pp test_ (repeat(42, 3))
+  }
+  assert [10 === _error.code]
+}
+
+if is-main {
+  byo-maybe-run
+}

@@ -65,9 +65,12 @@ chapters.
 
 <div class="highlight">
 
-[**Index**](chap-index.html)
+[**Index**](chap-index.html) - resolves topic name conflicts
 
 </div>
+
+[Topics By Feature](feature-index.html) - topics for modules, env vars, etc.
+
 
 ## `help` command
 

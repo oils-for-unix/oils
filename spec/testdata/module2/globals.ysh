@@ -1,0 +1,36 @@
+
+# We can provide a shortcut:
+
+# export mutate-g1 mutateG2
+# export --funcs --procs  # for convenience
+
+const __provide__ = :| mutate-g1 mutateG2 |
+
+var g1 = 'g1'
+var g2 = 'g2'
+
+var d = {g: 1}
+#pp test_ ([id(d), d])
+
+proc mutate-g1 {
+  echo "g1 = $g1"
+  setglobal g1 = 'proc mutated'
+  echo "g1 = $g1"
+
+  setglobal d = {'proc mutated': 42}
+
+  #pp test_ ([id(d), d])
+}
+
+# Should we disallow setglobal in func?  Yes I think so
+func mutateG2() {
+  echo "g2 = $g2"
+  setglobal g2 = 'func mutated'
+  echo "g2 = $g2"
+}
+
+#pp frame_vars_
+
+#mutate-g1
+#call mutateG2()
+

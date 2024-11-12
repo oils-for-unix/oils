@@ -15,7 +15,7 @@ set -o errexit
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source build/dev-shell.sh  # python2 in $PATH
-source mycpp/common-vars.sh  # MYPY_REPO
+#source devtools/types.sh  # typecheck-files
 source $REPO_ROOT/test/tsv-lib.sh  # time-tsv
 
 example-main-wrapper() {
@@ -64,12 +64,14 @@ EOF
 
 gen-oils-for-unix() {
   local main_name=$1
-  local out_prefix=$2
-  local preamble=$3
-  shift 3  # rest are inputs
+  local translator=$2
+  local out_prefix=$3
+  local preamble=$4
+  local mycpp_opts=$5
+  shift 5  # rest are inputs
 
   # Put it in _build/tmp so it's not in the tarball
-  local tmp=_build/tmp
+  local tmp=_build/tmp/$translator
   mkdir -p $tmp
 
   local raw_cc=$tmp/${main_name}_raw.cc
@@ -82,13 +84,14 @@ gen-oils-for-unix() {
 
   _bin/shwrap/mycpp_main $mypypath $raw_cc \
     --header-out $raw_header \
+    $mycpp_opts \
     ${EXTRA_MYCPP_ARGS:-} \
     "$@"
 
   # oils_for_unix -> OILS_FOR_UNIX_MYCPP_H'
   local guard=${main_name^^}_MYCPP_H
 
-  { echo "// $main_name.mycpp.h: translated from Python by mycpp"
+  { echo "// $main_name.h: translated from Python by mycpp"
     echo
     echo "#ifndef $guard"
     echo "#define $guard"
@@ -100,7 +103,7 @@ gen-oils-for-unix() {
   } > $header_out
 
   { cat <<EOF
-// $main_name.mycpp.cc: translated from Python by mycpp
+// $main_name.cc: translated from Python by mycpp
 
 // #include "$header_out"
 
@@ -209,14 +212,14 @@ benchmark-table() {
   } > $out
 }
 
-# TODO: No longer works.  This is called by ninja mycpp-check
-# I think it's giving strict warnings.
-mypy() {
-  ( source $MYCPP_VENV/bin/activate
-    # Don't need this since the virtualenv we created with it?
-    # source build/dev-shell.sh
-    PYTHONPATH=$MYPY_REPO python3 -m mypy "$@";
-  )
+# Copied from devtools/types.sh
+
+MYPY_FLAGS='--strict --no-strict-optional'
+typecheck-files() {
+  echo "MYPY $@"
+
+  # TODO: Adjust path for mcypp/examples/modules.py
+  time MYPYPATH='.:pyext' python3 -m mypy --py2 --follow-imports=silent $MYPY_FLAGS "$@"
 }
 
 typecheck() {
@@ -231,9 +234,21 @@ typecheck() {
     local more_flags=''
   fi
 
-  # $more_flags can be empty
-  MYPYPATH="$REPO_ROOT:$REPO_ROOT/mycpp" \
-    mypy --py2 --strict $more_flags $main_py > $out
+  # Similar to devtools/types.sh
+
+  local status=0
+
+  set +o errexit
+  typecheck-files $main_py > $out
+  status=$?
+  set -o errexit
+
+  if test $status != 0; then
+    echo "FAIL $main_py"
+    cat $out
+  fi
+
+  return $status
 }
 
 logs-equal() {
@@ -286,7 +301,7 @@ shift 2
 
 tmp=$out.tmp  # avoid creating partial files
 
-PYTHONPATH="$REPO_ROOT:$MYPY_REPO" MYPYPATH="$MYPYPATH" \
+PYTHONPATH="$REPO_ROOT:$TODO_MYPY_REPO" MYPYPATH="$MYPYPATH" \
   python3 pea/pea_main.py cpp "$@" > $tmp
 status=$?
 

@@ -45,13 +45,14 @@ from _devbuild.gen.runtime_asdl import (
     Piece,
 )
 from _devbuild.gen.value_asdl import (value, value_e, value_t, y_lvalue,
-                                      y_lvalue_e, y_lvalue_t, IntBox, LeftName)
+                                      y_lvalue_e, y_lvalue_t, IntBox, LeftName,
+                                      Obj, cmd_frag)
 from core import error
 from core.error import e_die, e_die_status
 from core import num
 from core import pyutil
 from core import state
-from core import ui
+from display import ui
 from core import vm
 from data_lang import j8
 from frontend import lexer
@@ -96,9 +97,12 @@ def _ConvertToInt(val, msg, blame_loc):
 
         elif case(value_e.Str):
             val = cast(value.Str, UP_val)
-            if match.LooksLikeInteger(val.s):
-                # TODO: Handle ValueError
-                return mops.FromStr(val.s)
+            if match.LooksLikeYshInt(val.s):
+                s = val.s.replace('_', '')
+                ok, i = mops.FromStr2(s)
+                if not ok:
+                    e_die("Integer too big: %s" % s, blame_loc)
+                return i
 
     raise error.TypeErr(val, msg, blame_loc)
 
@@ -117,12 +121,17 @@ def _ConvertToNumber(val):
 
         elif case(value_e.Str):
             val = cast(value.Str, UP_val)
-            if match.LooksLikeInteger(val.s):
-                # TODO: Handle ValueError
-                return coerced_e.Int, mops.FromStr(val.s), -1.0
 
-            if match.LooksLikeFloat(val.s):
-                return coerced_e.Float, mops.MINUS_ONE, float(val.s)
+            if match.LooksLikeYshInt(val.s):
+                s = val.s.replace('_', '')
+                ok, i = mops.FromStr2(s)
+                if not ok:
+                    e_die("Integer too big: %s" % s, loc.Missing)
+                return coerced_e.Int, i, -1.0
+
+            if match.LooksLikeYshFloat(val.s):
+                s = val.s.replace('_', '')
+                return coerced_e.Float, mops.MINUS_ONE, float(s)
 
     return coerced_e.Neither, mops.MINUS_ONE, -1.0
 
@@ -197,12 +206,10 @@ class ExprEvaluator(object):
 
     def EvalAugmented(self, lval, rhs_val, op, which_scopes):
         # type: (y_lvalue_t, value_t, Token, scope_t) -> None
-        """ setvar x +=1, setvar L[0] -= 1 
+        """ setvar x += 1, setvar L[0] -= 1 
 
         Called by CommandEvaluator
         """
-        # TODO: It might be nice to do auto d[x] += 1 too
-
         UP_lval = lval
         with tagswitch(lval) as case:
             if case(y_lvalue_e.Local):  # setvar x += 1
@@ -227,9 +234,11 @@ class ExprEvaluator(object):
                 with tagswitch(obj) as case:
                     if case(value_e.List):
                         obj = cast(value.List, UP_obj)
-                        index = val_ops.ToInt(lval.index,
-                                              'List index should be Int',
-                                              loc.Missing)
+                        i1 = _ConvertToInt(lval.index,
+                                           'List index should be Int',
+                                           loc.Missing)
+                        # TODO: don't truncate
+                        index = mops.BigTruncate(i1)
                         try:
                             lhs_val_ = obj.items[index]
                         except IndexError:
@@ -241,13 +250,26 @@ class ExprEvaluator(object):
                         obj = cast(value.Dict, UP_obj)
                         index = -1  # silence C++ warning
                         key = val_ops.ToStr(lval.index,
-                                            'Dict index should be Str',
+                                            'Dict key should be Str',
                                             loc.Missing)
                         try:
                             lhs_val_ = obj.d[key]
                         except KeyError:
-                            raise error.Expr('Dict entry not found: %r' % key,
+                            raise error.Expr('Dict key not found: %r' % key,
                                              loc.Missing)
+
+                    elif case(value_e.Obj):
+                        obj = cast(Obj, UP_obj)
+                        index = -1  # silence C++ warning
+                        key = val_ops.ToStr(lval.index,
+                                            'Obj attribute should be Str',
+                                            loc.Missing)
+                        try:
+                            lhs_val_ = obj.d[key]
+                        except KeyError:
+                            raise error.Expr(
+                                'Obj attribute not found: %r' % key,
+                                loc.Missing)
 
                     else:
                         raise error.TypeErr(
@@ -269,6 +291,13 @@ class ExprEvaluator(object):
                     elif case(value_e.Dict):
                         obj = cast(value.Dict, UP_obj)
                         obj.d[key] = new_val_
+
+                    elif case(value_e.Obj):
+                        obj = cast(Obj, UP_obj)
+                        obj.d[key] = new_val_
+
+                    else:
+                        raise AssertionError()
 
             else:
                 raise AssertionError()
@@ -299,7 +328,7 @@ class ExprEvaluator(object):
                 obj = self._EvalLeftLocalOrGlobal(lhs.obj, which_scopes)
                 index = self._EvalExpr(lhs.index)
 
-                return self._EvalSubscript(obj, index)
+                return self._EvalSubscript(obj, index, lhs.left)
 
             elif case(expr_e.Attribute):
                 lhs = cast(Attribute, UP_lhs)
@@ -346,6 +375,19 @@ class ExprEvaluator(object):
             else:
                 raise AssertionError()
 
+    def EvalExprClosure(self, expr_val, blame_loc):
+        # type: (value.Expr, loc_t) -> value_t
+        """
+        Used by user-facing APIs that take value.Expr closures:
+
+        var i = 42
+        var x = io->evalExpr(^[i + 1])
+        var x = s.replace(pat, ^"- $0 $i -")
+        """
+        with state.ctx_EnclosedFrame(self.mem, expr_val.captured_frame,
+                                     expr_val.module_frame, None):
+            return self.EvalExpr(expr_val.e, blame_loc)
+
     def EvalExpr(self, node, blame_loc):
         # type: (expr_t, loc_t) -> value_t
         """Public API for _EvalExpr to ensure command_sub_errexit"""
@@ -369,13 +411,12 @@ class ExprEvaluator(object):
 
         with switch(part.left.id) as case:
             if case(Id.Left_DollarBracket):  # $[join(x)]
-                s = val_ops.Stringify(val, loc.WordPart(part))
+                s = val_ops.Stringify(val, loc.WordPart(part), 'Expr sub ')
                 return Piece(s, False, False)
 
             elif case(Id.Lit_AtLBracket):  # @[split(x)]
-                strs = val_ops.ToShellArray(val,
-                                            loc.WordPart(part),
-                                            prefix='Expr splice ')
+                strs = val_ops.ToShellArray(val, loc.WordPart(part),
+                                            'Expr splice ')
                 return part_value.Array(strs)
 
             else:
@@ -430,6 +471,16 @@ class ExprEvaluator(object):
                 raise
 
         return val
+
+    def _CallMetaMethod(self, func_val, pos_args, blame_loc):
+        # type: (value_t, List[value_t], loc_t) -> value_t
+
+        named_args = {}  # type: Dict[str, value_t]
+        arg_list = ArgList.CreateNull()  # There's no call site
+        rd = typed_args.Reader(pos_args, named_args, None, arg_list)
+        rd.SetFallbackLocation(blame_loc)
+        # errors propagate
+        return self._CallFunc(func_val, rd)
 
     def SpliceValue(self, val, part):
         # type: (value_t, word_part.Splice) -> List[str]
@@ -544,13 +595,13 @@ class ExprEvaluator(object):
                     # Disallow this to remove confusion between modulus and remainder
                     raise error.Expr("Divisor can't be negative", op)
 
-                return value.Int(num.IntRemainder(i1, i2))
+                return value.Int(mops.Rem(i1, i2))
 
             # a // b   setvar a //= b
             elif case(Id.Expr_DSlash, Id.Expr_DSlashEqual):
                 if mops.Equal(i2, mops.ZERO):
                     raise error.Expr('Divide by zero', op)
-                return value.Int(num.IntDivide(i1, i2))
+                return value.Int(mops.Div(i1, i2))
 
             # a ** b   setvar a **= b (ysh only)
             elif case(Id.Arith_DStar, Id.Expr_DStarEqual):
@@ -570,9 +621,14 @@ class ExprEvaluator(object):
                 return value.Int(mops.BitXor(i1, i2))
 
             elif case(Id.Arith_DGreat, Id.Arith_DGreatEqual):  # >>
+                if mops.Greater(mops.ZERO, i2):  # i2 < 0
+                    raise error.Expr("Can't right shift by negative number",
+                                     op)
                 return value.Int(mops.RShift(i1, i2))
 
             elif case(Id.Arith_DLess, Id.Arith_DLessEqual):  # <<
+                if mops.Greater(mops.ZERO, i2):  # i2 < 0
+                    raise error.Expr("Can't left shift by negative number", op)
                 return value.Int(mops.LShift(i1, i2))
 
             else:
@@ -685,15 +741,9 @@ class ExprEvaluator(object):
                 result = self._CompareNumeric(left, right, op)
 
             elif op.id == Id.Expr_TEqual:
-                if left.tag() != right.tag():
-                    result = False
-                else:
-                    result = val_ops.ExactlyEqual(left, right, op)
+                result = val_ops.ExactlyEqual(left, right, op)
             elif op.id == Id.Expr_NotDEqual:
-                if left.tag() != right.tag():
-                    result = True
-                else:
-                    result = not val_ops.ExactlyEqual(left, right, op)
+                result = not val_ops.ExactlyEqual(left, right, op)
 
             elif op.id == Id.Expr_In:
                 result = val_ops.Contains(left, right)
@@ -701,17 +751,13 @@ class ExprEvaluator(object):
                 result = not val_ops.Contains(left, right)
 
             elif op.id == Id.Expr_Is:
-                if left.tag() != right.tag():
-                    raise error.TypeErrVerbose('Mismatched types', op)
                 result = left is right
 
             elif op.id == Id.Node_IsNot:
-                if left.tag() != right.tag():
-                    raise error.TypeErrVerbose('Mismatched types', op)
                 result = left is not right
 
             elif op.id == Id.Expr_DTilde:
-                # no extglob in Oil language; use eggex
+                # no extglob in YSH; use eggex
                 if left.tag() != value_e.Str:
                     raise error.TypeErrVerbose('LHS must be Str', op)
 
@@ -768,10 +814,17 @@ class ExprEvaluator(object):
 
                     elif case(value_e.Int):
                         right = cast(value.Int, UP_right)
-                        if not left2.isdigit():
+
+                        # Note: this logic is similar to _ConvertToInt(left2)
+                        if not match.LooksLikeYshInt(left2):
                             return value.Bool(False)
 
-                        eq = mops.Equal(mops.FromStr(left2), right.i)
+                        left2 = left2.replace('_', '')
+                        ok, left_i = mops.FromStr2(left2)
+                        if not ok:
+                            e_die('Integer too big: %s' % left2, op)
+
+                        eq = mops.Equal(left_i, right.i)
                         return value.Bool(eq)
 
                 e_die('~== expects Str, Int, or Bool on the right', op)
@@ -841,7 +894,7 @@ class ExprEvaluator(object):
                 to_call = func.func
                 pos_args, named_args = func_proc._EvalArgList(self,
                                                               node.args,
-                                                              me=func.me)
+                                                              self_val=func.me)
                 rd = typed_args.Reader(pos_args,
                                        named_args,
                                        None,
@@ -853,8 +906,8 @@ class ExprEvaluator(object):
 
         return self._CallFunc(to_call, rd)
 
-    def _EvalSubscript(self, obj, index):
-        # type: (value_t, value_t) -> value_t
+    def _EvalSubscript(self, obj, index, blame_loc):
+        # type: (value_t, value_t, loc_t) -> value_t
 
         UP_obj = obj
         UP_index = index
@@ -878,45 +931,52 @@ class ExprEvaluator(object):
                         try:
                             return value.Str(obj.s[i])
                         except IndexError:
-                            # TODO: expr.Subscript has no error location
-                            raise error.Expr('index out of range', loc.Missing)
+                            raise error.Expr('index out of range', blame_loc)
 
                     else:
                         raise error.TypeErr(index,
                                             'Str index expected Int or Slice',
-                                            loc.Missing)
+                                            blame_loc)
 
             elif case(value_e.List):
                 obj = cast(value.List, UP_obj)
+
+                big_i = mops.ZERO
                 with tagswitch(index) as case2:
                     if case2(value_e.Slice):
                         index = cast(value.Slice, UP_index)
 
-                        lower = index.lower.i if index.lower else 0
-                        upper = index.upper.i if index.upper else len(
-                            obj.items)
+                        lower = (index.lower.i if index.lower else 0)
+                        upper = (index.upper.i
+                                 if index.upper else len(obj.items))
                         return value.List(obj.items[lower:upper])
 
                     elif case2(value_e.Int):
                         index = cast(value.Int, UP_index)
-                        i = mops.BigTruncate(index.i)
-                        try:
-                            return obj.items[i]
-                        except IndexError:
-                            # TODO: expr.Subscript has no error location
-                            raise error.Expr('List index out of range: %d' % i,
-                                             loc.Missing)
+                        big_i = index.i
+
+                    elif case2(value_e.Str):
+                        index = cast(value.Str, UP_index)
+                        big_i = _ConvertToInt(index, 'List index expected Int',
+                                              blame_loc)
 
                     else:
                         raise error.TypeErr(
-                            index, 'List index expected Int or Slice',
-                            loc.Missing)
+                            index, 'List index expected Int, Str, or Slice',
+                            blame_loc)
+
+                i = mops.BigTruncate(big_i)  # TODO: don't truncate
+                try:
+                    return obj.items[i]
+                except IndexError:
+                    raise error.Expr('List index out of range: %d' % i,
+                                     blame_loc)
 
             elif case(value_e.Dict):
                 obj = cast(value.Dict, UP_obj)
                 if index.tag() != value_e.Str:
                     raise error.TypeErr(index, 'Dict index expected Str',
-                                        loc.Missing)
+                                        blame_loc)
 
                 index = cast(value.Str, UP_index)
                 try:
@@ -924,60 +984,162 @@ class ExprEvaluator(object):
                 except KeyError:
                     # TODO: expr.Subscript has no error location
                     raise error.Expr('Dict entry not found: %r' % index.s,
-                                     loc.Missing)
+                                     blame_loc)
 
-        raise error.TypeErr(obj, 'Subscript expected Str, List, or Dict',
-                            loc.Missing)
+            elif case(value_e.Obj):
+                obj = cast(Obj, UP_obj)
 
-    def _EvalDot(self, node, obj):
-        # type: (Attribute, value_t) -> value_t
-        """ obj.attr on RHS or LHS
+                index_method = val_ops.IndexMetaMethod(obj)
+                if index_method is not None:
+                    pos_args = [obj, index]
+                    return self._CallMetaMethod(index_method, pos_args,
+                                                blame_loc)
 
-        setvar x = obj.attr
-        setglobal g[obj.attr] = 42
+        raise error.TypeErr(
+            obj, 'Subscript expected one of (Str List Dict, indexable Obj)',
+            blame_loc)
+
+    def _ChainedLookup(self, obj, current, attr_name):
+        # type: (Obj, Obj, str) -> Optional[value_t]
+        """Prototype chain lookup.
+
+        Args:
+          obj: properties we might bind to
+          current: our location in the prototype chain
         """
-        UP_obj = obj
-        with tagswitch(obj) as case:
+        val = current.d.get(attr_name)
+        if val is not None:
+            # Special bound method logic for objects, but NOT modules
+            if val.tag() in (value_e.Func, value_e.BuiltinFunc):
+                return value.BoundFunc(obj, val)
+            else:
+                return val
+
+        if current.prototype is not None:
+            return self._ChainedLookup(obj, current.prototype, attr_name)
+
+        return None
+
+    def _EvalDot(self, node, val):
+        # type: (Attribute, value_t) -> value_t
+        """ foo.attr on RHS or LHS
+
+        setvar x = foo.attr
+        setglobal g[foo.attr] = 42
+        """
+        UP_val = val
+        with tagswitch(val) as case:
             if case(value_e.Dict):
-                obj = cast(value.Dict, UP_obj)
+                val = cast(value.Dict, UP_val)
                 attr_name = node.attr_name
-                try:
-                    result = obj.d[attr_name]
-                except KeyError:
-                    raise error.Expr('Dict entry %r not found' % attr_name,
-                                     node.op)
+
+                # Dict key / normal attribute lookup
+                result = val.d.get(attr_name)
+                if result is not None:
+                    return result
+
+                raise error.Expr('Dict entry %r not found' % attr_name,
+                                 node.op)
+
+            elif case(value_e.Obj):
+                obj = cast(Obj, UP_val)
+                attr_name = node.attr_name
+
+                # Dict key / normal attribute lookup
+                result = obj.d.get(attr_name)
+                if result is not None:
+                    return result
+
+                # Prototype lookup - with special logic for BoundMethod
+                if obj.prototype is not None:
+                    result = self._ChainedLookup(obj, obj.prototype, attr_name)
+                    if result is not None:
+                        return result
+
+                raise error.Expr('Attribute %r not found on Obj' % attr_name,
+                                 node.op)
 
             else:
-                raise error.TypeErr(obj, 'Dot operator expected Dict', node.op)
-
-        return result
-
-    def _EvalAttribute(self, node):
-        # type: (Attribute) -> value_t
-
-        o = self._EvalExpr(node.obj)
-        UP_o = o
-
-        with switch(node.op.id) as case:
-            # Right now => is a synonym for ->
-            # Later we may enforce that => is pure, and -> is for mutation and
-            # I/O.
-            if case(Id.Expr_RArrow, Id.Expr_RDArrow):
+                # Method lookup on builtin types.
+                # They don't have attributes or prototype chains -- we only
+                # have a flat dict.
+                type_methods = self.methods.get(val.tag())
                 name = node.attr_name
-                # Look up builtin methods
-                type_methods = self.methods.get(o.tag())
                 vm_callable = (type_methods.get(name)
                                if type_methods is not None else None)
                 if vm_callable:
                     func_val = value.BuiltinFunc(vm_callable)
-                    return value.BoundFunc(o, func_val)
+                    return value.BoundFunc(val, func_val)
 
-                # If the operator is ->, fail because we don't have any
-                # user-defined methods
-                if node.op.id == Id.Expr_RArrow:
-                    raise error.TypeErrVerbose(
-                        'Method %r does not exist on type %s' %
-                        (name, ui.ValType(o)), node.attr)
+                raise error.TypeErrVerbose(
+                    "Method %r not found on builtin type %s" %
+                    (name, ui.ValType(val)), node.attr)
+
+        raise AssertionError()
+
+    def _EvalRArrow(self, node, val):
+        # type: (Attribute, value_t) -> value_t
+        mut_name = 'M/' + node.attr_name
+
+        UP_val = val
+        with tagswitch(val) as case:
+            if case(value_e.Obj):
+                obj = cast(Obj, UP_val)
+
+                if obj.prototype is not None:
+                    result = self._ChainedLookup(obj, obj.prototype, mut_name)
+                    if result is not None:
+                        return result
+
+                # TODO: we could have different errors for:
+                # - no prototype
+                # - found in the properties, not in the prototype chain (not
+                #   sure if this error is common.)
+                raise error.Expr(
+                    "Mutating method %r not found on Obj prototype chain" %
+                    mut_name, node.attr)
+            else:
+                # Look up methods on builtin types
+                # TODO: These should also be called M/append, M/erase, etc.
+
+                type_methods = self.methods.get(val.tag())
+                vm_callable = (type_methods.get(mut_name)
+                               if type_methods is not None else None)
+                if vm_callable:
+                    func_val = value.BuiltinFunc(vm_callable)
+                    return value.BoundFunc(val, func_val)
+
+                raise error.TypeErrVerbose(
+                    "Mutating method %r not found on builtin type %s" %
+                    (mut_name, ui.ValType(val)), node.attr)
+        raise AssertionError()
+
+    def _EvalAttribute(self, node):
+        # type: (Attribute) -> value_t
+
+        val = self._EvalExpr(node.obj)
+        with switch(node.op.id) as case:
+            if case(Id.Expr_Dot):  # d.key is like d['key']
+                return self._EvalDot(node, val)
+
+            elif case(Id.Expr_RArrow):  # e.g. mylist->append(42)
+                return self._EvalRArrow(node, val)
+
+            elif case(Id.Expr_RDArrow):  # chaining s => split()
+                name = node.attr_name
+
+                # Look up builtin methods, e.g.
+                #   s => strip() is like s.strip()
+                # Note:
+                #   m => group(1) is worse than m.group(1)
+                #   This is not a transformation, but more like an attribute
+
+                type_methods = self.methods.get(val.tag())
+                vm_callable = (type_methods.get(name)
+                               if type_methods is not None else None)
+                if vm_callable:
+                    func_val = value.BuiltinFunc(vm_callable)
+                    return value.BoundFunc(val, func_val)
 
                 # Operator is =>, so try function chaining.
 
@@ -988,21 +1150,19 @@ class ExprEvaluator(object):
                 #     f() => str() => upper()
 
                 # Could improve error message: may give "Undefined variable"
-                val = self._LookupVar(name, node.attr)
+                val2 = self._LookupVar(name, node.attr)
 
-                with tagswitch(val) as case2:
+                with tagswitch(val2) as case2:
                     if case2(value_e.Func, value_e.BuiltinFunc):
-                        return value.BoundFunc(o, val)
+                        return value.BoundFunc(val, val2)
                     else:
                         raise error.TypeErr(
-                            val, 'Fat arrow => expects method or function',
+                            val2, 'Fat arrow => expects method or function',
                             node.attr)
-
-            elif case(Id.Expr_Dot):  # d.key is like d['key']
-                return self._EvalDot(node, o)
 
             else:
                 raise AssertionError(node.op)
+        raise AssertionError()
 
     def _EvalExpr(self, node):
         # type: (expr_t) -> value_t
@@ -1024,7 +1184,7 @@ class ExprEvaluator(object):
 
             elif case(expr_e.Place):
                 node = cast(expr.Place, UP_node)
-                frame = self.mem.TopNamespace()
+                frame = self.mem.CurrentFrame()
                 return value.Place(LeftName(node.var_name, node.blame_tok),
                                    frame)
 
@@ -1033,8 +1193,10 @@ class ExprEvaluator(object):
 
                 id_ = node.left_token.id
                 if id_ == Id.Left_CaretParen:  # ^(echo block literal)
-                    # TODO: Propgate location info?
-                    return value.Command(node.child)
+                    # TODO: Propagate location info with ^(
+                    return value.Command(cmd_frag.Expr(node.child),
+                                         self.mem.CurrentFrame(),
+                                         self.mem.GlobalFrame())
                 else:
                     stdout_str = self.shell_ex.RunCommandSub(node)
                     if id_ == Id.Left_AtParen:  # @(seq 3)
@@ -1106,16 +1268,16 @@ class ExprEvaluator(object):
                 upper = None  # type: Optional[IntBox]
 
                 if node.lower:
-                    msg = 'Slice begin should be Int'
-                    i = val_ops.ToInt(self._EvalExpr(node.lower), msg,
-                                      loc.Missing)
-                    lower = IntBox(i)
+                    i1 = _ConvertToInt(self._EvalExpr(node.lower),
+                                       'Slice begin should be Int', node.op)
+                    # TODO: don't truncate
+                    lower = IntBox(mops.BigTruncate(i1))
 
                 if node.upper:
-                    msg = 'Slice end should be Int'
-                    i = val_ops.ToInt(self._EvalExpr(node.upper), msg,
-                                      loc.Missing)
-                    upper = IntBox(i)
+                    i1 = _ConvertToInt(self._EvalExpr(node.upper),
+                                       'Slice end should be Int', node.op)
+                    # TODO: don't truncate
+                    upper = IntBox(mops.BigTruncate(i1))
 
                 return value.Slice(lower, upper)
 
@@ -1125,13 +1287,17 @@ class ExprEvaluator(object):
                 assert node.lower is not None
                 assert node.upper is not None
 
-                msg = 'Range begin should be Int'
-                i = val_ops.ToInt(self._EvalExpr(node.lower), msg, loc.Missing)
+                i1 = _ConvertToInt(self._EvalExpr(node.lower),
+                                   'Range begin should be Int', node.op)
 
-                msg = 'Range end should be Int'
-                j = val_ops.ToInt(self._EvalExpr(node.upper), msg, loc.Missing)
+                i2 = _ConvertToInt(self._EvalExpr(node.upper),
+                                   'Range end should be Int', node.op)
 
-                return value.Range(i, j)
+                if node.op.id == Id.Expr_DDotEqual:  # Closed range
+                    i2 = mops.Add(i2, mops.ONE)
+
+                # TODO: Don't truncate
+                return value.Range(mops.BigTruncate(i1), mops.BigTruncate(i2))
 
             elif case(expr_e.Compare):
                 node = cast(expr.Compare, UP_node)
@@ -1191,7 +1357,8 @@ class ExprEvaluator(object):
 
             elif case(expr_e.Literal):  # ^[1 + 2]
                 node = cast(expr.Literal, UP_node)
-                return value.Expr(node.inner)
+                return value.Expr(node.inner, self.mem.CurrentFrame(),
+                                  self.mem.GlobalFrame())
 
             elif case(expr_e.Lambda):  # |x| x+1 syntax is reserved
                 # TODO: Location information for |, or func
@@ -1206,7 +1373,7 @@ class ExprEvaluator(object):
                 node = cast(Subscript, UP_node)
                 obj = self._EvalExpr(node.obj)
                 index = self._EvalExpr(node.index)
-                return self._EvalSubscript(obj, index)
+                return self._EvalSubscript(obj, index, node.left)
 
             elif case(expr_e.Attribute):  # obj->method or mydict.key
                 node = cast(Attribute, UP_node)

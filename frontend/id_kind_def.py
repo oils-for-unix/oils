@@ -109,10 +109,10 @@ class IdSpec(object):
     ):
         # type: (...) -> None
         """
-    Args:
-      kind_name: string
-      arg_type_pairs: dictionary of bool_arg_type_e -> []
-    """
+        Args:
+          kind_name: string
+          arg_type_pairs: dictionary of bool_arg_type_e -> []
+        """
         lexer_pairs = []
         num_tokens = 0
         for arg_type, pairs in arg_type_pairs:
@@ -232,7 +232,7 @@ def AddKinds(spec):
     #   $'\z'  Such bad codes are accepted when parse_backslash is on
     #          (default in OSH), so we have to lex them.
     #  (x == y) should used === or ~==
-    spec.AddKind('Unknown', ['Tok', 'Backslash', 'DEqual'])
+    spec.AddKind('Unknown', ['Tok', 'Backslash', 'DEqual', 'DAmp', 'DPipe', 'DDot'])
 
     spec.AddKind('Eol', ['Tok'])  # no more tokens on line (\0)
 
@@ -333,7 +333,8 @@ def AddKinds(spec):
             'Float',
             'Bang',  # eggex !digit, ![a-z]
             'Dot',
-            'DDot',
+            'DDotLessThan',
+            'DDotEqual',
             'Colon',  # mylist:pop()
             'RArrow',
             'RDArrow',
@@ -707,6 +708,8 @@ def AddKinds(spec):
             'Operator',
         ])
 
+    spec.AddKind('ShNumber', ['Dec', 'Hex', 'Oct', 'BaseN'])
+
 
 # Shared between [[ and test/[.
 _UNARY_STR_CHARS = 'zn'  # -z -n
@@ -731,6 +734,15 @@ def AddBoolKinds(spec):
         (bool_arg_type_e.Path, _Dash(list(_UNARY_PATH_CHARS))),
     ])
 
+    Id = spec.id_str2int
+
+    # test --true and test --false have no single letter flags.  They need no
+    # lexing.
+    for long_flag in ('true', 'false'):
+        id_name = 'BoolUnary_%s' % long_flag
+        spec._AddId(id_name)
+        spec.AddBoolOp(Id[id_name], bool_arg_type_e.Str)
+
     spec.AddBoolKind('BoolBinary', [
         (bool_arg_type_e.Str, [
             ('GlobEqual', '='),
@@ -742,7 +754,6 @@ def AddBoolKinds(spec):
         (bool_arg_type_e.Int, _Dash(_BINARY_INT)),
     ])
 
-    Id = spec.id_str2int
     # logical, arity, arg_type
     spec.AddBoolOp(Id['Op_DAmp'], bool_arg_type_e.Undefined)
     spec.AddBoolOp(Id['Op_DPipe'], bool_arg_type_e.Undefined)

@@ -97,7 +97,12 @@ Features:
 - [Guide to YSH Error Handling](ysh-error.html)
 - [Guide to Procs and Funcs](proc-func.html)
   - [Block Literals](block-literals.html) &dagger;
-- [Streams, Tables, Processes - awk, R, xargs](stream-table-process.html) &dagger;
+
+Designs for "Maximalist YSH":
+
+- [Streams, Tables, and Processes - awk, R, xargs](stream-table-process.html) &dagger;
+- [Document Processing in YSH - Notation, Query, Templating](ysh-doc-processing.html) &dagger;
+
 
 Crosscutting design issues:
 
@@ -120,6 +125,7 @@ the wire, **not** the other way around.
 
 ## The Shared Oils Runtime
 
+- [Types in the Oils Runtime](types.html)
 - [YSH Fixes Shell's Error Handling (`errexit`)](error-handling.html)
 - [Oils Error Catalog, With Hints](error-catalog.html)
 - [Tracing Execution](xtrace.html).  YSH enhances shell's `set -x`.

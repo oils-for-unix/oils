@@ -1,5 +1,8 @@
 .once
 
+// Facts and Relations (Inputs)
+// ============================
+
 .type Function <: symbol
 .type Statement <: number
 

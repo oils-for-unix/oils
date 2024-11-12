@@ -43,19 +43,46 @@ Similar names: [append][]
 
 ### pp
 
-Pretty prints interpreter state.  Some of these are implementation details,
-subject to change.
+The `pp` builtin pretty prints values and interpreter state.
+
+Pretty printing expressions is the most common:
+
+    $ var x = 42
+    $ pp (x + 5)
+    myfile.ysh:1: (Int)   47   # print value with code location
+
+You can pass an unevaluated expression:
+
+    $ pp [x + 5]
+    myfile.ysh:1: (Int)   47   # evaluate first
+
+The `value` command is a synonym for the interactive `=` operator:
+
+    $ pp value (x)
+    (Int)   42
+
+    $ = x 
+    (Int)   42
+
+Print proc names and doc comments:
+
+    $ pp proc  # subject to change
+
+You can also print low-level interpreter state.  The trailing `_` indicates
+that the exact format may change:
 
 Examples:
 
-    pp proc  # print all procs and their doc comments
+    $ var x = :| one two |
 
-    var x = :| one two |
-    pp cell x  # dump the "guts" of a cell, which is a location for a value
+    $ pp asdl_ (x)  # dump the ASDL "guts"
 
-    pp asdl (x)  # dump the ASDL "guts"
+    $ pp test_ (x)  # single-line stable format, for spec tests
 
-    pp line (x)  # single-line stable format, for spec tests
+    # dump the ASDL representation of a "Cell", which is a location for a value
+    # (not the value itself)
+    $ pp cell_ x
+
 
 ## Handle Errors
 
@@ -155,6 +182,27 @@ Runs a command, and requires the exit code to be 0 or 1.
 It's meant for external commands that "return" more than 2 values, like true /
 false / fail, rather than pass / fail.
 
+### assert
+
+Evaluates and expression, and fails if it is not truthy.
+
+    assert (false)   # fails
+    assert [false]   # also fails (the expression is evaluated)
+
+It's common to pass an unevaluated expression with `===`:
+
+    func f() { return (42) }
+
+    assert [43 === f()]
+
+In this special case, you get a nicer error message:
+
+> Expected: 43
+> Got:      42
+
+That is, the left-hand side should be the expected value, and the right-hand
+side should be the actual value.
+
 ## Shell State
 
 ### ysh-cd
@@ -167,12 +215,35 @@ It takes a block:
 
 ### ysh-shopt
 
-It takes a block:
+Sets shell options, e.g.
+
+    shopt --unset errexit
+    shopt --set errexit
+
+You can set or unset multiple options with the groups `strict:all`,
+`ysh:upgrade`, and `ysh:all`.  Example:
+
+    shopt --set ysh:upgrade
+
+If a block is passed, then:
+
+1. the mutated options are pushed onto a stack
+2. the block is executed
+3. the options are restored to their original state (even if the block fails to
+   execute)
+
+Example:
 
     shopt --unset errexit {
       false
       echo 'ok'
     }
+
+Note that setting `ysh:upgrade` or `ysh:all` may initialize the [ENV][] dict.
+
+Related: [shopt](#shopt)
+
+[ENV]: chap-special-var.html#ENV
 
 ### shvar
 
@@ -277,18 +348,18 @@ level statement in a "task file":
     
 Like 'builtin' and 'command', it affects the lookup of the first word.
 
-### module
+### source-guard
 
-Registers a name in the global module dict.  Returns 0 if it doesn't exist, or
-1 if it does.
+Registers a name in the global "module" dict.  Returns 0 if it doesn't exist,
+or 1 if it does.
 
 Use it like this in executable files:
 
-    module main || return 0   
+    source-guard main || return 0   
 
 And like this in libraries:
 
-    module myfile.ysh || return 0   
+    source-guard myfile.ysh || return 0   
 
 ### is-main
 
@@ -305,32 +376,70 @@ Use it like this:
 
 ### use
 
-TODO
+The `use` builtin evaluates a source file in a new `Frame`, and then creates an
+`Obj` that is a namespace.
 
-Reuse code from other files, respecting namespaces.
+    use my-dir/mymodule.ysh
 
-    use lib/foo.ysh  # relative import, i.ie implicit $_this_dir?
-                     # makes name 'foo' available
+    echo $[mymodule.my_integer]   # the module Obj has attributes
+    mymodule my-proc              # the module Obj is invokable
 
-Bind a specific name:
+The evaluation of such files is cached, so it won't be re-evaluated if `use` is
+called again.
 
-    use lib/foo.ysh (&myvar)  # makes 'myvar' available
+To import a specific name, use the `--pick` flag:
 
-Bind multiple names:
+    use my-dir/mymodule.ysh --pick my-proc other-proc
 
-    use lib/foo.ysh (&myvar) {
-      var log, die
-    }
+    my-proc 1 2
+    other-proc 3 4
 
-Maybe:
+Note: the `--pick` flag must come *after* the module, so this isn't valid:
 
-    use lib/foo.ysh (&myvar) {
-      var mylog = myvar.log
-    }
+    use --pick my-proc mymodule.sh  # INVALID
 
-Also a declaration
+<!--
+# TODO:
 
-    use --extern grep sed
+use mod.ysh --all-provided    # relies on __provide__ or provide builtin
+use mod.ysh --all-for-testing
+-->
+
+---
+
+The `--extern` flag means that `use` does nothing.  These commands can be used
+by tools to analyze names.
+
+    use --extern grep sed awk
+
+---
+
+Notes:
+
+- To get a reference to `module-with-hyphens`, you may need to use
+  `getVar('module-with-hyphens')`. 
+  - TODO: consider backtick syntax as well
+- `use` must be used at the top level, not within a function.
+  - This behavior is unlike Python.
+- The `use` builtin populates the new module with references to these values in
+  the calling module:
+  - [ENV][] - to mutate and set environment vars
+  - [PS4][] - for cross-module tracing in OSH
+
+[ENV]: chap-special-var.html#ENV
+[PS4]: chap-plugin.html#PS4
+
+Warnings:
+
+- `use` **copies** the module bindings into a new `Obj`.  This means that if
+  you rebind `mymodule.my_integer`, it will **not** be visible to code in the
+  module.
+  - This behavior is unlike Python.
+- `use` allows "circular imports".  That is `A.ysh` can `use B.ysh`, and vice
+  versa.
+  - To eliminate confusion over uninitialized names, use **only** `const`,
+    `func`, and `proc` at the top level of `my-module.ysh`.  Don't run
+    commands, use `setvar`, etc.
 
 ## I/O
 
@@ -452,6 +561,30 @@ See the [YSH FAQ][echo-en] for details.
 
 [simple_echo]: chap-option.html#ysh:all
 [echo-en]: ../ysh-faq.html#how-do-i-write-the-equivalent-of-echo-e-or-echo-n
+
+### ysh-test
+
+The YSH [test](#test) builtin supports these long flags:
+
+    --dir            same as -d
+    --exists         same as -e
+    --file           same as -f
+    --symlink        same as -L
+
+    --true           Is the argument equal to the string "true"?
+    --false          Is the argument equal to the string "false"?
+
+The `--true` and `--false` flags can be used to combine commands and
+expressions:
+
+    if test --file a && test --true $[bool(mydict)] {
+      echo ok
+    }
+
+This works because the boolean `true` *stringifies* to `"true"`, and likewise
+with `false`.
+
+That is, `$[true] === "true"` and `$[false] === "false"`.
 
 ### write
 
@@ -740,12 +873,6 @@ issues][].
 
 [security issues]: https://mywiki.wooledge.org/BashFAQ/048
 
-YSH eval:
-
-    var myblock = ^(echo hi)
-    eval (myblock)  # => hi
-
-
 ### trap
 
     trap FLAG* CMD SIGNAL*
@@ -793,19 +920,12 @@ Flags:
 
     -s --set    Turn the named options on
     -u --unset  Turn the named options off
-    -p          Print option values
+    -p          Print option values, and 1 if any option is unset
     -o          Use older set of options, normally controlled by 'set -o'
     -q          Return 0 if the option is true, else 1
 
-Examples: 
-
-    shopt --set errexit
-
-You can set or unset multiple options with the groups `strict:all`,
-`ysh:upgrade`, and `ysh:all`.
-
-If a block is passed, then the mutated options are pushed onto a stack, the
-block is executed, and then options are restored to their original state.
+This command is compatible with `shopt` in bash.  See [ysh-shopt](#ysh-shopt) for
+details on YSH enhancements.
 
 ## Working Dir
 
@@ -1043,6 +1163,12 @@ JOB:
   Job ID to be resumed in the background. If none is specified, the latest job
   is chosen. -->
 
+### kill
+
+Unimplemented.
+
+<!-- Note: 'kill' accepts job control syntax -->
+
 ## External
 
 ### test
@@ -1054,8 +1180,8 @@ JOB:
 
 Evaluates a conditional expression and returns 0 (true) or 1 (false).
 
-Note that [ is the name of a builtin, not an operator in the language.  Use
-'test' to avoid this confusion.
+Note that `[` is the name of a builtin, not an operator in the language.  Use
+`test` to avoid this confusion.
 
 String expressions:
 
@@ -1114,12 +1240,9 @@ these are discouraged.
 
 <!--    -R VAR     True if the variable VAR has been set and is a nameref variable. -->
 
-Oils supports these long flags:
+---
 
-    --dir            same as -d
-    --exists         same as -e
-    --file           same as -f
-    --symlink        same as -L
+See [ysh-test](#ysh-test) for log flags like `--file` and `--true`.
 
 ### getopts
 
@@ -1154,11 +1277,30 @@ Notes:
   maintain state between invocations of `getopts`.
 - The characters `:` and `?` can't be flags.
 
-### kill
 
-Unimplemented.
+## Conditional
 
-<!-- Note: 'kill' accepts job control syntax -->
+### cmd/true
+
+Do nothing and return status 0.
+
+    if true; then
+      echo hello
+    fi
+
+### cmd/false
+
+Do nothing and return status 1.
+
+    if false; then
+      echo 'not reached'
+    else
+      echo hello
+    fi
+
+<h3 id="colon" class="osh-topic">colon :</h3>
+
+Like `true`: do nothing and return status 0.
 
 ## Introspection
 

@@ -4,7 +4,7 @@
 #
 # Capture status/stdout/stderr, and nq-assert those values.
 
-#module yblocks || return 0
+const __provide__ = :| yb-capture yb-capture-2 |
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/two.sh
@@ -13,17 +13,21 @@ source $LIB_OSH/two.sh
 # There is no yb-redir, because you can just use try >$tmp { } and inspect _error.code
 
 proc yb-capture(; out; ; block) {
-  ### capture status and stderr 
+  ### capture status and stdout
 
   var stdout = ''
   try {
-    eval (block) | read --all (&stdout)
+    { call io->eval(block) } | read --all (&stdout)
+
+    # Note that this doesn't parse because of expression issue:
+    #     call io->eval(block) | read --all (&stdout)
+    # used to be eval (block)
   }
   # TODO: if 'block' contains a pipeline, we lose this magic var
   var result = {status: _pipeline_status[0], stdout}
 
   #echo 'result-1'
-  #pp line (result)
+  #pp test_ (result)
 
   call out->setValue(result)
 }
@@ -33,13 +37,17 @@ proc yb-capture-2(; out; ; block) {
 
   var stderr = ''
   try {
-    eval (block) 2>&1 | read --all (&stderr)
+    redir 2>&1 { call io->eval(block); } | read --all (&stderr)
+
+    # Note that this doesn't parse because of expression issue:
+    #     call io->eval(block) 2>&1 | read --all (&stderr)
+    # used to be eval (block) 2>&1
   }
-  #pp line (_pipeline_status)
+  #pp test_ (_pipeline_status)
 
   var result = {status: _pipeline_status[0], stderr}
   #echo 'result-2'
-  #pp line (result)
+  #pp test_ (result)
 
   call out->setValue(result)
 }

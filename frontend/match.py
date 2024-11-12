@@ -149,6 +149,12 @@ def _MatchJsonStrToken_Fast(line, start_pos):
     return tok_type, end_pos
 
 
+def _MatchShNumberToken_Fast(line, start_pos):
+    # type: (str, int) -> Tuple[Id_t, int]
+    tok_type, end_pos = fastlex.MatchShNumberToken(line, start_pos)
+    return tok_type, end_pos
+
+
 if fastlex:
     OneToken = _MatchOshToken_Fast
     ECHO_MATCHER = _MatchEchoToken_Fast
@@ -161,11 +167,13 @@ if fastlex:
     MatchJ8LinesToken = _MatchJ8LinesToken_Fast
     MatchJ8StrToken = _MatchJ8StrToken_Fast
     MatchJsonStrToken = _MatchJsonStrToken_Fast
+    MatchShNumberToken = _MatchShNumberToken_Fast
 
     IsValidVarName = fastlex.IsValidVarName
     ShouldHijack = fastlex.ShouldHijack
     LooksLikeInteger = fastlex.LooksLikeInteger
-    LooksLikeFloat = fastlex.LooksLikeFloat
+    LooksLikeYshInt = fastlex.LooksLikeYshInt
+    LooksLikeYshFloat = fastlex.LooksLikeYshFloat
 else:
     OneToken = _MatchOshToken_Slow(lexer_def.LEXER_DEF)
     ECHO_MATCHER = _MatchTokenSlow(lexer_def.ECHO_E_DEF)
@@ -178,6 +186,7 @@ else:
     MatchJ8LinesToken = _MatchTokenSlow(lexer_def.J8_LINES_DEF)
     MatchJ8StrToken = _MatchTokenSlow(lexer_def.J8_STR_DEF)
     MatchJsonStrToken = _MatchTokenSlow(lexer_def.JSON_STR_DEF)
+    MatchShNumberToken = _MatchTokenSlow(lexer_def.SH_NUMBER_DEF)
 
     # Used by osh/cmd_parse.py to validate for loop name.  Note it must be
     # anchored on the right.
@@ -194,19 +203,28 @@ else:
         # type: (str) -> bool
         return bool(_SHOULD_HIJACK_RE.match(s))
 
+    #
+    # Integer/float
+    #
+
     _LOOKS_LIKE_INTEGER_RE = re.compile(lexer_def.LOOKS_LIKE_INTEGER + '$')  # type: ignore
 
     def LooksLikeInteger(s):
         # type: (str) -> bool
         return bool(_LOOKS_LIKE_INTEGER_RE.match(s))
 
-    _LOOKS_LIKE_FLOAT_RE = re.compile(lexer_def.LOOKS_LIKE_FLOAT + '$')  # type: ignore
-    # yapf: enable
+    _LOOKS_LIKE_YSH_INT_RE = re.compile(lexer_def.LOOKS_LIKE_YSH_INT + '$')  # type: ignore
 
-
-    def LooksLikeFloat(s):
+    def LooksLikeYshInt(s):
         # type: (str) -> bool
-        return bool(_LOOKS_LIKE_FLOAT_RE.match(s))
+        return bool(_LOOKS_LIKE_YSH_INT_RE.match(s))
+
+    _LOOKS_LIKE_YSH_FLOAT_RE = re.compile(lexer_def.LOOKS_LIKE_YSH_FLOAT + '$')  # type: ignore
+
+    def LooksLikeYshFloat(s):
+        # type: (str) -> bool
+        return bool(_LOOKS_LIKE_YSH_FLOAT_RE.match(s))
+    # yapf: enable
 
 
 class SimpleLexer(object):

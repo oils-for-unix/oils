@@ -14,7 +14,7 @@ from _devbuild.gen.syntax_asdl import (
     loc,
     loc_t,
 )
-from _devbuild.gen.value_asdl import value
+from _devbuild.gen.value_asdl import value, value_e
 from builtin import hay_ysh
 from core import dev
 from core import error
@@ -23,15 +23,19 @@ from core.error import e_die, e_die_status
 from core import pyos
 from core import pyutil
 from core import state
-from core import ui
 from core import vm
+from display import ui
 from frontend import consts
 from frontend import lexer
-from mycpp.mylib import log
+from mycpp import mylib
+from mycpp.mylib import log, print_stderr, tagswitch
+from pylib import os_path
+from pylib import path_stat
 
 import posix_ as posix
+from posix_ import X_OK  # translated directly to C macro
 
-from typing import cast, Dict, List, Optional, TYPE_CHECKING
+from typing import cast, Dict, List, Tuple, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import (cmd_value, CommandStatus,
                                             StatusArray)
@@ -39,9 +43,114 @@ if TYPE_CHECKING:
     from builtin import trap_osh
     from core import optview
     from core import state
-    from core.vm import _Builtin
 
 _ = log
+
+
+def LookupExecutable(name, path_dirs, exec_required=True):
+    # type: (str, List[str], bool) -> Optional[str]
+    """
+    Returns either
+    - the name if it's a relative path that exists
+    - the executable name resolved against path_dirs
+    - None if not found
+    """
+    if len(name) == 0:  # special case for "$(true)"
+        return None
+
+    if '/' in name:
+        return name if path_stat.exists(name) else None
+
+    for path_dir in path_dirs:
+        full_path = os_path.join(path_dir, name)
+        if exec_required:
+            found = posix.access(full_path, X_OK)
+        else:
+            found = path_stat.exists(full_path)
+
+        if found:
+            return full_path
+
+    return None
+
+
+class SearchPath(object):
+    """For looking up files in $PATH or ENV.PATH"""
+
+    def __init__(self, mem, exec_opts):
+        # type: (state.Mem, optview.Exec) -> None
+        self.mem = mem
+        # TODO: remove exec_opts
+        self.cache = {}  # type: Dict[str, str]
+
+    def _GetPath(self):
+        # type: () -> List[str]
+
+        # In YSH, we read from ENV.PATH
+        s = self.mem.env_config.Get('PATH')
+        if s is None:
+            return []  # treat as empty path
+
+        # TODO: Could cache this to avoid split() allocating all the time.
+        return s.split(':')
+
+    def LookupOne(self, name, exec_required=True):
+        # type: (str, bool) -> Optional[str]
+        """
+        Returns the path itself (if relative path), the resolved path, or None.
+        """
+        return LookupExecutable(name,
+                                self._GetPath(),
+                                exec_required=exec_required)
+
+    def LookupReflect(self, name, do_all):
+        # type: (str, bool) -> List[str]
+        """
+        Like LookupOne(), with an option for 'type -a' to return all paths.
+        """
+        if len(name) == 0:  # special case for "$(true)"
+            return []
+
+        if '/' in name:
+            if path_stat.exists(name):
+                return [name]
+            else:
+                return []
+
+        results = []  # type: List[str]
+        for path_dir in self._GetPath():
+            full_path = os_path.join(path_dir, name)
+            if path_stat.exists(full_path):
+                results.append(full_path)
+                if not do_all:
+                    return results
+
+        return results
+
+    def CachedLookup(self, name):
+        # type: (str) -> Optional[str]
+        #log('name %r', name)
+        if name in self.cache:
+            return self.cache[name]
+
+        full_path = self.LookupOne(name)
+        if full_path is not None:
+            self.cache[name] = full_path
+        return full_path
+
+    def MaybeRemoveEntry(self, name):
+        # type: (str) -> None
+        """When the file system changes."""
+        mylib.dict_erase(self.cache, name)
+
+    def ClearCache(self):
+        # type: () -> None
+        """For hash -r."""
+        self.cache.clear()
+
+    def CachedCommands(self):
+        # type: () -> List[str]
+        return self.cache.values()
 
 
 class _ProcessSubFrame(object):
@@ -89,8 +198,8 @@ class _ProcessSubFrame(object):
         status_array.locs = locs
 
 
-# Big flgas for RunSimpleCommand
-DO_FORK = 1 << 1
+# Big flags for RunSimpleCommand
+IS_LAST_CMD = 1 << 1
 NO_CALL_PROCS = 1 << 2  # command ls suppresses function lookup
 USE_DEFAULT_PATH = 1 << 3  # for command -p ls changes the path
 
@@ -110,10 +219,10 @@ class ShellExecutor(vm._Executor):
             mem,  # type: state.Mem
             exec_opts,  # type: optview.Exec
             mutable_opts,  # type: state.MutableOpts
-            procs,  # type: Dict[str, value.Proc]
+            procs,  # type: state.Procs
             hay_state,  # type: hay_ysh.HayState
-            builtins,  # type: Dict[int, _Builtin]
-            search_path,  # type: state.SearchPath
+            builtins,  # type: Dict[int, vm._Builtin]
+            search_path,  # type: SearchPath
             ext_prog,  # type: process.ExternalProgram
             waiter,  # type: process.Waiter
             tracer,  # type: dev.Tracer
@@ -158,8 +267,8 @@ class ShellExecutor(vm._Executor):
         # type: () -> None
         assert self.cmd_ev is not None
 
-    def _MakeProcess(self, node, inherit_errexit=True):
-        # type: (command_t, bool) -> process.Process
+    def _MakeProcess(self, node, inherit_errexit, inherit_errtrace):
+        # type: (command_t, bool, bool) -> process.Process
         """Assume we will run the node in another process.
 
         Return a process.
@@ -185,11 +294,9 @@ class ShellExecutor(vm._Executor):
         #   interleaved.
         # - We could turn the `exit` builtin into a error.FatalRuntime exception
         #   and get this check for "free".
-        thunk = process.SubProgramThunk(self.cmd_ev,
-                                        node,
-                                        self.trap_state,
-                                        self.multi_trace,
-                                        inherit_errexit=inherit_errexit)
+        thunk = process.SubProgramThunk(self.cmd_ev, node, self.trap_state,
+                                        self.multi_trace, inherit_errexit,
+                                        inherit_errtrace)
         p = process.Process(thunk, self.job_control, self.job_list,
                             self.tracer)
         return p
@@ -202,14 +309,19 @@ class ShellExecutor(vm._Executor):
         """
         self.tracer.OnBuiltin(builtin_id, cmd_val.argv)
 
-        builtin_func = self.builtins[builtin_id]
+        builtin_proc = self.builtins[builtin_id]
+
+        return self.RunBuiltinProc(builtin_proc, cmd_val)
+
+    def RunBuiltinProc(self, builtin_proc, cmd_val):
+        # type: (vm._Builtin, cmd_value.Argv) -> int
 
         io_errors = []  # type: List[error.IOError_OSError]
         with vm.ctx_FlushStdout(io_errors):
             # note: could be second word, like 'builtin read'
             with ui.ctx_Location(self.errfmt, cmd_val.arg_locs[0]):
                 try:
-                    status = builtin_func.Run(cmd_val)
+                    status = builtin_proc.Run(cmd_val)
                     assert isinstance(status, int)
                 except (IOError, OSError) as e:
                     self.errfmt.PrintMessage(
@@ -274,16 +386,13 @@ class ShellExecutor(vm._Executor):
             #  e_die_status(status, 'special builtin failed')
             return status
 
-        call_procs = not (run_flags & NO_CALL_PROCS)
         # Builtins like 'true' can be redefined as functions.
+        call_procs = not (run_flags & NO_CALL_PROCS)
         if call_procs:
-            # TODO: Look shell functions in self.sh_funcs, but procs are
-            # value.Proc in the var namespace.
-            # Pitfall: What happens if there are two of the same name?  I guess
-            # that's why you have = and 'type' inspect them
+            proc_val, self_obj = self.procs.GetInvokable(arg0)
+            cmd_val.self_obj = self_obj  # MAYBE bind self
 
-            proc_node = self.procs.get(arg0)
-            if proc_node is not None:
+            if proc_val is not None:
                 if self.exec_opts.strict_errexit():
                     disabled_tok = self.mutable_opts.ErrExitDisabledToken()
                     if disabled_tok:
@@ -296,9 +405,25 @@ class ShellExecutor(vm._Executor):
                             "Use 'try' or wrap it in a process with $0 myproc",
                             arg0_loc)
 
-                with dev.ctx_Tracer(self.tracer, 'proc', argv):
-                    # NOTE: Functions could call 'exit 42' directly, etc.
-                    status = self.cmd_ev.RunProc(proc_node, cmd_val)
+                with tagswitch(proc_val) as case:
+                    if case(value_e.BuiltinProc):
+                        # Handle the special case of the BUILTIN proc
+                        # module_ysh.ModuleInvoke, which is returned on the Obj
+                        # created by 'use util.ysh'
+                        builtin_proc = cast(value.BuiltinProc, proc_val)
+                        b = cast(vm._Builtin, builtin_proc.builtin)
+                        status = self.RunBuiltinProc(b, cmd_val)
+
+                    elif case(value_e.Proc):
+                        proc = cast(value.Proc, proc_val)
+                        with dev.ctx_Tracer(self.tracer, 'proc', argv):
+                            # NOTE: Functions could call 'exit 42' directly, etc.
+                            status = self.cmd_ev.RunProc(proc, cmd_val)
+
+                    else:
+                        # GetInvokable() should only return 1 of 2 things
+                        raise AssertionError()
+
                 return status
 
         # Notes:
@@ -327,24 +452,29 @@ class ShellExecutor(vm._Executor):
             cmd_st.show_code = True  # this is a "leaf" for errors
             return self.RunBuiltin(builtin_id, cmd_val)
 
-        environ = self.mem.GetExported()  # Include temporary variables
+        environ = self.mem.GetEnv()  # Include temporary variables
 
-        if cmd_val.typed_args:
+        if cmd_val.proc_args:
             e_die(
                 '%r appears to be external. External commands don\'t accept typed args (OILS-ERR-200)'
-                % arg0, cmd_val.typed_args.left)
+                % arg0, cmd_val.proc_args.typed_args.left)
 
         # Resolve argv[0] BEFORE forking.
         if run_flags & USE_DEFAULT_PATH:
-            argv0_path = state.LookupExecutable(arg0, DEFAULT_PATH)
+            argv0_path = LookupExecutable(arg0, DEFAULT_PATH)
         else:
             argv0_path = self.search_path.CachedLookup(arg0)
         if argv0_path is None:
             self.errfmt.Print_('%r not found (OILS-ERR-100)' % arg0, arg0_loc)
             return 127
 
+        if self.trap_state.ThisProcessHasTraps():
+            do_fork = True
+        else:
+            do_fork = not cmd_val.is_last_cmd
+
         # Normal case: ls /
-        if run_flags & DO_FORK:
+        if do_fork:
             thunk = process.ExternalThunk(self.ext_prog, argv0_path, cmd_val,
                                           environ)
             p = process.Process(thunk, self.job_control, self.job_list,
@@ -396,7 +526,7 @@ class ShellExecutor(vm._Executor):
             pi = process.Pipeline(self.exec_opts.sigpipe_status_ok(),
                                   self.job_control, self.job_list, self.tracer)
             for child in node.children:
-                p = self._MakeProcess(child)
+                p = self._MakeProcess(child, True, self.exec_opts.errtrace())
                 p.Init_ParentPipeline(pi)
                 pi.Add(p)
 
@@ -405,14 +535,14 @@ class ShellExecutor(vm._Executor):
             last_pid = pi.LastPid()
             self.mem.last_bg_pid = last_pid  # for $!
 
-            self.job_list.AddJob(pi)  # show in 'jobs' list
+            job_id = self.job_list.AddJob(pi)  # show in 'jobs' list
 
         else:
             # Problem: to get the 'set -b' behavior of immediate notifications, we
             # have to register SIGCHLD.  But then that introduces race conditions.
             # If we haven't called Register yet, then we won't know who to notify.
 
-            p = self._MakeProcess(node)
+            p = self._MakeProcess(node, True, self.exec_opts.errtrace())
             if self.job_control.Enabled():
                 p.AddStateChange(
                     process.SetPgid(process.OWN_LEADER, self.tracer))
@@ -420,7 +550,13 @@ class ShellExecutor(vm._Executor):
             p.SetBackground()
             pid = p.StartProcess(trace.Fork)
             self.mem.last_bg_pid = pid  # for $!
-            self.job_list.AddJob(p)  # show in 'jobs' list
+            job_id = self.job_list.AddJob(p)  # show in 'jobs' list
+
+        if self.exec_opts.interactive():
+            # Print it like %1 to show it's a job
+            print_stderr('[%%%d] PID %d Started' %
+                         (job_id, self.mem.last_bg_pid))
+
         return 0
 
     def RunPipeline(self, node, status_out):
@@ -440,7 +576,7 @@ class ShellExecutor(vm._Executor):
             # TODO: determine these locations at parse time?
             pipe_locs.append(loc.Command(child))
 
-            p = self._MakeProcess(child)
+            p = self._MakeProcess(child, True, self.exec_opts.errtrace())
             p.Init_ParentPipeline(pi)
             pi.Add(p)
 
@@ -459,17 +595,55 @@ class ShellExecutor(vm._Executor):
 
     def RunSubshell(self, node):
         # type: (command_t) -> int
-        p = self._MakeProcess(node)
+        p = self._MakeProcess(node, True, self.exec_opts.errtrace())
         if self.job_control.Enabled():
             p.AddStateChange(process.SetPgid(process.OWN_LEADER, self.tracer))
 
         return p.RunProcess(self.waiter, trace.ForkWait)
 
+    def CaptureStdout(self, node):
+        # type: (command_t) -> Tuple[int, str]
+
+        p = self._MakeProcess(node, self.exec_opts.inherit_errexit(),
+                              self.exec_opts.errtrace())
+        # Shell quirk: Command subs remain part of the shell's process group, so we
+        # don't use p.AddStateChange(process.SetPgid(...))
+
+        r, w = posix.pipe()
+        p.AddStateChange(process.StdoutToPipe(r, w))
+
+        p.StartProcess(trace.CommandSub)
+        #log('Command sub started %d', pid)
+
+        chunks = []  # type: List[str]
+        posix.close(w)  # not going to write
+        while True:
+            n, err_num = pyos.Read(r, 4096, chunks)
+
+            if n < 0:
+                if err_num == EINTR:
+                    pass  # retry
+                else:
+                    # Like the top level IOError handler
+                    e_die_status(
+                        2,
+                        'Oils I/O error (read): %s' % posix.strerror(err_num))
+
+            elif n == 0:  # EOF
+                break
+        posix.close(r)
+
+        status = p.Wait(self.waiter)
+        stdout_str = ''.join(chunks).rstrip('\n')
+
+        return status, stdout_str
+
     def RunCommandSub(self, cs_part):
         # type: (CommandSub) -> str
 
         if not self.exec_opts._allow_command_sub():
-            # _allow_command_sub is used in two places.  Only one of them turns off _allow_process_sub
+            # _allow_command_sub is used in two places.  Only one of them turns
+            # off _allow_process_sub
             if not self.exec_opts._allow_process_sub():
                 why = "status wouldn't be checked (strict_errexit)"
             else:
@@ -496,41 +670,12 @@ class ShellExecutor(vm._Executor):
                 # Blame < because __cat has no location
                 blame_tok = redir_node.redirects[0].op
                 simple = command.Simple(blame_tok, [], [cat_word], None, None,
-                                        True)
+                                        False)
 
                 # MUTATE redir node so it's like $(<file _cat)
                 redir_node.child = simple
 
-        p = self._MakeProcess(node,
-                              inherit_errexit=self.exec_opts.inherit_errexit())
-        # Shell quirk: Command subs remain part of the shell's process group, so we
-        # don't use p.AddStateChange(process.SetPgid(...))
-
-        r, w = posix.pipe()
-        p.AddStateChange(process.StdoutToPipe(r, w))
-
-        p.StartProcess(trace.CommandSub)
-        #log('Command sub started %d', pid)
-
-        chunks = []  # type: List[str]
-        posix.close(w)  # not going to write
-        while True:
-            n, err_num = pyos.Read(r, 4096, chunks)
-
-            if n < 0:
-                if err_num == EINTR:
-                    pass  # retry
-                else:
-                    # Like the top level IOError handler
-                    e_die_status(
-                        2,
-                        'osh I/O error (read): %s' % posix.strerror(err_num))
-
-            elif n == 0:  # EOF
-                break
-        posix.close(r)
-
-        status = p.Wait(self.waiter)
+        status, stdout_str = self.CaptureStdout(node)
 
         # OSH has the concept of aborting in the middle of a WORD.  We're not
         # waiting until the command is over!
@@ -554,7 +699,7 @@ class ShellExecutor(vm._Executor):
         # Runtime errors test case: # $("echo foo > $@")
         # Why rstrip()?
         # https://unix.stackexchange.com/questions/17747/why-does-shell-command-substitution-gobble-up-a-trailing-newline-char
-        return ''.join(chunks).rstrip('\n')
+        return stdout_str
 
     def RunProcessSub(self, cs_part):
         # type: (CommandSub) -> str
@@ -607,7 +752,7 @@ class ShellExecutor(vm._Executor):
                 "Process subs not allowed here because status wouldn't be checked (strict_errexit)",
                 cs_loc)
 
-        p = self._MakeProcess(cs_part.child)
+        p = self._MakeProcess(cs_part.child, True, self.exec_opts.errtrace())
 
         r, w = posix.pipe()
         #log('pipe = %d, %d', r, w)

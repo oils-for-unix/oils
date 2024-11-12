@@ -243,12 +243,12 @@ multiple-refs() {
   echo
 
   # Same with Oils
-  bin/osh -c 'var mylist = [1,2,3]; var val = [mylist, mylist]; = val; json write (val); pp asdl (val)'
+  bin/osh -c 'var mylist = [1,2,3]; var val = [mylist, mylist]; = val; json write (val); pp asdl_ (val)'
   echo
 }
 
 oils-cycles() {
-  bin/ysh -c 'var d = {}; setvar d.key = d; = d; pp line (d); pp asdl (d); json write (d)'
+  bin/ysh -c 'var d = {}; setvar d.key = d; = d; pp test_ (d); pp asdl_ (d); json write (d)'
 }
 
 surrogate-pair() {
@@ -285,6 +285,7 @@ encode-nan() {
   python3 -c 'import json; val = float("nan"); s = json.dumps(val); print(s); print(json.loads(s))' || true
   echo
 
+  # raises error
   python3 -c 'import json; val = float("nan"); s = json.dumps(val, allow_nan=False); print(s); print(json.loads(s))' || true
   echo
 
@@ -302,6 +303,7 @@ encode-inf() {
   python3 -c 'import json; val = float("-inf"); print(val); s = json.dumps(val); print(s); print(json.loads(s))' || true
   echo
 
+  # raises error
   python3 -c 'import json; val = float("-inf"); print(val); s = json.dumps(val, allow_nan=False); print(s); print(json.loads(s))' || true
   echo
 

@@ -1,15 +1,14 @@
 #!/usr/bin/env python2
-"""func_hay.py."""
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import source, loc, command_t
-from _devbuild.gen.value_asdl import value
+from _devbuild.gen.value_asdl import value, cmd_frag
 from builtin import hay_ysh
 from core import alloc
 from core import error
 from core import main_loop
 from core import state
-from core import ui
+from display import ui
 from core import vm
 from frontend import reader
 from frontend import typed_args
@@ -28,10 +27,11 @@ if TYPE_CHECKING:
 class ParseHay(vm._Callable):
     """parseHay()"""
 
-    def __init__(self, fd_state, parse_ctx, errfmt):
-        # type: (process.FdState, parse_lib.ParseContext, ui.ErrorFormatter) -> None
+    def __init__(self, fd_state, parse_ctx, mem, errfmt):
+        # type: (process.FdState, parse_lib.ParseContext, state.Mem, ui.ErrorFormatter) -> None
         self.fd_state = fd_state
         self.parse_ctx = parse_ctx
+        self.mem = mem
         self.errfmt = errfmt
 
     def _Call(self, path):
@@ -49,14 +49,14 @@ class ParseHay(vm._Callable):
         arena = self.parse_ctx.arena
         line_reader = reader.FileLineReader(f, arena)
 
-        parse_opts = state.MakeOilOpts()
+        parse_opts = state.MakeYshParseOpts()
         # Note: runtime needs these options and totally different memory
 
         # TODO: CommandParser needs parse_opts
         c_parser = self.parse_ctx.MakeConfigParser(line_reader)
 
         # TODO: Should there be a separate config file source?
-        src = source.SourcedFile(path, call_loc)
+        src = source.OtherFile(path, call_loc)
         try:
             with alloc.ctx_SourceCode(arena, src):
                 node = main_loop.ParseWholeFile(c_parser)
@@ -64,7 +64,8 @@ class ParseHay(vm._Callable):
             self.errfmt.PrettyPrintError(e)
             return None
 
-        return value.Command(node)
+        return value.Command(cmd_frag.Expr(node), self.mem.CurrentFrame(),
+                             self.mem.GlobalFrame())
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
@@ -94,7 +95,7 @@ class EvalHay(vm._Callable):
         # type: (command_t) -> Dict[str, value_t]
 
         with hay_ysh.ctx_HayEval(self.hay_state, self.mutable_opts, self.mem):
-            unused = self.cmd_ev.EvalCommand(cmd)
+            unused = self.cmd_ev.EvalCommandFrag(cmd)
 
         return self.hay_state.Result()
 
@@ -104,7 +105,7 @@ class EvalHay(vm._Callable):
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        cmd = rd.PosCommand()
+        cmd = rd.PosCommandFrag()
         rd.Done()
         return value.Dict(self._Call(cmd))
 

@@ -1,8 +1,6 @@
 #!/usr/bin/env python2
 from __future__ import print_function
-"""
-wild_report.py
-"""
+"""wild_report.py."""
 
 import json
 import optparse
@@ -32,27 +30,29 @@ from vendor import jsontemplate
 
 T = jsontemplate.Template
 
+
 def F(format_str):
-  # {x|commas}
-  if format_str == 'commas':
-    return lambda n: '{:,}'.format(n)
+    # {x|commas}
+    if format_str == 'commas':
+        return lambda n: '{:,}'.format(n)
 
-  # {x|printf %.1f}
-  if format_str.startswith('printf '):
-    fmt = format_str[len('printf '):]
-    return lambda value: fmt % value
+    # {x|printf %.1f}
+    if format_str.startswith('printf '):
+        fmt = format_str[len('printf '):]
+        return lambda value: fmt % value
 
-  #'urlesc': urllib.quote_plus,
-  return None
+    #'urlesc': urllib.quote_plus,
+    return None
 
 
 def MakeHtmlGroup(title_str, body_str):
-  """Make a group of templates that we can expand with a common style."""
-  return {
-      'TITLE': T(title_str, default_formatter='html', more_formatters=F),
-      'BODY': T(body_str, default_formatter='html', more_formatters=F),
-      'NAV': NAV_TEMPLATE,
-  }
+    """Make a group of templates that we can expand with a common style."""
+    return {
+        'TITLE': T(title_str, default_formatter='html', more_formatters=F),
+        'BODY': T(body_str, default_formatter='html', more_formatters=F),
+        'NAV': NAV_TEMPLATE,
+    }
+
 
 BODY_STYLE = jsontemplate.Template("""\
 <!DOCTYPE html>
@@ -82,7 +82,8 @@ BODY_STYLE = jsontemplate.Template("""\
   </body>
 
 </html>
-""", default_formatter='html')
+""",
+                                   default_formatter='html')
 
 # NOTE: {.link} {.or id?} {.or} {.end} doesn't work?  That is annoying.
 NAV_TEMPLATE = jsontemplate.Template("""\
@@ -99,15 +100,14 @@ NAV_TEMPLATE = jsontemplate.Template("""\
 {.end}
 </span>
 {.end}
-""", default_formatter='html')
-
+""",
+                                     default_formatter='html')
 
 PAGE_TEMPLATES = {}
 
 # <a href="{base_url}osh-to-oil.html#{rel_path|htmltag}/{name|htmltag}">view</a>
 PAGE_TEMPLATES['FAILED'] = MakeHtmlGroup(
-    '{task}_failed',
-"""\
+    '{task}_failed', """\
 <h1>{failures|size} {task} failures</h1>
 
 {.repeated section failures}
@@ -131,8 +131,7 @@ PAGE_TEMPLATES['FAILED'] = MakeHtmlGroup(
 #   columns.  That seems to be the only way to do it?
 
 PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
-    'WILD/{rel_path} - Parsing and Translating Shell Scripts with Oil',
-"""\
+    'WILD/{rel_path} - Parsing and Translating Shell Scripts with Oil', """\
 
 {.section subtree_stats}
 <div id="summary">
@@ -378,436 +377,456 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
 
 
 def log(msg, *args):
-  if msg:
-    msg = msg % args
-  print(msg, file=sys.stderr)
+    if msg:
+        msg = msg % args
+    print(msg, file=sys.stderr)
 
 
 class DirNode:
-  """Entry in the file system tree."""
+    """Entry in the file system tree."""
 
-  def __init__(self):
-    self.files = {}  # filename -> stats for success/failure, time, etc.
-    self.dirs = {}  # subdir name -> DirNode object
+    def __init__(self):
+        self.files = {}  # filename -> stats for success/failure, time, etc.
+        self.dirs = {}  # subdir name -> DirNode object
 
-    self.subtree_stats = {}  # name -> value
+        self.subtree_stats = {}  # name -> value
 
-    # show all the non-empty stderr here?
-    # __osh2oil.stderr.txt
-    # __parse.stderr.txt
-    self.stderr = []
+        # show all the non-empty stderr here?
+        # __osh2oil.stderr.txt
+        # __parse.stderr.txt
+        self.stderr = []
 
 
 def UpdateNodes(node, path_parts, file_stats):
-  """
-  Create a file node and update the stats of all its descendants in the FS
-  tree.
-  """
-  first = path_parts[0]
-  rest = path_parts[1:]
+    """Create a file node and update the stats of all its descendants in the FS
+    tree."""
+    first = path_parts[0]
+    rest = path_parts[1:]
 
-  for name, value in file_stats.iteritems():
-    # Sum numerical properties, but not strings
-    if isinstance(value, int) or isinstance(value, float):
-      if name in node.subtree_stats:
-        node.subtree_stats[name] += value
-      else:
-        # NOTE: Could be int or float!!!
-        node.subtree_stats[name] = value
+    for name, value in file_stats.iteritems():
+        # Sum numerical properties, but not strings
+        if isinstance(value, int) or isinstance(value, float):
+            if name in node.subtree_stats:
+                node.subtree_stats[name] += value
+            else:
+                # NOTE: Could be int or float!!!
+                node.subtree_stats[name] = value
 
-  # Calculate maximums
-  m = node.subtree_stats.get('max_parse_secs', 0.0)
-  node.subtree_stats['max_parse_secs'] = max(m, file_stats['parse_proc_secs'])
+    # Calculate maximums
+    m = node.subtree_stats.get('max_parse_secs', 0.0)
+    node.subtree_stats['max_parse_secs'] = max(m,
+                                               file_stats['parse_proc_secs'])
 
-  m = node.subtree_stats.get('max_lines', 0)  # integer
-  node.subtree_stats['max_lines'] = max(m, file_stats['num_lines'])
+    m = node.subtree_stats.get('max_lines', 0)  # integer
+    node.subtree_stats['max_lines'] = max(m, file_stats['num_lines'])
 
-  if rest:  # update an intermediate node
-    if first in node.dirs:
-      child = node.dirs[first]
+    if rest:  # update an intermediate node
+        if first in node.dirs:
+            child = node.dirs[first]
+        else:
+            child = DirNode()
+            node.dirs[first] = child
+
+        UpdateNodes(child, rest, file_stats)
     else:
-      child = DirNode()
-      node.dirs[first] = child
+        # TODO: Put these in different sections?  Or least one below the other?
 
-    UpdateNodes(child, rest, file_stats)
-  else:
-    # TODO: Put these in different sections?  Or least one below the other?
+        # Include stderr if non-empty, or if FAILED
+        parse_stderr = file_stats.pop('parse_stderr')
+        if parse_stderr or file_stats['parse_failed']:
+            node.stderr.append({
+                'parsing': True,
+                'action': 'parse',
+                'name': first,
+                'contents': parse_stderr,
+            })
+        osh2oil_stderr = file_stats.pop('osh2oil_stderr')
 
-    # Include stderr if non-empty, or if FAILED
-    parse_stderr = file_stats.pop('parse_stderr')
-    if parse_stderr or file_stats['parse_failed']:
-      node.stderr.append({
-          'parsing': True,
-          'action': 'parse',
-          'name': first,
-          'contents': parse_stderr,
-      })
-    osh2oil_stderr = file_stats.pop('osh2oil_stderr')
+        # TODO: Could disable this with a flag to concentrate on parse errors.
+        # Or just show parse errors all in one file.
+        if 1:
+            if osh2oil_stderr or file_stats['osh2oil_failed']:
+                node.stderr.append({
+                    'parsing': False,
+                    'action': 'osh2oil',
+                    'name': first,
+                    'contents': osh2oil_stderr,
+                })
 
-    # TODO: Could disable this with a flag to concentrate on parse errors.
-    # Or just show parse errors all in one file.
-    if 1:
-      if osh2oil_stderr or file_stats['osh2oil_failed']:
-        node.stderr.append({
-            'parsing': False,
-            'action': 'osh2oil',
-            'name': first,
-            'contents': osh2oil_stderr,
-        })
-
-    # Attach to this dir
-    node.files[first] = file_stats
+        # Attach to this dir
+        node.files[first] = file_stats
 
 
 def DebugPrint(node, indent=0):
-  """Debug print."""
-  ind = indent * '    '
-  #print('FILES', node.files.keys())
-  for name in node.files:
-    print('%s%s - %s' % (ind, name, node.files[name]))
-  for name, child in node.dirs.iteritems():
-    print('%s%s/ - %s' % (ind, name, child.subtree_stats))
-    DebugPrint(child, indent=indent+1)
+    """Debug print."""
+    ind = indent * '    '
+    #print('FILES', node.files.keys())
+    for name in node.files:
+        print('%s%s - %s' % (ind, name, node.files[name]))
+    for name, child in node.dirs.iteritems():
+        print('%s%s/ - %s' % (ind, name, child.subtree_stats))
+        DebugPrint(child, indent=indent + 1)
 
 
 def WriteJsonFiles(node, out_dir):
-  """Write a index.json file for every directory."""
-  path = os.path.join(out_dir, 'index.json')
-  with open(path, 'w') as f:
-    raise AssertionError  # fix dir_totals
-    d = {'files': node.files, 'dirs': node.dir_totals}
-    json.dump(d, f)
+    """Write a index.json file for every directory."""
+    path = os.path.join(out_dir, 'index.json')
+    with open(path, 'w') as f:
+        raise AssertionError  # fix dir_totals
+        d = {'files': node.files, 'dirs': node.dir_totals}
+        json.dump(d, f)
 
-  log('Wrote %s', path)
+    log('Wrote %s', path)
 
-  for name, child in node.dirs.iteritems():
-    WriteJsonFiles(child, os.path.join(out_dir, name))
+    for name, child in node.dirs.iteritems():
+        WriteJsonFiles(child, os.path.join(out_dir, name))
 
 
 def MakeNav(rel_path, root_name='WILD', offset=0):
-  """
+    """
   Args:
     offset: for doctools/src_tree.py to render files
   """
-  assert not rel_path.startswith('/'), rel_path
-  assert not rel_path.endswith('/'), rel_path
-  # Get rid of ['']
-  parts = [root_name] + [p for p in rel_path.split('/') if p]
-  data = []
-  n = len(parts)
-  for i, p in enumerate(parts):
-    if i == n - 1:
-      link = None  # Current page shouldn't have link
-    else:
-      # files need to link to .
-      link = '../' * (n - 1 - i + offset) + 'index.html'
-    data.append({'anchor': p, 'link': link})
-  return data
+    assert not rel_path.startswith('/'), rel_path
+    assert not rel_path.endswith('/'), rel_path
+    # Get rid of ['']
+    parts = [root_name] + [p for p in rel_path.split('/') if p]
+    data = []
+    n = len(parts)
+    for i, p in enumerate(parts):
+        if i == n - 1:
+            link = None  # Current page shouldn't have link
+        else:
+            # files need to link to .
+            link = '../' * (n - 1 - i + offset) + 'index.html'
+        data.append({'anchor': p, 'link': link})
+    return data
 
 
 def _Lower(s):
-  return s.lower()
+    return s.lower()
 
 
 def WriteHtmlFiles(node, out_dir, rel_path='', base_url=''):
-  """Write a index.html file for every directory.
+    """Write a index.html file for every directory.
 
-  NOTE:
-  - osh-to-oil.html lives at $base_url
-  - table-sort.js lives at $base_url/../table-sort.js
+    NOTE:
+    - osh-to-oil.html lives at $base_url
+    - table-sort.js lives at $base_url/../table-sort.js
 
-  wild/
-    table-sort.js
-    table-sort.css
-    www/
-      index.html
-      osh-to-oil.html
+    wild/
+      table-sort.js
+      table-sort.css
+      www/
+        index.html
+        osh-to-oil.html
 
-  wild/
-    table-sort.js
-    table-sort.css
-    wild.wwz/  # Zip file
-      index.html
-      osh-to-oil.html
+    wild/
+      table-sort.js
+      table-sort.css
+      wild.wwz/  # Zip file
+        index.html
+        osh-to-oil.html
 
-  wwz latency is subject to caching headers.
-  """
-  files = []
-  for name in sorted(node.files, key=_Lower):
-    stats = node.files[name]
-    entry = dict(stats)
-    entry['name'] = name
-    # TODO: This should be internal time
-    entry['lines_per_sec'] = entry['lines_parsed'] / entry['parse_proc_secs']
-    files.append(entry)
+    wwz latency is subject to caching headers.
+    """
+    files = []
+    for name in sorted(node.files, key=_Lower):
+        stats = node.files[name]
+        entry = dict(stats)
+        entry['name'] = name
+        # TODO: This should be internal time
+        entry[
+            'lines_per_sec'] = entry['lines_parsed'] / entry['parse_proc_secs']
+        files.append(entry)
 
-  dirs = []
-  for name in sorted(node.dirs, key=_Lower):
-    entry = dict(node.dirs[name].subtree_stats)
-    entry['name'] = name
-    # TODO: This should be internal time
-    entry['lines_per_sec'] = entry['lines_parsed'] / entry['parse_proc_secs']
-    dirs.append(entry)
+    dirs = []
+    for name in sorted(node.dirs, key=_Lower):
+        entry = dict(node.dirs[name].subtree_stats)
+        entry['name'] = name
+        # TODO: This should be internal time
+        entry[
+            'lines_per_sec'] = entry['lines_parsed'] / entry['parse_proc_secs']
+        dirs.append(entry)
 
-  # TODO: Is there a way to make this less redundant?
-  st = node.subtree_stats
-  try:
-    st['lines_per_sec'] = st['lines_parsed'] / st['parse_proc_secs']
-  except KeyError:
-    # This usually there were ZERO files.
-    print(node, st, repr(rel_path), file=sys.stderr)
-    raise
+    # TODO: Is there a way to make this less redundant?
+    st = node.subtree_stats
+    try:
+        st['lines_per_sec'] = st['lines_parsed'] / st['parse_proc_secs']
+    except KeyError:
+        # This usually there were ZERO files.
+        print(node, st, repr(rel_path), file=sys.stderr)
+        raise
 
-  data = {
-      'rel_path': rel_path,
-      'subtree_stats': node.subtree_stats,  # redundant totals
-      'files': files,
-      'dirs': dirs,
-      'base_url': base_url,
-      'stderr': node.stderr,
-      'nav': MakeNav(rel_path),
-  }
-  # Hack to add links for top level page:
-  if rel_path == '':
-    data['top_level_links'] = True
+    data = {
+        'rel_path': rel_path,
+        'subtree_stats': node.subtree_stats,  # redundant totals
+        'files': files,
+        'dirs': dirs,
+        'base_url': base_url,
+        'stderr': node.stderr,
+        'nav': MakeNav(rel_path),
+    }
+    # Hack to add links for top level page:
+    if rel_path == '':
+        data['top_level_links'] = True
 
-  group = PAGE_TEMPLATES['LISTING']
-  body = BODY_STYLE.expand(data, group=group)
+    group = PAGE_TEMPLATES['LISTING']
+    body = BODY_STYLE.expand(data, group=group)
 
-  path = os.path.join(out_dir, 'index.html')
-  with open(path, 'w') as f:
-    f.write(body)
+    path = os.path.join(out_dir, 'index.html')
+    with open(path, 'w') as f:
+        f.write(body)
 
-  log('Wrote %s', path)
+    log('Wrote %s', path)
 
-  # Recursive
-  for name, child in node.dirs.iteritems():
-    child_out = os.path.join(out_dir, name)
-    child_rel = os.path.join(rel_path, name)
-    child_base = base_url + '../'
-    WriteHtmlFiles(child, child_out, rel_path=child_rel, base_url=child_base)
+    # Recursive
+    for name, child in node.dirs.iteritems():
+        child_out = os.path.join(out_dir, name)
+        child_rel = os.path.join(rel_path, name)
+        child_base = base_url + '../'
+        WriteHtmlFiles(child,
+                       child_out,
+                       rel_path=child_rel,
+                       base_url=child_base)
 
 
 def _ReadTaskFile(path):
-  """
-  Parses the a file that looks like '0 0.11', for the status code and timing.
-  This is output by test/common.sh run-task-with-status.
-  """
-  try:
-    with open(path) as f:
-      parts = f.read().split()
-      status, secs = parts
-  except ValueError as e:
-    log('ERROR reading %s: %s', path, e)
-    raise
-  # Turn it into pass/fail
-  num_failed = 1 if int(status) >= 1 else 0
-  return num_failed, float(secs)
+    """Parses the a file that looks like '0 0.11', for the status code and
+    timing.
+
+    This is output by test/common.sh run-task-with-status.
+    """
+    try:
+        with open(path) as f:
+            parts = f.read().split()
+            status, secs = parts
+    except ValueError as e:
+        log('ERROR reading %s: %s', path, e)
+        raise
+    # Turn it into pass/fail
+    num_failed = 1 if int(status) >= 1 else 0
+    return num_failed, float(secs)
 
 
 def _ReadLinesToSet(path):
-  """Read blacklist files like not-shell.txt and not-osh.txt.
+    """Read blacklist files like not-shell.txt and not-osh.txt.
 
-  TODO: Consider adding globs here?  There are a lot of FreeBSD and illumos
-  files we want to get rid of.
+    TODO: Consider adding globs here?  There are a lot of FreeBSD and illumos
+    files we want to get rid of.
 
-  Or we could probably do that in the original 'find' expression.
-  """
-  result = set()
-  if not path:
+    Or we could probably do that in the original 'find' expression.
+    """
+    result = set()
+    if not path:
+        return result
+
+    with open(path) as f:
+        for line in f:
+            # Allow comments.  We assume filenames don't have #
+            i = line.find('#')
+            if i != -1:
+                line = line[:i]
+
+            line = line.strip()
+            if not line:  # Lines that are blank or only comments.
+                continue
+
+            result.add(line)
+
     return result
-
-  with open(path) as f:
-    for line in f:
-      # Allow comments.  We assume filenames don't have #
-      i = line.find('#')
-      if i != -1:
-        line = line[:i]
-
-      line = line.strip()
-      if not line:  # Lines that are blank or only comments.
-        continue
-
-      result.add(line)
-
-  return result
 
 
 def SumStats(stdin, in_dir, not_shell, not_osh, root_node, failures):
-  """Reads pairs of paths from stdin, and updates root_node."""
-  # Collect work into dirs
-  for line in stdin:
-    rel_path, abs_path = line.split()
-    #print proj, '-', abs_path, '-', rel_path
+    """Reads pairs of paths from stdin, and updates root_node."""
+    # Collect work into dirs
+    for line in stdin:
+        rel_path, abs_path = line.split()
+        #print proj, '-', abs_path, '-', rel_path
 
-    raw_base = os.path.join(in_dir, rel_path)
-    st = {}
+        raw_base = os.path.join(in_dir, rel_path)
+        st = {}
 
-    st['not_shell'] = 1 if rel_path in not_shell else 0
-    st['not_osh'] = 1 if rel_path in not_osh else 0
-    if st['not_shell'] and st['not_osh']:
-      raise RuntimeError(
-          "%r can't be in both not-shell.txt and not-osh.txt" % rel_path)
+        st['not_shell'] = 1 if rel_path in not_shell else 0
+        st['not_osh'] = 1 if rel_path in not_osh else 0
+        if st['not_shell'] and st['not_osh']:
+            raise RuntimeError(
+                "%r can't be in both not-shell.txt and not-osh.txt" % rel_path)
 
-    expected_failure = bool(st['not_shell'] or st['not_osh'])
+        expected_failure = bool(st['not_shell'] or st['not_osh'])
 
-    parse_task_path = raw_base + '__parse.task.txt'
-    parse_failed, st['parse_proc_secs'] = _ReadTaskFile(
-        parse_task_path)
-    st['parse_failed'] = 0 if expected_failure else parse_failed 
+        parse_task_path = raw_base + '__parse.task.txt'
+        parse_failed, st['parse_proc_secs'] = _ReadTaskFile(parse_task_path)
+        st['parse_failed'] = 0 if expected_failure else parse_failed
 
-    with open(raw_base + '__parse.stderr.txt') as f:
-      st['parse_stderr'] = f.read()
+        with open(raw_base + '__parse.stderr.txt') as f:
+            st['parse_stderr'] = f.read()
 
-    if st['not_shell']:
-      failures.not_shell.append(
-          {'rel_path': rel_path, 'stderr': st['parse_stderr']}
-      )
-    if st['not_osh']:
-      failures.not_osh.append(
-          {'rel_path': rel_path, 'stderr': st['parse_stderr']}
-      )
-    if st['parse_failed']:
-      failures.parse_failed.append(
-          {'rel_path': rel_path, 'stderr': st['parse_stderr']}
-      )
+        if st['not_shell']:
+            failures.not_shell.append({
+                'rel_path': rel_path,
+                'stderr': st['parse_stderr']
+            })
+        if st['not_osh']:
+            failures.not_osh.append({
+                'rel_path': rel_path,
+                'stderr': st['parse_stderr']
+            })
+        if st['parse_failed']:
+            failures.parse_failed.append({
+                'rel_path': rel_path,
+                'stderr': st['parse_stderr']
+            })
 
-    osh2oil_task_path = raw_base + '__ysh-ify.task.txt'
-    osh2oil_failed, st['osh2oil_proc_secs'] = _ReadTaskFile(
-        osh2oil_task_path)
+        osh2oil_task_path = raw_base + '__ysh-ify.task.txt'
+        osh2oil_failed, st['osh2oil_proc_secs'] = _ReadTaskFile(
+            osh2oil_task_path)
 
-    # Only count translation failures if the parse succeeded!
-    st['osh2oil_failed'] = osh2oil_failed if not parse_failed else 0
+        # Only count translation failures if the parse succeeded!
+        st['osh2oil_failed'] = osh2oil_failed if not parse_failed else 0
 
-    with open(raw_base + '__ysh-ify.stderr.txt') as f:
-      st['osh2oil_stderr'] = f.read()
+        with open(raw_base + '__ysh-ify.stderr.txt') as f:
+            st['osh2oil_stderr'] = f.read()
 
-    if st['osh2oil_failed']:
-      failures.osh2oil_failed.append(
-          {'rel_path': rel_path, 'stderr': st['osh2oil_stderr']}
-      )
+        if st['osh2oil_failed']:
+            failures.osh2oil_failed.append({
+                'rel_path': rel_path,
+                'stderr': st['osh2oil_stderr']
+            })
 
-    wc_path = raw_base + '__wc.txt'
-    with open(wc_path) as f:
-      st['num_lines'] = int(f.read().split()[0])
-    # For lines per second calculation
-    st['lines_parsed'] = 0 if st['parse_failed'] else st['num_lines']
+        wc_path = raw_base + '__wc.txt'
+        with open(wc_path) as f:
+            st['num_lines'] = int(f.read().split()[0])
+        # For lines per second calculation
+        st['lines_parsed'] = 0 if st['parse_failed'] else st['num_lines']
 
-    st['num_files'] = 1
+        st['num_files'] = 1
 
-    path_parts = rel_path.split('/')
-    #print path_parts
-    UpdateNodes(root_node, path_parts, st)
+        path_parts = rel_path.split('/')
+        #print path_parts
+        UpdateNodes(root_node, path_parts, st)
 
 
 class Failures(object):
-  """Simple object that gets transformed to HTML and text."""
-  def __init__(self):
-    self.parse_failed = []
-    self.osh2oil_failed = []
-    self.not_shell = []
-    self.not_osh = []
+    """Simple object that gets transformed to HTML and text."""
 
-  def Write(self, out_dir):
-    with open(os.path.join(out_dir, 'parse-failed.txt'), 'w') as f:
-      for failure in self.parse_failed:
-        print(failure['rel_path'], file=f)
+    def __init__(self):
+        self.parse_failed = []
+        self.osh2oil_failed = []
+        self.not_shell = []
+        self.not_osh = []
 
-    with open(os.path.join(out_dir, 'osh2oil-failed.txt'), 'w') as f:
-      for failure in self.osh2oil_failed:
-        print(failure['rel_path'], file=f)
+    def Write(self, out_dir):
+        with open(os.path.join(out_dir, 'parse-failed.txt'), 'w') as f:
+            for failure in self.parse_failed:
+                print(failure['rel_path'], file=f)
 
-    base_url = ''
+        with open(os.path.join(out_dir, 'osh2oil-failed.txt'), 'w') as f:
+            for failure in self.osh2oil_failed:
+                print(failure['rel_path'], file=f)
 
-    with open(os.path.join(out_dir, 'not-shell.html'), 'w') as f:
-      data = {
-          'task': 'not-shell', 'failures': self.not_shell, 'base_url': base_url
-      }
-      body = BODY_STYLE.expand(data, group=PAGE_TEMPLATES['FAILED'])
-      f.write(body)
+        base_url = ''
 
-    with open(os.path.join(out_dir, 'not-osh.html'), 'w') as f:
-      data = {
-          'task': 'not-osh', 'failures': self.not_osh, 'base_url': base_url
-      }
-      body = BODY_STYLE.expand(data, group=PAGE_TEMPLATES['FAILED'])
-      f.write(body)
+        with open(os.path.join(out_dir, 'not-shell.html'), 'w') as f:
+            data = {
+                'task': 'not-shell',
+                'failures': self.not_shell,
+                'base_url': base_url
+            }
+            body = BODY_STYLE.expand(data, group=PAGE_TEMPLATES['FAILED'])
+            f.write(body)
 
-    with open(os.path.join(out_dir, 'parse-failed.html'), 'w') as f:
-      data = {
-          'task': 'parse', 'failures': self.parse_failed, 'base_url': base_url
-      }
-      body = BODY_STYLE.expand(data, group=PAGE_TEMPLATES['FAILED'])
-      f.write(body)
+        with open(os.path.join(out_dir, 'not-osh.html'), 'w') as f:
+            data = {
+                'task': 'not-osh',
+                'failures': self.not_osh,
+                'base_url': base_url
+            }
+            body = BODY_STYLE.expand(data, group=PAGE_TEMPLATES['FAILED'])
+            f.write(body)
 
-    with open(os.path.join(out_dir, 'osh2oil-failed.html'), 'w') as f:
-      data = {
-          'task': 'osh2oil', 'failures': self.osh2oil_failed,
-          'base_url': base_url
-      }
-      body = BODY_STYLE.expand(data, group=PAGE_TEMPLATES['FAILED'])
-      f.write(body)
+        with open(os.path.join(out_dir, 'parse-failed.html'), 'w') as f:
+            data = {
+                'task': 'parse',
+                'failures': self.parse_failed,
+                'base_url': base_url
+            }
+            body = BODY_STYLE.expand(data, group=PAGE_TEMPLATES['FAILED'])
+            f.write(body)
+
+        with open(os.path.join(out_dir, 'osh2oil-failed.html'), 'w') as f:
+            data = {
+                'task': 'osh2oil',
+                'failures': self.osh2oil_failed,
+                'base_url': base_url
+            }
+            body = BODY_STYLE.expand(data, group=PAGE_TEMPLATES['FAILED'])
+            f.write(body)
 
 
 def Options():
-  """Returns an option parser instance."""
-  p = optparse.OptionParser('wild_report.py [options] ACTION...')
-  p.add_option(
-      '-v', '--verbose', dest='verbose', action='store_true', default=False,
-      help='Show details about test execution')
-  p.add_option(
-      '--not-shell', default=None,
-      help="A file that contains a list of files that are known to be invalid "
-           "shell")
-  p.add_option(
-      '--not-osh', default=None,
-      help="A file that contains a list of files that are known to be invalid "
-           "under the OSH language.")
-  return p
+    """Returns an option parser instance."""
+    p = optparse.OptionParser('wild_report.py [options] ACTION...')
+    p.add_option('-v',
+                 '--verbose',
+                 dest='verbose',
+                 action='store_true',
+                 default=False,
+                 help='Show details about test execution')
+    p.add_option(
+        '--not-shell',
+        default=None,
+        help="A file that contains a list of files that are known to be invalid "
+        "shell")
+    p.add_option(
+        '--not-osh',
+        default=None,
+        help="A file that contains a list of files that are known to be invalid "
+        "under the OSH language.")
+    return p
 
 
 def main(argv):
-  o = Options()
-  (opts, argv) = o.parse_args(argv)
+    o = Options()
+    (opts, argv) = o.parse_args(argv)
 
-  action = argv[1]
+    action = argv[1]
 
-  if action == 'summarize-dirs':
-    in_dir = argv[2]
-    out_dir = argv[3]
+    if action == 'summarize-dirs':
+        in_dir = argv[2]
+        out_dir = argv[3]
 
-    not_shell = _ReadLinesToSet(opts.not_shell)
-    not_osh = _ReadLinesToSet(opts.not_osh)
+        not_shell = _ReadLinesToSet(opts.not_shell)
+        not_osh = _ReadLinesToSet(opts.not_osh)
 
-    # lines and size, oops
+        # lines and size, oops
 
-    # TODO: Need read the manifest instead, and then go by dirname() I guess
-    # I guess it is a BFS so you can just assume?
-    # os.path.dirname() on the full path?
-    # Or maybe you need the output files?
+        # TODO: Need read the manifest instead, and then go by dirname() I guess
+        # I guess it is a BFS so you can just assume?
+        # os.path.dirname() on the full path?
+        # Or maybe you need the output files?
 
-    root_node = DirNode()
-    failures = Failures()
-    SumStats(sys.stdin, in_dir, not_shell, not_osh, root_node, failures)
+        root_node = DirNode()
+        failures = Failures()
+        SumStats(sys.stdin, in_dir, not_shell, not_osh, root_node, failures)
 
-    failures.Write(out_dir)
+        failures.Write(out_dir)
 
-    # Debug print
-    #DebugPrint(root_node)
-    #WriteJsonFiles(root_node, out_dir)
+        # Debug print
+        #DebugPrint(root_node)
+        #WriteJsonFiles(root_node, out_dir)
 
-    WriteHtmlFiles(root_node, out_dir)
+        WriteHtmlFiles(root_node, out_dir)
 
-  else:
-    raise RuntimeError('Invalid action %r' % action)
+    else:
+        raise RuntimeError('Invalid action %r' % action)
 
 
 if __name__ == '__main__':
-  try:
-    main(sys.argv)
-  except RuntimeError as e:
-    print('FATAL: %s' % e, file=sys.stderr)
-    sys.exit(1)
-
+    try:
+        main(sys.argv)
+    except RuntimeError as e:
+        print('FATAL: %s' % e, file=sys.stderr)
+        sys.exit(1)
 
 # vim: sw=2

@@ -8,7 +8,7 @@ from _devbuild.gen.value_asdl import (value, value_e)
 from core import completion
 from core import error
 from core import state
-from core import ui
+from display import ui
 from core import vm
 from mycpp import mylib
 from mycpp.mylib import log, print_stderr
@@ -22,7 +22,7 @@ from typing import Dict, List, Iterator, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value
     from core.completion import Lookup, OptionState, Api, UserSpec
-    from core.ui import ErrorFormatter
+    from display import ui
     from frontend.args import _Attributes
     from frontend.parse_lib import ParseContext
     from osh.cmd_eval import CommandEvaluator
@@ -48,19 +48,15 @@ class _FixedWordsAction(completion.CompletionAction):
 
 
 class _DynamicProcDictAction(completion.CompletionAction):
-    """For completing from proc and aliases dicts, which are mutable.
-
-    Note: this is the same as _FixedWordsAction now, but won't be when the code
-    is statically typed!
-    """
+    """For completing shell functions/procs/invokables."""
 
     def __init__(self, d):
-        # type: (Dict[str, value.Proc]) -> None
+        # type: (state.Procs) -> None
         self.d = d
 
     def Matches(self, comp):
         # type: (Api) -> Iterator[str]
-        for name in sorted(self.d):
+        for name in self.d.InvokableNames():
             if name.startswith(comp.to_complete):
                 yield name
 
@@ -70,11 +66,7 @@ class _DynamicProcDictAction(completion.CompletionAction):
 
 
 class _DynamicStrDictAction(completion.CompletionAction):
-    """For completing from proc and aliases dicts, which are mutable.
-
-    Note: this is the same as _FixedWordsAction now, but won't be when the code
-    is statically typed!
-    """
+    """For completing from the alias dicts, which is mutable."""
 
     def __init__(self, d):
         # type: (Dict[str, str]) -> None
@@ -139,9 +131,11 @@ class SpecBuilder(object):
         # obviously it's better to check here.
         if arg.F is not None:
             func_name = arg.F
-            func = cmd_ev.procs.get(func_name)
+            func = cmd_ev.procs.GetShellFunc(func_name)
             if func is None:
-                raise error.Usage('function %r not found' % func_name,
+                # Note: we will have a different protocol for YSH procs and invokables
+                # The ideal thing would be some kind of generator ...
+                raise error.Usage('shell function %r not found' % func_name,
                                   loc.Missing)
             actions.append(
                 completion.ShellFuncAction(cmd_ev, func, self.comp_lookup))
@@ -405,7 +399,7 @@ class CompOpt(vm._Builtin):
     """Adjust options inside user-defined completion functions."""
 
     def __init__(self, comp_state, errfmt):
-        # type: (OptionState, ErrorFormatter) -> None
+        # type: (OptionState, ui.ErrorFormatter) -> None
         self.comp_state = comp_state
         self.errfmt = errfmt
 

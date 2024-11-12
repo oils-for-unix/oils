@@ -814,7 +814,7 @@ release-oils-for-unix() {
 
   # Maybe rebuild it
   pushd $dir
-  _build/oils.sh '' '' SKIP_REBUILD
+  _build/oils.sh --skip-rebuild
   popd
 
   local suite_name=parse-errors-osh-cpp

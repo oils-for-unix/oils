@@ -26,14 +26,14 @@ int PNode::NumChildren() {
   return children.size();
 }
 
-PNodeAllocator::PNodeAllocator() : arena_(new std::vector<PNode>()) {
-  arena_->reserve(512);
+// TODO: It would be nicer to reuse the std::deque arena_ throughout the whole
+// program.  Rather than new/delete for parsing each YSH expression.
+PNodeAllocator::PNodeAllocator() : arena_(new std::deque<PNode>()) {
 }
 
 PNode* PNodeAllocator::NewPNode(int typ, syntax_asdl::Token* tok) {
-  CHECK(arena_->size() < arena_->capacity());
   arena_->emplace_back(typ, tok, nullptr);
-  return arena_->data() + (arena_->size() - 1);
+  return &(arena_->back());
 }
 
 void PNodeAllocator::Clear() {

@@ -1,0 +1,352 @@
+#!bin/ysh
+
+# TODO: you should only have to pick parser
+# and you can use 'args parser' I guess
+
+use $LIB_YSH/args.ysh --pick parser parseArgs
+
+source $LIB_YSH/yblocks.ysh
+
+# TODO: why doesn't this work?  Is there a buffering problem wtih read --all?
+# Why would it not show up with source though?
+#use $LIB_YSH/yblocks.ysh --pick yb-capture
+
+# Can't be 'use' because we're using shell functions?
+source $LIB_OSH/byo-server.sh
+
+proc test-basic {
+  parser (&spec) {
+    flag -v --verbose (help="Verbosely")  # default is Bool, false
+  
+    flag -P --max-procs (Int, default=-1, help='''
+      Run at most P processes at a time
+      ''')
+  
+    flag -i --invert (Bool, default=true, help='''
+      Long multiline
+      Description
+      ''')
+
+    flag -n --name (Str)
+
+    flag -s --scale (Float, default=0.0)
+  
+    arg src (help='Source')
+    arg dest (help='Dest')
+  
+    rest files
+  }
+  
+  var args = parseArgs(spec, :| -n test --scale 1.0 mysrc -P 12 mydest a b c |)
+  
+  assert [false === args.verbose]
+
+  assert [floatsEqual(args.scale, 1.0)]
+  call args->erase('scale') # remove Float key for subsequent equality check
+
+  var expected = {
+    "name": "test",
+    "src": "mysrc",
+    "max-procs": 12,
+    "dest": "mydest",
+    "files": :| a b c |,
+    "verbose": false,
+    "invert":true,
+  }
+
+  assert [expected === args]
+}
+
+proc test-2 {
+  ### Bool flag, positional args, more positional
+
+  parser (&spec) {
+    flag -v --verbose (Bool)
+    arg src
+    arg dst
+
+    rest more  # allow more args
+  }
+
+  var argv = ['-v', 'src/path', 'dst/path', 'x', 'y', 'z']
+
+  var args = parseArgs(spec, argv)
+
+  #pp test_ (args)
+
+  assert [true === args.verbose]
+  assert ['src/path' === args.src]
+  assert ['dst/path' === args.dst]
+  assert [ :| x y z | === args.more]
+}
+
+proc test-default-values {
+
+  parser (&spec) {
+    flag -S --sanitize (Bool, default=false)
+    flag -v --verbose (Bool, default=false)
+    flag -P --max-procs (Int)  # Will set to null (the default default)
+  }
+
+  var args = parseArgs(spec, [])
+
+  #pp test_ (args)
+  var expected = {
+    "sanitize": false,
+    "verbose": false,
+    "max-procs": null,
+  }
+  assert [expected === args]
+}
+
+proc test-multiple-argv-arrays {
+  parser (&spec) {
+    flag -v --verbose (Bool, default=false)
+    flag -c --count (Int, default=120)
+    arg file
+  }
+
+  # TODO: argCases should go above
+  var argsCases = [
+    :| -v --count 120 example.sh |,
+    :| -v --count 120 example.sh -v |,  # duplicate flags are ignored
+    :| -v --count 120 example.sh -v --count 150 |,  # the last duplicate has precedence
+  ]
+
+  yb-capture (&r) {
+    for args in (argsCases) {
+      var args_str = join(args, ' ')
+      echo "----------  $args_str  ----------"
+      echo "\$ bin/ysh example.sh $args_str"
+      pp test_ (parseArgs(spec, args))
+
+      echo
+    }
+  }
+
+  #pp (r.stdout)
+
+  var expected = '''
+  ----------  -v --count 120 example.sh  ----------
+  $ bin/ysh example.sh -v --count 120 example.sh
+  (Dict)   {"verbose":true,"count":120,"file":"example.sh"}
+
+  ----------  -v --count 120 example.sh -v  ----------
+  $ bin/ysh example.sh -v --count 120 example.sh -v
+  (Dict)   {"verbose":true,"count":120,"file":"example.sh"}
+
+  ----------  -v --count 120 example.sh -v --count 150  ----------
+  $ bin/ysh example.sh -v --count 120 example.sh -v --count 150
+  (Dict)   {"verbose":true,"count":150,"file":"example.sh"}
+
+  '''
+
+  assert [expected === r.stdout]
+}
+
+proc test-duplicate-names-are-errors {
+  try {
+    parser (&spec) {
+      flag -n --name
+      flag -N --name
+    }
+  }
+  assert [3 === _error.code]
+
+  try {
+    parser (&spec) {
+      flag -n --name
+      arg name
+    }
+  }
+  assert [3 === _error.code]
+
+  try {
+    parser (&spec) {
+      arg name
+      flag -o --other
+      arg name
+    }
+  }
+  assert [3 === _error.code]
+}
+
+proc test-more-errors {
+
+  parser (&spec) {
+    flag -v --verbose
+    flag -n --num (Int, required=true)
+
+    arg action
+    arg other (required=false)
+  }
+
+  try { call parseArgs(spec, :| -n 10 action other extra |) }
+  assert [2 === _error.code]
+
+  try { call parseArgs(spec, :| -n |) }
+  assert [2 === _error.code]
+
+  try { call parseArgs(spec, :| -n -v |) }
+  assert [2 === _error.code]
+
+  try { = parseArgs(spec, :| -n 10 |) }
+  assert [2 === _error.code]
+
+  try { call parseArgs(spec, :| -v action |) }
+  assert [2 === _error.code]
+
+  try { call parseArgs(spec, :| --unknown |) }
+  assert [2 === _error.code]
+}
+
+proc test-print-spec {
+  parser (&spec) {
+    flag -v --verbose (Bool)
+    arg src
+    arg dst
+
+    rest more  # allow more args
+  }
+
+  var expected = {
+    flags: [
+      {
+        short: "-v",
+        long: "--verbose",
+        name: "verbose",
+        type: Bool,
+        default: false,
+        help: null
+      }
+    ],
+    args: [
+      {
+        name: "src",
+        help: null
+      },
+      {
+        name: "dst",
+        help: null
+      }
+    ],
+    rest: "more"
+  }
+
+  # Type objects cannot be tested for equality, so check them for identity then
+  # erase the keys so the remainder of the Dict can be tested for equality.
+  for i, flag in (expected.flags) {
+    assert [flag.type is spec.flags[i].type]
+    call expected.flags[i]->erase('type')
+    call spec.flags[i]->erase('type')
+  }
+  assert [expected === spec]
+}
+
+proc test-vs-python3-argparse {
+  var spec = {
+    flags: [
+      {short: '-v', long: '--verbose', name: 'verbose', type: null, default: '', help: 'Enable verbose logging'},
+      {short: '-c', long: '--count', name: 'count', type: Int, default: 80, help: 'Maximum line length'},
+    ],
+    args: [
+      {name: 'file', type: 'str', help: 'File to check line lengths of'}
+    ],
+    rest: null,
+  }
+
+  var argsCases = [
+    :| -v --count 120 example.sh |,
+    :| -v --count 120 example.sh -v |,  # duplicate flags are ignored
+    :| -v --count 120 example.sh -v --count 150 |,  # the last duplicate has precedence
+  ]
+
+  var argparse_py = '''
+  import argparse
+  import sys
+
+  spec = argparse.ArgumentParser()
+  spec.add_argument("filename")
+  spec.add_argument("-c", "--count", type=int)
+  spec.add_argument("-v", "--verbose",
+                    action="store_true")
+
+  result = spec.parse_args(sys.argv[1:])
+  print([result.filename, result.count, result.verbose])
+  '''
+
+  yb-capture (&r) {
+    for args in (argsCases) {
+      var args_str = args => join(" ")
+      echo "----------  $args_str  ----------"
+      echo "\$ bin/ysh example.sh $args_str"
+      pp test_ (parseArgs(spec, args))
+
+      echo
+      echo "\$ python3 example.py $args_str"
+      python3 -c $argparse_py @args
+
+      echo
+    }
+  }
+
+  var expected = '''
+  ----------  -v --count 120 example.sh  ----------
+  $ bin/ysh example.sh -v --count 120 example.sh
+  (Dict)   {"verbose":true,"count":120,"file":"example.sh"}
+  
+  $ python3 example.py -v --count 120 example.sh
+  ['example.sh', 120, True]
+  
+  ----------  -v --count 120 example.sh -v  ----------
+  $ bin/ysh example.sh -v --count 120 example.sh -v
+  (Dict)   {"verbose":true,"count":120,"file":"example.sh"}
+  
+  $ python3 example.py -v --count 120 example.sh -v
+  ['example.sh', 120, True]
+  
+  ----------  -v --count 120 example.sh -v --count 150  ----------
+  $ bin/ysh example.sh -v --count 120 example.sh -v --count 150
+  (Dict)   {"verbose":true,"count":150,"file":"example.sh"}
+  
+  $ python3 example.py -v --count 120 example.sh -v --count 150
+  ['example.sh', 150, True]
+
+  '''
+
+  # This is acceptable, but the diff could look nicer and more precise
+  diff -u <(echo $expected) <(echo $[r.stdout])
+  #assert [expected === r.stdout]
+}
+
+proc test-multi-value-flags {
+  parser (&spec) {
+    flag -f --float (List[Float])
+    flag -i --int (List[Int])
+    flag -s --str (List[Str])
+  }
+
+  var args = parseArgs(spec, :| -f 1.0 -s one -i 0 --str two --int 1 -s three |)
+
+  assert [type(args.float) === 'List']
+  assert [len(args.float) === 1]
+  assert [floatsEqual(args.float[0], 1.0)]
+
+  call args->erase('float') # remove List[Float] value for subsequent equality check
+
+  var expected = {
+    "int": [0, 1],
+    "str": :| one two three |,
+  }
+
+  assert [expected === args]
+
+  try { call parseArgs(spec, :| -f not_a_float |) }
+  assert [2 === _error.code]
+  try { call parseArgs(spec, :| -i not_an_int |) }
+  assert [2 === _error.code]
+}
+
+if is-main {
+  byo-maybe-run
+}

@@ -94,15 +94,18 @@ readonly MARKDOWN_DOCS=(
 
   proc-func
   block-literals
+  objects
+  types
 
   # Data language
   qsn
   qtt
   j8-notation
   # Protocol
-  byo
   pretty-printing
   stream-table-process
+  byo
+  ysh-doc-processing
 
   lib-osh
 
@@ -445,12 +448,63 @@ tour() {
   # Files used by module example
   touch $work_dir/{build,test}.sh
 
+  cat >$work_dir/lines.txt <<'EOF'
+  doc/hello.md
+ "doc/with spaces.md"
+b'doc/with byte \yff.md'
+EOF
+  
+  cat >$work_dir/myargs.ysh <<EOF
+const __provide__ = :| proc1 p2 p3 |
+
+proc proc1 {
+  echo proc1
+}
+
+proc p2 {
+  echo p2
+}
+
+proc p3 {
+  echo p3
+}
+EOF
+
+  cat >$work_dir/demo.py <<EOF
+#!/usr/bin/env python
+
+print("hi")
+EOF
+  chmod +x $work_dir/demo.py
+
   cat >$work_dir/lib/util.ysh <<EOF
-log() { echo "$@" 1>&2; }
+const __provide__ = :| log |
+
+proc log {
+  echo @ARGV >&2
+}
 EOF
 
   pushd $work_dir
-  $REPO_ROOT/bin/ysh $name.txt
+
+  # Prepend extra code
+  cat >tour.ysh - $name.txt <<EOF
+func myMethod(self) {
+  echo 'myMethod'
+}
+
+func mutatingMethod(self) {
+  echo 'mutatingMethod'
+}
+
+func makeMyObject(x) {
+  var methods = Object(null, {myMethod, 'M/mutatingMethod': mutatingMethod})
+  return (Object(methods, {x}))
+}
+EOF
+
+  # Fix: don't supply stdin!
+  $REPO_ROOT/bin/ysh tour.ysh < /dev/null
   popd
 
   # My own dev tools

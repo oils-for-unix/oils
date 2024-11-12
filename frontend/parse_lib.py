@@ -248,7 +248,7 @@ class ParseContext(object):
     def MakeConfigParser(self, line_reader):
         # type: (_Reader) -> CommandParser
         lx = self.MakeLexer(line_reader)
-        parse_opts = state.MakeOilOpts()
+        parse_opts = state.MakeYshParseOpts()
         w_parser = word_parse.WordParser(self, lx, line_reader)
         c_parser = cmd_parse.CommandParser(self, parse_opts, w_parser, lx,
                                            line_reader)

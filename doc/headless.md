@@ -45,7 +45,7 @@ FANOS stands for *File descriptors and Netstrings Over Sockets*.  It's a
 **control** protocol that already has 2 implementations, which are very small:
 
 - [client/py_fanos.py]($oils-src): 102 lines of code
-- [native/fanos.c]($oils-src): 294 lines of code
+- [cpp/fanos_shared.c]($oils-src): 215 lines of code
 
 ### Send Commands and File Descriptors to the "Server"
 

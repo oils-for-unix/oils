@@ -7,7 +7,7 @@ proc myadd {
   json read (&args)
 
   # convenient!
-  fopen >&2 {
+  redir >&2 {
     = args
   }
 

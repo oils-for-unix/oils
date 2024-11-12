@@ -9,8 +9,8 @@ Quick Start
 
 If you haven't already done so, extract the tarball:
  
-    tar -x --gz < oil-for-unix-0.22.0.tar.gz
-    cd oils-for-unix-0.22.0
+    tar -x --gz < oils-for-unix-0.24.0.tar.gz
+    cd oils-for-unix-0.24.0
 
 This is the traditional way to install it:
 
@@ -54,7 +54,7 @@ More Documentation
 
 Every release has a home page with links:
 
-    https://oilshell.org/release/0.22.0/
+    https://oilshell.org/release/0.24.0/
 
 System Requirements
 -------------------
@@ -105,7 +105,7 @@ This doesn't require root access, but it requires:
   $MANPATH.)
 
 NOTE: Out-of-tree builds are NOT currently supported, so you have to be in the
-oils-for-unix-0.22.0 directory.
+oils-for-unix-0.24.0 directory.
 
 Build Options
 -------------
@@ -125,5 +125,5 @@ Links
 -----
 
 - Notes on portability:
-  https://oilshell.org/release/0.22.0/doc/portability.html
+  https://oilshell.org/release/0.24.0/doc/portability.html
 

@@ -199,8 +199,43 @@ def ContainsDemo():
         print('hi no')
 
 
+class HasDictMember(object):
+    """
+    based on state.Mem
+    """
+
+    def __init__(self):
+        # type: () -> None
+        self.builtins = NewDict()  # type: Dict[str, str]
+
+        non_member = NewDict()  # type: Dict[str, int]
+
+    def Get(self, k):
+        # type: (str) -> Optional[str]
+        return self.builtins.get(k)
+
+
+def NewDict_test():
+    # type: () -> None
+    """
+    regression test for a few bugs
+    """
+    h = HasDictMember()
+    result = h.Get('foo')
+    if result is not None:
+        print('result %r' % result)
+    else:
+        print('OK: NewDict result is None')
+
+    # mutation through non-self object
+    h.builtins = NewDict()
+
+
 def run_tests():
     # type: () -> None
+
+    NewDict_test()
+    log('')
 
     ListDemo()
     log('')

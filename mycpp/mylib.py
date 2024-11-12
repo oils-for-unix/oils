@@ -1,5 +1,6 @@
 """
-runtime.py
+mylib.py: Python stubs/interfaces that are reimplemented in C++, not directly
+translated.
 """
 from __future__ import print_function
 
@@ -105,13 +106,18 @@ def JoinBytes(byte_list):
 
 
 #
-# Added for SparseArray
+# For SparseArray
 #
 
 
 def BigIntSort(keys):
     # type: (List[mops.BigInt]) -> None
     keys.sort(key=lambda big: big.i)
+
+
+#
+# Files
+#
 
 
 class File:
@@ -204,6 +210,10 @@ class BufWriter(Writer):
         # type: (str) -> None
         self.parts.append(s)
 
+    def isatty(self):
+        # type: () -> bool
+        return False
+
     def write_spaces(self, n):
         # type: (int) -> None
         """For JSON indenting.  Avoid intermediate allocations in C++."""
@@ -221,7 +231,6 @@ class BufWriter(Writer):
         # type: () -> None
 
         # No-op for now - we could invalidate write()?
-
         pass
 
 

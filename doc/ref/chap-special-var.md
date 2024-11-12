@@ -28,9 +28,67 @@ Replacement for `"$@"`
 
 ### ENV
 
-TODO
+An `Obj` that's populated with environment variables.  Example usage:
 
-### _this_dir
+    var x = ENV.PYTHONPATH
+    echo $[ENV.SSH_AUTH_SOCK]
+
+It's initialized exactly **once** per process, in any of these situations:
+
+1. At shell startup, if `shopt --set env_obj` is on.  This is true when invoking
+   `bin/ysh`.
+2. When running `bin/osh -o ysh:upgrade` or `ysh:all`.
+3. When running `shopt --set ysh:upgrade` or `ysh:all`.
+
+Related: [ysh-shopt][], [osh-usage][]
+
+[ysh-shopt]: chap-builtin-cmd.html#ysh-shopt
+[osh-usage]: chap-front-end.html#osh-usage
+
+---
+
+When launching an external command, the shell creates a Unix `environ` from the
+`ENV` Obj.  This means that mutating it affects all subsequent processes:
+
+    setglobal ENV.PYTHONPATH = '.'
+    ./foo.py
+    ./bar.py
+
+You can also limit the change to a single process, without `ENV`:
+
+    PYTHONPATH=. ./foo.py
+    ./bar.py               # unaffected
+
+---
+
+YSH reads these ENV variables:
+
+- `PATH` - where to look for executables
+- `PS1` - how to print the prompt
+- TODO: `PS4` - how to show execution traces
+- `YSH_HISTFILE` (`HISTFILE` in OSH) - where to read/write command history
+- `HOME` - for tilde substitution ([tilde-sub])
+
+[tilde-sub]: chap-word-lang.html#tilde-sub
+
+### `__defaults__`
+
+The shell puts some default settings in this `Dict`.  In certain situations, it
+consults `__defaults__` after consulting `ENV`.  For example:
+
+- if `ENV.PATH` is not set, consult `__defaults__.PATH`
+- if `ENV.PS1` is not set, consult `__defaults__.PS1`
+
+<!-- TODO: consider renaming to DEF.PS1 ? -->
+
+### `__builtins__`
+
+An object that contains names visible in every module.
+
+If a name is not visible in the local scope, or module global scope, then it's
+looked up in `__builtins__`.
+
+### `_this_dir`
 
 The directory the current script resides in.  This knows about 3 situations:
 
@@ -92,10 +150,13 @@ The exit status of all the process subs in the last command.
 
 ### _reply
 
-YSH `read` sets this variable:
+Builtins that `read` set this variable:
 
-    read --all < myfile
-    echo $_reply
+    read --all < foo.txt
+    = _reply  # => 'contents of file'
+
+    json read < foo.json
+    = _reply  # => (Dict)  {}
 
 ## Oils VM
 
@@ -141,6 +202,37 @@ When the shell process exists, print GC stats to stderr.
 
 When the shell process exists, print GC stats to this file descriptor.
 
+## Float
+
+### NAN
+
+The float value for "not a number".
+
+(The name is consistent with the C language.)
+
+### INFINITY
+
+The float value for "infinity".  You can negate it to get "negative infinity".
+
+(The name is consistent with the C language.)
+
+## Module
+
+### `__provide__`
+
+A module is evaluated upon `use`.  After evaluation, the names in the
+`__provide__` `List` are put in the resulting module `Obj` instance.
+
+<!--
+`__provide__` may also be a string, where 'p' stands for --procs, and 'f' stands for funcs.
+
+Or we could make it [1, 2] insetad
+-->
+
+## POSIX Special
+
+`$@  $*  $#     $?  $-     $$  $!   $0  $9`
+
 ## Shell Vars
 
 ### IFS
@@ -165,24 +257,25 @@ bash compat: serialized options for the `set` builtin.
 
 bash compat: serialized options for the `shopt` builtin.
 
+(Not implemented.)
+
 ## Other Env
 
 ### HOME
 
-$HOME is used for:
+The `$HOME` env var is read by the shell, for:
 
-1. ~ expansion 
-2. ~ abbreviation in the UI (the dirs builtin, \W in $PS1).
+1. `~` expansion 
+2. `~` abbreviation in the UI (the dirs builtin, `\W` in `$PS1`).
 
-Note: The shell doesn't set $HOME.  According to POSIX, the program that
-invokes the login shell sets it based on /etc/passwd.
+The shell does not set $HOME.  According to POSIX, the program that invokes the
+login shell should set it, based on `/etc/passwd`.
 
 ### PATH
 
 A colon-separated string that's used to find executables to run.
 
-
-## POSIX Special
+In YSH, it's `ENV.PATH`.
 
 ## Other Special
 

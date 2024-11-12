@@ -44,6 +44,29 @@ test-return-args() {
     return (x, x)
   }
   '
+
+  # Bug regression
+
+  if false; then
+    bin/ysh -c '
+    func foo() {
+      return [42]
+    }
+    echo foo=$[foo()]
+    '
+  fi
+
+  _ysh-parse-error '
+  func foo() {
+    return [42]
+  }
+  '
+
+  _ysh-parse-error '
+  func foo() {
+    return [42 + a[i]]
+  }
+  '
 }
 
 test-func-var-checker() {
@@ -249,11 +272,6 @@ test-ysh-expr() {
 
   # Disallowed unconditionally
   _ysh-parse-error '=a'
-
-  _ysh-parse-error '
-    var d = {}
-    = d["foo", "bar"]
-  '
 }
 
 test-ysh-expr-more() {
@@ -476,17 +494,18 @@ test-parse-at() {
 }
 
 test-ysh-nested-proc-func() {
-  _ysh-parse-error 'proc p { echo 1; proc f { echo f }; echo 2 }'
-  _ysh-parse-error 'func f() { echo 1; proc f { echo f }; echo 2 }'
-  _ysh-parse-error 'proc p { echo 1; func f() { echo f }; echo 2 }'
-  _ysh-parse-error 'func f() { echo 1; func f2() { echo f }; echo 2 }'
+  _ysh-should-parse 'proc p { echo 1; proc f { echo f }; echo 2 }'
+  _ysh-should-parse 'func f() { echo 1; proc f { echo f }; echo 2 }'
+  _ysh-should-parse 'proc p { echo 1; func f() { echo f }; echo 2 }'
+  _ysh-should-parse 'func f() { echo 1; func f2() { echo f }; echo 2 }'
 
   _ysh-parse-error 'proc p { echo 1; +weird() { echo f; }; echo 2 }'
 
-  # ksh function
+  # Test the matrix of (proc, func) x (sh-func) and (sh-func) x (proc, func)
   _ysh-parse-error 'proc p { echo 1; function f { echo f; }; echo 2 }'
-
+  _ysh-parse-error 'func outer() { function f { echo f } }'
   _ysh-parse-error 'f() { echo 1; proc inner { echo inner; }; echo 2; }'
+  _ysh-parse-error 'f() { func inner() { var a = 1 } }'
 
   # shell nesting is still allowed
   _ysh-should-parse 'f() { echo 1; g() { echo g; }; echo 2; }'
@@ -1250,29 +1269,29 @@ test-bug-1118() {
 }
 
 test-bug-1850() {
-  _ysh-should-parse 'pp line (42); pp line (43)'
-  #_osh-should-parse 'pp line (42); pp line (43)'
+  _ysh-should-parse 'pp test_ (42); pp line (43)'
+  #_osh-should-parse 'pp test_ (42); pp line (43)'
 
   # Extra word is bad
-  _ysh-parse-error 'pp line (42) extra'
+  _ysh-parse-error 'pp test_ (42) extra'
 
   # Bug -- newline or block should come after arg list
-  _ysh-parse-error 'pp line (42), echo'
+  _ysh-parse-error 'pp test_ (42), echo'
 
   # This properly checks a similar error.  It's in a word.
-  _ysh-parse-error 'pp line @(echo), echo'
+  _ysh-parse-error 'pp test_ @(echo), echo'
 
   # Common cases
-  _ysh-should-parse 'pp line (42)'
-  _ysh-should-parse 'pp line (42) '
-  _ysh-should-parse 'pp line (42);'
-  _ysh-should-parse 'pp line (42) { echo hi }'
+  _ysh-should-parse 'pp test_ (42)'
+  _ysh-should-parse 'pp test_ (42) '
+  _ysh-should-parse 'pp test_ (42);'
+  _ysh-should-parse 'pp test_ (42) { echo hi }'
 
   # Original bug
 
   # Accidental comma instead of ;
   # Wow this is parsed horribly - (42) replaced (43)
-  _ysh-parse-error 'pp line (42), pp line (43)'
+  _ysh-parse-error 'pp test_ (42), pp line (43)'
 }
 
 test-bug-1850-more() {
@@ -1663,6 +1682,25 @@ test-eggex() {
 
   # This could be allowed, but currently isn't
   _osh-parse-error '= /dot{*} /'
+}
+
+test-unknown-boolops() {
+  _osh-parse-error '= a && b'
+  _osh-parse-error '= a || b'
+  _osh-parse-error '= !a'
+}
+
+test-expr-range() {
+  _osh-parse-error '= 1..5'
+  _osh-should-parse '= 1..<5'
+  _osh-should-parse '= 1..=5'
+}
+
+test-int-overflow() {
+  _ysh-parse-error '= 123456789_123456789_123456789'
+  _ysh-parse-error '= 0b111000000000000000000000000000000000000000000000000000000000000000000000000000000'
+  _ysh-parse-error '= 0o1234567_1234567_1234567_1234567'
+  _ysh-parse-error '= 0x123456789_123456789_123456789'
 }
 
 #

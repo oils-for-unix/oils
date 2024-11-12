@@ -87,8 +87,8 @@ bugs() {
   run-file bugs "$@"
 }
 
-TODO-deprecate() {
-  run-file TODO-deprecate "$@"
+osh-bugs() {
+  run-file osh-bugs "$@"
 }
 
 blog1() {
@@ -134,8 +134,7 @@ assign-extended() {
 
 # Corner cases that OSH doesn't handle
 assign-deferred() {
-  sh-spec spec/assign-deferred.test.sh \
-    $BASH $MKSH "$@" 
+  run-file assign-deferred "$@"
 }
 
 # These test associative arrays
@@ -148,13 +147,11 @@ background() {
 }
 
 subshell() {
-  sh-spec spec/subshell.test.sh \
-    ${REF_SHELLS[@]} $OSH_LIST "$@" 
+  run-file subshell "$@"
 }
 
 quote() {
-  sh-spec spec/quote.test.sh \
-    ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
+  run-file quote "$@"
 }
 
 unicode() {
@@ -170,8 +167,7 @@ case_() {
 }
 
 if_() {
-  sh-spec spec/if_.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file if_ "$@"
 }
 
 builtin-misc() {
@@ -219,10 +215,8 @@ builtin-history() {
   run-file builtin-history "$@"
 }
 
-# dash and mksh don't implement 'dirs'
 builtin-dirs() {
-  sh-spec spec/builtin-dirs.test.sh \
-    $BASH $ZSH $OSH_LIST "$@"
+  run-file builtin-dirs "$@"
 }
 
 builtin-vars() {
@@ -255,6 +249,10 @@ builtin-bash() {
   run-file builtin-bash "$@"
 }
 
+builtin-bind() {
+  run-file builtin-bind "$@"
+}
+
 builtin-type() {
   run-file builtin-type "$@"
 }
@@ -280,15 +278,15 @@ builtin-special() {
 }
 
 builtin-times() {
-  sh-spec spec/builtin-times.test.sh $BASH $ZSH $OSH_LIST "$@"
+  run-file builtin-times "$@"
 }
 
 command-parsing() {
-  sh-spec spec/command-parsing.test.sh ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file command-parsing "$@"
 }
 
 func-parsing() {
-  sh-spec spec/func-parsing.test.sh ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file func-parsing "$@"
 }
 
 sh-func() {
@@ -307,6 +305,10 @@ arith() {
   run-file arith "$@"
 }
 
+arith-dynamic() {
+  run-file arith-dynamic "$@"
+}
+
 command-sub() {
   sh-spec spec/command-sub.test.sh \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
@@ -318,8 +320,7 @@ command_() {
 }
 
 pipeline() {
-  sh-spec spec/pipeline.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file pipeline "$@"
 }
 
 explore-parsing() {
@@ -480,7 +481,7 @@ assoc() {
 
 # ZSH also has associative arrays
 assoc-zsh() {
-  sh-spec spec/assoc-zsh.test.sh $ZSH "$@"
+  run-file assoc-zsh "$@"
 }
 
 dbracket() {
@@ -530,7 +531,7 @@ nameref() {
 }
 
 let() {
-  sh-spec spec/let.test.sh $BASH $MKSH $ZSH "$@"
+  run-file let "$@"
 }
 
 for-expr() {
@@ -671,6 +672,10 @@ hay-meta() {
 # YSH
 #
 
+ysh-TODO-deprecate() {
+  run-file ysh-TODO-deprecate "$@"
+}
+
 ysh-convert() {
   run-file ysh-convert "$@"
 }
@@ -683,16 +688,8 @@ ysh-stdlib() {
   run-file ysh-stdlib "$@"
 }
 
-ysh-stdlib-2() {
-  run-file ysh-stdlib-2 "$@"
-}
-
 ysh-stdlib-args() {
   run-file ysh-stdlib-args "$@"
-}
-
-ysh-stdlib-testing() {
-  run-file ysh-stdlib-testing "$@"
 }
 
 ysh-stdlib-synch() {
@@ -743,6 +740,10 @@ ysh-blocks() {
   run-file ysh-blocks "$@"
 }
 
+ysh-control-flow() {
+  run-file ysh-control-flow "$@"
+}
+
 ysh-bugs() {
   run-file ysh-bugs "$@"
 }
@@ -788,6 +789,10 @@ ysh-demo() {
   run-file ysh-demo "$@"
 }
 
+ysh-env() {
+  run-file ysh-env "$@"
+}
+
 ysh-expr() {
   run-file ysh-expr "$@"
 }
@@ -822,6 +827,22 @@ ysh-for() {
 
 ysh-methods() {
   run-file ysh-methods "$@"
+}
+
+ysh-method-io() {
+  run-file ysh-method-io "$@"
+}
+
+ysh-namespaces() {
+  run-file ysh-namespaces "$@"
+}
+
+ysh-object() {
+  run-file ysh-object "$@"
+}
+
+ysh-closures() {
+  run-file ysh-closures "$@"
 }
 
 ysh-func() {
@@ -862,6 +883,10 @@ ysh-options-assign() {
 
 ysh-proc() {
   run-file ysh-proc "$@"
+}
+
+ysh-proc-meta() {
+  run-file ysh-proc-meta "$@"
 }
 
 ysh-regex() {

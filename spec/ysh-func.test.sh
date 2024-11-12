@@ -64,7 +64,7 @@ x=4
 #### Named args with ...rest
 func f(; x=3, ...named) {
   echo x=$x
-  pp line (named)
+  pp test_ (named)
 }
 
 call f()
@@ -104,8 +104,8 @@ call f(; ...args)
 #### Multiple spreads
 
 func f(...pos; ...named) {
-  pp line (pos)
-  pp line (named)
+  pp test_ (pos)
+  pp test_ (named)
 }
 
 var a = [1,2,3]
@@ -136,43 +136,19 @@ proc t() { return (0) }
 ## STDOUT:
 ## END
 
-#### Redefining functions is not allowed (with shopt -u redefine_proc_func)
-shopt -u redefine_proc_func
-func f() { return (0) }
-func f() { return (1) }
-## status: 1
-## STDOUT:
-## END
-
-#### Redefining functions is allowed (with shopt -s redefine_proc_func)
-shopt -s redefine_proc_func
+#### Redefining functions is allowed
 func f() { return (0) }
 func f() { return (1) }
 ## status: 0
 ## STDOUT:
 ## END
 
-#### Functions cannot redefine readonly vars (even with shopt -s redefine_proc_func)
-shopt -s redefine_proc_func
-const f = 0
-func f() { return (1) }
-## status: 1
-## STDOUT:
-## END
-
-#### Functions can redefine non-readonly vars
+#### Functions can redefine vars
 var f = 0
 func f() { return (1) }
-## status: 0
+pp test_ (f)
 ## STDOUT:
-## END
-
-#### Vars cannot redefine functions (even with shopt -s redefine_proc_func)
-shopt -s redefine_proc_func
-func f() { return (1) }
-const f = 0
-## status: 1
-## STDOUT:
+<Func>
 ## END
 
 #### Multiple func calls
@@ -229,9 +205,9 @@ func f(x) {
   setvar x = 'bar'
 }
 
-pp line (x)
-pp line (f(x))
-pp line (x)
+pp test_ (x)
+pp test_ (f(x))
+pp test_ (x)
 
 # reference
 var y = ['a', 'b', 'c']
@@ -240,9 +216,9 @@ func g(y) {
   setvar y[0] = 'z'
 }
 
-pp line (y)
-pp line (g(y))
-pp line (y)
+pp test_ (y)
+pp test_ (g(y))
+pp test_ (y)
 ## STDOUT:
 (Str)   "foo"
 (Null)   null
@@ -268,13 +244,13 @@ json write (fib(10))
 ## END
 
 #### Recursive functions with LRU Cache
-source --builtin list.ysh
+source $LIB_YSH/list.ysh
 
 var cache = []
 var maxSize = 4
 
 func remove(l, i) {
-  for i in (i .. len(l) - 1) {
+  for i in (i ..< len(l) - 1) {
     setvar l[i] = l[i + 1]
   }
 
@@ -349,7 +325,7 @@ hit: 8
 
 #### Varadic arguments, no other args
 func f(...args) {
-pp line (args)
+pp test_ (args)
 }
 
 call f()
@@ -365,7 +341,7 @@ call f(1, 2, 3)
 
 #### Varadic arguments, other args
 func f(a, b, ...args) {
-pp line ([a, b, args])
+pp test_ ([a, b, args])
 }
 
 call f(1, 2)
@@ -477,14 +453,19 @@ This is a CAT
 Meow
 ## END
 
-#### Functions cannot be nested
+#### Functions can be nested
 proc build {
   func f(x) {
     return (x)
   }
+
+  echo $[f(0)]
 }
-## status: 2
+build
+echo $[f(0)]  # This will fail as f is locally scoped in `proc build`
+## status: 1
 ## STDOUT:
+0
 ## END
 
 #### Functions can be shadowed
@@ -505,31 +486,11 @@ func inAnotherScope() {
 }
 call inAnotherScope()
 
-# We need a scope otherwise we'd overwrite `mysum` in the global scope
-var mysum = mysum([1, 2, 3])  # will raise status=1
-## status: 1
+var mysum = mysum([0, 1])
+echo mysum=$mysum
+
 ## STDOUT:
 1 + 2 + 3 = 6
 mysum=6
-## END
-
-#### Function names cannot be redeclared
-# Behaves like: const f = ...
-func f(x) {
-  return (x)
-}
-
-var f = "some val"
-## status: 1
-## STDOUT:
-## END
-
-#### Functions cannot be mutated
-func f(x) {
-  return (x)
-}
-
-setvar f = "some val"
-## status: 1
-## STDOUT:
+mysum=1
 ## END

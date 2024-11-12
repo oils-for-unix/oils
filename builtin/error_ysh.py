@@ -1,26 +1,31 @@
 from __future__ import print_function
 
 from _devbuild.gen.option_asdl import option_i
+from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
-from _devbuild.gen.syntax_asdl import loc
+from _devbuild.gen.syntax_asdl import loc, loc_t, expr, expr_e
 from _devbuild.gen.value_asdl import value, value_e
 from core import error
 from core.error import e_die_status, e_usage
 from core import executor
 from core import num
 from core import state
+from display import ui
 from core import vm
 from frontend import flag_util
 from frontend import typed_args
 from mycpp import mops
+from mycpp import mylib
 from mycpp.mylib import tagswitch, log
+from ysh import val_ops
 
 _ = log
 
 from typing import Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
-    from core import ui
+    from display import ui
     from osh import cmd_eval
+    from ysh import expr_eval
 
 
 class ctx_Try(object):
@@ -91,7 +96,7 @@ class Try(vm._Builtin):
                                          accept_typed_args=True)
 
         rd = typed_args.ReaderForProc(cmd_val)
-        cmd = rd.RequiredBlock()
+        cmd = rd.RequiredBlockAsFrag()
         rd.Done()
 
         error_dict = None  # type: value.Dict
@@ -99,7 +104,7 @@ class Try(vm._Builtin):
         status = 0  # success by default
         try:
             with ctx_Try(self.mutable_opts):
-                unused = self.cmd_ev.EvalCommand(cmd)
+                unused = self.cmd_ev.EvalCommandFrag(cmd)
         except error.Expr as e:
             status = e.ExitStatus()
         except error.ErrExit as e:
@@ -208,13 +213,12 @@ class BoolStatus(vm._Builtin):
             e_usage('expected a command to run', loc.Missing)
 
         argv, locs = arg_r.Rest2()
-        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args,
-                                  cmd_val.pos_args, cmd_val.named_args,
-                                  cmd_val.block_arg)
+        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.is_last_cmd,
+                                  cmd_val.self_obj, cmd_val.proc_args)
 
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
-        status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st,
-                                                executor.DO_FORK)
+        run_flags = executor.IS_LAST_CMD if cmd_val.is_last_cmd else 0
+        status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, run_flags)
 
         if status not in (0, 1):
             e_die_status(status,
@@ -222,3 +226,83 @@ class BoolStatus(vm._Builtin):
                          locs[0])
 
         return status
+
+
+class Assert(vm._Builtin):
+
+    def __init__(self, expr_ev, errfmt):
+        # type: (expr_eval.ExprEvaluator, ui.ErrorFormatter) -> None
+        self.expr_ev = expr_ev
+        self.errfmt = errfmt
+        self.f = mylib.Stdout()
+
+    def _AssertComparison(self, exp, blame_loc):
+        # type: (expr.Compare, loc_t) -> None
+
+        # We checked exp.ops
+        assert len(exp.comparators) == 1, exp.comparators
+
+        expected = self.expr_ev.EvalExpr(exp.left, loc.Missing)
+        actual = self.expr_ev.EvalExpr(exp.comparators[0], loc.Missing)
+
+        if not val_ops.ExactlyEqual(expected, actual, blame_loc):
+            self.f.write('\n')
+            # Long values could also show DIFF, rather than wrapping
+            # We could have assert --diff or something
+            ui.PrettyPrintValue('Expected: ', expected, self.f)
+            ui.PrettyPrintValue('Got:      ', actual, self.f)
+
+            raise error.Expr("Not equal", exp.ops[0])
+
+    def _AssertExpression(self, val, blame_loc):
+        # type: (value.Expr, loc_t) -> None
+
+        # Special case for assert [true === f()]
+        exp = val.e
+        UP_exp = exp
+        with tagswitch(exp) as case:
+            if case(expr_e.Compare):
+                exp = cast(expr.Compare, UP_exp)
+
+                # Only assert [x === y] is treated as special
+                # Not  assert [x === y === z]
+                if len(exp.ops) == 1 and exp.ops[0].id == Id.Expr_TEqual:
+                    self._AssertComparison(exp, blame_loc)
+                    return
+
+        # Any other expression
+        result = self.expr_ev.EvalExpr(val.e, blame_loc)
+        b = val_ops.ToBool(result)
+        if not b:
+            # Don't print the value for something like assert [x < 4]
+            #self.f.write('\n')
+            #ui.PrettyPrintValue("Expression isn't true: ", result, self.f)
+            raise error.Expr("Expression isn't true", blame_loc)
+
+    def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+
+        _, arg_r = flag_util.ParseCmdVal('assert',
+                                         cmd_val,
+                                         accept_typed_args=True)
+
+        rd = typed_args.ReaderForProc(cmd_val)
+        val = rd.PosValue()
+        rd.Done()
+
+        UP_val = val
+        with tagswitch(val) as case:
+            if case(value_e.Expr):  # Destructured assert [true === f()]
+                val = cast(value.Expr, UP_val)
+                self._AssertExpression(val, rd.LeftParenToken())
+            else:
+                b = val_ops.ToBool(val)
+                if not b:
+                    # assert (42 === null) should be written
+                    # assert [42 === null] to get a better error message
+                    # But show the value anyway
+                    self.f.write('\n')
+                    ui.PrettyPrintValue("Value isn't true: ", val, self.f)
+                    raise error.Expr('assertion', rd.LeftParenToken())
+
+        return 0

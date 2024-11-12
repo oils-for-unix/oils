@@ -136,8 +136,10 @@ MYPY_VERSION=0.780
 
 # Containers copy it here
 readonly MYPY_WEDGE=$USER_WEDGE_DIR/pkg/mypy/$MYPY_VERSION
+#echo "MYPY_WEDGE $MYPY_WEDGE"
 if test -d "$MYPY_WEDGE"; then
   export PYTHONPATH="$MYPY_WEDGE:$PYTHONPATH"
+  #echo "PYTHONPATH $PYTHONPATH"
 fi
 
 # Hack for misconfigured RC cluster!  Some machines have the empty string in

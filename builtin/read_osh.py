@@ -12,7 +12,7 @@ from core.error import e_die
 from core import pyos
 from core import pyutil
 from core import state
-from core import ui
+from display import ui
 from core import vm
 from frontend import flag_util
 from frontend import reader
@@ -186,14 +186,15 @@ def _ReadPortion(delim_byte, max_chars, cmd_ev):
 
 
 def ReadLineSlowly(cmd_ev, with_eol=True):
-    # type: (CommandEvaluator, bool) -> Tuple[str, bool]
+    # type: (CommandEvaluator, bool) -> str
     """Read a line from stdin, unbuffered 
+
+    Used by mapfile and read --raw-line.
 
     sys.stdin.readline() in Python has its own buffering which is incompatible
     with shell semantics.  dash, mksh, and zsh all read a single byte at a time
     with read(0, 1).
     """
-    eof = False
     ch_array = []  # type: List[int]
     while True:
         ch, err_num = pyos.ReadByte(0)
@@ -206,7 +207,6 @@ def ReadLineSlowly(cmd_ev, with_eol=True):
                 raise pyos.ReadError(err_num)
 
         elif ch == pyos.EOF_SENTINEL:
-            eof = True
             break
 
         else:
@@ -217,7 +217,7 @@ def ReadLineSlowly(cmd_ev, with_eol=True):
                 ch_array.pop()
             break
 
-    return pyutil.ChArrayToString(ch_array), eof
+    return pyutil.ChArrayToString(ch_array)
 
 
 def ReadAll():
@@ -349,12 +349,12 @@ class Read(vm._Builtin):
         """
         place = None  # type: value.Place
 
-        if cmd_val.typed_args:  # read --flag (&x)
+        if cmd_val.proc_args:  # read --flag (&x)
             rd = typed_args.ReaderForProc(cmd_val)
             place = rd.PosPlace()
             rd.Done()
 
-            blame_loc = cmd_val.typed_args.left  # type: loc_t
+            blame_loc = cmd_val.proc_args.typed_args.left  # type: loc_t
 
         else:  # read --flag
             var_name = '_reply'
@@ -362,7 +362,7 @@ class Read(vm._Builtin):
             #log('VAR %s', var_name)
             blame_loc = cmd_val.arg_locs[0]
             place = value.Place(LeftName(var_name, blame_loc),
-                                self.mem.TopNamespace())
+                                self.mem.CurrentFrame())
 
         next_arg, next_loc = arg_r.Peek2()
         if next_arg is not None:
@@ -374,8 +374,10 @@ class Read(vm._Builtin):
             status = 0
 
         elif arg.raw_line:  # read --raw-line is unbuffered
-            contents, eof = ReadLineSlowly(self.cmd_ev, with_eol=arg.with_eol)
-            status = 1 if eof else 0
+            contents = ReadLineSlowly(self.cmd_ev, with_eol=arg.with_eol)
+            #log('EOF %s', eof)
+            #status = 1 if eof else 0
+            status = 0 if len(contents) else 1
 
         elif arg.all:  # read --all
             contents = ReadAll()
@@ -395,13 +397,17 @@ class Read(vm._Builtin):
         arg = arg_types.read(attrs.attrs)
         names = arg_r.Rest()
 
+        if arg.u != mops.MINUS_ONE:
+            # TODO: could implement this
+            raise error.Usage('-u flag not implemented', cmd_val.arg_locs[0])
+
         if arg.raw_line or arg.all or mops.BigTruncate(arg.num_bytes) != -1:
             return self._ReadYsh(arg, arg_r, cmd_val)
 
-        if cmd_val.typed_args:
+        if cmd_val.proc_args:
             raise error.Usage(
                 "doesn't accept typed args without --all, or --num-bytes",
-                cmd_val.typed_args.left)
+                cmd_val.proc_args.typed_args.left)
 
         if arg.t >= 0.0:
             if arg.t != 0.0:

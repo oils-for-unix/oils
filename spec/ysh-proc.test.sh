@@ -134,10 +134,10 @@ shopt --set ysh:upgrade
 
 # TODO: duplicate param names aren't allowed
 proc p (a; mylist, mydict; opt Int = 42) {
-  pp line (a)
-  pp line (mylist)
-  pp line (mydict)
-  #pp line (opt)
+  pp test_ (a)
+  pp test_ (mylist)
+  pp test_ (mydict)
+  #pp test_ (opt)
 }
 
 p WORD ([1,2,3], {name: 'bob'})
@@ -175,7 +175,7 @@ proc f(x, y ; ; ; block) {
   echo f word $x $y
 
   if (block) {
-    eval (block)
+    call io->eval(block)
   }
 }
 f a b { echo FFF }
@@ -188,7 +188,7 @@ proc g(x, y, ...rest ; ; ; block) {
   echo g rest @rest
 
   if (block) {
-    eval (block)
+    call io->eval(block)
   }
 }
 g a b c d {
@@ -238,28 +238,22 @@ p
 ## STDOUT:
 ## END
 
-#### procs are in same namespace as shell functions
+#### procs are in same namespace as variables
 shopt --set parse_proc
-
-myfunc() {
-  echo hi
-}
 
 proc myproc {
   echo hi
 }
 
-declare -F
+echo "myproc is a $[type(myproc)]"
+
 ## STDOUT:
-declare -f myfunc
-declare -f myproc
+myproc is a Proc
 ## END
 
-
-#### Nested proc is disallowed at parse time
+#### Nested proc is allowed
 shopt --set parse_proc
 
-# NOTE: we can disallow this in Oil statically ...
 proc f {
   proc g {
     echo 'G'
@@ -267,14 +261,15 @@ proc f {
   g
 }
 f
-g
-## status: 2
-## stdout-json: ""
+g  # g is defined in the local scope of f
+## status: 127
+## STDOUT:
+G
+## END
 
-#### Procs defined inside compound statements (with redefine_proc)
+#### Procs defined inside compound statements
 
 shopt --set ysh:upgrade
-shopt --set redefine_proc_func
 
 for x in 1 2 {
   proc p {
@@ -299,7 +294,7 @@ brace
 shopt --set ysh:upgrade
 
 proc p ( ; ; ; block) {
-  eval (block)
+  call io->eval(block)
 }
 
 p { echo literal }
@@ -317,11 +312,11 @@ expression
 shopt --set ysh:upgrade
 
 proc p2 (...words; ...typed; ...named; block) {
-  pp line (words)
-  pp line (typed)
-  pp line (named)
-  #pp line (block)
-  # To avoid <Block 0x??> - could change pp line
+  pp test_ (words)
+  pp test_ (typed)
+  pp test_ (named)
+  #pp test_ (block)
+  # To avoid <Block 0x??> - could change pp test_
   echo $[type(block)]
 }
 
@@ -352,7 +347,7 @@ p2 a b ('c', 'd'; n=99; block) {
 (List)   ["a","b"]
 (List)   ["c","d"]
 (Dict)   {"n":99}
-Block
+Command
 
 (List)   ["a","b"]
 (List)   ["c","d"]
@@ -434,9 +429,9 @@ argv.py global @ARGV
 shopt -s ysh:upgrade
 
 typed proc p (w; t; n; block) {
-  pp line (w)
-  pp line (t)
-  pp line (n)
+  pp test_ (w)
+  pp test_ (t)
+  pp test_ (n)
   echo $[type(block)]
 }
 
@@ -449,5 +444,371 @@ p word (42, n=99) {
 (Str)   "word"
 (Int)   42
 (Int)   99
-Block
+Command
+## END
+
+#### can unset procs without -f
+shopt -s ysh:upgrade
+
+proc foo() {
+  echo bar
+}
+
+try { foo }
+echo status=$[_error.code]
+
+pp test_ (foo)
+unset foo
+#pp test_ (foo)
+
+try { foo }
+echo status=$[_error.code]
+
+## STDOUT:
+bar
+status=0
+<Proc>
+status=127
+## END
+
+#### procs shadow sh-funcs
+shopt -s ysh:upgrade
+
+f() {
+  echo sh-func
+}
+
+proc f {
+  echo proc
+}
+
+f
+## STDOUT:
+proc
+## END
+
+#### first word skips non-proc variables
+shopt -s ysh:upgrade
+
+grep() {
+  echo 'sh-func grep'
+}
+
+var grep = 'variable grep'
+
+grep
+
+# We first find `var grep`, but it's a Str not a Proc, so we skip it and then
+# find `function grep`.
+
+## STDOUT:
+sh-func grep
+## END
+
+#### proc resolution changes with the local scope
+shopt -s ysh:upgrade
+
+proc foo {
+  echo foo
+}
+
+proc bar {
+  echo bar
+}
+
+proc inner {
+  var foo = bar
+  foo  # Will now reference `proc bar`
+}
+
+foo
+inner
+foo  # Back to the global scope, foo still references `proc foo`
+
+# Without this behavior, features like `eval(b, vars={ flag: __flag })`, needed
+# by parseArgs, will not work. `eval` with `vars` adds a new frame to the end of
+# `mem.var_stack` with a local `flag` set to `proc __flag`. However, then we
+# cannot resolve `flag` by only checking `mem.var_stack[0]` like we could with
+# a proc declared normally, so we must search `mem.var_stack` from last to first.
+
+## STDOUT:
+foo
+bar
+foo
+## END
+
+
+#### procs are defined in local scope
+shopt -s ysh:upgrade
+
+proc gen-proc {
+  eval 'proc localproc { echo hi }'
+  pp frame_vars_
+
+}
+
+gen-proc
+
+# can't suppress 'grep' failure
+if false {
+  try {
+    pp frame_vars_ | grep localproc
+  }
+  pp test_ (_pipeline_status)
+  #pp test_ (PIPESTATUS)
+}
+
+## STDOUT:
+    [frame_vars_] ARGV localproc
+## END
+
+
+#### declare -f -F only prints shell functions
+shopt --set parse_proc
+
+myfunc() {
+  echo hi
+}
+
+proc myproc {
+  echo hi
+}
+
+declare -F
+echo ---
+
+declare -F myproc
+echo status=$?
+
+declare -f myproc
+echo status=$?
+
+## status: 0
+## STDOUT:
+declare -f myfunc
+---
+status=1
+status=1
+## END
+
+#### compgen -A function shows user-defined invokables - shell funcs, Proc, Obj
+shopt --set ysh:upgrade
+
+my-shell-func() {
+  echo hi
+}
+
+proc myproc {
+  echo hi
+}
+
+compgen -A function
+
+echo ---
+
+proc define-inner {
+  eval 'proc inner { echo inner }'
+  #eval 'proc myproc { echo inner }'  # shadowed name
+  compgen -A function
+}
+define-inner
+
+echo ---
+
+proc myinvoke (w; self) {
+  pp test_ ([w, self])
+}
+
+var methods = Object(null, {__invoke__: myinvoke})
+var myobj = Object(methods, {})
+
+compgen -A function
+
+## STDOUT:
+my-shell-func
+myproc
+---
+define-inner
+inner
+my-shell-func
+myproc
+---
+define-inner
+my-shell-func
+myinvoke
+myobj
+myproc
+## END
+
+#### type / type -a builtin on invokables - shell func, proc, invokable
+shopt --set ysh:upgrade
+
+my-shell-func() {
+   echo hi
+}
+
+proc myproc {
+  echo hi
+}
+
+proc boundProc(; self) {
+  echo hi
+}
+
+var methods = Object(null, {__invoke__: boundProc})
+var invokable = Object(methods, {})
+
+type -t my-shell-func
+type -t myproc
+type -t invokable
+try {
+  type -t methods  # not invokable!
+}
+echo $[_error.code]
+
+echo ---
+
+type my-shell-func
+type myproc
+type invokable
+try {
+  type methods  # not invokable!
+}
+echo $[_error.code]
+
+echo ---
+
+type -a my-shell-func
+type -a myproc
+type -a invokable
+
+echo ---
+
+if false {  # can't redefine right now
+  invokable() {
+    echo sh-func
+  }
+  type -a invokable
+}
+
+## STDOUT:
+function
+proc
+invokable
+1
+---
+my-shell-func is a shell function
+myproc is a YSH proc
+invokable is a YSH invokable
+1
+---
+my-shell-func is a shell function
+myproc is a YSH proc
+invokable is a YSH invokable
+---
+## END
+
+#### invokable Obj that doesn't declare self
+shopt --set ysh:upgrade
+
+proc boundProc(no_self; ) {
+  echo 'bad'
+}
+
+var methods = Object(null, {__invoke__: boundProc})
+var invokable = Object(methods, {x: 3, y: 5})
+
+invokable no_self
+
+## status: 3
+## STDOUT:
+## END
+
+#### invokable Obj is called with self
+shopt --set ysh:upgrade
+
+proc boundProc(; self) {
+  echo "sum = $[self.x + self.y]"
+}
+
+var methods = Object(null, {__invoke__: boundProc})
+var invokable = Object(methods, {x: 3, y: 5})
+
+invokable
+
+## STDOUT:
+sum = 8
+## END
+
+
+#### invokable Obj with more typed args
+shopt --set ysh:upgrade
+
+proc myInvoke (word1, word2; self, int1, int2) {
+  echo "sum = $[self.x + self.y]"
+  pp test_ (self)
+  pp test_ ([word1, word2, int1, int2])
+}
+
+# call it directly with 'self'
+myInvoke a b ({x: 0, y: 1}, 42, 43)
+echo
+
+var methods = Object(null, {__invoke__: myInvoke})
+
+var callable = Object(methods, {x: 2, y: 3})
+
+# call it through the obj
+callable a b (44, 45)
+
+## STDOUT:
+sum = 1
+(Dict)   {"x":0,"y":1}
+(List)   ["a","b",42,43]
+
+sum = 5
+(Obj)   ("x":2,"y":3) --> ("__invoke__":<Proc>)
+(List)   ["a","b",44,45]
+## END
+
+#### two different objects can share the same __invoke__
+shopt --set ysh:upgrade
+
+proc boundProc(; self, more) {
+  echo "sum = $[self.x + self.y + more]"
+}
+
+var methods = Object(null, {__invoke__: boundProc})
+
+var i1 = Object(methods, {x: 3, y: 5})
+var i2 = Object(methods, {x: 10, y: 42})
+
+i1 (1)
+i2 (1)
+
+## STDOUT:
+sum = 9
+sum = 53
+## END
+
+
+#### Stateful proc with counter
+shopt --set ysh:upgrade
+
+proc invokeCounter(; self, inc) {
+  setvar self.i += inc
+  echo "counter = $[self.i]"
+}
+
+var methods = Object(null, {__invoke__: invokeCounter})
+var counter = Object(methods, {i: 0})
+
+counter (1)
+counter (2)
+counter (3)
+
+## STDOUT:
+counter = 1
+counter = 3
+counter = 6
 ## END

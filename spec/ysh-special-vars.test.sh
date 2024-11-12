@@ -2,11 +2,11 @@
 
 #### _this_dir in main and oshrc
 
-$SH $REPO_ROOT/spec/testdata/module/this_dir.ysh
+$[ENV.SH] $[ENV.REPO_ROOT]/spec/testdata/module/this_dir.ysh
 
 echo interactive
 
-$SH -i --rcfile $REPO_ROOT/spec/testdata/module/this_dir.ysh -c 'echo -c'
+$[ENV.SH] -i --rcfile $[ENV.REPO_ROOT]/spec/testdata/module/this_dir.ysh -c 'echo -c'
 
 ## STDOUT:
 hi from this_dir.ysh
@@ -26,7 +26,7 @@ not yet
 
 
 #### _this_dir in sourced module
-source $REPO_ROOT/spec/testdata/module/this_dir.ysh
+source $[ENV.REPO_ROOT]/spec/testdata/module/this_dir.ysh
 ## STDOUT:
 hi from this_dir.ysh
 $_this_dir = REPLACED/oil/spec/testdata/module
@@ -35,14 +35,14 @@ $_this_dir = REPLACED/oil/spec/testdata/module
 
 #### _this_dir not affected by 'cd'
 cd /tmp
-source $REPO_ROOT/spec/testdata/module/this_dir.ysh
+source $[ENV.REPO_ROOT]/spec/testdata/module/this_dir.ysh
 ## STDOUT:
 hi from this_dir.ysh
 $_this_dir = REPLACED/oil/spec/testdata/module
 ## END
 
 #### _this_dir used with relative path
-cd $REPO_ROOT
+cd $[ENV.REPO_ROOT]
 source spec/testdata/module/this_dir.ysh
 ## STDOUT:
 hi from this_dir.ysh

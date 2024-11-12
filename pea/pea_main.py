@@ -16,6 +16,10 @@ from pprint import pprint
 import sys
 import time
 
+if 0:
+  for p in sys.path:
+     print('*** syspath: %s' % p)
+
 import typing
 from typing import Optional, Any
 

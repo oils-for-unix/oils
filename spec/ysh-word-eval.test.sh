@@ -1,7 +1,7 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 #### Splice in array
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 var a = %(one two three)
 argv.py @a
 ## STDOUT:
@@ -30,24 +30,23 @@ eggs
 ## END
 
 #### Can't splice string
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 var mystr = 'abc'
 argv.py @mystr
 ## status: 3
 ## stdout-json: ""
 
 #### Can't splice undefined
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 argv.py @undefined
 echo done
 ## status: 3
 ## stdout-json: ""
 
 #### echo $[f(x)] for various types
-shopt -s oil:upgrade
+shopt --set ysh:upgrade
 
-source --builtin funcs.ysh
-source --builtin math.ysh
+source $LIB_YSH/math.ysh
 
 echo bool $[identity(true)]
 echo int $[len(['a', 'b'])]
@@ -69,9 +68,9 @@ bool splice true
 ## END
 
 #### echo $f (x) with space is runtime error
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 
-source --builtin funcs.ysh
+source $LIB_YSH/math.ysh
 
 echo $identity (true)
 ## status: 3
@@ -79,9 +78,9 @@ echo $identity (true)
 ## END
 
 #### echo @f (x) with space is runtime error
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 
-source --builtin funcs.ysh
+source $LIB_YSH/math.ysh
 
 echo @identity (['foo', 'bar'])
 ## status: 3
@@ -104,15 +103,15 @@ true
 ## END
 
 #### Wrong sigil with $range() is runtime error
-shopt -s oil:upgrade
-echo $[10 .. 15]
+shopt -s ysh:upgrade
+echo $[10 ..< 15]
 echo 'should not get here'
 ## status: 3
 ## STDOUT:
 ## END
 
-#### Serializing type in a list
-shopt -s oil:upgrade
+#### Can't serialize type List in an array?  TODO: consider __str__
+shopt -s ysh:upgrade
 
 # If you can serialize the above, then why this?
 var mylist = [3, true]
@@ -132,9 +131,9 @@ ___
 ## END
 
 #### Wrong sigil @[max(3, 4)]
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 
-source --builtin math.ysh
+source $LIB_YSH/math.ysh
 
 write @[max(3, 4)]
 echo 'should not get here'

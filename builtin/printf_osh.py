@@ -1,5 +1,4 @@
 #!/usr/bin/env python2
-"""Builtin_printf.py."""
 from __future__ import print_function
 
 import time as time_  # avoid name conflict
@@ -23,7 +22,7 @@ from _devbuild.gen.value_asdl import (value, value_e)
 
 from core import alloc
 from core import error
-from core.error import e_die, p_die
+from core.error import p_die
 from core import state
 from core import vm
 from frontend import flag_util
@@ -44,7 +43,7 @@ import posix_ as posix
 from typing import Dict, List, Optional, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
-    from core import ui
+    from display import ui
     from frontend import parse_lib
 
 _ = log
@@ -185,8 +184,14 @@ class Printf(vm._Builtin):
         # this object initialized in main()
         self.shell_start_time = time_.time()
 
-    def _Percent(self, pr, part, varargs, locs):
-        # type: (_PrintfState, printf_part.Percent, List[str], List[CompoundWord]) -> Optional[str]
+    def _Percent(
+            self,
+            pr,  # type: _PrintfState
+            part,  # type: printf_part.Percent
+            varargs,  # type: List[str]
+            locs,  # type: List[CompoundWord]
+    ):
+        # type: (...) -> Optional[str]
 
         num_args = len(varargs)
 
@@ -301,7 +306,11 @@ class Printf(vm._Builtin):
 
             if match.LooksLikeInteger(s):
                 # Note: spaces like ' -42 ' accepted and normalized
-                d = mops.FromStr(s)
+                ok, d = mops.FromStr2(s)
+                if not ok:
+                    self.errfmt.Print_("Integer too big: %s" % s, word_loc)
+                    pr.status = 1
+                    return None
 
             else:
                 # Check for 'a and "a
@@ -322,8 +331,8 @@ class Printf(vm._Builtin):
                             # the rest of the bytes.
                             # Something like strict_arith or strict_printf
                             # could throw an error in this case.
-                            self.errfmt.Print_('Warning: %s' %
-                                               e.UserErrorString(), word_loc)
+                            self.errfmt.Print_(
+                                'Warning: %s' % e.UserErrorString(), word_loc)
                             small_i = ord(s[1])
 
                         d = mops.IntWiden(small_i)
@@ -388,9 +397,11 @@ class Printf(vm._Builtin):
                 # Disallowed because it depends on 32- or 64- bit
                 if mops.Greater(mops.ZERO, d) and typ in 'ouxX':
                     # TODO: Don't truncate it
-                    e_die(
+                    self.errfmt.Print_(
                         "Can't format negative number with %%%s: %d" %
                         (typ, mops.BigTruncate(d)), part.type)
+                    pr.status = 1
+                    return None
 
                 if typ == 'o':
                     s = mops.ToOctal(d)
@@ -510,7 +521,7 @@ class Printf(vm._Builtin):
             parser = _FormatStringParser(lexer)
 
             with alloc.ctx_SourceCode(arena,
-                                      source.ArgvWord('printf', fmt_loc)):
+                                      source.Dynamic('printf arg', fmt_loc)):
                 try:
                     parts = parser.Parse()
                 except error.Parse as e:

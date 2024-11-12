@@ -1,7 +1,6 @@
 #!/usr/bin/env python2
 from __future__ import print_function
-"""
-Our wrapper around pyflakes 2.4.0.
+"""Our wrapper around pyflakes 2.4.0.
 
 Newer versions dropped support for Python 2.
 
@@ -16,7 +15,7 @@ import sys
 from pyflakes import api
 from pyflakes import reporter
 
-from core import ansi
+from display import ansi
 
 # Our config for flake8
 # local fatal_errors='E901,E999,F821,F822,F823,F401'
@@ -46,8 +45,7 @@ class OilsReporter(reporter.Reporter):
         self.num_fatal_errors = 0
 
     def flake(self, message):
-        """
-        pyflakes found something wrong with the code.
+        """Pyflakes found something wrong with the code.
 
         @param: A L{pyflakes.messages.Message}.
         """

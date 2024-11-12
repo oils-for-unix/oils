@@ -1,4 +1,5 @@
 ## compare_shells: dash bash-4.4 mksh zsh
+## oils_failures_allowed: 0
 
 #### Eval
 eval "a=3"
@@ -34,6 +35,115 @@ echo $?
 0
 127
 ## END
+
+#### eval string with 'break continue return error'
+
+set -e
+
+sh_func_that_evals() {
+  local code_str=$1
+  for i in 1 2; do
+    echo $i
+    eval "$code_str"
+  done
+  echo 'end func'
+}
+
+for code_str in break continue return false; do
+  echo "--- $code_str"
+  sh_func_that_evals "$code_str"
+done
+echo status=$?
+
+## status: 1
+## STDOUT:
+--- break
+1
+end func
+--- continue
+1
+2
+end func
+--- return
+1
+--- false
+1
+## END
+
+## BUG mksh STDOUT:
+--- break
+1
+2
+end func
+--- continue
+1
+2
+end func
+--- return
+1
+--- false
+1
+## END
+
+#### eval YSH block with 'break continue return error'
+case $SH in dash|bash*|mksh|zsh) exit ;; esac
+
+shopt -s ysh:all
+
+proc proc_that_evals(; ; ;b) {
+  for i in 1 2; do
+    echo $i
+    call io->eval(b)
+  done
+  echo 'end func'
+}
+
+var cases = [
+  ['break', ^(break)],
+  ['continue', ^(continue)],
+  ['return', ^(return)],
+  ['false', ^(false)],
+]
+
+for test_case in (cases) {
+  var code_str, block = test_case
+  echo "--- $code_str"
+  proc_that_evals (; ; block)
+}
+echo status=$?
+
+## status: 1
+## STDOUT:
+--- break
+1
+end func
+--- continue
+1
+2
+end func
+--- return
+1
+--- false
+1
+## END
+
+## N-I dash/bash/mksh/zsh status: 0
+## N-I dash/bash/mksh/zsh STDOUT:
+## END
+
+#### exit within eval (regression)
+eval 'exit 42'
+echo 'should not get here'
+## stdout-json: ""
+## status: 42
+
+#### exit within source (regression)
+cd $TMP
+echo 'exit 42' > lib.sh
+. ./lib.sh
+echo 'should not get here'
+## stdout-json: ""
+## status: 42
 
 #### Source
 lib=$TMP/spec-test-lib.sh
@@ -225,20 +335,6 @@ rm dir/cmd
 ## STDOUT:
 path
 ## END
-
-#### exit within eval (regression)
-eval 'exit 42'
-echo 'should not get here'
-## stdout-json: ""
-## status: 42
-
-#### exit within source (regression)
-cd $TMP
-echo 'exit 42' > lib.sh
-. ./lib.sh
-echo 'should not get here'
-## stdout-json: ""
-## status: 42
 
 #### source doesn't crash when targeting a directory
 cd $TMP

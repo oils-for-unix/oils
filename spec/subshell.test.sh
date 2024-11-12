@@ -1,4 +1,4 @@
-# spec/subshell
+## compare_shells: dash bash mksh
 
 #### Subshell exit code
 ( false; )

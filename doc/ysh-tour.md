@@ -22,7 +22,6 @@ Remember, YSH is for Python and JavaScript users who avoid shell!  See the
 [project FAQ][FAQ] for more color on that.
 
 [FAQ]: https://www.oilshell.org/blog/2021/01/why-a-new-shell.html
-[path dependence]: https://en.wikipedia.org/wiki/Path_dependence
 
 This document is **long** because it demonstrates nearly every feature of the
 language.  You may want to read it in multiple sittings, or read [The Simplest
@@ -148,14 +147,22 @@ Let's describe the word language first, and then talk about commands and
 expressions.  Words are a rich language because **strings** are a central
 concept in shell.
 
+### Unquoted Words
+
+Words denote strings, but you often don't need to quote them:
+
+    echo hi  # => hi
+
+Quotes are useful when a string has spaces, or punctuation characters like `( )
+;`.
+
 ### Three Kinds of String Literals
 
-You can choose the quoting style that's most convenient to write a given
-string.
+You can choose the style that's most convenient to write a given string.
 
 #### Double-Quoted, Single-Quoted, and J8 strings (like JSON)
 
-Double-quoted strings allow **interpolation with `$`**:
+Double-quoted strings allow **interpolation**, with `$`:
 
     var person = 'alice'
     echo "hi $person, $(echo bye)"  # => hi alice, bye
@@ -170,18 +177,18 @@ can't be expressed):
     echo 'c:\Program Files\'        # => c:\Program Files\
 
 If you want C-style backslash **character escapes**, use a J8 string, which is
-like JSON, but with single quotes::
+like JSON, but with single quotes:
 
     echo u' A is \u{41} \n line two, with backslash \\'
     # =>
     #  A is A
     #  line two, with backslash \
 
-The `u''` strings are guaranteed to be valid Unicode (unlike JSON), but you can
+The `u''` strings are guaranteed to be valid Unicode (unlike JSON).  You can
 also use `b''` strings:
 
-    echo b'byte \yff'  # byte that's not valid unicode, like \xff in other languages
-                       # do not confuse with \u{ff}
+    echo b'byte \yff'  # Byte that's not valid unicode, like \xff in C.
+                       # Don't confuse it with \u{ff}.
 
 #### Multi-line Strings
 
@@ -218,8 +225,8 @@ three varieties, and leading whitespace is stripped in a convenient way.
 
 ### Three Kinds of Substitution
 
-YSH has syntax for 3 types of substitution, all of which start with `$`.  These
-things can all be converted to a **string**:
+YSH has syntax for 3 types of substitution, all of which start with `$`.  That
+is, you can convert any of these things to a **string**:
 
 1. Variables
 2. The output of commands
@@ -257,8 +264,8 @@ The `$[myexpr]` syntax evaluates an expression and converts it to a string:
 
 ### Arrays of Strings: Globs, Brace Expansion, Splicing, and Splitting
 
-There are four constructs that evaluate to an **list of strings**, rather than
-a single string.
+There are four constructs that evaluate to a **list of strings**, rather than a
+single string.
 
 #### Globs
 
@@ -304,30 +311,29 @@ Each item will be converted to a string.
 
 #### Split Command Sub / Split Builtin Sub
 
-There's also a variant of *command sub* that splits first:
+There's also a variant of *command sub* that decodes J8 lines into a sequence
+of strings:
 
-    write @(seq 3)  # write gets 3 arguments
+    write @(seq 3)  # write is passed 3 args
     # =>
     # 1
     # 2
     # 3
 
-<!-- TODO: This should decode J8 notation, which includes "" j"" and b"" -->
-
 ## Command Language: I/O, Control Flow, Abstraction
 
-### Simple Commands and Redirects
+### Simple Commands
 
-A simple command is a space-separated list of words, which are often unquoted.
-YSH looks up the first word to determine if it's a `proc` or shell builtin.
+A simple command is a space-separated list of words.  YSH looks up the first
+word to determine if it's a builtin command, or a user-defined `proc`.
 
     echo 'hello world'   # The shell builtin 'echo'
 
-    proc greet (name) {  # A proc is like a procedure or process
+    proc greet (name) {  # Define a unit of code
       echo "hello $name"
     }
 
-    # Now the first word will resolve to the proc
+    # The first word now resolves to the proc you defined
     greet alice          # => hello alice
 
 If it's neither, then it's assumed to be an external command:
@@ -340,18 +346,42 @@ parentheses:
     # 'write' is a string arg; 'x' is a typed expression arg
     json write (x)
 
+<!--
+Block args are a special kind of typed arg:
+
+    cd /tmp { 
+      echo $PWD
+    }
+-->
+
+### Redirects
+
 You can **redirect** `stdin` and `stdout` of simple commands:
 
     echo hi > tmp.txt  # write to a file
     sort < tmp.txt
 
-Idioms for using stderr (identical to shell):
+Here are the most common idioms for using `stderr` (identical to shell):
 
     ls /tmp 2>errors.txt
-    echo 'fatal error' 1>&2
+    echo 'fatal error' >&2
 
-"Simple" commands in YSH can also have typed `()` and block `{}` args, which
-we'll see in the section on "procs".
+### ARGV and ENV
+
+The `ARGV` list holds the arguments passed to the shell:
+
+    var num_args = len(ARGV)
+    ls /tmp @ARGV            # pass shell's arguments through
+
+---
+
+You can add to the environment of a new process with a *prefix binding*:
+
+    PYTHONPATH=vendor ./demo.py
+
+The `ENV` object reflects the current environment:
+
+    echo $[ENV.PYTHONPATH]   # => vendor
 
 ### Pipelines
 
@@ -365,7 +395,7 @@ Details below.
 
 ### Multi-line Commands
 
-The YSH `...` prefix lets you write long commands, pipelines, and `&&` chains
+The `...` prefix lets you write long commands, pipelines, and `&&` chains
 without `\` line continuations.
 
     ... find /bin               # traverse this directory and
@@ -413,9 +443,11 @@ want to use `setglobal` or `call myplace->setValue(42)` in certain situations.
     echo "$g $h"  # => 42 43
 -->
 
-More details: [Variable Declaration and Mutation](variables.html).
+More info: [Variable Declaration and Mutation](variables.html).
 
 ### `for` Loop
+
+#### Words
 
 Shell-style for loops iterate over **words**:
 
@@ -437,23 +469,14 @@ You can also request the loop index:
     # 0 - README.md
     # 1 - __init__.py
 
-To iterate over lines of `stdin`, use:
-
-    for line in (stdin) {
-      echo $line
-    }
-    # lines are buffered, so it's much faster than `while read --rawline`
-
-Ask for the loop index:
-
-    for i, line in (stdin) {
-      echo "$i $line"
-    }
+#### Typed Data
 
 To iterate over a typed data, use parentheses around an **expression**.  The
-expression should evaluate to an integer `Range`, `List`, or `Dict`:
+expression should evaluate to an integer `Range`, `List`, `Dict`, or `Stdin`.
 
-    for i in (3 .. 5) {  # range operator ..
+Range:
+
+    for i in (3 ..< 5) {  # range operator ..<
       echo "i = $i"
     }
     # =>
@@ -472,6 +495,8 @@ List:
 
 Again, you can request the index with `for i, item in ...`.
 
+---
+
 Here's the most general form of the loop over `Dict`:
 
     var mydict = {pea: 42, nut: 10}
@@ -489,6 +514,15 @@ There are two simpler forms:
 
 (One way to think of it: `for` loops in YSH have the functionality Python's
 `enumerate()`, `items()`, `keys()`, and `values()`.)
+
+---
+
+The `io.stdin` object iterates over lines:
+
+    for line in (io.stdin) {
+      echo $line
+    }
+    # lines are buffered, so it's much faster than `while read --raw-line`
 
 <!--
 TODO: Str loop should give you the (UTF-8 offset, rune)
@@ -516,7 +550,9 @@ Or an **expression**, which is surrounded in `()`:
     # i = 4
     # i = 5
 
-### `if elif` Conditional
+### Conditionals
+
+#### `if elif` 
 
 If statements test the exit code of a command, and have optional `elif` and
 `else` clauses:
@@ -548,7 +584,7 @@ As with `while` loops, the condition can also be an **expression** wrapped in
       echo "we aren't done"
     }
 
-### `case` Conditional
+#### `case` 
 
 The case statement is a series of conditionals and executable blocks.  The
 condition can be either an unquoted glob pattern like `*.py`, an eggex pattern
@@ -569,10 +605,11 @@ like `/d+/`, or a typed expression like `(42)`:
     }
     # => Markdown
 
-<!-- TODO: document case on typed data -->
 
-(Shell style like `if foo; then ... fi` and `case $x in ...  esac` is also legal,
-but discouraged in YSH code.)
+<!--
+(Shell style like `if foo; then ... fi` and `case $x in ...  esac` is also
+legal, but discouraged in YSH code.)
+-->
 
 ### Error Handling
 
@@ -600,26 +637,16 @@ For a complete list of examples, see [YSH Error
 Handling](ysh-error.html).  For design goals and a reference, see [YSH
 Fixes Shell's Error Handling](error-handling.html).
 
-#### `break`, `continue`, `return`, `exit`
+#### exit, break, continue, return
 
-The `exit` **keyword** exits a process (it's not a shell builtin.)  The other 3
-control flow keywords behave like they do in Python and JavaScript.
+The `exit` **keyword** exits a process.  (It's not a shell builtin.)
 
-### Ruby-like Blocks 
-
-Here's a builtin command that takes a literal block argument:
-
-    shopt --unset errexit {  # ignore errors
-      cp ale /tmp
-      cp bean /bin
-    }
-
-Blocks are a special kind of typed argument passed to commands like `shopt`.
-Their type is `value.Command`.
+The other 3 control flow keywords behave like they do in Python and JavaScript.
 
 ### Shell-like `proc`
 
-You can define units of code with the `proc` keyword.
+You can define units of code with the `proc` keyword.  A `proc` is like a
+*procedure* or *process*.
 
     proc mycopy (src, dest) {
       ### Copy verbosely
@@ -628,31 +655,32 @@ You can define units of code with the `proc` keyword.
       cp --verbose $src $dest
     }
 
-The `###` line is a "doc comment", and can be retrieved with `pp proc`.  Simple
-procs like this are invoked like a shell command:
+The `###` line is a "doc comment".  Simple procs like this are invoked like a
+shell command:
 
     touch log.txt
     mycopy log.txt /tmp   # first word 'mycopy' is a proc
 
-Procs have more features, including **four** kinds of arguments:
+Procs have many features, including **four** kinds of arguments:
 
 1. Word args (which are always strings)
-1. Typed, positional args (aka positional args)
-1. Typed, named args (aka named args)
+1. Typed, positional args
+1. Typed, named args
 1. A final block argument, which may be written with `{ }`.
 
 At the call site, they can look like any of these forms:
 
-    cd /tmp                      # word arg
+    ls /tmp                      # word arg
 
     json write (d)               # word arg, then positional arg
 
-    # error 'failed' (status=9)  # word arg, then named arg
+    try {
+      error 'failed' (status=9)  # word arg, then named arg
+    }
 
     cd /tmp { echo $PWD }        # word arg, then block arg
 
-    var mycmd = ^(echo hi)       # expression for a value.Command
-    eval (mycmd)                 # positional arg 
+    pp value ([1, 2])            # positional, typed arg 
 
 <!-- TODO: lazy arg list: ls8 | where [age > 10] -->
 
@@ -666,21 +694,53 @@ to the Julia language:
 
     proc p3 (w ; ; named1, named2, ...rest_named; block) {
       echo "$w $[named1 + named2]"
-      eval (block)
+      call io->eval(block)
       json write (rest_named)
     }
 
     proc p4 (; ; ; block) {
-      eval (block)
+      call io->eval(block)
     }
 
 YSH also has Python-like functions defined with `func`.  These are part of the
 expression language, which we'll see later.
 
-For more info, see the [Informal Guide to Procs and Funcs](proc-func.html)
-(under construction).
+For more info, see the [Guide to Procs and Funcs](proc-func.html).
 
-#### Builtin Commands
+### Ruby-like Block Arguments
+
+A block is a value of type `Command`.  For example, `shopt` is a builtin
+command that takes a block argument:
+
+    shopt --unset errexit {  # ignore errors
+      cp ale /tmp
+      cp bean /bin
+    }
+
+In this case, the block doesn't form a new scope.
+
+#### Block Scope / Closures
+
+However, by default, block arguments capture the frame they're defined in.
+This means they obey *lexical scope*.
+
+Consider this proc, which accepts a block, and runs it:
+
+    proc do-it (; ; ; block) {
+      call io->eval(block)
+    }
+
+When the block arg is passed, the enclosing stack frame is captured.  This
+means that code inside the block can use variables in the captured frame:
+
+    var x = 42
+    do-it {         
+      echo "x = $x"  # outer x is visible LATER, when the block is run    
+    }
+
+- [Feature Index: Closures](ref/feature-index.html#Closures)
+
+### Builtin Commands
 
 **Shell builtins** like `cd` and `read` are the "standard library" of the
 command language.  Each one takes various flags:
@@ -716,15 +776,41 @@ understand how YSH is parsed.
 ### Python-like `func`
 
 At the end of the *Command Language*, we saw that procs are shell-like units of
-code.  Now let's talk about Python-like **functions** in YSH, which are
-different than `procs`:
+code.  YSH also has Python-like **functions**, which are different than
+`procs`:
 
 - They're defined with the `func` keyword.
 - They're called in expressions, not in commands.
 - They're **pure**, and live in the **interior** of a process.
   - In contrast, procs usually perform I/O, and have **exterior** boundaries.
 
-Here's a function that mutates its argument:
+The simplest function is:
+
+    func identity(x) {
+      return (x)  # parens required for typed return
+    }
+
+A more complex pure function:
+
+    func myRepeat(s, n; special=false) {  # positional; named params
+      var parts = []
+      for i in (0 ..< n) {
+        append $s (parts)
+      }
+      var result = join(parts)
+
+      if (special) {
+        return ("$result !!")
+      } else {
+        return (result)
+      }
+    }
+
+    echo $[myRepeat('z', 3)]  # => zzz
+
+    echo $[myRepeat('z', 3, special=true)]  # => zzz !!
+
+A function that mutates its argument:
 
     func popTwice(mylist) {
       call mylist->pop()
@@ -737,25 +823,6 @@ Here's a function that mutates its argument:
     # like the = keyword.
     call popTwice(mylist)
 
-Here's a pure function:
-
-    func myRepeat(s, n; special=false) {  # positional; named params
-      var parts = []
-      for i in (0 .. n) {
-        append $s (parts)
-      }
-      var result = join(parts)
-
-      if (special) {
-        return ("$result !!")  # parens required for typed return
-      } else {
-        return (result)
-      }
-    }
-
-    echo $[myRepeat('z', 3)]  # => zzz
-
-    echo $[myRepeat('z', 3, special=true)]  # => zzz !!
 
 Funcs are named using `camelCase`, while procs use `kebab-case`.  See the
 [Style Guide](style-guide.html) for more conventions.
@@ -772,11 +839,16 @@ These are like the "standard library" for the expression language.  Examples:
 <!-- TODO: Make a comprehensive list of func builtins. -->
 
 
-### Data Types: `Int`, `Str`, `List`, `Dict`, ...
+### Data Types: `Int`, `Str`, `List`, `Dict`, `Obj`, ...
 
 YSH has data types, each with an expression syntax and associated methods.
 
 ### Methods
+
+Non-mutating methods are looked up with the `.` operator:
+
+    var line = ' ale bean '
+    var caps = line.trim().upper()  # 'ALE BEAN'
 
 Mutating methods are looked up with a thin arrow `->`:
 
@@ -788,19 +860,21 @@ You can ignore the return value with the `call` keyword:
 
     call foods->pop()
 
-Transforming methods use a fat arrow `=>`:
+That is, YSH adds mutable data structures to shell, so we have a special syntax
+for mutation.
 
-    var line = ' ale bean '
-    var trimmed = line => trim() => upper()  # 'ALE BEAN'
+---
 
-If the `=>` operator doesn't find a method with the given name in the object's
-type, it looks for free functions:
+You can also chain functions with a fat arrow `=>`:
+
+    var trimmed = line.trim() => upper()  # 'ALE BEAN'
+
+The `=>` operator allows functions to appear in a natural left-to-right order,
+like methods.
 
     # list() is a free function taking one arg
     # join() is a free function taking two args
     var x = {k1: 42, k2: 43} => list() => join('/')  # 'K1/K2'
-
-This allows a left-to-right "method chaining" style.
 
 ---
 
@@ -849,14 +923,17 @@ YSH code, but can make certain string algorithms more readable.
 
 #### Float
 
-Floats are written like you'd expect:
+Floats are written with a decimal point:
+
+    var big = 3.14
+
+You can use scientific notation, as in Python:
 
     var small = 1.5e-10
-    var big = 3.14
 
 #### Str
 
-See the section above called *Three Kinds of String Literals*.  It described
+See the section above on *Three Kinds of String Literals*.  It described
 `'single quoted'`, `"double ${quoted}"`, and `u'J8-style\n'` strings; as well
 as their multiline variants.
 
@@ -867,17 +944,15 @@ as in Python.
 Strings are **immutable**, as in Python and JavaScript.  This means they only
 have **transforming** methods:
 
-    var x = s => trim()
+    var x = s.trim()
 
 Other methods:
 
 - `trimLeft()   trimRight()`
 - `trimPrefix()   trimSuffix()`
-- `upper()   lower()` (not implemented)
-
-<!--
-The syntax `:symbol` could be an interned string.
--->
+- `upper()   lower()`
+- `search()  leftMatch()` - pattern matching
+- `replace()   split()`
 
 #### List (and Arrays)
 
@@ -907,8 +982,7 @@ mutating methods:
 
 #### Dict
 
-Dicts use syntax that's more like JavaScript than Python.  Here's a dict
-literal:
+Dicts use syntax that's like JavaScript.  Here's a dict literal:
 
     var d = {
       name: 'bob',  # unquoted keys are allowed
@@ -916,38 +990,66 @@ literal:
       'key with spaces': 'val'
     }
 
-There are two syntaxes for key lookup.  If the key doesn't exist, it's a fatal
-error.
+You can use either `[]` or `.` to retrieve a value, given a key:
 
     var v1 = d['name']
     var v2 = d.name                # shorthand for the above
     var v3 = d['key with spaces']  # no shorthand for this
 
-Keys names can be computed with expressions in `[]`:
+(If the key doesn't exist, an error is raised.)
+
+You can change Dict values with the same 2 syntaxes:
+
+    set d['name'] = 'other'
+    set d.name = 'fun'
+
+---
+
+If you want to compute a key name, use an expression inside `[]`:
 
     var key = 'alice'
     var d2 = {[key ++ '_z']: 'ZZZ'}  # Computed key name
-    echo $[d2.alice_z]   # => ZZZ    # Reminder: expression sub
+    echo $[d2.alice_z]   # => ZZZ
 
-Omitting the value causes it to be taken from a variable of the same name:
+If you omit the value, its taken from a variable of the same name:
 
-    var d3 = {key}             # value is taken from the environment
+    var d3 = {key}             # like {key: key}
     echo "name is $[d3.key]"   # => name is alice
 
-More:
+More examples:
 
     var empty = {}
     echo $[len(empty)]  # => 0
 
-Dicts are **mutable**, as in Python and JavaScript.  But the `keys()` and `values()`
-methods return new `List` objects:
+The `keys()` and `values()` methods return new `List` objects:
 
-    var keys = d2 => keys()    # => alice_z
-    # var vals = d3 => values()  # => alice
+    var keys = keys(d2)      # => alice_z
+    var vals = values(d3)    # => alice
+
+#### Obj
+
+YSH has an `Obj` type that bundles **code** and **data**.  (In contrast, JSON
+messages are pure data, not objects.)
+
+The main purpose of objects is **polymorphism**:
+
+    var obj = makeMyObject(42)  # I don't know what it looks like inside
+
+    echo $[obj.myMethod()]      # But I can perform abstract operations
+
+    call obj->mutatingMethod()  # Mutation is considered special, with ->
+
+YSH objects are similar to Lua and JavaScript objects.  They can be thought of
+as a linked list of `Dict` instances.
+
+Or you can say they have a `Dict` of properties, and a recursive "prototype
+chain" that is also an `Obj`.
+
+- [Feature Index: Objects](ref/feature-index.html#Objects)
 
 ### `Place` type / "out params"
 
-The `read` builtin can either set an implicit variable `_reply`:
+The `read` builtin can set an implicit variable `_reply`:
 
     whoami | read --all  # sets _reply
 
@@ -957,6 +1059,7 @@ Or you can pass a `value.Place`, created with `&`
     whoami | read --all (&x)   # mutate this "place"
     echo who=$x  # => who=andy
 
+<!--
 #### Quotation Types: value.Command (Block) and value.Expr
 
 These types are for reflection on YSH code.  Most YSH programs won't use them
@@ -966,12 +1069,11 @@ directly.
   - rarely-used literal: `^(ls | wc -l)`
 - `Expr`: an unevaluated expression.
   - rarely-used literal: `^[42 + a[i]]`
-
-<!-- TODO: implement Block, Expr, ArgList types (variants of value) -->
+-->
 
 ### Operators
 
-Operators are generally the same as in Python:
+YSH operators are generally the same as in Python:
 
     if (10 <= num_beans and num_beans < 20) {
       echo 'enough'
@@ -1046,7 +1148,7 @@ TODO: What about list comprehensions?
 
 ### Egg Expressions (YSH Regexes)
 
-An *Eggex* is a type of YSH expression that denote regular expressions.  They
+An *Eggex* is a YSH expression that denotes a regular expression.  Eggexes
 translate to POSIX ERE syntax, for use with tools like `egrep`, `awk`, and `sed
 --regexp-extended` (GNU only).
 
@@ -1068,7 +1170,7 @@ See the [Egg Expressions doc](eggex.html) for details.
 
 ## Interlude
 
-Let's review what we've seen before moving onto other YSH features.
+Before moving onto other YSH features, let's review what we've seen.
 
 ### Three Interleaved Languages
 
@@ -1082,8 +1184,8 @@ Here are the languages we saw in the last 3 sections:
    - I/O: pipelines, builtins like `read`
    - control flow: `if`, `for`
    - abstraction: `proc`
-3. **Expressions** on typed data are borrowed from Python, with some JavaScript
-   influence.
+3. **Expressions** on typed data are borrowed from Python, with influence from
+   JavaScript:
    - Lists: `['ale', 'bean']` or `:| ale bean |`
    - Dicts: `{name: 'bob', age: 42}`
    - Functions: `split('ale bean')` and `join(['pea', 'nut'])`
@@ -1123,51 +1225,105 @@ means something different in each context:
   JavaScript.
 -->
 
-## Languages for Data (Interchange Formats)
+---
 
-In addition to languages for **code**, YSH also deals with languages for
-**data**.  [JSON]($xref) is a prominent example of the latter.
+Let's move on from talking about **code**, and talk about **data**.
+
+## Data Notation / Interchange Formats
+
+In YSH, you can read and write data languages based on [JSON]($xref).  This is
+a primary way to exchange messages between Unix processes.
+
+Instead of being **executed**, like our command/word/expression languages,
+these languages **parsed** as data structures.
 
 <!-- TODO: Link to slogans, fallacies, and concepts -->
 
 ### UTF-8
 
-UTF-8 is the foundation of our textual data languages.
+UTF-8 is the foundation of our data notation.  It's the most common Unicode
+encoding, and the most consistent:
+
+    var x = u'hello \u{1f642}'  # store a UTF-8 string in memory
+    echo $x                     # send UTF-8 to stdout
+
+hello &#x1f642;
 
 <!-- TODO: there's a runes() iterator which gives integer offsets, usable for
 slicing -->
 
-<!-- TODO: write about J8 notation -->
+### JSON
 
-### Lines of Text (traditional), and JSON/J8 Strings
+JSON messages are UTF-8 text.  You can encode and decode JSON with functions
+(`func` style):
 
-Traditional Unix tools like `grep` and `awk` operate on streams of lines.  YSH
-supports this style, just like any other shell.
+    var message = toJson({x: 42})       # => (Str)   '{"x": 42}'
+    var mydict = fromJson('{"x": 42}')  # => (Dict)  {x: 42}
 
-But YSH also has [J8 Notation][], a data format based on [JSON][].
+Or with commands (`proc` style):
 
-[J8 Notation]: j8-notation.html
+    json write ({x: 42}) > foo.json     # writes '{"x": 42}'
 
-It lets you encode arbitrary byte strings into a single (readable) line,
-including those with newlines and terminal escape sequences.
+    json read (&mydict) < foo.json      # create var
+    = mydict                            # => (Dict)  {x: 42}
 
-Example:
+### J8 Notation
 
-    # A line with a tab char in the middle
-    var mystr = u'pea\t' ++ u'42\n'
+But JSON isn't quite enough for a principled shell.
 
-    # Print it as JSON
-    write $[toJson(mystr)]  # => "pea\t42\n"
+- Traditional Unix tools like `grep` and `awk` operate on streams of **lines**.
+  In YSH, to avoid data-dependent bugs, we want a reliable way of **quoting**
+  lines.
+- In YSH, we also want to represent **binary** data, not just text.  When you
+  read a Unix file, it may or may not be text.
 
-    # JSON8 is the same, but it's not lossy for binary data
-    write $[toJson8(mystr)]  # => "pea\t42\n"
+So we borrow JSON-style strings, and create [J8 Notation][].  Slogans:
 
-### Structured: JSON8, TSV8
+- *Deconstructing and Augmenting JSON*
+- *Fixing the JSON-Unix Mismatch*
 
-You can write and read **tree-shaped** as [JSON][]:
+[J8 Notation]: $xref:j8-notation
+
+#### J8 Lines
+
+*J8 Lines* are a building block of J8 Notation.  If you have a file
+`lines.txt`:
+
+<pre>
+  doc/hello.md
+ "doc/with spaces.md"
+b'doc/with byte \yff.md'
+</pre>
+
+Then you can decode it with *split command sub* (mentioned above):
+
+    var decoded = @(cat lines.txt)
+
+This file has:
+
+1. An unquoted string
+1. A JSON string with `"double quotes"`
+1. A J8-style string: `u'unicode'` or `b'bytes'`
+
+<!--
+TODO: fromJ8Line() toJ8Line()
+-->
+
+#### JSON8 is Tree-Shaped
+
+JSON8 is just like JSON, but it allows J8-style strings:
+
+<pre>
+{ "foo":  "hi \uD83D\uDE42"}  # valid JSON, and valid JSON8
+{u'foo': u'hi \u{1F642}'   }  # valid JSON8, with J8-style strings
+</pre>
+
+<!--
+In addition to strings and lines, you can write and read **tree-shaped** data
+as [JSON][]:
 
     var d = {key: 'value'}
-    json write (d)                # dump variable d as JSON
+    json write (d)                 # dump variable d as JSON
     # =>
     # {
     #   "key": "value"
@@ -1176,9 +1332,8 @@ You can write and read **tree-shaped** as [JSON][]:
     echo '["ale", 42]' > example.json
 
     json read (&d2) < example.json  # parse JSON into var d2
-    pp cell d2                      # inspect the in-memory value
-    # =>
-    # ['ale', 42]
+    pp (d2)                         # pretty print it 
+    # => (List)  ['ale', 42]
 
 [JSON][] will lose information when strings have binary data, but the slight
 [JSON8]($xref) upgrade won't:
@@ -1189,17 +1344,21 @@ You can write and read **tree-shaped** as [JSON][]:
     # {
     #   "binary": b'\yff'
     # }
+-->
 
 [JSON]: $xref
 
-<!--
-TODO:
-- Fix pp cell output
-- Use json write (d) syntax
--->
+#### TSV8 is Table-Shaped
 
-**Table-shaped** data can be read and written as [TSV8]($xref).  (TODO: not yet
-implemented.)
+(TODO: not yet implemented.)
+
+YSH supports data notation for tables:
+
+1. Plain TSV files, which are untyped.  Every column has string data.
+   - Cells with tabs, newlines, and binary data are a problem.
+2. Our extension [TSV8]($xref), which supports typed data.
+   - It uses JSON notation for booleans, integers, and floats.
+   - It uses J8 strings, which can represent any string.
 
 <!-- Figure out the API.  Does it work like JSON?
 
@@ -1218,31 +1377,57 @@ More later:
 - SASH: Simple and Strict HTML?  For easy processing
 -->
 
+## YSH Modules are Files
+
+A module is a **file** of source code, like `lib/myargs.ysh`.  The `use`
+builtin turns it into an `Obj` that can be invoked and inspected:
+
+    use myargs.ysh
+
+    myargs proc1 --flag val   # module name becomes a prefix, via __invoke__
+    var alias = myargs.proc1  # module has attributes
+
+You can import specific names with the `--pick` flag:
+
+    use myargs.ysh --pick p2 p3
+
+    p2
+    p3
+
+- [Feature Index: Modules](ref/feature-index.html#Modules)
+
 ## The Runtime Shared by OSH and YSH
 
 Although we describe OSH and YSH as different languages, they use the **same**
-interpreter under the hood.  This interpreter has various `shopt` flags that
-are flipped for different behavior, e.g. with `shopt --set ysh:all`.
+interpreter under the hood.
 
-Understanding this interpreter and its interface to the Unix kernel will help
-you understand **both** languages!
+This interpreter has many `shopt` booleans to control behavior, like `shopt
+--set parse_paren`.  The group `shopt --set ysh:all` flips all booleans to make
+`bin/osh` behave like `bin/ysh`.
+
+Understanding this common runtime, and its interface to the Unix kernel, will
+help you understand **both** languages!
 
 ### Interpreter Data Model
 
-The [Interpreter State](interpreter-state.html) doc is **under construction**.
-It will cover:
+The [Interpreter State](interpreter-state.html) doc is under construction.  It
+will cover:
 
-- Two separate namespaces (like Lisp 1 vs. 2):
-  - **proc** namespace for procs as the first word
-  - **variable** namespace
-- The variable namespace has a **call stack**, for the local variables of a
-  proc.
-  - Each **stack frame** is a `{name -> cell}` mapping.
-  - A **cell** has one of the above data types: `Bool`, `Int`, `Str`, etc.
-  - A cell has `readonly`, `export`, and `nameref` **flags**.
-- Boolean shell options with `shopt`: `parse_paren`, `simple_word_eval`, etc.
-- String shell options with `shvar`: `IFS`, `PATH`
-- **Registers** that are silently modified by the interpreter
+- The **call stack** for OSH and YSH
+  - Each *stack frame* is a `{name -> cell}` mapping.
+- Each cell has a **value**, with boolean flags
+  - OSH has types `Str BashArray BashAssoc`, and flags `readonly export
+    nameref`.
+  - YSH has types `Bool Int Float Str List Dict Obj ...`, and the `readonly`
+    flag.
+- YSH **namespaces**
+  - Modules with `use`
+  - Builtin functions and commands
+  - ENV
+- Shell **options**
+  - Boolean options with `shopt`: `parse_paren`, `simple_word_eval`, etc.
+  - String options with `shvar`: `IFS`, `PATH`
+- **Registers** that store interpreter state
   - `$?` and `_error`
   - `$!` for the last PID
   - `_this_dir`
@@ -1255,13 +1440,12 @@ The [Process Model](process-model.html) doc is **under construction**.  It will 
 - Simple Commands, `exec` 
 - Pipelines.  #[shell-the-good-parts](#blog-tag)
 - `fork`, `forkwait`
-- Command and process substitution.
-- Related links:
+- Command and process substitution
+- Related:
   - [Tracing execution in Oils](xtrace.html) (xtrace), which divides
     process-based concurrency into **synchronous** and **async** constructs.
   - [Three Comics For Understanding Unix
     Shell](http://www.oilshell.org/blog/2020/04/comics.html) (blog)
-
 
 <!--
 Process model additions: Capers, Headless shell 
@@ -1269,22 +1453,43 @@ Process model additions: Capers, Headless shell
 some optimizations: See YSH starts fewer processes than other shells.
 -->
 
+### Advanced: Reflecting on the Interpreter
+
+You can reflect on the interpreter with APIs like `io->eval()` and
+`vm.getFrame()`.
+
+- [Feature Index: Reflection](ref/feature-index.html#Reflection)
+
+This allows YSH to be a language for creating other languages.  (Ruby, Tcl, and
+Racket also have this flavor.)
+
+<!--
+
+TODO: Hay and Awk examples
+-->
+
 ## Summary
 
-YSH is a large language that evolved from Unix shell.  It has shell-like
-commands, Python-like expressions on typed data, and Ruby-like command blocks.
+What have we described in this tour?
 
-Even though it's large, you can "forget" the bad parts of shell like `[ $x -lt
-$y ]`.
+YSH is a programming language that evolved from Unix shell.  But you can
+"forget" the bad parts of shell like `[ $x -lt $y ]`.
 
-These concepts are central to YSH:
+<!--
+Instead, we've shown you shell-like commands, Python-like expressions on typed
+data, and Ruby-like command blocks.
+-->
+
+Instead, focus on these central concepts:
 
 1. Interleaved *word*, *command*, and *expression* languages.
-2. A standard library of *shell builtins*, as well as *builtin functions*
+2. A standard library of *builtin commands*, as well as *builtin functions*
 3. Languages for *data*: J8 Notation, including JSON8 and TSV8
 4. A *runtime* shared by OSH and YSH
 
-## Related Docs
+## Appendix
+
+### Related Docs
 
 - [YSH vs. Shell Idioms](idioms.html) - YSH side-by-side with shell.
 - [YSH Language Influences](language-influences.html) - In addition to shell,
@@ -1293,62 +1498,8 @@ These concepts are central to YSH:
   you remember the syntax.
 - [YSH Language Warts](warts.html) documents syntax that may be surprising.
 
-## Appendix: Features Not Shown
 
-### Advanced
-
-These shell features are part of YSH, but aren't shown for brevity.
-
-- The `fork` and `forkwait` builtins, for concurrent execution and subshells.
-- Process Substitution: `diff <(sort left.txt) <(sort right.txt)`
-
-### Deprecated Shell Constructs
-
-The shared interpreter supports many shell constructs that are deprecated:
-
-- YSH code uses shell's `||` and `&&` in limited circumstances, since `errexit`
-  is on by default.
-- Assignment builtins like `local` and `declare`.  Use YSH keywords.
-- Boolean expressions like `[[ x =~ $pat ]]`.  Use YSH expressions.
-- Shell arithmetic like `$(( x + 1 ))` and `(( y = x ))`.  Use YSH expressions.
-- The `until` loop can always be replaced with a `while` loop
-- Most of what's in `${}` can be written in other ways.  For example
-  `${s#/tmp}` could be `s => removePrefix('/tmp')` (TODO).
-
-### Not Yet Implemented
-
-This document mentions a few constructs that aren't yet implemented.  Here's a
-summary:
-
-```none
-# Unimplemented syntax:
-
-echo ${x|html}               # formatters
-
-echo ${x %.2f}               # statically-parsed printf
-
-var x = j"line\n"
-echo j"line\n"               # JSON-style string literal
-
-var x = "<p>$x</p>"html      
-echo "<p>$x</p>"html         # tagged string
-
-var x = 15 Mi                # units suffix
-```
-
-Important builtins that aren't implemented:
-
-- `describe` for testing
-- `parseArgs()` to parse flags
-- Builtins for [TSV8]($xref) - selection, projection, sorting
-
-<!--
-
-- To document: Method calls
-- To implement: Capers: stateless coprocesses
--->
-
-## Appendix: Example of an YSH Module
+### YSH Script Template
 
 YSH can be used to write simple "shell scripts" or longer programs.  It has
 *procs* and *modules* to help with the latter.
@@ -1359,9 +1510,7 @@ A module is just a file, like this:
 #!/usr/bin/env ysh
 ### Deploy script
 
-source-guard main || return 0   # declaration, "include guard"
-
-source $_this_dir/lib/util.ysh  # defines 'log' helper
+use $_this_dir/lib/util.ysh --pick log
 
 const DEST = '/tmp/ysh-tour'
 
@@ -1399,6 +1548,55 @@ TODO:
 -->
 
 You wouldn't bother with the boilerplate for something this small.  But this
-example illustrates the idea, which is that the top level often contains these
-words: `proc`, `const`, `module`, `source`, and `use`.
+example illustrates the basic idea: the top level often contains these words:
+`use`, `const`, `proc`, and `func`.
+
+
+<!--
+TODO: not mentioning __provide__, since it should be optional in the most basic usage?
+-->
+
+### YSH Features Not Shown
+
+#### Advanced
+
+These shell features are part of YSH, but aren't shown above:
+
+- The `fork` and `forkwait` builtins, for concurrent execution and subshells.
+- Process Substitution: `diff <(sort left.txt) <(sort right.txt)`
+
+#### Deprecated Shell Constructs
+
+The shared interpreter supports many shell constructs that are deprecated:
+
+- YSH code uses shell's `||` and `&&` in limited circumstances, since `errexit`
+  is on by default.
+- Assignment builtins like `local` and `declare`.  Use YSH keywords.
+- Boolean expressions like `[[ x =~ $pat ]]`.  Use YSH expressions.
+- Shell arithmetic like `$(( x + 1 ))` and `(( y = x ))`.  Use YSH expressions.
+- The `until` loop can always be replaced with a `while` loop
+- Most of what's in `${}` can be written in other ways.  For example
+  `${s#/tmp}` could be `s => removePrefix('/tmp')` (TODO).
+
+#### Not Yet Implemented
+
+This document mentions a few constructs that aren't yet implemented.  Here's a
+summary:
+
+```none
+# Unimplemented syntax:
+
+echo ${x|html}               # formatters
+
+echo ${x %.2f}               # statically-parsed printf
+
+var x = "<p>$x</p>"html      
+echo "<p>$x</p>"html         # tagged string
+
+var x = 15 Mi                # units suffix
+```
+
+<!--
+- To implement: Capers: stateless coprocesses
+-->
 

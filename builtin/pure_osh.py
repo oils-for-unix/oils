@@ -16,7 +16,7 @@ from _devbuild.gen.types_asdl import opt_group_i
 from core import error
 from core.error import e_usage
 from core import state
-from core import ui
+from display import ui
 from core import vm
 from data_lang import j8_lite
 from frontend import args
@@ -30,7 +30,9 @@ from mycpp.mylib import print_stderr, log
 from typing import List, Dict, Tuple, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value
-    from core.state import MutableOpts, Mem, SearchPath
+    from core import optview
+    from core.state import MutableOpts, Mem
+    from core import executor
     from osh.cmd_eval import CommandEvaluator
 
 _ = log
@@ -47,7 +49,7 @@ class Boolean(vm._Builtin):
         # type: (cmd_value.Argv) -> int
 
         # These ignore regular args, but shouldn't accept typed args.
-        typed_args.DoesNotAccept(cmd_val.typed_args)
+        typed_args.DoesNotAccept(cmd_val.proc_args)
         return self.status
 
 
@@ -133,6 +135,43 @@ def SetOptionsFromFlags(exec_opts, opt_changes, shopt_changes):
         exec_opts.SetAnyOption(opt_name, b)
 
 
+def ShowOptions(mutable_opts, opt_names):
+    # type: (state.MutableOpts, List[str]) -> bool
+    """Show traditional options, for 'set -o' and 'shopt -p -o'."""
+    # TODO: Maybe sort them differently?
+
+    if len(opt_names) == 0:  # if none, supplied, show all
+        opt_names = [consts.OptionName(i) for i in consts.SET_OPTION_NUMS]
+
+    any_false = False
+    for opt_name in opt_names:
+        opt_num = state._SetOptionNum(opt_name)
+        b = mutable_opts.Get(opt_num)
+        if not b:
+            any_false = True
+        print('set %so %s' % ('-' if b else '+', opt_name))
+    return any_false
+
+
+def _ShowShoptOptions(mutable_opts, opt_nums):
+    # type: (state.MutableOpts, List[int]) -> bool
+    """For 'shopt -p'."""
+
+    if len(opt_nums) == 0:
+        # If none supplied, show all
+        # Note: the way to show BOTH shopt and set options should be a
+        # __shopt__ Dict
+        opt_nums.extend(consts.VISIBLE_SHOPT_NUMS)
+
+    any_false = False
+    for opt_num in opt_nums:
+        b = mutable_opts.Get(opt_num)
+        if not b:
+            any_false = True
+        print('shopt -%s %s' % ('s' if b else 'u', consts.OptionName(opt_num)))
+    return any_false
+
+
 class Set(vm._Builtin):
 
     def __init__(self, exec_opts, mem):
@@ -169,7 +208,7 @@ class Set(vm._Builtin):
         # 'set -o' shows options.  This is actually used by autoconf-generated
         # scripts!
         if arg.show_options:
-            self.exec_opts.ShowOptions([])
+            ShowOptions(self.exec_opts, [])
             return 0
 
         # Note: set -o nullglob is not valid.  The 'shopt' builtin is preferred in
@@ -188,17 +227,57 @@ class Set(vm._Builtin):
 
 class Shopt(vm._Builtin):
 
-    def __init__(self, mutable_opts, cmd_ev):
-        # type: (MutableOpts, CommandEvaluator) -> None
+    def __init__(self, exec_opts, mutable_opts, cmd_ev, mem, environ):
+        # type: (optview.Exec, MutableOpts, CommandEvaluator, state.Mem, Dict[str, str]) -> None
+        self.exec_opts = exec_opts
         self.mutable_opts = mutable_opts
         self.cmd_ev = cmd_ev
+        self.mem = mem
+        self.environ = environ
 
     def _PrintOptions(self, use_set_opts, opt_names):
-        # type: (bool, List[str]) -> None
+        # type: (bool, List[str]) -> int
         if use_set_opts:
-            self.mutable_opts.ShowOptions(opt_names)
+            any_false = ShowOptions(self.mutable_opts, opt_names)
+
+            if len(opt_names):
+                # bash behavior: behave like -q if options are set
+                return 1 if any_false else 0
+            else:
+                return 0
         else:
-            self.mutable_opts.ShowShoptOptions(opt_names)
+            # Respect option groups like ysh:upgrade
+            any_single_names = False
+            opt_nums = []  # type: List[int]
+            for opt_name in opt_names:
+                opt_group = consts.OptionGroupNum(opt_name)
+                if opt_group == opt_group_i.YshUpgrade:
+                    opt_nums.extend(consts.YSH_UPGRADE)
+                elif opt_group == opt_group_i.YshAll:
+                    opt_nums.extend(consts.YSH_ALL)
+                elif opt_group == opt_group_i.StrictAll:
+                    opt_nums.extend(consts.STRICT_ALL)
+
+                else:
+                    index = consts.OptionNum(opt_name)
+                    # Minor incompatibility with bash: we validate everything
+                    # before printing.
+                    if index == 0:
+                        if self.exec_opts.ignore_shopt_not_impl():
+                            index = consts.UnimplOptionNum(opt_name)
+                        if index == 0:
+                            e_usage('got invalid option %r' % opt_name,
+                                    loc.Missing)
+                    opt_nums.append(index)
+                    any_single_names = True
+
+            any_false = _ShowShoptOptions(self.mutable_opts, opt_nums)
+
+            if any_single_names:
+                # bash behavior: behave like -q if options are set
+                return 1 if any_false else 0
+            else:
+                return 0
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -213,9 +292,14 @@ class Shopt(vm._Builtin):
             for name in opt_names:
                 index = consts.OptionNum(name)
                 if index == 0:
-                    return 2  # bash gives 1 for invalid option; 2 is better
+                    if self.exec_opts.ignore_shopt_not_impl():
+                        index = consts.UnimplOptionNum(name)
+                    if index == 0:
+                        return 2  # bash gives 1 for invalid option; 2 is better
+
                 if not self.mutable_opts.opt0_array[index]:
                     return 1  # at least one option is not true
+
             return 0  # all options are true
 
         if arg.s:
@@ -223,15 +307,13 @@ class Shopt(vm._Builtin):
         elif arg.u:
             b = False
         elif arg.p:  # explicit -p
-            self._PrintOptions(arg.o, opt_names)
-            return 0
+            return self._PrintOptions(arg.o, opt_names)
         else:  # otherwise -p is implicit
-            self._PrintOptions(arg.o, opt_names)
-            return 0
+            return self._PrintOptions(arg.o, opt_names)
 
         # shopt --set x { my-block }
-        cmd = typed_args.OptionalBlock(cmd_val)
-        if cmd:
+        cmd_frag = typed_args.OptionalBlockAsFrag(cmd_val)
+        if cmd_frag:
             opt_nums = []  # type: List[int]
             for opt_name in opt_names:
                 # TODO: could consolidate with checks in core/state.py and option
@@ -239,10 +321,14 @@ class Shopt(vm._Builtin):
                 opt_group = consts.OptionGroupNum(opt_name)
                 if opt_group == opt_group_i.YshUpgrade:
                     opt_nums.extend(consts.YSH_UPGRADE)
+                    if b:
+                        self.mem.MaybeInitEnvDict(self.environ)
                     continue
 
                 if opt_group == opt_group_i.YshAll:
                     opt_nums.extend(consts.YSH_ALL)
+                    if b:
+                        self.mem.MaybeInitEnvDict(self.environ)
                     continue
 
                 if opt_group == opt_group_i.StrictAll:
@@ -251,18 +337,23 @@ class Shopt(vm._Builtin):
 
                 index = consts.OptionNum(opt_name)
                 if index == 0:
-                    # TODO: location info
-                    e_usage('got invalid option %r' % opt_name, loc.Missing)
+                    if self.exec_opts.ignore_shopt_not_impl():
+                        index = consts.UnimplOptionNum(opt_name)
+                    if index == 0:
+                        # TODO: location info
+                        e_usage('got invalid option %r' % opt_name,
+                                loc.Missing)
                 opt_nums.append(index)
 
             with state.ctx_Option(self.mutable_opts, opt_nums, b):
-                unused = self.cmd_ev.EvalCommand(cmd)
+                unused = self.cmd_ev.EvalCommandFrag(cmd_frag)
             return 0  # cd also returns 0
 
         # Otherwise, set options.
+        ignore_shopt_not_impl = self.exec_opts.ignore_shopt_not_impl()
         for opt_name in opt_names:
             # We allow set -o options here
-            self.mutable_opts.SetAnyOption(opt_name, b)
+            self.mutable_opts.SetAnyOption(opt_name, b, ignore_shopt_not_impl)
 
         return 0
 
@@ -270,7 +361,7 @@ class Shopt(vm._Builtin):
 class Hash(vm._Builtin):
 
     def __init__(self, search_path):
-        # type: (SearchPath) -> None
+        # type: (executor.SearchPath) -> None
         self.search_path = search_path
 
     def Run(self, cmd_val):
@@ -441,13 +532,13 @@ def _GetOpts(
 
 class GetOpts(vm._Builtin):
     """
-  Vars used:
-    OPTERR: disable printing of error messages
-  Vars set:
-    The variable named by the second arg
-    OPTIND - initialized to 1 at startup
-    OPTARG - argument
-  """
+    Vars used:
+      OPTERR: disable printing of error messages
+    Vars set:
+      The variable named by the second arg
+      OPTIND - initialized to 1 at startup
+      OPTARG - argument
+    """
 
     def __init__(self, mem, errfmt):
         # type: (Mem, ui.ErrorFormatter) -> None

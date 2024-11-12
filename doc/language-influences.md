@@ -89,6 +89,24 @@ Proc signatures take influence from Python:
 Related: differences documented in [YSH Expressions vs.
 Python](ysh-vs-python.html).
 
+---
+
+J8 strings often have a leading letter, similar to Python's syntax:
+
+    var raw_str = r'C:\Program Files\'    
+    var unicode = u'mu = \u{03bc}'
+    var bytes   = b'\yfe \yff'
+
+---
+
+The syntax of type objects is similar to Python's syntax:
+
+    parser (&spec) {
+      flag --source (List[Str])  # List[Str] is a type object
+    }
+
+(Though YSH always capitalizes type names.)
+
 ### JavaScript
 
 YSH uses JavaScript's dict literals:
@@ -301,6 +319,23 @@ So a `value.Place` behaves like a pointer in some ways.
 
 The `&` syntax may also feel familiar to Rust users.
 
+### C++
+
+Using `->` to indicate mutating methods may feel familiar to C++ users:
+
+    call mylist->append(42)
+
+Compared with:
+
+    var x = mystr.trim()
+
+### Swift/Rust
+
+YSH has an explicit range syntax that is inspired by Swift and Rust:
+
+    $ = 3 ..< 5  # => 3, 4
+    $ = 3 ..= 5  # => 3, 4, 5
+
 ## Related
 
 - [Novelties in OSH and YSH](novelties.html)
@@ -328,13 +363,11 @@ Go for type signatures:
     }
     # what about named return values?
 
-and MyPy for types like List[Int], Dict[Str, Str]
-
+Python/MyPy for types like List[Int], Dict[Str, Str]
 (Swift and Perl 6 also capitalize all types)
 
 Rust:
 
-    0..n and 1..=n ?
     enum
     |x| x+1 
 

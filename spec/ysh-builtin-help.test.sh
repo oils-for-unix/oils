@@ -97,3 +97,28 @@ status=0
 status=0
 ## END
 
+
+#### help oils-err-12 (case insensitive)
+
+# note that the topics are lower-casedo
+
+help oils-err-12 | grep -o 'catalog.html#oils-err-12'
+echo status=$?
+
+help OILS-ERR-12 | grep -o 'catalog.html#oils-err-12'
+echo status=$?
+
+# these are bad
+
+# help oils-err-zz
+# echo status=$?
+
+# help OILS-ERR-zz
+# echo status=$?
+
+## STDOUT:
+catalog.html#oils-err-12
+status=0
+catalog.html#oils-err-12
+status=0
+## END

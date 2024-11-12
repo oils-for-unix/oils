@@ -4,6 +4,7 @@
 
 #include <ctype.h>  // ispunct()
 #include <errno.h>
+#include <float.h>
 #include <math.h>  // fmod()
 #include <pwd.h>   // passwd
 #include <signal.h>
@@ -22,18 +23,17 @@
 #include "_gen/cpp/build_stamp.h"        // gCommitHash
 #include "_gen/frontend/consts.h"        // gVersion
 #include "cpp/embedded_file.h"
+#include "mycpp/gc_iolib.h"
 
 extern char** environ;
 
 namespace pyos {
 
-SignalSafe* gSignalSafe = nullptr;
-
 Tuple2<int, int> WaitPid(int waitpid_options) {
   int status;
   int result = ::waitpid(-1, &status, WUNTRACED | waitpid_options);
   if (result < 0) {
-    if (errno == EINTR && gSignalSafe->PollSigInt()) {
+    if (errno == EINTR && iolib::gSignalSafe->PollUntrappedSigInt()) {
       throw Alloc<KeyboardInterrupt>();
     }
     return Tuple2<int, int>(-1, errno);
@@ -46,7 +46,7 @@ Tuple2<int, int> Read(int fd, int n, List<BigStr*>* chunks) {
 
   int length = ::read(fd, s->data(), n);
   if (length < 0) {
-    if (errno == EINTR && gSignalSafe->PollSigInt()) {
+    if (errno == EINTR && iolib::gSignalSafe->PollUntrappedSigInt()) {
       throw Alloc<KeyboardInterrupt>();
     }
     return Tuple2<int, int>(-1, errno);
@@ -66,7 +66,7 @@ Tuple2<int, int> ReadByte(int fd) {
   unsigned char buf[1];
   ssize_t n = read(fd, &buf, 1);
   if (n < 0) {  // read error
-    if (errno == EINTR && gSignalSafe->PollSigInt()) {
+    if (errno == EINTR && iolib::gSignalSafe->PollUntrappedSigInt()) {
       throw Alloc<KeyboardInterrupt>();
     }
     return Tuple2<int, int>(-1, errno);
@@ -262,34 +262,6 @@ IOError_OSError* FlushStdout() {
   return nullptr;
 }
 
-SignalSafe* InitSignalSafe() {
-  gSignalSafe = Alloc<SignalSafe>();
-  gHeap.RootGlobalVar(gSignalSafe);
-
-  RegisterSignalInterest(SIGINT);  // for KeyboardInterrupt checks
-
-  return gSignalSafe;
-}
-
-void Sigaction(int sig_num, void (*handler)(int)) {
-  struct sigaction act = {};
-  act.sa_handler = handler;
-  if (sigaction(sig_num, &act, nullptr) != 0) {
-    throw Alloc<OSError>(errno);
-  }
-}
-
-static void signal_handler(int sig_num) {
-  assert(gSignalSafe != nullptr);
-  gSignalSafe->UpdateFromSignalHandler(sig_num);
-}
-
-void RegisterSignalInterest(int sig_num) {
-  struct sigaction act = {};
-  act.sa_handler = signal_handler;
-  assert(sigaction(sig_num, &act, nullptr) == 0);
-}
-
 Tuple2<BigStr*, int>* MakeDirCacheKey(BigStr* path) {
   struct stat st;
   if (::stat(path->data(), &st) == -1) {
@@ -329,7 +301,13 @@ void PopTermAttrs(int fd, int orig_local_modes, void* term_attrs) {
 
 namespace pyutil {
 
-static grammar::Grammar* gOilGrammar = nullptr;
+double infinity() {
+  return INFINITY;  // float.h
+}
+
+double nan() {
+  return NAN;  // float.h
+}
 
 // TODO: SHARE with pyext
 bool IsValidCharEscape(BigStr* c) {
@@ -404,6 +382,8 @@ BigStr* strerror(IOError_OSError* e) {
   BigStr* s = StrFromC(::strerror(e->errno_));
   return s;
 }
+
+static grammar::Grammar* gOilGrammar = nullptr;
 
 grammar::Grammar* LoadYshGrammar(_ResourceLoader*) {
   if (gOilGrammar != nullptr) {

@@ -172,7 +172,46 @@ len=2
 pass
 ## END
 
-#### Mixing read --line with read -r
+#### read --raw-line handles line without end, --with-eol
+
+write --end '' $'a\nb\n' | while read --raw-line; do
+  pp test_ (_reply)
+done
+
+echo
+
+write --end '' $'a\nb' | while read --raw-line; do
+  pp test_ (_reply)
+done
+
+echo
+
+write --end '' $'a\nb\n' | while read --raw-line --with-eol; do
+  pp test_ (_reply)
+done
+
+echo
+
+write --end '' $'a\nb' | while read --raw-line --with-eol; do
+  pp test_ (_reply)
+done
+
+
+## STDOUT:
+(Str)   "a"
+(Str)   "b"
+
+(Str)   "a"
+(Str)   "b"
+
+(Str)   "a\n"
+(Str)   "b\n"
+
+(Str)   "a\n"
+(Str)   "b"
+## END
+
+#### Mixing read --raw-line with read -r
 
 $SH $REPO_ROOT/spec/testdata/ysh-read-0.sh
 
@@ -192,7 +231,7 @@ _reply=3
 REPLY=4
 ## END
 
-#### read --line --with-eol
+#### read --raw-line --with-eol
 
 $SH $REPO_ROOT/spec/testdata/ysh-read-1.sh
 
@@ -396,6 +435,92 @@ status=1
 status=2
 ## END
 
+#### test --true; test --false
+shopt --set ysh:upgrade
+
+for expr in (true, false, '', 'other') {
+  pp test_ (expr)
+
+  try {
+    test --true $[expr]
+  }
+  echo true=$[_error.code]
+
+  try {
+    test --false $[expr]
+  }
+  echo false=$[_error.code]
+  echo
+}
+
+## STDOUT:
+(Bool)   true
+true=0
+false=1
+
+(Bool)   false
+true=1
+false=0
+
+(Str)   ""
+true=1
+false=1
+
+(Str)   "other"
+true=1
+false=1
+
+## END
+
+#### More test --true --false
+shopt --set ysh:upgrade
+
+var d = {}
+
+try {
+  test --true $[bool(d)]
+}
+echo dict=$[_error.code]
+
+setvar d.key = 'val'
+
+try {
+  test --true $[bool(d)]
+}
+echo dict=$[_error.code]
+
+echo
+
+if test --true $[bool(d)] && ! test -f / {
+  echo AndOr
+}
+
+## STDOUT:
+dict=1
+dict=0
+
+AndOr
+## END
+
+
+#### Make sure [[ is not affected by --true --false
+
+set +o errexit
+
+$SH +o ysh:all -c '[[ --true ]]; echo dbracket=$?'
+$SH +o ysh:all -c '[[ --false ]]; echo dbracket=$?'
+
+$SH +o ysh:all -c '[[ --true true ]]; echo dbracket=$?'
+echo "parse error $?"
+$SH +o ysh:all -c '[[ --false false ]]; echo dbracket=$?'
+echo "parse error $?"
+
+## STDOUT:
+dbracket=0
+dbracket=0
+parse error 2
+parse error 2
+## END
 
 #### push-registers
 shopt --set ysh:upgrade
@@ -450,14 +575,14 @@ hi
 status=0
 ## END
 
-#### fopen
+#### redir
 shopt --set parse_brace parse_proc
 
 proc p {
   echo 'proc'
 }
 
-fopen >out.txt {
+redir >out.txt {
   p
   echo 'builtin'
 }
@@ -466,12 +591,12 @@ cat out.txt
 
 echo ---
 
-fopen <out.txt {
+redir <out.txt {
   tac
 }
 
 # Awkward bash syntax, but we'll live with it
-fopen {left}>left.txt {right}>right.txt {
+redir {left}>left.txt {right}>right.txt {
   echo 1 >& $left
   echo 1 >& $right
 
@@ -511,9 +636,9 @@ func f() {
 
 echo $[type(f)]
 echo $[type(len)]
-echo $[type('foo'->startsWith)]
+echo $[type('foo'=>startsWith)]
 echo $[type('foo'=>join)]  # Type error happens later
-echo $[type(1..3)]
+echo $[type(1..<3)]
 ## STDOUT:
 Int
 Str
@@ -546,6 +671,6 @@ echo status=$?
 ## STDOUT:
 status=0
 status=0
-status=2
-status=2
+status=1
+status=1
 ## END

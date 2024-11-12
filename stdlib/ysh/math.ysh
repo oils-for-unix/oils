@@ -1,0 +1,87 @@
+const __provide__ = :| identity max min abs |
+
+func identity(x) {
+  ### The identity function. Returns its argument.
+
+  return (x)
+}
+
+func __math_select(list, cmp) {
+  ## Internal helper for `max` and `min`.
+  ##
+  ## NOTE: If `list` is empty, then an error is thrown.
+
+  if (len(list) === 0) {
+    error "Unexpected empty list" (code=3)
+  }
+
+  if (len(list) === 1) {
+    return (list[0])
+  }
+
+  var match = list[0]
+  for i in (1 ..< len(list)) {
+    setvar match = cmp(list[i], match)
+  }
+  return (match)
+}
+
+func max(...args) {
+  ## Compute the maximum of 2 or more values.
+  ##
+  ## `max` takes two different signatures:
+  ##  - `max(a, b)` to return the maximum of `a`, `b`
+  ##  - `max(list)` to return the greatest item in the `list`
+  ##
+  ## So, for example:
+  ##
+  ##   max(1, 2)  # => 2
+  ##   max([1, 2, 3])  # => 3
+
+  case (len(args)) {
+    (1) { return (__math_select(args[0], max)) }
+    (2) {
+      if (args[0] > args[1]) {
+        return (args[0])
+      } else {
+        return (args[1])
+      }
+    }
+    (else) { error "max expects 1 or 2 args" (code=3) }
+  }
+}
+
+func min(...args) {
+  ## Compute the minimum of 2 or more values.
+  ##
+  ## `min` takes two different signatures:
+  ##  - `min(a, b)` to return the minimum of `a`, `b`
+  ##  - `min(list)` to return the least item in the `list`
+  ##
+  ## So, for example:
+  ##
+  ##   min(2, 3)  # => 2
+  ##   max([1, 2, 3])  # => 1
+
+  case (len(args)) {
+    (1) { return (__math_select(args[0], min)) }
+    (2) {
+      if (args[0] < args[1]) {
+        return (args[0])
+      } else {
+        return (args[1])
+      }
+    }
+    (else) { error "min expects 1 or 2 args" (code=3) }
+  }
+}
+
+func abs(x) {
+  ## Compute the absolute (positive) value of a number (float or int).
+
+  if (x < 0) {
+    return (-x)
+  } else {
+    return (x)
+  }
+}

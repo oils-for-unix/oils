@@ -231,7 +231,7 @@ Yes:
 
 Yes:
 
-    for line in (stdin) {
+    for line in (io.stdin) {
       echo $line
     }
     # this reads buffered lines, which is much faster
@@ -350,12 +350,12 @@ No:
 
 Yes:
 
-    fopen > out.txt {
+    redir > out.txt {
       echo 1
       echo 2
     }
 
-The `fopen` builtin is syntactic sugar -- it lets you see redirects before the
+The `redir` builtin is syntactic sugar -- it lets you see redirects before the
 code that uses them.
 
 ### Temporarily Set Shell Options

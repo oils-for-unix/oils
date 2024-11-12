@@ -11,9 +11,11 @@ static PyMethodDef methods[] = {
   {"MatchJ8LinesToken", fastlex_MatchJ8LinesToken, METH_VARARGS},
   {"MatchJ8StrToken", fastlex_MatchJ8StrToken, METH_VARARGS},
   {"MatchJsonStrToken", fastlex_MatchJsonStrToken, METH_VARARGS},
+  {"MatchShNumberToken", fastlex_MatchShNumberToken, METH_VARARGS},
   {"IsValidVarName", fastlex_IsValidVarName, METH_VARARGS},
   {"ShouldHijack", fastlex_ShouldHijack, METH_VARARGS},
   {"LooksLikeInteger", fastlex_LooksLikeInteger, METH_VARARGS},
-  {"LooksLikeFloat", fastlex_LooksLikeFloat, METH_VARARGS},
+  {"LooksLikeYshInt", fastlex_LooksLikeYshInt, METH_VARARGS},
+  {"LooksLikeYshFloat", fastlex_LooksLikeYshFloat, METH_VARARGS},
   {0},
 };

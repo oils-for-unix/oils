@@ -16,17 +16,15 @@ from _devbuild.gen.runtime_asdl import (scope_e, scope_t, Cell)
 from _devbuild.gen.syntax_asdl import (loc, loc_t, Token, debug_frame,
                                        debug_frame_e, debug_frame_t)
 from _devbuild.gen.types_asdl import opt_group_i
-from _devbuild.gen.value_asdl import (value, value_e, value_t, sh_lvalue,
+from _devbuild.gen.value_asdl import (value, value_e, value_t, Obj, sh_lvalue,
                                       sh_lvalue_e, sh_lvalue_t, LeftName,
                                       y_lvalue_e, regex_match, regex_match_e,
                                       regex_match_t, RegexMatch)
 from core import error
 from core.error import e_usage, e_die
 from core import num
-from core import pyos
-from core import pyutil
 from core import optview
-from core import ui
+from display import ui
 from core import util
 from frontend import consts
 from frontend import location
@@ -35,13 +33,9 @@ from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import (log, print_stderr, str_switch, tagswitch, iteritems,
                          NewDict)
-from osh import split
 from pylib import os_path
-from pylib import path_stat
 
-import libc
 import posix_ as posix
-from posix_ import X_OK  # translated directly to C macro
 
 from typing import Tuple, List, Dict, Optional, Any, cast, TYPE_CHECKING
 
@@ -52,12 +46,6 @@ if TYPE_CHECKING:
 
 _ = log
 
-# This was derived from bash --norc -c 'argv "$COMP_WORDBREAKS".
-# Python overwrites this to something Python-specific in Modules/readline.c, so
-# we have to set it back!
-# Used in both core/competion.py and osh/state.py
-_READLINE_DELIMS = ' \t\n"\'><=;|&(:'
-
 # flags for mem.SetValue()
 SetReadOnly = 1 << 0
 ClearReadOnly = 1 << 1
@@ -65,112 +53,6 @@ SetExport = 1 << 2
 ClearExport = 1 << 3
 SetNameref = 1 << 4
 ClearNameref = 1 << 5
-
-
-def LookupExecutable(name, path_dirs, exec_required=True):
-    # type: (str, List[str], bool) -> Optional[str]
-    """
-    Returns either
-    - the name if it's a relative path that exists
-    - the executable name resolved against path_dirs
-    - None if not found
-    """
-    if len(name) == 0:  # special case for "$(true)"
-        return None
-
-    if '/' in name:
-        return name if path_stat.exists(name) else None
-
-    for path_dir in path_dirs:
-        full_path = os_path.join(path_dir, name)
-        if exec_required:
-            found = posix.access(full_path, X_OK)
-        else:
-            found = path_stat.exists(full_path)
-
-        if found:
-            return full_path
-
-    return None
-
-
-class SearchPath(object):
-    """For looking up files in $PATH."""
-
-    def __init__(self, mem):
-        # type: (Mem) -> None
-        self.mem = mem
-        self.cache = {}  # type: Dict[str, str]
-
-    def _GetPath(self):
-        # type: () -> List[str]
-
-        # TODO: Could cache this to avoid split() allocating all the time.
-        val = self.mem.GetValue('PATH')
-        UP_val = val
-        if val.tag() == value_e.Str:
-            val = cast(value.Str, UP_val)
-            return val.s.split(':')
-        else:
-            return []  # treat as empty path
-
-    def LookupOne(self, name, exec_required=True):
-        # type: (str, bool) -> Optional[str]
-        """
-        Returns the path itself (if relative path), the resolved path, or None.
-        """
-        return LookupExecutable(name,
-                                self._GetPath(),
-                                exec_required=exec_required)
-
-    def LookupReflect(self, name, do_all):
-        # type: (str, bool) -> List[str]
-        """
-        Like LookupOne(), with an option for 'type -a' to return all paths.
-        """
-        if len(name) == 0:  # special case for "$(true)"
-            return []
-
-        if '/' in name:
-            if path_stat.exists(name):
-                return [name]
-            else:
-                return []
-
-        results = []  # type: List[str]
-        for path_dir in self._GetPath():
-            full_path = os_path.join(path_dir, name)
-            if path_stat.exists(full_path):
-                results.append(full_path)
-                if not do_all:
-                    return results
-
-        return results
-
-    def CachedLookup(self, name):
-        # type: (str) -> Optional[str]
-        #log('name %r', name)
-        if name in self.cache:
-            return self.cache[name]
-
-        full_path = self.LookupOne(name)
-        if full_path is not None:
-            self.cache[name] = full_path
-        return full_path
-
-    def MaybeRemoveEntry(self, name):
-        # type: (str) -> None
-        """When the file system changes."""
-        mylib.dict_erase(self.cache, name)
-
-    def ClearCache(self):
-        # type: () -> None
-        """For hash -r."""
-        self.cache.clear()
-
-    def CachedCommands(self):
-        # type: () -> List[str]
-        return self.cache.values()
 
 
 class ctx_Source(object):
@@ -286,7 +168,21 @@ class ctx_YshExpr(object):
 
     def __init__(self, mutable_opts):
         # type: (MutableOpts) -> None
+
+        # Similar to $LIB_OSH/bash-strict.sh
+
+        # TODO: consider errexit:all group, or even ysh:all
+        # It would be nice if this were more efficient
         mutable_opts.Push(option_i.command_sub_errexit, True)
+        mutable_opts.Push(option_i.errexit, True)
+        mutable_opts.Push(option_i.pipefail, True)
+        mutable_opts.Push(option_i.inherit_errexit, True)
+        mutable_opts.Push(option_i.strict_errexit, True)
+
+        # What about nounset?  This has a similar pitfall -- it's not running
+        # like YSH.
+        # e.g. var x = $(echo $zz)
+
         self.mutable_opts = mutable_opts
 
     def __enter__(self):
@@ -296,6 +192,10 @@ class ctx_YshExpr(object):
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
         self.mutable_opts.Pop(option_i.command_sub_errexit)
+        self.mutable_opts.Pop(option_i.errexit)
+        self.mutable_opts.Pop(option_i.pipefail)
+        self.mutable_opts.Pop(option_i.inherit_errexit)
+        self.mutable_opts.Pop(option_i.strict_errexit)
 
 
 class ctx_ErrExit(object):
@@ -366,13 +266,13 @@ def InitOpts():
     return opt0_array
 
 
-def MakeOpts(mem, opt_hook):
-    # type: (Mem, OptHook) -> Tuple[optview.Parse, optview.Exec, MutableOpts]
+def MakeOpts(mem, environ, opt_hook):
+    # type: (Mem, Dict[str, str], OptHook) -> Tuple[optview.Parse, optview.Exec, MutableOpts]
 
     # Unusual representation: opt0_array + opt_stacks.  For two features:
     #
     # - POSIX errexit disable semantics
-    # - Oil's shopt --set nullglob { ... }
+    # - YSH shopt --set nullglob { ... }
     #
     # We could do it with a single List of stacks.  But because shopt --set
     # random_option { ... } is very uncommon, we optimize and store the ZERO
@@ -387,7 +287,7 @@ def MakeOpts(mem, opt_hook):
 
     parse_opts = optview.Parse(opt0_array, opt_stacks)
     exec_opts = optview.Exec(opt0_array, opt_stacks)
-    mutable_opts = MutableOpts(mem, opt0_array, opt_stacks, opt_hook)
+    mutable_opts = MutableOpts(mem, environ, opt0_array, opt_stacks, opt_hook)
 
     return parse_opts, exec_opts, mutable_opts
 
@@ -399,7 +299,7 @@ def _SetGroup(opt0_array, opt_nums, b):
         opt0_array[opt_num] = b2
 
 
-def MakeOilOpts():
+def MakeYshParseOpts():
     # type: () -> optview.Parse
     opt0_array = InitOpts()
     _SetGroup(opt0_array, consts.YSH_ALL, True)
@@ -411,13 +311,16 @@ def MakeOilOpts():
     return parse_opts
 
 
-def _AnyOptionNum(opt_name):
-    # type: (str) -> option_t
+def _AnyOptionNum(opt_name, ignore_shopt_not_impl):
+    # type: (str, bool) -> option_t
     opt_num = consts.OptionNum(opt_name)
     if opt_num == 0:
-        e_usage('got invalid option %r' % opt_name, loc.Missing)
+        if ignore_shopt_not_impl:
+            opt_num = consts.UnimplOptionNum(opt_name)
+        if opt_num == 0:
+            e_usage('got invalid option %r' % opt_name, loc.Missing)
 
-    # Note: we relaxed this for Oil so we can do 'shopt --unset errexit' consistently
+    # Note: we relaxed this for YSH so we can do 'shopt --unset errexit' consistently
     #if opt_num not in consts.SHOPT_OPTION_NUMS:
     #  e_usage("doesn't own option %r (try 'set')" % opt_name)
 
@@ -438,9 +341,10 @@ def _SetOptionNum(opt_name):
 
 class MutableOpts(object):
 
-    def __init__(self, mem, opt0_array, opt_stacks, opt_hook):
-        # type: (Mem, List[bool], List[List[bool]], OptHook) -> None
+    def __init__(self, mem, environ, opt0_array, opt_stacks, opt_hook):
+        # type: (Mem, Dict[str, str], List[bool], List[List[bool]], OptHook) -> None
         self.mem = mem
+        self.environ = environ
         self.opt0_array = opt0_array
         self.opt_stacks = opt_stacks
         self.errexit_disabled_tok = []  # type: List[Token]
@@ -452,11 +356,12 @@ class MutableOpts(object):
         # type: () -> None
 
         # This comes after all the 'set' options.
-        UP_shellopts = self.mem.GetValue('SHELLOPTS')
-        # Always true in Oil, see Init above
-        if UP_shellopts.tag() == value_e.Str:
-            shellopts = cast(value.Str, UP_shellopts)
-            self._InitOptionsFromEnv(shellopts.s)
+        shellopts = self.mem.GetValue('SHELLOPTS')
+
+        # True in OSH, but not in YSH (no_init_globals)
+        if shellopts.tag() == value_e.Str:
+            s = cast(value.Str, shellopts).s
+            self._InitOptionsFromEnv(s)
 
     def _InitOptionsFromEnv(self, shellopts):
         # type: (str) -> None
@@ -520,23 +425,19 @@ class MutableOpts(object):
         # type: () -> None
         self._Set(option_i.interactive, True)
 
-    def set_redefine_proc_func(self):
+    def set_redefine_const(self):
         # type: () -> None
         """For interactive shells."""
-        self._Set(option_i.redefine_proc_func, True)
+        self._Set(option_i.redefine_const, True)
 
-    def set_redefine_module(self):
+    def set_redefine_source(self):
         # type: () -> None
-        """For interactive shells."""
-        self._Set(option_i.redefine_module, True)
+        """For interactive shells.  For source-guard"""
+        self._Set(option_i.redefine_source, True)
 
     def set_emacs(self):
         # type: () -> None
         self._Set(option_i.emacs, True)
-
-    def set_xtrace(self, b):
-        # type: (bool) -> None
-        self._Set(option_i.xtrace, b)
 
     def _SetArrayByNum(self, opt_num, b):
         # type: (int, bool) -> None
@@ -552,7 +453,7 @@ class MutableOpts(object):
         """Set the errexit flag, possibly deferring it.
 
         Implements the unusual POSIX "defer" behavior.  Callers: set -o
-        errexit, shopt -s oil:all, oil:upgrade
+        errexit, shopt -s ysh:all, ysh:upgrade
         """
         #log('Set %s', b)
 
@@ -617,103 +518,63 @@ class MutableOpts(object):
         unused = _SetOptionNum(opt_name)  # validate it
         self._SetOldOption(opt_name, b)
 
-        UP_val = self.mem.GetValue('SHELLOPTS')
-        assert UP_val.tag() == value_e.Str, UP_val
-        val = cast(value.Str, UP_val)
-        shellopts = val.s
+        if not self.Get(option_i.no_init_globals):
+            UP_val = self.mem.GetValue('SHELLOPTS')
+            assert UP_val.tag() == value_e.Str, UP_val
+            val = cast(value.Str, UP_val)
+            shellopts = val.s
 
-        # Now check if SHELLOPTS needs to be updated.  It may be exported.
-        #
-        # NOTE: It might be better to skip rewriting SEHLLOPTS in the common case
-        # where it is not used.  We could do it lazily upon GET.
+            # Now check if SHELLOPTS needs to be updated.  It may be exported.
+            #
+            # NOTE: It might be better to skip rewriting SEHLLOPTS in the common case
+            # where it is not used.  We could do it lazily upon GET.
 
-        # Also, it would be slightly more efficient to update SHELLOPTS if
-        # settings were batched, Examples:
-        # - set -eu
-        # - shopt -s foo bar
-        if b:
-            if opt_name not in shellopts:
-                new_val = value.Str('%s:%s' % (shellopts, opt_name))
-                self.mem.InternalSetGlobal('SHELLOPTS', new_val)
-        else:
-            if opt_name in shellopts:
-                names = [n for n in shellopts.split(':') if n != opt_name]
-                new_val = value.Str(':'.join(names))
-                self.mem.InternalSetGlobal('SHELLOPTS', new_val)
+            # Also, it would be slightly more efficient to update SHELLOPTS if
+            # settings were batched, Examples:
+            # - set -eu
+            # - shopt -s foo bar
+            if b:
+                if opt_name not in shellopts:
+                    new_val = value.Str('%s:%s' % (shellopts, opt_name))
+                    self.mem.InternalSetGlobal('SHELLOPTS', new_val)
+            else:
+                if opt_name in shellopts:
+                    names = [n for n in shellopts.split(':') if n != opt_name]
+                    new_val = value.Str(':'.join(names))
+                    self.mem.InternalSetGlobal('SHELLOPTS', new_val)
 
-    def SetAnyOption(self, opt_name, b):
-        # type: (str, bool) -> None
+    def SetAnyOption(self, opt_name, b, ignore_shopt_not_impl=False):
+        # type: (str, bool, bool) -> None
         """For shopt -s/-u and sh -O/+O."""
 
-        # shopt -s all:oil turns on all Oil options, which includes all strict #
+        # shopt -s ysh:all turns on all YSH options, which includes all strict
         # options
         opt_group = consts.OptionGroupNum(opt_name)
         if opt_group == opt_group_i.YshUpgrade:
             _SetGroup(self.opt0_array, consts.YSH_UPGRADE, b)
             self.SetDeferredErrExit(b)  # Special case
+            if b:  # ENV dict
+                self.mem.MaybeInitEnvDict(self.environ)
             return
 
         if opt_group == opt_group_i.YshAll:
             _SetGroup(self.opt0_array, consts.YSH_ALL, b)
             self.SetDeferredErrExit(b)  # Special case
+            if b:  # ENV dict
+                self.mem.MaybeInitEnvDict(self.environ)
             return
 
         if opt_group == opt_group_i.StrictAll:
             _SetGroup(self.opt0_array, consts.STRICT_ALL, b)
             return
 
-        opt_num = _AnyOptionNum(opt_name)
+        opt_num = _AnyOptionNum(opt_name, ignore_shopt_not_impl)
 
         if opt_num == option_i.errexit:
             self.SetDeferredErrExit(b)
             return
 
         self._SetArrayByNum(opt_num, b)
-
-    def ShowOptions(self, opt_names):
-        # type: (List[str]) -> None
-        """For 'set -o' and 'shopt -p -o'."""
-        # TODO: Maybe sort them differently?
-
-        if len(opt_names) == 0:  # if none, supplied, show all
-            opt_names = [consts.OptionName(i) for i in consts.SET_OPTION_NUMS]
-
-        for opt_name in opt_names:
-            opt_num = _SetOptionNum(opt_name)
-            b = self.Get(opt_num)
-            print('set %so %s' % ('-' if b else '+', opt_name))
-
-    def ShowShoptOptions(self, opt_names):
-        # type: (List[str]) -> None
-        """For 'shopt -p'."""
-
-        # Respect option groups.
-        opt_nums = []  # type: List[int]
-        for opt_name in opt_names:
-            opt_group = consts.OptionGroupNum(opt_name)
-            if opt_group == opt_group_i.YshUpgrade:
-                opt_nums.extend(consts.YSH_UPGRADE)
-            elif opt_group == opt_group_i.YshAll:
-                opt_nums.extend(consts.YSH_ALL)
-            elif opt_group == opt_group_i.StrictAll:
-                opt_nums.extend(consts.STRICT_ALL)
-            else:
-                index = consts.OptionNum(opt_name)
-                # Minor incompatibility with bash: we validate everything before
-                # printing.
-                if index == 0:
-                    e_usage('got invalid option %r' % opt_name, loc.Missing)
-                opt_nums.append(index)
-
-        if len(opt_names) == 0:
-            # If none supplied, show all>
-            # TODO: Should this show 'set' options too?
-            opt_nums.extend(consts.VISIBLE_SHOPT_NUMS)
-
-        for opt_num in opt_nums:
-            b = self.Get(opt_num)
-            print('shopt -%s %s' %
-                  ('s' if b else 'u', consts.OptionName(opt_num)))
 
 
 class _ArgFrame(object):
@@ -731,14 +592,19 @@ class _ArgFrame(object):
 
     def Dump(self):
         # type: () -> Dict[str, value_t]
+        items = [value.Str(s) for s in self.argv]  # type: List[value_t]
+        argv = value.List(items)
         return {
-            # Easier to serialize value.BashArray than value.List
-            'argv': value.BashArray(self.argv),
+            'argv': argv,
             'num_shifted': num.ToBig(self.num_shifted),
         }
 
     def GetArgNum(self, arg_num):
         # type: (int) -> value_t
+
+        # $0 is handled elsewhere
+        assert 1 <= arg_num, arg_num
+
         index = self.num_shifted + arg_num - 1
         if index >= len(self.argv):
             return value.Undef
@@ -787,19 +653,10 @@ def _DumpVarFrame(frame):
 
         with tagswitch(cell.val) as case:
             if case(value_e.Undef):
-                cell_json['type'] = value.Str('Undef')
+                cell_json['val'] = value.Null
 
-            elif case(value_e.Str):
-                cell_json['type'] = value.Str('Str')
-                cell_json['value'] = cell.val
-
-            elif case(value_e.BashArray):
-                cell_json['type'] = value.Str('BashArray')
-                cell_json['value'] = cell.val
-
-            elif case(value_e.BashAssoc):
-                cell_json['type'] = value.Str('BashAssoc')
-                cell_json['value'] = cell.val
+            elif case(value_e.Str, value_e.BashArray, value_e.BashAssoc):
+                cell_json['val'] = cell.val
 
             else:
                 # TODO: should we show the object ID here?
@@ -808,15 +665,6 @@ def _DumpVarFrame(frame):
         vars_json[name] = value.Dict(cell_json)
 
     return vars_json
-
-
-def _GetWorkingDir():
-    # type: () -> str
-    """Fallback for pwd and $PWD when there's no 'cd' and no inherited $PWD."""
-    try:
-        return posix.getcwd()
-    except (IOError, OSError) as e:
-        e_die("Can't determine working directory: %s" % pyutil.strerror(e))
 
 
 def _LineNumber(tok):
@@ -836,133 +684,22 @@ def _AddCallToken(d, token):
     d['call_line'] = value.Str(token.line.content)
 
 
-def _InitDefaults(mem):
-    # type: (Mem) -> None
-
-    # Default value; user may unset it.
-    # $ echo -n "$IFS" | python -c 'import sys;print repr(sys.stdin.read())'
-    # ' \t\n'
-    SetGlobalString(mem, 'IFS', split.DEFAULT_IFS)
-
-    # NOTE: Should we put these in a name_map for Oil?
-    SetGlobalString(mem, 'UID', str(posix.getuid()))
-    SetGlobalString(mem, 'EUID', str(posix.geteuid()))
-    SetGlobalString(mem, 'PPID', str(posix.getppid()))
-
-    SetGlobalString(mem, 'HOSTNAME', libc.gethostname())
-
-    # In bash, this looks like 'linux-gnu', 'linux-musl', etc.  Scripts test
-    # for 'darwin' and 'freebsd' too.  They generally don't like at 'gnu' or
-    # 'musl'.  We don't have that info, so just make it 'linux'.
-    SetGlobalString(mem, 'OSTYPE', pyos.OsType())
-
-    # For getopts builtin
-    SetGlobalString(mem, 'OPTIND', '1')
-
-    # When xtrace_rich is off, this is just like '+ ', the shell default
-    SetGlobalString(mem, 'PS4', '${SHX_indent}${SHX_punct}${SHX_pid_str} ')
-
-    # bash-completion uses this.  Value copied from bash.  It doesn't integrate
-    # with 'readline' yet.
-    SetGlobalString(mem, 'COMP_WORDBREAKS', _READLINE_DELIMS)
-
-    # TODO on $HOME: bash sets it if it's a login shell and not in POSIX mode!
-    # if (login_shell == 1 && posixly_correct == 0)
-    #   set_home_var ();
-
-
-def _InitVarsFromEnv(mem, environ):
-    # type: (Mem, Dict[str, str]) -> None
-
-    # This is the way dash and bash work -- at startup, they turn everything in
-    # 'environ' variable into shell variables.  Bash has an export_env
-    # variable.  Dash has a loop through environ in init.c
-    for n, v in iteritems(environ):
-        mem.SetNamed(location.LName(n),
-                     value.Str(v),
-                     scope_e.GlobalOnly,
-                     flags=SetExport)
-
-    # If it's not in the environment, initialize it.  This makes it easier to
-    # update later in MutableOpts.
-
-    # TODO: IFS, etc. should follow this pattern.  Maybe need a SysCall
-    # interface?  self.syscall.getcwd() etc.
-
-    val = mem.GetValue('SHELLOPTS')
-    if val.tag() == value_e.Undef:
-        SetGlobalString(mem, 'SHELLOPTS', '')
-    # Now make it readonly
-    mem.SetNamed(location.LName('SHELLOPTS'),
-                 None,
-                 scope_e.GlobalOnly,
-                 flags=SetReadOnly)
-
-    # Usually we inherit PWD from the parent shell.  When it's not set, we may
-    # compute it.
-    val = mem.GetValue('PWD')
-    if val.tag() == value_e.Undef:
-        SetGlobalString(mem, 'PWD', _GetWorkingDir())
-    # Now mark it exported, no matter what.  This is one of few variables
-    # EXPORTED.  bash and dash both do it.  (e.g. env -i -- dash -c env)
-    mem.SetNamed(location.LName('PWD'),
-                 None,
-                 scope_e.GlobalOnly,
-                 flags=SetExport)
-
-    val = mem.GetValue('PATH')
-    if val.tag() == value_e.Undef:
-        # Setting PATH to these two dirs match what zsh and mksh do.  bash and dash
-        # add {,/usr/,/usr/local}/{bin,sbin}
-        SetGlobalString(mem, 'PATH', '/bin:/usr/bin')
-
-
-def InitMem(mem, environ, version_str):
-    # type: (Mem, Dict[str, str], str) -> None
-    """Initialize memory with shell defaults.
-
-    Other interpreters could have different builtin variables.
-    """
-    # TODO: REMOVE this legacy.  ble.sh checks it!
-    SetGlobalString(mem, 'OIL_VERSION', version_str)
-
-    SetGlobalString(mem, 'OILS_VERSION', version_str)
-
-    # The source builtin understands '///' to mean "relative to embedded stdlib"
-    SetGlobalString(mem, 'LIB_OSH', '///osh')
-    SetGlobalString(mem, 'LIB_YSH', '///ysh')
-
-    _InitDefaults(mem)
-    _InitVarsFromEnv(mem, environ)
-
-    # MUTABLE GLOBAL that's SEPARATE from $PWD.  Used by the 'pwd' builtin, but
-    # it can't be modified by users.
-    val = mem.GetValue('PWD')
-    # should be true since it's exported
-    assert val.tag() == value_e.Str, val
-    pwd = cast(value.Str, val).s
-    mem.SetPwd(pwd)
-
-
-def InitInteractive(mem):
-    # type: (Mem) -> None
-    """Initialization that's only done in the interactive/headless shell."""
-
-    # Same default PS1 as bash
-    if mem.GetValue('PS1').tag() == value_e.Undef:
-        SetGlobalString(mem, 'PS1', r'\s-\v\$ ')
-
-
 class ctx_FuncCall(object):
     """For func calls."""
 
     def __init__(self, mem, func):
         # type: (Mem, value.Func) -> None
 
+        self.saved_globals = mem.var_stack[0]
+
+        assert func.module_frame is not None
+        mem.var_stack[0] = func.module_frame
+
         frame = NewDict()  # type: Dict[str, Cell]
         mem.var_stack.append(frame)
 
         mem.PushCall(func.name, func.parsed.name)
+
         self.mem = mem
 
     def __enter__(self):
@@ -974,6 +711,8 @@ class ctx_FuncCall(object):
         self.mem.PopCall()
         self.mem.var_stack.pop()
 
+        self.mem.var_stack[0] = self.saved_globals
+
 
 class ctx_ProcCall(object):
     """For proc calls, including shell functions."""
@@ -982,13 +721,14 @@ class ctx_ProcCall(object):
         # type: (Mem, MutableOpts, value.Proc, List[str]) -> None
 
         # TODO:
-        # - argv stack shouldn't be used for procs
-        #   - we can bind a real variable @A if we want
-        # - procs should be in the var namespace
-        #
         # should we separate procs and shell functions?
         # - dynamic scope is one difference
         # - '$@" shift etc. are another difference
+
+        self.saved_globals = mem.var_stack[0]
+
+        assert proc.module_frame is not None
+        mem.var_stack[0] = proc.module_frame
 
         frame = NewDict()  # type: Dict[str, Cell]
 
@@ -1028,14 +768,16 @@ class ctx_ProcCall(object):
         if self.sh_compat:
             self.mem.argv_stack.pop()
 
+        self.mem.var_stack[0] = self.saved_globals
+
 
 class ctx_Temp(object):
-    """For FOO=bar myfunc, etc."""
+    """ POSIX shell FOO=bar mycommand """
 
     def __init__(self, mem):
         # type: (Mem) -> None
-        mem.PushTemp()
         self.mem = mem
+        mem.PushTemp()
 
     def __enter__(self):
         # type: () -> None
@@ -1044,6 +786,23 @@ class ctx_Temp(object):
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
         self.mem.PopTemp()
+
+
+class ctx_EnvObj(object):
+    """YSH FOO=bar my-command"""
+
+    def __init__(self, mem, bindings):
+        # type: (Mem, Dict[str, value_t]) -> None
+        self.mem = mem
+        mem.PushEnvObj(bindings)
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        self.mem.PopEnvObj()
 
 
 class ctx_Registers(object):
@@ -1116,6 +875,274 @@ def _MakeArgvCell(argv):
     return Cell(False, False, False, value.List(items))
 
 
+class ctx_LoopFrame(object):
+
+    def __init__(self, mem, name1):
+        # type: (Mem, str) -> None
+        self.mem = mem
+        self.name1 = name1
+        self.do_new_frame = name1 == '__hack__'
+
+        if self.do_new_frame:
+            to_enclose = self.mem.var_stack[-1]
+            self.new_frame = NewDict()  # type: Dict[str, Cell]
+            self.new_frame['__E__'] = Cell(False, False, False,
+                                           value.Frame(to_enclose))
+            mem.var_stack.append(self.new_frame)
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        if self.do_new_frame:
+            self.mem.var_stack.pop()
+
+
+class ctx_EnclosedFrame(object):
+    """
+    Usages:
+
+    - io->evalToDict(), which is a primitive used for Hay and the Dict proc
+    - lexical scope aka static scope for block args to user-defined procs
+      - Including the "closures in a loop" problem, which will be used for Hay
+
+    var mutated = 'm'
+    var shadowed = 's'
+
+    Dict (&d) {
+      shadowed = 42
+      mutated = 'new'  # this is equivalent to var mutated
+
+      setvar mutated = 'new'
+    }
+    echo $shadowed  # restored to 's'
+    echo $mutated  # new
+
+    Or maybe we disallow the setvar lookup?
+    """
+
+    def __init__(
+            self,
+            mem,  # type: Mem
+            to_enclose,  # type: Dict[str, Cell]
+            module_frame,  # type: Dict[str, Cell]
+            out_dict,  # type: Optional[Dict[str, value_t]]
+    ):
+        # type: (...) -> None
+        self.mem = mem
+        self.to_enclose = to_enclose
+        self.module_frame = module_frame
+        self.out_dict = out_dict
+
+        if module_frame is not None:
+            self.saved_globals = self.mem.var_stack[0]
+            self.mem.var_stack[0] = module_frame
+
+        # __E__ gets a lookup rule
+        self.new_frame = NewDict()  # type: Dict[str, Cell]
+        self.new_frame['__E__'] = Cell(False, False, False,
+                                       value.Frame(to_enclose))
+
+        mem.var_stack.append(self.new_frame)
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+
+        if self.out_dict is not None:
+            for name, cell in iteritems(self.new_frame):
+                #log('name %r', name)
+                #log('cell %r', cell)
+
+                # User can hide variables with _ suffix
+                # e.g. for i_ in foo bar { echo $i_ }
+                if name.endswith('_'):
+                    continue
+
+                self.out_dict[name] = cell.val
+
+        # Restore
+        self.mem.var_stack.pop()
+
+        if self.module_frame is not None:
+            self.mem.var_stack[0] = self.saved_globals
+
+
+class ctx_ModuleEval(object):
+    """Evaluate a module with a new global stack frame.
+
+    e.g. setglobal in the new module doesn't leak
+
+    Different from ctx_EnclosedFrame because the new code can't see variables in
+    the old frame.
+    """
+
+    def __init__(self, mem, out_dict, out_errors):
+        # type: (Mem, Dict[str, value_t], List[str]) -> None
+        self.mem = mem
+        self.out_dict = out_dict
+        self.out_errors = out_errors
+
+        self.new_frame = NewDict()  # type: Dict[str, Cell]
+        self.saved_frame = mem.var_stack[0]
+
+        # Somewhat of a hack for tracing within a module.
+        # Other solutions:
+        # - PS4 can be __builtin__, but that would break shell compatibility
+        # - We can have a separate YSH mechanism that uses a different settings
+        #   - We probably still want it to be scoped, like shvar PS4=z { ... }
+        #
+        # Note: there's a similar issue with HOSTNAME UID EUID etc.  But those
+        # could be io.hostname() io.getuid(), or lazy constants, etc.
+
+        ps4 = self.saved_frame.get('PS4')
+        if ps4:
+            self.new_frame['PS4'] = ps4
+        # ENV is not in __builtins__ because it's mutable -- we want
+        # 'setglobal' to work
+        env = self.saved_frame.get('ENV')
+        if env:
+            self.new_frame['ENV'] = env
+
+        assert len(mem.var_stack) == 1
+        mem.var_stack[0] = self.new_frame
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value_, traceback):
+        # type: (Any, Any, Any) -> None
+
+        assert len(self.mem.var_stack) == 1
+        self.mem.var_stack[0] = self.saved_frame
+
+        # Now look in __export__ for the list of names to expose
+
+        cell = self.new_frame.get('__provide__')
+        if cell is None:
+            self.out_errors.append("Module is missing __provide__ List")
+            return
+
+        provide_val = cell.val
+        with tagswitch(provide_val) as case:
+            if case(value_e.List):
+                for val in cast(value.List, provide_val).items:
+                    if val.tag() == value_e.Str:
+                        name = cast(value.Str, val).s
+
+                        cell = self.new_frame.get(name)
+                        if cell is None:
+                            self.out_errors.append(
+                                "Name %r was provided, but not defined" % name)
+                            continue
+
+                        self.out_dict[name] = cell.val
+                    else:
+                        self.out_errors.append(
+                            "Expected Str in __provide__ List, got %s" %
+                            ui.ValType(val))
+
+            else:
+                self.out_errors.append("__provide__ should be a List, got %s" %
+                                       ui.ValType(provide_val))
+
+
+class ctx_Eval(object):
+    """Push temporary set of variables, $0, $1, $2, etc."""
+
+    def __init__(
+            self,
+            mem,  # type: Mem
+            dollar0,  # type: Optional[str]
+            pos_args,  # type: Optional[List[str]]
+            vars,  # type: Optional[Dict[str, value_t]]
+    ):
+        # type: (...) -> None
+        self.mem = mem
+        self.dollar0 = dollar0
+        self.pos_args = pos_args
+        self.vars = vars
+
+        # $0 needs to have lexical scoping. So we store it with other locals.
+        # As "0" cannot be parsed as an lvalue, we can safely store dollar0 there.
+        if dollar0 is not None:
+            #assert mem.GetValue("0", scope_e.LocalOnly).tag() == value_e.Undef
+            #self.dollar0_lval = LeftName("0", loc.Missing)
+            #mem.SetLocalName(self.dollar0_lval, value.Str(dollar0))
+
+            self.restore_dollar0 = self.mem.dollar0
+            self.mem.dollar0 = dollar0
+
+        if pos_args is not None:
+            mem.argv_stack.append(_ArgFrame(pos_args))
+
+        if vars is not None:
+            self.restore = []  # type: List[Tuple[LeftName, value_t]]
+            self._Push(vars)
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value_, traceback):
+        # type: (Any, Any, Any) -> None
+        if self.vars is not None:
+            self._Pop()
+
+        if self.pos_args is not None:
+            self.mem.argv_stack.pop()
+
+        if self.dollar0 is not None:
+            #self.mem.SetLocalName(self.dollar0_lval, value.Undef)
+            self.mem.dollar0 = self.restore_dollar0
+
+    # Note: _Push and _Pop are separate methods because the C++ translation
+    # doesn't like when they are inline in __init__ and __exit__.
+    def _Push(self, vars):
+        # type: (Dict[str, value_t]) -> None
+        for name in vars:
+            lval = location.LName(name)
+            # LocalOnly because we are only overwriting the current scope
+            old_val = self.mem.GetValue(name, scope_e.LocalOnly)
+            self.restore.append((lval, old_val))
+            self.mem.SetNamed(lval, vars[name], scope_e.LocalOnly)
+
+    def _Pop(self):
+        # type: () -> None
+        for lval, old_val in self.restore:
+            if old_val.tag() == value_e.Undef:
+                self.mem.Unset(lval, scope_e.LocalOnly)
+            else:
+                self.mem.SetNamed(lval, old_val, scope_e.LocalOnly)
+
+
+def _FrameLookup(frame, name):
+    # type: (Dict[str, Cell], str) -> Tuple[Optional[Cell], Dict[str, Cell]]
+    """
+    Look for a name in the frame, then recursively into the enclosing __E__
+    frame, if it exists
+    """
+    cell = frame.get(name)
+    if cell:
+        return cell, frame
+
+    rear_cell = frame.get('__E__')  # ctx_EnclosedFrame() sets this
+    if rear_cell:
+        rear_val = rear_cell.val
+        assert rear_val, rear_val
+        if rear_val.tag() == value_e.Frame:
+            to_enclose = cast(value.Frame, rear_val).frame
+            return _FrameLookup(to_enclose, name)  # recursive call
+
+    return None, None
+
+
 class Mem(object):
     """For storing variables.
 
@@ -1128,8 +1155,14 @@ class Mem(object):
     Modules: cmd_eval, word_eval, expr_eval, completion
     """
 
-    def __init__(self, dollar0, argv, arena, debug_stack):
-        # type: (str, List[str], alloc.Arena, List[debug_frame_t]) -> None
+    def __init__(self,
+                 dollar0,
+                 argv,
+                 arena,
+                 debug_stack,
+                 env_dict,
+                 defaults=None):
+        # type: (str, List[str], alloc.Arena, List[debug_frame_t], Dict[str, value_t], Dict[str, value_t]) -> None
         """
         Args:
           arena: currently unused
@@ -1152,6 +1185,14 @@ class Mem(object):
         # for crash dumps and for 3 parallel arrays: BASH_SOURCE, FUNCNAME, and
         # BASH_LINENO.
         self.debug_stack = debug_stack
+
+        self.env_dict = env_dict
+        self.env_object = Obj(None, env_dict)  # initial state
+
+        if defaults is None:  # for unit tests only
+            self.defaults = NewDict()  # type: Dict[str, value_t]
+        else:
+            self.defaults = defaults
 
         self.pwd = None  # type: Optional[str]
         self.seconds_start = time_.time()
@@ -1188,6 +1229,20 @@ class Mem(object):
         # For the ctx builtin
         self.ctx_stack = []  # type: List[Dict[str, value_t]]
 
+        self.builtins = NewDict()  # type: Dict[str, value_t]
+
+        # Note: Python 2 and 3 have __builtins__
+        # This is just for inspection
+        builtins_module = Obj(None, self.builtins)
+
+        # Code in any module can see __builtins__
+        self.builtins['__builtins__'] = builtins_module
+
+        self.did_ysh_env = False  # only initialize ENV once per process
+
+        from core import sh_init
+        self.env_config = sh_init.EnvConfig(self, defaults)
+
     def __repr__(self):
         # type: () -> str
         parts = []  # type: List[str]
@@ -1198,6 +1253,10 @@ class Mem(object):
                 parts.append('  %s %s' % (n, v))
         parts.append('>')
         return '\n'.join(parts) + '\n'
+
+    def AddBuiltin(self, name, val):
+        # type: (str, value_t) -> None
+        self.builtins[name] = val
 
     def SetPwd(self, pwd):
         # type: (str) -> None
@@ -1402,12 +1461,36 @@ class Mem(object):
 
         return True
 
+    def IsGlobalScope(self):
+        # type: () -> bool
+        """
+        local -g uses this, probably because bash does the wrong thing and
+        prints LOCALS, not globals.
+        """
+        return len(self.var_stack) == 1
+
     def InsideFunction(self):
         # type: () -> bool
-        """For the ERR trap"""
+        """For the ERR trap, and use builtin"""
+
+        # TODO: Should this be unified with ParsingChangesAllowed()?  Slightly
+        # different logic.
 
         # Don't run it inside functions
         return len(self.var_stack) > 1
+
+    def GlobalFrame(self):
+        # type: () -> Dict[str, Cell]
+        """For defining the global scope of modules.
+
+        It's affected by ctx_ModuleEval()
+        """
+        return self.var_stack[0]
+
+    def CurrentFrame(self):
+        # type: () -> Dict[str, Cell]
+        """For attaching a stack frame to a value.Block"""
+        return self.var_stack[-1]
 
     def PushSource(self, source_name, argv):
         # type: (str, List[str]) -> None
@@ -1440,10 +1523,41 @@ class Mem(object):
         # type: () -> None
         self.var_stack.pop()
 
-    def TopNamespace(self):
-        # type: () -> Dict[str, Cell]
-        """For eval_to_dict()."""
-        return self.var_stack[-1]
+    def _BindEnvObj(self):
+        # type: () -> None
+        self.SetNamed(location.LName('ENV'), self.env_object,
+                      scope_e.GlobalOnly)
+
+    def MaybeInitEnvDict(self, environ):
+        # type: (Dict[str, str]) -> None
+        if self.did_ysh_env:
+            return
+
+        for name, s in iteritems(environ):
+            self.env_dict[name] = value.Str(s)
+
+        self._BindEnvObj()
+        self.did_ysh_env = True
+
+    def PushEnvObj(self, bindings):
+        # type: (Dict[str, value_t]) -> None
+        """Push "bindings" as the MOST visible part of the ENV Obj 
+
+        i.e. first() / propView()
+        """
+        self.env_object = Obj(self.env_object, bindings)
+        self._BindEnvObj()
+
+    def PopEnvObj(self):
+        # type: () -> None
+        """Pop a Dict of bindings."""
+        self.env_object = self.env_object.prototype
+        if self.env_object is None:
+            # Note: there isn't a way to hit this now, but let's be defensive.
+            # See test case in spec/ysh-env.test.sh.
+            e_die('PopEnvObj: env.prototype is null', loc.Missing)
+
+        self._BindEnvObj()
 
     #
     # Argv
@@ -1468,10 +1582,16 @@ class Mem(object):
     def GetArgNum(self, arg_num):
         # type: (int) -> value_t
         if arg_num == 0:
-            # $0 may be overriden, eg. by Str => replace()
-            vars = self.var_stack[-1]
-            if "0" in vars and vars["0"].val.tag() != value_e.Undef:
-                return vars["0"].val
+            # Disabled
+            if 0:
+                # Problem: Doesn't obey enclosing frame?
+                # Yeah it needs FrameLookup
+                cell, _ = _FrameLookup(self.var_stack[-1], '0')
+                if cell is not None:
+                    val = cell.val
+                    if val.tag() != value_e.Undef:
+                        return val
+
             return value.Str(self.dollar0)
 
         return self.argv_stack[-1].GetArgNum(arg_num)
@@ -1524,35 +1644,45 @@ class Mem(object):
         Returns:
           cell: The cell corresponding to looking up 'name' with the given mode, or
             None if it's not found.
-          name_map: The name_map it should be set to or deleted from.
+          var_frame: The frame it should be set to or deleted from.
         """
         if which_scopes == scope_e.Dynamic:
             for i in xrange(len(self.var_stack) - 1, -1, -1):
-                name_map = self.var_stack[i]
-                if name in name_map:
-                    cell = name_map[name]
-                    return cell, name_map
-            no_cell = None  # type: Optional[Cell]
-            return no_cell, self.var_stack[0]  # set in global name_map
+                var_frame = self.var_stack[i]
+                cell, result_frame = _FrameLookup(var_frame, name)
+                if cell:
+                    return cell, result_frame
+            return None, self.var_stack[0]  # set in global var_frame
 
         if which_scopes == scope_e.LocalOnly:
-            name_map = self.var_stack[-1]
-            return name_map.get(name), name_map
+            var_frame = self.var_stack[-1]
+            cell, result_frame = _FrameLookup(var_frame, name)
+            if cell:
+                return cell, result_frame
+            return None, var_frame
 
         if which_scopes == scope_e.GlobalOnly:
-            name_map = self.var_stack[0]
-            return name_map.get(name), name_map
+            var_frame = self.var_stack[0]
+            cell, result_frame = _FrameLookup(var_frame, name)
+            if cell:
+                return cell, result_frame
+
+            return None, var_frame
 
         if which_scopes == scope_e.LocalOrGlobal:
             # Local
-            name_map = self.var_stack[-1]
-            cell = name_map.get(name)
+            var_frame = self.var_stack[-1]
+            cell, result_frame = _FrameLookup(var_frame, name)
             if cell:
-                return cell, name_map
+                return cell, result_frame
 
             # Global
-            name_map = self.var_stack[0]
-            return name_map.get(name), name_map
+            var_frame = self.var_stack[0]
+            cell, result_frame = _FrameLookup(var_frame, name)
+            if cell:
+                return cell, result_frame
+
+            return None, var_frame
 
         raise AssertionError()
 
@@ -1567,10 +1697,10 @@ class Mem(object):
 
         Resolving namerefs does RECURSIVE calls.
         """
-        cell, name_map = self._ResolveNameOnly(name, which_scopes)
+        cell, var_frame = self._ResolveNameOnly(name, which_scopes)
 
         if cell is None or not cell.nameref:
-            return cell, name_map, name  # not a nameref
+            return cell, var_frame, name  # not a nameref
 
         val = cell.val
         UP_val = val
@@ -1582,7 +1712,7 @@ class Mem(object):
                 if self.exec_opts.strict_nameref():
                     e_die('nameref %r is undefined' % name)
                 else:
-                    return cell, name_map, name  # fallback
+                    return cell, var_frame, name  # fallback
 
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
@@ -1603,7 +1733,7 @@ class Mem(object):
                 # Bash has this odd behavior of clearing the nameref bit when
                 # ref=#invalid#.  strict_nameref avoids it.
                 cell.nameref = False
-                return cell, name_map, name  # fallback
+                return cell, var_frame, name  # fallback
 
         # Check for circular namerefs.
         if ref_trail is None:
@@ -1614,10 +1744,9 @@ class Mem(object):
         ref_trail.append(new_name)
 
         # 'declare -n' uses dynamic scope.
-        cell, name_map, cell_name = self._ResolveNameOrRef(new_name,
-                                                           scope_e.Dynamic,
-                                                           ref_trail=ref_trail)
-        return cell, name_map, cell_name
+        cell, var_frame, cell_name = self._ResolveNameOrRef(
+            new_name, scope_e.Dynamic, ref_trail=ref_trail)
+        return cell, var_frame, cell_name
 
     def IsBashAssoc(self, name):
         # type: (str) -> bool
@@ -1639,19 +1768,25 @@ class Mem(object):
             if case(y_lvalue_e.Local):
                 yval = cast(LeftName, UP_yval)
 
-                # Check that the frame is still alive
-                found = False
-                for i in xrange(len(self.var_stack) - 1, -1, -1):
-                    frame = self.var_stack[i]
-                    if frame is place.frame:
-                        found = True
-                        #log('FOUND %s', found)
-                        break
-                if not found:
-                    e_die(
-                        "Can't assign to place that's no longer on the call stack.",
-                        blame_loc)
+                if 0:
+                    # Check that the frame is still alive
+                    # Note: Disabled because it doesn't work with modules.  the
+                    # Place captures a frame in def-test.ysh, which we want to
+                    # mutate while Dict is executing in the module_frame for
+                    # def.ysh.  See ctx_ModuleEval
+                    found = False
+                    for i in xrange(len(self.var_stack) - 1, -1, -1):
+                        frame = self.var_stack[i]
+                        if frame is place.frame:
+                            found = True
+                            #log('FOUND %s', found)
+                            break
+                    if not found:
+                        e_die(
+                            "Can't assign to place that's no longer on the call stack.",
+                            blame_loc)
 
+                frame = place.frame
                 cell = frame.get(yval.name)
                 if cell is None:
                     cell = Cell(False, False, False, val)
@@ -1667,11 +1802,14 @@ class Mem(object):
 
     def SetLocalName(self, lval, val):
         # type: (LeftName, value_t) -> None
+        """
+        Set a name in the local scope - used for func/proc param binding, etc.
+        """
 
         # Equivalent to
         # self._ResolveNameOnly(lval.name, scope_e.LocalOnly)
-        name_map = self.var_stack[-1]
-        cell = name_map.get(lval.name)
+        var_frame = self.var_stack[-1]
+        cell = var_frame.get(lval.name)
 
         if cell:
             if cell.readonly:
@@ -1680,14 +1818,13 @@ class Mem(object):
             cell.val = val  # Mutate value_t
         else:
             cell = Cell(False, False, False, val)
-            name_map[lval.name] = cell
+            var_frame[lval.name] = cell
 
     def SetNamed(self, lval, val, which_scopes, flags=0):
         # type: (LeftName, value_t, scope_t, int) -> None
-
         if flags & SetNameref or flags & ClearNameref:
             # declare -n ref=x  # refers to the ref itself
-            cell, name_map = self._ResolveNameOnly(lval.name, which_scopes)
+            cell, var_frame = self._ResolveNameOnly(lval.name, which_scopes)
             cell_name = lval.name
         else:
             # ref=x  # mutates THROUGH the reference
@@ -1698,7 +1835,7 @@ class Mem(object):
             #    BracedVarSub
             # 3. Turn BracedVarSub into an sh_lvalue, and call
             #    self.unsafe_arith.SetValue() wrapper with ref_trail
-            cell, name_map, cell_name = self._ResolveNameOrRef(
+            cell, var_frame, cell_name = self._ResolveNameOrRef(
                 lval.name, which_scopes)
 
         if cell:
@@ -1735,7 +1872,7 @@ class Mem(object):
 
             cell = Cell(bool(flags & SetExport), bool(flags & SetReadOnly),
                         bool(flags & SetNameref), val)
-            name_map[cell_name] = cell
+            var_frame[cell_name] = cell
 
         # Maintain invariant that only strings and undefined cells can be
         # exported.
@@ -1764,7 +1901,7 @@ class Mem(object):
         # STRICTNESS / SANENESS:
         #
         # 1) Don't create arrays automatically, e.g. a[1000]=x
-        # 2) Never change types?  yeah I think that's a good idea, at least for oil
+        # 2) Never change types?  yeah I think that's a good idea, at least for YSH
         # (not sh, for compatibility).  set -o strict_types or something.  That
         # means arrays have to be initialized with let arr = [], which is fine.
         # This helps with stuff like IFS.  It starts off as a string, and assigning
@@ -1791,7 +1928,7 @@ class Mem(object):
                 # There is no syntax 'declare a[x]'
                 assert val is not None, val
 
-                # TODO: relax this for Oil
+                # TODO: relax this for YSH
                 assert val.tag() == value_e.Str, val
                 rval = cast(value.Str, val)
 
@@ -1801,10 +1938,10 @@ class Mem(object):
                 # bash/mksh have annoying behavior of letting you do LHS assignment to
                 # Undef, which then turns into an INDEXED array.  (Undef means that set
                 # -o nounset fails.)
-                cell, name_map, _ = self._ResolveNameOrRef(
+                cell, var_frame, _ = self._ResolveNameOrRef(
                     lval.name, which_scopes)
                 if not cell:
-                    self._BindNewArrayWithEntry(name_map, lval, rval, flags)
+                    self._BindNewArrayWithEntry(var_frame, lval, rval, flags)
                     return
 
                 if cell.readonly:
@@ -1814,7 +1951,7 @@ class Mem(object):
                 # undef[0]=y is allowed
                 with tagswitch(UP_cell_val) as case2:
                     if case2(value_e.Undef):
-                        self._BindNewArrayWithEntry(name_map, lval, rval,
+                        self._BindNewArrayWithEntry(var_frame, lval, rval,
                                                     flags)
                         return
 
@@ -1838,8 +1975,6 @@ class Mem(object):
                             # Fill it in with None.  It could look like this:
                             # ['1', 2, 3, None, None, '4', None]
                             # Then ${#a[@]} counts the entries that are not None.
-                            #
-                            # TODO: strict_array for Oil arrays won't auto-fill.
                             n = index - len(strs) + 1
                             for i in xrange(n):
                                 strs.append(None)
@@ -1863,7 +1998,7 @@ class Mem(object):
 
                 left_loc = lval.blame_loc
 
-                cell, name_map, _ = self._ResolveNameOrRef(
+                cell, var_frame, _ = self._ResolveNameOrRef(
                     lval.name, which_scopes)
                 if cell.readonly:
                     e_die("Can't assign to readonly associative array",
@@ -1878,9 +2013,9 @@ class Mem(object):
             else:
                 raise AssertionError(lval.tag())
 
-    def _BindNewArrayWithEntry(self, name_map, lval, val, flags):
+    def _BindNewArrayWithEntry(self, var_frame, lval, val, flags):
         # type: (Dict[str, Cell], sh_lvalue.Indexed, value.Str, int) -> None
-        """Fill 'name_map' with a new indexed array entry."""
+        """Fill 'var_frame' with a new indexed array entry."""
         no_str = None  # type: Optional[str]
         items = [no_str] * lval.index
         items.append(val.s)
@@ -1888,7 +2023,7 @@ class Mem(object):
 
         # arrays can't be exported; can't have BashAssoc flag
         readonly = bool(flags & SetReadOnly)
-        name_map[lval.name] = Cell(False, readonly, False, new_value)
+        var_frame[lval.name] = Cell(False, readonly, False, new_value)
 
     def InternalSetGlobal(self, name, new_val):
         # type: (str, value_t) -> None
@@ -1915,7 +2050,7 @@ class Mem(object):
 
         with str_switch(name) as case:
             # "Registers"
-            if case('_status'):
+            if case('_status'):  # deprecated in favor of _error.code
                 return num.ToBig(self.TryStatus())
 
             elif case('_error'):
@@ -1925,7 +2060,7 @@ class Mem(object):
                 if len(self.this_dir) == 0:
                     # e.g. osh -c '' doesn't have it set
                     # Should we give a custom error here?
-                    # If you're at the interactive shell, 'source mymodule.oil' will still
+                    # If you're at the interactive shell, 'source mymodule.ysh' will still
                     # work because 'source' sets it.
                     return value.Undef
                 else:
@@ -2045,8 +2180,10 @@ class Mem(object):
                 return value.Str(self.last_arg)
 
             elif case('SECONDS'):
-                return value.Int(
-                    mops.FromFloat(time_.time() - self.seconds_start))
+                f = time_.time() - self.seconds_start
+                ok, big_int = mops.FromFloat(f)
+                assert ok, f  # should never be NAN or INFINITY
+                return value.Int(big_int)
 
             else:
                 # In the case 'declare -n ref='a[42]', the result won't be a cell.  Idea to
@@ -2058,6 +2195,11 @@ class Mem(object):
                 if cell:
                     return cell.val
 
+                builtin_val = self.builtins.get(name)
+                if builtin_val:
+                    return builtin_val
+
+                # TODO: Can look in the builtins module, which is a value.Obj
                 return value.Undef
 
     def GetCell(self, name, which_scopes=scope_e.Shopt):
@@ -2069,6 +2211,8 @@ class Mem(object):
           - declare -p
           - ${x@a}
           - to test of 'TZ' is exported in printf?  Why?
+
+        Note: consulting __builtins__ doesn't see necessary for any of these
         """
         if which_scopes == scope_e.Shopt:
             which_scopes = self.ScopesForReading()
@@ -2101,7 +2245,7 @@ class Mem(object):
         if which_scopes == scope_e.Shopt:
             which_scopes = self.ScopesForWriting()
 
-        cell, name_map, cell_name = self._ResolveNameOrRef(
+        cell, var_frame, cell_name = self._ResolveNameOrRef(
             var_name, which_scopes)
         if not cell:
             return False  # 'unset' builtin falls back on functions
@@ -2112,10 +2256,10 @@ class Mem(object):
             if case(sh_lvalue_e.Var):  # unset x
                 # Make variables in higher scopes visible.
                 # example: test/spec.sh builtin-vars -r 24 (ble.sh)
-                mylib.dict_erase(name_map, cell_name)
+                mylib.dict_erase(var_frame, cell_name)
 
                 # alternative that some shells use:
-                #   name_map[cell_name].val = value.Undef
+                #   var_frame[cell_name].val = value.Undef
                 #   cell.exported = False
 
                 # This should never happen because we do recursive lookups of namerefs.
@@ -2191,7 +2335,7 @@ class Mem(object):
         We don't use SetValue() because even if rval is None, it will make an
         Undef value in a scope.
         """
-        cell, name_map = self._ResolveNameOnly(name, self.ScopesForReading())
+        cell, var_frame = self._ResolveNameOnly(name, self.ScopesForReading())
         if cell:
             if flag & ClearExport:
                 cell.exported = False
@@ -2201,25 +2345,54 @@ class Mem(object):
         else:
             return False
 
-    def GetExported(self):
-        # type: () -> Dict[str, str]
-        """Get all the variables that are marked exported."""
-        # TODO: This is run on every SimpleCommand.  Should we have a dirty flag?
-        # We have to notice these things:
-        # - If an exported variable is changed.
-        # - If the set of exported variables changes.
+    def _FillWithExported(self, new_env):
+        # type: (Dict[str, str]) -> None
 
-        exported = {}  # type: Dict[str, str]
-        # Search from globals up.  Names higher on the stack will overwrite names
-        # lower on the stack.
+        # Search from globals up.  Names higher on the stack will overwrite
+        # names lower on the stack.
         for scope in self.var_stack:
             for name, cell in iteritems(scope):
-                # TODO: Disallow exporting at assignment time.  If an exported Str is
-                # changed to BashArray, also clear its 'exported' flag.
                 if cell.exported and cell.val.tag() == value_e.Str:
                     val = cast(value.Str, cell.val)
-                    exported[name] = val.s
-        return exported
+                    new_env[name] = val.s
+
+    def _FillEnvObj(self, new_env, env_object):
+        # type: (Dict[str, str], Obj) -> None
+
+        # Do the LEAST visible parts first
+        if env_object.prototype is not None:
+            self._FillEnvObj(new_env, env_object.prototype)
+
+        # Overwrite with MOST visible parts
+        for name, val in iteritems(env_object.d):
+            if val.tag() != value_e.Str:
+                continue
+            new_env[name] = cast(value.Str, val).s
+
+    def GetEnv(self):
+        # type: () -> Dict[str, str]
+        """
+        Get the environment that should be used for launching processes.
+
+        Note: This is run on every SimpleCommand.  Should we have a dirty
+        flag?  We could notice these things:
+
+        - If an exported variable is changed
+        - If the set of exported variables changes.
+        """
+        new_env = {}  # type: Dict[str, str]
+
+        # Note: ysh:upgrade has both of these behaviors
+
+        # OSH: Consult exported vars
+        if not self.exec_opts.no_exported():
+            self._FillWithExported(new_env)
+
+        # YSH: Consult the ENV dict
+        if self.exec_opts.env_obj():
+            self._FillEnvObj(new_env, self.env_object)
+
+        return new_env
 
     def VarNames(self):
         # type: () -> List[str]
@@ -2281,10 +2454,6 @@ class Mem(object):
                 result[name] = cell
         return result
 
-    def IsGlobalScope(self):
-        # type: () -> bool
-        return len(self.var_stack) == 1
-
     def SetRegexMatch(self, match):
         # type: (regex_match_t) -> None
         self.regex_match[-1] = match
@@ -2307,6 +2476,161 @@ class Mem(object):
         # type: () -> Dict[str, value_t]
         assert self.ctx_stack, "Empty context stack"
         return self.ctx_stack.pop()
+
+
+def ValueIsInvokableObj(val):
+    # type: (value_t) -> Tuple[Optional[value_t], Optional[Obj]]
+    """
+    Returns:
+      (__invoke__ Proc or BuiltinProc, self Obj) if the value is invokable
+      (None, None) otherwise
+    """
+    if val.tag() != value_e.Obj:
+        return None, None
+
+    obj = cast(Obj, val)
+    if not obj.prototype:
+        return None, None
+
+    invoke_val = obj.prototype.d.get('__invoke__')
+    if invoke_val is None:
+        return None, None
+
+    # TODO: __invoke__ of wrong type could be fatal error?
+    if invoke_val.tag() in (value_e.Proc, value_e.BuiltinProc):
+        return invoke_val, obj
+
+    return None, None
+
+
+def _AddNames(unique, frame):
+    # type: (Dict[str, bool], Dict[str, Cell]) -> None
+    for name in frame:
+        val = frame[name].val
+        if val.tag() == value_e.Proc:
+            unique[name] = True
+        proc, _ = ValueIsInvokableObj(val)
+        if proc is not None:
+            unique[name] = True
+
+
+class Procs(object):
+    """
+    Terminology:
+
+    - invokable - these are INTERIOR
+      - value.Proc - which can be shell function in __sh_funcs__ namespace, or
+                     YSH proc
+      - value.Obj with __invoke__
+    - exterior - external commands, extern builtin
+
+    Note: the YSH 'invoke' builtin can generalize YSH 'runproc' builtin, shell command/builtin,
+          and also type / type -a
+    """
+
+    def __init__(self, mem):
+        # type: (Mem) -> None
+        self.mem = mem
+        self.sh_funcs = {}  # type: Dict[str, value.Proc]
+
+    def DefineShellFunc(self, name, proc):
+        # type: (str, value.Proc) -> None
+        self.sh_funcs[name] = proc
+
+    def IsShellFunc(self, name):
+        # type: (str) -> bool
+        return name in self.sh_funcs
+
+    def GetShellFunc(self, name):
+        # type: (str) -> Optional[value.Proc]
+        return self.sh_funcs.get(name)
+
+    def EraseShellFunc(self, to_del):
+        # type: (str) -> None
+        """Undefine a sh-func with name `to_del`, if it exists."""
+        mylib.dict_erase(self.sh_funcs, to_del)
+
+    def ShellFuncNames(self):
+        # type: () -> List[str]
+        """Returns a *sorted* list of all shell function names
+
+        Callers:
+          declare -f -F
+        """
+        names = self.sh_funcs.keys()
+        names.sort()
+        return names
+
+    def DefineProc(self, name, proc):
+        # type: (str, value.Proc) -> None
+        """
+        procs are defined in the local scope.
+        """
+        self.mem.var_stack[-1][name] = Cell(False, False, False, proc)
+
+    def IsProc(self, name):
+        # type: (str) -> bool
+
+        maybe_proc = self.mem.GetValue(name)
+        # Could be Undef
+        return maybe_proc.tag() == value_e.Proc
+
+    def IsInvokableObj(self, name):
+        # type: (str) -> bool
+
+        val = self.mem.GetValue(name)
+        proc, _ = ValueIsInvokableObj(val)
+        return proc is not None
+
+    def InvokableNames(self):
+        # type: () -> List[str]
+        """Returns a *sorted* list of all invokable names
+
+        Callers:
+          complete -A function
+          pp proc - should deprecate this
+        """
+        unique = NewDict()  # type: Dict[str, bool]
+        for name in self.sh_funcs:
+            unique[name] = True
+
+        top_frame = self.mem.var_stack[-1]
+        _AddNames(unique, top_frame)
+
+        global_frame = self.mem.var_stack[0]
+        #log('%d %d', id(top_frame), id(global_frame))
+        if global_frame is not top_frame:
+            _AddNames(unique, global_frame)
+
+        #log('%s', unique)
+
+        names = unique.keys()
+        names.sort()
+
+        return names
+
+    def GetInvokable(self, name):
+        # type: (str) -> Tuple[Optional[value_t], Optional[Obj]]
+        """Find a proc, invokable Obj, or sh-func, in that order
+
+        Callers:
+          executor.py: to actually run
+          meta_oils.py runproc lookup - this is not 'invoke', because it is
+             INTERIOR shell functions, procs, invokable Obj
+        """
+        val = self.mem.GetValue(name)
+
+        if val.tag() == value_e.Proc:
+            return cast(value.Proc, val), None
+
+        proc, self_val = ValueIsInvokableObj(val)
+        if proc:
+            return proc, self_val
+
+        if name in self.sh_funcs:
+            return self.sh_funcs[name], None
+
+        return None, None
 
 
 #
@@ -2371,6 +2695,18 @@ def SetGlobalArray(mem, name, a):
     mem.SetNamed(location.LName(name), value.BashArray(a), scope_e.GlobalOnly)
 
 
+def SetGlobalValue(mem, name, val):
+    # type: (Mem, str, value_t) -> None
+    """Helper for completion, etc."""
+    mem.SetNamed(location.LName(name), val, scope_e.GlobalOnly)
+
+
+def SetLocalValue(mem, name, val):
+    # type: (Mem, str, value_t) -> None
+    """For 'use' builtin."""
+    mem.SetNamed(location.LName(name), val, scope_e.LocalOnly)
+
+
 def ExportGlobalString(mem, name, s):
     # type: (Mem, str, str) -> None
     """Helper for completion, $PWD, $OLDPWD, etc."""
@@ -2380,6 +2716,15 @@ def ExportGlobalString(mem, name, s):
                  val,
                  scope_e.GlobalOnly,
                  flags=SetExport)
+
+
+# TODO: remove in favor of EnvConfig
+def SetStringInEnv(mem, var_name, s):
+    # type: (Mem, str, str) -> None
+    if mem.exec_opts.env_obj():  # e.g. ENV.YSH_HISTFILE
+        mem.env_dict[var_name] = value.Str(s)
+    else:  # e.g. $YSH_HISTFILE
+        SetGlobalString(mem, var_name, s)
 
 
 #
@@ -2404,8 +2749,10 @@ def DynamicGetVar(mem, name, which_scopes):
 
 def GetString(mem, name):
     # type: (Mem, str) -> str
-    """Wrapper around GetValue().  Check that HOME, PWD, OLDPWD, etc. are
-    strings. bash doesn't have these errors because ${array} is ${array[0]}.
+    """Wrapper around GetValue().
+
+    Check that HOME, PWD, OLDPWD, etc. are strings. bash doesn't have these
+    errors because ${array} is ${array[0]}.
 
     TODO: We could also check this when you're storing variables?
     """

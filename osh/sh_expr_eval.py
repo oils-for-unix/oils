@@ -49,13 +49,12 @@ from core import error
 from core.error import e_die, e_die_status, e_strict, e_usage
 from core import num
 from core import state
-from core import ui
+from display import ui
 from core import util
 from frontend import consts
 from frontend import lexer
 from frontend import location
 from frontend import match
-from frontend import parse_lib
 from frontend import reader
 from mycpp import mops
 from mycpp import mylib
@@ -69,8 +68,8 @@ from libc import FNM_CASEFOLD, REG_ICASE
 
 from typing import Tuple, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
-    from core.ui import ErrorFormatter
     from core import optview
+    from frontend import parse_lib
 
 _ = log
 
@@ -235,7 +234,7 @@ class UnsafeArith(object):
         a_parser = self.parse_ctx.MakeArithParser(s)
 
         with alloc.ctx_SourceCode(self.arena,
-                                  source.ArgvWord('dynamic LHS', location)):
+                                  source.Dynamic('dynamic LHS', location)):
             try:
                 anode = a_parser.Parse()
             except error.Parse as e:
@@ -295,6 +294,93 @@ class UnsafeArith(object):
         return bvs_part
 
 
+def _MaybeParseInt(s, blame_loc):
+    # type: (str, loc_t) -> Tuple[bool, mops.BigInt]
+    """
+    Returns:
+      (True, value) when the string looks like an integer
+      (False, ...)  when it doesn't
+
+    Integer formats that are recognized:
+      0xAB    hex
+      042     octal
+      42      decimal
+      64#z    arbitrary base
+    """
+    id_, pos = match.MatchShNumberToken(s, 0)  # use re2c lexer
+    if pos != len(s):
+        # trailing data isn't allowed
+        return (False, mops.BigInt(0))
+
+    # Do conversions
+
+    if id_ == Id.ShNumber_Dec:
+        # Normal base 10 integer.
+        ok, big_int = mops.FromStr2(s)
+        if not ok:
+            e_die('Integer too big: %s' % s, blame_loc)
+        return (True, big_int)
+
+    elif id_ == Id.ShNumber_Oct:
+        # 0123, offset by 1
+        ok, big_int = mops.FromStr2(s[1:], 8)
+        if not ok:
+            e_die('Octal integer too big: %s' % s, blame_loc)
+        return (True, big_int)
+
+    elif id_ == Id.ShNumber_Hex:
+        # 0xff, offset by 2
+        ok, big_int = mops.FromStr2(s[2:], 16)
+        if not ok:
+            e_die('Hex integer too big: %s' % s, blame_loc)
+        return (True, big_int)
+
+    elif id_ == Id.ShNumber_BaseN:
+        b, digits = mylib.split_once(s, '#')
+        assert digits is not None, digits  # assured by lexer
+
+        try:
+            base = int(b)  # machine integer, not BigInt
+        except ValueError:
+            # Unreachable per the regex validation above
+            raise AssertionError()
+
+        if base > 64:
+            e_strict('Base %d cannot be larger than 64' % base, blame_loc)
+        if base < 2:
+            e_strict('Base %d must be larger than 2' % base, blame_loc)
+
+        integer = mops.ZERO
+        for ch in digits:
+            if IsLower(ch):
+                digit = ord(ch) - ord('a') + 10
+            elif IsUpper(ch):
+                digit = ord(ch) - ord('A') + 36
+            elif ch == '@':  # horrible syntax
+                digit = 62
+            elif ch == '_':
+                digit = 63
+            elif ch.isdigit():
+                digit = int(ch)
+            else:
+                # Unreachable per the regex validation above
+                raise AssertionError()
+
+            if digit >= base:
+                e_strict('Digits %r out of range for base %d' % (digits, base),
+                         blame_loc)
+
+            # formula is:
+            # integer = integer * base + digit
+            integer = mops.Add(mops.Mul(integer, mops.BigInt(base)),
+                               mops.BigInt(digit))
+        return (True, integer)
+
+    else:
+        # Id.Unknown_Tok or Id.Eol_Tok
+        return (False, mops.BigInt(0))  # not an integer
+
+
 class ArithEvaluator(object):
     """Shared between arith and bool evaluators.
 
@@ -310,7 +396,7 @@ class ArithEvaluator(object):
             exec_opts,  # type: optview.Exec
             mutable_opts,  # type: state.MutableOpts
             parse_ctx,  # type: Optional[parse_lib.ParseContext]
-            errfmt,  # type: ErrorFormatter
+            errfmt,  # type: ui.ErrorFormatter
     ):
         # type: (...) -> None
         self.word_ev = None  # type: word_eval.StringWordEvaluator
@@ -330,114 +416,55 @@ class ArithEvaluator(object):
 
         Runtime parsing enables silly stuff like $(( $(echo 1)$(echo 2) + 1 )) => 13
 
-        0xAB -- hex constant
-        042  -- octal constant
-        42   -- decimal constant
-        64#z -- arbitrary base constant
-
         bare word: variable
         quoted word: string (not done?)
         """
-        if s.startswith('0x'):
-            try:
-                integer = mops.FromStr(s, 16)
-            except ValueError:
-                e_strict('Invalid hex constant %r' % s, blame_loc)
-            # TODO: don't truncate
-            return integer
+        s = s.strip()
 
-        if s.startswith('0'):
-            try:
-                integer = mops.FromStr(s, 8)
-            except ValueError:
-                e_strict('Invalid octal constant %r' % s, blame_loc)
-            return integer
+        ok, i = _MaybeParseInt(s, blame_loc)
+        if ok:
+            return i
 
-        b, digits = mylib.split_once(s, '#')  # see if it has #
-        if digits is not None:
-            try:
-                base = int(b)  # machine integer, not BigInt
-            except ValueError:
-                e_strict('Invalid base for numeric constant %r' % b, blame_loc)
+        # Doesn't look like an integer
 
-            integer = mops.ZERO
-            for ch in digits:
-                if IsLower(ch):
-                    digit = ord(ch) - ord('a') + 10
-                elif IsUpper(ch):
-                    digit = ord(ch) - ord('A') + 36
-                elif ch == '@':  # horrible syntax
-                    digit = 62
-                elif ch == '_':
-                    digit = 63
-                elif ch.isdigit():
-                    digit = int(ch)
-                else:
-                    e_strict('Invalid digits for numeric constant %r' % digits,
-                             blame_loc)
+        # note: 'test' and '[' never evaluate recursively
+        if self.parse_ctx is None:
+            if len(s) == 0 or match.IsValidVarName(s):
+                # x42 could evaluate to 0
+                e_strict("Invalid integer constant %r" % s, blame_loc)
+            else:
+                # 42x is always fatal!
+                e_die("Invalid integer constant %r" % s, blame_loc)
 
-                if digit >= base:
-                    e_strict(
-                        'Digits %r out of range for base %d' % (digits, base),
-                        blame_loc)
+        # Special case so we don't get EOF error
+        if len(s) == 0:
+            return mops.ZERO
 
-                #integer = integer * base + digit
-                integer = mops.Add(mops.Mul(integer, mops.BigInt(base)),
-                                   mops.BigInt(digit))
-            return integer
+        # For compatibility: Try to parse it as an expression and evaluate it.
+        a_parser = self.parse_ctx.MakeArithParser(s)
 
         try:
-            # Normal base 10 integer.  This includes negative numbers like '-42'.
-            integer = mops.FromStr(s)
-        except ValueError:
-            # doesn't look like an integer
+            node2 = a_parser.Parse()  # may raise error.Parse
+        except error.Parse as e:
+            self.errfmt.PrettyPrintError(e)
+            e_die('Parse error in recursive arithmetic', e.location)
 
-            # note: 'test' and '[' never evaluate recursively
-            if self.parse_ctx:
-                arena = self.parse_ctx.arena
+        # Prevent infinite recursion of $(( 1x )) -- it's a word that evaluates
+        # to itself, and you don't want to reparse it as a word.
+        if node2.tag() == arith_expr_e.Word:
+            e_die("Invalid integer constant %r" % s, blame_loc)
 
-                # Special case so we don't get EOF error
-                if len(s.strip()) == 0:
-                    return mops.ZERO
+        if self.exec_opts.eval_unsafe_arith():
+            integer = self.EvalToBigInt(node2)
+        else:
+            # BoolEvaluator doesn't have parse_ctx or mutable_opts
+            assert self.mutable_opts is not None
 
-                # For compatibility: Try to parse it as an expression and evaluate it.
-                a_parser = self.parse_ctx.MakeArithParser(s)
-
-                # TODO: Fill in the variable name
-                with alloc.ctx_SourceCode(arena,
-                                          source.Variable(None, blame_loc)):
-                    try:
-                        node2 = a_parser.Parse()  # may raise error.Parse
-                    except error.Parse as e:
-                        self.errfmt.PrettyPrintError(e)
-                        e_die('Parse error in recursive arithmetic',
-                              e.location)
-
-                # Prevent infinite recursion of $(( 1x )) -- it's a word that evaluates
-                # to itself, and you don't want to reparse it as a word.
-                if node2.tag() == arith_expr_e.Word:
-                    e_die("Invalid integer constant %r" % s, blame_loc)
-
-                if self.exec_opts.eval_unsafe_arith():
-                    integer = self.EvalToBigInt(node2)
-                else:
-                    # BoolEvaluator doesn't have parse_ctx or mutable_opts
-                    assert self.mutable_opts is not None
-
-                    # We don't need to flip _allow_process_sub, because they can't be
-                    # parsed.  See spec/bugs.test.sh.
-                    with state.ctx_Option(self.mutable_opts,
-                                          [option_i._allow_command_sub],
-                                          False):
-                        integer = self.EvalToBigInt(node2)
-
-            else:
-                if len(s.strip()) == 0 or match.IsValidVarName(s):
-                    # x42 could evaluate to 0
-                    e_strict("Invalid integer constant %r" % s, blame_loc)
-                else:
-                    # 42x is always fatal!
-                    e_die("Invalid integer constant %r" % s, blame_loc)
+            # We don't need to flip _allow_process_sub, because they can't be
+            # parsed.  See spec/bugs.test.sh.
+            with state.ctx_Option(self.mutable_opts,
+                                  [option_i._allow_command_sub], False):
+                integer = self.EvalToBigInt(node2)
 
         return integer
 
@@ -618,12 +645,12 @@ class ArithEvaluator(object):
                 elif op_id == Id.Arith_SlashEqual:
                     if mops.Equal(rhs_big, mops.ZERO):
                         e_die('Divide by zero')  # TODO: location
-                    new_big = num.IntDivide(old_big, rhs_big)
+                    new_big = mops.Div(old_big, rhs_big)
 
                 elif op_id == Id.Arith_PercentEqual:
                     if mops.Equal(rhs_big, mops.ZERO):
                         e_die('Divide by zero')  # TODO: location
-                    new_big = num.IntRemainder(old_big, rhs_big)
+                    new_big = mops.Rem(old_big, rhs_big)
 
                 elif op_id == Id.Arith_DGreatEqual:
                     new_big = mops.RShift(old_big, rhs_big)
@@ -764,12 +791,12 @@ class ArithEvaluator(object):
                 elif op_id == Id.Arith_Slash:
                     if mops.Equal(rhs_big, mops.ZERO):
                         e_die('Divide by zero', node.op)
-                    result = num.IntDivide(lhs_big, rhs_big)
+                    result = mops.Div(lhs_big, rhs_big)
 
                 elif op_id == Id.Arith_Percent:
                     if mops.Equal(rhs_big, mops.ZERO):
                         e_die('Divide by zero', node.op)
-                    result = num.IntRemainder(lhs_big, rhs_big)
+                    result = mops.Rem(lhs_big, rhs_big)
 
                 elif op_id == Id.Arith_DStar:
                     if mops.Greater(mops.ZERO, rhs_big):
@@ -803,8 +830,14 @@ class ArithEvaluator(object):
 
                 # Note: how to define shift of negative numbers?
                 elif op_id == Id.Arith_DLess:
+                    if mops.Greater(mops.ZERO, rhs_big):  # rhs_big < 0
+                        raise error.Expr("Can't left shift by negative number",
+                                         node.op)
                     result = mops.LShift(lhs_big, rhs_big)
                 elif op_id == Id.Arith_DGreat:
+                    if mops.Greater(mops.ZERO, rhs_big):  # rhs_big < 0
+                        raise error.Expr(
+                            "Can't right shift by negative number", node.op)
                     result = mops.RShift(lhs_big, rhs_big)
                 else:
                     raise AssertionError(op_id)
@@ -954,7 +987,7 @@ class BoolEvaluator(ArithEvaluator):
             exec_opts,  # type: optview.Exec
             mutable_opts,  # type: Optional[state.MutableOpts]
             parse_ctx,  # type: Optional[parse_lib.ParseContext]
-            errfmt,  # type: ErrorFormatter
+            errfmt,  # type: ui.ErrorFormatter
             always_strict=False  # type: bool
     ):
         # type: (...) -> None
@@ -983,8 +1016,8 @@ class BoolEvaluator(ArithEvaluator):
             if case(value_e.BashArray):
                 val = cast(value.BashArray, UP_val)
 
-                # TODO: use mops.BigStr
                 try:
+                    # could use mops.FromStr?
                     index = int(index_str)
                 except ValueError as e:
                     if self.exec_opts.strict_word_eval():
@@ -1088,6 +1121,10 @@ class BoolEvaluator(ArithEvaluator):
                         return not bool(s)
                     if op_id == Id.BoolUnary_n:
                         return bool(s)
+                    if op_id == Id.BoolUnary_true:
+                        return s == 'true'
+                    if op_id == Id.BoolUnary_false:
+                        return s == 'false'
 
                     raise AssertionError(op_id)  # should never happen
 

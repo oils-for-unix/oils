@@ -7,7 +7,7 @@ from _devbuild.gen.syntax_asdl import (loc, Token, DoubleQuoted, SingleQuoted,
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_str
 from _devbuild.gen.types_asdl import lex_mode_e
 
-from core import ui
+from display import ui
 from core.error import p_die
 from frontend import consts
 from frontend import lexer
@@ -79,6 +79,15 @@ def _Classify(gr, tok):
 
     if id_ == Id.Unknown_DEqual:
         p_die('Use === to be exact, or ~== to convert types', tok)
+
+    if id_ == Id.Unknown_DAmp:
+        p_die("Use 'and' in expression mode (OILS-ERR-15)", tok)
+    if id_ == Id.Unknown_DPipe:
+        p_die("Use 'or' in expression mode (OILS-ERR-15)", tok)
+    # Not possible to check '!' as it conflicts with Id.Expr_Bang
+
+    if id_ == Id.Unknown_DDot:
+        p_die('Use ..< for half-open range, or ..= for closed range (OILS-ERR-16)', tok)
 
     if id_ == Id.Unknown_Tok:
         type_str = ''

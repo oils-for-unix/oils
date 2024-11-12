@@ -66,6 +66,7 @@ preserve_anchor_case: yes
   [Child Process] jobs        wait
                   fg        X bg      X kill        X disown 
   [External]      test [      getopts
+  [Conditional]   cmd/true    cmd/false               colon :
   [Introspection] help        hash      cmd/type    X caller
   [Word Lookup]   command     builtin
   [Interactive]   alias       unalias   history     X fc     X bind
@@ -100,18 +101,19 @@ X [Unsupported]   enable
 </h2>
 
 ```chapter-links-cmd-lang
-  [Commands]      simple-command            semicolon ;
-  [Conditional]   case        if            dbracket [[
-                  true        false         colon :
-                  bang !      and &&        or ||
-  [Iteration]     while       until         for            for-expr-sh ((
-  [Control Flow]  break       continue      return         exit
-  [Grouping]      sh-func     sh-block {    subshell (
-  [Concurrency]   pipe |    X pipe-amp |&   ampersand &
-  [Redirects]     redir-file  >  >>  >|  <  <>   not impl: &>
-                  redir-desc  >&  <&
-                  here-doc    <<  <<-  <<<
-  [Other Command] dparen ((   time        X coproc       X select
+  [Commands]      simple-command               prefix-binding
+                  semicolon ;    
+  [Conditional]   case           if            dbracket [[
+                  bang !         and &&        or ||
+  [Iteration]     while          until         for            for-expr-sh ((
+  [Control Flow]  break          continue      return         exit
+  [Grouping]      sh-func        sh-block {    subshell (
+  [Concurrency]   pipe |       X pipe-amp |&   ampersand &
+  [Redirects]     redir-file     >  >>  >|  <  <>   not impl: &>
+                  redir-desc     >&  <&
+                  here-doc       <<  <<-
+                  here-str       <<<
+  [Other Command] dparen ((      time        X coproc       X select
 ```
 
 <h2 id="osh-assign">
@@ -142,7 +144,7 @@ X [Unsupported]   enable
                   proc-sub      diff <(sort L.txt) <(sort R.txt)
   [Var Ops]       op-test       ${x:-default}  
                   op-strip      ${x%%suffix}  etc.
-                  op-replace    ${x//y/z}
+                  op-patsub     ${x//y/z}
                   op-index      ${a[i+1}
                   op-slice      ${a[@]:0:1}
                   op-format     ${x@P}
@@ -184,10 +186,11 @@ X [Unsupported]   enable
   [Errors]         nounset -u      errexit -e   inherit_errexit   pipefail
   [Globbing]       noglob -f       nullglob     failglob        X dotglob
                    dashglob (true)
+  [Other Option]   noclobber -C    errtrace -E
   [Debugging]      xtrace        X verbose    X extdebug
   [Interactive]    emacs           vi
-  [Other POSIX]  X noclobber
   [Compat]         eval_unsafe_arith            ignore_flags_not_impl
+                   ignore_shopt_not_impl
 ```
 
 <h2 id="special-var">
@@ -195,6 +198,7 @@ X [Unsupported]   enable
 </h2>
 
 ```chapter-links-special-var
+  [Oils VM]       OILS_VERSION      LIB_OSH
   [POSIX Special] $@  $*  $#     $?  $-     $$  $!   $0  $9
   [Shell Vars]    IFS             X LANG       X GLOBIGNORE
   [Shell Options] SHELLOPTS       X BASHOPTS
@@ -215,7 +219,6 @@ X [Shell State]   BASH_CMDS        @DIRSTACK
   [getopts]       OPTIND            OPTARG      X OPTERR
   [read]          REPLY
   [Functions]   X RANDOM            SECONDS
-  [Oils VM]       OILS_VERSION      LIB_OSH
 ```
 
 <h2 id="plugin">

@@ -4,6 +4,7 @@
 #define CORE_ERROR_MYCPP_H
 
 #include "_gen/asdl/hnode.asdl.h"
+#include "_gen/display/pretty.asdl.h"
 #include "cpp/data_lang.h"
 #include "mycpp/runtime.h"
 
@@ -43,8 +44,8 @@ class _ErrorWithLocation {
   _ErrorWithLocation(BigStr* msg, syntax_asdl::loc_t* location);
   bool HasLocation();
   BigStr* UserErrorString();
-  syntax_asdl::loc_t* location;
-  BigStr* msg;
+  syntax_asdl::loc_t* location{};
+  BigStr* msg{};
   
   static constexpr uint32_t field_mask() {
     return maskbit(offsetof(_ErrorWithLocation, location))
@@ -58,12 +59,12 @@ class _ErrorWithLocation {
   DISALLOW_COPY_AND_ASSIGN(_ErrorWithLocation)
 };
 
-class Usage : public _ErrorWithLocation {
+class Usage : public ::error::_ErrorWithLocation {
  public:
   Usage(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
-    return _ErrorWithLocation::field_mask();
+    return ::error::_ErrorWithLocation::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -73,12 +74,12 @@ class Usage : public _ErrorWithLocation {
   DISALLOW_COPY_AND_ASSIGN(Usage)
 };
 
-class Parse : public _ErrorWithLocation {
+class Parse : public ::error::_ErrorWithLocation {
  public:
   Parse(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
-    return _ErrorWithLocation::field_mask();
+    return ::error::_ErrorWithLocation::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -88,12 +89,12 @@ class Parse : public _ErrorWithLocation {
   DISALLOW_COPY_AND_ASSIGN(Parse)
 };
 
-class FailGlob : public _ErrorWithLocation {
+class FailGlob : public ::error::_ErrorWithLocation {
  public:
   FailGlob(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
-    return _ErrorWithLocation::field_mask();
+    return ::error::_ErrorWithLocation::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -103,12 +104,12 @@ class FailGlob : public _ErrorWithLocation {
   DISALLOW_COPY_AND_ASSIGN(FailGlob)
 };
 
-class RedirectEval : public _ErrorWithLocation {
+class RedirectEval : public ::error::_ErrorWithLocation {
  public:
   RedirectEval(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
-    return _ErrorWithLocation::field_mask();
+    return ::error::_ErrorWithLocation::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -118,15 +119,15 @@ class RedirectEval : public _ErrorWithLocation {
   DISALLOW_COPY_AND_ASSIGN(RedirectEval)
 };
 
-class FatalRuntime : public _ErrorWithLocation {
+class FatalRuntime : public ::error::_ErrorWithLocation {
  public:
   FatalRuntime(int exit_status, BigStr* msg, syntax_asdl::loc_t* location);
   int ExitStatus();
 
-  int exit_status;
+  int exit_status{};
   
   static constexpr uint32_t field_mask() {
-    return _ErrorWithLocation::field_mask();
+    return ::error::_ErrorWithLocation::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -136,12 +137,12 @@ class FatalRuntime : public _ErrorWithLocation {
   DISALLOW_COPY_AND_ASSIGN(FatalRuntime)
 };
 
-class Strict : public FatalRuntime {
+class Strict : public ::error::FatalRuntime {
  public:
   Strict(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
-    return FatalRuntime::field_mask();
+    return ::error::FatalRuntime::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -151,14 +152,14 @@ class Strict : public FatalRuntime {
   DISALLOW_COPY_AND_ASSIGN(Strict)
 };
 
-class ErrExit : public FatalRuntime {
+class ErrExit : public ::error::FatalRuntime {
  public:
   ErrExit(int exit_status, BigStr* msg, syntax_asdl::loc_t* location, bool show_code = false);
 
-  bool show_code;
+  bool show_code{};
   
   static constexpr uint32_t field_mask() {
-    return FatalRuntime::field_mask();
+    return ::error::FatalRuntime::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -168,12 +169,12 @@ class ErrExit : public FatalRuntime {
   DISALLOW_COPY_AND_ASSIGN(ErrExit)
 };
 
-class Expr : public FatalRuntime {
+class Expr : public ::error::FatalRuntime {
  public:
   Expr(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
-    return FatalRuntime::field_mask();
+    return ::error::FatalRuntime::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -183,15 +184,15 @@ class Expr : public FatalRuntime {
   DISALLOW_COPY_AND_ASSIGN(Expr)
 };
 
-class Structured : public FatalRuntime {
+class Structured : public ::error::FatalRuntime {
  public:
   Structured(int status, BigStr* msg, syntax_asdl::loc_t* location, Dict<BigStr*, value_asdl::value_t*>* properties = nullptr);
   value::Dict* ToDict();
 
-  Dict<BigStr*, value_asdl::value_t*>* properties;
+  Dict<BigStr*, value_asdl::value_t*>* properties{};
   
   static constexpr uint32_t field_mask() {
-    return FatalRuntime::field_mask()
+    return ::error::FatalRuntime::field_mask()
          | maskbit(offsetof(Structured, properties));
   }
 
@@ -202,12 +203,12 @@ class Structured : public FatalRuntime {
   DISALLOW_COPY_AND_ASSIGN(Structured)
 };
 
-class AssertionErr : public Expr {
+class AssertionErr : public ::error::Expr {
  public:
   AssertionErr(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
-    return Expr::field_mask();
+    return ::error::Expr::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -217,12 +218,12 @@ class AssertionErr : public Expr {
   DISALLOW_COPY_AND_ASSIGN(AssertionErr)
 };
 
-class TypeErrVerbose : public Expr {
+class TypeErrVerbose : public ::error::Expr {
  public:
   TypeErrVerbose(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
-    return Expr::field_mask();
+    return ::error::Expr::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -232,12 +233,12 @@ class TypeErrVerbose : public Expr {
   DISALLOW_COPY_AND_ASSIGN(TypeErrVerbose)
 };
 
-class TypeErr : public TypeErrVerbose {
+class TypeErr : public ::error::TypeErrVerbose {
  public:
   TypeErr(value_asdl::value_t* actual_val, BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
-    return TypeErrVerbose::field_mask();
+    return ::error::TypeErrVerbose::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -251,7 +252,7 @@ class Runtime {
  public:
   Runtime(BigStr* msg);
   BigStr* UserErrorString();
-  BigStr* msg;
+  BigStr* msg{};
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassScanned(1, sizeof(Runtime));
@@ -265,11 +266,11 @@ class Decode {
   Decode(BigStr* msg, BigStr* s, int start_pos, int end_pos, int line_num);
   BigStr* Message();
   BigStr* __str__();
-  BigStr* msg;
-  BigStr* s;
-  int start_pos;
-  int end_pos;
-  int line_num;
+  BigStr* msg{};
+  BigStr* s{};
+  int start_pos{};
+  int end_pos{};
+  int line_num{};
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassScanned(2, sizeof(Decode));
@@ -282,7 +283,7 @@ class Encode {
  public:
   Encode(BigStr* msg);
   BigStr* Message();
-  BigStr* msg;
+  BigStr* msg{};
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassScanned(1, sizeof(Encode));
@@ -296,7 +297,6 @@ class Encode {
 [[noreturn]] void p_die(BigStr* msg, syntax_asdl::loc_t* location);
 [[noreturn]] void e_die(BigStr* msg, syntax_asdl::loc_t* location = nullptr);
 [[noreturn]] void e_die_status(int status, BigStr* msg, syntax_asdl::loc_t* location = nullptr);
-
 
 }  // declare namespace error
 

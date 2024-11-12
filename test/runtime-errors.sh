@@ -226,8 +226,17 @@ test-errexit-multiple-processes() {
 
   _sep
 
-  # no pipefail
-  _ysh-should-run 'ls | false | wc -l'
+  # BUG introduced by shopt -s no_last_fork: Even though set -o pipefail is on
+  # in YSH, the entire shell does NOT exit!
+  #
+  # This is because 'wc -l' does exec.  And then there is nothing to "modify"
+  # the exit status based on pipefail.
+  #
+  # So it's actually unsound to do this optmization when set -o pipefail is on.
+  # Combined with shopt -s lastpipe
+
+  #_ysh-should-run 'ls | false | wc -l'
+  _ysh-error-1 'ls | false | wc -l'
 
   _sep
 
@@ -276,20 +285,21 @@ test-errexit-multiple-processes() {
 _strict-errexit-case() {
   local code=$1
 
-  case-banner "[strict_errexit] $code"
+  #case-banner "[strict_errexit] $code"
 
   _osh-error-1 \
     "set -o errexit; shopt -s strict_errexit; $code"
   echo
 }
 
-test-strict_errexit_1() {
+test-strict-errexit-1() {
   # Test out all the location info
 
   _strict-errexit-case '! { echo 1; echo 2; }'
 
   _strict-errexit-case '{ echo 1; echo 2; } && true'
   _strict-errexit-case '{ echo 1; echo 2; } || true'
+  _strict-errexit-case '{ echo 1; echo 2; } >/dev/null || true'
 
   # More chains
   _strict-errexit-case '{ echo 1; echo 2; } && true && true'
@@ -297,6 +307,8 @@ test-strict_errexit_1() {
   _strict-errexit-case 'true && true && { echo 1; echo 2; } || true || true'
 
   _strict-errexit-case 'if { echo 1; echo 2; }; then echo IF; fi'
+  _strict-errexit-case 'if { echo 1; echo 2; } >/dev/null; then echo IF; fi'
+
   _strict-errexit-case 'while { echo 1; echo 2; }; do echo WHILE; done'
   _strict-errexit-case 'until { echo 1; echo 2; }; do echo UNTIL; done'
 
@@ -306,7 +318,7 @@ test-strict_errexit_1() {
                         if p { echo hi }'
 }
 
-test-strict_errexit_conditionals() {
+test-strict-errexit-conditionals() {
   # this works, even though this is a subshell
   _strict-errexit-case '
 myfunc() { return 1; }
@@ -378,18 +390,18 @@ done
 
 # OLD WAY OF BLAMING
 # Note: most of these don't fail
-test-strict_errexit_old() {
+test-strict-errexit-old() {
   # Test out all the location info
 
   # command.Pipeline.
   _strict-errexit-case 'if ls | wc -l; then echo Pipeline; fi'
-  _strict-errexit-case 'if ! ls | wc -l; then echo Pipeline; fi'
+  _strict-errexit-case 'if ! ls | wc -l; then echo failed; fi'
 
   # This one is ALLOWED
   #_strict-errexit-case 'if ! ls; then echo Pipeline; fi'
 
   # command.AndOr
-  _strict-errexit-case 'if echo a && echo b; then echo AndOr; fi'
+  #_strict-errexit-case 'if echo a && echo b; then echo AndOr; fi'
 
   # command.DoGroup
   _strict-errexit-case '! for x in a; do echo $x; done'
@@ -1076,7 +1088,7 @@ test-control_flow_subshell() {
   '
 }
 
-test-fallback_locations() {
+test-fallback-locations() {
   # Redirect
   _osh-error-1 'echo hi > /'
 
@@ -1096,7 +1108,7 @@ test-fallback_locations() {
   _osh-error-1 '[[ $x =~ $(( 3 ** -2 )) ]]'
 
   _osh-error-2 'type -x'  # correctly points to -x
-  _osh-error-2 'use x'
+  _osh-error-2 'use'
 
   # Assign builtin
   _osh-error-2 'export -f'
@@ -1130,7 +1142,7 @@ test-external_cmd_typed_args() {
   _ysh-error-X 1 'cat ("myfile")'
 }
 
-test-arith_ops_str() {
+test-arith-ops-str() {
   _ysh-error-X 3 '= "100" + "10a"'
   _ysh-error-X 3 '= "100" - "10a"'
   _ysh-error-X 3 '= "100" * "10a"'
@@ -1165,6 +1177,41 @@ test-long-shell-line() {
 
   _ysh-error-1 'myvar=$(printf "what a very long string that we have here, which forces the command line to wrap around the terminal width. long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long") && echo $myvar'
   echo
+}
+
+test-int-overflow() {
+  local pos='18446744073709551616'
+  local neg='-18446744073709551616'
+
+  # frontend/args.py
+  _osh-error-2 "echo hi | read -n $pos"
+  _osh-error-2 "echo hi | read -n $neg"
+
+  # osh/sh_expr_eval.py
+  _osh-error-1 "s=$pos;"' echo $(( $s ))'
+  _osh-error-1 "s=$neg;"' echo $(( $s ))'
+
+  # octal
+  local oct_pos='01234567012345670123456701234567'
+  local oct_neg="-$oct_pos"
+  _osh-error-1 "s=$oct_pos;"' echo $(( $s ))'
+  _osh-error-1 "s=$oct_neg;"' echo $(( $s ))'  # treated as negation
+
+  # hex
+  local hex_pos='0x123456789abcdef0123456789'
+  local hex_neg="-$hex_pos"
+  _osh-error-1 "s=$hex_pos;"' echo $(( $s ))'
+  _osh-error-1 "s=$hex_neg;"' echo $(( $s ))'  # treated as negation
+
+  # builtins
+  _osh-error-1 'printf %d'" $pos"
+  _osh-error-1 'printf %d'" $neg"
+
+  _osh-error-2 "trap $pos ERR"
+  _osh-error-2 "trap -- $neg ERR"
+
+  _osh-error-2 "ulimit $pos"
+  _osh-error-2 "ulimit -- $neg"
 }
 
 #

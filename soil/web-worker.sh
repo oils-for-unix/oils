@@ -35,7 +35,7 @@ source web/table/html.sh  # table-sort-{begin,end}
 #       3619/  # $GITHUB_RUN_NUMBER
 #         dev-minimal.wwz
 #         cpp-small.wwz
-#     srht-jobs/
+#     sourcehut-jobs/
 #       index.html
 #       22/  # $JOB_ID
 #         dev-minimal.wwz
@@ -44,11 +44,11 @@ source web/table/html.sh  # table-sort-{begin,end}
 
 sshq() {
   # Don't need commands module as I said here!
-  # http://www.oilshell.org/blog/2017/01/31.html
+  # https://www.oilshell.org/blog/2017/01/31.html
   #
   # This is Bernstein chaining through ssh.
 
-  ssh $SOIL_USER@$SOIL_HOST "$(printf '%q ' "$@")"
+  my-ssh $SOIL_USER_HOST "$(printf '%q ' "$@")"
 }
 
 remote-rewrite-jobs-index() {
@@ -62,7 +62,19 @@ remote-cleanup-jobs-index() {
 }
 
 remote-cleanup-status-api() {
-  sshq soil-web/soil/web.sh cleanup-status-api false
+  #sshq soil-web/soil/web.sh cleanup-status-api false
+  # 2024-07 - work around bug by doing dry_run only.
+  #
+  # TODO: Fix the logic in soil/web.sh
+
+  if false; then
+    sshq soil-web/soil/web.sh cleanup-status-api true
+  else
+    curl --include --fail-with-body \
+      --form 'run-hook=soil-cleanup-status-api' \
+      --form 'arg1=true' \
+      $WWUP_URL
+  fi
 }
 
 my-scp() {
@@ -83,16 +95,26 @@ scp-status-api() {
   # We could make this one invocation of something like:
   # cat $status_file | sshq soil/web.sh PUT $remote_path
 
-  my-ssh $SOIL_USER_HOST "mkdir -p $(dirname $remote_path)"
+  if false; then
+    my-ssh $SOIL_USER_HOST "mkdir -p $(dirname $remote_path)"
 
-  # the consumer should check if these are all zero
-  # note: the file gets RENAMED
-  my-scp $status_file "$SOIL_USER_HOST:$remote_path"
+    # the consumer should check if these are all zero
+    # note: the file gets RENAMED
+    my-scp $status_file "$SOIL_USER_HOST:$remote_path"
+  else
+    # Note: we don't need to change the name of the file, because we just glob
+    # the dir
+    curl --include --fail-with-body \
+      --form 'payload-type=status-api' \
+      --form "subdir=github/$run_id" \
+      --form "file1=@$status_file" \
+      $WWUP_URL
+  fi
 }
 
 scp-results() {
   # could also use Travis known_hosts addon?
-  local prefix=$1  # srht- or ''
+  local prefix=$1  # sourcehut- or ''
   shift
 
   my-scp "$@" "$SOIL_USER_HOST:$SOIL_REMOTE_DIR/${prefix}jobs/"
@@ -124,7 +146,7 @@ format-wwz-index() {
   local job_id=$1
   local tsv=${2:-_tmp/soil/INDEX.tsv}
 
-  soil-html-head "$job_id.wwz"
+  soil-html-head "$job_id.wwz" /uuu/web
 
   cat <<EOF
   <body class="width40">
@@ -234,6 +256,7 @@ make-job-wwz() {
   zip -q -r $wwz \
     index.html \
     _build/wedge/logs \
+    _gen/mycpp/examples \
     _test \
     _tmp/{soil,spec,src-tree-www,wild-www,stateful,process-table,syscall,benchmark-data,metrics,mycpp-examples,compute,gc,gc-cachegrind,perf,vm-baseline,osh-runtime,osh-parser,host-id,shell-id} \
     _tmp/uftrace/{index.html,stage2} \
@@ -249,9 +272,9 @@ test-collect-json() {
 deploy-job-results() {
   ### Copy .wwz, .tsv, and .json to a new dir
 
-  local prefix=$1  # e.g. example.com/github-jobs/
-  local subdir=$2  # e.g. example.com/github-jobs/1234/  # make this dir
-  local job_name=$3  # e.g. example.com/github-jobs/1234/foo.wwz
+  local prefix=$1  # e.g. github- for example.com/github-jobs/
+  local run_dir=$2  # e.g. 1234  # make this dir
+  local job_name=$3  # e.g. cpp-small for example.com/github-jobs/1234/cpp-small.wwz
   shift 2
   # rest of args are more env vars
 
@@ -270,17 +293,27 @@ deploy-job-results() {
   # So we don't have to unzip it
   cp _tmp/soil/INDEX.tsv $job_name.tsv
 
-  local remote_dest_dir="$SOIL_REMOTE_DIR/${prefix}jobs/$subdir"
-  my-ssh $SOIL_USER_HOST "mkdir -p $remote_dest_dir"
+  if false; then
+    local remote_dest_dir="$SOIL_REMOTE_DIR/${prefix}jobs/$run_dir"
+    my-ssh $SOIL_USER_HOST "mkdir -p $remote_dest_dir"
 
-  # Do JSON last because that's what 'list-json' looks for
-  my-scp $job_name.{wwz,tsv,json} "$SOIL_USER_HOST:$remote_dest_dir"
+    # Do JSON last because that's what 'list-json' looks for
+    my-scp $job_name.{wwz,tsv,json} "$SOIL_USER_HOST:$remote_dest_dir"
+  else
+    curl --include --fail-with-body \
+      --form "payload-type=${prefix}jobs" \
+      --form "subdir=$run_dir" \
+      --form "file1=@${job_name}.wwz" \
+      --form "file2=@${job_name}.tsv" \
+      --form "file3=@${job_name}.json" \
+      $WWUP_URL
+  fi
 
   log ''
   log 'View CI results here:'
   log ''
-  log "http://$SOIL_HOST/${prefix}jobs/$subdir/"
-  log "http://$SOIL_HOST/${prefix}jobs/$subdir/$job_name.wwz/"
+  log "https://$SOIL_HOST/uuu/${prefix}jobs/$run_dir/"
+  log "https://$SOIL_HOST/uuu/${prefix}jobs/$run_dir/$job_name.wwz/"
   log ''
 }
 
@@ -289,7 +322,7 @@ publish-cpp-tarball() {
 
   # Example of dir structure we need to cleanup:
   #
-  # srht-jobs/
+  # sourcehut-jobs/
   #   git-$hash/
   #     index.html
   #     oils-for-unix.tar
@@ -302,46 +335,79 @@ publish-cpp-tarball() {
   # 2. Get the OLDEST commit dates, e.g. all except for 50
   # 3. Delete all commit hash dirs not associated with them
 
-  # Fix subtle problem here !!!
-  shopt -s inherit_errexit
+  if false; then
+    # Note: don't upload code without auth
+    # TODO: Move it to a different dir.
 
-  local git_commit_dir
-  git_commit_dir=$(git-commit-dir "$prefix")
+    local commit_hash
+    commit_hash=$(cat _tmp/soil/commit-hash.txt)
 
-  my-ssh $SOIL_USER_HOST "mkdir -p $git_commit_dir"
+    local tar=_release/oils-for-unix.tar 
+    curl --include --fail-with-body \
+      --form 'payload-type=github-jobs' \
+      --form "subdir=git-$commit_hash" \
+      --form "file1=@$tar" \
+      $WWUP_URL
 
-  # Do JSON last because that's what 'list-json' looks for
+    log 'Tarball:'
+    log ''
+    log "https://$SOIL_HOST/code/github-jobs/git-$commit_hash/"
 
-  local tar=_release/oils-for-unix.tar 
+  else
+    # Fix subtle problem here !!!
+    shopt -s inherit_errexit
 
-  # Permission denied because of host/guest issue
-  #local tar_gz=$tar.gz
-  #gzip -c $tar > $tar_gz
+    local git_commit_dir
+    git_commit_dir=$(git-commit-dir "$prefix")
 
-  # Avoid race condition
-  # Crappy UUID: seconds since epoch, plus PID
-  local timestamp
-  timestamp=$(date +%s)
+    my-ssh $SOIL_USER_HOST "mkdir -p $git_commit_dir"
 
-  local temp_name="tmp-$timestamp-$$.tar"
+    # Do JSON last because that's what 'list-json' looks for
 
-  my-scp $tar "$SOIL_USER_HOST:$git_commit_dir/$temp_name"
+    local tar=_release/oils-for-unix.tar 
 
-  my-ssh $SOIL_USER_HOST \
-    "mv -v $git_commit_dir/$temp_name $git_commit_dir/oils-for-unix.tar"
+    # Permission denied because of host/guest issue
+    #local tar_gz=$tar.gz
+    #gzip -c $tar > $tar_gz
 
-  log 'Tarball:'
-  log ''
-  log "http://$git_commit_dir"
+    # Avoid race condition
+    # Crappy UUID: seconds since epoch, plus PID
+    local timestamp
+    timestamp=$(date +%s)
+
+    local temp_name="tmp-$timestamp-$$.tar"
+
+    my-scp $tar "$SOIL_USER_HOST:$git_commit_dir/$temp_name"
+
+    my-ssh $SOIL_USER_HOST \
+      "mv -v $git_commit_dir/$temp_name $git_commit_dir/oils-for-unix.tar"
+
+    log 'Tarball:'
+    log ''
+    log "https://$git_commit_dir"
+  fi
+
 }
 
 remote-event-job-done() {
   ### "Client side" handler: a job calls this when it's done
 
-  log "remote-event-job-done"
+  local prefix=$1  # 'github-' or 'sourcehut-'
+  local run_id=$2  # $GITHUB_RUN_NUMBER or git-$hash
+
+  log "remote-event-job-done $prefix $run_id"
 
   # Deployed code dir
-  sshq soil-web/soil/web.sh event-job-done "$@"
+  if false; then
+    sshq soil-web/soil/web.sh event-job-done "$@"
+  else
+    # Note: I think curl does URL escaping of arg1= arg2= ?
+    curl --include --fail-with-body \
+      --form 'run-hook=soil-event-job-done' \
+      --form "arg1=$prefix" \
+      --form "arg2=$run_id" \
+      $WWUP_URL
+  fi
 }
 
 filename=$(basename $0)

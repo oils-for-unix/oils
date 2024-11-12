@@ -1,0 +1,26 @@
+
+
+#const __provide__ = :| echo-args |
+const __provide__ = :| echo-args badObj |
+
+proc echo-args (w1, w2, ...w_rest; t1, t2, ...t_rest; n1=42, n2=43, ...n_rest; block) {
+  pp test_ ([w1, w2])
+  pp test_ (w_rest)
+  echo
+
+  pp test_ ([t1, t2])
+  pp test_ (t_rest)
+  echo
+
+  pp test_ ([n1, n2])
+  pp test_ (n_rest)
+  echo
+
+  pp test_ (block)
+}
+
+# 'invoke_module' is in __builtins__ - it is the only value.BuiltinProc right now
+
+var methods = Object(null, {__invoke__: getVar('module-invoke')})
+#var methods = Object(null, {__invoke__: module_invoke})
+var badObj = Object(methods, {})

@@ -213,7 +213,8 @@ print-workloads() {
 
 print-tasks() {
   local host_name=$1  
-  local osh_native=$2
+  shift 1
+  local -a osh_native=( "$@" )
 
   if test -n "${QUICKLY:-}"; then
     workloads=(
@@ -226,7 +227,7 @@ print-tasks() {
     workloads=( "${ALL_WORKLOADS[@]}" )
   fi
 
-  for sh_path in bash dash bin/osh $osh_native; do
+  for sh_path in bash dash bin/osh "${osh_native[@]}"; do
     for workload in "${workloads[@]}"; do
       tsv-row $host_name $sh_path $workload
     done
@@ -310,10 +311,11 @@ run-tasks-wrapper() {
 measure() {
   ### For release and CI
   local host_name=$1  # 'no-host' or 'lenny'
-  local raw_out_dir=$2  # _tmp/osh-runtime or ../../benchmark-data/osh-runtime
-  local osh_native=$3  # $OSH_CPP_NINJA_BUILD or $OSH_CPP_BENCHMARK_DATA
+  local raw_out_dir=$2  # _tmp/osh-runtime/$X or ../../benchmark-data/osh-runtime/$X
+  shift 2
+  local -a osh_native=( "$@" )  # $OSH_CPP_NINJA_BUILD or $OSH_CPP_BENCHMARK_DATA, etc...
 
-  print-tasks "$host_name" "$osh_native" \
+  print-tasks "$host_name" "${osh_native[@]}" \
     | run-tasks-wrapper "$host_name" "$raw_out_dir"
 }
 
@@ -324,13 +326,12 @@ stage1() {
   local out_dir=$BASE_DIR/stage1  # _tmp/osh-runtime
   mkdir -p $out_dir
 
-  # Globs are in lexicographical order, which works for our dates.
-
   local -a raw_times=()
   local -a raw_gc_stats=()
   local -a raw_provenance=()
 
   if test -n "$single_machine"; then
+    # find dir in _tmp/osh-runtime
     local -a a=( $base_dir/raw.$single_machine.* )
 
     raw_times+=( ${a[-1]}/times.tsv )
@@ -338,6 +339,8 @@ stage1() {
     raw_provenance+=( ${a[-1]}/provenance.tsv )
 
   else
+    # find last dirs in ../benchmark-data/osh-runtime
+    # Globs are in lexicographical order, which works for our dates.
     local -a a=( $base_dir/raw.$MACHINE1.* )
     local -a b=( $base_dir/raw.$MACHINE2.* )
 
@@ -491,7 +494,7 @@ soil-run() {
   extract
 
   # could add _bin/cxx-bumpleak/oils-for-unix, although sometimes it's slower
-  local -a osh_bin=( $OSH_CPP_NINJA_BUILD )
+  local -a osh_bin=( $OSH_CPP_NINJA_BUILD $OSH_SOUFFLE_CPP_NINJA_BUILD )
   ninja "${osh_bin[@]}"
 
   local single_machine='no-host'
@@ -508,7 +511,7 @@ soil-run() {
   local raw_out_dir="$BASE_DIR/raw.$host_job_id"
   mkdir -p $raw_out_dir $BASE_DIR/stage1
 
-  measure $single_machine $raw_out_dir $OSH_CPP_NINJA_BUILD
+  measure $single_machine $raw_out_dir $OSH_CPP_NINJA_BUILD $OSH_SOUFFLE_CPP_NINJA_BUILD
 
   # Trivial concatenation for 1 machine
   stage1 '' $single_machine

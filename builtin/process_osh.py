@@ -23,6 +23,7 @@ from core import pyos
 from core import pyutil
 from core import vm
 from frontend import flag_util
+from frontend import match
 from frontend import typed_args
 from mycpp import mops
 from mycpp import mylib
@@ -33,8 +34,11 @@ import posix_ as posix
 from typing import TYPE_CHECKING, List, Tuple, Optional, cast
 if TYPE_CHECKING:
     from core.process import Waiter, ExternalProgram, FdState
-    from core.state import Mem, SearchPath
-    from core.ui import ErrorFormatter
+    from core import executor
+    from core import state
+    from display import ui
+
+_ = log
 
 
 class Jobs(vm._Builtin):
@@ -83,7 +87,7 @@ class Fg(vm._Builtin):
 
         job = self.job_list.GetJobWithSpec(job_spec)
         if job is None:
-            log('No job to put in the foreground')
+            print_stderr('fg: No job to put in the foreground')
             return 1
 
         pgid = job.ProcessGroupId()
@@ -91,7 +95,7 @@ class Fg(vm._Builtin):
             'Processes put in the background should have a PGID'
 
         # TODO: Print job ID rather than the PID
-        log('Continue PID %d', pgid)
+        print_stderr('fg: PID %d Continued' % pgid)
         # Put the job's process group back into the foreground. GiveTerminal() must
         # be called before sending SIGCONT or else the process might immediately get
         # suspsended again if it tries to read/write on the terminal.
@@ -156,11 +160,8 @@ class Fork(vm._Builtin):
         if arg is not None:
             e_usage('got unexpected argument %r' % arg, location)
 
-        cmd = typed_args.OptionalBlock(cmd_val)
-        if cmd is None:
-            e_usage('expected a block', loc.Missing)
-
-        return self.shell_ex.RunBackgroundJob(cmd)
+        cmd_frag = typed_args.RequiredBlockAsFrag(cmd_val)
+        return self.shell_ex.RunBackgroundJob(cmd_frag)
 
 
 class ForkWait(vm._Builtin):
@@ -178,17 +179,14 @@ class ForkWait(vm._Builtin):
         if arg is not None:
             e_usage('got unexpected argument %r' % arg, location)
 
-        cmd = typed_args.OptionalBlock(cmd_val)
-        if cmd is None:
-            e_usage('expected a block', loc.Missing)
-
-        return self.shell_ex.RunSubshell(cmd)
+        cmd_frag = typed_args.RequiredBlockAsFrag(cmd_val)
+        return self.shell_ex.RunSubshell(cmd_frag)
 
 
 class Exec(vm._Builtin):
 
     def __init__(self, mem, ext_prog, fd_state, search_path, errfmt):
-        # type: (Mem, ExternalProgram, FdState, SearchPath, ErrorFormatter) -> None
+        # type: (state.Mem, ExternalProgram, FdState, executor.SearchPath, ui.ErrorFormatter) -> None
         self.mem = mem
         self.ext_prog = ext_prog
         self.fd_state = fd_state
@@ -204,7 +202,11 @@ class Exec(vm._Builtin):
             self.fd_state.MakePermanent()
             return 0
 
-        environ = self.mem.GetExported()
+        environ = self.mem.GetEnv()
+        if 0:
+            log('E %r', environ)
+            log('E %r', environ)
+            log('ZZ %r', environ.get('ZZ'))
         i = arg_r.i
         cmd = cmd_val.argv[i]
         argv0_path = self.search_path.CachedLookup(cmd)
@@ -212,8 +214,8 @@ class Exec(vm._Builtin):
             e_die_status(127, 'exec: %r not found' % cmd, cmd_val.arg_locs[1])
 
         # shift off 'exec', and remove typed args because they don't apply
-        c2 = cmd_value.Argv(cmd_val.argv[i:], cmd_val.arg_locs[i:], None, None,
-                            None, None)
+        c2 = cmd_value.Argv(cmd_val.argv[i:], cmd_val.arg_locs[i:],
+                            cmd_val.is_last_cmd, cmd_val.self_obj, None)
 
         self.ext_prog.Exec(argv0_path, c2, environ)  # NEVER RETURNS
         # makes mypy and C++ compiler happy
@@ -240,7 +242,7 @@ class Wait(vm._Builtin):
     """
 
     def __init__(self, waiter, job_list, mem, tracer, errfmt):
-        # type: (Waiter, process.JobList, Mem, dev.Tracer, ErrorFormatter) -> None
+        # type: (Waiter, process.JobList, state.Mem, dev.Tracer, ui.ErrorFormatter) -> None
         self.waiter = waiter
         self.job_list = job_list
         self.mem = mem
@@ -380,7 +382,8 @@ class Umask(vm._Builtin):
             except ValueError:
                 # NOTE: This also happens when we have '8' or '9' in the input.
                 print_stderr(
-                    "osh warning: umask with symbolic input isn't implemented")
+                    "oils warning: umask with symbolic input isn't implemented"
+                )
                 return 1
 
             posix.umask(new_mask)
@@ -521,9 +524,11 @@ class Ulimit(vm._Builtin):
             # In C, RLIM_INFINITY is rlim_t
             limit = mops.FromC(RLIM_INFINITY)
         else:
-            try:
-                big_int = mops.FromStr(s)
-            except ValueError as e:
+            if match.LooksLikeInteger(s):
+                ok, big_int = mops.FromStr2(s)
+                if not ok:
+                    raise error.Usage('Integer too big: %s' % s, s_loc)
+            else:
                 raise error.Usage(
                     "expected a number or 'unlimited', got %r" % s, s_loc)
 
@@ -575,7 +580,7 @@ class Ulimit(vm._Builtin):
             except (ValueError, resource.error) as e:
                 # Annoying: Python binding changes IOError -> ValueError
 
-                print_stderr('ulimit error: %s' % e)
+                print_stderr('oils: ulimit error: %s' % e)
 
                 # Extra info we could expose in C++ too
                 print_stderr('soft=%s hard=%s -> soft=%s hard=%s' % (
@@ -589,7 +594,7 @@ class Ulimit(vm._Builtin):
             try:
                 pyos.SetRLimit(what, soft, hard)
             except (IOError, OSError) as e:
-                print_stderr('ulimit error: %s' % pyutil.strerror(e))
+                print_stderr('oils: ulimit error: %s' % pyutil.strerror(e))
                 return 1
 
         return 0

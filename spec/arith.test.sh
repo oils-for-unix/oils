@@ -96,6 +96,86 @@ should not get here
 ## END
 ## N-I bash/mksh/zsh status: 0
 
+#### Integer constant parsing
+echo $(( 0x12A ))
+echo $(( 0x0A ))
+echo $(( 0777 ))
+echo $(( 0010 ))
+echo $(( 24#ag7 ))
+## STDOUT:
+298
+10
+511
+8
+6151
+## END
+
+## N-I dash status: 2
+## N-I dash STDOUT:
+298
+10
+511
+8
+## END
+
+## BUG zsh STDOUT:
+298
+10
+777
+10
+6151
+## END
+
+## BUG mksh STDOUT:
+298
+10
+777
+10
+6151
+## END
+
+#### Integer constant validation
+check() {
+  $SH -c "shopt --set strict_arith; echo $1"
+  echo status=$?
+}
+
+check '$(( 0x1X ))'
+check '$(( 09 ))'
+check '$(( 2#A ))'
+check '$(( 02#0110 ))'
+## STDOUT:
+status=1
+status=1
+status=1
+status=1
+## END
+
+## OK dash STDOUT:
+status=2
+status=2
+status=2
+status=2
+## END
+
+## BUG zsh STDOUT:
+status=1
+9
+status=0
+status=1
+6
+status=0
+## END
+
+## BUG mksh STDOUT:
+status=1
+9
+status=0
+status=1
+6
+status=0
+## END
+
 #### Newline in the middle of expression
 echo $((1
 + 2))
@@ -750,14 +830,57 @@ echo $((-10 % 3))
 echo $(( 10 % -3))
 echo $((-10 % -3))
 
-# Algorithm: Make both number spositive, then take the sign of the first
-# number?
-
 ## STDOUT:
 1
 -1
 1
 -1
+## END
+
+#### Negative numbers with bit shift
+
+echo $(( 5 << 1 ))
+echo $(( 5 << 0 ))
+$SH -c 'echo $(( 5 << -1 ))'  # implementation defined - OSH fails
+echo ---
+
+echo $(( 16 >> 1 ))
+echo $(( 16 >> 0 ))
+$SH -c 'echo $(( 16 >> -1 ))'  # not sure why this is zero
+$SH -c 'echo $(( 16 >> -2 ))'  # also 0
+echo ---
+
+## STDOUT:
+10
+5
+---
+8
+16
+---
+## END
+
+## OK bash/dash/mksh/zsh STDOUT:
+10
+5
+-9223372036854775808
+---
+8
+16
+0
+0
+---
+## END
+
+## BUG mksh STDOUT:
+10
+5
+-2147483648
+---
+8
+16
+0
+0
+---
 ## END
 
 #### undef[0]

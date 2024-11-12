@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 #### Minus operator is left associative
 
@@ -219,35 +219,35 @@ json write (~'3.5')
 
 $SH -c '
 var x = 0.12345
-pp line (x)
+pp test_ (x)
 '
 echo float=$?
 
 $SH -c '
 # Becomes infinity
 var x = 0.123456789e1234567
-pp line (x)
+pp test_ (x)
 
 var x = -0.123456789e1234567
-pp line (x)
+pp test_ (x)
 '
 echo float=$?
 
 $SH -c '
 # Becomes infinity
 var x = 0.123456789e-1234567
-pp line (x)
+pp test_ (x)
 
 var x = -0.123456789e-1234567
-pp line (x)
+pp test_ (x)
 '
 echo float=$?
 
 ## STDOUT:
 (Float)   0.12345
 float=0
-(Float)   inf
-(Float)   -inf
+(Float)   INFINITY
+(Float)   -INFINITY
 float=0
 (Float)   0.0
 (Float)   -0.0
@@ -259,52 +259,52 @@ float=0
 # Decimal
 $SH -c '
 var x = 1111
-pp line (x)
+pp test_ (x)
 '
 echo dec=$?
 
 $SH -c '
 var x = 1111_2222_3333_4444_5555_6666
-pp line (x)
+pp test_ (x)
 '
 echo dec=$?
 
 # Binary
 $SH -c '
 var x = 0b11
-pp line (x)
+pp test_ (x)
 '
 echo bin=$?
 
 $SH -c '
 var x = 0b1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111
-pp line (x)
+pp test_ (x)
 '
 echo bin=$?
 
 # Octal
 $SH -c '
 var x = 0o77
-pp line (x)
+pp test_ (x)
 '
 echo oct=$?
 
 $SH -c '
 var x = 0o1111_2222_3333_4444_5555_6666
-pp line (x)
+pp test_ (x)
 '
 echo oct=$?
 
 # Hex
 $SH -c '
 var x = 0xff
-pp line (x)
+pp test_ (x)
 '
 echo hex=$?
 
 $SH -c '
 var x = 0xaaaa_bbbb_cccc_dddd_eeee_ffff
-pp line (x)
+pp test_ (x)
 '
 echo hex=$?
 
@@ -321,6 +321,37 @@ oct=2
 (Int)   255
 hex=0
 hex=2
+## END
+
+#### Bit shift by negative number is not allowed
+
+shopt -s ysh:upgrade
+
+pp test_ (1 << 1)
+pp test_ (1 << 0)
+try {
+  pp test_ (1 << -1)
+}
+echo failed $[_error.code]
+echo
+
+pp test_ (16 >> 2)
+pp test_ (16 >> 1)
+pp test_ (16 >> 0)
+try {
+  pp test_ (16 >> -1)
+}
+echo failed $[_error.code]
+
+## STDOUT:
+(Int)   2
+(Int)   1
+failed 3
+
+(Int)   4
+(Int)   8
+(Int)   16
+failed 3
 ## END
 
 #### 64-bit operations
@@ -365,5 +396,219 @@ echo "max positive = $[ x + y ]"
 4294967296
 6442450944
 max positive = 9223372036854775807
+## END
+
+#### Integer literals
+var d = 123
+var b = 0b11
+var o = 0o123
+var h = 0xff
+echo $d $b $o $h
+## STDOUT:
+123 3 83 255
+## END
+
+#### Integer literals with underscores
+const dec = 65_536
+const bin = 0b0001_0101
+const oct = 0o001_755
+const hex = 0x0001_000f
+
+echo SHELL
+echo $dec
+echo $bin
+echo $oct
+echo $hex
+const x = 1_1 + 0b1_1 + 0o1_1 + 0x1_1
+echo sum $x
+
+# This works under Python 3.6, but the continuous build has earlier versions
+if false; then
+  echo ---
+  echo PYTHON
+
+  python3 -c '
+  print(65_536)
+  print(0b0001_0101)
+  print(0o001_755)
+  print(0x0001_000f)
+
+  # Weird syntax
+  print("sum", 1_1 + 0b1_1 + 0o1_1 + 0x1_1)
+  '
+fi
+
+## STDOUT:
+SHELL
+65536
+21
+1005
+65551
+sum 40
+## END
+
+#### Exponentiation with **
+var x = 2**3
+echo $x
+
+var y = 2.0 ** 3.0  # NOT SUPPORTED
+echo 'should not get here'
+
+## status: 3
+## STDOUT:
+8
+## END
+
+#### Float Division
+pp test_ (5/2)
+pp test_ (-5/2)
+pp test_ (5/-2)
+pp test_ (-5/-2)
+
+echo ---
+
+var x = 9
+setvar x /= 2
+pp test_ (x)
+
+var x = -9
+setvar x /= 2
+pp test_ (x)
+
+var x = 9
+setvar x /= -2
+pp test_ (x)
+
+var x = -9
+setvar x /= -2
+pp test_ (x)
+
+
+## STDOUT:
+(Float)   2.5
+(Float)   -2.5
+(Float)   -2.5
+(Float)   2.5
+---
+(Float)   4.5
+(Float)   -4.5
+(Float)   -4.5
+(Float)   4.5
+## END
+
+#### Integer Division (rounds toward zero)
+pp test_ (5//2)
+pp test_ (-5//2)
+pp test_ (5//-2)
+pp test_ (-5//-2)
+
+echo ---
+
+var x = 9
+setvar x //= 2
+pp test_ (x)
+
+var x = -9
+setvar x //= 2
+pp test_ (x)
+
+var x = 9
+setvar x //= -2
+pp test_ (x)
+
+var x = -9
+setvar x //= -2
+pp test_ (x)
+
+## STDOUT:
+(Int)   2
+(Int)   -2
+(Int)   -2
+(Int)   2
+---
+(Int)   4
+(Int)   -4
+(Int)   -4
+(Int)   4
+## END
+
+#### % operator is remainder
+pp test_ ( 5 % 3)
+pp test_ (-5 % 3)
+
+# negative divisor illegal (tested in test/ysh-runtime-errors.sh)
+#pp test_ ( 5 % -3)
+#pp test_ (-5 % -3)
+
+var z = 10
+setvar z %= 3
+pp test_ (z)
+
+var z = -10
+setvar z %= 3
+pp test_ (z)
+
+## STDOUT:
+(Int)   2
+(Int)   -2
+(Int)   1
+(Int)   -1
+## END
+
+#### Bitwise logical
+var a = 0b0101 & 0b0011
+echo $a
+var b = 0b0101 | 0b0011
+echo $b
+var c = 0b0101 ^ 0b0011
+echo $c
+var d = ~b
+echo $d
+## STDOUT:
+1
+7
+6
+-8
+## END
+
+#### Shift operators
+var a = 1 << 4
+echo $a
+var b = 16 >> 4
+echo $b
+## STDOUT:
+16
+1
+## END
+
+#### multiline strings, list, tuple syntax for list, etc.
+var dq = "
+dq
+2
+"
+echo dq=$[len(dq)]
+
+var sq = '
+sq
+2
+'
+echo sq=$[len(sq)]
+
+var mylist = [
+  1,
+  2,
+  3,
+]
+echo mylist=$[len(mylist)]
+
+var mytuple = (1,
+  2, 3)
+echo mytuple=$[len(mytuple)]
+
+## STDOUT:
+dq=6
+sq=6
+mylist=3
+mytuple=3
 ## END
 

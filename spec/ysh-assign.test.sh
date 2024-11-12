@@ -239,7 +239,7 @@ json write (d)
 }
 ## END
 
-#### setvar d.key = 42 (setitem)
+#### setvar d.key = 42
 shopt -s ysh:all
 
 var d = {}
@@ -256,7 +256,7 @@ f3=43
 f2=42
 ## END
 
-#### setvar mylist[1] = 42 (setitem)
+#### setvar mylist[1] = 42
 shopt -s ysh:all
 var mylist = [1,2,3]
 setvar mylist[1] = 42
@@ -264,6 +264,27 @@ setvar mylist[1] = 42
 write --sep ' ' @mylist
 ## STDOUT:
 1 42 3
+## END
+
+#### setvar mylist[99] out of range
+shopt -s ysh:all
+var mylist = [4,5,6]
+try {
+  setvar mylist[99] = 42
+}
+echo $[_error.code]
+
+try {
+  setvar mylist[-99] = 42
+}
+echo $[_error.code]
+
+write --sep ' ' @mylist
+
+## STDOUT:
+3
+3
+4 5 6
 ## END
 
 #### mixing assignment builtins and YSH assignment
@@ -294,16 +315,16 @@ status=1
 
 #### circular dict - TODO 2023-06 REGRESS
 var d = {name: 'foo'}
-pp line (d)
+pp test_ (d)
 
 setvar d['name'] = 123
-pp line (d)
+pp test_ (d)
 
 setvar d['name'] = 'mystr'
-pp line (d)
+pp test_ (d)
 
 setvar d['name'] = d
-pp line (d)
+pp test_ (d)
 
 # This used to print ...
 
@@ -331,10 +352,10 @@ var L = [1,2,3]
 # be the last one ...
 
 run() {
-  $REPO_ROOT/bin/osh -O parse_proc -c "$@"
+  $[ENV.REPO_ROOT]/bin/osh -O parse_proc -c "$@"
 
   # Identical
-  # $SH +O ysh:all -O parse_proc -c "$@"
+  # $[ENV.SH] +O ysh:all -O parse_proc -c "$@"
 }
 
 set +o errexit
@@ -377,7 +398,7 @@ outside4=1
 
 set +o errexit
 
-$SH -c '
+$[ENV.SH] -c '
 var d = {}
 setvar d["key"] = 5
 echo "d.key = $[d.key]"
@@ -386,7 +407,7 @@ echo "should not get here"
 '
 echo outside1=$?
 
-$SH -c '
+$[ENV.SH] -c '
 var L = [42]
 setvar L[0] = 43
 echo "L[0] = $[L[0]]"

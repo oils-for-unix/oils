@@ -48,10 +48,11 @@ def run_tests():
     s1 = mops.ToStr(max_negative)
     print('max_negative string = %s' % s1)
 
-    max_negative2 = mops.FromStr(s1)
+    ok, max_negative2 = mops.FromStr2(s1)
     print('max_negative2 = %s' % mops.ToStr(max_negative2))
+    if ok:
+        print('ok')
 
-    #if max_negative == max_negative2:
     if mops.Equal(max_negative, max_negative2):
         print('round trip equal')
 

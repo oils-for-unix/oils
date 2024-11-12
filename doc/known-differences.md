@@ -88,12 +88,14 @@ Undecidable](https://www.oilshell.org/blog/2016/10/20.html) (2016).
 - [OILS-ERR-101](error-catalog.html#oils-err-101) explains more ways to fix
   this.
 
-### Subshell in command sub
+### Subshell in command sub - `$((` versus `$( (`
 
-You can have a subshell in a command sub, but it usually doesn't make sense.
+You can have a subshell `(` in a command sub `$(`, but it usually doesn't make
+sense.
 
-In OSH you need a space after `$(`.  The characters `$((` always start an
-arith sub.
+In OSH you need a space after `$(`, so it would be `$( (`.
+
+characters `$((` always start an arith sub.
 
 No:
 
@@ -105,6 +107,40 @@ Yes:
     $({ cd / && ls; })  # Use {} for grouping, not ().  Note trailing ;
     $(cd / && ls)       # Even better
 
+### Nested Subshells - `((` versus `( (`
+
+You should never need nested subshells with `((` in Bourne shell or Oils.
+
+If you do, you should add a space with `( (` instead of `((`, similar to the
+issue above.
+
+In OSH, `((` always starts bash-style arithmetic.
+
+---
+
+The only place I see `((` arise is when shell users try to use `( )` to mean
+**grouping**, because they are used to C or Python.
+
+But it means **subshell**, not grouping.  In shell, `{ }` is the way to group
+commands.
+
+No:
+
+    if ((test -f a || test -f b) && grep foo c); then
+      echo ok
+    fi
+
+Allowed, but not what you want:
+
+    if ( (test -f a || test -f b) && grep foo c); then
+      echo ok
+    fi
+
+Yes:
+
+    if { test -f a || test -f b; } && grep foo c; then
+      echo ok
+    fi
 
 ### Extended glob vs. Negation of boolean expression
 

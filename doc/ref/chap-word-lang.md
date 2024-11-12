@@ -25,16 +25,62 @@ strings, or arrays of strings.
 
 ### expr-sub
 
+Try to turn an expression into a string.  Examples:
+
+    $ echo $[3 * 2]
+    6
+
+    $ var s = 'foo'
+    $ echo $[s[1:]]
+    oo
+
+Some types can't be stringified, like Dict and List:
+
+    $ var d = {k: 42}
+
+    $ echo $[d]
+    fatal: expected Null, Bool, Int, Float, Eggex
+
+You can explicitly use `toJson8` or `toJson()`:
+
+    $ echo $[toJson8(d)]
+    {"k":42}
+
+(This is similar to `json write (d)`)
+
 ### expr-splice
 
+Splicing puts the elements of a `List` into a string array context:
+
+    $ var foods = ['ale', 'bean', 'corn']
+    $ echo pizza @[foods[1:]] worm
+    pizza bean corn worm
+
+This syntax is enabled by `shopt --set` [parse_at][], which is part of YSH.
+
+[parse_at]: chap-option.html#ysh:upgrade
+
 ### var-splice
+
+    $ var foods = ['ale', 'bean', 'corn']
+    echo @foods
+
+This syntax is enabled by `shopt --set` [parse_at][], which is part of YSH.
+
 
 <h2 id="formatting">Formatting Typed Data as Strings</h2>
 
 ### ysh-printf
 
+Not done.
+
+    echo ${x %.3f}
+
 ### ysh-format
 
+Not done.
+
+    echo ${x|html}
 
 ## Quotes
 
@@ -77,7 +123,7 @@ is returned, it's removed:
     $ echo "/tmp/$(hostname)"
     /tmp/example.com
 
-YSH has spliced command subs, enabled by `shopt --set parse_at`.  The reuslt is
+YSH has spliced command subs, enabled by `shopt --set parse_at`.  The result is
 a **List** of strings, rather than a single string.
 
     $ write -- @(echo foo; echo 'with spaces')
@@ -131,15 +177,63 @@ Open stdin as a named file in `/dev/fd`:
 
 ### op-test
 
+Shell has boolean operations within `${}`.  I use `:-` most frequently:
+
+    x=${1:-default}
+    osh=${OSH:-default}
+
+This idiom is also useful:
+
+    : ${LIB_OSH=stdlib/osh}
+
 ### op-strip
 
-### op-replace
+Remove prefixes or suffixes from strings:
+
+    echo ${y#prefix}
+    echo ${y##'prefix'}
+
+    echo ${y%suffix}
+    echo ${y%%'suffix'}
+
+The prefix and suffix can be glob patterns, but this usage is discouraged
+because it may be slow.
+
+### op-patsub
+
+Replace a substring or pattern.
+
+The character after the first `/` can be `/` to replace all occurrences:
+
+    $ x=food
+
+    $ echo ${x//o/--}      # replace 1 o with 2 --
+    f----d
+
+It can be `#` or `%` for an anchored replacement:
+
+    $ echo ${x/#f/--}      # left anchored f
+    --ood
+
+    $ echo ${x/%d/--}      # right anchored d
+    foo--
+
+The pattern can also be a glob:
+
+    $ echo ${x//[a-z]/o}   # replace 1 char with o
+    oooo
+
+    $ echo ${x//[a-z]+/o}  # replace multiple chars
+    o
 
 ### op-index
 
-    ${a[i+1]}
+    echo ${a[i+1]}
 
 ### op-slice
+
+    echo ${a[@]:1:2}
+    echo ${@:1:2}
 
 ### op-format
 

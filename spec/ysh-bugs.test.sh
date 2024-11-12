@@ -4,10 +4,10 @@
 #### fastlex: NUL byte not allowed inside char literal #' '
 
 echo $'var x = #\'\x00\'; echo x=$x' > tmp.oil
-$SH tmp.oil
+$[ENV.SH] tmp.oil
 
 echo $'var x = #\' ' > incomplete.oil
-$SH incomplete.oil
+$[ENV.SH] incomplete.oil
 
 ## status: 2
 ## STDOUT:
@@ -18,7 +18,7 @@ $SH incomplete.oil
 # Hm this test doesn't really tickle the bug
 
 echo $'#! /usr/bin/env \x00 sh \necho hi' > tmp.oil
-env OILS_HIJACK_SHEBANG=1 $SH tmp.oil
+env OILS_HIJACK_SHEBANG=1 $[ENV.SH] tmp.oil
 
 ## STDOUT:
 hi
@@ -122,7 +122,7 @@ type -a returned 1
 var x = []
 true && call x->append(42)
 false && call x->append(43)
-pp line (x)
+pp test_ (x)
 
 func amp() {
   true && return (42)
@@ -132,8 +132,8 @@ func pipe() {
   false || return (42)
 }
 
-pp line (amp())
-pp line (pipe())
+pp test_ (amp())
+pp test_ (pipe())
 
 ## STDOUT:
 ## END
@@ -142,7 +142,7 @@ pp line (pipe())
 #### shvar then replace - bug #1986 context manager crash
 
 shvar FOO=bar {
-  for x in (1 .. 500) {
+  for x in (1 ..< 500) {
     var Q = "hello"
     setvar Q = Q=>replace("hello","world")
   }
@@ -158,10 +158,10 @@ world
 
 set +o errexit
 
-$SH -c 'proc y (;x) { return = x }'
+$[ENV.SH] -c 'proc y (;x) { return = x }'
 echo status=$?
 
-$SH -c 'func y (;x) { return = x }'
+$[ENV.SH] -c 'func y (;x) { return = x }'
 echo status=$?
 
 ## STDOUT:
@@ -172,10 +172,8 @@ status=2
 
 #### proc with IFS= read -r line - dynamic scope - issue #2012
 
-# this is an issue with lack of dynamic scope
-# not sure exactly how to handle it ...
-
-# shvar IFS= { read } is our replacement for dynamic scope
+# 2024-10 - FIXED by the new Env Obj!  Because in YSH, 'line' is NOT created in
+# TEMP stack frame - we use the ENCLOSED frame, and it fixes it.
 
 proc p {
 	read -r line
@@ -196,4 +194,109 @@ echo yy | p-ifs
 ## STDOUT:
 zz
 yy
+## END
+
+#### func call inside proc call - error message attribution
+
+try 2> foo {
+  $[ENV.SH] -c '
+func ident(x) {
+  return (x)
+}
+
+proc p (; x) {
+  echo $x
+}
+
+# BUG: it points to ( in ident(
+#      should point to ( in eval (
+
+eval (ident([1,2,3]))
+'
+}
+
+cat foo
+
+## STDOUT:
+## END
+
+
+#### Crash in parsing case on EOF condition - issue #2037
+
+var WEIGHT = ${1:-}
+case (WEIGHT) {
+  "-" { echo "got nothing" }
+  (else) { echo $WEIGHT
+}
+
+## status: 2
+## STDOUT:
+## END
+
+#### Crash due to incorrect of context manager rooting - issue #1986
+
+proc p {
+  var s = "hi"
+  for q in (1..<50) {
+    shvar Q="whatever" {
+      setvar s = "." ++ s
+    }
+  }
+}
+
+for i in (1..<10) {
+  p
+}
+
+if false {
+  echo 'testing for longer'
+  for i in (1 ..< 1000) {
+    p
+  }
+}
+
+## STDOUT:
+## END
+
+
+#### crash due to arbitrary PNode limit - issue #2078
+
+#!/usr/bin/env ysh
+var DelegatedCompName = {
+  "llvm"                 : "x_project",
+  "rocprofiler_register" : "x_rocprofiler_register",
+  "roct_thunk_interface" : "x_roct",
+  "rocr_runtime"         : "x_rocr",
+  "openmp"               : "x_openmp",
+  "offload"              : "x_offload",
+  "aomp_extras"          : "x_extras",
+  "comgr"                : "x_comgr",
+  "rocminfo"             : "x_rocminfo",
+  "rocsmilib"            : "x_rocm_smi_lib",
+  "amdsmi"               : "x_amdsmi",
+  "flang_legacy"         : "x_flang_legacy",
+  "pgmath"               : "x_pgmath",
+  "flang"                : "x_flang",
+  "flang_runtime"        : "x_flang_runtime",
+  "hipcc"                : "x_hipcc",
+  "hipamd"               : "x_hipamd",
+  "rocm_dbgapi"          : "x_rocdbgapi",
+  "rocgdb"               : "x_rocgdb",
+  "roctracer"            : "x_roctracer",
+  "rocprofiler"          : "x_rocprofiler"
+}
+
+echo $[len(DelegatedCompName)]
+
+## STDOUT:
+21
+## END
+
+#### bad assertion when pretty printing
+
+pp value (__builtins__) > /dev/null
+echo status=$?
+
+## STDOUT:
+status=0
 ## END

@@ -10,6 +10,7 @@ from core import error
 from core.error import e_usage, p_die
 from core import vm
 from frontend import match
+from frontend import typed_args
 from mycpp.mylib import log
 from osh import bool_parse
 from osh import sh_expr_eval
@@ -24,9 +25,9 @@ if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value
     from _devbuild.gen.syntax_asdl import bool_expr_t
     from _devbuild.gen.types_asdl import lex_mode_t
-    from core.ui import ErrorFormatter
     from core import optview
     from core import state
+    from display import ui
 
 
 class _StringWordEmitter(word_parse.WordEmitter):
@@ -127,6 +128,10 @@ def _TwoArgs(w_parser):
             unary_id = Id.BoolUnary_f
         elif s0 == '--symlink':
             unary_id = Id.BoolUnary_L
+        elif s0 == '--true':
+            unary_id = Id.BoolUnary_true
+        elif s0 == '--false':
+            unary_id = Id.BoolUnary_false
 
     if unary_id == Id.Undefined_Tok:
         unary_id = match.BracketUnary(w0.s)
@@ -172,7 +177,7 @@ def _ThreeArgs(w_parser):
 class Test(vm._Builtin):
 
     def __init__(self, need_right_bracket, exec_opts, mem, errfmt):
-        # type: (bool, optview.Exec, state.Mem, ErrorFormatter) -> None
+        # type: (bool, optview.Exec, state.Mem, ui.ErrorFormatter) -> None
         self.need_right_bracket = need_right_bracket
         self.exec_opts = exec_opts
         self.mem = mem
@@ -185,6 +190,8 @@ class Test(vm._Builtin):
         The only difference between test and [ is that [ needs a
         matching ].
         """
+        typed_args.DoesNotAccept(cmd_val.proc_args)  # Disallow test (42)
+
         if self.need_right_bracket:  # Preprocess right bracket
             if self.exec_opts.simple_test_builtin():
                 e_usage("should be invoked as 'test' (simple_test_builtin)",

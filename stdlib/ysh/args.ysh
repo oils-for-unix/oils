@@ -1,0 +1,281 @@
+# args.ysh
+#
+# Usage:
+#   source --builtin args.sh
+
+const __provide__ = :| parser parseArgs |
+
+#
+#
+# parser (&spec) {
+#   flag -v --verbose (help="Verbosely")  # default is Bool, false
+#
+#   flag -P --max-procs (Int, default=-1, doc='''
+#     Run at most P processes at a time
+#     ''')
+#
+#   flag -i --invert (Bool, default=true, doc='''
+#     Long multiline
+#     Description
+#     ''')
+#
+#   arg src (help='Source')
+#   arg dest (help='Dest')
+#   arg times (help='Foo')
+#
+#   rest files
+# }
+#
+# var args = parseArgs(spec, ARGV)
+#
+# echo "Verbose $[args.verbose]"
+
+# TODO: See list
+# - flag builtin:
+#   - handle only long flag or only short flag
+#   - flag aliases
+#   - assert that default value has the declared type
+
+proc parser (; place ; ; block_def) {
+  ## Create an args spec which can be passed to parseArgs.
+  ##
+  ## Example:
+  ##
+  ##   # NOTE: &spec will create a variable named spec
+  ##   parser (&spec) {
+  ##     flag -v --verbose (Bool)
+  ##   }
+  ##
+  ##   var args = parseArgs(spec, ARGV)
+
+  var p = {flags: [], args: []}
+  ctx push (p) {
+    call io->eval(block_def, vars={flag, arg, rest})
+  }
+
+  # Validate that p.rest = [name] or null and reduce p.rest into name or null.
+  if ('rest' in p) {
+    if (len(p.rest) > 1) {
+      error '`rest` was called more than once' (code=3)
+    } else {
+      setvar p.rest = p.rest[0]
+    }
+  } else {
+    setvar p.rest = null
+  }
+
+  var names = {}
+  for items in ([p.flags, p.args]) {
+    for x in (items) {
+      if (x.name in names) {
+        error "Duplicate flag/arg name $[x.name] in spec" (code=3)
+      }
+
+      setvar names[x.name] = null
+    }
+  }
+
+  # TODO: what about `flag --name` and then `arg name`?
+
+  call place->setValue(p)
+}
+
+const kValidTypes = [Bool, Float, List[Float], Int, List[Int], Str, List[Str]]
+const kValidTypeNames = []
+for vt in (kValidTypes) {
+  var name = vt.name if ('name' in propView(vt)) else vt.unique_id
+  call kValidTypeNames->append(name)
+}
+
+func isValidType (type) {
+  for valid in (kValidTypes) {
+    if (type is valid) {
+      return (true)
+    }
+  }
+  return (false)
+}
+
+proc flag (short, long ; type=Bool ; default=null, help=null) {
+  ## Declare a flag within an `arg-parse`.
+  ##
+  ## Examples:
+  ##
+  ##   arg-parse (&spec) {
+  ##     flag -v --verbose
+  ##     flag -n --count (Int, default=1)
+  ##     flag -p --percent (Float, default=0.0)
+  ##     flag -f --file (Str, help="File to process")
+  ##     flag -e --exclude (List[Str], help="File to exclude")
+  ##   }
+
+  if (type !== null and not isValidType(type)) {
+    var type_names = ([null] ++ kValidTypeNames) => join(', ')
+    error "Expected flag type to be one of: $type_names" (code=2)
+  }
+
+  # Bool has a default of false, not null
+  if (type is Bool and default === null) {
+    setvar default = false
+  }
+
+  var name = long => trimStart('--')
+
+  ctx emit flags ({short, long, name, type, default, help})
+}
+
+proc arg (name ; ; help=null) {
+  ## Declare a positional argument within an `arg-parse`.
+  ##
+  ## Examples:
+  ##
+  ##   arg-parse (&spec) {
+  ##     arg name
+  ##     arg config (help="config file path")
+  ##   }
+
+  ctx emit args ({name, help})
+}
+
+proc rest (name) {
+  ## Take the remaining positional arguments within an `arg-parse`.
+  ##
+  ## Examples:
+  ##
+  ##   arg-parse (&grepSpec) {
+  ##     arg query
+  ##     rest files
+  ##   }
+
+  # We emit instead of set to detect multiple invocations of "rest"
+  ctx emit rest (name)
+}
+
+func parseArgs(spec, argv) {
+  ## Given a spec created by `parser`. Parse an array of strings `argv` per
+  ## that spec.
+  ##
+  ## See `parser` for examples of use.
+
+  var i = 0
+  var positionalPos = 0
+  var argc = len(argv)
+  var args = {}
+  var rest = []
+
+  var value
+  var found
+  while (i < argc) {
+    var arg = argv[i]
+    if (arg.startsWith('-')) {
+      setvar found = false
+
+      for flag in (spec.flags) {
+        if ( (flag.short and flag.short === arg) or
+             (flag.long and flag.long === arg) ) {
+          if (flag.type === null or flag.type is Bool) {
+            setvar value = true
+          } elif (flag.type is Int) {
+            setvar i += 1
+            if (i >= len(argv)) {
+              error "Expected Int after '$arg'" (code=2)
+            }
+
+            try { setvar value = int(argv[i]) }
+            if (_status !== 0) {
+              error "Expected Int after '$arg', got '$[argv[i]]'" (code=2)
+            }
+          } elif (flag.type is List[Int]) {
+            setvar i += 1
+            if (i >= len(argv)) {
+              error "Expected Int after '$arg'" (code=2)
+            }
+
+            setvar value = get(args, flag.name, [])
+            try { call value->append(int(argv[i])) }
+            if (_status !== 0) {
+              error "Expected Int after '$arg', got '$[argv[i]]'" (code=2)
+            }
+          } elif (flag.type is Float) {
+            setvar i += 1
+            if (i >= len(argv)) {
+              error "Expected Float after '$arg'" (code=2)
+            }
+
+            try { setvar value = float(argv[i]) }
+            if (_status !== 0) {
+              error "Expected Float after '$arg', got '$[argv[i]]'" (code=2)
+            }
+          } elif (flag.type is List[Float]) {
+            setvar i += 1
+            if (i >= len(argv)) {
+              error "Expected Float after '$arg'" (code=2)
+            }
+
+            setvar value = get(args, flag.name, [])
+            try { call value->append(float(argv[i])) }
+            if (_status !== 0) {
+              error "Expected Float after '$arg', got '$[argv[i]]'" (code=2)
+            }
+          } elif (flag.type is Str) {
+            setvar i += 1
+            if (i >= len(argv)) {
+              error "Expected Str after '$arg'" (code=2)
+            }
+
+            setvar value = argv[i]
+          } elif (flag.type is List[Str]) {
+            setvar i += 1
+            if (i >= len(argv)) {
+              error "Expected Str after '$arg'" (code=2)
+            }
+
+            setvar value = get(args, flag.name, [])
+            call value->append(argv[i])
+          }
+
+          setvar args[flag.name] = value
+          setvar found = true
+          break
+        }
+      }
+
+      if (not found) {
+        error "Unknown flag '$arg'" (code=2)
+      }
+    } elif (positionalPos >= len(spec.args)) {
+      if (not spec.rest) {
+        error "Too many arguments, unexpected '$arg'" (code=2)
+      }
+
+      call rest->append(arg)
+    } else {
+      var pos = spec.args[positionalPos]
+      setvar positionalPos += 1
+      setvar value = arg
+      setvar args[pos.name] = value
+    }
+
+    setvar i += 1
+  }
+
+  if (spec.rest) {
+    setvar args[spec.rest] = rest
+  }
+
+  # Set defaults for flags
+  for flag in (spec.flags) {
+    if (flag.name not in args) {
+      setvar args[flag.name] = flag.default
+    }
+  }
+
+  # Raise error on missing args
+  for arg in (spec.args) {
+    if (arg.name not in args) {
+      error "Usage Error: Missing required argument $[arg.name]" (code=2)
+    }
+  }
+
+  return (args)
+}

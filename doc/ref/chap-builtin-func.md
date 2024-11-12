@@ -52,29 +52,6 @@ Similar names: [type][]
 
 [type]: chap-index.html#type
 
-### repeat()
-
-TODO:
-
-    = repeat('a', 3)
-    (Str)   'aaa'
-
-    = repeat(['a'], 3)
-    (List)   ['a', 'a', 'a']
-
-Note that list elements are NOT copied.  They are repeated by reference, which
-means the List can have aliases.
-
-    = repeat([[42]], 3)
-    (List)   [[42], [42], [42]]
-
-Modeled after these Python expressions:
-
-    >>> 'a' * 3
-    'aaa'
-    >>> ['a'] * 3
-    ['a', 'a', 'a']
-
 
 ## Conversions
 
@@ -95,7 +72,7 @@ Given a float, returns the largest integer that is less than its argument (i.e. 
     (Int)    1
 
 Given a string, `Int()` will attempt to convert the string to a base-10
-integer. The base can be overriden by calling with a second argument.
+integer. The base can be overridden by calling with a second argument.
 
     $ = int('10')
     (Int)   10
@@ -108,7 +85,7 @@ integer. The base can be overriden by calling with a second argument.
 
 ### float()
 
-Given an integer, returns the corressponding flaoting point representation.
+Given an integer, returns the corresponding floating point representation.
 
     $ = float(1)
     (Float)   1.0
@@ -185,22 +162,6 @@ Given a List of integer byte values, return a string.
 
 TODO
 
-### split()
-
-TODO
-
-If no argument is passed, splits by whitespace 
-
-<!-- respecting Unicode space? -->
-
-If a delimiter Str with a single byte is given, splits by that byte.
-
-Modes:
-
-- Python-like algorithm
-- Is awk any different?
-- Split by eggex
-
 ### shSplit()
 
 Split a string into a List of strings, using the shell algorithm that respects
@@ -233,34 +194,90 @@ It's also often called with the `=>` chaining operator:
     json write (items => join(' '))   # => "1 2 3"
     json write (items => join(', '))  # => "1, 2, 3"
 
+## Dict
 
-### any()
+### keys()
 
-Returns true if any value in the list is truthy (`x` is truthy if `Bool(x)`
-returns true).
+Returns all existing keys from a dict as a list of strings.
 
-If the list is empty, return false.
+    var en2fr = {
+      hello: "bonjour",
+      friend: "ami",
+      cat: "chat"
+    }
+    = keys(en2fr)
+    # => (List 0x4689)   ["hello","friend","cat"]
 
-    = any([])  # => false
-    = any([true, false])  # => true
-    = any([false, false])  # => false
-    = any([false, "foo", false])  # => true
+### values()
 
-Note, you will need to `source --builtin list.ysh` to use this function.
+Similar to `keys()`, but returns the values of the dictionary.
 
-### all()
+    var person = {
+      name: "Foo",
+      age: 25,
+      hobbies: :|walking reading|
+    }
+    = values(en2fr)
+    # => (List 0x4689)   ["Foo",25,["walking","reading"]]
 
-Returns true if all values in the list are truthy (`x` is truthy if `Bool(x)`
-returns true).
+### get()
 
-If the list is empty, return true.
+Return value for given key, falling back to the default value if the key 
+doesn't exist.
 
-    = any([])  # => true
-    = any([true, true])  # => true
-    = any([false, true])  # => false
-    = any(["foo", true, true])  # => true
+    var book = {
+      title: "Hitchhiker's Guide",
+      published: 1979,
+    }
 
-Note, you will need to `source --builtin list.ysh` to use this function.
+    var published = get(book, 'published', null)
+    = published
+    # => (Int)   1979
+
+    var author = get(book, 'author', "???")
+    = author
+    # => (Str)   "???"
+
+If not specified, the default value is `null`:
+
+    var author = get(book, 'author')
+    = author
+    # => (Null)   null
+
+## Float
+
+### floatsEqual()
+
+Check if two floating point numbers are equal.
+
+    = floatsEqual(42.0, 42.0)
+    (Bool)   true
+
+It's usually better to make an approximate comparison:
+
+    = abs(float1 - float2) < 0.001
+    (Bool)   false
+
+## Obj
+
+### first()
+
+Get the Dict that contains an object's properties.
+
+    ysh$ = first(obj)
+    (Dict)  {x: 42}
+
+The Dict and Obj share the same storage.  So if the Dict is modified, the
+object is too.
+
+If you want a copy, use `dict(obj)`.
+
+### rest()
+
+Get the "prototype" of an Obj, which is another Obj, or null:
+
+    ysh$ = rest(obj)
+    (Null)  null
 
 ## Word
 
@@ -269,64 +286,6 @@ Note, you will need to `source --builtin list.ysh` to use this function.
 See `glob-pat` topic for syntax.
 
 ### maybe()
-
-## Math
-
-### abs()
-
-Compute the absolute (positive) value of a number (float or int).
-
-    = abs(-1)  # => 1
-    = abs(0)   # => 0
-    = abs(1)   # => 1
-
-Note, you will need to `source --builtin math.ysh` to use this function.
-
-### max()
-
-Compute the maximum of 2 or more values.
-
-`max` takes two different signatures:
-
-  1. `max(a, b)` to return the maximum of `a`, `b`
-  2. `max(list)` to return the greatest item in the `list`
-
-For example:
-
-      = max(1, 2)  # => 2
-      = max([1, 2, 3])  # => 3
-
-Note, you will need to `source --builtin math.ysh` to use this function.
-
-### min()
-
-Compute the minimum of 2 or more values.
-
-`min` takes two different signatures:
-
-  1. `min(a, b)` to return the minimum of `a`, `b`
-  2. `min(list)` to return the least item in the `list`
-
-For example:
-
-    = min(2, 3)  # => 2
-    = max([1, 2, 3])  # => 1
-
-Note, you will need to `source --builtin math.ysh` to use this function.
-
-### round()
-
-### sum()
-
-Computes the sum of all elements in the list.
-
-Returns 0 for an empty list.
-
-    = sum([])  # => 0
-    = sum([0])  # => 0
-    = sum([1, 2, 3])  # => 6
-
-Note, you will need to `source --builtin list.ysh` to use this function.
 
 ## Serialize
 
@@ -408,7 +367,7 @@ Like `Match => end()`, but accesses the global match created by `~`:
       echo $[_end(0)]  # => 5
     }
 
-## Introspection
+## Introspect
 
 ### `shvarGet()`
 
@@ -456,14 +415,31 @@ scope" rule.)
 If the variable isn't defined, `getVar()` returns `null`.  So there's no way to
 distinguish an undefined variable from one that's `null`.
 
-### `evalExpr()`
+### `setVar()`
 
-Given a an expression quotation, evaluate it and return its value:
+Bind a name to a value, in the local scope.  Returns nothing.
 
-    $ var expr = ^[1 + 2]  
+    call setVar('myname', 42)
 
-    $ = evalExpr(expr)
-    3
+This is like
+
+    setvar myname = 42
+
+except the name can is a string, which can be constructed at runtime.
+
+### `parseCommand()`
+
+Given a code string, parse it as a command (with the current parse options).
+
+Returns a `value.Command` instance, or raises an error.
+
+### `parseExpr()`
+
+TODO:
+
+Given a code string, parse it as an expression.
+
+Returns a `value.Expr` instance, or raises an error.
 
 ## Hay Config
 

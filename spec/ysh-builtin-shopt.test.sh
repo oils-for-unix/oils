@@ -8,10 +8,13 @@ shopt -p nullglob
 
 shopt --unset nullglob
 shopt -p nullglob
+
+echo ---
 ## STDOUT:
 shopt -u nullglob
 shopt -s nullglob
 shopt -u nullglob
+---
 ## END
 
 #### shopt supports 'set' options

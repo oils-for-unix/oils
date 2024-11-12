@@ -6,6 +6,7 @@
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
 source $LIB_OSH/task-five.sh
+source $LIB_OSH/no-quotes.sh
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
@@ -96,13 +97,14 @@ test-hello-cpp() {
   local hello=_bin/cxx-asan/yaks/examples/hello.yaks
   ninja $hello
 
+  local status
+
   set -o xtrace
-  set +o errexit
-  $hello
-  local status=$?
+  nq-run status \
+    $hello
   set -o errexit
 
-  echo status=$status
+  nq-assert 42 = "$status"
 }
 
 soil-run() {
@@ -113,7 +115,7 @@ soil-run() {
   #echo 'Disabled until container image has python2-dev to build pyext/fastfunc'
   #return
 
-  run-test-funcs
+  devtools/byo.sh test $0
 
   check
 }

@@ -41,25 +41,215 @@ Write an error message with the script name, and exit with status 1.
 
     die 'Expected a number'
 
-## Args Parser
+## no-quotes
+
+### nq-assert
+
+Use the syntax of the [test][] builtin to assert a condition is true.
+
+    nq-assert 99 = "$status"
+    nq-assert "$status" -lt 2
+
+
+[test]: chap-builtin-cmd.html#test
+
+### nq-run
+
+Run a command and "return" its status with nameref variables.
+
+    test-foo() {
+      local status
+
+      nq-run status \
+        false
+      nq-assert 1 = "$status"
+    }
+
+### nq-capture
+
+Run a command and return its status and stdout.
+
+### nq-capture-2
+
+Run a command and return its status and stderr.
+
+### nq-redir
+
+Run a command and return its status and a file with its stdout, so you can diff
+it.
+
+### nq-redir-2
+
+Run a command and return its status and a file with its stderr, so you can diff
+it.
+
+## task-five
+
+### task-five
+
+Dispatch to shell functions, and provide BYO test enumeration.
+
+OSH:
+
+    task-five "$@"
+
+YSH:
+
+    task-five @ARGV
+
+## math
+
+### abs()
+
+Compute the absolute (positive) value of a number (float or int).
+
+    = abs(-1)  # => 1
+    = abs(0)   # => 0
+    = abs(1)   # => 1
+
+Note, you will need to `source $LIB_YSH/math.ysh` to use this function.
+
+### max()
+
+Compute the maximum of 2 or more values.
+
+`max` takes two different signatures:
+
+  1. `max(a, b)` to return the maximum of `a`, `b`
+  2. `max(list)` to return the greatest item in the `list`
+
+For example:
+
+      = max(1, 2)  # => 2
+      = max([1, 2, 3])  # => 3
+
+Note, you will need to `source $LIB_YSH/math.ysh` to use this function.
+
+### min()
+
+Compute the minimum of 2 or more values.
+
+`min` takes two different signatures:
+
+  1. `min(a, b)` to return the minimum of `a`, `b`
+  2. `min(list)` to return the least item in the `list`
+
+For example:
+
+    = min(2, 3)  # => 2
+    = max([1, 2, 3])  # => 1
+
+Note, you will need to `source $LIB_YSH/math.ysh` to use this function.
+
+### round()
+
+TODO
+
+### sum()
+
+Computes the sum of all elements in the list.
+
+Returns 0 for an empty list.
+
+    = sum([])  # => 0
+    = sum([0])  # => 0
+    = sum([1, 2, 3])  # => 6
+
+Note, you will need to `source $LIB_YSH/list.ysh` to use this function.
+
+
+## list
+
+### all()
+
+Returns true if all values in the list are truthy (`x` is truthy if `Bool(x)`
+returns true).
+
+If the list is empty, return true.
+
+    = any([])  # => true
+    = any([true, true])  # => true
+    = any([false, true])  # => false
+    = any(["foo", true, true])  # => true
+
+Note, you will need to `source $LIB_YSH/list.ysh` to use this function.
+
+### any()
+
+Returns true if any value in the list is truthy (`x` is truthy if `Bool(x)`
+returns true).
+
+If the list is empty, return false.
+
+    = any([])  # => false
+    = any([true, false])  # => true
+    = any([false, false])  # => false
+    = any([false, "foo", false])  # => true
+
+Note, you will need to `source $LIB_YSH/list.ysh` to use this function.
+
+### repeat()
+
+Repeat a string or a list:
+
+    = repeat('foo', 3)           # => 'foofoofoo'
+    = repeat(['foo', 'bar'], 2)  # => ['foo', 'bar', 'foo', 'bar']
+
+Negative repetitions are equivalent to zero:
+
+    = repeat('foo', -5)           # => ''
+    = repeat(['foo', 'bar'], -5)  # => []
+
+Note that the `repeat()` function is modeled after these Python expressions:
+
+    >>> 'a' * 3
+    'aaa'
+    >>> ['a'] * 3
+    ['a', 'a', 'a']
+
+## yblocks
+
+Helpers to assert the status and output of commands.
+
+### yb-capture
+
+Capture the status and stdout of a command block:
+
+    yb-capture (&r) {
+      echo hi
+    }
+    assert [0 === r.status]
+    assert [u'hi\n' === r.stdout]
+
+### yb-capture-2
+
+Capture the status and stderr of a command block:
+
+    yb-capture-2 (&r) {
+      echo hi >& 2
+    }
+    assert [0 === r.status]
+    assert [u'hi\n' === r.stderr]
+
+## args
 
 YSH includes a command-line argument parsing utility called `parseArgs`. This
 is intended to be used for command-line interfaces to YSH programs.
 
 To use it, first import `args.ysh`:
 
-    source --builtin args.ysh
+    source $LIB_YSH/args.ysh
 
 Then, create an argument parser **spec**ification:
 
     parser (&spec) {
       flag -v --verbose (help="Verbosely")  # default is Bool, false
 
-      flag -P --max-procs ('int', default=-1, help='''
+      flag -P --max-procs (Int, default=-1, help='''
         Run at most P processes at a time
         ''')
 
-      flag -i --invert ('bool', default=true, help='''
+      flag -i --invert (Bool, default=true, help='''
         Long multiline
         Description
         ''')
@@ -134,20 +324,33 @@ The above example declares a flag "--verbose" and a short alias "-v".
 Flags can also accept values. For example, if you wanted to accept an integer count:
 
     parser (&spec) {
-      flag -N --count ('int')
+      flag -N --count (Int)
     }
 
-Calling `parseArgs` with `ARGV = :| -n 5 |` or `ARGV = :| --count 5 |` will
+Calling `parseArgs` with `ARGV = :| -N 5 |` or `ARGV = :| --count 5 |` will
 store the integer `5` under `args.count`. If the user passes in a non-integer
 value like `ARGV = :| --count abc |`, `parseArgs` will raise an error.
+
+The supported flag types are `Bool`, `Int`, `List[Int]`, `Float`, `List[Float]`,
+`Str`, and `List[Str]`.
+
+Flags with a `List` type may be provided multiple times. For example, if you
+wanted to accept a list of strings:
+
+    parser (&spec) {
+        flag -f --file (List[Str])
+    }
+
+Calling `parseArgs` with `ARGV = :| -f a --file b -f c |` will store the value
+`['a', 'b', 'c']` under `args.file`.
 
 Default values for an argument can be set with the `default` named argument.
 
     parser (&spec) {
-      flag -N --count ('int', default=2)
+      flag -N --count (Int, default=2)
 
       # Boolean flags can be given default values too
-      flag -O --optimize ('bool', default=true)
+      flag -O --optimize (Bool, default=true)
     }
 
     var args = parseArgs(spec, :| -n 3 |)

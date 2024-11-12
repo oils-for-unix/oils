@@ -9,13 +9,13 @@ import time as time_
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (loc, command_t, source, CompoundWord)
-from _devbuild.gen.value_asdl import (value, value_e, value_t)
+from _devbuild.gen.value_asdl import (value, value_e, value_t, Obj)
 from core import alloc
 from core import main_loop
 from core import error
 from core import pyos
 from core import state
-from core import ui
+from display import ui
 from frontend import consts
 from frontend import match
 from frontend import reader
@@ -104,7 +104,7 @@ class Evaluator(object):
         # type: (str, str, ParseContext, Mem) -> None
         self.word_ev = None  # type: word_eval.AbstractWordEvaluator
         self.expr_ev = None  # type: expr_eval.ExprEvaluator
-        self.global_io = None  # type: value.IO
+        self.global_io = None  # type: Obj
 
         assert lang in ('osh', 'ysh'), lang
         self.lang = lang
@@ -175,22 +175,16 @@ class Evaluator(object):
             r = time_.strftime(fmt, time_.localtime(now))
 
         elif ch == 'w':
-            try:
-                pwd = state.GetString(self.mem, 'PWD')
-                # doesn't have to exist
-                home = state.MaybeString(self.mem, 'HOME')
-                # Shorten to ~/mydir
-                r = ui.PrettyDir(pwd, home)
-            except error.Runtime as e:
-                r = _ERROR_FMT % e.UserErrorString()
+            # HOME doesn't have to exist
+            home = state.MaybeString(self.mem, 'HOME')
+
+            # Shorten /home/andy/mydir -> ~/mydir
+            # Note: could also call sh_init.GetWorkingDir()?
+            r = ui.PrettyDir(self.mem.pwd, home)
 
         elif ch == 'W':
-            val = self.mem.GetValue('PWD')
-            if val.tag() == value_e.Str:
-                str_val = cast(value.Str, val)
-                r = os_path.basename(str_val.s)
-            else:
-                r = _ERROR_FMT % 'PWD is not a string'
+            # Note: could also call sh_init.GetWorkingDir()?
+            r = os_path.basename(self.mem.pwd)
 
         else:
             # e.g. \e \r \n \\
@@ -308,19 +302,9 @@ class Evaluator(object):
                     return _ERROR_FMT % msg
 
         # Now try evaluating $PS1
-
-        ps1_val = self.mem.GetValue('PS1')
-        prompt_str = self.EvalPrompt(ps1_val)
-
-        # Add string to show it's YSH.  The user can disable this with
-        #
-        # func renderPrompt() {
-        #   return ("${PS1@P}")
-        # }
-        if self.lang == 'ysh':
-            prompt_str = 'ysh ' + prompt_str
-
-        return prompt_str
+        ps1_val = self.mem.env_config.GetVal('PS1')
+        #log('ps1_val %s', ps1_val)
+        return self.EvalPrompt(ps1_val)
 
 
 PROMPT_COMMAND = 'PROMPT_COMMAND'
@@ -370,4 +354,4 @@ class UserPlugin(object):
         # Save this so PROMPT_COMMAND can't set $?
         with state.ctx_Registers(self.mem):
             # Catches fatal execution error
-            self.cmd_ev.ExecuteAndCatch(node)
+            self.cmd_ev.ExecuteAndCatch(node, 0)

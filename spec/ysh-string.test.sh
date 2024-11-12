@@ -1,5 +1,62 @@
 ## our_shell: ysh
-## oils_failures_allowed: 0
+
+#### Unquoted backslash escapes, as in J8 strings
+
+# everything except \b \f \n
+
+var nl = \n
+pp test_ (nl)
+
+var tab = \t
+pp test_ (tab)
+
+pp test_ (\r)
+
+pp test_ (\" ++ \' ++ \\)
+
+echo backslash $[\\]
+echo "backslash $[\\]"
+
+## STDOUT:
+(Str)   "\n"
+(Str)   "\t"
+(Str)   "\r"
+(Str)   "\"'\\"
+backslash \
+backslash \
+## END
+
+#### Unquoted \u{3bc} escape
+
+var x = 'mu ' ++ \u{3bc}
+echo $x
+
+echo mu $[\u{3bc}]
+echo "mu $[\u{3bc}]"
+
+## STDOUT:
+mu μ
+mu μ
+mu μ
+## END
+
+#### Unquoted \y24 escape
+
+var x = 'foo ' ++ \y24
+echo $x
+
+var y = 0x24
+echo $y
+
+echo foo $[\y40]
+echo "foo $[\y41]"
+
+## STDOUT:
+foo $
+36
+foo @
+foo A
+## END
 
 #### single quoted -- implicit and explicit raw
 var x = 'foo bar'
@@ -178,10 +235,10 @@ echo $double
 
 ## END
 
-#### C strings in %() array literals
-shopt -s oil:upgrade
+#### C strings in :| | array literals
+shopt -s ysh:upgrade
 
-var lines=%($'aa\tbb' $'cc\tdd')
+var lines=:| $'aa\tbb' $'cc\tdd' |
 write @lines
 
 ## STDOUT:
@@ -217,6 +274,52 @@ raw\
 r\
 unset
 r\
+## END
+
+#### Special rule for <<< ''' and <<< """ - no extra newline
+
+read --all <<< unquoted
+pp test_ (_reply)
+
+read --all <<< 'single with newline'
+pp test_ (_reply)
+
+read --all <<< "double with newline"
+pp test_ (_reply)
+
+read --all <<< u'j8 with newline'
+pp test_ (_reply)
+
+echo
+
+read --all <<< '''
+multi
+single
+'''
+pp test_ (_reply)
+
+read --all <<< """
+multi
+double
+"""
+pp test_ (_reply)
+
+read --all <<< u'''
+multi
+j8
+'''
+pp test_ (_reply)
+
+
+## STDOUT:
+(Str)   "unquoted\n"
+(Str)   "single with newline\n"
+(Str)   "double with newline\n"
+(Str)   "j8 with newline\n"
+
+(Str)   "multi\nsingle\n"
+(Str)   "multi\ndouble\n"
+(Str)   "multi\nj8\n"
 ## END
 
 #### $''' isn't a a multiline string (removed)
@@ -374,7 +477,6 @@ two = 2 ""
 three = 3
 
 --
-
 three = 3
 two = 2 ""
 one "
@@ -436,7 +538,6 @@ tac <<< '''
   '''
 
 ## STDOUT:
-
 \u{61}
 '' '
 '
@@ -489,3 +590,4 @@ double
 """zz
 ## status: 2
 ## stdout-json: ""
+

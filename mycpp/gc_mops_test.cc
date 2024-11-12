@@ -1,5 +1,7 @@
 #include "mycpp/gc_mops.h"
 
+#include <cinttypes>
+
 #include "mycpp/runtime.h"
 #include "vendor/greatest.h"
 
@@ -85,6 +87,71 @@ TEST conversion_test() {
   PASS();
 }
 
+TEST float_test() {
+  double f = mops::ToFloat(1) / mops::ToFloat(3);
+  // double f = static_cast<double>(1) / static_cast<double>(3);
+
+  log("one third = %f", f);
+  // wtf, why does this has a 43
+  log("one third = %.9g", f);
+  log("one third = %.10g", f);
+  log("one third = %.11g", f);
+
+  f = mops::ToFloat(2) / mops::ToFloat(3);
+  log("one third = %.9g", f);
+  log("one third = %.10g", f);
+
+  double one = mops::ToFloat(1);
+  double three = mops::ToFloat(3);
+  log("one = %.10g", one);
+  log("three = %.10g", three);
+  log("one / three = %.10g", one / three);
+
+  PASS();
+}
+
+TEST gcc_clang_overflow_test() {
+  bool ok;
+
+  // Compute (1L << 63) - 1L without overflow!
+  int64_t a = INT64_C(1) << 62;
+  a += (INT64_C(1) << 62) - INT64_C(1);
+
+  int64_t b = 0;
+  int64_t result = 0;
+
+  for (b = 0; b <= 1; ++b) {
+#if LONG_MAX == INT64_MAX
+    ok = __builtin_saddl_overflow(a, b, &result);
+#else
+    // 32-bit, we have to use long long?
+    ok = __builtin_saddll_overflow(a, b, &result);
+#endif
+    if (ok) {
+      printf("%" PRId64 " + %" PRId64 " = signed add long overflow!\n", a, b);
+    } else {
+      printf("%" PRId64 " + %" PRId64 " = %" PRId64 "\n", a, b, result);
+    }
+  }
+
+  a = INT64_C(1) << 62;
+  for (b = 1; b <= 2; ++b) {
+#if LONG_MAX == INT64_MAX
+    ok = __builtin_smull_overflow(a, b, &result);
+#else
+    ok = __builtin_smulll_overflow(a, b, &result);
+#endif
+
+    if (ok) {
+      printf("%" PRId64 " * %" PRId64 " = signed mul long overflow!\n", a, b);
+    } else {
+      printf("%" PRId64 " * %" PRId64 " = %" PRId64 "\n", a, b, result);
+    }
+  }
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -95,6 +162,8 @@ int main(int argc, char** argv) {
   RUN_TEST(bigint_test);
   RUN_TEST(static_cast_test);
   RUN_TEST(conversion_test);
+  RUN_TEST(float_test);
+  RUN_TEST(gcc_clang_overflow_test);
 
   gHeap.CleanProcessExit();
 

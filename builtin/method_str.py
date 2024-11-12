@@ -2,11 +2,9 @@
 
 from __future__ import print_function
 
-from _devbuild.gen.syntax_asdl import loc_t, loc
-from _devbuild.gen.runtime_asdl import scope_e
+from _devbuild.gen.syntax_asdl import loc_t
 from _devbuild.gen.value_asdl import (value, value_e, value_t, eggex_ops,
-                                      eggex_ops_t, RegexMatch, LeftName)
-from builtin import pure_ysh
+                                      eggex_ops_t, RegexMatch)
 from core import error
 from core import state
 from core import vm
@@ -21,7 +19,7 @@ from ysh import val_ops
 import libc
 from libc import REG_NOTBOL
 
-from typing import cast, Any, List, Optional, Tuple
+from typing import cast, Dict, List, Tuple
 
 _ = log
 
@@ -321,37 +319,6 @@ class SearchMatch(vm._Callable):
         return RegexMatch(string, indices, capture)
 
 
-class ctx_EvalReplace(object):
-    """For $0, $1, $2, $3, ... replacements in Str => replace()"""
-
-    def __init__(self, mem, arg0, argv):
-        # type: (state.Mem, str, Optional[List[str]]) -> None
-        # argv will be None for Str => replace(Str, Expr)
-        if argv is None:
-            self.pushed_argv = False
-        else:
-            mem.argv_stack.append(state._ArgFrame(argv))
-            self.pushed_argv = True
-
-        # $0 needs to have lexical scoping. So we store it with other locals.
-        # As "0" cannot be parsed as an lvalue, we can safely store arg0 there.
-        assert mem.GetValue("0", scope_e.LocalOnly).tag() == value_e.Undef
-        self.lval = LeftName("0", loc.Missing)
-        mem.SetLocalName(self.lval, value.Str(arg0))
-
-        self.mem = mem
-
-    def __enter__(self):
-        # type: () -> None
-        pass
-
-    def __exit__(self, type, value_, traceback):
-        # type: (Any, Any, Any) -> None
-        self.mem.SetLocalName(self.lval, value.Undef)
-        if self.pushed_argv:
-            self.mem.argv_stack.pop()
-
-
 class Replace(vm._Callable):
 
     def __init__(self, mem, expr_ev):
@@ -361,7 +328,7 @@ class Replace(vm._Callable):
 
     def EvalSubstExpr(self, expr, blame_loc):
         # type: (value.Expr, loc_t) -> str
-        res = self.expr_ev.EvalExpr(expr.e, blame_loc)
+        res = self.expr_ev.EvalExprClosure(expr, blame_loc)
         if res.tag() == value_e.Str:
             return cast(value.Str, res).s
 
@@ -429,7 +396,7 @@ class Replace(vm._Callable):
                 s = subst_str.s
             if subst_expr:
                 # Eval with $0 set to string_val (the matched substring)
-                with ctx_EvalReplace(self.mem, string_val.s, None):
+                with state.ctx_Eval(self.mem, string_val.s, None, None):
                     s = self.EvalSubstExpr(subst_expr, rd.LeftParenToken())
             assert s is not None
 
@@ -438,6 +405,11 @@ class Replace(vm._Callable):
             return value.Str(result)
 
         if eggex_val:
+            if '\0' in string:
+                raise error.Structured(
+                    3, "cannot replace by eggex on a string with NUL bytes",
+                    rd.LeftParenToken())
+
             ere = regex_translate.AsPosixEre(eggex_val)
             cflags = regex_translate.LibcFlags(eggex_val.canonical_flags)
 
@@ -455,7 +427,7 @@ class Replace(vm._Callable):
                 # Collect captures
                 arg0 = None  # type: str
                 argv = []  # type: List[str]
-                named_vars = []  # type: List[Tuple[str, value_t]]
+                named_vars = {}  # type: Dict[str, value_t]
                 num_groups = len(indices) / 2
                 for group in xrange(num_groups):
                     start = indices[2 * group]
@@ -476,7 +448,7 @@ class Replace(vm._Callable):
                     # strings. Furthermore, they can only be used in string
                     # contexts
                     #   eg. "$[1]" != "$1".
-                    val_str = val_ops.Stringify(val, rd.LeftParenToken())
+                    val_str = val_ops.Stringify(val, rd.LeftParenToken(), '')
                     if group == 0:
                         arg0 = val_str
                     else:
@@ -486,19 +458,22 @@ class Replace(vm._Callable):
                     if group != 0:
                         name = eggex_val.capture_names[group - 2]
                         if name is not None:
-                            named_vars.append((name, val))
+                            named_vars[name] = val
 
                 if subst_str:
                     s = subst_str.s
                 if subst_expr:
-                    with ctx_EvalReplace(self.mem, arg0, argv):
-                        with pure_ysh.ctx_Shvar(self.mem, named_vars):
-                            s = self.EvalSubstExpr(subst_expr,
-                                                   rd.LeftParenToken())
+                    with state.ctx_Eval(self.mem, arg0, argv, named_vars):
+                        s = self.EvalSubstExpr(subst_expr, rd.LeftParenToken())
                 assert s is not None
 
                 start = indices[0]
                 end = indices[1]
+                if pos == end:
+                    raise error.Structured(
+                        3, "eggex should never match the empty string",
+                        rd.LeftParenToken())
+
                 parts.append(string[pos:start])  # Unmatched substring
                 parts.append(s)  # Replacement
                 pos = end  # Move to end of match
@@ -510,5 +485,103 @@ class Replace(vm._Callable):
             parts.append(string[pos:])  # Remaining unmatched substring
 
             return value.Str("".join(parts))
+
+        raise AssertionError()
+
+
+class Split(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        """
+        s.split(string_sep, count=-1)
+        s.split(eggex_sep, count=-1)
+
+        Count behaves like in replace() in that:
+        - `count` <  0 -> ignore
+        - `count` >= 0 -> there will be at most `count` splits
+        """
+        string = rd.PosStr()
+
+        string_sep = None  # type: str
+        eggex_sep = None  # type: value.Eggex
+
+        sep = rd.PosValue()
+        with tagswitch(sep) as case:
+            if case(value_e.Eggex):
+                eggex_sep_ = cast(value.Eggex, sep)
+                eggex_sep = eggex_sep_
+
+            elif case(value_e.Str):
+                string_sep_ = cast(value.Str, sep)
+                string_sep = string_sep_.s
+
+            else:
+                raise error.TypeErr(sep,
+                                    'expected separator to be Eggex or Str',
+                                    rd.LeftParenToken())
+
+        count = mops.BigTruncate(rd.NamedInt("count", -1))
+        rd.Done()
+
+        if len(string) == 0:
+            return value.List([])
+
+        if string_sep is not None:
+            if len(string_sep) == 0:
+                raise error.Structured(3, "separator must be non-empty",
+                                       rd.LeftParenToken())
+
+            cursor = 0
+            chunks = []  # type: List[value_t]
+            while cursor < len(string) and count != 0:
+                next = string.find(string_sep, cursor)
+                if next == -1:
+                    break
+
+                chunks.append(value.Str(string[cursor:next]))
+                cursor = next + len(string_sep)
+                count -= 1
+
+            chunks.append(value.Str(string[cursor:]))
+
+            return value.List(chunks)
+
+        if eggex_sep is not None:
+            if '\0' in string:
+                raise error.Structured(
+                    3, "cannot split a string with a NUL byte",
+                    rd.LeftParenToken())
+
+            regex = regex_translate.AsPosixEre(eggex_sep)
+            cflags = regex_translate.LibcFlags(eggex_sep.canonical_flags)
+
+            cursor = 0
+            chunks = []
+            while cursor < len(string) and count != 0:
+                m = libc.regex_search(regex, cflags, string, 0, cursor)
+                if m is None:
+                    break
+
+                start = m[0]
+                end = m[1]
+                if start == end:
+                    raise error.Structured(
+                        3,
+                        "eggex separators should never match the empty string",
+                        rd.LeftParenToken())
+
+                chunks.append(value.Str(string[cursor:start]))
+                cursor = end
+
+                count -= 1
+
+            chunks.append(value.Str(string[cursor:]))
+
+            return value.List(chunks)
 
         raise AssertionError()

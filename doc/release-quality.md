@@ -4,7 +4,7 @@ all_docs_url: -
 version_url: -
 ---
 
-Oils 0.22.0 Quality
+Oils 0.24.0 Quality
 ===================
 
 <!-- NOTE: This file is published to /release/$VERSION/quality.html -->
@@ -66,9 +66,8 @@ This is a supplement to the [main release page](index.html).
 - [osh-usage](more-tests.wwz/suite-logs/osh-usage.txt).  Misc tests of the `osh` binary.
 - [tools-deps](more-tests.wwz/suite-logs/tools-deps.txt).  Tests for a subcommand in
   progress.
-- How many processes does Oils start compared to other shells?
-  - [syscall/by-code](more-tests.wwz/syscall/by-code.txt)
-    | [syscall/by-input](more-tests.wwz/syscall/by-input.txt)
+- [syscall](more-tests.wwz/syscall/-wwz-index). How many syscalls do we make,
+  and how many processes do we start?
 - [ysh-ify Tests](more-tests.wwz/suite-logs/ysh-ify.txt).  Test OSH to YSH
   translation.
 
@@ -164,8 +163,5 @@ the "experimental" version of Oils.
   - [src-bin-ratio-with-opy](pub/metrics.wwz/bytecode/src-bin-ratio-with-opy.txt) -
     How big is the compiled output?
 - OVM / CPython
-  - [overview](pub/metrics.wwz/ovm/overview.txt) - An analysis of GCC's
-    compilation of [OVM][] (a subset of CPython).  [Bloaty][] provides the
-    underlying data.
   - [cpython-defs/overview](pub/metrics.wwz/cpython-defs/overview.txt) - We try to
     ship as little of CPython as possible, and this is what's left.

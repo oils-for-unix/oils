@@ -1,5 +1,3 @@
-
-
 #### bool() conversion
 echo "$[bool(1234)]"
 echo "$[bool(0)]"
@@ -10,8 +8,8 @@ echo "$[bool([])]"
 echo "$[bool({})]"
 echo "$[bool(null)]"
 echo "$[bool(len)]"
-echo "$[bool('foo'->startsWith)]"
-echo "$[bool(1..3)]"
+echo "$[bool('foo'=>startsWith)]"
+echo "$[bool(1..<3)]"
 ## STDOUT:
 true
 false
@@ -47,17 +45,22 @@ echo "$[int(1.234)]"
 ## END
 
 #### int() more
-var a = int("3")
-var b = int("-35")
-write $a $b
+pp test_ (int("3"))
+pp test_ (int("-35"))
+pp test_ (int('5_6'))
 
-var c = int("bad")
-echo 'should not get here'
+shopt -s ysh:upgrade
 
-## status: 3
+try {
+  var c = int("bad")
+}
+echo code=$[_error.code]
+
 ## STDOUT:
-3
--35
+(Int)   3
+(Int)   -35
+(Int)   56
+code=3
 ## END
 
 #### float() conversion
@@ -87,13 +90,29 @@ inf
 ## END
 
 #### str() conversion
-echo "$[str(1234)]"
-echo "$[str(1.234)]"
-echo "$[str('foo')]"
+echo $[str(1234)]
+echo $[str(1.234)]
+echo $[str('foo')]
+
+echo
+
+# Added with Stringify()
+
+echo $[str(true)]
+echo $[str(null)]
+echo $[str(/d+/)]
+
+echo $[str([1,2,3])]
+
+## status: 3
 ## STDOUT:
 1234
 1.234
 foo
+
+true
+null
+[[:digit:]]+
 ## END
 
 #### dict() converts from BashAssoc to Dict
@@ -161,7 +180,7 @@ foo
 #### list() from range
 shopt -s ysh:upgrade
 
-var mylist = list(0..3)
+var mylist = list(0..<3)
 write @mylist
 ## STDOUT:
 0

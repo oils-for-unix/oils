@@ -1,5 +1,4 @@
-#
-# Test the if statement
+## compare_shells: dash bash mksh zsh
 
 #### If
 if true; then

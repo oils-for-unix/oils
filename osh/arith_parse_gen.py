@@ -1,5 +1,4 @@
 #!/usr/bin/env python2
-"""Arith_parse_gen.py."""
 from __future__ import print_function
 
 import collections

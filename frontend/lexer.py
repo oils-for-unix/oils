@@ -376,7 +376,7 @@ class Lexer(object):
         self.translation_stack.append((old_id, new_id))
 
     def MoveToNextLine(self):
-        # type: () -> None
+        # type: () -> bool
         """For lookahead on the next line.
 
         This is required by `ParseYshCase` and is used in `_NewlineOkForYshCase`.
@@ -403,7 +403,11 @@ class Lexer(object):
         self.line_lexer.AssertAtEndOfLine()
 
         src_line, line_pos = self.line_reader.GetLine()
+        if src_line is None:
+            return False  # EOF, so we failed at moving to next line
+
         self.line_lexer.Reset(src_line, line_pos)  # fill with a new line
+        return True
 
     def _Read(self, lex_mode):
         # type: (lex_mode_t) -> Token

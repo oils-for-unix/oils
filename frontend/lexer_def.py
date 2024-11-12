@@ -484,23 +484,25 @@ LEXER_DEF[lex_mode_e.SQ_Raw] = [
 _U_BRACED_CHAR = R(r'\\[uU]\{[0-9a-fA-F]{1,6}\}', Id.Char_UBraced)
 
 _X_CHAR_LOOSE = R(r'\\x[0-9a-fA-F]{1,2}', Id.Char_Hex)  # bash
-_X_CHAR_STRICT = R(r'\\x[0-9a-fA-F]{2}', Id.Char_Hex)  # YSH
+_CHAR_YHEX = R(r'\\y[0-9a-fA-F]{2}', Id.Char_YHex)  # \yff - J8 only
 
 _U4_CHAR_LOOSE = R(r'\\u[0-9a-fA-F]{1,4}', Id.Char_Unicode4)  # bash
 
 _U4_CHAR_STRICT = R(r'\\u[0-9a-fA-F]{4}', Id.Char_Unicode4)  # JSON-only
 
+#_JSON_ONE_CHAR = R(r'\\[\\"/bfnrt]', Id.Char_OneChar)
 EXPR_CHARS = [
-    # This is like Rust.  We don't have the legacy C escapes like \b.
+    # Allow same backslash escapes as J8 strings, except;
+    # - legacy \b \f
+    # - unnecessary \/
+    #
+    # Note that \0 should be written \y00.
+    R(r'''\\[\\"'nrt]''', Id.Char_OneChar),
+    _CHAR_YHEX,
 
-    # NOTE: \' and \" are more readable versions of '"' and "'" in regexs
-    R(r'\\[0rtn\\"%s]' % "'", Id.Char_OneChar),
-    _X_CHAR_STRICT,
-
-    # Because 'a' is a string, we use the syntax #'a' for char literals.
-    # We explicitly leave out #''' because it's confusing.
-    # Note: we're not doing utf-8 validation here.
-    R(r"#'[^'\0]'", Id.Char_Pound),
+    # Eggex.  This is a LITERAL translation to \xff in ERE?  So it's not \yff
+    # It doesn't have semantics; it's just syntax.
+    R(r'\\x[0-9a-fA-F]{2}', Id.Char_Hex),
     _U_BRACED_CHAR,
 ]
 
@@ -634,7 +636,7 @@ _J8_STR_COMMON = [
     C("'", Id.Right_SingleQuote),  # end for J8
     _JSON_ONE_CHAR,
     C("\\'", Id.Char_OneChar),  # since ' ends, allow \'
-    R(r'\\y[0-9a-fA-F]{2}', Id.Char_YHex),  # \yff - J8 only
+    _CHAR_YHEX,
     _U_BRACED_CHAR,  # \u{123456} - J8 only
 
     # osh/word_parse.py relies on this.  It has to be consistent with $''
@@ -675,6 +677,17 @@ JSON_STR_DEF = [
 
     # Note: This will match INVALID UTF-8.  UTF-8 validation is another step.
     R(r'[^\\"\x00-\x1F]+', Id.Lit_Chars),
+]
+
+_WHITESPACE = r'[ \t\r\n]*'  # ASCII whitespace doesn't have legacy \f \v
+
+SH_NUMBER_DEF = [
+    R('0', Id.ShNumber_Dec),  # not octal
+    R(r'[1-9][0-9]*', Id.ShNumber_Dec),
+    R(r'0[0-7]+', Id.ShNumber_Oct),
+    R(r'0x[0-9A-Fa-f]+', Id.ShNumber_Hex),
+    R(r'[1-9][0-9]*#[0-9a-zA-Z@_]+', Id.ShNumber_BaseN),
+    R(r'[^\0]', Id.Unknown_Tok),  # any other char
 ]
 
 OCTAL3_RE = r'\\[0-7]{1,3}'
@@ -951,25 +964,29 @@ _EXPR_NEWLINE_COMMENT = [
     R(r'[ \t\r]+', Id.Ignored_Space),
 ]
 
-_WHITESPACE = r'[ \t\r\n]*'  # ASCII whitespace doesn't have legacy \f \v
+# Note: if you call match.LooksLikeInteger(s), mops.FromStr(s) may still
+# fail.  However you should call BOTH, because we don't rely want to rely on
+# the underlying stroll() to define the language accepted.
+LOOKS_LIKE_INTEGER = _WHITESPACE + '-?[0-9]+' + _WHITESPACE
 
+# TODO: use for YSH comparison operators > >= < <=
+#
 # Python allows 0 to be written 00 or 0_0_0, which is weird.  But let's be
 # consistent, and avoid '00' turning into a float!
-_DECIMAL_INT_RE = r'[0-9](_?[0-9])*'
+_YSH_DECIMAL_INT_RE = r'[0-9](_?[0-9])*'
 
-# Used for YSH comparison operators > >= < <=
-LOOKS_LIKE_INTEGER = _WHITESPACE + '-?' + _DECIMAL_INT_RE + _WHITESPACE
+LOOKS_LIKE_YSH_INT = _WHITESPACE + '-?' + _YSH_DECIMAL_INT_RE + _WHITESPACE
 
-_FLOAT_RE = (
-    _DECIMAL_INT_RE +
+_YSH_FLOAT_RE = (
+    _YSH_DECIMAL_INT_RE +
     # Unlike Python, exponent can't be like 42e5_000.  There's no use because
     # 1e309 is already inf.  Let's keep our code simple.
-    r'(\.' + _DECIMAL_INT_RE + ')?([eE][+\-]?[0-9]+)?')
+    r'(\.' + _YSH_DECIMAL_INT_RE + ')?([eE][+\-]?[0-9]+)?')
 
-# Ditto, used for comparison operators
+# Ditto, used for YSH comparison operators
 # Added optional Optional -?
 # Example: -3_000_000.000_001e12
-LOOKS_LIKE_FLOAT = _WHITESPACE + '-?' + _FLOAT_RE + _WHITESPACE
+LOOKS_LIKE_YSH_FLOAT = _WHITESPACE + '-?' + _YSH_FLOAT_RE + _WHITESPACE
 
 # Python 3 float literals:
 
@@ -998,13 +1015,13 @@ LEXER_DEF[lex_mode_e.Expr] = \
     # octdigit     ::=  "0"..."7"
     # hexdigit     ::=  digit | "a"..."f" | "A"..."F"
 
-    R(_DECIMAL_INT_RE, Id.Expr_DecInt),
+    R(_YSH_DECIMAL_INT_RE, Id.Expr_DecInt),
 
     R(r'0[bB](_?[01])+', Id.Expr_BinInt),
     R(r'0[oO](_?[0-7])+', Id.Expr_OctInt),
     R(r'0[xX](_?[0-9a-fA-F])+', Id.Expr_HexInt),
 
-    R(_FLOAT_RE, Id.Expr_Float),
+    R(_YSH_FLOAT_RE, Id.Expr_Float),
 
     # These can be looked up as keywords separately, so you enforce that they have
     # space around them?
@@ -1039,6 +1056,9 @@ LEXER_DEF[lex_mode_e.Expr] = \
     C('!==', Id.Expr_NotDEqual),
 
     C('==', Id.Unknown_DEqual),  # user must choose === or ~==
+
+    C('&&', Id.Unknown_DAmp),
+    C('||', Id.Unknown_DPipe),
 
     # Bitwise operators
     C('&', Id.Arith_Amp),
@@ -1084,10 +1104,12 @@ LEXER_DEF[lex_mode_e.Expr] = \
     C('//', Id.Expr_DSlash),  # For YSH integer division
     C('~==', Id.Expr_TildeDEqual),  # approximate equality
 
-    C('.', Id.Expr_Dot),      # d.key is alias for d['key']
-    C('..', Id.Expr_DDot),    # range 1..5
-    C('->', Id.Expr_RArrow),  # s->startswith()
-    C('$', Id.Expr_Dollar),   # legacy regex end: /d+ $/ (better written /d+ >/
+    C('.', Id.Expr_Dot),             # d.key is alias for d['key']
+    C('..', Id.Unknown_DDot),        # legacy half-open range 1..5
+    C('..<', Id.Expr_DDotLessThan),  # half-open range 1..<5
+    C('..=', Id.Expr_DDotEqual),     # closed range 1..5
+    C('->', Id.Expr_RArrow),         # s->startswith()
+    C('$', Id.Expr_Dollar),          # legacy regex end: /d+ $/ (better written /d+ >/
 
     # Reserved this.  Go uses it for channels, etc.
     # I guess it conflicts with -4<-3, but that's OK -- spaces suffices.

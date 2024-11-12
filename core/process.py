@@ -9,7 +9,7 @@ process.py - Launch processes and manipulate file descriptors.
 """
 from __future__ import print_function
 
-from errno import EACCES, EBADF, ECHILD, EINTR, ENOENT, ENOEXEC
+from errno import EACCES, EBADF, ECHILD, EINTR, ENOENT, ENOEXEC, EEXIST
 import fcntl as fcntl_
 from fcntl import F_DUPFD, F_GETFD, F_SETFD, FD_CLOEXEC
 from signal import (SIG_DFL, SIG_IGN, SIGINT, SIGPIPE, SIGQUIT, SIGTSTP,
@@ -34,11 +34,12 @@ from core.error import e_die
 from core import pyutil
 from core import pyos
 from core import state
-from core import ui
+from display import ui
 from core import util
 from data_lang import j8_lite
 from frontend import location
 from frontend import match
+from mycpp import iolib
 from mycpp import mylib
 from mycpp.mylib import log, print_stderr, probe, tagswitch, iteritems
 
@@ -54,6 +55,7 @@ from posix_ import (
     WNOHANG,
     O_APPEND,
     O_CREAT,
+    O_EXCL,
     O_NONBLOCK,
     O_NOCTTY,
     O_RDONLY,
@@ -69,7 +71,7 @@ if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import command_t
     from builtin import trap_osh
     from core import optview
-    from core.ui import ErrorFormatter
+    from core import pyos
     from core.util import _DebugFile
     from osh.cmd_eval import CommandEvaluator
 
@@ -78,7 +80,7 @@ NO_FD = -1
 # Minimum file descriptor that the shell can use.  Other descriptors can be
 # directly used by user programs, e.g. exec 9>&1
 #
-# Oil uses 100 because users are allowed TWO digits in frontend/lexer_def.py.
+# Oils uses 100 because users are allowed TWO digits in frontend/lexer_def.py.
 # This is a compromise between bash (unlimited, but requires crazy
 # bookkeeping), and dash/zsh (10) and mksh (24)
 _SHELL_MIN_FD = 100
@@ -107,28 +109,28 @@ class ctx_FileCloser(object):
         self.f.close()
 
 
-def InitInteractiveShell():
-    # type: () -> None
+def InitInteractiveShell(signal_safe):
+    # type: (iolib.SignalSafe) -> None
     """Called when initializing an interactive shell."""
 
     # The shell itself should ignore Ctrl-\.
-    pyos.Sigaction(SIGQUIT, SIG_IGN)
+    iolib.sigaction(SIGQUIT, SIG_IGN)
 
     # This prevents Ctrl-Z from suspending OSH in interactive mode.
-    pyos.Sigaction(SIGTSTP, SIG_IGN)
+    iolib.sigaction(SIGTSTP, SIG_IGN)
 
     # More signals from
     # https://www.gnu.org/software/libc/manual/html_node/Initializing-the-Shell.html
     # (but not SIGCHLD)
-    pyos.Sigaction(SIGTTOU, SIG_IGN)
-    pyos.Sigaction(SIGTTIN, SIG_IGN)
+    iolib.sigaction(SIGTTOU, SIG_IGN)
+    iolib.sigaction(SIGTTIN, SIG_IGN)
 
     # Register a callback to receive terminal width changes.
     # NOTE: In line_input.c, we turned off rl_catch_sigwinch.
 
     # This is ALWAYS on, which means that it can cause EINTR, and wait() and
     # read() have to handle it
-    pyos.RegisterSignalInterest(SIGWINCH)
+    iolib.RegisterSignalInterest(SIGWINCH)
 
 
 def SaveFd(fd):
@@ -180,9 +182,10 @@ class FdState(object):
             errfmt,  # type: ui.ErrorFormatter
             job_control,  # type: JobControl
             job_list,  # type: JobList
-            mem,  #type: state.Mem
+            mem,  # type: state.Mem
             tracer,  # type: Optional[dev.Tracer]
             waiter,  # type: Optional[Waiter]
+            exec_opts,  # type: optview.Exec
     ):
         # type: (...) -> None
         """
@@ -198,6 +201,7 @@ class FdState(object):
         self.mem = mem
         self.tracer = tracer
         self.waiter = waiter
+        self.exec_opts = exec_opts
 
     def Open(self, path):
         # type: (str) -> mylib.LineReader
@@ -378,16 +382,17 @@ class FdState(object):
 
             if case(redirect_arg_e.Path):
                 arg = cast(redirect_arg.Path, UP_arg)
-
+                # noclobber flag is OR'd with other flags when allowed
+                noclobber_mode = O_EXCL if self.exec_opts.noclobber() else 0
                 if r.op_id in (Id.Redir_Great, Id.Redir_AndGreat):  # >   &>
                     # NOTE: This is different than >| because it respects noclobber, but
                     # that option is almost never used.  See test/wild.sh.
-                    mode = O_CREAT | O_WRONLY | O_TRUNC
+                    mode = O_CREAT | O_WRONLY | O_TRUNC | noclobber_mode
                 elif r.op_id == Id.Redir_Clobber:  # >|
                     mode = O_CREAT | O_WRONLY | O_TRUNC
                 elif r.op_id in (Id.Redir_DGreat,
                                  Id.Redir_AndDGreat):  # >>   &>>
-                    mode = O_CREAT | O_WRONLY | O_APPEND
+                    mode = O_CREAT | O_WRONLY | O_APPEND | noclobber_mode
                 elif r.op_id == Id.Redir_Less:  # <
                     mode = O_RDONLY
                 elif r.op_id == Id.Redir_LessGreat:  # <>
@@ -399,9 +404,14 @@ class FdState(object):
                 try:
                     open_fd = posix.open(arg.filename, mode, 0o666)
                 except (IOError, OSError) as e:
-                    self.errfmt.Print_("Can't open %r: %s" %
-                                       (arg.filename, pyutil.strerror(e)),
-                                       blame_loc=r.op_loc)
+                    if e.errno == EEXIST and self.exec_opts.noclobber():
+                        extra = ' (noclobber)'
+                    else:
+                        extra = ''
+                    self.errfmt.Print_(
+                        "Can't open %r: %s%s" %
+                        (arg.filename, pyutil.strerror(e), extra),
+                        blame_loc=r.op_loc)
                     raise  # redirect failed
 
                 new_fd = self._PushDup(open_fd, r.loc)
@@ -658,7 +668,7 @@ class ExternalProgram(object):
             self,
             hijack_shebang,  # type: str
             fd_state,  # type: FdState
-            errfmt,  # type: ErrorFormatter
+            errfmt,  # type: ui.ErrorFormatter
             debug_f,  # type: _DebugFile
     ):
         # type: (...) -> None
@@ -799,18 +809,22 @@ class ExternalThunk(Thunk):
 class SubProgramThunk(Thunk):
     """A subprogram that can be executed in another process."""
 
-    def __init__(self,
-                 cmd_ev,
-                 node,
-                 trap_state,
-                 multi_trace,
-                 inherit_errexit=True):
-        # type: (CommandEvaluator, command_t, trap_osh.TrapState, dev.MultiTracer, bool) -> None
+    def __init__(
+            self,
+            cmd_ev,  # type: CommandEvaluator
+            node,  # type: command_t
+            trap_state,  # type: trap_osh.TrapState
+            multi_trace,  # type: dev.MultiTracer
+            inherit_errexit,  # type: bool
+            inherit_errtrace,  # type: bool
+    ):
+        # type: (...) -> None
         self.cmd_ev = cmd_ev
         self.node = node
         self.trap_state = trap_state
         self.multi_trace = multi_trace
         self.inherit_errexit = inherit_errexit  # for bash errexit compatibility
+        self.inherit_errtrace = inherit_errtrace  # for bash errtrace compatibility
 
     def UserString(self):
         # type: () -> str
@@ -831,14 +845,16 @@ class SubProgramThunk(Thunk):
         from osh import cmd_eval
 
         # signal handlers aren't inherited
-        self.trap_state.ClearForSubProgram()
+        self.trap_state.ClearForSubProgram(self.inherit_errtrace)
 
         # NOTE: may NOT return due to exec().
         if not self.inherit_errexit:
             self.cmd_ev.mutable_opts.DisableErrExit()
         try:
             # optimize to eliminate redundant subshells like ( echo hi ) | wc -l etc.
-            self.cmd_ev.ExecuteAndCatch(self.node, cmd_flags=cmd_eval.Optimize)
+            self.cmd_ev.ExecuteAndCatch(
+                self.node,
+                cmd_eval.OptimizeSubshells | cmd_eval.MarkLastCommands)
             status = self.cmd_ev.LastStatus()
             # NOTE: We ignore the is_fatal return value.  The user should set -o
             # errexit so failures in subprocesses cause failures in the parent.
@@ -1058,23 +1074,23 @@ class Process(Job):
             # shouldn't have this.
             # https://docs.python.org/2/library/signal.html
             # See Python/pythonrun.c.
-            pyos.Sigaction(SIGPIPE, SIG_DFL)
+            iolib.sigaction(SIGPIPE, SIG_DFL)
 
             # Respond to Ctrl-\ (core dump)
-            pyos.Sigaction(SIGQUIT, SIG_DFL)
+            iolib.sigaction(SIGQUIT, SIG_DFL)
 
             # Only standalone children should get Ctrl-Z. Pipelines remain in the
             # foreground because suspending them is difficult with our 'lastpipe'
             # semantics.
             pid = posix.getpid()
             if posix.getpgid(0) == pid and self.parent_pipeline is None:
-                pyos.Sigaction(SIGTSTP, SIG_DFL)
+                iolib.sigaction(SIGTSTP, SIG_DFL)
 
             # More signals from
             # https://www.gnu.org/software/libc/manual/html_node/Launching-Jobs.html
             # (but not SIGCHLD)
-            pyos.Sigaction(SIGTTOU, SIG_DFL)
-            pyos.Sigaction(SIGTTIN, SIG_DFL)
+            iolib.sigaction(SIGTTOU, SIG_DFL)
+            iolib.sigaction(SIGTTIN, SIG_DFL)
 
             self.tracer.OnNewProcess(pid)
             # clear foreground pipeline for subshells
@@ -1143,7 +1159,7 @@ class Process(Job):
         # type: (int, int) -> None
         """Called by the Waiter when this Process finishes."""
 
-        #log('WhenDone %d %d', pid, status)
+        #log('Process WhenDone %d %d', pid, status)
         assert pid == self.pid, 'Expected %d, got %d' % (self.pid, pid)
         self.status = status
         self.state = job_state_e.Done
@@ -1154,7 +1170,9 @@ class Process(Job):
                 # Job might have been brought to the foreground after being
                 # assigned a job ID.
                 if self.in_background:
-                    print_stderr('[%d] Done PID %d' % (self.job_id, self.pid))
+                    # TODO: bash only prints this interactively
+                    print_stderr('[%%%d] PID %d Done' %
+                                 (self.job_id, self.pid))
 
                 self.job_list.RemoveJob(self.job_id)
 
@@ -1437,7 +1455,7 @@ class Pipeline(Job):
                 # Job might have been brought to the foreground after being
                 # assigned a job ID.
                 if self.in_background:
-                    print_stderr('[%d] Done PGID %d' %
+                    print_stderr('[%%%d] PGID %d Done' %
                                  (self.job_id, self.pids[0]))
 
                 self.job_list.RemoveJob(self.job_id)
@@ -1534,12 +1552,14 @@ class JobControl(object):
 
     def Enabled(self):
         # type: () -> bool
+        """
+        Only the main shell process should bother with job control functions.
+        """
+        #log('ENABLED? %d', self.shell_tty_fd)
 
-        # TODO: get rid of this syscall?  SubProgramThunk should set a flag I
-        # think.
-        curr_pid = posix.getpid()
-        # Only the main shell should bother with job control functions.
-        return curr_pid == self.shell_pid and self.shell_tty_fd != -1
+        # TODO: get rid of getpid()?  I think SubProgramThunk should set a
+        # flag.
+        return self.shell_tty_fd != -1 and posix.getpid() == self.shell_pid
 
     # TODO: This isn't a PID.  This is a process group ID?
     #
@@ -1842,7 +1862,7 @@ class Waiter(object):
     """
 
     def __init__(self, job_list, exec_opts, signal_safe, tracer):
-        # type: (JobList, optview.Exec, pyos.SignalSafe, dev.Tracer) -> None
+        # type: (JobList, optview.Exec, iolib.SignalSafe, dev.Tracer) -> None
         self.job_list = job_list
         self.exec_opts = exec_opts
         self.signal_safe = signal_safe
@@ -1906,7 +1926,7 @@ class Waiter(object):
         # notification of its exit, even though we didn't start it.  We can't have
         # any knowledge of such processes, so print a warning.
         if pid not in self.job_list.child_procs:
-            print_stderr("osh: PID %d stopped, but osh didn't start it" % pid)
+            print_stderr("oils: PID %d Stopped, but osh didn't start it" % pid)
             return W1_OK
 
         proc = self.job_list.child_procs[pid]
@@ -1933,7 +1953,8 @@ class Waiter(object):
             stop_sig = WSTOPSIG(status)
 
             print_stderr('')
-            print_stderr('[PID %d] Stopped with signal %d' % (pid, stop_sig))
+            print_stderr('oils: PID %d Stopped with signal %d' %
+                         (pid, stop_sig))
             proc.WhenStopped(stop_sig)
 
         else:

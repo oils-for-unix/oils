@@ -91,6 +91,9 @@ setglobal_compile_flags() {
   case $variant in
     *+bumpleak|*+bumproot)
       ;;
+    *+bigint)
+      flags="$flags -D MARK_SWEEP -D BIGINT"
+      ;;
     *)
       flags="$flags -D MARK_SWEEP"
       ;;
@@ -252,20 +255,33 @@ compile_one() {
   setglobal_compile_flags "$variant" "$more_cxx_flags" "$dotd"
 
   case $out in
-    (_build/preprocessed/*)
+    _build/preprocessed/*)
       flags="$flags -E"
       ;;
 
 	 # DISABLE spew for mycpp-generated code.  mycpp/pea could flag this at the
    # PYTHON level, rather than doing it at the C++ level.
-   (_build/obj/*/_gen/bin/oils_for_unix.mycpp.o)
+   _build/obj/*/_gen/bin/oils_for_unix.mycpp.o)
      flags="$flags -Wno-unused-variable -Wno-unused-but-set-variable"
      ;;
   esac
 
-  # TODO: exactly when is -fPIC needed?  Clang needs it sometimes?
-  if test $compiler = 'clang' && test $variant != 'opt'; then
-    flags="$flags -fPIC"
+  if test "$compiler" = 'clang'; then
+    # 2024-08 - Clang needs -stdlib=libc++ for some reason
+    # https://stackoverflow.com/questions/26333823/clang-doesnt-see-basic-headers
+    # https://stackoverflow.com/questions/19774778/when-is-it-necessary-to-use-the-flag-stdlib-libstdc
+
+    # But don't do it for clang-coverage* builds, because the CI machine
+    # doesn't like it?  This makes it fail on the release machine - sigh
+    case $variant in
+      coverage*) ;;  # include coverage+bumpleak
+      *)         flags="$flags -stdlib=libc++" ;;
+    esac
+
+    # TODO: exactly when is -fPIC needed?  Clang needs it sometimes?
+    if test $variant != 'opt'; then
+      flags="$flags -fPIC"
+    fi
   fi
 
   # this flag is only valid in Clang, doesn't work in continuous build
@@ -301,6 +317,13 @@ link() {
   setglobal_link_flags $variant
 
   setglobal_cxx $compiler
+
+  if test "$compiler" = 'clang'; then
+    case $variant in
+      coverage*) ;;  # include coverage+bumpleak
+      *)         link_flags="$link_flags -stdlib=libc++"
+    esac
+  fi
 
   local prefix=''
   if test -n "${TIME_TSV_OUT:-}"; then

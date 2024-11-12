@@ -15,12 +15,17 @@ source test/sh-assert.sh  # _assert-sh-status
 #
 
 test-no-typed-args() {
-  # Hm these could both be J8 notation
-  #_ysh-error-1 'echo (42)'
-  #_ysh-error-1 'write (42)'
+  _ysh-error-X 2 'echo (42)'
+  _ysh-error-X 2 'echo { echo hi }'
+
+  # Hm write could be J8 notation?  like json8 write (x)?
+  _ysh-error-X 2 'write (42)'
 
   _ysh-error-X 2 'true (42)'
   _ysh-error-X 2 'false { echo hi }'
+
+  _ysh-error-X 2 'test x (42)'
+  _ysh-error-X 2 'test x { echo hi }'
 }
 
 test-undefined-vars() {
@@ -59,12 +64,10 @@ test-ysh-word-eval() {
   _ysh-expr-error 'echo $[maybe("foo")]'
 
   # Wrong sigil
-  _ysh-expr-error 'source --builtin funcs.ysh; echo $[identity({key: "val"})]'
+  _ysh-expr-error 'source $LIB_YSH/math.ysh; echo $[identity({key: "val"})]'
 
   # this should be consistent
-  _ysh-expr-error 'source --builtin funcs.ysh; write -- @[identity([{key: "val"}])]'
-
-  _ysh-expr-error 'const x = [1, 2]; echo $x'
+  _ysh-expr-error 'source $LIB_YSH/math.ysh; write -- @[identity([{key: "val"}])]'
 
   _ysh-should-run 'var x = [1, 2]; write @x'
 
@@ -77,6 +80,24 @@ test-ysh-word-eval() {
   _ysh-expr-error 'var x = /d+/; write @x'
 
   _ysh-expr-error 'var x = /d+/; write @[x]'
+}
+
+# Continuation of above
+test-cannot-stringify-list() {
+  # List can't be stringified
+  _ysh-expr-error 'var mylist = [1,2,3]; write $mylist'
+  _ysh-expr-error 'var mylist = [1,2,3]; write $[mylist]'
+
+  _ysh-should-run '= str(/d+/)'
+
+  _ysh-expr-error '= str([1,2])'
+  _ysh-expr-error '= str({})'
+
+  # Not sure if I like this join() behavior
+  _ysh-should-run '= join([true, null])'
+
+  # Bad error
+  _ysh-expr-error '= join([[1,2], null])'
 }
 
 test-ysh-expr-eval() {
@@ -102,6 +123,9 @@ test-ysh-expr-eval() {
   _ysh-expr-error 'var d = {}; setvar d[42] = 3'
   _ysh-expr-error 'var L = []; setvar L["key"] = 3'
 
+  # Index out of bounds
+  _ysh-expr-error 'var L = []; setvar L[99] = 3'
+  _ysh-expr-error 'var L = []; pp (L[-99])'
 }
 
 test-ysh-expr-eval-2() {
@@ -183,6 +207,29 @@ test-fallback-locations() {
 
   # Really bad one
   _ysh-expr-error 'func f(x) { return (x) }; var x = f([1,2])[1](3); echo $x'
+}
+
+test-more-locations() {
+  # Dict instead of Obj
+  # We need to call rd.BlamePos() right afterward
+  _ysh-expr-error \
+    'var Counter_methods = {}; var c = Object(Counter_methods, {i: 5})'
+
+  # This blames the ( after 'repeat' - that seems wrong
+  # Could clarify that it is Arg 1 to fromJson(), not repeat()
+  # - Or we could highlight MULTIPLE tokens, the whole repeat() call
+  # - Or nested calls fall back?
+
+#   func repeat(x, y) { return (null) }; var x = fromJson(repeat(123, 20))
+#                                                               ^
+# [ -c flag ]:1: fatal: Arg 1 should be a Str, got Null
+
+  _ysh-error-X 3 \
+    'func repeat(x, y) { return (null) }; var x = fromJson(repeat('123', 20))'
+
+  # This blames 'error'
+  _ysh-error-X 10 \
+    'source $LIB_YSH/list.ysh; var x = fromJson(repeat('123', 20))'
 }
 
 test-EvalExpr-calls() {
@@ -364,7 +411,10 @@ test-int-convert() {
   _ysh-expr-error '= int([])'
   _ysh-expr-error '= int("foo")'
   _ysh-expr-error '= int(len)'
-  _ysh-expr-error '= int("foo"->startswith)'
+  _ysh-expr-error '= int("foo" => startsWith)'
+
+  _ysh-expr-error '= int(NAN)'
+  _ysh-expr-error '= int(-INFINITY)'
 }
 
 test-float-convert() {
@@ -432,6 +482,36 @@ test-func-error-locs() {
      return (x)
   }
   = f()
+  '
+}
+
+test-attr-error-locs() {
+  _ysh-expr-error '= {}.key'
+  _ysh-expr-error '= {}->method'
+
+  _ysh-expr-error 'var obj = Object(null, {}); = obj.attr'
+  _ysh-expr-error 'var obj = Object(null, {}); = obj->method'
+
+}
+
+# TODO:
+test-error-loc-bugs() {
+  _ysh-expr-error '
+func id(x) {
+  return (x)
+}
+
+#pp test_ (id(len(42)))
+
+# This should point at ( in len, not id(
+pp test_ (len(id(42)))
+  '
+
+  _ysh-expr-error '
+var methods = {}
+
+# Should point at methods, not {}
+var o = Object(methods, {})
   '
 }
 
@@ -731,6 +811,14 @@ test-equality() {
   '
 }
 
+test-float-equality() {
+  _ysh-expr-error '
+var x = 1
+pp test_ (42.0 === x)'
+
+  _ysh-expr-error 'pp test_ (2.0 === 1.0)'
+}
+
 test-place() {
   _ysh-expr-error '
   var a = null
@@ -744,6 +832,8 @@ test-place() {
   call p->setValue(3, 4)
   '
 
+  # DISABLED 2024-10, after implementing modules
+  if false; then
   _ysh-error-1 '
   func f() {
     var s = "foo"
@@ -753,6 +843,7 @@ test-place() {
   var p = f()
   call p->setValue(3)
   '
+  fi
 
 }
 
@@ -865,9 +956,8 @@ test-append-usage-error() {
   _ysh-expr-error 'append x ([], [])'  # Too many
 }
 
-# Bad error location
 test-try-usage-error() {
-  _ysh-expr-error '
+  _ysh-error-X 2 '
 var s = "README"
 case (s) {
   README { echo hi }
@@ -898,22 +988,143 @@ test-setglobal() {
    _ysh-should-run '
 var a = [0]
 setglobal a[1-1] = 42
-pp line (a)
+pp test_ (a)
    '
 
    _ysh-expr-error '
 var a = [0]
 setglobal a[a.bad] = 42
-pp line (a)
+pp test_ (a)
    '
 
    _ysh-should-run '
 var d = {e:{f:0}}
 setglobal d.e.f = 42
-pp line (d)
+pp test_ (d)
 setglobal d.e.f += 1
-pp line (d)
+pp test_ (d)
    '
+}
+
+test-assert() {
+  _ysh-expr-error 'assert [0.0]'
+  _ysh-expr-error 'assert [3 > 4]'
+
+  _ysh-expr-error 'assert (0)'
+  _ysh-expr-error 'assert (null === 42)'
+
+  _ysh-expr-error 'assert [null === 42]'
+
+  # One is long
+  _ysh-expr-error 'assert [null === list(1 ..< 50)]'
+
+  # Both are long
+  _ysh-expr-error 'assert [{k: list(3 ..< 40)} === list(1 ..< 50)]'
+}
+
+test-pp() {
+  _ysh-expr-error 'pp (42/0)'
+
+  # Multiple lines
+  _ysh-should-run 'pp [42
+/0]'
+
+  _ysh-expr-error 'pp [5, 6]'
+
+  _ysh-should-run 'pp (42)'
+  _ysh-should-run 'var x = 42; pp (x)'
+  _ysh-should-run '
+var x = 42;
+pp [x]'
+
+  _ysh-should-run '
+var x = list(1 ..< 50);
+pp [x]'
+}
+
+test-module() {
+  # no args
+  _ysh-error-X 2 'use spec/testdata/module2/util.ysh; util'
+
+  # bad arg
+  _ysh-error-X 2 'use spec/testdata/module2/util.ysh; util zz'
+
+  # proc with bad args
+  _ysh-error-X 3 'use spec/testdata/module2/util2.ysh; util2 echo-args'
+
+  # malformed Obj
+  _ysh-error-X 3 'use spec/testdata/module2/util2.ysh; util2 badObj otherproc'
+}
+
+test-required-blocks() {
+
+  # These are procs, which normally give usage errors
+  #   The usage error prints the builtin name
+  #
+  # Funcs give you type errors though?  Is that inconsistent?
+
+  _ysh-error-X 2 'shvar'
+  _ysh-error-X 2 'push-registers'
+
+  _ysh-error-X 2 'redir'
+  _ysh-error-X 2 'redir (42)'
+  _ysh-error-X 2 'hay eval :myvar'
+  _ysh-error-X 2 'hay eval :myvar (42)'
+  _ysh-error-X 2 'try'
+  _ysh-error-X 2 'ctx push ({})'
+
+  _ysh-error-X 2 'fork'
+  _ysh-error-X 2 'forkwait'
+
+  # OK this is a type error
+  _ysh-error-X 3 'forkwait ( ; ; 42)'
+
+  _ysh-error-X 2 'haynode Foo'
+
+  # Hm this isn't a usage error
+  _ysh-error-X 3 'haynode Foo (42)'
+
+  # This neither
+  _ysh-error-X 3 'haynode Foo ( ; ; 42)'
+
+  _ysh-should-run 'haynode Foo a { echo hi }'
+}
+
+test-obj-methods() {
+  _ysh-error-X 3 'var o = Object(null, {}); pp test_ (o[1])'
+  _ysh-error-X 3 'var o = Str; pp test_ (Str[1])'
+
+  _ysh-error-X 3 'pp test_ (Bool[Bool])'
+  _ysh-error-X 3 'pp test_ (Dict[Bool])'
+  _ysh-error-X 3 'pp test_ (List[Str, Bool])'
+
+  # break invariants
+  _ysh-error-X 3 'call propView(List)->erase("name"); pp test_ (List[Str])'
+  _ysh-error-X 3 'call propView(Str)->erase("name"); pp test_ (List[Str])'
+
+  _ysh-error-X 3 'pp test_ (List[Str, 3])'
+}
+
+test-int-overflow() {
+  local pos='18446744073709551616'
+  local neg='-18446744073709551616'
+
+  # arithmetic
+
+  # _ConvertToInt
+  _ysh-error-1 "var s = '$pos'; = s % 2"
+  _ysh-error-1 "var s = '$neg'; = s % 2"
+
+  # _ConvertToNumber
+  _ysh-error-1 "var s = '$pos'; = s + 1"
+  _ysh-error-1 "var s = '$neg'; = s + 1"
+
+  _ysh-error-1 "= '$pos' ~== 42"
+  _ysh-error-1 "= '$neg' ~== 42"
+
+  # builtins
+  _ysh-expr-error "= int('$pos')"
+  _ysh-expr-error "= int('$neg')"
 }
 
 soil-run-py() {

@@ -520,7 +520,7 @@ This is a global pass that computes a Dict[int, int]
 
 The graph is specified by single root node, e.g. the argument to
 
-    pp line (obj)
+    pp value (obj)
 
 Pass this dict into the second step.
 

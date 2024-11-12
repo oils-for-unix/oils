@@ -158,7 +158,7 @@ def _CharClassTermToEre(term, parts, special_char_flags):
 
 def _AsPosixEre(node, parts, capture_names):
     # type: (re_t, List[str], List[Optional[str]]) -> None
-    """Translate an Oil regex to a POSIX ERE.
+    """Translate an Eggex to a POSIX ERE.
 
     Appends to a list of parts that you have to join.
     """

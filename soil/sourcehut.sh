@@ -28,7 +28,7 @@ publish-html-assuming-ssh-key() {
   local job_name=$1
 
   if true; then
-    soil/web-worker.sh deploy-job-results 'srht-' $JOB_ID $job_name JOB_ID JOB_URL
+    soil/web-worker.sh deploy-job-results 'sourcehut-' $JOB_ID $job_name JOB_ID JOB_URL
   else
     soil/web-worker.sh deploy-test-wwz  # dummy data that doesn't depend on the build
   fi
@@ -40,12 +40,12 @@ publish-html-assuming-ssh-key() {
   # Note: the directory structure will be overlapping, unlike Github which has
   # GITHUB_RUN_NUMBER
   #
-  # srht-jobs/
+  # sourcehut-jobs/
   #   1234/foo.wwz  # individual jobs
   #   1235/bar.wwz
   #   git-0101abab/index.html  # commit hash
 
-  time soil/web-worker.sh remote-event-job-done 'srht-' "git-$commit_hash"
+  time soil/web-worker.sh remote-event-job-done 'sourcehut-' "git-$commit_hash"
 }
 
 #

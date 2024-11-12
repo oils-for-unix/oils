@@ -13,6 +13,14 @@ _demo-stderr() {
   return 99
 }
 
+test-nq-run() {
+  local status
+
+  nq-run status \
+    false
+  nq-assert 1 = "$status"
+}
+
 test-nq-capture() {
   local status stdout
 

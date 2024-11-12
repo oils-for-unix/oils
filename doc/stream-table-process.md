@@ -250,7 +250,7 @@ We're doing **all of these**.
 
 - Buffered for loop
   - YSH is now roughly as fast as Awk!
-  - `for x in (stdin)`
+  - `for x in (io.stdin)`
 
 - "magic awk loop"
 

@@ -119,6 +119,14 @@ Tuple2<Id_t, int> MatchJsonStrToken(BigStr* s, int pos) {
   return Tuple2<Id_t, int>(static_cast<Id_t>(id), end_pos);
 }
 
+Tuple2<Id_t, int> MatchShNumberToken(BigStr* s, int pos) {
+  int id;
+  int end_pos;
+  ::MatchShNumberToken(reinterpret_cast<const unsigned char*>(s->data_), len(s),
+                       pos, &id, &end_pos);
+  return Tuple2<Id_t, int>(static_cast<Id_t>(id), end_pos);
+}
+
 bool IsValidVarName(BigStr* s) {
   return ::IsValidVarName(reinterpret_cast<const unsigned char*>(s->data_),
                           len(s));
@@ -129,14 +137,19 @@ bool ShouldHijack(BigStr* s) {
                         len(s));
 }
 
-bool LooksLikeFloat(BigStr* s) {
-  return ::LooksLikeFloat(reinterpret_cast<const unsigned char*>(s->data_),
-                          len(s));
-}
-
 bool LooksLikeInteger(BigStr* s) {
   return ::LooksLikeInteger(reinterpret_cast<const unsigned char*>(s->data_),
                             len(s));
+}
+
+bool LooksLikeYshInt(BigStr* s) {
+  return ::LooksLikeYshInt(reinterpret_cast<const unsigned char*>(s->data_),
+                           len(s));
+}
+
+bool LooksLikeYshFloat(BigStr* s) {
+  return ::LooksLikeYshFloat(reinterpret_cast<const unsigned char*>(s->data_),
+                             len(s));
 }
 
 }  // namespace match

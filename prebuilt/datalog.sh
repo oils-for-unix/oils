@@ -22,6 +22,7 @@ compile_one() {
 
 compile_all() {
   compile_one mycpp/datalog/call-graph.dl
+  compile_one mycpp/datalog/dataflow.dl
   compile_one deps/source.medo/souffle/smoke-test.dl
 }
 

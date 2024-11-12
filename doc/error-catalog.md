@@ -122,6 +122,7 @@ test/ysh-parse-errors.sh ysh_dq_strings (this may move)
 
 - Did you mean `"\\z"`?  Backslashes must be escaped in double-quoted strings.
 - Did you mean something like `"\$"`?  Only valid escapes are accepted in YSH.
+- Did you to use single quotes, like `u'\n'` rather than `u"\n"`?
 
 Related help topics:
 
@@ -172,6 +173,65 @@ Examples:
     if ( (x + 1) < n) {  # space between ( ( avoids ((
       echo yes
     }
+
+### OILS-ERR-15
+
+Incorrect:
+
+    # Expression mode
+    if (!a || b && c) {
+      echo no
+    }
+
+    # Command mode
+    if not test --dir a or test --dir b and test --dir c {
+      echo no
+    }
+
+Correct:
+
+    # Expression mode
+    if (not a or b and c) {
+      echo yes
+    }
+
+    # Command mode
+    if ! test --dir a || test --dir b && test --dir c {
+      echo yes
+    }
+
+In general, code within parentheses `()` is parsed as Python-like expressions
+-- referred to as [expression mode](command-vs-expression-mode.html). The
+standard boolean operators are written as `a and b`, `a or b` and `not a`.
+
+This differs from [command mode](command-vs-expression-mode.html) which uses
+shell-like `||` for "OR", `&&` for "AND" and `!` for "NOT".
+
+### OILS-ERR-16
+
+```
+  for x in (1 .. 5) {
+              ^~
+[ -c flag ]:1: Use ..< for half-open range, or ..= for closed range (OILS-ERR-16)
+```
+
+There are two ways to construct a [Range](ref/chap-expr-lang#range). The `..<`
+operator is for half-open ranges and the `..=` operator is for closed ranges:
+
+    for i in (0 ..< 3) {
+      echo $i
+    }
+    => 0
+    => 1
+    => 2
+
+    for i in (0 ..= 3) {
+      echo $i
+    }
+    => 0
+    => 1
+    => 2
+    => 3
 
 ## Runtime Errors - Traditional Shell
 
@@ -310,6 +370,73 @@ test/runtime-errors.sh test-arith_ops_str
   user provided input, it may be a better idea to first parse that input with
   [`int()`](ref/chap-builtin-func.html#int) or
   [`float()`](ref/chap-builtin-func.html#float).
+
+### OILS-ERR-202
+
+<!--
+Generated with:
+test/ysh-runtime-errors.sh test-float-equality
+-->
+
+```
+  pp (42.0 === x)
+                ^~~
+[ -c flag ]:3: fatal: Equality isn't defined on Float values (OILS-ERR-202)
+```
+
+Floating point numbers shouldn't be tested for equality.  Alternatives:
+
+    = abs(42.0 - x) < 0.1
+    = floatEquals(42.0, x) 
+
+### OILS-ERR-203
+
+<!--
+Generated with:
+test/ysh-runtime-errors.sh test-cannot-stringify-list
+-->
+
+```
+  var mylist = [1,2,3]; write $[mylist]
+                              ^~
+[ -c flag ]:1: fatal: Expr sub got a List, which can't be stringified (OILS-ERR-203)
+```
+
+- Did you mean to use `@mylist` instead of `$mylist`?
+- Did you mean to use `@[myfunc()]` instead of `$[myfunc()]`?
+- Did you mean `$[join(mylist)]`?
+
+Or:
+
+- Do you have an element that can't be stringified in a list, like `['good',
+  {bad: true}]`?
+
+
+<!-- TODO -->
+
+## Runtime Errors: `strict:all`
+
+### OILS-ERR-300
+
+```
+  if ! ls | wc -l; then echo failed; fi
+          ^
+[ -c flag ]:1: fatal: Command conditionals should only have one status, not Pipeline (strict_errexit, OILS-ERR-300)
+```
+
+Compound commands can't be used as conditionals because it's ambiguous.
+
+It confuses true/false with pass/fail.  What if part of the pipeline fails?
+What if `ls` doesn't exist?
+
+This YSH idiom is more explicit:
+
+    try {
+      ls | wc -l
+    }
+    if (_error.code !== 0) {
+      echo failed
+    }
 
 ## Appendix
 

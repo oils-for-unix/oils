@@ -87,13 +87,13 @@ EOF
   # JSON
   _ysh-error-here-X 1 << 'EOF'
 echo $'"foo \x01 "' | json read
-pp line (_reply)
+pp test_ (_reply)
 EOF
   # J8
   _ysh-error-here-X 1 << 'EOF'
 var invalid = b'\y01'
 echo $["u'foo" ++ invalid ++ "'"] | json8 read
-pp line (_reply)
+pp test_ (_reply)
 EOF
 }
 
@@ -139,7 +139,7 @@ test-encode() {
   _error-case-X 1 'var L = []; call L->append(L); json write (L)'
 
   # This should fail!
-  # But not pp line (L)
+  # But not pp test_ (L)
   _error-case-X 1 'var L = []; call L->append(/d+/); j8 write (L)'
 }
 
@@ -162,7 +162,7 @@ EOF
 var lines = @(
   echo '"unbalanced'
 )
-pp line (lines)
+pp test_ (lines)
 EOF
 
   # error in word language

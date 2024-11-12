@@ -2,6 +2,7 @@
 
 #include <errno.h>
 #include <inttypes.h>  // PRIo64, PRIx64
+#include <math.h>      // isnan(), isinf()
 #include <stdio.h>
 
 #include "mycpp/gc_alloc.h"
@@ -53,6 +54,26 @@ BigInt FromStr(BigStr* s, int base) {
   } else {
     throw Alloc<ValueError>();
   }
+}
+
+Tuple2<bool, BigInt> FromStr2(BigStr* s, int base) {
+  int64_t i;
+  if (StringToInt64(s->data_, len(s), base, &i)) {
+    return Tuple2<bool, BigInt>(true, i);
+  } else {
+    return Tuple2<bool, BigInt>(false, MINUS_ONE);
+  }
+}
+
+Tuple2<bool, BigInt> FromFloat(double f) {
+  if (isnan(f) || isinf(f)) {
+    return Tuple2<bool, BigInt>(false, MINUS_ONE);
+  }
+#ifdef BIGINT
+  // Testing that _bin/cxx-opt+bigint/ysh is actually different!
+  log("*** BIGINT active ***");
+#endif
+  return Tuple2<bool, BigInt>(true, static_cast<BigInt>(f));
 }
 
 }  // namespace mops

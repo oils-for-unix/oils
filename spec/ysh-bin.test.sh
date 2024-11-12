@@ -11,8 +11,9 @@ bar
 
 
 #### Options can be overridden
-$SH -c 'shopt | grep parse_paren'
-$SH +O parse_paren -c 'shopt | grep parse_paren'
+$[ENV.SH] -c 'shopt | grep parse_paren'
+$[ENV.SH] +O parse_paren -c 'shopt | grep parse_paren'
+
 ## STDOUT:
 shopt -s parse_paren
 shopt -u parse_paren

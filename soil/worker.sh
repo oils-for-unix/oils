@@ -208,7 +208,7 @@ osh-runtime      benchmarks/osh-runtime.sh soil-run    _tmp/osh-runtime/index.ht
 vm-baseline      benchmarks/vm-baseline.sh soil-run    _tmp/vm-baseline/index.html
 compute          benchmarks/compute.sh soil-run        _tmp/compute/index.html
 gc               benchmarks/gc.sh soil-run             _tmp/gc/index.html
-mycpp-benchmarks benchmarks/mycpp.sh soil-run          _tmp/mycpp-examples/-wwz-index
+mycpp-benchmarks benchmarks/mycpp.sh soil-run          _tmp/mycpp-examples/index.html
 EOF
 }
 
@@ -305,6 +305,8 @@ EOF
 cpp-coverage-tasks() {
   # dep notes: hnode_asdl.h required by expr_asdl.h in mycpp/examples
 
+  # TODO: make this work
+#tar-compile             benchmarks/ovm-build.sh soil-run                -
   cat <<EOF
 os-info                 soil/diagnose.sh os-info    -
 dump-env                soil/diagnose.sh dump-env   -
@@ -329,8 +331,7 @@ ovm-tarball-tasks() {
 os-info           soil/diagnose.sh os-info    -
 dump-env          soil/diagnose.sh dump-env   -
 py-all            build/py.sh all                        -
-syscall-by-code   test/syscall.sh by-code                _tmp/syscall/by-code.txt
-syscall-by-input  test/syscall.sh by-input               _tmp/syscall/by-input.txt
+syscall           test/syscall.sh soil-run               _tmp/syscall/-wwz-index
 osh-spec          test/spec-py.sh osh-all-serial         _tmp/spec/osh-py/index.html
 gold              test/gold.sh soil-run                  -
 osh-usage         test/osh-usage.sh soil-run             -
@@ -388,6 +389,11 @@ test-gold              opy/soil.sh test-gold                      -
 build-oil-repo         opy/soil.sh build-oil-repo                 -
 regtest-compile        opy/soil.sh regtest-compile                -
 EOF
+
+# TODO: add this back after fixing transitive test enumeration problem
+# We shouldn't use
+
+# web-remote-test        soil/web-remote-test.sh soil-run           -
 }
 
 tests-todo() {
@@ -474,7 +480,8 @@ run-tasks() {
       # explicitly connect TTY, e.g. for soil/interactive
       "${argv[@]}" > $log_path 2>&1 < $stdin_tty
     else
-      "${argv[@]}" > $log_path 2>&1
+      # Temporary fix: build/doc.sh soil-run reads from stdin!
+      "${argv[@]}" > $log_path 2>&1 < /dev/null
     fi
     status=$?
     set -o errexit

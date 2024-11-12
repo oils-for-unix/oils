@@ -4,9 +4,14 @@
 #define ASDL_RUNTIME_MYCPP_H
 
 #include "_gen/asdl/hnode.asdl.h"
+#include "_gen/display/pretty.asdl.h"
 #include "cpp/data_lang.h"
 #include "mycpp/runtime.h"
 
+#include "_gen/display/pretty.asdl.h"
+
+using pretty_asdl::doc;  // ad hoc
+      
 namespace runtime {  // forward declare
 
   class TraversalState;
@@ -32,8 +37,8 @@ hnode::Leaf* NewLeaf(BigStr* s, hnode_asdl::color_t e_color);
 class TraversalState {
  public:
   TraversalState();
-  Dict<int, bool>* seen;
-  Dict<int, int>* ref_count;
+  Dict<int, bool>* seen{};
+  Dict<int, int>* ref_count{};
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassScanned(2, sizeof(TraversalState));
@@ -44,7 +49,6 @@ class TraversalState {
 
 extern BigStr* TRUE_STR;
 extern BigStr* FALSE_STR;
-
 
 }  // declare namespace runtime
 
@@ -64,8 +68,8 @@ class ColorOutput {
   void WriteRaw(Tuple2<BigStr*, int>* raw);
   int NumChars();
   Tuple2<BigStr*, int> GetRaw();
-  mylib::Writer* f;
-  int num_chars;
+  mylib::Writer* f{};
+  int num_chars{};
   
   static constexpr uint32_t field_mask() {
     return maskbit(offsetof(ColorOutput, f));
@@ -78,7 +82,7 @@ class ColorOutput {
   DISALLOW_COPY_AND_ASSIGN(ColorOutput)
 };
 
-class TextOutput : public ColorOutput {
+class TextOutput : public ::format::ColorOutput {
  public:
   TextOutput(mylib::Writer* f);
   virtual format::TextOutput* NewTempBuffer();
@@ -86,7 +90,7 @@ class TextOutput : public ColorOutput {
   virtual void PopColor();
   
   static constexpr uint32_t field_mask() {
-    return ColorOutput::field_mask();
+    return ::format::ColorOutput::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -96,7 +100,7 @@ class TextOutput : public ColorOutput {
   DISALLOW_COPY_AND_ASSIGN(TextOutput)
 };
 
-class HtmlOutput : public ColorOutput {
+class HtmlOutput : public ::format::ColorOutput {
  public:
   HtmlOutput(mylib::Writer* f);
   virtual format::HtmlOutput* NewTempBuffer();
@@ -107,7 +111,7 @@ class HtmlOutput : public ColorOutput {
   virtual void write(BigStr* s);
   
   static constexpr uint32_t field_mask() {
-    return ColorOutput::field_mask();
+    return ::format::ColorOutput::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -117,7 +121,7 @@ class HtmlOutput : public ColorOutput {
   DISALLOW_COPY_AND_ASSIGN(HtmlOutput)
 };
 
-class AnsiOutput : public ColorOutput {
+class AnsiOutput : public ::format::ColorOutput {
  public:
   AnsiOutput(mylib::Writer* f);
   virtual format::AnsiOutput* NewTempBuffer();
@@ -125,7 +129,7 @@ class AnsiOutput : public ColorOutput {
   virtual void PopColor();
   
   static constexpr uint32_t field_mask() {
-    return ColorOutput::field_mask();
+    return ::format::ColorOutput::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -143,7 +147,7 @@ class _PrettyPrinter {
   bool _PrintWholeArray(List<hnode_asdl::hnode_t*>* array, int prefix_len, format::ColorOutput* f, int indent);
   void _PrintRecord(hnode::Record* node, format::ColorOutput* f, int indent);
   void PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f, int indent);
-  int max_col;
+  int max_col{};
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassScanned(0, sizeof(_PrettyPrinter));
@@ -155,7 +159,7 @@ class _PrettyPrinter {
 bool _TrySingleLineObj(hnode::Record* node, format::ColorOutput* f, int max_chars);
 bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_chars);
 void PrintTree(hnode_asdl::hnode_t* node, format::ColorOutput* f);
-
+void PrintTree2(hnode_asdl::hnode_t* node, format::ColorOutput* f);
 
 }  // declare namespace format
 

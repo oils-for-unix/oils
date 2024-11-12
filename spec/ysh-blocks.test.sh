@@ -1,3 +1,5 @@
+## oils_failures_allowed: 2
+
 #### cd accepts a block, runs it in different dir
 shopt -s ysh:all
 
@@ -40,70 +42,68 @@ cd { echo $PWD }
 /tmp
 ## END
 
-#### cd with block: fatal error in block
+#### cd passed block with return 1
 shopt -s ysh:all
-cd / {
-  echo one
-  false
-  echo two
-}
-## status: 1
-## STDOUT:
-one
-## END
 
-
-#### cd with block: return in block
-shopt -s oil:all
 f() {
   cd / {
-    echo one
-    return
-    echo two
+    echo block
+    return 1
+    echo 'not reached'
   }
-  echo 'end func'
 }
 f
-## STDOUT:
-one
-end func
-## END
+echo 'not reached'
 
-#### cd with block: break in block
-shopt -s oil:all
-f() {
-  cd / {
-    echo one
-    for i in 1 2; do
-      echo $i
-      break  # break out of loop
-    done
-
-    break  # break out of block isn't valid
-    echo two
-  }
-  echo end func
-}
-f
 ## status: 1
-## STDOUT:
-one
-1
-## END
-
-#### cd with block exits with status 0
-shopt -s ysh:all
-cd / {
-  echo block
-
-  # This return value is ignored.
-  # Or maybe this should be a runtime error?
-  return 1
-}
-echo status=$?
 ## STDOUT:
 block
-status=0
+## END
+
+#### cd passed a block defined in a different scope
+shopt --set ysh:upgrade
+
+proc my-cd (; b) {
+  cd /tmp ( ; ; b)
+}
+
+proc p {
+  var i = 42
+  var b = ^(echo "i = $i")
+
+  my-cd (b)
+}
+
+p
+
+## STDOUT:
+## END
+
+#### io->eval() and io.captureStdout() passed a block in different scope
+shopt --set ysh:upgrade
+
+proc my-cd (; b) {
+  call io->eval(b)
+
+  var d = io->evalToDict(b)
+
+  pp test_ (d)
+
+  # Yup, this is a problem
+  var s = io.captureStdout(b)
+  echo "stdout $s"
+}
+
+proc p {
+  var i = 42
+  var b = ^(var x = 'x'; echo "i = $i")
+
+  my-cd (b)
+}
+
+p
+
+## STDOUT:
 ## END
 
 #### block doesn't have its own scope
@@ -150,13 +150,13 @@ cat out
 ## END
 
 #### block literal in expression mode: ^(echo $PWD)
-shopt -s oil:all
+shopt -s ysh:all
 
 const myblock = ^(echo $PWD | wc -l)
-eval (myblock)
+call io->eval(myblock)
 
 const b2 = ^(echo one; echo two)
-eval (b2)
+call io->eval(b2)
 
 ## STDOUT:
 1
@@ -200,74 +200,6 @@ command cd / {
 ## STDOUT:
 builtin /
 command /
-## END
-
-
-#### Consistency: Control Flow and Blocks
-shopt --set parse_brace
-
-# "Invalid control flow at top level"
-eval '
-  cd / {
-    echo cd
-    break
-  }
-'
-echo cd no loop $?
-
-# warning: "Unexpected control flow in block" (strict_control_flow)
-eval '
-while true {
-  cd / {
-    echo cd
-    break
-  }
-}
-'
-echo cd loop $?
-
-eval '
-while true {
-  shopt --unset errexit {
-    echo shopt
-    continue
-  }
-}
-'
-echo shopt continue $?
-
-eval '
-while true {
-  shvar FOO=foo {
-    echo shvar
-    continue
-  }
-}
-'
-echo shvar continue $?
-
-
-eval '
-while true {
-  try {
-    echo try
-    break
-  }
-}
-'
-echo try break $?
-
-## STDOUT:
-cd
-cd no loop 0
-cd
-cd loop 1
-shopt
-shopt continue 1
-shvar
-shvar continue 1
-try
-try break 1
 ## END
 
 #### Consistency: Exit Status and Blocks
@@ -375,7 +307,7 @@ shopt --set parse_brace parse_proc parse_paren
 proc task(name ; ; ; b = null) {
   echo "task name=$name"
   if (b) {
-    eval (b)
+    call io->eval(b)
     return 33
   } else {
     echo 'no block'

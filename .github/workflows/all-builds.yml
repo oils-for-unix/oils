@@ -45,9 +45,6 @@ jobs:
           soil/worker.sh JOB-raw-vm
 
       - name: publish-html
-        env:
-          # for deploying to dashboard
-          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
         run: |
           soil/github-actions.sh publish-and-exit raw-vm T
 
@@ -64,9 +61,6 @@ jobs:
           soil/worker.sh JOB-dev-setup-debian
 
       - name: publish-html
-        env:
-          # for deploying to dashboard
-          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
         run: |
           soil/github-actions.sh publish-and-exit dev-setup-debian T
 
@@ -85,9 +79,6 @@ jobs:
           soil/github-actions.sh run-job dummy podman
 
       - name: publish-html
-        env:
-          # for deploying to dashboard
-          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
         run: |
           soil/github-actions.sh publish-and-exit dummy T
 
@@ -105,9 +96,6 @@ jobs:
           soil/github-actions.sh run-job dev-minimal
 
       - name: publish-html
-        env:
-          # for deploying to dashboard
-          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
         run: |
           soil/github-actions.sh publish-and-exit dev-minimal T
 
@@ -130,9 +118,6 @@ jobs:
           soil/github-actions.sh run-job interactive
 
       - name: publish-html
-        env:
-          # for deploying to dashboard
-          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
         run: |
           soil/github-actions.sh publish-and-exit interactive T
 
@@ -150,9 +135,6 @@ jobs:
           soil/github-actions.sh run-job pea podman
 
       - name: publish-html
-        env:
-          # for deploying to dashboard
-          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
         run: |
           soil/github-actions.sh publish-and-exit pea T
 
@@ -169,9 +151,6 @@ jobs:
           soil/github-actions.sh run-job other-tests
 
       - name: publish-html
-        env:
-          # for deploying to dashboard
-          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
         run: |
           soil/github-actions.sh publish-and-exit other-tests T
 
@@ -188,9 +167,6 @@ jobs:
           soil/github-actions.sh run-job ovm-tarball
 
       - name: publish-html
-        env:
-          # for deploying to dashboard
-          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
         run: |
           soil/github-actions.sh publish-and-exit ovm-tarball T
 
@@ -208,9 +184,6 @@ jobs:
           soil/github-actions.sh run-job app-tests
 
       - name: publish-html
-        env:
-          # for deploying to dashboard
-          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
         run: |
           soil/github-actions.sh publish-and-exit app-tests T
 
@@ -227,9 +200,6 @@ jobs:
           soil/github-actions.sh run-job cpp-coverage
 
       - name: publish-html
-        env:
-          # for deploying to dashboard
-          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
         run: |
           soil/github-actions.sh publish-and-exit cpp-coverage T
 
@@ -246,9 +216,6 @@ jobs:
           soil/github-actions.sh run-job benchmarks
 
       - name: publish-html
-        env:
-          # for deploying to dashboard
-          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
         run: |
           soil/github-actions.sh publish-and-exit benchmarks T
 
@@ -266,9 +233,6 @@ jobs:
           soil/github-actions.sh run-job bloaty
 
       - name: publish-html
-        env:
-          # for deploying to dashboard
-          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
         run: |
           soil/github-actions.sh publish-and-exit bloaty T
 
@@ -286,9 +250,6 @@ jobs:
           soil/github-actions.sh run-job benchmarks2
 
       - name: publish-html
-        env:
-          # for deploying to dashboard
-          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
         run: |
           soil/github-actions.sh publish-and-exit benchmarks2 T
 
@@ -311,9 +272,6 @@ jobs:
           soil/github-actions.sh run-job cpp-small
 
       - name: publish-html
-        env:
-          # for deploying to dashboard
-          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
         run: |
           soil/github-actions.sh publish-and-exit cpp-small T
 
@@ -344,8 +302,6 @@ jobs:
           soil/github-actions.sh publish-cpp-tarball
 
       - name: publish-html
-        env:
-          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
         run: |
           soil/github-actions.sh publish-and-exit cpp-tarball T
 
@@ -368,9 +324,6 @@ jobs:
           soil/github-actions.sh run-job cpp-spec
 
       - name: publish-html
-        env:
-          # for deploying to dashboard
-          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
         run: |
           soil/github-actions.sh publish-and-exit cpp-spec T
 
@@ -388,9 +341,6 @@ jobs:
           soil/github-actions.sh run-job wild
 
       - name: publish-html
-        env:
-          # for deploying to dashboard
-          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
         run: |
           soil/github-actions.sh publish-and-exit wild T
 
@@ -412,9 +362,6 @@ jobs:
           soil/worker.sh JOB-maybe-merge
 
       - name: publish-html
-        env:
-          # for deploying to dashboard
-          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
         run: |
           # NOTE: does not publish to status API
           soil/github-actions.sh publish-and-exit maybe-merge

@@ -21,7 +21,7 @@ from mycpp.mylib import log
 from typing import Dict, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.pyutil import _ResourceLoader
-    from core import ui
+    from display import ui
 
 _ = log
 
@@ -68,6 +68,17 @@ class Help(vm._Builtin):
             util.PrintTopicHeader(topic_id, self.f)
             print('    %s/%s/doc/ref/chap-%s.html#%s' %
                   (prefix, self.version_str, chapter_name, topic_id))
+            print('')
+            return 0
+
+        # Note: this is a heuristic.  Typos will print bad URLs, but let's keep
+        # it simple.
+        lower = topic_id.lower()
+        if lower.startswith('oils-err'):
+            print('')
+            print('    %s/%s/doc/error-catalog.html#%s' %
+                  (prefix, self.version_str, lower))
+            print('')
             return 0
 
         found = util.PrintEmbeddedHelp(self.loader, topic_id, self.f)
@@ -97,12 +108,13 @@ class Help(vm._Builtin):
 
         topic_id, blame_loc = arg_r.Peek2()
         if topic_id is None:
-            found = self._ShowTopic('help', blame_loc) == 0
-            assert found
+            unused_found = self._ShowTopic('help', blame_loc) == 0
+            assert unused_found
 
             # e.g. ysh-chapters
-            found = self._ShowTopic('%s-chapters' % self.lang, blame_loc) == 0
-            assert found
+            unused_found = self._ShowTopic('%s-chapters' % self.lang,
+                                           blame_loc) == 0
+            assert unused_found
 
             print('All docs: https://www.oilshell.org/release/%s/doc/' %
                   self.version_str)

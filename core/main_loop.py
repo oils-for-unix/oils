@@ -15,7 +15,7 @@ from _devbuild.gen.syntax_asdl import (command, command_t, parse_result,
                                        parse_result_e)
 from core import error
 from core import process
-from core import ui
+from display import ui
 from core import util
 from frontend import reader
 from osh import cmd_eval
@@ -28,7 +28,6 @@ import posix_ as posix
 from typing import cast, Any, List, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.comp_ui import _IDisplay
-    from core.ui import ErrorFormatter
     from frontend import parse_lib
     from osh.cmd_parse import CommandParser
     from osh.cmd_eval import CommandEvaluator
@@ -101,7 +100,7 @@ class Headless(object):
     """Main loop for headless mode."""
 
     def __init__(self, cmd_ev, parse_ctx, errfmt):
-        # type: (CommandEvaluator, parse_lib.ParseContext, ErrorFormatter) -> None
+        # type: (CommandEvaluator, parse_lib.ParseContext, ui.ErrorFormatter) -> None
         self.cmd_ev = cmd_ev
         self.parse_ctx = parse_ctx
         self.errfmt = errfmt
@@ -197,7 +196,7 @@ def Interactive(
         display,  # type: _IDisplay
         prompt_plugin,  # type: UserPlugin
         waiter,  # type: process.Waiter
-        errfmt,  # type: ErrorFormatter
+        errfmt,  # type: ui.ErrorFormatter
 ):
     # type: (...) -> int
     status = 0
@@ -250,12 +249,18 @@ def Interactive(
                 cmd_ev.mem.SetLastStatus(status)
                 quit = True
             except KeyboardInterrupt:  # thrown by InteractiveLineReader._GetLine()
-                # Here we must print a newline BEFORE EraseLines()
-                print('^C')
+                # TODO: We probably want to change terminal settings so ^C is printed.
+                # For now, just print a newline.
+                # 
+                # WITHOUT GNU readline, the ^C is printed.  So we need to make
+                # the 2 cases consistent.
+                print('')
+
+                if 0:
+                    from core import pyos
+                    pyos.FlushStdout()
+
                 display.EraseLines()
-                # http://www.tldp.org/LDP/abs/html/exitcodes.html
-                # bash gives 130, dash gives 0, zsh gives 1.
-                # Unless we SET cmd_ev.last_status, scripts see it, so don't bother now.
                 quit = True
 
             if quit:
@@ -269,11 +274,15 @@ def Interactive(
                 break
 
             try:
-                is_return, _ = cmd_ev.ExecuteAndCatch(node)
+                is_return, _ = cmd_ev.ExecuteAndCatch(node, 0)
             except KeyboardInterrupt:  # issue 467, Ctrl-C during $(sleep 1)
                 is_return = False
                 display.EraseLines()
+
+                # http://www.tldp.org/LDP/abs/html/exitcodes.html
+                # bash gives 130, dash gives 0, zsh gives 1.
                 status = 130  # 128 + 2
+
                 cmd_ev.mem.SetLastStatus(status)
                 break
 
@@ -355,13 +364,15 @@ def Batch(cmd_ev, c_parser, errfmt, cmd_flags=0):
         # Only optimize if we're on the last line like -c "echo hi" etc.
         if (cmd_flags & cmd_eval.IsMainProgram and
                 c_parser.line_reader.LastLineHint()):
-            cmd_flags |= cmd_eval.Optimize
+            cmd_flags |= cmd_eval.OptimizeSubshells
+            if not cmd_ev.exec_opts.verbose_errexit():
+                cmd_flags |= cmd_eval.MarkLastCommands
 
         probe('main_loop', 'Batch_parse_exit')
 
         probe('main_loop', 'Batch_execute_enter')
         # can't optimize this because we haven't seen the end yet
-        is_return, is_fatal = cmd_ev.ExecuteAndCatch(node, cmd_flags=cmd_flags)
+        is_return, is_fatal = cmd_ev.ExecuteAndCatch(node, cmd_flags)
         status = cmd_ev.LastStatus()
         # e.g. 'return' in middle of script, or divide by zero
         if is_return or is_fatal:

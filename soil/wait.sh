@@ -124,7 +124,7 @@ for-cpp-tarball()  {
 readonly TEST_FILE='oilshell.org/tmp/curl-test'
 
 for-test-file() {
-  curl-until-200 "http://www.$TEST_FILE" _tmp/$(basename $TEST_FILE) 5 10
+  curl-until-200 "https://www.$TEST_FILE" _tmp/$(basename $TEST_FILE) 5 10
 }
 
 touch-remote() {

@@ -15,7 +15,7 @@ source build/dev-shell.sh  # PYTHONPATH
 source devtools/release-version.sh  # for escape-segments
 
 readonly OILS_VERSION=$(head -n 1 oil-version.txt)
-readonly PREV_VERSION='0.21.0'
+readonly PREV_VERSION='0.23.0'
 
 # adapted from release-version.sh
 _git-changelog-body() {
@@ -28,7 +28,7 @@ _git-changelog-body() {
   # %x00 generates the byte \x00
   local format='<tr>
     <td><a class="checksum"
-           href="https://github.com/oilshell/oil/commit/%H">%h</a>
+           href="https://github.com/oils-for-unix/oils/commit/%H">%h</a>
     </td>
     <td>%x00%an%x01</td>
     <td class="subject">%x00%s%x01</td>
@@ -57,7 +57,9 @@ contrib-commit-table() {
 }
 
 fetch-issues() {
-  local url='https://api.github.com/repos/oilshell/oil/issues?labels=pending-release'
+  local url='https://api.github.com/repos/oils-for-unix/oils/issues?labels=pending-release'
+  # For Oils 0.24.0
+  #local url='https://api.github.com/repos/oils-for-unix/oils/issues?labels=pending-release-2'
   curl "$url" > _tmp/issues.json
 }
 
@@ -132,7 +134,7 @@ If you're new to the project, see [Why Create a New Shell?][why-oil] and posts
 tagged #[FAQ](\$blog-tag).
 
 [INSTALL.txt]: /release/$OILS_VERSION/doc/INSTALL.html
-[github-bugs]: https://github.com/oilshell/oil/issues
+[github-bugs]: https://github.com/oils-for-unix/oils/issues
 [why-oil]: ../../2021/01/why-a-new-shell.html
 [release-index]: /release/$OILS_VERSION/
 
@@ -178,7 +180,7 @@ EOF
 
 ### Wiki Pages
 
-- [How Interactive Shells Work](https://github.com/oilshell/oil/wiki/How-Interactive-Shells-Work)
+- [How Interactive Shells Work](https://github.com/oils-for-unix/oils/wiki/How-Interactive-Shells-Work)
 
 
 ## What's Next?

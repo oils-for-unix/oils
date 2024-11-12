@@ -270,11 +270,11 @@ echo "${a[@]}"
 ## END
 
 
-#### Performance demo
+#### SparseArray Performance demo
 
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
-#pp line (a)
+#pp test_ (a)
 
 a=( foo {25..27} bar )
 
@@ -312,24 +312,6 @@ call _opsp(sp, 'unset', 11)
 echo subst: @[_opsp(sp, 'subst')]
 echo keys: @[_opsp(sp, 'keys')]
 
-echo ---
-
-# Sparse
-var d = {
-  '1': 'a',
-  '10': 'b',
-  '100': 'c',
-  '1000': 'd',
-  '10000': 'e',
-  '100000': 'f',
-}
-
-var sp2 = _d2sp(d)
-
-echo len: $[_opsp(sp2, 'len')]
-echo subst: @[_opsp(sp2, 'subst')]
-
-
 ## STDOUT:
 SparseArray
 len: 6
@@ -346,9 +328,6 @@ keys: 0 1 2 3 4 10 11 12
 unset
 subst: set0 25 26 27 bar sparse y
 keys: 0 1 2 3 4 10 12
----
-len: 6
-subst: a b c d e f
 ## END
 
 ## N-I bash/zsh/mksh/ash STDOUT:

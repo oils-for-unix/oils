@@ -29,7 +29,7 @@ Continuous testing on many platforms.
           cpp-small.{tsv,json}
         commits/
 
-      srht-jobs/
+      sourcehut-jobs/
         index.html
         raw.html
         345/  # JOB_ID
@@ -43,6 +43,13 @@ Continuous testing on many platforms.
         commits/   # index grouped by commit?
           09ab09ab.html  # links to ../345/dev-minimal.wwz/
           1010abab.html
+
+## Tokens / Authentication
+
+- `SOIL_GITHUB_API_TOKEN` - used by `maybe-merge` task, to use Github API to fast forward
+  - appears in `.github/workflows/all-builds.yml` for **only** the `maybe-merge` task
+- `OILS_GITHUB_KEY` - used by all tasks to publish HTML
+  - - should really be called `OILS_SSH_FROM_GITHUB_ACTIONS`
 
 ## Code
 
@@ -99,7 +106,7 @@ TODO:
     - github-jobs/tmp-$$.{index,raw}.html - shell script does mv
     - github-jobs/commits/tmp-$$.$HASH.html - shell script does mv
       - this is based on github-jobs/$RUN/*.tsv -- similar to format-wwz-index
-      - or srht-jobs/*/*.tsv and filtered by commit
+      - or sourcehut-jobs/*/*.tsv and filtered by commit
     - github-jobs/tmp-$$.remove.txt - shell script does rm
   - status-api/github-jobs/$RUN/$job -- PUT this
 

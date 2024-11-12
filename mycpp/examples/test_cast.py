@@ -185,6 +185,9 @@ def TestCastInSwitch():
 def run_tests():
     # type: () -> None
 
+    # This should (void)unused2; on the same line
+    unused2 = 42
+
     TestCastBufWriter()
     TestSwitchDowncast(value__Eggex('[0-9]'))
     TestSwitchDowncast(value__Int(42))

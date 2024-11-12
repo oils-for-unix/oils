@@ -39,32 +39,41 @@ error handling, and more.
 </h2>
 
 ```chapter-links-type-method
-  [Atom Types]     Null           Bool
-  [Number Types]   Int            Float
-  [Str]          X find()         replace()
-                   trim()         trimStart()   trimEnd()
-                   startsWith()   endsWith()
-                   upper()        lower()
-                   search()       leftMatch()
-  [List]           List/append()  pop()         extend()    indexOf()
-                 X insert()     X remove()      reverse()
-  [Dict]           keys()         values()    X get()     X erase()
-                 X inc()        X accum()
-  [Range] 
-  [Eggex] 
-  [Match]          group()        start()       end()
-                 X groups()     X groupDict()
-  [Place]          setValue()
-  [Code Types]     Expr           Command
-                   BuiltinFunc    BoundFunc
-X [Func]           name()         location()    toJson()
-X [Proc]           name()         location()    toJson()
-X [Module]         name()         filename()
-  [IO]           X eval()       X captureStdout()
-                   promptVal()
-                 X time()       X strftime()
-                 X glob()
-X [Guts]           heapId()
+  [Atoms]          Null        null
+                   Bool        expr/true        expr/false
+  [Numbers]        Int
+                   Float
+                   Range
+  [String]         Str       X find()         X findLast()
+                             X contains()       replace()
+                               trim()           trimStart()      trimEnd()
+                               startsWith()     endsWith()
+                               upper()          lower()
+                               search()         leftMatch()
+                               split()
+  [Patterns]       Eggex
+                   Match       group()          start()          end()
+                             X groups()       X groupDict()
+  [Containers]     List        List/append()    pop()            extend()
+                               indexOf()      X lastIndexOf()  X includes()
+                             X insert()       X remove()
+                               reverse()      X List/clear()
+                   Dict        erase()        X Dict/clear()   X accum()
+                             X update()
+                   Place       setValue()
+  [Code Types]     Func        BuiltinFunc      BoundFunc
+                   Proc        BuiltinProc
+  [Objects]        Obj         __invoke__       new
+                             X __call__       __index__        X __str__
+  [Reflection]     Command     CommandFrag
+                   Expr
+                   Frame
+                   io          stdin            evalExpr()
+                               eval()           evalToDict()
+                               captureStdout()
+                               promptVal()
+                             X time()         X strftime()     X glob()
+                   vm          getFrame()       id() 
 ```
 
 <h2 id="builtin-func">
@@ -72,22 +81,25 @@ X [Guts]           heapId()
 </h2>
 
 ```chapter-links-builtin-func
-  [Values]        len()        func/type()   X repeat()
-  [Conversions]   bool()       int()           float()   str()   list()   dict()
-                X runes()    X encodeRunes()
-                X bytes()    X encodeBytes()
-  [Str]         X strcmp()   X split()         shSplit()
-  [List]          join()       any()           all()
-  [Collections] X copy()     X deepCopy()
-  [Word]          glob()       maybe()
-  [Math]          abs()        max()           min()   X round()   sum()
-  [Serialize]     toJson()     fromJson()
-                  toJson8()    fromJson8()
-X [J8 Decode]     J8.Bool()    J8.Int()        ...
-  [Pattern]       _group()     _start()        _end()
-  [Introspection] shvarGet()   getVar()        evalExpr()
-  [Hay Config]    parseHay()   evalHay()
-X [Hashing]       sha1dc()     sha256()
+  [Values]        len()             func/type()
+  [Conversions]   bool()            int()           float()
+                  str()             list()          dict()
+                X runes()         X encodeRunes()
+                X bytes()         X encodeBytes()
+  [Str]         X strcmp()          shSplit()
+  [List]          join()       
+  [Dict]          keys()            values()        get()       
+  [Float]         floatsEqual()   X isinf()       X isnan()
+  [Obj]           first()           rest()          get()
+  [Word]          glob()            maybe()
+  [Serialize]     toJson()          fromJson()
+                  toJson8()         fromJson8()
+                X toJ8Line()      X fromJ8Line()
+  [Pattern]       _group()          _start()        _end()
+  [Introspect]    shvarGet()        getVar()        setVar()  
+                  parseCommand()  X parseExpr()   X bindFrame()
+  [Hay Config]    parseHay()        evalHay()
+X [Hashing]       sha1dc()          sha256()
 ```
 
 <!-- ideas
@@ -104,73 +116,83 @@ X [Wok]           _field()
 
 ```chapter-links-builtin-cmd_42
   [Memory]        cmd/append             Add elements to end of array
-                  pp                     asdl   cell   X gc-stats   line   proc
+                  pp                     value   proc      test_
+                                         asdl_   cell_   X gc-stats_
   [Handle Errors] error                  error 'failed' (status=2)
                   try                    Run with errexit, set _error
                   failed                 Test if _error.code !== 0
                   boolstatus             Enforce 0 or 1 exit status
+                  assert                 assert [42 === f(x)]
   [Shell State]   ysh-cd       ysh-shopt compatible, and takes a block
                   shvar                  Temporary modify global settings
                   ctx                    Share and update a temporary "context"
                   push-registers         Save registers like $?, PIPESTATUS
-  [Modules]       runproc                Run a proc; use as main entry point
-                  module                 guard against duplicate 'source'
+  [Introspection] runproc                Run a proc; use as main entry point
+                X extern                 Run an external command, with an ENV
+                X invoke                 Control which "invokables" are run
+  [Modules]       
+                  source-guard           guard against duplicate 'source'
                   is-main                false when sourcing a file
-                  use                    change first word lookup
+                  use                    create a module Obj from a source file
   [I/O]           ysh-read               flags --all, -0
                   ysh-echo               no -e -n with simple_echo
+                  ysh-test               --file --true etc.
                   write                  Like echo, with --, --sep, --end
                   fork         forkwait  Replace & and (), and takes a block
                   fopen                  Open multiple streams, takes a block
-                X dbg                    Only thing that can be used in funcs
   [Hay Config]    hay          haynode   For DSLs and config files
   [Completion]    compadjust   compexport
   [Data Formats]  json                   read write
                   json8                  read write
-X [Testing]       assert                 takes an expression
 ```
 
 <h2 id="stdlib">
   Standard Library<a class="group-link" href="chap-stdlib.html">stdlib</a>
 </h2>
 
+```chapter-links-stdlib
+  [math]          abs()         max()          min()   X round()
+                  sum()     
+  [list]          all()         any()          repeat()
+  [yblocks]       yb-capture    yb-capture-2
+  [args]          parser        flag           arg       rest
+                  parseArgs()
+```
+
 <!-- linkify_stop_col is 42 -->
 
+Design for streams and tables (awk/xargs/dplyr):
+
 ```chapter-links-stdlib_42
-  [Args Parser]   parser                 Parse command line arguments
-                  flag
-                  arg
-                  rest
-                  parseArgs()
-  [yblocks]       yb-capture
-                  yb-capture-2
 X [Lines]         slurp-by               combine adjacent lines into cells
-X [Awk]           each-line              --j8 --max-jobs (Str, Template, Block) - xargs
-                  each-row               --max-jobs (Str, Template, Block) - xargs
+X [Awk]           each-line              --j8 --max-jobs (Str, Template, Block)
+                  each-row               --max-jobs (Str, Template, Block)
                   each-word              xargs-like splitting, similar to IFS too
                   split-by               (str=\n, ifs=':', pattern=/s+/)
-                  if-split-by  
+                  if-split-by            only lines that match
                   chop                   alias for split-by (pattern=/s+/)
                   must-match             (/ <capture d+> </capture w+> /)
-                  if-match               
-X [Table Create]  table                  --by-row --by-col (&place); construct/parse a table
-                  table/cols             cols name age - cols name:Str age:Int
-                  types                  type       Str Int
-                  attr                   attr units -   secs
+                  if-match               only lines that match
+X [Table Create]  table def              &place or print TSV8
+                  table parse            --by-row --by-col (&place), TSV or TSV8
+                  table/cols             cols       name age, or name:Str age:Int
+                  types                  type       Str  Int
+                  attr                   attr units   -  secs
                   row                    emit row
                   table cat              concatenate TSV8
                   table align            to ssv8
-                  table tabify           to tsv8
-                  table header           (cols = :|name age|, types = :|Str Int|, units = :|- secs|)
+                  table tabify           to tsv8 (similar to table parse)
+                  table header           cols = :|name age|, types = :|Str Int|, ...
                   table slice            e.g. slice (1, -1)   slice (5, 7)
                   table to-tsv           lose type info, and error on \t in cells
 X [Table Ops]     where                  subset of rows; dplyr filter()
                   pick                   subset of columns ('select' taken by shell)
-                  mutate    transmute    [average = count / sum] - drop the ones that are used?
+                  mutate                 [average = count / sum]
+                  transmute              drop columns that are used
                   rename                 (bytes='bytes', path='filename')
                   group-by               add a column with a group ID [ext]
                   sort-by                sort by columns; dplyr arrange() [ext]
-                  summary                count, sum, histogram, any, all, reduce(), etc. [ext]
+                  summary                count/sum, histogram, any/all, reduce, ...
 ```
 
 <!--
@@ -198,29 +220,35 @@ X [External Lang] BEGIN   END   when (awk)
 <!-- linkify_stop_col is 33 -->
 
 ```chapter-links-cmd-lang_33
-  [YSH Simple]    typed-arg     json write (x)
-                  lazy-expr-arg assert [42 === x]
-                  block-arg     cd /tmp { echo $PWD }; cd /tmp (; ; blockexpr)
-  [YSH Cond]      ysh-case      case (x) { *.py { echo 'python' } }
-                  ysh-if        if (x > 0) { echo }
-  [YSH Iter]      ysh-while     while (x > 0) { echo }
-                  ysh-for       for i, item in (mylist) { echo }
+  [Commands]      simple-command
+                  ysh-prefix-binding
+                  semicolon ;
+  [Redirects]     ysh-here-str    read <<< '''
+  [YSH Simple]    typed-arg       json write (x)
+                  lazy-expr-arg   assert [42 === x]
+                  block-arg       cd /tmp { echo $PWD }; cd /tmp (; ; blockexpr)
+  [YSH Cond]      ysh-case        case (x) { *.py { echo 'python' } }
+                  ysh-if          if (x > 0) { echo }
+  [YSH Iter]      ysh-for         for i, item in (mylist) { echo }
+                  ysh-while       while (x > 0) { echo }
 ```
+
+<!-- TODO: move YSH command topics to the chapter below -->
 
 <h2 id="ysh-cmd">
   YSH Command Language Keywords <a class="group-link" href="chap-ysh-cmd.html">ysh-cmd</a>
 </h2>
 
-```chapter-links-ysh-cmd_33
-  [Assignment]    const   var   Declare variables
-                  setvar        setvar a[i] = 42
-                  setglobal     setglobal d.key = 'foo'
-  [Expression]    equal =       = 1 + 2*3
-                  call          call mylist->append(42)
-  [Definitions]   proc          proc p (s, ...rest) {
-                                typed proc p (; typed, ...rest; n=0; b) {
-                  func          func f(x; opt1, opt2) { return (x + 1) }
-                  ysh-return    return (myexpr)
+```chapter-links-ysh-cmd_39
+  [Assignment]    const   var         Declare variables
+                  setvar              setvar a[i] = 42
+                  setglobal           setglobal d.key = 'foo'
+  [Expression]    equal =             = 1 + 2*3
+                  call                call mylist->append(42)
+  [Definitions]   proc                proc p (s, ...rest) {
+                                      typed proc p (; typed, ...rest; n=0; b) {
+                  func                func f(x; opt1, opt2) { return (x + 1) }
+                  ysh-return          return (myexpr)
 ```
 
 <h2 id="expr-lang">
@@ -233,19 +261,20 @@ X [External Lang] BEGIN   END   when (awk)
   [Assignment]    assign        =
                   aug-assign    +=   -=   *=   /=   **=   //=   %=
                                 &=   |=   ^=   <<=   >>=
-  [Literals]      atom-literal  true   false   null
+  [Literals]      atom-literal  null   true   false
                   int-literal   42  65_536  0xFF  0o755  0b10
-                  float-lit     3.14  1.5e-10
+                  float-literal 3.14  1.5e-10
                 X num-suffix    42 K Ki M Mi G Gi T Ti / ms us
+                  char-literal  \\ \t \"   \y00   \u{3bc}
                   ysh-string    "x is $x"  $"x is $x"   r'[a-z]\n'
                                 u'line\n'  b'byte \yff'
                   triple-quoted """  $"""  r'''  u'''  b'''
-                  str-template  ^"$a and $b" for Str::replace()
                   list-literal  ['one', 'two', 3]  :| unquoted words |
                   dict-literal  {name: 'bob'}  {a, b}
-                  range         1 .. n+1
+                  range         1 ..< n  1 ..= n
                   block-expr    ^(echo $PWD)
                   expr-literal  ^[1 + 2*3]
+                  str-template  ^"$a and $b" for Str.replace()
                 X expr-sub      $[myobj]
                 X expr-splice   @[myobj]
   [Operators]     op-precedence Like Python
@@ -258,15 +287,15 @@ X [External Lang] BEGIN   END   when (awk)
                   ysh-bitwise   ~  &  |  ^  <<  >>
                   ysh-ternary   '+' if x >= 0 else '-'
                   ysh-index     s[0]  mylist[3]  mydict['key']
-                  ysh-attr      mydict.key
+                  ysh-attr      mydict.key  mystr.startsWith('x')
                   ysh-slice     a[1:-1]  s[1:-1]
-                  func-call     f(x, y; ...named)
+                  ysh-func-call f(x, y, ...pos; n=1, ...named)
                   thin-arrow    mylist->pop()
-                  fat-arrow     mystr => startsWith('prefix')
+                  fat-arrow     mylist => join() => upper()
                   match-ops     ~   !~   ~~   !~~
   [Eggex]         re-literal    / d+ ; re-flags ; ERE /
                   re-primitive  %zero    'sq'
-                  class-literal [c a-z 'abc' @str_var \\ \xFF \u0100]
+                  class-literal [c a-z 'abc' @str_var \\ \xFF \u{3bc}]
                   named-class    dot   digit   space   word   d  s  w
                   re-repeat     d?   d*   d+   d{3}   d{2,4}
                   re-compound    seq1 seq2   alt1|alt2   (expr1 expr2)
@@ -290,7 +319,7 @@ X [External Lang] BEGIN   END   when (awk)
   [Substitutions] expr-sub      echo $[42 + a[i]]
                   expr-splice   echo @[split(x)]
                   var-splice    @myarray @ARGV
-                  command-sub   @(split command)
+                  command-sub   @(cat my-j8-lines.txt)
   [Formatting]  X ysh-printf    ${x %.3f}
                 X ysh-format    ${x|html}
 ```
@@ -320,7 +349,8 @@ X [External Lang] BEGIN   END   when (awk)
 </h2>
 
 ```chapter-links-special-var
-  [YSH Vars]      ARGV              X ENV                 X _ESCAPE
+  [YSH Vars]      ARGV                ENV
+                  __defaults__        __builtins__
                   _this_dir
   [YSH Status]    _error
                   _pipeline_status    _process_sub_status
@@ -331,11 +361,29 @@ X [External Lang] BEGIN   END   when (awk)
                   OILS_GC_THRESHOLD   OILS_GC_ON_EXIT
                   OILS_GC_STATS       OILS_GC_STATS_FD
                   LIB_YSH
+  [Float]         NAN                 INFINITY
+  [Module]        __provide__
+  [Other Env]     HOME                PATH
 ```
 
-<!-- ideas 
-X [Wok]           _filename   _line   _line_num
+<!-- 
+ENV vars read by interpreter:
+
+ENV.{PS1,PS4,YSH_HISTFILE}
+
+- renderPrompt() takes precedence over PS1
+- SHX_* takes precedence over PS4
+  - TODO: we may want to redo this - it is too confusing
+- HOME is read for ~, but it is not SET
+  - we should read ENV.HOME
+  - should be populate ENV.HOME?
+
+Notes:
+  [Module] __E__ - for evalToDict()?
 X [Builtin Sub]   _buffer
+
+Ideas:
+X [Wok]           _filename   _line   _line_num
 -->
 
 <h2 id="plugin">

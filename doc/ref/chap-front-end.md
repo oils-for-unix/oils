@@ -88,12 +88,17 @@ Usage: ysh FLAG* SCRIPT ARG*
        ysh FLAG* -c COMMAND ARG*
        ysh FLAG*
 
-`bin/ysh` is the same as `bin/osh` with a the `ysh:all` option group set.  So
-`bin/ysh` also accepts shell flags.
+Examples:
 
     ysh -c 'echo hi'
     ysh myscript.ysh
     echo 'echo hi' | ysh
+
+bin/ysh is the same as bin/osh with a the ysh:all option group set.  So bin/ysh
+also accepts shell flags.  Examples:
+
+    bin/ysh -n myfile.ysh
+    bin/ysh +o errexit -c 'false; echo ok'
 ```
 
 

@@ -73,12 +73,12 @@ class GlobEscapeTest(unittest.TestCase):
         self.assertEqual('ccdd', m.group(1))
 
     def testPatSubRegexes(self):
-        # x=~/git/oil
+        # x=~/git/oils
         # ${x//git*/X/}
 
         # git*
         r1 = re.compile('git.*')
-        result = r1.sub('X', '~/git/oil')
+        result = r1.sub('X', '~/git/oils')
         self.assertEqual('~/X', result)
 
         r2 = re.compile('[a-z]')

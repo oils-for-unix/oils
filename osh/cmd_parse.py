@@ -25,7 +25,6 @@ from _devbuild.gen.syntax_asdl import (
     for_iter,
     ArgList,
     BraceGroup,
-    LiteralBlock,
     CaseArm,
     case_arg,
     IfArm,
@@ -54,17 +53,20 @@ from _devbuild.gen.syntax_asdl import (
     proc_sig_e,
     Proc,
     Func,
+    SingleQuoted,
+    DoubleQuoted,
 )
+from _devbuild.gen.value_asdl import LiteralBlock
 from core import alloc
 from core import error
 from core.error import p_die
-from core import ui
+from display import ui
 from frontend import consts
 from frontend import lexer
 from frontend import location
 from frontend import match
 from frontend import reader
-from mycpp.mylib import log
+from mycpp.mylib import log, tagswitch
 from osh import braces
 from osh import bool_parse
 from osh import word_
@@ -379,8 +381,9 @@ def _MakeSimpleCommand(
     more_env = []  # type: List[EnvPair]
     _AppendMoreEnv(preparsed_list, more_env)
 
-    # do_fork by default
-    return command.Simple(blame_tok, more_env, words3, typed_args, block, True)
+    # is_last_cmd is False by default
+    return command.Simple(blame_tok, more_env, words3, typed_args, block,
+                          False)
 
 
 class VarChecker(object):
@@ -389,9 +392,9 @@ class VarChecker(object):
     def __init__(self):
         # type: () -> None
         """
-    Args:
-      oil_proc: Whether to disallow nested proc/function declarations
-    """
+        Args:
+          oil_proc: Whether to disallow nested proc/function declarations
+        """
         # self.tokens for location info: 'proc' or another token
         self.tokens = []  # type: List[Token]
         self.names = []  # type: List[Dict[str, Id_t]]
@@ -409,14 +412,22 @@ class VarChecker(object):
           }
         }
 
-        YSH disallows nested procs and funcs.
+        In contrast, YSH *allows* nested procs and funcs. However, they don't
+        have the same dynamic scope issues because proc/func definitions use
+        static scoping.
+
+        However, we still don't want to allow sh-func nested inside of ysh
+        procs/funcs and vice-versa.
         """
         if len(self.tokens) != 0:
-            if blame_tok.id == Id.KW_Proc:
-                p_die("procs must be defined at the top level", blame_tok)
-            if blame_tok.id == Id.KW_Func:
-                p_die("funcs must be defined at the top level", blame_tok)
-            if self.tokens[0].id in (Id.KW_Proc, Id.KW_Func):
+            if self.tokens[0].id not in (Id.KW_Proc, Id.KW_Func):
+                if blame_tok.id == Id.KW_Proc:
+                    p_die("procs can't be defined inside shell functions",
+                          blame_tok)
+                if blame_tok.id == Id.KW_Func:
+                    p_die("funcs can't be defined inside shell functions",
+                          blame_tok)
+            elif blame_tok.id not in (Id.KW_Proc, Id.KW_Func):
                 p_die("shell functions can't be defined inside proc or func",
                       blame_tok)
 
@@ -751,15 +762,39 @@ class CommandParser(object):
             self._SetNext()
             return r
 
-        arg_word = self.cur_word
+        # We should never get Empty, Token, etc.
+        assert self.cur_word.tag() == word_e.Compound, self.cur_word
+        arg_word = cast(CompoundWord, self.cur_word)
+
         tilde = word_.TildeDetect(arg_word)
         if tilde:
             arg_word = tilde
         self._SetNext()
 
-        # We should never get Empty, Token, etc.
-        assert arg_word.tag() == word_e.Compound, arg_word
-        return Redir(op_tok, where, cast(CompoundWord, arg_word))
+        # Special case for <<< 'hi' and <<< ''' multiline '''
+        if op_tok.id == Id.Redir_TLess:
+            part0 = arg_word.parts[0]
+
+            is_multiline = False
+            with tagswitch(part0) as case:
+                if case(word_part_e.SingleQuoted):
+                    sq = cast(SingleQuoted, part0)
+                    if sq.left.id in (Id.Left_TSingleQuote,
+                                      Id.Left_RTSingleQuote,
+                                      Id.Left_UTSingleQuote,
+                                      Id.Left_BTSingleQuote):
+                        is_multiline = True
+
+                elif case(word_part_e.DoubleQuoted):
+                    dq = cast(DoubleQuoted, part0)
+                    if dq.left.id in (Id.Left_TDoubleQuote,
+                                      Id.Left_DollarTDoubleQuote):
+                        is_multiline = True
+
+            param = redir_param.HereWord(arg_word, is_multiline)
+            return Redir(op_tok, where, param)
+
+        return Redir(op_tok, where, arg_word)
 
     def _ParseRedirectList(self):
         # type: () -> List[Redir]
@@ -1264,6 +1299,9 @@ class CommandParser(object):
                     if len(typed_args.named_args) != 0:
                         p_die("Typed return doesn't take named arguments",
                               typed_loc)
+                    if typed_args.left.id != Id.Op_LParen:
+                        # return [x] is not valid
+                        p_die("Expected ( in typed return", typed_args.left)
                     return command.Retval(kw_token, typed_args.pos_args[0])
 
             # Except for return (x), we shouldn't have typed args
@@ -2303,7 +2341,7 @@ class CommandParser(object):
         ate = self._Eat(Id.Right_Subshell)
         right = word_.AsOperatorToken(ate)
 
-        return command.Subshell(left, child, right)
+        return command.Subshell(left, child, right, False)
 
     def ParseDBracket(self):
         # type: () -> command.DBracket

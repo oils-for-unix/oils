@@ -93,19 +93,20 @@ TODO
 
 ### PS1
 
-First line of a prompt.
+First line of the shell prompt.
 
 ### PS2
 
-Second line of a prompt.
+Second line of the shell prompt (unimplemented).
 
 ### PS3
 
-For the 'select' builtin (unimplemented).
+For the `select` builtin (unimplemented).
 
 ### PS4
 
-For 'set -o xtrace'.  The leading character is special.
+The prefix of each line of output in `set -x` aka `set -o xtrace`.  The leading
+character is special.
 
 ## Completion
 

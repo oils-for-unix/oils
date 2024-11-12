@@ -121,6 +121,11 @@ def TokenForCommand(node):
     UP_node = node  # type: command_t
     tag = node.tag()
 
+    if tag == command_e.Redirect:
+        node = cast(command.Redirect, UP_node)
+        first = node.redirects[0]
+        return first.op
+
     if tag == command_e.Sentence:
         node = cast(command.Sentence, UP_node)
         #log("node.child %s", node.child)

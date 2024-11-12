@@ -58,10 +58,11 @@ _NORMAL_BUILTINS = [
     # take a block
     # push-registers added below
     'fork', 'forkwait',
-    'fopen',
+    'redir', 'fopen',  # fopen is for backward compat
     'shvar',
     'ctx',
 
+    'invoke',
     'runproc',
     'boolstatus',
 ]
@@ -124,9 +125,11 @@ def _Init(b):
         b.Add(name, kind='assign')
     b.Add('export', enum_name='export_', kind='assign')  # C++ keyword conflict
 
+    b.Add('extern', enum_name='extern_')
     b.Add('true', enum_name='true_')  # C++ Keywords
     b.Add('false', enum_name='false_')
     b.Add('try', enum_name='try_')
+    b.Add('assert', enum_name='assert_')  # avoid Python keyword
 
     for name in _NORMAL_BUILTINS:
         b.Add(name)

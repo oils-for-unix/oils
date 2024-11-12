@@ -175,6 +175,9 @@ def main(argv):
         return 2
 
     except KeyboardInterrupt:
+        # The interactive shell and the batch shell both handle
+        # KeyboardInterrupt themselves.
+        # This is a catch-all for --tool and so forth.
         print('')
         return 130  # 128 + 2
 

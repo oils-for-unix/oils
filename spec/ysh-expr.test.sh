@@ -8,47 +8,6 @@ echo x=${x:-default} y=${y:-default}
 x=hi y=default
 ## END
 
-#### shell array %(a 'b c')
-shopt -s parse_at
-var x = %(a 'b c')
-var empty = %()
-argv.py / @x @empty /
-
-## STDOUT:
-['/', 'a', 'b c', '/']
-## END
-
-#### empty array and simple_word_eval (regression test)
-shopt -s parse_at simple_word_eval
-var empty = :| |
-echo len=$[len(empty)]
-argv.py / @empty /
-
-## STDOUT:
-len=0
-['/', '/']
-## END
-
-#### Empty array and assignment builtin (regression)
-# Bug happens with shell arrays too
-empty=()
-declare z=1 "${empty[@]}"
-echo z=$z
-## STDOUT:
-z=1
-## END
-
-#### Shell arrays support tilde detection, static globbing, brace detection
-shopt -s parse_at simple_word_eval
-touch {foo,bar}.py
-HOME=/home/bob
-no_dynamic_glob='*.py'
-
-var x = %(~/src *.py {andy,bob}@example.com $no_dynamic_glob)
-argv.py @x
-## STDOUT:
-['/home/bob/src', 'bar.py', 'foo.py', 'andy@example.com', 'bob@example.com', '*.py']
-## END
 
 #### Set $HOME using 'var' (i.e. Oil string var in word evaluator)
 var HOME = "foo"
@@ -98,7 +57,7 @@ echo -$[len(s)]-
 #### Func with multiple args in multiple contexts
 shopt --set ysh:upgrade  # needed for math.ysh
 
-source --builtin math.ysh
+source $LIB_YSH/math.ysh
 
 var x = max(1+2, 3+4)
 echo $x $[max(1+2, 3+4)]
@@ -111,7 +70,7 @@ echo $x $[max(1+2, 3+4)]
 #### Trailing Comma in Param list
 shopt --set ysh:upgrade  # needed for math.ysh
 
-source --builtin math.ysh
+source $LIB_YSH/math.ysh
 
 var x = max(1+2, 3+4,)
 echo $x $[max(1+2, 3+4,)]
@@ -161,7 +120,7 @@ gt=0
 ## END
 
 #### Parse { var x = 42 }
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 g() { var x = 42 }
 
 var x = 1
@@ -239,7 +198,7 @@ a b c
 
 
 #### null / true / false
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 var n = null
 if (n) {
   echo yes
@@ -262,243 +221,6 @@ if (f) {
 no
 yes
 no
-## END
-
-#### Integer literals
-var d = 123
-var b = 0b11
-var o = 0o123
-var h = 0xff
-echo $d $b $o $h
-## STDOUT:
-123 3 83 255
-## END
-
-#### Integer literals with underscores
-const dec = 65_536
-const bin = 0b0001_0101
-const oct = 0o001_755
-const hex = 0x0001_000f
-
-echo SHELL
-echo $dec
-echo $bin
-echo $oct
-echo $hex
-const x = 1_1 + 0b1_1 + 0o1_1 + 0x1_1
-echo sum $x
-
-# This works under Python 3.6, but the continuous build has earlier versions
-if false; then
-  echo ---
-  echo PYTHON
-
-  python3 -c '
-  print(65_536)
-  print(0b0001_0101)
-  print(0o001_755)
-  print(0x0001_000f)
-
-  # Weird syntax
-  print("sum", 1_1 + 0b1_1 + 0o1_1 + 0x1_1)
-  '
-fi
-
-## STDOUT:
-SHELL
-65536
-21
-1005
-65551
-sum 40
-## END
-
-#### Backslash char literal (is an integer)
-const newline = \n
-const backslash = \\
-const sq = \'
-const dq = \"
-echo "$newline $backslash $sq $dq"
-## STDOUT:
-10 92 39 34
-## END
-
-#### \u{3bc} is char literal
-shopt -s oil:all
-
-var mu = \u{3bc}
-if (mu === 0x3bc) {  # this is the same!
-  echo 'yes'
-}
-echo "mu $mu"
-## STDOUT:
-yes
-mu 956
-## END
-
-#### Exponentiation with **
-var x = 2**3
-echo $x
-
-var y = 2.0 ** 3.0  # NOT SUPPORTED
-echo 'should not get here'
-
-## status: 3
-## STDOUT:
-8
-## END
-
-#### Float Division
-pp line (5/2)
-pp line (-5/2)
-pp line (5/-2)
-pp line (-5/-2)
-
-echo ---
-
-var x = 9
-setvar x /= 2
-pp line (x)
-
-var x = -9
-setvar x /= 2
-pp line (x)
-
-var x = 9
-setvar x /= -2
-pp line (x)
-
-var x = -9
-setvar x /= -2
-pp line (x)
-
-
-## STDOUT:
-(Float)   2.5
-(Float)   -2.5
-(Float)   -2.5
-(Float)   2.5
----
-(Float)   4.5
-(Float)   -4.5
-(Float)   -4.5
-(Float)   4.5
-## END
-
-#### Integer Division (rounds toward zero)
-pp line (5//2)
-pp line (-5//2)
-pp line (5//-2)
-pp line (-5//-2)
-
-echo ---
-
-var x = 9
-setvar x //= 2
-pp line (x)
-
-var x = -9
-setvar x //= 2
-pp line (x)
-
-var x = 9
-setvar x //= -2
-pp line (x)
-
-var x = -9
-setvar x //= -2
-pp line (x)
-
-## STDOUT:
-(Int)   2
-(Int)   -2
-(Int)   -2
-(Int)   2
----
-(Int)   4
-(Int)   -4
-(Int)   -4
-(Int)   4
-## END
-
-#### % operator is remainder
-pp line ( 5 % 3)
-pp line (-5 % 3)
-
-# negative divisor illegal (tested in test/ysh-runtime-errors.sh)
-#pp line ( 5 % -3)
-#pp line (-5 % -3)
-
-var z = 10
-setvar z %= 3
-pp line (z)
-
-var z = -10
-setvar z %= 3
-pp line (z)
-
-## STDOUT:
-(Int)   2
-(Int)   -2
-(Int)   1
-(Int)   -1
-## END
-
-#### Bitwise logical
-var a = 0b0101 & 0b0011
-echo $a
-var b = 0b0101 | 0b0011
-echo $b
-var c = 0b0101 ^ 0b0011
-echo $c
-var d = ~b
-echo $d
-## STDOUT:
-1
-7
-6
--8
-## END
-
-#### Shift operators
-var a = 1 << 4
-echo $a
-var b = 16 >> 4
-echo $b
-## STDOUT:
-16
-1
-## END
-
-#### multiline strings, list, tuple syntax for list, etc.
-var dq = "
-dq
-2
-"
-echo dq=$[len(dq)]
-
-var sq = '
-sq
-2
-'
-echo sq=$[len(sq)]
-
-var mylist = [
-  1,
-  2,
-  3,
-]
-echo mylist=$[len(mylist)]
-
-var mytuple = (1,
-  2, 3)
-echo mytuple=$[len(mytuple)]
-
-## STDOUT:
-dq=6
-sq=6
-mylist=3
-mytuple=3
 ## END
 
 #### multiline dict
@@ -533,7 +255,7 @@ array=3
 comsub=6
 ## END
 
-#### obj->method()
+#### obj=>method() - remove?
 var s = 'hi'
 
 # TODO: This does a bound method thing we probably don't want
@@ -543,7 +265,7 @@ echo $s2
 HI
 ## END
 
-#### obj->method does NOT give you a bound method
+#### s->upper does NOT work, should be s.upper() or =>
 var s = 'hi'
 var method = s->upper
 echo $method
@@ -599,7 +321,7 @@ Int Str 3
 ## END
 
 #### s ~~ glob and s !~~ glob
-shopt -s oil:all
+shopt -s ysh:all
 
 if ('foo.py' ~~ '*.py') {
   echo yes
@@ -662,17 +384,17 @@ echo $x
 var e = ^[1 + 2]
 
 echo type=$[type(e)]
-echo $[evalExpr(e)]
+echo $[io->evalExpr(e)]
 
 var e = ^[2 < 1]
-echo $[evalExpr(e)]
+echo $[io->evalExpr(e)]
 
 var x = 42
 var e = ^[42 === x and true]
-echo $[evalExpr(e)]
+echo $[io->evalExpr(e)]
 
 var mylist = ^[3, 4]
-pp line (evalExpr(mylist))
+pp test_ (io->evalExpr(mylist))
 
 ## STDOUT:
 type=Expr
@@ -685,7 +407,7 @@ true
 #### No list comprehension in ^[]
 
 var mylist = ^[x for x in y]  
-pp line (evalExpr(mylist))
+pp test_ (io->evalExpr(mylist))
 
 ## status: 2
 ## STDOUT:
@@ -694,7 +416,7 @@ pp line (evalExpr(mylist))
 
 #### expression literals, evaluation failure
 var e = ^[1 / 0]
-call evalExpr(e)
+call io->evalExpr(e)
 ## status: 3
 ## STDOUT:
 ## END
@@ -704,7 +426,7 @@ var x = 0
 var e = ^[x]
 
 setvar x = 1
-echo result=$[evalExpr(e)]
+echo result=$[io->evalExpr(e)]
 ## STDOUT:
 result=1
 ## END
@@ -714,7 +436,7 @@ var x = 0
 var e = ^"x is $x"
 
 setvar x = 1
-echo result=$[evalExpr(e)]
+echo result=$[io->evalExpr(e)]
 ## STDOUT:
 result=x is 1
 ## END

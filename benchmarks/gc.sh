@@ -90,6 +90,8 @@ banner() {
 }
 
 print-tasks() {
+  local mycpp_souffle=${1:-}
+
   local -a workloads=(
     parse.configure-coreutils
     parse.configure-cpython
@@ -118,6 +120,15 @@ print-tasks() {
     "_bin/cxx-opt/osh${TAB}mut+alloc+free+gc"
     "_bin/cxx-opt/osh${TAB}mut+alloc+free+gc+exit"
   )
+
+  if test -n "$mycpp_souffle"; then
+    shells+=(
+      "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc"
+      "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc+free"
+      "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc+free+gc"
+      "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc+free+gc+exit"
+    )
+  fi
 
   if test -n "${TCMALLOC:-}"; then
     shells+=(
@@ -159,6 +170,8 @@ print-tasks() {
 }
 
 print-cachegrind-tasks() {
+  local mycpp_souffle=${1:-}
+
   local -a workloads=(
     # coreutils is on osh-parser
     #parse.configure-coreutils
@@ -184,6 +197,15 @@ print-cachegrind-tasks() {
     "_bin/cxx-opt/osh${TAB}mut+alloc+free+gc"
     "_bin/cxx-opt/osh${TAB}mut+alloc+free+gc+exit"
   )
+
+  if test -n "$mycpp_souffle"; then
+    shells+=(
+      "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc"
+      "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc+free"
+      "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc+free+gc"
+      "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc+free+gc+exit"
+    )
+  fi
 
   local id=0
   for workload in "${workloads[@]}"; do
@@ -389,10 +411,13 @@ build-binaries() {
     soil/cpp-tarball.sh build-like-ninja \
       opt{,+bumpleak,+bumproot,+bumpsmall,+nopool}
 
+    OILS_TRANSLATOR=mycpp-souffle soil/cpp-tarball.sh build-like-ninja opt
+
   else
 
     # Old Ninja build
     local -a bin=( _bin/cxx-opt{,+bumpleak,+bumproot,+bumpsmall,+nopool}/osh )
+    bin+=( _bin/cxx-opt/mycpp-souffle/osh )
 
     if test -n "${TCMALLOC:-}"; then
       bin+=( _bin/cxx-opt+tcmalloc/osh )
@@ -402,16 +427,19 @@ build-binaries() {
 }
 
 measure-all() {
+  local tsv_out=${1:-$BASE_DIR/raw/times.tsv}
+  local mycpp_souffle=${2:-}
+
   build-binaries
 
-  local tsv_out=${1:-$BASE_DIR/raw/times.tsv}
   mkdir -p $(dirname $tsv_out)
 
   # Make the header
   time-tsv -o $tsv_out --print-header \
     --rusage --field join_id --field task --field sh_path --field shell_runtime_opts
 
-  time print-tasks | run-tasks $tsv_out
+  # Pass through args, which may include mycpp-souffle
+  time print-tasks "$mycpp_souffle" | run-tasks $tsv_out
 
   if command -v pretty-tsv; then
     pretty-tsv $tsv_out
@@ -419,9 +447,10 @@ measure-all() {
 }
 
 measure-cachegrind() {
-  build-binaries
-
   local tsv_out=${1:-$BASE_DIR_CACHEGRIND/raw/times.tsv}
+  local mycpp_souffle=${2:-}
+
+  build-binaries
 
   mkdir -p $(dirname $tsv_out)
 
@@ -429,7 +458,7 @@ measure-cachegrind() {
   time-tsv -o $tsv_out --print-header \
     --rusage --field join_id --field task --field sh_path --field shell_runtime_opts
 
-  print-cachegrind-tasks | run-tasks $tsv_out cachegrind
+  print-cachegrind-tasks "$mycpp_souffle" | run-tasks $tsv_out cachegrind
 
   # TODO: join cachegrind columns
 
@@ -549,7 +578,13 @@ make-report() {
 soil-run() {
   ### Run in soil/benchmarks
 
-  measure-all
+  measure-all '' mycpp-souffle
+
+  make-report
+}
+
+run-for-release() {
+  measure-all ''
 
   make-report
 }

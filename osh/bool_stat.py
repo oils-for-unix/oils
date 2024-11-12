@@ -11,7 +11,7 @@ from posix_ import X_OK, R_OK, W_OK  # refers directly to C macro
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import word_t, loc
 from core.error import e_die
-from core import ui
+from display import ui
 
 
 def isatty(fd_str, blame_word):

@@ -57,6 +57,7 @@ from _devbuild.gen.syntax_asdl import loc, loc_t, CompoundWord
 from _devbuild.gen.value_asdl import (value, value_e, value_t)
 
 from core.error import e_usage
+from frontend import match
 from mycpp import mops
 from mycpp.mylib import log, tagswitch, iteritems
 
@@ -104,6 +105,11 @@ class _Attributes(object):
 
         # debug-completion -> debug_completion
         name = name.replace('-', '_')
+
+        # similar hack to avoid C++ keyword in frontend/flag_gen.py
+        if name == 'extern':
+            name = 'extern_'
+
         self.attrs[name] = val
 
         if 0:
@@ -303,9 +309,11 @@ class SetToInt(_ArgAction):
 
     def _Value(self, arg, location):
         # type: (str, loc_t) -> value_t
-        try:
-            i = mops.FromStr(arg)
-        except ValueError:
+        if match.LooksLikeInteger(arg):
+            ok, i = mops.FromStr2(arg)
+            if not ok:
+                e_usage('Integer too big: %s' % arg, location)
+        else:
             e_usage(
                 'expected integer after %s, got %r' % ('-' + self.name, arg),
                 location)

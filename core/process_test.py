@@ -14,12 +14,14 @@ from builtin import trap_osh
 from core import dev
 from core import process  # module under test
 from core import pyos
-from core import test_lib
-from core import ui
-from core import util
-from mycpp.mylib import log
+from core import sh_init
 from core import state
+from core import test_lib
+from core import util
+from display import ui
+from mycpp import iolib
 from mycpp import mylib
+from mycpp.mylib import log
 
 import posix_ as posix
 
@@ -51,33 +53,36 @@ class ProcessTest(unittest.TestCase):
     def setUp(self):
         self.arena = test_lib.MakeArena('process_test.py')
 
-        mem = state.Mem('', [], self.arena, [])
-        parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
+        mem = state.Mem('', [], self.arena, [], {})
+        parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
         mem.exec_opts = exec_opts
 
-        state.InitMem(mem, {}, '0.1')
+        #state.InitMem(mem, {}, '0.1')
+        sh_init.InitDefaultVars(mem)
 
         self.job_control = process.JobControl()
         self.job_list = process.JobList()
 
-        signal_safe = pyos.InitSignalSafe()
+        signal_safe = iolib.InitSignalSafe()
         self.trap_state = trap_osh.TrapState(signal_safe)
 
         fd_state = None
-        multi_trace = dev.MultiTracer(posix.getpid(), '', '', '', fd_state)
+        self.multi_trace = dev.MultiTracer(posix.getpid(), '', '', '',
+                                           fd_state)
         self.tracer = dev.Tracer(None, exec_opts, mutable_opts, mem,
-                                 mylib.Stderr(), multi_trace)
+                                 mylib.Stderr(), self.multi_trace)
         self.waiter = process.Waiter(self.job_list, exec_opts, self.trap_state,
                                      self.tracer)
         errfmt = ui.ErrorFormatter()
         self.fd_state = process.FdState(errfmt, self.job_control,
-                                        self.job_list, None, self.tracer, None)
+                                        self.job_list, None, self.tracer, None,
+                                        exec_opts)
         self.ext_prog = process.ExternalProgram('', self.fd_state, errfmt,
                                                 util.NullDebugFile())
 
     def _ExtProc(self, argv):
-        arg_vec = cmd_value.Argv(argv, [loc.Missing] * len(argv), None, None,
-                                 None, None)
+        arg_vec = cmd_value.Argv(argv, [loc.Missing] * len(argv), False, None,
+                                 None)
         argv0_path = None
         for path_entry in ['/bin', '/usr/bin']:
             full_path = os.path.join(path_entry, argv[0])
@@ -181,9 +186,12 @@ class ProcessTest(unittest.TestCase):
         node2 = _CommandNode('head', self.arena)
         node3 = _CommandNode('sort --reverse', self.arena)
 
-        thunk1 = process.SubProgramThunk(cmd_ev, node1, self.trap_state, None)
-        thunk2 = process.SubProgramThunk(cmd_ev, node2, self.trap_state, None)
-        thunk3 = process.SubProgramThunk(cmd_ev, node3, self.trap_state, None)
+        thunk1 = process.SubProgramThunk(cmd_ev, node1, self.trap_state,
+                                         self.multi_trace, True, False)
+        thunk2 = process.SubProgramThunk(cmd_ev, node2, self.trap_state,
+                                         self.multi_trace, True, False)
+        thunk3 = process.SubProgramThunk(cmd_ev, node3, self.trap_state,
+                                         self.multi_trace, True, False)
 
         p = process.Pipeline(False, self.job_control, self.job_list,
                              self.tracer)
@@ -221,8 +229,10 @@ class ProcessTest(unittest.TestCase):
         node1 = _CommandNode('/bin/echo testpipeline', self.arena)
         node2 = _CommandNode('cat', self.arena)
 
-        thunk1 = process.SubProgramThunk(cmd_ev, node1, self.trap_state, None)
-        thunk2 = process.SubProgramThunk(cmd_ev, node2, self.trap_state, None)
+        thunk1 = process.SubProgramThunk(cmd_ev, node1, self.trap_state,
+                                         self.multi_trace, True, False)
+        thunk2 = process.SubProgramThunk(cmd_ev, node2, self.trap_state,
+                                         self.multi_trace, True, False)
 
         pi.Add(Process(thunk1, jc, self.job_list, self.tracer))
         pi.Add(Process(thunk2, jc, self.job_list, self.tracer))

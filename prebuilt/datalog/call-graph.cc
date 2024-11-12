@@ -1,4 +1,4 @@
-#define SOUFFLE_GENERATOR_VERSION "UNKNOWN"
+#define SOUFFLE_GENERATOR_VERSION "39d42a366"
 #include "souffle/CompiledSouffle.h"
 #include "souffle/SignalHandler.h"
 #include "souffle/SouffleInterface.h"
@@ -522,9 +522,16 @@ rel_might_collect_ef1d0b06d36e4ddc(&rel_might_collect_ef1d0b06d36e4ddc){
 }
 
 void Stratum_might_collect_beadc513d07ff032::run([[maybe_unused]] const std::vector<RamDomain>& args,[[maybe_unused]] std::vector<RamDomain>& ret){
-signalHandler->setMsg(R"_(might_collect(f,s) :- 
+signalHandler->setMsg(R"_(might_collect("mylib.MaybeCollect",0).
+in file call-graph.dl [14:1-14:40])_");
+[&](){
+CREATE_OP_CONTEXT(rel_might_collect_ef1d0b06d36e4ddc_op_ctxt,rel_might_collect_ef1d0b06d36e4ddc->createContext());
+Tuple<RamDomain,2> tuple{{ramBitCast(RamSigned(0)),ramBitCast(RamSigned(0))}};
+rel_might_collect_ef1d0b06d36e4ddc->insert(tuple,READ_OP_CONTEXT(rel_might_collect_ef1d0b06d36e4ddc_op_ctxt));
+}
+();signalHandler->setMsg(R"_(might_collect(f,s) :- 
    call(f,s,"mylib.MaybeCollect").
-in file call-graph.dl [14:1-14:57])_");
+in file call-graph.dl [15:1-15:57])_");
 if(!(rel_call_ee1d8972d66cc25f->empty())) {
 [&](){
 CREATE_OP_CONTEXT(rel_call_ee1d8972d66cc25f_op_ctxt,rel_call_ee1d8972d66cc25f->createContext());
@@ -550,7 +557,7 @@ for(;;) {
 signalHandler->setMsg(R"_(might_collect(f,s) :- 
    call(f,s,g),
    might_collect(g,_).
-in file call-graph.dl [15:1-15:59])_");
+in file call-graph.dl [16:1-16:59])_");
 if(!(rel_call_ee1d8972d66cc25f->empty()) && !(rel_delta_might_collect_d651f71586aafe59->empty())) {
 [&](){
 CREATE_OP_CONTEXT(rel_delta_might_collect_d651f71586aafe59_op_ctxt,rel_delta_might_collect_d651f71586aafe59->createContext());

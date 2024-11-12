@@ -93,6 +93,9 @@ class MatchTest(unittest.TestCase):
             _PrintTokens(lex)
 
     def testLooksLike(self):
+        self.assertEqual(False, match.LooksLikeInteger(' 3_000 '))
+        self.assertEqual(False, match.LooksLikeInteger(' '))
+
         INTS = [
             (False, ''),
             (False, 'foo'),
@@ -110,7 +113,7 @@ class MatchTest(unittest.TestCase):
         ]
 
         for expected, s in INTS + MORE_INTS:
-            self.assertEqual(expected, match.LooksLikeInteger(s))
+            self.assertEqual(expected, match.LooksLikeYshInt(s))
 
         FLOATS = [
             (True, '3.0'),
@@ -121,7 +124,7 @@ class MatchTest(unittest.TestCase):
         ]
 
         for expected, s in INTS + FLOATS:  # Use BOTH test cases
-            self.assertEqual(expected, match.LooksLikeFloat(s), s)
+            self.assertEqual(expected, match.LooksLikeYshFloat(s), s)
 
 
 if __name__ == '__main__':

@@ -80,9 +80,12 @@ osh-all() {
 
   local spec_subdir=osh-cpp 
 
+  # TODO: spec/nul-bytes passes when it should probably fail -- we get 1
+  # failure instead of 2.
+
   # $suite $compare_mode
   test/spec-runner.sh all-parallel \
-    osh compare-cpp $spec_subdir "$@" || true  # OK if it fails
+    osh compare-cpp $spec_subdir "$@"
 
   write-compare-html $spec_subdir
 }
@@ -94,7 +97,7 @@ ysh-all() {
 
   # $suite $compare_mode
   test/spec-runner.sh all-parallel \
-    ysh compare-cpp $spec_subdir "$@" || true  # OK if it fails
+    ysh compare-cpp $spec_subdir "$@"
 
   write-compare-html $spec_subdir
 }

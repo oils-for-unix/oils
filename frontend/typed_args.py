@@ -1,37 +1,61 @@
 #!/usr/bin/env python2
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import cmd_value
-from _devbuild.gen.syntax_asdl import (loc, loc_t, ArgList, LiteralBlock,
-                                       command_t, expr_t)
-from _devbuild.gen.value_asdl import (value, value_e, value_t, RegexMatch)
+from _devbuild.gen.runtime_asdl import cmd_value, ProcArgs, Cell
+from _devbuild.gen.syntax_asdl import (loc, loc_t, ArgList, command_t, Token)
+from _devbuild.gen.value_asdl import (value, value_e, value_t, RegexMatch, Obj,
+                                      cmd_frag, cmd_frag_e, cmd_frag_str,
+                                      LiteralBlock)
 from core import error
 from core.error import e_usage
 from frontend import location
 from mycpp import mops
 from mycpp import mylib
-from mycpp.mylib import log
+from mycpp.mylib import log, tagswitch
 
 from typing import Dict, List, Optional, cast
 
 _ = log
 
 
-def DoesNotAccept(arg_list):
-    # type: (Optional[ArgList]) -> None
-    if arg_list is not None:
-        e_usage('got unexpected typed args', arg_list.left)
+def DoesNotAccept(proc_args):
+    # type: (Optional[ProcArgs]) -> None
+    if proc_args is not None:
+        e_usage('got unexpected typed args', proc_args.typed_args.left)
 
 
-def OptionalBlock(cmd_val):
+if 0:
+
+    def OptionalCommandBlock(cmd_val):
+        # type: (cmd_value.Argv) -> Optional[value.Command]
+        """
+        Unused, the builtins don't take value.Command - they take a command_t CommandFrag
+        """
+        cmd = None  # type: Optional[value.Command]
+        if cmd_val.proc_args:
+            r = ReaderForProc(cmd_val)
+            cmd = r.OptionalCommandBlock()
+            r.Done()
+        return cmd
+
+
+def OptionalBlockAsFrag(cmd_val):
     # type: (cmd_value.Argv) -> Optional[command_t]
-    """Helper for shopt, etc."""
+    """Helper for cd, etc."""
 
-    cmd = None  # type: Optional[command_t]
-    if cmd_val.typed_args:
-        r = ReaderForProc(cmd_val)
-        cmd = r.OptionalBlock()
-        r.Done()
+    r = ReaderForProc(cmd_val)
+    cmd = r.OptionalBlockAsFrag()
+    r.Done()
+    return cmd
+
+
+def RequiredBlockAsFrag(cmd_val):
+    # type: (cmd_value.Argv) -> Optional[command_t]
+    """Helper for try, shopt, etc."""
+
+    r = ReaderForProc(cmd_val)
+    cmd = r.RequiredBlockAsFrag()
+    r.Done()
     return cmd
 
 
@@ -40,24 +64,50 @@ def OptionalLiteralBlock(cmd_val):
     """Helper for Hay """
 
     block = None  # type: Optional[LiteralBlock]
-    if cmd_val.typed_args:
+    if cmd_val.proc_args:
         r = ReaderForProc(cmd_val)
         block = r.OptionalLiteralBlock()
         r.Done()
     return block
 
 
+def GetCommandFrag(bound):
+    # type: (value.Command) -> command_t
+
+    frag = bound.frag
+    with tagswitch(frag) as case:
+        if case(cmd_frag_e.LiteralBlock):
+            lit = cast(LiteralBlock, frag)
+            return lit.brace_group
+        elif case(cmd_frag_e.Expr):
+            expr = cast(cmd_frag.Expr, frag)
+            return expr.c
+        else:
+            raise AssertionError(cmd_frag_str(frag.tag()))
+
+
 def ReaderForProc(cmd_val):
     # type: (cmd_value.Argv) -> Reader
 
-    # mycpp rewrite: doesn't understand 'or' pattern
-    pos_args = (cmd_val.pos_args if cmd_val.pos_args is not None else [])
-    named_args = (cmd_val.named_args if cmd_val.named_args is not None else {})
+    proc_args = cmd_val.proc_args
 
-    arg_list = (cmd_val.typed_args
-                if cmd_val.typed_args is not None else ArgList.CreateNull())
+    if proc_args:
+        # mycpp rewrite: doesn't understand 'or' pattern
+        pos_args = (proc_args.pos_args
+                    if proc_args.pos_args is not None else [])
+        named_args = (proc_args.named_args
+                      if proc_args.named_args is not None else {})
 
-    rd = Reader(pos_args, named_args, cmd_val.block_arg, arg_list)
+        arg_list = (proc_args.typed_args if proc_args.typed_args is not None
+                    else ArgList.CreateNull())
+        block_arg = proc_args.block_arg
+    else:
+        pos_args = []
+        named_args = {}
+        arg_list = ArgList.CreateNull()
+        block_arg = None
+
+    rd = Reader(pos_args, named_args, block_arg, arg_list)
 
     # Fix location info bug with 'try' or try foo' -- it should get a typed arg
     rd.SetFallbackLocation(cmd_val.arg_locs[0])
@@ -102,13 +152,16 @@ class Reader(object):
       ReaderForProc()
     """
 
-    def __init__(self,
-                 pos_args,
-                 named_args,
-                 block_arg,
-                 arg_list,
-                 is_bound=False):
-        # type: (List[value_t], Dict[str, value_t], Optional[value_t], ArgList, bool) -> None
+    def __init__(
+            self,
+            pos_args,  # type: List[value_t]
+            named_args,  # type: Dict[str, value_t]
+            block_arg,  # type: Optional[value_t]
+            arg_list,  # type: ArgList
+            is_bound=False,  # type: bool
+    ):
+        # type: (...) -> None
+
         self.pos_args = pos_args
         self.pos_consumed = 0
         # TODO: Add LHS of attribute expression to value.BoundFunc and pass
@@ -128,7 +181,7 @@ class Reader(object):
         self.fallback_loc = blame_loc
 
     def LeftParenToken(self):
-        # type: () -> loc_t
+        # type: () -> Token
         """ Used by functions in library/func_misc.py """
         return self.arg_list.left
 
@@ -183,7 +236,11 @@ class Reader(object):
                 self.LeastSpecificLocation())
 
         self.pos_consumed += 1
-        return self.pos_args.pop(0)
+        val = self.pos_args.pop(0)
+
+        # Should be value.Null
+        assert val is not None
+        return val
 
     def OptionalValue(self):
         # type: () -> Optional[value_t]
@@ -259,6 +316,14 @@ class Reader(object):
         raise error.TypeErr(val, 'Arg %d should be a Dict' % self.pos_consumed,
                             self.BlamePos())
 
+    def _ToObj(self, val):
+        # type: (value_t) -> Obj
+        if val.tag() == value_e.Obj:
+            return cast(Obj, val)
+
+        raise error.TypeErr(val, 'Arg %d should be a Obj' % self.pos_consumed,
+                            self.BlamePos())
+
     def _ToPlace(self, val):
         # type: (value_t) -> value.Place
         if val.tag() == value_e.Place:
@@ -286,53 +351,62 @@ class Reader(object):
                             'Arg %d should be an Eggex' % self.pos_consumed,
                             self.BlamePos())
 
-    def _ToIO(self, val):
-        # type: (value_t) -> value.IO
-        if val.tag() == value_e.IO:
-            return cast(value.IO, val)
-
-        raise error.TypeErr(val, 'Arg %d should be IO' % self.pos_consumed,
-                            self.BlamePos())
-
     def _ToExpr(self, val):
-        # type: (value_t) -> expr_t
+        # type: (value_t) -> value.Expr
         if val.tag() == value_e.Expr:
-            return cast(value.Expr, val).e
+            return cast(value.Expr, val)
 
         raise error.TypeErr(val, 'Arg %d should be a Expr' % self.pos_consumed,
                             self.BlamePos())
 
-    def _ToCommand(self, val):
-        # type: (value_t) -> command_t
-        if val.tag() == value_e.Command:
-            return cast(value.Command, val).c
-
-        # eval (myblock) uses this
-        if val.tag() == value_e.Block:
-            return cast(value.Block, val).block.brace_group
+    def _ToFrame(self, val):
+        # type: (value_t) -> Dict[str, Cell]
+        if val.tag() == value_e.Frame:
+            return cast(value.Frame, val).frame
 
         raise error.TypeErr(val,
-                            'Arg %d should be a Command' % self.pos_consumed,
+                            'Arg %d should be a Frame' % self.pos_consumed,
                             self.BlamePos())
 
-    def _ToBlock(self, val):
+    def _ToCommandFrag(self, val):
         # type: (value_t) -> command_t
+        if val.tag() == value_e.CommandFrag:
+            return cast(value.CommandFrag, val).c
+
+        # Builtins like shopt, cd, try rely on this, because proc argument
+        # evaluation gives you a value.Command, yet they operate on a
+        # CommandFrag.
+        #
+        # In YSH, we do this with the getCommandFrag() builtin, which returns
+        # an UNBOUND version of the command.  Hm.
+
         if val.tag() == value_e.Command:
-            return cast(value.Command, val).c
+            bound = cast(value.Command, val)
+            return GetCommandFrag(bound)
 
-        # Special case for hay
-        # Foo { x = 1 }
-        if val.tag() == value_e.Block:
-            return cast(value.Block, val).block.brace_group
+        raise error.TypeErr(
+            val, 'Arg %d should be a CommandFrag' % self.pos_consumed,
+            self.BlamePos())
 
+    def _ToCommand(self, val):
+        # type: (value_t) -> value.Command
+        if val.tag() == value_e.Command:
+            return cast(value.Command, val)
         raise error.TypeErr(val,
                             'Arg %d should be a Command' % self.pos_consumed,
                             self.BlamePos())
 
     def _ToLiteralBlock(self, val):
         # type: (value_t) -> LiteralBlock
-        if val.tag() == value_e.Block:
-            return cast(value.Block, val).block
+        """ Used by Hay """
+        if val.tag() == value_e.Command:
+            frag = cast(value.Command, val).frag
+            with tagswitch(frag) as case:
+                if case(cmd_frag_e.LiteralBlock):
+                    lit = cast(LiteralBlock, frag)
+                    return lit
+                else:
+                    raise AssertionError()
 
         raise error.TypeErr(
             val, 'Arg %d should be a LiteralBlock' % self.pos_consumed,
@@ -392,6 +466,11 @@ class Reader(object):
         val = self.PosValue()
         return self._ToDict(val)
 
+    def PosObj(self):
+        # type: () -> Obj
+        val = self.PosValue()
+        return self._ToObj(val)
+
     def PosPlace(self):
         # type: () -> value.Place
         val = self.PosValue()
@@ -407,18 +486,23 @@ class Reader(object):
         val = self.PosValue()
         return self._ToMatch(val)
 
-    def PosIO(self):
-        # type: () -> value.IO
+    def PosFrame(self):
+        # type: () -> Dict[str, Cell]
         val = self.PosValue()
-        return self._ToIO(val)
+        return self._ToFrame(val)
+
+    def PosCommandFrag(self):
+        # type: () -> command_t
+        val = self.PosValue()
+        return self._ToCommandFrag(val)
 
     def PosCommand(self):
-        # type: () -> command_t
+        # type: () -> value.Command
         val = self.PosValue()
         return self._ToCommand(val)
 
     def PosExpr(self):
-        # type: () -> expr_t
+        # type: () -> value.Expr
         val = self.PosValue()
         return self._ToExpr(val)
 
@@ -426,21 +510,32 @@ class Reader(object):
     # Block arg
     #
 
-    def RequiredBlock(self):
+    if 0:
+
+        def OptionalCommandBlock(self):
+            # type: () -> Optional[value.Command]
+            if self.block_arg is None:
+                return None
+            return self._ToCommand(self.block_arg)
+
+    def RequiredBlockAsFrag(self):
         # type: () -> command_t
         if self.block_arg is None:
-            raise error.TypeErrVerbose('Expected a block arg',
-                                       self.LeastSpecificLocation())
-        return self._ToBlock(self.block_arg)
+            raise error.Usage('expected a block arg',
+                              self.LeastSpecificLocation())
+        return self._ToCommandFrag(self.block_arg)
 
-    def OptionalBlock(self):
+    def OptionalBlockAsFrag(self):
         # type: () -> Optional[command_t]
         if self.block_arg is None:
             return None
-        return self._ToBlock(self.block_arg)
+        return self._ToCommandFrag(self.block_arg)
 
     def OptionalLiteralBlock(self):
         # type: () -> Optional[LiteralBlock]
+        """
+        Used by Hay
+        """
         if self.block_arg is None:
             return None
         return self._ToLiteralBlock(self.block_arg)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-"""Flag_gen.py."""
+""" flag_gen.py - generate Python and C++ from flag specs """
 from __future__ import print_function
 
 import itertools
@@ -30,6 +30,14 @@ def CString(s):
         return '"\\n"'
 
     return '"%s"' % s
+
+
+def _CleanFieldName(name):
+    # Avoid C++ keyword for invoke --extern
+    if name == 'extern':
+        return 'extern_'
+
+    return name.replace('-', '_')
 
 
 def _WriteStrArray(f, var_name, a):
@@ -206,7 +214,7 @@ namespace arg_types {
         bits = []
         for field_name in sorted(spec.fields):
             typ = spec.fields[field_name]
-            field_name = field_name.replace('-', '_')
+            field_name = _CleanFieldName(field_name)
             field_names.append(field_name)
 
             with switch(typ) as case:
@@ -485,7 +493,7 @@ class %s(object):
             i = 0
             for field_name in sorted(spec.fields):
                 typ = spec.fields[field_name]
-                field_name = field_name.replace('-', '_')
+                field_name = _CleanFieldName(field_name)
 
                 with switch(typ) as case:
                     if case(flag_type_e.Bool):

@@ -19,13 +19,22 @@ source build/common.sh  # log
 # - TODO: do this in the Soil 'cpp' task
 
 tarball-demo() {
+  translator=${1:-mycpp}
   mkdir -p _bin
 
   ./configure
 
-  time _build/oils.sh '' '' SKIP_REBUILD
+  time _build/oils.sh --translator "$translator" --skip-rebuild
 
-  local bin=_bin/cxx-opt-sh/oils-for-unix.stripped
+  local bin
+  case $translator in
+    mycpp)
+      bin=_bin/cxx-opt-sh/oils-for-unix.stripped
+      ;;
+    *)
+      bin=_bin/cxx-opt-sh/$translator/oils-for-unix.stripped
+      ;;
+  esac
 
   ls -l $bin
 
@@ -51,7 +60,7 @@ measure-build-times() {
   # Header for functions in build/ninja-rules-cpp.sh
   benchmarks/time_.py --tsv --out $out_tsv --rusage --print-header --field verb --field out
 
-  time TIME_TSV_OUT=$out_tsv _build/oils.sh '' $variant
+  time TIME_TSV_OUT=$out_tsv _build/oils.sh --variant "$variant"
 
   echo
   cat $out_tsv

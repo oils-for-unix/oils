@@ -47,7 +47,7 @@ osh-parser() {
   local base_dir=_tmp/osh-parser
 
   benchmarks/osh-parser.sh stage1 ../benchmark-data/osh-parser
-  stage2 $base_dir
+  OILS_NO_SOUFFLE=1 stage2 $base_dir
   stage3 $base_dir
 }
 
@@ -55,7 +55,7 @@ osh-runtime() {
   local base_dir=_tmp/osh-runtime
 
   benchmarks/osh-runtime.sh stage1 ../benchmark-data/osh-runtime
-  stage2 $base_dir
+  OILS_NO_SOUFFLE=1 stage2 $base_dir
   stage3 $base_dir
 }
 

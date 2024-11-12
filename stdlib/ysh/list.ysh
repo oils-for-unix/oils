@@ -1,0 +1,64 @@
+const __provide__ = :| any all sum repeat |
+
+func any(list) {
+  ### Returns true if any value in the list is truthy.
+  # Empty list: returns false
+
+  for item in (list) {
+    if (item) {
+      return (true)
+    }
+  }
+  return (false)
+}
+
+func all(list) {
+  ### Returns true if all values in the list are truthy.
+  # Empty list: returns true
+
+  for item in (list) {
+    if (not item) {
+      return (false)
+    }
+  }
+  return (true)
+}
+
+func sum(list; start=0) {
+  ### Returns the sum of all elements in the list.
+  # Empty list: returns 0
+
+  var sum = start
+  for item in (list) {
+    setvar sum += item
+  }
+  return (sum)
+}
+
+func repeat(x, n) {
+  ### Returns a list with the given string or list repeated
+
+  # Like Python's 'foo'*3 or ['foo', 'bar']*3
+  # negative numbers are like 0 in Python
+
+  var t = type(x)
+  case (t) {
+    Str {
+      var parts = []
+      for i in (0 ..< n) {
+        call parts->append(x)
+      }
+      return (join(parts))
+    }
+    List {
+      var result = []
+      for i in (0 ..< n) {
+        call result->extend(x)
+      }
+      return (result)
+    }
+    (else) {
+      error "Expected Str or List, got $t"
+    }
+  }
+}

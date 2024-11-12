@@ -153,7 +153,7 @@ Procs may start external processes and pipelines.  Can perform I/O anywhere.
 </td>
     <td>
 
-Funcs need an explicit `value.IO` param to perform I/O.
+Funcs need an explicit `io` param to perform I/O.
 
 </td>
   </tr>
@@ -254,6 +254,18 @@ Any type of value, e.g.
     return ([42, {name: 'bob'}])
 
 </td>
+  </tr>
+  <tr>
+    <td>Relation to Objects</td>
+    <td>none</td>
+    <td>
+
+May be bound to objects:
+
+    var x = obj.myMethod()
+    call obj->myMutatingMethod()
+
+   </td>
   </tr>
 
   <tr>
@@ -742,6 +754,39 @@ An "open" proc is nearly is nearly identical to a shell function:
     shfunc() {
       write 'args are' @ARGV
     }
+
+## Methods are Funcs Bound to Objects
+
+Values of type `Obj` have an ordered set of name-value bindings, as well as a
+prototype chain of more `Obj` instances ("parents").  They support these
+operators:
+
+- dot (`.`) looks for attributes or methods with a given name.
+  - Reference: [ysh-attr](ref/chap-expr-lang.html#ysh-attr)
+  - Attributes may be in the object, or up the chain.  They are returned
+    literally.
+  - Methods live up the chain.  They are returned as `BoundFunc`, so that the
+    first `self` argument of a method call is the object itself.
+- Thin arrow (`->`) looks for mutating methods, which have an `M/` prefix.
+  - Reference: [thin-arrow](ref/chap-expr-lang.html#thin-arrow)
+
+## The `__invoke__` method makes an Object "Proc-like"
+
+First, define a proc, with the first typed arg named `self`:
+
+    proc myInvoke (word_param; self, int_param) {
+      echo "sum = $[self.x + self.y + int_param]"
+    }
+
+Make it the `__invoke__` method of an `Obj`:
+
+    var methods = Object(null, {__invoke__: myInvoke})
+    var invokable_obj = Object(methods, {x: 1, y: 2})
+
+Then invoke it like a proc:
+
+    invokable_obj myword (3)
+    # sum => 6
 
 ## Usage Notes
 

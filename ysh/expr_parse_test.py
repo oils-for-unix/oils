@@ -30,9 +30,9 @@ class ExprParseTest(unittest.TestCase):
                                                    do_lossless=True)
 
     def _ParseOsh(self, code_str):
-        """Parse a line of OSH, which can include Oil assignments."""
+        """Parse a line of OSH, which can include YSH assignments."""
         line_reader = reader.StringLineReader(code_str, self.arena)
-        # the OSH parser hooks into the Oil parser
+        # the OSH parser hooks into the YSH parser
         c_parser = self.parse_ctx.MakeOshParser(line_reader)
         node = c_parser.ParseLogicalLine()
         print('')

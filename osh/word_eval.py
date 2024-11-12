@@ -52,7 +52,7 @@ from core import error
 from core import pyos
 from core import pyutil
 from core import state
-from core import ui
+from display import ui
 from core import util
 from data_lang import j8
 from data_lang import j8_lite
@@ -76,7 +76,6 @@ if TYPE_CHECKING:
     from _devbuild.gen.option_asdl import builtin_t
     from core import optview
     from core.state import Mem
-    from core.ui import ErrorFormatter
     from core.vm import _Executor
     from osh.split import SplitContext
     from osh import prompt
@@ -152,7 +151,7 @@ def _DetectMetaBuiltinStr(s):
 
     Fundamentally, assignment builtins have different WORD EVALUATION RULES
     for a=$x (no word splitting), so it seems hard to do this in
-    meta_osh.Builtin() or meta_osh.Command()
+    meta_oils.Builtin() or meta_oils.Command()
     """
     return (consts.LookupNormalBuiltin(s)
             in (builtin_i.builtin, builtin_i.command))
@@ -235,10 +234,10 @@ def _ValueToPartValue(val, quoted, part_loc):
             return part_value.Array(val.d.values())
 
         # Cases added for YSH
-        # value_e.List is also here - we use val_ops.stringify()s err message
+        # value_e.List is also here - we use val_ops.Stringify()s err message
         elif case(value_e.Null, value_e.Bool, value_e.Int, value_e.Float,
                   value_e.Eggex, value_e.List):
-            s = val_ops.Stringify(val, loc.Missing)
+            s = val_ops.Stringify(val, loc.Missing, 'Word eval ')
             return Piece(s, quoted, not quoted)
 
         else:
@@ -475,12 +474,12 @@ class TildeEvaluator(object):
         Important: the libc call can FAIL, which is why we prefer $HOME.  See issue
         #1578.
         """
-        # First look up the HOME var, then ask the OS.  This is what bash does.
-        val = self.mem.GetValue('HOME')
-        UP_val = val
-        if val.tag() == value_e.Str:
-            val = cast(value.Str, UP_val)
-            return val.s
+        # First look up the HOME var, ENV.HOME, ...
+        s = self.mem.env_config.Get('HOME')
+        if s is not None:
+            return s
+
+        # Then ask the OS.  This is what bash does.
         return pyos.GetMyHomeDir()
 
     def Eval(self, part):
@@ -1021,11 +1020,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
             with tagswitch(val) as case:
                 if case(value_e.Str):
                     str_val = cast(value.Str, UP_val)
-
-                    # TODO: use fastfunc.ShellEncode or
-                    # fastfunc.PosixShellEncode()
                     result = value.Str(j8_lite.MaybeShellEncode(str_val.s))
-                    # oddly, 'echo ${x@Q}' is equivalent to 'echo "${x@Q}"' in bash
+                    # oddly, 'echo ${x@Q}' is equivalent to 'echo "${x@Q}"' in
+                    # bash
                     quoted2 = True
                 elif case(value_e.BashArray):
                     array_val = cast(value.BashArray, UP_val)
@@ -2001,6 +1998,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         will_glob = not self.exec_opts.noglob()
 
+        if 0:
+            log('---')
+            log('FRAME')
+            for i, piece in enumerate(frame):
+                log('(%d) %s', i, piece)
+            log('')
+
         # Array of strings, some of which are BOTH IFS-escaped and GLOB escaped!
         frags = []  # type: List[str]
         for piece in frame:
@@ -2018,6 +2022,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 frag = self.splitter.Escape(frag)
 
             frags.append(frag)
+
+        if 0:
+            log('---')
+            log('FRAGS')
+            for i, frag in enumerate(frags):
+                log('(%d) %s', i, frag)
+            log('')
 
         flat = ''.join(frags)
         #log('flat: %r', flat)
@@ -2165,8 +2176,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 return self._DetectAssignBuiltinStr(val0.s, words, meta_offset)
         return None
 
-    def SimpleEvalWordSequence2(self, words, allow_assign):
-        # type: (List[CompoundWord], bool) -> cmd_value_t
+    def SimpleEvalWordSequence2(self, words, is_last_cmd, allow_assign):
+        # type: (List[CompoundWord], bool, bool) -> cmd_value_t
         """Simple word evaluation for YSH."""
         strs = []  # type: List[str]
         locs = []  # type: List[CompoundWord]
@@ -2225,10 +2236,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     strs.append(''.join(tmp))  # no split or glob
                     locs.append(w)
 
-        return cmd_value.Argv(strs, locs, None, None, None, None)
+        return cmd_value.Argv(strs, locs, is_last_cmd, None, None)
 
-    def EvalWordSequence2(self, words, allow_assign=False):
-        # type: (List[CompoundWord], bool) -> cmd_value_t
+    def EvalWordSequence2(self, words, is_last_cmd, allow_assign=False):
+        # type: (List[CompoundWord], bool, bool) -> cmd_value_t
         """Turns a list of Words into a list of strings.
 
         Unlike the EvalWord*() methods, it does globbing.
@@ -2237,7 +2248,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
           allow_assign: True for command.Simple, False for BashArray a=(1 2 3)
         """
         if self.exec_opts.simple_word_eval():
-            return self.SimpleEvalWordSequence2(words, allow_assign)
+            return self.SimpleEvalWordSequence2(words, is_last_cmd,
+                                                allow_assign)
 
         # Parse time:
         # 1. brace expansion.  TODO: Do at parse time.
@@ -2328,7 +2340,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         # A non-assignment command.
         # NOTE: Can't look up builtins here like we did for assignment, because
         # functions can override builtins.
-        return cmd_value.Argv(strs, locs, None, None, None, None)
+        return cmd_value.Argv(strs, locs, is_last_cmd, None, None)
 
     def EvalWordSequence(self, words):
         # type: (List[CompoundWord]) -> List[str]
@@ -2336,11 +2348,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         They don't allow assignment builtins.
         """
-        UP_cmd_val = self.EvalWordSequence2(words)
-
-        assert UP_cmd_val.tag() == cmd_value_e.Argv
-        cmd_val = cast(cmd_value.Argv, UP_cmd_val)
-        return cmd_val.argv
+        # is_last_cmd is irrelevant
+        cmd_val = self.EvalWordSequence2(words, False)
+        assert cmd_val.tag() == cmd_value_e.Argv
+        return cast(cmd_value.Argv, cmd_val).argv
 
 
 class NormalWordEvaluator(AbstractWordEvaluator):
@@ -2352,7 +2363,7 @@ class NormalWordEvaluator(AbstractWordEvaluator):
             mutable_opts,  # type: state.MutableOpts
             tilde_ev,  # type: TildeEvaluator
             splitter,  # type: SplitContext
-            errfmt,  # type: ErrorFormatter
+            errfmt,  # type: ui.ErrorFormatter
     ):
         # type: (...) -> None
         AbstractWordEvaluator.__init__(self, mem, exec_opts, mutable_opts,
@@ -2410,7 +2421,7 @@ class CompletionWordEvaluator(AbstractWordEvaluator):
             mutable_opts,  # type: state.MutableOpts
             tilde_ev,  # type: TildeEvaluator
             splitter,  # type: SplitContext
-            errfmt,  # type: ErrorFormatter
+            errfmt,  # type: ui.ErrorFormatter
     ):
         # type: (...) -> None
         AbstractWordEvaluator.__init__(self, mem, exec_opts, mutable_opts,

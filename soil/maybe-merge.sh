@@ -57,7 +57,7 @@ fast-forward()  {
     -H "Content-Type: application/json" \
     -H "Accept: application/vnd.github.v3+json" \
     -H "Authorization: token ${github_token}" \
-    https://api.github.com/repos/oilshell/oil/git/refs/heads/$to_branch \
+    https://api.github.com/repos/oils-for-unix/oils/git/refs/heads/$to_branch \
     -d '{"sha": "'$commit_hash'", "force": false }'
     
   local error
@@ -125,7 +125,7 @@ soil-run() {
   mkdir -p $dir
 
   # These tiny files are written by each Soil task
-  local url_base="http://$SOIL_HOST/status-api/github/$run_id"
+  local url_base="https://$SOIL_HOST/uuu/status-api/github/$run_id"
 
   #local jobs='dummy pea other-tests'  # minimal set of jobs to wait for
   local jobs=$(soil/worker.sh list-jobs)
@@ -134,7 +134,7 @@ soil-run() {
   for job in $jobs; do  # relies on word splitting
 
     # output each URL in a different file
-    args=( "${args[@]}" -o $dir/$job $url_base/$job )
+    args=( "${args[@]}" -o $dir/$job "$url_base/$job.status.txt" )
   done
 
   curl -v ${args[@]}

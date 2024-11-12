@@ -32,8 +32,12 @@ sourceUrl2 = function(filename) {
       filename)
 }
 
-mycppUrl = function(path) {
-  sprintf('https://github.com/oilshell/oil/blob/master/mycpp/examples/%s.py', path)
+mycppUrl = function(name) {
+  sprintf('https://github.com/oilshell/oil/blob/master/mycpp/examples/%s.py', name)
+}
+
+genUrl = function(name) {
+  sprintf('../../_gen/mycpp/examples/%s.mycpp.cc', name)
 }
 
 
@@ -61,6 +65,8 @@ GetOshLabel = function(shell_hash, prov_dir) {
       label = 'osh-ovm'
     } else if (length(grep('bin/osh', lines)) > 0) {
       label = 'osh-cpython'
+    } else if (length(grep('_bin/.*/mycpp-souffle/osh', lines)) > 0) {
+      label = 'osh-native-souffle'
     } else if (length(grep('_bin/.*/osh', lines)) > 0) {
       label = 'osh-native'
     } else {
@@ -74,6 +80,8 @@ GetOshLabel = function(shell_hash, prov_dir) {
 
 opt_suffix1 = '_bin/cxx-opt/osh'
 opt_suffix2 = '_bin/cxx-opt-sh/osh'
+opt_suffix3 = '_bin/cxx-opt/mycpp-souffle/osh'
+opt_suffix4 = '_bin/cxx-opt-sh/mycpp-souffle/osh'
 
 ShellLabels = function(shell_name, shell_hash, num_hosts) {
   ### Given 2 vectors, return a vector of readable labels.
@@ -100,6 +108,9 @@ ShellLabels = function(shell_name, shell_hash, num_hosts) {
     } else if (endsWith(sh, opt_suffix1) || endsWith(sh, opt_suffix2)) {
       label = 'opt/osh'
 
+    } else if (endsWith(sh, opt_suffix3) || endsWith(sh, opt_suffix4)) {
+      label = 'opt/osh-souffle'
+
     } else if (endsWith(sh, '_bin/cxx-opt+bumpleak/osh')) {
       label = 'bumpleak/osh'
 
@@ -123,6 +134,10 @@ ShellLabelFromPath = function(sh_path) {
     if (endsWith(sh, opt_suffix1) || endsWith(sh, opt_suffix2)) {
       # the opt binary is osh-native
       label = 'osh-native'
+
+	} else if (endsWith(sh, opt_suffix3) || endsWith(sh, opt_suffix4)) {
+      # the opt binary is osh-native
+      label = 'osh-native-souffle'
 
     } else if (endsWith(sh, '_bin/cxx-opt+bumpleak/osh')) {
       label = 'bumpleak/osh'
@@ -249,9 +264,9 @@ ParserReport = function(in_dir, out_dir) {
     spread(key = host_label, value = lines_per_ms) ->
     times_summary
 
-  # Sort by parsing rate on the fast machine
-  if ("host lenny" %in% colnames(times_summary)) {
-    times_summary %>% arrange(desc(`host lenny`)) -> times_summary
+  # Sort by parsing rate on machine 1
+  if ("host hoover" %in% colnames(times_summary)) {
+    times_summary %>% arrange(desc(`host hoover`)) -> times_summary
   } else {
     times_summary %>% arrange(desc(`host no-host`)) -> times_summary
   }
@@ -292,29 +307,39 @@ ParserReport = function(in_dir, out_dir) {
     times_flat = NULL
     cachegrind_flat = NULL
 
+    # Hack for release.  TODO: unify with Soil
+    if (Sys.getenv("OILS_NO_SOUFFLE") == "") {
+      souffle_col = c('osh-native-souffle')
+    } else {
+      souffle_col = c()
+    }
+
+    cols1 = c('host_label', 'bash', 'dash', 'mksh', 'zsh',
+              'osh-ovm', 'osh-cpython', 'osh-native', souffle_col,
+              'osh_to_bash_ratio', 'num_lines', 'filename', 'filename_HREF')
+
     # Elapsed seconds for each shell by platform and file
     joined_times %>%
       select(-c(lines_per_ms, user_ms, sys_ms, max_rss_MB)) %>% 
       spread(key = shell_label, value = elapsed_ms) %>%
       arrange(host_label, num_lines) %>%
       mutate(osh_to_bash_ratio = `osh-native` / bash) %>% 
-      select(c(host_label, bash, dash, mksh, zsh,
-               `osh-ovm`, `osh-cpython`, `osh-native`,
-               osh_to_bash_ratio, num_lines, filename, filename_HREF)) ->
+      select(all_of(cols1)) ->
       elapsed
 
     Log('\n')
     Log('ELAPSED')
     print(elapsed)
 
+    cols2 = c('host_label', 'bash', 'dash', 'mksh', 'zsh',
+               'osh-ovm', 'osh-cpython', 'osh-native', souffle_col,
+               'num_lines', 'filename', 'filename_HREF')
     # Rates by file and shell
-    joined_times  %>%
+    joined_times %>%
       select(-c(elapsed_ms, user_ms, sys_ms, max_rss_MB)) %>% 
       spread(key = shell_label, value = lines_per_ms) %>%
       arrange(host_label, num_lines) %>%
-      select(c(host_label, bash, dash, mksh, zsh,
-               `osh-ovm`, `osh-cpython`, `osh-native`,
-               num_lines, filename, filename_HREF)) ->
+      select(all_of(cols2)) ->
       rate
 
     Log('\n')
@@ -326,9 +351,7 @@ ParserReport = function(in_dir, out_dir) {
       select(-c(elapsed_ms, lines_per_ms, user_ms, sys_ms)) %>% 
       spread(key = shell_label, value = max_rss_MB) %>%
       arrange(host_label, num_lines) %>%
-      select(c(host_label, bash, dash, mksh, zsh,
-               `osh-ovm`, `osh-cpython`, `osh-native`,
-               num_lines, filename, filename_HREF)) ->
+      select(all_of(cols2)) ->
       max_rss
 
     Log('\n')
@@ -340,14 +363,16 @@ ParserReport = function(in_dir, out_dir) {
     print(joined_cachegrind)
     #print(joined_cachegrind %>% filter(path == 'benchmarks/testdata/configure-helper.sh'))
 
+    cols3 = c('bash', 'dash', 'mksh', 'osh-native', souffle_col,
+              'num_lines', 'filename', 'filename_HREF')
+
     # Cachegrind instructions by file
     joined_cachegrind %>%
       mutate(thousand_irefs_per_line = irefs / num_lines / 1000) %>%
       select(-c(irefs)) %>%
       spread(key = shell_label, value = thousand_irefs_per_line) %>%
       arrange(num_lines) %>%
-      select(c(bash, dash, mksh, `osh-native`,
-               num_lines, filename, filename_HREF)) ->
+      select(all_of(cols3)) ->
       instructions
 
     Log('\n')
@@ -525,6 +550,17 @@ RuntimeReport = function(in_dir, out_dir) {
   Log('details')
   print(details)
 
+  # Hack for release.  TODO: unify with Soil
+  if (Sys.getenv("OILS_NO_SOUFFLE") == "") {
+    souffle_col = c('osh-native-souffle')
+  } else {
+    souffle_col = c()
+  }
+
+  cols2 = c('workload', 'host_name',
+            'bash', 'dash', 'osh-cpython', 'osh-native', souffle_col,
+            'py_bash_ratio', 'native_bash_ratio')
+
   # Elapsed time comparison
   details %>%
     select(-c(task_id, user_ms, sys_ms, max_rss_MB)) %>%
@@ -532,10 +568,7 @@ RuntimeReport = function(in_dir, out_dir) {
     mutate(py_bash_ratio = `osh-cpython` / bash) %>%
     mutate(native_bash_ratio = `osh-native` / bash) %>%
     arrange(workload, host_name) %>%
-    select(c(workload, host_name,
-             bash, dash, `osh-cpython`, `osh-native`,
-             py_bash_ratio, native_bash_ratio)) ->
-
+    select(all_of(cols2)) ->
     elapsed
 
   Log('elapsed')
@@ -548,9 +581,7 @@ RuntimeReport = function(in_dir, out_dir) {
     mutate(py_bash_ratio = `osh-cpython` / bash) %>%
     mutate(native_bash_ratio = `osh-native` / bash) %>%
     arrange(workload, host_name) %>%
-    select(c(workload, host_name,
-             bash, dash, `osh-cpython`, `osh-native`,
-             py_bash_ratio, native_bash_ratio)) ->
+    select(all_of(cols2)) ->
     page_faults
 
   Log('page_faults')
@@ -563,9 +594,7 @@ RuntimeReport = function(in_dir, out_dir) {
     mutate(py_bash_ratio = `osh-cpython` / bash) %>%
     mutate(native_bash_ratio = `osh-native` / bash) %>%
     arrange(workload, host_name) %>%
-    select(c(workload, host_name,
-             bash, dash, `osh-cpython`, `osh-native`,
-             py_bash_ratio, native_bash_ratio)) ->
+    select(all_of(cols2)) ->
     max_rss
 
   Log('max rss')
@@ -606,7 +635,7 @@ RuntimeReport = function(in_dir, out_dir) {
 
   # milliseconds don't need decimal digit
   precision = ColumnPrecision(list(bash = 0, dash = 0, `osh-cpython` = 0,
-                                   `osh-native` = 0, py_bash_ratio = 2,
+                                   `osh-native` = 0, `osh-native-souffle` = 0, py_bash_ratio = 2,
                                    native_bash_ratio = 2))
   writeTsv(elapsed, file.path(out_dir, 'elapsed'), precision)
   writeTsv(page_faults, file.path(out_dir, 'page_faults'), precision)
@@ -670,10 +699,8 @@ WriteOvmBuildDetails = function(distinct_hosts, distinct_compilers, out_dir) {
 
 OvmBuildReport = function(in_dir, out_dir) {
   times = readTsv(file.path(in_dir, 'times.tsv'))
-  bytecode_size = readTsv(file.path(in_dir, 'bytecode-size.tsv'))
-  bin_sizes = readTsv(file.path(in_dir, 'bin-sizes.tsv'))
   native_sizes = readTsv(file.path(in_dir, 'native-sizes.tsv'))
-  raw_data = readTsv(file.path(in_dir, 'raw-data.tsv'))
+  #raw_data = readTsv(file.path(in_dir, 'raw-data.tsv'))
 
   times %>% filter(status != 0) -> failed
   if (nrow(failed) != 0) {
@@ -712,18 +739,6 @@ OvmBuildReport = function(in_dir, out_dir) {
 
   #print(times)
 
-  bytecode_size %>%
-    rename(bytecode_size = num_bytes) %>%
-    select(-c(path)) ->
-    bytecode_size
-
-  bin_sizes %>%
-    # reorder
-    select(c(host_label, path, num_bytes)) %>%
-    left_join(bytecode_size, by = c('host_label')) %>%
-    mutate(native_code_size = num_bytes - bytecode_size) ->
-    sizes
-
   # paths look like _tmp/ovm-build/bin/clang/oils_cpp.stripped
   native_sizes %>%
     select(c(host_label, path, num_bytes)) %>%
@@ -738,8 +753,6 @@ OvmBuildReport = function(in_dir, out_dir) {
 
   # NOTE: These don't have the host and compiler.
   writeTsv(times, file.path(out_dir, 'times'))
-  writeTsv(bytecode_size, file.path(out_dir, 'bytecode-size'))
-  writeTsv(sizes, file.path(out_dir, 'sizes'))
   writeTsv(native_sizes, file.path(out_dir, 'native-sizes'))
 
   # TODO: I want a size report too
@@ -964,6 +977,8 @@ MyCppReport = function(in_dir, out_dir) {
   # Don't care about elapsed and system
   times %>% select(-c(status, elapsed_secs, bin, task_out)) %>%
     mutate(example_name_HREF = mycppUrl(example_name),
+           gen = c('gen'),
+           gen_HREF = genUrl(example_name),
            user_ms = user_secs * 1000, 
            sys_ms = sys_secs * 1000, 
            max_rss_MB = max_rss_KiB * 1024 / 1e6) %>%

@@ -10,7 +10,7 @@ from core import alloc
 from core.error import e_usage, e_die
 from core import num
 from core import state
-from core import ui
+from display import ui
 from core import vm
 from frontend import args
 from frontend import consts
@@ -284,14 +284,12 @@ class Hay(vm._Builtin):
                 var_name = var_name[1:]
                 # TODO: This could be fatal?
 
-            cmd = typed_args.OptionalBlock(cmd_val)
-            if not cmd:  # 'package foo' is OK
-                e_usage('eval expected a block', loc.Missing)
+            cmd = typed_args.RequiredBlockAsFrag(cmd_val)
 
             with ctx_HayEval(self.hay_state, self.mutable_opts, self.mem):
                 # Note: we want all haynode invocations in the block to appear as
                 # our 'children', recursively
-                unused = self.cmd_ev.EvalCommand(cmd)
+                unused = self.cmd_ev.EvalCommandFrag(cmd)
 
             result = self.hay_state.Result()
 
@@ -411,10 +409,10 @@ class HayNode_(vm._Builtin):
                     with ctx_HayNode(self.hay_state, hay_name):
                         # Note: we want all haynode invocations in the block to appear as
                         # our 'children', recursively
-                        self.cmd_ev.EvalCommand(lit_block.brace_group)
+                        self.cmd_ev.EvalCommandFrag(lit_block.brace_group)
 
                     # Treat the vars as a Dict
-                    block_attrs = self.mem.TopNamespace()
+                    block_attrs = self.mem.CurrentFrame()
 
                 attrs = NewDict()  # type: Dict[str, value_t]
                 for name, cell in iteritems(block_attrs):

@@ -9,10 +9,10 @@ data_lang/py.*
 frontend/py.*\.py
 frontend/consts.py
 frontend/match.py
+mycpp/iolib.py
 mycpp/mops.py
 pgen2/grammar.py
 pgen2/pnode.py
 pgen2/token.py
 pylib/path_stat.py
 osh/bool_stat.py
-tea/

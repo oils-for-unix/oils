@@ -1,7 +1,7 @@
 ## oils_failures_allowed: 1
 
 #### Exact equality with === and !==
-shopt -s oil:all
+shopt -s ysh:all
 
 if (3 === 3) {
   echo 'ok'
@@ -39,7 +39,7 @@ ok
 ## END
 
 #### Approximate equality of Str x {Str, Int, Bool} with ~==
-shopt -s oil:all
+shopt -s ysh:all
 
 # Note: for now there's no !~== operator.  Use:   not (a ~== b)
 
@@ -53,6 +53,15 @@ if (' BAD ' ~== 'foo') {
 if ('3 ' ~== 3) {
   echo Str-Int
 }
+
+if ('-3 ' ~== -3) {
+  echo Str-Negative
+}
+
+if ('-3_456' ~== -3456) {
+  echo Str-Underscore
+}
+
 if ('4 ' ~== '3') {
   echo FAIL
 }
@@ -77,12 +86,14 @@ if (matrix === [true, true]) {
 ## STDOUT:
 Str-Str
 Str-Int
+Str-Negative
+Str-Underscore
 Str-Bool
 bool matrix
 ## END
 
 #### Wrong Types with ~==
-shopt -s oil:all
+shopt -s ysh:all
 
 # The LHS side should be a string
 
@@ -101,31 +112,38 @@ if (3 ~== 3) {
 one
 ## END
 
+#### === on float not allowed
 
-#### ~== on Float - TODO floatEquals()
-shopt -s oil:all
+$SH -c '
+shopt -s ysh:upgrade
+pp test_ (1.0 === 2.0)
+echo ok
+'
+echo status=$?
 
-if (42 ~== 42.0) {
-  echo int-float
-}
-if (42 ~== 43.0) {
-  echo FAIL
-}
+$SH -c '
+shopt -s ysh:upgrade
+pp test_ (42 === 3.0)
+echo ok
+'
+echo status=$?
 
-if ('42' ~== 42.0) {
-  echo str-float
-}
-if ('42' ~== 43.0) {
-  echo FAIL
-}
-
-if (42 ~== '42.0') {
-  echo int-str-float
-}
-if (42 ~== '43.0') {
-  echo FAIL
-}
 ## STDOUT:
+status=3
+status=3
+## END
+
+
+#### floatsEqual()
+
+var x = 42.0
+pp test_ (floatsEqual(42.0, x))
+
+pp test_ (floatsEqual(42.0, x + 1))
+
+## STDOUT:
+(Bool)   true
+(Bool)   false
 ## END
 
 #### Comparison converts from Str -> Int or Float
@@ -167,7 +185,7 @@ sf  i true
 ## END
 
 #### Comparison of Int 
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 
 if (1 < 2) {
   echo '<'
@@ -194,7 +212,7 @@ if (2 < 1) {
 ## END
 
 #### Comparison of Str does conversion to Int
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 
 if ('2' < '11') {
   echo '<'
@@ -222,7 +240,7 @@ if ('2' < '1') {
 
 
 #### Mixed Type Comparison does conversion to Int
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 
 if (2 < '11') {
   echo '<'
@@ -250,12 +268,17 @@ if (2 < '1') {
 
 
 #### Invalid String is an error
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 
-if ('3' < 'bar') {
-  echo no
+try {
+  = '3' < 'bar'
 }
-echo 'should not get here'
+echo code=$[_error.code]
+
+try {
+  = '3' < '123_4'
+}
+echo code=$[_error.code]
 
 ## status: 3
 ## STDOUT:
@@ -311,7 +334,7 @@ no
 
 #### List / "Tuple" comparison is not allowed
 
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 
 var t1 = 3, 0
 var t2 = 4, 0
@@ -355,7 +378,7 @@ var unimpl = [
     myexpr,  # Expr
     ^(echo hello),  # Block
     f,  # Func
-    mydict->keys,  # BoundFunc
+    ''.upper,  # BoundFunc
     # These cannot be constructed
     # - Proc
     # - Slice
@@ -380,3 +403,25 @@ case (myexpr) {
 ## status: 3
 ## STDOUT:
 ## END
+
+#### object identity
+
+var d = {}
+var s = 'str'
+
+pp test_ (d is d)
+pp test_ (d is not {})
+echo
+
+pp test_ (d is s)
+pp test_ (d is not s)
+
+## STDOUT:
+(Bool)   true
+(Bool)   true
+
+(Bool)   false
+(Bool)   true
+## END
+
+

@@ -3,28 +3,17 @@
 # POSIX shell script to install oils-for-unix into the proper directory.
 # Distributed with the source tarball.
 #
+# For usage, run:
+#
+#   ./install --help 
+#
 # Also shared with the old "oil.ovm" build.
 
 # NOTE: 'install' is part of coreutils and busybox.
 
-# The variable DESTDIR allows staged installs, where the installed files are
-# not placed directly into the location they're expected to be executed from.
-# They are placed in a temp dir first, which they are NOT expected to run out of.
-#
-# https://www.gnu.org/prep/standards/html_node/DESTDIR.html
-#
-# Staged installs are the default method of installation by package managers
-# such as gentoo-portage.
-#
-# https://devmanual.gentoo.org/quickstart/index.html
-
 # old tarball
-
 readonly OVM_NAME=oil.ovm
 readonly OVM_PATH=_bin/$OVM_NAME
-
-readonly OILS_PATH=_bin/cxx-opt-sh/oils-for-unix.stripped
-
 
 log() {
   # 4 space indent
@@ -108,13 +97,78 @@ install_bin_and_links() {
   log "Installed man page"
 }
 
-if test -f "$OVM_PATH"; then
-  # Python tarball keeps 'oil' for compatibility
-  install_bin_and_links "$OVM_PATH" "$OVM_NAME" osh ysh oil
-elif test -f "$OILS_PATH"; then
-  # new name is 'ysh', which points at oils-for-unix
-  install_bin_and_links "$OILS_PATH" 'oils-for-unix' osh ysh
-else
-  die "Couldn't find $OVM_PATH or $OILS_PATH"
-fi
+show_help() {
+  cat <<'EOF'
+Install the oils-for-unix binary, and symlinks to it, like osh.
 
+Usage:
+  ./install                                # install the stripped binary
+  ./install _bin/cxx-opt-sh/oils-for-unix  # or a given binary
+  ./install --help                         # show this help
+
+  DESTDIR=/tmp/foo ./install
+
+The DESTDIR var allows staged installs.  This means that the installed files
+are placed in a temp dir first, NOT the dir they are run from on the target
+machine.
+
+    https://www.gnu.org/prep/standards/html_node/DESTDIR.html
+
+Package managers such as gentoo-portage used staged installs by default.
+
+    https://devmanual.gentoo.org/quickstart/index.html
+
+EOF
+}
+
+
+FLAG_verbose=
+
+ARG_oils_binary=
+
+parse_flags() {
+  while true; do
+    case "$1" in
+      -h|--help)
+        show_help
+        exit 0
+        ;;
+      -v|--verbose)
+        FLAG_verbose=true
+        ;;
+      -*)
+        die "Invalid flag '$1'"
+        ;;
+      *)
+        # No more flags
+        break
+        ;;
+    esac
+    shift
+  done
+
+  # by default, install the stripped binary
+  ARG_oils_binary=${1:-_bin/cxx-opt-sh/oils-for-unix.stripped}
+}
+
+main() {
+  parse_flags "$@"  # sets FLAG_*, or prints help
+
+  if test -n "$FLAG_verbose"; then
+    log "Installing Oils binary $ARG_oils_binary"
+  fi
+
+  if test -f "$OVM_PATH"; then
+    # Python tarball keeps 'oil' for compatibility
+    install_bin_and_links "$OVM_PATH" "$OVM_NAME" osh ysh oil
+
+  elif test -f "$ARG_oils_binary"; then
+    # 'osh' and 'ysh' point at 'oils-for-unix'
+    install_bin_and_links "$ARG_oils_binary" 'oils-for-unix' osh ysh
+
+  else
+    die "Couldn't find $OVM_PATH or $ARG_oils_binary"
+  fi
+}
+
+main "$@"

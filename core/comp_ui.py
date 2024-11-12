@@ -1,9 +1,9 @@
 """comp_ui.py."""
 from __future__ import print_function
 
-from core import ansi
 from core import completion
-from data_lang import pretty
+from display import ansi
+from display import pp_value
 import libc
 
 from mycpp import mylib
@@ -12,7 +12,7 @@ from typing import Any, List, Optional, Dict, TYPE_CHECKING
 if TYPE_CHECKING:
     from frontend.py_readline import Readline
     from core.util import _DebugFile
-    from core import pyos
+    from mycpp import iolib
 
 # ANSI escape codes affect the prompt!
 # https://superuser.com/questions/301353/escape-non-printing-characters-in-a-function-for-a-bash-prompt
@@ -48,7 +48,7 @@ def _PromptLen(prompt_str):
             # mycpp: rewrite of +=
             display_str = display_str + c
     last_line = display_str.split('\n')[-1]
-    return pretty.TryUnicodeWidth(last_line)
+    return pp_value.TryUnicodeWidth(last_line)
 
 
 class PromptState(object):
@@ -316,7 +316,7 @@ class NiceDisplay(_IDisplay):
             prompt_state,  # type: PromptState
             debug_f,  # type: _DebugFile
             readline,  # type: Optional[Readline]
-            signal_safe,  # type: pyos.SignalSafe
+            signal_safe,  # type: iolib.SignalSafe
     ):
         # type: (...) -> None
         """

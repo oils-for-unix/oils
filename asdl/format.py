@@ -15,8 +15,9 @@ from typing import Tuple, List
 
 from _devbuild.gen.hnode_asdl import (hnode, hnode_e, hnode_t, color_e,
                                       color_t)
-from core import ansi
 from data_lang import j8_lite
+from display import ansi
+from display import pretty
 from pylib import cgi
 from mycpp import mylib
 
@@ -142,7 +143,7 @@ class HtmlOutput(ColorOutput):
         self.f.write("""
 <html>
   <head>
-     <title>oil AST</title>
+     <title>Oils AST</title>
      <style>
       .n { color: brown }
       .s { font-weight: bold }
@@ -516,3 +517,19 @@ def PrintTree(node, f):
     # type: (hnode_t, ColorOutput) -> None
     pp = _PrettyPrinter(100)  # max_col
     pp.PrintNode(node, f, 0)  # indent
+
+
+def PrintTree2(node, f):
+    # type: (hnode_t, ColorOutput) -> None
+    """
+    Make sure dependencies aren't a problem
+
+    TODO: asdl/pp_hnode.py, which is like display/pp_value.py
+    """
+    doc = pretty.AsciiText('foo')
+    printer = pretty.PrettyPrinter(20)
+
+    buf = mylib.BufWriter()
+    printer.PrintDoc(doc, buf)
+    f.write(buf.getvalue())
+    f.write('\n')

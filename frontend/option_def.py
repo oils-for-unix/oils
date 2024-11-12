@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 from __future__ import print_function
 
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Tuple, Any
 
 
 class Option(object):
@@ -69,6 +69,7 @@ _OTHER_SET_OPTIONS = [
     ('v', 'verbose'),  # like xtrace, but prints unevaluated commands
     ('f', 'noglob'),
     ('C', 'noclobber'),
+    ('E', 'errtrace'),
 
     # A no-op for modernish.
     (None, 'posix'),
@@ -127,9 +128,8 @@ _UPGRADE_RUNTIME_OPTS = [
     # Whether status 141 in pipelines is turned into 0
     ('sigpipe_status_ok', False),
 
-    # This applies to shell functions too
-    # It's also turned on in interactive mode
-    ('redefine_proc_func', True),
+    # create ENV at startup; read from it when starting processes
+    ('env_obj', False),
 ]
 
 # TODO: Add strict_arg_parse?  For example, 'trap 1 2 3' shouldn't be
@@ -137,6 +137,8 @@ _UPGRADE_RUNTIME_OPTS = [
 # checking this.
 
 _YSH_RUNTIME_OPTS = [
+    ('no_exported', False),  # don't initialize or use exported variables
+    ('no_init_globals', False),  # don't initialize PWD, COMP_WORDBREAKS, etc.
     ('simple_echo', False),  # echo takes 0 or 1 arguments
     ('simple_eval_builtin', False),  # eval takes exactly 1 argument
 
@@ -185,8 +187,6 @@ _YSH_PARSE_OPTS = [
 
 # No-ops for bash compatibility
 _NO_OPS = [
-    'lastpipe',  # this feature is always on
-
     # Handled one by one
     'progcomp',
     'histappend',  # stubbed out for issue #218
@@ -273,6 +273,9 @@ def _Init(opt_def):
     # bash --norc -c 'set -o' shows this is on by default
     opt_def.Add('hashall', short_flag='h', builtin='set', default=True)
 
+    # This option is always on
+    opt_def.Add('lastpipe', default=True)
+
     #
     # shopt
     # (bash uses $BASHOPTS rather than $SHELLOPTS)
@@ -287,7 +290,7 @@ def _Init(opt_def):
     opt_def.Add('eval_unsafe_arith')
 
     opt_def.Add('ignore_flags_not_impl')
-    opt_def.Add('ignore_opts_not_impl')
+    opt_def.Add('ignore_shopt_not_impl')
 
     # For implementing strict_errexit
     # TODO: could be _no_command_sub / _no_process_sub, if we had to discourage
@@ -299,9 +302,8 @@ def _Init(opt_def):
     opt_def.Add('dynamic_scope', default=True)
 
     # On in interactive shell
-    opt_def.Add('redefine_module', default=False)
-    # Hm these aren't the same?
-    #opt_def.Add('redefine_proc_func', default=False),
+    opt_def.Add('redefine_const', default=False)
+    opt_def.Add('redefine_source', default=False)
 
     # For disabling strict_errexit while running traps.  Because we run in the
     # main loop, the value can be "off".  Prefix with _ because it's undocumented
@@ -324,6 +326,7 @@ def _Init(opt_def):
     # Options that enable YSH features
     #
 
+    #opt_def.Add('no_exported')  # TODO: move this
     for name in _UPGRADE_PARSE_OPTS:
         opt_def.Add(name, groups=['ysh:upgrade', 'ysh:all'])
     # shopt -s simple_word_eval, etc.
@@ -364,9 +367,15 @@ def ArraySize():
 
 
 def OptionDict():
-    # type: () -> Dict[str, int]
-    """For the slow path in frontend/match.py."""
-    return dict((opt.name, opt.index) for opt in _OPTION_DEF.opts)
+    # type: () -> Dict[str, Tuple[int, bool]]
+    """Implemented options.
+
+    For the slow path in frontend/consts.py
+    """
+    d = {}
+    for opt in _OPTION_DEF.opts:
+        d[opt.name] = (opt.index, opt.implemented)
+    return d
 
 
 def ParseOptNames():

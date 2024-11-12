@@ -17,17 +17,16 @@ from core import state
 from core import vm
 from frontend import flag_util
 from frontend import args
-from mycpp import mylib
 from mycpp.mylib import log
 from osh import cmd_eval
 from osh import sh_expr_eval
 from data_lang import j8_lite
 
-from typing import cast, Optional, Dict, List, TYPE_CHECKING
+from typing import cast, Optional, List, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.state import Mem
     from core import optview
-    from core import ui
+    from display import ui
     from frontend.args import _Attributes
 
 _ = log
@@ -159,7 +158,6 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
 
         if val.tag() == value_e.Str:
             str_val = cast(value.Str, val)
-            # TODO: Use fastfunc.ShellEncode()
             decl.extend(["=", j8_lite.MaybeShellEncode(str_val.s)])
 
         elif val.tag() == value_e.BashArray:
@@ -255,6 +253,12 @@ class Export(vm._AssignBuiltin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Assign) -> int
+        if self.mem.exec_opts.no_exported():
+            self.errfmt.Print_(
+                'export builtin is disabled in YSH (shopt --set no_exported)',
+                cmd_val.arg_locs[0])
+            return 1
+
         arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
         arg_r.Next()
         attrs = flag_util.Parse('export_', arg_r)
@@ -363,7 +367,7 @@ class NewVar(vm._AssignBuiltin):
     """declare/typeset/local."""
 
     def __init__(self, mem, procs, exec_opts, errfmt):
-        # type: (Mem, Dict[str, value.Proc], optview.Exec, ui.ErrorFormatter) -> None
+        # type: (Mem, state.Procs, optview.Exec, ui.ErrorFormatter) -> None
         self.mem = mem
         self.procs = procs
         self.exec_opts = exec_opts
@@ -373,7 +377,7 @@ class NewVar(vm._AssignBuiltin):
         # type: (List[str]) -> int
         status = 0
         for name in names:
-            if name in self.procs:
+            if self.procs.GetShellFunc(name):
                 print(name)
                 # TODO: Could print LST for -f, or render LST.  Bash does this.  'trap'
                 # could use that too.
@@ -407,7 +411,7 @@ class NewVar(vm._AssignBuiltin):
                 status = self._PrintFuncs(names)
             else:
                 # bash quirk: with no names, they're printed in a different format!
-                for func_name in sorted(self.procs):
+                for func_name in self.procs.ShellFuncNames():
                     print('declare -f %s' % (func_name))
             return status
 
@@ -496,7 +500,7 @@ class Unset(vm._Builtin):
     def __init__(
             self,
             mem,  # type: state.Mem
-            procs,  # type: Dict[str, value.Proc]
+            procs,  # type: state.Procs
             unsafe_arith,  # type: sh_expr_eval.UnsafeArith
             errfmt,  # type: ui.ErrorFormatter
     ):
@@ -526,7 +530,7 @@ class Unset(vm._Builtin):
             return False
 
         if proc_fallback and not found:
-            mylib.dict_erase(self.procs, arg)
+            self.procs.EraseShellFunc(arg)
 
         return True
 
@@ -540,7 +544,7 @@ class Unset(vm._Builtin):
             location = arg_locs[i]
 
             if arg.f:
-                mylib.dict_erase(self.procs, name)
+                self.procs.EraseShellFunc(name)
 
             elif arg.v:
                 if not self._UnsetVar(name, location, False):

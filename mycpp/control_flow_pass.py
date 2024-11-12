@@ -50,7 +50,9 @@ class Build(SimpleVisitor):
         self.virtual = virtual
         self.local_vars = local_vars
         self.dot_exprs = dot_exprs
+        self.heap_counter = 0
         self.callees = {}  # statement object -> SymbolPath of the callee
+        self.current_lval = None
 
     def current_cfg(self):
         if not self.current_func_node:
@@ -145,7 +147,7 @@ class Build(SimpleVisitor):
         # Don't currently get here
         raise AssertionError()
 
-    def get_variable_name(self, expr: Expression) -> Optional[util.SymbolPath]:
+    def get_ref_name(self, expr: Expression) -> Optional[util.SymbolPath]:
         """
         To do dataflow analysis we need to track changes to objects, which
         requires naming them. This function returns the name of the object
@@ -207,19 +209,23 @@ class Build(SimpleVisitor):
                 return dot_expr.module_path + (dot_expr.member, )
 
             elif isinstance(dot_expr, pass_state.HeapObjectMember):
-                return GetObjectTypeName(
-                    dot_expr.object_type) + (dot_expr.member, )
+                obj_name = self.get_ref_name(dot_expr.object_expr)
+                if obj_name:
+                    # XXX: add a new case like pass_state.ExpressionMember for
+                    # cases when the LHS of . isn't a reference (e.g.
+                    # builtin/assign_osh.py:54)
+                    return obj_name + (dot_expr.member, )
 
             elif isinstance(dot_expr, pass_state.StackObjectMember):
-                return GetObjectTypeName(
-                    dot_expr.object_type) + (dot_expr.member, )
+                return self.get_ref_name(
+                    dot_expr.object_expr) + (dot_expr.member, )
 
         elif isinstance(expr, IndexExpr):
             if isinstance(self.types[expr.base], TupleType):
                 assert isinstance(expr.index, IntExpr)
-                return self.get_variable_name(expr.base) + (str(expr.index.value),)
+                return self.get_ref_name(expr.base) + (str(expr.index.value), )
 
-            return self.get_variable_name(expr.base)
+            return self.get_ref_name(expr.base)
 
         return None
 
@@ -348,7 +354,8 @@ class Build(SimpleVisitor):
         self.current_func_node = o
         cfg = self.current_cfg()
         for arg in o.arguments:
-            cfg.AddFact(0, pass_state.Definition((arg.variable.name,)))
+            cfg.AddFact(0,
+                        pass_state.Definition((arg.variable.name, ), '$Empty'))
 
         self.accept(o.body)
         self.current_func_node = None
@@ -439,10 +446,10 @@ class Build(SimpleVisitor):
             lval_names = []
             if isinstance(lval, TupleExpr):
                 lval_names.extend(
-                    [self.get_variable_name(item) for item in lval.items])
+                    [self.get_ref_name(item) for item in lval.items])
 
             else:
-                lval_names.append(self.get_variable_name(lval))
+                lval_names.append(self.get_ref_name(lval))
 
             assert lval_names, o
 
@@ -464,20 +471,20 @@ class Build(SimpleVisitor):
                     base + (str(i), ) for i in range(len(o.rvalue.items))
                 ]
                 rval_names = [
-                    self.get_variable_name(item) for item in o.rvalue.items
+                    self.get_ref_name(item) for item in o.rvalue.items
                 ]
 
             elif isinstance(rval_type, TupleType):
                 # We're unpacking a tuple. Like the tuple construction case,
                 # give each element a name.
-                rval_name = self.get_variable_name(o.rvalue)
+                rval_name = self.get_ref_name(o.rvalue)
                 assert rval_name, o.rvalue
                 rval_names = [
                     rval_name + (str(i), ) for i in range(len(lval_names))
                 ]
 
             else:
-                rval_names = [self.get_variable_name(o.rvalue)]
+                rval_names = [self.get_ref_name(o.rvalue)]
 
             assert len(rval_names) == len(lval_names)
 
@@ -494,15 +501,42 @@ class Build(SimpleVisitor):
                     # statement as an (re-)definition of a variable.
                     cfg.AddFact(
                         self.current_statement_id,
-                        pass_state.Definition(lhs),
+                        pass_state.Definition(
+                            lhs, '$HeapObject(h{})'.format(self.heap_counter)),
                     )
+                    self.heap_counter += 1
 
         for lval in o.lvalues:
+            self.current_lval = lval
             self.accept(lval)
+            self.current_lval = None
 
         self.accept(o.rvalue)
 
     # Expressions
+
+    def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> T:
+        self.accept(o.expr)
+        cfg = self.current_cfg()
+        if (cfg and
+                not isinstance(self.dot_exprs[o], pass_state.ModuleMember) and
+                o != self.current_lval):
+            ref = self.get_ref_name(o)
+            if ref:
+                cfg.AddFact(self.current_statement_id, pass_state.Use(ref))
+
+    def visit_name_expr(self, o: 'mypy.nodes.NameExpr') -> T:
+        cfg = self.current_cfg()
+        if cfg and o != self.current_lval:
+            is_local = False
+            for name, t in self.local_vars.get(self.current_func_node, []):
+                if name == o.name:
+                    is_local = True
+                    break
+
+            ref = self.get_ref_name(o)
+            if ref and is_local:
+                cfg.AddFact(self.current_statement_id, pass_state.Use(ref))
 
     def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> T:
         cfg = self.current_cfg()
@@ -513,6 +547,12 @@ class Build(SimpleVisitor):
                 cfg.AddFact(
                     self.current_statement_id,
                     pass_state.FunctionCall(join_name(full_callee, delim='.')))
+
+                for i, arg in enumerate(o.args):
+                    arg_ref = self.get_ref_name(arg)
+                    if arg_ref:
+                        cfg.AddFact(self.current_statement_id,
+                                    pass_state.Bind(arg_ref, full_callee, i))
 
         self.accept(o.callee)
         for arg in o.args:

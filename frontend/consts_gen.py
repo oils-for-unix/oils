@@ -370,6 +370,7 @@ id_kind_asdl::Kind GetKind(id_kind_asdl::Id_t id);
 
 types_asdl::opt_group_t OptionGroupNum(BigStr* s);
 option_asdl::option_t OptionNum(BigStr* s);
+option_asdl::option_t UnimplOptionNum(BigStr* s);
 option_asdl::builtin_t LookupNormalBuiltin(BigStr* s);
 option_asdl::builtin_t LookupAssignBuiltin(BigStr* s);
 option_asdl::builtin_t LookupSpecialBuiltin(BigStr* s);
@@ -492,8 +493,14 @@ Kind GetKind(id_kind_asdl::Id_t id) {
             GenStringLookup('types_asdl::opt_group_t', 'OptionGroupNum', pairs,
                             f)
 
-            pairs = [(opt.name, opt.index) for opt in option_def.All()]
+            pairs = [(opt.name, opt.index) for opt in option_def.All()
+                     if opt.implemented]
+            #pairs = [(opt.name, opt.index) for opt in option_def.All()]
             GenStringLookup('option_asdl::option_t', 'OptionNum', pairs, f)
+            pairs2 = [(opt.name, opt.index) for opt in option_def.All()
+                      if not opt.implemented]
+            GenStringLookup('option_asdl::option_t', 'UnimplOptionNum', pairs2,
+                            f)
 
             GenBuiltinLookup('LookupNormalBuiltin', 'normal', f)
             GenBuiltinLookup('LookupAssignBuiltin', 'assign', f)
@@ -570,7 +577,10 @@ Tuple2<state_t, emit_t> IfsEdge(state_t state, runtime_asdl::char_kind_t ch) {
                 import json
                 return json.dumps(s)
 
-            GLOBAL_STRINGS = ['ASSIGN_ARG_RE', 'TEST_V_RE']
+            GLOBAL_STRINGS = [
+                'ASSIGN_ARG_RE',
+                'TEST_V_RE',
+            ]
             for var_name in GLOBAL_STRINGS:
                 out('GLOBAL_STR(%s, %s);', var_name,
                     _CString(getattr(consts, var_name)))

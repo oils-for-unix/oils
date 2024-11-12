@@ -1,0 +1,64 @@
+#!bin/ysh
+
+use $LIB_YSH/math.ysh --pick max min abs
+
+# Change to 'use'?
+source $LIB_OSH/byo-server.sh
+
+proc test-identity {
+
+  assert [42 === math.identity(42)]
+
+  var mylist = [3, 4, 5]
+  assert [mylist === math.identity(mylist)]
+
+  var mydict = {foo: 'bar'}
+  assert [mydict === math.identity(mydict)]
+}
+
+proc test-max {
+  assert [2 === max(1, 2)]
+  assert [3 === max([1, 2, 3])]
+
+  try { call max([]) }
+  assert [3 === _error.code]
+   
+  try { call max(1, 2) }
+  assert [0 === _error.code]
+   
+  try { call max(1, 2, 3) }
+  assert [3 === _error.code]
+   
+  try { call max() }
+  assert [3 === _error.code]
+}
+
+proc test-min {
+  assert [2 === min(2, 3)]
+  assert [1 === min([1, 2, 3])]
+
+  try { call min([]) }
+  assert [3 === _error.code]
+
+  try { call min(2, 3) }
+  assert [0 === _error.code]
+
+  try { call min(1, 2, 3) }
+  assert [3 === _error.code]
+
+  try { call min() }
+  assert [3 === _error.code]
+}
+
+proc test-abs {
+  assert [1 === abs(-1)]
+  assert [0 === abs(0)]
+  assert [1 === abs(1)]
+  assert [42 === abs(42)]
+  assert [42 === abs(-42)]
+}
+
+if is-main {
+  byo-maybe-run
+}
+

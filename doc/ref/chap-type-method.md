@@ -42,20 +42,51 @@ See [sh-assoc][] for details.  In YSH, prefer to use [Dict](#Dict) instances.
 
 [sh-assoc]: chap-osh-assign.html#sh-assoc
 
-## Atom Types
+## Atoms
+
+<!-- TODO:
+true and false should be SINGLETONS
+null is already a singleton
+-->
 
 ### Null
+
+An `Obj` instance representing the `Null` type.
 
 The `Null` type has a single value spelled `null`.  (Related:
 [atom-literal][]).
 
 [atom-literal]: chap-expr-lang.html#atom-literal
 
+### null
+
+A value that's not equal to any other.  Values that aren't explicitly
+initialized are `null`, e.g.
+
+    var x
+    = x  # => (Null)   null
+
+Its type is `Null`.
+
 ### Bool
 
-The `Bool` type has 2 values: `true` and `false`.  (Related: [atom-literal][]).
+An `Obj` instance representing the boolean type.
 
-## Number Types
+This type has 2 values: `true` and `false`.  (Related: [atom-literal][]).
+
+### expr/true
+
+A single value representing truth, e.g.
+
+    = 42 === 42  # => true
+
+### expr/false
+
+A single value representing the opposite of truth, e.g.
+
+    = 42 === 3  # => false
+
+## Numbers
 
 ### Int
 
@@ -72,15 +103,22 @@ integers.  But you can use a "real" integer type in YSH.
 
 ### Float
 
-Floats are at least 32 bits wide.
-
-See [float-literal][] for how to denote them.
+YSH has 64-bit floating point numbers.  See [float-literal][] for how to denote
+them.
 
 [float-literal]: chap-expr-lang.html#float-literal
 
-<!-- TODO: reduce from 64-bit to 32-bit -->
+### Range
+  
+A `Range` is a pair of two numbers, used for iteration.  See [range][] for how
+to denote them.
 
-## Str
+Ranges are used for iteration; see [ysh-for][].
+
+[range]: chap-expr-lang.html#range
+[ysh-for]: chap-cmd-lang.html#ysh-for
+
+## String
 
 In Oils, strings may contains any sequence of bytes, which may be UTF-8
 encoded.
@@ -93,7 +131,25 @@ NUL-terminated strings.
 
 [cd]: chap-builtin-cmd.html#cd
 
+### Str
+
+An `Obj` instance representing the string type.
+
 ### find()
+
+TODO:
+
+    var i = mystr.find('foo')
+
+Similar to
+
+    = 'foo' in mystr
+
+Both of them do substring search.
+
+Also similar to `mystr.search(eggex)`.
+
+<!-- Python also has start, end indices, to reduce allocations -->
 
 ### replace()
 
@@ -142,6 +198,13 @@ The following matrix of signatures are supported by `replace()`:
     s => replace(string_val, subst_expr)
     s => replace(eggex_val, subst_str)
     s => replace(eggex_val, subst_expr)
+
+Replacing by an `Eggex` has some limitations:
+
+- If a `search()` results in an empty string match, eg.
+  `'abc'.split(/ space* /)`, then we raise an error to avoid an infinite loop.
+- The string to replace on cannot contain NUL bytes because we use the libc
+  regex engine.
 
 ### startsWith()
 
@@ -256,7 +319,96 @@ The `%start` or `^` metacharacter will only match when `pos` is zero.
 
 (Similar to Python's `re.match()`.)
 
-## List
+### split()
+
+Split a string by a `Str` separator `sep` into a `List` of chunks.
+
+    pp ('a;b;;c'.split(';'))       # => ["a", "b", "", "c"]
+    pp ('a<>b<>c<d'.split('<>'))   # => ["a", "b", "c<d"]
+    pp ('🌞🌝🌞🌝🌞'.split('🌝'))  # => ["🌞", "🌞", "🌞"]
+
+Or split using an `Eggex`.
+
+    pp ('a b  cd'.split(/ space+ /))   # => ["a", "b", "cd"]
+    pp ('a,b;c'.split(/ ',' | ';' /))  # => ["a", "b", "c"]
+
+Optionally, provide a `count` to split on `sep` at most `count` times. A
+negative `count` will split on all occurrences of `sep`.
+
+    pp ('a;b;;c'.split(';', count=2))   # => ["a", "b", ";c"]
+    pp ('a;b;;c'.split(';', count=-1))  # => ["a", "b", "", "c"]
+
+Passing an empty `sep` will result in an error.
+
+    pp ('abc'.split(''))  # => Error: Sep cannot be ""
+
+Splitting by an `Eggex` has some limitations:
+
+- If a `search()` results in an empty string match, eg.
+  `'abc'.split(/ space* /)`, then we raise an error to avoid an infinite loop.
+- The string to split cannot contain NUL bytes because we use the libc regex
+  engine.
+
+## Patterns
+
+### Eggex
+
+An `Eggex` is a composable regular expression.  It can be spliced into other
+regular expressions.
+
+### Match
+
+A `Match` is the result searching for an `Eggex` within a `Str`.
+
+### group()
+
+Returns the string that matched a regex capture group.  Group 0 is the entire
+match.
+
+    var m = '10:59' => search(/ ':' <capture d+> /)
+    echo $[m => group(0)]  # => ':59'
+    echo $[m => group(1)]  # => '59'
+
+Matches can be named with `as NAME`:
+
+    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
+
+And then accessed by the same name:
+
+    echo $[m => group('minute')]  # => '59'
+
+<!--
+    var m = '10:59' => search(/ ':' <capture d+ as minutes: int> /)
+-->
+
+### start()
+
+Like `group()`, but returns the **start** position of a regex capture group,
+rather than its value.
+
+    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
+    echo $[m => start(0)]         # => position 2 for ':59'
+    echo $[m => start(1)]         # => position 3 for '59'
+
+    echo $[m => start('minute')]  # => position 3 for '59'
+
+### end()
+
+Like `group()`, but returns the **end** position of a regex capture group,
+rather than its value.
+
+    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
+    echo $[m => end(0)]         # => position 5 for ':59'
+    echo $[m => end(1)]         # => position 5 for '59'
+
+    echo $[m => end('minute')]  # => 5 for '59'
+
+
+## Containers
+
+### List
+
+An `Obj` instance representing the `List` type.
 
 A List contains an ordered sequence of values.
 
@@ -310,104 +462,62 @@ Reverses a list in place.
     call fruits->reverse()
     echo @fruits  # => pear banana apple
 
-## Dict
+### List/clear()
+
+TODO:
+
+Remove all entries from the List:
+
+    call mylist->clear()
+  
+
+### Dict
+
+An `Obj` instance representing the `Dict` type.
 
 A Dict contains an ordered sequence of key-value pairs.  Given the key, the
 value can be retrieved efficiently.
 
-### keys()
-
-Returns all existing keys from a dict as a list of strings.
-
-    var en2fr = {
-      hello: "bonjour",
-      friend: "ami",
-      cat: "chat"
-    }
-    = en2fr => keys()
-    # => (List 0x4689)   ["hello","friend","cat"]
-
-### values()
-
-Similar to `keys()`, but returns the values of the dictionary.
-
-    var person = {
-      name: "Foo",
-      age: 25,
-      hobbies: :|walking reading|
-    }
-    = en2fr => values()]
-    # => (List 0x4689)   ["Foo",25,["walking","reading"]]
-
-### get()
-
 ### erase()
 
-### inc()
+Ensures that the given key does not exist in the dictionary.
+
+    var book = {
+      title: "The Histories",
+      author: "Herodotus",
+    }
+    = book
+    # => (Dict)   {title: "The Histories", author: "Herodotus"}
+
+    call book->erase("author")
+    = book
+    # => (Dict)   {title: "The Histories"}
+
+    # repeating the erase call does not cause an error
+    call book->erase("author")
+    = book
+    # => (Dict)   {title: "The Histories"}
 
 ### accum()
 
-## Range
-  
-A `Range` is a pair of two numbers, like `42 .. 45`.
+TODO:
 
-Ranges are used for iteration; see [ysh-for][].
+    call mydict->accum('key', 'string to append')
 
-[ysh-for]: chap-cmd-lang.html#ysh-for
+Similar:
 
-## Eggex
+    setvar mydict['k'] += 3  # TODO: default value of 0
 
-An `Eggex` is a composable regular expression.  It can be spliced into other
-regular expressions.
 
-## Match
+### Dict/clear()
 
-A `Match` is the result searching for an `Eggex` within a `Str`.
+TODO:
 
-### group()
+Remove all entries from the Dict:
 
-Returns the string that matched a regex capture group.  Group 0 is the entire
-match.
+    call mydict->clear()
 
-    var m = '10:59' => search(/ ':' <capture d+> /)
-    echo $[m => group(0)]  # => ':59'
-    echo $[m => group(1)]  # => '59'
-
-Matches can be named with `as NAME`:
-
-    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
-
-And then accessed by the same name:
-
-    echo $[m => group('minute')]  # => '59'
-
-<!--
-    var m = '10:59' => search(/ ':' <capture d+ as minutes: int> /)
--->
-
-### start()
-
-Like `group()`, but returns the **start** position of a regex capture group,
-rather than its value.
-
-    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
-    echo $[m => start(0)]         # => position 2 for ':59'
-    echo $[m => start(1)]         # => position 3 for '59'
-
-    echo $[m => start('minute')]  # => position 3 for '59'
-
-### end()
-
-Like `group()`, but returns the **end** position of a regex capture group,
-rather than its value.
-
-    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
-    echo $[m => end(0)]         # => position 5 for ':59'
-    echo $[m => end(1)]         # => position 5 for '59'
-
-    echo $[m => end('minute')]  # => 5 for '59'
-
-## Place
+### Place
 
 ### setValue()
 
@@ -421,26 +531,11 @@ A Place is used as an "out param" by calling setValue():
     p (&x)
     echo x=$x  # => x=hi
 
-
 ## Code Types
 
-### Expr
+### Func
 
-An unevaluated expression.  You can create an `Expr` with an expression literal
-([expr-literal][]):
-
-    var expr = ^[42 + a[i]]
-
-[expr-literal]: chap-expr-lang.html#expr-lit
-
-### Command
-
-An unevaluated command.  You can create a `Command` with a "block expression"
-([block-expr][]):
-
-    var block = ^(echo $PWD; ls *.txt)
-
-[block-expr]: chap-expr-lang.html#block-expr
+User-defined functions.
 
 ### BuiltinFunc
 
@@ -456,31 +551,210 @@ The [thin-arrow][] and [fat-arrow][] create bound funcs:
 [thin-arrow]: chap-expr-lang.html#thin-arrow
 [fat-arrow]: chap-expr-lang.html#thin-arrow
 
-## Func
-
-User-defined functions.
-
-## Proc
+### Proc
 
 User-defined procs.
 
-## Module
+### BuiltinProc
 
-TODO:
+A builtin proc, aka builtin command, like `module-invoke`.
 
-A module is a file with YSH code.
+## Objects
 
-<!-- can it be a directory or tree of files too? -->
+### Obj
 
-## IO
+An instance of `Obj`, representing the `Obj` type.
+
+TODO: make it callable.
+
+### `__invoke__`
+
+<!-- copied from doc/proc-func-md -->
+
+The `__invoke__` meta-method makes an Object "proc-like".
+
+First, define a proc, with the first typed arg named `self`:
+
+    proc myInvoke (word_param; self, int_param) {
+      echo "sum = $[self.x + self.y + int_param]"
+    }
+
+Make it the `__invoke__` method of an `Obj`:
+
+    var methods = Object(null, {__invoke__: myInvoke})
+    var invokable_obj = Object(methods, {x: 1, y: 2})
+
+Then invoke it like a proc:
+
+    invokable_obj myword (3)
+    # sum => 6
+
+### new
+
+Create an object:
+
+    var methods = Obj.new({mymethod: foo}, null)
+    var instance = Obj.new({x: 3, y: 4}, methods)
+
+TODO: This will become `Obj.__call__`, which means it's written `Obj`.
+
+### `__call__`
+
+TODO
+
+### `__index__`
+
+The `__index__` meta-method controls what happens when `obj[x]` is evaluated.
+
+It's currently used for type objects:
+
+    var t = Dict[Str, Int]
+    assert [t is Dict[Str, Int]]  # always evaluates to the same instance
+
+### `__str__`
+
+TODO
+
+
+## Reflection
+
+### Command
+
+An unevaluated command.  You can create a `Command` with a "block expression"
+([block-expr][]):
+
+    var block = ^(echo $PWD; ls *.txt)
+
+The Command is bound to a stack frame.  This frame will be pushed as an
+"enclosed frame" when the command is evaluated.
+
+[block-expr]: chap-expr-lang.html#block-expr
+
+### CommandFrag
+
+A command that's not bound to a stack frame.
+
+### Expr
+
+An unevaluated expression.  You can create an `Expr` with an expression literal
+([expr-literal][]):
+
+    var expr = ^[42 + a[i]]
+
+The Command is bound to a stack frame.  This frame will be pushed as an
+"enclosed frame" when the expression is evaluated.
+
+[expr-literal]: chap-expr-lang.html#expr-lit
+
+<!--
+
+### ExprFrag
+
+An expression command that's not bound to a stack frame.
+
+(TODO)
+
+-->
+
+### Frame
+
+A value that represents a stack frame.  It can be bound to a `CommandFrag`,
+producing a `Command`.
+
+Likewise, it can be found to a `ExprFrag`, producing an `Expr`.
+
+
+### io
+
+### stdin
+
+Returns the singleton `stdin` value, which you can iterate over:
+
+    for line in (io.stdin) {
+       echo $line
+    }
+
+This is buffered line-based I/O, as opposed to the unbuffered I/O of the `read`
+builtin.
+
+### evalExpr()
+
+Given an `Expr` value, evaluate it and return its value:
+
+    $ var i = 42
+    $ var expr = ^[i + 1] 
+
+    $ = io->evalExpr(expr)
+    43
+
+Examples of expressions that have effects:
+
+- `^[ myplace->setValue(42) ]` - memory operation
+- `^[ $(echo 42 > hi) ]` - I/O operation
 
 ### eval()
 
-Like the `eval` builtin, but useful in pure functions.
+Evaluate a command, and return `null`.
+
+    var cmd = ^(echo hi)
+    call io->eval(cmd)
+
+It's similar to the `eval` builtin, and is meant to be used in pure functions.
+
+You can also bind:
+
+- positional args `$1 $2 $3`
+- dollar0 `$0`
+- named variables
+
+Examples:
+
+    var cmd = ^(echo "zero $0, one $1, named $x")
+    call io->eval(cmd, dollar0="z", pos_args=['one'], vars={x: "x"})
+    # => zero z, one one, named x
+
+<!--
+TODO: We should be able to bind positional args, env vars, and inspect the
+shell VM.
+
+Though this runs in the same VM, not a new one.
+-->
+
+### evalToDict()
+
+The `evalToDict()` method is like the `eval()` method, but it returns a
+Dict of bindings.
+
+It pushes a new "enclosed frame", and executes the given code.
+
+Then it copies the frame's bindings into a Dict, and returns it.  Only the
+names that don't end with an underscore `_` are copied.
+
+Example:
+
+    var x = 10  # captured
+    var cmd = ^(var a = 42; var hidden_ = 'h'; var b = x + 1)
+
+    var d = io->evalToDict(cmd)
+
+    pp (d)  # => {a: 42, b: 11}
 
 ### captureStdout()
 
-Like `$()`, but useful in pure functions.
+Capture stdout of a command a string.
+
+    var c = ^(echo hi)
+    var stdout_str = _io.captureStdout(c)  # => "hi"
+
+It's like `$()`, but useful in pure functions.  Trailing newlines `\n` are
+removed.
+
+If the command fails, `captureStdout()` raises an error, which can be caught
+with `try`.
+
+    try {
+      var s = _io->captureStdout(c)
+    }
 
 ### promptVal()
 
@@ -488,8 +762,8 @@ An API the wraps the `$PS1` language.  For example, to simulate `PS1='\w\$ '`:
 
     func renderPrompt(io) {
       var parts = []
-      call parts->append(io->promptval('w'))  # pass 'w' for \w
-      call parts->append(io->promptval('$'))  # pass '$' for \$
+      call parts->append(io.promptval('w'))  # pass 'w' for \w
+      call parts->append(io.promptval('$'))  # pass '$' for \$
       call parts->append(' ')
       return (join(parts))
     }
@@ -509,4 +783,31 @@ database), and then C strftime().
 
 TODO: The free function glob() actually does I/O.  Although maybe it doesn't
 fail?
+
+### vm
+
+An object with functions for introspecting the Oils VM.
+
+### getFrame()
+
+Given an index, get a handle to a call stack frame.
+
+    var frame = vm.getFrame(0)   # global frame
+    var frame = vm.getFrame(1)   # first frame pushed on the global frame
+
+    var frame = vm.getFrame(-1)  # the current frame, aka local frame
+    var frame = vm.getFrame(-2)  # the calling frame
+
+If the index is out of range, an error is raised.
+
+### id()
+
+Returns an integer ID for mutable values like List, Dict, and Obj.
+
+    = vm.id({})
+    (Int)  123
+
+You can use it to test if two names refer to the same instance.
+
+`vm.id()` is undefined on immutable values like Bool, Int, Float, Str, etc.
 

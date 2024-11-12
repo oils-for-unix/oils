@@ -83,11 +83,6 @@ These styles don't work in YSH:
     echo -e "tab \\t newline \\n"   # NO: -e is printed literally
     echo -e "tab \t newline \n"     #     Error: Invalid char escape
 
-To mix backslash escapes and var substitution, use the concatenation operator
-`++`:
-
-    echo $[u'tab \t' ++ " $year/$month/$day"]
-
 To omit the trailing newline, use the `write` builtin:
 
     write -n       -- $prefix       # YES
@@ -121,6 +116,23 @@ So `echo` is technically superfluous in YSH, but it's also short, familiar, and
 correct.
 
 YSH isn't intended to be compatible with POSIX shell; only OSH is.
+
+### How do I write a string literal with both `$myvar` and `\n`?
+
+In YSH, either use `$[ \n ]` inside a double-quoted string:
+
+    $ echo "$myvar $[ \n ] two"  # expression sub wraps \n
+    value_of_myvar
+    two
+
+Or use the concatenation operator `++` with two styles of string literal:
+
+    echo $[u'newline \n' ++ " $year/$month/$day"]
+
+This POSIX shell behavior is probably not what you want:
+
+    $ echo "\n"
+    \n  # not a newline!
 
 ### How do I find all the `echo` invocations I need to change when using YSH?
 
@@ -192,6 +204,56 @@ The issue is the same as above.  YSH expression are allowed within `$[]` but
 not `${}`.
 
 -->
+
+## How do I combine conditional commands and expressions: `if (myvar)` and `if test -f`?
+
+You can use the `--true` and `--false` flags to the [YSH test][ysh-test]
+builtin:
+
+    if test --true $[myvar] && test --file x {
+        echo ok
+    }
+
+They test if their argument is literally the string `"true"` or `"false"`.
+
+This works because the boolean `true` *stringifies* to `"true"`, and likewise
+with `false`.
+
+[ysh-test]: ref/chap-builtin-cmd.html#ysh-test
+
+
+## Why do I lose the value of `p` in `myproc (&p) | grep foo`?
+
+In a pipeline, most components are **forked**.  This means that `myproc (&p)`
+runs in a different process from the main shell.
+
+The main shell can't see the memory of a subshell.
+
+---
+
+In general, you have to restructure your code to avoid this.  You could use a proc with multiple outputs:
+
+    myproc (&p, &grepped_output)
+
+Or you could use a function:
+
+    var out1, out2 = myfunc(io)
+
+---
+
+[The Unix Shell Process Model - When Are Processes
+Created?](process-model.html) may help.
+
+This issue is similar to the `shopt -s lastpipe` issue:
+
+    $ bash -c 'echo hi | read x; echo x=$x'
+    x=
+
+    $ zsh -c 'echo hi | read x; echo x=$x'
+    x=hi
+
+In bash, `read` runs in a subshell, but in `zsh` and OSH, it runs in the main
+shell.
 
 ## Related
 

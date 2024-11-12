@@ -5,12 +5,12 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (CommandStatus, StatusArray, flow_e,
                                         flow_t)
 from _devbuild.gen.syntax_asdl import Token
-from _devbuild.gen.value_asdl import value, value_t
+from _devbuild.gen.value_asdl import value_t, Obj
 from core import error
 from core import pyos
 from mycpp.mylib import log
 
-from typing import List, Any, TYPE_CHECKING
+from typing import List, Tuple, Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value, RedirValue
     from _devbuild.gen.syntax_asdl import (command, command_t, CommandSub)
@@ -123,7 +123,7 @@ def InitCircularDeps(
         cmd_ev,  # type: CommandEvaluator
         shell_ex,  # type:  _Executor
         prompt_ev,  # type: prompt.Evaluator
-        global_io,  # type: value.IO
+        global_io,  # type: Obj
         tracer,  # type: dev.Tracer
 ):
     # type: (...) -> None
@@ -197,6 +197,10 @@ class _Executor(object):
     def RunSubshell(self, node):
         # type: (command_t) -> int
         return 0
+
+    def CaptureStdout(self, node):
+        # type: (command_t) -> Tuple[int, str]
+        return 0, ''
 
     def RunCommandSub(self, cs_part):
         # type: (CommandSub) -> str

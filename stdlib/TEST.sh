@@ -8,7 +8,11 @@
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
 
-YSH=bin/ysh
+# TODO: byo-server.sh uses $BYO_COMMAND and $BYO_ARG
+# I guess we need a YSH version then?  We could hack it with
+# $(sh -c 'echo $BYO_COMMAND')
+
+YSH='bin/ysh +o no_exported'
 
 test-byo-protocol() {
   return
@@ -37,19 +41,24 @@ test-byo-protocol() {
 soil-run() {
   test-byo-protocol
 
-  devtools/byo.sh test $YSH stdlib/stream.ysh 
+  devtools/byo.sh test $YSH stdlib/ysh/def-test.ysh
+  #return
+  devtools/byo.sh test $YSH stdlib/ysh/args-test.ysh
+  devtools/byo.sh test $YSH stdlib/ysh/list-test.ysh
+  devtools/byo.sh test $YSH stdlib/ysh/math-test.ysh
 
-  devtools/byo.sh test $YSH stdlib/table.ysh 
+  devtools/byo.sh test $YSH stdlib/ysh/yblocks-test.ysh 
+  devtools/byo.sh test $YSH stdlib/ysh/stream.ysh 
+  devtools/byo.sh test $YSH stdlib/ysh/table.ysh 
 
   # Run shebang, bash
   devtools/byo.sh test stdlib/osh/two-test.sh 
-
   devtools/byo.sh test stdlib/osh/no-quotes-test.sh 
+  devtools/byo.sh test stdlib/osh/byo-server-test.sh 
 
   # Run with osh
   devtools/byo.sh test bin/osh stdlib/osh/two-test.sh 
 
-  devtools/byo.sh test bin/ysh stdlib/ysh/yblocks-test.ysh 
 }
 
 "$@"

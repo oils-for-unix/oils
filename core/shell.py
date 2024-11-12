@@ -8,10 +8,9 @@ import time as time_
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import option_i, builtin_i
-from _devbuild.gen.runtime_asdl import scope_e
 from _devbuild.gen.syntax_asdl import (loc, source, source_t, IntParamBox,
                                        debug_frame, debug_frame_t)
-from _devbuild.gen.value_asdl import (value, value_e)
+from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str, Obj)
 from core import alloc
 from core import comp_ui
 from core import dev
@@ -20,11 +19,11 @@ from core import executor
 from core import completion
 from core import main_loop
 from core import optview
-from core import pyos
 from core import process
 from core import pyutil
+from core import sh_init
 from core import state
-from core import ui
+from display import ui
 from core import util
 from core import vm
 
@@ -33,7 +32,6 @@ from frontend import flag_def  # side effect: flags are defined!
 
 unused1 = flag_def
 from frontend import flag_util
-from frontend import location
 from frontend import reader
 from frontend import parse_lib
 
@@ -47,7 +45,7 @@ from builtin import hay_ysh
 from builtin import io_osh
 from builtin import io_ysh
 from builtin import json_ysh
-from builtin import meta_osh
+from builtin import meta_oils
 from builtin import misc_osh
 from builtin import module_ysh
 from builtin import printf_osh
@@ -61,12 +59,14 @@ from builtin import trap_osh
 from builtin import func_eggex
 from builtin import func_hay
 from builtin import func_misc
+from builtin import func_reflect
 
 from builtin import method_dict
 from builtin import method_io
 from builtin import method_list
 from builtin import method_other
 from builtin import method_str
+from builtin import method_type
 
 from osh import cmd_eval
 from osh import glob_
@@ -76,9 +76,10 @@ from osh import sh_expr_eval
 from osh import split
 from osh import word_eval
 
+from mycpp import iolib
 from mycpp import mops
 from mycpp import mylib
-from mycpp.mylib import print_stderr, log
+from mycpp.mylib import NewDict, print_stderr, log
 from pylib import os_path
 from tools import deps
 from tools import fmt
@@ -90,7 +91,7 @@ unused2 = log
 import libc
 import posix_ as posix
 
-from typing import List, Dict, Optional, TYPE_CHECKING, cast
+from typing import List, Dict, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from frontend.py_readline import Readline
 
@@ -162,7 +163,7 @@ def SourceStartupFile(
     rc_line_reader = reader.FileLineReader(f, arena)
     rc_c_parser = parse_ctx.MakeOshParser(rc_line_reader)
 
-    with alloc.ctx_SourceCode(arena, source.SourcedFile(rc_path, loc.Missing)):
+    with alloc.ctx_SourceCode(arena, source.MainFile(rc_path)):
         # TODO: handle status, e.g. 2 for ParseError
         unused = main_loop.Batch(cmd_ev, rc_c_parser, errfmt)
 
@@ -200,18 +201,15 @@ class ShellOptHook(state.OptHook):
         return True
 
 
-def _SetGlobalFunc(mem, name, func):
+def _AddBuiltinFunc(mem, name, func):
     # type: (state.Mem, str, vm._Callable) -> None
     assert isinstance(func, vm._Callable), func
-
-    # Note: no location info for builtin functions?
-    mem.SetNamed(location.LName(name), value.BuiltinFunc(func),
-                 scope_e.GlobalOnly)
+    mem.AddBuiltin(name, value.BuiltinFunc(func))
 
 
 def InitAssignmentBuiltins(
         mem,  # type: state.Mem
-        procs,  # type: Dict[str, value.Proc]
+        procs,  # type: state.Procs
         exec_opts,  # type: optview.Exec
         errfmt,  # type: ui.ErrorFormatter
 ):
@@ -228,53 +226,6 @@ def InitAssignmentBuiltins(
     assign_b[builtin_i.readonly] = assign_osh.Readonly(mem, errfmt)
 
     return assign_b
-
-
-class ShellFiles(object):
-
-    def __init__(self, lang, home_dir, mem, flag):
-        # type: (str, str, state.Mem, arg_types.main) -> None
-        assert lang in ('osh', 'ysh'), lang
-        self.lang = lang
-        self.home_dir = home_dir
-        self.mem = mem
-        self.flag = flag
-
-    def _HistVar(self):
-        # type: () -> str
-        return 'HISTFILE' if self.lang == 'osh' else 'YSH_HISTFILE'
-
-    def _DefaultHistoryFile(self):
-        # type: () -> str
-        return os_path.join(self.home_dir,
-                            '.local/share/oils/%s_history' % self.lang)
-
-    def InitAfterLoadingEnv(self):
-        # type: () -> None
-
-        hist_var = self._HistVar()
-        if self.mem.GetValue(hist_var).tag() == value_e.Undef:
-            # Note: if the directory doesn't exist, GNU readline ignores
-            state.SetGlobalString(self.mem, hist_var,
-                                  self._DefaultHistoryFile())
-
-    def HistoryFile(self):
-        # type: () -> Optional[str]
-        # TODO: In non-strict mode we should try to cast the HISTFILE value to a
-        # string following bash's rules
-
-        UP_val = self.mem.GetValue(self._HistVar())
-        if UP_val.tag() == value_e.Str:
-            val = cast(value.Str, UP_val)
-            return val.s
-        else:
-            # Note: if HISTFILE is an array, bash will return ${HISTFILE[0]}
-            return None
-            #return self._DefaultHistoryFile()
-
-            # TODO: can we recover line information here?
-            #       might be useful to show where HISTFILE was set
-            #raise error.Strict("$HISTFILE should only ever be a string", loc.Missing)
 
 
 def Main(
@@ -347,20 +298,22 @@ def Main(
 
     script_name = arg_r.Peek()  # type: Optional[str]
     arg_r.Next()
-    mem = state.Mem(dollar0, arg_r.Rest(), arena, debug_stack)
+
+    env_dict = NewDict()  # type: Dict[str, value_t]
+    defaults = NewDict()  # type: Dict[str, value_t]
+    mem = state.Mem(dollar0,
+                    arg_r.Rest(),
+                    arena,
+                    debug_stack,
+                    env_dict,
+                    defaults=defaults)
 
     opt_hook = ShellOptHook(readline)
     # Note: only MutableOpts needs mem, so it's not a true circular dep.
-    parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, opt_hook)
+    parse_opts, exec_opts, mutable_opts = state.MakeOpts(
+        mem, environ, opt_hook)
     mem.exec_opts = exec_opts  # circular dep
     mutable_opts.Init()
-
-    version_str = pyutil.GetVersion(loader)
-    state.InitMem(mem, environ, version_str)
-
-    if attrs.show_options:  # special case: sh -o
-        mutable_opts.ShowOptions([])
-        return 0
 
     # Set these BEFORE processing flags, so they can be overridden.
     if lang == 'ysh':
@@ -369,8 +322,21 @@ def Main(
     pure_osh.SetOptionsFromFlags(mutable_opts, attrs.opt_changes,
                                  attrs.shopt_changes)
 
+    version_str = pyutil.GetVersion(loader)
+    sh_init.InitBuiltins(mem, version_str, defaults)
+    sh_init.InitDefaultVars(mem)
+
+    sh_init.CopyVarsFromEnv(exec_opts, environ, mem)
+
+    # PATH PWD SHELLOPTS, etc. must be set after CopyVarsFromEnv()
+    sh_init.InitVarsAfterEnv(mem)
+
+    if attrs.show_options:  # special case: sh -o
+        pure_osh.ShowOptions(mutable_opts, [])
+        return 0
+
     # feedback between runtime and parser
-    aliases = {}  # type: Dict[str, str]
+    aliases = NewDict()  # type: Dict[str, str]
 
     ysh_grammar = pyutil.LoadYshGrammar(loader)
 
@@ -418,7 +384,8 @@ def Main(
 
     job_control = process.JobControl()
     job_list = process.JobList()
-    fd_state = process.FdState(errfmt, job_control, job_list, mem, None, None)
+    fd_state = process.FdState(errfmt, job_control, job_list, mem, None, None,
+                               exec_opts)
 
     my_pid = posix.getpid()
 
@@ -457,7 +424,7 @@ def Main(
                         multi_trace)
     fd_state.tracer = tracer  # circular dep
 
-    signal_safe = pyos.InitSignalSafe()
+    signal_safe = iolib.InitSignalSafe()
     trap_state = trap_osh.TrapState(signal_safe)
 
     waiter = process.Waiter(job_list, exec_opts, signal_safe, tracer)
@@ -477,7 +444,7 @@ def Main(
         debug_f.writeln('Writing logs to %r' % debug_path)
 
     interp = environ.get('OILS_HIJACK_SHEBANG', '')
-    search_path = state.SearchPath(mem)
+    search_path = executor.SearchPath(mem, exec_opts)
     ext_prog = process.ExternalProgram(interp, fd_state, errfmt, debug_f)
 
     splitter = split.SplitContext(mem)
@@ -507,8 +474,7 @@ def Main(
                      lang)
         return 1
 
-    sh_files = ShellFiles(lang, home_dir, mem, flag)
-    sh_files.InitAfterLoadingEnv()
+    sh_files = sh_init.ShellFiles(lang, home_dir, mem, flag)
 
     #
     # Executor and Evaluators (are circularly dependent)
@@ -516,11 +482,11 @@ def Main(
 
     # Global proc namespace.  Funcs are defined in the common variable
     # namespace.
-    procs = {}  # type: Dict[str, value.Proc]
+    procs = state.Procs(mem)  # type: state.Procs
 
     builtins = {}  # type: Dict[int, vm._Builtin]
 
-    # e.g. s->startswith()
+    # e.g. s.startswith()
     methods = {}  # type: Dict[int, Dict[str, vm._Callable]]
 
     hay_state = hay_ysh.HayState()
@@ -546,12 +512,86 @@ def Main(
 
     # PromptEvaluator rendering is needed in non-interactive shells for @P.
     prompt_ev = prompt.Evaluator(lang, version_str, parse_ctx, mem)
-    global_io = value.IO(cmd_ev, prompt_ev)
-    global_guts = value.Guts(None)
+
+    io_methods = NewDict()  # type: Dict[str, value_t]
+    io_methods['promptVal'] = value.BuiltinFunc(method_io.PromptVal(prompt_ev))
+
+    # The M/ prefix means it's io->eval()
+    io_methods['M/eval'] = value.BuiltinFunc(
+        method_io.Eval(mem, cmd_ev, method_io.EVAL_NULL))
+    io_methods['M/evalToDict'] = value.BuiltinFunc(
+        method_io.Eval(mem, cmd_ev, method_io.EVAL_DICT))
+    io_methods['M/evalInFrame'] = value.BuiltinFunc(
+        method_io.EvalInFrame(mem, cmd_ev))
+    io_methods['M/evalExpr'] = value.BuiltinFunc(
+        func_reflect.EvalExpr(expr_ev))
+
+    # Identical to command sub
+    io_methods['captureStdout'] = value.BuiltinFunc(
+        method_io.CaptureStdout(mem, shell_ex))
+
+    # TODO:
+    io_methods['time'] = value.BuiltinFunc(method_io.Time())
+    io_methods['strftime'] = value.BuiltinFunc(method_io.Strftime())
+    io_methods['glob'] = value.BuiltinFunc(method_io.Glob())
+
+    io_props = {'stdin': value.Stdin}  # type: Dict[str, value_t]
+    io_obj = Obj(Obj(None, io_methods), io_props)
+
+    vm_methods = NewDict()  # type: Dict[str, value_t]
+    # These are methods, not free functions, because they reflect VM state
+    vm_methods['getFrame'] = value.BuiltinFunc(func_reflect.GetFrame(mem))
+    vm_methods['id'] = value.BuiltinFunc(func_reflect.Id())
+
+    vm_props = NewDict()  # type: Dict[str, value_t]
+    vm_obj = Obj(Obj(None, vm_methods), vm_props)
+
+    # Add basic type objects for flag parser
+    # flag -v --verbose (Bool, help='foo')
+    #
+    # TODO:
+    # - Add other types like Dict, CommandFlag
+    #   - Obj(first, rest)
+    #   - List() Dict() Obj() can do shallow copy with __call__
+
+    # - type(x) should return these Obj, or perhaps typeObj(x)
+    #   - __str__ method for echo $[type(x)] ?
+
+    # TODO: List and Dict could be the only ones with __index__?
+    i_func = method_type.Index__()
+    type_m = NewDict()  # type: Dict[str, value_t]
+    type_m['__index__'] = value.BuiltinFunc(i_func)
+    type_obj_methods = Obj(None, type_m)
+
+    # Note: Func[Int -> Int] is something we should do?
+    for tag in [
+            value_e.Bool,
+            value_e.Int,
+            value_e.Float,
+            value_e.Str,
+            value_e.List,
+            value_e.Dict,
+    ]:
+        type_name = value_str(tag, dot=False)
+        #log('%s %s' , type_name, tag)
+        type_obj = Obj(type_obj_methods, {'name': value.Str(type_name)})
+        mem.AddBuiltin(type_name, type_obj)
+
+    # Initialize Obj
+    tag = value_e.Obj
+    type_name = value_str(tag, dot=False)
+
+    # TODO: change Obj.new to __call__
+    type_props = NewDict()  # type: Dict[str, value_t]
+    type_props['name'] = value.Str(type_name)
+    type_props['new'] = value.BuiltinFunc(func_misc.Obj_call())
+    type_obj = Obj(type_obj_methods, type_props)
+
+    mem.AddBuiltin(type_name, type_obj)
 
     # Wire up circular dependencies.
     vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
-                        prompt_ev, global_io, tracer)
+                        prompt_ev, io_obj, tracer)
 
     unsafe_arith = sh_expr_eval.UnsafeArith(mem, exec_opts, mutable_opts,
                                             parse_ctx, arith_ev, errfmt)
@@ -567,14 +607,15 @@ def Main(
         if help_meta:
             help_data = help_meta.TopicMetadata()
         else:
-            help_data = {}  # minimal build
+            help_data = NewDict()  # minimal build
     else:
         help_data = help_meta.TopicMetadata()
     b[builtin_i.help] = misc_osh.Help(lang, loader, help_data, errfmt)
 
     # Interpreter state
     b[builtin_i.set] = pure_osh.Set(mutable_opts, mem)
-    b[builtin_i.shopt] = pure_osh.Shopt(mutable_opts, cmd_ev)
+    b[builtin_i.shopt] = pure_osh.Shopt(exec_opts, mutable_opts, cmd_ev, mem,
+                                        environ)
 
     b[builtin_i.hash] = pure_osh.Hash(search_path)  # not really pure
     b[builtin_i.trap] = trap_osh.Trap(trap_state, parse_ctx, tracer, errfmt)
@@ -588,27 +629,37 @@ def Main(
     b[builtin_i.haynode] = hay_ysh.HayNode_(hay_state, mem, cmd_ev)
 
     # Interpreter introspection
-    b[builtin_i.type] = meta_osh.Type(procs, aliases, search_path, errfmt)
-    b[builtin_i.builtin] = meta_osh.Builtin(shell_ex, errfmt)
-    b[builtin_i.command] = meta_osh.Command(shell_ex, procs, aliases,
-                                            search_path)
+    b[builtin_i.type] = meta_oils.Type(procs, aliases, search_path, errfmt)
+    b[builtin_i.builtin] = meta_oils.Builtin(shell_ex, errfmt)
+    b[builtin_i.command] = meta_oils.Command(shell_ex, procs, aliases,
+                                             search_path)
     # Part of YSH, but similar to builtin/command
-    b[builtin_i.runproc] = meta_osh.RunProc(shell_ex, procs, errfmt)
+    b[builtin_i.runproc] = meta_oils.RunProc(shell_ex, procs, errfmt)
+    b[builtin_i.invoke] = meta_oils.Invoke(shell_ex, procs, errfmt)
+    b[builtin_i.extern_] = meta_oils.Extern(shell_ex, procs, errfmt)
 
     # Meta builtins
-    source_builtin = meta_osh.Source(parse_ctx, search_path, cmd_ev, fd_state,
-                                     tracer, errfmt, loader)
+    module_invoke = module_ysh.ModuleInvoke(cmd_ev, tracer, errfmt)
+    b[builtin_i.use] = meta_oils.ShellFile(parse_ctx,
+                                           search_path,
+                                           cmd_ev,
+                                           fd_state,
+                                           tracer,
+                                           errfmt,
+                                           loader,
+                                           module_invoke=module_invoke)
+    source_builtin = meta_oils.ShellFile(parse_ctx, search_path, cmd_ev,
+                                         fd_state, tracer, errfmt, loader)
     b[builtin_i.source] = source_builtin
     b[builtin_i.dot] = source_builtin
-    b[builtin_i.eval] = meta_osh.Eval(parse_ctx, exec_opts, cmd_ev, tracer,
-                                      errfmt)
+    b[builtin_i.eval] = meta_oils.Eval(parse_ctx, exec_opts, cmd_ev, tracer,
+                                       errfmt, mem)
 
     # Module builtins
-    guards = {}  # type: Dict[str, bool]
+    guards = NewDict()  # type: Dict[str, bool]
     b[builtin_i.source_guard] = module_ysh.SourceGuard(guards, exec_opts,
                                                        errfmt)
     b[builtin_i.is_main] = module_ysh.IsMain(mem)
-    b[builtin_i.use] = module_ysh.Use(mem, errfmt)
 
     # Errors
     b[builtin_i.error] = error_ysh.Error()
@@ -616,6 +667,7 @@ def Main(
     b[builtin_i.boolstatus] = error_ysh.BoolStatus(shell_ex, errfmt)
     b[builtin_i.try_] = error_ysh.Try(mutable_opts, mem, cmd_ev, shell_ex,
                                       errfmt)
+    b[builtin_i.assert_] = error_ysh.Assert(expr_ev, errfmt)
 
     # Pure builtins
     true_ = pure_osh.Boolean(0)
@@ -642,10 +694,12 @@ def Main(
     b[builtin_i.printf] = printf_osh.Printf(mem, parse_ctx, unsafe_arith,
                                             errfmt)
     b[builtin_i.write] = io_ysh.Write(mem, errfmt)
-    b[builtin_i.fopen] = io_ysh.Fopen(mem, cmd_ev)
+    redir_builtin = io_ysh.RunBlock(mem, cmd_ev)  # used only for redirects
+    b[builtin_i.redir] = redir_builtin
+    b[builtin_i.fopen] = redir_builtin  # alias for backward compatibility
 
     # (pp output format isn't stable)
-    b[builtin_i.pp] = io_ysh.Pp(mem, errfmt, procs, arena)
+    b[builtin_i.pp] = io_ysh.Pp(expr_ev, mem, errfmt, procs, arena)
 
     # Input
     b[builtin_i.cat] = io_osh.Cat()  # for $(<file)
@@ -723,6 +777,7 @@ def Main(
         'trimEnd': method_str.Trim(method_str.END),
         'upper': method_str.Upper(),
         'lower': method_str.Lower(),
+        'split': method_str.Split(),
 
         # finds a substring, optional position to start at
         'find': None,
@@ -743,30 +798,31 @@ def Main(
         'fullMatch': None,
     }
     methods[value_e.Dict] = {
-        'get': None,  # doesn't raise an error
-        'erase': None,  # ensures it doesn't exist
-        'keys': method_dict.Keys(),
-        'values': method_dict.Values(),
-
-        # I think items() isn't as necessary because dicts are ordered?
-        # YSH code shouldn't use the List of Lists representation.
-
+        # keys() values() get() are FREE functions, not methods
+        # I think items() isn't as necessary because dicts are ordered?  YSH
+        # code shouldn't use the List of Lists representation.
+        'M/erase': method_dict.Erase(),
         # could be d->tally() or d->increment(), but inc() is short
         #
         # call d->inc('mycounter')
         # call d->inc('mycounter', 3)
-        'inc': None,
+        'M/inc': None,
 
         # call d->accum('mygroup', 'value')
-        'accum': None,
+        'M/accum': None,
+
+        # DEPRECATED - use free functions
+        'get': method_dict.Get(),
+        'keys': method_dict.Keys(),
+        'values': method_dict.Values(),
     }
     methods[value_e.List] = {
-        'reverse': method_list.Reverse(),
-        'append': method_list.Append(),
-        'extend': method_list.Extend(),
-        'pop': method_list.Pop(),
-        'insert': None,  # insert object before index
-        'remove': None,  # insert object before index
+        'M/reverse': method_list.Reverse(),
+        'M/append': method_list.Append(),
+        'M/extend': method_list.Extend(),
+        'M/pop': method_list.Pop(),
+        'M/insert': None,  # insert object before index
+        'M/remove': None,  # insert object before index
         'indexOf': method_list.IndexOf(),  # return first index of value, or -1
         # Python list() has index(), which raises ValueError
         # But this is consistent with Str->find(), and doesn't
@@ -780,24 +836,14 @@ def Main(
         'end': func_eggex.MatchMethod(func_eggex.E, None),
     }
 
-    methods[value_e.IO] = {
-        # io->eval(myblock) is the functional version of eval (myblock)
-        # Should we also have expr->eval() instead of evalExpr?
-        'eval': method_io.Eval(),
-
-        # identical to command sub
-        'captureStdout': method_io.CaptureStdout(),
-        'promptVal': method_io.PromptVal(),
-        'time': method_io.Time(),
-        'strftime': method_io.Strftime(),
-    }
-
     methods[value_e.Place] = {
+        # __mut_setValue()
+
         # instead of setplace keyword
-        'setValue': method_other.SetValue(mem),
+        'M/setValue': method_other.SetValue(mem),
     }
 
-    methods[value_e.Command] = {
+    methods[value_e.CommandFrag] = {
         # var x = ^(echo hi)
         # Export source code and line number
         # Useful for test frameworks and so forth
@@ -808,65 +854,99 @@ def Main(
     # Initialize Built-in Funcs
     #
 
-    parse_hay = func_hay.ParseHay(fd_state, parse_ctx, errfmt)
+    parse_hay = func_hay.ParseHay(fd_state, parse_ctx, mem, errfmt)
     eval_hay = func_hay.EvalHay(hay_state, mutable_opts, mem, cmd_ev)
     hay_func = func_hay.HayFunc(hay_state)
 
-    _SetGlobalFunc(mem, 'parseHay', parse_hay)
-    _SetGlobalFunc(mem, 'evalHay', eval_hay)
-    _SetGlobalFunc(mem, '_hay', hay_func)
+    _AddBuiltinFunc(mem, 'parseHay', parse_hay)
+    _AddBuiltinFunc(mem, 'evalHay', eval_hay)
+    _AddBuiltinFunc(mem, '_hay', hay_func)
 
-    _SetGlobalFunc(mem, 'len', func_misc.Len())
-    _SetGlobalFunc(mem, 'type', func_misc.Type())
-    _SetGlobalFunc(mem, 'repeat', func_misc.Repeat())
+    _AddBuiltinFunc(mem, 'len', func_misc.Len())
+    _AddBuiltinFunc(mem, 'type', func_misc.Type())
 
     g = func_eggex.MatchFunc(func_eggex.G, expr_ev, mem)
-    _SetGlobalFunc(mem, '_group', g)
-    _SetGlobalFunc(mem, '_match', g)  # TODO: remove this backward compat alias
-    _SetGlobalFunc(mem, '_start', func_eggex.MatchFunc(func_eggex.S, None,
-                                                       mem))
-    _SetGlobalFunc(mem, '_end', func_eggex.MatchFunc(func_eggex.E, None, mem))
+    _AddBuiltinFunc(mem, '_group', g)
+    _AddBuiltinFunc(mem, '_match',
+                    g)  # TODO: remove this backward compat alias
+    _AddBuiltinFunc(mem, '_start',
+                    func_eggex.MatchFunc(func_eggex.S, None, mem))
+    _AddBuiltinFunc(mem, '_end', func_eggex.MatchFunc(func_eggex.E, None, mem))
 
-    _SetGlobalFunc(mem, 'join', func_misc.Join())
-    _SetGlobalFunc(mem, 'maybe', func_misc.Maybe())
-    _SetGlobalFunc(mem, 'evalExpr', func_misc.EvalExpr(expr_ev))
+    # TODO: should this be parseCommandStr() vs. parseFile() for Hay?
+    _AddBuiltinFunc(mem, 'parseCommand',
+                    func_reflect.ParseCommand(parse_ctx, mem, errfmt))
+    _AddBuiltinFunc(mem, 'parseExpr',
+                    func_reflect.ParseExpr(parse_ctx, errfmt))
+
+    _AddBuiltinFunc(mem, 'shvarGet', func_reflect.Shvar_get(mem))
+    _AddBuiltinFunc(mem, 'getVar', func_reflect.GetVar(mem))
+    _AddBuiltinFunc(mem, 'setVar', func_reflect.SetVar(mem))
+
+    # TODO: implement bindFrame() to turn CommandFrag -> Command
+    # Then parseCommand() and parseHay() will not depend on mem; they will not
+    # bind a frame yet
+    #
+    # what about newFrame() and globalFrame()?
+    _AddBuiltinFunc(mem, 'bindFrame', func_reflect.BindFrame())
+
+    _AddBuiltinFunc(mem, 'Object', func_misc.Object())
+
+    _AddBuiltinFunc(mem, 'rest', func_misc.Prototype())
+    _AddBuiltinFunc(mem, 'first', func_misc.PropView())
+
+    # TODO: remove these aliases
+    _AddBuiltinFunc(mem, 'prototype', func_misc.Prototype())
+    _AddBuiltinFunc(mem, 'propView', func_misc.PropView())
 
     # type conversions
-    _SetGlobalFunc(mem, 'bool', func_misc.Bool())
-    _SetGlobalFunc(mem, 'int', func_misc.Int())
-    _SetGlobalFunc(mem, 'float', func_misc.Float())
-    _SetGlobalFunc(mem, 'str', func_misc.Str_())
-    _SetGlobalFunc(mem, 'list', func_misc.List_())
-    _SetGlobalFunc(mem, 'dict', func_misc.Dict_())
+    _AddBuiltinFunc(mem, 'bool', func_misc.Bool())
+    _AddBuiltinFunc(mem, 'int', func_misc.Int())
+    _AddBuiltinFunc(mem, 'float', func_misc.Float())
+    _AddBuiltinFunc(mem, 'str', func_misc.Str_())
+    _AddBuiltinFunc(mem, 'list', func_misc.List_())
+    _AddBuiltinFunc(mem, 'dict', func_misc.DictFunc())
 
-    _SetGlobalFunc(mem, 'runes', func_misc.Runes())
-    _SetGlobalFunc(mem, 'encodeRunes', func_misc.EncodeRunes())
-    _SetGlobalFunc(mem, 'bytes', func_misc.Bytes())
-    _SetGlobalFunc(mem, 'encodeBytes', func_misc.EncodeBytes())
+    # Dict functions
+    _AddBuiltinFunc(mem, 'get', method_dict.Get())
+    _AddBuiltinFunc(mem, 'keys', method_dict.Keys())
+    _AddBuiltinFunc(mem, 'values', method_dict.Values())
 
+    _AddBuiltinFunc(mem, 'runes', func_misc.Runes())
+    _AddBuiltinFunc(mem, 'encodeRunes', func_misc.EncodeRunes())
+    _AddBuiltinFunc(mem, 'bytes', func_misc.Bytes())
+    _AddBuiltinFunc(mem, 'encodeBytes', func_misc.EncodeBytes())
+
+    # Str
+    #_AddBuiltinFunc(mem, 'strcmp', None)
     # TODO: This should be Python style splitting
-    _SetGlobalFunc(mem, 'split', func_misc.Split(splitter))
-    _SetGlobalFunc(mem, 'shSplit', func_misc.Split(splitter))
+    _AddBuiltinFunc(mem, 'split', func_misc.Split(splitter))
+    _AddBuiltinFunc(mem, 'shSplit', func_misc.Split(splitter))
 
-    _SetGlobalFunc(mem, 'glob', func_misc.Glob(globber))
-    _SetGlobalFunc(mem, 'shvarGet', func_misc.Shvar_get(mem))
-    _SetGlobalFunc(mem, 'getVar', func_misc.GetVar(mem))
-    _SetGlobalFunc(mem, 'assert_', func_misc.Assert())
+    # Float
+    _AddBuiltinFunc(mem, 'floatsEqual', func_misc.FloatsEqual())
 
-    _SetGlobalFunc(mem, 'toJson8', func_misc.ToJson8(True))
-    _SetGlobalFunc(mem, 'toJson', func_misc.ToJson8(False))
+    # List
+    _AddBuiltinFunc(mem, 'join', func_misc.Join())
+    _AddBuiltinFunc(mem, 'maybe', func_misc.Maybe())
+    _AddBuiltinFunc(mem, 'glob', func_misc.Glob(globber))
 
-    _SetGlobalFunc(mem, 'fromJson8', func_misc.FromJson8(True))
-    _SetGlobalFunc(mem, 'fromJson', func_misc.FromJson8(False))
+    # Serialize
+    _AddBuiltinFunc(mem, 'toJson8', func_misc.ToJson8(True))
+    _AddBuiltinFunc(mem, 'toJson', func_misc.ToJson8(False))
 
-    _SetGlobalFunc(mem, '_a2sp', func_misc.BashArrayToSparse())
-    _SetGlobalFunc(mem, '_d2sp', func_misc.DictToSparse())
-    _SetGlobalFunc(mem, '_opsp', func_misc.SparseOp())
+    _AddBuiltinFunc(mem, 'fromJson8', func_misc.FromJson8(True))
+    _AddBuiltinFunc(mem, 'fromJson', func_misc.FromJson8(False))
 
-    mem.SetNamed(location.LName('_io'), global_io, scope_e.GlobalOnly)
-    mem.SetNamed(location.LName('_guts'), global_guts, scope_e.GlobalOnly)
+    # Demos
+    _AddBuiltinFunc(mem, '_a2sp', func_misc.BashArrayToSparse())
+    _AddBuiltinFunc(mem, '_opsp', func_misc.SparseOp())
 
-    mem.SetNamed(location.LName('stdin'), value.Stdin, scope_e.GlobalOnly)
+    mem.AddBuiltin('io', io_obj)
+    mem.AddBuiltin('vm', vm_obj)
+
+    # Special case for testing
+    mem.AddBuiltin('module-invoke', value.BuiltinProc(module_invoke))
 
     #
     # Is the shell interactive?
@@ -933,36 +1013,39 @@ def Main(
 
     config_dir = '.config/oils'
     rc_paths = []  # type: List[str]
-    if not flag.norc and (flag.headless or exec_opts.interactive()):
-        # User's rcfile comes FIRST.  Later we can add an 'after-rcdir' hook
-        rc_path = flag.rcfile
-        if rc_path is None:
-            rc_paths.append(
-                os_path.join(home_dir, '%s/%src' % (config_dir, lang)))
+    if flag.headless or exec_opts.interactive():
+        if flag.norc:
+            # bash doesn't have this warning, but it's useful
+            if flag.rcfile is not None:
+                print_stderr('%s warning: --rcfile ignored with --norc' % lang)
+            if flag.rcdir is not None:
+                print_stderr('%s warning: --rcdir ignored with --norc' % lang)
         else:
-            rc_paths.append(rc_path)
+            # User's rcfile comes FIRST.  Later we can add an 'after-rcdir' hook
+            rc_path = flag.rcfile
+            if rc_path is None:
+                rc_paths.append(
+                    os_path.join(home_dir, '%s/%src' % (config_dir, lang)))
+            else:
+                rc_paths.append(rc_path)
 
-        # Load all files in ~/.config/oil/oshrc.d or oilrc.d
-        # This way "installers" can avoid mutating oshrc directly
+            # Load all files in ~/.config/oils/oshrc.d or oilrc.d
+            # This way "installers" can avoid mutating oshrc directly
 
-        rc_dir = flag.rcdir
-        if rc_dir is None:
-            rc_dir = os_path.join(home_dir, '%s/%src.d' % (config_dir, lang))
+            rc_dir = flag.rcdir
+            if rc_dir is None:
+                rc_dir = os_path.join(home_dir,
+                                      '%s/%src.d' % (config_dir, lang))
 
-        rc_paths.extend(libc.glob(os_path.join(rc_dir, '*')))
-    else:
-        if flag.rcfile is not None:  # bash doesn't have this warning, but it's useful
-            print_stderr('%s warning: --rcfile ignored with --norc' % lang)
-        if flag.rcdir is not None:
-            print_stderr('%s warning: --rcdir ignored with --norc' % lang)
+            rc_paths.extend(libc.glob(os_path.join(rc_dir, '*')))
 
     # Initialize even in non-interactive shell, for 'compexport'
     _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
 
     if flag.headless:
-        state.InitInteractive(mem)
-        mutable_opts.set_redefine_proc_func()
-        mutable_opts.set_redefine_module()
+        sh_init.InitInteractive(mem, sh_files, lang)
+        mutable_opts.set_redefine_const()
+        mutable_opts.set_redefine_source()
 
         # NOTE: rc files loaded AFTER _InitDefaultCompletions.
         for rc_path in rc_paths:
@@ -982,7 +1065,7 @@ def Main(
 
         # Same logic as interactive shell
         mut_status = IntParamBox(status)
-        cmd_ev.MaybeRunExitTrap(mut_status)
+        cmd_ev.RunTrapsOnExit(mut_status)
         status = mut_status.i
 
         return status
@@ -992,11 +1075,11 @@ def Main(
     c_parser = parse_ctx.MakeOshParser(line_reader)
 
     if exec_opts.interactive():
-        state.InitInteractive(mem)
+        sh_init.InitInteractive(mem, sh_files, lang)
         # bash: 'set -o emacs' is the default only in the interactive shell
         mutable_opts.set_emacs()
-        mutable_opts.set_redefine_proc_func()
-        mutable_opts.set_redefine_module()
+        mutable_opts.set_redefine_const()
+        mutable_opts.set_redefine_source()
 
         if readline:
             term_width = 0
@@ -1017,7 +1100,6 @@ def Main(
             comp_ui.InitReadline(readline, sh_files.HistoryFile(), root_comp,
                                  display, debug_f)
 
-            _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
             if flag.completion_demo:
                 _CompletionDemo(comp_lookup)
 
@@ -1025,7 +1107,7 @@ def Main(
             display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state,
                                              debug_f)
 
-        process.InitInteractiveShell()  # Set signal handlers
+        process.InitInteractiveShell(signal_safe)  # Set signal handlers
 
         # The interactive shell leads a process group which controls the terminal.
         # It MUST give up the terminal afterward, otherwise we get SIGTTIN /
@@ -1052,7 +1134,7 @@ def Main(
                 status = e.status
 
             mut_status = IntParamBox(status)
-            cmd_ev.MaybeRunExitTrap(mut_status)
+            cmd_ev.RunTrapsOnExit(mut_status)
             status = mut_status.i
 
         if readline:
@@ -1130,8 +1212,11 @@ def Main(
                                      cmd_flags=cmd_eval.IsMainProgram)
         except util.UserExit as e:
             status = e.status
+        except KeyboardInterrupt:
+            # The interactive shell handles this in main_loop.Interactive
+            status = 130  # 128 + 2
     mut_status = IntParamBox(status)
-    cmd_ev.MaybeRunExitTrap(mut_status)
+    cmd_ev.RunTrapsOnExit(mut_status)
 
     multi_trace.WriteDumps()
 

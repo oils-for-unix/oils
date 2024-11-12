@@ -65,7 +65,7 @@ YSH has a simpler idiom:
 
 Or you can read all lines:
 
-    for line in (stdin) {     # buffered
+    for line in (io.stdin) {     # buffered
       echo line=$line
       break                   # remaining bytes may be lost in a buffer
     }

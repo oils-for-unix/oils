@@ -19,6 +19,20 @@ from typing import List, Union
 _PUNCT = """!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
 
 
+def nan():
+    # type: () -> float
+
+    # note: Python 3 has math.nan
+    return float('nan')
+
+
+def infinity():
+    # type: () -> float
+
+    # note: Python 3 has math.inf
+    return float('inf')
+
+
 def IsValidCharEscape(ch):
     # type: (str) -> bool
     """Is this a valid character escape when unquoted?"""
@@ -110,7 +124,7 @@ class _ZipResourceLoader(_ResourceLoader):
 
 def IsAppBundle():
     # type: () -> bool
-    """Are we running inside Oil's patched version of CPython?
+    """Are we running inside the patched version of CPython?
 
     As opposed to a "stock" Python interpreter.
     """
@@ -193,7 +207,6 @@ def PrintVersionDetails(loader):
     # We removed sys.executable from sysmodule.c.
     py_impl = 'CPython' if hasattr(sys, 'executable') else 'OVM'
 
-    # Call it OSH because "Oil" is deprecated
     print('Release Date: %s' % release_date)
     print('Arch: %s' % machine)
     print('OS: %s' % system)
@@ -202,8 +215,6 @@ def PrintVersionDetails(loader):
     print('Interpreter: %s' % py_impl)
     print('Interpreter version: %s' % py_version)
     print('Bytecode: %s' % pyc_version)
-
-    # TODO: advertise oils-for-unix when it's ready
 
 
 # This was useful for debugging.

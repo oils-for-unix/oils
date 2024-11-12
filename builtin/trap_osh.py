@@ -1,29 +1,29 @@
 #!/usr/bin/env python2
-"""Builtin_trap.py."""
 from __future__ import print_function
 
 from signal import SIG_DFL, SIGINT, SIGKILL, SIGSTOP, SIGWINCH
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value
-from _devbuild.gen.syntax_asdl import loc, source
+from _devbuild.gen.syntax_asdl import loc, loc_t, source
 from core import alloc
 from core import dev
 from core import error
 from core import main_loop
-from mycpp.mylib import log
-from core import pyos
 from core import vm
 from frontend import flag_util
-from frontend import signal_def
+from frontend import match
 from frontend import reader
+from frontend import signal_def
+from mycpp import iolib
 from mycpp import mylib
-from mycpp.mylib import iteritems, print_stderr
+from mycpp.mylib import iteritems, print_stderr, log
+from mycpp import mops
 
 from typing import Dict, List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import command_t
-    from core.ui import ErrorFormatter
+    from display import ui
     from frontend.parse_lib import ParseContext
 
 _ = log
@@ -42,18 +42,22 @@ class TrapState(object):
     """
 
     def __init__(self, signal_safe):
-        # type: (pyos.SignalSafe) -> None
+        # type: (iolib.SignalSafe) -> None
         self.signal_safe = signal_safe
         self.hooks = {}  # type: Dict[str, command_t]
         self.traps = {}  # type: Dict[int, command_t]
 
-    def ClearForSubProgram(self):
-        # type: () -> None
+    def ClearForSubProgram(self, inherit_errtrace):
+        # type: (bool) -> None
         """SubProgramThunk uses this because traps aren't inherited."""
 
-        # bash clears DEBUG hook in subshell, command sub, etc.  See
-        # spec/builtin-trap-bash.
+        # bash clears hooks like DEBUG in subshells.
+        # The ERR can be preserved if set -o errtrace
+        hook_err = self.hooks.get('ERR')
         self.hooks.clear()
+        if hook_err is not None and inherit_errtrace:
+            self.hooks['ERR'] = hook_err
+
         self.traps.clear()
 
     def GetHook(self, hook_name):
@@ -71,16 +75,20 @@ class TrapState(object):
 
     def AddUserTrap(self, sig_num, handler):
         # type: (int, command_t) -> None
-        """E.g.
-
-        SIGUSR1.
-        """
+        """ e.g. SIGUSR1 """
         self.traps[sig_num] = handler
 
-        if sig_num == SIGWINCH:
+        if sig_num == SIGINT:
+            # Don't disturb the underlying runtime's SIGINT handllers
+            # 1. CPython has one for KeyboardInterrupt
+            # 2. mycpp runtime simulates KeyboardInterrupt:
+            #    pyos::InitSignalSafe() calls RegisterSignalInterest(SIGINT),
+            #    then we PollSigInt() in the osh/cmd_eval.py main loop
+            self.signal_safe.SetSigIntTrapped(True)
+        elif sig_num == SIGWINCH:
             self.signal_safe.SetSigWinchCode(SIGWINCH)
         else:
-            pyos.RegisterSignalInterest(sig_num)
+            iolib.RegisterSignalInterest(sig_num)
 
     def RemoveUserTrap(self, sig_num):
         # type: (int) -> None
@@ -88,20 +96,31 @@ class TrapState(object):
         mylib.dict_erase(self.traps, sig_num)
 
         if sig_num == SIGINT:
-            # Don't disturb the runtime signal handlers:
-            # 1. from CPython
-            # 2. pyos::InitSignalSafe() calls RegisterSignalInterest(SIGINT)
+            self.signal_safe.SetSigIntTrapped(False)
             pass
         elif sig_num == SIGWINCH:
-            self.signal_safe.SetSigWinchCode(pyos.UNTRAPPED_SIGWINCH)
+            self.signal_safe.SetSigWinchCode(iolib.UNTRAPPED_SIGWINCH)
         else:
-            pyos.Sigaction(sig_num, SIG_DFL)
+            # TODO: In process.InitInteractiveShell(), 4 signals are set to
+            # SIG_IGN, not SIG_DFL:
+            #
+            # SIGQUIT SIGTSTP SIGTTOU SIGTTIN
+            #
+            # Should we restore them?  It's rare that you type 'trap' in
+            # interactive shells, but it might be more correct.  See what other
+            # shells do.
+            iolib.sigaction(sig_num, SIG_DFL)
 
     def GetPendingTraps(self):
         # type: () -> Optional[List[command_t]]
-        """Transfer ownership of the current queue of pending trap handlers to
-        the caller."""
+        """Transfer ownership of queue of pending trap handlers to caller."""
         signals = self.signal_safe.TakePendingSignals()
+        if 0:
+            log('*** GetPendingTraps')
+            for si in signals:
+                log('SIGNAL %d', si)
+            #import traceback
+            #traceback.print_stack()
 
         # Optimization for the common case: do not allocate a list.  This function
         # is called in the interpreter loop.
@@ -120,6 +139,32 @@ class TrapState(object):
         self.signal_safe.ReuseEmptyList(signals)
 
         return run_list
+
+    def ThisProcessHasTraps(self):
+        # type: () -> bool
+        """
+        noforklast optimizations are not enabled when the process has code to
+        run after fork!
+        """
+        if 0:
+            log('traps %d', len(self.traps))
+            log('hooks %d', len(self.hooks))
+        return len(self.traps) != 0 or len(self.hooks) != 0
+
+
+def _IsUnsignedInteger(s, blame_loc):
+    # type: (str, loc_t) -> bool
+    if not match.LooksLikeInteger(s):
+        return False
+
+    # Note: could simplify this by making match.LooksLikeUnsigned()
+
+    ok, big_int = mops.FromStr2(s)
+    if not ok:
+        raise error.Usage('integer too big: %s' % s, blame_loc)
+
+    # not (0 > s) is (s >= 0)
+    return not mops.Greater(mops.ZERO, big_int)
 
 
 def _GetSignalNumber(sig_spec):
@@ -157,7 +202,7 @@ _HOOK_NAMES = ['EXIT', 'ERR', 'RETURN', 'DEBUG']
 class Trap(vm._Builtin):
 
     def __init__(self, trap_state, parse_ctx, tracer, errfmt):
-        # type: (TrapState, ParseContext, dev.Tracer, ErrorFormatter) -> None
+        # type: (TrapState, ParseContext, dev.Tracer, ui.ErrorFormatter) -> None
         self.trap_state = trap_state
         self.parse_ctx = parse_ctx
         self.arena = parse_ctx.arena
@@ -174,7 +219,7 @@ class Trap(vm._Builtin):
         c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
         # TODO: the SPID should be passed through argv.
-        src = source.ArgvWord('trap', loc.Missing)
+        src = source.Dynamic('trap arg', loc.Missing)
         with alloc.ctx_SourceCode(self.arena, src):
             try:
                 node = main_loop.ParseWholeFile(c_parser)
@@ -208,7 +253,7 @@ class Trap(vm._Builtin):
 
             return 0
 
-        code_str = arg_r.ReadRequired('requires a code string')
+        code_str, code_loc = arg_r.ReadRequired2('requires a code string')
         sig_spec, sig_loc = arg_r.ReadRequired2(
             'requires a signal or hook name')
 
@@ -232,7 +277,10 @@ class Trap(vm._Builtin):
             return 1
 
         # NOTE: sig_spec isn't validated when removing handlers.
-        if code_str == '-':
+        # Per POSIX, if the first argument to trap is an unsigned integer
+        # then reset every condition
+        # https://pubs.opengroup.org/onlinepubs/9699919799.2018edition/utilities/V3_chap02.html#tag_18_28
+        if code_str == '-' or _IsUnsignedInteger(code_str, code_loc):
             if sig_key in _HOOK_NAMES:
                 self.trap_state.RemoveUserHook(sig_key)
                 return 0
@@ -245,7 +293,7 @@ class Trap(vm._Builtin):
 
         # Try parsing the code first.
 
-        # TODO: If simple_trap is on (for oil:upgrade), then it must be a function
+        # TODO: If simple_trap is on (for ysh:upgrade), then it must be a function
         # name?  And then you wrap it in 'try'?
 
         node = self._ParseTrapCode(code_str)

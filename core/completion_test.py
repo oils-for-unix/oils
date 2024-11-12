@@ -18,6 +18,7 @@ from _devbuild.gen.syntax_asdl import proc_sig
 from _devbuild.gen.value_asdl import (value, value_e)
 from core import completion  # module under test
 from core import comp_ui
+from core import sh_init
 from core import state
 from core import test_lib
 from core import util
@@ -53,11 +54,11 @@ def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
     comp_ui_state = comp_ui.State()
     comp_lookup = comp_lookup or completion.Lookup()
 
-    mem = state.Mem('', [], None, [])
-    parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
+    mem = state.Mem('', [], None, [], {})
+    parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
     mem.exec_opts = exec_opts
 
-    state.InitMem(mem, {}, '0.1')
+    sh_init.InitDefaultVars(mem)
     mutable_opts.Init()
 
     if not parse_ctx:
@@ -124,8 +125,8 @@ class CompletionTest(unittest.TestCase):
         print('rb', comp_rb)
 
     def testExternalCommandAction(self):
-        mem = state.Mem('dummy', [], None, [])
-        parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
+        mem = state.Mem('dummy', [], None, [], {})
+        parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
         mem.exec_opts = exec_opts
 
         a = completion.ExternalCommandAction(mem)
@@ -203,10 +204,13 @@ class CompletionTest(unittest.TestCase):
     """,
                                               arena=arena)
         node = c_parser.ParseLogicalLine()
-        proc = value.Proc(node.name, node.name_tok, proc_sig.Open, node.body,
-                          [], True)
 
         cmd_ev = test_lib.InitCommandEvaluator(arena=arena)
+
+        frame = cmd_ev.mem.var_stack[0]
+        assert frame is not None
+        proc = value.Proc(node.name, node.name_tok, proc_sig.Open, node.body,
+                          [], True, frame)
 
         comp_lookup = completion.Lookup()
         a = completion.ShellFuncAction(cmd_ev, proc, comp_lookup)
@@ -303,7 +307,7 @@ class RootCompleterTest(unittest.TestCase):
         self.assertEqual(7, comp.end)
         print(comp)
         m = list(r.Matches(comp))
-        self.assert_('echo $PWD' in m, 'Got %s' % m)
+        self.assert_('echo $PPID' in m, 'Got %s' % m)
         self.assert_('echo $PS4' in m, 'Got %s' % m)
 
         #
@@ -322,7 +326,7 @@ class RootCompleterTest(unittest.TestCase):
         comp = MockApi(line='echo ${P')
         print(comp)
         m = list(r.Matches(comp))
-        self.assert_('echo ${PWD' in m, 'Got %s' % m)
+        self.assert_('echo ${PPID' in m, 'Got %s' % m)
         self.assert_('echo ${PS4' in m, 'Got %s' % m)
 
         # Odd word break
@@ -330,7 +334,7 @@ class RootCompleterTest(unittest.TestCase):
         comp = MockApi(line='echo ${undef:-$P')
         print(comp)
         m = list(r.Matches(comp))
-        self.assert_('echo ${undef:-$PWD' in m, 'Got %s' % m)
+        self.assert_('echo ${undef:-$PPID' in m, 'Got %s' % m)
         self.assert_('echo ${undef:-$PS4' in m, 'Got %s' % m)
 
         comp = MockApi(line='echo ${undef:-$')
@@ -353,7 +357,7 @@ class RootCompleterTest(unittest.TestCase):
         comp = MockApi(line='echo "$P')
         print(comp)
         m = list(r.Matches(comp))
-        self.assert_('echo "$PWD' in m, 'Got %s' % m)
+        self.assert_('echo "$PPID' in m, 'Got %s' % m)
         self.assert_('echo "$PS4' in m, 'Got %s' % m)
 
         #
@@ -370,7 +374,7 @@ class RootCompleterTest(unittest.TestCase):
         comp = MockApi(line='echo "${#P')
         print(comp)
         m = list(r.Matches(comp))
-        self.assert_('echo "${#PWD' in m, 'Got %s' % m)
+        self.assert_('echo "${#PPID' in m, 'Got %s' % m)
         self.assert_('echo "${#PS4' in m, 'Got %s' % m)
 
         #
@@ -380,13 +384,13 @@ class RootCompleterTest(unittest.TestCase):
         comp = MockApi(line='echo "$((PWD +P')  # bare word
         print(comp)
         m = list(r.Matches(comp))
-        self.assert_('echo "$((PWD +PWD' in m, 'Got %s' % m)
+        self.assert_('echo "$((PWD +PPID' in m, 'Got %s' % m)
         self.assert_('echo "$((PWD +PS4' in m, 'Got %s' % m)
 
         comp = MockApi(line='echo "$(( $P')
         print(comp)
         m = list(r.Matches(comp))
-        self.assert_('echo "$(( $PWD' in m, 'Got %s' % m)  # word with $
+        self.assert_('echo "$(( $PPID' in m, 'Got %s' % m)  # word with $
         self.assert_('echo "$(( $PS4' in m, 'Got %s' % m)
 
     def testCompletesCommandSubs(self):
@@ -752,8 +756,8 @@ class InitCompletionTest(unittest.TestCase):
 
             arena = test_lib.MakeArena('<InitCompletionTest>')
             parse_ctx = test_lib.InitParseContext(arena=arena)
-            mem = state.Mem('', [], arena, [])
-            parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
+            mem = state.Mem('', [], arena, [], {})
+            parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
             mem.exec_opts = exec_opts
 
             mutable_opts.Init()

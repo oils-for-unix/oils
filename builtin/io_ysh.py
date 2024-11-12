@@ -6,26 +6,26 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value
-from _devbuild.gen.syntax_asdl import command_e, BraceGroup, loc
-from _devbuild.gen.value_asdl import value
+from _devbuild.gen.syntax_asdl import command_e, BraceGroup
+from _devbuild.gen.value_asdl import value, value_e
 from asdl import format as fmt
 from core import error
 from core.error import e_usage
 from core import state
-from core import ui
+from display import ui
 from core import vm
 from data_lang import j8
 from frontend import flag_util
 from frontend import match
 from frontend import typed_args
 from mycpp import mylib
-from mycpp.mylib import log
+from mycpp.mylib import log, iteritems
 
-from typing import TYPE_CHECKING, cast, Dict
+from typing import TYPE_CHECKING, cast
 if TYPE_CHECKING:
     from core.alloc import Arena
-    from core.ui import ErrorFormatter
     from osh import cmd_eval
+    from ysh import expr_eval
 
 _ = log
 
@@ -33,7 +33,7 @@ _ = log
 class _Builtin(vm._Builtin):
 
     def __init__(self, mem, errfmt):
-        # type: (state.Mem, ErrorFormatter) -> None
+        # type: (state.Mem, ui.ErrorFormatter) -> None
         self.mem = mem
         self.errfmt = errfmt
 
@@ -44,12 +44,42 @@ class Pp(_Builtin):
     'pp cell a' is a lot easier to type than 'argv.py "${a[@]}"'.
     """
 
-    def __init__(self, mem, errfmt, procs, arena):
-        # type: (state.Mem, ErrorFormatter, Dict[str, value.Proc], Arena) -> None
+    def __init__(
+            self,
+            expr_ev,  # type: expr_eval.ExprEvaluator
+            mem,  # type: state.Mem
+            errfmt,  # type: ui.ErrorFormatter
+            procs,  # type: state.Procs
+            arena,  # type: Arena
+    ):
+        # type: (...) -> None
         _Builtin.__init__(self, mem, errfmt)
+        self.expr_ev = expr_ev
         self.procs = procs
         self.arena = arena
         self.stdout_ = mylib.Stdout()
+
+    def _PrettyPrint(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        rd = typed_args.ReaderForProc(cmd_val)
+        val = rd.PosValue()
+        rd.Done()
+
+        blame_tok = rd.LeftParenToken()
+
+        # Show it with location
+        # It looks like
+        #   pp (42)
+        #      ^
+        # [ stdin ]:5: (Int)   42
+        # We could also print with ! or -^-
+
+        self.stdout_.write('\n')
+        excerpt, prefix = ui.CodeExcerptAndPrefix(blame_tok)
+        self.stdout_.write(excerpt)
+        ui.PrettyPrintValue(prefix, val, self.stdout_)
+
+        return 0
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -57,36 +87,26 @@ class Pp(_Builtin):
                                            cmd_val,
                                            accept_typed_args=True)
 
-        action, action_loc = arg_r.ReadRequired2(
-            'expected an action (proc, cell, etc.)')
+        action, action_loc = arg_r.Peek2()
 
-        # Actions that print unstable formats start with '.'
-        if action == 'cell':
-            argv, locs = arg_r.Rest2()
+        # Special cases
+        # pp (x) quotes its code location, can also be pp [x]
+        if action is None:
+            return self._PrettyPrint(cmd_val)
 
-            status = 0
-            for i, name in enumerate(argv):
-                if name.startswith(':'):
-                    name = name[1:]
+        arg_r.Next()
 
-                if not match.IsValidVarName(name):
-                    raise error.Usage('got invalid variable name %r' % name,
-                                      locs[i])
+        if action == 'value':
+            # pp value (x) prints in the same way that '= x' does
+            rd = typed_args.ReaderForProc(cmd_val)
+            val = rd.PosValue()
+            rd.Done()
 
-                cell = self.mem.GetCell(name)
-                if cell is None:
-                    self.errfmt.Print_("Couldn't find a variable named %r" %
-                                       name,
-                                       blame_loc=locs[i])
-                    status = 1
-                else:
-                    self.stdout_.write('%s = ' % name)
-                    pretty_f = fmt.DetectConsoleOutput(self.stdout_)
-                    fmt.PrintTree(cell.PrettyTree(), pretty_f)
-                    self.stdout_.write('\n')
+            ui.PrettyPrintValue('', val, self.stdout_)
+            return 0
 
-        elif action == 'asdl':
-            # TODO: could be pp asdl (x, y, z)
+        if action == 'asdl_':
+            # TODO: could be pp asdl_ (x, y, z)
             rd = typed_args.ReaderForProc(cmd_val)
             val = rd.PosValue()
             rd.Done()
@@ -105,45 +125,90 @@ class Pp(_Builtin):
             fmt.PrintTree(tree, pretty_f)
             self.stdout_.write('\n')
 
-            status = 0
+            return 0
 
-        elif action == 'line':
-            # Print format for unit tests
-
-            # TODO: could be pp line (x, y, z)
+        if action == 'test_':  # Print format for spec tests
+            # TODO: could be pp test_ (x, y, z)
             rd = typed_args.ReaderForProc(cmd_val)
             val = rd.PosValue()
             rd.Done()
 
-            ysh_type = ui.ValType(val)
-            self.stdout_.write('(%s)   ' % ysh_type)
+            if ui.TypeNotPrinted(val):
+                ysh_type = ui.ValType(val)
+                self.stdout_.write('(%s)   ' % ysh_type)
 
             j8.PrintLine(val, self.stdout_)
 
-            status = 0
+            return 0
 
-        elif action == 'gc-stats':
+        if action == 'cell_':  # Format may change
+            argv, locs = arg_r.Rest2()
+
+            status = 0
+            for i, name in enumerate(argv):
+
+                if not match.IsValidVarName(name):
+                    raise error.Usage('got invalid variable name %r' % name,
+                                      locs[i])
+
+                cell = self.mem.GetCell(name)
+                if cell is None:
+                    self.errfmt.Print_("Couldn't find a variable named %r" %
+                                       name,
+                                       blame_loc=locs[i])
+                    status = 1
+                else:
+                    self.stdout_.write('%s = ' % name)
+                    pretty_f = fmt.DetectConsoleOutput(self.stdout_)
+                    fmt.PrintTree(cell.PrettyTree(), pretty_f)
+                    self.stdout_.write('\n')
+            return status
+
+        if action == 'stacks_':  # Format may change
+            if mylib.PYTHON:
+                var_stack, argv_stack, unused = self.mem.Dump()
+                print(var_stack)
+                print('===')
+                print(argv_stack)
+            if 0:
+                var_stack = self.mem.var_stack
+                for i, frame in enumerate(var_stack):
+                    print('=== Frame %d' % i)
+                    for name, cell in iteritems(frame):
+                        print('%s = %s' % (name, cell))
+
+            return 0
+
+        if action == 'frame_vars_':  # Print names in current frame, for testing
+            top = self.mem.var_stack[-1]
+            print('    [frame_vars_] %s' % ' '.join(top.keys()))
+            return 0
+
+        if action == 'gc-stats_':
             print('TODO')
-            status = 0
+            return 0
 
-        elif action == 'proc':
+        if action == 'proc':
             names, locs = arg_r.Rest2()
             if len(names):
                 for i, name in enumerate(names):
-                    node = self.procs.get(name)
+                    node, _ = self.procs.GetInvokable(name)
                     if node is None:
                         self.errfmt.Print_('Invalid proc %r' % name,
                                            blame_loc=locs[i])
                         return 1
             else:
-                names = sorted(self.procs)
+                names = self.procs.InvokableNames()
 
             # TSV8 header
             print('proc_name\tdoc_comment')
             for name in names:
-                proc = self.procs[name]  # must exist
-                #log('Proc %s', proc)
-                body = proc.body
+                proc_val, _ = self.procs.GetInvokable(name)  # must exist
+                if proc_val.tag() != value_e.Proc:
+                    continue  # can't be value.BuiltinProc
+                user_proc = cast(value.Proc, proc_val)
+
+                body = user_proc.body
 
                 # TODO: not just command.ShFunction, but command.Proc!
                 doc = ''
@@ -162,12 +227,10 @@ class Pp(_Builtin):
                 j8.EncodeString(doc, buf, unquoted_ok=True)
                 print(buf.getvalue())
 
-            status = 0
+            return 0
 
-        else:
-            e_usage('got invalid action %r' % action, action_loc)
-
-        return status
+        e_usage('got invalid action %r' % action, action_loc)
+        #return status
 
 
 class Write(_Builtin):
@@ -180,7 +243,7 @@ class Write(_Builtin):
     """
 
     def __init__(self, mem, errfmt):
-        # type: (state.Mem, ErrorFormatter) -> None
+        # type: (state.Mem, ui.ErrorFormatter) -> None
         _Builtin.__init__(self, mem, errfmt)
         self.stdout_ = mylib.Stdout()
 
@@ -215,14 +278,11 @@ class Write(_Builtin):
         return 0
 
 
-class Fopen(vm._Builtin):
-    """fopen does nothing but run a block.
+class RunBlock(vm._Builtin):
+    """Used for 'redir' builtin
 
     It's used solely for its redirects.
-        fopen >out.txt { echo hi }
-
-    It's a subset of eval
-        eval >out.txt { echo hi }
+        redir >out.txt { echo hi }
     """
 
     def __init__(self, mem, cmd_ev):
@@ -232,13 +292,10 @@ class Fopen(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        _, arg_r = flag_util.ParseCmdVal('fopen',
+        _, arg_r = flag_util.ParseCmdVal('redir',
                                          cmd_val,
                                          accept_typed_args=True)
 
-        cmd = typed_args.OptionalBlock(cmd_val)
-        if not cmd:
-            raise error.Usage('expected a block', loc.Missing)
-
-        unused = self.cmd_ev.EvalCommand(cmd)
+        cmd_frag = typed_args.RequiredBlockAsFrag(cmd_val)
+        unused = self.cmd_ev.EvalCommandFrag(cmd_frag)
         return 0

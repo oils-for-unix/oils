@@ -371,15 +371,95 @@ json write (b' \y00 ' => trimEnd())
 " \u0000"
 ## END
 
-#### Dict => keys()
-var en2fr = {}
-setvar en2fr["hello"] = "bonjour"
-setvar en2fr["friend"] = "ami"
-setvar en2fr["cat"] = "chat"
-pp line (en2fr => keys())
-## status: 0
+#### Str => split(sep), non-empty str sep
+pp test_ ('a,b,c'.split(','))
+pp test_ ('aa'.split('a'))
+pp test_ ('a<>b<>c<d'.split('<>'))
+pp test_ ('a;b;;c'.split(';'))
+pp test_ (''.split('foo'))
 ## STDOUT:
-(List)   ["hello","friend","cat"]
+(List)   ["a","b","c"]
+(List)   ["","",""]
+(List)   ["a","b","c<d"]
+(List)   ["a","b","","c"]
+(List)   []
+## END
+
+#### Str => split(sep), eggex sep
+pp test_ ('a,b;c'.split(/ ',' | ';' /))
+pp test_ ('aa'.split(/ dot /))
+pp test_ ('a<>b@@c<d'.split(/ '<>' | '@@' /))
+pp test_ ('a b  cd'.split(/ space+ /))
+pp test_ (''.split(/ dot /))
+## STDOUT:
+(List)   ["a","b","c"]
+(List)   ["","",""]
+(List)   ["a","b","c<d"]
+(List)   ["a","b","cd"]
+(List)   []
+## END
+
+#### Str => split(sep, count), non-empty str sep
+pp test_ ('a,b,c'.split(',', count=-1))
+pp test_ ('a,b,c'.split(',', count=-2))  # Any negative count means "ignore count"
+pp test_ ('aa'.split('a', count=1))
+pp test_ ('a<>b<>c<d'.split('<>', count=10))
+pp test_ ('a;b;;c'.split(';', count=2))
+pp test_ (''.split('foo', count=3))
+pp test_ ('a,b,c'.split(',', count=0))
+pp test_ (''.split(',', count=0))
+## STDOUT:
+(List)   ["a","b","c"]
+(List)   ["a","b","c"]
+(List)   ["","a"]
+(List)   ["a","b","c<d"]
+(List)   ["a","b",";c"]
+(List)   []
+(List)   ["a,b,c"]
+(List)   []
+## END
+
+#### Str => split(sep, count), eggex sep
+pp test_ ('a,b;c'.split(/ ',' | ';' /, count=-1))
+pp test_ ('aa'.split(/ dot /, count=1))
+pp test_ ('a<>b@@c<d'.split(/ '<>' | '@@' /, count=50))
+pp test_ ('a b  c'.split(/ space+ /, count=0))
+pp test_ (''.split(/ dot /, count=1))
+## STDOUT:
+(List)   ["a","b","c"]
+(List)   ["","a"]
+(List)   ["a","b","c<d"]
+(List)   ["a b  c"]
+(List)   []
+## END
+
+#### Str => split(), usage errors
+try { pp test_ ('abc'.split(''))             } # Sep cannot be ""
+echo status=$[_error.code]
+try { pp test_ ('abc'.split())               } # Sep must be present
+echo status=$[_error.code]
+try { pp test_ (b'\y00a\y01'.split(/ 'a' /)) } # Cannot split by eggex when str has NUL-byte
+echo status=$[_error.code]
+try { pp test_ (b'abc'.split(/ space* /))    } # Eggex cannot accept empty string
+echo status=$[_error.code]
+try { pp test_ (b'abc'.split(/ dot* /))      } # But in some cases the input doesn't cause an
+                                               # infinite loop, so we actually allow it!
+echo status=$[_error.code]
+## STDOUT:
+status=3
+status=3
+status=3
+status=3
+(List)   ["",""]
+status=0
+## END
+
+#### Str => split(), non-ascii
+pp test_ ('🌞🌝🌞🌝🌞'.split('🌝'))
+pp test_ ('🌞🌝🌞🌝🌞'.split(/ '🌝' /))
+## STDOUT:
+(List)   ["🌞","🌞","🌞"]
+(List)   ["🌞","🌞","🌞"]
 ## END
 
 #### Dict => values()
@@ -387,15 +467,40 @@ var en2fr = {}
 setvar en2fr["hello"] = "bonjour"
 setvar en2fr["friend"] = "ami"
 setvar en2fr["cat"] = "chat"
-pp line (en2fr => values())
+pp test_ (en2fr => values())
 ## status: 0
 ## STDOUT:
 (List)   ["bonjour","ami","chat"]
 ## END
 
+#### Dict -> erase()
+var book = {title: "The Histories", author: "Herodotus"}
+call book->erase("author")
+pp test_ (book)
+# confirm method is idempotent
+call book->erase("author")
+pp test_ (book)
+## status: 0
+## STDOUT:
+(Dict)   {"title":"The Histories"}
+(Dict)   {"title":"The Histories"}
+## END
+
+#### Dict -> get()
+var book = {title: "Hitchhiker's Guide", published: 1979}
+pp test_ (book => get("title", ""))
+pp test_ (book => get("published", 0))
+pp test_ (book => get("author", ""))
+## status: 0
+## STDOUT:
+(Str)   "Hitchhiker's Guide"
+(Int)   1979
+(Str)   ""
+## END
+
 #### Separation of -> attr and () calling
 const check = "abc" => startsWith
-pp line (check("a"))
+pp test_ (check("a"))
 ## status: 0
 ## STDOUT:
 (Bool)   true
@@ -404,15 +509,15 @@ pp line (check("a"))
 #### Bound methods, receiver value/reference semantics
 var is_a_ref = { "foo": "bar" }
 const f = is_a_ref => keys
-pp line (f())
+pp test_ (f())
 setvar is_a_ref["baz"] = 42
-pp line (f())
+pp test_ (f())
 
 var is_a_val = "abc"
 const g = is_a_val => startsWith
-pp line (g("a"))
+pp test_ (g("a"))
 setvar is_a_val = "xyz"
-pp line (g("a"))
+pp test_ (g("a"))
 ## status: 0
 ## STDOUT:
 (List)   ["foo"]
@@ -466,10 +571,10 @@ call a->reverse()
 call b->reverse()
 call c->reverse()
 
-pp line (empty)
-pp line (a)
-pp line (b)
-pp line (c)
+pp test_ (empty)
+pp test_ (a)
+pp test_ (b)
+pp test_ (c)
 
 ## STDOUT:
 (List)   []
@@ -479,7 +584,7 @@ pp line (c)
 ## END
 
 #### List->reverse() from iterator
-var x = list(0 .. 3)
+var x = list(0 ..< 3)
 call x->reverse()
 write @x
 ## STDOUT:

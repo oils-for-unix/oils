@@ -10,7 +10,7 @@ util.py - Common infrastructure.
 """
 from __future__ import print_function
 
-from core import ansi
+from display import ansi
 from core import pyutil
 from mycpp import mylib
 

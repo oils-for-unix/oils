@@ -1,16 +1,19 @@
 #!/bin/sh
 #
-# POSIX shell script to detect target system properties required by Oil.
-# Distributed with the source tarball.
+# POSIX shell script to detect system properties required by Oils.  Distributed
+# with the source tarball.
 #
-# The only library Oil needs is readline.
+# For usage, run:
+#
+#   ./configure --help
 #
 # External utilities used: cc
+# Optional dependency: GNU readline
 #
-# TODO: Should be able to run this from another directory.
-#
-# Other settings: LTO, PGO?  Consider moving prefix, LTO, PGO to build and
-# install steps.
+# TODO:
+# - Should be able to run this from another directory.
+# - Other settings: LTO, PGO?  Consider moving prefix, LTO, PGO to build and
+#   install steps.
 
 TMP=${TMPDIR:-/tmp}  # Assume that any system has $TMPDIR set or /tmp exists
 readonly TMP  # POSIX sh supports 'readonly'
@@ -30,9 +33,11 @@ die() {
 
 show_help() {
   cat <<'EOF'
-Usage: ./configure [OPTION...]
+Detect system settings before a build of oils-for-unix.
 
-Detects system settings before a build of Oil.
+Usage:
+  ./configure FLAG*
+  ./configure --help
 
 Installation directories:
   --prefix=PREFIX               Prefix for the bin/ directory [/usr/local]
@@ -45,6 +50,7 @@ Optional features:
   --readline=DIR                An alternative readline installation to link against
   --with-systemtap-sdt          Fail unless systemtap-sdt is available.
   --without-systemtap-sdt       Don't compile with systemtap-sdt, even if it's available.
+
 EOF
 }
 
@@ -82,7 +88,6 @@ parse_flags() {
         break
         ;;
       --help)
-        # TODO: Fill out help
         show_help
         exit 0
         ;;

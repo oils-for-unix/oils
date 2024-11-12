@@ -176,7 +176,7 @@ parse-flags-osh-runtime() {
         ;;
 
       *)
-        die "Invalid flag '$1'"
+        die "Invalid argument '$1'"
         ;;
     esac
     shift
@@ -329,7 +329,7 @@ demo() {
   pushd oils-for-unix-$OILS_VERSION
   build/native.sh tarball-demo
 
-  local osh=$PWD/_bin/cxx-opt-sh/osh 
+  local osh=$PWD/_bin/cxx-opt-sh/osh
 
   $time_py --tsv --rusage -o demo.tsv -- \
     $osh -c 'sleep 0.1; echo "hi from osh"'

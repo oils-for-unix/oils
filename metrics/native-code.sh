@@ -124,7 +124,7 @@ compare-gcc-clang() {
   local -a targets=(
     _bin/{clang,cxx}-dbg/oils-for-unix
     _bin/{clang,cxx}-opt/oils-for-unix.stripped
-    _bin/cxx-{opt+bumpleak,opt+bumproot}/oils-for-unix.stripped
+    _bin/cxx-{opt+bumpleak,opt+bumproot,opt+bigint}/oils-for-unix.stripped
     _bin/{clang,cxx}-opt/yaks/yaks_main.mycpp.stripped
     _bin/cxx-{opt+bumpleak,opt+bumproot}/yaks/yaks_main.mycpp.stripped
     )
@@ -137,12 +137,15 @@ compare-gcc-clang() {
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 
 run-for-release() {
-  build-ovm
+  # 2024-08: Not building with DWARF 4
+  if false; then
+    build-ovm
 
-  local dbg=_build/oil/ovm-dbg
-  local opt=_build/oil/ovm-opt
+    local dbg=_build/oil/ovm-dbg
+    local opt=_build/oil/ovm-opt
 
-  collect-and-report $OVM_BASE_DIR $dbg $opt
+    collect-and-report $OVM_BASE_DIR $dbg $opt
+  fi
 
   # TODO: consolidate with benchmarks/common.sh, OSH_CPP_BENCHMARK_DATA
   # For some reason _bin/cxx-opt/ and _bin/cxx-opt-sh can differ by a few bytes

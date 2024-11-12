@@ -1,0 +1,30 @@
+# Pretty printing "documents". A `doc` encodes printing instructions, including
+# choices between multiple possible layouts.
+
+module pretty
+{
+  # A pretty printing document, together with a measure of its size.
+  MeasuredDoc = (doc doc, Measure measure)
+  
+  # The "size" of a document:
+  # - `flat` gives the width of the doc if printed flat (on one line).
+  # - `nonflat` gives the width until the doc's first possible newline,
+  #   or -1 if no layout of the doc contains a newline.
+  Measure = (int flat, int nonflat)
+  
+  # A pretty printing "document", which encodes a set of possible layouts.
+  # The pretty printer will pick the "best" layout from among this set.
+  # See the docs on the constructors in `pretty.py` for details.
+  doc =
+      Break(str string)
+    | Text(str string)
+    | Indent(int indent, MeasuredDoc mdoc)
+    | Concat(List[MeasuredDoc] mdocs)
+    | Group(MeasuredDoc mdoc)
+    | IfFlat(MeasuredDoc flat_mdoc, MeasuredDoc nonflat_mdoc)
+    | Flat(MeasuredDoc mdoc)
+  
+  # Used internally while pretty printing.
+  # See comments in PrettyPrinter._PrintDoc.
+  DocFragment = (MeasuredDoc mdoc, int indent, bool is_flat, Measure measure)
+}

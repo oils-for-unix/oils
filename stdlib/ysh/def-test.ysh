@@ -1,0 +1,43 @@
+use $LIB_YSH/def.ysh --pick Dict
+
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/byo-server.sh
+
+proc test-dict {
+  var i = 0
+  Dict (&d) {
+    a = 42
+    b = i + 1
+  }
+  pp test_ (d)
+}
+
+
+func Counter(start) {
+  ### constructor
+  var methods = Object(null, Counter_methods)
+  return (Object(methods, {i: start}))
+}
+
+var Counter_methods = null
+
+# BUG: I think there is a problem with using Dict in a DIFFERENT module!
+
+if false {
+Dict (&Counter_methods) {
+  #func inc(self, n) {
+  #  setvar self.i += n
+  #}
+  i = 2
+}
+}
+
+proc test-class-pattern {
+  #var c = Counter(5)
+  #call c.inc(5)
+  : 
+}
+
+if is-main {
+  byo-maybe-run
+}

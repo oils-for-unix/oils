@@ -4,13 +4,12 @@ func_misc.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import (scope_e)
-from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str)
+from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str, Obj)
 
 from core import error
 from core import num
-from core import state
-from core import ui
+from display import pp_value
+from display import ui
 from core import vm
 from data_lang import j8
 from frontend import match
@@ -18,15 +17,124 @@ from frontend import typed_args
 from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import NewDict, iteritems, log, tagswitch
-from ysh import expr_eval
 from ysh import val_ops
 
-from typing import TYPE_CHECKING, Dict, List, cast
+from typing import TYPE_CHECKING, Dict, List, Optional, cast
 if TYPE_CHECKING:
     from osh import glob_
     from osh import split
 
 _ = log
+
+
+class Object(vm._Callable):
+    """OLD API to a value.Obj
+
+    The order of params follows JavaScript's Object.create():
+        var obj = Object(prototype, props)
+    """
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        prototype = rd.PosValue()
+        proto_loc = rd.BlamePos()
+
+        props = rd.PosDict()
+        rd.Done()
+
+        chain = None  # type: Optional[Obj]
+        UP_prototype = prototype
+        with tagswitch(prototype) as case:
+            if case(value_e.Null):
+                pass
+            elif case(value_e.Obj):
+                prototype = cast(Obj, UP_prototype)
+                chain = prototype
+            else:
+                raise error.TypeErr(prototype, 'Object() expected Obj or Null',
+                                    proto_loc)
+
+        return Obj(chain, props)
+
+
+class Obj_call(vm._Callable):
+    """New API to create a value.Obj
+
+    It has a more natural order
+        var obj = Obj(props, prototype)
+
+    Until we have __call__, it's Obj:
+        var obj = Obj.new(props, prototype)
+    """
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        props = rd.PosDict()
+
+        prototype = rd.OptionalValue()
+        proto_loc = rd.BlamePos()
+
+        rd.Done()
+
+        chain = None  # type: Optional[Obj]
+
+        if prototype is not None:
+            UP_prototype = prototype
+            with tagswitch(prototype) as case:
+                if case(value_e.Null):  # Obj({}, null)
+                    pass
+                elif case(value_e.Obj):
+                    prototype = cast(Obj, UP_prototype)
+                    chain = prototype
+                else:
+                    raise error.TypeErr(prototype,
+                                        'Object() expected Obj or Null',
+                                        proto_loc)
+
+        return Obj(chain, props)
+
+
+class Prototype(vm._Callable):
+    """Get an object's prototype."""
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        obj = rd.PosObj()
+        rd.Done()
+
+        if obj.prototype is None:
+            return value.Null
+
+        return obj.prototype
+
+
+class PropView(vm._Callable):
+    """Get a Dict view of an object's properties."""
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        obj = rd.PosObj()
+        rd.Done()
+
+        return value.Dict(obj.d)
 
 
 class Len(vm._Callable):
@@ -71,18 +179,12 @@ class Type(vm._Callable):
         val = rd.PosValue()
         rd.Done()
 
+        # TODO: assert it's not Undef, Interrupted, Slice
+        # Then return an Obj type
+        #
+        # It would be nice if they were immutable, if we didn't have to create
+        # 23-24 dicts and 23-24 Obj on startup?
         return value.Str(ui.ValType(val))
-
-
-class Repeat(vm._Callable):
-
-    def __init__(self):
-        # type: () -> None
-        pass
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-        return value.Null
 
 
 class Join(vm._Callable):
@@ -101,7 +203,7 @@ class Join(vm._Callable):
 
         strs = []  # type: List[str]
         for i, el in enumerate(li):
-            strs.append(val_ops.Stringify(el, rd.LeftParenToken()))
+            strs.append(val_ops.Stringify(el, rd.LeftParenToken(), 'join() '))
 
         return value.Str(delim.join(strs))
 
@@ -168,15 +270,27 @@ class Int(vm._Callable):
 
             elif case(value_e.Float):
                 val = cast(value.Float, UP_val)
-                return value.Int(mops.FromFloat(val.f))
+                ok, big_int = mops.FromFloat(val.f)
+                if ok:
+                    return value.Int(big_int)
+                else:
+                    raise error.Expr(
+                        "Can't convert float %s to Int" %
+                        pp_value.FloatString(val.f), rd.BlamePos())
 
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
-                if not match.LooksLikeInteger(val.s):
-                    raise error.Expr('Cannot convert %s to Int' % val.s,
+                if not match.LooksLikeYshInt(val.s):
+                    raise error.Expr("Can't convert %s to Int" % val.s,
                                      rd.BlamePos())
 
-                return value.Int(mops.FromStr(val.s))
+                s = val.s.replace('_', '')
+                ok, big_int = mops.FromStr2(s)
+                if not ok:
+                    raise error.Expr("Integer too big: %s" % val.s,
+                                     rd.BlamePos())
+
+                return value.Int(big_int)
 
         raise error.TypeErr(val, 'int() expected Bool, Int, Float, or Str',
                             rd.BlamePos())
@@ -205,7 +319,7 @@ class Float(vm._Callable):
 
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
-                if not match.LooksLikeFloat(val.s):
+                if not match.LooksLikeYshFloat(val.s):
                     raise error.Expr('Cannot convert %s to Float' % val.s,
                                      rd.BlamePos())
 
@@ -227,23 +341,13 @@ class Str_(vm._Callable):
         val = rd.PosValue()
         rd.Done()
 
-        # TODO: Should we call Stringify here?  That would handle Eggex.
-
-        UP_val = val
         with tagswitch(val) as case:
-            if case(value_e.Int):
-                val = cast(value.Int, UP_val)
-                return value.Str(mops.ToStr(val.i))
-
-            elif case(value_e.Float):
-                val = cast(value.Float, UP_val)
-                return value.Str(str(val.f))
-
-            elif case(value_e.Str):
+            # Avoid extra allocation
+            if case(value_e.Str):
                 return val
-
-        raise error.TypeErr(val, 'str() expected Str, Int, or Float',
-                            rd.BlamePos())
+            else:
+                s = val_ops.Stringify(val, rd.LeftParenToken(), 'str() ')
+                return value.Str(s)
 
 
 class List_(vm._Callable):
@@ -290,7 +394,7 @@ class List_(vm._Callable):
         return value.List(l)
 
 
-class Dict_(vm._Callable):
+class DictFunc(vm._Callable):
 
     def __init__(self):
         # type: () -> None
@@ -305,22 +409,38 @@ class Dict_(vm._Callable):
         UP_val = val
         with tagswitch(val) as case:
             if case(value_e.Dict):
-                d = NewDict()  # type: Dict[str, value_t]
                 val = cast(value.Dict, UP_val)
+                d = NewDict()  # type: Dict[str, value_t]
+                for k, v in iteritems(val.d):
+                    d[k] = v
+
+                return value.Dict(d)
+
+            elif case(value_e.Obj):
+                val = cast(Obj, UP_val)
+                d = NewDict()
                 for k, v in iteritems(val.d):
                     d[k] = v
 
                 return value.Dict(d)
 
             elif case(value_e.BashAssoc):
-                d = NewDict()
                 val = cast(value.BashAssoc, UP_val)
+                d = NewDict()
                 for k, s in iteritems(val.d):
                     d[k] = value.Str(s)
 
                 return value.Dict(d)
 
-        raise error.TypeErr(val, 'dict() expected Dict or BashAssoc',
+            elif case(value_e.Frame):
+                val = cast(value.Frame, UP_val)
+                d = NewDict()
+                for k, cell in iteritems(val.frame):
+                    d[k] = cell.val
+
+                return value.Dict(d)
+
+        raise error.TypeErr(val, 'dict() expected Dict, Obj, or BashAssoc',
                             rd.BlamePos())
 
 
@@ -390,6 +510,21 @@ class Split(vm._Callable):
         return value.List(l)
 
 
+class FloatsEqual(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        left = rd.PosFloat()
+        right = rd.PosFloat()
+        rd.Done()
+
+        return value.Bool(left == right)
+
+
 class Glob(vm._Callable):
 
     def __init__(self, globber):
@@ -407,73 +542,6 @@ class Glob(vm._Callable):
 
         l = [value.Str(elem) for elem in out]  # type: List[value_t]
         return value.List(l)
-
-
-class Shvar_get(vm._Callable):
-    """Look up with dynamic scope."""
-
-    def __init__(self, mem):
-        # type: (state.Mem) -> None
-        vm._Callable.__init__(self)
-        self.mem = mem
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-        name = rd.PosStr()
-        rd.Done()
-        return state.DynamicGetVar(self.mem, name, scope_e.Dynamic)
-
-
-class GetVar(vm._Callable):
-    """Look up normal scoping rules."""
-
-    def __init__(self, mem):
-        # type: (state.Mem) -> None
-        vm._Callable.__init__(self)
-        self.mem = mem
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-        name = rd.PosStr()
-        rd.Done()
-        return state.DynamicGetVar(self.mem, name, scope_e.LocalOrGlobal)
-
-
-class Assert(vm._Callable):
-
-    def __init__(self):
-        # type: () -> None
-        pass
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-
-        val = rd.PosValue()
-
-        msg = rd.OptionalStr(default_='')
-
-        rd.Done()
-
-        if not val_ops.ToBool(val):
-            raise error.AssertionErr(msg, rd.LeftParenToken())
-
-        return value.Null
-
-
-class EvalExpr(vm._Callable):
-
-    def __init__(self, expr_ev):
-        # type: (expr_eval.ExprEvaluator) -> None
-        self.expr_ev = expr_ev
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-        lazy = rd.PosExpr()
-        rd.Done()
-
-        result = self.expr_ev.EvalExpr(lazy, rd.LeftParenToken())
-
-        return result
 
 
 class ToJson8(vm._Callable):
@@ -563,34 +631,6 @@ class BashArrayToSparse(vm._Callable):
                     max_index = big_i
 
         return value.SparseArray(d, max_index)
-
-
-class DictToSparse(vm._Callable):
-    """
-    value.Dict -> value.SparseArray, for testing
-    """
-
-    def __init__(self):
-        # type: () -> None
-        pass
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-
-        d = rd.PosDict()
-        rd.Done()
-
-        blame_tok = rd.LeftParenToken()
-
-        mydict = {}  # type: Dict[mops.BigInt, str]
-        for k, v in iteritems(d):
-            i = mops.FromStr(k)
-            s = val_ops.ToStr(v, 'expected str', blame_tok)
-
-            mydict[i] = s
-
-        max_index = mops.MINUS_ONE  # TODO:
-        return value.SparseArray(mydict, max_index)
 
 
 class SparseOp(vm._Callable):

@@ -65,9 +65,14 @@ YSH uses JavaScript-like spellings for these three "atoms":
 Note: to signify "no value", you may sometimes use an empty string `''`,
 instead of `null`.
 
+- Related: [Null][] type, [Bool][] type
+
+[Null]: chap-type-method.html#Null
+[Bool]: chap-type-method.html#Bool
+
 ### int-literal
 
-Examples of integer literals:
+There are several ways to write integers.  Examples:
 
     var decimal = 42
     var big = 42_000
@@ -78,13 +83,40 @@ Examples of integer literals:
 
     var binary = 0b0001_0000
 
-### float-lit
+- Related: [Int][] type
 
-Examples of float literals:
+[Int]: chap-type-method.html#Int
+
+### float-literal
+
+Floating point numbers looke like C, Python, or JavaScript:
 
     var myfloat = 3.14
 
     var f2 = -1.5e-100
+
+- Related: [Float][] type
+
+[Float]: chap-type-method.html#Float
+
+### char-literal
+
+The expression language has 3 kinds of backslash escapes, denoting bytes or
+UTF-8:
+
+    var backslash = \\
+    var quotes = \' ++ \"   # same as u'\'' ++ '"'
+
+    var mu = \u{3bc}        # same as u'\u{3bc}'
+
+    var nul = \y00          # same as b'\y00'
+
+Notice that this is the same syntax that's available within quoted J8 strings.
+That is, the expression `\\` denotes the same thing as `u'\\'`.
+
+- Related: [Str][] type
+
+[Str]: chap-type-method.html#Str
 
 ### ysh-string
 
@@ -168,16 +200,7 @@ ambiguous:
         no leading whitespace
         '''
 
-### str-template
-
-String templates use the same syntax as double-quoted strings:
-
-    var mytemplate = ^"name = $name, age = $age"
-
-Related topics:
-
-- [Str => replace](chap-type-method.html#replace)
-- [ysh-string](chap-expr-lang.html#ysh-string)
+[Expr]: chap-type-method.html#Expr
 
 ### list-literal
 
@@ -195,6 +218,10 @@ The shell-like syntax accepts the same syntax as a simple command:
 
     # Rather than executing ls, evaluate words into a List
     var cmd = :| ls $mystr @ARGV *.py {foo,bar}@example.com |
+
+- Related: [List][] type
+
+[List]: chap-type-method.html#List
 
 ### dict-literal
 
@@ -217,23 +244,35 @@ the same name:
     ysh$ = d
     (Dict)  {x: 42, y: 43}
 
+- Related: [Dict][] type
+
+[Dict]: chap-type-method.html#Dict
+
 ### range
 
-A range is a sequence of numbers that can be iterated over:
+A Range is a sequence of numbers that can be iterated over. The `..<` operator
+constructs half-open ranges.
 
-    for i in (0 .. 3) {
+    for i in (0 ..< 3) {
       echo $i
     }
     => 0
     => 1
     => 2
 
-As with slices, the last number isn't included.  To iterate from 1 to n, you
-can use this idiom:
+The `..=` operator constructs closed ranges:
 
-    for i in (1 .. n+1) {
+    for i in (0 ..= 3) {
       echo $i
     }
+    => 0
+    => 1
+    => 2
+    => 3
+
+- Related: [Range][] type
+
+[Range]: chap-type-method.html#Range
 
 ### block-expr
 
@@ -257,7 +296,21 @@ An expression literal is an object that holds an unevaluated expression:
 
     var myexpr = ^[1 + 2*3]
 
+- Related: [Expr][] type
+
 [Expr]: chap-type-method.html#Expr
+
+### str-template
+
+String templates use the same syntax as double-quoted strings:
+
+    var mytemplate = ^"name = $name, age = $age"
+
+Related topics:
+
+- The type of a template is [Expr][].
+- [Str.replace](chap-type-method.html#replace)
+- [ysh-string](#ysh-string)
 
 ## Operators
 
@@ -460,17 +513,72 @@ The ternary operator is borrowed from Python:
 
 ### ysh-attr
 
-The expression `mydict.key` is short for `mydict['key']`.
+The `.` operator looks up values on either `Dict` or `Obj` instances.
 
-(Like JavaScript, but unlike Python.)
+On dicts, it looks for the value associated with a key.  That is, the
+expression `mydict.key` is short for `mydict['key']` (like JavaScript, but
+unlike Python.)
+
+---
+
+On objects, the expression `obj.x` looks for attributes, with a special rule
+for bound methods.  The rules are:
+
+1. Search the properties of `obj` for a field named `x`. 
+   - If it exists, return the value literally.  (It can be of any type: `Func`, `Int`,
+     `Str`, ...)
+2. Search up the prototype chain for a field named `x`.
+   - If it exists, and is **not** a `Func`, return the value literally.
+   - If it **is** a `Func`, return **bound method**, which is an (object,
+     function) pair.
+
+Later, when the bound method is called, the object is passed as the first
+argument to the function (`self`), making it a method call.  This is how a
+method has access to the object's properties.
+
+Example of first rule:
+
+    func Free(i) {
+      return (i + 1)
+    }
+    var module = Object(null, {Free})
+    echo $[module.Free(42)]  # => 43
+
+Example of second rule:
+
+    func method(self, i) {
+      return (self.n + i)
+    }
+    var methods = Object(null, {method})
+    var obj = Object(methods, {n: 10})
+    echo $[obj.method(42)]  # => 52
 
 ### ysh-slice
 
-Slicing gives you a subsequence of a `Str` or `List`, like Python.
+Slicing gives you a subsequence of a `Str` or `List`, as in Python.
 
 Negative indices are relative to the end.
 
-### func-call
+String example:
+
+    $ var s = 'spam eggs'
+    $ pp (s[1:-1])
+    (Str)   "pam egg"
+
+    $ echo "x $[s[2:]]"
+    x am eggs
+
+List example:
+
+    $ var foods = ['ale', 'bean', 'corn']
+    $ pp (foods[-2:])
+    (List)   ["bean","corn"]
+    
+    $ write -- @[foods[:2]]
+    ale
+    bean
+
+### ysh-func-call
 
 A function call expression looks like Python:
 
@@ -494,11 +602,24 @@ The thin arrow is for mutating methods:
     var mylist = ['bar']
     call mylist->pop()
 
-<!--
-TODO
     var mydict = {name: 'foo'}
     call mydict->erase('name')
--->
+
+On `Obj` instances, `obj->mymethod` looks up the prototype chain for a function
+named `M/mymethod`.  The `M/` prefix signals mutation.
+
+Example:
+
+    func inc(self, n) {
+      setvar self.i += n
+    }
+    var Counter_methods = Object(null, {'M/inc': inc})
+    var c = Object(Counter_methods, {i: 0})
+
+    call c->inc(5)
+    echo $[c.i]  # => 5
+
+It does **not** look in the properties of an object.
 
 ### fat-arrow
 
@@ -618,7 +739,9 @@ Sets of characters can be written as strings
 Backslash escapes are respected:
 
     [ \\ \' \" \0 ]
-    [ \xFF \u0100 ]
+    [ \xFF \u{3bc} ]
+
+(Note that we don't use `\yFF`, as in J8 strings.)
 
 Splicing:
 

@@ -115,6 +115,8 @@ READ_SPEC.ShortFlag('-N', args.Int)
 READ_SPEC.ShortFlag('-a', args.String)  # name of array to read into
 READ_SPEC.ShortFlag('-d', args.String)
 READ_SPEC.ShortFlag('-p', args.String)  # prompt
+# bash supports -i text for GNU readline.  Different than -p
+# -e
 
 # OSH extension (not really considered YSH!)
 READ_SPEC.ShortFlag('-0')  # until NUL, like IFS= read -r -d ''
@@ -437,6 +439,7 @@ ERROR_SPEC = FlagSpec('error')
 FAILED_SPEC = FlagSpec('failed')
 
 BOOLSTATUS_SPEC = FlagSpec('boolstatus')
+ASSERT_SPEC = FlagSpec('assert')
 
 # Future directions:
 # run --builtin, run --command, run --proc:
@@ -454,17 +457,24 @@ CTX_SPEC = FlagSpec('ctx')
 
 PP_SPEC = FlagSpec('pp')
 
-SHVM_SPEC = FlagSpec('shvm')
-
 # --verbose?
 FORK_SPEC = FlagSpec('fork')
 FORKWAIT_SPEC = FlagSpec('forkwait')
 
 # Might want --list at some point
-MODULE_SPEC = FlagSpec('source-guard')
+SOURCE_GUARD_SPEC = FlagSpec('source-guard')
+USE_SPEC = FlagSpec('use')
+USE_SPEC.LongFlag('--extern')
 
 RUNPROC_SPEC = FlagSpec('runproc')
 RUNPROC_SPEC.ShortFlag('-h', args.Bool, help='Show all procs')
+
+INVOKE_SPEC = FlagSpec('invoke')
+INVOKE_SPEC.LongFlag('--builtin')  # like 'builtin'
+INVOKE_SPEC.LongFlag('--proc-like')  # like 'runproc'
+INVOKE_SPEC.LongFlag('--extern')  # like 'extern'
+
+EXTERN_SPEC = FlagSpec('extern')
 
 WRITE_SPEC = FlagSpec('write')
 WRITE_SPEC.LongFlag('--sep',
@@ -505,7 +515,7 @@ if 0:
 
 PUSH_REGISTERS_SPEC = FlagSpec('push-registers')
 
-FOPEN_SPEC = FlagSpec('fopen')
+FOPEN_SPEC = FlagSpec('redir')
 
 #
 # JSON

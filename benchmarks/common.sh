@@ -10,10 +10,14 @@ readonly __BENCHMARKS_COMMON_SH=1
 #readonly MACHINE1=flanders
 #readonly MACHINE2=lenny
 
-# 2023-11-29: machine1 is still lenny because it has bloaty, which doesn't
-#             work with ELF data emitted by newer GCC on Debian 12
-readonly MACHINE1=lenny
-readonly MACHINE2=hoover
+# 2023-11-29: MACHINE1=lenny MACHINE2=hoover
+
+# 2024-08-23: MACHINE1=hoover MACHINE2=mercer
+# Because we gained a Souffle dependency, which requires C++17.  And the base
+# image on lenny doesn't support C++17.
+
+readonly MACHINE1=hoover
+readonly MACHINE2=mercer
 
 OIL_VERSION=$(head -n 1 oil-version.txt)
 
@@ -21,11 +25,14 @@ OIL_VERSION=$(head -n 1 oil-version.txt)
 readonly BENCHMARK_DATA_OILS=$PWD/../benchmark-data/src/oils-for-unix-$OIL_VERSION
 
 readonly OSH_CPP_NINJA_BUILD=_bin/cxx-opt/osh
+readonly OSH_SOUFFLE_CPP_NINJA_BUILD=_bin/cxx-opt/mycpp-souffle/osh
 
 readonly OSH_CPP_SH_BUILD=_bin/cxx-opt-sh/osh
+readonly OSH_SOUFFLE_CPP_SH_BUILD=_bin/cxx-opt-sh/mycpp-souffle/osh
 readonly YSH_CPP_SH_BUILD=_bin/cxx-opt-sh/ysh
 
 readonly OSH_CPP_BENCHMARK_DATA=$BENCHMARK_DATA_OILS/$OSH_CPP_SH_BUILD
+readonly OSH_SOUFFLE_CPP_BENCHMARK_DATA=$BENCHMARK_DATA_OILS/$OSH_SOUFFLE_CPP_SH_BUILD
 readonly YSH_CPP_BENCHMARK_DATA=$BENCHMARK_DATA_OILS/$YSH_CPP_SH_BUILD
 
 #

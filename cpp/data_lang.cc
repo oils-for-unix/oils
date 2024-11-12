@@ -262,6 +262,8 @@ int HeapValueId(value_asdl::value_t* val) {
   // ASDL generates headers with HeapTag::Scanned, but HeapTag::FixedSize would
   // also be valid.
   ObjHeader* h = ObjHeader::FromObject(val);
+  // Note: value::Stdin is a HeapTag::Global singleton, but we avoid calling it
+  // on that.  Could return -1 for the HeapValueId instead of this assertion?
   DCHECK(h->heap_tag == HeapTag::Scanned || h->heap_tag == HeapTag::FixedSize);
 #endif
 

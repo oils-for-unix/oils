@@ -137,7 +137,9 @@ T* Alloc(Args&&... args) {
   #endif
 #endif
   void* obj = header->ObjectAddress();
-  // mycpp doesn't generated constructors that initialize every field
+  // Now that mycpp generates code to initialize every field, we should
+  // get rid of this.
+  // TODO: fix uftrace failure, maybe by upgrading, or working around
   memset(obj, 0, sizeof(T));
   return new (obj) T(std::forward<Args>(args)...);
 }

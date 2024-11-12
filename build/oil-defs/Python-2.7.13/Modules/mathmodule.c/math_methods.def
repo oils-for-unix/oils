@@ -1,0 +1,7 @@
+// Python-2.7.13/Modules/mathmodule.c
+
+static PyMethodDef math_methods[] = {
+  {"isinf", math_isinf, METH_O},
+  {"isnan", math_isnan, METH_O},
+  {0},
+};

@@ -11,7 +11,7 @@ GLOBAL_STR(str2, "_");
 GLOBAL_STR(str3, "T");
 GLOBAL_STR(str4, "F");
 GLOBAL_STR(str5, "<%s %r>");
-GLOBAL_STR(str6, "status");
+GLOBAL_STR(str6, "code");
 GLOBAL_STR(str7, "message");
 GLOBAL_STR(str8, "%s, got %s");
 GLOBAL_STR(str9, " (line %d, offset %d-%d: %r)");
@@ -36,8 +36,8 @@ hnode::Leaf* NewLeaf(BigStr* s, hnode_asdl::color_t e_color);
 class TraversalState {
  public:
   TraversalState();
-  Dict<int, bool>* seen;
-  Dict<int, int>* ref_count;
+  Dict<int, bool>* seen{};
+  Dict<int, int>* ref_count{};
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassScanned(2, sizeof(TraversalState));
@@ -49,19 +49,12 @@ class TraversalState {
 extern BigStr* TRUE_STR;
 extern BigStr* FALSE_STR;
 
-
 }  // declare namespace runtime
 
 namespace num {  // declare
 
 value::Int* ToBig(int i);
 mops::BigInt Exponent(mops::BigInt x, mops::BigInt y);
-int Exponent2(int x, int y);
-mops::BigInt IntDivide(mops::BigInt x, mops::BigInt y);
-int IntDivide2(int x, int y);
-mops::BigInt IntRemainder(mops::BigInt x, mops::BigInt y);
-int IntRemainder2(int x, int y);
-
 
 }  // declare namespace num
 
@@ -131,19 +124,19 @@ BigStr* _ErrorWithLocation::UserErrorString() {
   return this->msg;
 }
 
-Usage::Usage(BigStr* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
+Usage::Usage(BigStr* msg, syntax_asdl::loc_t* location) : ::error::_ErrorWithLocation(msg, location) {
 }
 
-Parse::Parse(BigStr* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
+Parse::Parse(BigStr* msg, syntax_asdl::loc_t* location) : ::error::_ErrorWithLocation(msg, location) {
 }
 
-FailGlob::FailGlob(BigStr* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
+FailGlob::FailGlob(BigStr* msg, syntax_asdl::loc_t* location) : ::error::_ErrorWithLocation(msg, location) {
 }
 
-RedirectEval::RedirectEval(BigStr* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
+RedirectEval::RedirectEval(BigStr* msg, syntax_asdl::loc_t* location) : ::error::_ErrorWithLocation(msg, location) {
 }
 
-FatalRuntime::FatalRuntime(int exit_status, BigStr* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
+FatalRuntime::FatalRuntime(int exit_status, BigStr* msg, syntax_asdl::loc_t* location) : ::error::_ErrorWithLocation(msg, location) {
   this->exit_status = exit_status;
 }
 
@@ -151,36 +144,40 @@ int FatalRuntime::ExitStatus() {
   return this->exit_status;
 }
 
-Strict::Strict(BigStr* msg, syntax_asdl::loc_t* location) : FatalRuntime(1, msg, location) {
+Strict::Strict(BigStr* msg, syntax_asdl::loc_t* location) : ::error::FatalRuntime(1, msg, location) {
 }
 
-ErrExit::ErrExit(int exit_status, BigStr* msg, syntax_asdl::loc_t* location, bool show_code) : FatalRuntime(exit_status, msg, location) {
+ErrExit::ErrExit(int exit_status, BigStr* msg, syntax_asdl::loc_t* location, bool show_code) : ::error::FatalRuntime(exit_status, msg, location) {
   this->show_code = show_code;
 }
 
-Expr::Expr(BigStr* msg, syntax_asdl::loc_t* location) : FatalRuntime(3, msg, location) {
+Expr::Expr(BigStr* msg, syntax_asdl::loc_t* location) : ::error::FatalRuntime(3, msg, location) {
 }
 
-Structured::Structured(int status, BigStr* msg, syntax_asdl::loc_t* location, Dict<BigStr*, value_asdl::value_t*>* properties) : FatalRuntime(status, msg, location) {
+Structured::Structured(int status, BigStr* msg, syntax_asdl::loc_t* location, Dict<BigStr*, value_asdl::value_t*>* properties) : ::error::FatalRuntime(status, msg, location) {
   this->properties = properties;
 }
 
 value::Dict* Structured::ToDict() {
-  if (this->properties == nullptr) {
-    this->properties = Alloc<Dict<BigStr*, value_asdl::value_t*>>();
+  Dict<BigStr*, value_asdl::value_t*>* d = nullptr;
+  StackRoot _root0(&d);
+
+  d = Alloc<Dict<BigStr*, value_asdl::value_t*>>();
+  if (this->properties != nullptr) {
+    d->update(this->properties);
   }
-  this->properties->set(str6, num::ToBig(this->ExitStatus()));
-  this->properties->set(str7, Alloc<value::Str>(this->msg));
-  return Alloc<value::Dict>(this->properties);
+  d->set(str6, num::ToBig(this->ExitStatus()));
+  d->set(str7, Alloc<value::Str>(this->msg));
+  return Alloc<value::Dict>(d);
 }
 
-AssertionErr::AssertionErr(BigStr* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
+AssertionErr::AssertionErr(BigStr* msg, syntax_asdl::loc_t* location) : ::error::Expr(msg, location) {
 }
 
-TypeErrVerbose::TypeErrVerbose(BigStr* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
+TypeErrVerbose::TypeErrVerbose(BigStr* msg, syntax_asdl::loc_t* location) : ::error::Expr(msg, location) {
 }
 
-TypeErr::TypeErr(value_asdl::value_t* actual_val, BigStr* msg, syntax_asdl::loc_t* location) : TypeErrVerbose(StrFormat("%s, got %s", msg, _ValType(actual_val)), location) {
+TypeErr::TypeErr(value_asdl::value_t* actual_val, BigStr* msg, syntax_asdl::loc_t* location) : ::error::TypeErrVerbose(StrFormat("%s, got %s", msg, _ValType(actual_val)), location) {
 }
 
 Runtime::Runtime(BigStr* msg) {
@@ -277,65 +274,6 @@ mops::BigInt Exponent(mops::BigInt x, mops::BigInt y) {
     result = mops::Mul(result, x);
   }
   return result;
-}
-
-int Exponent2(int x, int y) {
-  return mops::BigTruncate(Exponent(mops::IntWiden(x), mops::IntWiden(y)));
-}
-
-mops::BigInt IntDivide(mops::BigInt x, mops::BigInt y) {
-  mops::BigInt ZERO;
-  int sign;
-  mops::BigInt ax;
-  mops::BigInt ay;
-  ZERO = mops::BigInt(0);
-  sign = 1;
-  if (mops::Greater(ZERO, x)) {
-    ax = mops::Negate(x);
-    sign = -1;
-  }
-  else {
-    ax = x;
-  }
-  if (mops::Greater(ZERO, y)) {
-    ay = mops::Negate(y);
-    sign = -sign;
-  }
-  else {
-    ay = y;
-  }
-  return mops::Mul(mops::IntWiden(sign), mops::Div(ax, ay));
-}
-
-int IntDivide2(int x, int y) {
-  return mops::BigTruncate(IntDivide(mops::IntWiden(x), mops::IntWiden(y)));
-}
-
-mops::BigInt IntRemainder(mops::BigInt x, mops::BigInt y) {
-  mops::BigInt ZERO;
-  mops::BigInt ax;
-  int sign;
-  mops::BigInt ay;
-  ZERO = mops::BigInt(0);
-  if (mops::Greater(ZERO, x)) {
-    ax = mops::Negate(x);
-    sign = -1;
-  }
-  else {
-    ax = x;
-    sign = 1;
-  }
-  if (mops::Greater(ZERO, y)) {
-    ay = mops::Negate(y);
-  }
-  else {
-    ay = y;
-  }
-  return mops::Mul(mops::IntWiden(sign), mops::Rem(ax, ay));
-}
-
-int IntRemainder2(int x, int y) {
-  return mops::BigTruncate(IntRemainder(mops::IntWiden(x), mops::IntWiden(y)));
 }
 
 }  // define namespace num

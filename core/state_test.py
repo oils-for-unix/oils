@@ -10,6 +10,7 @@ from _devbuild.gen.syntax_asdl import source, SourceLine
 from _devbuild.gen.value_asdl import (value, value_e, sh_lvalue)
 from asdl import runtime
 from core import error
+from core import executor
 from core import test_lib
 from core import state  # module under test
 from frontend import lexer
@@ -24,9 +25,9 @@ def _InitMem():
     length = 1
     line_id = arena.AddLine(1, 'foo')
     arena.NewToken(-1, col, length, line_id)
-    mem = state.Mem('', [], arena, [])
+    mem = state.Mem('', [], arena, [], {})
 
-    parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
+    parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
 
     mem.exec_opts = exec_opts
     return mem
@@ -61,7 +62,7 @@ class MemTest(unittest.TestCase):
     def testSearchPath(self):
         mem = _InitMem()
         #print(mem)
-        search_path = state.SearchPath(mem)
+        search_path = executor.SearchPath(mem, mem.exec_opts)
 
         # Relative path works without $PATH
         self.assertEqual(None, search_path.LookupOne('__nonexistent__'))
@@ -147,7 +148,7 @@ class MemTest(unittest.TestCase):
         self.assertEqual('/', mem.var_stack[0]['PYTHONPATH'].val.s)
         self.assertEqual(True, mem.var_stack[0]['PYTHONPATH'].exported)
 
-        cmd_ev = mem.GetExported()
+        cmd_ev = mem.GetEnv()
         self.assertEqual('/', cmd_ev['PYTHONPATH'])
 
         mem.SetValue(location.LName('PYTHONPATH'),
@@ -226,7 +227,7 @@ class MemTest(unittest.TestCase):
         self.assertEqual(True, mem.var_stack[0]['r2'].readonly)
 
         # export -n PYTHONPATH
-        # Remove the exported property.  NOTE: scope is LocalOnly for Oil?
+        # Remove the exported property.  NOTE: scope is LocalOnly for YSH?
         self.assertEqual(True, mem.var_stack[0]['PYTHONPATH'].exported)
         mem.ClearFlag('PYTHONPATH', state.ClearExport)
         self.assertEqual(False, mem.var_stack[0]['PYTHONPATH'].exported)
@@ -294,7 +295,7 @@ class MemTest(unittest.TestCase):
         # U=u
         mem.SetValue(location.LName('U'), value.Str('u'), scope_e.Dynamic)
         print(mem)
-        e = mem.GetExported()
+        e = mem.GetEnv()
         self.assertEqual('u', e['U'])
 
     def testUnset(self):
@@ -339,7 +340,7 @@ class MemTest(unittest.TestCase):
         self.assertEqual(['a', 'b'], mem.GetArgv())
 
     def testArgv2(self):
-        mem = state.Mem('', ['x', 'y'], None, [])
+        mem = state.Mem('', ['x', 'y'], None, [], {})
 
         mem.Shift(1)
         self.assertEqual(['y'], mem.GetArgv())

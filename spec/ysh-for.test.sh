@@ -33,7 +33,7 @@ key age
 
 
 #### For loop over range
-var myrange = 0 .. 3
+var myrange = 0 ..< 3
 for i in (myrange) {
   echo "i $i"
 }
@@ -152,11 +152,11 @@ for i, file in *.py {README,foo}.md {
 3 foo.md
 ## END
 
-#### for x in (stdin) { 
+#### for x in (io.stdin) { 
 
 # to avoid stdin conflict
 
-$SH $REPO_ROOT/spec/testdata/ysh-for-stdin.ysh
+$[ENV.SH] $[ENV.REPO_ROOT]/spec/testdata/ysh-for-stdin.ysh
 
 ## STDOUT:
 -1-
@@ -182,7 +182,7 @@ hi
 set +o errexit
 
 # EISDIR - stdin descriptor is dir
-$SH -c 'for x in (stdin) { echo $x }' < /
+$[ENV.SH] -c 'for x in (io.stdin) { echo $x }' < /
 if test $? -ne 0; then
   echo pass
 fi

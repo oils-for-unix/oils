@@ -105,8 +105,8 @@ REDIR_ARG_TYPES = {
     # descriptor
     Id.Redir_GreatAnd: redir_arg_type_e.Desc,
     Id.Redir_LessAnd: redir_arg_type_e.Desc,
-    Id.Redir_TLess: redir_arg_type_e.Here,  # here word
-    # note: here docs aren't included
+
+    # Note: here docs aren't included
 }
 
 
@@ -165,12 +165,12 @@ def OptionName(opt_num):
 
 OPTION_GROUPS = {
     'strict:all': opt_group_i.StrictAll,
+    'ysh:upgrade': opt_group_i.YshUpgrade,
+    'ysh:all': opt_group_i.YshAll,
 
     # Aliases to deprecate
     'oil:upgrade': opt_group_i.YshUpgrade,
     'oil:all': opt_group_i.YshAll,
-    'ysh:upgrade': opt_group_i.YshUpgrade,
-    'ysh:all': opt_group_i.YshAll,
 }
 
 
@@ -184,7 +184,23 @@ _OPTION_DICT = option_def.OptionDict()
 
 def OptionNum(s):
     # type: (str) -> int
-    return _OPTION_DICT.get(s, 0)  # 0 means not found
+    """
+    Only considers implemented options.
+    """
+    pair = _OPTION_DICT.get(s)
+    if pair is None:
+        return 0
+    num, impl = pair
+    return num if impl else 0  # 0 means not found
+
+
+def UnimplOptionNum(s):
+    # type: (str) -> int
+    pair = _OPTION_DICT.get(s)
+    if pair is None:
+        return 0
+    num, impl = pair
+    return 0 if impl else num  # 0 means not found
 
 
 _CONTROL_FLOW_NAMES = [name for _, name, _ in lexer_def.CONTROL_FLOW]

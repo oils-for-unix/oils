@@ -14,7 +14,7 @@ Completion should run in threads?  For two reasons:
 
 - Completion can be slow -- e.g. completion for distributed resources
 - Because readline has a weird interface, and then you can implement
-  "iterators" in C++ or oil.  They just push onto a PIPE.  Use a netstring
+  "iterators" in C++ or YSH.  They just push onto a PIPE.  Use a netstring
   protocol and self-pipe?
 - completion can be in another process anyway?
 
@@ -44,7 +44,7 @@ from _devbuild.gen.value_asdl import (value, value_e)
 from core import error
 from core import pyos
 from core import state
-from core import ui
+from display import ui
 from core import util
 from frontend import consts
 from frontend import lexer
@@ -643,7 +643,7 @@ class ShellFuncAction(CompletionAction):
 
 
 class VariablesAction(CompletionAction):
-    """compgen -A variable."""
+    """compgen -v / compgen -A variable."""
 
     def __init__(self, mem):
         # type: (Mem) -> None
@@ -661,7 +661,7 @@ class VariablesAction(CompletionAction):
 
 
 class ExportedVarsAction(CompletionAction):
-    """compgen -e export."""
+    """compgen -e / compgen -A export."""
 
     def __init__(self, mem):
         # type: (Mem) -> None
@@ -669,7 +669,8 @@ class ExportedVarsAction(CompletionAction):
 
     def Matches(self, comp):
         # type: (Api) -> Iterator[str]
-        for var_name in self.mem.GetExported():
+        d = self.mem.GetEnv()
+        for var_name in d:
             yield var_name
 
 

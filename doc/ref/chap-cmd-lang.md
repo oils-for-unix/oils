@@ -45,7 +45,7 @@ YSH:
 
 <h2 id="Commands">Commands</h2>
 
-<h3 id="simple-command" class="osh-ysh-topic">simple-command</h3>
+### simple-command
 
 Commands are composed of words.  The first word may be the name of
 
@@ -71,6 +71,37 @@ Redirects are also allowed in any part of the command:
 
     echo 'to file' > out.txt
     echo > out.txt 'to file'
+
+### prefix-binding
+
+Bindings are allowed before a simple command:
+
+    PYTHONPATH=. mydir/myscript.py
+
+These bindings set a variable and mark it exported.  This binding is usually
+temporary, but when used with certain [special builtins][special], it persists.
+
+[special]: https://www.gnu.org/software/bash/manual/html_node/Special-Builtins.html
+
+- Related: [ysh-prefix-binding](ysh-prefix-binding)
+
+### ysh-prefix-binding
+
+YSH prefix bindings look exactly like they do in shell:
+
+    PYTHONPATH=. mydir/myscript.py
+
+However, they temporarily set `ENV.PYTHONPATH`, not `$PYTHONPATH`.  This is
+done by adding a new `Dict` to the prototype chain of the `Obj`.
+
+The new `ENV` then becomes the environment of the child processes for the
+command.
+
+(In YSH, prefix bindings only mean one thing.  They are temporary; they don't
+persist depending on whether the command is a special builtin.)
+
+- Related: [ENV](chap-special-var.html#ENV), [prefix-binding](chap-cmd-lang.html#prefix-binding)
+
 
 <h3 id="semicolon" class="osh-ysh-topic">semicolon ;</h3>
 
@@ -146,28 +177,6 @@ See [bool-expr][] for the expression syntax.
 [test]: chap-builtin-cmd.html#test
 [bool-expr]: chap-mini-lang.html#bool-expr
 
-
-<h3 id="true" class="osh-ysh-topic">true</h3>
-
-Do nothing and return status 0.
-
-    if true; then
-      echo hello
-    fi
-
-<h3 id="false" class="osh-ysh-topic">false</h3>
-
-Do nothing and return status 1.
-
-    if false; then
-      echo 'not reached'
-    else
-      echo hello
-    fi
-
-<h3 id="colon" class="osh-topic">colon :</h3>
-
-Like `true`: do nothing and return status 0.
 
 <h3 id="bang" class="osh-ysh-topic">bang !</h3>
 
@@ -315,6 +324,11 @@ In YSH, use the [fork][] builtin.
 
 ### redir-file
 
+The operators `>` and `>>` redirect the `stdout` of a process to a disk file.  
+The `<` operator redirects `stdin` from a disk file.
+
+---
+
 Examples of redirecting the `stdout` of a command:
 
     echo foo > out.txt   # overwrite out.txt
@@ -362,11 +376,24 @@ There's no real difference.
 
 ### here-doc
 
-TODO: unbalanced HTML if we use \<\<?
+Here documents let you write the `stdin` of a process in the shell program.
+
+Specify a delimiter word (like EOF) after the redir operator (like `<<`).
+
+If it's unquoted, then `$` expansion happens, like a double-quoted string:
 
     cat <<EOF
     here doc with $double ${quoted} substitution
     EOF
+
+If the delimiter is quoted, then `$` expansion does **not** happen, like a
+single-quoted string:
+
+    cat <<'EOF'
+    price is $3.99
+    EOF
+
+Leading tabs can be stripped with the `<<-` operator:
 
     myfunc() {
             cat <<-EOF
@@ -374,10 +401,48 @@ TODO: unbalanced HTML if we use \<\<?
             EOF
     }
 
+### here-str
+
+The `<<<` operator means that the argument is a `stdin` string, not a
+chosen delimiter.
+
     cat <<< 'here string'
 
-<!-- TODO: delimiter can be quoted -->
-<!-- Note: Python's HTML parser thinks <EOF starts a tag -->
+The string **plus a newline** is the `stdin` value, which is consistent with
+GNU bash.
+
+### ysh-here-str
+
+You can also use YSH multi-line strings as "here strings".  For example:
+
+Double-quoted:
+
+    cat <<< """
+    double
+    quoted = $x
+    """
+
+Single-quoted:
+
+    cat <<< '''
+    price is
+    $3.99
+    '''
+
+J8-style with escapes:
+
+    cat <<< u'''
+    j8 style string price is
+    mu = \u{3bc}
+    '''
+
+In these cases, a trailing newline is **not** added.  For example, the first
+example is equivalent to:
+
+    write --end '' -- """
+    double
+    quoted = $x
+    """
 
 ## Other Command
 
@@ -421,7 +486,7 @@ That is, it's single arg of type `value.Expr`.
 
 Redirects can also appear after the lazy typed args:
 
-    assert [42 ===x] >out.txt
+    assert [42 === x] >out.txt
 
 ### block-arg
 
@@ -440,7 +505,15 @@ Or as an expression:
 Note that `cd` has no typed or named arguments, so the two semicolons are
 preceded by nothing.
 
-Compare with [sh-block](#sh-block).
+When passed to procs, blocks capture the enclosing stack frame:
+
+    var x = 42
+    myproc {
+      # lexical scope is respected
+      echo "x = $x"  # x = 42
+    }
+
+---
 
 Redirects can appear after the block arg:
 
@@ -448,21 +521,10 @@ Redirects can appear after the block arg:
       echo $PWD  # prints /tmp
     } >out.txt
 
+
+- Related: [sh-block](#sh-block) in OSH.
+
 ## YSH Cond
-
-### ysh-if
-
-Like shell, you can use a command:
-
-    if test --file $x {
-      echo "$x is a file"
-    }
-
-You can also use an expression:
-
-    if (x > 0) {
-      echo 'positive'
-    }
 
 ### ysh-case
 
@@ -493,16 +555,21 @@ The `else` is a special keyword that matches any value.
     }
     # => Markdown
 
-## YSH Iter
+### ysh-if
 
-### ysh-while
+Like shell, you can use a command:
 
-Command or expression:
-
-    var x = 5
-    while (x < 0) {
-      setvar x -= 1
+    if test --file $x {
+      echo "$x is a file"
     }
+
+You can also use an expression:
+
+    if (x > 0) {
+      echo 'positive'
+    }
+
+## YSH Iter
 
 ### ysh-for
 
@@ -528,11 +595,27 @@ You can also ask for the index:
 
 Here's how to iterate over the lines of stdin:
 
-    for line in (stdin) {
+    for line in (io.stdin) {
       echo $line
     }
 
-Likewise, you can ask for the index with `for i, line in (stdin) { ...`.
+Likewise, you can ask for the index with `for i, line in (io.stdin) { ...`.
+
+### ysh-while
+
+You can use an expression as the condition:
+
+    var x = 5
+    while (x < 0) {
+      setvar x -= 1
+    }
+
+You or a command:
+
+    while test -f myfile {
+      echo 'myfile'
+      sleep 1
+    }
 
 #### Expressions
 

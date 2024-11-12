@@ -49,7 +49,7 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.value_asdl import value, value_t
 from _devbuild.gen import grammar_nt
 from core.error import p_die
-from core import num
+from data_lang import j8
 from frontend import consts
 from frontend import lexer
 from frontend import location
@@ -213,12 +213,22 @@ class Transformer(object):
         if typ0 == Id.Op_LBracket:
             p_args = p_trailer.GetChild(1)
             assert p_args.typ == grammar_nt.subscriptlist
-            n = p_args.NumChildren()
-            if n > 1:
-                p_die("Only 1 subscript is accepted", p_args.GetChild(1).tok)
 
-            a = p_args.GetChild(0)
-            return Subscript(tok0, base, self._Subscript(a))
+            n = p_args.NumChildren()
+            if n == 1:  # a[1] a[1:2] a[:] etc.
+                subscript = self._Subscript(p_args.GetChild(0))
+            else:  # a[1, 2] a[1:2, :]
+                slices = []  # type: List[expr_t]
+                for i in xrange(0, n, 2):
+                    slices.append(self._Subscript(p_args.GetChild(i)))
+                # expr.Tuple evaluates to List in YSH.
+                #
+                # Note that syntactically, a[1:2, 3:4] is the the only way to
+                # get a List[Slice].  [1:2, 3:4] by itself is not allowed.
+                comma_tok = p_args.GetChild(1).tok
+                subscript = expr.Tuple(comma_tok, slices, expr_context_e.Store)
+
+            return Subscript(tok0, base, subscript)
 
         if typ0 in (Id.Expr_Dot, Id.Expr_RArrow, Id.Expr_RDArrow):
             attr = p_trailer.GetChild(1).tok  # will be Id.Expr_Name
@@ -489,9 +499,12 @@ class Transformer(object):
         if typ0 == grammar_nt.expr:
             if n == 3:  # a[1:2]
                 lower = self.Expr(parent.GetChild(0))
+                op_tok = parent.GetChild(1).tok
                 upper = self.Expr(parent.GetChild(2))
+
             elif n == 2:  # a[1:]
                 lower = self.Expr(parent.GetChild(0))
+                op_tok = parent.GetChild(1).tok
                 upper = None
             else:  # a[1]
                 return self.Expr(parent.GetChild(0))
@@ -499,11 +512,13 @@ class Transformer(object):
             assert typ0 == Id.Arith_Colon
             lower = None
             if n == 1:  # a[:]
+                op_tok = parent.GetChild(0).tok
                 upper = None
             else:  # a[:3]
+                op_tok = parent.GetChild(0).tok
                 upper = self.Expr(parent.GetChild(1))
 
-        return expr.Slice(lower, parent.GetChild(0).tok, upper)
+        return expr.Slice(lower, op_tok, upper)
 
     def Expr(self, pnode):
         # type: (PNode) -> expr_t
@@ -679,11 +694,11 @@ class Transformer(object):
             return cast(BracedVarSub, pnode.GetChild(1).tok)
 
         elif typ == grammar_nt.dq_string:
-            s = cast(DoubleQuoted, pnode.GetChild(1).tok)
+            dq = cast(DoubleQuoted, pnode.GetChild(1).tok)
             # sugar: ^"..." is short for ^["..."]
             if pnode.GetChild(0).typ == Id.Left_CaretDoubleQuote:
-                return expr.Literal(s)
-            return s
+                return expr.Literal(dq)
+            return dq
 
         elif typ == grammar_nt.sq_string:
             return cast(SingleQuoted, pnode.GetChild(1).tok)
@@ -715,31 +730,31 @@ class Transformer(object):
         c_under = tok_str.replace('_', '')
 
         if typ == Id.Expr_DecInt:
-            try:
-                cval = value.Int(mops.FromStr(c_under))  # type: value_t
-            except ValueError:
+            ok, big_int = mops.FromStr2(c_under)
+            if not ok:
                 p_die('Decimal int constant is too large', tok)
+            cval = value.Int(big_int)  # type: value_t
 
         elif typ == Id.Expr_BinInt:
             assert c_under[:2] in ('0b', '0B'), c_under
-            try:
-                cval = value.Int(mops.FromStr(c_under[2:], 2))
-            except ValueError:
+            ok, big_int = mops.FromStr2(c_under[2:], 2)
+            if not ok:
                 p_die('Binary int constant is too large', tok)
+            cval = value.Int(big_int)
 
         elif typ == Id.Expr_OctInt:
             assert c_under[:2] in ('0o', '0O'), c_under
-            try:
-                cval = value.Int(mops.FromStr(c_under[2:], 8))
-            except ValueError:
+            ok, big_int = mops.FromStr2(c_under[2:], 8)
+            if not ok:
                 p_die('Octal int constant is too large', tok)
+            cval = value.Int(big_int)
 
         elif typ == Id.Expr_HexInt:
             assert c_under[:2] in ('0x', '0X'), c_under
-            try:
-                cval = value.Int(mops.FromStr(c_under[2:], 16))
-            except ValueError:
+            ok, big_int = mops.FromStr2(c_under[2:], 16)
+            if not ok:
                 p_die('Hex int constant is too large', tok)
+            cval = value.Int(big_int)
 
         elif typ == Id.Expr_Float:
             # Note: float() in mycpp/gc_builtins.cc currently uses strtod
@@ -756,30 +771,22 @@ class Transformer(object):
         elif typ == Id.Expr_False:
             cval = value.Bool(False)
 
-        # What to do with the char constants?
-        # \n  \u{3bc}  #'a'
-        # Are they integers or strings?
-        #
-        # Integers could be ord(\n), or strings could chr(\n)
-        # Or just remove them, with ord(u'\n') and chr(u'\n')
-        #
-        # I think this relies on small string optimization.  If we have it,
-        # then 1-4 byte characters are efficient, and don't require heap
-        # allocation.
+        elif typ == Id.Char_OneChar:  # \n
+            assert len(tok_str) == 2, tok_str
+            s = consts.LookupCharC(lexer.TokenSliceLeft(tok, 1))
+            cval = value.Str(s)
 
-        elif typ == Id.Char_OneChar:
-            # TODO: look up integer directly?
-            cval = num.ToBig(ord(consts.LookupCharC(tok_str[1])))
-        elif typ == Id.Char_UBraced:
-            hex_str = tok_str[3:-1]  # \u{123}
-            # ValueError shouldn't happen because lexer validates
-            cval = value.Int(mops.FromStr(hex_str, 16))
+        elif typ == Id.Char_YHex:  # \yff
+            assert len(tok_str) == 4, tok_str
+            hex_str = lexer.TokenSliceLeft(tok, 2)
+            s = chr(int(hex_str, 16))
+            cval = value.Str(s)
 
-        # This could be a char integer?  Not sure
-        elif typ == Id.Char_Pound:
-            # TODO: accept UTF-8 code point instead of single byte
-            byte = tok_str[2]  # the a in #'a'
-            cval = num.ToBig(ord(byte))  # It's an integer
+        elif typ == Id.Char_UBraced:  # \u{123}
+            hex_str = lexer.TokenSlice(tok, 3, -1)
+            code_point = int(hex_str, 16)
+            s = j8.Utf8Encode(code_point)
+            cval = value.Str(s)
 
         else:
             raise AssertionError(typ)
@@ -880,8 +887,7 @@ class Transformer(object):
         """
         ysh_mutation: lhs_list (augassign | '=') testlist end_stmt
         """
-        typ = p_node.typ
-        assert typ == grammar_nt.ysh_mutation
+        assert p_node.typ == grammar_nt.ysh_mutation
 
         lhs_list = self._LhsExprList(p_node.GetChild(0))  # could be a tuple
         op_tok = p_node.GetChild(1).tok
@@ -1217,8 +1223,7 @@ class Transformer(object):
           '{'  # opening { for pgen2
         )
         """
-        typ = p_node.typ
-        assert typ == grammar_nt.ysh_proc
+        assert p_node.typ == grammar_nt.ysh_proc
 
         n = p_node.NumChildren()
         if n == 1:  # proc f {
@@ -1526,6 +1531,14 @@ class Transformer(object):
             return cast(SingleQuoted, child0.GetChild(1).tok)
 
         if typ0 == grammar_nt.char_literal:
+            # Note: ERE doesn't seem to support escapes like Python
+            #    https://docs.python.org/3/library/re.html
+            # We might want to do a translation like this;
+            #
+            # \u{03bc} -> \u03bc
+            # \x00 -> \x00
+            # \n -> \n
+
             # Must be Id.Char_{OneChar,Hex,UBraced}
             assert consts.GetKind(tok0.id) == Kind.Char
             s = word_compile.EvalCStringToken(tok0.id, lexer.TokenVal(tok0))

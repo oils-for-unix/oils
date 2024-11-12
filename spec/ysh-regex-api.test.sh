@@ -46,7 +46,7 @@ got expected status 3
 shopt -s ysh:upgrade
 
 # Hm it's hard to test this, we can't get stderr of YSH from within YSH?
-#fopen 2>err.txt {
+#redir 2>err.txt {
 #  if ('abc' ~ '+') {
 #    echo 'bad'
 #  }
@@ -192,18 +192,18 @@ start=-1 end=-1
 
 var s = '= Hi5- Bye6-'
 
-var m = s => search(/ <capture [a-z]+ > <capture d+> '-' ; i /)
-echo "g0 $[m => start(0)] $[m => end(0)] $[m => group(0)]"
-echo "g1 $[m => start(1)] $[m => end(1)] $[m => group(1)]"
-echo "g2 $[m => start(2)] $[m => end(2)] $[m => group(2)]"
+var m = s.search(/ <capture [a-z]+ > <capture d+> '-' ; i /)
+echo "g0 $[m.start(0)] $[m.end(0)] $[m.group(0)]"
+echo "g1 $[m.start(1)] $[m.end(1)] $[m.group(1)]"
+echo "g2 $[m.start(2)] $[m.end(2)] $[m.group(2)]"
 
 echo ---
 
-var pos = m => end(0)  # search from end position
-var m = s => search(/ <capture [a-z]+ > <capture d+> '-' ; i /, pos=pos)
-echo "g0 $[m => start(0)] $[m => end(0)] $[m => group(0)]"
-echo "g1 $[m => start(1)] $[m => end(1)] $[m => group(1)]"
-echo "g2 $[m => start(2)] $[m => end(2)] $[m => group(2)]"
+var pos = m.end(0)  # search from end position
+var m = s.search(/ <capture [a-z]+ > <capture d+> '-' ; i /, pos=pos)
+echo "g0 $[m.start(0)] $[m.end(0)] $[m.group(0)]"
+echo "g1 $[m.start(1)] $[m.end(1)] $[m.group(1)]"
+echo "g2 $[m.start(2)] $[m.end(2)] $[m.group(2)]"
 
 ## STDOUT:
 g0 2 6 Hi5-
@@ -229,12 +229,12 @@ for pat in ([anchored, free]) {
 
   var pos = 0
   while (true) {
-    var m = s => search(pat, pos=pos)
+    var m = s.search(pat, pos=pos)
     if (not m) {
       break
     }
-    echo $[m => group(0)]
-    setvar pos = m => end(0)
+    echo $[m.group(0)]
+    setvar pos = m.end(0)
   }
 
 }
@@ -252,16 +252,16 @@ pat=([[:digit:]]+)-
 
 var s = '= hi5- bye6-'
 
-var m = s => search('([[:alpha:]]+)([[:digit:]]+)-')
-echo "g0 $[m => start(0)] $[m => end(0)] $[m => group(0)]"
-echo "g1 $[m => start(1)] $[m => end(1)] $[m => group(1)]"
-echo "g2 $[m => start(2)] $[m => end(2)] $[m => group(2)]"
+var m = s.search('([[:alpha:]]+)([[:digit:]]+)-')
+echo "g0 $[m.start(0)] $[m.end(0)] $[m.group(0)]"
+echo "g1 $[m.start(1)] $[m.end(1)] $[m.group(1)]"
+echo "g2 $[m.start(2)] $[m.end(2)] $[m.group(2)]"
 echo ---
 
-var m = s[2:] => leftMatch('([[:alpha:]]+)([[:digit:]]+)-')
-echo "g0 $[m => start(0)] $[m => end(0)] $[m => group(0)]"
-echo "g1 $[m => start(1)] $[m => end(1)] $[m => group(1)]"
-echo "g2 $[m => start(2)] $[m => end(2)] $[m => group(2)]"
+var m = s[2:].leftMatch('([[:alpha:]]+)([[:digit:]]+)-')
+echo "g0 $[m.start(0)] $[m.end(0)] $[m.group(0)]"
+echo "g1 $[m.start(1)] $[m.end(1)] $[m.group(1)]"
+echo "g2 $[m.start(2)] $[m.end(2)] $[m.group(2)]"
 
 ## STDOUT:
 g0 2 6 hi5-
@@ -273,7 +273,7 @@ g1 0 2 hi
 g2 2 3 5
 ## END
 
-#### Str->leftMatch() can implement lexer pattern
+#### Str.leftMatch() can implement lexer pattern
 
 shopt -s ysh:upgrade
 
@@ -286,17 +286,17 @@ proc show-tokens (s) {
   while (true) {
     echo "pos=$pos"
 
-    var m = s->leftMatch(lexer, pos=pos)
+    var m = s.leftMatch(lexer, pos=pos)
     if (not m) {
       break
     }
     # TODO: add groups()
-    #var groups = [m => group(1), m => group(2), m => group(3)]
-    echo "$[m => group(1)]/$[m => group(2)]/$[m => group(3)]/"
+    #var groups = [m.group(1), m.group(2), m.group(3)]
+    echo "$[m.group(1)]/$[m.group(2)]/$[m.group(3)]/"
 
     echo
 
-    setvar pos = m => end(0)
+    setvar pos = m.end(0)
   }
 }
 
@@ -325,18 +325,18 @@ null/ab/null/
 pos=2
 ## END
 
-#### Named captures with m => group()
+#### Named captures with m.group()
 shopt -s ysh:all
 
 var s = 'zz 2020-08-20'
 var pat = /<capture d+ as year> '-' <capture d+ as month>/
 
-var m = s => search(pat)
-argv.py $[m => group('year')] $[m => group('month')]
-echo $[m => start('year')] $[m => end('year')]
-echo $[m => start('month')] $[m => end('month')]
+var m = s.search(pat)
+argv.py $[m.group('year')] $[m.group('month')]
+echo $[m.start('year')] $[m.end('year')]
+echo $[m.start('month')] $[m.end('month')]
 
-argv.py $[m => group('oops')]
+argv.py $[m.group('oops')]
 echo 'error'
 
 ## status: 3
@@ -391,25 +391,25 @@ var pat = / 'when: ' (<capture Date> | <capture Time as two>) /
 #echo $pat
 
 proc show-groups (; m) {
-  echo 0 $[m => group(0)]
-  echo 1 $[m => group(1)]  # this is everything except when
-  echo 2 $[m => group(2)]
+  echo 0 $[m.group(0)]
+  echo 1 $[m.group(1)]  # this is everything except when
+  echo 2 $[m.group(2)]
   echo
-  echo $[m => group('two')]
-  echo $[m => group('year')] $[m => group('month')]
-  echo $[m => group('hour')] $[m => group('minute')] $[m => group('secs')]
+  echo $[m.group('two')]
+  echo $[m.group('year')] $[m.group('month')]
+  echo $[m.group('hour')] $[m.group('minute')] $[m.group('secs')]
 }
 
-var m = 'when: 2023-10' => leftMatch(pat)
+var m = 'when: 2023-10'.leftMatch(pat)
 
 show-groups (m)
 
-var m = 'when: 23:30' => leftMatch(pat)
+var m = 'when: 23:30'.leftMatch(pat)
 
 echo ---
 show-groups (m)
 
-var m = 'when: 23:30:59' => leftMatch(pat)
+var m = 'when: 23:30:59'.leftMatch(pat)
 
 echo ---
 show-groups (m)
@@ -452,9 +452,9 @@ if (s  ~ pat) {
   echo $[type(g1)] $[type(g2)]
 }
 
-var m = s => search(pat)
+var m = s.search(pat)
 if (m) {
-  echo $[m => group(1) => type()] $[m => group(2) => type()]
+  echo $[m.group(1) => type()] $[m.group(2) => type()]
 }
 
 ## STDOUT:
@@ -480,10 +480,10 @@ if (s ~ pat) {
   echo $[type(g1)] $[type(g2)]
 }
 
-var m = s => search(pat)
+var m = s.search(pat)
 if (m) {
-  echo $[m => group('right')]
-  echo $[m => group('left') => type()] $[m => group('right') => type()]
+  echo $[m.group('right')]
+  echo $[m.group('left') => type()] $[m.group('right') => type()]
 }
 
 ## STDOUT:
@@ -656,16 +656,16 @@ sq
 char class
 ## END
 
-#### Str => replace(Str, Str)
+#### Str.replace(Str, Str)
 shopt --set ysh:all
 
 var mystr = 'abca'
-write $[mystr => replace('a', 'A')]  # Two matches
-write $[mystr => replace('b', 'B')]  # One match
-write $[mystr => replace('x', 'y')]  # No matches
+write $[mystr.replace('a', 'A')]  # Two matches
+write $[mystr.replace('b', 'B')]  # One match
+write $[mystr.replace('x', 'y')]  # No matches
 
-write $[mystr => replace('abc', '')]  # Empty substitution
-write $[mystr => replace('', 'new')]  # Empty substring
+write $[mystr.replace('abc', '')]  # Empty substitution
+write $[mystr.replace('', 'new')]  # Empty substring
 ## STDOUT:
 AbcA
 aBca
@@ -674,80 +674,89 @@ a
 newanewbnewcnewanew
 ## END
 
-#### Str => replace(Eggex, Str)
+#### Str.replace(Eggex, Str)
 shopt --set ysh:all
 
 var mystr = 'mangled----kebab--case'
-write $[mystr => replace(/ '-'+ /, '-')]
+write $[mystr.replace(/ '-'+ /, '-')]
 
 setvar mystr = 'smaller-to-bigger'
-write $[mystr => replace(/ '-'+ /, '---')]
+write $[mystr.replace(/ '-'+ /, '---')]
 ## STDOUT:
 mangled-kebab-case
 smaller---to---bigger
 ## END
 
-#### Str => replace(Eggex, Expr)
+#### Str.replace(Eggex, Expr)
 shopt --set ysh:all
 
 var mystr = 'name: Bob'
-write $[mystr => replace(/ 'name: ' <capture dot+> /, ^"Hello $1")]
-write $[mystr => replace(/ 'name: ' <capture dot+> /, ^"Hello $1 (extracted from '$0')")]
+write $[mystr.replace(/ 'name: ' <capture dot+> /, ^"Hello $1")]
+write $[mystr.replace(/ 'name: ' <capture dot+> /, ^"Hello $1 (extracted from '$0')")]
 ## STDOUT:
 Hello Bob
 Hello Bob (extracted from 'name: Bob')
 ## END
 
-#### Str => replace(*, Expr), $0
+#### Str.replace(*, Expr), $0
 shopt --set ysh:all
 
 # Functionality
 var mystr = 'class Foo:  # this class is called Foo'
-write $[mystr => replace("Foo", ^"$0Bar")]
-write $[mystr => replace(/ 'Foo' /, ^"$0Bar")]
+write $[mystr.replace("Foo", ^"$0Bar")]
+write $[mystr.replace(/ 'Foo' /, ^"$0Bar")]
 
 # Edge-cases
 var dollar0 = "$0"
-func f() { return ("$0") }
-write $["foo" => replace("o", "$0") === "f$dollar0$dollar0"]
-write $["foo" => replace("o", ^[f()]) === "f$dollar0$dollar0"]
-write $[f() === "$dollar0"]
+#echo dollar0=$dollar0
+#echo "0 = $0"
+
+var expected = "f($dollar0)($dollar0)"
+#echo "expected = $expected"
+
+# Eager replacement
+assert [expected === "foo".replace("o", "($0)")]
+
+assert ['f(o)(o)' === "foo".replace("o", ^"($0)")]
+
+func f() { return ( "<$0>" ) }
+assert ["<$dollar0>" === f()]
+
+assert ['f<o><o>' === "foo".replace("o", ^[f()])]
+
 ## STDOUT:
 class FooBar:  # this class is called FooBar
 class FooBar:  # this class is called FooBar
-true
-true
-true
 ## END
 
-#### Str => replace(Eggex, Expr), scopes
+#### Str.replace(Eggex, Expr), scopes
 shopt --set ysh:all
 
 var mystr = '123'
 
 var anotherVar = 'surprise!'
-write $[mystr => replace(/ <capture d+> /, ^"Hello $1 ($anotherVar)")]
+write $[mystr.replace(/ <capture d+> /, ^"Hello $1 ($anotherVar)")]
 
 var globalName = '456'
-write $[mystr => replace(/ <capture d+ as globalName> /, ^"Hello $globalName")]
+write $[mystr.replace(/ <capture d+ as globalName> /, ^"Hello $globalName")]
 
-write $[mystr => replace(/ <capture d+ as localName> /, ^"Hello $localName, $globalName")]
+write $[mystr.replace(/ <capture d+ as localName> /, ^"Hello $localName, $globalName")]
 ## STDOUT:
 Hello 123 (surprise!)
 Hello 123
 Hello 123, 456
 ## END
 
-#### Str => replace(Eggex, *, count)
+#### Str.replace(Eggex, *, count)
 shopt --set ysh:all
 
 var mystr = '1abc2abc3abc'
 
-for count in (-2..4) {
-  write $[mystr => replace('abc', "-", count=count)]
-  write $[mystr => replace('abc', ^"-", count=count)]
-  write $[mystr => replace(/ [a-z]+ /, "-", count=count)]
-  write $[mystr => replace(/ [a-z]+ /, "-", count=count)]
+for count in (-2..<4) {
+  write $[mystr.replace('abc', "-", count=count)]
+  write $[mystr.replace('abc', ^"-", count=count)]
+  write $[mystr.replace(/ [a-z]+ /, "-", count=count)]
+  write $[mystr.replace(/ [a-z]+ /, "-", count=count)]
 }
 ## STDOUT:
 1-2-3-
@@ -776,12 +785,12 @@ for count in (-2..4) {
 1-2-3-
 ## END
 
-#### Str => replace(Str, Str), empty new/old strings
+#### Str.replace(Str, Str), empty new/old strings
 var mystr = 'abca'
-write $[mystr => replace('abc', '')]            # Empty substitution
-write $[mystr => replace('', 'new')]            # Empty substring
-write $[mystr => replace('', 'new', count=1)]   # Empty substring, count != -1
-write $[mystr => replace('', 'new', count=10)]  # Empty substring, count too large
+write $[mystr.replace('abc', '')]            # Empty substitution
+write $[mystr.replace('', 'new')]            # Empty substring
+write $[mystr.replace('', 'new', count=1)]   # Empty substring, count != -1
+write $[mystr.replace('', 'new', count=10)]  # Empty substring, count too large
 ## STDOUT:
 a
 newanewbnewcnewanew
@@ -789,22 +798,22 @@ newabca
 newanewbnewcnewanew
 ## END
 
-#### Str => replace(Eggex, Lazy), convert_func
+#### Str.replace(Eggex, Lazy), convert_func
 shopt --set ysh:all
 
 var mystr = '123'
 
-write $[mystr => replace(/ <capture d+ as n : int> /, ^"$[n + 1]")]
+write $[mystr.replace(/ <capture d+ as n : int> /, ^"$[n + 1]")]
 
 # values automatically get stringified
-write $[mystr => replace(/ <capture d+ as n : int> /, ^"$1")]
+write $[mystr.replace(/ <capture d+ as n : int> /, ^"$1")]
 
 func not_str(inp) {
   return ({ "value": inp })
 }
 
 # should fail to stringify $1
-try { call mystr => replace(/ <capture d+ : not_str> /, ^"$1") }
+try { call mystr.replace(/ <capture d+ : not_str> /, ^"$1") }
 write status=$_status
 ## STDOUT:
 124
@@ -812,13 +821,13 @@ write status=$_status
 status=3
 ## END
 
-#### Str => replace(Eggex, *), eflags
+#### Str.replace(Eggex, *), eflags
 shopt --set ysh:all
 
 var mystr = $'1-2-3\n4-5'
-write $[mystr => replace(/ d+ /, ^"[$0]")]
-write $[mystr => replace(/ ^ d+ /, ^"[$0]")]
-write $[mystr => replace(/ ^ d+ ; reg_newline /, ^"[$0]")]
+write $[mystr.replace(/ d+ /, ^"[$0]")]
+write $[mystr.replace(/ ^ d+ /, ^"[$0]")]
+write $[mystr.replace(/ ^ d+ ; reg_newline /, ^"[$0]")]
 ## STDOUT:
 [1]-[2]-[3]
 [4]-[5]
@@ -826,4 +835,105 @@ write $[mystr => replace(/ ^ d+ ; reg_newline /, ^"[$0]")]
 4-5
 [1]-2-3
 [4]-5
+## END
+
+#### Str.replace(Eggex, *), guard against infinite loop
+shopt --set ysh:all
+
+var mystr = 'foo bar  baz'
+write $[mystr.replace(/ space* /, ' ')]
+## status: 3
+## STDOUT:
+## END
+
+#### Str.replace(Eggex, *), str cannot contain NUL bytes
+shopt --set ysh:all
+
+var mystr = b'foo bar  baz\y00'
+write $[mystr.replace(/ space+ /, ' ')]
+## status: 3
+## STDOUT:
+## END
+
+#### Str.replace() at top level
+shopt --set ysh:upgrade
+
+var s = 'mystr'
+var pat = / 's' <capture dot> /
+var template = ^"[$x $0 $1 $x]"
+pp test_ (template)
+
+var x = 'x'
+
+var new = s.replace(pat, template)
+echo 'replace  ' $new
+
+func myreplace(s, template) {
+  return (s.replace(pat, template))
+}
+
+echo myreplace $[myreplace(s, template)]
+
+## STDOUT:
+<Expr>
+replace   my[x st t x]r
+myreplace my[x st t x]r
+## END
+
+#### Str.replace() lexical scope with ^""
+shopt --set ysh:upgrade
+
+var s = 'mystr'
+var pat = / 's' <capture dot> /
+
+proc p {
+  var x = 'x'
+  var template = ^"[$x $0 $1 $x]"
+  pp test_ (template)
+  
+  var new = s.replace(pat, template)
+  echo 'replace  ' $new
+  
+  func myreplace(s, template) {
+    return (s.replace(pat, template))
+  }
+  
+  echo myreplace $[myreplace(s, template)]
+}
+
+p
+
+## STDOUT:
+<Expr>
+replace   my[x st t x]r
+myreplace my[x st t x]r
+## END
+
+#### Str.replace() lexical scope with ^[]
+shopt --set ysh:upgrade
+
+var s = 'mystr'
+var pat = / 's' <capture dot> /
+
+proc p {
+  var x = 'x'
+  var template = ^['[' ++ x ++ ' ' ++ $0 ++ ' ' ++ $1 ++ ' ' ++ x ++ ']']
+  pp test_ (template)
+  
+  var new = s.replace(pat, template)
+  echo 'replace  ' $new
+  
+  func myreplace(s, template) {
+    return (s.replace(pat, template))
+  }
+  
+  echo myreplace $[myreplace(s, template)]
+}
+
+p
+
+## STDOUT:
+<Expr>
+replace   my[x st t x]r
+myreplace my[x st t x]r
 ## END

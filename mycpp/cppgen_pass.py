@@ -13,8 +13,8 @@ from mypy.types import (Type, AnyType, NoneTyp, TupleType, Instance, NoneType,
                         PartialType, TypeAliasType)
 from mypy.nodes import (Expression, Statement, NameExpr, IndexExpr, MemberExpr,
                         TupleExpr, ExpressionStmt, IfStmt, StrExpr, SliceExpr,
-                        FuncDef, UnaryExpr, OpExpr, CallExpr,
-                        ListExpr, DictExpr, ListComprehension)
+                        FuncDef, UnaryExpr, OpExpr, CallExpr, ListExpr,
+                        DictExpr, ListComprehension)
 
 from mycpp import format_strings
 from mycpp.crash import catch_errors
@@ -37,6 +37,10 @@ def _IsContextManager(class_name):
     return class_name[-1].startswith('ctx_')
 
 
+def _IsUnusedVar(var_name):
+    return var_name == '_' or var_name.startswith('unused')
+
+
 def _SkipAssignment(var_name):
     """
     Skip at the top level:
@@ -46,7 +50,7 @@ def _SkipAssignment(var_name):
     Always skip:
       x, _ = mytuple  # no second var
     """
-    return var_name == '_' or var_name.startswith('unused')
+    return _IsUnusedVar(var_name)
 
 
 def _GetCTypeForCast(type_expr):
@@ -436,7 +440,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                  decl=False,
                  forward_decl=False,
                  stack_roots_warn=None,
-                 dot_exprs=None):
+                 dot_exprs=None,
+                 stack_roots=None):
         self.types = types
         self.const_lookup = const_lookup
         self.f = f
@@ -475,6 +480,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.current_method_name = None
 
         self.dot_exprs = dot_exprs
+        self.stack_roots = stack_roots
 
         # So we can report multiple at once
         # module path, line number, message
@@ -679,7 +685,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if isinstance(dot_expr, pass_state.StackObjectMember):
                 op = '.'
 
-            elif isinstance(dot_expr, pass_state.StaticObjectMember) or isinstance(dot_expr, pass_state.ModuleMember):
+            elif isinstance(dot_expr,
+                            pass_state.StaticObjectMember) or isinstance(
+                                dot_expr, pass_state.ModuleMember):
                 op = '::'
 
             elif isinstance(dot_expr, pass_state.HeapObjectMember):
@@ -1408,25 +1416,30 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.def_write_ind('}\n')
 
-    def _AssignNewDictImpl(self, lval):
-        """
+    def _AssignNewDictImpl(self, lval, prefix=''):
+        """Translate NewDict() -> Alloc<Dict<K, V>>
+
+        This function is a specal case because the RHS need TYPES from the LHS.
+
+        e.g. here is how we make ORDERED dictionaries, which can't be done with {}:
+
            d = NewDict()  # type: Dict[int, int]
-        -> auto* d = NewDict<int, int>();
-        
-        - NewDict exists in Python, it makes ordered dictionaries
-        - We translate it here because we need type inference
-        
-        I think we could get rid of NewDict in C++, and have it only in
-        Python.
-        
-        We used to have the "allocating in a constructor" rooting
-        problem, but I believe that's gone now.
+
+        -> one of
+
+           auto* d = Alloc<Dict<int, int>>();  # declare
+           d = Alloc<Dict<int, int>>();        # mutate
+
+        We also have:
+
+            self.d = NewDict() 
+        ->
+            this->d = Alloc<Dict<int, int>)();
         """
         lval_type = self.types[lval]
+        #self.log('lval type %s', lval_type)
 
         # Fix for Dict[str, value]? in ASDL
-
-        #self.log('lval type %s', lval_type)
         if (isinstance(lval_type, UnionType) and len(lval_type.items) == 2 and
                 isinstance(lval_type.items[1], NoneTyp)):
             lval_type = lval_type.items[0]
@@ -1436,12 +1449,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.local_var_list.append((lval.name, lval_type))
 
         assert c_type.endswith('*')
-
-        # Hack for declaration vs. definition.  TODO: clean this up
-        prefix = '' if self.current_func_node else 'auto* '
-
-        self.def_write_ind('%s%s = Alloc<%s>();\n', prefix, lval.name,
-                           c_type[:-1])
+        self.def_write('Alloc<%s>()', c_type[:-1])
 
     def _AssignCastImpl(self, o, lval):
         """
@@ -1494,6 +1502,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.current_stmt_node = None
         self.def_write(';\n')
         self.def_write_ind('%s %s(&%s);\n', c_type, lval.name, iter_buf[0])
+
+    def _MaybeAddMember(self, lval, current_member_vars):
+        if isinstance(lval.expr, NameExpr) and lval.expr.name == 'self':
+            #log('    lval.name %s', lval.name)
+            lval_type = self.types[lval]
+            c_type = GetCType(lval_type)
+            is_managed = CTypeIsManaged(c_type)
+            current_member_vars[lval.name] = (lval_type, c_type, is_managed)
 
     def visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt') -> T:
         # Declare constant strings.  They have to be at the top level.
@@ -1573,7 +1589,22 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             callee = o.rvalue.callee
 
             if callee.name == 'NewDict':
-                self._AssignNewDictImpl(lval)
+                self.def_write_ind('')
+
+                # Hack for non-members - why does this work?
+                # Tests cases in mycpp/examples/containers.py
+                if not isinstance(
+                        lval, MemberExpr) and self.current_func_node is None:
+                    self.def_write('auto* ')
+
+                self.accept(lval)
+                self.def_write(' = ')
+                self._AssignNewDictImpl(lval)  # uses lval, not rval
+                self.def_write(';\n')
+
+                if isinstance(lval, MemberExpr):
+                    # Bug fix: self.front_frame = NewDict() needs to register member
+                    self._MaybeAddMember(lval, self.current_member_vars)
                 return
 
             if callee.name == 'cast':
@@ -1624,14 +1655,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 # HACK for WordParser: also include Reset().  We could change them
                 # all up front but I kinda like this.
 
-                if (isinstance(lval.expr, NameExpr) and
-                        lval.expr.name == 'self'):
-                    #log('    lval.name %s', lval.name)
-                    lval_type = self.types[lval]
-                    c_type = GetCType(lval_type)
-                    is_managed = CTypeIsManaged(c_type)
-                    self.current_member_vars[lval.name] = (lval_type, c_type,
-                                                           is_managed)
+                self._MaybeAddMember(lval, self.current_member_vars)
             return
 
         if isinstance(lval, IndexExpr):  # a[x] = 1
@@ -1883,7 +1907,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # it's called in a loop by _ExecuteList().  Although the 'child'
             # variable is already live by other means.
             # TODO: Test how much this affects performance.
-            if CTypeIsManaged(c_item_type):
+            if CTypeIsManaged(c_item_type) and not self.stack_roots:
                 self.def_write_ind('  StackRoot _for(&')
                 self.accept(index_expr)
                 self.def_write_ind(');\n')
@@ -2223,7 +2247,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             else:
                 # del mydict[mykey] raises KeyError, which we don't want
                 raise AssertionError(
-                    'Use mylib.maybe_remove(d, key) instead of del d[key]')
+                    'Use mylib.dict_erase(d, key) instead of del d[key]')
 
             self.def_write(';\n')
 
@@ -2497,7 +2521,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             for name in sorted_member_names:
                 _, c_type, _ = self.current_member_vars[name]
-                self.always_write_ind('%s %s;\n', c_type, name)
+                # use default zero initialization for all members
+                # (context managers may be on the stack)
+                self.always_write_ind('%s %s{};\n', c_type, name)
 
         if _IsContextManager(self.current_class_name):
             # Copy ctx member vars out of this class
@@ -2847,14 +2873,27 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                         self.def_write_ind('%s %s%s;\n', c_type, lval_name,
                                            rhs)
 
+                        # TODO: we're not skipping the assignment, because of
+                        # the RHS
+                        if _IsUnusedVar(lval_name):
+                            # suppress C++ unused var compiler warnings!
+                            self.def_write_ind('(void)%s;\n' % lval_name)
+
                     done.add(lval_name)
 
             # Figure out if we have any roots to write with StackRoots
             roots = []  # keep it sorted
+            full_func_name = None
+            if self.current_func_node:
+                full_func_name = split_py_name(self.current_func_node.fullname)
+
             for lval_name, c_type, is_param in self.prepend_to_block:
                 #self.log('%s %s %s', lval_name, c_type, is_param)
                 if lval_name not in roots and CTypeIsManaged(c_type):
-                    roots.append(lval_name)
+                    if (not self.stack_roots or self.stack_roots.needs_root(
+                            full_func_name, split_py_name(lval_name))):
+                        roots.append(lval_name)
+
             #self.log('roots %s', roots)
 
             if len(roots):

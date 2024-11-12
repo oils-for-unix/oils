@@ -6,7 +6,7 @@ from core import error
 from core.error import e_usage
 from core import pyos
 from core import state
-from core import ui
+from display import ui
 from core import vm
 from frontend import flag_util
 from frontend import typed_args
@@ -102,11 +102,11 @@ class Cd(vm._Builtin):
         arg = arg_types.cd(attrs.attrs)
 
         # If a block is passed, we do additional syntax checks
-        cmd = typed_args.OptionalBlock(cmd_val)
+        cmd_frag = typed_args.OptionalBlockAsFrag(cmd_val)
 
         dest_dir, arg_loc = arg_r.Peek2()
         if dest_dir is None:
-            if cmd:
+            if cmd_frag:
                 raise error.Usage(
                     'requires an argument when a block is passed',
                     cmd_val.arg_locs[0])
@@ -131,16 +131,13 @@ class Cd(vm._Builtin):
                 self.errfmt.Print_(e.UserErrorString())
                 return 1
 
-        try:
-            pwd = state.GetString(self.mem, 'PWD')
-        except error.Runtime as e:
-            self.errfmt.Print_(e.UserErrorString())
-            return 1
+        # Save a copy
+        old_pwd = self.mem.pwd
 
         # Calculate new directory, chdir() to it, then set PWD to it.  NOTE: We
         # can't call posix.getcwd() because it can raise OSError if the
         # directory was removed (ENOENT.)
-        abspath = os_path.join(pwd, dest_dir)  # make it absolute, for cd ..
+        abspath = os_path.join(old_pwd, dest_dir)  # make it absolute, for cd ..
         if arg.P:
             # -P means resolve symbolic links, then process '..'
             real_dest_dir = libc.realpath(abspath)
@@ -162,16 +159,16 @@ class Cd(vm._Builtin):
         # PWD.  Other shells use global variables.
         self.mem.SetPwd(real_dest_dir)
 
-        if cmd:
+        if cmd_frag:
             out_errs = []  # type: List[bool]
             with ctx_CdBlock(self.dir_stack, real_dest_dir, self.mem,
                              self.errfmt, out_errs):
-                unused = self.cmd_ev.EvalCommand(cmd)
+                unused = self.cmd_ev.EvalCommandFrag(cmd_frag)
             if len(out_errs):
                 return 1
 
         else:  # No block
-            state.ExportGlobalString(self.mem, 'OLDPWD', pwd)
+            state.ExportGlobalString(self.mem, 'OLDPWD', old_pwd)
             self.dir_stack.Replace(real_dest_dir)  # for pushd/popd/dirs
 
         return 0

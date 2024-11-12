@@ -28,7 +28,7 @@ _TOKENS = [
     ('RBrace', '}'),
     ('Percent', '%'),
 
-    # Oil addition for parameterized types.
+    # Oils addition for parameterized types.
     ('LBracket', '['),
     ('RBracket', ']'),
 
@@ -421,9 +421,8 @@ _PRIMITIVE_TYPES = [
     'float',
     'bool',
 
-    # 'any' is used:
-    # - for value.Obj in the the Oil expression evaluator.  We're not doing any
-    #   dynamic or static checking now.
+    # 'any' is used for value.{BuiltinProc,BuiltinFunc}, to cast from class
+    # type
     'any',
 ]
 

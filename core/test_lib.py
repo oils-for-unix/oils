@@ -15,7 +15,7 @@ import sys
 from _devbuild.gen.option_asdl import builtin_i, option_i
 from _devbuild.gen.runtime_asdl import cmd_value, scope_e
 from _devbuild.gen.syntax_asdl import loc, source, SourceLine, Token
-from _devbuild.gen.value_asdl import value
+from _devbuild.gen.value_asdl import value, Obj
 from asdl import pybase
 from builtin import assign_osh
 from builtin import completion_osh
@@ -31,10 +31,10 @@ from core import executor
 from core import main_loop
 from core import optview
 from core import process
-from core import pyos
 from core import pyutil
+from core import sh_init
 from core import state
-from core import ui
+from display import ui
 from core import util
 from core import vm
 from frontend import lexer
@@ -47,14 +47,14 @@ from osh import sh_expr_eval
 from osh import split
 from osh import word_eval
 from ysh import expr_eval
+from mycpp import iolib
 from mycpp import mylib
 
 import posix_ as posix
 
 
 def MakeBuiltinArgv(argv):
-    return cmd_value.Argv(argv, [loc.Missing] * len(argv), None, None, None,
-                          None)
+    return cmd_value.Argv(argv, [loc.Missing] * len(argv), False, None, None)
 
 
 def FakeTok(id_, val):
@@ -165,12 +165,12 @@ def InitLexer(s, arena):
 
 def InitWordEvaluator(exec_opts=None):
     arena = MakeArena('<InitWordEvaluator>')
-    mem = state.Mem('', [], arena, [])
+    mem = state.Mem('', [], arena, [], {})
 
     if exec_opts is None:
-        parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
+        parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
         mem.exec_opts = exec_opts  # circular dep
-        state.InitMem(mem, {}, '0.1')
+        sh_init.InitDefaultVars(mem)
         mutable_opts.Init()
     else:
         mutable_opts = None
@@ -201,11 +201,12 @@ def InitCommandEvaluator(parse_ctx=None,
     else:
         parse_ctx = InitParseContext()
 
-    mem = mem or state.Mem('', [], arena, [])
+    mem = mem or state.Mem('', [], arena, [], {})
     exec_opts = optview.Exec(opt0_array, opt_stacks)
-    mutable_opts = state.MutableOpts(mem, opt0_array, opt_stacks, None)
+    mutable_opts = state.MutableOpts(mem, {}, opt0_array, opt_stacks, None)
     mem.exec_opts = exec_opts
-    state.InitMem(mem, {}, '0.1')
+    #state.InitMem(mem, {}, '0.1')
+    sh_init.InitDefaultVars(mem)
     mutable_opts.Init()
 
     # No 'readline' in the tests.
@@ -213,9 +214,10 @@ def InitCommandEvaluator(parse_ctx=None,
     errfmt = ui.ErrorFormatter()
     job_control = process.JobControl()
     job_list = process.JobList()
-    fd_state = process.FdState(errfmt, job_control, job_list, None, None, None)
+    fd_state = process.FdState(errfmt, job_control, job_list, None, None, None,
+                               exec_opts)
     aliases = {} if aliases is None else aliases
-    procs = {}
+    procs = state.Procs(mem)
     methods = {}
 
     compopt_state = completion.OptionState()
@@ -253,7 +255,7 @@ def InitCommandEvaluator(parse_ctx=None,
     cmd_deps = cmd_eval.Deps()
     cmd_deps.mutable_opts = mutable_opts
 
-    search_path = state.SearchPath(mem)
+    search_path = executor.SearchPath(mem, exec_opts)
 
     ext_prog = \
         ext_prog or process.ExternalProgram('', fd_state, errfmt, debug_f)
@@ -272,7 +274,7 @@ def InitCommandEvaluator(parse_ctx=None,
     tilde_ev = word_eval.TildeEvaluator(mem, exec_opts)
     word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
                                             tilde_ev, splitter, errfmt)
-    signal_safe = pyos.InitSignalSafe()
+    signal_safe = iolib.InitSignalSafe()
     trap_state = trap_osh.TrapState(signal_safe)
     cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
                                        assign_builtins, arena, cmd_deps,
@@ -292,7 +294,7 @@ def InitCommandEvaluator(parse_ctx=None,
     assert cmd_ev.mutable_opts is not None, cmd_ev
     prompt_ev = prompt.Evaluator('osh', '0.0.0', parse_ctx, mem)
 
-    global_io = value.IO(cmd_ev, prompt_ev)
+    global_io = Obj(None, None)
     vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
                         prompt_ev, global_io, tracer)
 
@@ -319,11 +321,12 @@ def EvalCode(code_str, parse_ctx, comp_lookup=None, mem=None, aliases=None):
     errfmt = ui.ErrorFormatter()
 
     comp_lookup = comp_lookup or completion.Lookup()
-    mem = mem or state.Mem('', [], arena, [])
-    parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
+    mem = mem or state.Mem('', [], arena, [], {})
+    parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
     mem.exec_opts = exec_opts
 
-    state.InitMem(mem, {}, '0.1')
+    #state.InitMem(mem, {}, '0.1')
+    sh_init.InitDefaultVars(mem)
     mutable_opts.Init()
 
     line_reader, _ = InitLexer(code_str, arena)
@@ -349,9 +352,9 @@ def InitParseContext(arena=None,
     if aliases is None:
         aliases = {}
 
-    mem = state.Mem('', [], arena, [])
+    mem = state.Mem('', [], arena, [], {})
     if parse_opts is None:
-        parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
+        parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
 
     parse_ctx = parse_lib.ParseContext(arena,
                                        parse_opts,
@@ -365,8 +368,8 @@ def InitParseContext(arena=None,
 def InitWordParser(word_str, oil_at=False, arena=None):
     arena = arena or MakeArena('<test_lib>')
 
-    mem = state.Mem('', [], arena, [])
-    parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
+    mem = state.Mem('', [], arena, [], {})
+    parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
 
     # CUSTOM SETTING
     mutable_opts.opt0_array[option_i.parse_at] = oil_at

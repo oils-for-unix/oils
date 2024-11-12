@@ -8,25 +8,33 @@ module runtime
     expr word command
     CompoundWord DoubleQuoted
     ArgList re redir_loc proc_sig 
-    LiteralBlock Func
+    Func
   }
 
   use core value {
-    value
+    value Obj
   }
 
   # Evaluating SimpleCommand results in either an argv array or an assignment.
   # in 'local foo', rval is None.
   AssignArg = (str var_name, value? rval, bool plus_eq, CompoundWord blame_word)
 
+  ProcArgs = (
+    # Unevaluated args
+    ArgList typed_args,
+
+    # Evaluated args, similar to typed_args.py Reader
+    List[value]? pos_args, Dict[str, value]? named_args,
+
+    # block_arg comes from either p (; ; myblock) or p { echo b }
+    value? block_arg
+  )
+
   # note: could import 'builtin' from synthetic option_asdl
   cmd_value =
     Argv(List[str] argv, List[CompoundWord] arg_locs,
-         ArgList? typed_args,
-         # Evaluated args, similar to typed_args.py Reader
-         List[value]? pos_args, Dict[str, value]? named_args,
-         # block_arg comes from either p (; ; myblock) or p { echo b }
-         value? block_arg)
+         bool is_last_cmd,
+         Obj? self_obj, ProcArgs? proc_args)
 
   | Assign(int builtin_id,
            List[str] argv, List[CompoundWord] arg_locs,
@@ -62,20 +70,27 @@ module runtime
 
   # Where scopes are used
   # Shopt: to respect shopt -u dynamic_scope.
-  #   Dynamic -> LocalOrGlobal for reading
-  #   Dynamic -> LocalOnly for writing.
+  #   GetValue: Dynamic or LocalOrGlobal
+  #   SetValue: Dynamic or LocalOnly
   # Dynamic:
   #   GetValue: Shell Style
   #   SetValue: Shell Style
   # LocalOrGlobal:
-  #   GetValue: Oil style
+  #   GetValue: YSH style
   #   SetValue: N/A
   # LocalOnly:
   #   GetValue: N/A, we can always READ globals
   #   SetValue: setvar, parameter bindings, for loop iterator vars
   # GlobalOnly:
   #   GetValue: N/A
-  #   SetValue: internal use in COMPREPLY, and Oil's 'setglobal' keyword
+  #   SetValue: internal use in COMPREPLY, and YSH 'setglobal' keyword
+
+  # TODO: Avoid mutating __builtins__?  This could be illegal:
+  #
+  #   setvar io.glob = 'foo'
+  #
+  # Instead of LocalOnly, GlobalOnly, have MutateLocalOnly, MutateGlobalOnly?
+  # So they don't find the 'io' or 'vm' builtin Objs
 
   scope = Shopt | Dynamic | LocalOrGlobal | LocalOnly | GlobalOnly
 
