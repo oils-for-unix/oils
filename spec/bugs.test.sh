@@ -414,3 +414,83 @@ echo $0 | grep -o sh
 ## STDOUT:
 sh
 ## END
+
+#### bug from pnut: negative number $((-1))
+
+# https://lobste.rs/s/lplim1/design_self_compiling_c_transpiler#c_km2ywc
+
+[ $((-42)) -le 0 ]
+echo status=$?
+
+[ $((-1)) -le 0 ]
+echo status=$?
+
+echo
+
+[ -1 -le 0 ]
+echo status=$?
+
+[ -42 -le 0 ]
+echo status=$?
+
+echo
+
+test -1 -le 0
+echo status=$?
+
+test -42 -le 0
+echo status=$?
+
+## STDOUT:
+status=0
+status=0
+
+status=0
+status=0
+
+status=0
+status=0
+## END
+
+#### negative octal numbers, etc.
+
+# zero
+[ -0 -eq 0 ]
+echo zero=$?
+
+# octal numbers can be negative
+[ -0123 -eq -83 ]
+echo octal=$?
+
+# hex doesn't have negative numbers?
+[ -0xff -eq -255 ]
+echo hex=$?
+
+# base N doesn't either
+[ -64#a -eq -10 ]
+echo baseN=$?
+
+## STDOUT:
+zero=0
+octal=1
+hex=2
+baseN=2
+## END
+
+#### More negative numbers
+case $SH in dash) exit ;; esac
+
+[[ -1 -le 0 ]]
+echo status=$?
+
+[[ $((-1)) -le 0 ]]
+echo status=$?
+
+## STDOUT:
+status=0
+status=0
+## END
+
+## N-I dash STDOUT:
+## END
+
