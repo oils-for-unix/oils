@@ -227,8 +227,15 @@ class Set(vm._Builtin):
 
 class Shopt(vm._Builtin):
 
-    def __init__(self, exec_opts, mutable_opts, cmd_ev, mem, environ):
-        # type: (optview.Exec, MutableOpts, CommandEvaluator, state.Mem, Dict[str, str]) -> None
+    def __init__(
+            self,
+            exec_opts,  # type: optview.Exec
+            mutable_opts,  # type: MutableOpts
+            cmd_ev,  # type: CommandEvaluator
+            mem,  # type: state.Mem
+            environ,  # type: Dict[str, str]
+    ):
+        # type: (...) -> None
         self.exec_opts = exec_opts
         self.mutable_opts = mutable_opts
         self.cmd_ev = cmd_ev

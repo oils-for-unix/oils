@@ -27,8 +27,14 @@ if TYPE_CHECKING:
 class ParseHay(vm._Callable):
     """parseHay()"""
 
-    def __init__(self, fd_state, parse_ctx, mem, errfmt):
-        # type: (process.FdState, parse_lib.ParseContext, state.Mem, ui.ErrorFormatter) -> None
+    def __init__(
+            self,
+            fd_state,  # type:process.FdState
+            parse_ctx,  # type: parse_lib.ParseContext
+            mem,  # type: state.Mem
+            errfmt,  # type: ui.ErrorFormatter
+    ):
+        # type: (...) -> None
         self.fd_state = fd_state
         self.parse_ctx = parse_ctx
         self.mem = mem

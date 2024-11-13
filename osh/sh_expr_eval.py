@@ -1063,7 +1063,9 @@ class BoolEvaluator(ArithEvaluator):
                 ok = False
 
             if not ok:
-                e_strict('Invalid integer %r' % s, blame_loc)
+                # builtin_bracket.py catches this and return status 2, so it's
+                # not fatal
+                e_die('Invalid integer %r' % s, blame_loc)
 
             return i
 
