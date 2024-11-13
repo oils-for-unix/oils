@@ -24,7 +24,8 @@ class ParsingTest(unittest.TestCase):
         for s, expected in cases:
             stripped = s.strip()  # also done in caller
             try:
-                ok, actual = sh_expr_eval._MaybeParseInt(stripped, loc.Missing)
+                ok, actual = sh_expr_eval._ParseOshInteger(
+                    stripped, loc.Missing)
             except error.Strict:
                 ok = False
 
