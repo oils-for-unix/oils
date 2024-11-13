@@ -988,12 +988,12 @@ class BoolEvaluator(ArithEvaluator):
             mutable_opts,  # type: Optional[state.MutableOpts]
             parse_ctx,  # type: Optional[parse_lib.ParseContext]
             errfmt,  # type: ui.ErrorFormatter
-            always_strict=False  # type: bool
+            bracket=False  # type: bool
     ):
         # type: (...) -> None
         ArithEvaluator.__init__(self, mem, exec_opts, mutable_opts, parse_ctx,
                                 errfmt)
-        self.always_strict = always_strict
+        self.bracket = bracket  # [ and [[ are slightly different
 
     def _IsDefined(self, s, blame_loc):
         # type: (str, loc_t) -> bool
@@ -1052,18 +1052,13 @@ class BoolEvaluator(ArithEvaluator):
                 return False
         raise AssertionError()
 
-    def _StringToBigIntOrError(self, s, blame_word=None):
-        # type: (str, Optional[word_t]) -> mops.BigInt
+    def _StringToBigIntOrError(self, s, blame_loc):
+        # type: (str, loc_t) -> mops.BigInt
         """Used by both [[ $x -gt 3 ]] and (( $x ))."""
-        if blame_word:
-            location = loc.Word(blame_word)  # type: loc_t
-        else:
-            location = loc.Missing
-
         try:
-            i = self._StringToBigInt(s, location)
+            i = self._StringToBigInt(s, blame_loc)
         except error.Strict as e:
-            if self.always_strict or self.exec_opts.strict_arith():
+            if self.bracket or self.exec_opts.strict_arith():
                 raise
             else:
                 i = mops.ZERO
@@ -1173,8 +1168,8 @@ class BoolEvaluator(ArithEvaluator):
                 if arg_type == bool_arg_type_e.Int:
                     # NOTE: We assume they are constants like [[ 3 -eq 3 ]].
                     # Bash also allows [[ 1+2 -eq 3 ]].
-                    i1 = self._StringToBigIntOrError(s1, blame_word=node.left)
-                    i2 = self._StringToBigIntOrError(s2, blame_word=node.right)
+                    i1 = self._StringToBigIntOrError(s1, loc.Word(node.left))
+                    i2 = self._StringToBigIntOrError(s2, loc.Word(node.right))
 
                     if op_id == Id.BoolBinary_eq:
                         return mops.Equal(i1, i2)

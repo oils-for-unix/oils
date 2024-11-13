@@ -746,3 +746,22 @@ status=0
 status=0
 status=0
 ## END
+
+#### no recursive arith [ 1+2 -eq 3 ]
+
+[ 1+2 -eq 3 ]
+echo status=$?
+
+s='1+2'
+[ "$s" -eq 3 ]
+echo status=$?
+
+## STDOUT:
+status=2
+status=2
+## END
+
+## BUG mksh STDOUT:
+status=0
+status=0
+## END
