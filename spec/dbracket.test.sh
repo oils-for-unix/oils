@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 ## compare_shells: bash-4.4 mksh
 
 # NOTE: zsh passes about half, and fails about half.  It supports a subset of

@@ -294,7 +294,7 @@ class UnsafeArith(object):
         return bvs_part
 
 
-def _MaybeParseInt(s, blame_loc):
+def _ParseOshInteger(s, blame_loc):
     # type: (str, loc_t) -> Tuple[bool, mops.BigInt]
     """
     Returns:
@@ -421,7 +421,7 @@ class ArithEvaluator(object):
         """
         s = s.strip()
 
-        ok, i = _MaybeParseInt(s, blame_loc)
+        ok, i = _ParseOshInteger(s, blame_loc)
         if ok:
             return i
 
@@ -1054,15 +1054,29 @@ class BoolEvaluator(ArithEvaluator):
 
     def _StringToBigIntOrError(self, s, blame_loc):
         # type: (str, loc_t) -> mops.BigInt
-        """Used by both [[ $x -gt 3 ]] and (( $x ))."""
-        try:
-            i = self._StringToBigInt(s, blame_loc)
-        except error.Strict as e:
-            if self.bracket or self.exec_opts.strict_arith():
-                raise
+
+        # Used by [ $x -gt 3 ]
+        if self.bracket:
+            if match.LooksLikeInteger(s):
+                ok, i = mops.FromStr2(s)
             else:
-                i = mops.ZERO
-        return i
+                ok = False
+
+            if not ok:
+                e_strict('Invalid integer %r' % s, blame_loc)
+
+            return i
+
+        # Used by both [[ $x -gt 3 ]] and $(( x ))
+        else:
+            try:
+                i = self._StringToBigInt(s, blame_loc)
+            except error.Strict as e:
+                if self.bracket or self.exec_opts.strict_arith():
+                    raise
+                else:
+                    i = mops.ZERO
+            return i
 
     def _EvalCompoundWord(self, word, eval_flags=0):
         # type: (word_t, int) -> str
