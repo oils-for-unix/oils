@@ -1450,13 +1450,14 @@ def _SuccessOrFailure(test_name, stats):
             log('%s: note: Got %d allowed Oils failures', test_name, allowed)
 
     # TODO: remove special case for 0
-    if oils_cpp_count != 0 and oils_cpp_count != allowed_cpp:
-        errors.append('Got %d Oils C++ failures, but %d are allowed' %
-                      (oils_cpp_count, allowed))
-    else:
-        if allowed_cpp != 0:
-            log('%s: note: Got %d allowed Oils C++ failures', test_name,
-                allowed_cpp)
+    if oils_cpp_count != 0:
+        if oils_cpp_count != allowed_cpp:
+            errors.append('Got %d Oils C++ failures, but %d are allowed' %
+                          (oils_cpp_count, allowed))
+        else:
+            if allowed_cpp != 0:
+                log('%s: note: Got %d allowed Oils C++ failures', test_name,
+                    allowed_cpp)
 
     if all_count != allowed:
         errors.append('Got %d total failures, but %d are allowed' %

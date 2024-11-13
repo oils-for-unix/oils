@@ -1,4 +1,4 @@
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 ## compare_shells: dash bash mksh
 
 #### zero args: [ ]
@@ -578,4 +578,171 @@ test -S /dev/zero
 echo status=$?
 ## STDOUT:
 status=1
+## END
+
+#### bug from pnut: negative number $((-1))
+
+# https://lobste.rs/s/lplim1/design_self_compiling_c_transpiler#c_km2ywc
+
+[ $((-42)) -le 0 ]
+echo status=$?
+
+[ $((-1)) -le 0 ]
+echo status=$?
+
+echo
+
+[ -1 -le 0 ]
+echo status=$?
+
+[ -42 -le 0 ]
+echo status=$?
+
+echo
+
+test -1 -le 0
+echo status=$?
+
+test -42 -le 0
+echo status=$?
+
+## STDOUT:
+status=0
+status=0
+
+status=0
+status=0
+
+status=0
+status=0
+## END
+
+#### negative octal numbers, etc.
+
+# zero
+[ -0 -eq 0 ]
+echo zero=$?
+
+# octal numbers can be negative
+[ -0123 -eq -83 ]
+echo octal=$?
+
+# hex doesn't have negative numbers?
+[ -0xff -eq -255 ]
+echo hex=$?
+
+# base N doesn't either
+[ -64#a -eq -10 ]
+echo baseN=$?
+
+## STDOUT:
+zero=0
+octal=1
+hex=2
+baseN=2
+## END
+
+#### More negative numbers
+case $SH in dash) exit ;; esac
+
+[[ -1 -le 0 ]]
+echo status=$?
+
+[[ $((-1)) -le 0 ]]
+echo status=$?
+
+## STDOUT:
+status=0
+status=0
+## END
+
+## N-I dash STDOUT:
+## END
+
+#### No octal, hex, base N conversion - leading 0 is a regular decimal
+
+# arithmetic has octal conversion
+echo $(( 073 ))
+echo $(( -073 ))
+
+echo
+
+# Bracket does NOT have octal conversion!  That is annoying.
+[ 073 -eq 73 ]
+echo status=$?
+
+[ -073 -eq -73 ]
+echo status=$?
+
+echo
+
+[ 0xff -eq 255 ]
+echo hex=$?
+[ 64#a -eq 10 ]
+echo baseN=$?
+
+## STDOUT:
+59
+-59
+
+status=0
+status=0
+
+hex=2
+baseN=2
+## END
+
+## BUG mksh STDOUT:
+73
+-73
+
+status=0
+status=0
+
+hex=2
+baseN=2
+## END
+
+#### Looks like octal, but digit is too big
+
+# arithmetic has octal conversion
+echo $(( 083 ))
+echo status=$?
+
+echo $(( -083 ))
+echo status=$?
+
+echo
+
+# Bracket does NOT have octal conversion!  That is annoying.
+[ 083 -eq 83 ]
+echo status=$?
+
+[ -083 -eq -83 ]
+echo status=$?
+
+## status: 1
+## STDOUT:
+## END
+
+## OK dash status: 2
+
+## OK bash status: 0
+## OK bash STDOUT:
+status=1
+status=1
+
+status=0
+status=0
+## END
+
+## OK mksh status: 0
+## OK mksh STDOUT:
+83
+status=0
+-83
+status=0
+
+status=0
+status=0
 ## END
