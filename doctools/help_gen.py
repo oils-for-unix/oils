@@ -338,9 +338,10 @@ def SplitIntoCards(heading_tags, contents):
 
 
 def HelpTopics(s):
-    """Given an HTML page like index-{osh,ysh}.html,
+    """
+    Given a rendered toc-{osh,ysh}.html
 
-    Yield groups (section_id, section_name, block of text)
+    yield groups (section_id, section_name, block of text)
     """
     tag_lexer = html.TagLexer(s)
 
