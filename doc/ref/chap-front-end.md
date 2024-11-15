@@ -319,12 +319,14 @@ contents.  Type:
 
 Where $CHAPTER is one of:
 
+    type-method
+    builtin-cmd
+    stdlib
     front-end
-    command-lang
+    cmd-lang
     osh-assign
     word-lang
     mini-lang
-    builtin-cmd
     option
     special-var
     plugin
@@ -349,19 +351,23 @@ contents.  Type:
 
 Where $CHAPTER is one of:
 
-    front-end
-    command-lang
-    expr-lang
-    word-lang
-    builtin-cmd
-    option
-    special-var
     type-method
     builtin-func
+    builtin-cmd
+    stdlib
+    front-end
+    cmd-lang
+    ysh-cmd
+    expr-lang
+    word-lang
+    option
+    special-var
+    plugin
 
 Example:
 
     help ysh-expr-lang
+    help ysh-ysh-cmd    # may change
 ```
 
 <!-- h4 needed to end last card: ysh-chapters -->
