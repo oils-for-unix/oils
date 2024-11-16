@@ -669,7 +669,7 @@ var s = io->evalExpr(ex, dollar0='z', pos_args=:|a b c|, vars=vars)
 
 echo $s
 
-proc where(; pred) {
+proc my-where (; pred) {
   # note: for line in (io.stdin) is messed up by spec test framework
 
   while read --raw-line (&line) {
@@ -682,10 +682,18 @@ proc where(; pred) {
   }
 }
 
-seq 5 | where [_line ~== 2 or _line ~== 4]
+
+seq 5 | my-where [_line ~== 2 or _line ~== 4]
+echo ---
+
+seq 5 10 | my-where [_line % 2 === 1]
 
 ## STDOUT:
 z a b hello
 2
 4
+---
+5
+7
+9
 ## END

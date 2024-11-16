@@ -1,0 +1,78 @@
+# Run with _bin/cxx-opt/ysh
+
+proc filter (; predicate) {
+	for line in (io.stdin) {
+		if (io->evalExpr(predicate, vars={_val: fromJson8(line)})) {
+			write -- $line
+		}
+	}
+}
+
+#
+# Setup
+#
+
+var f = '_tmp/b1'
+
+for i in (0 ..= 100_000) {
+	json write ({}, space=0)
+} > $f
+
+#
+# Benchmarks
+#
+
+var N = 2
+
+proc with-default {
+  write -- u'get() with default\n'
+  write -- 'BEFORE ------------------------------------------------------'
+
+  for _ in (0 ..< N) {
+    time for line in (io.stdin) {
+      call fromJson8(line)
+    } < $f
+    write
+  }
+
+  echo 'FILTER with default'
+  time filter [get(_val, 'missing-key', 0) === 0] < $f >/dev/null
+
+  write -- 'AFTER -------------------------------------------------------'
+
+  for _ in (0 ..< N) {
+    time for line in (io.stdin) {
+      call fromJson8(line)
+    } < $f
+    write
+  }
+}
+
+proc without-default {
+  write -- u'get() without default\n'
+  write -- 'BEFORE ------------------------------------------------------'
+
+  for _ in (0 ..< N) {
+    time for line in (io.stdin) {
+      call fromJson8(line)
+    } < $f
+    write
+  }
+
+  echo 'FILTER without default'
+  time filter [get(_val, 'missing-key')] < $f #>/dev/null
+
+  write -- 'AFTER -------------------------------------------------------'
+
+  for _ in (0 ..< N) {
+    time for line in (io.stdin) {
+      call fromJson8(line)
+    } < $f
+    write
+  }
+}
+
+
+with-default
+without-default
+
