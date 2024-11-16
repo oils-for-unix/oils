@@ -681,13 +681,24 @@ builtin.
 
 Given an `Expr` value, evaluate it and return its value:
 
-    $ var i = 42
-    $ var expr = ^[i + 1] 
+    var i = 42
+    var expr = ^[i + 1] 
 
-    $ = io->evalExpr(expr)
-    43
+    = io->evalExpr(expr)  # => 43
 
-Examples of expressions that have effects:
+It accepts optional args that let you control name binding:
+
+- `pos_args` for `$1 $2 $3`
+- `dollar0` for `$0`
+- `vars` for named variables
+
+Example:
+
+    var expr = ^["zero $0, one $1, named $x"]
+    var s = io->evalExpr(expr, dollar0="z", pos_args=['one'], vars={x: "x"})
+    echo $s  # => zero z, one one, named x
+
+Note that these expressions that have effects:
 
 - `^[ myplace->setValue(42) ]` - memory operation
 - `^[ $(echo 42 > hi) ]` - I/O operation
@@ -701,24 +712,17 @@ Evaluate a command, and return `null`.
 
 It's similar to the `eval` builtin, and is meant to be used in pure functions.
 
-You can also bind:
+It accepts optional args that let you control name binding:
 
-- positional args `$1 $2 $3`
-- dollar0 `$0`
-- named variables
+- `pos_args` for `$1 $2 $3`
+- `dollar0` for `$0`
+- `vars` for named variables
 
-Examples:
+Example:
 
     var cmd = ^(echo "zero $0, one $1, named $x")
     call io->eval(cmd, dollar0="z", pos_args=['one'], vars={x: "x"})
     # => zero z, one one, named x
-
-<!--
-TODO: We should be able to bind positional args, env vars, and inspect the
-shell VM.
-
-Though this runs in the same VM, not a new one.
--->
 
 ### evalToDict()
 

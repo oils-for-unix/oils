@@ -523,8 +523,7 @@ def Main(
         method_io.Eval(mem, cmd_ev, method_io.EVAL_DICT))
     io_methods['M/evalInFrame'] = value.BuiltinFunc(
         method_io.EvalInFrame(mem, cmd_ev))
-    io_methods['M/evalExpr'] = value.BuiltinFunc(
-        method_io.EvalExpr(expr_ev))
+    io_methods['M/evalExpr'] = value.BuiltinFunc(method_io.EvalExpr(expr_ev))
 
     # Identical to command sub
     io_methods['captureStdout'] = value.BuiltinFunc(

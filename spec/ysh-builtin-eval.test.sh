@@ -659,3 +659,33 @@ p {
 ## STDOUT:
 TODO
 ## END
+
+#### io->evalExpr() with vars, dollar0, pos_args
+
+var ex = ^["$0 $1 $2 " ++ myvar]
+
+var vars = {myvar: 'hello'}
+var s = io->evalExpr(ex, dollar0='z', pos_args=:|a b c|, vars=vars)
+
+echo $s
+
+proc where(; pred) {
+  # note: for line in (io.stdin) is messed up by spec test framework
+
+  while read --raw-line (&line) {
+    var vars = {_line: line}
+    #= line
+    var b = io->evalExpr(pred, vars=vars)
+    if (b) {
+      echo $line
+    }
+  }
+}
+
+seq 5 | where [_line ~== 2 or _line ~== 4]
+
+## STDOUT:
+z a b hello
+2
+4
+## END
