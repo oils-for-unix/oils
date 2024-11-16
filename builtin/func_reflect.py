@@ -19,7 +19,6 @@ from frontend import reader
 from frontend import typed_args
 from mycpp import mops
 from mycpp.mylib import log, tagswitch
-from ysh import expr_eval
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -215,20 +214,3 @@ class ParseExpr(vm._Callable):
         rd.Done()
 
         return value.Null
-
-
-class EvalExpr(vm._Callable):
-
-    def __init__(self, expr_ev):
-        # type: (expr_eval.ExprEvaluator) -> None
-        self.expr_ev = expr_ev
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-        unused_self = rd.PosObj()
-        lazy = rd.PosExpr()
-        rd.Done()
-
-        result = self.expr_ev.EvalExprClosure(lazy, rd.LeftParenToken())
-
-        return result

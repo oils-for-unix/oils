@@ -13,13 +13,31 @@ from osh import prompt
 
 from typing import Dict, List, cast, TYPE_CHECKING
 if TYPE_CHECKING:
-    from osh import cmd_eval
     from _devbuild.gen.runtime_asdl import Cell
+    from osh import cmd_eval
+    from ysh import expr_eval
 
 _ = log
 
 EVAL_NULL = 1
 EVAL_DICT = 2
+
+
+class EvalExpr(vm._Callable):
+
+    def __init__(self, expr_ev):
+        # type: (expr_eval.ExprEvaluator) -> None
+        self.expr_ev = expr_ev
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        unused_self = rd.PosObj()
+        lazy = rd.PosExpr()
+        rd.Done()
+
+        result = self.expr_ev.EvalExprClosure(lazy, rd.LeftParenToken())
+
+        return result
 
 
 def _PrintFrame(prefix, frame):
