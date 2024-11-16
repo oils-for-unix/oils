@@ -180,9 +180,11 @@ def Preprocess(t):
 
 # Each of these files defines two variables.  We append them to a global list.
 asdl_types = []
-gdb.execute('source _devbuild/gen/syntax_asdl_debug.py')
+gdb.execute('source _gen/frontend/syntax.asdl_debug.py')
 asdl_types.append((cpp_namespace, tags_to_types))
-gdb.execute('source _devbuild/gen/runtime_asdl_debug.py')
+gdb.execute('source _gen/core/runtime.asdl_debug.py')
+asdl_types.append((cpp_namespace, tags_to_types))
+gdb.execute('source _gen/core/value.asdl_debug.py')
 asdl_types.append((cpp_namespace, tags_to_types))
 
 sum_type_lookup = Preprocess(asdl_types)

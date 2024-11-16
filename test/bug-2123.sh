@@ -11,4 +11,11 @@ demo() {
   /usr/bin/time --format '%e %M' $ysh test/bug-2123.ysh
 }
 
+debug() {
+  local ysh=_bin/cxx-dbg/ysh
+  ninja $ysh
+
+  gdb --args $ysh test/bug-2123.ysh
+}
+
 "$@"

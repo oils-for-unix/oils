@@ -112,7 +112,7 @@ flag-gen-mypy() {
 
 # Helper
 gen-asdl-py() {
-  local asdl_path=$1  # e.g. osh/osh.asdl
+  local asdl_path=$1  # e.g. frontend/syntax.asdl
 
   local name
   name=$(basename $asdl_path .asdl)

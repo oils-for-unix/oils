@@ -1069,6 +1069,53 @@ TEST member_init_demo() {
   PASS();
 }
 
+//
+// Zephyr ASDL Demo
+//
+
+class word_t {};
+
+class word__BracedTree : public word_t {};
+
+// This is multiple inheritance, and also inheritance from a subtype?
+// It's interesting that this works!
+// TODO: test if MyPy can express this!
+class CompoundWord : public word_t, public List<int> {};
+
+class value_t {};
+class Dict_ : public value_t, public Dict<BigStr*, value_t*> {};
+
+TEST subtype_demo() {
+  CompoundWord* c = new CompoundWord();
+  c->append(42);
+  log("CompoundWord len %d", len(c));
+
+  word_t* w = nullptr;
+
+  w = c;
+  w = static_cast<word_t*>(c);
+
+  List<BigStr*>* mylist = new List<BigStr*>();
+  mylist->append(kEmptyString);
+  mylist->append(kEmptyString);
+
+  log("List<BigStr*> len %d", len(mylist));
+
+  // yes, it's an error!
+  // w = mylist;
+
+  // also an error!
+  // w = static_cast<word_t*>(mylist);
+
+  w = reinterpret_cast<word_t*>(mylist);
+
+  Dict_* d = new Dict_();
+  d->set(kEmptyString, nullptr);
+  log("Dict_ len %d", len(d));
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -1101,6 +1148,7 @@ int main(int argc, char** argv) {
   RUN_TEST(asdl_namespace_demo);
 
   RUN_TEST(member_init_demo);
+  RUN_TEST(subtype_demo);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

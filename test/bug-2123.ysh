@@ -60,6 +60,13 @@ proc without-default {
   }
 
   echo 'FILTER without default'
+
+  for line in (io.stdin) {
+    var d = fromJson8(line)
+    call get(d, 'missing-key')
+  } < $f
+
+  #time filter [get(_val, 'missing-key', 0) === 0] < $f >/dev/null
   time filter [get(_val, 'missing-key')] < $f #>/dev/null
 
   write -- 'AFTER -------------------------------------------------------'
