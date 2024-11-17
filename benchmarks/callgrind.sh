@@ -8,25 +8,34 @@ set -o pipefail
 set -o errexit
 
 build-and-run() {
-  # Hm dbg build seems to give more exact info
-  local osh=_bin/cxx-dbg/osh
-  #local osh=_bin/cxx-opt/osh
+  local sh=$1
+  shift
+  ninja $sh
+  valgrind --tool=callgrind $sh "$@"
+}
 
-  ninja $osh
+osh-run() {
+  build-and-run _bin/cxx-dbg/osh "$@"
+}
 
-  valgrind --tool=callgrind \
-    $osh "$@"
+ysh-run() {
+  build-and-run _bin/cxx-dbg/ysh "$@"
 }
 
 fib() {
-  build-and-run benchmarks/compute/fib.sh 10 44
+  osh-run benchmarks/compute/fib.sh 10 44
 }
 
 parse-cpython-configure() {
   # Goal: eliminate string slicing in this workload!  It should just be
   # creating fixed size Tokens, syntax.asdl nodes, and List<T>
 
-  build-and-run -n --ast-format none Python-2.7.13/configure
+  ysh-run -n --ast-format none Python-2.7.13/configure
+}
+
+json() {
+  # 50 lines
+  ysh-run test/bug-2123.ysh 50
 }
 
 with-callgrind() {

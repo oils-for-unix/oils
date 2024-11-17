@@ -23,7 +23,11 @@ proc filter-continue (; predicate) {
 
 var f = '_tmp/b1'
 
-for i in (0 ..= 100_000) {
+# Using YSH numbers
+var lines = ${1:-100_000}
+
+for i in (0 ..= lines) {
+
   json write ({}, space=0)
 } > $f
 
