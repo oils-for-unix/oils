@@ -51,7 +51,7 @@ exec-ysh-count() {
 
   local code='
 var i = 0
-for _ in (stdin) {
+for _ in (io.stdin) {
   setvar i += 1
 }
 echo $i
@@ -191,7 +191,7 @@ test-ysh-read-error() {
   ### testing errno!
 
   set +o errexit
-  $YSH_ASAN -c 'for x in (stdin) { echo $x }' < /tmp
+  $YSH_ASAN -c 'for x in (io.stdin) { echo $x }' < /tmp
   echo status=$?
 }
 
@@ -240,6 +240,10 @@ setup-benchmark() {
 setup-test() {
   ninja $OSH_ASAN $YSH_ASAN
 }
+
+# TODO:
+# - Soil should run tests
+# - Soil should run benchmarks
 
 soil-benchmark() {
   setup-benchmark
