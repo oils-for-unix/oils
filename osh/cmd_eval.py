@@ -1720,27 +1720,27 @@ class CommandEvaluator(object):
             elif case(command_e.If):
                 node = cast(command.If, UP_node)
 
+                # Perf bug fix: loops might only execute 'if', but we still
+                # need to GC
+                self._LeafTick()
+
                 # No SetTokenForLine() because
                 # - $LINENO can't appear directly in 'if'
                 # - 'if' doesn't directly cause errors
                 # It will be taken care of by command.Simple, condition, etc.
                 status = self._DoIf(node)
 
-                # Perf bug fix: loops might only execute 'if', but we still
-                # need to GC
-                self._LeafTick()
-
             elif case(command_e.Case):
                 node = cast(command.Case, UP_node)
+
+                # Perf bug fix: loops might only execute 'case', but we still
+                # need to GC
+                self._LeafTick()
 
                 # Must set location for 'case $LINENO'
                 self.mem.SetTokenForLine(node.case_kw)
                 self._MaybeRunDebugTrap()
                 status = self._DoCase(node)
-
-                # Perf bug fix: loops might only execute 'case', but we still
-                # need to GC
-                self._LeafTick()
 
             elif case(command_e.WhileUntil):
                 node = cast(command.WhileUntil, UP_node)

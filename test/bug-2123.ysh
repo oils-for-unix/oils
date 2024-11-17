@@ -1,16 +1,20 @@
 # Run with _bin/cxx-opt/ysh
 
 proc filter (; predicate) {
-  #var i = 0
-	for line in (io.stdin) {
-		if (io->evalExpr(predicate, vars={_val: fromJson8(line)})) {
-			write -- $line
-		}
-    #setvar i += 1
-    #if (i % 1000 === 0) {
-    #  echo "i $i"
-    #}
-	}
+  for line in (io.stdin) {
+    if (io->evalExpr(predicate, vars={_val: fromJson8(line)})) {
+      write -- $line
+    }
+  }
+}
+
+proc filter-continue (; predicate) {
+  for line in (io.stdin) {
+    # BUG FIX: we should GC before 'continue' raises an exception
+    if (not io->evalExpr(predicate, vars={_val: fromJson8(line)})) {
+      continue
+    }
+  }
 }
 
 #
@@ -20,7 +24,7 @@ proc filter (; predicate) {
 var f = '_tmp/b1'
 
 for i in (0 ..= 100_000) {
-	json write ({}, space=0)
+  json write ({}, space=0)
 } > $f
 
 #
@@ -74,7 +78,8 @@ proc without-default {
   #time filter [get(_val, 'missing-key', 0) === 0] < $f >/dev/null
 
   echo '****** BEGIN filter'
-  time filter [get(_val, 'missing-key')] < $f #>/dev/null
+  #time filter [get(_val, 'missing-key')] < $f #>/dev/null
+  time filter-continue [get(_val, 'missing-key')] < $f #>/dev/null
   echo '****** END filter'
 
   write -- 'AFTER -------------------------------------------------------'
