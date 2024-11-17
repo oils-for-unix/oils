@@ -115,6 +115,8 @@ static PyObject *
 parse_and_bind(PyObject *self, PyObject *args)
 {
     char *s, *copy;
+    int binding_result;
+
     if (!PyArg_ParseTuple(args, "s:parse_and_bind", &s))
         return NULL;
     /* Make a copy -- rl_parse_and_bind() modifies its argument */
@@ -123,14 +125,22 @@ parse_and_bind(PyObject *self, PyObject *args)
     if (copy == NULL)
         return PyErr_NoMemory();
     strcpy(copy, s);
-    rl_parse_and_bind(copy);
+
+    binding_result = rl_parse_and_bind(copy);
     free(copy); /* Free the copy */
+    
+    if (binding_result != 0) {
+        PyErr_Format(PyExc_ValueError, "'%s': invalid binding", s);
+        return NULL;
+    }
+
     Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(doc_parse_and_bind,
 "parse_and_bind(string) -> None\n\
-Execute the init line provided in the string argument.");
+Bind a key sequence to a readline function (or a variable to a value).");
+
 
 
 /* Exported function to parse a readline init file */
@@ -853,6 +863,12 @@ void _pprint_strvec_list(char **strvec) {
         }
     }
 }
+
+/* 
+NB: readline (and bash) have a bug where they don't see certain keyseqs, even
+if the bindings work. E.g., if you bind a number key like "\C-7", it will be
+bound, but reporting code like query_bindings and function_dumper won't count it.
+*/
 
 static PyObject* 
 query_bindings(PyObject *self, PyObject *args)

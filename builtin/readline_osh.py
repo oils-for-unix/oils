@@ -139,6 +139,19 @@ class Bind(vm._Builtin):
                 if arg.X is not None:
                     readline.print_shell_cmd_map()
                     
+                bindings, arg_locs = arg_r.Rest2()
+                for i, binding in enumerate(bindings):
+                    try:
+                        # print("Binding %s (%i)", binding, i)
+                        # print("Arg loc %s (%i)", arg_locs[i], i)
+                        readline.parse_and_bind(binding)
+                    except ValueError as e:
+                        msg = e.message  # type: str
+                        self.errfmt.Print_("bind error: %s" % msg, arg_locs[i])
+                        return 1
+
+                return 0
+                    
         except ValueError as e:
             # temp var to work around mycpp runtime limitation
             msg = e.message  # type: str
