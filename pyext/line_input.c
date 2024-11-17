@@ -759,6 +759,7 @@ static PyObject*
 list_funmap_names(PyObject *self, PyObject *args)
 {
     rl_list_funmap_names();
+    // printf ("Compiled w/ readline version: %s\n", rl_library_version ? rl_library_version : "unknown");
     Py_RETURN_NONE;
 }
 

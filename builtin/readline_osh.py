@@ -85,6 +85,10 @@ class Bind(vm._Builtin):
         arg = arg_types.bind(attrs.attrs)
         # print("arg:\n", arg)
         # print("dir(arg):\n", dir(arg))
+        # for prop in dir(arg):
+        #     if not prop.startswith('__'):
+        #         value = getattr(arg, prop)
+        #         print("Property: {0}, Value: {1}".format(prop, value))
         # print("arg.m:\n", arg.m)
         
         
@@ -132,7 +136,7 @@ class Bind(vm._Builtin):
                                     blame_loc=cmd_val.arg_locs[0])
                     return 1
                 
-                if arg.X:
+                if arg.X is not None:
                     readline.print_shell_cmd_map()
                     
         except ValueError as e:
