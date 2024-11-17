@@ -1726,6 +1726,10 @@ class CommandEvaluator(object):
                 # It will be taken care of by command.Simple, condition, etc.
                 status = self._DoIf(node)
 
+                # Perf bug fix: loops might only execute 'if', but we still
+                # need to GC
+                self._LeafTick()
+
             elif case(command_e.Case):
                 node = cast(command.Case, UP_node)
 
@@ -1733,6 +1737,10 @@ class CommandEvaluator(object):
                 self.mem.SetTokenForLine(node.case_kw)
                 self._MaybeRunDebugTrap()
                 status = self._DoCase(node)
+
+                # Perf bug fix: loops might only execute 'case', but we still
+                # need to GC
+                self._LeafTick()
 
             elif case(command_e.WhileUntil):
                 node = cast(command.WhileUntil, UP_node)

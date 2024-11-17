@@ -1,10 +1,15 @@
 # Run with _bin/cxx-opt/ysh
 
 proc filter (; predicate) {
+  #var i = 0
 	for line in (io.stdin) {
 		if (io->evalExpr(predicate, vars={_val: fromJson8(line)})) {
 			write -- $line
 		}
+    #setvar i += 1
+    #if (i % 1000 === 0) {
+    #  echo "i $i"
+    #}
 	}
 }
 
@@ -67,7 +72,10 @@ proc without-default {
   } < $f
 
   #time filter [get(_val, 'missing-key', 0) === 0] < $f >/dev/null
+
+  echo '****** BEGIN filter'
   time filter [get(_val, 'missing-key')] < $f #>/dev/null
+  echo '****** END filter'
 
   write -- 'AFTER -------------------------------------------------------'
 
