@@ -1214,6 +1214,15 @@ test-int-overflow() {
   _osh-error-2 "ulimit -- $neg"
 }
 
+test-bind() {
+  _osh-error-2 'bind -x'
+  _osh-error-1 'bind -x foo'
+
+  _osh-error-1 'bind "a" "b"'
+  _osh-error-1 'bind "\eQ: yank-pop" "b"'
+  _osh-error-1 'bind "\eQ: yank-pop" "\eQ: yank-pop" "c"'
+}
+
 #
 # TEST DRIVER
 #

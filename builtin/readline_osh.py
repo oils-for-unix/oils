@@ -13,6 +13,7 @@ from core.error import e_usage
 from frontend import flag_util
 from mycpp import mops
 from mycpp import mylib
+from mycpp.mylib import log
 
 from typing import Optional, Any, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -20,6 +21,8 @@ if TYPE_CHECKING:
     from frontend.py_readline import Readline
     from core import sh_init
     from display import ui
+
+_ = log
 
 
 class ctx_Keymap(object):
@@ -104,24 +107,25 @@ class Bind(vm._Builtin):
                 # This gauntlet of ifs is meant to replicate bash behavior, in case we
                 # need to relax the mutual exclusion of flags like bash does
 
+                # List names of functions
                 if arg.l:
                     readline.list_funmap_names()
 
+                # Print function names and bindings
                 if arg.p:
-                    readline.function_dumper(True)
-
+                    readline.function_dumper(True)  # reusable as input
                 if arg.P:
                     readline.function_dumper(False)
 
+                # Print macros
                 if arg.s:
-                    readline.macro_dumper(True)
-
+                    readline.macro_dumper(True)  # reusable as input
                 if arg.S:
                     readline.macro_dumper(False)
 
+                # Print readline variable names
                 if arg.v:
                     readline.variable_dumper(True)
-
                 if arg.V:
                     readline.variable_dumper(False)
 
@@ -148,13 +152,16 @@ class Bind(vm._Builtin):
                     readline.print_shell_cmd_map()
 
                 bindings, arg_locs = arg_r.Rest2()
+                #log('bindings %d locs %d', len(arg_r.argv), len(arg_r.locs))
+
                 for i, binding in enumerate(bindings):
                     try:
-                        # print("Binding %s (%i)", binding, i)
-                        # print("Arg loc %s (%i)", arg_locs[i], i)
+                        #log("Binding %s (%d)", binding, i)
+                        #log("Arg loc %s (%d)", arg_locs[i], i)
                         readline.parse_and_bind(binding)
                     except ValueError as e:
                         msg = e.message  # type: str
+                        log("i %d", i)
                         self.errfmt.Print_("bind error: %s" % msg, arg_locs[i])
                         return 1
 
