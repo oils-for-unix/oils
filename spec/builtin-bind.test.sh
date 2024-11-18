@@ -19,3 +19,38 @@ bind -l | grep accept-line
 accept-line
 ## END
 
+
+#### bind -p -P to print function names and key bindings
+
+bind -p | grep accept-line
+echo
+
+bind -P | grep accept-line
+
+## STDOUT:
+## END
+
+#### bind -s -S accepted
+
+# TODO: add non-trivial tests here
+
+bind -s
+bind -S
+
+## STDOUT:
+## END
+
+#### bind -v -V accepted
+
+# TODO: add non-trivial tests here
+
+bind -v | grep blink-matching-paren
+echo
+
+bind -V | grep blink-matching-paren
+
+## STDOUT:
+set blink-matching-paren off
+
+blink-matching-paren is set to `off'
+## END
