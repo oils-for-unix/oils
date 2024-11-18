@@ -2236,6 +2236,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     strs.append(''.join(tmp))  # no split or glob
                     locs.append(w)
 
+        assert len(strs) == len(locs), '%s vs. %d' % (strs, len(locs))
         return cmd_value.Argv(strs, locs, is_last_cmd, None, None)
 
     def EvalWordSequence2(self, words, is_last_cmd, allow_assign=False):
@@ -2290,6 +2291,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 if i <= meta_offset and _DetectMetaBuiltinStr(fast_str):
                     meta_offset += 1
 
+                n = len(strs)  # Bug fix: n must be updated on every loop iteration
+                assert len(strs) == len(locs), strs
                 continue
 
             part_vals = []  # type: List[part_value_t]
@@ -2340,6 +2343,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         # A non-assignment command.
         # NOTE: Can't look up builtins here like we did for assignment, because
         # functions can override builtins.
+        assert len(strs) == len(locs), '%s vs. %d' % (strs, len(locs))
         return cmd_value.Argv(strs, locs, is_last_cmd, None, None)
 
     def EvalWordSequence(self, words):
