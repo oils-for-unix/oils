@@ -111,10 +111,9 @@ class Cd(vm._Builtin):
                     'requires an argument when a block is passed',
                     cmd_val.arg_locs[0])
             else:
-                try:
-                    dest_dir = state.GetString(self.mem, 'HOME')
-                except error.Runtime as e:
-                    self.errfmt.Print_(e.UserErrorString())
+                dest_dir = self.mem.env_config.Get('HOME')
+                if dest_dir is None:
+                    self.errfmt.Print_("cd got no argument, and $HOME isn't set")
                     return 1
 
         # At most 1 arg is accepted
@@ -124,6 +123,7 @@ class Cd(vm._Builtin):
             raise error.Usage('got too many arguments', extra_loc)
 
         if dest_dir == '-':
+            # Note: $OLDPWD isn't an env var; it's a global
             try:
                 dest_dir = state.GetString(self.mem, 'OLDPWD')
                 print(dest_dir)  # Shells print the directory

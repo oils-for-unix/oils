@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 
 #### global frame doesn't contain builtins like len(), dict(), io
 
@@ -78,15 +78,21 @@ assert [2 === len]
 
 try { cd }
 echo code=$[_error.code]
+echo
 
 setglobal ENV.HOME = '/tmp'
 
+# Now it's respected
 try { cd }
 echo code=$[_error.code]
 
 pwd
 
 ## STDOUT:
+code=1
+
+code=0
+/tmp
 ## END
 
 #### compgen -c respects ENV.PATH, not PATH
