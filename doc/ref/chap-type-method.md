@@ -103,23 +103,20 @@ integers.  But you can use a "real" integer type in YSH.
 
 ### Float
 
-Floats are at least 32 bits wide.
-
-See [float-literal][] for how to denote them.
+YSH has 64-bit floating point numbers.  See [float-literal][] for how to denote
+them.
 
 [float-literal]: chap-expr-lang.html#float-literal
 
-<!-- TODO: reduce from 64-bit to 32-bit -->
-
-
 ### Range
   
-A `Range` is a pair of two numbers, like `42 .. 45`.
+A `Range` is a pair of two numbers, used for iteration.  See [range][] for how
+to denote them.
 
 Ranges are used for iteration; see [ysh-for][].
 
+[range]: chap-expr-lang.html#range
 [ysh-for]: chap-cmd-lang.html#ysh-for
-
 
 ## String
 
@@ -140,7 +137,19 @@ An `Obj` instance representing the string type.
 
 ### find()
 
-TODO
+TODO:
+
+    var i = mystr.find('foo')
+
+Similar to
+
+    = 'foo' in mystr
+
+Both of them do substring search.
+
+Also similar to `mystr.search(eggex)`.
+
+<!-- Python also has start, end indices, to reduce allocations -->
 
 ### replace()
 
@@ -453,7 +462,7 @@ Reverses a list in place.
     call fruits->reverse()
     echo @fruits  # => pear banana apple
 
-### clear()
+### List/clear()
 
 TODO:
 
@@ -489,11 +498,18 @@ Ensures that the given key does not exist in the dictionary.
     = book
     # => (Dict)   {title: "The Histories"}
 
-### Dict/append()
+### accum()
 
-TODO
+TODO:
 
-### clear()
+    call mydict->accum('key', 'string to append')
+
+Similar:
+
+    setvar mydict['k'] += 3  # TODO: default value of 0
+
+
+### Dict/clear()
 
 TODO:
 
@@ -572,6 +588,15 @@ Then invoke it like a proc:
 
     invokable_obj myword (3)
     # sum => 6
+
+### new
+
+Create an object:
+
+    var methods = Obj.new({mymethod: foo}, null)
+    var instance = Obj.new({x: 3, y: 4}, methods)
+
+TODO: This will become `Obj.__call__`, which means it's written `Obj`.
 
 ### `__call__`
 
@@ -656,13 +681,24 @@ builtin.
 
 Given an `Expr` value, evaluate it and return its value:
 
-    $ var i = 42
-    $ var expr = ^[i + 1] 
+    var i = 42
+    var expr = ^[i + 1] 
 
-    $ = io->evalExpr(expr)
-    43
+    = io->evalExpr(expr)  # => 43
 
-Examples of expressions that have effects:
+It accepts optional args that let you control name binding:
+
+- `pos_args` for `$1 $2 $3`
+- `dollar0` for `$0`
+- `vars` for named variables
+
+Example:
+
+    var expr = ^["zero $0, one $1, named $x"]
+    var s = io->evalExpr(expr, dollar0="z", pos_args=['one'], vars={x: "x"})
+    echo $s  # => zero z, one one, named x
+
+Note that these expressions that have effects:
 
 - `^[ myplace->setValue(42) ]` - memory operation
 - `^[ $(echo 42 > hi) ]` - I/O operation
@@ -676,24 +712,17 @@ Evaluate a command, and return `null`.
 
 It's similar to the `eval` builtin, and is meant to be used in pure functions.
 
-You can also bind:
+It accepts optional args that let you control name binding:
 
-- positional args `$1 $2 $3`
-- dollar0 `$0`
-- named variables
+- `pos_args` for `$1 $2 $3`
+- `dollar0` for `$0`
+- `vars` for named variables
 
-Examples:
+Example:
 
     var cmd = ^(echo "zero $0, one $1, named $x")
     call io->eval(cmd, dollar0="z", pos_args=['one'], vars={x: "x"})
     # => zero z, one one, named x
-
-<!--
-TODO: We should be able to bind positional args, env vars, and inspect the
-shell VM.
-
-Though this runs in the same VM, not a new one.
--->
 
 ### evalToDict()
 
@@ -774,3 +803,15 @@ Given an index, get a handle to a call stack frame.
     var frame = vm.getFrame(-2)  # the calling frame
 
 If the index is out of range, an error is raised.
+
+### id()
+
+Returns an integer ID for mutable values like List, Dict, and Obj.
+
+    = vm.id({})
+    (Int)  123
+
+You can use it to test if two names refer to the same instance.
+
+`vm.id()` is undefined on immutable values like Bool, Int, Float, Str, etc.
+

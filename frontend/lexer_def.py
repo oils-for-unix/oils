@@ -682,7 +682,7 @@ JSON_STR_DEF = [
 _WHITESPACE = r'[ \t\r\n]*'  # ASCII whitespace doesn't have legacy \f \v
 
 SH_NUMBER_DEF = [
-    R('0', Id.ShNumber_Dec),  # not octal
+    R('0', Id.ShNumber_Dec),
     R(r'[1-9][0-9]*', Id.ShNumber_Dec),
     R(r'0[0-7]+', Id.ShNumber_Oct),
     R(r'0x[0-9A-Fa-f]+', Id.ShNumber_Hex),

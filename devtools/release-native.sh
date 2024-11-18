@@ -106,7 +106,7 @@ extract-for-benchmarks() {
 
   # devtools/release.sh also has this DWARF 4 hack, for bloaty
   for variant in dbg opt; do
-    CXXFLAGS=-gdwarf-4 _build/oils.sh '' $variant
+    CXXFLAGS=-gdwarf-4 _build/oils.sh --variant "$variant"
   done
 
   build/native.sh tarball-demo

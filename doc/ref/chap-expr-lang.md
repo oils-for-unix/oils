@@ -65,9 +65,14 @@ YSH uses JavaScript-like spellings for these three "atoms":
 Note: to signify "no value", you may sometimes use an empty string `''`,
 instead of `null`.
 
+- Related: [Null][] type, [Bool][] type
+
+[Null]: chap-type-method.html#Null
+[Bool]: chap-type-method.html#Bool
+
 ### int-literal
 
-Examples of integer literals:
+There are several ways to write integers.  Examples:
 
     var decimal = 42
     var big = 42_000
@@ -78,18 +83,26 @@ Examples of integer literals:
 
     var binary = 0b0001_0000
 
-### float-lit
+- Related: [Int][] type
 
-Examples of float literals:
+[Int]: chap-type-method.html#Int
+
+### float-literal
+
+Floating point numbers looke like C, Python, or JavaScript:
 
     var myfloat = 3.14
 
     var f2 = -1.5e-100
 
+- Related: [Float][] type
+
+[Float]: chap-type-method.html#Float
+
 ### char-literal
 
-Three kinds of unquoted backslash escapes are allowed in expression mode.  They
-match what's available in quoted J8-style strings:
+The expression language has 3 kinds of backslash escapes, denoting bytes or
+UTF-8:
 
     var backslash = \\
     var quotes = \' ++ \"   # same as u'\'' ++ '"'
@@ -97,6 +110,13 @@ match what's available in quoted J8-style strings:
     var mu = \u{3bc}        # same as u'\u{3bc}'
 
     var nul = \y00          # same as b'\y00'
+
+Notice that this is the same syntax that's available within quoted J8 strings.
+That is, the expression `\\` denotes the same thing as `u'\\'`.
+
+- Related: [Str][] type
+
+[Str]: chap-type-method.html#Str
 
 ### ysh-string
 
@@ -180,16 +200,7 @@ ambiguous:
         no leading whitespace
         '''
 
-### str-template
-
-String templates use the same syntax as double-quoted strings:
-
-    var mytemplate = ^"name = $name, age = $age"
-
-Related topics:
-
-- [Str => replace](chap-type-method.html#replace)
-- [ysh-string](chap-expr-lang.html#ysh-string)
+[Expr]: chap-type-method.html#Expr
 
 ### list-literal
 
@@ -207,6 +218,10 @@ The shell-like syntax accepts the same syntax as a simple command:
 
     # Rather than executing ls, evaluate words into a List
     var cmd = :| ls $mystr @ARGV *.py {foo,bar}@example.com |
+
+- Related: [List][] type
+
+[List]: chap-type-method.html#List
 
 ### dict-literal
 
@@ -228,6 +243,10 @@ the same name:
     ysh$ var d = {x, y}  # values omitted
     ysh$ = d
     (Dict)  {x: 42, y: 43}
+
+- Related: [Dict][] type
+
+[Dict]: chap-type-method.html#Dict
 
 ### range
 
@@ -251,6 +270,10 @@ The `..=` operator constructs closed ranges:
     => 2
     => 3
 
+- Related: [Range][] type
+
+[Range]: chap-type-method.html#Range
+
 ### block-expr
 
 In YSH expressions, we use `^()` to create a [Command][] object:
@@ -273,7 +296,21 @@ An expression literal is an object that holds an unevaluated expression:
 
     var myexpr = ^[1 + 2*3]
 
+- Related: [Expr][] type
+
 [Expr]: chap-type-method.html#Expr
+
+### str-template
+
+String templates use the same syntax as double-quoted strings:
+
+    var mytemplate = ^"name = $name, age = $age"
+
+Related topics:
+
+- The type of a template is [Expr][].
+- [Str.replace](chap-type-method.html#replace)
+- [ysh-string](#ysh-string)
 
 ## Operators
 

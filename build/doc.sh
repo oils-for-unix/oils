@@ -447,6 +447,12 @@ tour() {
 
   # Files used by module example
   touch $work_dir/{build,test}.sh
+
+  cat >$work_dir/lines.txt <<'EOF'
+  doc/hello.md
+ "doc/with spaces.md"
+b'doc/with byte \yff.md'
+EOF
   
   cat >$work_dir/myargs.ysh <<EOF
 const __provide__ = :| proc1 p2 p3 |

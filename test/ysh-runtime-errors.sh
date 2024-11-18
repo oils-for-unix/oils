@@ -406,6 +406,10 @@ test-eggex-convert-func() {
   _ysh-expr-error 'var pat = / <capture d+: evalExpr> /; var m = "10" => search(pat) => group(1)'
 }
 
+test-eval-expr() {
+  _ysh-expr-error 'var expr = ^[x + 1]; = io->evalExpr(expr, pos_args=[42])'
+}
+
 test-int-convert() {
   _ysh-expr-error '= int({})'
   _ysh-expr-error '= int([])'

@@ -15,7 +15,7 @@ source build/dev-shell.sh  # PYTHONPATH
 source devtools/release-version.sh  # for escape-segments
 
 readonly OILS_VERSION=$(head -n 1 oil-version.txt)
-readonly PREV_VERSION='0.22.0'
+readonly PREV_VERSION='0.23.0'
 
 # adapted from release-version.sh
 _git-changelog-body() {
@@ -58,6 +58,8 @@ contrib-commit-table() {
 
 fetch-issues() {
   local url='https://api.github.com/repos/oils-for-unix/oils/issues?labels=pending-release'
+  # For Oils 0.24.0
+  #local url='https://api.github.com/repos/oils-for-unix/oils/issues?labels=pending-release-2'
   curl "$url" > _tmp/issues.json
 }
 

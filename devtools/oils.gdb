@@ -11,7 +11,7 @@ set print pretty on
 # TODO: save history
 
 # Our Python commands
-source devtools/oil_gdb.py
+source devtools/oils_gdb.py
 
 define cls
     shell clear

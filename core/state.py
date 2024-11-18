@@ -266,8 +266,12 @@ def InitOpts():
     return opt0_array
 
 
-def MakeOpts(mem, environ, opt_hook):
-    # type: (Mem, Dict[str, str], OptHook) -> Tuple[optview.Parse, optview.Exec, MutableOpts]
+def MakeOpts(
+        mem,  # type: Mem
+        environ,  # type: Dict[str, str]
+        opt_hook,  # type:  OptHook
+):
+    # type: (...) -> Tuple[optview.Parse, optview.Exec, MutableOpts]
 
     # Unusual representation: opt0_array + opt_stacks.  For two features:
     #
@@ -1155,14 +1159,16 @@ class Mem(object):
     Modules: cmd_eval, word_eval, expr_eval, completion
     """
 
-    def __init__(self,
-                 dollar0,
-                 argv,
-                 arena,
-                 debug_stack,
-                 env_dict,
-                 defaults=None):
-        # type: (str, List[str], alloc.Arena, List[debug_frame_t], Dict[str, value_t], Dict[str, value_t]) -> None
+    def __init__(
+            self,
+            dollar0,  # type: str
+            argv,  # type: List[str]
+            arena,  # type: alloc.Arena
+            debug_stack,  # type: List[debug_frame_t]
+            env_dict,  # type: Dict[str, value_t]
+            defaults=None,  # type: Dict[str, value_t]
+    ):
+        # type: (...) -> None
         """
         Args:
           arena: currently unused

@@ -38,7 +38,7 @@ measure-shells() {
 
   raw_out_dir="$out_dir/osh-runtime/raw.$host_job_id"
   benchmarks/osh-runtime.sh measure \
-    $host_name $raw_out_dir $OSH_CPP_BENCHMARK_DATA $out_dir
+    $host_name $raw_out_dir $OSH_CPP_BENCHMARK_DATA
 
   # Old style uses provenance.txt.  TODO: use raw_out_dir everywhere
   local provenance=_tmp/provenance.txt
@@ -82,8 +82,8 @@ all() {
     # Only run on one machine
     benchmarks/uftrace.sh soil-run
     benchmarks/mycpp.sh soil-run
-    benchmarks/gc.sh soil-run
-    benchmarks/gc-cachegrind.sh soil-run
+    benchmarks/gc.sh run-for-release
+    benchmarks/gc-cachegrind.sh run-for-release
 
     benchmarks/osh-parser.sh measure-cachegrind \
       _tmp/provenance.txt $host_job_id $out_dir/osh-parser $OSH_CPP_BENCHMARK_DATA

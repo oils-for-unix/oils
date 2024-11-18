@@ -271,7 +271,7 @@ class Test(vm._Builtin):
                                              None,
                                              None,
                                              self.errfmt,
-                                             always_strict=True)
+                                             bracket=True)
         bool_ev.word_ev = word_ev
         bool_ev.CheckCircularDeps()
         try:

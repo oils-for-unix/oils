@@ -247,6 +247,7 @@ class StdinIterator(Iterator):
                 e_die("I/O error in for <> loop: %s" % posix.strerror(e.errno),
                       self.blame_loc)
 
+        #log('L %r', line)
         if len(line) == 0:
             return None  # Done
         elif line.endswith('\n'):

@@ -97,6 +97,7 @@ OSH:
 - [`use`](chap-builtin-cmd.html#use)
 - [`is-main`](chap-builtin-cmd.html#is-main)
 - provide (TODO)
+- [`_this_dir`](chap-special-var.html#_this_dir)
 - [`__provide__`](chap-special-var.html#__provide__)
 - An imported module is an [`Obj`][Obj] with an [`__invoke__`][__invoke__]
   method
@@ -168,3 +169,19 @@ Also see [the Unicode doc](../unicode.html).
 
 [io]: chap-type-method.html#io
 [vm]: chap-type-method.html#vm
+
+### Namespaces
+
+- [`ENV`](chap-special-var.html#ENV)
+- [`__builtins__`](chap-special-var.html#__builtins__)
+
+<!--
+
+TODO:
+
+- __modules__
+- does vm.getFrame() belong?
+
+-->
+
+

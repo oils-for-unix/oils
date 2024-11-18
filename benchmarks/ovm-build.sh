@@ -243,7 +243,7 @@ build-task() {
           ;;
       esac
 
-      "${TIME_PREFIX[@]}" -- _build/oils.sh $compiler $variant
+      "${TIME_PREFIX[@]}" -- _build/oils.sh --cxx $compiler --variant $variant
 
       # e.g. cp _bin/clang-opt-sh/oils-for-unix.stripped _tmp/ovm-build/bin/clang/
       local filename=$action

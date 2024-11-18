@@ -356,7 +356,7 @@ _build-oils-benchmark-data() {
     # I don't think this should affect benchmarks besides
     # metrics/native-code.sh, so we don't bother building a separate binary.
     # The Soil CI runs without this flag.
-    CXXFLAGS=-gdwarf-4 _build/oils.sh '' $variant SKIP_REBUILD
+    CXXFLAGS=-gdwarf-4 _build/oils.sh --variant "$variant" --skip-rebuild
   done
   popd
 }

@@ -19,7 +19,7 @@ pp test_ (b is Bool)
 # Objects don't have equality, only identity
 #pp test_ (b === Bool)
 
-pp test_ (id(b) === id(Bool))
+pp test_ (vm.id(b) === vm.id(Bool))
 
 ## STDOUT:
 (Obj)   ("name":"Bool") --> ("__index__":<BuiltinFunc>)
@@ -28,7 +28,7 @@ pp test_ (id(b) === id(Bool))
 (Obj)   ("name":"Str") --> ("__index__":<BuiltinFunc>)
 (Obj)   ("name":"List") --> ("__index__":<BuiltinFunc>)
 (Obj)   ("name":"Dict") --> ("__index__":<BuiltinFunc>)
-(Obj)   ("name":"Obj") --> ("__index__":<BuiltinFunc>)
+(Obj)   ("name":"Obj","new":<BuiltinFunc>) --> ("__index__":<BuiltinFunc>)
 
 (Bool)   true
 (Bool)   true

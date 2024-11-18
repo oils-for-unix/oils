@@ -247,8 +247,15 @@ class ShellFile(vm._Builtin):
         module_obj = Obj(methods, props)
         return module_obj
 
-    def _UseExec(self, cmd_val, path, path_loc, c_parser, props):
-        # type: (cmd_value.Argv, str, loc_t, cmd_parse.CommandParser, Dict[str, value_t]) -> int
+    def _UseExec(
+            self,
+            cmd_val,  # type: cmd_value.Argv
+            path,  # type: str
+            path_loc,  # type: loc_t
+            c_parser,  # type: cmd_parse.CommandParser
+            props,  # type: Dict[str, value_t]
+    ):
+        # type: (...) -> int
         """
         Args:
           props: is mutated, and will contain module properties

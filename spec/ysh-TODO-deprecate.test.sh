@@ -114,3 +114,31 @@ pp test_ (en2fr => keys())
 (List)   ["hello","friend","cat"]
 ## END
 
+
+#### Obj API
+shopt --set ysh:upgrade
+
+try {
+  var obj = Object(null, {x: 4})
+  pp test_ (obj)
+}
+echo $[_error.code]
+
+try {
+  pp test_ (propView(obj))
+}
+echo $[_error.code]
+
+try {
+  pp test_ (prototype(obj))
+}
+echo $[_error.code]
+
+## STDOUT:
+(Obj)   ("x":4)
+0
+(Dict)   {"x":4}
+0
+(Null)   null
+0
+## END

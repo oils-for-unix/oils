@@ -35,7 +35,9 @@ show_help() {
   cat <<'EOF'
 Detect system settings before a build of oils-for-unix.
 
-Usage: ./configure [OPTION...]
+Usage:
+  ./configure FLAG*
+  ./configure --help
 
 Installation directories:
   --prefix=PREFIX               Prefix for the bin/ directory [/usr/local]

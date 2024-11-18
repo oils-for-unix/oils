@@ -29,6 +29,16 @@ The name `append` can refer to:
 [cmd/append]: chap-builtin-cmd.html#cmd/append
 [List/append]: chap-type-method.html#List/append
 
+### clear
+
+The name `clear` can refer to:
+
+- The [List method clear][List/clear]
+- The [Dict method clear][Dict/clear]
+
+[List/clear]: chap-type-method.html#List/clear
+[Dict/clear]: chap-type-method.html#Dict/clear
+
 ### false
 
 The name `false` can refer to:

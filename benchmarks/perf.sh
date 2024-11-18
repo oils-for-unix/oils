@@ -395,7 +395,7 @@ build-tar() {
   for variant in opt+bumpleak opt; do
     echo
 
-    time _build/oils.sh '' $variant
+    time _build/oils.sh --variant $variant
     echo
 
     _bin/cxx-$variant-sh/osh -c 'echo "hi from $0"'

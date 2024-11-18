@@ -307,29 +307,39 @@ ParserReport = function(in_dir, out_dir) {
     times_flat = NULL
     cachegrind_flat = NULL
 
+    # Hack for release.  TODO: unify with Soil
+    if (Sys.getenv("OILS_NO_SOUFFLE") == "") {
+      souffle_col = c('osh-native-souffle')
+    } else {
+      souffle_col = c()
+    }
+
+    cols1 = c('host_label', 'bash', 'dash', 'mksh', 'zsh',
+              'osh-ovm', 'osh-cpython', 'osh-native', souffle_col,
+              'osh_to_bash_ratio', 'num_lines', 'filename', 'filename_HREF')
+
     # Elapsed seconds for each shell by platform and file
     joined_times %>%
       select(-c(lines_per_ms, user_ms, sys_ms, max_rss_MB)) %>% 
       spread(key = shell_label, value = elapsed_ms) %>%
       arrange(host_label, num_lines) %>%
       mutate(osh_to_bash_ratio = `osh-native` / bash) %>% 
-      select(c(host_label, bash, dash, mksh, zsh,
-               `osh-ovm`, `osh-cpython`, `osh-native`, `osh-native-souffle`,
-               osh_to_bash_ratio, num_lines, filename, filename_HREF)) ->
+      select(all_of(cols1)) ->
       elapsed
 
     Log('\n')
     Log('ELAPSED')
     print(elapsed)
 
+    cols2 = c('host_label', 'bash', 'dash', 'mksh', 'zsh',
+               'osh-ovm', 'osh-cpython', 'osh-native', souffle_col,
+               'num_lines', 'filename', 'filename_HREF')
     # Rates by file and shell
-    joined_times  %>%
+    joined_times %>%
       select(-c(elapsed_ms, user_ms, sys_ms, max_rss_MB)) %>% 
       spread(key = shell_label, value = lines_per_ms) %>%
       arrange(host_label, num_lines) %>%
-      select(c(host_label, bash, dash, mksh, zsh,
-               `osh-ovm`, `osh-cpython`, `osh-native`, `osh-native-souffle`,
-               num_lines, filename, filename_HREF)) ->
+      select(all_of(cols2)) ->
       rate
 
     Log('\n')
@@ -341,9 +351,7 @@ ParserReport = function(in_dir, out_dir) {
       select(-c(elapsed_ms, lines_per_ms, user_ms, sys_ms)) %>% 
       spread(key = shell_label, value = max_rss_MB) %>%
       arrange(host_label, num_lines) %>%
-      select(c(host_label, bash, dash, mksh, zsh,
-               `osh-ovm`, `osh-cpython`, `osh-native`, `osh-native-souffle`,
-               num_lines, filename, filename_HREF)) ->
+      select(all_of(cols2)) ->
       max_rss
 
     Log('\n')
@@ -355,14 +363,16 @@ ParserReport = function(in_dir, out_dir) {
     print(joined_cachegrind)
     #print(joined_cachegrind %>% filter(path == 'benchmarks/testdata/configure-helper.sh'))
 
+    cols3 = c('bash', 'dash', 'mksh', 'osh-native', souffle_col,
+              'num_lines', 'filename', 'filename_HREF')
+
     # Cachegrind instructions by file
     joined_cachegrind %>%
       mutate(thousand_irefs_per_line = irefs / num_lines / 1000) %>%
       select(-c(irefs)) %>%
       spread(key = shell_label, value = thousand_irefs_per_line) %>%
       arrange(num_lines) %>%
-      select(c(bash, dash, mksh, `osh-native`, `osh-native-souffle`,
-               num_lines, filename, filename_HREF)) ->
+      select(all_of(cols3)) ->
       instructions
 
     Log('\n')
@@ -540,6 +550,17 @@ RuntimeReport = function(in_dir, out_dir) {
   Log('details')
   print(details)
 
+  # Hack for release.  TODO: unify with Soil
+  if (Sys.getenv("OILS_NO_SOUFFLE") == "") {
+    souffle_col = c('osh-native-souffle')
+  } else {
+    souffle_col = c()
+  }
+
+  cols2 = c('workload', 'host_name',
+            'bash', 'dash', 'osh-cpython', 'osh-native', souffle_col,
+            'py_bash_ratio', 'native_bash_ratio')
+
   # Elapsed time comparison
   details %>%
     select(-c(task_id, user_ms, sys_ms, max_rss_MB)) %>%
@@ -547,10 +568,7 @@ RuntimeReport = function(in_dir, out_dir) {
     mutate(py_bash_ratio = `osh-cpython` / bash) %>%
     mutate(native_bash_ratio = `osh-native` / bash) %>%
     arrange(workload, host_name) %>%
-    select(c(workload, host_name,
-             bash, dash, `osh-cpython`, `osh-native`, `osh-native-souffle`,
-             py_bash_ratio, native_bash_ratio)) ->
-
+    select(all_of(cols2)) ->
     elapsed
 
   Log('elapsed')
@@ -563,9 +581,7 @@ RuntimeReport = function(in_dir, out_dir) {
     mutate(py_bash_ratio = `osh-cpython` / bash) %>%
     mutate(native_bash_ratio = `osh-native` / bash) %>%
     arrange(workload, host_name) %>%
-    select(c(workload, host_name,
-             bash, dash, `osh-cpython`, `osh-native`, `osh-native-souffle`,
-             py_bash_ratio, native_bash_ratio)) ->
+    select(all_of(cols2)) ->
     page_faults
 
   Log('page_faults')
@@ -578,9 +594,7 @@ RuntimeReport = function(in_dir, out_dir) {
     mutate(py_bash_ratio = `osh-cpython` / bash) %>%
     mutate(native_bash_ratio = `osh-native` / bash) %>%
     arrange(workload, host_name) %>%
-    select(c(workload, host_name,
-             bash, dash, `osh-cpython`, `osh-native`, `osh-native-souffle`,
-             py_bash_ratio, native_bash_ratio)) ->
+    select(all_of(cols2)) ->
     max_rss
 
   Log('max rss')

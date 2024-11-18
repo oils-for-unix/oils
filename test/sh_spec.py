@@ -323,6 +323,7 @@ _META_FIELDS = [
     'suite',
     'tags',
     'oils_failures_allowed',
+    'oils_cpp_failures_allowed',
 ]
 
 
@@ -547,6 +548,7 @@ class Stats(object):
         c['num_cases'] = num_cases
         c['oils_num_passed'] = 0
         c['oils_num_failed'] = 0
+        c['oils_cpp_num_failed'] = 0
         # Number of osh_ALT results that differed from osh.
         c['oils_ALT_delta'] = 0
 
@@ -584,6 +586,9 @@ class Stats(object):
 
             if sh_label in OSH_CPYTHON + YSH_CPYTHON:
                 c['oils_num_failed'] += 1
+
+            if sh_label in ('osh-cpp', 'ysh-cpp'):
+                c['oils_cpp_num_failed'] += 1
         elif cell_result == Result.BUG:
             c['num_bug'] += 1
         elif cell_result == Result.NI:
@@ -1005,6 +1010,7 @@ class AnsiOutput(Output):
         for sh_label in sh_labels:
             self.f.write('\t%d' % stats.counters['num_cases_run'])
         self.f.write('\n')
+        self.f.write('\n')
 
     def EndCases(self, sh_labels, stats):
         print()
@@ -1347,15 +1353,16 @@ def main(argv):
 
         # Always run with the Python version
         our_shell = file_metadata.get('our_shell', 'osh')  # default is OSH
-        shells.append(os.path.join(opts.oils_bin_dir, our_shell))
+        if our_shell != '-':
+            shells.append(os.path.join(opts.oils_bin_dir, our_shell))
 
-        # Legacy OVM/CPython build
-        if opts.ovm_bin_dir:
-            shells.append(os.path.join(opts.ovm_bin_dir, our_shell))
+            # Legacy OVM/CPython build
+            if opts.ovm_bin_dir:
+                shells.append(os.path.join(opts.ovm_bin_dir, our_shell))
 
-        # New C++ build
-        if opts.oils_cpp_bin_dir:
-            shells.append(os.path.join(opts.oils_cpp_bin_dir, our_shell))
+            # New C++ build
+            if opts.oils_cpp_bin_dir:
+                shells.append(os.path.join(opts.oils_cpp_bin_dir, our_shell))
 
         # Overwrite it when --oils-bin-dir is set
         # It's no longer a flag
@@ -1407,6 +1414,14 @@ def main(argv):
 
     # TODO: Could --stats-{file,template} be a separate awk step on .tsv files?
     stats.Set('oils_failures_allowed', opts.oils_failures_allowed)
+
+    # If it's not set separately for C++, we default to the allowed number
+    # above
+    x = int(
+        file_metadata.get('oils_cpp_failures_allowed',
+                          opts.oils_failures_allowed))
+    stats.Set('oils_cpp_failures_allowed', x)
+
     if opts.stats_file:
         with open(opts.stats_file, 'w') as f:
             f.write(opts.stats_template % stats.counters)
@@ -1415,26 +1430,45 @@ def main(argv):
     # spec/smoke.test.sh -> smoke
     test_name = os.path.basename(test_file).split('.')[0]
 
-    return _SuccessOrFailure(test_name, opts.oils_failures_allowed, stats)
+    return _SuccessOrFailure(test_name, stats)
 
 
-def _SuccessOrFailure(test_name, allowed, stats):
+def _SuccessOrFailure(test_name, stats):
+    allowed = stats.Get('oils_failures_allowed')
+    allowed_cpp = stats.Get('oils_cpp_failures_allowed')
+
     all_count = stats.Get('num_failed')
     oils_count = stats.Get('oils_num_failed')
+    oils_cpp_count = stats.Get('oils_cpp_num_failed')
 
-    # If we got EXACTLY the allowed number of failures, exit 0.
-    if allowed == all_count and all_count == oils_count:
-        log('%s: note: Got %d allowed oils failures (exit with code 0)',
-            test_name, allowed)
-        return 0
+    errors = []
+    if oils_count != allowed:
+        errors.append('Got %d Oils failures, but %d are allowed' %
+                      (oils_count, allowed))
     else:
-        log('')
-        log(
-            '%s: FATAL: Got %d failures (%d oils failures), but %d are allowed',
-            test_name, all_count, oils_count, allowed)
-        log('')
+        if allowed != 0:
+            log('%s: note: Got %d allowed Oils failures', test_name, allowed)
 
+    # TODO: remove special case for 0
+    if oils_cpp_count != 0:
+        if oils_cpp_count != allowed_cpp:
+            errors.append('Got %d Oils C++ failures, but %d are allowed' %
+                          (oils_cpp_count, allowed))
+        else:
+            if allowed_cpp != 0:
+                log('%s: note: Got %d allowed Oils C++ failures', test_name,
+                    allowed_cpp)
+
+    if all_count != allowed:
+        errors.append('Got %d total failures, but %d are allowed' %
+                      (all_count, allowed))
+
+    if errors:
+        for msg in errors:
+            log('%s: FATAL: %s', test_name, msg)
         return 1
+
+    return 0
 
 
 if __name__ == '__main__':
@@ -1446,5 +1480,3 @@ if __name__ == '__main__':
     except RuntimeError as e:
         print('FATAL: %s' % e, file=sys.stderr)
         sys.exit(1)
-
-# vim: sw=2

@@ -134,8 +134,7 @@ assign-extended() {
 
 # Corner cases that OSH doesn't handle
 assign-deferred() {
-  sh-spec spec/assign-deferred.test.sh \
-    $BASH $MKSH "$@" 
+  run-file assign-deferred "$@"
 }
 
 # These test associative arrays
@@ -482,7 +481,7 @@ assoc() {
 
 # ZSH also has associative arrays
 assoc-zsh() {
-  sh-spec spec/assoc-zsh.test.sh $ZSH "$@"
+  run-file assoc-zsh "$@"
 }
 
 dbracket() {
@@ -532,7 +531,7 @@ nameref() {
 }
 
 let() {
-  sh-spec spec/let.test.sh $BASH $MKSH $ZSH "$@"
+  run-file let "$@"
 }
 
 for-expr() {

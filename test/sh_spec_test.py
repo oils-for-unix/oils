@@ -160,20 +160,23 @@ class FunctionsTest(unittest.TestCase):
 
         stats.Set('num_failed', 0)
         stats.Set('oils_num_failed', 0)
+        stats.Set('oils_failures_allowed', 0)
         # zero allowed
-        status = sh_spec._SuccessOrFailure('foo', 0, stats)
+        status = sh_spec._SuccessOrFailure('foo', stats)
         self.assertEqual(0, status)
 
-        # 1 allowed
-        status = sh_spec._SuccessOrFailure('foo', 1, stats)
+        stats.Set('oils_failures_allowed', 1)
+        status = sh_spec._SuccessOrFailure('foo', stats)
         self.assertEqual(1, status)
 
         stats.Set('num_failed', 1)
         stats.Set('oils_num_failed', 1)
-        status = sh_spec._SuccessOrFailure('foo', 0, stats)
+        stats.Set('oils_failures_allowed', 0)
+        status = sh_spec._SuccessOrFailure('foo', stats)
         self.assertEqual(1, status)
 
-        status = sh_spec._SuccessOrFailure('foo', 1, stats)
+        stats.Set('oils_failures_allowed', 1)
+        status = sh_spec._SuccessOrFailure('foo', stats)
         self.assertEqual(0, status)
 
 

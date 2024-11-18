@@ -523,8 +523,7 @@ def Main(
         method_io.Eval(mem, cmd_ev, method_io.EVAL_DICT))
     io_methods['M/evalInFrame'] = value.BuiltinFunc(
         method_io.EvalInFrame(mem, cmd_ev))
-    io_methods['M/evalExpr'] = value.BuiltinFunc(
-        func_reflect.EvalExpr(expr_ev))
+    io_methods['M/evalExpr'] = value.BuiltinFunc(method_io.EvalExpr(expr_ev))
 
     # Identical to command sub
     io_methods['captureStdout'] = value.BuiltinFunc(
@@ -539,7 +538,10 @@ def Main(
     io_obj = Obj(Obj(None, io_methods), io_props)
 
     vm_methods = NewDict()  # type: Dict[str, value_t]
+    # These are methods, not free functions, because they reflect VM state
     vm_methods['getFrame'] = value.BuiltinFunc(func_reflect.GetFrame(mem))
+    vm_methods['id'] = value.BuiltinFunc(func_reflect.Id())
+
     vm_props = NewDict()  # type: Dict[str, value_t]
     vm_obj = Obj(Obj(None, vm_methods), vm_props)
 
@@ -550,11 +552,11 @@ def Main(
     # - Add other types like Dict, CommandFlag
     #   - Obj(first, rest)
     #   - List() Dict() Obj() can do shallow copy with __call__
-    #   - Bool() Int() Float() Str() List() Dict() conversions
 
     # - type(x) should return these Obj, or perhaps typeObj(x)
     #   - __str__ method for echo $[type(x)] ?
 
+    # TODO: List and Dict could be the only ones with __index__?
     i_func = method_type.Index__()
     type_m = NewDict()  # type: Dict[str, value_t]
     type_m['__index__'] = value.BuiltinFunc(i_func)
@@ -562,13 +564,29 @@ def Main(
 
     # Note: Func[Int -> Int] is something we should do?
     for tag in [
-            value_e.Bool, value_e.Int, value_e.Float, value_e.Str,
-            value_e.List, value_e.Dict, value_e.Obj
+            value_e.Bool,
+            value_e.Int,
+            value_e.Float,
+            value_e.Str,
+            value_e.List,
+            value_e.Dict,
     ]:
         type_name = value_str(tag, dot=False)
         #log('%s %s' , type_name, tag)
         type_obj = Obj(type_obj_methods, {'name': value.Str(type_name)})
         mem.AddBuiltin(type_name, type_obj)
+
+    # Initialize Obj
+    tag = value_e.Obj
+    type_name = value_str(tag, dot=False)
+
+    # TODO: change Obj.new to __call__
+    type_props = NewDict()  # type: Dict[str, value_t]
+    type_props['name'] = value.Str(type_name)
+    type_props['new'] = value.BuiltinFunc(func_misc.Obj_call())
+    type_obj = Obj(type_obj_methods, type_props)
+
+    mem.AddBuiltin(type_name, type_obj)
 
     # Wire up circular dependencies.
     vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
@@ -854,7 +872,6 @@ def Main(
                     func_eggex.MatchFunc(func_eggex.S, None, mem))
     _AddBuiltinFunc(mem, '_end', func_eggex.MatchFunc(func_eggex.E, None, mem))
 
-    _AddBuiltinFunc(mem, 'id', func_reflect.Id())
     # TODO: should this be parseCommandStr() vs. parseFile() for Hay?
     _AddBuiltinFunc(mem, 'parseCommand',
                     func_reflect.ParseCommand(parse_ctx, mem, errfmt))
@@ -873,6 +890,11 @@ def Main(
     _AddBuiltinFunc(mem, 'bindFrame', func_reflect.BindFrame())
 
     _AddBuiltinFunc(mem, 'Object', func_misc.Object())
+
+    _AddBuiltinFunc(mem, 'rest', func_misc.Prototype())
+    _AddBuiltinFunc(mem, 'first', func_misc.PropView())
+
+    # TODO: remove these aliases
     _AddBuiltinFunc(mem, 'prototype', func_misc.Prototype())
     _AddBuiltinFunc(mem, 'propView', func_misc.PropView())
 

@@ -185,8 +185,15 @@ class ForkWait(vm._Builtin):
 
 class Exec(vm._Builtin):
 
-    def __init__(self, mem, ext_prog, fd_state, search_path, errfmt):
-        # type: (state.Mem, ExternalProgram, FdState, executor.SearchPath, ui.ErrorFormatter) -> None
+    def __init__(
+            self,
+            mem,  # type: state.Mem
+            ext_prog,  # type: ExternalProgram
+            fd_state,  # type: FdState
+            search_path,  # type: executor.SearchPath
+            errfmt,  # type: ui.ErrorFormatter
+    ):
+        # type: (...) -> None
         self.mem = mem
         self.ext_prog = ext_prog
         self.fd_state = fd_state
@@ -241,8 +248,15 @@ class Wait(vm._Builtin):
         option is given.
     """
 
-    def __init__(self, waiter, job_list, mem, tracer, errfmt):
-        # type: (Waiter, process.JobList, state.Mem, dev.Tracer, ui.ErrorFormatter) -> None
+    def __init__(
+            self,
+            waiter,  # type: Waiter
+            job_list,  #type: process.JobList
+            mem,  # type: state.Mem
+            tracer,  # type: dev.Tracer
+            errfmt,  # type: ui.ErrorFormatter
+    ):
+        # type: (...) -> None
         self.waiter = waiter
         self.job_list = job_list
         self.mem = mem

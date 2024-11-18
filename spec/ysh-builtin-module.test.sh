@@ -120,13 +120,13 @@ use $REPO_ROOT/spec/testdata/module2/util.ysh
 
 # This is a value.Obj
 pp test_ (['util', util])
-var id1 = id(util)
+var id1 = vm.id(util)
 
 var saved_util = util
 
 use $REPO_ROOT/spec/testdata/module2/util.ysh
 pp test_ (['repeated', util])
-var id2 = id(util)
+var id2 = vm.id(util)
 
 # Create a symlink to test normalization
 
@@ -134,7 +134,7 @@ ln -s $REPO_ROOT/spec/testdata/module2/util.ysh symlink.ysh
 
 use symlink.ysh
 pp test_ (['symlink', symlink])
-var id3 = id(symlink)
+var id3 = vm.id(symlink)
 
 #pp test_ ([id1, id2, id3])
 
@@ -172,7 +172,7 @@ echo
 # PROBLEM: This is a value.Obj COPY, not the fucking original!!!
 # immutable objects??
 
-#pp test_ ([id(globals.d), globals.d])
+#pp test_ ([vm.id(globals.d), globals.d])
 
 call globals.mutateG2()
 echo

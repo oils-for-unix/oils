@@ -102,7 +102,6 @@ show_help() {
 Install the oils-for-unix binary, and symlinks to it, like osh.
 
 Usage:
-
   ./install                                # install the stripped binary
   ./install _bin/cxx-opt-sh/oils-for-unix  # or a given binary
   ./install --help                         # show this help
@@ -130,7 +129,7 @@ ARG_oils_binary=
 parse_flags() {
   while true; do
     case "$1" in
-      --help)
+      -h|--help)
         show_help
         exit 0
         ;;

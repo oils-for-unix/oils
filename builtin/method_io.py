@@ -2,6 +2,7 @@
 from __future__ import print_function
 
 from _devbuild.gen.value_asdl import value, value_e, value_t
+from _devbuild.gen.syntax_asdl import loc_t
 
 from core import error
 from core import num
@@ -11,15 +12,61 @@ from frontend import typed_args
 from mycpp.mylib import log, NewDict
 from osh import prompt
 
-from typing import Dict, List, cast, TYPE_CHECKING
+from typing import Dict, List, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
-    from osh import cmd_eval
     from _devbuild.gen.runtime_asdl import Cell
+    from osh import cmd_eval
+    from ysh import expr_eval
 
 _ = log
 
 EVAL_NULL = 1
 EVAL_DICT = 2
+
+
+def _CheckPosArgs(pos_args_raw, blame_loc):
+    # type: (Optional[List[value_t]], loc_t) -> Optional[List[str]]
+
+    if pos_args_raw is None:
+        return None
+
+    pos_args = []  # type: List[str]
+    for arg in pos_args_raw:
+        if arg.tag() != value_e.Str:
+            raise error.TypeErr(arg, "Expected pos_args to be a List of Strs",
+                                blame_loc)
+
+        pos_args.append(cast(value.Str, arg).s)
+    return pos_args
+
+
+class EvalExpr(vm._Callable):
+
+    def __init__(self, expr_ev):
+        # type: (expr_eval.ExprEvaluator) -> None
+        self.expr_ev = expr_ev
+        self.mem = expr_ev.mem
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        unused_self = rd.PosObj()
+        lazy = rd.PosExpr()
+
+        dollar0 = rd.NamedStr("dollar0", None)
+        pos_args_raw = rd.NamedList("pos_args", None)
+        vars_ = rd.NamedDict("vars", None)
+        rd.Done()
+
+        pos_args = _CheckPosArgs(pos_args_raw, rd.LeftParenToken())
+
+        # Note: ctx_Eval is on the outside, while ctx_EnclosedFrame is used in
+        # EvalExprClosure
+        with state.ctx_EnclosedFrame(self.mem, lazy.captured_frame,
+                                     lazy.module_frame, None):
+            with state.ctx_Eval(self.mem, dollar0, pos_args, vars_):
+                result = self.expr_ev.EvalExpr(lazy.e, rd.LeftParenToken())
+
+        return result
 
 
 def _PrintFrame(prefix, frame):
@@ -86,16 +133,7 @@ class Eval(vm._Callable):
         vars_ = rd.NamedDict("vars", None)
         rd.Done()
 
-        pos_args = None  # type: List[str]
-        if pos_args_raw is not None:
-            pos_args = []
-            for arg in pos_args_raw:
-                if arg.tag() != value_e.Str:
-                    raise error.TypeErr(
-                        arg, "Expected pos_args to be a List of Strs",
-                        rd.LeftParenToken())
-
-                pos_args.append(cast(value.Str, arg).s)
+        pos_args = _CheckPosArgs(pos_args_raw, rd.LeftParenToken())
 
         if self.which == EVAL_NULL:
             # _PrintFrame('[captured]', captured_frame)

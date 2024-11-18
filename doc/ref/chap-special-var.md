@@ -81,6 +81,12 @@ consults `__defaults__` after consulting `ENV`.  For example:
 
 <!-- TODO: consider renaming to DEF.PS1 ? -->
 
+### `__builtins__`
+
+An object that contains names visible in every module.
+
+If a name is not visible in the local scope, or module global scope, then it's
+looked up in `__builtins__`.
 
 ### `_this_dir`
 
@@ -144,10 +150,13 @@ The exit status of all the process subs in the last command.
 
 ### _reply
 
-YSH `read` sets this variable:
+Builtins that `read` set this variable:
 
-    read --all < myfile
-    echo $_reply
+    read --all < foo.txt
+    = _reply  # => 'contents of file'
+
+    json read < foo.json
+    = _reply  # => (Dict)  {}
 
 ## Oils VM
 

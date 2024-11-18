@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 
 #### fastlex: NUL byte not allowed inside char literal #' '
 
@@ -299,4 +299,26 @@ echo status=$?
 
 ## STDOUT:
 status=0
+## END
+
+#### Another "stealing stdin" issue with spec tests
+
+proc where2(; pred) {
+  for line in (io.stdin) {
+    pp test_ (line)
+  }
+}
+
+seq 5 | where2 [_line ~== 2 or _line ~== 4]
+
+#{ echo 1; echo 2; } | where2 [_line ~== 2 or _line ~== 4]
+
+# empty lines here get put on stdin
+
+## STDOUT:
+(Str)   "1"
+(Str)   "2"
+(Str)   "3"
+(Str)   "4"
+(Str)   "5"
 ## END

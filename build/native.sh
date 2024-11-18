@@ -24,7 +24,7 @@ tarball-demo() {
 
   ./configure
 
-  time _build/oils.sh '' '' $translator SKIP_REBUILD
+  time _build/oils.sh --translator "$translator" --skip-rebuild
 
   local bin
   case $translator in
@@ -60,7 +60,7 @@ measure-build-times() {
   # Header for functions in build/ninja-rules-cpp.sh
   benchmarks/time_.py --tsv --out $out_tsv --rusage --print-header --field verb --field out
 
-  time TIME_TSV_OUT=$out_tsv _build/oils.sh '' $variant
+  time TIME_TSV_OUT=$out_tsv _build/oils.sh --variant "$variant"
 
   echo
   cat $out_tsv

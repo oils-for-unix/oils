@@ -44,31 +44,36 @@ error handling, and more.
   [Numbers]        Int
                    Float
                    Range
-  [String]         Str       X find()           replace()
-                               trim()           trimStart()    trimEnd()
+  [String]         Str       X find()         X findLast()
+                             X contains()       replace()
+                               trim()           trimStart()      trimEnd()
                                startsWith()     endsWith()
                                upper()          lower()
                                search()         leftMatch()
+                               split()
   [Patterns]       Eggex
-                   Match       group()          start()        end()
+                   Match       group()          start()          end()
                              X groups()       X groupDict()
-  [Containers]     List        List/append()    pop()          extend()
-                               indexOf()      X insert()     X remove()
-                               reverse()      X clear()
-                   Dict        erase()        X clear()      X Dict/append() 
+  [Containers]     List        List/append()    pop()            extend()
+                               indexOf()      X lastIndexOf()  X includes()
+                             X insert()       X remove()
+                               reverse()      X List/clear()
+                   Dict        erase()        X Dict/clear()   X accum()
+                             X update()
                    Place       setValue()
   [Code Types]     Func        BuiltinFunc      BoundFunc
                    Proc        BuiltinProc
-  [Objects]        Obj         __invoke__     X __call__       __index__
-                             X __str__
+  [Objects]        Obj         __invoke__       new
+                             X __call__       __index__        X __str__
   [Reflection]     Command     CommandFrag
                    Expr
                    Frame
                    io          stdin            evalExpr()
-                               eval()           evalToDict()   captureStdout()
+                               eval()           evalToDict()
+                               captureStdout()
                                promptVal()
-                             X time()         X strftime()   X glob()
-                   vm          getFrame()
+                             X time()         X strftime()     X glob()
+                   vm          getFrame()       id() 
 ```
 
 <h2 id="builtin-func">
@@ -81,19 +86,17 @@ error handling, and more.
                   str()             list()          dict()
                 X runes()         X encodeRunes()
                 X bytes()         X encodeBytes()
-  [Str]         X strcmp()        X split()         shSplit()
+  [Str]         X strcmp()          shSplit()
   [List]          join()       
   [Dict]          keys()            values()        get()       
   [Float]         floatsEqual()   X isinf()       X isnan()
-  [Obj]           Object()          prototype()     propView()
-                  get()
+  [Obj]           first()           rest()          get()
   [Word]          glob()            maybe()
   [Serialize]     toJson()          fromJson()
                   toJson8()         fromJson8()
-X [J8 Decode]     J8.Bool()         J8.Int()        ...
+                X toJ8Line()      X fromJ8Line()
   [Pattern]       _group()          _start()        _end()
-  [Introspection] id()
-                  shvarGet()        getVar()        setVar()  
+  [Introspect]    shvarGet()        getVar()        setVar()  
                   parseCommand()  X parseExpr()   X bindFrame()
   [Hay Config]    parseHay()        evalHay()
 X [Hashing]       sha1dc()          sha256()
@@ -258,20 +261,20 @@ X [External Lang] BEGIN   END   when (awk)
   [Assignment]    assign        =
                   aug-assign    +=   -=   *=   /=   **=   //=   %=
                                 &=   |=   ^=   <<=   >>=
-  [Literals]      atom-literal  true   false   null
+  [Literals]      atom-literal  null   true   false
                   int-literal   42  65_536  0xFF  0o755  0b10
-                  float-lit     3.14  1.5e-10
-                  char-literal  \\ \t \"   \y00   \u{3bc}
+                  float-literal 3.14  1.5e-10
                 X num-suffix    42 K Ki M Mi G Gi T Ti / ms us
+                  char-literal  \\ \t \"   \y00   \u{3bc}
                   ysh-string    "x is $x"  $"x is $x"   r'[a-z]\n'
                                 u'line\n'  b'byte \yff'
                   triple-quoted """  $"""  r'''  u'''  b'''
-                  str-template  ^"$a and $b" for Str::replace()
                   list-literal  ['one', 'two', 3]  :| unquoted words |
                   dict-literal  {name: 'bob'}  {a, b}
                   range         1 ..< n  1 ..= n
                   block-expr    ^(echo $PWD)
                   expr-literal  ^[1 + 2*3]
+                  str-template  ^"$a and $b" for Str.replace()
                 X expr-sub      $[myobj]
                 X expr-splice   @[myobj]
   [Operators]     op-precedence Like Python
@@ -346,7 +349,8 @@ X [External Lang] BEGIN   END   when (awk)
 </h2>
 
 ```chapter-links-special-var
-  [YSH Vars]      ARGV                ENV                   __defaults__
+  [YSH Vars]      ARGV                ENV
+                  __defaults__        __builtins__
                   _this_dir
   [YSH Status]    _error
                   _pipeline_status    _process_sub_status

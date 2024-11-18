@@ -338,9 +338,10 @@ def SplitIntoCards(heading_tags, contents):
 
 
 def HelpTopics(s):
-    """Given an HTML page like index-{osh,ysh}.html,
+    """
+    Given a rendered toc-{osh,ysh}.html
 
-    Yield groups (section_id, section_name, block of text)
+    yield groups (section_id, section_name, block of text)
     """
     tag_lexer = html.TagLexer(s)
 
@@ -368,7 +369,7 @@ def HelpTopics(s):
                 h2_end_left, _ = html.ReadUntilEndTag(it, tag_lexer, 'h2')
 
                 anchor_html = s[h2_start_right:h2_end_left]
-                paren_pos = anchor_html.find('(')
+                paren_pos = anchor_html.find('<')  # remove HTML link
                 if paren_pos == -1:
                     section_name = anchor_html
                 else:

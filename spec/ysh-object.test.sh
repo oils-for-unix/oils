@@ -1,6 +1,39 @@
 ## our_shell: ysh
 ## oils_failures_allowed: 1
 
+#### New Obj API
+shopt --set ysh:upgrade
+
+try {
+  var obj = Obj.new({x: 4}, null)
+  pp test_ (obj)
+}
+echo $[_error.code]
+
+try {
+  pp test_ (first(obj))
+}
+echo $[_error.code]
+
+try {
+  pp test_ (rest(obj))
+}
+echo $[_error.code]
+
+# Second arg is optional
+var obj2 = Obj.new({y: 5})
+pp test_ (obj2)
+
+## STDOUT:
+(Obj)   ("x":4)
+0
+(Dict)   {"x":4}
+0
+(Null)   null
+0
+(Obj)   ("y":5)
+## END
+
 #### Object() creates prototype chain
 
 func Rect_area(this) {
