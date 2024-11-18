@@ -97,7 +97,7 @@ class Readline(object):
     def resize_terminal(self):
         # type: () -> None
         line_input.resize_terminal()
-        
+
     def list_funmap_names(self):
         # type: () -> None
         line_input.list_funmap_names()
@@ -133,11 +133,11 @@ class Readline(object):
     def print_shell_cmd_map(self):
         # type: () -> None
         line_input.print_shell_cmd_map()
-        
+
     def unbind_keyseq(self, keyseq):
         # type: (str) -> None
         line_input.unbind_keyseq(keyseq)
-        
+
 
 def MaybeGetReadline():
     # type: () -> Optional[Readline]

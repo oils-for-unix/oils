@@ -21,9 +21,10 @@ if TYPE_CHECKING:
     from core import sh_init
     from display import ui
 
+
 class ctx_Keymap(object):
 
-    def __init__(self, readline, keymap_name = None):
+    def __init__(self, readline, keymap_name=None):
         # type: (Readline, str) -> None
         self.readline = readline
         self.orig_keymap_name = keymap_name
@@ -37,7 +38,7 @@ class ctx_Keymap(object):
         # type: (Any, Any, Any) -> None
         if self.orig_keymap_name is not None:
             self.readline.restore_orig_keymap()
-        
+
 
 class Bind(vm._Builtin):
     """Interactive interface to readline bindings"""
@@ -54,9 +55,9 @@ class Bind(vm._Builtin):
         if not readline:
             e_usage("is disabled because Oils wasn't compiled with 'readline'",
                     loc.Missing)
-        
+
         attrs, arg_r = flag_util.ParseCmdVal('bind', cmd_val)
-        
+
         # print("attrs:\n", attrs)
         # print("attrs.attrs:\n", attrs.attrs)
         # print("attrs.attrs.m:\n", attrs.attrs["m"])
@@ -66,22 +67,28 @@ class Bind(vm._Builtin):
         # print("attrs.attrs[m].tag() == value_e.Undef:\n", attrs.attrs["m"].tag() == value_e.Undef)
         # print(arg_r)
         # print("Reader argv=%s locs=%s n=%i i=%i" % (arg_r.argv, str(arg_r.locs), arg_r.n, arg_r.i))
-        
+
         # Check mutually-exclusive flags and non-flag args
         found = False
         for flag in self.exclusive_flags:
-            if flag in attrs.attrs and attrs.attrs[flag].tag() != value_e.Undef:
+            if (flag in attrs.attrs and attrs.attrs[flag].tag(
+            ) != value_e.Undef):
                 # print("\tFound flag: {0} with tag: {1}".format(flag, attrs.attrs[flag].tag()))
                 if found:
-                    self.errfmt.Print_("error: can only use one of the following flags at a time: -" + ", -".join(self.exclusive_flags), blame_loc=cmd_val.arg_locs[0])
+                    self.errfmt.Print_(
+                        "error: can only use one of the following flags at a time: -"
+                        + ", -".join(self.exclusive_flags),
+                        blame_loc=cmd_val.arg_locs[0])
                     return 1
                 else:
                     found = True
         if found and not arg_r.AtEnd():
-            self.errfmt.Print_("error: cannot mix bind commands with the following flags: -" + ", -".join(self.exclusive_flags), blame_loc=cmd_val.arg_locs[0])
+            self.errfmt.Print_(
+                "error: cannot mix bind commands with the following flags: -" +
+                ", -".join(self.exclusive_flags),
+                blame_loc=cmd_val.arg_locs[0])
             return 1
-            
-        
+
         arg = arg_types.bind(attrs.attrs)
         # print("arg:\n", arg)
         # print("dir(arg):\n", dir(arg))
@@ -90,17 +97,16 @@ class Bind(vm._Builtin):
         #         value = getattr(arg, prop)
         #         print("Property: {0}, Value: {1}".format(prop, value))
         # print("arg.m:\n", arg.m)
-        
-        
-        try:                
-            with ctx_Keymap(readline, arg.m): # Replicates bind's -m behavior
-                
-                # This gauntlet of ifs is meant to replicate bash behavior, in case we 
+
+        try:
+            with ctx_Keymap(readline, arg.m):  # Replicates bind's -m behavior
+
+                # This gauntlet of ifs is meant to replicate bash behavior, in case we
                 # need to relax the mutual exclusion of flags like bash does
-                
+
                 if arg.l:
                     readline.list_funmap_names()
-                    
+
                 if arg.p:
                     readline.function_dumper(True)
 
@@ -112,13 +118,13 @@ class Bind(vm._Builtin):
 
                 if arg.S:
                     readline.macro_dumper(False)
-                    
+
                 if arg.v:
                     readline.variable_dumper(True)
 
                 if arg.V:
                     readline.variable_dumper(False)
-                    
+
                 if arg.f is not None:
                     readline.read_init_file(arg.f)
 
@@ -135,12 +141,12 @@ class Bind(vm._Builtin):
 
                 if arg.x is not None:
                     self.errfmt.Print_("warning: bind -x isn't implemented",
-                                    blame_loc=cmd_val.arg_locs[0])
+                                       blame_loc=cmd_val.arg_locs[0])
                     return 1
-                
+
                 if arg.X:
                     readline.print_shell_cmd_map()
-                    
+
                 bindings, arg_locs = arg_r.Rest2()
                 for i, binding in enumerate(bindings):
                     try:
@@ -153,7 +159,7 @@ class Bind(vm._Builtin):
                         return 1
 
                 return 0
-                    
+
         except ValueError as e:
             # temp var to work around mycpp runtime limitation
             msg2 = e.message  # type: str

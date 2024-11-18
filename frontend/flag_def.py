@@ -173,7 +173,6 @@ BIND_SPEC.ShortFlag('-S')
 BIND_SPEC.ShortFlag('-V')
 BIND_SPEC.ShortFlag('-X')
 
-
 HISTORY_SPEC = FlagSpec('history')
 HISTORY_SPEC.ShortFlag('-a')
 HISTORY_SPEC.ShortFlag('-r')
