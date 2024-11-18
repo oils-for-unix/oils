@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 3
+## oils_failures_allowed: 2
 
 #### global frame doesn't contain builtins like len(), dict(), io
 
@@ -97,9 +97,11 @@ code=0
 
 #### compgen -c respects ENV.PATH, not PATH
 
-# grep is required by posix
-compgen -c | grep -w ls
+setglobal ENV.PATH = '/usr/bin'
+
+# ls is required by POSIX
+compgen -c | grep -w 'ls'
 
 ## STDOUT:
+ls
 ## END
-

@@ -717,13 +717,13 @@ class ExternalCommandAction(CompletionAction):
         - When we get a newer timestamp, we should clear the old one.
         - When PATH is changed, we can remove old entries.
         """
-        val = self.mem.GetValue('PATH')
-        if val.tag() != value_e.Str:
+        path_str = self.mem.env_config.Get('PATH')
+        if path_str is None:
             # No matches if not a string
             return
 
-        val_s = cast(value.Str, val)
-        path_dirs = val_s.s.split(':')
+        # TODO: Could be part of SearchPath?
+        path_dirs = path_str.split(':')
         #log('path: %s', path_dirs)
 
         executables = []  # type: List[str]
