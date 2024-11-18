@@ -161,7 +161,6 @@ class Bind(vm._Builtin):
                         readline.parse_and_bind(binding)
                     except ValueError as e:
                         msg = e.message  # type: str
-                        log("i %d", i)
                         self.errfmt.Print_("bind error: %s" % msg, arg_locs[i])
                         return 1
 
