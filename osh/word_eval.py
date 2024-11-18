@@ -2002,13 +2002,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         will_glob = not self.exec_opts.noglob()
 
-        if 0:
-            log('---')
-            log('FRAME')
-            for i, piece in enumerate(frame):
-                log('(%d) %s', i, piece)
-            log('')
-
+        """
         # Array of strings, some of which are BOTH IFS-escaped and GLOB escaped!
         frags = []  # type: List[str]
         for piece in frame:
@@ -2026,14 +2020,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 frag = self.splitter.Escape(frag)
 
             frags.append(frag)
-
-        if 0:
-            log('---')
-            log('FRAGS')
-            for i, frag in enumerate(frags):
-                log('(%d) %s', i, frag)
-            log('')
-
         flat = ''.join(frags)
         #log('flat: %r', flat)
 
@@ -2055,6 +2041,123 @@ class AbstractWordEvaluator(StringWordEvaluator):
                                          loc.Missing)
             else:
                 argv.append(glob_.GlobUnescape(a))
+        """
+
+        # Partition the frame into parts. Each of these will then be globbed or
+        # added to the ARGV array.
+
+        """
+        args = [[]]  # List[List[Piece]]
+        for piece in frame:
+            if not piece.do_split:
+                args[-1].append(piece)
+                continue
+
+            piece_parts = self.splitter.SplitForWordEval(piece.s)
+            if len(piece_parts) > 0:
+                args[-1].append(Piece(piece_parts[0], quoted=piece.quoted, do_split=False))
+                piece_parts = piece_parts[1:]
+
+            for piece_part in piece_parts:
+                args.append([Piece(piece_part, quoted=piece.quoted, do_split=False)])
+
+        if len(args) == 1 and len(args[0]) == 0:
+            return
+
+        log(args)
+        log('any_quoted=%r', any_quoted)
+
+        for arg_pieces in args:
+            arg_frags = []
+            for piece in arg_pieces:
+                if will_glob and piece.quoted:
+                    arg_frags.append(glob_.GlobEscape(piece.s))
+                else:
+                    arg_frags.append(piece.s)
+
+            arg = "".join(arg_frags)
+
+            if glob_.LooksLikeGlob(arg):
+                n = self.globber.Expand(arg, argv)
+                if n < 0:
+                    # TODO: location info, with span IDs carried through the frame
+                    raise error.FailGlob('Pattern %r matched no files' % a,
+                                         loc.Missing)
+            else:
+                argv.append(glob_.GlobUnescape(arg))
+        """
+
+        # Split each piece
+        args = []
+        arg = []
+        for piece in frame:
+            if piece.do_split:
+                splits = self.splitter.SplitForWordEval(piece.s)
+                log(piece.s)
+                log(splits)
+                if len(splits) == 0:
+                    args.append(arg)
+                    arg = []
+                    continue
+
+                for i, split in enumerate(splits):
+                    if piece.quoted and will_glob:
+                        arg.append(glob_.GlobEscape(split))
+                    else:
+                        arg.append(split)
+
+                    args.append(arg)
+                    arg = []
+
+                if len(args):
+                    arg = args.pop()
+            elif piece.quoted and will_glob:
+                arg.append(glob_.GlobEscape(piece.s))
+            else:
+                arg.append(piece.s)
+        if len(arg):
+            args.append(arg)
+
+        log(args)
+
+        if not len(args):
+            return
+
+        args2 = []
+        for arg in args:
+            if len(arg):
+                args2.append(''.join(arg))
+
+        for arg2 in args2:
+            if glob_.LooksLikeGlob(arg2):
+                n = self.globber.Expand(arg2, argv)
+                if n < 0:
+                    # TODO: location info, with span IDs carried through the frame
+                    raise error.FailGlob('Pattern %r matched no files' % a,
+                                         loc.Missing)
+            elif will_glob:
+                argv.append(glob_.GlobUnescape(arg2))
+            else:
+                argv.append(arg2)
+
+        if 1:
+            log('---')
+            log('FRAME')
+            for i, piece in enumerate(frame):
+                log('(%d) %s', i, piece)
+            log('')
+
+            log('---')
+            log('ARGS')
+            for i, piece in enumerate(args):
+                log('(%d) %s', i, piece)
+            log('')
+
+            log('---')
+            log('ARGV')
+            for i, arg in enumerate(argv):
+                log('(%d) %s', i, arg)
+            log('')
 
     def _EvalWordToArgv(self, w):
         # type: (CompoundWord) -> List[str]
