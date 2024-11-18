@@ -35,7 +35,7 @@ def ParseCmdVal(spec_name, cmd_val, accept_typed_args=False):
     if not accept_typed_args:
         _DoesNotAccept(cmd_val.proc_args)
 
-    #assert len(cmd_val.argv) == len(cmd_val.arg_locs), cmd_val
+    assert len(cmd_val.argv) == len(cmd_val.arg_locs), cmd_val.argv
     arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
     arg_r.Next()  # move past the builtin name
 
