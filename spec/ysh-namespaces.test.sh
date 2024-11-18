@@ -73,3 +73,27 @@ assert [2 === len]
 ## STDOUT:
 ## END
 
+
+#### cd builtin respects ENV.HOME, not HOME
+
+try { cd }
+echo code=$[_error.code]
+
+setglobal ENV.HOME = '/tmp'
+
+try { cd }
+echo code=$[_error.code]
+
+pwd
+
+## STDOUT:
+## END
+
+#### compgen -c respects ENV.PATH, not PATH
+
+# grep is required by posix
+compgen -c | grep -w ls
+
+## STDOUT:
+## END
+
