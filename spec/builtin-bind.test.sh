@@ -23,15 +23,16 @@ accept-line
 
 #### bind -p -P to print function names and key bindings
 
-bind -p | grep menu-complete-backward
+# silly workaround for spec test format - change # comment to %
+bind -p | grep vi-subst | sed 's/^#/%/'
 echo
 
-bind -P | grep menu-complete-backward
+bind -P | grep vi-subst
 
 ## STDOUT:
-"\C-p": menu-complete-backward
+% vi-subst (not bound)
 
-menu-complete-backward can be found on "\C-p".
+vi-subst is not bound to any keys
 ## END
 
 #### bind -s -S accepted
@@ -68,13 +69,13 @@ echo status=$?
 bind -q vi-subst
 echo status=$?
 
-bind -q menu-complete
+bind -q yank
 echo status=$?
 
 ## STDOUT:
 status=1
 vi-subst is not bound to any keys.
 status=1
-menu-complete can be invoked via "\C-n".
+yank can be invoked via "\C-y".
 status=0
 ## END
