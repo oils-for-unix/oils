@@ -39,9 +39,9 @@ class Readline {
   void remove_history_item(int pos);
   int get_current_history_length();
   void resize_terminal();
-  void list_funmap_names();
 
-  // These functions were added for the 'bind' builtin
+  // Functions added to implement the 'bind' builtin in OSH
+  void list_funmap_names();
   void read_init_file(BigStr* s);
   void function_dumper(bool print_readably);
   void macro_dumper(bool print_readably);
