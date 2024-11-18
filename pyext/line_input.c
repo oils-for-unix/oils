@@ -715,7 +715,7 @@ Change what's displayed on the screen to reflect the current\n\
 contents of the line buffer.");
 
 
-/* Bind */
+/* Functions added to implement the 'bind' builtin in OSH */
 
 /* -x/-X command keymaps */
 static Keymap emacs_cmd_map;
@@ -829,7 +829,6 @@ variable_dumper(PyObject *self, PyObject *args)
 PyDoc_STRVAR(doc_list_variable_dumper,
 "variable_dumper(bool) -> None\n\
 List readline variables and their values.");
-
 
 
 /* Query bindings for a function name */
@@ -1037,9 +1036,6 @@ PyDoc_STRVAR(doc_unbind_keyseq,
 Unbind a key sequence from the current keymap.");
 
 
-
-
-
 /* Keymap toggling code */
 static Keymap orig_keymap = NULL;
 
@@ -1082,9 +1078,6 @@ restore_orig_keymap(PyObject *self, PyObject *args)
 PyDoc_STRVAR(doc_restore_orig_keymap,
 "restore_orig_keymap() -> None\n\
 Restore the previously saved keymap if one exists.");
-
-
-
 
 /* Table of functions exported by the module */
 
@@ -1132,6 +1125,8 @@ static struct PyMethodDef readline_methods[] = {
      METH_VARARGS, doc_set_pre_input_hook},
     {"clear_history", py_clear_history, METH_NOARGS, doc_clear_history},
     {"resize_terminal", py_resize_terminal, METH_NOARGS, ""},
+
+    /* Functions added to implement the 'bind' builtin in OSH */
     {"list_funmap_names", list_funmap_names, METH_NOARGS, doc_list_funmap_names},
     {"function_dumper", function_dumper, METH_VARARGS, doc_list_function_dumper},
     {"macro_dumper", macro_dumper, METH_VARARGS, doc_list_macro_dumper},
