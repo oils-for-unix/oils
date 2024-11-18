@@ -58,12 +58,11 @@ def Options():
         type='int',
         help='Emit warnings about functions with too many stack roots')
 
-    p.add_option(
-        '--minimize-stack-roots',
-        dest='minimize_stack_roots',
-        action='store_true',
-        default=False,
-        help='Try to minimize the number of GC stack roots.')
+    p.add_option('--minimize-stack-roots',
+                 dest='minimize_stack_roots',
+                 action='store_true',
+                 default=False,
+                 help='Try to minimize the number of GC stack roots.')
 
     return p
 
@@ -277,7 +276,7 @@ def main(argv):
 """)
 
     # Convert the mypy AST into our own IR.
-    dot_exprs = {} # module name -> {expr node -> access type}
+    dot_exprs = {}  # module name -> {expr node -> access type}
     log('\tmycpp pass: IR')
     for _, module in to_compile:
         p = ir_pass.Build(result.types)
@@ -378,8 +377,8 @@ def main(argv):
         if souffle_dir is None:
             tmp_dir = tempfile.TemporaryDirectory()
             souffle_dir = tmp_dir.name
-        stack_roots = pass_state.ComputeMinimalStackRoots(cfgs,
-                                                          souffle_dir=souffle_dir)
+        stack_roots = pass_state.ComputeMinimalStackRoots(
+            cfgs, souffle_dir=souffle_dir)
     else:
         pass_state.DumpControlFlowGraphs(cfgs)
 

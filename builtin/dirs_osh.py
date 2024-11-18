@@ -113,7 +113,8 @@ class Cd(vm._Builtin):
             else:
                 dest_dir = self.mem.env_config.Get('HOME')
                 if dest_dir is None:
-                    self.errfmt.Print_("cd got no argument, and $HOME isn't set")
+                    self.errfmt.Print_(
+                        "cd got no argument, and $HOME isn't set")
                     return 1
 
         # At most 1 arg is accepted
@@ -137,7 +138,8 @@ class Cd(vm._Builtin):
         # Calculate new directory, chdir() to it, then set PWD to it.  NOTE: We
         # can't call posix.getcwd() because it can raise OSError if the
         # directory was removed (ENOENT.)
-        abspath = os_path.join(old_pwd, dest_dir)  # make it absolute, for cd ..
+        abspath = os_path.join(old_pwd,
+                               dest_dir)  # make it absolute, for cd ..
         if arg.P:
             # -P means resolve symbolic links, then process '..'
             real_dest_dir = libc.realpath(abspath)

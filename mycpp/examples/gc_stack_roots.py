@@ -156,7 +156,8 @@ def collect_in_comprehension():
     Temporary variables used in list comprehensions should be rooted if a
     collection might happen.
     """
-    l = ['%s' % collect_and_slice(s) for s in ['foo', 'bar']] # type: List[str]
+    l = ['%s' % collect_and_slice(s)
+         for s in ['foo', 'bar']]  # type: List[str]
     for s in l:
         print(s)
 

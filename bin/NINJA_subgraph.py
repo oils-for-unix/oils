@@ -81,7 +81,8 @@ def NinjaGraph(ru):
                 ('preamble', 'cpp/preamble.h'),
             ]
             if translator == 'mycpp-souffle':
-                variables.append(('extra_mycpp_opts', '--minimize-stack-roots'))
+                variables.append(
+                    ('extra_mycpp_opts', '--minimize-stack-roots'))
 
             n.build(outputs,
                     'gen-oils-for-unix',
@@ -107,8 +108,8 @@ def NinjaGraph(ru):
                 bin_path=bin_path,
                 symlinks=symlinks,
                 preprocessed=True,
-                matrix=(ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS +
-                        ninja_lib.OTHER_VARIANTS),
+                matrix=(ninja_lib.COMPILERS_VARIANTS +
+                        ninja_lib.GC_PERF_VARIANTS + ninja_lib.OTHER_VARIANTS),
                 deps=[
                     '//bin/text_files',
                     '//cpp/core',

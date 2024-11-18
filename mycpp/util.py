@@ -5,7 +5,7 @@ from __future__ import print_function
 
 import sys
 from mypy.nodes import (CallExpr, IfStmt, Block, Expression, MypyFile,
-                       MemberExpr, IntExpr, NameExpr, ComparisonExpr)
+                        MemberExpr, IntExpr, NameExpr, ComparisonExpr)
 from mypy.types import Instance, Type
 
 from typing import Any, Sequence, Optional

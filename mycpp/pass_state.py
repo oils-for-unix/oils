@@ -590,8 +590,7 @@ def ComputeMinimalStackRoots(cfgs: dict[str, ControlFlowGraph],
     ])
 
     tuples: set[tuple[SymbolPath, SymbolPath]] = set({})
-    with open('{}/stack_root_vars.tsv'.format(output_dir),
-              'r') as roots_f:
+    with open('{}/stack_root_vars.tsv'.format(output_dir), 'r') as roots_f:
         pat = re.compile(r'\$(.*)\((.*), (.*)\)')
         for line in roots_f:
             function, ref = line.split('\t')

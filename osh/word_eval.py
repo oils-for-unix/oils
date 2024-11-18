@@ -2291,7 +2291,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 if i <= meta_offset and _DetectMetaBuiltinStr(fast_str):
                     meta_offset += 1
 
-                n = len(strs)  # Bug fix: n must be updated on every loop iteration
+                # Bug fix: n must be updated on every loop iteration
+                n = len(strs)
                 assert len(strs) == len(locs), strs
                 continue
 

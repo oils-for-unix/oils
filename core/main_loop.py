@@ -251,7 +251,7 @@ def Interactive(
             except KeyboardInterrupt:  # thrown by InteractiveLineReader._GetLine()
                 # TODO: We probably want to change terminal settings so ^C is printed.
                 # For now, just print a newline.
-                # 
+                #
                 # WITHOUT GNU readline, the ^C is printed.  So we need to make
                 # the 2 cases consistent.
                 print('')

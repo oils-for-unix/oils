@@ -57,7 +57,7 @@ assert WC_LINE.match('    68 bash-4.4__01.19610')
 
 
 def WriteHeader(f, shells, more_cols=None):
-    f.write("ID\t",)
+    f.write("ID\t", )
     for sh in shells:
         # abbreviate
         if sh.startswith('bash-4'):

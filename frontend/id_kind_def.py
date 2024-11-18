@@ -232,7 +232,8 @@ def AddKinds(spec):
     #   $'\z'  Such bad codes are accepted when parse_backslash is on
     #          (default in OSH), so we have to lex them.
     #  (x == y) should used === or ~==
-    spec.AddKind('Unknown', ['Tok', 'Backslash', 'DEqual', 'DAmp', 'DPipe', 'DDot'])
+    spec.AddKind('Unknown',
+                 ['Tok', 'Backslash', 'DEqual', 'DAmp', 'DPipe', 'DDot'])
 
     spec.AddKind('Eol', ['Tok'])  # no more tokens on line (\0)
 
