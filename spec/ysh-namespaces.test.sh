@@ -97,7 +97,7 @@ code=0
 
 #### compgen -c respects ENV.PATH, not PATH
 
-setglobal ENV.PATH = '/usr/bin'
+setglobal ENV.PATH = '/bin'
 
 # ls is required by POSIX
 compgen -c | grep -w 'ls'
