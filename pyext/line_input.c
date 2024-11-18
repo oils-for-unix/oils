@@ -730,7 +730,7 @@ static Keymap vi_movement_cmd_map;
 #define RL_FUNCTION_TO_KEYMAP(map, key) (Keymap)(map[key].function)
 
 static void
-_init_command_maps()
+_init_command_maps(void)
 {
     emacs_cmd_map = rl_make_bare_keymap();
     vi_insert_cmd_map = rl_make_bare_keymap();
@@ -744,8 +744,7 @@ _init_command_maps()
 }
 
 static Keymap
-_get_associated_cmd_map(kmap)
-Keymap kmap;
+_get_associated_cmd_map(Keymap kmap)
 {
     if (emacs_cmd_map == NULL)
         _init_command_maps();
@@ -876,7 +875,6 @@ query_bindings(PyObject *self, PyObject *args)
     char *fn_name;
     rl_command_func_t *cmd_fn;
     char **key_seqs;
-    int i;
 
     if (!PyArg_ParseTuple(args, "s:query_bindings", &fn_name))
         return NULL;
