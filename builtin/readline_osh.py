@@ -71,8 +71,8 @@ class Bind(vm._Builtin):
         # Check mutually-exclusive flags and non-flag args
         found = False
         for flag in self.exclusive_flags:
-            if (flag in attrs.attrs and attrs.attrs[flag].tag(
-            ) != value_e.Undef):
+            if (flag in attrs.attrs and
+                    attrs.attrs[flag].tag() != value_e.Undef):
                 # print("\tFound flag: {0} with tag: {1}".format(flag, attrs.attrs[flag].tag()))
                 if found:
                     self.errfmt.Print_(
