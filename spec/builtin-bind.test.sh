@@ -1,4 +1,4 @@
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 ## compare_shells: bash
 
 # NB: This is only for NON-interactive tests of bind. 
@@ -22,12 +22,15 @@ accept-line
 
 #### bind -p -P to print function names and key bindings
 
-bind -p | grep accept-line
+bind -p | grep menu-complete-backward
 echo
 
-bind -P | grep accept-line
+bind -P | grep menu-complete-backward
 
 ## STDOUT:
+"\C-p": menu-complete-backward
+
+menu-complete-backward can be found on "\C-p".
 ## END
 
 #### bind -s -S accepted
@@ -42,15 +45,35 @@ bind -S
 
 #### bind -v -V accepted
 
-# TODO: add non-trivial tests here
-
 bind -v | grep blink-matching-paren
 echo
 
-bind -V | grep blink-matching-paren
+# transform silly quote so we don't mess up syntax highlighting
+bind -V | grep blink-matching-paren | sed "s/\`/'/g"
 
 ## STDOUT:
 set blink-matching-paren off
 
-blink-matching-paren is set to `off'
+blink-matching-paren is set to 'off'
+## END
+
+#### bind -q
+
+bind -q zz-bad
+echo status=$?
+
+# bash prints message to stdout
+
+bind -q vi-subst
+echo status=$?
+
+bind -q menu-complete
+echo status=$?
+
+## STDOUT:
+status=1
+vi-subst is not bound to any keys.
+status=1
+menu-complete can be invoked via "\C-n".
+status=0
 ## END
