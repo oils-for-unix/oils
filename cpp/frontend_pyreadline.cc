@@ -334,43 +334,43 @@ void Readline::list_funmap_names() {
 }
 
 void Readline::read_init_file(BigStr* s) {
-  assert(0);  // not implemented
+  // assert(0);  // not implemented
 }
 
 void Readline::function_dumper(bool print_readably) {
-  assert(0);  // not implemented
+  // assert(0);  // not implemented
 }
 
 void Readline::macro_dumper(bool print_readably) {
-  assert(0);  // not implemented
+  // assert(0);  // not implemented
 }
 
 void Readline::variable_dumper(bool print_readably) {
-  assert(0);  // not implemented
+  // assert(0);  // not implemented
 }
 
 void Readline::query_bindings(BigStr* fn_name) {
-  assert(0);  // not implemented
+  // assert(0);  // not implemented
 }
 
 void Readline::unbind_rl_function(BigStr* fn_name) {
-  assert(0);  // not implemented
+  // assert(0);  // not implemented
 }
 
 void Readline::use_temp_keymap(BigStr* fn_name) {
-  assert(0);  // not implemented
+  // assert(0);  // not implemented
 }
 
 void Readline::restore_orig_keymap() {
-  assert(0);  // not implemented
+  // assert(0);  // not implemented
 }
 
 void Readline::print_shell_cmd_map() {
-  assert(0);  // not implemented
+  // assert(0);  // not implemented
 }
 
 void Readline::unbind_keyseq(BigStr* keyseq) {
-  assert(0);  // not implemented
+  // assert(0);  // not implemented
 }
 
 Readline* MaybeGetReadline() {
