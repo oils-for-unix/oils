@@ -128,8 +128,9 @@ class Bind(vm._Builtin):
                 if arg.u is not None:
                     readline.unbind_rl_function(arg.u)
 
-                if arg.r is not None:
-                    readline.unbind_keyseq(arg.r)
+                if 0:
+                    if arg.r is not None:
+                        readline.unbind_keyseq(arg.r)
 
                 if arg.x is not None:
                     self.errfmt.Print_("warning: bind -x isn't implemented",
@@ -154,8 +155,8 @@ class Bind(vm._Builtin):
                     
         except ValueError as e:
             # temp var to work around mycpp runtime limitation
-            msg = e.message  # type: str
-            self.errfmt.Print_("bind error: %s" % msg, loc.Missing)
+            msg2 = e.message  # type: str
+            self.errfmt.Print_("bind error: %s" % msg2, loc.Missing)
             return 1
 
         return 0

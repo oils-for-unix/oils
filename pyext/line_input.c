@@ -988,6 +988,7 @@ Print all bindings for shell commands in the current keymap.");
 
 /* Remove all bindings for a given keyseq */
 
+#if 0
 static PyObject*
 unbind_keyseq(PyObject *self, PyObject *args)
 {
@@ -1029,6 +1030,7 @@ unbind_keyseq(PyObject *self, PyObject *args)
     free(keyseq);
     Py_RETURN_NONE;
 }
+#endif
 
 PyDoc_STRVAR(doc_unbind_keyseq,
 "unbind_keyseq(sequence) -> None\n\
@@ -1140,7 +1142,9 @@ static struct PyMethodDef readline_methods[] = {
     {"restore_orig_keymap", restore_orig_keymap, METH_NOARGS, doc_restore_orig_keymap},
     {"unbind_shell_cmd", unbind_shell_cmd, METH_VARARGS, doc_unbind_shell_cmd},
     {"print_shell_cmd_map", print_shell_cmd_map, METH_NOARGS, doc_print_shell_cmd_map},
+#if 0
     {"unbind_keyseq", unbind_keyseq, METH_VARARGS, doc_unbind_keyseq},
+#endif
     {0, 0}
 };
 #endif
