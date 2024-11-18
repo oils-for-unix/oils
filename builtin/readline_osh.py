@@ -129,6 +129,7 @@ class Bind(vm._Builtin):
                     readline.unbind_rl_function(arg.u)
 
                 if 0:
+                    # disabled until we fix error with rl_function_of_keyseq_len()
                     if arg.r is not None:
                         readline.unbind_keyseq(arg.r)
 
@@ -137,7 +138,7 @@ class Bind(vm._Builtin):
                                     blame_loc=cmd_val.arg_locs[0])
                     return 1
                 
-                if arg.X is not None:
+                if arg.X:
                     readline.print_shell_cmd_map()
                     
                 bindings, arg_locs = arg_r.Rest2()
