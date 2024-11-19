@@ -26,10 +26,14 @@ import heapq as _heapq
 from itertools import repeat as _repeat, chain as _chain, starmap as _starmap
 from itertools import imap as _imap
 
-try:
-    from thread import get_ident as _get_ident
-except ImportError:
-    from dummy_thread import get_ident as _get_ident
+if 0:
+    try:
+        from thread import get_ident as _get_ident
+    except ImportError:
+        from dummy_thread import get_ident as _get_ident
+else:
+    def _get_ident():
+        return 999  # we don't have threads, so return a stable number
 
 
 ################################################################################
