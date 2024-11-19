@@ -81,6 +81,8 @@ check-types() {
 
   banner 'typed-demo-asdl'
   typed-demo-asdl
+
+  asdl-check asdl/target_lang_test.py
 }
 
 "$@"

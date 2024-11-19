@@ -153,23 +153,13 @@ class ASDLParser(object):
 
     def _parse_module(self):
         """
-    type_decl  : NAME (':' NAME) '=' compound_type
-    module     : 'module' NAME '{' use* type_decl* '}'
+        type_decl  : NAME '=' compound_type
+        module     : 'module' NAME '{' use* type_decl* '}'
 
-    We added:
-      : for code gen options
-      use for imports
-
-    alloc_members =
-      List
-    | Dict
-    | Struct
-    generate [bit_set]
-    
-    -- color::Red, not color_e::Red or color_i::Red
-    color = Red | Green
-            generate [integers, no_sum_suffix]
-    """
+        We added:
+        - use for imports
+        - generate on sum types
+        """
         if not self._at_keyword('module'):
             raise ASDLSyntaxError(
                 'Expected "module" (found {})'.format(self.cur_token.value),
@@ -193,7 +183,8 @@ class ASDLParser(object):
         return Module(name, uses, defs)
 
     def _parse_use(self):
-        """Use: 'use' NAME+ '{' NAME+ '}'.
+        """
+        use: 'use' NAME+ '{' NAME+ '}'
 
         example: use frontend syntax { Token }
 
@@ -221,10 +212,25 @@ class ASDLParser(object):
         return Use(module_parts, type_names)
 
     def _parse_compound_type(self):
-        """Constructor : NAME fields? | NAME '%' NAME  # shared variant.
+        """
+        constructor   : NAME fields?
+                      | NAME '%' NAME  # shared variant
+
+        sum           : constructor ('|' constructor)* generate?
 
         compound_type : product
-                      | constructor ('|' constructor)*
+                      | sum
+
+        Examples:
+            alloc_members =
+              List
+            | Dict
+            | Struct
+            generate [bit_set]
+            
+            -- color::Red, not color_e::Red or color_i::Red
+            color = Red | Green
+                    generate [integers, no_sum_suffix]
         """
         if self.cur_token.kind == TokenKind.LParen:
             # If we see a (, it's a product
@@ -324,7 +330,8 @@ class ASDLParser(object):
         return typ
 
     def _parse_fields(self):
-        """fields_inner: type_expr NAME ( ',' type_expr NAME )* ','?
+        """
+        fields_inner: type_expr NAME ( ',' type_expr NAME )* ','?
 
         fields      : '(' fields_inner? ')'
 
@@ -347,7 +354,8 @@ class ASDLParser(object):
         return fields
 
     def _parse_list(self):
-        """list_inner: NAME ( ',' NAME )* ','?
+        """
+        list_inner: NAME ( ',' NAME )* ','?
 
         list      : '[' list_inner? ']'
         """
@@ -367,7 +375,9 @@ class ASDLParser(object):
         return generate
 
     def _parse_optional_generate(self):
-        """Attributes = 'generate' list."""
+        """
+        generate : 'generate' list
+        """
         if self._at_keyword('generate'):
             self._advance()
             return self._parse_list()

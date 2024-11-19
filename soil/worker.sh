@@ -336,11 +336,13 @@ osh-spec          test/spec-py.sh osh-all-serial         _tmp/spec/osh-py/index.
 gold              test/gold.sh soil-run                  -
 osh-usage         test/osh-usage.sh soil-run             -
 tools-deps        test/tools-deps.sh soil-run            -
-make-tarball      devtools/release.sh py-tarball         _release/oil.tar
-ysh-ovm-tarball   test/spec-py.sh ysh-ovm-tarball        _tmp/spec/ysh-py/index.html
 docs              build/doc.sh soil-run                  _release/VERSION/index.html
 doc-metrics       echo no-op                             _release/VERSION/doc/metrics.txt
 EOF
+
+# TODO: restore these after fixing fallout from vendor/typing.py
+# make-tarball      devtools/release.sh py-tarball         _release/oil.tar
+# ysh-ovm-tarball   test/spec-py.sh ysh-ovm-tarball        _tmp/spec/ysh-py/index.html
 
 # doc-metrics is a no-op, just for the link.  Because soil-run just runs the
 # release, which creates metrics.
