@@ -9,6 +9,10 @@ import sys
 from _devbuild.gen.typed_arith_asdl import (
     arith_expr,
     arith_expr_t,
+    word,
+    word_e,
+    word_t,
+    CompoundWord,
 )
 
 from typing import Dict, List, Optional
@@ -284,8 +288,28 @@ class Evaluator(object):
 """
 
 
+def TypedCode():
+    # type: () -> None
+
+    c = CompoundWord()
+    print('len %d' % len(c))
+    c.append(arith_expr.NoOp)
+    print('len %d' % len(c))
+
+    # TODO: pretty prijnting needs to change
+    print(c)
+
+    w = None  # type: Optional[word_t]
+
+    # TODO: need to test with tagswitch, which is mycpp
+    w = c
+
+
 def main(argv):
     # type: (List[str]) -> int
+
+    TypedCode()
+
     try:
         action = argv[1]
         s = argv[2]

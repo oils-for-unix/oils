@@ -4,9 +4,12 @@ from __future__ import print_function
 import re
 
 from asdl import ast
-from asdl.ast import (AST, Use, Module, TypeDecl, Constructor, Field, Sum,
-                      SimpleSum, Product)
+from asdl.ast import (AST, Use, Module, TypeDecl, SubTypeDecl, Constructor,
+                      Field, Sum, SimpleSum, Product)
 from asdl.util import log
+
+# type checking not turned on yet
+from typing import Dict, Any
 
 _ = log
 
@@ -27,6 +30,7 @@ _TOKENS = [
     ('LBrace', '{'),
     ('RBrace', '}'),
     ('Percent', '%'),
+    ('LessThan', '<'),  # for subtyping CompoundWord < List[word_part]
 
     # Oils addition for parameterized types.
     ('LBracket', '['),
@@ -175,9 +179,18 @@ class ASDLParser(object):
         defs = []
         while self.cur_token.kind == TokenKind.Name:
             typename = self._advance()
-            self._match(TokenKind.Equals)
-            type_ = self._parse_compound_type()
-            defs.append(TypeDecl(typename, type_))
+            if self.cur_token.kind == TokenKind.Equals:
+                self._advance()
+                type_ = self._parse_compound_type()
+                defs.append(TypeDecl(typename, type_))
+            elif self.cur_token.kind == TokenKind.LessThan:
+                self._advance()
+                type_ = self._parse_type_expr()
+                defs.append(SubTypeDecl(typename, type_))
+            else:
+                raise ASDLSyntaxError(
+                    'Expected = or < after type name (found {})'.format(
+                        self.cur_token.value), self.cur_token.lineno)
 
         self._match(TokenKind.RBrace)
         return Module(name, uses, defs)
@@ -438,7 +451,7 @@ _PRIMITIVE_TYPES = [
 
 
 def _ResolveType(typ, type_lookup):
-    # type: (AST, dict) -> None
+    # type: (AST, Dict[str, Any]) -> None
     """Recursively attach a 'resolved' field to AST nodes."""
     if isinstance(typ, ast.NamedType):
         if typ.name not in _PRIMITIVE_TYPES:
@@ -471,9 +484,9 @@ def _ResolveType(typ, type_lookup):
 
 def _ResolveFields(field_ast_nodes, type_lookup):
     """
-  Args:
-    type_lookup: Populated by name resolution
-  """
+    Args:
+      type_lookup: Populated by name resolution
+    """
     for field in field_ast_nodes:
         _ResolveType(field.typ, type_lookup)
 
@@ -495,21 +508,34 @@ def _ResolveModule(module, app_types):
 
     # First pass: collect declared types and make entries for them.
     for d in module.dfns:
-        type_lookup[d.name] = d.value
+        if d.name in type_lookup:
+            raise ASDLSyntaxError('Type %r was already defined' % d.name)
+
+        if isinstance(d, SubTypeDecl):
+            # e.g. CompoundWord < List[str]
+            type_lookup[d.name] = d.base_class
+        else:
+            # e.g. Token = (str a)
+            type_lookup[d.name] = d.value
 
     # Second pass: add NamedType.resolved field
     for d in module.dfns:
+        if isinstance(d, SubTypeDecl):  # no fields
+            _ResolveType(d.base_class, type_lookup)
+            continue
+
         ast_node = d.value
         if isinstance(ast_node, ast.Product):
             #log('fields %s', ast_node.fields)
             _ResolveFields(ast_node.fields, type_lookup)
+            continue
 
-        elif isinstance(ast_node, ast.Sum):
+        if isinstance(ast_node, ast.Sum):
             for cons in ast_node.types:
                 _ResolveFields(cons.fields, type_lookup)
+            continue
 
-        else:
-            raise AssertionError(ast_node)
+        raise AssertionError(ast_node)
 
 
 def LoadSchema(f, app_types, verbose=False):

@@ -185,7 +185,9 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self._product_counter = 64  # matches asdl/gen_cpp.py
 
         self._products = []
-        self._product_bases = defaultdict(list)
+        self._base_classes = defaultdict(list)
+
+        self._subtypes = []
 
     def _EmitDict(self, name, d, depth):
         self.Emit('_%s_str = {' % name, depth)
@@ -324,7 +326,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
                       depth)
 
     def _GenClass(self,
-                  ast_node,
+                  fields,
                   class_name,
                   base_classes,
                   tag_num,
@@ -337,7 +339,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('class %s(%s):' % (class_name, ', '.join(base_classes)))
         self.Emit('  _type_tag = %d' % tag_num)
 
-        all_fields = ast_node.fields
+        all_fields = fields
 
         field_names = [f.name for f in all_fields]
 
@@ -349,13 +351,13 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         # __init__
         #
 
-        args = [f.name for f in ast_node.fields]
+        args = [f.name for f in fields]
 
         self.Emit('  def __init__(self, %s):' % ', '.join(args))
 
         arg_types = []
         default_vals = []
-        for f in ast_node.fields:
+        for f in fields:
             mypy_type = _MyPyType(f.typ)
             arg_types.append(mypy_type)
 
@@ -368,7 +370,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         if not all_fields:
             self.Emit('    pass')  # for types like NoOp
 
-        for f in ast_node.fields:
+        for f in fields:
             # don't wrap the type comment
             self.Emit('    self.%s = %s' % (f.name, f.name), reflow=False)
 
@@ -430,7 +432,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('    out_node = NewRecord(%r)' % pretty_cls_name)
         self.Emit('    L = out_node.fields')
 
-        for local_id, field in enumerate(ast_node.fields):
+        for local_id, field in enumerate(fields):
             self.Indent()
             self._EmitCodeForField('AbbreviatedTree', field, local_id)
             self.Dedent()
@@ -483,7 +485,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
                 tag_num = self._shared_type_tags[variant.shared_type]
                 # e.g. DoubleQuoted may have base types expr_t, word_part_t
                 base_class = sum_name + '_t'
-                bases = self._product_bases[variant.shared_type]
+                bases = self._base_classes[variant.shared_type]
                 if base_class in bases:
                     raise RuntimeError(
                         "Two tags in sum %r refer to product type %r" %
@@ -565,7 +567,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
                 # We must use the old-style naming here, ie. command__NoOp, in order
                 # to support zero field variants as constants.
                 class_name = '%s__%s' % (sum_name, variant.name)
-                self._GenClass(variant, class_name, (sum_name + '_t', ), i + 1)
+                self._GenClass(variant.fields, class_name, (sum_name + '_t', ),
+                               i + 1)
 
         # Class that's just a NAMESPACE, e.g. for value.Str
         self.Emit('class %s(object):' % sum_name, depth)
@@ -584,7 +587,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
                 # Use fully-qualified name, so we can have osh_cmd.Simple and
                 # oil_cmd.Simple.
                 fq_name = variant.name
-                self._GenClass(variant,
+                self._GenClass(variant.fields,
                                fq_name, (sum_name + '_t', ),
                                i + 1,
                                class_ns=sum_name + '.')
@@ -592,6 +595,14 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
         self.Dedent()
         self.Emit('')
+
+    def VisitSubType(self, subtype):
+        self._shared_type_tags[subtype.name] = self._product_counter
+
+        # Also create these last. They may inherit from sum types that have yet
+        # to be defined.
+        self._subtypes.append((subtype, self._product_counter))
+        self._product_counter += 1
 
     def VisitProduct(self, product, name, depth):
         self._shared_type_tags[name] = self._product_counter
@@ -605,7 +616,16 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         for args in self._products:
             ast_node, name, depth, tag_num = args
             # Figure out base classes AFTERWARD.
-            bases = self._product_bases[name]
+            bases = self._base_classes[name]
             if not bases:
                 bases = ('pybase.CompoundObj', )
-            self._GenClass(ast_node, name, bases, tag_num)
+            self._GenClass(ast_node.fields, name, bases, tag_num)
+
+        for args in self._subtypes:
+            subtype, tag_num = args
+            # Figure out base classes AFTERWARD.
+            bases = self._base_classes[subtype.name]
+            if not bases:
+                bases = ('pybase.CompoundObj', )
+            bases.append(_MyPyType(subtype.base_class))
+            self._GenClass([], subtype.name, bases, tag_num)

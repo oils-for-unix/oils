@@ -72,6 +72,23 @@ class TypeDecl(AST):
         f.write('%s}\n' % ind)
 
 
+class SubTypeDecl(AST):
+    """A declaration of a subtype.
+
+    CompoundWord < List[word_part]
+    """
+
+    def __init__(self, name, base_class):
+        self.name = name  # type: str
+        self.base_class = base_class  # type: AST
+
+    def Print(self, f, indent):
+        ind = indent * '  '
+        f.write('%sType %s {\n' % (ind, self.name))
+        self.base_class.Print(f, indent + 1)
+        f.write('%s}\n' % ind)
+
+
 class NamedType(AST):
     """Int, string are resolved to a Primitive type 'Point' can be resolved to
     CompoundSum instance, etc."""

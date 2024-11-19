@@ -241,7 +241,9 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         self._product_counter = 64  # start halfway through the range 0-127
 
         self._products = []
-        self._product_bases = defaultdict(list)
+        self._base_classes = defaultdict(list)
+
+        self._subtypes = []
 
     def _EmitEnum(self, sum, sum_name, depth, strong=False, is_simple=False):
         enum = []
@@ -252,7 +254,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
                 tag_num = self._shared_type_tags[variant.shared_type]
                 # e.g. DoubleQuoted may have base types expr_t, word_part_t
                 base_class = sum_name + '_t'
-                bases = self._product_bases[variant.shared_type]
+                bases = self._base_classes[variant.shared_type]
                 if base_class in bases:
                     raise RuntimeError(
                         "Two tags in sum %r refer to product type %r" %
@@ -386,7 +388,8 @@ class ClassDefVisitor(visitor.AsdlVisitor):
                 tag = 'static_cast<uint16_t>(%s_e::%s)' % (sum_name,
                                                            variant.name)
                 class_name = '%s__%s' % (sum_name, variant.name)
-                self._GenClass(variant, class_name, [super_name], depth, tag)
+                self._GenClass(variant.fields, class_name, [super_name], depth,
+                               tag)
 
         # Generate 'extern' declarations for zero arg singleton globals
         for variant in sum.types:
@@ -416,7 +419,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         Emit('};')
         Emit('')
 
-    def _GenClass(self, ast_node, class_name, base_classes, depth, tag):
+    def _GenClass(self, fields, class_name, base_classes, depth, tag):
         """For Product and Constructor."""
         if base_classes:
             bases = ', '.join('public %s' % b for b in base_classes)
@@ -428,7 +431,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         # Ensure that the member variables are ordered such that GC managed objects
         # come before any unmanaged ones because we use `HeapTag::Scanned`.
         managed_fields, unmanaged_fields = [], []
-        for f in ast_node.fields:
+        for f in fields:
             if _IsManagedType(f.typ):
                 managed_fields.append(f)
             else:
@@ -442,7 +445,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         # Ensure that the constructor params are listed in the same order as the
         # equivalent python constructors for compatibility in translated code.
         params = []
-        for f in ast_node.fields:
+        for f in fields:
             params.append('%s %s' % (_GetCppType(f.typ), f.name))
 
         # Member initializers are in the same order as the member variables to
@@ -464,9 +467,9 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
         # Define static constructor with ZERO args.  Don't emit for types with no
         # fields.
-        if ast_node.fields:
+        if fields:
             init_args = []
-            for field in ast_node.fields:
+            for field in fields:
                 init_args.append(_DefaultValue(field.typ))
 
             self.Emit(
@@ -502,6 +505,14 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         self.Emit('};', depth)
         self.Emit('', depth)
 
+    def VisitSubType(self, subtype):
+        self._shared_type_tags[subtype.name] = self._product_counter
+
+        # Also create these last. They may inherit from sum types that have yet
+        # to be defined.
+        self._subtypes.append((subtype, self._product_counter))
+        self._product_counter += 1
+
     def VisitProduct(self, product, name, depth):
         self._shared_type_tags[name] = self._product_counter
         # Create a tuple of _GenClass args to create LAST.  They may inherit from
@@ -514,8 +525,22 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         for args in self._products:
             ast_node, name, depth, tag_num = args
             # Figure out base classes AFTERWARD.
-            bases = self._product_bases[name]
-            self._GenClass(ast_node, name, bases, depth, tag_num)
+            bases = self._base_classes[name]
+            self._GenClass(ast_node.fields, name, bases, depth, tag_num)
+
+        for args in self._subtypes:
+            subtype, tag_num = args
+            # Figure out base classes AFTERWARD.
+            bases = self._base_classes[subtype.name]
+
+            cpp_type = _GetCppType(subtype.base_class)
+            assert cpp_type.endswith('*')  # hack
+            bases.append(cpp_type[:-1])
+
+            # TODO:
+            # - Change ObjHeader
+            # - Change pretty printing to be like a List
+            self._GenClass([], subtype.name, bases, 0, tag_num)
 
 
 class MethodDefVisitor(visitor.AsdlVisitor):
