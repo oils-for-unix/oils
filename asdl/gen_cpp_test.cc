@@ -19,6 +19,7 @@ using typed_arith_asdl::arith_expr__Const;
 using typed_arith_asdl::arith_expr__FuncCall;
 using typed_arith_asdl::arith_expr__Unary;
 using typed_arith_asdl::arith_expr__Var;
+using typed_arith_asdl::CompoundWord;
 
 using typed_demo_asdl::bool_expr__Binary;
 using typed_demo_asdl::bool_expr__LogicalBinary;
@@ -267,6 +268,32 @@ TEST list_defaults_test() {
   PASS();
 }
 
+TEST subtype_test() {
+  // TODO: Also need to test GC header for List[int] subtypes
+
+  auto c = Alloc<CompoundWord>();
+
+  log("len = %d", len(c));
+
+  c->append(arith_expr::NoOp);
+  c->append(Alloc<arith_expr::Const>(42));
+
+  log("len = %d", len(c));
+
+#if 0
+  hnode_t* t1 = c->PrettyTree();
+  //ASSERT_EQ_FMT(hnode_e::Record, t1->tag(), "%d");
+
+  auto f = mylib::Stdout();
+  auto ast_f = Alloc<format::TextOutput>(f);
+  format::PrintTree(t1, ast_f);
+  printf("\n");
+#endif
+
+  PASS();
+}
+
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -281,6 +308,7 @@ int main(int argc, char** argv) {
   RUN_TEST(literal_test);
   RUN_TEST(string_defaults_test);
   RUN_TEST(list_defaults_test);
+  RUN_TEST(subtype_test);
 
   gHeap.CleanProcessExit();
 

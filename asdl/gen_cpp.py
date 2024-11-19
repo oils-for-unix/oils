@@ -656,11 +656,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
                 'L->append(Alloc<Field>(StrFromC("%s"), %s));' %
                 (field.name, out_val_name), depth)
 
-    def _EmitPrettyPrintMethods(self,
-                                class_name,
-                                all_fields,
-                                ast_node,
-                                sum_name=None):
+    def _EmitPrettyPrintMethods(self, class_name, all_fields, sum_name=None):
         #
         # PrettyTree
         #
@@ -708,10 +704,10 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         self.Emit('')
         self.Emit('hnode_t* %s::_AbbreviatedTree() {' % class_name)
         self.Emit('  hnode::Record* out_node = runtime::NewRecord("%s");' % n)
-        if ast_node.fields:
+        if all_fields:
             self.Emit('  List<Field*>* L = out_node->fields;')
 
-        for local_id, field in enumerate(ast_node.fields):
+        for local_id, field in enumerate(all_fields):
             self.Indent()
             self._EmitCodeForField('AbbreviatedTree', field, local_id)
             self.Dedent()
@@ -815,7 +811,6 @@ class MethodDefVisitor(visitor.AsdlVisitor):
             class_name = '%s__%s' % (sum_name, variant.name)
             self._EmitPrettyPrintMethods(class_name,
                                          all_fields,
-                                         variant,
                                          sum_name=sum_name)
 
         # Emit dispatch WITHOUT using 'virtual'
@@ -846,6 +841,8 @@ class MethodDefVisitor(visitor.AsdlVisitor):
             self.Emit('}')
 
     def VisitProduct(self, product, name, depth):
-        #self._GenClass(product, product.attributes, name, None, depth)
-        all_fields = product.fields
-        self._EmitPrettyPrintMethods(name, all_fields, product)
+        self._EmitPrettyPrintMethods(name, product.fields)
+
+    def VisitSubType(self, subtype):
+        pass
+        #self._EmitPrettyPrintMethods(subtype.name, [], product)
