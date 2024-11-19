@@ -388,7 +388,8 @@ class ClassDefVisitor(visitor.AsdlVisitor):
                 tag = 'static_cast<uint16_t>(%s_e::%s)' % (sum_name,
                                                            variant.name)
                 class_name = '%s__%s' % (sum_name, variant.name)
-                self._GenClass(variant.fields, class_name, [super_name], depth, tag)
+                self._GenClass(variant.fields, class_name, [super_name], depth,
+                               tag)
 
         # Generate 'extern' declarations for zero arg singleton globals
         for variant in sum.types:
@@ -535,6 +536,10 @@ class ClassDefVisitor(visitor.AsdlVisitor):
             cpp_type = _GetCppType(subtype.base_class)
             assert cpp_type.endswith('*')  # hack
             bases.append(cpp_type[:-1])
+
+            # TODO:
+            # - Change ObjHeader
+            # - Change pretty printing to be like a List
             self._GenClass([], subtype.name, bases, 0, tag_num)
 
 
