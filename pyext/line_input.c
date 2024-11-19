@@ -888,7 +888,9 @@ query_bindings(PyObject *self, PyObject *args)
     key_seqs = rl_invoking_keyseqs(cmd_fn);
 
     if (!key_seqs) {
-        PyErr_Format(PyExc_ValueError, "%s is not bound to any keys", fn_name);
+        // print to stdout, but return an error
+        printf("%s is not bound to any keys.\n", fn_name); 
+        PyErr_SetNone(PyExc_ValueError);
         return NULL;
     }
 

@@ -164,12 +164,13 @@ class Bind(vm._Builtin):
                         self.errfmt.Print_("bind error: %s" % msg, arg_locs[i])
                         return 1
 
-                return 0
-
         except ValueError as e:
+            # only print out the exception message if non-empty
+            # some bash bind errors return non-zero, but print to stdout
             # temp var to work around mycpp runtime limitation
             msg2 = e.message  # type: str
-            self.errfmt.Print_("bind error: %s" % msg2, loc.Missing)
+            if msg2:
+                self.errfmt.Print_("bind error: %s" % msg2, loc.Missing)
             return 1
 
         return 0
