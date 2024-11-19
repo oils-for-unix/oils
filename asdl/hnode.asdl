@@ -19,6 +19,7 @@ module hnode {
   | Record(str node_type, List[Field] fields,
            bool abbrev, str left, str right, List[hnode] unnamed_fields)
   | Array(List[hnode] children)
+  | Subtype(str node_type, List[hnode] children)
   | Leaf(str s, color color)
     # Used for a few value_t variants like value.BuiltinFunc, that point back
     # to mycpp classes

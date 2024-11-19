@@ -13,8 +13,8 @@ Where we try wrap to a single line:
 """
 from typing import Tuple, List
 
-from _devbuild.gen.hnode_asdl import (hnode, hnode_e, hnode_t, color_e,
-                                      color_t)
+from _devbuild.gen.hnode_asdl import (hnode, hnode_e, hnode_t, hnode_str,
+                                      color_e, color_t)
 from data_lang import j8_lite
 from display import ansi
 from display import pretty
@@ -503,7 +503,7 @@ def _TrySingleLine(node, f, max_chars):
         f.write('...0x%s' % mylib.hex_lower(node.heap_id))
 
     else:
-        raise AssertionError(node)
+        raise AssertionError(hnode_str(node.tag()))
 
     # Take into account the last char.
     num_chars_so_far = f.NumChars()

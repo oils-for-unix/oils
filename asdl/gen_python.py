@@ -390,6 +390,10 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         if not self.pretty_print_methods:
             return
 
+        is_list = any(b.startswith('List[') for b in base_classes)
+        is_dict = any(b.startswith('Dict[') for b in base_classes)
+        assert not (is_list and is_dict), base_classes
+
         #
         # PrettyTree
         #
@@ -403,17 +407,23 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('      return hnode.AlreadySeen(heap_id)')
         self.Emit('    trav.seen[heap_id] = True')
 
-        self.Emit('    out_node = NewRecord(%r)' % pretty_cls_name)
-        self.Emit('    L = out_node.fields')
-        self.Emit('')
-
-        # Use the runtime type to be more like asdl/format.py
-        for local_id, field in enumerate(all_fields):
-            #log('%s :: %s', field_name, field_desc)
-            self.Indent()
-            self._EmitCodeForField('PrettyTree', field, local_id)
-            self.Dedent()
+        if is_list:
+            #self.Emit('    out_node = hnode.Subtype(%r, [c.PrettyTree() for c in self])' % pretty_cls_name)
+            # TODO: emit hnode.Subtype
+            self.Emit(
+                '    out_node = hnode.Array([c.PrettyTree() for c in self])')
+        else:
+            self.Emit('    out_node = NewRecord(%r)' % pretty_cls_name)
+            self.Emit('    L = out_node.fields')
             self.Emit('')
+
+            # Use the runtime type to be more like asdl/format.py
+            for local_id, field in enumerate(all_fields):
+                #log('%s :: %s', field_name, field_desc)
+                self.Indent()
+                self._EmitCodeForField('PrettyTree', field, local_id)
+                self.Dedent()
+                self.Emit('')
         self.Emit('    return out_node')
         self.Emit('')
 
@@ -429,14 +439,22 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         # cut off recursion
         self.Emit('      return hnode.AlreadySeen(heap_id)')
         self.Emit('    trav.seen[heap_id] = True')
-        self.Emit('    out_node = NewRecord(%r)' % pretty_cls_name)
-        self.Emit('    L = out_node.fields')
 
-        for local_id, field in enumerate(fields):
-            self.Indent()
-            self._EmitCodeForField('AbbreviatedTree', field, local_id)
-            self.Dedent()
-            self.Emit('')
+        if is_list:
+            #self.Emit('    out_node = hnode.Subtype(%r, [c.PrettyTree() for c in self])' % pretty_cls_name)
+            # TODO: emit hnode.Subtype
+            self.Emit(
+                '    out_node = hnode.Array([c.PrettyTree() for c in self])')
+        else:
+            self.Emit('    out_node = NewRecord(%r)' % pretty_cls_name)
+            self.Emit('    L = out_node.fields')
+
+            for local_id, field in enumerate(fields):
+                self.Indent()
+                self._EmitCodeForField('AbbreviatedTree', field, local_id)
+                self.Dedent()
+                self.Emit('')
+
         self.Emit('    return out_node')
         self.Emit('')
 
