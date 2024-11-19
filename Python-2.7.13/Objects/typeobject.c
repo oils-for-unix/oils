@@ -2765,6 +2765,12 @@ type_subclasses(PyTypeObject *type, PyObject *args_ignored)
     return list;
 }
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Objects/typeobject.c/type_methods.def"
+#else
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Objects/typeobject.c/type_methods.def"
+#else
 static PyMethodDef type_methods[] = {
     {"mro", (PyCFunction)mro_external, METH_NOARGS,
      PyDoc_STR("mro() -> list\nreturn a type's method resolution order")},
@@ -2776,6 +2782,8 @@ static PyMethodDef type_methods[] = {
      PyDoc_STR("__subclasscheck__() -> bool\ncheck if a class is a subclass")},
     {0}
 };
+#endif
+#endif
 
 PyDoc_STRVAR(type_doc,
 "type(object) -> the object's type\n"
