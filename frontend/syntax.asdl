@@ -16,10 +16,6 @@
 # - select block
 
 # Possible refactorings:
-#
-#   # %CompoundWord as first class variant:
-#   bool_expr = WordTest %CompoundWord | ...
-#
 #   # Can DoubleQuoted have a subset of parts compared with CompoundWord?
 #   string_part = ...  # subset of word_part
 #
