@@ -83,6 +83,9 @@ module foo {
   spam = (Optional[List[int]] pipe_status)
   -- Nicer way of writing it
   spam2 = (List[int]? pipe_status)
+
+  # New syntax for subtypes
+  CompoundWord < List[action]
 }
 """)
 
@@ -123,6 +126,10 @@ module foo {
 
         self._assertParseError(
             'module foo { integers = A | B generate [invalid] }')
+
+        self._assertParseError('module foo { CompoundWord < }')
+
+        self._assertParseError('module foo { CompoundWord < (str s) }')
 
     def _assertResolve(self, code_str):
         f = cStringIO.StringIO(code_str)
@@ -165,6 +172,22 @@ module foo {
         module foo { 
           color = Red | Green
           t = (color? status)
+        }
+        ''')
+
+        # Duplicate types
+        self._assertResolveError('''
+        module foo { 
+          Color = (str a)
+          Color = (str b)
+        }
+        ''')
+
+        # Duplicate type and subtype
+        self._assertResolveError('''
+        module foo { 
+          CompoundWord = (str a)
+          CompoundWord < List[int]
         }
         ''')
 

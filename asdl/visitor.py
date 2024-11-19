@@ -33,8 +33,14 @@ class AsdlVisitor:
 
     def VisitModule(self, mod):
         for dfn in mod.dfns:
-            self.VisitType(dfn)
+            if isinstance(dfn, ast.SubTypeDecl):
+                self.VisitSubType(dfn)
+            else:
+                self.VisitType(dfn)
         self.EmitFooter()
+
+    def VisitSubType(self, subtype):
+        pass
 
     def VisitType(self, typ, depth=0):
         if isinstance(typ.value, ast.SimpleSum):

@@ -63,6 +63,14 @@ value.asdl
     | List(List[value] items)
     | Dict(Dict[str, value] d)
     | Frame(Dict[str, Cell] frame)
+
+Note that this must work:
+
+    with tagswitch(node) as case:
+      pass
+
+I think it just needs _type_tag, and then the C++ version will use the GC
+header that's BEFORE the object.
 """
 
 from typing import List, Dict
@@ -71,18 +79,23 @@ from typing import List, Dict
 class word_t(object):
     pass
 
+
 #class CompoundWord('List[int]'):
 #class CompoundWord(word_t, 'List[int]'):
+
 
 #class CompoundWord(List[int]):
 class CompoundWord(word_t, List[int]):
     pass
 
+
 class value_t(object):
     pass
 
+
 class Dict_(value_t, Dict[str, value_t]):
     pass
+
 
 class List_(value_t, List[value_t]):
     pass

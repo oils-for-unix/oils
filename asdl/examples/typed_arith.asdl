@@ -14,5 +14,14 @@ module arith {
   | Index(arith_expr a, arith_expr index)
     -- Using Python's style for now.  Bash uses length instead of end.
   | Slice(arith_expr a, arith_expr? begin, arith_expr? end, arith_expr? stride)
+
+  # Old style
+  # CompoundWord = (List[arith_expr] parts)
+
+  CompoundWord < List[arith_expr]
+
+  word = 
+    String(str s)
+  | CompoundWord %CompoundWord
 }
 
