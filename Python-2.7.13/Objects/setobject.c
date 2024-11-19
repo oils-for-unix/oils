@@ -2031,9 +2031,6 @@ PyDoc_STRVAR(test_c_api_doc, "Exercises C API.  Returns True.\n\
 All is well if assertions don't fail.");
 #endif
 
-#ifdef OVM_MAIN
-#include "Python-2.7.13/Objects/setobject.c/set_methods.def"
-#else
 static PyMethodDef set_methods[] = {
     {"add",             (PyCFunction)set_add,           METH_O,
      add_doc},
@@ -2081,7 +2078,6 @@ static PyMethodDef set_methods[] = {
      update_doc},
     {NULL,              NULL}   /* sentinel */
 };
-#endif
 
 static PyNumberMethods set_as_number = {
     0,                                  /*nb_add*/
