@@ -241,7 +241,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         self._product_counter = 64  # start halfway through the range 0-127
 
         self._products = []
-        self._product_bases = defaultdict(list)
+        self._base_classes = defaultdict(list)
 
     def _EmitEnum(self, sum, sum_name, depth, strong=False, is_simple=False):
         enum = []
@@ -252,7 +252,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
                 tag_num = self._shared_type_tags[variant.shared_type]
                 # e.g. DoubleQuoted may have base types expr_t, word_part_t
                 base_class = sum_name + '_t'
-                bases = self._product_bases[variant.shared_type]
+                bases = self._base_classes[variant.shared_type]
                 if base_class in bases:
                     raise RuntimeError(
                         "Two tags in sum %r refer to product type %r" %
@@ -514,7 +514,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         for args in self._products:
             ast_node, name, depth, tag_num = args
             # Figure out base classes AFTERWARD.
-            bases = self._product_bases[name]
+            bases = self._base_classes[name]
             self._GenClass(ast_node, name, bases, depth, tag_num)
 
 
