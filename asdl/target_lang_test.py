@@ -4,10 +4,7 @@
 Similar to mycpp/demo/target_lang.cc
 """
 
-#import collections
-#import unittest
-
-from typing import List
+from typing import List, Dict
 
 
 class word_t(object):
@@ -18,6 +15,15 @@ class word_t(object):
 
 #class CompoundWord(List[int]):
 class CompoundWord(word_t, List[int]):
+    pass
+
+class value_t(object):
+    pass
+
+class Dict_(value_t, Dict[str, value_t]):
+    pass
+
+class List_(value_t, List[value_t]):
     pass
 
 
@@ -32,6 +38,16 @@ def main():
     c.append(42)
     print(c)
     print('len %d' % len(c))
+
+    d = Dict_()
+
+    d['key'] = d
+    print(d)
+    print(len(d))
+
+    mylist = List_()
+    print(mylist)
+    print(len(mylist))
 
 
 if __name__ == '__main__':
