@@ -125,6 +125,7 @@ mysort() {
 #
 
 py-tool() {
+  ### Used by NINJA-config.sh
   local py_module=$1
 
   local dir=$DIR/$py_module
@@ -138,6 +139,22 @@ py-tool() {
     > $dir/deps.txt
 
   echo "DEPS $dir/deps.txt"
+}
+
+asdl-target-lang() {
+  local py_module='asdl.target_lang_test'
+
+  # typing backport:
+  # https://pypi.org/project/typing/
+  #
+  # Brings in collections.py, copy.py, functools.py, heapq.py, keyword.py,
+  # weakref.py
+  # This might be OK?
+  # Right now we only depends on Lib/stat.py and Lib/__future__.py, but we can
+  # grow these
+
+  PYTHONPATH=$PY_PATH /usr/bin/env python2 \
+    build/dynamic_deps.py py-manifest $py_module
 }
 
 # Code generators

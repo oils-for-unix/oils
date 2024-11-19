@@ -4,8 +4,8 @@
 Similar to mycpp/demo/target_lang.cc
 """
 
-import collections
-import unittest
+#import collections
+#import unittest
 
 from typing import List
 
@@ -21,21 +21,18 @@ class CompoundWord(word_t, List[int]):
     pass
 
 
-class TargetLangTest(unittest.TestCase):
+def main():
+    # type: () -> None
 
-    def testFoo(self):
-        # type: () -> None
+    #print(dir(collections))
 
-        print(dir(collections))
+    # Wow this works
+    c = CompoundWord()
 
-        # Wow this works
-        c = CompoundWord()
-
-        c.append(42)
-        print(c)
-
-        pass
+    c.append(42)
+    print(c)
+    print('len %d' % len(c))
 
 
 if __name__ == '__main__':
-    unittest.main()
+    main()
