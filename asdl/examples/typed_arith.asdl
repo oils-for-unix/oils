@@ -15,6 +15,8 @@ module arith {
     -- Using Python's style for now.  Bash uses length instead of end.
   | Slice(arith_expr a, arith_expr? begin, arith_expr? end, arith_expr? stride)
 
+  | PrimitiveList(List[int] ints)
+
   # Old style
   # CompoundWord = (List[arith_expr] parts)
 

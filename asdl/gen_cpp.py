@@ -553,84 +553,94 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     def __init__(self, f, pretty_print_methods=True):
         visitor.AsdlVisitor.__init__(self, f)
 
+    def _EmitListPrettyPrint(self, abbrev, field, out_val_name, iter_name):
+        typ = field.typ
+        if typ.type_name == 'Optional':  # descend one level
+            typ = typ.children[0]
+        item_type = typ.children[0]
+
+        d = {
+            'field_name': field.name,
+            'out_val_name': out_val_name,
+            'iter_name': iter_name,
+            'c_item_type': _GetCppType(item_type),
+        }
+        self.Emit('if (this->%(field_name)s != nullptr) {  // List' % d)
+        self.Emit(
+            '  hnode::Array* %(out_val_name)s = Alloc<hnode::Array>(Alloc<List<hnode_t*>>());'
+            % d)
+        self.Emit(
+            '  for (ListIter<%(c_item_type)s> it(this->%(field_name)s); !it.Done(); it.Next()) {'
+            % d)
+        self.Emit('    %(c_item_type)s %(iter_name)s = it.Value();' % d)
+
+        child_code_str, none_guard = _HNodeExpr(abbrev, item_type, iter_name)
+        d['child_code_str'] = child_code_str
+        if none_guard:  # e.g. for List[Optional[value_t]]
+            # TODO: could consolidate with asdl/runtime.py NewLeaf(), which
+            # also uses _ to mean None/nullptr
+            self.Emit(
+                '    hnode_t* h = (%(iter_name)s == nullptr) ? Alloc<hnode::Leaf>(StrFromC("_"), color_e::OtherConst) : %(child_code_str)s;'
+                % d)
+            self.Emit('    %(out_val_name)s->children->append(h);' % d)
+        else:
+            self.Emit(
+                '    %(out_val_name)s->children->append(%(child_code_str)s);' %
+                d)
+
+        self.Emit('  }')
+        self.Emit(
+            '  L->append(Alloc<Field>(StrFromC("%(field_name)s"), %(out_val_name)s));'
+            % d)
+        self.Emit('}')
+
+    def _EmitDictPrettyPrint(self, abbrev, field, out_val_name, counter):
+        k = 'k%d' % counter
+        v = 'v%d' % counter
+
+        typ = field.typ
+        if typ.type_name == 'Optional':  # descend one level
+            typ = typ.children[0]
+
+        k_typ = typ.children[0]
+        v_typ = typ.children[1]
+
+        k_c_type = _GetCppType(k_typ)
+        v_c_type = _GetCppType(v_typ)
+
+        k_code_str, _ = _HNodeExpr(abbrev, k_typ, k)
+        v_code_str, _ = _HNodeExpr(abbrev, v_typ, v)
+
+        self.Emit('if (this->%s) {  // Dict' % field.name)
+        # TODO: m can be a global constant!
+        self.Emit(
+            '  auto m = Alloc<hnode::Leaf>(StrFromC("Dict"), color_e::OtherConst);'
+        )
+        self.Emit(
+            '  hnode::Array* %s = Alloc<hnode::Array>(NewList<hnode_t*>({m}));'
+            % out_val_name)
+        self.Emit(
+            '  for (DictIter<%s, %s> it(this->%s); !it.Done(); it.Next()) {' %
+            (k_c_type, v_c_type, field.name))
+        self.Emit('    auto %s = it.Key();' % k)
+        self.Emit('    auto %s = it.Value();' % v)
+        self.Emit('    %s->children->append(%s);' % (out_val_name, k_code_str))
+        self.Emit('    %s->children->append(%s);' % (out_val_name, v_code_str))
+        self.Emit('  }')
+        self.Emit('  L->append(Alloc<Field>(StrFromC ("%s"), %s));' %
+                  (field.name, out_val_name))
+        self.Emit('}')
+
     def _EmitCodeForField(self, abbrev, field, counter):
         """Generate code that returns an hnode for a field."""
         out_val_name = 'x%d' % counter
 
         if field.typ.IsList():
             iter_name = 'i%d' % counter
-
-            typ = field.typ
-            if typ.type_name == 'Optional':  # descend one level
-                typ = typ.children[0]
-            item_type = typ.children[0]
-
-            self.Emit('if (this->%s != nullptr) {  // List' % (field.name))
-            self.Emit(
-                '  hnode::Array* %s = Alloc<hnode::Array>(Alloc<List<hnode_t*>>());'
-                % out_val_name)
-            c_item_type = _GetCppType(item_type)
-            self.Emit(
-                '  for (ListIter<%s> it(this->%s); !it.Done(); it.Next()) {' %
-                (c_item_type, field.name))
-            self.Emit('    %s %s = it.Value();' % (c_item_type, iter_name))
-
-            child_code_str, none_guard = _HNodeExpr(abbrev, item_type,
-                                                    iter_name)
-            if none_guard:  # e.g. for List[Optional[value_t]]
-                # TODO: could consolidate with asdl/runtime.py NewLeaf(), which
-                # also uses _ to mean None/nullptr
-                self.Emit(
-                    '    hnode_t* h = (%s == nullptr) ? Alloc<hnode::Leaf>(StrFromC("_"), color_e::OtherConst) : %s;'
-                    % (iter_name, child_code_str))
-                self.Emit('    %s->children->append(h);' % out_val_name)
-            else:
-                self.Emit('    %s->children->append(%s);' %
-                          (out_val_name, child_code_str))
-
-            self.Emit('  }')
-            self.Emit('  L->append(Alloc<Field>(StrFromC("%s"), %s));' %
-                      (field.name, out_val_name))
-            self.Emit('}')
+            self._EmitListPrettyPrint(abbrev, field, out_val_name, iter_name)
 
         elif field.typ.IsDict():
-            k = 'k%d' % counter
-            v = 'v%d' % counter
-
-            typ = field.typ
-            if typ.type_name == 'Optional':  # descend one level
-                typ = typ.children[0]
-
-            k_typ = typ.children[0]
-            v_typ = typ.children[1]
-
-            k_c_type = _GetCppType(k_typ)
-            v_c_type = _GetCppType(v_typ)
-
-            k_code_str, _ = _HNodeExpr(abbrev, k_typ, k)
-            v_code_str, _ = _HNodeExpr(abbrev, v_typ, v)
-
-            self.Emit('if (this->%s) {  // Dict' % field.name)
-            # TODO: m can be a global constant!
-            self.Emit(
-                '  auto m = Alloc<hnode::Leaf>(StrFromC("Dict"), color_e::OtherConst);'
-            )
-            self.Emit(
-                '  hnode::Array* %s = Alloc<hnode::Array>(NewList<hnode_t*>({m}));'
-                % out_val_name)
-            self.Emit(
-                '  for (DictIter<%s, %s> it(this->%s); !it.Done(); it.Next()) {'
-                % (k_c_type, v_c_type, field.name))
-            self.Emit('    auto %s = it.Key();' % k)
-            self.Emit('    auto %s = it.Value();' % v)
-            self.Emit('    %s->children->append(%s);' %
-                      (out_val_name, k_code_str))
-            self.Emit('    %s->children->append(%s);' %
-                      (out_val_name, v_code_str))
-            self.Emit('  }')
-            self.Emit('  L->append(Alloc<Field>(StrFromC ("%s"), %s));' %
-                      (field.name, out_val_name))
-            self.Emit('}')
+            self._EmitDictPrettyPrint(abbrev, field, out_val_name, counter)
 
         elif field.typ.IsOptional():
             typ = field.typ.children[0]
@@ -656,7 +666,12 @@ class MethodDefVisitor(visitor.AsdlVisitor):
                 'L->append(Alloc<Field>(StrFromC("%s"), %s));' %
                 (field.name, out_val_name), depth)
 
-    def _EmitPrettyPrintMethods(self, class_name, all_fields, sum_name=None):
+    def _EmitPrettyPrintMethods(self,
+                                class_name,
+                                all_fields,
+                                sum_name=None,
+                                is_list=False):
+
         #
         # PrettyTree
         #
@@ -678,18 +693,25 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         self.Emit('  }')
         self.Emit('  seen->set(heap_id, true);')
 
-        self.Emit('  hnode::Record* out_node = runtime::NewRecord(%s);' % n)
-        if all_fields:
-            self.Emit('  List<Field*>* L = out_node->fields;')
-            self.Emit('')
+        if is_list:
+            # TODO: I want to share IsList()
+            self.Emit(
+                '  hnode::Array* out_node = Alloc<hnode::Array>(Alloc<List<hnode_t*>>());'
+            )
+        else:
+            self.Emit('  hnode::Record* out_node = runtime::NewRecord(%s);' %
+                      n)
+            if all_fields:
+                self.Emit('  List<Field*>* L = out_node->fields;')
+                self.Emit('')
 
-        # Use the runtime type to be more like asdl/format.py
-        for local_id, field in enumerate(all_fields):
-            #log('%s :: %s', field_name, field_desc)
-            self.Indent()
-            self._EmitCodeForField('PrettyTree', field, local_id)
-            self.Dedent()
-            self.Emit('')
+            # Use the runtime type to be more like asdl/format.py
+            for local_id, field in enumerate(all_fields):
+                #log('%s :: %s', field_name, field_desc)
+                self.Indent()
+                self._EmitCodeForField('PrettyTree', field, local_id)
+                self.Dedent()
+                self.Emit('')
         self.Emit('  return out_node;')
         self.Emit('}')
         self.Emit('')
@@ -703,16 +725,20 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
         self.Emit('')
         self.Emit('hnode_t* %s::_AbbreviatedTree() {' % class_name)
-        self.Emit('  hnode::Record* out_node = runtime::NewRecord("%s");' % n)
-        if all_fields:
-            self.Emit('  List<Field*>* L = out_node->fields;')
+        if is_list:
+            raise AssertionError()
+        else:
+            self.Emit('  hnode::Record* out_node = runtime::NewRecord("%s");' %
+                      n)
+            if all_fields:
+                self.Emit('  List<Field*>* L = out_node->fields;')
 
-        for local_id, field in enumerate(all_fields):
-            self.Indent()
-            self._EmitCodeForField('AbbreviatedTree', field, local_id)
-            self.Dedent()
-            self.Emit('')
-        self.Emit('  return out_node;')
+            for local_id, field in enumerate(all_fields):
+                self.Indent()
+                self._EmitCodeForField('AbbreviatedTree', field, local_id)
+                self.Dedent()
+                self.Emit('')
+            self.Emit('  return out_node;')
         self.Emit('}')
         self.Emit('')
 
@@ -844,5 +870,5 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         self._EmitPrettyPrintMethods(name, product.fields)
 
     def VisitSubType(self, subtype):
-        pass
-        #self._EmitPrettyPrintMethods(subtype.name, [], product)
+        is_list = subtype.base_class.IsList()
+        self._EmitPrettyPrintMethods(subtype.name, [], is_list=is_list)

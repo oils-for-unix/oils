@@ -280,9 +280,9 @@ TEST subtype_test() {
 
   log("len = %d", len(c));
 
-#if 0
+#if 1
   hnode_t* t1 = c->PrettyTree();
-  //ASSERT_EQ_FMT(hnode_e::Record, t1->tag(), "%d");
+  // ASSERT_EQ_FMT(hnode_e::Record, t1->tag(), "%d");
 
   auto f = mylib::Stdout();
   auto ast_f = Alloc<format::TextOutput>(f);
@@ -292,7 +292,6 @@ TEST subtype_test() {
 
   PASS();
 }
-
 
 GREATEST_MAIN_DEFS();
 
