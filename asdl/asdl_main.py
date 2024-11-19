@@ -111,11 +111,15 @@ def main(argv):
 #include "mycpp/runtime.h"
 """)
             if opts.pretty_print_methods:
-                f.write("""\
+                if 0:
+                    # TODO: gradually migrate to this templated code, reducing code gen
+                    f.write('#include "asdl/cpp_runtime.h"\n')
+                else:
+                    f.write("""\
 #include "_gen/asdl/hnode.asdl.h"
 using hnode_asdl::hnode_t;
 
-""")
+    """)
 
             if app_types:
                 f.write("""\

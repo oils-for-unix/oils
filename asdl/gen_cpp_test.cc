@@ -151,17 +151,24 @@ TEST pretty_print_test() {
   ASSERT(str_equals0("Binary", bool_expr_str(b->tag(), false)));
 
   // typed_arith.asdl
-  auto c = Alloc<arith_expr__Const>(42);
+  auto* c = Alloc<arith_expr__Const>(42);
   hnode_t* t2 = c->PrettyTree();
   ASSERT_EQ(hnode_e::Record, t2->tag());
   format::PrintTree(t2, ast_f);
   printf("\n");
 
-  auto big = Alloc<arith_expr__Big>(mops::BigInt(INT64_MAX));
+  auto* big = Alloc<arith_expr__Big>(mops::BigInt(INT64_MAX));
   hnode_t* t3 = big->PrettyTree();
   ASSERT_EQ(hnode_e::Record, t3->tag());
   format::PrintTree(t3, ast_f);
   printf("\n");
+
+  auto* args =
+      NewList<arith_expr_t*>(std::initializer_list<arith_expr_t*>{c, big});
+  auto* func = Alloc<arith_expr::FuncCall>(StrFromC("myfunc"), args);
+  hnode_t* t4 = func->PrettyTree();
+  ASSERT_EQ(hnode_e::Record, t4->tag());
+  format::PrintTree(t4, ast_f);
 
   PASS();
 }

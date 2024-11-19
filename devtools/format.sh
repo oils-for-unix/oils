@@ -99,7 +99,8 @@ clang-format() {
 }
 
 readonly -a CPP_FILES=(
-  {asdl,core}/*.cc
+  asdl/*.{h,cc}
+  core/*.cc
   benchmarks/*.c
   cpp/*.{c,cc,h}
   data_lang/*.{c,cc,h}

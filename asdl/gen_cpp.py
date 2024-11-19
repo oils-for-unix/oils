@@ -204,7 +204,7 @@ def _HNodeExpr(abbrev, typ, var_name):
         elif type_name == 'string':
             code_str = 'runtime::NewLeaf(%s, color_e::StringConst)' % var_name
 
-        elif type_name == 'any':  # TODO: Remove this.  Used for value.Obj().
+        elif type_name == 'any':  # TODO: Remove this.  Used for value.Builtin{Func,Proc}
             code_str = 'Alloc<hnode::External>(%s)' % var_name
 
         elif type_name == 'id':  # was meta.UserType
@@ -582,11 +582,9 @@ class MethodDefVisitor(visitor.AsdlVisitor):
             self.Emit(
                 '    hnode_t* h = (%(iter_name)s == nullptr) ? Alloc<hnode::Leaf>(StrFromC("_"), color_e::OtherConst) : %(child_code_str)s;'
                 % d)
-            self.Emit('    %(out_val_name)s->children->append(h);' % d)
         else:
-            self.Emit(
-                '    %(out_val_name)s->children->append(%(child_code_str)s);' %
-                d)
+            self.Emit('    hnode_t* h = %(child_code_str)s;' % d)
+        self.Emit('    %(out_val_name)s->children->append(h);' % d)
 
         self.Emit('  }')
         self.Emit(
