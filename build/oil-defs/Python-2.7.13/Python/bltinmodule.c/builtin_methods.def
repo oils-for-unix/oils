@@ -3,6 +3,7 @@
 static PyMethodDef builtin_methods[] = {
   {"__import__", (PyCFunction)builtin___import__, METH_VARARGS | METH_KEYWORDS},
   {"all", builtin_all, METH_O},
+    {"any",             builtin_any,        METH_O, any_doc},
   {"callable", builtin_callable, METH_O},
   {"chr", builtin_chr, METH_VARARGS},
   {"dir", builtin_dir, METH_VARARGS},
@@ -11,6 +12,7 @@ static PyMethodDef builtin_methods[] = {
   {"hash", builtin_hash, METH_O},
   {"id", builtin_id, METH_O},
   {"isinstance", builtin_isinstance, METH_VARARGS},
+    {"issubclass",  builtin_issubclass, METH_VARARGS, issubclass_doc},
   {"len", builtin_len, METH_O},
   {"max", (PyCFunction)builtin_max, METH_VARARGS | METH_KEYWORDS},
   {"min", (PyCFunction)builtin_min, METH_VARARGS | METH_KEYWORDS},
