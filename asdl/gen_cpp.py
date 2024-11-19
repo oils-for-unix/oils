@@ -388,7 +388,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
                 tag = 'static_cast<uint16_t>(%s_e::%s)' % (sum_name,
                                                            variant.name)
                 class_name = '%s__%s' % (sum_name, variant.name)
-                self._GenClass(variant, class_name, [super_name], depth, tag)
+                self._GenClass(variant.fields, class_name, [super_name], depth, tag)
 
         # Generate 'extern' declarations for zero arg singleton globals
         for variant in sum.types:
@@ -418,7 +418,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         Emit('};')
         Emit('')
 
-    def _GenClass(self, ast_node, class_name, base_classes, depth, tag):
+    def _GenClass(self, fields, class_name, base_classes, depth, tag):
         """For Product and Constructor."""
         if base_classes:
             bases = ', '.join('public %s' % b for b in base_classes)
@@ -430,7 +430,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         # Ensure that the member variables are ordered such that GC managed objects
         # come before any unmanaged ones because we use `HeapTag::Scanned`.
         managed_fields, unmanaged_fields = [], []
-        for f in ast_node.fields:
+        for f in fields:
             if _IsManagedType(f.typ):
                 managed_fields.append(f)
             else:
@@ -444,7 +444,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         # Ensure that the constructor params are listed in the same order as the
         # equivalent python constructors for compatibility in translated code.
         params = []
-        for f in ast_node.fields:
+        for f in fields:
             params.append('%s %s' % (_GetCppType(f.typ), f.name))
 
         # Member initializers are in the same order as the member variables to
@@ -466,9 +466,9 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
         # Define static constructor with ZERO args.  Don't emit for types with no
         # fields.
-        if ast_node.fields:
+        if fields:
             init_args = []
-            for field in ast_node.fields:
+            for field in fields:
                 init_args.append(_DefaultValue(field.typ))
 
             self.Emit(
@@ -525,7 +525,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
             ast_node, name, depth, tag_num = args
             # Figure out base classes AFTERWARD.
             bases = self._base_classes[name]
-            self._GenClass(ast_node, name, bases, depth, tag_num)
+            self._GenClass(ast_node.fields, name, bases, depth, tag_num)
 
         # TODO: emit subtypes
 
