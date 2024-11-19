@@ -66,10 +66,13 @@ XRangeType = xrange
 try:
     raise TypeError
 except TypeError:
-    tb = sys.exc_info()[2]
-    TracebackType = type(tb)
-    FrameType = type(tb.tb_frame)
-    del tb
+    # OVM_MAIN patch: Remove because we don't have sys.exc_info, and
+    # 'vendor/typing.py' imports  this module
+    if 0:
+        tb = sys.exc_info()[2]
+        TracebackType = type(tb)
+        FrameType = type(tb.tb_frame)
+        del tb
 
 SliceType = slice
 EllipsisType = type(Ellipsis)
