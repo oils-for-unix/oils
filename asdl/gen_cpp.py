@@ -527,7 +527,15 @@ class ClassDefVisitor(visitor.AsdlVisitor):
             bases = self._base_classes[name]
             self._GenClass(ast_node.fields, name, bases, depth, tag_num)
 
-        # TODO: emit subtypes
+        for args in self._subtypes:
+            subtype, tag_num = args
+            # Figure out base classes AFTERWARD.
+            bases = self._base_classes[subtype.name]
+
+            cpp_type = _GetCppType(subtype.base_class)
+            assert cpp_type.endswith('*')  # hack
+            bases.append(cpp_type[:-1])
+            self._GenClass([], subtype.name, bases, 0, tag_num)
 
 
 class MethodDefVisitor(visitor.AsdlVisitor):
