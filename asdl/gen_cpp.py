@@ -243,6 +243,8 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         self._products = []
         self._base_classes = defaultdict(list)
 
+        self._subtypes = []
+
     def _EmitEnum(self, sum, sum_name, depth, strong=False, is_simple=False):
         enum = []
         int_to_type = {}
@@ -502,6 +504,14 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         self.Emit('};', depth)
         self.Emit('', depth)
 
+    def VisitSubType(self, subtype):
+        self._shared_type_tags[subtype.name] = self._product_counter
+
+        # Also create these last. They may inherit from sum types that have yet
+        # to be defined.
+        self._subtypes.append((subtype, self._product_counter))
+        self._product_counter += 1
+
     def VisitProduct(self, product, name, depth):
         self._shared_type_tags[name] = self._product_counter
         # Create a tuple of _GenClass args to create LAST.  They may inherit from
@@ -516,6 +526,8 @@ class ClassDefVisitor(visitor.AsdlVisitor):
             # Figure out base classes AFTERWARD.
             bases = self._base_classes[name]
             self._GenClass(ast_node, name, bases, depth, tag_num)
+
+        # TODO: emit subtypes
 
 
 class MethodDefVisitor(visitor.AsdlVisitor):
