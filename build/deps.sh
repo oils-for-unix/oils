@@ -8,7 +8,7 @@
 #
 # Examples:
 #   build/deps.sh fetch
-#   build/deps.sh install-wedges-fast  # for both Python and C++
+#   build/deps.sh install-wedges  # for both Python and C++
 #
 #   build/deps.sh rm-oils-crap  # rm -r -f /wedge ~/wedge to start over
 #
@@ -995,7 +995,7 @@ fake-py3-libs-wedge() {
   echo "  FAKE  $(timestamp)  $name $version"
 }
 
-install-wedges-fast() {
+install-wedges() {
   local extra=${1:-}
 
   # For contributor setup: we need to use this BEFORE running build/py.sh all
@@ -1017,7 +1017,12 @@ install-wedges-fast() {
 }
 
 install-wedges-soil() {
-  install-wedges-fast extra
+  install-wedges extra
+}
+
+install-wedges-fast() {
+  ### Alias for compatibility
+  install-wedges "$@"
 }
 
 #
@@ -1054,11 +1059,11 @@ boxed-wedges() {
   # TODO:
   #
   # - Add equivalents of spec-bin
-  # - Use the same manifest as install-wedges-fast
+  # - Use the same manifest as install-wedges
   #   - so then you can delete the _build/wedge dir to re-run it
   #   - use xargs -n 1 so it's done serially
 
-  # - Do these lazily like we do in install-wedges-fast?
+  # - Do these lazily like we do in install-wedges
 
   # We can test if the dir _build/wedge/binary/oils-for-unix.org/pkg/FOO exists
   # if wedge-exists "$name" "$version" "$wedge_dir"; then
