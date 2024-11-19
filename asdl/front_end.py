@@ -8,6 +8,9 @@ from asdl.ast import (AST, Use, Module, TypeDecl, SubTypeDecl, Constructor,
                       Field, Sum, SimpleSum, Product)
 from asdl.util import log
 
+# type checking not turned on yet
+from typing import Dict, Any
+
 _ = log
 
 _KEYWORDS = ['use', 'module', 'generate']
