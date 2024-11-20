@@ -13,7 +13,7 @@ from typing import Tuple, Optional, cast
 # PYTHONPATH=$REPO_ROOT/mycpp
 from mycpp.mylib import log, tagswitch
 from mycpp import mylib
-from _devbuild.gen.expr_asdl import expr, expr_e, expr_t, tok_e, tok_t
+from _devbuild.gen.expr_asdl import expr, expr_e, expr_t, tok_e, tok_t, CompoundWord
 
 # PYTHONPATH=$REPO_ROOT
 from asdl import format as fmt
@@ -237,11 +237,26 @@ def TestCreateNull():
     ast_f.write('\n')
 
 
+def TestSubtype():
+    # type: () -> None
+
+    c = CompoundWord()
+    c.append('foo')
+    c.append('bar')
+
+    log('len(c) = %d', len(c))
+
+    #for s in c:
+    #    log("s = %r", s);
+
+
 def run_tests():
     # type: () -> None
 
     TestParse()
     TestCreateNull()
+
+    TestSubtype()
 
 
 def run_benchmarks():

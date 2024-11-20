@@ -636,7 +636,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             # Figure out base classes AFTERWARD.
             bases = self._base_classes[name]
             if not bases:
-                bases = ('pybase.CompoundObj', )
+                bases = ['pybase.CompoundObj']
             self._GenClass(ast_node.fields, name, bases, tag_num)
 
         for args in self._subtypes:
@@ -644,6 +644,6 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             # Figure out base classes AFTERWARD.
             bases = self._base_classes[subtype.name]
             if not bases:
-                bases = ('pybase.CompoundObj', )
+                bases = ['pybase.CompoundObj']
             bases.append(_MyPyType(subtype.base_class))
             self._GenClass([], subtype.name, bases, tag_num)

@@ -9,9 +9,7 @@ import sys
 from _devbuild.gen.typed_arith_asdl import (
     arith_expr,
     arith_expr_t,
-    word,
-    word_e,
-    word_t,
+    a_word_t,
     CompoundWord,
 )
 
@@ -303,7 +301,7 @@ def TypedCode():
     # TODO: pretty printing needs to change
     print(c)
 
-    w = None  # type: Optional[word_t]
+    w = None  # type: Optional[a_word_t]
 
     # TODO: need to test with tagswitch, which is mycpp
     w = c

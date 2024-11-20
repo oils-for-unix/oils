@@ -13,4 +13,8 @@ expr =
     Const(int i)
   | Var(string name) 
   | Binary(string op, expr left, expr right)
+
+# Test iteration
+CompoundWord < List[str]
+
 }
