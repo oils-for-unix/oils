@@ -34,7 +34,7 @@ class ctx_Keymap(object):
 
     def __enter__(self):
         # type: () -> None
-        if self.orig_keymap_name:
+        if self.orig_keymap_name is not None:
             self.readline.use_temp_keymap(self.orig_keymap_name)
 
     def __exit__(self, type, value, traceback):
@@ -169,7 +169,7 @@ class Bind(vm._Builtin):
             # some bash bind errors return non-zero, but print to stdout
             # temp var to work around mycpp runtime limitation
             msg2 = e.message  # type: str
-            if msg2:
+            if msg2 is not None and len(msg2) > 0:
                 self.errfmt.Print_("bind error: %s" % msg2, loc.Missing)
             return 1
 
