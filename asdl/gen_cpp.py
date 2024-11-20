@@ -723,7 +723,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
         self.Emit('')
         self.Emit('hnode_t* %s::_AbbreviatedTree() {' % class_name)
-        if is_list:
+        if list_item_type:
             raise AssertionError()
         else:
             self.Emit('  hnode::Record* out_node = runtime::NewRecord("%s");' %

@@ -27,9 +27,7 @@ TEST pretty_print_test() {
   log("");
 #endif
 
-  // Note: this segfaults with 1000 iterations, because it hit GC.
-  // TODO: GC_ALWAYS and make it pass.
-  for (int i = 0; i < 2; ++i) {
+  for (int i = 0; i < 2000; ++i) {
     hnode_t* t1 = b->PrettyTree();
     ASSERT_EQ(hnode_e::Record, t1->tag());
 
@@ -45,8 +43,6 @@ TEST pretty_print_test() {
 // TODO:
 // - This test is complex and not very good
 // - Maybe unify this with gen_cpp_test.cc
-// - Port build to Ninja
-// - Make it ASAN-clean
 
 TEST hnode_test() {
   mylib::Writer* f = nullptr;
@@ -95,9 +91,7 @@ int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(hnode_test);
-  // TODO: fix rooting of mylib.Stdout().  Then collect after every test, so
-  // that the number of live objects is accurate.
-  // gHeap.Collect();
+  gHeap.Collect();
 
   RUN_TEST(pretty_print_test);
 
