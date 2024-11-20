@@ -315,13 +315,13 @@ class SetToInt(_ArgAction):
             if not ok:
                 #e_usage('Integer too big: %s' % arg, location)
                 e_usage(
-                    'expected integer after %s, got %r' % ('-' + self.name, arg),
-                    location)
+                    'expected integer after %s, got %r' %
+                    ('-' + self.name, arg), location)
         else:
             pass
             #e_usage(
-                #'expected integer after %s, got %r' % ('-' + self.name, arg),
-                #location)
+            #'expected integer after %s, got %r' % ('-' + self.name, arg),
+            #location)
 
         # So far all our int values are > 0, so use -1 as the 'unset' value
         # corner case: this treats -0 as 0!
