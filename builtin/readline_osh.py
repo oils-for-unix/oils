@@ -1,39 +1,179 @@
 #!/usr/bin/env python2
 """
-builtin_lib.py - Builtins that are bindings to libraries, e.g. GNU readline.
+readline_osh.py - Builtins that are dependent on GNU readline.
 """
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.syntax_asdl import loc
-from core.error import e_usage
+from _devbuild.gen.value_asdl import value_e
 from core import pyutil
 from core import vm
+from core.error import e_usage
 from frontend import flag_util
 from mycpp import mops
 from mycpp import mylib
+from mycpp.mylib import log
 
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value
     from frontend.py_readline import Readline
     from core import sh_init
     from display import ui
 
+_ = log
+
+
+class ctx_Keymap(object):
+
+    def __init__(self, readline, keymap_name=None):
+        # type: (Readline, str) -> None
+        self.readline = readline
+        self.orig_keymap_name = keymap_name
+
+    def __enter__(self):
+        # type: () -> None
+        if self.orig_keymap_name is not None:
+            self.readline.use_temp_keymap(self.orig_keymap_name)
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        if self.orig_keymap_name is not None:
+            self.readline.restore_orig_keymap()
+
 
 class Bind(vm._Builtin):
-    """For :, true, false."""
+    """Interactive interface to readline bindings"""
 
     def __init__(self, readline, errfmt):
         # type: (Optional[Readline], ui.ErrorFormatter) -> None
         self.readline = readline
         self.errfmt = errfmt
+        self.exclusive_flags = ["q", "u", "r", "x", "f"]
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        self.errfmt.Print_("warning: bind isn't implemented",
-                           blame_loc=cmd_val.arg_locs[0])
-        return 1
+        readline = self.readline
+        if not readline:
+            e_usage("is disabled because Oils wasn't compiled with 'readline'",
+                    loc.Missing)
+
+        attrs, arg_r = flag_util.ParseCmdVal('bind', cmd_val)
+
+        # print("attrs:\n", attrs)
+        # print("attrs.attrs:\n", attrs.attrs)
+        # print("attrs.attrs.m:\n", attrs.attrs["m"])
+        # print("type(attrs.attrs.m):\n", type(attrs.attrs["m"]))
+        # print("type(attrs.attrs[m]):\n", type(attrs.attrs["m"]))
+        # print("attrs.attrs[m].tag() :\n", attrs.attrs["m"].tag())
+        # print("attrs.attrs[m].tag() == value_e.Undef:\n", attrs.attrs["m"].tag() == value_e.Undef)
+        # print(arg_r)
+        # print("Reader argv=%s locs=%s n=%i i=%i" % (arg_r.argv, str(arg_r.locs), arg_r.n, arg_r.i))
+
+        # Check mutually-exclusive flags and non-flag args
+        found = False
+        for flag in self.exclusive_flags:
+            if (flag in attrs.attrs and
+                    attrs.attrs[flag].tag() != value_e.Undef):
+                # print("\tFound flag: {0} with tag: {1}".format(flag, attrs.attrs[flag].tag()))
+                if found:
+                    self.errfmt.Print_(
+                        "error: can only use one of the following flags at a time: -"
+                        + ", -".join(self.exclusive_flags),
+                        blame_loc=cmd_val.arg_locs[0])
+                    return 1
+                else:
+                    found = True
+        if found and not arg_r.AtEnd():
+            self.errfmt.Print_(
+                "error: cannot mix bind commands with the following flags: -" +
+                ", -".join(self.exclusive_flags),
+                blame_loc=cmd_val.arg_locs[0])
+            return 1
+
+        arg = arg_types.bind(attrs.attrs)
+        # print("arg:\n", arg)
+        # print("dir(arg):\n", dir(arg))
+        # for prop in dir(arg):
+        #     if not prop.startswith('__'):
+        #         value = getattr(arg, prop)
+        #         print("Property: {0}, Value: {1}".format(prop, value))
+        # print("arg.m:\n", arg.m)
+
+        try:
+            with ctx_Keymap(readline, arg.m):  # Replicates bind's -m behavior
+
+                # This gauntlet of ifs is meant to replicate bash behavior, in case we
+                # need to relax the mutual exclusion of flags like bash does
+
+                # List names of functions
+                if arg.l:
+                    readline.list_funmap_names()
+
+                # Print function names and bindings
+                if arg.p:
+                    readline.function_dumper(True)  # reusable as input
+                if arg.P:
+                    readline.function_dumper(False)
+
+                # Print macros
+                if arg.s:
+                    readline.macro_dumper(True)  # reusable as input
+                if arg.S:
+                    readline.macro_dumper(False)
+
+                # Print readline variable names
+                if arg.v:
+                    readline.variable_dumper(True)
+                if arg.V:
+                    readline.variable_dumper(False)
+
+                if arg.f is not None:
+                    readline.read_init_file(arg.f)
+
+                if arg.q is not None:
+                    readline.query_bindings(arg.q)
+
+                if arg.u is not None:
+                    readline.unbind_rl_function(arg.u)
+
+                if 0:
+                    # disabled until we fix error with rl_function_of_keyseq_len()
+                    if arg.r is not None:
+                        readline.unbind_keyseq(arg.r)
+
+                if arg.x is not None:
+                    self.errfmt.Print_("warning: bind -x isn't implemented",
+                                       blame_loc=cmd_val.arg_locs[0])
+                    return 1
+
+                if arg.X:
+                    readline.print_shell_cmd_map()
+
+                bindings, arg_locs = arg_r.Rest2()
+                #log('bindings %d locs %d', len(arg_r.argv), len(arg_r.locs))
+
+                for i, binding in enumerate(bindings):
+                    try:
+                        #log("Binding %s (%d)", binding, i)
+                        #log("Arg loc %s (%d)", arg_locs[i], i)
+                        readline.parse_and_bind(binding)
+                    except ValueError as e:
+                        msg = e.message  # type: str
+                        self.errfmt.Print_("bind error: %s" % msg, arg_locs[i])
+                        return 1
+
+        except ValueError as e:
+            # only print out the exception message if non-empty
+            # some bash bind errors return non-zero, but print to stdout
+            # temp var to work around mycpp runtime limitation
+            msg2 = e.message  # type: str
+            if msg2 is not None and len(msg2) > 0:
+                self.errfmt.Print_("bind error: %s" % msg2, loc.Missing)
+            return 1
+
+        return 0
 
 
 class History(vm._Builtin):

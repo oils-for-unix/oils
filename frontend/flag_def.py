@@ -157,6 +157,22 @@ HELP_SPEC = FlagSpec('help')
 #HELP_SPEC.ShortFlag('-i')  # show index
 # Note: bash has help -d -m -s, which change the formatting
 
+BIND_SPEC = FlagSpec('bind')
+BIND_SPEC.ShortFlag('-m', args.String)
+BIND_SPEC.ShortFlag('-q', args.String)
+BIND_SPEC.ShortFlag('-u', args.String)
+BIND_SPEC.ShortFlag('-r', args.String)
+BIND_SPEC.ShortFlag('-f', args.String)
+BIND_SPEC.ShortFlag('-x', args.String)
+BIND_SPEC.ShortFlag('-l')
+BIND_SPEC.ShortFlag('-p')
+BIND_SPEC.ShortFlag('-s')
+BIND_SPEC.ShortFlag('-v')
+BIND_SPEC.ShortFlag('-P')
+BIND_SPEC.ShortFlag('-S')
+BIND_SPEC.ShortFlag('-V')
+BIND_SPEC.ShortFlag('-X')
+
 HISTORY_SPEC = FlagSpec('history')
 HISTORY_SPEC.ShortFlag('-a')
 HISTORY_SPEC.ShortFlag('-r')

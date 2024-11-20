@@ -34,6 +34,10 @@ class Readline(object):
         # type: (str) -> None
         line_input.parse_and_bind(s)
 
+    def read_init_file(self, s):
+        # type: (str) -> None
+        line_input.read_init_file(s)
+
     def add_history(self, line):
         # type: (str) -> None
         line_input.add_history(line)
@@ -93,6 +97,46 @@ class Readline(object):
     def resize_terminal(self):
         # type: () -> None
         line_input.resize_terminal()
+
+    def list_funmap_names(self):
+        # type: () -> None
+        line_input.list_funmap_names()
+
+    def function_dumper(self, print_readably):
+        # type: (bool) -> None
+        line_input.function_dumper(print_readably)
+
+    def macro_dumper(self, print_readably):
+        # type: (bool) -> None
+        line_input.macro_dumper(print_readably)
+
+    def variable_dumper(self, print_readably):
+        # type: (bool) -> None
+        line_input.variable_dumper(print_readably)
+
+    def query_bindings(self, fn_name):
+        # type: (str) -> None
+        line_input.query_bindings(fn_name)
+
+    def unbind_rl_function(self, fn_name):
+        # type: (str) -> None
+        line_input.unbind_rl_function(fn_name)
+
+    def use_temp_keymap(self, fn_name):
+        # type: (str) -> None
+        line_input.use_temp_keymap(fn_name)
+
+    def restore_orig_keymap(self):
+        # type: () -> None
+        line_input.restore_orig_keymap()
+
+    def print_shell_cmd_map(self):
+        # type: () -> None
+        line_input.print_shell_cmd_map()
+
+    def unbind_keyseq(self, keyseq):
+        # type: (str) -> None
+        line_input.unbind_keyseq(keyseq)
 
 
 def MaybeGetReadline():

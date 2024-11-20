@@ -115,6 +115,8 @@ static PyObject *
 parse_and_bind(PyObject *self, PyObject *args)
 {
     char *s, *copy;
+    int binding_result;
+
     if (!PyArg_ParseTuple(args, "s:parse_and_bind", &s))
         return NULL;
     /* Make a copy -- rl_parse_and_bind() modifies its argument */
@@ -123,14 +125,22 @@ parse_and_bind(PyObject *self, PyObject *args)
     if (copy == NULL)
         return PyErr_NoMemory();
     strcpy(copy, s);
-    rl_parse_and_bind(copy);
+
+    binding_result = rl_parse_and_bind(copy);
     free(copy); /* Free the copy */
+    
+    if (binding_result != 0) {
+        PyErr_Format(PyExc_ValueError, "'%s': invalid binding", s);
+        return NULL;
+    }
+
     Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(doc_parse_and_bind,
 "parse_and_bind(string) -> None\n\
-Execute the init line provided in the string argument.");
+Bind a key sequence to a readline function (or a variable to a value).");
+
 
 
 /* Exported function to parse a readline init file */
@@ -705,6 +715,372 @@ Change what's displayed on the screen to reflect the current\n\
 contents of the line buffer.");
 
 
+/* Functions added to implement the 'bind' builtin in OSH */
+
+/* -x/-X command keymaps */
+static Keymap emacs_cmd_map;
+static Keymap vi_insert_cmd_map;
+static Keymap vi_movement_cmd_map;
+
+/* 
+    These forcibly cast between a Keymap* and a rl_command_func_t*. Readline 
+    uses an additional `.type` field to keep track of the pointer's true type. 
+*/
+#define RL_KEYMAP_TO_FUNCTION(data) (rl_command_func_t *)(data)
+#define RL_FUNCTION_TO_KEYMAP(map, key) (Keymap)(map[key].function)
+
+static void
+_init_command_maps(void)
+{
+    emacs_cmd_map = rl_make_bare_keymap();
+    vi_insert_cmd_map = rl_make_bare_keymap();
+    vi_movement_cmd_map = rl_make_bare_keymap();
+
+    /* Ensure that Esc- and Ctrl-X are also keymaps */
+    emacs_cmd_map[CTRL('X')].type = ISKMAP;
+    emacs_cmd_map[CTRL('X')].function = RL_KEYMAP_TO_FUNCTION(rl_make_bare_keymap());
+    emacs_cmd_map[ESC].type = ISKMAP;
+    emacs_cmd_map[ESC].function = RL_KEYMAP_TO_FUNCTION(rl_make_bare_keymap());
+}
+
+static Keymap
+_get_associated_cmd_map(Keymap kmap)
+{
+    if (emacs_cmd_map == NULL)
+        _init_command_maps();
+
+    if (kmap == emacs_standard_keymap)
+        return emacs_cmd_map;
+    else if (kmap == vi_insertion_keymap)
+        return vi_insert_cmd_map;
+    else if (kmap == vi_movement_keymap)
+        return vi_movement_cmd_map;
+    else if (kmap == emacs_meta_keymap)
+        return (RL_FUNCTION_TO_KEYMAP(emacs_cmd_map, ESC));
+    else if (kmap == emacs_ctlx_keymap)
+        return (RL_FUNCTION_TO_KEYMAP(emacs_cmd_map, CTRL('X')));
+
+    return (Keymap) NULL;
+}
+
+/* List binding functions */
+static PyObject*
+list_funmap_names(PyObject *self, PyObject *args)
+{
+    rl_list_funmap_names();
+    // printf ("Compiled w/ readline version: %s\n", rl_library_version ? rl_library_version : "unknown");
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(doc_list_funmap_names,
+"list_funmap_names() -> None\n\
+Print all of the available readline functions.");
+
+/* Print readline functions and their bindings */
+
+static PyObject*
+function_dumper(PyObject *self, PyObject *args)
+{
+    int print_readably;
+
+    if (!PyArg_ParseTuple(args, "i:function_dumper", &print_readably))
+        return NULL;
+
+    rl_function_dumper(print_readably);
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(doc_list_function_dumper,
+"function_dumper(bool) -> None\n\
+Print all readline functions and their bindings.");
+
+/* Print macros, their bindings, and their string outputs */
+
+static PyObject*
+macro_dumper(PyObject *self, PyObject *args)
+{
+    int print_readably;
+
+    if (!PyArg_ParseTuple(args, "i:macro_dumper", &print_readably))
+        return NULL;
+
+    rl_macro_dumper(print_readably);
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(doc_list_macro_dumper,
+"macro_dumper(bool) -> None\n\
+Print all readline sequences bound to macros and the strings they output.");
+
+/* List readline variables */
+
+static PyObject*
+variable_dumper(PyObject *self, PyObject *args)
+{
+    int print_readably;
+
+    if (!PyArg_ParseTuple(args, "i:variable_dumper", &print_readably))
+        return NULL;
+
+    rl_variable_dumper(print_readably);
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(doc_list_variable_dumper,
+"variable_dumper(bool) -> None\n\
+List readline variables and their values.");
+
+
+/* Query bindings for a function name */
+
+// readline returns null-terminated string arrays
+void _strvec_dispose(char **strvec) {
+    register int i;
+
+    if (strvec == NULL)
+        return;
+    
+    for (i = 0; strvec[i]; i++) {
+        free(strvec[i]);
+    }
+    
+    free(strvec);
+}
+
+// Nicely prints a strvec with commas and an and
+// like '"foo", "bar", and "moop"'
+void _pprint_strvec_list(char **strvec) {
+    int i;
+
+    for (i = 0; strvec[i]; i++) {
+        printf("\"%s\"", strvec[i]);
+        if (strvec[i + 1]) {
+            printf(", ");
+            if (!strvec[i + 2])
+                printf("and ");
+        }
+    }
+}
+
+/* 
+NB: readline (and bash) have a bug where they don't see certain keyseqs, even
+if the bindings work. E.g., if you bind a number key like "\C-7", it will be
+bound, but reporting code like query_bindings and function_dumper won't count it.
+*/
+
+static PyObject* 
+query_bindings(PyObject *self, PyObject *args)
+{
+    char *fn_name;
+    rl_command_func_t *cmd_fn;
+    char **key_seqs;
+
+    if (!PyArg_ParseTuple(args, "s:query_bindings", &fn_name))
+        return NULL;
+
+    cmd_fn = rl_named_function(fn_name);
+
+    if (cmd_fn == NULL) {
+        PyErr_Format(PyExc_ValueError, "`%s': unknown function name", fn_name);
+        return NULL;
+    }
+
+    key_seqs = rl_invoking_keyseqs(cmd_fn);
+
+    if (!key_seqs) {
+        // print to stdout, but return an error
+        printf("%s is not bound to any keys.\n", fn_name); 
+        PyErr_SetNone(PyExc_ValueError);
+        return NULL;
+    }
+
+    printf("%s can be invoked via ", fn_name);
+    _pprint_strvec_list(key_seqs);
+    printf(".\n");
+
+    _strvec_dispose(key_seqs);
+    
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(doc_query_bindings,
+"query_bindings(str) -> None\n\
+Query bindings to see what's bound to a given function.");
+
+
+static PyObject*
+unbind_rl_function(PyObject *self, PyObject *args)
+{
+    char *fn_name;
+    rl_command_func_t *cmd_fn;
+
+    if (!PyArg_ParseTuple(args, "s:unbind_rl_function", &fn_name))
+        return NULL;
+
+    cmd_fn = rl_named_function(fn_name);
+    if (cmd_fn == NULL) {
+        PyErr_Format(PyExc_ValueError, "`%s': unknown function name", fn_name);
+        return NULL;
+    }
+
+    rl_unbind_function_in_map(cmd_fn, rl_get_keymap());
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(doc_unbind_rl_function,
+"unbind_rl_function(function_name) -> None\n\
+Unbind all keys bound to the named readline function in the current keymap.");
+
+
+static PyObject*
+unbind_shell_cmd(PyObject *self, PyObject *args)
+{
+    char *keyseq;
+    Keymap cmd_map;
+
+    if (!PyArg_ParseTuple(args, "s:unbind_shell_cmd", &keyseq))
+        return NULL;
+
+    cmd_map = _get_associated_cmd_map(rl_get_keymap());
+    if (cmd_map == NULL) {
+        PyErr_SetString(PyExc_ValueError, "Could not get command map for current keymap");
+        return NULL;
+    }
+
+    if (rl_bind_keyseq_in_map(keyseq, (rl_command_func_t *)NULL, cmd_map) != 0) {
+        PyErr_Format(PyExc_ValueError, "'%s': can't unbind from shell command keymap", keyseq);
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(doc_unbind_shell_cmd,
+"unbind_shell_cmd(key_sequence) -> None\n\
+Unbind a key sequence from the current keymap's associated shell command map.");
+
+
+static PyObject*
+print_shell_cmd_map(PyObject *self, PyObject *noarg)
+{
+    Keymap curr_map, cmd_map;
+
+    curr_map = rl_get_keymap();
+    cmd_map = _get_associated_cmd_map(curr_map);
+    
+    if (cmd_map == NULL) {
+        PyErr_SetString(PyExc_ValueError, "Could not get shell command map for current keymap");
+        return NULL;
+    }
+
+    rl_set_keymap(cmd_map);
+    rl_macro_dumper(1); 
+    rl_set_keymap(curr_map);
+
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(doc_print_shell_cmd_map,
+"print_shell_cmd_map() -> None\n\
+Print all bindings for shell commands in the current keymap.");
+
+
+/* Remove all bindings for a given keyseq */
+
+static PyObject*
+unbind_keyseq(PyObject *self, PyObject *args)
+{
+    /* Disabled because of rl_function_of_keyseq_len() error */
+    Py_RETURN_NONE;
+#if 0
+    char *seq, *keyseq;
+    int kslen, type;
+    rl_command_func_t *fn;
+
+    if (!PyArg_ParseTuple(args, "s:unbind_keyseq", &seq))
+        return NULL;
+
+    keyseq = (char *)malloc((2 * strlen(seq)) + 1);
+    if (rl_translate_keyseq(seq, keyseq, &kslen) != 0) {
+        free(keyseq);
+        PyErr_Format(PyExc_ValueError, "'%s': cannot translate key sequence", seq);
+        return NULL;
+    }
+
+    fn = rl_function_of_keyseq_len(keyseq, kslen, (Keymap)NULL, &type);
+    if (!fn) {
+        free(keyseq);
+        Py_RETURN_NONE;
+    }
+
+    if (type == ISKMAP) {
+        fn = ((Keymap)fn)[ANYOTHERKEY].function;
+    }
+
+    if (rl_bind_keyseq(seq, (rl_command_func_t *)NULL) != 0) {
+        free(keyseq);
+        PyErr_Format(PyExc_ValueError, "'%s': cannot unbind", seq);
+        return NULL;
+    }
+
+    /* 
+    TODO: Handle shell command unbinding if f == bash_execute_unix_command or
+    rather, whatever the osh equivalent will be
+    */
+
+    free(keyseq);
+    Py_RETURN_NONE;
+#endif
+}
+
+PyDoc_STRVAR(doc_unbind_keyseq,
+"unbind_keyseq(sequence) -> None\n\
+Unbind a key sequence from the current keymap.");
+
+
+/* Keymap toggling code */
+static Keymap orig_keymap = NULL;
+
+static PyObject*
+use_temp_keymap(PyObject *self, PyObject *args)
+{
+    char *keymap_name;
+    Keymap new_keymap;
+
+    if (!PyArg_ParseTuple(args, "s:use_temp_keymap", &keymap_name))
+        return NULL;
+
+    new_keymap = rl_get_keymap_by_name(keymap_name);
+    if (new_keymap == NULL) {
+        PyErr_Format(PyExc_ValueError, "`%s': unknown keymap name", keymap_name);
+        return NULL;
+    }
+
+    orig_keymap = rl_get_keymap();
+    rl_set_keymap(new_keymap);
+    
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(doc_use_temp_keymap,
+"use_temp_keymap(keymap_name) -> None\n\
+Temporarily switch to named keymap, saving the current one.");
+
+static PyObject*
+restore_orig_keymap(PyObject *self, PyObject *args)
+{
+    if (orig_keymap != NULL) {
+        rl_set_keymap(orig_keymap);
+        orig_keymap = NULL;
+    }
+    
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(doc_restore_orig_keymap,
+"restore_orig_keymap() -> None\n\
+Restore the previously saved keymap if one exists.");
+
 /* Table of functions exported by the module */
 
 #ifdef OVM_MAIN
@@ -751,6 +1127,19 @@ static struct PyMethodDef readline_methods[] = {
      METH_VARARGS, doc_set_pre_input_hook},
     {"clear_history", py_clear_history, METH_NOARGS, doc_clear_history},
     {"resize_terminal", py_resize_terminal, METH_NOARGS, ""},
+
+    /* Functions added to implement the 'bind' builtin in OSH */
+    {"list_funmap_names", list_funmap_names, METH_NOARGS, doc_list_funmap_names},
+    {"function_dumper", function_dumper, METH_VARARGS, doc_list_function_dumper},
+    {"macro_dumper", macro_dumper, METH_VARARGS, doc_list_macro_dumper},
+    {"variable_dumper", variable_dumper, METH_VARARGS, doc_list_variable_dumper},
+    {"query_bindings", query_bindings, METH_VARARGS, doc_query_bindings},
+    {"unbind_rl_function", unbind_rl_function, METH_VARARGS, doc_unbind_rl_function},
+    {"use_temp_keymap", use_temp_keymap, METH_VARARGS, doc_use_temp_keymap},
+    {"restore_orig_keymap", restore_orig_keymap, METH_NOARGS, doc_restore_orig_keymap},
+    {"unbind_shell_cmd", unbind_shell_cmd, METH_VARARGS, doc_unbind_shell_cmd},
+    {"print_shell_cmd_map", print_shell_cmd_map, METH_NOARGS, doc_print_shell_cmd_map},
+    {"unbind_keyseq", unbind_keyseq, METH_VARARGS, doc_unbind_keyseq},
     {0, 0}
 };
 #endif

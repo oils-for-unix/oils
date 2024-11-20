@@ -5,10 +5,12 @@ spec/stateful/bind.py
 from __future__ import print_function
 
 import sys
+import tempfile
 import time
 
 import harness
-from harness import register, expect_prompt
+from harness import expect_prompt, register
+
 from test.spec_lib import log
 
 
@@ -140,6 +142,18 @@ def bind_m(sh):
 
     send_bind(sh, "-q yank", "emacs")
     sh.expect("yank can be invoked via")
+
+
+@register(not_impl_shells=['dash', 'mksh'])
+def bind_f(sh):
+    "test bind -f for setting bindings from an inputrc init file"
+    expect_prompt(sh)
+
+    send_bind(sh, "-f spec/testdata/bind/bind_f.inputrc")
+    expect_prompt(sh)
+
+    send_bind(sh, "-q downcase-word")
+    sh.expect('downcase-word can be invoked via.*"\\\C-o\\\C-s\\\C-h"')
 
 
 if __name__ == '__main__':

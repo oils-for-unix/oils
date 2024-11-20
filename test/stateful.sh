@@ -35,8 +35,8 @@ readonly BASE_DIR=_tmp/spec/stateful
 readonly FIRST=''
 readonly OSH_CPP=_bin/cxx-asan/osh
 
-#readonly -a QUICK_SHELLS=( $OSH bash )
-readonly -a QUICK_SHELLS=( $OSH $OSH_CPP bash )
+readonly -a QUICK_SHELLS=( $OSH bash )
+readonly -a ALL_SHELLS=( $OSH $OSH_CPP bash )
 
 #
 # Suites in spec/stateful
@@ -55,7 +55,7 @@ job-control() {
 }
 
 bind() {
-  spec/stateful/bind.py $FIRST --oils-failures-allowed 6 "$@"
+  spec/stateful/bind.py $FIRST --oils-failures-allowed 2 "$@"
 }
 
 # Run on just 2 shells
@@ -69,14 +69,14 @@ bind-quick() { bind "${QUICK_SHELLS[@]}" "$@"; }
 
 # They now pass for dash and mksh, with wait -n and PIPESTATUS skipped.  zsh
 # doesn't work now, but could if the prompt was changed to $ ?
-signals-all() { signals "${QUICK_SHELLS[@]}" dash mksh "$@"; }
+signals-all() { signals "${ALL_SHELLS[@]}" dash mksh "$@"; }
 
-interactive-all() { interactive "${QUICK_SHELLS[@]}" dash mksh "$@"; }
+interactive-all() { interactive "${ALL_SHELLS[@]}" dash mksh "$@"; }
 
-job-control-all() { job-control "${QUICK_SHELLS[@]}" dash "$@"; }
+job-control-all() { job-control "${ALL_SHELLS[@]}" dash "$@"; }
 
 # On non-bash shells, bind is either unsupported or the syntax is too different
-bind-all() { bind "${QUICK_SHELLS[@]}" "$@"; }
+bind-all() { bind "${ALL_SHELLS[@]}" "$@"; }
 
 
 #
