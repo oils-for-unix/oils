@@ -1,5 +1,6 @@
 // asdl/gc_test.cc
 
+#include "_gen/asdl/examples/typed_arith.asdl.h"
 #include "_gen/asdl/examples/typed_demo.asdl.h"
 #include "_gen/asdl/hnode.asdl.h"
 #include "mycpp/runtime.h"
@@ -13,6 +14,13 @@ using hnode_asdl::hnode__Leaf;
 using hnode_asdl::hnode__Record;
 using hnode_asdl::hnode_e;
 using hnode_asdl::hnode_t;
+
+using typed_arith_asdl::a_word;
+using typed_arith_asdl::a_word_e;
+using typed_arith_asdl::a_word_t;
+using typed_arith_asdl::arith_expr;
+using typed_arith_asdl::arith_expr_e;
+using typed_arith_asdl::CompoundWord;
 
 using typed_demo_asdl::bool_expr__Binary;
 using typed_demo_asdl::word;
@@ -83,6 +91,77 @@ TEST hnode_test() {
   PASS();
 }
 
+TEST subtype_test() {
+  List<CompoundWord*>* li = nullptr;
+  StackRoot _r(&li);
+
+  // Test the GC header
+
+  li = NewList<CompoundWord*>();
+
+  int n = 1000;
+  for (int i = 0; i < n; ++i) {
+    auto* c = Alloc<CompoundWord>();
+
+    c->append(arith_expr::NoOp);
+    c->append(Alloc<arith_expr::Const>(42));
+
+    // log("len(c) %d", len(c));
+    // log("i = %d", i);
+
+    ASSERT_EQ_FMT(i, len(li), "%d");
+    li->append(c);
+    mylib::MaybeCollect();
+  }
+
+  log("len(li) = %d", len(li));
+  ASSERT_EQ(n, len(li));
+
+  // Now test the type tag
+
+  List<a_word_t*>* words = nullptr;
+  StackRoot _r2(&words);
+
+  words = NewList<a_word_t*>();
+
+#if 1
+  n = 100;
+  for (int i = 0; i < n; ++i) {
+    words->append(Alloc<CompoundWord>());
+    words->append(Alloc<a_word::String>(kEmptyString));
+
+    // mylib::MaybeCollect();
+  }
+#endif
+
+  log("len(words) = %d", len(words));
+  ASSERT_EQ(n * 2, len(words));
+
+  int num_c = 0;
+  int num_s = 0;
+  for (int i = 0; i < len(words); ++i) {
+    auto* w = words->at(i);
+    switch (w->tag()) {
+    case a_word_e::CompoundWord: {
+      // printf("CompoundWord\n");
+      num_c++;
+      break;
+    }
+    case a_word_e::String: {
+      // printf("String\n");
+      num_s++;
+      break;
+    }
+    default: {
+      FAIL();
+    }
+    }
+  }
+  log("CompoundWord %d, String %d", num_c, num_s);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -94,6 +173,8 @@ int main(int argc, char** argv) {
   gHeap.Collect();
 
   RUN_TEST(pretty_print_test);
+
+  RUN_TEST(subtype_test);
 
   gHeap.CleanProcessExit();
 

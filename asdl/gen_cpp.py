@@ -419,7 +419,13 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         Emit('};')
         Emit('')
 
-    def _GenClass(self, fields, class_name, base_classes, depth, tag):
+    def _GenClass(self,
+                  fields,
+                  class_name,
+                  base_classes,
+                  depth,
+                  tag,
+                  obj_header_str=''):
         """For Product and Constructor."""
         if base_classes:
             bases = ', '.join('public %s' % b for b in base_classes)
@@ -430,7 +436,8 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
         # Ensure that the member variables are ordered such that GC managed objects
         # come before any unmanaged ones because we use `HeapTag::Scanned`.
-        managed_fields, unmanaged_fields = [], []
+        managed_fields = []
+        unmanaged_fields = []
         for f in fields:
             if _IsManagedType(f.typ):
                 managed_fields.append(f)
@@ -488,9 +495,12 @@ class ClassDefVisitor(visitor.AsdlVisitor):
                     depth)
             self.Emit('')
 
+        if not obj_header_str:  # override for subtypes
+            obj_header_str = 'ObjHeader::AsdlClass(%s, %d)' % (
+                tag, len(managed_fields))
+
         self.Emit('  static constexpr ObjHeader obj_header() {')
-        self.Emit('    return ObjHeader::AsdlClass(%s, %d);' %
-                  (tag, len(managed_fields)))
+        self.Emit('    return %s;' % obj_header_str)
         self.Emit('  }')
         self.Emit('')
 
@@ -535,12 +545,25 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
             cpp_type = _GetCppType(subtype.base_class)
             assert cpp_type.endswith('*')  # hack
-            bases.append(cpp_type[:-1])
+            cpp_type = cpp_type[:-1]
+            bases.append(cpp_type)
 
-            # TODO:
-            # - Change ObjHeader
-            # - Change pretty printing to be like a List
-            self._GenClass([], subtype.name, bases, 0, tag_num)
+            t = subtype.base_class.type_name
+            if t == 'List':
+                # field_mask() should call List superclass, since say word_t won't have it
+                obj_header_str = 'ObjHeader::TaggedSubtype(%d, field_mask())' % tag_num
+
+            elif t == 'Dict':
+                raise AssertionError()
+            else:
+                obj_header_str = ''
+
+            self._GenClass([],
+                           subtype.name,
+                           bases,
+                           0,
+                           tag_num,
+                           obj_header_str=obj_header_str)
 
 
 class MethodDefVisitor(visitor.AsdlVisitor):

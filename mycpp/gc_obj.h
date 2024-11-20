@@ -70,6 +70,12 @@ struct ObjHeader {
             kUndefinedId};
   }
 
+  // For ASDL - tagged subtypes of List<T> and Dict<K, V>
+  static constexpr ObjHeader TaggedSubtype(uint8_t type_tag,
+                                           uint32_t field_mask) {
+    return {type_tag, field_mask, HeapTag::FixedSize, kNotInPool, kUndefinedId};
+  }
+
   // Classes with no inheritance (e.g. used by mycpp)
   static constexpr ObjHeader ClassScanned(uint32_t num_pointers,
                                           uint32_t obj_len) {

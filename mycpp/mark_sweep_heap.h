@@ -147,6 +147,7 @@ class Pool {
       free(block);
     }
     blocks_.clear();
+    num_free_ = 0;
   }
 
   int num_allocated() {
@@ -158,6 +159,12 @@ class Pool {
   }
 
   int num_live() {
+#ifndef OPTIMIZED
+    int capacity = blocks_.size() * CellsPerBlock;
+    // log("Pool capacity = %d", capacity);
+    // log("Pool num_free_ = %d", num_free_);
+    DCHECK(num_free_ <= capacity);
+#endif
     return blocks_.size() * CellsPerBlock - num_free_;
   }
 

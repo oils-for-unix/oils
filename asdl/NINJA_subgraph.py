@@ -49,6 +49,7 @@ def NinjaGraph(ru):
 
     ru.cc_binary('asdl/gc_test.cc',
                  deps=[
+                     '//asdl/examples/typed_arith.asdl',
                      '//asdl/examples/typed_demo.asdl',
                      '//mycpp/runtime',
                      '//prebuilt/asdl/runtime.mycpp',

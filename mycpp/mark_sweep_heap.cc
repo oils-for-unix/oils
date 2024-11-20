@@ -408,6 +408,8 @@ void MarkSweepHeap::FreeEverything() {
 }
 
 void MarkSweepHeap::CleanProcessExit() {
+  MaybePrintStats();
+
   char* e = getenv("OILS_GC_ON_EXIT");
   // collect by default; OILS_GC_ON_EXIT=0 overrides
   if (e && strcmp(e, "0") == 0) {
@@ -415,11 +417,12 @@ void MarkSweepHeap::CleanProcessExit() {
   } else {
     FreeEverything();
   }
-  MaybePrintStats();
 }
 
 // for the main binary
 void MarkSweepHeap::ProcessExit() {
+  MaybePrintStats();
+
   #ifdef CLEAN_PROCESS_EXIT
   FreeEverything();
   #else
@@ -429,8 +432,6 @@ void MarkSweepHeap::ProcessExit() {
     FreeEverything();
   }
   #endif
-
-  MaybePrintStats();
 }
 
 MarkSweepHeap gHeap;

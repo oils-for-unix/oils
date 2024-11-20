@@ -20,9 +20,11 @@ module arith {
   # Old style
   # CompoundWord = (List[arith_expr] parts)
 
+  # TODO: move to typed_demo.asdl
+
   CompoundWord < List[arith_expr]
 
-  word = 
+  a_word = 
     String(str s)
   | CompoundWord %CompoundWord
 }
