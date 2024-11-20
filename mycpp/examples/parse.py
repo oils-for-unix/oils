@@ -65,15 +65,15 @@ class ParseError(Exception):
 
 class Parser(object):
     """
-  Grammar from http://compilers.iecc.com/crenshaw/tutor6.txt, adapted to ANTLR
-  syntax.
+    Grammar from http://compilers.iecc.com/crenshaw/tutor6.txt, adapted to ANTLR
+    syntax.
 
-    Expr    = Term ('+' Term)*
-    Term    = Factor ('*' Factor)*
-    Factor  = VAR
-            | CONST
-            | '(' Expr ')'
-  """
+      Expr    = Term ('+' Term)*
+      Term    = Factor ('*' Factor)*
+      Factor  = VAR
+              | CONST
+              | '(' Expr ')'
+    """
 
     def __init__(self, lexer):
         # type: (Lexer) -> None
@@ -245,6 +245,10 @@ def TestSubtype():
     c.append('bar')
 
     log('len(c) = %d', len(c))
+
+    # It behaves like a container
+    s1 = c[1]
+    log('s1 = %r', s1)
 
     #for s in c:
     #    log("s = %r", s);

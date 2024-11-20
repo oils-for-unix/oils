@@ -9,15 +9,10 @@ import sys
 from _devbuild.gen.typed_arith_asdl import (
     arith_expr,
     arith_expr_t,
-    a_word_t,
-    CompoundWord,
 )
 
 from asdl.examples import tdop
 from asdl.examples import tdop_lexer
-from asdl import format as fmt
-
-from mycpp import mylib
 
 from typing import Dict, List, Optional
 #from typing import cast
@@ -289,38 +284,8 @@ class Evaluator(object):
 """
 
 
-def TypedCode():
-    # type: () -> None
-
-    c = CompoundWord()
-    print('len %d' % len(c))
-    c.append(arith_expr.NoOp)
-    c.append(arith_expr.Const(42))
-    print('len %d' % len(c))
-
-    # TODO: pretty printing needs to change
-    print(c)
-
-    w = None  # type: Optional[a_word_t]
-
-    # TODO: need to test with tagswitch, which is mycpp
-    w = c
-
-    ast_f = fmt.DetectConsoleOutput(mylib.Stdout())
-    a = c.AbbreviatedTree()
-    fmt.PrintTree(a, ast_f)
-    print('')
-
-    p = c.PrettyTree()
-    fmt.PrintTree(p, ast_f)
-    print('')
-
-
 def main(argv):
     # type: (List[str]) -> int
-
-    TypedCode()
-
     try:
         action = argv[1]
         s = argv[2]

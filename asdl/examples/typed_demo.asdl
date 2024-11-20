@@ -15,6 +15,8 @@ module arith {
   | Continue
   | Return(int status)
 
+  | PrimitiveList(List[int] ints)
+
   source_location = (string path, int line, int col, int length)
 
   word = (string value)
@@ -46,4 +48,16 @@ module arith {
   Maybes = (Token? op, word? arg)
 
   OptionalList = (List[word]? words)
+
+  # Subtype feature
+
+  arith_expr = NoOp | Const(int i)
+
+  # Old style
+  # CompoundWord = (List[arith_expr] parts)
+  CompoundWord < List[arith_expr]
+
+  a_word = 
+    String(str s)
+  | CompoundWord %CompoundWord
 }

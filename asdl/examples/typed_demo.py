@@ -8,15 +8,55 @@ from __future__ import print_function
 
 import sys
 
-from _devbuild.gen.typed_demo_asdl import (cflow, cflow_e, op_id_e,
-                                           source_location, word, bool_expr,
-                                           Dicts)
+from _devbuild.gen.typed_demo_asdl import (
+    cflow,
+    cflow_e,
+    op_id_e,
+    source_location,
+    word,
+    bool_expr,
+    Dicts,
+    arith_expr,
+    CompoundWord,
+    a_word_t,
+)
+from asdl import format as fmt
+from mycpp import mylib
 
-from typing import List, cast
+from typing import List, Optional, cast
+
+
+def TestSubtype():
+    # type: () -> None
+
+    c = CompoundWord()
+    print('len %d' % len(c))
+    c.append(arith_expr.NoOp)
+    c.append(arith_expr.Const(42))
+    print('len %d' % len(c))
+
+    # TODO: pretty printing needs to change
+    print(c)
+
+    w = None  # type: Optional[a_word_t]
+
+    # TODO: need to test with tagswitch, which is mycpp
+    w = c
+
+    ast_f = fmt.DetectConsoleOutput(mylib.Stdout())
+    a = c.AbbreviatedTree()
+    fmt.PrintTree(a, ast_f)
+    print('')
+
+    p = c.PrettyTree()
+    fmt.PrintTree(p, ast_f)
+    print('')
 
 
 def main(argv):
     # type: (List[str]) -> None
+
+    TestSubtype()
 
     op = op_id_e.Plus
     print(op)

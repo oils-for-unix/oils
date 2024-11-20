@@ -1,6 +1,5 @@
 // asdl/gc_test.cc
 
-#include "_gen/asdl/examples/typed_arith.asdl.h"
 #include "_gen/asdl/examples/typed_demo.asdl.h"
 #include "_gen/asdl/hnode.asdl.h"
 #include "mycpp/runtime.h"
@@ -15,14 +14,13 @@ using hnode_asdl::hnode__Record;
 using hnode_asdl::hnode_e;
 using hnode_asdl::hnode_t;
 
-using typed_arith_asdl::a_word;
-using typed_arith_asdl::a_word_e;
-using typed_arith_asdl::a_word_t;
-using typed_arith_asdl::arith_expr;
-using typed_arith_asdl::arith_expr_e;
-using typed_arith_asdl::CompoundWord;
-
+using typed_demo_asdl::a_word;
+using typed_demo_asdl::a_word_e;
+using typed_demo_asdl::a_word_t;
+using typed_demo_asdl::arith_expr;
+using typed_demo_asdl::arith_expr_e;
 using typed_demo_asdl::bool_expr__Binary;
+using typed_demo_asdl::CompoundWord;
 using typed_demo_asdl::word;
 
 TEST pretty_print_test() {
@@ -162,6 +160,31 @@ TEST subtype_test() {
   PASS();
 }
 
+TEST print_subtype_test() {
+  // TODO: Also need to test GC header for List[int] subtypes
+
+  auto c = Alloc<CompoundWord>();
+
+  log("len = %d", len(c));
+
+  c->append(arith_expr::NoOp);
+  c->append(Alloc<arith_expr::Const>(42));
+
+  log("len = %d", len(c));
+
+#if 1
+  hnode_t* t1 = c->PrettyTree();
+  // ASSERT_EQ_FMT(hnode_e::Record, t1->tag(), "%d");
+
+  auto f = mylib::Stdout();
+  auto ast_f = Alloc<format::TextOutput>(f);
+  format::PrintTree(t1, ast_f);
+  printf("\n");
+#endif
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -175,6 +198,7 @@ int main(int argc, char** argv) {
   RUN_TEST(pretty_print_test);
 
   RUN_TEST(subtype_test);
+  RUN_TEST(print_subtype_test);
 
   gHeap.CleanProcessExit();
 
