@@ -80,54 +80,53 @@ GLOBAL_STR(str71, "<args.Reader %r %d>");
 GLOBAL_STR(str72, "got too many arguments");
 GLOBAL_STR(str73, "expected argument to %r");
 GLOBAL_STR(str74, "-");
-GLOBAL_STR(str75, "Integer too big: %s");
-GLOBAL_STR(str76, "expected integer after %s, got %r");
-GLOBAL_STR(str77, "-");
-GLOBAL_STR(str78, "got invalid integer for %s: %s");
-GLOBAL_STR(str79, "-");
-GLOBAL_STR(str80, "expected number after %r, got %r");
-GLOBAL_STR(str81, "-");
-GLOBAL_STR(str82, "got invalid float for %s: %s");
-GLOBAL_STR(str83, "-");
-GLOBAL_STR(str84, "got invalid argument %r to %r, expected one of: %s");
-GLOBAL_STR(str85, "-");
-GLOBAL_STR(str86, "|");
-GLOBAL_STR(str87, "0");
-GLOBAL_STR(str88, "F");
-GLOBAL_STR(str89, "false");
-GLOBAL_STR(str90, "False");
-GLOBAL_STR(str91, "1");
-GLOBAL_STR(str92, "T");
-GLOBAL_STR(str93, "true");
-GLOBAL_STR(str94, "Talse");
-GLOBAL_STR(str95, "got invalid argument to boolean flag: %r");
+GLOBAL_STR(str75, "expected integer after %s, got %r");
+GLOBAL_STR(str76, "-");
+GLOBAL_STR(str77, "got invalid integer for %s: %s");
+GLOBAL_STR(str78, "-");
+GLOBAL_STR(str79, "expected number after %r, got %r");
+GLOBAL_STR(str80, "-");
+GLOBAL_STR(str81, "got invalid float for %s: %s");
+GLOBAL_STR(str82, "-");
+GLOBAL_STR(str83, "got invalid argument %r to %r, expected one of: %s");
+GLOBAL_STR(str84, "-");
+GLOBAL_STR(str85, "|");
+GLOBAL_STR(str86, "0");
+GLOBAL_STR(str87, "F");
+GLOBAL_STR(str88, "false");
+GLOBAL_STR(str89, "False");
+GLOBAL_STR(str90, "1");
+GLOBAL_STR(str91, "T");
+GLOBAL_STR(str92, "true");
+GLOBAL_STR(str93, "Talse");
+GLOBAL_STR(str94, "got invalid argument to boolean flag: %r");
+GLOBAL_STR(str95, "-");
 GLOBAL_STR(str96, "-");
-GLOBAL_STR(str97, "-");
-GLOBAL_STR(str98, "Invalid option %r");
-GLOBAL_STR(str99, "Expected argument for action");
-GLOBAL_STR(str100, "Invalid action name %r");
+GLOBAL_STR(str97, "Invalid option %r");
+GLOBAL_STR(str98, "Expected argument for action");
+GLOBAL_STR(str99, "Invalid action name %r");
+GLOBAL_STR(str100, "--");
 GLOBAL_STR(str101, "--");
-GLOBAL_STR(str102, "--");
-GLOBAL_STR(str103, "=");
-GLOBAL_STR(str104, "got invalid flag %r");
-GLOBAL_STR(str105, "-");
-GLOBAL_STR(str106, "0");
-GLOBAL_STR(str107, "Z");
-GLOBAL_STR(str108, "-");
-GLOBAL_STR(str109, "doesn't accept flag %s");
-GLOBAL_STR(str110, "-");
+GLOBAL_STR(str102, "=");
+GLOBAL_STR(str103, "got invalid flag %r");
+GLOBAL_STR(str104, "-");
+GLOBAL_STR(str105, "0");
+GLOBAL_STR(str106, "Z");
+GLOBAL_STR(str107, "-");
+GLOBAL_STR(str108, "doesn't accept flag %s");
+GLOBAL_STR(str109, "-");
+GLOBAL_STR(str110, "+");
 GLOBAL_STR(str111, "+");
-GLOBAL_STR(str112, "+");
-GLOBAL_STR(str113, "doesn't accept option %s");
-GLOBAL_STR(str114, "+");
-GLOBAL_STR(str115, "-");
+GLOBAL_STR(str112, "doesn't accept option %s");
+GLOBAL_STR(str113, "+");
+GLOBAL_STR(str114, "-");
+GLOBAL_STR(str115, "--");
 GLOBAL_STR(str116, "--");
-GLOBAL_STR(str117, "--");
-GLOBAL_STR(str118, "got invalid flag %r");
-GLOBAL_STR(str119, "-");
-GLOBAL_STR(str120, "+");
-GLOBAL_STR(str121, "got invalid flag %r");
-GLOBAL_STR(str122, "-");
+GLOBAL_STR(str117, "got invalid flag %r");
+GLOBAL_STR(str118, "-");
+GLOBAL_STR(str119, "+");
+GLOBAL_STR(str120, "got invalid flag %r");
+GLOBAL_STR(str121, "-");
 
 namespace ansi {  // forward declare
 
@@ -1801,19 +1800,19 @@ value_asdl::value_t* SetToInt::_Value(BigStr* arg, syntax_asdl::loc_t* location)
   StackRoot _root0(&arg);
   StackRoot _root1(&location);
 
-  if (match::LooksLikeInteger(arg)) {
+  if (true) {
     Tuple2<bool, mops::BigInt> tup0 = mops::FromStr2(arg);
     ok = tup0.at0();
     i = tup0.at1();
     if (!ok) {
-      e_usage(StrFormat("Integer too big: %s", arg), location);
+      e_usage(StrFormat("expected integer after %s, got %r", str_concat(str76, this->name), arg), location);
     }
   }
   else {
-    e_usage(StrFormat("expected integer after %s, got %r", str_concat(str77, this->name), arg), location);
+    ;  // pass
   }
   if (mops::Greater(mops::BigInt(0), i)) {
-    e_usage(StrFormat("got invalid integer for %s: %s", str_concat(str79, this->name), arg), location);
+    e_usage(StrFormat("got invalid integer for %s: %s", str_concat(str78, this->name), arg), location);
   }
   return Alloc<value::Int>(i);
 }
@@ -1830,10 +1829,10 @@ value_asdl::value_t* SetToFloat::_Value(BigStr* arg, syntax_asdl::loc_t* locatio
     f = to_float(arg);
   }
   catch (ValueError*) {
-    e_usage(StrFormat("expected number after %r, got %r", str_concat(str81, this->name), arg), location);
+    e_usage(StrFormat("expected number after %r, got %r", str_concat(str80, this->name), arg), location);
   }
   if (f < 0) {
-    e_usage(StrFormat("got invalid float for %s: %s", str_concat(str83, this->name), arg), location);
+    e_usage(StrFormat("got invalid float for %s: %s", str_concat(str82, this->name), arg), location);
   }
   return Alloc<value::Float>(f);
 }
@@ -1846,7 +1845,7 @@ value_asdl::value_t* SetToString::_Value(BigStr* arg, syntax_asdl::loc_t* locati
   StackRoot _root1(&location);
 
   if ((this->valid != nullptr and !list_contains(this->valid, arg))) {
-    e_usage(StrFormat("got invalid argument %r to %r, expected one of: %s", arg, str_concat(str85, this->name), str86->join(this->valid)), location);
+    e_usage(StrFormat("got invalid argument %r to %r, expected one of: %s", arg, str_concat(str84, this->name), str85->join(this->valid)), location);
   }
   return Alloc<value::Str>(arg);
 }
@@ -1862,11 +1861,11 @@ bool SetAttachedBool::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_
   StackRoot _root2(&out);
 
   if (attached_arg != nullptr) {
-    if ((str_equals(attached_arg, str87) || str_equals(attached_arg, str88) || str_equals(attached_arg, str89) || str_equals(attached_arg, str90))) {
+    if ((str_equals(attached_arg, str86) || str_equals(attached_arg, str87) || str_equals(attached_arg, str88) || str_equals(attached_arg, str89))) {
       b = false;
     }
     else {
-      if ((str_equals(attached_arg, str91) || str_equals(attached_arg, str92) || str_equals(attached_arg, str93) || str_equals(attached_arg, str94))) {
+      if ((str_equals(attached_arg, str90) || str_equals(attached_arg, str91) || str_equals(attached_arg, str92) || str_equals(attached_arg, str93))) {
         b = true;
       }
       else {
@@ -1904,7 +1903,7 @@ bool SetOption::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attrib
   StackRoot _root1(&arg_r);
   StackRoot _root2(&out);
 
-  b = maybe_str_equals(attached_arg, str96);
+  b = maybe_str_equals(attached_arg, str95);
   out->opt_changes->append((Alloc<Tuple2<BigStr*, bool>>(this->name, b)));
   return false;
 }
@@ -1932,7 +1931,7 @@ bool SetNamedOption::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_A
   StackRoot _root4(&attr_name);
   StackRoot _root5(&changes);
 
-  b = maybe_str_equals(attached_arg, str97);
+  b = maybe_str_equals(attached_arg, str96);
   arg_r->Next();
   arg = arg_r->Peek();
   if (arg == nullptr) {
@@ -1983,7 +1982,7 @@ bool SetNamedAction::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_A
   arg_r->Next();
   arg = arg_r->Peek();
   if (arg == nullptr) {
-    e_usage(str99, loc::Missing);
+    e_usage(str98, loc::Missing);
   }
   attr_name = arg;
   if ((len(this->names) and !list_contains(this->names, attr_name))) {
@@ -2016,13 +2015,13 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
   out = Alloc<_Attributes>(spec->defaults);
   while (!arg_r->AtEnd()) {
     arg = arg_r->Peek();
-    if (maybe_str_equals(arg, str101)) {
+    if (maybe_str_equals(arg, str100)) {
       out->saw_double_dash = true;
       arg_r->Next();
       break;
     }
-    if ((len(spec->actions_long) and arg->startswith(str102))) {
-      pos = arg->find(str103, 2);
+    if ((len(spec->actions_long) and arg->startswith(str101))) {
+      pos = arg->find(str102, 2);
       if (pos == -1) {
         suffix = nullptr;
         flag_name = arg->slice(2);
@@ -2040,15 +2039,15 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
       continue;
     }
     else {
-      if ((arg->startswith(str105) and len(arg) > 1)) {
+      if ((arg->startswith(str104) and len(arg) > 1)) {
         n = len(arg);
         for (int i = 1; i < n; ++i) {
           ch = arg->at(i);
-          if (str_equals(ch, str106)) {
-            ch = str107;
+          if (str_equals(ch, str105)) {
+            ch = str106;
           }
           if (list_contains(spec->plus_flags, ch)) {
-            out->Set(ch, Alloc<value::Str>(str108));
+            out->Set(ch, Alloc<value::Str>(str107));
             continue;
           }
           if (list_contains(spec->arity0, ch)) {
@@ -2061,20 +2060,20 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
             action->OnMatch(attached_arg, arg_r, out);
             break;
           }
-          e_usage(StrFormat("doesn't accept flag %s", str_concat(str110, ch)), arg_r->Location());
+          e_usage(StrFormat("doesn't accept flag %s", str_concat(str109, ch)), arg_r->Location());
         }
         arg_r->Next();
       }
       else {
-        if ((len(spec->plus_flags) and (arg->startswith(str111) and len(arg) > 1))) {
+        if ((len(spec->plus_flags) and (arg->startswith(str110) and len(arg) > 1))) {
           n = len(arg);
           for (int i = 1; i < n; ++i) {
             ch = arg->at(i);
             if (list_contains(spec->plus_flags, ch)) {
-              out->Set(ch, Alloc<value::Str>(str112));
+              out->Set(ch, Alloc<value::Str>(str111));
               continue;
             }
-            e_usage(StrFormat("doesn't accept option %s", str_concat(str114, ch)), arg_r->Location());
+            e_usage(StrFormat("doesn't accept option %s", str_concat(str113, ch)), arg_r->Location());
           }
           arg_r->Next();
         }
@@ -2102,7 +2101,7 @@ args::_Attributes* ParseLikeEcho(flag_spec::_FlagSpec* spec, args::Reader* arg_r
   while (!arg_r->AtEnd()) {
     arg = arg_r->Peek();
     chars = arg->slice(1);
-    if ((arg->startswith(str115) and len(chars))) {
+    if ((arg->startswith(str114) and len(chars))) {
       done = false;
       for (StrIter it(chars); !it.Done(); it.Next()) {
         BigStr* c = it.Value();
@@ -2148,12 +2147,12 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
   quit = false;
   while (!arg_r->AtEnd()) {
     arg = arg_r->Peek();
-    if (maybe_str_equals(arg, str116)) {
+    if (maybe_str_equals(arg, str115)) {
       out->saw_double_dash = true;
       arg_r->Next();
       break;
     }
-    if (arg->startswith(str117)) {
+    if (arg->startswith(str116)) {
       action = spec->actions_long->get(arg->slice(2));
       if (action == nullptr) {
         e_usage(StrFormat("got invalid flag %r", arg), arg_r->Location());
@@ -2162,14 +2161,14 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
       arg_r->Next();
       continue;
     }
-    if (((arg->startswith(str119) or arg->startswith(str120)) and len(arg) > 1)) {
+    if (((arg->startswith(str118) or arg->startswith(str119)) and len(arg) > 1)) {
       char0 = arg->at(0);
       for (StrIter it(arg->slice(1)); !it.Done(); it.Next()) {
         BigStr* ch = it.Value();
         StackRoot _for(&ch      );
         action = spec->actions_short->get(ch);
         if (action == nullptr) {
-          e_usage(StrFormat("got invalid flag %r", str_concat(str122, ch)), arg_r->Location());
+          e_usage(StrFormat("got invalid flag %r", str_concat(str121, ch)), arg_r->Location());
         }
         attached_arg = list_contains(spec->plus_flags, ch) ? char0 : nullptr;
         quit = action->OnMatch(attached_arg, arg_r, out);

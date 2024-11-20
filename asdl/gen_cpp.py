@@ -563,17 +563,16 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         c_item_type = _GetCppType(item_type)
         field_name = field.name
 
-        def _Emit(s, depth=0):
-            self.Emit(s % sys._getframe(1).f_locals, depth)
+        def _Emit(s):
+            self.Emit(s % sys._getframe(1).f_locals, self.current_depth)
 
-        _Emit('if (this->%(field_name)s != nullptr) {  // List')
         _Emit(
-            '  hnode::Array* %(out_val_name)s = Alloc<hnode::Array>(Alloc<List<hnode_t*>>());'
+            'hnode::Array* %(out_val_name)s = Alloc<hnode::Array>(Alloc<List<hnode_t*>>());'
         )
         _Emit(
-            '  for (ListIter<%(c_item_type)s> it(this->%(field_name)s); !it.Done(); it.Next()) {'
+            'for (ListIter<%(c_item_type)s> it(this->%(field_name)s); !it.Done(); it.Next()) {'
         )
-        _Emit('    %(c_item_type)s %(iter_name)s = it.Value();')
+        _Emit('  %(c_item_type)s %(iter_name)s = it.Value();')
 
         child_code_str, none_guard = _HNodeExpr(abbrev, item_type, iter_name)
         if none_guard:  # e.g. for List[Optional[value_t]]
@@ -581,13 +580,8 @@ class MethodDefVisitor(visitor.AsdlVisitor):
             child_code_str = (
                 '(%s == nullptr) ? Alloc<hnode::Leaf>(StrFromC("_"), color_e::OtherConst) : %s'
                 % (iter_name, child_code_str))
-        _Emit('    hnode_t* h = %(child_code_str)s;')
-        _Emit('    %(out_val_name)s->children->append(h);')
-
-        _Emit('  }')
-        _Emit(
-            '  L->append(Alloc<Field>(StrFromC("%(field_name)s"), %(out_val_name)s));'
-        )
+        _Emit('  hnode_t* h = %(child_code_str)s;')
+        _Emit('  %(out_val_name)s->children->append(h);')
         _Emit('}')
 
     def _EmitDictPrettyPrint(self, abbrev, field, out_val_name, counter):
@@ -633,7 +627,14 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
         if field.typ.IsList():
             iter_name = 'i%d' % counter
+            self.Emit('if (this->%s != nullptr) {  // List' % field.name)
+            self.Indent()
             self._EmitListPrettyPrint(abbrev, field, out_val_name, iter_name)
+            self.Emit(
+                'L->append(Alloc<Field>(StrFromC("%s"), %s));' % (field.name, out_val_name)
+            )
+            self.Dedent()
+            self.Emit('}')
 
         elif field.typ.IsDict():
             self._EmitDictPrettyPrint(abbrev, field, out_val_name, counter)

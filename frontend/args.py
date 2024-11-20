@@ -57,7 +57,7 @@ from _devbuild.gen.syntax_asdl import loc, loc_t, CompoundWord
 from _devbuild.gen.value_asdl import (value, value_e, value_t)
 
 from core.error import e_usage
-from frontend import match
+#from frontend import match
 from mycpp import mops
 from mycpp.mylib import log, tagswitch, iteritems
 
@@ -309,14 +309,19 @@ class SetToInt(_ArgAction):
 
     def _Value(self, arg, location):
         # type: (str, loc_t) -> value_t
-        if match.LooksLikeInteger(arg):
+        #if match.LooksLikeInteger(arg):
+        if True:  # break dependency for prebuilt/
             ok, i = mops.FromStr2(arg)
             if not ok:
-                e_usage('Integer too big: %s' % arg, location)
+                #e_usage('Integer too big: %s' % arg, location)
+                e_usage(
+                    'expected integer after %s, got %r' % ('-' + self.name, arg),
+                    location)
         else:
-            e_usage(
-                'expected integer after %s, got %r' % ('-' + self.name, arg),
-                location)
+            pass
+            #e_usage(
+                #'expected integer after %s, got %r' % ('-' + self.name, arg),
+                #location)
 
         # So far all our int values are > 0, so use -1 as the 'unset' value
         # corner case: this treats -0 as 0!
