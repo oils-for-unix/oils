@@ -10,7 +10,7 @@ GLOBAL_STR(str1, ")");
 GLOBAL_STR(str2, "_");
 GLOBAL_STR(str3, "T");
 GLOBAL_STR(str4, "F");
-GLOBAL_STR(str5, "\n<html>\n  <head>\n     <title>oil AST</title>\n     <style>\n      .n { color: brown }\n      .s { font-weight: bold }\n      .o { color: darkgreen }\n     </style>\n  </head>\n  <body>\n    <pre>\n");
+GLOBAL_STR(str5, "\n<html>\n  <head>\n     <title>Oils AST</title>\n     <style>\n      .n { color: brown }\n      .s { font-weight: bold }\n      .o { color: darkgreen }\n     </style>\n  </head>\n  <body>\n    <pre>\n");
 GLOBAL_STR(str6, "\n    </pre>\n  </body>\n</html>\n    ");
 GLOBAL_STR(str7, "n");
 GLOBAL_STR(str8, "s");

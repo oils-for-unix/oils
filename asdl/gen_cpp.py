@@ -559,38 +559,36 @@ class MethodDefVisitor(visitor.AsdlVisitor):
             typ = typ.children[0]
         item_type = typ.children[0]
 
-        d = {
-            'field_name': field.name,
-            'out_val_name': out_val_name,
-            'iter_name': iter_name,
-            'c_item_type': _GetCppType(item_type),
-        }
-        self.Emit('if (this->%(field_name)s != nullptr) {  // List' % d)
-        self.Emit(
+        # used in format strings
+        c_item_type = _GetCppType(item_type)
+        field_name = field.name
+
+        def _Emit(s, depth=0):
+            self.Emit(s % sys._getframe(1).f_locals, depth)
+
+        _Emit('if (this->%(field_name)s != nullptr) {  // List')
+        _Emit(
             '  hnode::Array* %(out_val_name)s = Alloc<hnode::Array>(Alloc<List<hnode_t*>>());'
-            % d)
-        self.Emit(
+        )
+        _Emit(
             '  for (ListIter<%(c_item_type)s> it(this->%(field_name)s); !it.Done(); it.Next()) {'
-            % d)
-        self.Emit('    %(c_item_type)s %(iter_name)s = it.Value();' % d)
+        )
+        _Emit('    %(c_item_type)s %(iter_name)s = it.Value();')
 
         child_code_str, none_guard = _HNodeExpr(abbrev, item_type, iter_name)
-        d['child_code_str'] = child_code_str
         if none_guard:  # e.g. for List[Optional[value_t]]
-            # TODO: could consolidate with asdl/runtime.py NewLeaf(), which
-            # also uses _ to mean None/nullptr
-            self.Emit(
-                '    hnode_t* h = (%(iter_name)s == nullptr) ? Alloc<hnode::Leaf>(StrFromC("_"), color_e::OtherConst) : %(child_code_str)s;'
-                % d)
-        else:
-            self.Emit('    hnode_t* h = %(child_code_str)s;' % d)
-        self.Emit('    %(out_val_name)s->children->append(h);' % d)
+            # TODO: could consolidate this logic with asdl/runtime.py NewLeaf(), which is prebuilt/
+            child_code_str = (
+                '(%s == nullptr) ? Alloc<hnode::Leaf>(StrFromC("_"), color_e::OtherConst) : %s'
+                % (iter_name, child_code_str))
+        _Emit('    hnode_t* h = %(child_code_str)s;')
+        _Emit('    %(out_val_name)s->children->append(h);')
 
-        self.Emit('  }')
-        self.Emit(
+        _Emit('  }')
+        _Emit(
             '  L->append(Alloc<Field>(StrFromC("%(field_name)s"), %(out_val_name)s));'
-            % d)
-        self.Emit('}')
+        )
+        _Emit('}')
 
     def _EmitDictPrettyPrint(self, abbrev, field, out_val_name, counter):
         k = 'k%d' % counter
