@@ -1820,34 +1820,60 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             iterated_over = o.expr
 
         over_type = self.types[iterated_over]
+
         if isinstance(over_type, TypeAliasType):
             over_type = over_type.alias.target
 
-        #self.log('  iterating over type %s', over_type)
-        #self.log('  iterating over type %s', over_type.type.fullname)
+        if 0:
+            log("***** OVER %s %s", over_type, dir(over_type))
+            t = over_type.type
+            log("***** t %s %s", t, dir(t))
+            bases = t.bases
+            # Look for string and dict!
+            log("=== bases %s %s", bases, dir(bases))
 
-        over_dict = False
+            #self.log('  iterating over type %s', over_type)
+            #self.log('  iterating over type %s', over_type.type.fullname)
+
         yield_acc = None
 
+        over_list = False
+        over_dict = False
+
         if over_type.type.fullname == 'builtins.list':
+            over_list = True
+            container_base_type = over_type
+
+        if over_type.type.fullname == 'builtins.dict':
+            over_dict = True
+            container_base_type = over_type
+
+        # now check base classes
+        for base_type in over_type.type.bases:
+            n = base_type.type.fullname
+            if n == 'builtins.list':
+                over_list = True
+                container_base_type = base_type
+            elif n == 'builtins.dict':
+                over_dict = True
+                container_base_type = base_type
+
+        assert not (over_dict and over_list)
+
+        if over_list:
             c_type = GetCType(over_type)
             assert c_type.endswith('*'), c_type
-            c_iter_type = c_type.replace('List', 'ListIter',
-                                         1)[:-1]  # remove *
+            inner_c_type = GetCType(container_base_type.args[0])
+            c_iter_type = 'ListIter<%s>' % inner_c_type
 
             # ReverseListIter!
             if reverse:
                 c_iter_type = 'Reverse' + c_iter_type
 
-        elif over_type.type.fullname == 'builtins.dict':
-            # Iterator
-            c_type = GetCType(over_type)
-            assert c_type.endswith('*'), c_type
-            c_iter_type = c_type.replace('Dict', 'DictIter',
-                                         1)[:-1]  # remove *
-
-            over_dict = True
-
+        elif over_dict:
+            key_c_type = GetCType(container_base_type.args[0])
+            val_c_type = GetCType(container_base_type.args[1])
+            c_iter_type = 'DictIter<%s, %s>' % (key_c_type, val_c_type)
             assert not reverse
 
         elif over_type.type.fullname == 'builtins.str':

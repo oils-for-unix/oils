@@ -274,4 +274,14 @@ test-files() {
   sed -i -f _tmp/sedr test/runtime-errors.sh
 }
 
+#
+# Boxless optimization
+#
+
+singleton-list() {
+  egrep -n '\(List\[[^]]+\] [a-z]+\)' */*.asdl
+  echo
+  egrep -n '\(Dict\[[^]]+\] [a-z]+\)' */*.asdl
+}
+
 task-five "$@"

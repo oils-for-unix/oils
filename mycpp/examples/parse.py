@@ -8,7 +8,7 @@ import os
 import sys
 
 # PYTHONPATH=$REPO_ROOT/vendor
-from typing import Tuple, Optional, cast
+from typing import Tuple, List, Optional, cast
 
 # PYTHONPATH=$REPO_ROOT/mycpp
 from mycpp.mylib import log, tagswitch
@@ -250,8 +250,24 @@ def TestSubtype():
     s1 = c[1]
     log('s1 = %r', s1)
 
-    #for s in c:
-    #    log("s = %r", s);
+    c[1] = 'zz'
+    log('c[1] = %r', c[1])
+
+    # Iterate over it like a List
+    for s in c:
+        log("s = %r", s)
+
+    strs = ['a', 'b', 'c', 'd']  # type: List[str]
+
+    # TODO: does this need to work?  Or do we use casting?
+    #c2 = CompoundWord(strs)
+
+    c3 = cast(CompoundWord, strs)
+    log('len(c3) = %d', len(c3))
+
+    # Hm this opposite cast crashes in mycpp - should probably work
+    #strs2 = cast(List[str], c)
+    #log('len(strs2) = %d', len(strs2))
 
 
 def run_tests():

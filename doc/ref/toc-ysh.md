@@ -95,6 +95,7 @@ error handling, and more.
   [Serialize]     toJson()          fromJson()
                   toJson8()         fromJson8()
                 X toJ8Line()      X fromJ8Line()
+X [Quoting]       quoteJ8()         quoteSh()       quoteHtml()
   [Pattern]       _group()          _start()        _end()
   [Introspect]    shvarGet()        getVar()        setVar()  
                   parseCommand()  X parseExpr()   X bindFrame()
@@ -103,8 +104,16 @@ X [Hashing]       sha1dc()          sha256()
 ```
 
 <!-- ideas
-X [Codecs]        quoteUrl()   quoteHtml()   quoteSh()   quoteC()
-                  quoteMake()   quoteNinja()
+More quoting:
+
+quoteC()  quotePython() - can we make these ALWAYS work?
+- They can be like J8 b'' strings?
+
+quoteMake()   quoteNinja()
+
+quoteSql()  - doubling up ''
+quoteCsv()  - doubling up ""
+
 X [Wok]           _field()
 -->
 
