@@ -2002,7 +2002,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         will_glob = not self.exec_opts.noglob()
 
-        """
+        #"""
         # Array of strings, some of which are BOTH IFS-escaped and GLOB escaped!
         frags = []  # type: List[str]
         for piece in frame:
@@ -2021,7 +2021,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             frags.append(frag)
         flat = ''.join(frags)
-        #log('flat: %r', flat)
+        log('flat: %r', flat)
 
         args = self.splitter.SplitForWordEval(flat)
 
@@ -2031,7 +2031,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             argv.append('')
             return
 
-        #log('split args: %r', args)
+        log('split args: %r', args)
         for a in args:
             if glob_.LooksLikeGlob(a):
                 n = self.globber.Expand(a, argv)
@@ -2041,7 +2041,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
                                          loc.Missing)
             else:
                 argv.append(glob_.GlobUnescape(a))
-        """
+
+        return
+
+        #"""
 
         # Partition the frame into parts. Each of these will then be globbed or
         # added to the ARGV array.
@@ -2093,7 +2096,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         for piece in frame:
             if piece.do_split:
                 splits = self.splitter.SplitForWordEval(piece.s)
-                log(piece.s)
+                log('%r', piece.s)
                 log(splits)
                 if len(splits) == 0:
                     args.append(arg)
