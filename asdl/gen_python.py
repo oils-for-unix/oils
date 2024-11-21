@@ -339,22 +339,21 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('class %s(%s):' % (class_name, ', '.join(base_classes)))
         self.Emit('  _type_tag = %d' % tag_num)
 
-        all_fields = fields
-
-        field_names = [f.name for f in all_fields]
+        field_names = [f.name for f in fields]
 
         quoted_fields = repr(tuple(field_names))
         self.Emit('  __slots__ = %s' % quoted_fields)
         self.Emit('')
+
+        is_list = any(b.startswith('List[') for b in base_classes)
+        is_dict = any(b.startswith('Dict[') for b in base_classes)
+        assert not (is_list and is_dict), base_classes
 
         #
         # __init__
         #
 
         args = [f.name for f in fields]
-
-        self.Emit('  def __init__(self, %s):' % ', '.join(args))
-
         arg_types = []
         default_vals = []
         for f in fields:
@@ -364,10 +363,34 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             d_str = _DefaultValue(f.typ, mypy_type)
             default_vals.append(d_str)
 
-        self.Emit('    # type: (%s) -> None' % ', '.join(arg_types),
+        param_str = ''
+        arg_types_str = ''
+
+        if is_list:
+            assert len(args) == 0, args
+            param_str = 'other=None'
+            # hack
+            arg_types_str = [b for b in base_classes if b.startswith('List[')][0]
+
+        if is_dict:
+            raise AssertionError('TODO')
+
+        if args:
+            param_str = ', '.join(args)
+            arg_types_str = ', '.join(arg_types)
+
+        self.Emit('  def __init__(self, %s):' % param_str)
+        self.Emit('    # type: (%s) -> None' % arg_types_str,
                   reflow=False)
 
-        if not all_fields:
+        if is_list:
+            self.Emit('    if other is not None:')
+            self.Emit('        self.extend(other)')
+        if is_dict:
+            self.Emit('    if other is not None:')
+            raise AssertionError('TODO')
+
+        if not fields:
             self.Emit('    pass')  # for types like NoOp
 
         for f in fields:
@@ -376,9 +399,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
         self.Emit('')
 
-        pretty_cls_name = '%s%s' % (class_ns, class_name)
-
-        if len(all_fields) and not self.py_init_n:
+        if len(fields) and not self.py_init_n:
             self.Emit('  @staticmethod')
             self.Emit('  def CreateNull(alloc_lists=False):')
             self.Emit('    # type: () -> %s%s' % (class_ns, class_name))
@@ -387,12 +408,12 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
                       reflow=False)
             self.Emit('')
 
-        if not self.pretty_print_methods:
-            return
+        if self.pretty_print_methods:
+            self._EmitPrettyPrintMethods(class_name, class_ns, fields, is_list)
 
-        is_list = any(b.startswith('List[') for b in base_classes)
-        is_dict = any(b.startswith('Dict[') for b in base_classes)
-        assert not (is_list and is_dict), base_classes
+
+    def _EmitPrettyPrintMethods(self, class_name, class_ns, fields, is_list):
+        pretty_cls_name = '%s%s' % (class_ns, class_name)
 
         #
         # PrettyTree
@@ -408,17 +429,17 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('    trav.seen[heap_id] = True')
 
         if is_list:
-            #self.Emit('    out_node = hnode.Subtype(%r, [c.PrettyTree() for c in self])' % pretty_cls_name)
-            # TODO: emit hnode.Subtype
             self.Emit(
                 '    out_node = hnode.Array([c.PrettyTree() for c in self])')
+            # TODO: emit hnode.Subtype
+            #self.Emit('    out_node = hnode.Subtype(%r, [c.PrettyTree() for c in self])' % pretty_cls_name)
         else:
             self.Emit('    out_node = NewRecord(%r)' % pretty_cls_name)
             self.Emit('    L = out_node.fields')
             self.Emit('')
 
             # Use the runtime type to be more like asdl/format.py
-            for local_id, field in enumerate(all_fields):
+            for local_id, field in enumerate(fields):
                 #log('%s :: %s', field_name, field_desc)
                 self.Indent()
                 self._EmitCodeForField('PrettyTree', field, local_id)
