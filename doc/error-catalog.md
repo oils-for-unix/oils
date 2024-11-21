@@ -76,14 +76,14 @@ test/ysh-parse-errors.sh test-func-var-checker
 [ -c flag ]:3: setvar couldn't find matching 'var x' (OILS-ERR-10)
 ```
 
-- Did you forget to declare the name with the [var](ref/chap-cmd-lang.html#var)
+- Did you forget to declare the name with the [var](ref/chap-ysh-cmd.html#var)
   keyword?
-- Did you mean to use the [setglobal](ref/chap-cmd-lang.html#setglobal)
+- Did you mean to use the [setglobal](ref/chap-ysh-cmd.html#setglobal)
   keyword?
 
 Related help topics:
 
-- [setvar](ref/chap-cmd-lang.html#setvar)
+- [setvar](ref/chap-ysh-cmd.html#setvar)
 
 ### OILS-ERR-11
 
