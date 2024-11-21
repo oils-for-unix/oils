@@ -271,11 +271,19 @@ def TestSubtype():
 
     # AList constructor
 
+    c4 = CompoundWord(strs)
+    log('len(c4) = %d', len(c4))
+
     if 0:
-        c4 = CompoundWord(strs)
-        log('len(c4) = %d', len(c4))
+        # here we mutate the slab, but the length is unchanged!  Bad!
+        # we can't alias!  I think we have to "take"!
         strs.append('e')
         log('len(c4) = %d', len(c4))
+
+        del strs[:]
+
+        for s in c4:
+            print("s = %r" % s)
 
 
 def run_tests():

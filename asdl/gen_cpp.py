@@ -419,20 +419,64 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         Emit('};')
         Emit('')
 
-    def _GenClass(self,
-                  fields,
-                  class_name,
-                  base_classes,
-                  depth,
-                  tag,
-                  obj_header_str=''):
-        """For Product and Constructor."""
+    def _GenClassBegin(self, class_name, base_classes, depth):
         if base_classes:
             bases = ', '.join('public %s' % b for b in base_classes)
             self.Emit("class %s : %s {" % (class_name, bases), depth)
         else:
             self.Emit("class %s {" % class_name, depth)
         self.Emit(" public:", depth)
+
+    def _GenClassEnd(self, class_name, depth):
+        self.Emit('')
+        self.Emit('  DISALLOW_COPY_AND_ASSIGN(%s)' % class_name)
+        self.Emit('};', depth)
+        self.Emit('', depth)
+
+    def _EmitMethodDecl(self, obj_header_str, depth):
+        if self.pretty_print_methods:
+            for abbrev in PRETTY_METHODS:
+                self.Emit(
+                    '  hnode_t* %s(Dict<int, bool>* seen = nullptr);' % abbrev,
+                    depth)
+            self.Emit('')
+
+        self.Emit('  static constexpr ObjHeader obj_header() {')
+        self.Emit('    return %s;' % obj_header_str)
+        self.Emit('  }')
+        self.Emit('')
+
+    def _GenClassForList(self, class_name, base_classes, tag_num):
+        depth = 0
+        self._GenClassBegin(class_name, base_classes, depth)
+
+        base_type_str = [b for b in base_classes if b.startswith('List<')][0]
+
+        # Zero arg constructor
+        self.Emit('  %s() : %s() {' % (class_name, base_type_str), depth)
+        self.Emit('  }', depth)
+
+        # One arg constructor
+        self.Emit(
+            '  explicit %s(%s* other) : %s(other) {' %
+            (class_name, base_type_str, base_type_str), depth)
+        self.Emit('  }', depth)
+
+        # field_mask() should call List superclass, since say word_t won't have it
+        obj_header_str = 'ObjHeader::TaggedSubtype(%d, field_mask())' % tag_num
+        self._EmitMethodDecl(obj_header_str, depth)
+
+        self._GenClassEnd(class_name, depth)
+
+    def _GenClass(self,
+                  fields,
+                  class_name,
+                  base_classes,
+                  depth,
+                  tag_num,
+                  obj_header_str=''):
+        """For Product and Constructor."""
+        self._GenClassBegin(class_name, base_classes, depth)
 
         # Ensure that the member variables are ordered such that GC managed objects
         # come before any unmanaged ones because we use `HeapTag::Scanned`.
@@ -488,21 +532,9 @@ class ClassDefVisitor(visitor.AsdlVisitor):
             self.Emit('  }')
             self.Emit('')
 
-        if self.pretty_print_methods:
-            for abbrev in PRETTY_METHODS:
-                self.Emit(
-                    '  hnode_t* %s(Dict<int, bool>* seen = nullptr);' % abbrev,
-                    depth)
-            self.Emit('')
-
-        if not obj_header_str:  # override for subtypes
-            obj_header_str = 'ObjHeader::AsdlClass(%s, %d)' % (
-                tag, len(managed_fields))
-
-        self.Emit('  static constexpr ObjHeader obj_header() {')
-        self.Emit('    return %s;' % obj_header_str)
-        self.Emit('  }')
-        self.Emit('')
+        obj_header_str = 'ObjHeader::AsdlClass(%s, %d)' % (tag_num,
+                                                           len(managed_fields))
+        self._EmitMethodDecl(obj_header_str, depth)
 
         #
         # Members
@@ -510,10 +542,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         for field in all_fields:
             self.Emit("  %s %s;" % (_GetCppType(field.typ), field.name))
 
-        self.Emit('')
-        self.Emit('  DISALLOW_COPY_AND_ASSIGN(%s)' % class_name)
-        self.Emit('};', depth)
-        self.Emit('', depth)
+        self._GenClassEnd(class_name, depth)
 
     def VisitSubType(self, subtype):
         self._shared_type_tags[subtype.name] = self._product_counter
@@ -550,20 +579,13 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
             t = subtype.base_class.type_name
             if t == 'List':
-                # field_mask() should call List superclass, since say word_t won't have it
-                obj_header_str = 'ObjHeader::TaggedSubtype(%d, field_mask())' % tag_num
+                self._GenClassForList(subtype.name, bases, tag_num)
 
             elif t == 'Dict':
                 raise AssertionError()
             else:
-                obj_header_str = ''
-
-            self._GenClass([],
-                           subtype.name,
-                           bases,
-                           0,
-                           tag_num,
-                           obj_header_str=obj_header_str)
+                #obj_header_str = ''
+                raise AssertionError()
 
 
 class MethodDefVisitor(visitor.AsdlVisitor):

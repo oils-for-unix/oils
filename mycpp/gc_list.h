@@ -36,6 +36,11 @@ class List {
  public:
   List() : len_(0), capacity_(0), slab_(nullptr) {
   }
+  // Used for ASDL subtypes with <.  NOT even a shallow copy - it ALIASES thes
+  // slab.
+  explicit List(List* other)
+      : len_(other->len_), capacity_(other->capacity_), slab_(other->slab_) {
+  }
 
   // Implements L[i]
   T at(int i);
