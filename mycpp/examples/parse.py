@@ -240,8 +240,8 @@ def TestCreateNull():
 def TestSubtype():
     # type: () -> None
 
-    # TODO: fix this
-    #c = CompoundWord()
+    # TODO:
+    #c = CompoundWord.New()
     c = CompoundWord.Take([])
     c.append('foo')
     c.append('bar')

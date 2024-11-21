@@ -335,6 +335,9 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         # TODO: Do something nicer
         base_class_str = [b for b in base_classes if b.startswith('List[')][0]
 
+        # Needed for c = CompoundWord() to work
+        # TODO: make it
+        # c = CompoundWord.New()
         if 0:
             self.Emit('  def __init__(self, other=None):')
             self.Emit('    # type: (Optional[%s]) -> None' % base_class_str,
