@@ -269,6 +269,14 @@ def TestSubtype():
     #strs2 = cast(List[str], c)
     #log('len(strs2) = %d', len(strs2))
 
+    # AList constructor
+
+    if 0:
+        c4 = CompoundWord(strs)
+        log('len(c4) = %d', len(c4))
+        strs.append('e')
+        log('len(c4) = %d', len(c4))
+
 
 def run_tests():
     # type: () -> None

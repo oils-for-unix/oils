@@ -325,29 +325,46 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             self.Emit('  L.append(Field(%r, %s))' % (field.name, out_val_name),
                       depth)
 
+    def _GenClassBegin(self, class_name, base_classes, tag_num):
+        self.Emit('class %s(%s):' % (class_name, ', '.join(base_classes)))
+        self.Emit('  _type_tag = %d' % tag_num)
+
+    def _GenListSubclass(self, class_name, base_classes, tag_num, class_ns=''):
+        self._GenClassBegin(class_name, base_classes, tag_num)
+
+        # TODO: Do something nicer
+        arg_types_str = [b for b in base_classes if b.startswith('List[')][0]
+
+        self.Emit('  def __init__(self, other=None):')
+        self.Emit('    # type: (Optional[%s]) -> None' % arg_types_str,
+                  reflow=False)
+        self.Emit('    if other is not None:')
+        self.Emit('        self.extend(other)')
+        self.Emit('')
+
+        if self.pretty_print_methods:
+            self._EmitPrettyPrintMethodsForList(class_name)
+
     def _GenClass(self,
                   fields,
                   class_name,
                   base_classes,
                   tag_num,
                   class_ns=''):
-        """Used for both Sum variants ("constructors") and Product types.
+        """Generate a typed Python class.
+
+        Used for both Sum variants ("constructors") and Product types.
 
         Args:
           class_ns: for variants like value.Str
         """
-        self.Emit('class %s(%s):' % (class_name, ', '.join(base_classes)))
-        self.Emit('  _type_tag = %d' % tag_num)
+        self._GenClassBegin(class_name, base_classes, tag_num)
 
         field_names = [f.name for f in fields]
 
         quoted_fields = repr(tuple(field_names))
         self.Emit('  __slots__ = %s' % quoted_fields)
         self.Emit('')
-
-        is_list = any(b.startswith('List[') for b in base_classes)
-        is_dict = any(b.startswith('Dict[') for b in base_classes)
-        assert not (is_list and is_dict), base_classes
 
         #
         # __init__
@@ -363,32 +380,9 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             d_str = _DefaultValue(f.typ, mypy_type)
             default_vals.append(d_str)
 
-        param_str = ''
-        arg_types_str = ''
-
-        if is_list:
-            assert len(args) == 0, args
-            param_str = 'other=None'
-            # hack
-            arg_types_str = [b for b in base_classes if b.startswith('List[')][0]
-
-        if is_dict:
-            raise AssertionError('TODO')
-
-        if args:
-            param_str = ', '.join(args)
-            arg_types_str = ', '.join(arg_types)
-
-        self.Emit('  def __init__(self, %s):' % param_str)
-        self.Emit('    # type: (%s) -> None' % arg_types_str,
+        self.Emit('  def __init__(self, %s):' % ', '.join(args))
+        self.Emit('    # type: (%s) -> None' % ', '.join(arg_types),
                   reflow=False)
-
-        if is_list:
-            self.Emit('    if other is not None:')
-            self.Emit('        self.extend(other)')
-        if is_dict:
-            self.Emit('    if other is not None:')
-            raise AssertionError('TODO')
 
         if not fields:
             self.Emit('    pass')  # for types like NoOp
@@ -399,6 +393,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
         self.Emit('')
 
+        # CreateNull() - another way of initializing
         if len(fields) and not self.py_init_n:
             self.Emit('  @staticmethod')
             self.Emit('  def CreateNull(alloc_lists=False):')
@@ -408,18 +403,12 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
                       reflow=False)
             self.Emit('')
 
+        # PrettyTree(), _AbbreviatedTree(), AbbreviatedTree()
         if self.pretty_print_methods:
-            self._EmitPrettyPrintMethods(class_name, class_ns, fields, is_list)
+            self._EmitPrettyPrintMethods(class_name, class_ns, fields)
 
-
-    def _EmitPrettyPrintMethods(self, class_name, class_ns, fields, is_list):
-        pretty_cls_name = '%s%s' % (class_ns, class_name)
-
-        #
-        # PrettyTree
-        #
-
-        self.Emit('  def PrettyTree(self, trav=None):')
+    def _EmitPrettyBegin(self, method_name):
+        self.Emit('  def %s(self, trav=None):' % method_name)
         self.Emit('    # type: (Optional[TraversalState]) -> hnode_t')
         self.Emit('    trav = trav or TraversalState()')
         self.Emit('    heap_id = id(self)')
@@ -428,59 +417,63 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('      return hnode.AlreadySeen(heap_id)')
         self.Emit('    trav.seen[heap_id] = True')
 
-        if is_list:
-            self.Emit(
-                '    out_node = hnode.Array([c.PrettyTree() for c in self])')
-            # TODO: emit hnode.Subtype
-            #self.Emit('    out_node = hnode.Subtype(%r, [c.PrettyTree() for c in self])' % pretty_cls_name)
-        else:
-            self.Emit('    out_node = NewRecord(%r)' % pretty_cls_name)
-            self.Emit('    L = out_node.fields')
-            self.Emit('')
+    def _EmitPrettyPrintMethodsForList(self, class_name):
+        self._EmitPrettyBegin('PrettyTree')
+        self.Emit('    return hnode.Array([c.PrettyTree() for c in self])')
+        # TODO: emit hnode.Subtype
+        #self.Emit('    out_node = hnode.Subtype(%r, [c.PrettyTree() for c in self])' % pretty_cls_name)
+        self.Emit('')
 
-            # Use the runtime type to be more like asdl/format.py
-            for local_id, field in enumerate(fields):
-                #log('%s :: %s', field_name, field_desc)
-                self.Indent()
-                self._EmitCodeForField('PrettyTree', field, local_id)
-                self.Dedent()
-                self.Emit('')
+        self._EmitPrettyBegin('_AbbreviatedTree')
+        self.Emit(
+            '    return hnode.Array([c._AbbreviatedTree() for c in self])')
+        self.Emit('')
+
+        # No abbreviations possible here, but children may have them
+        self.Emit('  def AbbreviatedTree(self, trav=None):')
+        self.Emit('    # type: (Optional[TraversalState]) -> hnode_t')
+        self.Emit('    return self._AbbreviatedTree(trav=trav)')
+
+    def _EmitPrettyPrintMethods(self, class_name, class_ns, fields):
+        pretty_cls_name = '%s%s' % (class_ns, class_name)
+
+        # def PrettyTree(...):
+
+        self._EmitPrettyBegin('PrettyTree')
+        self.Emit('    out_node = NewRecord(%r)' % pretty_cls_name)
+        self.Emit('    L = out_node.fields')
+        self.Emit('')
+
+        # Use the runtime type to be more like asdl/format.py
+        for local_id, field in enumerate(fields):
+            #log('%s :: %s', field_name, field_desc)
+            self.Indent()
+            self._EmitCodeForField('PrettyTree', field, local_id)
+            self.Dedent()
+            self.Emit('')
         self.Emit('    return out_node')
         self.Emit('')
 
-        #
-        # _AbbreviatedTree
-        #
+        # def _AbbreviatedTree(...):
 
-        self.Emit('  def _AbbreviatedTree(self, trav=None):')
-        self.Emit('    # type: (Optional[TraversalState]) -> hnode_t')
-        self.Emit('    trav = trav or TraversalState()')
-        self.Emit('    heap_id = id(self)')
-        self.Emit('    if heap_id in trav.seen:')
-        # cut off recursion
-        self.Emit('      return hnode.AlreadySeen(heap_id)')
-        self.Emit('    trav.seen[heap_id] = True')
+        self._EmitPrettyBegin('_AbbreviatedTree')
+        self.Emit('    out_node = NewRecord(%r)' % pretty_cls_name)
+        self.Emit('    L = out_node.fields')
 
-        if is_list:
-            #self.Emit('    out_node = hnode.Subtype(%r, [c.PrettyTree() for c in self])' % pretty_cls_name)
-            # TODO: emit hnode.Subtype
-            self.Emit(
-                '    out_node = hnode.Array([c.PrettyTree() for c in self])')
-        else:
-            self.Emit('    out_node = NewRecord(%r)' % pretty_cls_name)
-            self.Emit('    L = out_node.fields')
-
-            for local_id, field in enumerate(fields):
-                self.Indent()
-                self._EmitCodeForField('AbbreviatedTree', field, local_id)
-                self.Dedent()
-                self.Emit('')
+        for local_id, field in enumerate(fields):
+            self.Indent()
+            self._EmitCodeForField('AbbreviatedTree', field, local_id)
+            self.Dedent()
+            self.Emit('')
 
         self.Emit('    return out_node')
         self.Emit('')
 
         self.Emit('  def AbbreviatedTree(self, trav=None):')
         self.Emit('    # type: (Optional[TraversalState]) -> hnode_t')
+
+        # For ASDL Token, look for 'class _Token' in frontend/syntax_abbrev.py,
+        # and call it
         abbrev_name = '_%s' % class_name
         if abbrev_name in self.abbrev_mod_entries:
             self.Emit('    p = %s(self)' % abbrev_name)
@@ -666,5 +659,10 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             bases = self._base_classes[subtype.name]
             if not bases:
                 bases = ['pybase.CompoundObj']
+
             bases.append(_MyPyType(subtype.base_class))
-            self._GenClass([], subtype.name, bases, tag_num)
+
+            if subtype.base_class.IsList():
+                self._GenListSubclass(subtype.name, bases, tag_num)
+            else:
+                self._GenClass([], subtype.name, bases, tag_num)
