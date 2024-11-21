@@ -51,6 +51,7 @@ from _devbuild.gen.syntax_asdl import (
     pat_e,
     word,
     Eggex,
+    List_of_command,
 )
 from _devbuild.gen.runtime_asdl import (
     cmd_value,
@@ -606,12 +607,14 @@ class CommandEvaluator(object):
         """
         b = False
         UP_cond = cond
+        #log('cond %r', type(cond))
+        #log('cond %r', cond)
         with tagswitch(cond) as case:
             if case(condition_e.Shell):
-                cond = cast(condition.Shell, UP_cond)
-                self._StrictErrExitList(cond.commands)
+                cond = cast(List_of_command, UP_cond)
+                self._StrictErrExitList(cond)
                 with state.ctx_ErrExit(self.mutable_opts, False, blame_tok):
-                    cond_status = self._ExecuteList(cond.commands)
+                    cond_status = self._ExecuteList(cond)
 
                 b = cond_status == 0
 

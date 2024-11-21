@@ -70,11 +70,11 @@ from _devbuild.gen.syntax_asdl import (
     for_iter_e,
     case_arg_e,
     case_arg,
-    condition,
     condition_e,
     redir_param,
     redir_param_e,
     Redir,
+    List_of_command,
 )
 from asdl import runtime
 from core.error import p_die
@@ -710,10 +710,10 @@ class YshPrinter(object):
                     self.f.write('while !')
 
                 if node.cond.tag() == condition_e.Shell:
-                    commands = cast(condition.Shell, node.cond).commands
+                    commands = cast(List_of_command, node.cond)
                     # Skip the semi-colon in the condition, which is usually a Sentence
-                    if len(commands) == 1 and commands[0].tag(
-                    ) == command_e.Sentence:
+                    if (len(commands) == 1 and
+                            commands[0].tag() == command_e.Sentence):
                         sentence = cast(command.Sentence, commands[0])
                         self.DoCommand(sentence.child, local_symbols)
                         self.cursor.SkipPast(sentence.terminator)
@@ -735,7 +735,7 @@ class YshPrinter(object):
 
                     cond = arm.cond
                     if cond.tag() == condition_e.Shell:
-                        commands = cast(condition.Shell, cond).commands
+                        commands = cast(List_of_command, cond)
                         if (len(commands) == 1 and
                                 commands[0].tag() == command_e.Sentence):
                             sentence = cast(command.Sentence, commands[0])

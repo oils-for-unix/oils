@@ -55,6 +55,7 @@ from _devbuild.gen.syntax_asdl import (
     Func,
     SingleQuoted,
     DoubleQuoted,
+    List_of_command,
 )
 from _devbuild.gen.value_asdl import LiteralBlock
 from core import alloc
@@ -1643,13 +1644,14 @@ class CommandParser(object):
         loops. It will throw a parse error if there are no conditions in the list.
         """
         self.allow_block = False
+        # TODO: CommandList should become List subtype
         commands = self._ParseCommandList()
         self.allow_block = True
 
         if len(commands.children) == 0:
             p_die("Expected a condition", loc.Word(self.cur_word))
 
-        return condition.Shell(commands.children)
+        return List_of_command.Take(commands.children)
 
     def ParseWhileUntil(self, keyword):
         # type: (Token) -> command.WhileUntil
@@ -1911,9 +1913,10 @@ class CommandParser(object):
                 cond = condition.YshExpr(enode)  # type: condition_t
             else:
                 self.allow_block = False
+                # TODO: CommandList should become List subtype
                 commands = self._ParseCommandList()
                 self.allow_block = True
-                cond = condition.Shell(commands.children)
+                cond = List_of_command.Take(commands.children)
 
             body = self.ParseBraceGroup()
             self._GetWord()

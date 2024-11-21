@@ -277,8 +277,10 @@ module syntax
   # TODO: could put Id.Lit_VarLike foo= into LazyStr() with -1 slice
   EnvPair = (Token left, str name, rhs_word val)
 
+  List_of_command < List[command]
+
   condition = 
-    Shell(List[command] commands)  # if false; true; then echo hi; fi
+    Shell %List_of_command         # if false; true; then echo hi; fi
   | YshExpr(expr e)                # if (x > 0) { echo hi }
                                    # TODO: add more specific blame location
 
@@ -423,6 +425,8 @@ module syntax
     # 2. ls ; ls & ls  (same line)
     # 3. CommandSub  # single child that's a CommandList
     # 4. Subshell  # single child that's a CommandList
+
+    # TODO: Use List_of_command
   | CommandList(List[command] children)
 
     # YSH command constructs

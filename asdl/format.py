@@ -409,12 +409,21 @@ class _PrettyPrinter(object):
             node = cast(hnode.Record, UP_node)
             self._PrintRecord(node, f, indent)
 
+        elif tag == hnode_e.Array:
+            # Now happens with subtype?
+            raise AssertionError()
+            #node = cast(hnode.Array, UP_node)
+            #self._PrintWholeArray(node, f, indent)
+
         elif tag == hnode_e.AlreadySeen:
             node = cast(hnode.AlreadySeen, UP_node)
             # ... means omitting second reference, while --- means a cycle
             f.write('...0x%s' % mylib.hex_lower(node.heap_id))
 
         else:
+            #from _devbuild.gen.hnode_asdl import hnode_str
+            #raise AssertionError(hnode_str(node.tag()))
+
             raise AssertionError(node)
 
 
