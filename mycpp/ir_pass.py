@@ -76,7 +76,9 @@ class Build(SimpleVisitor):
 
              """
 
-        is_asdl = o.name == 'CreateNull'  # hack for MyType.CreateNull(alloc_lists=True)
+        # hack for MyType.CreateNull(alloc_lists=True)
+        #          MyType.Take(other)
+        is_asdl = o.name in ('CreateNull', 'Take')
         is_module = (isinstance(o.expr, NameExpr) and
                      o.expr.name in self.imported_names)
 

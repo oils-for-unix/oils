@@ -529,6 +529,13 @@ TEST test_index_out_of_bounds() {
   PASS();
 }
 
+TEST test_constructors() {
+  auto* li = Alloc<List<int>>();
+  // auto* li2 = Alloc<List<int>>(li);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -553,6 +560,7 @@ int main(int argc, char** argv) {
   RUN_TEST(test_list_pop_mem_safe);
 
   RUN_TEST(test_index_out_of_bounds);
+  RUN_TEST(test_constructors);
 
   gHeap.CleanProcessExit();
 

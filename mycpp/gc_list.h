@@ -36,12 +36,15 @@ class List {
  public:
   List() : len_(0), capacity_(0), slab_(nullptr) {
   }
+
+ protected:
   // Used for ASDL subtypes with <.  NOT even a shallow copy - it ALIASES thes
   // slab.
   explicit List(List* other)
       : len_(other->len_), capacity_(other->capacity_), slab_(other->slab_) {
   }
 
+ public:
   // Implements L[i]
   T at(int i);
 
@@ -87,6 +90,9 @@ class List {
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(field_mask(), sizeof(List<T>));
   }
+
+  // Used by ASDL
+  void SetTaken();
 
   int len_;       // number of entries
   int capacity_;  // max entries before resizing
@@ -368,6 +374,14 @@ void List<T>::clear() {
     memset(slab_->items_, 0, len_ * sizeof(T));  // zero for GC scan
   }
   len_ = 0;
+}
+
+// used by ASDL
+template <typename T>
+void List<T>::SetTaken() {
+  slab_ = nullptr;
+  len_ = 0;
+  capacity_ = 0;
 }
 
 // Used in osh/string_ops.py

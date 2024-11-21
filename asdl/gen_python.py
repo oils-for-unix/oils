@@ -333,13 +333,22 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self._GenClassBegin(class_name, base_classes, tag_num)
 
         # TODO: Do something nicer
-        arg_types_str = [b for b in base_classes if b.startswith('List[')][0]
+        base_class_str = [b for b in base_classes if b.startswith('List[')][0]
 
-        self.Emit('  def __init__(self, other=None):')
-        self.Emit('    # type: (Optional[%s]) -> None' % arg_types_str,
-                  reflow=False)
-        self.Emit('    if other is not None:')
-        self.Emit('        self.extend(other)')
+        if 0:
+            self.Emit('  def __init__(self, other=None):')
+            self.Emit('    # type: (Optional[%s]) -> None' % base_class_str,
+                      reflow=False)
+            self.Emit('    if other is not None:')
+            self.Emit('        self.extend(other)')
+            self.Emit('')
+
+        self.Emit('  @staticmethod')
+        self.Emit('  def Take(plain_list):')
+        self.Emit('    # type: (%s) -> %s' % (base_class_str, class_name))
+        self.Emit('    result = %s(plain_list)' % class_name)
+        self.Emit('    del plain_list[:]')
+        self.Emit('    return result')
         self.Emit('')
 
         if self.pretty_print_methods:

@@ -428,7 +428,6 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         self.Emit(" public:", depth)
 
     def _GenClassEnd(self, class_name, depth):
-        self.Emit('')
         self.Emit('  DISALLOW_COPY_AND_ASSIGN(%s)' % class_name)
         self.Emit('};', depth)
         self.Emit('', depth)
@@ -456,10 +455,23 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         self.Emit('  %s() : %s() {' % (class_name, base_type_str), depth)
         self.Emit('  }', depth)
 
-        # One arg constructor
+        # One arg constructor used by Take.
+        # This should be is PROTECTED, like the superclass, but Alloc<T> calls
+        # it.  Hm.
+        #self.Emit(' protected:')
         self.Emit(
-            '  explicit %s(%s* other) : %s(other) {' %
+            '  %s(%s* plain_list) : %s(plain_list) {' %
             (class_name, base_type_str, base_type_str), depth)
+        self.Emit('  }', depth)
+
+        # Take() constructor
+        self.Emit(
+            '  static %s* Take(%s* plain_list) {' %
+            (class_name, base_type_str), depth)
+        self.Emit('    auto* result = Alloc<%s>(plain_list);' % class_name,
+                  depth)
+        self.Emit('    plain_list->SetTaken();', depth)
+        self.Emit('    return result;', depth)
         self.Emit('  }', depth)
 
         # field_mask() should call List superclass, since say word_t won't have it
@@ -541,6 +553,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         #
         for field in all_fields:
             self.Emit("  %s %s;" % (_GetCppType(field.typ), field.name))
+        self.Emit('')
 
         self._GenClassEnd(class_name, depth)
 

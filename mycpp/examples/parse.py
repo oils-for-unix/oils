@@ -240,7 +240,9 @@ def TestCreateNull():
 def TestSubtype():
     # type: () -> None
 
-    c = CompoundWord()
+    # TODO: fix this
+    #c = CompoundWord()
+    c = CompoundWord.Take([])
     c.append('foo')
     c.append('bar')
 
@@ -271,19 +273,25 @@ def TestSubtype():
 
     # AList constructor
 
-    c4 = CompoundWord(strs)
+    c4 = CompoundWord.Take(strs)
     log('len(c4) = %d', len(c4))
 
-    if 0:
-        # here we mutate the slab, but the length is unchanged!  Bad!
-        # we can't alias!  I think we have to "take"!
-        strs.append('e')
-        log('len(c4) = %d', len(c4))
+    # The length is zero after taking!
+    log('len(strs) = %d', len(strs))
 
-        del strs[:]
+    if c[0] is None:
+        log('NULL BUG')
+    else:
+        log('not null')
 
-        for s in c4:
-            print("s = %r" % s)
+    log('c4[0] = %s', c4[0])
+
+    # this is back to zero, can technically be reused
+    strs.append('e')
+    log('len(strs) = %d', len(strs))
+
+    for s in c4:
+        print("s = %r" % s)
 
 
 def run_tests():
