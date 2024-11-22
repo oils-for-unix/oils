@@ -85,4 +85,24 @@ check-types() {
   asdl-check asdl/target_lang_test.py
 }
 
+pretty-demo() {  
+  local cpp=${1:-}
+
+  if test -n "$cpp"; then
+    ninja _bin/cxx-asan/{osh,ysh}
+    export OSH=_bin/cxx-asan/osh
+    export YSH=_bin/cxx-asan/ysh
+  fi
+
+  # osh -n
+  test/parse-errors.sh test-syntax-abbrev
+  echo
+
+  $OSH -c 'declare -a a=(a b); a[12]=zz; pp asdl_ (a); pp asdl_ (_a2sp(a))'
+  echo
+
+  $YSH -c 'var d = {x:42}; setvar d.k = d; pp asdl_ (d)'
+  echo
+}
+
 "$@"

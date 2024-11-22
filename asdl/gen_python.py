@@ -294,14 +294,13 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             v_code_str, _ = _HNodeExpr(abbrev, v_typ, v)
 
             self.Emit('  if self.%s is not None:  # Dict' % field.name)
-            self.Emit('    m = hnode.Leaf("Dict", color_e.OtherConst)')
-            self.Emit('    %s = hnode.Array([m])' % out_val_name)
+            self.Emit('    unnamed = []')
+            self.Emit('    %s = hnode.Record("", "{", "}", [], unnamed)' %
+                      out_val_name)
             self.Emit('    for %s, %s in self.%s.iteritems():' %
                       (k, v, field.name))
-            self.Emit('      %s.children.append(%s)' %
-                      (out_val_name, k_code_str))
-            self.Emit('      %s.children.append(%s)' %
-                      (out_val_name, v_code_str))
+            self.Emit('      unnamed.append(%s)' % k_code_str)
+            self.Emit('      unnamed.append(%s)' % v_code_str)
             self.Emit('    L.append(Field(%r, %s))' %
                       (field.name, out_val_name))
 

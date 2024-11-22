@@ -645,10 +645,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         self._EmitList(abbrev, 'this->%s' % field.name, item_type,
                        out_val_name)
 
-    def _EmitDictPrettyPrint(self, abbrev, field, out_val_name, counter):
-        k = 'k%d' % counter
-        v = 'v%d' % counter
-
+    def _EmitDictPrettyPrint(self, abbrev, field):
         typ = field.typ
         if typ.type_name == 'Optional':  # descend one level
             typ = typ.children[0]
@@ -659,28 +656,24 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         k_c_type = _GetCppType(k_typ)
         v_c_type = _GetCppType(v_typ)
 
-        k_code_str, _ = _HNodeExpr(abbrev, k_typ, k)
-        v_code_str, _ = _HNodeExpr(abbrev, v_typ, v)
+        k_code_str, _ = _HNodeExpr(abbrev, k_typ, 'k')
+        v_code_str, _ = _HNodeExpr(abbrev, v_typ, 'v')
 
-        self.Emit('if (this->%s) {  // Dict' % field.name)
-        # TODO: m can be a global constant!
+        self.Emit('auto* unnamed = NewList<hnode_t*>();')
         self.Emit(
-            '  auto m = Alloc<hnode::Leaf>(StrFromC("Dict"), color_e::OtherConst);'
+            #'auto* hdict = Alloc<hnode_asdl::hnode__Record>(kEmptyString, StrFromC("{"), StrFromC("}"), NewList<hnode_t*>(), unnamed);')
+            'auto* hdict = Alloc<hnode::Record>(kEmptyString, StrFromC("{"), StrFromC("}"), NewList<Field*>(), unnamed);'
         )
         self.Emit(
-            '  hnode::Array* %s = Alloc<hnode::Array>(NewList<hnode_t*>({m}));'
-            % out_val_name)
-        self.Emit(
-            '  for (DictIter<%s, %s> it(this->%s); !it.Done(); it.Next()) {' %
+            'for (DictIter<%s, %s> it(this->%s); !it.Done(); it.Next()) {' %
             (k_c_type, v_c_type, field.name))
-        self.Emit('    auto %s = it.Key();' % k)
-        self.Emit('    auto %s = it.Value();' % v)
-        self.Emit('    %s->children->append(%s);' % (out_val_name, k_code_str))
-        self.Emit('    %s->children->append(%s);' % (out_val_name, v_code_str))
-        self.Emit('  }')
-        self.Emit('  L->append(Alloc<Field>(StrFromC ("%s"), %s));' %
-                  (field.name, out_val_name))
+        self.Emit('  auto k = it.Key();')
+        self.Emit('  auto v = it.Value();')
+        self.Emit('  unnamed->append(%s);' % k_code_str)
+        self.Emit('  unnamed->append(%s);' % v_code_str)
         self.Emit('}')
+        self.Emit('L->append(Alloc<Field>(StrFromC("%s"), hdict));' %
+                  field.name)
 
     def _EmitCodeForField(self, abbrev, field, counter):
         """Generate code that returns an hnode for a field."""
@@ -696,7 +689,11 @@ class MethodDefVisitor(visitor.AsdlVisitor):
             self.Emit('}')
 
         elif field.typ.IsDict():
-            self._EmitDictPrettyPrint(abbrev, field, out_val_name, counter)
+            self.Emit('if (this->%s != nullptr) {  // Dict' % field.name)
+            self.Indent()
+            self._EmitDictPrettyPrint(abbrev, field)
+            self.Dedent()
+            self.Emit('}')
 
         elif field.typ.IsOptional():
             typ = field.typ.children[0]
