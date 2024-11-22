@@ -431,17 +431,19 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     def _EmitPrettyPrintMethodsForList(self, class_name):
         self._EmitPrettyBegin('PrettyTree')
-        self.Emit('    return hnode.Array([c.PrettyTree() for c in self])')
-        # TODO: emit hnode.Subtype
-        #self.Emit('    out_node = hnode.Subtype(%r, [c.PrettyTree() for c in self])' % pretty_cls_name)
+        self.Emit('    h = runtime.NewRecord(%r)' % class_name)
+        self.Emit('    h.unnamed_fields = [c.PrettyTree() for c in self]')
+        self.Emit('    return h')
         self.Emit('')
 
         self._EmitPrettyBegin('_AbbreviatedTree')
+        self.Emit('    h = runtime.NewRecord(%r)' % class_name)
         self.Emit(
-            '    return hnode.Array([c._AbbreviatedTree() for c in self])')
+            '    h.unnamed_fields = [c._AbbreviatedTree() for c in self]')
+        self.Emit('    return h')
         self.Emit('')
 
-        # No abbreviations possible here, but children may have them
+        # TODO: register abbreviations with _CompoundWord?
         self.Emit('  def AbbreviatedTree(self, trav=None):')
         self.Emit('    # type: (Optional[TraversalState]) -> hnode_t')
         self.Emit('    return self._AbbreviatedTree(trav=trav)')

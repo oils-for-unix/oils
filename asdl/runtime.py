@@ -18,7 +18,9 @@ def NewRecord(node_type):
 
     # TODO: could CreateNull(alloc_lists=True) to optimize?
     return hnode.Record(
-        node_type, '(', ')',  
+        node_type,
+        '(',
+        ')',
         [],  # fields
         None,  # unnamed fields
     )
