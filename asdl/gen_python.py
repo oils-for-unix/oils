@@ -117,7 +117,7 @@ def _DefaultValue(typ, mypy_type):
         raise AssertionError()
 
 
-def _HNodeExpr(abbrev, typ, var_name):
+def _HNodeExpr(typ, var_name):
     # type: (str, ast.TypeExpr, str) -> str
     none_guard = False
 
@@ -125,7 +125,7 @@ def _HNodeExpr(abbrev, typ, var_name):
         typ = typ.children[0]  # descend one level
 
     if isinstance(typ, ast.ParameterizedType):
-        code_str = '%s.%s()' % (var_name, abbrev)
+        code_str = '%s.PrettyTree()' % var_name
         none_guard = True
 
     elif isinstance(typ, ast.NamedType):
@@ -158,7 +158,7 @@ def _HNodeExpr(abbrev, typ, var_name):
                                                                      var_name)
 
         else:
-            code_str = '%s.%s(do_abbrev, trav=trav)' % (var_name, abbrev)
+            code_str = '%s.PrettyTree(do_abbrev, trav=trav)' % var_name
             none_guard = True
 
     else:
@@ -252,7 +252,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('  return _%s_str[val]' % sum_name, depth)
         self.Emit('', depth)
 
-    def _EmitCodeForField(self, abbrev, field, counter):
+    def _EmitCodeForField(self, field, counter):
         """Generate code that returns an hnode for a field."""
         out_val_name = 'x%d' % counter
 
@@ -267,8 +267,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             self.Emit('  if self.%s is not None:  # List' % field.name)
             self.Emit('    %s = hnode.Array([])' % out_val_name)
             self.Emit('    for %s in self.%s:' % (iter_name, field.name))
-            child_code_str, none_guard = _HNodeExpr(abbrev, item_type,
-                                                    iter_name)
+            child_code_str, none_guard = _HNodeExpr(item_type, iter_name)
 
             if none_guard:  # e.g. for List[Optional[value_t]]
                 # TODO: could consolidate with asdl/runtime.py NewLeaf(), which
@@ -295,8 +294,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             k_typ = typ.children[0]
             v_typ = typ.children[1]
 
-            k_code_str, _ = _HNodeExpr(abbrev, k_typ, k)
-            v_code_str, _ = _HNodeExpr(abbrev, v_typ, v)
+            k_code_str, _ = _HNodeExpr(k_typ, k)
+            v_code_str, _ = _HNodeExpr(v_typ, v)
 
             unnamed = 'unnamed%d' % counter
             self.Emit('  if self.%s is not None:  # Dict' % field.name)
@@ -314,14 +313,14 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             typ = field.typ.children[0]
 
             self.Emit('  if self.%s is not None:  # Optional' % field.name)
-            child_code_str, _ = _HNodeExpr(abbrev, typ, 'self.%s' % field.name)
+            child_code_str, _ = _HNodeExpr(typ, 'self.%s' % field.name)
             self.Emit('    %s = %s' % (out_val_name, child_code_str))
             self.Emit('    L.append(Field(%r, %s))' %
                       (field.name, out_val_name))
 
         else:
             var_name = 'self.%s' % field.name
-            code_str, obj_none_guard = _HNodeExpr(abbrev, field.typ, var_name)
+            code_str, obj_none_guard = _HNodeExpr(field.typ, var_name)
             depth = self.current_depth
             if obj_none_guard:  # to satisfy MyPy type system
                 self.Emit('  assert self.%s is not None' % field.name)
@@ -420,12 +419,12 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
                       reflow=False)
             self.Emit('')
 
-        # PrettyTree(), _AbbreviatedTree(), AbbreviatedTree()
+        # PrettyTree()
         if self.pretty_print_methods:
             self._EmitPrettyPrintMethods(class_name, class_ns, fields)
 
-    def _EmitPrettyBegin(self, method_name):
-        self.Emit('  def %s(self, do_abbrev, trav=None):' % method_name)
+    def _EmitPrettyBegin(self):
+        self.Emit('  def PrettyTree(self, do_abbrev, trav=None):')
         self.Emit('    # type: (bool, Optional[TraversalState]) -> hnode_t')
         self.Emit('    trav = trav or TraversalState()')
         self.Emit('    heap_id = id(self)')
@@ -435,32 +434,19 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('    trav.seen[heap_id] = True')
 
     def _EmitPrettyPrintMethodsForList(self, class_name):
-        self._EmitPrettyBegin('PrettyTree')
+        self._EmitPrettyBegin()
         self.Emit('    h = runtime.NewRecord(%r)' % class_name)
         self.Emit(
             '    h.unnamed_fields = [c.PrettyTree(do_abbrev) for c in self]')
         self.Emit('    return h')
         self.Emit('')
 
-        return
-        self._EmitPrettyBegin('_AbbreviatedTree')
-        self.Emit('    h = runtime.NewRecord(%r)' % class_name)
-        self.Emit(
-            '    h.unnamed_fields = [c._AbbreviatedTree() for c in self]')
-        self.Emit('    return h')
-        self.Emit('')
-
-        # TODO: register abbreviations with _CompoundWord?
-        self.Emit('  def AbbreviatedTree(self, trav=None):')
-        self.Emit('    # type: (Optional[TraversalState]) -> hnode_t')
-        self.Emit('    return self._AbbreviatedTree(trav=trav)')
-
     def _EmitPrettyPrintMethods(self, class_name, class_ns, fields):
         pretty_cls_name = '%s%s' % (class_ns, class_name)
 
         # def PrettyTree(...):
 
-        self._EmitPrettyBegin('PrettyTree')
+        self._EmitPrettyBegin()
         self.Emit('')
 
         if class_ns:
@@ -486,50 +472,10 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         for local_id, field in enumerate(fields):
             #log('%s :: %s', field_name, field_desc)
             self.Indent()
-            self._EmitCodeForField('PrettyTree', field, local_id)
+            self._EmitCodeForField(field, local_id)
             self.Dedent()
             self.Emit('')
         self.Emit('    return out_node')
-        self.Emit('')
-
-        return
-
-        # def _AbbreviatedTree(...):
-
-        self._EmitPrettyBegin('_AbbreviatedTree')
-        self.Emit('    out_node = NewRecord(%r)' % pretty_cls_name)
-        self.Emit('    L = out_node.fields')
-
-        for local_id, field in enumerate(fields):
-            self.Indent()
-            self._EmitCodeForField('AbbreviatedTree', field, local_id)
-            self.Dedent()
-            self.Emit('')
-
-        self.Emit('    return out_node')
-        self.Emit('')
-
-        self.Emit('  def AbbreviatedTree(self, trav=None):')
-        self.Emit('    # type: (Optional[TraversalState]) -> hnode_t')
-
-        # For ASDL Token, look for 'class _Token' in frontend/syntax_abbrev.py,
-        # and call it
-
-        if class_ns:
-            # e.g. _command__Simple
-            assert class_ns.endswith('.')
-            abbrev_name = '_%s__%s' % (class_ns[:-1], class_name)
-        else:
-            # e.g. _Token
-            abbrev_name = '_%s' % class_name
-
-        if abbrev_name in self.abbrev_mod_entries:
-            self.Emit('    p = %s(self)' % abbrev_name)
-            # If the user function didn't return anything, fall back.
-            self.Emit(
-                '    return p if p else self._AbbreviatedTree(trav=trav)')
-        else:
-            self.Emit('    return self._AbbreviatedTree(trav=trav)')
         self.Emit('')
 
     def VisitCompoundSum(self, sum, sum_name, depth):
@@ -600,42 +546,9 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('  # type: () -> int')
         self.Emit('  return self._type_tag')
 
-        # This is what we would do in C++, but we don't need it in Python because
-        # every function is virtual.
-        if 0:
-            #if self.pretty_print_methods:
-            for abbrev in 'PrettyTree', '_AbbreviatedTree', 'AbbreviatedTree':
-                self.Emit('')
-                self.Emit('def %s(self):' % abbrev, depth)
-                self.Emit('  # type: () -> hnode_t', depth)
-                self.Indent()
-                depth = self.current_depth
-                self.Emit('UP_self = self', depth)
-                self.Emit('', depth)
-
-                for variant in sum.types:
-                    if variant.shared_type:
-                        subtype_name = variant.shared_type
-                    else:
-                        subtype_name = '%s__%s' % (sum_name, variant.name)
-
-                    self.Emit(
-                        'if self.tag() == %s_e.%s:' % (sum_name, variant.name),
-                        depth)
-                    self.Emit('  self = cast(%s, UP_self)' % subtype_name,
-                              depth)
-                    self.Emit('  return self.%s()' % abbrev, depth)
-
-                self.Emit('raise AssertionError()', depth)
-
-                self.Dedent()
-                depth = self.current_depth
-        else:
-            # Otherwise it's empty
-            self.Emit('pass', depth)
-
         self.Dedent()
         depth = self.current_depth
+
         self.Emit('')
 
         # Declare any zero argument singleton classes outside of the main
