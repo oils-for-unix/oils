@@ -795,6 +795,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     if s is not None:
                         length += 1
 
+            elif case(value_e.SparseArray):
+                val = cast(value.SparseArray, UP_val)
+                length = len(val.d)
+
             elif case(value_e.BashAssoc):
                 val = cast(value.BashAssoc, UP_val)
                 length = len(val.d)

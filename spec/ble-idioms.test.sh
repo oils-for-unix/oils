@@ -332,3 +332,30 @@ keys: 0 1 2 3 4 10 12
 
 ## N-I bash/zsh/mksh/ash STDOUT:
 ## END
+
+#### test that length works after conversion to SparseArray
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+declare -a a=(x y z)
+
+a[5]=z
+var sp = _a2sp(a)
+
+echo len=${#sp[@]}
+
+a[10]=z
+var sp = _a2sp(a)
+
+echo len=${#sp[@]}
+
+
+## STDOUT:
+len=4
+len=5
+## END
+
+## N-I bash/zsh/mksh/ash STDOUT:
+## END
+
+
+
