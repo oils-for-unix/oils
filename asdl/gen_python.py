@@ -486,7 +486,15 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
         # For ASDL Token, look for 'class _Token' in frontend/syntax_abbrev.py,
         # and call it
-        abbrev_name = '_%s' % class_name
+
+        if class_ns:
+            # e.g. _command__Simple
+            assert class_ns.endswith('.')
+            abbrev_name = '_%s__%s' % (class_ns[:-1], class_name)
+        else:
+            # e.g. _Token
+            abbrev_name = '_%s' % class_name
+
         if abbrev_name in self.abbrev_mod_entries:
             self.Emit('    p = %s(self)' % abbrev_name)
             # If the user function didn't return anything, fall back.
