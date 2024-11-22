@@ -3,7 +3,7 @@ from __future__ import print_function
 
 import unittest
 
-from _devbuild.gen.syntax_asdl import Id, Id_str
+from _devbuild.gen.id_kind_asdl import Id, Id_str
 from core import error
 from data_lang import j8
 from mycpp.mylib import log

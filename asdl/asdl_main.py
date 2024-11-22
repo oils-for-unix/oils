@@ -291,7 +291,6 @@ from typing import Optional, List, Tuple, Dict, Any, cast, TYPE_CHECKING
                         (typ.mod_name, typ.type_name))
                 # HACK
                 f.write('from _devbuild.gen.%s import Id_str\n' % typ.mod_name)
-                f.write('\n')
 
         if opts.pretty_print_methods:
             f.write("""
@@ -300,6 +299,9 @@ from asdl.runtime import NewRecord, NewLeaf, TraversalState
 from _devbuild.gen.hnode_asdl import color_e, hnode, hnode_e, hnode_t, Field
 
 """)
+        if abbrev_mod:
+            f.write('from %s import *\n' % abbrev_module_name)
+            f.write('\n')
 
         abbrev_mod_entries = dir(abbrev_mod) if abbrev_mod else []
         v = gen_python.GenMyPyVisitor(
@@ -308,19 +310,6 @@ from _devbuild.gen.hnode_asdl import color_e, hnode, hnode_e, hnode_t, Field
             pretty_print_methods=opts.pretty_print_methods,
             py_init_n=opts.py_init_n)
         v.VisitModule(schema_ast)
-
-        if abbrev_mod:
-            f.write("""\
-#
-# CONCATENATED FILE
-#
-
-""")
-            first, module = abbrev_module_name.rsplit('.', 1)
-            dir_name = first.replace('.', '/')
-            path = os.path.join(dir_name, module + '.py')
-            with open(path) as in_f:
-                f.write(in_f.read())
 
     else:
         raise RuntimeError('Invalid action %r' % action)

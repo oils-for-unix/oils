@@ -3,7 +3,12 @@ typed_arith_abbrev.py - Abbreviations for pretty-printing typed_arith.asdl.
 """
 
 from asdl import runtime
-from _devbuild.gen.hnode_asdl import hnode
+from _devbuild.gen.hnode_asdl import hnode, color_e
+
+__all__ = [
+    '_arith_expr__Unary', '_arith_expr__Binary', '_arith_expr__Const',
+    '_arith_expr__Var'
+]
 
 
 def _arith_expr__Unary(obj):

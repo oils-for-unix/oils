@@ -31,6 +31,7 @@ from asdl.util import log
 _ = log
 
 # Not supporting concise syntax tree like Python
+#ABBREV = True
 ABBREV = False
 
 if ABBREV:
@@ -784,7 +785,10 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         self.Emit('')
         self.Emit('hnode_t* %s::_AbbreviatedTree() {' % class_name)
         if list_item_type:
-            raise AssertionError()
+            self.Indent()
+            self._EmitList('_AbbreviatedTree', 'this', list_item_type,
+                           'out_node')
+            self.Dedent()
         else:
             self.Emit('  hnode::Record* out_node = runtime::NewRecord("%s");' %
                       n)

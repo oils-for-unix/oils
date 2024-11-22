@@ -1,12 +1,22 @@
 """
 syntax_abbrev.py - Abbreviations for pretty-printing syntax.asdl.
-
-This module is not used directly, but is combined with generated code.
 """
 
-from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.hnode_asdl import hnode_t
+from _devbuild.gen.id_kind_asdl import Id, Id_str
+from _devbuild.gen.hnode_asdl import hnode, hnode_t, color_e
 from asdl import runtime
+
+from typing import List, Optional, TYPE_CHECKING
+if TYPE_CHECKING:
+    from _devbuild.gen.syntax_asdl import (Token, CompoundWord, DoubleQuoted,
+                                           SingleQuoted, BracedVarSub,
+                                           SimpleVarSub, command, expr)
+
+__all__ = [
+    '_Token', '_CompoundWord', '_DoubleQuoted', '_SingleQuoted',
+    '_BracedVarSub', '_SimpleVarSub', '_command__Simple', '_expr__Var',
+    '_expr__Const'
+]
 
 
 def _AbbreviateToken(tok, out):
@@ -90,9 +100,10 @@ def _SimpleVarSub(obj):
 
 
 def _BracedVarSub(obj):
-    # type: (BracedVarSub) -> hnode_t
+    # type: (BracedVarSub) -> Optional[hnode_t]
     p_node = runtime.NewRecord('${')
-    if obj.prefix_op or obj.bracket_op or obj.suffix_op:
+    if (obj.prefix_op is not None or obj.bracket_op is not None or
+            obj.suffix_op is not None):
         return None  # we have other fields to display; don't abbreviate
 
     p_node.unnamed_fields = []
@@ -101,10 +112,10 @@ def _BracedVarSub(obj):
 
 
 def _command__Simple(obj):
-    # type: (command.Simple) -> hnode_t
+    # type: (command.Simple) -> Optional[hnode_t]
     p_node = runtime.NewRecord('C')
-    if (obj.more_env or obj.typed_args or obj.block or
-            obj.is_last_cmd == True):
+    if (len(obj.more_env) or obj.typed_args is not None or
+            obj.block is not None or obj.is_last_cmd == True):
         return None  # we have other fields to display; don't abbreviate
 
     p_node.unnamed_fields = []
