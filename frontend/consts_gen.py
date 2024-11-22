@@ -37,7 +37,7 @@ def _CreateModule(id_spec, ids):
     id_ = ast.TypeDecl('Id', id_sum)
     kind_ = ast.TypeDecl('Kind', kind_sum)
 
-    schema_ast = ast.Module('id_kind', [], [id_, kind_])
+    schema_ast = ast.Module('id_kind', [], [], [id_, kind_])
     return schema_ast
 
 

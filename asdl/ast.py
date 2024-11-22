@@ -37,11 +37,22 @@ class Use(AST):
         f.write('%s}\n' % ind)
 
 
+class Extern(AST):
+
+    def __init__(self, name):
+        self.name = name
+
+    def Print(self, f, indent):
+        ind = indent * '  '
+        f.write('%sExtern %s\n' % (ind, self.name))
+
+
 class Module(AST):
 
-    def __init__(self, name, uses, dfns):
+    def __init__(self, name, uses, externs, dfns):
         self.name = name
         self.uses = uses
+        self.externs = externs
         self.dfns = dfns
 
     def Print(self, f, indent):
@@ -50,6 +61,10 @@ class Module(AST):
 
         for u in self.uses:
             u.Print(f, indent + 1)
+            f.write('\n')
+
+        for e in self.externs:
+            e.Print(f, indent + 1)
             f.write('\n')
 
         for d in self.dfns:

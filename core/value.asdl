@@ -18,6 +18,9 @@ module value
     Cell
   }
 
+  extern _Builtin   # for value.BuiltinProc, below
+  extern _Callable  # for value.BuiltinFunc, below
+
   IntBox = (int i)
 
   ProcDefaults = (

@@ -11,9 +11,8 @@ module hnode {
   | UserType  # e.g. for Id
   | External
 
-  Field = (str name, hnode val)
-
   # hnode is our homogeneous representation
+  # (Can this converge with NIL8?   It's homogeneous too.  With the key:value issue)
 
   # Cases:
   # - Full Record
@@ -39,9 +38,14 @@ module hnode {
   #   (CompoundWord [1 2 3])
   #   (Dict {a:1 b:2})
 
+  Field = (str name, hnode val)
+
   hnode =
-    # Used to prevent infinite loops
+    # Used to prevent infinite loops.  This could also be a Leaf.
     AlreadySeen(int heap_id)
+
+    # String, int, float, etc. of different color
+  | Leaf(str s, color color)
 
   | Record(str node_type,
            str left, str right,
@@ -49,18 +53,13 @@ module hnode {
            List[hnode]? unnamed_fields)
   | Array(List[hnode] children)
 
-    # note: an ASDL Dict is pretty printed as pairs of Leaf:hnode_t, not Field
-  | Leaf(str s, color color)
-
     # TODO: I think we can remove this if we add PrettyTree() to
     # value.BuiltinFunc _Callable, BuiltinProc, etc.
   | External(any obj)
 
-  # NIL8 pretty-printing -- see doc/pretty-printing.md
 
   # Idea for bit flags for CreateNull().  NOT part of pretty printing / hnode.
   # We just use a single param alloc_lists=True now
-
   alloc_members =
     List
   | Dict

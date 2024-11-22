@@ -42,7 +42,7 @@ def main(argv):
     # TODO: could shrink array later.
     # [opt.name for opt in option_def.All() if opt.implemented])
 
-    schema_ast = ast.Module('option', [], [option, builtin])
+    schema_ast = ast.Module('option', [], [], [option, builtin])
 
     if action == 'cpp':
         from asdl import gen_cpp

@@ -5,7 +5,7 @@ import re
 
 from asdl import ast
 from asdl.ast import (AST, Use, Module, TypeDecl, SubTypeDecl, Constructor,
-                      Field, Sum, SimpleSum, Product)
+                      Field, Sum, SimpleSum, Product, Extern)
 from asdl.util import log
 
 # type checking not turned on yet
@@ -13,7 +13,7 @@ from typing import Dict, Any
 
 _ = log
 
-_KEYWORDS = ['use', 'module', 'generate']
+_KEYWORDS = ['use', 'module', 'generate', 'extern']
 
 _TOKENS = [
     ('Keyword', ''),
@@ -78,18 +78,21 @@ class ASDLSyntaxError(Exception):
         return 'Syntax error on line {0.lineno}: {0.msg}'.format(self)
 
 
+TOKEN_RE = r'\s*(\w+|--.*|#.*|.)'
+
+
 def _Tokenize(f):
     """Tokenize the given buffer.
 
     Yield Token objects.
     """
     for lineno, line in enumerate(f, 1):
-        for m in re.finditer(r'\s*(\w+|--.*|#.*|.)', line.strip()):
+        for m in re.finditer(TOKEN_RE, line.strip()):
             c = m.group(1)
             if c in _KEYWORDS:
                 yield Token(TokenKind.Keyword, c, lineno)
 
-            elif c[0].isalpha():
+            elif c[0].isalpha() or c[0] == '_':
                 yield Token(TokenKind.Name, c, lineno)
 
             elif c.startswith('--') or c.startswith('#'):
@@ -158,7 +161,11 @@ class ASDLParser(object):
     def _parse_module(self):
         """
         type_decl  : NAME '=' compound_type
-        module     : 'module' NAME '{' use* type_decl* '}'
+        module     : 'module' NAME '{'
+                       use*
+                       extern*
+                       type_decl*
+                     '}'
 
         We added:
         - use for imports
@@ -175,6 +182,10 @@ class ASDLParser(object):
         uses = []
         while self._at_keyword('use'):
             uses.append(self._parse_use())
+
+        externs = []
+        while self._at_keyword('extern'):
+            externs.append(self._parse_extern())
 
         defs = []
         while self.cur_token.kind == TokenKind.Name:
@@ -193,7 +204,7 @@ class ASDLParser(object):
                         self.cur_token.value), self.cur_token.lineno)
 
         self._match(TokenKind.RBrace)
-        return Module(name, uses, defs)
+        return Module(name, uses, externs, defs)
 
     def _parse_use(self):
         """
@@ -223,6 +234,18 @@ class ASDLParser(object):
         self._match(TokenKind.RBrace)
         #print('MOD %s' % module_parts)
         return Use(module_parts, type_names)
+
+    def _parse_extern(self):
+        """
+        extern: 'extern' NAME
+
+        Examples:
+          extern _Builtin
+          extern _Callable
+        """
+        self._advance()  # past 'extern'
+        name = self._match(TokenKind.Name)
+        return Extern(name)
 
     def _parse_compound_type(self):
         """

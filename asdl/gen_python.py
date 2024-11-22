@@ -293,14 +293,15 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             k_code_str, _ = _HNodeExpr(abbrev, k_typ, k)
             v_code_str, _ = _HNodeExpr(abbrev, v_typ, v)
 
+            unnamed = 'unnamed%d' % counter
             self.Emit('  if self.%s is not None:  # Dict' % field.name)
-            self.Emit('    unnamed = []')
-            self.Emit('    %s = hnode.Record("", "{", "}", [], unnamed)' %
-                      out_val_name)
+            self.Emit('    %s = []  # type: List[hnode_t]' % unnamed)
+            self.Emit('    %s = hnode.Record("", "{", "}", [], %s)' %
+                      (out_val_name, unnamed))
             self.Emit('    for %s, %s in self.%s.iteritems():' %
                       (k, v, field.name))
-            self.Emit('      unnamed.append(%s)' % k_code_str)
-            self.Emit('      unnamed.append(%s)' % v_code_str)
+            self.Emit('      %s.append(%s)' % (unnamed, k_code_str))
+            self.Emit('      %s.append(%s)' % (unnamed, v_code_str))
             self.Emit('    L.append(Field(%r, %s))' %
                       (field.name, out_val_name))
 
