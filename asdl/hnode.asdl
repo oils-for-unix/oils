@@ -13,13 +13,54 @@ module hnode {
 
   Field = (str name, hnode val)
 
+  # Cases:
+  # - Full Record
+  #   - product type
+  #   - sum type - do we need tag?
+  # - abbreviated record like Token, CompoundWord
+  #   - unnamed fields
+  # - List
+  #   [1 2 3]
+  # - List subtype - with tag
+  #   (Foo [1 2 3])
+  #   
+  # - Dict
+  #   - right now this is [Dict k:v] - change it to {k: v} I think
+  # - Dict subtype
+  #
+  # can it be more like NIL8?
+  #   (Point x: 42 y: 52)
+  #   [a b c]
+  #   {k:v k2:v2}
+  #   (CompoundWord [1 2 3])
+  #   (Dict {a:1 b2})
+  #
+  #   <Id.Lit_Chars "a">
+  #   CompoundWord - {<Id.Lit_Chars "a">}
+  # I might change those to
+  # <T Lit_Chars a>
+  # <w <T LitChars a>>
+
   hnode =
     # Used to prevent infinite loops
     AlreadySeen(int heap_id)
+
+    # node.abbrev means we print the unnamed fields only - e.g.
+    # syntax_abbrev.py sets it
+    #
+    # A tighter representation might be
+    #   record_child = Named(List[Field])
+    #                | Unnamed(List[hnode])
+    # I guess we want Field in addition to Leaf()?  To avoid breaking it
+    #
+    # Token is abbreviated <Id.Lit_EscapedChar "\\">  (node_type is removed)
+
   | Record(str node_type, List[Field] fields,
-           bool abbrev, str left, str right, List[hnode] unnamed_fields)
+           bool unnamed, str left, str right, List[hnode] unnamed_fields)
   | Array(List[hnode] children)
   | Subtype(str node_type, List[hnode] children)
+
+    # note: an ASDL Dict is pretty printed as pairs of Leaf:hnode_t, not Field
   | Leaf(str s, color color)
     # Used for a few value_t variants like value.BuiltinFunc, that point back
     # to mycpp classes

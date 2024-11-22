@@ -21,7 +21,7 @@ def _AbbreviateToken(tok, out):
 def _Token(obj):
     # type: (Token) -> hnode_t
     p_node = runtime.NewRecord('')  # don't show node type
-    p_node.abbrev = True
+    p_node.unnamed = True
 
     p_node.left = '<'
     p_node.right = '>'
@@ -31,10 +31,10 @@ def _Token(obj):
 
 def _CompoundWord(obj):
     # type: (CompoundWord) -> hnode_t
-    p_node = runtime.NewRecord('')  # don't show node type
-    p_node.abbrev = True
-    p_node.left = '{'
-    p_node.right = '}'
+    p_node = runtime.NewRecord('w')
+    p_node.unnamed = True
+    p_node.left = '('
+    p_node.right = ')'
 
     for part in obj.parts:
         p_node.unnamed_fields.append(part.AbbreviatedTree())
@@ -47,7 +47,7 @@ def _DoubleQuoted(obj):
         return None  # Fall back on obj._AbbreviatedTree()
 
     p_node = runtime.NewRecord('DQ')
-    p_node.abbrev = True
+    p_node.unnamed = True
 
     for part in obj.parts:
         p_node.unnamed_fields.append(part.AbbreviatedTree())
@@ -62,7 +62,7 @@ def _SingleQuoted(obj):
         return None  # Fall back on obj._AbbreviatedTree()
 
     p_node = runtime.NewRecord('SQ')
-    p_node.abbrev = True
+    p_node.unnamed = True
 
     n2 = runtime.NewLeaf(obj.sval, color_e.StringConst)
     p_node.unnamed_fields.append(n2)
@@ -72,7 +72,7 @@ def _SingleQuoted(obj):
 def _SimpleVarSub(obj):
     # type: (SimpleVarSub) -> hnode_t
     p_node = runtime.NewRecord('$')
-    p_node.abbrev = True
+    p_node.unnamed = True
 
     if obj.tok.id in (Id.VSub_DollarName, Id.VSub_Number):  # $myvar or $1
         # We want to show the variable name
@@ -95,7 +95,7 @@ def _BracedVarSub(obj):
     if obj.prefix_op or obj.bracket_op or obj.suffix_op:
         return None  # we have other fields to display; don't abbreviate
 
-    p_node.abbrev = True
+    p_node.unnamed = True
     _AbbreviateToken(obj.token, p_node.unnamed_fields)
     return p_node
 
@@ -107,7 +107,7 @@ def _command__Simple(obj):
             obj.is_last_cmd == True):
         return None  # we have other fields to display; don't abbreviate
 
-    p_node.abbrev = True
+    p_node.unnamed = True
 
     for w in obj.words:
         p_node.unnamed_fields.append(w.AbbreviatedTree())
@@ -117,7 +117,7 @@ def _command__Simple(obj):
 def _expr__Var(obj):
     # type: (expr.Var) -> hnode_t
     p_node = runtime.NewRecord('Var')
-    p_node.abbrev = True
+    p_node.unnamed = True
 
     assert obj.left.id == Id.Expr_Name, obj.name
     n1 = runtime.NewLeaf(obj.name, color_e.StringConst)
@@ -128,7 +128,7 @@ def _expr__Var(obj):
 def _expr__Const(obj):
     # type: (expr.Const) -> hnode_t
     p_node = runtime.NewRecord('Const')
-    p_node.abbrev = True
+    p_node.unnamed = True
 
     tok = obj.c
     out = p_node.unnamed_fields
