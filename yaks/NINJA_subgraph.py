@@ -54,6 +54,7 @@ def NinjaGraph(ru):
             '//cpp/frontend_match',
             '//data_lang/nil8.asdl',
             '//frontend/consts',
+            '//frontend/syntax.asdl',  # TODO: remove this, value.asdl dep
             '//mycpp/runtime',
             '//yaks/yaks.asdl',
         ])

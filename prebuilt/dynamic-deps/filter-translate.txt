@@ -9,7 +9,6 @@ data_lang/py.*
 frontend/py.*\.py
 frontend/consts.py
 frontend/match.py
-frontend/syntax_abbrev.py
 mycpp/iolib.py
 mycpp/mops.py
 pgen2/grammar.py

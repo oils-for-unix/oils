@@ -82,7 +82,6 @@ data_lang/py.*      # pyj8.py
 frontend/py.*\.py   # py_readline.py ported by hand to C++
 frontend/consts.py  # frontend/consts_gen.py
 frontend/match.py   # frontend/lexer_gen.py
-frontend/syntax_abbrev.py
 
 mycpp/iolib.py       # Implemented in gc_iolib.{h,cC}
 mycpp/mops.py       # Implemented in gc_mops.{h,cC}

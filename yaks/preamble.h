@@ -7,6 +7,7 @@
 #include "_gen/display/pretty.asdl.h"
 #include "_gen/frontend/consts.h"
 #include "_gen/frontend/id_kind.asdl.h"  // syntax.asdl depends on this
+#include "_gen/frontend/syntax.asdl.h"
 #include "_gen/yaks/yaks.asdl.h"
 #include "cpp/data_lang.h"
 #include "cpp/frontend_match.h"
@@ -17,3 +18,5 @@
 using pretty_asdl::doc;
 using value_asdl::value;
 using yaks_asdl::mod_def;
+using syntax_asdl::command;
+using syntax_asdl::expr;
