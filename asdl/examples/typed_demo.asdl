@@ -3,6 +3,8 @@
 module arith {
   use asdl examples demo_lib { value }
 
+  extern [ asdl examples typed_demo _Callable ]
+
   -- Simple Sum Type
   op_id = Plus | Minus | Star
 
@@ -60,4 +62,6 @@ module arith {
   a_word = 
     String(str s)
   | CompoundWord %CompoundWord
+
+  foo = (_Callable x, _Callable y)
 }

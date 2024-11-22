@@ -109,6 +109,11 @@ def _GetCppType(typ):
             if isinstance(typ.resolved, ast.Use):
                 return '%s_asdl::%s*' % (typ.resolved.module_parts[-1],
                                          ast.TypeNameHeuristic(typ.name))
+            if isinstance(typ.resolved, ast.Extern):
+                r = typ.resolved
+                type_name = r.names[-1]
+                cpp_namespace = r.names[-2]
+                return '%s::%s*' % (cpp_namespace, type_name)
 
         # 'id' falls through here
         return _PRIMITIVES[typ.name]

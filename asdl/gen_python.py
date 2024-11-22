@@ -47,6 +47,11 @@ def _MyPyType(typ):
                 return typ.name
             if isinstance(typ.resolved, ast.Use):
                 return ast.TypeNameHeuristic(typ.name)
+            if isinstance(typ.resolved, ast.Extern):
+                r = typ.resolved
+                type_name = r.names[-1]
+                py_module = r.names[-2]
+                return '%s.%s' % (py_module, type_name)
 
         # 'id' falls through here
         return _PRIMITIVES[typ.name]

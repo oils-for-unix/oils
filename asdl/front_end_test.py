@@ -58,8 +58,8 @@ class FrontEndTest(unittest.TestCase):
     def testParse(self):
         self._assertParse("""
 module foo {
-  extern _Builtin
-  extern _Callable
+  extern [core vm _Builtin]
+  extern [core vm _Callable]
 
   -- these are invalid, but checked in name resolution stage
   point = (int? x, int* y)
@@ -136,8 +136,10 @@ module foo {
 
         self._assertParseError('module foo { extern }')
         self._assertParseError('module foo { extern extern }')
+        self._assertParseError('module foo { extern [ }')
+        self._assertParseError('module foo { extern [] }')
 
-        self._assertParseError('module foo { extern foo extern bar baz }')
+        self._assertParseError('module foo { extern [ foo ] extern [ use ] }')
 
     def _assertResolve(self, code_str):
         f = cStringIO.StringIO(code_str)

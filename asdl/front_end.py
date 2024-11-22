@@ -237,15 +237,25 @@ class ASDLParser(object):
 
     def _parse_extern(self):
         """
-        extern: 'extern' NAME
+        extern: 'extern' NAME+
 
         Examples:
           extern _Builtin
           extern _Callable
         """
         self._advance()  # past 'extern'
-        name = self._match(TokenKind.Name)
-        return Extern(name)
+
+        self._match(TokenKind.LBracket)
+
+        # At least one name
+        names = [self._match(TokenKind.Name)]
+
+        while self.cur_token.kind == TokenKind.Name:
+            names.append(self._advance())
+
+        self._match(TokenKind.RBracket)
+
+        return Extern(names)
 
     def _parse_compound_type(self):
         """
@@ -530,6 +540,12 @@ def _ResolveModule(module, app_types):
     # asdl/arith.asdl.
 
     # First pass: collect declared types and make entries for them.
+    for ex in module.externs:
+        last = ex.names[-1]  # e.g. _Callable
+        if last in type_lookup:
+            raise ASDLSyntaxError('Type %r was already defined' % last)
+        type_lookup[last] = ex
+
     for d in module.dfns:
         if d.name in type_lookup:
             raise ASDLSyntaxError('Type %r was already defined' % d.name)

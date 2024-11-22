@@ -119,7 +119,7 @@ def main(argv):
 #include "_gen/asdl/hnode.asdl.h"
 using hnode_asdl::hnode_t;
 
-    """)
+""")
 
             if app_types:
                 f.write("""\
@@ -141,6 +141,30 @@ using id_kind_asdl::Id_t;
                 f.write('namespace %s_asdl { %s }\n' %
                         (use.module_parts[-1], ' '.join(cpp_names)))
                 f.write('\n')
+
+            for extern in schema_ast.externs:
+                names = extern.names
+                type_name = names[-1]
+                cpp_namespace = names[-2]
+
+                # TODO: This isn't enough for Oils
+                # I think we would have to export header to
+                # _gen/bin/oils_for_unix.mycpp.cc or something
+                # Does that create circular dependencies?
+                #
+                # Or maybe of 'extern' we can have 'include' or something?
+                # Maybe we need `.pyi` files in MyPy?
+
+                f.write("""\
+namespace %s {
+class %s {
+ public:
+  hnode_t* PrettyTree(Dict<int, bool>* seen);
+  hnode_t* _AbbreviatedTree(Dict<int, bool>* seen);
+  hnode_t* AbbreviatedTree(Dict<int, bool>* seen);
+};
+}
+""" % (cpp_namespace, type_name))
 
             f.write("""\
 namespace %s {
@@ -252,7 +276,14 @@ from typing import Optional, List, Tuple, Dict, Any, cast, TYPE_CHECKING
             # indented
             f.write('  from _devbuild.gen.%s_asdl import %s\n' %
                     (use.module_parts[-1], ', '.join(py_names)))
-        f.write('\n')
+
+        if schema_ast.externs:
+            f.write('\n')
+            f.write('if TYPE_CHECKING:\n')
+        for extern in schema_ast.externs:
+            n = extern.names
+            mod_parts = n[:-2]
+            f.write('  from %s import %s\n' % ('.'.join(mod_parts), n[-2]))
 
         for typ in app_types.itervalues():
             if isinstance(typ, UserType):

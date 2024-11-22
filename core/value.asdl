@@ -18,8 +18,11 @@ module value
     Cell
   }
 
-  extern _Builtin   # for value.BuiltinProc, below
-  extern _Callable  # for value.BuiltinFunc, below
+  # Probably need to export 'class vm' declarations in
+  # _gen/bin/oils_for_unix.mycpp.h, or another header
+  #
+  # extern [ core vm _Builtin ]  # for value.BuiltinProc, below
+  # extern [ core vm _Callable ] # for value.BuiltinFunc, below
 
   IntBox = (int i)
 

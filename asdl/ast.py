@@ -39,12 +39,12 @@ class Use(AST):
 
 class Extern(AST):
 
-    def __init__(self, name):
-        self.name = name
+    def __init__(self, names):
+        self.names = names
 
     def Print(self, f, indent):
         ind = indent * '  '
-        f.write('%sExtern %s\n' % (ind, self.name))
+        f.write('%sExtern [ %s ]\n' % (ind, ' '.join(self.names)))
 
 
 class Module(AST):

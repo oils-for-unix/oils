@@ -20,10 +20,30 @@ from _devbuild.gen.typed_demo_asdl import (
     CompoundWord,
     a_word_t,
 )
+from _devbuild.gen.hnode_asdl import hnode, hnode_t, color_e
+
 from asdl import format as fmt
+from asdl.runtime import TraversalState
 from mycpp import mylib
 
 from typing import List, Optional, cast
+
+
+class _Callable(object):
+    """
+    Demo of extern, like vm._Callable in Oils
+    """
+    def PrettyTree(self, trav=None):
+      # type: (Optional[TraversalState]) -> hnode_t
+      return hnode.Leaf('TODO', color_e.UserType)
+
+    def _AbbreviatedTree(self, trav=None):
+      # type: (Optional[TraversalState]) -> hnode_t
+      return hnode.Leaf('TODO', color_e.UserType)
+
+    def AbbreviatedTree(self, trav=None):
+      # type: (Optional[TraversalState]) -> hnode_t
+      return hnode.Leaf('TODO', color_e.UserType)
 
 
 def TestSubtype():
