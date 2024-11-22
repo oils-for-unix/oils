@@ -15,13 +15,12 @@ NO_SPID = -1
 
 def NewRecord(node_type):
     # type: (str) -> hnode.Record
+
+    # TODO: could CreateNull(alloc_lists=True) to optimize?
     return hnode.Record(
-        node_type,
+        node_type, '(', ')',  
         [],  # fields
-        False,
-        '(',
-        ')',  # abbrev, left, right
-        []  # unnamed fields
+        None,  # unnamed fields
     )
 
 

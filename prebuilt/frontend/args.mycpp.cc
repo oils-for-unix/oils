@@ -519,7 +519,7 @@ int NO_SPID = -1;
 hnode::Record* NewRecord(BigStr* node_type) {
   StackRoot _root0(&node_type);
 
-  return Alloc<hnode::Record>(node_type, Alloc<List<hnode_asdl::Field*>>(), false, str0, str1, Alloc<List<hnode_asdl::hnode_t*>>());
+  return Alloc<hnode::Record>(node_type, str0, str1, Alloc<List<hnode_asdl::Field*>>(), nullptr);
 }
 
 hnode::Leaf* NewLeaf(BigStr* s, hnode_asdl::color_t e_color) {

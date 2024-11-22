@@ -55,8 +55,10 @@ module hnode {
     #
     # Token is abbreviated <Id.Lit_EscapedChar "\\">  (node_type is removed)
 
-  | Record(str node_type, List[Field] fields,
-           bool unnamed, str left, str right, List[hnode] unnamed_fields)
+  | Record(str node_type,
+           str left, str right,
+           List[Field] fields,
+           List[hnode]? unnamed_fields)
   | Array(List[hnode] children)
   | Subtype(str node_type, List[hnode] children)
 
