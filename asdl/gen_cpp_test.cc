@@ -136,7 +136,7 @@ TEST pretty_print_test() {
   auto w2 = Alloc<typed_demo_asdl::word>(StrFromC("right"));
   auto b = Alloc<bool_expr__Binary>(w1, w2);
 
-  hnode_t* t1 = b->PrettyTree();
+  hnode_t* t1 = b->PrettyTree(false);
   ASSERT_EQ_FMT(hnode_e::Record, t1->tag(), "%d");
 
   auto f = mylib::Stdout();
@@ -151,13 +151,13 @@ TEST pretty_print_test() {
 
   // typed_arith.asdl
   auto* c = Alloc<arith_expr__Const>(42);
-  hnode_t* t2 = c->PrettyTree();
+  hnode_t* t2 = c->PrettyTree(false);
   ASSERT_EQ(hnode_e::Record, t2->tag());
   format::PrintTree(t2, ast_f);
   printf("\n");
 
   auto* big = Alloc<arith_expr__Big>(mops::BigInt(INT64_MAX));
-  hnode_t* t3 = big->PrettyTree();
+  hnode_t* t3 = big->PrettyTree(false);
   ASSERT_EQ(hnode_e::Record, t3->tag());
   format::PrintTree(t3, ast_f);
   printf("\n");
@@ -165,7 +165,7 @@ TEST pretty_print_test() {
   auto* args =
       NewList<arith_expr_t*>(std::initializer_list<arith_expr_t*>{c, big});
   auto* func = Alloc<arith_expr::FuncCall>(StrFromC("myfunc"), args);
-  hnode_t* t4 = func->PrettyTree();
+  hnode_t* t4 = func->PrettyTree(false);
   ASSERT_EQ(hnode_e::Record, t4->tag());
   format::PrintTree(t4, ast_f);
 
@@ -187,7 +187,7 @@ TEST dicts_test() {
   // to return.  But Dict<int, bool>::index() does compile.
   log("mm.ib[42] = %d", m->ib->at(42));
 
-  hnode_t* t = m->PrettyTree();
+  hnode_t* t = m->PrettyTree(false);
   auto f = mylib::Stdout();
   auto ast_f = Alloc<format::TextOutput>(f);
   // fails with repr(void *)

@@ -98,10 +98,16 @@ pretty-demo() {
   test/parse-errors.sh test-syntax-abbrev
   echo
 
+  # Show Dict[BigInt, str]
   $OSH -c 'declare -a a=(a b); a[12]=zz; pp asdl_ (a); pp asdl_ (_a2sp(a))'
   echo
 
+  # Show Dict[str, value_t]
   $YSH -c 'var d = {x:42}; setvar d.k = d; pp asdl_ (d)'
+  echo
+
+  # hnode::External
+  $YSH -c 'pp asdl_ (len)'
   echo
 }
 

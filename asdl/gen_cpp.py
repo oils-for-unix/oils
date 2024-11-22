@@ -221,7 +221,7 @@ def _HNodeExpr(abbrev, typ, var_name):
                 type_name, var_name)
 
         else:
-            code_str = '%s->%s(seen)' % (var_name, abbrev)
+            code_str = '%s->%s(do_abbrev, seen)' % (var_name, abbrev)
             none_guard = True
 
     else:
@@ -235,10 +235,10 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
     def __init__(self, f, pretty_print_methods=True, debug_info=None):
         """
-    Args:
-      f: file to write to
-      debug_info: dictionary fill in with info for GDB
-    """
+        Args:
+          f: file to write to
+          debug_info: dictionary fill in with info for GDB
+        """
         visitor.AsdlVisitor.__init__(self, f)
         self.pretty_print_methods = pretty_print_methods
         self.debug_info = debug_info if debug_info is not None else {}
@@ -378,8 +378,9 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
         if self.pretty_print_methods:
             for abbrev in PRETTY_METHODS:
-                self.Emit('  hnode_t* %s(Dict<int, bool>* seen = nullptr);' %
-                          abbrev)
+                self.Emit(
+                    '  hnode_t* %s(bool do_abbrev, Dict<int, bool>* seen = nullptr);'
+                    % abbrev)
 
         Emit('  DISALLOW_COPY_AND_ASSIGN(%(sum_name)s_t)')
         Emit('};')
@@ -442,8 +443,8 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         if self.pretty_print_methods:
             for abbrev in PRETTY_METHODS:
                 self.Emit(
-                    '  hnode_t* %s(Dict<int, bool>* seen = nullptr);' % abbrev,
-                    depth)
+                    '  hnode_t* %s(bool do_abbrev, Dict<int, bool>* seen = nullptr);'
+                    % abbrev, depth)
             self.Emit('')
 
         self.Emit('  static constexpr ObjHeader obj_header() {')
@@ -741,8 +742,9 @@ class MethodDefVisitor(visitor.AsdlVisitor):
             n = 'StrFromC("%s")' % class_name
 
         self.Emit('')
-        self.Emit('hnode_t* %s::PrettyTree(Dict<int, bool>* seen) {' %
-                  class_name)
+        self.Emit(
+            'hnode_t* %s::PrettyTree(bool do_abbrev, Dict<int, bool>* seen) {'
+            % class_name)
 
         # Similar to j8::HeapValueId()
         self.Emit('  seen = seen ? seen : Alloc<Dict<int, bool>>();')
@@ -904,8 +906,9 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         # Emit dispatch WITHOUT using 'virtual'
         for func_name in PRETTY_METHODS:
             self.Emit('')
-            self.Emit('hnode_t* %s_t::%s(Dict<int, bool>* seen) {' %
-                      (sum_name, func_name))
+            self.Emit(
+                'hnode_t* %s_t::%s(bool do_abbrev, Dict<int, bool>* seen) {' %
+                (sum_name, func_name))
             self.Emit('  switch (this->tag()) {', depth)
 
             for variant in sum.types:
@@ -919,7 +922,8 @@ class MethodDefVisitor(visitor.AsdlVisitor):
                 self.Emit(
                     '    %s* obj = static_cast<%s*>(this);' %
                     (subtype_name, subtype_name), depth)
-                self.Emit('    return obj->%s(seen);' % func_name, depth)
+                self.Emit('    return obj->%s(do_abbrev, seen);' % func_name,
+                          depth)
                 self.Emit('  }', depth)
 
             self.Emit('  default:', depth)

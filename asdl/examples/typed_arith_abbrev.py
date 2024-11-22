@@ -17,7 +17,7 @@ def _arith_expr__Unary(obj):
     p_node = runtime.NewRecord('U')
     n = runtime.NewLeaf(str(obj.op), color_e.StringConst)
     p_node.unnamed_fields = [n]
-    p_node.unnamed_fields.append(obj.a.AbbreviatedTree())  # type: ignore
+    p_node.unnamed_fields.append(obj.a.PrettyTree(True))  # type: ignore
     return p_node
 
 
@@ -30,8 +30,8 @@ def _arith_expr__Binary(obj):
     p_node = runtime.NewRecord('B')
     n = runtime.NewLeaf(str(obj.op), color_e.StringConst)
     p_node.unnamed_fields = [n]
-    p_node.unnamed_fields.append(obj.left.AbbreviatedTree())  # type: ignore
-    p_node.unnamed_fields.append(obj.right.AbbreviatedTree())  # type: ignore
+    p_node.unnamed_fields.append(obj.left.PrettyTree(True))  # type: ignore
+    p_node.unnamed_fields.append(obj.right.PrettyTree(True))  # type: ignore
     return p_node
 
 

@@ -34,7 +34,7 @@ TEST pretty_print_test() {
 #endif
 
   for (int i = 0; i < 2000; ++i) {
-    hnode_t* t1 = b->PrettyTree();
+    hnode_t* t1 = b->PrettyTree(false);
     ASSERT_EQ(hnode_e::Record, t1->tag());
 
     auto f = mylib::Stdout();
@@ -173,7 +173,7 @@ TEST print_subtype_test() {
   log("len = %d", len(c));
 
 #if 1
-  hnode_t* t1 = c->PrettyTree();
+  hnode_t* t1 = c->PrettyTree(false);
   // ASSERT_EQ_FMT(hnode_e::Record, t1->tag(), "%d");
 
   auto f = mylib::Stdout();

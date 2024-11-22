@@ -33,17 +33,10 @@ class _Callable(object):
     """
     Demo of extern, like vm._Callable in Oils
     """
-    def PrettyTree(self, trav=None):
-      # type: (Optional[TraversalState]) -> hnode_t
-      return hnode.Leaf('TODO', color_e.UserType)
 
-    def _AbbreviatedTree(self, trav=None):
-      # type: (Optional[TraversalState]) -> hnode_t
-      return hnode.Leaf('TODO', color_e.UserType)
-
-    def AbbreviatedTree(self, trav=None):
-      # type: (Optional[TraversalState]) -> hnode_t
-      return hnode.Leaf('TODO', color_e.UserType)
+    def PrettyTree(self, do_abbrev, trav=None):
+        # type: (bool, Optional[TraversalState]) -> hnode_t
+        return hnode.Leaf('TODO', color_e.UserType)
 
 
 def TestSubtype():
@@ -64,11 +57,11 @@ def TestSubtype():
     w = c
 
     ast_f = fmt.DetectConsoleOutput(mylib.Stdout())
-    a = c.AbbreviatedTree()
+    a = c.PrettyTree(True)
     fmt.PrintTree(a, ast_f)
     print('')
 
-    p = c.PrettyTree()
+    p = c.PrettyTree(False)
     fmt.PrintTree(p, ast_f)
     print('')
 

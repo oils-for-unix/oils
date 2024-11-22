@@ -117,12 +117,12 @@ def main(argv):
         # Dump ASDL representation
         # We could also have a NIL8 printer
         pretty_f = fmt.DetectConsoleOutput(stderr_)
-        fmt.PrintTree(nval.PrettyTree(), pretty_f)
+        fmt.PrintTree(nval.PrettyTree(False), pretty_f)
         stderr_.write('\n')
 
         prog = transform.Transform(nval)
 
-        fmt.PrintTree(prog.PrettyTree(), pretty_f)
+        fmt.PrintTree(prog.PrettyTree(False), pretty_f)
         stderr_.write('\n')
 
         # TODO: a few mycpp passes over this representation
@@ -137,7 +137,7 @@ def main(argv):
         m = yaks_asdl.Module('hi', [])
 
         pretty_f = fmt.DetectConsoleOutput(stderr_)
-        fmt.PrintTree(m.PrettyTree(), pretty_f)
+        fmt.PrintTree(m.PrettyTree(False), pretty_f)
         stderr_.write('\n')
 
     else:

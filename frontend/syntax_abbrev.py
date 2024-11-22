@@ -47,20 +47,20 @@ def _CompoundWord(obj):
 
     p_node.unnamed_fields = []
     for part in obj.parts:
-        p_node.unnamed_fields.append(part.AbbreviatedTree())
+        p_node.unnamed_fields.append(part.PrettyTree(True))
     return p_node
 
 
 def _DoubleQuoted(obj):
     # type: (DoubleQuoted) -> hnode_t
     if obj.left.id != Id.Left_DoubleQuote:
-        return None  # Fall back on obj._AbbreviatedTree()
+        return None  # Fall back on obj._PrettyTree(True)
 
     p_node = runtime.NewRecord('DQ')
 
     p_node.unnamed_fields = []
     for part in obj.parts:
-        p_node.unnamed_fields.append(part.AbbreviatedTree())
+        p_node.unnamed_fields.append(part.PrettyTree(True))
     return p_node
 
 
@@ -69,7 +69,7 @@ def _SingleQuoted(obj):
 
     # Only abbreviate 'foo', not $'foo\n' or r'foo'
     if obj.left.id != Id.Left_SingleQuote:
-        return None  # Fall back on obj._AbbreviatedTree()
+        return None  # Fall back on obj._PrettyTree(True)
 
     p_node = runtime.NewRecord('SQ')
 
@@ -120,7 +120,7 @@ def _command__Simple(obj):
 
     p_node.unnamed_fields = []
     for w in obj.words:
-        p_node.unnamed_fields.append(w.AbbreviatedTree())
+        p_node.unnamed_fields.append(w.PrettyTree(True))
     return p_node
 
 

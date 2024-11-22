@@ -159,9 +159,9 @@ using id_kind_asdl::Id_t;
 namespace %s {
 class %s {
  public:
-  hnode_t* PrettyTree(Dict<int, bool>* seen);
-  hnode_t* _AbbreviatedTree(Dict<int, bool>* seen);
-  hnode_t* AbbreviatedTree(Dict<int, bool>* seen);
+  hnode_t* PrettyTree(bool do_abbrev, Dict<int, bool>* seen);
+  hnode_t* _AbbreviatedTree(bool do_abbrev, Dict<int, bool>* seen);
+  hnode_t* AbbreviatedTree(bool do_abbrev, Dict<int, bool>* seen);
 };
 }
 """ % (cpp_namespace, type_name))

@@ -158,7 +158,7 @@ def _HNodeExpr(abbrev, typ, var_name):
                                                                      var_name)
 
         else:
-            code_str = '%s.%s(trav=trav)' % (var_name, abbrev)
+            code_str = '%s.%s(do_abbrev, trav=trav)' % (var_name, abbrev)
             none_guard = True
 
     else:
@@ -425,8 +425,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             self._EmitPrettyPrintMethods(class_name, class_ns, fields)
 
     def _EmitPrettyBegin(self, method_name):
-        self.Emit('  def %s(self, trav=None):' % method_name)
-        self.Emit('    # type: (Optional[TraversalState]) -> hnode_t')
+        self.Emit('  def %s(self, do_abbrev, trav=None):' % method_name)
+        self.Emit('    # type: (bool, Optional[TraversalState]) -> hnode_t')
         self.Emit('    trav = trav or TraversalState()')
         self.Emit('    heap_id = id(self)')
         self.Emit('    if heap_id in trav.seen:')
@@ -437,10 +437,12 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     def _EmitPrettyPrintMethodsForList(self, class_name):
         self._EmitPrettyBegin('PrettyTree')
         self.Emit('    h = runtime.NewRecord(%r)' % class_name)
-        self.Emit('    h.unnamed_fields = [c.PrettyTree() for c in self]')
+        self.Emit(
+            '    h.unnamed_fields = [c.PrettyTree(do_abbrev) for c in self]')
         self.Emit('    return h')
         self.Emit('')
 
+        return
         self._EmitPrettyBegin('_AbbreviatedTree')
         self.Emit('    h = runtime.NewRecord(%r)' % class_name)
         self.Emit(
@@ -459,6 +461,23 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         # def PrettyTree(...):
 
         self._EmitPrettyBegin('PrettyTree')
+        self.Emit('')
+
+        if class_ns:
+            # e.g. _command__Simple
+            assert class_ns.endswith('.')
+            abbrev_name = '_%s__%s' % (class_ns[:-1], class_name)
+        else:
+            # e.g. _Token
+            abbrev_name = '_%s' % class_name
+
+        if abbrev_name in self.abbrev_mod_entries:
+            self.Emit('    if do_abbrev:')
+            self.Emit('      p = %s(self)' % abbrev_name)
+            self.Emit('      if p:')
+            self.Emit('        return p')
+            self.Emit('')
+
         self.Emit('    out_node = NewRecord(%r)' % pretty_cls_name)
         self.Emit('    L = out_node.fields')
         self.Emit('')
@@ -472,6 +491,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             self.Emit('')
         self.Emit('    return out_node')
         self.Emit('')
+
+        return
 
         # def _AbbreviatedTree(...):
 

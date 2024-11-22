@@ -193,7 +193,7 @@ def TestParse():
 
         #log('%s', tree)
 
-        htree = node.PrettyTree()
+        htree = node.PrettyTree(False)
         ast_f = fmt.AnsiOutput(mylib.Stdout())
 
         fmt.PrintTree(htree, ast_f)
@@ -230,7 +230,7 @@ def TestCreateNull():
     b.left = c
     b.right = v
 
-    htree = b.PrettyTree()
+    htree = b.PrettyTree(False)
     ast_f = fmt.AnsiOutput(mylib.Stdout())
 
     fmt.PrintTree(htree, ast_f)

@@ -27,16 +27,8 @@ class CompoundObj(Obj):
     # types.  Never set for product types.
     _type_tag = 0  # Starts at 1.  Zero is invalid
 
-    def PrettyTree(self, trav=None):
-        # type: (TraversalState) -> hnode_t
-        raise NotImplementedError(self.__class__.__name__)
-
-    def _AbbreviatedTree(self, trav=None):
-        # type: (TraversalState) -> hnode_t
-        raise NotImplementedError(self.__class__.__name__)
-
-    def AbbreviatedTree(self, trav=None):
-        # type: (TraversalState) -> hnode_t
+    def PrettyTree(self, do_abbrev, trav=None):
+        # type: (bool, TraversalState) -> hnode_t
         raise NotImplementedError(self.__class__.__name__)
 
     def __repr__(self):
@@ -45,7 +37,7 @@ class CompoundObj(Obj):
         from asdl import format as fmt
 
         ast_f = fmt.TextOutput(mylib.BufWriter())  # No color by default.
-        tree = self.PrettyTree()
+        tree = self.PrettyTree(False)
         fmt.PrintTree(tree, ast_f)
         s, _ = ast_f.GetRaw()
         return s

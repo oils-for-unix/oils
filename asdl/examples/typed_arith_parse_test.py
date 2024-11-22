@@ -198,7 +198,7 @@ def t_parse(
     from mycpp import mylib
 
     ast_f = fmt.DetectConsoleOutput(mylib.Stdout())
-    p_node = tree.AbbreviatedTree()
+    p_node = tree.PrettyTree(True)
     fmt.PrintTree(p_node, ast_f)
 
     #v = PrettyPrinter()

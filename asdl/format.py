@@ -31,7 +31,7 @@ if mylib.PYTHON:
         f = f if f else mylib.Stdout()
 
         ast_f = DetectConsoleOutput(f)
-        tree = obj.AbbreviatedTree()
+        tree = obj.PrettyTree(True)
         PrintTree(tree, ast_f)
 
 

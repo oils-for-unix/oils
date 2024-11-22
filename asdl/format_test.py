@@ -27,7 +27,7 @@ class FormatTest(unittest.TestCase):
         f2 = fmt.HtmlOutput(f)
 
         for ast_f in [f1, f2]:
-            tree = node.PrettyTree()
+            tree = node.PrettyTree(False)
 
             fmt.PrintTree(tree, ast_f)
             pretty_str = f.getvalue()
@@ -37,7 +37,7 @@ class FormatTest(unittest.TestCase):
                 self.assertEqual('(assign name:declare flags:[-r -x])',
                                  pretty_str)
 
-            t2 = node.AbbreviatedTree()
+            t2 = node.PrettyTree(True)
 
             fmt.PrintTree(t2, ast_f)
 

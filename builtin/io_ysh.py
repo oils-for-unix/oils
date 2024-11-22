@@ -111,7 +111,7 @@ class Pp(_Builtin):
             val = rd.PosValue()
             rd.Done()
 
-            tree = val.PrettyTree()
+            tree = val.PrettyTree(False)
             #tree = val.AbbreviatedTree()  # I used this to test cycle detection
 
             # TODO: ASDL should print the IDs.  And then they will be
@@ -160,7 +160,7 @@ class Pp(_Builtin):
                 else:
                     self.stdout_.write('%s = ' % name)
                     pretty_f = fmt.DetectConsoleOutput(self.stdout_)
-                    fmt.PrintTree(cell.PrettyTree(), pretty_f)
+                    fmt.PrintTree(cell.PrettyTree(False), pretty_f)
                     self.stdout_.write('\n')
             return status
 
