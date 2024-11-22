@@ -296,7 +296,7 @@ class _PrettyPrinter(object):
         """Print a CompoundObj in abbreviated or normal form."""
         ind = ' ' * indent
 
-        if node.unnamed:  # abbreviated
+        if node.unnamed_fields is not None and len(node.unnamed_fields):
             prefix = ind + node.left
             f.write(prefix)
             if len(node.node_type):
@@ -431,7 +431,7 @@ def _TrySingleLineObj(node, f, max_chars):
     # type: (hnode.Record, ColorOutput, int) -> bool
     """Print an object on a single line."""
     f.write(node.left)
-    if node.unnamed:
+    if node.unnamed_fields is not None and len(node.unnamed_fields):
         if len(node.node_type):
             f.PushColor(color_e.TypeName)
             f.write(node.node_type)

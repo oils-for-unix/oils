@@ -40,6 +40,14 @@ _runtime-parse-error() {
 # Cases
 #
 
+test-syntax-abbrev() {
+  # test frontend/syntax_abbrev.py
+
+  _osh-should-parse 'echo "double $x ${braced}" $(date)'
+  _osh-should-parse "echo 'single'"
+  _ysh-should-parse 'var x = i + 42;'
+}
+
 # All in osh/word_parse.py
 test-patsub() {
   _osh-should-parse 'echo ${x/}'

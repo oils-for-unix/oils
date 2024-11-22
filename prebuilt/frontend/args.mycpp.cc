@@ -851,7 +851,7 @@ void _PrettyPrinter::_PrintRecord(hnode::Record* node, format::ColorOutput* f, i
   StackRoot _root10(&s);
 
   ind = str_repeat(str18, indent);
-  if (node->abbrev) {
+  if ((node->unnamed_fields != nullptr and len(node->unnamed_fields))) {
     prefix = str_concat(ind, node->left);
     f->write(prefix);
     if (len(node->node_type)) {
@@ -969,12 +969,17 @@ void _PrettyPrinter::PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f
         this->_PrintRecord(node, f, indent);
       }
       else {
-        if (tag == hnode_e::AlreadySeen) {
-          hnode::AlreadySeen* node = static_cast<hnode::AlreadySeen*>(UP_node);
-          f->write(StrFormat("...0x%s", mylib::hex_lower(node->heap_id)));
+        if (tag == hnode_e::Array) {
+          assert(0);  // AssertionError
         }
         else {
-          assert(0);  // AssertionError
+          if (tag == hnode_e::AlreadySeen) {
+            hnode::AlreadySeen* node = static_cast<hnode::AlreadySeen*>(UP_node);
+            f->write(StrFormat("...0x%s", mylib::hex_lower(node->heap_id)));
+          }
+          else {
+            assert(0);  // AssertionError
+          }
         }
       }
     }
@@ -987,7 +992,7 @@ bool _TrySingleLineObj(hnode::Record* node, format::ColorOutput* f, int max_char
   StackRoot _root1(&f);
 
   f->write(node->left);
-  if (node->abbrev) {
+  if ((node->unnamed_fields != nullptr and len(node->unnamed_fields))) {
     if (len(node->node_type)) {
       f->PushColor(color_e::TypeName);
       f->write(node->node_type);
