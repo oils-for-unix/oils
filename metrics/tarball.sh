@@ -58,7 +58,7 @@ linecount-pydeps() {
 
 _oils-cpp() {
   # The CI runs devtools/release-native.sh test-tar
-  find . \( -name '*.cc' -o -name '*.h' \) -a -printf '%P\n'
+  find . \( -name '*.cc' -o -name '*.h' \) -a -printf '%P\n' | grep -v mycpp-souffle
 }
 
 linecount-oils-cpp() {
