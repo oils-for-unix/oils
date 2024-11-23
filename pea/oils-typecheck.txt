@@ -44,6 +44,7 @@ builtin/read_osh.py
 builtin/readline_osh.py
 builtin/trap_osh.py
 core/alloc.py
+core/bash_impl.py
 core/comp_ui.py
 core/completion.py
 core/dev.py

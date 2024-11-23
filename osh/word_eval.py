@@ -48,6 +48,7 @@ from _devbuild.gen.value_asdl import (
     sh_lvalue,
     sh_lvalue_t,
 )
+from core import bash_impl
 from core import error
 from core import pyos
 from core import pyutil
@@ -789,19 +790,15 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             elif case(value_e.BashArray):
                 val = cast(value.BashArray, UP_val)
-                # There can be empty placeholder values in the array.
-                length = 0
-                for s in val.strs:
-                    if s is not None:
-                        length += 1
-
-            elif case(value_e.SparseArray):
-                val = cast(value.SparseArray, UP_val)
-                length = len(val.d)
+                length = bash_impl.BashArray_Length(val)
 
             elif case(value_e.BashAssoc):
                 val = cast(value.BashAssoc, UP_val)
-                length = len(val.d)
+                length = bash_impl.BashAssoc_Length(val)
+
+            elif case(value_e.SparseArray):
+                val = cast(value.SparseArray, UP_val)
+                length = bash_impl.SparseArray_Length(val)
 
             else:
                 raise error.TypeErr(
