@@ -76,3 +76,27 @@ $[ENV.SH] -o | egrep 'errexit|pipefail'
 set -o errexit
 set -o pipefail
 ## END
+
+#### --tool syntax-tree respects frontend/syntax_abbrev.py
+
+$[ENV.SH] --tool syntax-tree <<< '''
+echo 'sq'
+'''
+
+$[ENV.SH] --tool syntax-tree <<< '''
+echo "hi $x ${y}"
+'''
+
+$[ENV.SH] --tool syntax-tree <<< '''
+var x = 42 + a
+'''
+
+## STDOUT:
+(C (w <Id.Lit_Chars echo>) (w (SQ sq)))
+(C (w <Id.Lit_Chars echo>) (w (DQ <Id.Lit_Chars "hi "> ($ x) <Id.Lit_Chars " "> (${ Id.VSub_Name y))))
+(command.VarDecl
+  keyword: <Id.KW_Var var>
+  lhs: [(NameType left:<Id.Expr_Name x> name:x)]
+  rhs: (expr.Binary op:<Id.Arith_Plus "+"> left:(Const Id.Expr_DecInt _) right:(Var a))
+)
+## END
