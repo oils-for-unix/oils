@@ -57,7 +57,7 @@ error handling, and more.
   [Containers]     List        List/append()    pop()            extend()
                                indexOf()      X lastIndexOf()  X includes()
                              X insert()       X remove()
-                               reverse()      X List/clear()
+                               reverse()        List/clear()
                    Dict        erase()        X Dict/clear()   X accum()
                              X update()
                    Place       setValue()

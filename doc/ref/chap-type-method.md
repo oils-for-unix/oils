@@ -464,12 +464,11 @@ Reverses a list in place.
 
 ### List/clear()
 
-TODO:
-
 Remove all entries from the List:
 
+    var fruits = :|apple banana pear|
     call mylist->clear()
-  
+    echo @fruits # =>
 
 ### Dict
 

@@ -31,6 +31,23 @@ class Append(vm._Callable):
         return value.Null
 
 
+class Clear(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        li = rd.PosList()
+        rd.Done()
+
+        del li[:]
+
+        return value.Null
+
+
 class Extend(vm._Callable):
 
     def __init__(self):
