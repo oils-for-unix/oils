@@ -521,3 +521,18 @@ declare -p sp1
 ## N-I bash/zsh/mksh/ash status: 0
 ## N-I bash/zsh/mksh/ash STDERR:
 ## END
+
+
+#### SparseArray: xtrace a+=()
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+sp1=(1)
+var sp1 = _a2sp(sp1)
+set -x
+sp1+=(2)
+
+## STDERR:
++ sp1+=(2)
+## END
+## N-I bash/zsh/mksh/ash STDERR:
+## END
