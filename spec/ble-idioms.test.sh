@@ -1064,6 +1064,37 @@ echo "[${a[@]: -4}][${a[*]: -4}]"
 ## END
 
 
+#### SparseArray: compgen -F _set_COMPREPLY
+case $SH in zsh|mksh|ash) exit ;; esac
+
+a=({0..9})
+unset -v 'a[2]' 'a[4]' 'a[6]'
+
+case ${SH##*/} in
+osh)
+  eval '_set_COMPREPLY() { setglobal COMPREPLY = _a2sp(a); }'
+  ;;
+*)
+  _set_COMPREPLY() { COMPREPLY=("${a[@]}"); }
+  ;;
+esac
+
+compgen -F _set_COMPREPLY
+
+## STDOUT:
+0
+1
+3
+5
+7
+8
+9
+## END
+
+## N-I zsh/mksh/ash STDOUT:
+## END
+
+
 #### SparseArray (YSH): $[a1 === a2]
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
