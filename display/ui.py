@@ -534,8 +534,13 @@ def PrintAst(node, flag):
         do_abbrev = 'abbrev-' in afmt
         tree = node.PrettyTree(do_abbrev)
 
+        width = _GetMaxWidth()
+
         ast_f.FileHeader()
+
         fmt.PrintTree(tree, ast_f)
+        #fmt.PrintTree2(tree, ast_f, width)
+
         ast_f.FileFooter()
         ast_f.write('\n')
 

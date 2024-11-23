@@ -10,6 +10,7 @@ from _devbuild.gen.pretty_asdl import (doc, Measure, MeasuredDoc)
 from _devbuild.gen.value_asdl import Obj, value, value_e, value_t, value_str
 from data_lang import j8
 from data_lang import j8_lite
+from display import ansi
 from display import pp_hnode
 from display.pretty import _Break, _Concat, AsciiText
 from frontend import match
@@ -75,6 +76,15 @@ class ValueEncoder(pp_hnode.BaseEncoder):
         # type: () -> None
         pp_hnode.BaseEncoder.__init__(self)
         self.ysh_style = True
+
+        # These can be configurable later
+        self.int_style = ansi.YELLOW
+        self.float_style = ansi.BLUE
+        self.null_style = ansi.RED
+        self.bool_style = ansi.CYAN
+        self.string_style = ansi.GREEN
+        self.cycle_style = ansi.BOLD + ansi.BLUE
+        self.type_style = ansi.MAGENTA
 
     def TypePrefix(self, type_str):
         # type: (str) -> List[MeasuredDoc]

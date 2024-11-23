@@ -4,8 +4,9 @@ from __future__ import print_function
 Base class for pretty printing, and HNodeEncoder
 """
 
-from _devbuild.gen.hnode_asdl import hnode, hnode_e, hnode_t
+from _devbuild.gen.hnode_asdl import hnode, hnode_e, hnode_t, Field
 from _devbuild.gen.pretty_asdl import (doc, MeasuredDoc)
+from data_lang import j8_lite
 from display import ansi
 from display import pretty
 from display.pretty import (_Break, _Concat, _Flat, _Group, _IfFlat, _Indent,
@@ -31,14 +32,8 @@ class BaseEncoder(object):
 
         self.visiting = {}  # type: Dict[int, bool]
 
-        # These can be configurable later
-        self.int_style = ansi.YELLOW
-        self.float_style = ansi.BLUE
-        self.null_style = ansi.RED
-        self.bool_style = ansi.CYAN
-        self.string_style = ansi.GREEN
-        self.cycle_style = ansi.BOLD + ansi.BLUE
-        self.type_style = ansi.MAGENTA
+        self.type_color = ansi.YELLOW
+        self.field_color = ansi.MAGENTA
 
     def SetIndent(self, indent):
         # type: (int) -> None
@@ -212,10 +207,13 @@ class HNodeEncoder(BaseEncoder):
         self.visiting.clear()
         return self._HNode(h)
 
+    def _Field(self, field):
+        # type: (Field) -> MeasuredDoc
+        name = self._Styled(self.field_color, AsciiText(field.name))
+        return _Concat([name, AsciiText(": "), self._HNode(field.val)])
+
     def _HNode(self, h):
         # type: (hnode_t) -> MeasuredDoc
-
-        doc = pretty.AsciiText('foo')
 
         UP_h = h
         with tagswitch(h) as case:
@@ -225,23 +223,43 @@ class HNodeEncoder(BaseEncoder):
 
             elif case(hnode_e.Leaf):
                 h = cast(hnode.Leaf, UP_h)
+
                 # TODO: what do we do with node.color
-                return doc
+                s = j8_lite.EncodeString(h.s, unquoted_ok=True)
+
+                # Could be Unicode, but we don't want that dependency right now
+                return self._Styled(self.type_color, AsciiText(s))
 
             elif case(hnode_e.External):
                 h = cast(hnode.External, UP_h)
                 # TODO: color_e.External
-                return doc
+                return self._Styled(self.type_color, AsciiText('EXTERN'))
 
             elif case(hnode_e.Array):
                 h = cast(hnode.Array, UP_h)
-                # TODO: _Join I think
-                return doc
+                if len(h.children) == 0:
+                    return AsciiText("[]")
+                mdocs = [self._HNode(item) for item in h.children]
+                return self._Surrounded("[", self._Tabular(mdocs, " "), "]")
 
             elif case(hnode_e.Record):
                 h = cast(hnode.Record, UP_h)
-                # TODO: _SurroundedAndPrefixed
-                return doc
+
+                # TODO: does it help to make this empty?
+                type_name = self._Styled(self.type_color,
+                                         AsciiText(h.node_type))
+
+                if h.unnamed_fields is not None and len(h.unnamed_fields):
+                    mdocs = [self._HNode(item) for item in h.unnamed_fields]
+                else:
+                    if len(h.fields) == 0:
+                        return _Concat(
+                            [AsciiText(h.left), type_name,
+                             AsciiText(h.right)])
+                    mdocs = [self._Field(field) for field in h.fields]
+                return self._SurroundedAndPrefixed(h.left, type_name, " ",
+                                                   self._Join(mdocs, " ", ""),
+                                                   h.right)
 
             else:
                 raise AssertionError()
