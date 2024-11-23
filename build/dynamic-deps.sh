@@ -9,7 +9,11 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+# Note on the cd option, "-P": Resolve symlinks in the current working
+# directory.  This is needed to make `grep $REPO_ROOT...` in `repo-filter
+# (build/dynamic-deps.sh)` work.  Later, `repo-filter` and related parts may be
+# rewritten using AWK to handle it better.
+REPO_ROOT=$(cd -P "$(dirname $0)/.."; pwd)
 
 readonly PY_PATH='.:vendor/'
 
