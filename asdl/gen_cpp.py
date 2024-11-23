@@ -186,20 +186,8 @@ def _HNodeExpr(typ, var_name):
 
         type_name = typ.name
 
-        if type_name == 'bool':
-            code_str = "Alloc<hnode::Leaf>(%s ? runtime::TRUE_STR : runtime::FALSE_STR, color_e::OtherConst)" % var_name
-
-        elif type_name in ('int', 'uint16'):
-            code_str = 'Alloc<hnode::Leaf>(str(%s), color_e::OtherConst)' % var_name
-
-        elif type_name == 'BigInt':
-            code_str = 'Alloc<hnode::Leaf>(mops::ToStr(%s), color_e::OtherConst)' % var_name
-
-        elif type_name == 'float':
-            code_str = 'Alloc<hnode::Leaf>(str(%s), color_e::OtherConst)' % var_name
-
-        elif type_name == 'string':
-            code_str = 'runtime::NewLeaf(%s, color_e::StringConst)' % var_name
+        if type_name in ('bool', 'int', 'uint16', 'BigInt', 'float', 'string'):
+            code_str = "ToPretty(%s)" % var_name
 
         elif type_name == 'any':  # TODO: Remove this.  Used for value.Builtin{Func,Proc}
             code_str = 'Alloc<hnode::External>(%s)' % var_name
@@ -208,6 +196,7 @@ def _HNodeExpr(typ, var_name):
             code_str = 'Alloc<hnode::Leaf>(Id_str(%s), color_e::UserType)' % var_name
 
         elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
+            # ASDL could generate ToPretty<T> ?
             code_str = 'Alloc<hnode::Leaf>(%s_str(%s), color_e::TypeName)' % (
                 type_name, var_name)
 

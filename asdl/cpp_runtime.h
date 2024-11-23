@@ -1,6 +1,5 @@
 // Experiment toward trying to generate less C++ code in *.asdl.cc
 // Problems:
-// - BigStr* runtime::NewLeaf()
 // - Id_t type -> dependency issue
 
 #ifndef ASDL_CPP_RUNTIME_H
@@ -13,15 +12,14 @@ using hnode_asdl::color_e;
 using hnode_asdl::hnode;
 using hnode_asdl::hnode_t;
 
-#if 0
-template <typename T>
-hnode_t* ToPretty(T item) {
-  return Alloc<hnode::Leaf>("TODO");
-}
-#endif
+//
+// ToPretty() overload set.  asdl/gen_cpp.py targets this.
+//
 
 inline hnode_t* ToPretty(bool item) {
   // T and F are also in asdl/runtime.py
+
+  // TODO: use constant, not StrFromC
   return Alloc<hnode::Leaf>(item ? StrFromC("T") : StrFromC("F"),
                             color_e::OtherConst);
 }
@@ -44,13 +42,16 @@ inline hnode_t* ToPretty(mops::BigInt item) {
 }
 
 inline hnode_t* ToPretty(BigStr* item) {
-  // return Alloc<hnode::Leaf>(item, color_e::StringConst);
-
-  // generated code
-  // runtime::NewLeaf()
-  assert(0);
+  // Note: if we had strict Optional[T], we might not need this
+  if (item == nullptr) {
+    // TODO: use constant, not StrFromC
+    return Alloc<hnode::Leaf>(StrFromC("_"), color_e::OtherConst);
+  } else {
+    return Alloc<hnode::Leaf>(item, color_e::StringConst);
+  }
 }
 
+#if 0
 // Problem: we can't distinguish between T* and void* ?
 // We need to call obj->PrettyTree() sometimes
 inline hnode_t* ToPretty(void* item) {
@@ -74,5 +75,6 @@ hnode_t* ListPretty(List<T>* li, Dict<int, bool>* seen) {
   }
   return a;
 }
+#endif
 
 #endif  // ASDL_CPP_RUNTIME_H

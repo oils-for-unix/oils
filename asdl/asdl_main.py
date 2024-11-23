@@ -126,7 +126,7 @@ def main(argv):
 #include "mycpp/runtime.h"
 """)
             if opts.pretty_print_methods:
-                if 0:
+                if 1:
                     # TODO: gradually migrate to this templated code, reducing code gen
                     f.write('#include "asdl/cpp_runtime.h"\n')
                 else:
