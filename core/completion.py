@@ -41,6 +41,7 @@ from _devbuild.gen.syntax_asdl import (CompoundWord, word_part_e, word_t,
 from _devbuild.gen.runtime_asdl import (scope_e, comp_action_e, comp_action_t)
 from _devbuild.gen.types_asdl import redir_arg_type_e
 from _devbuild.gen.value_asdl import (value, value_e)
+from core import bash_impl
 from core import error
 from core import pyos
 from core import state
@@ -628,7 +629,13 @@ class ShellFuncAction(CompletionAction):
                          self.func.name)
             return
 
-        if val.tag() != value_e.BashArray:
+        if val.tag() == value_e.BashArray:
+            array_val = cast(value.BashArray, val)
+            strs = array_val.strs
+        elif val.tag() == value_e.SparseArray:
+            sparse_val = cast(value.SparseArray, val)
+            strs = bash_impl.SparseArray_GetValues(sparse_val)
+        else:
             print_stderr('osh error: COMPREPLY should be an array, got %s' %
                          ui.ValType(val))
             return
@@ -636,8 +643,7 @@ class ShellFuncAction(CompletionAction):
         if 0:
             self.debug('> %r' % val)  # CRASHES in C++
 
-        array_val = cast(value.BashArray, val)
-        for s in array_val.strs:
+        for s in strs:
             #self.debug('> %r' % s)
             yield s
 
