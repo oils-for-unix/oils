@@ -9,6 +9,12 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+# Resolve symlinks in the current working directory.  This is needed to make
+# `grep $REPO_ROOT...` in `repo-filter (build/dynamic-deps.sh)` work.  Later,
+# `repo-filter` and related parts may be rewritten using AWK to handle it
+# better.
+cd -P .
+
 source build/dev-shell.sh  # python2 in $PATH
 source build/dynamic-deps.sh  # py-tool, etc
 
