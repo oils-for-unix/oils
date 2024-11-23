@@ -333,7 +333,8 @@ keys: 0 1 2 3 4 10 12
 ## N-I bash/zsh/mksh/ash STDOUT:
 ## END
 
-#### test that length works after conversion to SparseArray
+
+#### SparseArray: test length
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 declare -a a=(x y z)
@@ -358,4 +359,56 @@ len=5
 ## END
 
 
+#### SparseArray: test "declare -p sp"
+case $SH in zsh|ash) exit ;; esac
 
+a0=()
+a1=(1)
+a2=(1 2)
+a=(x y z w)
+a[500]=100
+a[1000]=100
+
+case $SH in
+bash|mksh)
+  typeset -p a0 a1 a2 a
+  exit ;;
+esac
+
+var a0 = _a2sp(a0)
+var a1 = _a2sp(a1)
+var a2 = _a2sp(a2)
+var sp = _a2sp(a)
+declare -p a0 a1 a2 sp
+
+## STDOUT:
+declare -a a0=()
+declare -a a1=([0]=1)
+declare -a a2=([0]=1 [1]=2)
+declare -a sp=([0]=x [1]=y [2]=z [3]=w [500]=100 [1000]=100)
+## END
+
+## OK bash STDOUT:
+declare -a a0=()
+declare -a a1=([0]="1")
+declare -a a2=([0]="1" [1]="2")
+declare -a a=([0]="x" [1]="y" [2]="z" [3]="w" [500]="100" [1000]="100")
+## END
+
+## OK mksh STDOUT:
+set -A a1
+typeset a1[0]=1
+set -A a2
+typeset a2[0]=1
+typeset a2[1]=2
+set -A a
+typeset a[0]=x
+typeset a[1]=y
+typeset a[2]=z
+typeset a[3]=w
+typeset a[500]=100
+typeset a[1000]=100
+## END
+
+## N-I zsh/ash STDOUT:
+## END
