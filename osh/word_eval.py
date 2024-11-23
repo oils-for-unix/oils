@@ -471,12 +471,10 @@ def _PerformSlice(
 
             result = value.InternalStringArray(strs)
 
-        elif case(value_e.BashAssoc):
-            e_die("Can't slice associative arrays", loc.WordPart(part))
-
         else:
-            raise error.TypeErr(val, 'Slice op expected Str or BashArray',
-                                loc.WordPart(part))
+            raise error.TypeErr(
+                val, 'Slice op expected Str, BashArray, or BashAssoc',
+                loc.WordPart(part))
 
     return result
 
