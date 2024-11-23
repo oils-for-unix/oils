@@ -105,7 +105,7 @@ repo-filter() {
 
   # select what's in the repo; eliminating stdlib stuff
   # eliminate _cache for mycpp running under Python-3.10
-  fgrep -v "$REPO_ROOT/_cache" | fgrep "$REPO_ROOT" | awk '{ print $2 }' 
+  grep -F -v "$REPO_ROOT/_cache" | grep -F "$REPO_ROOT" | awk '{ print $2 }' 
 }
 
 exclude-filter() {
@@ -113,7 +113,7 @@ exclude-filter() {
 
   local filter_name=$1
 
-  egrep -v -f $FILTER_DIR/filter-$filter_name.txt
+  grep -E -v -f $FILTER_DIR/filter-$filter_name.txt
 }
 
 mysort() {

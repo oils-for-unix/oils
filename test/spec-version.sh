@@ -85,7 +85,7 @@ osh-version-text() {
   if test -f $my_dash; then
     ls -l $my_dash
   else
-    dpkg -s dash | egrep '^Package|Version'
+    dpkg -s dash | grep -E '^Package|Version'
   fi
   echo
 
@@ -95,7 +95,7 @@ osh-version-text() {
   if test -f $my_mksh; then
     ls -l $my_mksh
   else
-    dpkg -s mksh | egrep '^Package|Version'
+    dpkg -s mksh | grep -E '^Package|Version'
   fi
   echo
 
