@@ -64,6 +64,7 @@ data_lang/j8.py
 data_lang/j8_lite.py
 data_lang/pyj8.py
 display/ansi.py
+display/pp_hnode.py
 display/pp_value.py
 display/pretty.py
 display/ui.py
@@ -83,6 +84,7 @@ frontend/parse_lib.py
 frontend/py_readline.py
 frontend/reader.py
 frontend/signal_def.py
+frontend/syntax_abbrev.py
 frontend/typed_args.py
 mycpp/iolib.py
 mycpp/mops.py

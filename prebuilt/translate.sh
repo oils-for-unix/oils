@@ -69,7 +69,7 @@ EOF
 }
 
 readonly -a ASDL_FILES=(
-  $REPO_ROOT/{asdl/runtime,asdl/format,display/ansi,display/pretty,pylib/cgi,data_lang/j8_lite}.py \
+  $REPO_ROOT/{asdl/runtime,asdl/format,display/ansi,display/pretty,display/pp_hnode,pylib/cgi,data_lang/j8_lite}.py
 )
 
 syntax-abbrev() {
@@ -119,6 +119,7 @@ using pretty_asdl::doc;  // ad hoc
     --to-header asdl.runtime \
     --to-header asdl.format \
     "${ASDL_FILES[@]}"
+    #--to-header display.pp_hnode \
 }
 
 core-error() {
@@ -170,9 +171,11 @@ using pretty_asdl::doc;
     core/error.py \
     core/num.py \
     frontend/args.py
+    #--to-header display.pp_hnode \
 }
 
 all() {
+  syntax-abbrev
   asdl-runtime
   core-error
   frontend-args

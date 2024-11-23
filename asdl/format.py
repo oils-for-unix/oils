@@ -17,6 +17,7 @@ from _devbuild.gen.hnode_asdl import (hnode, hnode_e, hnode_t, color_e,
                                       color_t)
 from data_lang import j8_lite
 from display import ansi
+from display import pp_hnode
 from display import pretty
 from pylib import cgi
 from mycpp import mylib
@@ -536,11 +537,10 @@ def PrintTree2(node, f):
     # type: (hnode_t, ColorOutput) -> None
     """
     Make sure dependencies aren't a problem
-
-    TODO: asdl/pp_hnode.py, which is like display/pp_value.py
     """
-    doc = pretty.AsciiText('foo')
-    printer = pretty.PrettyPrinter(20)
+    enc = pp_hnode.HNodeEncoder()
+    doc = enc.HNode(node)
+    printer = pretty.PrettyPrinter(100)  # max columns
 
     buf = mylib.BufWriter()
     printer.PrintDoc(doc, buf)

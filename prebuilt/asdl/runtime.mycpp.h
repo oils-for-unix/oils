@@ -28,6 +28,13 @@ namespace format {  // forward declare
 
 }  // forward declare namespace format
 
+namespace pp_hnode {  // forward declare
+
+  class BaseEncoder;
+  class HNodeEncoder;
+
+}  // forward declare namespace pp_hnode
+
 namespace runtime {  // declare
 
 using hnode_asdl::hnode;
@@ -162,5 +169,69 @@ void PrintTree(hnode_asdl::hnode_t* node, format::ColorOutput* f);
 void PrintTree2(hnode_asdl::hnode_t* node, format::ColorOutput* f);
 
 }  // declare namespace format
+
+namespace pp_hnode {  // declare
+
+using hnode_asdl::hnode;
+class BaseEncoder {
+ public:
+  BaseEncoder();
+  void SetIndent(int indent);
+  void SetUseStyles(bool use_styles);
+  void SetMaxTabularWidth(int max_tabular_width);
+  pretty_asdl::MeasuredDoc* _Styled(BigStr* style, pretty_asdl::MeasuredDoc* mdoc);
+  pretty_asdl::MeasuredDoc* _Surrounded(BigStr* open, pretty_asdl::MeasuredDoc* mdoc, BigStr* close);
+  pretty_asdl::MeasuredDoc* _SurroundedAndPrefixed(BigStr* open, pretty_asdl::MeasuredDoc* prefix, BigStr* sep, pretty_asdl::MeasuredDoc* mdoc, BigStr* close);
+  pretty_asdl::MeasuredDoc* _Join(List<pretty_asdl::MeasuredDoc*>* items, BigStr* sep, BigStr* space);
+  pretty_asdl::MeasuredDoc* _Tabular(List<pretty_asdl::MeasuredDoc*>* items, BigStr* sep);
+  BigStr* bool_style{};
+  BigStr* cycle_style{};
+  BigStr* float_style{};
+  int indent{};
+  BigStr* int_style{};
+  int max_tabular_width{};
+  BigStr* null_style{};
+  BigStr* string_style{};
+  BigStr* type_style{};
+  bool use_styles{};
+  Dict<int, bool>* visiting{};
+  
+  static constexpr uint32_t field_mask() {
+    return maskbit(offsetof(BaseEncoder, bool_style))
+         | maskbit(offsetof(BaseEncoder, cycle_style))
+         | maskbit(offsetof(BaseEncoder, float_style))
+         | maskbit(offsetof(BaseEncoder, int_style))
+         | maskbit(offsetof(BaseEncoder, null_style))
+         | maskbit(offsetof(BaseEncoder, string_style))
+         | maskbit(offsetof(BaseEncoder, type_style))
+         | maskbit(offsetof(BaseEncoder, visiting));
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(BaseEncoder));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(BaseEncoder)
+};
+
+class HNodeEncoder : public ::pp_hnode::BaseEncoder {
+ public:
+  HNodeEncoder();
+  pretty_asdl::MeasuredDoc* HNode(hnode_asdl::hnode_t* h);
+  pretty_asdl::MeasuredDoc* _HNode(hnode_asdl::hnode_t* h);
+  
+  static constexpr uint32_t field_mask() {
+    return ::pp_hnode::BaseEncoder::field_mask();
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(HNodeEncoder));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(HNodeEncoder)
+};
+
+
+}  // declare namespace pp_hnode
 
 #endif  // ASDL_RUNTIME_MYCPP_H
