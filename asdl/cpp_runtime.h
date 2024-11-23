@@ -45,6 +45,7 @@ inline hnode_t* ToPretty(BigStr* item) {
   // Note: if we had strict Optional[T], we might not need this
   if (item == nullptr) {
     // TODO: use constant, not StrFromC
+    // asdl/gen_cpp.py also uses "_"
     return Alloc<hnode::Leaf>(StrFromC("_"), color_e::OtherConst);
   } else {
     return Alloc<hnode::Leaf>(item, color_e::StringConst);

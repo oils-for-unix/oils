@@ -140,3 +140,34 @@ def FormatLines(s, depth, reflow=True):
         line = (" " * TABSIZE * depth) + line + "\n"
         result.append(line)
     return result
+
+
+"""
+For */*_gen.py, and asdl/gen_*.py
+
+from asdl.util import Write
+
+def f():
+    # constant string with leading stuff stripped off
+    Write(f, '''
+        hello
+        there
+       |''')
+
+    # - option to reflow
+    # - option to add MORE depth, in addition to stripping whitespace
+    #   - I wonder if YSH template strings could use something like that
+    Write(f, '''
+        a = {a}
+        b = {b}
+       |''', locals(), reflow=True, depth=2)
+
+    with Printer(locals()) as p:
+      p.Write('''
+          a = {a}
+          b = {b}
+         |''')
+"""
+
+
+
