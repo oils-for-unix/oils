@@ -1095,6 +1095,24 @@ compgen -F _set_COMPREPLY
 ## END
 
 
+#### SparseArray: compgen -F _set_COMPREPLY
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+a=(echo 'Hello,' 'Bash' 'world!')
+var COMP_ARGV = _a2sp(a)
+compadjust cur prev words cword
+argv.py "$cur" "$prev" "$cword"
+argv.py "${words[@]}"
+
+## STDOUT:
+['world!', 'Bash', '3']
+['echo', 'Hello,', 'Bash', 'world!']
+## END
+
+## N-I bash/zsh/mksh/ash STDOUT:
+## END
+
+
 #### SparseArray (YSH): $[a1 === a2]
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
