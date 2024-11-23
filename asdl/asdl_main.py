@@ -127,6 +127,10 @@ using hnode_asdl::hnode_t;
 using id_kind_asdl::Id_t;
 
 """)
+            # Doesn't work
+            if 0:
+                #if schema_path.endswith('/syntax.asdl'):
+                f.write('#include  "prebuilt/frontend/syntax_abbrev.mycpp.h"\n')
 
             for use in schema_ast.uses:
                 # Forward declarations in the header, like
@@ -160,8 +164,6 @@ namespace %s {
 class %s {
  public:
   hnode_t* PrettyTree(bool do_abbrev, Dict<int, bool>* seen);
-  hnode_t* _AbbreviatedTree(bool do_abbrev, Dict<int, bool>* seen);
-  hnode_t* AbbreviatedTree(bool do_abbrev, Dict<int, bool>* seen);
 };
 }
 """ % (cpp_namespace, type_name))

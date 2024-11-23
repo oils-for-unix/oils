@@ -72,6 +72,38 @@ readonly -a ASDL_FILES=(
   $REPO_ROOT/{asdl/runtime,asdl/format,display/ansi,display/pretty,pylib/cgi,data_lang/j8_lite}.py \
 )
 
+syntax-abbrev() {
+  # Experiment: try to generate something that can be included in
+  # _gen/frontend/syntax.asdl.h.  It kinda works, but it would need a preamble.
+
+  mkdir -p prebuilt/frontend $TEMP_DIR/frontend
+  oils-part \
+    prebuilt/frontend/syntax_abbrev.mycpp \
+    $TEMP_DIR/frontend/syntax_abbrev_raw.mycpp.h \
+    FRONTEND_SYNTAX_ABBREV_H \
+    '
+namespace syntax_asdl {
+  class Token;
+  class CompoundWord;
+  class DoubleQuoted;
+  class SingleQuoted;
+  class SimpleVarSub;
+  class BracedVarSub;
+#if 0
+  struct command {  // ASDL_NAMES
+    class Simple;
+  };
+  struct expr {  // ASDL_NAMES
+    class Const;
+    class Var;
+  };
+#endif
+}
+' \
+    --to-header frontend.syntax_abbrev \
+    frontend/syntax_abbrev.py
+}
+
 asdl-runtime() {
   mkdir -p prebuilt/asdl $TEMP_DIR/asdl
   oils-part \
