@@ -1099,3 +1099,20 @@ false
 
 ## N-I bash/zsh/mksh/ash STDOUT:
 ## END
+
+
+#### SparseArray (YSH): append v1 v2... (a)
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+a=(1 2 3)
+unset -v 'a[1]'
+var a = _a2sp(a)
+append 'x' 'y' 'z' (a)
+= a
+
+## STDOUT:
+(SparseArray [0]='1' [2]='3' [3]='x' [4]='y' [5]='z')
+## END
+
+## N-I bash/zsh/mksh/ash STDOUT:
+## END
