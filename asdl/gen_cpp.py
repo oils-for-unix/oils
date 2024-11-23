@@ -604,8 +604,10 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     circular dependencies.
     """
 
-    def __init__(self, f, pretty_print_methods=True):
+    def __init__(self, f, abbrev_ns=None, abbrev_mod_entries=None):
         visitor.AsdlVisitor.__init__(self, f)
+        self.abbrev_ns = abbrev_ns
+        self.abbrev_mod_entries = abbrev_mod_entries or []
 
     def _EmitList(self, list_str, item_type, out_val_name):
         # used in format strings
@@ -717,16 +719,8 @@ class MethodDefVisitor(visitor.AsdlVisitor):
                                 all_fields,
                                 sum_name=None,
                                 list_item_type=None):
-
-        #
-        # PrettyTree
-        #
-
-        if sum_name is not None:
-            n = '%s_str(this->tag())' % sum_name
-        else:
-            n = 'StrFromC("%s")' % class_name
-
+        """
+        """
         self.Emit('')
         self.Emit(
             'hnode_t* %s::PrettyTree(bool do_abbrev, Dict<int, bool>* seen) {'
@@ -746,6 +740,25 @@ class MethodDefVisitor(visitor.AsdlVisitor):
             self._EmitList('this', list_item_type, 'out_node')
             self.Dedent()
         else:
+            if sum_name is not None:
+                n = '%s_str(this->tag())' % sum_name
+            else:
+                n = 'StrFromC("%s")' % class_name
+
+            abbrev_name = '_%s' % class_name
+
+            if abbrev_name in self.abbrev_mod_entries:
+                self.Emit('  if (do_abbrev) {')
+                self.Emit('    auto* p = %s::%s(this);' %
+                          (self.abbrev_ns, abbrev_name))
+                self.Emit('    if (p) {')
+                self.Emit('      return p;')
+                self.Emit('    }')
+                self.Emit('  }')
+            else:
+                #self.Emit('  // no abbrev %s' % abbrev_name)
+                pass
+
             self.Emit('  hnode::Record* out_node = runtime::NewRecord(%s);' %
                       n)
             if all_fields:

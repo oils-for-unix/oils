@@ -44,6 +44,11 @@ def Options():
         default=True,
         help='Generate 0 arg and N arg constructors, in Python and C++')
 
+    p.add_option('--abbrev-module',
+                 dest='abbrev_module',
+                 default=None,
+                 help='Import this module to find abbreviations')
+
     return p
 
 
@@ -77,6 +82,16 @@ def main(argv):
         app_types = {'id': UserType('id_kind_asdl', 'Id_t')}
     else:
         app_types = {}
+
+    if opts.abbrev_module:
+        # Weird Python rule for importing: fromlist needs to be non-empty.
+        abbrev_mod = __import__(opts.abbrev_module, fromlist=['.'])
+    else:
+        abbrev_mod = None
+
+    abbrev_mod_entries = dir(abbrev_mod) if abbrev_mod else []
+    # e.g. syntax_abbrev
+    abbrev_ns = opts.abbrev_module.split('.')[-1] if abbrev_mod else None
 
     if action == 'c':  # Generate C code for the lexer
         with open(schema_path) as f:
@@ -127,10 +142,11 @@ using hnode_asdl::hnode_t;
 using id_kind_asdl::Id_t;
 
 """)
-            # Doesn't work
+            # Only works with gross hacks
             if 0:
                 #if schema_path.endswith('/syntax.asdl'):
-                f.write('#include  "prebuilt/frontend/syntax_abbrev.mycpp.h"\n')
+                f.write(
+                    '#include  "prebuilt/frontend/syntax_abbrev.mycpp.h"\n')
 
             for use in schema_ast.uses:
                 # Forward declarations in the header, like
@@ -206,6 +222,7 @@ tags_to_types = \\
 ''' % (ns, pformat(debug_info)))
 
             if not opts.pretty_print_methods:
+                # No .cc file at all
                 return
 
             with open(out_prefix + '.cc', 'w') as f:
@@ -215,6 +232,14 @@ tags_to_types = \\
 #include "%s.h"
 #include <assert.h>
 """ % (out_prefix, ARG_0, out_prefix))
+
+                if abbrev_mod_entries:
+                    # This is somewhat hacky, works for frontend/syntax_abbrev.py and
+                    # prebuilt/frontend/syntax_abbrev.mycpp.h
+                    part0, part1 = opts.abbrev_module.split('.')
+                    f.write("""\
+#include "prebuilt/%s/%s.mycpp.h"
+""" % (part0, part1))
 
                 f.write("""\
 #include "prebuilt/asdl/runtime.mycpp.h"  // generated code uses wrappers here
@@ -242,7 +267,10 @@ namespace %s {
 
 """ % ns)
 
-                v3 = gen_cpp.MethodDefVisitor(f)
+                v3 = gen_cpp.MethodDefVisitor(
+                    f,
+                    abbrev_ns=abbrev_ns,
+                    abbrev_mod_entries=abbrev_mod_entries)
                 v3.VisitModule(schema_ast)
 
                 f.write("""
@@ -252,14 +280,6 @@ namespace %s {
     elif action == 'mypy':  # Generated typed MyPy code
         with open(schema_path) as f:
             schema_ast = front_end.LoadSchema(f, app_types)
-
-        try:
-            abbrev_module_name = argv[3]
-        except IndexError:
-            abbrev_mod = None
-        else:
-            # Weird Python rule for importing: fromlist needs to be non-empty.
-            abbrev_mod = __import__(abbrev_module_name, fromlist=['.'])
 
         f = sys.stdout
 
@@ -301,11 +321,10 @@ from asdl.runtime import NewRecord, NewLeaf, TraversalState
 from _devbuild.gen.hnode_asdl import color_e, hnode, hnode_e, hnode_t, Field
 
 """)
-        if abbrev_mod:
-            f.write('from %s import *\n' % abbrev_module_name)
+        if opts.abbrev_module:
+            f.write('from %s import *\n' % opts.abbrev_module)
             f.write('\n')
 
-        abbrev_mod_entries = dir(abbrev_mod) if abbrev_mod else []
         v = gen_python.GenMyPyVisitor(
             f,
             abbrev_mod_entries,

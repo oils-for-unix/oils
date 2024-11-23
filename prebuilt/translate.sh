@@ -89,19 +89,20 @@ namespace syntax_asdl {
   class SingleQuoted;
   class SimpleVarSub;
   class BracedVarSub;
-#if 0
-  struct command {  // ASDL_NAMES
-    class Simple;
-  };
-  struct expr {  // ASDL_NAMES
-    class Const;
-    class Var;
-  };
-#endif
+
+  class command__Simple;
+  class expr__Const;
+  class expr__Var;
 }
 ' \
     --to-header frontend.syntax_abbrev \
     frontend/syntax_abbrev.py
+
+  # Gross hack!  Massage mycpp output into something we can use.
+  sed -i \
+    -e 's/command::/syntax_asdl::command__/g' \
+    -e 's/expr::/syntax_asdl::expr__/g' \
+    prebuilt/frontend/syntax_abbrev.mycpp.h
 }
 
 asdl-runtime() {

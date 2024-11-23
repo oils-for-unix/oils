@@ -168,7 +168,9 @@ def NinjaGraph(ru):
             # Hm it did not create a problem?  I guess only cc_library() deps
             # can't be circular?
             '//core/value.asdl',
-        ])
+        ],
+        abbrev_module='frontend.syntax_abbrev',
+    )
 
     ru.cc_binary('frontend/syntax_asdl_test.cc',
                  deps=['//frontend/syntax.asdl'],
