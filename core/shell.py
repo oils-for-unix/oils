@@ -818,6 +818,7 @@ def Main(
     methods[value_e.List] = {
         'M/reverse': method_list.Reverse(),
         'M/append': method_list.Append(),
+        'M/clear': method_list.Clear(),
         'M/extend': method_list.Extend(),
         'M/pop': method_list.Pop(),
         'M/insert': None,  # insert object before index
@@ -826,6 +827,7 @@ def Main(
         # Python list() has index(), which raises ValueError
         # But this is consistent with Str->find(), and doesn't
         # use exceptions
+        'lastIndexOf': method_list.LastIndexOf(),
         'join': func_misc.Join(),  # both a method and a func
     }
 
