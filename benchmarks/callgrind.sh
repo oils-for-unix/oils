@@ -26,6 +26,10 @@ fib() {
   osh-run benchmarks/compute/fib.sh 10 44
 }
 
+pretty() {
+  osh-run -n --ast-format text configure
+}
+
 parse-cpython-configure() {
   # Goal: eliminate string slicing in this workload!  It should just be
   # creating fixed size Tokens, syntax.asdl nodes, and List<T>
