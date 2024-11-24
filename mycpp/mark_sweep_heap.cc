@@ -328,12 +328,14 @@ int MarkSweepHeap::Collect() {
 }
 
 void MarkSweepHeap::PrintShortStats() {
+  #ifndef NO_POOL_ALLOC
   int fd = 2;
   dprintf(fd, "  num allocated    = %10d\n",
           num_allocated_ + pool1_.num_allocated() + pool2_.num_allocated());
   dprintf(
       fd, "bytes allocated    = %10" PRId64 "\n",
       bytes_allocated_ + pool1_.bytes_allocated() + pool2_.bytes_allocated());
+  #endif
 }
 
 void MarkSweepHeap::PrintStats(int fd) {

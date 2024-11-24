@@ -20,7 +20,7 @@ module pretty
     | Text(str string)
     | Indent(int indent, MeasuredDoc mdoc)
     | Concat(List[MeasuredDoc] mdocs)
-    | Group(MeasuredDoc mdoc)
+    | Group %MeasuredDoc
     | Flat(MeasuredDoc mdoc)
     | IfFlat(MeasuredDoc flat_mdoc, MeasuredDoc nonflat_mdoc)
 

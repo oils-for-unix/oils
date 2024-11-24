@@ -188,7 +188,7 @@ def _Concat(mdocs):
 def _Group(mdoc):
     # type: (MeasuredDoc) -> MeasuredDoc
     """Print `mdoc`. Use flat mode if `mdoc` will fit on the current line."""
-    return MeasuredDoc(doc.Group(mdoc), mdoc.measure)
+    return MeasuredDoc(mdoc, mdoc.measure)
 
 
 def _IfFlat(flat_mdoc, nonflat_mdoc):
@@ -217,9 +217,9 @@ class PrettyPrinter(object):
         self.max_width = max_width
 
     def _Fits(self, prefix_len, group, suffix_measure):
-        # type: (int, doc.Group, Measure) -> bool
+        # type: (int, MeasuredDoc, Measure) -> bool
         """Will `group` fit flat on the current line?"""
-        measure = _ConcatMeasure(_FlattenMeasure(group.mdoc.measure),
+        measure = _ConcatMeasure(_FlattenMeasure(group.measure),
                                  suffix_measure)
         return prefix_len + _SuffixLen(measure) <= self.max_width
 
@@ -283,11 +283,10 @@ class PrettyPrinter(object):
                 elif case(doc_e.Group):
                     # If the group would fit on the current line when printed
                     # flat, do so. Otherwise, print it non-flat.
-                    group = cast(doc.Group, frag.mdoc.doc)
+                    group = cast(MeasuredDoc, frag.mdoc.doc)
                     flat = self._Fits(prefix_len, group, frag.measure)
                     fragments.append(
-                        DocFragment(group.mdoc, frag.indent, flat,
-                                    frag.measure))
+                        DocFragment(group, frag.indent, flat, frag.measure))
 
                 elif case(doc_e.IfFlat):
                     if_flat = cast(doc.IfFlat, frag.mdoc.doc)
