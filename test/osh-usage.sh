@@ -22,8 +22,6 @@ DISABLED-test-oheap() {
 test-ast-formats() {
   bin/osh -n -c 'echo hi'
   bin/osh -n --ast-format text -c 'echo hi'
-  bin/osh -n --ast-format abbrev-html -c 'echo hi'
-  bin/osh -n --ast-format html -c 'echo hi'
 
   # Removed with oheap
   return
