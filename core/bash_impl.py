@@ -240,6 +240,12 @@ def BashAssoc_HasElement(assoc_val, s):
     return s in assoc_val.d
 
 
+def BashAssoc_GetElement(assoc_val, s):
+    # type: (value.BashAssoc, str) -> Optional[str]
+
+    return assoc_val.d.get(s)
+
+
 def BashAssoc_SetElement(assoc_val, key, s):
     # type: (value.BashAssoc, str, str) -> None
 

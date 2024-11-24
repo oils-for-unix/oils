@@ -1128,7 +1128,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     anode, blame_loc=location.TokenForArith(anode))
 
                 vtest_place.index = a_index.Str(key)  # out param
-                s = assoc_val.d.get(key)
+                s = bash_impl.BashAssoc_GetElement(assoc_val, key)
 
                 if s is None:
                     val = value.Undef

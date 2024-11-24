@@ -170,10 +170,10 @@ def OldValue(lval, mem, exec_opts):
                     tmp2 = cast(value.BashAssoc, UP_val)
                     # mycpp rewrite: add tmp.  cast() creates a new var in inner scope
                     assoc_val = tmp2
+                    s = bash_impl.BashAssoc_GetElement(assoc_val, lval.key)
                 else:
                     e_die("Can't use [] on value of type %s" % ui.ValType(val))
 
-            s = assoc_val.d.get(lval.key)
             if s is None:
                 val = value.Str('')
             else:
@@ -746,7 +746,7 @@ class ArithEvaluator(object):
                         elif case(value_e.BashAssoc):
                             left = cast(value.BashAssoc, UP_left)
                             key = self.EvalWordToString(node.right)
-                            s = left.d.get(key)
+                            s = bash_impl.BashAssoc_GetElement(left, key)
 
                         elif case(value_e.Str):
                             left = cast(value.Str, UP_left)
