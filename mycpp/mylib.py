@@ -40,6 +40,11 @@ def MaybeCollect():
     pass
 
 
+def PrintGcStats():
+    # type: () -> None
+    pass
+
+
 def NewDict():
     # type: () -> Dict[str, Any]
     """Make dictionaries ordered in Python, e.g. for JSON.

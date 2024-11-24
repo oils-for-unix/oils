@@ -524,8 +524,19 @@ def PrintAst(node, flag):
         f = mylib.Stdout()
 
         do_abbrev = 'abbrev-' in flag.ast_format
+        perf_stats = flag.ast_format == '__perf'  # special debug flag
+
+        if perf_stats:
+            log('')
+            log('___ GC: after parsing')
+            mylib.PrintGcStats()
+
         tree = node.PrettyTree(do_abbrev)
-        fmt.HNodePrettyPrint(tree, f, max_width=_GetMaxWidth())
+
+        if perf_stats:
+            fmt._HNodePrettyPrint(True, tree, f, max_width=_GetMaxWidth())
+        else:
+            fmt.HNodePrettyPrint(tree, f, max_width=_GetMaxWidth())
 
 
 def TypeNotPrinted(val):

@@ -27,11 +27,15 @@ TIMEFORMAT='%R'
 # 74292325  # 74 MB
 # 2.668
 
+# NEW Wadler printer!
+
+
 compare() {
   local osh=_bin/cxx-opt/osh
   ninja $osh
 
-  for file in benchmarks/testdata/conf*; do
+  #for file in benchmarks/testdata/conf*; do
+  for file in benchmarks/testdata/configure; do
     echo ---
     echo "$file - parsing only, then parsing and printing"
 
@@ -45,6 +49,44 @@ compare() {
 
     # Print abbreviated
     time $osh --tool syntax-tree $file | wc --bytes
+    echo
+
+  done
+}
+
+gc-stats() {
+  local osh=_bin/cxx-opt/osh
+  ninja $osh
+
+  # 615K file
+  for file in benchmarks/testdata/configure; do
+  #for file in benchmarks/testdata/configure-coreutils; do
+
+    local fmt=__perf
+    echo "___ parsing and pretty printing $file"
+    time $osh --ast-format $fmt --tool syntax-tree $file | wc --bytes
+
+    echo
+
+    # Compare against OLD printer
+    time OILS_GC_STATS=1 osh --ast-format text --tool syntax-tree $file | wc --bytes
+
+    continue
+    echo ---
+
+    # 585K objects allocated, 16 MB
+    echo "$file - parsing only"
+    time OILS_GC_STATS=1 $osh --ast-format none --tool syntax-tree $file
+    echo
+
+    # 14M allocated, 450 MB!  Geez!
+    echo "$file - parsing, pretty print abbreviated"
+    time OILS_GC_STATS=1 $osh --tool syntax-tree $file | wc --bytes
+    echo
+
+    # 31 M allocated, 1 GB!   Gah
+    echo "$file - parsing, pretty print full"
+    time OILS_GC_STATS=1 $osh --ast-format text --tool syntax-tree $file | wc --bytes
     echo
 
   done

@@ -177,8 +177,11 @@ def _Concat(mdocs):
     # type: (List[MeasuredDoc]) -> MeasuredDoc
     """Print the mdocs in order (with no space in between)."""
     measure = _EmptyMeasure()
+
+    # TODO: this algorithm allocates too much!
     for mdoc in mdocs:
         measure = _ConcatMeasure(measure, mdoc.measure)
+
     return MeasuredDoc(doc.Concat(mdocs), measure)
 
 
@@ -268,10 +271,13 @@ class PrettyPrinter(object):
                     # - A, with suffix_measure = M
                     concat = cast(doc.Concat, frag.mdoc.doc)
                     measure = frag.measure
+
+                    # TODO: optimize reversed?
                     for mdoc in reversed(concat.mdocs):
                         fragments.append(
                             DocFragment(mdoc, frag.indent, frag.is_flat,
                                         measure))
+                        # TODO: this algorithm allocates too much!
                         measure = _ConcatMeasure(mdoc.measure, measure)
 
                 elif case(doc_e.Group):

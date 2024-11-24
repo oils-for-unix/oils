@@ -231,6 +231,7 @@ class MarkSweepHeap {
   void Sweep();
 
   void PrintStats(int fd);  // public for testing
+  void PrintShortStats();
 
   void CleanProcessExit();  // do one last GC, used in unit tests
   void ProcessExit();       // main() lets OS clean up, except ASAN variant

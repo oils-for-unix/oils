@@ -31,6 +31,10 @@ inline void MaybeCollect() {
   gHeap.MaybeCollect();
 }
 
+inline void PrintGcStats() {
+  gHeap.PrintShortStats();  // print to stderr
+}
+
 void print_stderr(BigStr* s);
 
 inline int ByteAt(BigStr* s, int i) {

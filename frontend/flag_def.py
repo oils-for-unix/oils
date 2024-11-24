@@ -267,7 +267,7 @@ MAIN_SPEC.LongFlag('--headless')  # accepts ECMD, etc.
 
 # TODO: -h too
 # the output format when passing -n
-MAIN_SPEC.LongFlag('--ast-format', ['text', 'abbrev-text', 'none'],
+MAIN_SPEC.LongFlag('--ast-format', ['text', 'abbrev-text', 'none', '__perf'],
                    default='abbrev-text')
 
 # Defines completion style.
