@@ -163,50 +163,11 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
 
         elif val.tag() == value_e.BashArray:
             array_val = cast(value.BashArray, val)
-
-            # mycpp rewrite: None in array_val.strs
-            has_holes = False
-            for s in array_val.strs:
-                if s is None:
-                    has_holes = True
-                    break
-
-            if has_holes:
-                # Note: Arrays with unset elements are printed in the form:
-                #   declare -p arr=(); arr[3]='' arr[4]='foo' ...
-                decl.append("=()")
-                first = True
-                for i, element in enumerate(array_val.strs):
-                    if element is not None:
-                        if first:
-                            decl.append(";")
-                            first = False
-                        decl.extend([
-                            " ", name, "[",
-                            str(i), "]=",
-                            j8_lite.MaybeShellEncode(element)
-                        ])
-            else:
-                body = []  # type: List[str]
-                for element in array_val.strs:
-                    if len(body) > 0:
-                        body.append(" ")
-                    body.append(j8_lite.MaybeShellEncode(element))
-                decl.extend(["=(", ''.join(body), ")"])
+            decl.extend(["=", bash_impl.BashArray_ToStrForShellPrint(array_val, name)])
 
         elif val.tag() == value_e.BashAssoc:
             assoc_val = cast(value.BashAssoc, val)
-            body = []
-            for key in sorted(assoc_val.d):
-                if len(body) > 0:
-                    body.append(" ")
-
-                key_quoted = j8_lite.ShellEncode(key)
-                value_quoted = j8_lite.MaybeShellEncode(assoc_val.d[key])
-
-                body.extend(["[", key_quoted, "]=", value_quoted])
-            if len(body) > 0:
-                decl.extend(["=(", ''.join(body), ")"])
+            decl.extend(["=", bash_impl.BashAssoc_ToStrForShellPrint(assoc_val)])
 
         elif val.tag() == value_e.SparseArray:
             sparse_val = cast(value.SparseArray, val)
