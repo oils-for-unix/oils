@@ -2288,6 +2288,15 @@ class Mem(object):
                         raise error.Runtime(
                             "%s[%d]: Index is out of bounds for array of length %d"
                             % (var_name, lval.index, n))
+                elif val.tag() == value_e.SparseArray:
+                    val = cast(value.SparseArray, UP_val)
+                    error_code = bash_impl.SparseArray_UnsetElement(
+                        val, mops.IntWiden(lval.index))
+                    if error_code == 1:
+                        big_length = bash_impl.SparseArray_Length(val)
+                        raise error.Runtime(
+                            "%s[%d]: Index is out of bounds for array of length %s"
+                            % (var_name, lval.index, mops.ToStr(big_length)))
                 else:
                     raise error.Runtime("%r isn't an array" % var_name)
 
