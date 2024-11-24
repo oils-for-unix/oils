@@ -215,7 +215,7 @@ class Append(vm._Builtin):
         with tagswitch(val) as case:
             if case(value_e.BashArray):
                 val = cast(value.BashArray, UP_val)
-                val.strs.extend(arg_r.Rest())
+                bash_impl.BashArray_AppendValues(val, arg_r.Rest())
             elif case(value_e.List):
                 val = cast(value.List, UP_val)
                 typed = [value.Str(s)

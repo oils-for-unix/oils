@@ -6,6 +6,7 @@ from _devbuild.gen.syntax_asdl import loc, loc_t, command_t
 from _devbuild.gen.value_asdl import (value, value_e, value_t, eggex_ops,
                                       eggex_ops_t, regex_match, RegexMatch,
                                       Obj)
+from core import bash_impl
 from core import error
 from core.error import e_die
 from display import ui
@@ -175,8 +176,8 @@ def ToShellArray(val, blame_loc, prefix=''):
         # - readarray/mapfile returns bash array (ysh-user-feedback depends on it)
         # - ysh-options tests parse_at too
         elif case2(value_e.BashArray):
-            val = cast(value.BashArray, UP_val)
-            strs = val.strs
+            array_val = cast(value.BashArray, UP_val)
+            strs = bash_impl.BashArray_GetValues(array_val)
 
         else:
             raise error.TypeErr(val, "%sexpected List" % prefix, blame_loc)
@@ -352,11 +353,11 @@ def ToBool(val):
         # OLD TYPES
         elif case(value_e.BashArray):
             val = cast(value.BashArray, UP_val)
-            return len(val.strs) != 0
+            return not bash_impl.BashArray_IsEmpty(val)
 
         elif case(value_e.BashAssoc):
             val = cast(value.BashAssoc, UP_val)
-            return len(val.d) != 0
+            return not bash_impl.BashAssoc_IsEmpty(val)
 
         elif case(value_e.Bool):
             val = cast(value.Bool, UP_val)
@@ -422,14 +423,7 @@ def ExactlyEqual(left, right, blame_loc):
         elif case(value_e.BashArray):
             left = cast(value.BashArray, UP_left)
             right = cast(value.BashArray, UP_right)
-            if len(left.strs) != len(right.strs):
-                return False
-
-            for i in xrange(0, len(left.strs)):
-                if left.strs[i] != right.strs[i]:
-                    return False
-
-            return True
+            return bash_impl.BashArray_Equals(left, right)
 
         elif case(value_e.List):
             left = cast(value.List, UP_left)
@@ -446,14 +440,7 @@ def ExactlyEqual(left, right, blame_loc):
         elif case(value_e.BashAssoc):
             left = cast(value.BashAssoc, UP_left)
             right = cast(value.BashAssoc, UP_right)
-            if len(left.d) != len(right.d):
-                return False
-
-            for k in left.d:
-                if k not in right.d or right.d[k] != left.d[k]:
-                    return False
-
-            return True
+            return bash_impl.BashAssoc_Equals(left, right)
 
         elif case(value_e.Dict):
             left = cast(value.Dict, UP_left)
