@@ -29,7 +29,6 @@ from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str, Obj)
 from _devbuild.gen.nil8_asdl import (nvalue, nvalue_t)
 
-from asdl import format as fmt
 from core import error
 from data_lang import pyj8
 # dependency issue: consts.py pulls in frontend/option_def.py

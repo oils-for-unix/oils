@@ -116,14 +116,12 @@ def main(argv):
 
         # Dump ASDL representation
         # We could also have a NIL8 printer
-        pretty_f = fmt.DetectConsoleOutput(stderr_)
-        fmt.PrintTree(nval.PrettyTree(False), pretty_f)
-        stderr_.write('\n')
+        fmt.HNodePrettyPrint(nval.PrettyTree(False), stderr_)
+        #stderr_.write('\n')
 
         prog = transform.Transform(nval)
 
-        fmt.PrintTree(prog.PrettyTree(False), pretty_f)
-        stderr_.write('\n')
+        fmt.HNodePrettyPrint(prog.PrettyTree(False), stderr_)
 
         # TODO: a few mycpp passes over this representation
         #   - not sure if we'll need any more IRs
@@ -136,9 +134,8 @@ def main(argv):
 
         m = yaks_asdl.Module('hi', [])
 
-        pretty_f = fmt.DetectConsoleOutput(stderr_)
-        fmt.PrintTree(m.PrettyTree(False), pretty_f)
-        stderr_.write('\n')
+        fmt.HNodePrettyPrint(m.PrettyTree(False), stderr_)
+        #stderr_.write('\n')
 
     else:
         raise RuntimeError('Invalid action %r' % action)

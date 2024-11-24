@@ -194,10 +194,9 @@ def TestParse():
         #log('%s', tree)
 
         htree = node.PrettyTree(False)
-        ast_f = fmt.AnsiOutput(mylib.Stdout())
+        f = mylib.Stdout()
 
-        fmt.PrintTree(htree, ast_f)
-        ast_f.write('\n')
+        fmt.HNodePrettyPrint(htree, f)
 
         UP_node = node
         with tagswitch(UP_node) as case:
@@ -231,10 +230,8 @@ def TestCreateNull():
     b.right = v
 
     htree = b.PrettyTree(False)
-    ast_f = fmt.AnsiOutput(mylib.Stdout())
-
-    fmt.PrintTree(htree, ast_f)
-    ast_f.write('\n')
+    f = mylib.Stdout()
+    fmt.HNodePrettyPrint(htree, f)
 
 
 def TestSubtype():
