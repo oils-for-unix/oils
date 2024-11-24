@@ -267,12 +267,13 @@ class HNodeEncoder(BaseEncoder):
                     mdocs = [self._Field(field) for field in h.fields]
 
                 if mdocs is None:
-                    assert type_name is not None, h
+                    m = [AsciiText(h.left)]
+                    if type_name is not None:  # {}
+                        m.append(type_name)
+                    m.append(AsciiText(h.right))
 
                     # e.g. (value.Stdin) with no fields
-                    return _Concat(
-                        [AsciiText(h.left), type_name,
-                         AsciiText(h.right)])
+                    return _Concat(m)
 
                 # Named or unnamed
                 child = self._Join(mdocs, '', ' ')
