@@ -26,8 +26,9 @@ module pretty
 
   # Optimizing allocations
   # - Concat can be a List subtype
-  # - Group can be %MeasuredDoc - it is more common than Flat it seems
   # - One of Break or Text can be %Str, when we add it
+  # - All these objects are immutable, so there can be a lot of sharing / hash consing, etc.
+  #   - especially for ( : , ) '' etc. and ANSI styles
   
   # Used internally while pretty printing.
   # See comments in PrettyPrinter._PrintDoc.

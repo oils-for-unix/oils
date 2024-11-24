@@ -239,17 +239,18 @@ class PrettyPrinter(object):
 
         while len(fragments) > 0:
             frag = fragments.pop()
-            with tagswitch(frag.mdoc.doc) as case:
+            UP_doc = frag.mdoc.doc
+            with tagswitch(UP_doc) as case:
 
                 if case(doc_e.Text):
-                    text = cast(doc.Text, frag.mdoc.doc)
+                    text = cast(doc.Text, UP_doc)
                     buf.write(text.string)
                     prefix_len += frag.mdoc.measure.flat
 
                 elif case(doc_e.Break):
+                    break_ = cast(doc.Break, UP_doc)
                     if frag.is_flat:
-                        break_str = cast(doc.Break, frag.mdoc.doc).string
-                        buf.write(break_str)
+                        buf.write(break_.string)
                         prefix_len += frag.mdoc.measure.flat
                     else:
                         buf.write('\n')
@@ -257,14 +258,14 @@ class PrettyPrinter(object):
                         prefix_len = frag.indent
 
                 elif case(doc_e.Indent):
-                    indented = cast(doc.Indent, frag.mdoc.doc)
+                    indented = cast(doc.Indent, UP_doc)
                     fragments.append(
                         DocFragment(indented.mdoc,
                                     frag.indent + indented.indent,
                                     frag.is_flat, frag.measure))
 
                 elif case(doc_e.Concat):
-                    concat = cast(doc.Concat, frag.mdoc.doc)
+                    concat = cast(doc.Concat, UP_doc)
 
                     # If we encounter Concat([A, B, C]) with a suffix measure M,
                     # we need to push A,B,C onto the stack in reverse order:
@@ -282,13 +283,13 @@ class PrettyPrinter(object):
                 elif case(doc_e.Group):
                     # If the group would fit on the current line when printed
                     # flat, do so. Otherwise, print it non-flat.
-                    group = cast(MeasuredDoc, frag.mdoc.doc)
-                    flat = self._Fits(prefix_len, group, frag.measure)
+                    group = cast(MeasuredDoc, UP_doc)
+                    is_flat = self._Fits(prefix_len, group, frag.measure)
                     fragments.append(
-                        DocFragment(group, frag.indent, flat, frag.measure))
+                        DocFragment(group, frag.indent, is_flat, frag.measure))
 
                 elif case(doc_e.IfFlat):
-                    if_flat = cast(doc.IfFlat, frag.mdoc.doc)
+                    if_flat = cast(doc.IfFlat, UP_doc)
                     if frag.is_flat:
                         subdoc = if_flat.flat_mdoc
                     else:
@@ -298,7 +299,7 @@ class PrettyPrinter(object):
                                     frag.measure))
 
                 elif case(doc_e.Flat):
-                    flat_doc = cast(doc.Flat, frag.mdoc.doc)
+                    flat_doc = cast(doc.Flat, UP_doc)
                     fragments.append(
                         DocFragment(flat_doc.mdoc, frag.indent, True,
                                     frag.measure))

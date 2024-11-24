@@ -263,6 +263,8 @@ class HNodeEncoder(BaseEncoder):
                 if h.unnamed_fields is not None and len(h.unnamed_fields):
                     mdocs = [self._HNode(item) for item in h.unnamed_fields]
                 else:
+                    # TODO: Handle the case of (value.Stdin) with no fields
+
                     #if len(h.fields) == 0:
                     #    return _Concat(
                     #        [AsciiText(h.left), type_name,

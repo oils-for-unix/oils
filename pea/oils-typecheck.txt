@@ -109,7 +109,6 @@ osh/word_parse.py
 pgen2/grammar.py
 pgen2/parse.py
 pgen2/pnode.py
-pylib/cgi.py
 pylib/os_path.py
 pylib/path_stat.py
 tools/fmt.py
