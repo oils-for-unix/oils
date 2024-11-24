@@ -139,21 +139,18 @@ def OldValue(lval, mem, exec_opts):
         elif case(sh_lvalue_e.Indexed):
             lval = cast(sh_lvalue.Indexed, UP_lval)
 
-            array_val = None  # type: value.BashArray
             with tagswitch(val) as case2:
                 if case2(value_e.Undef):
-                    array_val = value.BashArray([])
+                    s = None  # type: str
                 elif case2(value_e.BashArray):
-                    tmp = cast(value.BashArray, UP_val)
-                    # mycpp rewrite: add tmp.  cast() creates a new var in inner scope
-                    array_val = tmp
+                    array_val = cast(value.BashArray, UP_val)
+                    s, _ = bash_impl.BashArray_GetElement(
+                        array_val, lval.index)
+                    # Note: We ignore error_code in the return value of
+                    # BashArray_GetElement because an invalid index will be
+                    # reported on the assignment stage anyway.
                 else:
                     e_die("Can't use [] on value of type %s" % ui.ValType(val))
-
-            s, _ = word_eval.GetArrayItem(array_val.strs, lval.index)
-            # Note: We ignore error_code in the return value of
-            # BashArray_GetElement because an invalid index will be reported on
-            # the assignment stage anyway.
 
             if s is None:
                 val = value.Str('')  # NOTE: Other logic is value.Undef?  0?
@@ -734,8 +731,8 @@ class ArithEvaluator(object):
                             array_val = cast(value.BashArray, UP_left)
                             small_i = mops.BigTruncate(
                                 self.EvalToBigInt(node.right))
-                            s, error_code = word_eval.GetArrayItem(
-                                array_val.strs, small_i)
+                            s, error_code = bash_impl.BashArray_GetElement(
+                                array_val, small_i)
                             if error_code == error_code_e.IndexOutOfRange:
                                 # Note: Bash outputs warning but does not make
                                 # it a real error.  We follow the Bash behavior

@@ -72,6 +72,31 @@ def BashArray_HasElement(val, index):
     return False, error_code_e.OK
 
 
+def BashArray_GetElement(array_val, index):
+    # type: (value.BashArray, int) -> Tuple[Optional[str], error_code_t]
+    """This function returns a tuple of a string value and an
+    error_code.  If the element is found, the value is returned as the
+    first element of the tuple.  Otherwise, the first element of the
+    tuple is None.
+
+    """
+
+    strs = array_val.strs
+    n = len(strs)
+    if index < 0:
+        index += n
+        if index < 0:
+            return None, error_code_e.IndexOutOfRange
+
+    if index < n:
+        # TODO: strs->index() has a redundant check for (i < 0)
+        s = strs[index]
+        # note: s could be None because representation is sparse
+    else:
+        s = None
+    return s, error_code_e.OK
+
+
 def BashArray_SetElement(array_val, index, s):
     # type: (value.BashArray, int, str) -> error_code_t
 
