@@ -359,6 +359,15 @@ def SparseArray_HasElement(sparse_val, index):
     return index in sparse_val.d, error_code_e.OK
 
 
+def SparseArray_GetElement(sparse_val, index):
+    # type: (value.SparseArray, mops.BigInt) -> Tuple[Optional[str], error_code_t]
+
+    index, error_code = _SparseArray_CanonicalizeIndex(sparse_val, index)
+    if error_code != error_code_e.OK:
+        return None, error_code
+    return sparse_val.d.get(index), error_code_e.OK
+
+
 def SparseArray_SetElement(sparse_val, index, s):
     # type: (value.SparseArray, mops.BigInt, str) -> error_code_t
 

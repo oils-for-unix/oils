@@ -149,6 +149,10 @@ def OldValue(lval, mem, exec_opts):
                     # Note: We ignore error_code in the return value of
                     # BashArray_GetElement because an invalid index will be
                     # reported on the assignment stage anyway.
+                elif case2(value_e.SparseArray):
+                    sparse_val = cast(value.SparseArray, UP_val)
+                    s, _ = bash_impl.SparseArray_GetElement(
+                        sparse_val, mops.IntWiden(lval.index))
                 else:
                     e_die("Can't use [] on value of type %s" % ui.ValType(val))
 
@@ -511,18 +515,19 @@ class ArithEvaluator(object):
         val = OldValue(lval, self.mem, self.exec_opts)
 
         # BASH_LINENO, arr (array name without strict_array), etc.
-        if (val.tag() in (value_e.BashArray, value_e.BashAssoc) and
+        if (val.tag() in (value_e.BashArray, value_e.BashAssoc,
+                          value_e.SparseArray) and
                 lval.tag() == sh_lvalue_e.Var):
             named_lval = cast(LeftName, lval)
             if word_eval.ShouldArrayDecay(named_lval.name, self.exec_opts):
-                if val.tag() == value_e.BashArray:
+                if val.tag() in (value_e.BashArray, value_e.SparseArray):
                     lval = sh_lvalue.Indexed(named_lval.name, 0, loc.Missing)
                 elif val.tag() == value_e.BashAssoc:
                     lval = sh_lvalue.Keyed(named_lval.name, '0', loc.Missing)
                 val = word_eval.DecayArray(val)
 
         # This error message could be better, but we already have one
-        #if val.tag() == value_e.BashArray:
+        #if val.tag() in (value_e.BashArray, value_e.SparseArray):
         #  e_die("Can't use assignment like ++ or += on arrays")
 
         i = self._ValToIntOrError(val, node)
@@ -542,7 +547,8 @@ class ArithEvaluator(object):
         val = self.Eval(node)
 
         # BASH_LINENO, arr (array name without strict_array), etc.
-        if (val.tag() in (value_e.BashArray, value_e.BashAssoc) and
+        if (val.tag() in (value_e.BashArray, value_e.BashAssoc,
+                          value_e.SparseArray) and
                 node.tag() == arith_expr_e.VarSub):
             vsub = cast(Token, node)
             if word_eval.ShouldArrayDecay(lexer.LazyStr(vsub), self.exec_opts):
@@ -561,7 +567,7 @@ class ArithEvaluator(object):
         Returns:
           None for Undef  (e.g. empty cell)  TODO: Don't return 0!
           int for Str
-          List[int] for BashArray
+          List[int] for BashArray and SparseArray
           Dict[str, str] for BashAssoc (TODO: Should we support this?)
 
         NOTE: (( A['x'] = 'x' )) and (( x = A['x'] )) are syntactically valid in
@@ -737,10 +743,27 @@ class ArithEvaluator(object):
                                 # Note: Bash outputs warning but does not make
                                 # it a real error.  We follow the Bash behavior
                                 # here.
+                                small_length = bash_impl.BashArray_Length(
+                                    array_val)
                                 self.errfmt.Print_(
                                     "Index %d out of bounds for array of length %d"
-                                    % (small_i,
-                                       bash_impl.BashArray_Length(array_val)),
+                                    % (small_i, small_length),
+                                    blame_loc=node.op)
+
+                        elif case(value_e.SparseArray):
+                            sparse_val = cast(value.SparseArray, UP_left)
+                            i = self.EvalToBigInt(node.right)
+                            s, error_code = bash_impl.SparseArray_GetElement(
+                                sparse_val, i)
+                            if error_code == error_code_e.IndexOutOfRange:
+                                # Note: Bash outputs warning but does not make
+                                # it a real error.  We follow the Bash behavior
+                                # here.
+                                length = bash_impl.SparseArray_Length(
+                                    sparse_val)
+                                self.errfmt.Print_(
+                                    "Index %s out of bounds for array of length %s"
+                                    % (mops.ToStr(i), mops.ToStr(length)),
                                     blame_loc=node.op)
 
                         elif case(value_e.BashAssoc):
