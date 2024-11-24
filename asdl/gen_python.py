@@ -442,7 +442,12 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('')
 
     def _EmitPrettyPrintMethods(self, class_name, class_ns, fields):
-        pretty_cls_name = '%s%s' % (class_ns, class_name)
+        if len(fields) == 0: 
+            # value__Stdin -> value.Stdin (defined at top level)
+            pretty_cls_name = class_name.replace('__', '.')
+        else:
+            # value.Str (defined inside the 'class value') namespace
+            pretty_cls_name = '%s%s' % (class_ns, class_name)
 
         # def PrettyTree(...):
 

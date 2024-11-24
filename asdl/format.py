@@ -23,22 +23,23 @@ if mylib.PYTHON:
 
 def _HNodePrettyPrint(perf_stats, node, f, max_width=80):
     # type: (bool, hnode_t, mylib.Writer, int) -> None
+    mylib.MaybeCollect()
     if perf_stats:
-        log('')
         log('___ GC: after hnode_t conversion')
         mylib.PrintGcStats()
+        log('')
 
     enc = pp_hnode.HNodeEncoder()
     enc.SetUseStyles(f.isatty())
     enc.SetIndent(2)  # save space, compared to 4 spaces
 
     doc = enc.HNode(node)
-    # TODO: print gc stats here
 
+    mylib.MaybeCollect()
     if perf_stats:
-        log('')
         log('___ GC: after doc_t conversion')
         mylib.PrintGcStats()
+        log('')
 
     printer = pretty.PrettyPrinter(max_width)  # max columns
 
@@ -48,10 +49,11 @@ def _HNodePrettyPrint(perf_stats, node, f, max_width=80):
     f.write(buf.getvalue())
     f.write('\n')
 
+    mylib.MaybeCollect()
     if perf_stats:
-        log('')
         log('___ GC: after printing')
         mylib.PrintGcStats()
+        log('')
 
 
 def HNodePrettyPrint(node, f, max_width=80):

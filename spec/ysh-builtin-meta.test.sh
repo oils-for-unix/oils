@@ -176,30 +176,18 @@ Command
 
 #### pp asdl_
 
-shopt -s ysh:upgrade
+x=42
+setvar y = {foo: x}
 
-redir >out.txt {
-  x=42
-  setvar y = {foo: x}
+pp asdl_ (x)
+pp asdl_ (y)
 
-  pp asdl_ (x)
-  pp asdl_ (y)
-
-  # TODO, this might be nice?
-  # pp asdl_ (x, y)
-}
-
-# Two lines with value.Str
-grep -n -o value.Str out.txt
-
-# Dict should have an address
-#grep -n -o 'Dict 0x' out.txt
-
-#cat out.txt
+pp asdl_ (io.stdin)
 
 ## STDOUT:
-1:value.Str
-2:value.Str
+(value.Str s:42)
+(value.Dict d:{foo (value.Str s:42)})
+(value.Stdin )
 ## END
 
 #### pp asdl_ can handle an object cycle

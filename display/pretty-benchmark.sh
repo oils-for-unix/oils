@@ -58,16 +58,20 @@ gc-stats() {
   local osh=_bin/cxx-opt/osh
   ninja $osh
 
+  # We should be doing some big GCs here
+  export _OILS_GC_VERBOSE=1
+
   # 615K file
   for file in benchmarks/testdata/configure; do
   #for file in benchmarks/testdata/configure-coreutils; do
 
     local fmt=__perf
     echo "___ parsing and pretty printing $file"
-    time $osh --ast-format $fmt --tool syntax-tree $file | wc --bytes
+    time OILS_GC_STATS=1 $osh --ast-format $fmt --tool syntax-tree $file | wc --bytes
 
     echo
 
+    echo "OLD printer"
     # Compare against OLD printer
     time OILS_GC_STATS=1 osh --ast-format text --tool syntax-tree $file | wc --bytes
 

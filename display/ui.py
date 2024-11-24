@@ -530,6 +530,7 @@ def PrintAst(node, flag):
             log('')
             log('___ GC: after parsing')
             mylib.PrintGcStats()
+            log('')
 
         tree = node.PrettyTree(do_abbrev)
 
