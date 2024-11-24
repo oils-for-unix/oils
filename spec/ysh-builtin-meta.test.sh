@@ -257,7 +257,7 @@ array = (Cell
   exported:F
   readonly:F
   nameref:F
-  val:(value.BashArray strs:[_  _  _  42  _  99])
+  val:(value.BashArray strs:[_ _ _ 42 _ 99])
 )
 ## END
 

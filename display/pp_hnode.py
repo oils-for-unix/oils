@@ -52,6 +52,8 @@ class BaseEncoder(object):
         # type: (str, MeasuredDoc) -> MeasuredDoc
         """Apply the ANSI style string to the given node, if use_styles is set."""
         if self.use_styles:
+            # TODO: the begin and end mdocs are CONSTANT.  We should fold those
+            # in.
             return _Concat([
                 MeasuredDoc(doc.Text(style), _EmptyMeasure()), mdoc,
                 MeasuredDoc(doc.Text(ansi.RESET), _EmptyMeasure())
@@ -69,6 +71,9 @@ class BaseEncoder(object):
             mdoc
         ]
         """
+        # TODO:
+        # - left and right AsciiText often CONSTANT mdocs
+        # - _Break too
         return _Group(
             _Concat([
                 AsciiText(left),
@@ -142,7 +147,6 @@ class BaseEncoder(object):
         greater than self.max_tabular_width. The third "multi line" style is
         used otherwise.
         """
-
         # Why not "just" use tabular alignment so long as two items fit on every
         # line?  Because it isn't possible to check for that in the pretty
         # printing language. There are two sorts of conditionals we can do:
@@ -251,7 +255,7 @@ class HNodeEncoder(BaseEncoder):
                 if len(h.children) == 0:
                     return AsciiText('[]')
                 mdocs = [self._HNode(item) for item in h.children]
-                return self._Surrounded('[', self._Tabular(mdocs, ' '), ']')
+                return self._Surrounded('[', self._Tabular(mdocs, ''), ']')
 
             elif case(hnode_e.Record):
                 h = cast(hnode.Record, UP_h)

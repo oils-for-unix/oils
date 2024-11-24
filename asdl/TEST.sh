@@ -88,6 +88,9 @@ check-types() {
 pretty-demo() {  
   local cpp=${1:-}
 
+  OSH=bin/osh
+  YSH=bin/ysh
+
   if test -n "$cpp"; then
     ninja _bin/cxx-asan/{osh,ysh}
     export OSH=_bin/cxx-asan/osh

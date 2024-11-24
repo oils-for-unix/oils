@@ -29,7 +29,7 @@ class FormatTest(unittest.TestCase):
         pretty_str = f.getvalue()
         print(pretty_str)
 
-        self.assertEqual('(assign name:declare flags:[-r  -x])\n', pretty_str)
+        self.assertEqual('(assign name:declare flags:[-r -x])\n', pretty_str)
 
         t2 = node.PrettyTree(True)
         fmt.HNodePrettyPrint(t2, f)

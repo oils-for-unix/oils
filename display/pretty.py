@@ -264,15 +264,14 @@ class PrettyPrinter(object):
                                     frag.is_flat, frag.measure))
 
                 elif case(doc_e.Concat):
+                    concat = cast(doc.Concat, frag.mdoc.doc)
+
                     # If we encounter Concat([A, B, C]) with a suffix measure M,
                     # we need to push A,B,C onto the stack in reverse order:
                     # - C, with suffix_measure = B.measure + A.measure + M
                     # - B, with suffix_measure = A.measure + M
                     # - A, with suffix_measure = M
-                    concat = cast(doc.Concat, frag.mdoc.doc)
                     measure = frag.measure
-
-                    # TODO: optimize reversed?
                     for mdoc in reversed(concat.mdocs):
                         fragments.append(
                             DocFragment(mdoc, frag.indent, frag.is_flat,
