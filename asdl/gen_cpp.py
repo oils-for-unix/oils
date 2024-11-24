@@ -189,8 +189,9 @@ def _HNodeExpr(typ, var_name):
         if type_name in ('bool', 'int', 'uint16', 'BigInt', 'float', 'string'):
             code_str = "ToPretty(%s)" % var_name
 
-        elif type_name == 'any':  # TODO: Remove this.  Used for value.Builtin{Func,Proc}
-            code_str = 'Alloc<hnode::External>(%s)' % var_name
+        elif type_name == 'any':
+            # This is used for _BuiltinFunc, _BuiltinProc.  There is not that much to customize here.
+            code_str = 'Alloc<hnode::Leaf>(StrFromC("<extern>"), color_e::External)'  # % var_name
 
         elif type_name == 'id':  # was meta.UserType
             code_str = 'Alloc<hnode::Leaf>(Id_str(%s), color_e::UserType)' % var_name

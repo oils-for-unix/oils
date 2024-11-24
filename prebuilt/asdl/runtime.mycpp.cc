@@ -10,13 +10,13 @@ GLOBAL_STR(str1, ")");
 GLOBAL_STR(str2, "_");
 GLOBAL_STR(str3, "T");
 GLOBAL_STR(str4, "F");
-GLOBAL_STR(str5, "");
-GLOBAL_STR(str6, "___ GC: after hnode_t conversion");
-GLOBAL_STR(str7, "");
-GLOBAL_STR(str8, "___ GC: after doc_t conversion");
+GLOBAL_STR(str5, "___ GC: after hnode_t conversion");
+GLOBAL_STR(str6, "");
+GLOBAL_STR(str7, "___ GC: after doc_t conversion");
+GLOBAL_STR(str8, "");
 GLOBAL_STR(str9, "\n");
-GLOBAL_STR(str10, "");
-GLOBAL_STR(str11, "___ GC: after printing");
+GLOBAL_STR(str10, "___ GC: after printing");
+GLOBAL_STR(str11, "");
 GLOBAL_STR(str12, "\u001b[0;0m");
 GLOBAL_STR(str13, "\u001b[1m");
 GLOBAL_STR(str14, "\u001b[4m");
@@ -37,20 +37,19 @@ GLOBAL_STR(str28, " ");
 GLOBAL_STR(str29, " ");
 GLOBAL_STR(str30, ":");
 GLOBAL_STR(str31, "...0x%s");
-GLOBAL_STR(str32, "EXTERN");
-GLOBAL_STR(str33, "[]");
-GLOBAL_STR(str34, "[");
-GLOBAL_STR(str35, " ");
-GLOBAL_STR(str36, "]");
-GLOBAL_STR(str37, "");
+GLOBAL_STR(str32, "[]");
+GLOBAL_STR(str33, "[");
+GLOBAL_STR(str34, "");
+GLOBAL_STR(str35, "]");
+GLOBAL_STR(str36, "");
+GLOBAL_STR(str37, " ");
 GLOBAL_STR(str38, " ");
-GLOBAL_STR(str39, " ");
-GLOBAL_STR(str40, "&");
-GLOBAL_STR(str41, "&amp;");
-GLOBAL_STR(str42, "<");
-GLOBAL_STR(str43, "&lt;");
-GLOBAL_STR(str44, ">");
-GLOBAL_STR(str45, "&gt;");
+GLOBAL_STR(str39, "&");
+GLOBAL_STR(str40, "&amp;");
+GLOBAL_STR(str41, "<");
+GLOBAL_STR(str42, "&lt;");
+GLOBAL_STR(str43, ">");
+GLOBAL_STR(str44, "&gt;");
 
 namespace ansi {  // forward declare
 
@@ -247,29 +246,32 @@ void _HNodePrettyPrint(bool perf_stats, hnode_asdl::hnode_t* node, mylib::Writer
   StackRoot _root4(&printer);
   StackRoot _root5(&buf);
 
+  mylib::MaybeCollect();
   if (perf_stats) {
     mylib::print_stderr(str5);
-    mylib::print_stderr(str6);
     mylib::PrintGcStats();
+    mylib::print_stderr(str6);
   }
   enc = Alloc<pp_hnode::HNodeEncoder>();
   enc->SetUseStyles(f->isatty());
   enc->SetIndent(2);
   doc = enc->HNode(node);
+  mylib::MaybeCollect();
   if (perf_stats) {
     mylib::print_stderr(str7);
-    mylib::print_stderr(str8);
     mylib::PrintGcStats();
+    mylib::print_stderr(str8);
   }
   printer = Alloc<pretty::PrettyPrinter>(max_width);
   buf = Alloc<mylib::BufWriter>();
   printer->PrintDoc(doc, buf);
   f->write(buf->getvalue());
   f->write(str9);
+  mylib::MaybeCollect();
   if (perf_stats) {
     mylib::print_stderr(str10);
-    mylib::print_stderr(str11);
     mylib::PrintGcStats();
+    mylib::print_stderr(str11);
   }
 }
 
@@ -414,45 +416,34 @@ void PrettyPrinter::PrintDoc(pretty_asdl::MeasuredDoc* document, mylib::BufWrite
   int prefix_len;
   List<pretty_asdl::DocFragment*>* fragments = nullptr;
   pretty_asdl::DocFragment* frag = nullptr;
-  doc::Text* text = nullptr;
-  BigStr* break_str = nullptr;
-  doc::Indent* indented = nullptr;
-  doc::Concat* concat = nullptr;
+  pretty_asdl::doc_t* UP_doc = nullptr;
   pretty_asdl::Measure* measure = nullptr;
-  MeasuredDoc* group = nullptr;
-  bool flat;
-  doc::IfFlat* if_flat = nullptr;
+  bool is_flat;
   pretty_asdl::MeasuredDoc* subdoc = nullptr;
-  doc::Flat* flat_doc = nullptr;
   StackRoot _root0(&document);
   StackRoot _root1(&buf);
   StackRoot _root2(&fragments);
   StackRoot _root3(&frag);
-  StackRoot _root4(&text);
-  StackRoot _root5(&break_str);
-  StackRoot _root6(&indented);
-  StackRoot _root7(&concat);
-  StackRoot _root8(&measure);
-  StackRoot _root9(&group);
-  StackRoot _root10(&if_flat);
-  StackRoot _root11(&subdoc);
-  StackRoot _root12(&flat_doc);
+  StackRoot _root4(&UP_doc);
+  StackRoot _root5(&measure);
+  StackRoot _root6(&subdoc);
 
   prefix_len = 0;
   fragments = NewList<pretty_asdl::DocFragment*>(std::initializer_list<pretty_asdl::DocFragment*>{Alloc<DocFragment>(_Group(document), 0, false, _EmptyMeasure())});
   while (len(fragments) > 0) {
     frag = fragments->pop();
-    switch (frag->mdoc->doc->tag()) {
+    UP_doc = frag->mdoc->doc;
+    switch (UP_doc->tag()) {
       case doc_e::Text: {
-        text = static_cast<doc::Text*>(frag->mdoc->doc);
+        doc::Text* text = static_cast<doc::Text*>(UP_doc);
         buf->write(text->string);
         prefix_len += frag->mdoc->measure->flat;
       }
         break;
       case doc_e::Break: {
+        doc::Break* break_ = static_cast<doc::Break*>(UP_doc);
         if (frag->is_flat) {
-          break_str = static_cast<doc::Break*>(frag->mdoc->doc)->string;
-          buf->write(break_str);
+          buf->write(break_->string);
           prefix_len += frag->mdoc->measure->flat;
         }
         else {
@@ -463,12 +454,12 @@ void PrettyPrinter::PrintDoc(pretty_asdl::MeasuredDoc* document, mylib::BufWrite
       }
         break;
       case doc_e::Indent: {
-        indented = static_cast<doc::Indent*>(frag->mdoc->doc);
+        doc::Indent* indented = static_cast<doc::Indent*>(UP_doc);
         fragments->append(Alloc<DocFragment>(indented->mdoc, (frag->indent + indented->indent), frag->is_flat, frag->measure));
       }
         break;
       case doc_e::Concat: {
-        concat = static_cast<doc::Concat*>(frag->mdoc->doc);
+        doc::Concat* concat = static_cast<doc::Concat*>(UP_doc);
         measure = frag->measure;
         for (ReverseListIter<pretty_asdl::MeasuredDoc*> it(concat->mdocs); !it.Done(); it.Next()) {
           pretty_asdl::MeasuredDoc* mdoc = it.Value();
@@ -479,13 +470,13 @@ void PrettyPrinter::PrintDoc(pretty_asdl::MeasuredDoc* document, mylib::BufWrite
       }
         break;
       case doc_e::Group: {
-        group = static_cast<MeasuredDoc*>(frag->mdoc->doc);
-        flat = this->_Fits(prefix_len, group, frag->measure);
-        fragments->append(Alloc<DocFragment>(group, frag->indent, flat, frag->measure));
+        MeasuredDoc* group = static_cast<MeasuredDoc*>(UP_doc);
+        is_flat = this->_Fits(prefix_len, group, frag->measure);
+        fragments->append(Alloc<DocFragment>(group, frag->indent, is_flat, frag->measure));
       }
         break;
       case doc_e::IfFlat: {
-        if_flat = static_cast<doc::IfFlat*>(frag->mdoc->doc);
+        doc::IfFlat* if_flat = static_cast<doc::IfFlat*>(UP_doc);
         if (frag->is_flat) {
           subdoc = if_flat->flat_mdoc;
         }
@@ -496,7 +487,7 @@ void PrettyPrinter::PrintDoc(pretty_asdl::MeasuredDoc* document, mylib::BufWrite
       }
         break;
       case doc_e::Flat: {
-        flat_doc = static_cast<doc::Flat*>(frag->mdoc->doc);
+        doc::Flat* flat_doc = static_cast<doc::Flat*>(UP_doc);
         fragments->append(Alloc<DocFragment>(flat_doc->mdoc, frag->indent, true, frag->measure));
       }
         break;
@@ -675,16 +666,18 @@ pretty_asdl::MeasuredDoc* HNodeEncoder::_HNode(hnode_asdl::hnode_t* h) {
   hnode_asdl::hnode_t* UP_h = nullptr;
   BigStr* color = nullptr;
   BigStr* s = nullptr;
+  List<pretty_asdl::MeasuredDoc*>* children = nullptr;
+  pretty_asdl::MeasuredDoc* type_name = nullptr;
   List<pretty_asdl::MeasuredDoc*>* mdocs = nullptr;
   pretty_asdl::MeasuredDoc* child = nullptr;
-  pretty_asdl::MeasuredDoc* type_name = nullptr;
   StackRoot _root0(&h);
   StackRoot _root1(&UP_h);
   StackRoot _root2(&color);
   StackRoot _root3(&s);
-  StackRoot _root4(&mdocs);
-  StackRoot _root5(&child);
-  StackRoot _root6(&type_name);
+  StackRoot _root4(&children);
+  StackRoot _root5(&type_name);
+  StackRoot _root6(&mdocs);
+  StackRoot _root7(&child);
 
   UP_h = h;
   switch (h->tag()) {
@@ -724,26 +717,26 @@ pretty_asdl::MeasuredDoc* HNodeEncoder::_HNode(hnode_asdl::hnode_t* h) {
       return this->_Styled(color, AsciiText(s));
     }
       break;
-    case hnode_e::External: {
-      hnode::External* h = static_cast<hnode::External*>(UP_h);
-      return this->_Styled(this->type_color, AsciiText(str32));
-    }
-      break;
     case hnode_e::Array: {
       hnode::Array* h = static_cast<hnode::Array*>(UP_h);
       if (len(h->children) == 0) {
-        return AsciiText(str33);
+        return AsciiText(str32);
       }
-      mdocs = Alloc<List<pretty_asdl::MeasuredDoc*>>();
+      children = Alloc<List<pretty_asdl::MeasuredDoc*>>();
       for (ListIter<hnode_asdl::hnode_t*> it(h->children); !it.Done(); it.Next()) {
         hnode_asdl::hnode_t* item = it.Value();
-        mdocs->append(this->_HNode(item));
+        children->append(this->_HNode(item));
       }
-      return this->_Surrounded(str34, this->_Tabular(mdocs, str35), str36);
+      return this->_Surrounded(str33, this->_Tabular(children, str34), str35);
     }
       break;
     case hnode_e::Record: {
       hnode::Record* h = static_cast<hnode::Record*>(UP_h);
+      type_name = nullptr;
+      if (len(h->node_type)) {
+        type_name = this->_Styled(this->type_color, AsciiText(h->node_type));
+      }
+      mdocs = nullptr;
       if ((h->unnamed_fields != nullptr and len(h->unnamed_fields))) {
         mdocs = Alloc<List<pretty_asdl::MeasuredDoc*>>();
         for (ListIter<hnode_asdl::hnode_t*> it(h->unnamed_fields); !it.Done(); it.Next()) {
@@ -752,16 +745,20 @@ pretty_asdl::MeasuredDoc* HNodeEncoder::_HNode(hnode_asdl::hnode_t* h) {
         }
       }
       else {
-        mdocs = Alloc<List<pretty_asdl::MeasuredDoc*>>();
-        for (ListIter<hnode_asdl::Field*> it(h->fields); !it.Done(); it.Next()) {
-          hnode_asdl::Field* field = it.Value();
-          mdocs->append(this->_Field(field));
+        if (len(h->fields) != 0) {
+          mdocs = Alloc<List<pretty_asdl::MeasuredDoc*>>();
+          for (ListIter<hnode_asdl::Field*> it(h->fields); !it.Done(); it.Next()) {
+            hnode_asdl::Field* field = it.Value();
+            mdocs->append(this->_Field(field));
+          }
         }
       }
-      child = this->_Join(mdocs, str37, str38);
-      if (len(h->node_type)) {
-        type_name = this->_Styled(this->type_color, AsciiText(h->node_type));
-        return this->_SurroundedAndPrefixed(h->left, type_name, str39, child, h->right);
+      if (mdocs == nullptr) {
+        return _Concat(NewList<pretty_asdl::MeasuredDoc*>(std::initializer_list<pretty_asdl::MeasuredDoc*>{AsciiText(h->left), type_name, AsciiText(h->right)}));
+      }
+      child = this->_Join(mdocs, str36, str37);
+      if (type_name != nullptr) {
+        return this->_SurroundedAndPrefixed(h->left, type_name, str38, child, h->right);
       }
       else {
         return this->_Surrounded(h->left, child, h->right);
@@ -782,9 +779,9 @@ namespace cgi {  // define
 BigStr* escape(BigStr* s) {
   StackRoot _root0(&s);
 
-  s = s->replace(str40, str41);
-  s = s->replace(str42, str43);
-  s = s->replace(str44, str45);
+  s = s->replace(str39, str40);
+  s = s->replace(str41, str42);
+  s = s->replace(str43, str44);
   return s;
 }
 

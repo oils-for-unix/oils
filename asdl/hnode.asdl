@@ -47,10 +47,6 @@ module hnode {
     # String, int, float, etc. of different color
   | Leaf(str s, color color)
 
-    # TODO: I think we can remove this if we add PrettyTree() to
-    # value.BuiltinFunc _Callable, BuiltinProc, etc.
-  | External(any obj)
-
   | Array(List[hnode] children)
 
   | Record(str node_type,

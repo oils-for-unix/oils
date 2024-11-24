@@ -245,11 +245,6 @@ class HNodeEncoder(BaseEncoder):
                 # Could be Unicode, but we don't want that dependency right now
                 return self._Styled(color, AsciiText(s))
 
-            elif case(hnode_e.External):
-                h = cast(hnode.External, UP_h)
-                # TODO: color_e.External
-                return self._Styled(self.type_color, AsciiText('EXTERN'))
-
             elif case(hnode_e.Array):
                 h = cast(hnode.Array, UP_h)
                 if len(h.children) == 0:

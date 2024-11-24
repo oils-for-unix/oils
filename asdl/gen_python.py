@@ -146,8 +146,8 @@ def _HNodeExpr(typ, var_name):
         elif type_name == 'string':
             code_str = 'NewLeaf(%s, color_e.StringConst)' % var_name
 
-        elif type_name == 'any':  # TODO: Remove this.  Used for value.Obj().
-            code_str = 'hnode.External(%s)' % var_name
+        elif type_name == 'any':
+            code_str = 'NewLeaf(str(%s), color_e.External)' % var_name
 
         elif type_name == 'id':  # was meta.UserType
             # This assumes it's Id, which is a simple SumType.  TODO: Remove this.
@@ -442,7 +442,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('')
 
     def _EmitPrettyPrintMethods(self, class_name, class_ns, fields):
-        if len(fields) == 0: 
+        if len(fields) == 0:
             # value__Stdin -> value.Stdin (defined at top level)
             pretty_cls_name = class_name.replace('__', '.')
         else:

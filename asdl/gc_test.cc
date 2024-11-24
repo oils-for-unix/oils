@@ -19,14 +19,18 @@ using typed_demo_asdl::a_word_e;
 using typed_demo_asdl::a_word_t;
 using typed_demo_asdl::arith_expr;
 using typed_demo_asdl::arith_expr_e;
+using typed_demo_asdl::bool_expr_t;
 using typed_demo_asdl::bool_expr__Binary;
 using typed_demo_asdl::CompoundWord;
 using typed_demo_asdl::word;
 
 TEST pretty_print_test() {
+  bool_expr_t* b = nullptr;
+  StackRoot _r1(&b);
+
   auto w1 = Alloc<word>(StrFromC("left"));
   auto w2 = Alloc<word>(StrFromC("right"));
-  auto b = Alloc<bool_expr__Binary>(w1, w2);
+  b = Alloc<bool_expr__Binary>(w1, w2);
 
 #if 0
   log("sizeof b = %d", sizeof b);
