@@ -6,7 +6,7 @@ from data_lang import j8_lite
 from mycpp import mops
 from mycpp import mylib
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 
 #------------------------------------------------------------------------------
@@ -22,6 +22,16 @@ def BashArray_Length(array_val):
         if s is not None:
             length += 1
     return length
+
+def BashArray_GetValues(array_val):
+    # type: (value.BashArray) -> List[str]
+
+    return array_val.strs
+
+def BashArray_AppendValues(array_val, strs):
+    # type: (value.BashArray, List[str]) -> None
+
+    array_val.strs.extend(strs)
 
 def _BashArray_HasHoles(array_val):
     # type: (value.BashArray) -> bool
@@ -86,6 +96,17 @@ def BashArray_ToStrForShellPrint(array_val, name):
 def BashAssoc_Length(assoc_val):
     # type: (value.BashAssoc) -> int
     return len(assoc_val.d)
+
+def BashAssoc_GetValues(assoc_val):
+    # type: (value.BashAssoc) -> Dict[str, str]
+
+    return assoc_val.d
+
+def BashAssoc_AppendValues(assoc_val, d):
+    # type: (value.BashAssoc, Dict[str, str]) -> None
+
+    for key in d.keys():
+        assoc_val.d[key] = d[key]
 
 def BashAssoc_ToStrForShellPrint(assoc_val):
     # type: (value.BashAssoc) -> str
