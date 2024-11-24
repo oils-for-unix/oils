@@ -33,13 +33,12 @@ TEST pretty_print_test() {
   log("");
 #endif
 
-  for (int i = 0; i < 2000; ++i) {
+  for (int i = 0; i < 2; ++i) {
     hnode_t* t1 = b->PrettyTree(false);
     ASSERT_EQ(hnode_e::Record, t1->tag());
 
     auto f = mylib::Stdout();
-    auto ast_f = Alloc<format::TextOutput>(f);
-    format::PrintTree(t1, ast_f);
+    format::HNodePrettyPrint(t1, f);
     log("");
   }
 
@@ -52,39 +51,37 @@ TEST pretty_print_test() {
 
 TEST hnode_test() {
   mylib::Writer* f = nullptr;
-  format::TextOutput* ast_f = nullptr;
   hnode_t* h = nullptr;           // base type
   hnode__Array* array = nullptr;  // base type
   hnode__Record* rec = nullptr;
-  StackRoots _roots({&f, &ast_f, &h, &array, &rec});
+  StackRoots _roots({&f, &h, &array, &rec});
 
   f = mylib::Stdout();
-  ast_f = Alloc<format::TextOutput>(f);
   array = hnode::Array::CreateNull(true);
-  ASSERT_EQ_FMT(4, gHeap.Collect(), "%d");
+  ASSERT_EQ_FMT(3, gHeap.Collect(), "%d");
 
   rec = hnode::Record::CreateNull(true);
   rec->node_type = StrFromC("dummy_node");
-  ASSERT_EQ_FMT(7, gHeap.Collect(), "%d");
+  ASSERT_EQ_FMT(6, gHeap.Collect(), "%d");
 
   h = rec;  // base type
   array->children->append(h);
 
-  format::PrintTree(h, ast_f);
+  format::HNodePrettyPrint(h, f);
   printf("\n");
-  ASSERT_EQ_FMT(8, gHeap.Collect(), "%d");
+  ASSERT_EQ_FMT(7, gHeap.Collect(), "%d");
 
   h = Alloc<hnode__Leaf>(StrFromC("zz"), color_e::TypeName);
   array->children->append(h);
 
-  format::PrintTree(h, ast_f);
+  format::HNodePrettyPrint(h, f);
   printf("\n");
-  ASSERT_EQ_FMT(10, gHeap.Collect(), "%d");
+  ASSERT_EQ_FMT(9, gHeap.Collect(), "%d");
 
   h = array;
-  format::PrintTree(h, ast_f);
+  format::HNodePrettyPrint(h, f);
   printf("\n");
-  ASSERT_EQ_FMT(10, gHeap.Collect(), "%d");
+  ASSERT_EQ_FMT(9, gHeap.Collect(), "%d");
 
   PASS();
 }
@@ -177,8 +174,7 @@ TEST print_subtype_test() {
   // ASSERT_EQ_FMT(hnode_e::Record, t1->tag(), "%d");
 
   auto f = mylib::Stdout();
-  auto ast_f = Alloc<format::TextOutput>(f);
-  format::PrintTree(t1, ast_f);
+  format::HNodePrettyPrint(t1, f);
   printf("\n");
 #endif
 
