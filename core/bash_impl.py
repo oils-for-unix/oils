@@ -161,6 +161,21 @@ def BashArray_UnsetElement(array_val, index):
     return error_code_e.OK
 
 
+def BashArray_Equals(lhs, rhs):
+    # type: (value.BashArray, value.BashArray) -> bool
+
+    len_lhs = len(lhs.strs)
+    len_rhs = len(rhs.strs)
+    if len_lhs != len_rhs:
+        return False
+
+    for i in xrange(0, len_lhs):
+        if lhs.strs[i] != rhs.strs[i]:
+            return False
+
+    return True
+
+
 def _BashArray_HasHoles(array_val):
     # type: (value.BashArray) -> bool
 
@@ -272,6 +287,19 @@ def BashAssoc_UnsetElement(assoc_val, key):
     # type: (value.BashAssoc, str) -> None
 
     mylib.dict_erase(assoc_val.d, key)
+
+
+def BashAssoc_Equals(lhs, rhs):
+    # type: (value.BashAssoc, value.BashAssoc) -> bool
+
+    if len(lhs.d) != len(rhs.d):
+        return False
+
+    for k in lhs.d:
+        if k not in rhs.d or rhs.d[k] != lhs.d[k]:
+            return False
+
+    return True
 
 
 def BashAssoc_ToStrForShellPrint(assoc_val):
