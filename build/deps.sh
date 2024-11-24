@@ -220,6 +220,8 @@ readonly -a WEDGE_DEPS_FEDORA=(
   # still have a job control error compiling bash
   # https://packages.fedoraproject.org/pkgs/glibc/glibc-devel/
   # glibc-devel
+
+  libasan
 )
 
 readonly -a WEDGE_DEPS_ARCH=(
