@@ -30,10 +30,8 @@ if mylib.PYTHON:
         # type: (Any, Optional[mylib.Writer]) -> None
         """Print abbreviated tree in color.  For unit tests."""
         f = f if f else mylib.Stdout()
-
-        ast_f = DetectConsoleOutput(f)
         tree = obj.PrettyTree(True)
-        PrintTree(tree, ast_f)
+        HNodePrettyPrint(tree, f)
 
 
 def DetectConsoleOutput(f):
@@ -533,7 +531,7 @@ def PrintTree(node, f):
     pp.PrintNode(node, f, 0)  # indent
 
 
-def PrintTree2(node, f, max_width):
+def HNodePrettyPrint(node, f, max_width=80):
     # type: (hnode_t, mylib.Writer, int) -> None
     """
     Make sure dependencies aren't a problem

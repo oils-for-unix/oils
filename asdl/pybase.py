@@ -36,8 +36,7 @@ class CompoundObj(Obj):
         # TODO: Break this circular dependency.
         from asdl import format as fmt
 
-        ast_f = fmt.TextOutput(mylib.BufWriter())  # No color by default.
+        f = mylib.BufWriter()
         tree = self.PrettyTree(False)
-        fmt.PrintTree(tree, ast_f)
-        s, _ = ast_f.GetRaw()
-        return s
+        fmt.HNodePrettyPrint(tree, f)
+        return f.getvalue()

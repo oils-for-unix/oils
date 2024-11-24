@@ -300,10 +300,10 @@ class Hay(vm._Builtin):
             self.hay_state.Reset()
 
         elif action == 'pp':
-            tree = self.hay_state.root_defs.PrettyTree(False)
-            ast_f = fmt.DetectConsoleOutput(mylib.Stdout())
-            fmt.PrintTree(tree, ast_f)
-            ast_f.write('\n')
+            h = self.hay_state.root_defs.PrettyTree(False)
+            f = mylib.Stdout()
+            fmt.HNodePrettyPrint(h, f)
+            f.write('\n')
 
         else:
             e_usage(_HAY_ACTION_ERROR, action_loc)

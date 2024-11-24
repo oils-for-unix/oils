@@ -525,10 +525,7 @@ def PrintAst(node, flag):
 
         do_abbrev = 'abbrev-' in flag.ast_format
         tree = node.PrettyTree(do_abbrev)
-
-        width = _GetMaxWidth()
-
-        fmt.PrintTree2(tree, f, width)
+        fmt.HNodePrettyPrint(tree, f, max_width=_GetMaxWidth())
 
 
 def TypeNotPrinted(val):
