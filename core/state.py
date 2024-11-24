@@ -1974,8 +1974,10 @@ class Mem(object):
                         index = lval.index
                         if index < 0:  # a[-1]++ computes this twice; could we avoid it?
                             index += n
+                            if index < 0:
+                                e_die("Index %d is out of range" % lval.index, left_loc)
 
-                        if 0 <= index and index < n:
+                        if index < n:
                             strs[index] = rval.s
                         else:
                             # Fill it in with None.  It could look like this:
