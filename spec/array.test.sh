@@ -855,7 +855,7 @@ e=()
 ## STDERR:
   [[ -v e[-1] ]] && echo 'e has -1'
         ^
-[ stdin ]:2: fatal: -v got invalid negative index -1
+[ stdin ]:2: fatal: -v got index -1, which is out of bounds for array of length 0
 ## END
 
 ## OK bash STDERR:
