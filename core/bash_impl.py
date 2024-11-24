@@ -6,7 +6,20 @@ from data_lang import j8_lite
 from mycpp import mops
 from mycpp import mylib
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
+
+
+def BigInt_Greater(a, b):
+    # type: (mops.BigInt, mops.BigInt) -> bool
+
+    return mops.Greater(a, b)
+
+
+def BigInt_Less(a, b):
+    # type: (mops.BigInt, mops.BigInt) -> bool
+
+    return mops.Greater(b, a)
+
 
 #------------------------------------------------------------------------------
 # All BashArray operations depending on the internal
@@ -176,6 +189,37 @@ def SparseArray_AppendValues(sparse_val, strs):
     for s in strs:
         sparse_val.max_index = mops.Add(sparse_val.max_index, mops.ONE)
         sparse_val.d[sparse_val.max_index] = s
+
+
+def _SparseArray_CanonicalizeIndex(sparse_val, index):
+    # type: (value.SparseArray, mops.BigInt) -> Tuple[mops.BigInt, bool]
+    """This function returns None when the specified index is out of
+    range.  For example, when the index is negative and its absolute
+    value is larger than max_index + 1, it returns None.
+
+    """
+
+    if BigInt_Less(index, mops.ZERO):
+        index = mops.Add(index, mops.Add(sparse_val.max_index, mops.ONE))
+        if BigInt_Less(index, mops.ZERO):
+            return mops.MINUS_ONE, False
+    return index, True
+
+
+def SparseArray_SetElement(sparse_val, index, s):
+    # type: (value.SparseArray, mops.BigInt, str) -> int
+    """A non-zero return value represents an error code. If this
+    function returns 1, the specified index is out of range.
+
+    """
+
+    index, ok = _SparseArray_CanonicalizeIndex(sparse_val, index)
+    if not ok:
+        return 1  # error_code: out-of-range index
+    if BigInt_Greater(index, sparse_val.max_index):
+        sparse_val.max_index = index
+    sparse_val.d[index] = s
+    return 0
 
 
 def SparseArray_ToStrForShellPrint(sparse_val):

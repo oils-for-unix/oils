@@ -431,3 +431,25 @@ declare -a sp1=([10]=a [20]=b [99]=c [100]=1 [101]=2 [102]=3)
 
 ## N-I bash/zsh/mksh/ash STDOUT:
 ## END
+
+
+#### SparseArray: a[i]=v
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+sp1[10]=a
+sp1[20]=b
+sp1[30]=c
+var sp1 = _a2sp(sp1)
+declare -p sp1
+sp1[10]=X
+sp1[25]=Y
+sp1[90]=Z
+declare -p sp1
+
+## STDOUT:
+declare -a sp1=([10]=a [20]=b [30]=c)
+declare -a sp1=([10]=X [20]=b [25]=Y [30]=c [90]=Z)
+## END
+
+## N-I bash/zsh/mksh/ash STDOUT:
+## END
