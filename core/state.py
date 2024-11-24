@@ -2279,37 +2279,17 @@ class Mem(object):
 
                 val = cell.val
                 UP_val = val
-                if val.tag() != value_e.BashArray:
-                    raise error.Runtime("%r isn't an array" % var_name)
-
-                val = cast(value.BashArray, UP_val)
-                strs = val.strs
-
-                n = len(strs)
-                last_index = n - 1
-                index = lval.index
-                if index < 0:
-                    index += n
-                    if index < 0:
-                        e_die(
-                            "Index %d is out of bounds for array of length %d"
-                            % (lval.index, n))
-
-                if index == last_index:
-                    # Special case: The array SHORTENS if you unset from the end.  You
-                    # can tell with a+=(3 4)
-                    strs.pop()
-                    while len(strs) > 0 and strs[-1] is None:
-                        strs.pop()
-                elif index < last_index:
-                    strs[index] = None
+                if val.tag() == value_e.BashArray:
+                    val = cast(value.BashArray, UP_val)
+                    error_code = bash_impl.BashArray_UnsetElement(
+                        val, lval.index)
+                    if error_code == 1:
+                        n = bash_impl.BashArray_Length(val)
+                        raise error.Runtime(
+                            "%s[%d]: Index is out of bounds for array of length %d"
+                            % (var_name, lval.index, n))
                 else:
-                    # If it's not found, it's not an error.  In other words, 'unset'
-                    # ensures that a value doesn't exist, regardless of whether it
-                    # existed.  It's idempotent.
-                    # (Ousterhout specifically argues that the strict behavior was a
-                    # mistake for Tcl!)
-                    pass
+                    raise error.Runtime("%r isn't an array" % var_name)
 
             elif case(sh_lvalue_e.Keyed):  # unset 'A["K"]'
                 lval = cast(sh_lvalue.Keyed, UP_lval)
