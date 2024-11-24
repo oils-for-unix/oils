@@ -827,6 +827,7 @@ def Main(
         # Python list() has index(), which raises ValueError
         # But this is consistent with Str->find(), and doesn't
         # use exceptions
+        'lastIndexOf': method_list.LastIndexOf(),
         'join': func_misc.Join(),  # both a method and a func
     }
 

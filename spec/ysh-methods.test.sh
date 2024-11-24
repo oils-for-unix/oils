@@ -555,6 +555,20 @@ json write (items => indexOf({'a': 5}))
 3
 ## END
 
+#### List => lastIndexOf()
+var items = ['a', 'b', 'c', 'b', 'a']
+
+json write (items => lastIndexOf('a'))
+json write (items => lastIndexOf('b'))
+json write (items => lastIndexOf('c'))
+json write (items => lastIndexOf('d'))
+## STDOUT:
+4
+3
+2
+-1
+## END
+
 #### List => join()
 var items = [1, 2, 3]
 

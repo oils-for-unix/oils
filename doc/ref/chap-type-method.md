@@ -452,6 +452,15 @@ Returns the first index of the element in the list, or -1 if it's not present.
 
 ### insert()
 
+### lastIndexOf()
+
+Returns the index of the last occurring instance of the specified
+element in the list, or -1 if it's not present.
+
+    var names = :| Sam Alice Sam Sam |
+    echo $[names => lastIndexOf("Sam")]    # => 3
+    echo $[names => lastIndexOf("Simon")]  # => -1
+
 ### remove()
 
 ### reverse()

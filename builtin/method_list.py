@@ -115,3 +115,24 @@ class IndexOf(vm._Callable):
                 return num.ToBig(i)
             i += 1
         return value.Int(mops.MINUS_ONE)
+
+
+class LastIndexOf(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        li = rd.PosList()
+        needle = rd.PosValue()
+        rd.Done()
+
+        i = len(li) - 1
+        while i > -1:
+            if val_ops.ExactlyEqual(li[i], needle, rd.LeftParenToken()):
+                return num.ToBig(i)
+            i -= 1
+        return value.Int(mops.MINUS_ONE)
