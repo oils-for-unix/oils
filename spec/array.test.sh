@@ -883,3 +883,27 @@ b=(1 2 3 4 5)
 
 ## N-I mksh/bash STDOUT:
 ## END
+
+
+#### unset a[-2]: out-of-bound negative index should cause error
+case $SH in mksh) exit ;; esac
+
+a=(1)
+unset -v 'a[-2]'
+
+## status: 1
+## STDOUT:
+## END
+## STDERR:
+  unset -v 'a[-2]'
+  ^~~~~
+[ stdin ]:4: fatal: Index -2 is out of bounds for array of length 1
+## END
+
+## OK bash STDERR:
+bash: line 4: unset: [-2]: bad array subscript
+## END
+
+## N-I mksh status: 0
+## N-I mksh STDERR:
+## END

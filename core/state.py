@@ -2292,12 +2292,16 @@ class Mem(object):
                 index = lval.index
                 if index < 0:
                     index += n
+                    if index < 0:
+                        e_die(
+                            "Index %d is out of bounds for array of length %d"
+                            % (lval.index, n))
 
                 if index == last_index:
                     # Special case: The array SHORTENS if you unset from the end.  You
                     # can tell with a+=(3 4)
                     strs.pop()
-                elif 0 <= index and index < last_index:
+                elif index < last_index:
                     strs[index] = None
                 else:
                     # If it's not found, it's not an error.  In other words, 'unset'
