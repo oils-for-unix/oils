@@ -660,7 +660,8 @@ def _DumpVarFrame(frame):
             if case(value_e.Undef):
                 cell_json['val'] = value.Null
 
-            elif case(value_e.Str, value_e.BashArray, value_e.BashAssoc):
+            elif case(value_e.Str, value_e.BashArray, value_e.BashAssoc,
+                      value_e.SparseArray):
                 cell_json['val'] = cell.val
 
             else:
