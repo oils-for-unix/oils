@@ -853,6 +853,9 @@ e=()
 
 ## status: 1
 ## STDERR:
+  [[ -v e[-1] ]] && echo 'e has -1'
+        ^
+[ stdin ]:2: fatal: -v got invalid negative index -1
 ## END
 
 ## OK bash STDERR:

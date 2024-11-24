@@ -1030,9 +1030,8 @@ class BoolEvaluator(ArithEvaluator):
                 if index < 0:
                     index += n
                     if index < 0:
-                        if self.exec_opts.strict_word_eval():
-                            e_die('-v got invalid negative index %s' % index_str,
-                                  blame_loc)
+                        e_die('-v got invalid negative index %s' % index_str,
+                              blame_loc)
                         return False
 
                 if index < n:
