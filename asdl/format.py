@@ -534,13 +534,16 @@ def PrintTree(node, f):
 
 
 def PrintTree2(node, f, max_width):
-    # type: (hnode_t, ColorOutput, int) -> None
+    # type: (hnode_t, mylib.Writer, int) -> None
     """
     Make sure dependencies aren't a problem
     """
     enc = pp_hnode.HNodeEncoder()
+    enc.SetUseStyles(f.isatty())
     enc.SetIndent(2)  # save space, compared to 4 spaces
+
     doc = enc.HNode(node)
+
     printer = pretty.PrettyPrinter(max_width)  # max columns
 
     buf = mylib.BufWriter()

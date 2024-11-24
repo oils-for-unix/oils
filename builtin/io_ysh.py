@@ -123,6 +123,8 @@ class Pp(_Builtin):
 
             pretty_f = fmt.DetectConsoleOutput(self.stdout_)
             fmt.PrintTree(tree, pretty_f)
+            #max_width = ui._GetMaxWidth()
+            #fmt.PrintTree2(tree, pretty_f, max_width)
             self.stdout_.write('\n')
 
             return 0

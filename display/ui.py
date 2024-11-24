@@ -523,26 +523,12 @@ def PrintAst(node, flag):
     else:  # text output
         f = mylib.Stdout()
 
-        afmt = flag.ast_format  # note: mycpp rewrite to avoid 'in'
-        if afmt in ('text', 'abbrev-text'):
-            ast_f = fmt.DetectConsoleOutput(f)
-        elif afmt in ('html', 'abbrev-html'):
-            ast_f = fmt.HtmlOutput(f)
-        else:
-            raise AssertionError()
-
-        do_abbrev = 'abbrev-' in afmt
+        do_abbrev = 'abbrev-' in flag.ast_format
         tree = node.PrettyTree(do_abbrev)
 
         width = _GetMaxWidth()
 
-        ast_f.FileHeader()
-
-        fmt.PrintTree(tree, ast_f)
-        #fmt.PrintTree2(tree, ast_f, width)
-
-        ast_f.FileFooter()
-        ast_f.write('\n')
+        fmt.PrintTree2(tree, f, width)
 
 
 def TypeNotPrinted(val):

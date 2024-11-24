@@ -98,8 +98,10 @@ pretty-demo() {
   test/parse-errors.sh test-syntax-abbrev
   echo
 
+  #return
+
   # Show Dict[BigInt, str]
-  for i in 12 50 100; do
+  for i in 12 50 80; do
     $OSH -c 'declare -a a=(a b); a[$1]=zz; pp asdl_ (a); pp asdl_ (_a2sp(a))' dummy $i
     echo
   done

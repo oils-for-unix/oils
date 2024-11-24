@@ -63,13 +63,11 @@ class BaseEncoder(object):
         # type: (str, MeasuredDoc, str) -> MeasuredDoc
         """Print one of two options (using '[', ']' for left, right):
     
-        ```
         [mdoc]
         ------
         [
             mdoc
         ]
-        ```
         """
         return _Group(
             _Concat([
@@ -84,13 +82,11 @@ class BaseEncoder(object):
         """Print one of two options
         (using '[', 'prefix', ':', 'mdoc', ']' for left, prefix, sep, mdoc, right):
 
-        ```
         [prefix:mdoc]
         ------
         [prefix
             mdoc
         ]
-        ```
         """
         return _Group(
             _Concat([
@@ -104,14 +100,13 @@ class BaseEncoder(object):
         # type: (List[MeasuredDoc], str, str) -> MeasuredDoc
         """Join `items`, using either 'sep+space' or 'sep+newline' between them.
 
-        E.g., if sep and space are ',' and '_', print one of these two cases:
-        ```
+        e.g., if sep and space are ',' and '_', print one of these two cases:
+
         first,_second,_third
         ------
         first,
         second,
         third
-        ```
         """
         seq = []  # type: List[MeasuredDoc]
         for i, item in enumerate(items):
@@ -126,7 +121,7 @@ class BaseEncoder(object):
         """Join `items` together, using one of three styles:
 
         (showing spaces as underscores for clarity)
-        ```
+
         first,_second,_third,_fourth,_fifth,_sixth,_seventh,_eighth
         ------
         first,___second,__third,
@@ -141,7 +136,6 @@ class BaseEncoder(object):
         sixth,
         seventh,
         eighth
-        ```
 
         The first "single line" style is used if the items fit on one line.  The
         second "tabular" style is used if the flat width of all items is no
@@ -262,21 +256,25 @@ class HNodeEncoder(BaseEncoder):
             elif case(hnode_e.Record):
                 h = cast(hnode.Record, UP_h)
 
-                # TODO: does it help to make this empty?
-                type_name = self._Styled(self.type_color,
-                                         AsciiText(h.node_type))
-
                 if h.unnamed_fields is not None and len(h.unnamed_fields):
                     mdocs = [self._HNode(item) for item in h.unnamed_fields]
                 else:
-                    if len(h.fields) == 0:
-                        return _Concat(
-                            [AsciiText(h.left), type_name,
-                             AsciiText(h.right)])
+                    #if len(h.fields) == 0:
+                    #    return _Concat(
+                    #        [AsciiText(h.left), type_name,
+                    #         AsciiText(h.right)])
                     mdocs = [self._Field(field) for field in h.fields]
-                return self._SurroundedAndPrefixed(h.left, type_name, ' ',
-                                                   self._Join(mdocs, ' ', ''),
-                                                   h.right)
+
+                child = self._Join(mdocs, '', ' ')
+                if len(h.node_type):
+                    # TODO: does it help to make this empty?
+                    type_name = self._Styled(self.type_color,
+                                             AsciiText(h.node_type))
+
+                    return self._SurroundedAndPrefixed(h.left, type_name, ' ',
+                                                       child, h.right)
+                else:
+                    return self._Surrounded(h.left, child, h.right)
 
             else:
                 raise AssertionError()
