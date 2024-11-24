@@ -88,17 +88,17 @@ class ValueEncoder(pp_hnode.BaseEncoder):
 
     def TypePrefix(self, type_str):
         # type: (str) -> List[MeasuredDoc]
-        """Return docs for type string "(List)", which may break afterward."""
+        """Return docs for type string '(List)', which may break afterward."""
         type_name = self._Styled(self.type_style, AsciiText(type_str))
 
         n = len(type_str)
-        # Our maximum string is "Float"
+        # Our maximum string is 'Float'
         assert n <= 5, type_str
 
         # Start printing in column 8.   Adjust to 6 because () takes 2 spaces.
         spaces = ' ' * (6 - n)
 
-        mdocs = [AsciiText("("), type_name, AsciiText(")"), _Break(spaces)]
+        mdocs = [AsciiText('('), type_name, AsciiText(')'), _Break(spaces)]
         return mdocs
 
     def Value(self, val):
@@ -151,9 +151,9 @@ class ValueEncoder(pp_hnode.BaseEncoder):
         # type: (value.List) -> MeasuredDoc
         """Print a string literal."""
         if len(vlist.items) == 0:
-            return AsciiText("[]")
+            return AsciiText('[]')
         mdocs = [self._Value(item) for item in vlist.items]
-        return self._Surrounded("[", self._Tabular(mdocs, ","), "]")
+        return self._Surrounded('[', self._Tabular(mdocs, ','), ']')
 
     def _DictMdocs(self, d):
         # type: (Dict[str, value_t]) -> List[MeasuredDoc]
@@ -161,64 +161,64 @@ class ValueEncoder(pp_hnode.BaseEncoder):
         for k, v in iteritems(d):
             mdocs.append(
                 _Concat([self._DictKey(k),
-                         AsciiText(": "),
+                         AsciiText(': '),
                          self._Value(v)]))
         return mdocs
 
     def _YshDict(self, vdict):
         # type: (value.Dict) -> MeasuredDoc
         if len(vdict.d) == 0:
-            return AsciiText("{}")
+            return AsciiText('{}')
         mdocs = self._DictMdocs(vdict.d)
-        return self._Surrounded("{", self._Join(mdocs, ",", " "), "}")
+        return self._Surrounded('{', self._Join(mdocs, ',', ' '), '}')
 
     def _BashArray(self, varray):
         # type: (value.BashArray) -> MeasuredDoc
-        type_name = self._Styled(self.type_style, AsciiText("BashArray"))
+        type_name = self._Styled(self.type_style, AsciiText('BashArray'))
         if len(varray.strs) == 0:
-            return _Concat([AsciiText("("), type_name, AsciiText(")")])
+            return _Concat([AsciiText('('), type_name, AsciiText(')')])
         mdocs = []  # type: List[MeasuredDoc]
         for s in varray.strs:
             if s is None:
-                mdocs.append(AsciiText("null"))
+                mdocs.append(AsciiText('null'))
             else:
                 mdocs.append(self._BashStringLiteral(s))
-        return self._SurroundedAndPrefixed("(", type_name, " ",
-                                           self._Tabular(mdocs, ""), ")")
+        return self._SurroundedAndPrefixed('(', type_name, ' ',
+                                           self._Tabular(mdocs, ''), ')')
 
     def _BashAssoc(self, vassoc):
         # type: (value.BashAssoc) -> MeasuredDoc
-        type_name = self._Styled(self.type_style, AsciiText("BashAssoc"))
+        type_name = self._Styled(self.type_style, AsciiText('BashAssoc'))
         if len(vassoc.d) == 0:
-            return _Concat([AsciiText("("), type_name, AsciiText(")")])
+            return _Concat([AsciiText('('), type_name, AsciiText(')')])
         mdocs = []  # type: List[MeasuredDoc]
         for k2, v2 in iteritems(vassoc.d):
             mdocs.append(
                 _Concat([
-                    AsciiText("["),
+                    AsciiText('['),
                     self._BashStringLiteral(k2),
-                    AsciiText("]="),
+                    AsciiText(']='),
                     self._BashStringLiteral(v2)
                 ]))
-        return self._SurroundedAndPrefixed("(", type_name, " ",
-                                           self._Join(mdocs, "", " "), ")")
+        return self._SurroundedAndPrefixed('(', type_name, ' ',
+                                           self._Join(mdocs, '', ' '), ')')
 
     def _SparseArray(self, val):
         # type: (value.SparseArray) -> MeasuredDoc
-        type_name = self._Styled(self.type_style, AsciiText("SparseArray"))
+        type_name = self._Styled(self.type_style, AsciiText('SparseArray'))
         if len(val.d) == 0:
-            return _Concat([AsciiText("("), type_name, AsciiText(")")])
+            return _Concat([AsciiText('('), type_name, AsciiText(')')])
         mdocs = []  # type: List[MeasuredDoc]
         for k2, v2 in iteritems(val.d):
             mdocs.append(
                 _Concat([
-                    AsciiText("["),
+                    AsciiText('['),
                     self._Styled(self.int_style, AsciiText(mops.ToStr(k2))),
-                    AsciiText("]="),
+                    AsciiText(']='),
                     self._BashStringLiteral(v2)
                 ]))
-        return self._SurroundedAndPrefixed("(", type_name, " ",
-                                           self._Join(mdocs, "", " "), ")")
+        return self._SurroundedAndPrefixed('(', type_name, ' ',
+                                           self._Join(mdocs, '', ' '), ')')
 
     def _Obj(self, obj):
         # type: (Obj) -> MeasuredDoc
@@ -227,10 +227,10 @@ class ValueEncoder(pp_hnode.BaseEncoder):
         while cur is not None:
             mdocs = self._DictMdocs(cur.d)
             chain.append(
-                self._Surrounded("(", self._Join(mdocs, ",", " "), ")"))
+                self._Surrounded('(', self._Join(mdocs, ',', ' '), ')'))
             cur = cur.prototype
             if cur is not None:
-                chain.append(AsciiText(" --> "))
+                chain.append(AsciiText(' --> '))
 
         return _Concat(chain)
 
@@ -239,12 +239,12 @@ class ValueEncoder(pp_hnode.BaseEncoder):
 
         with tagswitch(val) as case:
             if case(value_e.Null):
-                return self._Styled(self.null_style, AsciiText("null"))
+                return self._Styled(self.null_style, AsciiText('null'))
 
             elif case(value_e.Bool):
                 b = cast(value.Bool, val).b
                 return self._Styled(self.bool_style,
-                                    AsciiText("true" if b else "false"))
+                                    AsciiText('true' if b else 'false'))
 
             elif case(value_e.Int):
                 i = cast(value.Int, val).i
@@ -265,21 +265,21 @@ class ValueEncoder(pp_hnode.BaseEncoder):
                                          AsciiText(ValType(r)))
                 mdocs = [
                     AsciiText(str(r.lower)),
-                    AsciiText("..<"),
+                    AsciiText('..<'),
                     AsciiText(str(r.upper))
                 ]
-                return self._SurroundedAndPrefixed("(", type_name, " ",
-                                                   self._Join(mdocs, "", " "),
-                                                   ")")
+                return self._SurroundedAndPrefixed('(', type_name, ' ',
+                                                   self._Join(mdocs, '', ' '),
+                                                   ')')
 
             elif case(value_e.List):
                 vlist = cast(value.List, val)
                 heap_id = j8.HeapValueId(vlist)
                 if self.visiting.get(heap_id, False):
                     return _Concat([
-                        AsciiText("["),
-                        self._Styled(self.cycle_style, AsciiText("...")),
-                        AsciiText("]")
+                        AsciiText('['),
+                        self._Styled(self.cycle_style, AsciiText('...')),
+                        AsciiText(']')
                     ])
                 else:
                     self.visiting[heap_id] = True
@@ -292,9 +292,9 @@ class ValueEncoder(pp_hnode.BaseEncoder):
                 heap_id = j8.HeapValueId(vdict)
                 if self.visiting.get(heap_id, False):
                     return _Concat([
-                        AsciiText("{"),
-                        self._Styled(self.cycle_style, AsciiText("...")),
-                        AsciiText("}")
+                        AsciiText('{'),
+                        self._Styled(self.cycle_style, AsciiText('...')),
+                        AsciiText('}')
                     ])
                 else:
                     self.visiting[heap_id] = True
@@ -319,9 +319,9 @@ class ValueEncoder(pp_hnode.BaseEncoder):
                 heap_id = j8.HeapValueId(vaobj)
                 if self.visiting.get(heap_id, False):
                     return _Concat([
-                        AsciiText("("),
-                        self._Styled(self.cycle_style, AsciiText("...")),
-                        AsciiText(")")
+                        AsciiText('('),
+                        self._Styled(self.cycle_style, AsciiText('...')),
+                        AsciiText(')')
                     ])
                 else:
                     self.visiting[heap_id] = True
@@ -335,15 +335,15 @@ class ValueEncoder(pp_hnode.BaseEncoder):
             elif case(value_e.Stdin, value_e.Interrupted):
                 type_name = self._Styled(self.type_style,
                                          AsciiText(ValType(val)))
-                return _Concat([AsciiText("<"), type_name, AsciiText(">")])
+                return _Concat([AsciiText('<'), type_name, AsciiText('>')])
 
             else:
                 type_name = self._Styled(self.type_style,
                                          AsciiText(ValType(val)))
                 id_str = j8.ValueIdString(val)
                 return _Concat(
-                    [AsciiText("<"), type_name,
-                     AsciiText(id_str + ">")])
+                    [AsciiText('<'), type_name,
+                     AsciiText(id_str + '>')])
 
 
 # vim: sw=4

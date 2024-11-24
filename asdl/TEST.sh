@@ -99,8 +99,18 @@ pretty-demo() {
   echo
 
   # Show Dict[BigInt, str]
-  $OSH -c 'declare -a a=(a b); a[12]=zz; pp asdl_ (a); pp asdl_ (_a2sp(a))'
-  echo
+  for i in 12 50 100; do
+    $OSH -c 'declare -a a=(a b); a[$1]=zz; pp asdl_ (a); pp asdl_ (_a2sp(a))' dummy $i
+    echo
+  done
+
+  # Tabular
+  for i in 12 50 100; do
+    $YSH -c 'var i = $1; var x = []; for i in (1 ..= i) { call x->append(i) }; pp (x)' \
+      dummy $i
+    echo
+  done
+
 
   # Show Dict[str, value_t]
   $YSH -c 'var d = {x:42}; setvar d.k = d; pp asdl_ (d)'

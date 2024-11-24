@@ -4,7 +4,7 @@ from __future__ import print_function
 Base class for pretty printing, and HNodeEncoder
 """
 
-from _devbuild.gen.hnode_asdl import hnode, hnode_e, hnode_t, Field
+from _devbuild.gen.hnode_asdl import hnode, hnode_e, hnode_t, Field, color_e
 from _devbuild.gen.pretty_asdl import (doc, MeasuredDoc)
 from data_lang import j8_lite
 from display import ansi
@@ -12,7 +12,7 @@ from display import pretty
 from display.pretty import (_Break, _Concat, _Flat, _Group, _IfFlat, _Indent,
                             _EmptyMeasure, AsciiText)
 from mycpp import mylib
-from mycpp.mylib import log, tagswitch
+from mycpp.mylib import log, tagswitch, switch
 from typing import cast, List, Dict
 
 _ = log
@@ -31,9 +31,6 @@ class BaseEncoder(object):
         self.max_tabular_width = 22
 
         self.visiting = {}  # type: Dict[int, bool]
-
-        self.type_color = ansi.YELLOW
-        self.field_color = ansi.MAGENTA
 
     def SetIndent(self, indent):
         # type: (int) -> None
@@ -62,9 +59,9 @@ class BaseEncoder(object):
         else:
             return mdoc
 
-    def _Surrounded(self, open, mdoc, close):
+    def _Surrounded(self, left, mdoc, right):
         # type: (str, MeasuredDoc, str) -> MeasuredDoc
-        """Print one of two options (using '[', ']' for open, close):
+        """Print one of two options (using '[', ']' for left, right):
     
         ```
         [mdoc]
@@ -76,16 +73,16 @@ class BaseEncoder(object):
         """
         return _Group(
             _Concat([
-                AsciiText(open),
-                _Indent(self.indent, _Concat([_Break(""), mdoc])),
-                _Break(""),
-                AsciiText(close)
+                AsciiText(left),
+                _Indent(self.indent, _Concat([_Break(''), mdoc])),
+                _Break(''),
+                AsciiText(right)
             ]))
 
-    def _SurroundedAndPrefixed(self, open, prefix, sep, mdoc, close):
+    def _SurroundedAndPrefixed(self, left, prefix, sep, mdoc, right):
         # type: (str, MeasuredDoc, str, MeasuredDoc, str) -> MeasuredDoc
         """Print one of two options
-        (using '[', 'prefix', ':', 'mdoc', ']' for open, prefix, sep, mdoc, close):
+        (using '[', 'prefix', ':', 'mdoc', ']' for left, prefix, sep, mdoc, right):
 
         ```
         [prefix:mdoc]
@@ -97,10 +94,10 @@ class BaseEncoder(object):
         """
         return _Group(
             _Concat([
-                AsciiText(open), prefix,
+                AsciiText(left), prefix,
                 _Indent(self.indent, _Concat([_Break(sep), mdoc])),
-                _Break(""),
-                AsciiText(close)
+                _Break(''),
+                AsciiText(right)
             ]))
 
     def _Join(self, items, sep, space):
@@ -147,8 +144,8 @@ class BaseEncoder(object):
         ```
 
         The first "single line" style is used if the items fit on one line.  The
-        second "tabular' style is used if the flat width of all items is no
-        greater than `self.max_tabular_width`. The third "multi line" style is
+        second "tabular" style is used if the flat width of all items is no
+        greater than self.max_tabular_width. The third "multi line" style is
         used otherwise.
         """
 
@@ -165,21 +162,23 @@ class BaseEncoder(object):
         #
         # We're picking between the three styles, by using (A) to check if the
         # first style fits on one line, then using (B) with "are all the items
-        # smaller than `self.max_tabular_width`?" to pick between style 2 and
+        # smaller than self.max_tabular_width?" to pick between style 2 and
         # style 3.
 
         if len(items) == 0:
-            return AsciiText("")
+            return AsciiText('')
 
         max_flat_len = 0
         seq = []  # type: List[MeasuredDoc]
         for i, item in enumerate(items):
             if i != 0:
                 seq.append(AsciiText(sep))
-                seq.append(_Break(" "))
+                seq.append(_Break(' '))
             seq.append(item)
             max_flat_len = max(max_flat_len, item.measure.flat)
         non_tabular = _Concat(seq)
+
+        #log('MAX FLAT %d', max_flat_len)
 
         sep_width = len(sep)
         if max_flat_len + sep_width + 1 <= self.max_tabular_width:
@@ -189,7 +188,7 @@ class BaseEncoder(object):
                 if i != len(items) - 1:
                     padding = max_flat_len - item.measure.flat + 1
                     tabular_seq.append(AsciiText(sep))
-                    tabular_seq.append(_Group(_Break(" " * padding)))
+                    tabular_seq.append(_Group(_Break(' ' * padding)))
             tabular = _Concat(tabular_seq)
             return _Group(_IfFlat(non_tabular, tabular))
         else:
@@ -202,6 +201,9 @@ class HNodeEncoder(BaseEncoder):
         # type: () -> None
         BaseEncoder.__init__(self)
 
+        self.type_color = ansi.YELLOW
+        self.field_color = ansi.MAGENTA
+
     def HNode(self, h):
         # type: (hnode_t) -> MeasuredDoc
         self.visiting.clear()
@@ -209,8 +211,9 @@ class HNodeEncoder(BaseEncoder):
 
     def _Field(self, field):
         # type: (Field) -> MeasuredDoc
-        name = self._Styled(self.field_color, AsciiText(field.name))
-        return _Concat([name, AsciiText(": "), self._HNode(field.val)])
+        #name = self._Styled(self.field_color, AsciiText(field.name))
+        name = AsciiText(field.name)
+        return _Concat([name, AsciiText(':'), self._HNode(field.val)])
 
     def _HNode(self, h):
         # type: (hnode_t) -> MeasuredDoc
@@ -224,11 +227,25 @@ class HNodeEncoder(BaseEncoder):
             elif case(hnode_e.Leaf):
                 h = cast(hnode.Leaf, UP_h)
 
+                with switch(h.color) as case2:
+                    if case2(color_e.TypeName):
+                        color = ansi.YELLOW
+                    elif case2(color_e.StringConst):
+                        color = ansi.BOLD
+                    elif case2(color_e.OtherConst):
+                        color = ansi.GREEN
+                    elif case2(color_e.External):
+                        color = ansi.BOLD + ansi.BLUE
+                    elif case2(color_e.UserType):
+                        color = ansi.GREEN  # Same color as other literals for now
+                    else:
+                        raise AssertionError()
+
                 # TODO: what do we do with node.color
                 s = j8_lite.EncodeString(h.s, unquoted_ok=True)
 
                 # Could be Unicode, but we don't want that dependency right now
-                return self._Styled(self.type_color, AsciiText(s))
+                return self._Styled(color, AsciiText(s))
 
             elif case(hnode_e.External):
                 h = cast(hnode.External, UP_h)
@@ -238,9 +255,9 @@ class HNodeEncoder(BaseEncoder):
             elif case(hnode_e.Array):
                 h = cast(hnode.Array, UP_h)
                 if len(h.children) == 0:
-                    return AsciiText("[]")
+                    return AsciiText('[]')
                 mdocs = [self._HNode(item) for item in h.children]
-                return self._Surrounded("[", self._Tabular(mdocs, " "), "]")
+                return self._Surrounded('[', self._Tabular(mdocs, ' '), ']')
 
             elif case(hnode_e.Record):
                 h = cast(hnode.Record, UP_h)
@@ -257,8 +274,8 @@ class HNodeEncoder(BaseEncoder):
                             [AsciiText(h.left), type_name,
                              AsciiText(h.right)])
                     mdocs = [self._Field(field) for field in h.fields]
-                return self._SurroundedAndPrefixed(h.left, type_name, " ",
-                                                   self._Join(mdocs, " ", ""),
+                return self._SurroundedAndPrefixed(h.left, type_name, ' ',
+                                                   self._Join(mdocs, ' ', ''),
                                                    h.right)
 
             else:
