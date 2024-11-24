@@ -74,8 +74,8 @@ class BaseEncoder(object):
         return _Group(
             _Concat([
                 AsciiText(open),
-                _Indent(self.indent, _Concat([_Break(""), mdoc])),
-                _Break(""),
+                _Indent(self.indent, _Concat([_Break(''), mdoc])),
+                _Break(''),
                 AsciiText(close)
             ]))
 
@@ -96,7 +96,7 @@ class BaseEncoder(object):
             _Concat([
                 AsciiText(open), prefix,
                 _Indent(self.indent, _Concat([_Break(sep), mdoc])),
-                _Break(""),
+                _Break(''),
                 AsciiText(close)
             ]))
 
@@ -143,9 +143,9 @@ class BaseEncoder(object):
         eighth
         ```
 
-        The first "single line" style is used if the items fit on one line.  The
-        second "tabular' style is used if the flat width of all items is no
-        greater than `self.max_tabular_width`. The third "multi line" style is
+        The first 'single line' style is used if the items fit on one line.  The
+        second 'tabular' style is used if the flat width of all items is no
+        greater than `self.max_tabular_width`. The third 'multi line' style is
         used otherwise.
         """
 
@@ -154,26 +154,26 @@ class BaseEncoder(object):
         # printing language. There are two sorts of conditionals we can do:
         #
         # A. Inside the pretty printing language, which supports exactly one
-        #    conditional: "does it fit on one line?".
+        #    conditional: 'does it fit on one line?'.
         # B. Outside the pretty printing language we can run arbitrary Python
         #    code, but we don't know how much space is available on the line
         #    because it depends on the context in which we're printed, which may
         #    vary.
         #
         # We're picking between the three styles, by using (A) to check if the
-        # first style fits on one line, then using (B) with "are all the items
-        # smaller than `self.max_tabular_width`?" to pick between style 2 and
+        # first style fits on one line, then using (B) with 'are all the items
+        # smaller than `self.max_tabular_width`?' to pick between style 2 and
         # style 3.
 
         if len(items) == 0:
-            return AsciiText("")
+            return AsciiText('')
 
         max_flat_len = 0
         seq = []  # type: List[MeasuredDoc]
         for i, item in enumerate(items):
             if i != 0:
                 seq.append(AsciiText(sep))
-                seq.append(_Break(" "))
+                seq.append(_Break(' '))
             seq.append(item)
             max_flat_len = max(max_flat_len, item.measure.flat)
         non_tabular = _Concat(seq)
@@ -186,7 +186,7 @@ class BaseEncoder(object):
                 if i != len(items) - 1:
                     padding = max_flat_len - item.measure.flat + 1
                     tabular_seq.append(AsciiText(sep))
-                    tabular_seq.append(_Group(_Break(" " * padding)))
+                    tabular_seq.append(_Group(_Break(' ' * padding)))
             tabular = _Concat(tabular_seq)
             return _Group(_IfFlat(non_tabular, tabular))
         else:
@@ -211,7 +211,7 @@ class HNodeEncoder(BaseEncoder):
         # type: (Field) -> MeasuredDoc
         #name = self._Styled(self.field_color, AsciiText(field.name))
         name = AsciiText(field.name)
-        return _Concat([name, AsciiText(": "), self._HNode(field.val)])
+        return _Concat([name, AsciiText(':'), self._HNode(field.val)])
 
     def _HNode(self, h):
         # type: (hnode_t) -> MeasuredDoc
@@ -253,9 +253,9 @@ class HNodeEncoder(BaseEncoder):
             elif case(hnode_e.Array):
                 h = cast(hnode.Array, UP_h)
                 if len(h.children) == 0:
-                    return AsciiText("[]")
+                    return AsciiText('[]')
                 mdocs = [self._HNode(item) for item in h.children]
-                return self._Surrounded("[", self._Tabular(mdocs, " "), "]")
+                return self._Surrounded('[', self._Tabular(mdocs, ' '), ']')
 
             elif case(hnode_e.Record):
                 h = cast(hnode.Record, UP_h)
@@ -272,8 +272,8 @@ class HNodeEncoder(BaseEncoder):
                             [AsciiText(h.left), type_name,
                              AsciiText(h.right)])
                     mdocs = [self._Field(field) for field in h.fields]
-                return self._SurroundedAndPrefixed(h.left, type_name, " ",
-                                                   self._Join(mdocs, " ", ""),
+                return self._SurroundedAndPrefixed(h.left, type_name, ' ',
+                                                   self._Join(mdocs, ' ', ''),
                                                    h.right)
 
             else:
