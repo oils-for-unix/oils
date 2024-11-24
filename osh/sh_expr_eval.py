@@ -1030,7 +1030,7 @@ class BoolEvaluator(ArithEvaluator):
                 if index < 0:
                     index += n
                     if index < 0:
-                        e_die('-v got invalid negative index %s' % index_str,
+                        e_die('-v got index %s, which is out of bounds for array of length %d' % (index_str, n),
                               blame_loc)
                         return False
 
