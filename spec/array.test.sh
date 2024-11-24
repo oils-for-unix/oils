@@ -824,3 +824,44 @@ bash: line 2: a[-1]: bad array subscript
 ## N-I mksh STDERR:
 ## END
 
+
+#### Negative index in [[ -v a[index] ]]
+a[0]=x
+a[5]=y
+a[10]=z
+[[ -v a[-1] ]] && echo 'a has -1'
+[[ -v a[-2] ]] && echo 'a has -2'
+[[ -v a[-5] ]] && echo 'a has -5'
+[[ -v a[-6] ]] && echo 'a has -6'
+[[ -v a[-10] ]] && echo 'a has -10'
+[[ -v a[-11] ]] && echo 'a has -11'
+
+## STDOUT:
+a has -1
+a has -6
+a has -11
+## END
+
+## N-I mksh status: 1
+## N-I mksh STDOUT:
+## END
+
+
+#### Negative out-of-range index in [[ -v a[index] ]]
+e=()
+[[ -v e[-1] ]] && echo 'e has -1'
+
+## status: 1
+## STDERR:
+  [[ -v e[-1] ]] && echo 'e has -1'
+        ^
+[ stdin ]:2: fatal: -v got invalid negative index -1
+## END
+
+## OK bash STDERR:
+bash: line 2: e: bad array subscript
+## END
+
+## N-I mksh STDERR:
+mksh: <stdin>[2]: syntax error: 'e[-1]' unexpected operator/operand
+## END

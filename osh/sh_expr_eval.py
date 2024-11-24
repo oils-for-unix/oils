@@ -1026,13 +1026,15 @@ class BoolEvaluator(ArithEvaluator):
                             index_str, blame_loc)
                     return False
 
+                n = len(val.strs)
                 if index < 0:
-                    if self.exec_opts.strict_word_eval():
+                    index += n
+                    if index < 0:
                         e_die('-v got invalid negative index %s' % index_str,
                               blame_loc)
-                    return False
+                        return False
 
-                if index < len(val.strs):
+                if index < n:
                     return val.strs[index] is not None
 
                 # out of range
