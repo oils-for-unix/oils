@@ -55,16 +55,19 @@ compare() {
 }
 
 gc-stats() {
-  local osh=_bin/cxx-opt/osh
+  #local osh=_bin/cxx-opt/osh
+  local osh=_bin/cxx-asan/osh
   ninja $osh
 
   # We should be doing some big GCs here
   export _OILS_GC_VERBOSE=1
 
+  # 41 KB file
+  #for file in benchmarks/testdata/functions; do
   # 615K file
-  for file in benchmarks/testdata/configure; do
+  #for file in benchmarks/testdata/configure; do
   # 1.7 MB file
-  #for file in benchmarks/testdata/configure-coreutils; do
+  for file in benchmarks/testdata/configure-coreutils; do
 
     local fmt=__perf
     echo "___ parsing and pretty printing $file"
@@ -73,6 +76,7 @@ gc-stats() {
 
     # even after adding GC
     # - max RSS is 878 MB, on configure
+    #   - other the other hand, the output is just 30 MB (30,370,809 bytes)
     # - max RSS is 2,386 MB, on configure-coreutils
     /usr/bin/time --format '*** elapsed %e, max RSS %M' -- \
       $osh --ast-format $fmt --tool syntax-tree $file | wc --bytes

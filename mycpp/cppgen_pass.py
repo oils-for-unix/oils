@@ -401,13 +401,13 @@ def GetCType(t, param=False, local=False):
 
 def GetCReturnType(t) -> Tuple[str, bool, Optional[str]]:
     """
-  Returns a C string, whether the tuple-by-value optimization was applied, and
-  the C type of an extra output param if the function is a generator.
-  """
+    Returns a C string, whether the tuple-by-value optimization was applied,
+    and the C type of an extra output param if the function is a generator.
+    """
 
     c_ret_type = GetCType(t)
 
-    # Optimization: Return tupels BY VALUE
+    # Optimization: Return tuples BY VALUE
     if isinstance(t, TupleType):
         assert c_ret_type.endswith('*')
         return c_ret_type[:-1], True, None

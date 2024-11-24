@@ -19,10 +19,10 @@ module pretty
       Break(str string)
     | Text(str string)
     | Indent(int indent, MeasuredDoc mdoc)
-    | Concat(List[MeasuredDoc] mdocs)
     | Group %MeasuredDoc
     | Flat(MeasuredDoc mdoc)
     | IfFlat(MeasuredDoc flat_mdoc, MeasuredDoc nonflat_mdoc)
+    | Concat(List[MeasuredDoc] mdocs)
 
   # Optimizing allocations
   # - Concat can be a List subtype
