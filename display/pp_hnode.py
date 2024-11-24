@@ -13,7 +13,7 @@ from display.pretty import (_Break, _Concat, _Flat, _Group, _IfFlat, _Indent,
                             _EmptyMeasure, AsciiText)
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch, switch
-from typing import cast, List, Dict
+from typing import cast, List, Dict, Optional
 
 _ = log
 
@@ -254,32 +254,40 @@ class HNodeEncoder(BaseEncoder):
                 h = cast(hnode.Array, UP_h)
                 if len(h.children) == 0:
                     return AsciiText('[]')
-                mdocs = [self._HNode(item) for item in h.children]
-                return self._Surrounded('[', self._Tabular(mdocs, ''), ']')
+                children = [self._HNode(item) for item in h.children]
+                return self._Surrounded('[', self._Tabular(children, ''), ']')
 
             elif case(hnode_e.Record):
                 h = cast(hnode.Record, UP_h)
 
-                if h.unnamed_fields is not None and len(h.unnamed_fields):
-                    mdocs = [self._HNode(item) for item in h.unnamed_fields]
-                else:
-                    # TODO: Handle the case of (value.Stdin) with no fields
-
-                    #if len(h.fields) == 0:
-                    #    return _Concat(
-                    #        [AsciiText(h.left), type_name,
-                    #         AsciiText(h.right)])
-                    mdocs = [self._Field(field) for field in h.fields]
-
-                child = self._Join(mdocs, '', ' ')
+                type_name = None  # type: Optional[MeasuredDoc]
                 if len(h.node_type):
-                    # TODO: does it help to make this empty?
                     type_name = self._Styled(self.type_color,
                                              AsciiText(h.node_type))
 
+                mdocs = None  # type: Optional[List[MeasuredDoc]]
+                if h.unnamed_fields is not None and len(h.unnamed_fields):
+                    mdocs = [self._HNode(item) for item in h.unnamed_fields]
+                elif len(h.fields) != 0:
+                    mdocs = [self._Field(field) for field in h.fields]
+
+                if mdocs is None:
+                    assert type_name is not None, h
+
+                    # e.g. (value.Stdin) with no fields
+                    return _Concat(
+                        [AsciiText(h.left), type_name,
+                         AsciiText(h.right)])
+
+                # Named or unnamed
+                child = self._Join(mdocs, '', ' ')
+
+                if type_name is not None:
+                    # e.g. (Token id:LitChars col:5)
                     return self._SurroundedAndPrefixed(h.left, type_name, ' ',
                                                        child, h.right)
                 else:
+                    # e.g. <Id.Lit_Chars foo>
                     return self._Surrounded(h.left, child, h.right)
 
             else:

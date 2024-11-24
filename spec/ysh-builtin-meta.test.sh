@@ -187,7 +187,7 @@ pp asdl_ (io.stdin)
 ## STDOUT:
 (value.Str s:42)
 (value.Dict d:{foo (value.Str s:42)})
-(value.Stdin )
+(value.Stdin)
 ## END
 
 #### pp asdl_ can handle an object cycle
