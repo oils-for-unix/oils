@@ -538,8 +538,8 @@ def PrintAst(node, flag):
 
         ast_f.FileHeader()
 
-        fmt.PrintTree(tree, ast_f)
-        #fmt.PrintTree2(tree, ast_f, width)
+        #fmt.PrintTree(tree, ast_f)
+        fmt.PrintTree2(tree, ast_f, width)
 
         ast_f.FileFooter()
         ast_f.write('\n')

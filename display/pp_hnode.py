@@ -4,7 +4,7 @@ from __future__ import print_function
 Base class for pretty printing, and HNodeEncoder
 """
 
-from _devbuild.gen.hnode_asdl import hnode, hnode_e, hnode_t, Field
+from _devbuild.gen.hnode_asdl import hnode, hnode_e, hnode_t, Field, color_e
 from _devbuild.gen.pretty_asdl import (doc, MeasuredDoc)
 from data_lang import j8_lite
 from display import ansi
@@ -12,7 +12,7 @@ from display import pretty
 from display.pretty import (_Break, _Concat, _Flat, _Group, _IfFlat, _Indent,
                             _EmptyMeasure, AsciiText)
 from mycpp import mylib
-from mycpp.mylib import log, tagswitch
+from mycpp.mylib import log, tagswitch, switch
 from typing import cast, List, Dict
 
 _ = log
@@ -31,9 +31,6 @@ class BaseEncoder(object):
         self.max_tabular_width = 22
 
         self.visiting = {}  # type: Dict[int, bool]
-
-        self.type_color = ansi.YELLOW
-        self.field_color = ansi.MAGENTA
 
     def SetIndent(self, indent):
         # type: (int) -> None
@@ -202,6 +199,9 @@ class HNodeEncoder(BaseEncoder):
         # type: () -> None
         BaseEncoder.__init__(self)
 
+        self.type_color = ansi.YELLOW
+        self.field_color = ansi.MAGENTA
+
     def HNode(self, h):
         # type: (hnode_t) -> MeasuredDoc
         self.visiting.clear()
@@ -209,7 +209,8 @@ class HNodeEncoder(BaseEncoder):
 
     def _Field(self, field):
         # type: (Field) -> MeasuredDoc
-        name = self._Styled(self.field_color, AsciiText(field.name))
+        #name = self._Styled(self.field_color, AsciiText(field.name))
+        name = AsciiText(field.name)
         return _Concat([name, AsciiText(": "), self._HNode(field.val)])
 
     def _HNode(self, h):
@@ -224,11 +225,25 @@ class HNodeEncoder(BaseEncoder):
             elif case(hnode_e.Leaf):
                 h = cast(hnode.Leaf, UP_h)
 
+                with switch(h.color) as case2:
+                    if case2(color_e.TypeName):
+                        color = ansi.YELLOW
+                    elif case2(color_e.StringConst):
+                        color = ansi.BOLD
+                    elif case2(color_e.OtherConst):
+                        color = ansi.GREEN
+                    elif case2(color_e.External):
+                        color = ansi.BOLD + ansi.BLUE
+                    elif case2(color_e.UserType):
+                        color = ansi.GREEN  # Same color as other literals for now
+                    else:
+                        raise AssertionError()
+
                 # TODO: what do we do with node.color
                 s = j8_lite.EncodeString(h.s, unquoted_ok=True)
 
                 # Could be Unicode, but we don't want that dependency right now
-                return self._Styled(self.type_color, AsciiText(s))
+                return self._Styled(color, AsciiText(s))
 
             elif case(hnode_e.External):
                 h = cast(hnode.External, UP_h)
