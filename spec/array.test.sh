@@ -801,3 +801,26 @@ two=1
 ## N-I mksh status: 1
 ## N-I mksh STDOUT:
 ## END
+
+#### Assigning with out-of-range negative index
+a=()
+a[-1]=1
+
+## status: 1
+## STDOUT:
+## END
+## STDERR:
+  a[-1]=1
+  ^~
+[ stdin ]:2: fatal: Index -1 is out of range
+## END
+
+## OK bash STDERR:
+bash: line 2: a[-1]: bad array subscript
+## END
+
+# Note: mksh interprets -1 as 0xFFFFFFFF
+## N-I mksh status: 0
+## N-I mksh STDERR:
+## END
+
