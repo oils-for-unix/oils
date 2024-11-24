@@ -178,6 +178,8 @@ class BaseEncoder(object):
             max_flat_len = max(max_flat_len, item.measure.flat)
         non_tabular = _Concat(seq)
 
+        #log('MAX FLAT %d', max_flat_len)
+
         sep_width = len(sep)
         if max_flat_len + sep_width + 1 <= self.max_tabular_width:
             tabular_seq = []  # type: List[MeasuredDoc]
