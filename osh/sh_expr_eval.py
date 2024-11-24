@@ -1024,9 +1024,7 @@ class BoolEvaluator(ArithEvaluator):
 
         UP_val = val
         with tagswitch(val) as case:
-            if case(value_e.BashArray):
-                val = cast(value.BashArray, UP_val)
-
+            if case(value_e.BashArray, value_e.SparseArray):
                 try:
                     # could use mops.FromStr?
                     index = int(index_str)
@@ -1037,13 +1035,29 @@ class BoolEvaluator(ArithEvaluator):
                             index_str, blame_loc)
                     return False
 
-                result, error_code = bash_impl.BashArray_HasElement(val, index)
-                if error_code == error_code_e.IndexOutOfRange:
-                    e_die(
-                        '-v got index %s, which is out of bounds for array of length %d'
-                        % (index_str, bash_impl.BashArray_Length(val)),
-                        blame_loc)
-                    return False
+                if val.tag() == value_e.BashArray:
+                    array_val = cast(value.BashArray, UP_val)
+                    result, error_code = bash_impl.BashArray_HasElement(
+                        array_val, index)
+                    if error_code == error_code_e.IndexOutOfRange:
+                        length = bash_impl.BashArray_Length(array_val)
+                        e_die(
+                            '-v got index %s, which is out of bounds for array of length %d'
+                            % (index_str, length), blame_loc)
+
+                elif val.tag() == value_e.SparseArray:
+                    sparse_val = cast(value.SparseArray, UP_val)
+                    result, error_code = bash_impl.SparseArray_HasElement(
+                        sparse_val, mops.IntWiden(index))
+                    if error_code == error_code_e.IndexOutOfRange:
+                        big_length = bash_impl.SparseArray_Length(sparse_val)
+                        e_die(
+                            '-v got index %s, which is out of bounds for array of length %s'
+                            % (index_str, mops.ToStr(big_length)), blame_loc)
+
+                else:
+                    raise AssertionError()
+
                 return result
 
             elif case(value_e.BashAssoc):
