@@ -249,9 +249,16 @@ status=1
 #### pp cell_ on indexed array with hole
 declare -a array
 array[3]=42
+array[5]=99
 pp cell_ array
+
 ## STDOUT:
-array = (Cell exported:F readonly:F nameref:F val:(value.BashArray strs:[_ _ _ 42]))
+array = (Cell
+  exported:F
+  readonly:F
+  nameref:F
+  val:(value.BashArray strs:[_  _  _  42  _  99])
+)
 ## END
 
 

@@ -525,12 +525,6 @@ def _TrySingleLine(node, f, max_chars):
     return True
 
 
-def PrintTree(node, f):
-    # type: (hnode_t, ColorOutput) -> None
-    pp = _PrettyPrinter(100)  # max_col
-    pp.PrintNode(node, f, 0)  # indent
-
-
 def HNodePrettyPrint(node, f, max_width=80):
     # type: (hnode_t, mylib.Writer, int) -> None
     """

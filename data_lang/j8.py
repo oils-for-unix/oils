@@ -4,11 +4,6 @@ j8.py: J8 Notation, a superset of JSON
 
 Later:
 
-- PrettyPrinter uses hnode.asdl?
-  - color
-  - line wrapping -- do this later
-  - would like CONTRIBUTORS here
-
 - Unify with ASDL pretty printing - NIL8
    - {} [] are identical
    - () is for statically typed ASDL data
@@ -618,60 +613,6 @@ class InstancePrinter(object):
                 else:
                     raise error.Encode("Can't serialize object of type %s" %
                                        ValType(val))
-
-
-class PrettyPrinter(object):
-    """ Unused right now, but could enhance the = operator.
-
-    Output to polymorphic ColorOutput 
-
-    Features like asdl/format.py:
-    - line wrapping
-    - color
-    - sharing detection by passing in a REF COUTN dict
-      - print @123 the first time, and then print ... the second time
-
-    and 
-
-    - Pretty spaces: {"k": "v", "k2": "v2"} instead of {"k":"v","k2","v2"}
-    - Unquoted: {k: "v", k2: "v2"} instead of {"k": "v", "k2": "v2"}
-
-    - Omitting commas for ASDL?  Maybe we can use two spaces
-
-    (Token id: Id.VSub_DollarName  start: 0  length: 3)
-    (Token id:Id.VSub_DollarName start:0 length:3)  - color makes this work
-    """
-
-    def __init__(self, max_col):
-        # type: (int) -> None
-        self.max_col = max_col
-
-        # This could be an optimized set an C++ bit set like
-        # mark_sweep_heap.h, rather than a Dict
-        #self.unique_objs = mylib.UniqueObjects()
-
-        # first pass of object ID -> number of times references
-
-        self.ref_count = {}  # type: Dict[int, int]
-
-    def PrettyTree(self, val, f):
-        # type: (value_t, fmt.ColorOutput) -> None
-
-        # TODO: first convert to hnode.asdl types?
-
-        # Although we might want
-        # hnode.AlreadyShown = (str type, int unique_id)
-        pass
-
-    def Print(self, val, buf):
-        # type: (value_t, mylib.BufWriter) -> None
-
-        # Or print to stderr?
-        f = fmt.DetectConsoleOutput(mylib.Stdout())
-        self.PrettyTree(val, f)
-
-        # Then print those with ASDL
-        pass
 
 
 class LexerDecoder(object):
