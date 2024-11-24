@@ -1969,27 +1969,13 @@ class Mem(object):
 
                     elif case2(value_e.BashArray):
                         cell_val = cast(value.BashArray, UP_cell_val)
-                        strs = cell_val.strs
-
-                        n = len(strs)
-                        index = lval.index
-                        if index < 0:  # a[-1]++ computes this twice; could we avoid it?
-                            index += n
-                            if index < 0:
-                                e_die(
-                                    "Index %d is out of bounds for array of length %d"
-                                    % (lval.index, n), left_loc)
-
-                        if index < n:
-                            strs[index] = rval.s
-                        else:
-                            # Fill it in with None.  It could look like this:
-                            # ['1', 2, 3, None, None, '4', None]
-                            # Then ${#a[@]} counts the entries that are not None.
-                            n = index - len(strs) + 1
-                            for i in xrange(n):
-                                strs.append(None)
-                            strs[lval.index] = rval.s
+                        error_code = bash_impl.BashArray_SetElement(
+                            cell_val, lval.index, rval.s)
+                        if error_code == 1:
+                            n = bash_impl.BashArray_Length(cell_val)
+                            e_die(
+                                "Index %d is out of bounds for array of length %d"
+                                % (lval.index, n), left_loc)
                         return
 
                     elif case2(value_e.SparseArray):

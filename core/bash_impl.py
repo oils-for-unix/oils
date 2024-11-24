@@ -49,6 +49,31 @@ def BashArray_AppendValues(array_val, strs):
     array_val.strs.extend(strs)
 
 
+def BashArray_SetElement(array_val, index, s):
+    # type: (value.BashArray, int, str) -> int
+
+    strs = array_val.strs
+
+    n = len(strs)
+    if index < 0:  # a[-1]++ computes this twice; could we avoid it?
+        index += n
+        if index < 0:
+            return 1
+
+    if index < n:
+        strs[index] = s
+    else:
+        # Fill it in with None.  It could look like this:
+        # ['1', 2, 3, None, None, '4', None]
+        # Then ${#a[@]} counts the entries that are not None.
+        n = index - len(strs) + 1
+        for i in xrange(n):
+            strs.append(None)
+        strs[index] = s
+
+    return 0
+
+
 def _BashArray_HasHoles(array_val):
     # type: (value.BashArray) -> bool
 
