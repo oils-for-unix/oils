@@ -535,7 +535,11 @@ def PrintAst(node, flag):
         tree = node.PrettyTree(do_abbrev)
 
         if perf_stats:
-            fmt._HNodePrettyPrint(True, tree, f, max_width=_GetMaxWidth())
+            fmt._HNodePrettyPrint(True,
+                                  True,
+                                  tree,
+                                  f,
+                                  max_width=_GetMaxWidth())
         else:
             fmt.HNodePrettyPrint(tree, f, max_width=_GetMaxWidth())
 

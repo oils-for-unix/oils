@@ -97,8 +97,8 @@ def _DocCount(d):
             raise AssertionError()
 
 
-def _HNodePrettyPrint(perf_stats, node, f, max_width=80):
-    # type: (bool, hnode_t, mylib.Writer, int) -> None
+def _HNodePrettyPrint(perf_stats, doc_debug, node, f, max_width=80):
+    # type: (bool, bool, hnode_t, mylib.Writer, int) -> None
 
     mylib.MaybeCollect()
     if perf_stats:
@@ -113,11 +113,17 @@ def _HNodePrettyPrint(perf_stats, node, f, max_width=80):
     enc.SetUseStyles(f.isatty())
     enc.SetIndent(2)  # save space, compared to 4 spaces
 
-    doc = enc.HNode(node)
+    d = enc.HNode(node)
 
     mylib.MaybeCollect()
     if perf_stats:
-        log('___ DOC COUNT %d', _DocCount(doc))
+        #if doc_debug:
+        if 0:
+            # Pretty print the doc tree itself!
+            p = d.PrettyTree(False)
+            _HNodePrettyPrint(perf_stats, False, p, f)
+
+        log('___ DOC COUNT %d', _DocCount(d))
         log('')
 
         log('___ GC: after doc_t conversion')
@@ -127,7 +133,7 @@ def _HNodePrettyPrint(perf_stats, node, f, max_width=80):
     printer = pretty.PrettyPrinter(max_width)  # max columns
 
     buf = mylib.BufWriter()
-    printer.PrintDoc(doc, buf)
+    printer.PrintDoc(d, buf)
 
     f.write(buf.getvalue())
     f.write('\n')
@@ -144,4 +150,4 @@ def HNodePrettyPrint(node, f, max_width=80):
     """
     Make sure dependencies aren't a problem
     """
-    _HNodePrettyPrint(False, node, f, max_width=max_width)
+    _HNodePrettyPrint(False, True, node, f, max_width=max_width)

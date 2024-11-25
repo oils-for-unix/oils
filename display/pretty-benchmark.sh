@@ -55,24 +55,28 @@ compare() {
 }
 
 gc-stats() {
-  #local osh=_bin/cxx-opt/osh
-  local osh=_bin/cxx-asan/osh
+  local osh=_bin/cxx-opt/osh
+  #local osh=_bin/cxx-asan/osh
   ninja $osh
 
   # We should be doing some big GCs here
   export _OILS_GC_VERBOSE=1
 
   # 41 KB file
-  #for file in benchmarks/testdata/functions; do
+  for file in benchmarks/testdata/functions; do
   # 615K file
   #for file in benchmarks/testdata/configure; do
+
+  # THIS FILE MAKES MY COMPUTER LOCK UP SOMETIMES!
   # 1.7 MB file
-  for file in benchmarks/testdata/configure-coreutils; do
+  #for file in benchmarks/testdata/configure-coreutils; do
 
     local fmt=__perf
     echo "___ parsing and pretty printing $file"
     time OILS_GC_STATS=1 $osh --ast-format $fmt --tool syntax-tree $file | wc --bytes
     echo
+
+    continue
 
     # even after adding GC
     # - max RSS is 878 MB, on configure
@@ -81,8 +85,6 @@ gc-stats() {
     /usr/bin/time --format '*** elapsed %e, max RSS %M' -- \
       $osh --ast-format $fmt --tool syntax-tree $file | wc --bytes
     echo
-
-    continue
 
     echo "OLD printer"
     # Compare against OLD printer
@@ -106,6 +108,17 @@ gc-stats() {
     time OILS_GC_STATS=1 $osh --ast-format text --tool syntax-tree $file | wc --bytes
     echo
 
+  done
+}
+
+counters() {
+  #local osh=_bin/cxx-opt/osh
+  local osh=_bin/cxx-dbg/osh
+  ninja $osh
+
+  # 615K file
+  for file in benchmarks/testdata/{functions,configure,configure-coreutils}; do
+    time $osh --ast-format __perf --tool syntax-tree $file | wc --bytes
   done
 }
 

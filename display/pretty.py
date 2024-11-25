@@ -237,7 +237,11 @@ class PrettyPrinter(object):
         #   (Call this the suffix_measure)
         fragments = [DocFragment(_Group(document), 0, False, _EmptyMeasure())]
 
+        max_stack = len(fragments)
+
         while len(fragments) > 0:
+            max_stack = max(max_stack, len(fragments))
+
             frag = fragments.pop()
             UP_doc = frag.mdoc.doc
             with tagswitch(UP_doc) as case:
@@ -303,6 +307,11 @@ class PrettyPrinter(object):
                     fragments.append(
                         DocFragment(flat_doc.mdoc, frag.indent, True,
                                     frag.measure))
+
+        if 0:
+            log('')
+            log('___ MAX DocFragment stack: %d', max_stack)
+            log('')
 
 
 # vim: sw=4
