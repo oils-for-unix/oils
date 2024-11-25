@@ -115,6 +115,19 @@ readonly -a FILES=(
   benchmarks/testdata/{functions,configure,configure-coreutils}
 )
 
+count-small() {
+  # Python
+  bin/osh --ast-format __perf --tool syntax-tree -c 'echo hi'
+  return
+
+  local osh=_bin/cxx-opt/osh
+  #local osh=_bin/cxx-dbg/osh
+  ninja $osh
+
+  /usr/bin/time --format '*** elapsed %e, max RSS %M' -- \
+    $osh --ast-format __perf --tool syntax-tree -c 'echo hi'
+}
+
 counters() {
   local osh=_bin/cxx-opt/osh
   #local osh=_bin/cxx-dbg/osh

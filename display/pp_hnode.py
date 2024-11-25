@@ -5,7 +5,7 @@ Base class for pretty printing, and HNodeEncoder
 """
 
 from _devbuild.gen.hnode_asdl import hnode, hnode_e, hnode_t, Field, color_e
-from _devbuild.gen.pretty_asdl import (doc, MeasuredDoc)
+from _devbuild.gen.pretty_asdl import (doc, MeasuredDoc, Measure)
 from data_lang import j8_lite
 from display import ansi
 from display import pretty
@@ -60,6 +60,14 @@ class BaseEncoder(object):
             ])
         else:
             return mdoc
+
+    def _StyledText(self, style, s):
+        # type: (str, str) -> MeasuredDoc
+        """Apply the ANSI style string to the given node, if use_styles is set."""
+        measure = Measure(len(s), -1)  # like AsciiText()
+        if self.use_styles:
+            s = '%s%s%s' % (style, s, ansi.RESET)
+        return MeasuredDoc(doc.Text(s), measure)
 
     def _Surrounded(self, left, mdoc, right):
         # type: (str, MeasuredDoc, str) -> MeasuredDoc
@@ -173,8 +181,11 @@ class BaseEncoder(object):
             if i != 0:
                 seq.append(AsciiText(sep))
                 seq.append(_Break(' '))
+            # It would be nice if we could extend other _Concat() nodes here
             seq.append(item)
+
             max_flat_len = max(max_flat_len, item.measure.flat)
+
         non_tabular = _Concat(seq)
 
         #log('MAX FLAT %d', max_flat_len)
@@ -210,9 +221,8 @@ class HNodeEncoder(BaseEncoder):
 
     def _Field(self, field):
         # type: (Field) -> MeasuredDoc
-        #name = self._Styled(self.field_color, AsciiText(field.name))
-        name = AsciiText(field.name)
-        return _Concat([name, AsciiText(':'), self._HNode(field.val)])
+        name = AsciiText(field.name + ':')
+        return _Concat([name, self._HNode(field.val)])
 
     def _HNode(self, h):
         # type: (hnode_t) -> MeasuredDoc
@@ -244,7 +254,8 @@ class HNodeEncoder(BaseEncoder):
                 s = j8_lite.EncodeString(h.s, unquoted_ok=True)
 
                 # Could be Unicode, but we don't want that dependency right now
-                return self._Styled(color, AsciiText(s))
+                return self._StyledText(color, s)
+                #return self._Styled(color, AsciiText(s))
 
             elif case(hnode_e.Array):
                 h = cast(hnode.Array, UP_h)
@@ -258,8 +269,8 @@ class HNodeEncoder(BaseEncoder):
 
                 type_name = None  # type: Optional[MeasuredDoc]
                 if len(h.node_type):
-                    type_name = self._Styled(self.type_color,
-                                             AsciiText(h.node_type))
+                    type_name = self._StyledText(self.type_color, h.node_type)
+                    #type_name = self._Styled(self.type_color, AsciiText(h.node_type))
 
                 mdocs = None  # type: Optional[List[MeasuredDoc]]
                 if h.unnamed_fields is not None and len(h.unnamed_fields):
