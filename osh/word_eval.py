@@ -506,12 +506,11 @@ class TildeEvaluator(object):
 
 class FrameEvaluator(object):
 
-    def __init__(self, splitter, will_glob):
-        # type: (SplitContext, bool) -> None
+    def __init__(self, splitter):
+        # type: (SplitContext) -> None
         self.frags = []  # type: List[str]
         self.frag = []  # type: List[str]
         self.splitter = splitter
-        self.will_glob = will_glob
 
     def _Append(self, text):
         # type: (str) -> None
@@ -523,8 +522,8 @@ class FrameEvaluator(object):
             self.frags.append("".join(self.frag))
             self.frag = []
 
-    def _Split(self, piece, quoted, do_split):
-        # type: (str, bool, bool) -> None
+    def _Split(self, piece, quoted, do_split, will_glob):
+        # type: (str, bool, bool, bool) -> None
         if do_split:
             splits = self.splitter.SplitForWordEval(piece)
             if len(splits) == 0:
@@ -533,22 +532,27 @@ class FrameEvaluator(object):
 
             last = len(splits) - 1
             for i, tosplit in enumerate(splits):
-                self._Split(tosplit, quoted, False)
+                self._Split(tosplit, quoted, False, will_glob)
 
                 if i != last:
                     self._NextFrag()
 
-        elif quoted and self.will_glob:
+        elif quoted and will_glob:
             self._Append(glob_.GlobEscape(piece))
 
         else:
             self._Append(piece)
 
-    def Eval(self, frame):
-        # type: (List[Piece]) -> List[str]
+    def Eval(self, frame, will_glob):
+        # type: (List[Piece], bool) -> List[str]
+        del self.frags[:]
+        del self.frag[:]
+
         for piece in frame:
-            self._Split(piece.s, piece.quoted, piece.do_split)
+            self._Split(piece.s, piece.quoted, piece.do_split, will_glob)
+
         self._NextFrag()
+
         return self.frags
 
 
@@ -585,6 +589,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
         self.errfmt = errfmt
 
         self.globber = glob_.Globber(exec_opts)
+
+        self.frame_ev = FrameEvaluator(self.splitter)
 
     def CheckCircularDeps(self):
         # type: () -> None
@@ -2055,9 +2061,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             return
 
         will_glob = not self.exec_opts.noglob()
-
-        frame_evaluator = FrameEvaluator(self.splitter, will_glob)
-        frags = frame_evaluator.Eval(frame)
+        frags = self.frame_ev.Eval(frame, will_glob)
 
         if 1:
             log('---')
