@@ -367,6 +367,11 @@ def BashAssoc_ToStrForShellPrint(assoc_val):
 # representation of SparseArray come here.
 
 
+def SparseArray_IsEmpty(sparse_val):
+    # type: (value.SparseArray) -> bool
+    return len(sparse_val.d) == 0
+
+
 def SparseArray_Count(sparse_val):
     # type: (value.SparseArray) -> int
     return len(sparse_val.d)

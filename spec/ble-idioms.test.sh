@@ -1116,3 +1116,32 @@ append 'x' 'y' 'z' (a)
 
 ## N-I bash/zsh/mksh/ash STDOUT:
 ## END
+
+
+#### SparseArray (YSH): $[bool(a)]
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+a1=()
+a2=(0)
+a3=(0 1 2)
+a4=(0 0)
+unset -v 'a4[0]'
+var a1 = _a2sp(a1)
+var a2 = _a2sp(a2)
+var a3 = _a2sp(a3)
+var a4 = _a2sp(a4)
+
+echo $[bool(a1)]
+echo $[bool(a2)]
+echo $[bool(a3)]
+echo $[bool(a4)]
+
+## STDOUT:
+false
+true
+true
+true
+## END
+
+## N-I bash/zsh/mksh/ash STDOUT:
+## END
