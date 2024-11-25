@@ -223,7 +223,6 @@ class HNodeEncoder(BaseEncoder):
 
         # TODO: the _HNode is often a _Concat node, and we could optimize them
         # together.  That means we also have to concatenate their measures.
-
         return _Concat([name, self._HNode(field.val)])
 
     def _HNode(self, h):
@@ -261,6 +260,11 @@ class HNodeEncoder(BaseEncoder):
 
             elif case(hnode_e.Array):
                 h = cast(hnode.Array, UP_h)
+
+                # Reduces Max RSS!  Because we build up the trees all at once,
+                # and there's a ton fo garbage.
+                mylib.MaybeCollect()
+
                 if len(h.children) == 0:
                     return AsciiText('[]')
                 children = [self._HNode(item) for item in h.children]

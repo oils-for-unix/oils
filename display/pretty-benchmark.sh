@@ -133,6 +133,8 @@ counters() {
   #local osh=_bin/cxx-dbg/osh
   ninja $osh
 
+  #export OILS_GC_STATS=1
+
   for file in "${FILES[@]}"; do
     echo "=== parsing and pretty printing $file"
     echo

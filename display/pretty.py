@@ -174,20 +174,34 @@ def _Indent(indent, mdoc):
     return MeasuredDoc(doc.Indent(indent, mdoc), mdoc.measure)
 
 
+def _Splice(out, mdocs):
+    # type: (List[MeasuredDoc], List[MeasuredDoc]) -> Measure
+    """Optimization for _Concat.
+
+    This reduces the total size of the doc_t tree, and thus the memory usage
+    (as long as we mylib.MaybeCollect() in _HNode!)
+
+    Example of optimizing _Concat nodes together: _Field() concatenates
+    AsciiText("name:") and _HNode(), and the latter is often a doc.Concat node.
+    """
+    measure = _EmptyMeasure()
+    for mdoc in mdocs:
+        with tagswitch(mdoc.doc) as case:
+            if case(doc_e.Concat):
+                child = cast(doc.Concat, mdoc.doc)
+                measure = _Splice(out, child.mdocs)
+            else:
+                out.append(mdoc)
+                measure = _ConcatMeasure(measure, mdoc.measure)
+    return measure
+
+
 def _Concat(mdocs):
     # type: (List[MeasuredDoc]) -> MeasuredDoc
     """Print the mdocs in order (with no space in between)."""
-    measure = _EmptyMeasure()
-
-    # TODO: this algorithm allocates too much!
-    for mdoc in mdocs:
-        measure = _ConcatMeasure(measure, mdoc.measure)
-        # TODO: if mdoc.doc is a doc.Concat node, then we can "expand" it here.
-        # That reduces memory.
-        # Example: _Field() concatenates foo:[bar], which is often a Concat
-        # node itself.
-
-    return MeasuredDoc(doc.Concat(mdocs), measure)
+    flattened = []  # type: List[MeasuredDoc]
+    measure = _Splice(flattened, mdocs)
+    return MeasuredDoc(doc.Concat(flattened), measure)
 
 
 def _Group(mdoc):
