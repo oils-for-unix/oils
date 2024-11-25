@@ -100,7 +100,8 @@ maximum line width.
 
 from __future__ import print_function
 
-from _devbuild.gen.pretty_asdl import doc, doc_e, DocFragment, Measure, MeasuredDoc
+from _devbuild.gen.pretty_asdl import (doc, doc_e, DocFragment, Measure,
+                                       MeasuredDoc, List_Measured)
 from mycpp.mylib import log, tagswitch, BufWriter
 from typing import cast, List
 
@@ -188,9 +189,9 @@ def _Splice(out, mdocs):
     for mdoc in mdocs:
         with tagswitch(mdoc.doc) as case:
             if case(doc_e.Concat):
-                child = cast(doc.Concat, mdoc.doc)
+                child = cast(List_Measured, mdoc.doc)
                 # ignore return value, because the parent has the measure already
-                _Splice(out, child.mdocs)
+                _Splice(out, child)
             else:
                 out.append(mdoc)
         measure = _ConcatMeasure(measure, mdoc.measure)
@@ -200,9 +201,9 @@ def _Splice(out, mdocs):
 def _Concat(mdocs):
     # type: (List[MeasuredDoc]) -> MeasuredDoc
     """Print the mdocs in order (with no space in between)."""
-    flattened = []  # type: List[MeasuredDoc]
+    flattened = List_Measured.Take([])  # TODO: New()
     measure = _Splice(flattened, mdocs)
-    return MeasuredDoc(doc.Concat(flattened), measure)
+    return MeasuredDoc(flattened, measure)
 
 
 def _Group(mdoc):
@@ -284,7 +285,7 @@ class PrettyPrinter(object):
                                     frag.is_flat, frag.measure))
 
                 elif case(doc_e.Concat):
-                    concat = cast(doc.Concat, UP_doc)
+                    concat = cast(List_Measured, UP_doc)
 
                     # If we encounter Concat([A, B, C]) with a suffix measure M,
                     # we need to push A,B,C onto the stack in reverse order:
@@ -292,7 +293,7 @@ class PrettyPrinter(object):
                     # - B, with suffix_measure = A.measure + M
                     # - A, with suffix_measure = M
                     measure = frag.measure
-                    for mdoc in reversed(concat.mdocs):
+                    for mdoc in reversed(concat):
                         fragments.append(
                             DocFragment(mdoc, frag.indent, frag.is_flat,
                                         measure))

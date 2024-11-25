@@ -2,7 +2,8 @@
 format.py -- Pretty print an ASDL data structure.
 """
 from _devbuild.gen.hnode_asdl import hnode, hnode_e, hnode_t
-from _devbuild.gen.pretty_asdl import doc, doc_e, doc_t, MeasuredDoc
+from _devbuild.gen.pretty_asdl import (doc, doc_e, doc_t, MeasuredDoc,
+                                       List_Measured)
 from display import pp_hnode
 from display import pretty
 from mycpp import mylib
@@ -88,9 +89,9 @@ def _DocCount(d):
                 d.nonflat_mdoc.doc)
 
         elif case(doc_e.Concat):
-            d = cast(doc.Concat, UP_d)
+            d = cast(List_Measured, UP_d)
             n = 1  # 1 for this node
-            for mdoc in d.mdocs:
+            for mdoc in d:
                 n += _DocCount(mdoc.doc)
             return n
 

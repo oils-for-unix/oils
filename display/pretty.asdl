@@ -11,6 +11,14 @@ module pretty
   # - `nonflat` gives the width until the doc's first possible newline,
   #   or -1 if no layout of the doc contains a newline.
   Measure = (int flat, int nonflat)
+
+  # Leaf Value optimization
+  # This affects:
+  #   the GC mask for any struct that contains it
+  #   C++ uses parent.measure instead of parent->measure
+  #Measure_v = (int flat, int nonflat)
+
+  List_Measured < List[MeasuredDoc]
   
   # A pretty printing "document", which encodes a set of possible layouts.
   # The pretty printer will pick the "best" layout from among this set.
@@ -22,7 +30,7 @@ module pretty
     | Group %MeasuredDoc
     | Flat(MeasuredDoc mdoc)
     | IfFlat(MeasuredDoc flat_mdoc, MeasuredDoc nonflat_mdoc)
-    | Concat(List[MeasuredDoc] mdocs)
+    | Concat %List_Measured
 
   # Optimizing allocations
   # - Concat can be a List subtype
