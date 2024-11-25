@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh
-## oils_failures_allowed: 8
+## oils_failures_allowed: 9
 
 # NOTE on bash bug:  After setting IFS to array, it never splits anymore?  Even
 # if you assign IFS again.
@@ -419,3 +419,40 @@ noglob
 ['[\\]_']
 ## END
 
+
+#### Empty IFS bug #2141 (from pnut)
+
+res=0
+sum() {
+  # implement callee-save calling convention using `set`
+  # here, we save the value of $res after the function parameters
+  set $@ $res           # $1 $2 $3 are now set
+  res=$(($1 + $2))
+  echo "$1 + $2 = $res"
+  res=$3                # restore the value of $res
+}
+
+unset IFS
+sum 12 30 # outputs "12 + 30 = 42"
+
+IFS=' '
+sum 12 30 # outputs "12 + 30 = 42"
+
+IFS=
+sum 12 30 # outputs "1230 + 0 = 1230"
+
+# I added this
+IFS=''
+sum 12 30
+
+set -u
+IFS=
+sum 12 30 # fails with "fatal: Undefined variable '2'" on res=$(($1 + $2))
+
+## STDOUT:
+12 + 30 = 42
+12 + 30 = 42
+12 + 30 = 42
+12 + 30 = 42
+12 + 30 = 42
+## END

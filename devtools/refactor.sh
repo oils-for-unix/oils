@@ -279,9 +279,17 @@ test-files() {
 #
 
 singleton-list() {
-  egrep -n '\(List\[[^]]+\] [a-z]+\)' */*.asdl
+  egrep -n '\(List\[[^]]+\] [a-z_]+\)' */*.asdl
   echo
-  egrep -n '\(Dict\[[^]]+\] [a-z]+\)' */*.asdl
+  egrep -n '\(Dict\[[^]]+\] [a-z_]+\)' */*.asdl
+}
+
+singleton-primitive() {
+  egrep -n '\(str [a-z_]+\)' */*.asdl
+  echo
+
+  egrep -n '\(int [a-z_]+\)' */*.asdl
+  echo
 }
 
 task-five "$@"
