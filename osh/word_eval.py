@@ -503,6 +503,55 @@ class TildeEvaluator(object):
         return result
 
 
+
+class FrameEvaluator(object):
+
+    def __init__(self, splitter, will_glob):
+        # type: (SplitContext, bool) -> None
+        self.frags = []  # type: List[str]
+        self.frag = []  # type: List[str]
+        self.splitter = splitter
+        self.will_glob = will_glob
+
+    def _Append(self, text):
+        # type: (str) -> None
+        self.frag.append(text)
+
+    def _NextFrag(self):
+        # type: () -> None
+        if len(self.frag):
+            self.frags.append("".join(self.frag))
+            self.frag = []
+
+    def _Split(self, piece, quoted, do_split):
+        # type: (str, bool, bool) -> None
+        if do_split:
+            splits = self.splitter.SplitForWordEval(piece)
+            if len(splits) == 0:
+                self._NextFrag()
+                return
+
+            last = len(splits) - 1
+            for i, tosplit in enumerate(splits):
+                self._Split(tosplit, quoted, False)
+
+                if i != last:
+                    self._NextFrag()
+
+        elif quoted and self.will_glob:
+            self._Append(glob_.GlobEscape(piece))
+
+        else:
+            self._Append(piece)
+
+    def Eval(self, frame):
+        # type: (List[Piece]) -> List[str]
+        for piece in frame:
+            self._Split(piece.s, piece.quoted, piece.do_split)
+        self._NextFrag()
+        return self.frags
+
+
 class AbstractWordEvaluator(StringWordEvaluator):
     """Abstract base class for word evaluators.
 
@@ -2007,48 +2056,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         will_glob = not self.exec_opts.noglob()
 
-        class FrameEvaluator:
-
-            def __init__(self, splitter):
-                self.frags = []
-                self.frag = []
-                self.splitter = splitter
-
-            def append(self, text):
-                self.frag.append(text)
-
-            def next_frag(self):
-                if len(self.frag):
-                    self.frags.append("".join(self.frag))
-                    self.frag = []
-
-            def split(self, piece):
-                if piece.do_split:
-                    splits = self.splitter.SplitForWordEval(piece.s)
-                    if len(splits) == 0:
-                        self.next_frag()
-                        return
-
-                    last = len(splits) - 1
-                    for i, tosplit in enumerate(splits):
-                        self.split(Piece(tosplit, quoted=piece.quoted, do_split=False))
-
-                        if i != last:
-                            self.next_frag()
-
-                elif piece.quoted and will_glob:
-                    self.append(glob_.GlobEscape(piece.s))
-                else:
-                    self.append(piece.s)
-
-            def finish(self):
-                self.next_frag()
-                return self.frags
-
-        frame_evaluator = FrameEvaluator(self.splitter)
-        for piece in frame:
-            frame_evaluator.split(piece)
-        frags = frame_evaluator.finish()
+        frame_evaluator = FrameEvaluator(self.splitter, will_glob)
+        frags = frame_evaluator.Eval(frame)
 
         if 1:
             log('---')
