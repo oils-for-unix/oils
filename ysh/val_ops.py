@@ -363,6 +363,10 @@ def ToBool(val):
             val = cast(value.BashAssoc, UP_val)
             return not bash_impl.BashAssoc_IsEmpty(val)
 
+        elif case(value_e.SparseArray):
+            val = cast(value.SparseArray, UP_val)
+            return not bash_impl.SparseArray_IsEmpty(val)
+
         elif case(value_e.Bool):
             val = cast(value.Bool, UP_val)
             return val.b
