@@ -179,6 +179,10 @@ def ToShellArray(val, blame_loc, prefix=''):
             array_val = cast(value.BashArray, UP_val)
             strs = bash_impl.BashArray_GetValues(array_val)
 
+        elif case2(value_e.SparseArray):
+            sparse_val = cast(value.SparseArray, UP_val)
+            strs = bash_impl.SparseArray_GetValues(sparse_val)
+
         else:
             raise error.TypeErr(val, "%sexpected List" % prefix, blame_loc)
 
