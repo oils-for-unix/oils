@@ -201,7 +201,7 @@ def _Splice(out, mdocs):
 def _Concat(mdocs):
     # type: (List[MeasuredDoc]) -> MeasuredDoc
     """Print the mdocs in order (with no space in between)."""
-    flattened = List_Measured.Take([])  # TODO: New()
+    flattened = List_Measured.New()
     measure = _Splice(flattened, mdocs)
     return MeasuredDoc(flattened, measure)
 

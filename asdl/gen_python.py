@@ -350,6 +350,13 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             self.Emit('        self.extend(other)')
             self.Emit('')
 
+        # Use our own constructor
+        self.Emit('  @staticmethod')
+        self.Emit('  def New():')
+        self.Emit('    # type: () -> %s' % class_name)
+        self.Emit('    return %s()' % class_name)
+        self.Emit('')
+
         self.Emit('  @staticmethod')
         self.Emit('  def Take(plain_list):')
         self.Emit('    # type: (%s) -> %s' % (base_class_str, class_name))

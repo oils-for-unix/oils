@@ -450,6 +450,10 @@ class ClassDefVisitor(visitor.AsdlVisitor):
             (class_name, base_type_str, base_type_str), depth)
         self.Emit('  }', depth)
 
+        self.Emit('  static %s* New() {' % class_name, depth)
+        self.Emit('    return Alloc<%s>();' % class_name, depth)
+        self.Emit('  }', depth)
+
         # Take() constructor
         self.Emit(
             '  static %s* Take(%s* plain_list) {' %

@@ -238,8 +238,8 @@ def TestSubtype():
     # type: () -> None
 
     # TODO:
-    #c = CompoundWord.New()
-    c = CompoundWord.Take([])
+    c = CompoundWord.New()
+    #c = CompoundWord.Take([])
     c.append('foo')
     c.append('bar')
 
