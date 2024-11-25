@@ -27,7 +27,12 @@ fib() {
 }
 
 pretty() {
-  osh-run -n --ast-format text configure
+  # takes 44 seconds to collect 1.6 MB of data
+  # benchmarks/testdata/functions
+
+  # Measure one of our own scripts
+  # Takes 3 seconds
+  time osh-run -n --ast-format text install
 }
 
 parse-cpython-configure() {
