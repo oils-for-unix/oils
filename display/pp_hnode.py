@@ -164,6 +164,7 @@ class BaseEncoder(object):
         # style 3.
 
         if len(items) == 0:
+            # TODO: this should be turned into "append nothing"
             return AsciiText('')
 
         max_flat_len = 0

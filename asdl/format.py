@@ -37,14 +37,14 @@ def _HNodeCount(h):
 
         elif case(hnode_e.Array):
             h = cast(hnode.Array, UP_h)
-            n = 0
+            n = 1  # 1 for this node
             for child in h.children:
                 n += _HNodeCount(child)
             return n
 
         elif case(hnode_e.Record):
             h = cast(hnode.Record, UP_h)
-            n = 0
+            n = 1  # 1 for this node
             for field in h.fields:
                 n += _HNodeCount(field.val)
 
@@ -72,23 +72,23 @@ def _DocCount(d):
 
         elif case(doc_e.Indent):
             d = cast(doc.Indent, UP_d)
-            return _DocCount(d.mdoc.doc)
+            return 1 + _DocCount(d.mdoc.doc)
 
         elif case(doc_e.Group):
             d = cast(MeasuredDoc, UP_d)
-            return _DocCount(d.doc)
+            return 1 + _DocCount(d.doc)
 
         elif case(doc_e.Flat):
             d = cast(doc.Flat, UP_d)
-            return _DocCount(d.mdoc.doc)
+            return 1 + _DocCount(d.mdoc.doc)
 
         elif case(doc_e.IfFlat):
             d = cast(doc.IfFlat, UP_d)
-            return _DocCount(d.flat_mdoc.doc) + _DocCount(d.nonflat_mdoc.doc)
+            return 1 + _DocCount(d.flat_mdoc.doc) + _DocCount(d.nonflat_mdoc.doc)
 
         elif case(doc_e.Concat):
             d = cast(doc.Concat, UP_d)
-            n = 0
+            n = 1  # 1 for this node
             for mdoc in d.mdocs:
                 n += _DocCount(mdoc.doc)
             return n
@@ -105,9 +105,10 @@ def _HNodePrettyPrint(perf_stats, doc_debug, node, f, max_width=80):
         log('___ HNODE COUNT %d', _HNodeCount(node))
         log('')
 
-        log('___ GC: after hnode_t conversion')
-        mylib.PrintGcStats()
-        log('')
+        if 0:
+            log('___ GC: after hnode_t conversion')
+            mylib.PrintGcStats()
+            log('')
 
     enc = pp_hnode.HNodeEncoder()
     enc.SetUseStyles(f.isatty())
@@ -126,9 +127,10 @@ def _HNodePrettyPrint(perf_stats, doc_debug, node, f, max_width=80):
         log('___ DOC COUNT %d', _DocCount(d))
         log('')
 
-        log('___ GC: after doc_t conversion')
-        mylib.PrintGcStats()
-        log('')
+        if 0:
+            log('___ GC: after doc_t conversion')
+            mylib.PrintGcStats()
+            log('')
 
     printer = pretty.PrettyPrinter(max_width)  # max columns
 

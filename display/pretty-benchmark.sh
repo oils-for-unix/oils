@@ -111,16 +111,37 @@ gc-stats() {
   done
 }
 
+readonly -a FILES=(
+  benchmarks/testdata/{functions,configure,configure-coreutils}
+)
+
 counters() {
-  #local osh=_bin/cxx-opt/osh
-  local osh=_bin/cxx-dbg/osh
+  local osh=_bin/cxx-opt/osh
+  #local osh=_bin/cxx-dbg/osh
   ninja $osh
 
-  # 615K file
-  for file in benchmarks/testdata/{functions,configure,configure-coreutils}; do
-    time $osh --ast-format __perf --tool syntax-tree $file | wc --bytes
+  for file in "${FILES[@]}"; do
+    echo "=== parsing and pretty printing $file"
+    echo
+
+    /usr/bin/time --format '*** elapsed %e, max RSS %M' -- \
+      $osh --ast-format __perf --tool syntax-tree $file | wc --bytes
   done
 }
+
+max-rss() {
+  local osh=_bin/cxx-opt/osh
+  ninja $osh
+
+  for file in "${FILES[@]}"; do
+    echo "___ parsing and pretty printing $file"
+    echo
+
+    /usr/bin/time --format '*** elapsed %e, max RSS %M' -- \
+      $osh --ast-format text --tool syntax-tree $file | wc --bytes
+  done
+}
+
 
 test-abbrev() {
   local osh=_bin/cxx-opt/osh
