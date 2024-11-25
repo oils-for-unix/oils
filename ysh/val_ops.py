@@ -429,6 +429,11 @@ def ExactlyEqual(left, right, blame_loc):
             right = cast(value.BashArray, UP_right)
             return bash_impl.BashArray_Equals(left, right)
 
+        elif case(value_e.SparseArray):
+            left = cast(value.SparseArray, UP_left)
+            right = cast(value.SparseArray, UP_right)
+            return bash_impl.SparseArray_Equals(left, right)
+
         elif case(value_e.List):
             left = cast(value.List, UP_left)
             right = cast(value.List, UP_right)

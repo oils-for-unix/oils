@@ -1062,3 +1062,40 @@ echo "[${a[@]: -4}][${a[*]: -4}]"
 
 ## N-I zsh/mksh/ash STDOUT:
 ## END
+
+
+#### SparseArray (YSH): $[a1 === a2]
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+a1=(1 2 3)
+unset -v 'a1[1]'
+a2=(1 2 3)
+unset -v 'a2[1]'
+a3=(1 2 4)
+unset -v 'a3[1]'
+a4=(1 2 3)
+var a1 = _a2sp(a1)
+var a2 = _a2sp(a2)
+var a3 = _a2sp(a3)
+var a4 = _a2sp(a4)
+
+echo $[a1 === a1]
+echo $[a1 === a2]
+echo $[a1 === a3]
+echo $[a1 === a4]
+echo $[a2 === a1]
+echo $[a3 === a1]
+echo $[a4 === a1]
+
+## STDOUT:
+true
+true
+false
+false
+true
+false
+false
+## END
+
+## N-I bash/zsh/mksh/ash STDOUT:
+## END

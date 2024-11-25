@@ -471,6 +471,21 @@ def SparseArray_UnsetElement(sparse_val, index):
     return error_code_e.OK
 
 
+def SparseArray_Equals(lhs, rhs):
+    # type: (value.SparseArray, value.SparseArray) -> bool
+
+    len_lhs = len(lhs.d)
+    len_rhs = len(rhs.d)
+    if len_lhs != len_rhs:
+        return False
+
+    for index in lhs.d:
+        if index not in rhs.d or rhs.d[index] != lhs.d[index]:
+            return False
+
+    return True
+
+
 def SparseArray_ToStrForShellPrint(sparse_val):
     # type: (value.SparseArray) -> str
 
