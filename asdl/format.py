@@ -84,7 +84,8 @@ def _DocCount(d):
 
         elif case(doc_e.IfFlat):
             d = cast(doc.IfFlat, UP_d)
-            return 1 + _DocCount(d.flat_mdoc.doc) + _DocCount(d.nonflat_mdoc.doc)
+            return 1 + _DocCount(d.flat_mdoc.doc) + _DocCount(
+                d.nonflat_mdoc.doc)
 
         elif case(doc_e.Concat):
             d = cast(doc.Concat, UP_d)
@@ -118,8 +119,8 @@ def _HNodePrettyPrint(perf_stats, doc_debug, node, f, max_width=80):
 
     mylib.MaybeCollect()
     if perf_stats:
-        #if doc_debug:
-        if 0:
+        if doc_debug:
+            #if 0:
             # Pretty print the doc tree itself!
             p = d.PrettyTree(False)
             _HNodePrettyPrint(perf_stats, False, p, f)

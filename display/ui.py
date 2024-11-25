@@ -524,7 +524,7 @@ def PrintAst(node, flag):
         f = mylib.Stdout()
 
         do_abbrev = 'abbrev-' in flag.ast_format
-        perf_stats = flag.ast_format == '__perf'  # special debug flag
+        perf_stats = flag.ast_format.startswith('__')  # __perf or __dumpdoc
 
         if perf_stats:
             log('')
@@ -535,8 +535,10 @@ def PrintAst(node, flag):
         tree = node.PrettyTree(do_abbrev)
 
         if perf_stats:
+            # Warning: __dumpdoc should only be passed with tiny -c fragments.
+            # This tree is huge and can eat up all memory.
             fmt._HNodePrettyPrint(True,
-                                  True,
+                                  flag.ast_format == '__dumpdoc',
                                   tree,
                                   f,
                                   max_width=_GetMaxWidth())

@@ -52,8 +52,6 @@ class BaseEncoder(object):
         # type: (str, MeasuredDoc) -> MeasuredDoc
         """Apply the ANSI style string to the given node, if use_styles is set."""
         if self.use_styles:
-            # TODO: the begin and end mdocs are CONSTANT.  We should fold those
-            # in.
             return _Concat([
                 MeasuredDoc(doc.Text(style), _EmptyMeasure()), mdoc,
                 MeasuredDoc(doc.Text(ansi.RESET), _EmptyMeasure())
@@ -61,7 +59,7 @@ class BaseEncoder(object):
         else:
             return mdoc
 
-    def _StyledText(self, style, s):
+    def _StyledAscii(self, style, s):
         # type: (str, str) -> MeasuredDoc
         """Apply the ANSI style string to the given node, if use_styles is set."""
         measure = Measure(len(s), -1)  # like AsciiText()
@@ -222,6 +220,10 @@ class HNodeEncoder(BaseEncoder):
     def _Field(self, field):
         # type: (Field) -> MeasuredDoc
         name = AsciiText(field.name + ':')
+
+        # TODO: the _HNode is often a _Concat node, and we could optimize them
+        # together.  That means we also have to concatenate their measures.
+
         return _Concat([name, self._HNode(field.val)])
 
     def _HNode(self, h):
@@ -254,7 +256,7 @@ class HNodeEncoder(BaseEncoder):
                 s = j8_lite.EncodeString(h.s, unquoted_ok=True)
 
                 # Could be Unicode, but we don't want that dependency right now
-                return self._StyledText(color, s)
+                return self._StyledAscii(color, s)
                 #return self._Styled(color, AsciiText(s))
 
             elif case(hnode_e.Array):
@@ -269,7 +271,7 @@ class HNodeEncoder(BaseEncoder):
 
                 type_name = None  # type: Optional[MeasuredDoc]
                 if len(h.node_type):
-                    type_name = self._StyledText(self.type_color, h.node_type)
+                    type_name = self._StyledAscii(self.type_color, h.node_type)
                     #type_name = self._Styled(self.type_color, AsciiText(h.node_type))
 
                 mdocs = None  # type: Optional[List[MeasuredDoc]]

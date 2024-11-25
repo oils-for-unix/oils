@@ -106,9 +106,9 @@ from typing import cast, List
 
 _ = log
 
-################
-# Measurements #
-################
+#
+# Measurements
+#
 
 
 def _EmptyMeasure():
@@ -125,11 +125,12 @@ def _FlattenMeasure(measure):
 
 def _ConcatMeasure(m1, m2):
     # type: (Measure, Measure) -> Measure
-    """Compute the measure of concatenated docs.
+    """Compute the measure of 2 concatenated docs.
 
-    If m1 and m2 are the measures of doc1 and doc2,
-    then _ConcatMeasure(m1, m2) is the measure of doc.Concat([doc1, doc2]).
-    This concatenation is associative but not commutative."""
+    If m1 and m2 are the measures of doc1 and doc2, then _ConcatMeasure(m1, m2)
+    is the measure of doc.Concat([doc1, doc2]).  This concatenation is
+    associative but not commutative.
+    """
     if m1.nonflat != -1:
         return Measure(m1.flat + m2.flat, m1.nonflat)
     elif m2.nonflat != -1:
@@ -147,20 +148,20 @@ def _SuffixLen(measure):
         return measure.flat
 
 
-####################
-# Doc Construction #
-####################
+#
+# Doc Construction
+#
 
 
 def AsciiText(string):
     # type: (str) -> MeasuredDoc
-    """Print `string` (which must not contain a newline)."""
+    """Print string (which must not contain a newline)."""
     return MeasuredDoc(doc.Text(string), Measure(len(string), -1))
 
 
 def _Break(string):
     # type: (str) -> MeasuredDoc
-    """If in `flat` mode, print `string`, otherwise print `\n`.
+    """If in flat mode, print string, otherwise print `\n`.
 
     Note: Doesn't try to compute Unicode width, since we control these strings.
     """
@@ -169,7 +170,7 @@ def _Break(string):
 
 def _Indent(indent, mdoc):
     # type: (int, MeasuredDoc) -> MeasuredDoc
-    """Add `indent` spaces after every newline in `mdoc`."""
+    """Add 'indent' spaces after every newline in mdoc."""
     return MeasuredDoc(doc.Indent(indent, mdoc), mdoc.measure)
 
 
@@ -181,19 +182,23 @@ def _Concat(mdocs):
     # TODO: this algorithm allocates too much!
     for mdoc in mdocs:
         measure = _ConcatMeasure(measure, mdoc.measure)
+        # TODO: if mdoc.doc is a doc.Concat node, then we can "expand" it here.
+        # That reduces memory.
+        # Example: _Field() concatenates foo:[bar], which is often a Concat
+        # node itself.
 
     return MeasuredDoc(doc.Concat(mdocs), measure)
 
 
 def _Group(mdoc):
     # type: (MeasuredDoc) -> MeasuredDoc
-    """Print `mdoc`. Use flat mode if `mdoc` will fit on the current line."""
+    """Print mdoc. Use flat mode if mdoc will fit on the current line."""
     return MeasuredDoc(mdoc, mdoc.measure)
 
 
 def _IfFlat(flat_mdoc, nonflat_mdoc):
     # type: (MeasuredDoc, MeasuredDoc) -> MeasuredDoc
-    """If in flat mode, print `flat_mdoc` otherwise print `nonflat_mdoc`."""
+    """If in flat mode, print flat_mdoc; otherwise print nonflat_mdoc."""
     return MeasuredDoc(
         doc.IfFlat(flat_mdoc, nonflat_mdoc),
         Measure(flat_mdoc.measure.flat, nonflat_mdoc.measure.nonflat))
@@ -201,13 +206,8 @@ def _IfFlat(flat_mdoc, nonflat_mdoc):
 
 def _Flat(mdoc):
     # type: (MeasuredDoc) -> MeasuredDoc
-    """Prints `mdoc` in flat mode."""
+    """Prints mdoc in flat mode."""
     return MeasuredDoc(doc.Flat(mdoc), _FlattenMeasure(mdoc.measure))
-
-
-###################
-# Pretty Printing #
-###################
 
 
 class PrettyPrinter(object):
@@ -218,14 +218,14 @@ class PrettyPrinter(object):
 
     def _Fits(self, prefix_len, group, suffix_measure):
         # type: (int, MeasuredDoc, Measure) -> bool
-        """Will `group` fit flat on the current line?"""
+        """Will group fit flat on the current line?"""
         measure = _ConcatMeasure(_FlattenMeasure(group.measure),
                                  suffix_measure)
         return prefix_len + _SuffixLen(measure) <= self.max_width
 
     def PrintDoc(self, document, buf):
         # type: (MeasuredDoc, BufWriter) -> None
-        """Pretty print a `pretty.doc` to a BufWriter."""
+        """Pretty print a doc_t to a BufWriter."""
 
         # The width of the text we've printed so far on the current line
         prefix_len = 0
