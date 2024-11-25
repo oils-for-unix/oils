@@ -72,7 +72,10 @@ extern BigStr* FALSE_STR;
 
 namespace format {  // declare
 
-void _HNodePrettyPrint(bool perf_stats, hnode_asdl::hnode_t* node, mylib::Writer* f, int max_width = 80);
+using hnode_asdl::hnode;
+int _HNodeCount(hnode_asdl::hnode_t* h);
+int _DocCount(pretty_asdl::doc_t* d);
+void _HNodePrettyPrint(bool perf_stats, bool doc_debug, hnode_asdl::hnode_t* node, mylib::Writer* f, int max_width = 80);
 void HNodePrettyPrint(hnode_asdl::hnode_t* node, mylib::Writer* f, int max_width = 80);
 
 }  // declare namespace format

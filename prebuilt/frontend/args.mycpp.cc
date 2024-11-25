@@ -10,107 +10,115 @@ GLOBAL_STR(str1, ")");
 GLOBAL_STR(str2, "_");
 GLOBAL_STR(str3, "T");
 GLOBAL_STR(str4, "F");
-GLOBAL_STR(str5, "___ GC: after hnode_t conversion");
+GLOBAL_STR(str5, "___ HNODE COUNT %d");
 GLOBAL_STR(str6, "");
-GLOBAL_STR(str7, "___ GC: after doc_t conversion");
+GLOBAL_STR(str7, "___ GC: after hnode_t conversion");
 GLOBAL_STR(str8, "");
-GLOBAL_STR(str9, "\n");
-GLOBAL_STR(str10, "___ GC: after printing");
-GLOBAL_STR(str11, "");
-GLOBAL_STR(str12, "\u001b[0;0m");
-GLOBAL_STR(str13, "\u001b[1m");
-GLOBAL_STR(str14, "\u001b[4m");
-GLOBAL_STR(str15, "\u001b[7m");
-GLOBAL_STR(str16, "\u001b[31m");
-GLOBAL_STR(str17, "\u001b[32m");
-GLOBAL_STR(str18, "\u001b[33m");
-GLOBAL_STR(str19, "\u001b[34m");
-GLOBAL_STR(str20, "\u001b[35m");
-GLOBAL_STR(str21, "\u001b[36m");
-GLOBAL_STR(str22, "\u001b[37m");
-GLOBAL_STR(str23, "\n");
-GLOBAL_STR(str24, "");
-GLOBAL_STR(str25, "");
-GLOBAL_STR(str26, "");
-GLOBAL_STR(str27, "");
-GLOBAL_STR(str28, " ");
-GLOBAL_STR(str29, " ");
-GLOBAL_STR(str30, ":");
-GLOBAL_STR(str31, "...0x%s");
-GLOBAL_STR(str32, "[]");
-GLOBAL_STR(str33, "[");
+GLOBAL_STR(str9, "___ DOC COUNT %d");
+GLOBAL_STR(str10, "");
+GLOBAL_STR(str11, "___ GC: after doc_t conversion");
+GLOBAL_STR(str12, "");
+GLOBAL_STR(str13, "\n");
+GLOBAL_STR(str14, "___ GC: after printing");
+GLOBAL_STR(str15, "");
+GLOBAL_STR(str16, "\u001b[0;0m");
+GLOBAL_STR(str17, "\u001b[1m");
+GLOBAL_STR(str18, "\u001b[4m");
+GLOBAL_STR(str19, "\u001b[7m");
+GLOBAL_STR(str20, "\u001b[31m");
+GLOBAL_STR(str21, "\u001b[32m");
+GLOBAL_STR(str22, "\u001b[33m");
+GLOBAL_STR(str23, "\u001b[34m");
+GLOBAL_STR(str24, "\u001b[35m");
+GLOBAL_STR(str25, "\u001b[36m");
+GLOBAL_STR(str26, "\u001b[37m");
+GLOBAL_STR(str27, "\n");
+GLOBAL_STR(str28, "");
+GLOBAL_STR(str29, "___ MAX DocFragment stack: %d");
+GLOBAL_STR(str30, "");
+GLOBAL_STR(str31, "%s%s%s");
+GLOBAL_STR(str32, "");
+GLOBAL_STR(str33, "");
 GLOBAL_STR(str34, "");
-GLOBAL_STR(str35, "]");
-GLOBAL_STR(str36, "");
+GLOBAL_STR(str35, "");
+GLOBAL_STR(str36, " ");
 GLOBAL_STR(str37, " ");
-GLOBAL_STR(str38, " ");
-GLOBAL_STR(str39, "&");
-GLOBAL_STR(str40, "&amp;");
-GLOBAL_STR(str41, "<");
-GLOBAL_STR(str42, "&lt;");
-GLOBAL_STR(str43, ">");
-GLOBAL_STR(str44, "&gt;");
-GLOBAL_STR(str45, "<%s %r>");
-GLOBAL_STR(str46, "code");
-GLOBAL_STR(str47, "message");
-GLOBAL_STR(str48, "%s, got %s");
-GLOBAL_STR(str49, " (line %d, offset %d-%d: %r)");
-GLOBAL_STR(str50, "-");
-GLOBAL_STR(str51, "_");
-GLOBAL_STR(str52, "extern");
-GLOBAL_STR(str53, "extern_");
-GLOBAL_STR(str54, "<_Attributes %s>");
-GLOBAL_STR(str55, "<args.Reader %r %d>");
-GLOBAL_STR(str56, "got too many arguments");
-GLOBAL_STR(str57, "expected argument to %r");
+GLOBAL_STR(str38, ":");
+GLOBAL_STR(str39, "...0x%s");
+GLOBAL_STR(str40, "[]");
+GLOBAL_STR(str41, "[");
+GLOBAL_STR(str42, "");
+GLOBAL_STR(str43, "]");
+GLOBAL_STR(str44, "");
+GLOBAL_STR(str45, " ");
+GLOBAL_STR(str46, " ");
+GLOBAL_STR(str47, "&");
+GLOBAL_STR(str48, "&amp;");
+GLOBAL_STR(str49, "<");
+GLOBAL_STR(str50, "&lt;");
+GLOBAL_STR(str51, ">");
+GLOBAL_STR(str52, "&gt;");
+GLOBAL_STR(str53, "<%s %r>");
+GLOBAL_STR(str54, "code");
+GLOBAL_STR(str55, "message");
+GLOBAL_STR(str56, "%s, got %s");
+GLOBAL_STR(str57, " (line %d, offset %d-%d: %r)");
 GLOBAL_STR(str58, "-");
-GLOBAL_STR(str59, "expected integer after %s, got %r");
-GLOBAL_STR(str60, "-");
-GLOBAL_STR(str61, "got invalid integer for %s: %s");
-GLOBAL_STR(str62, "-");
-GLOBAL_STR(str63, "expected number after %r, got %r");
-GLOBAL_STR(str64, "-");
-GLOBAL_STR(str65, "got invalid float for %s: %s");
+GLOBAL_STR(str59, "_");
+GLOBAL_STR(str60, "extern");
+GLOBAL_STR(str61, "extern_");
+GLOBAL_STR(str62, "<_Attributes %s>");
+GLOBAL_STR(str63, "<args.Reader %r %d>");
+GLOBAL_STR(str64, "got too many arguments");
+GLOBAL_STR(str65, "expected argument to %r");
 GLOBAL_STR(str66, "-");
-GLOBAL_STR(str67, "got invalid argument %r to %r, expected one of: %s");
+GLOBAL_STR(str67, "expected integer after %s, got %r");
 GLOBAL_STR(str68, "-");
-GLOBAL_STR(str69, "|");
-GLOBAL_STR(str70, "0");
-GLOBAL_STR(str71, "F");
-GLOBAL_STR(str72, "false");
-GLOBAL_STR(str73, "False");
-GLOBAL_STR(str74, "1");
-GLOBAL_STR(str75, "T");
-GLOBAL_STR(str76, "true");
-GLOBAL_STR(str77, "Talse");
-GLOBAL_STR(str78, "got invalid argument to boolean flag: %r");
-GLOBAL_STR(str79, "-");
-GLOBAL_STR(str80, "-");
-GLOBAL_STR(str81, "Invalid option %r");
-GLOBAL_STR(str82, "Expected argument for action");
-GLOBAL_STR(str83, "Invalid action name %r");
-GLOBAL_STR(str84, "--");
-GLOBAL_STR(str85, "--");
-GLOBAL_STR(str86, "=");
-GLOBAL_STR(str87, "got invalid flag %r");
+GLOBAL_STR(str69, "got invalid integer for %s: %s");
+GLOBAL_STR(str70, "-");
+GLOBAL_STR(str71, "expected number after %r, got %r");
+GLOBAL_STR(str72, "-");
+GLOBAL_STR(str73, "got invalid float for %s: %s");
+GLOBAL_STR(str74, "-");
+GLOBAL_STR(str75, "got invalid argument %r to %r, expected one of: %s");
+GLOBAL_STR(str76, "-");
+GLOBAL_STR(str77, "|");
+GLOBAL_STR(str78, "0");
+GLOBAL_STR(str79, "F");
+GLOBAL_STR(str80, "false");
+GLOBAL_STR(str81, "False");
+GLOBAL_STR(str82, "1");
+GLOBAL_STR(str83, "T");
+GLOBAL_STR(str84, "true");
+GLOBAL_STR(str85, "Talse");
+GLOBAL_STR(str86, "got invalid argument to boolean flag: %r");
+GLOBAL_STR(str87, "-");
 GLOBAL_STR(str88, "-");
-GLOBAL_STR(str89, "0");
-GLOBAL_STR(str90, "Z");
-GLOBAL_STR(str91, "-");
-GLOBAL_STR(str92, "doesn't accept flag %s");
-GLOBAL_STR(str93, "-");
-GLOBAL_STR(str94, "+");
-GLOBAL_STR(str95, "+");
-GLOBAL_STR(str96, "doesn't accept option %s");
-GLOBAL_STR(str97, "+");
-GLOBAL_STR(str98, "-");
-GLOBAL_STR(str99, "--");
-GLOBAL_STR(str100, "--");
-GLOBAL_STR(str101, "got invalid flag %r");
-GLOBAL_STR(str102, "-");
+GLOBAL_STR(str89, "Invalid option %r");
+GLOBAL_STR(str90, "Expected argument for action");
+GLOBAL_STR(str91, "Invalid action name %r");
+GLOBAL_STR(str92, "--");
+GLOBAL_STR(str93, "--");
+GLOBAL_STR(str94, "=");
+GLOBAL_STR(str95, "got invalid flag %r");
+GLOBAL_STR(str96, "-");
+GLOBAL_STR(str97, "0");
+GLOBAL_STR(str98, "Z");
+GLOBAL_STR(str99, "-");
+GLOBAL_STR(str100, "doesn't accept flag %s");
+GLOBAL_STR(str101, "-");
+GLOBAL_STR(str102, "+");
 GLOBAL_STR(str103, "+");
-GLOBAL_STR(str104, "got invalid flag %r");
-GLOBAL_STR(str105, "-");
+GLOBAL_STR(str104, "doesn't accept option %s");
+GLOBAL_STR(str105, "+");
+GLOBAL_STR(str106, "-");
+GLOBAL_STR(str107, "--");
+GLOBAL_STR(str108, "--");
+GLOBAL_STR(str109, "got invalid flag %r");
+GLOBAL_STR(str110, "-");
+GLOBAL_STR(str111, "+");
+GLOBAL_STR(str112, "got invalid flag %r");
+GLOBAL_STR(str113, "-");
 
 namespace ansi {  // forward declare
 
@@ -191,6 +199,7 @@ int _SuffixLen(pretty_asdl::Measure* measure);
 pretty_asdl::MeasuredDoc* AsciiText(BigStr* string);
 pretty_asdl::MeasuredDoc* _Break(BigStr* string);
 pretty_asdl::MeasuredDoc* _Indent(int indent, pretty_asdl::MeasuredDoc* mdoc);
+pretty_asdl::Measure* _Splice(List<pretty_asdl::MeasuredDoc*>* out, List<pretty_asdl::MeasuredDoc*>* mdocs);
 pretty_asdl::MeasuredDoc* _Concat(List<pretty_asdl::MeasuredDoc*>* mdocs);
 pretty_asdl::MeasuredDoc* _Group(pretty_asdl::MeasuredDoc* mdoc);
 pretty_asdl::MeasuredDoc* _IfFlat(pretty_asdl::MeasuredDoc* flat_mdoc, pretty_asdl::MeasuredDoc* nonflat_mdoc);
@@ -222,6 +231,7 @@ class BaseEncoder {
   void SetUseStyles(bool use_styles);
   void SetMaxTabularWidth(int max_tabular_width);
   pretty_asdl::MeasuredDoc* _Styled(BigStr* style, pretty_asdl::MeasuredDoc* mdoc);
+  pretty_asdl::MeasuredDoc* _StyledAscii(BigStr* style, BigStr* s);
   pretty_asdl::MeasuredDoc* _Surrounded(BigStr* left, pretty_asdl::MeasuredDoc* mdoc, BigStr* right);
   pretty_asdl::MeasuredDoc* _SurroundedAndPrefixed(BigStr* left, pretty_asdl::MeasuredDoc* prefix, BigStr* sep, pretty_asdl::MeasuredDoc* mdoc, BigStr* right);
   pretty_asdl::MeasuredDoc* _Join(List<pretty_asdl::MeasuredDoc*>* items, BigStr* sep, BigStr* space);
@@ -591,46 +601,161 @@ BigStr* FALSE_STR = str4;
 
 namespace format {  // define
 
+using hnode_asdl::hnode;
+using hnode_asdl::hnode_e;
 using hnode_asdl::hnode_t;
+using pretty_asdl::doc;
+using pretty_asdl::doc_e;
+using pretty_asdl::doc_t;
+using pretty_asdl::MeasuredDoc;
+using pretty_asdl::List_Measured;
 
-void _HNodePrettyPrint(bool perf_stats, hnode_asdl::hnode_t* node, mylib::Writer* f, int max_width) {
+int _HNodeCount(hnode_asdl::hnode_t* h) {
+  hnode_asdl::hnode_t* UP_h = nullptr;
+  int n;
+  StackRoot _root0(&h);
+  StackRoot _root1(&UP_h);
+
+  UP_h = h;
+  switch (h->tag()) {
+    case hnode_e::AlreadySeen: {
+      return 1;
+    }
+      break;
+    case hnode_e::Leaf: {
+      return 1;
+    }
+      break;
+    case hnode_e::Array: {
+      hnode::Array* h = static_cast<hnode::Array*>(UP_h);
+      n = 1;
+      for (ListIter<hnode_asdl::hnode_t*> it(h->children); !it.Done(); it.Next()) {
+        hnode_asdl::hnode_t* child = it.Value();
+        StackRoot _for(&child      );
+        n += _HNodeCount(child);
+      }
+      return n;
+    }
+      break;
+    case hnode_e::Record: {
+      hnode::Record* h = static_cast<hnode::Record*>(UP_h);
+      n = 1;
+      for (ListIter<hnode_asdl::Field*> it(h->fields); !it.Done(); it.Next()) {
+        hnode_asdl::Field* field = it.Value();
+        StackRoot _for(&field      );
+        n += _HNodeCount(field->val);
+      }
+      if (h->unnamed_fields != nullptr) {
+        for (ListIter<hnode_asdl::hnode_t*> it(h->unnamed_fields); !it.Done(); it.Next()) {
+          hnode_asdl::hnode_t* child = it.Value();
+          StackRoot _for(&child        );
+          n += _HNodeCount(child);
+        }
+      }
+      return n;
+    }
+      break;
+    default: {
+      assert(0);  // AssertionError
+    }
+  }
+}
+
+int _DocCount(pretty_asdl::doc_t* d) {
+  pretty_asdl::doc_t* UP_d = nullptr;
+  int n;
+  StackRoot _root0(&d);
+  StackRoot _root1(&UP_d);
+
+  UP_d = d;
+  switch (d->tag()) {
+    case doc_e::Break: {
+      return 1;
+    }
+      break;
+    case doc_e::Text: {
+      return 1;
+    }
+      break;
+    case doc_e::Indent: {
+      doc::Indent* d = static_cast<doc::Indent*>(UP_d);
+      return (1 + _DocCount(d->mdoc->doc));
+    }
+      break;
+    case doc_e::Group: {
+      MeasuredDoc* d = static_cast<MeasuredDoc*>(UP_d);
+      return (1 + _DocCount(d->doc));
+    }
+      break;
+    case doc_e::Flat: {
+      doc::Flat* d = static_cast<doc::Flat*>(UP_d);
+      return (1 + _DocCount(d->mdoc->doc));
+    }
+      break;
+    case doc_e::IfFlat: {
+      doc::IfFlat* d = static_cast<doc::IfFlat*>(UP_d);
+      return ((1 + _DocCount(d->flat_mdoc->doc)) + _DocCount(d->nonflat_mdoc->doc));
+    }
+      break;
+    case doc_e::Concat: {
+      List_Measured* d = static_cast<List_Measured*>(UP_d);
+      n = 1;
+      for (ListIter<pretty_asdl::MeasuredDoc*> it(d); !it.Done(); it.Next()) {
+        pretty_asdl::MeasuredDoc* mdoc = it.Value();
+        StackRoot _for(&mdoc      );
+        n += _DocCount(mdoc->doc);
+      }
+      return n;
+    }
+      break;
+    default: {
+      assert(0);  // AssertionError
+    }
+  }
+}
+
+void _HNodePrettyPrint(bool perf_stats, bool doc_debug, hnode_asdl::hnode_t* node, mylib::Writer* f, int max_width) {
   pp_hnode::HNodeEncoder* enc = nullptr;
-  pretty_asdl::MeasuredDoc* doc = nullptr;
+  pretty_asdl::MeasuredDoc* d = nullptr;
+  hnode_asdl::hnode_t* p = nullptr;
   pretty::PrettyPrinter* printer = nullptr;
   mylib::BufWriter* buf = nullptr;
   StackRoot _root0(&node);
   StackRoot _root1(&f);
   StackRoot _root2(&enc);
-  StackRoot _root3(&doc);
-  StackRoot _root4(&printer);
-  StackRoot _root5(&buf);
+  StackRoot _root3(&d);
+  StackRoot _root4(&p);
+  StackRoot _root5(&printer);
+  StackRoot _root6(&buf);
 
   mylib::MaybeCollect();
   if (perf_stats) {
-    mylib::print_stderr(str5);
-    mylib::PrintGcStats();
+    mylib::print_stderr(StrFormat("___ HNODE COUNT %d", _HNodeCount(node)));
     mylib::print_stderr(str6);
   }
   enc = Alloc<pp_hnode::HNodeEncoder>();
   enc->SetUseStyles(f->isatty());
   enc->SetIndent(2);
-  doc = enc->HNode(node);
+  d = enc->HNode(node);
   mylib::MaybeCollect();
   if (perf_stats) {
-    mylib::print_stderr(str7);
-    mylib::PrintGcStats();
-    mylib::print_stderr(str8);
+    if (doc_debug) {
+      p = d->PrettyTree(false);
+      _HNodePrettyPrint(perf_stats, false, p, f);
+    }
+    mylib::print_stderr(StrFormat("___ DOC COUNT %d", _DocCount(d)));
+    mylib::print_stderr(str10);
   }
   printer = Alloc<pretty::PrettyPrinter>(max_width);
   buf = Alloc<mylib::BufWriter>();
-  printer->PrintDoc(doc, buf);
+  printer->PrintDoc(d, buf);
   f->write(buf->getvalue());
-  f->write(str9);
+  f->write(str13);
   mylib::MaybeCollect();
   if (perf_stats) {
-    mylib::print_stderr(str10);
+    mylib::print_stderr(str14);
     mylib::PrintGcStats();
-    mylib::print_stderr(str11);
+    mylib::print_stderr(str15);
   }
 }
 
@@ -638,24 +763,24 @@ void HNodePrettyPrint(hnode_asdl::hnode_t* node, mylib::Writer* f, int max_width
   StackRoot _root0(&node);
   StackRoot _root1(&f);
 
-  _HNodePrettyPrint(false, node, f, max_width);
+  _HNodePrettyPrint(false, true, node, f, max_width);
 }
 
 }  // define namespace format
 
 namespace ansi {  // define
 
-BigStr* RESET = str12;
-BigStr* BOLD = str13;
-BigStr* UNDERLINE = str14;
-BigStr* REVERSE = str15;
-BigStr* RED = str16;
-BigStr* GREEN = str17;
-BigStr* YELLOW = str18;
-BigStr* BLUE = str19;
-BigStr* MAGENTA = str20;
-BigStr* CYAN = str21;
-BigStr* WHITE = str22;
+BigStr* RESET = str16;
+BigStr* BOLD = str17;
+BigStr* UNDERLINE = str18;
+BigStr* REVERSE = str19;
+BigStr* RED = str20;
+BigStr* GREEN = str21;
+BigStr* YELLOW = str22;
+BigStr* BLUE = str23;
+BigStr* MAGENTA = str24;
+BigStr* CYAN = str25;
+BigStr* WHITE = str26;
 
 }  // define namespace ansi
 
@@ -666,6 +791,7 @@ using pretty_asdl::doc_e;
 using pretty_asdl::DocFragment;
 using pretty_asdl::Measure;
 using pretty_asdl::MeasuredDoc;
+using pretty_asdl::List_Measured;
 using mylib::BufWriter;
 
 pretty_asdl::Measure* _EmptyMeasure() {
@@ -724,18 +850,43 @@ pretty_asdl::MeasuredDoc* _Indent(int indent, pretty_asdl::MeasuredDoc* mdoc) {
   return Alloc<MeasuredDoc>(Alloc<doc::Indent>(indent, mdoc), mdoc->measure);
 }
 
-pretty_asdl::MeasuredDoc* _Concat(List<pretty_asdl::MeasuredDoc*>* mdocs) {
+pretty_asdl::Measure* _Splice(List<pretty_asdl::MeasuredDoc*>* out, List<pretty_asdl::MeasuredDoc*>* mdocs) {
   pretty_asdl::Measure* measure = nullptr;
-  StackRoot _root0(&mdocs);
-  StackRoot _root1(&measure);
+  List_Measured* child = nullptr;
+  StackRoot _root0(&out);
+  StackRoot _root1(&mdocs);
+  StackRoot _root2(&measure);
+  StackRoot _root3(&child);
 
   measure = _EmptyMeasure();
   for (ListIter<pretty_asdl::MeasuredDoc*> it(mdocs); !it.Done(); it.Next()) {
     pretty_asdl::MeasuredDoc* mdoc = it.Value();
     StackRoot _for(&mdoc  );
+    switch (mdoc->doc->tag()) {
+      case doc_e::Concat: {
+        child = static_cast<List_Measured*>(mdoc->doc);
+        _Splice(out, child);
+      }
+        break;
+      default: {
+        out->append(mdoc);
+      }
+    }
     measure = _ConcatMeasure(measure, mdoc->measure);
   }
-  return Alloc<MeasuredDoc>(Alloc<doc::Concat>(mdocs), measure);
+  return measure;
+}
+
+pretty_asdl::MeasuredDoc* _Concat(List<pretty_asdl::MeasuredDoc*>* mdocs) {
+  pretty_asdl::List_Measured* flattened = nullptr;
+  pretty_asdl::Measure* measure = nullptr;
+  StackRoot _root0(&mdocs);
+  StackRoot _root1(&flattened);
+  StackRoot _root2(&measure);
+
+  flattened = List_Measured::New();
+  measure = _Splice(flattened, mdocs);
+  return Alloc<MeasuredDoc>(flattened, measure);
 }
 
 pretty_asdl::MeasuredDoc* _Group(pretty_asdl::MeasuredDoc* mdoc) {
@@ -774,6 +925,7 @@ bool PrettyPrinter::_Fits(int prefix_len, pretty_asdl::MeasuredDoc* group, prett
 void PrettyPrinter::PrintDoc(pretty_asdl::MeasuredDoc* document, mylib::BufWriter* buf) {
   int prefix_len;
   List<pretty_asdl::DocFragment*>* fragments = nullptr;
+  int max_stack;
   pretty_asdl::DocFragment* frag = nullptr;
   pretty_asdl::doc_t* UP_doc = nullptr;
   pretty_asdl::Measure* measure = nullptr;
@@ -789,7 +941,9 @@ void PrettyPrinter::PrintDoc(pretty_asdl::MeasuredDoc* document, mylib::BufWrite
 
   prefix_len = 0;
   fragments = NewList<pretty_asdl::DocFragment*>(std::initializer_list<pretty_asdl::DocFragment*>{Alloc<DocFragment>(_Group(document), 0, false, _EmptyMeasure())});
+  max_stack = len(fragments);
   while (len(fragments) > 0) {
+    max_stack = max(max_stack, len(fragments));
     frag = fragments->pop();
     UP_doc = frag->mdoc->doc;
     switch (UP_doc->tag()) {
@@ -806,7 +960,7 @@ void PrettyPrinter::PrintDoc(pretty_asdl::MeasuredDoc* document, mylib::BufWrite
           prefix_len += frag->mdoc->measure->flat;
         }
         else {
-          buf->write(str23);
+          buf->write(str27);
           buf->write_spaces(frag->indent);
           prefix_len = frag->indent;
         }
@@ -818,9 +972,9 @@ void PrettyPrinter::PrintDoc(pretty_asdl::MeasuredDoc* document, mylib::BufWrite
       }
         break;
       case doc_e::Concat: {
-        doc::Concat* concat = static_cast<doc::Concat*>(UP_doc);
+        List_Measured* concat = static_cast<List_Measured*>(UP_doc);
         measure = frag->measure;
-        for (ReverseListIter<pretty_asdl::MeasuredDoc*> it(concat->mdocs); !it.Done(); it.Next()) {
+        for (ReverseListIter<pretty_asdl::MeasuredDoc*> it(concat); !it.Done(); it.Next()) {
           pretty_asdl::MeasuredDoc* mdoc = it.Value();
           StackRoot _for(&mdoc        );
           fragments->append(Alloc<DocFragment>(mdoc, frag->indent, frag->is_flat, measure));
@@ -865,6 +1019,7 @@ using hnode_asdl::Field;
 using hnode_asdl::color_e;
 using pretty_asdl::doc;
 using pretty_asdl::MeasuredDoc;
+using pretty_asdl::Measure;
 using pretty::_Break;
 using pretty::_Concat;
 using pretty::_Flat;
@@ -905,12 +1060,25 @@ pretty_asdl::MeasuredDoc* BaseEncoder::_Styled(BigStr* style, pretty_asdl::Measu
   }
 }
 
+pretty_asdl::MeasuredDoc* BaseEncoder::_StyledAscii(BigStr* style, BigStr* s) {
+  pretty_asdl::Measure* measure = nullptr;
+  StackRoot _root0(&style);
+  StackRoot _root1(&s);
+  StackRoot _root2(&measure);
+
+  measure = Alloc<Measure>(len(s), -1);
+  if (this->use_styles) {
+    s = StrFormat("%s%s%s", style, s, ansi::RESET);
+  }
+  return Alloc<MeasuredDoc>(Alloc<doc::Text>(s), measure);
+}
+
 pretty_asdl::MeasuredDoc* BaseEncoder::_Surrounded(BigStr* left, pretty_asdl::MeasuredDoc* mdoc, BigStr* right) {
   StackRoot _root0(&left);
   StackRoot _root1(&mdoc);
   StackRoot _root2(&right);
 
-  return _Group(_Concat(NewList<pretty_asdl::MeasuredDoc*>(std::initializer_list<pretty_asdl::MeasuredDoc*>{AsciiText(left), _Indent(this->indent, _Concat(NewList<pretty_asdl::MeasuredDoc*>(std::initializer_list<pretty_asdl::MeasuredDoc*>{_Break(str24), mdoc}))), _Break(str25), AsciiText(right)})));
+  return _Group(_Concat(NewList<pretty_asdl::MeasuredDoc*>(std::initializer_list<pretty_asdl::MeasuredDoc*>{AsciiText(left), _Indent(this->indent, _Concat(NewList<pretty_asdl::MeasuredDoc*>(std::initializer_list<pretty_asdl::MeasuredDoc*>{_Break(str32), mdoc}))), _Break(str33), AsciiText(right)})));
 }
 
 pretty_asdl::MeasuredDoc* BaseEncoder::_SurroundedAndPrefixed(BigStr* left, pretty_asdl::MeasuredDoc* prefix, BigStr* sep, pretty_asdl::MeasuredDoc* mdoc, BigStr* right) {
@@ -920,7 +1088,7 @@ pretty_asdl::MeasuredDoc* BaseEncoder::_SurroundedAndPrefixed(BigStr* left, pret
   StackRoot _root3(&mdoc);
   StackRoot _root4(&right);
 
-  return _Group(_Concat(NewList<pretty_asdl::MeasuredDoc*>(std::initializer_list<pretty_asdl::MeasuredDoc*>{AsciiText(left), prefix, _Indent(this->indent, _Concat(NewList<pretty_asdl::MeasuredDoc*>(std::initializer_list<pretty_asdl::MeasuredDoc*>{_Break(sep), mdoc}))), _Break(str26), AsciiText(right)})));
+  return _Group(_Concat(NewList<pretty_asdl::MeasuredDoc*>(std::initializer_list<pretty_asdl::MeasuredDoc*>{AsciiText(left), prefix, _Indent(this->indent, _Concat(NewList<pretty_asdl::MeasuredDoc*>(std::initializer_list<pretty_asdl::MeasuredDoc*>{_Break(sep), mdoc}))), _Break(str34), AsciiText(right)})));
 }
 
 pretty_asdl::MeasuredDoc* BaseEncoder::_Join(List<pretty_asdl::MeasuredDoc*>* items, BigStr* sep, BigStr* space) {
@@ -962,7 +1130,7 @@ pretty_asdl::MeasuredDoc* BaseEncoder::_Tabular(List<pretty_asdl::MeasuredDoc*>*
   StackRoot _root5(&tabular);
 
   if (len(items) == 0) {
-    return AsciiText(str27);
+    return AsciiText(str35);
   }
   max_flat_len = 0;
   seq = Alloc<List<pretty_asdl::MeasuredDoc*>>();
@@ -972,7 +1140,7 @@ pretty_asdl::MeasuredDoc* BaseEncoder::_Tabular(List<pretty_asdl::MeasuredDoc*>*
     StackRoot _for(&item  );
     if (i != 0) {
       seq->append(AsciiText(sep));
-      seq->append(_Break(str28));
+      seq->append(_Break(str36));
     }
     seq->append(item);
     max_flat_len = max(max_flat_len, item->measure->flat);
@@ -989,7 +1157,7 @@ pretty_asdl::MeasuredDoc* BaseEncoder::_Tabular(List<pretty_asdl::MeasuredDoc*>*
       if (i != (len(items) - 1)) {
         padding = ((max_flat_len - item->measure->flat) + 1);
         tabular_seq->append(AsciiText(sep));
-        tabular_seq->append(_Group(_Break(str_repeat(str29, padding))));
+        tabular_seq->append(_Group(_Break(str_repeat(str37, padding))));
       }
     }
     tabular = _Concat(tabular_seq);
@@ -1017,8 +1185,8 @@ pretty_asdl::MeasuredDoc* HNodeEncoder::_Field(hnode_asdl::Field* field) {
   StackRoot _root0(&field);
   StackRoot _root1(&name);
 
-  name = AsciiText(field->name);
-  return _Concat(NewList<pretty_asdl::MeasuredDoc*>(std::initializer_list<pretty_asdl::MeasuredDoc*>{name, AsciiText(str30), this->_HNode(field->val)}));
+  name = AsciiText(str_concat(field->name, str38));
+  return _Concat(NewList<pretty_asdl::MeasuredDoc*>(std::initializer_list<pretty_asdl::MeasuredDoc*>{name, this->_HNode(field->val)}));
 }
 
 pretty_asdl::MeasuredDoc* HNodeEncoder::_HNode(hnode_asdl::hnode_t* h) {
@@ -1028,6 +1196,7 @@ pretty_asdl::MeasuredDoc* HNodeEncoder::_HNode(hnode_asdl::hnode_t* h) {
   List<pretty_asdl::MeasuredDoc*>* children = nullptr;
   pretty_asdl::MeasuredDoc* type_name = nullptr;
   List<pretty_asdl::MeasuredDoc*>* mdocs = nullptr;
+  List<pretty_asdl::MeasuredDoc*>* m = nullptr;
   pretty_asdl::MeasuredDoc* child = nullptr;
   StackRoot _root0(&h);
   StackRoot _root1(&UP_h);
@@ -1036,7 +1205,8 @@ pretty_asdl::MeasuredDoc* HNodeEncoder::_HNode(hnode_asdl::hnode_t* h) {
   StackRoot _root4(&children);
   StackRoot _root5(&type_name);
   StackRoot _root6(&mdocs);
-  StackRoot _root7(&child);
+  StackRoot _root7(&m);
+  StackRoot _root8(&child);
 
   UP_h = h;
   switch (h->tag()) {
@@ -1073,27 +1243,28 @@ pretty_asdl::MeasuredDoc* HNodeEncoder::_HNode(hnode_asdl::hnode_t* h) {
         }
       }
       s = j8_lite::EncodeString(h->s, true);
-      return this->_Styled(color, AsciiText(s));
+      return this->_StyledAscii(color, s);
     }
       break;
     case hnode_e::Array: {
       hnode::Array* h = static_cast<hnode::Array*>(UP_h);
+      mylib::MaybeCollect();
       if (len(h->children) == 0) {
-        return AsciiText(str32);
+        return AsciiText(str40);
       }
       children = Alloc<List<pretty_asdl::MeasuredDoc*>>();
       for (ListIter<hnode_asdl::hnode_t*> it(h->children); !it.Done(); it.Next()) {
         hnode_asdl::hnode_t* item = it.Value();
         children->append(this->_HNode(item));
       }
-      return this->_Surrounded(str33, this->_Tabular(children, str34), str35);
+      return this->_Surrounded(str41, this->_Tabular(children, str42), str43);
     }
       break;
     case hnode_e::Record: {
       hnode::Record* h = static_cast<hnode::Record*>(UP_h);
       type_name = nullptr;
       if (len(h->node_type)) {
-        type_name = this->_Styled(this->type_color, AsciiText(h->node_type));
+        type_name = this->_StyledAscii(this->type_color, h->node_type);
       }
       mdocs = nullptr;
       if ((h->unnamed_fields != nullptr and len(h->unnamed_fields))) {
@@ -1113,11 +1284,16 @@ pretty_asdl::MeasuredDoc* HNodeEncoder::_HNode(hnode_asdl::hnode_t* h) {
         }
       }
       if (mdocs == nullptr) {
-        return _Concat(NewList<pretty_asdl::MeasuredDoc*>(std::initializer_list<pretty_asdl::MeasuredDoc*>{AsciiText(h->left), type_name, AsciiText(h->right)}));
+        m = NewList<pretty_asdl::MeasuredDoc*>(std::initializer_list<pretty_asdl::MeasuredDoc*>{AsciiText(h->left)});
+        if (type_name != nullptr) {
+          m->append(type_name);
+        }
+        m->append(AsciiText(h->right));
+        return _Concat(m);
       }
-      child = this->_Join(mdocs, str36, str37);
+      child = this->_Join(mdocs, str44, str45);
       if (type_name != nullptr) {
-        return this->_SurroundedAndPrefixed(h->left, type_name, str38, child, h->right);
+        return this->_SurroundedAndPrefixed(h->left, type_name, str46, child, h->right);
       }
       else {
         return this->_Surrounded(h->left, child, h->right);
@@ -1138,9 +1314,9 @@ namespace cgi {  // define
 BigStr* escape(BigStr* s) {
   StackRoot _root0(&s);
 
-  s = s->replace(str39, str40);
-  s = s->replace(str41, str42);
-  s = s->replace(str43, str44);
+  s = s->replace(str47, str48);
+  s = s->replace(str49, str50);
+  s = s->replace(str51, str52);
   return s;
 }
 
@@ -1265,8 +1441,8 @@ value::Dict* Structured::ToDict() {
   if (this->properties != nullptr) {
     d->update(this->properties);
   }
-  d->set(str46, num::ToBig(this->ExitStatus()));
-  d->set(str47, Alloc<value::Str>(this->msg));
+  d->set(str54, num::ToBig(this->ExitStatus()));
+  d->set(str55, Alloc<value::Str>(this->msg));
   return Alloc<value::Dict>(d);
 }
 
@@ -1415,9 +1591,9 @@ void _Attributes::Set(BigStr* name, value_asdl::value_t* val) {
   StackRoot _root0(&name);
   StackRoot _root1(&val);
 
-  name = name->replace(str50, str51);
-  if (str_equals(name, str52)) {
-    name = str53;
+  name = name->replace(str58, str59);
+  if (str_equals(name, str60)) {
+    name = str61;
   }
   this->attrs->set(name, val);
 }
@@ -1494,7 +1670,7 @@ bool Reader::AtEnd() {
 
 void Reader::Done() {
   if (!this->AtEnd()) {
-    e_usage(str56, this->Location());
+    e_usage(str64, this->Location());
   }
 }
 
@@ -1569,7 +1745,7 @@ bool _ArgAction::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attri
     arg_r->Next();
     arg = arg_r->Peek();
     if (arg == nullptr) {
-      e_usage(StrFormat("expected argument to %r", str_concat(str58, this->name)), arg_r->Location());
+      e_usage(StrFormat("expected argument to %r", str_concat(str66, this->name)), arg_r->Location());
     }
   }
   val = this->_Value(arg, arg_r->Location());
@@ -1591,14 +1767,14 @@ value_asdl::value_t* SetToInt::_Value(BigStr* arg, syntax_asdl::loc_t* location)
     ok = tup0.at0();
     i = tup0.at1();
     if (!ok) {
-      e_usage(StrFormat("expected integer after %s, got %r", str_concat(str60, this->name), arg), location);
+      e_usage(StrFormat("expected integer after %s, got %r", str_concat(str68, this->name), arg), location);
     }
   }
   else {
     ;  // pass
   }
   if (mops::Greater(mops::BigInt(0), i)) {
-    e_usage(StrFormat("got invalid integer for %s: %s", str_concat(str62, this->name), arg), location);
+    e_usage(StrFormat("got invalid integer for %s: %s", str_concat(str70, this->name), arg), location);
   }
   return Alloc<value::Int>(i);
 }
@@ -1615,10 +1791,10 @@ value_asdl::value_t* SetToFloat::_Value(BigStr* arg, syntax_asdl::loc_t* locatio
     f = to_float(arg);
   }
   catch (ValueError*) {
-    e_usage(StrFormat("expected number after %r, got %r", str_concat(str64, this->name), arg), location);
+    e_usage(StrFormat("expected number after %r, got %r", str_concat(str72, this->name), arg), location);
   }
   if (f < 0) {
-    e_usage(StrFormat("got invalid float for %s: %s", str_concat(str66, this->name), arg), location);
+    e_usage(StrFormat("got invalid float for %s: %s", str_concat(str74, this->name), arg), location);
   }
   return Alloc<value::Float>(f);
 }
@@ -1631,7 +1807,7 @@ value_asdl::value_t* SetToString::_Value(BigStr* arg, syntax_asdl::loc_t* locati
   StackRoot _root1(&location);
 
   if ((this->valid != nullptr and !list_contains(this->valid, arg))) {
-    e_usage(StrFormat("got invalid argument %r to %r, expected one of: %s", arg, str_concat(str68, this->name), str69->join(this->valid)), location);
+    e_usage(StrFormat("got invalid argument %r to %r, expected one of: %s", arg, str_concat(str76, this->name), str77->join(this->valid)), location);
   }
   return Alloc<value::Str>(arg);
 }
@@ -1647,11 +1823,11 @@ bool SetAttachedBool::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_
   StackRoot _root2(&out);
 
   if (attached_arg != nullptr) {
-    if ((str_equals(attached_arg, str70) || str_equals(attached_arg, str71) || str_equals(attached_arg, str72) || str_equals(attached_arg, str73))) {
+    if ((str_equals(attached_arg, str78) || str_equals(attached_arg, str79) || str_equals(attached_arg, str80) || str_equals(attached_arg, str81))) {
       b = false;
     }
     else {
-      if ((str_equals(attached_arg, str74) || str_equals(attached_arg, str75) || str_equals(attached_arg, str76) || str_equals(attached_arg, str77))) {
+      if ((str_equals(attached_arg, str82) || str_equals(attached_arg, str83) || str_equals(attached_arg, str84) || str_equals(attached_arg, str85))) {
         b = true;
       }
       else {
@@ -1689,7 +1865,7 @@ bool SetOption::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attrib
   StackRoot _root1(&arg_r);
   StackRoot _root2(&out);
 
-  b = maybe_str_equals(attached_arg, str79);
+  b = maybe_str_equals(attached_arg, str87);
   out->opt_changes->append((Alloc<Tuple2<BigStr*, bool>>(this->name, b)));
   return false;
 }
@@ -1717,7 +1893,7 @@ bool SetNamedOption::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_A
   StackRoot _root4(&attr_name);
   StackRoot _root5(&changes);
 
-  b = maybe_str_equals(attached_arg, str80);
+  b = maybe_str_equals(attached_arg, str88);
   arg_r->Next();
   arg = arg_r->Peek();
   if (arg == nullptr) {
@@ -1768,7 +1944,7 @@ bool SetNamedAction::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_A
   arg_r->Next();
   arg = arg_r->Peek();
   if (arg == nullptr) {
-    e_usage(str82, loc::Missing);
+    e_usage(str90, loc::Missing);
   }
   attr_name = arg;
   if ((len(this->names) and !list_contains(this->names, attr_name))) {
@@ -1801,13 +1977,13 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
   out = Alloc<_Attributes>(spec->defaults);
   while (!arg_r->AtEnd()) {
     arg = arg_r->Peek();
-    if (maybe_str_equals(arg, str84)) {
+    if (maybe_str_equals(arg, str92)) {
       out->saw_double_dash = true;
       arg_r->Next();
       break;
     }
-    if ((len(spec->actions_long) and arg->startswith(str85))) {
-      pos = arg->find(str86, 2);
+    if ((len(spec->actions_long) and arg->startswith(str93))) {
+      pos = arg->find(str94, 2);
       if (pos == -1) {
         suffix = nullptr;
         flag_name = arg->slice(2);
@@ -1825,15 +2001,15 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
       continue;
     }
     else {
-      if ((arg->startswith(str88) and len(arg) > 1)) {
+      if ((arg->startswith(str96) and len(arg) > 1)) {
         n = len(arg);
         for (int i = 1; i < n; ++i) {
           ch = arg->at(i);
-          if (str_equals(ch, str89)) {
-            ch = str90;
+          if (str_equals(ch, str97)) {
+            ch = str98;
           }
           if (list_contains(spec->plus_flags, ch)) {
-            out->Set(ch, Alloc<value::Str>(str91));
+            out->Set(ch, Alloc<value::Str>(str99));
             continue;
           }
           if (list_contains(spec->arity0, ch)) {
@@ -1846,20 +2022,20 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
             action->OnMatch(attached_arg, arg_r, out);
             break;
           }
-          e_usage(StrFormat("doesn't accept flag %s", str_concat(str93, ch)), arg_r->Location());
+          e_usage(StrFormat("doesn't accept flag %s", str_concat(str101, ch)), arg_r->Location());
         }
         arg_r->Next();
       }
       else {
-        if ((len(spec->plus_flags) and (arg->startswith(str94) and len(arg) > 1))) {
+        if ((len(spec->plus_flags) and (arg->startswith(str102) and len(arg) > 1))) {
           n = len(arg);
           for (int i = 1; i < n; ++i) {
             ch = arg->at(i);
             if (list_contains(spec->plus_flags, ch)) {
-              out->Set(ch, Alloc<value::Str>(str95));
+              out->Set(ch, Alloc<value::Str>(str103));
               continue;
             }
-            e_usage(StrFormat("doesn't accept option %s", str_concat(str97, ch)), arg_r->Location());
+            e_usage(StrFormat("doesn't accept option %s", str_concat(str105, ch)), arg_r->Location());
           }
           arg_r->Next();
         }
@@ -1887,7 +2063,7 @@ args::_Attributes* ParseLikeEcho(flag_spec::_FlagSpec* spec, args::Reader* arg_r
   while (!arg_r->AtEnd()) {
     arg = arg_r->Peek();
     chars = arg->slice(1);
-    if ((arg->startswith(str98) and len(chars))) {
+    if ((arg->startswith(str106) and len(chars))) {
       done = false;
       for (StrIter it(chars); !it.Done(); it.Next()) {
         BigStr* c = it.Value();
@@ -1933,12 +2109,12 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
   quit = false;
   while (!arg_r->AtEnd()) {
     arg = arg_r->Peek();
-    if (maybe_str_equals(arg, str99)) {
+    if (maybe_str_equals(arg, str107)) {
       out->saw_double_dash = true;
       arg_r->Next();
       break;
     }
-    if (arg->startswith(str100)) {
+    if (arg->startswith(str108)) {
       action = spec->actions_long->get(arg->slice(2));
       if (action == nullptr) {
         e_usage(StrFormat("got invalid flag %r", arg), arg_r->Location());
@@ -1947,14 +2123,14 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
       arg_r->Next();
       continue;
     }
-    if (((arg->startswith(str102) or arg->startswith(str103)) and len(arg) > 1)) {
+    if (((arg->startswith(str110) or arg->startswith(str111)) and len(arg) > 1)) {
       char0 = arg->at(0);
       for (StrIter it(arg->slice(1)); !it.Done(); it.Next()) {
         BigStr* ch = it.Value();
         StackRoot _for(&ch      );
         action = spec->actions_short->get(ch);
         if (action == nullptr) {
-          e_usage(StrFormat("got invalid flag %r", str_concat(str105, ch)), arg_r->Location());
+          e_usage(StrFormat("got invalid flag %r", str_concat(str113, ch)), arg_r->Location());
         }
         attached_arg = list_contains(spec->plus_flags, ch) ? char0 : nullptr;
         quit = action->OnMatch(attached_arg, arg_r, out);
