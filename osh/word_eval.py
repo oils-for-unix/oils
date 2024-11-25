@@ -1977,7 +1977,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
         all_quoted = True
         any_quoted = False
 
-        #log('--- frame %s', frame)
+        if 1:
+            log('---')
+            log('FRAME')
+            for i, piece in enumerate(frame):
+                log('(%d) %s', i, piece)
+            log('')
 
         for piece in frame:
             if len(piece.s):
@@ -2002,160 +2007,72 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         will_glob = not self.exec_opts.noglob()
 
-        #"""
-        # Array of strings, some of which are BOTH IFS-escaped and GLOB escaped!
-        frags = []  # type: List[str]
-        for piece in frame:
-            if will_glob and piece.quoted:
-                frag = glob_.GlobEscape(piece.s)
-            else:
-                # If we have a literal \, then we turn it into \\\\.
-                # Splitting takes \\\\ -> \\
-                # Globbing takes \\ to \ if it doesn't match
-                frag = _BackslashEscape(piece.s)
+        class FrameEvaluator:
 
-            if piece.do_split:
-                frag = _BackslashEscape(frag)
-            else:
-                frag = self.splitter.Escape(frag)
+            def __init__(self, splitter):
+                self.frags = []
+                self.frag = []
+                self.splitter = splitter
 
-            frags.append(frag)
-        flat = ''.join(frags)
-        log('flat: %r', flat)
+            def append(self, text):
+                self.frag.append(text)
 
-        args = self.splitter.SplitForWordEval(flat)
+            def next_frag(self):
+                if len(self.frag):
+                    self.frags.append("".join(self.frag))
+                    self.frag = []
 
-        # space=' '; argv $space"".  We have a quoted part, but we CANNOT elide.
-        # Add it back and don't bother globbing.
-        if len(args) == 0 and any_quoted:
-            argv.append('')
-            return
+            def split(self, piece):
+                if piece.do_split:
+                    splits = self.splitter.SplitForWordEval(piece.s)
+                    if len(splits) == 0:
+                        self.next_frag()
+                        return
 
-        log('split args: %r', args)
-        for a in args:
-            if glob_.LooksLikeGlob(a):
-                n = self.globber.Expand(a, argv)
-                if n < 0:
-                    # TODO: location info, with span IDs carried through the frame
-                    raise error.FailGlob('Pattern %r matched no files' % a,
-                                         loc.Missing)
-            else:
-                argv.append(glob_.GlobUnescape(a))
+                    last = len(splits) - 1
+                    for i, tosplit in enumerate(splits):
+                        self.split(Piece(tosplit, quoted=piece.quoted, do_split=False))
 
-        return
+                        if i != last:
+                            self.next_frag()
 
-        #"""
-
-        # Partition the frame into parts. Each of these will then be globbed or
-        # added to the ARGV array.
-
-        """
-        args = [[]]  # List[List[Piece]]
-        for piece in frame:
-            if not piece.do_split:
-                args[-1].append(piece)
-                continue
-
-            piece_parts = self.splitter.SplitForWordEval(piece.s)
-            if len(piece_parts) > 0:
-                args[-1].append(Piece(piece_parts[0], quoted=piece.quoted, do_split=False))
-                piece_parts = piece_parts[1:]
-
-            for piece_part in piece_parts:
-                args.append([Piece(piece_part, quoted=piece.quoted, do_split=False)])
-
-        if len(args) == 1 and len(args[0]) == 0:
-            return
-
-        log(args)
-        log('any_quoted=%r', any_quoted)
-
-        for arg_pieces in args:
-            arg_frags = []
-            for piece in arg_pieces:
-                if will_glob and piece.quoted:
-                    arg_frags.append(glob_.GlobEscape(piece.s))
+                elif piece.quoted and will_glob:
+                    self.append(glob_.GlobEscape(piece.s))
                 else:
-                    arg_frags.append(piece.s)
+                    self.append(piece.s)
 
-            arg = "".join(arg_frags)
+            def finish(self):
+                self.next_frag()
+                return self.frags
 
-            if glob_.LooksLikeGlob(arg):
-                n = self.globber.Expand(arg, argv)
-                if n < 0:
-                    # TODO: location info, with span IDs carried through the frame
-                    raise error.FailGlob('Pattern %r matched no files' % a,
-                                         loc.Missing)
-            else:
-                argv.append(glob_.GlobUnescape(arg))
-        """
-
-        # Split each piece
-        args = []
-        arg = []
+        frame_evaluator = FrameEvaluator(self.splitter)
         for piece in frame:
-            if piece.do_split:
-                splits = self.splitter.SplitForWordEval(piece.s)
-                log('%r', piece.s)
-                log(splits)
-                if len(splits) == 0:
-                    args.append(arg)
-                    arg = []
-                    continue
+            frame_evaluator.split(piece)
+        frags = frame_evaluator.finish()
 
-                for i, split in enumerate(splits):
-                    if piece.quoted and will_glob:
-                        arg.append(glob_.GlobEscape(split))
-                    else:
-                        arg.append(split)
+        if 1:
+            log('---')
+            log('FRAGS')
+            for i, frag in enumerate(frags):
+                log('(%d) %s', i, frag)
+            log('')
 
-                    args.append(arg)
-                    arg = []
-
-                if len(args):
-                    arg = args.pop()
-            elif piece.quoted and will_glob:
-                arg.append(glob_.GlobEscape(piece.s))
-            else:
-                arg.append(piece.s)
-        if len(arg):
-            args.append(arg)
-
-        log(args)
-
-        if not len(args):
+        if not len(frags):
             return
 
-        args2 = []
-        for arg in args:
-            if len(arg):
-                args2.append(''.join(arg))
-
-        for arg2 in args2:
-            if glob_.LooksLikeGlob(arg2):
-                n = self.globber.Expand(arg2, argv)
+        for frag in frags:
+            if glob_.LooksLikeGlob(frag):
+                n = self.globber.Expand(frag, argv)
                 if n < 0:
                     # TODO: location info, with span IDs carried through the frame
                     raise error.FailGlob('Pattern %r matched no files' % a,
                                          loc.Missing)
             elif will_glob:
-                argv.append(glob_.GlobUnescape(arg2))
+                argv.append(glob_.GlobUnescape(frag))
             else:
-                argv.append(arg2)
+                argv.append(frag)
 
-        if 1:
-            log('---')
-            log('FRAME')
-            for i, piece in enumerate(frame):
-                log('(%d) %s', i, piece)
-            log('')
-
-            log('---')
-            log('ARGS')
-            for i, piece in enumerate(args):
-                log('(%d) %s', i, piece)
-            log('')
-
+        if 0:
             log('---')
             log('ARGV')
             for i, arg in enumerate(argv):

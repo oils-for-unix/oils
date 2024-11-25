@@ -386,7 +386,6 @@ set -f
 echo $var
 ## STDOUT:
 \
-plsfail
 ## END
 
 #### Bug #1664, \\ with noglob
