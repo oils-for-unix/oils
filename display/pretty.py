@@ -189,10 +189,11 @@ def _Splice(out, mdocs):
         with tagswitch(mdoc.doc) as case:
             if case(doc_e.Concat):
                 child = cast(doc.Concat, mdoc.doc)
-                measure = _Splice(out, child.mdocs)
+                # ignore return value, because the parent has the measure already
+                _Splice(out, child.mdocs)
             else:
                 out.append(mdoc)
-                measure = _ConcatMeasure(measure, mdoc.measure)
+        measure = _ConcatMeasure(measure, mdoc.measure)
     return measure
 
 
