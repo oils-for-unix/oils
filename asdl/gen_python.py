@@ -206,8 +206,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         variants = []
         for i, variant in enumerate(sum.types):
             tag_num = i + 1
-            tag_str = '%s.%s' % (sum_name, variant.name)
-            int_to_str[tag_num] = tag_str
+            int_to_str[tag_num] = variant.name
             variants.append((variant, tag_num))
 
         add_suffix = not ('no_namespace_suffix' in sum.generate)
@@ -247,9 +246,13 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
         self._EmitDict(sum_name, int_to_str, depth)
 
-        self.Emit('def %s_str(val):' % sum_name, depth)
-        self.Emit('  # type: (%s_t) -> str' % sum_name, depth)
-        self.Emit('  return _%s_str[val]' % sum_name, depth)
+        self.Emit('def %s_str(val, dot=True):' % sum_name, depth)
+        self.Emit('  # type: (%s_t, bool) -> str' % sum_name, depth)
+        self.Emit('  v = _%s_str[val]' % sum_name, depth)
+        self.Emit('  if dot:', depth)
+        self.Emit('    return "%s.%%s" %% v' % sum_name, depth)
+        self.Emit('  else:', depth)
+        self.Emit('    return v', depth)
         self.Emit('', depth)
 
     def _EmitCodeForField(self, field, counter):

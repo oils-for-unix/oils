@@ -94,18 +94,14 @@ var x = 42 + a
 # this reflects the default width
 
 ## STDOUT:
-(C (w <Id.Lit_Chars echo>) (w (SQ sq)))
+(C (w <Lit_Chars echo>) (w (SQ sq)))
 (C
-  (w <Id.Lit_Chars echo>)
-  (w (DQ <Id.Lit_Chars "hi "> ($ x) <Id.Lit_Chars " "> (${ Id.VSub_Name y)))
+  (w <Lit_Chars echo>)
+  (w (DQ <Lit_Chars "hi "> ($ x) <Lit_Chars " "> (${ VSub_Name y)))
 )
 (command.VarDecl
-  keyword:<Id.KW_Var var>
-  lhs:[(NameType left:<Id.Expr_Name x> name:x)]
-  rhs:(expr.Binary
-    op:<Id.Arith_Plus "+">
-    left:(Const Id.Expr_DecInt _)
-    right:(Var a)
-  )
+  keyword:<KW_Var var>
+  lhs:[(NameType left:<Expr_Name x> name:x)]
+  rhs:(expr.Binary op:<Arith_Plus "+"> left:(Const Expr_DecInt _) right:(Var a))
 )
 ## END

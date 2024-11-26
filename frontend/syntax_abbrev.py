@@ -22,7 +22,7 @@ __all__ = [
 def _AbbreviateToken(tok, out):
     # type: (Token, List[hnode_t]) -> None
     tok_str = tok.line.content[tok.col:tok.col + tok.length]
-    n1 = runtime.NewLeaf(Id_str(tok.id), color_e.OtherConst)
+    n1 = runtime.NewLeaf(Id_str(tok.id, dot=False), color_e.OtherConst)
     out.append(n1)
     n2 = runtime.NewLeaf(tok_str, color_e.StringConst)
     out.append(n2)
@@ -93,7 +93,7 @@ def _SimpleVarSub(obj):
         n1 = runtime.NewLeaf(var_name, color_e.StringConst)
         p_node.unnamed_fields.append(n1)
     else:  # $?
-        n1 = runtime.NewLeaf(Id_str(obj.tok.id), color_e.OtherConst)
+        n1 = runtime.NewLeaf(Id_str(obj.tok.id, dot=False), color_e.OtherConst)
         p_node.unnamed_fields.append(n1)
 
     return p_node
@@ -139,7 +139,7 @@ def _expr__Const(obj):
     p_node = runtime.NewRecord('Const')
 
     tok = obj.c
-    n1 = runtime.NewLeaf(Id_str(tok.id), color_e.OtherConst)
+    n1 = runtime.NewLeaf(Id_str(tok.id, dot=False), color_e.OtherConst)
     n2 = runtime.NewLeaf(tok.tval, color_e.StringConst)
 
     p_node.unnamed_fields = [n1, n2]
