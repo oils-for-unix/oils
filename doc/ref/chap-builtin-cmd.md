@@ -557,7 +557,7 @@ accepted.
     ysh$ echo -n
     -n
 
-See the [YSH FAQ][echo-en] for details.
+See the [YSH FAQ entry on echo][echo-en] for details.
 
 [simple_echo]: chap-option.html#ysh:all
 [echo-en]: ../ysh-faq.html#how-do-i-write-the-equivalent-of-echo-e-or-echo-n
@@ -750,7 +750,12 @@ Flags:
     -n  omit the trailing newline
 <!--  -E  -->
 
-See [char-escapes](chap-mini-lang.html#char-escapes).
+`echo` in YSH does **not** accept these flags.  See [ysh-echo](#ysh-echo) and
+[the FAQ entry][echo-en].  (This is unusual because YSH doesn't usually "break"
+OSH.)
+
+See [char-escapes](chap-mini-lang.html#char-escapes) to see what's supported
+when `-e` is passed.
 
 ### printf
 
