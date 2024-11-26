@@ -151,7 +151,7 @@ def _HNodeExpr(typ, var_name):
 
         elif type_name == 'id':  # was meta.UserType
             # This assumes it's Id, which is a simple SumType.  TODO: Remove this.
-            code_str = 'hnode.Leaf(Id_str(%s), color_e.UserType)' % var_name
+            code_str = 'hnode.Leaf(Id_str(%s, dot=False), color_e.UserType)' % var_name
 
         elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
             code_str = 'hnode.Leaf(%s_str(%s), color_e.TypeName)' % (type_name,

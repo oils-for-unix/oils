@@ -194,7 +194,7 @@ def _HNodeExpr(typ, var_name):
             code_str = 'Alloc<hnode::Leaf>(StrFromC("<extern>"), color_e::External)'  # % var_name
 
         elif type_name == 'id':  # was meta.UserType
-            code_str = 'Alloc<hnode::Leaf>(Id_str(%s), color_e::UserType)' % var_name
+            code_str = 'Alloc<hnode::Leaf>(Id_str(%s, false), color_e::UserType)' % var_name
 
         elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
             # ASDL could generate ToPretty<T> ?
