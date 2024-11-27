@@ -48,7 +48,6 @@ from _devbuild.gen.value_asdl import (
     sh_lvalue,
     sh_lvalue_t,
 )
-from core import bash_impl
 from core import error
 from core import pyos
 from core import pyutil
@@ -525,6 +524,11 @@ class FrameEvaluator(object):
 
     def _Split(self, piece, quoted, do_split, will_glob):
         # type: (str, bool, bool, bool) -> None
+
+        # A word like /$exists/$notexists/ should eval to ['/someval//'] not ['/someval/', '/']
+        if len(piece) == 0 and do_split:
+            return
+
         if do_split:
             splits = self.splitter.SplitForWordEval(piece)
             if len(splits) == 0:
@@ -845,15 +849,19 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             elif case(value_e.BashArray):
                 val = cast(value.BashArray, UP_val)
-                length = bash_impl.BashArray_Length(val)
-
-            elif case(value_e.BashAssoc):
-                val = cast(value.BashAssoc, UP_val)
-                length = bash_impl.BashAssoc_Length(val)
+                # There can be empty placeholder values in the array.
+                length = 0
+                for s in val.strs:
+                    if s is not None:
+                        length += 1
 
             elif case(value_e.SparseArray):
                 val = cast(value.SparseArray, UP_val)
-                length = bash_impl.SparseArray_Length(val)
+                length = len(val.d)
+
+            elif case(value_e.BashAssoc):
+                val = cast(value.BashAssoc, UP_val)
+                length = len(val.d)
 
             else:
                 raise error.TypeErr(
@@ -2029,7 +2037,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         all_quoted = True
         any_quoted = False
 
-        if 0:
+        if 1:
             log('---')
             log('FRAME')
             for i, piece in enumerate(frame):
@@ -2060,7 +2068,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         will_glob = not self.exec_opts.noglob()
         frags = self.frame_ev.Eval(frame, will_glob)
 
-        if 0:
+        if 1:
             log('---')
             log('FRAGS')
             for i, frag in enumerate(frags):
