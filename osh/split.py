@@ -183,6 +183,10 @@ class SplitContext(object):
         """
         sp = self._GetSplitter(ifs=ifs)
         spans = sp.Split(s, True)
+
+        # Note: pass allow_escape=False so \ isn't special
+        #spans = sp.Split(s, False)
+
         if 0:
             for span in spans:
                 log('SPAN %s', span)
@@ -220,6 +224,11 @@ class IfsSplitter(_BaseSplitter):
         _BaseSplitter.__init__(self, ifs_whitespace + ifs_other)
         self.ifs_whitespace = ifs_whitespace
         self.ifs_other = ifs_other
+
+    def __repr__(self):
+        # type: () -> str
+        return '<IfsSplitter whitespace=%r other=%r>' % (self.ifs_whitespace,
+                                                         self.ifs_other)
 
     def Split(self, s, allow_escape):
         # type: (str, bool) -> List[Span]

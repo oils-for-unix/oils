@@ -5,6 +5,8 @@ split.test.py: Tests for split.py
 
 import unittest
 
+from core import state
+from core import test_lib
 from osh import split  # module under test
 
 
@@ -158,6 +160,22 @@ class SplitTest(unittest.TestCase):
         # IFS='_ '
         sp = split.IfsSplitter('', '_-')
         _RunSplitCases(self, sp, CASES)
+
+
+class SplitContextTest(unittest.TestCase):
+
+    def testSplitForWordEval(self):
+        arena = test_lib.MakeArena('<SplitContextTest>')
+        mem = state.Mem('', [], arena, [], {})
+        # This is the default
+        #state.SetGlobalString(mem, 'IFS', split.DEFAULT_IFS)
+
+        splitter = split.SplitContext(mem)
+
+        # Can pass allow_escape=False
+        for s in ['', ' foo bar ', '\\']:
+            result = splitter.SplitForWordEval(s)
+            print(result)
 
 
 if __name__ == '__main__':
