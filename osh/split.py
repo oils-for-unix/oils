@@ -182,10 +182,10 @@ class SplitContext(object):
         Also used by the explicit shSplit() function.
         """
         sp = self._GetSplitter(ifs=ifs)
-        spans = sp.Split(s, True)
+        #spans = sp.Split(s, True)
 
         # Note: pass allow_escape=False so \ isn't special
-        #spans = sp.Split(s, False)
+        spans = sp.Split(s, False)
 
         if 0:
             for span in spans:
