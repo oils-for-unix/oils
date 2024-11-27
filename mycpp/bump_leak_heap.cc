@@ -57,6 +57,10 @@ void* BumpLeakHeap::Reallocate(void* old_data, size_t num_bytes) {
   return new_data;
 }
 
+void BumpLeakHeap::PrintShortStats() {
+  // no-op
+}
+
 void BumpLeakHeap::PrintStats(int fd) {
   dprintf(fd, "[BumpLeakHeap]");
   #ifdef BUMP_ROOT

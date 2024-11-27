@@ -26,6 +26,15 @@ fib() {
   osh-run benchmarks/compute/fib.sh 10 44
 }
 
+pretty() {
+  # takes 44 seconds to collect 1.6 MB of data
+  # benchmarks/testdata/functions
+
+  # Measure one of our own scripts
+  # Takes 3 seconds
+  time osh-run -n --ast-format text install
+}
+
 parse-cpython-configure() {
   # Goal: eliminate string slicing in this workload!  It should just be
   # creating fixed size Tokens, syntax.asdl nodes, and List<T>

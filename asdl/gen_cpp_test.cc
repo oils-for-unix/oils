@@ -20,6 +20,7 @@ using typed_arith_asdl::arith_expr__FuncCall;
 using typed_arith_asdl::arith_expr__Unary;
 using typed_arith_asdl::arith_expr__Var;
 
+using typed_demo_asdl::bool_expr_t;
 using typed_demo_asdl::bool_expr__Binary;
 using typed_demo_asdl::bool_expr__LogicalBinary;
 using typed_demo_asdl::op_array;
@@ -127,39 +128,44 @@ using typed_demo_asdl::bool_expr_str;
 TEST pretty_print_test() {
   // typed_demo.asdl
 
-  // auto o = op_id_e::Plus;
-  // Note: this is NOT prevented at compile time, even though it's illegal.
-  // left and right are not optional.
-  // auto b = new bool_expr__LogicalBinary(o, nullptr, nullptr);
+  bool_expr_t* b = nullptr;
+  StackRoot _r1(&b);
 
   auto w1 = Alloc<typed_demo_asdl::word>(StrFromC("left"));
   auto w2 = Alloc<typed_demo_asdl::word>(StrFromC("right"));
-  auto b = Alloc<bool_expr__Binary>(w1, w2);
+  b = Alloc<bool_expr__Binary>(w1, w2);
 
   hnode_t* t1 = b->PrettyTree(false);
   ASSERT_EQ_FMT(hnode_e::Record, t1->tag(), "%d");
 
   auto f = mylib::Stdout();
-  auto ast_f = Alloc<format::TextOutput>(f);
-  format::PrintTree(t1, ast_f);
+  format::HNodePrettyPrint(t1, f);
   printf("\n");
 
-  log("bool_expr_str = %s", bool_expr_str(b->tag())->data_);
-  ASSERT(str_equals0("bool_expr.Binary", bool_expr_str(b->tag())));
+  BigStr* s = bool_expr_str(b->tag());
+  log("bool_expr_str = %s", s->data_);
+  ASSERT(str_equals0("bool_expr.Binary", s));
 
-  ASSERT(str_equals0("Binary", bool_expr_str(b->tag(), false)));
+  s = bool_expr_str(b->tag(), false);
+  ASSERT(str_equals0("Binary", s));
 
   // typed_arith.asdl
-  auto* c = Alloc<arith_expr__Const>(42);
+
+  arith_expr_t* c = nullptr;
+  arith_expr_t* big = nullptr;
+  StackRoot _r2(&c);
+  StackRoot _r3(&big);
+
+  c = Alloc<arith_expr__Const>(42);
   hnode_t* t2 = c->PrettyTree(false);
   ASSERT_EQ(hnode_e::Record, t2->tag());
-  format::PrintTree(t2, ast_f);
+  format::HNodePrettyPrint(t2, f);
   printf("\n");
 
-  auto* big = Alloc<arith_expr__Big>(mops::BigInt(INT64_MAX));
+  big = Alloc<arith_expr__Big>(mops::BigInt(INT64_MAX));
   hnode_t* t3 = big->PrettyTree(false);
   ASSERT_EQ(hnode_e::Record, t3->tag());
-  format::PrintTree(t3, ast_f);
+  format::HNodePrettyPrint(t3, f);
   printf("\n");
 
   auto* args =
@@ -167,7 +173,7 @@ TEST pretty_print_test() {
   auto* func = Alloc<arith_expr::FuncCall>(StrFromC("myfunc"), args);
   hnode_t* t4 = func->PrettyTree(false);
   ASSERT_EQ(hnode_e::Record, t4->tag());
-  format::PrintTree(t4, ast_f);
+  format::HNodePrettyPrint(t4, f);
 
   PASS();
 }
@@ -189,10 +195,9 @@ TEST dicts_test() {
 
   hnode_t* t = m->PrettyTree(false);
   auto f = mylib::Stdout();
-  auto ast_f = Alloc<format::TextOutput>(f);
   // fails with repr(void *)
   // OK change the pretty printer!
-  format::PrintTree(t, ast_f);
+  format::HNodePrettyPrint(t, f);
 
   PASS();
 }

@@ -114,10 +114,7 @@ def main(argv):
 
     if pretty_print:
         tree = node.PrettyTree(True)
-
-        ast_f = fmt.DetectConsoleOutput(mylib.Stdout())
-        fmt.PrintTree(tree, ast_f)
-        ast_f.write('\n')
+        fmt.HNodePrettyPrint(tree, mylib.Stdout())
 
     return 0
 

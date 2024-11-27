@@ -56,13 +56,13 @@ def TestSubtype():
     # TODO: need to test with tagswitch, which is mycpp
     w = c
 
-    ast_f = fmt.DetectConsoleOutput(mylib.Stdout())
+    f = mylib.Stdout()
     a = c.PrettyTree(True)
-    fmt.PrintTree(a, ast_f)
+    fmt.HNodePrettyPrint(a, f)
     print('')
 
     p = c.PrettyTree(False)
-    fmt.PrintTree(p, ast_f)
+    fmt.HNodePrettyPrint(p, f)
     print('')
 
 

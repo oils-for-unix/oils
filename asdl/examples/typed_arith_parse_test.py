@@ -197,9 +197,8 @@ def t_parse(
     from asdl import format as fmt
     from mycpp import mylib
 
-    ast_f = fmt.DetectConsoleOutput(mylib.Stdout())
     p_node = tree.PrettyTree(True)
-    fmt.PrintTree(p_node, ast_f)
+    fmt.HNodePrettyPrint(p_node, mylib.Stdout())
 
     #v = PrettyPrinter()
     #v.Visit(tree)

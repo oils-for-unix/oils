@@ -6,6 +6,7 @@ asdl/pybase.py
 asdl/runtime.py
 data_lang/j8_lite.py
 display/ansi.py
+display/pp_hnode.py
 display/pretty.py
 mycpp/examples/parse.py
 mycpp/mops.py

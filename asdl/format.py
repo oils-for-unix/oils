@@ -1,27 +1,17 @@
 """
 format.py -- Pretty print an ASDL data structure.
-
-TODO: replace ad hoc line wrapper, e.g. _TrySingleLine
-
-- auto-abbreviation of single field things (minus location)
-- option to omit spaces for SQ, SQ, W?  It's all one thing.
-
-Where we try wrap to a single line:
- - arrays
- - objects with name fields
- - abbreviated, unnamed fields
 """
-from typing import Tuple, List
-
-from _devbuild.gen.hnode_asdl import (hnode, hnode_e, hnode_t, color_e,
-                                      color_t)
-from data_lang import j8_lite
-from display import ansi
+from _devbuild.gen.hnode_asdl import hnode, hnode_e, hnode_t
+from _devbuild.gen.pretty_asdl import (doc, doc_e, doc_t, MeasuredDoc,
+                                       List_Measured)
+from display import pp_hnode
 from display import pretty
-from pylib import cgi
 from mycpp import mylib
+from mycpp.mylib import log, tagswitch
 
-from typing import cast, Any, Optional
+from typing import Any, Optional, cast
+
+_ = log
 
 if mylib.PYTHON:
 
@@ -29,520 +19,139 @@ if mylib.PYTHON:
         # type: (Any, Optional[mylib.Writer]) -> None
         """Print abbreviated tree in color.  For unit tests."""
         f = f if f else mylib.Stdout()
-
-        ast_f = DetectConsoleOutput(f)
         tree = obj.PrettyTree(True)
-        PrintTree(tree, ast_f)
+        HNodePrettyPrint(tree, f)
 
 
-def DetectConsoleOutput(f):
-    # type: (mylib.Writer) -> ColorOutput
-    """Wrapped to auto-detect."""
-    if f.isatty():
-        return AnsiOutput(f)
-    else:
-        return TextOutput(f)
-
-
-class ColorOutput(object):
-    """Abstract base class for plain text, ANSI color, and HTML color."""
-
-    def __init__(self, f):
-        # type: (mylib.Writer) -> None
-        self.f = f
-        self.num_chars = 0
-
-    def NewTempBuffer(self):
-        # type: () -> ColorOutput
-        """Return a temporary buffer for the line wrapping calculation."""
-        raise NotImplementedError()
-
-    def FileHeader(self):
-        # type: () -> None
-        """Hook for printing a full file."""
-        pass
-
-    def FileFooter(self):
-        # type: () -> None
-        """Hook for printing a full file."""
-        pass
-
-    def PushColor(self, e_color):
-        # type: (color_t) -> None
-        raise NotImplementedError()
-
-    def PopColor(self):
-        # type: () -> None
-        raise NotImplementedError()
-
-    def write(self, s):
-        # type: (str) -> None
-        self.f.write(s)
-        self.num_chars += len(s)  # Only count visible characters!
-
-    def WriteRaw(self, raw):
-        # type: (Tuple[str, int]) -> None
-        """Write raw data without escaping, and without counting control codes
-        in the length."""
-        s, num_chars = raw
-        self.f.write(s)
-        self.num_chars += num_chars
-
-    def NumChars(self):
-        # type: () -> int
-        return self.num_chars
-
-    def GetRaw(self):
-        # type: () -> Tuple[str, int]
-
-        # NOTE: Ensured by NewTempBuffer()
-        f = cast(mylib.BufWriter, self.f)
-        return f.getvalue(), self.num_chars
-
-
-class TextOutput(ColorOutput):
-    """TextOutput put obeys the color interface, but outputs nothing."""
-
-    def __init__(self, f):
-        # type: (mylib.Writer) -> None
-        ColorOutput.__init__(self, f)
-
-    def NewTempBuffer(self):
-        # type: () -> TextOutput
-        return TextOutput(mylib.BufWriter())
-
-    def PushColor(self, e_color):
-        # type: (color_t) -> None
-        pass  # ignore color
-
-    def PopColor(self):
-        # type: () -> None
-        pass  # ignore color
-
-
-class HtmlOutput(ColorOutput):
-    """HTML one can have wider columns.  Maybe not even fixed-width font.  Hm
-    yeah indentation should be logical then?
-
-    Color: HTML spans
+def _HNodeCount(h):
+    # type: (hnode_t) -> int
     """
+    Return the size of the tree
+    """
+    UP_h = h
+    with tagswitch(h) as case:
+        if case(hnode_e.AlreadySeen):
+            return 1
 
-    def __init__(self, f):
-        # type: (mylib.Writer) -> None
-        ColorOutput.__init__(self, f)
+        elif case(hnode_e.Leaf):
+            return 1
 
-    def NewTempBuffer(self):
-        # type: () -> HtmlOutput
-        return HtmlOutput(mylib.BufWriter())
+        elif case(hnode_e.Array):
+            h = cast(hnode.Array, UP_h)
+            n = 1  # 1 for this node
+            for child in h.children:
+                n += _HNodeCount(child)
+            return n
 
-    def FileHeader(self):
-        # type: () -> None
-        # TODO: Use a different CSS file to make the colors match.  I like string
-        # literals as yellow, etc.
-        #<link rel="stylesheet" type="text/css" href="/css/code.css" />
-        self.f.write("""
-<html>
-  <head>
-     <title>Oils AST</title>
-     <style>
-      .n { color: brown }
-      .s { font-weight: bold }
-      .o { color: darkgreen }
-     </style>
-  </head>
-  <body>
-    <pre>
-""")
+        elif case(hnode_e.Record):
+            h = cast(hnode.Record, UP_h)
+            n = 1  # 1 for this node
+            for field in h.fields:
+                n += _HNodeCount(field.val)
 
-    def FileFooter(self):
-        # type: () -> None
-        self.f.write("""
-    </pre>
-  </body>
-</html>
-    """)
+            if h.unnamed_fields is not None:
+                for child in h.unnamed_fields:
+                    n += _HNodeCount(child)
+            return n
 
-    def PushColor(self, e_color):
-        # type: (color_t) -> None
-        # To save bandwidth, use single character CSS names.
-        if e_color == color_e.TypeName:
-            css_class = 'n'
-        elif e_color == color_e.StringConst:
-            css_class = 's'
-        elif e_color == color_e.OtherConst:
-            css_class = 'o'
-        elif e_color == color_e.External:
-            css_class = 'o'
-        elif e_color == color_e.UserType:
-            css_class = 'o'
         else:
-            raise AssertionError(e_color)
-        self.f.write('<span class="%s">' % css_class)
-
-    def PopColor(self):
-        # type: () -> None
-        self.f.write('</span>')
-
-    def write(self, s):
-        # type: (str) -> None
-
-        # PROBLEM: Double escaping!
-        self.f.write(cgi.escape(s))
-        self.num_chars += len(s)  # Only count visible characters!
-
-
-class AnsiOutput(ColorOutput):
-    """For the console."""
-
-    def __init__(self, f):
-        # type: (mylib.Writer) -> None
-        ColorOutput.__init__(self, f)
-
-    def NewTempBuffer(self):
-        # type: () -> AnsiOutput
-        return AnsiOutput(mylib.BufWriter())
-
-    def PushColor(self, e_color):
-        # type: (color_t) -> None
-        if e_color == color_e.TypeName:
-            self.f.write(ansi.YELLOW)
-        elif e_color == color_e.StringConst:
-            self.f.write(ansi.BOLD)
-        elif e_color == color_e.OtherConst:
-            self.f.write(ansi.GREEN)
-        elif e_color == color_e.External:
-            self.f.write(ansi.BOLD + ansi.BLUE)
-        elif e_color == color_e.UserType:
-            self.f.write(ansi.GREEN)  # Same color as other literals for now
-        else:
-            raise AssertionError(e_color)
-
-    def PopColor(self):
-        # type: () -> None
-        self.f.write(ansi.RESET)
-
-
-INDENT = 2
-
-
-class _PrettyPrinter(object):
-
-    def __init__(self, max_col):
-        # type: (int) -> None
-        self.max_col = max_col
-
-    def _PrintWrappedArray(self, array, prefix_len, f, indent):
-        # type: (List[hnode_t], int, ColorOutput, int) -> bool
-        """Print an array of objects with line wrapping.
-
-        Returns whether they all fit on a single line, so you can print
-        the closing brace properly.
-        """
-        all_fit = True
-        chars_so_far = prefix_len
-
-        for i, val in enumerate(array):
-            if i != 0:
-                f.write(' ')
-
-            single_f = f.NewTempBuffer()
-            if _TrySingleLine(val, single_f, self.max_col - chars_so_far):
-                s, num_chars = single_f.GetRaw()  # extra unpacking for mycpp
-                f.WriteRaw((s, num_chars))
-                chars_so_far += single_f.NumChars()
-            else:  # WRAP THE LINE
-                f.write('\n')
-                self.PrintNode(val, f, indent + INDENT)
-
-                chars_so_far = 0  # allow more
-                all_fit = False
-        return all_fit
-
-    def _PrintWholeArray(self, array, prefix_len, f, indent):
-        # type: (List[hnode_t], int, ColorOutput, int) -> bool
-
-        # This is UNLIKE the abbreviated case above, where we do WRAPPING.
-        # Here, ALL children must fit on a single line, or else we separate
-        # each one onto a separate line.  This is to avoid the following:
-        #
-        # children: [(C ...)
-        #   (C ...)
-        # ]
-        # The first child is out of line.  The abbreviated objects have a
-        # small header like C or DQ so it doesn't matter as much.
-        all_fit = True
-        pieces = []  # type: List[Tuple[str, int]]
-        chars_so_far = prefix_len
-        for item in array:
-            single_f = f.NewTempBuffer()
-            if _TrySingleLine(item, single_f, self.max_col - chars_so_far):
-                s, num_chars = single_f.GetRaw()  # extra unpacking for mycpp
-                pieces.append((s, num_chars))
-                chars_so_far += single_f.NumChars()
-            else:
-                all_fit = False
-                break
-
-        if all_fit:
-            for i, p in enumerate(pieces):
-                if i != 0:
-                    f.write(' ')
-                f.WriteRaw(p)
-            f.write(']')
-        return all_fit
-
-    def _PrintRecord(self, node, f, indent):
-        # type: (hnode.Record, ColorOutput, int) -> None
-        """Print a CompoundObj in abbreviated or normal form."""
-        ind = ' ' * indent
-
-        if node.unnamed_fields is not None and len(node.unnamed_fields):
-            prefix = ind + node.left
-            f.write(prefix)
-            if len(node.node_type):
-                f.PushColor(color_e.TypeName)
-                f.write(node.node_type)
-                f.PopColor()
-                f.write(' ')
-
-            prefix_len = len(prefix) + len(node.node_type) + 1
-            all_fit = self._PrintWrappedArray(node.unnamed_fields, prefix_len,
-                                              f, indent)
-
-            if not all_fit:
-                f.write('\n')
-                f.write(ind)
-            f.write(node.right)
-
-        else:  # full form like (SimpleCommand ...)
-            f.write(ind + node.left)
-
-            f.PushColor(color_e.TypeName)
-            f.write(node.node_type)
-            f.PopColor()
-
-            f.write('\n')
-            for field in node.fields:
-                name = field.name
-                val = field.val
-
-                ind1 = ' ' * (indent + INDENT)
-                UP_val = val  # for mycpp
-                tag = val.tag()
-                if tag == hnode_e.Array:
-                    val = cast(hnode.Array, UP_val)
-
-                    name_str = '%s%s: [' % (ind1, name)
-                    f.write(name_str)
-                    prefix_len = len(name_str)
-
-                    if not self._PrintWholeArray(val.children, prefix_len, f,
-                                                 indent):
-                        f.write('\n')
-                        for child in val.children:
-                            self.PrintNode(child, f, indent + INDENT + INDENT)
-                            f.write('\n')
-                        f.write('%s]' % ind1)
-
-                else:  # primitive field
-                    name_str = '%s%s: ' % (ind1, name)
-                    f.write(name_str)
-                    prefix_len = len(name_str)
-
-                    # Try to print it on the same line as the field name; otherwise print
-                    # it on a separate line.
-                    single_f = f.NewTempBuffer()
-                    if _TrySingleLine(val, single_f,
-                                      self.max_col - prefix_len):
-                        s, num_chars = single_f.GetRaw(
-                        )  # extra unpacking for mycpp
-                        f.WriteRaw((s, num_chars))
-                    else:
-                        f.write('\n')
-                        self.PrintNode(val, f, indent + INDENT + INDENT)
-
-                f.write('\n')  # separate fields
-
-            f.write(ind + node.right)
-
-    def PrintNode(self, node, f, indent):
-        # type: (hnode_t, ColorOutput, int) -> None
-        """Second step of printing: turn homogeneous tree into a colored
-        string.
-
-        Args:
-          node: homogeneous tree node
-          f: ColorOutput instance.
-          max_col: don't print past this column number on ANY line
-            NOTE: See asdl/run.sh line-length-hist for a test of this.  It's
-            approximate.
-            TODO: Use the terminal width.
-        """
-        ind = ' ' * indent
-
-        # Try printing on a single line
-        single_f = f.NewTempBuffer()
-        single_f.write(ind)
-        if _TrySingleLine(node, single_f, self.max_col - indent):
-            s, num_chars = single_f.GetRaw()  # extra unpacking for mycpp
-            f.WriteRaw((s, num_chars))
-            return
-
-        UP_node = node  # for mycpp
-        tag = node.tag()
-        if tag == hnode_e.Leaf:
-            node = cast(hnode.Leaf, UP_node)
-            f.PushColor(node.color)
-            f.write(j8_lite.EncodeString(node.s, unquoted_ok=True))
-            f.PopColor()
-
-        elif tag == hnode_e.External:
-            node = cast(hnode.External, UP_node)
-            f.PushColor(color_e.External)
-            if mylib.PYTHON:
-                f.write(repr(node.obj))
-            else:
-                f.write('UNTYPED any')
-            f.PopColor()
-
-        elif tag == hnode_e.Record:
-            node = cast(hnode.Record, UP_node)
-            self._PrintRecord(node, f, indent)
-
-        elif tag == hnode_e.Array:
-            # Now happens with subtype?
             raise AssertionError()
-            #node = cast(hnode.Array, UP_node)
-            #self._PrintWholeArray(node, f, indent)
 
-        elif tag == hnode_e.AlreadySeen:
-            node = cast(hnode.AlreadySeen, UP_node)
-            # ... means omitting second reference, while --- means a cycle
-            f.write('...0x%s' % mylib.hex_lower(node.heap_id))
+
+def _DocCount(d):
+    # type: (doc_t) -> int
+    """
+    Return the size of the tree
+    """
+    UP_d = d
+    with tagswitch(d) as case:
+        if case(doc_e.Break):
+            return 1
+
+        elif case(doc_e.Text):
+            return 1
+
+        elif case(doc_e.Indent):
+            d = cast(doc.Indent, UP_d)
+            return 1 + _DocCount(d.mdoc.doc)
+
+        elif case(doc_e.Group):
+            d = cast(MeasuredDoc, UP_d)
+            return 1 + _DocCount(d.doc)
+
+        elif case(doc_e.Flat):
+            d = cast(doc.Flat, UP_d)
+            return 1 + _DocCount(d.mdoc.doc)
+
+        elif case(doc_e.IfFlat):
+            d = cast(doc.IfFlat, UP_d)
+            return 1 + _DocCount(d.flat_mdoc.doc) + _DocCount(
+                d.nonflat_mdoc.doc)
+
+        elif case(doc_e.Concat):
+            d = cast(List_Measured, UP_d)
+            n = 1  # 1 for this node
+            for mdoc in d:
+                n += _DocCount(mdoc.doc)
+            return n
 
         else:
-            #from _devbuild.gen.hnode_asdl import hnode_str
-            #raise AssertionError(hnode_str(node.tag()))
-
-            raise AssertionError(node)
+            raise AssertionError()
 
 
-def _TrySingleLineObj(node, f, max_chars):
-    # type: (hnode.Record, ColorOutput, int) -> bool
-    """Print an object on a single line."""
-    f.write(node.left)
-    if node.unnamed_fields is not None and len(node.unnamed_fields):
-        if len(node.node_type):
-            f.PushColor(color_e.TypeName)
-            f.write(node.node_type)
-            f.PopColor()
-            f.write(' ')
+def _HNodePrettyPrint(perf_stats, doc_debug, node, f, max_width=80):
+    # type: (bool, bool, hnode_t, mylib.Writer, int) -> None
 
-        for i, val in enumerate(node.unnamed_fields):
-            if i != 0:
-                f.write(' ')
-            if not _TrySingleLine(val, f, max_chars):
-                return False
-    else:
-        f.PushColor(color_e.TypeName)
-        f.write(node.node_type)
-        f.PopColor()
+    mylib.MaybeCollect()
+    if perf_stats:
+        log('___ HNODE COUNT %d', _HNodeCount(node))
+        log('')
 
-        for field in node.fields:
-            f.write(' %s:' % field.name)
-            if not _TrySingleLine(field.val, f, max_chars):
-                return False
+        if 0:
+            log('___ GC: after hnode_t conversion')
+            mylib.PrintGcStats()
+            log('')
 
-    f.write(node.right)
-    return True
+    enc = pp_hnode.HNodeEncoder()
+    enc.SetUseStyles(f.isatty())
+    enc.SetIndent(2)  # save space, compared to 4 spaces
 
+    d = enc.HNode(node)
 
-def _TrySingleLine(node, f, max_chars):
-    # type: (hnode_t, ColorOutput, int) -> bool
-    """Try printing on a single line.
+    mylib.MaybeCollect()
+    if perf_stats:
+        if doc_debug:
+            #if 0:
+            # Pretty print the doc tree itself!
+            p = d.PrettyTree(False)
+            _HNodePrettyPrint(perf_stats, False, p, f)
 
-    Args:
-      node: homogeneous tree node
-      f: ColorOutput instance
-      max_chars: maximum number of characters to print on THIS line
-      indent: current indent level
+        log('___ DOC COUNT %d', _DocCount(d))
+        log('')
 
-    Returns:
-      ok: whether it fit on the line of the given size.
-        If False, you can't use the value of f.
-    """
-    UP_node = node  # for mycpp
-    tag = node.tag()
-    if tag == hnode_e.Leaf:
-        node = cast(hnode.Leaf, UP_node)
-        f.PushColor(node.color)
-        f.write(j8_lite.EncodeString(node.s, unquoted_ok=True))
-        f.PopColor()
+        if 0:
+            log('___ GC: after doc_t conversion')
+            mylib.PrintGcStats()
+            log('')
 
-    elif tag == hnode_e.External:
-        node = cast(hnode.External, UP_node)
-
-        f.PushColor(color_e.External)
-        if mylib.PYTHON:
-            f.write(repr(node.obj))
-        else:
-            f.write('UNTYPED any')
-        f.PopColor()
-
-    elif tag == hnode_e.Array:
-        node = cast(hnode.Array, UP_node)
-
-        # Can we fit the WHOLE array on the line?
-        f.write('[')
-        for i, item in enumerate(node.children):
-            if i != 0:
-                f.write(' ')
-            if not _TrySingleLine(item, f, max_chars):
-                return False
-        f.write(']')
-
-    elif tag == hnode_e.Record:
-        node = cast(hnode.Record, UP_node)
-
-        return _TrySingleLineObj(node, f, max_chars)
-
-    elif tag == hnode_e.AlreadySeen:
-        node = cast(hnode.AlreadySeen, UP_node)
-        # ... means omitting second reference, while --- means a cycle
-        f.write('...0x%s' % mylib.hex_lower(node.heap_id))
-
-    else:
-        # Not available in C++
-        #from _devbuild.gen.hnode_asdl import hnode_str
-        #raise AssertionError(hnode_str(node.tag()))
-
-        raise AssertionError(node)
-
-    # Take into account the last char.
-    num_chars_so_far = f.NumChars()
-    if num_chars_so_far > max_chars:
-        return False
-
-    return True
-
-
-def PrintTree(node, f):
-    # type: (hnode_t, ColorOutput) -> None
-    pp = _PrettyPrinter(100)  # max_col
-    pp.PrintNode(node, f, 0)  # indent
-
-
-def PrintTree2(node, f):
-    # type: (hnode_t, ColorOutput) -> None
-    """
-    Make sure dependencies aren't a problem
-
-    TODO: asdl/pp_hnode.py, which is like display/pp_value.py
-    """
-    doc = pretty.AsciiText('foo')
-    printer = pretty.PrettyPrinter(20)
+    printer = pretty.PrettyPrinter(max_width)  # max columns
 
     buf = mylib.BufWriter()
-    printer.PrintDoc(doc, buf)
+    printer.PrintDoc(d, buf)
+
     f.write(buf.getvalue())
     f.write('\n')
+
+    mylib.MaybeCollect()
+    if perf_stats:
+        log('___ GC: after printing')
+        mylib.PrintGcStats()
+        log('')
+
+
+def HNodePrettyPrint(node, f, max_width=80):
+    # type: (hnode_t, mylib.Writer, int) -> None
+    """
+    Make sure dependencies aren't a problem
+    """
+    _HNodePrettyPrint(False, True, node, f, max_width=max_width)

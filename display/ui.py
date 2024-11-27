@@ -523,21 +523,27 @@ def PrintAst(node, flag):
     else:  # text output
         f = mylib.Stdout()
 
-        afmt = flag.ast_format  # note: mycpp rewrite to avoid 'in'
-        if afmt in ('text', 'abbrev-text'):
-            ast_f = fmt.DetectConsoleOutput(f)
-        elif afmt in ('html', 'abbrev-html'):
-            ast_f = fmt.HtmlOutput(f)
-        else:
-            raise AssertionError()
+        do_abbrev = 'abbrev-' in flag.ast_format
+        perf_stats = flag.ast_format.startswith('__')  # __perf or __dumpdoc
 
-        do_abbrev = 'abbrev-' in afmt
+        if perf_stats:
+            log('')
+            log('___ GC: after parsing')
+            mylib.PrintGcStats()
+            log('')
+
         tree = node.PrettyTree(do_abbrev)
 
-        ast_f.FileHeader()
-        fmt.PrintTree(tree, ast_f)
-        ast_f.FileFooter()
-        ast_f.write('\n')
+        if perf_stats:
+            # Warning: __dumpdoc should only be passed with tiny -c fragments.
+            # This tree is huge and can eat up all memory.
+            fmt._HNodePrettyPrint(True,
+                                  flag.ast_format == '__dumpdoc',
+                                  tree,
+                                  f,
+                                  max_width=_GetMaxWidth())
+        else:
+            fmt.HNodePrettyPrint(tree, f, max_width=_GetMaxWidth())
 
 
 def TypeNotPrinted(val):

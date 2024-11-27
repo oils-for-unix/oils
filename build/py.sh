@@ -146,10 +146,10 @@ py-codegen() {
 
   const-mypy-gen  # depends on bool_arg_type_e, generates Id_t
 
-  # does __import__ of syntax_abbrev.py, which depends on Id.  We could use the
-  # AST module later?
-  # depends on syntax_asdl
-  gen-asdl-py 'frontend/syntax.asdl' 'frontend.syntax_abbrev'
+  # This does __import__ of syntax_abbrev.py, which depends on Id.  We could
+  # use the AST module later?
+  gen-asdl-py 'frontend/syntax.asdl' \
+    --abbrev-module='frontend.syntax_abbrev'
 
   option-mypy-gen
   flag-gen-mypy
@@ -167,7 +167,8 @@ py-asdl-examples() {
   gen-asdl-py 'asdl/examples/typed_demo.asdl'
 
   gen-asdl-py 'asdl/examples/shared_variant.asdl'
-  gen-asdl-py 'asdl/examples/typed_arith.asdl' 'asdl.examples.typed_arith_abbrev'
+  gen-asdl-py 'asdl/examples/typed_arith.asdl' \
+    --abbrev-module='asdl.examples.typed_arith_abbrev'
 }
 
 oil-cpp() {

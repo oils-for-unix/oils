@@ -100,15 +100,16 @@ maximum line width.
 
 from __future__ import print_function
 
-from _devbuild.gen.pretty_asdl import doc, doc_e, DocFragment, Measure, MeasuredDoc
+from _devbuild.gen.pretty_asdl import (doc, doc_e, DocFragment, Measure,
+                                       MeasuredDoc, List_Measured)
 from mycpp.mylib import log, tagswitch, BufWriter
 from typing import cast, List
 
 _ = log
 
-################
-# Measurements #
-################
+#
+# Measurements
+#
 
 
 def _EmptyMeasure():
@@ -125,11 +126,12 @@ def _FlattenMeasure(measure):
 
 def _ConcatMeasure(m1, m2):
     # type: (Measure, Measure) -> Measure
-    """Compute the measure of concatenated docs.
+    """Compute the measure of 2 concatenated docs.
 
-    If m1 and m2 are the measures of doc1 and doc2,
-    then _ConcatMeasure(m1, m2) is the measure of doc.Concat([doc1, doc2]).
-    This concatenation is associative but not commutative."""
+    If m1 and m2 are the measures of doc1 and doc2, then _ConcatMeasure(m1, m2)
+    is the measure of doc.Concat([doc1, doc2]).  This concatenation is
+    associative but not commutative.
+    """
     if m1.nonflat != -1:
         return Measure(m1.flat + m2.flat, m1.nonflat)
     elif m2.nonflat != -1:
@@ -147,20 +149,20 @@ def _SuffixLen(measure):
         return measure.flat
 
 
-####################
-# Doc Construction #
-####################
+#
+# Doc Construction
+#
 
 
 def AsciiText(string):
     # type: (str) -> MeasuredDoc
-    """Print `string` (which must not contain a newline)."""
+    """Print string (which must not contain a newline)."""
     return MeasuredDoc(doc.Text(string), Measure(len(string), -1))
 
 
 def _Break(string):
     # type: (str) -> MeasuredDoc
-    """If in `flat` mode, print `string`, otherwise print `\n`.
+    """If in flat mode, print string, otherwise print `\n`.
 
     Note: Doesn't try to compute Unicode width, since we control these strings.
     """
@@ -169,28 +171,50 @@ def _Break(string):
 
 def _Indent(indent, mdoc):
     # type: (int, MeasuredDoc) -> MeasuredDoc
-    """Add `indent` spaces after every newline in `mdoc`."""
+    """Add 'indent' spaces after every newline in mdoc."""
     return MeasuredDoc(doc.Indent(indent, mdoc), mdoc.measure)
+
+
+def _Splice(out, mdocs):
+    # type: (List[MeasuredDoc], List[MeasuredDoc]) -> Measure
+    """Optimization for _Concat.
+
+    This reduces the total size of the doc_t tree, and thus the memory usage
+    (as long as we mylib.MaybeCollect() in _HNode!)
+
+    Example of optimizing _Concat nodes together: _Field() concatenates
+    AsciiText("name:") and _HNode(), and the latter is often a doc.Concat node.
+    """
+    measure = _EmptyMeasure()
+    for mdoc in mdocs:
+        with tagswitch(mdoc.doc) as case:
+            if case(doc_e.Concat):
+                child = cast(List_Measured, mdoc.doc)
+                # ignore return value, because the parent has the measure already
+                _Splice(out, child)
+            else:
+                out.append(mdoc)
+        measure = _ConcatMeasure(measure, mdoc.measure)
+    return measure
 
 
 def _Concat(mdocs):
     # type: (List[MeasuredDoc]) -> MeasuredDoc
     """Print the mdocs in order (with no space in between)."""
-    measure = _EmptyMeasure()
-    for mdoc in mdocs:
-        measure = _ConcatMeasure(measure, mdoc.measure)
-    return MeasuredDoc(doc.Concat(mdocs), measure)
+    flattened = List_Measured.New()
+    measure = _Splice(flattened, mdocs)
+    return MeasuredDoc(flattened, measure)
 
 
 def _Group(mdoc):
     # type: (MeasuredDoc) -> MeasuredDoc
-    """Print `mdoc`. Use flat mode if `mdoc` will fit on the current line."""
-    return MeasuredDoc(doc.Group(mdoc), mdoc.measure)
+    """Print mdoc. Use flat mode if mdoc will fit on the current line."""
+    return MeasuredDoc(mdoc, mdoc.measure)
 
 
 def _IfFlat(flat_mdoc, nonflat_mdoc):
     # type: (MeasuredDoc, MeasuredDoc) -> MeasuredDoc
-    """If in flat mode, print `flat_mdoc` otherwise print `nonflat_mdoc`."""
+    """If in flat mode, print flat_mdoc; otherwise print nonflat_mdoc."""
     return MeasuredDoc(
         doc.IfFlat(flat_mdoc, nonflat_mdoc),
         Measure(flat_mdoc.measure.flat, nonflat_mdoc.measure.nonflat))
@@ -198,13 +222,8 @@ def _IfFlat(flat_mdoc, nonflat_mdoc):
 
 def _Flat(mdoc):
     # type: (MeasuredDoc) -> MeasuredDoc
-    """Prints `mdoc` in flat mode."""
+    """Prints mdoc in flat mode."""
     return MeasuredDoc(doc.Flat(mdoc), _FlattenMeasure(mdoc.measure))
-
-
-###################
-# Pretty Printing #
-###################
 
 
 class PrettyPrinter(object):
@@ -214,15 +233,15 @@ class PrettyPrinter(object):
         self.max_width = max_width
 
     def _Fits(self, prefix_len, group, suffix_measure):
-        # type: (int, doc.Group, Measure) -> bool
-        """Will `group` fit flat on the current line?"""
-        measure = _ConcatMeasure(_FlattenMeasure(group.mdoc.measure),
+        # type: (int, MeasuredDoc, Measure) -> bool
+        """Will group fit flat on the current line?"""
+        measure = _ConcatMeasure(_FlattenMeasure(group.measure),
                                  suffix_measure)
         return prefix_len + _SuffixLen(measure) <= self.max_width
 
     def PrintDoc(self, document, buf):
         # type: (MeasuredDoc, BufWriter) -> None
-        """Pretty print a `pretty.doc` to a BufWriter."""
+        """Pretty print a doc_t to a BufWriter."""
 
         # The width of the text we've printed so far on the current line
         prefix_len = 0
@@ -234,19 +253,24 @@ class PrettyPrinter(object):
         #   (Call this the suffix_measure)
         fragments = [DocFragment(_Group(document), 0, False, _EmptyMeasure())]
 
+        max_stack = len(fragments)
+
         while len(fragments) > 0:
+            max_stack = max(max_stack, len(fragments))
+
             frag = fragments.pop()
-            with tagswitch(frag.mdoc.doc) as case:
+            UP_doc = frag.mdoc.doc
+            with tagswitch(UP_doc) as case:
 
                 if case(doc_e.Text):
-                    text = cast(doc.Text, frag.mdoc.doc)
+                    text = cast(doc.Text, UP_doc)
                     buf.write(text.string)
                     prefix_len += frag.mdoc.measure.flat
 
                 elif case(doc_e.Break):
+                    break_ = cast(doc.Break, UP_doc)
                     if frag.is_flat:
-                        break_str = cast(doc.Break, frag.mdoc.doc).string
-                        buf.write(break_str)
+                        buf.write(break_.string)
                         prefix_len += frag.mdoc.measure.flat
                     else:
                         buf.write('\n')
@@ -254,37 +278,38 @@ class PrettyPrinter(object):
                         prefix_len = frag.indent
 
                 elif case(doc_e.Indent):
-                    indented = cast(doc.Indent, frag.mdoc.doc)
+                    indented = cast(doc.Indent, UP_doc)
                     fragments.append(
                         DocFragment(indented.mdoc,
                                     frag.indent + indented.indent,
                                     frag.is_flat, frag.measure))
 
                 elif case(doc_e.Concat):
+                    concat = cast(List_Measured, UP_doc)
+
                     # If we encounter Concat([A, B, C]) with a suffix measure M,
                     # we need to push A,B,C onto the stack in reverse order:
                     # - C, with suffix_measure = B.measure + A.measure + M
                     # - B, with suffix_measure = A.measure + M
                     # - A, with suffix_measure = M
-                    concat = cast(doc.Concat, frag.mdoc.doc)
                     measure = frag.measure
-                    for mdoc in reversed(concat.mdocs):
+                    for mdoc in reversed(concat):
                         fragments.append(
                             DocFragment(mdoc, frag.indent, frag.is_flat,
                                         measure))
+                        # TODO: this algorithm allocates too much!
                         measure = _ConcatMeasure(mdoc.measure, measure)
 
                 elif case(doc_e.Group):
                     # If the group would fit on the current line when printed
                     # flat, do so. Otherwise, print it non-flat.
-                    group = cast(doc.Group, frag.mdoc.doc)
-                    flat = self._Fits(prefix_len, group, frag.measure)
+                    group = cast(MeasuredDoc, UP_doc)
+                    is_flat = self._Fits(prefix_len, group, frag.measure)
                     fragments.append(
-                        DocFragment(group.mdoc, frag.indent, flat,
-                                    frag.measure))
+                        DocFragment(group, frag.indent, is_flat, frag.measure))
 
                 elif case(doc_e.IfFlat):
-                    if_flat = cast(doc.IfFlat, frag.mdoc.doc)
+                    if_flat = cast(doc.IfFlat, UP_doc)
                     if frag.is_flat:
                         subdoc = if_flat.flat_mdoc
                     else:
@@ -294,10 +319,15 @@ class PrettyPrinter(object):
                                     frag.measure))
 
                 elif case(doc_e.Flat):
-                    flat_doc = cast(doc.Flat, frag.mdoc.doc)
+                    flat_doc = cast(doc.Flat, UP_doc)
                     fragments.append(
                         DocFragment(flat_doc.mdoc, frag.indent, True,
                                     frag.measure))
+
+        if 0:
+            log('')
+            log('___ MAX DocFragment stack: %d', max_stack)
+            log('')
 
 
 # vim: sw=4

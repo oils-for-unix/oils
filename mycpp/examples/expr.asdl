@@ -14,7 +14,46 @@ expr =
   | Var(string name) 
   | Binary(string op, expr left, expr right)
 
-# Test iteration
+# Subtype Optimization
+
 CompoundWord < List[str]
+
+# Leaf Struct Value Optimization
+#
+# It's only different in C++
+#
+# What is affected?
+#
+# *** ASDL:
+#
+# (1) ASDL Schema Validation
+#     - The Measure_v can't contain any pointers, because otherwise the GC
+#     header would be wrong.
+#
+# (2) GC header for structs that contain it, like MeasuredDoc
+#     They will simply IGNORE its presence
+#
+# (3) Class definition
+#     - There will be no CreateNull(), because it calls Alloc()
+#     - There will be no DISALLOW_COPY_AND_ASSIGN(), because that's precisely
+#     what we want
+#
+# *** mycpp:
+#
+# (1) Initialization (and local var rooting)
+#     m = Measure_v(3, 4)   # don't do Alloc<Measure_v>()
+#
+# (2) Types - Measure_v instead of Measure_v* everywhere
+#     local var types -
+#     func param types
+#     func return types
+#
+# (3) Attribute access
+#     mdoc.measure instead of mdoc->measure
+
+Measure_v = (int a, int b)
+
+# The GC header is affected
+MeasuredDoc = (str s, Measure_v measure)
 
 }

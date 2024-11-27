@@ -526,6 +526,21 @@ pp test_ (g("a"))
 (Bool)   true
 ## END
 
+#### List->clear()
+var empty = []
+var items = [1, 2, 3]
+
+call empty->clear()
+call items->clear()
+
+pp test_ (empty)
+pp test_ (items)
+
+## STDOUT:
+(List)   []
+(List)   []
+## END
+
 #### List => indexOf()
 var items = [1, '2', 3, { 'a': 5 }]
 
@@ -538,6 +553,20 @@ json write (items => indexOf({'a': 5}))
 0
 1
 3
+## END
+
+#### List => lastIndexOf()
+var items = ['a', 'b', 'c', 'b', 'a']
+
+json write (items => lastIndexOf('a'))
+json write (items => lastIndexOf('b'))
+json write (items => lastIndexOf('c'))
+json write (items => lastIndexOf('d'))
+## STDOUT:
+4
+3
+2
+-1
 ## END
 
 #### List => join()

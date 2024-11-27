@@ -13,7 +13,8 @@ from typing import Tuple, List, Optional, cast
 # PYTHONPATH=$REPO_ROOT/mycpp
 from mycpp.mylib import log, tagswitch
 from mycpp import mylib
-from _devbuild.gen.expr_asdl import expr, expr_e, expr_t, tok_e, tok_t, CompoundWord
+from _devbuild.gen.expr_asdl import (expr, expr_e, expr_t, tok_e, tok_t,
+                                     CompoundWord, Measure_v, MeasuredDoc)
 
 # PYTHONPATH=$REPO_ROOT
 from asdl import format as fmt
@@ -194,10 +195,9 @@ def TestParse():
         #log('%s', tree)
 
         htree = node.PrettyTree(False)
-        ast_f = fmt.AnsiOutput(mylib.Stdout())
+        f = mylib.Stdout()
 
-        fmt.PrintTree(htree, ast_f)
-        ast_f.write('\n')
+        fmt.HNodePrettyPrint(htree, f)
 
         UP_node = node
         with tagswitch(UP_node) as case:
@@ -231,18 +231,16 @@ def TestCreateNull():
     b.right = v
 
     htree = b.PrettyTree(False)
-    ast_f = fmt.AnsiOutput(mylib.Stdout())
-
-    fmt.PrintTree(htree, ast_f)
-    ast_f.write('\n')
+    f = mylib.Stdout()
+    fmt.HNodePrettyPrint(htree, f)
 
 
 def TestSubtype():
     # type: () -> None
 
     # TODO:
-    #c = CompoundWord.New()
-    c = CompoundWord.Take([])
+    c = CompoundWord.New()
+    #c = CompoundWord.Take([])
     c.append('foo')
     c.append('bar')
 
@@ -294,6 +292,20 @@ def TestSubtype():
         print("s = %r" % s)
 
 
+def TestLeafValue():
+    # type: () -> None
+
+    f = mylib.Stdout()
+
+    n = 10
+    for i in xrange(n):
+        m = Measure_v(i, i + 1)
+        d = MeasuredDoc('s%d' % i, m)
+
+        tree = d.PrettyTree(False)
+        fmt.HNodePrettyPrint(tree, f)
+
+
 def run_tests():
     # type: () -> None
 
@@ -301,6 +313,8 @@ def run_tests():
     TestCreateNull()
 
     TestSubtype()
+
+    TestLeafValue()
 
 
 def run_benchmarks():

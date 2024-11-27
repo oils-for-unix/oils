@@ -461,7 +461,11 @@ class Rules(object):
             headers.extend(self.cc_libs[label].generated_headers)
         return headers
 
-    def asdl_library(self, asdl_path, deps=None, pretty_print_methods=True):
+    def asdl_library(self,
+                     asdl_path,
+                     deps=None,
+                     pretty_print_methods=True,
+                     abbrev_module=None):
 
         deps = deps or []
 
@@ -475,13 +479,16 @@ class Rules(object):
         out_cc = prefix + '.cc'
         out_header = prefix + '.h'
 
-        asdl_flags = ''
+        asdl_flags = []
 
         if pretty_print_methods:
             outputs = [out_cc, out_header]
         else:
             outputs = [out_header]
-            asdl_flags += '--no-pretty-print-methods'
+            asdl_flags.append('--no-pretty-print-methods')
+
+        if abbrev_module:
+            asdl_flags.append('--abbrev-module=%s' % abbrev_module)
 
         debug_mod = prefix + '_debug.py'
         outputs.append(debug_mod)
@@ -493,7 +500,7 @@ class Rules(object):
                      variables=[
                          ('action', 'cpp'),
                          ('out_prefix', prefix),
-                         ('asdl_flags', asdl_flags),
+                         ('asdl_flags', ' '.join(asdl_flags)),
                          ('debug_mod', debug_mod),
                      ])
         self.n.newline()

@@ -112,7 +112,6 @@ class Pp(_Builtin):
             rd.Done()
 
             tree = val.PrettyTree(False)
-            #tree = val.AbbreviatedTree()  # I used this to test cycle detection
 
             # TODO: ASDL should print the IDs.  And then they will be
             # line-wrapped.
@@ -121,9 +120,9 @@ class Pp(_Builtin):
             #id_str = vm.ValueIdString(val)
             #f.write('    <%s%s>\n' % (ysh_type, id_str))
 
-            pretty_f = fmt.DetectConsoleOutput(self.stdout_)
-            fmt.PrintTree(tree, pretty_f)
-            self.stdout_.write('\n')
+            max_width = ui._GetMaxWidth()
+            fmt.HNodePrettyPrint(tree, self.stdout_, max_width=max_width)
+            #self.stdout_.write('\n')
 
             return 0
 
@@ -159,9 +158,7 @@ class Pp(_Builtin):
                     status = 1
                 else:
                     self.stdout_.write('%s = ' % name)
-                    pretty_f = fmt.DetectConsoleOutput(self.stdout_)
-                    fmt.PrintTree(cell.PrettyTree(False), pretty_f)
-                    self.stdout_.write('\n')
+                    fmt.HNodePrettyPrint(cell.PrettyTree(False), self.stdout_)
             return status
 
         if action == 'stacks_':  # Format may change

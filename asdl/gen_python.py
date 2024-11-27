@@ -146,12 +146,12 @@ def _HNodeExpr(typ, var_name):
         elif type_name == 'string':
             code_str = 'NewLeaf(%s, color_e.StringConst)' % var_name
 
-        elif type_name == 'any':  # TODO: Remove this.  Used for value.Obj().
-            code_str = 'hnode.External(%s)' % var_name
+        elif type_name == 'any':
+            code_str = 'NewLeaf(str(%s), color_e.External)' % var_name
 
         elif type_name == 'id':  # was meta.UserType
             # This assumes it's Id, which is a simple SumType.  TODO: Remove this.
-            code_str = 'hnode.Leaf(Id_str(%s), color_e.UserType)' % var_name
+            code_str = 'hnode.Leaf(Id_str(%s, dot=False), color_e.UserType)' % var_name
 
         elif typ.resolved and isinstance(typ.resolved, ast.SimpleSum):
             code_str = 'hnode.Leaf(%s_str(%s), color_e.TypeName)' % (type_name,
@@ -206,8 +206,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         variants = []
         for i, variant in enumerate(sum.types):
             tag_num = i + 1
-            tag_str = '%s.%s' % (sum_name, variant.name)
-            int_to_str[tag_num] = tag_str
+            int_to_str[tag_num] = variant.name
             variants.append((variant, tag_num))
 
         add_suffix = not ('no_namespace_suffix' in sum.generate)
@@ -247,9 +246,13 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
         self._EmitDict(sum_name, int_to_str, depth)
 
-        self.Emit('def %s_str(val):' % sum_name, depth)
-        self.Emit('  # type: (%s_t) -> str' % sum_name, depth)
-        self.Emit('  return _%s_str[val]' % sum_name, depth)
+        self.Emit('def %s_str(val, dot=True):' % sum_name, depth)
+        self.Emit('  # type: (%s_t, bool) -> str' % sum_name, depth)
+        self.Emit('  v = _%s_str[val]' % sum_name, depth)
+        self.Emit('  if dot:', depth)
+        self.Emit('    return "%s.%%s" %% v' % sum_name, depth)
+        self.Emit('  else:', depth)
+        self.Emit('    return v', depth)
         self.Emit('', depth)
 
     def _EmitCodeForField(self, field, counter):
@@ -350,6 +353,13 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             self.Emit('        self.extend(other)')
             self.Emit('')
 
+        # Use our own constructor
+        self.Emit('  @staticmethod')
+        self.Emit('  def New():')
+        self.Emit('    # type: () -> %s' % class_name)
+        self.Emit('    return %s()' % class_name)
+        self.Emit('')
+
         self.Emit('  @staticmethod')
         self.Emit('  def Take(plain_list):')
         self.Emit('    # type: (%s) -> %s' % (base_class_str, class_name))
@@ -442,7 +452,12 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('')
 
     def _EmitPrettyPrintMethods(self, class_name, class_ns, fields):
-        pretty_cls_name = '%s%s' % (class_ns, class_name)
+        if len(fields) == 0:
+            # value__Stdin -> value.Stdin (defined at top level)
+            pretty_cls_name = class_name.replace('__', '.')
+        else:
+            # value.Str (defined inside the 'class value') namespace
+            pretty_cls_name = '%s%s' % (class_ns, class_name)
 
         # def PrettyTree(...):
 

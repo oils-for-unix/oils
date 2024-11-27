@@ -444,8 +444,8 @@ def ExactlyEqual(left, right, blame_loc):
             return True
 
         elif case(value_e.BashAssoc):
-            left = cast(value.Dict, UP_left)
-            right = cast(value.Dict, UP_right)
+            left = cast(value.BashAssoc, UP_left)
+            right = cast(value.BashAssoc, UP_right)
             if len(left.d) != len(right.d):
                 return False
 

@@ -88,6 +88,9 @@ check-types() {
 pretty-demo() {  
   local cpp=${1:-}
 
+  OSH=bin/osh
+  YSH=bin/ysh
+
   if test -n "$cpp"; then
     ninja _bin/cxx-asan/{osh,ysh}
     export OSH=_bin/cxx-asan/osh
@@ -98,9 +101,21 @@ pretty-demo() {
   test/parse-errors.sh test-syntax-abbrev
   echo
 
+  #return
+
   # Show Dict[BigInt, str]
-  $OSH -c 'declare -a a=(a b); a[12]=zz; pp asdl_ (a); pp asdl_ (_a2sp(a))'
-  echo
+  for i in 12 50 80; do
+    $OSH -c 'declare -a a=(a b); a[$1]=zzz; pp asdl_ (a); pp asdl_ (_a2sp(a))' dummy $i
+    echo
+  done
+
+  # Tabular
+  for i in 12 50 100; do
+    $YSH -c 'var i = $1; var x = []; for i in (1 ..= i) { call x->append(i) }; pp (x)' \
+      dummy $i
+    echo
+  done
+
 
   # Show Dict[str, value_t]
   $YSH -c 'var d = {x:42}; setvar d.k = d; pp asdl_ (d)'

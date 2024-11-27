@@ -11,6 +11,7 @@ from _devbuild.gen.runtime_asdl import (
 from _devbuild.gen.value_asdl import (value, value_e, value_t, LeftName)
 from _devbuild.gen.syntax_asdl import loc, loc_t, word_t
 
+from core import bash_impl
 from core import error
 from core.error import e_usage
 from core import state
@@ -131,7 +132,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
         if flag_x == '+' and cell.exported:
             continue
 
-        if flag_a and val.tag() != value_e.BashArray:
+        if flag_a and val.tag() not in [value_e.BashArray, value_e.SparseArray]:
             continue
         if flag_A and val.tag() != value_e.BashAssoc:
             continue
@@ -145,7 +146,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
                 flags.append('r')
             if cell.exported:
                 flags.append('x')
-            if val.tag() == value_e.BashArray:
+            if val.tag() in [value_e.BashArray, value_e.SparseArray]:
                 flags.append('a')
             elif val.tag() == value_e.BashAssoc:
                 flags.append('A')
@@ -206,6 +207,10 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
                 body.extend(["[", key_quoted, "]=", value_quoted])
             if len(body) > 0:
                 decl.extend(["=(", ''.join(body), ")"])
+
+        elif val.tag() == value_e.SparseArray:
+            sparse_val = cast(value.SparseArray, val)
+            decl.extend(["=", bash_impl.SparseArray_ToStrForShellPrint(sparse_val)])
 
         else:
             pass  # note: other types silently ignored

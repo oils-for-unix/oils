@@ -47,15 +47,12 @@ module hnode {
     # String, int, float, etc. of different color
   | Leaf(str s, color color)
 
+  | Array(List[hnode] children)
+
   | Record(str node_type,
            str left, str right,
            List[Field] fields,
            List[hnode]? unnamed_fields)
-  | Array(List[hnode] children)
-
-    # TODO: I think we can remove this if we add PrettyTree() to
-    # value.BuiltinFunc _Callable, BuiltinProc, etc.
-  | External(any obj)
 
 
   # Idea for bit flags for CreateNull().  NOT part of pretty printing / hnode.

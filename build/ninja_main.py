@@ -74,8 +74,9 @@ def TarballManifest(cc_h_files):
 
     # TODO: crawl headers
     # We can now use the headers=[] attribute
-    names.extend(glob('mycpp/*.h'))
     names.extend(glob('cpp/*.h'))
+    names.extend(glob('mycpp/*.h'))
+    names.extend(glob('asdl/*.h'))
 
     # ONLY the headers
     names.extend(glob('prebuilt/*/*.h'))

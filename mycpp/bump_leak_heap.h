@@ -51,6 +51,7 @@ class BumpLeakHeap {
   }
 
   void PrintStats(int fd);
+  void PrintShortStats();
 
   void CleanProcessExit();
   void ProcessExit();
