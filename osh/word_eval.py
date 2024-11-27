@@ -2032,7 +2032,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         all_quoted = True
         any_quoted = False
 
-        if 1:
+        if 0:
             log('---')
             log('FRAME')
             for i, piece in enumerate(frame):
@@ -2063,7 +2063,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         will_glob = not self.exec_opts.noglob()
         frags = self.frame_ev.Eval(frame, will_glob)
 
-        if 1:
+        if 0:
             log('---')
             log('FRAGS')
             for i, frag in enumerate(frags):
