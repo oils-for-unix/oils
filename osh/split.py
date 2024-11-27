@@ -226,6 +226,7 @@ class IfsSplitter(_BaseSplitter):
         self.ifs_other = ifs_other
 
     def __repr__(self):
+        # type: () -> str
         return '<IfsSplitter whitespace=%r other=%r>' % (self.ifs_whitespace,
                                                          self.ifs_other)
 
