@@ -65,7 +65,7 @@ class StackObjectMember(object):
 
     def __init__(self, object_expr: Expression, object_type: Type,
                  member: str) -> None:
-        self.ojbect_expr = object_expr
+        self.object_expr = object_expr
         self.object_type = object_type
         self.member = member
 

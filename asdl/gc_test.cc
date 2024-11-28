@@ -19,8 +19,8 @@ using typed_demo_asdl::a_word_e;
 using typed_demo_asdl::a_word_t;
 using typed_demo_asdl::arith_expr;
 using typed_demo_asdl::arith_expr_e;
-using typed_demo_asdl::bool_expr_t;
 using typed_demo_asdl::bool_expr__Binary;
+using typed_demo_asdl::bool_expr_t;
 using typed_demo_asdl::CompoundWord;
 using typed_demo_asdl::word;
 

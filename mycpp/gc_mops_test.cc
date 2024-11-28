@@ -5,6 +5,14 @@
 #include "mycpp/runtime.h"
 #include "vendor/greatest.h"
 
+TEST sizeof_test() {
+  // 8 bytes
+  log("size = %d", sizeof(long long));
+  // 16 bytes!  Supposed by GCC and Clang on SOME targets for ~15 years
+  // log("size = %d", sizeof(__int128_t));
+  PASS();
+}
+
 TEST bigint_test() {
   // You need to instantiate it as a BigInt, the constant (1) doesn't work
   // And also use %ld
@@ -159,6 +167,7 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
 
+  RUN_TEST(sizeof_test);
   RUN_TEST(bigint_test);
   RUN_TEST(static_cast_test);
   RUN_TEST(conversion_test);
