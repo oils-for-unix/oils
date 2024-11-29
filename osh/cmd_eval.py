@@ -221,11 +221,10 @@ def PlusEquals(old_val, val):
                 old_val = cast(value.BashArray, UP_old_val)
                 to_append = cast(value.BashArray, UP_val)
 
-                # TODO: MUTATE the existing value for efficiency?
-                strs = []  # type: List[str]
-                strs.extend(old_val.strs)
-                strs.extend(to_append.strs)
-                val = value.BashArray(strs)
+                # We modify the original instance so that change is
+                # visible to other references (which may exist in YSH)
+                old_val.strs.extend(to_append.strs)
+                val = old_val
 
             else:
                 raise AssertionError()  # parsing should prevent this
