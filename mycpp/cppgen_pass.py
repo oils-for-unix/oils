@@ -33,15 +33,15 @@ class UnsupportedException(Exception):
     pass
 
 
-def _IsContextManager(class_name) -> bool:
+def _IsContextManager(class_name: str) -> bool:
     return class_name[-1].startswith('ctx_')
 
 
-def _IsUnusedVar(var_name) -> bool:
+def _IsUnusedVar(var_name: str) -> bool:
     return var_name == '_' or var_name.startswith('unused')
 
 
-def _SkipAssignment(var_name) -> bool:
+def _SkipAssignment(var_name: str) -> bool:
     """
     Skip at the top level:
       _ = log 
@@ -139,7 +139,7 @@ def _GetContainsFunc(t) -> Optional[str]:
     return contains_func  # None checked later
 
 
-def _EqualsFunc(left_type) -> str:
+def _EqualsFunc(left_type) -> Optional[str]:
     if IsStr(left_type):
         return 'str_equals'
 
@@ -460,7 +460,8 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
 
         self.indent = 0
         self.local_var_list = []  # Collected at assignment
-        self.prepend_to_block = None  # For writing vars after {
+        # For writing vars after {
+        self.prepend_to_block: Optional[List[Tuple[Any, str, bool]]] = None
 
         # Temporary lists to use as output params for generators
         self.yield_accumulators = {
@@ -474,7 +475,7 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
         # all the methods, and accumulate the types of everything that looks
         # like self.foo = 1.  Then we write C++ class member declarations at
         # the end of the class.
-        self.current_member_vars: Dict[str, Type] = {}
+        self.current_member_vars: Dict[str, Tuple[Any, str, bool]] = {}
         self.current_class_name = None  # for prototypes
         self.current_method_name = None
 
@@ -487,11 +488,11 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
 
         self.writing_default_arg = False
 
-    def log(self, msg: str, *args: Any):
+    def log(self, msg: str, *args: Any) -> None:
         ind_str = self.indent * '  '
         log(ind_str + msg, *args)
 
-    def always_write(self, msg: str, *args: Any):
+    def always_write(self, msg: str, *args: Any) -> None:
         """Write unconditionally - forward decl, decl, def """
         if args:
             msg = msg % args
@@ -501,7 +502,7 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
         ind_str = self.indent * '  '
         self.always_write(ind_str + msg, *args)
 
-    def def_write(self, msg: str, *args: Any):
+    def def_write(self, msg: str, *args: Any) -> None:
         """Write only in definitions."""
 
         if self.forward_decl:
@@ -514,11 +515,11 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
             msg = msg % args
         self.f.write(msg)
 
-    def def_write_ind(self, msg: str, *args: Any):
+    def def_write_ind(self, msg: str, *args: Any) -> None:
         ind_str = self.indent * '  '
         self.def_write(ind_str + msg, *args)
 
-    def decl_write(self, msg: str, *args: Any):
+    def decl_write(self, msg: str, *args: Any) -> None:
         """Write only in the decl stage (not forward declarations)"""
         if not self.decl:
             return
@@ -527,7 +528,7 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
             msg = msg % args
         self.f.write(msg)
 
-    def decl_write_ind(self, msg: str, *args: Any):
+    def decl_write_ind(self, msg: str, *args: Any) -> None:
         ind_str = self.indent * '  '
         self.decl_write(ind_str + msg, *args)
 
@@ -543,7 +544,7 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
     def accept(self, node: Statement) -> None:
         ...
 
-    def accept(self, node: Union[Statement, Expression]) -> Optional[T]:
+    def accept(self, node: Union[Statement, Expression]) -> None:
         with catch_errors(self.module_path, node.line):
             if isinstance(node, Expression):
                 try:
@@ -564,14 +565,17 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
                     pass
                 return None
 
-    def report_error(self, node: Union[Statement, Expression], msg: str):
+    def report_error(self, node: Union[Statement, Expression],
+                     msg: str) -> None:
         err = (self.module_path, node.line, msg)
         self.errors_keep_going.append(err)
 
-    def not_translated(self, node: Union[Statement, Expression], name: str):
+    def not_translated(self, node: Union[Statement, Expression],
+                       name: str) -> None:
         self.report_error(node, '%s not translated' % name)
 
-    def not_python2(self, node: Union[Statement, Expression], name: str):
+    def not_python2(self, node: Union[Statement, Expression],
+                    name: str) -> None:
         self.report_error(node, "%s: shouldn't get here in Python 2" % name)
 
     # Not in superclasses:
@@ -719,7 +723,7 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
         self.accept(o.expr)
         self.def_write(');\n')
 
-    def _WriteArgList(self, o):
+    def _WriteArgList(self, o) -> None:
         self.def_write('(')
         for i, arg in enumerate(o.args):
             if i != 0:
@@ -738,7 +742,7 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
 
         self.def_write(')')
 
-    def _IsInstantiation(self, o):
+    def _IsInstantiation(self, o) -> bool:
         callee_name = o.callee.name
         callee_type = self.types[o.callee]
 
@@ -768,7 +772,7 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
 
         return False
 
-    def _ProbeExpr(self, o):
+    def _ProbeExpr(self, o) -> None:
         assert len(o.args) >= 2 and len(o.args) < 13, o.args
         assert isinstance(o.args[0], mypy.nodes.StrExpr), o.args[0]
         assert isinstance(o.args[1], mypy.nodes.StrExpr), o.args[1]
@@ -790,7 +794,7 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
 
         self.def_write(')')
 
-    def _LogExpr(self, o):
+    def _LogExpr(self, o) -> None:
         args = o.args
         if len(args) == 1:  # log(CONST)
             self.def_write('mylib::print_stderr(')
@@ -2627,7 +2631,7 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
 
         self._MemberDecl(o, base_class_name)
 
-    def _ConstructorImpl(self, o, stmt, base_class_name):
+    def _ConstructorImpl(self, o, stmt, base_class_name) -> None:
         self.def_write('\n')
         self.def_write('%s::%s(', o.name, o.name)
         self._WriteFuncParams(stmt.type.arg_types, stmt.arguments)

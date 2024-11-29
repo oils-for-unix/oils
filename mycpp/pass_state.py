@@ -537,7 +537,7 @@ class StackRoots(object):
         return (func, reference) in self.root_tuples
 
 
-def DumpControlFlowGraphs(cfgs: dict[str, ControlFlowGraph],
+def DumpControlFlowGraphs(cfgs: Dict[str, ControlFlowGraph],
                           facts_dir='_tmp/mycpp-facts') -> None:
     """
     Dump the given control flow graphs and associated facts into the given
@@ -569,7 +569,7 @@ def DumpControlFlowGraphs(cfgs: dict[str, ControlFlowGraph],
         f.close()
 
 
-def ComputeMinimalStackRoots(cfgs: dict[str, ControlFlowGraph],
+def ComputeMinimalStackRoots(cfgs: Dict[str, ControlFlowGraph],
                              souffle_dir: str = '_tmp') -> StackRoots:
     """
     Run the the souffle stack roots solver and translate its output in a format

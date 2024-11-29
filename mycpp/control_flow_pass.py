@@ -17,6 +17,8 @@ from mycpp.visitor import SimpleVisitor, T
 from mycpp import util
 from mycpp import pass_state
 
+from typing import Dict, List, Any
+
 
 class UnsupportedException(Exception):
     pass
@@ -38,20 +40,23 @@ def GetObjectTypeName(t: Type) -> util.SymbolPath:
 
 class Build(SimpleVisitor):
 
-    def __init__(self, types: Dict[Expression, Type], virtual, local_vars,
-                 dot_exprs):
+    def __init__(self, types: Dict[Expression, Type],
+                 virtual: pass_state.Virtual, local_vars, dot_exprs):
 
         self.types = types
-        self.cfgs = collections.defaultdict(pass_state.ControlFlowGraph)
+        self.cfgs: Dict[str,
+                        pass_state.ControlFlowGraph] = collections.defaultdict(
+                            pass_state.ControlFlowGraph)
         self.current_statement_id = None
         self.current_class_name = None
         self.current_func_node = None
-        self.loop_stack = []
+        self.loop_stack: List[pass_state.CfgLoopContext] = []
         self.virtual = virtual
         self.local_vars = local_vars
         self.dot_exprs = dot_exprs
         self.heap_counter = 0
-        self.callees = {}  # statement object -> SymbolPath of the callee
+        self.callees: Dict[Any, Any] = {
+        }  # statement object -> SymbolPath of the callee
         self.current_lval = None
 
     def current_cfg(self) -> pass_state.ControlFlowGraph:

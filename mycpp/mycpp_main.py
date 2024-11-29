@@ -9,7 +9,7 @@ import os
 import sys
 import tempfile
 
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Any
 
 from mypy.build import build as mypy_build
 from mypy.build import BuildSource
@@ -69,8 +69,8 @@ def Options() -> optparse.OptionParser:
 
 # Copied from mypyc/build.py
 def get_mypy_config(
-        paths: List[str], mypy_options: Optional[List[str]]
-) -> Tuple[List[BuildSource], Options]:
+        paths: List[str],
+        mypy_options: Optional[List[str]]) -> Tuple[List[BuildSource], Any]:
     """Construct mypy BuildSources and Options from file and options lists"""
     # It is kind of silly to do this but oh well
     mypy_options = mypy_options or []
@@ -135,7 +135,7 @@ def ModulesToCompile(result, mod_names):
             yield name, module
 
 
-def main(argv):
+def main(argv: List[str]) -> int:
     # TODO: Put these in the shell script
     mypy_options = [
         '--py2',
