@@ -54,7 +54,7 @@ class Build(SimpleVisitor):
         self.callees = {}  # statement object -> SymbolPath of the callee
         self.current_lval = None
 
-    def current_cfg(self):
+    def current_cfg(self) -> pass_state.ControlFlowGraph:
         if not self.current_func_node:
             return None
 
@@ -234,7 +234,7 @@ class Build(SimpleVisitor):
     #
 
     @overload
-    def accept(self, node: Expression) -> T:
+    def accept(self, node: Expression) -> None:
         ...
 
     @overload
@@ -272,7 +272,7 @@ class Build(SimpleVisitor):
 
     # Not in superclasses:
 
-    def visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> T:
+    def visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> None:
         if util.ShouldSkipPyFile(o):
             return
 
@@ -287,7 +287,7 @@ class Build(SimpleVisitor):
 
     # Statements
 
-    def visit_for_stmt(self, o: 'mypy.nodes.ForStmt') -> T:
+    def visit_for_stmt(self, o: 'mypy.nodes.ForStmt') -> None:
         cfg = self.current_cfg()
         with pass_state.CfgLoopContext(
                 cfg, entry=self.current_statement_id) as loop:
@@ -314,7 +314,7 @@ class Build(SimpleVisitor):
                 with branch_ctx.AddBranch():
                     self.accept(default_block)
 
-    def visit_with_stmt(self, o: 'mypy.nodes.WithStmt') -> T:
+    def visit_with_stmt(self, o: 'mypy.nodes.WithStmt') -> None:
         cfg = self.current_cfg()
         assert len(o.expr) == 1, o.expr
         expr = o.expr[0]
@@ -332,7 +332,7 @@ class Build(SimpleVisitor):
             with pass_state.CfgBlockContext(cfg, self.current_statement_id):
                 self.accept(o.body)
 
-    def visit_func_def(self, o: 'mypy.nodes.FuncDef') -> T:
+    def visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
         if o.name == '__repr__':  # Don't translate
             return
 
@@ -361,7 +361,7 @@ class Build(SimpleVisitor):
         self.current_func_node = None
         self.current_statement_id = None
 
-    def visit_class_def(self, o: 'mypy.nodes.ClassDef') -> T:
+    def visit_class_def(self, o: 'mypy.nodes.ClassDef') -> None:
         self.current_class_name = split_py_name(o.fullname)
         for stmt in o.defs.body:
             # Ignore things that look like docstrings
@@ -376,7 +376,7 @@ class Build(SimpleVisitor):
 
         self.current_class_name = None
 
-    def visit_while_stmt(self, o: 'mypy.nodes.WhileStmt') -> T:
+    def visit_while_stmt(self, o: 'mypy.nodes.WhileStmt') -> None:
         cfg = self.current_cfg()
         with pass_state.CfgLoopContext(
                 cfg, entry=self.current_statement_id) as loop:
@@ -385,7 +385,7 @@ class Build(SimpleVisitor):
             self.accept(o.body)
             self.loop_stack.pop()
 
-    def visit_return_stmt(self, o: 'mypy.nodes.ReturnStmt') -> T:
+    def visit_return_stmt(self, o: 'mypy.nodes.ReturnStmt') -> None:
         cfg = self.current_cfg()
         if cfg:
             cfg.AddDeadend(self.current_statement_id)
@@ -393,7 +393,7 @@ class Build(SimpleVisitor):
         if o.expr:
             self.accept(o.expr)
 
-    def visit_if_stmt(self, o: 'mypy.nodes.IfStmt') -> T:
+    def visit_if_stmt(self, o: 'mypy.nodes.IfStmt') -> None:
         cfg = self.current_cfg()
 
         if util.ShouldVisitIfExpr(o):
@@ -411,15 +411,15 @@ class Build(SimpleVisitor):
                 with branch_ctx.AddBranch():
                     self.accept(o.else_body)
 
-    def visit_break_stmt(self, o: 'mypy.nodes.BreakStmt') -> T:
+    def visit_break_stmt(self, o: 'mypy.nodes.BreakStmt') -> None:
         if len(self.loop_stack):
             self.loop_stack[-1].AddBreak(self.current_statement_id)
 
-    def visit_continue_stmt(self, o: 'mypy.nodes.ContinueStmt') -> T:
+    def visit_continue_stmt(self, o: 'mypy.nodes.ContinueStmt') -> None:
         if len(self.loop_stack):
             self.loop_stack[-1].AddContinue(self.current_statement_id)
 
-    def visit_raise_stmt(self, o: 'mypy.nodes.RaiseStmt') -> T:
+    def visit_raise_stmt(self, o: 'mypy.nodes.RaiseStmt') -> None:
         cfg = self.current_cfg()
         if cfg:
             cfg.AddDeadend(self.current_statement_id)
@@ -427,7 +427,7 @@ class Build(SimpleVisitor):
         if o.expr:
             self.accept(o.expr)
 
-    def visit_try_stmt(self, o: 'mypy.nodes.TryStmt') -> T:
+    def visit_try_stmt(self, o: 'mypy.nodes.TryStmt') -> None:
         cfg = self.current_cfg()
         with pass_state.CfgBranchContext(cfg,
                                          self.current_statement_id) as try_ctx:
@@ -438,7 +438,7 @@ class Build(SimpleVisitor):
                 with try_ctx.AddBranch(try_block.exit):
                     self.accept(handler)
 
-    def visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt') -> T:
+    def visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt') -> None:
         cfg = self.current_cfg()
         if cfg:
             assert len(o.lvalues) == 1
@@ -515,7 +515,7 @@ class Build(SimpleVisitor):
 
     # Expressions
 
-    def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> T:
+    def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
         self.accept(o.expr)
         cfg = self.current_cfg()
         if (cfg and
@@ -525,7 +525,7 @@ class Build(SimpleVisitor):
             if ref:
                 cfg.AddFact(self.current_statement_id, pass_state.Use(ref))
 
-    def visit_name_expr(self, o: 'mypy.nodes.NameExpr') -> T:
+    def visit_name_expr(self, o: 'mypy.nodes.NameExpr') -> None:
         cfg = self.current_cfg()
         if cfg and o != self.current_lval:
             is_local = False
@@ -538,7 +538,7 @@ class Build(SimpleVisitor):
             if ref and is_local:
                 cfg.AddFact(self.current_statement_id, pass_state.Use(ref))
 
-    def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> T:
+    def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> None:
         cfg = self.current_cfg()
         if self.current_func_node:
             full_callee = self.resolve_callee(o)

@@ -363,7 +363,9 @@ check-types() {
   local p=".:$MYPY_WEDGE:$PY3_LIBS_WEDGE"
 
   #local -a files=( mycpp/*.py )
-  local -a files=( mycpp/{pass_state,util,crash,format_strings,visitor}.py )
+  local -a files=(
+    mycpp/{pass_state,util,crash,format_strings,visitor,ir_pass,const_pass,debug_pass,control_flow_pass,mycpp_main}.py
+  )
 
   # the path is fiddly
   PYTHONPATH=$p MYPYPATH=$MYPY_WEDGE \

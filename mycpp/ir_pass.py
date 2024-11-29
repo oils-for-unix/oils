@@ -8,7 +8,7 @@ from mypy.nodes import Expression, NameExpr
 from mypy.types import Type
 
 from mycpp.util import split_py_name
-from mycpp.visitor import SimpleVisitor, T
+from mycpp.visitor import SimpleVisitor
 from mycpp import util
 from mycpp import pass_state
 
@@ -31,7 +31,7 @@ class Build(SimpleVisitor):
 
     # Statements
 
-    def visit_import(self, o: 'mypy.nodes.Import') -> T:
+    def visit_import(self, o: 'mypy.nodes.Import') -> None:
         for name, as_name in o.ids:
             if as_name is not None:
                 # import time as time_
@@ -40,7 +40,7 @@ class Build(SimpleVisitor):
                 # import libc
                 self.imported_names.add(name)
 
-    def visit_import_from(self, o: 'mypy.nodes.ImportFrom') -> T:
+    def visit_import_from(self, o: 'mypy.nodes.ImportFrom') -> None:
         """
         Write C++ namespace aliases and 'using' for imports.
         We need them in the 'decl' phase for default arguments like
@@ -56,7 +56,7 @@ class Build(SimpleVisitor):
 
     # Expressions
 
-    def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> T:
+    def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
         # Why do we not get some of the types?  e.g. hnode.Record in asdl/runtime
         # But this might suffice for the "Str_v" and "value_v" refactoring.
         # We want to rewrite w.parts not to w->parts, but to w.parts() (method call)

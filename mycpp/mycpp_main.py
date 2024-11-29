@@ -24,7 +24,7 @@ from mycpp import pass_state
 from mycpp.util import log
 
 
-def Options():
+def Options() -> optparse.OptionParser:
     """Returns an option parser instance."""
 
     p = optparse.OptionParser()
@@ -402,7 +402,7 @@ def main(argv):
     return 0  # success
 
 
-def MaybeExitWithErrors(p):
+def MaybeExitWithErrors(p) -> None:
     # Check for errors we collected
     num_errors = len(p.errors_keep_going)
     if num_errors != 0:
