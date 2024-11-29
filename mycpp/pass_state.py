@@ -13,7 +13,7 @@ from mypy.nodes import Expression
 
 from mycpp.util import join_name, log, split_py_name, SymbolPath
 
-from typing import Optional
+from typing import Optional, List, Dict, Tuple, Set
 
 _ = log
 
@@ -77,15 +77,15 @@ class Virtual(object):
     """
 
     def __init__(self) -> None:
-        self.methods: dict[SymbolPath, list[str]] = defaultdict(list)
-        self.subclasses: dict[SymbolPath, list[tuple[str]]] = defaultdict(list)
-        self.virtuals: dict[tuple[SymbolPath, str], Optional[tuple[SymbolPath,
+        self.methods: Dict[SymbolPath, List[str]] = defaultdict(list)
+        self.subclasses: Dict[SymbolPath, List[Tuple[str]]] = defaultdict(list)
+        self.virtuals: Dict[Tuple[SymbolPath, str], Optional[Tuple[SymbolPath,
                                                                    str]]] = {}
-        self.has_vtable: dict[SymbolPath, bool] = {}
-        self.can_reorder_fields: dict[SymbolPath, bool] = {}
+        self.has_vtable: Dict[SymbolPath, bool] = {}
+        self.can_reorder_fields: Dict[SymbolPath, bool] = {}
 
         # _Executor -> vm::_Executor
-        self.base_class_unique: dict[str, SymbolPath] = {}
+        self.base_class_unique: Dict[str, SymbolPath] = {}
 
     # These are called on the Forward Declare pass
     def OnMethod(self, class_name: SymbolPath, method_name: str) -> None:
@@ -323,14 +323,14 @@ class ControlFlowGraph(object):
 
     def __init__(self) -> None:
         self.statement_counter: int = 0
-        self.edges: set[tuple[int, int]] = set({})
-        self.block_stack: list[int] = []
-        self.predecessors: set[int] = set({})
-        self.deadends: set[int] = set({})
+        self.edges: Set[Tuple[int, int]] = set({})
+        self.block_stack: List[int] = []
+        self.predecessors: Set[int] = set({})
+        self.deadends: Set[int] = set({})
 
         # order doesn't actually matter here, but sets require elements to be
         # hashable
-        self.facts: dict[int, list[Fact]] = defaultdict(list)
+        self.facts: Dict[int, List[Fact]] = defaultdict(list)
 
     def AddEdge(self, pred: int, succ: int) -> None:
         """
@@ -343,7 +343,7 @@ class ControlFlowGraph(object):
         else:
             self.edges.add((pred, succ))
 
-    def AddDeadend(self, statement: int):
+    def AddDeadend(self, statement: int) -> None:
         """
         Mark a statement as a dead-end (e.g. return or continue).
         """
@@ -527,7 +527,7 @@ class StackRoots(object):
     Output of the souffle stack roots solver.
     """
 
-    def __init__(self, tuples: set[tuple[SymbolPath, SymbolPath]]) -> None:
+    def __init__(self, tuples: Set[Tuple[SymbolPath, SymbolPath]]) -> None:
         self.root_tuples = tuples
 
     def needs_root(self, func: SymbolPath, reference: SymbolPath) -> bool:
@@ -589,7 +589,7 @@ def ComputeMinimalStackRoots(cfgs: dict[str, ControlFlowGraph],
         output_dir,
     ])
 
-    tuples: set[tuple[SymbolPath, SymbolPath]] = set({})
+    tuples: Set[Tuple[SymbolPath, SymbolPath]] = set({})
     with open('{}/stack_root_vars.tsv'.format(output_dir), 'r') as roots_f:
         pat = re.compile(r'\$(.*)\((.*), (.*)\)')
         for line in roots_f:

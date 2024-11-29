@@ -8,7 +8,7 @@ from mypy.nodes import (CallExpr, IfStmt, Block, Expression, MypyFile,
                         MemberExpr, IntExpr, NameExpr, ComparisonExpr)
 from mypy.types import Instance, Type
 
-from typing import Any, Sequence, Optional
+from typing import Any, Sequence, Optional, List, Tuple, Union
 
 # Used by cppgen_pass and const_pass
 
@@ -53,10 +53,12 @@ def split_py_name(name: str) -> SymbolPath:
     return ret
 
 
-def _collect_cases(module_path: str,
-                   if_node: IfStmt,
-                   out: list[tuple[Expression, Block]],
-                   errors=None) -> Optional[Block] | bool:
+def _collect_cases(
+    module_path: str,
+    if_node: IfStmt,
+    out: List[Tuple[Expression, Block]],
+    errors: Optional[List[Tuple[Any, Any, str]]] = None
+) -> Union[Optional[Block], bool]:
     """
     The MyPy AST has a recursive structure for if-elif-elif rather than a
     flat one.  It's a bit confusing.
@@ -79,7 +81,7 @@ def _collect_cases(module_path: str,
         if errors is not None:
             errors.append((module_path, expr.line,
                            'Expected call like case(x), got %s' % expr))
-        return
+        return False
 
     out.append((expr, body))
 
@@ -108,7 +110,7 @@ def ShouldSkipPyFile(node: MypyFile) -> bool:
                              'cStringIO', 're', 'builtins')
 
 
-def IsStr(t: Type):
+def IsStr(t: Type) -> bool:
     """Helper to check if a type is a string."""
     return isinstance(t, Instance) and t.type.fullname == 'builtins.str'
 

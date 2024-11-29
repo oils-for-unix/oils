@@ -11,6 +11,7 @@ set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source build/common.sh
+#source build/dev-shell.sh
 source build/ninja-rules-cpp.sh
 source devtools/common.sh
 source test/common.sh  # run-test-bin, can-compile-32-bit
@@ -352,6 +353,21 @@ examples-coverage() {
 
   local out_dir=_test/clang-coverage/mycpp/examples
   test/coverage.sh html-report $out_dir clang-coverage/mycpp/examples
+}
+
+mycpp-check() {
+  python3 -m mypy --strict --follow-imports=silent "$@"
+}
+
+check-types() {
+  local p=".:$MYPY_WEDGE:$PY3_LIBS_WEDGE"
+
+  #local -a files=( mycpp/*.py )
+  local -a files=( mycpp/{pass_state,util}.py )
+
+  # the path is fiddly
+  PYTHONPATH=$p MYPYPATH=$MYPY_WEDGE \
+    mycpp-check "${files[@]}"
 }
 
 # Call function $1 with arguments $2 $3 $4
