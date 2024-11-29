@@ -364,7 +364,7 @@ check-types() {
 
   #local -a files=( mycpp/*.py )
   local -a files=(
-    mycpp/{pass_state,util,crash,format_strings,visitor,ir_pass,const_pass,debug_pass,control_flow_pass,mycpp_main}.py
+    mycpp/{pass_state,util,crash,format_strings,visitor,ir_pass,const_pass,debug_pass,control_flow_pass,mycpp_main,cppgen_pass}.py
   )
 
   # the path is fiddly

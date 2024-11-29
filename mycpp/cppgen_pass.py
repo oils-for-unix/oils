@@ -22,7 +22,7 @@ from mycpp.util import log, join_name, split_py_name, IsStr
 from mycpp import pass_state
 from mycpp import util
 
-from typing import Tuple, List
+from typing import Tuple, List, Any
 
 T = None
 
@@ -33,15 +33,15 @@ class UnsupportedException(Exception):
     pass
 
 
-def _IsContextManager(class_name):
+def _IsContextManager(class_name) -> bool:
     return class_name[-1].startswith('ctx_')
 
 
-def _IsUnusedVar(var_name):
+def _IsUnusedVar(var_name) -> bool:
     return var_name == '_' or var_name.startswith('unused')
 
 
-def _SkipAssignment(var_name):
+def _SkipAssignment(var_name) -> bool:
     """
     Skip at the top level:
       _ = log 
@@ -53,7 +53,7 @@ def _SkipAssignment(var_name):
     return _IsUnusedVar(var_name)
 
 
-def _GetCTypeForCast(type_expr):
+def _GetCTypeForCast(type_expr) -> str:
     """ MyPy cast() """
 
     if isinstance(type_expr, MemberExpr):
@@ -75,7 +75,7 @@ def _GetCTypeForCast(type_expr):
     return subtype_name
 
 
-def _GetCastKind(module_path, cast_to_type):
+def _GetCastKind(module_path, cast_to_type) -> str:
     """Translate MyPy cast to C++ cast.
 
     Prefer static_cast, but sometimes we need reinterpret_cast.
@@ -110,7 +110,7 @@ def _GetCastKind(module_path, cast_to_type):
     return cast_kind
 
 
-def _GetContainsFunc(t):
+def _GetContainsFunc(t) -> Optional[str]:
     """ x in y """
     contains_func = None
 
@@ -139,7 +139,7 @@ def _GetContainsFunc(t):
     return contains_func  # None checked later
 
 
-def _EqualsFunc(left_type):
+def _EqualsFunc(left_type) -> str:
     if IsStr(left_type):
         return 'str_equals'
 
@@ -154,7 +154,7 @@ def _EqualsFunc(left_type):
 _EXPLICIT = ('builtins.str', 'builtins.list', 'builtins.dict')
 
 
-def _CheckCondition(node, types):
+def _CheckCondition(node, types) -> bool:
     """
     Ban
         if (mystr)
@@ -191,8 +191,7 @@ def _CheckCondition(node, types):
     return True
 
 
-def CTypeIsManaged(c_type):
-    # type: (str) -> bool
+def CTypeIsManaged(c_type: str) -> bool:
     """For rooting and field masks."""
     assert c_type != 'void'
 
@@ -204,7 +203,7 @@ def CTypeIsManaged(c_type):
     return c_type.endswith('*')
 
 
-def GetCType(t, param=False, local=False):
+def GetCType(t, param=False, local=False) -> str:
     """Recursively translate MyPy type to C++ type."""
     is_pointer = False
 
@@ -428,7 +427,7 @@ def PythonStringLiteral(s: str) -> str:
     return json.dumps(format_strings.DecodeMyPyString(s))
 
 
-class Generate(ExpressionVisitor[T], StatementVisitor[None]):
+class Generate(ExpressionVisitor[None], StatementVisitor[None]):
 
     def __init__(self,
                  types: Dict[Expression, Type],
@@ -488,21 +487,21 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.writing_default_arg = False
 
-    def log(self, msg, *args):
+    def log(self, msg: str, *args: Any):
         ind_str = self.indent * '  '
         log(ind_str + msg, *args)
 
-    def always_write(self, msg, *args):
+    def always_write(self, msg: str, *args: Any):
         """Write unconditionally - forward decl, decl, def """
         if args:
             msg = msg % args
         self.f.write(msg)
 
-    def always_write_ind(self, msg, *args):
+    def always_write_ind(self, msg: str, *args: Any):
         ind_str = self.indent * '  '
         self.always_write(ind_str + msg, *args)
 
-    def def_write(self, msg, *args):
+    def def_write(self, msg: str, *args: Any):
         """Write only in definitions."""
 
         if self.forward_decl:
@@ -515,11 +514,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             msg = msg % args
         self.f.write(msg)
 
-    def def_write_ind(self, msg, *args):
+    def def_write_ind(self, msg: str, *args: Any):
         ind_str = self.indent * '  '
         self.def_write(ind_str + msg, *args)
 
-    def decl_write(self, msg, *args):
+    def decl_write(self, msg: str, *args: Any):
         """Write only in the decl stage (not forward declarations)"""
         if not self.decl:
             return
@@ -528,7 +527,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             msg = msg % args
         self.f.write(msg)
 
-    def decl_write_ind(self, msg, *args):
+    def decl_write_ind(self, msg: str, *args: Any):
         ind_str = self.indent * '  '
         self.decl_write(ind_str + msg, *args)
 
@@ -537,7 +536,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     #
 
     @overload
-    def accept(self, node: Expression) -> T:
+    def accept(self, node: Expression) -> None:
         ...
 
     @overload
@@ -577,7 +576,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     # Not in superclasses:
 
-    def visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> T:
+    def visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> None:
         if util.ShouldSkipPyFile(o):
             return
 
@@ -624,38 +623,38 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     # LITERALS
 
-    def visit_int_expr(self, o: 'mypy.nodes.IntExpr') -> T:
+    def visit_int_expr(self, o: 'mypy.nodes.IntExpr') -> None:
         self.def_write(str(o.value))
 
-    def visit_float_expr(self, o: 'mypy.nodes.FloatExpr') -> T:
+    def visit_float_expr(self, o: 'mypy.nodes.FloatExpr') -> None:
         # e.g. for arg.t > 0.0
         self.def_write(str(o.value))
 
-    def visit_str_expr(self, o: 'mypy.nodes.StrExpr') -> T:
+    def visit_str_expr(self, o: 'mypy.nodes.StrExpr') -> None:
         self.def_write(self.const_lookup[o])
 
     # UNHANDLED
 
-    def visit_bytes_expr(self, o: 'mypy.nodes.BytesExpr') -> T:
+    def visit_bytes_expr(self, o: 'mypy.nodes.BytesExpr') -> None:
         self.not_python2(o, 'bytes expr')
 
-    def visit_unicode_expr(self, o: 'mypy.nodes.UnicodeExpr') -> T:
+    def visit_unicode_expr(self, o: 'mypy.nodes.UnicodeExpr') -> None:
         self.not_translated(o, 'unicode expr')
 
-    def visit_complex_expr(self, o: 'mypy.nodes.ComplexExpr') -> T:
+    def visit_complex_expr(self, o: 'mypy.nodes.ComplexExpr') -> None:
         self.not_translated(o, 'complex expr')
 
-    def visit_ellipsis(self, o: 'mypy.nodes.EllipsisExpr') -> T:
+    def visit_ellipsis(self, o: 'mypy.nodes.EllipsisExpr') -> None:
         # is this in .pyi files only?
         self.not_translated(o, 'ellipsis')
 
     # Expressions
 
-    def visit_star_expr(self, o: 'mypy.nodes.StarExpr') -> T:
+    def visit_star_expr(self, o: 'mypy.nodes.StarExpr') -> None:
         # mycpp/examples/invalid_python.py doesn't hit this?
         self.not_translated(o, 'star expr')
 
-    def visit_name_expr(self, o: 'mypy.nodes.NameExpr') -> T:
+    def visit_name_expr(self, o: 'mypy.nodes.NameExpr') -> None:
         if o.name == 'None':
             self.def_write('nullptr')
             return
@@ -678,7 +677,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.def_write(o.name)
 
-    def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> T:
+    def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
         if o.expr:
             dot_expr = self.dot_exprs[o]
 
@@ -710,10 +709,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         else:
             self.def_write('%s', o.name)
 
-    def visit_yield_from_expr(self, o: 'mypy.nodes.YieldFromExpr') -> T:
+    def visit_yield_from_expr(self, o: 'mypy.nodes.YieldFromExpr') -> None:
         self.not_python2(o, 'yield from')
 
-    def visit_yield_expr(self, o: 'mypy.nodes.YieldExpr') -> T:
+    def visit_yield_expr(self, o: 'mypy.nodes.YieldExpr') -> None:
         assert self.current_func_node in self.yield_accumulators
         self.def_write_ind('%s->append(',
                            self.yield_accumulators[self.current_func_node][0])
@@ -808,7 +807,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.accept(arg)
         self.def_write('))')
 
-    def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> T:
+    def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> None:
         if o.callee.name == 'probe':
             self._ProbeExpr(o)
             return
@@ -873,7 +872,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         #self.log('  arg_kinds %s', o.arg_kinds)
         #self.log('  arg_names %s', o.arg_names)
 
-    def visit_op_expr(self, o: 'mypy.nodes.OpExpr') -> T:
+    def visit_op_expr(self, o: 'mypy.nodes.OpExpr') -> None:
         # a + b when a and b are strings.  (Can't use operator overloading
         # because they're pointers.)
         left_type = self.types[o.left]
@@ -960,7 +959,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.accept(o.right)
         self.def_write(')')
 
-    def visit_comparison_expr(self, o: 'mypy.nodes.ComparisonExpr') -> T:
+    def visit_comparison_expr(self, o: 'mypy.nodes.ComparisonExpr') -> None:
         # Make sure it's binary
         assert len(o.operators) == 1, o.operators
         assert len(o.operands) == 2, o.operands
@@ -1107,19 +1106,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.def_write(' %s ', o.operators[0])
         self.accept(o.operands[1])
 
-    def visit_cast_expr(self, o: 'mypy.nodes.CastExpr') -> T:
+    def visit_cast_expr(self, o: 'mypy.nodes.CastExpr') -> None:
         pass
 
-    def visit_reveal_expr(self, o: 'mypy.nodes.RevealExpr') -> T:
+    def visit_reveal_expr(self, o: 'mypy.nodes.RevealExpr') -> None:
         pass
 
-    def visit_super_expr(self, o: 'mypy.nodes.SuperExpr') -> T:
+    def visit_super_expr(self, o: 'mypy.nodes.SuperExpr') -> None:
         self.not_translated(o, 'super expr')
 
-    def visit_assignment_expr(self, o: 'mypy.nodes.AssignmentExpr') -> T:
+    def visit_assignment_expr(self, o: 'mypy.nodes.AssignmentExpr') -> None:
         self.not_translated(o, 'assign expr')
 
-    def visit_unary_expr(self, o: 'mypy.nodes.UnaryExpr') -> T:
+    def visit_unary_expr(self, o: 'mypy.nodes.UnaryExpr') -> None:
         # e.g. a[-1] or 'not x'
         if o.op == 'not':
             op_str = '!'
@@ -1137,7 +1136,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.accept(item)
         self.def_write('}')
 
-    def visit_list_expr(self, o: 'mypy.nodes.ListExpr') -> T:
+    def visit_list_expr(self, o: 'mypy.nodes.ListExpr') -> None:
         list_type = self.types[o]
         #self.log('**** list_type = %s', list_type)
         c_type = GetCType(list_type)
@@ -1156,7 +1155,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self._WriteListElements(o.items)
             self.def_write(')')
 
-    def visit_dict_expr(self, o: 'mypy.nodes.DictExpr') -> T:
+    def visit_dict_expr(self, o: 'mypy.nodes.DictExpr') -> None:
         dict_type = self.types[o]
         c_type = GetCType(dict_type)
         assert c_type.endswith('*'), c_type
@@ -1181,7 +1180,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.def_write(')')
 
-    def visit_tuple_expr(self, o: 'mypy.nodes.TupleExpr') -> T:
+    def visit_tuple_expr(self, o: 'mypy.nodes.TupleExpr') -> None:
         tuple_type = self.types[o]
         c_type = GetCType(tuple_type)
         assert c_type.endswith('*'), c_type
@@ -1194,10 +1193,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.accept(item)
         self.def_write('))')
 
-    def visit_set_expr(self, o: 'mypy.nodes.SetExpr') -> T:
+    def visit_set_expr(self, o: 'mypy.nodes.SetExpr') -> None:
         self.not_translated(o, 'set expr')
 
-    def visit_index_expr(self, o: 'mypy.nodes.IndexExpr') -> T:
+    def visit_index_expr(self, o: 'mypy.nodes.IndexExpr') -> None:
         self.accept(o.base)
 
         #base_type = self.types[o.base]
@@ -1215,26 +1214,28 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.accept(o.index)
             self.def_write(')')
 
-    def visit_type_application(self, o: 'mypy.nodes.TypeApplication') -> T:
+    def visit_type_application(self, o: 'mypy.nodes.TypeApplication') -> None:
         pass
 
-    def visit_lambda_expr(self, o: 'mypy.nodes.LambdaExpr') -> T:
+    def visit_lambda_expr(self, o: 'mypy.nodes.LambdaExpr') -> None:
         pass
 
-    def visit_list_comprehension(self, o: 'mypy.nodes.ListComprehension') -> T:
+    def visit_list_comprehension(self,
+                                 o: 'mypy.nodes.ListComprehension') -> None:
         pass
 
-    def visit_set_comprehension(self, o: 'mypy.nodes.SetComprehension') -> T:
+    def visit_set_comprehension(self,
+                                o: 'mypy.nodes.SetComprehension') -> None:
         pass
 
     def visit_dictionary_comprehension(
-            self, o: 'mypy.nodes.DictionaryComprehension') -> T:
+            self, o: 'mypy.nodes.DictionaryComprehension') -> None:
         pass
 
-    def visit_generator_expr(self, o: 'mypy.nodes.GeneratorExpr') -> T:
+    def visit_generator_expr(self, o: 'mypy.nodes.GeneratorExpr') -> None:
         pass
 
-    def visit_slice_expr(self, o: 'mypy.nodes.SliceExpr') -> T:
+    def visit_slice_expr(self, o: 'mypy.nodes.SliceExpr') -> None:
         self.def_write('->slice(')
         if o.begin_index:
             self.accept(o.begin_index)
@@ -1255,7 +1256,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.def_write(')')
 
-    def visit_conditional_expr(self, o: 'mypy.nodes.ConditionalExpr') -> T:
+    def visit_conditional_expr(self, o: 'mypy.nodes.ConditionalExpr') -> None:
         if not _CheckCondition(o.cond, self.types):
             self.report_error(
                 o,
@@ -1270,34 +1271,34 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.def_write(' : ')
         self.accept(o.else_expr)
 
-    def visit_backquote_expr(self, o: 'mypy.nodes.BackquoteExpr') -> T:
+    def visit_backquote_expr(self, o: 'mypy.nodes.BackquoteExpr') -> None:
         pass
 
-    def visit_type_var_expr(self, o: 'mypy.nodes.TypeVarExpr') -> T:
+    def visit_type_var_expr(self, o: 'mypy.nodes.TypeVarExpr') -> None:
         pass
 
-    def visit_type_alias_expr(self, o: 'mypy.nodes.TypeAliasExpr') -> T:
+    def visit_type_alias_expr(self, o: 'mypy.nodes.TypeAliasExpr') -> None:
         pass
 
-    def visit_namedtuple_expr(self, o: 'mypy.nodes.NamedTupleExpr') -> T:
+    def visit_namedtuple_expr(self, o: 'mypy.nodes.NamedTupleExpr') -> None:
         pass
 
-    def visit_enum_call_expr(self, o: 'mypy.nodes.EnumCallExpr') -> T:
+    def visit_enum_call_expr(self, o: 'mypy.nodes.EnumCallExpr') -> None:
         pass
 
-    def visit_typeddict_expr(self, o: 'mypy.nodes.TypedDictExpr') -> T:
+    def visit_typeddict_expr(self, o: 'mypy.nodes.TypedDictExpr') -> None:
         pass
 
-    def visit_newtype_expr(self, o: 'mypy.nodes.NewTypeExpr') -> T:
+    def visit_newtype_expr(self, o: 'mypy.nodes.NewTypeExpr') -> None:
         pass
 
-    def visit__promote_expr(self, o: 'mypy.nodes.PromoteExpr') -> T:
+    def visit__promote_expr(self, o: 'mypy.nodes.PromoteExpr') -> None:
         pass
 
-    def visit_await_expr(self, o: 'mypy.nodes.AwaitExpr') -> T:
+    def visit_await_expr(self, o: 'mypy.nodes.AwaitExpr') -> None:
         pass
 
-    def visit_temp_node(self, o: 'mypy.nodes.TempNode') -> T:
+    def visit_temp_node(self, o: 'mypy.nodes.TempNode') -> None:
         pass
 
     def _write_tuple_unpacking(self,
@@ -1511,7 +1512,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             is_managed = CTypeIsManaged(c_type)
             current_member_vars[lval.name] = (lval_type, c_type, is_managed)
 
-    def visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt') -> T:
+    def visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt') -> None:
         # Declare constant strings.  They have to be at the top level.
         if self.decl and self.indent == 0 and len(o.lvalues) == 1:
             lval = o.lvalues[0]
@@ -1718,7 +1719,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             #log('-- %d', self.indent)
             self.accept(stmt)
 
-    def visit_for_stmt(self, o: 'mypy.nodes.ForStmt') -> T:
+    def visit_for_stmt(self, o: 'mypy.nodes.ForStmt') -> None:
         if 0:
             self.log('ForStmt')
             self.log('  index_type %s', o.index_type)
@@ -2181,7 +2182,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.indent -= 1
         self.def_write_ind('}\n')
 
-    def visit_with_stmt(self, o: 'mypy.nodes.WithStmt') -> T:
+    def visit_with_stmt(self, o: 'mypy.nodes.WithStmt') -> None:
         """
         Translate only blocks of this form:
 
@@ -2256,7 +2257,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.indent -= 1
             self.def_write_ind('}\n')
 
-    def visit_del_stmt(self, o: 'mypy.nodes.DelStmt') -> T:
+    def visit_del_stmt(self, o: 'mypy.nodes.DelStmt') -> None:
 
         d = o.expr
         if isinstance(d, IndexExpr):
@@ -2281,7 +2282,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                          arg_types,
                          arguments,
                          update_locals=False,
-                         write_defaults=False):
+                         write_defaults=False) -> None:
         """Write params for function/method signatures.
 
         Optionally mutate self.local_vars, and optionally write default arguments.
@@ -2387,7 +2388,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             arg_name, c_type = self.yield_accumulators[self.current_func_node]
             self.always_write('%s %s', c_type, arg_name)
 
-    def visit_func_def(self, o: 'mypy.nodes.FuncDef') -> T:
+    def visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
         if o.name == '__repr__':  # Don't translate
             return
 
@@ -2460,7 +2461,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.current_func_node = None
 
     def visit_overloaded_func_def(self,
-                                  o: 'mypy.nodes.OverloadedFuncDef') -> T:
+                                  o: 'mypy.nodes.OverloadedFuncDef') -> None:
         pass
 
     def _TracingMetadataDecl(self, o, field_gc, mask_bits):
@@ -2736,7 +2737,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
                 self.accept(stmt)
 
-    def visit_class_def(self, o: 'mypy.nodes.ClassDef') -> T:
+    def visit_class_def(self, o: 'mypy.nodes.ClassDef') -> None:
         #log('  CLASS %s', o.name)
 
         base_class_name = None  # single inheritance only
@@ -2771,24 +2772,24 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self._ClassDefImpl(o, base_class_name)
         self.current_class_name = None  # Stop prefixing functions with class
 
-    def visit_global_decl(self, o: 'mypy.nodes.GlobalDecl') -> T:
+    def visit_global_decl(self, o: 'mypy.nodes.GlobalDecl') -> None:
         self.report_error(o, 'global not allowed')
 
-    def visit_nonlocal_decl(self, o: 'mypy.nodes.NonlocalDecl') -> T:
+    def visit_nonlocal_decl(self, o: 'mypy.nodes.NonlocalDecl') -> None:
         pass
 
-    def visit_decorator(self, o: 'mypy.nodes.Decorator') -> T:
+    def visit_decorator(self, o: 'mypy.nodes.Decorator') -> None:
         pass
 
-    def visit_var(self, o: 'mypy.nodes.Var') -> T:
+    def visit_var(self, o: 'mypy.nodes.Var') -> None:
         pass
 
     # Module structure
 
-    def visit_import(self, o: 'mypy.nodes.Import') -> T:
+    def visit_import(self, o: 'mypy.nodes.Import') -> None:
         pass
 
-    def visit_import_from(self, o: 'mypy.nodes.ImportFrom') -> T:
+    def visit_import_from(self, o: 'mypy.nodes.ImportFrom') -> None:
         """
         Write C++ namespace aliases and 'using' for imports.
         We need them in the 'decl' phase for default arguments like
@@ -2875,12 +2876,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 # -> namespace fmt = format;
                 self.def_write_ind('namespace %s = %s;\n', alias, name)
 
-    def visit_import_all(self, o: 'mypy.nodes.ImportAll') -> T:
+    def visit_import_all(self, o: 'mypy.nodes.ImportAll') -> None:
         pass
 
     # Statements
 
-    def visit_block(self, block: 'mypy.nodes.Block') -> T:
+    def visit_block(self, block: 'mypy.nodes.Block') -> None:
         self.def_write('{\n')  # not indented to use same line as while/if
 
         self.indent += 1
@@ -2940,7 +2941,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.indent -= 1
         self.def_write_ind('}\n')
 
-    def visit_expression_stmt(self, o: 'mypy.nodes.ExpressionStmt') -> T:
+    def visit_expression_stmt(self, o: 'mypy.nodes.ExpressionStmt') -> None:
         # TODO: Avoid writing docstrings.
         # If it's just a string, then we don't need it.
 
@@ -2949,20 +2950,20 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.def_write(';\n')
 
     def visit_operator_assignment_stmt(
-            self, o: 'mypy.nodes.OperatorAssignmentStmt') -> T:
+            self, o: 'mypy.nodes.OperatorAssignmentStmt') -> None:
         self.def_write_ind('')
         self.accept(o.lvalue)
         self.def_write(' %s= ', o.op)  # + to +=
         self.accept(o.rvalue)
         self.def_write(';\n')
 
-    def visit_while_stmt(self, o: 'mypy.nodes.WhileStmt') -> T:
+    def visit_while_stmt(self, o: 'mypy.nodes.WhileStmt') -> None:
         self.def_write_ind('while (')
         self.accept(o.expr)
         self.def_write(') ')
         self.accept(o.body)
 
-    def visit_return_stmt(self, o: 'mypy.nodes.ReturnStmt') -> T:
+    def visit_return_stmt(self, o: 'mypy.nodes.ReturnStmt') -> None:
         # Examples:
         # return
         # return None
@@ -2995,10 +2996,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.def_write(';\n')
 
-    def visit_assert_stmt(self, o: 'mypy.nodes.AssertStmt') -> T:
+    def visit_assert_stmt(self, o: 'mypy.nodes.AssertStmt') -> None:
         pass
 
-    def visit_if_stmt(self, o: 'mypy.nodes.IfStmt') -> T:
+    def visit_if_stmt(self, o: 'mypy.nodes.IfStmt') -> None:
         # Not sure why this wouldn't be true
         assert len(o.expr) == 1, o.expr
 
@@ -3043,16 +3044,16 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if cond == 'PYTHON':
                 self.def_write_ind('// endif MYCPP\n')
 
-    def visit_break_stmt(self, o: 'mypy.nodes.BreakStmt') -> T:
+    def visit_break_stmt(self, o: 'mypy.nodes.BreakStmt') -> None:
         self.def_write_ind('break;\n')
 
-    def visit_continue_stmt(self, o: 'mypy.nodes.ContinueStmt') -> T:
+    def visit_continue_stmt(self, o: 'mypy.nodes.ContinueStmt') -> None:
         self.def_write_ind('continue;\n')
 
-    def visit_pass_stmt(self, o: 'mypy.nodes.PassStmt') -> T:
+    def visit_pass_stmt(self, o: 'mypy.nodes.PassStmt') -> None:
         self.def_write_ind(';  // pass\n')
 
-    def visit_raise_stmt(self, o: 'mypy.nodes.RaiseStmt') -> T:
+    def visit_raise_stmt(self, o: 'mypy.nodes.RaiseStmt') -> None:
         # C++ compiler is aware of assert(0) for unreachable code
         if o.expr and isinstance(o.expr, CallExpr):
             if o.expr.callee.name == 'AssertionError':
@@ -3069,7 +3070,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.accept(o.expr)
         self.def_write(';\n')
 
-    def visit_try_stmt(self, o: 'mypy.nodes.TryStmt') -> T:
+    def visit_try_stmt(self, o: 'mypy.nodes.TryStmt') -> None:
         self.def_write_ind('try ')
         self.accept(o.body)
         caught = False
@@ -3124,10 +3125,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if o.finally_body:
             self.report_error(o, 'try/finally not supported')
 
-    def visit_print_stmt(self, o: 'mypy.nodes.PrintStmt') -> T:
+    def visit_print_stmt(self, o: 'mypy.nodes.PrintStmt') -> None:
         self.report_error(
             o,
             'File should start with "from __future__ import print_function"')
 
-    def visit_exec_stmt(self, o: 'mypy.nodes.ExecStmt') -> T:
+    def visit_exec_stmt(self, o: 'mypy.nodes.ExecStmt') -> None:
         self.report_error(o, 'exec not allowed')
