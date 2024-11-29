@@ -232,7 +232,7 @@ def PlusEquals(old_val, val):
 
         elif case(value_e.BashAssoc):
             if tag == value_e.Str:
-                e_die("Can't append string to array")
+                e_die("Can't append string to associative arrays")
 
             elif tag == value_e.BashAssoc:
                 assoc_lhs = cast(value.BashAssoc, UP_old_val)
