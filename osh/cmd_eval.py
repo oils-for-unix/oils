@@ -231,8 +231,19 @@ def PlusEquals(old_val, val):
                 raise AssertionError()  # parsing should prevent this
 
         elif case(value_e.BashAssoc):
-            # TODO: Could try to match bash, it will append to ${A[0]}
-            pass
+            if tag == value_e.Str:
+                e_die("Can't append string to array")
+
+            elif tag == value_e.BashAssoc:
+                assoc_lhs = cast(value.BashAssoc, UP_old_val)
+                assoc_rhs = cast(value.BashAssoc, UP_val)
+
+                for key in assoc_rhs.d.keys():
+                    assoc_lhs.d[key] = assoc_rhs.d[key]
+                val = assoc_lhs
+
+            else:
+                raise AssertionError()  # parsing should prevent this
 
         else:
             e_die("Can't append to value of type %s" % ui.ValType(old_val))
