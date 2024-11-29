@@ -1,0 +1,9 @@
+# Running
+# $ ninja -t compdb > compile_commands.json
+# allows the clangd language server to work
+
+CompileFlags:
+  Add:
+    - -I.
+    - -IPython-2.7.13
+    - -IPython-2.7.13/Include
