@@ -332,7 +332,7 @@ declare -p test_arr{1..7}
 ## STDOUT:
 declare -a test_arr1=()
 declare -a test_arr2=()
-declare -A test_arr3
+declare -A test_arr3=()
 declare -a test_arr4=(1 2 3)
 declare -a test_arr5=(1 2 3)
 declare -A test_arr6=(['a']=1 ['b']=2 ['c']=3)
@@ -422,7 +422,7 @@ f1
 [declare -pa]
 declare -a test_var6=()
 [declare -pA]
-declare -A test_var7
+declare -A test_var7=()
 ## END
 ## OK bash STDOUT:
 [declare -pa]
