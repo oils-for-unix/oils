@@ -7,6 +7,8 @@ from __future__ import print_function
 
 import re
 
+from typing import List
+
 
 def DecodeMyPyString(s):
     # type: (str) -> str
@@ -24,24 +26,28 @@ def DecodeMyPyString(s):
     return raw_string
 
 
-class LiteralPart:
+class _Part:
+    pass
 
-    def __init__(self, s):
+
+class LiteralPart(_Part):
+
+    def __init__(self, s: str):
         self.s = s
         self.strlen = len(s)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '(Literal %r)' % (self.s)
 
 
-class SubstPart:
+class SubstPart(_Part):
 
-    def __init__(self, width, char_code, arg_num):
+    def __init__(self, width: str, char_code: str, arg_num: int) -> None:
         self.width = width
         self.char_code = char_code
         self.arg_num = arg_num
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '(Subst %r %s %d)' % (self.width, self.char_code, self.arg_num)
 
 
@@ -54,10 +60,10 @@ PAT = re.compile(
 ''', re.VERBOSE)
 
 
-def Parse(fmt):
+def Parse(fmt: str) -> List[_Part]:
 
     arg_num = 0
-    parts = []
+    parts: List[_Part] = []
     for m in PAT.finditer(fmt):
         lit = m.group(1)
         width = m.group(2)
@@ -67,7 +73,7 @@ def Parse(fmt):
             parts.append(LiteralPart(lit))
         if char_code:
             if char_code == '%':
-                part = LiteralPart('%')
+                part: _Part = LiteralPart('%')
             else:
                 part = SubstPart(width, char_code, arg_num)
                 arg_num += 1

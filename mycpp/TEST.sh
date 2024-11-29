@@ -363,11 +363,15 @@ check-types() {
   local p=".:$MYPY_WEDGE:$PY3_LIBS_WEDGE"
 
   #local -a files=( mycpp/*.py )
-  local -a files=( mycpp/{pass_state,util}.py )
+  local -a files=( mycpp/{pass_state,util,crash,format_strings,visitor}.py )
 
   # the path is fiddly
   PYTHONPATH=$p MYPYPATH=$MYPY_WEDGE \
     mycpp-check "${files[@]}"
+}
+
+files() {
+  wc -l mycpp/*.py | sort -n
 }
 
 # Call function $1 with arguments $2 $3 $4
