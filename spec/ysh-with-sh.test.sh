@@ -52,13 +52,13 @@ echo Dict $?
 $SH -c '
 declare -A A=()
 A+=1
-declare -A
 '
-#echo AssocArray $?
+echo BashAssoc $?
 
 ## STDOUT:
 eggex 1
 Dict 1
+BashAssoc 1
 ## END
 
 #### Shell ${x:-default} with YSH List (issue #954)

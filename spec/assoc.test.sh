@@ -795,3 +795,20 @@ empty=0
 k=0
 typo=1
 ## END
+
+
+#### BashAssoc a+=()
+
+declare -A a=([apple]=red [orange]=orange)
+a+=([lemon]=yellow [banana]=yellow)
+echo "apple is ${a['apple']}"
+echo "orange is ${a['orange']}"
+echo "lemon is ${a['lemon']}"
+echo "banana is ${a['banana']}"
+
+## STDOUT:
+apple is red
+orange is orange
+lemon is yellow
+banana is yellow
+## END
