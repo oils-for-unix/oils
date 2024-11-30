@@ -311,7 +311,9 @@ def main(argv: List[str]) -> int:
         log('virtuals %s', virtual.virtuals)
         log('has_vtable %s', virtual.has_vtable)
 
+    #
     # String constants
+    #
     log('\tmycpp pass: CONST')
     for name, module in to_compile:
         pass1.visit_mypy_file(module)
@@ -322,14 +324,15 @@ def main(argv: List[str]) -> int:
         f.write('%s\n' % line)
     f.write('\n')
 
-    local_vars: cppgen_pass.LocalVars = {}
-    # ClassDef node for ctx_Foo
-    ctx_member_vars: cppgen_pass.CtxMemberVars = {}
-
+    #
+    # C++ declarations like:
+    # class Foo { void method(); }; class Bar { void method(); };
+    #
     log('\tmycpp pass: PROTOTYPES')
 
-    # First generate ALL C++ declarations / "headers".
-    # class Foo { void method(); }; class Bar { void method(); };
+    local_vars: cppgen_pass.LocalVars = {}
+    ctx_member_vars: cppgen_pass.CtxMemberVars = {}
+
     for name, module in to_compile:
         #log('decl name %s', name)
         if name in to_header:
@@ -337,11 +340,11 @@ def main(argv: List[str]) -> int:
         else:
             out_f = f
         p3 = cppgen_pass.Generate(result.types,
-                                  const_lookup,
+                                  const_lookup,  # input
                                   out_f,
-                                  local_vars=local_vars,
-                                  ctx_member_vars=ctx_member_vars,
-                                  virtual=virtual,
+                                  local_vars=local_vars,  # output
+                                  ctx_member_vars=ctx_member_vars,  # output
+                                  virtual=virtual,  # input
                                   decl=True)
 
         p3.visit_mypy_file(module)
@@ -383,12 +386,12 @@ def main(argv: List[str]) -> int:
     # void Bar:method() { ... }
     for name, module in to_compile:
         p4 = cppgen_pass.Generate(result.types,
-                                  const_lookup,
+                                  const_lookup,  # input
                                   f,
-                                  local_vars=local_vars,
-                                  ctx_member_vars=ctx_member_vars,
+                                  local_vars=local_vars,  # input
+                                  ctx_member_vars=ctx_member_vars,  # input
                                   stack_roots_warn=opts.stack_roots_warn,
-                                  dot_exprs=dot_exprs[module.path],
+                                  dot_exprs=dot_exprs[module.path],  # input
                                   stack_roots=stack_roots)
         p4.visit_mypy_file(module)
         MaybeExitWithErrors(p4)
