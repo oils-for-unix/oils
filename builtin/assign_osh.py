@@ -132,7 +132,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
         if flag_x == '+' and cell.exported:
             continue
 
-        if flag_a and val.tag() not in [value_e.BashArray, value_e.SparseArray]:
+        if flag_a and val.tag() not in (value_e.BashArray, value_e.SparseArray):
             continue
         if flag_A and val.tag() != value_e.BashAssoc:
             continue
@@ -146,7 +146,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
                 flags.append('r')
             if cell.exported:
                 flags.append('x')
-            if val.tag() in [value_e.BashArray, value_e.SparseArray]:
+            if val.tag() in (value_e.BashArray, value_e.SparseArray):
                 flags.append('a')
             elif val.tag() == value_e.BashAssoc:
                 flags.append('A')
@@ -431,7 +431,7 @@ class NewVar(vm._AssignBuiltin):
             if rval is None and (arg.a or arg.A):
                 old_val = self.mem.GetValue(pair.var_name)
                 if arg.a:
-                    if old_val.tag() not in [value_e.BashArray, value_e.SparseArray]:
+                    if old_val.tag() not in (value_e.BashArray, value_e.SparseArray):
                         rval = value.BashArray([])
                 elif arg.A:
                     if old_val.tag() != value_e.BashAssoc:
