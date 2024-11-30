@@ -224,7 +224,7 @@ def main(argv: List[str]) -> int:
     # strings together.  And have globally unique IDs str0, str1, ... strN.
     const_lookup: Dict[Expression, str] = {}  # StrExpr node => string name
     const_code: List[str] = []
-    pass1 = const_pass.Collect(result.types, const_lookup, const_code)
+    pass1 = const_pass.Collect(const_lookup, const_code)
 
     to_compile = list(ModulesToCompile(result, mod_names))
 

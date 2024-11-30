@@ -2,7 +2,6 @@ mycpp/const_pass.py
 mycpp/control_flow_pass.py
 mycpp/cppgen_pass.py
 mycpp/crash.py
-mycpp/debug_pass.py
 mycpp/format_strings.py
 mycpp/ir_pass.py
 mycpp/mycpp_main.py

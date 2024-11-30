@@ -1,13 +1,12 @@
 """
-const_pass.py - AST pass that collects constants.
+const_pass.py - AST pass that collects string constants.
 
-Immutable string constants like 'StrFromC("foo")' are moved to the top level of
-the generated C++ program for efficiency.
+Instead of emitting a dynamic allocation StrFromC("foo"), we emit a
+GLOBAL_STR(str99, "foo"), and then a reference to str99.
 """
 import json
 
 from mypy.nodes import (Expression, StrExpr, CallExpr)
-from mypy.types import Type
 
 from mycpp import format_strings
 from mycpp import util
@@ -16,14 +15,13 @@ from mycpp import visitor
 
 from typing import Dict, List, Any
 
+_ = log
+
 
 class Collect(visitor.SimpleVisitor):
 
-    def __init__(self, types: Dict[Expression,
-                                   Type], const_lookup: Dict[Expression, str],
+    def __init__(self, const_lookup: Dict[Expression, str],
                  const_code: List[str]) -> None:
-
-        self.types = types
         self.const_lookup = const_lookup
         self.const_code = const_code
 
@@ -47,13 +45,6 @@ class Collect(visitor.SimpleVisitor):
             msg = msg % args
         self.const_code.append(msg)
 
-    def log(self, msg: str, *args: Any) -> None:
-        if 0:  # quiet
-            ind_str = self.indent * '  '
-            log(ind_str + msg, *args)
-
-    # LITERALS
-
     def visit_str_expr(self, o: StrExpr) -> None:
         str_val = o.value
 
@@ -67,7 +58,7 @@ class Collect(visitor.SimpleVisitor):
 
             raw_string = format_strings.DecodeMyPyString(str_val)
             if util.SMALL_STR:
-                self._EmitStringConstant('GLOBAL_STR2(%s, %s);', str_d,
+                self._EmitStringConstant('GLOBAL_STR2(%s, %s);', str_id,
                                          json.dumps(raw_string))
             else:
                 self._EmitStringConstant('GLOBAL_STR(%s, %s);', str_id,
@@ -76,10 +67,7 @@ class Collect(visitor.SimpleVisitor):
         # Different nodes can refer to the same string ID
         self.const_lookup[o] = str_id
 
-    # Expression
-
     def visit_call_expr(self, o: CallExpr) -> None:
-        self.log('CallExpr')
         self.accept(o.callee)  # could be f() or obj.method()
         if o.callee.name == 'probe':
             # don't generate constants for probe names
