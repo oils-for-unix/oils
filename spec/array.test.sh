@@ -868,7 +868,7 @@ mksh: <stdin>[2]: syntax error: 'e[-1]' unexpected operator/operand
 
 
 #### a+=() modify existing instance of BashArray
-case $SH in mksh|bash) exit 0;; esac
+case $SH in mksh|bash) exit ;; esac
 
 a=(1 2 3)
 var b = a
