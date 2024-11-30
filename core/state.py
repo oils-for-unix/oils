@@ -2302,6 +2302,8 @@ class Mem(object):
                     # Special case: The array SHORTENS if you unset from the end.  You
                     # can tell with a+=(3 4)
                     strs.pop()
+                    while len(strs) > 0 and strs[-1] is None:
+                        strs.pop()
                 elif index < last_index:
                     strs[index] = None
                 else:
