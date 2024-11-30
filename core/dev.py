@@ -11,6 +11,7 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, sh_lvalue,
                                       sh_lvalue_e, LeftName)
 
 from core import error
+from core import bash_impl
 from core import optview
 from core import num
 from core import state
@@ -212,22 +213,11 @@ def _PrintShValue(val, buf):
 
         elif case(value_e.BashArray):
             val = cast(value.BashArray, UP_val)
-            parts = ['(']
-            for s in val.strs:
-                parts.append(j8_lite.MaybeShellEncode(s))
-            parts.append(')')
-            result = ' '.join(parts)
+            result = bash_impl.BashArray_ToStrForShellPrint(val, None)
 
         elif case(value_e.BashAssoc):
             val = cast(value.BashAssoc, UP_val)
-            parts = ['(']
-            for k, v in iteritems(val.d):
-                # key must be quoted
-                parts.append(
-                    '[%s]=%s' %
-                    (j8_lite.ShellEncode(k), j8_lite.MaybeShellEncode(v)))
-            parts.append(')')
-            result = ' '.join(parts)
+            result = bash_impl.BashAssoc_ToStrForShellPrint(val)
 
     buf.write(result)
 
