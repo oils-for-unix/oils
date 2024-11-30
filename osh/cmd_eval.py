@@ -190,6 +190,46 @@ def _HasManyStatuses(node):
     return node
 
 
+def ListInitializeTarget(old_val, has_plus, blame_loc):
+    # type: (value_t, bool, loc_t) -> value_t
+    UP_old_val = old_val
+    with tagswitch(old_val) as case:
+        if case(value_e.Undef):
+            return bash_impl.BashArray_New()
+        elif case(value_e.Str):
+            if has_plus:
+                e_die("Can't append array to string")
+
+            return bash_impl.BashArray_New()
+        elif case(value_e.BashArray):
+            old_val = cast(value.BashArray, UP_old_val)
+            return old_val
+        elif case(value_e.BashAssoc):
+            old_val = cast(value.BashAssoc, UP_old_val)
+            return old_val
+        else:
+            e_die(
+                "Can't list-initialize a value of type %s" %
+                ui.ValType(old_val), blame_loc)
+
+
+def ListInitialize(val, initializer, has_plus, blame_loc, arith_ev):
+    # type: (value_t, value.InitializerList, bool, loc_t, sh_expr_eval.ArithEvaluator) -> None
+    UP_val = val
+    with tagswitch(val) as case:
+        if case(value_e.BashArray):
+            val = cast(value.BashArray, UP_val)
+            bash_impl.BashArray_ListInitialize(val, initializer, has_plus,
+                                               blame_loc, arith_ev)
+        elif case(value_e.BashAssoc):
+            val = cast(value.BashAssoc, UP_val)
+            bash_impl.BashAssoc_ListInitialize(val, initializer, has_plus,
+                                               blame_loc)
+        else:
+            raise AssertionError(val.tag())
+
+
+# XXX---Remove the cases for BashArray/BashAssoc on rhs.
 def PlusEquals(old_val, val):
     # type: (value_t, value_t) -> value_t
     """Implement s+=val, typeset s+=val, etc."""
@@ -979,23 +1019,33 @@ class CommandEvaluator(object):
             # be CompoundWord or rhs_word.Empty.
             assert pair.rhs, pair.rhs
 
-            if pair.op == assign_op_e.PlusEqual:
-                rhs = self.word_ev.EvalRhsWord(pair.rhs)
+            # RHS can be a string or initializer list.
+            rhs = self.word_ev.EvalRhsWord(pair.rhs)
+            assert isinstance(rhs, value_t), rhs
 
-                lval = self.arith_ev.EvalShellLhs(pair.lhs, which_scopes)
+            lval = self.arith_ev.EvalShellLhs(pair.lhs, which_scopes)
+            has_plus = pair.op == assign_op_e.PlusEqual
+
+            initializer = None  # type: value.InitializerList
+            if rhs.tag() == value_e.InitializerList:
+                initializer = cast(value.InitializerList, rhs)
+
+                # If rhs is an initializer list, we perform the initialization
+                # of LHS.
+                old_val = sh_expr_eval.OldValue(lval, self.mem, None,
+                                                node.left)
+
+                val = ListInitializeTarget(old_val, has_plus, pair.left)
+
+            elif has_plus:
                 # do not respect set -u
                 old_val = sh_expr_eval.OldValue(lval, self.mem, None,
                                                 node.left)
 
                 val = PlusEquals(old_val, rhs)
 
-            else:  # plain assignment
-                lval = self.arith_ev.EvalShellLhs(pair.lhs, which_scopes)
-
-                # RHS can be a string or array.
-                rhs = self.word_ev.EvalRhsWord(pair.rhs)
-                assert isinstance(rhs, value_t), rhs
-
+            elif pair.rhs:
+                # plain assignment
                 val = rhs
 
             # NOTE: In bash and mksh, declare -a myarray makes an empty cell
@@ -1003,6 +1053,10 @@ class CommandEvaluator(object):
 
             flags = 0  # for tracing
             self.mem.SetValue(lval, val, which_scopes, flags=flags)
+            if initializer is not None:
+                ListInitialize(val, initializer, has_plus, pair.left,
+                               self.arith_ev)
+
             self.tracer.OnShAssignment(lval, pair.op, rhs, flags, which_scopes)
 
         # PATCH to be compatible with existing shells: If the assignment had a

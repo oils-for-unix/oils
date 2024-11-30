@@ -201,7 +201,7 @@ def PrintTokens(arena):
         print('%s' % arena.tokens[0])
         return
 
-    # TODO: 
+    # TODO:
     # - TSV8: end position, token type
     #   - then an option to print token text, as a J8 string
     # - and then there can be a separate tool to number the columns

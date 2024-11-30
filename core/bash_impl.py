@@ -2,7 +2,9 @@
 
 from _devbuild.gen.runtime_asdl import error_code_e, error_code_t
 from _devbuild.gen.value_asdl import value
+from _devbuild.gen.syntax_asdl import loc_t
 
+from core.error import e_die
 from data_lang import j8_lite
 from mycpp import mops
 from mycpp import mylib
@@ -28,6 +30,21 @@ def BigInt_GreaterEq(a, b):
 def BigInt_LessEq(a, b):
     # type: (mops.BigInt, mops.BigInt) -> bool
     return not mops.Greater(a, b)
+
+
+class ArrayIndexEvaluator(object):
+    """Interface class for implementing the evaluation of array indices in
+    initializer-list items of the form [i]=1."""
+
+    def __init__(self):
+        # type: () -> None
+        """Empty constructor for mycpp."""
+        pass
+
+    def StringToBigInt(self, s, blame_loc):
+        # type: (str, loc_t) -> mops.BigInt
+        """Returns an array index obtained by evaluating the specified string."""
+        raise NotImplementedError()
 
 
 #------------------------------------------------------------------------------
@@ -267,6 +284,26 @@ def BashAssoc_New():
     return value.BashAssoc(d)
 
 
+def BashAssoc_ListInitialize(val, initializer, has_plus, blame_loc):
+    # type: (value.BashAssoc, value.InitializerList, bool, loc_t) -> None
+
+    if not has_plus:
+        val.d.clear()
+
+    for triplet in initializer.assigns:
+        if triplet.key is None:
+            e_die(
+                "Key is missing. BashAssoc requires a key for %r" %
+                triplet.rval, blame_loc)
+
+        s = triplet.rval
+        if triplet.plus_eq:
+            old_s = val.d.get(triplet.key)
+            if old_s is not None:
+                s = old_s + s
+        val.d[triplet.key] = s
+
+
 def BashAssoc_IsEmpty(assoc_val):
     # type: (value.BashAssoc) -> bool
     return len(assoc_val.d) == 0
@@ -371,6 +408,30 @@ def BashArray_FromList(strs):
             d[max_index] = s
 
     return value.BashArray(d, max_index)
+
+
+def BashArray_ListInitialize(val, initializer, has_plus, blame_loc, arith_ev):
+    # type: (value.BashArray, value.InitializerList, bool, loc_t, ArrayIndexEvaluator) -> None
+    if not has_plus:
+        val.d.clear()
+        val.max_index = mops.MINUS_ONE
+
+    array_index = val.max_index
+    for triplet in initializer.assigns:
+        if triplet.key is not None:
+            array_index = arith_ev.StringToBigInt(triplet.key, blame_loc)
+        else:
+            array_index = mops.Add(array_index, mops.ONE)
+
+        s = triplet.rval
+        if triplet.plus_eq:
+            old_s = val.d.get(array_index)
+            if old_s is not None:
+                s = old_s + s
+
+        val.d[array_index] = s
+        if BigInt_Greater(array_index, val.max_index):
+            val.max_index = array_index
 
 
 def BashArray_IsEmpty(sparse_val):

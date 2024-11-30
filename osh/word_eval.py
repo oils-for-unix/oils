@@ -51,6 +51,7 @@ from _devbuild.gen.value_asdl import (
     value_t,
     sh_lvalue,
     sh_lvalue_t,
+    InitializerValue,
 )
 from core import bash_impl
 from core import error
@@ -66,7 +67,7 @@ from frontend import consts
 from frontend import lexer
 from frontend import location
 from mycpp import mops
-from mycpp.mylib import log, tagswitch, NewDict
+from mycpp.mylib import log, tagswitch
 from osh import braces
 from osh import glob_
 from osh import string_ops
@@ -74,7 +75,7 @@ from osh import word_
 from ysh import expr_eval
 from ysh import val_ops
 
-from typing import Optional, Tuple, List, Dict, cast, TYPE_CHECKING
+from typing import Optional, Tuple, List, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import word_part_t
@@ -2167,17 +2168,27 @@ class AbstractWordEvaluator(StringWordEvaluator):
             tag = part0.tag()
             if tag == word_part_e.InitializerLiteral:
                 part0 = cast(word_part.InitializerLiteral, UP_part0)
-                d = NewDict()  # type: Dict[str, str]
+
+                assigns = []  # type: List[InitializerValue]
                 for pair in part0.pairs:
                     UP_pair = pair
-                    if pair.tag() == InitializerWord_e.AssocPair:
-                        pair = cast(AssocPair, UP_pair)
-                        k = self.EvalWordToString(pair.key)
-                        v = self.EvalWordToString(pair.value)
-                        d[k.s] = v.s
-                    else:
-                        raise AssertionError('Not yet implemented')
-                return value.BashAssoc(d)
+                    with tagswitch(pair) as case:
+                        if case(InitializerWord_e.ArrayWord):
+                            pair = cast(InitializerWord.ArrayWord, UP_pair)
+                            words = braces.BraceExpandWords([pair.w])
+                            for v in self.EvalWordSequence(words):
+                                assigns.append(InitializerValue(
+                                    None, v, False))
+                        elif case(InitializerWord_e.AssocPair):
+                            pair = cast(AssocPair, UP_pair)
+                            k = self.EvalWordToString(pair.key).s
+                            v = self.EvalWordToString(pair.value).s
+                            assigns.append(
+                                InitializerValue(k, v, pair.has_plus))
+                        else:
+                            raise AssertionError(pair.tag())
+
+                return value.InitializerList(assigns)
 
         # If RHS doesn't look like a=( ... ), then it must be a string.
         return self.EvalWordToString(w)

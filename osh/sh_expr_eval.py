@@ -393,7 +393,7 @@ def _ParseOshInteger(s, blame_loc):
         return (False, mops.BigInt(0))  # not an integer
 
 
-class ArithEvaluator(object):
+class ArithEvaluator(bash_impl.ArrayIndexEvaluator):
     """Shared between arith and bool evaluators.
 
     They both:
@@ -411,6 +411,7 @@ class ArithEvaluator(object):
             errfmt,  # type: ui.ErrorFormatter
     ):
         # type: (...) -> None
+        bash_impl.ArrayIndexEvaluator.__init__(self)
         self.word_ev = None  # type: word_eval.StringWordEvaluator
         self.mem = mem
         self.exec_opts = exec_opts
@@ -422,7 +423,7 @@ class ArithEvaluator(object):
         # type: () -> None
         assert self.word_ev is not None
 
-    def _StringToBigInt(self, s, blame_loc):
+    def StringToBigInt(self, s, blame_loc):
         # type: (str, loc_t) -> mops.BigInt
         """Use bash-like rules to coerce a string to an integer.
 
@@ -498,7 +499,7 @@ class ArithEvaluator(object):
                 elif case(value_e.Str):
                     val = cast(value.Str, UP_val)
                     # calls e_strict
-                    return self._StringToBigInt(val.s, loc.Arith(blame))
+                    return self.StringToBigInt(val.s, loc.Arith(blame))
 
         except error.Strict as e:
             if self.exec_opts.strict_arith():
@@ -1127,7 +1128,7 @@ class BoolEvaluator(ArithEvaluator):
         # Used by both [[ $x -gt 3 ]] and $(( x ))
         else:
             try:
-                i = self._StringToBigInt(s, blame_loc)
+                i = self.StringToBigInt(s, blame_loc)
             except error.Strict as e:
                 if self.bracket or self.exec_opts.strict_arith():
                     raise
