@@ -412,3 +412,22 @@ typeset a[1000]=100
 
 ## N-I zsh/ash STDOUT:
 ## END
+
+#### SparseArray: +=
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+sp1[10]=a
+sp1[20]=b
+sp1[99]=c
+var sp1 = _a2sp(sp1)
+declare -p sp1
+sp1+=(1 2 3)
+declare -p sp1
+
+## STDOUT:
+declare -a sp1=([10]=a [20]=b [99]=c)
+declare -a sp1=([10]=a [20]=b [99]=c [100]=1 [101]=2 [102]=3)
+## END
+
+## N-I bash/zsh/mksh/ash STDOUT:
+## END

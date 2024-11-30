@@ -135,13 +135,37 @@ def SparseArray_Length(sparse_val):
     # type: (value.SparseArray) -> int
     return len(sparse_val.d)
 
+def SparseArray_GetKeys(sparse_val):
+    # type: (value.SparseArray) -> List[mops.BigInt]
+
+    keys = sparse_val.d.keys()
+    mylib.BigIntSort(keys)
+    return keys
+
+def SparseArray_GetValues(sparse_val):
+    # type: (value.SparseArray) -> List[str]
+    """Get the list of values.  This function does not fill None for
+    the unset elements, so the index in the returned list does not
+    match the index in a sparse array.
+
+    """
+
+    values = []  # type: List[str]
+    for index in SparseArray_GetKeys(sparse_val):
+        values.append(sparse_val.d[index])
+    return values
+
+def SparseArray_AppendValues(sparse_val, strs):
+    # type: (value.SparseArray, List[str]) ->  None
+    for s in strs:
+        sparse_val.max_index = mops.Add(sparse_val.max_index, mops.ONE)
+        sparse_val.d[sparse_val.max_index] = s
+
 def SparseArray_ToStrForShellPrint(sparse_val):
     # type: (value.SparseArray) -> str
 
     body = [] # type: List[str]
-    keys = sparse_val.d.keys()
-    mylib.BigIntSort(keys)
-    for index in keys:
+    for index in SparseArray_GetKeys(sparse_val):
         if len(body) > 0:
             body.append(" ")
         body.extend([

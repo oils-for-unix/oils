@@ -431,7 +431,7 @@ class NewVar(vm._AssignBuiltin):
             if rval is None and (arg.a or arg.A):
                 old_val = self.mem.GetValue(pair.var_name)
                 if arg.a:
-                    if old_val.tag() != value_e.BashArray:
+                    if old_val.tag() not in [value_e.BashArray, value_e.SparseArray]:
                         rval = value.BashArray([])
                 elif arg.A:
                     if old_val.tag() != value_e.BashAssoc:
