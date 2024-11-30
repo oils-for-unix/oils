@@ -907,3 +907,27 @@ bash: line 4: unset: [-2]: bad array subscript
 ## N-I mksh status: 0
 ## N-I mksh STDERR:
 ## END
+
+
+#### out-of-bound negative offset for ${a[@]:offset}
+case $SH in mksh) exit ;; esac
+
+a=(1 2 3 4)
+echo "a=(${a[*]})"
+echo "begin=-1 -> (${a[*]: -1})"
+echo "begin=-2 -> (${a[*]: -2})"
+echo "begin=-3 -> (${a[*]: -3})"
+echo "begin=-4 -> (${a[*]: -4})"
+echo "begin=-5 -> (${a[*]: -5})"
+
+## STDOUT:
+a=(1 2 3 4)
+begin=-1 -> (4)
+begin=-2 -> (3 4)
+begin=-3 -> (2 3 4)
+begin=-4 -> (1 2 3 4)
+begin=-5 -> ()
+## END
+
+## N-I mksh STDOUT:
+## END
