@@ -283,6 +283,7 @@ shift 2
 tmp=$out.tmp  # avoid creating partial files
 
 MYPYPATH="$MYPYPATH" \
+  /usr/bin/time --format 'MYCPP { elapsed: %e, max_RSS: %M }' -- \
   python3 mycpp/mycpp_main.py --cc-out $tmp "$@"
 status=$?
 

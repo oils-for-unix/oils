@@ -49,8 +49,8 @@ class Build(SimpleVisitor):
 
     def __init__(self, types: Dict[Expression,
                                    Type], virtual: pass_state.Virtual,
-                 local_vars: cppgen_pass.LocalVars,
-                 dot_exprs: cppgen_pass.DotExprs) -> None:
+                 local_vars: 'cppgen_pass.LocalVars',
+                 dot_exprs: 'cppgen_pass.DotExprs') -> None:
 
         self.types = types
         self.cfgs: Dict[SymbolPath,
