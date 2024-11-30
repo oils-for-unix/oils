@@ -375,12 +375,13 @@ def _PerformSlice(
                 e_die("Array slice can't have negative length: %d" % length,
                       loc.WordPart(part))
 
+            orig = bash_impl.BashArray_GetValues(val)
+
             # Quirk: "begin" for positional arguments ($@ and $*) counts $0.
             if arg0_val is not None:
-                orig = [arg0_val.s]
-                orig.extend(val.strs)
-            else:
-                orig = val.strs
+                new_list = [arg0_val.s]
+                new_list.extend(orig)
+                orig = new_list
 
             n = len(orig)
             if begin < 0:
