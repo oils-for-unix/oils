@@ -868,7 +868,7 @@ mksh: <stdin>[2]: syntax error: 'e[-1]' unexpected operator/operand
 
 
 #### a+=() modify existing instance of BashArray
-case $SH in mksh|bash) exit 0;; esac
+case $SH in mksh|bash) exit ;; esac
 
 a=(1 2 3)
 var b = a
@@ -882,4 +882,28 @@ b=(1 2 3 4 5)
 ## END
 
 ## N-I mksh/bash STDOUT:
+## END
+
+
+#### unset a[-2]: out-of-bound negative index should cause error
+case $SH in mksh) exit ;; esac
+
+a=(1)
+unset -v 'a[-2]'
+
+## status: 1
+## STDOUT:
+## END
+## STDERR:
+  unset -v 'a[-2]'
+  ^~~~~
+[ stdin ]:4: fatal: Index -2 is out of bounds for array of length 1
+## END
+
+## OK bash STDERR:
+bash: line 4: unset: [-2]: bad array subscript
+## END
+
+## N-I mksh status: 0
+## N-I mksh STDERR:
 ## END
