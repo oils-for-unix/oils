@@ -6,24 +6,15 @@ the generated C++ program for efficiency.
 """
 import json
 
-from typing import overload, Union, Dict, List, Any
-
-import mypy
-from mypy.visitor import ExpressionVisitor, StatementVisitor
-from mypy.nodes import (Expression, Statement, ExpressionStmt, StrExpr,
-                        ComparisonExpr, NameExpr, MemberExpr)
-
+from mypy.nodes import (Expression, StrExpr, CallExpr)
 from mypy.types import Type
 
-from mycpp.crash import catch_errors
 from mycpp import format_strings
 from mycpp import util
 from mycpp.util import log
 from mycpp import visitor
 
-
-class UnsupportedException(Exception):
-    pass
+from typing import Dict, List, Any
 
 
 class Collect(visitor.SimpleVisitor):
@@ -51,7 +42,7 @@ class Collect(visitor.SimpleVisitor):
 
     # LITERALS
 
-    def visit_str_expr(self, o: 'mypy.nodes.StrExpr') -> None:
+    def visit_str_expr(self, o: StrExpr) -> None:
         id_ = 'str%d' % self.unique_id
         self.unique_id += 1
 
@@ -68,7 +59,7 @@ class Collect(visitor.SimpleVisitor):
 
     # Expression
 
-    def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> None:
+    def visit_call_expr(self, o: CallExpr) -> None:
         self.log('CallExpr')
         self.accept(o.callee)  # could be f() or obj.method()
         if o.callee.name == 'probe':
