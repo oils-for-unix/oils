@@ -133,7 +133,7 @@ def AppBundleMain(argv):
 
     environ = pyos.Environ()
 
-    if applet.startswith('ysh') or applet.startswith('oil'):
+    if applet.startswith('ysh') or applet == 'oil':
         return shell.Main('ysh', arg_r, environ, login_shell, loader, readline)
 
     elif applet.startswith('osh') or applet.endswith(
