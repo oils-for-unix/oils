@@ -282,12 +282,20 @@ shift 2
 
 tmp=$out.tmp  # avoid creating partial files
 
-# Avoid the 'time' keyword with 'command'.  'busybox time' supports -f but not
-# --format.
-MYPYPATH="$MYPYPATH" \
-  command -- \
-  time -f 'MYCPP { elapsed: %e, max_RSS: %M }' -- \
-  python3 mycpp/mycpp_main.py --cc-out $tmp "$@"
+# If 'time' is on the system, add timing info.  (It's not present on some
+# Debian CI images)
+
+if command -v time >/dev/null; then
+  'busybox time' supports -f but not # --format.
+  set -- \
+    time -f 'MYCPP { elapsed: %e, max_RSS: %M }' -- \
+    python3 mycpp/mycpp_main.py --cc-out $tmp "$@"
+else
+  set -- \
+    python3 mycpp/mycpp_main.py --cc-out $tmp "$@"
+fi
+
+MYPYPATH="$MYPYPATH" "$@"
 status=$?
 
 mv $tmp $out
