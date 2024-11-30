@@ -217,7 +217,8 @@ test-invalid-examples() {
 
     case $ex in 
       */invalid_condition.py)
-        expected_status=8
+        # forward decl pass catches some, but not all
+        expected_status=5
         ;;
       */invalid_default_args.py)
         expected_status=4

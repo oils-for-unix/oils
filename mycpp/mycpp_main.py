@@ -20,7 +20,6 @@ if TYPE_CHECKING:
 from mycpp import ir_pass
 from mycpp import const_pass
 from mycpp import cppgen_pass
-from mycpp import debug_pass
 from mycpp import control_flow_pass
 from mycpp import pass_state
 from mycpp.util import log
