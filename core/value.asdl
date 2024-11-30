@@ -27,6 +27,8 @@ module value
 
   IntBox = (int i)
 
+  InitializerValue = (str? key, str rval, bool plus_eq)
+
   ProcDefaults = (
     List[value]? for_word,  # all of them are value.Str
     List[value]? for_typed,
@@ -101,6 +103,8 @@ module value
   | Undef
 
   | Str(str s)
+
+  | InitializerList(List[InitializerValue] assigns)
 
     # "holes" in the array are represented by None
   | InternalStringArray(List[str] strs)

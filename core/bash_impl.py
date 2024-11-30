@@ -2,7 +2,9 @@
 
 from _devbuild.gen.runtime_asdl import error_code_e, error_code_t
 from _devbuild.gen.value_asdl import value
+from _devbuild.gen.syntax_asdl import loc_t
 
+from core.error import e_die
 from data_lang import j8_lite
 from mycpp import mops
 from mycpp import mylib
@@ -267,6 +269,26 @@ def BashAssoc_New():
     return value.BashAssoc(d)
 
 
+def BashAssoc_ListInitialize(val, initializer, has_plus, blame_loc):
+    # type: (value.BashAssoc, value.InitializerList, bool, loc_t) -> None
+
+    if not has_plus:
+        val.d.clear()
+
+    for triplet in initializer.assigns:
+        if triplet.key is None:
+            e_die(
+                "Key is missing. BashAssoc requires a key for %r" %
+                triplet.rval, blame_loc)
+
+        s = triplet.rval
+        if triplet.plus_eq:
+            old_s = val.d.get(triplet.key)
+            if old_s is not None:
+                s = old_s + s
+        val.d[triplet.key] = s
+
+
 def BashAssoc_IsEmpty(assoc_val):
     # type: (value.BashAssoc) -> bool
     return len(assoc_val.d) == 0
@@ -371,6 +393,30 @@ def BashArray_FromList(strs):
             d[max_index] = s
 
     return value.BashArray(d, max_index)
+
+
+def BashArray_ListInitialize(val, initializer, has_plus, blame_loc, indices):
+    # type: (value.BashArray, value.InitializerList, bool, loc_t, List[mops.BigInt]) -> None
+    assert len(indices) == len(initializer.assigns), indices
+
+    if not has_plus:
+        val.d.clear()
+        val.max_index = mops.MINUS_ONE
+
+    i = 0
+    for triplet in initializer.assigns:
+        array_index = indices[i]
+        i = i + 1
+
+        s = triplet.rval
+        if triplet.plus_eq:
+            old_s = val.d.get(array_index)
+            if old_s is not None:
+                s = old_s + s
+
+        val.d[array_index] = s
+        if BigInt_Greater(array_index, val.max_index):
+            val.max_index = array_index
 
 
 def BashArray_IsEmpty(sparse_val):

@@ -190,6 +190,66 @@ def _HasManyStatuses(node):
     return node
 
 
+# Evaluate indices before clearing the content of the array
+def _ListInitializeBashArray(val, initializer, has_plus, blame_loc, arith_ev):
+    # type: (value.BashArray, value.InitializerList, bool, loc_t, sh_expr_eval.ArithEvaluator) -> None
+    indices = []  # type: List[mops.BigInt]
+    if has_plus:
+        array_index = mops.Sub(bash_impl.BashArray_Length(val), mops.ONE)
+    else:
+        array_index = mops.MINUS_ONE
+    for triplet in initializer.assigns:
+        if triplet.key is not None:
+            # XXX---We now specify the loc_t of the LHS of the
+            # compound assignment.  However, we may save "loc_t" in
+            # InitializerList for a better error reporting.
+            array_index = arith_ev._StringToBigInt(triplet.key, blame_loc)
+        else:
+            array_index = mops.Add(array_index, mops.ONE)
+        indices.append(array_index)
+
+    bash_impl.BashArray_ListInitialize(val, initializer, has_plus, blame_loc,
+                                       indices)
+
+
+def ListInitialize(old_val, initializer, has_plus, blame_loc, arith_ev):
+    # type: (value_t, value.InitializerList, bool, loc_t,  sh_expr_eval.ArithEvaluator) -> value_t
+    UP_old_val = old_val
+    with tagswitch(old_val) as case:
+        if case(value_e.Undef):
+            new_val = bash_impl.BashArray_New()
+            _ListInitializeBashArray(new_val, initializer, has_plus, blame_loc,
+                                     arith_ev)
+            return new_val
+        elif case(value_e.Str):
+            if has_plus:
+                e_die("Can't append array to string")
+
+            new_val = bash_impl.BashArray_New()
+            _ListInitializeBashArray(new_val, initializer, has_plus, blame_loc,
+                                     arith_ev)
+            return new_val
+        elif case(value_e.BashArray):
+            old_val = cast(value.BashArray, UP_old_val)
+            _ListInitializeBashArray(old_val, initializer, has_plus, blame_loc,
+                                     arith_ev)
+            return old_val
+        elif case(value_e.BashAssoc):
+            old_val = cast(value.BashAssoc, UP_old_val)
+            bash_impl.BashAssoc_ListInitialize(old_val, initializer, has_plus,
+                                               blame_loc)
+            return old_val
+        else:
+            # XXX---Do we need to support "if
+            # case(value_e.InternalStringArray)"? Probably not.  We expect
+            # value_e.InternalStringArray to be readonly, but at which point is
+            # it checked?
+            e_die(
+                "Can't list-initialize a value of type %s" %
+                ui.ValType(old_val), blame_loc)
+
+
+# XXX---Remove the cases for BashArray/BashAssoc on rhs.
 def PlusEquals(old_val, val):
     # type: (value_t, value_t) -> value_t
     """Implement s+=val, typeset s+=val, etc."""
@@ -979,22 +1039,29 @@ class CommandEvaluator(object):
             # be CompoundWord or rhs_word.Empty.
             assert pair.rhs, pair.rhs
 
-            if pair.op == assign_op_e.PlusEqual:
-                rhs = self.word_ev.EvalRhsWord(pair.rhs)
+            # RHS can be a string or initialier list.
+            rhs = self.word_ev.EvalRhsWord(pair.rhs)
+            assert isinstance(rhs, value_t), rhs
 
-                lval = self.arith_ev.EvalShellLhs(pair.lhs, which_scopes)
+            lval = self.arith_ev.EvalShellLhs(pair.lhs, which_scopes)
+
+            if rhs.tag() == value_e.InitializerList:
+                initializer = cast(value.InitializerList, rhs)
+
+                # If rhs is an initializer list, we perform the
+                # initialization of LHS.
+                old_val = sh_expr_eval.OldValue(lval, self.mem, None)
+                has_plus = pair.op == assign_op_e.PlusEqual
+                val = ListInitialize(old_val, initializer, has_plus, pair.left,
+                                     self.arith_ev)
+
+            elif pair.op == assign_op_e.PlusEqual:
                 # do not respect set -u
                 old_val = sh_expr_eval.OldValue(lval, self.mem, None)
-
                 val = PlusEquals(old_val, rhs)
 
-            else:  # plain assignment
-                lval = self.arith_ev.EvalShellLhs(pair.lhs, which_scopes)
-
-                # RHS can be a string or array.
-                rhs = self.word_ev.EvalRhsWord(pair.rhs)
-                assert isinstance(rhs, value_t), rhs
-
+            elif pair.rhs:
+                # plain assignment
                 val = rhs
 
             # NOTE: In bash and mksh, declare -a myarray makes an empty cell

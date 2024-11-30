@@ -51,6 +51,7 @@ from _devbuild.gen.value_asdl import (
     value_t,
     sh_lvalue,
     sh_lvalue_t,
+    InitializerValue,
 )
 from core import bash_impl
 from core import error
@@ -2167,17 +2168,24 @@ class AbstractWordEvaluator(StringWordEvaluator):
             tag = part0.tag()
             if tag == word_part_e.InitializerLiteral:
                 part0 = cast(word_part.InitializerLiteral, UP_part0)
-                d = NewDict()  # type: Dict[str, str]
+
+                assigns = []  # type: List[InitializerValue]
                 for pair in part0.pairs:
                     UP_pair = pair
-                    if pair.tag() == InitializerWord_e.AssocPair:
+                    if pair.tag() == InitializerWord_e.ArrayWord:
+                        pair = cast(InitializerWord.ArrayWord, UP_pair)
+                        words = braces.BraceExpandWords([pair.w])
+                        for v in self.EvalWordSequence(words):
+                            assigns.append(InitializerValue(None, v, False))
+                    elif pair.tag() == InitializerWord_e.AssocPair:
                         pair = cast(AssocPair, UP_pair)
-                        k = self.EvalWordToString(pair.key)
-                        v = self.EvalWordToString(pair.value)
-                        d[k.s] = v.s
+                        k = self.EvalWordToString(pair.key).s
+                        v = self.EvalWordToString(pair.value).s
+                        assigns.append(InitializerValue(k, v, pair.has_plus))
                     else:
-                        raise AssertionError('Not yet implemented')
-                return value.BashAssoc(d)
+                        raise AssertionError(pair.tag())
+
+                return value.InitializerList(assigns)
 
         # If RHS doesn't look like a=( ... ), then it must be a string.
         return self.EvalWordToString(w)
