@@ -5,17 +5,6 @@
 
 #include "mycpp/runtime.h"
 
-GLOBAL_STR(str0, "(");
-GLOBAL_STR(str1, ")");
-GLOBAL_STR(str2, "_");
-GLOBAL_STR(str3, "T");
-GLOBAL_STR(str4, "F");
-GLOBAL_STR(str5, "<%s %r>");
-GLOBAL_STR(str6, "code");
-GLOBAL_STR(str7, "message");
-GLOBAL_STR(str8, "%s, got %s");
-GLOBAL_STR(str9, " (line %d, offset %d-%d: %r)");
-
 namespace runtime {  // forward declare
 
   class TraversalState;
@@ -26,6 +15,31 @@ namespace num {  // forward declare
 
 
 }  // forward declare namespace num
+
+GLOBAL_STR(str0, "(");
+GLOBAL_STR(str1, ")");
+GLOBAL_STR(str2, "_");
+GLOBAL_STR(str3, "T");
+GLOBAL_STR(str4, "F");
+GLOBAL_STR(str5, "A parse error that can be formatted.\n\n    Formatting is in ui.PrintError.\n    ");
+GLOBAL_STR(str6, "For flag parsing errors in builtins and main()\n\n    Called by e_usage().  TODO: Should settle on a single interface that\n    can be translated.  Sometimes we use 'raise error.Usage()'\n    ");
+GLOBAL_STR(str7, "Used in the parsers.");
+GLOBAL_STR(str8, "Raised when a glob matches nothing when failglob is set.\n\n    Meant to be caught.\n    ");
+GLOBAL_STR(str9, "Used in the CommandEvaluator.\n\n    A bad redirect causes the SimpleCommand to return with status 1.  To\n    make it fatal, use set -o errexit.\n    ");
+GLOBAL_STR(str10, "An exception that propagates to the top level.\n\n    Used in the evaluators, and also also used in test builtin for\n    invalid argument.\n    ");
+GLOBAL_STR(str11, "Depending on shell options, these errors may be caught and ignored.\n\n    For example, if options like these are ON:\n\n      set -o strict_arith\n      set -o strict_word_eval\n\n    then we re-raise the error so it's caught by the top level.  Otherwise\n    we catch it and return a dummy value like '' or -1 (i.e. what bash commonly\n    does.)\n\n    TODO: Have levels, like:\n\n    OILS_STRICT_PRINT=2   # print warnings at level 2 and above\n    OILS_STRICT_DIE=1  # abort the program at level 1 and above\n    ");
+GLOBAL_STR(str12, "For set -e.\n\n    Travels between WordEvaluator and CommandEvaluator.\n    ");
+GLOBAL_STR(str13, "e.g. KeyError, IndexError, ZeroDivisionError.");
+GLOBAL_STR(str14, "An error that can be exposed via the _error Dict.\n\n    Including:\n    - Errors raised by the 'error' builtin\n    - J8 encode and decode errors.\n    ");
+GLOBAL_STR(str15, "code");
+GLOBAL_STR(str16, "message");
+GLOBAL_STR(str17, "An assertion.");
+GLOBAL_STR(str18, "e.g. ~ on a bool or float, 'not' on an int.");
+GLOBAL_STR(str19, "%s, got %s");
+GLOBAL_STR(str20, "An error that's meant to be caught, i.e. it's non-fatal.\n\n    Thrown by core/state.py and caught by builtins\n    ");
+GLOBAL_STR(str21, "\n    List of J8 errors:\n    - message isn't UTF-8 - Id.Lit_Chars - need loc\n    - Invalid token Id.Unkown_Tok - need loc\n    - Unclosed double quote string -- need loc\n    - Parse error, e.g. [}{]\n\n    - Invalid escapes:\n      - b\"\" and u\"\" don't accept \\u1234\n      - u\"\" doesn't accept \\yff\n      - \"\" doesn't accept \\yff or \\u{123456}\n    ");
+GLOBAL_STR(str22, " (line %d, offset %d-%d: %r)");
+GLOBAL_STR(str23, "\n    List of J8 encode errors:\n    - object cycle\n    - unprintable object like Eggex\n    When encoding JSON:\n    - binary data that can't be represented in JSON\n      - if using Unicode replacement char, then it won't fail\n    ");
 
 namespace runtime {  // declare
 
@@ -166,8 +180,8 @@ value::Dict* Structured::ToDict() {
   if (this->properties != nullptr) {
     d->update(this->properties);
   }
-  d->set(str6, num::ToBig(this->ExitStatus()));
-  d->set(str7, Alloc<value::Str>(this->msg));
+  d->set(str15, num::ToBig(this->ExitStatus()));
+  d->set(str16, Alloc<value::Str>(this->msg));
   return Alloc<value::Dict>(d);
 }
 
