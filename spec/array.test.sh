@@ -812,7 +812,7 @@ a[-1]=1
 ## STDERR:
   a[-1]=1
   ^~
-[ stdin ]:2: fatal: Index -1 is out of range
+[ stdin ]:2: fatal: Index -1 is out of bounds for array of length 0
 ## END
 
 ## OK bash STDERR:
