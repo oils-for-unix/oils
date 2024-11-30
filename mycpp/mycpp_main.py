@@ -317,8 +317,7 @@ def main(argv: List[str]) -> int:
                                   const_lookup,
                                   out_f,
                                   virtual=virtual,
-                                  forward_decl=True,
-                                  dot_exprs=dot_exprs[module.path])
+                                  forward_decl=True)
 
         p2.visit_mypy_file(module)
         MaybeExitWithErrors(p2)
@@ -350,8 +349,7 @@ def main(argv: List[str]) -> int:
                                   local_vars=local_vars,
                                   ctx_member_vars=ctx_member_vars,
                                   virtual=virtual,
-                                  decl=True,
-                                  dot_exprs=dot_exprs[module.path])
+                                  decl=True)
 
         p3.visit_mypy_file(module)
         MaybeExitWithErrors(p3)

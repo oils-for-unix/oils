@@ -692,22 +692,28 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
         self.def_write(o.name)
 
     def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
+
         if o.expr:
-            dot_expr = self.dot_exprs[o]
-
-            if isinstance(dot_expr, pass_state.StackObjectMember):
-                op = '.'
-
-            elif isinstance(dot_expr,
-                            pass_state.StaticObjectMember) or isinstance(
-                                dot_expr, pass_state.ModuleMember):
+            if self.decl or self.forward_decl:
+                # In declarations, 'a.b' is only used for default argument
+                # values 'a::b'
                 op = '::'
-
-            elif isinstance(dot_expr, pass_state.HeapObjectMember):
-                op = '->'
-
             else:
-                assert False, o
+                dot_expr = self.dot_exprs[o]
+
+                if isinstance(dot_expr, pass_state.StackObjectMember):
+                    op = '.'
+
+                elif isinstance(dot_expr,
+                                pass_state.StaticObjectMember) or isinstance(
+                                    dot_expr, pass_state.ModuleMember):
+                    op = '::'
+
+                elif isinstance(dot_expr, pass_state.HeapObjectMember):
+                    op = '->'
+
+                else:
+                    assert False, o
 
             self.accept(o.expr)
             self.def_write(op)
