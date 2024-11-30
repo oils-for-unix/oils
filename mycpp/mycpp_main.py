@@ -15,8 +15,7 @@ from mypy.build import build as mypy_build
 from mypy.build import BuildSource
 from mypy.main import process_options
 if TYPE_CHECKING:
-    from mypy.nodes import Expression, FuncDef, ClassDef, MemberExpr
-    from mypy.types import Type
+    from mypy.nodes import Expression
 
 from mycpp import ir_pass
 from mycpp import const_pass

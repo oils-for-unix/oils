@@ -18,7 +18,7 @@ from mycpp import util
 from mycpp.util import SymbolPath
 from mycpp import pass_state
 
-from typing import Dict, List, Any, TYPE_CHECKING
+from typing import Dict, List, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from mycpp import cppgen_pass
