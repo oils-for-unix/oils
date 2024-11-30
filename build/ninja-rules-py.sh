@@ -282,8 +282,11 @@ shift 2
 
 tmp=$out.tmp  # avoid creating partial files
 
+# Avoid the 'time' keyword with 'command'.  'busybox time' supports -f but not
+# --format.
 MYPYPATH="$MYPYPATH" \
-  /usr/bin/time --format 'MYCPP { elapsed: %e, max_RSS: %M }' -- \
+  command -- \
+  time -f 'MYCPP { elapsed: %e, max_RSS: %M }' -- \
   python3 mycpp/mycpp_main.py --cc-out $tmp "$@"
 status=$?
 
