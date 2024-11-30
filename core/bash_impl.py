@@ -231,13 +231,13 @@ def BashAssoc_Count(assoc_val):
     return len(assoc_val.d)
 
 
-def BashAssoc_GetValues(assoc_val):
+def BashAssoc_GetDict(assoc_val):
     # type: (value.BashAssoc) -> Dict[str, str]
 
     return assoc_val.d
 
 
-def BashAssoc_AppendValues(assoc_val, d):
+def BashAssoc_AppendDict(assoc_val, d):
     # type: (value.BashAssoc, Dict[str, str]) -> None
 
     for key in d:
