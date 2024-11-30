@@ -112,10 +112,14 @@ def DecayArray(val):
     """Resolve ${array} to ${array[0]}."""
     if val.tag() == value_e.BashArray:
         array_val = cast(value.BashArray, val)
-        s = array_val.strs[0] if len(array_val.strs) else None
+        s, error_code = bash_impl.BashArray_GetElement(array_val, 0)
+
+        # Note: index 0 should never cause the out-of-bound index error.
+        assert error_code == error_code_e.OK
+
     elif val.tag() == value_e.BashAssoc:
         assoc_val = cast(value.BashAssoc, val)
-        s = assoc_val.d['0'] if '0' in assoc_val.d else None
+        s = bash_impl.BashAssoc_GetElement(assoc_val, '0')
     else:
         raise AssertionError(val.tag())
 
