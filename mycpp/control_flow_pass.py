@@ -15,6 +15,7 @@ from mycpp.crash import catch_errors
 from mycpp.util import join_name, split_py_name
 from mycpp.visitor import SimpleVisitor, T
 from mycpp import util
+from mycpp.util import SymbolPath
 from mycpp import pass_state
 
 from typing import Dict, List, Any
@@ -24,7 +25,7 @@ class UnsupportedException(Exception):
     pass
 
 
-def GetObjectTypeName(t: Type) -> util.SymbolPath:
+def GetObjectTypeName(t: Type) -> SymbolPath:
     if isinstance(t, Instance):
         return split_py_name(t.type.fullname)
 
@@ -38,18 +39,21 @@ def GetObjectTypeName(t: Type) -> util.SymbolPath:
     assert False, t
 
 
+INVALID_ID = -99  # statement IDs are positive
+
+
 class Build(SimpleVisitor):
 
     def __init__(self, types: Dict[Expression, Type],
                  virtual: pass_state.Virtual, local_vars, dot_exprs):
 
         self.types = types
-        self.cfgs: Dict[str,
+        self.cfgs: Dict[SymbolPath,
                         pass_state.ControlFlowGraph] = collections.defaultdict(
                             pass_state.ControlFlowGraph)
-        self.current_statement_id = None
-        self.current_class_name = None
-        self.current_func_node = None
+        self.current_statement_id = INVALID_ID
+        self.current_class_name: Optional[SymbolPath] = None
+        self.current_func_node: Optional[FuncDef] = None
         self.loop_stack: List[pass_state.CfgLoopContext] = []
         self.virtual = virtual
         self.local_vars = local_vars
@@ -364,7 +368,7 @@ class Build(SimpleVisitor):
 
         self.accept(o.body)
         self.current_func_node = None
-        self.current_statement_id = None
+        self.current_statement_id = INVALID_ID
 
     def visit_class_def(self, o: 'mypy.nodes.ClassDef') -> None:
         self.current_class_name = split_py_name(o.fullname)

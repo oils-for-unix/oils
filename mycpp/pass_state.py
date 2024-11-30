@@ -18,7 +18,11 @@ from typing import Optional, List, Dict, Tuple, Set
 _ = log
 
 
-class ModuleMember(object):
+class member_t(object):
+    pass
+
+
+class ModuleMember(member_t):
     """
     A member of a Python module.
 
@@ -30,7 +34,7 @@ class ModuleMember(object):
         self.member = member
 
 
-class StaticObjectMember(object):
+class StaticObjectMember(member_t):
     """
     A static member of an object. Usually a a method like an alternative constructor.
 
@@ -42,7 +46,7 @@ class StaticObjectMember(object):
         self.member = member
 
 
-class HeapObjectMember(object):
+class HeapObjectMember(member_t):
     """
     A member of a heap-allocated object.
 
@@ -56,7 +60,7 @@ class HeapObjectMember(object):
         self.member = member
 
 
-class StackObjectMember(object):
+class StackObjectMember(member_t):
     """
     A member of a stack-allocated object.
 
@@ -78,7 +82,7 @@ class Virtual(object):
 
     def __init__(self) -> None:
         self.methods: Dict[SymbolPath, List[str]] = defaultdict(list)
-        self.subclasses: Dict[SymbolPath, List[Tuple[str]]] = defaultdict(list)
+        self.subclasses: Dict[SymbolPath, List[SymbolPath]] = defaultdict(list)
         self.virtuals: Dict[Tuple[SymbolPath, str], Optional[Tuple[SymbolPath,
                                                                    str]]] = {}
         self.has_vtable: Dict[SymbolPath, bool] = {}
@@ -116,9 +120,6 @@ class Virtual(object):
                         ), base_class
             else:
                 self.base_class_unique[base_key] = base_class
-
-        else:
-            base_key = base_class
 
         self.subclasses[base_class].append(subclass)
 
@@ -445,10 +446,10 @@ class CfgBranchContext(object):
         if cfg is None:
             return
 
-        self.arms = []
+        self.arms: List[CfgBranchContext] = []
         self.pushed = False
 
-    def AddBranch(self, entry: Optional[int] = None):
+    def AddBranch(self, entry: Optional[int] = None) -> 'CfgBranchContext':
         if not self.cfg:
             return CfgBranchContext(None, None)
 
@@ -457,7 +458,7 @@ class CfgBranchContext(object):
         self.arms[-1].pushed = True
         return self.arms[-1]
 
-    def __enter__(self) -> None:
+    def __enter__(self) -> 'CfgBranchContext':
         return self
 
     def __exit__(self, *args) -> None:
@@ -481,7 +482,7 @@ class CfgLoopContext(object):
                  cfg: ControlFlowGraph,
                  entry: Optional[int] = None) -> None:
         self.cfg = cfg
-        self.breaks = set({})
+        self.breaks: Set[int] = set()
         if cfg is None:
             return
 
@@ -537,7 +538,7 @@ class StackRoots(object):
         return (func, reference) in self.root_tuples
 
 
-def DumpControlFlowGraphs(cfgs: Dict[str, ControlFlowGraph],
+def DumpControlFlowGraphs(cfgs: Dict[SymbolPath, ControlFlowGraph],
                           facts_dir='_tmp/mycpp-facts') -> None:
     """
     Dump the given control flow graphs and associated facts into the given
@@ -569,7 +570,7 @@ def DumpControlFlowGraphs(cfgs: Dict[str, ControlFlowGraph],
         f.close()
 
 
-def ComputeMinimalStackRoots(cfgs: Dict[str, ControlFlowGraph],
+def ComputeMinimalStackRoots(cfgs: Dict[SymbolPath, ControlFlowGraph],
                              souffle_dir: str = '_tmp') -> StackRoots:
     """
     Run the the souffle stack roots solver and translate its output in a format

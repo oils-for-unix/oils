@@ -317,7 +317,7 @@ class Print(ExpressionVisitor[None], StatementVisitor[None]):
     def visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
         # got the type here, nice!
         typ = o.type
-        self.log('FuncDef %s :: %s', o.name(), typ)
+        self.log('FuncDef %s :: %s', o.name, typ)
         #self.log('%s', type(typ))
 
         for t, name in zip(typ.arg_types, typ.arg_names):

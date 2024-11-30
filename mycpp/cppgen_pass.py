@@ -14,13 +14,14 @@ from mypy.types import (Type, AnyType, NoneTyp, TupleType, Instance, NoneType,
 from mypy.nodes import (Expression, Statement, NameExpr, IndexExpr, MemberExpr,
                         TupleExpr, ExpressionStmt, IfStmt, StrExpr, SliceExpr,
                         FuncDef, UnaryExpr, OpExpr, CallExpr, ListExpr,
-                        DictExpr, ListComprehension)
+                        DictExpr, ListComprehension, FuncDef)
 
 from mycpp import format_strings
 from mycpp.crash import catch_errors
 from mycpp.util import log, join_name, split_py_name, IsStr
 from mycpp import pass_state
 from mycpp import util
+from mycpp.util import SymbolPath
 
 from typing import Tuple, List, Any
 
@@ -33,7 +34,7 @@ class UnsupportedException(Exception):
     pass
 
 
-def _IsContextManager(class_name: str) -> bool:
+def _IsContextManager(class_name: SymbolPath) -> bool:
     return class_name[-1].startswith('ctx_')
 
 
@@ -459,7 +460,8 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
         self.unique_id = 0
 
         self.indent = 0
-        self.local_var_list = []  # Collected at assignment
+        self.local_var_list: List[Tuple[str,
+                                        Type]] = []  # Collected at assignment
         # For writing vars after {
         self.prepend_to_block: Optional[List[Tuple[Any, str, bool]]] = None
 
@@ -467,7 +469,7 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
         self.yield_accumulators = {
         }  # type: Dict[Union[Statement, FuncDef], Tuple[str, str]]
 
-        self.current_func_node = None
+        self.current_func_node: Optional[FuncDef] = None
         self.current_stmt_node = None
 
         # DECL pass: self.current_member_vars holds the vars for the current
@@ -476,8 +478,8 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
         # like self.foo = 1.  Then we write C++ class member declarations at
         # the end of the class.
         self.current_member_vars: Dict[str, Tuple[Any, str, bool]] = {}
-        self.current_class_name = None  # for prototypes
-        self.current_method_name = None
+        self.current_class_name: Optional[SymbolPath] = None  # for prototypes
+        self.current_method_name: Optional[str] = None
 
         self.dot_exprs = dot_exprs
         self.stack_roots = stack_roots

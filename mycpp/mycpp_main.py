@@ -9,11 +9,14 @@ import os
 import sys
 import tempfile
 
-from typing import List, Optional, Tuple, Any
+from typing import Dict, List, Optional, Tuple, Any, TYPE_CHECKING
 
 from mypy.build import build as mypy_build
 from mypy.build import BuildSource
 from mypy.main import process_options
+if TYPE_CHECKING:
+    from mypy.nodes import Expression, FuncDef, ClassDef
+    from mypy.types import Type
 
 from mycpp import ir_pass
 from mycpp import const_pass
@@ -221,8 +224,8 @@ def main(argv: List[str]) -> int:
 
     # GLOBAL Constant pass over all modules.  We want to collect duplicate
     # strings together.  And have globally unique IDs str0, str1, ... strN.
-    const_lookup = {}  # Dict {StrExpr node => string name}
-    const_code = []
+    const_lookup: Dict[Expression, str] = {}  # StrExpr node => string name
+    const_code: List[str] = []
     pass1 = const_pass.Collect(result.types, const_lookup, const_code)
 
     to_compile = list(ModulesToCompile(result, mod_names))
@@ -327,9 +330,9 @@ def main(argv: List[str]) -> int:
         log('virtuals %s', virtual.virtuals)
         log('has_vtable %s', virtual.has_vtable)
 
-    local_vars = {}  # FuncDef node -> (name, c_type) list
-    ctx_member_vars = {
-    }  # Dict[ClassDef node for ctx_Foo, Dict[member_name: str, Type]]
+    local_vars: Dict[FuncDef, List[Tuple[str, Type]]] = {}
+    # ClassDef node for ctx_Foo
+    ctx_member_vars: Dict[ClassDef, Dict[str, Type]] = {}
 
     log('\tmycpp pass: PROTOTYPES')
 

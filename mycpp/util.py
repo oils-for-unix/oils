@@ -8,7 +8,7 @@ from mypy.nodes import (CallExpr, IfStmt, Block, Expression, MypyFile,
                         MemberExpr, IntExpr, NameExpr, ComparisonExpr)
 from mypy.types import Instance, Type
 
-from typing import Any, Sequence, Optional, List, Tuple, Union
+from typing import Any, Optional, List, Tuple, Union
 
 # Used by cppgen_pass and const_pass
 
@@ -17,7 +17,7 @@ from typing import Any, Sequence, Optional, List, Tuple, Union
 
 SMALL_STR = False
 
-SymbolPath = Sequence[str]
+SymbolPath = Tuple[str, ...]
 
 
 def log(msg: str, *args: Any) -> None:

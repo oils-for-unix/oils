@@ -22,7 +22,7 @@ class Build(SimpleVisitor):
     def __init__(self, types: Dict[Expression, Type]):
 
         self.types = types
-        self.dot_exprs = {}
+        self.dot_exprs: Dict[mypy.nodes.MemberExpr, pass_state.member_t] = {}
 
         self.imported_names = set()  # MemberExpr -> module::Foo() or self->foo
         # HACK for conditional import inside mylib.PYTHON
