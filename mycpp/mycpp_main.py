@@ -389,12 +389,13 @@ def main(argv: List[str]) -> int:
         p4 = cppgen_pass.Generate(
             result.types,
             const_lookup,  # input
-            f,
+            f,  # output
             local_vars=local_vars,  # input
             ctx_member_vars=ctx_member_vars,  # input
-            stack_roots_warn=opts.stack_roots_warn,
+            stack_roots_warn=opts.stack_roots_warn,  # input
             dot_exprs=dot_exprs[module.path],  # input
-            stack_roots=stack_roots)
+            stack_roots=stack_roots,  # input
+        )
         p4.visit_mypy_file(module)
         MaybeExitWithErrors(p4)
 
