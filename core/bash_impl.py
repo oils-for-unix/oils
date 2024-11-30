@@ -244,6 +244,12 @@ def BashAssoc_AppendDict(assoc_val, d):
         assoc_val.d[key] = d[key]
 
 
+def BashAssoc_GetValues(assoc_val):
+    # type: (value.BashAssoc) -> List[str]
+
+    return assoc_val.d.values()
+
+
 def BashAssoc_HasElement(assoc_val, s):
     # type: (value.BashAssoc, str) -> bool
 
