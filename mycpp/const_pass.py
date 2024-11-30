@@ -26,9 +26,21 @@ class Collect(visitor.SimpleVisitor):
         self.types = types
         self.const_lookup = const_lookup
         self.const_code = const_code
-        self.unique_id = 0
 
-        self.indent = 0
+        # Only generate unique strings.
+        # Before this optimization, _gen/bin/oils_for_unix.mycpp.cc went up to:
+        #     "str2824"
+        # After:
+        #     "str1789"
+        #
+        # So it saved over 1000 strings.
+        #
+        # The C++ compiler should also optimize it, but it's easy for us to
+        # generate less source code.
+
+        # unique string value -> id
+        self.unique: Dict[str, str] = {}
+        self.unique_id = 0
 
     def _EmitStringConstant(self, msg: str, *args: Any) -> None:
         if args:
@@ -43,19 +55,26 @@ class Collect(visitor.SimpleVisitor):
     # LITERALS
 
     def visit_str_expr(self, o: StrExpr) -> None:
-        id_ = 'str%d' % self.unique_id
-        self.unique_id += 1
+        str_val = o.value
 
-        raw_string = format_strings.DecodeMyPyString(o.value)
+        # Optimization to save code
+        str_id = self.unique.get(str_val)
+        if str_id is None:
+            str_id = 'str%d' % self.unique_id
+            self.unique_id += 1
 
-        if util.SMALL_STR:
-            self._EmitStringConstant('GLOBAL_STR2(%s, %s);', id_,
-                                     json.dumps(raw_string))
-        else:
-            self._EmitStringConstant('GLOBAL_STR(%s, %s);', id_,
-                                     json.dumps(raw_string))
+            self.unique[str_val] = str_id
 
-        self.const_lookup[o] = id_
+            raw_string = format_strings.DecodeMyPyString(str_val)
+            if util.SMALL_STR:
+                self._EmitStringConstant('GLOBAL_STR2(%s, %s);', str_d,
+                                         json.dumps(raw_string))
+            else:
+                self._EmitStringConstant('GLOBAL_STR(%s, %s);', str_id,
+                                         json.dumps(raw_string))
+
+        # Different nodes can refer to the same string ID
+        self.const_lookup[o] = str_id
 
     # Expression
 
