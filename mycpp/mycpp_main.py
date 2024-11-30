@@ -258,13 +258,6 @@ def main(argv: List[str]) -> int:
         #s = pickle.dumps(module)
         #log('%d pickle', len(s))
 
-    # Print the tree for debugging
-    if 0:
-        for name, module in to_compile:
-            builder = debug_pass.Print(result.types)
-            builder.visit_mypy_file(module)
-        return
-
     if opts.cc_out:
         f = open(opts.cc_out, 'w')
     else:
@@ -286,38 +279,27 @@ def main(argv: List[str]) -> int:
         p.visit_mypy_file(module)
         dot_exprs[module.path] = p.dot_exprs
 
-    # Collect constants and then emit code.
-    log('\tmycpp pass: CONST')
-    for name, module in to_compile:
-        pass1.visit_mypy_file(module)
-
-    # Instead of top-level code, should we generate a function and call it from
-    # main?
-    for line in const_code:
-        f.write('%s\n' % line)
-    f.write('\n')
-
-    # Note: doesn't take into account module names!
-    virtual = pass_state.Virtual()
-
+    header_f = None
     if opts.header_out:
         header_f = open(opts.header_out, 'w')  # Not closed
 
-    log('\tmycpp pass: FORWARD DECL')
+    # Which functions are C++ 'virtual'?
+    virtual = pass_state.Virtual()
 
-    # Forward declarations first.
     # class Foo; class Bar;
+    log('\tmycpp pass: FORWARD DECL')
     for name, module in to_compile:
         #log('forward decl name %s', name)
         if name in to_header:
             out_f = header_f
         else:
             out_f = f
-        p2 = cppgen_pass.Generate(result.types,
-                                  const_lookup,
-                                  out_f,
-                                  virtual=virtual,
-                                  forward_decl=True)
+        p2 = cppgen_pass.Generate(
+            result.types,
+            None,
+            out_f,
+            virtual=virtual,  # output
+            forward_decl=True)
 
         p2.visit_mypy_file(module)
         MaybeExitWithErrors(p2)
@@ -328,6 +310,17 @@ def main(argv: List[str]) -> int:
     if 0:
         log('virtuals %s', virtual.virtuals)
         log('has_vtable %s', virtual.has_vtable)
+
+    # String constants
+    log('\tmycpp pass: CONST')
+    for name, module in to_compile:
+        pass1.visit_mypy_file(module)
+
+    # Instead of top-level code, should we generate a function and call it from
+    # main?
+    for line in const_code:
+        f.write('%s\n' % line)
+    f.write('\n')
 
     local_vars: cppgen_pass.LocalVars = {}
     # ClassDef node for ctx_Foo

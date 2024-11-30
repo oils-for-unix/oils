@@ -1535,6 +1535,9 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
             current_member_vars[lval.name] = (lval_type, c_type, is_managed)
 
     def visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt') -> None:
+        if self.forward_decl:
+            return
+
         # Declare constant strings.  They have to be at the top level.
         if self.decl and self.indent == 0 and len(o.lvalues) == 1:
             lval = o.lvalues[0]
