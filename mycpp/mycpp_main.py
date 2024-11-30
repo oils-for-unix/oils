@@ -339,13 +339,14 @@ def main(argv: List[str]) -> int:
             out_f = header_f
         else:
             out_f = f
-        p3 = cppgen_pass.Generate(result.types,
-                                  const_lookup,  # input
-                                  out_f,
-                                  local_vars=local_vars,  # output
-                                  ctx_member_vars=ctx_member_vars,  # output
-                                  virtual=virtual,  # input
-                                  decl=True)
+        p3 = cppgen_pass.Generate(
+            result.types,
+            const_lookup,  # input
+            out_f,
+            local_vars=local_vars,  # output
+            ctx_member_vars=ctx_member_vars,  # output
+            virtual=virtual,  # input
+            decl=True)
 
         p3.visit_mypy_file(module)
         MaybeExitWithErrors(p3)
@@ -385,14 +386,15 @@ def main(argv: List[str]) -> int:
     # void Foo:method() { ... }
     # void Bar:method() { ... }
     for name, module in to_compile:
-        p4 = cppgen_pass.Generate(result.types,
-                                  const_lookup,  # input
-                                  f,
-                                  local_vars=local_vars,  # input
-                                  ctx_member_vars=ctx_member_vars,  # input
-                                  stack_roots_warn=opts.stack_roots_warn,
-                                  dot_exprs=dot_exprs[module.path],  # input
-                                  stack_roots=stack_roots)
+        p4 = cppgen_pass.Generate(
+            result.types,
+            const_lookup,  # input
+            f,
+            local_vars=local_vars,  # input
+            ctx_member_vars=ctx_member_vars,  # input
+            stack_roots_warn=opts.stack_roots_warn,
+            dot_exprs=dot_exprs[module.path],  # input
+            stack_roots=stack_roots)
         p4.visit_mypy_file(module)
         MaybeExitWithErrors(p4)
 
