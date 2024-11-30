@@ -399,15 +399,16 @@ def _PerformSlice(
             else:
                 i = begin
             strs = []  # type: List[str]
-            count = 0
-            while i < n:
-                if has_length and count == length:  # length could be 0
-                    break
-                s = orig[i]
-                if s is not None:  # Unset elements don't count towards the length
-                    strs.append(s)
-                    count += 1
-                i += 1
+            if i >= 0:
+                count = 0
+                while i < n:
+                    if has_length and count == length:  # length could be 0
+                        break
+                    s = orig[i]
+                    if s is not None:  # Unset elements don't count towards the length
+                        strs.append(s)
+                        count += 1
+                    i += 1
 
             result = value.BashArray(strs)
 
