@@ -68,6 +68,7 @@ from _devbuild.gen.types_asdl import redir_arg_type_e
 from _devbuild.gen.value_asdl import (value, value_e, value_t, y_lvalue,
                                       y_lvalue_e, y_lvalue_t, LeftName, Obj)
 
+from core import bash_impl
 from core import dev
 from core import error
 from core import executor
@@ -218,13 +219,14 @@ def PlusEquals(old_val, val):
                 e_die("Can't append string to array")
 
             elif tag == value_e.BashArray:
-                old_val = cast(value.BashArray, UP_old_val)
-                to_append = cast(value.BashArray, UP_val)
+                array_lhs = cast(value.BashArray, UP_old_val)
+                array_rhs = cast(value.BashArray, UP_val)
 
                 # We modify the original instance so that change is
                 # visible to other references (which may exist in YSH)
-                old_val.strs.extend(to_append.strs)
-                val = old_val
+                strs = bash_impl.BashArray_GetValues(array_rhs)
+                bash_impl.BashArray_AppendValues(array_lhs, strs)
+                val = array_lhs
 
             else:
                 raise AssertionError()  # parsing should prevent this
@@ -236,9 +238,8 @@ def PlusEquals(old_val, val):
             elif tag == value_e.BashAssoc:
                 assoc_lhs = cast(value.BashAssoc, UP_old_val)
                 assoc_rhs = cast(value.BashAssoc, UP_val)
-
-                for key in assoc_rhs.d.keys():
-                    assoc_lhs.d[key] = assoc_rhs.d[key]
+                d = bash_impl.BashAssoc_GetValues(assoc_rhs)
+                bash_impl.BashAssoc_AppendValues(assoc_lhs, d)
                 val = assoc_lhs
 
             else:
