@@ -286,7 +286,7 @@ tmp=$out.tmp  # avoid creating partial files
 # Debian CI images)
 
 if command -v time >/dev/null; then
-  'busybox time' supports -f but not # --format.
+  # 'busybox time' supports -f but not --format.
   set -- \
     time -f 'MYCPP { elapsed: %e, max_RSS: %M }' -- \
     python3 mycpp/mycpp_main.py --cc-out $tmp "$@"
