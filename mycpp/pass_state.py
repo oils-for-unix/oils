@@ -13,7 +13,7 @@ from mypy.nodes import Expression
 
 from mycpp.util import join_name, log, split_py_name, SymbolPath
 
-from typing import Optional, List, Dict, Tuple, Set
+from typing import Optional, List, Dict, Tuple, Set, Any
 
 _ = log
 
@@ -424,10 +424,10 @@ class CfgBlockContext(object):
         self.entry = self.cfg._PushBlock(begin)
         self.exit = self.entry
 
-    def __enter__(self) -> None:
+    def __enter__(self) -> Optional['CfgBlockContext']:
         return self if self.cfg else None
 
-    def __exit__(self, *args) -> None:
+    def __exit__(self, *args: Any) -> None:
         if not self.cfg:
             return
 
@@ -461,7 +461,7 @@ class CfgBranchContext(object):
     def __enter__(self) -> 'CfgBranchContext':
         return self
 
-    def __exit__(self, *args) -> None:
+    def __exit__(self, *args: Any) -> None:
         if not self.cfg:
             return
 
@@ -498,10 +498,10 @@ class CfgLoopContext(object):
         self.cfg.AddEdge(statement, self.entry)
         self.cfg.AddDeadend(statement)
 
-    def __enter__(self) -> None:
+    def __enter__(self) -> Optional['CfgLoopContext']:
         return self if self.cfg else None
 
-    def __exit__(self, *args) -> None:
+    def __exit__(self, *args: Any) -> None:
         if not self.cfg:
             return
 
@@ -539,7 +539,7 @@ class StackRoots(object):
 
 
 def DumpControlFlowGraphs(cfgs: Dict[SymbolPath, ControlFlowGraph],
-                          facts_dir='_tmp/mycpp-facts') -> None:
+                          facts_dir: str = '_tmp/mycpp-facts') -> None:
     """
     Dump the given control flow graphs and associated facts into the given
     directory as text files that can be consumed by datalog.

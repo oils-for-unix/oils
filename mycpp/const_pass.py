@@ -29,8 +29,9 @@ class UnsupportedException(Exception):
 
 class Collect(ExpressionVisitor[None], StatementVisitor[None]):
 
-    def __init__(self, types: Dict[Expression, Type],
-                 const_lookup: Dict[Expression, str], const_code: List[str]):
+    def __init__(self, types: Dict[Expression,
+                                   Type], const_lookup: Dict[Expression, str],
+                 const_code: List[str]) -> None:
 
         self.types = types
         self.const_lookup = const_lookup
@@ -39,7 +40,7 @@ class Collect(ExpressionVisitor[None], StatementVisitor[None]):
 
         self.indent = 0
 
-    def out(self, msg: str, *args: Any):
+    def out(self, msg: str, *args: Any) -> None:
         if args:
             msg = msg % args
         self.const_code.append(msg)

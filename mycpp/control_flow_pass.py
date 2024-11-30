@@ -18,7 +18,10 @@ from mycpp import util
 from mycpp.util import SymbolPath
 from mycpp import pass_state
 
-from typing import Dict, List, Any
+from typing import Dict, List, Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from mycpp import cppgen_pass
 
 
 class UnsupportedException(Exception):
@@ -44,8 +47,10 @@ INVALID_ID = -99  # statement IDs are positive
 
 class Build(SimpleVisitor):
 
-    def __init__(self, types: Dict[Expression, Type],
-                 virtual: pass_state.Virtual, local_vars, dot_exprs):
+    def __init__(self, types: Dict[Expression,
+                                   Type], virtual: pass_state.Virtual,
+                 local_vars: cppgen_pass.LocalVars,
+                 dot_exprs: cppgen_pass.DotExprs) -> None:
 
         self.types = types
         self.cfgs: Dict[SymbolPath,
@@ -59,8 +64,8 @@ class Build(SimpleVisitor):
         self.local_vars = local_vars
         self.dot_exprs = dot_exprs
         self.heap_counter = 0
-        self.callees: Dict[Any, Any] = {
-        }  # statement object -> SymbolPath of the callee
+        # statement object -> SymbolPath of the callee
+        self.callees: Dict[Statement, SymbolPath] = {}
         self.current_lval = None
 
     def current_cfg(self) -> pass_state.ControlFlowGraph:
@@ -95,8 +100,8 @@ class Build(SimpleVisitor):
                 is_module = isinstance(self.dot_exprs.get(o.callee),
                                        pass_state.ModuleMember)
                 if is_module:
-                    return split_py_name(
-                        o.callee.expr.fullname) + (o.callee.name, )
+                    return (split_py_name(o.callee.expr.fullname) +
+                            (o.callee.name, ))
 
                 elif o.callee.expr.name == 'self':
                     assert self.current_class_name
@@ -112,18 +117,18 @@ class Build(SimpleVisitor):
 
                     if local_type:
                         if isinstance(local_type, str):
-                            return split_py_name(local_type) + (
-                                o.callee.name, )
+                            return (split_py_name(local_type) +
+                                    (o.callee.name, ))
 
                         elif isinstance(local_type, Instance):
-                            return split_py_name(
-                                local_type.type.fullname) + (o.callee.name, )
+                            return (split_py_name(local_type.type.fullname) +
+                                    (o.callee.name, ))
 
                         elif isinstance(local_type, UnionType):
                             assert len(local_type.items) == 2
-                            return split_py_name(
-                                local_type.items[0].type.fullname) + (
-                                    o.callee.expr.name, )
+                            return (split_py_name(
+                                local_type.items[0].type.fullname) +
+                                    (o.callee.expr.name, ))
 
                         else:
                             assert not isinstance(local_type, CallableType)
@@ -141,13 +146,13 @@ class Build(SimpleVisitor):
 
                 elif isinstance(t, UnionType):
                     assert len(t.items) == 2
-                    return split_py_name(
-                        t.items[0].type.fullname) + (o.callee.name, )
+                    return (split_py_name(t.items[0].type.fullname) +
+                            (o.callee.name, ))
 
                 elif o.callee.expr and getattr(o.callee.expr, 'fullname',
                                                None):
-                    return split_py_name(
-                        o.callee.expr.fullname) + (o.callee.name, )
+                    return (split_py_name(o.callee.expr.fullname) +
+                            (o.callee.name, ))
 
                 else:
                     # constructors of things that we don't care about.
@@ -305,7 +310,7 @@ class Build(SimpleVisitor):
             self.accept(o.body)
             self.loop_stack.pop()
 
-    def _handle_switch(self, expr, o, cfg):
+    def _handle_switch(self, expr, o, cfg) -> None:
         assert len(o.body.body) == 1, o.body.body
         if_node = o.body.body[0]
         assert isinstance(if_node, IfStmt), if_node

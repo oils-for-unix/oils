@@ -15,7 +15,7 @@ from mypy.build import build as mypy_build
 from mypy.build import BuildSource
 from mypy.main import process_options
 if TYPE_CHECKING:
-    from mypy.nodes import Expression, FuncDef, ClassDef
+    from mypy.nodes import Expression, FuncDef, ClassDef, MemberExpr
     from mypy.types import Type
 
 from mycpp import ir_pass
@@ -279,7 +279,8 @@ def main(argv: List[str]) -> int:
 """)
 
     # Convert the mypy AST into our own IR.
-    dot_exprs = {}  # module name -> {expr node -> access type}
+    # module name -> {expr node -> access type}
+    dot_exprs: cppgen_pass.DotExprs = {}
     log('\tmycpp pass: IR')
     for _, module in to_compile:
         p = ir_pass.Build(result.types)
@@ -330,9 +331,9 @@ def main(argv: List[str]) -> int:
         log('virtuals %s', virtual.virtuals)
         log('has_vtable %s', virtual.has_vtable)
 
-    local_vars: Dict[FuncDef, List[Tuple[str, Type]]] = {}
+    local_vars: cppgen_pass.LocalVars = {}
     # ClassDef node for ctx_Foo
-    ctx_member_vars: Dict[ClassDef, Dict[str, Type]] = {}
+    ctx_member_vars: cppgen_pass.CtxMemberVars = {}
 
     log('\tmycpp pass: PROTOTYPES')
 

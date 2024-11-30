@@ -356,8 +356,9 @@ examples-coverage() {
 }
 
 mycpp-check() {
-  if false; then
-    python3 -m mypy --strict --follow-imports=silent "$@"
+  if true; then
+    #python3 -m mypy --strict --follow-imports=silent "$@"
+    python3 -m mypy --strict --no-strict-optional --follow-imports=silent "$@"
   else
     # Disable --strict until more passes - 308 -> 181 errors
     # That means that types are optional
