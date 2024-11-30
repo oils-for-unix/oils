@@ -81,8 +81,11 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
     # LITERALS
 
     def visit_for_stmt(self, o: 'mypy.nodes.ForStmt') -> None:
+        self.accept(o.index)  # index var expression
         self.accept(o.expr)
         self.accept(o.body)
+        if o.else_body:
+            raise AssertionError("can't translate for-else")
 
     def visit_with_stmt(self, o: 'mypy.nodes.WithStmt') -> None:
         assert len(o.expr) == 1, o.expr
@@ -198,23 +201,21 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
             self.accept(operand)
 
     def visit_unary_expr(self, o: 'mypy.nodes.UnaryExpr') -> None:
+        # e.g. -42 or 'not x'
         self.accept(o.expr)
 
     def visit_list_expr(self, o: 'mypy.nodes.ListExpr') -> None:
-        if o.items:
-            for item in o.items:
-                self.accept(item)
+        for item in o.items:
+            self.accept(item)
 
     def visit_dict_expr(self, o: 'mypy.nodes.DictExpr') -> None:
-        if o.items:
-            for k, v in o.items:
-                self.accept(k)
-                self.accept(v)
+        for k, v in o.items:
+            self.accept(k)
+            self.accept(v)
 
     def visit_tuple_expr(self, o: 'mypy.nodes.TupleExpr') -> None:
-        if o.items:
-            for item in o.items:
-                self.accept(item)
+        for item in o.items:
+            self.accept(item)
 
     def visit_index_expr(self, o: 'mypy.nodes.IndexExpr') -> None:
         self.accept(o.base)

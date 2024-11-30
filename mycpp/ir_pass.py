@@ -8,16 +8,12 @@ from mypy.nodes import Expression, NameExpr
 from mypy.types import Type
 
 from mycpp.util import split_py_name
-from mycpp.visitor import SimpleVisitor
+from mycpp import visitor
 from mycpp import util
 from mycpp import pass_state
 
 
-class UnsupportedException(Exception):
-    pass
-
-
-class Build(SimpleVisitor):
+class Build(visitor.SimpleVisitor):
 
     def __init__(self, types: Dict[Expression, Type]):
 
