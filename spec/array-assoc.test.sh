@@ -788,3 +788,84 @@ echo "[${a[*]@Q}]"
 ['[]*?' ''\'''\''' '"' '()<>&|']
 ['[]*?' ''\'''\''' '"' '()<>&|']
 ## END
+
+
+#### BashAssoc ${a[@]:offset:count}
+
+declare -A a=()
+a['apple']=red
+a['orange']=orange
+a['lemon']=yellow
+a['melon']=green
+a['banana']=yellow
+
+keys=("${!a[@]}")
+function slice {
+  local offset=$1 count=$2
+  ((offset>0)) && ((offset--))
+  if [[ $count ]]; then
+    keys2=("${keys[@]:offset:count}")
+  else
+    keys2=("${keys[@]:offset}")
+  fi
+
+  local out key
+  out=()
+  for key in "${keys2[@]}"; do
+    out+=("${a[$key]}")
+  done
+  echo "${out[*]}"
+}
+
+function assert_eq {
+  local title=$1 result=$2 expect=$3
+  if [[ $result == "$expect" ]]; then
+    return 0
+  else
+    printf '%s\n' "${BASH_LINENO:-?}: $title (result: $result, expect: $expect)" >&2
+    return 1
+  fi
+}
+
+assert_eq ':0' "${a[*]:0}" "$(slice 0)"
+assert_eq ':1' "${a[*]:1}" "$(slice 1)"
+assert_eq ':4' "${a[*]:4}" "$(slice 4)"
+assert_eq ':5' "${a[*]:5}" "$(slice 5)"
+
+# Bash has a bug that count=0 produces one word
+assert_eq ':0:0' "${a[*]:0:0}" "$(slice 0 0)"
+assert_eq ':1:0' "${a[*]:1:0}" "$(slice 1 0)"
+assert_eq ':5:0' "${a[*]:5:0}" "$(slice 5 0)"
+assert_eq ':6:0' "${a[*]:6:0}" "$(slice 6 0)"
+
+assert_eq ':0:1' "${a[*]:0:1}" "$(slice 0 1)"
+assert_eq ':1:1' "${a[*]:1:1}" "$(slice 1 1)"
+assert_eq ':4:1' "${a[*]:4:1}" "$(slice 4 1)"
+assert_eq ':5:1' "${a[*]:5:1}" "$(slice 5 1)"
+assert_eq ':6:1' "${a[*]:6:1}" "$(slice 6 1)"
+assert_eq ':7:1' "${a[*]:7:1}" "$(slice 7 1)"
+
+assert_eq ':0:2' "${a[*]:0:2}" "$(slice 0 2)"
+assert_eq ':1:2' "${a[*]:1:2}" "$(slice 1 2)"
+assert_eq ':4:2' "${a[*]:4:2}" "$(slice 4 2)"
+assert_eq ':5:2' "${a[*]:5:2}" "$(slice 5 2)"
+assert_eq ':6:2' "${a[*]:6:2}" "$(slice 6 2)"
+
+assert_eq ':0:4' "${a[*]:0:4}" "$(slice 0 4)"
+assert_eq ':0:5' "${a[*]:0:5}" "$(slice 0 5)"
+assert_eq ':0:6' "${a[*]:0:6}" "$(slice 0 6)"
+assert_eq ':1:4' "${a[*]:1:4}" "$(slice 1 4)"
+assert_eq ':1:5' "${a[*]:1:5}" "$(slice 1 5)"
+assert_eq ':1:6' "${a[*]:1:6}" "$(slice 1 6)"
+assert_eq ':4:4' "${a[*]:4:4}" "$(slice 4 4)"
+assert_eq ':5:4' "${a[*]:5:4}" "$(slice 5 4)"
+assert_eq ':6:4' "${a[*]:6:4}" "$(slice 6 4)"
+
+## stdout-json: ""
+## stderr-json: ""
+
+## BUG bash STDERR:
+41: :0:0 (result: red, expect: )
+42: :1:0 (result: red, expect: )
+43: :5:0 (result: green, expect: )
+## END

@@ -378,8 +378,8 @@ def _PerformSlice(
             substr = s[byte_begin:byte_end]
             result = value.Str(substr)  # type: value_t
 
-        elif case(value_e.InternalStringArray,
-                  value_e.BashArray):  # Slice array entries.
+        elif case(value_e.InternalStringArray, value_e.BashArray,
+                  value_e.BashAssoc):  # Slice array entries.
             # NOTE: This error is ALWAYS fatal in bash.  It's inconsistent with
             # strings.
             if has_length and length < 0:
@@ -395,6 +395,14 @@ def _PerformSlice(
                 elif val.tag() == value_e.BashArray:
                     val = cast(value.BashArray, UP_val)
                     array_length = bash_impl.BashArray_Length(val)
+                elif val.tag() == value_e.BashAssoc:
+                    val = cast(value.BashAssoc, UP_val)
+                    # Quirk: In Bash, the indices of associative-array values
+                    # are considered to start with 1 as if there is an unset
+                    # element at the beginning.  Thus, the max index plus one
+                    # is calculated by the following expression:
+                    array_length = mops.IntWiden(
+                        bash_impl.BashAssoc_Count(val) + 1)
                 else:
                     raise AssertionError()
 
@@ -455,6 +463,20 @@ def _PerformSlice(
                     else:
                         strs = bash_impl.BashArray_GetValues(val)[i:]
 
+                elif val.tag() == value_e.BashAssoc:
+                    val = cast(value.BashAssoc, UP_val)
+
+                    i = mops.BigTruncate(offset)
+                    # Quirk: In Bash, the indices of associative-array values
+                    # are considered to start with 1 as if there is an unset
+                    # element at the beginning.  We here shift OFFSET.
+                    if i > 0:
+                        i = i - 1
+                    if has_length:
+                        strs = bash_impl.BashAssoc_GetValues(val)[i:i + length]
+                    else:
+                        strs = bash_impl.BashAssoc_GetValues(val)[i:]
+
                 else:
                     raise AssertionError()
 
@@ -465,12 +487,10 @@ def _PerformSlice(
 
             result = value.InternalStringArray(strs)
 
-        elif case(value_e.BashAssoc):
-            e_die("Can't slice associative arrays", loc.WordPart(part))
-
         else:
-            raise error.TypeErr(val, 'Slice op expected Str or BashArray',
-                                loc.WordPart(part))
+            raise error.TypeErr(
+                val, 'Slice op expected Str, BashArray, or BashAssoc',
+                loc.WordPart(part))
 
     return result
 
