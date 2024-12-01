@@ -24,6 +24,8 @@ from mycpp import ir_pass
 from mycpp import const_pass
 from mycpp import cppgen_pass
 from mycpp import control_flow_pass
+from mycpp import decl_pass
+from mycpp import virtual_pass
 from mycpp import pass_state
 from mycpp.util import log
 from mycpp import visitor
@@ -328,14 +330,14 @@ def main(argv: List[str]) -> int:
             out_f = header_f
         else:
             out_f = f
-        p2 = cppgen_pass.Generate(
-            result.types,
-            None,
-            out_f,
-            virtual=virtual,  # output
-            forward_decl=True)
+
+        # TODO: write output of forward_decls, instead of the file
+        forward_decls: List[str] = []
+        p2 = virtual_pass.Pass(virtual, forward_decls)
+        p2.SetOutputFile(out_f)
 
         p2.visit_mypy_file(module)
+
         MaybeExitWithErrors(p2)
 
     # After seeing class and method names in the first pass, figure out which
@@ -374,14 +376,24 @@ def main(argv: List[str]) -> int:
             out_f = header_f
         else:
             out_f = f
-        p3 = cppgen_pass.Generate(
-            result.types,
-            const_lookup,  # input
-            out_f,
-            local_vars=local_vars,  # output
-            ctx_member_vars=ctx_member_vars,  # output
-            virtual=virtual,  # input
-            decl=True)
+        if 0:
+            # TODO: Fill this out
+            p3 = decl_pass.Pass(
+                result.types,
+                const_lookup,  # input
+                local_vars=local_vars,  # output
+                ctx_member_vars=ctx_member_vars,  # output
+                virtual=virtual,  # input
+                decl=True)
+        else:
+            p3 = cppgen_pass.Generate(
+                result.types,
+                const_lookup,  # input
+                local_vars=local_vars,  # output
+                ctx_member_vars=ctx_member_vars,  # output
+                virtual=virtual,  # input
+                decl=True)
+        p3.SetOutputFile(out_f)
 
         p3.visit_mypy_file(module)
         MaybeExitWithErrors(p3)
@@ -424,13 +436,14 @@ def main(argv: List[str]) -> int:
         p4 = cppgen_pass.Generate(
             result.types,
             const_lookup,  # input
-            f,  # output
             local_vars=local_vars,  # input
             ctx_member_vars=ctx_member_vars,  # input
             stack_roots_warn=opts.stack_roots_warn,  # input
             dot_exprs=dot_exprs[module.path],  # input
             stack_roots=stack_roots,  # input
         )
+        p4.SetOutputFile(out_f)
+
         p4.visit_mypy_file(module)
         MaybeExitWithErrors(p4)
 

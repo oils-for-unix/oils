@@ -2,12 +2,11 @@
 control_flow_pass.py - AST pass that builds a control flow graph.
 """
 import collections
-from typing import overload, Union, Optional, Dict
 
 import mypy
-from mypy.nodes import (Block, Expression, Statement, ExpressionStmt, StrExpr,
-                        CallExpr, FuncDef, IfStmt, NameExpr, MemberExpr,
-                        IndexExpr, TupleExpr, IntExpr)
+from mypy.nodes import (Block, Expression, Statement, CallExpr, FuncDef,
+                        IfStmt, NameExpr, MemberExpr, IndexExpr, TupleExpr,
+                        IntExpr)
 
 from mypy.types import CallableType, Instance, Type, UnionType, NoneTyp, TupleType
 
@@ -19,7 +18,7 @@ from mycpp import util
 from mycpp.util import SymbolPath
 from mycpp import pass_state
 
-from typing import Dict, List, TYPE_CHECKING
+from typing import Dict, List, Union, Optional, overload, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from mycpp import ir_pass
@@ -287,21 +286,6 @@ class Build(visitor.SimpleVisitor):
                     pass
                 return None
 
-    # Not in superclasses:
-
-    def visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> None:
-        if util.ShouldSkipPyFile(o):
-            return
-
-        self.module_path = o.path
-
-        for node in o.defs:
-            # skip module docstring
-            if isinstance(node, ExpressionStmt) and isinstance(
-                    node.expr, StrExpr):
-                continue
-            self.accept(node)
-
     # Statements
 
     def visit_for_stmt(self, o: 'mypy.nodes.ForStmt') -> None:
@@ -349,10 +333,7 @@ class Build(visitor.SimpleVisitor):
             with pass_state.CfgBlockContext(cfg, self.current_statement_id):
                 self.accept(o.body)
 
-    def visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
-        if o.name == '__repr__':  # Don't translate
-            return
-
+    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
         # For virtual methods, pretend that the method on the base class calls
         # the same method on every subclass. This way call sites using the
         # abstract base class will over-approximate the set of call paths they
@@ -377,21 +358,6 @@ class Build(visitor.SimpleVisitor):
         self.accept(o.body)
         self.current_func_node = None
         self.current_statement_id = INVALID_ID
-
-    def visit_class_def(self, o: 'mypy.nodes.ClassDef') -> None:
-        self.current_class_name = split_py_name(o.fullname)
-        for stmt in o.defs.body:
-            # Ignore things that look like docstrings
-            if (isinstance(stmt, ExpressionStmt) and
-                    isinstance(stmt.expr, StrExpr)):
-                continue
-
-            if isinstance(stmt, FuncDef) and stmt.name == '__repr__':
-                continue
-
-            self.accept(stmt)
-
-        self.current_class_name = None
 
     def visit_while_stmt(self, o: 'mypy.nodes.WhileStmt') -> None:
         cfg = self.current_cfg()
