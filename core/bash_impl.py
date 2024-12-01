@@ -162,6 +162,12 @@ def SparseArray_Length(sparse_val):
     return len(sparse_val.d)
 
 
+def SparseArray_MaxIndex(sparse_val):
+    # type: (value.SparseArray) -> mops.BigInt
+
+    return sparse_val.max_index
+
+
 def SparseArray_GetKeys(sparse_val):
     # type: (value.SparseArray) -> List[mops.BigInt]
 
