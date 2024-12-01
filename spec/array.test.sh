@@ -802,7 +802,8 @@ two=1
 ## N-I mksh STDOUT:
 ## END
 
-#### Assigning with out-of-range negative index
+
+#### Regression: Assigning with out-of-range negative index
 a=()
 a[-1]=1
 
@@ -825,7 +826,7 @@ bash: line 2: a[-1]: bad array subscript
 ## END
 
 
-#### Negative index in [[ -v a[index] ]]
+#### Regression: Negative index in [[ -v a[index] ]]
 a[0]=x
 a[5]=y
 a[10]=z
@@ -847,7 +848,7 @@ a has -11
 ## END
 
 
-#### Negative out-of-range index in [[ -v a[index] ]]
+#### Regression: Negative out-of-range index in [[ -v a[index] ]]
 e=()
 [[ -v e[-1] ]] && echo 'e has -1'
 
@@ -867,7 +868,7 @@ mksh: <stdin>[2]: syntax error: 'e[-1]' unexpected operator/operand
 ## END
 
 
-#### a+=() modify existing instance of BashArray
+#### a+=() modifies existing instance of BashArray
 case $SH in mksh|bash) exit ;; esac
 
 a=(1 2 3)
@@ -885,7 +886,7 @@ b=(1 2 3 4 5)
 ## END
 
 
-#### unset a[-2]: out-of-bound negative index should cause error
+#### Regression: unset a[-2]: out-of-bound negative index should cause error
 case $SH in mksh) exit ;; esac
 
 a=(1)
@@ -909,7 +910,7 @@ bash: line 4: unset: [-2]: bad array subscript
 ## END
 
 
-#### out-of-bound negative offset for ${a[@]:offset}
+#### Regression: Out-of-bound negative offset for ${a[@]:offset}
 case $SH in mksh) exit ;; esac
 
 a=(1 2 3 4)
@@ -933,7 +934,7 @@ begin=-5 -> ()
 ## END
 
 
-#### array length after unset
+#### Regression: Array length after unset
 case $SH in mksh) exit ;; esac
 
 a=(x)
@@ -948,6 +949,25 @@ echo "last ${a[@]: -1};"
 len 2;
 len 1;
 last x;
+## END
+
+## N-I mksh STDOUT:
+## END
+
+
+#### Regression: ${a[@]@Q} crash with `a[0]=x a[2]=y`
+case $SH in mksh) exit ;; esac
+
+a[0]=x
+a[2]=y
+echo "quoted = (${a[@]@Q})"
+
+## STDOUT:
+quoted = (x y)
+## END
+
+## OK bash STDOUT:
+quoted = ('x' 'y')
 ## END
 
 ## N-I mksh STDOUT:
