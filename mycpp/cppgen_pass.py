@@ -1056,12 +1056,6 @@ class Generate(visitor.SimpleVisitor):
         self.def_write(' %s ', o.operators[0])
         self.accept(o.operands[1])
 
-    def visit_cast_expr(self, o: 'mypy.nodes.CastExpr') -> None:
-        pass
-
-    def visit_reveal_expr(self, o: 'mypy.nodes.RevealExpr') -> None:
-        pass
-
     def visit_unary_expr(self, o: 'mypy.nodes.UnaryExpr') -> None:
         # e.g. a[-1] or 'not x'
         if o.op == 'not':
@@ -1157,27 +1151,6 @@ class Generate(visitor.SimpleVisitor):
             self.accept(o.index)
             self.def_write(')')
 
-    def visit_type_application(self, o: 'mypy.nodes.TypeApplication') -> None:
-        pass
-
-    def visit_lambda_expr(self, o: 'mypy.nodes.LambdaExpr') -> None:
-        pass
-
-    def visit_list_comprehension(self,
-                                 o: 'mypy.nodes.ListComprehension') -> None:
-        pass
-
-    def visit_set_comprehension(self,
-                                o: 'mypy.nodes.SetComprehension') -> None:
-        pass
-
-    def visit_dictionary_comprehension(
-            self, o: 'mypy.nodes.DictionaryComprehension') -> None:
-        pass
-
-    def visit_generator_expr(self, o: 'mypy.nodes.GeneratorExpr') -> None:
-        pass
-
     def visit_slice_expr(self, o: 'mypy.nodes.SliceExpr') -> None:
         self.def_write('->slice(')
         if o.begin_index:
@@ -1213,36 +1186,6 @@ class Generate(visitor.SimpleVisitor):
         self.accept(o.if_expr)
         self.def_write(' : ')
         self.accept(o.else_expr)
-
-    def visit_backquote_expr(self, o: 'mypy.nodes.BackquoteExpr') -> None:
-        pass
-
-    def visit_type_var_expr(self, o: 'mypy.nodes.TypeVarExpr') -> None:
-        pass
-
-    def visit_type_alias_expr(self, o: 'mypy.nodes.TypeAliasExpr') -> None:
-        pass
-
-    def visit_namedtuple_expr(self, o: 'mypy.nodes.NamedTupleExpr') -> None:
-        pass
-
-    def visit_enum_call_expr(self, o: 'mypy.nodes.EnumCallExpr') -> None:
-        pass
-
-    def visit_typeddict_expr(self, o: 'mypy.nodes.TypedDictExpr') -> None:
-        pass
-
-    def visit_newtype_expr(self, o: 'mypy.nodes.NewTypeExpr') -> None:
-        pass
-
-    def visit__promote_expr(self, o: 'mypy.nodes.PromoteExpr') -> None:
-        pass
-
-    def visit_await_expr(self, o: 'mypy.nodes.AwaitExpr') -> None:
-        pass
-
-    def visit_temp_node(self, o: 'mypy.nodes.TempNode') -> None:
-        pass
 
     def _write_tuple_unpacking(self,
                                temp_name: str,
@@ -1454,6 +1397,11 @@ class Generate(visitor.SimpleVisitor):
             c_type = GetCType(lval_type)
             is_managed = CTypeIsManaged(c_type)
             current_member_vars[lval.name] = (lval_type, c_type, is_managed)
+
+    def visit_list_comprehension(self,
+                                 o: 'mypy.nodes.ListComprehension') -> None:
+        # no-op on purpose - overrides visitor
+        pass
 
     def visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt') -> None:
         if self.forward_decl:
@@ -2407,10 +2355,6 @@ class Generate(visitor.SimpleVisitor):
         self.accept(o.body)
         self.current_func_node = None
 
-    def visit_overloaded_func_def(self,
-                                  o: 'mypy.nodes.OverloadedFuncDef') -> None:
-        pass
-
     def _TracingMetadataDecl(self, o, field_gc, mask_bits) -> None:
         if mask_bits:
             self.always_write_ind('\n')
@@ -2719,10 +2663,6 @@ class Generate(visitor.SimpleVisitor):
         self._ClassDefImpl(o, base_class_name)
         self.current_class_name = None  # Stop prefixing functions with class
 
-    def visit_var(self, o: 'mypy.nodes.Var') -> None:
-        # Is this a Python 3 class member?
-        pass
-
     # Module structure
 
     def visit_import(self, o: 'mypy.nodes.Import') -> None:
@@ -2814,9 +2754,6 @@ class Generate(visitor.SimpleVisitor):
                 #    from asdl import format as fmt
                 # -> namespace fmt = format;
                 self.def_write_ind('namespace %s = %s;\n', alias, name)
-
-    def visit_import_all(self, o: 'mypy.nodes.ImportAll') -> None:
-        pass
 
     # Statements
 
@@ -2934,9 +2871,6 @@ class Generate(visitor.SimpleVisitor):
             self.accept(o.expr)
 
         self.def_write(';\n')
-
-    def visit_assert_stmt(self, o: 'mypy.nodes.AssertStmt') -> None:
-        pass
 
     def visit_if_stmt(self, o: 'mypy.nodes.IfStmt') -> None:
         # Not sure why this wouldn't be true
@@ -3063,8 +2997,3 @@ class Generate(visitor.SimpleVisitor):
 
         if o.finally_body:
             self.report_error(o, 'try/finally not supported')
-
-    def visit_print_stmt(self, o: 'mypy.nodes.PrintStmt') -> None:
-        self.report_error(
-            o,
-            'File should start with "from __future__ import print_function"')

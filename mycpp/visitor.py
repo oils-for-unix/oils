@@ -187,6 +187,7 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
     # Expressions
 
     def visit_generator_expr(self, o: 'mypy.nodes.GeneratorExpr') -> None:
+        # Called by visit_list_comprehension
         self.accept(o.left_expr)
 
         for expr in o.indices:
@@ -259,8 +260,48 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
             self.accept(arg)
 
     #
+    # Not doing anything with these?
+    #
+
+    def visit_cast_expr(self, o: 'mypy.nodes.CastExpr') -> None:
+        # I think casts are handle in AssignmentStmt
+        pass
+
+    def visit_type_application(self, o: 'mypy.nodes.TypeApplication') -> None:
+        # what is this?
+        pass
+
+    def visit_type_var_expr(self, o: 'mypy.nodes.TypeVarExpr') -> None:
+        pass
+
+    def visit_type_alias_expr(self, o: 'mypy.nodes.TypeAliasExpr') -> None:
+        pass
+
+    def visit_reveal_expr(self, o: 'mypy.nodes.RevealExpr') -> None:
+        pass
+
+    def visit_var(self, o: 'mypy.nodes.Var') -> None:
+        # Is this a Python 3 class member?
+        pass
+
+    def visit_assert_stmt(self, o: 'mypy.nodes.AssertStmt') -> None:
+        # no-op on purpose
+        pass
+
+    #
     # Not part of the mycpp dialect
     #
+
+    def visit_lambda_expr(self, o: 'mypy.nodes.LambdaExpr') -> None:
+        self.not_translated(o, 'lambda')
+
+    def visit_set_comprehension(self,
+                                o: 'mypy.nodes.SetComprehension') -> None:
+        self.not_translated(o, 'set comp')
+
+    def visit_dictionary_comprehension(
+            self, o: 'mypy.nodes.DictionaryComprehension') -> None:
+        self.not_translated(o, 'dict comp')
 
     def visit_global_decl(self, o: 'mypy.nodes.GlobalDecl') -> None:
         self.not_translated(o, 'global')
@@ -271,7 +312,20 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
     def visit_exec_stmt(self, o: 'mypy.nodes.ExecStmt') -> None:
         self.report_error(o, 'exec not allowed')
 
+    # Error
+    def visit_print_stmt(self, o: 'mypy.nodes.PrintStmt') -> None:
+        self.report_error(
+            o,
+            'File should start with "from __future__ import print_function"')
+
     # UNHANDLED
+
+    def visit_import_all(self, o: 'mypy.nodes.ImportAll') -> None:
+        self.not_translated(o, 'ImportAll')
+
+    def visit_overloaded_func_def(self,
+                                  o: 'mypy.nodes.OverloadedFuncDef') -> None:
+        self.not_python2(o, 'overloaded func')
 
     def visit_bytes_expr(self, o: 'mypy.nodes.BytesExpr') -> None:
         self.not_python2(o, 'bytes expr')
@@ -305,3 +359,27 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
 
     def visit_decorator(self, o: 'mypy.nodes.Decorator') -> None:
         self.not_translated(o, 'decorator')
+
+    def visit_backquote_expr(self, o: 'mypy.nodes.BackquoteExpr') -> None:
+        self.not_translated(o, 'backquote')
+
+    def visit_namedtuple_expr(self, o: 'mypy.nodes.NamedTupleExpr') -> None:
+        self.not_translated(o, 'namedtuple')
+
+    def visit_enum_call_expr(self, o: 'mypy.nodes.EnumCallExpr') -> None:
+        self.not_translated(o, 'enum')
+
+    def visit_typeddict_expr(self, o: 'mypy.nodes.TypedDictExpr') -> None:
+        self.not_translated(o, 'typed dict')
+
+    def visit_newtype_expr(self, o: 'mypy.nodes.NewTypeExpr') -> None:
+        self.not_translated(o, 'newtype')
+
+    def visit__promote_expr(self, o: 'mypy.nodes.PromoteExpr') -> None:
+        self.not_translated(o, 'promote')
+
+    def visit_await_expr(self, o: 'mypy.nodes.AwaitExpr') -> None:
+        self.not_translated(o, 'await')
+
+    def visit_temp_node(self, o: 'mypy.nodes.TempNode') -> None:
+        self.not_translated(o, 'temp')

@@ -220,6 +220,9 @@ test-invalid-examples() {
         # forward decl pass catches some, but not all
         expected_status=5
         ;;
+      */invalid_other.py)
+        expected_status=4
+        ;;
       */invalid_default_args.py)
         expected_status=4
         ;;
