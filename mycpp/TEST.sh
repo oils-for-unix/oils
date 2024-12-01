@@ -230,7 +230,7 @@ test-invalid-examples() {
         expected_status=3
         ;;
       */invalid_except.py)
-        expected_status=3
+        expected_status=4
         ;;
       */invalid_global.py)
         expected_status=2
