@@ -295,13 +295,30 @@ compile_one() {
     echo '__' "$cxx" $flags -o "$out" -c "$in" >&2
   fi
 
+  # The command we want to run
+  set -- "$cxx" $flags -o "$out" -c "$in"
+
   # Not using arrays because this is POSIX shell
-  local prefix=''
+
   if test -n "${TIME_TSV_OUT:-}"; then
-    prefix="benchmarks/time_.py --tsv --out $TIME_TSV_OUT --append --rusage --field compile_one --field $out --"
+    set -- \
+      benchmarks/time_.py --tsv \
+      --out $TIME_TSV_OUT --append \
+      --rusage --field compile_one --field $out -- \
+      "$@"
+  else
+    # Show timing info on the most expensive translation unit
+    case $in in
+      */oils_for_unix.*)
+        set -- \
+          time -f "$out { elapsed: %e, max_RSS: %M }" -- \
+          "$@"
+        ;;
+    esac
   fi
 
-  $prefix "$cxx" $flags -o "$out" -c "$in"
+  # Execute the command, with a prefix
+  "$@"
 }
 
 link() {
