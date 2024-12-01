@@ -22,15 +22,28 @@ shopt -s globstar
 mkdir -p c/subdir
 touch {leaf.md,c/leaf.md,c/subdir/leaf.md}
 
-echo **/*.* | tr ' ' '\n' | sort -u
+echo **/*.* | tr ' ' '\n'
 echo
-echo **/**/*.* | tr ' ' '\n' | sort -u
+echo **/**/*.* | tr ' ' '\n'
 ## STDOUT:
 c/leaf.md
 c/subdir/leaf.md
 leaf.md
 
 c/leaf.md
+c/subdir/leaf.md
+leaf.md
+## END
+
+## BUG zsh STDOUT:
+c/leaf.md
+c/subdir/leaf.md
+leaf.md
+
+c/leaf.md
+c/leaf.md
+c/subdir/leaf.md
+c/subdir/leaf.md
 c/subdir/leaf.md
 leaf.md
 ## END
