@@ -112,7 +112,11 @@ gc-stats() {
 }
 
 readonly -a FILES=(
-  benchmarks/testdata/{functions,configure,configure-coreutils}
+  benchmarks/testdata/{functions,configure}
+
+  # This file is known to lock up my Debian machine!  It seems to go into a
+  # swap loop.
+  # configure-coreutils
 )
 
 count-small() {
