@@ -15,10 +15,11 @@ START_TIME = time.time()  # measure before imports
 from typing import Dict, List, Optional, Tuple, Any, Iterator, TYPE_CHECKING
 
 from mypy.build import build as mypy_build
-from mypy.build import BuildSource
 from mypy.main import process_options
 if TYPE_CHECKING:
     from mypy.nodes import Expression, MemberExpr
+    from mypy.modulefinder import BuildSource
+    from mypy.build import BuildResult
 
 from mycpp import ir_pass
 from mycpp import const_pass
@@ -77,7 +78,7 @@ def Options() -> optparse.OptionParser:
 # Copied from mypyc/build.py
 def get_mypy_config(
         paths: List[str],
-        mypy_options: Optional[List[str]]) -> Tuple[List[BuildSource], Any]:
+        mypy_options: Optional[List[str]]) -> Tuple[List['BuildSource'], Any]:
     """Construct mypy BuildSources and Options from file and options lists"""
     # It is kind of silly to do this but oh well
     mypy_options = mypy_options or []
@@ -111,7 +112,7 @@ _FIRST = ('asdl.runtime', 'core.vm')
 _LAST = ('builtin.bracket_osh', 'builtin.completion_osh', 'core.shell')
 
 
-def ModulesToCompile(result,
+def ModulesToCompile(result: 'BuildResult',
                      mod_names: List[str]) -> Iterator[Tuple[str, Any]]:
     # HACK TO PUT asdl/runtime FIRST.
     #
@@ -165,7 +166,7 @@ class Timer:
     def __init__(self, start_time: float):
         self.start_time = start_time
 
-    def Section(self, msg: str, *args: Any):
+    def Section(self, msg: str, *args: Any) -> None:
         elapsed = time.time() - self.start_time
 
         if args:

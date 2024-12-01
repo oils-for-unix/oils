@@ -20,7 +20,6 @@ from mycpp import format_strings
 from mycpp.util import log, join_name, split_py_name, IsStr
 from mycpp import pass_state
 from mycpp import util
-from mycpp.util import SymbolPath
 
 from typing import Tuple, List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -54,7 +53,7 @@ class UnsupportedException(Exception):
     pass
 
 
-def _IsContextManager(class_name: SymbolPath) -> bool:
+def _IsContextManager(class_name: util.SymbolPath) -> bool:
     return class_name[-1].startswith('ctx_')
 
 
@@ -505,7 +504,8 @@ class Generate(visitor.SimpleVisitor):
         # like self.foo = 1.  Then we write C++ class member declarations at
         # the end of the class.
         self.current_member_vars: Dict[str, MemberVar] = {}
-        self.current_class_name: Optional[SymbolPath] = None  # for prototypes
+        self.current_class_name: Optional[
+            util.SymbolPath] = None  # for prototypes
         self.current_method_name: Optional[str] = None
 
         self.dot_exprs = dot_exprs
@@ -2157,10 +2157,10 @@ class Generate(visitor.SimpleVisitor):
             self.def_write(';\n')
 
     def _WriteFuncParams(self,
-                         arg_types,
-                         arguments,
-                         update_locals=False,
-                         write_defaults=False) -> None:
+                         arg_types: List[Type],
+                         arguments: List['mypy.nodes.Argument'],
+                         update_locals: bool = False,
+                         write_defaults: bool = False) -> None:
         """Write params for function/method signatures.
 
         Optionally mutate self.local_vars, and optionally write default arguments.
@@ -2325,7 +2325,9 @@ class Generate(visitor.SimpleVisitor):
         self.accept(o.body)
         self.current_func_node = None
 
-    def _TracingMetadataDecl(self, o, field_gc, mask_bits) -> None:
+    def _TracingMetadataDecl(self, o: 'mypy.nodes.ClassDef',
+                             field_gc: Tuple[str, str],
+                             mask_bits: List[str]) -> None:
         if mask_bits:
             self.always_write_ind('\n')
             self.always_write_ind('static constexpr uint32_t field_mask() {\n')
@@ -2356,7 +2358,7 @@ class Generate(visitor.SimpleVisitor):
         self.always_write_ind('}\n')
 
     def _MemberDecl(self, o: 'mypy.nodes.ClassDef',
-                    base_class_name: SymbolPath) -> None:
+                    base_class_name: util.SymbolPath) -> None:
         # List of field mask expressions
         mask_bits = []
         if self.virtual.CanReorderFields(split_py_name(o.fullname)):
@@ -2427,7 +2429,8 @@ class Generate(visitor.SimpleVisitor):
         self.always_write_ind('};\n')
         self.always_write('\n')
 
-    def _ClassDefDecl(self, o, base_class_name) -> None:
+    def _ClassDefDecl(self, o: 'mypy.nodes.ClassDef',
+                      base_class_name: util.SymbolPath) -> None:
         self.current_member_vars.clear()  # make a new list
 
         self.always_write_ind('class %s', o.name)  # block after this
@@ -2484,7 +2487,9 @@ class Generate(visitor.SimpleVisitor):
 
         self._MemberDecl(o, base_class_name)
 
-    def _ConstructorImpl(self, o, stmt, base_class_name: SymbolPath) -> None:
+    def _ConstructorImpl(self, o: 'mypy.nodes.ClassDef',
+                         stmt: 'mypy.nodes.FuncDef',
+                         base_class_name: util.SymbolPath) -> None:
         self.def_write('\n')
         self.def_write('%s::%s(', o.name, o.name)
         self._WriteFuncParams(stmt.type.arg_types, stmt.arguments)
@@ -2546,7 +2551,9 @@ class Generate(visitor.SimpleVisitor):
         self.indent -= 1
         self.def_write('}\n')
 
-    def _DestructorImpl(self, o, stmt, base_class_name: SymbolPath) -> None:
+    def _DestructorImpl(self, o: 'mypy.nodes.ClassDef',
+                        stmt: 'mypy.nodes.FuncDef',
+                        base_class_name: util.SymbolPath) -> None:
         self.always_write('\n')
         self.always_write_ind('%s::~%s()', o.name, o.name)
 
@@ -2578,7 +2585,7 @@ class Generate(visitor.SimpleVisitor):
         self.def_write('}\n')
 
     def _ClassDefImpl(self, o: 'mypy.nodes.ClassDef',
-                      base_class_name: SymbolPath) -> None:
+                      base_class_name: util.SymbolPath) -> None:
         block = o.defs
         for stmt in block.body:
             if isinstance(stmt, FuncDef):
@@ -2595,8 +2602,9 @@ class Generate(visitor.SimpleVisitor):
 
                 self.accept(stmt)
 
-    def oils_visit_class_def(self, o: 'mypy.nodes.ClassDef',
-                             base_class_name: Optional[SymbolPath]) -> None:
+    def oils_visit_class_def(
+            self, o: 'mypy.nodes.ClassDef',
+            base_class_name: Optional[util.SymbolPath]) -> None:
         #log('  CLASS %s', o.name)
         if self.decl:
             self._ClassDefDecl(o, base_class_name)

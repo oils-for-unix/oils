@@ -4,7 +4,7 @@ visitor.py - AST pass that accepts everything.
 import mypy
 from mypy.visitor import ExpressionVisitor, StatementVisitor
 from mypy.nodes import (Expression, Statement, StrExpr, CallExpr, NameExpr,
-                        MemberExpr)
+                        MemberExpr, Argument)
 
 from mycpp.crash import catch_errors
 from mycpp import util
@@ -88,7 +88,7 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
                     pass
                 return None
 
-    def report_error(self, node: Union[Statement, Expression],
+    def report_error(self, node: Union[Statement, Expression, Argument],
                      msg: str) -> None:
         err = (self.module_path, node.line, msg)
         self.errors_keep_going.append(err)

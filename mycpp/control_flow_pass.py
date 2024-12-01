@@ -297,7 +297,8 @@ class Build(visitor.SimpleVisitor):
             self.accept(o.body)
             self.loop_stack.pop()
 
-    def _handle_switch(self, expr, o, cfg) -> None:
+    def _handle_switch(self, expr: Expression, o: 'mypy.nodes.WithStmt',
+                       cfg: pass_state.ControlFlowGraph) -> None:
         assert len(o.body.body) == 1, o.body.body
         if_node = o.body.body[0]
         assert isinstance(if_node, IfStmt), if_node
