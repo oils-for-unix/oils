@@ -224,7 +224,7 @@ def CTypeIsManaged(c_type: str) -> bool:
     return c_type.endswith('*')
 
 
-def GetCType(t: Type, param=False, local=False) -> str:
+def GetCType(t: Type, param: bool = False, local: bool = False) -> str:
     """Recursively translate MyPy type to C++ type."""
     is_pointer = False
 
@@ -448,11 +448,13 @@ def PythonStringLiteral(s: str) -> str:
     return json.dumps(format_strings.DecodeMyPyString(s))
 
 
-MemberVar = Tuple[str, Type, bool]
+LocalVar = Tuple[str, Type, bool]
+
+MemberVar = Tuple[Type, str, bool]
 
 CtxMemberVars = Dict[ClassDef, Dict[str, MemberVar]]
 
-LocalVars = Dict[FuncDef, List[Tuple[str, Type]]]
+LocalVarsTable = Dict[FuncDef, List[Tuple[str, Type]]]
 
 
 class Generate(visitor.SimpleVisitor):
@@ -461,7 +463,7 @@ class Generate(visitor.SimpleVisitor):
                  types: Dict[Expression, Type],
                  const_lookup: Dict[Expression, str],
                  virtual: pass_state.Virtual = None,
-                 local_vars: Optional[LocalVars] = None,
+                 local_vars: Optional[LocalVarsTable] = None,
                  ctx_member_vars: Optional[CtxMemberVars] = None,
                  decl: bool = False,
                  stack_roots_warn: Optional[int] = None,
@@ -488,7 +490,7 @@ class Generate(visitor.SimpleVisitor):
         # Collected at assignment
         self.local_var_list: List[Tuple[str, Type]] = []
         # For writing vars after {
-        self.prepend_to_block: Optional[List[MemberVar]] = None
+        self.prepend_to_block: Optional[List[LocalVar]] = None
 
         # Temporary lists to use as output params for generators
         self.yield_accumulators: Dict[Union[Statement, FuncDef],
@@ -651,9 +653,9 @@ class Generate(visitor.SimpleVisitor):
         self.accept(o.expr)
         self.def_write(');\n')
 
-    def _WriteArgList(self, o) -> None:
+    def _WriteArgList(self, args: List[Expression]) -> None:
         self.def_write('(')
-        for i, arg in enumerate(o.args):
+        for i, arg in enumerate(args):
             if i != 0:
                 self.def_write(', ')
             self.accept(arg)
@@ -662,7 +664,7 @@ class Generate(visitor.SimpleVisitor):
         # a) accumulating the output of an iterator
         # b) constructing an iterator with the result of (a)
         if self.current_stmt_node in self.yield_accumulators:
-            if len(o.args) > 0:
+            if len(args) > 0:
                 self.def_write(', ')
 
             arg_name, _ = self.yield_accumulators[self.current_stmt_node]
@@ -670,7 +672,7 @@ class Generate(visitor.SimpleVisitor):
 
         self.def_write(')')
 
-    def _IsInstantiation(self, o) -> bool:
+    def _IsInstantiation(self, o: 'mypy.nodes.CallExpr') -> bool:
         callee_name = o.callee.name
         callee_type = self.types[o.callee]
 
@@ -699,7 +701,7 @@ class Generate(visitor.SimpleVisitor):
 
         return False
 
-    def _ProbeExpr(self, o) -> None:
+    def _ProbeExpr(self, o: 'mypy.nodes.CallExpr') -> None:
         assert len(o.args) >= 2 and len(o.args) < 13, o.args
         assert isinstance(o.args[0], mypy.nodes.StrExpr), o.args[0]
         assert isinstance(o.args[1], mypy.nodes.StrExpr), o.args[1]
@@ -721,7 +723,7 @@ class Generate(visitor.SimpleVisitor):
 
         self.def_write(')')
 
-    def _LogExpr(self, o) -> None:
+    def _LogExpr(self, o: 'mypy.nodes.CallExpr') -> None:
         args = o.args
         if len(args) == 1:  # log(CONST)
             self.def_write('mylib::print_stderr(')
@@ -776,14 +778,14 @@ class Generate(visitor.SimpleVisitor):
         if isinstance(o.callee, MemberExpr) and callee_name == 'next':
             self.accept(o.callee.expr)
             self.def_write('.iterNext')
-            self._WriteArgList(o)
+            self._WriteArgList(o.args)
             return
 
         if self._IsInstantiation(o):
             self.def_write('Alloc<')
             self.accept(o.callee)
             self.def_write('>')
-            self._WriteArgList(o)
+            self._WriteArgList(o.args)
             return
 
         # Namespace.
@@ -796,7 +798,7 @@ class Generate(visitor.SimpleVisitor):
         else:
             self.accept(o.callee)  # could be f() or obj.method()
 
-        self._WriteArgList(o)
+        self._WriteArgList(o.args)
 
         # TODO: look at keyword arguments!
         #self.log('  arg_kinds %s', o.arg_kinds)
@@ -1171,7 +1173,7 @@ class Generate(visitor.SimpleVisitor):
                                temp_name: str,
                                lval_items: List[Expression],
                                item_types: List[Type],
-                               is_return=False) -> None:
+                               is_return: bool = False) -> None:
         """Used by assignment and for loops."""
         for i, (lval_item, item_type) in enumerate(zip(lval_items,
                                                        item_types)):
@@ -1193,7 +1195,8 @@ class Generate(visitor.SimpleVisitor):
             op = '.' if is_return else '->'
             self.def_write(' = %s%sat%d();\n', temp_name, op, i)  # RHS
 
-    def _ListComprehensionImpl(self, o, lval: Expression, c_type) -> None:
+    def _ListComprehensionImpl(self, o: 'mypy.nodes.AssignmentStmt',
+                               lval: Expression, c_type: 'str') -> None:
         """
         Special case for list comprehensions.  Note that the LHS MUST be on the
         LHS, so we can append to it.
@@ -1283,7 +1286,7 @@ class Generate(visitor.SimpleVisitor):
 
         self.def_write_ind('}\n')
 
-    def _AssignNewDictImpl(self, lval: Expression, prefix='') -> None:
+    def _AssignNewDictImpl(self, lval: Expression, prefix: str = '') -> None:
         """Translate NewDict() -> Alloc<Dict<K, V>>
 
         This function is a specal case because the RHS need TYPES from the LHS.
@@ -1318,7 +1321,8 @@ class Generate(visitor.SimpleVisitor):
         assert c_type.endswith('*')
         self.def_write('Alloc<%s>()', c_type[:-1])
 
-    def _AssignCastImpl(self, o, lval: Expression) -> None:
+    def _AssignCastImpl(self, o: 'mypy.nodes.AssignmentStmt',
+                        lval: Expression) -> None:
         """
         is_downcast_and_shadow idiom:
         
@@ -1352,7 +1356,8 @@ class Generate(visitor.SimpleVisitor):
         self.accept(call.args[1])  # variable being casted
         self.def_write(');\n')
 
-    def _IteratorImpl(self, o, lval: Expression, rval_type) -> None:
+    def _IteratorImpl(self, o: 'mypy.nodes.AssignmentStmt', lval: Expression,
+                      rval_type: Type) -> None:
         # We're calling a generator. Create a temporary List<T> on the stack
         # to accumulate the results in one big batch, then wrap it in
         # ListIter<T>.
@@ -1370,7 +1375,8 @@ class Generate(visitor.SimpleVisitor):
         self.def_write(';\n')
         self.def_write_ind('%s %s(&%s);\n', c_type, lval.name, iter_buf[0])
 
-    def _MaybeAddMember(self, lval: Expression, current_member_vars) -> None:
+    def _MaybeAddMember(self, lval: Expression,
+                        current_member_vars: Dict[str, MemberVar]) -> None:
         if isinstance(lval.expr, NameExpr) and lval.expr.name == 'self':
             #log('    lval.name %s', lval.name)
             lval_type = self.types[lval]
@@ -1865,8 +1871,8 @@ class Generate(visitor.SimpleVisitor):
         if o.else_body:
             raise AssertionError("can't translate for-else")
 
-    def _write_cases(self, switch_expr: Expression, cases,
-                     default_block) -> None:
+    def _write_cases(self, switch_expr: Expression, cases: util.CaseList,
+                     default_block: Union['mypy.nodes.Block', int]) -> None:
         """ Write a list of (expr, block) pairs """
 
         for expr, body in cases:
@@ -1886,10 +1892,10 @@ class Generate(visitor.SimpleVisitor):
             self.accept(body)
             self.def_write_ind('  break;\n')
 
-        if default_block is None:
+        if default_block == -1:
             # an error occurred
             return
-        if default_block is False:
+        if default_block == -2:
             # This is too restrictive
             #self.report_error(switch_expr,
             #                  'switch got no else: for default block')
@@ -1899,7 +1905,8 @@ class Generate(visitor.SimpleVisitor):
         self.accept(default_block)
         # don't write 'break'
 
-    def _write_switch(self, expr: Expression, o) -> None:
+    def _write_switch(self, expr: Expression,
+                      o: 'mypy.nodes.WithStmt') -> None:
         """Write a switch statement over integers."""
         assert len(expr.args) == 1, expr.args
 
@@ -1912,7 +1919,7 @@ class Generate(visitor.SimpleVisitor):
         assert isinstance(if_node, IfStmt), if_node
 
         self.indent += 1
-        cases = []
+        cases: util.CaseList = []
         default_block = util._collect_cases(self.module_path,
                                             if_node,
                                             cases,
@@ -1922,7 +1929,8 @@ class Generate(visitor.SimpleVisitor):
         self.indent -= 1
         self.def_write_ind('}\n')
 
-    def _write_tag_switch(self, expr: Expression, o) -> None:
+    def _write_tag_switch(self, expr: Expression,
+                          o: 'mypy.nodes.WithStmt') -> None:
         """Write a switch statement over ASDL types."""
         assert len(expr.args) == 1, expr.args
 
@@ -1935,7 +1943,7 @@ class Generate(visitor.SimpleVisitor):
         assert isinstance(if_node, IfStmt), if_node
 
         self.indent += 1
-        cases = []
+        cases: util.CaseList = []
         default_block = util._collect_cases(self.module_path,
                                             if_node,
                                             cases,
@@ -1945,8 +1953,8 @@ class Generate(visitor.SimpleVisitor):
         self.indent -= 1
         self.def_write_ind('}\n')
 
-    def _str_switch_cases(self, cases) -> Any:
-        cases2 = []
+    def _str_switch_cases(self, cases: util.CaseList) -> Any:
+        cases2: util.CaseList = []
         for expr, body in cases:
             if not isinstance(expr, CallExpr):
                 # non-fatal check from _collect_cases
@@ -1975,7 +1983,8 @@ class Generate(visitor.SimpleVisitor):
         grouped = itertools.groupby(cases2, key=lambda pair: pair[0])
         return grouped
 
-    def _write_str_switch(self, expr: Expression, o) -> None:
+    def _write_str_switch(self, expr: Expression,
+                          o: 'mypy.nodes.WithStmt') -> None:
         """Write a switch statement over strings."""
         assert len(expr.args) == 1, expr.args
 
@@ -1998,7 +2007,7 @@ class Generate(visitor.SimpleVisitor):
 
         self.indent += 1
 
-        cases = []
+        cases: util.CaseList = []
         default_block = util._collect_cases(self.module_path,
                                             if_node,
                                             cases,
@@ -2032,13 +2041,16 @@ class Generate(visitor.SimpleVisitor):
             self.def_write_ind('}\n')
             self.def_write_ind('  break;\n')
 
-        if default_block is None:
+        if default_block == -1:
             # an error occurred
             return
-        if default_block is False:
+        if default_block == -2:
             self.report_error(switch_expr,
                               'str_switch got no else: for default block')
             return
+
+        # Narrow the type
+        assert not isinstance(default_block, int), default_block
 
         self.def_write('\n')
         self.def_write_ind('str_switch_default:\n')
@@ -2343,7 +2355,8 @@ class Generate(visitor.SimpleVisitor):
         self.always_write_ind('  return %s;\n' % obj_header)
         self.always_write_ind('}\n')
 
-    def _MemberDecl(self, o, base_class_name: SymbolPath) -> None:
+    def _MemberDecl(self, o: 'mypy.nodes.ClassDef',
+                    base_class_name: SymbolPath) -> None:
         # List of field mask expressions
         mask_bits = []
         if self.virtual.CanReorderFields(split_py_name(o.fullname)):
@@ -2564,7 +2577,8 @@ class Generate(visitor.SimpleVisitor):
         self.indent -= 1
         self.def_write('}\n')
 
-    def _ClassDefImpl(self, o, base_class_name: SymbolPath) -> None:
+    def _ClassDefImpl(self, o: 'mypy.nodes.ClassDef',
+                      base_class_name: SymbolPath) -> None:
         block = o.defs
         for stmt in block.body:
             if isinstance(stmt, FuncDef):

@@ -50,7 +50,7 @@ class Build(visitor.SimpleVisitor):
 
     def __init__(self, types: Dict[Expression,
                                    Type], virtual: pass_state.Virtual,
-                 local_vars: 'cppgen_pass.LocalVars',
+                 local_vars: 'cppgen_pass.LocalVarsTable',
                  dot_exprs: 'ir_pass.DotExprs') -> None:
         visitor.SimpleVisitor.__init__(self)
 
@@ -311,7 +311,7 @@ class Build(visitor.SimpleVisitor):
                 with branch_ctx.AddBranch():
                     self.accept(body)
 
-            if default_block:
+            if not isinstance(default_block, int):
                 with branch_ctx.AddBranch():
                     self.accept(default_block)
 

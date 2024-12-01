@@ -367,7 +367,7 @@ def main(argv: List[str]) -> int:
     #
     timer.Section('mycpp pass: PROTOTYPES')
 
-    local_vars: cppgen_pass.LocalVars = {}
+    local_vars: cppgen_pass.LocalVarsTable = {}
     ctx_member_vars: cppgen_pass.CtxMemberVars = {}
 
     for name, module in to_compile:

@@ -53,12 +53,16 @@ def split_py_name(name: str) -> SymbolPath:
     return ret
 
 
+CaseList = List[Tuple[Expression, Block]]
+
+CaseError = Tuple[str, int, str]
+
+
 def _collect_cases(
-    module_path: str,
-    if_node: IfStmt,
-    out: List[Tuple[Expression, Block]],
-    errors: Optional[List[Tuple[Any, Any, str]]] = None
-) -> Union[Optional[Block], bool]:
+        module_path: str,
+        if_node: IfStmt,
+        out: CaseList,
+        errors: Optional[List[CaseError]] = None) -> Union[Block, int]:
     """
     The MyPy AST has a recursive structure for if-elif-elif rather than a
     flat one.  It's a bit confusing.
@@ -81,7 +85,7 @@ def _collect_cases(
         if errors is not None:
             errors.append((module_path, expr.line,
                            'Expected call like case(x), got %s' % expr))
-        return False
+        return -1  # error code
 
     out.append((expr, body))
 
@@ -98,7 +102,7 @@ def _collect_cases(
             # default case - no expression
             return if_node.else_body
 
-    return False  # NO DEFAULT BLOCK - Different than None
+    return -2  # NO DEFAULT BLOCK
 
 
 def ShouldSkipPyFile(node: MypyFile) -> bool:
