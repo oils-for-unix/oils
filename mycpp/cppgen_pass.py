@@ -441,7 +441,6 @@ class Generate(visitor.SimpleVisitor):
     def __init__(self,
                  types: Dict[Expression, Type],
                  const_lookup: Dict[Expression, str],
-                 f,
                  virtual: pass_state.Virtual = None,
                  local_vars: Optional[LocalVars] = None,
                  ctx_member_vars: Optional[CtxMemberVars] = None,
@@ -454,7 +453,6 @@ class Generate(visitor.SimpleVisitor):
 
         self.types = types
         self.const_lookup = const_lookup
-        self.f = f
 
         self.virtual = virtual
 
@@ -542,13 +540,7 @@ class Generate(visitor.SimpleVisitor):
 
     # Not in superclasses:
 
-    def visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> None:
-        if util.ShouldSkipPyFile(o):
-            return
-
-        #self.log('')
-        #self.log('mypyfile %s', o.fullname)
-
+    def oils_visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> None:
         mod_parts = o.fullname.split('.')
         if self.forward_decl:
             comment = 'forward declare'
@@ -560,8 +552,6 @@ class Generate(visitor.SimpleVisitor):
         self.always_write_ind('namespace %s {  // %s\n', mod_parts[-1],
                               comment)
         self.always_write('\n')
-
-        self.module_path = o.path
 
         if self.forward_decl:
             self.indent += 1
@@ -577,9 +567,6 @@ class Generate(visitor.SimpleVisitor):
         self.always_write_ind('}  // %s namespace %s\n', comment,
                               mod_parts[-1])
         self.always_write('\n')
-
-        for path, line_num, msg in self.errors_keep_going:
-            self.log('%s:%s %s', path, line_num, msg)
 
     # LITERALS
 

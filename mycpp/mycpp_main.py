@@ -332,9 +332,9 @@ def main(argv: List[str]) -> int:
         p2 = cppgen_pass.Generate(
             result.types,
             None,
-            out_f,
             virtual=virtual,  # output
             forward_decl=True)
+        p2.SetOutputFile(out_f)
 
         p2.visit_mypy_file(module)
         MaybeExitWithErrors(p2)
@@ -342,6 +342,7 @@ def main(argv: List[str]) -> int:
         # TODO: hook this up
         forward_decls: List[str] = []
         tmp = virtual_pass.Pass(virtual, forward_decls)
+        tmp.SetOutputFile(out_f)
 
     # After seeing class and method names in the first pass, figure out which
     # ones are virtual.  We use this info in the second pass.
@@ -382,11 +383,11 @@ def main(argv: List[str]) -> int:
         p3 = cppgen_pass.Generate(
             result.types,
             const_lookup,  # input
-            out_f,
             local_vars=local_vars,  # output
             ctx_member_vars=ctx_member_vars,  # output
             virtual=virtual,  # input
             decl=True)
+        p3.SetOutputFile(out_f)
 
         p3.visit_mypy_file(module)
         MaybeExitWithErrors(p3)
@@ -429,13 +430,14 @@ def main(argv: List[str]) -> int:
         p4 = cppgen_pass.Generate(
             result.types,
             const_lookup,  # input
-            f,  # output
             local_vars=local_vars,  # input
             ctx_member_vars=ctx_member_vars,  # input
             stack_roots_warn=opts.stack_roots_warn,  # input
             dot_exprs=dot_exprs[module.path],  # input
             stack_roots=stack_roots,  # input
         )
+        p4.SetOutputFile(out_f)
+
         p4.visit_mypy_file(module)
         MaybeExitWithErrors(p4)
 

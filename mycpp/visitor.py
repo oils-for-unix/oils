@@ -10,7 +10,8 @@ from mycpp.crash import catch_errors
 from mycpp import util
 from mycpp.util import split_py_name
 
-from typing import overload, Union, Optional, TypeVar, List, Tuple
+from typing import (overload, Any, Union, Optional, TypeVar, List, Tuple,
+                    TextIO)
 
 T = TypeVar('T')
 
@@ -27,10 +28,27 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
 
     def __init__(self) -> None:
         self.current_class_name: Optional[util.SymbolPath] = None
+        self.module_path: Optional[str] = None
 
         # So we can report multiple at once
         # module path, line number, message
         self.errors_keep_going: List[Tuple[str, int, str]] = []
+
+        self.indent = 0
+        self.f = None
+
+    def SetOutputFile(self, f: TextIO) -> None:
+        self.f = f
+
+    def write(self, msg: str, *args: Any) -> None:
+        if args:
+            msg = msg % args
+        assert self.f is not None
+        self.f.write(msg)
+
+    def write_ind(self, msg: str, *args: Any) -> None:
+        ind_str = self.indent * '  '
+        self.write(ind_str + msg, *args)
 
     #
     # COPIED from IRBuilder
@@ -78,7 +96,9 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
                     name: str) -> None:
         self.report_error(node, "%s: shouldn't get here in Python 2" % name)
 
-    # Not in superclasses:
+    def oils_visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> None:
+        for node in o.defs:
+            self.accept(node)
 
     def visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> None:
         if util.ShouldSkipPyFile(o):
@@ -86,10 +106,11 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
 
         self.module_path = o.path
 
-        for node in o.defs:
-            self.accept(node)
+        self.oils_visit_mypy_file(o)
 
-    # LITERALS
+        # Now show errors for each file
+        for path, line_num, msg in self.errors_keep_going:
+            self.log('%s:%s %s', path, line_num, msg)
 
     def visit_for_stmt(self, o: 'mypy.nodes.ForStmt') -> None:
         self.accept(o.index)  # index var expression

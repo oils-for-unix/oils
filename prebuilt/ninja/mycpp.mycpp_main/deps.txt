@@ -7,5 +7,6 @@ mycpp/ir_pass.py
 mycpp/mycpp_main.py
 mycpp/pass_state.py
 mycpp/util.py
+mycpp/virtual_pass.py
 mycpp/visitor.py
 _bin/datalog/dataflow

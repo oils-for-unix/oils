@@ -4,9 +4,9 @@ control_flow_pass.py - AST pass that builds a control flow graph.
 import collections
 
 import mypy
-from mypy.nodes import (Block, Expression, Statement, ExpressionStmt, StrExpr,
-                        CallExpr, FuncDef, IfStmt, NameExpr, MemberExpr,
-                        IndexExpr, TupleExpr, IntExpr)
+from mypy.nodes import (Block, Expression, Statement, CallExpr, FuncDef,
+                        IfStmt, NameExpr, MemberExpr, IndexExpr, TupleExpr,
+                        IntExpr)
 
 from mypy.types import CallableType, Instance, Type, UnionType, NoneTyp, TupleType
 
@@ -285,21 +285,6 @@ class Build(visitor.SimpleVisitor):
                 except UnsupportedException:
                     pass
                 return None
-
-    # Not in superclasses:
-
-    def visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> None:
-        if util.ShouldSkipPyFile(o):
-            return
-
-        self.module_path = o.path
-
-        for node in o.defs:
-            # skip module docstring
-            if isinstance(node, ExpressionStmt) and isinstance(
-                    node.expr, StrExpr):
-                continue
-            self.accept(node)
 
     # Statements
 
