@@ -24,6 +24,7 @@ from mycpp import ir_pass
 from mycpp import const_pass
 from mycpp import cppgen_pass
 from mycpp import control_flow_pass
+from mycpp import virtual_pass
 from mycpp import pass_state
 from mycpp.util import log
 from mycpp import visitor
@@ -337,6 +338,10 @@ def main(argv: List[str]) -> int:
 
         p2.visit_mypy_file(module)
         MaybeExitWithErrors(p2)
+
+        # TODO: hook this up
+        forward_decls: List[str] = []
+        tmp = virtual_pass.Pass(virtual, forward_decls)
 
     # After seeing class and method names in the first pass, figure out which
     # ones are virtual.  We use this info in the second pass.

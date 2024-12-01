@@ -581,8 +581,6 @@ class Generate(visitor.SimpleVisitor):
         for path, line_num, msg in self.errors_keep_going:
             self.log('%s:%s %s', path, line_num, msg)
 
-    # NOTE: Copied ExpressionVisitor and StatementVisitor nodes below!
-
     # LITERALS
 
     def visit_int_expr(self, o: 'mypy.nodes.IntExpr') -> None:
@@ -2271,10 +2269,7 @@ class Generate(visitor.SimpleVisitor):
             arg_name, c_type = self.yield_accumulators[self.current_func_node]
             self.always_write('%s %s', c_type, arg_name)
 
-    def visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
-        if o.name == '__repr__':  # Don't translate
-            return
-
+    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
         # No function prototypes when forward declaring.
         if self.forward_decl:
             self.virtual.OnMethod(self.current_class_name, o.name)
@@ -2611,18 +2606,9 @@ class Generate(visitor.SimpleVisitor):
 
                 self.accept(stmt)
 
-    def visit_class_def(self, o: 'mypy.nodes.ClassDef') -> None:
+    def oils_visit_class_def(self, o: 'mypy.nodes.ClassDef',
+                             base_class_name: Optional[SymbolPath]) -> None:
         #log('  CLASS %s', o.name)
-
-        base_class_name = None  # single inheritance only
-        for b in o.base_type_exprs:
-            if isinstance(b, NameExpr):
-                # TODO: inherit from std::exception?
-                if b.name != 'object' and b.name != 'Exception':
-                    base_class_name = split_py_name(b.fullname)
-            elif isinstance(b, MemberExpr):  # vm._Executor -> vm::_Executor
-                assert isinstance(b.expr, NameExpr), b
-                base_class_name = split_py_name(b.expr.fullname) + (b.name, )
 
         # Forward declare types because they may be used in prototypes
         if self.forward_decl:
@@ -2630,21 +2616,14 @@ class Generate(visitor.SimpleVisitor):
             if base_class_name:
                 self.virtual.OnSubclass(base_class_name,
                                         split_py_name(o.fullname))
-            # Visit class body so we get method declarations
-            self.current_class_name = split_py_name(o.fullname)
             self._write_body(o.defs.body)
-            self.current_class_name = None
             return
 
         if self.decl:
-            self.current_class_name = split_py_name(o.fullname)
             self._ClassDefDecl(o, base_class_name)
-            self.current_class_name = None
             return
 
-        self.current_class_name = split_py_name(o.fullname)
         self._ClassDefImpl(o, base_class_name)
-        self.current_class_name = None  # Stop prefixing functions with class
 
     # Module structure
 

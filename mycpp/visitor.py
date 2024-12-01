@@ -1,17 +1,16 @@
 """
 visitor.py - AST pass that accepts everything.
 """
-from typing import overload, Union, Optional
-
 import mypy
 from mypy.visitor import ExpressionVisitor, StatementVisitor
-from mypy.nodes import (Expression, Statement, StrExpr, CallExpr)
+from mypy.nodes import (Expression, Statement, StrExpr, CallExpr, NameExpr,
+                        MemberExpr)
 
 from mycpp.crash import catch_errors
-from mycpp.util import split_py_name
 from mycpp import util
+from mycpp.util import split_py_name
 
-from typing import Optional, TypeVar, List, Tuple
+from typing import overload, Union, Optional, TypeVar, List, Tuple
 
 T = TypeVar('T')
 
@@ -106,20 +105,38 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         self.accept(expr)
         self.accept(o.body)
 
-    def visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
-        if o.name == '__repr__':  # Don't translate
-            return
-
+    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
+        """Only the functions we care about in Oils."""
         for arg in o.arguments:
             if arg.initializer:
                 self.accept(arg.initializer)
 
         self.accept(o.body)
 
-    def visit_class_def(self, o: 'mypy.nodes.ClassDef') -> None:
-        self.current_class_name = split_py_name(o.fullname)
+    def visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
+        if o.name == '__repr__':  # Don't translate
+            return
+
+        self.oils_visit_func_def(o)
+
+    def oils_visit_class_def(
+            self, o: 'mypy.nodes.ClassDef',
+            base_class_name: Optional[util.SymbolPath]) -> None:
         for stmt in o.defs.body:
             self.accept(stmt)
+
+    def visit_class_def(self, o: 'mypy.nodes.ClassDef') -> None:
+        base_class_name = None  # single inheritance only
+        for b in o.base_type_exprs:
+            if isinstance(b, NameExpr):
+                if b.name != 'object' and b.name != 'Exception':
+                    base_class_name = split_py_name(b.fullname)
+            elif isinstance(b, MemberExpr):  # vm._Executor -> vm::_Executor
+                assert isinstance(b.expr, NameExpr), b
+                base_class_name = split_py_name(b.expr.fullname) + (b.name, )
+
+        self.current_class_name = split_py_name(o.fullname)
+        self.oils_visit_class_def(o, base_class_name)
         self.current_class_name = None
 
     # Statements
@@ -380,4 +397,3 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
 
     def visit_temp_node(self, o: 'mypy.nodes.TempNode') -> None:
         self.not_translated(o, 'temp')
-
