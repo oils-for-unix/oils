@@ -1075,8 +1075,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 if self.exec_opts.strict_array():
                     e_die("Can't index string with %s" % op_str,
                           loc.WordPart(part))
-            elif case2(value_e.BashArray):
+            elif case2(value_e.BashArray, value_e.SparseArray, value_e.BashAssoc):
                 pass  # no-op
+            else:
+                raise AssertionError(op_id)  # unknown
 
         return val
 
