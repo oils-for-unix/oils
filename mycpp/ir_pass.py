@@ -12,13 +12,15 @@ from mycpp import visitor
 from mycpp import util
 from mycpp import pass_state
 
+DotExprs = Dict[mypy.nodes.MemberExpr, pass_state.member_t]
+
 
 class Build(visitor.SimpleVisitor):
 
-    def __init__(self, types: Dict[Expression, Type]):
+    def __init__(self, types: Dict[Expression, Type], dot_exprs: DotExprs):
 
         self.types = types
-        self.dot_exprs: Dict[mypy.nodes.MemberExpr, pass_state.member_t] = {}
+        self.dot_exprs = dot_exprs
 
         self.imported_names = set()  # MemberExpr -> module::Foo() or self->foo
         # HACK for conditional import inside mylib.PYTHON

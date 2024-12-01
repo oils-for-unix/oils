@@ -21,6 +21,7 @@ from mycpp import pass_state
 from typing import Dict, List, TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from mycpp import ir_pass
     from mycpp import cppgen_pass
 
 
@@ -50,7 +51,7 @@ class Build(SimpleVisitor):
     def __init__(self, types: Dict[Expression,
                                    Type], virtual: pass_state.Virtual,
                  local_vars: 'cppgen_pass.LocalVars',
-                 dot_exprs: 'cppgen_pass.DotExprs') -> None:
+                 dot_exprs: 'ir_pass.DotExprs') -> None:
 
         self.types = types
         self.cfgs: Dict[SymbolPath,

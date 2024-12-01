@@ -15,7 +15,7 @@ from mypy.build import build as mypy_build
 from mypy.build import BuildSource
 from mypy.main import process_options
 if TYPE_CHECKING:
-    from mypy.nodes import Expression
+    from mypy.nodes import Expression, MemberExpr
 
 from mycpp import ir_pass
 from mycpp import const_pass
@@ -23,6 +23,7 @@ from mycpp import cppgen_pass
 from mycpp import control_flow_pass
 from mycpp import pass_state
 from mycpp.util import log
+from mycpp import visitor
 
 
 def Options() -> optparse.OptionParser:
@@ -271,10 +272,11 @@ def main(argv: List[str]) -> int:
 
     # Convert the mypy AST into our own IR.
     # module name -> {expr node -> access type}
-    dot_exprs: cppgen_pass.DotExprs = {}
+    dot_exprs: Dict[MemberExpr, ir_pass.DotExprs] = {}
     log('\tmycpp pass: IR')
     for _, module in to_compile:
-        p = ir_pass.Build(result.types)
+        module_dot_exprs: ir_pass.DotExprs = {}
+        p = ir_pass.Build(result.types, module_dot_exprs)
         p.visit_mypy_file(module)
         dot_exprs[module.path] = p.dot_exprs
 
@@ -401,7 +403,7 @@ def main(argv: List[str]) -> int:
     return 0  # success
 
 
-def MaybeExitWithErrors(p) -> None:
+def MaybeExitWithErrors(p: visitor.SimpleVisitor) -> None:
     # Check for errors we collected
     num_errors = len(p.errors_keep_going)
     if num_errors != 0:

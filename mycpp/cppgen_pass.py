@@ -1,5 +1,5 @@
 """
-cppgen.py - AST pass to that prints C++ code
+cppgen_pass.py - AST pass that prints C++ code
 """
 import itertools
 import json  # for "C escaping"
@@ -7,7 +7,7 @@ import json  # for "C escaping"
 from typing import overload, Union, Optional, Dict
 
 import mypy
-from mypy.visitor import ExpressionVisitor, StatementVisitor
+from mycpp import visitor
 from mypy.types import (Type, AnyType, NoneTyp, TupleType, Instance, NoneType,
                         Overloaded, CallableType, UnionType, UninhabitedType,
                         PartialType, TypeAliasType)
@@ -23,7 +23,9 @@ from mycpp import pass_state
 from mycpp import util
 from mycpp.util import SymbolPath
 
-from typing import Tuple, List, Any
+from typing import Tuple, List, Any, TYPE_CHECKING
+if TYPE_CHECKING:
+    from mycpp import ir_pass
 
 T = None
 
@@ -429,14 +431,13 @@ def PythonStringLiteral(s: str) -> str:
 
 
 MemberVar = Tuple[Any, str, bool]
+
 CtxMemberVars = Dict[ClassDef, Dict[str, MemberVar]]
 
 LocalVars = Dict[FuncDef, List[Tuple[str, Type]]]
 
-DotExprs = Dict[MemberExpr, Any]
 
-
-class Generate(ExpressionVisitor[None], StatementVisitor[None]):
+class Generate(visitor.SimpleVisitor):
 
     def __init__(self,
                  types: Dict[Expression, Type],
@@ -448,8 +449,10 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
                  decl: bool = False,
                  forward_decl: bool = False,
                  stack_roots_warn: Optional[int] = None,
-                 dot_exprs: Optional[DotExprs] = None,
+                 dot_exprs: Optional['ir_pass.DotExprs'] = None,
                  stack_roots: Optional[pass_state.StackRoots] = None) -> None:
+        visitor.SimpleVisitor.__init__(self)
+
         self.types = types
         self.const_lookup = const_lookup
         self.f = f
@@ -491,10 +494,6 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
 
         self.dot_exprs = dot_exprs
         self.stack_roots = stack_roots
-
-        # So we can report multiple at once
-        # module path, line number, message
-        self.errors_keep_going: List[Tuple[str, int, str]] = []
 
         self.writing_default_arg = False
 
@@ -574,11 +573,6 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
                 except UnsupportedException:
                     pass
                 return None
-
-    def report_error(self, node: Union[Statement, Expression],
-                     msg: str) -> None:
-        err = (self.module_path, node.line, msg)
-        self.errors_keep_going.append(err)
 
     def not_translated(self, node: Union[Statement, Expression],
                        name: str) -> None:
@@ -1324,10 +1318,10 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
         pass
 
     def _write_tuple_unpacking(self,
-                               temp_name,
-                               lval_items,
-                               item_types,
-                               is_return=False):
+                               temp_name: str,
+                               lval_items: List[Expression],
+                               item_types: List[Type],
+                               is_return=False) -> None:
         """Used by assignment and for loops."""
         for i, (lval_item, item_type) in enumerate(zip(lval_items,
                                                        item_types)):
@@ -1349,7 +1343,7 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
             op = '.' if is_return else '->'
             self.def_write(' = %s%sat%d();\n', temp_name, op, i)  # RHS
 
-    def _ListComprehensionImpl(self, o, lval, c_type):
+    def _ListComprehensionImpl(self, o, lval: Expression, c_type) -> None:
         """
         Special case for list comprehensions.  Note that the LHS MUST be on the
         LHS, so we can append to it.
@@ -1439,7 +1433,7 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
 
         self.def_write_ind('}\n')
 
-    def _AssignNewDictImpl(self, lval, prefix=''):
+    def _AssignNewDictImpl(self, lval: Expression, prefix='') -> None:
         """Translate NewDict() -> Alloc<Dict<K, V>>
 
         This function is a specal case because the RHS need TYPES from the LHS.
@@ -1474,7 +1468,7 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
         assert c_type.endswith('*')
         self.def_write('Alloc<%s>()', c_type[:-1])
 
-    def _AssignCastImpl(self, o, lval):
+    def _AssignCastImpl(self, o, lval: Expression) -> None:
         """
         is_downcast_and_shadow idiom:
         
@@ -1508,7 +1502,7 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
         self.accept(call.args[1])  # variable being casted
         self.def_write(');\n')
 
-    def _IteratorImpl(self, o, lval, rval_type):
+    def _IteratorImpl(self, o, lval: Expression, rval_type) -> None:
         # We're calling a generator. Create a temporary List<T> on the stack
         # to accumulate the results in one big batch, then wrap it in
         # ListIter<T>.
@@ -1526,7 +1520,7 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
         self.def_write(';\n')
         self.def_write_ind('%s %s(&%s);\n', c_type, lval.name, iter_buf[0])
 
-    def _MaybeAddMember(self, lval, current_member_vars):
+    def _MaybeAddMember(self, lval: Expression, current_member_vars) -> None:
         if isinstance(lval.expr, NameExpr) and lval.expr.name == 'self':
             #log('    lval.name %s', lval.name)
             lval_type = self.types[lval]
@@ -2025,7 +2019,8 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
         if o.else_body:
             raise AssertionError("can't translate for-else")
 
-    def _write_cases(self, switch_expr, cases, default_block):
+    def _write_cases(self, switch_expr: Expression, cases,
+                     default_block) -> None:
         """ Write a list of (expr, block) pairs """
 
         for expr, body in cases:
@@ -2058,7 +2053,7 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
         self.accept(default_block)
         # don't write 'break'
 
-    def _write_switch(self, expr, o):
+    def _write_switch(self, expr: Expression, o) -> None:
         """Write a switch statement over integers."""
         assert len(expr.args) == 1, expr.args
 
@@ -2081,7 +2076,7 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
         self.indent -= 1
         self.def_write_ind('}\n')
 
-    def _write_tag_switch(self, expr, o):
+    def _write_tag_switch(self, expr: Expression, o) -> None:
         """Write a switch statement over ASDL types."""
         assert len(expr.args) == 1, expr.args
 
@@ -2104,7 +2099,7 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
         self.indent -= 1
         self.def_write_ind('}\n')
 
-    def _str_switch_cases(self, cases):
+    def _str_switch_cases(self, cases) -> Any:
         cases2 = []
         for expr, body in cases:
             if not isinstance(expr, CallExpr):
@@ -2134,7 +2129,7 @@ class Generate(ExpressionVisitor[None], StatementVisitor[None]):
         grouped = itertools.groupby(cases2, key=lambda pair: pair[0])
         return grouped
 
-    def _write_str_switch(self, expr, o):
+    def _write_str_switch(self, expr: Expression, o) -> None:
         """Write a switch statement over strings."""
         assert len(expr.args) == 1, expr.args
 

@@ -12,7 +12,7 @@ from mycpp.crash import catch_errors
 from mycpp.util import split_py_name
 from mycpp import util
 
-from typing import Optional, TypeVar
+from typing import Optional, TypeVar, List, Tuple
 
 T = TypeVar('T')
 
@@ -29,6 +29,10 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
 
     def __init__(self) -> None:
         self.current_class_name: Optional[util.SymbolPath] = None
+
+        # So we can report multiple at once
+        # module path, line number, message
+        self.errors_keep_going: List[Tuple[str, int, str]] = []
 
     #
     # COPIED from IRBuilder
@@ -62,6 +66,11 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
                 except UnsupportedException:
                     pass
                 return None
+
+    def report_error(self, node: Union[Statement, Expression],
+                     msg: str) -> None:
+        err = (self.module_path, node.line, msg)
+        self.errors_keep_going.append(err)
 
     # Not in superclasses:
 
