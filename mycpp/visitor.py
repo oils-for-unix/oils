@@ -16,10 +16,6 @@ from typing import (overload, Any, Union, Optional, TypeVar, List, Tuple,
 T = TypeVar('T')
 
 
-class UnsupportedException(Exception):
-    pass
-
-
 class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
     """
     A simple AST visitor that accepts every node in the AST. Derrived classes
@@ -56,7 +52,7 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         self.write(ind_str + msg, *args)
 
     #
-    # COPIED from IRBuilder
+    # COPIED from mypyc IRBuilder
     #
 
     @overload
@@ -67,26 +63,16 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
     def accept(self, node: Statement) -> None:
         ...
 
-    def accept(self, node: Union[Statement, Expression]) -> Optional[T]:
+    def accept(self, node: Union[Statement, Expression]) -> None:
         with catch_errors(self.module_path, node.line):
             if isinstance(node, Expression):
-                try:
-                    res = node.accept(self)
-                    #res = self.coerce(res, self.node_type(node), node.line)
-
-                # If we hit an error during compilation, we want to
-                # keep trying, so we can produce more error
-                # messages. Generate a temp of the right type to keep
-                # from causing more downstream trouble.
-                except UnsupportedException:
-                    res = self.alloc_temp(self.node_type(node))
-                return res
+                node.accept(self)
             else:
-                try:
-                    node.accept(self)
-                except UnsupportedException:
-                    pass
-                return None
+                node.accept(self)
+
+    #
+    # Error API
+    #
 
     def report_error(self, node: Union[Statement, Expression, Argument],
                      msg: str) -> None:
@@ -305,6 +291,37 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         self.accept(o.callee)
         for arg in o.args:
             self.accept(arg)
+
+    #
+    # Leaf Statements and Expressions that do nothing
+    #
+
+    def visit_int_expr(self, o: 'mypy.nodes.IntExpr') -> None:
+        pass
+
+    def visit_float_expr(self, o: 'mypy.nodes.FloatExpr') -> None:
+        pass
+
+    def visit_str_expr(self, o: 'mypy.nodes.StrExpr') -> None:
+        pass
+
+    def visit_break_stmt(self, o: 'mypy.nodes.BreakStmt') -> None:
+        pass
+
+    def visit_continue_stmt(self, o: 'mypy.nodes.ContinueStmt') -> None:
+        pass
+
+    def visit_pass_stmt(self, o: 'mypy.nodes.PassStmt') -> None:
+        pass
+
+    def visit_import(self, o: 'mypy.nodes.Import') -> None:
+        pass
+
+    def visit_import_from(self, o: 'mypy.nodes.ImportFrom') -> None:
+        pass
+
+    def visit_name_expr(self, o: 'mypy.nodes.NameExpr') -> None:
+        pass
 
     #
     # Not doing anything with these?

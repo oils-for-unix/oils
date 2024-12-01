@@ -13,7 +13,6 @@ from mypy.types import CallableType, Instance, Type, UnionType, NoneTyp, TupleTy
 from mycpp.crash import catch_errors
 from mycpp.util import join_name, split_py_name
 from mycpp import visitor
-from mycpp.visitor import T
 from mycpp import util
 from mycpp.util import SymbolPath
 from mycpp import pass_state
@@ -23,10 +22,6 @@ from typing import Dict, List, Union, Optional, overload, TYPE_CHECKING
 if TYPE_CHECKING:
     from mycpp import ir_pass
     from mycpp import cppgen_pass
-
-
-class UnsupportedException(Exception):
-    pass
 
 
 def GetObjectTypeName(t: Type) -> SymbolPath:
@@ -68,7 +63,7 @@ class Build(visitor.SimpleVisitor):
         self.heap_counter = 0
         # statement object -> SymbolPath of the callee
         self.callees: Dict[Statement, SymbolPath] = {}
-        self.current_lval = None
+        self.current_lval: Optional[Expression] = None
 
     def current_cfg(self) -> pass_state.ControlFlowGraph:
         if not self.current_func_node:
@@ -257,34 +252,20 @@ class Build(visitor.SimpleVisitor):
     def accept(self, node: Statement) -> None:
         ...
 
-    def accept(self, node: Union[Statement, Expression]) -> Optional[T]:
+    def accept(self, node: Union[Statement, Expression]) -> None:
         with catch_errors(self.module_path, node.line):
             if isinstance(node, Expression):
-                try:
-                    res = node.accept(self)
-                    #res = self.coerce(res, self.node_type(node), node.line)
-
-                # If we hit an error during compilation, we want to
-                # keep trying, so we can produce more error
-                # messages. Generate a temp of the right type to keep
-                # from causing more downstream trouble.
-                except UnsupportedException:
-                    res = self.alloc_temp(self.node_type(node))
-                return res
+                res = node.accept(self)
             else:
-                try:
-                    cfg = self.current_cfg()
-                    # Most statements have empty visitors because they don't
-                    # require any special logic. Create statements for them
-                    # here. Don't create statements from blocks to avoid
-                    # stuttering.
-                    if cfg and not isinstance(node, Block):
-                        self.current_statement_id = cfg.AddStatement()
+                cfg = self.current_cfg()
+                # Most statements have empty visitors because they don't
+                # require any special logic. Create statements for them
+                # here. Don't create statements from blocks to avoid
+                # stuttering.
+                if cfg and not isinstance(node, Block):
+                    self.current_statement_id = cfg.AddStatement()
 
-                    node.accept(self)
-                except UnsupportedException:
-                    pass
-                return None
+                node.accept(self)
 
     # Statements
 
@@ -302,7 +283,7 @@ class Build(visitor.SimpleVisitor):
         assert len(o.body.body) == 1, o.body.body
         if_node = o.body.body[0]
         assert isinstance(if_node, IfStmt), if_node
-        cases = []
+        cases: util.CaseList = []
         default_block = util._collect_cases(self.module_path, if_node, cases)
         with pass_state.CfgBranchContext(
                 cfg, self.current_statement_id) as branch_ctx:

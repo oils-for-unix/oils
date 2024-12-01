@@ -920,30 +920,30 @@ class Generate(visitor.SimpleVisitor):
         # 0: not a special case
         # 1: str
         # 2: Optional[str] which is Union[str, None]
-        left_type = 0  # not a special case
-        right_type = 0  # not a special case
+        left_type_i = 0  # not a special case
+        right_type_i = 0  # not a special case
 
         if IsStr(t0):
-            left_type = 1
+            left_type_i = 1
         elif (isinstance(t0, UnionType) and len(t0.items) == 2 and
               IsStr(t0.items[0]) and isinstance(t0.items[1], NoneTyp)):
-            left_type = 2
+            left_type_i = 2
 
         if IsStr(t1):
-            right_type = 1
+            right_type_i = 1
         elif (isinstance(t1, UnionType) and len(t1.items) == 2 and
               IsStr(t1.items[0]) and isinstance(t1.items[1], NoneTyp)):
-            right_type = 2
+            right_type_i = 2
 
-        #self.log('left_type %s right_type %s', left_type, right_type)
+        #self.log('left_type_i %s right_type_i %s', left_type, right_type)
 
-        if left_type > 0 and right_type > 0 and operator in ('==', '!='):
+        if left_type_i > 0 and right_type_i > 0 and operator in ('==', '!='):
             if operator == '!=':
                 self.def_write('!(')
 
             # NOTE: This could also be str_equals(left, right)?  Does it make a
             # difference?
-            if left_type > 1 or right_type > 1:
+            if left_type_i > 1 or right_type_i > 1:
                 self.def_write('maybe_str_equals(')
             else:
                 self.def_write('str_equals(')
@@ -1901,6 +1901,9 @@ class Generate(visitor.SimpleVisitor):
             #                  'switch got no else: for default block')
             return
 
+        # Narrow the type
+        assert not isinstance(default_block, int), default_block
+
         self.def_write_ind('default: ')
         self.accept(default_block)
         # don't write 'break'
@@ -1954,7 +1957,7 @@ class Generate(visitor.SimpleVisitor):
         self.def_write_ind('}\n')
 
     def _str_switch_cases(self, cases: util.CaseList) -> Any:
-        cases2: util.CaseList = []
+        cases2: List[Tuple[int, str, 'mypy.nodes.Block']] = []
         for expr, body in cases:
             if not isinstance(expr, CallExpr):
                 # non-fatal check from _collect_cases
@@ -2827,9 +2830,9 @@ class Generate(visitor.SimpleVisitor):
         # Not sure why this wouldn't be true
         assert len(o.expr) == 1, o.expr
 
-        cond = o.expr[0]
+        condition = o.expr[0]
 
-        if not _CheckCondition(cond, self.types):
+        if not _CheckCondition(condition, self.types):
             self.report_error(
                 o,
                 "Use explicit len(obj) or 'obj is not None' for mystr, mylist, mydict"
