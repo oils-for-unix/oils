@@ -384,3 +384,16 @@ declare a+=(2)
 ## END
 ## N-I dash/mksh STDERR:
 ## END
+
+
+#### Regression: xtrace for "a+=(v)"
+case $SH in dash|mksh) exit ;; esac
+
+a=(1)
+set -x
+a+=(2)
+## STDERR:
++ a+=(2)
+## END
+## N-I dash/mksh STDERR:
+## END
