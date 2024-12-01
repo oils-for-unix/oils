@@ -310,8 +310,9 @@ compile_one() {
     # Show timing info on the most expensive translation unit
     case $in in
       */oils_for_unix.*)
-        # Some machines don't have 'time'
-        if command -v time >/dev/null; then
+        # Must have external 'time', so we test with 'which', not 'command -v'.
+        # busybox time supports -f but not --format.
+        if which time >/dev/null; then
           set -- \
             time -f "$out { elapsed: %e, max_RSS: %M }" -- \
             "$@"
