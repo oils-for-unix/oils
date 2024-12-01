@@ -1,7 +1,5 @@
 """
-virtual_pass.py - forward declarations, and virtuals
-
-TODO: Join with ir_pass.py
+decl_pass.py - Write declarations
 """
 import mypy
 

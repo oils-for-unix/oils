@@ -24,6 +24,7 @@ from mycpp import ir_pass
 from mycpp import const_pass
 from mycpp import cppgen_pass
 from mycpp import control_flow_pass
+from mycpp import decl_pass
 from mycpp import virtual_pass
 from mycpp import pass_state
 from mycpp.util import log
@@ -330,17 +331,9 @@ def main(argv: List[str]) -> int:
         else:
             out_f = f
 
-        if 1:
-            # TODO: write output of forward_decls, instead of the file
-            forward_decls: List[str] = []
-            p2 = virtual_pass.Pass(virtual, forward_decls)
-        else:
-            p2 = cppgen_pass.Generate(
-                result.types,
-                None,
-                virtual=virtual,  # output
-                forward_decl=True)
-
+        # TODO: write output of forward_decls, instead of the file
+        forward_decls: List[str] = []
+        p2 = virtual_pass.Pass(virtual, forward_decls)
         p2.SetOutputFile(out_f)
 
         p2.visit_mypy_file(module)
@@ -383,13 +376,23 @@ def main(argv: List[str]) -> int:
             out_f = header_f
         else:
             out_f = f
-        p3 = cppgen_pass.Generate(
-            result.types,
-            const_lookup,  # input
-            local_vars=local_vars,  # output
-            ctx_member_vars=ctx_member_vars,  # output
-            virtual=virtual,  # input
-            decl=True)
+        if 0:
+            # TODO: Fill this out
+            p3 = decl_pass.Pass(
+                result.types,
+                const_lookup,  # input
+                local_vars=local_vars,  # output
+                ctx_member_vars=ctx_member_vars,  # output
+                virtual=virtual,  # input
+                decl=True)
+        else:
+            p3 = cppgen_pass.Generate(
+                result.types,
+                const_lookup,  # input
+                local_vars=local_vars,  # output
+                ctx_member_vars=ctx_member_vars,  # output
+                virtual=virtual,  # input
+                decl=True)
         p3.SetOutputFile(out_f)
 
         p3.visit_mypy_file(module)

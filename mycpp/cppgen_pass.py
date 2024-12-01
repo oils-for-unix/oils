@@ -14,7 +14,7 @@ from mypy.types import (Type, AnyType, NoneTyp, TupleType, Instance, NoneType,
 from mypy.nodes import (Expression, Statement, NameExpr, IndexExpr, MemberExpr,
                         TupleExpr, ExpressionStmt, IfStmt, StrExpr, SliceExpr,
                         FuncDef, UnaryExpr, OpExpr, CallExpr, ListExpr,
-                        DictExpr, ListComprehension, FuncDef, ClassDef)
+                        DictExpr, ListComprehension, ClassDef)
 
 from mycpp import format_strings
 from mycpp.util import log, join_name, split_py_name, IsStr
@@ -445,7 +445,6 @@ class Generate(visitor.SimpleVisitor):
                  local_vars: Optional[LocalVars] = None,
                  ctx_member_vars: Optional[CtxMemberVars] = None,
                  decl: bool = False,
-                 forward_decl: bool = False,
                  stack_roots_warn: Optional[int] = None,
                  dot_exprs: Optional['ir_pass.DotExprs'] = None,
                  stack_roots: Optional[pass_state.StackRoots] = None) -> None:
@@ -462,7 +461,6 @@ class Generate(visitor.SimpleVisitor):
         self.ctx_member_vars = ctx_member_vars  # for rooting
 
         self.decl = decl
-        self.forward_decl = forward_decl
         self.stack_roots_warn = stack_roots_warn
 
         self.unique_id = 0
@@ -506,10 +504,6 @@ class Generate(visitor.SimpleVisitor):
 
     def def_write(self, msg: str, *args: Any) -> None:
         """Write only in definitions."""
-
-        if self.forward_decl:
-            return
-
         if self.decl and not self.writing_default_arg:
             return
 
@@ -538,9 +532,7 @@ class Generate(visitor.SimpleVisitor):
 
     def oils_visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> None:
         mod_parts = o.fullname.split('.')
-        if self.forward_decl:
-            comment = 'forward declare'
-        elif self.decl:
+        if self.decl:
             comment = 'declare'
         else:
             comment = 'define'
@@ -549,15 +541,9 @@ class Generate(visitor.SimpleVisitor):
                               comment)
         self.always_write('\n')
 
-        if self.forward_decl:
-            self.indent += 1
-
         #self.log('defs %s', o.defs)
         for node in o.defs:
             self.accept(node)
-
-        if self.forward_decl:
-            self.indent -= 1
 
         self.always_write('\n')
         self.always_write_ind('}  // %s namespace %s\n', comment,
@@ -604,7 +590,7 @@ class Generate(visitor.SimpleVisitor):
     def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
 
         if o.expr:
-            if self.decl or self.forward_decl:
+            if self.decl:
                 # In declarations, 'a.b' is only used for default argument
                 # values 'a::b'
                 op = '::'
@@ -1379,9 +1365,6 @@ class Generate(visitor.SimpleVisitor):
         pass
 
     def visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt') -> None:
-        if self.forward_decl:
-            return
-
         # Declare constant strings.  They have to be at the top level.
         if self.decl and self.indent == 0 and len(o.lvalues) == 1:
             lval = o.lvalues[0]
@@ -2253,11 +2236,6 @@ class Generate(visitor.SimpleVisitor):
             self.always_write('%s %s', c_type, arg_name)
 
     def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
-        # No function prototypes when forward declaring.
-        if self.forward_decl:
-            self.virtual.OnMethod(self.current_class_name, o.name)
-            return
-
         func_name = o.name
 
         virtual = ''
@@ -2305,18 +2283,17 @@ class Generate(visitor.SimpleVisitor):
             self.always_write(');\n')
         else:
             self.def_write(') ')
-            if not self.forward_decl:
-                arg_names = [arg.variable.name for arg in o.arguments]
-                #log('arg_names %s', arg_names)
-                #log('local_vars %s', self.local_vars[o])
-                self.prepend_to_block = []
-                for (lval_name, lval_type) in self.local_vars[o]:
-                    c_type = lval_type
-                    if not isinstance(lval_type, str):
-                        c_type = GetCType(lval_type)
+            arg_names = [arg.variable.name for arg in o.arguments]
+            #log('arg_names %s', arg_names)
+            #log('local_vars %s', self.local_vars[o])
+            self.prepend_to_block = []
+            for (lval_name, lval_type) in self.local_vars[o]:
+                c_type = lval_type
+                if not isinstance(lval_type, str):
+                    c_type = GetCType(lval_type)
 
-                    self.prepend_to_block.append((lval_name, c_type, lval_name
-                                                  in arg_names))
+                self.prepend_to_block.append((lval_name, c_type, lval_name
+                                              in arg_names))
 
         self.accept(o.body)
         self.current_func_node = None
@@ -2592,16 +2569,6 @@ class Generate(visitor.SimpleVisitor):
     def oils_visit_class_def(self, o: 'mypy.nodes.ClassDef',
                              base_class_name: Optional[SymbolPath]) -> None:
         #log('  CLASS %s', o.name)
-
-        # Forward declare types because they may be used in prototypes
-        if self.forward_decl:
-            self.always_write_ind('class %s;\n', o.name)
-            if base_class_name:
-                self.virtual.OnSubclass(base_class_name,
-                                        split_py_name(o.fullname))
-            self._write_body(o.defs.body)
-            return
-
         if self.decl:
             self._ClassDefDecl(o, base_class_name)
             return
