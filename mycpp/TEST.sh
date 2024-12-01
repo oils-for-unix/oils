@@ -387,6 +387,27 @@ files() {
   wc -l mycpp/*.py | sort -n
 }
 
+copy-golden() {
+  local dir=testdata/mycpp
+  mkdir -p $dir
+  cp -v _gen/bin/oils_for_unix.mycpp.cc $dir
+}
+
+compare-golden() {
+  local -a files=(
+    _gen/bin/oils_for_unix.mycpp.cc testdata/mycpp/oils_for_unix.mycpp.cc
+  )
+
+  wc -l "${files[@]}"
+  echo
+
+  if diff -u "${files[@]}"; then
+    echo EQUAL
+  else
+    echo 'NOT EQUAL'
+  fi
+}
+
 # Call function $1 with arguments $2 $3 $4
 #
 # mycpp/TEST.sh examples-variant '' asan

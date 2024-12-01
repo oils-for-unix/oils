@@ -28,17 +28,13 @@ class Pass(visitor.SimpleVisitor):
         comment = 'forward declare'
 
         self.write('namespace %s {  // %s\n', mod_parts[-1], comment)
-        self.write('\n')
-
-        self.indent += 1
 
         # Do default traversal
+        self.indent += 1
         super().oils_visit_mypy_file(o)
-
         self.indent -= 1
 
-        self.write('\n')
-        self.write('}  // %s namespace %s\n', comment, mod_parts[-1])
+        self.write('}\n')
         self.write('\n')
 
     def oils_visit_class_def(
