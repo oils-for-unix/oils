@@ -156,7 +156,7 @@ def _EqualsFunc(left_type: Type) -> Optional[str]:
 _EXPLICIT = ('builtins.str', 'builtins.list', 'builtins.dict')
 
 
-def _CheckCondition(node, types) -> bool:
+def _CheckCondition(node: Expression, types: Dict[Expression, Type]) -> bool:
     """
     Ban
         if (mystr)
@@ -223,8 +223,8 @@ def GetCType(t: Type, param=False, local=False) -> str:
         c_type = 'void'
         is_pointer = True
 
-    # TODO: It seems better not to check for string equality, but that's what
-    # mypyc/genops.py does?
+    # TODO: It seems better not to check types with string equality, but that's
+    # what mypyc/genops.py does?
 
     elif isinstance(t, Instance):
         type_name = t.type.fullname
@@ -699,15 +699,14 @@ class Generate(visitor.SimpleVisitor):
             # 'Alloc<>'.  f = Foo() => f = Alloc<Foo>().
             ret_type = callee_type.ret_type
 
-            # str(i) doesn't need new.  For now it's a free function.
-            # TODO: rename int_to_str?  or BigStr::from_int()?
+            # e.g. str(i) is a free function
             if (callee_name not in ('str', 'bool', 'float') and
                     'BigInt' not in callee_name and
                     isinstance(ret_type, Instance)):
 
                 ret_type_name = ret_type.type.name
 
-                # HACK: Const is the callee; expr.Const is the return type
+                # HACK: Const is the callee; expr__Const is the return type
                 if (ret_type_name == callee_name or
                         ret_type_name.endswith('__' + callee_name)):
                     return True
@@ -766,7 +765,6 @@ class Generate(visitor.SimpleVisitor):
         # -> return static_cast<ShArrayLiteral*>(tok)
 
         # TODO: Consolidate this with AssignmentExpr logic.
-
         if o.callee.name == 'cast':
             call = o
             type_expr = call.args[0]
@@ -1247,8 +1245,8 @@ class Generate(visitor.SimpleVisitor):
             c_iter_type = c_type.replace('List', 'ListIter',
                                          1)[:-1]  # remove *
         else:
-            # Example: assoc == Optional[Dict[str, str]]
-            c_iter_type = 'TODO_ASSOC'
+            # List comprehension over dictionary not implemented
+            c_iter_type = 'TODO_DICT'
 
         self.def_write_ind('for (%s it(', c_iter_type)
         self.accept(seq)
@@ -1598,7 +1596,7 @@ class Generate(visitor.SimpleVisitor):
 
         raise AssertionError(lval)
 
-    def _write_body(self, body):
+    def _write_body(self, body: List[Statement]) -> None:
         """Write a block without the { }."""
         for stmt in body:
             self.accept(stmt)
@@ -2209,11 +2207,11 @@ class Generate(visitor.SimpleVisitor):
                     num_defaults += 1
 
             if num_defaults > 1:
-                name = '[TODO]'
-                #if class_name:
-                #  name = '%s::%s' % (class_name, func_name)
-                #else:
-                #  name = func_name
+                if self.current_func_node:
+                    name = self.current_func_node.name
+                else:
+                    # TODO: could pass the name, e.g. for __init__
+                    name = '<Unknown>'
 
                 # Report on first arg
                 self.report_error(
@@ -2226,7 +2224,7 @@ class Generate(visitor.SimpleVisitor):
             if not first:
                 self.always_write(', ')
 
-            # TODO: Turn this on.  Having stdlib problems, e.g.
+            # TODO: Turn on param=True?  Having stdlib problems, e.g.
             # examples/cartesian.
             c_type = GetCType(arg_type, param=False)
 
@@ -2669,8 +2667,6 @@ class Generate(visitor.SimpleVisitor):
 
             if name == 'log':  # varargs translation
                 continue
-            if name == 'stderr_line':  # TODO: remove this
-                continue
 
             if o.id == 'mycpp.mylib':
                 # These mylib functions are translated in a special way
@@ -2974,10 +2970,8 @@ class Generate(visitor.SimpleVisitor):
 
             caught = True
 
-        # DUMMY to prevent compile errors
-        # TODO: Remove this
         if not caught:
-            self.def_write_ind('catch (std::exception const&) { }\n')
+            self.report_error(o, 'try should have an except')
 
         if o.else_body:
             self.report_error(o, 'try/else not supported')

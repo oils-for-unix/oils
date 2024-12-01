@@ -12,7 +12,7 @@ import time
 
 START_TIME = time.time()  # measure before imports
 
-from typing import Dict, List, Optional, Tuple, Any, TYPE_CHECKING
+from typing import Dict, List, Optional, Tuple, Any, Iterator, TYPE_CHECKING
 
 from mypy.build import build as mypy_build
 from mypy.build import BuildSource
@@ -109,7 +109,8 @@ _FIRST = ('asdl.runtime', 'core.vm')
 _LAST = ('builtin.bracket_osh', 'builtin.completion_osh', 'core.shell')
 
 
-def ModulesToCompile(result, mod_names):
+def ModulesToCompile(result,
+                     mod_names: List[str]) -> Iterator[Tuple[str, Any]]:
     # HACK TO PUT asdl/runtime FIRST.
     #
     # Another fix is to hoist those to the declaration phase?  Not sure if that
@@ -220,11 +221,7 @@ def main(argv: List[str]) -> int:
         log('')
     #log('options %s', options)
 
-    #result = emitmodule.parse_and_typecheck(sources, options)
-    import time
-    start_time = time.time()
     result = mypy_build(sources=sources, options=options)
-    #log('elapsed 1: %f', time.time() - start_time)
 
     if result.errors:
         log('')
@@ -268,8 +265,6 @@ def main(argv: List[str]) -> int:
     to_compile = list(ModulesToCompile(result, mod_names))
 
     # HACK: Why do I get oil.asdl.tdop in addition to asdl.tdop?
-    #names = set(name for name, _ in to_compile)
-
     filtered = []
     seen = set()
     for name, module in to_compile:
@@ -286,12 +281,12 @@ def main(argv: List[str]) -> int:
 
     to_compile = filtered
 
-    #import pickle
     if 0:
         for name, module in to_compile:
             log('to_compile %s', name)
         log('')
 
+        #import pickle
         # can't pickle but now I see deserialize() nodes and stuff
         #s = pickle.dumps(module)
         #log('%d pickle', len(s))
