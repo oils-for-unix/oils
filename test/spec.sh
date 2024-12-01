@@ -301,6 +301,10 @@ globignore() {
   run-file globignore "$@"
 }
 
+globstar() {
+  run-file globstar "$@"
+}
+
 arith() {
   run-file arith "$@"
 }
