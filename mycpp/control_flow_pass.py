@@ -62,7 +62,7 @@ class Build(visitor.SimpleVisitor):
         self.dot_exprs = dot_exprs
         self.heap_counter = 0
         # statement object -> SymbolPath of the callee
-        self.callees: Dict[Statement, SymbolPath] = {}
+        self.callees: Dict['mypy.nodes.CallExpr', SymbolPath] = {}
         self.current_lval: Optional[Expression] = None
 
     def current_cfg(self) -> pass_state.ControlFlowGraph:
@@ -419,7 +419,7 @@ class Build(visitor.SimpleVisitor):
             assert lval_names, o
 
             rval_type = self.types[o.rvalue]
-            rval_names = []
+            rval_names: List[Optional[util.SymbolPath]] = []
             if isinstance(o.rvalue, CallExpr):
                 # The RHS is either an object constructor or something that
                 # returns a primitive type (e.g. Tuple[int, int] or str).

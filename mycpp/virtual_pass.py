@@ -49,3 +49,12 @@ class Pass(visitor.SimpleVisitor):
 
     def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
         self.virtual.OnMethod(self.current_class_name, o.name)
+
+
+# class_member_vars - Dict replacing current_member_vars
+# - collect for each ClassDef node
+#   - might as well keep them all
+# _MaybeAddMember() is only called in 2 places
+#
+# Special case
+# - ctx_member_vars

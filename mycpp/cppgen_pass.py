@@ -41,7 +41,7 @@ class MyTypeInfo:
 class Primitive(Instance):
 
     def __init__(self, name: str) -> None:
-        self.type = MyTypeInfo(name)
+        self.type = MyTypeInfo(name)  # type: ignore
 
 
 MYCPP_INT = Primitive('builtins.int')
@@ -800,7 +800,7 @@ class Generate(visitor.SimpleVisitor):
 
         self._WriteArgList(o.args)
 
-        # TODO: look at keyword arguments!
+        # TODO: we could check that keyword arguments are passed as named args?
         #self.log('  arg_kinds %s', o.arg_kinds)
         #self.log('  arg_names %s', o.arg_names)
 
@@ -857,7 +857,7 @@ class Generate(visitor.SimpleVisitor):
                 self.accept(o.left)
             #log('right_type %s', right_type)
             if isinstance(right_type, Instance):
-                fmt_types = [right_type]
+                fmt_types: List[Type] = [right_type]
             elif isinstance(right_type, TupleType):
                 fmt_types = right_type.items
             # Handle Optional[str]
@@ -913,7 +913,6 @@ class Generate(visitor.SimpleVisitor):
             self.accept(o.operands[1])
             return
 
-        # TODO: Change Optional[T] to T for our purposes?
         t0 = self.types[left]
         t1 = self.types[right]
 
@@ -1230,9 +1229,9 @@ class Generate(visitor.SimpleVisitor):
 
         if over_type.type.fullname == 'builtins.list':
             c_type = GetCType(over_type)
+            # remove *
             assert c_type.endswith('*'), c_type
-            c_iter_type = c_type.replace('List', 'ListIter',
-                                         1)[:-1]  # remove *
+            c_iter_type = c_type.replace('List', 'ListIter', 1)[:-1]
         else:
             # List comprehension over dictionary not implemented
             c_iter_type = 'TODO_DICT'
@@ -1622,9 +1621,9 @@ class Generate(visitor.SimpleVisitor):
                 self.def_write('; ++%s) ', index_name)
 
             elif num_args == 3:  # xrange(being, end, step)
-                # Special case to detect a constant -1.  This is a static
-                # heuristic, because it could be negative dynamically.  TODO:
-                # mylib.reverse_xrange() or something?
+                # Special case to detect a step of -1.  This is a static
+                # heuristic, because it could be negative dynamically.
+                # TODO: could add an API like mylib.reverse_xrange()
                 step = args[2]
                 if isinstance(step, UnaryExpr) and step.op == '-':
                     comparison_op = '>'
@@ -2077,7 +2076,6 @@ class Generate(visitor.SimpleVisitor):
 
         switch(x) {
           case 0:
-            # TODO: need casting here
             print('zero')
             break;
           case 1:
@@ -2485,7 +2483,7 @@ class Generate(visitor.SimpleVisitor):
                 self.current_method_name = None
                 continue
 
-            # TODO: Remove this?  Everything under a class is a method?
+            # TODO: Enforce that everything under a class is a method?
             self.accept(stmt)
 
         self._MemberDecl(o, base_class_name)
@@ -2769,12 +2767,8 @@ class Generate(visitor.SimpleVisitor):
         self.indent -= 1
         self.def_write_ind('}\n')
 
-    def visit_expression_stmt(self, o: 'mypy.nodes.ExpressionStmt') -> None:
-        # Ignore all docstrings: module, class, and function body
-        # TODO: This logic is duplicated in asdl/visitor.py
-        if isinstance(o.expr, StrExpr):
-            return
-
+    def oils_visit_expression_stmt(self,
+                                   o: 'mypy.nodes.ExpressionStmt') -> None:
         self.def_write_ind('')
         self.accept(o.expr)
         self.def_write(';\n')

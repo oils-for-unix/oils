@@ -3,8 +3,8 @@ visitor.py - AST pass that accepts everything.
 """
 import mypy
 from mypy.visitor import ExpressionVisitor, StatementVisitor
-from mypy.nodes import (Expression, Statement, StrExpr, CallExpr, NameExpr,
-                        MemberExpr, Argument)
+from mypy.nodes import (Expression, Statement, StrExpr, CallExpr, YieldExpr,
+                        NameExpr, MemberExpr, Argument)
 
 from mycpp.crash import catch_errors
 from mycpp import util
@@ -168,15 +168,19 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         for stmt in block.body:
             self.accept(stmt)
 
+    def oils_visit_expression_stmt(self,
+                                   o: 'mypy.nodes.ExpressionStmt') -> None:
+        self.accept(o.expr)
+
     def visit_expression_stmt(self, o: 'mypy.nodes.ExpressionStmt') -> None:
         # Ignore all docstrings: module, class, and function body
         if isinstance(o.expr, StrExpr):
             return
 
-        # This is likely either
-        # f()
-        # obj.method()
-        self.accept(o.expr)
+        # Either f() or obj.method()
+        assert isinstance(o.expr, (CallExpr, YieldExpr)), o.expr
+
+        self.oils_visit_expression_stmt(o)
 
     def visit_while_stmt(self, o: 'mypy.nodes.WhileStmt') -> None:
         self.accept(o.expr)
