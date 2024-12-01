@@ -22,9 +22,9 @@ shopt -s globstar
 mkdir -p c/subdir
 touch {leaf.md,c/leaf.md,c/subdir/leaf.md}
 
-echo **/*.* | tr ' ' '\n'
+echo **/*.* | tr ' ' '\n' | sort
 echo
-echo **/**/*.* | tr ' ' '\n'
+echo **/**/*.* | tr ' ' '\n' | sort
 ## STDOUT:
 c/leaf.md
 c/subdir/leaf.md
@@ -54,7 +54,7 @@ shopt -s globstar
 mkdir -p c/subdir
 touch c/subdir/leaf.md
 
-echo {**/*.*,} | sort -u | sed 's/[[:space:]]*$//'
+echo {**/*.*,} | sort | sed 's/[[:space:]]*$//'
 ## STDOUT:
 c/subdir/leaf.md
 ## END
@@ -66,11 +66,11 @@ mkdir directory
 touch leaf.md
 touch directory/leaf.md
 
-echo **/*.* | sort -u
-echo directory/**/*.md | sort -u
-echo d**/*.md | sort -u
-echo **y/*.md | sort -u
-echo d**y/*.md | sort -u
+echo **/*.* | sort
+echo directory/**/*.md | sort
+echo d**/*.md | sort
+echo **y/*.md | sort
+echo d**y/*.md | sort
 ## STDOUT:
 directory/leaf.md leaf.md
 directory/leaf.md
@@ -87,8 +87,8 @@ mkdir directory-2
 touch directory-2/leaf-2.md
 ln -s -T ../directory-2 directory-1/symlink
 
-echo **/*.* | sort -u
-echo ***/*.* | sort -u
+echo **/*.* | sort
+echo ***/*.* | sort
 ## STDOUT:
 directory-2/leaf-2.md
 directory-1/symlink/leaf-2.md directory-2/leaf-2.md
