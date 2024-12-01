@@ -2,6 +2,7 @@ examples.scoped_resource.DirStack.Iter	0	1
 examples.scoped_resource.DirStack.Iter	1	2
 examples.scoped_resource.DirStack.Iter	2	3
 examples.scoped_resource.DirStack.Iter	3	4
+examples.scoped_resource.DirStack.Iter	4	5
 examples.scoped_resource.DirStack.Pop	0	1
 examples.scoped_resource.DirStack.Pop	1	2
 examples.scoped_resource.DirStack.Pop	1	3
@@ -21,6 +22,7 @@ examples.scoped_resource.MyError.__init__	0	1
 examples.scoped_resource.ctx_BadName.__exit__	0	1
 examples.scoped_resource.ctx_BadName.__init__	0	1
 examples.scoped_resource.ctx_DirStack.__enter__	0	1
+examples.scoped_resource.ctx_DirStack.__enter__	1	2
 examples.scoped_resource.ctx_DirStack.__exit__	0	1
 examples.scoped_resource.ctx_DirStack.__exit__	1	2
 examples.scoped_resource.ctx_DirStack.__init__	0	1
@@ -29,6 +31,7 @@ examples.scoped_resource.ctx_DirStack.__init__	2	3
 examples.scoped_resource.ctx_DirStack.__init__	3	4
 examples.scoped_resource.ctx_DirStack.__init__	4	5
 examples.scoped_resource.ctx_NoArgs.__enter__	0	1
+examples.scoped_resource.ctx_NoArgs.__enter__	1	2
 examples.scoped_resource.ctx_NoArgs.__exit__	0	1
 examples.scoped_resource.ctx_NoArgs.__init__	0	1
 examples.scoped_resource.run_benchmarks	0	1
