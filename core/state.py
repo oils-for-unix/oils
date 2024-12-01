@@ -2017,8 +2017,7 @@ class Mem(object):
                 # We already looked it up before making the sh_lvalue
                 assert cell.val.tag() == value_e.BashAssoc, cell
                 cell_val2 = cast(value.BashAssoc, cell.val)
-
-                cell_val2.d[lval.key] = rval.s
+                bash_impl.BashAssoc_SetElement(cell_val2, lval.key, rval.s)
 
             else:
                 raise AssertionError(lval.tag())

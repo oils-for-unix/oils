@@ -157,6 +157,12 @@ def BashAssoc_AppendValues(assoc_val, d):
         assoc_val.d[key] = d[key]
 
 
+def BashAssoc_SetElement(assoc_val, key, s):
+    # type: (value.BashAssoc, str, str) -> None
+
+    assoc_val.d[key] = s
+
+
 def BashAssoc_ToStrForShellPrint(assoc_val):
     # type: (value.BashAssoc) -> str
 
