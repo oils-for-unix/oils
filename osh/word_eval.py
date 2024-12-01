@@ -1029,8 +1029,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 elif case(value_e.BashArray):
                     array_val = cast(value.BashArray, UP_val)
 
-                    # TODO: should use fastfunc.ShellEncode
-                    tmp = [j8_lite.MaybeShellEncode(s) for s in array_val.strs]
+                    tmp = []  # type: List[str]
+                    for s in array_val.strs:
+                        if s is not None:
+                            # TODO: should use fastfunc.ShellEncode
+                            tmp.append(j8_lite.MaybeShellEncode(s))
                     result = value.Str(' '.join(tmp))
                 else:
                     e_die("Can't use @Q on %s" % ui.ValType(val), op)

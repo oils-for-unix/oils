@@ -952,3 +952,22 @@ last x;
 
 ## N-I mksh STDOUT:
 ## END
+
+
+#### Regression: ${a[@]@Q} crash with `a[0]=x a[2]=y`
+case $SH in mksh) exit ;; esac
+
+a[0]=x
+a[2]=y
+echo "quoted = (${a[@]@Q})"
+
+## STDOUT:
+quoted = (x y)
+## END
+
+## OK bash STDOUT:
+quoted = ('x' 'y')
+## END
+
+## N-I mksh STDOUT:
+## END
