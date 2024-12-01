@@ -35,7 +35,7 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         self.errors_keep_going: List[Tuple[str, int, str]] = []
 
         self.indent = 0
-        self.f = None
+        self.f: Optional[TextIO] = None
 
     def SetOutputFile(self, f: TextIO) -> None:
         self.f = f

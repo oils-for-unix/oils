@@ -1194,9 +1194,9 @@ GLOBAL_STR(str556, " %d");
 GLOBAL_STR(str557, ">");
 GLOBAL_STR(str558, "<");
 GLOBAL_STR(str559, "!");
-GLOBAL_STR(str560, "%s[%d]");
-GLOBAL_STR(str561, "%s[%s]");
-GLOBAL_STR(str562, "+=");
+GLOBAL_STR(str560, "+=");
+GLOBAL_STR(str561, "%s[%d]");
+GLOBAL_STR(str562, "%s[%s]");
 GLOBAL_STR(str563, " ...");
 GLOBAL_STR(str564, "message");
 GLOBAL_STR(str565, "%s, got %s");
@@ -23650,7 +23650,7 @@ void Tracer::OnAssignBuiltin(cmd_value::Assign* cmd_val) {
     StackRoot _for(&pair  );
     buf->write(str14);
     buf->write(pair->var_name);
-    buf->write(str48);
+    buf->write(pair->plus_eq ? str560 : str48);
     if (pair->rval) {
       _PrintShValue(pair->rval, buf);
     }
@@ -23693,7 +23693,7 @@ void Tracer::OnShAssignment(value_asdl::sh_lvalue_t* lval, syntax_asdl::assign_o
       break;
   }
   buf->write(left);
-  buf->write(op == assign_op_e::PlusEqual ? str562 : str48);
+  buf->write(op == assign_op_e::PlusEqual ? str560 : str48);
   _PrintShValue(val, buf);
   buf->write(str8);
   this->f->write(buf->getvalue());
@@ -37272,15 +37272,16 @@ int CommandEvaluator::_DoShAssignment(command::ShAssignment* node, runtime_asdl:
     else {
       lval = this->arith_ev->EvalShellLhs(pair->lhs, which_scopes);
       if (pair->rhs) {
-        val = this->word_ev->EvalRhsWord(pair->rhs);
+        rhs = this->word_ev->EvalRhsWord(pair->rhs);
       }
       else {
-        val = nullptr;
+        rhs = nullptr;
       }
+      val = rhs;
     }
     flags = 0;
     this->mem->SetValue(lval, val, which_scopes, flags);
-    this->tracer->OnShAssignment(lval, pair->op, val, flags, which_scopes);
+    this->tracer->OnShAssignment(lval, pair->op, rhs, flags, which_scopes);
   }
   if (this->check_command_sub_status) {
     last_status = this->mem->LastStatus();

@@ -28,6 +28,25 @@ if TYPE_CHECKING:
 
 T = None
 
+#
+# Simulating
+#
+
+
+class MyTypeInfo:
+
+    def __init__(self, fullname: str) -> None:
+        self.fullname = fullname
+
+
+class Primitive(Instance):
+
+    def __init__(self, name: str) -> None:
+        self.type = MyTypeInfo(name)
+
+
+MYCPP_INT = Primitive('builtins.int')
+
 NAME_CONFLICTS = ('stdin', 'stdout', 'stderr')
 
 
@@ -429,7 +448,7 @@ def PythonStringLiteral(s: str) -> str:
     return json.dumps(format_strings.DecodeMyPyString(s))
 
 
-MemberVar = Tuple[Any, str, bool]
+MemberVar = Tuple[str, Type, bool]
 
 CtxMemberVars = Dict[ClassDef, Dict[str, MemberVar]]
 
@@ -1750,7 +1769,7 @@ class Generate(visitor.SimpleVisitor):
         if index0_name:
             # can't initialize two things in a for loop, so do it on a separate line
             if self.decl:
-                self.local_var_list.append((index0_name, 'int'))
+                self.local_var_list.append((index0_name, MYCPP_INT))
             self.def_write_ind('%s = 0;\n', index0_name)
             index_update = ', ++%s' % index0_name
         else:
@@ -1937,8 +1956,8 @@ class Generate(visitor.SimpleVisitor):
             if len(args) != 1:
                 self.report_error(
                     expr,
-                    'str_switch can only have case("x"), not case("x", "y")' %
-                    args)
+                    'str_switch can only have case("x"), not case("x", "y"): got %r'
+                    % args)
                 break
 
             if not isinstance(args[0], StrExpr):
@@ -2288,11 +2307,7 @@ class Generate(visitor.SimpleVisitor):
             #log('local_vars %s', self.local_vars[o])
             self.prepend_to_block = []
             for (lval_name, lval_type) in self.local_vars[o]:
-                c_type = lval_type
-                if not isinstance(lval_type, str):
-                    c_type = GetCType(lval_type)
-
-                self.prepend_to_block.append((lval_name, c_type, lval_name
+                self.prepend_to_block.append((lval_name, lval_type, lval_name
                                               in arg_names))
 
         self.accept(o.body)
@@ -2348,7 +2363,7 @@ class Generate(visitor.SimpleVisitor):
             # So we declare them in the right order
             sorted_member_names = pointer_members + non_pointer_members
 
-            field_gc = ('HeapTag::Scanned', len(pointer_members))
+            field_gc = ('HeapTag::Scanned', str(len(pointer_members)))
         else:
             # Has inheritance
 
@@ -2676,7 +2691,8 @@ class Generate(visitor.SimpleVisitor):
             # TODO: put the pointers first, and then register a single
             # StackRoots record.
             done = set()
-            for lval_name, c_type, is_param in self.prepend_to_block:
+            for lval_name, lval_type, is_param in self.prepend_to_block:
+                c_type = GetCType(lval_type)
                 if not is_param and lval_name not in done:
                     if util.SMALL_STR and c_type == 'Str':
                         self.def_write_ind('%s %s(nullptr);\n', c_type,
@@ -2700,7 +2716,8 @@ class Generate(visitor.SimpleVisitor):
             if self.current_func_node:
                 full_func_name = split_py_name(self.current_func_node.fullname)
 
-            for lval_name, c_type, is_param in self.prepend_to_block:
+            for lval_name, lval_type, is_param in self.prepend_to_block:
+                c_type = GetCType(lval_type)
                 #self.log('%s %s %s', lval_name, c_type, is_param)
                 if lval_name not in roots and CTypeIsManaged(c_type):
                     if (not self.stack_roots or self.stack_roots.needs_root(
@@ -2889,7 +2906,8 @@ class Generate(visitor.SimpleVisitor):
                 raise AssertionError()
 
             if c_type is None:
-                c_type = 'INVALID_TRY_EXCEPT'  # Causes compile error
+                self.report_error(o, "try couldn't determine c_type")
+                return
 
             if v:
                 self.def_write_ind('catch (%s %s) ', c_type, v.name)
