@@ -8,7 +8,7 @@ from mypy.nodes import (Expression, Statement, StrExpr, CallExpr, NameExpr,
 
 from mycpp.crash import catch_errors
 from mycpp import util
-from mycpp.util import split_py_name
+from mycpp.util import split_py_name, log
 
 from typing import (overload, Any, Union, Optional, TypeVar, List, Tuple,
                     TextIO)
@@ -39,6 +39,11 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
 
     def SetOutputFile(self, f: TextIO) -> None:
         self.f = f
+
+    def log(self, msg: str, *args: Any) -> None:
+        """Log to STDERR"""
+        ind_str = self.indent * '  '
+        log(ind_str + msg, *args)
 
     def write(self, msg: str, *args: Any) -> None:
         if args:

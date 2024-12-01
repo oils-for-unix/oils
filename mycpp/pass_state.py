@@ -93,7 +93,7 @@ class Virtual(object):
 
     # These are called on the Forward Declare pass
     def OnMethod(self, class_name: SymbolPath, method_name: str) -> None:
-        #log('OnMethod %s %s', class_name, method_name)
+        #log('VIRTUAL OnMethod %s %s', class_name, method_name)
 
         # __init__ and so forth don't count
         if method_name.startswith('__') and method_name.endswith('__'):
@@ -102,6 +102,7 @@ class Virtual(object):
         self.methods[class_name].append(method_name)
 
     def OnSubclass(self, base_class: SymbolPath, subclass: SymbolPath) -> None:
+        #log('VIRTUAL OnSubclass base %s -> %s', base_class, subclass)
         if len(base_class) > 1:
             # Hack for
             #

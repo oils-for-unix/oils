@@ -329,20 +329,23 @@ def main(argv: List[str]) -> int:
             out_f = header_f
         else:
             out_f = f
-        p2 = cppgen_pass.Generate(
-            result.types,
-            None,
-            virtual=virtual,  # output
-            forward_decl=True)
+
+        if 1:
+            # TODO: write output of forward_decls, instead of the file
+            forward_decls: List[str] = []
+            p2 = virtual_pass.Pass(virtual, forward_decls)
+        else:
+            p2 = cppgen_pass.Generate(
+                result.types,
+                None,
+                virtual=virtual,  # output
+                forward_decl=True)
+
         p2.SetOutputFile(out_f)
 
         p2.visit_mypy_file(module)
-        MaybeExitWithErrors(p2)
 
-        # TODO: hook this up
-        forward_decls: List[str] = []
-        tmp = virtual_pass.Pass(virtual, forward_decls)
-        tmp.SetOutputFile(out_f)
+        MaybeExitWithErrors(p2)
 
     # After seeing class and method names in the first pass, figure out which
     # ones are virtual.  We use this info in the second pass.

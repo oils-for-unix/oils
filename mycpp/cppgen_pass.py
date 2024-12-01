@@ -494,10 +494,6 @@ class Generate(visitor.SimpleVisitor):
 
         self.writing_default_arg = False
 
-    def log(self, msg: str, *args: Any) -> None:
-        ind_str = self.indent * '  '
-        log(ind_str + msg, *args)
-
     def always_write(self, msg: str, *args: Any) -> None:
         """Write unconditionally - forward decl, decl, def """
         if args:
