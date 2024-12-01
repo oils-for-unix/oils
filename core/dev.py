@@ -677,7 +677,7 @@ class Tracer(object):
         for pair in cmd_val.pairs:
             buf.write(' ')
             buf.write(pair.var_name)
-            buf.write('=')
+            buf.write('+=' if pair.plus_eq else '=')
             if pair.rval:
                 _PrintShValue(pair.rval, buf)
 

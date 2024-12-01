@@ -980,18 +980,20 @@ class CommandEvaluator(object):
 
                 # RHS can be a string or array.
                 if pair.rhs:
-                    val = self.word_ev.EvalRhsWord(pair.rhs)
-                    assert isinstance(val, value_t), val
+                    rhs = self.word_ev.EvalRhsWord(pair.rhs)
+                    assert isinstance(rhs, value_t), rhs
 
                 else:  # e.g. 'readonly x' or 'local x'
-                    val = None
+                    rhs = None
+
+                val = rhs
 
             # NOTE: In bash and mksh, declare -a myarray makes an empty cell
             # with Undef value, but the 'array' attribute.
 
             flags = 0  # for tracing
             self.mem.SetValue(lval, val, which_scopes, flags=flags)
-            self.tracer.OnShAssignment(lval, pair.op, val, flags, which_scopes)
+            self.tracer.OnShAssignment(lval, pair.op, rhs, flags, which_scopes)
 
         # PATCH to be compatible with existing shells: If the assignment had a
         # command sub like:
