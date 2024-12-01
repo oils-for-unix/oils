@@ -18,6 +18,7 @@ DotExprs = Dict[mypy.nodes.MemberExpr, pass_state.member_t]
 class Build(visitor.SimpleVisitor):
 
     def __init__(self, types: Dict[Expression, Type], dot_exprs: DotExprs):
+        visitor.SimpleVisitor.__init__(self)
 
         self.types = types
         self.dot_exprs = dot_exprs

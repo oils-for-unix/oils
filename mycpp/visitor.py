@@ -72,6 +72,14 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         err = (self.module_path, node.line, msg)
         self.errors_keep_going.append(err)
 
+    def not_translated(self, node: Union[Statement, Expression],
+                       name: str) -> None:
+        self.report_error(node, '%s not translated' % name)
+
+    def not_python2(self, node: Union[Statement, Expression],
+                    name: str) -> None:
+        self.report_error(node, "%s: shouldn't get here in Python 2" % name)
+
     # Not in superclasses:
 
     def visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> None:
@@ -249,3 +257,51 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         self.accept(o.callee)
         for arg in o.args:
             self.accept(arg)
+
+    #
+    # Not part of the mycpp dialect
+    #
+
+    def visit_global_decl(self, o: 'mypy.nodes.GlobalDecl') -> None:
+        self.not_translated(o, 'global')
+
+    def visit_nonlocal_decl(self, o: 'mypy.nodes.NonlocalDecl') -> None:
+        self.not_translated(o, 'nonlocal')
+
+    def visit_exec_stmt(self, o: 'mypy.nodes.ExecStmt') -> None:
+        self.report_error(o, 'exec not allowed')
+
+    # UNHANDLED
+
+    def visit_bytes_expr(self, o: 'mypy.nodes.BytesExpr') -> None:
+        self.not_python2(o, 'bytes expr')
+
+    def visit_unicode_expr(self, o: 'mypy.nodes.UnicodeExpr') -> None:
+        self.not_translated(o, 'unicode expr')
+
+    def visit_complex_expr(self, o: 'mypy.nodes.ComplexExpr') -> None:
+        self.not_translated(o, 'complex expr')
+
+    def visit_set_expr(self, o: 'mypy.nodes.SetExpr') -> None:
+        self.not_translated(o, 'set expr')
+
+    def visit_ellipsis(self, o: 'mypy.nodes.EllipsisExpr') -> None:
+        # is this in .pyi files only?
+        self.not_translated(o, 'ellipsis')
+
+    def visit_yield_from_expr(self, o: 'mypy.nodes.YieldFromExpr') -> None:
+        self.not_python2(o, 'yield from')
+
+    def visit_star_expr(self, o: 'mypy.nodes.StarExpr') -> None:
+        # mycpp/examples/invalid_python.py doesn't hit this?
+        self.not_translated(o, 'star expr')
+
+    def visit_super_expr(self, o: 'mypy.nodes.SuperExpr') -> None:
+        self.not_translated(o, 'super expr')
+
+    def visit_assignment_expr(self, o: 'mypy.nodes.AssignmentExpr') -> None:
+        # I think this is a := b
+        self.not_translated(o, 'assign expr')
+
+    def visit_decorator(self, o: 'mypy.nodes.Decorator') -> None:
+        self.not_translated(o, 'decorator')

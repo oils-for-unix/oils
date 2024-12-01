@@ -13,7 +13,8 @@ from mypy.types import CallableType, Instance, Type, UnionType, NoneTyp, TupleTy
 
 from mycpp.crash import catch_errors
 from mycpp.util import join_name, split_py_name
-from mycpp.visitor import SimpleVisitor, T
+from mycpp import visitor
+from mycpp.visitor import T
 from mycpp import util
 from mycpp.util import SymbolPath
 from mycpp import pass_state
@@ -46,12 +47,13 @@ def GetObjectTypeName(t: Type) -> SymbolPath:
 INVALID_ID = -99  # statement IDs are positive
 
 
-class Build(SimpleVisitor):
+class Build(visitor.SimpleVisitor):
 
     def __init__(self, types: Dict[Expression,
                                    Type], virtual: pass_state.Virtual,
                  local_vars: 'cppgen_pass.LocalVars',
                  dot_exprs: 'ir_pass.DotExprs') -> None:
+        visitor.SimpleVisitor.__init__(self)
 
         self.types = types
         self.cfgs: Dict[SymbolPath,

@@ -22,6 +22,7 @@ class Collect(visitor.SimpleVisitor):
 
     def __init__(self, const_lookup: Dict[Expression, str],
                  const_code: List[str]) -> None:
+        visitor.SimpleVisitor.__init__(self)
         self.const_lookup = const_lookup
         self.const_code = const_code
 
