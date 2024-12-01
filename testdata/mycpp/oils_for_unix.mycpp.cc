@@ -46761,7 +46761,6 @@ value_asdl::value_t* AbstractWordEvaluator::_WholeArray(value_asdl::value_t* val
   else {
     if (op_id == Id::Arith_Star) {
       vsub_state->join_array = true;
-      UP_val = val;
       switch (val->tag()) {
         case value_e::Undef: {
           if (!vsub_state->has_test_op) {
@@ -49041,16 +49040,13 @@ word_part::ExtGlob* WordParser::_ReadExtGlob() {
 
 word_part::BashRegexGroup* WordParser::_ReadBashRegexGroup() {
   syntax_asdl::Token* left_token = nullptr;
-  syntax_asdl::Token* right_token = nullptr;
   List<syntax_asdl::CompoundWord*>* arms = nullptr;
   syntax_asdl::CompoundWord* w = nullptr;
   StackRoot _root0(&left_token);
-  StackRoot _root1(&right_token);
-  StackRoot _root2(&arms);
-  StackRoot _root3(&w);
+  StackRoot _root1(&arms);
+  StackRoot _root2(&w);
 
   left_token = this->cur_token;
-  right_token = nullptr;
   arms = Alloc<List<syntax_asdl::CompoundWord*>>();
   this->lexer->PushHint(Id::Op_RParen, Id::Right_BashRegexGroup);
   this->_SetNext(lex_mode_e::BashRegexFakeInner);

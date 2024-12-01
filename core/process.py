@@ -71,7 +71,6 @@ if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import command_t
     from builtin import trap_osh
     from core import optview
-    from core import pyos
     from core.util import _DebugFile
     from osh.cmd_eval import CommandEvaluator
 

@@ -219,7 +219,6 @@ def main(argv):
         log('Error executing %s: %s', time_argv, e)
         return 1
 
-    elapsed = time.time() - start_time
     if opts.stdout:
         if hashlib:
             m = hashlib.md5()  # PY3

@@ -963,7 +963,6 @@ class WordParser(WordEmitter):
         left_token = self.cur_token
         assert left_token.id == Id.BashRegex_LParen, left_token
 
-        right_token = None  # type: Token
         arms = []  # type: List[CompoundWord]
 
         self.lexer.PushHint(Id.Op_RParen, Id.Right_BashRegexGroup)

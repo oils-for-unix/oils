@@ -856,17 +856,18 @@ class Generate(visitor.SimpleVisitor):
             else:
                 self.accept(o.left)
             #log('right_type %s', right_type)
-            if isinstance(right_type, Instance):
-                fmt_types: List[Type] = [right_type]
-            elif isinstance(right_type, TupleType):
-                fmt_types = right_type.items
-            # Handle Optional[str]
-            elif (isinstance(right_type, UnionType) and
-                  len(right_type.items) == 2 and
-                  isinstance(right_type.items[1], NoneTyp)):
-                fmt_types = [right_type.items[0]]
-            else:
-                raise AssertionError(right_type)
+            if 0:
+                if isinstance(right_type, Instance):
+                    fmt_types: List[Type] = [right_type]
+                elif isinstance(right_type, TupleType):
+                    fmt_types = right_type.items
+                # Handle Optional[str]
+                elif (isinstance(right_type, UnionType) and
+                      len(right_type.items) == 2 and
+                      isinstance(right_type.items[1], NoneTyp)):
+                    fmt_types = [right_type.items[0]]
+                else:
+                    raise AssertionError(right_type)
 
             # In the definition pass, write the call site.
             if isinstance(right_type, TupleType):

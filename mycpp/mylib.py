@@ -125,21 +125,6 @@ def BigIntSort(keys):
 #
 
 
-class File:
-    """
-    TODO: This should define a read/write interface, and then LineReader() and
-    Writer() can possibly inherit it, with runtime assertions
-
-    Then we allow downcasting from File -> LineReader, like we currently do in
-    C++ in gc_mylib.h.
-
-    Inheritance can't express the structural Reader/Writer pattern of Go, which
-    would be better.  I suppose we could use File* everywhere, but having
-    fine-grained types is nicer.  And there will be very few casts.
-    """
-    pass
-
-
 class LineReader:
 
     def readline(self):
@@ -498,41 +483,16 @@ def probe(provider, name, *args):
     return
 
 
-if 0:
-    # Prototype of Unix file descriptor I/O, compared with FILE* libc I/O.
-    # Doesn't seem like we need this now.
+class File:
+    """
+    TODO: This should define a read/write interface, and then LineReader() and
+    Writer() can possibly inherit it, with runtime assertions
 
-    # Short versions of STDOUT_FILENO and STDERR_FILENO
-    kStdout = 1
-    kStderr = 2
+    Then we allow downcasting from File -> LineReader, like we currently do in
+    C++ in gc_mylib.h.
 
-    def writeln(s, fd=kStdout):
-        # type: (str, int) -> None
-        """Write a line.  The name is consistent with JavaScript writeln() and Rust.
-
-        e.g.
-        writeln("x = %d" % x, kStderr)
-
-        TODO: The Oil interpreter shouldn't use print() anywhere.  Instead it can use
-        writeln(s) and writeln(s, kStderr)
-        """
-        posix.write(fd, s)
-        posix.write(fd, '\n')
-
-    class File(object):
-        """Custom file wrapper for Unix I/O like write() read()
-    
-        Not C I/O like fwrite() fread().  There should be no flush().
-        """
-
-        def __init__(self, fd):
-            # type: (int) -> None
-            self.fd = fd
-
-        def write(self, s):
-            # type: (str) -> None
-            posix.write(self.fd, s)
-
-        def writeln(self, s):
-            # type: (str) -> None
-            writeln(s, fd=self.fd)
+    Inheritance can't express the structural Reader/Writer pattern of Go, which
+    would be better.  I suppose we could use File* everywhere, but having
+    fine-grained types is nicer.  And there will be very few casts.
+    """
+    pass

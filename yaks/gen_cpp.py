@@ -5,7 +5,7 @@ from __future__ import print_function
 
 from _devbuild.gen.yaks_asdl import (Program, mod_def, mod_def_e, ktype,
                                      ktype_e, ktype_t, NameType, stmt, stmt_e,
-                                     stmt_t, Int, kexpr_e, kexpr_t, Int)
+                                     stmt_t, Int, kexpr_e, kexpr_t)
 from mycpp import mylib
 from mycpp.mylib import tagswitch, log
 

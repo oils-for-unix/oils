@@ -22,7 +22,6 @@ from typing import Dict, List, Iterator, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value
     from core.completion import Lookup, OptionState, Api, UserSpec
-    from display import ui
     from frontend.args import _Attributes
     from frontend.parse_lib import ParseContext
     from osh.cmd_eval import CommandEvaluator

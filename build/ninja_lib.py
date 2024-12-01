@@ -272,7 +272,6 @@ class Rules(object):
 
         objects = [main_obj]
         for label in deps:
-            key = (label, compiler, variant)
             try:
                 cc_lib = self.cc_libs[label]
             except KeyError:

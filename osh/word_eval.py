@@ -1084,7 +1084,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         elif op_id == Id.Arith_Star:
             vsub_state.join_array = True  # both ${a[*]} and "${a[*]}" decay
-            UP_val = val
             with tagswitch(val) as case2:
                 if case2(value_e.Undef):
                     if not vsub_state.has_test_op:

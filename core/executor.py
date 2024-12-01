@@ -42,7 +42,6 @@ if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import command_t
     from builtin import trap_osh
     from core import optview
-    from core import state
 
 _ = log
 
