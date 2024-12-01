@@ -459,7 +459,7 @@ declare -a sp1=([10]=X [20]=b [25]=Y [30]=c [90]=Z)
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 sp1[9]=x
-var sp1 = _a2sp(sp1);
+var sp1 = _a2sp(sp1)
 
 declare -p sp1
 sp1[-1]=A
@@ -481,7 +481,7 @@ declare -a sp1=([0]=D [2]=C [6]=B [9]=A)
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 sp1[9]=x
-var sp1 = _a2sp(sp1);
+var sp1 = _a2sp(sp1)
 
 sp1[-11]=E
 declare -p sp1
@@ -504,7 +504,7 @@ declare -p sp1
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 sp1[9]=x
-var sp1 = _a2sp(sp1);
+var sp1 = _a2sp(sp1)
 
 sp1[-21]=F
 declare -p sp1
