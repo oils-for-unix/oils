@@ -291,19 +291,18 @@ compile_one() {
 
   setglobal_cxx $compiler
 
-  if test -n "${OILS_CXX_VERBOSE:-}"; then
-    echo '__' "$cxx" $flags -o "$out" -c "$in" >&2
-  fi
-
-  # The command we want to run
+  # The command we want to run.  Not using arrays because this is POSIX shell
   set -- "$cxx" $flags -o "$out" -c "$in"
 
-  # Not using arrays because this is POSIX shell
+  if test -n "${OILS_CXX_VERBOSE:-}"; then
+    echo '__' "$@" >&2
+  fi
 
+  # Maybe add timing prefix
   if test -n "${TIME_TSV_OUT:-}"; then
     set -- \
       benchmarks/time_.py --tsv \
-      --out $TIME_TSV_OUT --append \
+      --out "$TIME_TSV_OUT" --append \
       --rusage --field compile_one --field $out -- \
       "$@"
   else
@@ -321,7 +320,7 @@ compile_one() {
     esac
   fi
 
-  # Execute the command, with a prefix
+  # Run the command
   "$@"
 }
 
@@ -346,17 +345,27 @@ link() {
     esac
   fi
 
-  local prefix=''
-  if test -n "${TIME_TSV_OUT:-}"; then
-    prefix="benchmarks/time_.py --tsv --out $TIME_TSV_OUT --append --rusage --field link --field $out --"
-  fi
-
-  if test -n "${OILS_CXX_VERBOSE:-}"; then
-    echo "__ $prefix $cxx -o $out $@ $link_flags" >&2
-  fi
+  # The command we want to run.  Not using arrays because this is POSIX shell
+  #
   # IMPORTANT: Flags like -ltcmalloc have to come AFTER objects!  Weird but
   # true.
-  $prefix "$cxx" -o "$out" "$@" $link_flags $more_link_flags
+  set -- "$cxx" -o "$out" "$@" $link_flags $more_link_flags
+
+  if test -n "${OILS_CXX_VERBOSE:-}"; then
+    echo '__' "$@" >&2
+  fi
+
+  # Maybe add timing prefix
+  if test -n "${TIME_TSV_OUT:-}"; then
+    set -- \
+      benchmarks/time_.py --tsv \
+      --out "$TIME_TSV_OUT" --append \
+      --rusage --field link --field $out -- \
+      "$@"
+  fi
+
+  # Run the command
+  "$@"
 }
 
 compile_and_link() {
