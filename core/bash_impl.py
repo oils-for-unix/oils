@@ -198,6 +198,12 @@ def BashAssoc_SetElement(assoc_val, key, s):
     assoc_val.d[key] = s
 
 
+def BashAssoc_UnsetElement(assoc_val, key):
+    # type: (value.BashAssoc, str) -> None
+
+    mylib.dict_erase(assoc_val.d, key)
+
+
 def BashAssoc_ToStrForShellPrint(assoc_val):
     # type: (value.BashAssoc) -> str
 

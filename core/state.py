@@ -2302,7 +2302,7 @@ class Mem(object):
                 #  raise error.Runtime("%r isn't an associative array" % lval.name)
 
                 val = cast(value.BashAssoc, UP_val)
-                mylib.dict_erase(val.d, lval.key)
+                bash_impl.BashAssoc_UnsetElement(val, lval.key)
 
             else:
                 raise AssertionError(lval)
