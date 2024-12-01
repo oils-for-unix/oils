@@ -20,6 +20,7 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, Obj, sh_lvalue,
                                       sh_lvalue_e, sh_lvalue_t, LeftName,
                                       y_lvalue_e, regex_match, regex_match_e,
                                       regex_match_t, RegexMatch)
+from core import bash_impl
 from core import error
 from core.error import e_usage, e_die
 from core import num
@@ -1989,6 +1990,19 @@ class Mem(object):
                             for i in xrange(n):
                                 strs.append(None)
                             strs[lval.index] = rval.s
+                        return
+
+                    elif case2(value_e.SparseArray):
+                        lhs_sp = cast(value.SparseArray, UP_cell_val)
+                        error_code = bash_impl.SparseArray_SetElement(
+                            lhs_sp, mops.BigInt(lval.index), rval.s)
+                        if error_code == 1:
+                            n_big = mops.Add(
+                                bash_impl.SparseArray_MaxIndex(lhs_sp),
+                                mops.ONE)
+                            e_die(
+                                "Index %d is out of bounds for array of length %s"
+                                % (lval.index, mops.ToStr(n_big)), left_loc)
                         return
 
                 # This could be an object, eggex object, etc.  It won't be

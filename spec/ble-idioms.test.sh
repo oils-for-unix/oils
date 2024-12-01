@@ -431,3 +431,93 @@ declare -a sp1=([10]=a [20]=b [99]=c [100]=1 [101]=2 [102]=3)
 
 ## N-I bash/zsh/mksh/ash STDOUT:
 ## END
+
+
+#### SparseArray: a[i]=v
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+sp1[10]=a
+sp1[20]=b
+sp1[30]=c
+var sp1 = _a2sp(sp1)
+declare -p sp1
+sp1[10]=X
+sp1[25]=Y
+sp1[90]=Z
+declare -p sp1
+
+## STDOUT:
+declare -a sp1=([10]=a [20]=b [30]=c)
+declare -a sp1=([10]=X [20]=b [25]=Y [30]=c [90]=Z)
+## END
+
+## N-I bash/zsh/mksh/ash STDOUT:
+## END
+
+
+#### SparseArray: Negative index with a[i]=v
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+sp1[9]=x
+var sp1 = _a2sp(sp1);
+
+declare -p sp1
+sp1[-1]=A
+sp1[-4]=B
+sp1[-8]=C
+sp1[-10]=D
+declare -p sp1
+
+## STDOUT:
+declare -a sp1=([9]=x)
+declare -a sp1=([0]=D [2]=C [6]=B [9]=A)
+## END
+
+## N-I bash/zsh/mksh/ash STDOUT:
+## END
+
+
+#### SparseArray: Negative out-of-bound index with a[i]=v (1/2)
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+sp1[9]=x
+var sp1 = _a2sp(sp1);
+
+sp1[-11]=E
+declare -p sp1
+
+## status: 1
+## STDOUT:
+## END
+## STDERR:
+  sp1[-11]=E
+  ^~~~
+[ stdin ]:6: fatal: Index -11 is out of bounds for array of length 10
+## END
+
+## N-I bash/zsh/mksh/ash status: 0
+## N-I bash/zsh/mksh/ash STDERR:
+## END
+
+
+#### SparseArray: Negative out-of-bound index with a[i]=v (2/2)
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+sp1[9]=x
+var sp1 = _a2sp(sp1);
+
+sp1[-21]=F
+declare -p sp1
+
+## status: 1
+## STDOUT:
+## END
+## STDERR:
+  sp1[-21]=F
+  ^~~~
+[ stdin ]:6: fatal: Index -21 is out of bounds for array of length 10
+## END
+
+## N-I bash/zsh/mksh/ash status: 0
+## N-I bash/zsh/mksh/ash STDERR:
+## END
