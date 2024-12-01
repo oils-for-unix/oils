@@ -931,3 +931,24 @@ begin=-5 -> ()
 
 ## N-I mksh STDOUT:
 ## END
+
+
+#### array length after unset
+case $SH in mksh) exit ;; esac
+
+a=(x)
+a[9]=y
+echo "len ${#a[@]};"
+
+unset -v 'a[-1]'
+echo "len ${#a[@]};"
+echo "last ${a[@]: -1};"
+
+## STDOUT:
+len 2;
+len 1;
+last x;
+## END
+
+## N-I mksh STDOUT:
+## END
