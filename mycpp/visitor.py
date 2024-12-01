@@ -89,10 +89,6 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         self.module_path = o.path
 
         for node in o.defs:
-            # skip module docstring
-            if isinstance(node, ExpressionStmt) and isinstance(
-                    node.expr, StrExpr):
-                continue
             self.accept(node)
 
     # LITERALS
@@ -142,14 +138,16 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
 
     def visit_block(self, block: 'mypy.nodes.Block') -> None:
         for stmt in block.body:
-            # Ignore things that look like docstrings
-            if (isinstance(stmt, ExpressionStmt) and
-                    isinstance(stmt.expr, StrExpr)):
-                continue
-
             self.accept(stmt)
 
     def visit_expression_stmt(self, o: 'mypy.nodes.ExpressionStmt') -> None:
+        # Ignore all docstrings: module, class, and function body
+        if isinstance(o.expr, StrExpr):
+            return
+
+        # This is likely either
+        # f()
+        # obj.method()
         self.accept(o.expr)
 
     def visit_while_stmt(self, o: 'mypy.nodes.WhileStmt') -> None:
@@ -383,3 +381,4 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
 
     def visit_temp_node(self, o: 'mypy.nodes.TempNode') -> None:
         self.not_translated(o, 'temp')
+

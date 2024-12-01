@@ -568,10 +568,6 @@ class Generate(visitor.SimpleVisitor):
 
         #self.log('defs %s', o.defs)
         for node in o.defs:
-            # skip module docstring
-            if (isinstance(node, ExpressionStmt) and
-                    isinstance(node.expr, StrExpr)):
-                continue
             self.accept(node)
 
         if self.forward_decl:
@@ -1605,12 +1601,6 @@ class Generate(visitor.SimpleVisitor):
     def _write_body(self, body):
         """Write a block without the { }."""
         for stmt in body:
-            # Ignore things that look like docstrings
-            if (isinstance(stmt, ExpressionStmt) and
-                    isinstance(stmt.expr, StrExpr)):
-                continue
-
-            #log('-- %d', self.indent)
             self.accept(stmt)
 
     def visit_for_stmt(self, o: 'mypy.nodes.ForStmt') -> None:
@@ -2474,11 +2464,6 @@ class Generate(visitor.SimpleVisitor):
         self.indent += 1
         for stmt in block.body:
 
-            # Ignore things that look like docstrings
-            if (isinstance(stmt, ExpressionStmt) and
-                    isinstance(stmt.expr, StrExpr)):
-                continue
-
             # Constructor is named after class
             if isinstance(stmt, FuncDef):
                 method_name = stmt.name
@@ -2818,8 +2803,10 @@ class Generate(visitor.SimpleVisitor):
         self.def_write_ind('}\n')
 
     def visit_expression_stmt(self, o: 'mypy.nodes.ExpressionStmt') -> None:
-        # TODO: Avoid writing docstrings.
-        # If it's just a string, then we don't need it.
+        # Ignore all docstrings: module, class, and function body
+        # TODO: This logic is duplicated in asdl/visitor.py
+        if isinstance(o.expr, StrExpr):
+            return
 
         self.def_write_ind('')
         self.accept(o.expr)

@@ -8,6 +8,9 @@ import optparse
 import os
 import sys
 import tempfile
+import time
+
+START_TIME = time.time()  # measure before imports
 
 from typing import Dict, List, Optional, Tuple, Any, TYPE_CHECKING
 
@@ -137,7 +140,41 @@ def ModulesToCompile(result, mod_names):
             yield name, module
 
 
+class Timer:
+    """
+    Example timings:
+
+    So loading it takes 13.4 seconds, and the rest only takes 2 seconds.  If we
+    combine const pass and forward decl pass, that's only a couple hundred
+    milliseconds.  So might as well keep them separate.
+
+        [0.1] mycpp: LOADING asdl/format.py ...
+        [13.5] mycpp pass: IR
+        [13.7] mycpp pass: FORWARD DECL
+        [13.8] mycpp pass: CONST
+        [14.0] mycpp pass: PROTOTYPES
+        [14.4] mycpp pass: CONTROL FLOW
+        [15.0] mycpp pass: DATAFLOW
+        [15.0] mycpp pass: IMPL
+        [15.5] mycpp DONE
+    """
+
+    def __init__(self, start_time: float):
+        self.start_time = start_time
+
+    def Section(self, msg: str, *args: Any):
+        elapsed = time.time() - self.start_time
+
+        if args:
+            msg = msg % args
+
+        #log('\t[%.1f] %s', elapsed, msg)
+        log('\t%s', msg)
+
+
 def main(argv: List[str]) -> int:
+    timer = Timer(START_TIME)
+
     # TODO: Put these in the shell script
     mypy_options = [
         '--py2',
@@ -154,7 +191,8 @@ def main(argv: List[str]) -> int:
 
     paths = argv[1:]  # e.g. asdl/typed_arith_parse.py
 
-    log('\tmycpp: LOADING %s', ' '.join(paths))
+    timer.Section('mycpp: LOADING %s', ' '.join(paths))
+
     #log('\tmycpp: MYPYPATH = %r', os.getenv('MYPYPATH'))
 
     if 0:
@@ -273,7 +311,7 @@ def main(argv: List[str]) -> int:
     # Convert the mypy AST into our own IR.
     # module name -> {expr node -> access type}
     dot_exprs: Dict[MemberExpr, ir_pass.DotExprs] = {}
-    log('\tmycpp pass: IR')
+    timer.Section('mycpp pass: IR')
     for _, module in to_compile:
         module_dot_exprs: ir_pass.DotExprs = {}
         p = ir_pass.Build(result.types, module_dot_exprs)
@@ -288,7 +326,7 @@ def main(argv: List[str]) -> int:
     virtual = pass_state.Virtual()
 
     # class Foo; class Bar;
-    log('\tmycpp pass: FORWARD DECL')
+    timer.Section('mycpp pass: FORWARD DECL')
     for name, module in to_compile:
         #log('forward decl name %s', name)
         if name in to_header:
@@ -315,9 +353,10 @@ def main(argv: List[str]) -> int:
     #
     # String constants
     #
-    log('\tmycpp pass: CONST')
+    timer.Section('mycpp pass: CONST')
     for name, module in to_compile:
         pass1.visit_mypy_file(module)
+        MaybeExitWithErrors(pass1)
 
     # Instead of top-level code, should we generate a function and call it from
     # main?
@@ -329,7 +368,7 @@ def main(argv: List[str]) -> int:
     # C++ declarations like:
     # class Foo { void method(); }; class Bar { void method(); };
     #
-    log('\tmycpp pass: PROTOTYPES')
+    timer.Section('mycpp pass: PROTOTYPES')
 
     local_vars: cppgen_pass.LocalVars = {}
     ctx_member_vars: cppgen_pass.CtxMemberVars = {}
@@ -357,7 +396,7 @@ def main(argv: List[str]) -> int:
         from pprint import pformat
         print(pformat(ctx_member_vars), file=sys.stderr)
 
-    log('\tmycpp pass: CONTROL FLOW')
+    timer.Section('mycpp pass: CONTROL FLOW')
 
     cfgs = {}  # fully qualified function name -> control flow graph
     for name, module in to_compile:
@@ -366,7 +405,7 @@ def main(argv: List[str]) -> int:
         cfg_pass.visit_mypy_file(module)
         cfgs.update(cfg_pass.cfgs)
 
-    log('\tmycpp pass: DATAFLOW')
+    timer.Section('mycpp pass: DATAFLOW')
     stack_roots = None
     if opts.minimize_stack_roots:
         # souffle_dir contains two subdirectories.
@@ -381,7 +420,7 @@ def main(argv: List[str]) -> int:
     else:
         pass_state.DumpControlFlowGraphs(cfgs)
 
-    log('\tmycpp pass: IMPL')
+    timer.Section('mycpp pass: IMPL')
 
     # Now the definitions / implementations.
     # void Foo:method() { ... }
@@ -400,6 +439,7 @@ def main(argv: List[str]) -> int:
         p4.visit_mypy_file(module)
         MaybeExitWithErrors(p4)
 
+    timer.Section('mycpp DONE')
     return 0  # success
 
 
