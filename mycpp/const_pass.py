@@ -6,7 +6,7 @@ GLOBAL_STR(str99, "foo"), and then a reference to str99.
 """
 import json
 
-from mypy.nodes import (Expression, StrExpr, CallExpr)
+from mypy.nodes import (Expression, StrExpr, CallExpr, NameExpr)
 
 from mycpp import format_strings
 from mycpp import util
@@ -69,10 +69,11 @@ class Collect(visitor.SimpleVisitor):
         self.const_lookup[o] = str_id
 
     def visit_call_expr(self, o: CallExpr) -> None:
-        self.accept(o.callee)  # could be f() or obj.method()
-        if o.callee.name == 'probe':
-            # don't generate constants for probe names
+        # Don't generate constants for probe names
+        if isinstance(o.callee, NameExpr) and o.callee.name == 'probe':
             return
+
+        self.accept(o.callee)  # could be f() or obj.method()
 
         # This is what the SimpleVisitor superclass does
         for arg in o.args:

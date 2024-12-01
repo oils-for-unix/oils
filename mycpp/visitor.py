@@ -295,6 +295,13 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         self.accept(o.else_expr)
 
     def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> None:
+        # Oils invariant
+        assert isinstance(o.callee, (NameExpr, MemberExpr)), o.callee
+        if isinstance(o.callee, MemberExpr):
+            # o.callee.name is the RHS, e.g. 'append' in 'mylist.append'
+            #log('CallExpr MemberExpr name=%r', o.callee.name)
+            pass
+
         self.accept(o.callee)
         for arg in o.args:
             self.accept(arg)

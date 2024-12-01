@@ -14711,7 +14711,7 @@ int Pp::Run(cmd_value::Argv* cmd_val) {
   value::Proc* user_proc = nullptr;
   syntax_asdl::command_t* body = nullptr;
   BigStr* doc = nullptr;
-  BraceGroup* bgroup = nullptr;
+  syntax_asdl::BraceGroup* bgroup = nullptr;
   syntax_asdl::Token* token = nullptr;
   mylib::BufWriter* buf = nullptr;
   StackRoot _root0(&cmd_val);
@@ -22562,10 +22562,10 @@ void RootCompleter::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc
   BigStr* to_complete = nullptr;
   int n;
   List<syntax_asdl::word_part_t*>* parts = nullptr;
-  Token* tilde_tok = nullptr;
+  syntax_asdl::Token* tilde_tok = nullptr;
   BigStr* name = nullptr;
   BigStr* s = nullptr;
-  Token* chars_tok = nullptr;
+  syntax_asdl::Token* chars_tok = nullptr;
   syntax_asdl::Redir* r = nullptr;
   syntax_asdl::redir_param_t* arg_word = nullptr;
   syntax_asdl::redir_param_t* UP_word = nullptr;
@@ -28506,7 +28506,7 @@ value_asdl::value_t* Mem::GetValue(BigStr* name, runtime_asdl::scope_t which_sco
   BigStr* source_str = nullptr;
   value_asdl::regex_match_t* top_match = nullptr;
   List<BigStr*>* groups = nullptr;
-  RegexMatch* m = nullptr;
+  value_asdl::RegexMatch* m = nullptr;
   List<value_asdl::value_t*>* items = nullptr;
   runtime_asdl::Cell* cell = nullptr;
   value_asdl::value_t* builtin_val = nullptr;
@@ -29087,7 +29087,7 @@ Dict<BigStr*, value_asdl::value_t*>* Mem::PopContextStack() {
 }
 
 Tuple2<value_asdl::value_t*, value_asdl::Obj*> ValueIsInvokableObj(value_asdl::value_t* val) {
-  Obj* obj = nullptr;
+  value_asdl::Obj* obj = nullptr;
   value_asdl::value_t* invoke_val = nullptr;
   StackRoot _root0(&val);
   StackRoot _root1(&obj);
@@ -31357,7 +31357,7 @@ pretty_asdl::MeasuredDoc* ValueEncoder::_Value(value_asdl::value_t* val) {
   value::SparseArray* sparse = nullptr;
   value::BashArray* varray = nullptr;
   value::BashAssoc* vassoc = nullptr;
-  Obj* vaobj = nullptr;
+  value_asdl::Obj* vaobj = nullptr;
   BigStr* id_str = nullptr;
   StackRoot _root0(&val);
   StackRoot _root1(&s);
@@ -31546,7 +31546,7 @@ pretty_asdl::MeasuredDoc* _Indent(int indent, pretty_asdl::MeasuredDoc* mdoc) {
 
 pretty_asdl::Measure* _Splice(List<pretty_asdl::MeasuredDoc*>* out, List<pretty_asdl::MeasuredDoc*>* mdocs) {
   pretty_asdl::Measure* measure = nullptr;
-  List_Measured* child = nullptr;
+  pretty_asdl::List_Measured* child = nullptr;
   StackRoot _root0(&out);
   StackRoot _root1(&mdocs);
   StackRoot _root2(&measure);
@@ -34735,7 +34735,7 @@ value_asdl::LiteralBlock* OptionalLiteralBlock(cmd_value::Argv* cmd_val) {
 
 syntax_asdl::command_t* GetCommandFrag(value::Command* bound) {
   value_asdl::cmd_frag_t* frag = nullptr;
-  LiteralBlock* lit = nullptr;
+  value_asdl::LiteralBlock* lit = nullptr;
   cmd_frag::Expr* expr = nullptr;
   StackRoot _root0(&bound);
   StackRoot _root1(&frag);
@@ -35013,7 +35013,7 @@ value::Command* Reader::_ToCommand(value_asdl::value_t* val) {
 
 value_asdl::LiteralBlock* Reader::_ToLiteralBlock(value_asdl::value_t* val) {
   value_asdl::cmd_frag_t* frag = nullptr;
-  LiteralBlock* lit = nullptr;
+  value_asdl::LiteralBlock* lit = nullptr;
   StackRoot _root0(&val);
   StackRoot _root1(&frag);
   StackRoot _root2(&lit);
@@ -35447,7 +35447,7 @@ syntax_asdl::arith_expr_t* LeftIncDec(tdop::TdopParser* p, syntax_asdl::word_t* 
 
 syntax_asdl::arith_expr_t* LeftIndex(tdop::TdopParser* p, syntax_asdl::word_t* w, syntax_asdl::arith_expr_t* left, int unused_bp) {
   syntax_asdl::arith_expr_t* index = nullptr;
-  Token* tok = nullptr;
+  syntax_asdl::Token* tok = nullptr;
   StackRoot _root0(&p);
   StackRoot _root1(&w);
   StackRoot _root2(&left);
@@ -35906,7 +35906,7 @@ word::BracedTree* BraceDetect(syntax_asdl::CompoundWord* w) {
   braces::_StackFrame* new_frame = nullptr;
   syntax_asdl::word_part_t* range_part = nullptr;
   syntax_asdl::word_part_t* part2 = nullptr;
-  Token* tok = nullptr;
+  syntax_asdl::Token* tok = nullptr;
   braces::_StackFrame* frame = nullptr;
   StackRoot _root0(&w);
   StackRoot _root1(&cur_parts);
@@ -37810,7 +37810,7 @@ int CommandEvaluator::_DoCase(command::Case* node) {
   int id_;
   pat::YshExprs* pat_exprs = nullptr;
   value_asdl::value_t* expr_val = nullptr;
-  Eggex* eggex = nullptr;
+  syntax_asdl::Eggex* eggex = nullptr;
   value::Eggex* eggex_val = nullptr;
   StackRoot _root0(&node);
   StackRoot _root1(&to_match);
@@ -39206,7 +39206,7 @@ void CommandParser::_SetNextBrack() {
 
 void CommandParser::_GetWord() {
   syntax_asdl::word_t* w = nullptr;
-  Token* tok = nullptr;
+  syntax_asdl::Token* tok = nullptr;
   StackRoot _root0(&w);
   StackRoot _root1(&tok);
 
@@ -39263,18 +39263,18 @@ bool CommandParser::_AtSecondaryKeyword() {
 }
 
 syntax_asdl::Redir* CommandParser::ParseRedirect() {
-  Token* op_tok = nullptr;
+  syntax_asdl::Token* op_tok = nullptr;
   BigStr* op_val = nullptr;
   int pos;
   syntax_asdl::redir_loc_t* where = nullptr;
   redir_param::HereDoc* arg = nullptr;
   syntax_asdl::Redir* r = nullptr;
-  CompoundWord* arg_word = nullptr;
+  syntax_asdl::CompoundWord* arg_word = nullptr;
   syntax_asdl::CompoundWord* tilde = nullptr;
   syntax_asdl::word_part_t* part0 = nullptr;
   bool is_multiline;
-  SingleQuoted* sq = nullptr;
-  DoubleQuoted* dq = nullptr;
+  syntax_asdl::SingleQuoted* sq = nullptr;
+  syntax_asdl::DoubleQuoted* dq = nullptr;
   redir_param::HereWord* param = nullptr;
   StackRoot _root0(&op_tok);
   StackRoot _root1(&op_val);
@@ -39401,9 +39401,9 @@ Tuple4<List<syntax_asdl::Redir*>*, List<syntax_asdl::CompoundWord*>*, syntax_asd
   int i;
   id_kind_asdl::Kind_t kind2;
   syntax_asdl::Redir* node = nullptr;
-  CompoundWord* w = nullptr;
+  syntax_asdl::CompoundWord* w = nullptr;
   syntax_asdl::word_part_t* part0 = nullptr;
-  Token* tok = nullptr;
+  syntax_asdl::Token* tok = nullptr;
   bool ok;
   BigStr* word_str = nullptr;
   bool quoted;
@@ -39771,7 +39771,7 @@ syntax_asdl::BraceGroup* CommandParser::ParseBraceGroup() {
   syntax_asdl::word_t* ate = nullptr;
   syntax_asdl::Token* left = nullptr;
   syntax_asdl::word_t* doc_word = nullptr;
-  Token* doc_token = nullptr;
+  syntax_asdl::Token* doc_token = nullptr;
   command::CommandList* c_list = nullptr;
   syntax_asdl::Token* right = nullptr;
   StackRoot _root0(&ate);
@@ -39825,8 +39825,8 @@ command::DoGroup* CommandParser::ParseDoGroup() {
 Tuple2<List<syntax_asdl::CompoundWord*>*, syntax_asdl::Token*> CommandParser::ParseForWords() {
   List<syntax_asdl::CompoundWord*>* words = nullptr;
   syntax_asdl::Token* semi_tok = nullptr;
-  Token* tok = nullptr;
-  CompoundWord* w2 = nullptr;
+  syntax_asdl::Token* tok = nullptr;
+  syntax_asdl::CompoundWord* w2 = nullptr;
   StackRoot _root0(&words);
   StackRoot _root1(&semi_tok);
   StackRoot _root2(&tok);
@@ -40559,10 +40559,10 @@ syntax_asdl::command_t* CommandParser::ParseCompoundCommand() {
 }
 
 command::ShFunction* CommandParser::ParseFunctionDef() {
-  CompoundWord* word0 = nullptr;
+  syntax_asdl::CompoundWord* word0 = nullptr;
   BigStr* name = nullptr;
   syntax_asdl::word_part_t* part0 = nullptr;
-  Token* blame_tok = nullptr;
+  syntax_asdl::Token* blame_tok = nullptr;
   command::ShFunction* func = nullptr;
   StackRoot _root0(&word0);
   StackRoot _root1(&name);
@@ -40603,7 +40603,7 @@ command::ShFunction* CommandParser::ParseFunctionDef() {
 
 command::ShFunction* CommandParser::ParseKshFunctionDef() {
   syntax_asdl::Token* keyword_tok = nullptr;
-  CompoundWord* cur_word = nullptr;
+  syntax_asdl::CompoundWord* cur_word = nullptr;
   BigStr* name = nullptr;
   syntax_asdl::word_t* name_word = nullptr;
   command::ShFunction* func = nullptr;
@@ -40846,10 +40846,10 @@ syntax_asdl::command_t* CommandParser::ParseCommand() {
   command::Mutation* n9 = nullptr;
   syntax_asdl::Token* keyword = nullptr;
   syntax_asdl::expr_t* enode = nullptr;
-  CompoundWord* cur_word = nullptr;
+  syntax_asdl::CompoundWord* cur_word = nullptr;
   List<syntax_asdl::word_part_t*>* parts = nullptr;
   syntax_asdl::word_part_t* part0 = nullptr;
-  Token* tok = nullptr;
+  syntax_asdl::Token* tok = nullptr;
   StackRoot _root0(&kw_token);
   StackRoot _root1(&n8);
   StackRoot _root2(&n9);
@@ -41058,7 +41058,7 @@ syntax_asdl::command_t* CommandParser::_ParseCommandLine() {
   List<syntax_asdl::command_t*>* children = nullptr;
   bool done;
   syntax_asdl::command_t* child = nullptr;
-  Token* tok = nullptr;
+  syntax_asdl::Token* tok = nullptr;
   StackRoot _root0(&END_LIST);
   StackRoot _root1(&children);
   StackRoot _root2(&child);
@@ -41102,7 +41102,7 @@ command::CommandList* CommandParser::_ParseCommandTerm() {
   List<syntax_asdl::command_t*>* children = nullptr;
   bool done;
   syntax_asdl::command_t* child = nullptr;
-  Token* tok = nullptr;
+  syntax_asdl::Token* tok = nullptr;
   StackRoot _root0(&END_LIST);
   StackRoot _root1(&children);
   StackRoot _root2(&child);
@@ -42727,7 +42727,7 @@ mops::BigInt ArithEvaluator::_ValToIntOrError(value_asdl::value_t* val, syntax_a
 Tuple2<mops::BigInt, value_asdl::sh_lvalue_t*> ArithEvaluator::_EvalLhsAndLookupArith(syntax_asdl::arith_expr_t* node) {
   value_asdl::sh_lvalue_t* lval = nullptr;
   value_asdl::value_t* val = nullptr;
-  LeftName* named_lval = nullptr;
+  value_asdl::LeftName* named_lval = nullptr;
   mops::BigInt i;
   StackRoot _root0(&node);
   StackRoot _root1(&lval);
@@ -42765,7 +42765,7 @@ void ArithEvaluator::_Store(value_asdl::sh_lvalue_t* lval, mops::BigInt new_int)
 
 mops::BigInt ArithEvaluator::EvalToBigInt(syntax_asdl::arith_expr_t* node) {
   value_asdl::value_t* val = nullptr;
-  Token* vsub = nullptr;
+  syntax_asdl::Token* vsub = nullptr;
   mops::BigInt i;
   StackRoot _root0(&node);
   StackRoot _root1(&val);
@@ -44491,7 +44491,7 @@ syntax_asdl::arith_expr_t* LeftError(tdop::TdopParser* p, syntax_asdl::word_t* t
 }
 
 syntax_asdl::arith_expr_t* LeftBinaryOp(tdop::TdopParser* p, syntax_asdl::word_t* w, syntax_asdl::arith_expr_t* left, int rbp) {
-  Token* tok = nullptr;
+  syntax_asdl::Token* tok = nullptr;
   StackRoot _root0(&p);
   StackRoot _root1(&w);
   StackRoot _root2(&left);
@@ -44757,10 +44757,10 @@ syntax_asdl::CompoundWord* TildeDetect(syntax_asdl::word_t* UP_w) {
 syntax_asdl::CompoundWord* TildeDetect2(syntax_asdl::CompoundWord* w) {
   syntax_asdl::word_part_t* part0 = nullptr;
   int id0;
-  Token* tok0 = nullptr;
+  syntax_asdl::Token* tok0 = nullptr;
   List<syntax_asdl::word_part_t*>* new_parts = nullptr;
   int id1;
-  Token* tok1 = nullptr;
+  syntax_asdl::Token* tok1 = nullptr;
   int id2;
   StackRoot _root0(&w);
   StackRoot _root1(&part0);
@@ -44815,9 +44815,9 @@ void TildeDetectAssign(syntax_asdl::CompoundWord* w) {
   syntax_asdl::word_part_t* part0 = nullptr;
   syntax_asdl::word_part_t* part1 = nullptr;
   syntax_asdl::word_part_t* part2 = nullptr;
-  Token* tok0 = nullptr;
+  syntax_asdl::Token* tok0 = nullptr;
   int id1;
-  Token* tok1 = nullptr;
+  syntax_asdl::Token* tok1 = nullptr;
   int id2;
   StackRoot _root0(&w);
   StackRoot _root1(&parts);
@@ -45110,7 +45110,7 @@ syntax_asdl::Token* BraceToken(syntax_asdl::word_t* UP_w) {
 
 syntax_asdl::Token* AsKeywordToken(syntax_asdl::word_t* UP_w) {
   syntax_asdl::word_part_t* part = nullptr;
-  Token* tok = nullptr;
+  syntax_asdl::Token* tok = nullptr;
   StackRoot _root0(&UP_w);
   StackRoot _root1(&part);
   StackRoot _root2(&tok);
@@ -45128,7 +45128,7 @@ syntax_asdl::Token* AsOperatorToken(syntax_asdl::word_t* word) {
 }
 
 int ArithId(syntax_asdl::word_t* w) {
-  Token* tok = nullptr;
+  syntax_asdl::Token* tok = nullptr;
   StackRoot _root0(&w);
   StackRoot _root1(&tok);
 
@@ -45223,7 +45223,7 @@ int CommandId(syntax_asdl::word_t* w) {
 }
 
 id_kind_asdl::Kind_t CommandKind(syntax_asdl::word_t* w) {
-  Token* tok = nullptr;
+  syntax_asdl::Token* tok = nullptr;
   StackRoot _root0(&w);
   StackRoot _root1(&tok);
 
@@ -45493,7 +45493,7 @@ void RemoveLeadingSpaceDQ(List<syntax_asdl::word_part_t*>* parts) {
   syntax_asdl::word_part_t* UP_last = nullptr;
   BigStr* to_strip = nullptr;
   int n;
-  Token* lit_tok = nullptr;
+  syntax_asdl::Token* lit_tok = nullptr;
   StackRoot _root0(&parts);
   StackRoot _root1(&UP_first);
   StackRoot _root2(&UP_last);
@@ -46996,7 +46996,7 @@ void AbstractWordEvaluator::_EvalBracedVarSub(syntax_asdl::BracedVarSub* part, L
   BigStr* var_name = nullptr;
   runtime_asdl::VTestPlace* vtest_place = nullptr;
   runtime_asdl::VarSubState* vsub_state = nullptr;
-  Token* nullary_op = nullptr;
+  syntax_asdl::Token* nullary_op = nullptr;
   List<BigStr*>* names = nullptr;
   BigStr* sep = nullptr;
   value_asdl::value_t* val = nullptr;
@@ -49636,7 +49636,7 @@ syntax_asdl::word_part_t* WordParser::_ReadArrayLiteral() {
   List<syntax_asdl::CompoundWord*>* words = nullptr;
   bool done;
   syntax_asdl::word_t* w = nullptr;
-  Token* tok = nullptr;
+  syntax_asdl::Token* tok = nullptr;
   List<syntax_asdl::word_t*>* no_words = nullptr;
   syntax_asdl::ShArrayLiteral* node = nullptr;
   List<syntax_asdl::AssocPair*>* pairs = nullptr;
@@ -50997,7 +50997,7 @@ void YshPrinter::DoCommand(syntax_asdl::command_t* node, Dict<BigStr*, bool>* lo
   syntax_asdl::command_t* UP_body = nullptr;
   syntax_asdl::for_iter_t* UP_iterable = nullptr;
   syntax_asdl::Token* body_tok = nullptr;
-  List_of_command* commands = nullptr;
+  syntax_asdl::List_of_command* commands = nullptr;
   command::Sentence* sentence = nullptr;
   int i;
   syntax_asdl::Token* elif_tok = nullptr;
@@ -51005,9 +51005,9 @@ void YshPrinter::DoCommand(syntax_asdl::command_t* node, Dict<BigStr*, bool>* lo
   syntax_asdl::condition_t* cond = nullptr;
   syntax_asdl::word_t* to_match = nullptr;
   syntax_asdl::SimpleVarSub* var_part = nullptr;
-  CompoundWord* w = nullptr;
+  syntax_asdl::CompoundWord* w = nullptr;
   syntax_asdl::word_part_t* part0 = nullptr;
-  DoubleQuoted* dq_part = nullptr;
+  syntax_asdl::DoubleQuoted* dq_part = nullptr;
   syntax_asdl::word_part_t* dq_part0 = nullptr;
   bool missing_last_dsemi;
   StackRoot _root0(&node);
@@ -51389,9 +51389,9 @@ void YshPrinter::DoRhsWord(syntax_asdl::rhs_word_t* node, Dict<BigStr*, bool>* l
 
 void YshPrinter::DoWordInCommand(syntax_asdl::word_t* node, Dict<BigStr*, bool>* local_symbols) {
   syntax_asdl::word_t* UP_node = nullptr;
-  DoubleQuoted* dq_part = nullptr;
+  syntax_asdl::DoubleQuoted* dq_part = nullptr;
   syntax_asdl::word_part_t* part0 = nullptr;
-  SimpleVarSub* vsub_part = nullptr;
+  syntax_asdl::SimpleVarSub* vsub_part = nullptr;
   StackRoot _root0(&node);
   StackRoot _root1(&local_symbols);
   StackRoot _root2(&UP_node);
@@ -53613,7 +53613,7 @@ syntax_asdl::Token* _PushYshTokens(parse_lib::ParseContext* parse_ctx, grammar::
   List<syntax_asdl::word_t*>* words3 = nullptr;
   int typ;
   syntax_asdl::ShArrayLiteral* lit_part = nullptr;
-  Token* opaque = nullptr;
+  syntax_asdl::Token* opaque = nullptr;
   syntax_asdl::Token* left_token = nullptr;
   cmd_parse::CommandParser* c_parser = nullptr;
   syntax_asdl::command_t* node = nullptr;
@@ -54345,7 +54345,7 @@ syntax_asdl::expr_t* Transformer::Expr(pnode::PNode* pnode) {
   syntax_asdl::expr_t* node = nullptr;
   int i;
   syntax_asdl::expr_t* factor = nullptr;
-  DoubleQuoted* dq = nullptr;
+  syntax_asdl::DoubleQuoted* dq = nullptr;
   syntax_asdl::Token* tok = nullptr;
   BigStr* bare = nullptr;
   BigStr* tok_str = nullptr;
@@ -55258,7 +55258,7 @@ void Transformer::YshFunc(pnode::PNode* p_node, syntax_asdl::Func* out) {
 
 syntax_asdl::CharCode* Transformer::_RangeCharSingleQuoted(pnode::PNode* p_node) {
   pnode::PNode* child0 = nullptr;
-  SingleQuoted* sq_part = nullptr;
+  syntax_asdl::SingleQuoted* sq_part = nullptr;
   int n;
   StackRoot _root0(&p_node);
   StackRoot _root1(&child0);

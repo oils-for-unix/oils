@@ -375,7 +375,7 @@ check-types() {
 
   #local -a files=( mycpp/*.py )
   local -a files=(
-    mycpp/{pass_state,util,crash,format_strings,visitor,ir_pass,const_pass,control_flow_pass,mycpp_main,cppgen_pass}.py
+    mycpp/{pass_state,util,crash,format_strings,visitor,ir_pass,const_pass,control_flow_pass,mycpp_main,cppgen_pass,virtual_pass,decl_pass}.py
   )
 
   # the path is fiddly
@@ -395,7 +395,7 @@ copy-golden() {
 
 compare-golden() {
   local -a files=(
-    _gen/bin/oils_for_unix.mycpp.cc testdata/mycpp/oils_for_unix.mycpp.cc
+    testdata/mycpp/oils_for_unix.mycpp.cc _gen/bin/oils_for_unix.mycpp.cc 
   )
 
   wc -l "${files[@]}"

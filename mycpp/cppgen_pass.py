@@ -1326,7 +1326,7 @@ class Generate(visitor.SimpleVisitor):
         else:
             # Normal variable
             if self.decl:
-                self.local_var_list.append((lval.name, subtype_name))
+                self.local_var_list.append((lval.name, self.types[lval]))
             self.def_write_ind('%s = %s<%s>(', lval.name, cast_kind,
                                subtype_name)
 
