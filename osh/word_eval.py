@@ -1013,12 +1013,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     quoted2 = True
                 elif case(value_e.BashArray):
                     array_val = cast(value.BashArray, UP_val)
-
-                    tmp = []  # type: List[str]
-                    for s in array_val.strs:
-                        if s is not None:
-                            # TODO: should use fastfunc.ShellEncode
-                            tmp.append(j8_lite.MaybeShellEncode(s))
+                    tmp = [
+                        # TODO: should use fastfunc.ShellEncode
+                        j8_lite.MaybeShellEncode(s)
+                        for s in bash_impl.BashArray_GetValues(array_val)
+                        if s is not None
+                    ]
                     result = value.Str(' '.join(tmp))
                 else:
                     e_die("Can't use @Q on %s" % ui.ValType(val), op)
