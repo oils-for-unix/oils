@@ -26,6 +26,23 @@ def run_tests():
     exec('x = 42')
 
 
+class A:
+    pass
+
+
+class B:
+    pass
+
+
+class Child(A, B):
+    pass
+
+
+# Doesn't need to be checked, because it fails at runtime
+#class Child2('invalid'):
+#    pass
+
+
 def run_benchmarks():
     # type: () -> None
     raise NotImplementedError()

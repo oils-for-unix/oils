@@ -25,14 +25,9 @@ from typing import Tuple, List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from mycpp import ir_pass
 
-T = None
-
-#
-# Simulating
-#
-
 
 class MyTypeInfo:
+    """Like mypy.nodes.TypeInfo"""
 
     def __init__(self, fullname: str) -> None:
         self.fullname = fullname
@@ -192,8 +187,8 @@ def _CheckCondition(node: Expression, types: Dict[Expression, Type]) -> bool:
         #log('OpExpr node %s %s', node, dir(node))
 
         # if x > 0 and not mylist, etc.
-        return _CheckCondition(node.left, types) and _CheckCondition(
-            node.right, types)
+        return (_CheckCondition(node.left, types) and
+                _CheckCondition(node.right, types))
 
     t = types[node]
 
@@ -621,9 +616,8 @@ class Generate(visitor.SimpleVisitor):
                 if isinstance(dot_expr, pass_state.StackObjectMember):
                     op = '.'
 
-                elif isinstance(dot_expr,
-                                pass_state.StaticObjectMember) or isinstance(
-                                    dot_expr, pass_state.ModuleMember):
+                elif (isinstance(dot_expr, pass_state.StaticObjectMember) or
+                      isinstance(dot_expr, pass_state.ModuleMember)):
                     op = '::'
 
                 elif isinstance(dot_expr, pass_state.HeapObjectMember):
@@ -839,8 +833,8 @@ class Generate(visitor.SimpleVisitor):
             return
 
         # [None] * 3  =>  list_repeat(None, 3)
-        if left_ctype.startswith(
-                'List<') and right_ctype == 'int' and c_op == '*':
+        if (left_ctype.startswith('List<') and right_ctype == 'int' and
+                c_op == '*'):
             self.def_write('list_repeat(')
             self.accept(o.left.items[0])
             self.def_write(', ')

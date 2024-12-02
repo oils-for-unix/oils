@@ -255,7 +255,7 @@ class Build(visitor.SimpleVisitor):
     def accept(self, node: Union[Statement, Expression]) -> None:
         with catch_errors(self.module_path, node.line):
             if isinstance(node, Expression):
-                res = node.accept(self)
+                node.accept(self)
             else:
                 cfg = self.current_cfg()
                 # Most statements have empty visitors because they don't

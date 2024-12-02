@@ -220,7 +220,7 @@ test-invalid-examples() {
         expected_status=8
         ;;
       */invalid_other.py)
-        expected_status=4
+        expected_status=5
         ;;
       */invalid_default_args.py)
         expected_status=4

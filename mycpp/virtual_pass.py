@@ -5,23 +5,35 @@ TODO: Join with ir_pass.py
 """
 import mypy
 
+from mypy.nodes import (Expression, NameExpr)
+from mypy.types import Type
+
 from mycpp import util
 from mycpp.util import log
 from mycpp import pass_state
 from mycpp import visitor
+from mycpp import cppgen_pass
 
-from typing import List, Optional
+from typing import Dict, List, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    #from mycpp import cppgen_pass
+    pass
 
 _ = log
 
 
 class Pass(visitor.SimpleVisitor):
 
-    def __init__(self, virtual: pass_state.Virtual,
+    def __init__(self, types: Dict[Expression,
+                                   Type], virtual: pass_state.Virtual,
                  forward_decls: List[str]) -> None:
         visitor.SimpleVisitor.__init__(self)
+        self.types = types
         self.virtual = virtual  # output
         self.forward_decls = forward_decls  # output
+
+        self.current_member_vars: Dict[str, 'cppgen_pass.MemberVar'] = {}
 
     def oils_visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> None:
         mod_parts = o.fullname.split('.')
@@ -44,11 +56,21 @@ class Pass(visitor.SimpleVisitor):
         if base_class_name:
             self.virtual.OnSubclass(base_class_name, self.current_class_name)
 
-        # Do default traversal
+        # Do default traversal of methods
         super().oils_visit_class_def(o, base_class_name)
 
     def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
         self.virtual.OnMethod(self.current_class_name, o.name)
+
+    def _MaybeAddMember(
+            self, lval: Expression,
+            current_member_vars: Dict[str, 'cppgen_pass.MemberVar']) -> None:
+        if isinstance(lval.expr, NameExpr) and lval.expr.name == 'self':
+            #log('    lval.name %s', lval.name)
+            lval_type = self.types[lval]
+            c_type = cppgen_pass.GetCType(lval_type)
+            is_managed = cppgen_pass.CTypeIsManaged(c_type)
+            current_member_vars[lval.name] = (lval_type, c_type, is_managed)
 
 
 # class_member_vars - Dict replacing current_member_vars

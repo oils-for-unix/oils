@@ -312,9 +312,11 @@ def main(argv: List[str]) -> int:
     timer.Section('mycpp pass: IR')
     for _, module in to_compile:
         module_dot_exprs: ir_pass.DotExprs = {}
-        p = ir_pass.Build(result.types, module_dot_exprs)
-        p.visit_mypy_file(module)
-        dot_exprs[module.path] = p.dot_exprs
+        p1 = ir_pass.Build(result.types, module_dot_exprs)
+        p1.visit_mypy_file(module)
+        dot_exprs[module.path] = p1.dot_exprs
+
+        MaybeExitWithErrors(p1)
 
     header_f = None
     if opts.header_out:
@@ -334,7 +336,7 @@ def main(argv: List[str]) -> int:
 
         # TODO: write output of forward_decls, instead of the file
         forward_decls: List[str] = []
-        p2 = virtual_pass.Pass(virtual, forward_decls)
+        p2 = virtual_pass.Pass(result.types, virtual, forward_decls)
         p2.SetOutputFile(out_f)
 
         p2.visit_mypy_file(module)

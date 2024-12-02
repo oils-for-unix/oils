@@ -3,8 +3,9 @@ visitor.py - AST pass that accepts everything.
 """
 import mypy
 from mypy.visitor import ExpressionVisitor, StatementVisitor
-from mypy.nodes import (Expression, Statement, StrExpr, CallExpr, YieldExpr,
-                        NameExpr, MemberExpr, Argument)
+from mypy.nodes import (Expression, Statement, ExpressionStmt, StrExpr,
+                        CallExpr, YieldExpr, NameExpr, MemberExpr, Argument,
+                        FuncDef, IfStmt, PassStmt)
 
 from mycpp.crash import catch_errors
 from mycpp import util
@@ -23,8 +24,10 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
     """
 
     def __init__(self) -> None:
-        self.current_class_name: Optional[util.SymbolPath] = None
         self.module_path: Optional[str] = None
+
+        self.current_class_name: Optional[util.SymbolPath] = None
+        self.current_method_name: Optional[str] = None
 
         # So we can report multiple at once
         # module path, line number, message
@@ -126,10 +129,16 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         self.accept(o.body)
 
     def visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
+        # TODO: move logic to class level
         if o.name == '__repr__':  # Don't translate
             return
 
         self.oils_visit_func_def(o)
+
+    def oils_visit_method(self, cls: 'mypy.nodes.ClassDef',
+                          method: 'mypy.nodes.FuncDef') -> None:
+        # Visit it like a funciton
+        self.accept(method)
 
     def oils_visit_class_def(
             self, o: 'mypy.nodes.ClassDef',
@@ -137,8 +146,53 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         for stmt in o.defs.body:
             self.accept(stmt)
 
+    def X_oils_visit_class_def(
+            self, o: 'mypy.nodes.ClassDef',
+            base_class_name: Optional[util.SymbolPath]) -> None:
+
+        for stmt in o.defs.body:
+            # Skip class docstrings
+            if (isinstance(stmt, ExpressionStmt) and
+                    isinstance(stmt.expr, StrExpr)):
+                continue
+
+            # if 0: is allowed
+            if isinstance(stmt, FuncDef):
+                if stmt.name == '__repr__':  # Don't translate
+                    return
+
+                self.accept(stmt)
+
+                #self.current_method_name = stmt.name
+                #self.oils_visit_method(o, base_class_name, stmt)
+                #self.current_method_name = None
+                continue
+
+            if isinstance(stmt, (IfStmt, PassStmt)):
+                self.accept(stmt)
+                continue
+
+            self.report_error(
+                o, 'Classes may only have method definitions, got %s' % stmt)
+
+        # Some special cases:
+        #
+        # __repr__ - skipped
+        # __init__ - becomes a function of the same name
+        # __enter__ - ignored, not visited
+        # __exit__ - becomes destructor, at least for ctx_* functions
+
+        # Then call
+        # oils_visit_method(ClassDef, method_name: str)
+        # oils_visit_constructor(ClassDef)
+        # oils_visit_dunder_exit(ClassDef)  # __exit__
+
     def visit_class_def(self, o: 'mypy.nodes.ClassDef') -> None:
         base_class_name = None  # single inheritance only
+        if len(o.base_type_exprs) > 1:
+            self.report_error(o, 'too many base types: %s' % o.base_type_exprs)
+            return
+
         for b in o.base_type_exprs:
             if isinstance(b, NameExpr):
                 if b.name != 'object' and b.name != 'Exception':
@@ -146,6 +200,9 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
             elif isinstance(b, MemberExpr):  # vm._Executor -> vm::_Executor
                 assert isinstance(b.expr, NameExpr), b
                 base_class_name = split_py_name(b.expr.fullname) + (b.name, )
+            else:
+                # shouldn't happen
+                raise AssertionError(b)
 
         self.current_class_name = split_py_name(o.fullname)
         self.oils_visit_class_def(o, base_class_name)
