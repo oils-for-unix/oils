@@ -386,10 +386,9 @@ class SetAttachedBool(_Action):
         # 'attached_arg' is also used for -t0 though, which is weird
 
         if attached_arg is not None:  # '0' in --verbose=0
-            if attached_arg in ('0', 'F', 'false',
-                                'False'):  # TODO: incorrect translation
+            if attached_arg in ('0', 'F', 'false', 'False'):
                 b = False
-            elif attached_arg in ('1', 'T', 'true', 'Talse'):
+            elif attached_arg in ('1', 'T', 'true', 'True'):
                 b = True
             else:
                 e_usage(

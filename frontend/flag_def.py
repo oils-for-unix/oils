@@ -503,7 +503,8 @@ WRITE_SPEC.LongFlag('--end',
 WRITE_SPEC.ShortFlag('-n',
                      args.Bool,
                      help="Omit newline (synonym for -end '')")
-# Do we need these two?
+
+# Note: these 2 aren't documented, but they are implemented
 WRITE_SPEC.LongFlag('--json',
                     args.Bool,
                     default=False,
@@ -538,23 +539,22 @@ FOPEN_SPEC = FlagSpec('redir')
 
 JSON_WRITE_SPEC = FlagSpec('json_write')
 
-# TODO: --compact is probably better
-# --pretty=F is like JSON.stringify(d, null, 0)
-JSON_WRITE_SPEC.LongFlag('--pretty',
-                         args.Bool,
-                         default=True,
-                         help='Whitespace in output (default true)')
+if 0:
+    JSON_WRITE_SPEC.LongFlag('--pretty',
+                             args.Bool,
+                             default=True,
+                             help='Whitespace in output (default true)')
 
-# Unused:
-# JSON has the questionable decision of allowing (unpaired) surrogate like
-# \udc00.
-# When encoding, we try to catch the error on OUR side, rather than letting it
-# travel over the wire.  But you can disable this.
-JSON_WRITE_SPEC.LongFlag(
-    '--surrogate-ok',
-    args.Bool,
-    default=False,
-    help='Invalid UTF-8 can be encoded as surrogate like \\udc00')
+    # Unused:
+    # JSON has the questionable decision of allowing (unpaired) surrogate like
+    # \udc00.
+    # When encoding, we try to catch the error on OUR side, rather than letting it
+    # travel over the wire.  But you can disable this.
+    JSON_WRITE_SPEC.LongFlag(
+        '--surrogate-ok',
+        args.Bool,
+        default=False,
+        help='Invalid UTF-8 can be encoded as surrogate like \\udc00')
 
 JSON_WRITE_SPEC.LongFlag('--indent',
                          args.Int,
