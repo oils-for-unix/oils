@@ -10,6 +10,7 @@ from _devbuild.gen.syntax_asdl import assign_op_e, Token
 from _devbuild.gen.value_asdl import (value, value_e, value_t, sh_lvalue,
                                       sh_lvalue_e, LeftName)
 
+from core import bash_impl
 from core import error
 from core import bash_impl
 from core import optview
@@ -218,6 +219,10 @@ def _PrintShValue(val, buf):
         elif case(value_e.BashAssoc):
             val = cast(value.BashAssoc, UP_val)
             result = bash_impl.BashAssoc_ToStrForShellPrint(val)
+
+        elif case(value_e.SparseArray):
+            val = cast(value.SparseArray, UP_val)
+            result = bash_impl.SparseArray_ToStrForShellPrint(val)
 
     buf.write(result)
 
