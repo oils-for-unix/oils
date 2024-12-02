@@ -438,7 +438,7 @@ class Reader(object):
         # type: (int) -> mops.BigInt
         val = self.OptionalValue()
         if val is None:
-            return mops.BigInt(default_)
+            return mops.IntWiden(default_)
         return self._ToInt(val)
 
     def PosFloat(self):
@@ -587,7 +587,7 @@ class Reader(object):
     def NamedInt(self, param_name, default_):
         # type: (str, int) -> mops.BigInt
         if param_name not in self.named_args:
-            return mops.BigInt(default_)
+            return mops.IntWiden(default_)
 
         val = self.named_args[param_name]
         UP_val = val

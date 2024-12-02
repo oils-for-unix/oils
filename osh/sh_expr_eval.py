@@ -372,8 +372,8 @@ def _ParseOshInteger(s, blame_loc):
 
             # formula is:
             # integer = integer * base + digit
-            integer = mops.Add(mops.Mul(integer, mops.BigInt(base)),
-                               mops.BigInt(digit))
+            integer = mops.Add(mops.Mul(integer, mops.IntWiden(base)),
+                               mops.IntWiden(digit))
         return (True, integer)
 
     else:
