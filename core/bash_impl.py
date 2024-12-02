@@ -80,6 +80,35 @@ def BashArray_SetElement(array_val, index, s):
     return 0
 
 
+def BashArray_UnsetElement(array_val, index):
+    # type: (value.BashArray, int) -> int
+    strs = array_val.strs
+
+    n = len(strs)
+    last_index = n - 1
+    if index < 0:
+        index += n
+        if index < 0:
+            return 1
+
+    if index == last_index:
+        # Special case: The array SHORTENS if you unset from the end.  You can
+        # tell with a+=(3 4)
+        strs.pop()
+        while len(strs) > 0 and strs[-1] is None:
+            strs.pop()
+    elif index < last_index:
+        strs[index] = None
+    else:
+        # If it's not found, it's not an error.  In other words, 'unset'
+        # ensures that a value doesn't exist, regardless of whether it existed.
+        # It's idempotent.  (Ousterhout specifically argues that the strict
+        # behavior was a mistake for Tcl!)
+        pass
+
+    return 0
+
+
 def _BashArray_HasHoles(array_val):
     # type: (value.BashArray) -> bool
 
@@ -167,6 +196,12 @@ def BashAssoc_SetElement(assoc_val, key, s):
     # type: (value.BashAssoc, str, str) -> None
 
     assoc_val.d[key] = s
+
+
+def BashAssoc_UnsetElement(assoc_val, key):
+    # type: (value.BashAssoc, str) -> None
+
+    mylib.dict_erase(assoc_val.d, key)
 
 
 def BashAssoc_ToStrForShellPrint(assoc_val):

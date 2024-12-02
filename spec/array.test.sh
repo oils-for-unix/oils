@@ -897,8 +897,8 @@ unset -v 'a[-2]'
 ## END
 ## STDERR:
   unset -v 'a[-2]'
-  ^~~~~
-[ stdin ]:4: fatal: Index -2 is out of bounds for array of length 1
+           ^
+[ stdin ]:4: a[-2]: Index is out of bounds for array of length 1
 ## END
 
 ## OK bash STDERR:
