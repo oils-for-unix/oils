@@ -45,6 +45,7 @@ from _devbuild.gen.value_asdl import (
     RegexMatch,
 )
 from core import alloc
+from core import bash_impl
 from core import error
 from core.error import e_die, e_die_status, e_strict, e_usage
 from core import num
@@ -149,7 +150,10 @@ def OldValue(lval, mem, exec_opts):
                 else:
                     e_die("Can't use [] on value of type %s" % ui.ValType(val))
 
-            s = word_eval.GetArrayItem(array_val.strs, lval.index)
+            s, _ = word_eval.GetArrayItem(array_val.strs, lval.index)
+            # Note: We ignore error_code in the return value of
+            # BashArray_GetElement because an invalid index will be reported on
+            # the assignment stage anyway.
 
             if s is None:
                 val = value.Str('')  # NOTE: Other logic is value.Undef?  0?
@@ -730,7 +734,17 @@ class ArithEvaluator(object):
                             array_val = cast(value.BashArray, UP_left)
                             small_i = mops.BigTruncate(
                                 self.EvalToBigInt(node.right))
-                            s = word_eval.GetArrayItem(array_val.strs, small_i)
+                            s, error_code = word_eval.GetArrayItem(
+                                array_val.strs, small_i)
+                            if error_code == 1:
+                                # Note: Bash outputs warning but does not make
+                                # it a real error.  We follow the Bash behavior
+                                # here.
+                                self.errfmt.Print_(
+                                    "Index %d out of bounds for array of length %d"
+                                    % (small_i,
+                                       bash_impl.BashArray_Length(array_val)),
+                                    blame_loc=node.op)
 
                         elif case(value_e.BashAssoc):
                             left = cast(value.BashAssoc, UP_left)
