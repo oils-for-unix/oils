@@ -37,6 +37,12 @@ def BashArray_Count(array_val):
     return length
 
 
+def BashArray_Length(array_val):
+    # type: (value.BashArray) -> int
+
+    return len(array_val.strs)
+
+
 def BashArray_GetValues(array_val):
     # type: (value.BashArray) -> List[str]
 
@@ -193,10 +199,10 @@ def SparseArray_Count(sparse_val):
     return len(sparse_val.d)
 
 
-def SparseArray_MaxIndex(sparse_val):
+def SparseArray_Length(sparse_val):
     # type: (value.SparseArray) -> mops.BigInt
 
-    return sparse_val.max_index
+    return mops.Add(sparse_val.max_index, mops.ONE)
 
 
 def SparseArray_GetKeys(sparse_val):
