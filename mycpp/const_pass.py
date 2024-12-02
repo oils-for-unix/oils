@@ -26,10 +26,10 @@ _ALPHABET = _ALPHABET[:32]
 class Collect(visitor.SimpleVisitor):
 
     def __init__(self, const_lookup: Dict[Expression, str],
-                 const_code: List[str]) -> None:
+                 global_strings: List[Tuple[str, str]]) -> None:
         visitor.SimpleVisitor.__init__(self)
         self.const_lookup = const_lookup
-        self.const_code = const_code
+        self.global_strings = global_strings
 
         # Only generate unique strings.
         # Before this optimization, _gen/bin/oils_for_unix.mycpp.cc went up to:
@@ -46,11 +46,6 @@ class Collect(visitor.SimpleVisitor):
         self.unique: Dict[str, str] = {}
         self.unique_id = 0
 
-    def _EmitStringConstant(self, msg: str, *args: Any) -> None:
-        if args:
-            msg = msg % args
-        self.const_code.append(msg)
-
     def visit_str_expr(self, o: StrExpr) -> None:
         str_val = o.value
 
@@ -63,12 +58,7 @@ class Collect(visitor.SimpleVisitor):
             self.unique[str_val] = str_id
 
             raw_string = format_strings.DecodeMyPyString(str_val)
-            if util.SMALL_STR:
-                self._EmitStringConstant('GLOBAL_STR2(%s, %s);', str_id,
-                                         json.dumps(raw_string))
-            else:
-                self._EmitStringConstant('GLOBAL_STR(%s, %s);', str_id,
-                                         json.dumps(raw_string))
+            self.global_strings.append((str_id, raw_string))
 
         # Different nodes can refer to the same string ID
         self.const_lookup[o] = str_id

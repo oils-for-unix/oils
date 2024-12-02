@@ -4,6 +4,7 @@ mycpp_main.py - Translate a subset of Python to C++, using MyPy's typed AST.
 """
 from __future__ import print_function
 
+import json
 import optparse
 import os
 import sys
@@ -28,6 +29,7 @@ from mycpp import control_flow_pass
 from mycpp import decl_pass
 from mycpp import virtual_pass
 from mycpp import pass_state
+from mycpp import util
 from mycpp.util import log
 from mycpp import visitor
 
@@ -259,12 +261,6 @@ def main(argv: List[str]) -> int:
             log('result %s %s', name, result.graph[name])
         log('')
 
-    # GLOBAL Constant pass over all modules.  We want to collect duplicate
-    # strings together.  And have globally unique IDs str0, str1, ... strN.
-    const_lookup: Dict[Expression, str] = {}  # StrExpr node => string name
-    const_code: List[str] = []
-    pass1 = const_pass.Collect(const_lookup, const_code)
-
     to_compile = list(ModulesToCompile(result, mod_names))
 
     # HACK: Why do I get oil.asdl.tdop in addition to asdl.tdop?
@@ -353,16 +349,27 @@ def main(argv: List[str]) -> int:
     #
     # String constants
     #
+
+    # GLOBAL Constant pass over all modules.  We want to collect duplicate
+    # strings together.  And have globally unique IDs str0, str1, ... strN.
+    const_lookup: Dict[Expression, str] = {}  # StrExpr node => string name
+    global_strings: List[Tuple[str, str]] = []
+    pass1 = const_pass.Collect(const_lookup, global_strings)
+
     timer.Section('mycpp pass: CONST')
     for name, module in to_compile:
         pass1.visit_mypy_file(module)
         MaybeExitWithErrors(pass1)
 
-    # Instead of top-level code, should we generate a function and call it from
-    # main?
-    for line in const_code:
-        f.write('%s\n' % line)
-    f.write('\n')
+    for str_id, raw_string in global_strings:
+        if util.SMALL_STR:
+            macro_name = 'GLOBAL_STR2'
+        else:
+            macro_name = 'GLOBAL_STR'
+        out_f.write('%s(%s, %s);\n' %
+                    (macro_name, str_id, json.dumps(raw_string)))
+
+    out_f.write('\n')
 
     #
     # C++ declarations like:
