@@ -5,17 +5,15 @@ Instead of emitting a dynamic allocation StrFromC("foo"), we emit a
 GLOBAL_STR(str99, "foo"), and then a reference to str99.
 """
 import collections
-import json
 import string
 
 from mypy.nodes import (Expression, StrExpr, CallExpr, NameExpr)
 
 from mycpp import format_strings
-from mycpp import util
 from mycpp.util import log
 from mycpp import visitor
 
-from typing import Dict, List, Tuple, Iterator, Counter, Any
+from typing import Dict, List, Tuple, Iterator, Counter
 
 _ = log
 

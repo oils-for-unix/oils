@@ -243,6 +243,8 @@ print-first-line() {
 }
 
 check-shebangs() {
+  banner 'Checking Python and shell shebang lines'
+
   set +o errexit
 
   if true; then
