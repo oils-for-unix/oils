@@ -935,19 +935,16 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 s = replacer.Replace(str_val.s, op)
                 val = value.Str(s)
 
-            elif case2(value_e.BashArray):
-                array_val = cast(value.BashArray, val)
-                strs = []  # type: List[str]
-                for s in array_val.strs:
-                    if s is not None:
-                        strs.append(replacer.Replace(s, op))
-                val = value.BashArray(strs)
-
-            elif case2(value_e.BashAssoc):
-                assoc_val = cast(value.BashAssoc, val)
-                strs = []
-                for s in assoc_val.d.values():
-                    strs.append(replacer.Replace(s, op))
+            elif case2(value_e.BashArray, value_e.BashAssoc):
+                if val.tag() == value_e.BashArray:
+                    array_val = cast(value.BashArray, val)
+                    values = bash_impl.BashArray_GetValues(array_val)
+                elif val.tag() == value_e.BashAssoc:
+                    assoc_val = cast(value.BashAssoc, val)
+                    values = bash_impl.BashAssoc_GetValues(assoc_val)
+                else:
+                    raise AssertionError()
+                strs = [replacer.Replace(s, op) for s in values]
                 val = value.BashArray(strs)
 
             else:
