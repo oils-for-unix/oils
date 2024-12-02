@@ -1983,9 +1983,7 @@ class Mem(object):
                         error_code = bash_impl.SparseArray_SetElement(
                             lhs_sp, mops.IntWiden(lval.index), rval.s)
                         if error_code == 1:
-                            n_big = mops.Add(
-                                bash_impl.SparseArray_MaxIndex(lhs_sp),
-                                mops.ONE)
+                            n_big = bash_impl.SparseArray_Length(lhs_sp)
                             e_die(
                                 "Index %d is out of bounds for array of length %s"
                                 % (lval.index, mops.ToStr(n_big)), left_loc)
