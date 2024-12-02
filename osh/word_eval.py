@@ -872,24 +872,22 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     #log('%r %r -> %r', val.s, arg_val.s, s)
                     new_val = value.Str(s)  # type: value_t
 
-                elif case(value_e.BashArray):
-                    val = cast(value.BashArray, UP_val)
-                    # ${a[@]#prefix} is VECTORIZED on arrays.  YSH should have this too.
-                    strs = []  # type: List[str]
-                    for s in val.strs:
-                        if s is not None:
-                            strs.append(
-                                string_ops.DoUnarySuffixOp(
-                                    s, op.op, arg_val.s, has_extglob))
-                    new_val = value.BashArray(strs)
+                elif case(value_e.BashArray, value_e.BashAssoc):
+                    # get values
+                    if val.tag() == value_e.BashArray:
+                        val = cast(value.BashArray, UP_val)
+                        values = bash_impl.BashArray_GetValues(val)
+                    elif val.tag() == value_e.BashAssoc:
+                        val = cast(value.BashAssoc, UP_val)
+                        values = bash_impl.BashAssoc_GetValues(val)
+                    else:
+                        raise AssertionError()
 
-                elif case(value_e.BashAssoc):
-                    val = cast(value.BashAssoc, UP_val)
-                    strs = []
-                    for s in val.d.values():
-                        strs.append(
-                            string_ops.DoUnarySuffixOp(s, op.op, arg_val.s,
-                                                       has_extglob))
+                    # ${a[@]#prefix} is VECTORIZED on arrays.  YSH should have this too.
+                    strs = [
+                        string_ops.DoUnarySuffixOp(s, op.op, arg_val.s,
+                                                   has_extglob) for s in values
+                    ]
                     new_val = value.BashArray(strs)
 
                 else:
