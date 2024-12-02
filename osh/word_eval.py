@@ -805,12 +805,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         with tagswitch(val) as case:
             if case(value_e.BashArray):
                 val = cast(value.BashArray, UP_val)
-                # translation issue: tuple indices not supported in list comprehensions
-                #indices = [str(i) for i, s in enumerate(val.strs) if s is not None]
-                indices = []  # type: List[str]
-                for i, s in enumerate(val.strs):
-                    if s is not None:
-                        indices.append(str(i))
+                indices = [str(i) for i in bash_impl.BashArray_GetKeys(val)]
                 return value.BashArray(indices)
 
             elif case(value_e.BashAssoc):
@@ -818,7 +813,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 assert val.d is not None  # for MyPy, so it's not Optional[]
 
                 # BUG: Keys aren't ordered according to insertion!
-                return value.BashArray(val.d.keys())
+                keys = bash_impl.BashAssoc_GetKeys(val)
+                return value.BashArray(keys)
 
             else:
                 raise error.TypeErr(val, 'Keys op expected Str', token)
