@@ -353,11 +353,11 @@ def ToBool(val):
         # OLD TYPES
         elif case(value_e.BashArray):
             val = cast(value.BashArray, UP_val)
-            return len(val.strs) != 0
+            return not bash_impl.BashArray_IsEmpty(val)
 
         elif case(value_e.BashAssoc):
             val = cast(value.BashAssoc, UP_val)
-            return len(val.d) != 0
+            return not bash_impl.BashAssoc_IsEmpty(val)
 
         elif case(value_e.Bool):
             val = cast(value.Bool, UP_val)

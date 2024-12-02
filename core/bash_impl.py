@@ -27,6 +27,12 @@ def BigInt_Less(a, b):
 # representation of SparseArray come here.
 
 
+def BashArray_IsEmpty(array_val):
+    # type: (value.BashArray) -> bool
+
+    return len(array_val.strs) == 0
+
+
 def BashArray_Count(array_val):
     # type: (value.BashArray) -> int
 
@@ -239,6 +245,11 @@ def BashArray_ToStrForShellPrint(array_val, name):
 #------------------------------------------------------------------------------
 # All BashAssoc operations depending on the internal
 # representation of SparseArray come here.
+
+
+def BashAssoc_IsEmpty(assoc_val):
+    # type: (value.BashAssoc) -> bool
+    return len(assoc_val.d) == 0
 
 
 def BashAssoc_Count(assoc_val):
