@@ -403,11 +403,10 @@ class Build(visitor.SimpleVisitor):
                 with try_ctx.AddBranch(try_block.exit):
                     self.accept(handler)
 
-    def visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt') -> None:
+    def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
+                                   lval: Expression, rval: Expression) -> None:
         cfg = self.current_cfg()
         if cfg:
-            assert len(o.lvalues) == 1
-            lval = o.lvalues[0]
             lval_names = []
             if isinstance(lval, TupleExpr):
                 lval_names.extend(
@@ -416,40 +415,38 @@ class Build(visitor.SimpleVisitor):
             else:
                 lval_names.append(self.get_ref_name(lval))
 
-            assert lval_names, o
+            assert len(lval_names), lval
 
-            rval_type = self.types[o.rvalue]
+            rval_type = self.types[rval]
             rval_names: List[Optional[util.SymbolPath]] = []
-            if isinstance(o.rvalue, CallExpr):
+            if isinstance(rval, CallExpr):
                 # The RHS is either an object constructor or something that
                 # returns a primitive type (e.g. Tuple[int, int] or str).
                 # XXX: When we add inter-procedural analysis we should treat
                 # these not as definitions but as some new kind of assignment.
                 rval_names = [None for _ in lval_names]
 
-            elif isinstance(o.rvalue, TupleExpr) and len(lval_names) == 1:
+            elif isinstance(rval, TupleExpr) and len(lval_names) == 1:
                 # We're constructing a tuple. Since tuples have have a fixed
                 # (and usually small) size, we can name each of the
                 # elements.
                 base = lval_names[0]
                 lval_names = [
-                    base + (str(i), ) for i in range(len(o.rvalue.items))
+                    base + (str(i), ) for i in range(len(rval.items))
                 ]
-                rval_names = [
-                    self.get_ref_name(item) for item in o.rvalue.items
-                ]
+                rval_names = [self.get_ref_name(item) for item in rval.items]
 
             elif isinstance(rval_type, TupleType):
                 # We're unpacking a tuple. Like the tuple construction case,
                 # give each element a name.
-                rval_name = self.get_ref_name(o.rvalue)
-                assert rval_name, o.rvalue
+                rval_name = self.get_ref_name(rval)
+                assert rval_name, rval
                 rval_names = [
                     rval_name + (str(i), ) for i in range(len(lval_names))
                 ]
 
             else:
-                rval_names = [self.get_ref_name(o.rvalue)]
+                rval_names = [self.get_ref_name(rval)]
 
             assert len(rval_names) == len(lval_names)
 
@@ -471,12 +468,12 @@ class Build(visitor.SimpleVisitor):
                     )
                     self.heap_counter += 1
 
-        for lval in o.lvalues:
-            self.current_lval = lval
-            self.accept(lval)
-            self.current_lval = None
+        # TODO: Could simplify this
+        self.current_lval = lval
+        self.accept(lval)
+        self.current_lval = None
 
-        self.accept(o.rvalue)
+        self.accept(rval)
 
     # Expressions
 

@@ -52,22 +52,6 @@ def _IsContextManager(class_name: util.SymbolPath) -> bool:
     return class_name[-1].startswith('ctx_')
 
 
-def _IsUnusedVar(var_name: str) -> bool:
-    return var_name == '_' or var_name.startswith('unused')
-
-
-def _SkipAssignment(var_name: str) -> bool:
-    """
-    Skip at the top level:
-      _ = log 
-      unused1 = log
-
-    Always skip:
-      x, _ = mytuple  # no second var
-    """
-    return _IsUnusedVar(var_name)
-
-
 def _GetCTypeForCast(type_expr: Expression) -> str:
     """ MyPy cast() """
 
@@ -1173,7 +1157,7 @@ class Generate(visitor.SimpleVisitor):
                                                        item_types)):
             #self.log('*** %s :: %s', lval_item, item_type)
             if isinstance(lval_item, NameExpr):
-                if _SkipAssignment(lval_item.name):
+                if util.SkipAssignment(lval_item.name):
                     continue
 
                 # declare it at the top of the function
@@ -1383,23 +1367,18 @@ class Generate(visitor.SimpleVisitor):
         # no-op on purpose - overrides visitor
         pass
 
-    def visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt') -> None:
+    def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
+                                   lval: Expression, rval: Expression) -> None:
         # Declare constant strings.  They have to be at the top level.
-        if self.decl and self.indent == 0 and len(o.lvalues) == 1:
-            lval = o.lvalues[0]
-            c_type = GetCType(self.types[lval])
-            if not _SkipAssignment(lval.name):
+        if self.decl and self.indent == 0:
+            if not util.SkipAssignment(lval.name):
+                c_type = GetCType(self.types[lval])
                 self.always_write('extern %s %s;\n', c_type, lval.name)
-
-        # I think there are more than one when you do a = b = 1, which I never
-        # use.
-        assert len(o.lvalues) == 1, o.lvalues
-        lval = o.lvalues[0]
 
         # GLOBAL CONSTANTS - Avoid Alloc<T>, since that can't be done until main().
         if self.indent == 0:
             assert isinstance(lval, NameExpr), lval
-            if _SkipAssignment(lval.name):
+            if util.SkipAssignment(lval.name):
                 return
             #self.log('    GLOBAL: %s', lval.name)
 
@@ -1407,29 +1386,29 @@ class Generate(visitor.SimpleVisitor):
 
             # Global
             #   L = [1, 2]  # type: List[int]
-            if isinstance(o.rvalue, ListExpr):
+            if isinstance(rval, ListExpr):
                 item_type = lval_type.args[0]
                 item_c_type = GetCType(item_type)
 
                 # Any constant strings will have already been written
                 # TODO: Assert that every item is a constant?
                 self.def_write('GLOBAL_LIST(%s, %s, %d, ', lval.name,
-                               item_c_type, len(o.rvalue.items))
+                               item_c_type, len(rval.items))
 
-                self._WriteListElements(o.rvalue.items, sep=' COMMA ')
+                self._WriteListElements(rval.items, sep=' COMMA ')
 
                 self.def_write(');\n')
                 return
 
             # Global
             #   D = {"foo": "bar"}  # type: Dict[str, str]
-            if isinstance(o.rvalue, DictExpr):
+            if isinstance(rval, DictExpr):
                 key_type, val_type = lval_type.args
 
                 key_c_type = GetCType(key_type)
                 val_c_type = GetCType(val_type)
 
-                dict_expr = o.rvalue
+                dict_expr = rval
                 self.def_write('GLOBAL_DICT(%s, %s, %s, %d, ', lval.name,
                                key_c_type, val_c_type, len(dict_expr.items))
 
@@ -1444,7 +1423,7 @@ class Generate(visitor.SimpleVisitor):
                 return
 
             # We could do GcGlobal<> for ASDL classes, but Oils doesn't use them
-            if isinstance(o.rvalue, CallExpr):
+            if isinstance(rval, CallExpr):
                 self.report_error(
                     o,
                     "Can't initialize objects at the top level, only BigStr List Dict"
@@ -1457,8 +1436,8 @@ class Generate(visitor.SimpleVisitor):
         # Non-top-level
         #
 
-        if isinstance(o.rvalue, CallExpr):
-            callee = o.rvalue.callee
+        if isinstance(rval, CallExpr):
+            callee = rval.callee
 
             if callee.name == 'NewDict':
                 self.def_write_ind('')
@@ -1483,7 +1462,7 @@ class Generate(visitor.SimpleVisitor):
                 self._AssignCastImpl(o, lval)
                 return
 
-            rval_type = self.types[o.rvalue]
+            rval_type = self.types[rval]
             if (isinstance(rval_type, Instance) and
                     rval_type.type.fullname == 'typing.Iterator'):
                 self._IteratorImpl(o, lval, rval_type)
@@ -1503,11 +1482,11 @@ class Generate(visitor.SimpleVisitor):
                 # globals always get a type -- they're not mutated
                 self.def_write_ind('%s %s = ', c_type, lval.name)
 
-            if isinstance(o.rvalue, ListComprehension):
+            if isinstance(rval, ListComprehension):
                 self._ListComprehensionImpl(o, lval, c_type)
                 return
 
-            self.accept(o.rvalue)
+            self.accept(rval)
             self.def_write(';\n')
             return
 
@@ -1515,7 +1494,7 @@ class Generate(visitor.SimpleVisitor):
             self.def_write_ind('')
             self.accept(lval)
             self.def_write(' = ')
-            self.accept(o.rvalue)
+            self.accept(rval)
             self.def_write(';\n')
 
             if self.current_method_name in ('__init__', 'Reset'):
@@ -1537,7 +1516,7 @@ class Generate(visitor.SimpleVisitor):
             self.def_write('->set(')
             self.accept(lval.index)
             self.def_write(', ')
-            self.accept(o.rvalue)
+            self.accept(rval)
             self.def_write(');\n')
             return
 
@@ -1550,7 +1529,7 @@ class Generate(visitor.SimpleVisitor):
             # int x = tup1->at0()
             # BigStr* y = tup1->at1()
 
-            rvalue_type = self.types[o.rvalue]
+            rvalue_type = self.types[rval]
 
             # type alias upgrade for MyPy 0.780
             if isinstance(rvalue_type, TypeAliasType):
@@ -1558,8 +1537,8 @@ class Generate(visitor.SimpleVisitor):
 
             c_type = GetCType(rvalue_type)
 
-            is_return = (isinstance(o.rvalue, CallExpr) and
-                         o.rvalue.callee.name != "next")
+            is_return = (isinstance(rval, CallExpr) and
+                         rval.callee.name != "next")
             if is_return:
                 assert c_type.endswith('*')
                 c_type = c_type[:-1]
@@ -1568,7 +1547,7 @@ class Generate(visitor.SimpleVisitor):
             self.unique_id += 1
             self.def_write_ind('%s %s = ', c_type, temp_name)
 
-            self.accept(o.rvalue)
+            self.accept(rval)
             self.def_write(';\n')
 
             self._write_tuple_unpacking(temp_name,
@@ -2722,7 +2701,7 @@ class Generate(visitor.SimpleVisitor):
 
                         # TODO: we're not skipping the assignment, because of
                         # the RHS
-                        if _IsUnusedVar(lval_name):
+                        if util.IsUnusedVar(lval_name):
                             # suppress C++ unused var compiler warnings!
                             self.def_write_ind('(void)%s;\n' % lval_name)
 

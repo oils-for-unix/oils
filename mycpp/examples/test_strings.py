@@ -10,6 +10,9 @@ from mycpp.mylib import log
 
 from typing import List
 
+__all__ = ['should', 'not', 'appear', 'in C++']
+MYLIST = ['zzyyxx']
+
 
 def banner(s):
     # type: (str) -> None
@@ -257,6 +260,8 @@ def run_tests():
     TestMethods()
     TestByteOperations()
     TestBytes2()
+
+    print('len(MYLIST) = %d' % len(MYLIST))
 
 
 def run_benchmarks():

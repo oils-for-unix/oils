@@ -181,3 +181,20 @@ def ShouldVisitElseBody(stmt: IfStmt) -> bool:
         return False
 
     return stmt.else_body is not None
+
+
+def IsUnusedVar(var_name: str) -> bool:
+    return var_name == '_' or var_name.startswith('unused')
+
+
+def SkipAssignment(var_name: str) -> bool:
+    """
+    Skip at the top level:
+      _ = log 
+      unused1 = log
+
+    Always skip:
+      x, _ = mytuple  # no second var
+    """
+    # __all__ should be excluded
+    return IsUnusedVar(var_name)

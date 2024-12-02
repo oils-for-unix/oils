@@ -210,11 +210,21 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
 
     # Statements
 
-    def visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt') -> None:
-        for lval in o.lvalues:
-            self.accept(lval)
+    def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
+                                   lval: Expression, rval: Expression) -> None:
+        self.accept(lval)
+        self.accept(rval)
 
-        self.accept(o.rvalue)
+    def visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt') -> None:
+        # We never use this idiom:   x = y = 42
+        assert len(o.lvalues) == 1, o.lvalues
+        lval = o.lvalues[0]
+
+        # Metadata we'll never use
+        if isinstance(lval, NameExpr) and lval.name == '__all__':
+            return
+
+        self.oils_visit_assignment_stmt(o, lval, o.rvalue)
 
     def visit_operator_assignment_stmt(
             self, o: 'mypy.nodes.OperatorAssignmentStmt') -> None:
