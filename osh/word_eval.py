@@ -216,12 +216,12 @@ def _ValueToPartValue(val, quoted, part_loc):
 
         elif case(value_e.BashArray):
             val = cast(value.BashArray, UP_val)
-            return part_value.Array(val.strs)
+            return part_value.Array(bash_impl.BashArray_GetValues(val))
 
         elif case(value_e.BashAssoc):
             val = cast(value.BashAssoc, UP_val)
             # bash behavior: splice values!
-            return part_value.Array(val.d.values())
+            return part_value.Array(bash_impl.BashAssoc_GetValues(val))
 
         # Cases added for YSH
         # value_e.List is also here - we use val_ops.Stringify()s err message
