@@ -760,7 +760,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         else:
             raise AssertionError(tok.id)
 
-    def _Length(self, val, token):
+    def _Count(self, val, token):
         # type: (value_t, Token) -> int
         """Returns the length of the value, for ${#var}"""
         UP_val = val
@@ -774,7 +774,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
                 # https://stackoverflow.com/questions/17368067/length-of-string-in-bash
                 try:
-                    length = string_ops.CountUtf8Chars(val.s)
+                    count = string_ops.CountUtf8Chars(val.s)
                 except error.Strict as e:
                     # Add this here so we don't have to add it so far down the stack.
                     # TODO: It's better to show BOTH this CODE an the actual DATA
@@ -791,21 +791,21 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             elif case(value_e.BashArray):
                 val = cast(value.BashArray, UP_val)
-                length = bash_impl.BashArray_Length(val)
+                count = bash_impl.BashArray_Count(val)
 
             elif case(value_e.BashAssoc):
                 val = cast(value.BashAssoc, UP_val)
-                length = bash_impl.BashAssoc_Length(val)
+                count = bash_impl.BashAssoc_Count(val)
 
             elif case(value_e.SparseArray):
                 val = cast(value.SparseArray, UP_val)
-                length = bash_impl.SparseArray_Length(val)
+                count = bash_impl.SparseArray_Count(val)
 
             else:
                 raise error.TypeErr(
                     val, "Length op expected Str, BashArray, BashAssoc", token)
 
-        return length
+        return count
 
     def _Keys(self, val, token):
         # type: (value_t, Token) -> value_t
@@ -1380,7 +1380,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 if not vsub_state.has_test_op:  # undef -> '' BEFORE length
                     val = self._EmptyStrOrError(val, part.token)
 
-                n = self._Length(val, part.token)
+                n = self._Count(val, part.token)
                 part_vals.append(Piece(str(n), quoted, False))
                 return  # EARLY EXIT: nothing else can come after length
 

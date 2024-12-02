@@ -26,7 +26,7 @@ def BigInt_Less(a, b):
 # representation of SparseArray come here.
 
 
-def BashArray_Length(array_val):
+def BashArray_Count(array_val):
     # type: (value.BashArray) -> int
 
     # There can be empty placeholder values in the array.
@@ -139,7 +139,7 @@ def BashArray_ToStrForShellPrint(array_val, name):
 # representation of SparseArray come here.
 
 
-def BashAssoc_Length(assoc_val):
+def BashAssoc_Count(assoc_val):
     # type: (value.BashAssoc) -> int
     return len(assoc_val.d)
 
@@ -188,7 +188,7 @@ def BashAssoc_ToStrForShellPrint(assoc_val):
 # representation of SparseArray come here.
 
 
-def SparseArray_Length(sparse_val):
+def SparseArray_Count(sparse_val):
     # type: (value.SparseArray) -> int
     return len(sparse_val.d)
 
