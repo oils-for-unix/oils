@@ -1981,7 +1981,7 @@ class Mem(object):
                     elif case2(value_e.SparseArray):
                         lhs_sp = cast(value.SparseArray, UP_cell_val)
                         error_code = bash_impl.SparseArray_SetElement(
-                            lhs_sp, mops.BigInt(lval.index), rval.s)
+                            lhs_sp, mops.IntWiden(lval.index), rval.s)
                         if error_code == 1:
                             n_big = mops.Add(
                                 bash_impl.SparseArray_MaxIndex(lhs_sp),
