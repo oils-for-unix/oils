@@ -1181,7 +1181,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         """Decay $* to a string."""
         assert val.tag() == value_e.BashArray, val
         sep = self.splitter.GetJoinChar()
-        tmp = [s for s in val.strs if s is not None]
+        tmp = [s for s in bash_impl.BashArray_GetValues(val) if s is not None]
         return value.Str(sep.join(tmp))
 
     def _EmptyStrOrError(self, val, token):
