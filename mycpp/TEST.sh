@@ -5,13 +5,13 @@
 # Usage:
 #   mycpp/TEST.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+
 source build/common.sh
-#source build/dev-shell.sh
 source build/ninja-rules-cpp.sh
 source devtools/common.sh
 source test/common.sh  # run-test-bin, can-compile-32-bit
@@ -408,8 +408,25 @@ compare-golden() {
   fi
 }
 
-# Call function $1 with arguments $2 $3 $4
-#
-# mycpp/TEST.sh examples-variant '' asan
+const-pass() {
+  python3 mycpp/const_pass.py "$@"
+}
 
-"$@"
+str-hash-demo() {
+  local file=benchmarks/testdata/configure-coreutils
+
+  # We have ~1600 strings - let's say it doubles
+  #
+  # 1613 unique strings -> 34 collisions of length 2, 1 of length 3
+  # 2618 unique strings -> 108 collisions of length 2, 6 of length 3
+  #
+  # So yes 3 is good
+
+  for n in 180 1800 3600 18000; do
+    echo "=== Number of strings $n ==="
+    head -n $n $file | const-pass
+    echo
+  done
+}
+
+task-five "$@"
