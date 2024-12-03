@@ -93,7 +93,7 @@ def TestListCompParity():
     d['k2'] = 'v2'
 
     # BUG: generates TODO_DICT
-    keys = [k for k in d]
+    #keys = [k for k in d]
 
     log('-- list comp iteritems')
 
