@@ -7,7 +7,7 @@ from __future__ import print_function
 import os
 
 from mycpp import mylib
-from mycpp.mylib import log, iteritems
+from mycpp.mylib import log, iteritems, NewDict
 
 from typing import Dict
 
@@ -24,7 +24,7 @@ def TestListComp():
     log("y[0] = %d", y[0])
     log("y[-1] = %d", y[-1])
 
-    log('--- list comprehension changing type')
+    log('--- list comprehension over strings')
 
     z = ['[%d]' % i for i in x[1:-1]]
 
@@ -40,7 +40,43 @@ def TestListComp():
     log("z[0] = %s", z[0])
     log("z[-1] = %s", z[-1])
 
-    log('-- list comprehension tuple unpacking')
+    log('-- list comprehension filtering')
+
+    parts = ['a', None, 'b']
+    tmp = [s for s in parts if s is not None]
+    print(''.join(tmp))
+
+    tmp2 = [s for s in tmp if s.startswith('-')]
+    print(''.join(tmp2))
+
+
+def TestListCompParity():
+    # type: () -> None
+    """
+    Does it have all the same features as 'for' loops?
+
+    - Integers
+      - xrange()
+    - Any type
+      - enumerate()
+
+    - List
+      - unpacking of tuples
+    - Dict
+      - iterate directly over dict
+      - iteritem()
+    """
+    log('-- list comp xrange')
+    # BUG: it only works iterating over an List[T]
+    #numbers = [i+1 for i in xrange(3, 5)]
+    #PrintListStr(numbers)
+
+    log('-- list comp enumerate')
+    mylist = [3, 4, 5]
+    # BUG: crashes on tuple expression
+    # enum = [i+item for i, item in enumerate(mylist)]
+
+    log('-- list comp tuple unpacking')
 
     pairs = [('one', 1), ('two', 2)]
 
@@ -51,14 +87,18 @@ def TestListComp():
     for s2 in first:
         log('first = %s', s2)
 
-    log('-- list comprehension filtering')
+    log('-- list comp dict')
+    d = NewDict()  # type: Dict[str, str]
+    d['k'] = 'v'
+    d['k2'] = 'v2'
 
-    parts = ['a', None, 'b']
-    tmp = [s for s in parts if s is not None]
-    print(''.join(tmp))
+    # BUG: generates TODO_DICT
+    keys = [k for k in d]
 
-    tmp2 = [s for s in tmp if s.startswith('-')]
-    print(''.join(tmp2))
+    log('-- list comp iteritems')
+
+    # BUG: generates TODO_DICT
+    #values = [v for k, v in iteritems(d)]
 
 
 def TestDict():
@@ -156,6 +196,7 @@ def run_tests():
     TestForLoop()
 
     TestListComp()
+    TestListCompParity()
 
     TestDict()
 

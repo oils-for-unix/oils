@@ -50,14 +50,36 @@ class Pass(visitor.SimpleVisitor):
         all_local_vars: 'cppgen_pass.AllLocalVars',
     ) -> None:
         visitor.SimpleVisitor.__init__(self)
+
+        # Input
         self.types = types
-        self.virtual = virtual  # output
-        self.forward_decls = forward_decls  # output
+
+        # These are all outputs we compute
+        self.virtual = virtual
+        self.forward_decls = forward_decls
         self.all_member_vars = all_member_vars
         self.all_local_vars = all_local_vars
 
+        # Internal state
         self.current_member_vars: Dict[str, 'cppgen_pass.MemberVar'] = {}
         self.current_local_vars: List[Tuple[str, Type]] = []
+
+        # Where do we need to update current_local_vars?
+        #
+        # x = 42                  # oils_visit_assignment_stmt
+        # a, b = foo
+
+        # x = [y for y in other]  # oils_visit_assign_to_listcomp_:
+        #
+        # Tuple unpacking:
+        #   for a, b in other:
+        #   result = [a for a, b in other]
+        #
+        # Special case for enumerate:
+        #   for i, x in enumerate(other):
+        #
+        # def f(p, q):   # params are locals, _WriteFuncParams
+        #                # but only if update_locals
 
     def oils_visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> None:
         mod_parts = o.fullname.split('.')
@@ -91,11 +113,21 @@ class Pass(visitor.SimpleVisitor):
 
         self.current_local_vars = []
 
-        # Add function params as locals, to be rooted
-        arg_types = o.type.arg_types
-        arg_names = [arg.variable.name for arg in o.arguments]
-        for name, typ in zip(arg_names, arg_types):
-            self.current_local_vars.append((name, typ))
+        # Add params as local vars, but only if we're NOT in a constructor.
+        # This is borrowed from cppgen_pass -
+        #   _ConstructorImpl has update_locals=False, likewise for decl
+        # Is this just a convention?
+        # Counterexample: what if locals are used in __init__ after allocation?
+        # Are we assuming we never do mylib.MaybeCollect() inside a
+        # constructor?  We can check that too.
+
+        if (self.current_method_name is not None and
+                self.current_method_name != '__init__'):
+            # Add function params as locals, to be rooted
+            arg_types = o.type.arg_types
+            arg_names = [arg.variable.name for arg in o.arguments]
+            for name, typ in zip(arg_names, arg_types):
+                self.current_local_vars.append((name, typ))
 
         # Traverse to collect member variables
         super().oils_visit_func_def(o)
@@ -103,17 +135,37 @@ class Pass(visitor.SimpleVisitor):
 
     def oils_visit_assign_to_listcomp(self, o: 'mypy.nodes.AssignmentStmt',
                                       lval: NameExpr) -> None:
+        # We need to consider 'result' a local var:
+        #     result = [x for x in other]
+        self.current_local_vars.append((lval.name, self.types[lval]))
+
+        # TODO: _write_tuple_unpacking: result = [a for a, b in other]
 
         super().oils_visit_assign_to_listcomp(o, lval)
 
-        #self.accept(lval)
-        #self.accept(o.rvalue.generator)
+    def _MaybeAddMember(self, lval: MemberExpr) -> None:
+        # Collect statements that look like self.foo = 1
+        # Only do this in __init__ so that a derived class mutating a field
+        # from the base class doesn't cause duplicate C++ fields.  (C++
+        # allows two fields of the same name!)
+        #
+        # HACK for WordParser: also include Reset().  We could change them
+        # all up front but I kinda like this.
+        if self.current_method_name not in ('__init__', 'Reset'):
+            return
+
+        if isinstance(lval.expr, NameExpr) and lval.expr.name == 'self':
+            #log('    lval.name %s', lval.name)
+            lval_type = self.types[lval]
+            c_type = cppgen_pass.GetCType(lval_type)
+            is_managed = cppgen_pass.CTypeIsManaged(c_type)
+            self.current_member_vars[lval.name] = (lval_type, c_type, is_managed)
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
                                    lval: Expression, rval: Expression) -> None:
 
         if isinstance(lval, MemberExpr):
-            self._MaybeAddMember(lval, self.current_member_vars)
+            self._MaybeAddMember(lval)
 
         # Handle:
         #    x = y
@@ -163,6 +215,8 @@ class Pass(visitor.SimpleVisitor):
             # can't initialize two things in a for loop, so do it on a separate line
             self.current_local_vars.append((index0_name, MYCPP_INT))
 
+        # TODO: _write_tuple_unpacking - for x, y in other
+
         # Notes:
         # - index0_name - can we remove this?
         #   - it only happens in for i, x in enumerate(...):
@@ -170,33 +224,3 @@ class Pass(visitor.SimpleVisitor):
         #   - we could initialize it to zero inside the loop
         #     and then increment it, at the end
         super().oils_visit_for_stmt(o, func_name)
-
-    def _MaybeAddMember(
-            self, lval: MemberExpr,
-            current_member_vars: Dict[str, 'cppgen_pass.MemberVar']) -> None:
-
-        # Collect statements that look like self.foo = 1
-        # Only do this in __init__ so that a derived class mutating a field
-        # from the base class doesn't cause duplicate C++ fields.  (C++
-        # allows two fields of the same name!)
-        #
-        # HACK for WordParser: also include Reset().  We could change them
-        # all up front but I kinda like this.
-        if self.current_method_name not in ('__init__', 'Reset'):
-            return
-
-        if isinstance(lval.expr, NameExpr) and lval.expr.name == 'self':
-            #log('    lval.name %s', lval.name)
-            lval_type = self.types[lval]
-            c_type = cppgen_pass.GetCType(lval_type)
-            is_managed = cppgen_pass.CTypeIsManaged(c_type)
-            current_member_vars[lval.name] = (lval_type, c_type, is_managed)
-
-
-# class_member_vars - Dict replacing current_member_vars
-# - collect for each ClassDef node
-#   - might as well keep them all
-# _MaybeAddMember() is only called in 2 places
-#
-# Special case
-# - ctx_member_vars

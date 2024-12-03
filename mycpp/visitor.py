@@ -172,6 +172,8 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         self.accept(o.body)
 
     def visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
+        # This could be a free function or a method
+        # __init__ __exit__ and other methods call this, with self.current_class_name set
         self.oils_visit_func_def(o)
 
     #

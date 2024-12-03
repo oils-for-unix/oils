@@ -2187,9 +2187,7 @@ class Generate(visitor.SimpleVisitor):
 
             first = False
 
-            # Params are locals.  There are 4 callers to _WriteFuncParams and we
-            # only do it in one place.  TODO: Check if locals are used in
-            # __init__ after allocation.
+            # Params are locals.  Note: update_locals=False for constructors.
             if update_locals:
                 self.local_var_list.append((arg_name, arg_type))
 
@@ -2272,7 +2270,7 @@ class Generate(visitor.SimpleVisitor):
         self.accept(o.body)
         self.current_func_node = None
 
-    def _TracingMetadataDecl(self, o: 'mypy.nodes.ClassDef',
+    def _GcHeaderDecl(self, o: 'mypy.nodes.ClassDef',
                              field_gc: Tuple[str, str],
                              mask_bits: List[str]) -> None:
         if mask_bits:
@@ -2367,7 +2365,7 @@ class Generate(visitor.SimpleVisitor):
 
         # Context managers aren't GC objects
         if not _IsContextManager(self.current_class_name):
-            self._TracingMetadataDecl(o, field_gc, mask_bits)
+            self._GcHeaderDecl(o, field_gc, mask_bits)
 
         self.always_write('\n')
         self.always_write_ind('DISALLOW_COPY_AND_ASSIGN(%s)\n', o.name)
@@ -2494,6 +2492,7 @@ class Generate(visitor.SimpleVisitor):
             self.always_write_ind('~%s();\n', o.name)
             self.indent -= 1
             return
+
         self._DestructorImpl(o, stmt, base_class_name)
 
     def oils_visit_method(self, o: ClassDef, stmt: FuncDef,
@@ -2503,6 +2502,7 @@ class Generate(visitor.SimpleVisitor):
             self.accept(stmt)
             self.indent -= 1
             return
+
         self.accept(stmt)
 
     def oils_visit_class_members(self, o: ClassDef,
@@ -2517,6 +2517,7 @@ class Generate(visitor.SimpleVisitor):
             self, o: 'mypy.nodes.ClassDef',
             base_class_name: Optional[util.SymbolPath]) -> None:
         #log('  CLASS %s', o.name)
+
         if self.decl:
             self.always_write_ind('class %s', o.name)  # block after this
 
@@ -2534,7 +2535,6 @@ class Generate(visitor.SimpleVisitor):
 
             super().oils_visit_class_def(o, base_class_name)
 
-            #self.indent -= 1
             self.always_write_ind('};\n')
             self.always_write('\n')
 
@@ -2542,8 +2542,6 @@ class Generate(visitor.SimpleVisitor):
 
         # Write method implementations
         super().oils_visit_class_def(o, base_class_name)
-
-        #self._ClassDefImpl(o, base_class_name)
 
     # Module structure
 
