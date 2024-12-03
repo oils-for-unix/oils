@@ -2335,6 +2335,8 @@ class Generate(visitor.SimpleVisitor):
 
     def _MemberDecl(self, o: 'mypy.nodes.ClassDef',
                     base_class_name: util.SymbolPath) -> None:
+        member_vars = self.current_member_vars
+
         # List of field mask expressions
         mask_bits = []
         if self.virtual.CanReorderFields(split_py_name(o.fullname)):
@@ -2344,8 +2346,8 @@ class Generate(visitor.SimpleVisitor):
             pointer_members = []
             non_pointer_members = []
 
-            for name in self.current_member_vars:
-                _, c_type, is_managed = self.current_member_vars[name]
+            for name in member_vars:
+                _, c_type, is_managed = member_vars[name]
                 if is_managed:
                     pointer_members.append(name)
                 else:
@@ -2365,8 +2367,8 @@ class Generate(visitor.SimpleVisitor):
                     '%s::field_mask()' %
                     join_name(base_class_name, strip_package=True))
 
-            for name in sorted(self.current_member_vars):
-                _, c_type, is_managed = self.current_member_vars[name]
+            for name in sorted(member_vars):
+                _, c_type, is_managed = member_vars[name]
                 if is_managed:
                     mask_bits.append('maskbit(offsetof(%s, %s))' %
                                      (o.name, name))
@@ -2375,19 +2377,19 @@ class Generate(visitor.SimpleVisitor):
             if not base_class_name and not mask_bits:
                 mask_bits.append('kZeroMask')
 
-            sorted_member_names = sorted(self.current_member_vars)
+            sorted_member_names = sorted(member_vars)
 
             field_gc = ('HeapTag::FixedSize', 'field_mask()')
 
         # Write member variables
 
-        #log('MEMBERS for %s: %s', o.name, list(self.current_member_vars.keys()))
-        if len(self.current_member_vars):
+        #log('MEMBERS for %s: %s', o.name, list(self.member_vars.keys()))
+        if len(member_vars):
             if base_class_name:
                 self.always_write('\n')  # separate from functions
 
             for name in sorted_member_names:
-                _, c_type, _ = self.current_member_vars[name]
+                _, c_type, _ = member_vars[name]
                 # use default zero initialization for all members
                 # (context managers may be on the stack)
                 self.always_write_ind('%s %s{};\n', c_type, name)
@@ -2395,7 +2397,7 @@ class Generate(visitor.SimpleVisitor):
         if _IsContextManager(self.current_class_name):
             # Copy ctx member vars out of this class
             assert self.ctx_member_vars is not None
-            self.ctx_member_vars[o] = dict(self.current_member_vars)
+            self.ctx_member_vars[o] = dict(member_vars)
         else:
             self._TracingMetadataDecl(o, field_gc, mask_bits)
 

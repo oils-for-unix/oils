@@ -52,12 +52,18 @@ class Pass(visitor.SimpleVisitor):
     def oils_visit_class_def(
             self, o: 'mypy.nodes.ClassDef',
             base_class_name: Optional[util.SymbolPath]) -> None:
+        #self.current_member_vars.clear()  # make a new list
+        # TODO: make a new one
+        # self.current_member_vars = []
+
         self.write_ind('class %s;\n', o.name)
         if base_class_name:
             self.virtual.OnSubclass(base_class_name, self.current_class_name)
 
         # Do default traversal of methods
         super().oils_visit_class_def(o, base_class_name)
+
+        # TODO: associate current_member_vars with this class_def node
 
     def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
         self.virtual.OnMethod(self.current_class_name, o.name)
