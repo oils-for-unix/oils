@@ -71,10 +71,6 @@ class Pass(visitor.SimpleVisitor):
 
         # x = [y for y in other]  # oils_visit_assign_to_listcomp_:
         #
-        # Tuple unpacking:
-        #   for a, b in other:
-        #   result = [a for a, b in other]
-        #
         # Special case for enumerate:
         #   for i, x in enumerate(other):
         #
@@ -212,11 +208,6 @@ class Pass(visitor.SimpleVisitor):
 
         # This handles:
         #    a, b = func_that_returns_tuple()
-        # We also need to handle:
-        #    for a, b in foo:
-        #      pass
-        #    result = [a for a, b in foo]
-
         if isinstance(lval, TupleExpr):
             rval_type = self.types[rval]
             assert isinstance(rval_type, TupleType), rval_type
@@ -229,6 +220,7 @@ class Pass(visitor.SimpleVisitor):
                         continue
                     self.current_local_vars.append((lval_item.name, item_type))
 
+                # self.a, self.b = foo()
                 if isinstance(lval_item, MemberExpr):
                     self._MaybeAddMember(lval_item)
 
@@ -248,12 +240,4 @@ class Pass(visitor.SimpleVisitor):
             # can't initialize two things in a for loop, so do it on a separate line
             self.current_local_vars.append((index0_name, MYCPP_INT))
 
-        # TODO: _write_tuple_unpacking - for x, y in other
-
-        # Notes:
-        # - index0_name - can we remove this?
-        #   - it only happens in for i, x in enumerate(...):
-        #     because for (x, y) makes locally scoped vars
-        #   - we could initialize it to zero inside the loop
-        #     and then increment it, at the end
         super().oils_visit_for_stmt(o, func_name)

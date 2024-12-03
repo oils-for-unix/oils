@@ -14,7 +14,7 @@ from mypy.types import (Type, AnyType, NoneTyp, TupleType, Instance, NoneType,
 from mypy.nodes import (Expression, Statement, NameExpr, IndexExpr, MemberExpr,
                         TupleExpr, ExpressionStmt, IfStmt, StrExpr, SliceExpr,
                         FuncDef, UnaryExpr, OpExpr, CallExpr, ListExpr,
-                        DictExpr, ClassDef)
+                        DictExpr, ClassDef, Argument)
 
 from mycpp import format_strings
 from mycpp.util import log, join_name, split_py_name, IsStr
@@ -187,7 +187,7 @@ def CTypeIsManaged(c_type: str) -> bool:
     return c_type.endswith('*')
 
 
-def GetCType(t: Type, param: bool = False, local: bool = False) -> str:
+def GetCType(t: Type) -> str:
     """Recursively translate MyPy type to C++ type."""
     is_pointer = False
 
@@ -374,10 +374,7 @@ def GetCType(t: Type, param: bool = False, local: bool = False) -> str:
         raise NotImplementedError('MyPy type: %s %s' % (type(t), t))
 
     if is_pointer:
-        if param or local:
-            c_type = 'Local<%s>' % c_type
-        else:
-            c_type += '*'
+        c_type += '*'
 
     return c_type
 
@@ -2096,6 +2093,53 @@ class Generate(visitor.SimpleVisitor):
 
             self.def_write(';\n')
 
+    def _ValidateDefaultArg(self, arg: Argument) -> None:
+        t = self.types[arg.initializer]
+
+        valid = False
+        if isinstance(t, NoneType):
+            valid = True
+        if isinstance(t, Instance):
+            # Allowing strings since they're immutable, e.g.
+            # prefix='' seems OK
+            if t.type.fullname in ('builtins.bool', 'builtins.int',
+                                   'builtins.float', 'builtins.str'):
+                valid = True
+
+            # ASDL enums lex_mode_t, scope_t, ...
+            if t.type.fullname.endswith('_t'):
+                valid = True
+
+            # Hack for loc__Missing.  Should detect the general case.
+            if t.type.fullname.endswith('loc__Missing'):
+                valid = True
+
+        if not valid:
+            self.report_error(
+                arg,
+                'Invalid default arg %r of type %s (not None, bool, int, float, ASDL enum)'
+                % (arg.initializer, t))
+
+    def _ValidateDefaultArgs(self, arguments: List[Argument]) -> None:
+        num_defaults = 0
+        for arg in arguments:
+            if arg.initializer:
+                self._ValidateDefaultArg(arg)
+                num_defaults += 1
+
+        if num_defaults > 1:
+            if self.current_func_node:
+                name = self.current_func_node.name
+            else:
+                # TODO: could pass the name, e.g. for __init__
+                name = '<Unknown>'
+
+            # Report on first arg
+            self.report_error(
+                arg, '%s has %d default arguments.  Only 1 is allowed' %
+                (name, num_defaults))
+            return
+
     def _WriteFuncParams(self,
                          arg_types: List[Type],
                          arguments: List['mypy.nodes.Argument'],
@@ -2106,62 +2150,14 @@ class Generate(visitor.SimpleVisitor):
         Optionally mutate self.local_vars, and optionally write default arguments.
         """
         if write_defaults:
-            # Check if default args are valid first
+            self._ValidateDefaultArgs(arguments)
 
-            num_defaults = 0
-            for arg in arguments:
-                if arg.initializer:
-                    t = self.types[arg.initializer]
-
-                    valid = False
-                    if isinstance(t, NoneType):
-                        valid = True
-                    if isinstance(t, Instance):
-                        # Allowing strings since they're immutable, e.g.
-                        # prefix='' seems OK
-                        if t.type.fullname in ('builtins.bool', 'builtins.int',
-                                               'builtins.float',
-                                               'builtins.str'):
-                            valid = True
-
-                        # ASDL enums lex_mode_t, scope_t, ...
-                        if t.type.fullname.endswith('_t'):
-                            valid = True
-
-                        # Hack for loc__Missing.  Should detect the general case.
-                        if t.type.fullname.endswith('loc__Missing'):
-                            valid = True
-
-                    if not valid:
-                        self.report_error(
-                            arg,
-                            'Invalid default arg %r of type %s (not None, bool, int, float, ASDL enum)'
-                            % (arg.initializer, t))
-                        return
-
-                    num_defaults += 1
-
-            if num_defaults > 1:
-                if self.current_func_node:
-                    name = self.current_func_node.name
-                else:
-                    # TODO: could pass the name, e.g. for __init__
-                    name = '<Unknown>'
-
-                # Report on first arg
-                self.report_error(
-                    arg, '%s has %d default arguments.  Only 1 is allowed' %
-                    (name, num_defaults))
-                return
-
-        first = True  # first NOT including self
+        is_first = True  # EXCLUDING 'self'
         for arg_type, arg in zip(arg_types, arguments):
-            if not first:
+            if not is_first:
                 self.always_write(', ')
 
-            # TODO: Turn on param=True?  Having stdlib problems, e.g.
-            # examples/cartesian.
-            c_type = GetCType(arg_type, param=False)
+            c_type = GetCType(arg_type)
 
             arg_name = arg.variable.name
 
@@ -2169,8 +2165,10 @@ class Generate(visitor.SimpleVisitor):
             if arg_name == 'self':
                 continue
 
+            # int foo
             self.always_write('%s %s', c_type, arg_name)
-            if write_defaults and arg.initializer:
+
+            if write_defaults and arg.initializer:  # int foo = 42
                 self.always_write(' = ')
 
                 # Silly mechanism to activate self.def_write()
@@ -2178,11 +2176,7 @@ class Generate(visitor.SimpleVisitor):
                 self.accept(arg.initializer)
                 self.writing_default_arg = False
 
-            first = False
-
-            # We can't use __str__ on these Argument objects?  That seems like an
-            # oversight
-            #self.log('%r', arg)
+            is_first = False
 
             if 0:
                 self.log('Argument %s', arg.variable)
@@ -2194,8 +2188,7 @@ class Generate(visitor.SimpleVisitor):
         # Will be set if we're declaring or defining a function that returns
         # Iterator[T].
         if self.current_func_node in self.yield_accumulators:
-            if not first:
-                self.always_write(', ')
+            self.always_write(', ')
 
             arg_name, c_type = self.yield_accumulators[self.current_func_node]
             self.always_write('%s %s', c_type, arg_name)

@@ -223,7 +223,7 @@ test-invalid-examples() {
         expected_status=6
         ;;
       */invalid_default_args.py)
-        expected_status=4
+        expected_status=5
         ;;
       */invalid_try_else.py)
         expected_status=3
