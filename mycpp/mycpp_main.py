@@ -388,13 +388,13 @@ def main(argv: List[str]) -> int:
                 virtual=virtual,  # input
                 decl=True)
         else:
-            p3 = cppgen_pass.Generate(
+            p3 = cppgen_pass.Decl(
                 result.types,
                 global_strings,  # input
                 local_vars=None,  # unused
                 all_member_vars=all_member_vars,  # input
                 virtual=virtual,  # input
-                decl=True)
+            )
         p3.SetOutputFile(out_f)
 
         p3.visit_mypy_file(module)
@@ -436,14 +436,13 @@ def main(argv: List[str]) -> int:
     # void Foo:method() { ... }
     # void Bar:method() { ... }
     for name, module in to_compile:
-        p4 = cppgen_pass.Generate(
+        p4 = cppgen_pass.Impl(
             result.types,
             global_strings,  # input
             local_vars=all_local_vars,  # input
-            #all_member_vars=all_member_vars,  # input
             all_member_vars=all_member_vars,
-            stack_roots_warn=opts.stack_roots_warn,  # input
             dot_exprs=dot_exprs[module.path],  # input
+            stack_roots_warn=opts.stack_roots_warn,  # input
             stack_roots=stack_roots,  # input
         )
         p4.SetOutputFile(f)  # doesn't go to header

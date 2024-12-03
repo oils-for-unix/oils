@@ -14,7 +14,7 @@ from mypy.types import (Type, AnyType, NoneTyp, TupleType, Instance, NoneType,
 from mypy.nodes import (Expression, Statement, NameExpr, IndexExpr, MemberExpr,
                         TupleExpr, ExpressionStmt, IfStmt, StrExpr, SliceExpr,
                         FuncDef, UnaryExpr, OpExpr, CallExpr, ListExpr,
-                        DictExpr, ClassDef, Argument)
+                        DictExpr, ClassDef, Argument, ForStmt, AssignmentStmt)
 
 from mycpp import format_strings
 from mycpp.util import log, join_name, split_py_name, IsStr
@@ -419,7 +419,7 @@ AllMemberVars = Dict[ClassDef, Dict[str, MemberVar]]
 AllLocalVars = Dict[FuncDef, List[Tuple[str, Type]]]
 
 
-class Generate(visitor.SimpleVisitor):
+class _Shared(visitor.SimpleVisitor):
 
     def __init__(self,
                  types: Dict[Expression, Type],
@@ -427,9 +427,8 @@ class Generate(visitor.SimpleVisitor):
                  virtual: pass_state.Virtual = None,
                  local_vars: Optional[AllLocalVars] = None,
                  all_member_vars: Optional[AllMemberVars] = None,
-                 decl: bool = False,
-                 stack_roots_warn: Optional[int] = None,
                  dot_exprs: Optional['ir_pass.DotExprs'] = None,
+                 stack_roots_warn: Optional[int] = None,
                  stack_roots: Optional[pass_state.StackRoots] = None) -> None:
         visitor.SimpleVisitor.__init__(self)
 
@@ -443,7 +442,6 @@ class Generate(visitor.SimpleVisitor):
             self.local_vars = local_vars
 
         self.all_member_vars = all_member_vars  # for class def, and rooting
-        self.decl = decl
         self.stack_roots_warn = stack_roots_warn
         self.dot_exprs = dot_exprs
         self.stack_roots = stack_roots
@@ -454,16 +452,41 @@ class Generate(visitor.SimpleVisitor):
         self.prepend_to_block: Optional[List[LocalVar]] = None
 
         # Temporary lists to use as output params for generators
-        self.yield_accumulators: Dict[Union[Statement, FuncDef],
+        self.yield_accumulators: Dict[Union[FuncDef, AssignmentStmt, ForStmt],
                                       Tuple[str, str]] = {}
 
         # TODO: move this state into SimpleVisitor
         # It keeps track of the curernt class and method too
         self.current_func_node: Optional[FuncDef] = None
         # Used for iterators
-        self.current_stmt_node: Optional[Statement] = None
+        self.current_stmt_node: Optional[Union[AssignmentStmt, ForStmt]] = None
 
         self.writing_default_arg = False
+
+        self.decl = False
+
+
+class Decl(_Shared):
+
+    def __init__(self,
+                 types: Dict[Expression, Type],
+                 global_strings: 'const_pass.GlobalStrings',
+                 virtual: pass_state.Virtual = None,
+                 local_vars: Optional[AllLocalVars] = None,
+                 all_member_vars: Optional[AllMemberVars] = None,
+                 dot_exprs: Optional['ir_pass.DotExprs'] = None,
+                 stack_roots_warn: Optional[int] = None,
+                 stack_roots: Optional[pass_state.StackRoots] = None) -> None:
+        _Shared.__init__(self,
+                         types,
+                         global_strings,
+                         virtual=virtual,
+                         local_vars=local_vars,
+                         all_member_vars=all_member_vars,
+                         dot_exprs=dot_exprs,
+                         stack_roots_warn=stack_roots_warn,
+                         stack_roots=stack_roots)
+        self.decl = True
 
     def always_write(self, msg: str, *args: Any) -> None:
         """Write unconditionally - forward decl, decl, def """
@@ -1338,11 +1361,13 @@ class Generate(visitor.SimpleVisitor):
         inner_c_type = GetCType(type_param)
         iter_buf = ('_iter_buf_%s' % lval.name, 'List<%s>*' % inner_c_type)
         self.def_write_ind('List<%s> %s;\n', inner_c_type, iter_buf[0])
-        self.current_stmt_node = o
         self.yield_accumulators[o] = iter_buf
         self.def_write_ind('')
+
+        self.current_stmt_node = o
         self.accept(o.rvalue)
         self.current_stmt_node = None
+
         self.def_write(';\n')
         self.def_write_ind('%s %s(&%s);\n', c_type, lval.name, iter_buf[0])
 
@@ -1456,12 +1481,12 @@ class Generate(visitor.SimpleVisitor):
             #c_type = GetCType(lval_type, local=self.indent != 0)
             c_type = GetCType(lval_type)
 
-            # for "hoisting" to the top of the function
-            if self.current_func_node:
-                self.def_write_ind('%s = ', lval.name)
-            else:
+            if self.at_global_scope:
                 # globals always get a type -- they're not mutated
                 self.def_write_ind('%s %s = ', c_type, lval.name)
+            else:
+                # local declarations are "hoisted" to the top of the function
+                self.def_write_ind('%s = ', lval.name)
 
             self.accept(rval)
             self.def_write(';\n')
@@ -1689,20 +1714,26 @@ class Generate(visitor.SimpleVisitor):
             assert not reverse  # can't reverse iterate over string yet
 
         elif over_type.type.fullname == 'typing.Iterator':
-            # We're iterating over a generator. Create a temporary List<T> on the stack
-            # to accumulate the results in one big batch.
+            # We're iterating over a generator. Create a temporary List<T> on
+            # the stack to accumulate the results in one big batch.
             c_iter_type = GetCType(over_type)
+
             assert len(over_type.args) == 1, over_type.args
             inner_c_type = GetCType(over_type.args[0])
+
             yield_acc = ('_for_yield_acc%d' % self.unique_id,
                          'List<%s>*' % inner_c_type)
             self.unique_id += 1
+
             self.def_write_ind('List<%s> %s;\n', inner_c_type, yield_acc[0])
             self.def_write_ind('')
+
             self.yield_accumulators[o] = yield_acc
+
             self.current_stmt_node = o
             self.accept(iterated_over)
             self.current_stmt_node = None
+
             self.def_write(';\n')
 
         else:  # assume it's like d.iteritems()?  Iterator type
@@ -2852,3 +2883,26 @@ class Generate(visitor.SimpleVisitor):
 
         if o.finally_body:
             self.report_error(o, 'try/finally not supported')
+
+
+class Impl(Decl):
+
+    def __init__(self,
+                 types: Dict[Expression, Type],
+                 global_strings: 'const_pass.GlobalStrings',
+                 virtual: pass_state.Virtual = None,
+                 local_vars: Optional[AllLocalVars] = None,
+                 all_member_vars: Optional[AllMemberVars] = None,
+                 dot_exprs: Optional['ir_pass.DotExprs'] = None,
+                 stack_roots_warn: Optional[int] = None,
+                 stack_roots: Optional[pass_state.StackRoots] = None) -> None:
+        _Shared.__init__(self,
+                         types,
+                         global_strings,
+                         virtual=virtual,
+                         local_vars=local_vars,
+                         all_member_vars=all_member_vars,
+                         dot_exprs=dot_exprs,
+                         stack_roots_warn=stack_roots_warn,
+                         stack_roots=stack_roots)
+        self.decl = False
