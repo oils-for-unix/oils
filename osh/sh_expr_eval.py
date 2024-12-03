@@ -1040,24 +1040,18 @@ class BoolEvaluator(ArithEvaluator):
                             index_str, blame_loc)
                     return False
 
-                n = len(val.strs)
-                if index < 0:
-                    index += n
-                    if index < 0:
-                        e_die(
-                            '-v got index %s, which is out of bounds for array of length %d'
-                            % (index_str, n), blame_loc)
-                        return False
-
-                if index < n:
-                    return val.strs[index] is not None
-
-                # out of range
-                return False
+                result, error_code = bash_impl.BashArray_HasElement(val, index)
+                if error_code == 1:
+                    e_die(
+                        '-v got index %s, which is out of bounds for array of length %d'
+                        % (index_str, bash_impl.BashArray_Length(val)),
+                        blame_loc)
+                    return False
+                return result
 
             elif case(value_e.BashAssoc):
                 val = cast(value.BashAssoc, UP_val)
-                return index_str in val.d
+                return bash_impl.BashAssoc_HasElement(val, index_str)
 
             else:
                 # work around mycpp bug!  parses as 'elif'

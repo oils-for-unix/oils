@@ -55,6 +55,22 @@ def BashArray_AppendValues(array_val, strs):
     array_val.strs.extend(strs)
 
 
+def BashArray_HasElement(val, index):
+    # type: (value.BashArray, int) -> Tuple[bool, int]
+
+    n = len(val.strs)
+    if index < 0:
+        index += n
+        if index < 0:
+            return False, 1
+
+    if index < n:
+        return val.strs[index] is not None, 0
+
+    # out of range
+    return False, 0
+
+
 def BashArray_SetElement(array_val, index, s):
     # type: (value.BashArray, int, str) -> int
 
@@ -190,6 +206,12 @@ def BashAssoc_AppendValues(assoc_val, d):
 
     for key in d.keys():
         assoc_val.d[key] = d[key]
+
+
+def BashAssoc_HasElement(assoc_val, s):
+    # type: (value.BashAssoc, str) -> bool
+
+    return s in assoc_val.d
 
 
 def BashAssoc_SetElement(assoc_val, key, s):
