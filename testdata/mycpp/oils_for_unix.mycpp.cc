@@ -18536,12 +18536,10 @@ List<Tuple4<BigStr*, int, int, BigStr*>*>* Ulimit::_Table() {
 }
 
 int Ulimit::_FindFactor(int what) {
-  int w;
-  int factor;
   for (ListIter<Tuple4<BigStr*, int, int, BigStr*>*> it(this->_Table()); !it.Done(); it.Next()) {
     Tuple4<BigStr*, int, int, BigStr*>* tup8 = it.Value();
-    w = tup8->at1();
-    factor = tup8->at2();
+    int w = tup8->at1();
+    int factor = tup8->at2();
     if (w == what) {
       return factor;
     }
@@ -18559,15 +18557,13 @@ int Ulimit::Run(cmd_value::Argv* cmd_val) {
   BigStr* extra = nullptr;
   syntax_asdl::loc_t* extra_loc = nullptr;
   BigStr* fmt = nullptr;
-  BigStr* flag = nullptr;
-  int factor;
-  BigStr* desc = nullptr;
   mops::BigInt soft;
   mops::BigInt hard;
   BigStr* soft2 = nullptr;
   BigStr* hard2 = nullptr;
   BigStr* s = nullptr;
   syntax_asdl::loc_t* s_loc = nullptr;
+  int factor;
   mops::BigInt limit;
   bool ok;
   mops::BigInt big_int;
@@ -18583,14 +18579,12 @@ int Ulimit::Run(cmd_value::Argv* cmd_val) {
   StackRoot _root4(&extra);
   StackRoot _root5(&extra_loc);
   StackRoot _root6(&fmt);
-  StackRoot _root7(&flag);
-  StackRoot _root8(&desc);
-  StackRoot _root9(&soft2);
-  StackRoot _root10(&hard2);
-  StackRoot _root11(&s);
-  StackRoot _root12(&s_loc);
-  StackRoot _root13(&extra2);
-  StackRoot _root14(&extra_loc2);
+  StackRoot _root7(&soft2);
+  StackRoot _root8(&hard2);
+  StackRoot _root9(&s);
+  StackRoot _root10(&s_loc);
+  StackRoot _root11(&extra2);
+  StackRoot _root12(&extra_loc2);
 
   Tuple2<args::_Attributes*, args::Reader*> tup9 = flag_util::ParseCmdVal(S_otx, cmd_val);
   attrs = tup9.at0();
@@ -18644,10 +18638,12 @@ int Ulimit::Run(cmd_value::Argv* cmd_val) {
     print(StrFormat(fmt, S_kDk, S_zrq, S_avA, S_aos, S_vnc));
     for (ListIter<Tuple4<BigStr*, int, int, BigStr*>*> it(this->_Table()); !it.Done(); it.Next()) {
       Tuple4<BigStr*, int, int, BigStr*>* tup11 = it.Value();
-      flag = tup11->at0();
-      what = tup11->at1();
-      factor = tup11->at2();
-      desc = tup11->at3();
+      BigStr* flag = tup11->at0();
+      StackRoot _unpack_0(&flag);
+      int what = tup11->at1();
+      int factor = tup11->at2();
+      BigStr* desc = tup11->at3();
+      StackRoot _unpack_3(&desc);
       Tuple2<mops::BigInt, mops::BigInt> tup12 = pyos::GetRLimit(what);
       soft = tup12.at0();
       hard = tup12.at1();
@@ -18859,23 +18855,22 @@ int UnAlias::Run(cmd_value::Argv* cmd_val) {
 }
 
 void SetOptionsFromFlags(state::MutableOpts* exec_opts, List<Tuple2<BigStr*, bool>*>* opt_changes, List<Tuple2<BigStr*, bool>*>* shopt_changes) {
-  BigStr* opt_name = nullptr;
-  bool b;
   StackRoot _root0(&exec_opts);
   StackRoot _root1(&opt_changes);
   StackRoot _root2(&shopt_changes);
-  StackRoot _root3(&opt_name);
 
   for (ListIter<Tuple2<BigStr*, bool>*> it(opt_changes); !it.Done(); it.Next()) {
     Tuple2<BigStr*, bool>* tup3 = it.Value();
-    opt_name = tup3->at0();
-    b = tup3->at1();
+    BigStr* opt_name = tup3->at0();
+    StackRoot _unpack_0(&opt_name);
+    bool b = tup3->at1();
     exec_opts->SetAnyOption(opt_name, b);
   }
   for (ListIter<Tuple2<BigStr*, bool>*> it(shopt_changes); !it.Done(); it.Next()) {
     Tuple2<BigStr*, bool>* tup4 = it.Value();
-    opt_name = tup4->at0();
-    b = tup4->at1();
+    BigStr* opt_name = tup4->at0();
+    StackRoot _unpack_0(&opt_name);
+    bool b = tup4->at1();
     exec_opts->SetAnyOption(opt_name, b);
   }
 }
@@ -18940,15 +18935,12 @@ int Set::Run(cmd_value::Argv* cmd_val) {
   BigStr* code_str = nullptr;
   args::Reader* arg_r = nullptr;
   args::_Attributes* arg = nullptr;
-  BigStr* opt_name = nullptr;
-  bool b;
   StackRoot _root0(&cmd_val);
   StackRoot _root1(&mapping);
   StackRoot _root2(&str_val);
   StackRoot _root3(&code_str);
   StackRoot _root4(&arg_r);
   StackRoot _root5(&arg);
-  StackRoot _root6(&opt_name);
 
   if (len(cmd_val->argv) == 1) {
     mapping = this->mem->GetAllVars();
@@ -18970,14 +18962,16 @@ int Set::Run(cmd_value::Argv* cmd_val) {
   }
   for (ListIter<Tuple2<BigStr*, bool>*> it(arg->opt_changes); !it.Done(); it.Next()) {
     Tuple2<BigStr*, bool>* tup5 = it.Value();
-    opt_name = tup5->at0();
-    b = tup5->at1();
+    BigStr* opt_name = tup5->at0();
+    StackRoot _unpack_0(&opt_name);
+    bool b = tup5->at1();
     this->exec_opts->SetOldOption(opt_name, b);
   }
   for (ListIter<Tuple2<BigStr*, bool>*> it(arg->shopt_changes); !it.Done(); it.Next()) {
     Tuple2<BigStr*, bool>* tup6 = it.Value();
-    opt_name = tup6->at0();
-    b = tup6->at1();
+    BigStr* opt_name = tup6->at0();
+    StackRoot _unpack_0(&opt_name);
+    bool b = tup6->at1();
     this->exec_opts->SetAnyOption(opt_name, b);
   }
   if ((arg->saw_double_dash or !arg_r->AtEnd())) {
@@ -19712,8 +19706,6 @@ using error::e_die;
 Tuple2<bool, bool> _AppendParts(BigStr* s, List<Tuple2<runtime_asdl::span_t, int>*>* spans, int max_results, bool join_next, List<mylib::BufWriter*>* parts) {
   int start_index;
   bool last_span_was_black;
-  runtime_asdl::span_t span_type;
-  int end_index;
   mylib::BufWriter* buf = nullptr;
   bool done;
   runtime_asdl::span_t last_span_type;
@@ -19726,8 +19718,8 @@ Tuple2<bool, bool> _AppendParts(BigStr* s, List<Tuple2<runtime_asdl::span_t, int
   last_span_was_black = false;
   for (ListIter<Tuple2<runtime_asdl::span_t, int>*> it(spans); !it.Done(); it.Next()) {
     Tuple2<runtime_asdl::span_t, int>* tup0 = it.Value();
-    span_type = tup0->at0();
-    end_index = tup0->at1();
+    runtime_asdl::span_t span_type = tup0->at0();
+    int end_index = tup0->at1();
     if (span_type == span_e::Black) {
       if ((join_next and len(parts))) {
         parts->at(-1)->write(s->slice(start_index, end_index));
@@ -21869,13 +21861,9 @@ void Lookup::PrintSpecs() {
   mylib::BufWriter* f = nullptr;
   Dict<BigStr*, bool>* base_opts = nullptr;
   completion::UserSpec* user_spec = nullptr;
-  BigStr* pat = nullptr;
-  completion::UserSpec* spec = nullptr;
   StackRoot _root0(&f);
   StackRoot _root1(&base_opts);
   StackRoot _root2(&user_spec);
-  StackRoot _root3(&pat);
-  StackRoot _root4(&spec);
 
   f = Alloc<mylib::BufWriter>();
   f->write(S_jDw);
@@ -21892,9 +21880,12 @@ void Lookup::PrintSpecs() {
   f->write(S_chm);
   for (ListIter<Tuple3<BigStr*, Dict<BigStr*, bool>*, completion::UserSpec*>*> it(this->patterns); !it.Done(); it.Next()) {
     Tuple3<BigStr*, Dict<BigStr*, bool>*, completion::UserSpec*>* tup2 = it.Value();
-    pat = tup2->at0();
-    base_opts = tup2->at1();
-    spec = tup2->at2();
+    BigStr* pat = tup2->at0();
+    StackRoot _unpack_0(&pat);
+    Dict<BigStr*, bool>* base_opts = tup2->at1();
+    StackRoot _unpack_1(&base_opts);
+    completion::UserSpec* spec = tup2->at2();
+    StackRoot _unpack_2(&spec);
     f->write(StrFormat("%s:\n", pat));
     _PrintOpts(base_opts, f);
     user_spec->PrintSpec(f);
@@ -21934,17 +21925,11 @@ Tuple2<Dict<BigStr*, bool>*, completion::UserSpec*> Lookup::GetSpecForName(BigSt
   Dict<BigStr*, bool>* a = nullptr;
   completion::UserSpec* b = nullptr;
   BigStr* key = nullptr;
-  BigStr* glob_pat = nullptr;
-  Dict<BigStr*, bool>* base_opts = nullptr;
-  completion::UserSpec* user_spec = nullptr;
   StackRoot _root0(&argv0);
   StackRoot _root1(&pair);
   StackRoot _root2(&a);
   StackRoot _root3(&b);
   StackRoot _root4(&key);
-  StackRoot _root5(&glob_pat);
-  StackRoot _root6(&base_opts);
-  StackRoot _root7(&user_spec);
 
   pair = this->lookup->get(argv0);
   if (pair) {
@@ -21963,9 +21948,12 @@ Tuple2<Dict<BigStr*, bool>*, completion::UserSpec*> Lookup::GetSpecForName(BigSt
   }
   for (ListIter<Tuple3<BigStr*, Dict<BigStr*, bool>*, completion::UserSpec*>*> it(this->patterns); !it.Done(); it.Next()) {
     Tuple3<BigStr*, Dict<BigStr*, bool>*, completion::UserSpec*>* tup5 = it.Value();
-    glob_pat = tup5->at0();
-    base_opts = tup5->at1();
-    user_spec = tup5->at2();
+    BigStr* glob_pat = tup5->at0();
+    StackRoot _unpack_0(&glob_pat);
+    Dict<BigStr*, bool>* base_opts = tup5->at1();
+    StackRoot _unpack_1(&base_opts);
+    completion::UserSpec* user_spec = tup5->at2();
+    StackRoot _unpack_2(&user_spec);
     if (libc::fnmatch(glob_pat, key)) {
       return Tuple2<Dict<BigStr*, bool>*, completion::UserSpec*>(base_opts, user_spec);
     }
@@ -22995,8 +22983,6 @@ void RootCompleter::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc
 void RootCompleter::_PostProcess(Dict<BigStr*, bool>* base_opts, Dict<BigStr*, bool>* dynamic_opts, completion::UserSpec* user_spec, completion::Api* comp, List<BigStr*>* _out_yield_acc) {
   double start_time;
   int i;
-  BigStr* candidate = nullptr;
-  runtime_asdl::comp_action_t action_kind;
   BigStr* line_until_tab = nullptr;
   BigStr* line_until_word = nullptr;
   bool opt_filenames;
@@ -23010,13 +22996,12 @@ void RootCompleter::_PostProcess(Dict<BigStr*, bool>* base_opts, Dict<BigStr*, b
   StackRoot _root1(&dynamic_opts);
   StackRoot _root2(&user_spec);
   StackRoot _root3(&comp);
-  StackRoot _root4(&candidate);
-  StackRoot _root5(&line_until_tab);
-  StackRoot _root6(&line_until_word);
-  StackRoot _root7(&s);
-  StackRoot _root8(&sp);
-  StackRoot _root9(&cand);
-  StackRoot _root10(&plural);
+  StackRoot _root4(&line_until_tab);
+  StackRoot _root5(&line_until_word);
+  StackRoot _root6(&s);
+  StackRoot _root7(&sp);
+  StackRoot _root8(&cand);
+  StackRoot _root9(&plural);
 
   this->debug_f->writeln(StrFormat("Completing %r ... (Ctrl-C to cancel)", comp->line));
   start_time = time_::time();
@@ -23025,8 +23010,9 @@ void RootCompleter::_PostProcess(Dict<BigStr*, bool>* base_opts, Dict<BigStr*, b
   user_spec->AllMatches(comp, &_for_yield_acc21);
   for (ListIter<Tuple2<BigStr*, runtime_asdl::comp_action_t>*> it(&_for_yield_acc21); !it.Done(); it.Next()) {
     Tuple2<BigStr*, runtime_asdl::comp_action_t>* tup22 = it.Value();
-    candidate = tup22->at0();
-    action_kind = tup22->at1();
+    BigStr* candidate = tup22->at0();
+    StackRoot _unpack_0(&candidate);
+    runtime_asdl::comp_action_t action_kind = tup22->at1();
     line_until_tab = this->comp_ui_state->line_until_tab;
     line_until_word = line_until_tab->slice(0, this->comp_ui_state->display_pos);
     opt_filenames = base_opts->get(S_Fqh, false);
@@ -27751,15 +27737,12 @@ void ctx_Eval::_Push(Dict<BigStr*, value_asdl::value_t*>* vars) {
 }
 
 void ctx_Eval::_Pop() {
-  value_asdl::LeftName* lval = nullptr;
-  value_asdl::value_t* old_val = nullptr;
-  StackRoot _root0(&lval);
-  StackRoot _root1(&old_val);
-
   for (ListIter<Tuple2<value_asdl::LeftName*, value_asdl::value_t*>*> it(this->restore); !it.Done(); it.Next()) {
     Tuple2<value_asdl::LeftName*, value_asdl::value_t*>* tup0 = it.Value();
-    lval = tup0->at0();
-    old_val = tup0->at1();
+    value_asdl::LeftName* lval = tup0->at0();
+    StackRoot _unpack_0(&lval);
+    value_asdl::value_t* old_val = tup0->at1();
+    StackRoot _unpack_1(&old_val);
     if (old_val->tag() == value_e::Undef) {
       this->mem->Unset(lval, scope_e::LocalOnly);
     }
@@ -38838,20 +38821,18 @@ Tuple2<List<Tuple2<syntax_asdl::SourceLine*, int>*>*, Tuple2<syntax_asdl::Source
 
 List<syntax_asdl::word_part_t*>* _MakeLiteralHereLines(List<Tuple2<syntax_asdl::SourceLine*, int>*>* here_lines, alloc::Arena* arena, bool do_lossless) {
   List<syntax_asdl::word_part_t*>* tokens = nullptr;
-  syntax_asdl::SourceLine* src_line = nullptr;
-  int start_offset;
   syntax_asdl::Token* t = nullptr;
   StackRoot _root0(&here_lines);
   StackRoot _root1(&arena);
   StackRoot _root2(&tokens);
-  StackRoot _root3(&src_line);
-  StackRoot _root4(&t);
+  StackRoot _root3(&t);
 
   tokens = Alloc<List<syntax_asdl::word_part_t*>>();
   for (ListIter<Tuple2<syntax_asdl::SourceLine*, int>*> it(here_lines); !it.Done(); it.Next()) {
     Tuple2<syntax_asdl::SourceLine*, int>* tup1 = it.Value();
-    src_line = tup1->at0();
-    start_offset = tup1->at1();
+    syntax_asdl::SourceLine* src_line = tup1->at0();
+    StackRoot _unpack_0(&src_line);
+    int start_offset = tup1->at1();
     if (do_lossless) {
       arena->NewToken(Id::Lit_CharsWithoutPrefix, start_offset, 0, src_line);
     }
@@ -41422,16 +41403,13 @@ List<syntax_asdl::glob_part_t*>* _GlobParser::_ParseCharClass() {
   int balance;
   List<Tuple2<int, BigStr*>*>* tokens = nullptr;
   List<syntax_asdl::glob_part_t*>* parts = nullptr;
-  int id_;
-  BigStr* s = nullptr;
   bool negated;
   int id1;
   List<BigStr*>* strs = nullptr;
   StackRoot _root0(&first_token);
   StackRoot _root1(&tokens);
   StackRoot _root2(&parts);
-  StackRoot _root3(&s);
-  StackRoot _root4(&strs);
+  StackRoot _root3(&strs);
 
   first_token = Alloc<glob_part::Literal>(this->token_type, this->token_val);
   balance = 1;
@@ -41443,8 +41421,9 @@ List<syntax_asdl::glob_part_t*>* _GlobParser::_ParseCharClass() {
       parts = NewList<syntax_asdl::glob_part_t*>(std::initializer_list<syntax_asdl::glob_part_t*>{first_token});
       for (ListIter<Tuple2<int, BigStr*>*> it(tokens); !it.Done(); it.Next()) {
         Tuple2<int, BigStr*>* tup1 = it.Value();
-        id_ = tup1->at0();
-        s = tup1->at1();
+        int id_ = tup1->at0();
+        BigStr* s = tup1->at1();
+        StackRoot _unpack_1(&s);
         parts->append(Alloc<glob_part::Literal>(id_, s));
       }
       return parts;
@@ -41474,7 +41453,8 @@ List<syntax_asdl::glob_part_t*>* _GlobParser::_ParseCharClass() {
   strs = Alloc<List<BigStr*>>();
   for (ListIter<Tuple2<int, BigStr*>*> it(tokens); !it.Done(); it.Next()) {
     Tuple2<int, BigStr*>* tup3 = it.Value();
-    s = tup3->at1();
+    BigStr* s = tup3->at1();
+    StackRoot _unpack_1(&s);
     strs->append(s);
   }
   return NewList<syntax_asdl::glob_part_t*>(std::initializer_list<syntax_asdl::glob_part_t*>{Alloc<glob_part::CharClass>(negated, strs)});
@@ -41781,10 +41761,8 @@ Evaluator::Evaluator(py_readline::Readline* readline, parse_lib::ParseContext* p
 BigStr* Evaluator::Eval(BigStr* line) {
   List<Tuple2<int, BigStr*>*>* tokens = nullptr;
   bool ok;
-  int id_;
   int history_len;
   List<BigStr*>* parts = nullptr;
-  BigStr* val = nullptr;
   BigStr* out = nullptr;
   BigStr* prev = nullptr;
   BigStr* ch = nullptr;
@@ -41801,25 +41779,26 @@ BigStr* Evaluator::Eval(BigStr* line) {
   int index;
   int num;
   BigStr* last_char = nullptr;
+  BigStr* val = nullptr;
   BigStr* prefix = nullptr;
   BigStr* substring = nullptr;
   BigStr* cmd = nullptr;
   StackRoot _root0(&line);
   StackRoot _root1(&tokens);
   StackRoot _root2(&parts);
-  StackRoot _root3(&val);
-  StackRoot _root4(&out);
-  StackRoot _root5(&prev);
-  StackRoot _root6(&ch);
-  StackRoot _root7(&line_reader);
-  StackRoot _root8(&c_parser);
-  StackRoot _root9(&words);
-  StackRoot _root10(&w);
-  StackRoot _root11(&tok1);
-  StackRoot _root12(&tok2);
-  StackRoot _root13(&w1);
-  StackRoot _root14(&w2);
-  StackRoot _root15(&last_char);
+  StackRoot _root3(&out);
+  StackRoot _root4(&prev);
+  StackRoot _root5(&ch);
+  StackRoot _root6(&line_reader);
+  StackRoot _root7(&c_parser);
+  StackRoot _root8(&words);
+  StackRoot _root9(&w);
+  StackRoot _root10(&tok1);
+  StackRoot _root11(&tok2);
+  StackRoot _root12(&w1);
+  StackRoot _root13(&w2);
+  StackRoot _root14(&last_char);
+  StackRoot _root15(&val);
   StackRoot _root16(&prefix);
   StackRoot _root17(&substring);
   StackRoot _root18(&cmd);
@@ -41831,7 +41810,7 @@ BigStr* Evaluator::Eval(BigStr* line) {
   ok = true;
   for (ListIter<Tuple2<int, BigStr*>*> it(tokens); !it.Done(); it.Next()) {
     Tuple2<int, BigStr*>* tup0 = it.Value();
-    id_ = tup0->at0();
+    int id_ = tup0->at0();
     if (id_ != Id::History_Other) {
       ok = false;
       break;
@@ -41848,8 +41827,9 @@ BigStr* Evaluator::Eval(BigStr* line) {
   parts = Alloc<List<BigStr*>>();
   for (ListIter<Tuple2<int, BigStr*>*> it(tokens); !it.Done(); it.Next()) {
     Tuple2<int, BigStr*>* tup1 = it.Value();
-    id_ = tup1->at0();
-    val = tup1->at1();
+    int id_ = tup1->at0();
+    BigStr* val = tup1->at1();
+    StackRoot _unpack_1(&val);
     if (id_ == Id::History_Other) {
       out = val;
     }
@@ -42139,25 +42119,23 @@ BigStr* Evaluator::PromptSubst(BigStr* ch, BigStr* arg) {
 BigStr* Evaluator::_ReplaceBackslashCodes(List<Tuple2<int, BigStr*>*>* tokens) {
   List<BigStr*>* ret = nullptr;
   int non_printing;
-  int id_;
-  BigStr* s = nullptr;
   int i;
   BigStr* ch = nullptr;
   BigStr* arg = nullptr;
   BigStr* r = nullptr;
   StackRoot _root0(&tokens);
   StackRoot _root1(&ret);
-  StackRoot _root2(&s);
-  StackRoot _root3(&ch);
-  StackRoot _root4(&arg);
-  StackRoot _root5(&r);
+  StackRoot _root2(&ch);
+  StackRoot _root3(&arg);
+  StackRoot _root4(&r);
 
   ret = Alloc<List<BigStr*>>();
   non_printing = 0;
   for (ListIter<Tuple2<int, BigStr*>*> it(tokens); !it.Done(); it.Next()) {
     Tuple2<int, BigStr*>* tup1 = it.Value();
-    id_ = tup1->at0();
-    s = tup1->at1();
+    int id_ = tup1->at0();
+    BigStr* s = tup1->at1();
+    StackRoot _unpack_1(&s);
     if ((id_ == Id::PS_Literals || id_ == Id::PS_BadBackslash)) {
       ret->append(s);
     }
@@ -43716,8 +43694,6 @@ List<BigStr*>* _SpansToParts(BigStr* s, List<Tuple2<runtime_asdl::span_t, int>*>
   int start_index;
   bool join_next;
   bool last_span_was_black;
-  runtime_asdl::span_t span_type;
-  int end_index;
   mylib::BufWriter* buf = nullptr;
   List<BigStr*>* result = nullptr;
   StackRoot _root0(&s);
@@ -43732,8 +43708,8 @@ List<BigStr*>* _SpansToParts(BigStr* s, List<Tuple2<runtime_asdl::span_t, int>*>
   last_span_was_black = false;
   for (ListIter<Tuple2<runtime_asdl::span_t, int>*> it(spans); !it.Done(); it.Next()) {
     Tuple2<runtime_asdl::span_t, int>* tup0 = it.Value();
-    span_type = tup0->at0();
-    end_index = tup0->at1();
+    runtime_asdl::span_t span_type = tup0->at0();
+    int end_index = tup0->at1();
     if (span_type == span_e::Black) {
       if ((len(parts) and join_next)) {
         parts->at(-1)->write(s->slice(start_index, end_index));
@@ -44370,8 +44346,6 @@ List<Tuple2<int, int>*>* _AllMatchPositions(BigStr* s, BigStr* regex) {
 BigStr* _PatSubAll(BigStr* s, BigStr* regex, BigStr* replace_str) {
   List<BigStr*>* parts = nullptr;
   int prev_end;
-  int start;
-  int end;
   StackRoot _root0(&s);
   StackRoot _root1(&regex);
   StackRoot _root2(&replace_str);
@@ -44381,8 +44355,8 @@ BigStr* _PatSubAll(BigStr* s, BigStr* regex, BigStr* replace_str) {
   prev_end = 0;
   for (ListIter<Tuple2<int, int>*> it(_AllMatchPositions(s, regex)); !it.Done(); it.Next()) {
     Tuple2<int, int>* tup3 = it.Value();
-    start = tup3->at0();
-    end = tup3->at1();
+    int start = tup3->at0();
+    int end = tup3->at1();
     parts->append(s->slice(prev_end, start));
     parts->append(replace_str);
     prev_end = end;
@@ -50314,16 +50288,12 @@ bool Parser::addtoken(int typ, syntax_asdl::Token* opaque, int ilabel) {
   int state;
   List<Tuple2<int, int>*>* arcs = nullptr;
   bool found;
-  int ilab;
-  int newstate;
   int t;
   int s0;
   int s1;
   Tuple2<List<List<Tuple2<int, int>*>*>*, Dict<int, int>*>* itsdfa = nullptr;
   Dict<int, int>* itsfirst = nullptr;
   bool found2;
-  int left;
-  int right;
   StackRoot _root0(&opaque);
   StackRoot _root1(&top);
   StackRoot _root2(&states);
@@ -50340,8 +50310,8 @@ bool Parser::addtoken(int typ, syntax_asdl::Token* opaque, int ilabel) {
     found = false;
     for (ListIter<Tuple2<int, int>*> it(arcs); !it.Done(); it.Next()) {
       Tuple2<int, int>* tup1 = it.Value();
-      ilab = tup1->at0();
-      newstate = tup1->at1();
+      int ilab = tup1->at0();
+      int newstate = tup1->at1();
       t = this->grammar->labels->at(ilab);
       if (ilabel == ilab) {
         this->shift(typ, opaque, newstate);
@@ -50384,8 +50354,8 @@ bool Parser::addtoken(int typ, syntax_asdl::Token* opaque, int ilabel) {
       found2 = false;
       for (ListIter<Tuple2<int, int>*> it(arcs); !it.Done(); it.Next()) {
         Tuple2<int, int>* tup5 = it.Value();
-        left = tup5->at0();
-        right = tup5->at1();
+        int left = tup5->at0();
+        int right = tup5->at1();
         if ((left == 0 and right == state)) {
           this->pop();
           if (len(this->stack) == 0) {
@@ -57994,7 +57964,6 @@ int CompGen::Run(cmd_value::Argv* cmd_val) {
   Dict<BigStr*, bool>* base_opts = nullptr;
   completion::UserSpec* user_spec = nullptr;
   completion::Api* comp = nullptr;
-  BigStr* m = nullptr;
   StackRoot _root0(&cmd_val);
   StackRoot _root1(&arg_r);
   StackRoot _root2(&arg);
@@ -58002,7 +57971,6 @@ int CompGen::Run(cmd_value::Argv* cmd_val) {
   StackRoot _root4(&base_opts);
   StackRoot _root5(&user_spec);
   StackRoot _root6(&comp);
-  StackRoot _root7(&m);
 
   arg_r = Alloc<args::Reader>(cmd_val->argv, cmd_val->arg_locs);
   arg_r->Next();
@@ -58030,7 +57998,8 @@ int CompGen::Run(cmd_value::Argv* cmd_val) {
     user_spec->AllMatches(comp, &_for_yield_acc0);
     for (ListIter<Tuple2<BigStr*, runtime_asdl::comp_action_t>*> it(&_for_yield_acc0); !it.Done(); it.Next()) {
       Tuple2<BigStr*, runtime_asdl::comp_action_t>* tup1 = it.Value();
-      m = tup1->at0();
+      BigStr* m = tup1->at0();
+      StackRoot _unpack_0(&m);
       matched = true;
       print(m);
     }

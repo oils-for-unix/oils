@@ -1146,15 +1146,20 @@ class Generate(visitor.SimpleVisitor):
                                lval_items: List[Expression],
                                item_types: List[Type],
                                is_return: bool = False) -> None:
-        """Used by assignment and for loops."""
+        """Used by assignment and for loops.
+
+        is_return is a special case for:
+
+            # return Tuple2<A, B> by VALUE, not Tuple2<A, B>* pointer
+            a, b = myfunc()
+        """
         for i, (lval_item, item_type) in enumerate(zip(lval_items,
                                                        item_types)):
-            #self.log('*** %s :: %s', lval_item, item_type)
             if isinstance(lval_item, NameExpr):
                 if util.SkipAssignment(lval_item.name):
                     continue
 
-                # declare it at the top of the function
+                # Declare local vars at TOP of function for a, b = myfunc()
                 if self.decl:
                     self.local_var_list.append((lval_item.name, item_type))
                 self.def_write_ind('%s', lval_item.name)
@@ -1166,6 +1171,33 @@ class Generate(visitor.SimpleVisitor):
             # Tuples that are return values aren't pointers
             op = '.' if is_return else '->'
             self.def_write(' = %s%sat%d();\n', temp_name, op, i)  # RHS
+
+    def _write_tuple_unpacking_loop(self, temp_name: str,
+                                    lval_items: List[Expression],
+                                    item_types: List[Type]) -> None:
+        for i, (lval_item, item_type) in enumerate(zip(lval_items,
+                                                       item_types)):
+            c_item_type = GetCType(item_type)
+
+            if isinstance(lval_item, NameExpr):
+                if util.SkipAssignment(lval_item.name):
+                    continue
+
+                self.def_write_ind('%s %s', c_item_type, lval_item.name)
+            else:
+                # Could be MemberExpr like self.foo, self.bar = baz
+                self.def_write_ind('')
+                self.accept(lval_item)
+
+            op = '->'
+            self.def_write(' = %s%sat%d();\n', temp_name, op, i)  # RHS
+
+            # Note: it would be nice to eliminate these roots, just like
+            # StackRoots _for() below
+            if isinstance(lval_item, NameExpr):
+                if CTypeIsManaged(c_item_type) and not self.stack_roots:
+                    self.def_write_ind('StackRoot _unpack_%d(&%s);\n' %
+                                       (i, lval_item.name))
 
     def _ListComprehensionImpl(self, lval: NameExpr, left_expr: Expression,
                                index_expr: Expression, seq: Expression,
@@ -1229,8 +1261,8 @@ class Generate(visitor.SimpleVisitor):
                 self.indent += 1
 
                 # list comp
-                self._write_tuple_unpacking(temp_name, index_expr.items,
-                                            item_type.items)
+                self._write_tuple_unpacking_loop(temp_name, index_expr.items,
+                                                 item_type.items)
 
                 self.indent -= 1
             else:
@@ -1791,8 +1823,8 @@ class Generate(visitor.SimpleVisitor):
                     self.indent += 1
 
                     # loop - for x, y in other:
-                    self._write_tuple_unpacking(temp_name, o.index.items,
-                                                item_type.items)
+                    self._write_tuple_unpacking_loop(temp_name, o.index.items,
+                                                     item_type.items)
 
                     self.indent -= 1
                 else:
