@@ -465,8 +465,108 @@ class _Shared(visitor.SimpleVisitor):
 
         self.decl = False
 
+    def _ValidateDefaultArg(self, arg: Argument) -> None:
+        t = self.types[arg.initializer]
 
-class Decl(_Shared):
+        valid = False
+        if isinstance(t, NoneType):
+            valid = True
+        if isinstance(t, Instance):
+            # Allowing strings since they're immutable, e.g.
+            # prefix='' seems OK
+            if t.type.fullname in ('builtins.bool', 'builtins.int',
+                                   'builtins.float', 'builtins.str'):
+                valid = True
+
+            # ASDL enums lex_mode_t, scope_t, ...
+            if t.type.fullname.endswith('_t'):
+                valid = True
+
+            # Hack for loc__Missing.  Should detect the general case.
+            if t.type.fullname.endswith('loc__Missing'):
+                valid = True
+
+        if not valid:
+            self.report_error(
+                arg,
+                'Invalid default arg %r of type %s (not None, bool, int, float, ASDL enum)'
+                % (arg.initializer, t))
+
+    def _ValidateDefaultArgs(self, arguments: List[Argument]) -> None:
+        num_defaults = 0
+        for arg in arguments:
+            if arg.initializer:
+                self._ValidateDefaultArg(arg)
+                num_defaults += 1
+
+        if num_defaults > 1:
+            if self.current_func_node:
+                name = self.current_func_node.name
+            else:
+                # TODO: could pass the name, e.g. for __init__
+                name = '<Unknown>'
+
+            # Report on first arg
+            self.report_error(
+                arg, '%s has %d default arguments.  Only 1 is allowed' %
+                (name, num_defaults))
+            return
+
+    def _WriteFuncParams(self,
+                         arg_types: List[Type],
+                         arguments: List['mypy.nodes.Argument'],
+                         update_locals: bool = False,
+                         write_defaults: bool = False) -> None:
+        """Write params for function/method signatures.
+
+        Optionally mutate self.local_vars, and optionally write default arguments.
+        """
+        if write_defaults:
+            self._ValidateDefaultArgs(arguments)
+
+        is_first = True  # EXCLUDING 'self'
+        for arg_type, arg in zip(arg_types, arguments):
+            if not is_first:
+                self.write(', ')
+
+            c_type = GetCType(arg_type)
+
+            arg_name = arg.variable.name
+
+            # C++ has implicit 'this'
+            if arg_name == 'self':
+                continue
+
+            # int foo
+            self.write('%s %s', c_type, arg_name)
+
+            if write_defaults and arg.initializer:  # int foo = 42
+                self.write(' = ')
+
+                # Silly mechanism to activate self.def_write()
+                self.writing_default_arg = True
+                self.accept(arg.initializer)
+                self.writing_default_arg = False
+
+            is_first = False
+
+            if 0:
+                self.log('Argument %s', arg.variable)
+                self.log('  type_annotation %s', arg.type_annotation)
+                # I think these are for default values
+                self.log('  initializer %s', arg.initializer)
+                self.log('  kind %s', arg.kind)
+
+        # Will be set if we're declaring or defining a function that returns
+        # Iterator[T].
+        if self.current_func_node in self.yield_accumulators:
+            self.write(', ')
+
+            arg_name, c_type = self.yield_accumulators[self.current_func_node]
+            self.write('%s %s', c_type, arg_name)
+
+
+class Impl(_Shared):
 
     def __init__(self,
                  types: Dict[Expression, Type],
@@ -486,17 +586,7 @@ class Decl(_Shared):
                          dot_exprs=dot_exprs,
                          stack_roots_warn=stack_roots_warn,
                          stack_roots=stack_roots)
-        self.decl = True
-
-    def always_write(self, msg: str, *args: Any) -> None:
-        """Write unconditionally - forward decl, decl, def """
-        if args:
-            msg = msg % args
-        self.f.write(msg)
-
-    def always_write_ind(self, msg: str, *args: Any) -> None:
-        ind_str = self.indent * '  '
-        self.always_write(ind_str + msg, *args)
+        self.decl = False
 
     def def_write(self, msg: str, *args: Any) -> None:
         """Write only in definitions."""
@@ -533,18 +623,16 @@ class Decl(_Shared):
         else:
             comment = 'define'
 
-        self.always_write_ind('namespace %s {  // %s\n', mod_parts[-1],
-                              comment)
-        self.always_write('\n')
+        self.write_ind('namespace %s {  // %s\n', mod_parts[-1], comment)
+        self.write('\n')
 
         #self.log('defs %s', o.defs)
         for node in o.defs:
             self.accept(node)
 
-        self.always_write('\n')
-        self.always_write_ind('}  // %s namespace %s\n', comment,
-                              mod_parts[-1])
-        self.always_write('\n')
+        self.write('\n')
+        self.write_ind('}  // %s namespace %s\n', comment, mod_parts[-1])
+        self.write('\n')
 
     # LITERALS
 
@@ -1385,7 +1473,7 @@ class Decl(_Shared):
         if self.decl and self.indent == 0:
             if not util.SkipAssignment(lval.name):
                 c_type = GetCType(self.types[lval])
-                self.always_write('extern %s %s;\n', c_type, lval.name)
+                self.write('extern %s %s;\n', c_type, lval.name)
 
         # GLOBAL CONSTANTS - Avoid Alloc<T>, since that can't be done until main().
         if self.indent == 0:
@@ -2124,106 +2212,6 @@ class Decl(_Shared):
 
             self.def_write(';\n')
 
-    def _ValidateDefaultArg(self, arg: Argument) -> None:
-        t = self.types[arg.initializer]
-
-        valid = False
-        if isinstance(t, NoneType):
-            valid = True
-        if isinstance(t, Instance):
-            # Allowing strings since they're immutable, e.g.
-            # prefix='' seems OK
-            if t.type.fullname in ('builtins.bool', 'builtins.int',
-                                   'builtins.float', 'builtins.str'):
-                valid = True
-
-            # ASDL enums lex_mode_t, scope_t, ...
-            if t.type.fullname.endswith('_t'):
-                valid = True
-
-            # Hack for loc__Missing.  Should detect the general case.
-            if t.type.fullname.endswith('loc__Missing'):
-                valid = True
-
-        if not valid:
-            self.report_error(
-                arg,
-                'Invalid default arg %r of type %s (not None, bool, int, float, ASDL enum)'
-                % (arg.initializer, t))
-
-    def _ValidateDefaultArgs(self, arguments: List[Argument]) -> None:
-        num_defaults = 0
-        for arg in arguments:
-            if arg.initializer:
-                self._ValidateDefaultArg(arg)
-                num_defaults += 1
-
-        if num_defaults > 1:
-            if self.current_func_node:
-                name = self.current_func_node.name
-            else:
-                # TODO: could pass the name, e.g. for __init__
-                name = '<Unknown>'
-
-            # Report on first arg
-            self.report_error(
-                arg, '%s has %d default arguments.  Only 1 is allowed' %
-                (name, num_defaults))
-            return
-
-    def _WriteFuncParams(self,
-                         arg_types: List[Type],
-                         arguments: List['mypy.nodes.Argument'],
-                         update_locals: bool = False,
-                         write_defaults: bool = False) -> None:
-        """Write params for function/method signatures.
-
-        Optionally mutate self.local_vars, and optionally write default arguments.
-        """
-        if write_defaults:
-            self._ValidateDefaultArgs(arguments)
-
-        is_first = True  # EXCLUDING 'self'
-        for arg_type, arg in zip(arg_types, arguments):
-            if not is_first:
-                self.always_write(', ')
-
-            c_type = GetCType(arg_type)
-
-            arg_name = arg.variable.name
-
-            # C++ has implicit 'this'
-            if arg_name == 'self':
-                continue
-
-            # int foo
-            self.always_write('%s %s', c_type, arg_name)
-
-            if write_defaults and arg.initializer:  # int foo = 42
-                self.always_write(' = ')
-
-                # Silly mechanism to activate self.def_write()
-                self.writing_default_arg = True
-                self.accept(arg.initializer)
-                self.writing_default_arg = False
-
-            is_first = False
-
-            if 0:
-                self.log('Argument %s', arg.variable)
-                self.log('  type_annotation %s', arg.type_annotation)
-                # I think these are for default values
-                self.log('  initializer %s', arg.initializer)
-                self.log('  kind %s', arg.kind)
-
-        # Will be set if we're declaring or defining a function that returns
-        # Iterator[T].
-        if self.current_func_node in self.yield_accumulators:
-            self.always_write(', ')
-
-            arg_name, c_type = self.yield_accumulators[self.current_func_node]
-            self.always_write('%s %s', c_type, arg_name)
-
     def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
         func_name = o.name
 
@@ -2254,8 +2242,7 @@ class Decl(_Shared):
                          'p_die'):
             noreturn = '[[noreturn]] '
 
-        self.always_write_ind('%s%s%s %s(', noreturn, virtual, c_ret_type,
-                              func_name)
+        self.write_ind('%s%s%s %s(', noreturn, virtual, c_ret_type, func_name)
 
         self.current_func_node = o
         self._WriteFuncParams(
@@ -2266,7 +2253,7 @@ class Decl(_Shared):
             write_defaults=self.decl)
 
         if self.decl:
-            self.always_write(');\n')
+            self.write(');\n')
         else:
             self.def_write(') ')
             arg_names = [arg.variable.name for arg in o.arguments]
@@ -2283,16 +2270,16 @@ class Decl(_Shared):
     def _GcHeaderDecl(self, o: 'mypy.nodes.ClassDef',
                       field_gc: Tuple[str, str], mask_bits: List[str]) -> None:
         if mask_bits:
-            self.always_write_ind('\n')
-            self.always_write_ind('static constexpr uint32_t field_mask() {\n')
-            self.always_write_ind('  return ')
+            self.write_ind('\n')
+            self.write_ind('static constexpr uint32_t field_mask() {\n')
+            self.write_ind('  return ')
             for i, b in enumerate(mask_bits):
                 if i != 0:
-                    self.always_write('\n')
-                    self.always_write_ind('       | ')
-                self.always_write(b)
-            self.always_write(';\n')
-            self.always_write_ind('}\n')
+                    self.write('\n')
+                    self.write_ind('       | ')
+                self.write(b)
+            self.write(';\n')
+            self.write_ind('}\n')
 
         obj_tag, obj_arg = field_gc
         if obj_tag == 'HeapTag::FixedSize':
@@ -2306,10 +2293,10 @@ class Decl(_Shared):
         else:
             raise AssertionError(o.name)
 
-        self.always_write('\n')
-        self.always_write_ind('static constexpr ObjHeader obj_header() {\n')
-        self.always_write_ind('  return %s;\n' % obj_header)
-        self.always_write_ind('}\n')
+        self.write('\n')
+        self.write_ind('static constexpr ObjHeader obj_header() {\n')
+        self.write_ind('  return %s;\n' % obj_header)
+        self.write_ind('}\n')
 
     def _MemberDecl(self, o: 'mypy.nodes.ClassDef',
                     base_class_name: util.SymbolPath) -> None:
@@ -2364,20 +2351,20 @@ class Decl(_Shared):
         #log('MEMBERS for %s: %s', o.name, list(self.member_vars.keys()))
         if len(member_vars):
             if base_class_name:
-                self.always_write('\n')  # separate from functions
+                self.write('\n')  # separate from functions
 
             for name in sorted_member_names:
                 _, c_type, _ = member_vars[name]
                 # use default zero initialization for all members
                 # (context managers may be on the stack)
-                self.always_write_ind('%s %s{};\n', c_type, name)
+                self.write_ind('%s %s{};\n', c_type, name)
 
         # Context managers aren't GC objects
         if not _IsContextManager(self.current_class_name):
             self._GcHeaderDecl(o, field_gc, mask_bits)
 
-        self.always_write('\n')
-        self.always_write_ind('DISALLOW_COPY_AND_ASSIGN(%s)\n', o.name)
+        self.write('\n')
+        self.write_ind('DISALLOW_COPY_AND_ASSIGN(%s)\n', o.name)
 
     def _ConstructorImpl(self, o: 'mypy.nodes.ClassDef',
                          stmt: 'mypy.nodes.FuncDef',
@@ -2446,8 +2433,8 @@ class Decl(_Shared):
     def _DestructorImpl(self, o: 'mypy.nodes.ClassDef',
                         stmt: 'mypy.nodes.FuncDef',
                         base_class_name: util.SymbolPath) -> None:
-        self.always_write('\n')
-        self.always_write_ind('%s::~%s()', o.name, o.name)
+        self.write('\n')
+        self.write_ind('%s::~%s()', o.name, o.name)
 
         self.def_write(' {\n')
         self.indent += 1
@@ -2480,11 +2467,11 @@ class Decl(_Shared):
                                base_class_name: util.SymbolPath) -> None:
         if self.decl:
             self.indent += 1
-            self.always_write_ind('%s(', o.name)
+            self.write_ind('%s(', o.name)
             self._WriteFuncParams(stmt.type.arg_types,
                                   stmt.arguments,
                                   write_defaults=True)
-            self.always_write(');\n')
+            self.write(');\n')
 
             # Visit for member vars
             self.accept(stmt.body)
@@ -2498,7 +2485,7 @@ class Decl(_Shared):
         if self.decl:
             self.indent += 1
             # Turn it into a destructor with NO ARGS
-            self.always_write_ind('~%s();\n', o.name)
+            self.write_ind('~%s();\n', o.name)
             self.indent -= 1
             return
 
@@ -2528,24 +2515,23 @@ class Decl(_Shared):
         #log('  CLASS %s', o.name)
 
         if self.decl:
-            self.always_write_ind('class %s', o.name)  # block after this
+            self.write_ind('class %s', o.name)  # block after this
 
             # e.g. class TextOutput : public ColorOutput
             if base_class_name:
-                self.always_write(
-                    ' : public %s',
-                    join_name(base_class_name, strip_package=True))
+                self.write(' : public %s',
+                           join_name(base_class_name, strip_package=True))
 
-            self.always_write(' {\n')
-            self.always_write_ind(' public:\n')
+            self.write(' {\n')
+            self.write_ind(' public:\n')
 
             # This visits all the methods, with self.indent += 1, param
             # base_class_name, self.current_method_name
 
             super().oils_visit_class_def(o, base_class_name)
 
-            self.always_write_ind('};\n')
-            self.always_write('\n')
+            self.write_ind('};\n')
+            self.write('\n')
 
             return
 
@@ -2885,7 +2871,7 @@ class Decl(_Shared):
             self.report_error(o, 'try/finally not supported')
 
 
-class Impl(Decl):
+class Decl(Impl):
 
     def __init__(self,
                  types: Dict[Expression, Type],
@@ -2905,4 +2891,4 @@ class Impl(Decl):
                          dot_exprs=dot_exprs,
                          stack_roots_warn=stack_roots_warn,
                          stack_roots=stack_roots)
-        self.decl = False
+        self.decl = True
