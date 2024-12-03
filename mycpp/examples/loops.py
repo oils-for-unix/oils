@@ -40,10 +40,18 @@ def TestListComp():
     log("z[0] = %s", z[0])
     log("z[-1] = %s", z[-1])
 
+    log('-- list comprehension tuple unpacking')
+
     pairs = [('one', 1), ('two', 2)]
-    first = [s for s, _ in pairs]
+
+    # Note: listcomp_iter_var is at TOP level, but it could be SCOPED.  It is
+    # also rooted at the top level.
+    first = [listcomp_iter_var for listcomp_iter_var, _ in pairs]
+
     for s2 in first:
         log('first = %s', s2)
+
+    log('-- list comprehension filtering')
 
     parts = ['a', None, 'b']
     tmp = [s for s in parts if s is not None]
@@ -74,12 +82,9 @@ def TestDict():
 
 CATS = ['big', 'small', 'hairless']
 
-#EMPTY_DICT = {}  # type: Dict[int, int]
 
-
-def run_tests():
+def TestForLoop():
     # type: () -> None
-
     log('--- iterate over bytes in string')
     for ch in 'abc':
         log('ch = %s', ch)
@@ -88,14 +93,14 @@ def run_tests():
     for item in ['xx', 'yy']:
         log('item = %s', item)
 
-    # TODO: iterate over items in dict
-    # DictIter gives pairs?  Just do .Key() and .Value()?  Hm that makes sense.
-
     log('--- tuple unpacking')
 
+    # Note: tuple_iter_1 and tuple_iter_2 are also top-level locals, and are
+    # rooted at the top level.
+    # They could be SCOPED.
     list_of_tuples = [(5, 'five'), (6, 'six')]
-    for i, item in list_of_tuples:
-        log("- [%d] %s", i, item)
+    for tuple_iter_1, tuple_iter_2 in list_of_tuples:
+        log("- [%d] %s", tuple_iter_1, tuple_iter_2)
 
     log('--- one arg xrange()')
 
@@ -143,6 +148,12 @@ def run_tests():
     log('--- reversed() list with tuple unpacking')
     for i, item in reversed(list_of_tuples):
         log("- [%d] %s", i, item)
+
+
+def run_tests():
+    # type: () -> None
+
+    TestForLoop()
 
     TestListComp()
 

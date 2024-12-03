@@ -138,6 +138,23 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         # LHS
         # - NameExpr
         # - TupleExpr
+        #
+        # More destructuring:
+        #
+        # item_type - is it a Tuple?
+        #    enumerate - o.inferred_item_type[1]
+        #    otherwise (xrange, reversed, iteritems) - o.inferred_item_type
+        #
+        # elif isinstance(item_type, TupleType):  # for x, y in pairs
+        #    if over_dict:
+        #       ...
+        #    else  # it's a List
+        #       if isinstance(o.index, TupleExpr):
+        #          ...
+        #          self._write_tuple_unpacking(temp_name, o.index.items, item_type.items)
+        #
+        # We need to detect this
+        # And then also detect it for list comprehensions
 
     def visit_with_stmt(self, o: 'mypy.nodes.WithStmt') -> None:
         assert len(o.expr) == 1, o.expr
@@ -330,7 +347,8 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
     # Expressions
 
     def visit_generator_expr(self, o: 'mypy.nodes.GeneratorExpr') -> None:
-        # Called by visit_list_comprehension
+        """Called by visit_list_comprehension."""
+
         self.accept(o.left_expr)
 
         for expr in o.indices:

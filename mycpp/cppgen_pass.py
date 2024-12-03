@@ -1221,7 +1221,7 @@ class Generate(visitor.SimpleVisitor):
             self.accept(index_expr)
             self.def_write(' = it.Value();\n')
 
-        elif isinstance(item_type, TupleType):  # for x, y in pairs
+        elif isinstance(item_type, TupleType):  # [x for x, y in pairs]
             c_item_type = GetCType(item_type)
 
             if isinstance(index_expr, TupleExpr):
@@ -1232,6 +1232,7 @@ class Generate(visitor.SimpleVisitor):
 
                 self.indent += 1
 
+                # list comp
                 self._write_tuple_unpacking(temp_name, index_expr.items,
                                             item_type.items)
 
@@ -1523,6 +1524,7 @@ class Generate(visitor.SimpleVisitor):
             self.accept(rval)
             self.def_write(';\n')
 
+            # assignment
             self._write_tuple_unpacking(temp_name,
                                         lval.items,
                                         rvalue_type.items,
@@ -1791,6 +1793,7 @@ class Generate(visitor.SimpleVisitor):
 
                     self.indent += 1
 
+                    # loop - for x, y in other:
                     self._write_tuple_unpacking(temp_name, o.index.items,
                                                 item_type.items)
 

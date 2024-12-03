@@ -101,25 +101,42 @@ class Pass(visitor.SimpleVisitor):
         super().oils_visit_func_def(o)
         self.all_local_vars[o] = self.current_local_vars
 
+    def oils_visit_assign_to_listcomp(self, o: 'mypy.nodes.AssignmentStmt',
+                                      lval: NameExpr) -> None:
+
+        super().oils_visit_assign_to_listcomp(o, lval)
+
+        #self.accept(lval)
+        #self.accept(o.rvalue.generator)
+
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
                                    lval: Expression, rval: Expression) -> None:
 
         if isinstance(lval, MemberExpr):
             self._MaybeAddMember(lval, self.current_member_vars)
 
-        # Replacing old logic: cast(), NewDict()
+        # Handle:
+        #    x = y
+        # These two are special cases in cppgen_pass, but not here
+        #    x = NewDict()
+        #    x = cast(T, y)
         #
-        # Note: this has duplicates, and the 'done' set in visit_block()
-        # handles it.  Could make it a Dict.
+        # Note: this has duplicates: the 'done' set in visit_block() handles
+        # it.  Could make it a Dict.
         if isinstance(lval, NameExpr):
             self.current_local_vars.append((lval.name, self.types[lval]))
 
-        # From _write_tuple_unpacking
-        # TODO: we also need to handle list comprehensions!  Gah
+        # Handle local vars, like _write_tuple_unpacking
+
+        # This handles:
+        #    a, b = func_that_returns_tuple()
+        # We also need to handle:
+        #    for a, b in foo:
+        #      pass
+        #    result = [a for a, b in foo]
+
         if isinstance(lval, TupleExpr):
             rval_type = self.types[rval]
-            # This is
-            # a, b = func_that_returns_tuple()
             assert isinstance(rval_type, TupleType), rval_type
 
             for i, (lval_item,

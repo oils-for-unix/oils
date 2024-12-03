@@ -475,11 +475,13 @@ Issue on mycpp improvements: <https://github.com/oilshell/oil/issues/568>
 - Collection literals turn into initializer lists
   - And there is a C++ type inference issue which requires an explicit
     `std::initializer_list<int>{1, 2, 3}`, not just `{1, 2, 3}`
-- Python's polymorphic iteration &rarr; `StrIter`, `ListIter<T>`, `DictIter<K,
-  V`
+- `for` loops, i.e. Python's polymorphic iteration &rarr; `StrIter`,
+  `ListIter<T>`, `DictIter<K, V`
+  - `xrange()`
+  - `enumerate()`
+  - `reversed(mylist)` &rarr; `ReverseListIter`
   - `d.iteritems()` is rewritten `mylib.iteritems()` &rarr; `DictIter`
     - TODO: can we be smarter about this?
-  - `reversed(mylist)` &rarr; `ReverseListIter`
 - Python's `in` operator:
   - `s in mystr` &rarr; `str_contains(mystr, s)`
   - `x in mylist` &rarr; `list_contains(mylist, x)`
