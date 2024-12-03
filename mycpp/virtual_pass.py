@@ -25,13 +25,18 @@ _ = log
 
 class Pass(visitor.SimpleVisitor):
 
-    def __init__(self, types: Dict[Expression,
-                                   Type], virtual: pass_state.Virtual,
-                 forward_decls: List[str]) -> None:
+    def __init__(
+        self,
+        types: Dict[Expression, Type],
+        virtual: pass_state.Virtual,
+        forward_decls: List[str],
+        all_member_vars: 'cppgen_pass.AllMemberVars',
+    ) -> None:
         visitor.SimpleVisitor.__init__(self)
         self.types = types
         self.virtual = virtual  # output
         self.forward_decls = forward_decls  # output
+        self.all_member_vars = all_member_vars
 
         self.current_member_vars: Dict[str, 'cppgen_pass.MemberVar'] = {}
 
@@ -52,21 +57,21 @@ class Pass(visitor.SimpleVisitor):
     def oils_visit_class_def(
             self, o: 'mypy.nodes.ClassDef',
             base_class_name: Optional[util.SymbolPath]) -> None:
-        #self.current_member_vars.clear()  # make a new list
-        # TODO: make a new one
-        # self.current_member_vars = []
-
         self.write_ind('class %s;\n', o.name)
         if base_class_name:
             self.virtual.OnSubclass(base_class_name, self.current_class_name)
 
-        # Do default traversal of methods
+        # Do default traversal of methods, associating member vars with the
+        # ClassDef node
+        self.current_member_vars = {}
         super().oils_visit_class_def(o, base_class_name)
-
-        # TODO: associate current_member_vars with this class_def node
+        self.all_member_vars[o] = self.current_member_vars
 
     def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
         self.virtual.OnMethod(self.current_class_name, o.name)
+
+        # Traverse to collect member variables
+        super().oils_visit_func_def(o)
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
                                    lval: Expression, rval: Expression) -> None:

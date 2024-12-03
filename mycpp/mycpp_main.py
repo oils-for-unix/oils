@@ -319,6 +319,8 @@ def main(argv: List[str]) -> int:
     # Which functions are C++ 'virtual'?
     virtual = pass_state.Virtual()
 
+    all_member_vars: cppgen_pass.AllMemberVars = {}
+
     # class Foo; class Bar;
     timer.Section('mycpp pass: FORWARD DECL')
     for name, module in to_compile:
@@ -330,7 +332,8 @@ def main(argv: List[str]) -> int:
 
         # TODO: write output of forward_decls, instead of the file
         forward_decls: List[str] = []
-        p2 = virtual_pass.Pass(result.types, virtual, forward_decls)
+        p2 = virtual_pass.Pass(result.types, virtual, forward_decls,
+                               all_member_vars)
         p2.SetOutputFile(out_f)
 
         p2.visit_mypy_file(module)
@@ -368,7 +371,6 @@ def main(argv: List[str]) -> int:
     timer.Section('mycpp pass: PROTOTYPES')
 
     local_vars: cppgen_pass.LocalVarsTable = {}
-    ctx_member_vars: cppgen_pass.CtxMemberVars = {}
 
     for name, module in to_compile:
         #log('decl name %s', name)
@@ -382,7 +384,7 @@ def main(argv: List[str]) -> int:
                 result.types,
                 global_strings,  # input
                 local_vars=local_vars,  # output
-                ctx_member_vars=ctx_member_vars,  # output
+                all_member_vars=all_member_vars,  # output
                 virtual=virtual,  # input
                 decl=True)
         else:
@@ -390,7 +392,7 @@ def main(argv: List[str]) -> int:
                 result.types,
                 global_strings,  # input
                 local_vars=local_vars,  # output
-                ctx_member_vars=ctx_member_vars,  # output
+                all_member_vars=all_member_vars,  # input
                 virtual=virtual,  # input
                 decl=True)
         p3.SetOutputFile(out_f)
@@ -399,9 +401,9 @@ def main(argv: List[str]) -> int:
         MaybeExitWithErrors(p3)
 
     if 0:
-        log('\tctx_member_vars')
+        log('\tall_member_vars')
         from pprint import pformat
-        print(pformat(ctx_member_vars), file=sys.stderr)
+        print(pformat(all_member_vars), file=sys.stderr)
 
     timer.Section('mycpp pass: CONTROL FLOW')
 
@@ -437,7 +439,8 @@ def main(argv: List[str]) -> int:
             result.types,
             global_strings,  # input
             local_vars=local_vars,  # input
-            ctx_member_vars=ctx_member_vars,  # input
+            #all_member_vars=all_member_vars,  # input
+            all_member_vars=all_member_vars,
             stack_roots_warn=opts.stack_roots_warn,  # input
             dot_exprs=dot_exprs[module.path],  # input
             stack_roots=stack_roots,  # input

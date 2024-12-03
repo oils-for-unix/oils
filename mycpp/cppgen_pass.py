@@ -427,11 +427,13 @@ def PythonStringLiteral(s: str) -> str:
     return json.dumps(format_strings.DecodeMyPyString(s))
 
 
+# name, type, is_param
 LocalVar = Tuple[str, Type, bool]
 
+# lval_type, c_type, is_managed
 MemberVar = Tuple[Type, str, bool]
 
-CtxMemberVars = Dict[ClassDef, Dict[str, MemberVar]]
+AllMemberVars = Dict[ClassDef, Dict[str, MemberVar]]
 
 LocalVarsTable = Dict[FuncDef, List[Tuple[str, Type]]]
 
@@ -443,7 +445,7 @@ class Generate(visitor.SimpleVisitor):
                  global_strings: 'const_pass.GlobalStrings',
                  virtual: pass_state.Virtual = None,
                  local_vars: Optional[LocalVarsTable] = None,
-                 ctx_member_vars: Optional[CtxMemberVars] = None,
+                 all_member_vars: Optional[AllMemberVars] = None,
                  decl: bool = False,
                  stack_roots_warn: Optional[int] = None,
                  dot_exprs: Optional['ir_pass.DotExprs'] = None,
@@ -458,7 +460,8 @@ class Generate(visitor.SimpleVisitor):
         # We collect local_vars and ctx-member_vars in the DECL phase, and
         # write them in the IMPL phase.
         self.local_vars = local_vars  # Dict[FuncDef node, list of type, var]
-        self.ctx_member_vars = ctx_member_vars  # for rooting
+
+        self.all_member_vars = all_member_vars  # for class def, and rooting
 
         self.decl = decl
         self.stack_roots_warn = stack_roots_warn
@@ -477,16 +480,6 @@ class Generate(visitor.SimpleVisitor):
 
         self.current_func_node: Optional[FuncDef] = None
         self.current_stmt_node: Optional[Statement] = None
-
-        # DECL pass: self.current_member_vars holds the vars for the current
-        # class.  It's cleared when we start looking at a class.  Then we visit
-        # all the methods, and accumulate the types of everything that looks
-        # like self.foo = 1.  Then we write C++ class member declarations at
-        # the end of the class.
-        self.current_member_vars: Dict[str, MemberVar] = {}
-        self.current_class_name: Optional[
-            util.SymbolPath] = None  # for prototypes
-        self.current_method_name: Optional[str] = None
 
         self.dot_exprs = dot_exprs
         self.stack_roots = stack_roots
@@ -1354,15 +1347,6 @@ class Generate(visitor.SimpleVisitor):
         self.def_write(';\n')
         self.def_write_ind('%s %s(&%s);\n', c_type, lval.name, iter_buf[0])
 
-    def _MaybeAddMember(self, lval: Expression,
-                        current_member_vars: Dict[str, MemberVar]) -> None:
-        if isinstance(lval.expr, NameExpr) and lval.expr.name == 'self':
-            #log('    lval.name %s', lval.name)
-            lval_type = self.types[lval]
-            c_type = GetCType(lval_type)
-            is_managed = CTypeIsManaged(c_type)
-            current_member_vars[lval.name] = (lval_type, c_type, is_managed)
-
     def visit_list_comprehension(self,
                                  o: 'mypy.nodes.ListComprehension') -> None:
         # no-op on purpose - overrides visitor
@@ -1453,10 +1437,6 @@ class Generate(visitor.SimpleVisitor):
                 self.def_write(' = ')
                 self._AssignNewDictImpl(lval)  # uses lval, not rval
                 self.def_write(';\n')
-
-                if isinstance(lval, MemberExpr):
-                    # Bug fix: self.front_frame = NewDict() needs to register member
-                    self._MaybeAddMember(lval, self.current_member_vars)
                 return
 
             if callee.name == 'cast':
@@ -1497,17 +1477,6 @@ class Generate(visitor.SimpleVisitor):
             self.def_write(' = ')
             self.accept(rval)
             self.def_write(';\n')
-
-            if self.current_method_name in ('__init__', 'Reset'):
-                # Collect statements that look like self.foo = 1
-                # Only do this in __init__ so that a derived class mutating a field
-                # from the base class doesn't cause duplicate C++ fields.  (C++
-                # allows two fields of the same name!)
-                #
-                # HACK for WordParser: also include Reset().  We could change them
-                # all up front but I kinda like this.
-
-                self._MaybeAddMember(lval, self.current_member_vars)
             return
 
         if isinstance(lval, IndexExpr):  # a[x] = 1
@@ -2335,7 +2304,7 @@ class Generate(visitor.SimpleVisitor):
 
     def _MemberDecl(self, o: 'mypy.nodes.ClassDef',
                     base_class_name: util.SymbolPath) -> None:
-        member_vars = self.current_member_vars
+        member_vars = self.all_member_vars[o]
 
         # List of field mask expressions
         mask_bits = []
@@ -2394,11 +2363,8 @@ class Generate(visitor.SimpleVisitor):
                 # (context managers may be on the stack)
                 self.always_write_ind('%s %s{};\n', c_type, name)
 
-        if _IsContextManager(self.current_class_name):
-            # Copy ctx member vars out of this class
-            assert self.ctx_member_vars is not None
-            self.ctx_member_vars[o] = dict(member_vars)
-        else:
+        # Context managers aren't GC objects
+        if not _IsContextManager(self.current_class_name):
             self._TracingMetadataDecl(o, field_gc, mask_bits)
 
         self.always_write('\n')
@@ -2452,7 +2418,7 @@ class Generate(visitor.SimpleVisitor):
         if _IsContextManager(self.current_class_name):
             # For ctx_* classes only, do gHeap.PushRoot() for all the pointer
             # members
-            member_vars = self.ctx_member_vars[o]
+            member_vars = self.all_member_vars[o]
             for name in sorted(member_vars):
                 _, c_type, is_managed = member_vars[name]
                 if is_managed:
@@ -2487,7 +2453,7 @@ class Generate(visitor.SimpleVisitor):
 
         # For ctx_* classes only , gHeap.PopRoot() for all the pointer members
         if _IsContextManager(self.current_class_name):
-            member_vars = self.ctx_member_vars[o]
+            member_vars = self.all_member_vars[o]
             for name in sorted(member_vars):
                 _, c_type, is_managed = member_vars[name]
                 if is_managed:
@@ -2530,7 +2496,6 @@ class Generate(visitor.SimpleVisitor):
 
     def oils_visit_method(self, o: ClassDef, stmt: FuncDef,
                           base_class_name: util.SymbolPath) -> None:
-        # self.current_method_name is set by superclass
         if self.decl:
             self.indent += 1
             self.accept(stmt)
@@ -2551,8 +2516,6 @@ class Generate(visitor.SimpleVisitor):
             base_class_name: Optional[util.SymbolPath]) -> None:
         #log('  CLASS %s', o.name)
         if self.decl:
-            self.current_member_vars.clear()  # make a new list
-
             self.always_write_ind('class %s', o.name)  # block after this
 
             # e.g. class TextOutput : public ColorOutput
