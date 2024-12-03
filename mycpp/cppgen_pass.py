@@ -1167,8 +1167,9 @@ class Generate(visitor.SimpleVisitor):
             op = '.' if is_return else '->'
             self.def_write(' = %s%sat%d();\n', temp_name, op, i)  # RHS
 
-    def _ListComprehensionImpl(self, o: 'mypy.nodes.AssignmentStmt',
-                               lval: Expression, c_type: 'str') -> None:
+    def _ListComprehensionImpl(self, lval: NameExpr, left_expr: Expression,
+                               index_expr: Expression, seq: Expression,
+                               cond: Expression) -> None:
         """
         Special case for list comprehensions.  Note that the LHS MUST be on the
         LHS, so we can append to it.
@@ -1181,12 +1182,6 @@ class Generate(visitor.SimpleVisitor):
             y.append(i+1)
         (but in C++)
         """
-        gen = o.rvalue.generator  # GeneratorExpr
-        left_expr = gen.left_expr
-        index_expr = gen.indices[0]
-        seq = gen.sequences[0]
-        cond = gen.condlists[0]
-
         # BUG: can't use this to filter
         # results = [x for x in results]
         if isinstance(seq, NameExpr) and seq.name == lval.name:
@@ -1194,6 +1189,7 @@ class Generate(visitor.SimpleVisitor):
                 "Can't use var %r in list comprehension because it would "
                 "be overwritten" % lval.name)
 
+        c_type = GetCType(self.types[lval])
         # Write empty container as initialization.
         assert c_type.endswith('*'), c_type  # Hack
         self.def_write('Alloc<%s>();\n' % c_type[:-1])
@@ -1243,10 +1239,10 @@ class Generate(visitor.SimpleVisitor):
         else:
             raise AssertionError('Unexpected type %s' % item_type)
 
-        if cond:
+        if cond is not None:
             self.indent += 1
             self.def_write_ind('if (')
-            self.accept(cond[0])  # Just the first one
+            self.accept(cond)
             self.def_write(') {\n')
 
         self.def_write_ind('  %s->append(', lval.name)
@@ -1348,8 +1344,10 @@ class Generate(visitor.SimpleVisitor):
         self.def_write(';\n')
         self.def_write_ind('%s %s(&%s);\n', c_type, lval.name, iter_buf[0])
 
-    def oils_visit_assign_to_listcomp(self, o: 'mypy.nodes.AssignmentStmt',
-                                      lval: NameExpr) -> None:
+    def oils_visit_assign_to_listcomp(self, lval: NameExpr,
+                                      left_expr: Expression,
+                                      index_expr: Expression, seq: Expression,
+                                      cond: Expression) -> None:
         lval_type = self.types[lval]
 
         # Copied from oils_visit_assignment_stmt
@@ -1357,8 +1355,7 @@ class Generate(visitor.SimpleVisitor):
         if self.decl:
             self.local_var_list.append((lval.name, lval_type))
 
-        c_type = GetCType(lval_type)
-        self._ListComprehensionImpl(o, lval, c_type)
+        self._ListComprehensionImpl(lval, left_expr, index_expr, seq, cond)
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
                                    lval: Expression, rval: Expression) -> None:
@@ -2271,8 +2268,7 @@ class Generate(visitor.SimpleVisitor):
         self.current_func_node = None
 
     def _GcHeaderDecl(self, o: 'mypy.nodes.ClassDef',
-                             field_gc: Tuple[str, str],
-                             mask_bits: List[str]) -> None:
+                      field_gc: Tuple[str, str], mask_bits: List[str]) -> None:
         if mask_bits:
             self.always_write_ind('\n')
             self.always_write_ind('static constexpr uint32_t field_mask() {\n')

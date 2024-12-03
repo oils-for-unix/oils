@@ -156,6 +156,10 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         # We need to detect this
         # And then also detect it for list comprehensions
 
+        # Two different tests:
+        # for loop test
+        # if isinstance(o.index, TupleExpr):
+
     def visit_with_stmt(self, o: 'mypy.nodes.WithStmt') -> None:
         assert len(o.expr) == 1, o.expr
         expr = o.expr[0]
@@ -286,7 +290,7 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
 
             # Special case for
             if isinstance(o.rvalue, ListComprehension):
-                self.oils_visit_assign_to_listcomp(o, lval)
+                self.visit_assign_to_listcomp(o, lval)
                 return
 
         self.oils_visit_assignment_stmt(o, lval, o.rvalue)
@@ -349,7 +353,7 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
     # Expressions
 
     def visit_generator_expr(self, o: 'mypy.nodes.GeneratorExpr') -> None:
-        """Called by visit_list_comprehension."""
+        raise AssertionError()
 
         self.accept(o.left_expr)
 
@@ -370,10 +374,39 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         self.report_error(o,
                           'List comprehension must be assigned to a temp var')
 
-    def oils_visit_assign_to_listcomp(self, o: 'mypy.nodes.AssignmentStmt',
-                                      lval: NameExpr) -> None:
+    def oils_visit_assign_to_listcomp(self, lval: NameExpr,
+                                      left_expr: Expression,
+                                      index_expr: Expression, seq: Expression,
+                                      cond: Expression) -> None:
         self.accept(lval)
-        self.accept(o.rvalue.generator)
+        self.accept(left_expr)
+        self.accept(index_expr)
+        self.accept(seq)
+        if cond is not None:
+            self.accept(cond)
+
+    def visit_assign_to_listcomp(self, o: 'mypy.nodes.AssignmentStmt',
+                                 lval: NameExpr) -> None:
+        gen = o.rvalue.generator  # GeneratorExpr
+
+        if (len(gen.indices) != 1 or len(gen.sequences) != 1 or
+                len(gen.condlists) != 1):
+            self.report_error(o, 'List comprehensions can only have one loop')
+
+        index_expr = gen.indices[0]
+        seq = gen.sequences[0]
+        condlist = gen.condlists[0]
+
+        if len(condlist) == 0:
+            cond: Optional[Expression] = None
+        elif len(condlist) == 1:
+            cond = condlist[0]
+        else:
+            self.report_error(
+                o, 'List comprehensions may have at most one condition')
+
+        self.oils_visit_assign_to_listcomp(lval, gen.left_expr, index_expr,
+                                           seq, cond)
 
     def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
         self.accept(o.expr)

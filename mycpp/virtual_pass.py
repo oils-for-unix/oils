@@ -133,15 +133,18 @@ class Pass(visitor.SimpleVisitor):
         super().oils_visit_func_def(o)
         self.all_local_vars[o] = self.current_local_vars
 
-    def oils_visit_assign_to_listcomp(self, o: 'mypy.nodes.AssignmentStmt',
-                                      lval: NameExpr) -> None:
+    def oils_visit_assign_to_listcomp(self, lval: NameExpr,
+                                      left_expr: Expression,
+                                      index_expr: Expression, seq: Expression,
+                                      cond: Expression) -> None:
         # We need to consider 'result' a local var:
         #     result = [x for x in other]
         self.current_local_vars.append((lval.name, self.types[lval]))
 
         # TODO: _write_tuple_unpacking: result = [a for a, b in other]
 
-        super().oils_visit_assign_to_listcomp(o, lval)
+        super().oils_visit_assign_to_listcomp(lval, left_expr, index_expr, seq,
+                                              cond)
 
     def _MaybeAddMember(self, lval: MemberExpr) -> None:
         # Collect statements that look like self.foo = 1
@@ -159,7 +162,8 @@ class Pass(visitor.SimpleVisitor):
             lval_type = self.types[lval]
             c_type = cppgen_pass.GetCType(lval_type)
             is_managed = cppgen_pass.CTypeIsManaged(c_type)
-            self.current_member_vars[lval.name] = (lval_type, c_type, is_managed)
+            self.current_member_vars[lval.name] = (lval_type, c_type,
+                                                   is_managed)
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
                                    lval: Expression, rval: Expression) -> None:
