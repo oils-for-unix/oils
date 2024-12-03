@@ -125,19 +125,21 @@ def DecayArray(val):
 
 
 def GetArrayItem(strs, index):
-    # type: (List[str], int) -> Optional[str]
+    # type: (List[str], int) -> Tuple[Optional[str], int]
 
     n = len(strs)
     if index < 0:
         index += n
+        if index < 0:
+            return None, 1
 
-    if 0 <= index and index < n:
+    if index < n:
         # TODO: strs->index() has a redundant check for (i < 0)
         s = strs[index]
         # note: s could be None because representation is sparse
     else:
         s = None
-    return s
+    return s, 0
 
 
 def _DetectMetaBuiltinStr(s):
@@ -1120,7 +1122,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 index = self.arith_ev.EvalToInt(anode)
                 vtest_place.index = a_index.Int(index)
 
-                s = GetArrayItem(array_val.strs, index)
+                s, error_code = GetArrayItem(array_val.strs, index)
+                if error_code == 1:
+                    # Note: Bash outputs warning but does not make it a real
+                    # error.  We follow the Bash behavior here.
+                    self.errfmt.Print_(
+                        "Index %d out of bounds for array of length %d" %
+                        (index, bash_impl.BashArray_Length(array_val)),
+                        blame_loc=part.token)
 
                 if s is None:
                     val = value.Undef

@@ -972,3 +972,39 @@ quoted = ('x' 'y')
 
 ## N-I mksh STDOUT:
 ## END
+
+
+#### Regression: silent out-of-bound negative index in ${a[-2]} and $((a[-2]))
+case $SH in mksh) exit ;; esac
+
+a=(x)
+echo "[${a[-2]}]"
+echo $?
+echo "[$((a[-2]))]"
+echo $?
+
+## STDOUT:
+[]
+0
+[0]
+0
+## END
+## STDERR:
+  echo "[${a[-2]}]"
+           ^
+[ stdin ]:4: Index -2 out of bounds for array of length 1
+  echo "[$((a[-2]))]"
+             ^
+[ stdin ]:6: Index -2 out of bounds for array of length 1
+## END
+
+## OK bash STDERR:
+bash: line 4: a: bad array subscript
+bash: line 6: a: bad array subscript
+## END
+
+## N-I mksh status: 0
+## N-I mksh STDOUT:
+## END
+## N-I mksh STDERR:
+## END
