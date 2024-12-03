@@ -5,7 +5,7 @@ import mypy
 from mypy.visitor import ExpressionVisitor, StatementVisitor
 from mypy.nodes import (Expression, Statement, ExpressionStmt, StrExpr,
                         CallExpr, YieldExpr, NameExpr, MemberExpr, Argument,
-                        ClassDef, FuncDef, IfStmt, PassStmt)
+                        ClassDef, FuncDef, IfStmt, PassStmt, ListComprehension)
 
 from mycpp.crash import catch_errors
 from mycpp import util
@@ -106,12 +106,38 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         for path, line_num, msg in self.errors_keep_going:
             self.log('%s:%s %s', path, line_num, msg)
 
-    def visit_for_stmt(self, o: 'mypy.nodes.ForStmt') -> None:
+    def oils_visit_for_stmt(self, o: 'mypy.nodes.ForStmt',
+                            func_name: Optional[str]) -> None:
         self.accept(o.index)  # index var expression
         self.accept(o.expr)
         self.accept(o.body)
         if o.else_body:
             raise AssertionError("can't translate for-else")
+
+    def visit_for_stmt(self, o: 'mypy.nodes.ForStmt') -> None:
+
+        func_name = None  # does the loop look like 'for x in func():' ?
+        if (isinstance(o.expr, CallExpr) and
+                isinstance(o.expr.callee, NameExpr)):
+            func_name = o.expr.callee.name
+
+        self.oils_visit_for_stmt(o, func_name)
+
+        # TODO: validate and destructure the different kinds of loops
+        #
+        # xrange() - 1 index
+        #   xrange negative
+        # enumerate() - 2 indices
+        # reversed() - container - 1 index
+        # iteritems() - dict, 2 indices
+        #
+        # - over list
+        # - over dict - list comprehensions would need this too
+        # - over iterator
+        #
+        # LHS
+        # - NameExpr
+        # - TupleExpr
 
     def visit_with_stmt(self, o: 'mypy.nodes.WithStmt') -> None:
         assert len(o.expr) == 1, o.expr
@@ -235,8 +261,14 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         lval = o.lvalues[0]
 
         # Metadata we'll never use
-        if isinstance(lval, NameExpr) and lval.name == '__all__':
-            return
+        if isinstance(lval, NameExpr):
+            if lval.name == '__all__':
+                return
+
+            # Special case for
+            if isinstance(o.rvalue, ListComprehension):
+                self.oils_visit_assign_to_listcomp(o, lval)
+                return
 
         self.oils_visit_assignment_stmt(o, lval, o.rvalue)
 
@@ -313,7 +345,15 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
 
     def visit_list_comprehension(self,
                                  o: 'mypy.nodes.ListComprehension') -> None:
-        self.accept(o.generator)
+        # old code
+        #self.accept(o.generator)
+        self.report_error(o,
+                          'List comprehension must be assigned to a temp var')
+
+    def oils_visit_assign_to_listcomp(self, o: 'mypy.nodes.AssignmentStmt',
+                                      lval: NameExpr) -> None:
+        self.accept(lval)
+        self.accept(o.rvalue.generator)
 
     def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
         self.accept(o.expr)

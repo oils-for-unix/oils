@@ -25,6 +25,13 @@ def run_tests():
 
     exec('x = 42')
 
+    # ok
+    assign_to_listcomp = ['t' for s in xrange(5)]
+
+    # Not ok
+    mylist = []  # type: List[List[str]]
+    mylist.append(['s' for s in xrange(3)])
+
 
 class A:
     pass

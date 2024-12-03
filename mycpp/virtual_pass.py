@@ -5,8 +5,8 @@ TODO: Join with ir_pass.py
 """
 import mypy
 
-from mypy.nodes import (Expression, NameExpr, MemberExpr)
-from mypy.types import Type
+from mypy.nodes import (Expression, NameExpr, MemberExpr, TupleExpr)
+from mypy.types import Type, Instance, TupleType
 
 from mycpp import util
 from mycpp.util import log
@@ -14,13 +14,29 @@ from mycpp import pass_state
 from mycpp import visitor
 from mycpp import cppgen_pass
 
-from typing import Dict, List, Optional, TYPE_CHECKING
+from typing import Dict, List, Tuple, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     #from mycpp import cppgen_pass
     pass
 
 _ = log
+
+
+class MyTypeInfo:
+    """Like mypy.nodes.TypeInfo"""
+
+    def __init__(self, fullname: str) -> None:
+        self.fullname = fullname
+
+
+class Primitive(Instance):
+
+    def __init__(self, name: str) -> None:
+        self.type = MyTypeInfo(name)  # type: ignore
+
+
+MYCPP_INT = Primitive('builtins.int')
 
 
 class Pass(visitor.SimpleVisitor):
@@ -31,14 +47,17 @@ class Pass(visitor.SimpleVisitor):
         virtual: pass_state.Virtual,
         forward_decls: List[str],
         all_member_vars: 'cppgen_pass.AllMemberVars',
+        all_local_vars: 'cppgen_pass.AllLocalVars',
     ) -> None:
         visitor.SimpleVisitor.__init__(self)
         self.types = types
         self.virtual = virtual  # output
         self.forward_decls = forward_decls  # output
         self.all_member_vars = all_member_vars
+        self.all_local_vars = all_local_vars
 
         self.current_member_vars: Dict[str, 'cppgen_pass.MemberVar'] = {}
+        self.current_local_vars: List[Tuple[str, Type]] = []
 
     def oils_visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> None:
         mod_parts = o.fullname.split('.')
@@ -70,8 +89,17 @@ class Pass(visitor.SimpleVisitor):
     def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
         self.virtual.OnMethod(self.current_class_name, o.name)
 
+        self.current_local_vars = []
+
+        # Add function params as locals, to be rooted
+        arg_types = o.type.arg_types
+        arg_names = [arg.variable.name for arg in o.arguments]
+        for name, typ in zip(arg_names, arg_types):
+            self.current_local_vars.append((name, typ))
+
         # Traverse to collect member variables
         super().oils_visit_func_def(o)
+        self.all_local_vars[o] = self.current_local_vars
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
                                    lval: Expression, rval: Expression) -> None:
@@ -79,7 +107,52 @@ class Pass(visitor.SimpleVisitor):
         if isinstance(lval, MemberExpr):
             self._MaybeAddMember(lval, self.current_member_vars)
 
+        # Replacing old logic: cast(), NewDict()
+        #
+        # Note: this has duplicates, and the 'done' set in visit_block()
+        # handles it.  Could make it a Dict.
+        if isinstance(lval, NameExpr):
+            self.current_local_vars.append((lval.name, self.types[lval]))
+
+        # From _write_tuple_unpacking
+        # TODO: we also need to handle list comprehensions!  Gah
+        if isinstance(lval, TupleExpr):
+            rval_type = self.types[rval]
+            # This is
+            # a, b = func_that_returns_tuple()
+            assert isinstance(rval_type, TupleType), rval_type
+
+            for i, (lval_item,
+                    item_type) in enumerate(zip(lval.items, rval_type.items)):
+                #self.log('*** %s :: %s', lval_item, item_type)
+                if isinstance(lval_item, NameExpr):
+                    if util.SkipAssignment(lval_item.name):
+                        continue
+                    self.current_local_vars.append((lval_item.name, item_type))
+
         super().oils_visit_assignment_stmt(o, lval, rval)
+
+    def oils_visit_for_stmt(self, o: 'mypy.nodes.ForStmt',
+                            func_name: Optional[str]) -> None:
+        # TODO: copied from cppgen_pass - this could be destructured in visitor.py
+        index0_name: Optional[str] = None
+        if func_name == 'enumerate':
+            assert isinstance(o.index, TupleExpr), o.index
+            index0 = o.index.items[0]
+            assert isinstance(index0, NameExpr), index0
+            index0_name = index0.name  # generate int i = 0; ; ++i
+
+        if index0_name:
+            # can't initialize two things in a for loop, so do it on a separate line
+            self.current_local_vars.append((index0_name, MYCPP_INT))
+
+        # Notes:
+        # - index0_name - can we remove this?
+        #   - it only happens in for i, x in enumerate(...):
+        #     because for (x, y) makes locally scoped vars
+        #   - we could initialize it to zero inside the loop
+        #     and then increment it, at the end
+        super().oils_visit_for_stmt(o, func_name)
 
     def _MaybeAddMember(
             self, lval: MemberExpr,

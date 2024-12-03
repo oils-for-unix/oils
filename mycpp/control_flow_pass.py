@@ -45,7 +45,7 @@ class Build(visitor.SimpleVisitor):
 
     def __init__(self, types: Dict[Expression,
                                    Type], virtual: pass_state.Virtual,
-                 local_vars: 'cppgen_pass.LocalVarsTable',
+                 local_vars: 'cppgen_pass.AllLocalVars',
                  dot_exprs: 'ir_pass.DotExprs') -> None:
         visitor.SimpleVisitor.__init__(self)
 
@@ -402,6 +402,26 @@ class Build(visitor.SimpleVisitor):
             for t, v, handler in zip(o.types, o.vars, o.handlers):
                 with try_ctx.AddBranch(try_block.exit):
                     self.accept(handler)
+
+    # 2024-12(andy): SimpleVisitor now has a special case for:
+    #
+    #   myvar = [x for x in other]
+    #
+    # This seems like it should affect the control flow graph, since we are no
+    # longer calling oils_visit_assignment_stmt, and are instead calling
+    # oils_visit_assign_to_listcomp.
+    #
+    # We may need more test coverage?
+    # List comprehensions are arguably a weird/legacy part of the mycpp IR that
+    # should be cleaned up.
+    #
+    # We do NOT allow:
+    #
+    #   myfunc([x for x in other])
+    #
+    # See mycpp/visitor.py and mycpp/cppgen_pass.py for how this is used.
+
+    #def oils_visit_assign_to_listcomp(self, o: 'mypy.nodes.AssignmentStmt', lval: NameExpr) -> None:
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
                                    lval: Expression, rval: Expression) -> None:

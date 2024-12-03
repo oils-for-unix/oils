@@ -14,7 +14,7 @@ from mypy.types import (Type, AnyType, NoneTyp, TupleType, Instance, NoneType,
 from mypy.nodes import (Expression, Statement, NameExpr, IndexExpr, MemberExpr,
                         TupleExpr, ExpressionStmt, IfStmt, StrExpr, SliceExpr,
                         FuncDef, UnaryExpr, OpExpr, CallExpr, ListExpr,
-                        DictExpr, ListComprehension, ClassDef)
+                        DictExpr, ClassDef)
 
 from mycpp import format_strings
 from mycpp.util import log, join_name, split_py_name, IsStr
@@ -435,7 +435,7 @@ MemberVar = Tuple[Type, str, bool]
 
 AllMemberVars = Dict[ClassDef, Dict[str, MemberVar]]
 
-LocalVarsTable = Dict[FuncDef, List[Tuple[str, Type]]]
+AllLocalVars = Dict[FuncDef, List[Tuple[str, Type]]]
 
 
 class Generate(visitor.SimpleVisitor):
@@ -444,7 +444,7 @@ class Generate(visitor.SimpleVisitor):
                  types: Dict[Expression, Type],
                  global_strings: 'const_pass.GlobalStrings',
                  virtual: pass_state.Virtual = None,
-                 local_vars: Optional[LocalVarsTable] = None,
+                 local_vars: Optional[AllLocalVars] = None,
                  all_member_vars: Optional[AllMemberVars] = None,
                  decl: bool = False,
                  stack_roots_warn: Optional[int] = None,
@@ -1347,10 +1347,17 @@ class Generate(visitor.SimpleVisitor):
         self.def_write(';\n')
         self.def_write_ind('%s %s(&%s);\n', c_type, lval.name, iter_buf[0])
 
-    def visit_list_comprehension(self,
-                                 o: 'mypy.nodes.ListComprehension') -> None:
-        # no-op on purpose - overrides visitor
-        pass
+    def oils_visit_assign_to_listcomp(self, o: 'mypy.nodes.AssignmentStmt',
+                                      lval: NameExpr) -> None:
+        lval_type = self.types[lval]
+
+        # Copied from oils_visit_assignment_stmt
+        self.def_write_ind('%s = ', lval.name)
+        if self.decl:
+            self.local_var_list.append((lval.name, lval_type))
+
+        c_type = GetCType(lval_type)
+        self._ListComprehensionImpl(o, lval, c_type)
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
                                    lval: Expression, rval: Expression) -> None:
@@ -1463,10 +1470,6 @@ class Generate(visitor.SimpleVisitor):
                 # globals always get a type -- they're not mutated
                 self.def_write_ind('%s %s = ', c_type, lval.name)
 
-            if isinstance(rval, ListComprehension):
-                self._ListComprehensionImpl(o, lval, c_type)
-                return
-
             self.accept(rval)
             self.def_write(';\n')
             return
@@ -1533,17 +1536,13 @@ class Generate(visitor.SimpleVisitor):
         for stmt in body:
             self.accept(stmt)
 
-    def visit_for_stmt(self, o: 'mypy.nodes.ForStmt') -> None:
+    def oils_visit_for_stmt(self, o: 'mypy.nodes.ForStmt',
+                            func_name: Optional[str]) -> None:
         if 0:
             self.log('ForStmt')
             self.log('  index_type %s', o.index_type)
             self.log('  inferred_item_type %s', o.inferred_item_type)
             self.log('  inferred_iterator_type %s', o.inferred_iterator_type)
-
-        func_name = None  # does the loop look like 'for x in func():' ?
-        if (isinstance(o.expr, CallExpr) and
-                isinstance(o.expr.callee, NameExpr)):
-            func_name = o.expr.callee.name
 
         # special case: 'for i in xrange(3)'
         if func_name == 'xrange':

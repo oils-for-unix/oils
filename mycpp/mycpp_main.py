@@ -320,6 +320,7 @@ def main(argv: List[str]) -> int:
     virtual = pass_state.Virtual()
 
     all_member_vars: cppgen_pass.AllMemberVars = {}
+    all_local_vars: cppgen_pass.AllLocalVars = {}
 
     # class Foo; class Bar;
     timer.Section('mycpp pass: FORWARD DECL')
@@ -333,7 +334,7 @@ def main(argv: List[str]) -> int:
         # TODO: write output of forward_decls, instead of the file
         forward_decls: List[str] = []
         p2 = virtual_pass.Pass(result.types, virtual, forward_decls,
-                               all_member_vars)
+                               all_member_vars, all_local_vars)
         p2.SetOutputFile(out_f)
 
         p2.visit_mypy_file(module)
@@ -370,7 +371,7 @@ def main(argv: List[str]) -> int:
     #
     timer.Section('mycpp pass: PROTOTYPES')
 
-    local_vars: cppgen_pass.LocalVarsTable = {}
+    local_vars: cppgen_pass.AllLocalVars = {}
 
     for name, module in to_compile:
         #log('decl name %s', name)
