@@ -28,8 +28,8 @@ UniqueStrings = Dict[bytes, str]  # SHA1 digest -> raw string
 HashedStrings = Dict[str, List[str]]  # short hash -> raw string
 VarNames = Dict[str, str]  # raw string -> variable name
 
-#_STABLE_NAMES = True
-_STABLE_NAMES = False
+_STABLE_NAMES = True
+#_STABLE_NAMES = False
 
 
 class GlobalStrings:
