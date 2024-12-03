@@ -13,15 +13,11 @@
 using pretty_asdl::doc;  // ad hoc
       
 namespace runtime {  // forward declare
-
   class TraversalState;
-
-}  // forward declare namespace runtime
+}
 
 namespace format {  // forward declare
-
-
-}  // forward declare namespace format
+}
 
 namespace runtime {  // declare
 

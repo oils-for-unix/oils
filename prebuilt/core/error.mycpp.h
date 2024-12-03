@@ -15,7 +15,6 @@
 using value_asdl::value;  // This is a bit ad hoc
 
 namespace error {  // forward declare
-
   class _ErrorWithLocation;
   class Usage;
   class Parse;
@@ -32,8 +31,7 @@ namespace error {  // forward declare
   class Runtime;
   class Decode;
   class Encode;
-
-}  // forward declare namespace error
+}
 
 namespace error {  // declare
 

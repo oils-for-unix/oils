@@ -18,18 +18,13 @@ using value_asdl::value;  // This is a bit ad hoc
 using pretty_asdl::doc;
 
 namespace runtime {  // forward declare
-
   class TraversalState;
-
-}  // forward declare namespace runtime
+}
 
 namespace format {  // forward declare
-
-
-}  // forward declare namespace format
+}
 
 namespace args {  // forward declare
-
   class _Attributes;
   class Reader;
   class _Action;
@@ -43,8 +38,7 @@ namespace args {  // forward declare
   class SetNamedOption;
   class SetAction;
   class SetNamedAction;
-
-}  // forward declare namespace args
+}
 
 namespace runtime {  // declare
 

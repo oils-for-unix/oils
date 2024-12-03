@@ -362,8 +362,8 @@ def main(argv: List[str]) -> int:
 
     global_strings.ComputeStableVarNames()
 
-    # Emit GLOBAL_STR()
-    global_strings.WriteConstants(out_f)
+    # Emit GLOBAL_STR(), never to header
+    global_strings.WriteConstants(f)
 
     #
     # C++ declarations like:
@@ -446,7 +446,7 @@ def main(argv: List[str]) -> int:
             dot_exprs=dot_exprs[module.path],  # input
             stack_roots=stack_roots,  # input
         )
-        p4.SetOutputFile(out_f)
+        p4.SetOutputFile(f)  # doesn't go to header
 
         p4.visit_mypy_file(module)
         MaybeExitWithErrors(p4)
