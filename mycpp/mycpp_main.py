@@ -4,7 +4,6 @@ mycpp_main.py - Translate a subset of Python to C++, using MyPy's typed AST.
 """
 from __future__ import print_function
 
-import json
 import optparse
 import os
 import sys
@@ -18,7 +17,7 @@ from typing import Dict, List, Optional, Tuple, Any, Iterator, TYPE_CHECKING
 from mypy.build import build as mypy_build
 from mypy.main import process_options
 if TYPE_CHECKING:
-    from mypy.nodes import Expression, MemberExpr
+    from mypy.nodes import MemberExpr
     from mypy.modulefinder import BuildSource
     from mypy.build import BuildResult
 
@@ -29,7 +28,6 @@ from mycpp import control_flow_pass
 from mycpp import decl_pass
 from mycpp import virtual_pass
 from mycpp import pass_state
-from mycpp import util
 from mycpp.util import log
 from mycpp import visitor
 
@@ -350,26 +348,18 @@ def main(argv: List[str]) -> int:
     # String constants
     #
 
-    # GLOBAL Constant pass over all modules.  We want to collect duplicate
-    # strings together.  And have globally unique IDs str0, str1, ... strN.
-    const_lookup: Dict[Expression, str] = {}  # StrExpr node => string name
-    global_strings: List[Tuple[str, str]] = []
-    pass1 = const_pass.Collect(const_lookup, global_strings)
+    global_strings = const_pass.GlobalStrings()
+    pass1 = const_pass.Collect(global_strings)
 
     timer.Section('mycpp pass: CONST')
     for name, module in to_compile:
         pass1.visit_mypy_file(module)
         MaybeExitWithErrors(pass1)
 
-    for str_id, raw_string in global_strings:
-        if util.SMALL_STR:
-            macro_name = 'GLOBAL_STR2'
-        else:
-            macro_name = 'GLOBAL_STR'
-        out_f.write('%s(%s, %s);\n' %
-                    (macro_name, str_id, json.dumps(raw_string)))
+    global_strings.ComputeStableVarNames()
 
-    out_f.write('\n')
+    # Emit GLOBAL_STR()
+    global_strings.WriteConstants(out_f)
 
     #
     # C++ declarations like:
@@ -390,7 +380,7 @@ def main(argv: List[str]) -> int:
             # TODO: Fill this out
             p3 = decl_pass.Pass(
                 result.types,
-                const_lookup,  # input
+                global_strings,  # input
                 local_vars=local_vars,  # output
                 ctx_member_vars=ctx_member_vars,  # output
                 virtual=virtual,  # input
@@ -398,7 +388,7 @@ def main(argv: List[str]) -> int:
         else:
             p3 = cppgen_pass.Generate(
                 result.types,
-                const_lookup,  # input
+                global_strings,  # input
                 local_vars=local_vars,  # output
                 ctx_member_vars=ctx_member_vars,  # output
                 virtual=virtual,  # input
@@ -445,7 +435,7 @@ def main(argv: List[str]) -> int:
     for name, module in to_compile:
         p4 = cppgen_pass.Generate(
             result.types,
-            const_lookup,  # input
+            global_strings,  # input
             local_vars=local_vars,  # input
             ctx_member_vars=ctx_member_vars,  # input
             stack_roots_warn=opts.stack_roots_warn,  # input

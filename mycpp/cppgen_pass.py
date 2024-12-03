@@ -23,6 +23,7 @@ from mycpp import util
 
 from typing import Tuple, List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
+    from mycpp import const_pass
     from mycpp import ir_pass
 
 
@@ -439,7 +440,7 @@ class Generate(visitor.SimpleVisitor):
 
     def __init__(self,
                  types: Dict[Expression, Type],
-                 const_lookup: Dict[Expression, str],
+                 global_strings: 'const_pass.GlobalStrings',
                  virtual: pass_state.Virtual = None,
                  local_vars: Optional[LocalVarsTable] = None,
                  ctx_member_vars: Optional[CtxMemberVars] = None,
@@ -450,7 +451,7 @@ class Generate(visitor.SimpleVisitor):
         visitor.SimpleVisitor.__init__(self)
 
         self.types = types
-        self.const_lookup = const_lookup
+        self.global_strings = global_strings
 
         self.virtual = virtual
 
@@ -560,7 +561,7 @@ class Generate(visitor.SimpleVisitor):
         self.def_write(str(o.value))
 
     def visit_str_expr(self, o: 'mypy.nodes.StrExpr') -> None:
-        self.def_write(self.const_lookup[o])
+        self.def_write(self.global_strings.GetVarName(o))
 
     # Expressions
 

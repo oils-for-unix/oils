@@ -5,28 +5,88 @@ Instead of emitting a dynamic allocation StrFromC("foo"), we emit a
 GLOBAL_STR(str99, "foo"), and then a reference to str99.
 """
 import collections
+import json
+import hashlib
 import string
 
 from mypy.nodes import (Expression, StrExpr, CallExpr, NameExpr)
 
 from mycpp import format_strings
+from mycpp import util
 from mycpp.util import log
 from mycpp import visitor
 
-from typing import Dict, List, Tuple, Iterator, Counter
+from typing import Dict, List, Tuple, Counter, TextIO, Union
 
 _ = log
 
 _ALPHABET = string.ascii_lowercase + string.ascii_uppercase
 _ALPHABET = _ALPHABET[:32]
 
+AllStrings = Dict[Union[int, StrExpr], str]  # Node -> raw string
+UniqueStrings = Dict[bytes, str]  # SHA1 digest -> raw string
+HashedStrings = Dict[str, List[str]]  # short hash -> raw string
+VarNames = Dict[str, str]  # raw string -> variable name
+
+#_STABLE_NAMES = True
+_STABLE_NAMES = False
+
+
+class GlobalStrings:
+
+    def __init__(self) -> None:
+        # SHA1 hash -> encoded bytes
+        self.all_strings: AllStrings = {}
+        self.var_names: VarNames = {}
+
+        # OLD
+        self.unique: Dict[bytes, bytes] = {}
+        self.int_id_lookup: Dict[Expression, str] = {}
+        self.pairs: List[Tuple[str, str]] = []
+
+    def Add(self, key: Union[int, StrExpr], s: str) -> None:
+        """
+        key: int for tests
+             StrExpr node for production
+        """
+        self.all_strings[key] = s
+
+    def ComputeStableVarNames(self) -> None:
+        unique = _MakeUniqueStrings(self.all_strings)
+        hash15 = _HashAndCollect(unique)
+        self.var_names = _HandleCollisions(hash15)
+
+    def GetVarName(self, node: StrExpr) -> str:
+        if _STABLE_NAMES:
+            # StrExpr -> str -> variable names
+            return self.var_names[self.all_strings[node]]
+
+        return self.int_id_lookup[node]
+
+    def WriteConstants(self, out_f: TextIO) -> None:
+        if util.SMALL_STR:
+            macro_name = 'GLOBAL_STR2'
+        else:
+            macro_name = 'GLOBAL_STR'
+
+        if _STABLE_NAMES:
+            # sort by the string value itself
+            for raw_string in sorted(self.var_names):
+                var_name = self.var_names[raw_string]
+                out_f.write('%s(%s, %s);\n' %
+                            (macro_name, var_name, json.dumps(raw_string)))
+        else:
+            for str_id, raw_string in self.pairs:
+                out_f.write('%s(%s, %s);\n' %
+                            (macro_name, str_id, json.dumps(raw_string)))
+
+        out_f.write('\n')
+
 
 class Collect(visitor.SimpleVisitor):
 
-    def __init__(self, const_lookup: Dict[Expression, str],
-                 global_strings: List[Tuple[str, str]]) -> None:
+    def __init__(self, global_strings: GlobalStrings) -> None:
         visitor.SimpleVisitor.__init__(self)
-        self.const_lookup = const_lookup
         self.global_strings = global_strings
 
         # Only generate unique strings.
@@ -45,6 +105,11 @@ class Collect(visitor.SimpleVisitor):
         self.unique_id = 0
 
     def visit_str_expr(self, o: StrExpr) -> None:
+        if _STABLE_NAMES:
+            raw_string = format_strings.DecodeMyPyString(o.value)
+            self.global_strings.Add(o, raw_string)
+            return
+
         str_val = o.value
 
         # Optimization to save code
@@ -56,10 +121,10 @@ class Collect(visitor.SimpleVisitor):
             self.unique[str_val] = str_id
 
             raw_string = format_strings.DecodeMyPyString(str_val)
-            self.global_strings.append((str_id, raw_string))
+            self.global_strings.pairs.append((str_id, raw_string))
 
         # Different nodes can refer to the same string ID
-        self.const_lookup[o] = str_id
+        self.global_strings.int_id_lookup[o] = str_id
 
     def visit_call_expr(self, o: CallExpr) -> None:
         # Don't generate constants for probe names
@@ -71,6 +136,24 @@ class Collect(visitor.SimpleVisitor):
         # This is what the SimpleVisitor superclass does
         for arg in o.args:
             self.accept(arg)
+
+
+def _MakeUniqueStrings(all_strings: AllStrings) -> UniqueStrings:
+    """
+    Given all the strings, make a smaller set of unique strings.
+    """
+    unique: UniqueStrings = {}
+    for _, raw_string in all_strings.items():
+        b = raw_string.encode('utf-8')
+        h = hashlib.sha1(b).digest()
+        #print(repr(h))
+
+        if h in unique:
+            # extremely unlikely
+            assert unique[h] == raw_string, ("SHA1 hash collision! %r and %r" %
+                                             (unique[h], b))
+        unique[h] = raw_string
+    return unique
 
 
 def _ShortHash15(h: bytes) -> str:
@@ -94,23 +177,18 @@ def _ShortHash15(h: bytes) -> str:
     return _ALPHABET[d1] + _ALPHABET[d2] + _ALPHABET[d3]
 
 
-def _CollectHashes(unique: Dict[bytes, bytes]) -> Dict[str, List[bytes]]:
-    import pprint
-
+def _HashAndCollect(unique: UniqueStrings) -> HashedStrings:
+    """
+    Use the short hash.
+    """
     hash15 = collections.defaultdict(list)
-
-    for h, the_string in unique.items():
-        if 0:
-            pprint.pprint(h)
-            pprint.pprint(the_string)
-            print('')
-
-        short_hash = _ShortHash15(h)
-        hash15[short_hash].append(the_string)
+    for sha1, b in unique.items():
+        short_hash = _ShortHash15(sha1)
+        hash15[short_hash].append(b)
     return hash15
 
 
-def _SummarizeCollisions(hash15: Dict[str, List[bytes]]) -> None:
+def _SummarizeCollisions(hash15: HashedStrings) -> None:
     collisions: Counter[int] = collections.Counter()
     for short_hash, strs in hash15.items():
         n = len(strs)
@@ -120,48 +198,45 @@ def _SummarizeCollisions(hash15: Dict[str, List[bytes]]) -> None:
             print(strs)
         collisions[n] += 1
 
-    log('COUNT ITEM')
+    log('%10s %s', 'COUNT', 'ITEM')
     for item, count in collisions.most_common():
         log('%10d %s', count, item)
 
 
-def _ResolveCollisions(
-        hash15: Dict[str, List[bytes]]) -> Iterator[Tuple[str, bytes]]:
-    for short_hash, strs in hash15.items():
-        strs.sort()
-        for i, s in enumerate(strs):
+def _HandleCollisions(hash15: HashedStrings) -> VarNames:
+    var_names: VarNames = {}
+    for short_hash, bytes_list in hash15.items():
+        bytes_list.sort()  # stable order, will bump some of the strings
+        for i, b in enumerate(bytes_list):
             if i == 0:
-                yield 'S_%s' % short_hash, s
+                var_names[b] = 'S_%s' % short_hash
             else:
-                yield 'S_%s_%d' % (short_hash, i), s
+                var_names[b] = 'S_%s_%d' % (short_hash, i)
+    return var_names
 
 
 def HashDemo() -> None:
-    import hashlib
     import sys
 
     # 5 bits
     #_ALPHABET = _ALPHABET.replace('l', 'Z')  # use a nicer one?
     log('alpha %r', _ALPHABET)
 
-    unique: Dict[bytes, bytes] = {}
-    for line in sys.stdin:
-        b = line.strip().encode('utf-8')
-        h = hashlib.sha1(b).digest()
-        #print(repr(h))
+    global_strings = GlobalStrings()
 
-        if h in unique:
-            # extremely unlikely
-            assert unique[h] == b, ("SHA1 hash collision! %r and %r" %
-                                    (unique[h], b))
-        unique[h] = b
+    all_lines = sys.stdin.readlines()
+    for i, line in enumerate(all_lines):
+        global_strings.Add(i, line.strip())
 
-    hash15 = _CollectHashes(unique)
+    unique = _MakeUniqueStrings(global_strings.all_strings)
+    hash15 = _HashAndCollect(unique)
+    var_names = _HandleCollisions(hash15)
 
     if 0:
-        for var_name, s in _ResolveCollisions(hash15):
+        for b, var_name in var_names.items():
             if var_name[-1].isdigit():
-                log('%r %r', var_name, s)
+                log('%r %r', var_name, b)
+            #log('%r %r', var_name, b)
 
     log('Unique %d' % len(unique))
     log('hash15 %d' % len(hash15))
