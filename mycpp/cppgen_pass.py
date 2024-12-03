@@ -457,9 +457,10 @@ class Generate(visitor.SimpleVisitor):
 
         self.virtual = virtual
 
-        # We collect local_vars and ctx-member_vars in the DECL phase, and
-        # write them in the IMPL phase.
-        self.local_vars = local_vars  # Dict[FuncDef node, list of type, var]
+        if local_vars is None:
+            self.local_vars = {}  # stub that can be deleted
+        else:
+            self.local_vars = local_vars
 
         self.all_member_vars = all_member_vars  # for class def, and rooting
 

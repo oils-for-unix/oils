@@ -371,7 +371,7 @@ def main(argv: List[str]) -> int:
     #
     timer.Section('mycpp pass: PROTOTYPES')
 
-    local_vars: cppgen_pass.AllLocalVars = {}
+    #local_vars: cppgen_pass.AllLocalVars = {}
 
     for name, module in to_compile:
         #log('decl name %s', name)
@@ -392,7 +392,7 @@ def main(argv: List[str]) -> int:
             p3 = cppgen_pass.Generate(
                 result.types,
                 global_strings,  # input
-                local_vars=local_vars,  # output
+                local_vars=None,  # unused
                 all_member_vars=all_member_vars,  # input
                 virtual=virtual,  # input
                 decl=True)
@@ -410,7 +410,8 @@ def main(argv: List[str]) -> int:
 
     cfgs = {}  # fully qualified function name -> control flow graph
     for name, module in to_compile:
-        cfg_pass = control_flow_pass.Build(result.types, virtual, local_vars,
+        cfg_pass = control_flow_pass.Build(result.types, virtual,
+                                           all_local_vars,
                                            dot_exprs[module.path])
         cfg_pass.visit_mypy_file(module)
         cfgs.update(cfg_pass.cfgs)
@@ -439,7 +440,7 @@ def main(argv: List[str]) -> int:
         p4 = cppgen_pass.Generate(
             result.types,
             global_strings,  # input
-            local_vars=local_vars,  # input
+            local_vars=all_local_vars,  # input
             #all_member_vars=all_member_vars,  # input
             all_member_vars=all_member_vars,
             stack_roots_warn=opts.stack_roots_warn,  # input

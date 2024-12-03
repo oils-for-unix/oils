@@ -5,7 +5,7 @@ TODO: Join with ir_pass.py
 """
 import mypy
 
-from mypy.nodes import (Expression, NameExpr, MemberExpr, TupleExpr)
+from mypy.nodes import (Expression, NameExpr, MemberExpr, TupleExpr, CallExpr)
 from mypy.types import Type, Instance, TupleType
 
 from mycpp import util
@@ -121,12 +121,13 @@ class Pass(visitor.SimpleVisitor):
         # Are we assuming we never do mylib.MaybeCollect() inside a
         # constructor?  We can check that too.
 
-        if (self.current_method_name is not None and
-                self.current_method_name != '__init__'):
+        if self.current_method_name != '__init__':
             # Add function params as locals, to be rooted
             arg_types = o.type.arg_types
             arg_names = [arg.variable.name for arg in o.arguments]
             for name, typ in zip(arg_names, arg_types):
+                if name == 'self':
+                    continue
                 self.current_local_vars.append((name, typ))
 
         # Traverse to collect member variables
@@ -139,6 +140,9 @@ class Pass(visitor.SimpleVisitor):
                                       cond: Expression) -> None:
         # We need to consider 'result' a local var:
         #     result = [x for x in other]
+
+        # what about yield accumulator, like
+        # it_g = g(n)
         self.current_local_vars.append((lval.name, self.types[lval]))
 
         # TODO: _write_tuple_unpacking: result = [a for a, b in other]
@@ -147,6 +151,8 @@ class Pass(visitor.SimpleVisitor):
                                               cond)
 
     def _MaybeAddMember(self, lval: MemberExpr) -> None:
+        assert not self.at_global_scope, "Members shouldn't be assigned at the top level"
+
         # Collect statements that look like self.foo = 1
         # Only do this in __init__ so that a derived class mutating a field
         # from the base class doesn't cause duplicate C++ fields.  (C++
@@ -180,7 +186,27 @@ class Pass(visitor.SimpleVisitor):
         # Note: this has duplicates: the 'done' set in visit_block() handles
         # it.  Could make it a Dict.
         if isinstance(lval, NameExpr):
-            self.current_local_vars.append((lval.name, self.types[lval]))
+            rval_type = self.types[rval]
+
+            # Two pieces of logic adapted from cppgen_pass: is_iterator and is_cast.
+            # Can we simplify them?
+
+            is_iterator = (isinstance(rval_type, Instance) and
+                           rval_type.type.fullname == 'typing.Iterator')
+
+            # Downcasted vars are BLOCK-scoped, not FUNCTION-scoped, so they
+            # don't become local vars.  They are also ALIASED, so they don't
+            # need to be rooted.
+            is_downcast_and_shadow = False
+            if isinstance(rval, CallExpr) and rval.callee.name == 'cast':
+                to_cast = rval.args[1]
+                if isinstance(to_cast,
+                              NameExpr) and to_cast.name.startswith('UP_'):
+                    is_downcast_and_shadow = True
+
+            if (not self.at_global_scope and not is_iterator and
+                    not is_downcast_and_shadow):
+                self.current_local_vars.append((lval.name, self.types[lval]))
 
         # Handle local vars, like _write_tuple_unpacking
 
@@ -202,6 +228,9 @@ class Pass(visitor.SimpleVisitor):
                     if util.SkipAssignment(lval_item.name):
                         continue
                     self.current_local_vars.append((lval_item.name, item_type))
+
+                if isinstance(lval_item, MemberExpr):
+                    self._MaybeAddMember(lval_item)
 
         super().oils_visit_assignment_stmt(o, lval, rval)
 

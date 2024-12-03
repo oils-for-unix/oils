@@ -252,11 +252,8 @@ class ctx_TermAttrs(object):
         self.fd = fd
 
         # We change term_attrs[3] in Python, which is lflag "local modes"
-        orig_local_modes, term_attrs = pyos.PushTermAttrs(fd, local_modes)
-
-        # Workaround: destructured assignment into members doesn't work
-        self.orig_local_modes = orig_local_modes
-        self.term_attrs = term_attrs
+        self.orig_local_modes, self.term_attrs = pyos.PushTermAttrs(
+            fd, local_modes)
 
     def __enter__(self):
         # type: () -> None

@@ -19887,10 +19887,7 @@ BigStr* ReadAll() {
   List<BigStr*>* chunks = nullptr;
   int n;
   int err_num;
-  int orig_local_modes;
-  void* term_attrs = nullptr;
   StackRoot _root0(&chunks);
-  StackRoot _root1(&term_attrs);
 
   chunks = Alloc<List<BigStr*>>();
   while (true) {
@@ -19918,10 +19915,8 @@ ctx_TermAttrs::ctx_TermAttrs(int fd, int local_modes) {
   gHeap.PushRoot(reinterpret_cast<RawObject**>(&(this->term_attrs)));
   this->fd = fd;
   Tuple2<int, void*> tup6 = pyos::PushTermAttrs(fd, local_modes);
-  orig_local_modes = tup6.at0();
-  term_attrs = tup6.at1();
-  this->orig_local_modes = orig_local_modes;
-  this->term_attrs = term_attrs;
+  this->orig_local_modes = tup6.at0();
+  this->term_attrs = tup6.at1();
 }
 
 ctx_TermAttrs::~ctx_TermAttrs() {
@@ -27406,10 +27401,8 @@ BigStr* _LineNumber(syntax_asdl::Token* tok) {
 }
 
 void _AddCallToken(Dict<BigStr*, value_asdl::value_t*>* d, syntax_asdl::Token* token) {
-  Dict<BigStr*, runtime_asdl::Cell*>* frame = nullptr;
   StackRoot _root0(&d);
   StackRoot _root1(&token);
-  StackRoot _root2(&frame);
 
   if (token == nullptr) {
     return ;
@@ -27536,10 +27529,8 @@ ctx_ThisDir::~ctx_ThisDir() {
 
 runtime_asdl::Cell* _MakeArgvCell(List<BigStr*>* argv) {
   List<value_asdl::value_t*>* items = nullptr;
-  Dict<BigStr*, runtime_asdl::Cell*>* new_frame = nullptr;
   StackRoot _root0(&argv);
   StackRoot _root1(&items);
-  StackRoot _root2(&new_frame);
 
   items = Alloc<List<value_asdl::value_t*>>();
   for (ListIter<BigStr*> it(argv); !it.Done(); it.Next()) {
@@ -27757,16 +27748,12 @@ Tuple2<runtime_asdl::Cell*, Dict<BigStr*, runtime_asdl::Cell*>*> _FrameLookup(Di
   runtime_asdl::Cell* rear_cell = nullptr;
   value_asdl::value_t* rear_val = nullptr;
   Dict<BigStr*, runtime_asdl::Cell*>* to_enclose = nullptr;
-  Dict<BigStr*, value_asdl::value_t*>* defaults = nullptr;
-  Dict<BigStr*, value_asdl::value_t*>* builtins = nullptr;
   StackRoot _root0(&frame);
   StackRoot _root1(&name);
   StackRoot _root2(&cell);
   StackRoot _root3(&rear_cell);
   StackRoot _root4(&rear_val);
   StackRoot _root5(&to_enclose);
-  StackRoot _root6(&defaults);
-  StackRoot _root7(&builtins);
 
   cell = frame->get(name);
   if (cell) {
@@ -28552,28 +28539,28 @@ void Mem::InternalSetGlobal(BigStr* name, value_asdl::value_t* new_val) {
 }
 
 value_asdl::value_t* Mem::GetValue(BigStr* name, runtime_asdl::scope_t which_scopes) {
-  double f;
-  bool ok;
-  mops::BigInt big_int;
-  List<BigStr*>* strs = nullptr;
-  syntax_asdl::debug_frame_t* UP_frame = nullptr;
   List<BigStr*>* strs2 = nullptr;
-  BigStr* source_str = nullptr;
+  List<value_asdl::value_t*>* items = nullptr;
   value_asdl::regex_match_t* top_match = nullptr;
   List<BigStr*>* groups = nullptr;
   value_asdl::RegexMatch* m = nullptr;
-  List<value_asdl::value_t*>* items = nullptr;
+  List<BigStr*>* strs = nullptr;
+  syntax_asdl::debug_frame_t* UP_frame = nullptr;
+  BigStr* source_str = nullptr;
+  double f;
+  bool ok;
+  mops::BigInt big_int;
   runtime_asdl::Cell* cell = nullptr;
   value_asdl::value_t* builtin_val = nullptr;
   StackRoot _root0(&name);
-  StackRoot _root1(&strs);
-  StackRoot _root2(&UP_frame);
-  StackRoot _root3(&strs2);
-  StackRoot _root4(&source_str);
-  StackRoot _root5(&top_match);
-  StackRoot _root6(&groups);
-  StackRoot _root7(&m);
-  StackRoot _root8(&items);
+  StackRoot _root1(&strs2);
+  StackRoot _root2(&items);
+  StackRoot _root3(&top_match);
+  StackRoot _root4(&groups);
+  StackRoot _root5(&m);
+  StackRoot _root6(&strs);
+  StackRoot _root7(&UP_frame);
+  StackRoot _root8(&source_str);
   StackRoot _root9(&cell);
   StackRoot _root10(&builtin_val);
 
@@ -55935,7 +55922,6 @@ Tuple2<List<value_asdl::value_t*>*, Dict<BigStr*, value_asdl::value_t*>*> _EvalA
 void EvalTypedArgsToProc(expr_eval::ExprEvaluator* expr_ev, Dict<BigStr*, runtime_asdl::Cell*>* current_frame, Dict<BigStr*, runtime_asdl::Cell*>* module_frame, state::MutableOpts* mutable_opts, command::Simple* node, runtime_asdl::ProcArgs* proc_args) {
   syntax_asdl::ArgList* ty = nullptr;
   List<syntax_asdl::NamedArg*>* n1 = nullptr;
-  Dict<BigStr*, value_asdl::value_t*>* named_args = nullptr;
   BigStr* name = nullptr;
   StackRoot _root0(&expr_ev);
   StackRoot _root1(&current_frame);
@@ -55945,8 +55931,7 @@ void EvalTypedArgsToProc(expr_eval::ExprEvaluator* expr_ev, Dict<BigStr*, runtim
   StackRoot _root5(&proc_args);
   StackRoot _root6(&ty);
   StackRoot _root7(&n1);
-  StackRoot _root8(&named_args);
-  StackRoot _root9(&name);
+  StackRoot _root8(&name);
 
   proc_args->typed_args = node->typed_args;
   proc_args->pos_args = Alloc<List<value_asdl::value_t*>>();

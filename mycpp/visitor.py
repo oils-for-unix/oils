@@ -33,6 +33,7 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         # module path, line number, message
         self.errors_keep_going: List[Tuple[str, int, str]] = []
 
+        self.at_global_scope = True
         self.indent = 0
         self.f: Optional[TextIO] = None
 
@@ -178,7 +179,12 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
     def visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
         # This could be a free function or a method
         # __init__ __exit__ and other methods call this, with self.current_class_name set
+
+        # If an assignment statement is not in a function or method, then it's at global scope
+
+        self.at_global_scope = False
         self.oils_visit_func_def(o)
+        self.at_global_scope = True
 
     #
     # Classes
