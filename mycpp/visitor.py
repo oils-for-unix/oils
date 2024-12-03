@@ -5,7 +5,7 @@ import mypy
 from mypy.visitor import ExpressionVisitor, StatementVisitor
 from mypy.nodes import (Expression, Statement, ExpressionStmt, StrExpr,
                         CallExpr, YieldExpr, NameExpr, MemberExpr, Argument,
-                        FuncDef, IfStmt, PassStmt)
+                        ClassDef, FuncDef, IfStmt, PassStmt)
 
 from mycpp.crash import catch_errors
 from mycpp import util
@@ -129,24 +129,31 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         self.accept(o.body)
 
     def visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
-        # TODO: move logic to class level
-        if o.name == '__repr__':  # Don't translate
-            return
-
         self.oils_visit_func_def(o)
 
-    def oils_visit_method(self, cls: 'mypy.nodes.ClassDef',
-                          method: 'mypy.nodes.FuncDef') -> None:
-        # Visit it like a funciton
-        self.accept(method)
+    #
+    # Classes
+    #
+
+    def oils_visit_constructor(self, o: ClassDef, stmt: FuncDef,
+                               base_class_name: util.SymbolPath) -> None:
+        self.accept(stmt)
+
+    def oils_visit_dunder_exit(self, o: ClassDef, stmt: FuncDef,
+                               base_class_name: util.SymbolPath) -> None:
+        self.accept(stmt)
+
+    def oils_visit_method(self, o: ClassDef, stmt: FuncDef,
+                          base_class_name: util.SymbolPath) -> None:
+        self.accept(stmt)
+
+    def oils_visit_class_members(self, o: ClassDef,
+                                 base_class_name: util.SymbolPath) -> None:
+        """Hook for writing member vars."""
+        # Do nothing by default.
+        pass
 
     def oils_visit_class_def(
-            self, o: 'mypy.nodes.ClassDef',
-            base_class_name: Optional[util.SymbolPath]) -> None:
-        for stmt in o.defs.body:
-            self.accept(stmt)
-
-    def X_oils_visit_class_def(
             self, o: 'mypy.nodes.ClassDef',
             base_class_name: Optional[util.SymbolPath]) -> None:
 
@@ -156,36 +163,43 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
                     isinstance(stmt.expr, StrExpr)):
                 continue
 
-            # if 0: is allowed
-            if isinstance(stmt, FuncDef):
-                if stmt.name == '__repr__':  # Don't translate
-                    return
-
-                self.accept(stmt)
-
-                #self.current_method_name = stmt.name
-                #self.oils_visit_method(o, base_class_name, stmt)
-                #self.current_method_name = None
+            # Skip empty classes
+            if isinstance(stmt, PassStmt):
                 continue
 
-            if isinstance(stmt, (IfStmt, PassStmt)):
+            if isinstance(stmt, FuncDef):
+                method_name = stmt.name
+
+                # Don't translate
+                if method_name in ('__enter__', '__repr__'):
+                    continue
+
+                if method_name == '__init__':  # Don't translate
+                    self.current_method_name = stmt.name
+                    self.oils_visit_constructor(o, stmt, base_class_name)
+                    self.current_method_name = None
+                    continue
+
+                if method_name == '__exit__':  # Don't translate
+                    self.current_method_name = stmt.name
+                    self.oils_visit_dunder_exit(o, stmt, base_class_name)
+                    self.current_method_name = None
+                    continue
+
+                self.current_method_name = stmt.name
+                self.oils_visit_method(o, stmt, base_class_name)
+                self.current_method_name = None
+                continue
+
+            # if 0: is allowed
+            if isinstance(stmt, IfStmt):
                 self.accept(stmt)
                 continue
 
             self.report_error(
                 o, 'Classes may only have method definitions, got %s' % stmt)
 
-        # Some special cases:
-        #
-        # __repr__ - skipped
-        # __init__ - becomes a function of the same name
-        # __enter__ - ignored, not visited
-        # __exit__ - becomes destructor, at least for ctx_* functions
-
-        # Then call
-        # oils_visit_method(ClassDef, method_name: str)
-        # oils_visit_constructor(ClassDef)
-        # oils_visit_dunder_exit(ClassDef)  # __exit__
+        self.oils_visit_class_members(o, base_class_name)
 
     def visit_class_def(self, o: 'mypy.nodes.ClassDef') -> None:
         base_class_name = None  # single inheritance only

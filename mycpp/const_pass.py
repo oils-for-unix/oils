@@ -131,11 +131,7 @@ class Collect(visitor.SimpleVisitor):
         if isinstance(o.callee, NameExpr) and o.callee.name == 'probe':
             return
 
-        self.accept(o.callee)  # could be f() or obj.method()
-
-        # This is what the SimpleVisitor superclass does
-        for arg in o.args:
-            self.accept(arg)
+        super().visit_call_expr(o)
 
 
 def _MakeUniqueStrings(all_strings: AllStrings) -> UniqueStrings:

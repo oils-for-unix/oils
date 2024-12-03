@@ -5,7 +5,7 @@ TODO: Join with ir_pass.py
 """
 import mypy
 
-from mypy.nodes import (Expression, NameExpr)
+from mypy.nodes import (Expression, NameExpr, MemberExpr)
 from mypy.types import Type
 
 from mycpp import util
@@ -62,9 +62,28 @@ class Pass(visitor.SimpleVisitor):
     def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
         self.virtual.OnMethod(self.current_class_name, o.name)
 
+    def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
+                                   lval: Expression, rval: Expression) -> None:
+
+        if isinstance(lval, MemberExpr):
+            self._MaybeAddMember(lval, self.current_member_vars)
+
+        super().oils_visit_assignment_stmt(o, lval, rval)
+
     def _MaybeAddMember(
-            self, lval: Expression,
+            self, lval: MemberExpr,
             current_member_vars: Dict[str, 'cppgen_pass.MemberVar']) -> None:
+
+        # Collect statements that look like self.foo = 1
+        # Only do this in __init__ so that a derived class mutating a field
+        # from the base class doesn't cause duplicate C++ fields.  (C++
+        # allows two fields of the same name!)
+        #
+        # HACK for WordParser: also include Reset().  We could change them
+        # all up front but I kinda like this.
+        if self.current_method_name not in ('__init__', 'Reset'):
+            return
+
         if isinstance(lval.expr, NameExpr) and lval.expr.name == 'self':
             #log('    lval.name %s', lval.name)
             lval_type = self.types[lval]

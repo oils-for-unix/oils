@@ -2401,67 +2401,6 @@ class Generate(visitor.SimpleVisitor):
 
         self.always_write('\n')
         self.always_write_ind('DISALLOW_COPY_AND_ASSIGN(%s)\n', o.name)
-        self.indent -= 1
-        self.always_write_ind('};\n')
-        self.always_write('\n')
-
-    def _ClassDefDecl(self, o: 'mypy.nodes.ClassDef',
-                      base_class_name: util.SymbolPath) -> None:
-        self.current_member_vars.clear()  # make a new list
-
-        self.always_write_ind('class %s', o.name)  # block after this
-
-        # e.g. class TextOutput : public ColorOutput
-        if base_class_name:
-            self.always_write(' : public %s',
-                              join_name(base_class_name, strip_package=True))
-
-        self.always_write(' {\n')
-        self.always_write_ind(' public:\n')
-
-        block = o.defs
-
-        self.indent += 1
-        for stmt in block.body:
-
-            # Constructor is named after class
-            if isinstance(stmt, FuncDef):
-                method_name = stmt.name
-                if method_name == '__init__':
-                    self.always_write_ind('%s(', o.name)
-                    self._WriteFuncParams(stmt.type.arg_types,
-                                          stmt.arguments,
-                                          write_defaults=True)
-                    self.always_write(');\n')
-
-                    # Visit for member vars
-                    self.current_method_name = method_name
-                    self.accept(stmt.body)
-                    self.current_method_name = None
-                    continue
-
-                if method_name == '__enter__':
-                    continue
-
-                if method_name == '__exit__':
-                    # Turn it into a destructor with NO ARGS
-                    self.always_write_ind('~%s();\n', o.name)
-                    continue
-
-                if method_name == '__repr__':
-                    # skip during declaration, just like visit_func_def does during definition
-                    continue
-
-                # Any other function: Visit for member vars
-                self.current_method_name = method_name
-                self.accept(stmt)
-                self.current_method_name = None
-                continue
-
-            # TODO: Enforce that everything under a class is a method?
-            self.accept(stmt)
-
-        self._MemberDecl(o, base_class_name)
 
     def _ConstructorImpl(self, o: 'mypy.nodes.ClassDef',
                          stmt: 'mypy.nodes.FuncDef',
@@ -2560,33 +2499,84 @@ class Generate(visitor.SimpleVisitor):
         self.indent -= 1
         self.def_write('}\n')
 
-    def _ClassDefImpl(self, o: 'mypy.nodes.ClassDef',
-                      base_class_name: util.SymbolPath) -> None:
-        block = o.defs
-        for stmt in block.body:
-            if isinstance(stmt, FuncDef):
-                if stmt.name == '__init__':
-                    self._ConstructorImpl(o, stmt, base_class_name)
-                    continue
+    def oils_visit_constructor(self, o: ClassDef, stmt: FuncDef,
+                               base_class_name: util.SymbolPath) -> None:
+        if self.decl:
+            self.indent += 1
+            self.always_write_ind('%s(', o.name)
+            self._WriteFuncParams(stmt.type.arg_types,
+                                  stmt.arguments,
+                                  write_defaults=True)
+            self.always_write(');\n')
 
-                if stmt.name == '__enter__':  # We never use these
-                    continue
+            # Visit for member vars
+            self.accept(stmt.body)
+            self.indent -= 1
+            return
 
-                if stmt.name == '__exit__':
-                    self._DestructorImpl(o, stmt, base_class_name)
-                    continue
+        self._ConstructorImpl(o, stmt, base_class_name)
 
-                self.accept(stmt)
+    def oils_visit_dunder_exit(self, o: ClassDef, stmt: FuncDef,
+                               base_class_name: util.SymbolPath) -> None:
+        if self.decl:
+            self.indent += 1
+            # Turn it into a destructor with NO ARGS
+            self.always_write_ind('~%s();\n', o.name)
+            self.indent -= 1
+            return
+        self._DestructorImpl(o, stmt, base_class_name)
+
+    def oils_visit_method(self, o: ClassDef, stmt: FuncDef,
+                          base_class_name: util.SymbolPath) -> None:
+        # self.current_method_name is set by superclass
+        if self.decl:
+            self.indent += 1
+            self.accept(stmt)
+            self.indent -= 1
+            return
+        self.accept(stmt)
+
+    def oils_visit_class_members(self, o: ClassDef,
+                                 base_class_name: util.SymbolPath) -> None:
+        if self.decl:
+            # Write member variables
+            self.indent += 1
+            self._MemberDecl(o, base_class_name)
+            self.indent -= 1
 
     def oils_visit_class_def(
             self, o: 'mypy.nodes.ClassDef',
             base_class_name: Optional[util.SymbolPath]) -> None:
         #log('  CLASS %s', o.name)
         if self.decl:
-            self._ClassDefDecl(o, base_class_name)
+            self.current_member_vars.clear()  # make a new list
+
+            self.always_write_ind('class %s', o.name)  # block after this
+
+            # e.g. class TextOutput : public ColorOutput
+            if base_class_name:
+                self.always_write(
+                    ' : public %s',
+                    join_name(base_class_name, strip_package=True))
+
+            self.always_write(' {\n')
+            self.always_write_ind(' public:\n')
+
+            # This visits all the methods, with self.indent += 1, param
+            # base_class_name, self.current_method_name
+
+            super().oils_visit_class_def(o, base_class_name)
+
+            #self.indent -= 1
+            self.always_write_ind('};\n')
+            self.always_write('\n')
+
             return
 
-        self._ClassDefImpl(o, base_class_name)
+        # Write method implementations
+        super().oils_visit_class_def(o, base_class_name)
+
+        #self._ClassDefImpl(o, base_class_name)
 
     # Module structure
 
