@@ -384,7 +384,6 @@ def main(argv: List[str]) -> int:
             p3 = decl_pass.Pass(
                 result.types,
                 global_strings,  # input
-                local_vars=local_vars,  # output
                 all_member_vars=all_member_vars,  # output
                 virtual=virtual,  # input
                 decl=True)

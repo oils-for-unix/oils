@@ -26,22 +26,6 @@ if TYPE_CHECKING:
     from mycpp import const_pass
     from mycpp import ir_pass
 
-
-class MyTypeInfo:
-    """Like mypy.nodes.TypeInfo"""
-
-    def __init__(self, fullname: str) -> None:
-        self.fullname = fullname
-
-
-class Primitive(Instance):
-
-    def __init__(self, name: str) -> None:
-        self.type = MyTypeInfo(name)  # type: ignore
-
-
-MYCPP_INT = Primitive('builtins.int')
-
 NAME_CONFLICTS = ('stdin', 'stdout', 'stderr')
 
 
@@ -454,7 +438,6 @@ class Generate(visitor.SimpleVisitor):
 
         self.types = types
         self.global_strings = global_strings
-
         self.virtual = virtual
 
         if local_vars is None:
@@ -463,15 +446,13 @@ class Generate(visitor.SimpleVisitor):
             self.local_vars = local_vars
 
         self.all_member_vars = all_member_vars  # for class def, and rooting
-
         self.decl = decl
         self.stack_roots_warn = stack_roots_warn
+        self.dot_exprs = dot_exprs
+        self.stack_roots = stack_roots
 
+        # Traversal state
         self.unique_id = 0
-
-        self.indent = 0
-        # Collected at assignment
-        self.local_var_list: List[Tuple[str, Type]] = []
         # For writing vars after {
         self.prepend_to_block: Optional[List[LocalVar]] = None
 
@@ -479,11 +460,11 @@ class Generate(visitor.SimpleVisitor):
         self.yield_accumulators: Dict[Union[Statement, FuncDef],
                                       Tuple[str, str]] = {}
 
+        # TODO: move this state into SimpleVisitor
+        # It keeps track of the curernt class and method too
         self.current_func_node: Optional[FuncDef] = None
+        # Used for iterators
         self.current_stmt_node: Optional[Statement] = None
-
-        self.dot_exprs = dot_exprs
-        self.stack_roots = stack_roots
 
         self.writing_default_arg = False
 
@@ -1159,10 +1140,6 @@ class Generate(visitor.SimpleVisitor):
             if isinstance(lval_item, NameExpr):
                 if util.SkipAssignment(lval_item.name):
                     continue
-
-                # Declare local vars at TOP of function for a, b = myfunc()
-                if self.decl:
-                    self.local_var_list.append((lval_item.name, item_type))
                 self.def_write_ind('%s', lval_item.name)
             else:
                 # Could be MemberExpr like self.foo, self.bar = baz
@@ -1317,9 +1294,6 @@ class Generate(visitor.SimpleVisitor):
             lval_type = lval_type.items[0]
 
         c_type = GetCType(lval_type)
-        if self.decl:
-            self.local_var_list.append((lval.name, lval_type))
-
         assert c_type.endswith('*')
         self.def_write('Alloc<%s>()', c_type[:-1])
 
@@ -1350,8 +1324,6 @@ class Generate(visitor.SimpleVisitor):
                                cast_kind, subtype_name)
         else:
             # Normal variable
-            if self.decl:
-                self.local_var_list.append((lval.name, self.types[lval]))
             self.def_write_ind('%s = %s<%s>(', lval.name, cast_kind,
                                subtype_name)
 
@@ -1381,13 +1353,8 @@ class Generate(visitor.SimpleVisitor):
                                       left_expr: Expression,
                                       index_expr: Expression, seq: Expression,
                                       cond: Expression) -> None:
-        lval_type = self.types[lval]
-
         # Copied from oils_visit_assignment_stmt
         self.def_write_ind('%s = ', lval.name)
-        if self.decl:
-            self.local_var_list.append((lval.name, lval_type))
-
         self._ListComprehensionImpl(lval, left_expr, index_expr, seq, cond)
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
@@ -1467,8 +1434,8 @@ class Generate(visitor.SimpleVisitor):
 
                 # Hack for non-members - why does this work?
                 # Tests cases in mycpp/examples/containers.py
-                if not isinstance(
-                        lval, MemberExpr) and self.current_func_node is None:
+                if (not isinstance(lval, MemberExpr) and
+                        self.current_func_node is None):
                     self.def_write('auto* ')
 
                 self.accept(lval)
@@ -1495,8 +1462,6 @@ class Generate(visitor.SimpleVisitor):
             # for "hoisting" to the top of the function
             if self.current_func_node:
                 self.def_write_ind('%s = ', lval.name)
-                if self.decl:
-                    self.local_var_list.append((lval.name, lval_type))
             else:
                 # globals always get a type -- they're not mutated
                 self.def_write_ind('%s %s = ', c_type, lval.name)
@@ -1748,8 +1713,6 @@ class Generate(visitor.SimpleVisitor):
 
         if index0_name:
             # can't initialize two things in a for loop, so do it on a separate line
-            if self.decl:
-                self.local_var_list.append((index0_name, MYCPP_INT))
             self.def_write_ind('%s = 0;\n', index0_name)
             index_update = ', ++%s' % index0_name
         else:
@@ -2217,10 +2180,6 @@ class Generate(visitor.SimpleVisitor):
 
             first = False
 
-            # Params are locals.  Note: update_locals=False for constructors.
-            if update_locals:
-                self.local_var_list.append((arg_name, arg_type))
-
             # We can't use __str__ on these Argument objects?  That seems like an
             # oversight
             #self.log('%r', arg)
@@ -2246,9 +2205,6 @@ class Generate(visitor.SimpleVisitor):
 
         virtual = ''
         if self.decl:
-            self.local_var_list = []  # Make a new instance to collect from
-            self.local_vars[o] = self.local_var_list
-
             if self.virtual.IsVirtual(self.current_class_name, o.name):
                 virtual = 'virtual '
 

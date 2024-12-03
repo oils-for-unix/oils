@@ -28,9 +28,6 @@ UniqueStrings = Dict[bytes, str]  # SHA1 digest -> raw string
 HashedStrings = Dict[str, List[str]]  # short hash -> raw string
 VarNames = Dict[str, str]  # raw string -> variable name
 
-_STABLE_NAMES = True
-#_STABLE_NAMES = False
-
 
 class GlobalStrings:
 
@@ -57,11 +54,8 @@ class GlobalStrings:
         self.var_names = _HandleCollisions(hash15)
 
     def GetVarName(self, node: StrExpr) -> str:
-        if _STABLE_NAMES:
-            # StrExpr -> str -> variable names
-            return self.var_names[self.all_strings[node]]
-
-        return self.int_id_lookup[node]
+        # StrExpr -> str -> variable names
+        return self.var_names[self.all_strings[node]]
 
     def WriteConstants(self, out_f: TextIO) -> None:
         if util.SMALL_STR:
@@ -69,16 +63,11 @@ class GlobalStrings:
         else:
             macro_name = 'GLOBAL_STR'
 
-        if _STABLE_NAMES:
-            # sort by the string value itself
-            for raw_string in sorted(self.var_names):
-                var_name = self.var_names[raw_string]
-                out_f.write('%s(%s, %s);\n' %
-                            (macro_name, var_name, json.dumps(raw_string)))
-        else:
-            for str_id, raw_string in self.pairs:
-                out_f.write('%s(%s, %s);\n' %
-                            (macro_name, str_id, json.dumps(raw_string)))
+        # sort by the string value itself
+        for raw_string in sorted(self.var_names):
+            var_name = self.var_names[raw_string]
+            out_f.write('%s(%s, %s);\n' %
+                        (macro_name, var_name, json.dumps(raw_string)))
 
         out_f.write('\n')
 
@@ -105,26 +94,8 @@ class Collect(visitor.SimpleVisitor):
         self.unique_id = 0
 
     def visit_str_expr(self, o: StrExpr) -> None:
-        if _STABLE_NAMES:
-            raw_string = format_strings.DecodeMyPyString(o.value)
-            self.global_strings.Add(o, raw_string)
-            return
-
-        str_val = o.value
-
-        # Optimization to save code
-        str_id = self.unique.get(str_val)
-        if str_id is None:
-            str_id = 'str%d' % self.unique_id
-            self.unique_id += 1
-
-            self.unique[str_val] = str_id
-
-            raw_string = format_strings.DecodeMyPyString(str_val)
-            self.global_strings.pairs.append((str_id, raw_string))
-
-        # Different nodes can refer to the same string ID
-        self.global_strings.int_id_lookup[o] = str_id
+        raw_string = format_strings.DecodeMyPyString(o.value)
+        self.global_strings.Add(o, raw_string)
 
     def visit_call_expr(self, o: CallExpr) -> None:
         # Don't generate constants for probe names
