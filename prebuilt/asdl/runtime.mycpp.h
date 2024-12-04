@@ -21,7 +21,6 @@ namespace format {  // forward declare
 
 namespace runtime {  // declare
 
-using hnode_asdl::hnode;
 extern int NO_SPID;
 hnode::Record* NewRecord(BigStr* node_type);
 hnode::Leaf* NewLeaf(BigStr* s, hnode_asdl::color_t e_color);
@@ -45,7 +44,6 @@ extern BigStr* FALSE_STR;
 
 namespace format {  // declare
 
-using hnode_asdl::hnode;
 int _HNodeCount(hnode_asdl::hnode_t* h);
 int _DocCount(pretty_asdl::doc_t* d);
 void _HNodePrettyPrint(bool perf_stats, bool doc_debug, hnode_asdl::hnode_t* node, mylib::Writer* f, int max_width = 80);

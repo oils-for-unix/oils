@@ -161,7 +161,6 @@ class PrettyPrinter {
 
 namespace pp_hnode {  // declare
 
-using hnode_asdl::hnode;
 class BaseEncoder {
  public:
   BaseEncoder();
@@ -234,7 +233,6 @@ BigStr* YshEncode(BigStr* s, bool unquoted_ok = false);
 
 namespace error {  // declare
 
-using syntax_asdl::loc;
 BigStr* _ValType(value_asdl::value_t* val);
 class _ErrorWithLocation {
  public:

@@ -107,7 +107,6 @@ class PrettyPrinter {
 
 namespace pp_hnode {  // declare
 
-using hnode_asdl::hnode;
 class BaseEncoder {
  public:
   BaseEncoder();

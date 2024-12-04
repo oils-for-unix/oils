@@ -2213,7 +2213,6 @@ GLOBAL_STR(S_jgw, "~~~ %s ~~~\n");
 
 namespace runtime {  // declare
 
-using hnode_asdl::hnode;
 extern int NO_SPID;
 hnode::Record* NewRecord(BigStr* node_type);
 hnode::Leaf* NewLeaf(BigStr* s, hnode_asdl::color_t e_color);
@@ -2237,7 +2236,6 @@ extern BigStr* FALSE_STR;
 
 namespace vm {  // declare
 
-using id_kind_asdl::Id;
 class ControlFlow {
  public:
 
@@ -2393,7 +2391,6 @@ class ctx_FlushStdout {
 
 namespace format {  // declare
 
-using hnode_asdl::hnode;
 int _HNodeCount(hnode_asdl::hnode_t* h);
 int _DocCount(pretty_asdl::doc_t* d);
 void _HNodePrettyPrint(bool perf_stats, bool doc_debug, hnode_asdl::hnode_t* node, mylib::Writer* f, int max_width = 80);
@@ -2403,7 +2400,6 @@ void HNodePrettyPrint(hnode_asdl::hnode_t* node, mylib::Writer* f, int max_width
 
 namespace oils_for_unix {  // declare
 
-using syntax_asdl::loc;
 int CaperDispatch();
 int AppBundleMain(List<BigStr*>* argv);
 int main(List<BigStr*>* argv);
@@ -2412,9 +2408,6 @@ int main(List<BigStr*>* argv);
 
 namespace assign_osh {  // declare
 
-using runtime_asdl::scope_e;
-using runtime_asdl::cmd_value;
-using syntax_asdl::loc;
 extern int _OTHER;
 extern int _READONLY;
 extern int _EXPORT;
@@ -2539,7 +2532,6 @@ class Shift : public ::vm::_Builtin {
 
 namespace completion_ysh {  // declare
 
-using syntax_asdl::loc;
 class CompExport : public ::vm::_Builtin {
  public:
   CompExport(completion::RootCompleter* root_comp);
@@ -2564,7 +2556,6 @@ class CompExport : public ::vm::_Builtin {
 
 namespace dirs_osh {  // declare
 
-using runtime_asdl::cmd_value;
 class DirStack {
  public:
   DirStack();
@@ -2719,9 +2710,6 @@ class Pwd : public ::vm::_Builtin {
 
 namespace error_ysh {  // declare
 
-using id_kind_asdl::Id;
-using runtime_asdl::cmd_value;
-using syntax_asdl::loc;
 class ctx_Try {
  public:
   ctx_Try(state::MutableOpts* mutable_opts);
@@ -2909,7 +2897,6 @@ class MatchMethod : public ::func_eggex::_MatchCallable {
 
 namespace func_hay {  // declare
 
-using syntax_asdl::loc;
 class ParseHay : public ::vm::_Callable {
  public:
   ParseHay(process::FdState* fd_state, parse_lib::ParseContext* parse_ctx, state::Mem* mem, ui::ErrorFormatter* errfmt);
@@ -3422,7 +3409,6 @@ class SparseOp : public ::vm::_Callable {
 
 namespace func_reflect {  // declare
 
-using runtime_asdl::scope_e;
 class Id : public ::vm::_Callable {
  public:
   Id();
@@ -3580,8 +3566,6 @@ class ParseExpr : public ::vm::_Callable {
 
 namespace hay_ysh {  // declare
 
-using runtime_asdl::scope_e;
-using syntax_asdl::loc;
 extern BigStr* _HAY_ACTION_ERROR;
 class ctx_HayNode {
  public:
@@ -3685,7 +3669,6 @@ class HayNode_ : public ::vm::_Builtin {
 
 namespace io_osh {  // declare
 
-using id_kind_asdl::Id;
 class Echo : public ::vm::_Builtin {
  public:
   Echo(optview::Exec* exec_opts);
@@ -3754,7 +3737,6 @@ class Cat : public ::vm::_Builtin {
 
 namespace io_ysh {  // declare
 
-using runtime_asdl::cmd_value;
 class _Builtin : public ::vm::_Builtin {
  public:
   _Builtin(state::Mem* mem, ui::ErrorFormatter* errfmt);
@@ -3846,8 +3828,6 @@ class RunBlock : public ::vm::_Builtin {
 
 namespace json_ysh {  // declare
 
-using runtime_asdl::cmd_value;
-using syntax_asdl::loc;
 extern BigStr* _JSON_ACTION_ERROR;
 class Json : public ::vm::_Builtin {
  public:
@@ -3880,8 +3860,6 @@ class Json : public ::vm::_Builtin {
 
 namespace meta_oils {  // declare
 
-using runtime_asdl::cmd_value;
-using syntax_asdl::loc;
 class Eval : public ::vm::_Builtin {
  public:
   Eval(parse_lib::ParseContext* parse_ctx, optview::Exec* exec_opts, cmd_eval::CommandEvaluator* cmd_ev, dev::Tracer* tracer, ui::ErrorFormatter* errfmt, state::Mem* mem);
@@ -4649,7 +4627,6 @@ class Index__ : public ::vm::_Callable {
 
 namespace misc_osh {  // declare
 
-using runtime_asdl::cmd_value;
 class Times : public ::vm::_Builtin {
  public:
   Times();
@@ -4701,7 +4678,6 @@ class Help : public ::vm::_Builtin {
 
 namespace module_ysh {  // declare
 
-using runtime_asdl::cmd_value;
 class IsMain : public ::vm::_Builtin {
  public:
   IsMain(state::Mem* mem);
@@ -4772,10 +4748,6 @@ class ModuleInvoke : public ::vm::_Builtin {
 
 namespace printf_osh {  // declare
 
-using id_kind_asdl::Id;
-using runtime_asdl::cmd_value;
-using syntax_asdl::loc;
-using types_asdl::lex_mode_e;
 class _FormatStringParser {
  public:
   _FormatStringParser(lexer::Lexer* lexer);
@@ -4843,8 +4815,6 @@ class Printf : public ::vm::_Builtin {
 
 namespace process_osh {  // declare
 
-using syntax_asdl::loc;
-using runtime_asdl::cmd_value;
 class Jobs : public ::vm::_Builtin {
  public:
   Jobs(process::JobList* job_list);
@@ -5042,7 +5012,6 @@ class Ulimit : public ::vm::_Builtin {
 
 namespace pure_osh {  // declare
 
-using syntax_asdl::loc;
 class Boolean : public ::vm::_Builtin {
  public:
   Boolean(int status);
@@ -5226,8 +5195,6 @@ class GetOpts : public ::vm::_Builtin {
 
 namespace pure_ysh {  // declare
 
-using runtime_asdl::cmd_value;
-using syntax_asdl::loc;
 class Shvar : public ::vm::_Builtin {
  public:
   Shvar(state::Mem* mem, executor::SearchPath* search_path, cmd_eval::CommandEvaluator* cmd_ev);
@@ -5332,7 +5299,6 @@ class Append : public ::vm::_Builtin {
 
 namespace read_osh {  // declare
 
-using runtime_asdl::cmd_value;
 Tuple2<bool, bool> _AppendParts(BigStr* s, List<Tuple2<runtime_asdl::span_t, int>*>* spans, int max_results, bool join_next, List<mylib::BufWriter*>* parts);
 BigStr* _ReadN(int num_bytes, cmd_eval::CommandEvaluator* cmd_ev);
 Tuple2<BigStr*, bool> _ReadPortion(int delim_byte, int max_chars, cmd_eval::CommandEvaluator* cmd_ev);
@@ -5386,7 +5352,6 @@ class Read : public ::vm::_Builtin {
 
 namespace readline_osh {  // declare
 
-using syntax_asdl::loc;
 class ctx_Keymap {
  public:
   ctx_Keymap(py_readline::Readline* readline, BigStr* keymap_name = nullptr);
@@ -5450,8 +5415,6 @@ class History : public ::vm::_Builtin {
 
 namespace trap_osh {  // declare
 
-using runtime_asdl::cmd_value;
-using syntax_asdl::loc;
 class TrapState {
  public:
   TrapState(iolib::SignalSafe* signal_safe);
@@ -5510,7 +5473,6 @@ class Trap : public ::vm::_Builtin {
 
 namespace alloc {  // declare
 
-using syntax_asdl::loc;
 BigStr* SnipCodeBlock(syntax_asdl::Token* left, syntax_asdl::Token* right, List<syntax_asdl::SourceLine*>* lines);
 class ctx_SourceCode {
  public:
@@ -5741,8 +5703,6 @@ void InitReadline(py_readline::Readline* readline, BigStr* hist_file, completion
 
 namespace completion {  // declare
 
-using id_kind_asdl::Id;
-using runtime_asdl::scope_e;
 class _RetryCompletion {
  public:
   _RetryCompletion();
@@ -6160,9 +6120,6 @@ BigStr* ExecuteReadlineCallback(completion::ReadlineCallback* cb, BigStr* word, 
 
 namespace dev {  // declare
 
-using runtime_asdl::cmd_value;
-using runtime_asdl::scope_e;
-using value_asdl::sh_lvalue;
 class CrashDumper {
  public:
   CrashDumper(BigStr* crash_dump_dir, process::FdState* fd_state);
@@ -6269,7 +6226,6 @@ class Tracer {
 
 namespace error {  // declare
 
-using syntax_asdl::loc;
 BigStr* _ValType(value_asdl::value_t* val);
 class _ErrorWithLocation {
  public:
@@ -6534,8 +6490,6 @@ class Encode {
 
 namespace executor {  // declare
 
-using id_kind_asdl::Id;
-using syntax_asdl::loc;
 BigStr* LookupExecutable(BigStr* name, List<BigStr*>* path_dirs, bool exec_required = true);
 class SearchPath {
  public:
@@ -6699,7 +6653,6 @@ mops::BigInt Exponent(mops::BigInt x, mops::BigInt y);
 
 namespace process {  // declare
 
-using id_kind_asdl::Id;
 extern int NO_FD;
 extern int _SHELL_MIN_FD;
 extern int STYLE_DEFAULT;
@@ -7176,7 +7129,6 @@ class Waiter {
 
 namespace sh_init {  // declare
 
-using runtime_asdl::scope_e;
 class EnvConfig {
  public:
   EnvConfig(state::Mem* mem, Dict<BigStr*, value_asdl::value_t*>* defaults);
@@ -7225,10 +7177,6 @@ void InitBuiltins(state::Mem* mem, BigStr* version_str, Dict<BigStr*, value_asdl
 
 namespace state {  // declare
 
-using id_kind_asdl::Id;
-using runtime_asdl::scope_e;
-using syntax_asdl::loc;
-using value_asdl::sh_lvalue;
 extern int SetReadOnly;
 extern int ClearReadOnly;
 extern int SetExport;
@@ -7742,7 +7690,6 @@ void VersionFlag(pyutil::_ResourceLoader* loader, mylib::Writer* f);
 
 namespace j8 {  // declare
 
-using id_kind_asdl::Id;
 BigStr* ValType(value_asdl::value_t* val);
 int ValueId(value_asdl::value_t* val);
 BigStr* ValueIdString(value_asdl::value_t* val);
@@ -7927,7 +7874,6 @@ extern BigStr* WHITE;
 
 namespace pp_hnode {  // declare
 
-using hnode_asdl::hnode;
 class BaseEncoder {
  public:
   BaseEncoder();
@@ -8068,8 +8014,6 @@ class PrettyPrinter {
 
 namespace ui {  // declare
 
-using id_kind_asdl::Id;
-using syntax_asdl::loc;
 BigStr* ValType(value_asdl::value_t* val);
 BigStr* CommandType(syntax_asdl::command_t* cmd);
 BigStr* PrettyId(int id_);
@@ -8119,7 +8063,6 @@ void PrettyPrintValue(BigStr* prefix, value_asdl::value_t* val, mylib::Writer* f
 
 namespace args {  // declare
 
-using syntax_asdl::loc;
 extern int String;
 extern int Int;
 extern int Float;
@@ -8381,7 +8324,6 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
 
 namespace flag_util {  // declare
 
-using runtime_asdl::cmd_value;
 void _DoesNotAccept(runtime_asdl::ProcArgs* proc_args);
 Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(BigStr* spec_name, cmd_value::Argv* cmd_val, bool accept_typed_args = false);
 Tuple2<args::_Attributes*, args::Reader*> ParseLikeEcho(BigStr* spec_name, cmd_value::Argv* cmd_val);
@@ -8392,8 +8334,6 @@ args::_Attributes* ParseMore(BigStr* spec_name, args::Reader* arg_r);
 
 namespace lexer {  // declare
 
-using types_asdl::lex_mode_e;
-using id_kind_asdl::Id;
 bool IsPlusEquals(syntax_asdl::Token* tok);
 bool TokenContains(syntax_asdl::Token* tok, BigStr* substr);
 bool TokenEquals(syntax_asdl::Token* tok, BigStr* s);
@@ -8464,9 +8404,6 @@ class Lexer {
 
 namespace location {  // declare
 
-using syntax_asdl::loc;
-using syntax_asdl::word;
-using syntax_asdl::word_part;
 value_asdl::LeftName* LName(BigStr* name);
 syntax_asdl::Token* TokenFor(syntax_asdl::loc_t* loc_);
 syntax_asdl::Token* TokenForCommand(syntax_asdl::command_t* node);
@@ -8483,7 +8420,6 @@ syntax_asdl::loc_t* TokenForExpr(syntax_asdl::expr_t* node);
 
 namespace parse_lib {  // declare
 
-using types_asdl::lex_mode_e;
 class _BaseTrail {
  public:
   _BaseTrail();
@@ -8579,7 +8515,6 @@ class ParseContext {
 
 namespace reader {  // declare
 
-using id_kind_asdl::Id;
 extern BigStr* _PS2;
 class _Reader {
  public:
@@ -8704,8 +8639,6 @@ class InteractiveLineReader : public ::reader::_Reader {
 
 namespace syntax_abbrev {  // declare
 
-using id_kind_asdl::Id;
-using hnode_asdl::hnode;
 void _AbbreviateToken(syntax_asdl::Token* tok, List<hnode_asdl::hnode_t*>* out);
 hnode_asdl::hnode_t* _Token(syntax_asdl::Token* obj);
 hnode_asdl::hnode_t* _CompoundWord(syntax_asdl::CompoundWord* obj);
@@ -8721,8 +8654,6 @@ hnode_asdl::hnode_t* _expr__Const(expr::Const* obj);
 
 namespace typed_args {  // declare
 
-using runtime_asdl::cmd_value;
-using syntax_asdl::loc;
 void DoesNotAccept(runtime_asdl::ProcArgs* proc_args);
 syntax_asdl::command_t* OptionalBlockAsFrag(cmd_value::Argv* cmd_val);
 syntax_asdl::command_t* RequiredBlockAsFrag(cmd_value::Argv* cmd_val);
@@ -8806,8 +8737,6 @@ class Reader {
 
 namespace arith_parse {  // declare
 
-using id_kind_asdl::Id;
-using syntax_asdl::loc;
 syntax_asdl::arith_expr_t* NullIncDec(tdop::TdopParser* p, syntax_asdl::word_t* w, int bp);
 syntax_asdl::arith_expr_t* NullUnaryPlus(tdop::TdopParser* p, syntax_asdl::word_t* t, int bp);
 syntax_asdl::arith_expr_t* NullUnaryMinus(tdop::TdopParser* p, syntax_asdl::word_t* t, int bp);
@@ -8819,9 +8748,6 @@ syntax_asdl::arith_expr_t* LeftTernary(tdop::TdopParser* p, syntax_asdl::word_t*
 
 namespace bool_parse {  // declare
 
-using id_kind_asdl::Id;
-using types_asdl::lex_mode_e;
-using syntax_asdl::loc;
 class BoolParser {
  public:
   BoolParser(word_parse::WordEmitter* w_parser);
@@ -8853,9 +8779,6 @@ class BoolParser {
 
 namespace braces {  // declare
 
-using id_kind_asdl::Id;
-using syntax_asdl::word;
-using syntax_asdl::word_part;
 extern int NO_STEP;
 class _NotARange {
  public:
@@ -8916,11 +8839,6 @@ List<syntax_asdl::CompoundWord*>* BraceExpandWords(List<syntax_asdl::word_t*>* w
 
 namespace cmd_eval {  // declare
 
-using id_kind_asdl::Id;
-using syntax_asdl::loc;
-using syntax_asdl::word;
-using runtime_asdl::cmd_value;
-using runtime_asdl::scope_e;
 extern int IsMainProgram;
 extern int RaiseControlFlow;
 extern int OptimizeSubshells;
@@ -9035,9 +8953,6 @@ class CommandEvaluator {
 
 namespace cmd_parse {  // declare
 
-using id_kind_asdl::Id;
-using types_asdl::lex_mode_e;
-using syntax_asdl::loc;
 extern int TAB_CH;
 extern int SPACE_CH;
 Tuple2<List<Tuple2<syntax_asdl::SourceLine*, int>*>*, Tuple2<syntax_asdl::SourceLine*, int>*> _ReadHereLines(reader::_Reader* line_reader, syntax_asdl::Redir* h, BigStr* delimiter);
@@ -9170,7 +9085,6 @@ class CommandParser {
 
 namespace glob_ {  // declare
 
-using id_kind_asdl::Id;
 bool LooksLikeGlob(BigStr* s);
 bool LooksLikeStaticGlob(syntax_asdl::CompoundWord* w);
 extern BigStr* GLOB_META_CHARS;
@@ -9219,7 +9133,6 @@ class Globber {
 
 namespace history {  // declare
 
-using id_kind_asdl::Id;
 class Evaluator {
  public:
   Evaluator(py_readline::Readline* readline, parse_lib::ParseContext* parse_ctx, util::_DebugFile* debug_f);
@@ -9240,8 +9153,6 @@ class Evaluator {
 
 namespace prompt {  // declare
 
-using id_kind_asdl::Id;
-using syntax_asdl::loc;
 extern BigStr* _ERROR_FMT;
 extern BigStr* _UNBALANCED_ERROR;
 class _PromptEvaluatorCache {
@@ -9310,9 +9221,6 @@ class UserPlugin {
 
 namespace sh_expr_eval {  // declare
 
-using id_kind_asdl::Id;
-using syntax_asdl::loc;
-using value_asdl::sh_lvalue;
 value_asdl::value_t* OldValue(value_asdl::sh_lvalue_t* lval, state::Mem* mem, optview::Exec* exec_opts);
 class UnsafeArith {
  public:
@@ -9399,7 +9307,6 @@ class BoolEvaluator : public ::sh_expr_eval::ArithEvaluator {
 
 namespace split {  // declare
 
-using runtime_asdl::scope_e;
 extern BigStr* DEFAULT_IFS;
 List<BigStr*>* _SpansToParts(BigStr* s, List<Tuple2<runtime_asdl::span_t, int>*>* spans);
 class SplitContext {
@@ -9463,9 +9370,6 @@ class IfsSplitter : public ::split::_BaseSplitter {
 
 namespace string_ops {  // declare
 
-using id_kind_asdl::Id;
-using syntax_asdl::loc;
-using syntax_asdl::suffix_op;
 extern int UTF8_ERR_OVERLONG;
 extern int UTF8_ERR_SURROGATE;
 extern int UTF8_ERR_TOO_LARGE;
@@ -9507,8 +9411,6 @@ BigStr* ShellQuoteB(BigStr* s);
 
 namespace tdop {  // declare
 
-using id_kind_asdl::Id;
-using syntax_asdl::loc;
 bool IsIndexable(syntax_asdl::arith_expr_t* node);
 void CheckLhsExpr(syntax_asdl::arith_expr_t* node, syntax_asdl::word_t* blame_word);
 syntax_asdl::arith_expr_t* NullError(tdop::TdopParser* p, syntax_asdl::word_t* t, int bp);
@@ -9545,9 +9447,6 @@ class TdopParser {
 
 namespace word_ {  // declare
 
-using id_kind_asdl::Id;
-using syntax_asdl::word;
-using syntax_asdl::word_part;
 int LiteralId(syntax_asdl::word_part_t* p);
 Tuple3<bool, BigStr*, bool> _EvalWordPart(syntax_asdl::word_part_t* part);
 BigStr* FastStrEval(syntax_asdl::CompoundWord* w);
@@ -9597,7 +9496,6 @@ class ctx_Multiline {
 
 namespace word_compile {  // declare
 
-using id_kind_asdl::Id;
 syntax_asdl::CharCode* EvalCharLiteralForRegex(syntax_asdl::Token* tok);
 BigStr* EvalCStringToken(int id_, BigStr* value);
 BigStr* EvalSingleQuoted(int id_, List<syntax_asdl::Token*>* tokens);
@@ -9611,13 +9509,6 @@ void RemoveLeadingSpaceSQ(List<syntax_asdl::Token*>* tokens);
 
 namespace word_eval {  // declare
 
-using id_kind_asdl::Id;
-using syntax_asdl::loc;
-using syntax_asdl::suffix_op;
-using syntax_asdl::word_part;
-using runtime_asdl::part_value;
-using runtime_asdl::cmd_value;
-using value_asdl::sh_lvalue;
 extern int QUOTED;
 extern int IS_SUBST;
 extern int EXTGLOB_FILES;
@@ -9797,11 +9688,6 @@ class CompletionWordEvaluator : public ::word_eval::AbstractWordEvaluator {
 
 namespace word_parse {  // declare
 
-using id_kind_asdl::Id;
-using types_asdl::lex_mode_e;
-using syntax_asdl::loc;
-using syntax_asdl::suffix_op;
-using syntax_asdl::word_part;
 extern List<id_kind_asdl::Kind_t>* KINDS_THAT_END_WORDS;
 class WordEmitter {
  public:
@@ -9995,9 +9881,6 @@ void Format(alloc::Arena* arena, syntax_asdl::command_t* node);
 
 namespace ysh_ify {  // declare
 
-using id_kind_asdl::Id;
-using syntax_asdl::loc;
-using syntax_asdl::word_part;
 class Cursor {
  public:
   Cursor(alloc::Arena* arena, mylib::Writer* f);
@@ -10051,11 +9934,6 @@ class YshPrinter {
 
 namespace expr_eval {  // declare
 
-using id_kind_asdl::Id;
-using syntax_asdl::loc;
-using syntax_asdl::word_part;
-using runtime_asdl::scope_e;
-using runtime_asdl::part_value;
 value_asdl::value_t* LookupVar(state::Mem* mem, BigStr* var_name, runtime_asdl::scope_t which_scopes, syntax_asdl::loc_t* var_loc);
 mops::BigInt _ConvertToInt(value_asdl::value_t* val, BigStr* msg, syntax_asdl::loc_t* blame_loc);
 Tuple3<runtime_asdl::coerced_t, mops::BigInt, double> _ConvertToNumber(value_asdl::value_t* val);
@@ -10132,9 +10010,6 @@ class EggexEvaluator {
 
 namespace expr_parse {  // declare
 
-using syntax_asdl::loc;
-using id_kind_asdl::Id;
-using types_asdl::lex_mode_e;
 int _Classify(grammar::Grammar* gr, syntax_asdl::Token* tok);
 extern Dict<int, int>* _OTHER_BALANCE;
 syntax_asdl::Token* _PushYshTokens(parse_lib::ParseContext* parse_ctx, grammar::Grammar* gr, parse::Parser* p, lexer::Lexer* lex);
@@ -10168,8 +10043,6 @@ class ctx_PNodeAllocator {
 
 namespace expr_to_ast {  // declare
 
-using id_kind_asdl::Id;
-using syntax_asdl::loc;
 extern Dict<BigStr*, BigStr*>* PERL_CLASSES;
 extern List<BigStr*>* POSIX_CLASSES;
 extern BigStr* RANGE_POINT_TOO_LONG;
@@ -10233,9 +10106,6 @@ class Transformer {
 
 namespace func_proc {  // declare
 
-using id_kind_asdl::Id;
-using runtime_asdl::cmd_value;
-using syntax_asdl::loc;
 void _DisallowMutableDefault(value_asdl::value_t* val, syntax_asdl::loc_t* blame_loc);
 List<value_asdl::value_t*>* _EvalPosDefaults(expr_eval::ExprEvaluator* expr_ev, List<syntax_asdl::Param*>* pos_params);
 Dict<BigStr*, value_asdl::value_t*>* _EvalNamedDefaults(expr_eval::ExprEvaluator* expr_ev, List<syntax_asdl::Param*>* named_params);
@@ -10256,7 +10126,6 @@ value_asdl::value_t* CallUserFunc(value::Func* func, typed_args::Reader* rd, sta
 
 namespace regex_translate {  // declare
 
-using id_kind_asdl::Id;
 extern Dict<BigStr*, BigStr*>* PERL_CLASS;
 extern int CH_RBRACKET;
 extern int CH_BACKSLASH;
@@ -10277,7 +10146,6 @@ int LibcFlags(BigStr* canonical_flags);
 
 namespace val_ops {  // declare
 
-using syntax_asdl::loc;
 int ToInt(value_asdl::value_t* val, BigStr* msg, syntax_asdl::loc_t* blame_loc);
 double ToFloat(value_asdl::value_t* val, BigStr* msg, syntax_asdl::loc_t* blame_loc);
 BigStr* ToStr(value_asdl::value_t* val, BigStr* msg, syntax_asdl::loc_t* blame_loc);
@@ -10419,10 +10287,6 @@ value_asdl::value_t* IndexMetaMethod(value_asdl::Obj* obj);
 
 namespace bracket_osh {  // declare
 
-using id_kind_asdl::Id;
-using syntax_asdl::loc;
-using syntax_asdl::word;
-using types_asdl::lex_mode_e;
 class _StringWordEmitter : public ::word_parse::WordEmitter {
  public:
   _StringWordEmitter(cmd_value::Argv* cmd_val);
@@ -10494,7 +10358,6 @@ class Test : public ::vm::_Builtin {
 
 namespace completion_osh {  // declare
 
-using syntax_asdl::loc;
 class _FixedWordsAction : public ::completion::CompletionAction {
  public:
   _FixedWordsAction(List<BigStr*>* d);
@@ -10660,7 +10523,6 @@ class CompAdjust : public ::vm::_Builtin {
 
 namespace shell {  // declare
 
-using syntax_asdl::loc;
 void _InitDefaultCompletions(cmd_eval::CommandEvaluator* cmd_ev, completion_osh::Complete* complete_builtin, completion::Lookup* comp_lookup);
 void _CompletionDemo(completion::Lookup* comp_lookup);
 void SourceStartupFile(process::FdState* fd_state, BigStr* rc_path, BigStr* lang, parse_lib::ParseContext* parse_ctx, cmd_eval::CommandEvaluator* cmd_ev, ui::ErrorFormatter* errfmt);

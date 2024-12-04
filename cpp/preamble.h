@@ -36,13 +36,30 @@
 #include "cpp/translation_stubs.h"
 #include "mycpp/runtime.h"  // runtime library e.g. with Python data structures
 
-// TODO: Why do we need these?
+// Function prototypes are emitted in mycpp's DECL phase, and some of them have
+// default args that reuide this.
+
+using id_kind_asdl::Id;
+
+using hnode_asdl::hnode;
+
 using pretty_asdl::doc;
+
 using runtime_asdl::cmd_value;
+using runtime_asdl::part_value;
+using runtime_asdl::scope_e;
+
 using syntax_asdl::command;
 using syntax_asdl::expr;
+using syntax_asdl::loc;
 using syntax_asdl::printf_part;  // added when self._Percent() used it in
                                  // function signature
 using syntax_asdl::proc_sig;
+using syntax_asdl::suffix_op;
+using syntax_asdl::word;
+using syntax_asdl::word_part;
+
+using types_asdl::lex_mode_e;
+
 using value_asdl::sh_lvalue;  // for builtin_assign.py and builtin_misc.py
 using value_asdl::value;

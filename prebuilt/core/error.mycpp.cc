@@ -24,7 +24,6 @@ GLOBAL_STR(S_pBg, "message");
 
 namespace runtime {  // declare
 
-using hnode_asdl::hnode;
 extern int NO_SPID;
 hnode::Record* NewRecord(BigStr* node_type);
 hnode::Leaf* NewLeaf(BigStr* s, hnode_asdl::color_t e_color);

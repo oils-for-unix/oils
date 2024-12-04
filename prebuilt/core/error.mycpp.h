@@ -35,7 +35,6 @@ namespace error {  // forward declare
 
 namespace error {  // declare
 
-using syntax_asdl::loc;
 BigStr* _ValType(value_asdl::value_t* val);
 class _ErrorWithLocation {
  public:
