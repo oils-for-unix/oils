@@ -5646,12 +5646,9 @@ class MinimalDisplay : public ::comp_ui::_IDisplay {
   MinimalDisplay(comp_ui::State* comp_state, comp_ui::PromptState* prompt_state, util::_DebugFile* debug_f);
   void _RedrawPrompt();
   virtual void _PrintCandidates(BigStr* unused_subst, List<BigStr*>* matches, int unused_match_len);
-
-  void* reader{};
   
   static constexpr uint32_t field_mask() {
-    return ::comp_ui::_IDisplay::field_mask()
-         | maskbit(offsetof(MinimalDisplay, reader));
+    return ::comp_ui::_IDisplay::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -21309,7 +21306,6 @@ void _IDisplay::EraseLines() {
 }
 
 MinimalDisplay::MinimalDisplay(comp_ui::State* comp_state, comp_ui::PromptState* prompt_state, util::_DebugFile* debug_f) : ::comp_ui::_IDisplay(comp_state, prompt_state, 10, mylib::Stdout(), debug_f) {
-  this->reader = nullptr;
 }
 
 void MinimalDisplay::_RedrawPrompt() {

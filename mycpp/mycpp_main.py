@@ -178,7 +178,7 @@ class Timer:
 def main(argv: List[str]) -> int:
     timer = Timer(START_TIME)
 
-    # TODO: Put these in the shell script
+    # Hack:
     mypy_options = [
         '--py2',
         '--strict',
@@ -209,7 +209,6 @@ def main(argv: List[str]) -> int:
 
     # Ditto
     to_header = opts.to_header
-    #if to_header:
     if 0:
         to_header = [os.path.basename(p) for p in to_header]
         to_header = [os.path.splitext(name)[0] for name in to_header]
@@ -223,6 +222,9 @@ def main(argv: List[str]) -> int:
         log('')
     #log('options %s', options)
 
+    #
+    # Type checking, which builds a Dict[Expression, Type] (12+ seconds)
+    #
     result = mypy_build(sources=sources, options=options)
 
     if result.errors:
@@ -233,24 +235,6 @@ def main(argv: List[str]) -> int:
         log('-' * 80)
         log('')
         return 1
-
-    # Important functions in mypyc/build.py:
-    #
-    # generate_c (251 lines)
-    #   parse_and_typecheck
-    #   compile_modules_to_c
-
-    # mypyc/emitmodule.py (487 lines)
-    # def compile_modules_to_c(result: BuildResult, module_names: List[str],
-    # class ModuleGenerator:
-    #   # This generates a whole bunch of textual code!
-
-    # literals, modules, errors = genops.build_ir(file_nodes, result.graph,
-    # result.types)
-
-    # TODO: Debug what comes out of here.
-    #build.dump_graph(result.graph)
-    #return
 
     # no-op
     if 0:
@@ -292,6 +276,10 @@ def main(argv: List[str]) -> int:
     else:
         f = sys.stdout
 
+    header_f = None
+    if opts.header_out:
+        header_f = open(opts.header_out, 'w')  # Not closed
+
     f.write("""\
 // BEGIN mycpp output
 
@@ -299,10 +287,10 @@ def main(argv: List[str]) -> int:
 
 """)
 
-    # Convert the mypy AST into our own IR.
-    # module name -> {expr node -> access type}
-    dot_exprs: Dict[MemberExpr, ir_pass.DotExprs] = {}
+    # [PASS] IR pass could be merged with virtual pass
     timer.Section('mycpp pass: IR')
+
+    dot_exprs: Dict[MemberExpr, ir_pass.DotExprs] = {}
     for _, module in to_compile:
         module_dot_exprs: ir_pass.DotExprs = {}
         p1 = ir_pass.Build(result.types, module_dot_exprs)
@@ -311,10 +299,6 @@ def main(argv: List[str]) -> int:
 
         MaybeExitWithErrors(p1)
 
-    header_f = None
-    if opts.header_out:
-        header_f = open(opts.header_out, 'w')  # Not closed
-
     # Which functions are C++ 'virtual'?
     virtual = pass_state.Virtual()
 
@@ -322,16 +306,16 @@ def main(argv: List[str]) -> int:
     all_local_vars: cppgen_pass.AllLocalVars = {}
     yield_out_params: Dict[FuncDef, Tuple[str, str]] = {}
 
-    # class Foo; class Bar;
+    # [PASS] namespace foo { class Spam; class Eggs; }
     timer.Section('mycpp pass: FORWARD DECL')
+
     for name, module in to_compile:
-        #log('forward decl name %s', name)
         if name in to_header:
             out_f = header_f
         else:
             out_f = f
 
-        forward_decls: List[str] = []
+        forward_decls: List[str] = []  # unused
         p2 = virtual_pass.Pass(
             result.types,
             virtual,  # output
@@ -351,33 +335,25 @@ def main(argv: List[str]) -> int:
         log('virtuals %s', virtual.virtuals)
         log('has_vtable %s', virtual.has_vtable)
 
-    #
-    # String constants
-    #
+    # [PASS]
+    timer.Section('mycpp pass: CONST')
 
     global_strings = const_pass.GlobalStrings()
     p3 = const_pass.Collect(global_strings)
 
-    timer.Section('mycpp pass: CONST')
     for name, module in to_compile:
         p3.visit_mypy_file(module)
         MaybeExitWithErrors(p3)
 
     global_strings.ComputeStableVarNames()
-
     # Emit GLOBAL_STR(), never to header
     global_strings.WriteConstants(f)
 
-    #
-    # C++ declarations like:
+    # [PASS] C++ declarations like:
     # class Foo { void method(); }; class Bar { void method(); };
-    #
     timer.Section('mycpp pass: PROTOTYPES')
 
-    #local_vars: cppgen_pass.AllLocalVars = {}
-
     for name, module in to_compile:
-        #log('decl name %s', name)
         if name in to_header:
             out_f = header_f
         else:
@@ -398,6 +374,7 @@ def main(argv: List[str]) -> int:
         from pprint import pformat
         print(pformat(all_member_vars), file=sys.stderr)
 
+    # [PASS]
     timer.Section('mycpp pass: CONTROL FLOW')
 
     cfgs = {}  # fully qualified function name -> control flow graph
@@ -408,7 +385,9 @@ def main(argv: List[str]) -> int:
         cfgs.update(p5.cfgs)
         MaybeExitWithErrors(p5)
 
+    # [PASS]
     timer.Section('mycpp pass: DATAFLOW')
+
     stack_roots = None
     if opts.minimize_stack_roots:
         # souffle_dir contains two subdirectories.
@@ -425,7 +404,7 @@ def main(argv: List[str]) -> int:
 
     timer.Section('mycpp pass: IMPL')
 
-    # Now the definitions / implementations.
+    # [PASS] the definitions / implementations:
     # void Foo:method() { ... }
     # void Bar:method() { ... }
     for name, module in to_compile:

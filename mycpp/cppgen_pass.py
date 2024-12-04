@@ -185,22 +185,46 @@ def GetCType(t: Type) -> str:
     """Recursively translate MyPy type to C++ type."""
     is_pointer = False
 
-    if isinstance(t, NoneTyp):  # e.g. a function that doesn't return anything
+    if isinstance(t, UninhabitedType):
+        # UninhabitedType is used by def e_usage() -> NoReturn
+        # TODO: we could add [[noreturn]] here!
+        c_type = 'void'
+
+    elif isinstance(t, PartialType):
+        # I removed the last instance of this!  It was dead code in comp_ui.py.
+        raise AssertionError()
+        #c_type = 'void'
+        #is_pointer = True
+
+    elif isinstance(t,
+                    NoneTyp):  # e.g. a function that doesn't return anything
         return 'void'
 
     elif isinstance(t, AnyType):
-        # Note: this usually results in another compile-time error.  We should get
-        # rid of the 'Any' types.
+        # 'any' in ASDL becomes void*
+        # It's useful for value::BuiltinFunc(void* f) which is a vm::_Callable*
         c_type = 'void'
         is_pointer = True
 
-    elif isinstance(t, PartialType):
-        # Note: bin/oil.py has some of these?  Not sure why.
-        c_type = 'void'
-        is_pointer = True
+    elif isinstance(t, CallableType):
+        # Function types are expanded
+        #    Callable[[Parser, Token, int], arith_expr_t]
+        # -> arith_expr_t* (*f)(Parser*, Token*, int) nud;
 
-    # TODO: It seems better not to check types with string equality, but that's
-    # what mypyc/genops.py does?
+        ret_type = GetCType(t.ret_type)
+        arg_types = [GetCType(typ) for typ in t.arg_types]
+        c_type = '%s (*f)(%s)' % (ret_type, ', '.join(arg_types))
+
+    elif isinstance(t, TypeAliasType):
+        if 0:
+            log('***')
+            log('%s', t)
+            log('%s', dir(t))
+            log('%s', t.alias)
+            log('%s', dir(t.alias))
+            log('%s', t.alias.target)
+            log('***')
+        return GetCType(t.alias.target)
 
     elif isinstance(t, Instance):
         type_name = t.type.fullname
@@ -223,6 +247,17 @@ def GetCType(t: Type) -> str:
                 c_type = 'BigStr'
                 is_pointer = True
 
+        elif 'BigInt' in type_name:
+            # also spelled mycpp.mylib.BigInt
+
+            c_type = 'mops::BigInt'
+            # Not a pointer!
+
+        elif type_name == 'typing.IO':
+            c_type = 'mylib::File'
+            is_pointer = True
+
+        # Parameterized types: List, Dict, Iterator
         elif type_name == 'builtins.list':
             assert len(t.args) == 1, t.args
             type_param = t.args[0]
@@ -237,16 +272,6 @@ def GetCType(t: Type) -> str:
             c_type = 'Dict<%s>' % ', '.join(params)
             is_pointer = True
 
-        elif 'BigInt' in type_name:
-            # also spelled mycpp.mylib.BigInt
-
-            c_type = 'mops::BigInt'
-            # Not a pointer!
-
-        elif type_name == 'typing.IO':
-            c_type = 'mylib::File'
-            is_pointer = True
-
         elif type_name == 'typing.Iterator':
             assert len(t.args) == 1, t.args
             type_param = t.args[0]
@@ -254,10 +279,11 @@ def GetCType(t: Type) -> str:
             c_type = 'ListIter<%s>' % inner_c_type
 
         else:
+            parts = t.type.fullname.split('.')
+            c_type = '%s::%s' % (parts[-2], parts[-1])
+
             # note: fullname => 'parse.Lexer'; name => 'Lexer'
             base_class_names = [b.type.fullname for b in t.type.bases]
-
-            #log('** base_class_names %s', base_class_names)
 
             # Check base class for pybase.SimpleObj so we can output
             # expr_asdl::tok_t instead of expr_asdl::tok_t*.  That is a enum, while
@@ -268,27 +294,13 @@ def GetCType(t: Type) -> str:
             if 'asdl.pybase.SimpleObj' not in base_class_names:
                 is_pointer = True
 
-            parts = t.type.fullname.split('.')
-            c_type = '%s::%s' % (parts[-2], parts[-1])
-
-    elif isinstance(t, UninhabitedType):
-        # UninhabitedType has a NoReturn flag
-        c_type = 'void'
-
     elif isinstance(t, TupleType):
-        inner_c_types = []
-        for inner_type in t.items:
-            c_type = GetCType(inner_type)
-            if c_type == 'void':
-                # Why does MyPy give us 'None' instead of type declared with type: ?
-                # log('**** items %s', t.items)
-                pass
-            inner_c_types.append(c_type)
-
+        inner_c_types = [GetCType(inner) for inner in t.items]
         c_type = 'Tuple%d<%s>' % (len(t.items), ', '.join(inner_c_types))
         is_pointer = True
 
-    elif isinstance(t, UnionType):
+    elif isinstance(t, UnionType):  # Optional[T]
+
         # Special case for Optional[IOError_OSError]
         # == Union[IOError, OSError, None]
 
@@ -343,26 +355,6 @@ def GetCType(t: Type) -> str:
         else:
             raise NotImplementedError(
                 'Expected 2 or 3 items in Union, got %s' % num_items)
-
-    elif isinstance(t, CallableType):
-        # Function types are expanded
-        #    Callable[[Parser, Token, int], arith_expr_t]
-        # -> arith_expr_t* (*f)(Parser*, Token*, int) nud;
-
-        ret_type = GetCType(t.ret_type)
-        arg_types = [GetCType(typ) for typ in t.arg_types]
-        c_type = '%s (*f)(%s)' % (ret_type, ', '.join(arg_types))
-
-    elif isinstance(t, TypeAliasType):
-        if 0:
-            log('***')
-            log('%s', t)
-            log('%s', dir(t))
-            log('%s', t.alias)
-            log('%s', dir(t.alias))
-            log('%s', t.alias.target)
-            log('***')
-        return GetCType(t.alias.target)
 
     else:
         raise NotImplementedError('MyPy type: %s %s' % (type(t), t))
@@ -575,6 +567,7 @@ class Decl(_Shared):
         # declaration inside class { }
         func_name = o.name
 
+        # Why can't we get this Type object with self.types[o]?
         c_ret_type, _, _ = GetCReturnType(o.type.ret_type)
 
         self.write_ind('%s%s%s %s(', noreturn, virtual, c_ret_type, func_name)
@@ -803,6 +796,7 @@ class Impl(_Shared):
 
         self.write('\n')
 
+        # Why can't we get this Type object with self.types[o]?
         c_ret_type, _, _ = GetCReturnType(o.type.ret_type)
 
         self.write_ind('%s%s %s(', noreturn, c_ret_type, func_name)

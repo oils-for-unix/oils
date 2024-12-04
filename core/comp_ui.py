@@ -147,8 +147,6 @@ class MinimalDisplay(_IDisplay):
         _IDisplay.__init__(self, comp_state, prompt_state, 10, mylib.Stdout(),
                            debug_f)
 
-        self.reader = None
-
     def _RedrawPrompt(self):
         # type: () -> None
         # NOTE: This has to reprint the prompt and the command line!
