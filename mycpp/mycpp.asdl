@@ -14,11 +14,11 @@ module mycpp
     # Are we using typing.IO?
   | IOError_OSError  # Special thing for exceptions?
 
-    # e.g. builtins.int, mops::BigInt
-    # Or should we expand these into Int, BigInt, Double
-  | Atom(str name)
+    # Builtin types
+    # MyPy Float is C++ double
+  | Bool | Int | Float | Str
 
-    # e.g. state::Mem
+    # e.g. state::Mem, mops::BigInt
   | Class(List[str] mod_parts, str name)
   | Callable(List[mtype] args, mtype return_)  # Callable[[float, float], float]
 

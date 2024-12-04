@@ -963,11 +963,12 @@ class Impl(_Shared):
         self.write('))')
 
     def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> None:
-        if o.callee.name == 'probe':
+        callee_name = o.callee.name
+        if callee_name == 'probe':
             self._ProbeExpr(o)
             return
 
-        if o.callee.name == 'isinstance':
+        if callee_name == 'isinstance':
             self.report_error(o, 'isinstance() not allowed')
             return
 
@@ -975,7 +976,7 @@ class Impl(_Shared):
         # -> return static_cast<ShArrayLiteral*>(tok)
 
         # TODO: Consolidate this with AssignmentExpr logic.
-        if o.callee.name == 'cast':
+        if callee_name == 'cast':
             call = o
             type_expr = call.args[0]
 
@@ -991,11 +992,9 @@ class Impl(_Shared):
         # log('foo %s', x)
         #   =>
         # log(StrFormat('foo %s', x))
-        if o.callee.name == 'log':
+        if callee_name == 'log':
             self._LogExpr(o)
             return
-
-        callee_name = o.callee.name
 
         if isinstance(o.callee, MemberExpr) and callee_name == 'next':
             self.accept(o.callee.expr)
@@ -1697,8 +1696,9 @@ class Impl(_Shared):
 
         if isinstance(rval, CallExpr):
             callee = rval.callee
+            callee_name = callee.name
 
-            if callee.name == 'NewDict':
+            if callee_name == 'NewDict':
                 self.write_ind('')
 
                 # Hack for non-members - why does this work?
@@ -1713,7 +1713,7 @@ class Impl(_Shared):
                 self.write(';\n')
                 return
 
-            if callee.name == 'cast':
+            if callee_name == 'cast':
                 self._AssignCastImpl(o, lval)
                 return
 
@@ -2179,7 +2179,7 @@ class Impl(_Shared):
         self.indent -= 1
         self.write_ind('}\n')
 
-    def _str_switch_cases(self, cases: util.CaseList) -> Any:
+    def _StrSwitchCases(self, cases: util.CaseList) -> Any:
         cases2: List[Tuple[int, str, 'mypy.nodes.Block']] = []
         for expr, body in cases:
             if not isinstance(expr, CallExpr):
@@ -2239,7 +2239,7 @@ class Impl(_Shared):
                                             cases,
                                             errors=self.errors_keep_going)
 
-        grouped_cases = self._str_switch_cases(cases)
+        grouped_cases = self._StrSwitchCases(cases)
         # Warning: this consumes internal iterator
         #self.log('grouped %s', list(grouped_cases))
 
@@ -2726,10 +2726,11 @@ class Impl(_Shared):
     def visit_raise_stmt(self, o: 'mypy.nodes.RaiseStmt') -> None:
         # C++ compiler is aware of assert(0) for unreachable code
         if o.expr and isinstance(o.expr, CallExpr):
-            if o.expr.callee.name == 'AssertionError':
+            callee_name = o.expr.callee.name
+            if callee_name == 'AssertionError':
                 self.write_ind('assert(0);  // AssertionError\n')
                 return
-            if o.expr.callee.name == 'NotImplementedError':
+            if callee_name == 'NotImplementedError':
                 self.write_ind(
                     'FAIL(kNotImplemented);  // Python NotImplementedError\n')
                 return
