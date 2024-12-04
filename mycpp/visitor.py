@@ -124,6 +124,13 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
                 isinstance(o.expr.callee, NameExpr)):
             func_name = o.expr.callee.name
 
+        # In addition to func_name, can we also pass
+        # iterated_over
+        #   enumerate() reversed() iteritems() is o.expr[0]
+        #   otherwise it's o.expr
+        # And then you get the type, and if it's typing.Iterator, then the
+        # virtual pass can set self.yield_eager_for
+
         self.oils_visit_for_stmt(o, func_name)
 
         # TODO: validate and destructure the different kinds of loops
@@ -300,6 +307,15 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
             if isinstance(o.rvalue, ListComprehension):
                 self.visit_assign_to_listcomp(o, lval)
                 return
+
+            # TODO: virtual pass might want this
+            # However it depends on TYPES.  Right now the visitor doesn't depend on types
+            # if (isinstance(rval_type, Instance) and
+            #        rval_type.type.fullname == 'typing.Iterator'):
+            #    self._AssignToGenerator(o, lval, rval_type)
+            #    return
+            # Key reason it needs to be in the virtual pass is that signatures
+            # must change to allow an out param.
 
         self.oils_visit_assignment_stmt(o, lval, o.rvalue)
 

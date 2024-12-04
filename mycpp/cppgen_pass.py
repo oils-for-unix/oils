@@ -1509,7 +1509,7 @@ class Impl(_Shared):
         type_param = rval_type.args[0]
         inner_c_type = GetCType(type_param)
 
-        eager_list_name = '_iter_buf_%s' % lval.name
+        eager_list_name = 'EAGER_%s' % lval.name
         eager_list_type = 'List<%s>*' % inner_c_type
 
         # write the variable to accumulate into
@@ -1876,7 +1876,7 @@ class Impl(_Shared):
             inner_c_type = GetCType(over_type.args[0])
 
             # eager_list_name is used below
-            eager_list_name = '_for_yield_acc%d' % self.unique_id
+            eager_list_name = 'EAGER_for_%d' % self.unique_id
             eager_list_type = 'List<%s>*' % inner_c_type
             self.unique_id += 1
 

@@ -11871,9 +11871,9 @@ int CompExport::Run(cmd_value::Argv* cmd_val) {
   begin = arg_begin == -1 ? 0 : arg_begin;
   end = arg_end == -1 ? len(arg->c) : arg_end;
   comp = Alloc<completion::Api>(arg->c, begin, end);
-  List<BigStr*> _iter_buf_it;
-  this->root_comp->Matches(comp, &_iter_buf_it);
-  ListIter<BigStr*> it(&_iter_buf_it);
+  List<BigStr*> EAGER_it;
+  this->root_comp->Matches(comp, &EAGER_it);
+  ListIter<BigStr*> it(&EAGER_it);
   comp_matches = list(it);
   comp_matches->reverse();
   if (maybe_str_equals(arg->format, S_mfD)) {
@@ -22405,9 +22405,9 @@ void UserSpec::AllMatches(completion::Api* comp, List<Tuple2<BigStr*, runtime_as
     completion::CompletionAction* a = it.Value();
     StackRoot _for(&a  );
     action_kind = a->ActionKind();
-    List<BigStr*> _for_yield_acc9;
-    a->Matches(comp, &_for_yield_acc9);
-    for (ListIter<BigStr*> it(&_for_yield_acc9); !it.Done(); it.Next()) {
+    List<BigStr*> EAGER_for_9;
+    a->Matches(comp, &EAGER_for_9);
+    for (ListIter<BigStr*> it(&EAGER_for_9); !it.Done(); it.Next()) {
       BigStr* match = it.Value();
       StackRoot _for(&match    );
       show = (this->predicate->Evaluate(match) and (match->startswith(comp->to_complete) or action_kind == comp_action_e::BashFunc));
@@ -22421,9 +22421,9 @@ void UserSpec::AllMatches(completion::Api* comp, List<Tuple2<BigStr*, runtime_as
   for (ListIter<completion::CompletionAction*> it(this->extra_actions); !it.Done(); it.Next()) {
     completion::CompletionAction* a = it.Value();
     StackRoot _for(&a  );
-    List<BigStr*> _for_yield_acc10;
-    a->Matches(comp, &_for_yield_acc10);
-    for (ListIter<BigStr*> it(&_for_yield_acc10); !it.Done(); it.Next()) {
+    List<BigStr*> EAGER_for_10;
+    a->Matches(comp, &EAGER_for_10);
+    for (ListIter<BigStr*> it(&EAGER_for_10); !it.Done(); it.Next()) {
       BigStr* match = it.Value();
       StackRoot _for(&match    );
             _out_yield_acc->append((Alloc<Tuple2<BigStr*, runtime_asdl::comp_action_t>>(match, comp_action_e::FileSystem)));
@@ -22434,9 +22434,9 @@ void UserSpec::AllMatches(completion::Api* comp, List<Tuple2<BigStr*, runtime_as
     for (ListIter<completion::CompletionAction*> it(this->else_actions); !it.Done(); it.Next()) {
       completion::CompletionAction* a = it.Value();
       StackRoot _for(&a    );
-      List<BigStr*> _for_yield_acc11;
-      a->Matches(comp, &_for_yield_acc11);
-      for (ListIter<BigStr*> it(&_for_yield_acc11); !it.Done(); it.Next()) {
+      List<BigStr*> EAGER_for_11;
+      a->Matches(comp, &EAGER_for_11);
+      for (ListIter<BigStr*> it(&EAGER_for_11); !it.Done(); it.Next()) {
         BigStr* match = it.Value();
         StackRoot _for(&match      );
                 _out_yield_acc->append((Alloc<Tuple2<BigStr*, runtime_asdl::comp_action_t>>(match, comp_action_e::FileSystem)));
@@ -22716,9 +22716,9 @@ void RootCompleter::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc
         comp->Update(S_Aoo, val->s, S_Aoo, 0, Alloc<List<BigStr*>>());
         n = len(val->s);
         action = Alloc<FileSystemAction>(false, false, true);
-        List<BigStr*> _for_yield_acc12;
-        action->Matches(comp, &_for_yield_acc12);
-        for (ListIter<BigStr*> it(&_for_yield_acc12); !it.Done(); it.Next()) {
+        List<BigStr*> EAGER_for_12;
+        action->Matches(comp, &EAGER_for_12);
+        for (ListIter<BigStr*> it(&EAGER_for_12); !it.Done(); it.Next()) {
           BigStr* name = it.Value();
           StackRoot _for(&name        );
                     _out_yield_acc->append(str_concat(line_until_tab, ShellQuoteB(name->slice(n))));
@@ -22825,9 +22825,9 @@ void RootCompleter::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc
     while (!done) {
       done = true;
       try {
-        List<BigStr*> _for_yield_acc17;
-        this->_PostProcess(base_opts, dynamic_opts, user_spec, comp, &_for_yield_acc17);
-        for (ListIter<BigStr*> it(&_for_yield_acc17); !it.Done(); it.Next()) {
+        List<BigStr*> EAGER_for_17;
+        this->_PostProcess(base_opts, dynamic_opts, user_spec, comp, &EAGER_for_17);
+        for (ListIter<BigStr*> it(&EAGER_for_17); !it.Done(); it.Next()) {
           BigStr* candidate = it.Value();
           StackRoot _for(&candidate        );
                     _out_yield_acc->append(candidate);
@@ -22888,9 +22888,9 @@ void RootCompleter::_PostProcess(Dict<BigStr*, bool>* base_opts, Dict<BigStr*, b
   this->debug_f->writeln(StrFormat("Completing %r ... (Ctrl-C to cancel)", comp->line));
   start_time = time_::time();
   i = 0;
-  List<Tuple2<BigStr*, runtime_asdl::comp_action_t>*> _for_yield_acc21;
-  user_spec->AllMatches(comp, &_for_yield_acc21);
-  for (ListIter<Tuple2<BigStr*, runtime_asdl::comp_action_t>*> it(&_for_yield_acc21); !it.Done(); it.Next()) {
+  List<Tuple2<BigStr*, runtime_asdl::comp_action_t>*> EAGER_for_21;
+  user_spec->AllMatches(comp, &EAGER_for_21);
+  for (ListIter<Tuple2<BigStr*, runtime_asdl::comp_action_t>*> it(&EAGER_for_21); !it.Done(); it.Next()) {
     Tuple2<BigStr*, runtime_asdl::comp_action_t>* tup22 = it.Value();
     BigStr* candidate = tup22->at0();
     StackRoot _unpack_0(&candidate);
@@ -22955,9 +22955,9 @@ BigStr* ReadlineCallback::_GetNextCompletion(int state) {
     this->debug_f->writeln(StrFormat("Api %r %d %d", buf, begin, end));
     // if not PYTHON
     {
-      List<BigStr*> _iter_buf_it;
-      this->root_comp->Matches(comp, &_iter_buf_it);
-      ListIter<BigStr*> it(&_iter_buf_it);
+      List<BigStr*> EAGER_it;
+      this->root_comp->Matches(comp, &EAGER_it);
+      ListIter<BigStr*> it(&EAGER_it);
       this->comp_matches = list(it);
       this->comp_matches->reverse();
     }
@@ -57877,9 +57877,9 @@ int CompGen::Run(cmd_value::Argv* cmd_val) {
   comp = Alloc<completion::Api>(S_Aoo, 0, 0);
   comp->Update(S_pqd, to_complete, S_Aoo, -1, nullptr);
   try {
-    List<Tuple2<BigStr*, runtime_asdl::comp_action_t>*> _for_yield_acc0;
-    user_spec->AllMatches(comp, &_for_yield_acc0);
-    for (ListIter<Tuple2<BigStr*, runtime_asdl::comp_action_t>*> it(&_for_yield_acc0); !it.Done(); it.Next()) {
+    List<Tuple2<BigStr*, runtime_asdl::comp_action_t>*> EAGER_for_0;
+    user_spec->AllMatches(comp, &EAGER_for_0);
+    for (ListIter<Tuple2<BigStr*, runtime_asdl::comp_action_t>*> it(&EAGER_for_0); !it.Done(); it.Next()) {
       Tuple2<BigStr*, runtime_asdl::comp_action_t>* tup1 = it.Value();
       BigStr* m = tup1->at0();
       StackRoot _unpack_0(&m);
