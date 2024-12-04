@@ -204,7 +204,7 @@ def BashAssoc_GetValues(assoc_val):
 def BashAssoc_AppendValues(assoc_val, d):
     # type: (value.BashAssoc, Dict[str, str]) -> None
 
-    for key in d.keys():
+    for key in d:
         assoc_val.d[key] = d[key]
 
 
