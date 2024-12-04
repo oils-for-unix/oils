@@ -11,7 +11,7 @@ sh_expr_eval.py -- Shell boolean and arithmetic expressions.
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import scope_t
+from _devbuild.gen.runtime_asdl import error_code_e, scope_t
 from _devbuild.gen.syntax_asdl import (
     word_t,
     CompoundWord,
@@ -736,7 +736,7 @@ class ArithEvaluator(object):
                                 self.EvalToBigInt(node.right))
                             s, error_code = word_eval.GetArrayItem(
                                 array_val.strs, small_i)
-                            if error_code == 1:
+                            if error_code == error_code_e.IndexOutOfRange:
                                 # Note: Bash outputs warning but does not make
                                 # it a real error.  We follow the Bash behavior
                                 # here.
@@ -1041,7 +1041,7 @@ class BoolEvaluator(ArithEvaluator):
                     return False
 
                 result, error_code = bash_impl.BashArray_HasElement(val, index)
-                if error_code == 1:
+                if error_code == error_code_e.IndexOutOfRange:
                     e_die(
                         '-v got index %s, which is out of bounds for array of length %d'
                         % (index_str, bash_impl.BashArray_Length(val)),

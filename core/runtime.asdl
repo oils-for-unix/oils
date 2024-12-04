@@ -163,6 +163,9 @@ module runtime
   #   inside them are stopped.
   job_state = Running | Done | Stopped
 
+  # core/bash_impl.py
+  error_code = OK | IndexOutOfRange
+
   # Flag arguments can be any of these types.
   flag_type = Bool | Int | Float | Str
 
