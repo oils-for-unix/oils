@@ -391,7 +391,6 @@ def main(argv: List[str]) -> int:
             p3 = cppgen_pass.Decl(
                 result.types,
                 global_strings,  # input
-                local_vars=None,  # unused
                 all_member_vars=all_member_vars,  # input
                 virtual=virtual,  # input
             )

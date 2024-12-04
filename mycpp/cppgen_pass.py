@@ -449,8 +449,8 @@ class _Shared(visitor.SimpleVisitor):
         self.yield_accumulators: Dict[Union[FuncDef, AssignmentStmt, ForStmt],
                                       Tuple[str, str]] = {}
 
-        # TODO: move this state into SimpleVisitor
-        # It keeps track of the curernt class and method too
+        # TODO: move this state into SimpleVisitor.  # It also keeps track of
+        # the current class and method.
         self.current_func_node: Optional[FuncDef] = None
         # Used for iterators
         self.current_stmt_node: Optional[Union[AssignmentStmt, ForStmt]] = None
@@ -497,9 +497,10 @@ class _Shared(visitor.SimpleVisitor):
             self.write('\n')
 
         c_ret_type, _, c_iter_list_type = GetCReturnType(o.type.ret_type)
+
+        # Is this FuncDef is a generator?  Then associate the node with an
+        # accumulator param (name and type).
         if c_iter_list_type is not None:
-            # The function is a generator. Add an output param that references an
-            # accumulator for the results.
             self.yield_accumulators[o] = ('_out_yield_acc', c_iter_list_type)
 
         # Avoid C++ warnings by prepending [[noreturn]]
@@ -512,6 +513,7 @@ class _Shared(visitor.SimpleVisitor):
 
         self.current_func_node = o
         self._WriteFuncParams(
+            o,
             o.type.arg_types,
             o.arguments,
             # write default values in the declaration only
@@ -580,6 +582,7 @@ class _Shared(visitor.SimpleVisitor):
             return
 
     def _WriteFuncParams(self,
+                         func_def: FuncDef,
                          arg_types: List[Type],
                          arguments: List['mypy.nodes.Argument'],
                          write_defaults: bool = False) -> None:
@@ -631,12 +634,11 @@ class _Shared(visitor.SimpleVisitor):
                 self.log('  initializer %s', arg.initializer)
                 self.log('  kind %s', arg.kind)
 
-        # Will be set if we're declaring or defining a function that returns
-        # Iterator[T].
-        if self.current_func_node in self.yield_accumulators:
+        # Is the function we're writing params for an iterator?
+        if func_def in self.yield_accumulators:
             self.write(', ')
 
-            arg_name, c_type = self.yield_accumulators[self.current_func_node]
+            arg_name, c_type = self.yield_accumulators[func_def]
             self.write('%s %s', c_type, arg_name)
 
 
@@ -2245,7 +2247,8 @@ class Impl(_Shared):
                          base_class_name: util.SymbolPath) -> None:
         self.def_write('\n')
         self.def_write('%s::%s(', o.name, o.name)
-        self._WriteFuncParams(stmt.type.arg_types,
+        self._WriteFuncParams(stmt,
+                              stmt.type.arg_types,
                               stmt.arguments,
                               write_defaults=False)
         self.def_write(')')
@@ -2679,27 +2682,22 @@ class Decl(Impl):
                  types: Dict[Expression, Type],
                  global_strings: 'const_pass.GlobalStrings',
                  virtual: pass_state.Virtual = None,
-                 local_vars: Optional[AllLocalVars] = None,
                  all_member_vars: Optional[AllMemberVars] = None,
-                 dot_exprs: Optional['ir_pass.DotExprs'] = None,
-                 stack_roots_warn: Optional[int] = None,
-                 stack_roots: Optional[pass_state.StackRoots] = None) -> None:
+                 dot_exprs: Optional['ir_pass.DotExprs'] = None) -> None:
         _Shared.__init__(self,
                          types,
                          global_strings,
                          virtual=virtual,
-                         local_vars=local_vars,
                          all_member_vars=all_member_vars,
-                         dot_exprs=dot_exprs,
-                         stack_roots_warn=stack_roots_warn,
-                         stack_roots=stack_roots)
+                         dot_exprs=dot_exprs)
         self.decl = True
 
     def oils_visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
         # In declarations, 'a.b' is only used for default argument
         # values 'a::b'
         self.accept(o.expr)
-        self.def_write('::')
+        # TODO: remove def_write() in Decl pass
+        self.def_write('::')  
         self.def_write(o.name)
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
@@ -2718,7 +2716,8 @@ class Decl(Impl):
                                base_class_name: util.SymbolPath) -> None:
         self.indent += 1
         self.write_ind('%s(', o.name)
-        self._WriteFuncParams(stmt.type.arg_types,
+        self._WriteFuncParams(stmt,
+                              stmt.type.arg_types,
                               stmt.arguments,
                               write_defaults=True)
         self.write(');\n')
