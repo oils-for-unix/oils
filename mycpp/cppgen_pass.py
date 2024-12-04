@@ -35,7 +35,9 @@ def _GetCTypeForCast(type_expr: Expression) -> str:
     """ MyPy cast() """
 
     if isinstance(type_expr, MemberExpr):
-        subtype_name = '%s::%s' % (type_expr.expr.name, type_expr.name)
+        left = type_expr.expr
+        assert isinstance(left, NameExpr), left  # assume it's module.Type
+        subtype_name = '%s::%s' % (left.name, type_expr.name)
     elif isinstance(type_expr, IndexExpr):
         # List[word_t] would be a problem.
         # But worked around it in osh/word_parse.py
@@ -44,8 +46,10 @@ def _GetCTypeForCast(type_expr: Expression) -> str:
     elif isinstance(type_expr, StrExpr):
         parts = type_expr.value.split('.')
         subtype_name = '::'.join(parts)
-    else:
+    elif isinstance(type_expr, NameExpr):
         subtype_name = type_expr.name
+    else:
+        raise AssertionError()
 
     # Hack for now
     if subtype_name != 'int' and subtype_name != 'mops::BigInt':
@@ -396,7 +400,6 @@ def PythonStringLiteral(s: str) -> str:
 
 def _GetNoReturn(func_name: str) -> str:
     # Avoid C++ warnings by prepending [[noreturn]]
-    noreturn = ''
     if func_name in ('e_die', 'e_die_status', 'e_strict', 'e_usage', 'p_die'):
         return '[[noreturn]] '
     else:
@@ -588,9 +591,12 @@ class Decl(_Shared):
         # Declare constant strings.  They have to be at the top level.
 
         # TODO: self.at_global_scope doesn't work for context managers and so forth
-        if self.indent == 0 and not util.SkipAssignment(lval.name):
-            c_type = GetCType(self.types[lval])
-            self.write('extern %s %s;\n', c_type, lval.name)
+        if self.indent == 0:
+            # Top level can't have foo.bar = baz
+            assert isinstance(lval, NameExpr), lval
+            if not util.SkipAssignment(lval.name):
+                c_type = GetCType(self.types[lval])
+                self.write('extern %s %s;\n', c_type, lval.name)
 
         # TODO: we don't traverse here, so _CheckCondition() isn't called
         # e.g. x = 'a' if mylist else 'b'

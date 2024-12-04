@@ -141,6 +141,7 @@ py-codegen() {
   gen-asdl-py 'core/value.asdl'
   gen-asdl-py 'data_lang/nil8.asdl'
   gen-asdl-py 'display/pretty.asdl'
+  gen-asdl-py 'mycpp/mycpp.asdl'
 
   gen-asdl-py 'tools/find/find.asdl'
 

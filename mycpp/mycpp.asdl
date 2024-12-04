@@ -1,0 +1,39 @@
+# ARuntime value
+
+module mycpp
+{
+  # Should these be Python types, or C++ types?
+  #
+  # Python: mops.BigInt, C++ mops::BigInt
+  # Python: float, C++: double
+
+  mtype =
+    NoneType  # -> None
+  | NoReturn  # -> NoReturn
+
+    # Are we using typing.IO?
+  | IOError_OSError  # Special thing for exceptions?
+
+    # e.g. builtins.int, mops::BigInt
+    # Or should we expand these into Int, BigInt, Double
+  | Atom(str name)
+
+    # e.g. state::Mem
+  | Class(List[str] mod_parts, str name)
+  | Callable(List[mtype] args, mtype return_)  # Callable[[float, float], float]
+
+  # Parameterized types
+
+  | Dict_(mtype k, mtype v)  # Dict[K, V]
+  | List_(mtype t)  # List[T]
+  | Iterator(mtype t)  # Iterator[T]
+
+    # Will be turns into Tuple2, Tuple3, Tuple4<A, B, C, D>
+  | Tuple(List[mtype] children)
+  | Optional(mtype child)  # Optional[T]
+
+  | Alias(mtype child)
+}
+
+# vim: sw=2
+

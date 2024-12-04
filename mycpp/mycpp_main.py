@@ -12,14 +12,12 @@ import time
 
 START_TIME = time.time()  # measure before imports
 
-from typing import Dict, List, Optional, Tuple, Any, Iterator, TYPE_CHECKING
-
+# MyPy deps
 from mypy.build import build as mypy_build
 from mypy.main import process_options
-if TYPE_CHECKING:
-    from mypy.nodes import MemberExpr, FuncDef
-    from mypy.modulefinder import BuildSource
-    from mypy.build import BuildResult
+
+# Our code
+from _devbuild.gen.mycpp_asdl import mtype
 
 from mycpp import ir_pass
 from mycpp import const_pass
@@ -29,6 +27,13 @@ from mycpp import virtual_pass
 from mycpp import pass_state
 from mycpp.util import log
 from mycpp import visitor
+
+from typing import Dict, List, Optional, Tuple, Any, Iterator, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from mypy.nodes import MemberExpr, FuncDef
+    from mypy.modulefinder import BuildSource
+    from mypy.build import BuildResult
 
 
 def Options() -> optparse.OptionParser:
@@ -177,6 +182,11 @@ class Timer:
 
 def main(argv: List[str]) -> int:
     timer = Timer(START_TIME)
+
+    _ = mtype
+    if 0:
+        log('m %r' % mtype)
+        log('m %r' % mtype.Callable)
 
     # Hack:
     mypy_options = [

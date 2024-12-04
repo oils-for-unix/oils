@@ -242,13 +242,13 @@ def Stdin():
 class switch(object):
     """Translates to C switch on int.
 
-    with tagswitch(i) as case:
+    with switch(i) as case:
         if case(42, 43):
-           print('hi')
+            print('hi')
         elif case(99):
-           print('two')
-       else:
-           print('neither')
+            print('two')
+        else:
+            print('neither')
     """
 
     def __init__(self, value):
@@ -289,7 +289,7 @@ class str_switch(object):
 
 
 class tagswitch(object):
-    """A ContextManager that translates to switch statement over ASDL types."""
+    """Translates to C switch(node->tag())"""
 
     def __init__(self, node):
         # type: (Any) -> None
