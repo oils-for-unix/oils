@@ -465,6 +465,80 @@ class _Shared(visitor.SimpleVisitor):
 
         self.decl = False
 
+    def oils_visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> None:
+        mod_parts = o.fullname.split('.')
+        if self.decl:
+            comment = 'declare'
+        else:
+            comment = 'define'
+
+        self.write_ind('namespace %s {  // %s\n', mod_parts[-1], comment)
+        self.write('\n')
+
+        #self.log('defs %s', o.defs)
+        for node in o.defs:
+            self.accept(node)
+
+        self.write('\n')
+        self.write_ind('}  // %s namespace %s\n', comment, mod_parts[-1])
+        self.write('\n')
+
+    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
+        func_name = o.name
+
+        virtual = ''
+        if self.decl:
+            if self.virtual.IsVirtual(self.current_class_name, o.name):
+                virtual = 'virtual '
+
+        if not self.decl and self.current_class_name:
+            # definition looks like
+            # void Class::method(...);
+            func_name = join_name((self.current_class_name[-1], o.name))
+        else:
+            # declaration inside class { }
+            func_name = o.name
+
+        if not self.decl:
+            self.write('\n')
+
+        c_ret_type, _, c_iter_list_type = GetCReturnType(o.type.ret_type)
+        if c_iter_list_type is not None:
+            # The function is a generator. Add an output param that references an
+            # accumulator for the results.
+            self.yield_accumulators[o] = ('_out_yield_acc', c_iter_list_type)
+
+        # Avoid C++ warnings by prepending [[noreturn]]
+        noreturn = ''
+        if func_name in ('e_die', 'e_die_status', 'e_strict', 'e_usage',
+                         'p_die'):
+            noreturn = '[[noreturn]] '
+
+        self.write_ind('%s%s%s %s(', noreturn, virtual, c_ret_type, func_name)
+
+        self.current_func_node = o
+        self._WriteFuncParams(
+            o.type.arg_types,
+            o.arguments,
+            update_locals=True,
+            # write default values in the declaration only
+            write_defaults=self.decl)
+
+        if self.decl:
+            self.write(');\n')
+        else:
+            self.write(') ')
+            arg_names = [arg.variable.name for arg in o.arguments]
+            #log('arg_names %s', arg_names)
+            #log('local_vars %s', self.local_vars[o])
+            self.prepend_to_block = []
+            for (lval_name, lval_type) in self.local_vars[o]:
+                self.prepend_to_block.append((lval_name, lval_type, lval_name
+                                              in arg_names))
+
+        self.accept(o.body)
+        self.current_func_node = None
+
     def _ValidateDefaultArg(self, arg: Argument) -> None:
         t = self.types[arg.initializer]
 
@@ -610,29 +684,9 @@ class Impl(_Shared):
             msg = msg % args
         self.f.write(msg)
 
-    def decl_write_ind(self, msg: str, *args: Any) -> None:
-        ind_str = self.indent * '  '
-        self.decl_write(ind_str + msg, *args)
-
-    # Not in superclasses:
-
-    def oils_visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> None:
-        mod_parts = o.fullname.split('.')
-        if self.decl:
-            comment = 'declare'
-        else:
-            comment = 'define'
-
-        self.write_ind('namespace %s {  // %s\n', mod_parts[-1], comment)
-        self.write('\n')
-
-        #self.log('defs %s', o.defs)
-        for node in o.defs:
-            self.accept(node)
-
-        self.write('\n')
-        self.write_ind('}  // %s namespace %s\n', comment, mod_parts[-1])
-        self.write('\n')
+    #
+    # Visiting
+    #
 
     # LITERALS
 
@@ -1469,11 +1523,6 @@ class Impl(_Shared):
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
                                    lval: Expression, rval: Expression) -> None:
-        # Declare constant strings.  They have to be at the top level.
-        if self.decl and self.indent == 0:
-            if not util.SkipAssignment(lval.name):
-                c_type = GetCType(self.types[lval])
-                self.write('extern %s %s;\n', c_type, lval.name)
 
         # GLOBAL CONSTANTS - Avoid Alloc<T>, since that can't be done until main().
         if self.indent == 0:
@@ -2212,160 +2261,6 @@ class Impl(_Shared):
 
             self.def_write(';\n')
 
-    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
-        func_name = o.name
-
-        virtual = ''
-        if self.decl:
-            if self.virtual.IsVirtual(self.current_class_name, o.name):
-                virtual = 'virtual '
-
-        if not self.decl and self.current_class_name:
-            # definition looks like
-            # void Class::method(...);
-            func_name = join_name((self.current_class_name[-1], o.name))
-        else:
-            # declaration inside class { }
-            func_name = o.name
-
-        self.def_write('\n')
-
-        c_ret_type, _, c_iter_list_type = GetCReturnType(o.type.ret_type)
-        if c_iter_list_type is not None:
-            # The function is a generator. Add an output param that references an
-            # accumulator for the results.
-            self.yield_accumulators[o] = ('_out_yield_acc', c_iter_list_type)
-
-        # Avoid C++ warnings by prepending [[noreturn]]
-        noreturn = ''
-        if func_name in ('e_die', 'e_die_status', 'e_strict', 'e_usage',
-                         'p_die'):
-            noreturn = '[[noreturn]] '
-
-        self.write_ind('%s%s%s %s(', noreturn, virtual, c_ret_type, func_name)
-
-        self.current_func_node = o
-        self._WriteFuncParams(
-            o.type.arg_types,
-            o.arguments,
-            update_locals=True,
-            # write default values in the declaration only
-            write_defaults=self.decl)
-
-        if self.decl:
-            self.write(');\n')
-        else:
-            self.def_write(') ')
-            arg_names = [arg.variable.name for arg in o.arguments]
-            #log('arg_names %s', arg_names)
-            #log('local_vars %s', self.local_vars[o])
-            self.prepend_to_block = []
-            for (lval_name, lval_type) in self.local_vars[o]:
-                self.prepend_to_block.append((lval_name, lval_type, lval_name
-                                              in arg_names))
-
-        self.accept(o.body)
-        self.current_func_node = None
-
-    def _GcHeaderDecl(self, o: 'mypy.nodes.ClassDef',
-                      field_gc: Tuple[str, str], mask_bits: List[str]) -> None:
-        if mask_bits:
-            self.write_ind('\n')
-            self.write_ind('static constexpr uint32_t field_mask() {\n')
-            self.write_ind('  return ')
-            for i, b in enumerate(mask_bits):
-                if i != 0:
-                    self.write('\n')
-                    self.write_ind('       | ')
-                self.write(b)
-            self.write(';\n')
-            self.write_ind('}\n')
-
-        obj_tag, obj_arg = field_gc
-        if obj_tag == 'HeapTag::FixedSize':
-            obj_mask = obj_arg
-            obj_header = 'ObjHeader::ClassFixed(%s, sizeof(%s))' % (obj_mask,
-                                                                    o.name)
-        elif obj_tag == 'HeapTag::Scanned':
-            num_pointers = obj_arg
-            obj_header = 'ObjHeader::ClassScanned(%s, sizeof(%s))' % (
-                num_pointers, o.name)
-        else:
-            raise AssertionError(o.name)
-
-        self.write('\n')
-        self.write_ind('static constexpr ObjHeader obj_header() {\n')
-        self.write_ind('  return %s;\n' % obj_header)
-        self.write_ind('}\n')
-
-    def _MemberDecl(self, o: 'mypy.nodes.ClassDef',
-                    base_class_name: util.SymbolPath) -> None:
-        member_vars = self.all_member_vars[o]
-
-        # List of field mask expressions
-        mask_bits = []
-        if self.virtual.CanReorderFields(split_py_name(o.fullname)):
-            # No inheritance, so we are free to REORDER member vars, putting
-            # pointers at the front.
-
-            pointer_members = []
-            non_pointer_members = []
-
-            for name in member_vars:
-                _, c_type, is_managed = member_vars[name]
-                if is_managed:
-                    pointer_members.append(name)
-                else:
-                    non_pointer_members.append(name)
-
-            # So we declare them in the right order
-            sorted_member_names = pointer_members + non_pointer_members
-
-            field_gc = ('HeapTag::Scanned', str(len(pointer_members)))
-        else:
-            # Has inheritance
-
-            # The field mask of a derived class is unioned with its base's
-            # field mask.
-            if base_class_name:
-                mask_bits.append(
-                    '%s::field_mask()' %
-                    join_name(base_class_name, strip_package=True))
-
-            for name in sorted(member_vars):
-                _, c_type, is_managed = member_vars[name]
-                if is_managed:
-                    mask_bits.append('maskbit(offsetof(%s, %s))' %
-                                     (o.name, name))
-
-            # A base class with no fields has kZeroMask.
-            if not base_class_name and not mask_bits:
-                mask_bits.append('kZeroMask')
-
-            sorted_member_names = sorted(member_vars)
-
-            field_gc = ('HeapTag::FixedSize', 'field_mask()')
-
-        # Write member variables
-
-        #log('MEMBERS for %s: %s', o.name, list(self.member_vars.keys()))
-        if len(member_vars):
-            if base_class_name:
-                self.write('\n')  # separate from functions
-
-            for name in sorted_member_names:
-                _, c_type, _ = member_vars[name]
-                # use default zero initialization for all members
-                # (context managers may be on the stack)
-                self.write_ind('%s %s{};\n', c_type, name)
-
-        # Context managers aren't GC objects
-        if not _IsContextManager(self.current_class_name):
-            self._GcHeaderDecl(o, field_gc, mask_bits)
-
-        self.write('\n')
-        self.write_ind('DISALLOW_COPY_AND_ASSIGN(%s)\n', o.name)
-
     def _ConstructorImpl(self, o: 'mypy.nodes.ClassDef',
                          stmt: 'mypy.nodes.FuncDef',
                          base_class_name: util.SymbolPath) -> None:
@@ -2465,78 +2360,15 @@ class Impl(_Shared):
 
     def oils_visit_constructor(self, o: ClassDef, stmt: FuncDef,
                                base_class_name: util.SymbolPath) -> None:
-        if self.decl:
-            self.indent += 1
-            self.write_ind('%s(', o.name)
-            self._WriteFuncParams(stmt.type.arg_types,
-                                  stmt.arguments,
-                                  write_defaults=True)
-            self.write(');\n')
-
-            # Visit for member vars
-            self.accept(stmt.body)
-            self.indent -= 1
-            return
-
         self._ConstructorImpl(o, stmt, base_class_name)
 
     def oils_visit_dunder_exit(self, o: ClassDef, stmt: FuncDef,
                                base_class_name: util.SymbolPath) -> None:
-        if self.decl:
-            self.indent += 1
-            # Turn it into a destructor with NO ARGS
-            self.write_ind('~%s();\n', o.name)
-            self.indent -= 1
-            return
-
         self._DestructorImpl(o, stmt, base_class_name)
 
     def oils_visit_method(self, o: ClassDef, stmt: FuncDef,
                           base_class_name: util.SymbolPath) -> None:
-        if self.decl:
-            self.indent += 1
-            self.accept(stmt)
-            self.indent -= 1
-            return
-
         self.accept(stmt)
-
-    def oils_visit_class_members(self, o: ClassDef,
-                                 base_class_name: util.SymbolPath) -> None:
-        if self.decl:
-            # Write member variables
-            self.indent += 1
-            self._MemberDecl(o, base_class_name)
-            self.indent -= 1
-
-    def oils_visit_class_def(
-            self, o: 'mypy.nodes.ClassDef',
-            base_class_name: Optional[util.SymbolPath]) -> None:
-        #log('  CLASS %s', o.name)
-
-        if self.decl:
-            self.write_ind('class %s', o.name)  # block after this
-
-            # e.g. class TextOutput : public ColorOutput
-            if base_class_name:
-                self.write(' : public %s',
-                           join_name(base_class_name, strip_package=True))
-
-            self.write(' {\n')
-            self.write_ind(' public:\n')
-
-            # This visits all the methods, with self.indent += 1, param
-            # base_class_name, self.current_method_name
-
-            super().oils_visit_class_def(o, base_class_name)
-
-            self.write_ind('};\n')
-            self.write('\n')
-
-            return
-
-        # Write method implementations
-        super().oils_visit_class_def(o, base_class_name)
 
     # Module structure
 
@@ -2551,8 +2383,6 @@ class Impl(_Shared):
         """
         if o.id in ('__future__', 'typing'):
             return  # do nothing
-
-        #self.log('    %s ImportFrom id: %s', self.decl, o.id)
 
         for name, alias in o.names:
             #self.log('ImportFrom id: %s name: %s alias: %s', o.id, name, alias)
@@ -2892,3 +2722,165 @@ class Decl(Impl):
                          stack_roots_warn=stack_roots_warn,
                          stack_roots=stack_roots)
         self.decl = True
+
+    def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
+                                   lval: Expression, rval: Expression) -> None:
+        # Declare constant strings.  They have to be at the top level.
+
+        # TODO: self.at_global_scope doesn't work for context managers and so forth
+        if self.indent == 0 and not util.SkipAssignment(lval.name):
+            c_type = GetCType(self.types[lval])
+            self.write('extern %s %s;\n', c_type, lval.name)
+
+    def oils_visit_constructor(self, o: ClassDef, stmt: FuncDef,
+                               base_class_name: util.SymbolPath) -> None:
+        self.indent += 1
+        self.write_ind('%s(', o.name)
+        self._WriteFuncParams(stmt.type.arg_types,
+                              stmt.arguments,
+                              write_defaults=True)
+        self.write(');\n')
+
+        # Visit for member vars
+        self.accept(stmt.body)
+        self.indent -= 1
+
+    def oils_visit_dunder_exit(self, o: ClassDef, stmt: FuncDef,
+                               base_class_name: util.SymbolPath) -> None:
+        self.indent += 1
+        # Turn it into a destructor with NO ARGS
+        self.write_ind('~%s();\n', o.name)
+        self.indent -= 1
+
+    def oils_visit_method(self, o: ClassDef, stmt: FuncDef,
+                          base_class_name: util.SymbolPath) -> None:
+        self.indent += 1
+        self.accept(stmt)
+        self.indent -= 1
+
+    def oils_visit_class_members(self, o: ClassDef,
+                                 base_class_name: util.SymbolPath) -> None:
+        # Write member variables
+        self.indent += 1
+        self._MemberDecl(o, base_class_name)
+        self.indent -= 1
+
+    def oils_visit_class_def(
+            self, o: 'mypy.nodes.ClassDef',
+            base_class_name: Optional[util.SymbolPath]) -> None:
+        self.write_ind('class %s', o.name)  # block after this
+
+        # e.g. class TextOutput : public ColorOutput
+        if base_class_name:
+            self.write(' : public %s',
+                       join_name(base_class_name, strip_package=True))
+
+        self.write(' {\n')
+        self.write_ind(' public:\n')
+
+        # This visits all the methods, with self.indent += 1, param
+        # base_class_name, self.current_method_name
+
+        super().oils_visit_class_def(o, base_class_name)
+
+        self.write_ind('};\n')
+        self.write('\n')
+
+    def _GcHeaderDecl(self, o: 'mypy.nodes.ClassDef',
+                      field_gc: Tuple[str, str], mask_bits: List[str]) -> None:
+        if mask_bits:
+            self.write_ind('\n')
+            self.write_ind('static constexpr uint32_t field_mask() {\n')
+            self.write_ind('  return ')
+            for i, b in enumerate(mask_bits):
+                if i != 0:
+                    self.write('\n')
+                    self.write_ind('       | ')
+                self.write(b)
+            self.write(';\n')
+            self.write_ind('}\n')
+
+        obj_tag, obj_arg = field_gc
+        if obj_tag == 'HeapTag::FixedSize':
+            obj_mask = obj_arg
+            obj_header = 'ObjHeader::ClassFixed(%s, sizeof(%s))' % (obj_mask,
+                                                                    o.name)
+        elif obj_tag == 'HeapTag::Scanned':
+            num_pointers = obj_arg
+            obj_header = 'ObjHeader::ClassScanned(%s, sizeof(%s))' % (
+                num_pointers, o.name)
+        else:
+            raise AssertionError(o.name)
+
+        self.write('\n')
+        self.write_ind('static constexpr ObjHeader obj_header() {\n')
+        self.write_ind('  return %s;\n' % obj_header)
+        self.write_ind('}\n')
+
+    def _MemberDecl(self, o: 'mypy.nodes.ClassDef',
+                    base_class_name: util.SymbolPath) -> None:
+        member_vars = self.all_member_vars[o]
+
+        # List of field mask expressions
+        mask_bits = []
+        if self.virtual.CanReorderFields(split_py_name(o.fullname)):
+            # No inheritance, so we are free to REORDER member vars, putting
+            # pointers at the front.
+
+            pointer_members = []
+            non_pointer_members = []
+
+            for name in member_vars:
+                _, c_type, is_managed = member_vars[name]
+                if is_managed:
+                    pointer_members.append(name)
+                else:
+                    non_pointer_members.append(name)
+
+            # So we declare them in the right order
+            sorted_member_names = pointer_members + non_pointer_members
+
+            field_gc = ('HeapTag::Scanned', str(len(pointer_members)))
+        else:
+            # Has inheritance
+
+            # The field mask of a derived class is unioned with its base's
+            # field mask.
+            if base_class_name:
+                mask_bits.append(
+                    '%s::field_mask()' %
+                    join_name(base_class_name, strip_package=True))
+
+            for name in sorted(member_vars):
+                _, c_type, is_managed = member_vars[name]
+                if is_managed:
+                    mask_bits.append('maskbit(offsetof(%s, %s))' %
+                                     (o.name, name))
+
+            # A base class with no fields has kZeroMask.
+            if not base_class_name and not mask_bits:
+                mask_bits.append('kZeroMask')
+
+            sorted_member_names = sorted(member_vars)
+
+            field_gc = ('HeapTag::FixedSize', 'field_mask()')
+
+        # Write member variables
+
+        #log('MEMBERS for %s: %s', o.name, list(self.member_vars.keys()))
+        if len(member_vars):
+            if base_class_name:
+                self.write('\n')  # separate from functions
+
+            for name in sorted_member_names:
+                _, c_type, _ = member_vars[name]
+                # use default zero initialization for all members
+                # (context managers may be on the stack)
+                self.write_ind('%s %s{};\n', c_type, name)
+
+        # Context managers aren't GC objects
+        if not _IsContextManager(self.current_class_name):
+            self._GcHeaderDecl(o, field_gc, mask_bits)
+
+        self.write('\n')
+        self.write_ind('DISALLOW_COPY_AND_ASSIGN(%s)\n', o.name)
