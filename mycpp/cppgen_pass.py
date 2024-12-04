@@ -26,12 +26,6 @@ if TYPE_CHECKING:
     from mycpp import const_pass
     from mycpp import ir_pass
 
-NAME_CONFLICTS = ('stdin', 'stdout', 'stderr')
-
-
-class UnsupportedException(Exception):
-    pass
-
 
 def _IsContextManager(class_name: util.SymbolPath) -> bool:
     return class_name[-1].startswith('ctx_')
@@ -645,36 +639,6 @@ class _Shared(visitor.SimpleVisitor):
             arg_name, c_type = self.yield_accumulators[self.current_func_node]
             self.write('%s %s', c_type, arg_name)
 
-    #
-    # Yield stuff to separate
-    #
-
-    def visit_yield_expr(self, o: 'mypy.nodes.YieldExpr') -> None:
-        assert self.current_func_node in self.yield_accumulators
-        self.def_write_ind('%s->append(',
-                           self.yield_accumulators[self.current_func_node][0])
-        self.accept(o.expr)
-        self.def_write(');\n')
-
-    def _WriteArgList(self, args: List[Expression]) -> None:
-        self.def_write('(')
-        for i, arg in enumerate(args):
-            if i != 0:
-                self.def_write(', ')
-            self.accept(arg)
-
-        # Will be set if we're:
-        # a) accumulating the output of an iterator
-        # b) constructing an iterator with the result of (a)
-        if self.current_stmt_node in self.yield_accumulators:
-            if len(args) > 0:
-                self.def_write(', ')
-
-            arg_name, _ = self.yield_accumulators[self.current_stmt_node]
-            self.def_write('&%s', arg_name)
-
-        self.def_write(')')
-
 
 class Impl(_Shared):
 
@@ -712,6 +676,36 @@ class Impl(_Shared):
         self.def_write(ind_str + msg, *args)
 
     #
+    # Yield stuff to separate
+    #
+
+    def visit_yield_expr(self, o: 'mypy.nodes.YieldExpr') -> None:
+        assert self.current_func_node in self.yield_accumulators
+        self.def_write_ind('%s->append(',
+                           self.yield_accumulators[self.current_func_node][0])
+        self.accept(o.expr)
+        self.def_write(');\n')
+
+    def _WriteArgList(self, args: List[Expression]) -> None:
+        self.def_write('(')
+        for i, arg in enumerate(args):
+            if i != 0:
+                self.def_write(', ')
+            self.accept(arg)
+
+        # Will be set if we're:
+        # a) accumulating the output of an iterator
+        # b) constructing an iterator with the result of (a)
+        if self.current_stmt_node in self.yield_accumulators:
+            if len(args) > 0:
+                self.def_write(', ')
+
+            arg_name, _ = self.yield_accumulators[self.current_stmt_node]
+            self.def_write('&%s', arg_name)
+
+        self.def_write(')')
+
+    #
     # Visiting
     #
 
@@ -729,7 +723,7 @@ class Impl(_Shared):
 
     # Expressions
 
-    def visit_name_expr(self, o: 'mypy.nodes.NameExpr') -> None:
+    def oils_visit_name_expr(self, o: 'mypy.nodes.NameExpr') -> None:
         if o.name == 'None':
             self.def_write('nullptr')
             return
@@ -743,49 +737,30 @@ class Impl(_Shared):
             self.def_write('this')
             return
 
-        if o.name in NAME_CONFLICTS:
-            self.report_error(
-                o,
-                "The name %r conflicts with C macros on some platforms; choose a different name"
-                % o.name)
-            return
-
         self.def_write(o.name)
 
-    def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
+    def oils_visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
+        dot_expr = self.dot_exprs[o]
 
-        if o.expr:
-            if self.decl:
-                # In declarations, 'a.b' is only used for default argument
-                # values 'a::b'
-                op = '::'
-            else:
-                dot_expr = self.dot_exprs[o]
+        if isinstance(dot_expr, pass_state.StackObjectMember):
+            op = '.'
 
-                if isinstance(dot_expr, pass_state.StackObjectMember):
-                    op = '.'
+        elif (isinstance(dot_expr, pass_state.StaticObjectMember) or
+              isinstance(dot_expr, pass_state.ModuleMember)):
+            op = '::'
 
-                elif (isinstance(dot_expr, pass_state.StaticObjectMember) or
-                      isinstance(dot_expr, pass_state.ModuleMember)):
-                    op = '::'
+        elif isinstance(dot_expr, pass_state.HeapObjectMember):
+            op = '->'
 
-                elif isinstance(dot_expr, pass_state.HeapObjectMember):
-                    op = '->'
+        else:
+            raise AssertionError()
 
-                else:
-                    assert False, o
-
-            self.accept(o.expr)
-            self.def_write(op)
+        self.accept(o.expr)
+        self.def_write(op)
 
         if o.name == 'errno':
             # e->errno -> e->errno_ to avoid conflict with C macro
             self.def_write('errno_')
-        elif o.name in NAME_CONFLICTS:
-            self.report_error(
-                o,
-                "The name %r conflicts with C macros on some platforms; choose a different name"
-                % o.name)
         else:
             self.def_write('%s', o.name)
 
@@ -2719,6 +2694,13 @@ class Decl(Impl):
                          stack_roots_warn=stack_roots_warn,
                          stack_roots=stack_roots)
         self.decl = True
+
+    def oils_visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
+        # In declarations, 'a.b' is only used for default argument
+        # values 'a::b'
+        self.accept(o.expr)
+        self.def_write('::')
+        self.def_write(o.name)
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
                                    lval: Expression, rval: Expression) -> None:

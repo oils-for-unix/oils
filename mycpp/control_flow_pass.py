@@ -497,7 +497,7 @@ class Build(visitor.SimpleVisitor):
 
     # Expressions
 
-    def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
+    def oils_visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
         self.accept(o.expr)
         cfg = self.current_cfg()
         if (cfg and
@@ -507,7 +507,7 @@ class Build(visitor.SimpleVisitor):
             if ref:
                 cfg.AddFact(self.current_statement_id, pass_state.Use(ref))
 
-    def visit_name_expr(self, o: 'mypy.nodes.NameExpr') -> None:
+    def oils_visit_name_expr(self, o: 'mypy.nodes.NameExpr') -> None:
         cfg = self.current_cfg()
         if cfg and o != self.current_lval:
             is_local = False

@@ -55,7 +55,7 @@ class Build(visitor.SimpleVisitor):
 
     # Expressions
 
-    def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
+    def oils_visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
         # Why do we not get some of the types?  e.g. hnode.Record in asdl/runtime
         # But this might suffice for the "Str_v" and "value_v" refactoring.
         # We want to rewrite w.parts not to w->parts, but to w.parts() (method call)

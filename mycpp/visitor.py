@@ -1,5 +1,8 @@
 """
-visitor.py - AST pass that accepts everything.
+visitor.py - base class for all our tree traversals.
+
+It validates many nodes, i.e. presenting a subset of the MyPy AST to
+subclasses.
 """
 import mypy
 from mypy.visitor import ExpressionVisitor, StatementVisitor
@@ -11,10 +14,9 @@ from mycpp.crash import catch_errors
 from mycpp import util
 from mycpp.util import split_py_name, log
 
-from typing import (overload, Any, Union, Optional, TypeVar, List, Tuple,
-                    TextIO)
+from typing import (overload, Any, Union, Optional, List, Tuple, TextIO)
 
-T = TypeVar('T')
+NAME_CONFLICTS = ('stdin', 'stdout', 'stderr')
 
 
 class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
@@ -414,9 +416,6 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         self.oils_visit_assign_to_listcomp(lval, gen.left_expr, index_expr,
                                            seq, cond)
 
-    def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
-        self.accept(o.expr)
-
     def visit_yield_expr(self, o: 'mypy.nodes.YieldExpr') -> None:
         self.accept(o.expr)
 
@@ -504,8 +503,31 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
     def visit_import_from(self, o: 'mypy.nodes.ImportFrom') -> None:
         pass
 
-    def visit_name_expr(self, o: 'mypy.nodes.NameExpr') -> None:
+    def oils_visit_name_expr(self, o: 'mypy.nodes.NameExpr') -> None:
         pass
+
+    def visit_name_expr(self, o: 'mypy.nodes.NameExpr') -> None:
+        if o.name in NAME_CONFLICTS:
+            self.report_error(
+                o,
+                "The name %r conflicts with C macros on some platforms; choose a different name"
+                % o.name)
+            return
+
+        self.oils_visit_name_expr(o)
+
+    def oils_visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
+        self.accept(o.expr)
+
+    def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
+        if o.name in NAME_CONFLICTS:
+            self.report_error(
+                o,
+                "The name %r conflicts with C macros on some platforms; choose a different name"
+                % o.name)
+            return
+
+        self.oils_visit_member_expr(o)
 
     #
     # Not doing anything with these?
