@@ -415,15 +415,19 @@ AllLocalVars = Dict[FuncDef, List[Tuple[str, Type]]]
 
 class _Shared(visitor.SimpleVisitor):
 
-    def __init__(self,
-                 types: Dict[Expression, Type],
-                 global_strings: 'const_pass.GlobalStrings',
-                 virtual: pass_state.Virtual = None,
-                 local_vars: Optional[AllLocalVars] = None,
-                 all_member_vars: Optional[AllMemberVars] = None,
-                 dot_exprs: Optional['ir_pass.DotExprs'] = None,
-                 stack_roots_warn: Optional[int] = None,
-                 stack_roots: Optional[pass_state.StackRoots] = None) -> None:
+    def __init__(
+        self,
+        types: Dict[Expression, Type],
+        global_strings: 'const_pass.GlobalStrings',
+        # TODO: virtual only needs to be in Decl pass!
+        virtual: pass_state.Virtual = None,
+        # TODO: local_vars only in Impl pass
+        local_vars: Optional[AllLocalVars] = None,
+        # all_member_vars
+        # - Decl for declaring vars
+        # - Impl for rooting context managers
+        all_member_vars: Optional[AllMemberVars] = None,
+    ) -> None:
         visitor.SimpleVisitor.__init__(self)
 
         self.types = types
@@ -436,9 +440,6 @@ class _Shared(visitor.SimpleVisitor):
             self.local_vars = local_vars
 
         self.all_member_vars = all_member_vars  # for class def, and rooting
-        self.stack_roots_warn = stack_roots_warn
-        self.dot_exprs = dot_exprs
-        self.stack_roots = stack_roots
 
         # Traversal state
         self.unique_id = 0
@@ -450,14 +451,6 @@ class _Shared(visitor.SimpleVisitor):
         # Used to add another param to definition, and yield -> out->append()
         # _for_yield_accum - for loop
         self.yield_out_params: Dict[FuncDef, Tuple[str, str]] = {}
-
-        # Used to to create an EAGER List<T>
-        self.yield_eager_assign: Dict[AssignmentStmt, Tuple[str, str]] = {}
-        self.yield_eager_for: Dict[ForStmt, Tuple[str, str]] = {}
-
-        # Traversal state
-        self.yield_assign_node: Optional[AssignmentStmt] = None
-        self.yield_for_node: Optional[ForStmt] = None
 
         # Remove this stuff
 
@@ -669,11 +662,19 @@ class Impl(_Shared):
                          global_strings,
                          virtual=virtual,
                          local_vars=local_vars,
-                         all_member_vars=all_member_vars,
-                         dot_exprs=dot_exprs,
-                         stack_roots_warn=stack_roots_warn,
-                         stack_roots=stack_roots)
+                         all_member_vars=all_member_vars)
+
+        self.dot_exprs = dot_exprs
+        self.stack_roots_warn = stack_roots_warn
+        self.stack_roots = stack_roots
         self.decl = False
+
+        # Used to to create an EAGER List<T>
+        self.yield_eager_assign: Dict[AssignmentStmt, Tuple[str, str]] = {}
+        self.yield_eager_for: Dict[ForStmt, Tuple[str, str]] = {}
+
+        self.yield_assign_node: Optional[AssignmentStmt] = None
+        self.yield_for_node: Optional[ForStmt] = None
 
     def def_write(self, msg: str, *args: Any) -> None:
         """Write only in definitions."""
@@ -695,7 +696,7 @@ class Impl(_Shared):
     def visit_yield_expr(self, o: 'mypy.nodes.YieldExpr') -> None:
         assert self.current_func_node in self.yield_out_params
         self.def_write('%s->append(',
-                           self.yield_out_params[self.current_func_node][0])
+                       self.yield_out_params[self.current_func_node][0])
         self.accept(o.expr)
         self.def_write(')')
 
@@ -2725,18 +2726,20 @@ class Impl(_Shared):
 
 class Decl(Impl):
 
-    def __init__(self,
-                 types: Dict[Expression, Type],
-                 global_strings: 'const_pass.GlobalStrings',
-                 virtual: pass_state.Virtual = None,
-                 all_member_vars: Optional[AllMemberVars] = None,
-                 dot_exprs: Optional['ir_pass.DotExprs'] = None) -> None:
-        _Shared.__init__(self,
-                         types,
-                         global_strings,
-                         virtual=virtual,
-                         all_member_vars=all_member_vars,
-                         dot_exprs=dot_exprs)
+    def __init__(
+        self,
+        types: Dict[Expression, Type],
+        global_strings: 'const_pass.GlobalStrings',
+        virtual: pass_state.Virtual = None,
+        all_member_vars: Optional[AllMemberVars] = None,
+    ) -> None:
+        _Shared.__init__(
+            self,
+            types,
+            global_strings,
+            virtual=virtual,
+            all_member_vars=all_member_vars,
+        )
         self.decl = True
 
     def oils_visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
@@ -2746,6 +2749,22 @@ class Decl(Impl):
         # TODO: remove def_write() in Decl pass
         self.def_write('::')
         self.def_write(o.name)
+
+    def oils_visit_for_stmt(self, o: 'mypy.nodes.ForStmt',
+                            func_name: Optional[str]) -> None:
+        # Do nothing on purpose (we don't have yield_eager_for)
+        pass
+
+    def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> None:
+        # Do nothing on purpose (we don't have yield_eager_assign)
+        pass
+
+    def oils_visit_assign_to_listcomp(self, lval: NameExpr,
+                                      left_expr: Expression,
+                                      index_expr: Expression, seq: Expression,
+                                      cond: Expression) -> None:
+        # Do nothing on purpose (no stack_roots, etc.)
+        pass
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
                                    lval: Expression, rval: Expression) -> None:
