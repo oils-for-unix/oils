@@ -445,7 +445,7 @@ class _Shared(visitor.SimpleVisitor):
         # For writing vars after {
         self.prepend_to_block: Optional[List[LocalVar]] = None
 
-        # Implementation of EAGER GENERATORS
+        # Implementation of EAGER yield (aka Python 2 generators)
 
         # Used to add another param to definition, and yield -> out->append()
         # _for_yield_accum - for loop
@@ -513,7 +513,7 @@ class _Shared(visitor.SimpleVisitor):
         # [FuncDef] Is this function is a generator?  Then associate the node
         # with an accumulator param (name and type).
         if c_iter_list_type is not None:
-            self.yield_out_params[o] = ('_out_yield_acc', c_iter_list_type)
+            self.yield_out_params[o] = ('YIELD', c_iter_list_type)
 
         # Avoid C++ warnings by prepending [[noreturn]]
         noreturn = ''
@@ -694,10 +694,10 @@ class Impl(_Shared):
 
     def visit_yield_expr(self, o: 'mypy.nodes.YieldExpr') -> None:
         assert self.current_func_node in self.yield_out_params
-        self.def_write_ind('%s->append(',
+        self.def_write('%s->append(',
                            self.yield_out_params[self.current_func_node][0])
         self.accept(o.expr)
-        self.def_write(');\n')
+        self.def_write(')')
 
     def _WriteArgList(self, args: List[Expression]) -> None:
         self.def_write('(')
@@ -1509,7 +1509,7 @@ class Impl(_Shared):
         type_param = rval_type.args[0]
         inner_c_type = GetCType(type_param)
 
-        eager_list_name = 'EAGER_%s' % lval.name
+        eager_list_name = 'YIELD_%s' % lval.name
         eager_list_type = 'List<%s>*' % inner_c_type
 
         # write the variable to accumulate into
@@ -1876,7 +1876,7 @@ class Impl(_Shared):
             inner_c_type = GetCType(over_type.args[0])
 
             # eager_list_name is used below
-            eager_list_name = 'EAGER_for_%d' % self.unique_id
+            eager_list_name = 'YIELD_for_%d' % self.unique_id
             eager_list_type = 'List<%s>*' % inner_c_type
             self.unique_id += 1
 

@@ -5791,7 +5791,7 @@ class Api {
 class CompletionAction {
  public:
   CompletionAction();
-  virtual void Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc);
+  virtual void Matches(completion::Api* comp, List<BigStr*>* YIELD);
   virtual runtime_asdl::comp_action_t ActionKind();
   virtual void Print(mylib::BufWriter* f);
   
@@ -5809,7 +5809,7 @@ class CompletionAction {
 class UsersAction : public ::completion::CompletionAction {
  public:
   UsersAction();
-  virtual void Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc);
+  virtual void Matches(completion::Api* comp, List<BigStr*>* YIELD);
   virtual void Print(mylib::BufWriter* f);
   
   static constexpr uint32_t field_mask() {
@@ -5826,7 +5826,7 @@ class UsersAction : public ::completion::CompletionAction {
 class TestAction : public ::completion::CompletionAction {
  public:
   TestAction(List<BigStr*>* words, double delay = 0.0);
-  virtual void Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc);
+  virtual void Matches(completion::Api* comp, List<BigStr*>* YIELD);
   virtual void Print(mylib::BufWriter* f);
 
   double delay{};
@@ -5847,7 +5847,7 @@ class TestAction : public ::completion::CompletionAction {
 class DynamicWordsAction : public ::completion::CompletionAction {
  public:
   DynamicWordsAction(word_eval::AbstractWordEvaluator* word_ev, split::SplitContext* splitter, syntax_asdl::CompoundWord* arg_word, ui::ErrorFormatter* errfmt);
-  virtual void Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc);
+  virtual void Matches(completion::Api* comp, List<BigStr*>* YIELD);
   virtual void Print(mylib::BufWriter* f);
 
   syntax_asdl::CompoundWord* arg_word{};
@@ -5875,7 +5875,7 @@ class FileSystemAction : public ::completion::CompletionAction {
   FileSystemAction(bool dirs_only, bool exec_only, bool add_slash);
   virtual runtime_asdl::comp_action_t ActionKind();
   virtual void Print(mylib::BufWriter* f);
-  virtual void Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc);
+  virtual void Matches(completion::Api* comp, List<BigStr*>* YIELD);
 
   bool add_slash{};
   bool dirs_only{};
@@ -5895,7 +5895,7 @@ class FileSystemAction : public ::completion::CompletionAction {
 class CommandAction : public ::completion::CompletionAction {
  public:
   CommandAction(cmd_eval::CommandEvaluator* cmd_ev, BigStr* command_name);
-  virtual void Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc);
+  virtual void Matches(completion::Api* comp, List<BigStr*>* YIELD);
 
   cmd_eval::CommandEvaluator* cmd_ev{};
   BigStr* command_name{};
@@ -5919,7 +5919,7 @@ class ShellFuncAction : public ::completion::CompletionAction {
   virtual void Print(mylib::BufWriter* f);
   virtual runtime_asdl::comp_action_t ActionKind();
   void debug(BigStr* msg);
-  virtual void Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc);
+  virtual void Matches(completion::Api* comp, List<BigStr*>* YIELD);
 
   cmd_eval::CommandEvaluator* cmd_ev{};
   completion::Lookup* comp_lookup{};
@@ -5942,7 +5942,7 @@ class ShellFuncAction : public ::completion::CompletionAction {
 class VariablesAction : public ::completion::CompletionAction {
  public:
   VariablesAction(state::Mem* mem);
-  virtual void Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc);
+  virtual void Matches(completion::Api* comp, List<BigStr*>* YIELD);
   virtual void Print(mylib::BufWriter* f);
 
   state::Mem* mem{};
@@ -5962,7 +5962,7 @@ class VariablesAction : public ::completion::CompletionAction {
 class ExportedVarsAction : public ::completion::CompletionAction {
  public:
   ExportedVarsAction(state::Mem* mem);
-  virtual void Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc);
+  virtual void Matches(completion::Api* comp, List<BigStr*>* YIELD);
 
   state::Mem* mem{};
   
@@ -5982,7 +5982,7 @@ class ExternalCommandAction : public ::completion::CompletionAction {
  public:
   ExternalCommandAction(state::Mem* mem);
   virtual void Print(mylib::BufWriter* f);
-  virtual void Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc);
+  virtual void Matches(completion::Api* comp, List<BigStr*>* YIELD);
 
   Dict<Tuple2<BigStr*, int>*, List<BigStr*>*>* cache{};
   state::Mem* mem{};
@@ -6059,7 +6059,7 @@ class UserSpec {
  public:
   UserSpec(List<completion::CompletionAction*>* actions, List<completion::CompletionAction*>* extra_actions, List<completion::CompletionAction*>* else_actions, completion::_Predicate* predicate, BigStr* prefix, BigStr* suffix);
   void PrintSpec(mylib::BufWriter* f);
-  void AllMatches(completion::Api* comp, List<Tuple2<BigStr*, runtime_asdl::comp_action_t>*>* _out_yield_acc);
+  void AllMatches(completion::Api* comp, List<Tuple2<BigStr*, runtime_asdl::comp_action_t>*>* YIELD);
   List<completion::CompletionAction*>* actions{};
   List<completion::CompletionAction*>* extra_actions{};
   List<completion::CompletionAction*>* else_actions{};
@@ -6080,8 +6080,8 @@ bool WordEndsWithCompDummy(syntax_asdl::CompoundWord* w);
 class RootCompleter {
  public:
   RootCompleter(word_eval::AbstractWordEvaluator* word_ev, state::Mem* mem, completion::Lookup* comp_lookup, completion::OptionState* compopt_state, comp_ui::State* comp_ui_state, parse_lib::ParseContext* parse_ctx, util::_DebugFile* debug_f);
-  void Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc);
-  void _PostProcess(Dict<BigStr*, bool>* base_opts, Dict<BigStr*, bool>* dynamic_opts, completion::UserSpec* user_spec, completion::Api* comp, List<BigStr*>* _out_yield_acc);
+  void Matches(completion::Api* comp, List<BigStr*>* YIELD);
+  void _PostProcess(Dict<BigStr*, bool>* base_opts, Dict<BigStr*, bool>* dynamic_opts, completion::UserSpec* user_spec, completion::Api* comp, List<BigStr*>* YIELD);
   word_eval::AbstractWordEvaluator* word_ev{};
   state::Mem* mem{};
   completion::Lookup* comp_lookup{};
@@ -10361,7 +10361,7 @@ namespace completion_osh {  // declare
 class _FixedWordsAction : public ::completion::CompletionAction {
  public:
   _FixedWordsAction(List<BigStr*>* d);
-  virtual void Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc);
+  virtual void Matches(completion::Api* comp, List<BigStr*>* YIELD);
   virtual void Print(mylib::BufWriter* f);
 
   List<BigStr*>* d{};
@@ -10381,7 +10381,7 @@ class _FixedWordsAction : public ::completion::CompletionAction {
 class _DynamicProcDictAction : public ::completion::CompletionAction {
  public:
   _DynamicProcDictAction(state::Procs* d);
-  virtual void Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc);
+  virtual void Matches(completion::Api* comp, List<BigStr*>* YIELD);
   virtual void Print(mylib::BufWriter* f);
 
   state::Procs* d{};
@@ -10401,7 +10401,7 @@ class _DynamicProcDictAction : public ::completion::CompletionAction {
 class _DynamicStrDictAction : public ::completion::CompletionAction {
  public:
   _DynamicStrDictAction(Dict<BigStr*, BigStr*>* d);
-  virtual void Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc);
+  virtual void Matches(completion::Api* comp, List<BigStr*>* YIELD);
   virtual void Print(mylib::BufWriter* f);
 
   Dict<BigStr*, BigStr*>* d{};
@@ -11871,9 +11871,9 @@ int CompExport::Run(cmd_value::Argv* cmd_val) {
   begin = arg_begin == -1 ? 0 : arg_begin;
   end = arg_end == -1 ? len(arg->c) : arg_end;
   comp = Alloc<completion::Api>(arg->c, begin, end);
-  List<BigStr*> EAGER_it;
-  this->root_comp->Matches(comp, &EAGER_it);
-  ListIter<BigStr*> it(&EAGER_it);
+  List<BigStr*> YIELD_it;
+  this->root_comp->Matches(comp, &YIELD_it);
+  ListIter<BigStr*> it(&YIELD_it);
   comp_matches = list(it);
   comp_matches->reverse();
   if (maybe_str_equals(arg->format, S_mfD)) {
@@ -21898,7 +21898,7 @@ CompletionAction::CompletionAction() {
   ;  // pass
 }
 
-void CompletionAction::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc) {
+void CompletionAction::Matches(completion::Api* comp, List<BigStr*>* YIELD) {
   StackRoot _root0(&comp);
 
   ;  // pass
@@ -21918,7 +21918,7 @@ UsersAction::UsersAction() {
   ;  // pass
 }
 
-void UsersAction::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc) {
+void UsersAction::Matches(completion::Api* comp, List<BigStr*>* YIELD) {
   BigStr* name = nullptr;
   StackRoot _root0(&comp);
   StackRoot _root1(&name);
@@ -21928,8 +21928,7 @@ void UsersAction::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc) 
     StackRoot _for(&u  );
     name = u->pw_name;
     if (name->startswith(comp->to_complete)) {
-            _out_yield_acc->append(name);
-;
+      YIELD->append(name);
     }
   }
 }
@@ -21945,7 +21944,7 @@ TestAction::TestAction(List<BigStr*>* words, double delay) {
   this->delay = delay;
 }
 
-void TestAction::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc) {
+void TestAction::Matches(completion::Api* comp, List<BigStr*>* YIELD) {
   StackRoot _root0(&comp);
 
   for (ListIter<BigStr*> it(this->words); !it.Done(); it.Next()) {
@@ -21955,8 +21954,7 @@ void TestAction::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc) {
       if (this->delay != 0.0) {
         time_::sleep(this->delay);
       }
-            _out_yield_acc->append(w);
-;
+      YIELD->append(w);
     }
   }
 }
@@ -21974,7 +21972,7 @@ DynamicWordsAction::DynamicWordsAction(word_eval::AbstractWordEvaluator* word_ev
   this->errfmt = errfmt;
 }
 
-void DynamicWordsAction::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc) {
+void DynamicWordsAction::Matches(completion::Api* comp, List<BigStr*>* YIELD) {
   value::Str* val = nullptr;
   List<BigStr*>* candidates = nullptr;
   StackRoot _root0(&comp);
@@ -21993,8 +21991,7 @@ void DynamicWordsAction::Matches(completion::Api* comp, List<BigStr*>* _out_yiel
     BigStr* c = it.Value();
     StackRoot _for(&c  );
     if (c->startswith(comp->to_complete)) {
-            _out_yield_acc->append(c);
-;
+      YIELD->append(c);
     }
   }
 }
@@ -22021,7 +22018,7 @@ void FileSystemAction::Print(mylib::BufWriter* f) {
   f->write(S_ezz_1);
 }
 
-void FileSystemAction::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc) {
+void FileSystemAction::Matches(completion::Api* comp, List<BigStr*>* YIELD) {
   BigStr* to_complete = nullptr;
   BigStr* dirname = nullptr;
   BigStr* basename = nullptr;
@@ -22059,8 +22056,7 @@ void FileSystemAction::Matches(completion::Api* comp, List<BigStr*>* _out_yield_
     if (path->startswith(to_complete)) {
       if (this->dirs_only) {
         if (path_stat::isdir(path)) {
-                    _out_yield_acc->append(path);
-;
+          YIELD->append(path);
         }
         continue;
       }
@@ -22071,12 +22067,10 @@ void FileSystemAction::Matches(completion::Api* comp, List<BigStr*>* _out_yield_
       }
       if ((this->add_slash and path_stat::isdir(path))) {
         path = str_concat(path, S_ckc);
-                _out_yield_acc->append(path);
-;
+        YIELD->append(path);
       }
       else {
-                _out_yield_acc->append(path);
-;
+        YIELD->append(path);
       }
     }
   }
@@ -22087,14 +22081,13 @@ CommandAction::CommandAction(cmd_eval::CommandEvaluator* cmd_ev, BigStr* command
   this->command_name = command_name;
 }
 
-void CommandAction::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc) {
+void CommandAction::Matches(completion::Api* comp, List<BigStr*>* YIELD) {
   StackRoot _root0(&comp);
 
   for (ListIter<BigStr*> it(NewList<BigStr*>(std::initializer_list<BigStr*>{S_jpy})); !it.Done(); it.Next()) {
     BigStr* candidate = it.Value();
     StackRoot _for(&candidate  );
-        _out_yield_acc->append(candidate);
-;
+    YIELD->append(candidate);
   }
 }
 
@@ -22120,7 +22113,7 @@ void ShellFuncAction::debug(BigStr* msg) {
   this->cmd_ev->debug_f->writeln(msg);
 }
 
-void ShellFuncAction::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc) {
+void ShellFuncAction::Matches(completion::Api* comp, List<BigStr*>* YIELD) {
   List<BigStr*>* comp_words = nullptr;
   int comp_cword;
   List<BigStr*>* argv = nullptr;
@@ -22184,8 +22177,7 @@ void ShellFuncAction::Matches(completion::Api* comp, List<BigStr*>* _out_yield_a
   for (ListIter<BigStr*> it(array_val->strs); !it.Done(); it.Next()) {
     BigStr* s = it.Value();
     StackRoot _for(&s  );
-        _out_yield_acc->append(s);
-;
+    YIELD->append(s);
   }
 }
 
@@ -22193,14 +22185,13 @@ VariablesAction::VariablesAction(state::Mem* mem) {
   this->mem = mem;
 }
 
-void VariablesAction::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc) {
+void VariablesAction::Matches(completion::Api* comp, List<BigStr*>* YIELD) {
   StackRoot _root0(&comp);
 
   for (ListIter<BigStr*> it(this->mem->VarNames()); !it.Done(); it.Next()) {
     BigStr* var_name = it.Value();
     StackRoot _for(&var_name  );
-        _out_yield_acc->append(var_name);
-;
+    YIELD->append(var_name);
   }
 }
 
@@ -22214,7 +22205,7 @@ ExportedVarsAction::ExportedVarsAction(state::Mem* mem) {
   this->mem = mem;
 }
 
-void ExportedVarsAction::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc) {
+void ExportedVarsAction::Matches(completion::Api* comp, List<BigStr*>* YIELD) {
   Dict<BigStr*, BigStr*>* d = nullptr;
   StackRoot _root0(&comp);
   StackRoot _root1(&d);
@@ -22223,8 +22214,7 @@ void ExportedVarsAction::Matches(completion::Api* comp, List<BigStr*>* _out_yiel
   for (DictIter<BigStr*, BigStr*> it(d); !it.Done(); it.Next()) {
     BigStr* var_name = it.Key();
     StackRoot _for(&var_name  );
-        _out_yield_acc->append(var_name);
-;
+    YIELD->append(var_name);
   }
 }
 
@@ -22239,7 +22229,7 @@ void ExternalCommandAction::Print(mylib::BufWriter* f) {
   f->write(S_fFs);
 }
 
-void ExternalCommandAction::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc) {
+void ExternalCommandAction::Matches(completion::Api* comp, List<BigStr*>* YIELD) {
   BigStr* path_str = nullptr;
   List<BigStr*>* path_dirs = nullptr;
   List<BigStr*>* executables = nullptr;
@@ -22292,8 +22282,7 @@ void ExternalCommandAction::Matches(completion::Api* comp, List<BigStr*>* _out_y
     BigStr* word = it.Value();
     StackRoot _for(&word  );
     if (word->startswith(comp->to_complete)) {
-            _out_yield_acc->append(word);
-;
+      YIELD->append(word);
     }
   }
 }
@@ -22394,7 +22383,7 @@ void UserSpec::PrintSpec(mylib::BufWriter* f) {
   f->write(StrFormat("  suffix: %s\n", this->prefix));
 }
 
-void UserSpec::AllMatches(completion::Api* comp, List<Tuple2<BigStr*, runtime_asdl::comp_action_t>*>* _out_yield_acc) {
+void UserSpec::AllMatches(completion::Api* comp, List<Tuple2<BigStr*, runtime_asdl::comp_action_t>*>* YIELD) {
   int num_matches;
   runtime_asdl::comp_action_t action_kind;
   bool show;
@@ -22405,15 +22394,14 @@ void UserSpec::AllMatches(completion::Api* comp, List<Tuple2<BigStr*, runtime_as
     completion::CompletionAction* a = it.Value();
     StackRoot _for(&a  );
     action_kind = a->ActionKind();
-    List<BigStr*> EAGER_for_9;
-    a->Matches(comp, &EAGER_for_9);
-    for (ListIter<BigStr*> it(&EAGER_for_9); !it.Done(); it.Next()) {
+    List<BigStr*> YIELD_for_9;
+    a->Matches(comp, &YIELD_for_9);
+    for (ListIter<BigStr*> it(&YIELD_for_9); !it.Done(); it.Next()) {
       BigStr* match = it.Value();
       StackRoot _for(&match    );
       show = (this->predicate->Evaluate(match) and (match->startswith(comp->to_complete) or action_kind == comp_action_e::BashFunc));
       if (show) {
-                _out_yield_acc->append((Alloc<Tuple2<BigStr*, runtime_asdl::comp_action_t>>(str_concat(str_concat(this->prefix, match), this->suffix), action_kind)));
-;
+        YIELD->append((Alloc<Tuple2<BigStr*, runtime_asdl::comp_action_t>>(str_concat(str_concat(this->prefix, match), this->suffix), action_kind)));
         num_matches += 1;
       }
     }
@@ -22421,26 +22409,24 @@ void UserSpec::AllMatches(completion::Api* comp, List<Tuple2<BigStr*, runtime_as
   for (ListIter<completion::CompletionAction*> it(this->extra_actions); !it.Done(); it.Next()) {
     completion::CompletionAction* a = it.Value();
     StackRoot _for(&a  );
-    List<BigStr*> EAGER_for_10;
-    a->Matches(comp, &EAGER_for_10);
-    for (ListIter<BigStr*> it(&EAGER_for_10); !it.Done(); it.Next()) {
+    List<BigStr*> YIELD_for_10;
+    a->Matches(comp, &YIELD_for_10);
+    for (ListIter<BigStr*> it(&YIELD_for_10); !it.Done(); it.Next()) {
       BigStr* match = it.Value();
       StackRoot _for(&match    );
-            _out_yield_acc->append((Alloc<Tuple2<BigStr*, runtime_asdl::comp_action_t>>(match, comp_action_e::FileSystem)));
-;
+      YIELD->append((Alloc<Tuple2<BigStr*, runtime_asdl::comp_action_t>>(match, comp_action_e::FileSystem)));
     }
   }
   if (num_matches == 0) {
     for (ListIter<completion::CompletionAction*> it(this->else_actions); !it.Done(); it.Next()) {
       completion::CompletionAction* a = it.Value();
       StackRoot _for(&a    );
-      List<BigStr*> EAGER_for_11;
-      a->Matches(comp, &EAGER_for_11);
-      for (ListIter<BigStr*> it(&EAGER_for_11); !it.Done(); it.Next()) {
+      List<BigStr*> YIELD_for_11;
+      a->Matches(comp, &YIELD_for_11);
+      for (ListIter<BigStr*> it(&YIELD_for_11); !it.Done(); it.Next()) {
         BigStr* match = it.Value();
         StackRoot _for(&match      );
-                _out_yield_acc->append((Alloc<Tuple2<BigStr*, runtime_asdl::comp_action_t>>(match, comp_action_e::FileSystem)));
-;
+        YIELD->append((Alloc<Tuple2<BigStr*, runtime_asdl::comp_action_t>>(match, comp_action_e::FileSystem)));
       }
     }
   }
@@ -22486,7 +22472,7 @@ RootCompleter::RootCompleter(word_eval::AbstractWordEvaluator* word_ev, state::M
   this->debug_f = debug_f;
 }
 
-void RootCompleter::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc) {
+void RootCompleter::Matches(completion::Api* comp, List<BigStr*>* YIELD) {
   BigStr* line_until_tab = nullptr;
   reader::FileLineReader* line_reader = nullptr;
   cmd_parse::CommandParser* c_parser = nullptr;
@@ -22598,8 +22584,7 @@ void RootCompleter::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc
       for (ListIter<BigStr*> it(this->mem->VarNames()); !it.Done(); it.Next()) {
         BigStr* name = it.Value();
         StackRoot _for(&name      );
-                _out_yield_acc->append(str_concat(line_until_tab, name));
-;
+        YIELD->append(str_concat(line_until_tab, name));
       }
       return ;
     }
@@ -22608,8 +22593,7 @@ void RootCompleter::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc
       for (ListIter<BigStr*> it(this->mem->VarNames()); !it.Done(); it.Next()) {
         BigStr* name = it.Value();
         StackRoot _for(&name      );
-                _out_yield_acc->append(str_concat(line_until_tab, name));
-;
+        YIELD->append(str_concat(line_until_tab, name));
       }
       return ;
     }
@@ -22621,8 +22605,7 @@ void RootCompleter::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc
         BigStr* name = it.Value();
         StackRoot _for(&name      );
         if (name->startswith(to_complete)) {
-                    _out_yield_acc->append(str_concat(line_until_tab, name->slice(n)));
-;
+          YIELD->append(str_concat(line_until_tab, name->slice(n)));
         }
       }
       return ;
@@ -22635,8 +22618,7 @@ void RootCompleter::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc
         BigStr* name = it.Value();
         StackRoot _for(&name      );
         if (name->startswith(to_complete)) {
-                    _out_yield_acc->append(str_concat(line_until_tab, name->slice(n)));
-;
+          YIELD->append(str_concat(line_until_tab, name->slice(n)));
         }
       }
       return ;
@@ -22649,8 +22631,7 @@ void RootCompleter::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc
         BigStr* name = it.Value();
         StackRoot _for(&name      );
         if (name->startswith(to_complete)) {
-                    _out_yield_acc->append(str_concat(line_until_tab, name->slice(n)));
-;
+          YIELD->append(str_concat(line_until_tab, name->slice(n)));
         }
       }
       return ;
@@ -22668,8 +22649,7 @@ void RootCompleter::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc
           StackRoot _for(&u        );
           name = u->pw_name;
           s = str_concat(str_concat(line_until_tab, ShellQuoteB(name)), S_ckc);
-                    _out_yield_acc->append(s);
-;
+          YIELD->append(s);
         }
         return ;
       }
@@ -22684,8 +22664,7 @@ void RootCompleter::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc
           name = u->pw_name;
           if (name->startswith(to_complete)) {
             s = str_concat(str_concat(line_until_tab, ShellQuoteB(name->slice(n))), S_ckc);
-                        _out_yield_acc->append(s);
-;
+            YIELD->append(s);
           }
         }
         return ;
@@ -22716,13 +22695,12 @@ void RootCompleter::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc
         comp->Update(S_Aoo, val->s, S_Aoo, 0, Alloc<List<BigStr*>>());
         n = len(val->s);
         action = Alloc<FileSystemAction>(false, false, true);
-        List<BigStr*> EAGER_for_12;
-        action->Matches(comp, &EAGER_for_12);
-        for (ListIter<BigStr*> it(&EAGER_for_12); !it.Done(); it.Next()) {
+        List<BigStr*> YIELD_for_12;
+        action->Matches(comp, &YIELD_for_12);
+        for (ListIter<BigStr*> it(&YIELD_for_12); !it.Done(); it.Next()) {
           BigStr* name = it.Value();
           StackRoot _for(&name        );
-                    _out_yield_acc->append(str_concat(line_until_tab, ShellQuoteB(name->slice(n))));
-;
+          YIELD->append(str_concat(line_until_tab, ShellQuoteB(name->slice(n))));
         }
         return ;
       }
@@ -22825,13 +22803,12 @@ void RootCompleter::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc
     while (!done) {
       done = true;
       try {
-        List<BigStr*> EAGER_for_17;
-        this->_PostProcess(base_opts, dynamic_opts, user_spec, comp, &EAGER_for_17);
-        for (ListIter<BigStr*> it(&EAGER_for_17); !it.Done(); it.Next()) {
+        List<BigStr*> YIELD_for_17;
+        this->_PostProcess(base_opts, dynamic_opts, user_spec, comp, &YIELD_for_17);
+        for (ListIter<BigStr*> it(&YIELD_for_17); !it.Done(); it.Next()) {
           BigStr* candidate = it.Value();
           StackRoot _for(&candidate        );
-                    _out_yield_acc->append(candidate);
-;
+          YIELD->append(candidate);
         }
       }
       catch (_RetryCompletion* e) {
@@ -22862,7 +22839,7 @@ void RootCompleter::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc
   }
 }
 
-void RootCompleter::_PostProcess(Dict<BigStr*, bool>* base_opts, Dict<BigStr*, bool>* dynamic_opts, completion::UserSpec* user_spec, completion::Api* comp, List<BigStr*>* _out_yield_acc) {
+void RootCompleter::_PostProcess(Dict<BigStr*, bool>* base_opts, Dict<BigStr*, bool>* dynamic_opts, completion::UserSpec* user_spec, completion::Api* comp, List<BigStr*>* YIELD) {
   double start_time;
   int i;
   BigStr* line_until_tab = nullptr;
@@ -22888,9 +22865,9 @@ void RootCompleter::_PostProcess(Dict<BigStr*, bool>* base_opts, Dict<BigStr*, b
   this->debug_f->writeln(StrFormat("Completing %r ... (Ctrl-C to cancel)", comp->line));
   start_time = time_::time();
   i = 0;
-  List<Tuple2<BigStr*, runtime_asdl::comp_action_t>*> EAGER_for_21;
-  user_spec->AllMatches(comp, &EAGER_for_21);
-  for (ListIter<Tuple2<BigStr*, runtime_asdl::comp_action_t>*> it(&EAGER_for_21); !it.Done(); it.Next()) {
+  List<Tuple2<BigStr*, runtime_asdl::comp_action_t>*> YIELD_for_21;
+  user_spec->AllMatches(comp, &YIELD_for_21);
+  for (ListIter<Tuple2<BigStr*, runtime_asdl::comp_action_t>*> it(&YIELD_for_21); !it.Done(); it.Next()) {
     Tuple2<BigStr*, runtime_asdl::comp_action_t>* tup22 = it.Value();
     BigStr* candidate = tup22->at0();
     StackRoot _unpack_0(&candidate);
@@ -22904,8 +22881,7 @@ void RootCompleter::_PostProcess(Dict<BigStr*, bool>* base_opts, Dict<BigStr*, b
     if ((action_kind == comp_action_e::FileSystem or opt_filenames)) {
       if (path_stat::isdir(candidate)) {
         s = str_concat(str_concat(line_until_word, ShellQuoteB(candidate)), S_ckc);
-                _out_yield_acc->append(s);
-;
+        YIELD->append(s);
         continue;
       }
     }
@@ -22915,8 +22891,7 @@ void RootCompleter::_PostProcess(Dict<BigStr*, bool>* base_opts, Dict<BigStr*, b
     }
     sp = opt_nospace ? S_Aoo : S_yfw;
     cand = action_kind == comp_action_e::BashFunc ? candidate : ShellQuoteB(candidate);
-        _out_yield_acc->append(str_concat(str_concat(line_until_word, cand), sp));
-;
+    YIELD->append(str_concat(str_concat(line_until_word, cand), sp));
     i += 1;
     elapsed_ms = ((time_::time() - start_time) * 1000.0);
     plural = i == 1 ? S_Aoo : S_jit;
@@ -22955,9 +22930,9 @@ BigStr* ReadlineCallback::_GetNextCompletion(int state) {
     this->debug_f->writeln(StrFormat("Api %r %d %d", buf, begin, end));
     // if not PYTHON
     {
-      List<BigStr*> EAGER_it;
-      this->root_comp->Matches(comp, &EAGER_it);
-      ListIter<BigStr*> it(&EAGER_it);
+      List<BigStr*> YIELD_it;
+      this->root_comp->Matches(comp, &YIELD_it);
+      ListIter<BigStr*> it(&YIELD_it);
       this->comp_matches = list(it);
       this->comp_matches->reverse();
     }
@@ -57499,15 +57474,14 @@ _FixedWordsAction::_FixedWordsAction(List<BigStr*>* d) {
   this->d = d;
 }
 
-void _FixedWordsAction::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc) {
+void _FixedWordsAction::Matches(completion::Api* comp, List<BigStr*>* YIELD) {
   StackRoot _root0(&comp);
 
   for (ListIter<BigStr*> it(sorted(this->d)); !it.Done(); it.Next()) {
     BigStr* name = it.Value();
     StackRoot _for(&name  );
     if (name->startswith(comp->to_complete)) {
-            _out_yield_acc->append(name);
-;
+      YIELD->append(name);
     }
   }
 }
@@ -57522,15 +57496,14 @@ _DynamicProcDictAction::_DynamicProcDictAction(state::Procs* d) {
   this->d = d;
 }
 
-void _DynamicProcDictAction::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc) {
+void _DynamicProcDictAction::Matches(completion::Api* comp, List<BigStr*>* YIELD) {
   StackRoot _root0(&comp);
 
   for (ListIter<BigStr*> it(this->d->InvokableNames()); !it.Done(); it.Next()) {
     BigStr* name = it.Value();
     StackRoot _for(&name  );
     if (name->startswith(comp->to_complete)) {
-            _out_yield_acc->append(name);
-;
+      YIELD->append(name);
     }
   }
 }
@@ -57545,15 +57518,14 @@ _DynamicStrDictAction::_DynamicStrDictAction(Dict<BigStr*, BigStr*>* d) {
   this->d = d;
 }
 
-void _DynamicStrDictAction::Matches(completion::Api* comp, List<BigStr*>* _out_yield_acc) {
+void _DynamicStrDictAction::Matches(completion::Api* comp, List<BigStr*>* YIELD) {
   StackRoot _root0(&comp);
 
   for (ListIter<BigStr*> it(sorted(this->d)); !it.Done(); it.Next()) {
     BigStr* name = it.Value();
     StackRoot _for(&name  );
     if (name->startswith(comp->to_complete)) {
-            _out_yield_acc->append(name);
-;
+      YIELD->append(name);
     }
   }
 }
@@ -57877,9 +57849,9 @@ int CompGen::Run(cmd_value::Argv* cmd_val) {
   comp = Alloc<completion::Api>(S_Aoo, 0, 0);
   comp->Update(S_pqd, to_complete, S_Aoo, -1, nullptr);
   try {
-    List<Tuple2<BigStr*, runtime_asdl::comp_action_t>*> EAGER_for_0;
-    user_spec->AllMatches(comp, &EAGER_for_0);
-    for (ListIter<Tuple2<BigStr*, runtime_asdl::comp_action_t>*> it(&EAGER_for_0); !it.Done(); it.Next()) {
+    List<Tuple2<BigStr*, runtime_asdl::comp_action_t>*> YIELD_for_0;
+    user_spec->AllMatches(comp, &YIELD_for_0);
+    for (ListIter<Tuple2<BigStr*, runtime_asdl::comp_action_t>*> it(&YIELD_for_0); !it.Done(); it.Next()) {
       Tuple2<BigStr*, runtime_asdl::comp_action_t>* tup1 = it.Value();
       BigStr* m = tup1->at0();
       StackRoot _unpack_0(&m);
