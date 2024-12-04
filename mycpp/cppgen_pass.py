@@ -445,18 +445,30 @@ class _Shared(visitor.SimpleVisitor):
         # For writing vars after {
         self.prepend_to_block: Optional[List[LocalVar]] = None
 
-        # Temporary lists to use as output params for generators
-        self.yield_accumulators: Dict[Union[FuncDef, AssignmentStmt, ForStmt],
-                                      Tuple[str, str]] = {}
+        # Implementation of EAGER GENERATORS
 
-        # TODO: move this state into SimpleVisitor.  # It also keeps track of
-        # the current class and method.
+        # Used to add another param to definition, and yield -> out->append()
+        # _for_yield_accum - for loop
+        self.yield_out_params: Dict[FuncDef, Tuple[str, str]] = {}
+
+        # Used to to create an EAGER List<T>
+        self.yield_eager_assign: Dict[AssignmentStmt, Tuple[str, str]] = {}
+        self.yield_eager_for: Dict[ForStmt, Tuple[str, str]] = {}
+
+        # Traversal state
+        self.yield_assign_node: Optional[AssignmentStmt] = None
+        self.yield_for_node: Optional[ForStmt] = None
+
+        # Remove this stuff
+
+        # TODO: move this state into SimpleVisitor.  (It also keeps track of
+        # the current class and method.)
         self.current_func_node: Optional[FuncDef] = None
-        # Used for iterators
-        self.current_stmt_node: Optional[Union[AssignmentStmt, ForStmt]] = None
 
+        # TODO: remove
         self.writing_default_arg = False
 
+        # TODO: remove
         self.decl = False
 
     def oils_visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> None:
@@ -498,10 +510,10 @@ class _Shared(visitor.SimpleVisitor):
 
         c_ret_type, _, c_iter_list_type = GetCReturnType(o.type.ret_type)
 
-        # Is this FuncDef is a generator?  Then associate the node with an
-        # accumulator param (name and type).
+        # [FuncDef] Is this function is a generator?  Then associate the node
+        # with an accumulator param (name and type).
         if c_iter_list_type is not None:
-            self.yield_accumulators[o] = ('_out_yield_acc', c_iter_list_type)
+            self.yield_out_params[o] = ('_out_yield_acc', c_iter_list_type)
 
         # Avoid C++ warnings by prepending [[noreturn]]
         noreturn = ''
@@ -619,8 +631,7 @@ class _Shared(visitor.SimpleVisitor):
                 # - visit_unary_expr (-42)
                 #
                 # It would be nice if the Decl phase did not visit any
-                # statements at all, but we need to clean up
-                # self.yield_accumulators first.
+                # statements at all.
                 self.writing_default_arg = True
                 self.accept(arg.initializer)
                 self.writing_default_arg = False
@@ -635,10 +646,10 @@ class _Shared(visitor.SimpleVisitor):
                 self.log('  kind %s', arg.kind)
 
         # Is the function we're writing params for an iterator?
-        if func_def in self.yield_accumulators:
+        if func_def in self.yield_out_params:
             self.write(', ')
 
-            arg_name, c_type = self.yield_accumulators[func_def]
+            arg_name, c_type = self.yield_out_params[func_def]
             self.write('%s %s', c_type, arg_name)
 
 
@@ -682,9 +693,9 @@ class Impl(_Shared):
     #
 
     def visit_yield_expr(self, o: 'mypy.nodes.YieldExpr') -> None:
-        assert self.current_func_node in self.yield_accumulators
+        assert self.current_func_node in self.yield_out_params
         self.def_write_ind('%s->append(',
-                           self.yield_accumulators[self.current_func_node][0])
+                           self.yield_out_params[self.current_func_node][0])
         self.accept(o.expr)
         self.def_write(');\n')
 
@@ -695,15 +706,24 @@ class Impl(_Shared):
                 self.def_write(', ')
             self.accept(arg)
 
-        # Will be set if we're:
-        # a) accumulating the output of an iterator
-        # b) constructing an iterator with the result of (a)
-        if self.current_stmt_node in self.yield_accumulators:
+        # Pass an extra arg like my_generator(42, &accum)
+        #
+        # Two cases:
+        #   ForStmt:         for y in generator(42): =>
+        #                    generator(42, &y)
+        #   AssignmentStmt:  it = generator(42)     =>
+        #                    List<int> _iter_buf_it;
+        #                    generator(42, &iter_buf_it);   # eagerly append
+
+        eager_pair = (self.yield_eager_assign.get(self.yield_assign_node) or
+                      self.yield_eager_for.get(self.yield_for_node))
+
+        if eager_pair:
             if len(args) > 0:
                 self.def_write(', ')
 
-            arg_name, _ = self.yield_accumulators[self.current_stmt_node]
-            self.def_write('&%s', arg_name)
+            eager_list_name, _ = eager_pair
+            self.def_write('&%s', eager_list_name)
 
         self.def_write(')')
 
@@ -1470,8 +1490,16 @@ class Impl(_Shared):
         self.accept(call.args[1])  # variable being casted
         self.def_write(');\n')
 
-    def _IteratorImpl(self, o: 'mypy.nodes.AssignmentStmt', lval: Expression,
-                      rval_type: Type) -> None:
+    def _AssignToGenerator(self, o: 'mypy.nodes.AssignmentStmt',
+                           lval: Expression, rval_type: Type) -> None:
+        """
+        it_f = f(42)
+
+        translates to
+
+        List<int> _iter_buf_it;
+        f(42, &_iter_buf_it);
+        """
         # We're calling a generator. Create a temporary List<T> on the stack
         # to accumulate the results in one big batch, then wrap it in
         # ListIter<T>.
@@ -1481,18 +1509,26 @@ class Impl(_Shared):
         type_param = rval_type.args[0]
         inner_c_type = GetCType(type_param)
 
-        iter_buf = ('_iter_buf_%s' % lval.name, 'List<%s>*' % inner_c_type)
-        self.def_write_ind('List<%s> %s;\n', inner_c_type, iter_buf[0])
+        eager_list_name = '_iter_buf_%s' % lval.name
+        eager_list_type = 'List<%s>*' % inner_c_type
 
-        self.yield_accumulators[o] = iter_buf
+        # write the variable to accumulate into
+        self.def_write_ind('List<%s> %s;\n', inner_c_type, eager_list_name)
+
+        # AssignmentStmt key, like:
+        #     it_f = f()
+        # maybe call them self.generator_func, generator_assign
+        # In MyPy, the type is Iterator though
+        self.yield_eager_assign[o] = (eager_list_name, eager_list_type)
         self.def_write_ind('')
 
-        self.current_stmt_node = o
+        self.yield_assign_node = o  # AssignmentStmt
         self.accept(o.rvalue)
-        self.current_stmt_node = None
+        self.yield_assign_node = None
 
         self.def_write(';\n')
-        self.def_write_ind('%s %s(&%s);\n', c_type, lval.name, iter_buf[0])
+
+        self.def_write_ind('%s %s(&%s);\n', c_type, lval.name, eager_list_name)
 
     def oils_visit_assign_to_listcomp(self, lval: NameExpr,
                                       left_expr: Expression,
@@ -1591,7 +1627,7 @@ class Impl(_Shared):
             rval_type = self.types[rval]
             if (isinstance(rval_type, Instance) and
                     rval_type.type.fullname == 'typing.Iterator'):
-                self._IteratorImpl(o, lval, rval_type)
+                self._AssignToGenerator(o, lval, rval_type)
                 return
 
         if isinstance(lval, NameExpr):
@@ -1786,7 +1822,7 @@ class Impl(_Shared):
             #self.log('  iterating over type %s', over_type)
             #self.log('  iterating over type %s', over_type.type.fullname)
 
-        yield_acc = None
+        eager_list_name: Optional[str] = None
 
         over_list = False
         over_dict = False
@@ -1839,18 +1875,29 @@ class Impl(_Shared):
             assert len(over_type.args) == 1, over_type.args
             inner_c_type = GetCType(over_type.args[0])
 
-            yield_acc = ('_for_yield_acc%d' % self.unique_id,
-                         'List<%s>*' % inner_c_type)
+            # eager_list_name is used below
+            eager_list_name = '_for_yield_acc%d' % self.unique_id
+            eager_list_type = 'List<%s>*' % inner_c_type
             self.unique_id += 1
 
-            self.def_write_ind('List<%s> %s;\n', inner_c_type, yield_acc[0])
+            self.def_write_ind('List<%s> %s;\n', inner_c_type, eager_list_name)
             self.def_write_ind('')
 
-            self.yield_accumulators[o] = yield_acc
+            # ForStmt - could be self.generator_for_stmt
+            #
+            # for x in my_generator(42):
+            #   log('x = %s', x)
+            #
+            # Turns into
+            # List<T> _for_yield_acc3;
+            # my_generator(42, &_for_yield_acc3);
+            # for (ListIter it(_for_yield_acc3) ...)
 
-            self.current_stmt_node = o
+            self.yield_eager_for[o] = (eager_list_name, eager_list_type)
+
+            self.yield_for_node = o  # ForStmt
             self.accept(iterated_over)
-            self.current_stmt_node = None
+            self.yield_for_node = None
 
             self.def_write(';\n')
 
@@ -1865,8 +1912,8 @@ class Impl(_Shared):
             index_update = ''
 
         self.def_write_ind('for (%s it(', c_iter_type)
-        if yield_acc:
-            self.def_write('&%s', yield_acc[0])
+        if eager_list_name:
+            self.def_write('&%s', eager_list_name)
         else:
             self.accept(iterated_over)  # the thing being iterated over
         self.def_write('); !it.Done(); it.Next()%s) {\n', index_update)
@@ -2697,7 +2744,7 @@ class Decl(Impl):
         # values 'a::b'
         self.accept(o.expr)
         # TODO: remove def_write() in Decl pass
-        self.def_write('::')  
+        self.def_write('::')
         self.def_write(o.name)
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
