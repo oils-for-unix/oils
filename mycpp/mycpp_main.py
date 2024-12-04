@@ -17,7 +17,7 @@ from typing import Dict, List, Optional, Tuple, Any, Iterator, TYPE_CHECKING
 from mypy.build import build as mypy_build
 from mypy.main import process_options
 if TYPE_CHECKING:
-    from mypy.nodes import MemberExpr
+    from mypy.nodes import MemberExpr, FuncDef
     from mypy.modulefinder import BuildSource
     from mypy.build import BuildResult
 
@@ -321,6 +321,7 @@ def main(argv: List[str]) -> int:
 
     all_member_vars: cppgen_pass.AllMemberVars = {}
     all_local_vars: cppgen_pass.AllLocalVars = {}
+    yield_out_params: Dict[FuncDef, Tuple[str, str]] = {}
 
     # class Foo; class Bar;
     timer.Section('mycpp pass: FORWARD DECL')
@@ -334,7 +335,8 @@ def main(argv: List[str]) -> int:
         # TODO: write output of forward_decls, instead of the file
         forward_decls: List[str] = []
         p2 = virtual_pass.Pass(result.types, virtual, forward_decls,
-                               all_member_vars, all_local_vars)
+                               all_member_vars, all_local_vars,
+                               yield_out_params)
         p2.SetOutputFile(out_f)
 
         p2.visit_mypy_file(module)
@@ -391,6 +393,7 @@ def main(argv: List[str]) -> int:
             p3 = cppgen_pass.Decl(
                 result.types,
                 global_strings,  # input
+                yield_out_params,
                 all_member_vars=all_member_vars,  # input
                 virtual=virtual,  # input
             )
@@ -438,6 +441,7 @@ def main(argv: List[str]) -> int:
         p4 = cppgen_pass.Impl(
             result.types,
             global_strings,  # input
+            yield_out_params,
             local_vars=all_local_vars,  # input
             all_member_vars=all_member_vars,
             dot_exprs=dot_exprs[module.path],  # input

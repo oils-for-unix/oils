@@ -5,7 +5,8 @@ TODO: Join with ir_pass.py
 """
 import mypy
 
-from mypy.nodes import (Expression, NameExpr, MemberExpr, TupleExpr, CallExpr)
+from mypy.nodes import (Expression, NameExpr, MemberExpr, TupleExpr, CallExpr,
+                        FuncDef)
 from mypy.types import Type, Instance, TupleType
 
 from mycpp import util
@@ -42,12 +43,13 @@ MYCPP_INT = Primitive('builtins.int')
 class Pass(visitor.SimpleVisitor):
 
     def __init__(
-        self,
-        types: Dict[Expression, Type],
-        virtual: pass_state.Virtual,
-        forward_decls: List[str],
-        all_member_vars: 'cppgen_pass.AllMemberVars',
-        all_local_vars: 'cppgen_pass.AllLocalVars',
+            self,
+            types: Dict[Expression, Type],
+            virtual: pass_state.Virtual,
+            forward_decls: List[str],
+            all_member_vars: 'cppgen_pass.AllMemberVars',
+            all_local_vars: 'cppgen_pass.AllLocalVars',
+            yield_out_params: Dict[FuncDef, Tuple[str, str]],  # output
     ) -> None:
         visitor.SimpleVisitor.__init__(self)
 
@@ -59,6 +61,9 @@ class Pass(visitor.SimpleVisitor):
         self.forward_decls = forward_decls
         self.all_member_vars = all_member_vars
         self.all_local_vars = all_local_vars
+        # Used to add another param to definition, and
+        #     yield x --> YIELD->append(x)
+        self.yield_out_params = yield_out_params
 
         # Internal state
         self.current_member_vars: Dict[str, 'cppgen_pass.MemberVar'] = {}
@@ -129,6 +134,13 @@ class Pass(visitor.SimpleVisitor):
         # Traverse to collect member variables
         super().oils_visit_func_def(o)
         self.all_local_vars[o] = self.current_local_vars
+
+        # Is this function is a generator?  Then associate the node with an
+        # accumulator param (name and type).
+        # This is info is consumed by both the Decl and Impl passes
+        _, _, c_iter_list_type = cppgen_pass.GetCReturnType(o.type.ret_type)
+        if c_iter_list_type is not None:
+            self.yield_out_params[o] = ('YIELD', c_iter_list_type)
 
     def oils_visit_assign_to_listcomp(self, lval: NameExpr,
                                       left_expr: Expression,

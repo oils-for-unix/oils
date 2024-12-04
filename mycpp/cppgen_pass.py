@@ -419,6 +419,7 @@ class _Shared(visitor.SimpleVisitor):
         self,
         types: Dict[Expression, Type],
         global_strings: 'const_pass.GlobalStrings',
+        yield_out_params: Dict[FuncDef, Tuple[str, str]],  # input
         # TODO: virtual only needs to be in Decl pass!
         virtual: pass_state.Virtual = None,
         # TODO: local_vars only in Impl pass
@@ -432,6 +433,7 @@ class _Shared(visitor.SimpleVisitor):
 
         self.types = types
         self.global_strings = global_strings
+        self.yield_out_params = yield_out_params
         self.virtual = virtual
 
         if local_vars is None:
@@ -445,12 +447,6 @@ class _Shared(visitor.SimpleVisitor):
         self.unique_id = 0
         # For writing vars after {
         self.prepend_to_block: Optional[List[LocalVar]] = None
-
-        # Implementation of EAGER yield (aka Python 2 generators)
-
-        # Used to add another param to definition, and yield -> out->append()
-        # _for_yield_accum - for loop
-        self.yield_out_params: Dict[FuncDef, Tuple[str, str]] = {}
 
         # Remove this stuff
 
@@ -501,12 +497,7 @@ class _Shared(visitor.SimpleVisitor):
         if not self.decl:
             self.write('\n')
 
-        c_ret_type, _, c_iter_list_type = GetCReturnType(o.type.ret_type)
-
-        # [FuncDef] Is this function is a generator?  Then associate the node
-        # with an accumulator param (name and type).
-        if c_iter_list_type is not None:
-            self.yield_out_params[o] = ('YIELD', c_iter_list_type)
+        c_ret_type, _, _ = GetCReturnType(o.type.ret_type)
 
         # Avoid C++ warnings by prepending [[noreturn]]
         noreturn = ''
@@ -536,7 +527,8 @@ class _Shared(visitor.SimpleVisitor):
                 self.prepend_to_block.append((lval_name, lval_type, lval_name
                                               in arg_names))
 
-        self.accept(o.body)
+        if not self.decl:
+            self.accept(o.body)
         self.current_func_node = None
 
     def _ValidateDefaultArg(self, arg: Argument) -> None:
@@ -648,18 +640,21 @@ class _Shared(visitor.SimpleVisitor):
 
 class Impl(_Shared):
 
-    def __init__(self,
-                 types: Dict[Expression, Type],
-                 global_strings: 'const_pass.GlobalStrings',
-                 virtual: pass_state.Virtual = None,
-                 local_vars: Optional[AllLocalVars] = None,
-                 all_member_vars: Optional[AllMemberVars] = None,
-                 dot_exprs: Optional['ir_pass.DotExprs'] = None,
-                 stack_roots_warn: Optional[int] = None,
-                 stack_roots: Optional[pass_state.StackRoots] = None) -> None:
+    def __init__(
+            self,
+            types: Dict[Expression, Type],
+            global_strings: 'const_pass.GlobalStrings',
+            yield_out_params: Dict[FuncDef, Tuple[str, str]],  # input
+            virtual: pass_state.Virtual = None,
+            local_vars: Optional[AllLocalVars] = None,
+            all_member_vars: Optional[AllMemberVars] = None,
+            dot_exprs: Optional['ir_pass.DotExprs'] = None,
+            stack_roots_warn: Optional[int] = None,
+            stack_roots: Optional[pass_state.StackRoots] = None) -> None:
         _Shared.__init__(self,
                          types,
                          global_strings,
+                         yield_out_params,
                          virtual=virtual,
                          local_vars=local_vars,
                          all_member_vars=all_member_vars)
@@ -2724,12 +2719,15 @@ class Impl(_Shared):
             self.report_error(o, 'try/finally not supported')
 
 
+# Type error: def_write().  Still need to handle this
+#class Decl(_Shared):
 class Decl(Impl):
 
     def __init__(
         self,
         types: Dict[Expression, Type],
         global_strings: 'const_pass.GlobalStrings',
+        yield_out_params: Dict[FuncDef, Tuple[str, str]],  # input
         virtual: pass_state.Virtual = None,
         all_member_vars: Optional[AllMemberVars] = None,
     ) -> None:
@@ -2737,6 +2735,7 @@ class Decl(Impl):
             self,
             types,
             global_strings,
+            yield_out_params,
             virtual=virtual,
             all_member_vars=all_member_vars,
         )
@@ -2747,24 +2746,8 @@ class Decl(Impl):
         # values 'a::b'
         self.accept(o.expr)
         # TODO: remove def_write() in Decl pass
-        self.def_write('::')
-        self.def_write(o.name)
-
-    def oils_visit_for_stmt(self, o: 'mypy.nodes.ForStmt',
-                            func_name: Optional[str]) -> None:
-        # Do nothing on purpose (we don't have yield_eager_for)
-        pass
-
-    def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> None:
-        # Do nothing on purpose (we don't have yield_eager_assign)
-        pass
-
-    def oils_visit_assign_to_listcomp(self, lval: NameExpr,
-                                      left_expr: Expression,
-                                      index_expr: Expression, seq: Expression,
-                                      cond: Expression) -> None:
-        # Do nothing on purpose (no stack_roots, etc.)
-        pass
+        self.write('::')
+        self.write(o.name)
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
                                    lval: Expression, rval: Expression) -> None:
@@ -2787,9 +2770,6 @@ class Decl(Impl):
                               stmt.arguments,
                               write_defaults=True)
         self.write(');\n')
-
-        # Visit for member vars
-        self.accept(stmt.body)
         self.indent -= 1
 
     def oils_visit_dunder_exit(self, o: ClassDef, stmt: FuncDef,
