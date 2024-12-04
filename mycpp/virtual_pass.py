@@ -6,8 +6,8 @@ TODO: Join with ir_pass.py
 import mypy
 
 from mypy.nodes import (Expression, NameExpr, MemberExpr, TupleExpr, CallExpr,
-                        FuncDef)
-from mypy.types import Type, Instance, TupleType
+                        FuncDef, Argument)
+from mypy.types import Type, Instance, TupleType, NoneType
 
 from mycpp import util
 from mycpp.util import log
@@ -109,7 +109,52 @@ class Pass(visitor.SimpleVisitor):
         super().oils_visit_class_def(o, base_class_name)
         self.all_member_vars[o] = self.current_member_vars
 
+    def _ValidateDefaultArg(self, arg: Argument) -> None:
+        t = self.types[arg.initializer]
+
+        valid = False
+        if isinstance(t, NoneType):
+            valid = True
+        if isinstance(t, Instance):
+            # Allowing strings since they're immutable, e.g.
+            # prefix='' seems OK
+            if t.type.fullname in ('builtins.bool', 'builtins.int',
+                                   'builtins.float', 'builtins.str'):
+                valid = True
+
+            # ASDL enums lex_mode_t, scope_t, ...
+            if t.type.fullname.endswith('_t'):
+                valid = True
+
+            # Hack for loc__Missing.  Should detect the general case.
+            if t.type.fullname.endswith('loc__Missing'):
+                valid = True
+
+        if not valid:
+            self.report_error(
+                arg,
+                'Invalid default arg %r of type %s (not None, bool, int, float, ASDL enum)'
+                % (arg.initializer, t))
+
+    def _ValidateDefaultArgs(self, func_def: FuncDef) -> None:
+        arguments = func_def.arguments
+
+        num_defaults = 0
+        for arg in arguments:
+            if arg.initializer:
+                self._ValidateDefaultArg(arg)
+                num_defaults += 1
+
+        if num_defaults > 1:
+            # Report on first arg
+            self.report_error(
+                arg, '%s has %d default arguments.  Only 1 is allowed' %
+                (func_def.name, num_defaults))
+            return
+
     def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
+        self._ValidateDefaultArgs(o)
+
         self.virtual.OnMethod(self.current_class_name, o.name)
 
         self.current_local_vars = []

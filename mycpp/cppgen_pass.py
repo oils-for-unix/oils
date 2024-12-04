@@ -8,13 +8,13 @@ from typing import Union, Optional, Dict
 
 import mypy
 from mycpp import visitor
-from mypy.types import (Type, AnyType, NoneTyp, TupleType, Instance, NoneType,
+from mypy.types import (Type, AnyType, NoneTyp, TupleType, Instance,
                         Overloaded, CallableType, UnionType, UninhabitedType,
                         PartialType, TypeAliasType)
 from mypy.nodes import (Expression, Statement, NameExpr, IndexExpr, MemberExpr,
                         TupleExpr, ExpressionStmt, IfStmt, StrExpr, SliceExpr,
                         FuncDef, UnaryExpr, OpExpr, CallExpr, ListExpr,
-                        DictExpr, ClassDef, Argument, ForStmt, AssignmentStmt)
+                        DictExpr, ClassDef, ForStmt, AssignmentStmt)
 
 from mycpp import format_strings
 from mycpp.util import log, join_name, split_py_name, IsStr
@@ -539,8 +539,6 @@ class _Shared(visitor.SimpleVisitor):
         self.current_func_node = o
         self._WriteFuncParams(
             o,
-            o.type.arg_types,
-            o.arguments,
             # write default values in the declaration only
             write_defaults=self.decl)
 
@@ -560,64 +558,15 @@ class _Shared(visitor.SimpleVisitor):
             self.accept(o.body)
         self.current_func_node = None
 
-    def _ValidateDefaultArg(self, arg: Argument) -> None:
-        t = self.types[arg.initializer]
-
-        valid = False
-        if isinstance(t, NoneType):
-            valid = True
-        if isinstance(t, Instance):
-            # Allowing strings since they're immutable, e.g.
-            # prefix='' seems OK
-            if t.type.fullname in ('builtins.bool', 'builtins.int',
-                                   'builtins.float', 'builtins.str'):
-                valid = True
-
-            # ASDL enums lex_mode_t, scope_t, ...
-            if t.type.fullname.endswith('_t'):
-                valid = True
-
-            # Hack for loc__Missing.  Should detect the general case.
-            if t.type.fullname.endswith('loc__Missing'):
-                valid = True
-
-        if not valid:
-            self.report_error(
-                arg,
-                'Invalid default arg %r of type %s (not None, bool, int, float, ASDL enum)'
-                % (arg.initializer, t))
-
-    def _ValidateDefaultArgs(self, arguments: List[Argument]) -> None:
-        num_defaults = 0
-        for arg in arguments:
-            if arg.initializer:
-                self._ValidateDefaultArg(arg)
-                num_defaults += 1
-
-        if num_defaults > 1:
-            if self.current_func_node:
-                name = self.current_func_node.name
-            else:
-                # TODO: could pass the name, e.g. for __init__
-                name = '<Unknown>'
-
-            # Report on first arg
-            self.report_error(
-                arg, '%s has %d default arguments.  Only 1 is allowed' %
-                (name, num_defaults))
-            return
-
     def _WriteFuncParams(self,
                          func_def: FuncDef,
-                         arg_types: List[Type],
-                         arguments: List['mypy.nodes.Argument'],
                          write_defaults: bool = False) -> None:
         """Write params for function/method signatures.
 
         Optionally mutate self.local_vars, and optionally write default arguments.
         """
-        if write_defaults:
-            self._ValidateDefaultArgs(arguments)
+        arg_types = func_def.type.arg_types
+        arguments = func_def.arguments
 
         is_first = True  # EXCLUDING 'self'
         for arg_type, arg in zip(arg_types, arguments):
@@ -699,7 +648,7 @@ class Impl(_Shared):
     def visit_yield_expr(self, o: 'mypy.nodes.YieldExpr') -> None:
         assert self.current_func_node in self.yield_out_params
         self.write('%s->append(',
-                       self.yield_out_params[self.current_func_node][0])
+                   self.yield_out_params[self.current_func_node][0])
         self.accept(o.expr)
         self.write(')')
 
@@ -1148,7 +1097,7 @@ class Impl(_Shared):
             self.write('Alloc<%s>()' % c_type)
         else:
             self.write('NewList<%s>(std::initializer_list<%s>' %
-                           (item_c_type, item_c_type))
+                       (item_c_type, item_c_type))
             self._WriteListElements(o.items)
             self.write(')')
 
@@ -1296,7 +1245,7 @@ class Impl(_Shared):
             if isinstance(lval_item, NameExpr):
                 if CTypeIsManaged(c_item_type) and not self.stack_roots:
                     self.write_ind('StackRoot _unpack_%d(&%s);\n' %
-                                       (i, lval_item.name))
+                                   (i, lval_item.name))
 
     def _ListComprehensionImpl(self, lval: NameExpr, left_expr: Expression,
                                index_expr: Expression, seq: Expression,
@@ -1355,7 +1304,7 @@ class Impl(_Shared):
                 temp_name = 'tup%d' % self.unique_id
                 self.unique_id += 1
                 self.write_ind('  %s %s = it.Value();\n', c_item_type,
-                                   temp_name)
+                               temp_name)
 
                 self.indent += 1
 
@@ -1442,11 +1391,10 @@ class Impl(_Shared):
         if is_downcast_and_shadow:
             # Declare NEW local variable inside case, which shadows it
             self.write_ind('%s %s = %s<%s>(', subtype_name, lval.name,
-                               cast_kind, subtype_name)
+                           cast_kind, subtype_name)
         else:
             # Normal variable
-            self.write_ind('%s = %s<%s>(', lval.name, cast_kind,
-                               subtype_name)
+            self.write_ind('%s = %s<%s>(', lval.name, cast_kind, subtype_name)
 
         self.accept(call.args[1])  # variable being casted
         self.write(');\n')
@@ -1519,8 +1467,8 @@ class Impl(_Shared):
 
                 # Any constant strings will have already been written
                 # TODO: Assert that every item is a constant?
-                self.write('GLOBAL_LIST(%s, %s, %d, ', lval.name,
-                               item_c_type, len(rval.items))
+                self.write('GLOBAL_LIST(%s, %s, %d, ', lval.name, item_c_type,
+                           len(rval.items))
 
                 self._WriteListElements(rval.items, sep=' COMMA ')
 
@@ -1537,7 +1485,7 @@ class Impl(_Shared):
 
                 dict_expr = rval
                 self.write('GLOBAL_DICT(%s, %s, %s, %d, ', lval.name,
-                               key_c_type, val_c_type, len(dict_expr.items))
+                           key_c_type, val_c_type, len(dict_expr.items))
 
                 keys = [k for k, _ in dict_expr.items]
                 values = [v for _, v in dict_expr.items]
@@ -1686,7 +1634,7 @@ class Impl(_Shared):
 
             if num_args == 1:  # xrange(end)
                 self.write_ind('for (int %s = 0; %s < ', index_name,
-                                   index_name)
+                               index_name)
                 self.accept(args[0])
                 self.write('; ++%s) ', index_name)
 
@@ -1916,9 +1864,9 @@ class Impl(_Shared):
 
                 # TODO(StackRoots): k, v
                 self.write_ind('  %s %s = it.Key();\n', key_type,
-                                   index_items[0].name)
+                               index_items[0].name)
                 self.write_ind('  %s %s = it.Value();\n', val_type,
-                                   index_items[1].name)
+                               index_items[1].name)
 
             else:
                 # Example:
@@ -1936,7 +1884,7 @@ class Impl(_Shared):
                     temp_name = 'tup%d' % self.unique_id
                     self.unique_id += 1
                     self.write_ind('  %s %s = it.Value();\n', c_item_type,
-                                       temp_name)
+                                   temp_name)
 
                     self.indent += 1
 
@@ -1947,7 +1895,7 @@ class Impl(_Shared):
                     self.indent -= 1
                 else:
                     self.write_ind('  %s %s = it.Value();\n', c_item_type,
-                                       o.index.name)
+                                   o.index.name)
                     #self.write_ind('  StackRoots _for(&%s)\n;', o.index.name)
 
         else:
@@ -2120,8 +2068,8 @@ class Impl(_Shared):
 
                 else_str = '' if if_num == 0 else 'else '
                 self.write_ind('%sif (str_equals_c(%s, %s, %d)) ' %
-                                   (else_str, switch_var.name,
-                                    PythonStringLiteral(case_str), str_len))
+                               (else_str, switch_var.name,
+                                PythonStringLiteral(case_str), str_len))
                 self.accept(block)
 
                 self.indent -= 1
@@ -2255,10 +2203,7 @@ class Impl(_Shared):
                          base_class_name: util.SymbolPath) -> None:
         self.write('\n')
         self.write('%s::%s(', o.name, o.name)
-        self._WriteFuncParams(stmt,
-                              stmt.type.arg_types,
-                              stmt.arguments,
-                              write_defaults=False)
+        self._WriteFuncParams(stmt, write_defaults=False)
         self.write(')')
 
         first_index = 0
@@ -2282,7 +2227,7 @@ class Impl(_Shared):
                 base_constructor_args = expr.args
                 #log('ARGS %s', base_constructor_args)
                 self.write(' : %s(',
-                               join_name(base_class_name, strip_package=True))
+                           join_name(base_class_name, strip_package=True))
                 for i, arg in enumerate(base_constructor_args):
                     if i == 0:
                         continue  # Skip 'this'
@@ -2420,8 +2365,8 @@ class Impl(_Shared):
 
                 if alias:
                     # using runtime_asdl::emit_e = EMIT;
-                    self.write_ind('using %s = %s::%s;\n', alias,
-                                       last_dotted, name)
+                    self.write_ind('using %s = %s::%s;\n', alias, last_dotted,
+                                   name)
                 else:
                     #    from _devbuild.gen.id_kind_asdl import Id
                     # -> using id_kind_asdl::Id.
@@ -2456,12 +2401,10 @@ class Impl(_Shared):
                 c_type = GetCType(lval_type)
                 if not is_param and lval_name not in done:
                     if util.SMALL_STR and c_type == 'Str':
-                        self.write_ind('%s %s(nullptr);\n', c_type,
-                                           lval_name)
+                        self.write_ind('%s %s(nullptr);\n', c_type, lval_name)
                     else:
                         rhs = ' = nullptr' if CTypeIsManaged(c_type) else ''
-                        self.write_ind('%s %s%s;\n', c_type, lval_name,
-                                           rhs)
+                        self.write_ind('%s %s%s;\n', c_type, lval_name, rhs)
 
                         # TODO: we're not skipping the assignment, because of
                         # the RHS
@@ -2728,10 +2671,7 @@ class Decl(_Shared):
                                base_class_name: util.SymbolPath) -> None:
         self.indent += 1
         self.write_ind('%s(', o.name)
-        self._WriteFuncParams(stmt,
-                              stmt.type.arg_types,
-                              stmt.arguments,
-                              write_defaults=True)
+        self._WriteFuncParams(stmt, write_defaults=True)
         self.write(');\n')
         self.indent -= 1
 
