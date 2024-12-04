@@ -217,9 +217,7 @@ test-invalid-examples() {
 
     case $ex in 
       */invalid_condition.py)
-        #expected_status=8
-        # 2024-12: altered for new Decl pass
-        expected_status=5
+        expected_status=8
         ;;
       */invalid_other.py)
         expected_status=6

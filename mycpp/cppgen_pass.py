@@ -443,19 +443,14 @@ class _Shared(visitor.SimpleVisitor):
 
         self.all_member_vars = all_member_vars  # for class def, and rooting
 
-        # Traversal state
-        self.unique_id = 0
+        # TODO: remove
+        self.decl = False
+
         # For writing vars after {
         self.prepend_to_block: Optional[List[LocalVar]] = None
-
-        # Remove this stuff
-
         # TODO: move this state into SimpleVisitor.  (It also keeps track of
         # the current class and method.)
         self.current_func_node: Optional[FuncDef] = None
-
-        # TODO: remove
-        self.decl = False
 
     # Primitives shared for default values
 
@@ -694,35 +689,25 @@ class Impl(_Shared):
         self.yield_assign_node: Optional[AssignmentStmt] = None
         self.yield_for_node: Optional[ForStmt] = None
 
-    def def_write(self, msg: str, *args: Any) -> None:
-        """Write only in definitions."""
-        if self.decl:
-            return
-
-        if args:
-            msg = msg % args
-        self.f.write(msg)
-
-    def def_write_ind(self, msg: str, *args: Any) -> None:
-        ind_str = self.indent * '  '
-        self.def_write(ind_str + msg, *args)
+        # Traversal state
+        self.unique_id = 0
 
     #
-    # Yield stuff to separate
+    # Visit methods
     #
 
     def visit_yield_expr(self, o: 'mypy.nodes.YieldExpr') -> None:
         assert self.current_func_node in self.yield_out_params
-        self.def_write('%s->append(',
+        self.write('%s->append(',
                        self.yield_out_params[self.current_func_node][0])
         self.accept(o.expr)
-        self.def_write(')')
+        self.write(')')
 
     def _WriteArgList(self, args: List[Expression]) -> None:
-        self.def_write('(')
+        self.write('(')
         for i, arg in enumerate(args):
             if i != 0:
-                self.def_write(', ')
+                self.write(', ')
             self.accept(arg)
 
         # Pass an extra arg like my_generator(42, &accum)
@@ -739,16 +724,12 @@ class Impl(_Shared):
 
         if eager_pair:
             if len(args) > 0:
-                self.def_write(', ')
+                self.write(', ')
 
             eager_list_name, _ = eager_pair
-            self.def_write('&%s', eager_list_name)
+            self.write('&%s', eager_list_name)
 
-        self.def_write(')')
-
-    #
-    # Visiting
-    #
+        self.write(')')
 
     def oils_visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
         dot_expr = self.dot_exprs[o]
@@ -767,13 +748,13 @@ class Impl(_Shared):
             raise AssertionError()
 
         self.accept(o.expr)
-        self.def_write(op)
+        self.write(op)
 
         if o.name == 'errno':
             # e->errno -> e->errno_ to avoid conflict with C macro
-            self.def_write('errno_')
+            self.write('errno_')
         else:
-            self.def_write('%s', o.name)
+            self.write('%s', o.name)
 
     def _IsInstantiation(self, o: 'mypy.nodes.CallExpr') -> bool:
         callee_name = o.callee.name
@@ -813,35 +794,35 @@ class Impl(_Shared):
         if arity > 0:
             macro = 'DTRACE_PROBE%d' % arity
 
-        self.def_write('%s(%s, %s', macro, o.args[0].value, o.args[1].value)
+        self.write('%s(%s, %s', macro, o.args[0].value, o.args[1].value)
 
         for arg in o.args[2:]:
             arg_type = self.types[arg]
-            self.def_write(', ')
+            self.write(', ')
             if (isinstance(arg_type, Instance) and
                     arg_type.type.fullname == 'builtins.str'):
-                self.def_write('%s->data()' % arg.name)
+                self.write('%s->data()' % arg.name)
             else:
                 self.accept(arg)
 
-        self.def_write(')')
+        self.write(')')
 
     def _LogExpr(self, o: 'mypy.nodes.CallExpr') -> None:
         args = o.args
         if len(args) == 1:  # log(CONST)
-            self.def_write('mylib::print_stderr(')
+            self.write('mylib::print_stderr(')
             self.accept(args[0])
-            self.def_write(')')
+            self.write(')')
             return
 
         quoted_fmt = PythonStringLiteral(args[0].value)
 
-        self.def_write('mylib::print_stderr(StrFormat(%s, ' % quoted_fmt)
+        self.write('mylib::print_stderr(StrFormat(%s, ' % quoted_fmt)
         for i, arg in enumerate(args[1:]):
             if i != 0:
-                self.def_write(', ')
+                self.write(', ')
             self.accept(arg)
-        self.def_write('))')
+        self.write('))')
 
     def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> None:
         if o.callee.name == 'probe':
@@ -862,9 +843,9 @@ class Impl(_Shared):
 
             subtype_name = _GetCTypeForCast(type_expr)
             cast_kind = _GetCastKind(self.module_path, subtype_name)
-            self.def_write('%s<%s>(', cast_kind, subtype_name)
+            self.write('%s<%s>(', cast_kind, subtype_name)
             self.accept(call.args[1])  # variable being casted
-            self.def_write(')')
+            self.write(')')
             return
 
         # Translate printf-style varargs:
@@ -880,24 +861,24 @@ class Impl(_Shared):
 
         if isinstance(o.callee, MemberExpr) and callee_name == 'next':
             self.accept(o.callee.expr)
-            self.def_write('.iterNext')
+            self.write('.iterNext')
             self._WriteArgList(o.args)
             return
 
         if self._IsInstantiation(o):
-            self.def_write('Alloc<')
+            self.write('Alloc<')
             self.accept(o.callee)
-            self.def_write('>')
+            self.write('>')
             self._WriteArgList(o.args)
             return
 
         # Namespace.
         if callee_name == 'int':  # int('foo') in Python conflicts with keyword
-            self.def_write('to_int')
+            self.write('to_int')
         elif callee_name == 'float':
-            self.def_write('to_float')
+            self.write('to_float')
         elif callee_name == 'bool':
-            self.def_write('to_bool')
+            self.write('to_bool')
         else:
             self.accept(o.callee)  # could be f() or obj.method()
 
@@ -925,37 +906,37 @@ class Impl(_Shared):
 
         # 'abc' + 'def'
         if left_ctype == right_ctype == 'BigStr*' and c_op == '+':
-            self.def_write('str_concat(')
+            self.write('str_concat(')
             self.accept(o.left)
-            self.def_write(', ')
+            self.write(', ')
             self.accept(o.right)
-            self.def_write(')')
+            self.write(')')
             return
 
         # 'abc' * 3
         if left_ctype == 'BigStr*' and right_ctype == 'int' and c_op == '*':
-            self.def_write('str_repeat(')
+            self.write('str_repeat(')
             self.accept(o.left)
-            self.def_write(', ')
+            self.write(', ')
             self.accept(o.right)
-            self.def_write(')')
+            self.write(')')
             return
 
         # [None] * 3  =>  list_repeat(None, 3)
         if (left_ctype.startswith('List<') and right_ctype == 'int' and
                 c_op == '*'):
-            self.def_write('list_repeat(')
+            self.write('list_repeat(')
             self.accept(o.left.items[0])
-            self.def_write(', ')
+            self.write(', ')
             self.accept(o.right)
-            self.def_write(')')
+            self.write(')')
             return
 
         # RHS can be primitive or tuple
         if left_ctype == 'BigStr*' and c_op == '%':
-            self.def_write('StrFormat(')
+            self.write('StrFormat(')
             if isinstance(o.left, StrExpr):
-                self.def_write(PythonStringLiteral(o.left.value))
+                self.write(PythonStringLiteral(o.left.value))
             else:
                 self.accept(o.left)
             #log('right_type %s', right_type)
@@ -975,13 +956,13 @@ class Impl(_Shared):
             # In the definition pass, write the call site.
             if isinstance(right_type, TupleType):
                 for i, item in enumerate(o.right.items):
-                    self.def_write(', ')
+                    self.write(', ')
                     self.accept(item)
             else:  # '[%s]' % x
-                self.def_write(', ')
+                self.write(', ')
                 self.accept(o.right)
 
-            self.def_write(')')
+            self.write(')')
             return
 
         # These parens are sometimes extra, but sometimes required.  Example:
@@ -989,11 +970,11 @@ class Impl(_Shared):
         # if ((a and (false or true))) {  # right
         # vs.
         # if (a and false or true)) {  # wrong
-        self.def_write('(')
+        self.write('(')
         self.accept(o.left)
-        self.def_write(' %s ', c_op)
+        self.write(' %s ', c_op)
         self.accept(o.right)
-        self.def_write(')')
+        self.write(')')
 
     def visit_comparison_expr(self, o: 'mypy.nodes.ComparisonExpr') -> None:
         # Make sure it's binary
@@ -1007,13 +988,13 @@ class Impl(_Shared):
         # Assume is and is not are for None / nullptr comparison.
         if operator == 'is':  # foo is None => foo == nullptr
             self.accept(o.operands[0])
-            self.def_write(' == ')
+            self.write(' == ')
             self.accept(o.operands[1])
             return
 
         if operator == 'is not':  # foo is not None => foo != nullptr
             self.accept(o.operands[0])
-            self.def_write(' != ')
+            self.write(' != ')
             self.accept(o.operands[1])
             return
 
@@ -1042,21 +1023,21 @@ class Impl(_Shared):
 
         if left_type_i > 0 and right_type_i > 0 and operator in ('==', '!='):
             if operator == '!=':
-                self.def_write('!(')
+                self.write('!(')
 
             # NOTE: This could also be str_equals(left, right)?  Does it make a
             # difference?
             if left_type_i > 1 or right_type_i > 1:
-                self.def_write('maybe_str_equals(')
+                self.write('maybe_str_equals(')
             else:
-                self.def_write('str_equals(')
+                self.write('str_equals(')
             self.accept(left)
-            self.def_write(', ')
+            self.write(', ')
             self.accept(right)
-            self.def_write(')')
+            self.write(')')
 
             if operator == '!=':
-                self.def_write(')')
+                self.write(')')
             return
 
         # Note: we could get rid of this altogether and rely on C++ function
@@ -1071,33 +1052,33 @@ class Impl(_Shared):
                 equals_func = _EqualsFunc(left_type)
 
                 # x in (1, 2, 3) => (x == 1 || x == 2 || x == 3)
-                self.def_write('(')
+                self.write('(')
 
                 for i, item in enumerate(right.items):
                     if i != 0:
-                        self.def_write(' || ')
+                        self.write(' || ')
 
                     if equals_func:
-                        self.def_write('%s(' % equals_func)
+                        self.write('%s(' % equals_func)
                         self.accept(left)
-                        self.def_write(', ')
+                        self.write(', ')
                         self.accept(item)
-                        self.def_write(')')
+                        self.write(')')
                     else:
                         self.accept(left)
-                        self.def_write(' == ')
+                        self.write(' == ')
                         self.accept(item)
 
-                self.def_write(')')
+                self.write(')')
                 return
 
             assert contains_func, "RHS of 'in' has type %r" % t1
             # x in mylist => list_contains(mylist, x)
-            self.def_write('%s(', contains_func)
+            self.write('%s(', contains_func)
             self.accept(right)
-            self.def_write(', ')
+            self.write(', ')
             self.accept(left)
-            self.def_write(')')
+            self.write(')')
             return
 
         if operator == 'not in':
@@ -1106,51 +1087,51 @@ class Impl(_Shared):
                 equals_func = _EqualsFunc(left_type)
 
                 # x not in (1, 2, 3) => (x != 1 && x != 2 && x != 3)
-                self.def_write('(')
+                self.write('(')
 
                 for i, item in enumerate(right.items):
                     if i != 0:
-                        self.def_write(' && ')
+                        self.write(' && ')
 
                     if equals_func:
-                        self.def_write('!%s(' % equals_func)
+                        self.write('!%s(' % equals_func)
                         self.accept(left)
-                        self.def_write(', ')
+                        self.write(', ')
                         self.accept(item)
-                        self.def_write(')')
+                        self.write(')')
                     else:
                         self.accept(left)
-                        self.def_write(' != ')
+                        self.write(' != ')
                         self.accept(item)
 
-                self.def_write(')')
+                self.write(')')
                 return
 
             assert contains_func, t1
 
             # x not in mylist => !list_contains(mylist, x)
-            self.def_write('!%s(', contains_func)
+            self.write('!%s(', contains_func)
             self.accept(right)
-            self.def_write(', ')
+            self.write(', ')
             self.accept(left)
-            self.def_write(')')
+            self.write(')')
             return
 
         # Default case
         self.accept(o.operands[0])
-        self.def_write(' %s ', o.operators[0])
+        self.write(' %s ', o.operators[0])
         self.accept(o.operands[1])
 
     def _WriteListElements(self,
                            items: List[Expression],
                            sep: str = ', ') -> None:
         # sep may be 'COMMA' for a macro
-        self.def_write('{')
+        self.write('{')
         for i, item in enumerate(items):
             if i != 0:
-                self.def_write(sep)
+                self.write(sep)
             self.accept(item)
-        self.def_write('}')
+        self.write('}')
 
     def visit_list_expr(self, o: 'mypy.nodes.ListExpr') -> None:
         list_type = self.types[o]
@@ -1164,12 +1145,12 @@ class Impl(_Shared):
         c_type = c_type[:-1]  # HACK TO CLEAN UP
 
         if len(o.items) == 0:
-            self.def_write('Alloc<%s>()' % c_type)
+            self.write('Alloc<%s>()' % c_type)
         else:
-            self.def_write('NewList<%s>(std::initializer_list<%s>' %
+            self.write('NewList<%s>(std::initializer_list<%s>' %
                            (item_c_type, item_c_type))
             self._WriteListElements(o.items)
-            self.def_write(')')
+            self.write(')')
 
     def visit_dict_expr(self, o: 'mypy.nodes.DictExpr') -> None:
         dict_type = self.types[o]
@@ -1181,20 +1162,20 @@ class Impl(_Shared):
         key_c_type = GetCType(key_type)
         val_c_type = GetCType(val_type)
 
-        self.def_write('Alloc<%s>(' % c_type)
-        #self.def_write('NewDict<%s, %s>(' % (key_c_type, val_c_type))
+        self.write('Alloc<%s>(' % c_type)
+        #self.write('NewDict<%s, %s>(' % (key_c_type, val_c_type))
         if o.items:
             keys = [k for k, _ in o.items]
             values = [v for _, v in o.items]
 
-            self.def_write('std::initializer_list<%s>' % key_c_type)
+            self.write('std::initializer_list<%s>' % key_c_type)
             self._WriteListElements(keys)
-            self.def_write(', ')
+            self.write(', ')
 
-            self.def_write('std::initializer_list<%s>' % val_c_type)
+            self.write('std::initializer_list<%s>' % val_c_type)
             self._WriteListElements(values)
 
-        self.def_write(')')
+        self.write(')')
 
     def visit_tuple_expr(self, o: 'mypy.nodes.TupleExpr') -> None:
         tuple_type = self.types[o]
@@ -1202,12 +1183,12 @@ class Impl(_Shared):
         assert c_type.endswith('*'), c_type
         c_type = c_type[:-1]  # HACK TO CLEAN UP
 
-        self.def_write('(Alloc<%s>(' % c_type)
+        self.write('(Alloc<%s>(' % c_type)
         for i, item in enumerate(o.items):
             if i != 0:
-                self.def_write(', ')
+                self.write(', ')
             self.accept(item)
-        self.def_write('))')
+        self.write('))')
 
     def visit_index_expr(self, o: 'mypy.nodes.IndexExpr') -> None:
         self.accept(o.base)
@@ -1220,22 +1201,22 @@ class Impl(_Shared):
         else:
             # it's hard syntactically to do (*a)[0], so do it this way.
             if util.SMALL_STR:
-                self.def_write('.at(')
+                self.write('.at(')
             else:
-                self.def_write('->at(')
+                self.write('->at(')
 
             self.accept(o.index)
-            self.def_write(')')
+            self.write(')')
 
     def visit_slice_expr(self, o: 'mypy.nodes.SliceExpr') -> None:
-        self.def_write('->slice(')
+        self.write('->slice(')
         if o.begin_index:
             self.accept(o.begin_index)
         else:
-            self.def_write('0')  # implicit beginning
+            self.write('0')  # implicit beginning
 
         if o.end_index:
-            self.def_write(', ')
+            self.write(', ')
             self.accept(o.end_index)
 
         if o.stride:
@@ -1243,10 +1224,10 @@ class Impl(_Shared):
                 raise AssertionError(
                     'Stride only supported with beginning and ending index')
 
-            self.def_write(', ')
+            self.write(', ')
             self.accept(o.stride)
 
-        self.def_write(')')
+        self.write(')')
 
     def visit_conditional_expr(self, o: 'mypy.nodes.ConditionalExpr') -> None:
         if not _CheckCondition(o.cond, self.types):
@@ -1258,9 +1239,9 @@ class Impl(_Shared):
 
         # 0 if b else 1 -> b ? 0 : 1
         self.accept(o.cond)
-        self.def_write(' ? ')
+        self.write(' ? ')
         self.accept(o.if_expr)
-        self.def_write(' : ')
+        self.write(' : ')
         self.accept(o.else_expr)
 
     def _write_tuple_unpacking(self,
@@ -1280,15 +1261,15 @@ class Impl(_Shared):
             if isinstance(lval_item, NameExpr):
                 if util.SkipAssignment(lval_item.name):
                     continue
-                self.def_write_ind('%s', lval_item.name)
+                self.write_ind('%s', lval_item.name)
             else:
                 # Could be MemberExpr like self.foo, self.bar = baz
-                self.def_write_ind('')
+                self.write_ind('')
                 self.accept(lval_item)
 
             # Tuples that are return values aren't pointers
             op = '.' if is_return else '->'
-            self.def_write(' = %s%sat%d();\n', temp_name, op, i)  # RHS
+            self.write(' = %s%sat%d();\n', temp_name, op, i)  # RHS
 
     def _write_tuple_unpacking_loop(self, temp_name: str,
                                     lval_items: List[Expression],
@@ -1301,20 +1282,20 @@ class Impl(_Shared):
                 if util.SkipAssignment(lval_item.name):
                     continue
 
-                self.def_write_ind('%s %s', c_item_type, lval_item.name)
+                self.write_ind('%s %s', c_item_type, lval_item.name)
             else:
                 # Could be MemberExpr like self.foo, self.bar = baz
-                self.def_write_ind('')
+                self.write_ind('')
                 self.accept(lval_item)
 
             op = '->'
-            self.def_write(' = %s%sat%d();\n', temp_name, op, i)  # RHS
+            self.write(' = %s%sat%d();\n', temp_name, op, i)  # RHS
 
             # Note: it would be nice to eliminate these roots, just like
             # StackRoots _for() below
             if isinstance(lval_item, NameExpr):
                 if CTypeIsManaged(c_item_type) and not self.stack_roots:
-                    self.def_write_ind('StackRoot _unpack_%d(&%s);\n' %
+                    self.write_ind('StackRoot _unpack_%d(&%s);\n' %
                                        (i, lval_item.name))
 
     def _ListComprehensionImpl(self, lval: NameExpr, left_expr: Expression,
@@ -1342,7 +1323,7 @@ class Impl(_Shared):
         c_type = GetCType(self.types[lval])
         # Write empty container as initialization.
         assert c_type.endswith('*'), c_type  # Hack
-        self.def_write('Alloc<%s>();\n' % c_type[:-1])
+        self.write('Alloc<%s>();\n' % c_type[:-1])
 
         over_type = self.types[seq]
 
@@ -1355,17 +1336,17 @@ class Impl(_Shared):
             # List comprehension over dictionary not implemented
             c_iter_type = 'TODO_DICT'
 
-        self.def_write_ind('for (%s it(', c_iter_type)
+        self.write_ind('for (%s it(', c_iter_type)
         self.accept(seq)
-        self.def_write('); !it.Done(); it.Next()) {\n')
+        self.write('); !it.Done(); it.Next()) {\n')
 
         item_type = over_type.args[0]  # get 'int' from 'List<int>'
 
         if isinstance(item_type, Instance):
-            self.def_write_ind('  %s ', GetCType(item_type))
+            self.write_ind('  %s ', GetCType(item_type))
             # TODO(StackRoots): for ch in 'abc'
             self.accept(index_expr)
-            self.def_write(' = it.Value();\n')
+            self.write(' = it.Value();\n')
 
         elif isinstance(item_type, TupleType):  # [x for x, y in pairs]
             c_item_type = GetCType(item_type)
@@ -1373,7 +1354,7 @@ class Impl(_Shared):
             if isinstance(index_expr, TupleExpr):
                 temp_name = 'tup%d' % self.unique_id
                 self.unique_id += 1
-                self.def_write_ind('  %s %s = it.Value();\n', c_item_type,
+                self.write_ind('  %s %s = it.Value();\n', c_item_type,
                                    temp_name)
 
                 self.indent += 1
@@ -1391,19 +1372,19 @@ class Impl(_Shared):
 
         if cond is not None:
             self.indent += 1
-            self.def_write_ind('if (')
+            self.write_ind('if (')
             self.accept(cond)
-            self.def_write(') {\n')
+            self.write(') {\n')
 
-        self.def_write_ind('  %s->append(', lval.name)
+        self.write_ind('  %s->append(', lval.name)
         self.accept(left_expr)
-        self.def_write(');\n')
+        self.write(');\n')
 
         if cond:
-            self.def_write_ind('}\n')
+            self.write_ind('}\n')
             self.indent -= 1
 
-        self.def_write_ind('}\n')
+        self.write_ind('}\n')
 
     def _AssignNewDictImpl(self, lval: Expression, prefix: str = '') -> None:
         """Translate NewDict() -> Alloc<Dict<K, V>>
@@ -1435,7 +1416,7 @@ class Impl(_Shared):
 
         c_type = GetCType(lval_type)
         assert c_type.endswith('*')
-        self.def_write('Alloc<%s>()', c_type[:-1])
+        self.write('Alloc<%s>()', c_type[:-1])
 
     def _AssignCastImpl(self, o: 'mypy.nodes.AssignmentStmt',
                         lval: Expression) -> None:
@@ -1460,15 +1441,15 @@ class Impl(_Shared):
 
         if is_downcast_and_shadow:
             # Declare NEW local variable inside case, which shadows it
-            self.def_write_ind('%s %s = %s<%s>(', subtype_name, lval.name,
+            self.write_ind('%s %s = %s<%s>(', subtype_name, lval.name,
                                cast_kind, subtype_name)
         else:
             # Normal variable
-            self.def_write_ind('%s = %s<%s>(', lval.name, cast_kind,
+            self.write_ind('%s = %s<%s>(', lval.name, cast_kind,
                                subtype_name)
 
         self.accept(call.args[1])  # variable being casted
-        self.def_write(');\n')
+        self.write(');\n')
 
     def _AssignToGenerator(self, o: 'mypy.nodes.AssignmentStmt',
                            lval: Expression, rval_type: Type) -> None:
@@ -1493,29 +1474,29 @@ class Impl(_Shared):
         eager_list_type = 'List<%s>*' % inner_c_type
 
         # write the variable to accumulate into
-        self.def_write_ind('List<%s> %s;\n', inner_c_type, eager_list_name)
+        self.write_ind('List<%s> %s;\n', inner_c_type, eager_list_name)
 
         # AssignmentStmt key, like:
         #     it_f = f()
         # maybe call them self.generator_func, generator_assign
         # In MyPy, the type is Iterator though
         self.yield_eager_assign[o] = (eager_list_name, eager_list_type)
-        self.def_write_ind('')
+        self.write_ind('')
 
         self.yield_assign_node = o  # AssignmentStmt
         self.accept(o.rvalue)
         self.yield_assign_node = None
 
-        self.def_write(';\n')
+        self.write(';\n')
 
-        self.def_write_ind('%s %s(&%s);\n', c_type, lval.name, eager_list_name)
+        self.write_ind('%s %s(&%s);\n', c_type, lval.name, eager_list_name)
 
     def oils_visit_assign_to_listcomp(self, lval: NameExpr,
                                       left_expr: Expression,
                                       index_expr: Expression, seq: Expression,
                                       cond: Expression) -> None:
         # Copied from oils_visit_assignment_stmt
-        self.def_write_ind('%s = ', lval.name)
+        self.write_ind('%s = ', lval.name)
         self._ListComprehensionImpl(lval, left_expr, index_expr, seq, cond)
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
@@ -1538,12 +1519,12 @@ class Impl(_Shared):
 
                 # Any constant strings will have already been written
                 # TODO: Assert that every item is a constant?
-                self.def_write('GLOBAL_LIST(%s, %s, %d, ', lval.name,
+                self.write('GLOBAL_LIST(%s, %s, %d, ', lval.name,
                                item_c_type, len(rval.items))
 
                 self._WriteListElements(rval.items, sep=' COMMA ')
 
-                self.def_write(');\n')
+                self.write(');\n')
                 return
 
             # Global
@@ -1555,17 +1536,17 @@ class Impl(_Shared):
                 val_c_type = GetCType(val_type)
 
                 dict_expr = rval
-                self.def_write('GLOBAL_DICT(%s, %s, %s, %d, ', lval.name,
+                self.write('GLOBAL_DICT(%s, %s, %s, %d, ', lval.name,
                                key_c_type, val_c_type, len(dict_expr.items))
 
                 keys = [k for k, _ in dict_expr.items]
                 values = [v for _, v in dict_expr.items]
 
                 self._WriteListElements(keys, sep=' COMMA ')
-                self.def_write(', ')
+                self.write(', ')
                 self._WriteListElements(values, sep=' COMMA ')
 
-                self.def_write(');\n')
+                self.write(');\n')
                 return
 
             # We could do GcGlobal<> for ASDL classes, but Oils doesn't use them
@@ -1586,18 +1567,18 @@ class Impl(_Shared):
             callee = rval.callee
 
             if callee.name == 'NewDict':
-                self.def_write_ind('')
+                self.write_ind('')
 
                 # Hack for non-members - why does this work?
                 # Tests cases in mycpp/examples/containers.py
                 if (not isinstance(lval, MemberExpr) and
                         self.current_func_node is None):
-                    self.def_write('auto* ')
+                    self.write('auto* ')
 
                 self.accept(lval)
-                self.def_write(' = ')
+                self.write(' = ')
                 self._AssignNewDictImpl(lval)  # uses lval, not rval
-                self.def_write(';\n')
+                self.write(';\n')
                 return
 
             if callee.name == 'cast':
@@ -1617,32 +1598,32 @@ class Impl(_Shared):
 
             if self.at_global_scope:
                 # globals always get a type -- they're not mutated
-                self.def_write_ind('%s %s = ', c_type, lval.name)
+                self.write_ind('%s %s = ', c_type, lval.name)
             else:
                 # local declarations are "hoisted" to the top of the function
-                self.def_write_ind('%s = ', lval.name)
+                self.write_ind('%s = ', lval.name)
 
             self.accept(rval)
-            self.def_write(';\n')
+            self.write(';\n')
             return
 
         if isinstance(lval, MemberExpr):  # self.x = foo
-            self.def_write_ind('')
+            self.write_ind('')
             self.accept(lval)
-            self.def_write(' = ')
+            self.write(' = ')
             self.accept(rval)
-            self.def_write(';\n')
+            self.write(';\n')
             return
 
         if isinstance(lval, IndexExpr):  # a[x] = 1
             # d->set(x, 1) for both List and Dict
-            self.def_write_ind('')
+            self.write_ind('')
             self.accept(lval.base)
-            self.def_write('->set(')
+            self.write('->set(')
             self.accept(lval.index)
-            self.def_write(', ')
+            self.write(', ')
             self.accept(rval)
-            self.def_write(');\n')
+            self.write(');\n')
             return
 
         if isinstance(lval, TupleExpr):
@@ -1670,10 +1651,10 @@ class Impl(_Shared):
 
             temp_name = 'tup%d' % self.unique_id
             self.unique_id += 1
-            self.def_write_ind('%s %s = ', c_type, temp_name)
+            self.write_ind('%s %s = ', c_type, temp_name)
 
             self.accept(rval)
-            self.def_write(';\n')
+            self.write(';\n')
 
             # assignment
             self._write_tuple_unpacking(temp_name,
@@ -1704,17 +1685,17 @@ class Impl(_Shared):
             num_args = len(args)
 
             if num_args == 1:  # xrange(end)
-                self.def_write_ind('for (int %s = 0; %s < ', index_name,
+                self.write_ind('for (int %s = 0; %s < ', index_name,
                                    index_name)
                 self.accept(args[0])
-                self.def_write('; ++%s) ', index_name)
+                self.write('; ++%s) ', index_name)
 
             elif num_args == 2:  # xrange(being, end)
-                self.def_write_ind('for (int %s = ', index_name)
+                self.write_ind('for (int %s = ', index_name)
                 self.accept(args[0])
-                self.def_write('; %s < ', index_name)
+                self.write('; %s < ', index_name)
                 self.accept(args[1])
-                self.def_write('; ++%s) ', index_name)
+                self.write('; ++%s) ', index_name)
 
             elif num_args == 3:  # xrange(being, end, step)
                 # Special case to detect a step of -1.  This is a static
@@ -1726,13 +1707,13 @@ class Impl(_Shared):
                 else:
                     comparison_op = '<'
 
-                self.def_write_ind('for (int %s = ', index_name)
+                self.write_ind('for (int %s = ', index_name)
                 self.accept(args[0])
-                self.def_write('; %s %s ', index_name, comparison_op)
+                self.write('; %s %s ', index_name, comparison_op)
                 self.accept(args[1])
-                self.def_write('; %s += ', index_name)
+                self.write('; %s += ', index_name)
                 self.accept(step)
-                self.def_write(') ')
+                self.write(') ')
 
             else:
                 raise AssertionError()
@@ -1860,8 +1841,8 @@ class Impl(_Shared):
             eager_list_type = 'List<%s>*' % inner_c_type
             self.unique_id += 1
 
-            self.def_write_ind('List<%s> %s;\n', inner_c_type, eager_list_name)
-            self.def_write_ind('')
+            self.write_ind('List<%s> %s;\n', inner_c_type, eager_list_name)
+            self.write_ind('')
 
             # ForStmt - could be self.generator_for_stmt
             #
@@ -1879,36 +1860,36 @@ class Impl(_Shared):
             self.accept(iterated_over)
             self.yield_for_node = None
 
-            self.def_write(';\n')
+            self.write(';\n')
 
         else:  # assume it's like d.iteritems()?  Iterator type
             assert False, over_type
 
         if index0_name:
             # can't initialize two things in a for loop, so do it on a separate line
-            self.def_write_ind('%s = 0;\n', index0_name)
+            self.write_ind('%s = 0;\n', index0_name)
             index_update = ', ++%s' % index0_name
         else:
             index_update = ''
 
-        self.def_write_ind('for (%s it(', c_iter_type)
+        self.write_ind('for (%s it(', c_iter_type)
         if eager_list_name:
-            self.def_write('&%s', eager_list_name)
+            self.write('&%s', eager_list_name)
         else:
             self.accept(iterated_over)  # the thing being iterated over
-        self.def_write('); !it.Done(); it.Next()%s) {\n', index_update)
+        self.write('); !it.Done(); it.Next()%s) {\n', index_update)
 
         # for x in it: ...
         # for i, x in enumerate(pairs): ...
 
         if isinstance(item_type, Instance) or index0_name:
             c_item_type = GetCType(item_type)
-            self.def_write_ind('  %s ', c_item_type)
+            self.write_ind('  %s ', c_item_type)
             self.accept(index_expr)
             if over_dict:
-                self.def_write(' = it.Key();\n')
+                self.write(' = it.Key();\n')
             else:
-                self.def_write(' = it.Value();\n')
+                self.write(' = it.Value();\n')
 
             # Register loop variable as a stack root.
             # Note we have mylib.Collect() in CommandEvaluator::_Execute(), and
@@ -1916,9 +1897,9 @@ class Impl(_Shared):
             # variable is already live by other means.
             # TODO: Test how much this affects performance.
             if CTypeIsManaged(c_item_type) and not self.stack_roots:
-                self.def_write_ind('  StackRoot _for(&')
+                self.write_ind('  StackRoot _for(&')
                 self.accept(index_expr)
-                self.def_write_ind(');\n')
+                self.write_ind(');\n')
 
         elif isinstance(item_type, TupleType):  # for x, y in pairs
             if over_dict:
@@ -1934,9 +1915,9 @@ class Impl(_Shared):
                 #log('** %s val_type %s', item_type.items[1], val_type)
 
                 # TODO(StackRoots): k, v
-                self.def_write_ind('  %s %s = it.Key();\n', key_type,
+                self.write_ind('  %s %s = it.Key();\n', key_type,
                                    index_items[0].name)
-                self.def_write_ind('  %s %s = it.Value();\n', val_type,
+                self.write_ind('  %s %s = it.Value();\n', val_type,
                                    index_items[1].name)
 
             else:
@@ -1954,7 +1935,7 @@ class Impl(_Shared):
                     # TODO(StackRoots)
                     temp_name = 'tup%d' % self.unique_id
                     self.unique_id += 1
-                    self.def_write_ind('  %s %s = it.Value();\n', c_item_type,
+                    self.write_ind('  %s %s = it.Value();\n', c_item_type,
                                        temp_name)
 
                     self.indent += 1
@@ -1965,9 +1946,9 @@ class Impl(_Shared):
 
                     self.indent -= 1
                 else:
-                    self.def_write_ind('  %s %s = it.Value();\n', c_item_type,
+                    self.write_ind('  %s %s = it.Value();\n', c_item_type,
                                        o.index.name)
-                    #self.def_write_ind('  StackRoots _for(&%s)\n;', o.index.name)
+                    #self.write_ind('  StackRoots _for(&%s)\n;', o.index.name)
 
         else:
             raise AssertionError('Unexpected type %s' % item_type)
@@ -1977,7 +1958,7 @@ class Impl(_Shared):
         block = o.body
         self._write_body(block.body)
         self.indent -= 1
-        self.def_write_ind('}\n')
+        self.write_ind('}\n')
 
         if o.else_body:
             raise AssertionError("can't translate for-else")
@@ -1995,13 +1976,13 @@ class Impl(_Shared):
 
             for i, arg in enumerate(expr.args):
                 if i != 0:
-                    self.def_write('\n')
-                self.def_write_ind('case ')
+                    self.write('\n')
+                self.write_ind('case ')
                 self.accept(arg)
-                self.def_write(': ')
+                self.write(': ')
 
             self.accept(body)
-            self.def_write_ind('  break;\n')
+            self.write_ind('  break;\n')
 
         if default_block == -1:
             # an error occurred
@@ -2015,7 +1996,7 @@ class Impl(_Shared):
         # Narrow the type
         assert not isinstance(default_block, int), default_block
 
-        self.def_write_ind('default: ')
+        self.write_ind('default: ')
         self.accept(default_block)
         # don't write 'break'
 
@@ -2024,9 +2005,9 @@ class Impl(_Shared):
         """Write a switch statement over integers."""
         assert len(expr.args) == 1, expr.args
 
-        self.def_write_ind('switch (')
+        self.write_ind('switch (')
         self.accept(expr.args[0])
-        self.def_write(') {\n')
+        self.write(') {\n')
 
         assert len(o.body.body) == 1, o.body.body
         if_node = o.body.body[0]
@@ -2041,16 +2022,16 @@ class Impl(_Shared):
         self._write_cases(expr, cases, default_block)
 
         self.indent -= 1
-        self.def_write_ind('}\n')
+        self.write_ind('}\n')
 
     def _write_tag_switch(self, expr: Expression,
                           o: 'mypy.nodes.WithStmt') -> None:
         """Write a switch statement over ASDL types."""
         assert len(expr.args) == 1, expr.args
 
-        self.def_write_ind('switch (')
+        self.write_ind('switch (')
         self.accept(expr.args[0])
-        self.def_write('->tag()) {\n')
+        self.write('->tag()) {\n')
 
         assert len(o.body.body) == 1, o.body.body
         if_node = o.body.body[0]
@@ -2065,7 +2046,7 @@ class Impl(_Shared):
         self._write_cases(expr, cases, default_block)
 
         self.indent -= 1
-        self.def_write_ind('}\n')
+        self.write_ind('}\n')
 
     def _str_switch_cases(self, cases: util.CaseList) -> Any:
         cases2: List[Tuple[int, str, 'mypy.nodes.Block']] = []
@@ -2112,7 +2093,7 @@ class Impl(_Shared):
                 switch_var)
             return
 
-        self.def_write_ind('switch (len(%s)) {\n' % switch_var.name)
+        self.write_ind('switch (len(%s)) {\n' % switch_var.name)
 
         # There can only be one thing under 'with str_switch'
         assert len(o.body.body) == 1, o.body.body
@@ -2132,13 +2113,13 @@ class Impl(_Shared):
         #self.log('grouped %s', list(grouped_cases))
 
         for str_len, group in grouped_cases:
-            self.def_write_ind('case %s: {\n' % str_len)
+            self.write_ind('case %s: {\n' % str_len)
             if_num = 0
             for _, case_str, block in group:
                 self.indent += 1
 
                 else_str = '' if if_num == 0 else 'else '
-                self.def_write_ind('%sif (str_equals_c(%s, %s, %d)) ' %
+                self.write_ind('%sif (str_equals_c(%s, %s, %d)) ' %
                                    (else_str, switch_var.name,
                                     PythonStringLiteral(case_str), str_len))
                 self.accept(block)
@@ -2147,13 +2128,13 @@ class Impl(_Shared):
                 if_num += 1
 
             self.indent += 1
-            self.def_write_ind('else {\n')
-            self.def_write_ind('  goto str_switch_default;\n')
-            self.def_write_ind('}\n')
+            self.write_ind('else {\n')
+            self.write_ind('  goto str_switch_default;\n')
+            self.write_ind('}\n')
             self.indent -= 1
 
-            self.def_write_ind('}\n')
-            self.def_write_ind('  break;\n')
+            self.write_ind('}\n')
+            self.write_ind('  break;\n')
 
         if default_block == -1:
             # an error occurred
@@ -2166,13 +2147,13 @@ class Impl(_Shared):
         # Narrow the type
         assert not isinstance(default_block, int), default_block
 
-        self.def_write('\n')
-        self.def_write_ind('str_switch_default:\n')
-        self.def_write_ind('default: ')
+        self.write('\n')
+        self.write_ind('str_switch_default:\n')
+        self.write_ind('default: ')
         self.accept(default_block)
 
         self.indent -= 1
-        self.def_write_ind('}\n')
+        self.write_ind('}\n')
 
     def visit_with_stmt(self, o: 'mypy.nodes.WithStmt') -> None:
         """
@@ -2227,32 +2208,32 @@ class Impl(_Shared):
             self._write_tag_switch(expr, o)
         else:
             assert isinstance(expr, CallExpr), expr
-            self.def_write_ind('{  // with\n')
+            self.write_ind('{  // with\n')
             self.indent += 1
 
-            self.def_write_ind('')
+            self.write_ind('')
             self.accept(expr.callee)
 
             # FIX: Use braced initialization to avoid most-vexing parse when
             # there are 0 args!
-            self.def_write(' ctx{')
+            self.write(' ctx{')
             for i, arg in enumerate(expr.args):
                 if i != 0:
-                    self.def_write(', ')
+                    self.write(', ')
                 self.accept(arg)
-            self.def_write('};\n\n')
+            self.write('};\n\n')
 
-            #self.def_write_ind('')
+            #self.write_ind('')
             self._write_body(o.body.body)
 
             self.indent -= 1
-            self.def_write_ind('}\n')
+            self.write_ind('}\n')
 
     def visit_del_stmt(self, o: 'mypy.nodes.DelStmt') -> None:
 
         d = o.expr
         if isinstance(d, IndexExpr):
-            self.def_write_ind('')
+            self.write_ind('')
             self.accept(d.base)
 
             if isinstance(d.index, SliceExpr):
@@ -2261,24 +2242,24 @@ class Impl(_Shared):
                 sl = d.index
                 assert sl.begin_index is None, sl
                 assert sl.end_index is None, sl
-                self.def_write('->clear()')
+                self.write('->clear()')
             else:
                 # del mydict[mykey] raises KeyError, which we don't want
                 raise AssertionError(
                     'Use mylib.dict_erase(d, key) instead of del d[key]')
 
-            self.def_write(';\n')
+            self.write(';\n')
 
     def _ConstructorImpl(self, o: 'mypy.nodes.ClassDef',
                          stmt: 'mypy.nodes.FuncDef',
                          base_class_name: util.SymbolPath) -> None:
-        self.def_write('\n')
-        self.def_write('%s::%s(', o.name, o.name)
+        self.write('\n')
+        self.write('%s::%s(', o.name, o.name)
         self._WriteFuncParams(stmt,
                               stmt.type.arg_types,
                               stmt.arguments,
                               write_defaults=False)
-        self.def_write(')')
+        self.write(')')
 
         first_index = 0
 
@@ -2300,19 +2281,19 @@ class Impl(_Shared):
             if (isinstance(callee, MemberExpr) and callee.name == '__init__'):
                 base_constructor_args = expr.args
                 #log('ARGS %s', base_constructor_args)
-                self.def_write(' : %s(',
+                self.write(' : %s(',
                                join_name(base_class_name, strip_package=True))
                 for i, arg in enumerate(base_constructor_args):
                     if i == 0:
                         continue  # Skip 'this'
                     if i != 1:
-                        self.def_write(', ')
+                        self.write(', ')
                     self.accept(arg)
-                self.def_write(')')
+                self.write(')')
 
                 first_index += 1
 
-        self.def_write(' {\n')
+        self.write(' {\n')
 
         # Now visit the rest of the statements
         self.indent += 1
@@ -2326,15 +2307,15 @@ class Impl(_Shared):
                 if is_managed:
                     # VALIDATE_ROOTS doesn't complain even if it's not
                     # initialized?  Should be initialized after PushRoot().
-                    #self.def_write_ind('this->%s = nullptr;\n' % name)
-                    self.def_write_ind(
+                    #self.write_ind('this->%s = nullptr;\n' % name)
+                    self.write_ind(
                         'gHeap.PushRoot(reinterpret_cast<RawObject**>(&(this->%s)));\n'
                         % name)
 
         for node in stmt.body.body[first_index:]:
             self.accept(node)
         self.indent -= 1
-        self.def_write('}\n')
+        self.write('}\n')
 
     def _DestructorImpl(self, o: 'mypy.nodes.ClassDef',
                         stmt: 'mypy.nodes.FuncDef',
@@ -2342,7 +2323,7 @@ class Impl(_Shared):
         self.write('\n')
         self.write_ind('%s::~%s()', o.name, o.name)
 
-        self.def_write(' {\n')
+        self.write(' {\n')
         self.indent += 1
 
         # TODO:
@@ -2359,7 +2340,7 @@ class Impl(_Shared):
             for name in sorted(member_vars):
                 _, c_type, is_managed = member_vars[name]
                 if is_managed:
-                    self.def_write_ind('gHeap.PopRoot();\n')
+                    self.write_ind('gHeap.PopRoot();\n')
         else:
             self.report_error(
                 o, 'Any class with __exit__ should be named ctx_Foo (%s)' %
@@ -2367,7 +2348,7 @@ class Impl(_Shared):
             return
 
         self.indent -= 1
-        self.def_write('}\n')
+        self.write('}\n')
 
     def oils_visit_constructor(self, o: ClassDef, stmt: FuncDef,
                                base_class_name: util.SymbolPath) -> None:
@@ -2434,21 +2415,21 @@ class Impl(_Shared):
                 # Problem:
                 # - The decl stage has to return yaks_asdl::mod_def, so imports should go there
                 # - But if you change this to decl_write() instead of
-                #   def_write(), you end up 'using error::e_usage' in say
+                #   write(), you end up 'using error::e_usage' in say
                 #   'assign_osh', and it hasn't been defined yet.
 
                 if alias:
                     # using runtime_asdl::emit_e = EMIT;
-                    self.def_write_ind('using %s = %s::%s;\n', alias,
+                    self.write_ind('using %s = %s::%s;\n', alias,
                                        last_dotted, name)
                 else:
                     #    from _devbuild.gen.id_kind_asdl import Id
                     # -> using id_kind_asdl::Id.
                     using_str = 'using %s::%s;\n' % (last_dotted, name)
-                    self.def_write_ind(using_str)
+                    self.write_ind(using_str)
 
                     # Fully qualified:
-                    # self.def_write_ind('using %s::%s;\n', '::'.join(dotted_parts), name)
+                    # self.write_ind('using %s::%s;\n', '::'.join(dotted_parts), name)
 
             else:
                 # If we're importing a module without an alias, we don't need to do
@@ -2458,12 +2439,12 @@ class Impl(_Shared):
 
                 #    from asdl import format as fmt
                 # -> namespace fmt = format;
-                self.def_write_ind('namespace %s = %s;\n', alias, name)
+                self.write_ind('namespace %s = %s;\n', alias, name)
 
     # Statements
 
     def visit_block(self, block: 'mypy.nodes.Block') -> None:
-        self.def_write('{\n')  # not indented to use same line as while/if
+        self.write('{\n')  # not indented to use same line as while/if
 
         self.indent += 1
 
@@ -2475,18 +2456,18 @@ class Impl(_Shared):
                 c_type = GetCType(lval_type)
                 if not is_param and lval_name not in done:
                     if util.SMALL_STR and c_type == 'Str':
-                        self.def_write_ind('%s %s(nullptr);\n', c_type,
+                        self.write_ind('%s %s(nullptr);\n', c_type,
                                            lval_name)
                     else:
                         rhs = ' = nullptr' if CTypeIsManaged(c_type) else ''
-                        self.def_write_ind('%s %s%s;\n', c_type, lval_name,
+                        self.write_ind('%s %s%s;\n', c_type, lval_name,
                                            rhs)
 
                         # TODO: we're not skipping the assignment, because of
                         # the RHS
                         if util.IsUnusedVar(lval_name):
                             # suppress C++ unused var compiler warnings!
-                            self.def_write_ind('(void)%s;\n' % lval_name)
+                            self.write_ind('(void)%s;\n' % lval_name)
 
                     done.add(lval_name)
 
@@ -2513,35 +2494,35 @@ class Impl(_Shared):
                         % (self.current_func_node.fullname, len(roots)))
 
                 for i, r in enumerate(roots):
-                    self.def_write_ind('StackRoot _root%d(&%s);\n' % (i, r))
+                    self.write_ind('StackRoot _root%d(&%s);\n' % (i, r))
 
-                self.def_write('\n')
+                self.write('\n')
 
             self.prepend_to_block = None
 
         self._write_body(block.body)
 
         self.indent -= 1
-        self.def_write_ind('}\n')
+        self.write_ind('}\n')
 
     def oils_visit_expression_stmt(self,
                                    o: 'mypy.nodes.ExpressionStmt') -> None:
-        self.def_write_ind('')
+        self.write_ind('')
         self.accept(o.expr)
-        self.def_write(';\n')
+        self.write(';\n')
 
     def visit_operator_assignment_stmt(
             self, o: 'mypy.nodes.OperatorAssignmentStmt') -> None:
-        self.def_write_ind('')
+        self.write_ind('')
         self.accept(o.lvalue)
-        self.def_write(' %s= ', o.op)  # + to +=
+        self.write(' %s= ', o.op)  # + to +=
         self.accept(o.rvalue)
-        self.def_write(';\n')
+        self.write(';\n')
 
     def visit_while_stmt(self, o: 'mypy.nodes.WhileStmt') -> None:
-        self.def_write_ind('while (')
+        self.write_ind('while (')
         self.accept(o.expr)
-        self.def_write(') ')
+        self.write(') ')
         self.accept(o.body)
 
     def visit_return_stmt(self, o: 'mypy.nodes.ReturnStmt') -> None:
@@ -2549,7 +2530,7 @@ class Impl(_Shared):
         # return
         # return None
         # return my_int + 3;
-        self.def_write_ind('return ')
+        self.write_ind('return ')
         if o.expr:
             if not (isinstance(o.expr, NameExpr) and o.expr.name == 'None'):
 
@@ -2564,18 +2545,18 @@ class Impl(_Shared):
                 #   but NOT
                 # return tuple_func()
                 if returning_tuple and isinstance(o.expr, TupleExpr):
-                    self.def_write('%s(' % c_ret_type)
+                    self.write('%s(' % c_ret_type)
                     for i, item in enumerate(o.expr.items):
                         if i != 0:
-                            self.def_write(', ')
+                            self.write(', ')
                         self.accept(item)
-                    self.def_write(');\n')
+                    self.write(');\n')
                     return
 
             # Not returning tuple
             self.accept(o.expr)
 
-        self.def_write(';\n')
+        self.write(';\n')
 
     def visit_if_stmt(self, o: 'mypy.nodes.IfStmt') -> None:
         # Not sure why this wouldn't be true
@@ -2591,65 +2572,65 @@ class Impl(_Shared):
             return
 
         if util.ShouldVisitIfExpr(o):
-            self.def_write_ind('if (')
+            self.write_ind('if (')
             for e in o.expr:
                 self.accept(e)
-            self.def_write(') ')
+            self.write(') ')
 
         if util.ShouldVisitIfBody(o):
             cond = util.GetSpecialIfCondition(o)
             if cond == 'CPP':
-                self.def_write_ind('// if MYCPP\n')
-                self.def_write_ind('')
+                self.write_ind('// if MYCPP\n')
+                self.write_ind('')
 
             for body in o.body:
                 self.accept(body)
 
             if cond == 'CPP':
-                self.def_write_ind('// endif MYCPP\n')
+                self.write_ind('// endif MYCPP\n')
 
         if util.ShouldVisitElseBody(o):
             cond = util.GetSpecialIfCondition(o)
             if cond == 'PYTHON':
-                self.def_write_ind('// if not PYTHON\n')
-                self.def_write_ind('')
+                self.write_ind('// if not PYTHON\n')
+                self.write_ind('')
 
             if util.ShouldVisitIfBody(o):
-                self.def_write_ind('else ')
+                self.write_ind('else ')
 
             self.accept(o.else_body)
 
             if cond == 'PYTHON':
-                self.def_write_ind('// endif MYCPP\n')
+                self.write_ind('// endif MYCPP\n')
 
     def visit_break_stmt(self, o: 'mypy.nodes.BreakStmt') -> None:
-        self.def_write_ind('break;\n')
+        self.write_ind('break;\n')
 
     def visit_continue_stmt(self, o: 'mypy.nodes.ContinueStmt') -> None:
-        self.def_write_ind('continue;\n')
+        self.write_ind('continue;\n')
 
     def visit_pass_stmt(self, o: 'mypy.nodes.PassStmt') -> None:
-        self.def_write_ind(';  // pass\n')
+        self.write_ind(';  // pass\n')
 
     def visit_raise_stmt(self, o: 'mypy.nodes.RaiseStmt') -> None:
         # C++ compiler is aware of assert(0) for unreachable code
         if o.expr and isinstance(o.expr, CallExpr):
             if o.expr.callee.name == 'AssertionError':
-                self.def_write_ind('assert(0);  // AssertionError\n')
+                self.write_ind('assert(0);  // AssertionError\n')
                 return
             if o.expr.callee.name == 'NotImplementedError':
-                self.def_write_ind(
+                self.write_ind(
                     'FAIL(kNotImplemented);  // Python NotImplementedError\n')
                 return
 
-        self.def_write_ind('throw ')
+        self.write_ind('throw ')
         # it could be raise -> throw ; .  OSH uses that.
         if o.expr:
             self.accept(o.expr)
-        self.def_write(';\n')
+        self.write(';\n')
 
     def visit_try_stmt(self, o: 'mypy.nodes.TryStmt') -> None:
-        self.def_write_ind('try ')
+        self.write_ind('try ')
         self.accept(o.body)
         caught = False
 
@@ -2686,9 +2667,9 @@ class Impl(_Shared):
                 return
 
             if v:
-                self.def_write_ind('catch (%s %s) ', c_type, v.name)
+                self.write_ind('catch (%s %s) ', c_type, v.name)
             else:
-                self.def_write_ind('catch (%s) ', c_type)
+                self.write_ind('catch (%s) ', c_type)
             self.accept(handler)
 
             caught = True
@@ -2727,7 +2708,7 @@ class Decl(_Shared):
         # In declarations, 'a.b' is only used for default argument
         # values 'a::b'
         self.accept(o.expr)
-        # TODO: remove def_write() in Decl pass
+        # TODO: remove write() in Decl pass
         self.write('::')
         self.write(o.name)
 
