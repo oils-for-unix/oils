@@ -43,7 +43,6 @@
 /home/andy/git/oilshell/oil/mycpp/control_flow_pass.py mycpp/control_flow_pass.py
 /home/andy/git/oilshell/oil/mycpp/cppgen_pass.py mycpp/cppgen_pass.py
 /home/andy/git/oilshell/oil/mycpp/crash.py mycpp/crash.py
-/home/andy/git/oilshell/oil/mycpp/decl_pass.py mycpp/decl_pass.py
 /home/andy/git/oilshell/oil/mycpp/format_strings.py mycpp/format_strings.py
 /home/andy/git/oilshell/oil/mycpp/ir_pass.py mycpp/ir_pass.py
 /home/andy/git/oilshell/oil/mycpp/mycpp_main.py mycpp/mycpp_main.py
@@ -154,6 +153,7 @@
 /wedge/oils-for-unix.org/pkg/python3/3.10.4/lib/python3.10/sre_compile.py sre_compile.py
 /wedge/oils-for-unix.org/pkg/python3/3.10.4/lib/python3.10/sre_constants.py sre_constants.py
 /wedge/oils-for-unix.org/pkg/python3/3.10.4/lib/python3.10/sre_parse.py sre_parse.py
+/wedge/oils-for-unix.org/pkg/python3/3.10.4/lib/python3.10/string.py string.py
 /wedge/oils-for-unix.org/pkg/python3/3.10.4/lib/python3.10/subprocess.py subprocess.py
 /wedge/oils-for-unix.org/pkg/python3/3.10.4/lib/python3.10/sysconfig.py sysconfig.py
 /wedge/oils-for-unix.org/pkg/python3/3.10.4/lib/python3.10/tempfile.py tempfile.py
