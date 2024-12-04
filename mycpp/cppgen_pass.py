@@ -2732,6 +2732,9 @@ class Decl(Impl):
             c_type = GetCType(self.types[lval])
             self.write('extern %s %s;\n', c_type, lval.name)
 
+        # TODO: we don't traverse here, so _CheckCondition() isn't called
+        # e.g. x = 'a' if mylist else 'b'
+
     def oils_visit_constructor(self, o: ClassDef, stmt: FuncDef,
                                base_class_name: util.SymbolPath) -> None:
         self.indent += 1
