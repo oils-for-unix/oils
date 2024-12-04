@@ -799,6 +799,7 @@ GLOBAL_STR(S_eyp, "%s:%s");
 GLOBAL_STR(S_pBd, "%s=%s");
 GLOBAL_STR(S_crv, "%s[%d]");
 GLOBAL_STR(S_sfd, "%s[%d]: Index is out of bounds for array of length %d");
+GLOBAL_STR(S_ovr, "%s[%d]: Index is out of bounds for array of length %s");
 GLOBAL_STR(S_njn, "%s[%s]");
 GLOBAL_STR(S_Asd, "%sexpected List");
 GLOBAL_STR(S_iul, "%sexpected one of (Null Bool Int Float Str Eggex)");
@@ -5614,6 +5615,7 @@ List<BigStr*>* SparseArray_GetValues(value::SparseArray* sparse_val);
 void SparseArray_AppendValues(value::SparseArray* sparse_val, List<BigStr*>* strs);
 Tuple2<mops::BigInt, bool> _SparseArray_CanonicalizeIndex(value::SparseArray* sparse_val, mops::BigInt index);
 int SparseArray_SetElement(value::SparseArray* sparse_val, mops::BigInt index, BigStr* s);
+int SparseArray_UnsetElement(value::SparseArray* sparse_val, mops::BigInt index);
 BigStr* SparseArray_ToStrForShellPrint(value::SparseArray* sparse_val);
 
 }  // declare namespace bash_impl
@@ -21176,8 +21178,8 @@ void BashAssoc_AppendValues(value::BashAssoc* assoc_val, Dict<BigStr*, BigStr*>*
   StackRoot _root0(&assoc_val);
   StackRoot _root1(&d);
 
-  for (ListIter<BigStr*> it(d->keys()); !it.Done(); it.Next()) {
-    BigStr* key = it.Value();
+  for (DictIter<BigStr*, BigStr*> it(d); !it.Done(); it.Next()) {
+    BigStr* key = it.Key();
     StackRoot _for(&key  );
     assoc_val->d->set(key, d->at(key));
   }
@@ -21308,6 +21310,29 @@ int SparseArray_SetElement(value::SparseArray* sparse_val, mops::BigInt index, B
     sparse_val->max_index = index;
   }
   sparse_val->d->set(index, s);
+  return 0;
+}
+
+int SparseArray_UnsetElement(value::SparseArray* sparse_val, mops::BigInt index) {
+  bool ok;
+  StackRoot _root0(&sparse_val);
+
+  Tuple2<mops::BigInt, bool> tup1 = _SparseArray_CanonicalizeIndex(sparse_val, index);
+  index = tup1.at0();
+  ok = tup1.at1();
+  if (!ok) {
+    return 1;
+  }
+  mylib::dict_erase(sparse_val->d, index);
+  if (mops::Equal(index, sparse_val->max_index)) {
+    sparse_val->max_index = mops::MINUS_ONE;
+    for (DictIter<mops::BigInt, BigStr*> it(sparse_val->d); !it.Done(); it.Next()) {
+      mops::BigInt index = it.Key();
+      if (mops::Greater(index, sparse_val->max_index)) {
+        sparse_val->max_index = index;
+      }
+    }
+  }
   return 0;
 }
 
@@ -28814,6 +28839,7 @@ bool Mem::Unset(value_asdl::sh_lvalue_t* lval, runtime_asdl::scope_t which_scope
   value_asdl::value_t* UP_val = nullptr;
   int error_code;
   int n;
+  mops::BigInt big_length;
   StackRoot _root0(&lval);
   StackRoot _root1(&UP_lval);
   StackRoot _root2(&var_name);
@@ -28875,7 +28901,17 @@ bool Mem::Unset(value_asdl::sh_lvalue_t* lval, runtime_asdl::scope_t which_scope
         }
       }
       else {
-        throw Alloc<error::Runtime>(StrFormat("%r isn't an array", var_name));
+        if (val->tag() == value_e::SparseArray) {
+          value::SparseArray* val = static_cast<value::SparseArray*>(UP_val);
+          error_code = bash_impl::SparseArray_UnsetElement(val, mops::IntWiden(lval->index));
+          if (error_code == 1) {
+            big_length = bash_impl::SparseArray_Length(val);
+            throw Alloc<error::Runtime>(StrFormat("%s[%d]: Index is out of bounds for array of length %s", var_name, lval->index, mops::ToStr(big_length)));
+          }
+        }
+        else {
+          throw Alloc<error::Runtime>(StrFormat("%r isn't an array", var_name));
+        }
       }
     }
       break;
@@ -57174,8 +57210,8 @@ bool ExactlyEqual(value_asdl::value_t* left, value_asdl::value_t* right, syntax_
       if (len(left->d) != len(right->d)) {
         return false;
       }
-      for (ListIter<BigStr*> it(left->d->keys()); !it.Done(); it.Next()) {
-        BigStr* k = it.Value();
+      for (DictIter<BigStr*, BigStr*> it(left->d); !it.Done(); it.Next()) {
+        BigStr* k = it.Key();
         StackRoot _for(&k      );
         if ((!dict_contains(right->d, k) or !(str_equals(right->d->at(k), left->d->at(k))))) {
           return false;
@@ -57190,8 +57226,8 @@ bool ExactlyEqual(value_asdl::value_t* left, value_asdl::value_t* right, syntax_
       if (len(left->d) != len(right->d)) {
         return false;
       }
-      for (ListIter<BigStr*> it(left->d->keys()); !it.Done(); it.Next()) {
-        BigStr* k = it.Value();
+      for (DictIter<BigStr*, value_asdl::value_t*> it(left->d); !it.Done(); it.Next()) {
+        BigStr* k = it.Key();
         StackRoot _for(&k      );
         if ((!dict_contains(right->d, k) or !ExactlyEqual(right->d->at(k), left->d->at(k), blame_loc))) {
           return false;

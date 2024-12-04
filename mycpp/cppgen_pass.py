@@ -520,7 +520,6 @@ class _Shared(visitor.SimpleVisitor):
         self._WriteFuncParams(
             o.type.arg_types,
             o.arguments,
-            update_locals=True,
             # write default values in the declaration only
             write_defaults=self.decl)
 
@@ -589,7 +588,6 @@ class _Shared(visitor.SimpleVisitor):
     def _WriteFuncParams(self,
                          arg_types: List[Type],
                          arguments: List['mypy.nodes.Argument'],
-                         update_locals: bool = False,
                          write_defaults: bool = False) -> None:
         """Write params for function/method signatures.
 
@@ -618,6 +616,14 @@ class _Shared(visitor.SimpleVisitor):
                 self.write(' = ')
 
                 # Silly mechanism to activate self.def_write()
+                # For defaults, we need at least:
+                # - visit_name_expr, visit_member_expr
+                # - visit_int_expr, visit_float_expr, visit_str_expr
+                # - visit_unary_expr (-42)
+                #
+                # It would be nice if the Decl phase did not visit any
+                # statements at all, but we need to clean up
+                # self.yield_accumulators first.
                 self.writing_default_arg = True
                 self.accept(arg.initializer)
                 self.writing_default_arg = False
@@ -638,6 +644,36 @@ class _Shared(visitor.SimpleVisitor):
 
             arg_name, c_type = self.yield_accumulators[self.current_func_node]
             self.write('%s %s', c_type, arg_name)
+
+    #
+    # Yield stuff to separate
+    #
+
+    def visit_yield_expr(self, o: 'mypy.nodes.YieldExpr') -> None:
+        assert self.current_func_node in self.yield_accumulators
+        self.def_write_ind('%s->append(',
+                           self.yield_accumulators[self.current_func_node][0])
+        self.accept(o.expr)
+        self.def_write(');\n')
+
+    def _WriteArgList(self, args: List[Expression]) -> None:
+        self.def_write('(')
+        for i, arg in enumerate(args):
+            if i != 0:
+                self.def_write(', ')
+            self.accept(arg)
+
+        # Will be set if we're:
+        # a) accumulating the output of an iterator
+        # b) constructing an iterator with the result of (a)
+        if self.current_stmt_node in self.yield_accumulators:
+            if len(args) > 0:
+                self.def_write(', ')
+
+            arg_name, _ = self.yield_accumulators[self.current_stmt_node]
+            self.def_write('&%s', arg_name)
+
+        self.def_write(')')
 
 
 class Impl(_Shared):
@@ -674,15 +710,6 @@ class Impl(_Shared):
     def def_write_ind(self, msg: str, *args: Any) -> None:
         ind_str = self.indent * '  '
         self.def_write(ind_str + msg, *args)
-
-    def decl_write(self, msg: str, *args: Any) -> None:
-        """Write only in the decl stage (not forward declarations)"""
-        if not self.decl:
-            return
-
-        if args:
-            msg = msg % args
-        self.f.write(msg)
 
     #
     # Visiting
@@ -761,32 +788,6 @@ class Impl(_Shared):
                 % o.name)
         else:
             self.def_write('%s', o.name)
-
-    def visit_yield_expr(self, o: 'mypy.nodes.YieldExpr') -> None:
-        assert self.current_func_node in self.yield_accumulators
-        self.def_write_ind('%s->append(',
-                           self.yield_accumulators[self.current_func_node][0])
-        self.accept(o.expr)
-        self.def_write(');\n')
-
-    def _WriteArgList(self, args: List[Expression]) -> None:
-        self.def_write('(')
-        for i, arg in enumerate(args):
-            if i != 0:
-                self.def_write(', ')
-            self.accept(arg)
-
-        # Will be set if we're:
-        # a) accumulating the output of an iterator
-        # b) constructing an iterator with the result of (a)
-        if self.current_stmt_node in self.yield_accumulators:
-            if len(args) > 0:
-                self.def_write(', ')
-
-            arg_name, _ = self.yield_accumulators[self.current_stmt_node]
-            self.def_write('&%s', arg_name)
-
-        self.def_write(')')
 
     def _IsInstantiation(self, o: 'mypy.nodes.CallExpr') -> bool:
         callee_name = o.callee.name
@@ -1499,10 +1500,13 @@ class Impl(_Shared):
         # ListIter<T>.
         assert len(rval_type.args) == 1, rval_type.args
         c_type = GetCType(rval_type)
+
         type_param = rval_type.args[0]
         inner_c_type = GetCType(type_param)
+
         iter_buf = ('_iter_buf_%s' % lval.name, 'List<%s>*' % inner_c_type)
         self.def_write_ind('List<%s> %s;\n', inner_c_type, iter_buf[0])
+
         self.yield_accumulators[o] = iter_buf
         self.def_write_ind('')
 
@@ -2266,7 +2270,9 @@ class Impl(_Shared):
                          base_class_name: util.SymbolPath) -> None:
         self.def_write('\n')
         self.def_write('%s::%s(', o.name, o.name)
-        self._WriteFuncParams(stmt.type.arg_types, stmt.arguments)
+        self._WriteFuncParams(stmt.type.arg_types,
+                              stmt.arguments,
+                              write_defaults=False)
         self.def_write(')')
 
         first_index = 0
@@ -2399,7 +2405,7 @@ class Impl(_Shared):
                 if name == 'STDIN_FILENO':
                     continue
 
-            # A heuristic that works for the Oil import style.
+            # A heuristic that works for the Oils import style.
             if '.' in o.id:
                 # from mycpp.mylib import log => using mylib::log
                 translate_import = True
@@ -2437,16 +2443,17 @@ class Impl(_Shared):
                     using_str = 'using %s::%s;\n' % (last_dotted, name)
                     self.def_write_ind(using_str)
 
-                    # Fully qualified:
-                    # self.def_write_ind('using %s::%s;\n', '::'.join(dotted_parts), name)
-
                     # Hack for default args.  Without this limitation, we write
                     # 'using' of names that aren't declared yet.
                     # suffix_op is needed for string_ops.py, for some reason
-                    if (name in ('Id', 'scope_e', 'lex_mode_e', 'suffix_op',
-                                 'sh_lvalue', 'part_value', 'loc', 'word',
-                                 'word_part', 'cmd_value', 'hnode')):
-                        self.decl_write(using_str)
+                    if (self.decl and name
+                            in ('Id', 'scope_e', 'lex_mode_e', 'suffix_op',
+                                'sh_lvalue', 'part_value', 'loc', 'word',
+                                'word_part', 'cmd_value', 'hnode')):
+                        self.write(using_str)
+
+                    # Fully qualified:
+                    # self.def_write_ind('using %s::%s;\n', '::'.join(dotted_parts), name)
 
             else:
                 # If we're importing a module without an alias, we don't need to do
