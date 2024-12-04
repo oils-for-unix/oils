@@ -11,7 +11,7 @@ from collections import defaultdict
 from mypy.types import Type
 from mypy.nodes import Expression
 
-from mycpp.util import join_name, log, split_py_name, SymbolPath
+from mycpp.util import SymbolToString, log, SplitPyName, SymbolPath
 
 from typing import Optional, List, Dict, Tuple, Set, Any
 
@@ -158,8 +158,8 @@ class Virtual(object):
 
 def SymbolPathToReference(func: str, p: SymbolPath) -> str:
     if len(p) > 1:
-        return '$ObjectMember({}, {})'.format(join_name(p[:-1], delim='.'),
-                                              p[-1])
+        return '$ObjectMember({}, {})'.format(
+            SymbolToString(p[:-1], delim='.'), p[-1])
 
     return '$LocalVariable({}, {})'.format(func, p[0])
 
@@ -283,7 +283,7 @@ class Bind(Fact):
     def Generate(self, func: str, statement: int) -> str:
         return '{}\t{}\t{}\t{}\t{}\n'.format(
             func, statement, SymbolPathToReference(func, self.ref),
-            join_name(self.callee, delim='.'), self.arg_pos)
+            SymbolToString(self.callee, delim='.'), self.arg_pos)
 
 
 class ControlFlowGraph(object):
@@ -558,7 +558,7 @@ def DumpControlFlowGraphs(cfgs: Dict[SymbolPath, ControlFlowGraph],
     }
     with open(edge_facts, 'w') as cfg_f:
         for func, cfg in sorted(cfgs.items()):
-            joined = join_name(func, delim='.')
+            joined = SymbolToString(func, delim='.')
             for (u, v) in sorted(cfg.edges):
                 cfg_f.write('{}\t{}\t{}\n'.format(joined, u, v))
 
@@ -601,11 +601,11 @@ def ComputeMinimalStackRoots(cfgs: Dict[SymbolPath, ControlFlowGraph],
             if m.group(1) == 'LocalVariable':
                 _, ref_func, var_name = m.groups()
                 assert ref_func == function
-                tuples.add((split_py_name(function), (var_name, )))
+                tuples.add((SplitPyName(function), (var_name, )))
 
             if m.group(1) == 'ObjectMember':
                 _, base_obj, member_name = m.groups()
-                tuples.add((split_py_name(function),
-                            split_py_name(base_obj) + (member_name, )))
+                tuples.add((SplitPyName(function),
+                            SplitPyName(base_obj) + (member_name, )))
 
     return StackRoots(tuples)

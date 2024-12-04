@@ -7,7 +7,7 @@ import mypy
 from mypy.nodes import Expression, NameExpr
 from mypy.types import Type
 
-from mycpp.util import split_py_name
+from mycpp.util import SplitPyName
 from mycpp import visitor
 from mycpp import util
 from mycpp import pass_state
@@ -91,7 +91,7 @@ class Build(visitor.SimpleVisitor):
                 self.types[o].ret_type.type.fullname, o.name)
         elif is_module:
             self.dot_exprs[o] = pass_state.ModuleMember(
-                split_py_name(o.expr.fullname or o.expr.name), o.name)
+                SplitPyName(o.expr.fullname or o.expr.name), o.name)
 
         else:
             self.dot_exprs[o] = pass_state.HeapObjectMember(

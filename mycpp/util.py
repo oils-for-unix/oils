@@ -26,9 +26,9 @@ def log(msg: str, *args: Any) -> None:
     print(msg, file=sys.stderr)
 
 
-def join_name(parts: SymbolPath,
-              strip_package: bool = False,
-              delim: str = '::') -> str:
+def SymbolToString(parts: SymbolPath,
+                   strip_package: bool = False,
+                   delim: str = '::') -> str:
     """
     Join the given name path into a string with the given delimiter.
     Use strip_package to remove the top-level directory (e.g. `core`, `ysh`)
@@ -43,7 +43,7 @@ def join_name(parts: SymbolPath,
     return parts[0]
 
 
-def split_py_name(name: str) -> SymbolPath:
+def SplitPyName(name: str) -> SymbolPath:
     ret = tuple(name.split('.'))
     if len(ret) and ret[0] == 'mycpp':
         # Drop the prefix 'mycpp.' if present. This makes names compatible with
@@ -58,7 +58,7 @@ CaseList = List[Tuple[Expression, Block]]
 CaseError = Tuple[str, int, str]
 
 
-def _collect_cases(
+def CollectSwitchCases(
         module_path: str,
         if_node: IfStmt,
         out: CaseList,
@@ -97,7 +97,7 @@ def _collect_cases(
         #   if 0:
 
         if isinstance(first_of_block, IfStmt):
-            return _collect_cases(module_path, first_of_block, out, errors)
+            return CollectSwitchCases(module_path, first_of_block, out, errors)
         else:
             # default case - no expression
             return if_node.else_body

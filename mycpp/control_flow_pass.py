@@ -11,7 +11,7 @@ from mypy.nodes import (Block, Expression, Statement, CallExpr, FuncDef,
 from mypy.types import CallableType, Instance, Type, UnionType, NoneTyp, TupleType
 
 from mycpp.crash import catch_errors
-from mycpp.util import join_name, split_py_name
+from mycpp.util import SymbolToString, SplitPyName
 from mycpp import visitor
 from mycpp import util
 from mycpp.util import SymbolPath
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
 def GetObjectTypeName(t: Type) -> SymbolPath:
     if isinstance(t, Instance):
-        return split_py_name(t.type.fullname)
+        return SplitPyName(t.type.fullname)
 
     elif isinstance(t, UnionType):
         assert len(t.items) == 2
@@ -69,7 +69,7 @@ class Build(visitor.SimpleVisitor):
         if not self.current_func_node:
             return None
 
-        return self.cfgs[split_py_name(self.current_func_node.fullname)]
+        return self.cfgs[SplitPyName(self.current_func_node.fullname)]
 
     def resolve_callee(self, o: CallExpr) -> Optional[util.SymbolPath]:
         """
@@ -90,14 +90,14 @@ class Build(visitor.SimpleVisitor):
         """
 
         if isinstance(o.callee, NameExpr):
-            return split_py_name(o.callee.fullname)
+            return SplitPyName(o.callee.fullname)
 
         elif isinstance(o.callee, MemberExpr):
             if isinstance(o.callee.expr, NameExpr):
                 is_module = isinstance(self.dot_exprs.get(o.callee),
                                        pass_state.ModuleMember)
                 if is_module:
-                    return (split_py_name(o.callee.expr.fullname) +
+                    return (SplitPyName(o.callee.expr.fullname) +
                             (o.callee.name, ))
 
                 elif o.callee.expr.name == 'self':
@@ -114,16 +114,16 @@ class Build(visitor.SimpleVisitor):
 
                     if local_type:
                         if isinstance(local_type, str):
-                            return (split_py_name(local_type) +
+                            return (SplitPyName(local_type) +
                                     (o.callee.name, ))
 
                         elif isinstance(local_type, Instance):
-                            return (split_py_name(local_type.type.fullname) +
+                            return (SplitPyName(local_type.type.fullname) +
                                     (o.callee.name, ))
 
                         elif isinstance(local_type, UnionType):
                             assert len(local_type.items) == 2
-                            return (split_py_name(
+                            return (SplitPyName(
                                 local_type.items[0].type.fullname) +
                                     (o.callee.expr.name, ))
 
@@ -139,16 +139,16 @@ class Build(visitor.SimpleVisitor):
             else:
                 t = self.types.get(o.callee.expr)
                 if isinstance(t, Instance):
-                    return split_py_name(t.type.fullname) + (o.callee.name, )
+                    return SplitPyName(t.type.fullname) + (o.callee.name, )
 
                 elif isinstance(t, UnionType):
                     assert len(t.items) == 2
-                    return (split_py_name(t.items[0].type.fullname) +
+                    return (SplitPyName(t.items[0].type.fullname) +
                             (o.callee.name, ))
 
                 elif o.callee.expr and getattr(o.callee.expr, 'fullname',
                                                None):
-                    return (split_py_name(o.callee.expr.fullname) +
+                    return (SplitPyName(o.callee.expr.fullname) +
                             (o.callee.name, ))
 
                 else:
@@ -284,7 +284,8 @@ class Build(visitor.SimpleVisitor):
         if_node = o.body.body[0]
         assert isinstance(if_node, IfStmt), if_node
         cases: util.CaseList = []
-        default_block = util._collect_cases(self.module_path, if_node, cases)
+        default_block = util.CollectSwitchCases(self.module_path, if_node,
+                                                cases)
         with pass_state.CfgBranchContext(
                 cfg, self.current_statement_id) as branch_ctx:
             for expr, body in cases:
@@ -325,8 +326,8 @@ class Build(visitor.SimpleVisitor):
             key = (self.current_class_name, o.name)
             base = self.virtual.virtuals[key]
             if base:
-                sub = join_name(self.current_class_name + (o.name, ),
-                                delim='.')
+                sub = SymbolToString(self.current_class_name + (o.name, ),
+                                     delim='.')
                 base_key = base[0] + (base[1], )
                 cfg = self.cfgs[base_key]
                 cfg.AddFact(0, pass_state.FunctionCall(sub))
@@ -528,7 +529,8 @@ class Build(visitor.SimpleVisitor):
                 self.callees[o] = full_callee
                 cfg.AddFact(
                     self.current_statement_id,
-                    pass_state.FunctionCall(join_name(full_callee, delim='.')))
+                    pass_state.FunctionCall(
+                        SymbolToString(full_callee, delim='.')))
 
                 for i, arg in enumerate(o.args):
                     arg_ref = self.get_ref_name(arg)

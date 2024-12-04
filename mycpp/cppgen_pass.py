@@ -17,9 +17,9 @@ from mypy.nodes import (Expression, Statement, NameExpr, IndexExpr, MemberExpr,
                         DictExpr, ClassDef, ForStmt, AssignmentStmt)
 
 from mycpp import format_strings
-from mycpp.util import log, join_name, split_py_name, IsStr
 from mycpp import pass_state
 from mycpp import util
+from mycpp.util import log, SymbolToString, SplitPyName, IsStr
 
 from typing import Tuple, List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -602,7 +602,7 @@ class Decl(_Shared):
         # e.g. x = 'a' if mylist else 'b'
 
     def oils_visit_constructor(self, o: ClassDef, stmt: FuncDef,
-                               base_class_name: util.SymbolPath) -> None:
+                               base_class_sym: util.SymbolPath) -> None:
         self.indent += 1
         self.write_ind('%s(', o.name)
         self._WriteFuncParams(stmt, write_defaults=True)
@@ -610,42 +610,42 @@ class Decl(_Shared):
         self.indent -= 1
 
     def oils_visit_dunder_exit(self, o: ClassDef, stmt: FuncDef,
-                               base_class_name: util.SymbolPath) -> None:
+                               base_class_sym: util.SymbolPath) -> None:
         self.indent += 1
         # Turn it into a destructor with NO ARGS
         self.write_ind('~%s();\n', o.name)
         self.indent -= 1
 
     def oils_visit_method(self, o: ClassDef, stmt: FuncDef,
-                          base_class_name: util.SymbolPath) -> None:
+                          base_class_sym: util.SymbolPath) -> None:
         self.indent += 1
         self.accept(stmt)
         self.indent -= 1
 
     def oils_visit_class_members(self, o: ClassDef,
-                                 base_class_name: util.SymbolPath) -> None:
+                                 base_class_sym: util.SymbolPath) -> None:
         # Write member variables
         self.indent += 1
-        self._MemberDecl(o, base_class_name)
+        self._MemberDecl(o, base_class_sym)
         self.indent -= 1
 
     def oils_visit_class_def(
             self, o: 'mypy.nodes.ClassDef',
-            base_class_name: Optional[util.SymbolPath]) -> None:
+            base_class_sym: Optional[util.SymbolPath]) -> None:
         self.write_ind('class %s', o.name)  # block after this
 
         # e.g. class TextOutput : public ColorOutput
-        if base_class_name:
+        if base_class_sym:
             self.write(' : public %s',
-                       join_name(base_class_name, strip_package=True))
+                       SymbolToString(base_class_sym, strip_package=True))
 
         self.write(' {\n')
         self.write_ind(' public:\n')
 
         # This visits all the methods, with self.indent += 1, param
-        # base_class_name, self.current_method_name
+        # base_class_sym, self.current_method_name
 
-        super().oils_visit_class_def(o, base_class_name)
+        super().oils_visit_class_def(o, base_class_sym)
 
         self.write_ind('};\n')
         self.write('\n')
@@ -682,12 +682,12 @@ class Decl(_Shared):
         self.write_ind('}\n')
 
     def _MemberDecl(self, o: 'mypy.nodes.ClassDef',
-                    base_class_name: util.SymbolPath) -> None:
+                    base_class_sym: util.SymbolPath) -> None:
         member_vars = self.all_member_vars[o]
 
         # List of field mask expressions
         mask_bits = []
-        if self.virtual.CanReorderFields(split_py_name(o.fullname)):
+        if self.virtual.CanReorderFields(SplitPyName(o.fullname)):
             # No inheritance, so we are free to REORDER member vars, putting
             # pointers at the front.
 
@@ -710,10 +710,10 @@ class Decl(_Shared):
 
             # The field mask of a derived class is unioned with its base's
             # field mask.
-            if base_class_name:
+            if base_class_sym:
                 mask_bits.append(
                     '%s::field_mask()' %
-                    join_name(base_class_name, strip_package=True))
+                    SymbolToString(base_class_sym, strip_package=True))
 
             for name in sorted(member_vars):
                 _, c_type, is_managed = member_vars[name]
@@ -722,7 +722,7 @@ class Decl(_Shared):
                                      (o.name, name))
 
             # A base class with no fields has kZeroMask.
-            if not base_class_name and not mask_bits:
+            if not base_class_sym and not mask_bits:
                 mask_bits.append('kZeroMask')
 
             sorted_member_names = sorted(member_vars)
@@ -733,7 +733,7 @@ class Decl(_Shared):
 
         #log('MEMBERS for %s: %s', o.name, list(self.member_vars.keys()))
         if len(member_vars):
-            if base_class_name:
+            if base_class_sym:
                 self.write('\n')  # separate from functions
 
             for name in sorted_member_names:
@@ -794,7 +794,7 @@ class Impl(_Shared):
         if self.current_class_name:
             # definition looks like
             # void Class::method(...);
-            func_name = join_name((self.current_class_name[-1], o.name))
+            func_name = SymbolToString((self.current_class_name[-1], o.name))
             noreturn = ''
         else:
             func_name = o.name
@@ -2146,10 +2146,10 @@ class Impl(_Shared):
 
         self.indent += 1
         cases: util.CaseList = []
-        default_block = util._collect_cases(self.module_path,
-                                            if_node,
-                                            cases,
-                                            errors=self.errors_keep_going)
+        default_block = util.CollectSwitchCases(self.module_path,
+                                                if_node,
+                                                cases,
+                                                errors=self.errors_keep_going)
         self._WriteCases(expr, cases, default_block)
 
         self.indent -= 1
@@ -2170,10 +2170,10 @@ class Impl(_Shared):
 
         self.indent += 1
         cases: util.CaseList = []
-        default_block = util._collect_cases(self.module_path,
-                                            if_node,
-                                            cases,
-                                            errors=self.errors_keep_going)
+        default_block = util.CollectSwitchCases(self.module_path,
+                                                if_node,
+                                                cases,
+                                                errors=self.errors_keep_going)
         self._WriteCases(expr, cases, default_block)
 
         self.indent -= 1
@@ -2183,7 +2183,7 @@ class Impl(_Shared):
         cases2: List[Tuple[int, str, 'mypy.nodes.Block']] = []
         for expr, body in cases:
             if not isinstance(expr, CallExpr):
-                # non-fatal check from _collect_cases
+                # non-fatal check from CollectSwitchCases
                 break
 
             args = expr.args
@@ -2234,10 +2234,10 @@ class Impl(_Shared):
         self.indent += 1
 
         cases: util.CaseList = []
-        default_block = util._collect_cases(self.module_path,
-                                            if_node,
-                                            cases,
-                                            errors=self.errors_keep_going)
+        default_block = util.CollectSwitchCases(self.module_path,
+                                                if_node,
+                                                cases,
+                                                errors=self.errors_keep_going)
 
         grouped_cases = self._StrSwitchCases(cases)
         # Warning: this consumes internal iterator
@@ -2381,7 +2381,7 @@ class Impl(_Shared):
             self.write(';\n')
 
     def oils_visit_constructor(self, o: ClassDef, stmt: FuncDef,
-                               base_class_name: util.SymbolPath) -> None:
+                               base_class_sym: util.SymbolPath) -> None:
         self.write('\n')
         self.write('%s::%s(', o.name, o.name)
         self._WriteFuncParams(stmt, write_defaults=False)
@@ -2408,7 +2408,7 @@ class Impl(_Shared):
                 base_constructor_args = expr.args
                 #log('ARGS %s', base_constructor_args)
                 self.write(' : %s(',
-                           join_name(base_class_name, strip_package=True))
+                           SymbolToString(base_class_sym, strip_package=True))
                 for i, arg in enumerate(base_constructor_args):
                     if i == 0:
                         continue  # Skip 'this'
@@ -2444,7 +2444,7 @@ class Impl(_Shared):
         self.write('}\n')
 
     def oils_visit_dunder_exit(self, o: ClassDef, stmt: FuncDef,
-                               base_class_name: util.SymbolPath) -> None:
+                               base_class_sym: util.SymbolPath) -> None:
         self.write('\n')
         self.write_ind('%s::~%s()', o.name, o.name)
 
@@ -2476,7 +2476,7 @@ class Impl(_Shared):
         self.write('}\n')
 
     def oils_visit_method(self, o: ClassDef, stmt: FuncDef,
-                          base_class_name: util.SymbolPath) -> None:
+                          base_class_sym: util.SymbolPath) -> None:
         self.accept(stmt)
 
     # Module structure
@@ -2585,14 +2585,14 @@ class Impl(_Shared):
         roots = []  # keep it sorted
         full_func_name = None
         if self.current_func_node:
-            full_func_name = split_py_name(self.current_func_node.fullname)
+            full_func_name = SplitPyName(self.current_func_node.fullname)
 
         for lval_name, lval_type, is_param in local_var_list:
             c_type = GetCType(lval_type)
             #self.log('%s %s %s', lval_name, c_type, is_param)
             if lval_name not in roots and CTypeIsManaged(c_type):
                 if (not self.stack_roots or self.stack_roots.needs_root(
-                        full_func_name, split_py_name(lval_name))):
+                        full_func_name, SplitPyName(lval_name))):
                     roots.append(lval_name)
 
         #self.log('roots %s', roots)

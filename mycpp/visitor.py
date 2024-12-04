@@ -12,7 +12,7 @@ from mypy.nodes import (Expression, Statement, ExpressionStmt, StrExpr,
 
 from mycpp.crash import catch_errors
 from mycpp import util
-from mycpp.util import split_py_name, log
+from mycpp.util import SplitPyName, log
 
 from typing import (overload, Any, Union, Optional, List, Tuple, TextIO)
 
@@ -200,26 +200,26 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
     #
 
     def oils_visit_constructor(self, o: ClassDef, stmt: FuncDef,
-                               base_class_name: util.SymbolPath) -> None:
+                               base_class_sym: util.SymbolPath) -> None:
         self.accept(stmt)
 
     def oils_visit_dunder_exit(self, o: ClassDef, stmt: FuncDef,
-                               base_class_name: util.SymbolPath) -> None:
+                               base_class_sym: util.SymbolPath) -> None:
         self.accept(stmt)
 
     def oils_visit_method(self, o: ClassDef, stmt: FuncDef,
-                          base_class_name: util.SymbolPath) -> None:
+                          base_class_sym: util.SymbolPath) -> None:
         self.accept(stmt)
 
     def oils_visit_class_members(self, o: ClassDef,
-                                 base_class_name: util.SymbolPath) -> None:
+                                 base_class_sym: util.SymbolPath) -> None:
         """Hook for writing member vars."""
         # Do nothing by default.
         pass
 
     def oils_visit_class_def(
             self, o: 'mypy.nodes.ClassDef',
-            base_class_name: Optional[util.SymbolPath]) -> None:
+            base_class_sym: Optional[util.SymbolPath]) -> None:
 
         for stmt in o.defs.body:
             # Skip class docstrings
@@ -240,18 +240,18 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
 
                 if method_name == '__init__':  # Don't translate
                     self.current_method_name = stmt.name
-                    self.oils_visit_constructor(o, stmt, base_class_name)
+                    self.oils_visit_constructor(o, stmt, base_class_sym)
                     self.current_method_name = None
                     continue
 
                 if method_name == '__exit__':  # Don't translate
                     self.current_method_name = stmt.name
-                    self.oils_visit_dunder_exit(o, stmt, base_class_name)
+                    self.oils_visit_dunder_exit(o, stmt, base_class_sym)
                     self.current_method_name = None
                     continue
 
                 self.current_method_name = stmt.name
-                self.oils_visit_method(o, stmt, base_class_name)
+                self.oils_visit_method(o, stmt, base_class_sym)
                 self.current_method_name = None
                 continue
 
@@ -263,10 +263,10 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
             self.report_error(
                 o, 'Classes may only have method definitions, got %s' % stmt)
 
-        self.oils_visit_class_members(o, base_class_name)
+        self.oils_visit_class_members(o, base_class_sym)
 
     def visit_class_def(self, o: 'mypy.nodes.ClassDef') -> None:
-        base_class_name = None  # single inheritance only
+        base_class_sym = None  # single inheritance only
         if len(o.base_type_exprs) > 1:
             self.report_error(o, 'too many base types: %s' % o.base_type_exprs)
             return
@@ -274,16 +274,16 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         for b in o.base_type_exprs:
             if isinstance(b, NameExpr):
                 if b.name != 'object' and b.name != 'Exception':
-                    base_class_name = split_py_name(b.fullname)
+                    base_class_sym = SplitPyName(b.fullname)
             elif isinstance(b, MemberExpr):  # vm._Executor -> vm::_Executor
                 assert isinstance(b.expr, NameExpr), b
-                base_class_name = split_py_name(b.expr.fullname) + (b.name, )
+                base_class_sym = SplitPyName(b.expr.fullname) + (b.name, )
             else:
                 # shouldn't happen
                 raise AssertionError(b)
 
-        self.current_class_name = split_py_name(o.fullname)
-        self.oils_visit_class_def(o, base_class_name)
+        self.current_class_name = SplitPyName(o.fullname)
+        self.oils_visit_class_def(o, base_class_sym)
         self.current_class_name = None
 
     # Statements
