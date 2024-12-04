@@ -420,12 +420,8 @@ class _Shared(visitor.SimpleVisitor):
         types: Dict[Expression, Type],
         global_strings: 'const_pass.GlobalStrings',
         yield_out_params: Dict[FuncDef, Tuple[str, str]],  # input
-        # TODO: virtual only needs to be in Decl pass!
-        virtual: pass_state.Virtual = None,
-        # TODO: local_vars only in Impl pass
-        local_vars: Optional[AllLocalVars] = None,
-        # all_member_vars
-        # - Decl for declaring vars
+        # all_member_vars:
+        # - Decl for declaring members in class { }
         # - Impl for rooting context managers
         all_member_vars: Optional[AllMemberVars] = None,
     ) -> None:
@@ -434,23 +430,7 @@ class _Shared(visitor.SimpleVisitor):
         self.types = types
         self.global_strings = global_strings
         self.yield_out_params = yield_out_params
-        self.virtual = virtual
-
-        if local_vars is None:
-            self.local_vars = {}  # stub that can be deleted
-        else:
-            self.local_vars = local_vars
-
         self.all_member_vars = all_member_vars  # for class def, and rooting
-
-        # TODO: remove
-        self.decl = False
-
-        # For writing vars after {
-        self.prepend_to_block: Optional[List[LocalVar]] = None
-        # TODO: move this state into SimpleVisitor.  (It also keeps track of
-        # the current class and method.)
-        self.current_func_node: Optional[FuncDef] = None
 
     # Primitives shared for default values
 
@@ -489,12 +469,13 @@ class _Shared(visitor.SimpleVisitor):
         self.write(op_str)
         self.accept(o.expr)
 
+    def _NamespaceComment(self) -> str:
+        # abstract method
+        raise NotImplementedError()
+
     def oils_visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> None:
         mod_parts = o.fullname.split('.')
-        if self.decl:
-            comment = 'declare'
-        else:
-            comment = 'define'
+        comment = self._NamespaceComment()
 
         self.write_ind('namespace %s {  // %s\n', mod_parts[-1], comment)
         self.write('\n')
@@ -507,64 +488,10 @@ class _Shared(visitor.SimpleVisitor):
         self.write_ind('}  // %s namespace %s\n', comment, mod_parts[-1])
         self.write('\n')
 
-    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
-        func_name = o.name
-
-        virtual = ''
-        if self.decl:
-            if self.virtual.IsVirtual(self.current_class_name, o.name):
-                virtual = 'virtual '
-
-        if not self.decl and self.current_class_name:
-            # definition looks like
-            # void Class::method(...);
-            func_name = join_name((self.current_class_name[-1], o.name))
-        else:
-            # declaration inside class { }
-            func_name = o.name
-
-        if not self.decl:
-            self.write('\n')
-
-        c_ret_type, _, _ = GetCReturnType(o.type.ret_type)
-
-        # Avoid C++ warnings by prepending [[noreturn]]
-        noreturn = ''
-        if func_name in ('e_die', 'e_die_status', 'e_strict', 'e_usage',
-                         'p_die'):
-            noreturn = '[[noreturn]] '
-
-        self.write_ind('%s%s%s %s(', noreturn, virtual, c_ret_type, func_name)
-
-        self.current_func_node = o
-        self._WriteFuncParams(
-            o,
-            # write default values in the declaration only
-            write_defaults=self.decl)
-
-        if self.decl:
-            self.write(');\n')
-        else:
-            self.write(') ')
-            arg_names = [arg.variable.name for arg in o.arguments]
-            #log('arg_names %s', arg_names)
-            #log('local_vars %s', self.local_vars[o])
-            self.prepend_to_block = []
-            for (lval_name, lval_type) in self.local_vars[o]:
-                self.prepend_to_block.append((lval_name, lval_type, lval_name
-                                              in arg_names))
-
-        if not self.decl:
-            self.accept(o.body)
-        self.current_func_node = None
-
     def _WriteFuncParams(self,
                          func_def: FuncDef,
                          write_defaults: bool = False) -> None:
-        """Write params for function/method signatures.
-
-        Optionally mutate self.local_vars, and optionally write default arguments.
-        """
+        """Write params for function/method signatures."""
         arg_types = func_def.type.arg_types
         arguments = func_def.arguments
 
@@ -605,6 +532,15 @@ class _Shared(visitor.SimpleVisitor):
             self.write('%s %s', c_type, arg_name)
 
 
+def _GetNoReturn(func_name: str) -> str:
+    # Avoid C++ warnings by prepending [[noreturn]]
+    noreturn = ''
+    if func_name in ('e_die', 'e_die_status', 'e_strict', 'e_usage', 'p_die'):
+        return '[[noreturn]] '
+    else:
+        return ''
+
+
 class Impl(_Shared):
 
     def __init__(
@@ -612,7 +548,6 @@ class Impl(_Shared):
             types: Dict[Expression, Type],
             global_strings: 'const_pass.GlobalStrings',
             yield_out_params: Dict[FuncDef, Tuple[str, str]],  # input
-            virtual: pass_state.Virtual = None,
             local_vars: Optional[AllLocalVars] = None,
             all_member_vars: Optional[AllMemberVars] = None,
             dot_exprs: Optional['ir_pass.DotExprs'] = None,
@@ -622,24 +557,63 @@ class Impl(_Shared):
                          types,
                          global_strings,
                          yield_out_params,
-                         virtual=virtual,
-                         local_vars=local_vars,
                          all_member_vars=all_member_vars)
+        self.local_vars = local_vars
 
+        # Computed in previous passes
         self.dot_exprs = dot_exprs
         self.stack_roots_warn = stack_roots_warn
         self.stack_roots = stack_roots
-        self.decl = False
 
-        # Used to to create an EAGER List<T>
+        # Traversal state used to to create an EAGER List<T>
         self.yield_eager_assign: Dict[AssignmentStmt, Tuple[str, str]] = {}
         self.yield_eager_for: Dict[ForStmt, Tuple[str, str]] = {}
 
         self.yield_assign_node: Optional[AssignmentStmt] = None
         self.yield_for_node: Optional[ForStmt] = None
 
-        # Traversal state
+        # More Traversal state
+        self.current_func_node: Optional[FuncDef] = None
+
+        # For writing vars after {
+        self.prepend_to_block: Optional[List[LocalVar]] = None
+
         self.unique_id = 0
+
+    def _NamespaceComment(self) -> str:
+        # abstract method
+        return 'define'
+
+    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
+        if self.current_class_name:
+            # definition looks like
+            # void Class::method(...);
+            func_name = join_name((self.current_class_name[-1], o.name))
+            noreturn = ''
+        else:
+            func_name = o.name
+            noreturn = _GetNoReturn(o.name)
+
+        self.write('\n')
+
+        c_ret_type, _, _ = GetCReturnType(o.type.ret_type)
+
+        self.write_ind('%s%s %s(', noreturn, c_ret_type, func_name)
+
+        self.current_func_node = o
+        self._WriteFuncParams(o, write_defaults=False)
+
+        self.write(') ')
+        arg_names = [arg.variable.name for arg in o.arguments]
+        #log('arg_names %s', arg_names)
+        #log('local_vars %s', self.local_vars[o])
+        self.prepend_to_block = []
+        for (lval_name, lval_type) in self.local_vars[o]:
+            self.prepend_to_block.append((lval_name, lval_type, lval_name
+                                          in arg_names))
+
+        self.accept(o.body)
+        self.current_func_node = None
 
     #
     # Visit methods
@@ -2642,10 +2616,31 @@ class Decl(_Shared):
             types,
             global_strings,
             yield_out_params,
-            virtual=virtual,
             all_member_vars=all_member_vars,
         )
-        self.decl = True
+        self.virtual = virtual
+
+    def _NamespaceComment(self) -> str:
+        # abstract method
+        return 'declare'
+
+    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
+        # Avoid C++ warnings by prepending [[noreturn]]
+        noreturn = _GetNoReturn(o.name)
+
+        virtual = ''
+        if self.virtual.IsVirtual(self.current_class_name, o.name):
+            virtual = 'virtual '
+
+        # declaration inside class { }
+        func_name = o.name
+
+        c_ret_type, _, _ = GetCReturnType(o.type.ret_type)
+
+        self.write_ind('%s%s%s %s(', noreturn, virtual, c_ret_type, func_name)
+
+        self._WriteFuncParams(o, write_defaults=True)
+        self.write(');\n')
 
     def oils_visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
         # In declarations, 'a.b' is only used for default argument
