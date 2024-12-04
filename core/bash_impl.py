@@ -322,6 +322,27 @@ def SparseArray_SetElement(sparse_val, index, s):
     return 0
 
 
+def SparseArray_UnsetElement(sparse_val, index):
+    # type: (value.SparseArray, mops.BigInt) -> int
+    """A non-zero return value represents an error code. If this
+    function returns 1, the specified index is out of range.
+
+    """
+
+    index, ok = _SparseArray_CanonicalizeIndex(sparse_val, index)
+    if not ok:
+        return 1  # error_code: out-of-range index
+    mylib.dict_erase(sparse_val.d, index)
+
+    # update max_index
+    if mops.Equal(index, sparse_val.max_index):
+        sparse_val.max_index = mops.MINUS_ONE
+        for index in sparse_val.d:
+            if mops.Greater(index, sparse_val.max_index):
+                sparse_val.max_index = index
+    return 0
+
+
 def SparseArray_ToStrForShellPrint(sparse_val):
     # type: (value.SparseArray) -> str
 

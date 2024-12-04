@@ -534,5 +534,77 @@ sp1+=(2)
 ## STDERR:
 + sp1+=(2)
 ## END
+
 ## N-I bash/zsh/mksh/ash STDERR:
+## END
+
+
+#### SparseArray: unset -v a[i]
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+a=({1..9})
+var a = _a2sp(a)
+
+declare -p a
+unset -v "a[1]"
+declare -p a
+unset -v "a[9]"
+declare -p a
+unset -v "a[0]"
+declare -p a
+
+## STDOUT:
+declare -a a=([0]=1 [1]=2 [2]=3 [3]=4 [4]=5 [5]=6 [6]=7 [7]=8 [8]=9)
+declare -a a=([0]=1 [2]=3 [3]=4 [4]=5 [5]=6 [6]=7 [7]=8 [8]=9)
+declare -a a=([0]=1 [2]=3 [3]=4 [4]=5 [5]=6 [6]=7 [7]=8 [8]=9)
+declare -a a=([2]=3 [3]=4 [4]=5 [5]=6 [6]=7 [7]=8 [8]=9)
+## END
+
+## N-I bash/zsh/mksh/ash STDOUT:
+## END
+
+
+#### SparseArray: unset -v a[i] with out-of-bound negative index
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+a=(1)
+var a = _a2sp(a)
+
+unset -v "a[-2]"
+unset -v "a[-3]"
+
+## status: 1
+## STDOUT:
+## END
+## STDERR:
+  unset -v "a[-2]"
+           ^
+[ stdin ]:6: a[-2]: Index is out of bounds for array of length 1
+  unset -v "a[-3]"
+           ^
+[ stdin ]:7: a[-3]: Index is out of bounds for array of length 1
+## END
+
+## N-I bash/zsh/mksh/ash status: 0
+## N-I bash/zsh/mksh/ash STDERR:
+## END
+
+
+#### SparseArray: unset -v a[i] for max index
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+a=({1..9})
+unset -v 'a[-1]'
+a[-1]=x
+declare -p a
+unset -v 'a[-1]'
+a[-1]=x
+declare -p a
+
+## STDOUT:
+declare -a a=(1 2 3 4 5 6 7 x)
+declare -a a=(1 2 3 4 5 6 x)
+## END
+
+## N-I bash/zsh/mksh/ash STDOUT:
 ## END
