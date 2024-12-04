@@ -455,10 +455,44 @@ class _Shared(visitor.SimpleVisitor):
         self.current_func_node: Optional[FuncDef] = None
 
         # TODO: remove
-        self.writing_default_arg = False
-
-        # TODO: remove
         self.decl = False
+
+    # Primitives shared for default values
+
+    def visit_int_expr(self, o: 'mypy.nodes.IntExpr') -> None:
+        self.write(str(o.value))
+
+    def visit_float_expr(self, o: 'mypy.nodes.FloatExpr') -> None:
+        # e.g. for arg.t > 0.0
+        self.write(str(o.value))
+
+    def visit_str_expr(self, o: 'mypy.nodes.StrExpr') -> None:
+        self.write(self.global_strings.GetVarName(o))
+
+    def oils_visit_name_expr(self, o: 'mypy.nodes.NameExpr') -> None:
+        if o.name == 'None':
+            self.write('nullptr')
+            return
+        if o.name == 'True':
+            self.write('true')
+            return
+        if o.name == 'False':
+            self.write('false')
+            return
+        if o.name == 'self':
+            self.write('this')
+            return
+
+        self.write(o.name)
+
+    def visit_unary_expr(self, o: 'mypy.nodes.UnaryExpr') -> None:
+        # e.g. a[-1] or 'not x'
+        if o.op == 'not':
+            op_str = '!'
+        else:
+            op_str = o.op
+        self.write(op_str)
+        self.accept(o.expr)
 
     def oils_visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> None:
         mod_parts = o.fullname.split('.')
@@ -608,18 +642,7 @@ class _Shared(visitor.SimpleVisitor):
 
             if write_defaults and arg.initializer:  # int foo = 42
                 self.write(' = ')
-
-                # Silly mechanism to activate self.def_write()
-                # For defaults, we need at least:
-                # - visit_name_expr, visit_member_expr
-                # - visit_int_expr, visit_float_expr, visit_str_expr
-                # - visit_unary_expr (-42)
-                #
-                # It would be nice if the Decl phase did not visit any
-                # statements at all.
-                self.writing_default_arg = True
                 self.accept(arg.initializer)
-                self.writing_default_arg = False
 
             is_first = False
 
@@ -673,7 +696,7 @@ class Impl(_Shared):
 
     def def_write(self, msg: str, *args: Any) -> None:
         """Write only in definitions."""
-        if self.decl and not self.writing_default_arg:
+        if self.decl:
             return
 
         if args:
@@ -726,36 +749,6 @@ class Impl(_Shared):
     #
     # Visiting
     #
-
-    # LITERALS
-
-    def visit_int_expr(self, o: 'mypy.nodes.IntExpr') -> None:
-        self.def_write(str(o.value))
-
-    def visit_float_expr(self, o: 'mypy.nodes.FloatExpr') -> None:
-        # e.g. for arg.t > 0.0
-        self.def_write(str(o.value))
-
-    def visit_str_expr(self, o: 'mypy.nodes.StrExpr') -> None:
-        self.def_write(self.global_strings.GetVarName(o))
-
-    # Expressions
-
-    def oils_visit_name_expr(self, o: 'mypy.nodes.NameExpr') -> None:
-        if o.name == 'None':
-            self.def_write('nullptr')
-            return
-        if o.name == 'True':
-            self.def_write('true')
-            return
-        if o.name == 'False':
-            self.def_write('false')
-            return
-        if o.name == 'self':
-            self.def_write('this')
-            return
-
-        self.def_write(o.name)
 
     def oils_visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
         dot_expr = self.dot_exprs[o]
@@ -1147,15 +1140,6 @@ class Impl(_Shared):
         self.accept(o.operands[0])
         self.def_write(' %s ', o.operators[0])
         self.accept(o.operands[1])
-
-    def visit_unary_expr(self, o: 'mypy.nodes.UnaryExpr') -> None:
-        # e.g. a[-1] or 'not x'
-        if o.op == 'not':
-            op_str = '!'
-        else:
-            op_str = o.op
-        self.def_write(op_str)
-        self.accept(o.expr)
 
     def _WriteListElements(self,
                            items: List[Expression],
@@ -2719,9 +2703,7 @@ class Impl(_Shared):
             self.report_error(o, 'try/finally not supported')
 
 
-# Type error: def_write().  Still need to handle this
-#class Decl(_Shared):
-class Decl(Impl):
+class Decl(_Shared):
 
     def __init__(
         self,
