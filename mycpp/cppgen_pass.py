@@ -88,7 +88,7 @@ def _GetCastKind(module_path: str, cast_to_type: str) -> str:
     return cast_kind
 
 
-def _GetContainsFunc(t: Type) -> Optional[str]:
+def _ContainsFunc(t: Type) -> Optional[str]:
     """ x in y """
     contains_func = None
 
@@ -112,7 +112,7 @@ def _GetContainsFunc(t: Type) -> Optional[str]:
         if not isinstance(t.items[1], NoneTyp):
             raise NotImplementedError('Expected Optional, got %s' % t)
 
-        contains_func = _GetContainsFunc(t.items[0])
+        contains_func = _ContainsFunc(t.items[0])
 
     return contains_func  # None checked later
 
@@ -785,9 +785,6 @@ class Impl(_Shared):
         # More Traversal state
         self.current_func_node: Optional[FuncDef] = None
 
-        # For writing vars after {
-        self.prepend_to_block: Optional[List[LocalVar]] = None
-
         self.unique_id = 0
 
     def _NamespaceComment(self) -> str:
@@ -817,12 +814,20 @@ class Impl(_Shared):
         arg_names = [arg.variable.name for arg in o.arguments]
         #log('arg_names %s', arg_names)
         #log('local_vars %s', self.local_vars[o])
-        self.prepend_to_block = []
+        local_var_list: List[LocalVar] = []
         for (lval_name, lval_type) in self.local_vars[o]:
-            self.prepend_to_block.append((lval_name, lval_type, lval_name
-                                          in arg_names))
+            local_var_list.append((lval_name, lval_type, lval_name
+                                   in arg_names))
 
-        self.accept(o.body)
+        self.write('{\n')
+
+        self.indent += 1
+        self._WriteLocals(local_var_list)
+        self._WriteBody(o.body.body)
+        self.indent -= 1
+
+        self.write('}\n')
+
         self.current_func_node = None
 
     #
@@ -1176,7 +1181,7 @@ class Impl(_Shared):
         # Note: we could get rid of this altogether and rely on C++ function
         # overloading.  But somehow I like it more explicit, closer to C (even
         # though we use templates).
-        contains_func = _GetContainsFunc(t1)
+        contains_func = _ContainsFunc(t1)
 
         if operator == 'in':
             if isinstance(right, TupleExpr):
@@ -1377,11 +1382,11 @@ class Impl(_Shared):
         self.write(' : ')
         self.accept(o.else_expr)
 
-    def _write_tuple_unpacking(self,
-                               temp_name: str,
-                               lval_items: List[Expression],
-                               item_types: List[Type],
-                               is_return: bool = False) -> None:
+    def _WriteTupleUnpacking(self,
+                             temp_name: str,
+                             lval_items: List[Expression],
+                             item_types: List[Type],
+                             is_return: bool = False) -> None:
         """Used by assignment and for loops.
 
         is_return is a special case for:
@@ -1404,9 +1409,9 @@ class Impl(_Shared):
             op = '.' if is_return else '->'
             self.write(' = %s%sat%d();\n', temp_name, op, i)  # RHS
 
-    def _write_tuple_unpacking_loop(self, temp_name: str,
-                                    lval_items: List[Expression],
-                                    item_types: List[Type]) -> None:
+    def _WriteTupleUnpackingInLoop(self, temp_name: str,
+                                   lval_items: List[Expression],
+                                   item_types: List[Type]) -> None:
         for i, (lval_item, item_type) in enumerate(zip(lval_items,
                                                        item_types)):
             c_item_type = GetCType(item_type)
@@ -1430,94 +1435,6 @@ class Impl(_Shared):
                 if CTypeIsManaged(c_item_type) and not self.stack_roots:
                     self.write_ind('StackRoot _unpack_%d(&%s);\n' %
                                    (i, lval_item.name))
-
-    def _ListComprehensionImpl(self, lval: NameExpr, left_expr: Expression,
-                               index_expr: Expression, seq: Expression,
-                               cond: Expression) -> None:
-        """
-        Special case for list comprehensions.  Note that the LHS MUST be on the
-        LHS, so we can append to it.
-        
-        y = [i+1 for i in x[1:] if i]
-          =>
-        y = []
-        for i in x[1:]:
-          if i:
-            y.append(i+1)
-        (but in C++)
-        """
-        # BUG: can't use this to filter
-        # results = [x for x in results]
-        if isinstance(seq, NameExpr) and seq.name == lval.name:
-            raise AssertionError(
-                "Can't use var %r in list comprehension because it would "
-                "be overwritten" % lval.name)
-
-        c_type = GetCType(self.types[lval])
-        # Write empty container as initialization.
-        assert c_type.endswith('*'), c_type  # Hack
-        self.write('Alloc<%s>();\n' % c_type[:-1])
-
-        over_type = self.types[seq]
-
-        if over_type.type.fullname == 'builtins.list':
-            c_type = GetCType(over_type)
-            # remove *
-            assert c_type.endswith('*'), c_type
-            c_iter_type = c_type.replace('List', 'ListIter', 1)[:-1]
-        else:
-            # List comprehension over dictionary not implemented
-            c_iter_type = 'TODO_DICT'
-
-        self.write_ind('for (%s it(', c_iter_type)
-        self.accept(seq)
-        self.write('); !it.Done(); it.Next()) {\n')
-
-        item_type = over_type.args[0]  # get 'int' from 'List<int>'
-
-        if isinstance(item_type, Instance):
-            self.write_ind('  %s ', GetCType(item_type))
-            # TODO(StackRoots): for ch in 'abc'
-            self.accept(index_expr)
-            self.write(' = it.Value();\n')
-
-        elif isinstance(item_type, TupleType):  # [x for x, y in pairs]
-            c_item_type = GetCType(item_type)
-
-            if isinstance(index_expr, TupleExpr):
-                temp_name = 'tup%d' % self.unique_id
-                self.unique_id += 1
-                self.write_ind('  %s %s = it.Value();\n', c_item_type,
-                               temp_name)
-
-                self.indent += 1
-
-                # list comp
-                self._write_tuple_unpacking_loop(temp_name, index_expr.items,
-                                                 item_type.items)
-
-                self.indent -= 1
-            else:
-                raise AssertionError()
-
-        else:
-            raise AssertionError('Unexpected type %s' % item_type)
-
-        if cond is not None:
-            self.indent += 1
-            self.write_ind('if (')
-            self.accept(cond)
-            self.write(') {\n')
-
-        self.write_ind('  %s->append(', lval.name)
-        self.accept(left_expr)
-        self.write(');\n')
-
-        if cond:
-            self.write_ind('}\n')
-            self.indent -= 1
-
-        self.write_ind('}\n')
 
     def _AssignNewDictImpl(self, lval: Expression, prefix: str = '') -> None:
         """Translate NewDict() -> Alloc<Dict<K, V>>
@@ -1627,9 +1544,92 @@ class Impl(_Shared):
                                       left_expr: Expression,
                                       index_expr: Expression, seq: Expression,
                                       cond: Expression) -> None:
-        # Copied from oils_visit_assignment_stmt
+        """
+        Special case for list comprehensions.  Note that the LHS MUST be on the
+        LHS, so we can append to it.
+        
+        y = [i+1 for i in x[1:] if i]
+          =>
+        y = []
+        for i in x[1:]:
+          if i:
+            y.append(i+1)
+        (but in C++)
+        """
         self.write_ind('%s = ', lval.name)
-        self._ListComprehensionImpl(lval, left_expr, index_expr, seq, cond)
+
+        # BUG: can't use this to filter
+        # results = [x for x in results]
+        if isinstance(seq, NameExpr) and seq.name == lval.name:
+            raise AssertionError(
+                "Can't use var %r in list comprehension because it would "
+                "be overwritten" % lval.name)
+
+        c_type = GetCType(self.types[lval])
+        # Write empty container as initialization.
+        assert c_type.endswith('*'), c_type  # Hack
+        self.write('Alloc<%s>();\n' % c_type[:-1])
+
+        over_type = self.types[seq]
+
+        if over_type.type.fullname == 'builtins.list':
+            c_type = GetCType(over_type)
+            # remove *
+            assert c_type.endswith('*'), c_type
+            c_iter_type = c_type.replace('List', 'ListIter', 1)[:-1]
+        else:
+            # List comprehension over dictionary not implemented
+            c_iter_type = 'TODO_DICT'
+
+        self.write_ind('for (%s it(', c_iter_type)
+        self.accept(seq)
+        self.write('); !it.Done(); it.Next()) {\n')
+
+        item_type = over_type.args[0]  # get 'int' from 'List<int>'
+
+        if isinstance(item_type, Instance):
+            self.write_ind('  %s ', GetCType(item_type))
+            # TODO(StackRoots): for ch in 'abc'
+            self.accept(index_expr)
+            self.write(' = it.Value();\n')
+
+        elif isinstance(item_type, TupleType):  # [x for x, y in pairs]
+            c_item_type = GetCType(item_type)
+
+            if isinstance(index_expr, TupleExpr):
+                temp_name = 'tup%d' % self.unique_id
+                self.unique_id += 1
+                self.write_ind('  %s %s = it.Value();\n', c_item_type,
+                               temp_name)
+
+                self.indent += 1
+
+                # list comp
+                self._WriteTupleUnpackingInLoop(temp_name, index_expr.items,
+                                                item_type.items)
+
+                self.indent -= 1
+            else:
+                raise AssertionError()
+
+        else:
+            raise AssertionError('Unexpected type %s' % item_type)
+
+        if cond is not None:
+            self.indent += 1
+            self.write_ind('if (')
+            self.accept(cond)
+            self.write(') {\n')
+
+        self.write_ind('  %s->append(', lval.name)
+        self.accept(left_expr)
+        self.write(');\n')
+
+        if cond:
+            self.write_ind('}\n')
+            self.indent -= 1
+
+        self.write_ind('}\n')
 
     def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
                                    lval: Expression, rval: Expression) -> None:
@@ -1789,15 +1789,15 @@ class Impl(_Shared):
             self.write(';\n')
 
             # assignment
-            self._write_tuple_unpacking(temp_name,
-                                        lval.items,
-                                        rvalue_type.items,
-                                        is_return=is_return)
+            self._WriteTupleUnpacking(temp_name,
+                                      lval.items,
+                                      rvalue_type.items,
+                                      is_return=is_return)
             return
 
         raise AssertionError(lval)
 
-    def _write_body(self, body: List[Statement]) -> None:
+    def _WriteBody(self, body: List[Statement]) -> None:
         """Write a block without the { }."""
         for stmt in body:
             self.accept(stmt)
@@ -2073,8 +2073,8 @@ class Impl(_Shared):
                     self.indent += 1
 
                     # loop - for x, y in other:
-                    self._write_tuple_unpacking_loop(temp_name, o.index.items,
-                                                     item_type.items)
+                    self._WriteTupleUnpackingInLoop(temp_name, o.index.items,
+                                                    item_type.items)
 
                     self.indent -= 1
                 else:
@@ -2088,15 +2088,15 @@ class Impl(_Shared):
         # Copy of visit_block, without opening {
         self.indent += 1
         block = o.body
-        self._write_body(block.body)
+        self._WriteBody(block.body)
         self.indent -= 1
         self.write_ind('}\n')
 
         if o.else_body:
             raise AssertionError("can't translate for-else")
 
-    def _write_cases(self, switch_expr: Expression, cases: util.CaseList,
-                     default_block: Union['mypy.nodes.Block', int]) -> None:
+    def _WriteCases(self, switch_expr: Expression, cases: util.CaseList,
+                    default_block: Union['mypy.nodes.Block', int]) -> None:
         """ Write a list of (expr, block) pairs """
 
         for expr, body in cases:
@@ -2132,8 +2132,7 @@ class Impl(_Shared):
         self.accept(default_block)
         # don't write 'break'
 
-    def _write_switch(self, expr: Expression,
-                      o: 'mypy.nodes.WithStmt') -> None:
+    def _WriteSwitch(self, expr: Expression, o: 'mypy.nodes.WithStmt') -> None:
         """Write a switch statement over integers."""
         assert len(expr.args) == 1, expr.args
 
@@ -2151,13 +2150,13 @@ class Impl(_Shared):
                                             if_node,
                                             cases,
                                             errors=self.errors_keep_going)
-        self._write_cases(expr, cases, default_block)
+        self._WriteCases(expr, cases, default_block)
 
         self.indent -= 1
         self.write_ind('}\n')
 
-    def _write_tag_switch(self, expr: Expression,
-                          o: 'mypy.nodes.WithStmt') -> None:
+    def _WriteTagSwitch(self, expr: Expression,
+                        o: 'mypy.nodes.WithStmt') -> None:
         """Write a switch statement over ASDL types."""
         assert len(expr.args) == 1, expr.args
 
@@ -2175,7 +2174,7 @@ class Impl(_Shared):
                                             if_node,
                                             cases,
                                             errors=self.errors_keep_going)
-        self._write_cases(expr, cases, default_block)
+        self._WriteCases(expr, cases, default_block)
 
         self.indent -= 1
         self.write_ind('}\n')
@@ -2210,8 +2209,8 @@ class Impl(_Shared):
         grouped = itertools.groupby(cases2, key=lambda pair: pair[0])
         return grouped
 
-    def _write_str_switch(self, expr: Expression,
-                          o: 'mypy.nodes.WithStmt') -> None:
+    def _WriteStrSwitch(self, expr: Expression,
+                        o: 'mypy.nodes.WithStmt') -> None:
         """Write a switch statement over strings."""
         assert len(expr.args) == 1, expr.args
 
@@ -2333,11 +2332,11 @@ class Impl(_Shared):
 
         callee_name = expr.callee.name
         if callee_name == 'switch':
-            self._write_switch(expr, o)
+            self._WriteSwitch(expr, o)
         elif callee_name == 'str_switch':
-            self._write_str_switch(expr, o)
+            self._WriteStrSwitch(expr, o)
         elif callee_name == 'tagswitch':
-            self._write_tag_switch(expr, o)
+            self._WriteTagSwitch(expr, o)
         else:
             assert isinstance(expr, CallExpr), expr
             self.write_ind('{  // with\n')
@@ -2355,8 +2354,7 @@ class Impl(_Shared):
                 self.accept(arg)
             self.write('};\n\n')
 
-            #self.write_ind('')
-            self._write_body(o.body.body)
+            self._WriteBody(o.body.body)
 
             self.indent -= 1
             self.write_ind('}\n')
@@ -2382,9 +2380,8 @@ class Impl(_Shared):
 
             self.write(';\n')
 
-    def _ConstructorImpl(self, o: 'mypy.nodes.ClassDef',
-                         stmt: 'mypy.nodes.FuncDef',
-                         base_class_name: util.SymbolPath) -> None:
+    def oils_visit_constructor(self, o: ClassDef, stmt: FuncDef,
+                               base_class_name: util.SymbolPath) -> None:
         self.write('\n')
         self.write('%s::%s(', o.name, o.name)
         self._WriteFuncParams(stmt, write_defaults=False)
@@ -2446,9 +2443,8 @@ class Impl(_Shared):
         self.indent -= 1
         self.write('}\n')
 
-    def _DestructorImpl(self, o: 'mypy.nodes.ClassDef',
-                        stmt: 'mypy.nodes.FuncDef',
-                        base_class_name: util.SymbolPath) -> None:
+    def oils_visit_dunder_exit(self, o: ClassDef, stmt: FuncDef,
+                               base_class_name: util.SymbolPath) -> None:
         self.write('\n')
         self.write_ind('%s::~%s()', o.name, o.name)
 
@@ -2478,14 +2474,6 @@ class Impl(_Shared):
 
         self.indent -= 1
         self.write('}\n')
-
-    def oils_visit_constructor(self, o: ClassDef, stmt: FuncDef,
-                               base_class_name: util.SymbolPath) -> None:
-        self._ConstructorImpl(o, stmt, base_class_name)
-
-    def oils_visit_dunder_exit(self, o: ClassDef, stmt: FuncDef,
-                               base_class_name: util.SymbolPath) -> None:
-        self._DestructorImpl(o, stmt, base_class_name)
 
     def oils_visit_method(self, o: ClassDef, stmt: FuncDef,
                           base_class_name: util.SymbolPath) -> None:
@@ -2572,64 +2560,60 @@ class Impl(_Shared):
 
     # Statements
 
+    def _WriteLocals(self, local_var_list: List[LocalVar]) -> None:
+        # TODO: put the pointers first, and then register a single
+        # StackRoots record.
+        done = set()
+        for lval_name, lval_type, is_param in local_var_list:
+            c_type = GetCType(lval_type)
+            if not is_param and lval_name not in done:
+                if util.SMALL_STR and c_type == 'Str':
+                    self.write_ind('%s %s(nullptr);\n', c_type, lval_name)
+                else:
+                    rhs = ' = nullptr' if CTypeIsManaged(c_type) else ''
+                    self.write_ind('%s %s%s;\n', c_type, lval_name, rhs)
+
+                    # TODO: we're not skipping the assignment, because of
+                    # the RHS
+                    if util.IsUnusedVar(lval_name):
+                        # suppress C++ unused var compiler warnings!
+                        self.write_ind('(void)%s;\n' % lval_name)
+
+                done.add(lval_name)
+
+        # Figure out if we have any roots to write with StackRoots
+        roots = []  # keep it sorted
+        full_func_name = None
+        if self.current_func_node:
+            full_func_name = split_py_name(self.current_func_node.fullname)
+
+        for lval_name, lval_type, is_param in local_var_list:
+            c_type = GetCType(lval_type)
+            #self.log('%s %s %s', lval_name, c_type, is_param)
+            if lval_name not in roots and CTypeIsManaged(c_type):
+                if (not self.stack_roots or self.stack_roots.needs_root(
+                        full_func_name, split_py_name(lval_name))):
+                    roots.append(lval_name)
+
+        #self.log('roots %s', roots)
+
+        if len(roots):
+            if (self.stack_roots_warn and len(roots) > self.stack_roots_warn):
+                log('WARNING: %s() has %d stack roots. Consider refactoring this function.'
+                    % (self.current_func_node.fullname, len(roots)))
+
+            for i, r in enumerate(roots):
+                self.write_ind('StackRoot _root%d(&%s);\n' % (i, r))
+
+            self.write('\n')
+
     def visit_block(self, block: 'mypy.nodes.Block') -> None:
         self.write('{\n')  # not indented to use same line as while/if
 
         self.indent += 1
-
-        if self.prepend_to_block:
-            # TODO: put the pointers first, and then register a single
-            # StackRoots record.
-            done = set()
-            for lval_name, lval_type, is_param in self.prepend_to_block:
-                c_type = GetCType(lval_type)
-                if not is_param and lval_name not in done:
-                    if util.SMALL_STR and c_type == 'Str':
-                        self.write_ind('%s %s(nullptr);\n', c_type, lval_name)
-                    else:
-                        rhs = ' = nullptr' if CTypeIsManaged(c_type) else ''
-                        self.write_ind('%s %s%s;\n', c_type, lval_name, rhs)
-
-                        # TODO: we're not skipping the assignment, because of
-                        # the RHS
-                        if util.IsUnusedVar(lval_name):
-                            # suppress C++ unused var compiler warnings!
-                            self.write_ind('(void)%s;\n' % lval_name)
-
-                    done.add(lval_name)
-
-            # Figure out if we have any roots to write with StackRoots
-            roots = []  # keep it sorted
-            full_func_name = None
-            if self.current_func_node:
-                full_func_name = split_py_name(self.current_func_node.fullname)
-
-            for lval_name, lval_type, is_param in self.prepend_to_block:
-                c_type = GetCType(lval_type)
-                #self.log('%s %s %s', lval_name, c_type, is_param)
-                if lval_name not in roots and CTypeIsManaged(c_type):
-                    if (not self.stack_roots or self.stack_roots.needs_root(
-                            full_func_name, split_py_name(lval_name))):
-                        roots.append(lval_name)
-
-            #self.log('roots %s', roots)
-
-            if len(roots):
-                if (self.stack_roots_warn and
-                        len(roots) > self.stack_roots_warn):
-                    log('WARNING: %s() has %d stack roots. Consider refactoring this function.'
-                        % (self.current_func_node.fullname, len(roots)))
-
-                for i, r in enumerate(roots):
-                    self.write_ind('StackRoot _root%d(&%s);\n' % (i, r))
-
-                self.write('\n')
-
-            self.prepend_to_block = None
-
-        self._write_body(block.body)
-
+        self._WriteBody(block.body)
         self.indent -= 1
+
         self.write_ind('}\n')
 
     def oils_visit_expression_stmt(self,
