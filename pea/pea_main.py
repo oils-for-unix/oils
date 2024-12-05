@@ -166,10 +166,11 @@ class ForwardDeclPass:
 
 def _ParseFuncType(st: stmt) -> AST:
     # 2024-12: causes an error with the latest MyPy, 1.13.0
-    #assert st.type_comment, st
+    #          works with Soil CI MyPy, 1.10.0
+    assert st.type_comment, st
 
     # Caller checks this.   Is there a better way?
-    assert hasattr(st, 'type_comment'), st
+    #assert hasattr(st, 'type_comment'), st
 
     try:
         # This parses with the func_type production in the grammar
