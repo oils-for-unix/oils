@@ -167,6 +167,7 @@ def _CheckCondition(node: Expression, types: Dict[Expression, Type]) -> bool:
     elif isinstance(t, UnionType):
         if len(t.items) == 2 and isinstance(t.items[1], NoneTyp):
             t2 = t.items[0]
+            assert isinstance(t2, Instance), t2
             if t2.type.fullname in _EXPLICIT:
                 return False
 
@@ -305,16 +306,17 @@ def GetCType(t: Type) -> str:
 
     elif isinstance(t, UnionType):  # Optional[T]
 
-        # Special case for Optional[IOError_OSError]
-        # == Union[IOError, OSError, None]
-
         num_items = len(t.items)
 
         if num_items == 3:
+            # Special case for Optional[IOError_OSError] ==
+            # Union[IOError, # OSError, None]
             t0 = t.items[0]
             t1 = t.items[1]
             t2 = t.items[2]
 
+            assert isinstance(t0, Instance), t0
+            assert isinstance(t1, Instance), t1
             t0_name = t0.type.fullname
             t1_name = t1.type.fullname
 
@@ -336,12 +338,13 @@ def GetCType(t: Type) -> str:
             is_pointer = True
 
         elif num_items == 2:
+            # Optional[T]
 
             t0 = t.items[0]
             t1 = t.items[1]
 
             c_type = None
-            if isinstance(t1, NoneTyp):  # Optional[T0]
+            if isinstance(t1, NoneTyp):
                 c_type = GetCType(t.items[0])
             else:
                 # Detect type alias defined in core/error.py
@@ -953,6 +956,8 @@ class Impl(_Shared):
             self.write(')')
             return
 
+        # Must be log('foo'), not log(mystr)
+        assert isinstance(args[0], StrExpr), args[0]
         quoted_fmt = PythonStringLiteral(args[0].value)
 
         self.write('mylib::print_stderr(StrFormat(%s, ' % quoted_fmt)
@@ -1272,6 +1277,9 @@ class Impl(_Shared):
 
     def visit_list_expr(self, o: 'mypy.nodes.ListExpr') -> None:
         list_type = self.types[o]
+        # Note: need a lookup function that understands ListExpr -> Instance
+        assert isinstance(list_type, Instance), list_type
+
         #self.log('**** list_type = %s', list_type)
         c_type = GetCType(list_type)
 
@@ -1291,6 +1299,9 @@ class Impl(_Shared):
 
     def visit_dict_expr(self, o: 'mypy.nodes.DictExpr') -> None:
         dict_type = self.types[o]
+        # Note: need a lookup function that understands DictExpr -> Instance
+        assert isinstance(dict_type, Instance), dict_type
+
         c_type = GetCType(dict_type)
         assert c_type.endswith('*'), c_type
         c_type = c_type[:-1]  # HACK TO CLEAN UP
@@ -1467,8 +1478,7 @@ class Impl(_Shared):
         assert c_type.endswith('*')
         self.write('Alloc<%s>()', c_type[:-1])
 
-    def _AssignCastImpl(self, o: 'mypy.nodes.AssignmentStmt',
-                        lval: Expression) -> None:
+    def _AssignCastImpl(self, lval: Expression, rval: CallExpr) -> None:
         """
         is_downcast_and_shadow idiom:
         
@@ -1476,14 +1486,13 @@ class Impl(_Shared):
         -> source__SourcedFile* src = static_cast<source__SourcedFile>(UP_src)
         """
         assert isinstance(lval, NameExpr)
-        call = o.rvalue
-        type_expr = call.args[0]
+        type_expr = rval.args[0]
         subtype_name = _GetCTypeForCast(type_expr)
 
         cast_kind = _GetCastKind(self.module_path, subtype_name)
 
         is_downcast_and_shadow = False
-        to_cast = call.args[1]
+        to_cast = rval.args[1]
         if isinstance(to_cast, NameExpr):
             if to_cast.name.startswith('UP_'):
                 is_downcast_and_shadow = True
@@ -1496,11 +1505,11 @@ class Impl(_Shared):
             # Normal variable
             self.write_ind('%s = %s<%s>(', lval.name, cast_kind, subtype_name)
 
-        self.accept(call.args[1])  # variable being casted
+        self.accept(rval.args[1])  # variable being casted
         self.write(');\n')
 
     def _AssignToGenerator(self, o: 'mypy.nodes.AssignmentStmt',
-                           lval: Expression, rval_type: Type) -> None:
+                           lval: Expression, rval_type: Instance) -> None:
         """
         it_f = f(42)
 
@@ -1715,7 +1724,7 @@ class Impl(_Shared):
                 return
 
             if callee_name == 'cast':
-                self._AssignCastImpl(o, lval)
+                self._AssignCastImpl(lval, rval)
                 return
 
             rval_type = self.types[rval]
@@ -2143,7 +2152,7 @@ class Impl(_Shared):
         self.accept(default_block)
         # don't write 'break'
 
-    def _WriteSwitch(self, expr: Expression, o: 'mypy.nodes.WithStmt') -> None:
+    def _WriteSwitch(self, expr: CallExpr, o: 'mypy.nodes.WithStmt') -> None:
         """Write a switch statement over integers."""
         assert len(expr.args) == 1, expr.args
 
@@ -2166,7 +2175,7 @@ class Impl(_Shared):
         self.indent -= 1
         self.write_ind('}\n')
 
-    def _WriteTagSwitch(self, expr: Expression,
+    def _WriteTagSwitch(self, expr: CallExpr,
                         o: 'mypy.nodes.WithStmt') -> None:
         """Write a switch statement over ASDL types."""
         assert len(expr.args) == 1, expr.args
@@ -2220,7 +2229,7 @@ class Impl(_Shared):
         grouped = itertools.groupby(cases2, key=lambda pair: pair[0])
         return grouped
 
-    def _WriteStrSwitch(self, expr: Expression,
+    def _WriteStrSwitch(self, expr: CallExpr,
                         o: 'mypy.nodes.WithStmt') -> None:
         """Write a switch statement over strings."""
         assert len(expr.args) == 1, expr.args

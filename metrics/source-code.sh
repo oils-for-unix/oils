@@ -268,11 +268,21 @@ gen-cpp-counts() {
     "$@"
 }
 
+mycpp-translator-files() {
+  # compare_pairs is for testing mycpp-examples
+  ls mycpp/*.py | egrep -v 'mylib|iolib|mops|compare_pairs'
+}
+
 mycpp-counts() {
   local count=$1
   shift
 
-  ls mycpp/*.py | grep -v 'NINJA_subgraph.py' | filter-py | $count \
+  ls mycpp/{mylib,iolib,mops}.py | grep -v 'NINJA_subgraph.py' | filter-py | $count \
+    'mycpp Python Runtime' \
+    "Stubs that are re-implemented in C++" \
+    "$@"
+
+  mycpp-translator-files | grep -v 'NINJA_subgraph.py' | filter-py | $count \
     'mycpp Translator' \
     "This prototype uses the MyPy frontend to translate statically-typed Python to C++.  The generated code calls a small runtime which implements things like List[T], Dict[K, V], and Python's len()." \
     "$@"
