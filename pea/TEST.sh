@@ -40,6 +40,7 @@ install-mypy() {
   python3 -m pip install mypy
 
   # Says 1.5.1 (compiled: yes)
+  # 2024-12: 1.13.0 (compiled: yes)
   mypy-version
 }
 
