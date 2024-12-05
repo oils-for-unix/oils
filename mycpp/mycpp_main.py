@@ -409,7 +409,7 @@ def main(argv: List[str]) -> int:
             souffle_dir = tmp_dir.name
         stack_roots = pass_state.ComputeMinimalStackRoots(
             cfgs, souffle_dir=souffle_dir)
-    else:  
+    else:
         # [PASS]
         timer.Section('mycpp: dumping control flow graph to _tmp/mycpp-facts')
 

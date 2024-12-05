@@ -19,7 +19,7 @@ from mypy.nodes import (Expression, Statement, NameExpr, IndexExpr, MemberExpr,
 from mycpp import format_strings
 from mycpp import pass_state
 from mycpp import util
-from mycpp.util import log, SymbolToString, SplitPyName, IsStr
+from mycpp.util import log, SymbolToString, SplitPyName
 
 from typing import Tuple, List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -122,11 +122,11 @@ def _ContainsFunc(t: Type) -> Optional[str]:
 
 
 def _EqualsFunc(left_type: Type) -> Optional[str]:
-    if IsStr(left_type):
+    if util.IsStr(left_type):
         return 'str_equals'
 
     if (isinstance(left_type, UnionType) and len(left_type.items) == 2 and
-            IsStr(left_type.items[0]) and
+            util.IsStr(left_type.items[0]) and
             isinstance(left_type.items[1], NoneTyp)):
         return 'maybe_str_equals'
 
@@ -347,6 +347,9 @@ def GetCType(t: Type) -> str:
             if isinstance(t1, NoneTyp):
                 c_type = GetCType(t.items[0])
             else:
+                assert isinstance(t0, Instance), t0
+                assert isinstance(t1, Instance), t1
+
                 # Detect type alias defined in core/error.py
                 # IOError_OSError = Union[IOError, OSError]
                 t0_name = t0.type.fullname
@@ -940,8 +943,7 @@ class Impl(_Shared):
         for arg in o.args[2:]:
             arg_type = self.types[arg]
             self.write(', ')
-            if (isinstance(arg_type, Instance) and
-                    arg_type.type.fullname == 'builtins.str'):
+            if util.IsStr(arg_type):  # TODO: doesn't know it's an Instance
                 self.write('%s->data()' % arg.name)
             else:
                 self.accept(arg)
@@ -1082,6 +1084,8 @@ class Impl(_Shared):
             else:
                 self.accept(o.left)
             #log('right_type %s', right_type)
+
+            # TODO: Can we restore some type checking?
             if 0:
                 if isinstance(right_type, Instance):
                     fmt_types: List[Type] = [right_type]
@@ -1097,6 +1101,7 @@ class Impl(_Shared):
 
             # In the definition pass, write the call site.
             if isinstance(right_type, TupleType):
+                assert isinstance(o.right, TupleExpr), o.right
                 for i, item in enumerate(o.right.items):
                     self.write(', ')
                     self.accept(item)
@@ -1149,16 +1154,16 @@ class Impl(_Shared):
         left_type_i = 0  # not a special case
         right_type_i = 0  # not a special case
 
-        if IsStr(t0):
+        if util.IsStr(t0):
             left_type_i = 1
         elif (isinstance(t0, UnionType) and len(t0.items) == 2 and
-              IsStr(t0.items[0]) and isinstance(t0.items[1], NoneTyp)):
+              util.IsStr(t0.items[0]) and isinstance(t0.items[1], NoneTyp)):
             left_type_i = 2
 
-        if IsStr(t1):
+        if util.IsStr(t1):
             right_type_i = 1
         elif (isinstance(t1, UnionType) and len(t1.items) == 2 and
-              IsStr(t1.items[0]) and isinstance(t1.items[1], NoneTyp)):
+              util.IsStr(t1.items[0]) and isinstance(t1.items[1], NoneTyp)):
             right_type_i = 2
 
         #self.log('left_type_i %s right_type_i %s', left_type, right_type)
@@ -1580,6 +1585,7 @@ class Impl(_Shared):
         self.write('Alloc<%s>();\n' % c_type[:-1])
 
         over_type = self.types[seq]
+        assert isinstance(over_type, Instance), over_type
 
         if over_type.type.fullname == 'builtins.list':
             c_type = GetCType(over_type)
@@ -1655,6 +1661,8 @@ class Impl(_Shared):
             # Global
             #   L = [1, 2]  # type: List[int]
             if isinstance(rval, ListExpr):
+                assert isinstance(lval_type, Instance), lval_type
+
                 item_type = lval_type.args[0]
                 item_c_type = GetCType(item_type)
 
@@ -1671,6 +1679,8 @@ class Impl(_Shared):
             # Global
             #   D = {"foo": "bar"}  # type: Dict[str, str]
             if isinstance(rval, DictExpr):
+                assert isinstance(lval_type, Instance), lval_type
+
                 key_type, val_type = lval_type.args
 
                 key_c_type = GetCType(key_type)
@@ -1783,6 +1793,8 @@ class Impl(_Shared):
             if isinstance(rvalue_type, TypeAliasType):
                 rvalue_type = rvalue_type.alias.target
 
+            assert isinstance(rvalue_type, TupleType), rvalue_type
+
             c_type = GetCType(rvalue_type)
 
             is_return = (isinstance(rval, CallExpr) and
@@ -1876,14 +1888,17 @@ class Impl(_Shared):
         if func_name == 'enumerate':
             assert isinstance(o.index, TupleExpr), o.index
             index0 = o.index.items[0]
+
             assert isinstance(index0, NameExpr), index0
             index0_name = index0.name  # generate int i = 0; ; ++i
 
-            # type of 'x' in 'for i, x in enumerate(...)'
+            # Get type of 'x' in 'for i, x in enumerate(...)'
+            assert isinstance(o.inferred_item_type,
+                              TupleType), o.inferred_item_type
             item_type = o.inferred_item_type.items[1]
             index_expr = o.index.items[1]
 
-            assert isinstance(o.expr, CallExpr), o.expr  # caller insured
+            assert isinstance(o.expr, CallExpr), o.expr  # caller ensured
             # enumerate(mylist) turns into iteration over mylist with variable i
             assert len(args) == 1, args
             iterated_over = args[0]
@@ -1918,6 +1933,8 @@ class Impl(_Shared):
 
         if isinstance(over_type, TypeAliasType):
             over_type = over_type.alias.target
+
+        assert isinstance(over_type, Instance), over_type
 
         if 0:
             log("***** OVER %s %s", over_type, dir(over_type))
