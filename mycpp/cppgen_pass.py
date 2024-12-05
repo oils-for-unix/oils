@@ -763,8 +763,8 @@ class Impl(_Shared):
             types: Dict[Expression, Type],
             global_strings: 'const_pass.GlobalStrings',
             yield_out_params: Dict[FuncDef, Tuple[str, str]],  # input
-            local_vars: Optional[AllLocalVars] = None,
             all_member_vars: Optional[AllMemberVars] = None,
+            local_vars: Optional[AllLocalVars] = None,
             dot_exprs: Optional['ir_pass.DotExprs'] = None,
             stack_roots_warn: Optional[int] = None,
             stack_roots: Optional[pass_state.StackRoots] = None) -> None:
@@ -835,10 +835,6 @@ class Impl(_Shared):
         self.write('}\n')
 
         self.current_func_node = None
-
-    #
-    # Visit methods
-    #
 
     def visit_yield_expr(self, o: 'mypy.nodes.YieldExpr') -> None:
         assert self.current_func_node in self.yield_out_params

@@ -198,8 +198,6 @@ class Pass(visitor.SimpleVisitor):
         # it_g = g(n)
         self.current_local_vars.append((lval.name, self.types[lval]))
 
-        # TODO: _write_tuple_unpacking: result = [a for a, b in other]
-
         super().oils_visit_assign_to_listcomp(lval, left_expr, index_expr, seq,
                                               cond)
 
@@ -287,7 +285,8 @@ class Pass(visitor.SimpleVisitor):
 
     def oils_visit_for_stmt(self, o: 'mypy.nodes.ForStmt',
                             func_name: Optional[str]) -> None:
-        # TODO: copied from cppgen_pass - this could be destructured in visitor.py
+        # TODO: this variable should be BLOCK scoped, not function scoped, like
+        # the tuple variables for i, x
         index0_name: Optional[str] = None
         if func_name == 'enumerate':
             assert isinstance(o.index, TupleExpr), o.index

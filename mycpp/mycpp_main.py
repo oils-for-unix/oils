@@ -28,10 +28,12 @@ from mycpp import pass_state
 from mycpp.util import log
 from mycpp import visitor
 
-from typing import Dict, List, Optional, Tuple, Any, Iterator, TYPE_CHECKING
+from typing import (Dict, List, Optional, Tuple, Any, Iterator, TextIO,
+                    TYPE_CHECKING)
 
 if TYPE_CHECKING:
-    from mypy.nodes import MemberExpr, FuncDef
+    from mypy.nodes import FuncDef, MypyFile, Expression
+    from mypy.types import Type
     from mypy.modulefinder import BuildSource
     from mypy.build import BuildResult
 
@@ -117,7 +119,7 @@ _LAST = ('builtin.bracket_osh', 'builtin.completion_osh', 'core.shell')
 
 
 def ModulesToCompile(result: 'BuildResult',
-                     mod_names: List[str]) -> Iterator[Tuple[str, Any]]:
+                     mod_names: List[str]) -> Iterator[Tuple[str, 'MypyFile']]:
     # HACK TO PUT asdl/runtime FIRST.
     #
     # Another fix is to hoist those to the declaration phase?  Not sure if that
@@ -146,6 +148,27 @@ def ModulesToCompile(result: 'BuildResult',
     for name, module in result.files.items():
         if name in _LAST:
             yield name, module
+
+
+def _DedupeHack(
+        to_compile: List[Tuple[str,
+                               'MypyFile']]) -> List[Tuple[str, 'MypyFile']]:
+    # Filtering step
+    filtered = []
+    seen = set()
+    for name, module in to_compile:
+        # HACK: Why do I get oil.asdl.tdop in addition to asdl.tdop?
+        if name.startswith('oil.'):
+            name = name[4:]
+
+        # ditto with testpkg.module1
+        if name.startswith('mycpp.'):
+            name = name[6:]
+
+        if name not in seen:  # remove dupe
+            filtered.append((name, module))
+            seen.add(name)
+    return filtered
 
 
 class Timer:
@@ -201,7 +224,6 @@ def main(argv: List[str]) -> int:
 
     o = Options()
     opts, argv = o.parse_args(argv)
-
     paths = argv[1:]  # e.g. asdl/typed_arith_parse.py
 
     timer.Section('mycpp: LOADING %s', ' '.join(paths))
@@ -219,9 +241,6 @@ def main(argv: List[str]) -> int:
 
     # Ditto
     to_header = opts.to_header
-    if 0:
-        to_header = [os.path.basename(p) for p in to_header]
-        to_header = [os.path.splitext(name)[0] for name in to_header]
 
     #log('to_header %s', to_header)
 
@@ -253,29 +272,12 @@ def main(argv: List[str]) -> int:
         log('')
 
     to_compile = list(ModulesToCompile(result, mod_names))
-
-    # HACK: Why do I get oil.asdl.tdop in addition to asdl.tdop?
-    filtered = []
-    seen = set()
-    for name, module in to_compile:
-        if name.startswith('oil.'):
-            name = name[4:]
-
-        # ditto with testpkg.module1
-        if name.startswith('mycpp.'):
-            name = name[6:]
-
-        if name not in seen:  # remove dupe
-            filtered.append((name, module))
-            seen.add(name)
-
-    to_compile = filtered
+    to_compile = _DedupeHack(to_compile)
 
     if 0:
         for name, module in to_compile:
             log('to_compile %s', name)
         log('')
-
         #import pickle
         # can't pickle but now I see deserialize() nodes and stuff
         #s = pickle.dumps(module)
@@ -290,6 +292,24 @@ def main(argv: List[str]) -> int:
     if opts.header_out:
         header_f = open(opts.header_out, 'w')  # Not closed
 
+    return Run(timer,
+               f,
+               header_f,
+               result.types,
+               to_header,
+               to_compile,
+               stack_roots_warn=opts.stack_roots_warn,
+               minimize_stack_roots=opts.minimize_stack_roots)
+
+
+def Run(timer: Timer,
+        f: TextIO,
+        header_f: TextIO,
+        types: Dict['Expression', 'Type'],
+        to_header: List[str],
+        to_compile: List[Tuple[str, 'MypyFile']],
+        stack_roots_warn: bool = False,
+        minimize_stack_roots: bool = False) -> int:
     f.write("""\
 // BEGIN mycpp output
 
@@ -300,10 +320,10 @@ def main(argv: List[str]) -> int:
     # [PASS] IR pass could be merged with virtual pass
     timer.Section('mycpp pass: IR')
 
-    dot_exprs: Dict[MemberExpr, ir_pass.DotExprs] = {}
+    dot_exprs: Dict[str, ir_pass.DotExprs] = {}
     for _, module in to_compile:
         module_dot_exprs: ir_pass.DotExprs = {}
-        p1 = ir_pass.Build(result.types, module_dot_exprs)
+        p1 = ir_pass.Build(types, module_dot_exprs)
         p1.visit_mypy_file(module)
         dot_exprs[module.path] = p1.dot_exprs
 
@@ -320,21 +340,17 @@ def main(argv: List[str]) -> int:
     timer.Section('mycpp pass: FORWARD DECL')
 
     for name, module in to_compile:
-        if name in to_header:
-            out_f = header_f
-        else:
-            out_f = f
-
         forward_decls: List[str] = []  # unused
         p2 = virtual_pass.Pass(
-            result.types,
+            types,
             virtual,  # output
             forward_decls,  # TODO: write output of forward_decls
             all_member_vars,  # output
             all_local_vars,  # output
             yield_out_params,  # output
         )
-        p2.SetOutputFile(out_f)
+        # forward declarations may go to header
+        p2.SetOutputFile(header_f if name in to_header else f)
         p2.visit_mypy_file(module)
         MaybeExitWithErrors(p2)
 
@@ -364,18 +380,15 @@ def main(argv: List[str]) -> int:
     timer.Section('mycpp pass: PROTOTYPES')
 
     for name, module in to_compile:
-        if name in to_header:
-            out_f = header_f
-        else:
-            out_f = f
         p4 = cppgen_pass.Decl(
-            result.types,
+            types,
             global_strings,  # input
             yield_out_params,
             virtual=virtual,  # input
             all_member_vars=all_member_vars,  # input
         )
-        p4.SetOutputFile(out_f)
+        # prototypes may go to a header
+        p4.SetOutputFile(header_f if name in to_header else f)
         p4.visit_mypy_file(module)
         MaybeExitWithErrors(p4)
 
@@ -389,15 +402,15 @@ def main(argv: List[str]) -> int:
 
     cfgs = {}  # fully qualified function name -> control flow graph
     for name, module in to_compile:
-        p5 = control_flow_pass.Build(result.types, virtual, all_local_vars,
+        p5 = control_flow_pass.Build(types, virtual, all_local_vars,
                                      dot_exprs[module.path])
         p5.visit_mypy_file(module)
         cfgs.update(p5.cfgs)
         MaybeExitWithErrors(p5)
 
+    # [PASS] Conditionally run Souffle
     stack_roots = None
-    if opts.minimize_stack_roots:
-        # [PASS]
+    if minimize_stack_roots:
         timer.Section('mycpp pass: SOUFFLE data flow')
 
         # souffle_dir contains two subdirectories.
@@ -410,7 +423,6 @@ def main(argv: List[str]) -> int:
         stack_roots = pass_state.ComputeMinimalStackRoots(
             cfgs, souffle_dir=souffle_dir)
     else:
-        # [PASS]
         timer.Section('mycpp: dumping control flow graph to _tmp/mycpp-facts')
 
         pass_state.DumpControlFlowGraphs(cfgs)
@@ -422,14 +434,14 @@ def main(argv: List[str]) -> int:
     # void Bar:method() { ... }
     for name, module in to_compile:
         p6 = cppgen_pass.Impl(
-            result.types,
+            types,
             global_strings,
             yield_out_params,
             local_vars=all_local_vars,
             all_member_vars=all_member_vars,
             dot_exprs=dot_exprs[module.path],
             stack_roots=stack_roots,
-            stack_roots_warn=opts.stack_roots_warn,
+            stack_roots_warn=stack_roots_warn,
         )
         p6.SetOutputFile(f)  # doesn't go to header
         p6.visit_mypy_file(module)
