@@ -109,7 +109,7 @@ py2() {
 }
 
 py3-files() {
-  for f in mycpp/*.py; do
+  for f in mycpp/*.py pea/*.py; do
     echo $f
   done
 }

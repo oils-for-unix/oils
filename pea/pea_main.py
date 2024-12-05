@@ -6,7 +6,7 @@ A potential rewrite of mycpp.
 """
 import ast
 from ast import AST, stmt, Module, ClassDef, FunctionDef, Assign
-import collections
+#import collections
 from dataclasses import dataclass
 import io
 import optparse
@@ -21,9 +21,10 @@ if 0:
         print('*** syspath: %s' % p)
 
 import typing
-from typing import Optional, Any
+from typing import Any, Dict, List, Tuple
 
 from mycpp import pass_state
+from mycpp import translate
 
 START_TIME = time.time()
 
@@ -401,6 +402,39 @@ def main(argv: list[str]) -> int:
             return 1
 
         log('Done')
+
+    elif action == 'mycpp':
+        paths = argv[2:]
+
+        timer = translate.Timer(START_TIME)
+        timer.Section('PEA loading %s', ' '.join(paths))
+
+        f = sys.stdout
+        header_f = sys.stdout
+
+        # TODO: Dict[Expression, Type]
+        types: Dict[Any, Any] = {}
+
+        to_header: List[str] = []
+        # TODO: MypyFile
+        to_compile: List[Tuple[str, Any]] = []
+
+        from mypy.nodes import MypyFile
+        for path in paths:
+            # defs, imports
+            # Ah this is an empty file!
+            stub = MypyFile([], [])
+            # fullname is a property, backed by _fullname
+            stub._fullname = path
+
+            to_compile.append((path, stub))
+
+        return translate.Run(timer,
+                             f,
+                             header_f,
+                             types,
+                             to_header,
+                             to_compile)
 
     elif action == 'dump-pickles':
         files = argv[2:]

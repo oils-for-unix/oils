@@ -335,6 +335,15 @@ test-syntax-error() {
   nq-assert $? -eq 1
 }
 
+test-mycpp-integration() {
+  # Works
+  echo ---
+  pea-main mycpp 
+
+  echo ---
+  pea-main mycpp mycpp/examples/test_small_str.py
+}
+
 run-tests() {
   # Making this separate for soil/worker.sh
 
