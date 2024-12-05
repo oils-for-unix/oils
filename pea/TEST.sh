@@ -14,21 +14,9 @@ source devtools/common.sh
 
 source build/dev-shell.sh  # find python3 in /wedge PATH component
 
-# This is just like the yapf problem in devtools/format.sh !
-# Pea needs a newer version of MyPy -- one that supports 'math'
-
-# 2024-09 - there is a conflict between:
-# parse-all - 'import mypy' for mycpp/pass_state.py
-# check-types - uses a newer version of MyPy
-#
-# The problem is importing MyPy as a LIBRARY vs. using it as a TOOL
-
-unset PYTHONPATH
-export PYTHONPATH=.
-
 readonly MYPY_VENV='_tmp/mypy-venv'
 
-install-mypy() {
+install-latest-mypy() {
   local venv=$MYPY_VENV
 
   rm -r -f -v $venv
@@ -39,15 +27,38 @@ install-mypy() {
 
   python3 -m pip install mypy
 
-  # Says 1.5.1 (compiled: yes)
-  # 2024-12: 1.13.0 (compiled: yes)
+  # 2022:                   1.5.1 (compiled: yes)
+  # 2024-12 Debian desktop: 1.13.0 (compiled: yes)
+  # 2024-12 Soil CI image:  1.10.0 
   mypy-version
 }
 
-mypy-version() {
-  . $MYPY_VENV/bin/activate
+_check-types() {
   python3 -m mypy --version
+  time python3 -m mypy --strict pea/pea_main.py
 }
+
+check-with-our-mypy() {
+  echo PYTHONPATH=$PYTHONPATH
+  echo
+
+  _check-types
+}
+
+check-with-latest-mypy() {
+  # This disables the MyPy wedge< and uses the latest MyPy installed above
+  # It'
+  export PYTHONPATH=.
+
+  # install-mypy creates this.  May not be present in CI machine.
+  local activate=$MYPY_VENV/bin/activate
+  if test -f $activate; then
+    . $activate
+  fi
+
+  _check-types
+}
+
 
 #
 # Run Pea
@@ -302,17 +313,6 @@ osh-overhead() {
 
 mypy-compare() {
   devtools/types.sh check-oils
-}
-
-check-types() {
-
-  # install-mypy creates this.  May not be present in CI machine.
-  local activate=$MYPY_VENV/bin/activate
-  if test -f $activate; then
-    . $activate
-  fi
-
-  time python3 -m mypy --strict pea/pea_main.py
 }
 
 test-translate() {
