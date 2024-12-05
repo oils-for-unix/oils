@@ -8,6 +8,28 @@ COPY --chown=uke \
   _build/wedge/binary/oils-for-unix.org/pkg/python3/3.10.4 \
   /wedge/oils-for-unix.org/pkg/python3/3.10.4
 
+# 2024-12: Added because we want to run the old MyPy (which is not compiled)
+#
+# TODO: we really need a way to crawl deps
+
+COPY stdlib/osh/bash-strict.sh /home/uke/tmp/stdlib/osh/bash-strict.sh
+COPY stdlib/osh/task-five.sh /home/uke/tmp/stdlib/osh/task-five.sh
+COPY stdlib/osh/byo-server.sh /home/uke/tmp/stdlib/osh/byo-server.sh
+COPY stdlib/osh/two.sh /home/uke/tmp/stdlib/osh/two.sh
+
+COPY test/tsv-lib.sh /home/uke/tmp/test/tsv-lib.sh
+COPY web/table/html.sh /home/uke/tmp/web/table/html.sh
+
+COPY build/dev-shell.sh /home/uke/tmp/build/dev-shell.sh
+COPY deps/from-apt.sh /home/uke/tmp/deps/from-apt.sh
+COPY build/deps.sh /home/uke/tmp/build/deps.sh
+
+COPY --chown=uke \
+  _build/deps-source/mypy/mypy-0.780/ \
+  /home/uke/wedge/oils-for-unix.org/pkg/mypy/0.780/
+
+RUN build/deps.sh install-py3-libs /home/uke/wedge/oils-for-unix.org/pkg/mypy/0.780/
+
 # Install MyPy with the python3 wedge
 RUN /wedge/oils-for-unix.org/pkg/python3/3.10.4/bin/python3 -m pip \
   install mypy

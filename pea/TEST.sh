@@ -16,21 +16,41 @@ source build/dev-shell.sh  # find python3 in /wedge PATH component
 
 readonly MYPY_VENV='_tmp/mypy-venv'
 
+show-python-config() {
+  which python3
+  echo
+
+  python3 -V
+  echo
+
+  echo PYTHONPATH=$PYTHONPATH
+  echo
+}
+
 install-latest-mypy() {
   local venv=$MYPY_VENV
 
+  export PYTHONPATH=.
+
   rm -r -f -v $venv
 
+  show-python-config
+
+  echo "Creating venv in $venv"
   python3 -m venv $venv
 
   . $venv/bin/activate
+
+  echo "venv $venv is activated"
+  show-python-config
+
 
   python3 -m pip install mypy
 
   # 2022:                   1.5.1 (compiled: yes)
   # 2024-12 Debian desktop: 1.13.0 (compiled: yes)
   # 2024-12 Soil CI image:  1.10.0 
-  mypy-version
+  python3 -m mypy --version
 }
 
 _check-types() {
@@ -341,7 +361,7 @@ test-mycpp-integration() {
   # In Soil CI, we are importing a compiled MyPy?
   # We don't have the WEDGE
   # OK I can just add that
-  return
+  #return
 
   # Works
   echo ---
