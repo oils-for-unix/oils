@@ -121,7 +121,7 @@ pea-tasks() {
 os-info          soil/diagnose.sh os-info    -
 dump-env         soil/diagnose.sh dump-env   -
 py-source        build/py.sh py-source       -
-check-types      pea/TEST.sh check-types     -
+typecheck        pea/TEST.sh check-with-latest-mypy -
 run-tests        pea/TEST.sh run-tests       -
 parse-all        pea/TEST.sh parse-all       -
 EOF

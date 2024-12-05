@@ -23,12 +23,15 @@ source build/dev-shell.sh  # find python3 in /wedge PATH component
 #
 # The problem is importing MyPy as a LIBRARY vs. using it as a TOOL
 
-unset PYTHONPATH
-export PYTHONPATH=.
+# save it for later
+OILS_PYTHONPATH=$PYTHONPATH
+
+#unset PYTHONPATH
+#export PYTHONPATH=.
 
 readonly MYPY_VENV='_tmp/mypy-venv'
 
-install-mypy() {
+install-latest-mypy() {
   local venv=$MYPY_VENV
 
   rm -r -f -v $venv
@@ -42,11 +45,6 @@ install-mypy() {
   # Says 1.5.1 (compiled: yes)
   # 2024-12: 1.13.0 (compiled: yes)
   mypy-version
-}
-
-mypy-version() {
-  . $MYPY_VENV/bin/activate
-  python3 -m mypy --version
 }
 
 #
@@ -304,7 +302,24 @@ mypy-compare() {
   devtools/types.sh check-oils
 }
 
-check-types() {
+_check-types() {
+  python3 -m mypy --version
+  time python3 -m mypy --strict pea/pea_main.py
+}
+
+check-with-our-mypy() {
+  #source build/dev-shell.sh
+
+  echo PYTHONPATH=$PYTHONPATH
+  echo
+
+  PYTHONPATH=$OILS_PYTHONPATH _check-types
+}
+
+check-with-latest-mypy() {
+  # Use the LATEST MyPy
+
+  export PYTHONPATH=.
 
   # install-mypy creates this.  May not be present in CI machine.
   local activate=$MYPY_VENV/bin/activate
@@ -312,7 +327,7 @@ check-types() {
     . $activate
   fi
 
-  time python3 -m mypy --strict pea/pea_main.py
+  _check-types
 }
 
 test-translate() {
