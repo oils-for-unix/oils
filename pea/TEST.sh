@@ -16,14 +16,34 @@ source build/dev-shell.sh  # find python3 in /wedge PATH component
 
 readonly MYPY_VENV='_tmp/mypy-venv'
 
+show-python-config() {
+  which python3
+  echo
+
+  python3 -V
+  echo
+
+  echo PYTHONPATH=$PYTHONPATH
+  echo
+}
+
 install-latest-mypy() {
   local venv=$MYPY_VENV
 
+  export PYTHONPATH=.
+
   rm -r -f -v $venv
 
+  show-python-config
+
+  echo "Creating venv in $venv"
   python3 -m venv $venv
 
   . $venv/bin/activate
+
+  echo "venv $venv is activated"
+  show-python-config
+
 
   python3 -m pip install mypy
 
