@@ -1,5 +1,15 @@
 mycpp/__init__.py
+mycpp/const_pass.py
+mycpp/control_flow_pass.py
+mycpp/cppgen_pass.py
+mycpp/crash.py
+mycpp/format_strings.py
+mycpp/ir_pass.py
 mycpp/pass_state.py
+mycpp/translate.py
 mycpp/util.py
+mycpp/virtual_pass.py
+mycpp/visitor.py
 pea/__init__.py
+pea/mypy_shim.py
 pea/pea_main.py

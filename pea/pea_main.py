@@ -27,6 +27,8 @@ from typing import Any, Dict, List, Tuple
 from mycpp import pass_state
 from mycpp import translate
 
+from pea import mypy_shim
+
 START_TIME = time.time()
 
 
@@ -421,22 +423,14 @@ def main(argv: list[str]) -> int:
         # TODO: MypyFile
         to_compile: List[Tuple[str, Any]] = []
 
-        from mypy.nodes import MypyFile
         for path in paths:
             # defs, imports
             # Ah this is an empty file!
-            stub = MypyFile([], [])
-            # fullname is a property, backed by _fullname
-            stub._fullname = path
+            m = mypy_shim.CreateMyPyFile(path)
 
-            to_compile.append((path, stub))
+            to_compile.append((path, m))
 
-        return translate.Run(timer,
-                             f,
-                             header_f,
-                             types,
-                             to_header,
-                             to_compile)
+        return translate.Run(timer, f, header_f, types, to_header, to_compile)
 
     elif action == 'dump-pickles':
         files = argv[2:]

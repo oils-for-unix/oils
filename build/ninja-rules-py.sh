@@ -140,8 +140,10 @@ print-wrap-cc() {
        main-wrapper $main_module
        ;;
      pea)
-        echo '#include <stdio.h>'
-        echo 'int main() { printf("stub\n"); return 1; }'
+       # TODO: use the same wrapper
+       #example-main-wrapper $main_module
+       echo '#include <stdio.h>'
+       echo 'int main() { printf("stub\n"); return 1; }'
        ;;
      (*)
        die "Invalid translator $translator"
@@ -312,7 +314,18 @@ shift 2
 
 tmp=$out.tmp  # avoid creating partial files
 
-PYTHONPATH="$REPO_ROOT:$TODO_MYPY_REPO" MYPYPATH="$MYPYPATH" \
+# copied from build/dev-shell.sh
+
+USER_WEDGE_DIR=~/wedge/oils-for-unix.org
+
+MYPY_VERSION=0.780
+MYPY_WEDGE=$USER_WEDGE_DIR/pkg/mypy/$MYPY_VERSION
+
+PY3_LIBS_VERSION=2023-03-04
+site_packages=lib/python3.10/site-packages
+PY3_LIBS_WEDGE=$USER_WEDGE_DIR/pkg/py3-libs/$PY3_LIBS_VERSION/$site_packages
+
+PYTHONPATH="$REPO_ROOT:$MYPY_WEDGE:$PY3_LIBS_WEDGE" MYPYPATH="$MYPYPATH" \
   python3 pea/pea_main.py cpp "$@" > $tmp
 status=$?
 

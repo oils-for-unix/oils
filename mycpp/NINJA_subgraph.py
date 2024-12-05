@@ -165,6 +165,8 @@ def TranslatorSubgraph(ru, translator, ex):
     # Implicit dependency: if the translator changes, regenerate source code.
     # But don't pass it on the command line.
     if translator == 'pea':
+        # Note: build/ninja-rules-py.sh writes this 'shwrap'
+        # It depends on MYPY_WEDGE and PY3_LIBS_WEDGE
         translator_wrapper = '_bin/shwrap/pea_main'
         base_translator = 'pea'
         translate_rule = 'translate-pea'
@@ -216,9 +218,13 @@ def TranslatorSubgraph(ru, translator, ex):
             ('cxx', 'asan'),  # need this for running the examples in CI
             ('cxx', 'asan+gcalways'),
         ]
+    elif translator == 'pea':
+        example_matrix = [
+            ('cxx', 'asan'),
+            ('cxx', 'opt'),
+        ]
     else:
-        # pea just has one variant for now
-        example_matrix = [('cxx', 'asan+gcalways')]
+        raise AssertionError()
 
     if translator == 'mycpp':
         phony_prefix = 'mycpp-examples'
