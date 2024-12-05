@@ -361,7 +361,7 @@ test-mycpp-integration() {
   # In Soil CI, we are importing a compiled MyPy?
   # We don't have the WEDGE
   # OK I can just add that
-  return
+  #return
 
   # Works
   echo ---
