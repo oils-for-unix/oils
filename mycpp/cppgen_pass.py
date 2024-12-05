@@ -1518,6 +1518,7 @@ class Impl(_Shared):
         type_param = rval_type.args[0]
         inner_c_type = GetCType(type_param)
 
+        assert isinstance(lval, NameExpr), lval
         eager_list_name = 'YIELD_%s' % lval.name
         eager_list_type = 'List<%s>*' % inner_c_type
 
@@ -1810,10 +1811,16 @@ class Impl(_Shared):
             self.log('  inferred_item_type %s', o.inferred_item_type)
             self.log('  inferred_iterator_type %s', o.inferred_iterator_type)
 
+        if func_name:
+            assert isinstance(o.expr, CallExpr), o.expr  # caller ensured it
+            args = o.expr.args
+
         # special case: 'for i in xrange(3)'
         if func_name == 'xrange':
+            assert isinstance(o.index, NameExpr), o.index
             index_name = o.index.name
-            args = o.expr.args
+
+            assert isinstance(o.expr, CallExpr), o.expr  # caller ensured it
             num_args = len(args)
 
             if num_args == 1:  # xrange(end)
@@ -1867,9 +1874,10 @@ class Impl(_Shared):
             item_type = o.inferred_item_type.items[1]
             index_expr = o.index.items[1]
 
+            assert isinstance(o.expr, CallExpr), o.expr  # caller insured
             # enumerate(mylist) turns into iteration over mylist with variable i
-            assert len(o.expr.args) == 1, o.expr.args
-            iterated_over = o.expr.args[0]
+            assert len(args) == 1, args
+            iterated_over = args[0]
 
         elif func_name == 'reversed':
             # NOTE: enumerate() and reversed() can't be mixed yet.  But you CAN
@@ -1877,7 +1885,6 @@ class Impl(_Shared):
             item_type = o.inferred_item_type
             index_expr = o.index
 
-            args = o.expr.args
             assert len(args) == 1, args
             iterated_over = args[0]
 
@@ -1887,7 +1894,6 @@ class Impl(_Shared):
             item_type = o.inferred_item_type
             index_expr = o.index
 
-            args = o.expr.args
             assert len(args) == 1, args
             # This should be a dict
             iterated_over = args[0]
@@ -2046,6 +2052,9 @@ class Impl(_Shared):
                 #log('** %s key_type %s', item_type.items[0], key_type)
                 #log('** %s val_type %s', item_type.items[1], val_type)
 
+                assert isinstance(index_items[0], NameExpr), index_items[0]
+                assert isinstance(index_items[1], NameExpr), index_items[1]
+
                 # TODO(StackRoots): k, v
                 self.write_ind('  %s %s = it.Key();\n', key_type,
                                index_items[0].name)
@@ -2070,17 +2079,19 @@ class Impl(_Shared):
                     self.write_ind('  %s %s = it.Value();\n', c_item_type,
                                    temp_name)
 
-                    self.indent += 1
-
                     # loop - for x, y in other:
+                    self.indent += 1
                     self._WriteTupleUnpackingInLoop(temp_name, o.index.items,
                                                     item_type.items)
-
                     self.indent -= 1
-                else:
+
+                elif isinstance(o.index, NameExpr):
                     self.write_ind('  %s %s = it.Value();\n', c_item_type,
                                    o.index.name)
                     #self.write_ind('  StackRoots _for(&%s)\n;', o.index.name)
+
+                else:
+                    raise AssertionError()
 
         else:
             raise AssertionError('Unexpected type %s' % item_type)
@@ -2329,6 +2340,10 @@ class Impl(_Shared):
         assert len(o.expr) == 1, o.expr
         expr = o.expr[0]
         assert isinstance(expr, CallExpr), expr
+
+        # There is no 'with mylib.tagswitch(x)', only 'with tagswitch(x)'
+        # But we have with alloc.ctx_SourceCode
+        #assert isinstance(expr.callee, NameExpr), expr.callee
 
         callee_name = expr.callee.name
         if callee_name == 'switch':
@@ -2724,22 +2739,27 @@ class Impl(_Shared):
         self.write_ind(';  // pass\n')
 
     def visit_raise_stmt(self, o: 'mypy.nodes.RaiseStmt') -> None:
-        # C++ compiler is aware of assert(0) for unreachable code
-        if o.expr and isinstance(o.expr, CallExpr):
-            callee_name = o.expr.callee.name
-            if callee_name == 'AssertionError':
-                self.write_ind('assert(0);  // AssertionError\n')
-                return
-            if callee_name == 'NotImplementedError':
-                self.write_ind(
-                    'FAIL(kNotImplemented);  // Python NotImplementedError\n')
-                return
+        to_raise = o.expr
 
-        self.write_ind('throw ')
-        # it could be raise -> throw ; .  OSH uses that.
-        if o.expr:
-            self.accept(o.expr)
-        self.write(';\n')
+        if to_raise:
+            if isinstance(to_raise, CallExpr) and isinstance(
+                    to_raise.callee, NameExpr):
+                callee_name = to_raise.callee.name
+                if callee_name == 'AssertionError':
+                    # C++ compiler is aware of assert(0) for unreachable code
+                    self.write_ind('assert(0);  // AssertionError\n')
+                    return
+                if callee_name == 'NotImplementedError':
+                    self.write_ind(
+                        'FAIL(kNotImplemented);  // Python NotImplementedError\n'
+                    )
+                    return
+            self.write_ind('throw ')
+            self.accept(to_raise)
+            self.write(';\n')
+        else:
+            # raise without arg
+            self.write_ind('throw;\n')
 
     def visit_try_stmt(self, o: 'mypy.nodes.TryStmt') -> None:
         self.write_ind('try ')
@@ -2758,7 +2778,8 @@ class Impl(_Shared):
                 c_type = '%s*' % t.name
 
             elif isinstance(t, MemberExpr):
-                # Heuristic
+                # We never use 'except foo.bar.T', only `foo.T'
+                assert isinstance(t.expr, NameExpr), t.expr
                 c_type = '%s::%s*' % (t.expr.name, t.name)
 
             elif isinstance(t, TupleExpr):

@@ -251,10 +251,12 @@ class Pass(visitor.SimpleVisitor):
             # don't become local vars.  They are also ALIASED, so they don't
             # need to be rooted.
             is_downcast_and_shadow = False
-            if isinstance(rval, CallExpr) and rval.callee.name == 'cast':
+            if (isinstance(rval, CallExpr) and
+                    isinstance(rval.callee, NameExpr) and
+                    rval.callee.name == 'cast'):
                 to_cast = rval.args[1]
-                if isinstance(to_cast,
-                              NameExpr) and to_cast.name.startswith('UP_'):
+                if (isinstance(to_cast, NameExpr) and
+                        to_cast.name.startswith('UP_')):
                     is_downcast_and_shadow = True
 
             if (not self.at_global_scope and not is_iterator and

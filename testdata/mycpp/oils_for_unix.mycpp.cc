@@ -15114,7 +15114,7 @@ int ShellFile::_SourceExec(cmd_value::Argv* cmd_val, args::Reader* arg_r, BigStr
               status = e->StatusCode();
             }
             else {
-              throw ;
+              throw;
             }
           }
         }
@@ -15172,7 +15172,7 @@ int ShellFile::_UseExec(cmd_value::Argv* cmd_val, BigStr* path, syntax_asdl::loc
               status = e->StatusCode();
             }
             else {
-              throw ;
+              throw;
             }
           }
           if (status != 0) {
@@ -21980,7 +21980,7 @@ void DynamicWordsAction::Matches(completion::Api* comp, List<BigStr*>* YIELD) {
   }
   catch (error::FatalRuntime* e) {
     this->errfmt->PrettyPrintError(e);
-    throw ;
+    throw;
   }
   candidates = this->splitter->SplitForWordEval(val->s);
   for (ListIter<BigStr*> it(candidates); !it.Done(); it.Next()) {
@@ -24677,7 +24677,7 @@ int Headless::_Loop() {
     }
     catch (ValueError* e) {
       fanos_log(StrFormat("protocol error: %s", e));
-      throw ;
+      throw;
     }
     if (blob == nullptr) {
       fanos_log(S_nhc);
@@ -25093,7 +25093,7 @@ bool FdState::_PushSave(int fd) {
   catch (IOError_OSError* e) {
     ok = false;
     if (e->errno_ != EBADF) {
-      throw ;
+      throw;
     }
   }
   if (ok) {
@@ -25131,7 +25131,7 @@ int FdState::_PushDup(int fd1, syntax_asdl::redir_loc_t* blame_loc) {
         return NO_FD;
       }
       else {
-        throw ;
+        throw;
       }
     }
     this->_WriteFdToMem(fd2_name, new_fd);
@@ -25147,7 +25147,7 @@ int FdState::_PushDup(int fd1, syntax_asdl::redir_loc_t* blame_loc) {
       }
       catch (IOError_OSError* e) {
         print_stderr(StrFormat("F_GETFD fd %d: %s", fd1, pyutil::strerror(e)));
-        throw ;
+        throw;
       }
       need_restore = this->_PushSave(fd2);
       try {
@@ -25160,7 +25160,7 @@ int FdState::_PushDup(int fd1, syntax_asdl::redir_loc_t* blame_loc) {
           posix::dup2(rf->saved_fd, rf->orig_fd);
           posix::close(rf->saved_fd);
         }
-        throw ;
+        throw;
       }
       new_fd = fd2;
     }
@@ -25275,7 +25275,7 @@ void FdState::_ApplyRedirect(runtime_asdl::RedirValue* r) {
           extra = S_Aoo;
         }
         this->errfmt->Print_(StrFormat("Can't open %r: %s%s", arg->filename, pyutil::strerror(e), extra), r->op_loc);
-        throw ;
+        throw;
       }
       new_fd = this->_PushDup(open_fd, r->loc);
       if (new_fd != NO_FD) {
@@ -37346,7 +37346,7 @@ int CommandEvaluator::_DoWhileUntil(command::WhileUntil* node) {
         }
         else {
           if (action == flow_e::Raise) {
-            throw ;
+            throw;
           }
         }
       }
@@ -37551,7 +37551,7 @@ int CommandEvaluator::_DoForEach(command::ForEach* node) {
           }
           else {
             if (action == flow_e::Raise) {
-              throw ;
+              throw;
             }
           }
         }
@@ -37600,7 +37600,7 @@ int CommandEvaluator::_DoForExpr(command::ForExpr* node) {
         }
         else {
           if (action == flow_e::Raise) {
-            throw ;
+            throw;
           }
         }
       }
@@ -38365,7 +38365,7 @@ Tuple2<bool, bool> CommandEvaluator::ExecuteAndCatch(syntax_asdl::command_t* nod
   }
   catch (vm::IntControlFlow* e) {
     if ((cmd_flags & RaiseControlFlow)) {
-      throw ;
+      throw;
     }
     else {
       if (e->IsReturn()) {
@@ -38381,7 +38381,7 @@ Tuple2<bool, bool> CommandEvaluator::ExecuteAndCatch(syntax_asdl::command_t* nod
   }
   catch (error::Parse* e) {
     this->dumper->MaybeRecord(this, e);
-    throw ;
+    throw;
   }
   catch (error::ErrExit* e) {
     err = e;
@@ -38539,7 +38539,7 @@ int CommandEvaluator::RunProc(value::Proc* proc, cmd_value::Argv* cmd_val) {
     }
     catch (error::FatalRuntime* e) {
       this->dumper->MaybeRecord(this, e);
-      throw ;
+      throw;
     }
   }
   return status;
@@ -39495,7 +39495,7 @@ syntax_asdl::command_t* CommandParser::_MaybeExpandAliases(List<syntax_asdl::Com
         node = cp->_ParseCommandTerm();
       }
       catch (error::Parse* e) {
-        throw ;
+        throw;
       }
     }
   }
@@ -41516,7 +41516,7 @@ int Globber::_Glob(BigStr* arg, List<BigStr*>* out) {
   catch (RuntimeError* e) {
     msg = e->message;
     print_stderr(StrFormat("Error expanding glob %r: %s", arg, msg));
-    throw ;
+    throw;
   }
   n = len(results);
   if (n) {
@@ -42602,7 +42602,7 @@ mops::BigInt ArithEvaluator::_ValToIntOrError(value_asdl::value_t* val, syntax_a
   }
   catch (error::Strict* e) {
     if (this->exec_opts->strict_arith()) {
-      throw ;
+      throw;
     }
     else {
       return mops::ZERO;
@@ -43322,7 +43322,7 @@ mops::BigInt BoolEvaluator::_StringToBigIntOrError(BigStr* s, syntax_asdl::loc_t
     }
     catch (error::Strict* e) {
       if ((this->bracket or this->exec_opts->strict_arith())) {
-        throw ;
+        throw;
       }
       else {
         i = mops::ZERO;
@@ -46212,7 +46212,7 @@ int AbstractWordEvaluator::_Count(value_asdl::value_t* val, syntax_asdl::Token* 
       catch (error::Strict* e) {
         e->location = token;
         if (this->exec_opts->strict_word_eval()) {
-          throw ;
+          throw;
         }
         else {
           this->errfmt->PrettyPrintError(e, S_jhf);
@@ -46491,7 +46491,7 @@ value_asdl::value_t* AbstractWordEvaluator::_Slice(value_asdl::value_t* val, suf
   }
   catch (error::Strict* e) {
     if (this->exec_opts->strict_word_eval()) {
-      throw ;
+      throw;
     }
     else {
       this->errfmt->PrettyPrintError(e, S_jhf);
@@ -52021,7 +52021,7 @@ value_asdl::value_t* ExprEvaluator::CallConvertFunc(value_asdl::value_t* func_va
       func_name = lexer::TokenVal(convert_tok);
       this->errfmt->Print_(StrFormat("Fatal error calling Eggex conversion func %r from this Match accessor", func_name), call_loc);
       print_stderr(S_Aoo);
-      throw ;
+      throw;
     }
   }
   return val;
@@ -57700,7 +57700,7 @@ completion::UserSpec* SpecBuilder::Build(List<BigStr*>* argv, args::_Attributes*
     }
     catch (error::Parse* e) {
       this->errfmt->PrettyPrintError(e);
-      throw ;
+      throw;
     }
     a = Alloc<completion::DynamicWordsAction>(this->word_ev, this->splitter, arg_word, this->errfmt);
     actions->append(a);
@@ -58056,7 +58056,7 @@ void SourceStartupFile(process::FdState* fd_state, BigStr* rc_path, BigStr* lang
   }
   catch (IOError_OSError* e) {
     if (e->errno_ != ENOENT) {
-      throw ;
+      throw;
     }
     return ;
   }

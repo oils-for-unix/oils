@@ -228,8 +228,8 @@ class Build(visitor.SimpleVisitor):
                     return obj_name + (dot_expr.member, )
 
             elif isinstance(dot_expr, pass_state.StackObjectMember):
-                return self.get_ref_name(
-                    dot_expr.object_expr) + (dot_expr.member, )
+                return (self.get_ref_name(dot_expr.object_expr) +
+                        (dot_expr.member, ))
 
         elif isinstance(expr, IndexExpr):
             if isinstance(self.types[expr.base], TupleType):
@@ -300,12 +300,17 @@ class Build(visitor.SimpleVisitor):
 
     def visit_with_stmt(self, o: 'mypy.nodes.WithStmt') -> None:
         cfg = self.current_cfg()
+
         assert len(o.expr) == 1, o.expr
         expr = o.expr[0]
+
         assert isinstance(expr, CallExpr), expr
         self.accept(expr)
 
+        # Note: we have 'with alloc.ctx_SourceCode'
+        #assert isinstance(expr.callee, NameExpr), expr.callee
         callee_name = expr.callee.name
+
         if callee_name == 'switch':
             self._handle_switch(expr, o, cfg)
         elif callee_name == 'str_switch':
