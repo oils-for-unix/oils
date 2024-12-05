@@ -21,12 +21,11 @@ if 0:
         print('*** syspath: %s' % p)
 
 import typing
-#from typing import Any, Dict, List, Tuple
-from typing import Any
+from typing import Any, Dict, List, Tuple
+#from typing import Any
 
 from mycpp import pass_state
-# Disabled until Soil CI is fixed
-#from mycpp import translate
+from mycpp import translate
 
 START_TIME = time.time()
 
@@ -170,10 +169,10 @@ class ForwardDeclPass:
 def _ParseFuncType(st: stmt) -> AST:
     # 2024-12: causes an error with the latest MyPy, 1.13.0
     #          works with Soil CI MyPy, 1.10.0
-    assert st.type_comment, st
+    #assert st.type_comment, st
 
     # Caller checks this.   Is there a better way?
-    #assert hasattr(st, 'type_comment'), st
+    assert hasattr(st, 'type_comment'), st
 
     try:
         # This parses with the func_type production in the grammar
@@ -409,7 +408,6 @@ def main(argv: list[str]) -> int:
         paths = argv[2:]
         _ = paths
 
-        """
         timer = translate.Timer(START_TIME)
         timer.Section('PEA loading %s', ' '.join(paths))
 
@@ -439,7 +437,6 @@ def main(argv: list[str]) -> int:
                              types,
                              to_header,
                              to_compile)
-                             """
 
     elif action == 'dump-pickles':
         files = argv[2:]

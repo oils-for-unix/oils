@@ -30,7 +30,7 @@ install-latest-mypy() {
   # 2022:                   1.5.1 (compiled: yes)
   # 2024-12 Debian desktop: 1.13.0 (compiled: yes)
   # 2024-12 Soil CI image:  1.10.0 
-  mypy-version
+  python3 -m mypy --version
 }
 
 _check-types() {
