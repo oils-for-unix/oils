@@ -684,11 +684,11 @@ install-py3-libs-from-cache() {
 
 install-py3-libs() {
   ### Invoked by Dockerfile.cpp-small, etc.
+  local mypy_dir=${1:-}
 
-  download-py3-libs
-  install-py3-libs-from-cache
+  download-py3-libs "$mypy_dir"
+  install-py3-libs-from-cache "$mypy_dir"
 }
-
 
 # zsh notes
   # Fedora compiler error

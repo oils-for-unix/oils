@@ -22,66 +22,66 @@ live-image-tag() {
   local image_id=$1
 
   case $image_id in
-    (app-tests)
+    app-tests)
       # rebuild with curl
       echo 'v-2023-10-05'
       ;;
-    (wild)
+    wild)
       # rebuild with ca-certificates
       echo 'v-2024-08-26'
       ;;
-    (bloaty)
+    bloaty)
       # rebuild with ca-certificates
       echo 'v-2024-08-26'
       ;;
-    (benchmarks)
+    benchmarks)
       # freshen up
       echo 'v-2023-07-15'
       ;;
-    (benchmarks2)
+    benchmarks2)
       # debian 12, python3, new R-libs, cmark
       # new uftrace version
       echo 'v-2024-06-09'
       ;;
-    (cpp-spec)
+    cpp-spec)
       # Rebuild with jq, procps
       echo 'v-2023-07-17'
       ;;
-    (pea)
-      # freshen up
-      echo 'v-2024-06-08'
+    pea)
+      # install our version of MyPy
+      echo 'v-2024-12-05'
       ;;
-    (cpp-small)
+    cpp-small)
       # Rebuild with Docker, remove dead code
       echo 'v-2023-07-15'
       ;;
-    (clang)
+    clang)
       # Rebuild with wedges
       echo 'v-2023-08-09'
       ;;
-    (ovm-tarball)
+    ovm-tarball)
       # bash 5.2.21
       echo 'v-2024-06-09b'
       ;;
-    (other-tests)
+    other-tests)
       # freshen up
       echo 'v-2023-07-15'
       ;;
-    (dummy)
+    dummy)
       # freshen up
       echo 'v-2024-06-08'
       ;;
-    (dev-minimal)
+    dev-minimal)
       # Use python3 wedge and mypy-0.780 repo
       echo 'v-2023-07-15'
       ;;
 
     # Not run directly
-    (common)
+    common)
       # Rebuild with wedges
       echo 'v-2023-02-28f'
       ;;
-    (*)
+    *)
       die "Invalid image $image"
       ;;
   esac
