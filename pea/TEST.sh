@@ -34,14 +34,16 @@ install-latest-mypy() {
 }
 
 _check-types() {
+  echo PYTHONPATH=$PYTHONPATH
+  echo
+
   python3 -m mypy --version
+  echo
+
   time python3 -m mypy --strict pea/pea_main.py
 }
 
 check-with-our-mypy() {
-  echo PYTHONPATH=$PYTHONPATH
-  echo
-
   _check-types
 }
 
@@ -333,6 +335,20 @@ test-syntax-error() {
   # error in assignment
   parse-one pea/testdata/assign_err.py
   nq-assert $? -eq 1
+}
+
+test-mycpp-integration() {
+  # In Soil CI, we are importing a compiled MyPy?
+  # We don't have the WEDGE
+  # OK I can just add that
+  return
+
+  # Works
+  echo ---
+  pea-main mycpp 
+
+  echo ---
+  pea-main mycpp mycpp/examples/test_small_str.py
 }
 
 run-tests() {
