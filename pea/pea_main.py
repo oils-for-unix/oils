@@ -21,10 +21,12 @@ if 0:
         print('*** syspath: %s' % p)
 
 import typing
-from typing import Any, Dict, List, Tuple
+#from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from mycpp import pass_state
-from mycpp import translate
+# Disabled until Soil CI is fixed
+#from mycpp import translate
 
 START_TIME = time.time()
 
@@ -405,7 +407,9 @@ def main(argv: list[str]) -> int:
 
     elif action == 'mycpp':
         paths = argv[2:]
+        _ = paths
 
+        """
         timer = translate.Timer(START_TIME)
         timer.Section('PEA loading %s', ' '.join(paths))
 
@@ -435,6 +439,7 @@ def main(argv: list[str]) -> int:
                              types,
                              to_header,
                              to_compile)
+                             """
 
     elif action == 'dump-pickles':
         files = argv[2:]
