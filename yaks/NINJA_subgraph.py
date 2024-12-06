@@ -35,7 +35,7 @@ def NinjaGraph(ru):
             deps,
             implicit=['_bin/shwrap/mycpp_main', RULES_PY],
             variables=[('out_prefix', prefix), ('main_name', main_name),
-                       ('translator', 'yaks'),
+                       ('translator', 'yaks_main'),
                        ('preamble', 'yaks/preamble.h')])
 
     ru.cc_binary(
@@ -82,7 +82,7 @@ def NinjaGraph(ru):
             'wrap-cc', [raw_cc],
             implicit=[RULES_PY],
             variables=[('name', 'hello'), ('preamble_path', '""'),
-                       ('translator', 'yaks')])
+                       ('translator', 'yaks_main')])
     n.newline()
 
     ru.cc_binary(

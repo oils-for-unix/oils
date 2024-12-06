@@ -196,9 +196,6 @@ write-mycpp() {
     | mysort \
     | tee $deps
 
-  # EXTRA FILE
-  echo '_bin/datalog/dataflow' >> $deps
-
   echo
   echo $dir/*
 }

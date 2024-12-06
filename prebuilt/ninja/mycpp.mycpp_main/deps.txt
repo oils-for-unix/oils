@@ -10,4 +10,3 @@ mycpp/translate.py
 mycpp/util.py
 mycpp/virtual_pass.py
 mycpp/visitor.py
-_bin/datalog/dataflow
