@@ -152,6 +152,8 @@ EXAMPLES_PY = {
 
 
 def TranslatorSubgraph(ru, translator, ex):
+    """Create rules for a single example."""
+
     n = ru.n
 
     raw = '_gen/mycpp/examples/%s_raw.%s.cc' % (ex, translator)
@@ -385,12 +387,15 @@ def NinjaGraph(ru):
 
             n.newline()
 
-        for translator in ['mycpp', 'mycpp-souffle', 'pea']:
-            TranslatorSubgraph(ru, translator, ex)
+        # Special case: mycpp/examples/pea_* are only translated with pea.
+        # For now, the main() wrapper is different.
+        if ex.startswith('pea_'):
+            TranslatorSubgraph(ru, 'pea', ex)
+            continue
 
-            # Don't run it for now; just compile
-            if translator == 'pea':
-                continue
+        for translator in ['mycpp', 'mycpp-souffle']:
+
+            TranslatorSubgraph(ru, translator, ex)
 
             # minimal
             MATRIX = [

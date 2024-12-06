@@ -5,14 +5,10 @@ pea_main.py
 A potential rewrite of mycpp.
 """
 import ast
-from ast import AST, stmt, Module, ClassDef, FunctionDef, Assign
-#import collections
-from dataclasses import dataclass
 import io
 import optparse
 import os
 import pickle
-from pprint import pprint
 import sys
 import time
 
@@ -20,14 +16,13 @@ if 0:
     for p in sys.path:
         print('*** syspath: %s' % p)
 
-import typing
 from typing import Any, Dict, List, Tuple
-#from typing import Any
 
-from mycpp import pass_state
 from mycpp import translate
 
 from pea import mypy_shim
+from pea import gen_cpp
+from pea.header import (TypeSyntaxError, PyFile, Program)
 
 START_TIME = time.time()
 
@@ -36,74 +31,6 @@ def log(msg: str, *args: Any) -> None:
     if args:
         msg = msg % args
     print('%.2f %s' % (time.time() - START_TIME, msg), file=sys.stderr)
-
-
-@dataclass
-class PyFile:
-    filename: str
-    namespace: str  # C++ namespace
-    module: ast.Module  # parsed representation
-
-
-class Program:
-    """A program is a collection of PyFiles."""
-
-    def __init__(self) -> None:
-        self.py_files: list[PyFile] = []
-
-        # As we parse, we add modules, and fill in the dictionaries with parsed
-        # types.  Then other passes can retrieve the types with the same
-        # dictionaries.
-
-        # right now types are modules?  Could change that
-        self.func_types: dict[FunctionDef, AST] = {}
-        self.method_types: dict[FunctionDef, AST] = {}
-        self.class_types: dict[ClassDef, Module] = {}
-        self.assign_types: dict[Assign, Module] = {}
-
-        # like mycpp: type and variable string.  TODO: We shouldn't flatten it to a
-        # C type until later.
-        #
-        # Note: ImplPass parses the types.  So I guess this could be limited to
-        # that?
-        # DoFunctionMethod() could make two passes?
-        # 1. collect vars
-        # 2. print code
-
-        self.local_vars: dict[FunctionDef, list[tuple[str, str]]] = {}
-
-        # ForwardDeclPass:
-        #   OnMethod()
-        #   OnSubclass()
-
-        # Then
-        # Calculate()
-        #
-        # PrototypesPass: # IsVirtual
-        self.virtual = pass_state.Virtual()
-
-        self.stats: dict[str, int] = {
-            # parsing stats
-            'num_files': 0,
-            'num_funcs': 0,
-            'num_classes': 0,
-            'num_methods': 0,
-            'num_assign': 0,
-
-            # ConstPass stats
-            'num_strings': 0,
-        }
-
-    def PrintStats(self) -> None:
-        pprint(self.stats, stream=sys.stderr)
-        print('', file=sys.stderr)
-
-
-class TypeSyntaxError(Exception):
-
-    def __init__(self, lineno: int, code_str: str):
-        self.lineno = lineno
-        self.code_str = code_str
 
 
 def ParseFiles(files: list[str], prog: Program) -> bool:
@@ -129,176 +56,6 @@ def ParseFiles(files: list[str], prog: Program) -> bool:
         prog.stats['num_files'] += 1
 
     return True
-
-
-class ConstVisitor(ast.NodeVisitor):
-
-    def __init__(self, const_lookup: dict[str, int]):
-        ast.NodeVisitor.__init__(self)
-        self.const_lookup = const_lookup
-        self.str_id = 0
-
-    def visit_Constant(self, o: ast.Constant) -> None:
-        if isinstance(o.value, str):
-            self.const_lookup[o.value] = self.str_id
-            self.str_id += 1
-
-
-class ForwardDeclPass:
-    """Emit forward declarations."""
-
-    # TODO: Move this to ParsePass after comparing with mycpp.
-
-    def __init__(self, f: typing.IO[str]) -> None:
-        self.f = f
-
-    def DoPyFile(self, py_file: PyFile) -> None:
-
-        # TODO: could omit empty namespaces
-        namespace = py_file.namespace
-        self.f.write(f'namespace {namespace} {{  // forward declare\n')
-
-        for stmt in py_file.module.body:
-            match stmt:
-                case ClassDef():
-                    class_name = stmt.name
-                    self.f.write(f'  class {class_name};\n')
-
-        self.f.write(f'}}  // forward declare {namespace}\n')
-        self.f.write('\n')
-
-
-def _ParseFuncType(st: stmt) -> AST:
-    # 2024-12: causes an error with the latest MyPy, 1.13.0
-    #          works with Soil CI MyPy, 1.10.0
-    #assert st.type_comment, st
-
-    # Caller checks this.   Is there a better way?
-    assert hasattr(st, 'type_comment'), st
-
-    try:
-        # This parses with the func_type production in the grammar
-        return ast.parse(st.type_comment, mode='func_type')
-    except SyntaxError:
-        raise TypeSyntaxError(st.lineno, st.type_comment)
-
-
-class PrototypesPass:
-    """Parse signatures and Emit function prototypes."""
-
-    def __init__(self, opts: Any, prog: Program, f: typing.IO[str]) -> None:
-        self.opts = opts
-        self.prog = prog
-        self.f = f
-
-    def DoClass(self, cls: ClassDef) -> None:
-        for stmt in cls.body:
-            match stmt:
-                case FunctionDef():
-                    if stmt.type_comment:
-                        sig = _ParseFuncType(stmt)  # may raise
-
-                        if self.opts.verbose:
-                            print('METHOD')
-                            print(ast.dump(sig, indent='  '))
-                            # TODO: We need to print virtual here
-
-                        self.prog.method_types[stmt] = sig  # save for ImplPass
-                    self.prog.stats['num_methods'] += 1
-
-                # TODO: assert that there aren't top-level statements?
-                case _:
-                    pass
-
-    def DoPyFile(self, py_file: PyFile) -> None:
-        for stmt in py_file.module.body:
-            match stmt:
-                case FunctionDef():
-                    if stmt.type_comment:
-                        sig = _ParseFuncType(stmt)  # may raise
-
-                        if self.opts.verbose:
-                            print('FUNC')
-                            print(ast.dump(sig, indent='  '))
-
-                        self.prog.func_types[stmt] = sig  # save for ImplPass
-
-                    self.prog.stats['num_funcs'] += 1
-
-                case ClassDef():
-                    self.DoClass(stmt)
-                    self.prog.stats['num_classes'] += 1
-
-                case _:
-                    # Import, Assign, etc.
-                    #print(stmt)
-
-                    # TODO: omit __name__ == '__main__' etc.
-                    # if __name__ == '__main__'
-                    pass
-
-
-class ImplPass:
-    """Emit function and method bodies.
-
-    Algorithm:
-      collect local variables first
-    """
-
-    def __init__(self, prog: Program, f: typing.IO[str]) -> None:
-        self.prog = prog
-        self.f = f
-
-    # TODO: needs to be fully recursive, so you get bodies of loops, etc.
-    def DoBlock(self, stmts: list[stmt], indent: int = 0) -> None:
-        """e.g. body of function, method, etc."""
-
-        #print('STMTS %s' % stmts)
-
-        ind_str = '  ' * indent
-
-        for stmt in stmts:
-            match stmt:
-                case Assign():
-                    #print('%s* Assign' % ind_str)
-                    #print(ast.dump(stmt, indent='  '))
-
-                    if stmt.type_comment:
-                        # This parses with the func_type production in the grammar
-                        try:
-                            typ = ast.parse(stmt.type_comment)
-                        except SyntaxError as e:
-                            # New syntax error
-                            raise TypeSyntaxError(stmt.lineno,
-                                                  stmt.type_comment)
-
-                        self.prog.assign_types[stmt] = typ
-
-                        #print('%s  TYPE: Assign' % ind_str)
-                        #print(ast.dump(typ, indent='  '))
-
-                    self.prog.stats['num_assign'] += 1
-
-                case _:
-                    pass
-
-    def DoClass(self, cls: ClassDef) -> None:
-        for stmt in cls.body:
-            match stmt:
-                case FunctionDef():
-                    self.DoBlock(stmt.body, indent=1)
-
-                case _:
-                    pass
-
-    def DoPyFile(self, py_file: PyFile) -> None:
-        for stmt in py_file.module.body:
-            match stmt:
-                case ClassDef():
-                    self.DoClass(stmt)
-
-                case FunctionDef():
-                    self.DoBlock(stmt.body, indent=1)
 
 
 def Options() -> optparse.OptionParser:
@@ -359,7 +116,7 @@ def main(argv: list[str]) -> int:
 
         const_lookup: dict[str, int] = {}
 
-        v = ConstVisitor(const_lookup)
+        v = gen_cpp.ConstVisitor(const_lookup)
         for py_file in prog.py_files:
             v.visit(py_file.module)
 
@@ -372,7 +129,7 @@ def main(argv: list[str]) -> int:
         # ForwardDeclPass: module -> class
         # TODO: Move trivial ForwardDeclPass into ParsePass, BEFORE constants,
         # after comparing output with mycpp.
-        pass2 = ForwardDeclPass(out_f)
+        pass2 = gen_cpp.ForwardDeclPass(out_f)
         for py_file in prog.py_files:
             namespace = py_file.namespace
             pass2.DoPyFile(py_file)
@@ -383,7 +140,7 @@ def main(argv: list[str]) -> int:
         try:
             # PrototypesPass: module -> class/method, func
 
-            pass3 = PrototypesPass(opts, prog, out_f)
+            pass3 = gen_cpp.PrototypesPass(opts, prog, out_f)
             for py_file in prog.py_files:
                 pass3.DoPyFile(py_file)  # parses type comments in signatures
 
@@ -392,7 +149,7 @@ def main(argv: list[str]) -> int:
 
             # ImplPass: module -> class/method, func; then probably a fully recursive thing
 
-            pass4 = ImplPass(prog, out_f)
+            pass4 = gen_cpp.ImplPass(prog, out_f)
             for py_file in prog.py_files:
                 pass4.DoPyFile(py_file)  # parses type comments in assignments
 
@@ -410,6 +167,8 @@ def main(argv: list[str]) -> int:
         paths = argv[2:]
         _ = paths
 
+        #log('pea mycpp %s', sys.argv)
+
         timer = translate.Timer(START_TIME)
         timer.Section('PEA loading %s', ' '.join(paths))
 
@@ -420,7 +179,6 @@ def main(argv: list[str]) -> int:
         types: Dict[Any, Any] = {}
 
         to_header: List[str] = []
-        # TODO: MypyFile
         to_compile: List[Tuple[str, Any]] = []
 
         for path in paths:
@@ -429,6 +187,14 @@ def main(argv: list[str]) -> int:
             m = mypy_shim.CreateMyPyFile(path)
 
             to_compile.append((path, m))
+
+            prog = Program()
+            log('Pea begin')
+
+            if not ParseFiles([path], prog):
+                return 1
+            prog.PrintStats()
+            log('prog %s', prog)
 
         return translate.Run(timer, f, header_f, types, to_header, to_compile)
 

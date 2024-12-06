@@ -53,6 +53,22 @@ install-latest-mypy() {
   python3 -m mypy --version
 }
 
+pea-files() {
+  for f in pea/*.py; do
+    case $f in 
+      *NINJA_subgraph.py)
+        continue
+        ;;
+    esac
+
+    echo $f
+  done
+}
+
+count-lines() {
+  pea-files | xargs wc -l
+}
+
 _check-types() {
   echo PYTHONPATH=$PYTHONPATH
   echo
@@ -60,7 +76,7 @@ _check-types() {
   python3 -m mypy --version
   echo
 
-  time python3 -m mypy --strict pea/pea_main.py
+  time pea-files | xargs python3 -m mypy --strict 
 }
 
 check-with-our-mypy() {
@@ -80,7 +96,6 @@ check-with-latest-mypy() {
 
   _check-types
 }
-
 
 #
 # Run Pea
