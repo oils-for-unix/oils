@@ -394,6 +394,9 @@ def NinjaGraph(ru):
             continue
 
         for translator in ['mycpp', 'mycpp-souffle']:
+            # TODO: pea examples don't have the same main()
+            if ex.startswith('pea_'):
+                continue
 
             TranslatorSubgraph(ru, translator, ex)
 
