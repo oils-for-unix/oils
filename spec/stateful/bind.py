@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
-spec/stateful/bind.py
+Interactively tests shell bindings.
+
+To invoke this file, run the shell wrapper:
+
+    test/stateful.sh bind-quick
 """
 from __future__ import print_function
 

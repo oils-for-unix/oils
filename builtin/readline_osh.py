@@ -138,10 +138,8 @@ class Bind(vm._Builtin):
                 if arg.u is not None:
                     readline.unbind_rl_function(arg.u)
 
-                if 0:
-                    # disabled until we fix error with rl_function_of_keyseq_len()
-                    if arg.r is not None:
-                        readline.unbind_keyseq(arg.r)
+                if arg.r is not None:
+                    readline.unbind_keyseq(arg.r)
 
                 if arg.x is not None:
                     self.errfmt.Print_("warning: bind -x isn't implemented",
