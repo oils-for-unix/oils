@@ -56,17 +56,32 @@ def BashArray_AppendValues(array_val, strs):
     array_val.strs.extend(strs)
 
 
-def BashArray_HasElement(val, index):
-    # type: (value.BashArray, int) -> Tuple[bool, error_code_t]
+def _BashArray_CanonicalizeIndex(array_val, index):
+    # type: (value.BashArray, int) -> Tuple[int, int, error_code_t]
+    """This function returns (-1, n, error_code_e.IndexOutOfRange)
+    when the specified index is out of range.  For example, it
+    includes the case where the index is negative and its absolute
+    value is larger than max_index + 1.
 
-    n = len(val.strs)
+    """
+
+    n = len(array_val.strs)
     if index < 0:
         index += n
         if index < 0:
-            return False, error_code_e.IndexOutOfRange
+            return -1, n, error_code_e.IndexOutOfRange
+    return index, n, error_code_e.OK
+
+
+def BashArray_HasElement(array_val, index):
+    # type: (value.BashArray, int) -> Tuple[bool, error_code_t]
+
+    index, n, error_code = _BashArray_CanonicalizeIndex(array_val, index)
+    if error_code != error_code_e.OK:
+        return False, error_code
 
     if index < n:
-        return val.strs[index] is not None, error_code_e.OK
+        return array_val.strs[index] is not None, error_code_e.OK
 
     # out of range
     return False, error_code_e.OK
@@ -81,16 +96,13 @@ def BashArray_GetElement(array_val, index):
 
     """
 
-    strs = array_val.strs
-    n = len(strs)
-    if index < 0:
-        index += n
-        if index < 0:
-            return None, error_code_e.IndexOutOfRange
+    index, n, error_code = _BashArray_CanonicalizeIndex(array_val, index)
+    if error_code != error_code_e.OK:
+        return None, error_code
 
     if index < n:
         # TODO: strs->index() has a redundant check for (i < 0)
-        s = strs[index]
+        s = array_val.strs[index]
         # note: s could be None because representation is sparse
     else:
         s = None
@@ -102,22 +114,20 @@ def BashArray_SetElement(array_val, index, s):
 
     strs = array_val.strs
 
-    n = len(strs)
-    if index < 0:  # a[-1]++ computes this twice; could we avoid it?
-        index += n
-        if index < 0:
-            return error_code_e.IndexOutOfRange
+    # a[-1]++ computes this twice; could we avoid it?
+    index, n, error_code = _BashArray_CanonicalizeIndex(array_val, index)
+    if error_code != error_code_e.OK:
+        return error_code
 
     if index < n:
-        strs[index] = s
+        array_val.strs[index] = s
     else:
         # Fill it in with None.  It could look like this:
         # ['1', 2, 3, None, None, '4', None]
         # Then ${#a[@]} counts the entries that are not None.
-        n = index - len(strs) + 1
-        for i in xrange(n):
-            strs.append(None)
-        strs[index] = s
+        for i in xrange(index - n + 1):
+            array_val.strs.append(None)
+        array_val.strs[index] = s
 
     return error_code_e.OK
 
@@ -325,7 +335,8 @@ def SparseArray_AppendValues(sparse_val, strs):
 
 def _SparseArray_CanonicalizeIndex(sparse_val, index):
     # type: (value.SparseArray, mops.BigInt) -> Tuple[mops.BigInt, error_code_t]
-    """This function returns (None, error_code_e.IndexOutOfRange) when
+    """This function returns (mops.BigInt(-1),
+    error_code_e.IndexOutOfRange) when
     the specified index is out of range.  For example, it includes the
     case where the index is negative and its absolute value is larger
     than max_index + 1.
