@@ -330,10 +330,7 @@ def InitSteps(n):
 
     # Trivial build rule, for bin/mycpp_main -> _bin/shwrap/mycpp_souffle
     # while adding implicit deps
-    n.rule(
-        'cp',
-        command='cp $in $out',
-        description='cp $in $out')
+    n.rule('cp', command='cp $in $out', description='cp $in $out')
     n.newline()
 
     n.rule(
