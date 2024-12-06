@@ -7,9 +7,9 @@
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 source $LIB_OSH/no-quotes.sh
 
-source test/common.sh  # run-test-funcs
 source devtools/common.sh
 
 source build/dev-shell.sh  # find python3 in /wedge PATH component
@@ -84,6 +84,8 @@ check-with-our-mypy() {
 }
 
 check-with-latest-mypy() {
+  ### soil/worker.sh call this
+
   # This disables the MyPy wedge< and uses the latest MyPy installed above
   # It'
   export PYTHONPATH=.
@@ -129,7 +131,8 @@ all-files() {
 }
 
 parse-all() {
-  #source $MYPY_VENV/bin/activate
+  ### soil/worker.sh call this
+
   time all-files | xargs --verbose -- $0 pea-main parse
 }
 
@@ -357,19 +360,22 @@ test-translate() {
 }
 
 test-syntax-error() {
-  set +o errexit
+  local status stdout
 
   # error in Python syntax
-  parse-one pea/testdata/py_err.py
-  nq-assert $? -eq 1
+  nq-capture status stdout \
+    parse-one pea/testdata/py_err.py
+  nq-assert 1 = $status
 
   # error in signature
-  parse-one pea/testdata/sig_err.py
-  nq-assert $? -eq 1
+  nq-capture status stdout \
+    parse-one pea/testdata/sig_err.py
+  nq-assert 1 = $status
 
   # error in assignment
-  parse-one pea/testdata/assign_err.py
-  nq-assert $? -eq 1
+  nq-capture status stdout \
+    parse-one pea/testdata/assign_err.py
+  nq-assert 1 = $status
 }
 
 test-mycpp-integration() {
@@ -386,11 +392,20 @@ test-mycpp-integration() {
   pea-main mycpp mycpp/examples/test_small_str.py
 }
 
-run-tests() {
-  # Making this separate for soil/worker.sh
+test-example-hello() {
+  local bin=_bin/cxx-asan/mycpp/examples/pea_hello.pea
+  ninja $bin
 
-  echo 'Running test functions'
-  run-test-funcs
+  local status stdout
+  nq-capture status stdout \
+    $bin 
+  nq-assert 42 = $status
 }
 
-"$@"
+run-tests() {
+  ### soil/worker.sh call this
+
+  devtools/byo.sh test $0
+}
+
+task-five "$@"
