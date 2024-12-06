@@ -308,17 +308,6 @@ exit $status
 EOF
 }
 
-shwrap-mycpp-souffle() {
-  cat <<'EOF'
-MYPYPATH=$1    # e.g. $REPO_ROOT/mycpp
-out=$2
-shift 2
-
-# Add an extra flag, and also depends on _bin/datalog
-exec _bin/shwrap/mycpp_main $MYPYPATH $out --minimize-stack-roots "$@"
-EOF
-}
-
 shwrap-pea() {
   ### Part of shell template for pea executable
 
@@ -368,9 +357,6 @@ EOF
       ;;
     mycpp)
       shwrap-mycpp
-      ;;
-    mycpp-souffle)
-      shwrap-mycpp-souffle
       ;;
     pea)
       shwrap-pea

@@ -23,9 +23,9 @@ def DefineTargets(ru):
     # from Souffle datalog!
     ru.n.build(
         '_bin/shwrap/mycpp_main_souffle',
-        'write-shwrap',
+        'cp',
+        ['bin/mycpp_main_souffle.sh'],
         implicit=['_bin/shwrap/mycpp_main', '_bin/datalog/dataflow'],
-        variables=[('template', 'mycpp-souffle')],
     )
 
     ru.cc_library(
