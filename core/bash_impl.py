@@ -1,5 +1,6 @@
 """bash_impl.py - implements operations on Bash data structures"""
 
+from _devbuild.gen.runtime_asdl import error_code_e, error_code_t
 from _devbuild.gen.value_asdl import value
 
 from data_lang import j8_lite
@@ -56,23 +57,23 @@ def BashArray_AppendValues(array_val, strs):
 
 
 def BashArray_HasElement(val, index):
-    # type: (value.BashArray, int) -> Tuple[bool, int]
+    # type: (value.BashArray, int) -> Tuple[bool, error_code_t]
 
     n = len(val.strs)
     if index < 0:
         index += n
         if index < 0:
-            return False, 1
+            return False, error_code_e.IndexOutOfRange
 
     if index < n:
-        return val.strs[index] is not None, 0
+        return val.strs[index] is not None, error_code_e.OK
 
     # out of range
-    return False, 0
+    return False, error_code_e.OK
 
 
 def BashArray_SetElement(array_val, index, s):
-    # type: (value.BashArray, int, str) -> int
+    # type: (value.BashArray, int, str) -> error_code_t
 
     strs = array_val.strs
 
@@ -80,7 +81,7 @@ def BashArray_SetElement(array_val, index, s):
     if index < 0:  # a[-1]++ computes this twice; could we avoid it?
         index += n
         if index < 0:
-            return 1
+            return error_code_e.IndexOutOfRange
 
     if index < n:
         strs[index] = s
@@ -93,11 +94,11 @@ def BashArray_SetElement(array_val, index, s):
             strs.append(None)
         strs[index] = s
 
-    return 0
+    return error_code_e.OK
 
 
 def BashArray_UnsetElement(array_val, index):
-    # type: (value.BashArray, int) -> int
+    # type: (value.BashArray, int) -> error_code_t
     strs = array_val.strs
 
     n = len(strs)
@@ -105,7 +106,7 @@ def BashArray_UnsetElement(array_val, index):
     if index < 0:
         index += n
         if index < 0:
-            return 1
+            return error_code_e.IndexOutOfRange
 
     if index == last_index:
         # Special case: The array SHORTENS if you unset from the end.  You can
@@ -122,7 +123,7 @@ def BashArray_UnsetElement(array_val, index):
         # behavior was a mistake for Tcl!)
         pass
 
-    return 0
+    return error_code_e.OK
 
 
 def _BashArray_HasHoles(array_val):
@@ -292,46 +293,39 @@ def SparseArray_AppendValues(sparse_val, strs):
 
 
 def _SparseArray_CanonicalizeIndex(sparse_val, index):
-    # type: (value.SparseArray, mops.BigInt) -> Tuple[mops.BigInt, bool]
-    """This function returns None when the specified index is out of
-    range.  For example, when the index is negative and its absolute
-    value is larger than max_index + 1, it returns None.
+    # type: (value.SparseArray, mops.BigInt) -> Tuple[mops.BigInt, error_code_t]
+    """This function returns (None, error_code_e.IndexOutOfRange) when
+    the specified index is out of range.  For example, it includes the
+    case where the index is negative and its absolute value is larger
+    than max_index + 1.
 
     """
 
     if BigInt_Less(index, mops.ZERO):
         index = mops.Add(index, mops.Add(sparse_val.max_index, mops.ONE))
         if BigInt_Less(index, mops.ZERO):
-            return mops.MINUS_ONE, False
-    return index, True
+            return mops.MINUS_ONE, error_code_e.IndexOutOfRange
+    return index, error_code_e.OK
 
 
 def SparseArray_SetElement(sparse_val, index, s):
-    # type: (value.SparseArray, mops.BigInt, str) -> int
-    """A non-zero return value represents an error code. If this
-    function returns 1, the specified index is out of range.
+    # type: (value.SparseArray, mops.BigInt, str) -> error_code_t
 
-    """
-
-    index, ok = _SparseArray_CanonicalizeIndex(sparse_val, index)
-    if not ok:
-        return 1  # error_code: out-of-range index
+    index, error_code = _SparseArray_CanonicalizeIndex(sparse_val, index)
+    if error_code != error_code_e.OK:
+        return error_code
     if BigInt_Greater(index, sparse_val.max_index):
         sparse_val.max_index = index
     sparse_val.d[index] = s
-    return 0
+    return error_code_e.OK
 
 
 def SparseArray_UnsetElement(sparse_val, index):
-    # type: (value.SparseArray, mops.BigInt) -> int
-    """A non-zero return value represents an error code. If this
-    function returns 1, the specified index is out of range.
+    # type: (value.SparseArray, mops.BigInt) -> error_code_t
 
-    """
-
-    index, ok = _SparseArray_CanonicalizeIndex(sparse_val, index)
-    if not ok:
-        return 1  # error_code: out-of-range index
+    index, error_code = _SparseArray_CanonicalizeIndex(sparse_val, index)
+    if error_code != error_code_e.OK:
+        return error_code
     mylib.dict_erase(sparse_val.d, index)
 
     # update max_index
@@ -340,7 +334,7 @@ def SparseArray_UnsetElement(sparse_val, index):
         for index in sparse_val.d:
             if mops.Greater(index, sparse_val.max_index):
                 sparse_val.max_index = index
-    return 0
+    return error_code_e.OK
 
 
 def SparseArray_ToStrForShellPrint(sparse_val):

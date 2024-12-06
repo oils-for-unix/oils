@@ -12,7 +12,7 @@ import time as time_  # avoid name conflict
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import option_i
-from _devbuild.gen.runtime_asdl import (scope_e, scope_t, Cell)
+from _devbuild.gen.runtime_asdl import (error_code_e, scope_e, scope_t, Cell)
 from _devbuild.gen.syntax_asdl import (loc, loc_t, Token, debug_frame,
                                        debug_frame_e, debug_frame_t)
 from _devbuild.gen.types_asdl import opt_group_i
@@ -1971,7 +1971,7 @@ class Mem(object):
                         cell_val = cast(value.BashArray, UP_cell_val)
                         error_code = bash_impl.BashArray_SetElement(
                             cell_val, lval.index, rval.s)
-                        if error_code == 1:
+                        if error_code == error_code_e.IndexOutOfRange:
                             n = bash_impl.BashArray_Length(cell_val)
                             e_die(
                                 "Index %d is out of bounds for array of length %d"
@@ -1982,7 +1982,7 @@ class Mem(object):
                         lhs_sp = cast(value.SparseArray, UP_cell_val)
                         error_code = bash_impl.SparseArray_SetElement(
                             lhs_sp, mops.IntWiden(lval.index), rval.s)
-                        if error_code == 1:
+                        if error_code == error_code_e.IndexOutOfRange:
                             n_big = bash_impl.SparseArray_Length(lhs_sp)
                             e_die(
                                 "Index %d is out of bounds for array of length %s"
@@ -2283,7 +2283,7 @@ class Mem(object):
                     val = cast(value.BashArray, UP_val)
                     error_code = bash_impl.BashArray_UnsetElement(
                         val, lval.index)
-                    if error_code == 1:
+                    if error_code == error_code_e.IndexOutOfRange:
                         n = bash_impl.BashArray_Length(val)
                         raise error.Runtime(
                             "%s[%d]: Index is out of bounds for array of length %d"
@@ -2292,7 +2292,7 @@ class Mem(object):
                     val = cast(value.SparseArray, UP_val)
                     error_code = bash_impl.SparseArray_UnsetElement(
                         val, mops.IntWiden(lval.index))
-                    if error_code == 1:
+                    if error_code == error_code_e.IndexOutOfRange:
                         big_length = bash_impl.SparseArray_Length(val)
                         raise error.Runtime(
                             "%s[%d]: Index is out of bounds for array of length %s"
