@@ -479,17 +479,32 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         self.accept(o.if_expr)
         self.accept(o.else_expr)
 
-    def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> None:
-        # Oils invariant
-        assert isinstance(o.callee, (NameExpr, MemberExpr)), o.callee
-        if isinstance(o.callee, MemberExpr):
-            # o.callee.name is the RHS, e.g. 'append' in 'mylist.append'
-            #log('CallExpr MemberExpr name=%r', o.callee.name)
-            pass
-
+    def oils_visit_probe_call(self, o: 'mypy.nodes.CallExpr') -> None:
         self.accept(o.callee)
         for arg in o.args:
             self.accept(arg)
+
+    def oils_visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> None:
+        self.accept(o.callee)
+        for arg in o.args:
+            self.accept(arg)
+
+    def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> None:
+        # Oils invariant: check that it'fs () or obj.method()
+        assert isinstance(o.callee, (NameExpr, MemberExpr)), o.callee
+
+        if isinstance(o.callee, NameExpr):
+            callee_name = o.callee.name
+
+            if callee_name == 'isinstance':
+                self.report_error(o, 'isinstance() not allowed')
+                return
+
+            if callee_name == 'probe':
+                self.oils_visit_probe_call(o)
+                return
+
+        self.oils_visit_call_expr(o)
 
     #
     # Leaf Statements and Expressions that do nothing

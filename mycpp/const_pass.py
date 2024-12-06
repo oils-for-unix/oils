@@ -9,7 +9,7 @@ import json
 import hashlib
 import string
 
-from mypy.nodes import (Expression, StrExpr, CallExpr, NameExpr)
+from mypy.nodes import (Expression, StrExpr, CallExpr)
 
 from mycpp import format_strings
 from mycpp import util
@@ -97,12 +97,9 @@ class Collect(visitor.SimpleVisitor):
         raw_string = format_strings.DecodeMyPyString(o.value)
         self.global_strings.Add(o, raw_string)
 
-    def visit_call_expr(self, o: CallExpr) -> None:
+    def oils_visit_probe_call(self, o: CallExpr) -> None:
         # Don't generate constants for probe names
-        if isinstance(o.callee, NameExpr) and o.callee.name == 'probe':
-            return
-
-        super().visit_call_expr(o)
+        pass
 
 
 def _MakeUniqueStrings(all_strings: AllStrings) -> UniqueStrings:

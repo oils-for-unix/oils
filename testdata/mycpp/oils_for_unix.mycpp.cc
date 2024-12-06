@@ -5558,15 +5558,18 @@ int BashArray_Count(value::BashArray* array_val);
 int BashArray_Length(value::BashArray* array_val);
 List<BigStr*>* BashArray_GetValues(value::BashArray* array_val);
 void BashArray_AppendValues(value::BashArray* array_val, List<BigStr*>* strs);
-Tuple2<bool, int> BashArray_HasElement(value::BashArray* val, int index);
-int BashArray_SetElement(value::BashArray* array_val, int index, BigStr* s);
-int BashArray_UnsetElement(value::BashArray* array_val, int index);
+Tuple3<int, int, runtime_asdl::error_code_t> _BashArray_CanonicalizeIndex(value::BashArray* array_val, int index);
+Tuple2<bool, runtime_asdl::error_code_t> BashArray_HasElement(value::BashArray* array_val, int index);
+Tuple2<BigStr*, runtime_asdl::error_code_t> BashArray_GetElement(value::BashArray* array_val, int index);
+runtime_asdl::error_code_t BashArray_SetElement(value::BashArray* array_val, int index, BigStr* s);
+runtime_asdl::error_code_t BashArray_UnsetElement(value::BashArray* array_val, int index);
 bool _BashArray_HasHoles(value::BashArray* array_val);
 BigStr* BashArray_ToStrForShellPrint(value::BashArray* array_val, BigStr* name);
 int BashAssoc_Count(value::BashAssoc* assoc_val);
 Dict<BigStr*, BigStr*>* BashAssoc_GetValues(value::BashAssoc* assoc_val);
 void BashAssoc_AppendValues(value::BashAssoc* assoc_val, Dict<BigStr*, BigStr*>* d);
 bool BashAssoc_HasElement(value::BashAssoc* assoc_val, BigStr* s);
+BigStr* BashAssoc_GetElement(value::BashAssoc* assoc_val, BigStr* s);
 void BashAssoc_SetElement(value::BashAssoc* assoc_val, BigStr* key, BigStr* s);
 void BashAssoc_UnsetElement(value::BashAssoc* assoc_val, BigStr* key);
 BigStr* BashAssoc_ToStrForShellPrint(value::BashAssoc* assoc_val);
@@ -5575,9 +5578,9 @@ mops::BigInt SparseArray_Length(value::SparseArray* sparse_val);
 List<mops::BigInt>* SparseArray_GetKeys(value::SparseArray* sparse_val);
 List<BigStr*>* SparseArray_GetValues(value::SparseArray* sparse_val);
 void SparseArray_AppendValues(value::SparseArray* sparse_val, List<BigStr*>* strs);
-Tuple2<mops::BigInt, bool> _SparseArray_CanonicalizeIndex(value::SparseArray* sparse_val, mops::BigInt index);
-int SparseArray_SetElement(value::SparseArray* sparse_val, mops::BigInt index, BigStr* s);
-int SparseArray_UnsetElement(value::SparseArray* sparse_val, mops::BigInt index);
+Tuple2<mops::BigInt, runtime_asdl::error_code_t> _SparseArray_CanonicalizeIndex(value::SparseArray* sparse_val, mops::BigInt index);
+runtime_asdl::error_code_t SparseArray_SetElement(value::SparseArray* sparse_val, mops::BigInt index, BigStr* s);
+runtime_asdl::error_code_t SparseArray_UnsetElement(value::SparseArray* sparse_val, mops::BigInt index);
 BigStr* SparseArray_ToStrForShellPrint(value::SparseArray* sparse_val);
 
 }  // declare namespace bash_impl
@@ -9516,7 +9519,6 @@ extern int QUOTE_ERE;
 extern List<BigStr*>* _STRING_AND_ARRAY;
 bool ShouldArrayDecay(BigStr* var_name, optview::Exec* exec_opts, bool is_plain_var_sub = true);
 value_asdl::value_t* DecayArray(value_asdl::value_t* val);
-Tuple2<BigStr*, int> GetArrayItem(List<BigStr*>* strs, int index);
 bool _DetectMetaBuiltinStr(BigStr* s);
 bool _DetectMetaBuiltin(runtime_asdl::part_value_t* val0);
 runtime_asdl::AssignArg* _SplitAssignArg(BigStr* arg, syntax_asdl::CompoundWord* blame_word);
@@ -20166,6 +20168,9 @@ int Bind::Run(cmd_value::Argv* cmd_val) {
       if (arg->u != nullptr) {
         readline->unbind_rl_function(arg->u);
       }
+      if (arg->r != nullptr) {
+        readline->unbind_keyseq(arg->r);
+      }
       if (arg->x != nullptr) {
         this->errfmt->Print_(S_bsD, cmd_val->arg_locs->at(0));
         return 1;
@@ -20823,6 +20828,8 @@ int Arena::LastSpanId() {
 
 namespace bash_impl {  // define
 
+using runtime_asdl::error_code_e;
+using runtime_asdl::error_code_t;
 using value_asdl::value;
 
 bool BigInt_Greater(mops::BigInt a, mops::BigInt b) {
@@ -20867,52 +20874,90 @@ void BashArray_AppendValues(value::BashArray* array_val, List<BigStr*>* strs) {
   array_val->strs->extend(strs);
 }
 
-Tuple2<bool, int> BashArray_HasElement(value::BashArray* val, int index) {
+Tuple3<int, int, runtime_asdl::error_code_t> _BashArray_CanonicalizeIndex(value::BashArray* array_val, int index) {
   int n;
-  StackRoot _root0(&val);
+  StackRoot _root0(&array_val);
 
-  n = len(val->strs);
+  n = len(array_val->strs);
   if (index < 0) {
     index += n;
     if (index < 0) {
-      return Tuple2<bool, int>(false, 1);
+      return Tuple3<int, int, runtime_asdl::error_code_t>(-1, n, error_code_e::IndexOutOfRange);
     }
   }
-  if (index < n) {
-    return Tuple2<bool, int>(val->strs->at(index) != nullptr, 0);
-  }
-  return Tuple2<bool, int>(false, 0);
+  return Tuple3<int, int, runtime_asdl::error_code_t>(index, n, error_code_e::OK);
 }
 
-int BashArray_SetElement(value::BashArray* array_val, int index, BigStr* s) {
+Tuple2<bool, runtime_asdl::error_code_t> BashArray_HasElement(value::BashArray* array_val, int index) {
+  int n;
+  runtime_asdl::error_code_t error_code;
+  StackRoot _root0(&array_val);
+
+  Tuple3<int, int, runtime_asdl::error_code_t> tup0 = _BashArray_CanonicalizeIndex(array_val, index);
+  index = tup0.at0();
+  n = tup0.at1();
+  error_code = tup0.at2();
+  if (error_code != error_code_e::OK) {
+    return Tuple2<bool, runtime_asdl::error_code_t>(false, error_code);
+  }
+  if (index < n) {
+    return Tuple2<bool, runtime_asdl::error_code_t>(array_val->strs->at(index) != nullptr, error_code_e::OK);
+  }
+  return Tuple2<bool, runtime_asdl::error_code_t>(false, error_code_e::OK);
+}
+
+Tuple2<BigStr*, runtime_asdl::error_code_t> BashArray_GetElement(value::BashArray* array_val, int index) {
+  int n;
+  runtime_asdl::error_code_t error_code;
+  BigStr* s = nullptr;
+  StackRoot _root0(&array_val);
+  StackRoot _root1(&s);
+
+  Tuple3<int, int, runtime_asdl::error_code_t> tup1 = _BashArray_CanonicalizeIndex(array_val, index);
+  index = tup1.at0();
+  n = tup1.at1();
+  error_code = tup1.at2();
+  if (error_code != error_code_e::OK) {
+    return Tuple2<BigStr*, runtime_asdl::error_code_t>(nullptr, error_code);
+  }
+  if (index < n) {
+    s = array_val->strs->at(index);
+  }
+  else {
+    s = nullptr;
+  }
+  return Tuple2<BigStr*, runtime_asdl::error_code_t>(s, error_code_e::OK);
+}
+
+runtime_asdl::error_code_t BashArray_SetElement(value::BashArray* array_val, int index, BigStr* s) {
   List<BigStr*>* strs = nullptr;
   int n;
+  runtime_asdl::error_code_t error_code;
   StackRoot _root0(&array_val);
   StackRoot _root1(&s);
   StackRoot _root2(&strs);
 
   strs = array_val->strs;
-  n = len(strs);
-  if (index < 0) {
-    index += n;
-    if (index < 0) {
-      return 1;
-    }
+  Tuple3<int, int, runtime_asdl::error_code_t> tup2 = _BashArray_CanonicalizeIndex(array_val, index);
+  index = tup2.at0();
+  n = tup2.at1();
+  error_code = tup2.at2();
+  if (error_code != error_code_e::OK) {
+    return error_code;
   }
   if (index < n) {
-    strs->set(index, s);
+    array_val->strs->set(index, s);
   }
   else {
-    n = ((index - len(strs)) + 1);
-    for (int i = 0; i < n; ++i) {
-      strs->append(nullptr);
+    for (int i = 0; i < ((index - n) + 1); ++i) {
+      array_val->strs->append(nullptr);
     }
-    strs->set(index, s);
+    array_val->strs->set(index, s);
   }
-  return 0;
+  return error_code_e::OK;
 }
 
-int BashArray_UnsetElement(value::BashArray* array_val, int index) {
+runtime_asdl::error_code_t BashArray_UnsetElement(value::BashArray* array_val, int index) {
   List<BigStr*>* strs = nullptr;
   int n;
   int last_index;
@@ -20925,7 +20970,7 @@ int BashArray_UnsetElement(value::BashArray* array_val, int index) {
   if (index < 0) {
     index += n;
     if (index < 0) {
-      return 1;
+      return error_code_e::IndexOutOfRange;
     }
   }
   if (index == last_index) {
@@ -20942,7 +20987,7 @@ int BashArray_UnsetElement(value::BashArray* array_val, int index) {
       ;  // pass
     }
   }
-  return 0;
+  return error_code_e::OK;
 }
 
 bool _BashArray_HasHoles(value::BashArray* array_val) {
@@ -21051,6 +21096,13 @@ bool BashAssoc_HasElement(value::BashAssoc* assoc_val, BigStr* s) {
   return dict_contains(assoc_val->d, s);
 }
 
+BigStr* BashAssoc_GetElement(value::BashAssoc* assoc_val, BigStr* s) {
+  StackRoot _root0(&assoc_val);
+  StackRoot _root1(&s);
+
+  return assoc_val->d->get(s);
+}
+
 void BashAssoc_SetElement(value::BashAssoc* assoc_val, BigStr* key, BigStr* s) {
   StackRoot _root0(&assoc_val);
   StackRoot _root1(&key);
@@ -21142,45 +21194,45 @@ void SparseArray_AppendValues(value::SparseArray* sparse_val, List<BigStr*>* str
   }
 }
 
-Tuple2<mops::BigInt, bool> _SparseArray_CanonicalizeIndex(value::SparseArray* sparse_val, mops::BigInt index) {
+Tuple2<mops::BigInt, runtime_asdl::error_code_t> _SparseArray_CanonicalizeIndex(value::SparseArray* sparse_val, mops::BigInt index) {
   StackRoot _root0(&sparse_val);
 
   if (BigInt_Less(index, mops::ZERO)) {
     index = mops::Add(index, mops::Add(sparse_val->max_index, mops::ONE));
     if (BigInt_Less(index, mops::ZERO)) {
-      return Tuple2<mops::BigInt, bool>(mops::MINUS_ONE, false);
+      return Tuple2<mops::BigInt, runtime_asdl::error_code_t>(mops::MINUS_ONE, error_code_e::IndexOutOfRange);
     }
   }
-  return Tuple2<mops::BigInt, bool>(index, true);
+  return Tuple2<mops::BigInt, runtime_asdl::error_code_t>(index, error_code_e::OK);
 }
 
-int SparseArray_SetElement(value::SparseArray* sparse_val, mops::BigInt index, BigStr* s) {
-  bool ok;
+runtime_asdl::error_code_t SparseArray_SetElement(value::SparseArray* sparse_val, mops::BigInt index, BigStr* s) {
+  runtime_asdl::error_code_t error_code;
   StackRoot _root0(&sparse_val);
   StackRoot _root1(&s);
 
-  Tuple2<mops::BigInt, bool> tup0 = _SparseArray_CanonicalizeIndex(sparse_val, index);
-  index = tup0.at0();
-  ok = tup0.at1();
-  if (!ok) {
-    return 1;
+  Tuple2<mops::BigInt, runtime_asdl::error_code_t> tup3 = _SparseArray_CanonicalizeIndex(sparse_val, index);
+  index = tup3.at0();
+  error_code = tup3.at1();
+  if (error_code != error_code_e::OK) {
+    return error_code;
   }
   if (BigInt_Greater(index, sparse_val->max_index)) {
     sparse_val->max_index = index;
   }
   sparse_val->d->set(index, s);
-  return 0;
+  return error_code_e::OK;
 }
 
-int SparseArray_UnsetElement(value::SparseArray* sparse_val, mops::BigInt index) {
-  bool ok;
+runtime_asdl::error_code_t SparseArray_UnsetElement(value::SparseArray* sparse_val, mops::BigInt index) {
+  runtime_asdl::error_code_t error_code;
   StackRoot _root0(&sparse_val);
 
-  Tuple2<mops::BigInt, bool> tup1 = _SparseArray_CanonicalizeIndex(sparse_val, index);
-  index = tup1.at0();
-  ok = tup1.at1();
-  if (!ok) {
-    return 1;
+  Tuple2<mops::BigInt, runtime_asdl::error_code_t> tup4 = _SparseArray_CanonicalizeIndex(sparse_val, index);
+  index = tup4.at0();
+  error_code = tup4.at1();
+  if (error_code != error_code_e::OK) {
+    return error_code;
   }
   mylib::dict_erase(sparse_val->d, index);
   if (mops::Equal(index, sparse_val->max_index)) {
@@ -21192,7 +21244,7 @@ int SparseArray_UnsetElement(value::SparseArray* sparse_val, mops::BigInt index)
       }
     }
   }
-  return 0;
+  return error_code_e::OK;
 }
 
 BigStr* SparseArray_ToStrForShellPrint(value::SparseArray* sparse_val) {
@@ -26652,6 +26704,7 @@ namespace state {  // define
 
 using id_kind_asdl::Id;
 using option_asdl::option_i;
+using runtime_asdl::error_code_e;
 using runtime_asdl::scope_e;
 using runtime_asdl::scope_t;
 using runtime_asdl::Cell;
@@ -28276,7 +28329,7 @@ void Mem::SetValue(value_asdl::sh_lvalue_t* lval, value_asdl::value_t* val, runt
   runtime_asdl::Cell* cell = nullptr;
   Dict<BigStr*, runtime_asdl::Cell*>* var_frame = nullptr;
   value_asdl::value_t* UP_cell_val = nullptr;
-  int error_code;
+  runtime_asdl::error_code_t error_code;
   int n;
   mops::BigInt n_big;
   value::BashAssoc* cell_val2 = nullptr;
@@ -28325,7 +28378,7 @@ void Mem::SetValue(value_asdl::sh_lvalue_t* lval, value_asdl::value_t* val, runt
         case value_e::BashArray: {
           value::BashArray* cell_val = static_cast<value::BashArray*>(UP_cell_val);
           error_code = bash_impl::BashArray_SetElement(cell_val, lval->index, rval->s);
-          if (error_code == 1) {
+          if (error_code == error_code_e::IndexOutOfRange) {
             n = bash_impl::BashArray_Length(cell_val);
             e_die(StrFormat("Index %d is out of bounds for array of length %d", lval->index, n), left_loc);
           }
@@ -28335,7 +28388,7 @@ void Mem::SetValue(value_asdl::sh_lvalue_t* lval, value_asdl::value_t* val, runt
         case value_e::SparseArray: {
           value::SparseArray* lhs_sp = static_cast<value::SparseArray*>(UP_cell_val);
           error_code = bash_impl::SparseArray_SetElement(lhs_sp, mops::IntWiden(lval->index), rval->s);
-          if (error_code == 1) {
+          if (error_code == error_code_e::IndexOutOfRange) {
             n_big = bash_impl::SparseArray_Length(lhs_sp);
             e_die(StrFormat("Index %d is out of bounds for array of length %s", lval->index, mops::ToStr(n_big)), left_loc);
           }
@@ -28670,7 +28723,7 @@ bool Mem::Unset(value_asdl::sh_lvalue_t* lval, runtime_asdl::scope_t which_scope
   BigStr* cell_name = nullptr;
   value_asdl::value_t* val = nullptr;
   value_asdl::value_t* UP_val = nullptr;
-  int error_code;
+  runtime_asdl::error_code_t error_code;
   int n;
   mops::BigInt big_length;
   StackRoot _root0(&lval);
@@ -28728,7 +28781,7 @@ bool Mem::Unset(value_asdl::sh_lvalue_t* lval, runtime_asdl::scope_t which_scope
       if (val->tag() == value_e::BashArray) {
         value::BashArray* val = static_cast<value::BashArray*>(UP_val);
         error_code = bash_impl::BashArray_UnsetElement(val, lval->index);
-        if (error_code == 1) {
+        if (error_code == error_code_e::IndexOutOfRange) {
           n = bash_impl::BashArray_Length(val);
           throw Alloc<error::Runtime>(StrFormat("%s[%d]: Index is out of bounds for array of length %d", var_name, lval->index, n));
         }
@@ -28737,7 +28790,7 @@ bool Mem::Unset(value_asdl::sh_lvalue_t* lval, runtime_asdl::scope_t which_scope
         if (val->tag() == value_e::SparseArray) {
           value::SparseArray* val = static_cast<value::SparseArray*>(UP_val);
           error_code = bash_impl::SparseArray_UnsetElement(val, mops::IntWiden(lval->index));
-          if (error_code == 1) {
+          if (error_code == error_code_e::IndexOutOfRange) {
             big_length = bash_impl::SparseArray_Length(val);
             throw Alloc<error::Runtime>(StrFormat("%s[%d]: Index is out of bounds for array of length %s", var_name, lval->index, mops::ToStr(big_length)));
           }
@@ -42170,6 +42223,7 @@ void UserPlugin::Run() {
 namespace sh_expr_eval {  // define
 
 using id_kind_asdl::Id;
+using runtime_asdl::error_code_e;
 using runtime_asdl::scope_t;
 using syntax_asdl::word_t;
 using syntax_asdl::CompoundWord;
@@ -42210,7 +42264,6 @@ value_asdl::value_t* OldValue(value_asdl::sh_lvalue_t* lval, state::Mem* mem, op
   BigStr* var_name = nullptr;
   value_asdl::value_t* val = nullptr;
   value_asdl::value_t* UP_val = nullptr;
-  value::BashArray* array_val = nullptr;
   BigStr* s = nullptr;
   value::BashAssoc* assoc_val = nullptr;
   StackRoot _root0(&lval);
@@ -42220,9 +42273,8 @@ value_asdl::value_t* OldValue(value_asdl::sh_lvalue_t* lval, state::Mem* mem, op
   StackRoot _root4(&var_name);
   StackRoot _root5(&val);
   StackRoot _root6(&UP_val);
-  StackRoot _root7(&array_val);
-  StackRoot _root8(&s);
-  StackRoot _root9(&assoc_val);
+  StackRoot _root7(&s);
+  StackRoot _root8(&assoc_val);
 
   UP_lval = lval;
   switch (lval->tag()) {
@@ -42257,23 +42309,21 @@ value_asdl::value_t* OldValue(value_asdl::sh_lvalue_t* lval, state::Mem* mem, op
       break;
     case sh_lvalue_e::Indexed: {
       sh_lvalue::Indexed* lval = static_cast<sh_lvalue::Indexed*>(UP_lval);
-      array_val = nullptr;
       switch (val->tag()) {
         case value_e::Undef: {
-          array_val = Alloc<value::BashArray>(Alloc<List<BigStr*>>());
+          s = nullptr;
         }
           break;
         case value_e::BashArray: {
-          value::BashArray* tmp = static_cast<value::BashArray*>(UP_val);
-          array_val = tmp;
+          value::BashArray* array_val = static_cast<value::BashArray*>(UP_val);
+          Tuple2<BigStr*, runtime_asdl::error_code_t> tup0 = bash_impl::BashArray_GetElement(array_val, lval->index);
+          s = tup0.at0();
         }
           break;
         default: {
           e_die(StrFormat("Can't use [] on value of type %s", ui::ValType(val)));
         }
       }
-      Tuple2<BigStr*, int> tup0 = word_eval::GetArrayItem(array_val->strs, lval->index);
-      s = tup0.at0();
       if (s == nullptr) {
         val = Alloc<value::Str>(S_Aoo);
       }
@@ -42293,13 +42343,13 @@ value_asdl::value_t* OldValue(value_asdl::sh_lvalue_t* lval, state::Mem* mem, op
         case value_e::BashAssoc: {
           value::BashAssoc* tmp2 = static_cast<value::BashAssoc*>(UP_val);
           assoc_val = tmp2;
+          s = bash_impl::BashAssoc_GetElement(assoc_val, lval->key);
         }
           break;
         default: {
           e_die(StrFormat("Can't use [] on value of type %s", ui::ValType(val)));
         }
       }
-      s = assoc_val->d->get(lval->key);
       if (s == nullptr) {
         val = Alloc<value::Str>(S_Aoo);
       }
@@ -42691,7 +42741,7 @@ value_asdl::value_t* ArithEvaluator::Eval(syntax_asdl::arith_expr_t* node) {
   value_asdl::value_t* UP_left = nullptr;
   int small_i;
   BigStr* s = nullptr;
-  int error_code;
+  runtime_asdl::error_code_t error_code;
   BigStr* key = nullptr;
   mops::BigInt index;
   mops::BigInt cond;
@@ -42914,10 +42964,10 @@ value_asdl::value_t* ArithEvaluator::Eval(syntax_asdl::arith_expr_t* node) {
           case value_e::BashArray: {
             value::BashArray* array_val = static_cast<value::BashArray*>(UP_left);
             small_i = mops::BigTruncate(this->EvalToBigInt(node->right));
-            Tuple2<BigStr*, int> tup9 = word_eval::GetArrayItem(array_val->strs, small_i);
+            Tuple2<BigStr*, runtime_asdl::error_code_t> tup9 = bash_impl::BashArray_GetElement(array_val, small_i);
             s = tup9.at0();
             error_code = tup9.at1();
-            if (error_code == 1) {
+            if (error_code == error_code_e::IndexOutOfRange) {
               this->errfmt->Print_(StrFormat("Index %d out of bounds for array of length %d", small_i, bash_impl::BashArray_Length(array_val)), node->op);
             }
           }
@@ -42925,7 +42975,7 @@ value_asdl::value_t* ArithEvaluator::Eval(syntax_asdl::arith_expr_t* node) {
           case value_e::BashAssoc: {
             value::BashAssoc* left = static_cast<value::BashAssoc*>(UP_left);
             key = this->EvalWordToString(node->right);
-            s = left->d->get(key);
+            s = bash_impl::BashAssoc_GetElement(left, key);
           }
             break;
           case value_e::Str: {
@@ -43235,7 +43285,7 @@ bool BoolEvaluator::_IsDefined(BigStr* s, syntax_asdl::loc_t* blame_loc) {
   value_asdl::value_t* UP_val = nullptr;
   int index;
   bool result;
-  int error_code;
+  runtime_asdl::error_code_t error_code;
   StackRoot _root0(&s);
   StackRoot _root1(&blame_loc);
   StackRoot _root2(&m);
@@ -43270,10 +43320,10 @@ bool BoolEvaluator::_IsDefined(BigStr* s, syntax_asdl::loc_t* blame_loc) {
         }
         return false;
       }
-      Tuple2<bool, int> tup12 = bash_impl::BashArray_HasElement(val, index);
+      Tuple2<bool, runtime_asdl::error_code_t> tup12 = bash_impl::BashArray_HasElement(val, index);
       result = tup12.at0();
       error_code = tup12.at1();
-      if (error_code == 1) {
+      if (error_code == error_code_e::IndexOutOfRange) {
         e_die(StrFormat("-v got index %s, which is out of bounds for array of length %d", index_str, bash_impl::BashArray_Length(val)), blame_loc);
         return false;
       }
@@ -45500,6 +45550,7 @@ using runtime_asdl::part_value_t;
 using runtime_asdl::cmd_value;
 using runtime_asdl::cmd_value_e;
 using runtime_asdl::cmd_value_t;
+using runtime_asdl::error_code_e;
 using runtime_asdl::AssignArg;
 using runtime_asdl::a_index;
 using runtime_asdl::a_index_e;
@@ -45533,6 +45584,7 @@ bool ShouldArrayDecay(BigStr* var_name, optview::Exec* exec_opts, bool is_plain_
 value_asdl::value_t* DecayArray(value_asdl::value_t* val) {
   value::BashArray* array_val = nullptr;
   BigStr* s = nullptr;
+  runtime_asdl::error_code_t error_code;
   value::BashAssoc* assoc_val = nullptr;
   StackRoot _root0(&val);
   StackRoot _root1(&array_val);
@@ -45541,12 +45593,14 @@ value_asdl::value_t* DecayArray(value_asdl::value_t* val) {
 
   if (val->tag() == value_e::BashArray) {
     array_val = static_cast<value::BashArray*>(val);
-    s = len(array_val->strs) ? array_val->strs->at(0) : nullptr;
+    Tuple2<BigStr*, runtime_asdl::error_code_t> tup0 = bash_impl::BashArray_GetElement(array_val, 0);
+    s = tup0.at0();
+    error_code = tup0.at1();
   }
   else {
     if (val->tag() == value_e::BashAssoc) {
       assoc_val = static_cast<value::BashAssoc*>(val);
-      s = dict_contains(assoc_val->d, S_wfw) ? assoc_val->d->at(S_wfw) : nullptr;
+      s = bash_impl::BashAssoc_GetElement(assoc_val, S_wfw);
     }
     else {
       assert(0);  // AssertionError
@@ -45558,28 +45612,6 @@ value_asdl::value_t* DecayArray(value_asdl::value_t* val) {
   else {
     return Alloc<value::Str>(s);
   }
-}
-
-Tuple2<BigStr*, int> GetArrayItem(List<BigStr*>* strs, int index) {
-  int n;
-  BigStr* s = nullptr;
-  StackRoot _root0(&strs);
-  StackRoot _root1(&s);
-
-  n = len(strs);
-  if (index < 0) {
-    index += n;
-    if (index < 0) {
-      return Tuple2<BigStr*, int>(nullptr, 1);
-    }
-  }
-  if (index < n) {
-    s = strs->at(index);
-  }
-  else {
-    s = nullptr;
-  }
-  return Tuple2<BigStr*, int>(s, 0);
 }
 
 bool _DetectMetaBuiltinStr(BigStr* s) {
@@ -46333,9 +46365,9 @@ value_asdl::value_t* AbstractWordEvaluator::_ApplyUnarySuffixOp(value_asdl::valu
 
   op_kind = consts::GetKind(op->op->id);
   if (op_kind == Kind::VOp1) {
-    Tuple2<value::Str*, bool> tup0 = this->EvalWordToPattern(op->arg_word);
-    arg_val = tup0.at0();
-    has_extglob = tup0.at1();
+    Tuple2<value::Str*, bool> tup1 = this->EvalWordToPattern(op->arg_word);
+    arg_val = tup1.at0();
+    has_extglob = tup1.at1();
     UP_val = val;
     switch (val->tag()) {
       case value_e::Str: {
@@ -46406,9 +46438,9 @@ value_asdl::value_t* AbstractWordEvaluator::_PatSub(value_asdl::value_t* val, su
   StackRoot _root11(&strs);
   StackRoot _root12(&assoc_val);
 
-  Tuple2<value::Str*, bool> tup1 = this->EvalWordToPattern(op->pat);
-  pat_val = tup1.at0();
-  has_extglob = tup1.at1();
+  Tuple2<value::Str*, bool> tup2 = this->EvalWordToPattern(op->pat);
+  pat_val = tup2.at0();
+  has_extglob = tup2.at1();
   if (has_extglob) {
     e_die(S_med, op->pat);
   }
@@ -46419,9 +46451,9 @@ value_asdl::value_t* AbstractWordEvaluator::_PatSub(value_asdl::value_t* val, su
   else {
     replace_str = S_Aoo;
   }
-  Tuple2<BigStr*, List<BigStr*>*> tup2 = glob_::GlobToERE(pat_val->s);
-  regex = tup2.at0();
-  warnings = tup2.at1();
+  Tuple2<BigStr*, List<BigStr*>*> tup3 = glob_::GlobToERE(pat_val->s);
+  regex = tup3.at0();
+  warnings = tup3.at1();
   if (len(warnings)) {
     ;  // pass
   }
@@ -46680,7 +46712,7 @@ value_asdl::value_t* AbstractWordEvaluator::_ArrayIndex(value_asdl::value_t* val
   value_asdl::value_t* UP_val = nullptr;
   int index;
   BigStr* s = nullptr;
-  int error_code;
+  runtime_asdl::error_code_t error_code;
   BigStr* key = nullptr;
   StackRoot _root0(&val);
   StackRoot _root1(&part);
@@ -46705,10 +46737,10 @@ value_asdl::value_t* AbstractWordEvaluator::_ArrayIndex(value_asdl::value_t* val
       value::BashArray* array_val = static_cast<value::BashArray*>(UP_val);
       index = this->arith_ev->EvalToInt(anode);
       vtest_place->index = Alloc<a_index::Int>(index);
-      Tuple2<BigStr*, int> tup3 = GetArrayItem(array_val->strs, index);
-      s = tup3.at0();
-      error_code = tup3.at1();
-      if (error_code == 1) {
+      Tuple2<BigStr*, runtime_asdl::error_code_t> tup4 = bash_impl::BashArray_GetElement(array_val, index);
+      s = tup4.at0();
+      error_code = tup4.at1();
+      if (error_code == error_code_e::IndexOutOfRange) {
         this->errfmt->Print_(StrFormat("Index %d out of bounds for array of length %d", index, bash_impl::BashArray_Length(array_val)), part->token);
       }
       if (s == nullptr) {
@@ -46723,7 +46755,7 @@ value_asdl::value_t* AbstractWordEvaluator::_ArrayIndex(value_asdl::value_t* val
       value::BashAssoc* assoc_val = static_cast<value::BashAssoc*>(UP_val);
       key = this->arith_ev->EvalWordToString(anode, location::TokenForArith(anode));
       vtest_place->index = Alloc<a_index::Str>(key);
-      s = assoc_val->d->get(key);
+      s = bash_impl::BashAssoc_GetElement(assoc_val, key);
       if (s == nullptr) {
         val = value::Undef;
       }
@@ -47015,9 +47047,9 @@ void AbstractWordEvaluator::_EvalBracedVarSub(syntax_asdl::BracedVarSub* part, L
     switch (suffix_op_->tag()) {
       case suffix_op_e::Nullary: {
         Token* op = static_cast<Token*>(UP_op);
-        Tuple2<value::Str*, bool> tup4 = this->_Nullary(val, op, var_name);
-        val = tup4.at0();
-        quoted2 = tup4.at1();
+        Tuple2<value::Str*, bool> tup5 = this->_Nullary(val, op, var_name);
+        val = tup5.at0();
+        quoted2 = tup5.at1();
       }
         break;
       case suffix_op_e::Unary: {
@@ -47847,10 +47879,10 @@ cmd_value::Assign* AbstractWordEvaluator::_EvalAssignBuiltin(int builtin_id, Big
       started_pairs = true;
     }
     if (started_pairs) {
-      Tuple3<syntax_asdl::Token*, syntax_asdl::Token*, int> tup5 = word_::DetectShAssignment(w);
-      left_token = tup5.at0();
-      close_token = tup5.at1();
-      part_offset = tup5.at2();
+      Tuple3<syntax_asdl::Token*, syntax_asdl::Token*, int> tup6 = word_::DetectShAssignment(w);
+      left_token = tup6.at0();
+      close_token = tup6.at1();
+      part_offset = tup6.at2();
       if (left_token) {
         if (left_token->id != Id::Lit_VarLike) {
           e_die(S_lgF, w);

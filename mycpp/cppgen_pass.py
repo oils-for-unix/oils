@@ -925,7 +925,7 @@ class Impl(_Shared):
 
         return False
 
-    def _ProbeExpr(self, o: 'mypy.nodes.CallExpr') -> None:
+    def oils_visit_probe_call(self, o: 'mypy.nodes.CallExpr') -> None:
         assert len(o.args) >= 2 and len(o.args) < 13, o.args
         assert isinstance(o.args[0], mypy.nodes.StrExpr), o.args[0]
         assert isinstance(o.args[1], mypy.nodes.StrExpr), o.args[1]
@@ -965,15 +965,8 @@ class Impl(_Shared):
             self.accept(arg)
         self.write('))')
 
-    def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> None:
+    def oils_visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> None:
         callee_name = o.callee.name
-        if callee_name == 'probe':
-            self._ProbeExpr(o)
-            return
-
-        if callee_name == 'isinstance':
-            self.report_error(o, 'isinstance() not allowed')
-            return
 
         #    return cast(ShArrayLiteral, tok)
         # -> return static_cast<ShArrayLiteral*>(tok)

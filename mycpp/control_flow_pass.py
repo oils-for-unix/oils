@@ -526,7 +526,7 @@ class Build(visitor.SimpleVisitor):
             if ref and is_local:
                 cfg.AddFact(self.current_statement_id, pass_state.Use(ref))
 
-    def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> None:
+    def oils_visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> None:
         cfg = self.current_cfg()
         if self.current_func_node:
             full_callee = self.resolve_callee(o)
