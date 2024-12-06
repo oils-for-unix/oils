@@ -22,10 +22,15 @@ from pea import parse
 
 
 def CreateMyPyFile(path: str) -> MypyFile:
+    """
+    Hacky function create MyPy AST!
+
+    Works for a trivial function
+    """
     defs: list[Statement] = []
     stub = MypyFile(defs, [])
 
-    name = 'f'
+    func_name = 'main'
 
     v = Var('argv')
     s = ret_type = Primitive('builtins.str')
@@ -41,13 +46,15 @@ def CreateMyPyFile(path: str) -> MypyFile:
     arg_kinds: list[Any] = [ARG_POS]
     arg_names: list[str] = ['argv']
     ret_type = Primitive('builtins.int')
-    fallback = Primitive('builtins.int')  # WHAT is this for?
+    fallback = Primitive('??? fallback')  # WHAT is this for?
     func_type = CallableType(arg_types, arg_kinds, arg_names, ret_type,
                              fallback)
 
-    func = FuncDef(name, arguments, body, typ=func_type)
-    _ = func
-    #defs.append(func)
+    func = FuncDef(func_name, arguments, body, typ=func_type)
+    func._fullname = func_name
+
+    #_ = func
+    defs.append(func)
 
     # fullname is a property, backed by _fullname
     #

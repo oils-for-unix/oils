@@ -122,9 +122,11 @@ os-info          soil/diagnose.sh os-info    -
 dump-env         soil/diagnose.sh dump-env   -
 py-source        build/py.sh py-source       -
 typecheck        pea/TEST.sh check-with-latest-mypy -
-run-tests        pea/TEST.sh run-tests       -
 parse-all        pea/TEST.sh parse-all       -
 EOF
+
+# Moved this to cpp-small, because it depends on py-all-and-ninja
+# run-tests        pea/TEST.sh run-tests       -
 }
 
 dev-minimal-tasks() {
@@ -280,6 +282,7 @@ dump-env         soil/diagnose.sh dump-env   -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
 py-unit          test/unit.sh all                      _test/py-unit/
 yaks             yaks/TEST.sh soil-run                 -
+pea              pea/TEST.sh run-tests                 -
 oils-cpp-smoke   build/native.sh soil-run              -
 cpp-unit         test/cpp-unit.sh soil-run             _test/-wwz-index
 headless         client/run.sh soil-run-cpp            -
