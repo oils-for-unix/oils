@@ -33,8 +33,9 @@ class MyTypeInfo:
 
 class Primitive(Instance):
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, args: List[Type] = None) -> None:
         self.type = MyTypeInfo(name)  # type: ignore
+        self.args = args if args is not None else []
 
 
 MYCPP_INT = Primitive('builtins.int')

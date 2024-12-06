@@ -4,7 +4,16 @@ from ast import AST, Module, ClassDef, FunctionDef, Assign
 from pprint import pprint
 import sys
 
+from typing import Any
+
 from mycpp import pass_state
+
+
+def log(msg: str, *args: Any) -> None:
+    if args:
+        msg = msg % args
+    #print('%.2f %s' % (time.time() - START_TIME, msg), file=sys.stderr)
+    print(msg, file=sys.stderr)
 
 
 @dataclass

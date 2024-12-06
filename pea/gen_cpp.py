@@ -1,25 +1,11 @@
 import ast
-from ast import AST, stmt, ClassDef, FunctionDef, Assign
+from ast import stmt, ClassDef, FunctionDef, Assign
 
 import typing
 from typing import Any
 
 from pea.header import (TypeSyntaxError, PyFile, Program)
-
-
-def _ParseFuncType(st: stmt) -> AST:
-    # 2024-12: causes an error with the latest MyPy, 1.13.0
-    #          works with Soil CI MyPy, 1.10.0
-    #assert st.type_comment, st
-
-    # Caller checks this.   Is there a better way?
-    assert hasattr(st, 'type_comment'), st
-
-    try:
-        # This parses with the func_type production in the grammar
-        return ast.parse(st.type_comment, mode='func_type')
-    except SyntaxError:
-        raise TypeSyntaxError(st.lineno, st.type_comment)
+from pea import parse
 
 
 class ConstVisitor(ast.NodeVisitor):
@@ -72,7 +58,7 @@ class PrototypesPass:
             match stmt:
                 case FunctionDef():
                     if stmt.type_comment:
-                        sig = _ParseFuncType(stmt)  # may raise
+                        sig = parse.ParseFuncType(stmt)  # may raise
 
                         if self.opts.verbose:
                             print('METHOD')
@@ -91,7 +77,7 @@ class PrototypesPass:
             match stmt:
                 case FunctionDef():
                     if stmt.type_comment:
-                        sig = _ParseFuncType(stmt)  # may raise
+                        sig = parse.ParseFuncType(stmt)  # may raise
 
                         if self.opts.verbose:
                             print('FUNC')

@@ -4,13 +4,13 @@ pea_main.py
 
 A potential rewrite of mycpp.
 """
-import ast
 import io
 import optparse
-import os
 import pickle
 import sys
 import time
+
+START_TIME = time.time()
 
 if 0:
     for p in sys.path:
@@ -20,42 +20,10 @@ from typing import Any, Dict, List, Tuple
 
 from mycpp import translate
 
-from pea import mypy_shim
 from pea import gen_cpp
-from pea.header import (TypeSyntaxError, PyFile, Program)
-
-START_TIME = time.time()
-
-
-def log(msg: str, *args: Any) -> None:
-    if args:
-        msg = msg % args
-    print('%.2f %s' % (time.time() - START_TIME, msg), file=sys.stderr)
-
-
-def ParseFiles(files: list[str], prog: Program) -> bool:
-
-    for filename in files:
-        with open(filename) as f:
-            contents = f.read()
-
-        try:
-            # Python 3.8+ supports type_comments=True
-            module = ast.parse(contents, filename=filename, type_comments=True)
-        except SyntaxError as e:
-            # This raises an exception for some reason
-            #e.print_file_and_line()
-            print('Error parsing %s: %s' % (filename, e))
-            return False
-
-        tmp = os.path.basename(filename)
-        namespace, _ = os.path.splitext(tmp)
-
-        prog.py_files.append(PyFile(filename, namespace, module))
-
-        prog.stats['num_files'] += 1
-
-    return True
+from pea import mypy_shim
+from pea import parse
+from pea.header import (TypeSyntaxError, Program, log)
 
 
 def Options() -> optparse.OptionParser:
@@ -107,7 +75,7 @@ def main(argv: list[str]) -> int:
         prog = Program()
         log('Pea begin')
 
-        if not ParseFiles(files, prog):
+        if not parse.ParseFiles(files, prog):
             return 1
         log('Parsed %d files and their type comments', len(files))
         prog.PrintStats()
@@ -188,14 +156,6 @@ def main(argv: list[str]) -> int:
 
             to_compile.append((path, m))
 
-            prog = Program()
-            log('Pea begin')
-
-            if not ParseFiles([path], prog):
-                return 1
-            prog.PrintStats()
-            log('prog %s', prog)
-
         return translate.Run(timer, f, header_f, types, to_header, to_compile)
 
     elif action == 'dump-pickles':
@@ -204,7 +164,7 @@ def main(argv: list[str]) -> int:
         prog = Program()
         log('Pea begin')
 
-        if not ParseFiles(files, prog):
+        if not parse.ParseFiles(files, prog):
             return 1
         log('Parsed %d files and their type comments', len(files))
         prog.PrintStats()
