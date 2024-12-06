@@ -42,7 +42,10 @@ examples-variant() {
 
   for b in _bin/$compiler-$variant/mycpp/examples/*; do
     case $b in
-      (*.stripped)  # just run the unstripped binary
+      *.pea)  # for now, don't run pea_hello.pea, it fails on purpose
+        continue
+        ;;
+      *.stripped)  # just run the unstripped binary
         continue
         ;;
     esac
@@ -50,7 +53,7 @@ examples-variant() {
     local prefix="$log_dir/$(basename $b)"
 
     case $variant in
-      (coverage)
+      coverage)
         export LLVM_PROFILE_FILE=$prefix.profraw
         ;;
     esac
@@ -180,7 +183,7 @@ run-unit-tests() {
     local asan_options=''
     case $b in
       # leaks with malloc
-      (*/demo/hash_table|*/demo/target_lang|*/demo/gc_header|*/small_str_test)
+      */demo/hash_table|*/demo/target_lang|*/demo/gc_header|*/small_str_test)
         asan_options='detect_leaks=0'
         ;;
     esac
