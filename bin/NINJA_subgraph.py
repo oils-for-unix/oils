@@ -80,14 +80,15 @@ def NinjaGraph(ru):
                 ('translator', translator),
                 ('preamble', 'cpp/preamble.h'),
             ]
-            if translator == 'mycpp-souffle':
-                variables.append(
-                    ('extra_mycpp_opts', '--minimize-stack-roots'))
+            if translator == 'mycpp':
+                shwrap_path = '_bin/shwrap/mycpp_main'
+            else:
+                shwrap_path = '_bin/shwrap/mycpp_main_souffle'
 
             n.build(outputs,
                     'gen-oils-for-unix',
                     deps,
-                    implicit=['_bin/shwrap/mycpp_main', RULES_PY],
+                    implicit=[shwrap_path, RULES_PY],
                     variables=variables)
 
             if main_name == 'oils_for_unix':

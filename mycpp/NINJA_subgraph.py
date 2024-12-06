@@ -14,9 +14,19 @@ _ = log
 
 def DefineTargets(ru):
 
+    # Creates _bin/shwrap/mycpp_main
     ru.py_binary('mycpp/mycpp_main.py',
                  deps_base_dir='prebuilt/ninja',
                  template='mycpp')
+
+    # mycpp wrapper that depends on _bin/datalog/dataflow, a binary created
+    # from Souffle datalog!
+    ru.n.build(
+        '_bin/shwrap/mycpp_main_souffle',
+        'cp',
+        ['bin/mycpp_main_souffle.sh'],
+        implicit=['_bin/shwrap/mycpp_main', '_bin/datalog/dataflow'],
+    )
 
     ru.cc_library(
         '//mycpp/runtime',
@@ -170,18 +180,21 @@ def TranslatorSubgraph(ru, translator, ex):
         # Note: build/ninja-rules-py.sh writes this 'shwrap'
         # It depends on MYPY_WEDGE and PY3_LIBS_WEDGE
         translator_wrapper = '_bin/shwrap/pea_main'
-        base_translator = 'pea'
         translate_rule = 'translate-pea'
-    else:
+    elif translator == 'mycpp':
         translate_rule = 'translate-mycpp'
-        base_translator = 'mycpp'
         translator_wrapper = '_bin/shwrap/mycpp_main'
+    elif translator == 'mycpp-souffle':
+        translate_rule = 'translate-mycpp-souffle'
+        translator_wrapper = '_bin/shwrap/mycpp_main_souffle'
+    else:
+        raise AssertionError('translator = %r' % translator)
 
     translator_vars = [
         ('mypypath', '$NINJA_REPO_ROOT/mycpp:$NINJA_REPO_ROOT/pyext'),
     ]
-    if translator == 'mycpp-souffle':
-        translator_vars.append(('extra_mycpp_opts', '--minimize-stack-roots'))
+    #if translator == 'mycpp-souffle':
+    #    translator_vars.append(('extra_mycpp_opts', '--minimize-stack-roots'))
 
     n.build(
         raw,
@@ -198,12 +211,17 @@ def TranslatorSubgraph(ru, translator, ex):
     main_cc_src = '_gen/mycpp/examples/%s.%s.cc' % (ex, translator)
 
     # Make a translation unit
-    n.build(main_cc_src,
-            'wrap-cc',
-            raw,
-            implicit=[RULES_PY],
-            variables=[('name', ex), ('preamble_path', preamble_path),
-                       ('translator', base_translator)])
+    n.build(
+        main_cc_src,
+        'wrap-cc',
+        raw,
+        implicit=[RULES_PY],
+        variables=[
+            ('name', ex),
+            ('preamble_path', preamble_path),
+            # translator is used to determine wrap-cc
+            ('translator', os.path.basename(translator_wrapper))
+        ])
 
     n.newline()
 
@@ -260,10 +278,14 @@ def NinjaGraph(ru):
     n.newline()
 
     # mycpp and pea have the same interface
-    n.rule(
-        'translate-mycpp',
-        command='_bin/shwrap/mycpp_main $mypypath $out $in $extra_mycpp_opts',
-        description='mycpp $mypypath $out $in')
+    n.rule('translate-mycpp',
+           command='_bin/shwrap/mycpp_main $mypypath $out $in',
+           description='mycpp $mypypath $out $in')
+    n.newline()
+
+    n.rule('translate-mycpp-souffle',
+           command='_bin/shwrap/mycpp_main_souffle $mypypath $out $in',
+           description='mycpp-souffle $mypypath $out $in')
     n.newline()
 
     n.rule('translate-pea',

@@ -518,12 +518,19 @@ class Rules(object):
         )
 
     def py_binary(self, main_py, deps_base_dir='_build/NINJA', template='py'):
-        """
-        Wrapper for Python script with dynamically discovered deps
+        """Wrapper for Python script with dynamically discovered deps
+
+        Args:
+          template: py, mycpp, or pea
+
+        Example:
+          _bin/shwrap/mycpp_main wraps mycpp/mycpp_main.py
+            - using dependencies from prebuilt/ninja/mycpp.mycpp_main/deps.txt
+            - with the 'shwrap-mycpp' template defined in build/ninja-lib.sh
         """
         rel_path, _ = os.path.splitext(main_py)
-        py_module = rel_path.replace(
-            '/', '.')  # asdl/asdl_main.py -> asdl.asdl_main
+        # asdl/asdl_main.py -> asdl.asdl_main
+        py_module = rel_path.replace('/', '.')
 
         deps_path = os.path.join(deps_base_dir, py_module, 'deps.txt')
         with open(deps_path) as f:
@@ -531,8 +538,8 @@ class Rules(object):
 
         deps.remove(main_py)  # raises ValueError if it's not there
 
-        basename = os.path.basename(rel_path)
-        self.n.build('_bin/shwrap/%s' % basename,
+        shwrap_name = os.path.basename(rel_path)
+        self.n.build('_bin/shwrap/%s' % shwrap_name,
                      'write-shwrap', [main_py] + deps,
                      variables=[('template', template)])
         self.n.newline()

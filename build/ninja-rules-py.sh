@@ -18,6 +18,11 @@ source build/dev-shell.sh  # python2 in $PATH
 #source devtools/types.sh  # typecheck-files
 source $REPO_ROOT/test/tsv-lib.sh  # time-tsv
 
+die() {
+  echo "$@" >& 2
+  exit 1
+}
+
 example-main-wrapper() {
   ### Used by mycpp/examples
 
@@ -133,13 +138,13 @@ print-wrap-cc() {
 
    # main() function
    case $translator in
-     mycpp)
+     mycpp_main|mycpp_main_souffle)
        example-main-wrapper $main_module
        ;;
-     yaks)
+     yaks_main)
        main-wrapper $main_module
        ;;
-     pea)
+     pea_main)
        main-wrapper $main_module
        #echo '#include <stdio.h>'
        #echo 'int main() { printf("stub\n"); return 1; }'
