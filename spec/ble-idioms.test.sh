@@ -866,3 +866,122 @@ argv.py @a
 
 ## N-I bash/zsh/mksh/ash STDOUT:
 ## END
+
+
+#### SparseArray: ${a[@]:offset:length}
+case $SH in zsh|mksh|ash) exit ;; esac
+
+a=(v{0..9})
+unset -v 'a[2]' 'a[3]' 'a[4]' 'a[7]'
+case $SH in osh) eval 'var a = _a2sp(a)' ;; esac
+
+echo '==== ${a[@]:offset} ===='
+echo "[${a[@]:0}][${a[*]:0}]"
+echo "[${a[@]:2}][${a[*]:2}]"
+echo "[${a[@]:3}][${a[*]:3}]"
+echo "[${a[@]:5}][${a[*]:5}]"
+echo "[${a[@]:9}][${a[*]:9}]"
+echo "[${a[@]:10}][${a[*]:10}]"
+echo "[${a[@]:11}][${a[*]:11}]"
+
+echo '==== ${a[@]:negative} ===='
+echo "[${a[@]: -1}][${a[*]: -1}]"
+echo "[${a[@]: -2}][${a[*]: -2}]"
+echo "[${a[@]: -5}][${a[*]: -5}]"
+echo "[${a[@]: -9}][${a[*]: -9}]"
+echo "[${a[@]: -10}][${a[*]: -10}]"
+echo "[${a[@]: -11}][${a[*]: -11}]"
+echo "[${a[@]: -21}][${a[*]: -21}]"
+
+echo '==== ${a[@]:offset:length} ===='
+echo "[${a[@]:0:0}][${a[*]:0:0}]"
+echo "[${a[@]:0:1}][${a[*]:0:1}]"
+echo "[${a[@]:0:3}][${a[*]:0:3}]"
+echo "[${a[@]:2:1}][${a[*]:2:1}]"
+echo "[${a[@]:2:4}][${a[*]:2:4}]"
+echo "[${a[@]:3:4}][${a[*]:3:4}]"
+echo "[${a[@]:5:4}][${a[*]:5:4}]"
+echo "[${a[@]:5:0}][${a[*]:5:0}]"
+echo "[${a[@]:9:1}][${a[*]:9:1}]"
+echo "[${a[@]:9:2}][${a[*]:9:2}]"
+echo "[${a[@]:10:1}][${a[*]:10:1}]"
+
+## STDOUT:
+==== ${a[@]:offset} ====
+[v0 v1 v5 v6 v8 v9][v0 v1 v5 v6 v8 v9]
+[v5 v6 v8 v9][v5 v6 v8 v9]
+[v5 v6 v8 v9][v5 v6 v8 v9]
+[v5 v6 v8 v9][v5 v6 v8 v9]
+[v9][v9]
+[][]
+[][]
+==== ${a[@]:negative} ====
+[v9][v9]
+[v8 v9][v8 v9]
+[v5 v6 v8 v9][v5 v6 v8 v9]
+[v1 v5 v6 v8 v9][v1 v5 v6 v8 v9]
+[v0 v1 v5 v6 v8 v9][v0 v1 v5 v6 v8 v9]
+[][]
+[][]
+==== ${a[@]:offset:length} ====
+[][]
+[v0][v0]
+[v0 v1 v5][v0 v1 v5]
+[v5][v5]
+[v5 v6 v8 v9][v5 v6 v8 v9]
+[v5 v6 v8 v9][v5 v6 v8 v9]
+[v5 v6 v8 v9][v5 v6 v8 v9]
+[][]
+[v9][v9]
+[v9][v9]
+[][]
+## END
+
+## N-I zsh/mksh/ash STDOUT:
+## END
+
+
+#### ${@:offset:length}
+case $SH in zsh|mksh|ash) exit ;; esac
+
+set -- v{1..9}
+
+{
+  echo '==== ${@:offset:length} ===='
+  echo "[${*:0:3}][${*:0:3}]"
+  echo "[${*:1:3}][${*:1:3}]"
+  echo "[${*:3:3}][${*:3:3}]"
+  echo "[${*:5:10}][${*:5:10}]"
+
+  echo '==== ${@:negative} ===='
+  echo "[${*: -1}][${*: -1}]"
+  echo "[${*: -3}][${*: -3}]"
+  echo "[${*: -9}][${*: -9}]"
+  echo "[${*: -10}][${*: -10}]"
+  echo "[${*: -11}][${*: -11}]"
+  echo "[${*: -3:2}][${*: -3:2}]"
+  echo "[${*: -9:4}][${*: -9:4}]"
+  echo "[${*: -10:4}][${*: -10:4}]"
+  echo "[${*: -11:4}][${*: -11:4}]"
+} | sed "s:$SH:\$SH:g;s:${SH##*/}:\$SH:g"
+
+## STDOUT:
+==== ${@:offset:length} ====
+[$SH v1 v2][$SH v1 v2]
+[v1 v2 v3][v1 v2 v3]
+[v3 v4 v5][v3 v4 v5]
+[v5 v6 v7 v8 v9][v5 v6 v7 v8 v9]
+==== ${@:negative} ====
+[v9][v9]
+[v7 v8 v9][v7 v8 v9]
+[v1 v2 v3 v4 v5 v6 v7 v8 v9][v1 v2 v3 v4 v5 v6 v7 v8 v9]
+[$SH v1 v2 v3 v4 v5 v6 v7 v8 v9][$SH v1 v2 v3 v4 v5 v6 v7 v8 v9]
+[][]
+[v7 v8][v7 v8]
+[v1 v2 v3 v4][v1 v2 v3 v4]
+[$SH v1 v2 v3][$SH v1 v2 v3]
+[][]
+## END
+
+## N-I zsh/mksh/ash STDOUT:
+## END
