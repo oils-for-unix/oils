@@ -1059,32 +1059,29 @@ class AbstractWordEvaluator(StringWordEvaluator):
         op_id = cast(bracket_op.WholeArray, part.bracket_op).op_id
 
         if op_id == Id.Lit_At:
+            op_str = '@'
             vsub_state.join_array = not quoted  # ${a[@]} decays but "${a[@]}" doesn't
-            UP_val = val
-            with tagswitch(val) as case2:
-                if case2(value_e.Undef):
-                    if not vsub_state.has_test_op:
-                        val = self._EmptyBashArrayOrError(part.token)
-                elif case2(value_e.Str):
-                    if self.exec_opts.strict_array():
-                        e_die("Can't index string with @", loc.WordPart(part))
-                elif case2(value_e.BashArray):
-                    pass  # no-op
-
         elif op_id == Id.Arith_Star:
+            op_str = '*'
             vsub_state.join_array = True  # both ${a[*]} and "${a[*]}" decay
-            with tagswitch(val) as case2:
-                if case2(value_e.Undef):
-                    if not vsub_state.has_test_op:
-                        val = self._EmptyBashArrayOrError(part.token)
-                elif case2(value_e.Str):
-                    if self.exec_opts.strict_array():
-                        e_die("Can't index string with *", loc.WordPart(part))
-                elif case2(value_e.BashArray):
-                    pass  # no-op
-
         else:
             raise AssertionError(op_id)  # unknown
+
+        with tagswitch(val) as case2:
+            if case2(value_e.Undef):
+                if not vsub_state.has_test_op:
+                    val = self._EmptyBashArrayOrError(part.token)
+            elif case2(value_e.Str):
+                if self.exec_opts.strict_array():
+                    e_die("Can't index string with %s" % op_str,
+                          loc.WordPart(part))
+            elif case2(value_e.BashArray, value_e.SparseArray, value_e.BashAssoc):
+                pass  # no-op
+            else:
+                # The other YSH types such as List, Dict, and Float are not
+                # supported.  Error messages will be printed later, so we here
+                # return the unsupported objects without modification.
+                pass  # no-op
 
         return val
 
