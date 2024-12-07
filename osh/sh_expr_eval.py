@@ -141,7 +141,7 @@ def OldValue(lval, mem, exec_opts):
 
             with tagswitch(val) as case2:
                 if case2(value_e.Undef):
-                    s = None  # type: str
+                    s = None  # type: Optional[str]
                 elif case2(value_e.BashArray):
                     array_val = cast(value.BashArray, UP_val)
                     s, _ = bash_impl.BashArray_GetElement(
