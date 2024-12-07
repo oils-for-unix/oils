@@ -608,3 +608,86 @@ declare -a a=(1 2 3 4 5 6 x)
 
 ## N-I bash/zsh/mksh/ash STDOUT:
 ## END
+
+
+#### SparseArray: [[ -v a[i] ]]
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+a=()
+var sp1 = _a2sp(a)
+[[ -v sp1[0] ]]; echo "$? (expect 1)"
+[[ -v sp1[9] ]]; echo "$? (expect 1)"
+
+a=({1..9})
+var sp2 = _a2sp(a)
+[[ -v sp2[0] ]]; echo "$? (expect 0)"
+[[ -v sp2[8] ]]; echo "$? (expect 0)"
+[[ -v sp2[9] ]]; echo "$? (expect 1)"
+[[ -v sp2[-1] ]]; echo "$? (expect 0)"
+[[ -v sp2[-2] ]]; echo "$? (expect 0)"
+[[ -v sp2[-9] ]]; echo "$? (expect 0)"
+
+unset -v 'a[4]'
+var sp3 = _a2sp(a)
+[[ -v sp3[3] ]]; echo "$? (expect 0)"
+[[ -v sp3[4] ]]; echo "$? (expect 1)"
+[[ -v sp3[5] ]]; echo "$? (expect 0)"
+[[ -v sp3[-1] ]]; echo "$? (expect 0)"
+[[ -v sp3[-4] ]]; echo "$? (expect 0)"
+[[ -v sp3[-5] ]]; echo "$? (expect 1)"
+[[ -v sp3[-6] ]]; echo "$? (expect 0)"
+[[ -v sp3[-9] ]]; echo "$? (expect 0)"
+
+## STDOUT:
+1 (expect 1)
+1 (expect 1)
+0 (expect 0)
+0 (expect 0)
+1 (expect 1)
+0 (expect 0)
+0 (expect 0)
+0 (expect 0)
+0 (expect 0)
+1 (expect 1)
+0 (expect 0)
+0 (expect 0)
+0 (expect 0)
+1 (expect 1)
+0 (expect 0)
+0 (expect 0)
+## END
+
+## N-I bash/zsh/mksh/ash STDOUT:
+## END
+
+
+#### SparseArray: [[ -v a[i] ]] with invalid negative index
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+a=()
+var sp1 = _a2sp(a)
+([[ -v sp1[-1] ]]; echo "$? (expect 1)")
+a=({1..9})
+var sp2 = _a2sp(a)
+([[ -v sp2[-10] ]]; echo "$? (expect 1)")
+var sp3 = _a2sp(a)
+([[ -v sp3[-10] ]]; echo "$? (expect 1)")
+
+## status: 1
+## STDOUT:
+## END
+## STDERR:
+  ([[ -v sp1[-1] ]]; echo "$? (expect 1)")
+         ^~~
+[ stdin ]:5: fatal: -v got index -1, which is out of bounds for array of length 0
+  ([[ -v sp2[-10] ]]; echo "$? (expect 1)")
+         ^~~
+[ stdin ]:8: fatal: -v got index -10, which is out of bounds for array of length 9
+  ([[ -v sp3[-10] ]]; echo "$? (expect 1)")
+         ^~~
+[ stdin ]:10: fatal: -v got index -10, which is out of bounds for array of length 9
+## END
+
+## N-I bash/zsh/mksh/ash status: 0
+## N-I bash/zsh/mksh/ash STDERR:
+## END
