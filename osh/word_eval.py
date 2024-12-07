@@ -1147,10 +1147,17 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     # oddly, 'echo ${x@Q}' is equivalent to 'echo "${x@Q}"' in
                     # bash
                     quoted2 = True
-                elif case(value_e.BashArray, value_e.BashAssoc):
+                elif case(value_e.BashArray, value_e.SparseArray,
+                          value_e.BashAssoc):
                     if val.tag() == value_e.BashArray:
                         val = cast(value.BashArray, UP_val)
-                        values = [s for s in bash_impl.BashArray_GetValues(val) if s is not None]
+                        values = [
+                            s for s in bash_impl.BashArray_GetValues(val)
+                            if s is not None
+                        ]
+                    elif val.tag() == value_e.SparseArray:
+                        val = cast(value.SparseArray, UP_val)
+                        values = bash_impl.SparseArray_GetValues(val)
                     elif val.tag() == value_e.BashAssoc:
                         val = cast(value.BashAssoc, UP_val)
                         values = bash_impl.BashAssoc_GetValues(val)
