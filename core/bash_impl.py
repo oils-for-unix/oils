@@ -22,6 +22,18 @@ def BigInt_Less(a, b):
     return mops.Greater(b, a)
 
 
+def BigInt_GreaterEq(a, b):
+    # type: (mops.BigInt, mops.BigInt) -> bool
+
+    return not mops.Greater(b, a)
+
+
+def BigInt_LessEq(a, b):
+    # type: (mops.BigInt, mops.BigInt) -> bool
+
+    return not mops.Greater(a, b)
+
+
 #------------------------------------------------------------------------------
 # All BashArray operations depending on the internal
 # representation of SparseArray come here.
