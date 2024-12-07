@@ -650,7 +650,7 @@ class SparseOp(vm._Callable):
         #i = mops.BigTruncate(rd.PosInt())
         op_name = rd.PosStr()
 
-        no_str = None  # type: str
+        no_str = None  # type: Optional[str]
 
         if op_name == 'len':  # ${#a[@]}
             rd.Done()

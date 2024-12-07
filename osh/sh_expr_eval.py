@@ -947,7 +947,7 @@ class ArithEvaluator(object):
                 var_name = self.EvalWordToString(w)
                 return (var_name, w)
 
-        no_str = None  # type: str
+        no_str = None  # type: Optional[str]
         return (no_str, loc.Missing)
 
     def EvalArithLhs(self, anode):

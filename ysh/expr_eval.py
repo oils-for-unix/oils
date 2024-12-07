@@ -1420,7 +1420,7 @@ class EggexEvaluator(object):
         UP_term = term
 
         # These 2 vars will be initialized if we don't return early
-        s = None  # type: str
+        s = None  # type: Optional[str]
         char_code_tok = None  # type: Token
 
         with tagswitch(term) as case:

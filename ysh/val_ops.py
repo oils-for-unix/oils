@@ -522,7 +522,7 @@ def MatchRegex(left, right, mem):
                                 loc.Missing)
 
     UP_left = left
-    left_s = None  # type: str
+    left_s = None  # type: Optional[str]
     with tagswitch(left) as case:
         if case(value_e.Str):
             left = cast(value.Str, UP_left)

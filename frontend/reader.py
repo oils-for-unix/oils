@@ -205,7 +205,7 @@ class InteractiveLineReader(_Reader):
         self.line_input = line_input
         self.prompt_state = prompt_state
 
-        self.prev_line = None  # type: str
+        self.prev_line = None  # type: Optional[str]
         self.prompt_str = ''
 
         self.Reset()

@@ -19,7 +19,7 @@ from ysh import val_ops
 import libc
 from libc import REG_NOTBOL
 
-from typing import cast, Dict, List, Tuple
+from typing import cast, Dict, List, Optional, Tuple
 
 _ = log
 
@@ -130,7 +130,7 @@ class HasAffix(vm._Callable):
 
         string = rd.PosStr()
         pattern_val = rd.PosValue()
-        pattern_str = None  # type: str
+        pattern_str = None  # type: Optional[str]
         pattern_eggex = None  # type: value.Eggex
         with tagswitch(pattern_val) as case:
             if case(value_e.Eggex):
@@ -187,7 +187,7 @@ class Trim(vm._Callable):
 
         string = rd.PosStr()
         pattern_val = rd.OptionalValue()
-        pattern_str = None  # type: str
+        pattern_str = None  # type: Optional[str]
         pattern_eggex = None  # type: value.Eggex
         if pattern_val:
             with tagswitch(pattern_val) as case:
@@ -425,7 +425,7 @@ class Replace(vm._Callable):
                     break
 
                 # Collect captures
-                arg0 = None  # type: str
+                arg0 = None  # type: Optional[str]
                 argv = []  # type: List[str]
                 named_vars = {}  # type: Dict[str, value_t]
                 num_groups = len(indices) / 2
@@ -507,7 +507,7 @@ class Split(vm._Callable):
         """
         string = rd.PosStr()
 
-        string_sep = None  # type: str
+        string_sep = None  # type: Optional[str]
         eggex_sep = None  # type: value.Eggex
 
         sep = rd.PosValue()

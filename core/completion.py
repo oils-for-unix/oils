@@ -320,9 +320,9 @@ class Api(object):
         self.line = line
         self.begin = begin
         self.end = end
-        self.first = None  # type: str
-        self.to_complete = None  # type: str
-        self.prev = None  # type: str
+        self.first = None  # type: Optional[str]
+        self.to_complete = None  # type: Optional[str]
+        self.prev = None  # type: Optional[str]
         self.index = -1  # type: int
         self.partial_argv = []  # type: List[str]
         # NOTE: COMP_WORDBREAKS is initialized in Mem().
@@ -1182,7 +1182,7 @@ class RootCompleter(object):
         # Used on retries.
         partial_argv = []  # type: List[str]
         num_partial = -1
-        first = None  # type: str
+        first = None  # type: Optional[str]
 
         if len(trail.words) > 0:
             # Now check if we're completing a word!
@@ -1225,7 +1225,7 @@ class RootCompleter(object):
                 num_partial = len(partial_argv)
 
                 first = partial_argv[0]
-                alias_first = None  # type: str
+                alias_first = None  # type: Optional[str]
                 if mylib.PYTHON:
                     debug_f.writeln('alias_words: [%s]' % trail.alias_words)
 
