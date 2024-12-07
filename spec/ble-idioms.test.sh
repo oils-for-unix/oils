@@ -771,3 +771,79 @@ bash: line 7: a: bad array subscript
 ## END
 ## N-I zsh/mksh/ash STDERR:
 ## END
+
+
+#### SparseArray: ${sp[i]}
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+a=({1..9})
+unset -v 'a[2]'
+unset -v 'a[3]'
+unset -v 'a[7]'
+var sp = _a2sp(a)
+
+echo "sp[0]: '${sp[0]}', ${sp[0]:-(empty)}, ${sp[0]+set}."
+echo "sp[1]: '${sp[1]}', ${sp[1]:-(empty)}, ${sp[1]+set}."
+echo "sp[8]: '${sp[8]}', ${sp[8]:-(empty)}, ${sp[8]+set}."
+echo "sp[2]: '${sp[2]}', ${sp[2]:-(empty)}, ${sp[2]+set}."
+echo "sp[3]: '${sp[3]}', ${sp[3]:-(empty)}, ${sp[3]+set}."
+echo "sp[7]: '${sp[7]}', ${sp[7]:-(empty)}, ${sp[7]+set}."
+
+echo "sp[-1]: '${sp[-1]}'."
+echo "sp[-2]: '${sp[-2]}'."
+echo "sp[-3]: '${sp[-3]}'."
+echo "sp[-4]: '${sp[-4]}'."
+echo "sp[-9]: '${sp[-9]}'."
+
+## STDOUT:
+sp[0]: '1', 1, set.
+sp[1]: '2', 2, set.
+sp[8]: '9', 9, set.
+sp[2]: '', (empty), .
+sp[3]: '', (empty), .
+sp[7]: '', (empty), .
+sp[-1]: '9'.
+sp[-2]: ''.
+sp[-3]: '7'.
+sp[-4]: '6'.
+sp[-9]: '1'.
+## END
+
+## N-I bash/zsh/mksh/ash STDOUT:
+## END
+
+
+#### SparseArray: ${sp[i]} with negative invalid index
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+a=({1..9})
+unset -v 'a[2]'
+unset -v 'a[3]'
+unset -v 'a[7]'
+var sp = _a2sp(a)
+
+echo "sp[-10]: '${sp[-10]}'."
+echo "sp[-11]: '${sp[-11]}'."
+echo "sp[-19]: '${sp[-19]}'."
+
+## STDOUT:
+sp[-10]: ''.
+sp[-11]: ''.
+sp[-19]: ''.
+## END
+## STDERR:
+  echo "sp[-10]: '${sp[-10]}'."
+                    ^~
+[ stdin ]:9: Index -10 out of bounds for array of length 9
+  echo "sp[-11]: '${sp[-11]}'."
+                    ^~
+[ stdin ]:10: Index -11 out of bounds for array of length 9
+  echo "sp[-19]: '${sp[-19]}'."
+                    ^~
+[ stdin ]:11: Index -19 out of bounds for array of length 9
+## END
+
+## N-I bash/zsh/mksh/ash STDOUT:
+## END
+## N-I bash/zsh/mksh/ash STDERR:
+## END

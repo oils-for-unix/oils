@@ -1117,6 +1117,27 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 else:
                     val = value.Str(s)
 
+            elif case2(value_e.SparseArray):
+                sparse_val = cast(value.SparseArray, UP_val)
+                big_index = self.arith_ev.EvalToBigInt(anode)
+                vtest_place.index = a_index.Int(mops.BigTruncate(big_index))
+
+                s, error_code = bash_impl.SparseArray_GetElement(
+                    sparse_val, big_index)
+                if error_code == error_code_e.IndexOutOfRange:
+                    # Note: Bash outputs warning but does not make it a real
+                    # error.  We follow the Bash behavior here.
+                    big_length = bash_impl.SparseArray_Length(sparse_val)
+                    self.errfmt.Print_(
+                        "Index %s out of bounds for array of length %s" %
+                        (mops.ToStr(big_index), mops.ToStr(big_length)),
+                        blame_loc=part.token)
+
+                if s is None:
+                    val = value.Undef
+                else:
+                    val = value.Str(s)
+
             elif case2(value_e.BashAssoc):
                 assoc_val = cast(value.BashAssoc, UP_val)
                 # Location could also be attached to bracket_op?  But
