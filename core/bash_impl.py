@@ -102,7 +102,7 @@ def BashArray_GetElement(array_val, index):
 
     if index < n:
         # TODO: strs->index() has a redundant check for (i < 0)
-        s = array_val.strs[index]
+        s = array_val.strs[index]  # type: Optional[str]
         # note: s could be None because representation is sparse
     else:
         s = None
