@@ -1060,7 +1060,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         if op_id == Id.Lit_At:
             vsub_state.join_array = not quoted  # ${a[@]} decays but "${a[@]}" doesn't
-            UP_val = val
             with tagswitch(val) as case2:
                 if case2(value_e.Undef):
                     if not vsub_state.has_test_op:
