@@ -996,6 +996,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 if val.tag() == value_e.BashArray:
                     array_val = cast(value.BashArray, val)
                     values = bash_impl.BashArray_GetValues(array_val)
+                elif val.tag() == value_e.SparseArray:
+                    array_val = cast(value.SparseArray, val)
+                    values = bash_impl.SparseArray_GetValues(array_val)
                 elif val.tag() == value_e.BashAssoc:
                     assoc_val = cast(value.BashAssoc, val)
                     values = bash_impl.BashAssoc_GetValues(assoc_val)
