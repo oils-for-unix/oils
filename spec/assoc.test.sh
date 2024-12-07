@@ -812,3 +812,24 @@ orange is orange
 lemon is yellow
 banana is yellow
 ## END
+
+
+#### BashAssoc ${a[@]@Q}
+
+declare -A a=()
+a['symbol1']=\'\'
+a['symbol2']='"'
+a['symbol3']='()<>&|'
+a['symbol4']='[]*?'
+echo "[${a[@]@Q}]"
+echo "[${a[*]@Q}]"
+
+## STDOUT:
+['()<>&|' '"' $'\'\'' '[]*?']
+['()<>&|' '"' $'\'\'' '[]*?']
+## END
+
+## OK bash STDOUT:
+['[]*?' ''\'''\''' '"' '()<>&|']
+['[]*?' ''\'''\''' '"' '()<>&|']
+## END
