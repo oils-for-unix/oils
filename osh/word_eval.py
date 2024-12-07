@@ -34,7 +34,6 @@ from _devbuild.gen.runtime_asdl import (
     cmd_value_e,
     cmd_value_t,
     error_code_e,
-    error_code_t,
     AssignArg,
     a_index,
     a_index_e,
@@ -113,10 +112,14 @@ def DecayArray(val):
     """Resolve ${array} to ${array[0]}."""
     if val.tag() == value_e.BashArray:
         array_val = cast(value.BashArray, val)
-        s = array_val.strs[0] if len(array_val.strs) else None
+        s, error_code = bash_impl.BashArray_GetElement(array_val, 0)
+
+        # Note: index 0 should never cause the out-of-bound index error.
+        assert error_code == error_code_e.OK
+
     elif val.tag() == value_e.BashAssoc:
         assoc_val = cast(value.BashAssoc, val)
-        s = assoc_val.d['0'] if '0' in assoc_val.d else None
+        s = bash_impl.BashAssoc_GetElement(assoc_val, '0')
     else:
         raise AssertionError(val.tag())
 
@@ -124,24 +127,6 @@ def DecayArray(val):
         return value.Undef
     else:
         return value.Str(s)
-
-
-def GetArrayItem(strs, index):
-    # type: (List[str], int) -> Tuple[Optional[str], error_code_t]
-
-    n = len(strs)
-    if index < 0:
-        index += n
-        if index < 0:
-            return None, error_code_e.IndexOutOfRange
-
-    if index < n:
-        # TODO: strs->index() has a redundant check for (i < 0)
-        s = strs[index]
-        # note: s could be None because representation is sparse
-    else:
-        s = None
-    return s, error_code_e.OK
 
 
 def _DetectMetaBuiltinStr(s):
@@ -1124,7 +1109,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 index = self.arith_ev.EvalToInt(anode)
                 vtest_place.index = a_index.Int(index)
 
-                s, error_code = GetArrayItem(array_val.strs, index)
+                s, error_code = bash_impl.BashArray_GetElement(
+                    array_val, index)
                 if error_code == error_code_e.IndexOutOfRange:
                     # Note: Bash outputs warning but does not make it a real
                     # error.  We follow the Bash behavior here.
@@ -1146,7 +1132,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     anode, blame_loc=location.TokenForArith(anode))
 
                 vtest_place.index = a_index.Str(key)  # out param
-                s = assoc_val.d.get(key)
+                s = bash_impl.BashAssoc_GetElement(assoc_val, key)
 
                 if s is None:
                     val = value.Undef
