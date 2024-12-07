@@ -965,11 +965,15 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     #log('%r %r -> %r', val.s, arg_val.s, s)
                     new_val = value.Str(s)  # type: value_t
 
-                elif case(value_e.BashArray, value_e.BashAssoc):
+                elif case(value_e.BashArray, value_e.SparseArray,
+                          value_e.BashAssoc):
                     # get values
                     if val.tag() == value_e.BashArray:
                         val = cast(value.BashArray, UP_val)
                         values = bash_impl.BashArray_GetValues(val)
+                    elif val.tag() == value_e.SparseArray:
+                        val = cast(value.SparseArray, UP_val)
+                        values = bash_impl.SparseArray_GetValues(val)
                     elif val.tag() == value_e.BashAssoc:
                         val = cast(value.BashAssoc, UP_val)
                         values = bash_impl.BashAssoc_GetValues(val)
