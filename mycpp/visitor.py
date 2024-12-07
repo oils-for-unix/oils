@@ -9,12 +9,13 @@ from mypy.visitor import ExpressionVisitor, StatementVisitor
 from mypy.nodes import (Expression, Statement, ExpressionStmt, StrExpr,
                         CallExpr, YieldExpr, NameExpr, MemberExpr, Argument,
                         ClassDef, FuncDef, IfStmt, PassStmt, ListComprehension)
+from mypy.types import Type
 
 from mycpp.crash import catch_errors
 from mycpp import util
 from mycpp.util import SplitPyName, log
 
-from typing import (overload, Any, Union, Optional, List, Tuple, TextIO)
+from typing import (overload, Any, Union, Optional, List, Dict, Tuple, TextIO)
 
 NAME_CONFLICTS = ('stdin', 'stdout', 'stderr')
 
@@ -706,3 +707,30 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
 
     def visit_temp_node(self, o: 'mypy.nodes.TempNode') -> None:
         self.not_translated(o, 'temp')
+
+
+class TypedVisitor(SimpleVisitor):
+    """Base class for visitors that need type info."""
+
+    def __init__(self, types: Dict[Expression, Type]) -> None:
+        SimpleVisitor.__init__(self)
+        self.types = types
+
+    def oils_visit_op_expr(self, o: 'mypy.nodes.OpExpr') -> None:
+        self.accept(o.left)
+        self.accept(o.right)
+
+    def oils_visit_format_expr(self, left: Expression,
+                               right: Expression) -> None:
+        """ mystr % x   mystr % (x, y) """
+        self.accept(left)
+        self.accept(right)
+
+    def visit_op_expr(self, o: 'mypy.nodes.OpExpr') -> None:
+        if o.op == '%' and util.IsStr(self.types[o.left]):
+            # 'x = %r' % x
+            self.oils_visit_format_expr(o.left, o.right)
+            return
+
+        # Any other expression
+        self.oils_visit_op_expr(o)

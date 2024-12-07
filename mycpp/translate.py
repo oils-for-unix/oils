@@ -129,7 +129,7 @@ def Run(timer: Timer,
     timer.Section('mycpp pass: CONST')
 
     global_strings = const_pass.GlobalStrings()
-    p3 = const_pass.Collect(global_strings)
+    p3 = const_pass.Collect(types, global_strings)
 
     for name, module in to_compile:
         p3.visit_mypy_file(module)

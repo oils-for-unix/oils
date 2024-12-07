@@ -10,6 +10,7 @@ import hashlib
 import string
 
 from mypy.nodes import (Expression, StrExpr, CallExpr)
+from mypy.types import Type
 
 from mycpp import format_strings
 from mycpp import util
@@ -72,10 +73,11 @@ class GlobalStrings:
         out_f.write('\n')
 
 
-class Collect(visitor.SimpleVisitor):
+class Collect(visitor.TypedVisitor):
 
-    def __init__(self, global_strings: GlobalStrings) -> None:
-        visitor.SimpleVisitor.__init__(self)
+    def __init__(self, types: Dict[Expression, Type],
+                 global_strings: GlobalStrings) -> None:
+        visitor.TypedVisitor.__init__(self, types)
         self.global_strings = global_strings
 
         # Only generate unique strings.
@@ -92,6 +94,16 @@ class Collect(visitor.SimpleVisitor):
         # unique string value -> id
         self.unique: Dict[str, str] = {}
         self.unique_id = 0
+
+    # TODO: enable
+    def X_oils_visit_format_expr(self, left: Expression,
+                                 right: Expression) -> None:
+        if isinstance(left, StrExpr):
+            # Do NOT visit the left, because we write it literally
+            pass
+        else:
+            self.accept(left)
+        self.accept(right)
 
     def visit_str_expr(self, o: StrExpr) -> None:
         raw_string = format_strings.DecodeMyPyString(o.value)

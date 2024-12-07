@@ -423,7 +423,7 @@ AllMemberVars = Dict[ClassDef, Dict[str, MemberVar]]
 AllLocalVars = Dict[FuncDef, List[Tuple[str, Type]]]
 
 
-class _Shared(visitor.SimpleVisitor):
+class _Shared(visitor.TypedVisitor):
 
     def __init__(
         self,
@@ -435,9 +435,7 @@ class _Shared(visitor.SimpleVisitor):
         # - Impl for rooting context managers
         all_member_vars: Optional[AllMemberVars] = None,
     ) -> None:
-        visitor.SimpleVisitor.__init__(self)
-
-        self.types = types
+        visitor.TypedVisitor.__init__(self, types)
         self.global_strings = global_strings
         self.yield_out_params = yield_out_params
         self.all_member_vars = all_member_vars  # for class def, and rooting
@@ -1012,7 +1010,45 @@ class Impl(_Shared):
         #self.log('  arg_kinds %s', o.arg_kinds)
         #self.log('  arg_names %s', o.arg_names)
 
-    def visit_op_expr(self, o: 'mypy.nodes.OpExpr') -> None:
+    def oils_visit_format_expr(self, left: Expression,
+                               right: Expression) -> None:
+        self.write('StrFormat(')
+        if isinstance(left, StrExpr):
+            self.write(PythonStringLiteral(left.value))
+        else:
+            self.accept(left)
+        #log('right_type %s', right_type)
+
+        right_type = self.types[right]
+
+        # TODO: Can we restore some type checking?
+        if 0:
+            if isinstance(right_type, Instance):
+                fmt_types: List[Type] = [right_type]
+            elif isinstance(right_type, TupleType):
+                fmt_types = right_type.items
+            # Handle Optional[str]
+            elif (isinstance(right_type, UnionType) and
+                  len(right_type.items) == 2 and
+                  isinstance(right_type.items[1], NoneTyp)):
+                fmt_types = [right_type.items[0]]
+            else:
+                raise AssertionError(right_type)
+
+        # In the definition pass, write the call site.
+        if isinstance(right_type, TupleType):
+            assert isinstance(right, TupleExpr), right
+            for i, item in enumerate(right.items):
+                self.write(', ')
+                self.accept(item)
+
+        else:  # '[%s]' % x
+            self.write(', ')
+            self.accept(right)
+
+        self.write(')')
+
+    def oils_visit_op_expr(self, o: 'mypy.nodes.OpExpr') -> None:
         # a + b when a and b are strings.  (Can't use operator overloading
         # because they're pointers.)
         left_type = self.types[o.left]
@@ -1053,42 +1089,6 @@ class Impl(_Shared):
             self.accept(o.left.items[0])
             self.write(', ')
             self.accept(o.right)
-            self.write(')')
-            return
-
-        # RHS can be primitive or tuple
-        if left_ctype == 'BigStr*' and c_op == '%':
-            self.write('StrFormat(')
-            if isinstance(o.left, StrExpr):
-                self.write(PythonStringLiteral(o.left.value))
-            else:
-                self.accept(o.left)
-            #log('right_type %s', right_type)
-
-            # TODO: Can we restore some type checking?
-            if 0:
-                if isinstance(right_type, Instance):
-                    fmt_types: List[Type] = [right_type]
-                elif isinstance(right_type, TupleType):
-                    fmt_types = right_type.items
-                # Handle Optional[str]
-                elif (isinstance(right_type, UnionType) and
-                      len(right_type.items) == 2 and
-                      isinstance(right_type.items[1], NoneTyp)):
-                    fmt_types = [right_type.items[0]]
-                else:
-                    raise AssertionError(right_type)
-
-            # In the definition pass, write the call site.
-            if isinstance(right_type, TupleType):
-                assert isinstance(o.right, TupleExpr), o.right
-                for i, item in enumerate(o.right.items):
-                    self.write(', ')
-                    self.accept(item)
-            else:  # '[%s]' % x
-                self.write(', ')
-                self.accept(o.right)
-
             self.write(')')
             return
 

@@ -863,6 +863,7 @@ GLOBAL_STR(S_vtj, "-v");
 GLOBAL_STR(S_cem, "-v expected name or name[index]");
 GLOBAL_STR(S_whu, "-v got BashArray and invalid index %r");
 GLOBAL_STR(S_irt, "-v got index %s, which is out of bounds for array of length %d");
+GLOBAL_STR(S_bnu, "-v got index %s, which is out of bounds for array of length %s");
 GLOBAL_STR(S_Aru, ".");
 GLOBAL_STR(S_mgF, ".*");
 GLOBAL_STR(S_Dmc, "..");
@@ -1008,8 +1009,7 @@ GLOBAL_STR(S_kdC, "Can't encode value of type Obj");
 GLOBAL_STR(S_vql, "Can't execute %r: %s");
 GLOBAL_STR(S_Fyt_1, "Can't format negative number with %%%s: %d");
 GLOBAL_STR(S_jeA, "Can't index string %r with integer");
-GLOBAL_STR(S_DAl, "Can't index string with *");
-GLOBAL_STR(S_gyw, "Can't index string with @");
+GLOBAL_STR(S_jvo, "Can't index string with %s");
 GLOBAL_STR(S_Clv, "Can't left shift by negative number");
 GLOBAL_STR(S_kfs, "Can't negate this symbol");
 GLOBAL_STR(S_hAr, "Can't open %r: %s%s");
@@ -5571,6 +5571,7 @@ List<mops::BigInt>* SparseArray_GetKeys(value::SparseArray* sparse_val);
 List<BigStr*>* SparseArray_GetValues(value::SparseArray* sparse_val);
 void SparseArray_AppendValues(value::SparseArray* sparse_val, List<BigStr*>* strs);
 Tuple2<mops::BigInt, runtime_asdl::error_code_t> _SparseArray_CanonicalizeIndex(value::SparseArray* sparse_val, mops::BigInt index);
+Tuple2<bool, runtime_asdl::error_code_t> SparseArray_HasElement(value::SparseArray* sparse_val, mops::BigInt index);
 runtime_asdl::error_code_t SparseArray_SetElement(value::SparseArray* sparse_val, mops::BigInt index, BigStr* s);
 runtime_asdl::error_code_t SparseArray_UnsetElement(value::SparseArray* sparse_val, mops::BigInt index);
 BigStr* SparseArray_ToStrForShellPrint(value::SparseArray* sparse_val);
@@ -21198,14 +21199,27 @@ Tuple2<mops::BigInt, runtime_asdl::error_code_t> _SparseArray_CanonicalizeIndex(
   return Tuple2<mops::BigInt, runtime_asdl::error_code_t>(index, error_code_e::OK);
 }
 
+Tuple2<bool, runtime_asdl::error_code_t> SparseArray_HasElement(value::SparseArray* sparse_val, mops::BigInt index) {
+  runtime_asdl::error_code_t error_code;
+  StackRoot _root0(&sparse_val);
+
+  Tuple2<mops::BigInt, runtime_asdl::error_code_t> tup3 = _SparseArray_CanonicalizeIndex(sparse_val, index);
+  index = tup3.at0();
+  error_code = tup3.at1();
+  if (error_code != error_code_e::OK) {
+    return Tuple2<bool, runtime_asdl::error_code_t>(false, error_code);
+  }
+  return Tuple2<bool, runtime_asdl::error_code_t>(dict_contains(sparse_val->d, index), error_code_e::OK);
+}
+
 runtime_asdl::error_code_t SparseArray_SetElement(value::SparseArray* sparse_val, mops::BigInt index, BigStr* s) {
   runtime_asdl::error_code_t error_code;
   StackRoot _root0(&sparse_val);
   StackRoot _root1(&s);
 
-  Tuple2<mops::BigInt, runtime_asdl::error_code_t> tup3 = _SparseArray_CanonicalizeIndex(sparse_val, index);
-  index = tup3.at0();
-  error_code = tup3.at1();
+  Tuple2<mops::BigInt, runtime_asdl::error_code_t> tup4 = _SparseArray_CanonicalizeIndex(sparse_val, index);
+  index = tup4.at0();
+  error_code = tup4.at1();
   if (error_code != error_code_e::OK) {
     return error_code;
   }
@@ -21220,9 +21234,9 @@ runtime_asdl::error_code_t SparseArray_UnsetElement(value::SparseArray* sparse_v
   runtime_asdl::error_code_t error_code;
   StackRoot _root0(&sparse_val);
 
-  Tuple2<mops::BigInt, runtime_asdl::error_code_t> tup4 = _SparseArray_CanonicalizeIndex(sparse_val, index);
-  index = tup4.at0();
-  error_code = tup4.at1();
+  Tuple2<mops::BigInt, runtime_asdl::error_code_t> tup5 = _SparseArray_CanonicalizeIndex(sparse_val, index);
+  index = tup5.at0();
+  error_code = tup5.at1();
   if (error_code != error_code_e::OK) {
     return error_code;
   }
@@ -34402,7 +34416,7 @@ BigStr* InteractiveLineReader::_GetLine() {
   }
   if (line != nullptr) {
     line = this->hist_ev->Eval(line);
-    if ((len(line->strip()) and (!(str_equals(line, this->prev_line)) and this->line_input != nullptr))) {
+    if ((len(line->strip()) and (!(maybe_str_equals(line, this->prev_line)) and this->line_input != nullptr))) {
       this->line_input->add_history(line->rstrip());
       this->prev_line = line;
     }
@@ -43278,6 +43292,8 @@ bool BoolEvaluator::_IsDefined(BigStr* s, syntax_asdl::loc_t* blame_loc) {
   int index;
   bool result;
   runtime_asdl::error_code_t error_code;
+  int length;
+  mops::BigInt big_length;
   StackRoot _root0(&s);
   StackRoot _root1(&blame_loc);
   StackRoot _root2(&m);
@@ -43301,8 +43317,8 @@ bool BoolEvaluator::_IsDefined(BigStr* s, syntax_asdl::loc_t* blame_loc) {
   }
   UP_val = val;
   switch (val->tag()) {
-    case value_e::BashArray: {
-      value::BashArray* val = static_cast<value::BashArray*>(UP_val);
+    case value_e::BashArray: 
+    case value_e::SparseArray: {
       try {
         index = to_int(index_str);
       }
@@ -43312,12 +43328,30 @@ bool BoolEvaluator::_IsDefined(BigStr* s, syntax_asdl::loc_t* blame_loc) {
         }
         return false;
       }
-      Tuple2<bool, runtime_asdl::error_code_t> tup12 = bash_impl::BashArray_HasElement(val, index);
-      result = tup12.at0();
-      error_code = tup12.at1();
-      if (error_code == error_code_e::IndexOutOfRange) {
-        e_die(StrFormat("-v got index %s, which is out of bounds for array of length %d", index_str, bash_impl::BashArray_Length(val)), blame_loc);
-        return false;
+      if (val->tag() == value_e::BashArray) {
+        value::BashArray* array_val = static_cast<value::BashArray*>(UP_val);
+        Tuple2<bool, runtime_asdl::error_code_t> tup12 = bash_impl::BashArray_HasElement(array_val, index);
+        result = tup12.at0();
+        error_code = tup12.at1();
+        if (error_code == error_code_e::IndexOutOfRange) {
+          length = bash_impl::BashArray_Length(array_val);
+          e_die(StrFormat("-v got index %s, which is out of bounds for array of length %d", index_str, length), blame_loc);
+        }
+      }
+      else {
+        if (val->tag() == value_e::SparseArray) {
+          value::SparseArray* sparse_val = static_cast<value::SparseArray*>(UP_val);
+          Tuple2<bool, runtime_asdl::error_code_t> tup13 = bash_impl::SparseArray_HasElement(sparse_val, mops::IntWiden(index));
+          result = tup13.at0();
+          error_code = tup13.at1();
+          if (error_code == error_code_e::IndexOutOfRange) {
+            big_length = bash_impl::SparseArray_Length(sparse_val);
+            e_die(StrFormat("-v got index %s, which is out of bounds for array of length %s", index_str, mops::ToStr(big_length)), blame_loc);
+          }
+        }
+        else {
+          assert(0);  // AssertionError
+        }
       }
       return result;
     }
@@ -43346,9 +43380,9 @@ mops::BigInt BoolEvaluator::_StringToBigIntOrError(BigStr* s, syntax_asdl::loc_t
 
   if (this->bracket) {
     if (match::LooksLikeInteger(s)) {
-      Tuple2<bool, mops::BigInt> tup13 = mops::FromStr2(s);
-      ok = tup13.at0();
-      i = tup13.at1();
+      Tuple2<bool, mops::BigInt> tup14 = mops::FromStr2(s);
+      ok = tup14.at0();
+      i = tup14.at1();
     }
     else {
       ok = false;
@@ -46641,59 +46675,47 @@ Tuple2<value::Str*, bool> AbstractWordEvaluator::_Nullary(value_asdl::value_t* v
 
 value_asdl::value_t* AbstractWordEvaluator::_WholeArray(value_asdl::value_t* val, syntax_asdl::BracedVarSub* part, bool quoted, runtime_asdl::VarSubState* vsub_state) {
   int op_id;
-  value_asdl::value_t* UP_val = nullptr;
+  BigStr* op_str = nullptr;
   StackRoot _root0(&val);
   StackRoot _root1(&part);
   StackRoot _root2(&vsub_state);
-  StackRoot _root3(&UP_val);
+  StackRoot _root3(&op_str);
 
   op_id = static_cast<bracket_op::WholeArray*>(part->bracket_op)->op_id;
   if (op_id == Id::Lit_At) {
+    op_str = S_AeE;
     vsub_state->join_array = !quoted;
-    UP_val = val;
-    switch (val->tag()) {
-      case value_e::Undef: {
-        if (!vsub_state->has_test_op) {
-          val = this->_EmptyBashArrayOrError(part->token);
-        }
-      }
-        break;
-      case value_e::Str: {
-        if (this->exec_opts->strict_array()) {
-          e_die(S_gyw, Alloc<loc::WordPart>(part));
-        }
-      }
-        break;
-      case value_e::BashArray: {
-        ;  // pass
-      }
-        break;
-    }
   }
   else {
     if (op_id == Id::Arith_Star) {
+      op_str = S_Fgw;
       vsub_state->join_array = true;
-      switch (val->tag()) {
-        case value_e::Undef: {
-          if (!vsub_state->has_test_op) {
-            val = this->_EmptyBashArrayOrError(part->token);
-          }
-        }
-          break;
-        case value_e::Str: {
-          if (this->exec_opts->strict_array()) {
-            e_die(S_DAl, Alloc<loc::WordPart>(part));
-          }
-        }
-          break;
-        case value_e::BashArray: {
-          ;  // pass
-        }
-          break;
-      }
     }
     else {
       assert(0);  // AssertionError
+    }
+  }
+  switch (val->tag()) {
+    case value_e::Undef: {
+      if (!vsub_state->has_test_op) {
+        val = this->_EmptyBashArrayOrError(part->token);
+      }
+    }
+      break;
+    case value_e::Str: {
+      if (this->exec_opts->strict_array()) {
+        e_die(StrFormat("Can't index string with %s", op_str), Alloc<loc::WordPart>(part));
+      }
+    }
+      break;
+    case value_e::BashArray: 
+    case value_e::SparseArray: 
+    case value_e::BashAssoc: {
+      ;  // pass
+    }
+      break;
+    default: {
+      ;  // pass
     }
   }
   return val;
