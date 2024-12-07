@@ -1078,7 +1078,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
             elif case2(value_e.BashArray, value_e.SparseArray, value_e.BashAssoc):
                 pass  # no-op
             else:
-                raise AssertionError(op_id)  # unknown
+                # The other YSH types such as List, Dict, and Float are not
+                # supported.  Error messages will be printed later, so we here
+                # return the unsupported objects without modification.
+                pass  # no-op
 
         return val
 
