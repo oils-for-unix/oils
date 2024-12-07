@@ -23,8 +23,8 @@ def BigInt_Less(a, b):
 
 
 #------------------------------------------------------------------------------
-# All BashArray operations depending on the internal
-# representation of SparseArray come here.
+# All BashArray operations depending on the internal representation of
+# BashArray come here.
 
 
 def BashArray_Count(array_val):
@@ -222,8 +222,8 @@ def BashArray_ToStrForShellPrint(array_val, name):
 
 
 #------------------------------------------------------------------------------
-# All BashAssoc operations depending on the internal
-# representation of SparseArray come here.
+# All BashAssoc operations depending on the internal representation of
+# BashAssoc come here.
 
 
 def BashAssoc_Count(assoc_val):
@@ -295,8 +295,8 @@ def BashAssoc_ToStrForShellPrint(assoc_val):
 
 
 #------------------------------------------------------------------------------
-# All SparseArray operations depending on the internal
-# representation of SparseArray come here.
+# All SparseArray operations depending on the internal representation of
+# SparseArray come here.
 
 
 def SparseArray_Count(sparse_val):
