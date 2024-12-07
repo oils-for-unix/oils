@@ -329,7 +329,7 @@ def _DecayPartValuesToString(part_vals, join_char):
 
 def _PerformSlice(
         val,  # type: value_t
-        begin,  # type: int
+        offset,  # type: mops.BigInt
         length,  # type: int
         has_length,  # type: bool
         part,  # type: BracedVarSub
@@ -343,6 +343,7 @@ def _PerformSlice(
             s = val.s
             n = len(s)
 
+            begin = mops.BigTruncate(offset)
             if begin < 0:  # Compute offset with unicode
                 byte_begin = n
                 num_iters = -begin
@@ -375,7 +376,6 @@ def _PerformSlice(
                 e_die("Array slice can't have negative length: %d" % length,
                       loc.WordPart(part))
 
-            offset = mops.IntWiden(begin)
             if bash_impl.BigInt_Less(offset, mops.ZERO):
                 # ${@:-3} starts counts from the end
                 if val.tag() == value_e.BashArray:
@@ -397,7 +397,7 @@ def _PerformSlice(
             if bash_impl.BigInt_Less(offset, mops.ZERO):
                 strs = []  # type: List[str]
             else:
-                # Quirk: "begin" for positional arguments ($@ and $*) counts $0.
+                # Quirk: "offset" for positional arguments ($@ and $*) counts $0.
                 prepends_arg0 = False
                 if arg0_val is not None:
                     if bash_impl.BigInt_Greater(offset, mops.ZERO):
@@ -1006,7 +1006,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     def _Slice(self, val, op, var_name, part):
         # type: (value_t, suffix_op.Slice, Optional[str], BracedVarSub) -> value_t
 
-        begin = self.arith_ev.EvalToInt(op.begin)
+        begin = self.arith_ev.EvalToBigInt(op.begin)
 
         # Note: bash allows lengths to be negative (with odd semantics), but
         # we don't allow that right now.

@@ -873,7 +873,7 @@ case $SH in zsh|mksh|ash) exit ;; esac
 
 a=(v{0..9})
 unset -v 'a[2]' 'a[3]' 'a[4]' 'a[7]'
-case $SH in osh) eval 'var a = _a2sp(a)' ;; esac
+case ${SH##*/} in osh) eval 'var a = _a2sp(a)' ;; esac
 
 echo '==== ${a[@]:offset} ===='
 echo "[${a[@]:0}][${a[*]:0}]"
@@ -981,6 +981,31 @@ set -- v{1..9}
 [v1 v2 v3 v4][v1 v2 v3 v4]
 [$SH v1 v2 v3][$SH v1 v2 v3]
 [][]
+## END
+
+## N-I zsh/mksh/ash STDOUT:
+## END
+
+
+#### SparseArray: ${a[@]:BigInt}
+case $SH in zsh|mksh|ash) exit ;; esac
+
+a=(1 2 3)
+case ${SH##*/} in osh) eval 'var a = _a2sp(a)' ;; esac
+a[0x7FFFFFFFFFFFFFFF]=x
+a[0x7FFFFFFFFFFFFFFE]=y
+a[0x7FFFFFFFFFFFFFFD]=z
+
+echo "[${a[@]: -1}][${a[*]: -1}]"
+echo "[${a[@]: -2}][${a[*]: -2}]"
+echo "[${a[@]: -3}][${a[*]: -3}]"
+echo "[${a[@]: -4}][${a[*]: -4}]"
+
+## STDOUT:
+[x][x]
+[y x][y x]
+[z y x][z y x]
+[z y x][z y x]
 ## END
 
 ## N-I zsh/mksh/ash STDOUT:
