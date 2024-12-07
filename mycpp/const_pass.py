@@ -98,8 +98,19 @@ class Collect(visitor.SimpleVisitor):
         self.global_strings.Add(o, raw_string)
 
     def oils_visit_probe_call(self, o: CallExpr) -> None:
-        # Don't generate constants for probe names
+        # Don't generate constants for DTRACE_PROBE()
         pass
+
+    def oils_visit_log_call(self, fmt: StrExpr,
+                            args: List[Expression]) -> None:
+        if len(args) == 0:
+            self.accept(fmt)
+            return
+
+        # Don't generate a string constant for the format string, which is an
+        # inlined C string, not a mycpp GC string
+        for i, arg in enumerate(args):
+            self.accept(arg)
 
 
 def _MakeUniqueStrings(all_strings: AllStrings) -> UniqueStrings:

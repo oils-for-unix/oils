@@ -946,20 +946,20 @@ class Impl(_Shared):
 
         self.write(')')
 
-    def _LogExpr(self, o: 'mypy.nodes.CallExpr') -> None:
-        args = o.args
-        if len(args) == 1:  # log(CONST)
+    def oils_visit_log_call(self, fmt: StrExpr,
+                            args: List[Expression]) -> None:
+        if len(args) == 0:  # log('const') -> print_stderr(S_xyz)
+            # This is a GC string
             self.write('mylib::print_stderr(')
-            self.accept(args[0])
+            self.accept(fmt)
             self.write(')')
             return
 
-        # Must be log('foo'), not log(mystr)
-        assert isinstance(args[0], StrExpr), args[0]
-        quoted_fmt = PythonStringLiteral(args[0].value)
-
+        # log('const %s', a) -> print_stderr(StrFormat("const %s", a))
+        quoted_fmt = PythonStringLiteral(fmt.value)
         self.write('mylib::print_stderr(StrFormat(%s, ' % quoted_fmt)
-        for i, arg in enumerate(args[1:]):
+
+        for i, arg in enumerate(args):
             if i != 0:
                 self.write(', ')
             self.accept(arg)
@@ -981,15 +981,6 @@ class Impl(_Shared):
             self.write('%s<%s>(', cast_kind, subtype_name)
             self.accept(call.args[1])  # variable being casted
             self.write(')')
-            return
-
-        # Translate printf-style varargs:
-        #
-        # log('foo %s', x)
-        #   =>
-        # log(StrFormat('foo %s', x))
-        if callee_name == 'log':
-            self._LogExpr(o)
             return
 
         if isinstance(o.callee, MemberExpr) and callee_name == 'next':

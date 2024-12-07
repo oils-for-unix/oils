@@ -479,6 +479,12 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
         self.accept(o.if_expr)
         self.accept(o.else_expr)
 
+    def oils_visit_log_call(self, fmt: StrExpr,
+                            args: List[Expression]) -> None:
+        self.accept(fmt)
+        for arg in args:
+            self.accept(arg)
+
     def oils_visit_probe_call(self, o: 'mypy.nodes.CallExpr') -> None:
         self.accept(o.callee)
         for arg in o.args:
@@ -500,7 +506,23 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
                 self.report_error(o, 'isinstance() not allowed')
                 return
 
+            if callee_name == 'log':
+                # Special printf-style varargs:
+                #
+                # log('foo %s', x)
+                #   =>
+                # log(StrFormat('foo %s', x))
+
+                args = o.args
+                assert len(args) > 0, o
+                assert isinstance(args[0], StrExpr), args[0]
+                fmt = args[0]
+
+                self.oils_visit_log_call(fmt, args[1:])
+                return
+
             if callee_name == 'probe':
+                # DTRACE_PROBE()
                 self.oils_visit_probe_call(o)
                 return
 
