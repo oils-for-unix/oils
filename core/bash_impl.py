@@ -35,8 +35,8 @@ def BigInt_LessEq(a, b):
 
 
 #------------------------------------------------------------------------------
-# All BashArray operations depending on the internal
-# representation of SparseArray come here.
+# All BashArray operations depending on the internal representation of
+# BashArray come here.
 
 
 def BashArray_IsEmpty(array_val):
@@ -266,8 +266,8 @@ def BashArray_ToStrForShellPrint(array_val, name):
 
 
 #------------------------------------------------------------------------------
-# All BashAssoc operations depending on the internal
-# representation of SparseArray come here.
+# All BashAssoc operations depending on the internal representation of
+# BashAssoc come here.
 
 
 def BashAssoc_IsEmpty(assoc_val):
@@ -363,8 +363,8 @@ def BashAssoc_ToStrForShellPrint(assoc_val):
 
 
 #------------------------------------------------------------------------------
-# All SparseArray operations depending on the internal
-# representation of SparseArray come here.
+# All SparseArray operations depending on the internal representation of
+# SparseArray come here.
 
 
 def SparseArray_IsEmpty(sparse_val):
