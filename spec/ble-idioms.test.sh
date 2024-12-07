@@ -691,3 +691,83 @@ var sp3 = _a2sp(a)
 ## N-I bash/zsh/mksh/ash status: 0
 ## N-I bash/zsh/mksh/ash STDERR:
 ## END
+
+
+#### SparseArray: ((sp[i])) and ((sp[i]++))
+case $SH in zsh|mksh|ash) exit ;; esac
+
+a=({1..9})
+unset -v 'a[2]' 'a[3]' 'a[7]'
+case $SH in osh) eval 'var a = _a2sp(a)' ;; esac
+
+echo $((a[0]))
+echo $((a[1]))
+echo $((a[2]))
+echo $((a[3]))
+echo $((a[7]))
+
+echo $((a[1]++))
+echo $((a[2]++))
+echo $((a[3]++))
+echo $((a[7]++))
+
+echo $((++a[1]))
+echo $((++a[2]))
+echo $((++a[3]))
+echo $((++a[7]))
+
+echo $((a[1] = 100, a[1]))
+echo $((a[2] = 100, a[2]))
+echo $((a[3] = 100, a[3]))
+echo $((a[7] = 100, a[7]))
+
+## STDOUT:
+1
+2
+0
+0
+0
+2
+0
+0
+0
+4
+2
+2
+2
+100
+100
+100
+100
+## END
+
+## N-I zsh/mksh/ash STDOUT:
+## END
+
+
+#### SparseArray: ((sp[i])) and ((sp[i]++)) with invalid negative index
+case $SH in zsh|mksh|ash) exit ;; esac
+
+a=({1..9})
+unset -v 'a[2]' 'a[3]' 'a[7]'
+case $SH in osh) eval 'var a = _a2sp(a)' ;; esac
+
+echo $((a[-10]))
+
+## STDOUT:
+0
+## END
+## STDERR:
+  echo $((a[-10]))
+           ^
+[ stdin ]:7: Index -10 out of bounds for array of length 9
+## END
+
+## OK bash STDERR:
+bash: line 7: a: bad array subscript
+## END
+
+## N-I zsh/mksh/ash STDOUT:
+## END
+## N-I zsh/mksh/ash STDERR:
+## END
