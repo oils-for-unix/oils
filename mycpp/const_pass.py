@@ -95,8 +95,7 @@ class Collect(visitor.TypedVisitor):
         self.unique: Dict[str, str] = {}
         self.unique_id = 0
 
-    # TODO: enable
-    def X_oils_visit_format_expr(self, left: Expression,
+    def oils_visit_format_expr(self, left: Expression,
                                  right: Expression) -> None:
         if isinstance(left, StrExpr):
             # Do NOT visit the left, because we write it literally
