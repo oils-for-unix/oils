@@ -1110,6 +1110,39 @@ argv.py "${a[@]#v?}"
 ## END
 
 
+#### SparseArray: ${a[@]/pat/rep}
+
+case $SH in zsh|mksh|ash) exit ;; esac
+
+a=(v{0..9})
+unset -v 'a[2]' 'a[3]' 'a[4]' 'a[7]'
+case ${SH##*/} in osh) eval 'var a = _a2sp(a)' ;; esac
+
+argv.py "${a[@]/?}"
+argv.py "${a[@]//?}"
+argv.py "${a[@]/#?}"
+argv.py "${a[@]/%?}"
+
+argv.py "${a[@]/v/x}"
+argv.py "${a[@]//v/x}"
+argv.py "${a[@]/[0-5]/D}"
+argv.py "${a[@]//[!0-5]/_}"
+
+## STDOUT:
+['0', '1', '5', '6', '8', '9']
+['', '', '', '', '', '']
+['0', '1', '5', '6', '8', '9']
+['v', 'v', 'v', 'v', 'v', 'v']
+['x0', 'x1', 'x5', 'x6', 'x8', 'x9']
+['x0', 'x1', 'x5', 'x6', 'x8', 'x9']
+['vD', 'vD', 'vD', 'v6', 'v8', 'v9']
+['_0', '_1', '_5', '__', '__', '__']
+## END
+
+## N-I zsh/mksh/ash STDOUT:
+## END
+
+
 #### SparseArray: compgen -F _set_COMPREPLY
 case $SH in zsh|mksh|ash) exit ;; esac
 

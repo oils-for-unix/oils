@@ -1032,10 +1032,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 s = replacer.Replace(str_val.s, op)
                 val = value.Str(s)
 
-            elif case2(value_e.BashArray, value_e.BashAssoc):
+            elif case2(value_e.BashArray, value_e.SparseArray,
+                       value_e.BashAssoc):
                 if val.tag() == value_e.BashArray:
                     array_val = cast(value.BashArray, val)
                     values = bash_impl.BashArray_GetValues(array_val)
+                elif val.tag() == value_e.SparseArray:
+                    sparse_val = cast(value.SparseArray, val)
+                    values = bash_impl.SparseArray_GetValues(sparse_val)
                 elif val.tag() == value_e.BashAssoc:
                     assoc_val = cast(value.BashAssoc, val)
                     values = bash_impl.BashAssoc_GetValues(assoc_val)
