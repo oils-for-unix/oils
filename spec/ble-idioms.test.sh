@@ -622,6 +622,7 @@ unset -v "a[-3]"
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 a=({1..9})
+var a = _a2sp(a)
 unset -v 'a[-1]'
 a[-1]=x
 declare -p a
@@ -630,8 +631,8 @@ a[-1]=x
 declare -p a
 
 ## STDOUT:
-declare -a a=(1 2 3 4 5 6 7 x)
-declare -a a=(1 2 3 4 5 6 x)
+declare -a a=([0]=1 [1]=2 [2]=3 [3]=4 [4]=5 [5]=6 [6]=7 [7]=x)
+declare -a a=([0]=1 [1]=2 [2]=3 [3]=4 [4]=5 [5]=6 [6]=x)
 ## END
 
 ## N-I bash/zsh/mksh/ash STDOUT:
