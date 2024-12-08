@@ -218,6 +218,10 @@ def _ValueToPartValue(val, quoted, part_loc):
             val = cast(value.BashArray, UP_val)
             return part_value.Array(bash_impl.BashArray_GetValues(val))
 
+        elif case(value_e.SparseArray):
+            val = cast(value.SparseArray, UP_val)
+            return part_value.Array(bash_impl.SparseArray_GetValues(val))
+
         elif case(value_e.BashAssoc):
             val = cast(value.BashAssoc, UP_val)
             # bash behavior: splice values!
