@@ -1064,6 +1064,26 @@ echo "[${a[@]: -4}][${a[*]: -4}]"
 ## END
 
 
+#### SparseArray: ${a[@]}
+
+case $SH in zsh|mksh|ash) exit ;; esac
+
+a=(v{0..9})
+unset -v 'a[2]' 'a[3]' 'a[4]' 'a[7]'
+case ${SH##*/} in osh) eval 'var a = _a2sp(a)' ;; esac
+
+argv.py "${a[@]}"
+argv.py "abc${a[@]}xyz"
+
+## STDOUT:
+['v0', 'v1', 'v5', 'v6', 'v8', 'v9']
+['abcv0', 'v1', 'v5', 'v6', 'v8', 'v9xyz']
+## END
+
+## N-I zsh/mksh/ash STDOUT:
+## END
+
+
 #### SparseArray: compgen -F _set_COMPREPLY
 case $SH in zsh|mksh|ash) exit ;; esac
 
