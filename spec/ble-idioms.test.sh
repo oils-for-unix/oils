@@ -847,3 +847,22 @@ sp[-19]: ''.
 ## END
 ## N-I bash/zsh/mksh/ash STDERR:
 ## END
+
+
+#### SparseArray (YSH): @[sp] and @sp
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+a=({0..5})
+unset -v 'a[1]' 'a[2]' 'a[4]'
+var a = _a2sp(a)
+
+shopt -s parse_at
+argv.py @[a]
+argv.py @a
+## STDOUT:
+['0', '3', '5']
+['0', '3', '5']
+## END
+
+## N-I bash/zsh/mksh/ash STDOUT:
+## END
