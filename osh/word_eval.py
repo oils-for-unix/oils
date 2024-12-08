@@ -216,12 +216,12 @@ def _ValueToPartValue(val, quoted, part_loc):
 
         elif case(value_e.BashArray):
             val = cast(value.BashArray, UP_val)
-            return part_value.Array(val.strs)
+            return part_value.Array(bash_impl.BashArray_GetValues(val))
 
         elif case(value_e.BashAssoc):
             val = cast(value.BashAssoc, UP_val)
             # bash behavior: splice values!
-            return part_value.Array(val.d.values())
+            return part_value.Array(bash_impl.BashAssoc_GetValues(val))
 
         # Cases added for YSH
         # value_e.List is also here - we use val_ops.Stringify()s err message
@@ -375,12 +375,13 @@ def _PerformSlice(
                 e_die("Array slice can't have negative length: %d" % length,
                       loc.WordPart(part))
 
+            orig = bash_impl.BashArray_GetValues(val)
+
             # Quirk: "begin" for positional arguments ($@ and $*) counts $0.
             if arg0_val is not None:
-                orig = [arg0_val.s]
-                orig.extend(val.strs)
-            else:
-                orig = val.strs
+                new_list = [arg0_val.s]
+                new_list.extend(orig)
+                orig = new_list
 
             n = len(orig)
             if begin < 0:
@@ -871,24 +872,22 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     #log('%r %r -> %r', val.s, arg_val.s, s)
                     new_val = value.Str(s)  # type: value_t
 
-                elif case(value_e.BashArray):
-                    val = cast(value.BashArray, UP_val)
-                    # ${a[@]#prefix} is VECTORIZED on arrays.  YSH should have this too.
-                    strs = []  # type: List[str]
-                    for s in val.strs:
-                        if s is not None:
-                            strs.append(
-                                string_ops.DoUnarySuffixOp(
-                                    s, op.op, arg_val.s, has_extglob))
-                    new_val = value.BashArray(strs)
+                elif case(value_e.BashArray, value_e.BashAssoc):
+                    # get values
+                    if val.tag() == value_e.BashArray:
+                        val = cast(value.BashArray, UP_val)
+                        values = bash_impl.BashArray_GetValues(val)
+                    elif val.tag() == value_e.BashAssoc:
+                        val = cast(value.BashAssoc, UP_val)
+                        values = bash_impl.BashAssoc_GetValues(val)
+                    else:
+                        raise AssertionError()
 
-                elif case(value_e.BashAssoc):
-                    val = cast(value.BashAssoc, UP_val)
-                    strs = []
-                    for s in val.d.values():
-                        strs.append(
-                            string_ops.DoUnarySuffixOp(s, op.op, arg_val.s,
-                                                       has_extglob))
+                    # ${a[@]#prefix} is VECTORIZED on arrays.  YSH should have this too.
+                    strs = [
+                        string_ops.DoUnarySuffixOp(s, op.op, arg_val.s,
+                                                   has_extglob) for s in values
+                    ]
                     new_val = value.BashArray(strs)
 
                 else:
@@ -936,19 +935,16 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 s = replacer.Replace(str_val.s, op)
                 val = value.Str(s)
 
-            elif case2(value_e.BashArray):
-                array_val = cast(value.BashArray, val)
-                strs = []  # type: List[str]
-                for s in array_val.strs:
-                    if s is not None:
-                        strs.append(replacer.Replace(s, op))
-                val = value.BashArray(strs)
-
-            elif case2(value_e.BashAssoc):
-                assoc_val = cast(value.BashAssoc, val)
-                strs = []
-                for s in assoc_val.d.values():
-                    strs.append(replacer.Replace(s, op))
+            elif case2(value_e.BashArray, value_e.BashAssoc):
+                if val.tag() == value_e.BashArray:
+                    array_val = cast(value.BashArray, val)
+                    values = bash_impl.BashArray_GetValues(array_val)
+                elif val.tag() == value_e.BashAssoc:
+                    assoc_val = cast(value.BashAssoc, val)
+                    values = bash_impl.BashAssoc_GetValues(assoc_val)
+                else:
+                    raise AssertionError()
+                strs = [replacer.Replace(s, op) for s in values]
                 val = value.BashArray(strs)
 
             else:
@@ -1017,12 +1013,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     quoted2 = True
                 elif case(value_e.BashArray):
                     array_val = cast(value.BashArray, UP_val)
-
-                    tmp = []  # type: List[str]
-                    for s in array_val.strs:
-                        if s is not None:
-                            # TODO: should use fastfunc.ShellEncode
-                            tmp.append(j8_lite.MaybeShellEncode(s))
+                    tmp = [
+                        # TODO: should use fastfunc.ShellEncode
+                        j8_lite.MaybeShellEncode(s)
+                        for s in bash_impl.BashArray_GetValues(array_val)
+                        if s is not None
+                    ]
                     result = value.Str(' '.join(tmp))
                 else:
                     e_die("Can't use @Q on %s" % ui.ValType(val), op)
@@ -1185,7 +1181,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         """Decay $* to a string."""
         assert val.tag() == value_e.BashArray, val
         sep = self.splitter.GetJoinChar()
-        tmp = [s for s in val.strs if s is not None]
+        tmp = [s for s in bash_impl.BashArray_GetValues(val) if s is not None]
         return value.Str(sep.join(tmp))
 
     def _EmptyStrOrError(self, val, token):

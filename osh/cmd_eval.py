@@ -246,8 +246,8 @@ def PlusEquals(old_val, val):
             elif tag == value_e.BashAssoc:
                 assoc_lhs = cast(value.BashAssoc, UP_old_val)
                 assoc_rhs = cast(value.BashAssoc, UP_val)
-                d = bash_impl.BashAssoc_GetValues(assoc_rhs)
-                bash_impl.BashAssoc_AppendValues(assoc_lhs, d)
+                d = bash_impl.BashAssoc_GetDict(assoc_rhs)
+                bash_impl.BashAssoc_AppendDict(assoc_lhs, d)
                 val = assoc_lhs
 
             else:
