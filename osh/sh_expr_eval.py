@@ -1092,8 +1092,9 @@ class BoolEvaluator(ArithEvaluator):
                 pass
 
                 if self.exec_opts.strict_word_eval():
-                    raise error.TypeErr(val, 'Expected BashArray or BashAssoc',
-                                        blame_loc)
+                    raise error.TypeErr(
+                        val, 'Expected BashArray, SparseArray, or BashAssoc',
+                        blame_loc)
                 return False
         raise AssertionError()
 
