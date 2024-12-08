@@ -75,6 +75,10 @@ void* MarkSweepHeap::Allocate(size_t num_bytes, int* obj_id, int* pool_id) {
     *pool_id = 2;
     return pool2_.Allocate(obj_id);
   }
+  if (num_bytes <= pool3_.kMaxObjSize) {
+    *pool_id = 3;
+    return pool3_.Allocate(obj_id);
+  }
   *pool_id = 0;  // malloc(), not a pool
   #endif
 
@@ -148,6 +152,11 @@ void MarkSweepHeap::MaybeMarkAndPush(RawObject* obj) {
       return;
     }
     pool2_.Mark(obj_id);
+  } else if (header->pool_id == 3) {
+    if (pool3_.IsMarked(obj_id)) {
+      return;
+    }
+    pool3_.Mark(obj_id);
   } else
   #endif
   {
@@ -215,6 +224,7 @@ void MarkSweepHeap::Sweep() {
   #ifndef NO_POOL_ALLOC
   pool1_.Sweep();
   pool2_.Sweep();
+  pool3_.Sweep();
   #endif
 
   int last_live_index = 0;
@@ -263,6 +273,7 @@ int MarkSweepHeap::Collect() {
   #ifndef NO_POOL_ALLOC
   pool1_.PrepareForGc();
   pool2_.PrepareForGc();
+  pool3_.PrepareForGc();
   #endif
 
   // Mark roots.
@@ -346,7 +357,7 @@ void MarkSweepHeap::PrintStats(int fd) {
 
   #ifndef NO_POOL_ALLOC
   dprintf(fd, "  num allocated    = %10d\n",
-          num_allocated_ + pool1_.num_allocated() + pool2_.num_allocated());
+          num_allocated_ + pool1_.num_allocated() + pool2_.num_allocated() + pool3_.num_allocated());
   dprintf(fd, "  num in heap      = %10d\n", num_allocated_);
   #else
   dprintf(fd, "  num allocated    = %10d\n", num_allocated_);
@@ -355,9 +366,10 @@ void MarkSweepHeap::PrintStats(int fd) {
   #ifndef NO_POOL_ALLOC
   dprintf(fd, "  num in pool 1    = %10d\n", pool1_.num_allocated());
   dprintf(fd, "  num in pool 2    = %10d\n", pool2_.num_allocated());
+  dprintf(fd, "  num in pool 3    = %10d\n", pool3_.num_allocated());
   dprintf(
       fd, "bytes allocated    = %10" PRId64 "\n",
-      bytes_allocated_ + pool1_.bytes_allocated() + pool2_.bytes_allocated());
+      bytes_allocated_ + pool1_.bytes_allocated() + pool2_.bytes_allocated() + pool3_.bytes_allocated());
   #else
   dprintf(fd, "bytes allocated    = %10" PRId64 "\n", bytes_allocated_);
   #endif
@@ -415,6 +427,7 @@ void MarkSweepHeap::FreeEverything() {
   #ifndef NO_POOL_ALLOC
   pool1_.Free();
   pool2_.Free();
+  pool3_.Free();
   #endif
 }
 
