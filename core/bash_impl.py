@@ -44,6 +44,17 @@ def BashArray_Length(array_val):
     return len(array_val.strs)
 
 
+def BashArray_GetKeys(array_val):
+    # type: (value.BashArray) -> List[int]
+
+    indices = []  # type: List[int]
+    for i, s in enumerate(array_val.strs):
+        if s is not None:
+            indices.append(i)
+
+    return indices
+
+
 def BashArray_GetValues(array_val):
     # type: (value.BashArray) -> List[str]
 
@@ -242,6 +253,12 @@ def BashAssoc_AppendDict(assoc_val, d):
 
     for key in d:
         assoc_val.d[key] = d[key]
+
+
+def BashAssoc_GetKeys(assoc_val):
+    # type: (value.BashAssoc) -> List[str]
+
+    return assoc_val.d.keys()
 
 
 def BashAssoc_GetValues(assoc_val):
