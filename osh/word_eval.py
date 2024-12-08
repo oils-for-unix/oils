@@ -986,8 +986,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         raise NotImplementedError()
         return val
 
-    def _Nullary(self, val, op, var_name):
-        # type: (value_t, Token, Optional[str]) -> Tuple[value.Str, bool]
+    def _Nullary(self, val, op, var_name, is_undef):
+        # type: (value_t, Token, Optional[str], bool) -> Tuple[value.Str, bool]
 
         UP_val = val
         quoted2 = False
@@ -1006,8 +1006,15 @@ class AbstractWordEvaluator(StringWordEvaluator):
         elif op_id == Id.VOp0_Q:
             with tagswitch(val) as case:
                 if case(value_e.Str):
-                    str_val = cast(value.Str, UP_val)
-                    result = value.Str(j8_lite.MaybeShellEncode(str_val.s))
+                    if is_undef:
+                        # ${unset@Q} is converted to an empty
+                        # value.Str by _EmptyStrOrError and comes to
+                        # this branch.  For the unset variable, we do
+                        # not generate any quoted words.
+                        result = value.Str('')
+                    else:
+                        str_val = cast(value.Str, UP_val)
+                        result = value.Str(j8_lite.MaybeShellEncode(str_val.s))
                     # oddly, 'echo ${x@Q}' is equivalent to 'echo "${x@Q}"' in
                     # bash
                     quoted2 = True
@@ -1354,6 +1361,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     if suffix_op_.id == Id.VOp0_a:
                         vsub_state.is_type_query = True
 
+                    suffix_op0_is_undef = val.tag() == value_e.Undef
+
                 elif case(suffix_op_e.Unary):
                     suffix_op_ = cast(suffix_op.Unary, UP_op)
 
@@ -1416,7 +1425,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
             with tagswitch(suffix_op_) as case:
                 if case(suffix_op_e.Nullary):
                     op = cast(Token, UP_op)
-                    val, quoted2 = self._Nullary(val, op, var_name)
+                    val, quoted2 = self._Nullary(val, op, var_name,
+                                                 suffix_op0_is_undef)
 
                 elif case(suffix_op_e.Unary):
                     op = cast(suffix_op.Unary, UP_op)
