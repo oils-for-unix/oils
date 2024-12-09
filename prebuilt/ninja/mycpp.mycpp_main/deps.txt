@@ -1,5 +1,6 @@
 mycpp/const_pass.py
 mycpp/control_flow_pass.py
+mycpp/conversion_pass.py
 mycpp/cppgen_pass.py
 mycpp/crash.py
 mycpp/format_strings.py
@@ -7,5 +8,4 @@ mycpp/mycpp_main.py
 mycpp/pass_state.py
 mycpp/translate.py
 mycpp/util.py
-mycpp/virtual_pass.py
 mycpp/visitor.py

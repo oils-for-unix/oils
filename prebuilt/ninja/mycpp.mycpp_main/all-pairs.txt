@@ -41,6 +41,7 @@
 /home/andy/git/oilshell/oil/mycpp/__init__.py mycpp/__init__.py
 /home/andy/git/oilshell/oil/mycpp/const_pass.py mycpp/const_pass.py
 /home/andy/git/oilshell/oil/mycpp/control_flow_pass.py mycpp/control_flow_pass.py
+/home/andy/git/oilshell/oil/mycpp/conversion_pass.py mycpp/conversion_pass.py
 /home/andy/git/oilshell/oil/mycpp/cppgen_pass.py mycpp/cppgen_pass.py
 /home/andy/git/oilshell/oil/mycpp/crash.py mycpp/crash.py
 /home/andy/git/oilshell/oil/mycpp/format_strings.py mycpp/format_strings.py
@@ -48,7 +49,6 @@
 /home/andy/git/oilshell/oil/mycpp/pass_state.py mycpp/pass_state.py
 /home/andy/git/oilshell/oil/mycpp/translate.py mycpp/translate.py
 /home/andy/git/oilshell/oil/mycpp/util.py mycpp/util.py
-/home/andy/git/oilshell/oil/mycpp/virtual_pass.py mycpp/virtual_pass.py
 /home/andy/git/oilshell/oil/mycpp/visitor.py mycpp/visitor.py
 /home/andy/wedge/oils-for-unix.org/pkg/mypy/0.780/mypy/__init__.py mypy/__init__.py
 /home/andy/wedge/oils-for-unix.org/pkg/mypy/0.780/mypy/applytype.py mypy/applytype.py

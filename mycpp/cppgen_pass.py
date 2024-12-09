@@ -24,7 +24,7 @@ from mycpp.util import log, SymbolToString, SplitPyName
 from typing import Tuple, List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from mycpp import const_pass
-    from mycpp import ir_pass
+    from mycpp import conversion_pass
 
 
 def _IsContextManager(class_name: util.SymbolPath) -> bool:
@@ -763,7 +763,7 @@ class Impl(_Shared):
             yield_out_params: Dict[FuncDef, Tuple[str, str]],  # input
             all_member_vars: Optional[AllMemberVars] = None,
             local_vars: Optional[AllLocalVars] = None,
-            dot_exprs: Optional['ir_pass.DotExprs'] = None,
+            dot_exprs: Optional['conversion_pass.DotExprs'] = None,
             stack_roots_warn: Optional[int] = None,
             stack_roots: Optional[pass_state.StackRoots] = None) -> None:
         _Shared.__init__(self,
