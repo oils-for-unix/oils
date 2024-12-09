@@ -44,7 +44,6 @@
 /home/andy/git/oilshell/oil/mycpp/cppgen_pass.py mycpp/cppgen_pass.py
 /home/andy/git/oilshell/oil/mycpp/crash.py mycpp/crash.py
 /home/andy/git/oilshell/oil/mycpp/format_strings.py mycpp/format_strings.py
-/home/andy/git/oilshell/oil/mycpp/ir_pass.py mycpp/ir_pass.py
 /home/andy/git/oilshell/oil/mycpp/mycpp_main.py mycpp/mycpp_main.py
 /home/andy/git/oilshell/oil/mycpp/pass_state.py mycpp/pass_state.py
 /home/andy/git/oilshell/oil/mycpp/translate.py mycpp/translate.py

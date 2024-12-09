@@ -12,7 +12,6 @@ import time
 # Our code
 #from _devbuild.gen.mycpp_asdl import mtype
 
-from mycpp import ir_pass
 from mycpp import const_pass
 from mycpp import cppgen_pass
 from mycpp import control_flow_pass
@@ -40,7 +39,7 @@ class Timer:
         [13.5] mycpp pass: IR
         [13.7] mycpp pass: FORWARD DECL
         [13.8] mycpp pass: CONST
-        [14.0] mycpp pass: PROTOTYPES
+        [14.0] mycpp pass: DECL
         [14.4] mycpp pass: CONTROL FLOW
         [15.0] mycpp pass: DATAFLOW
         [15.0] mycpp pass: IMPL
@@ -81,42 +80,35 @@ def Run(timer: Timer,
 
 """)
 
-    # [PASS] IR pass could be merged with virtual pass
-    timer.Section('mycpp pass: IR')
-
-    dot_exprs: Dict[str, ir_pass.DotExprs] = {}
-    for _, module in to_compile:
-        module_dot_exprs: ir_pass.DotExprs = {}
-        p1 = ir_pass.Build(types, module_dot_exprs)
-        p1.visit_mypy_file(module)
-        dot_exprs[module.path] = p1.dot_exprs
-
-        MaybeExitWithErrors(p1)
-
     # Which functions are C++ 'virtual'?
     virtual = pass_state.Virtual()
 
     all_member_vars: cppgen_pass.AllMemberVars = {}
     all_local_vars: cppgen_pass.AllLocalVars = {}
+    dot_exprs: Dict[str, virtual_pass.DotExprs] = {}
     yield_out_params: Dict[FuncDef, Tuple[str, str]] = {}
 
     # [PASS] namespace foo { class Spam; class Eggs; }
-    timer.Section('mycpp pass: FORWARD DECL')
+    timer.Section('mycpp pass: CONVERT')
 
     for name, module in to_compile:
         forward_decls: List[str] = []  # unused
+        module_dot_exprs: virtual_pass.DotExprs = {}
         p2 = virtual_pass.Pass(
             types,
             virtual,  # output
             forward_decls,  # TODO: write output of forward_decls
             all_member_vars,  # output
             all_local_vars,  # output
+            module_dot_exprs,  # output
             yield_out_params,  # output
         )
         # forward declarations may go to header
         p2.SetOutputFile(header_f if name in to_header else f)
         p2.visit_mypy_file(module)
         MaybeExitWithErrors(p2)
+
+        dot_exprs[module.path] = module_dot_exprs
 
     # After seeing class and method names in the first pass, figure out which
     # ones are virtual.  We use this info in the second pass.
@@ -141,7 +133,7 @@ def Run(timer: Timer,
 
     # [PASS] C++ declarations like:
     # class Foo { void method(); }; class Bar { void method(); };
-    timer.Section('mycpp pass: PROTOTYPES')
+    timer.Section('mycpp pass: DECL')
 
     for name, module in to_compile:
         p4 = cppgen_pass.Decl(
