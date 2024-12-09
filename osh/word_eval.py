@@ -1451,8 +1451,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         if part.prefix_op:
             if part.prefix_op.id == Id.VSub_Pound:  # ${#var} for length
-                if not vsub_state.has_test_op:  # undef -> '' BEFORE length
-                    val = self._EmptyStrOrError(val, part.token)
+                # undef -> '' BEFORE length
+                val = self._EmptyStrOrError(val, part.token)
 
                 n = self._Count(val, part.token)
                 part_vals.append(Piece(str(n), quoted, False))
