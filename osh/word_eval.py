@@ -1036,13 +1036,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         raise NotImplementedError()
         return val
 
-    def _Nullary(self, val, op, var_name):
-        # type: (value_t, Token, Optional[str]) -> Tuple[value.Str, bool]
+    def _Nullary(self, val, op, var_name, vsub_token):
+        # type: (value_t, Token, Optional[str], Token) -> Tuple[value.Str, bool]
 
-        UP_val = val
         quoted2 = False
         op_id = op.id
         if op_id == Id.VOp0_P:
+            val = self._EmptyStrOrError(val, vsub_token)
+            UP_val = val
             with tagswitch(val) as case:
                 if case(value_e.Undef):
                     result = value.Str('')
@@ -1056,9 +1057,18 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     e_die("Can't use @P on %s" % ui.ValType(val), op)
 
         elif op_id == Id.VOp0_Q:
+            UP_val = val
             with tagswitch(val) as case:
                 if case(value_e.Undef):
+                    # We need to issue an error when "-o nounset" is enabled.
+                    # Although we do not need to check val for value_e.Undef,
+                    # we call _EmptyStrOrError for consistency in the error
+                    # message.
+                    self._EmptyStrOrError(val, vsub_token)
+
+                    # For unset variables, we do not generate any quoted words.
                     result = value.Str('')
+
                 elif case(value_e.Str):
                     str_val = cast(value.Str, UP_val)
                     result = value.Str(j8_lite.MaybeShellEncode(str_val.s))
@@ -1084,6 +1094,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     e_die("Can't use @Q on %s" % ui.ValType(val), op)
 
         elif op_id == Id.VOp0_a:
+            val = self._EmptyStrOrError(val, vsub_token)
+            UP_val = val
             # We're ONLY simluating -a and -A, not -r -x -n for now.  See
             # spec/ble-idioms.test.sh.
             chars = []  # type: List[str]
@@ -1494,7 +1506,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
             with tagswitch(suffix_op_) as case:
                 if case(suffix_op_e.Nullary):
                     op = cast(Token, UP_op)
-                    val, quoted2 = self._Nullary(val, op, var_name)
+                    val, quoted2 = self._Nullary(val, op, var_name, part.token)
+
                 elif case(suffix_op_e.Unary):
                     op = cast(suffix_op.Unary, UP_op)
                     if consts.GetKind(op.op.id) == Kind.VTest:
