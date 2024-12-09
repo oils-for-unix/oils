@@ -1430,8 +1430,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 if case(suffix_op_e.Nullary):
                     suffix_op_ = cast(Token, UP_op)
 
-                    vsub_state.has_nullary_op = True
-
                     # Type query ${array@a} is a STRING, not an array
                     # NOTE: ${array@Q} is ${array[0]@Q} in bash, which is different than
                     # ${array[@]@Q}
@@ -1461,12 +1459,15 @@ class AbstractWordEvaluator(StringWordEvaluator):
             elif part.prefix_op.id == Id.VSub_Bang:
                 if (part.bracket_op and
                         part.bracket_op.tag() == bracket_op_e.WholeArray):
-                    if vsub_state.has_test_op:
-                        # ${!a[@]-'default'} is a non-fatal runtime error in bash.  Here
-                        # it's fatal.
-                        op_tok = cast(suffix_op.Unary, UP_op).op
-                        e_die('Test operation not allowed with ${!array[@]}',
-                              op_tok)
+
+                    # ${!a[@]-'default'} is a non-fatal runtime error in bash.
+                    # Here it's fatal.
+                    if suffix_op_ and suffix_op_.tag() == suffix_op_e.Unary:
+                        unary_op = cast(suffix_op.Unary, suffix_op_)
+                        if consts.GetKind(unary_op.op.id) == Kind.VTest:
+                            e_die(
+                                'Test operation not allowed with ${!array[@]}',
+                                unary_op.op)
 
                     # ${!array[@]} to get indices/keys
                     val = self._Keys(val, part.token)
@@ -1483,16 +1484,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     val = self._EvalVarRef(val, part.token, quoted, vsub_state,
                                            vtest_place)
 
-                    if not vsub_state.has_test_op:  # undef -> '' AFTER indirection
-                        val = self._EmptyStrOrError(val, part.token)
-
             else:
                 raise AssertionError(part.prefix_op)
-
-        else:
-            # undef -> '' if no prefix op or ${x@P} up
-            if not vsub_state.has_test_op and not vsub_state.has_nullary_op:
-                val = self._EmptyStrOrError(val, part.token)
 
         quoted2 = False  # another bit for @Q
         if suffix_op_:
@@ -1505,6 +1498,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 elif case(suffix_op_e.Unary):
                     op = cast(suffix_op.Unary, UP_op)
                     if consts.GetKind(op.op.id) == Kind.VTest:
+                        # Note: _EmptyStrOrError (i.e., the conversion of undef
+                        # -> '') is not applied to the VTest operators such as
+                        # ${a:-def}, ${a+set}, etc.
                         if self._ApplyTestOp(val, op, quoted, part_vals,
                                              vtest_place, part.token):
                             # e.g. to evaluate ${undef:-'default'}, we already appended
@@ -1513,14 +1509,17 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
                     else:
                         # Other suffix: value -> value
+                        val = self._EmptyStrOrError(val, part.token)
                         val = self._ApplyUnarySuffixOp(val, op)
 
                 elif case(suffix_op_e.PatSub):  # PatSub, vectorized
                     op = cast(suffix_op.PatSub, UP_op)
+                    val = self._EmptyStrOrError(val, part.token)
                     val = self._PatSub(val, op)
 
                 elif case(suffix_op_e.Slice):
                     op = cast(suffix_op.Slice, UP_op)
+                    val = self._EmptyStrOrError(val, part.token)
                     val = self._Slice(val, op, var_name, part)
 
                 elif case(suffix_op_e.Static):
@@ -1529,6 +1528,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
                 else:
                     raise AssertionError()
+        else:
+            val = self._EmptyStrOrError(val, part.token)
+
 
         # After applying suffixes, process join_array here.
         UP_val = val
