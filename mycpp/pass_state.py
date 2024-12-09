@@ -34,15 +34,15 @@ class ModuleMember(member_t):
         self.member = member
 
 
-class StaticObjectMember(member_t):
+class StaticClassMember(member_t):
     """
     A static member of an object. Usually a a method like an alternative constructor.
 
     e.g. runtime_asdl.Cell.CreateNull() => runtime_asdl::Cell::CreateNull()
     """
 
-    def __init__(self, base_type_name: SymbolPath, member: str) -> None:
-        self.base_type_name = base_type_name
+    def __init__(self, type_name: str, member: str) -> None:
+        self.type_name = type_name
         self.member = member
 
 

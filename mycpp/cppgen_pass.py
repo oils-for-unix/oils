@@ -875,7 +875,7 @@ class Impl(_Shared):
         if isinstance(dot_expr, pass_state.StackObjectMember):
             op = '.'
 
-        elif (isinstance(dot_expr, pass_state.StaticObjectMember) or
+        elif (isinstance(dot_expr, pass_state.StaticClassMember) or
               isinstance(dot_expr, pass_state.ModuleMember)):
             op = '::'
 
