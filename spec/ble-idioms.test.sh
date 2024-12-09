@@ -1,3 +1,4 @@
+## oils_cpp_failures_allowed: 2
 
 #### recursive arith: one level
 a='b=123'
@@ -474,6 +475,33 @@ declare -a sp1=([0]=D [2]=C [6]=B [9]=A)
 ## END
 
 ## N-I bash/zsh/mksh/ash STDOUT:
+## END
+
+
+#### SparseArray: a[i]=v with BigInt
+case $SH in zsh|mksh|ash) exit ;; esac
+
+sp1[1]=x
+sp1[5]=y
+sp1[9]=z
+case ${SH##*/} in osh) eval 'var sp1 = _a2sp(sp1)' ;; esac
+
+echo "${#sp1[@]}"
+sp1[0x7FFFFFFFFFFFFFFF]=a
+echo "${#sp1[@]}"
+sp1[0x7FFFFFFFFFFFFFFE]=b
+echo "${#sp1[@]}"
+sp1[0x7FFFFFFFFFFFFFFD]=c
+echo "${#sp1[@]}"
+
+## STDOUT:
+3
+4
+5
+6
+## END
+
+## N-I zsh/mksh/ash STDOUT:
 ## END
 
 
