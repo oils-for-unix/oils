@@ -273,6 +273,7 @@ set_hook(const char *funcname, PyObject **hook_var, PyObject *args)
 
 static PyObject *completion_display_matches_hook = NULL;
 static PyObject *startup_hook = NULL;
+static PyObject *bind_shell_command_hook = NULL;
 
 #ifdef HAVE_RL_PRE_INPUT_HOOK
 static PyObject *pre_input_hook = NULL;
@@ -338,6 +339,7 @@ characters.");
 #endif
 
 
+
 /* Exported function to specify a word completer in Python */
 
 static PyObject *completer = NULL;
@@ -356,6 +358,23 @@ get_completion_type(PyObject *self, PyObject *noarg)
 PyDoc_STRVAR(doc_get_completion_type,
 "get_completion_type() -> int\n\
 Get the type of completion being attempted.");
+
+
+/* Set bind -x Python command hook */
+
+static PyObject *
+set_bind_shell_command_hook(PyObject *self, PyObject *args)
+{
+    return set_hook("bind_shell_command_hook", &bind_shell_command_hook, args);
+}
+
+PyDoc_STRVAR(doc_set_bind_shell_command_hook,
+"set_bind_shell_command_hook([function]) -> None\n\
+Set or remove the function invoked by the rl_bind_keyseq_in_map callback.\n\
+The function is called with three arguments: the string to parse and evaluate,\n\
+the contents of the readline buffer to put in the READLINE_LINE env var,\n\
+and the int of the cursor's point in the buffer to put in READLINE_POINT.\n\
+It must return the READLINE_* vars in a tuple.");
 
 
 /* Get the beginning index for the scope of the tab-completion */
@@ -732,6 +751,7 @@ static Keymap vi_movement_cmd_map;
 static void
 _init_command_maps(void)
 {
+    printf("initializing command maps\n");
     emacs_cmd_map = rl_make_bare_keymap();
     vi_insert_cmd_map = rl_make_bare_keymap();
     vi_movement_cmd_map = rl_make_bare_keymap();
@@ -749,17 +769,26 @@ _get_associated_cmd_map(Keymap kmap)
     if (emacs_cmd_map == NULL)
         _init_command_maps();
 
-    if (kmap == emacs_standard_keymap)
+    if (kmap == emacs_standard_keymap) {
+        printf("returning emacs_cmd_map\n");
         return emacs_cmd_map;
-    else if (kmap == vi_insertion_keymap)
+        }
+    else if (kmap == vi_insertion_keymap){
+        printf("returning vi_insert_cmd_map\n");
         return vi_insert_cmd_map;
-    else if (kmap == vi_movement_keymap)
+        }
+    else if (kmap == vi_movement_keymap){
+        printf("returning vi_movement_cmd_map\n");
         return vi_movement_cmd_map;
-    else if (kmap == emacs_meta_keymap)
-        return (RL_FUNCTION_TO_KEYMAP(emacs_cmd_map, ESC));
-    else if (kmap == emacs_ctlx_keymap)
-        return (RL_FUNCTION_TO_KEYMAP(emacs_cmd_map, CTRL('X')));
+        }
+    else if (kmap == emacs_meta_keymap){
+        printf("returning RL_FUNCTION_TO_KEYMAP(emacs_cmd_map, ESC)\n");
+        return (RL_FUNCTION_TO_KEYMAP(emacs_cmd_map, ESC));}
+    else if (kmap == emacs_ctlx_keymap){
+        printf("returning RL_FUNCTION_TO_KEYMAP(emacs_cmd_map, CTRL('X'))\n");
+        return (RL_FUNCTION_TO_KEYMAP(emacs_cmd_map, CTRL('X')));}
 
+    printf("FOUND NO CMD MAP!!!\n");
     return (Keymap) NULL;
 }
 
@@ -963,6 +992,7 @@ Unbind a key sequence from the current keymap's associated shell command map.");
 static PyObject*
 print_shell_cmd_map(PyObject *self, PyObject *noarg)
 {
+    // FIXME: this is wrong, it uses the rl func map, not the shell command map
     Keymap curr_map, cmd_map;
 
     curr_map = rl_get_keymap();
@@ -1048,6 +1078,323 @@ unbind_keyseq(PyObject *self, PyObject *args)
 PyDoc_STRVAR(doc_unbind_keyseq,
 "unbind_keyseq(sequence) -> None\n\
 Unbind a key sequence from the current keymap.");
+
+
+/* Support fns for bind -x */
+
+static void 
+debug_print(const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    printf("[osh_execute] ");
+    vprintf(fmt, args);
+    printf("\n");
+    va_end(args);
+}
+
+static void 
+make_line_if_needed(char *new_line)
+{
+    if (strcmp(new_line, rl_line_buffer) != 0) {
+        rl_point = rl_end;
+
+        rl_add_undo(UNDO_BEGIN, 0, 0, 0);
+        rl_delete_text(0, rl_point);
+        rl_point = rl_end = rl_mark = 0;
+        rl_insert_text(new_line);
+        rl_add_undo(UNDO_END, 0, 0, 0);
+    }
+}
+
+static char*
+get_bound_command(Keymap cmd_map) {
+    int type;
+    char *cmd = (char *)rl_function_of_keyseq(rl_executing_keyseq, cmd_map, &type);
+    
+    if (cmd == NULL || type != ISMACR) {
+        PyErr_SetString(PyExc_RuntimeError, 
+            "Cannot find shell command bound to this key sequence");
+        return NULL;
+    }
+    
+    debug_print("Found bound command: %s", cmd);
+    return cmd;
+}
+
+static void
+clear_current_line(int use_ce) {
+    if (use_ce) {
+        debug_print("Clearing line with termcap 'ce'");
+        rl_clear_visible_line();
+        fflush(rl_outstream);
+    } else {
+        debug_print("No termcap 'ce', using newline");
+        rl_crlf();
+    }
+}
+
+
+/* Save readline state to Python variables */
+static int
+save_readline_state(void) {
+    PyObject *line = NULL, *point = NULL;
+    
+    debug_print("Saving readline state - line: '%s', point: %d", 
+                rl_line_buffer, rl_point);
+
+    /* Create Python string for readline line */
+    line = PyString_FromString(rl_line_buffer);
+    if (!line) {
+        PyErr_SetString(PyExc_RuntimeError, 
+            "Failed to convert readline line to Python string");
+        return 0;
+    }
+
+    /* Create Python int for readline point */
+    point = PyInt_FromLong(rl_point);
+    if (!point) {
+        Py_DECREF(line);
+        PyErr_SetString(PyExc_RuntimeError,
+            "Failed to convert readline point to Python int"); 
+        return 0;
+    }
+
+    /* Set the Python variables */
+    if (PyDict_SetItemString(PyEval_GetGlobals(), "READLINE_LINE", line) < 0 ||
+        PyDict_SetItemString(PyEval_GetGlobals(), "READLINE_POINT", point) < 0) {
+        Py_DECREF(line);
+        Py_DECREF(point);
+        PyErr_SetString(PyExc_RuntimeError,
+            "Failed to set READLINE_LINE/POINT variables");
+        return 0;
+    }
+
+    Py_DECREF(line);
+    Py_DECREF(point);
+    return 1;
+}
+
+/* Update readline state from Python variables */
+static int 
+restore_readline_state(void) {
+    PyObject *line = NULL, *point = NULL;
+    const char *new_line;
+    long new_point;
+
+    debug_print("Restoring readline state from Python variables");
+
+    /* Get the Python variables */
+    line = PyDict_GetItemString(PyEval_GetGlobals(), "READLINE_LINE");
+    point = PyDict_GetItemString(PyEval_GetGlobals(), "READLINE_POINT");
+
+    if (line && PyString_Check(line)) {
+        new_line = PyString_AsString(line);
+        debug_print("Got new line from Python: '%s'", new_line);
+        
+        /* Update if different */
+        if (strcmp(new_line, rl_line_buffer) != 0) {
+            debug_print("Line changed, updating readline buffer");
+            make_line_if_needed((char *)new_line);
+        }
+    }
+
+    if (point && PyInt_Check(point)) {
+        new_point = PyInt_AsLong(point);
+        debug_print("Got new point from Python: %ld", new_point);
+        
+        /* Validate and update point if needed */
+        if (new_point != rl_point) {
+            if (new_point > rl_end)
+                new_point = rl_end;
+            else if (new_point < 0) 
+                new_point = 0;
+            
+            debug_print("Point changed, updating to: %ld", new_point);
+            rl_point = new_point;
+        }
+    }
+
+    return 1;
+}
+
+/* Main entry point for executing shell commands. Based on bash_execute_unix_command */
+
+static int
+on_bind_shell_command_hook(int count /* unused */, int key /* unused */) {
+    char *cmd;
+    int use_ce;
+    Keymap cmd_map;
+    PyObject *r = NULL;
+    #ifdef WITH_THREAD
+        PyGILState_STATE gilstate;
+    #endif
+    int cmd_return_code;
+    char *line_buffer;
+    char *point;
+    int result;
+
+    debug_print("Starting shell command execution");
+
+    if (bind_shell_command_hook == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "No bind_shell_command_hook set");
+        return 1;
+    }
+
+    cmd_map = _get_associated_cmd_map(rl_get_keymap());
+    cmd = get_bound_command(cmd_map);
+    if (!cmd) { 
+        PyErr_SetString(PyExc_RuntimeError, "on_bind_shell_command_hook: Cannot find shell command in keymap");
+        rl_crlf();
+        rl_forced_update_display();
+        return 1;
+    }
+
+    use_ce = rl_get_termcap("ce") != NULL;
+    clear_current_line(use_ce);
+
+    debug_print("Preparing to execute shell command: '%s'", cmd);
+    debug_print("rl_line_buffer: '%s'", rl_line_buffer);
+    debug_print("rl_point: '%i'", rl_point);
+
+#ifdef WITH_THREAD
+    gilstate = PyGILState_Ensure();
+#endif
+
+    r = PyObject_CallFunction(bind_shell_command_hook,
+                            "ssi", cmd, rl_line_buffer, rl_point);
+    if (r == NULL) {
+        PyErr_Print();
+        result = 1;
+        goto cleanup;
+    }
+    if (!PyArg_ParseTuple(r, "iss", &cmd_return_code, &line_buffer, &point)) {
+        PyErr_SetString(PyExc_ValueError, "Expected (int, str, str) tuple from bind_shell_command_hook");
+        result = 1;
+        goto cleanup;
+    }
+
+    debug_print("Command return code: %d", cmd_return_code);
+    debug_print("New line buffer: '%s'", line_buffer);
+    debug_print("New point: '%s'", point);
+
+    // if (save_readline_state() != 1 || restore_readline_state() != 1) {
+    //     PyErr_SetString(PyExc_RuntimeError, "Failed to update readline state");
+    //     result = 1;
+    //     goto cleanup;
+    // }
+
+
+    /* Redraw the prompt */
+    if (use_ce) // need to handle a  `&& return code != 124` somehow
+        rl_redraw_prompt_last_line();
+    else
+        rl_forced_update_display();
+
+    result = 0; 
+    debug_print("Completed shell command execution");
+
+cleanup:
+    Py_XDECREF(r);
+#ifdef WITH_THREAD
+    PyGILState_Release(gilstate);
+#endif
+
+done:
+    return result;
+}
+
+
+// static int
+// on_bind_shell_command_hook(int count /* unused */, int key /* unused */) {
+//     char *cmd;
+//     int use_ce;
+//     Keymap cmd_map;
+//     PyObject *r=NULL;
+
+//     debug_print("Starting shell command execution");
+
+//     if (bind_shell_command_hook == NULL) {
+//         PyErr_SetString(PyExc_RuntimeError, "No bind_shell_command_hook set");
+//         return 1;
+//     }
+
+//     cmd_map = _get_associated_cmd_map(rl_get_keymap());
+//     cmd = get_bound_command(cmd_map);
+//     if (!cmd)
+//         return 1;
+
+//     /* Clear the current line */
+//     use_ce = rl_get_termcap("ce") != NULL;
+//     clear_current_line(use_ce);
+
+//     // /* Save the current readline state */
+//     // if (!save_readline_state())
+//     //     return 1;
+
+//     /* TODO: Actually execute the shell command */
+//     debug_print("Preparing to execute shell command: '%s'", cmd);
+//     debug_print("rl_line_buffer: '%s'", rl_line_buffer);
+//     debug_print("rl_point: '%i'", rl_point);
+//     r = PyObject_CallFunction(bind_shell_command_hook,
+//                               "ssi", cmd, rl_line_buffer, rl_point);
+
+//     if (r == NULL) {
+//         PyErr_Print();
+//         return 1;
+//     }
+    
+
+
+//     // /* Restore readline state */
+//     // if (!restore_readline_state())
+//     //     return 1;
+
+//     Py_XDECREF(r); r=NULL;
+
+//     /* Redraw the prompt */
+//     if (use_ce)
+//         rl_redraw_prompt_last_line();
+//     else
+//         rl_forced_update_display();
+
+//     debug_print("Completed shell command execution");
+    
+//     return 0;
+// }
+
+/* Binds a key sequence to arbitrary shell code, not readline fns */
+static PyObject*
+bind_shell_command(PyObject *self, PyObject *args) {
+    // const char *kseq;
+    // const char *cmd;
+    char *kseq;
+    char *cmd;
+    Keymap kmap, cmd_xmap;
+
+    // if (!PyArg_ParseTuple(args, "ss:bind_shell_command", &kseq, &cmd)) {
+    //     return NULL;
+    // }
+    if (!PyArg_ParseTuple(args, "eses:bind_shell_command", "utf-8", &kseq, "utf-8", &cmd)) {
+        return NULL;
+    }
+
+    kmap = rl_get_keymap();
+    cmd_xmap = _get_associated_cmd_map(kmap);
+
+    printf("Binding %s to: %s.\n", kseq, cmd); 
+    
+    if (rl_generic_bind(ISMACR, kseq, (char *)cmd, cmd_xmap) != 0 
+        || rl_bind_keyseq_in_map (kseq, on_bind_shell_command_hook, kmap) != 0) {
+        PyErr_Format(PyExc_RuntimeError, "Failed to bind key sequence '%s' to command '%s'", kseq, cmd);
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(doc_bind_shell_command,
+"bind_shell_command(key_sequence, command) -> None\n\
+Bind a key sequence to a shell command in the current keymap.");
 
 
 /* Keymap toggling code */
@@ -1152,6 +1499,9 @@ static struct PyMethodDef readline_methods[] = {
     {"unbind_shell_cmd", unbind_shell_cmd, METH_VARARGS, doc_unbind_shell_cmd},
     {"print_shell_cmd_map", print_shell_cmd_map, METH_NOARGS, doc_print_shell_cmd_map},
     {"unbind_keyseq", unbind_keyseq, METH_VARARGS, doc_unbind_keyseq},
+    {"bind_shell_command", bind_shell_command, METH_VARARGS, doc_bind_shell_command},
+    {"set_bind_shell_command_hook", set_bind_shell_command_hook,
+     METH_VARARGS, doc_set_bind_shell_command_hook},
     {0, 0}
 };
 #endif
