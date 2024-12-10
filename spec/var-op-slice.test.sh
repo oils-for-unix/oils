@@ -388,9 +388,6 @@ argv.py ${@:0:}
 
 ## status: 0
 ## STDOUT:
-
-## status: 0
-## STDOUT:
 []
 []
 

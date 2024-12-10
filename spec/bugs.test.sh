@@ -98,7 +98,8 @@ foo $x() {
 }
 
 ## status: 2
-## OK mksh/zsh status: 1
+## OK mksh status: 1
+# Note: zsh should return 1 or 2
 ## BUG zsh status: 0
 ## STDOUT:
 ## END

@@ -183,11 +183,6 @@ x=1 x=2; echo $x; readonly x=3
 + echo 2
 + readonly x=3
 ## END
-## OK dash STDERR:
-+ x=1 x=2
-+ echo 2
-+ readonly x=3
-## END
 ## OK bash STDERR:
 + x=1
 + x=2
