@@ -201,15 +201,9 @@ def AddMetadataToCase(case, qualifier, shells, name, value, line_num):
             raise ParseError('Line %d: duplicate spec %r for %r' %
                              (line_num, name, shell))
 
-        # Check inconsistent qualifier
-        if 'qualifier' in case[shell] and qualifier != case[shell]['qualifier']:
-            raise ParseError(
-                'Line %d: inconsistent qualifier %r is specified for %r, '
-                'but %r was previously specified.  '
-                % (line_num, qualifier, shell, case[shell]['qualifier']))
-
-        case[shell][name] = value
-        case[shell]['qualifier'] = qualifier
+        if qualifier not in case[shell]:
+            case[shell][qualifier] = {}
+        case[shell][qualifier][name] = value
 
 
 # Format of a test script.
@@ -270,7 +264,8 @@ def ParseKeyValue(tokens, case):
                 AddMetadataToCase(case, qualifier, shells, name, value,
                                   line_num)
             else:
-                case[name] = value
+                AddMetadataToCase(case, 'PASS', 'DEFAULT', name, value,
+                                  line_num)
 
             # END token is optional.
             if kind2 == END_MULTILINE:
@@ -279,11 +274,15 @@ def ParseKeyValue(tokens, case):
         elif kind == KEY_VALUE:
             qualifier, shells, name, value = item
 
-            if qualifier:
+            if name == 'code':
+                assert not qualifier
+                case['code'] = value
+            elif qualifier:
                 AddMetadataToCase(case, qualifier, shells, name, value,
                                   line_num)
             else:
-                case[name] = value
+                AddMetadataToCase(case, 'PASS', 'DEFAULT', name, value,
+                                  line_num)
 
             tokens.next()
 
@@ -321,7 +320,7 @@ def ParseTestCase(tokens):
 
     tokens.next()
 
-    case = {'desc': item, 'line_num': line_num}
+    case = {'desc': item, 'line_num': line_num, 'DEFAULT': {'PASS': {}}}
 
     ParseKeyValue(tokens, case)
 
@@ -425,14 +424,12 @@ def CreateIntAssertion(d, key, assertions, qualifier=False):
 
 
 def CreateAssertions(case, sh_label):
-    """Given a raw test case and a shell label, create EqualAssertion instances
-    to run."""
-    assertions = []
+    """Given a raw test case and a shell label, create a set of lists of
+    EqualAssertion instances to run.
 
-    # Whether we found assertions
-    stdout = False
-    stderr = False
-    status = False
+    """
+
+    assertion_sets = []
 
     # So the assertion are exactly the same for osh and osh_ALT
 
@@ -444,41 +441,60 @@ def CreateAssertions(case, sh_label):
         case_sh = sh_label
 
     if case_sh in case:
-        q = case[case_sh]['qualifier']
-        if CreateStringAssertion(case[case_sh],
-                                 'stdout',
-                                 assertions,
-                                 qualifier=q):
-            stdout = True
-        if CreateStringAssertion(case[case_sh],
-                                 'stderr',
-                                 assertions,
-                                 qualifier=q):
-            stderr = True
-        if CreateIntAssertion(case[case_sh], 'status', assertions,
-                              qualifier=q):
-            status = True
+        for q in case[case_sh]:
+            assertions = []
 
-    if not stdout:
-        CreateStringAssertion(case, 'stdout', assertions)
-    if not stderr:
-        CreateStringAssertion(case, 'stderr', assertions)
-    if not status:
-        if 'status' in case:
-            CreateIntAssertion(case, 'status', assertions)
-        else:
-            # If the user didn't specify a 'status' assertion, assert that the exit
-            # code is 0.
-            a = EqualAssertion('status', 0)
-            assertions.append(a)
+            # Whether we found assertions
+            stdout = False
+            stderr = False
+            status = False
 
-    no_traceback = SubstringAssertion('stderr', 'Traceback (most recent')
-    assertions.append(no_traceback)
+            d = case[case_sh][q]
+            if CreateStringAssertion(d, 'stdout', assertions, qualifier=q):
+                stdout = True
+            if CreateStringAssertion(d, 'stderr', assertions, qualifier=q):
+                stderr = True
+            if CreateIntAssertion(d, 'status', assertions, qualifier=q):
+                status = True
 
-    #print 'SHELL', shell
-    #pprint.pprint(case)
-    #print(assertions)
-    return assertions
+            d = case['DEFAULT']['PASS']
+            if not stdout:
+                CreateStringAssertion(d, 'stdout', assertions)
+            if not stderr:
+                CreateStringAssertion(d, 'stderr', assertions)
+            if not status:
+                if 'status' in d:
+                    CreateIntAssertion(d, 'status', assertions)
+                else:
+                    # If the user didn't specify a 'status' assertion, assert that
+                    # the exit code is 0.
+                    a = EqualAssertion('status', 0)
+                    assertions.append(a)
+
+            no_traceback = SubstringAssertion('stderr',
+                                              'Traceback (most recent')
+            assertions.append(no_traceback)
+
+            #print 'SHELL', shell
+            #pprint.pprint(case)
+            #print(assertions)
+
+            assertion_sets.append(assertions)
+
+    assertions = []
+    d = case['DEFAULT']['PASS']
+    CreateStringAssertion(d, 'stdout', assertions)
+    CreateStringAssertion(d, 'stderr', assertions)
+    if 'status' in d:
+        CreateIntAssertion(d, 'status', assertions)
+    else:
+        # If the user didn't specify a 'status' assertion, assert that
+        # the exit code is 0.
+        a = EqualAssertion('status', 0)
+        assertions.append(a)
+    assertion_sets.append(assertions)
+
+    return assertion_sets
 
 
 class Result(object):
@@ -543,7 +559,11 @@ Got      %r
 
             return Result.FAIL, msg
 
-        return QualifierToResult(self.qualifier), ''
+        qlevel = self.QualifierLevel() or Result.PASS  # 0 -> ideal behavior
+        return qlevel, ''
+
+    def QualifierLevel(self):
+        return QualifierToResult(self.qualifier)
 
 
 class SubstringAssertion(object):
@@ -562,6 +582,9 @@ class SubstringAssertion(object):
             msg = '[%s %s] Found %r' % (shell, self.key, self.substring)
             return Result.FAIL, msg
         return Result.PASS, ''
+
+    def QualifierLevel(self):
+        return 0
 
 
 class Stats(object):
@@ -784,29 +807,46 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
             elif not opts.timeout_bin and actual['status'] == 124:
                 cell_result = Result.TIMEOUT
             else:
-                messages = []
-                cell_result = Result.PASS
+                best_result = 0
+                best_messages = None
+                best_qualifier_level = 0
 
-                # TODO: Warn about no assertions?  Well it will always test the error
-                # code.
-                assertions = CreateAssertions(case, sh_label)
-                for a in assertions:
-                    result, msg = a.Check(sh_label, actual)
-                    # The minimum one wins.
-                    # If any failed, then the result is FAIL.
-                    # If any are OK, but none are FAIL, the result is OK.
-                    cell_result = min(cell_result, result)
-                    if msg:
-                        messages.append(msg)
+                for assertions in CreateAssertions(case, sh_label):
+                    messages = []
+                    cell_result = Result.PASS
+                    # TODO: Warn about no assertions?  Well it will always test the
+                    # error code.
+                    for a in assertions:
+                        result, msg = a.Check(sh_label, actual)
+                        # The minimum one wins.
+                        # If any failed, then the result is FAIL.
+                        # If any are OK, but none are FAIL, the result is OK.
+                        cell_result = min(cell_result, result)
+                        if msg:
+                            messages.append(msg)
 
-                if cell_result != Result.PASS or opts.details:
+                    qualifier_level = max(
+                        [a.QualifierLevel() for a in assertions])
+
+                    # We choose the results of the assertion set with the
+                    # mildest failure category.  If two assertion sets fail
+                    # with the same level of failure (such as Result.FAIL), we
+                    # choose the assertion set with the best qualifier.
+                    if cell_result > best_result or (
+                            cell_result == best_result and
+                            qualifier_level > best_messages):
+                        best_result = cell_result
+                        best_messages = messages
+                        best_qualifier_level = qualifier_level
+
+                if best_result != Result.PASS or opts.details:
                     d = (i, sh_label, actual['stdout'], actual['stderr'],
-                         messages)
+                         best_messages)
                     out.AddDetails(d)
 
-            result_row.append(cell_result)
+            result_row.append(best_result)
 
-            stats.ReportCell(i, cell_result, sh_label)
+            stats.ReportCell(i, best_result, sh_label)
 
             if sh_label in OTHER_OSH:
                 # This is only an error if we tried to run ANY OSH.
