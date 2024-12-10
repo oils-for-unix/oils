@@ -1020,8 +1020,9 @@ case $SH in zsh|mksh|ash) exit ;; esac
 
 case $SH in
   bash)
-    # Work around bash integer overflow bug that only happens on say Debian
-    # 10, NOT Debian 12.  It's unclear why it depends on the version
+    # Work around bash integer overflow bug that only happens on say Debian 10,
+    # but NOT Debian 12.  The bug exists in bash 5.2.  It's unclear why it
+    # depends on the OS version.
     v='/etc/debian_version'
     # debian version 10 / debian buster
     if test -f $v && grep -E 'buster/sid|^10' $v >/dev/null; then
