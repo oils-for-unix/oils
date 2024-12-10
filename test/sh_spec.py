@@ -194,7 +194,15 @@ def AddMetadataToCase(case, qualifier, shells, name, value):
             case[shell] = {}
         if qualifier not in case[shell]:
             case[shell][qualifier] = {}
-        case[shell][qualifier][name] = value
+
+        if name not in case[shell][qualifier]:
+            case[shell][qualifier][name] = value
+        elif not isinstance(case[shell][qualifier][name], list):
+            case[shell][qualifier][name] = [
+                    case[shell][qualifier][name], value
+            ]
+        else:
+            case[shell][qualifier][name].append(value)
 
 
 # Format of a test script.
@@ -384,7 +392,11 @@ def CreateStringAssertion(d, key, assertions, qualifier=False):
 
     exp_json = d.get(key + '-json')
     if exp_json is not None:
-        exp = json.loads(exp_json, encoding='utf-8')
+        if isinstance(exp, list):
+            exp = [json.loads(v, encoding='utf-8') for v in exp_json]
+        else:
+            exp = json.loads(exp_json, encoding='utf-8')
+
         a = EqualAssertion(key, exp, qualifier=qualifier)
         assertions.append(a)
         found = True
@@ -392,7 +404,10 @@ def CreateStringAssertion(d, key, assertions, qualifier=False):
     # For testing invalid unicode
     exp_repr = d.get(key + '-repr')
     if exp_repr is not None:
-        exp = eval(exp_repr)
+        if isinstance(exp, list):
+            exp = [eval(v) for v in exp_repr]
+        else:
+            exp = eval(exp_repr)
         a = EqualAssertion(key, exp, qualifier=qualifier)
         assertions.append(a)
         found = True
@@ -403,8 +418,13 @@ def CreateStringAssertion(d, key, assertions, qualifier=False):
 def CreateIntAssertion(d, key, assertions, qualifier=False):
     exp = d.get(key)  # expected
     if exp is not None:
-        # For now, turn it into int
-        a = EqualAssertion(key, int(exp), qualifier=qualifier)
+        # # For now, turn it into int
+        if isinstance(exp, list):
+            exp = [int(v) for v in exp]
+        else:
+            exp = int(exp)
+
+        a = EqualAssertion(key, exp, qualifier=qualifier)
         assertions.append(a)
         return True
     return False
@@ -513,27 +533,36 @@ class EqualAssertion(object):
 
     def Check(self, shell, record):
         actual = record[self.key]
-        if actual != self.expected:
-            if len(str(self.expected)) < 40:
-                msg = '[%s %s] Expected %r, got %r' % (shell, self.key,
-                                                       self.expected, actual)
-            else:
-                msg = '''
+
+        if isinstance(self.expected, list):
+            if actual not in self.expected:
+                msg_lines = ['[%s %s]' % (shell, self.key)]
+                msg_lines.extend(['Expected %r' % e for e in self.expected])
+                msg_lines.append('Got      %r' % actual)
+                return Result.FAIL, '\n'.join(msg_lines)
+
+        else:
+            if actual != self.expected:
+                if len(str(self.expected)) < 40:
+                    msg = '[%s %s] Expected %r, got %r' % (
+                        shell, self.key, self.expected, actual)
+                else:
+                    msg = '''
 [%s %s]
 Expected %r
 Got      %r
 ''' % (shell, self.key, self.expected, actual)
 
-            # TODO: Make this better and add a flag for it.
-            if 0:
-                import difflib
-                for line in difflib.unified_diff(self.expected,
-                                                 actual,
-                                                 fromfile='expected',
-                                                 tofile='actual'):
-                    print(repr(line))
+                    # TODO: Make this better and add a flag for it.
+                    if 0:
+                        import difflib
+                        for line in difflib.unified_diff(self.expected,
+                                                         actual,
+                                                         fromfile='expected',
+                                                         tofile='actual'):
+                            print(repr(line))
 
-            return Result.FAIL, msg
+                return Result.FAIL, msg
 
         qlevel = self.QualifierLevel() or Result.PASS  # 0 -> ideal behavior
         return qlevel, ''
