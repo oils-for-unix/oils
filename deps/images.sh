@@ -172,6 +172,20 @@ smoke() {
   #export-podman
 
   sudo $docker run ${prefix}oilshell/$name:$tag bash -c '
+for file in /etc/debian_version /etc/lsb-release; do
+  if test -f $file; then
+    # spec/ble-idioms tests this
+    #grep -E "foo|^10" $file; echo grep=$?
+
+    echo $file
+    echo
+    cat $file
+    echo
+  else
+    echo "($file does not exist)"
+  fi
+done
+
 echo "bash $BASH_VERSION"
 
 git --version
