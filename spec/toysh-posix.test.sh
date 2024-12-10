@@ -18,7 +18,7 @@ echo status=$?
 ## status: 2
 ## stdout-json: ""
 ## OK osh/zsh status: 1
-## OK bash status: 0
+## BUG bash status: 0
 ## BUG bash STDOUT:
 status=1
 ## END

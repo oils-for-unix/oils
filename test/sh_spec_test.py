@@ -92,11 +92,11 @@ class ShSpecTest(unittest.TestCase):
         pprint.pprint(CASE1)
         print()
 
-        expected = {'status': '0', 'stdout': 'v=None\n', 'qualifier': 'OK'}
+        expected = {'OK': {'status': '0', 'stdout': 'v=None\n'}}
         self.assertEqual(expected, CASE1['bash'])
         self.assertEqual(expected, CASE1['dash'])
         self.assertEqual(expected, CASE1['mksh'])
-        self.assertEqual('2', CASE1['status'])
+        self.assertEqual('2', CASE1['DEFAULT']['PASS']['status'])
         self.assertEqual('Env binding in readonly/declare disallowed',
                          CASE1['desc'])
 
@@ -104,15 +104,9 @@ class ShSpecTest(unittest.TestCase):
         pprint.pprint(CASE2)
         print()
         print(CreateAssertions(CASE2, 'bash'))
-        self.assertEqual('one\ntwo\n', CASE2['stdout'])
-        self.assertEqual({
-            'qualifier': 'OK',
-            'stdout': 'dash1\ndash2\n'
-        }, CASE2['dash'])
-        self.assertEqual({
-            'qualifier': 'OK',
-            'stdout': 'mksh1\nmksh2\n'
-        }, CASE2['mksh'])
+        self.assertEqual('one\ntwo\n', CASE2['DEFAULT']['PASS']['stdout'])
+        self.assertEqual({'OK': {'stdout': 'dash1\ndash2\n'}}, CASE2['dash'])
+        self.assertEqual({'OK': {'stdout': 'mksh1\nmksh2\n'}}, CASE2['mksh'])
 
     def testCreateAssertions(self):
         print(CreateAssertions(self.CASE1, 'bash'))
