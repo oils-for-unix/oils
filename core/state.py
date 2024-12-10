@@ -1353,6 +1353,7 @@ class Mem(object):
         #traceback.print_stack()
         #return
 
+        self.loc_for_expr = loc.Missing  # reset it on every line
         self.token_for_line = tok
 
     def SetLocationForExpr(self, blame_loc):

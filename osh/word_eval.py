@@ -227,7 +227,7 @@ def _ValueToPartValue(val, quoted, part_loc):
         # value_e.List is also here - we use val_ops.Stringify()s err message
         elif case(value_e.Null, value_e.Bool, value_e.Int, value_e.Float,
                   value_e.Eggex, value_e.List):
-            s = val_ops.Stringify(val, loc.Missing, 'Word eval ')
+            s = val_ops.Stringify(val, loc.WordPart(part_loc), 'Word eval ')
             return Piece(s, quoted, not quoted)
 
         else:

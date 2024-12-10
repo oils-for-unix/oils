@@ -1131,6 +1131,23 @@ test-int-overflow() {
   _ysh-expr-error "= int('$neg')"
 }
 
+test-bug-2129() {
+  # bug in interactive only
+
+  _assert-sh-status 3 $YSH 'Should fail under YSH' \
+    -i -c '
+proc p (...args) {
+  echo $args
+}
+
+p 1 2 3
+
+echo $[{}]
+
+p 1 2 3
+'
+}
+
 soil-run-py() {
   run-test-funcs
 }
