@@ -1036,5 +1036,15 @@ echo "[${a[@]: -4}][${a[*]: -4}]"
 [z y x][z y x]
 ## END
 
+# Note: Bash behavior depends on the version and the environment.  In some
+# conditions, the index 0x7FFFFFFFFFFFFFFF hits an integer overflow bug.  Then
+# all slicing with a negative index results in empty lists:
+## BUG bash STDOUT:
+[][]
+[][]
+[][]
+[][]
+## END
+
 ## N-I zsh/mksh/ash STDOUT:
 ## END
