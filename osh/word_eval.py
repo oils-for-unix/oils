@@ -329,7 +329,7 @@ def _DecayPartValuesToString(part_vals, join_char):
 
 def _PerformSlice(
         val,  # type: value_t
-        begin,  # type: int
+        offset,  # type: mops.BigInt
         length,  # type: int
         has_length,  # type: bool
         part,  # type: BracedVarSub
@@ -343,6 +343,7 @@ def _PerformSlice(
             s = val.s
             n = len(s)
 
+            begin = mops.BigTruncate(offset)
             if begin < 0:  # Compute offset with unicode
                 byte_begin = n
                 num_iters = -begin
@@ -367,38 +368,90 @@ def _PerformSlice(
             substr = s[byte_begin:byte_end]
             result = value.Str(substr)  # type: value_t
 
-        elif case(value_e.BashArray):  # Slice array entries.
-            val = cast(value.BashArray, UP_val)
+        elif case(value_e.BashArray,
+                  value_e.SparseArray):  # Slice array entries.
             # NOTE: This error is ALWAYS fatal in bash.  It's inconsistent with
             # strings.
             if has_length and length < 0:
                 e_die("Array slice can't have negative length: %d" % length,
                       loc.WordPart(part))
 
-            orig = bash_impl.BashArray_GetValues(val)
+            if bash_impl.BigInt_Less(offset, mops.ZERO):
+                # ${@:-3} starts counts from the end
+                if val.tag() == value_e.BashArray:
+                    val = cast(value.BashArray, UP_val)
+                    array_length = mops.IntWiden(
+                        bash_impl.BashArray_Length(val))
+                elif val.tag() == value_e.SparseArray:
+                    val = cast(value.SparseArray, UP_val)
+                    array_length = bash_impl.SparseArray_Length(val)
+                else:
+                    raise AssertionError()
 
-            # Quirk: "begin" for positional arguments ($@ and $*) counts $0.
-            if arg0_val is not None:
-                new_list = [arg0_val.s]
-                new_list.extend(orig)
-                orig = new_list
+                # The array length counts $0 for $@ and $*
+                if arg0_val is not None:
+                    array_length = mops.Add(array_length, mops.ONE)
 
-            n = len(orig)
-            if begin < 0:
-                i = n + begin  # ${@:-3} starts counts from the end
+                offset = mops.Add(offset, array_length)
+
+            if bash_impl.BigInt_Less(offset, mops.ZERO):
+                strs = []  # type: List[str]
             else:
-                i = begin
-            strs = []  # type: List[str]
-            if i >= 0:
-                count = 0
-                while i < n:
-                    if has_length and count == length:  # length could be 0
-                        break
-                    s = orig[i]
-                    if s is not None:  # Unset elements don't count towards the length
-                        strs.append(s)
-                        count += 1
-                    i += 1
+                # Quirk: "offset" for positional arguments ($@ and $*) counts $0.
+                prepends_arg0 = False
+                if arg0_val is not None:
+                    if bash_impl.BigInt_Greater(offset, mops.ZERO):
+                        offset = mops.Sub(offset, mops.ONE)
+                    elif not has_length or length >= 1:
+                        prepends_arg0 = True
+                        length = length - 1
+
+                if has_length and length == 0:
+                    strs = []
+
+                elif val.tag() == value_e.BashArray:
+                    val = cast(value.BashArray, UP_val)
+                    orig = bash_impl.BashArray_GetValues(val)
+                    n = len(orig)
+
+                    strs = []
+                    i = mops.BigTruncate(offset)
+                    count = 0
+                    while i < n:
+                        if has_length and count == length:  # length could be 0
+                            break
+                        s = orig[i]
+                        if s is not None:  # Unset elements don't count towards the length
+                            strs.append(s)
+                            count += 1
+                        i += 1
+
+                elif val.tag() == value_e.SparseArray:
+                    val = cast(value.SparseArray, UP_val)
+
+                    # TODO: We may optimize this by finding the first index
+                    # using the binary search.  Furthermore, the sorting by
+                    # SparseArray_GetKeys can be replaced with the heap sort so
+                    # that we only extract the first LENGTH elements of the
+                    # indices greater or equal to OFFSET.
+                    i = 0
+                    for index in bash_impl.SparseArray_GetKeys(val):
+                        if bash_impl.BigInt_GreaterEq(index, offset):
+                            break
+                        i = i + 1
+
+                    if has_length:
+                        strs = bash_impl.SparseArray_GetValues(val)[i:i+length]
+                    else:
+                        strs = bash_impl.SparseArray_GetValues(val)[i:]
+
+                else:
+                    raise AssertionError()
+
+                if prepends_arg0:
+                    new_list = [arg0_val.s]
+                    new_list.extend(strs)
+                    strs = new_list
 
             result = value.BashArray(strs)
 
@@ -953,7 +1006,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     def _Slice(self, val, op, var_name, part):
         # type: (value_t, suffix_op.Slice, Optional[str], BracedVarSub) -> value_t
 
-        begin = self.arith_ev.EvalToInt(op.begin)
+        begin = self.arith_ev.EvalToBigInt(op.begin)
 
         # Note: bash allows lengths to be negative (with odd semantics), but
         # we don't allow that right now.
