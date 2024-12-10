@@ -142,9 +142,10 @@ class Bind(vm._Builtin):
                     readline.unbind_keyseq(arg.r)
 
                 if arg.x is not None:
-                    self.errfmt.Print_("warning: bind -x isn't implemented",
-                                       blame_loc=cmd_val.arg_locs[0])
-                    return 1
+                    if self.bindx_cb is None:
+                        self.bindx_cb = BindXCallback(self.eval)
+                        readline.set_bind_shell_command_hook(self.bindx_cb)
+                    readline.bind_shell_command(arg.x)
 
                 if arg.X:
                     readline.print_shell_cmd_map()

@@ -142,6 +142,25 @@ class Readline(object):
         # type: (str) -> None
         line_input.unbind_keyseq(keyseq)
 
+    def bind_shell_command(self, cmdseq):
+        # type: (str) -> None
+        cmdseq_split = cmdseq.strip().split(":", 1)
+        if len(cmdseq_split) != 2:
+            raise ValueError("%s: missing colon separator" % cmdseq)
+
+        # Below checks prevent need to do so in C, but also ensure rl_generic_bind
+        # will not try to incorrectly xfree `cmd`/`data`, which doesn't belong to it
+        keyseq = cmdseq_split[0].rstrip()
+        if len(keyseq) <= 2:
+            raise ValueError("%s: empty binding key sequence" % keyseq)
+        if keyseq[0] != '"' or keyseq[-1] != '"':
+            raise ValueError("%s: missing double-quotes around the binding" %
+                             keyseq)
+        keyseq = keyseq[1:-1]
+
+        cmd = cmdseq_split[1]
+        line_input.bind_shell_command(keyseq, cmd)
+
 
 def MaybeGetReadline():
     # type: () -> Optional[Readline]
