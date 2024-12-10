@@ -698,7 +698,7 @@ None
 2
 3
 ## END
-## OK mksh status: 0
+## BUG mksh status: 0
 
 #### syntax error in array assignment
 a=x b[0+]=y c=z

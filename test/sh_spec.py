@@ -201,19 +201,15 @@ def AddMetadataToCase(case, qualifier, shells, name, value, line_num):
             raise ParseError('Line %d: duplicate spec %r for %r' %
                              (line_num, name, shell))
 
-        # Merge qualifier
-        if 'qualifier' in case[shell]:
-            # If there are multiple requirements of different qualifiers,
-            # choose the worst qualifier.  For example, when requirements of
-            # "OK" and "N-I" are both satisified, the result should be "N-I".
-            result_new = QualifierToResult(qualifier)
-            result_old = QualifierToResult(case[shell]['qualifier'])
-            if result_new < result_old:
-                case[shell]['qualifier'] = qualifier
-        else:
-            case[shell]['qualifier'] = qualifier
+        # Check inconsistent qualifier
+        if 'qualifier' in case[shell] and qualifier != case[shell]['qualifier']:
+            raise ParseError(
+                'Line %d: inconsistent qualifier %r is specified for %r, '
+                'but %r was previously specified.  '
+                % (line_num, qualifier, shell, case[shell]['qualifier']))
 
         case[shell][name] = value
+        case[shell]['qualifier'] = qualifier
 
 
 # Format of a test script.
