@@ -1018,6 +1018,20 @@ set -- v{1..9}
 #### SparseArray: ${a[@]:BigInt}
 case $SH in zsh|mksh|ash) exit ;; esac
 
+case $SH in
+  bash)
+    v='/etc/debian_version'
+    if test -f $v && grep 'buster/sid' $v; then
+      cat << 'EOF'
+[x][x]
+[y x][y x]
+[z y x][z y x]
+[z y x][z y x]
+EOF
+    fi
+    ;;
+esac
+
 a=(1 2 3)
 case ${SH##*/} in osh) eval 'var a = _a2sp(a)' ;; esac
 a[0x7FFFFFFFFFFFFFFF]=x
@@ -1034,16 +1048,6 @@ echo "[${a[@]: -4}][${a[*]: -4}]"
 [y x][y x]
 [z y x][z y x]
 [z y x][z y x]
-## END
-
-# Note: Bash behavior depends on the version and the environment.  In some
-# conditions, the index 0x7FFFFFFFFFFFFFFF hits an integer overflow bug.  Then
-# all slicing with a negative index results in empty lists:
-## BUG bash STDOUT:
-[][]
-[][]
-[][]
-[][]
 ## END
 
 ## N-I zsh/mksh/ash STDOUT:
