@@ -366,6 +366,11 @@ echo -{e..a..2}-
 -{a..e..-2}-
 -{e..a..2}-
 ## END
+## N-I mksh/zsh status: 2
+## BUG mksh/zsh STDOUT:
+-{a..e..-2}-
+-{e..a..2}-
+## END
 ## BUG mksh/zsh status: 0
 
 #### Mixed case char expansion is invalid
