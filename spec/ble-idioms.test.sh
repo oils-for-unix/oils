@@ -1021,13 +1021,14 @@ case $SH in zsh|mksh|ash) exit ;; esac
 case $SH in
   bash)
     v='/etc/debian_version'
-    if test -f $v && grep 'buster/sid' $v; then
+    if test -f $v && grep 'buster/sid' $v >/dev/null; then
       cat << 'EOF'
 [x][x]
 [y x][y x]
 [z y x][z y x]
 [z y x][z y x]
 EOF
+      exit
     fi
     ;;
 esac
