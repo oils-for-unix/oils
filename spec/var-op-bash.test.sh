@@ -397,6 +397,8 @@ echo ${x@K} ${empty@K} ${undef@K} ${x@K}
 
 echo ${x@k} ${empty@k} ${undef@k} ${x@k}
 
+echo ${x@A} ${empty@A} ${undef@A} ${x@A}
+
 declare -r x
 echo ${x@a} ${empty@a} ${undef@a} ${x@a}
 
