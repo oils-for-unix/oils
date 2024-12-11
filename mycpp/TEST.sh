@@ -411,6 +411,26 @@ compare-golden() {
   fi
 }
 
+compare-souffle() {
+  # Show less rooting in examples
+  ninja _bin/cxx-asan/mycpp/examples/test_iterators.mycpp{,-souffle}
+
+  local -a files=(
+    _gen/mycpp/examples/test_iterators.mycpp{,-souffle}.cc 
+  )
+  if diff -u "${files[@]}"; then
+    die 'Should not be equal'
+  fi
+
+  ninja _bin/cxx-asan/mycpp-souffle/osh
+  local -a files=(
+    _gen/bin/oils_for_unix.mycpp{,-souffle}.cc 
+  )
+  if diff -u "${files[@]}"; then
+    die 'Should not be equal'
+  fi
+}
+
 const-pass() {
   python3 mycpp/const_pass.py "$@"
 }

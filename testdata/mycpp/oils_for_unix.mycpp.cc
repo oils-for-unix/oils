@@ -5092,6 +5092,8 @@ namespace bash_impl {  // declare
 
 bool BigInt_Greater(mops::BigInt a, mops::BigInt b);
 bool BigInt_Less(mops::BigInt a, mops::BigInt b);
+bool BigInt_GreaterEq(mops::BigInt a, mops::BigInt b);
+bool BigInt_LessEq(mops::BigInt a, mops::BigInt b);
 bool BashArray_IsEmpty(value::BashArray* array_val);
 int BashArray_Count(value::BashArray* array_val);
 int BashArray_Length(value::BashArray* array_val);
@@ -9073,7 +9075,7 @@ BigStr* _BackslashEscape(BigStr* s);
 runtime_asdl::part_value_t* _ValueToPartValue(value_asdl::value_t* val, bool quoted, syntax_asdl::word_part_t* part_loc);
 List<List<runtime_asdl::Piece*>*>* _MakeWordFrames(List<runtime_asdl::part_value_t*>* part_vals);
 BigStr* _DecayPartValuesToString(List<runtime_asdl::part_value_t*>* part_vals, BigStr* join_char);
-value_asdl::value_t* _PerformSlice(value_asdl::value_t* val, int begin, int length, bool has_length, syntax_asdl::BracedVarSub* part, value::Str* arg0_val);
+value_asdl::value_t* _PerformSlice(value_asdl::value_t* val, mops::BigInt offset, int length, bool has_length, syntax_asdl::BracedVarSub* part, value::Str* arg0_val);
 class StringWordEvaluator {
  public:
   StringWordEvaluator();
@@ -20387,6 +20389,14 @@ bool BigInt_Less(mops::BigInt a, mops::BigInt b) {
   return mops::Greater(b, a);
 }
 
+bool BigInt_GreaterEq(mops::BigInt a, mops::BigInt b) {
+  return !mops::Greater(b, a);
+}
+
+bool BigInt_LessEq(mops::BigInt a, mops::BigInt b) {
+  return !mops::Greater(a, b);
+}
+
 bool BashArray_IsEmpty(value::BashArray* array_val) {
   StackRoot _root0(&array_val);
 
@@ -27464,6 +27474,7 @@ void Mem::SetTokenForLine(syntax_asdl::Token* tok) {
   if ((this->running_debug_trap or this->running_err_trap)) {
     return ;
   }
+  this->loc_for_expr = loc::Missing;
   this->token_for_line = tok;
 }
 
@@ -32838,6 +32849,7 @@ using syntax_asdl::expr_e;
 using syntax_asdl::loc;
 using syntax_asdl::loc_t;
 using syntax_asdl::loc_e;
+using syntax_asdl::loc_str;
 using syntax_asdl::command;
 using syntax_asdl::command_e;
 using syntax_asdl::command_t;
@@ -45398,7 +45410,7 @@ runtime_asdl::part_value_t* _ValueToPartValue(value_asdl::value_t* val, bool quo
     case value_e::Float: 
     case value_e::Eggex: 
     case value_e::List: {
-      s = val_ops::Stringify(val, loc::Missing, S_fEB);
+      s = val_ops::Stringify(val, Alloc<loc::WordPart>(part_loc), S_fEB);
       return Alloc<Piece>(s, quoted, !quoted);
     }
       break;
@@ -45503,20 +45515,23 @@ BigStr* _DecayPartValuesToString(List<runtime_asdl::part_value_t*>* part_vals, B
   return S_Aoo->join(out);
 }
 
-value_asdl::value_t* _PerformSlice(value_asdl::value_t* val, int begin, int length, bool has_length, syntax_asdl::BracedVarSub* part, value::Str* arg0_val) {
+value_asdl::value_t* _PerformSlice(value_asdl::value_t* val, mops::BigInt offset, int length, bool has_length, syntax_asdl::BracedVarSub* part, value::Str* arg0_val) {
   value_asdl::value_t* UP_val = nullptr;
   BigStr* s = nullptr;
   int n;
+  int begin;
   int byte_begin;
   int num_iters;
   int byte_end;
   BigStr* substr = nullptr;
   value_asdl::value_t* result = nullptr;
-  List<BigStr*>* orig = nullptr;
-  List<BigStr*>* new_list = nullptr;
-  int i;
+  mops::BigInt array_length;
   List<BigStr*>* strs = nullptr;
+  bool prepends_arg0;
+  List<BigStr*>* orig = nullptr;
+  int i;
   int count;
+  List<BigStr*>* new_list = nullptr;
   StackRoot _root0(&val);
   StackRoot _root1(&part);
   StackRoot _root2(&arg0_val);
@@ -45524,9 +45539,9 @@ value_asdl::value_t* _PerformSlice(value_asdl::value_t* val, int begin, int leng
   StackRoot _root4(&s);
   StackRoot _root5(&substr);
   StackRoot _root6(&result);
-  StackRoot _root7(&orig);
-  StackRoot _root8(&new_list);
-  StackRoot _root9(&strs);
+  StackRoot _root7(&strs);
+  StackRoot _root8(&orig);
+  StackRoot _root9(&new_list);
 
   UP_val = val;
   switch (val->tag()) {
@@ -45534,6 +45549,7 @@ value_asdl::value_t* _PerformSlice(value_asdl::value_t* val, int begin, int leng
       value::Str* val = static_cast<value::Str*>(UP_val);
       s = val->s;
       n = len(s);
+      begin = mops::BigTruncate(offset);
       if (begin < 0) {
         byte_begin = n;
         num_iters = -begin;
@@ -45563,37 +45579,96 @@ value_asdl::value_t* _PerformSlice(value_asdl::value_t* val, int begin, int leng
       result = Alloc<value::Str>(substr);
     }
       break;
-    case value_e::BashArray: {
-      value::BashArray* val = static_cast<value::BashArray*>(UP_val);
+    case value_e::BashArray: 
+    case value_e::SparseArray: {
       if ((has_length and length < 0)) {
         e_die(StrFormat("Array slice can't have negative length: %d", length), Alloc<loc::WordPart>(part));
       }
-      orig = bash_impl::BashArray_GetValues(val);
-      if (arg0_val != nullptr) {
-        new_list = NewList<BigStr*>(std::initializer_list<BigStr*>{arg0_val->s});
-        new_list->extend(orig);
-        orig = new_list;
+      if (bash_impl::BigInt_Less(offset, mops::ZERO)) {
+        if (val->tag() == value_e::BashArray) {
+          value::BashArray* val = static_cast<value::BashArray*>(UP_val);
+          array_length = mops::IntWiden(bash_impl::BashArray_Length(val));
+        }
+        else {
+          if (val->tag() == value_e::SparseArray) {
+            value::SparseArray* val = static_cast<value::SparseArray*>(UP_val);
+            array_length = bash_impl::SparseArray_Length(val);
+          }
+          else {
+            assert(0);  // AssertionError
+          }
+        }
+        if (arg0_val != nullptr) {
+          array_length = mops::Add(array_length, mops::ONE);
+        }
+        offset = mops::Add(offset, array_length);
       }
-      n = len(orig);
-      if (begin < 0) {
-        i = (n + begin);
+      if (bash_impl::BigInt_Less(offset, mops::ZERO)) {
+        strs = Alloc<List<BigStr*>>();
       }
       else {
-        i = begin;
-      }
-      strs = Alloc<List<BigStr*>>();
-      if (i >= 0) {
-        count = 0;
-        while (i < n) {
-          if ((has_length and count == length)) {
-            break;
+        prepends_arg0 = false;
+        if (arg0_val != nullptr) {
+          if (bash_impl::BigInt_Greater(offset, mops::ZERO)) {
+            offset = mops::Sub(offset, mops::ONE);
           }
-          s = orig->at(i);
-          if (s != nullptr) {
-            strs->append(s);
-            count += 1;
+          else {
+            if ((!has_length or length >= 1)) {
+              prepends_arg0 = true;
+              length = (length - 1);
+            }
           }
-          i += 1;
+        }
+        if ((has_length and length == 0)) {
+          strs = Alloc<List<BigStr*>>();
+        }
+        else {
+          if (val->tag() == value_e::BashArray) {
+            value::BashArray* val = static_cast<value::BashArray*>(UP_val);
+            orig = bash_impl::BashArray_GetValues(val);
+            n = len(orig);
+            strs = Alloc<List<BigStr*>>();
+            i = mops::BigTruncate(offset);
+            count = 0;
+            while (i < n) {
+              if ((has_length and count == length)) {
+                break;
+              }
+              s = orig->at(i);
+              if (s != nullptr) {
+                strs->append(s);
+                count += 1;
+              }
+              i += 1;
+            }
+          }
+          else {
+            if (val->tag() == value_e::SparseArray) {
+              value::SparseArray* val = static_cast<value::SparseArray*>(UP_val);
+              i = 0;
+              for (ListIter<mops::BigInt> it(bash_impl::SparseArray_GetKeys(val)); !it.Done(); it.Next()) {
+                mops::BigInt index = it.Value();
+                if (bash_impl::BigInt_GreaterEq(index, offset)) {
+                  break;
+                }
+                i = (i + 1);
+              }
+              if (has_length) {
+                strs = bash_impl::SparseArray_GetValues(val)->slice(i, (i + length));
+              }
+              else {
+                strs = bash_impl::SparseArray_GetValues(val)->slice(i);
+              }
+            }
+            else {
+              assert(0);  // AssertionError
+            }
+          }
+        }
+        if (prepends_arg0) {
+          new_list = NewList<BigStr*>(std::initializer_list<BigStr*>{arg0_val->s});
+          new_list->extend(strs);
+          strs = new_list;
         }
       }
       result = Alloc<value::BashArray>(strs);
@@ -46190,7 +46265,7 @@ value_asdl::value_t* AbstractWordEvaluator::_PatSub(value_asdl::value_t* val, su
 }
 
 value_asdl::value_t* AbstractWordEvaluator::_Slice(value_asdl::value_t* val, suffix_op::Slice* op, BigStr* var_name, syntax_asdl::BracedVarSub* part) {
-  int begin;
+  mops::BigInt begin;
   bool has_length;
   int length;
   value::Str* arg0_val = nullptr;
@@ -46200,7 +46275,7 @@ value_asdl::value_t* AbstractWordEvaluator::_Slice(value_asdl::value_t* val, suf
   StackRoot _root3(&part);
   StackRoot _root4(&arg0_val);
 
-  begin = this->arith_ev->EvalToInt(op->begin);
+  begin = this->arith_ev->EvalToBigInt(op->begin);
   has_length = false;
   length = -1;
   if (op->length) {
@@ -46242,9 +46317,9 @@ Tuple2<value::Str*, bool> AbstractWordEvaluator::_Nullary(value_asdl::value_t* v
   value_asdl::value_t* UP_val = nullptr;
   bool quoted2;
   int op_id;
+  value::Str* result = nullptr;
   BigStr* prompt = nullptr;
   BigStr* p = nullptr;
-  value::Str* result = nullptr;
   List<BigStr*>* tmp = nullptr;
   List<BigStr*>* chars = nullptr;
   runtime_asdl::Cell* cell = nullptr;
@@ -46252,9 +46327,9 @@ Tuple2<value::Str*, bool> AbstractWordEvaluator::_Nullary(value_asdl::value_t* v
   StackRoot _root1(&op);
   StackRoot _root2(&var_name);
   StackRoot _root3(&UP_val);
-  StackRoot _root4(&prompt);
-  StackRoot _root5(&p);
-  StackRoot _root6(&result);
+  StackRoot _root4(&result);
+  StackRoot _root5(&prompt);
+  StackRoot _root6(&p);
   StackRoot _root7(&tmp);
   StackRoot _root8(&chars);
   StackRoot _root9(&cell);
@@ -46264,6 +46339,10 @@ Tuple2<value::Str*, bool> AbstractWordEvaluator::_Nullary(value_asdl::value_t* v
   op_id = op->id;
   if (op_id == Id::VOp0_P) {
     switch (val->tag()) {
+      case value_e::Undef: {
+        result = Alloc<value::Str>(S_Aoo);
+      }
+        break;
       case value_e::Str: {
         value::Str* str_val = static_cast<value::Str*>(UP_val);
         prompt = this->prompt_ev->EvalPrompt(str_val);
@@ -46279,6 +46358,10 @@ Tuple2<value::Str*, bool> AbstractWordEvaluator::_Nullary(value_asdl::value_t* v
   else {
     if (op_id == Id::VOp0_Q) {
       switch (val->tag()) {
+        case value_e::Undef: {
+          result = Alloc<value::Str>(S_Aoo);
+        }
+          break;
         case value_e::Str: {
           value::Str* str_val = static_cast<value::Str*>(UP_val);
           result = Alloc<value::Str>(j8_lite::MaybeShellEncode(str_val->s));
@@ -46690,6 +46773,7 @@ void AbstractWordEvaluator::_EvalBracedVarSub(syntax_asdl::BracedVarSub* part, L
     switch (suffix_op_->tag()) {
       case suffix_op_e::Nullary: {
         Token* suffix_op_ = static_cast<Token*>(UP_op);
+        vsub_state->has_nullary_op = true;
         if (suffix_op_->id == Id::VOp0_a) {
           vsub_state->is_type_query = true;
         }
@@ -46738,7 +46822,7 @@ void AbstractWordEvaluator::_EvalBracedVarSub(syntax_asdl::BracedVarSub* part, L
     }
   }
   else {
-    if (!vsub_state->has_test_op) {
+    if ((!vsub_state->has_test_op and !vsub_state->has_nullary_op)) {
       val = this->_EmptyStrOrError(val, part->token);
     }
   }
