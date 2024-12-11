@@ -14,7 +14,7 @@ from mypy.nodes import (MypyFile, FuncDef, Argument, ReturnStmt, IntExpr,
 
 from mypy.types import Type, CallableType
 
-from mycpp.virtual_pass import Primitive
+from mycpp.conversion_pass import Primitive
 
 from pea import header
 from pea.header import log

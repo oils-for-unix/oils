@@ -50,9 +50,9 @@ class Build(visitor.SimpleVisitor):
         visitor.SimpleVisitor.__init__(self)
 
         self.types = types
-        self.cfgs: Dict[SymbolPath,
-                        pass_state.ControlFlowGraph] = collections.defaultdict(
-                            pass_state.ControlFlowGraph)
+        self.cflow_graphs: Dict[
+            SymbolPath, pass_state.ControlFlowGraph] = collections.defaultdict(
+                pass_state.ControlFlowGraph)
         self.current_statement_id = INVALID_ID
         self.current_class_name: Optional[SymbolPath] = None
         self.current_func_node: Optional[FuncDef] = None
@@ -69,7 +69,7 @@ class Build(visitor.SimpleVisitor):
         if not self.current_func_node:
             return None
 
-        return self.cfgs[SplitPyName(self.current_func_node.fullname)]
+        return self.cflow_graphs[SplitPyName(self.current_func_node.fullname)]
 
     def resolve_callee(self, o: CallExpr) -> Optional[util.SymbolPath]:
         """
@@ -334,7 +334,7 @@ class Build(visitor.SimpleVisitor):
                 sub = SymbolToString(self.current_class_name + (o.name, ),
                                      delim='.')
                 base_key = base[0] + (base[1], )
-                cfg = self.cfgs[base_key]
+                cfg = self.cflow_graphs[base_key]
                 cfg.AddFact(0, pass_state.FunctionCall(sub))
 
         self.current_func_node = o

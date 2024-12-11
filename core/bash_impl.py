@@ -22,9 +22,27 @@ def BigInt_Less(a, b):
     return mops.Greater(b, a)
 
 
+def BigInt_GreaterEq(a, b):
+    # type: (mops.BigInt, mops.BigInt) -> bool
+
+    return not mops.Greater(b, a)
+
+
+def BigInt_LessEq(a, b):
+    # type: (mops.BigInt, mops.BigInt) -> bool
+
+    return not mops.Greater(a, b)
+
+
 #------------------------------------------------------------------------------
 # All BashArray operations depending on the internal
 # representation of SparseArray come here.
+
+
+def BashArray_IsEmpty(array_val):
+    # type: (value.BashArray) -> bool
+
+    return len(array_val.strs) == 0
 
 
 def BashArray_Count(array_val):
@@ -42,6 +60,17 @@ def BashArray_Length(array_val):
     # type: (value.BashArray) -> int
 
     return len(array_val.strs)
+
+
+def BashArray_GetKeys(array_val):
+    # type: (value.BashArray) -> List[int]
+
+    indices = []  # type: List[int]
+    for i, s in enumerate(array_val.strs):
+        if s is not None:
+            indices.append(i)
+
+    return indices
 
 
 def BashArray_GetValues(array_val):
@@ -161,6 +190,21 @@ def BashArray_UnsetElement(array_val, index):
     return error_code_e.OK
 
 
+def BashArray_Equals(lhs, rhs):
+    # type: (value.BashArray, value.BashArray) -> bool
+
+    len_lhs = len(lhs.strs)
+    len_rhs = len(rhs.strs)
+    if len_lhs != len_rhs:
+        return False
+
+    for i in xrange(0, len_lhs):
+        if lhs.strs[i] != rhs.strs[i]:
+            return False
+
+    return True
+
+
 def _BashArray_HasHoles(array_val):
     # type: (value.BashArray) -> bool
 
@@ -226,6 +270,11 @@ def BashArray_ToStrForShellPrint(array_val, name):
 # representation of SparseArray come here.
 
 
+def BashAssoc_IsEmpty(assoc_val):
+    # type: (value.BashAssoc) -> bool
+    return len(assoc_val.d) == 0
+
+
 def BashAssoc_Count(assoc_val):
     # type: (value.BashAssoc) -> int
     return len(assoc_val.d)
@@ -242,6 +291,12 @@ def BashAssoc_AppendDict(assoc_val, d):
 
     for key in d:
         assoc_val.d[key] = d[key]
+
+
+def BashAssoc_GetKeys(assoc_val):
+    # type: (value.BashAssoc) -> List[str]
+
+    return assoc_val.d.keys()
 
 
 def BashAssoc_GetValues(assoc_val):
@@ -272,6 +327,19 @@ def BashAssoc_UnsetElement(assoc_val, key):
     # type: (value.BashAssoc, str) -> None
 
     mylib.dict_erase(assoc_val.d, key)
+
+
+def BashAssoc_Equals(lhs, rhs):
+    # type: (value.BashAssoc, value.BashAssoc) -> bool
+
+    if len(lhs.d) != len(rhs.d):
+        return False
+
+    for k in lhs.d:
+        if k not in rhs.d or rhs.d[k] != lhs.d[k]:
+            return False
+
+    return True
 
 
 def BashAssoc_ToStrForShellPrint(assoc_val):

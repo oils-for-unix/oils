@@ -1353,6 +1353,10 @@ class Mem(object):
         #traceback.print_stack()
         #return
 
+        # Reset the expression fallback location on every line.  It REFINES the
+        # line-based fallback location.
+        self.loc_for_expr = loc.Missing
+
         self.token_for_line = tok
 
     def SetLocationForExpr(self, blame_loc):

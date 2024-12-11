@@ -1,5 +1,5 @@
 """
-virtual_pass.py - forward declarations, and virtuals
+conversion_pass.py - forward declarations, and virtuals
 
 TODO: Join with ir_pass.py
 """
@@ -10,7 +10,7 @@ from mypy.nodes import (Expression, NameExpr, MemberExpr, TupleExpr, CallExpr,
 from mypy.types import Type, Instance, TupleType, NoneType
 
 from mycpp import util
-from mycpp.util import log
+from mycpp.util import log, SplitPyName
 from mycpp import pass_state
 from mycpp import visitor
 from mycpp import cppgen_pass
@@ -22,6 +22,8 @@ if TYPE_CHECKING:
     pass
 
 _ = log
+
+DotExprs = Dict[MemberExpr, pass_state.member_t]
 
 
 class MyTypeInfo:
@@ -50,6 +52,7 @@ class Pass(visitor.SimpleVisitor):
             forward_decls: List[str],
             all_member_vars: 'cppgen_pass.AllMemberVars',
             all_local_vars: 'cppgen_pass.AllLocalVars',
+            module_dot_exprs: DotExprs,
             yield_out_params: Dict[FuncDef, Tuple[str, str]],  # output
     ) -> None:
         visitor.SimpleVisitor.__init__(self)
@@ -62,6 +65,7 @@ class Pass(visitor.SimpleVisitor):
         self.forward_decls = forward_decls
         self.all_member_vars = all_member_vars
         self.all_local_vars = all_local_vars
+        self.module_dot_exprs = module_dot_exprs
         # Used to add another param to definition, and
         #     yield x --> YIELD->append(x)
         self.yield_out_params = yield_out_params
@@ -82,6 +86,69 @@ class Pass(visitor.SimpleVisitor):
         #
         # def f(p, q):   # params are locals, _WriteFuncParams
         #                # but only if update_locals
+
+        self.imported_names = set()  # MemberExpr -> module::Foo() or self->foo
+        # HACK for conditional import inside mylib.PYTHON
+        # in core/shell.py
+        self.imported_names.add('help_meta')
+
+    def visit_import(self, o: 'mypy.nodes.Import') -> None:
+        for name, as_name in o.ids:
+            if as_name is not None:
+                # import time as time_
+                self.imported_names.add(as_name)
+            else:
+                # import libc
+                self.imported_names.add(name)
+
+    def visit_import_from(self, o: 'mypy.nodes.ImportFrom') -> None:
+        """
+        Write C++ namespace aliases and 'using' for imports.
+        We need them in the 'decl' phase for default arguments like
+        runtime_asdl::scope_e -> scope_e
+        """
+        # For MemberExpr . -> module::func() or this->field.  Also needed in
+        # the decl phase for default arg values.
+        for name, alias in o.names:
+            if alias:
+                self.imported_names.add(alias)
+            else:
+                self.imported_names.add(name)
+
+    def oils_visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
+        # Why is self.types[o] missing some types?  e.g. hnode.Record() call in
+        # asdl/runtime.py, failing with KeyError NameExpr
+        lhs_type = self.types.get(o.expr)  # type: Optional[Type]
+
+        is_small_str = False
+        if util.SMALL_STR:
+            if util.IsStr(lhs_type):
+                is_small_str = True
+
+        # This is an approximate hack that assumes that locals don't shadow
+        # imported names.  Might be a problem with names like 'word'?
+        if is_small_str:
+            # mystr.upper()
+            dot = pass_state.StackObjectMember(
+                o.expr, lhs_type, o.name)  # type: pass_state.member_t
+
+        elif o.name in ('CreateNull', 'Take'):
+            # heuristic for MyType::CreateNull()
+            #               MyType::Take(other)
+            type_name = self.types[o].ret_type.type.fullname
+            dot = pass_state.StaticClassMember(type_name, o.name)
+        elif (isinstance(o.expr, NameExpr) and
+              o.expr.name in self.imported_names):
+            # heuristic for state::Mem()
+            module_path = SplitPyName(o.expr.fullname or o.expr.name)
+            dot = pass_state.ModuleMember(module_path, o.name)
+        else:
+            # mylist->append(42)
+            dot = pass_state.HeapObjectMember(o.expr, lhs_type, o.name)
+
+        self.module_dot_exprs[o] = dot
+
+        self.accept(o.expr)
 
     def oils_visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> None:
         mod_parts = o.fullname.split('.')

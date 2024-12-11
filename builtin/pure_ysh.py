@@ -6,6 +6,7 @@ from __future__ import print_function
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import command_t, loc, loc_t
 from _devbuild.gen.value_asdl import value, value_e, value_t
+from core import bash_impl
 from core import error
 from core import state
 from core import vm
@@ -215,7 +216,7 @@ class Append(vm._Builtin):
         with tagswitch(val) as case:
             if case(value_e.BashArray):
                 val = cast(value.BashArray, UP_val)
-                val.strs.extend(arg_r.Rest())
+                bash_impl.BashArray_AppendValues(val, arg_r.Rest())
             elif case(value_e.List):
                 val = cast(value.List, UP_val)
                 typed = [value.Str(s)

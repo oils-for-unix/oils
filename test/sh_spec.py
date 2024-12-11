@@ -1453,7 +1453,7 @@ def _SuccessOrFailure(test_name, stats):
     if oils_cpp_count != 0:
         if oils_cpp_count != allowed_cpp:
             errors.append('Got %d Oils C++ failures, but %d are allowed' %
-                          (oils_cpp_count, allowed))
+                          (oils_cpp_count, allowed_cpp))
         else:
             if allowed_cpp != 0:
                 log('%s: note: Got %d allowed Oils C++ failures', test_name,

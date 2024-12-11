@@ -60,6 +60,11 @@ def _MyPyType(typ):
         raise AssertionError()
 
 
+def _CastedNull(mypy_type):
+    # type: (str) -> None
+    return "cast('%s', None)" % mypy_type
+
+
 def _DefaultValue(typ, mypy_type):
     """Values that the static CreateNull() constructor passes.
 
@@ -73,13 +78,13 @@ def _DefaultValue(typ, mypy_type):
         type_name = typ.type_name
 
         if type_name == 'Optional':
-            return "cast('%s', None)" % mypy_type
+            return _CastedNull(mypy_type)
 
         if type_name == 'List':
             return "[] if alloc_lists else cast('%s', None)" % mypy_type
 
         if type_name == 'Dict':  # TODO: can respect alloc_dicts=True
-            return "cast('%s', None)" % mypy_type
+            return _CastedNull(mypy_type)
 
         raise AssertionError(type_name)
 
@@ -111,7 +116,7 @@ def _DefaultValue(typ, mypy_type):
             return '%s_e.%s' % (type_name, sum_type.types[0].name)
 
         # CompoundSum or Product type
-        return 'cast(%s, None)' % mypy_type
+        return _CastedNull(mypy_type)
 
     else:
         raise AssertionError()

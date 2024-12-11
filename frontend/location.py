@@ -13,6 +13,7 @@ from _devbuild.gen.syntax_asdl import (
     loc,
     loc_t,
     loc_e,
+    loc_str,
     command,
     command_e,
     command_t,
@@ -110,7 +111,7 @@ def TokenFor(loc_):
                 return None
 
         else:
-            raise AssertionError()
+            raise AssertionError(loc_str(loc_.tag()))
 
     raise AssertionError()
 

@@ -1,7 +1,5 @@
 ## compare_shells: bash
-## oils_failures_allowed: 6
-
-# TODO: bash 5.2.21 with lower case
+## oils_failures_allowed: 7
 
 #### Lower Case with , and ,,
 x='ABC DEF'
@@ -387,3 +385,33 @@ echo x=${!A@a}
 x=
 x=
 ## END
+
+#### undef vs. empty string in var ops
+
+empty=''
+x=x
+
+echo ${x@Q} ${empty@Q} ${undef@Q} ${x@Q}
+
+echo ${x@K} ${empty@K} ${undef@K} ${x@K}
+
+echo ${x@k} ${empty@k} ${undef@k} ${x@k}
+
+echo ${x@A} ${empty@A} ${undef@A} ${x@A}
+
+declare -r x
+echo ${x@a} ${empty@a} ${undef@a} ${x@a}
+
+# x x
+#echo ${x@E} ${empty@E} ${undef@E} ${x@E}
+# x x
+#echo ${x@P} ${empty@P} ${undef@P} ${x@P}
+
+## STDOUT:
+'x' '' 'x'
+'x' '' 'x'
+'x' '' 'x'
+x='x' empty='' x='x'
+r r
+## END
+
