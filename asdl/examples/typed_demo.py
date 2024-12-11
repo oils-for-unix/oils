@@ -19,7 +19,9 @@ from _devbuild.gen.typed_demo_asdl import (
     arith_expr,
     CompoundWord,
     a_word_t,
+    ContainsLib
 )
+from _devbuild.gen.demo_lib_asdl import LibToken
 from _devbuild.gen.hnode_asdl import hnode, hnode_t, color_e
 
 from asdl import format as fmt
@@ -66,10 +68,20 @@ def TestSubtype():
     print('')
 
 
+def TestCreateNull():
+    # type: () -> None
+
+    c = ContainsLib.CreateNull()
+    c.t = LibToken.CreateNull()
+    print(c)
+
+
 def main(argv):
     # type: (List[str]) -> None
 
     TestSubtype()
+
+    TestCreateNull()
 
     op = op_id_e.Plus
     print(op)
