@@ -171,13 +171,13 @@ class LibcTest(unittest.TestCase):
           (pat, s, actual, expected))
 
   def testGlob(self):
-    print(libc.glob('*.py'))
+    print(libc.glob('*.py', 0))
 
     # This will not match anything!
-    print(libc.glob('\\'))
+    print(libc.glob('\\', 0))
     # This one will match a file named \
-    print(libc.glob('\\\\'))
-    print(libc.glob('[[:punct:]]'))
+    print(libc.glob('\\\\', 0))
+    print(libc.glob('[[:punct:]]', 0))
 
   def testRegexMatchError(self):
     # See core/util_test.py for more tests

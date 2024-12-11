@@ -193,7 +193,7 @@ class Globber(object):
       #g = glob.glob(arg)  # Bad Python glob
       # PROBLEM: / is significant and can't be escaped!  Have to avoid
       # globbing it.
-      g = libc.glob(arg)
+      g = libc.glob(arg, 0)
     except Exception as e:
       # - [C\-D] is invalid in Python?  Regex compilation error.
       # - [:punct:] not supported

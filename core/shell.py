@@ -1038,7 +1038,7 @@ def Main(
                 rc_dir = os_path.join(home_dir,
                                       '%s/%src.d' % (config_dir, lang))
 
-            rc_paths.extend(libc.glob(os_path.join(rc_dir, '*')))
+            rc_paths.extend(libc.glob(os_path.join(rc_dir, '*'), 0))
 
     # Initialize even in non-interactive shell, for 'compexport'
     _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
