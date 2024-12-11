@@ -1424,14 +1424,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 if case(suffix_op_e.Nullary):
                     suffix_op_ = cast(Token, UP_op)
 
+                    vsub_state.has_nullary_op = True
+
                     # Type query ${array@a} is a STRING, not an array
                     # NOTE: ${array@Q} is ${array[0]@Q} in bash, which is different than
                     # ${array[@]@Q}
                     if suffix_op_.id == Id.VOp0_a:
                         vsub_state.is_type_query = True
-
-                    suffix_op0_is_undef = val.tag() == value_e.Undef
-                    vsub_state.has_nullary_op = True
 
                 elif case(suffix_op_e.Unary):
                     suffix_op_ = cast(suffix_op.Unary, UP_op)
