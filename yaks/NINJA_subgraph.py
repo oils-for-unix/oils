@@ -30,12 +30,13 @@ def NinjaGraph(ru):
 
     prefix = '_gen/yaks/%s.mycpp' % main_name
     outputs = [prefix + '.cc', prefix + '.h']
+    shwrap_path = '_bin/shwrap/mycpp_main'
     n.build(outputs,
             'gen-oils-for-unix',
             deps,
-            implicit=['_bin/shwrap/mycpp_main', RULES_PY],
+            implicit=[shwrap_path, RULES_PY],
             variables=[('out_prefix', prefix), ('main_name', main_name),
-                       ('translator', 'yaks_main'),
+                       ('shwrap_path', shwrap_path),
                        ('preamble', 'yaks/preamble.h')])
 
     ru.cc_binary(
