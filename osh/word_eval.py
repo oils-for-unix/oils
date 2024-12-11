@@ -441,7 +441,8 @@ def _PerformSlice(
                         i = i + 1
 
                     if has_length:
-                        strs = bash_impl.SparseArray_GetValues(val)[i:i+length]
+                        strs = bash_impl.SparseArray_GetValues(val)[i:i +
+                                                                    length]
                     else:
                         strs = bash_impl.SparseArray_GetValues(val)[i:]
 
@@ -1124,7 +1125,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 if self.exec_opts.strict_array():
                     e_die("Can't index string with %s" % op_str,
                           loc.WordPart(part))
-            elif case2(value_e.BashArray, value_e.SparseArray, value_e.BashAssoc):
+            elif case2(value_e.BashArray, value_e.SparseArray,
+                       value_e.BashAssoc):
                 pass  # no-op
             else:
                 # The other YSH types such as List, Dict, and Float are not
