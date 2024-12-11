@@ -1284,6 +1284,9 @@ def ParseTestList(test_files):
             except RuntimeError as e:
                 log('ERROR in %r', test_file)
                 raise
+            except ParseError as e:
+                log('PARSE ERROR in %r', test_file)
+                raise
 
         tmp = os.path.basename(test_file)
         spec_name = tmp.split('.')[0]  # foo.test.sh -> foo
