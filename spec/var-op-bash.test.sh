@@ -282,14 +282,6 @@ status=0
 
 status=0
 ## END
-## OK osh STDOUT:
-
-status=0
-''
-status=0
-
-status=0
-## END
 
 
 #### argv array and @P @Q @a

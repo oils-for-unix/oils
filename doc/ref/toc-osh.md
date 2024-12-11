@@ -147,7 +147,7 @@ X [Unsupported]   enable
                   op-patsub     ${x//y/z}
                   op-index      ${a[i+1}
                   op-slice      ${a[@]:0:1}
-                  op-format     ${x@P}
+                  op-format     ${x@P} ${x@Q} etc.
 ```
 
 <h2 id="mini-lang">
