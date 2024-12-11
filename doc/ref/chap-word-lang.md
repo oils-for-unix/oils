@@ -237,10 +237,10 @@ The pattern can also be a glob:
 
 ### op-format
 
-${x@P} evaluates x as a prompt string, e.g. the string that would be printed if
+${x@P} evaluates x as a prompt string, i.e. the string that would be printed if
 PS1=$x.
 
-### op-quote
+---
 
 `${x@Q}` quotes the value of `x`, if necessary, so that it can be evaluated as
 a shell word.
@@ -248,19 +248,25 @@ a shell word.
     $ x='<'
     $ echo "value = $x, quoted = ${x@Q}."
     value = <, quoted = '<'.
+
     $ x=a
     $ echo "value = $x, quoted = ${x@Q}."
     value = a, quoted = a.
 
-In the second case, the value `a` is not quoted because it is unnecessary.
+In the second case, the string `a` doesn't need to be quoted.
 
-An empty variable and an unset variable are distinguished.  `${x@Q}` produces
-`''` for a variable `x` with an empty value, while it produces an empty string
-for an unset variable.
+---
+
+Format operations like `@Q` generally treat **empty** variables differently
+than **unset** variables.
+
+That is, `${empty@Q}` is the string `''`, while `${unset@Q}` is an empty
+string:
 
     $ x=''
     $ echo "value = $x, quoted = ${x@Q}."
     value = , quoted = ''.
+
     $ unset -v x
     $ echo "value = $x, quoted = ${x@Q}."
     value = , quoted = .
