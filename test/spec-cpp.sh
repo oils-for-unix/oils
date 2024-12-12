@@ -80,14 +80,18 @@ osh-all() {
 
   local spec_subdir=osh-cpp 
 
-  # TODO: spec/nul-bytes passes when it should probably fail -- we get 1
-  # failure instead of 2.
-
+  local status
+  set +o errexit
   # $suite $compare_mode
   test/spec-runner.sh all-parallel \
     osh compare-cpp $spec_subdir "$@"
+  status=$?
+  set -o errexit
 
+  # Write comparison even if we failed
   write-compare-html $spec_subdir
+
+  return $status
 }
 
 ysh-all() {
