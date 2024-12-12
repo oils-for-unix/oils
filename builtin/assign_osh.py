@@ -18,12 +18,12 @@ from core import state
 from core import vm
 from frontend import flag_util
 from frontend import args
-from mycpp.mylib import log
+from mycpp.mylib import log, NewDict
 from osh import cmd_eval
 from osh import sh_expr_eval
 from data_lang import j8_lite
 
-from typing import cast, Optional, List, TYPE_CHECKING
+from typing import cast, Dict, List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.state import Mem
     from core import optview
@@ -283,7 +283,9 @@ def _ReconcileTypes(rval, flag_a, flag_A, blame_word):
         if rval.tag() == value_e.BashArray:
             array_val = cast(value.BashArray, rval)
             if len(array_val.strs) == 0:
-                return value.BashAssoc({})
+                # mycpp limitation: NewDict() needs to be typed
+                tmp = NewDict()  # type: Dict[str, str]
+                return value.BashAssoc(tmp)
                 #return value.BashArray([])
 
         if rval.tag() != value_e.BashAssoc:
@@ -442,7 +444,9 @@ class NewVar(vm._AssignBuiltin):
                         rval = value.BashArray([])
                 elif arg.A:
                     if old_val.tag() != value_e.BashAssoc:
-                        rval = value.BashAssoc({})
+                        # mycpp limitation: NewDict() needs to be typed
+                        tmp = NewDict()  # type: Dict[str, str]
+                        rval = value.BashAssoc(tmp)
 
             lval = LeftName(pair.var_name, pair.blame_word)
 
