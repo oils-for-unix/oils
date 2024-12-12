@@ -20,8 +20,6 @@ def main(argv):
   globs = [
       'Modules/*.c',
       'Modules/_io/*.c',
-      # The main entry point
-      '../py-yajl/yajl.c',
   ]
 
   paths = []

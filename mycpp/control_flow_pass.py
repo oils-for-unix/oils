@@ -20,7 +20,7 @@ from mycpp import pass_state
 from typing import Dict, List, Union, Optional, overload, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from mycpp import ir_pass
+    from mycpp import conversion_pass
     from mycpp import cppgen_pass
 
 
@@ -46,7 +46,7 @@ class Build(visitor.SimpleVisitor):
     def __init__(self, types: Dict[Expression,
                                    Type], virtual: pass_state.Virtual,
                  local_vars: 'cppgen_pass.AllLocalVars',
-                 dot_exprs: 'ir_pass.DotExprs') -> None:
+                 dot_exprs: 'conversion_pass.DotExprs') -> None:
         visitor.SimpleVisitor.__init__(self)
 
         self.types = types

@@ -1,7 +1,5 @@
 """
 conversion_pass.py - forward declarations, and virtuals
-
-TODO: Join with ir_pass.py
 """
 import mypy
 

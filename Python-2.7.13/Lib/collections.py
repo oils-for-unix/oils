@@ -29,7 +29,10 @@ from itertools import imap as _imap
 try:
     from thread import get_ident as _get_ident
 except ImportError:
-    from dummy_thread import get_ident as _get_ident
+    #from dummy_thread import get_ident as _get_ident
+    # OVM_MAIN patch: avoid transitive dependencies of dummy_thread
+    def _get_ident():
+        return -1
 
 
 ################################################################################

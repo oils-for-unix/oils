@@ -2259,9 +2259,6 @@ PyDoc_STRVAR(viewitems__doc__,
 PyDoc_STRVAR(viewvalues__doc__,
              "D.viewvalues() -> an object providing a view on D's values");
 
-#ifdef OVM_MAIN
-#include "Python-2.7.13/Objects/dictobject.c/mapp_methods.def"
-#else
 static PyMethodDef mapp_methods[] = {
     {"__contains__",(PyCFunction)dict_contains,         METH_O | METH_COEXIST,
      contains__doc__},
@@ -2285,14 +2282,12 @@ static PyMethodDef mapp_methods[] = {
      items__doc__},
     {"values",          (PyCFunction)dict_values,       METH_NOARGS,
      values__doc__},
-#ifndef OVM_MAIN
     {"viewkeys",        (PyCFunction)dictkeys_new,      METH_NOARGS,
      viewkeys__doc__},
     {"viewitems",       (PyCFunction)dictitems_new,     METH_NOARGS,
      viewitems__doc__},
     {"viewvalues",      (PyCFunction)dictvalues_new,    METH_NOARGS,
      viewvalues__doc__},
-#endif
     {"update",          (PyCFunction)dict_update,       METH_VARARGS | METH_KEYWORDS,
      update__doc__},
     {"fromkeys",        (PyCFunction)dict_fromkeys,     METH_VARARGS | METH_CLASS,
@@ -2309,7 +2304,6 @@ static PyMethodDef mapp_methods[] = {
      iteritems__doc__},
     {NULL,              NULL}   /* sentinel */
 };
-#endif
 
 /* Return 1 if `key` is in dict `op`, 0 if not, and -1 on error. */
 int
@@ -2553,14 +2547,10 @@ dictiter_len(dictiterobject *di)
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
-#ifdef OVM_MAIN
-#include "Python-2.7.13/Objects/dictobject.c/dictiter_methods.def"
-#else
 static PyMethodDef dictiter_methods[] = {
     {"__length_hint__", (PyCFunction)dictiter_len, METH_NOARGS, length_hint_doc},
     {NULL,              NULL}           /* sentinel */
 };
-#endif
 
 static PyObject *dictiter_iternextkey(dictiterobject *di)
 {
@@ -3093,13 +3083,9 @@ static PyNumberMethods dictviews_as_number = {
     (binaryfunc)dictviews_or,           /*nb_or*/
 };
 
-#ifdef OVM_MAIN
-#include "Python-2.7.13/Objects/dictobject.c/dictkeys_methods.def"
-#else
 static PyMethodDef dictkeys_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
-#endif
 
 PyTypeObject PyDictKeys_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -3182,13 +3168,9 @@ static PySequenceMethods dictitems_as_sequence = {
     (objobjproc)dictitems_contains,     /* sq_contains */
 };
 
-#ifdef OVM_MAIN
-#include "Python-2.7.13/Objects/dictobject.c/dictitems_methods.def"
-#else
 static PyMethodDef dictitems_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
-#endif
 
 PyTypeObject PyDictItems_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -3252,13 +3234,9 @@ static PySequenceMethods dictvalues_as_sequence = {
     (objobjproc)0,                      /* sq_contains */
 };
 
-#ifdef OVM_MAIN
-#include "Python-2.7.13/Objects/dictobject.c/dictvalues_methods.def"
-#else
 static PyMethodDef dictvalues_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
-#endif
 
 PyTypeObject PyDictValues_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)

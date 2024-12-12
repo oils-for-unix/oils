@@ -19,6 +19,7 @@ OLD_MODULES = dict(sys.modules)  # Make a copy
 import posix  # Do it afterward so we don't mess up analysis.
 
 VERBOSE = False
+#VERBOSE = True
 
 def log(msg, *args):
   if not VERBOSE:
@@ -53,10 +54,13 @@ def ImportMain(main_module, old_modules):
     # For some reason, there are entries like:
     # 'pan.core.os': None in sys.modules.  Here's a hack to get rid of them.
     if module is None:
+      log('module is None: %r', name)
       continue
     # Not sure why, but some stdlib modules don't have a __file__ attribute,
     # e.g. "gc", "marshal", "thread".  Doesn't matter for our purposes.
     if full_path is None:
+      # _sre has this issue, because it's built-in
+      log('full_path is None: %r', name)
       continue
     yield name, full_path
 
@@ -75,7 +79,7 @@ def FilterModules(modules):
   """Look at __file__ of each module, and classify them as Python or C."""
 
   for module, full_path in modules:
-    #print 'OLD', module, full_path
+    #log('FilterModules %s %s', module, full_path)
     num_parts = module.count('.') + 1
     i = len(full_path)
     # Do it once more in this case
@@ -107,6 +111,7 @@ def main(argv):
   action = argv[1]
   main_module = argv[2]
   log('Before importing: %d modules', len(OLD_MODULES))
+  log('OLD %s', OLD_MODULES.keys())
 
   if action == 'both':  # Write files for both .py and .so dependencies
     prefix = argv[3]
@@ -114,6 +119,7 @@ def main(argv):
     c_out_path = prefix + '-c.txt'
 
     modules = ImportMain(main_module, OLD_MODULES)
+    #log('NEW %s', list(modules))
 
     with open(py_out_path, 'w') as py_out, open(c_out_path, 'w') as c_out:
       for mod_type, x, y in FilterModules(modules):
@@ -153,3 +159,5 @@ if __name__ == '__main__':
   except RuntimeError as e:
     print('%s: %s' % (sys.argv[0], e.args[0]), file=sys.stderr)
     sys.exit(1)
+
+# vim: ts=2
