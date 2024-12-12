@@ -74,16 +74,19 @@ def NinjaGraph(ru):
             prefix = '_gen/bin/%s.%s' % (main_name, translator)
             outputs = [prefix + '.cc', prefix + '.h']
 
-            variables = [
-                ('out_prefix', prefix),
-                ('main_name', main_name),
-                ('translator', translator),
-                ('preamble', 'cpp/preamble.h'),
-            ]
             if translator == 'mycpp':
                 shwrap_path = '_bin/shwrap/mycpp_main'
-            else:
+            elif translator == 'mycpp-souffle':
                 shwrap_path = '_bin/shwrap/mycpp_main_souffle'
+            else:
+                raise AssertionError()
+
+            variables = [
+                ('main_name', main_name),
+                ('shwrap_path', shwrap_path),
+                ('out_prefix', prefix),
+                ('preamble', 'cpp/preamble.h'),
+            ]
 
             n.build(outputs,
                     'gen-oils-for-unix',

@@ -227,7 +227,7 @@ def _ValueToPartValue(val, quoted, part_loc):
         # value_e.List is also here - we use val_ops.Stringify()s err message
         elif case(value_e.Null, value_e.Bool, value_e.Int, value_e.Float,
                   value_e.Eggex, value_e.List):
-            s = val_ops.Stringify(val, loc.Missing, 'Word eval ')
+            s = val_ops.Stringify(val, loc.WordPart(part_loc), 'Word eval ')
             return Piece(s, quoted, not quoted)
 
         else:
@@ -441,7 +441,8 @@ def _PerformSlice(
                         i = i + 1
 
                     if has_length:
-                        strs = bash_impl.SparseArray_GetValues(val)[i:i+length]
+                        strs = bash_impl.SparseArray_GetValues(val)[i:i +
+                                                                    length]
                     else:
                         strs = bash_impl.SparseArray_GetValues(val)[i:]
 
@@ -1043,7 +1044,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
         op_id = op.id
         if op_id == Id.VOp0_P:
             with tagswitch(val) as case:
-                if case(value_e.Str):
+                if case(value_e.Undef):
+                    result = value.Str('')
+                elif case(value_e.Str):
                     str_val = cast(value.Str, UP_val)
                     prompt = self.prompt_ev.EvalPrompt(str_val)
                     # readline gets rid of these, so we should too.
@@ -1054,7 +1057,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         elif op_id == Id.VOp0_Q:
             with tagswitch(val) as case:
-                if case(value_e.Str):
+                if case(value_e.Undef):
+                    result = value.Str('')
+                elif case(value_e.Str):
                     str_val = cast(value.Str, UP_val)
                     result = value.Str(j8_lite.MaybeShellEncode(str_val.s))
                     # oddly, 'echo ${x@Q}' is equivalent to 'echo "${x@Q}"' in
@@ -1120,7 +1125,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 if self.exec_opts.strict_array():
                     e_die("Can't index string with %s" % op_str,
                           loc.WordPart(part))
-            elif case2(value_e.BashArray, value_e.SparseArray, value_e.BashAssoc):
+            elif case2(value_e.BashArray, value_e.SparseArray,
+                       value_e.BashAssoc):
                 pass  # no-op
             else:
                 # The other YSH types such as List, Dict, and Float are not
@@ -1418,6 +1424,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 if case(suffix_op_e.Nullary):
                     suffix_op_ = cast(Token, UP_op)
 
+                    vsub_state.has_nullary_op = True
+
                     # Type query ${array@a} is a STRING, not an array
                     # NOTE: ${array@Q} is ${array[0]@Q} in bash, which is different than
                     # ${array[@]@Q}
@@ -1476,7 +1484,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 raise AssertionError(part.prefix_op)
 
         else:
-            if not vsub_state.has_test_op:  # undef -> '' if no prefix op
+            # undef -> '' if no prefix op or ${x@P} up
+            if not vsub_state.has_test_op and not vsub_state.has_nullary_op:
                 val = self._EmptyStrOrError(val, part.token)
 
         quoted2 = False  # another bit for @Q
@@ -1487,7 +1496,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 if case(suffix_op_e.Nullary):
                     op = cast(Token, UP_op)
                     val, quoted2 = self._Nullary(val, op, var_name)
-
                 elif case(suffix_op_e.Unary):
                     op = cast(suffix_op.Unary, UP_op)
                     if consts.GetKind(op.op.id) == Kind.VTest:

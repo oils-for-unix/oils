@@ -69,14 +69,13 @@ EOF
 
 gen-oils-for-unix() {
   local main_name=$1
-  local translator=$2
+  local shwrap_path=$2
   local out_prefix=$3
   local preamble=$4
-  local mycpp_opts=$5
-  shift 5  # rest are inputs
+  shift 4  # rest are inputs
 
   # Put it in _build/tmp so it's not in the tarball
-  local tmp=_build/tmp/$translator
+  local tmp=_build/tmp/$(basename $shwrap_path)
   mkdir -p $tmp
 
   local raw_cc=$tmp/${main_name}_raw.cc
@@ -87,9 +86,8 @@ gen-oils-for-unix() {
 
   local mypypath="$REPO_ROOT:$REPO_ROOT/pyext"
 
-  _bin/shwrap/mycpp_main $mypypath $raw_cc \
+  $shwrap_path $mypypath $raw_cc \
     --header-out $raw_header \
-    $mycpp_opts \
     ${EXTRA_MYCPP_ARGS:-} \
     "$@"
 
