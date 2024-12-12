@@ -1034,6 +1034,11 @@ case $SH in
 EOF
       exit
     fi
+    # Actual STDOUT of buggy bash builds:
+    # [][]
+    # [][]
+    # [][]
+    # [][]
     ;;
 esac
 
