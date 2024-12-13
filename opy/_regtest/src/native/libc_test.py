@@ -45,12 +45,12 @@ class LibcTest(unittest.TestCase):
 
   def testGlob(self):
     print('GLOB')
-    print(libc.glob('*.py'))
+    print(libc.glob('*.py', 0))
 
     # This will not match anything!
-    print(libc.glob('\\'))
+    print(libc.glob('\\', 0))
     # This one will match a file named \
-    print(libc.glob('\\\\'))
+    print(libc.glob('\\\\', 0))
 
   def testRegex(self):
     #print(libc.regcomp(r'.*\.py'))

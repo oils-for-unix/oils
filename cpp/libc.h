@@ -22,7 +22,7 @@ BigStr* gethostname();
 
 int fnmatch(BigStr* pat, BigStr* str, int flags = 0);
 
-List<BigStr*>* glob(BigStr* pat);
+List<BigStr*>* glob(BigStr* pat, int flags = 0);
 
 Tuple2<int, int>* regex_first_group_match(BigStr* pattern, BigStr* str,
                                           int pos);

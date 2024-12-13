@@ -217,7 +217,6 @@ _NO_OPS = [
     # through 4.2.
     'direxpand',
     'dirspell',
-    'dotglob',
     'execfail',
     'extdebug',  # for --debugger?
     'extquote',
@@ -285,6 +284,7 @@ def _Init(opt_def):
     opt_def.Add('failglob')
     opt_def.Add('extglob')
     opt_def.Add('nocasematch')
+    opt_def.Add('dotglob')
 
     # recursive parsing and evaluation - for compatibility, ble.sh, etc.
     opt_def.Add('eval_unsafe_arith')
