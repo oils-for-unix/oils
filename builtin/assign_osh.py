@@ -321,7 +321,9 @@ class Readonly(vm._AssignBuiltin):
                 if arg.a:
                     rval = value.BashArray([])  # type: value_t
                 elif arg.A:
-                    rval = value.BashAssoc({})
+                    # mycpp limitation: NewDict() needs to be typed
+                    tmp = NewDict()  # type: Dict[str, str]
+                    rval = value.BashAssoc(tmp)
                 else:
                     rval = None
             else:
