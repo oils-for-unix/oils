@@ -194,9 +194,12 @@ def AddMetadataToCase(case, qualifier, shells, name, value, line_num):
             case[shell] = {}
 
         # Check a duplicate specification
-        if name in case[shell]:
-            raise ParseError(
-                'Line %d: duplicate spec %r for %r' % (line_num, name, shell))
+        name_without_type = re.sub(r'-(json|repr)$', '', name)
+        if (name_without_type in case[shell] or
+                name_without_type + '-json' in case[shell] or
+                name_without_type + '-repr' in case[shell]):
+            raise ParseError('Line %d: duplicate spec %r for %r' %
+                             (line_num, name, shell))
 
         # Merge qualifier
         if 'qualifier' in case[shell]:
