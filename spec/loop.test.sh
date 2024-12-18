@@ -283,7 +283,7 @@ echo --
 a
 --
 ## END
-## OK bash status: 0
+## BUG bash status: 0
 ## BUG dash/mksh/zsh STDOUT:
 a
 b

@@ -859,7 +859,7 @@ echo ---
 ---
 ## END
 
-## OK bash/dash/mksh/zsh STDOUT:
+## OK bash/dash/zsh STDOUT:
 10
 5
 -9223372036854775808

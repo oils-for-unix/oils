@@ -187,11 +187,27 @@ class Tokenizer(object):
         return self.cursor
 
 
-def AddMetadataToCase(case, qualifier, shells, name, value):
+def AddMetadataToCase(case, qualifier, shells, name, value, line_num):
     shells = shells.split('/')  # bash/dash/mksh
     for shell in shells:
         if shell not in case:
             case[shell] = {}
+
+        # Check a duplicate specification
+        name_without_type = re.sub(r'-(json|repr)$', '', name)
+        if (name_without_type in case[shell] or
+                name_without_type + '-json' in case[shell] or
+                name_without_type + '-repr' in case[shell]):
+            raise ParseError('Line %d: duplicate spec %r for %r' %
+                             (line_num, name, shell))
+
+        # Check inconsistent qualifier
+        if 'qualifier' in case[shell] and qualifier != case[shell]['qualifier']:
+            raise ParseError(
+                'Line %d: inconsistent qualifier %r is specified for %r, '
+                'but %r was previously specified.  '
+                % (line_num, qualifier, shell, case[shell]['qualifier']))
+
         case[shell][name] = value
         case[shell]['qualifier'] = qualifier
 
@@ -251,7 +267,8 @@ def ParseKeyValue(tokens, case):
 
             name = name.lower()  # STDOUT -> stdout
             if qualifier:
-                AddMetadataToCase(case, qualifier, shells, name, value)
+                AddMetadataToCase(case, qualifier, shells, name, value,
+                                  line_num)
             else:
                 case[name] = value
 
@@ -263,7 +280,8 @@ def ParseKeyValue(tokens, case):
             qualifier, shells, name, value = item
 
             if qualifier:
-                AddMetadataToCase(case, qualifier, shells, name, value)
+                AddMetadataToCase(case, qualifier, shells, name, value,
+                                  line_num)
             else:
                 case[name] = value
 
@@ -479,6 +497,17 @@ class Result(object):
     length = 6  # for loops
 
 
+def QualifierToResult(qualifier):
+    # type: (str) -> Result
+    if qualifier == 'BUG':  # equal, but known bad
+        return Result.BUG
+    if qualifier == 'N-I':  # equal, and known UNIMPLEMENTED
+        return Result.NI
+    if qualifier == 'OK':  # equal, but ok (not ideal)
+        return Result.OK
+    return Result.PASS  # ideal behavior
+
+
 class EqualAssertion(object):
     """Check that two values are equal."""
 
@@ -513,13 +542,8 @@ Got      %r
                     print(repr(line))
 
             return Result.FAIL, msg
-        if self.qualifier == 'BUG':  # equal, but known bad
-            return Result.BUG, ''
-        if self.qualifier == 'N-I':  # equal, and known UNIMPLEMENTED
-            return Result.NI, ''
-        if self.qualifier == 'OK':  # equal, but ok (not ideal)
-            return Result.OK, ''
-        return Result.PASS, ''  # ideal behavior
+
+        return QualifierToResult(self.qualifier), ''
 
 
 class SubstringAssertion(object):
@@ -1258,6 +1282,9 @@ def ParseTestList(test_files):
                 file_metadata, cases = ParseTestFile(test_file, tokens)
             except RuntimeError as e:
                 log('ERROR in %r', test_file)
+                raise
+            except ParseError as e:
+                log('PARSE ERROR in %r', test_file)
                 raise
 
         tmp = os.path.basename(test_file)

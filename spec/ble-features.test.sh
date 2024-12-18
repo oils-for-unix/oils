@@ -550,7 +550,7 @@ v=tempenv1 f4_unset global,tempenv1
 [global,tempenv1,tempenv2,tempenv3] v: (unset) (unset 4)
 ## END
 
-## OK zsh/ash/dash/mksh/yash STDOUT:
+## OK zsh/ash/dash/mksh STDOUT:
 # value-unset, mksh-unset, tempenv-value-unset?
 [global,tempenv1,tempenv2,tempenv3] v: tempenv3
 [global,tempenv1,tempenv2,tempenv3] v: (unset) (unset 1)
