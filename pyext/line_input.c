@@ -1050,6 +1050,217 @@ PyDoc_STRVAR(doc_unbind_keyseq,
 Unbind a key sequence from the current keymap.");
 
 
+/* Support fns for bind -x */
+
+static void 
+debug_print(const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    printf("[osh_execute] ");
+    vprintf(fmt, args);
+    printf("\n");
+    va_end(args);
+}
+
+static void 
+make_line_if_needed(char *new_line)
+{
+    if (strcmp(new_line, rl_line_buffer) != 0) {
+        rl_point = rl_end;
+
+        rl_add_undo(UNDO_BEGIN, 0, 0, 0);
+        rl_delete_text(0, rl_point);
+        rl_point = rl_end = rl_mark = 0;
+        rl_insert_text(new_line);
+        rl_add_undo(UNDO_END, 0, 0, 0);
+    }
+}
+
+static char*
+get_bound_command(Keymap cmd_map) {
+    int type;
+    char *cmd = (char *)rl_function_of_keyseq(rl_executing_keyseq, cmd_map, &type);
+    
+    if (cmd == NULL || type != ISMACR) {
+        PyErr_SetString(PyExc_RuntimeError, 
+            "Cannot find shell command bound to this key sequence");
+        return NULL;
+    }
+    
+    debug_print("Found bound command: %s", cmd);
+    return cmd;
+}
+
+static int
+clear_current_line(void) {
+    char *ce = rl_get_termcap("ce");
+    if (ce) {
+        debug_print("Clearing line with termcap 'ce'");
+        rl_clear_visible_line();
+        fflush(rl_outstream);
+    } else {
+        debug_print("No termcap 'ce', using newline");
+        rl_crlf();
+    }
+    return ce != NULL;
+}
+
+
+/* Save readline state to Python variables */
+static int
+save_readline_state(void) {
+    PyObject *line = NULL, *point = NULL;
+    
+    debug_print("Saving readline state - line: '%s', point: %d", 
+                rl_line_buffer, rl_point);
+
+    /* Create Python string for readline line */
+    line = PyString_FromString(rl_line_buffer);
+    if (!line) {
+        PyErr_SetString(PyExc_RuntimeError, 
+            "Failed to convert readline line to Python string");
+        return 0;
+    }
+
+    /* Create Python int for readline point */
+    point = PyInt_FromLong(rl_point);
+    if (!point) {
+        Py_DECREF(line);
+        PyErr_SetString(PyExc_RuntimeError,
+            "Failed to convert readline point to Python int"); 
+        return 0;
+    }
+
+    /* Set the Python variables */
+    if (PyDict_SetItemString(PyEval_GetGlobals(), "READLINE_LINE", line) < 0 ||
+        PyDict_SetItemString(PyEval_GetGlobals(), "READLINE_POINT", point) < 0) {
+        Py_DECREF(line);
+        Py_DECREF(point);
+        PyErr_SetString(PyExc_RuntimeError,
+            "Failed to set READLINE_LINE/POINT variables");
+        return 0;
+    }
+
+    Py_DECREF(line);
+    Py_DECREF(point);
+    return 1;
+}
+
+/* Update readline state from Python variables */
+static int 
+restore_readline_state(void) {
+    PyObject *line = NULL, *point = NULL;
+    const char *new_line;
+    long new_point;
+
+    debug_print("Restoring readline state from Python variables");
+
+    /* Get the Python variables */
+    line = PyDict_GetItemString(PyEval_GetGlobals(), "READLINE_LINE");
+    point = PyDict_GetItemString(PyEval_GetGlobals(), "READLINE_POINT");
+
+    if (line && PyString_Check(line)) {
+        new_line = PyString_AsString(line);
+        debug_print("Got new line from Python: '%s'", new_line);
+        
+        /* Update if different */
+        if (strcmp(new_line, rl_line_buffer) != 0) {
+            debug_print("Line changed, updating readline buffer");
+            make_line_if_needed((char *)new_line);
+        }
+    }
+
+    if (point && PyInt_Check(point)) {
+        new_point = PyInt_AsLong(point);
+        debug_print("Got new point from Python: %ld", new_point);
+        
+        /* Validate and update point if needed */
+        if (new_point != rl_point) {
+            if (new_point > rl_end)
+                new_point = rl_end;
+            else if (new_point < 0) 
+                new_point = 0;
+            
+            debug_print("Point changed, updating to: %ld", new_point);
+            rl_point = new_point;
+        }
+    }
+
+    return 1;
+}
+
+/* Main entry point for executing shell commands */
+static int
+osh_execute_shell_command(int _count /* unused */, int key) {
+    char *cmd;
+    int used_ce;
+    Keymap cmd_map;
+
+    debug_print("Starting shell command execution");
+
+    cmd_map = _get_associated_cmd_map(rl_get_keymap());
+    cmd = get_bound_command(cmd_map);
+    if (!cmd)
+        return 1;
+
+    /* Clear the current line */
+    used_ce = clear_current_line();
+
+    /* Save the current readline state */
+    if (!save_readline_state())
+        return 1;
+
+    /* TODO: Actually execute the shell command */
+    debug_print("Would execute shell command: '%s'", cmd);
+
+    /* Restore readline state */
+    if (!restore_readline_state())
+        return 1;
+
+    /* Redraw the prompt */
+    if (used_ce)
+        rl_redraw_prompt_last_line();
+    else
+        rl_forced_update_display();
+
+    debug_print("Completed shell command execution");
+    return 0;
+}
+
+/* Binds a key sequence to arbitrary shell code, not readline fns */
+static PyObject*
+bind_shell_command(PyObject *self, PyObject *args) {
+    const char *kseq;
+    const char *cmd;
+    PyObject *mem; // core.state.Mem reference
+    Keymap kmap, cmd_xmap;
+
+    if (!PyArg_ParseTuple(args, "ssO:bind_shell_command", &kseq, &cmd, &mem)) {
+        return NULL;
+    }
+    Py_INCREF(mem);
+
+    kmap = rl_get_keymap();
+    cmd_xmap = _get_associated_cmd_map(kmap);
+
+    printf("Binding %s to: %s.\n", kseq, cmd); 
+    
+    if (rl_generic_bind(ISMACR, kseq, (char *)cmd, cmd_xmap) != 0 
+        || rl_bind_keyseq_in_map (kseq, osh_execute_shell_command, kmap) != 0) {
+        PyErr_Format(PyExc_RuntimeError, "Failed to bind key sequence '%s' to command '%s'", kseq, cmd);
+        Py_DECREF(mem);
+        return NULL;
+    }
+
+    Py_DECREF(mem);
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(doc_bind_shell_command,
+"bind_shell_command(key_sequence, command) -> None\n\
+Bind a key sequence to a shell command in the current keymap.");
+
+
 /* Keymap toggling code */
 static Keymap orig_keymap = NULL;
 
@@ -1152,6 +1363,7 @@ static struct PyMethodDef readline_methods[] = {
     {"unbind_shell_cmd", unbind_shell_cmd, METH_VARARGS, doc_unbind_shell_cmd},
     {"print_shell_cmd_map", print_shell_cmd_map, METH_NOARGS, doc_print_shell_cmd_map},
     {"unbind_keyseq", unbind_keyseq, METH_VARARGS, doc_unbind_keyseq},
+    {"bind_shell_command", bind_shell_command, METH_VARARGS, doc_bind_shell_command},
     {0, 0}
 };
 #endif

@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from frontend.py_readline import Readline
     from core import sh_init
     from display import ui
+    from state import Mem
 
 _ = log
 
@@ -46,10 +47,11 @@ class ctx_Keymap(object):
 class Bind(vm._Builtin):
     """Interactive interface to readline bindings"""
 
-    def __init__(self, readline, errfmt):
-        # type: (Optional[Readline], ui.ErrorFormatter) -> None
+    def __init__(self, readline, errfmt, mem):
+        # type: (Optional[Readline], ui.ErrorFormatter, Mem) -> None
         self.readline = readline
         self.errfmt = errfmt
+        self.mem = mem
         self.exclusive_flags = ["q", "u", "r", "x", "f"]
 
     def Run(self, cmd_val):
@@ -79,7 +81,7 @@ class Bind(vm._Builtin):
                 # print("\tFound flag: {0} with tag: {1}".format(flag, attrs.attrs[flag].tag()))
                 if found:
                     self.errfmt.Print_(
-                        "error: can only use one of the following flags at a time: -"
+                        "error: Can only use one of the following flags at a time: -"
                         + ", -".join(self.exclusive_flags),
                         blame_loc=cmd_val.arg_locs[0])
                     return 1
@@ -87,7 +89,7 @@ class Bind(vm._Builtin):
                     found = True
         if found and not arg_r.AtEnd():
             self.errfmt.Print_(
-                "error: cannot mix bind commands with the following flags: -" +
+                "error: Too many arguments. Check your quoting. Also, you cannot mix normal bindings with the following flags: -" +
                 ", -".join(self.exclusive_flags),
                 blame_loc=cmd_val.arg_locs[0])
             return 1
@@ -142,9 +144,8 @@ class Bind(vm._Builtin):
                     readline.unbind_keyseq(arg.r)
 
                 if arg.x is not None:
-                    self.errfmt.Print_("warning: bind -x isn't implemented",
-                                       blame_loc=cmd_val.arg_locs[0])
-                    return 1
+                    # print("arg.x: %s" % arg.x)
+                    readline.bind_shell_command(arg.x, self.mem)
 
                 if arg.X:
                     readline.print_shell_cmd_map()
