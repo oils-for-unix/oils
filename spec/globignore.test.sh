@@ -136,8 +136,11 @@ shopt -u globskipdots
 touch .env
 GLOBIGNORE=.:..
 echo .*
+GLOBIGNORE=
+echo .* | sort
 ## STDOUT:
 .env
+. .. .env
 ## END
 
 #### different styles

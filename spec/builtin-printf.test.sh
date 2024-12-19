@@ -1041,7 +1041,7 @@ echo status=$?
 [     2019-]
 status=0
 ## END
-## N-I dash/mksh/zsh/ash STDOUT:
+## N-I mksh/zsh/ash STDOUT:
 [[status=1
 ## END
 ## N-I dash STDOUT:

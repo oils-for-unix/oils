@@ -329,7 +329,8 @@ status=0
 ## END
 ## OK osh STDOUT:
 status=1
-status=1
+- y
+status=0
 A - A
 status=0
 ## END

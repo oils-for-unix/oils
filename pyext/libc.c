@@ -107,14 +107,14 @@ int globerr(const char *path, int errno_) {
 static PyObject *
 func_glob(PyObject *self, PyObject *args) {
   const char* pattern;
-  if (!PyArg_ParseTuple(args, "s", &pattern)) {
+  int flags = 0;
+  if (!PyArg_ParseTuple(args, "s|i", &pattern, &flags)) {
     return NULL;
   }
 
   glob_t results;
   // Hm, it's weird that the first one can't be called with GLOB_APPEND.  You
   // get a segfault.
-  int flags = 0;
   // int flags = GLOB_APPEND;
   //flags |= GLOB_NOMAGIC;
   int ret = glob(pattern, flags, NULL, &results);
@@ -410,6 +410,7 @@ void initlibc(void) {
 
   module = Py_InitModule("libc", methods);
   if (module != NULL) {
+      PyModule_AddIntConstant(module, "GLOB_PERIOD", GLOB_PERIOD);
       PyModule_AddIntConstant(module, "FNM_CASEFOLD", FNM_CASEFOLD);
       PyModule_AddIntConstant(module, "REG_ICASE", REG_ICASE);
       PyModule_AddIntConstant(module, "REG_NEWLINE", REG_NEWLINE);

@@ -133,11 +133,11 @@ echo $x ${A['y']}
 ## STDOUT:
 42 0
 ## END
-## BUG mksh status: 0
+## N-I mksh status: 0
 ## N-I mksh STDOUT:
 0
 ## END
-## BUG zsh status: 0
+## N-I zsh status: 0
 ## N-I zsh STDOUT:
 42
 ## END

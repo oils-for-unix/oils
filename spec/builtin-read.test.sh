@@ -223,7 +223,7 @@ case $SH in (dash|ash|zsh) exit ;; esac
 echo abcxyz | { read -n 3; echo reply=$REPLY; }
 ## status: 0
 ## stdout: reply=abc
-## N-I dash/ash/zsh stdout-json: ""
+## N-I dash/ash stdout-json: ""
 
 # zsh appears to hang with -k
 ## N-I zsh stdout-json: ""
@@ -254,7 +254,6 @@ echo '  a b  \
 [  a b  \]
 [a b  \]
 ## END
-## N-I dash stdout:
 ## BUG mksh/zsh STDOUT:
 [a b]
 [a b]

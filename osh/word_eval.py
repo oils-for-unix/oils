@@ -1065,13 +1065,19 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     # oddly, 'echo ${x@Q}' is equivalent to 'echo "${x@Q}"' in
                     # bash
                     quoted2 = True
-                elif case(value_e.BashArray):
-                    array_val = cast(value.BashArray, UP_val)
+                elif case(value_e.BashArray, value_e.BashAssoc):
+                    if val.tag() == value_e.BashArray:
+                        val = cast(value.BashArray, UP_val)
+                        values = [s for s in bash_impl.BashArray_GetValues(val) if s is not None]
+                    elif val.tag() == value_e.BashAssoc:
+                        val = cast(value.BashAssoc, UP_val)
+                        values = bash_impl.BashAssoc_GetValues(val)
+                    else:
+                        raise AssertionError()
+
                     tmp = [
                         # TODO: should use fastfunc.ShellEncode
-                        j8_lite.MaybeShellEncode(s)
-                        for s in bash_impl.BashArray_GetValues(array_val)
-                        if s is not None
+                        j8_lite.MaybeShellEncode(s) for s in values
                     ]
                     result = value.Str(' '.join(tmp))
                 else:

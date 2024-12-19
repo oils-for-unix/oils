@@ -70,7 +70,7 @@ true  # exit 0
 9
 7
 ## END
-## BUG dash/mksh stderr-json: ""
+## N-I dash/mksh stderr-json: ""
 ## N-I dash/mksh STDOUT:
 0
 1
