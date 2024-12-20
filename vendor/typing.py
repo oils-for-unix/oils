@@ -13,6 +13,11 @@ try:
 except ImportError:
     import collections as collections_abc  # Fallback for PY3.2.
 
+# MINIMAL OILS PATCH - stub out 'unicode' type, because the legacy OVM build
+# doesn't have it, and it is hard to undo the build hacks.
+# Should be type(u''), but type('') runs under OVM, and doesn't appear to break
+# type checking.
+unicode = type('')
 
 # Please keep __all__ alphabetized within each category.
 __all__ = [
@@ -2494,8 +2499,7 @@ class BinaryIO(IO[bytes]):
         pass
 
 
-# OILS PATCH: 'unicode' not available
-class TextIO(IO['unicode']):
+class TextIO(IO[unicode]):
     """Typed version of the return of open() in text mode."""
 
     __slots__ = ()
