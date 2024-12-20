@@ -2061,7 +2061,8 @@ class ByteString(Sequence[int]):
 
 
 ByteString.register(str)
-ByteString.register(bytearray)
+# OILS PATCH: don't need bytearray
+#ByteString.register(bytearray)
 
 
 class List(list, MutableSequence[T]):
