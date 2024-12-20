@@ -779,7 +779,9 @@ T_contra = TypeVar('T_contra', contravariant=True)  # Ditto contravariant.
 
 # A useful type variable with constraints.  This represents string types.
 # (This one *is* for export!)
-AnyStr = TypeVar('AnyStr', bytes, unicode)
+#AnyStr = TypeVar('AnyStr', bytes, unicode)
+# OILS PATCH to remove unicode
+AnyStr = TypeVar('AnyStr', bytes, bytes)
 
 
 def _replace_arg(arg, tvars, args):
