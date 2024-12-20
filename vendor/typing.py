@@ -13,10 +13,11 @@ try:
 except ImportError:
     import collections as collections_abc  # Fallback for PY3.2.
 
-# MINIMAL OILS PATCH - stub out 'unicode' type, because the legacy OVM build
-# doesn't have it, and it is hard to undo the build hacks.
-# Should be type(u''), but type('') runs under OVM, and doesn't appear to break
-# type checking.
+# MINIMAL OILS PATCH - stub out 'unicode' builtin, because the legacy OVM build
+# doesn't have unicodeobject.c, and it is hard to undo the build hacks.
+#
+# It should be type(u''), but type('') runs under OVM, and doesn't appear to
+# break type checking.
 unicode = type('')
 
 # Please keep __all__ alphabetized within each category.
@@ -87,8 +88,7 @@ __all__ = [
     'NoReturn',
     'overload',
     'runtime_checkable',
-    # OILS PATCH
-    # 'Text',
+    'Text',
     'TYPE_CHECKING',
 ]
 
@@ -785,9 +785,7 @@ T_contra = TypeVar('T_contra', contravariant=True)  # Ditto contravariant.
 
 # A useful type variable with constraints.  This represents string types.
 # (This one *is* for export!)
-#AnyStr = TypeVar('AnyStr', bytes, unicode)
-# OILS PATCH to remove unicode
-AnyStr = TypeVar('AnyStr', bytes, bytes)
+AnyStr = TypeVar('AnyStr', bytes, unicode)
 
 
 def _replace_arg(arg, tvars, args):
@@ -2380,9 +2378,8 @@ def NewType(name, tp):
     return new_type
 
 
-# OILS PATCH
 # Python-version-specific alias (Python 2: unicode; Python 3: str)
-# Text = unicode
+Text = unicode
 
 
 # Constant that's True when type checking, but False here.
