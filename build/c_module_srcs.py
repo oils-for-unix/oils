@@ -20,7 +20,8 @@ def main(argv):
       mod_name, rel_path = line.split(None, 2)
       manifest[mod_name] = rel_path
 
-  #print manifest
+  #print(manifest, file=sys.stderr)
+
   with open(discovered) as f:
     for line in f:
       line = line.strip()
@@ -58,6 +59,10 @@ def main(argv):
       elif mod_name == '_sha512':
         print('Modules/sha512module.c')
 
+      # TODO: This needs to be printed
+      #elif mod_name == '_sre':
+      #  print('Modules/_sre.c')
+
       elif mod_name == '_io':
         # This data is in setup.py and Modules/Setup.dist.
         #_io -I$(srcdir)/Modules/_io _io/bufferedio.c _io/bytesio.c
@@ -81,3 +86,5 @@ if __name__ == '__main__':
   except RuntimeError as e:
     print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)
+
+# vim: ts=2
