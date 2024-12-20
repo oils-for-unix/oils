@@ -117,6 +117,7 @@ Modules/gcmodule.c
 MODOBJS='
 Modules/errnomodule.c
 Modules/pwdmodule.c
+Modules/_sre.c
 Modules/_weakref.c
 Modules/zipimport.c
 Modules/signalmodule.c

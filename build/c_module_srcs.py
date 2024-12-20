@@ -59,7 +59,7 @@ def main(argv):
       elif mod_name == '_sha512':
         print('Modules/sha512module.c')
 
-      # TODO: This needs to be printed
+      # build/static-c-modules.txt
       #elif mod_name == '_sre':
       #  print('Modules/_sre.c')
 
