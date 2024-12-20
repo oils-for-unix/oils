@@ -82,7 +82,8 @@ __all__ = [
     'NoReturn',
     'overload',
     'runtime_checkable',
-    'Text',
+    # OILS PATCH
+    # 'Text',
     'TYPE_CHECKING',
 ]
 
@@ -2374,8 +2375,9 @@ def NewType(name, tp):
     return new_type
 
 
+# OILS PATCH
 # Python-version-specific alias (Python 2: unicode; Python 3: str)
-Text = unicode
+# Text = unicode
 
 
 # Constant that's True when type checking, but False here.
@@ -2492,7 +2494,8 @@ class BinaryIO(IO[bytes]):
         pass
 
 
-class TextIO(IO[unicode]):
+# OILS PATCH: 'unicode' not available
+class TextIO(IO['unicode']):
     """Typed version of the return of open() in text mode."""
 
     __slots__ = ()
