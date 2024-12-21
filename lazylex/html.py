@@ -227,6 +227,7 @@ class TagLexer(object):
         self.end_pos = -1
 
     def Reset(self, start_pos, end_pos):
+        """Reuse instances of this object."""
         self.start_pos = start_pos
         self.end_pos = end_pos
 
@@ -290,7 +291,8 @@ class TagLexer(object):
         """
         m = _TAG_RE.match(self.s, self.start_pos + 1)
         if not m:
-            raise RuntimeError('Invalid HTML tag: %r' % self.TagString())
+            raise RuntimeError("Couldn't find HTML tag in %r" %
+                               self.TagString())
         yield TagName, m.start(1), m.end(1)
 
         pos = m.end(0)
@@ -315,7 +317,9 @@ class TagLexer(object):
 
 
 def ReadUntilStartTag(it, tag_lexer, tag_name):
-    """Find the next <foo>.
+    """Find the next <foo>, returning its (start, end) positions
+
+    Raise ParseError if it's not found.
 
     tag_lexer is RESET.
     """
@@ -335,7 +339,9 @@ def ReadUntilStartTag(it, tag_lexer, tag_name):
 
 
 def ReadUntilEndTag(it, tag_lexer, tag_name):
-    """Find the next </foo>.
+    """Find the next </foo>, returning its (start, end) position
+
+    Raise ParseError if it's not found.
 
     tag_lexer is RESET.
     """

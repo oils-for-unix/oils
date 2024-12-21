@@ -61,17 +61,21 @@ tags.
 
 ### Link Shortcuts, e.g. `$xref`
 
-Here's an example of how it works.  This Markdown:
+Markdown:
 
     The [GNU bash shell]($xref:bash)
 
-is translated to HTML by [CommonMark][]:
+After [CommonMark][]:
 
     The <a href="$xref:bash">GNU bash shell</a>
 
-Our `$xref:` plugin expands it to:
+After our `$xref:` plugin:
 
     The <a href="/cross-ref.html#bash">GNU bash shell</a>
+
+Example: The [GNU bash shell]($xref:bash)
+
+---
 
 If the argument is omitted, then the **anchor text** is used.  So you can just write:
 
@@ -80,6 +84,10 @@ If the argument is omitted, then the **anchor text** is used.  So you can just w
 and it will become:
 
     The <a href="/cross-ref.html#bash">bash</a>
+
+Example: [bash][]
+
+[bash]: $xref
 
 List of plugins:
 
@@ -98,19 +106,88 @@ See the raw and rendered versions of this doc for more:
 
 Use Markdown's fenced code blocks like this:
 
-    ``` sh-prompt
+    ```oil-sh
     ysh$ var x = 'hello world'
     ysh$ echo $x
     hello world
     ```
 
+Example:
+
+```oil-sh
+ysh$ var x = 'hello world'
+ysh$ echo $x
+hello world
+```
+
+
 Or you can set `default_highlighter` for blocks indented by 4 spaces.
 
 Again see [doc-plugins.md][] for examples.
 
-## The Help Toolchain Renders to HTML and ANSI
+## Convenient Tables with `ul-table`
 
-This is done with `doctools/`
+TODO: We want to transform `<ul>` into table rows.
+
+Example:
+
+<table id="foo">
+
+- thead
+  - Shell
+  - Version
+  - Example Code
+- tr
+  - [bash][]
+  - 5.2
+  - ```
+    echo sh=$bash
+    echo
+    this seems misaligned?  <pre><code>?
+    ```
+- tr
+  - [dash]($xref)
+  - 1.5
+  - placeholder
+    - 1
+    - 2
+- tr
+  - [mksh]($xref)
+  - TODO
+  - placeholder
+
+</table>
+
+Name for this plugin:
+
+- `ul-table` ?
+
+### Features
+
+- Justify columns left and right
+  - numbers to right, text to left
+  - or custom logic
+- can any markdown be in a cell?
+  - `<pre>` blocks - yes
+  - more lists - we just do the top level, with THEAD I think
+- Check that number of cells in each row matches the header
+- `<td colspan=2>`  I am using that
+- `<colgroup>`?  I ran into problems with this
+  - See `web/table/`
+- CSS is written manually?  See `blog/2024/09/project-overview.html`, etc.
+  - Or we could have a default
+
+### Algorithm
+
+1. find `<table>` then `<ul>`
+   - this isn't valid HTML, so it should be transformed
+1. find heading and rows
+   - `<li>thead` turns into `<thead><tr>`
+   - `<li>tr` gets turned into `<tr>`
+   - any other top-level `<li>` is disallowed
+1. find cells
+   - each of those must have an `<ul>` under it
+    - each of the `<li>` is turned into `<td>`
 
 ## Code Location
 

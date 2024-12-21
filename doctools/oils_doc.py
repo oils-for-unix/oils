@@ -174,6 +174,9 @@ def ExpandLinks(s):
 
 
 class _Plugin(object):
+    """
+    A plugin for HighlightCode(), which modifies <pre><code> ... </code></pre>
+    """
 
     def __init__(self, s, start_pos, end_pos):
         self.s = s
@@ -212,6 +215,7 @@ _COMMENT_LINE_RE = re.compile(r'#.*')
 
 
 def Lines(s, start_pos, end_pos):
+    """Yields positions in s that end a line."""
     pos = start_pos
     while pos < end_pos:
         m = _LINE_RE.match(s, pos, end_pos)
@@ -508,10 +512,11 @@ def HighlightCode(s, default_highlighter, debug_out=None):
                             out.SkipTo(slash_code_left)
 
                         else:  # language-*: Use Pygments
+                            # We REMOVE the original <pre><code> because
+                            # Pygments gives you a <pre> already
 
-                            # We REMOVE the original <pre><code> because Pygments gives you a <pre> already
-
-                            # We just read closing </code>, and the next one should be </pre>.
+                            # We just read closing </code>, and the next one
+                            # should be </pre>.
                             try:
                                 tok_id, end_pos = next(it)
                             except StopIteration:
@@ -602,6 +607,120 @@ def ExtractCode(s, f):
         pos = end_pos
 
     #out.PrintTheRest()
+
+
+class TableParser(object):
+
+    def __init__(self, lexer, tag_lexer):
+        self.lexer = lexer
+        self.tag_lexer = tag_lexer
+
+        self.tok_id = html.Invalid
+        self.start_pos = 0
+        self.end_pos = 0
+
+    def _Next(self):
+        self.start_pos = self.end_pos
+        try:
+            self.tok_id, self.end_pos = next(self.lexer)
+        except StopIteration:
+            raise
+        if 0:
+            part = self.tag_lexer.s[self.start_pos:self.end_pos]
+            log('%r start %d end %d', part, self.start_pos, self.end_pos)
+
+        #self.tok_id = html.EndOfStream
+        # Don't change self.end_pos
+
+    def FindUlTable(self):
+        """
+        Find <table ...> <ul>thead
+
+        Return the START POS of the <ul>, because that is what we are gonig to
+        replace?
+
+        Similar to html.ReadUntilStartTag()
+        """
+        tag_lexer = self.tag_lexer
+
+        # Find first table
+        while True:
+            self._Next()
+            if self.tok_id == html.EndOfStream:
+                return False
+
+            tag_lexer.Reset(self.start_pos, self.end_pos)
+            if (self.tok_id == html.StartTag and
+                    tag_lexer.TagName() == 'table'):
+                while True:
+                    self._Next()
+                    if self.tok_id != html.RawData:
+                        break
+
+                tag_lexer.Reset(self.start_pos, self.end_pos)
+                if (self.tok_id == html.StartTag and
+                        tag_lexer.TagName() == 'ul'):
+                    return self.start_pos
+        return -1
+
+    def _ParseTable(self):
+        """
+        Returns a structure like this
+        { 'thead': [ 'col1', 'col2' ],  # TODO: columns can have CSS attributes
+          'tr': [                       # raw HTML that you surround with <td>
+            [ 'cell1 html', 'cell2 html' ], 
+            [ 'cell1 html', 'cell2 html' ],
+          ]
+        }
+        """
+        return
+
+    def Parse(self):
+        self._Next()
+        t = self._ParseTable()
+        ul_end = self.end_pos
+        return t, ul_end
+
+
+def ReplaceTables(s, debug_out=None):
+    """
+    ul-table: Write tables using bulleted list
+    """
+    if debug_out is None:
+        debug_out = []
+
+    f = cStringIO.StringIO()
+    out = html.Output(s, f)
+
+    tag_lexer = html.TagLexer(s)
+    it = html.ValidTokens(s)
+
+    p = TableParser(it, tag_lexer)
+
+    while True:
+        ul_start = p.FindUlTable()
+        if ul_start == -1:
+            break
+
+        log('UL START %d', ul_start)
+        out.PrintUntil(ul_start)
+
+        table, ul_end = p.Parse()
+        log('UL END %d', ul_end)
+
+        # Don't write the matching </u> of the LAST row, but write everything
+        # after that
+        out.SkipTo(ul_end)
+
+        # Now write the table
+        out.Print('MYTABLE')
+
+        # TODO: Replace multiple tables
+        break
+
+    out.PrintTheRest()
+
+    return f.getvalue()
 
 
 class ShellSession(object):

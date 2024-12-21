@@ -1,5 +1,4 @@
 #!/usr/bin/env python2
-"""oils_doc_test.py: Tests for oils_doc.py."""
 from __future__ import print_function
 
 import sys
@@ -27,13 +26,13 @@ class OilsDocTest(unittest.TestCase):
 
     def testExpandLinks(self):
         """
-    <a href=$xref:bash>bash</a>
-    ->
-    <a href=/cross-ref?tag=bash#bash>
+        <a href=$xref:bash>bash</a>
+        ->
+        <a href=/cross-ref?tag=bash#bash>
 
-    NOTE: THIs could really be done with a ref like <a.*href="(.*)">
-    But we're testing it
-    """
+        NOTE: THIs could really be done with a ref like <a.*href="(.*)">
+        But we're testing it
+        """
         h = oils_doc.ExpandLinks(TEST_HTML)
         self.assert_('/blog/tags.html' in h, h)
 
@@ -73,6 +72,73 @@ class OilsDocTest(unittest.TestCase):
         # assert there's no double escaping
         self.assert_('hi &gt; out.txt' in h, h)
         #print(h)
+
+
+TEST1 = """\
+<table id="foo">
+
+- thead
+  - name
+  - age
+- tr
+  - alice
+  - 30
+- tr
+  - bob
+  - 42
+
+</table>"""  # no extra
+
+import cmark
+import cStringIO
+
+
+def MarkdownToTable(md):
+
+    opts, _ = cmark.Options().parse_args([])
+
+    # markdown -> HTML
+
+    in_file = cStringIO.StringIO(md)
+    out_file = cStringIO.StringIO()
+    cmark.Render(opts, {}, in_file, out_file)
+    h = out_file.getvalue()
+
+    if 1:
+        print('---')
+        print('ORIGINAL')
+        print(h)
+        print('')
+
+    h2 = oils_doc.ReplaceTables(h)
+
+    if 1:
+        print('---')
+        print('REPLACED')
+        print(h2)
+        print('')
+
+    return h2
+
+
+class UlTableTest(unittest.TestCase):
+
+    def testOne(self):
+        h = MarkdownToTable('hi\n' + TEST1 + '\n\n bye \n')
+
+    def testMultipleTables(self):
+        h = MarkdownToTable(TEST1 + TEST1)
+
+    def testSyntaxErrors(self):
+        # Once we get <table><ul>, then we TAKE OVER, and start being STRICT
+
+        # Expected <li>
+        h = MarkdownToTable("""
+<table>
+
+- should be thead
+        """)
+        print(h)
 
 
 if __name__ == '__main__':
