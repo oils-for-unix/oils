@@ -60,8 +60,8 @@ live-image-tag() {
       echo 'v-2023-08-09'
       ;;
     ovm-tarball)
-      # bash 5.2.21
-      echo 'v-2024-06-09b'
+      # Lib/collections.py patch for OVM tarball
+      echo 'v-2024-12-20'
       ;;
     other-tests)
       # freshen up

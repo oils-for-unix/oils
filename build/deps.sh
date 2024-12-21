@@ -1097,21 +1097,24 @@ boxed-wedges() {
 }
 
 boxed-spec-bin() {
+  if false; then
+    deps/wedge.sh boxed deps/source.medo/bash '4.4'
+  fi
+
   if true; then
-    #deps/wedge.sh boxed deps/source.medo/bash '4.4'
     deps/wedge.sh boxed deps/source.medo/bash '5.2.21'
   fi
 
-  if false; then
+  if true; then
     deps/wedge.sh boxed deps/source.medo/dash
     deps/wedge.sh boxed deps/source.medo/mksh
   fi
 
-  if false; then
+  if true; then
     # Note: zsh requires libncursesw5-dev
-    #deps/wedge.sh boxed deps/source.medo/zsh
+    deps/wedge.sh boxed deps/source.medo/zsh
 
-    #deps/wedge.sh boxed deps/source.medo/busybox
+    deps/wedge.sh boxed deps/source.medo/busybox
 
     # Problem with out of tree build, as above.  Skipping for now
     deps/wedge.sh boxed deps/source.medo/yash

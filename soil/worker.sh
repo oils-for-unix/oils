@@ -334,6 +334,8 @@ ovm-tarball-tasks() {
 os-info           soil/diagnose.sh os-info    -
 dump-env          soil/diagnose.sh dump-env   -
 py-all            build/py.sh all                        -
+make-tarball      devtools/release.sh py-tarball         _release/oil.tar
+ysh-ovm-tarball   test/spec-py.sh ysh-ovm-tarball        _tmp/spec/ysh-py/index.html
 syscall           test/syscall.sh soil-run               _tmp/syscall/-wwz-index
 osh-spec          test/spec-py.sh osh-all-serial         _tmp/spec/osh-py/index.html
 gold              test/gold.sh soil-run                  -
@@ -345,9 +347,6 @@ EOF
 # doc-metrics is a no-op, just for the link.  Because soil-run just runs the
 # release, which creates metrics.
 
-# TODO: restore these after fixing fallout from vendor/typing.py
-#make-tarball      devtools/release.sh py-tarball         _release/oil.tar
-#ysh-ovm-tarball   test/spec-py.sh ysh-ovm-tarball        _tmp/spec/ysh-py/index.html
 }
 
 # Reuse ovm-tarball container
