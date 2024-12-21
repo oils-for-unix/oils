@@ -4,8 +4,6 @@ from __future__ import print_function
 c_module_srcs.py
 """
 
-import os
-import glob
 import sys
 
 
@@ -58,10 +56,6 @@ def main(argv):
         print('Modules/sha256module.c')
       elif mod_name == '_sha512':
         print('Modules/sha512module.c')
-
-      # build/static-c-modules.txt
-      #elif mod_name == '_sre':
-      #  print('Modules/_sre.c')
 
       elif mod_name == '_io':
         # This data is in setup.py and Modules/Setup.dist.
