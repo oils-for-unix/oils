@@ -37,6 +37,10 @@
 #
 #    deps/images.sh build wedge-bootstrap-debian-10 T
 #    deps/images.sh push wedge-bootstrap-debian-10  v-2024-06-08
+#
+# Building wedges:
+#
+#    deps/wedge.sh boxed-spec-bin
 
 set -o nounset
 set -o pipefail
@@ -47,7 +51,7 @@ source deps/podman.sh
 DOCKER=${DOCKER:-docker}
 
 # Build with this tag
-readonly LATEST_TAG='v-2024-12-05'
+readonly LATEST_TAG='v-2024-12-20'
 
 # BUGS in Docker.
 #
