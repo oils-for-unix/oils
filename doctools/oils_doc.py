@@ -609,6 +609,17 @@ def ExtractCode(s, f):
     #out.PrintTheRest()
 
 
+class ParseError(RuntimeError):
+
+    def __init__(self, msg, *args):
+        if args:
+            msg = msg % args
+        self.msg = msg
+
+    def __str__(self):
+        return self.msg
+
+
 class TableParser(object):
 
     def __init__(self, lexer, tag_lexer):
@@ -619,18 +630,54 @@ class TableParser(object):
         self.start_pos = 0
         self.end_pos = 0
 
+    def _CurrentString(self):
+        part = self.tag_lexer.s[self.start_pos:self.end_pos]
+        return part
+
     def _Next(self):
+        """
+        Advance and set self.tok_id, self.start_pos, self.end_pos
+        """
         self.start_pos = self.end_pos
         try:
             self.tok_id, self.end_pos = next(self.lexer)
         except StopIteration:
             raise
-        if 0:
-            part = self.tag_lexer.s[self.start_pos:self.end_pos]
-            log('%r start %d end %d', part, self.start_pos, self.end_pos)
+        if 1:
+            part = self._CurrentString()
+            log('[%3d - %3d] %r', self.start_pos, self.end_pos, part)
 
         #self.tok_id = html.EndOfStream
         # Don't change self.end_pos
+
+    def _Eat(self, tok_id, s):
+        """
+        Advance, and assert we got the right input
+        """
+        if self.tok_id != tok_id:
+            raise ParseError('Expected token %s, got %s',
+                             html.TokenName(tok_id),
+                             html.TokenName(self.tok_id))
+        if tok_id in (html.StartTag, html.EndTag):
+            self.tag_lexer.Reset(self.start_pos, self.end_pos)
+            tag_name = self.tag_lexer.TagName()
+            if s != tag_name:
+                raise ParseError('Expected tag %r, got %r', s, tag_name)
+        elif tok_id == html.RawData:
+            actual = self._CurrentString()
+            if s != actual:
+                raise ParseError('Expected data %r, got %r', s, actual)
+        else:
+            if s is not None:
+                raise AssertionErro("Don't know what to do with %r" % s)
+        self._Next()
+
+    def _WhitespaceOk(self):
+        """
+        Optional whitespace
+        """
+        if self.tok_id == html.RawData and self._CurrentString().isspace():
+            self._Next()
 
     def FindUlTable(self):
         """
@@ -663,6 +710,80 @@ class TableParser(object):
                     return self.start_pos
         return -1
 
+    def _ParseTHead(self):
+        """
+        Assume we're looking at the first <ul> tag
+
+        Then we want to find <li>thead and nested <ul>
+
+        Grammar:
+
+        <tr>
+
+        THEAD = 
+          [StartTag 'ul']
+          [RawData \s*]?
+          [StartTag 'li']
+          [RawData thead\s*]
+            [StartTag 'ul']   # Indented bullet that starts -
+            LIST_ITEM+
+            [RawData \s*]?
+            [EndTag 'ul']
+
+        LIST_ITEM =
+          [RawData \s*]?
+          [StartTag 'li']
+          ANY*               # NOT context-free - anything that's not the end
+                             # This is what we should capture in CELLS
+          [EndTag 'li']
+        """
+        cells = []
+
+        tag_lexer = self.tag_lexer
+
+        self._Eat(html.StartTag, 'ul')
+
+        self._WhitespaceOk()
+        self._Eat(html.StartTag, 'li')
+
+        # TODO: pass regex so it's tolerant to whitespace?
+        self._Eat(html.RawData, 'thead\n')
+
+        # This is the row data
+        self._Eat(html.StartTag, 'ul')
+        self._WhitespaceOk()
+
+        # TODO:
+        #self._ListItem()
+
+        self._Eat(html.StartTag, 'li')
+        #cells.ap
+
+        #self._Eat(html.EndTag, 'ul')
+
+        # Really should be
+        #
+        #
+        # or
+        # _EatStart('li')
+        # _EatRawData('thead')
+        # _EatStart('ul')
+        # _WhitespaceOk()
+        # while True:
+        #   _EatStart('li')  # this one becomes the <td>
+        #
+        # what about entity refs and shit?  That we need
+        # Then we need to find the matching end tag
+
+        self._Next()
+        tag_lexer.Reset(self.start_pos, self.end_pos)
+        if (self.tok_id == html.StartTag and tag_lexer.TagName() == 'li'):
+            self._Next()
+            if self.tok_id == html.RawData:
+                log('cur %r', self._CurrentString())
+
+        log('_ParseTHead %s ', html.TOKEN_NAMES[self.tok_id])
+
     def _ParseTable(self):
         """
         Returns a structure like this
@@ -673,10 +794,11 @@ class TableParser(object):
           ]
         }
         """
+        thead = self._ParseTHead()
         return
 
     def Parse(self):
-        self._Next()
+        #self._Next()
         t = self._ParseTable()
         ul_end = self.end_pos
         return t, ul_end

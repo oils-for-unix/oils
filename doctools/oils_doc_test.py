@@ -133,12 +133,18 @@ class UlTableTest(unittest.TestCase):
         # Once we get <table><ul>, then we TAKE OVER, and start being STRICT
 
         # Expected <li>
-        h = MarkdownToTable("""
+        try:
+            h = MarkdownToTable("""
 <table>
 
 - should be thead
-        """)
-        print(h)
+  - one
+  - two
+""")
+        except oils_doc.ParseError as e:
+            print(e)
+        else:
+            self.fail('Expected parse error')
 
 
 if __name__ == '__main__':

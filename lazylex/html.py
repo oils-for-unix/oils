@@ -77,8 +77,21 @@ class Output(object):
 
 
 # HTML Tokens
-(Decl, Comment, Processing, StartTag, StartEndTag, EndTag, DecChar, HexChar,
- CharEntity, RawData, Invalid, EndOfStream) = range(12)
+TOKENS = 'Decl Comment Processing StartTag StartEndTag EndTag DecChar HexChar CharEntity RawData Invalid EndOfStream'.split(
+)
+
+assert len(TOKENS) == 12, TOKENS
+
+TOKEN_NAMES = [None] * len(TOKENS)
+
+this_module = sys.modules[__name__]
+for i, tok_str in enumerate(TOKENS):
+    setattr(this_module, tok_str, i)
+    TOKEN_NAMES[i] = tok_str
+
+
+def TokenName(tok_id):
+    return TOKEN_NAMES[tok_id]
 
 
 def MakeLexer(rules):
