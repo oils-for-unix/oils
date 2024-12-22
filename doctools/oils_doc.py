@@ -669,7 +669,7 @@ class TableParser(object):
                 raise ParseError('Expected data %r, got %r', s, actual)
         else:
             if s is not None:
-                raise AssertionErro("Don't know what to do with %r" % s)
+                raise AssertionError("Don't know what to do with %r" % s)
         self._Next()
 
     def _WhitespaceOk(self):

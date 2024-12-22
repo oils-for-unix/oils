@@ -51,7 +51,7 @@ class OilsReporter(reporter.Reporter):
         """
         type_name = type(message).__name__
 
-        # Suppress some errors for now to reducenoise
+        # Suppress some errors for now to reduce noise
         if type_name == 'UnusedVariable':
             if message.filename.endswith('_test.py'):
                 return

@@ -80,6 +80,14 @@ class Output(object):
 TOKENS = 'Decl Comment Processing StartTag StartEndTag EndTag DecChar HexChar CharEntity RawData Invalid EndOfStream'.split(
 )
 
+
+class Tok(object):
+    """
+    Avoid lint errors by using these aliases
+    """
+    pass
+
+
 assert len(TOKENS) == 12, TOKENS
 
 TOKEN_NAMES = [None] * len(TOKENS)
@@ -87,6 +95,7 @@ TOKEN_NAMES = [None] * len(TOKENS)
 this_module = sys.modules[__name__]
 for i, tok_str in enumerate(TOKENS):
     setattr(this_module, tok_str, i)
+    setattr(Tok, tok_str, i)
     TOKEN_NAMES[i] = tok_str
 
 
@@ -140,22 +149,22 @@ LEXER = [
     # https://news.ycombinator.com/item?id=27099798
     #
     # Maybe try combining all of these for speed.
-    (r'<!-- .*? -->', Comment),
-    (r'<\? .*? \?>', Processing),
+    (r'<!-- .*? -->', Tok.Comment),
+    (r'<\? .*? \?>', Tok.Processing),
 
     # NOTE: < is allowed in these.
-    (r'<! [^>]+ >', Decl),  # <!DOCTYPE html>
-    (r'</ [^>]+ >', EndTag),  # self-closing <br/>  comes FIRST
-    (r'< [^>]+ />', StartEndTag),  # end </a>
-    (r'< [^>]+  >', StartTag),  # start <a>
-    (r'&\# [0-9]+ ;', DecChar),
-    (r'&\# x[0-9a-fA-F]+ ;', HexChar),
-    (r'& [a-zA-Z]+ ;', CharEntity),
+    (r'<! [^>]+ >', Tok.Decl),  # <!DOCTYPE html>
+    (r'</ [^>]+ >', Tok.EndTag),  # self-closing <br/>  comes FIRST
+    (r'< [^>]+ />', Tok.StartEndTag),  # end </a>
+    (r'< [^>]+  >', Tok.StartTag),  # start <a>
+    (r'&\# [0-9]+ ;', Tok.DecChar),
+    (r'&\# x[0-9a-fA-F]+ ;', Tok.HexChar),
+    (r'& [a-zA-Z]+ ;', Tok.CharEntity),
 
     # Note: > is allowed in raw data.
     # https://stackoverflow.com/questions/10462348/right-angle-bracket-in-html
-    (r'[^&<]+', RawData),
-    (r'.', Invalid),  # error!
+    (r'[^&<]+', Tok.RawData),
+    (r'.', Tok.Invalid),  # error!
 ]
 
 LEXER = MakeLexer(LEXER)
@@ -184,7 +193,7 @@ def _Tokens(s, left_pos, right_pos):
                 break
 
     # Zero length sentinel
-    yield EndOfStream, pos
+    yield Tok.EndOfStream, pos
 
 
 def ValidTokens(s, left_pos=0, right_pos=0):
@@ -196,7 +205,7 @@ def ValidTokens(s, left_pos=0, right_pos=0):
     """
     pos = left_pos
     for tok_id, end_pos in _Tokens(s, left_pos, right_pos):
-        if tok_id == Invalid:
+        if tok_id == Tok.Invalid:
             raise LexError(s, pos)
         yield tok_id, end_pos
         pos = end_pos
@@ -343,7 +352,7 @@ def ReadUntilStartTag(it, tag_lexer, tag_name):
         except StopIteration:
             break
         tag_lexer.Reset(pos, end_pos)
-        if tok_id == StartTag and tag_lexer.TagName() == tag_name:
+        if tok_id == Tok.StartTag and tag_lexer.TagName() == tag_name:
             return pos, end_pos
 
         pos = end_pos
@@ -365,7 +374,7 @@ def ReadUntilEndTag(it, tag_lexer, tag_name):
         except StopIteration:
             break
         tag_lexer.Reset(pos, end_pos)
-        if tok_id == EndTag and tag_lexer.TagName() == tag_name:
+        if tok_id == Tok.EndTag and tag_lexer.TagName() == tag_name:
             return pos, end_pos
 
         pos = end_pos
@@ -400,11 +409,11 @@ def ToText(s, left_pos=0, right_pos=0):
 
     pos = left_pos
     for tok_id, end_pos in ValidTokens(s, left_pos, right_pos):
-        if tok_id == RawData:
+        if tok_id == Tok.RawData:
             out.SkipTo(pos)
             out.PrintUntil(end_pos)
 
-        elif tok_id == CharEntity:  # &amp;
+        elif tok_id == Tok.CharEntity:  # &amp;
 
             entity = s[pos + 1:end_pos - 1]
 
@@ -413,10 +422,10 @@ def ToText(s, left_pos=0, right_pos=0):
             out.SkipTo(end_pos)
 
         # Not handling these yet
-        elif tok_id == HexChar:
+        elif tok_id == Tok.HexChar:
             raise AssertionError('Hex Char %r' % s[pos:pos + 20])
 
-        elif tok_id == DecChar:
+        elif tok_id == Tok.DecChar:
             raise AssertionError('Dec Char %r' % s[pos:pos + 20])
 
         pos = end_pos
