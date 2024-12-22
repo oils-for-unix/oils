@@ -74,12 +74,14 @@ class OilsDocTest(unittest.TestCase):
         #print(h)
 
 
+# <ulcol> is a special annotation
+
 TEST1 = """\
 <table id="foo">
 
 - thead
-  - name
-  - [age](https://example.com/)
+  - <ulcol class="foo" /> name
+  - <ulcol class="bar" /> [age](https://example.com/)
 - tr
   - alice *italic*
   - 30
@@ -126,6 +128,42 @@ class UlTableTest(unittest.TestCase):
     def testOne(self):
         h = MarkdownToTable('hi\n' + TEST1 + '\n\n bye \n')
 
+    def testSimple(self):
+        h = MarkdownToTable("""\
+<table>
+
+- thead
+  - *name*
+  - *age*
+- tr
+  - alice
+  - 30
+- tr
+  - bob
+  - 40
+
+<table>
+""")
+        self.assertEqual(
+            """\
+<table>
+<thead>
+<tr>
+  <td><em>name</em></td>
+  <td><em>age</em></td>
+</tr>
+</thead>
+<tr>
+  <td>alice</td>
+  <td>30</td>
+</tr>
+<tr>
+  <td>bob</td>
+  <td>40</td>
+</tr>
+<table>
+""", h)
+
     def testMultipleTables(self):
         h = MarkdownToTable(TEST1 + TEST1)
 
@@ -140,7 +178,7 @@ class UlTableTest(unittest.TestCase):
   - one
   - two
 """)
-        except oils_doc.ParseError as e:
+        except html.ParseError as e:
             print(e)
         else:
             self.fail('Expected parse error')
@@ -161,7 +199,7 @@ class UlTableTest(unittest.TestCase):
   - 3
   - 4
 """)
-        except oils_doc.ParseError as e:
+        except html.ParseError as e:
             print(e)
         else:
             self.fail('Expected parse error')

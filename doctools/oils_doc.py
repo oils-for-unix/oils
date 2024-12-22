@@ -609,18 +609,7 @@ def ExtractCode(s, f):
     #out.PrintTheRest()
 
 
-class ParseError(RuntimeError):
-
-    def __init__(self, msg, *args):
-        if args:
-            msg = msg % args
-        self.msg = msg
-
-    def __str__(self):
-        return self.msg
-
-
-class TableParser(object):
+class UlTableParser(object):
 
     def __init__(self, lexer, tag_lexer):
         self.lexer = lexer
@@ -655,18 +644,18 @@ class TableParser(object):
         Advance, and assert we got the right input
         """
         if self.tok_id != tok_id:
-            raise ParseError('Expected token %s, got %s',
-                             html.TokenName(tok_id),
-                             html.TokenName(self.tok_id))
+            raise html.ParseError('Expected token %s, got %s',
+                                  html.TokenName(tok_id),
+                                  html.TokenName(self.tok_id))
         if tok_id in (html.StartTag, html.EndTag):
             self.tag_lexer.Reset(self.start_pos, self.end_pos)
             tag_name = self.tag_lexer.TagName()
             if s is not None and s != tag_name:
-                raise ParseError('Expected tag %r, got %r', s, tag_name)
+                raise html.ParseError('Expected tag %r, got %r', s, tag_name)
         elif tok_id == html.RawData:
             actual = self._CurrentString()
             if s is not None and s != actual:
-                raise ParseError('Expected data %r, got %r', s, actual)
+                raise html.ParseError('Expected data %r, got %r', s, actual)
         else:
             if s is not None:
                 raise AssertionError("Don't know what to do with %r" % s)
@@ -680,12 +669,9 @@ class TableParser(object):
             self._Next()
 
     def FindUlTable(self):
-        """
-        Find <table ...> <ul>thead
+        """Find <table ...> <ul>
 
-        Return the START POS of the <ul>, because that is what we are gonig to
-        replace?
-
+        Return the START POS of the <ul>
         Similar to html.ReadUntilStartTag()
         """
         tag_lexer = self.tag_lexer
@@ -694,7 +680,7 @@ class TableParser(object):
         while True:
             self._Next()
             if self.tok_id == html.EndOfStream:
-                return False
+                return -1
 
             tag_lexer.Reset(self.start_pos, self.end_pos)
             if (self.tok_id == html.StartTag and
@@ -732,7 +718,7 @@ class TableParser(object):
         right = self.start_pos  # start of the end tag
 
         inner_html = self.tag_lexer.s[left:right]
-        log('RAW %r', inner_html)
+        #log('RAW inner html %r', inner_html)
 
         #self._Eat(html.EndTag, 'li')
         self._Next()
@@ -784,10 +770,8 @@ class TableParser(object):
           - age
             - colgroup=foo align=right
         """
-        log('*** _ParseTHead')
+        #log('*** _ParseTHead')
         cells = []
-
-        self._Eat(html.StartTag, 'ul')
 
         self._WhitespaceOk()
         self._Eat(html.StartTag, 'li')
@@ -810,7 +794,7 @@ class TableParser(object):
         self._WhitespaceOk()
         self._Eat(html.EndTag, 'li')
 
-        log('_ParseTHead %s ', html.TOKEN_NAMES[self.tok_id])
+        #log('_ParseTHead %s ', html.TOKEN_NAMES[self.tok_id])
         return cells
 
     def _ParseTr(self):
@@ -829,7 +813,7 @@ class TableParser(object):
             [RawData \s*]?
             [EndTag 'ul']
         """
-        log('*** _ParseTr')
+        #log('*** _ParseTr')
 
         cells = []
 
@@ -861,10 +845,10 @@ class TableParser(object):
         self._WhitespaceOk()
         self._Eat(html.EndTag, 'li')
 
-        log('_ParseTHead %s ', html.TOKEN_NAMES[self.tok_id])
+        #log('_ParseTHead %s ', html.TOKEN_NAMES[self.tok_id])
         return cells
 
-    def _ParseTable(self):
+    def ParseTable(self):
         """
         Returns a structure like this
         { 'thead': [ 'col1', 'col2' ],  # TODO: columns can have CSS attributes
@@ -877,14 +861,19 @@ class TableParser(object):
         Grammar:
 
         UL_TABLE =
+          [StartTag 'ul']
           THEAD   # this this returns the number of cells, so it's NOT context
                   # free
-          TR+     # Must have at least one row?
+          TR*     
+          [EndTag 'ul']
         """
         table = {'tr': []}
 
+        ul_start = self.start_pos
+        self._Eat(html.StartTag, 'ul')
+
         thead = self._ParseTHead()
-        log('___ THEAD %s', thead)
+        #log('___ THEAD %s', thead)
 
         num_cells = len(thead)
         while True:
@@ -892,24 +881,28 @@ class TableParser(object):
             if tr is None:
                 break
             if len(tr) != num_cells:
-                raise ParseError('Expected %d cells, got %d', num_cells,
-                                 len(tr))
+                raise html.ParseError('Expected %d cells, got %d', num_cells,
+                                      len(tr))
 
-            log('___ TR %s', tr)
+            #log('___ TR %s', tr)
             table['tr'].append(tr)
 
+        self._Eat(html.EndTag, 'ul')
+
+        self._WhitespaceOk()
+
+        ul_end = self.start_pos
+
         table['thead'] = thead
-        log('table %s', table)
-        from pprint import pprint
-        pprint(table)
+        table['ul_start'] = ul_start
+        table['ul_end'] = ul_end
+
+        if 0:
+            log('table %s', table)
+            from pprint import pprint
+            pprint(table)
 
         return table
-
-    def Parse(self):
-        #self._Next()
-        t = self._ParseTable()
-        ul_end = self.end_pos
-        return t, ul_end
 
 
 def ReplaceTables(s, debug_out=None):
@@ -925,25 +918,41 @@ def ReplaceTables(s, debug_out=None):
     tag_lexer = html.TagLexer(s)
     it = html.ValidTokens(s)
 
-    p = TableParser(it, tag_lexer)
+    p = UlTableParser(it, tag_lexer)
 
     while True:
         ul_start = p.FindUlTable()
         if ul_start == -1:
             break
 
-        log('UL START %d', ul_start)
+        #log('UL START %d', ul_start)
         out.PrintUntil(ul_start)
 
-        table, ul_end = p.Parse()
-        log('UL END %d', ul_end)
+        table = p.ParseTable()
+        #log('UL END %d', ul_end)
 
         # Don't write the matching </u> of the LAST row, but write everything
         # after that
-        out.SkipTo(ul_end)
+        out.SkipTo(table['ul_end'])
 
         # Now write the table
-        out.Print('MYTABLE')
+        out.Print('<thead>\n')
+        out.Print('<tr>\n')
+        for cell in table['thead']:
+            # TODO: parse <ulcol> and print attributes <td> attributes
+            out.Print('  <td>')
+            out.Print(cell)
+            out.Print('</td>\n')
+        out.Print('</tr>\n')
+        out.Print('</thead>\n')
+
+        for row in table['tr']:
+            out.Print('<tr>\n')
+            for cell in row:
+                out.Print('  <td>')
+                out.Print(cell)
+                out.Print('</td>\n')
+            out.Print('</tr>\n')
 
         # TODO: Replace multiple tables
         break
