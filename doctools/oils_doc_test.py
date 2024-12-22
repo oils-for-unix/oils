@@ -79,9 +79,9 @@ TEST1 = """\
 
 - thead
   - name
-  - age
+  - [age](https://example.com/)
 - tr
-  - alice
+  - alice *italic*
   - 30
 - tr
   - bob
@@ -132,7 +132,6 @@ class UlTableTest(unittest.TestCase):
     def testSyntaxErrors(self):
         # Once we get <table><ul>, then we TAKE OVER, and start being STRICT
 
-        # Expected <li>
         try:
             h = MarkdownToTable("""
 <table>
@@ -140,6 +139,27 @@ class UlTableTest(unittest.TestCase):
 - should be thead
   - one
   - two
+""")
+        except oils_doc.ParseError as e:
+            print(e)
+        else:
+            self.fail('Expected parse error')
+
+        try:
+            h = MarkdownToTable("""
+<table>
+
+- thead
+  - one
+  - two
+- tr
+  - 1
+  - 2
+- tr
+  - wrong number of cells
+- tr
+  - 3
+  - 4
 """)
         except oils_doc.ParseError as e:
             print(e)

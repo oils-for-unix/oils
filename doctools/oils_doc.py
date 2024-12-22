@@ -643,14 +643,14 @@ class TableParser(object):
             self.tok_id, self.end_pos = next(self.lexer)
         except StopIteration:
             raise
-        if 1:
+        if 0:
             part = self._CurrentString()
             log('[%3d - %3d] %r', self.start_pos, self.end_pos, part)
 
         #self.tok_id = html.EndOfStream
         # Don't change self.end_pos
 
-    def _Eat(self, tok_id, s):
+    def _Eat(self, tok_id, s=None):
         """
         Advance, and assert we got the right input
         """
@@ -661,11 +661,11 @@ class TableParser(object):
         if tok_id in (html.StartTag, html.EndTag):
             self.tag_lexer.Reset(self.start_pos, self.end_pos)
             tag_name = self.tag_lexer.TagName()
-            if s != tag_name:
+            if s is not None and s != tag_name:
                 raise ParseError('Expected tag %r, got %r', s, tag_name)
         elif tok_id == html.RawData:
             actual = self._CurrentString()
-            if s != actual:
+            if s is not None and s != actual:
                 raise ParseError('Expected data %r, got %r', s, actual)
         else:
             if s is not None:
@@ -710,15 +710,41 @@ class TableParser(object):
                     return self.start_pos
         return -1
 
+    def _ListItem(self):
+        self._WhitespaceOk()
+
+        if self.tok_id != html.StartTag:
+            return None
+
+        self._Eat(html.StartTag, 'li')
+
+        left = self.start_pos
+
+        # Any tag except end tag
+        inner_html = None
+        while True:
+            if self.tok_id == html.EndTag:
+                self.tag_lexer.Reset(self.start_pos, self.end_pos)
+                if self.tag_lexer.TagName() == 'li':
+                    break
+            self._Next()
+
+        right = self.start_pos  # start of the end tag
+
+        inner_html = self.tag_lexer.s[left:right]
+        log('RAW %r', inner_html)
+
+        #self._Eat(html.EndTag, 'li')
+        self._Next()
+
+        return inner_html
+
     def _ParseTHead(self):
         """
-        Assume we're looking at the first <ul> tag
-
-        Then we want to find <li>thead and nested <ul>
+        Assume we're looking at the first <ul> tag.  Now we want to find
+        <li>thead and the nested <ul>
 
         Grammar:
-
-        <tr>
 
         THEAD = 
           [StartTag 'ul']
@@ -729,6 +755,8 @@ class TableParser(object):
             LIST_ITEM+
             [RawData \s*]?
             [EndTag 'ul']
+          [RawData thead\s*]
+          [End 'li']
 
         LIST_ITEM =
           [RawData \s*]?
@@ -736,10 +764,28 @@ class TableParser(object):
           ANY*               # NOT context-free - anything that's not the end
                              # This is what we should capture in CELLS
           [EndTag 'li']
-        """
-        cells = []
 
-        tag_lexer = self.tag_lexer
+        Two Algorithms:
+
+        1. Replacement:
+           - skip over the first ul 'thead' li, and ul 'tr' li
+           - then replace the next ul -> tr, and li -> td
+        2. Parsing and Rendering:
+           - parse them into a structure
+           - skip all the text
+           - print your own HTML
+
+        I think the second one is better, because it allows attribute extensions
+        to thead
+
+        - thead
+          - name [link][]
+            - colgroup=foo align=left
+          - age
+            - colgroup=foo align=right
+        """
+        log('*** _ParseTHead')
+        cells = []
 
         self._Eat(html.StartTag, 'ul')
 
@@ -751,38 +797,72 @@ class TableParser(object):
 
         # This is the row data
         self._Eat(html.StartTag, 'ul')
+
+        while True:
+            inner_html = self._ListItem()
+            if inner_html is None:
+                break
+            cells.append(inner_html)
         self._WhitespaceOk()
 
-        # TODO:
-        #self._ListItem()
+        self._Eat(html.EndTag, 'ul')
 
-        self._Eat(html.StartTag, 'li')
-        #cells.ap
-
-        #self._Eat(html.EndTag, 'ul')
-
-        # Really should be
-        #
-        #
-        # or
-        # _EatStart('li')
-        # _EatRawData('thead')
-        # _EatStart('ul')
-        # _WhitespaceOk()
-        # while True:
-        #   _EatStart('li')  # this one becomes the <td>
-        #
-        # what about entity refs and shit?  That we need
-        # Then we need to find the matching end tag
-
-        self._Next()
-        tag_lexer.Reset(self.start_pos, self.end_pos)
-        if (self.tok_id == html.StartTag and tag_lexer.TagName() == 'li'):
-            self._Next()
-            if self.tok_id == html.RawData:
-                log('cur %r', self._CurrentString())
+        self._WhitespaceOk()
+        self._Eat(html.EndTag, 'li')
 
         log('_ParseTHead %s ', html.TOKEN_NAMES[self.tok_id])
+        return cells
+
+    def _ParseTr(self):
+        """
+        Assume we're looking at the first <ul> tag.  Now we want to find
+        <li>tr and the nested <ul>
+
+        Grammar:
+
+        TR = 
+          [RawData \s*]?
+          [StartTag 'li']
+          [RawData thead\s*]
+            [StartTag 'ul']   # Indented bullet that starts -
+            LIST_ITEM+        # Defined above
+            [RawData \s*]?
+            [EndTag 'ul']
+        """
+        log('*** _ParseTr')
+
+        cells = []
+
+        self._WhitespaceOk()
+
+        # Could be a </ul>
+        if self.tok_id != html.StartTag:
+            return None
+
+        self._Eat(html.StartTag, 'li')
+
+        # TODO: pass regex so it's tolerant to whitespace?
+        self._Eat(html.RawData, 'tr\n')
+
+        # This is the row data
+        self._Eat(html.StartTag, 'ul')
+
+        while True:
+            inner_html = self._ListItem()
+            if inner_html is None:
+                break
+            cells.append(inner_html)
+            # TODO: assert
+
+        self._WhitespaceOk()
+
+        self._Eat(html.EndTag, 'ul')
+
+        self._WhitespaceOk()
+        self._Eat(html.EndTag, 'li')
+
+        log('_ParseTHead %s ', html.TOKEN_NAMES[self.tok_id])
+        return cells
 
     def _ParseTable(self):
         """
@@ -793,9 +873,37 @@ class TableParser(object):
             [ 'cell1 html', 'cell2 html' ],
           ]
         }
+
+        Grammar:
+
+        UL_TABLE =
+          THEAD   # this this returns the number of cells, so it's NOT context
+                  # free
+          TR+     # Must have at least one row?
         """
+        table = {'tr': []}
+
         thead = self._ParseTHead()
-        return
+        log('___ THEAD %s', thead)
+
+        num_cells = len(thead)
+        while True:
+            tr = self._ParseTr()
+            if tr is None:
+                break
+            if len(tr) != num_cells:
+                raise ParseError('Expected %d cells, got %d', num_cells,
+                                 len(tr))
+
+            log('___ TR %s', tr)
+            table['tr'].append(tr)
+
+        table['thead'] = thead
+        log('table %s', table)
+        from pprint import pprint
+        pprint(table)
+
+        return table
 
     def Parse(self):
         #self._Next()
