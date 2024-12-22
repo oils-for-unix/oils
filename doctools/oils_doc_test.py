@@ -4,8 +4,11 @@ from __future__ import print_function
 import sys
 import unittest
 
+import cmark  # Oils dev dependency
+
 from doctools import oils_doc  # module under test
 from lazylex import html
+
 
 with open('lazylex/testdata.html') as f:
     TEST_HTML = f.read()
@@ -91,20 +94,29 @@ TEST1 = """\
 
 </table>"""  # no extra
 
-import cmark
-import cStringIO
+TEST2 = """
+<table>
 
+- ul-head
+  - <ulcol id="foo" /> arbitrary text
+  - age
+- ul-row
+  - alice
+  - 30
+- <ulrow id="spam" />  # a way to attach attributes
+  - bob
+  - 42
+
+</table>
+"""
 
 def MarkdownToTable(md):
-
-    opts, _ = cmark.Options().parse_args([])
-
     # markdown -> HTML
 
-    in_file = cStringIO.StringIO(md)
-    out_file = cStringIO.StringIO()
-    cmark.Render(opts, {}, in_file, out_file)
-    h = out_file.getvalue()
+    h = cmark.md2html(md)
+    # Markdown adds a newline
+    if h.endswith('\n'):
+        print('ENDS WITH NEWLINE %r' % h[-10:])
 
     if 1:
         print('---')
@@ -165,7 +177,21 @@ class UlTableTest(unittest.TestCase):
 """, h)
 
     def testMultipleTables(self):
-        h = MarkdownToTable(TEST1 + TEST1)
+        # They can be right next to each other
+        html_one = MarkdownToTable(TEST1)
+
+        self.assert_(not TEST1.endswith('\n'))
+        # CommonMark added a newline
+        self.assert_(html_one.endswith('\n'))
+        html_one = html_one[:-1]
+
+        html_two = MarkdownToTable(TEST1 + TEST1)
+
+        # The output is just concatenated
+        self.assertMultiLineEqual(html_one + html_one + '\n', html_two)
+
+    def testMultipleTablesWithSpace(self):
+        h = MarkdownToTable(TEST1 + '\n\n hi \n' + TEST1)
 
     def testSyntaxErrors(self):
         # Once we get <table><ul>, then we TAKE OVER, and start being STRICT

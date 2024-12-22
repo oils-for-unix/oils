@@ -127,9 +127,135 @@ Again see [doc-plugins.md][] for examples.
 
 ## Convenient Tables with `ul-table`
 
-TODO: We want to transform `<ul>` into table rows.
+Our `ul-table` plugin allows you to write HTML **tables** as bulleted
+**lists**.
 
-Example:
+Why?
+
+- Because writing and maintaining `<tr>` and `<td>` and `</td>` and `</tr>` is
+  tedious.
+  - And putting markdown inside the `<td>` cells is verbose.
+- Because Markdown can express bulleted lists, so your file remains **valid**
+  Markdown.
+
+That is, there is **no** new syntax.  The `ul-table` format is **not** a
+Markdown language extension.
+
+---
+
+Here's a simple example.  Suppose you want to make this table:
+
+<style>
+table {
+  margin: 0 auto;
+}
+thead {
+  font-weight: bold;
+}
+td {
+  padding: 5px;
+}
+</style>
+
+<table>
+
+- thead
+  - Shell
+  - Version
+- tr
+  - [bash]($xref)
+  - 5.2
+- tr
+  - [OSH]($xref)
+  - 0.25.0
+
+</table>
+
+Then you create a **two-level Markdown list** inside `<table>` tags, which
+gives you `<table><ul> ... </ul></table>` when rendered:
+
+    <table>
+
+    - thead
+      - Shell
+      - Version
+    - tr
+      - [bash]($xref)
+      - 5.2
+    - tr
+      - [OSH]($xref)
+      - 0.25.0
+
+    </table>
+
+Then **our plugin** transforms the `<ul>` into a `<tr> <td>` structure.
+
+---
+
+Here's the stylesheet:
+
+    <style>
+    table {
+      margin: 0 auto;
+    }
+    thead {
+      font-weight: bold;
+    }
+    td {
+      padding: 5px;
+    }
+    </style>
+
+---
+
+If you wanted to create this with pure Markdown, it would look **worse**:
+
+    <table>
+      <thead>
+        <tr>
+          <td>Shell</td>
+          <td>Version</td>
+        </tr>
+      </thead>
+      <tr>
+        <td>
+
+        [bash]($xref)
+
+        </td>
+        <td>5.2</td>
+      </tr>
+      <tr>
+        <td>
+
+        [OSH]($xref)
+
+        </td>
+        <td>0.25.0</td>
+      </tr>
+
+    </table>
+
+---
+
+By the way, if you omit the `<table>` tags, then the bulleted list looks like
+this:
+
+- thead
+  - Shell
+  - Version
+- tr
+  - [bash]($xref)
+  - 5.2
+- tr
+  - [OSH]($xref)
+  - 0.25.0
+
+Remember, this is **not** an extension to Markdown **syntax**.
+
+---
+
+Here's a more complex example:
 
 <table id="foo">
 
@@ -142,52 +268,50 @@ Example:
   - 5.2
   - ```
     echo sh=$bash
+    ls /tmp | wc -l
     echo
-    this seems misaligned?  <pre><code>?
     ```
 - tr
   - [dash]($xref)
   - 1.5
-  - placeholder
-    - 1
-    - 2
+  - <em>Inline HTML</em>
 - tr
   - [mksh]($xref)
-  - TODO
-  - placeholder
+  - 4.0
+  - <table>
+      <tr>
+        <td>HTML table</td>
+        <td>inside</td>
+      </tr>
+      <tr>
+        <td>this table</td>
+        <td>no way to re-enter inline markdown though?</td>
+      </tr>
+    </table>
 
 </table>
 
-Name for this plugin:
-
-- `ul-table` ?
-
 ### Features
 
-- Justify columns left and right
-  - numbers to right, text to left
-  - or custom logic
-- can any markdown be in a cell?
-  - `<pre>` blocks - yes
-  - more lists - we just do the top level, with THEAD I think
-- Check that number of cells in each row matches the header
-- `<td colspan=2>`  I am using that
-- `<colgroup>`?  I ran into problems with this
-  - See `web/table/`
+- Any markdown can be in a cell, which means any HTML can be in a cell
+  - code blocks with bacticks
+  - arbitrary HTML inside Markdown
+  - TODO: nested lists
+- TODO: Attributes for columns, rows, and cells
+  - `<ul-col class=foo />`
+     - Note: I ran into problems with `<colgroup>`
+     - Example: Justify columns left and right
+  - `<ul-row class=foo />`
+  - `<ul-td colspan=2 />`
+- Note: should have a custom rule of numbers to right, text to left?
+  - I think `web/table/` has that rule
+
+<!--
+
 - CSS is written manually?  See `blog/2024/09/project-overview.html`, etc.
   - Or we could have a default
 
-### Algorithm
-
-1. find `<table>` then `<ul>`
-   - this isn't valid HTML, so it should be transformed
-1. find heading and rows
-   - `<li>thead` turns into `<thead><tr>`
-   - `<li>tr` gets turned into `<tr>`
-   - any other top-level `<li>` is disallowed
-1. find cells
-   - each of those must have an `<ul>` under it
-    - each of the `<li>` is turned into `<td>`
+-->
 
 ## Code Location
 

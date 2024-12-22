@@ -583,9 +583,9 @@ def ExtractCode(s, f):
 
                     css_class = tag_lexer.GetAttr('class')
                     # Skip code blocks that look like ```foo
-                    # Usually we use 'oil-sh' as the default_highlighter, and all those
-                    # code blocks should be extracted.  TODO: maybe this should be
-                    # oil-language?
+                    # Usually we use 'oil-sh' as the default_highlighter, and
+                    # all those code blocks should be extracted.  TODO: maybe
+                    # this should be oil-language?
                     if css_class is None:
                         code_start_pos = end_pos
 
@@ -643,6 +643,11 @@ class UlTableParser(object):
         """
         Advance, and assert we got the right input
         """
+
+        # TODO:
+        # - _EatTag()
+        # - _EatRawData
+
         if self.tok_id != tok_id:
             raise html.ParseError('Expected token %s, got %s',
                                   html.TokenName(tok_id),
@@ -671,8 +676,8 @@ class UlTableParser(object):
     def FindUlTable(self):
         """Find <table ...> <ul>
 
-        Return the START POS of the <ul>
-        Similar to html.ReadUntilStartTag()
+        Return the START position of the <ul>
+        Similar algorithm as html.ReadUntilStartTag()
         """
         tag_lexer = self.tag_lexer
 
@@ -709,6 +714,10 @@ class UlTableParser(object):
         # Any tag except end tag
         inner_html = None
         while True:
+            # TODO: This has to  match NESTED
+            # <li> <li>foo</li> </li>
+            # Because cells can have bulleted lists
+
             if self.tok_id == html.EndTag:
                 self.tag_lexer.Reset(self.start_pos, self.end_pos)
                 if self.tag_lexer.TagName() == 'li':
@@ -881,8 +890,8 @@ class UlTableParser(object):
             if tr is None:
                 break
             if len(tr) != num_cells:
-                raise html.ParseError('Expected %d cells, got %d', num_cells,
-                                      len(tr))
+                raise html.ParseError('Expected %d cells, got %d: %s',
+                                      num_cells, len(tr), tr)
 
             #log('___ TR %s', tr)
             table['tr'].append(tr)
@@ -953,9 +962,6 @@ def ReplaceTables(s, debug_out=None):
                 out.Print(cell)
                 out.Print('</td>\n')
             out.Print('</tr>\n')
-
-        # TODO: Replace multiple tables
-        break
 
     out.PrintTheRest()
 
