@@ -17,6 +17,7 @@ import sys
 from doctools import html_lib
 from doctools import doc_html  # templates
 from doctools import oils_doc
+from doctools import ul_table
 from lazylex import html as lazylex_html
 
 # Geez find_library returns the filename and not the path?  Just hardcode it as
@@ -383,7 +384,7 @@ def Render(opts, meta, in_file, out_file, use_fastlex=True, debug_out=None):
         html = html.replace('</pstrip></p>', '')
 
         try:
-            html = oils_doc.ReplaceTables(html)
+            html = ul_table.ReplaceTables(html)
         except lazylex_html.ParseError as e:
             print('Error rendering file %r' % in_file, file=sys.stderr)
             raise

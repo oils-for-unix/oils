@@ -48,8 +48,7 @@ td {
 
 </table>
 
-With `ul-table`, you create a **two-level Markdown list** inside `<table>`
-tags:
+With `ul-table`, you type a **two-level Markdown list**, inside `<table>` tags:
 
     <table>
 
@@ -65,15 +64,16 @@ tags:
 
     </table>
 
-Making an HTML table takes two steps:
+(This format looks similar to [tables in
+reStructuredText](https://sublime-and-sphinx-guide.readthedocs.io/en/latest/tables.html)).
 
-1. The Markdown translator produces a
+The conversion takes two steps:
+
+1. Any Markdown translator will produce a
    `<table> <ul> <li> ... </li> </ul> </table>` structure.
-1. **Our** `ul-table` plugin transforms that into a `<tr> <td> </td> </tr>`
-   structure.
-
-(This format is inspired by [tables in
-reStructuredText](https://sublime-and-sphinx-guide.readthedocs.io/en/latest/tables.html).
+1. **Our** `ul-table` plugin transforms that into a
+   `<table> <tr> <td> </td> </tr> </table>` structure, which is a normal HTML
+   table.
 
 ### Pure Markdown Requires Tedious HTML
 
@@ -145,9 +145,11 @@ this:
 
 This is how your tables will appear on sourcehut or Github &mdash; the contents
 are still readable.  Remember, `ul-table` is **not** an extension to Markdown
-**syntax**.
+syntax.
 
 ## More Complex Example
+
+View the source code of this table: [doc/ul-table.md]($oils-src)
 
 [bash]: $xref
 
@@ -207,7 +209,19 @@ are still readable.  Remember, `ul-table` is **not** an extension to Markdown
 
 </table>
 
-## Features
+## Real Examples in Oils
+
+TODO
+
+- docs
+  - convert proc-func table
+  - interior/exterior?
+- blog
+  - What Oils Looks Like in 2024
+  - Line Counts
+  - Narrow waist?  diagrams
+
+## `ul-table` Features
 
 - Any markdown can be in a cell
   - paragraphs, code blocks with backticks, nested lists
@@ -231,7 +245,55 @@ I think `web/table/` has that rule.
 -->
 
 
-## Related Docs
+## Appendix
+
+### Related Docs
 
 - [How We Build Oils Documentation](doc-toolchain.html)
 - [Examples of HTML Plugins](doc-plugins.html)
+
+### Our Style is Nicer Than Github's
+
+Github-flavored Markdown has an non-standard extension for tables:
+
+- [Github: Organizing Information With Tables](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/organizing-information-with-tables)
+
+This style is hard to read and write, especially with large tables:
+
+```
+| Command | Description |
+| --- | --- |
+| git status | List all new or modified files |
+| git diff | Show file differences that haven't been staged |
+```
+
+Our style is less noisy and more easily editable:
+
+```
+- thead
+  - Command
+  - Description
+- tr
+  - git status
+  - List all new or modified files
+- tr
+  - git diff
+  - Show file differences that haven't been staged
+```
+
+### CommonMark
+
+- 2014 discussion: [Tables in pure Markdown](https://talk.commonmark.org/t/tables-in-pure-markdown/81)
+- 2022 discussion: [Obvious Markdown syntax for Tables](https://talk.commonmark.org/t/obvious-markdown-syntax-for-tables/4143/9)
+
+
+### Implemention
+
+- [doctools/ul_table.py]($oils-src) - less than 400 lines
+- [lazylex/html.py]($oils-src) - about 400 lines
+
+TODO:
+
+- Make it run under Python 3, including unit tests
+- De-couple it from cmark.so
+  - Use Unix pipes, with a demo in `doctools/ul-table.sh`
