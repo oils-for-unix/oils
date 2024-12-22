@@ -9,7 +9,6 @@ import cmark  # Oils dev dependency
 from doctools import oils_doc  # module under test
 from lazylex import html
 
-
 with open('lazylex/testdata.html') as f:
     TEST_HTML = f.read()
 
@@ -109,6 +108,7 @@ TEST2 = """
 
 </table>
 """
+
 
 def MarkdownToTable(md):
     # markdown -> HTML

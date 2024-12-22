@@ -364,6 +364,7 @@ def Render(opts, meta, in_file, out_file, use_fastlex=True, debug_out=None):
 
     # First convert to HTML
     html = md2html(in_file.read())
+    #print(html, file=sys.stderr)
 
     # Now process HTML with oils_doc
     if use_fastlex:
@@ -376,8 +377,8 @@ def Render(opts, meta, in_file, out_file, use_fastlex=True, debug_out=None):
 
         html = oils_doc.RemoveComments(html)
 
-        # Hack for allowing tables without <p> in cells, which CommonMark seems to
-        # require?
+        # Hack for allowing tables without <p> in cells, which CommonMark seems
+        # to require?
         html = html.replace('<p><pstrip>', '')
         html = html.replace('</pstrip></p>', '')
 

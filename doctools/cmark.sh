@@ -89,6 +89,18 @@ Test spacing out:
 Another paragraph with `code`.
 EOF
 
+  doctools/cmark.py <<'EOF'
+1. what `<table>`
+EOF
+
+  # BUG: parse error because backticks span a line
+
+  return
+  doctools/cmark.py <<'EOF'
+1. The Markdown translator produces a `<table> <ul> <li> ... </li> </ul>
+   </table>` structure.
+EOF
+
 }
 
 "$@"
