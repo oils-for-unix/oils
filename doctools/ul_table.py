@@ -100,6 +100,47 @@ class UlTableParser(object):
         return -1
 
     def _ListItem(self):
+        """
+        LIST_ITEM =
+          [RawData \s*]?
+          [StartTag 'li']
+          [StartEndTag 'td-attrs']?
+          ANY*               # NOT context-free - anything that's not the end
+                             # This is what we should capture in CELLS
+          [EndTag 'li']
+
+        Example:
+
+        - hi there          ==>
+        <li>hi there</li>   ==>
+        <td>hi there</td>
+
+        - <td-attrs class=foo /> hi there          ==>
+        <li><td-attrs class=foo /> hi there </li>  ==>
+        <td class=foo> hi there </td>  ==>
+
+        That is, the attributes are borrowed.
+
+        TODO: TagLexer() needs a method to copy everything except the tag name,
+        i.e. all the attributes.
+
+        We can then return a pair (attr_string, inner_html)
+
+        TODO:
+        - We may need to merge "class" attributes?
+
+        - thead
+          - <td-attrs class=first-col />
+          - other
+          - <td-attrs class=zulip-col />
+        - tr
+          - <td-attrs class=more />
+          - other
+          - <td-attrs class=more />
+
+        To start, we could assert that the attrs in thead and tr are DISJOINT?
+        More tables probably don't need it.
+        """
         self._WhitespaceOk()
 
         if self.tok_id != html.StartTag:
@@ -158,13 +199,6 @@ class UlTableParser(object):
             [EndTag 'ul']
           [RawData thead\s*]
           [End 'li']
-
-        LIST_ITEM =
-          [RawData \s*]?
-          [StartTag 'li']
-          ANY*               # NOT context-free - anything that's not the end
-                             # This is what we should capture in CELLS
-          [EndTag 'li']
 
         Two Algorithms:
 

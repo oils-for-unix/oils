@@ -36,6 +36,9 @@ class OilsDocTest(unittest.TestCase):
         h = oils_doc.ExpandLinks(TEST_HTML)
         self.assert_('/blog/tags.html' in h, h)
 
+        h = oils_doc.ExpandLinks('<a href="$xref:bash">')
+        self.assertEqual('<a href="/cross-ref.html?tag=bash#bash">', h)
+
     def testShPrompt(self):
         r = oils_doc._PROMPT_LINE_RE
         line = 'oil$ ls -l&lt;TAB&gt;  # comment'

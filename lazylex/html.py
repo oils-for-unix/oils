@@ -273,20 +273,12 @@ class TagLexer(object):
                 if tok_id == AttrName:
                     name = self.s[start:end]
                     if name == attr_name:
-                        # For HasAttr()
-                        #val = True
-
-                        # Now try to get a real value
+                        # The value should come next
                         tok_id, start, end = next(events)
                         if tok_id in (QuotedValue, UnquotedValue):
-
-                            # TODO: Unescape this with htmlentitydefs
-                            # I think we need another lexer!
-                            #
-                            # We could make a single pass?
-                            # Shortcut: 'if '&' in substring'
-                            # Then we need to unescape it
-
+                            # Note: quoted values may have &amp;
+                            # We would need ANOTHER lexer to unescape them.
+                            # Right now help_gen.py and oils_doc.py
                             val = start, end
                             break
 
@@ -294,13 +286,44 @@ class TagLexer(object):
             pass
         return val
 
-    def GetAttr(self, attr_name):
+    def GetAttrRaw(self, attr_name):
+        """
+        Return the value, which may be UNESCAPED.
+        """
         # Algorithm: search for QuotedValue or UnquotedValue after AttrName
         # TODO: Could also cache these
         start, end = self.GetSpanForAttrValue(attr_name)
         if start == -1:
             return None
         return self.s[start:end]
+
+    def AllAttrsRaw(self):
+        """
+        Get a list of pairs [('class', 'foo'), ('href', '?foo=1&amp;bar=2')]
+
+        The quoted values may be escaped.  We would need another lexer to
+        unescape them.
+        """
+        pairs = []
+        events = self.Tokens()
+        try:
+            while True:
+                tok_id, start, end = next(events)
+                if tok_id == AttrName:
+                    name = self.s[start:end]
+
+                    # The value should come next
+                    tok_id, start, end = next(events)
+                    if tok_id in (QuotedValue, UnquotedValue):
+                        # Note: quoted values may have &amp;
+                        # We would need ANOTHER lexer to unescape them, but we
+                        # don't need that for ul-table
+
+                        val = self.s[start:end]
+                        pairs.append((name, val))
+        except StopIteration:
+            pass
+        return pairs
 
     def Tokens(self):
         """

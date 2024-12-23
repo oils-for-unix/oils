@@ -40,19 +40,38 @@ class HtmlTest(unittest.TestCase):
         # Note: we could have a different HasAttr() method
         # <a novalue> means lex.Get('novalue') == None
         # https://developer.mozilla.org/en-US/docs/Web/API/Element/hasAttribute
-        self.assertEqual(None, lex.GetAttr('novalue'))
+        self.assertEqual(None, lex.GetAttrRaw('novalue'))
 
         lex = _MakeTagLexer('<a href="double quoted">')
         _PrintTokens(lex)
 
-        self.assertEqual('double quoted', lex.GetAttr('href'))
-        self.assertEqual(None, lex.GetAttr('oops'))
+        self.assertEqual('double quoted', lex.GetAttrRaw('href'))
+        self.assertEqual(None, lex.GetAttrRaw('oops'))
 
         lex = _MakeTagLexer('<a href=foo class="bar">')
         _PrintTokens(lex)
 
         lex = _MakeTagLexer('<a href=foo class="bar" />')
         _PrintTokens(lex)
+
+        lex = _MakeTagLexer('<a href="?foo=1&amp;bar=2" />')
+        self.assertEqual('?foo=1&amp;bar=2', lex.GetAttrRaw('href'))
+
+    def testTagName(self):
+        lex = _MakeTagLexer('<a href=foo class="bar" />')
+        self.assertEqual('a', lex.TagName())
+
+    def testAllAttrs(self):
+        """
+        [('key', 'value')] for all
+        """
+        # closed
+        lex = _MakeTagLexer('<a href=foo class="bar" />')
+        self.assertEqual([('href', 'foo'), ('class', 'bar')],
+                         lex.AllAttrsRaw())
+
+        lex = _MakeTagLexer('<a href="?foo=1&amp;bar=2" />')
+        self.assertEqual([('href', '?foo=1&amp;bar=2')], lex.AllAttrsRaw())
 
     # IndexLinker in devtools/make_help.py
     #  <pre> sections in doc/html_help.py
@@ -66,7 +85,6 @@ class HtmlTest(unittest.TestCase):
         pass
 
     def testCommentParse(self):
-        """"""
         n = len(TEST_HTML)
         for tok_id, end_pos in html._Tokens(TEST_HTML, 0, n):
             if tok_id == html.Invalid:

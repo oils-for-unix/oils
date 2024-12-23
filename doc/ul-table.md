@@ -244,6 +244,36 @@ I think `web/table/` has that rule.
 
 -->
 
+## Quirks
+
+(1) CommonMark doesn't seem to allow empty list items:
+
+    - thead
+      -
+      - above is not rendered as a list item
+
+A workaround is to use a comment:
+
+    - tr
+      - <!-- empty -->
+      - above is OK
+
+- [Related CommonMark thread](https://talk.commonmark.org/t/clarify-following-empty-list-items-in-0-31-2/4599)
+
+(2) Likewise, a cell containing a hyphen may need a comment in front of it:
+
+    - tr
+      - <!-- hyphen --> -
+      - <!-- hyphen --> -
+
+(3) I ran into an issue where line breaks affect backtick expansion to `<code>`:
+
+    - tr
+      - <ul-td /> <!-- we need something on this line -->
+        ... More `proc` features ...
+
+This is probably the same as case (1), because the `<ul-td />` is considered
+empty.
 
 ## Appendix
 

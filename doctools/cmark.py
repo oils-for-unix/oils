@@ -441,6 +441,11 @@ def Render(opts, meta, in_file, out_file, use_fastlex=True, debug_out=None):
 def Options():
     p = optparse.OptionParser('cmark.py [options]')
 
+    p.add_option('--common-mark',
+                 action='store_true',
+                 default=False,
+                 help='Only do CommonMark conversion')
+
     p.add_option(
         '--toc-pretty-href',
         action='store_true',
@@ -473,6 +478,10 @@ def main(argv):
     o = Options()
     opts, argv = o.parse_args(argv)
     assert all(tag.startswith('h') for tag in opts.toc_tags), opts.toc_tags
+
+    if opts.common_mark:
+        print(md2html(sys.stdin.read()))
+        return
 
     meta = dict(DEFAULT_META)
 

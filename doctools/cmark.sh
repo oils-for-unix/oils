@@ -93,6 +93,35 @@ EOF
 1. what `<table>`
 EOF
 
+  # Very annoying: list items can't be empty
+  # <span />
+  doctools/cmark.py --common-mark <<'EOF'
+<table>
+
+- thead
+  - <!-- list item can't be empty -->
+  - Proc
+  - Func
+
+</table>
+EOF
+
+  # Weird case - the `proc` is sometimes not expanded to <code>proc</code>
+  doctools/cmark.py --common-mark <<'EOF'
+- <span /> ... More `proc` features
+- <span />
+  More `proc` features 
+- <span /> <!-- why does this fix it? -->
+  More `proc` features 
+EOF
+
+  # This has &amp; in an attr value, which our HTML lexer needs to handle
+  doctools/cmark.py --common-mark <<'EOF'
+from [ampersand][]
+
+[ampersand]: http://google.com/?q=foo&z=z
+EOF
+
   # BUG: parse error because backticks span a line
 
   return

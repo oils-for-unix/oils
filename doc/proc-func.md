@@ -84,6 +84,7 @@ doc will elaborate on these issues.
   }
 </style>
 
+
 <table>
   <thead>
   <tr>
@@ -939,3 +940,134 @@ I think this might go in the backlog - #**blog-ideas**
 
 
 <!-- vim sw=2 -->
+
+## ul-table Draft
+
+<table>
+
+- thead
+  - <!-- empty -->
+  - Proc
+  - Func
+- tr
+  - Design Influence
+  - Shell-like.
+  - Python- and JavaScript-like, but **pure**.
+- tr
+  - Shape
+  - Procs are shaped like Unix processes: with `argv`, an integer return code,
+    and `stdin` / `stdout` streams.
+
+    They're a generalization of Bourne shell "functions".  
+  - Funcs are shaped like mathematical functions.
+- tr
+  - Architectural Role ([Oils is Exterior First](https://www.oilshell.org/blog/2023/06/ysh-design.html))
+  - **Exterior**: processes and files.
+  - **Interior**: functions and garbage-collected data structures.
+- tr
+  - I/O
+  - Procs may start external processes and pipelines.  Can perform I/O
+    anywhere.
+  - Funcs need an explicit `io` param to perform I/O.
+- tr
+  - Example Definition
+  - ```
+    proc print-max (; x, y) {
+      echo $[x if x > y else y]
+    }
+    ```
+  - ```
+    func computeMax(x, y) {
+      return (x if x > y else y)
+    }
+    ```
+- tr
+  - Example Call
+  - ```
+    print-max (3, 4)
+    ```
+
+    Procs can be put in pipelines:
+
+    ```
+    print-max (3, 4) | tee out.txt
+    ```
+  - ```
+    var m = computeMax(3, 4)
+    ```
+
+    Or throw away the return value, which is useful for functions that mutate:
+
+    ```
+    call computeMax(3, 4)
+    ```
+- tr
+  - Naming Convention
+  - `kebab-case`
+  - `camelCase`
+- tr
+  - [Syntax Mode](command-vs-expression-mode.html) of call site
+  - Command Mode</td>
+  - Expression Mode</td>
+- tr
+  - Kinds of Parameters / Arguments
+  - <!-- empty -->
+    1. Word aka string
+    1. Typed and Positional
+    1. Typed and Named
+    1. Block
+
+    Examples shown below.
+  - <!-- empty -->
+    1. Positional 
+    1. Named
+
+    (both typed)
+- tr
+  - Return Value
+  - Integer status 0-255
+  - Any type of value, e.g.
+
+    ```
+    return ([42, {name: 'bob'}])
+    ```
+- tr
+  - Can it be a method on an object?
+  - No
+  - Yes, funcs may be bound to objects:
+
+    ```
+    var x = obj.myMethod()
+    call obj->myMutatingMethod()
+    ```
+- tr
+  - Interface Evolution
+  - **Slower**: Procs exposed to the outside world may need to evolve in a compatible or "versionless" way.
+  - **Faster**: Funcs may be refactored internally.
+- tr
+  - Parallelism?
+  - Procs can be parallel with:
+    - shell constructs: pipelines, `&` aka `fork`
+    - external tools and the [$0 Dispatch
+      Pattern](https://www.oilshell.org/blog/2021/08/xargs.html): xargs, make,
+      Ninja, etc. 
+  - Funcs are inherently **serial**, unless wrapped in a proc.
+- tr
+  - <!-- empty -->
+  - <td-attrs colspan=3 style="text-align: center; padding: 3em" /> &nbsp;
+    ...  More `proc` Features ...
+  - <!-- empty -->
+- tr
+  - Kinds of Signature
+  - Open `proc p {` or <br/>
+    Closed `proc p () {`
+  - <!-- dash --> -
+- tr
+  - Lazy Args
+  - ```
+    assert [42 === x]
+    ```
+  - <!-- dash --> -
+
+</table>
+

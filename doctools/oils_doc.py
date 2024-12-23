@@ -138,11 +138,10 @@ def ExpandLinks(s):
                 if href_start == -1:
                     continue
 
-                # TODO: Need to unescape like GetAttr()
-                href = s[href_start:href_end]
+                href_raw = s[href_start:href_end]
 
                 new = None
-                m = _SHORTCUT_RE.match(href)
+                m = _SHORTCUT_RE.match(href_raw)
                 if m:
                     abbrev_name, arg = m.groups()
                     if not arg:
@@ -150,8 +149,8 @@ def ExpandLinks(s):
                             it, tag_lexer, 'a')
                         arg = s[open_tag_right:close_tag_left]
 
-                    # Hack to so we can write [Wiki Page]($wiki) and have the link look
-                    # like /Wiki-Page/
+                    # Hack to so we can write [Wiki Page]($wiki) and have the
+                    # link look like /Wiki-Page/
                     if abbrev_name == 'wiki':
                         arg = arg.replace(' ', '-')
 
@@ -431,7 +430,7 @@ def HighlightCode(s, default_highlighter, debug_out=None):
                 tag_lexer.Reset(pos, end_pos)
                 if tok_id == html.StartTag and tag_lexer.TagName() == 'code':
 
-                    css_class = tag_lexer.GetAttr('class')
+                    css_class = tag_lexer.GetAttrRaw('class')
                     code_start_pos = end_pos
 
                     if css_class is None:
@@ -581,7 +580,7 @@ def ExtractCode(s, f):
                 tag_lexer.Reset(pos, end_pos)
                 if tok_id == html.StartTag and tag_lexer.TagName() == 'code':
 
-                    css_class = tag_lexer.GetAttr('class')
+                    css_class = tag_lexer.GetAttrRaw('class')
                     # Skip code blocks that look like ```foo
                     # Usually we use 'oil-sh' as the default_highlighter, and
                     # all those code blocks should be extracted.  TODO: maybe
