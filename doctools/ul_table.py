@@ -100,7 +100,13 @@ class UlTableParser(object):
         return -1
 
     def _ListItem(self):
-        """
+        """Parse a list item nested below thead or tr.
+
+        Returns:
+            A pair (td_attrs, inner_html)
+
+        Grammar:
+
         LIST_ITEM =
           [RawData \s*]?
           [StartTag 'li']
@@ -109,7 +115,7 @@ class UlTableParser(object):
                              # This is what we should capture in CELLS
           [EndTag 'li']
 
-        Example:
+        Example of attribute borrowing:
 
         - hi there          ==>
         <li>hi there</li>   ==>
@@ -118,40 +124,29 @@ class UlTableParser(object):
         - <td-attrs class=foo /> hi there          ==>
         <li><td-attrs class=foo /> hi there </li>  ==>
         <td class=foo> hi there </td>  ==>
-
-        That is, the attributes are borrowed.
-
-        TODO: TagLexer() needs a method to copy everything except the tag name,
-        i.e. all the attributes.
-
-        We can then return a pair (attr_string, inner_html)
-
-        TODO:
-        - We may need to merge "class" attributes?
-
-        - thead
-          - <td-attrs class=first-col />
-          - other
-          - <td-attrs class=zulip-col />
-        - tr
-          - <td-attrs class=more />
-          - other
-          - <td-attrs class=more />
-
-        To start, we could assert that the attrs in thead and tr are DISJOINT?
-        More tables probably don't need it.
         """
         self._WhitespaceOk()
 
         if self.tok_id != html.StartTag:
-            return None
+            return None, None
+
+        inner_html = None
+        td_attrs = None  # Can we also have col-attrs?
 
         self._Eat(html.StartTag, 'li')
 
+        if self.tok_id == html.StartEndTag:
+            self.tag_lexer.Reset(self.start_pos, self.end_pos)
+            tag_name = self.tag_lexer.TagName()
+            if tag_name != 'td-attrs':
+                raise html.ParseError('Expected <td-attrs />, got %r' %
+                                      tag_name)
+            td_attrs = self.tag_lexer.AllAttrsRaw()
+            self._Next()
+
         left = self.start_pos
 
-        # Any tag except end tag
-        inner_html = None
+        # Find the closing </li>
         balance = 0
         while True:
             # TODO: This has to  match NESTED
@@ -179,7 +174,7 @@ class UlTableParser(object):
         #self._Eat(html.EndTag, 'li')
         self._Next()
 
-        return inner_html
+        return td_attrs, inner_html
 
     def _ParseTHead(self):
         """
@@ -232,10 +227,10 @@ class UlTableParser(object):
         self._Eat(html.StartTag, 'ul')
 
         while True:
-            inner_html = self._ListItem()
+            td_attrs, inner_html = self._ListItem()
             if inner_html is None:
                 break
-            cells.append(inner_html)
+            cells.append((td_attrs, inner_html))
         self._WhitespaceOk()
 
         self._Eat(html.EndTag, 'ul')
@@ -281,10 +276,10 @@ class UlTableParser(object):
         self._Eat(html.StartTag, 'ul')
 
         while True:
-            inner_html = self._ListItem()
+            td_attrs, inner_html = self._ListItem()
             if inner_html is None:
                 break
-            cells.append(inner_html)
+            cells.append((td_attrs, inner_html))
             # TODO: assert
 
         self._WhitespaceOk()
@@ -329,9 +324,11 @@ class UlTableParser(object):
             tr = self._ParseTr()
             if tr is None:
                 break
-            if len(tr) != num_cells:
-                raise html.ParseError('Expected %d cells, got %d: %s',
-                                      num_cells, len(tr), tr)
+            # Not validating because of colspan
+            if 0:
+                if len(tr) != num_cells:
+                    raise html.ParseError('Expected %d cells, got %d: %s',
+                                          num_cells, len(tr), tr)
 
             #log('___ TR %s', tr)
             table['tr'].append(tr)
@@ -352,6 +349,25 @@ class UlTableParser(object):
             pprint(table)
 
         return table
+
+
+def MergeAttrs(thead_td_attrs, row_td_attrs):
+    merged_attrs = []
+
+    thead_lookup = set()
+    if thead_td_attrs:
+        for name, raw_value in thead_td_attrs:
+            thead_lookup.add(name)
+            merged_attrs.append((name, raw_value))
+
+    if row_td_attrs:
+        for name, raw_value in row_td_attrs:
+            if name in thead_lookup:
+                raise html.ParseError('Duplicate attribute %r in thead and tr' %
+                                 name)
+            merged_attrs.append((name, raw_value))
+
+    return merged_attrs
 
 
 def ReplaceTables(s, debug_out=None):
@@ -384,23 +400,44 @@ def ReplaceTables(s, debug_out=None):
         # after that
         out.SkipTo(table['ul_end'])
 
-        # Now write the table
+        # Write the header
         out.Print('<thead>\n')
         out.Print('<tr>\n')
-        for cell in table['thead']:
-            # TODO: parse <ulcol> and print attributes <td> attributes
+
+        col_attrs = {}  # integer -> td_attrs
+
+        i = 0
+        for td_attrs, raw_html in table['thead']:
+            if td_attrs:
+                col_attrs[i] = td_attrs
             out.Print('  <td>')
-            out.Print(cell)
+            out.Print(raw_html)
             out.Print('</td>\n')
+            i += 1
+
         out.Print('</tr>\n')
         out.Print('</thead>\n')
 
+        # Write each row
         for row in table['tr']:
             out.Print('<tr>\n')
-            for cell in row:
-                out.Print('  <td>')
-                out.Print(cell)
+            i = 0
+            for row_td_attrs, raw_html in row:
+                # Inherited from header
+                thead_td_attrs = col_attrs.get(i)
+                merged_attrs = MergeAttrs(thead_td_attrs, row_td_attrs)
+
+                out.Print('  <td')
+                for name, raw_value in merged_attrs:
+                    out.Print(' ')
+                    out.Print(name)
+                    # No escaping because it's raw.  It can't contain quotes.
+                    out.Print('="%s"' % raw_value)
+                out.Print('>')
+
+                out.Print(raw_html)
                 out.Print('</td>\n')
+                i += 1
             out.Print('</tr>\n')
 
     out.PrintTheRest()

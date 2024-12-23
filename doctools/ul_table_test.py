@@ -13,8 +13,8 @@ TEST1 = """\
 <table id="foo">
 
 - thead
-  - <ulcol class="foo" /> name
-  - <ulcol class="bar" /> [age](https://example.com/)
+  - <td-attrs class="foo" /> name
+  - <td-attrs class="bar" /> [age](https://example.com/)
 - tr
   - alice *italic*
   - 30
@@ -24,19 +24,87 @@ TEST1 = """\
 
 </table>"""  # no extra
 
-TEST2 = """
+TD_ATTRS = """\
 <table>
 
-- ul-head
-  - <ulcol id="foo" /> arbitrary text
-  - age
-- ul-row
+- thead
+  - <td-attrs class=unquoted /> name
+  - <td-attrs class=quoted /> age
+  - role
+- tr
   - alice
   - 30
-- <ulrow id="spam" />  # a way to attach attributes
+  - parent
+- tr
+  - bob
+  - 42
+  - <td-attrs class=child /> child
+
+</table>
+"""
+
+TD_ATTRS_HTML = """\
+<table>
+<thead>
+<tr>
+  <td> name</td>
+  <td> age</td>
+  <td>role</td>
+</tr>
+</thead>
+<tr>
+  <td class="unquoted">alice</td>
+  <td class="quoted">30</td>
+  <td>parent</td>
+</tr>
+<tr>
+  <td class="unquoted">bob</td>
+  <td class="quoted">42</td>
+  <td class="child"> child</td>
+</tr>
+</table>
+"""
+
+# Note CSS Grid can express colspan
+# https://developer.mozilla.org/en-US/docs/Web/CSS/grid-column
+
+COLSPAN = """\
+<table>
+
+- thead
+  - <td-attrs class=foo /> name
+  - age
+- tr
+  - alice
+  - 30
+- tr
+  - <td-attrs colspan=2 /> ... more ...
+- tr
   - bob
   - 42
 
+</table>
+"""
+
+COLSPAN_HTML = """\
+<table>
+<thead>
+<tr>
+  <td> name</td>
+  <td>age</td>
+</tr>
+</thead>
+<tr>
+  <td class="foo">alice</td>
+  <td>30</td>
+</tr>
+<tr>
+  <td class="foo" colspan="2"> ... more ...</td>
+</tr>
+<tr>
+  <td class="foo">bob</td>
+  <td>42</td>
+</tr>
 </table>
 """
 
@@ -124,6 +192,14 @@ class UlTableTest(unittest.TestCase):
     def testMultipleTablesWithSpace(self):
         h = MarkdownToTable(TEST1 + '\n\n hi \n' + TEST1)
 
+    def testTdAttrs(self):
+        h = MarkdownToTable(TD_ATTRS)
+        self.assertMultiLineEqual(TD_ATTRS_HTML, h)
+
+    def testColspan(self):
+        h = MarkdownToTable(COLSPAN)
+        self.assertMultiLineEqual(COLSPAN_HTML, h)
+
     def testSyntaxErrors(self):
         # Once we get <table><ul>, then we TAKE OVER, and start being STRICT
 
@@ -145,6 +221,42 @@ class UlTableTest(unittest.TestCase):
 <table>
 
 - thead
+  - <span /> Not allowed
+  - two
+- tr
+  - 1
+  - 2
+""")
+        except html.ParseError as e:
+            print(e)
+        else:
+            self.fail('Expected parse error')
+
+        try:
+            h = MarkdownToTable("""
+<table>
+
+- thead
+  - <td-attrs class="foo" /> Dupe
+  - two
+- tr
+  - <td-attrs class="bar" /> Dupe
+  - 2
+""")
+        except html.ParseError as e:
+            print(e)
+        else:
+            self.fail('Expected parse error')
+
+    def testColumnCheck(self):
+        # Disabled because of colspan
+        return
+
+        try:
+            h = MarkdownToTable("""
+<table>
+
+- thead
   - one
   - two
 - tr
@@ -155,6 +267,8 @@ class UlTableTest(unittest.TestCase):
 - tr
   - 3
   - 4
+
+</table>
 """)
         except html.ParseError as e:
             print(e)

@@ -112,6 +112,20 @@ inside HTML.
 With `ul-table`, we **remove** this kind of mutual nesting (at least, one level
 of it.)
 
+---
+
+Note that HTML inside CommonMark results in an extra `<p>` element:
+
+    <td>
+      <p>OSH</p>
+    </td>
+
+In contrast, `ul-table` can produce:
+
+    <td>
+      OSH
+    </td>
+
 ### Stylesheet
 
 To make the table look nice, I use `<style>` tags inside Markdown:

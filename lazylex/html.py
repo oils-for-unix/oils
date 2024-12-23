@@ -211,9 +211,24 @@ def ValidTokens(s, left_pos=0, right_pos=0):
         pos = end_pos
 
 
-# To match <a  or </a
-# <h2 but not <2h ?
-_TAG_RE = re.compile(r'/? \s* ([a-zA-Z][a-zA-Z0-9]*)', re.VERBOSE)
+# Tag names:
+#   Match <a  or </a
+#   Match <h2, but not <2h
+#
+# HTML 5 doesn't restrict tag names at all
+#   https://html.spec.whatwg.org/#toc-syntax
+#
+# XML allows : - .
+#  https://www.w3.org/TR/xml/#NT-NameChar
+
+# Namespaces for MathML, SVG
+# XLink, XML, XMLNS
+#
+# https://infra.spec.whatwg.org/#namespaces
+#
+# Allow - for td-attrs
+
+_TAG_RE = re.compile(r'/? \s* ([a-zA-Z][a-zA-Z0-9-]*)', re.VERBOSE)
 
 # To match href="foo"
 

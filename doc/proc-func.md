@@ -1053,10 +1053,8 @@ I think this might go in the backlog - #**blog-ideas**
       Ninja, etc. 
   - Funcs are inherently **serial**, unless wrapped in a proc.
 - tr
-  - <!-- empty -->
   - <td-attrs colspan=3 style="text-align: center; padding: 3em" /> &nbsp;
-    ...  More `proc` Features ...
-  - <!-- empty -->
+    More `proc` Features ...
 - tr
   - Kinds of Signature
   - Open `proc p {` or <br/>
