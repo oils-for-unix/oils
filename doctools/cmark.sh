@@ -88,6 +88,12 @@ Test spacing out:
 
 Another paragraph with `code`.
 EOF
+}
+
+demo-quirks() {
+  ### Cases that came from writing ul-table
+
+  export PYTHONPATH=.
 
   doctools/cmark.py <<'EOF'
 1. what `<table>`
@@ -104,6 +110,18 @@ EOF
   - Func
 
 </table>
+EOF
+
+  doctools/cmark.py --common-mark <<'EOF'
+- <tr-attrs class=foo /> text required here
+  - one
+  - two
+EOF
+
+doctools/cmark.py --common-mark <<'EOF'
+- tr <tr-attrs class=foo />
+  - one
+  - two
 EOF
 
   # Weird case - the `proc` is sometimes not expanded to <code>proc</code>

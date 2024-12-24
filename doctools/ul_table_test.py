@@ -12,7 +12,7 @@ from doctools import ul_table
 TEST1 = """\
 <table id="foo">
 
-- thead
+- thead 
   - <td-attrs class="foo" /> name
   - <td-attrs class="bar" /> [age](https://example.com/)
 - tr
@@ -32,7 +32,7 @@ TD_ATTRS = """\
   - <td-attrs class=quoted /> age
   - role
 - tr
-  - alice
+  - <td-attrs class="cool" /> alice
   - 30
   - parent
 - tr
@@ -53,6 +53,47 @@ TD_ATTRS_HTML = """\
 </tr>
 </thead>
 <tr>
+  <td class="unquoted cool"> alice</td>
+  <td class="quoted">30</td>
+  <td>parent</td>
+</tr>
+<tr>
+  <td class="unquoted">bob</td>
+  <td class="quoted">42</td>
+  <td class="child"> child</td>
+</tr>
+</table>
+"""
+
+TR_ATTRS = """\
+<table>
+
+- thead
+  - <td-attrs class=unquoted /> name
+  - <td-attrs class=quoted /> age
+  - role
+- tr   <tr-attrs class=totals />
+  - alice
+  - 30
+  - parent
+- tr
+  - bob
+  - 42
+  - <td-attrs class=child /> child
+
+</table>
+"""
+
+TR_ATTRS_HTML = """\
+<table>
+<thead>
+<tr>
+  <th> name</th>
+  <th> age</th>
+  <th>role</th>
+</tr>
+</thead>
+<tr class="totals">
   <td class="unquoted">alice</td>
   <td class="quoted">30</td>
   <td>parent</td>
@@ -200,6 +241,10 @@ class UlTableTest(unittest.TestCase):
         h = MarkdownToTable(COLSPAN)
         self.assertMultiLineEqual(COLSPAN_HTML, h)
 
+    def testTrAttrs(self):
+        h = MarkdownToTable(TR_ATTRS)
+        self.assertMultiLineEqual(TR_ATTRS_HTML, h)
+
     def testSyntaxErrors(self):
         # Once we get <table><ul>, then we TAKE OVER, and start being STRICT
 
@@ -225,22 +270,6 @@ class UlTableTest(unittest.TestCase):
   - two
 - tr
   - 1
-  - 2
-""")
-        except html.ParseError as e:
-            print(e)
-        else:
-            self.fail('Expected parse error')
-
-        try:
-            h = MarkdownToTable("""
-<table>
-
-- thead
-  - <td-attrs class="foo" /> Dupe
-  - two
-- tr
-  - <td-attrs class="bar" /> Dupe
   - 2
 """)
         except html.ParseError as e:

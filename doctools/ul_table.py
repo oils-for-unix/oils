@@ -2,6 +2,7 @@
 """ul_table.py: Markdown Tables Without New Syntax."""
 
 import cStringIO
+import re
 
 from doctools.util import log
 from lazylex import html
@@ -37,15 +38,25 @@ class UlTableParser(object):
         #self.tok_id = html.EndOfStream
         # Don't change self.end_pos
 
-    def _Eat(self, tok_id, s=None):
+    def _EatRawData(self, regex):
+        # type: (str) -> None
         """
-        Advance, and assert we got the right input
+        Assert that we got text data matching a regex, and advance
         """
+        if self.tok_id != html.RawData:
+            raise html.ParseError('Expected RawData, got %s',
+                                  html.TokenName(self.tok_id))
+        actual = self._CurrentString()
+        m = re.match(regex, actual)  # could compile this
+        if m is None:
+            raise html.ParseError('Expected to match %r, got %r', regex,
+                                  actual)
+        self._Next()
 
-        # TODO:
-        # - _EatTag()
-        # - _EatRawData
-
+    def _Eat(self, tok_id, s):
+        """
+        Assert that we got a start or end tag, with the given name, and advance
+        """
         if self.tok_id != tok_id:
             raise html.ParseError('Expected token %s, got %s',
                                   html.TokenName(tok_id),
@@ -53,12 +64,8 @@ class UlTableParser(object):
         if tok_id in (html.StartTag, html.EndTag):
             self.tag_lexer.Reset(self.start_pos, self.end_pos)
             tag_name = self.tag_lexer.TagName()
-            if s is not None and s != tag_name:
+            if s != tag_name:
                 raise html.ParseError('Expected tag %r, got %r', s, tag_name)
-        elif tok_id == html.RawData:
-            actual = self._CurrentString()
-            if s is not None and s != actual:
-                raise html.ParseError('Expected data %r, got %r', s, actual)
         else:
             if s is not None:
                 raise AssertionError("Don't know what to do with %r" % s)
@@ -220,8 +227,10 @@ class UlTableParser(object):
         self._WhitespaceOk()
         self._Eat(html.StartTag, 'li')
 
-        # TODO: pass regex so it's tolerant to whitespace?
-        self._Eat(html.RawData, 'thead\n')
+        # In CommonMark, r'thead\n' is enough, because it strips trailing
+        # whitespace.  I'm not sure if other Markdown processors do that, so
+        # use r'thead\n'.
+        self._EatRawData(r'thead\s*')
 
         # This is the row data
         self._Eat(html.StartTag, 'ul')
@@ -253,6 +262,7 @@ class UlTableParser(object):
           [StartTag 'li']
           [RawData thead\s*]
             [StartTag 'ul']   # Indented bullet that starts -
+            ( [StartEndTag tr-attrs] [RawData \s*] )? 
             LIST_ITEM+        # Defined above
             [RawData \s*]?
             [EndTag 'ul']
@@ -265,12 +275,18 @@ class UlTableParser(object):
 
         # Could be a </ul>
         if self.tok_id != html.StartTag:
-            return None
+            return None, None
 
         self._Eat(html.StartTag, 'li')
 
-        # TODO: pass regex so it's tolerant to whitespace?
-        self._Eat(html.RawData, 'tr\n')
+        self._EatRawData(r'tr\s*')
+
+        tr_attrs = None
+        if self.tok_id == html.StartEndTag:
+            self.tag_lexer.Reset(self.start_pos, self.end_pos)
+            tr_attrs = self.tag_lexer.AllAttrsRaw()
+            self._Next()
+            self._WhitespaceOk()
 
         # This is the row data
         self._Eat(html.StartTag, 'ul')
@@ -290,7 +306,7 @@ class UlTableParser(object):
         self._Eat(html.EndTag, 'li')
 
         #log('_ParseTHead %s ', html.TOKEN_NAMES[self.tok_id])
-        return cells
+        return tr_attrs, cells
 
     def ParseTable(self):
         """
@@ -321,7 +337,7 @@ class UlTableParser(object):
 
         num_cells = len(thead)
         while True:
-            tr = self._ParseTr()
+            tr_attrs, tr = self._ParseTr()
             if tr is None:
                 break
             # Not validating because of colspan
@@ -331,7 +347,7 @@ class UlTableParser(object):
                                           num_cells, len(tr), tr)
 
             #log('___ TR %s', tr)
-            table['tr'].append(tr)
+            table['tr'].append((tr_attrs, tr))
 
         self._Eat(html.EndTag, 'ul')
 
@@ -354,17 +370,25 @@ class UlTableParser(object):
 def MergeAttrs(thead_td_attrs, row_td_attrs):
     merged_attrs = []
 
-    thead_lookup = set()
+    if row_td_attrs is None:
+        row_lookup = {}
+    else:
+        row_lookup = {n: v for n, v in row_td_attrs}
+
+    done_for_row = set()
+
     if thead_td_attrs:
         for name, raw_value in thead_td_attrs:
-            thead_lookup.add(name)
+            more_values = row_lookup.get(name)
+            if more_values is not None:
+                raw_value += ' %s' % more_values
+                done_for_row.add(name)
             merged_attrs.append((name, raw_value))
 
     if row_td_attrs:
         for name, raw_value in row_td_attrs:
-            if name in thead_lookup:
-                raise html.ParseError('Duplicate attribute %r in thead and tr' %
-                                 name)
+            if name in done_for_row:
+                continue
             merged_attrs.append((name, raw_value))
 
     return merged_attrs
@@ -420,8 +444,19 @@ def ReplaceTables(s, debug_out=None):
         out.Print('</thead>\n')
 
         # Write each row
-        for row in table['tr']:
-            out.Print('<tr>\n')
+        for tr_attrs, row in table['tr']:
+
+            # Print tr tag and attrs
+            out.Print('<tr')
+            if tr_attrs:
+                for name, raw_value in tr_attrs:
+                    out.Print(' ')
+                    out.Print(name)
+                    # No escaping because it's raw.  It can't contain quotes.
+                    out.Print('="%s"' % raw_value)
+            out.Print('>\n')
+
+            # Print cells
             i = 0
             for row_td_attrs, raw_html in row:
                 # Inherited from header

@@ -221,38 +221,43 @@ View the source code of this table: [doc/ul-table.md]($oils-src)
 
 TODO
 
-- docs
-  - convert proc-func table
+- [Guide to Procs and Funcs]($oils-doc:proc-func.html)
   - interior/exterior?
 - blog
   - What Oils Looks Like in 2024
   - Line Counts
   - Narrow waist?  diagrams
 
+- TODO: Wiki pages could use conversion
+  - [Alternative Shells]($wiki)
+  - [Alternative Regex Syntax]($wiki)
+  - [Survey of Config Languages]($wiki)
+  - [Polyglot Language Understanding]($wiki)
+  - [The Biggest Shell Programs in the World]($wiki)
+
 ## `ul-table` Features
+
+### Works Well with both Markdown and inline HTML
 
 - Any markdown can be in a cell
   - paragraphs, code blocks with backticks, nested lists
   - Markdown supports arbitrary HTML, so arbitrary HTML can be in a cell
     - no new rules to learn!
-- TODO: Attributes for columns, rows, and cells
-  - `<ul-col class=foo />`
-     - Note: I ran into problems with `<colgroup>`
-     - Example: Justify columns left and right
-  - `<ul-row class=foo />`
-  - `<ul-td colspan=2 />`
+- You can mix `ul-table` and inline HTML
+  - e.g. the header can use `ul-table`, but other rows use raw `<tr>`
+
+### Attributes for Cells, Columns, and Rows
+
+- Cells: put `<td-attrs class=foo />` in a `tr` section
+- Columns: put `<td-attrs class=foo />` in the `thead` section
+- Rows: `tr <tr-attrs class=foo />`
 
 Note: should have a custom rule of aligning numbers to right, and text to left?
 I think `web/table/` has that rule.
 
-<!--
-
-- CSS is written manually?  See `blog/2024/09/project-overview.html`, etc.
-  - Or we could have a default
-
--->
-
 ## Quirks
+
+### CommonMark
 
 (1) CommonMark doesn't seem to allow empty list items:
 
@@ -260,28 +265,52 @@ I think `web/table/` has that rule.
       -
       - above is not rendered as a list item
 
-A workaround is to use a comment:
+A workaround is to use a comment or invisible character:
 
     - tr
       - <!-- empty -->
       - above is OK
+    - tr
+      - &nbsp;
+      - also OK
 
 - [Related CommonMark thread](https://talk.commonmark.org/t/clarify-following-empty-list-items-in-0-31-2/4599)
 
-(2) Likewise, a cell containing a hyphen may need a comment in front of it:
+As similar issue is that line breaks affect backtick expansion to `<code>`:
 
     - tr
-      - <!-- hyphen --> -
-      - <!-- hyphen --> -
-
-(3) I ran into an issue where line breaks affect backtick expansion to `<code>`:
-
-    - tr
-      - <ul-td /> <!-- we need something on this line -->
+      - <td-attrs /> <!-- we need something on this line -->
         ... More `proc` features ...
 
-This is probably the same as case (1), because the `<ul-td />` is considered
-empty.
+I think this is also because `<td-attrs />` doesn't "count" as text, so the
+list item is considered empty.
+
+(2) Likewise, a cell with a literal hyphen may need a comment in front of it:
+
+    - tr
+      - <!-- hyphen --> -
+      - <!-- hyphen --> -
+
+
+### HTML
+
+- `<th>` is like `<td>`, but it belongs in `<thead><tr>`.  Browsers make it
+  bold and centered.
+- You can't put `class=` on `<colgroup>` and `<col>` and align columns left and
+  right.
+  - You have to put `class=` on *every* `<td>` cell instead.
+  - `ul-table` solves this with "inherited" `<td-attrs />` in the `thead`
+    section.
+
+## FAQ
+
+(1) Why do row with attributes look like `tr <tr-attrs />`?   The first `tr`
+looks redundant.
+
+This is because of the CommonMark quirk above: a list item without **text** is
+treated as **empty**.  So we require the extra `tr` text.
+
+It's also consistent with plain rows, without attributes.
 
 ## Appendix
 
