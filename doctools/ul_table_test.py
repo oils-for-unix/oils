@@ -180,6 +180,31 @@ class UlTableTest(unittest.TestCase):
     def testOne(self):
         h = MarkdownToTable('hi\n' + TEST1 + '\n\n bye \n')
 
+    def testNoHeader(self):
+        return
+        # HTML looks like:
+        #
+        # <table>
+        #   <ul>  # problem: we need to lookahead SPACE <li> (tr or thead)
+        #     <li>tr
+        #       <ul>
+        #          <li>one</li>
+        #       </ul>
+        #     </li>
+        #   </ul>
+        # </table>
+
+        h = MarkdownToTable('''\
+<table>
+
+- tr
+  - one                             
+  - two
+
+</table>
+''')
+        print(h)
+
     def testSimple(self):
         h = MarkdownToTable("""\
 <table>

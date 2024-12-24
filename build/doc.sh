@@ -60,12 +60,12 @@ mandoc() {
 
 # Run with environment variable
 help-gen() {
-  PYTHONPATH=. doctools/help_gen.py "$@"
+  PYTHONPATH=.:vendor doctools/help_gen.py "$@"
 }
 
 cmark() {
   # h2 and h3 are shown in TOC.  The blog uses "legacy" h3 and h4.
-  PYTHONPATH=. doctools/cmark.py --toc-tag h2 --toc-tag h3 --toc-pretty-href "$@"
+  PYTHONPATH=.:vendor doctools/cmark.py --toc-tag h2 --toc-tag h3 --toc-pretty-href "$@"
 }
 
 readonly MARKDOWN_DOCS=(
@@ -421,7 +421,7 @@ ref-check() {
 }
 
 fmt-check() {
-  PYTHONPATH=. doctools/fmt_check.py _release/VERSION/doc/ref/*.html
+  PYTHONPATH=.:vendor doctools/fmt_check.py _release/VERSION/doc/ref/*.html
 }
 
 

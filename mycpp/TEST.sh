@@ -361,31 +361,6 @@ examples-coverage() {
   test/coverage.sh html-report $out_dir clang-coverage/mycpp/examples
 }
 
-mycpp-check() {
-  if true; then
-    #python3 -m mypy --strict --follow-imports=silent "$@"
-    python3 -m mypy --strict --no-strict-optional --follow-imports=silent "$@"
-  else
-    # Disable --strict until more passes - 308 -> 181 errors
-    # That means that types are optional
-    # Also add --no-strict-optional
-    python3 -m mypy --no-strict-optional --follow-imports=silent "$@"
-  fi
-}
-
-check-types() {
-  local p=".:$MYPY_WEDGE:$PY3_LIBS_WEDGE"
-
-  #local -a files=( mycpp/*.py )
-  local -a files=(
-    mycpp/{pass_state,util,crash,format_strings,visitor,const_pass,control_flow_pass,mycpp_main,cppgen_pass,conversion_pass}.py
-  )
-
-  # the path is fiddly
-  PYTHONPATH=$p MYPYPATH=$MYPY_WEDGE \
-    mycpp-check "${files[@]}"
-}
-
 files() {
   wc -l mycpp/*.py | sort -n
 }

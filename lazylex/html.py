@@ -13,6 +13,8 @@ import cStringIO
 import re
 import sys
 
+from typing import List, Tuple
+
 
 def log(msg, *args):
     msg = msg % args
@@ -48,14 +50,11 @@ class Output(object):
     Print FROM the input or print new text to the output.
     """
 
-    def __init__(self, s, f, left_pos=0, right_pos=0):
+    def __init__(self, s, f, left_pos=0, right_pos=-1):
         self.s = s
         self.f = f
         self.pos = left_pos
-        if right_pos == 0:
-            self.right_pos = len(s)
-        else:
-            self.right_pos = right_pos
+        self.right_pos = len(s) if right_pos == -1 else right_pos
 
     def SkipTo(self, pos):
         """Skip to a position."""
@@ -90,7 +89,7 @@ class Tok(object):
 
 assert len(TOKENS) == 12, TOKENS
 
-TOKEN_NAMES = [None] * len(TOKENS)
+TOKEN_NAMES = [None] * len(TOKENS)  # type: List[str]
 
 this_module = sys.modules[__name__]
 for i, tok_str in enumerate(TOKENS):
@@ -170,6 +169,17 @@ LEXER = [
 LEXER = MakeLexer(LEXER)
 
 
+class Lexer(object):
+    def __init__(self, s, left_pos=0, right_pos=-1):
+        self.s = s
+        self.pos = left_pos
+        self.right_pos = len(s) if right_pos == -1 else right_pos
+
+    def Next(self):
+        # TODO: Use lexer
+        pass
+
+
 def _Tokens(s, left_pos, right_pos):
     """
     Args:
@@ -177,12 +187,9 @@ def _Tokens(s, left_pos, right_pos):
       left_pos, right_pos: Optional span boundaries.
     """
     pos = left_pos
-    if right_pos == 0:
-        n = len(s)
-    else:
-        n = right_pos
+    right_pos = len(s) if right_pos == -1 else right_pos
 
-    while pos < n:
+    while pos < right_pos:
         # Find the FIRST pattern that matches.
         for pat, tok_id in LEXER:
             m = pat.match(s, pos)
@@ -196,7 +203,7 @@ def _Tokens(s, left_pos, right_pos):
     yield Tok.EndOfStream, pos
 
 
-def ValidTokens(s, left_pos=0, right_pos=0):
+def ValidTokens(s, left_pos=0, right_pos=-1):
     """Wrapper around _Tokens to prevent callers from having to handle Invalid.
 
     I'm not combining the two functions because I might want to do a
@@ -428,7 +435,7 @@ CHAR_ENTITY = {
 }
 
 
-def ToText(s, left_pos=0, right_pos=0):
+def ToText(s, left_pos=0, right_pos=-1):
     """Given HTML, return text by unquoting &gt; and &lt; etc.
 
     Used by:

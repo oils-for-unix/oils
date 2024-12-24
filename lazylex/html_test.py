@@ -24,7 +24,7 @@ def _PrintTokens(lex):
         log('%s %r', tok, lex.s[start:end])
 
 
-class HtmlTest(unittest.TestCase):
+class TagLexerTest(unittest.TestCase):
 
     def testTagLexer(self):
         # Invalid!
@@ -73,6 +73,9 @@ class HtmlTest(unittest.TestCase):
         lex = _MakeTagLexer('<a href="?foo=1&amp;bar=2" />')
         self.assertEqual([('href', '?foo=1&amp;bar=2')], lex.AllAttrsRaw())
 
+
+class LexerTest(unittest.TestCase):
+
     # IndexLinker in devtools/make_help.py
     #  <pre> sections in doc/html_help.py
     # TocExtractor in devtools/cmark.py
@@ -90,6 +93,52 @@ class HtmlTest(unittest.TestCase):
             if tok_id == html.Invalid:
                 raise RuntimeError()
             print(tok_id)
+
+    def testValid(self):
+        Tok = html.Tok
+
+        lex = html.ValidTokens('<a>hi</a>')
+
+        tok_id, pos = next(lex)
+        self.assertEqual(3, pos)
+        self.assertEqual(Tok.StartTag, tok_id)
+
+        tok_id, pos = next(lex)
+        self.assertEqual(5, pos)
+        self.assertEqual(Tok.RawData, tok_id)
+
+        tok_id, pos = next(lex)
+        self.assertEqual(9, pos)
+        self.assertEqual(Tok.EndTag, tok_id)
+
+        tok_id, pos = next(lex)
+        self.assertEqual(9, pos)
+        self.assertEqual(Tok.EndOfStream, tok_id)
+
+        return
+        tok_id, pos = next(lex)
+        self.assertEqual(9, pos)
+        self.assertEqual(Tok.EndOfStream, tok_id)
+
+        while True:
+            tok_id, pos = next(lex)
+            print('%d %s' % (pos, html.TokenName(tok_id)))
+
+    def testInvalid(self):
+        Tok = html.Tok
+
+        lex = html.ValidTokens('<a>&')
+
+        tok_id, pos = next(lex)
+        self.assertEqual(3, pos)
+        self.assertEqual(Tok.StartTag, tok_id)
+
+        try:
+            tok_id, pos = next(lex)
+        except html.LexError as e:
+            print(e)
+        else:
+            self.fail('Expected LexError')
 
 
 if __name__ == '__main__':
