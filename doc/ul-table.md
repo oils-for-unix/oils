@@ -26,9 +26,6 @@ Suppose you want to make this table:
 table {
   margin: 0 auto;
 }
-thead {
-  font-weight: bold;
-}
 td {
   padding: 5px;
 }
@@ -133,9 +130,6 @@ To make the table look nice, I use `<style>` tags inside Markdown:
     <style>
     table {
       margin: 0 auto;
-    }
-    thead {
-      font-weight: bold;
     }
     td {
       padding: 5px;

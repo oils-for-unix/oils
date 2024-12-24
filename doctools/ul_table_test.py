@@ -47,9 +47,9 @@ TD_ATTRS_HTML = """\
 <table>
 <thead>
 <tr>
-  <td> name</td>
-  <td> age</td>
-  <td>role</td>
+  <th> name</th>
+  <th> age</th>
+  <th>role</th>
 </tr>
 </thead>
 <tr>
@@ -90,8 +90,8 @@ COLSPAN_HTML = """\
 <table>
 <thead>
 <tr>
-  <td> name</td>
-  <td>age</td>
+  <th> name</th>
+  <th>age</th>
 </tr>
 </thead>
 <tr>
@@ -155,13 +155,13 @@ class UlTableTest(unittest.TestCase):
 
 <table>
 """)
-        self.assertEqual(
+        self.assertMultiLineEqual(
             """\
 <table>
 <thead>
 <tr>
-  <td><em>name</em></td>
-  <td><em>age</em></td>
+  <th><em>name</em></th>
+  <th><em>age</em></th>
 </tr>
 </thead>
 <tr>

@@ -410,9 +410,10 @@ def ReplaceTables(s, debug_out=None):
         for td_attrs, raw_html in table['thead']:
             if td_attrs:
                 col_attrs[i] = td_attrs
-            out.Print('  <td>')
+            # <th> tag is more semantic, and styled bold by default
+            out.Print('  <th>')
             out.Print(raw_html)
-            out.Print('</td>\n')
+            out.Print('</th>\n')
             i += 1
 
         out.Print('</tr>\n')
