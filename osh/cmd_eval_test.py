@@ -44,7 +44,7 @@ class VarOpTest(unittest.TestCase):
         left = None
         unset_sub = BracedVarSub.CreateNull(alloc_lists=True)
         unset_sub.left = left
-        unset_sub.token = Tok(Id.VSub_Name, 'unset')
+        unset_sub.name_tok = Tok(Id.VSub_Name, 'unset')
         unset_sub.var_name = 'unset'
 
         part_vals = []
@@ -53,7 +53,7 @@ class VarOpTest(unittest.TestCase):
 
         set_sub = BracedVarSub.CreateNull(alloc_lists=True)
         set_sub.left = left
-        set_sub.token = Tok(Id.VSub_Name, 'x')
+        set_sub.name_tok = Tok(Id.VSub_Name, 'x')
         set_sub.var_name = 'x'
 
         part_vals = []
