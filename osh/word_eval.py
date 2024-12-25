@@ -1078,7 +1078,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     self._ProcessUndef(val, vsub_token, vsub_state)
 
                     # For unset variables, we do not generate any quoted words.
-                    result = value.Str('')
+                    if vsub_state.array_ref is not None:
+                        result = value.BashArray([])
+                    else:
+                        result = value.Str('')
 
                 elif case(value_e.Str):
                     str_val = cast(value.Str, UP_val)
@@ -1100,7 +1103,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         # TODO: should use fastfunc.ShellEncode
                         j8_lite.MaybeShellEncode(s) for s in values
                     ]
-                    result = value.Str(' '.join(tmp))
+                    result = value.BashArray(tmp)
                 else:
                     e_die("Can't use @Q on %s" % ui.ValType(val), op)
 
