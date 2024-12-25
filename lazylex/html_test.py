@@ -115,6 +115,13 @@ class LexerTest(unittest.TestCase):
         self.assertEqual(9, pos)
         self.assertEqual(Tok.EndOfStream, tok_id)
 
+        lex = html.Lexer('<a>hi</a>')
+        while True:
+            tok_id, pos = lex.Read()
+            print('%d %s' % (pos, html.TokenName(tok_id)))
+            if tok_id == Tok.EndOfStream:
+                break
+
         return
         tok_id, pos = next(lex)
         self.assertEqual(9, pos)

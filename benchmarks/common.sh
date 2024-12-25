@@ -61,7 +61,7 @@ die() {
 
 cmark() {
   # A filter to making reports
-  PYTHONPATH=. doctools/cmark.py "$@"
+  PYTHONPATH=.:vendor doctools/cmark.py "$@"
 }
 
 # For compatibility, if cell starts with 'osh', apply the 'special' CSS class.

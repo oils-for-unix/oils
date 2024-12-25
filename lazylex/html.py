@@ -170,16 +170,34 @@ LEXER = MakeLexer(LEXER)
 
 
 class Lexer(object):
+
     def __init__(self, s, left_pos=0, right_pos=-1):
         self.s = s
         self.pos = left_pos
         self.right_pos = len(s) if right_pos == -1 else right_pos
 
-    def Next(self):
+    def Peek(self):
         # type: () -> Tuple[int, int]
+        if self.pos == self.right_pos:
+            return Tok.EndOfStream, self.pos
 
-        # TODO: hook up lexing rules
-        pass
+        assert self.pos < self.right_pos, self.pos
+
+        # Find the first match.
+        # Note: frontend/match.py uses _LongestMatch(), which is different!
+        # TODO: reconcile them.  This lexer should be expressible in re2c.
+        for pat, tok_id in LEXER:
+            m = pat.match(self.s, self.pos)
+            if m:
+                return tok_id, m.end()
+        else:
+            raise AssertionError('Tok.Invalid rule should have matched')
+
+    def Read(self):
+        # type: () -> Tuple[int, int]
+        tok_id, end_pos = self.Peek()
+        self.pos = end_pos  # advance
+        return tok_id, end_pos
 
 
 def _Tokens(s, left_pos, right_pos):
