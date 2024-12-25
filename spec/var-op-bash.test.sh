@@ -472,3 +472,81 @@ a
 A
 A
 ## END
+
+
+#### Array expansion with nullary var ops
+
+declare -a a=({1..9})
+declare -A A=(['a']=hello ['b']=world ['c']=osh ['d']=ysh)
+
+echo "@Q"
+argv.py "${a[@]@Q}"
+argv.py "${a[*]@Q}"
+argv.py "${A[@]@Q}"
+argv.py "${A[*]@Q}"
+argv.py "${u[@]@Q}"
+argv.py "${u[*]@Q}"
+
+echo "@P"
+argv.py "${a[@]@P}"
+argv.py "${a[*]@P}"
+argv.py "${A[@]@P}"
+argv.py "${A[*]@P}"
+argv.py "${u[@]@P}"
+argv.py "${u[*]@P}"
+
+echo "@a"
+argv.py "${a[@]@a}"
+argv.py "${a[*]@a}"
+argv.py "${A[@]@a}"
+argv.py "${A[*]@a}"
+argv.py "${u[@]@a}"
+argv.py "${u[*]@a}"
+
+## STDOUT:
+@Q
+['1', '2', '3', '4', '5', '6', '7', '8', '9']
+['1 2 3 4 5 6 7 8 9']
+['hello', 'world', 'osh', 'ysh']
+['hello world osh ysh']
+[]
+['']
+@P
+['1', '2', '3', '4', '5', '6', '7', '8', '9']
+['1 2 3 4 5 6 7 8 9']
+['hello', 'world', 'osh', 'ysh']
+['hello world osh ysh']
+[]
+['']
+@a
+['a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a']
+['a a a a a a a a a']
+['A', 'A', 'A', 'A']
+['A A A A']
+[]
+['']
+## END
+
+## OK bash STDOUT:
+@Q
+["'1'", "'2'", "'3'", "'4'", "'5'", "'6'", "'7'", "'8'", "'9'"]
+["'1' '2' '3' '4' '5' '6' '7' '8' '9'"]
+["'ysh'", "'osh'", "'world'", "'hello'"]
+["'ysh' 'osh' 'world' 'hello'"]
+[]
+['']
+@P
+['1', '2', '3', '4', '5', '6', '7', '8', '9']
+['1 2 3 4 5 6 7 8 9']
+['ysh', 'osh', 'world', 'hello']
+['ysh osh world hello']
+[]
+['']
+@a
+['a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a']
+['a a a a a a a a a']
+['A', 'A', 'A', 'A']
+['A A A A']
+[]
+['']
+## END
