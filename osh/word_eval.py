@@ -206,7 +206,7 @@ def _ValueToPartValue(val, quoted, part_loc):
 
     with tagswitch(val) as case:
         if case(value_e.Undef):
-            # This happens in the case of ${undef+foo}.  We skipped _EmptyStrOrError,
+            # This happens in the case of ${undef+foo}.  We skipped _ProcessUndef,
             # but we have to append to the empty string.
             return Piece('', quoted, not quoted)
 
@@ -1036,13 +1036,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         raise NotImplementedError()
         return val
 
-    def _Nullary(self, val, op, var_name):
-        # type: (value_t, Token, Optional[str]) -> Tuple[value.Str, bool]
+    def _Nullary(self, val, op, var_name, vsub_token, vsub_state):
+        # type: (value_t, Token, Optional[str], Token, VarSubState) -> Tuple[value.Str, bool]
 
-        UP_val = val
         quoted2 = False
         op_id = op.id
         if op_id == Id.VOp0_P:
+            val = self._ProcessUndef(val, vsub_token, vsub_state)
+            UP_val = val
             with tagswitch(val) as case:
                 if case(value_e.Undef):
                     result = value.Str('')
@@ -1056,9 +1057,18 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     e_die("Can't use @P on %s" % ui.ValType(val), op)
 
         elif op_id == Id.VOp0_Q:
+            UP_val = val
             with tagswitch(val) as case:
                 if case(value_e.Undef):
+                    # We need to issue an error when "-o nounset" is enabled.
+                    # Although we do not need to check val for value_e.Undef,
+                    # we call _ProcessUndef for consistency in the error
+                    # message.
+                    self._ProcessUndef(val, vsub_token, vsub_state)
+
+                    # For unset variables, we do not generate any quoted words.
                     result = value.Str('')
+
                 elif case(value_e.Str):
                     str_val = cast(value.Str, UP_val)
                     result = value.Str(j8_lite.MaybeShellEncode(str_val.s))
@@ -1084,6 +1094,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     e_die("Can't use @Q on %s" % ui.ValType(val), op)
 
         elif op_id == Id.VOp0_a:
+            val = self._ProcessUndef(val, vsub_token, vsub_state)
+            UP_val = val
             # We're ONLY simluating -a and -A, not -r -x -n for now.  See
             # spec/ble-idioms.test.sh.
             chars = []  # type: List[str]
@@ -1125,8 +1137,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         with tagswitch(val) as case2:
             if case2(value_e.Undef):
-                if not vsub_state.has_test_op:
-                    val = self._EmptyBashArrayOrError(part.token)
+                # For an undefined array, we save the token of the array
+                # reference for the later error message.
+                vsub_state.array_ref = part.token
             elif case2(value_e.Str):
                 if self.exec_opts.strict_array():
                     e_die("Can't index string with %s" % op_str,
@@ -1266,25 +1279,27 @@ class AbstractWordEvaluator(StringWordEvaluator):
         tmp = [s for s in bash_impl.BashArray_GetValues(val) if s is not None]
         return value.Str(sep.join(tmp))
 
-    def _EmptyStrOrError(self, val, token):
-        # type: (value_t, Token) -> value_t
+    def _ProcessUndef(self, val, name_tok, vsub_state):
+        # type: (value_t, Token, VarSubState) -> value_t
+        assert name_tok is not None
+
         if val.tag() != value_e.Undef:
             return val
 
-        if not self.exec_opts.nounset():
-            return value.Str('')
-
-        tok_str = lexer.TokenVal(token)
-        name = tok_str[1:] if tok_str.startswith('$') else tok_str
-        e_die('Undefined variable %r' % name, token)
-
-    def _EmptyBashArrayOrError(self, token):
-        # type: (Token) -> value_t
-        assert token is not None
-        if self.exec_opts.nounset():
-            e_die('Undefined array %r' % lexer.TokenVal(token), token)
+        if vsub_state.array_ref is not None:
+            array_tok = vsub_state.array_ref
+            if self.exec_opts.nounset():
+                e_die('Undefined array %r' % lexer.TokenVal(array_tok),
+                      array_tok)
+            else:
+                return value.BashArray([])
         else:
-            return value.BashArray([])
+            if self.exec_opts.nounset():
+                tok_str = lexer.TokenVal(name_tok)
+                name = tok_str[1:] if tok_str.startswith('$') else tok_str
+                e_die('Undefined variable %r' % name, name_tok)
+            else:
+                return value.Str('')
 
     def _EvalBracketOp(self, val, part, quoted, vsub_state, vtest_place):
         # type: (value_t, BracedVarSub, bool, VarSubState, VTestPlace) -> value_t
@@ -1430,29 +1445,19 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 if case(suffix_op_e.Nullary):
                     suffix_op_ = cast(Token, UP_op)
 
-                    vsub_state.has_nullary_op = True
-
                     # Type query ${array@a} is a STRING, not an array
                     # NOTE: ${array@Q} is ${array[0]@Q} in bash, which is different than
                     # ${array[@]@Q}
                     if suffix_op_.id == Id.VOp0_a:
                         vsub_state.is_type_query = True
 
-                elif case(suffix_op_e.Unary):
-                    suffix_op_ = cast(suffix_op.Unary, UP_op)
-
-                    # Do the _EmptyStrOrError/_EmptyBashArrayOrError up front, EXCEPT in
-                    # the case of Kind.VTest
-                    if consts.GetKind(suffix_op_.op.id) == Kind.VTest:
-                        vsub_state.has_test_op = True
-
         # 2. Bracket Op
         val = self._EvalBracketOp(val, part, quoted, vsub_state, vtest_place)
 
         if part.prefix_op:
             if part.prefix_op.id == Id.VSub_Pound:  # ${#var} for length
-                if not vsub_state.has_test_op:  # undef -> '' BEFORE length
-                    val = self._EmptyStrOrError(val, part.token)
+                # undef -> '' BEFORE length
+                val = self._ProcessUndef(val, part.token, vsub_state)
 
                 n = self._Count(val, part.token)
                 part_vals.append(Piece(str(n), quoted, False))
@@ -1461,12 +1466,17 @@ class AbstractWordEvaluator(StringWordEvaluator):
             elif part.prefix_op.id == Id.VSub_Bang:
                 if (part.bracket_op and
                         part.bracket_op.tag() == bracket_op_e.WholeArray):
-                    if vsub_state.has_test_op:
-                        # ${!a[@]-'default'} is a non-fatal runtime error in bash.  Here
-                        # it's fatal.
-                        op_tok = cast(suffix_op.Unary, UP_op).op
-                        e_die('Test operation not allowed with ${!array[@]}',
-                              op_tok)
+                    # undef -> empty array
+                    val = self._ProcessUndef(val, part.token, vsub_state)
+
+                    # ${!a[@]-'default'} is a non-fatal runtime error in bash.
+                    # Here it's fatal.
+                    if suffix_op_ and suffix_op_.tag() == suffix_op_e.Unary:
+                        unary_op = cast(suffix_op.Unary, suffix_op_)
+                        if consts.GetKind(unary_op.op.id) == Kind.VTest:
+                            e_die(
+                                'Test operation not allowed with ${!array[@]}',
+                                unary_op.op)
 
                     # ${!array[@]} to get indices/keys
                     val = self._Keys(val, part.token)
@@ -1483,16 +1493,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     val = self._EvalVarRef(val, part.token, quoted, vsub_state,
                                            vtest_place)
 
-                    if not vsub_state.has_test_op:  # undef -> '' AFTER indirection
-                        val = self._EmptyStrOrError(val, part.token)
-
             else:
                 raise AssertionError(part.prefix_op)
-
-        else:
-            # undef -> '' if no prefix op or ${x@P} up
-            if not vsub_state.has_test_op and not vsub_state.has_nullary_op:
-                val = self._EmptyStrOrError(val, part.token)
 
         quoted2 = False  # another bit for @Q
         if suffix_op_:
@@ -1501,10 +1503,15 @@ class AbstractWordEvaluator(StringWordEvaluator):
             with tagswitch(suffix_op_) as case:
                 if case(suffix_op_e.Nullary):
                     op = cast(Token, UP_op)
-                    val, quoted2 = self._Nullary(val, op, var_name)
+                    val, quoted2 = self._Nullary(val, op, var_name, part.token,
+                                                 vsub_state)
+
                 elif case(suffix_op_e.Unary):
                     op = cast(suffix_op.Unary, UP_op)
                     if consts.GetKind(op.op.id) == Kind.VTest:
+                        # Note: _ProcessUndef (i.e., the conversion of undef ->
+                        # '') is not applied to the VTest operators such as
+                        # ${a:-def}, ${a+set}, etc.
                         if self._ApplyTestOp(val, op, quoted, part_vals,
                                              vtest_place, part.token):
                             # e.g. to evaluate ${undef:-'default'}, we already appended
@@ -1513,14 +1520,17 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
                     else:
                         # Other suffix: value -> value
+                        val = self._ProcessUndef(val, part.token, vsub_state)
                         val = self._ApplyUnarySuffixOp(val, op)
 
                 elif case(suffix_op_e.PatSub):  # PatSub, vectorized
                     op = cast(suffix_op.PatSub, UP_op)
+                    val = self._ProcessUndef(val, part.token, vsub_state)
                     val = self._PatSub(val, op)
 
                 elif case(suffix_op_e.Slice):
                     op = cast(suffix_op.Slice, UP_op)
+                    val = self._ProcessUndef(val, part.token, vsub_state)
                     val = self._Slice(val, op, var_name, part)
 
                 elif case(suffix_op_e.Static):
@@ -1529,6 +1539,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
                 else:
                     raise AssertionError()
+        else:
+            val = self._ProcessUndef(val, part.token, vsub_state)
 
         # After applying suffixes, process join_array here.
         UP_val = val
@@ -1614,7 +1626,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             val = self._EvalSpecialVar(token.id, quoted, vsub_state)
 
         #log('SIMPLE %s', part)
-        val = self._EmptyStrOrError(val, token)
+        val = self._ProcessUndef(val, token, vsub_state)
         UP_val = val
         if val.tag() == value_e.BashArray:
             array_val = cast(value.BashArray, UP_val)

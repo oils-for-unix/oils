@@ -416,3 +416,15 @@ x='x' empty='' x='x'
 r r
 ## END
 
+#### -o nounset with var ops
+
+set -u
+(echo ${undef@Q}); echo "stat: $?"
+(echo ${undef@P}); echo "stat: $?"
+(echo ${undef@a}); echo "stat: $?"
+
+## STDOUT:
+stat: 1
+stat: 1
+stat: 1
+## END
