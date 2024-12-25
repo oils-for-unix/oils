@@ -176,7 +176,7 @@ class Lexer(object):
         self.pos = left_pos
         self.right_pos = len(s) if right_pos == -1 else right_pos
 
-    def Peek(self):
+    def _Peek(self):
         # type: () -> Tuple[int, int]
         if self.pos == self.right_pos:
             return Tok.EndOfStream, self.pos
@@ -195,9 +195,13 @@ class Lexer(object):
 
     def Read(self):
         # type: () -> Tuple[int, int]
-        tok_id, end_pos = self.Peek()
+        tok_id, end_pos = self._Peek()
         self.pos = end_pos  # advance
         return tok_id, end_pos
+
+    def LookAhead(self, regex):
+        # TODO: test if it matches the regex.  Don't need Peek()
+        return True
 
 
 def _Tokens(s, left_pos, right_pos):

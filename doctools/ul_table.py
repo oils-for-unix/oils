@@ -7,6 +7,8 @@ import re
 from doctools.util import log
 from lazylex import html
 
+_WHITESPACE_RE = re.compile(r'\s*')
+
 
 class UlTableParser(object):
 
@@ -19,7 +21,7 @@ class UlTableParser(object):
         self.end_pos = 0
 
     def _CurrentString(self):
-        part = self.tag_lexer.s[self.start_pos:self.end_pos]
+        part = self.lexer.s[self.start_pos:self.end_pos]
         return part
 
     def _Next(self):
@@ -27,10 +29,7 @@ class UlTableParser(object):
         Advance and set self.tok_id, self.start_pos, self.end_pos
         """
         self.start_pos = self.end_pos
-        try:
-            self.tok_id, self.end_pos = next(self.lexer)
-        except StopIteration:
-            raise
+        self.tok_id, self.end_pos = self.lexer.Read()
         if 0:
             part = self._CurrentString()
             log('[%3d - %3d] %r', self.start_pos, self.end_pos, part)
@@ -53,29 +52,35 @@ class UlTableParser(object):
                                   actual)
         self._Next()
 
-    def _Eat(self, tok_id, s):
+    def _Eat(self, expected_id, expected_tag):
         """
         Assert that we got a start or end tag, with the given name, and advance
+
+        Args:
+          expected_id: html.StartTag or html.EndTag
+          expected_tag: 'a', 'span', etc.
         """
-        if self.tok_id != tok_id:
+        assert expected_id in (html.StartTag,
+                               html.EndTag), html.TokenName(expected_id)
+
+        if self.tok_id != expected_id:
             raise html.ParseError('Expected token %s, got %s',
-                                  html.TokenName(tok_id),
+                                  html.TokenName(expected_id),
                                   html.TokenName(self.tok_id))
-        if tok_id in (html.StartTag, html.EndTag):
-            self.tag_lexer.Reset(self.start_pos, self.end_pos)
-            tag_name = self.tag_lexer.TagName()
-            if s != tag_name:
-                raise html.ParseError('Expected tag %r, got %r', s, tag_name)
-        else:
-            if s is not None:
-                raise AssertionError("Don't know what to do with %r" % s)
+        self.tag_lexer.Reset(self.start_pos, self.end_pos)
+        tag_name = self.tag_lexer.TagName()
+        if expected_tag != tag_name:
+            raise html.ParseError('Expected tag %r, got %r', expected_tag,
+                                  tag_name)
+
         self._Next()
 
     def _WhitespaceOk(self):
         """
         Optional whitespace
         """
-        if self.tok_id == html.RawData and self._CurrentString().isspace():
+        if (self.tok_id == html.RawData and
+                _WHITESPACE_RE.match(self.lexer.s, self.start_pos)):
             self._Next()
 
     def FindUlTable(self):
@@ -199,7 +204,7 @@ class UlTableParser(object):
             LIST_ITEM+
             [RawData \s*]?
             [EndTag 'ul']
-          [RawData thead\s*]
+          [RawData thead\s+]
           [End 'li']
 
         Two Algorithms:
@@ -229,8 +234,8 @@ class UlTableParser(object):
 
         # In CommonMark, r'thead\n' is enough, because it strips trailing
         # whitespace.  I'm not sure if other Markdown processors do that, so
-        # use r'thead\n'.
-        self._EatRawData(r'thead\s*')
+        # use r'thead\s+'.
+        self._EatRawData(r'thead\s+')
 
         # This is the row data
         self._Eat(html.StartTag, 'ul')
@@ -332,19 +337,22 @@ class UlTableParser(object):
         ul_start = self.start_pos
         self._Eat(html.StartTag, 'ul')
 
-        thead = self._ParseTHead()
+        # Look ahead 2 or 3 tokens:
+        if self.lexer.LookAhead(r'\s*<li>thead\s+'):
+            thead = self._ParseTHead()
+        else:
+            thead = None
         #log('___ THEAD %s', thead)
 
-        num_cells = len(thead)
         while True:
             tr_attrs, tr = self._ParseTr()
             if tr is None:
                 break
             # Not validating because of colspan
             if 0:
-                if len(tr) != num_cells:
+                if thead and len(tr) != len(thead):
                     raise html.ParseError('Expected %d cells, got %d: %s',
-                                          num_cells, len(tr), tr)
+                                          len(thead), len(tr), tr)
 
             #log('___ TR %s', tr)
             table['tr'].append((tr_attrs, tr))
@@ -405,9 +413,9 @@ def ReplaceTables(s, debug_out=None):
     out = html.Output(s, f)
 
     tag_lexer = html.TagLexer(s)
-    it = html.ValidTokens(s)
+    lexer = html.Lexer(s)
 
-    p = UlTableParser(it, tag_lexer)
+    p = UlTableParser(lexer, tag_lexer)
 
     while True:
         ul_start = p.FindUlTable()
@@ -425,23 +433,26 @@ def ReplaceTables(s, debug_out=None):
         out.SkipTo(table['ul_end'])
 
         # Write the header
-        out.Print('<thead>\n')
-        out.Print('<tr>\n')
+        thead = table['thead']
 
-        col_attrs = {}  # integer -> td_attrs
+        if thead:
+            out.Print('<thead>\n')
+            out.Print('<tr>\n')
 
-        i = 0
-        for td_attrs, raw_html in table['thead']:
-            if td_attrs:
-                col_attrs[i] = td_attrs
-            # <th> tag is more semantic, and styled bold by default
-            out.Print('  <th>')
-            out.Print(raw_html)
-            out.Print('</th>\n')
-            i += 1
+            col_attrs = {}  # integer -> td_attrs
 
-        out.Print('</tr>\n')
-        out.Print('</thead>\n')
+            i = 0
+            for td_attrs, raw_html in thead:
+                if td_attrs:
+                    col_attrs[i] = td_attrs
+                # <th> tag is more semantic, and styled bold by default
+                out.Print('  <th>')
+                out.Print(raw_html)
+                out.Print('</th>\n')
+                i += 1
+
+            out.Print('</tr>\n')
+            out.Print('</thead>\n')
 
         # Write each row
         for tr_attrs, row in table['tr']:
