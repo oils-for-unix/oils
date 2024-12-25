@@ -1060,7 +1060,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     result = value.Str('')
                 elif case(value_e.Str):
                     str_val = cast(value.Str, UP_val)
-                    prompt = self.prompt_ev.EvalPrompt(str_val)
+                    prompt = self.prompt_ev.EvalPrompt(str_val.s)
                     # readline gets rid of these, so we should too.
                     p = prompt.replace('\x01', '').replace('\x02', '')
                     result = value.Str(p)
