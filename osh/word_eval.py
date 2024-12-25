@@ -1139,7 +1139,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             if case2(value_e.Undef):
                 # For an undefined array, we save the token of the array
                 # reference for the later error message.
-                vsub_state.array_ref = part.token
+                vsub_state.array_ref = part.name_tok
             elif case2(value_e.Str):
                 if self.exec_opts.strict_array():
                     e_die("Can't index string with %s" % op_str,
@@ -1169,7 +1169,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 # Bash treats any string as an array, so we can't add our own
                 # behavior here without making valid OSH invalid bash.
                 e_die("Can't index string %r with integer" % part.var_name,
-                      part.token)
+                      part.name_tok)
 
             elif case2(value_e.BashArray):
                 array_val = cast(value.BashArray, UP_val)
@@ -1184,7 +1184,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     self.errfmt.Print_(
                         "Index %d out of bounds for array of length %d" %
                         (index, bash_impl.BashArray_Length(array_val)),
-                        blame_loc=part.token)
+                        blame_loc=part.name_tok)
 
                 if s is None:
                     val = value.Undef
@@ -1205,7 +1205,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     self.errfmt.Print_(
                         "Index %s out of bounds for array of length %s" %
                         (mops.ToStr(big_index), mops.ToStr(big_length)),
-                        blame_loc=part.token)
+                        blame_loc=part.name_tok)
 
                 if s is None:
                     val = value.Undef
@@ -1337,17 +1337,17 @@ class AbstractWordEvaluator(StringWordEvaluator):
         value_t."""
 
         # 1. Evaluate from (var_name, var_num, token Id) -> value
-        if part.token.id == Id.VSub_Name:
+        if part.name_tok.id == Id.VSub_Name:
             vtest_place.name = part.var_name
             val = self.mem.GetValue(part.var_name)
 
-        elif part.token.id == Id.VSub_Number:
+        elif part.name_tok.id == Id.VSub_Number:
             var_num = int(part.var_name)
             val = self._EvalVarNum(var_num)
 
         else:
             # $* decays
-            val = self._EvalSpecialVar(part.token.id, quoted, vsub_state)
+            val = self._EvalSpecialVar(part.name_tok.id, quoted, vsub_state)
 
         # We don't need var_index because it's only for L-Values of test ops?
         if self.exec_opts.eval_unsafe_arith():
@@ -1407,7 +1407,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         vsub_state = VarSubState.CreateNull()  # for $*, ${a[*]}, etc.
 
         # 1. Evaluate from (var_name, var_num, token Id) -> value
-        if part.token.id == Id.VSub_Name:
+        if part.name_tok.id == Id.VSub_Name:
             # Handle ${!prefix@} first, since that looks at names and not values
             # Do NOT handle ${!A[@]@a} here!
             if (part.prefix_op is not None and part.bracket_op is None and
@@ -1431,12 +1431,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             val = self.mem.GetValue(var_name)
 
-        elif part.token.id == Id.VSub_Number:
+        elif part.name_tok.id == Id.VSub_Number:
             var_num = int(part.var_name)
             val = self._EvalVarNum(var_num)
         else:
             # $* decays
-            val = self._EvalSpecialVar(part.token.id, quoted, vsub_state)
+            val = self._EvalSpecialVar(part.name_tok.id, quoted, vsub_state)
 
         suffix_op_ = part.suffix_op
         if suffix_op_:
@@ -1457,9 +1457,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
         if part.prefix_op:
             if part.prefix_op.id == Id.VSub_Pound:  # ${#var} for length
                 # undef -> '' BEFORE length
-                val = self._ProcessUndef(val, part.token, vsub_state)
+                val = self._ProcessUndef(val, part.name_tok, vsub_state)
 
-                n = self._Count(val, part.token)
+                n = self._Count(val, part.name_tok)
                 part_vals.append(Piece(str(n), quoted, False))
                 return  # EARLY EXIT: nothing else can come after length
 
@@ -1467,7 +1467,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 if (part.bracket_op and
                         part.bracket_op.tag() == bracket_op_e.WholeArray):
                     # undef -> empty array
-                    val = self._ProcessUndef(val, part.token, vsub_state)
+                    val = self._ProcessUndef(val, part.name_tok, vsub_state)
 
                     # ${!a[@]-'default'} is a non-fatal runtime error in bash.
                     # Here it's fatal.
@@ -1479,7 +1479,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                                 unary_op.op)
 
                     # ${!array[@]} to get indices/keys
-                    val = self._Keys(val, part.token)
+                    val = self._Keys(val, part.name_tok)
                     # already set vsub_State.join_array ABOVE
                 else:
                     # Process ${!ref}.  SURPRISE: ${!a[0]} is an indirect expansion unlike
@@ -1490,7 +1490,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     vtest_place.name = None
                     vtest_place.index = None
 
-                    val = self._EvalVarRef(val, part.token, quoted, vsub_state,
+                    val = self._EvalVarRef(val, part.name_tok, quoted, vsub_state,
                                            vtest_place)
 
             else:
@@ -1503,7 +1503,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             with tagswitch(suffix_op_) as case:
                 if case(suffix_op_e.Nullary):
                     op = cast(Token, UP_op)
-                    val, quoted2 = self._Nullary(val, op, var_name, part.token,
+                    val, quoted2 = self._Nullary(val, op, var_name, part.name_tok,
                                                  vsub_state)
 
                 elif case(suffix_op_e.Unary):
@@ -1513,24 +1513,24 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         # '') is not applied to the VTest operators such as
                         # ${a:-def}, ${a+set}, etc.
                         if self._ApplyTestOp(val, op, quoted, part_vals,
-                                             vtest_place, part.token):
+                                             vtest_place, part.name_tok):
                             # e.g. to evaluate ${undef:-'default'}, we already appended
                             # what we need
                             return
 
                     else:
                         # Other suffix: value -> value
-                        val = self._ProcessUndef(val, part.token, vsub_state)
+                        val = self._ProcessUndef(val, part.name_tok, vsub_state)
                         val = self._ApplyUnarySuffixOp(val, op)
 
                 elif case(suffix_op_e.PatSub):  # PatSub, vectorized
                     op = cast(suffix_op.PatSub, UP_op)
-                    val = self._ProcessUndef(val, part.token, vsub_state)
+                    val = self._ProcessUndef(val, part.name_tok, vsub_state)
                     val = self._PatSub(val, op)
 
                 elif case(suffix_op_e.Slice):
                     op = cast(suffix_op.Slice, UP_op)
-                    val = self._ProcessUndef(val, part.token, vsub_state)
+                    val = self._ProcessUndef(val, part.name_tok, vsub_state)
                     val = self._Slice(val, op, var_name, part)
 
                 elif case(suffix_op_e.Static):
@@ -1540,7 +1540,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 else:
                     raise AssertionError()
         else:
-            val = self._ProcessUndef(val, part.token, vsub_state)
+            val = self._ProcessUndef(val, part.name_tok, vsub_state)
 
         # After applying suffixes, process join_array here.
         UP_val = val

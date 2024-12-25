@@ -84,7 +84,7 @@ def _GetPrefixOp(test, w):
 def _GetVarSub(test, w):
     test.assertEqual(1, len(w.parts))
     part = w.parts[0]
-    return lexer.LazyStr(part.token)
+    return lexer.LazyStr(part.name_tok)
 
 
 class ArenaTest(unittest.TestCase):

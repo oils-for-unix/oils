@@ -403,7 +403,7 @@ class WordParser(WordEmitter):
             bracket_op = None
 
         part = BracedVarSub.CreateNull()
-        part.token = name_token
+        part.name_tok = name_token
         part.var_name = lexer.TokenVal(name_token)
         part.bracket_op = bracket_op
         return part
@@ -2112,8 +2112,8 @@ class WordParser(WordEmitter):
 
         part = self._ParseVarOf()
         # NOTE: no ${ } means no part.left and part.right
-        part.left = part.token  # cheat to make test pass
-        part.right = part.token
+        part.left = part.name_tok  # cheat to make test pass
+        part.right = part.name_tok
 
         self._GetToken()
         if self.token_type != Id.Eof_Real:

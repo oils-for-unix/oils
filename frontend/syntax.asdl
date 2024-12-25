@@ -137,7 +137,7 @@ module syntax
 
   BracedVarSub = (
       Token left,        # in dynamic ParseVarRef, same as name_tok
-      Token token,       # location for the name
+      Token name_tok,    # location for the name
       str var_name,      # the name - TODO: remove this, use LazyStr() instead
       Token? prefix_op,  # prefix # or ! operators
       bracket_op? bracket_op,

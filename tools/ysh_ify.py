@@ -1098,9 +1098,9 @@ class YshPrinter(object):
                 if node.suffix_op:
                     pass
 
-                op_id = node.token.id
+                op_id = node.name_tok.id
                 if op_id == Id.VSub_QMark:
-                    self.cursor.PrintIncluding(node.token)
+                    self.cursor.PrintIncluding(node.name_tok)
 
                 self.cursor.PrintIncluding(node.right)
 
