@@ -43,6 +43,33 @@ check-more() {
     | xargs -- $0 typecheck-files
 }
 
+mypy-check() {
+  local p=".:$MYPY_WEDGE:$PY3_LIBS_WEDGE"
+
+  # the path is fiddly
+  PYTHONPATH=$p MYPYPATH=$MYPY_WEDGE \
+    python3 -m mypy "$@"
+}
+
+check-mycpp() {
+  local -a files=(
+    mycpp/{pass_state,util,crash,format_strings,visitor,const_pass,control_flow_pass,mycpp_main,cppgen_pass,conversion_pass}.py
+  )
+  local -a flags=( --strict --no-strict-optional --follow-imports=silent )
+
+  mypy-check "${flags[@]}" "${files[@]}"
+}
+
+check-doctools() {
+  local -a files=(
+    doctools/oils_doc.py lazylex/html.py
+  )
+  #local -a flags=( --py2 --no-strict-optional --strict )
+  local -a flags=( --py2 --no-strict-optional )
+
+  mypy-check "${flags[@]}" "${files[@]}"
+}
+
 check-all() {
   ### Run this locally
 

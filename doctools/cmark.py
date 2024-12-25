@@ -20,6 +20,8 @@ from doctools import oils_doc
 from doctools import ul_table
 from lazylex import html as lazylex_html
 
+from typing import Any
+
 # Geez find_library returns the filename and not the path?  Just hardcode it as
 # a workaround.
 # https://bugs.python.org/issue21042
@@ -54,6 +56,7 @@ markdown.argtypes = [ctypes.c_char_p, ctypes.c_long, ctypes.c_long]
 
 
 def log(msg, *args):
+    # type: (str, Any) -> None
     if args:
         msg = msg % args
 

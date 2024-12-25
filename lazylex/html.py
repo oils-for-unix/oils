@@ -13,6 +13,8 @@ import cStringIO
 import re
 import sys
 
+from typing import List, Tuple
+
 
 def log(msg, *args):
     msg = msg % args
@@ -48,14 +50,11 @@ class Output(object):
     Print FROM the input or print new text to the output.
     """
 
-    def __init__(self, s, f, left_pos=0, right_pos=0):
+    def __init__(self, s, f, left_pos=0, right_pos=-1):
         self.s = s
         self.f = f
         self.pos = left_pos
-        if right_pos == 0:
-            self.right_pos = len(s)
-        else:
-            self.right_pos = right_pos
+        self.right_pos = len(s) if right_pos == -1 else right_pos
 
     def SkipTo(self, pos):
         """Skip to a position."""
@@ -90,7 +89,7 @@ class Tok(object):
 
 assert len(TOKENS) == 12, TOKENS
 
-TOKEN_NAMES = [None] * len(TOKENS)
+TOKEN_NAMES = [None] * len(TOKENS)  # type: List[str]
 
 this_module = sys.modules[__name__]
 for i, tok_str in enumerate(TOKENS):
@@ -170,33 +169,52 @@ LEXER = [
 LEXER = MakeLexer(LEXER)
 
 
+class Lexer(object):
+
+    def __init__(self, s, left_pos=0, right_pos=-1):
+        self.s = s
+        self.pos = left_pos
+        self.right_pos = len(s) if right_pos == -1 else right_pos
+
+    def Peek(self):
+        # type: () -> Tuple[int, int]
+        if self.pos == self.right_pos:
+            return Tok.EndOfStream, self.pos
+
+        assert self.pos < self.right_pos, self.pos
+
+        # Find the first match.
+        # Note: frontend/match.py uses _LongestMatch(), which is different!
+        # TODO: reconcile them.  This lexer should be expressible in re2c.
+        for pat, tok_id in LEXER:
+            m = pat.match(self.s, self.pos)
+            if m:
+                return tok_id, m.end()
+        else:
+            raise AssertionError('Tok.Invalid rule should have matched')
+
+    def Read(self):
+        # type: () -> Tuple[int, int]
+        tok_id, end_pos = self.Peek()
+        self.pos = end_pos  # advance
+        return tok_id, end_pos
+
+
 def _Tokens(s, left_pos, right_pos):
     """
     Args:
       s: string to parse
       left_pos, right_pos: Optional span boundaries.
     """
-    pos = left_pos
-    if right_pos == 0:
-        n = len(s)
-    else:
-        n = right_pos
-
-    while pos < n:
-        # Find the FIRST pattern that matches.
-        for pat, tok_id in LEXER:
-            m = pat.match(s, pos)
-            if m:
-                end_pos = m.end()
-                yield tok_id, end_pos
-                pos = end_pos
-                break
-
-    # Zero length sentinel
-    yield Tok.EndOfStream, pos
+    lx = Lexer(s, left_pos, right_pos)
+    while True:
+        tok_id, pos = lx.Read()
+        yield tok_id, pos
+        if tok_id == Tok.EndOfStream:
+            break
 
 
-def ValidTokens(s, left_pos=0, right_pos=0):
+def ValidTokens(s, left_pos=0, right_pos=-1):
     """Wrapper around _Tokens to prevent callers from having to handle Invalid.
 
     I'm not combining the two functions because I might want to do a
@@ -428,7 +446,7 @@ CHAR_ENTITY = {
 }
 
 
-def ToText(s, left_pos=0, right_pos=0):
+def ToText(s, left_pos=0, right_pos=-1):
     """Given HTML, return text by unquoting &gt; and &lt; etc.
 
     Used by:
