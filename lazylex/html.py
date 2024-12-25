@@ -206,21 +206,12 @@ def _Tokens(s, left_pos, right_pos):
       s: string to parse
       left_pos, right_pos: Optional span boundaries.
     """
-    pos = left_pos
-    right_pos = len(s) if right_pos == -1 else right_pos
-
-    while pos < right_pos:
-        # Find the FIRST pattern that matches.
-        for pat, tok_id in LEXER:
-            m = pat.match(s, pos)
-            if m:
-                end_pos = m.end()
-                yield tok_id, end_pos
-                pos = end_pos
-                break
-
-    # Zero length sentinel
-    yield Tok.EndOfStream, pos
+    lx = Lexer(s, left_pos, right_pos)
+    while True:
+        tok_id, pos = lx.Read()
+        yield tok_id, pos
+        if tok_id == Tok.EndOfStream:
+            break
 
 
 def ValidTokens(s, left_pos=0, right_pos=-1):
