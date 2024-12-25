@@ -176,7 +176,9 @@ class Lexer(object):
         self.right_pos = len(s) if right_pos == -1 else right_pos
 
     def Next(self):
-        # TODO: Use lexer
+        # type: () -> Tuple[int, int]
+
+        # TODO: hook up lexing rules
         pass
 
 
