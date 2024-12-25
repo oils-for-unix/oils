@@ -300,7 +300,8 @@ status=0
 status=0
 ## END
 ## OK osh STDOUT:
-status=1
+a b c
+status=0
 a $'b\\nc'
 status=0
 a a a
@@ -328,7 +329,8 @@ A - A
 status=0
 ## END
 ## OK osh STDOUT:
-status=1
+- y
+status=0
 - y
 status=0
 A - A

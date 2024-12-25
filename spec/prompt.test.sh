@@ -234,12 +234,6 @@ status=0
 x
 status=0
 ## END
-## OK osh STDOUT:
-status=1
-status=1
-x
-status=0
-## END
 
 #### default PS1
 #flags='--norc --noprofile'
