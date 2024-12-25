@@ -175,6 +175,33 @@ Open stdin as a named file in `/dev/fd`:
 
 ## Var Ops
 
+There are three types of braced variable expansions:
+
+    ${!name*} or ${!name@}
+    ${!name[@]} or ${!name[*]}
+    ${ops var ops}
+
+`name` needs to be a valid identifier.  If the expansion matches the first
+form, the variable names starting with `name` are generated.  Otherwise, if the
+expansion matches the second form, the keys of the indexed or associative array
+named `name` are generated.  When the expansion does not much either the first
+or second forms, it is interpreted as the third form of the variable name
+surrounded by operators.
+
+
+### op-indirect
+
+The indirection operator `!` is a prefix operator, and it interprets the
+received string as a variable name `name`, an array element `name[key]`, or an
+arrat list `name[@]` / `name[*]` and reads its values.
+
+    $ a=1234
+    $ v=a
+    $ echo $v
+    a
+    $ echo ${!v}
+    1234
+
 ### op-test
 
 Shell has boolean operations within `${}`.  I use `:-` most frequently:

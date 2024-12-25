@@ -142,7 +142,8 @@ X [Unsupported]   enable
                   arith-sub     $((1 + 2))
                   tilde-sub     ~/src
                   proc-sub      diff <(sort L.txt) <(sort R.txt)
-  [Var Ops]       op-test       ${x:-default}  
+  [Var Ops]       op-indirect   ${!x}
+                  op-test       ${x:-default}
                   op-strip      ${x%%suffix}  etc.
                   op-patsub     ${x//y/z}
                   op-index      ${a[i+1}
