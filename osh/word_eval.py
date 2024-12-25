@@ -1129,7 +1129,18 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     if cell.nameref:
                         chars.append('n')
 
-            result = value.Str(''.join(chars))
+            count = 1
+            with tagswitch(val) as case:
+                if case(value_e.Undef):
+                    count = 0
+                elif case(value_e.BashArray):
+                    val = cast(value.BashArray, UP_val)
+                    count = bash_impl.BashArray_Count(val)
+                elif case(value_e.BashAssoc):
+                    val = cast(value.BashAssoc, UP_val)
+                    count = bash_impl.BashAssoc_Count(val)
+
+            result = value.BashArray([''.join(chars)] * count)
 
         else:
             e_die('Var op %r not implemented' % lexer.TokenVal(op), op)

@@ -303,7 +303,7 @@ status=0
 status=1
 a $'b\\nc'
 status=0
-a
+a a a
 status=0
 ## END
 
