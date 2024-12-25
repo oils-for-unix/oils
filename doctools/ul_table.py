@@ -159,13 +159,11 @@ class UlTableParser(object):
 
         left = self.start_pos
 
-        # Find the closing </li>
+        # Find the closing </li>, taking into accounted NESTED tags:
+        #    <li> <li>foo</li> </li>
+        # because cells can have bulleted lists
         balance = 0
         while True:
-            # TODO: This has to  match NESTED
-            # <li> <li>foo</li> </li>
-            # Because cells can have bulleted lists
-
             if self.tok_id == html.StartTag:
                 self.tag_lexer.Reset(self.start_pos, self.end_pos)
                 if self.tag_lexer.TagName() == 'li':

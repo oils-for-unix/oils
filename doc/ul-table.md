@@ -1,33 +1,71 @@
 ul-table: Markdown Tables Without New Syntax
 ================================
 
-Our `ul-table` plugin allows you to write HTML **tables** as bulleted
-**lists**.
+`ul-table` is an HTML processor that lets you write **tables** as bulleted
+**lists**, in Markdown:
 
-Why?
+    <table>
 
-- Because writing and maintaining `<tr>` and `<td>` and `</td>` and `</tr>` is
-  tedious.
-- Because Markdown can express bulleted lists, so your file remains **valid**
-  Markdown.
-  - Your documentation still be readable when viewed with sourcehut or Github.
+    - thead
+      - Shell
+      - Version
+    - tr
+      - bash
+      - 5.2
+    - tr
+      - OSH
+      - 0.25.0
 
-That is, this way of writing tables involves **no** new syntax.  It's not a
-Markdown language extension.
+    </table>
+
+<table>
+
+- thead
+  - Shell
+  - Version
+- tr
+  - bash
+  - 5.2
+- tr
+  - OSH
+  - 0.25.0
+
+</table>
+
+I designed this format because it's tedious to read, write, and edit `<tr>` and
+`<td>` and `</td>` and `</tr>`.  Aligning columns is also tedious in HTML.
+
+`ul-table` does **not** involve new Markdown syntax, only a new interpretation.
+
+This means your docs are still readable without it, e.g. on sourcehut or
+Github.  It degrades gracefully.
+
+---
+
+Other design goals:
+
+- It should scale to large, complex tables.
+- Expose the **full** power of HTML, unlike other solutions.
+
+<!--
+
+- Solve the "column alignment problem" concisely.
+  - HTML punts on this, as explained below.
+-->
 
 <div id="toc">
 </div>
 
 ## Simple Example
 
-Suppose you want to make this table:
+Let's add hyperlinks to our example, to make it more realistic.
 
 <style>
 table {
   margin: 0 auto;
 }
 td {
-  padding: 5px;
+  padding: 0.2em;
 }
 </style>
 
@@ -37,26 +75,29 @@ td {
   - Shell
   - Version
 - tr
-  - [bash]($xref)
+  - [bash](https://www.gnu.org/software/bash/)
   - 5.2
 - tr
-  - [OSH]($xref)
+  - [OSH](https://www.oilshell.org/)
   - 0.25.0
 
 </table>
 
-With `ul-table`, you type a **two-level Markdown list**, inside `<table>` tags:
+### `ul-table` Syntax
 
-    <table>
+You can make this table with a **two-level Markdown list**, with Markdown
+hyperlink syntax:
+
+    <table>  <!-- don't forget this tag -->
 
     - thead
       - Shell
       - Version
     - tr
-      - [bash]($xref)
+      - [bash](https://www.gnu.org/software/bash/)
       - 5.2
     - tr
-      - [OSH]($xref)
+      - [OSH](https://www.oilshell.org/)
       - 0.25.0
 
     </table>
@@ -64,7 +105,7 @@ With `ul-table`, you type a **two-level Markdown list**, inside `<table>` tags:
 (This format looks similar to [tables in
 reStructuredText](https://sublime-and-sphinx-guide.readthedocs.io/en/latest/tables.html)).
 
-The conversion takes two steps:
+It takes two steps to convert:
 
 1. Any Markdown translator will produce a
    `<table> <ul> <li> ... </li> </ul> </table>` structure.
@@ -72,10 +113,9 @@ The conversion takes two steps:
    `<table> <tr> <td> </td> </tr> </table>` structure, which is a normal HTML
    table.
 
-### Pure Markdown Requires Tedious HTML
+### Comparison: Markdown Uses Tedious Inline HTML
 
-The bulleted lists are easier to **read and write**!  Here's the equivalent in
-CommonMark:
+Here's the equivalent in CommonMark:
 
     <table>
       <thead>
@@ -87,7 +127,8 @@ CommonMark:
       <tr>
         <td>
 
-        [bash]($xref)
+    <!-- be careful not to indent this 4 spaces! -->
+    [bash](https://www.gnu.org/software/bash/)
 
         </td>
         <td>5.2</td>
@@ -95,7 +136,7 @@ CommonMark:
       <tr>
         <td>
 
-        [OSH]($xref)
+    [OSH](https://www.oilshell.org/)
 
         </td>
         <td>0.25.0</td>
@@ -103,21 +144,20 @@ CommonMark:
 
     </table>
 
-It uses the rule where you can embed HTML inside markdown, and then markdown
-inside HTML.
+It uses the rule where you can embed Markdown inside HTML inside Markdown.
+With `ul-table`, you **don't** need this mutual nesting.
 
-With `ul-table`, we **remove** this kind of mutual nesting (at least, one level
-of it.)
+The text you have to write is also a lot shorter!
 
 ---
 
-Note that HTML inside CommonMark results in an extra `<p>` element:
+Trivia: with CommonMark, you also get an extra `<p>` element:
 
     <td>
       <p>OSH</p>
     </td>
 
-In contrast, `ul-table` can produce:
+`ul-table` can produce simpler HTML:
 
     <td>
       OSH
@@ -125,21 +165,20 @@ In contrast, `ul-table` can produce:
 
 ### Stylesheet
 
-To make the table look nice, I use `<style>` tags inside Markdown:
+To make the table look nice, I add a `<style>` tag, inside Markdown:
 
     <style>
     table {
       margin: 0 auto;
     }
     td {
-      padding: 5px;
+      padding: 0.2em;
     }
     </style>
 
-### The Untranslated Markdown
+### The Untranslated HTML
 
-By the way, if you omit the `<table>` tags, then the bulleted list looks like
-this:
+If you omit the `<table>` tags, then the rendered HTML looks like this:
 
 - thead
   - Shell
@@ -151,13 +190,82 @@ this:
   - [OSH]($xref)
   - 0.25.0
 
-This is how your tables will appear on sourcehut or Github &mdash; the contents
-are still readable.  Remember, `ul-table` is **not** an extension to Markdown
-syntax.
+This is how your tables will appear on sourcehut or Github, which don't (yet)
+have `ul-table` support.  Remember, `ul-table` is **not** an extension to
+Markdown syntax.
 
-## More Complex Example
+## Adding HTML Attributes
 
-View the source code of this table: [doc/ul-table.md]($oils-src)
+HTML attributes like `<tr class=foo>` and `<td id=bar>` let you format and
+style your table.
+
+You can add attributes to cells, columns, and rows.
+
+### Cells
+
+Add cell attributes with a `cell-attrs` tag **before** the cell contents:
+
+    - thead
+      - Name
+      - Age
+    - tr
+      - Alice
+      - <cell-attrs class=num /> 42
+
+It's important that `cell-attrs` is a **self-closing** tag:
+
+    <cell-attrs />  # Yes
+    <cell-attrs>    # No: this is an opening tag
+
+How does this work?  `ul-table` takes the attributes from `<cell-attrs />`, and
+puts it on the generated `<td>`.
+
+### Columns
+
+Add attributes to **every cell in a column** by the same way, except in the
+`thead` section:
+
+    - thead
+      - Name
+      - <cell-attrs class=num /> Age
+    - tr
+      - Alice
+      - 42     # this cell gets class=num
+    - tr
+      - Bob
+      - 25     # this cells gets class=num
+
+This is particularly useful for aligning numbers to the right:
+
+    <style>
+    .num {
+      text-align: right;
+    }
+    </style>
+
+If the same attribute appears in the `thead` and and a `tr` section, the values
+are **concatenated**, with a space.  Example:
+
+    <td class="from-thead from-tr">
+
+### Rows
+
+Add row attributes like this:
+
+    - thead
+      - Name
+      - Age
+    - tr
+      - Alice
+      - 42
+    - tr <row-attrs class="special-row />
+      - Bob
+      - 25
+
+## Example: Markdown and HTML Inside Cells
+
+Here's an example that uses more features.  Source code of this table:
+[doc/ul-table.md]($oils-src).
 
 [bash]: $xref
 
@@ -217,89 +325,17 @@ View the source code of this table: [doc/ul-table.md]($oils-src)
 
 </table>
 
-## Real Examples in Oils
+## Markdown Quirks to Be Aware Of
 
-TODO
+Here are some quirks I ran into when creating ul-tables.
 
-- [Guide to Procs and Funcs]($oils-doc:proc-func.html)
-  - interior/exterior?
-- blog
-  - What Oils Looks Like in 2024
-  - Line Counts
-  - Narrow waist?  diagrams
-
-- TODO: Wiki pages could use conversion
-  - [Alternative Shells]($wiki)
-  - [Alternative Regex Syntax]($wiki)
-  - [Survey of Config Languages]($wiki)
-  - [Polyglot Language Understanding]($wiki)
-  - [The Biggest Shell Programs in the World]($wiki)
-
-## `ul-table` Features
-
-### Works Well with both Markdown and inline HTML
-
-- Any markdown can be in a cell
-  - paragraphs, code blocks with backticks, nested lists
-  - Markdown supports arbitrary HTML, so arbitrary HTML can be in a cell
-    - no new rules to learn!
-- You can mix `ul-table` and inline HTML
-  - e.g. the header can use `ul-table`, but other rows use raw `<tr>`
-
-### Attributes for Cells, Columns, and Rows
-
-- Cells: put `<cell-attrs class=foo />` in a `tr` section
-- Columns: put `<cell-attrs class=foo />` in the `thead` section
-- Rows: `tr <row-attrs class=foo />`
-
-Note: should have a custom rule of aligning numbers to right, and text to left?
-I think `web/table/` has that rule.
-
-### Ideas
-
-We could help users edit well-formed tables with enforced column names:
-
-- thead
-  - <cell-attrs ult-name=name /> Name
-  - <cell-attrs ult-name=age /> Age
-- tr 
-  - <cell-attrs ult-name=name /> Hi
-  - <cell-attrs ult-name=age /> 5
-
-This is a bit verbose, but may be worth it for large tables.
-
-Less verbose syntax idea:
-
-- thead
-  - <ult col=NAME /> <cell-attrs class=foo /> Name
-  - <ult col=AGE /> Age
-- tr 
-  - <ult col=NAME /> Hi
-  - <ult col=AGE /> 5
-
-Even less verbose:
-
-- thead
-  - {NAME} Name
-  - {AGE} Age
-- tr 
-  - {NAME} Hi
-  - {AGE} 5
-
-The obvious problem is that we might want the literal text `{NAME}` in the
-header.  It's unlikely, but posssible.
-
-## Quirks
-
-### CommonMark
-
-(1) CommonMark doesn't seem to allow empty list items:
+(1) CommonMark doesn't allow empty list items:
 
     - thead
       -
       - above is not rendered as a list item
 
-A workaround is to use a comment or invisible character:
+You can work around this by using a comment, or invisible character:
 
     - tr
       - <!-- empty -->
@@ -319,41 +355,22 @@ As similar issue is that line breaks affect backtick expansion to `<code>`:
 I think this is also because `<cell-attrs />` doesn't "count" as text, so the
 list item is considered empty.
 
-(2) Likewise, a cell with a literal hyphen may need a comment in front of it:
+(2) Likewise, a cell with a literal hyphen may need a comment or space in front of it:
 
     - tr
       - <!-- hyphen --> -
-      - <!-- hyphen --> -
+      - &nbsp; -
 
+## Comparisons
 
-### HTML
+### CommonMark Doesn't Have Tables
 
-- `<th>` is like `<td>`, but it belongs in `<thead><tr>`.  Browsers make it
-  bold and centered.
-- You can't put `class=` on `<colgroup>` and `<col>` and align columns left and
-  right.
-  - You have to put `class=` on *every* `<td>` cell instead.
-  - `ul-table` solves this with "inherited" `<cell-attrs />` in the `thead`
-    section.
+Related discussions:
 
-## FAQ
+- 2014: [Tables in pure Markdown](https://talk.commonmark.org/t/tables-in-pure-markdown/81)
+- 2022: [Obvious Markdown syntax for Tables](https://talk.commonmark.org/t/obvious-markdown-syntax-for-tables/4143/9)
 
-(1) Why do row with attributes look like `tr <row-attrs />`?   The first `tr`
-looks redundant.
-
-This is because of the CommonMark quirk above: a list item without **text** is
-treated as **empty**.  So we require the extra `tr` text.
-
-It's also consistent with plain rows, without attributes.
-
-## Appendix
-
-### Related Docs
-
-- [How We Build Oils Documentation](doc-toolchain.html)
-- [Examples of HTML Plugins](doc-plugins.html)
-
-### Our Style is Nicer Than Github's
+### Github Tables are Awkward
 
 Github-flavored Markdown has an non-standard extension for tables:
 
@@ -368,7 +385,7 @@ This style is hard to read and write, especially with large tables:
 | git diff | Show file differences that haven't been staged |
 ```
 
-Our style is less noisy and more easily editable:
+Our style is less noisy, and more easily editable:
 
 ```
 - thead
@@ -382,19 +399,127 @@ Our style is less noisy and more easily editable:
   - Show file differences that haven't been staged
 ```
 
-### CommonMark
-
-- 2014 discussion: [Tables in pure Markdown](https://talk.commonmark.org/t/tables-in-pure-markdown/81)
-- 2022 discussion: [Obvious Markdown syntax for Tables](https://talk.commonmark.org/t/obvious-markdown-syntax-for-tables/4143/9)
+- Related wiki page: [Markdown Tables]($wiki)
 
 
-### Implemention
+## Conclusion
 
-- [doctools/ul_table.py]($oils-src) - less than 400 lines
-- [lazylex/html.py]($oils-src) - about 400 lines
+`ul-table` is a nice way of writing and maintaining HTML tables.  The appendix
+has links and details.
+
+### Related Docs
+
+- [How We Build Oils Documentation](doc-toolchain.html)
+- [Examples of HTML Plugins](doc-plugins.html)
+
+## Appendix: Implemention
+
+- [doctools/ul_table.py]($oils-src) - about 500 lines
+- [lazylex/html.py]($oils-src) - about 500 lines
 
 TODO:
 
 - Make it run under Python 3, including unit tests
 - De-couple it from cmark.so
   - Use Unix pipes, with a demo in `doctools/ul-table.sh`
+
+### Algorithm Notes
+
+- lazy lexing
+- recursive descent parser
+  - TODO: show grammar
+
+TODO:
+
+- I would like someone to produce a **DOM** implementation!
+  - Our implementation is meant to avoid the "big load anti-pattern"
+    (allocating too much), so it's a necessarily more verbose.  A DOM
+    implementation should be much less than 1000 lines.
+
+
+## Appendix: Real Examples
+
+- [Guide to Procs and Funcs]($oils-doc:proc-func.html) has a big `ul-table`.
+  - Source: [doc/proc-func.md]($oils-src)
+
+I converted the tables in these September posts to `ul-table`:
+
+- [What Oils Looks Like in 2024](https://www.oilshell.org/blog/2024/09/project-overview.html)
+- [After 8 Years, Oils Is Still Small and Flexible](https://www.oilshell.org/blog/2024/09/line-counts.html)
+- [Garbage Collection Makes YSH Different](https://www.oilshell.org/blog/2024/09/gc.html)
+- [A Retrospective on the Oils Project](https://www.oilshell.org/blog/2024/09/retrospective.html)
+
+The markup was much shorter and simpler after conversion!
+
+TODO:
+
+- Tables to Make
+  - Interior/Exterior
+  - Narrow Waist
+
+- Wiki pages could use conversion
+  - [Alternative Shells]($wiki)
+  - [Alternative Regex Syntax]($wiki)
+  - [Survey of Config Languages]($wiki)
+  - [Polyglot Language Understanding]($wiki)
+  - [The Biggest Shell Programs in the World]($wiki)
+
+
+## HTML Quirks
+
+- `<th>` is like `<td>`, but it belongs in `<thead><tr>`.  Browsers make it
+  bold and centered.
+- You can't put `class=` on `<colgroup>` and `<col>` and align columns left and
+  right.
+  - You have to put `class=` on *every* `<td>` cell instead.
+  - `ul-table` solves this with "inherited" `<cell-attrs />` in the `thead`
+    section.
+
+<!--
+
+### FAQ
+
+(1) Why do row with attributes look like `tr <row-attrs />`?   The first `tr`
+doesn't seem neecssary.
+
+This is because of the CommonMark quirk above: a list item without **text** is
+treated as **empty**.  So we require the extra `tr` text.
+
+It's also consistent with plain rows, without attributes.
+
+-->
+
+## Feature Ideas
+
+We could help users edit well-formed tables with enforced column names:
+
+    - thead
+      - <cell-attrs ult-name=name /> Name
+      - <cell-attrs ult-name=age /> Age
+    - tr 
+      - <cell-attrs ult-name=name /> Hi
+      - <cell-attrs ult-name=age /> 5
+
+This is a bit verbose, but may be worth it for large tables.
+
+Less verbose syntax idea:
+
+    - thead
+      - <ult col=NAME /> <cell-attrs class=foo /> Name
+      - <ult col=AGE /> Age
+    - tr 
+      - <ult col=NAME /> Hi
+      - <ult col=AGE /> 5
+
+Even less verbose:
+
+    - thead
+      - {NAME} Name
+      - {AGE} Age
+    - tr 
+      - {NAME} Hi
+      - {AGE} 5
+
+The obvious problem is that we might want the literal text `{NAME}` in the
+header.  It's unlikely, but possible.
+
