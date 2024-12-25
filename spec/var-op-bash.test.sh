@@ -428,3 +428,37 @@ stat: 1
 stat: 1
 stat: 1
 ## END
+
+
+#### ${a[0]@a} and ${a@a}
+
+a=(1 2 3)
+echo "attr = '${a[0]@a}'"
+echo "attr = '${a@a}'"
+
+## STDOUT:
+attr = 'a'
+attr = 'a'
+## END
+
+
+#### ${!r@a} with r='a[0]' (attribute for indirect expansion of an array element)
+
+a=(1 2 3)
+r='a'
+echo ${!r@a}
+r='a[0]'
+echo ${!r@a}
+
+declare -A d=([0]=foo [1]=bar)
+r='d'
+echo ${!r@a}
+r='d[0]'
+echo ${!r@a}
+
+## STDOUT:
+a
+a
+A
+A
+## END

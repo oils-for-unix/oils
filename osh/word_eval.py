@@ -1104,7 +1104,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             # We're ONLY simluating -a and -A, not -r -x -n for now.  See
             # spec/ble-idioms.test.sh.
             chars = []  # type: List[str]
-            with tagswitch(val) as case:
+            with tagswitch(vsub_state.holder_val) as case:
                 if case(value_e.BashArray):
                     chars.append('a')
                 elif case(value_e.BashAssoc):
@@ -1323,8 +1323,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         else:  # no bracket op
             var_name = vtest_place.name
             if (var_name is not None and
-                    val.tag() in (value_e.BashArray, value_e.BashAssoc) and
-                    not vsub_state.is_type_query):
+                    val.tag() in (value_e.BashArray, value_e.BashAssoc)):
                 if ShouldArrayDecay(var_name, self.exec_opts,
                                     not (part.prefix_op or part.suffix_op)):
                     # for ${BASH_SOURCE}, etc.
@@ -1353,6 +1352,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
         else:
             # $* decays
             val = self._EvalSpecialVar(part.name_tok.id, quoted, vsub_state)
+
+        # update the holder of the current value
+        vsub_state.holder_val = val
 
         # We don't need var_index because it's only for L-Values of test ops?
         if self.exec_opts.eval_unsafe_arith():
@@ -1446,15 +1448,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         suffix_op_ = part.suffix_op
         if suffix_op_:
             UP_op = suffix_op_
-            with tagswitch(suffix_op_) as case:
-                if case(suffix_op_e.Nullary):
-                    suffix_op_ = cast(Token, UP_op)
-
-                    # Type query ${array@a} is a STRING, not an array
-                    # NOTE: ${array@Q} is ${array[0]@Q} in bash, which is different than
-                    # ${array[@]@Q}
-                    if suffix_op_.id == Id.VOp0_a:
-                        vsub_state.is_type_query = True
+        vsub_state.holder_val = val
 
         # 2. Bracket Op
         val = self._EvalBracketOp(val, part, quoted, vsub_state, vtest_place)
