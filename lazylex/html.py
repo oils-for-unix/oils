@@ -175,9 +175,13 @@ class Lexer(object):
         self.s = s
         self.pos = left_pos
         self.right_pos = len(s) if right_pos == -1 else right_pos
+        self.cache = {}  # string -> compiled regex pattern object
 
     def _Peek(self):
         # type: () -> Tuple[int, int]
+        """
+        Note: not using _Peek() now
+        """
         if self.pos == self.right_pos:
             return Tok.EndOfStream, self.pos
 
@@ -186,6 +190,9 @@ class Lexer(object):
         # Find the first match.
         # Note: frontend/match.py uses _LongestMatch(), which is different!
         # TODO: reconcile them.  This lexer should be expressible in re2c.
+
+        # TODO: Get rid of non-greedy match
+
         for pat, tok_id in LEXER:
             m = pat.match(self.s, self.pos)
             if m:
@@ -200,8 +207,15 @@ class Lexer(object):
         return tok_id, end_pos
 
     def LookAhead(self, regex):
-        # TODO: test if it matches the regex.  Don't need Peek()
-        return True
+        # Cache the regex compilation.  This could also be LookAheadFor(THEAD)
+        # or something.
+        pat = self.cache.get(regex)
+        if pat is None:
+            pat = re.compile(regex)
+            self.cache[regex] = pat
+
+        m = pat.match(self.s, self.pos)
+        return m is not None
 
 
 def _Tokens(s, left_pos, right_pos):

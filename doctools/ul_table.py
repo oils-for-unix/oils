@@ -435,11 +435,10 @@ def ReplaceTables(s, debug_out=None):
         # Write the header
         thead = table['thead']
 
+        col_attrs = {}  # integer -> td_attrs
         if thead:
             out.Print('<thead>\n')
             out.Print('<tr>\n')
-
-            col_attrs = {}  # integer -> td_attrs
 
             i = 0
             for td_attrs, raw_html in thead:

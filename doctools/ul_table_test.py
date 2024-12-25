@@ -181,7 +181,6 @@ class UlTableTest(unittest.TestCase):
         h = MarkdownToTable('hi\n' + TEST1 + '\n\n bye \n')
 
     def testNoHeader(self):
-        return
         # HTML looks like:
         #
         # <table>
