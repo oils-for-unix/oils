@@ -122,7 +122,7 @@ class UlTableParser(object):
         LIST_ITEM =
           [RawData \s*]?
           [StartTag 'li']
-          [StartEndTag 'td-attrs']?
+          [StartEndTag 'cell-attrs']?
           ANY*               # NOT context-free - anything that's not the end
                              # This is what we should capture in CELLS
           [EndTag 'li']
@@ -133,8 +133,8 @@ class UlTableParser(object):
         <li>hi there</li>   ==>
         <td>hi there</td>
 
-        - <td-attrs class=foo /> hi there          ==>
-        <li><td-attrs class=foo /> hi there </li>  ==>
+        - <cell-attrs class=foo /> hi there          ==>
+        <li><cell-attrs class=foo /> hi there </li>  ==>
         <td class=foo> hi there </td>  ==>
         """
         self._WhitespaceOk()
@@ -150,8 +150,9 @@ class UlTableParser(object):
         if self.tok_id == html.StartEndTag:
             self.tag_lexer.Reset(self.start_pos, self.end_pos)
             tag_name = self.tag_lexer.TagName()
-            if tag_name != 'td-attrs':
-                raise html.ParseError('Expected <td-attrs />, got %r' %
+            # TODO: remove td-attrs backward compat
+            if tag_name not in ('td-attrs', 'cell-attrs'):
+                raise html.ParseError('Expected <cell-attrs />, got %r' %
                                       tag_name)
             td_attrs = self.tag_lexer.AllAttrsRaw()
             self._Next()
@@ -267,7 +268,7 @@ class UlTableParser(object):
           [StartTag 'li']
           [RawData thead\s*]
             [StartTag 'ul']   # Indented bullet that starts -
-            ( [StartEndTag tr-attrs] [RawData \s*] )? 
+            ( [StartEndTag row-attrs] [RawData \s*] )? 
             LIST_ITEM+        # Defined above
             [RawData \s*]?
             [EndTag 'ul']
@@ -289,6 +290,9 @@ class UlTableParser(object):
         tr_attrs = None
         if self.tok_id == html.StartEndTag:
             self.tag_lexer.Reset(self.start_pos, self.end_pos)
+            tag_name = self.tag_lexer.TagName()
+            if tag_name != 'row-attrs':
+                raise html.ParseError('Expected row-attrs, got %r' % tag_name)
             tr_attrs = self.tag_lexer.AllAttrsRaw()
             self._Next()
             self._WhitespaceOk()

@@ -248,12 +248,46 @@ TODO
 
 ### Attributes for Cells, Columns, and Rows
 
-- Cells: put `<td-attrs class=foo />` in a `tr` section
-- Columns: put `<td-attrs class=foo />` in the `thead` section
-- Rows: `tr <tr-attrs class=foo />`
+- Cells: put `<cell-attrs class=foo />` in a `tr` section
+- Columns: put `<cell-attrs class=foo />` in the `thead` section
+- Rows: `tr <row-attrs class=foo />`
 
 Note: should have a custom rule of aligning numbers to right, and text to left?
 I think `web/table/` has that rule.
+
+### Ideas
+
+We could help users edit well-formed tables with enforced column names:
+
+- thead
+  - <cell-attrs ult-name=name /> Name
+  - <cell-attrs ult-name=age /> Age
+- tr 
+  - <cell-attrs ult-name=name /> Hi
+  - <cell-attrs ult-name=age /> 5
+
+This is a bit verbose, but may be worth it for large tables.
+
+Less verbose syntax idea:
+
+- thead
+  - <ult col=NAME /> <cell-attrs class=foo /> Name
+  - <ult col=AGE /> Age
+- tr 
+  - <ult col=NAME /> Hi
+  - <ult col=AGE /> 5
+
+Even less verbose:
+
+- thead
+  - {NAME} Name
+  - {AGE} Age
+- tr 
+  - {NAME} Hi
+  - {AGE} 5
+
+The obvious problem is that we might want the literal text `{NAME}` in the
+header.  It's unlikely, but posssible.
 
 ## Quirks
 
@@ -279,10 +313,10 @@ A workaround is to use a comment or invisible character:
 As similar issue is that line breaks affect backtick expansion to `<code>`:
 
     - tr
-      - <td-attrs /> <!-- we need something on this line -->
+      - <cell-attrs /> <!-- we need something on this line -->
         ... More `proc` features ...
 
-I think this is also because `<td-attrs />` doesn't "count" as text, so the
+I think this is also because `<cell-attrs />` doesn't "count" as text, so the
 list item is considered empty.
 
 (2) Likewise, a cell with a literal hyphen may need a comment in front of it:
@@ -299,12 +333,12 @@ list item is considered empty.
 - You can't put `class=` on `<colgroup>` and `<col>` and align columns left and
   right.
   - You have to put `class=` on *every* `<td>` cell instead.
-  - `ul-table` solves this with "inherited" `<td-attrs />` in the `thead`
+  - `ul-table` solves this with "inherited" `<cell-attrs />` in the `thead`
     section.
 
 ## FAQ
 
-(1) Why do row with attributes look like `tr <tr-attrs />`?   The first `tr`
+(1) Why do row with attributes look like `tr <row-attrs />`?   The first `tr`
 looks redundant.
 
 This is because of the CommonMark quirk above: a list item without **text** is

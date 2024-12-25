@@ -43,16 +43,20 @@ demo-theirs() {
   echo '*hi*' | cmark
 }
 
+cmark-py() {
+  PYTHONPATH='.:vendor' doctools/cmark.py "$@"
+}
+
 demo-ours() {
   export PYTHONPATH=.
 
-  echo '*hi*' | doctools/cmark.py
+  echo '*hi*' | cmark-py
 
   # This translates to <code class="language-sh"> which is cool.
   #
   # We could do syntax highlighting in JavaScript, or simply post-process HTML
 
-  doctools/cmark.py <<'EOF'
+  cmark-py <<'EOF'
 ```sh
 code
 block
@@ -72,7 +76,7 @@ EOF
   # $oil-source-file
   # $oil-commit
 
-  doctools/cmark.py <<'EOF'
+  cmark-py <<'EOF'
 [click here]($xref:re2c)
 EOF
 
@@ -80,7 +84,7 @@ EOF
   # to text, we would have to indent and insert blank lines?  I guess we can
   # parse <p> and wrap it.
 
-  doctools/cmark.py <<'EOF'
+  cmark-py <<'EOF'
 Test spacing out:
 
     echo one
@@ -95,13 +99,13 @@ demo-quirks() {
 
   export PYTHONPATH=.
 
-  doctools/cmark.py <<'EOF'
+  cmark-py <<'EOF'
 1. what `<table>`
 EOF
 
   # Very annoying: list items can't be empty
   # <span />
-  doctools/cmark.py --common-mark <<'EOF'
+  cmark-py --common-mark <<'EOF'
 <table>
 
 - thead
@@ -112,20 +116,20 @@ EOF
 </table>
 EOF
 
-  doctools/cmark.py --common-mark <<'EOF'
+  cmark-py --common-mark <<'EOF'
 - <tr-attrs class=foo /> text required here
   - one
   - two
 EOF
 
-doctools/cmark.py --common-mark <<'EOF'
+cmark-py --common-mark <<'EOF'
 - tr <tr-attrs class=foo />
   - one
   - two
 EOF
 
   # Weird case - the `proc` is sometimes not expanded to <code>proc</code>
-  doctools/cmark.py --common-mark <<'EOF'
+  cmark-py --common-mark <<'EOF'
 - <span /> ... More `proc` features
 - <span />
   More `proc` features 
@@ -134,16 +138,24 @@ EOF
 EOF
 
   # This has &amp; in an attr value, which our HTML lexer needs to handle
-  doctools/cmark.py --common-mark <<'EOF'
+  cmark-py --common-mark <<'EOF'
 from [ampersand][]
 
 [ampersand]: http://google.com/?q=foo&z=z
 EOF
 
+  # Only &nbsp; is standard
+  cmark-py --common-mark <<'EOF'
+- tr
+  - &nbsp; -
+  - &sp; -
+  - &zwsp; -
+EOF
+
   # BUG: parse error because backticks span a line
 
   return
-  doctools/cmark.py <<'EOF'
+  cmark-py <<'EOF'
 1. The Markdown translator produces a `<table> <ul> <li> ... </li> </ul>
    </table>` structure.
 EOF

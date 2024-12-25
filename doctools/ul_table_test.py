@@ -13,8 +13,8 @@ TEST1 = """\
 <table id="foo">
 
 - thead 
-  - <td-attrs class="foo" /> name
-  - <td-attrs class="bar" /> [age](https://example.com/)
+  - <cell-attrs class="foo" /> name
+  - <cell-attrs class="bar" /> [age](https://example.com/)
 - tr
   - alice *italic*
   - 30
@@ -28,17 +28,17 @@ TD_ATTRS = """\
 <table>
 
 - thead
-  - <td-attrs class=unquoted /> name
-  - <td-attrs class=quoted /> age
+  - <cell-attrs class=unquoted /> name
+  - <cell-attrs class=quoted /> age
   - role
 - tr
-  - <td-attrs class="cool" /> alice
+  - <cell-attrs class="cool" /> alice
   - 30
   - parent
 - tr
   - bob
   - 42
-  - <td-attrs class=child /> child
+  - <cell-attrs class=child /> child
 
 </table>
 """
@@ -69,17 +69,17 @@ TR_ATTRS = """\
 <table>
 
 - thead
-  - <td-attrs class=unquoted /> name
-  - <td-attrs class=quoted /> age
+  - <cell-attrs class=unquoted /> name
+  - <cell-attrs class=quoted /> age
   - role
-- tr   <tr-attrs class=totals />
+- tr   <row-attrs class=totals />
   - alice
   - 30
   - parent
 - tr
   - bob
   - 42
-  - <td-attrs class=child /> child
+  - <cell-attrs class=child /> child
 
 </table>
 """
@@ -113,13 +113,13 @@ COLSPAN = """\
 <table>
 
 - thead
-  - <td-attrs class=foo /> name
+  - <cell-attrs class=foo /> name
   - age
 - tr
   - alice
   - 30
 - tr
-  - <td-attrs colspan=2 /> ... more ...
+  - <cell-attrs colspan=2 /> ... more ...
 - tr
   - bob
   - 42
@@ -146,6 +146,29 @@ COLSPAN_HTML = """\
   <td class="foo">bob</td>
   <td>42</td>
 </tr>
+</table>
+"""
+
+# UNUSED - not worth it now
+MIXED_TR = """\
+<table>
+
+- thead
+  - name
+  - age
+- tr
+  - 30
+  - parent
+
+<tr>
+  <td colspan=2> - </td>
+</tr>
+
+- tr
+  - bob
+  - 42
+  - <cell-attrs class=child /> child
+
 </table>
 """
 
@@ -269,6 +292,12 @@ class UlTableTest(unittest.TestCase):
         h = MarkdownToTable(TR_ATTRS)
         self.assertMultiLineEqual(TR_ATTRS_HTML, h)
 
+    def testMixedTr(self):
+        # Not worth it
+        return
+        h = MarkdownToTable(MIXED_TR)
+        #self.assertMultiLineEqual(MIXED_TR, h)
+
     def testSyntaxErrors(self):
         # Once we get <table><ul>, then we TAKE OVER, and start being STRICT
 
@@ -293,6 +322,22 @@ class UlTableTest(unittest.TestCase):
   - <span /> Not allowed
   - two
 - tr
+  - 1
+  - 2
+""")
+        except html.ParseError as e:
+            print(e)
+        else:
+            self.fail('Expected parse error')
+
+        try:
+            h = MarkdownToTable("""
+<table>
+
+- thead
+  - one
+  - two
+- tr <bad-attrs />
   - 1
   - 2
 """)
