@@ -38,7 +38,7 @@ test-cli() {
   echo
 
   log "Testing cmark"
-  echo '*bold*' | doctools/cmark.py
+  echo '*bold*' | PYTHONPATH='.:vendor' doctools/cmark.py
   echo
 
   log "Testing python3"
