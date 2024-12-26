@@ -4,19 +4,23 @@ ul-table: Markdown Tables Without New Syntax
 `ul-table` is an HTML processor that lets you write **tables** as bulleted
 **lists**, in Markdown:
 
-    <table>
+<!-- TODO: Add hyperlinks here, or maybe add markdown-->
 
-    - thead
-      - Shell
-      - Version
-    - tr
-      - bash
-      - 5.2
-    - tr
-      - OSH
-      - 0.25.0
+```
+<table>
 
-    </table>
+- thead
+  - Shell
+  - Version
+- tr
+  - bash
+  - 5.2
+- tr
+  - OSH
+  - 0.25.0
+
+</table>
+```
 
 <table>
 
@@ -419,9 +423,14 @@ has links and details.
 
 TODO:
 
-- Make it run under Python 3, including unit tests
-- De-couple it from cmark.so
-  - Use Unix pipes, with a demo in `doctools/ul-table.sh`
+- Move unit tests to spec tests - `doctools/ul-table-test.ysh`
+  - can run under Python 2 vs. Python 3
+  - can run with cmark vs. `markdown.pl`
+    - De-couple it from cmark.so
+- Publish the code separately?
+  - `lazylex/html.py` can got in `doctools/`
+  - or maybe it's ready to go in `data_lang/htm8.py`, if we can fix the lexer
+- Could revive pyannotate automation to help with the typing
 
 ### Algorithm Notes
 

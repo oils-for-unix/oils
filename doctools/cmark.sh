@@ -33,6 +33,9 @@ readonly URL="https://github.com/commonmark/cmark/archive/$CMARK_VERSION.tar.gz"
 #
 # It's only used in the blog, so let's just put it in the oilshell.org repo,
 # not the oil repo
+#
+# 12/2024: I want a Markdown highlighter for doc/ul-table.md.  It will look
+# nicer.
 
 download-old-pygments() {
   wget --directory _tmp --no-clobber \

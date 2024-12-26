@@ -1,7 +1,10 @@
 #!/usr/bin/env python2
 """ul_table.py: Markdown Tables Without New Syntax."""
 
-import cStringIO
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO
 import re
 
 from doctools.util import log
@@ -411,7 +414,7 @@ def ReplaceTables(s, debug_out=None):
     if debug_out is None:
         debug_out = []
 
-    f = cStringIO.StringIO()
+    f = StringIO()
     out = html.Output(s, f)
 
     tag_lexer = html.TagLexer(s)

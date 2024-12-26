@@ -17,7 +17,7 @@ the doc pipeline looks like:
 (Final HTML) <br/>
 
 Eventually it would be nice to expand this API design to more formats and make
-it available to Oil language users.
+it available to YSH users.
 
 <div id="toc">
 </div>
@@ -42,18 +42,19 @@ HTML has two levels:
    instructions
 2. The `name="value"` attributes inside start tags (and self-closing tags)
 
-### TSV2
+Note there could be third layer:
+
+3. `"foo=42&amp;bar=99`
+
+### TSV8
 
 - This format is **designed** to be read line-by-line (unlike CSV).
 - You can skip to any column, and optionally decode the field into an Bool,
   Int, Float, or Str.
 
-### JSON
+### JSON8
 
-- py-yajl is event-based, but not lazy.  And it's a parser, not a lexer.
-- We could LEX `{}` and `[] and `""` `\` in the first step.  This is lexing and
-  not parsing.
-
+- We could reuse the lexer from `data_lang/j8.py`, without parsing
 
 ## Links
 
@@ -147,4 +148,3 @@ HTML has two levels:
 
 - CSS selectors
 - DOM
-

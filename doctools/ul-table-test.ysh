@@ -1,0 +1,38 @@
+#!bin/ysh
+#
+# System tests for ul-table.
+#
+# Usage:
+#   doctools/ul-table-test.ysh <function name>
+
+# TODO:
+# - run tests with python2 and python3
+# - run with CommonMark and Markdown.pl
+#   - CommonMark only works under Python 2 now?  But we could add Python 3.
+
+source $LIB_OSH/task-five.sh
+#source $LIB_YSH/yblocks.ysh
+
+# proc doesn't work with task-five!
+# we need task-five.ysh?
+proc unit-py2 {
+  # like test/unit.sh
+  PYTHONPATH='.:vendor/' doctools/ul_table_test.py
+}
+
+unit-py2() {
+  # like test/unit.sh
+  PYTHONPATH='.:vendor/' doctools/ul_table_test.py
+}
+
+# Problem: We import cmark, which imports ctypes
+unit-py3() {
+  # like test/unit.sh
+  PYTHONPATH='.:vendor/' python3 doctools/ul_table_test.py
+}
+
+proc run-tests() {
+  devtools/byo.sh test $0
+}
+
+task-five "$@"

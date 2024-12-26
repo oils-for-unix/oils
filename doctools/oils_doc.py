@@ -12,7 +12,10 @@ Plugins:
 from __future__ import print_function
 
 import cgi
-import cStringIO
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO  # python3
 import re
 import sys
 
@@ -22,7 +25,7 @@ from lazylex import html
 
 def RemoveComments(s):
     """Remove <!-- comments -->"""
-    f = cStringIO.StringIO()
+    f = StringIO()
     out = html.Output(s, f)
 
     tag_lexer = html.TagLexer(s)
@@ -114,7 +117,7 @@ _SHORTCUT_RE = re.compile(r'\$ ([a-z\-]+) (?: : (\S+))?', re.VERBOSE)
 
 def ExpandLinks(s):
     """Expand $xref:bash and so forth."""
-    f = cStringIO.StringIO()
+    f = StringIO()
     out = html.Output(s, f)
 
     tag_lexer = html.TagLexer(s)
@@ -341,7 +344,7 @@ class PygmentsPlugin(_Plugin):
 def SimpleHighlightCode(s):
     """Simple highlighting for test/shell-vs-shell.sh."""
 
-    f = cStringIO.StringIO()
+    f = StringIO()
     out = html.Output(s, f)
 
     tag_lexer = html.TagLexer(s)
@@ -400,7 +403,7 @@ def HighlightCode(s, default_highlighter, debug_out=None):
     if debug_out is None:
         debug_out = []
 
-    f = cStringIO.StringIO()
+    f = StringIO()
     out = html.Output(s, f)
 
     tag_lexer = html.TagLexer(s)

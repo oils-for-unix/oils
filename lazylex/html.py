@@ -9,11 +9,15 @@ structure" like TSV8
 """
 from __future__ import print_function
 
-import cStringIO
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO  # python3
 import re
 import sys
 
-from typing import List, Tuple
+if sys.version_info.major == 2:
+    from typing import List, Tuple
 
 
 def log(msg, *args):
@@ -478,7 +482,7 @@ def ToText(s, left_pos=0, right_pos=-1):
 
     That should be html.ToAnsi.
     """
-    f = cStringIO.StringIO()
+    f = StringIO()
     out = Output(s, f, left_pos, right_pos)
 
     pos = left_pos

@@ -7,7 +7,10 @@ I started from cmark-0.28.3/wrappers/wrapper.py.
 from __future__ import print_function
 
 import ctypes
-import HTMLParser
+try:
+    from HTMLParser import HTMLParser
+except ImportError:
+    from html.parser import HTMLParser  # python3
 import json
 import optparse
 import os
@@ -20,7 +23,8 @@ from doctools import oils_doc
 from doctools import ul_table
 from lazylex import html as lazylex_html
 
-from typing import Any
+if sys.version_info.major == 2:
+    from typing import Any
 
 # Geez find_library returns the filename and not the path?  Just hardcode it as
 # a workaround.
@@ -68,17 +72,26 @@ def log(msg, *args):
 CMARK_OPT_UNSAFE = (1 << 17)
 
 
-def md2html(text):
-    textbytes = text
-    textlen = len(text)
-    return markdown(textbytes, textlen, CMARK_OPT_UNSAFE)
+def md2html(md):
+    if sys.version_info.major == 2:
+        md_bytes = md
+    else:
+        md_bytes = md.encode('utf-8')
+
+    md_len = len(md)
+    html = markdown(md_bytes, md_len, CMARK_OPT_UNSAFE)
+
+    if sys.version_info.major == 2:
+        return html
+    else:
+        return html.decode('utf-8')
 
 
 def demo():
     sys.stdout.write(md2html('*hi*'))
 
 
-class TocExtractor(HTMLParser.HTMLParser):
+class TocExtractor(HTMLParser):
     """Extract Table of Contents
 
     When we hit h_tags (h2, h3, h4, etc.), append to self.headings, recording
@@ -90,7 +103,7 @@ class TocExtractor(HTMLParser.HTMLParser):
     """
 
     def __init__(self):
-        HTMLParser.HTMLParser.__init__(self)
+        HTMLParser.__init__(self)
 
         # make targets for these, regardless of whether the TOC links to them.
         self.h_tags = ['h2', 'h3', 'h4']
