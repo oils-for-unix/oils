@@ -6,25 +6,52 @@
 #   doctools/ul-table-test.ysh <function name>
 
 # TODO:
+#
+# - another pass over ul_table doc
+#
 # - Run with another markdown processor other than cmark?  pandoc?
 #   - Because markdown.pl doesn't support the inline HTML rule
-#   - Or we could find a Python library too
+#   - markdown-it-py - https://github.com/executablebooks/markdown-it-py?tab=readme-ov-file
 #
 # - task-five needs support for proc!
 #   - we might need to discover procs differently
-#   - right now we're using _bash-print-funcs,w hich uses shopt -s extdebug,
-#   which OSH doesn't support!
+#   - right now we're using _bash-print-funcs, which uses shopt -s extdebug,
+#
+# task files
+# - OSH should support shopt -s extdebug!  So it can run our task files
+# - always use bash, never use awk/gawk to parse compgen -F
+#   - we don't need to worry about awk FS space/tab
+#   - if the filename contains newlines, then we are kinda screwed, but we can 
+#     detect that with bash regex I think - every line must have 3 fields
+# - well I also wanted docstrings, but I think that can be an OSH/YSH-only
+#   feature, not a bash feature.
+#   - Oils can used for bash completion when necessary
+#
+# - my own bash completion needs to discover procs via the BYO protocol
+#
 # - Use 'byo test' - does that mean byo-server-lib also needs to be YSH?
-# - Put this in CI
-
-# - run with CommonMark and Markdown.pl
-#   - CommonMark only works under Python 2 now?  But we could add Python 3.
+#
+# - Put all tests in CI
+#   - maybe just pip install markdown-it
+#
+# - lazylex/html.py
+#   - fix the lexer and make it data_lang/htm8.py?  
+#
+# - might want to run it through pyannotate too?
+#   - python2/python3 conflicts with mycpp distribution though
+#   - mylib.BufWriter() is different than cStringIo.StringIO aka io.StringIO
+#   - see {types,asdl}/pyann_driver.py
 
 source $LIB_OSH/task-five.sh
 #source $LIB_YSH/yblocks.ysh
 
 proc run-py {
   PYTHONPATH='.:vendor/' @ARGV
+}
+
+deps() {
+  # Good: only 3 files: ul_table, lazylex/html, util.py
+  build/dynamic-deps.sh py-tool doctools.ul_table
 }
 
 # proc doesn't work with task-five!

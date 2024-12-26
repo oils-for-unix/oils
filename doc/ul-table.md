@@ -2,54 +2,8 @@ ul-table: Markdown Tables Without New Syntax
 ================================
 
 `ul-table` is an HTML processor that lets you write **tables** as bulleted
-**lists**, in Markdown:
+**lists**, in Markdown.
 
-<!-- TODO: Add hyperlinks here, or maybe add markdown-->
-
-```
-<table>
-
-- thead
-  - Shell
-  - Version
-- tr
-  - bash
-  - 5.2
-- tr
-  - OSH
-  - 0.25.0
-
-</table>
-```
-
-<table>
-
-- thead
-  - Shell
-  - Version
-- tr
-  - bash
-  - 5.2
-- tr
-  - OSH
-  - 0.25.0
-
-</table>
-
-I designed this format because it's tedious to read, write, and edit `<tr>` and
-`<td>` and `</td>` and `</tr>`.  Aligning columns is also tedious in HTML.
-
-`ul-table` does **not** involve new Markdown syntax, only a new interpretation.
-
-This means your docs are still readable without it, e.g. on sourcehut or
-Github.  It degrades gracefully.
-
----
-
-Other design goals:
-
-- It should scale to large, complex tables.
-- Expose the **full** power of HTML, unlike other solutions.
 
 <!--
 
@@ -62,14 +16,15 @@ Other design goals:
 
 ## Simple Example
 
-Let's add hyperlinks to our example, to make it more realistic.
+To make this table:
 
 <style>
 table {
   margin: 0 auto;
 }
 td {
-  padding: 0.2em;
+  padding-left: 1em;
+  padding-right: 1em;
 }
 </style>
 
@@ -82,34 +37,94 @@ td {
   - [bash](https://www.gnu.org/software/bash/)
   - 5.2
 - tr
-  - [OSH](https://www.oilshell.org/)
+  - [OSH](https://oils.pub/)
   - 0.25.0
 
 </table>
 
-### `ul-table` Syntax
+You write:
 
-You can make this table with a **two-level Markdown list**, with Markdown
-hyperlink syntax:
+<!-- TODO: Add pygments highlighting -->
 
-    <table>  <!-- don't forget this tag -->
+```
+<table>
 
-    - thead
-      - Shell
-      - Version
-    - tr
-      - [bash](https://www.gnu.org/software/bash/)
-      - 5.2
-    - tr
-      - [OSH](https://www.oilshell.org/)
-      - 0.25.0
+- thead
+  - Shell
+  - Version
+- tr
+  - [bash](https://www.gnu.org/software/bash/)
+  - 5.2
+- tr
+  - [OSH](https://oils.pub/)
+  - 0.25.0
 
-    </table>
+</table>
+```
+
+Any Markdown processor will produce this:
+
+- thead
+  - Shell
+  - Version
+- tr
+  - [bash](https://www.gnu.org/software/bash/)
+  - 5.2
+- tr
+  - [OSH](https://oils.pub/)
+  - 0.25.0
+
+And then **our** `ul-table` plugin transforms that into the table shown.
+
+So the conversion takes **2 steps**.  The intermediate form is what sourcehut
+or Github will show, because they currently don't support `ul-table`.
+
+This is good, because it means that `ul-table` degrades gracefully!  You can
+use it anywhere without worrying about breakage.
+
+## About `ul-table`
+
+### Why?
+
+Because it's tedious to read, write, and edit `<tr>` and `<td>` and `</td>` and
+`</tr>`.  Aligning columns is also tedious in HTML.
+
+<!--
+This means your docs are still readable without it, e.g. on sourcehut or
+Github.  It degrades gracefully.
+-->
+
+Other design goals:
+
+- Don't invent any new Markdown syntax.
+- Scale to large, complex tables.
+- Expose the **full** power of HTML, unlike other solutions.
+
+### Structure
+
+You make tables with a **two-level Markdown list**, between `<table>` tags.
+The top level list contains either:
+
+<table>
+
+- tr
+  - `thead`
+  - zero or one, at the beginning
+- tr
+  - `tr` 
+  - zero or more, after `thead`
+
+</table>
+
+The second level contains the contents of cells, but you **don't** write `td`
+or `<td>`.
 
 (This format looks similar to [tables in
 reStructuredText](https://sublime-and-sphinx-guide.readthedocs.io/en/latest/tables.html)).
 
-It takes two steps to convert:
+### Markdown &rarr; HTML &rarr; HTML Conversion
+
+As mentioned, it takes two steps to convert:
 
 1. Any Markdown translator will produce a
    `<table> <ul> <li> ... </li> </ul> </table>` structure.
@@ -117,7 +132,12 @@ It takes two steps to convert:
    `<table> <tr> <td> </td> </tr> </table>` structure, which is a normal HTML
    table.
 
-### Comparison: Markdown Uses Tedious Inline HTML
+So `ul-table` is an HTML processor, **not** a Markdown processor.  But it's
+meant to be used with Markdown.
+
+## Details
+
+### Comparison: Tedious Inline HTML
 
 Here's the equivalent in CommonMark:
 
@@ -140,7 +160,7 @@ Here's the equivalent in CommonMark:
       <tr>
         <td>
 
-    [OSH](https://www.oilshell.org/)
+    [OSH](https://oils.pub/)
 
         </td>
         <td>0.25.0</td>
@@ -151,11 +171,11 @@ Here's the equivalent in CommonMark:
 It uses the rule where you can embed Markdown inside HTML inside Markdown.
 With `ul-table`, you **don't** need this mutual nesting.
 
-The text you have to write is also a lot shorter!
+The `ul-table` text is also shorter!
 
 ---
 
-Trivia: with CommonMark, you also get an extra `<p>` element:
+Trivia: with CommonMark, you get an extra `<p>` element:
 
     <td>
       <p>OSH</p>
@@ -176,27 +196,10 @@ To make the table look nice, I add a `<style>` tag, inside Markdown:
       margin: 0 auto;
     }
     td {
-      padding: 0.2em;
+      padding-left: 1em;
+      padding-right: 1em;
     }
     </style>
-
-### The Untranslated HTML
-
-If you omit the `<table>` tags, then the rendered HTML looks like this:
-
-- thead
-  - Shell
-  - Version
-- tr
-  - [bash]($xref)
-  - 5.2
-- tr
-  - [OSH]($xref)
-  - 0.25.0
-
-This is how your tables will appear on sourcehut or Github, which don't (yet)
-have `ul-table` support.  Remember, `ul-table` is **not** an extension to
-Markdown syntax.
 
 ## Adding HTML Attributes
 
@@ -226,7 +229,7 @@ puts it on the generated `<td>`.
 
 ### Columns
 
-Add attributes to **every cell in a column** by the same way, except in the
+Add attributes to **every cell in a column** the same way, except in the
 `thead` section:
 
     - thead
@@ -234,10 +237,10 @@ Add attributes to **every cell in a column** by the same way, except in the
       - <cell-attrs class=num /> Age
     - tr
       - Alice
-      - 42     # this cell gets class=num
+      - 42     <!-- this cell gets class=num -->
     - tr
       - Bob
-      - 25     # this cells gets class=num
+      - 9      <!-- this cells gets class=num -->
 
 This is particularly useful for aligning numbers to the right:
 
@@ -247,8 +250,30 @@ This is particularly useful for aligning numbers to the right:
     }
     </style>
 
-If the same attribute appears in the `thead` and and a `tr` section, the values
-are **concatenated**, with a space.  Example:
+Example:
+
+<style>
+.num {
+  text-align: right;
+}
+</style>
+
+<table>
+
+- thead
+  - Name
+  - <cell-attrs class=num /> Age
+- tr
+  - Alice
+  - 42
+- tr
+  - Bob
+  - 9
+
+</table>
+
+If the same attribute appears in the `thead` and a `tr` section, the values are
+**concatenated**, with a space.  Example:
 
     <td class="from-thead from-tr">
 
@@ -264,7 +289,7 @@ Add row attributes like this:
       - 42
     - tr <row-attrs class="special-row />
       - Bob
-      - 25
+      - 9
 
 ## Example: Markdown and HTML Inside Cells
 
@@ -392,6 +417,8 @@ This style is hard to read and write, especially with large tables:
 Our style is less noisy, and more easily editable:
 
 ```
+<table>
+
 - thead
   - Command
   - Description
@@ -401,6 +428,8 @@ Our style is less noisy, and more easily editable:
 - tr
   - git diff
   - Show file differences that haven't been staged
+
+</table>
 ```
 
 - Related wiki page: [Markdown Tables]($wiki)
@@ -421,30 +450,18 @@ has links and details.
 - [doctools/ul_table.py]($oils-src) - about 500 lines
 - [lazylex/html.py]($oils-src) - about 500 lines
 
-TODO:
-
-- Move unit tests to spec tests - `doctools/ul-table-test.ysh`
-  - can run under Python 2 vs. Python 3
-  - can run with cmark vs. `markdown.pl`
-    - De-couple it from cmark.so
-- Publish the code separately?
-  - `lazylex/html.py` can got in `doctools/`
-  - or maybe it's ready to go in `data_lang/htm8.py`, if we can fix the lexer
-- Could revive pyannotate automation to help with the typing
-
 ### Algorithm Notes
 
 - lazy lexing
 - recursive descent parser
   - TODO: show grammar
 
-TODO:
+TODO: I would like someone to produce a **DOM**-based implementation!
 
-- I would like someone to produce a **DOM** implementation!
-  - Our implementation is meant to avoid the "big load anti-pattern"
-    (allocating too much), so it's a necessarily more verbose.  A DOM
-    implementation should be much less than 1000 lines.
+Our implementation is pretty low-level.  It's meant to avoid the "big load
+anti-pattern" (allocating too much), so it's a necessarily more verbose.
 
+A DOM-based implementation should be much less than 1000 lines.
 
 ## Appendix: Real Examples
 
@@ -462,17 +479,15 @@ The markup was much shorter and simpler after conversion!
 
 TODO:
 
-- Tables to Make
+- More tables to Make
   - Interior/Exterior
   - Narrow Waist
-
 - Wiki pages could use conversion
   - [Alternative Shells]($wiki)
   - [Alternative Regex Syntax]($wiki)
   - [Survey of Config Languages]($wiki)
   - [Polyglot Language Understanding]($wiki)
   - [The Biggest Shell Programs in the World]($wiki)
-
 
 ## HTML Quirks
 
@@ -498,7 +513,7 @@ It's also consistent with plain rows, without attributes.
 
 -->
 
-## Feature Ideas
+## Ideas for Features
 
 We could help users edit well-formed tables with enforced column names:
 
