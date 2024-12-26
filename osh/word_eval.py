@@ -893,6 +893,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             elif case(value_e.BashArray):  # caught earlier but OK
                 val = cast(value.BashArray, UP_val)
+                # When there are more than one element in the array, this
+                # produces a wrong variable name containing spaces.
                 var_ref_str = ' '.join(bash_impl.BashArray_GetValues(val))
 
             elif case(value_e.BashAssoc):  # caught earlier but OK
