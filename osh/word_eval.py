@@ -883,7 +883,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
         UP_val = val
         with tagswitch(val) as case:
             if case(value_e.Undef):
-                return value.Undef  # ${!undef} is just weird bash behavior
+                # bash-4.4 returned value.Undef here. bash-5.0 started to treat
+                # the variable name to be empty so that the indirection fails.
+                var_ref_str = ''
 
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
