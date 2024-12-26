@@ -6,33 +6,91 @@
 #   doctools/ul-table-test.ysh <function name>
 
 # TODO:
-# - run tests with python2 and python3
+# - Run with another markdown processor other than cmark?  pandoc?
+#   - Because markdown.pl doesn't support the inline HTML rule
+#   - Or we could find a Python library too
+#
+# - task-five needs support for proc!
+#   - we might need to discover procs differently
+#   - right now we're using _bash-print-funcs,w hich uses shopt -s extdebug,
+#   which OSH doesn't support!
+# - Use 'byo test' - does that mean byo-server-lib also needs to be YSH?
+# - Put this in CI
+
 # - run with CommonMark and Markdown.pl
 #   - CommonMark only works under Python 2 now?  But we could add Python 3.
 
 source $LIB_OSH/task-five.sh
 #source $LIB_YSH/yblocks.ysh
 
-# proc doesn't work with task-five!
-# we need task-five.ysh?
-proc unit-py2 {
-  # like test/unit.sh
-  PYTHONPATH='.:vendor/' doctools/ul_table_test.py
+proc run-py {
+  PYTHONPATH='.:vendor/' @ARGV
 }
 
-unit-py2() {
+# proc doesn't work with task-five!
+# we need task-five.ysh?
+proc test-unit-py2 {
   # like test/unit.sh
-  PYTHONPATH='.:vendor/' doctools/ul_table_test.py
+  run-py doctools/ul_table_test.py
+}
+
+test-unit-py2() {
+  # like test/unit.sh
+  run-py doctools/ul_table_test.py
 }
 
 # Problem: We import cmark, which imports ctypes
-unit-py3() {
+test-unit-py3() {
   # like test/unit.sh
-  PYTHONPATH='.:vendor/' python3 doctools/ul_table_test.py
+  run-py python3 doctools/ul_table_test.py
+}
+
+# Taken from unit test
+# TODO: need YSH syntax highlighting of '''
+const TD_ATTRS = '''
+<table>
+
+- thead
+  - <cell-attrs class=unquoted /> name
+  - <cell-attrs class=quoted /> age
+  - role
+- tr
+  - <cell-attrs class="cool" /> alice
+  - 30
+  - parent
+- tr
+  - bob
+  - 42
+  - <cell-attrs class=child /> child
+
+</table>
+'''
+
+const CMARK_DIR = '/wedge/oils-for-unix.org/pkg/cmark/0.29.0'
+
+proc cmark-bin {
+  $CMARK_DIR/bin/cmark @ARGV
+}
+
+test-without-cmark-py2() {
+  # Oh markdown.pl doesn't have the embedded HTML rule?
+
+  # cmark omits raw HTML by default
+  # cmark-bin --help
+
+  echo $TD_ATTRS | cmark-bin --unsafe | run-py doctools/ul_table.py
+}
+
+test-without-cmark-py3() {
+  echo $TD_ATTRS | cmark-bin --unsafe | run-py python3 doctools/ul_table.py
 }
 
 proc run-tests() {
   devtools/byo.sh test $0
+}
+
+proc soil-run {
+  echo TODO
 }
 
 task-five "$@"

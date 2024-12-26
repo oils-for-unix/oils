@@ -6,6 +6,7 @@ try:
 except ImportError:
     from io import StringIO
 import re
+import sys
 
 from doctools.util import log
 from lazylex import html
@@ -494,3 +495,8 @@ def ReplaceTables(s, debug_out=None):
     out.PrintTheRest()
 
     return f.getvalue()
+
+
+if __name__ == '__main__':
+    # Simple CLI filter
+    sys.stdout.write(ReplaceTables(sys.stdin.read()))
