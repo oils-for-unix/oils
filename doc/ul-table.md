@@ -4,13 +4,6 @@ ul-table: Markdown Tables Without New Syntax
 `ul-table` is an HTML processor that lets you write **tables** as bulleted
 **lists**, in Markdown.
 
-
-<!--
-
-- Solve the "column alignment problem" concisely.
-  - HTML punts on this, as explained below.
--->
-
 <div id="toc">
 </div>
 
@@ -94,11 +87,13 @@ This means your docs are still readable without it, e.g. on sourcehut or
 Github.  It degrades gracefully.
 -->
 
-Other design goals:
+Design goals:
 
-- Don't invent any new Markdown syntax.
+- Don't invent any new syntax.
+  - Reuse your knowledge of Markdown
+  - Reuse your knowledge of HTML
 - Scale to large, complex tables.
-- Expose the **full** power of HTML, unlike other solutions.
+- Expose the **full** power of HTML
 
 ### Structure
 
@@ -210,14 +205,38 @@ You can add attributes to cells, columns, and rows.
 
 ### Cells
 
-Add cell attributes with a `cell-attrs` tag **before** the cell contents:
+<style>
+.hi { background-color: thistle }
+</style>
 
-    - thead
-      - Name
-      - Age
-    - tr
-      - Alice
-      - <cell-attrs class=num /> 42
+<table>
+
+- thead
+  - Name
+  - Age
+- tr
+  - Alice
+  - 42 <cell-attrs class=hi />
+- tr
+  - Bob
+  - 9
+
+</table>
+
+Add cell attributes with a `cell-attrs` tag after the cell contents:
+
+```
+- thead
+  - Name
+  - Age
+- tr
+  - Alice
+  - 42 <cell-attrs class=hi />
+- tr
+  - Bob
+  - 9
+```
+
 
 It's important that `cell-attrs` is a **self-closing** tag:
 
@@ -229,29 +248,6 @@ puts it on the generated `<td>`.
 
 ### Columns
 
-Add attributes to **every cell in a column** the same way, except in the
-`thead` section:
-
-    - thead
-      - Name
-      - <cell-attrs class=num /> Age
-    - tr
-      - Alice
-      - 42     <!-- this cell gets class=num -->
-    - tr
-      - Bob
-      - 9      <!-- this cells gets class=num -->
-
-This is particularly useful for aligning numbers to the right:
-
-    <style>
-    .num {
-      text-align: right;
-    }
-    </style>
-
-Example:
-
 <style>
 .num {
   text-align: right;
@@ -262,7 +258,7 @@ Example:
 
 - thead
   - Name
-  - <cell-attrs class=num /> Age
+  - Age <cell-attrs class=num /> 
 - tr
   - Alice
   - 42
@@ -272,14 +268,64 @@ Example:
 
 </table>
 
-If the same attribute appears in the `thead` and a `tr` section, the values are
-**concatenated**, with a space.  Example:
+To add attributes to **every cell in a column**, put `<cell-attrs />` in the
+`thead` section:
+
+<style>
+.num {
+  background-color: bisque;
+  align: right;
+}
+</style>
+
+```
+- thead
+  - Name
+  - Age <cell-attrs class=num /> 
+- tr
+  - Alice
+  - 42     <!-- this cell gets class=num -->
+- tr
+  - Bob
+  - 9      <!-- this cells gets class=num -->
+```
+
+This is particularly useful for aligning numbers to the right:
+
+    <style>
+    .num {
+      align: right;
+    }
+    </style>
+
+If the same attribute appears in a column in both `thead` and `tr`, the values
+are **concatenated**, with a space.  Example:
 
     <td class="from-thead from-tr">
 
 ### Rows
 
-Add row attributes like this:
+<style>
+.special-row {
+  background-color: powderblue;
+}
+</style>
+
+<table>
+
+- thead
+  - Name
+  - Age
+- tr
+  - Alice
+  - 42
+- tr <row-attrs class="special-row "/>
+  - Bob
+  - 9
+
+</table>
+
+To add row attributes, put `<row-attrs />` after the `- tr`:
 
     - thead
       - Name
@@ -287,7 +333,7 @@ Add row attributes like this:
     - tr
       - Alice
       - 42
-    - tr <row-attrs class="special-row />
+    - tr <row-attrs class="special-row" />
       - Bob
       - 9
 
@@ -354,6 +400,41 @@ Here's an example that uses more features.  Source code of this table:
 
 </table>
 
+&nbsp;
+
+Another table:
+
+<style>
+.osh-code { color: darkred }
+.ysh-code { color: darkblue }
+</style>
+
+
+<table>
+
+- thead
+  - OSH
+  - YSH
+- tr
+  - ```
+    my-copy() {
+      cp --verbose "$@"
+    }
+    ```
+    <cell-attrs class=osh-code /> 
+  - ```
+    proc my-copy {
+      cp --verbose @ARGV
+    }
+    ```
+    <cell-attrs class=ysh-code />
+- tr
+  - x
+  - y
+
+</table>
+
+
 ## Markdown Quirks to Be Aware Of
 
 Here are some quirks I ran into when creating ul-tables.
@@ -375,16 +456,8 @@ You can work around this by using a comment, or invisible character:
 
 - [Related CommonMark thread](https://talk.commonmark.org/t/clarify-following-empty-list-items-in-0-31-2/4599)
 
-As similar issue is that line breaks affect backtick expansion to `<code>`:
-
-    - tr
-      - <cell-attrs /> <!-- we need something on this line -->
-        ... More `proc` features ...
-
-I think this is also because `<cell-attrs />` doesn't "count" as text, so the
-list item is considered empty.
-
-(2) Likewise, a cell with a literal hyphen may need a comment or space in front of it:
+(2) Similarly, a cell with a literal hyphen may need a comment or space in
+front of it:
 
     - tr
       - <!-- hyphen --> -
@@ -434,6 +507,27 @@ Our style is less noisy, and more easily editable:
 
 - Related wiki page: [Markdown Tables]($wiki)
 
+### MediaWiki Tables
+
+Here is a **long** page describing how to make tables on Wikipedia:
+
+- <https://en.wikipedia.org/wiki/Help:Table>
+
+I created the equivalent of the opening example:
+
+```
+{| class="wikitable"
+! Shell !! Version
+|-
+| [https://www.gnu.org/software/bash/ Bash] || 5.2
+|-
+| [https://www.oilshell.org/ OSH] || 0.25.0
+|}
+```
+
+In general, it has more "ASCII art", and invents a lot of new syntax.
+
+I prefer `ul-table` because it reuses Markdown and HTML syntax.
 
 ## Conclusion
 
@@ -515,6 +609,11 @@ It's also consistent with plain rows, without attributes.
 
 ## Ideas for Features
 
+- Support `tfoot`?
+- Emit `tbody`?
+
+---
+
 We could help users edit well-formed tables with enforced column names:
 
     - thead
@@ -547,3 +646,42 @@ Even less verbose:
 The obvious problem is that we might want the literal text `{NAME}` in the
 header.  It's unlikely, but possible.
 
+
+<!--
+
+TODO: We should detect cell-attrs before the closing `</li>`, or in any
+position?
+
+<table>
+
+- thead
+  - OSH
+  - YSH
+- tr
+  - ```
+    my-copy() {
+      cp --verbose "$@"
+    }
+    ```
+    <cell-attrs class=osh-code />
+  - ```
+    proc my-copy {
+      cp --verbose @ARGV
+    }
+    ```
+    <cell-attrs class=ysh-code />
+
+</table>
+
+-->
+
+
+<!--
+TODO:
+
+- change back to oilshell.org/ for publishing
+- Compare to wikipedia
+  - https://en.wikipedia.org/wiki/Help:Table
+  - table caption  - this is just <caption>
+  - rowspan
+-->

@@ -65,6 +65,48 @@ TD_ATTRS_HTML = """\
 </table>
 """
 
+TRAILING_ATTRS = """\
+<table>
+
+- thead
+  - OSH
+  - YSH
+- tr
+  - ```
+    echo osh
+    ```
+    <cell-attrs class=osh-code />
+  - ```
+    echo ysh
+    ```
+    <cell-attrs class=ysh-code />
+
+</table>
+"""
+
+TRAILING_ATTRS_HTML = """\
+<table>
+<thead>
+<tr>
+  <th>OSH</th>
+  <th>YSH</th>
+</tr>
+</thead>
+<tr>
+  <td class="osh-code">
+<pre><code>echo osh
+</code></pre>
+
+</td>
+  <td class="ysh-code">
+<pre><code>echo ysh
+</code></pre>
+
+</td>
+</tr>
+</table>
+"""
+
 TR_ATTRS = """\
 <table>
 
@@ -284,6 +326,14 @@ class UlTableTest(unittest.TestCase):
         h = MarkdownToTable(TD_ATTRS)
         self.assertMultiLineEqual(TD_ATTRS_HTML, h)
 
+    def testTdAttrsTrailing(self):
+        self.maxDiff = 2000
+        h = MarkdownToTable(TRAILING_ATTRS)
+        if 1:
+            print('expect', repr(TRAILING_ATTRS_HTML))
+            print('actual', repr(h))
+        self.assertMultiLineEqual(TRAILING_ATTRS_HTML, h)
+
     def testColspan(self):
         h = MarkdownToTable(COLSPAN)
         self.assertMultiLineEqual(COLSPAN_HTML, h)
@@ -308,22 +358,6 @@ class UlTableTest(unittest.TestCase):
 - should be thead
   - one
   - two
-""")
-        except html.ParseError as e:
-            print(e)
-        else:
-            self.fail('Expected parse error')
-
-        try:
-            h = MarkdownToTable("""
-<table>
-
-- thead
-  - <span /> Not allowed
-  - two
-- tr
-  - 1
-  - 2
 """)
         except html.ParseError as e:
             print(e)

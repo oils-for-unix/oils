@@ -126,9 +126,9 @@ class UlTableParser(object):
         LIST_ITEM =
           [RawData \s*]?
           [StartTag 'li']
-          [StartEndTag 'cell-attrs']?
-          ANY*               # NOT context-free - anything that's not the end
-                             # This is what we should capture in CELLS
+          ANY*               # NOT context-free:
+                             # - we MATCH <li> and </li> with a tack
+                             # - We search for [StartEndTag 'cell-attrs']?
           [EndTag 'li']
 
         Example of attribute borrowing:
@@ -148,18 +148,9 @@ class UlTableParser(object):
 
         inner_html = None
         td_attrs = None  # Can we also have col-attrs?
+        td_attrs_span = None
 
         self._Eat(html.StartTag, 'li')
-
-        if self.tok_id == html.StartEndTag:
-            self.tag_lexer.Reset(self.start_pos, self.end_pos)
-            tag_name = self.tag_lexer.TagName()
-            # TODO: remove td-attrs backward compat
-            if tag_name not in ('td-attrs', 'cell-attrs'):
-                raise html.ParseError('Expected <cell-attrs />, got %r' %
-                                      tag_name)
-            td_attrs = self.tag_lexer.AllAttrsRaw()
-            self._Next()
 
         left = self.start_pos
 
@@ -168,12 +159,21 @@ class UlTableParser(object):
         # because cells can have bulleted lists
         balance = 0
         while True:
-            if self.tok_id == html.StartTag:
+            if self.tok_id == html.StartEndTag:
+                self.tag_lexer.Reset(self.start_pos, self.end_pos)
+                tag_name = self.tag_lexer.TagName()
+                # TODO: remove td-attrs backward compat
+                if tag_name in ('td-attrs', 'cell-attrs'):
+                    td_attrs_span = self.start_pos, self.end_pos
+                    td_attrs = self.tag_lexer.AllAttrsRaw()
+                    #log('CELL ATTRS %r', self._CurrentString())
+
+            elif self.tok_id == html.StartTag:
                 self.tag_lexer.Reset(self.start_pos, self.end_pos)
                 if self.tag_lexer.TagName() == 'li':
                     balance += 1
 
-            if self.tok_id == html.EndTag:
+            elif self.tok_id == html.EndTag:
                 self.tag_lexer.Reset(self.start_pos, self.end_pos)
                 if self.tag_lexer.TagName() == 'li':
                     balance -= 1
@@ -183,7 +183,14 @@ class UlTableParser(object):
 
         right = self.start_pos  # start of the end tag
 
-        inner_html = self.tag_lexer.s[left:right]
+        s = self.tag_lexer.s
+        if td_attrs_span:
+            # everything except the <cell-attrs />
+            inner_html = s[left:td_attrs_span[0]] + s[td_attrs_span[1]:right]
+            #log('LEFT %r', s[left:td_attrs_span[0]])
+            #log('RIGHT %r', s[td_attrs_span[1]:right])
+        else:
+            inner_html = s[left:right]
         #log('RAW inner html %r', inner_html)
 
         #self._Eat(html.EndTag, 'li')
