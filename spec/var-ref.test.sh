@@ -1,4 +1,4 @@
-## compare_shells: bash-4.4
+## compare_shells: bash
 ## oils_failures_allowed: 1
 
 # Var refs are done with ${!a}
@@ -59,7 +59,7 @@ echo a_nobrackets=$?
 echo ---
 declare -A A=([A]=a [B]=b)
 
-argv.py ${!A[@]}
+argv.py $(printf '%s\n' ${!A[@]} | sort)
 echo A_keys=$?
 
 argv.py "${!A}"  # missing [] is equivalent to ${!A[0]} ?
@@ -390,10 +390,13 @@ PWD=1
 ref='a[~+]'
 echo ${!ref}
 ## status: 1
-## BUG bash status: 0
-## BUG bash STDOUT:
-y
-## END
+
+# Bash 4.4 had a bug, which was fixed in Bash 5.0.
+#
+# ## BUG bash status: 0
+# ## BUG bash STDOUT:
+# y
+# ## END
 
 #### Indirect expansion TO fancy expansion features bash disallows
 
@@ -670,34 +673,6 @@ test-rep 'a3[@]'
 ['1', '2', '3']
 ## END
 
-## BUG bash STDOUT:
-==== v1 ====
-['alue']
-['valu']
-['vlu']
-['vxlux']
-==== v2 ====
-['']
-['']
-['']
-['']
-==== a1 ====
-['']
-['']
-['']
-['']
-==== a2[0] ====
-['lement']
-['elemen']
-['lmnt']
-['xlxmxnt']
-==== a3[@] ====
-[]
-[]
-['1', '2', '3']
-['1', '2', '3']
-## END
-
 #### Array indirect expansion with @? conversion
 
 declare -A ref=(['dummy']=v1)
@@ -747,12 +722,12 @@ test-op0 'a3[@]'
 ['a', 'a', 'a']
 ## END
 
-# Bash 4.4 has a bug in the section "==== a3[@] ====".  Bash 5 correctly
-# outputs the following:
+# Bash 4.4 had a bug in the section "==== a3[@] ====":
 #
-# ["'1'", "'2'", "'3'"]
-# ['1', '2', '3']
-# ['a', 'a', 'a']
+# ==== a3[@] ====
+# []
+# []
+# []
 
 ## BUG bash STDOUT:
 ==== v1 ====
@@ -772,7 +747,7 @@ test-op0 'a3[@]'
 ['element']
 ['a']
 ==== a3[@] ====
-[]
-[]
-[]
+["'1'", "'2'", "'3'"]
+['1', '2', '3']
+['a', 'a', 'a']
 ## END
