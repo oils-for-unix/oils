@@ -77,11 +77,13 @@ A_keys=0
 A_nobrackets=0
 ## END
 
-#### ${!a[@]-'default'} is illegal
+#### ${!a[@]-'default'} is legal but fails with more than one element
 
-# bash disallows this when a is an array.  We originally made it an error
-# because [@] implies it's an array, but we now changed to follow Bash when the
-# array has a single element.
+# bash allows this construct, but the indirection fails when the array has more
+# than one element because the variable name contains a space.  OSH originally
+# made it an error unconditionally because [@] implies it's an array, so the
+# behavior has been different from Bash when the array has a single element.
+# We now changed it to follow Bash even when the array has a single element.
 
 argv.py "${!a[@]-default}"
 echo status=$?
