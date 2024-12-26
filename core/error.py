@@ -80,6 +80,19 @@ class FailGlob(_ErrorWithLocation):
         _ErrorWithLocation.__init__(self, msg, location)
 
 
+class VarSubFailure(_ErrorWithLocation):
+    """Raised when a variable substitution fails.  For example, this
+    is thrown with ${!ref} when the variable "ref" contains invalid
+    variable name such as ref="a b c".
+
+    Meant to be caught.
+    """
+
+    def __init__(self, msg, location):
+        # type: (str, loc_t) -> None
+        _ErrorWithLocation.__init__(self, msg, location)
+
+
 class RedirectEval(_ErrorWithLocation):
     """Used in the CommandEvaluator.
 

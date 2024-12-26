@@ -1537,6 +1537,11 @@ class CommandEvaluator(object):
                 e.location = self.mem.GetFallbackLocation()
             self.errfmt.PrettyPrintError(e, prefix='failglob: ')
             redirects = None
+        except error.VarSubFailure as e:  # e.g. echo hi > ${!undef}
+            if not e.HasLocation():
+                e.location = self.mem.GetFallbackLocation()
+            self.errfmt.PrettyPrintError(e)
+            redirects = None
 
         if redirects is None:
             # Error evaluating redirect words
@@ -1896,6 +1901,12 @@ class CommandEvaluator(object):
                 self.errfmt.PrettyPrintError(e, prefix='failglob: ')
                 status = 1  # another redirect word eval error
                 cmd_st.check_errexit = True  # failglob + errexit
+            except error.VarSubFailure as e:  # e.g. echo hi > ${!undef}
+                if not e.HasLocation():  # Last resort!
+                    e.location = self.mem.GetFallbackLocation()
+                self.errfmt.PrettyPrintError(e)
+                status = 1  # another redirect word eval error
+                cmd_st.check_errexit = True  # errexit for e.g. a=${!undef}
 
         # Now we've waited for process subs
 

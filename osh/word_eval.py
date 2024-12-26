@@ -904,7 +904,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
             else:
                 raise error.TypeErr(val, 'Var Ref op expected Str', blame_tok)
 
-        bvs_part = self.unsafe_arith.ParseVarRef(var_ref_str, blame_tok)
+        try:
+            bvs_part = self.unsafe_arith.ParseVarRef(var_ref_str, blame_tok)
+        except error.FatalRuntime as e:
+            raise error.VarSubFailure(e.msg, e.location)
+
         return self._VarRefValue(bvs_part, quoted, vsub_state, vtest_place)
 
     def _ApplyUnarySuffixOp(self, val, op):
