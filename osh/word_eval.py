@@ -887,18 +887,21 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
-                bvs_part = self.unsafe_arith.ParseVarRef(val.s, blame_tok)
-                return self._VarRefValue(bvs_part, quoted, vsub_state,
-                                         vtest_place)
+                var_ref_str = val.s
 
             elif case(value_e.BashArray):  # caught earlier but OK
-                e_die('Indirect expansion of array')
+                val = cast(value.BashArray, UP_val)
+                var_ref_str = ' '.join(bash_impl.BashArray_GetValues(val))
 
             elif case(value_e.BashAssoc):  # caught earlier but OK
-                e_die('Indirect expansion of assoc array')
+                val = cast(value.BashAssoc, UP_val)
+                var_ref_str = ' '.join(bash_impl.BashAssoc_GetValues(val))
 
             else:
                 raise error.TypeErr(val, 'Var Ref op expected Str', blame_tok)
+
+        bvs_part = self.unsafe_arith.ParseVarRef(var_ref_str, blame_tok)
+        return self._VarRefValue(bvs_part, quoted, vsub_state, vtest_place)
 
     def _ApplyUnarySuffixOp(self, val, op):
         # type: (value_t, suffix_op.Unary) -> value_t
@@ -1465,18 +1468,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             elif part.prefix_op.id == Id.VSub_Bang:
                 if (part.bracket_op and
-                        part.bracket_op.tag() == bracket_op_e.WholeArray):
+                        part.bracket_op.tag() == bracket_op_e.WholeArray and
+                        not suffix_op_):
                     # undef -> empty array
                     val = self._ProcessUndef(val, part.name_tok, vsub_state)
-
-                    # ${!a[@]-'default'} is a non-fatal runtime error in bash.
-                    # Here it's fatal.
-                    if suffix_op_ and suffix_op_.tag() == suffix_op_e.Unary:
-                        unary_op = cast(suffix_op.Unary, suffix_op_)
-                        if consts.GetKind(unary_op.op.id) == Kind.VTest:
-                            e_die(
-                                'Test operation not allowed with ${!array[@]}',
-                                unary_op.op)
 
                     # ${!array[@]} to get indices/keys
                     val = self._Keys(val, part.name_tok)
@@ -1490,8 +1485,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     vtest_place.name = None
                     vtest_place.index = None
 
-                    val = self._EvalVarRef(val, part.name_tok, quoted, vsub_state,
-                                           vtest_place)
+                    val = self._EvalVarRef(val, part.name_tok, quoted,
+                                           vsub_state, vtest_place)
 
             else:
                 raise AssertionError(part.prefix_op)
@@ -1503,8 +1498,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
             with tagswitch(suffix_op_) as case:
                 if case(suffix_op_e.Nullary):
                     op = cast(Token, UP_op)
-                    val, quoted2 = self._Nullary(val, op, var_name, part.name_tok,
-                                                 vsub_state)
+                    val, quoted2 = self._Nullary(val, op, var_name,
+                                                 part.name_tok, vsub_state)
 
                 elif case(suffix_op_e.Unary):
                     op = cast(suffix_op.Unary, UP_op)
@@ -1520,7 +1515,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
                     else:
                         # Other suffix: value -> value
-                        val = self._ProcessUndef(val, part.name_tok, vsub_state)
+                        val = self._ProcessUndef(val, part.name_tok,
+                                                 vsub_state)
                         val = self._ApplyUnarySuffixOp(val, op)
 
                 elif case(suffix_op_e.PatSub):  # PatSub, vectorized
