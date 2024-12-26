@@ -1,5 +1,5 @@
 ## compare_shells: bash
-## oils_failures_allowed: 8
+## oils_failures_allowed: 7
 
 #### Lower Case with , and ,,
 x='ABC DEF'
@@ -337,11 +337,6 @@ if test $? -ne 0; then echo fail; fi
 
 
 # END
-## OK osh STDOUT:
-fail
-'x y'
-a
-## END
 
 #### ${#var@X} is a parse error
 # note: "y z" causes a bug!
