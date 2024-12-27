@@ -35,7 +35,7 @@
 #
 #   demo/osh-debug.sh analyze  # see what you ran
 # 
-# - Go to oilshell.org repo and do:
+# - Go to oils.pub repo and do:
 #   ./deploy.sh site                  # copy release
 #   ./deploy.sh bump-index-version
 #   make
@@ -535,6 +535,7 @@ deploy-doc() {
   local release_root_dir="$deploy_repo/release"
   local release_dir="$release_root_dir/$OIL_VERSION"
 
+  mkdir -p $release_dir
   cp -v -r --force --no-target-directory \
     _release/VERSION/ $release_dir/
 
