@@ -134,7 +134,7 @@ compare-gcc-clang() {
   ls -l --sort=none "${targets[@]}" | tee _tmp/metrics/compare-gcc-clang.txt
 }
 
-readonly OIL_VERSION=$(head -n 1 oil-version.txt)
+readonly OIL_VERSION=$(head -n 1 oils-version.txt)
 
 run-for-release() {
   # 2024-08: Not building with DWARF 4

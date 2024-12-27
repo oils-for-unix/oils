@@ -108,7 +108,7 @@ _fill-oil-tree() {
 
   cp -v ../asdl/*.asdl $dir/asdl
   ln -v -s -f $PWD/../{libc,fastlex}.so $dir
-  ln -v -s -f $PWD/../oil-version.txt $dir
+  ln -v -s -f $PWD/../oils-version.txt $dir
 
   # OPy needs this for the grammar pickle?  Maybe just copy it.
   ln -v -s -f --no-target-directory $PWD/../_build $dir/_build

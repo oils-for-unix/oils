@@ -45,7 +45,7 @@ ysh-ovm-tarball() {
   ### Regression test run by CI
 
   local version
-  version=$(head -n 1 oil-version.txt)
+  version=$(head -n 1 oils-version.txt)
 
   local tar_root=$REPO_ROOT/_tmp/oil-tar-test/oil-$version
 

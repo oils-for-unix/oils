@@ -13,7 +13,7 @@ shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 # adapted from build/ovm-compile.sh
 # and devtools/release.sh
 
-OILS_VERSION=$(head -n 1 oil-version.txt)
+OILS_VERSION=$(head -n 1 oils-version.txt)
 readonly OILS_VERSION
 
 _gen-oils-sh() {

@@ -167,7 +167,7 @@ def GetResourceLoader():
 
 def GetVersion(loader):
     # type: (_ResourceLoader) -> str
-    contents = loader.Get('oil-version.txt')
+    contents = loader.Get('oils-version.txt')
     version_str, _ = mylib.split_once(contents, '\n')
     return version_str
 

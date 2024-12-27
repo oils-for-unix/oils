@@ -30,7 +30,7 @@ set -o errexit
 source benchmarks/id.sh
 source test/common.sh  # die
 
-OILS_VERSION=$(head -n 1 oil-version.txt)
+OILS_VERSION=$(head -n 1 oils-version.txt)
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 

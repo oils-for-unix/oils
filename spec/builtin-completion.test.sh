@@ -243,7 +243,7 @@ cpp
 cd $REPO_ROOT
 compgen -A file o | sort
 ## STDOUT:
-oil-version.txt
+oils-version.txt
 opy
 osh
 ## END

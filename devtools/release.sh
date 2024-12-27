@@ -6,7 +6,7 @@
 #   devtools/release.sh <function name>
 #
 # Steps:
-#   edit oil-version.txt, build/doc.sh update-src-versions, bump devtools/release-note.sh
+#   edit oils-version.txt, build/doc.sh update-src-versions, bump devtools/release-note.sh
 #   $0 make-release-branch
 #   $0 two-tarballs          # CPython, then oils-for-unix, which is INSTALLED
 #   demo/osh-debug.sh osh-for-release: Start a shell to dogfood
@@ -51,7 +51,7 @@ set -o errexit
 shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
 REPO_ROOT=$(cd $(dirname $0)/.. ; pwd)
-OIL_VERSION=$(head -n 1 oil-version.txt)
+OIL_VERSION=$(head -n 1 oils-version.txt)
 
 source devtools/common.sh  # banner
 source benchmarks/common.sh  # BENCHMARK_DATA_OILS, OSH_CPP_BENCHMARK_DATA
@@ -132,7 +132,7 @@ auto-machine2() {
 #   release/
 #     $VERSION/
 #       index.html  # release page, from doc/release-index.md
-#       oil-version.txt
+#       oils-version.txt
 #       release-date.txt
 #       announcement.html  # HTML redirect
 #       changelog.html
@@ -203,7 +203,7 @@ _test-tarball() {
 
 test-oil-tar() {
   local install=${1:-}  # non-empty to install
-  _test-tarball oil $(head -n 1 oil-version.txt) "$install"
+  _test-tarball oil $(head -n 1 oils-version.txt) "$install"
 }
 
 _release-build() {
@@ -613,7 +613,7 @@ _html-index() {
     local dir=$entry
 
     local version
-    version=$(head -n 1 $dir/oil-version.txt)
+    version=$(head -n 1 $dir/oils-version.txt)
     local release_date
     release_date=$(head -n 1 $dir/release-date.txt)
 
