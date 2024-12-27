@@ -162,6 +162,3 @@ the "experimental" version of Oils.
     compiled with CPython (for comparison).
   - [src-bin-ratio-with-opy](pub/metrics.wwz/bytecode/src-bin-ratio-with-opy.txt) -
     How big is the compiled output?
-- OVM / CPython
-  - [cpython-defs/overview](pub/metrics.wwz/cpython-defs/overview.txt) - We try to
-    ship as little of CPython as possible, and this is what's left.

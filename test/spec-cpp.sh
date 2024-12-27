@@ -53,6 +53,7 @@ run-file() {
   case $suite in
     osh) spec_subdir='osh-cpp' ;;
     ysh) spec_subdir='ysh-cpp' ;;
+    disabled) spec_subdir='disabled-cpp' ;;
     *)   die "Invalid suite $suite" ;;
   esac
 

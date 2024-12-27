@@ -91,6 +91,10 @@ osh-bugs() {
   run-file osh-bugs "$@"
 }
 
+spec-harness-bug() {
+  run-file spec-harness-bug "$@"
+}
+
 blog1() {
   sh-spec spec/blog1.test.sh \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
