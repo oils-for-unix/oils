@@ -249,6 +249,10 @@ case $SH in dash|mksh|zsh) exit ;; esac
 
 # https://oilshell.zulipchat.com/#narrow/stream/307442-nix/topic/Replacing.20bash.20with.20osh.20in.20Nixpkgs.20stdenv
 
+(argv.py ${!hooksSlice+"${!hooksSlice}"})
+
+hooksSlice=x
+
 argv.py ${!hooksSlice+"${!hooksSlice}"}
 
 declare -a hookSlice=()
@@ -263,6 +267,15 @@ declare -a hooksSlice=(foo bar spam eggs)
 argv.py ${!hooksSlice+"${!hooksSlice}"}
 
 ## STDOUT:
+[]
+[]
+['42']
+## END
+
+# Bash 4.4 has a bug that ${!undef-} is successfully generate an empty word.
+
+## BUG bash STDOUT:
+[]
 []
 []
 ['42']
