@@ -258,14 +258,14 @@ argv.py ${!hooksSlice+"${!hooksSlice}"}
 foo=42
 bar=43
 
-declare -a hookSlice=(foo bar spam eggs)
+declare -a hooksSlice=(foo bar spam eggs)
 
 argv.py ${!hooksSlice+"${!hooksSlice}"}
 
 ## STDOUT:
 []
 []
-[]
+['42']
 ## END
 
 ## OK dash/mksh/zsh STDOUT:
