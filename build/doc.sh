@@ -625,7 +625,7 @@ EOF
     oil-native-$version.tar.xz; do
 
     local url="/download/$name"  # The server URL
-    local path="../oilshell.org__deploy/download/$name"
+    local path="../oils.pub__deploy/download/$name"
 
     # Don't show tarballs that don't exist
     if [[ $name == oils-for-unix-* && ! -f $path ]]; then

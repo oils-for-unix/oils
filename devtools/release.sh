@@ -41,7 +41,7 @@
 #   make
 #   ./deploy.sh site                  # copy new index
 #   ./deploy.sh bump-release-version
-# - Go to oilshell.org__deploy and "git add release/$VERSION".
+# - Go to oils.pub__deploy and "git add release/$VERSION".
 #   - git commit -a
 
 set -o nounset
@@ -127,7 +127,7 @@ auto-machine2() {
 # TODO:
 # - enforce that there is a release/$VERSION branch?
 
-# oilshell.org__deploy/
+# oils.pub__deploy/
 #   releases.html
 #   release/
 #     $VERSION/
@@ -530,7 +530,7 @@ metrics() {
 }
 
 deploy-doc() {
-  local deploy_repo='../oilshell.org__deploy'
+  local deploy_repo='../oils.pub__deploy'
   local release_root_dir="$deploy_repo/release"
   local release_dir="$release_root_dir/$OIL_VERSION"
 
@@ -546,7 +546,7 @@ deploy-doc() {
   ls -l $deploy_repo/releases.html
 }
 
-readonly DOWNLOAD_DIR='../oilshell.org__deploy/download/'
+readonly DOWNLOAD_DIR='../oils.pub__deploy/download/'
 
 # Generating releases.html requires the old tarballs!
 sync-old-tar() {
