@@ -153,7 +153,7 @@ format-wwz-index() {
     <p id="home-link">
         <a href="..">Up</a>
       | <a href="/">Home</a>
-      | <a href="//oilshell.org/">oilshell.org</a>
+      | <a href="//oils.pub/">oils.pub</a>
     </p>
 
     <h1>$job_id.wwz</h1>
@@ -197,7 +197,7 @@ format-image-stats() {
   cat <<EOF
     <p id="home-link">
         <a href="/">Home</a>
-      | <a href="//oilshell.org/">oilshell.org</a>
+      | <a href="//oils.pub/">oils.pub</a>
     </p>
 
     <h1>Images Tagged</h1>

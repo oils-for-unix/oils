@@ -149,7 +149,7 @@ def PrintEmbeddedHelp(loader, topic_id, f):
 def _PrintVersionLine(loader, f):
     # type: (pyutil._ResourceLoader, mylib.Writer) -> None
     v = pyutil.GetVersion(loader)
-    f.write('Oils %s\t\thttps://www.oilshell.org/\n' % v)
+    f.write('Oils %s\t\thttps://oils.pub/\n' % v)
 
 
 def HelpFlag(loader, topic_id, f):

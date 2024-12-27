@@ -132,7 +132,7 @@ _html-summary() {
 <p id="home-link">
   <!-- The release index is two dirs up -->
   <a href="../..">Up</a> |
-  <a href="/">oilshell.org</a>
+  <a href="/">oils.pub</a>
 </p>
 
 <h1>Spec Test Results Summary</h1>

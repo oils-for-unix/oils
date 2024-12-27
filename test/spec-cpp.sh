@@ -277,7 +277,7 @@ html-summary-header() {
 <p id="home-link">
   <!-- The release index is two dirs up -->
   <a href="../..">Up</a> |
-  <a href="/">oilshell.org</a>
+  <a href="/">oils.pub</a>
 </p>
 
 <h1>Python vs C++</h1>

@@ -188,7 +188,7 @@ print-report() {
   cat <<EOF
   <body class="width40">
     <p id="home-link">
-      <a href="/">oilshell.org</a>
+      <a href="/">oils.pub</a>
     </p>
     <h2>Unit Test Results</h2>
 

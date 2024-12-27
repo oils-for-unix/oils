@@ -119,7 +119,7 @@ def SpecFiles(pairs, attrs_f):
         <div id="home-link">
           <a href="https://github.com/oilshell/oil/blob/master/%s">View on Github</a>
           |
-          <a href="/">oilshell.org</a>
+          <a href="/">oils.pub</a>
         </div>
         <table>
       ''' % path)
@@ -229,7 +229,7 @@ def WriteHtmlFragments(in_f, out_dir, attrs_f=sys.stdout):
         <span id="home-link">
           <a href="https://github.com/oilshell/oil/blob/master/%s">View on Github</a>
           |
-          <a href="/">oilshell.org</a>
+          <a href="/">oils.pub</a>
         </span>
       </p>
       ''' % rel_path)
@@ -357,7 +357,7 @@ def WriteDirsHtml(node, out_dir, rel_path='', base_url=''):
 
         f.write('''
         <span id="home-link">
-          <a href="/">oilshell.org</a>
+          <a href="/">oils.pub</a>
         </span>
       </p>
     ''')

@@ -692,7 +692,7 @@ cat <<EOF
   </head>
   <body class="width50">
     <p id="home-link">
-      <a href="/">oilshell.org</a>
+      <a href="/">oils.pub</a>
     </p>
     <h1>Oils Releases</h1>
 

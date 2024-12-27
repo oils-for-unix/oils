@@ -892,7 +892,7 @@ index-html()  {
 
   cat <<EOF
     <p id="home-link">
-      <a href="/">oilshell.org</a>
+      <a href="/">oils.pub</a>
     </p>
 
   <h1>Wedge Builds</h1>

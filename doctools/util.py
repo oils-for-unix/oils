@@ -5,7 +5,7 @@ from __future__ import print_function
 import sys
 
 # many tools import this, causes ImportError
-# the oilshell.org/ also imports this
+# the oilshell.org/ repo also imports this
 #from typing import Any
 
 

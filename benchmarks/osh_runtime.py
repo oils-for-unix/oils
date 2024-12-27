@@ -6,7 +6,7 @@ Extract and merge results from benchmarks/osh-runtime.sh test-oils-run
 
 Structure:
 
-  http://travis-ci.oilshell.org/uuu/osh-runtime/
+  http://op.oilshell.org/uuu/osh-runtime/
     git-96d96a16/
       2024-05-08__16-11-59.andy-VirtualBox.wwz/
         osh-runtime/

@@ -73,7 +73,7 @@ BODY_STYLE = jsontemplate.Template("""\
         class="width60">
     <p id="status"></p>
 
-    <p style="text-align: right"><a href="/">oilshell.org</a></p>
+    <p style="text-align: right"><a href="/">oils.pub</a></p>
 <p>
 {.template NAV}
 </p>

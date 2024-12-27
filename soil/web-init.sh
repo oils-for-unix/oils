@@ -33,7 +33,7 @@ home-page() {
   cat <<EOF
   <body class="width40">
     <p id="home-link">
-      <a href="//oilshell.org/">oilshell.org</a>
+      <a href="//oils.pub/">oils.pub</a>
     </p>
 
     <h1>$title</h1>

@@ -1064,7 +1064,7 @@ class HtmlOutput(Output):
     <p id="home-link">
       <a href=".">spec test index</a>
       /
-      <a href="/">oilshell.org</a>
+      <a href="/">oils.pub</a>
     </p>
     <h1>Results for %s</h1>
     <table>
