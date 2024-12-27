@@ -38,6 +38,17 @@ stdin
 status=0
 ## END
 
+#### is-main with use/modules
+shopt --set ysh:upgrade
+
+use $REPO_ROOT/spec/testdata/module2/main.ysh
+$SH $REPO_ROOT/spec/testdata/module2/main.ysh
+
+## STDOUT:
+main.ysh is not the main module
+hi from main.ysh
+## END
+
 #### use builtin usage
 
 use

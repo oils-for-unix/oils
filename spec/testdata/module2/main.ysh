@@ -1,0 +1,9 @@
+shopt --set ysh:upgrade
+
+var __provide__ = []
+
+if is-main {
+  echo 'hi from main.ysh'
+} else {
+  echo 'main.ysh is not the main module'
+}
