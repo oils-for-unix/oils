@@ -100,7 +100,7 @@ pyc-version-manifest() {
 
   echo $user_str > $dir/pyc-version.txt
 
-  # Put it at the root, like release-date and oil-version.txt.
+  # Put it at the root, like release-date and oils-version.txt.
   echo $dir/pyc-version.txt pyc-version.txt
 }
 

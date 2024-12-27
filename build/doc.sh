@@ -13,7 +13,7 @@ set -o errexit
 #    INSTALL.html
 #    INSTALL-old.html
 
-readonly OIL_VERSION=$(head -n 1 oil-version.txt)
+readonly OIL_VERSION=$(head -n 1 oils-version.txt)
 export OIL_VERSION  # for quick_ref.py
 
 THIS_DIR=$(readlink -f $(dirname $0))
@@ -712,7 +712,7 @@ run-for-release() {
   tour
 
   # Metadata
-  cp -v _build/release-date.txt oil-version.txt $root
+  cp -v _build/release-date.txt oils-version.txt $root
 
   # Docs
   # Writes _release/VERSION and _tmp/release-index.html

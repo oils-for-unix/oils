@@ -19,7 +19,7 @@ readonly __BENCHMARKS_COMMON_SH=1
 readonly MACHINE1=hoover
 readonly MACHINE2=mercer
 
-OIL_VERSION=$(head -n 1 oil-version.txt)
+OIL_VERSION=$(head -n 1 oils-version.txt)
 
 # Used by devtools/release.sh
 readonly BENCHMARK_DATA_OILS=$PWD/../benchmark-data/src/oils-for-unix-$OIL_VERSION
