@@ -7,17 +7,11 @@
 test -n "${__BENCHMARKS_COMMON_SH:-}" && return
 readonly __BENCHMARKS_COMMON_SH=1
 
-#readonly MACHINE1=flanders
-#readonly MACHINE2=lenny
-
-# 2023-11-29: MACHINE1=lenny MACHINE2=hoover
-
-# 2024-08-23: MACHINE1=hoover MACHINE2=mercer
-# Because we gained a Souffle dependency, which requires C++17.  And the base
-# image on lenny doesn't support C++17.
+# 2024-12: Moved back to local machines
 
 readonly MACHINE1=hoover
-readonly MACHINE2=mercer
+readonly MACHINE2=lenny
+#readonly MACHINE2=mercer
 
 OIL_VERSION=$(head -n 1 oils-version.txt)
 
