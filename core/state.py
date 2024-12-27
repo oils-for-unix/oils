@@ -1017,12 +1017,18 @@ class ctx_ModuleEval(object):
         assert len(mem.var_stack) == 1
         mem.var_stack[0] = self.new_frame
 
+        # Whenever we're use-ing, the 'is-main' builtin will return 1 (false)
+        self.to_restore = self.mem.is_main
+        self.mem.is_main = False
+
     def __enter__(self):
         # type: () -> None
         pass
 
     def __exit__(self, type, value_, traceback):
         # type: (Any, Any, Any) -> None
+
+        self.mem.is_main = self.to_restore
 
         assert len(self.mem.var_stack) == 1
         self.mem.var_stack[0] = self.saved_frame
