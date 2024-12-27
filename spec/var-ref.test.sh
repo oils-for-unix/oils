@@ -1,4 +1,4 @@
-## compare_shells: bash-4.4
+## compare_shells: bash
 ## oils_failures_allowed: 1
 
 # Var refs are done with ${!a}
@@ -30,7 +30,7 @@ x=foo
 ## END
 
 #### ${!undef:-}
-# bash gives empty string, but I feel like this could be an error
+# bash 4.4 gives empty string, but I feel like this could be an error
 echo undef=${!undef-'default'}
 echo undef=${!undef}
 
@@ -41,11 +41,19 @@ echo undef=${!undef}
 
 ## status: 1
 ## STDOUT:
-undef=default
-undef=
-NOUNSET
-undef=default
 ## END
+## OK bash STDOUT:
+NOUNSET
+## END
+
+# Bash 4.4 had been generating an empty string, but it was fixed in Bash 5.0.
+#
+# ## BUG bash STDOUT:
+# undef=default
+# undef=
+# NOUNSET
+# undef=default
+# ## END
 
 #### comparison to ${!array[@]} keys (similar SYNTAX)
 
@@ -59,13 +67,24 @@ echo a_nobrackets=$?
 echo ---
 declare -A A=([A]=a [B]=b)
 
-argv.py ${!A[@]}
+argv.py $(printf '%s\n' ${!A[@]} | sort)
 echo A_keys=$?
 
-argv.py "${!A}"  # missing [] is equivalent to ${!A[0]} ?
+(argv.py "${!A}")  # missing [] is equivalent to ${!A[0]} ?
 echo A_nobrackets=$?
 
 ## STDOUT:
+['0', '1']
+a_keys=0
+['']
+a_nobrackets=0
+---
+['A', 'B']
+A_keys=0
+A_nobrackets=1
+## END
+
+## BUG bash STDOUT:
 ['0', '1']
 a_keys=0
 ['']
@@ -85,23 +104,27 @@ A_nobrackets=0
 # behavior has been different from Bash when the array has a single element.
 # We now changed it to follow Bash even when the array has a single element.
 
-argv.py "${!a[@]-default}"
+(argv.py "${!a[@]-default}")
 echo status=$?
 
 a=(x y z)
-argv.py "${!a[@]-default}"
+(argv.py "${!a[@]-default}")
 echo status=$?
-## status: 1
+## status: 0
 ## STDOUT:
-['default']
-status=0
-## END
-## BUG bash status: 0
-## BUG bash STDOUT:
-['default']
-status=0
+status=1
 status=1
 ## END
+
+# Bash 4.4 had been generating an empty string for ${!undef[@]-}, but this was
+# fixed in Bash 5.0.
+#
+# ## BUG bash status: 0
+# ## BUG bash STDOUT:
+# ['default']
+# status=0
+# status=1
+# ## END
 
 
 #### var ref to $@ with @
@@ -390,10 +413,13 @@ PWD=1
 ref='a[~+]'
 echo ${!ref}
 ## status: 1
-## BUG bash status: 0
-## BUG bash STDOUT:
-y
-## END
+
+# Bash 4.4 had a bug, which was fixed in Bash 5.0.
+#
+# ## BUG bash status: 0
+# ## BUG bash STDOUT:
+# y
+# ## END
 
 #### Indirect expansion TO fancy expansion features bash disallows
 
@@ -670,34 +696,6 @@ test-rep 'a3[@]'
 ['1', '2', '3']
 ## END
 
-## BUG bash STDOUT:
-==== v1 ====
-['alue']
-['valu']
-['vlu']
-['vxlux']
-==== v2 ====
-['']
-['']
-['']
-['']
-==== a1 ====
-['']
-['']
-['']
-['']
-==== a2[0] ====
-['lement']
-['elemen']
-['lmnt']
-['xlxmxnt']
-==== a3[@] ====
-[]
-[]
-['1', '2', '3']
-['1', '2', '3']
-## END
-
 #### Array indirect expansion with @? conversion
 
 declare -A ref=(['dummy']=v1)
@@ -747,12 +745,12 @@ test-op0 'a3[@]'
 ['a', 'a', 'a']
 ## END
 
-# Bash 4.4 has a bug in the section "==== a3[@] ====".  Bash 5 correctly
-# outputs the following:
+# Bash 4.4 had a bug in the section "==== a3[@] ====":
 #
-# ["'1'", "'2'", "'3'"]
-# ['1', '2', '3']
-# ['a', 'a', 'a']
+# ==== a3[@] ====
+# []
+# []
+# []
 
 ## BUG bash STDOUT:
 ==== v1 ====
@@ -772,7 +770,7 @@ test-op0 'a3[@]'
 ['element']
 ['a']
 ==== a3[@] ====
-[]
-[]
-[]
+["'1'", "'2'", "'3'"]
+['1', '2', '3']
+['a', 'a', 'a']
 ## END
