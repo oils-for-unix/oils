@@ -4,12 +4,16 @@ ul-table: Markdown Tables Without New Syntax
 `ul-table` is an HTML processor that lets you write **tables** as bulleted
 **lists**, in Markdown.
 
+It's a short program I wrote because I got tired of reading and writing `<tr>`
+and `<td>` and `</td>` and `</tr>`.  And I got tired of aligning numbers by
+writing `<td class="num">` for every cell.
+
 <div id="toc">
 </div>
 
 ## Simple Example
 
-To make this table:
+Let's see how it works.  How do you make this table?
 
 <style>
 table {
@@ -35,7 +39,8 @@ td {
 
 </table>
 
-You write:
+With `ul-table`, you create a **two-level** Markdown list, inside `<table>`
+tags:
 
 <!-- TODO: Add pygments highlighting -->
 
@@ -55,7 +60,15 @@ You write:
 </table>
 ```
 
-Any Markdown processor will produce this:
+The header and data rows are at the top level, and the cells are indented under
+them.
+
+---
+
+The conversion takes **2 steps**: it's Markdown &rarr; HTML &rarr; HTML.
+
+First, any Markdown processor will produce this list structure, with `<ul>` and
+`<li>`:
 
 - thead
   - Shell
@@ -67,38 +80,58 @@ Any Markdown processor will produce this:
   - [OSH](https://oils.pub/)
   - 0.25.0
 
-And then **our** `ul-table` plugin transforms that into the table shown.
+Second, **our** `ul-table` plugin parses and transforms that into a table, with
+`<tr>` and `<td>`:
 
-So the conversion takes **2 steps**.  The intermediate form is what sourcehut
-or Github will show, because they currently don't support `ul-table`.
+<table>
 
-This is good, because it means that `ul-table` degrades gracefully!  You can
-use it anywhere without worrying about breakage.
+- thead
+  - Shell
+  - Version
+- tr
+  - [bash](https://www.gnu.org/software/bash/)
+  - 5.2
+- tr
+  - [OSH](https://oils.pub/)
+  - 0.25.0
 
-## About `ul-table`
+</table>
 
-### Why?
+So `ul-table` is an HTML processor, **not** a Markdown processor.  But it's
+meant to be used with Markdown.
 
-Because it's tedious to read, write, and edit `<tr>` and `<td>` and `</td>` and
-`</tr>`.  Aligning columns is also tedious in HTML.
+## Design 
+
+### Goals
 
 <!--
 This means your docs are still readable without it, e.g. on sourcehut or
 Github.  It degrades gracefully.
 -->
 
-Design goals:
-
 - Don't invent any new syntax.
-  - Reuse your knowledge of Markdown
-  - Reuse your knowledge of HTML
-- Scale to large, complex tables.
-- Expose the **full** power of HTML
+  - It reuses your knowledge of Markdown &mdash; e.g. hyperlinks.
+  - It reuses your knowledge of HTML &mdash; e.g. attributes on tags.
+- Large, complex tables should be maintainable.
+- The user should have the **full** power of HTML.  We don't hide it under
+  another language, like MediaWiki does.
+- Degrade gracefully.  Because it's just Markdown, you **won't break** docs by
+  adding it.
+  - The intermediate list form is what sourcehut or Github will show.
 
-### Structure
+### Comparison
 
-You make tables with a **two-level Markdown list**, between `<table>` tags.
-The top level list contains either:
+Compared to other table markup formats, `ul-table` is shorter, less noisy, and
+easier to edit:
+
+- [ul-table Comparison: Github, Wikipedia, reStructuredText, AsciiDoc](ul-table-compare.html)
+
+## Details
+
+### ul-table "Grammar"
+
+Recall that a `ul-table` is a **two-level Markdown list**, between `<table>`
+tags.  The top level list contains either:
 
 <table>
 
@@ -113,74 +146,6 @@ The top level list contains either:
 
 The second level contains the contents of cells, but you **don't** write `td`
 or `<td>`.
-
-(This format looks similar to [tables in
-reStructuredText](https://sublime-and-sphinx-guide.readthedocs.io/en/latest/tables.html)).
-
-### Markdown &rarr; HTML &rarr; HTML Conversion
-
-As mentioned, it takes two steps to convert:
-
-1. Any Markdown translator will produce a
-   `<table> <ul> <li> ... </li> </ul> </table>` structure.
-1. **Our** `ul-table` plugin transforms that into a
-   `<table> <tr> <td> </td> </tr> </table>` structure, which is a normal HTML
-   table.
-
-So `ul-table` is an HTML processor, **not** a Markdown processor.  But it's
-meant to be used with Markdown.
-
-## Details
-
-### Comparison: Tedious Inline HTML
-
-Here's the equivalent in CommonMark:
-
-    <table>
-      <thead>
-        <tr>
-          <td>Shell</td>
-          <td>Version</td>
-        </tr>
-      </thead>
-      <tr>
-        <td>
-
-    <!-- be careful not to indent this 4 spaces! -->
-    [bash](https://www.gnu.org/software/bash/)
-
-        </td>
-        <td>5.2</td>
-      </tr>
-      <tr>
-        <td>
-
-    [OSH](https://oils.pub/)
-
-        </td>
-        <td>0.25.0</td>
-      </tr>
-
-    </table>
-
-It uses the rule where you can embed Markdown inside HTML inside Markdown.
-With `ul-table`, you **don't** need this mutual nesting.
-
-The `ul-table` text is also shorter!
-
----
-
-Trivia: with CommonMark, you get an extra `<p>` element:
-
-    <td>
-      <p>OSH</p>
-    </td>
-
-`ul-table` can produce simpler HTML:
-
-    <td>
-      OSH
-    </td>
 
 ### Stylesheet
 
@@ -237,14 +202,13 @@ Add cell attributes with a `cell-attrs` tag after the cell contents:
   - 9
 ```
 
-
-It's important that `cell-attrs` is a **self-closing** tag:
+You must use a **self-closing** tag:
 
     <cell-attrs />  # Yes
     <cell-attrs>    # No: this is an opening tag
 
-How does this work?  `ul-table` takes the attributes from `<cell-attrs />`, and
-puts it on the generated `<td>`.
+Notice that `ul-table` takes the attributes from the `<cell-attrs />` tag, and
+puts it on the generated `<td>` tag.
 
 ### Columns
 
@@ -290,7 +254,8 @@ To add attributes to **every cell in a column**, put `<cell-attrs />` in the
   - 9      <!-- this cells gets class=num -->
 ```
 
-This is particularly useful for aligning numbers to the right:
+Then every `<td>` in the column will "inherit" those attributes.  This is
+useful for aligning numbers to the right:
 
     <style>
     .num {
@@ -337,10 +302,10 @@ To add row attributes, put `<row-attrs />` after the `- tr`:
       - Bob
       - 9
 
-## Example: Markdown and HTML Inside Cells
+## More Complex Example
 
-Here's an example that uses more features.  Source code of this table:
-[doc/ul-table.md]($oils-src).
+This example uses more features, like Markdown and HTML inside cells.  You may
+want to view the source text for this table: [doc/ul-table.md]($oils-src).
 
 [bash]: $xref
 
@@ -435,9 +400,9 @@ Another table:
 </table>
 
 
-## Markdown Quirks to Be Aware Of
+## Markdown Quirks
 
-Here are some quirks I ran into when creating ul-tables.
+Here are some quirks I ran into when using `ul-table`.
 
 (1) CommonMark doesn't allow empty list items:
 
@@ -463,72 +428,6 @@ front of it:
       - <!-- hyphen --> -
       - &nbsp; -
 
-## Comparisons
-
-### CommonMark Doesn't Have Tables
-
-Related discussions:
-
-- 2014: [Tables in pure Markdown](https://talk.commonmark.org/t/tables-in-pure-markdown/81)
-- 2022: [Obvious Markdown syntax for Tables](https://talk.commonmark.org/t/obvious-markdown-syntax-for-tables/4143/9)
-
-### Github Tables are Awkward
-
-Github-flavored Markdown has an non-standard extension for tables:
-
-- [Github: Organizing Information With Tables](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/organizing-information-with-tables)
-
-This style is hard to read and write, especially with large tables:
-
-```
-| Command | Description |
-| --- | --- |
-| git status | List all new or modified files |
-| git diff | Show file differences that haven't been staged |
-```
-
-Our style is less noisy, and more easily editable:
-
-```
-<table>
-
-- thead
-  - Command
-  - Description
-- tr
-  - git status
-  - List all new or modified files
-- tr
-  - git diff
-  - Show file differences that haven't been staged
-
-</table>
-```
-
-- Related wiki page: [Markdown Tables]($wiki)
-
-### MediaWiki Tables
-
-Here is a **long** page describing how to make tables on Wikipedia:
-
-- <https://en.wikipedia.org/wiki/Help:Table>
-
-I created the equivalent of the opening example:
-
-```
-{| class="wikitable"
-! Shell !! Version
-|-
-| [https://www.gnu.org/software/bash/ Bash] || 5.2
-|-
-| [https://www.oilshell.org/ OSH] || 0.25.0
-|}
-```
-
-In general, it has more "ASCII art", and invents a lot of new syntax.
-
-I prefer `ul-table` because it reuses Markdown and HTML syntax.
-
 ## Conclusion
 
 `ul-table` is a nice way of writing and maintaining HTML tables.  The appendix
@@ -536,6 +435,7 @@ has links and details.
 
 ### Related Docs
 
+- [ul-table Comparison: Github, Wikipedia, reStructuredText, AsciiDoc](ul-table-compare.html)
 - [How We Build Oils Documentation](doc-toolchain.html)
 - [Examples of HTML Plugins](doc-plugins.html)
 
@@ -544,7 +444,7 @@ has links and details.
 - [doctools/ul_table.py]($oils-src) - about 500 lines
 - [lazylex/html.py]($oils-src) - about 500 lines
 
-### Algorithm Notes
+### Notes on the Algorithm
 
 - lazy lexing
 - recursive descent parser
@@ -587,11 +487,9 @@ TODO:
 
 - `<th>` is like `<td>`, but it belongs in `<thead><tr>`.  Browsers make it
   bold and centered.
-- You can't put `class=` on `<colgroup>` and `<col>` and align columns left and
-  right.
-  - You have to put `class=` on *every* `<td>` cell instead.
-  - `ul-table` solves this with "inherited" `<cell-attrs />` in the `thead`
-    section.
+- `<colgroup>` and `<col>` often do do what I want.
+  - As mentioned above, you can't put `class=` columns and align them to the
+    right or left.  You have to put `class=` on *every* `<td>` cell instead.
 
 <!--
 

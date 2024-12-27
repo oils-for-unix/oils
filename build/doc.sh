@@ -112,6 +112,7 @@ readonly MARKDOWN_DOCS=(
   doc-toolchain
   doc-plugins
   ul-table
+  ul-table-compare
   idioms
   shell-idioms
   ysh-faq
