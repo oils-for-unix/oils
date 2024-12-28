@@ -29,6 +29,7 @@ If you see an error that you don't understand:
    below.
 1. Add a tagged section below, with hints and explanations.
    - Quote the error message.  You may want copy and paste from the output of
+     `doc/error-catalog.sh`, or
      `test/{parse,runtime,ysh-parse,ysh-runtime}-errors.sh`.  Add an HTML
      comment `<!-- -->` about that.
    - Link to relevant sections in the [**Oils Reference**](ref/index.html).
@@ -176,36 +177,44 @@ Examples:
 
 ### OILS-ERR-15
 
-Incorrect:
+```
+      if (a || b && c) {
+            ^~
+[ -c flag ]:2: Use 'or' in expression mode (OILS-ERR-15)
+```
 
-    # Expression mode
+Expression mode uses `not or and`, rather than `! || &&`.  See [Command vs.
+Expression Mode](command-vs-expression-mode.html) for details.
+
+
+No:
+
     if (!a || b && c) {
       echo no
     }
+
+Yes:
+
+    if (not a or b and c) {
+      echo yes
+    }
+
+
+Command mode is the opposite; it uses `! || &&`, rather than `not or and`:
+
+No:
 
     # Command mode
     if not test --dir a or test --dir b and test --dir c {
       echo no
     }
 
-Correct:
-
-    # Expression mode
-    if (not a or b and c) {
-      echo yes
-    }
+Yes:
 
     # Command mode
     if ! test --dir a || test --dir b && test --dir c {
       echo yes
     }
-
-In general, code within parentheses `()` is parsed as Python-like expressions
--- referred to as [expression mode](command-vs-expression-mode.html). The
-standard boolean operators are written as `a and b`, `a or b` and `not a`.
-
-This differs from [command mode](command-vs-expression-mode.html) which uses
-shell-like `||` for "OR", `&&` for "AND" and `!` for "NOT".
 
 ### OILS-ERR-16
 
@@ -214,6 +223,11 @@ shell-like `||` for "OR", `&&` for "AND" and `!` for "NOT".
               ^~
 [ -c flag ]:1: Use ..< for half-open range, or ..= for closed range (OILS-ERR-16)
 ```
+
+<!-- 
+Similar to
+test/ysh-parse-errors.sh test-expr-range
+-->
 
 There are two ways to construct a [Range](ref/chap-expr-lang#range). The `..<`
 operator is for half-open ranges and the `..=` operator is for closed ranges:
@@ -434,7 +448,7 @@ This YSH idiom is more explicit:
     try {
       ls | wc -l
     }
-    if (_error.code !== 0) {
+    if failed {
       echo failed
     }
 

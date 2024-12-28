@@ -233,6 +233,10 @@ readonly -a MORE_TESTS=(
   osh-usage tools-deps
   syscall
 )
+# TODO: Unify with CI, and clean up
+# doc/error-catalog.sh
+# data_lang/j8-errors.sh
+# ysh/run.sh
 
 run-more-tests() {
   for name in "${MORE_TESTS[@]}"; do

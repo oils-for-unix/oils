@@ -143,11 +143,16 @@ Also see [the Unicode doc](../unicode.html).
 ### Objects
 
 - [`Obj`][Obj]
-  - `__invoke__` and `__call__`
-  - `propView()` and `prototype()` - may be renamed `first() rest()`
+  - [`__invoke__`][__invoke__]
+  - TODO: `__call__`
+  - [`first()`][first] and [`rest()`][first]
   - [`ENV`][ENV] is an `Obj`
 - operator `.` [ysh-attr](chap-expr-lang.html#ysh-attr)
 - operator `->` [thin-arrow](chap-expr-lang.html#thin-arrow)
+
+
+[first]: chap-builtin-func.html#first
+[rest]: chap-builtin-func.html#rest
 
 ### Closures
 

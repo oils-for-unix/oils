@@ -201,9 +201,16 @@ def PrintTokens(arena):
         print('%s' % arena.tokens[0])
         return
 
+    # TODO: 
+    # - TSV8: end position, token type
+    #   - then an option to print token text, as a J8 string
+    # - and then there can be a separate tool to number the columns
+    #
+    # - Do we also have JSON8 / HTM8 / TSV8 tokens?
+    # - And mini-languages like glob, etc.
     for i, tok in enumerate(arena.tokens):
         piece = tok.line.content[tok.col:tok.col + tok.length]
-        print('%5d %-20s %r' % (i, Id_str(tok.id), piece))
+        print('%5d %-20s %r' % (i, Id_str(tok.id, dot=False), piece))
     print_stderr('(%d tokens)' % len(arena.tokens))
 
 
