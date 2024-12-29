@@ -11,6 +11,7 @@ from typing import Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.completion import ReadlineCallback
     from core.comp_ui import _IDisplay
+    from core.state import Mem
 
 
 class Readline(object):
@@ -137,6 +138,35 @@ class Readline(object):
     def unbind_keyseq(self, keyseq):
         # type: (str) -> None
         line_input.unbind_keyseq(keyseq)
+        
+    def bind_shell_command(self, bindseq):
+        # type: (str) -> None
+        import sys
+        print("default encoding: %s" % sys.getdefaultencoding())
+        cmdseq_split = bindseq.strip().split(":", 1)
+        if len(cmdseq_split) != 2:
+            raise ValueError("%s: missing colon separator" % bindseq)
+        
+        # Below checks prevent need to do so in C, but also ensure rl_generic_bind
+        # will not try to incorrectly xfree `cmd`/`data`, which doesn't belong to it
+        keyseq = cmdseq_split[0].rstrip()
+        if len(keyseq) <= 2:
+            raise ValueError("%s: empty/invalid key sequence" % keyseq)
+        if keyseq[0] != '"' or keyseq[-1] != '"':
+            raise ValueError("%s: missing double-quotes around the key sequence" % keyseq)
+        keyseq = keyseq[1:-1]
+        
+        cmd = cmdseq_split[1]
+        print("type of cmd string: %s" % type(cmd)) # REMOVE ME
+        line_input.bind_shell_command(keyseq, cmd)
+        
+    def set_bind_shell_command_hook(self, hook):
+        # type: (Callable[[str, str, int], (int, str, str)]) -> None
+        
+        if hook is None:
+            raise ValueError("missing bind shell command hook function")
+        
+        line_input.set_bind_shell_command_hook(hook)
 
 
 def MaybeGetReadline():

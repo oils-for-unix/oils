@@ -737,7 +737,7 @@ def Main(
     b[builtin_i.forkwait] = process_osh.ForkWait(shell_ex)
 
     # Interactive builtins depend on readline
-    b[builtin_i.bind] = readline_osh.Bind(readline, errfmt)
+    b[builtin_i.bind] = readline_osh.Bind(readline, errfmt, mem)
     b[builtin_i.history] = readline_osh.History(readline, sh_files, errfmt,
                                                 mylib.Stdout())
 
