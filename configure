@@ -445,6 +445,13 @@ echo_cpp() {
   else
     echo '/* #undef HAVE_PWENT */'
   fi
+
+  # Check if non-POSIX GLOB_PERIOD is available
+  if cc_quiet build/detect-glob-period.c; then
+    echo '/* GLOB_PERIOD already exists */'
+  else
+    echo '#define GLOB_PERIOD 0'
+  fi
 }
 
 # Another way of working: set detected-config.mk ?
