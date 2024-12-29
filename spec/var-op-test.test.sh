@@ -272,7 +272,7 @@ argv.py ${!hooksSlice+"${!hooksSlice}"}
 ['42']
 ## END
 
-# Bash 4.4 has a bug that ${!undef-} is successfully generate an empty word.
+# Bash 4.4 has a bug that ${!undef-} successfully generates an empty word.
 
 ## BUG bash STDOUT:
 []
