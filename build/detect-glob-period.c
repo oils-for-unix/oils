@@ -1,6 +1,6 @@
 #include <glob.h>
 
 int main(void) {
-  int x = GLOB_PERIOD
-  return 0
+  int x = GLOB_PERIOD;
+  return 0;
 }
