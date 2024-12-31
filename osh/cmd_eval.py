@@ -1532,12 +1532,12 @@ class CommandEvaluator(object):
         except error.RedirectEval as e:
             self.errfmt.PrettyPrintError(e)
             redirects = None
-        except error.FailGlob as e:  # e.g. echo hi > foo-*
-            if not e.HasLocation():
-                e.location = self.mem.GetFallbackLocation()
-            self.errfmt.PrettyPrintError(e, prefix='failglob: ')
-            redirects = None
-        except error.VarSubFailure as e:  # e.g. echo hi > ${!undef}
+        except error.WordFailure as e:
+            # This happens e.g. with the following cases:
+            #
+            #   $ echo hi > foo-*   # with failglob (FailGlob)
+            #   $ echo > ${!undef}  # (VarSubFailure)
+            #
             if not e.HasLocation():
                 e.location = self.mem.GetFallbackLocation()
             self.errfmt.PrettyPrintError(e)
@@ -1895,13 +1895,7 @@ class CommandEvaluator(object):
         with vm.ctx_ProcessSub(self.shell_ex, process_sub_st):  # for wait()
             try:
                 status = self._Dispatch(node, cmd_st)
-            except error.FailGlob as e:
-                if not e.HasLocation():  # Last resort!
-                    e.location = self.mem.GetFallbackLocation()
-                self.errfmt.PrettyPrintError(e, prefix='failglob: ')
-                status = 1  # another redirect word eval error
-                cmd_st.check_errexit = True  # failglob + errexit
-            except error.VarSubFailure as e:  # e.g. echo hi > ${!undef}
+            except error.WordFailure as e:  # e.g. echo hi > ${!undef}
                 if not e.HasLocation():  # Last resort!
                     e.location = self.mem.GetFallbackLocation()
                 self.errfmt.PrettyPrintError(e)
