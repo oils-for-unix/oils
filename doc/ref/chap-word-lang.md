@@ -300,34 +300,89 @@ string:
 
 ---
 
-`${x@a}` returns the set of characters that represent the attributes of
-*h-value* of the expansion `$x`.
+`${x@a}` returns characters that represent the attributes of the `${x}`, or
+more precisely, the *h-value* of `${x}`.
 
-Here, *h-value* is the variable (or the object that the variable directly
-points) from which the result of `$x` would originally come.  This is different
-from the *r-value* of the expansion `$x`, namely the result of the expansion
-`$x`.
+Definitions:
 
-The characters representing attributes are listed below:
+- *h-value* is the variable (or the object that the variable directly points)
+  from which the result of `${x}` would originally come.
+- *r-value* is the expansion of `${x}`
 
-- `a`: The value of `$x` would be obtained from an indexed array element.
-- `A`: The value of `$x` would be obtained from an associative array element.
-- `r`: The value of `$x` would be obtained from a readonly container.
-- `x`: The value of `$x` would be obtained from a container with the export attribute.
-- `n`: `x` is a name reference (OSH extension)
+For example, with `arr=(1 2 3)`:
 
-It should be noted that `${x@a}` does not return the attributes of the
-*r-value* of the expansion `$x`.  For example, although the *r-value* of
-`${arr[0]}` is arr scalar string, `${arr[0]@a}` returns `a` because the
-*h-value* is array `arr`, which stores the element `arr[0]`.
+<style>
+table { 
+  width: 100%;
+  margin-left: 2em;  /* matches p text in manual.css */
+}
+thead {
+  text-align: left;
+}
+</style>
 
-    $ echo ${arr[0]@a}
-    a
+<table>
 
-When `$x` would result in a word list (such as `${arr[@]}` and `${!ref}` with
-`ref="arr[@]"`), `${x@a}` returns a word list containing the attributes of the
-*h-value* of each word.
+- thead
+  - Reference
+  - Expression
+  - H-value
+  - R-value
+  - Flags returned
+- tr
+  - <!-- empty -->
+  - `${arr[0]@a}` or <br/> `${arr@a}`
+  - array<br/> `(1 2 3)`
+  - string<br/> `1`
+  - `a`
+- tr
+  - <!-- empty -->
+  - `${arr[@]@a}`
+  - array<br/> `(1 2 3)`
+  - array<br/> `(1 2 3)`
+  - `a a a`
+- tr
+  - `ref=arr` or `ref=arr[0]`
+  - `${!ref@a}`
+  - array<br/> `(1 2 3)`
+  - string<br/> `1`
+  - `a`
+  - <!-- empty -->
+- tr
+  - `ref=arr[@]`
+  - `${!ref@a}`
+  - array<br/> `(1 2 3)`
+  - array<br/> `(1 2 3)`
+  - `a a a`
 
-    $ arr=(1 2 3)
-    $ echo "${arr[@]@a}"
-    a a a
+</table>
+
+When `${x}` would result in a word list, `${x@a}` returns a word list
+containing the attributes of the *h-value* of each word.
+
+---
+
+These characters may be returned:
+
+<table>
+
+- thead
+  - Character
+  - Where `${x}` would be obtained
+- tr
+  - `a`
+  - indexed array
+- tr
+  - `A`
+  - associative array
+- tr
+  - `r`
+  - readonly container
+- tr
+  - `x`
+  - exported variable
+- tr
+  - `n`
+  - name reference (OSH extension)
+
+</table>
