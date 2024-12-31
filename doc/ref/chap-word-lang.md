@@ -297,3 +297,92 @@ string:
     $ unset -v x
     $ echo "value = $x, quoted = ${x@Q}."
     value = , quoted = .
+
+---
+
+`${x@a}` returns characters that represent the attributes of the `${x}`, or
+more precisely, the *h-value* of `${x}`.
+
+Definitions:
+
+- *h-value* is the variable (or the object that the variable directly points)
+  from which the result of `${x}` would originally come.
+- *r-value* is the value of the expansion of `${x}`
+
+For example, with `arr=(1 2 3)`:
+
+<style>
+table { 
+  width: 100%;
+  margin-left: 2em;  /* matches p text in manual.css */
+}
+thead {
+  text-align: left;
+}
+</style>
+
+<table>
+
+- thead
+  - Reference
+  - Expression
+  - H-value
+  - R-value
+  - Flags returned
+- tr
+  - <!-- empty -->
+  - `${arr[0]@a}` or <br/> `${arr@a}`
+  - array<br/> `(1 2 3)`
+  - string<br/> `1`
+  - `a`
+- tr
+  - <!-- empty -->
+  - `${arr[@]@a}`
+  - array<br/> `(1 2 3)`
+  - array<br/> `(1 2 3)`
+  - `a a a`
+- tr
+  - `ref=arr` or `ref=arr[0]`
+  - `${!ref@a}`
+  - array<br/> `(1 2 3)`
+  - string<br/> `1`
+  - `a`
+  - <!-- empty -->
+- tr
+  - `ref=arr[@]`
+  - `${!ref@a}`
+  - array<br/> `(1 2 3)`
+  - array<br/> `(1 2 3)`
+  - `a a a`
+
+</table>
+
+When `${x}` would result in a word list, `${x@a}` returns a word list
+containing the attributes of the *h-value* of each word.
+
+---
+
+These characters may be returned:
+
+<table>
+
+- thead
+  - Character
+  - Where `${x}` would be obtained
+- tr
+  - `a`
+  - indexed array
+- tr
+  - `A`
+  - associative array
+- tr
+  - `r`
+  - readonly container
+- tr
+  - `x`
+  - exported variable
+- tr
+  - `n`
+  - name reference (OSH extension)
+
+</table>

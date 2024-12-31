@@ -58,8 +58,9 @@ module runtime
 
   coerced = Int | Float | Neither
 
-  # evaluation state for BracedVarSub 
-  VarSubState = (bool join_array, bool is_type_query, Token array_ref)
+  # evaluation state for BracedVarSub.  See "doc/ref/chap-word-lang.md" for
+  # the description of h-value of a variable substitution.
+  VarSubState = (bool join_array, value h_value, Token array_ref)
 
   # A Cell is a wrapper for a value.
   # TODO: add location for declaration for 'assigning const' error

@@ -377,14 +377,24 @@ fail
 #### ${!A@a} and ${!A[@]@a}
 declare -A A=(["x"]=y)
 echo x=${!A[@]@a}
-echo x=${!A@a}
+echo invalid=${!A@a}
 
 # OSH prints 'a' for indexed array because the AssocArray with ! turns into
 # it.  Disallowing it would be the other reasonable behavior.
 
+## status: 1
 ## STDOUT:
 x=
+## END
+
+# Bash succeeds with ${!A@a}, which references the variable named as $A (i.e.,
+# '').  This must be a Bash bug since the behavior is inconsistent with the
+# fact that ${!undef@a} and ${!empty@a} fail.
+
+## BUG bash status: 0
+## BUG bash STDOUT:
 x=
+invalid=
 ## END
 
 #### undef vs. empty string in var ops
@@ -427,4 +437,38 @@ set -u
 stat: 1
 stat: 1
 stat: 1
+## END
+
+
+#### ${a[0]@a} and ${a@a}
+
+a=(1 2 3)
+echo "attr = '${a[0]@a}'"
+echo "attr = '${a@a}'"
+
+## STDOUT:
+attr = 'a'
+attr = 'a'
+## END
+
+
+#### ${!r@a} with r='a[0]' (attribute for indirect expansion of an array element)
+
+a=(1 2 3)
+r='a'
+echo ${!r@a}
+r='a[0]'
+echo ${!r@a}
+
+declare -A d=([0]=foo [1]=bar)
+r='d'
+echo ${!r@a}
+r='d[0]'
+echo ${!r@a}
+
+## STDOUT:
+a
+a
+A
+A
 ## END
