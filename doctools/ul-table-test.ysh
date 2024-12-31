@@ -88,7 +88,7 @@ const TD_ATTRS = '''
   - <cell-attrs class=unquoted /> name
   - <cell-attrs class=quoted /> age
   - role
-- tr
+- tr <!-- comment --> <!-- comment 2 -->
   - <cell-attrs class="cool" /> alice
   - 30
   - parent
