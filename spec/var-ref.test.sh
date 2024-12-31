@@ -41,8 +41,6 @@ echo undef=${!undef}
 
 ## status: 1
 ## STDOUT:
-## END
-## OK bash STDOUT:
 NOUNSET
 ## END
 
@@ -451,12 +449,10 @@ check_indir "!a@"    "a aa"
 check_indir "#x"      1
 check_indir "x#y"
 check_indir "x/y/foo" foo
-check_indir "x@Q"    "'y'"
+check_indir "x@Q"     y
 echo done
-## status: 1
-## stdout-json: ""
-## OK bash status: 0
-## OK bash stdout: done
+## status: 0
+## stdout: done
 
 #### Bad var ref
 a='bad var name'
@@ -466,8 +462,6 @@ echo status=$?
 ## STDOUT:
 status=1
 ## END
-## OK osh stdout-json: ""
-## OK osh status: 1
 
 #### Bad var ref 2
 b='/'  # really bad
@@ -476,8 +470,6 @@ echo status=$?
 ## STDOUT:
 status=1
 ## END
-## OK osh stdout-json: ""
-## OK osh status: 1
 
 #### ${!OPTIND} (used by bash completion
 set -- a b c

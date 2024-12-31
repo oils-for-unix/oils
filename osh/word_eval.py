@@ -893,6 +893,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             elif case(value_e.BashArray):  # caught earlier but OK
                 val = cast(value.BashArray, UP_val)
+                # When there are more than one element in the array, this
+                # produces a wrong variable name containing spaces.
                 var_ref_str = ' '.join(bash_impl.BashArray_GetValues(val))
 
             elif case(value_e.BashAssoc):  # caught earlier but OK
@@ -902,7 +904,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
             else:
                 raise error.TypeErr(val, 'Var Ref op expected Str', blame_tok)
 
-        bvs_part = self.unsafe_arith.ParseVarRef(var_ref_str, blame_tok)
+        try:
+            bvs_part = self.unsafe_arith.ParseVarRef(var_ref_str, blame_tok)
+        except error.FatalRuntime as e:
+            raise error.VarSubFailure(e.msg, e.location)
+
         return self._VarRefValue(bvs_part, quoted, vsub_state, vtest_place)
 
     def _ApplyUnarySuffixOp(self, val, op):
