@@ -460,8 +460,11 @@ A DOM-based implementation should be much less than 1000 lines.
 ## Appendix: Real Examples
 
 - Docs
-  - [Guide to Procs and Funcs]($oils-doc:proc-func.html) has a big `ul-table`.
+  - [Guide to Procs and Funcs](proc-func.html) has a big `ul-table`.
     Source: [doc/proc-func.md]($oils-src)
+- Oils Reference
+  - [Chapter: Word Language](ref/chap-word-lang.html#op-format) has
+    tables to document `${x@a}`
 - Site
   - [oils.pub Home Page](/)
   - [Blog Index](/blog/)
@@ -472,7 +475,7 @@ I converted the tables in these September posts to `ul-table`:
 - [After 8 Years, Oils Is Still Small and Flexible](https://www.oilshell.org/blog/2024/09/line-counts.html)
 - [Garbage Collection Makes YSH Different](https://www.oilshell.org/blog/2024/09/gc.html)
 - [A Retrospective on the Oils Project](https://www.oilshell.org/blog/2024/09/retrospective.html)
-- [Oils 0.22.0 Announcement](https://www.oilshell.org/blog/2024/06/release-0.22.0.html#data-languages) - table of multi-line string litearls
+- [Oils 0.22.0 Announcement](https://www.oilshell.org/blog/2024/06/release-0.22.0.html#data-languages) - table of multi-line string literals
 
 The markup was much shorter and simpler after conversion!
 
