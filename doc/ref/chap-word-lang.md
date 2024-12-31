@@ -297,3 +297,30 @@ string:
     $ unset -v x
     $ echo "value = $x, quoted = ${x@Q}."
     value = , quoted = .
+
+---
+
+`${x@a}` returns the set of characters that represent the attributes of the
+variable in which each resulting string is stored.
+
+- `a`: The value of `$x` would be obtained from an indexed array element.
+- `A`: The value of `$x` would be obtained from an associative array element.
+- `r`: The value of `$x` would be obtained from a readonly container.
+- `x`: The value of `$x` would be obtained from a container with the export attribute.
+- `n`: `x` is a name reference (OSH extension)
+
+It should be noted that `${x@a}` does not return the attributes of the obtained
+value.  For example, `${a[0]@a}` returns `a` because the string `${a[0]}` would
+be obtained from an array although the resulting value of `${a[0]}` is a scalar
+string.
+
+    $ echo ${a[0]@a}
+    a
+
+When `$x` would result in a word list (such as `${a[@]}` and `${!ref}` with
+`ref="a[@]"`), `${x@a}` returns a word list containing the attributes for each
+word.
+
+    $ a=(1 2 3)
+    $ echo "${a[@]@a}"
+    a a a
