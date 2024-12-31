@@ -367,6 +367,11 @@ def BashAssoc_ToStrForShellPrint(assoc_val):
 # representation of SparseArray come here.
 
 
+def SparseArray_IsEmpty(sparse_val):
+    # type: (value.SparseArray) -> bool
+    return len(sparse_val.d) == 0
+
+
 def SparseArray_Count(sparse_val):
     # type: (value.SparseArray) -> int
     return len(sparse_val.d)
@@ -469,6 +474,21 @@ def SparseArray_UnsetElement(sparse_val, index):
             if mops.Greater(index, sparse_val.max_index):
                 sparse_val.max_index = index
     return error_code_e.OK
+
+
+def SparseArray_Equals(lhs, rhs):
+    # type: (value.SparseArray, value.SparseArray) -> bool
+
+    len_lhs = len(lhs.d)
+    len_rhs = len(rhs.d)
+    if len_lhs != len_rhs:
+        return False
+
+    for index in lhs.d:
+        if index not in rhs.d or rhs.d[index] != lhs.d[index]:
+            return False
+
+    return True
 
 
 def SparseArray_ToStrForShellPrint(sparse_val):

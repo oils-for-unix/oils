@@ -363,6 +363,10 @@ def ToBool(val):
             val = cast(value.BashAssoc, UP_val)
             return not bash_impl.BashAssoc_IsEmpty(val)
 
+        elif case(value_e.SparseArray):
+            val = cast(value.SparseArray, UP_val)
+            return not bash_impl.SparseArray_IsEmpty(val)
+
         elif case(value_e.Bool):
             val = cast(value.Bool, UP_val)
             return val.b
@@ -428,6 +432,11 @@ def ExactlyEqual(left, right, blame_loc):
             left = cast(value.BashArray, UP_left)
             right = cast(value.BashArray, UP_right)
             return bash_impl.BashArray_Equals(left, right)
+
+        elif case(value_e.SparseArray):
+            left = cast(value.SparseArray, UP_left)
+            right = cast(value.SparseArray, UP_right)
+            return bash_impl.SparseArray_Equals(left, right)
 
         elif case(value_e.List):
             left = cast(value.List, UP_left)
