@@ -300,8 +300,15 @@ string:
 
 ---
 
-`${x@a}` returns the set of characters that represent the attributes of the
-variable in which each resulting string is stored.
+`${x@a}` returns the set of characters that represent the attributes of
+*h-value* of the expansion `$x`.
+
+Here, *h-value* is the variable (or the object that the variable directly
+points) from which the result of `$x` would originally come.  This is different
+from the *r-value* of the expansion `$x`, namely the result of the expansion
+`$x`.
+
+The characters representing attributes are listed below:
 
 - `a`: The value of `$x` would be obtained from an indexed array element.
 - `A`: The value of `$x` would be obtained from an associative array element.
@@ -309,18 +316,18 @@ variable in which each resulting string is stored.
 - `x`: The value of `$x` would be obtained from a container with the export attribute.
 - `n`: `x` is a name reference (OSH extension)
 
-It should be noted that `${x@a}` does not return the attributes of the obtained
-value.  For example, `${a[0]@a}` returns `a` because the string `${a[0]}` would
-be obtained from an array although the resulting value of `${a[0]}` is a scalar
-string.
+It should be noted that `${x@a}` does not return the attributes of the
+*r-value* of the expansion `$x`.  For example, although the *r-value* of
+`${arr[0]}` is arr scalar string, `${arr[0]@a}` returns `a` because the
+*h-value* is array `arr`, which stores the element `arr[0]`.
 
-    $ echo ${a[0]@a}
+    $ echo ${arr[0]@a}
     a
 
-When `$x` would result in a word list (such as `${a[@]}` and `${!ref}` with
-`ref="a[@]"`), `${x@a}` returns a word list containing the attributes for each
-word.
+When `$x` would result in a word list (such as `${arr[@]}` and `${!ref}` with
+`ref="arr[@]"`), `${x@a}` returns a word list containing the attributes of the
+*h-value* of each word.
 
-    $ a=(1 2 3)
-    $ echo "${a[@]@a}"
+    $ arr=(1 2 3)
+    $ echo "${arr[@]@a}"
     a a a

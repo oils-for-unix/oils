@@ -1104,7 +1104,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             # We're ONLY simluating -a and -A, not -r -x -n for now.  See
             # spec/ble-idioms.test.sh.
             chars = []  # type: List[str]
-            with tagswitch(vsub_state.holder_val) as case:
+            with tagswitch(vsub_state.h_value) as case:
                 if case(value_e.BashArray):
                     chars.append('a')
                 elif case(value_e.BashAssoc):
@@ -1353,8 +1353,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
             # $* decays
             val = self._EvalSpecialVar(part.name_tok.id, quoted, vsub_state)
 
-        # update the holder of the current value
-        vsub_state.holder_val = val
+        # update h-value (i.e., the holder of the current value)
+        vsub_state.h_value = val
 
         # We don't need var_index because it's only for L-Values of test ops?
         if self.exec_opts.eval_unsafe_arith():
@@ -1448,7 +1448,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         suffix_op_ = part.suffix_op
         if suffix_op_:
             UP_op = suffix_op_
-        vsub_state.holder_val = val
+        vsub_state.h_value = val
 
         # 2. Bracket Op
         val = self._EvalBracketOp(val, part, quoted, vsub_state, vtest_place)
