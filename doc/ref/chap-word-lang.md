@@ -307,7 +307,7 @@ Definitions:
 
 - *h-value* is the variable (or the object that the variable directly points)
   from which the result of `${x}` would originally come.
-- *r-value* is the expansion of `${x}`
+- *r-value* is the value of the expansion of `${x}`
 
 For example, with `arr=(1 2 3)`:
 
