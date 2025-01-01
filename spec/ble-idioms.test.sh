@@ -1064,6 +1064,29 @@ echo "[${a[@]: -4}][${a[*]: -4}]"
 ## END
 
 
+#### SparseArray: ${a-}
+case $SH in zsh|mksh|ash) exit ;; esac
+
+a1=()
+a2=("" "")
+a3=(foo bar)
+
+case ${SH##*/} in osh) eval 'var a1 = _a2sp(a1); var a2 = _a2sp(a2); var a3 = _a2sp(a3)' ;; esac
+
+echo "$a1, ${a1-(unset)}, ${a1:-(empty)};"
+echo "$a2, ${a2-(unset)}, ${a2:-(empty)};"
+echo "$a3, ${a3-(unset)}, ${a3:-(empty)};"
+
+## STDOUT:
+, (unset), (empty);
+, , (empty);
+foo, foo, foo;
+## END
+
+## N-I zsh/mksh/ash STDOUT:
+## END
+
+
 #### SparseArray (YSH): $[a1 === a2]
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 

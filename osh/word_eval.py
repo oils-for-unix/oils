@@ -110,9 +110,15 @@ def ShouldArrayDecay(var_name, exec_opts, is_plain_var_sub=True):
 def DecayArray(val):
     # type: (value_t) -> value_t
     """Resolve ${array} to ${array[0]}."""
-    if val.tag() == value_e.BashArray:
-        array_val = cast(value.BashArray, val)
-        s, error_code = bash_impl.BashArray_GetElement(array_val, 0)
+    if val.tag() in (value_e.BashArray, value_e.SparseArray):
+        if val.tag() == value_e.BashArray:
+            array_val = cast(value.BashArray, val)
+            s, error_code = bash_impl.BashArray_GetElement(array_val, 0)
+        elif val.tag() == value_e.SparseArray:
+            sparse_val = cast(value.SparseArray, val)
+            s, error_code = bash_impl.SparseArray_GetElement(sparse_val, 0)
+        else:
+            raise AssertionError(val.tag())
 
         # Note: index 0 should never cause the out-of-bound index error.
         assert error_code == error_code_e.OK
