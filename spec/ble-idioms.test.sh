@@ -1143,22 +1143,28 @@ argv.py "${a[@]//[!0-5]/_}"
 ## END
 
 
-#### SparseArray: ${a[@]@Q}
+#### SparseArray: ${a[@]@P}, ${a[@]@Q}
 case $SH in zsh|mksh|ash) exit ;; esac
 
 a=(v{0..9})
 unset -v 'a[2]' 'a[3]' 'a[4]' 'a[7]'
 case ${SH##*/} in osh) eval 'var a = _a2sp(a)' ;; esac
 
+argv.py "${a[@]@P}"
+argv.py "${a[*]@P}"
 argv.py "${a[@]@Q}"
 argv.py "${a[*]@Q}"
 
 ## STDOUT:
 ['v0', 'v1', 'v5', 'v6', 'v8', 'v9']
 ['v0 v1 v5 v6 v8 v9']
+['v0', 'v1', 'v5', 'v6', 'v8', 'v9']
+['v0 v1 v5 v6 v8 v9']
 ## END
 
 ## OK bash STDOUT:
+['v0', 'v1', 'v5', 'v6', 'v8', 'v9']
+['v0 v1 v5 v6 v8 v9']
 ["'v0'", "'v1'", "'v5'", "'v6'", "'v8'", "'v9'"]
 ["'v0' 'v1' 'v5' 'v6' 'v8' 'v9'"]
 ## END
