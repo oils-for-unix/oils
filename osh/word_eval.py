@@ -1183,7 +1183,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             # spec/ble-idioms.test.sh.
             chars = []  # type: List[str]
             with tagswitch(vsub_state.h_value) as case:
-                if case(value_e.BashArray):
+                if case(value_e.BashArray, value_e.SparseArray):
                     chars.append('a')
                 elif case(value_e.BashAssoc):
                     chars.append('A')
@@ -1205,6 +1205,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 elif case(value_e.BashArray):
                     val = cast(value.BashArray, UP_val)
                     count = bash_impl.BashArray_Count(val)
+                elif case(value_e.SparseArray):
+                    val = cast(value.SparseArray, UP_val)
+                    count = bash_impl.SparseArray_Count(val)
                 elif case(value_e.BashAssoc):
                     val = cast(value.BashAssoc, UP_val)
                     count = bash_impl.BashAssoc_Count(val)
