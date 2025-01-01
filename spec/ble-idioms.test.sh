@@ -1143,7 +1143,7 @@ argv.py "${a[@]//[!0-5]/_}"
 ## END
 
 
-#### SparseArray: ${a[@]@P}, ${a[@]@Q}
+#### SparseArray: ${a[@]@P}, ${a[@]@Q}, and ${a[@]@a}
 case $SH in zsh|mksh|ash) exit ;; esac
 
 a=(v{0..9})
@@ -1154,12 +1154,16 @@ argv.py "${a[@]@P}"
 argv.py "${a[*]@P}"
 argv.py "${a[@]@Q}"
 argv.py "${a[*]@Q}"
+argv.py "${a[@]@a}"
+argv.py "${a[*]@a}"
 
 ## STDOUT:
 ['v0', 'v1', 'v5', 'v6', 'v8', 'v9']
 ['v0 v1 v5 v6 v8 v9']
 ['v0', 'v1', 'v5', 'v6', 'v8', 'v9']
 ['v0 v1 v5 v6 v8 v9']
+['a', 'a', 'a', 'a', 'a', 'a']
+['a a a a a a']
 ## END
 
 ## OK bash STDOUT:
@@ -1167,6 +1171,8 @@ argv.py "${a[*]@Q}"
 ['v0 v1 v5 v6 v8 v9']
 ["'v0'", "'v1'", "'v5'", "'v6'", "'v8'", "'v9'"]
 ["'v0' 'v1' 'v5' 'v6' 'v8' 'v9'"]
+['a', 'a', 'a', 'a', 'a', 'a']
+['a a a a a a']
 ## END
 
 ## N-I zsh/mksh/ash STDOUT:
