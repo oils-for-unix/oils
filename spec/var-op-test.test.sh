@@ -101,7 +101,7 @@ argv.py "${with_icc+set}" = set
 ## STDOUT:
 ['', '=', 'set']
 ## END
-     
+
 #### ${s+foo} and ${s:+foo} when set -u
 set -u
 v=v
@@ -468,7 +468,7 @@ x
 hello=x
 hello=x
 ## END
- 
+
 #### array ${arr[0]=x}
 arr=()
 echo ${#arr[@]}
@@ -530,4 +530,3 @@ echo "${undef-\e}"
 ## END
 ## BUG zsh/mksh stdout-repr: '\x1b\n'
 ## BUG yash stdout: e
-
