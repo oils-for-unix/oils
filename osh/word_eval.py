@@ -689,10 +689,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 else:
                     is_falsey = False
 
-            elif case(value_e.BashArray, value_e.BashAssoc):
+            elif case(value_e.BashArray, value_e.SparseArray,
+                      value_e.BashAssoc):
                 if val.tag() == value_e.BashArray:
                     val = cast(value.BashArray, UP_val)
                     strs = bash_impl.BashArray_GetValues(val)
+                elif val.tag() == value_e.SparseArray:
+                    val = cast(value.SparseArray, UP_val)
+                    strs = bash_impl.SparseArray_GetValues(val)
                 elif val.tag() == value_e.BashAssoc:
                     val = cast(value.BashAssoc, UP_val)
                     strs = bash_impl.BashAssoc_GetValues(val)
