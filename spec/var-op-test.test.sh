@@ -540,3 +540,154 @@ echo "${undef-\e}"
 ## END
 ## BUG zsh/mksh stdout-repr: '\x1b\n'
 ## BUG yash stdout: e
+
+
+#### op-test for ${a[@]} and ${a[*]}
+case $SH in dash) exit ;; esac
+
+test-hyphen() {
+  echo "a   : '${a-no-colon}' '${a:-with-colon}'"
+  echo "a[0]: '${a[0]-no-colon}' '${a[0]:-with-colon}'"
+  echo "a[@]: '${a[@]-no-colon}' '${a[@]:-with-colon}'"
+  echo "a[*]: '${a[*]-no-colon}' '${a[*]:-with-colon}'"
+}
+
+a=()
+test-hyphen
+a=("")
+test-hyphen
+a=("" "")
+test-hyphen
+IFS=
+test-hyphen
+
+## STDOUT:
+a   : 'no-colon' 'with-colon'
+a[0]: 'no-colon' 'with-colon'
+a[@]: 'no-colon' 'with-colon'
+a[*]: 'no-colon' 'with-colon'
+a   : '' 'with-colon'
+a[0]: '' 'with-colon'
+a[@]: '' 'with-colon'
+a[*]: '' 'with-colon'
+a   : '' 'with-colon'
+a[0]: '' 'with-colon'
+a[@]: ' ' ' '
+a[*]: ' ' ' '
+a   : '' 'with-colon'
+a[0]: '' 'with-colon'
+a[@]: ' ' ' '
+a[*]: '' 'with-colon'
+## END
+
+# Bash 2.0..4.4 has a bug that "${a[@]:-xxx}" produces an empty string.  It
+# seemed to consider a[@] and a[*] are non-empty when there is at least one
+# element even if the element is empty.  This was fixed in Bash 5.0.
+#
+# ## BUG bash STDOUT:
+# a   : 'no-colon' 'with-colon'
+# a[0]: 'no-colon' 'with-colon'
+# a[@]: 'no-colon' 'with-colon'
+# a[*]: 'no-colon' 'with-colon'
+# a   : '' 'with-colon'
+# a[0]: '' 'with-colon'
+# a[@]: '' ''
+# a[*]: '' ''
+# a   : '' 'with-colon'
+# a[0]: '' 'with-colon'
+# a[@]: ' ' ' '
+# a[*]: ' ' ' '
+# a   : '' 'with-colon'
+# a[0]: '' 'with-colon'
+# a[@]: ' ' ' '
+# a[*]: '' ''
+# ## END
+
+# Zsh's ${a} and ${a[@]} implement something different from the other shells'.
+
+## OK zsh STDOUT:
+a   : '' 'with-colon'
+a[0]: 'no-colon' 'with-colon'
+a[@]: '' 'with-colon'
+a[*]: '' 'with-colon'
+a   : '' 'with-colon'
+a[0]: 'no-colon' 'with-colon'
+a[@]: '' ''
+a[*]: '' 'with-colon'
+a   : ' ' ' '
+a[0]: 'no-colon' 'with-colon'
+a[@]: ' ' ' '
+a[*]: ' ' ' '
+a   : '' 'with-colon'
+a[0]: 'no-colon' 'with-colon'
+a[@]: ' ' ' '
+a[*]: '' 'with-colon'
+## END
+
+## N-I dash STDOUT:
+## END:
+
+
+#### op-test for ${!array} with array="a[@]" or array="a[*]"
+case $SH in dash|mksh|zsh) exit ;; esac
+
+test-hyphen() {
+  ref='a'
+  echo "ref=a   : '${!ref-no-colon}' '${!ref:-with-colon}'"
+  ref='a[0]'
+  echo "ref=a[0]: '${!ref-no-colon}' '${!ref:-with-colon}'"
+  ref='a[@]'
+  echo "ref=a[@]: '${!ref-no-colon}' '${!ref:-with-colon}'"
+  ref='a[*]'
+  echo "ref=a[*]: '${!ref-no-colon}' '${!ref:-with-colon}'"
+}
+
+a=()
+test-hyphen
+a=("")
+test-hyphen
+a=("" "")
+test-hyphen
+IFS=
+test-hyphen
+
+## STDOUT:
+ref=a   : 'no-colon' 'with-colon'
+ref=a[0]: 'no-colon' 'with-colon'
+ref=a[@]: 'no-colon' 'with-colon'
+ref=a[*]: 'no-colon' 'with-colon'
+ref=a   : '' 'with-colon'
+ref=a[0]: '' 'with-colon'
+ref=a[@]: '' 'with-colon'
+ref=a[*]: '' 'with-colon'
+ref=a   : '' 'with-colon'
+ref=a[0]: '' 'with-colon'
+ref=a[@]: ' ' ' '
+ref=a[*]: ' ' ' '
+ref=a   : '' 'with-colon'
+ref=a[0]: '' 'with-colon'
+ref=a[@]: ' ' ' '
+ref=a[*]: '' 'with-colon'
+## END
+
+## BUG bash STDOUT:
+ref=a   : 'no-colon' 'with-colon'
+ref=a[0]: 'no-colon' 'with-colon'
+ref=a[@]: 'no-colon' 'with-colon'
+ref=a[*]: 'no-colon' 'with-colon'
+ref=a   : '' 'with-colon'
+ref=a[0]: '' 'with-colon'
+ref=a[@]: '' ''
+ref=a[*]: '' ''
+ref=a   : '' 'with-colon'
+ref=a[0]: '' 'with-colon'
+ref=a[@]: ' ' ' '
+ref=a[*]: ' ' ' '
+ref=a   : '' 'with-colon'
+ref=a[0]: '' 'with-colon'
+ref=a[@]: ' ' ' '
+ref=a[*]: '' ''
+## END
+
+## N-I dash/mksh/zsh STDOUT:
+## END:
