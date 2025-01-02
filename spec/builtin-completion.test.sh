@@ -625,3 +625,16 @@ argv.py "${words[@]}"
 
 ## N-I bash STDOUT:
 ## END
+
+
+#### compgen -F with scalar COMPREPLY
+
+_comp_cmd_test() {
+  unset -v COMPREPLY
+  COMPREPLY=hello
+}
+compgen -F _comp_cmd_test
+
+## STDOUT:
+hello
+## END
