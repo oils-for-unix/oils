@@ -1,4 +1,4 @@
-## compare_shells: bash-4.4 dash mksh zsh
+## compare_shells: bash dash mksh zsh
 
 #### Lazy Evaluation of Alternative
 i=0
@@ -47,10 +47,14 @@ argv.py "X${unset=x$@x}X"  # OSH is the same here
 ['Xx1 2 3 4xX']
 ['Xx1 2 3 4xX']
 ## END
-## BUG bash STDOUT:
-['Xx1', '2', '3', '4xX']
-['Xx1 2 3 4xX']
-## END
+
+# Bash 4.2..4.4 had a bug. This was fixed in Bash 5.0.
+#
+# ## BUG bash STDOUT:
+# ['Xx1', '2', '3', '4xX']
+# ['Xx1 2 3 4xX']
+# ## END
+
 ## OK osh STDOUT:
 ['Xx1 2', '3 4xX']
 ['Xx1 2 3 4xX']
@@ -101,7 +105,7 @@ argv.py "${with_icc+set}" = set
 ## STDOUT:
 ['', '=', 'set']
 ## END
-     
+
 #### ${s+foo} and ${s:+foo} when set -u
 set -u
 v=v
@@ -193,21 +197,6 @@ echo '+:' /"${array[@]:+foo}"/
 echo
 
 
-## STDOUT:
-+  //
-+: //
-
-+  //
-+: //
-
-+  /foo/
-+: /foo/
-
-+  /foo/
-+: /foo/
-
-## END
-
 ## BUG mksh STDOUT:
 +  //
 +: //
@@ -222,6 +211,25 @@ echo
 +: /foo/
 
 ## END
+
+# Bash 2.0..4.4 has a bug that "${a[@]:-xxx}" produces an empty string.  It
+# seemed to consider a[@] and a[*] are non-empty when there is at least one
+# element even if the element is empty.  This was fixed in Bash 5.0.
+#
+# ## BUG bash STDOUT:
+# +  //
+# +: //
+#
+# +  //
+# +: //
+#
+# +  /foo/
+# +: /foo/
+#
+# +  /foo/
+# +: /foo/
+#
+# ## END
 
 ## BUG zsh STDOUT:
 +  //
@@ -272,14 +280,14 @@ argv.py ${!hooksSlice+"${!hooksSlice}"}
 ['42']
 ## END
 
-# Bash 4.4 has a bug that ${!undef-} is successfully generate an empty word.
-
-## BUG bash STDOUT:
-[]
-[]
-[]
-['42']
-## END
+# Bash 4.4 has a bug that ${!undef-} successfully generates an empty word.
+#
+# ## BUG bash STDOUT:
+# []
+# []
+# []
+# ['42']
+# ## END
 
 ## OK dash/mksh/zsh STDOUT:
 ## END
@@ -468,7 +476,7 @@ x
 hello=x
 hello=x
 ## END
- 
+
 #### array ${arr[0]=x}
 arr=()
 echo ${#arr[@]}
@@ -522,6 +530,8 @@ z
 `
 \
 ## END
+# Note: this line terminates the quoting by ` not to confuse the text editor.
+
 
 #### "\e" as arg
 echo "${undef-\e}"
@@ -530,4 +540,3 @@ echo "${undef-\e}"
 ## END
 ## BUG zsh/mksh stdout-repr: '\x1b\n'
 ## BUG yash stdout: e
-
