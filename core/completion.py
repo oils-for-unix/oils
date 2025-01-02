@@ -631,12 +631,16 @@ class ShellFuncAction(CompletionAction):
                              self.func.name)
                 return
 
+            elif case(value_e.Str):
+                val = cast(value.Str, UP_val)
+                strs = [val.s]
+
             elif case(value_e.BashArray):
                 val = cast(value.BashArray, UP_val)
                 strs = bash_impl.BashArray_GetValues(val)
 
             else:
-                print_stderr('osh error: COMPREPLY should be an array, got %s' %
+                print_stderr('osh error: COMPREPLY should be an array or a string, got %s' %
                              ui.ValType(val))
                 return
 
