@@ -242,22 +242,18 @@ class Evaluator(object):
 
         return ''.join(ret)
 
-    def EvalPrompt(self, UP_val):
-        # type: (value_t) -> str
+    def EvalPrompt(self, s):
+        # type: (str) -> str
         """Perform the two evaluations that bash does.
 
         Used by $PS1 and ${x@P}.
         """
-        if UP_val.tag() != value_e.Str:
-            return ''  # e.g. if the user does 'unset PS1'
-
-        val = cast(value.Str, UP_val)
 
         # Parse backslash escapes (cached)
-        tokens = self.tokens_cache.get(val.s)
+        tokens = self.tokens_cache.get(s)
         if tokens is None:
-            tokens = match.Ps1Tokens(val.s)
-            self.tokens_cache[val.s] = tokens
+            tokens = match.Ps1Tokens(s)
+            self.tokens_cache[s] = tokens
 
         # Replace values.
         ps1_str = self._ReplaceBackslashCodes(tokens)
@@ -304,7 +300,12 @@ class Evaluator(object):
         # Now try evaluating $PS1
         ps1_val = self.mem.env_config.GetVal('PS1')
         #log('ps1_val %s', ps1_val)
-        return self.EvalPrompt(ps1_val)
+        UP_ps1_val = ps1_val
+        if UP_ps1_val.tag() == value_e.Str:
+            ps1_val = cast(value.Str, UP_ps1_val)
+            return self.EvalPrompt(ps1_val.s)
+        else:
+            return ''  # e.g. if the user does 'unset PS1'
 
 
 PROMPT_COMMAND = 'PROMPT_COMMAND'

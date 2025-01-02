@@ -1048,7 +1048,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         return val
 
     def _Nullary(self, val, op, var_name, vsub_token, vsub_state):
-        # type: (value_t, Token, Optional[str], Token, VarSubState) -> Tuple[value.Str, bool]
+        # type: (value_t, Token, Optional[str], Token, VarSubState) -> Tuple[value_t, bool]
 
         quoted2 = False
         op_id = op.id
@@ -1057,13 +1057,31 @@ class AbstractWordEvaluator(StringWordEvaluator):
             UP_val = val
             with tagswitch(val) as case:
                 if case(value_e.Undef):
-                    result = value.Str('')
+                    result = value.Str('')  # type: value_t
                 elif case(value_e.Str):
                     str_val = cast(value.Str, UP_val)
-                    prompt = self.prompt_ev.EvalPrompt(str_val)
+                    prompt = self.prompt_ev.EvalPrompt(str_val.s)
                     # readline gets rid of these, so we should too.
                     p = prompt.replace('\x01', '').replace('\x02', '')
                     result = value.Str(p)
+                elif case(value_e.BashArray, value_e.BashAssoc):
+                    if val.tag() == value_e.BashArray:
+                        val = cast(value.BashArray, UP_val)
+                        values = [
+                            s for s in bash_impl.BashArray_GetValues(val)
+                            if s is not None
+                        ]
+                    elif val.tag() == value_e.BashAssoc:
+                        val = cast(value.BashAssoc, UP_val)
+                        values = bash_impl.BashAssoc_GetValues(val)
+                    else:
+                        raise AssertionError()
+
+                    tmp = [
+                        self.prompt_ev.EvalPrompt(s).replace(
+                            '\x01', '').replace('\x02', '') for s in values
+                    ]
+                    result = value.BashArray(tmp)
                 else:
                     e_die("Can't use @P on %s" % ui.ValType(val), op)
 
@@ -1078,7 +1096,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     self._ProcessUndef(val, vsub_token, vsub_state)
 
                     # For unset variables, we do not generate any quoted words.
-                    result = value.Str('')
+                    if vsub_state.array_ref is not None:
+                        result = value.BashArray([])
+                    else:
+                        result = value.Str('')
 
                 elif case(value_e.Str):
                     str_val = cast(value.Str, UP_val)
@@ -1100,7 +1121,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         # TODO: should use fastfunc.ShellEncode
                         j8_lite.MaybeShellEncode(s) for s in values
                     ]
-                    result = value.Str(' '.join(tmp))
+                    result = value.BashArray(tmp)
                 else:
                     e_die("Can't use @Q on %s" % ui.ValType(val), op)
 
@@ -1126,7 +1147,18 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     if cell.nameref:
                         chars.append('n')
 
-            result = value.Str(''.join(chars))
+            count = 1
+            with tagswitch(val) as case:
+                if case(value_e.Undef):
+                    count = 0
+                elif case(value_e.BashArray):
+                    val = cast(value.BashArray, UP_val)
+                    count = bash_impl.BashArray_Count(val)
+                elif case(value_e.BashAssoc):
+                    val = cast(value.BashAssoc, UP_val)
+                    count = bash_impl.BashAssoc_Count(val)
+
+            result = value.BashArray([''.join(chars)] * count)
 
         else:
             e_die('Var op %r not implemented' % lexer.TokenVal(op), op)

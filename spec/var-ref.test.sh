@@ -1,5 +1,4 @@
 ## compare_shells: bash
-## oils_failures_allowed: 1
 
 # Var refs are done with ${!a}
 #
@@ -744,7 +743,7 @@ test-op0 'a3[@]'
 # []
 # []
 
-## BUG bash STDOUT:
+## OK bash STDOUT:
 ==== v1 ====
 ["'value'"]
 ['value']
