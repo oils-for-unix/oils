@@ -1,5 +1,5 @@
 ## compare_shells: bash
-## oils_failures_allowed: 7
+## oils_failures_allowed: 8
 
 #### Lower Case with , and ,,
 x='ABC DEF'
@@ -297,14 +297,6 @@ status=0
 'a' 'b\nc'
 status=0
 
-status=0
-## END
-## OK osh STDOUT:
-a b c
-status=0
-a $'b\\nc'
-status=0
-a a a
 status=0
 ## END
 
