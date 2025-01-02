@@ -476,13 +476,14 @@ class CompAdjust(vm._Builtin):
         # argv adjusted according to 'break_chars'.
         adjusted_argv = []  # type: List[str]
         for a in comp_argv:
-            completion.AdjustArg(a, break_chars, adjusted_argv)
+            if a is not None:
+                completion.AdjustArg(a, break_chars, adjusted_argv)
 
         if 'words' in var_names:
             state.BuiltinSetArray(self.mem, 'words', adjusted_argv)
 
         n = len(adjusted_argv)
-        cur = adjusted_argv[-1]
+        cur = '' if n < 1 else adjusted_argv[-1]
         prev = '' if n < 2 else adjusted_argv[-2]
 
         if arg.s:
