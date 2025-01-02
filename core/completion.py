@@ -41,6 +41,7 @@ from _devbuild.gen.syntax_asdl import (CompoundWord, word_part_e, word_t,
 from _devbuild.gen.runtime_asdl import (scope_e, comp_action_e, comp_action_t)
 from _devbuild.gen.types_asdl import redir_arg_type_e
 from _devbuild.gen.value_asdl import (value, value_e)
+from core import bash_impl
 from core import error
 from core import pyos
 from core import state
@@ -51,7 +52,7 @@ from frontend import lexer
 from frontend import location
 from frontend import reader
 from mycpp import mylib
-from mycpp.mylib import print_stderr, iteritems, log
+from mycpp.mylib import iteritems, log, print_stderr, tagswitch
 from osh.string_ops import ShellQuoteB
 from osh import word_
 from pylib import os_path
@@ -619,25 +620,30 @@ class ShellFuncAction(CompletionAction):
         # Read the response.  (The name 'COMP_REPLY' would be more consistent with others.)
         val = self.cmd_ev.mem.GetValue('COMPREPLY', scope_e.GlobalOnly)
 
-        if val.tag() == value_e.Undef:
-            # We set it above, so this error would only happen if the user unset it.
-            # Not changing it means there were no completions.
-            # TODO: This writes over the command line; it would be better to use an
-            # error object.
-            print_stderr('osh error: Ran function %r but COMPREPLY was unset' %
-                         self.func.name)
-            return
+        UP_val = val
+        with tagswitch(val) as case:
+            if case(value_e.Undef):
+                # We set it above, so this error would only happen if the user
+                # unset it.  Not changing it means there were no completions.
+                # TODO: This writes over the command line; it would be better
+                # to use an error object.
+                print_stderr('osh error: Ran function %r but COMPREPLY was unset' %
+                             self.func.name)
+                return
 
-        if val.tag() != value_e.BashArray:
-            print_stderr('osh error: COMPREPLY should be an array, got %s' %
-                         ui.ValType(val))
-            return
+            elif case(value_e.BashArray):
+                val = cast(value.BashArray, UP_val)
+                strs = bash_impl.BashArray_GetValues(val)
+
+            else:
+                print_stderr('osh error: COMPREPLY should be an array, got %s' %
+                             ui.ValType(val))
+                return
 
         if 0:
             self.debug('> %r' % val)  # CRASHES in C++
 
-        array_val = cast(value.BashArray, val)
-        for s in array_val.strs:
+        for s in strs:
             #self.debug('> %r' % s)
             yield s
 
