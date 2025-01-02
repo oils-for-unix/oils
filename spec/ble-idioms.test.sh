@@ -1145,3 +1145,27 @@ true
 
 ## N-I bash/zsh/mksh/ash STDOUT:
 ## END
+
+
+#### SparseArray: crash dump
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+OILS_CRASH_DUMP_DIR=$TMP $SH -ec 'a=({0..3}); unset -v "a[2]"; var a = _a2sp(a); false'
+json read (&crash_dump) < $TMP/*.json
+json write (crash_dump.var_stack[0].a)
+
+## STDOUT:
+{
+  "val": {
+    "type": "SparseArray",
+    "data": {
+      "0": "0",
+      "1": "1",
+      "3": "3"
+    }
+  }
+}
+## END
+
+## N-I bash/zsh/mksh/ash STDOUT:
+## END
