@@ -627,21 +627,23 @@ class ShellFuncAction(CompletionAction):
                 # unset it.  Not changing it means there were no completions.
                 # TODO: This writes over the command line; it would be better
                 # to use an error object.
-                print_stderr('osh error: Ran function %r but COMPREPLY was unset' %
-                             self.func.name)
+                print_stderr(
+                    'osh error: Ran function %r but COMPREPLY was unset' %
+                    self.func.name)
                 return
-
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
                 strs = [val.s]
-
             elif case(value_e.BashArray):
                 val = cast(value.BashArray, UP_val)
                 strs = bash_impl.BashArray_GetValues(val)
-
+            elif case(value_e.SparseArray):
+                val = cast(value.SparseArray, UP_val)
+                strs = bash_impl.SparseArray_GetValues(val)
             else:
-                print_stderr('osh error: COMPREPLY should be an array or a string, got %s' %
-                             ui.ValType(val))
+                print_stderr(
+                    'osh error: COMPREPLY should be an array or a string, got %s'
+                    % ui.ValType(val))
                 return
 
         if 0:
