@@ -594,3 +594,18 @@ bar
 compgen=0
 complete=0
 ## END
+
+
+#### compadjust with empty COMP_ARGV
+case $SH in bash) exit ;; esac
+
+COMP_ARGV=()
+compadjust words
+argv.py "${words[@]}"
+
+## STDOUT:
+[]
+## END
+
+## N-I bash STDOUT:
+## END

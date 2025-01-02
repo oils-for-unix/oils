@@ -482,7 +482,7 @@ class CompAdjust(vm._Builtin):
             state.BuiltinSetArray(self.mem, 'words', adjusted_argv)
 
         n = len(adjusted_argv)
-        cur = adjusted_argv[-1]
+        cur = '' if n < 1 else adjusted_argv[-1]
         prev = '' if n < 2 else adjusted_argv[-2]
 
         if arg.s:
