@@ -381,7 +381,7 @@ a3=plus
 ## N-I zsh stdout-json: "empty=\na1=\n"
 ## N-I zsh status: 1
 
-#### $@ and - and +
+#### $@ (empty) and - and +
 echo argv=${@-minus}
 echo argv=${@+plus}
 echo argv=${@:-minus}
@@ -393,6 +393,76 @@ argv=minus
 argv=
 ## END
 ## BUG dash/zsh STDOUT:
+argv=
+argv=plus
+argv=minus
+argv=
+## END
+
+#### $@ ("") and - and +
+set -- ""
+echo argv=${@-minus}
+echo argv=${@+plus}
+echo argv=${@:-minus}
+echo argv=${@:+plus}
+## STDOUT:
+argv=
+argv=plus
+argv=minus
+argv=
+## END
+
+# Zsh treats $@ as an array unlike Bash converting it to a string by joining it
+# with a space.
+
+## OK zsh STDOUT:
+argv=
+argv=plus
+argv=
+argv=plus
+## END
+
+#### $@ ("" "") and - and +
+set -- "" ""
+echo argv=${@-minus}
+echo argv=${@+plus}
+echo argv=${@:-minus}
+echo argv=${@:+plus}
+## STDOUT:
+argv=
+argv=plus
+argv=
+argv=plus
+## END
+
+#### $* ("" "") and - and + (IFS=)
+set -- "" ""
+IFS=
+echo argv=${*-minus}
+echo argv=${*+plus}
+echo argv=${*:-minus}
+echo argv=${*:+plus}
+## STDOUT:
+argv=
+argv=plus
+argv=
+argv=plus
+## END
+## BUG mksh/osh STDOUT:
+argv=
+argv=plus
+argv=minus
+argv=
+## END
+
+#### "$*" ("" "") and - and + (IFS=)
+set -- "" ""
+IFS=
+echo "argv=${*-minus}"
+echo "argv=${*+plus}"
+echo "argv=${*:-minus}"
+echo "argv=${*:+plus}"
+## STDOUT:
 argv=
 argv=plus
 argv=minus
