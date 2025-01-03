@@ -343,7 +343,7 @@ class InstancePrinter(object):
         self._ItemIndent(level)
         self.buf.write('"type":')
         self._MaybeSpace()
-        self.buf.write(type_str)  # "BashArray",  or "BashAssoc",
+        self.buf.write(type_str)  # "BashArray", "SparseArray", or "BashAssoc",
 
         self._MaybeNewline()
 
