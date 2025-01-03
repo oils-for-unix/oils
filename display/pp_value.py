@@ -7,7 +7,9 @@ Render Oils value_t -> doc_t, so it can be pretty printed
 import math
 
 from _devbuild.gen.pretty_asdl import (doc, Measure, MeasuredDoc)
+from _devbuild.gen.runtime_asdl import error_code_e
 from _devbuild.gen.value_asdl import Obj, value, value_e, value_t, value_str
+from core import bash_impl
 from data_lang import j8
 from data_lang import j8_lite
 from display import ansi
@@ -175,10 +177,10 @@ class ValueEncoder(pp_hnode.BaseEncoder):
     def _BashArray(self, varray):
         # type: (value.BashArray) -> MeasuredDoc
         type_name = self._Styled(self.type_style, AsciiText('BashArray'))
-        if len(varray.strs) == 0:
+        if bash_impl.BashArray_Count(varray) == 0:
             return _Concat([AsciiText('('), type_name, AsciiText(')')])
         mdocs = []  # type: List[MeasuredDoc]
-        for s in varray.strs:
+        for s in bash_impl.BashArray_GetValues(varray):
             if s is None:
                 mdocs.append(AsciiText('null'))
             else:
@@ -189,10 +191,10 @@ class ValueEncoder(pp_hnode.BaseEncoder):
     def _BashAssoc(self, vassoc):
         # type: (value.BashAssoc) -> MeasuredDoc
         type_name = self._Styled(self.type_style, AsciiText('BashAssoc'))
-        if len(vassoc.d) == 0:
+        if bash_impl.BashAssoc_Count(vassoc) == 0:
             return _Concat([AsciiText('('), type_name, AsciiText(')')])
         mdocs = []  # type: List[MeasuredDoc]
-        for k2, v2 in iteritems(vassoc.d):
+        for k2, v2 in iteritems(bash_impl.BashAssoc_GetDict(vassoc)):
             mdocs.append(
                 _Concat([
                     AsciiText('['),
@@ -206,10 +208,12 @@ class ValueEncoder(pp_hnode.BaseEncoder):
     def _SparseArray(self, val):
         # type: (value.SparseArray) -> MeasuredDoc
         type_name = self._Styled(self.type_style, AsciiText('SparseArray'))
-        if len(val.d) == 0:
+        if bash_impl.SparseArray_Count(val) == 0:
             return _Concat([AsciiText('('), type_name, AsciiText(')')])
         mdocs = []  # type: List[MeasuredDoc]
-        for k2, v2 in iteritems(val.d):
+        for k2 in bash_impl.SparseArray_GetKeys(val):
+            v2, error_code = bash_impl.SparseArray_GetElement(val, k2)
+            assert error_code == error_code_e.OK, error_code
             mdocs.append(
                 _Concat([
                     AsciiText('['),
