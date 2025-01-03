@@ -697,11 +697,21 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
                 if tok.id in (Id.VTest_ColonHyphen, Id.VTest_ColonEquals,
                               Id.VTest_ColonQMark, Id.VTest_ColonPlus):
+                    # The first character of IFS is used as a separator only
+                    # for the double-quoted "$*", or otherwise, a space " " is
+                    # used (for $*, $@, and "$@").
+                    # TODO: We current do not check whether the current $* is
+                    # double-quoted or not.  We should use IFS only when $* is
+                    # double-quoted.
                     if vsub_state.join_array:
                         sep_width = len(self.splitter.GetJoinChar())
                     else:
                         sep_width = 1  # we use ' ' for a[@]
 
+                    # We test whether the joined string will be empty.  When
+                    # the separator is empty, all the elements need to be
+                    # empty.  When the separator is non-empty, one element is
+                    # allowed at most and needs to be an empty string if any.
                     if sep_width == 0:
                         is_falsey = True
                         for s in strs:

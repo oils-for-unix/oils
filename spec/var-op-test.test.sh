@@ -794,3 +794,22 @@ ref=a[*]: '' ''
 
 ## N-I dash/mksh/zsh STDOUT:
 ## END:
+
+
+#### op-test for unquoted ${a[*]:-empty} with IFS=
+case $SH in dash) exit ;; esac
+
+IFS=
+a=("" "")
+argv.py ${a[*]:-empty}
+
+## STDOUT:
+[]
+## END
+
+## BUG mksh/osh STDOUT:
+['empty']
+## END
+
+## N-I dash STDOUT:
+## END:
