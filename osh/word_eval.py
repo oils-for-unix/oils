@@ -290,8 +290,8 @@ def _MakeWordFrames(part_vals):
                     if s is None:
                         continue  # ignore undefined array entries
 
-                    # Arrays parts are always quoted; otherwise they would have decayed to
-                    # a string.
+                    # Arrays parts are always quoted; otherwise they would have
+                    # decayed to a string.
                     piece = Piece(s, True, False)
                     if is_first:
                         current.append(piece)
@@ -652,8 +652,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
           ${a:?error} returns error word?
           ${a:=} returns part_value[] but also needs self.mem for side effects.
 
-          So I guess it should return part_value[], and then a flag for raising an
-          error, and then a flag for assigning it?
+          So I guess it should return part_value[], and then a flag for raising
+          an error, and then a flag for assigning it?
           The original BracedVarSub will have the name.
 
         Example of needing multiple part_value[]
@@ -697,16 +697,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
                 if tok.id in (Id.VTest_ColonHyphen, Id.VTest_ColonEquals,
                               Id.VTest_ColonQMark, Id.VTest_ColonPlus):
-                    # The first character of IFS is used as a separator only
-                    # for the double-quoted "$*", or otherwise, a space " " is
-                    # used (for $*, $@, and "$@").
-                    # TODO: We current do not check whether the current $* is
-                    # double-quoted or not.  We should use IFS only when $* is
-                    # double-quoted.
-                    if vsub_state.join_array:
+                    # "$*"           - the separator is the first character of IFS
+                    #  $*  $@  "$@"  - the separator is a space
+                    if quoted and vsub_state.join_array:
                         sep_width = len(self.splitter.GetJoinChar())
                     else:
-                        sep_width = 1  # we use ' ' for a[@]
+                        sep_width = 1
 
                     # We test whether the joined string will be empty.  When
                     # the separator is empty, all the elements need to be
