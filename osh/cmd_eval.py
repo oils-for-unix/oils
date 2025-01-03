@@ -208,7 +208,8 @@ def PlusEquals(old_val, val):
                 str_to_append = cast(value.Str, UP_val)
                 val = value.Str(old_val.s + str_to_append.s)
 
-            elif tag in (value_e.BashArray, value_e.SparseArray, value_e.BashAssoc):
+            elif tag in (value_e.BashArray, value_e.SparseArray,
+                         value_e.BashAssoc):
                 e_die("Can't append array to string")
 
             else:
