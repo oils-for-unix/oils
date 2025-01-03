@@ -1,4 +1,5 @@
 ## compare_shells: bash dash mksh zsh
+## oils_failures_allowed: 2
 
 #### Lazy Evaluation of Alternative
 i=0
@@ -448,7 +449,7 @@ argv=plus
 argv=
 argv=plus
 ## END
-## BUG mksh/osh STDOUT:
+## BUG mksh STDOUT:
 argv=
 argv=plus
 argv=minus
@@ -807,7 +808,7 @@ argv.py ${a[*]:-empty}
 []
 ## END
 
-## BUG mksh/osh STDOUT:
+## BUG mksh STDOUT:
 ['empty']
 ## END
 
