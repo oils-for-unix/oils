@@ -301,3 +301,29 @@ echo "${e[@]}"
 ## N-I bash STDOUT:
 e x
 ## END
+
+
+#### Type mismatching of lhs+=rhs should not cause a crash
+case $SH in mksh|zsh) exit ;; esac
+s=
+a=()
+declare -A d=([lemon]=yellow)
+
+s+=(1)
+s+=([melon]=green)
+
+a+=lime
+a+=([1]=banana)
+
+d+=orange
+d+=(0)
+
+true
+
+## STDOUT:
+## END
+
+## OK osh status: 1
+
+## N-I mksh/zsh STDOUT:
+## END

@@ -208,7 +208,7 @@ def PlusEquals(old_val, val):
                 str_to_append = cast(value.Str, UP_val)
                 val = value.Str(old_val.s + str_to_append.s)
 
-            elif tag in (value_e.BashArray, value_e.SparseArray):
+            elif tag in (value_e.BashArray, value_e.SparseArray, value_e.BashAssoc):
                 e_die("Can't append array to string")
 
             else:
@@ -236,12 +236,18 @@ def PlusEquals(old_val, val):
                     bash_impl.SparseArray_AppendValues(sparse_lhs, strs)
                     val = sparse_lhs
 
+            elif tag == value_e.BashAssoc:
+                e_die("Can't append an associative array to an indexed array")
+
             else:
                 raise AssertionError()  # parsing should prevent this
 
         elif case(value_e.BashAssoc):
             if tag == value_e.Str:
                 e_die("Can't append string to associative arrays")
+
+            elif tag in (value_e.BashArray, value_e.SparseArray):
+                e_die("Can't append an assoxiative array to indexed arrays")
 
             elif tag == value_e.BashAssoc:
                 assoc_lhs = cast(value.BashAssoc, UP_old_val)
