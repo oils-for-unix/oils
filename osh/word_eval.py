@@ -640,6 +640,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             part_vals,  # type: Optional[List[part_value_t]]
             vtest_place,  # type: VTestPlace
             blame_token,  # type: Token
+            vsub_state,  # type: VarSubState
     ):
         # type: (...) -> bool
         """
@@ -684,14 +685,45 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 else:
                     is_falsey = False
 
-            elif case(value_e.BashArray):
-                val = cast(value.BashArray, UP_val)
-                # TODO: allow undefined
-                is_falsey = len(val.strs) == 0
+            elif case(value_e.BashArray, value_e.BashAssoc):
+                if val.tag() == value_e.BashArray:
+                    val = cast(value.BashArray, UP_val)
+                    strs = bash_impl.BashArray_GetValues(val)
+                elif val.tag() == value_e.BashAssoc:
+                    val = cast(value.BashAssoc, UP_val)
+                    strs = bash_impl.BashAssoc_GetValues(val)
+                else:
+                    raise AssertionError()
 
-            elif case(value_e.BashAssoc):
-                val = cast(value.BashAssoc, UP_val)
-                is_falsey = len(val.d) == 0
+                if tok.id in (Id.VTest_ColonHyphen, Id.VTest_ColonEquals,
+                              Id.VTest_ColonQMark, Id.VTest_ColonPlus):
+                    # The first character of IFS is used as a separator only
+                    # for the double-quoted "$*", or otherwise, a space " " is
+                    # used (for $*, $@, and "$@").
+                    # TODO: We current do not check whether the current $* is
+                    # double-quoted or not.  We should use IFS only when $* is
+                    # double-quoted.
+                    if vsub_state.join_array:
+                        sep_width = len(self.splitter.GetJoinChar())
+                    else:
+                        sep_width = 1  # we use ' ' for a[@]
+
+                    # We test whether the joined string will be empty.  When
+                    # the separator is empty, all the elements need to be
+                    # empty.  When the separator is non-empty, one element is
+                    # allowed at most and needs to be an empty string if any.
+                    if sep_width == 0:
+                        is_falsey = True
+                        for s in strs:
+                            if len(s) != 0:
+                                is_falsey = False
+                                break
+                    else:
+                        is_falsey = len(strs) == 0 or (len(strs) == 1 and
+                                                       len(strs[0]) == 0)
+                else:
+                    # TODO: allow undefined
+                    is_falsey = len(strs) == 0
 
             else:
                 # value.Eggex, etc. are all false
@@ -1542,7 +1574,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         # '') is not applied to the VTest operators such as
                         # ${a:-def}, ${a+set}, etc.
                         if self._ApplyTestOp(val, op, quoted, part_vals,
-                                             vtest_place, part.name_tok):
+                                             vtest_place, part.name_tok,
+                                             vsub_state):
                             # e.g. to evaluate ${undef:-'default'}, we already appended
                             # what we need
                             return
