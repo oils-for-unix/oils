@@ -26,9 +26,11 @@ Later:
 import math
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
-from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str, Obj)
 from _devbuild.gen.nil8_asdl import (nvalue, nvalue_t)
+from _devbuild.gen.runtime_asdl import error_code_e
+from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str, Obj)
 
+from core import bash_impl
 from core import error
 from data_lang import pyj8
 # dependency issue: consts.py pulls in frontend/option_def.py
@@ -360,14 +362,15 @@ class InstancePrinter(object):
 
         self._PrintBashPrefix('"SparseArray",', level)
 
-        if len(val.d) == 0:  # Special case like Python/JS
+        if bash_impl.SparseArray_Count(
+                val) == 0:  # Special case like Python/JS
             self.buf.write('{}')
         else:
             self.buf.write('{')
             self._MaybeNewline()
 
             i = 0
-            for k, v in iteritems(val.d):
+            for k in bash_impl.SparseArray_GetKeys(val):
                 if i != 0:
                     self.buf.write(',')
                     self._MaybeNewline()
@@ -378,6 +381,8 @@ class InstancePrinter(object):
                 self.buf.write(':')
                 self._MaybeSpace()
 
+                v, error_code = bash_impl.SparseArray_GetElement(val, k)
+                assert error_code == error_code_e.OK, error_code
                 pyj8.WriteString(v, self.options, self.buf)
 
                 i += 1
@@ -394,14 +399,14 @@ class InstancePrinter(object):
 
         self._PrintBashPrefix('"BashArray",', level)
 
-        if len(val.strs) == 0:  # Special case like Python/JS
+        if bash_impl.BashArray_Count(val) == 0:  # Special case like Python/JS
             self.buf.write('{}')
         else:
             self.buf.write('{')
             self._MaybeNewline()
 
             first = True
-            for i, s in enumerate(val.strs):
+            for i, s in enumerate(bash_impl.BashArray_GetValues(val)):
                 if s is None:
                     continue
 
@@ -431,14 +436,14 @@ class InstancePrinter(object):
 
         self._PrintBashPrefix('"BashAssoc",', level)
 
-        if len(val.d) == 0:  # Special case like Python/JS
+        if bash_impl.BashAssoc_Count(val) == 0:  # Special case like Python/JS
             self.buf.write('{}')
         else:
             self.buf.write('{')
             self._MaybeNewline()
 
             i = 0
-            for k2, v2 in iteritems(val.d):
+            for k2, v2 in iteritems(bash_impl.BashAssoc_GetDict(val)):
                 if i != 0:
                     self.buf.write(',')
                     self._MaybeNewline()
