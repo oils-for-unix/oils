@@ -218,6 +218,10 @@ def _ValueToPartValue(val, quoted, part_loc):
             val = cast(value.BashArray, UP_val)
             return part_value.Array(bash_impl.BashArray_GetValues(val))
 
+        elif case(value_e.SparseArray):
+            val = cast(value.SparseArray, UP_val)
+            return part_value.Array(bash_impl.SparseArray_GetValues(val))
+
         elif case(value_e.BashAssoc):
             val = cast(value.BashAssoc, UP_val)
             # bash behavior: splice values!
@@ -685,10 +689,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 else:
                     is_falsey = False
 
-            elif case(value_e.BashArray, value_e.BashAssoc):
+            elif case(value_e.BashArray, value_e.SparseArray,
+                      value_e.BashAssoc):
                 if val.tag() == value_e.BashArray:
                     val = cast(value.BashArray, UP_val)
                     strs = bash_impl.BashArray_GetValues(val)
+                elif val.tag() == value_e.SparseArray:
+                    val = cast(value.SparseArray, UP_val)
+                    strs = bash_impl.SparseArray_GetValues(val)
                 elif val.tag() == value_e.BashAssoc:
                     val = cast(value.BashAssoc, UP_val)
                     strs = bash_impl.BashAssoc_GetValues(val)
@@ -961,11 +969,15 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     #log('%r %r -> %r', val.s, arg_val.s, s)
                     new_val = value.Str(s)  # type: value_t
 
-                elif case(value_e.BashArray, value_e.BashAssoc):
+                elif case(value_e.BashArray, value_e.SparseArray,
+                          value_e.BashAssoc):
                     # get values
                     if val.tag() == value_e.BashArray:
                         val = cast(value.BashArray, UP_val)
                         values = bash_impl.BashArray_GetValues(val)
+                    elif val.tag() == value_e.SparseArray:
+                        val = cast(value.SparseArray, UP_val)
+                        values = bash_impl.SparseArray_GetValues(val)
                     elif val.tag() == value_e.BashAssoc:
                         val = cast(value.BashAssoc, UP_val)
                         values = bash_impl.BashAssoc_GetValues(val)
@@ -1024,10 +1036,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 s = replacer.Replace(str_val.s, op)
                 val = value.Str(s)
 
-            elif case2(value_e.BashArray, value_e.BashAssoc):
+            elif case2(value_e.BashArray, value_e.SparseArray,
+                       value_e.BashAssoc):
                 if val.tag() == value_e.BashArray:
                     array_val = cast(value.BashArray, val)
                     values = bash_impl.BashArray_GetValues(array_val)
+                elif val.tag() == value_e.SparseArray:
+                    sparse_val = cast(value.SparseArray, val)
+                    values = bash_impl.SparseArray_GetValues(sparse_val)
                 elif val.tag() == value_e.BashAssoc:
                     assoc_val = cast(value.BashAssoc, val)
                     values = bash_impl.BashAssoc_GetValues(assoc_val)
@@ -1092,13 +1108,17 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     # readline gets rid of these, so we should too.
                     p = prompt.replace('\x01', '').replace('\x02', '')
                     result = value.Str(p)
-                elif case(value_e.BashArray, value_e.BashAssoc):
+                elif case(value_e.BashArray, value_e.SparseArray,
+                          value_e.BashAssoc):
                     if val.tag() == value_e.BashArray:
                         val = cast(value.BashArray, UP_val)
                         values = [
                             s for s in bash_impl.BashArray_GetValues(val)
                             if s is not None
                         ]
+                    elif val.tag() == value_e.SparseArray:
+                        val = cast(value.SparseArray, UP_val)
+                        values = bash_impl.SparseArray_GetValues(val)
                     elif val.tag() == value_e.BashAssoc:
                         val = cast(value.BashAssoc, UP_val)
                         values = bash_impl.BashAssoc_GetValues(val)
@@ -1135,10 +1155,17 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     # oddly, 'echo ${x@Q}' is equivalent to 'echo "${x@Q}"' in
                     # bash
                     quoted2 = True
-                elif case(value_e.BashArray, value_e.BashAssoc):
+                elif case(value_e.BashArray, value_e.SparseArray,
+                          value_e.BashAssoc):
                     if val.tag() == value_e.BashArray:
                         val = cast(value.BashArray, UP_val)
-                        values = [s for s in bash_impl.BashArray_GetValues(val) if s is not None]
+                        values = [
+                            s for s in bash_impl.BashArray_GetValues(val)
+                            if s is not None
+                        ]
+                    elif val.tag() == value_e.SparseArray:
+                        val = cast(value.SparseArray, UP_val)
+                        values = bash_impl.SparseArray_GetValues(val)
                     elif val.tag() == value_e.BashAssoc:
                         val = cast(value.BashAssoc, UP_val)
                         values = bash_impl.BashAssoc_GetValues(val)
@@ -1160,7 +1187,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             # spec/ble-idioms.test.sh.
             chars = []  # type: List[str]
             with tagswitch(vsub_state.h_value) as case:
-                if case(value_e.BashArray):
+                if case(value_e.BashArray, value_e.SparseArray):
                     chars.append('a')
                 elif case(value_e.BashAssoc):
                     chars.append('A')
@@ -1182,6 +1209,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 elif case(value_e.BashArray):
                     val = cast(value.BashArray, UP_val)
                     count = bash_impl.BashArray_Count(val)
+                elif case(value_e.SparseArray):
+                    val = cast(value.SparseArray, UP_val)
+                    count = bash_impl.SparseArray_Count(val)
                 elif case(value_e.BashAssoc):
                     val = cast(value.BashAssoc, UP_val)
                     count = bash_impl.BashAssoc_Count(val)

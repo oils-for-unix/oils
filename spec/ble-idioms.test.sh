@@ -1064,6 +1064,153 @@ echo "[${a[@]: -4}][${a[*]: -4}]"
 ## END
 
 
+#### SparseArray: ${a[@]}
+
+case $SH in zsh|mksh|ash) exit ;; esac
+
+a=(v{0..9})
+unset -v 'a[2]' 'a[3]' 'a[4]' 'a[7]'
+case ${SH##*/} in osh) eval 'var a = _a2sp(a)' ;; esac
+
+argv.py "${a[@]}"
+argv.py "abc${a[@]}xyz"
+
+## STDOUT:
+['v0', 'v1', 'v5', 'v6', 'v8', 'v9']
+['abcv0', 'v1', 'v5', 'v6', 'v8', 'v9xyz']
+## END
+
+## N-I zsh/mksh/ash STDOUT:
+## END
+
+
+#### SparseArray: ${a[@]#...}
+
+case $SH in zsh|mksh|ash) exit ;; esac
+
+a=(v{0..9})
+unset -v 'a[2]' 'a[3]' 'a[4]' 'a[7]'
+case ${SH##*/} in osh) eval 'var a = _a2sp(a)' ;; esac
+
+argv.py "${a[@]#v}"
+argv.py "abc${a[@]#v}xyz"
+argv.py "${a[@]%[0-5]}"
+argv.py "abc${a[@]%[0-5]}xyz"
+argv.py "${a[@]#v?}"
+
+## STDOUT:
+['0', '1', '5', '6', '8', '9']
+['abc0', '1', '5', '6', '8', '9xyz']
+['v', 'v', 'v', 'v6', 'v8', 'v9']
+['abcv', 'v', 'v', 'v6', 'v8', 'v9xyz']
+['', '', '', '', '', '']
+## END
+
+## N-I zsh/mksh/ash STDOUT:
+## END
+
+
+#### SparseArray: ${a[@]/pat/rep}
+
+case $SH in zsh|mksh|ash) exit ;; esac
+
+a=(v{0..9})
+unset -v 'a[2]' 'a[3]' 'a[4]' 'a[7]'
+case ${SH##*/} in osh) eval 'var a = _a2sp(a)' ;; esac
+
+argv.py "${a[@]/?}"
+argv.py "${a[@]//?}"
+argv.py "${a[@]/#?}"
+argv.py "${a[@]/%?}"
+
+argv.py "${a[@]/v/x}"
+argv.py "${a[@]//v/x}"
+argv.py "${a[@]/[0-5]/D}"
+argv.py "${a[@]//[!0-5]/_}"
+
+## STDOUT:
+['0', '1', '5', '6', '8', '9']
+['', '', '', '', '', '']
+['0', '1', '5', '6', '8', '9']
+['v', 'v', 'v', 'v', 'v', 'v']
+['x0', 'x1', 'x5', 'x6', 'x8', 'x9']
+['x0', 'x1', 'x5', 'x6', 'x8', 'x9']
+['vD', 'vD', 'vD', 'v6', 'v8', 'v9']
+['_0', '_1', '_5', '__', '__', '__']
+## END
+
+## N-I zsh/mksh/ash STDOUT:
+## END
+
+
+#### SparseArray: ${a[@]@P}, ${a[@]@Q}, and ${a[@]@a}
+case $SH in zsh|mksh|ash) exit ;; esac
+
+a=(v{0..9})
+unset -v 'a[2]' 'a[3]' 'a[4]' 'a[7]'
+case ${SH##*/} in osh) eval 'var a = _a2sp(a)' ;; esac
+
+argv.py "${a[@]@P}"
+argv.py "${a[*]@P}"
+argv.py "${a[@]@Q}"
+argv.py "${a[*]@Q}"
+argv.py "${a[@]@a}"
+argv.py "${a[*]@a}"
+
+## STDOUT:
+['v0', 'v1', 'v5', 'v6', 'v8', 'v9']
+['v0 v1 v5 v6 v8 v9']
+['v0', 'v1', 'v5', 'v6', 'v8', 'v9']
+['v0 v1 v5 v6 v8 v9']
+['a', 'a', 'a', 'a', 'a', 'a']
+['a a a a a a']
+## END
+
+## OK bash STDOUT:
+['v0', 'v1', 'v5', 'v6', 'v8', 'v9']
+['v0 v1 v5 v6 v8 v9']
+["'v0'", "'v1'", "'v5'", "'v6'", "'v8'", "'v9'"]
+["'v0' 'v1' 'v5' 'v6' 'v8' 'v9'"]
+['a', 'a', 'a', 'a', 'a', 'a']
+['a a a a a a']
+## END
+
+## N-I zsh/mksh/ash STDOUT:
+## END
+
+
+#### SparseArray: ${a[@]-unset}, ${a[@]:-empty}, etc.
+case $SH in zsh|mksh|ash) exit ;; esac
+
+a1=()
+a2=("")
+a3=("" "")
+
+case $SH in
+bash) ;;
+*) eval "var a1 = _a2sp(a1); var a2 = _a2sp(a2); var a3 = _a2sp(a3)" ;;
+esac
+
+echo "a1 unset: [${a1[@]-unset}]"
+echo "a1 empty: [${a1[@]:-empty}]"
+echo "a2 unset: [${a2[@]-unset}]"
+echo "a2 empty: [${a2[@]:-empty}]"
+echo "a3 unset: [${a3[@]-unset}]"
+echo "a3 empty: [${a3[@]:-empty}]"
+
+## STDOUT:
+a1 unset: [unset]
+a1 empty: [empty]
+a2 unset: []
+a2 empty: [empty]
+a3 unset: [ ]
+a3 empty: [ ]
+## END
+
+## N-I zsh/mksh/ash STDOUT:
+## END
+
+
 #### SparseArray: compgen -F _set_COMPREPLY
 case $SH in zsh|mksh|ash) exit ;; esac
 
