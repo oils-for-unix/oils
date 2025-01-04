@@ -12,36 +12,31 @@ from typing import Dict, List, Optional, Tuple
 
 def BigInt_Greater(a, b):
     # type: (mops.BigInt, mops.BigInt) -> bool
-
     return mops.Greater(a, b)
 
 
 def BigInt_Less(a, b):
     # type: (mops.BigInt, mops.BigInt) -> bool
-
     return mops.Greater(b, a)
 
 
 def BigInt_GreaterEq(a, b):
     # type: (mops.BigInt, mops.BigInt) -> bool
-
     return not mops.Greater(b, a)
 
 
 def BigInt_LessEq(a, b):
     # type: (mops.BigInt, mops.BigInt) -> bool
-
     return not mops.Greater(a, b)
 
 
 #------------------------------------------------------------------------------
-# All BashArray operations depending on the internal
-# representation of SparseArray come here.
+# All BashArray operations depending on the internal representation of
+# BashArray come here.
 
 
 def BashArray_IsEmpty(array_val):
     # type: (value.BashArray) -> bool
-
     return len(array_val.strs) == 0
 
 
@@ -58,13 +53,11 @@ def BashArray_Count(array_val):
 
 def BashArray_Length(array_val):
     # type: (value.BashArray) -> int
-
     return len(array_val.strs)
 
 
 def BashArray_GetKeys(array_val):
     # type: (value.BashArray) -> List[int]
-
     indices = []  # type: List[int]
     for i, s in enumerate(array_val.strs):
         if s is not None:
@@ -75,13 +68,11 @@ def BashArray_GetKeys(array_val):
 
 def BashArray_GetValues(array_val):
     # type: (value.BashArray) -> List[str]
-
     return array_val.strs
 
 
 def BashArray_AppendValues(array_val, strs):
     # type: (value.BashArray, List[str]) -> None
-
     array_val.strs.extend(strs)
 
 
@@ -104,7 +95,6 @@ def _BashArray_CanonicalizeIndex(array_val, index):
 
 def BashArray_HasElement(array_val, index):
     # type: (value.BashArray, int) -> Tuple[bool, error_code_t]
-
     index, n, error_code = _BashArray_CanonicalizeIndex(array_val, index)
     if error_code != error_code_e.OK:
         return False, error_code
@@ -140,7 +130,6 @@ def BashArray_GetElement(array_val, index):
 
 def BashArray_SetElement(array_val, index, s):
     # type: (value.BashArray, int, str) -> error_code_t
-
     strs = array_val.strs
 
     # a[-1]++ computes this twice; could we avoid it?
@@ -192,7 +181,6 @@ def BashArray_UnsetElement(array_val, index):
 
 def BashArray_Equals(lhs, rhs):
     # type: (value.BashArray, value.BashArray) -> bool
-
     len_lhs = len(lhs.strs)
     len_rhs = len(rhs.strs)
     if len_lhs != len_rhs:
@@ -217,7 +205,6 @@ def _BashArray_HasHoles(array_val):
 
 def BashArray_ToStrForShellPrint(array_val, name):
     # type: (value.BashArray, Optional[str]) -> str
-
     buff = []  # type: List[str]
     first = True
     if _BashArray_HasHoles(array_val):
@@ -266,8 +253,8 @@ def BashArray_ToStrForShellPrint(array_val, name):
 
 
 #------------------------------------------------------------------------------
-# All BashAssoc operations depending on the internal
-# representation of SparseArray come here.
+# All BashAssoc operations depending on the internal representation of
+# BashAssoc come here.
 
 
 def BashAssoc_IsEmpty(assoc_val):
@@ -282,56 +269,47 @@ def BashAssoc_Count(assoc_val):
 
 def BashAssoc_GetDict(assoc_val):
     # type: (value.BashAssoc) -> Dict[str, str]
-
     return assoc_val.d
 
 
 def BashAssoc_AppendDict(assoc_val, d):
     # type: (value.BashAssoc, Dict[str, str]) -> None
-
     for key in d:
         assoc_val.d[key] = d[key]
 
 
 def BashAssoc_GetKeys(assoc_val):
     # type: (value.BashAssoc) -> List[str]
-
     return assoc_val.d.keys()
 
 
 def BashAssoc_GetValues(assoc_val):
     # type: (value.BashAssoc) -> List[str]
-
     return assoc_val.d.values()
 
 
 def BashAssoc_HasElement(assoc_val, s):
     # type: (value.BashAssoc, str) -> bool
-
     return s in assoc_val.d
 
 
 def BashAssoc_GetElement(assoc_val, s):
     # type: (value.BashAssoc, str) -> Optional[str]
-
     return assoc_val.d.get(s)
 
 
 def BashAssoc_SetElement(assoc_val, key, s):
     # type: (value.BashAssoc, str, str) -> None
-
     assoc_val.d[key] = s
 
 
 def BashAssoc_UnsetElement(assoc_val, key):
     # type: (value.BashAssoc, str) -> None
-
     mylib.dict_erase(assoc_val.d, key)
 
 
 def BashAssoc_Equals(lhs, rhs):
     # type: (value.BashAssoc, value.BashAssoc) -> bool
-
     if len(lhs.d) != len(rhs.d):
         return False
 
@@ -344,7 +322,6 @@ def BashAssoc_Equals(lhs, rhs):
 
 def BashAssoc_ToStrForShellPrint(assoc_val):
     # type: (value.BashAssoc) -> str
-
     buff = ["("]  # type: List[str]
     first = True
     for key in sorted(assoc_val.d):
@@ -363,8 +340,8 @@ def BashAssoc_ToStrForShellPrint(assoc_val):
 
 
 #------------------------------------------------------------------------------
-# All SparseArray operations depending on the internal
-# representation of SparseArray come here.
+# All SparseArray operations depending on the internal representation of
+# SparseArray come here.
 
 
 def SparseArray_IsEmpty(sparse_val):
@@ -379,13 +356,11 @@ def SparseArray_Count(sparse_val):
 
 def SparseArray_Length(sparse_val):
     # type: (value.SparseArray) -> mops.BigInt
-
     return mops.Add(sparse_val.max_index, mops.ONE)
 
 
 def SparseArray_GetKeys(sparse_val):
     # type: (value.SparseArray) -> List[mops.BigInt]
-
     keys = sparse_val.d.keys()
     mylib.BigIntSort(keys)
     return keys
@@ -431,7 +406,6 @@ def _SparseArray_CanonicalizeIndex(sparse_val, index):
 
 def SparseArray_HasElement(sparse_val, index):
     # type: (value.SparseArray, mops.BigInt) -> Tuple[bool, error_code_t]
-
     index, error_code = _SparseArray_CanonicalizeIndex(sparse_val, index)
     if error_code != error_code_e.OK:
         return False, error_code
@@ -440,7 +414,6 @@ def SparseArray_HasElement(sparse_val, index):
 
 def SparseArray_GetElement(sparse_val, index):
     # type: (value.SparseArray, mops.BigInt) -> Tuple[Optional[str], error_code_t]
-
     index, error_code = _SparseArray_CanonicalizeIndex(sparse_val, index)
     if error_code != error_code_e.OK:
         return None, error_code
@@ -449,7 +422,6 @@ def SparseArray_GetElement(sparse_val, index):
 
 def SparseArray_SetElement(sparse_val, index, s):
     # type: (value.SparseArray, mops.BigInt, str) -> error_code_t
-
     index, error_code = _SparseArray_CanonicalizeIndex(sparse_val, index)
     if error_code != error_code_e.OK:
         return error_code
@@ -461,7 +433,6 @@ def SparseArray_SetElement(sparse_val, index, s):
 
 def SparseArray_UnsetElement(sparse_val, index):
     # type: (value.SparseArray, mops.BigInt) -> error_code_t
-
     index, error_code = _SparseArray_CanonicalizeIndex(sparse_val, index)
     if error_code != error_code_e.OK:
         return error_code
@@ -478,7 +449,6 @@ def SparseArray_UnsetElement(sparse_val, index):
 
 def SparseArray_Equals(lhs, rhs):
     # type: (value.SparseArray, value.SparseArray) -> bool
-
     len_lhs = len(lhs.d)
     len_rhs = len(rhs.d)
     if len_lhs != len_rhs:
@@ -493,7 +463,6 @@ def SparseArray_Equals(lhs, rhs):
 
 def SparseArray_ToStrForShellPrint(sparse_val):
     # type: (value.SparseArray) -> str
-
     body = []  # type: List[str]
     for index in SparseArray_GetKeys(sparse_val):
         if len(body) > 0:
