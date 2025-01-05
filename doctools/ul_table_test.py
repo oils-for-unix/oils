@@ -31,7 +31,7 @@ TD_ATTRS = """\
   - <cell-attrs class=unquoted /> name
   - <cell-attrs class=quoted /> age
   - role
-- tr
+- tr <!-- comment --> <!-- comment 2 -->
   - <cell-attrs class="cool" /> alice
   - 30
   - parent
@@ -152,6 +152,8 @@ TR_ATTRS_HTML = """\
 # https://developer.mozilla.org/en-US/docs/Web/CSS/grid-column
 
 COLSPAN = """\
+<!-- begin REPLACE -->
+
 <table>
 
 - thead
@@ -167,9 +169,12 @@ COLSPAN = """\
   - 42
 
 </table>
+
+<!-- end REPLACE -->
 """
 
 COLSPAN_HTML = """\
+<!-- begin REPLACE -->
 <table>
 <thead>
 <tr>
@@ -189,6 +194,7 @@ COLSPAN_HTML = """\
   <td>42</td>
 </tr>
 </table>
+<!-- end REPLACE -->
 """
 
 # UNUSED - not worth it now
@@ -229,15 +235,16 @@ def MarkdownToTable(md):
         print(h)
         print('')
 
-    h2 = ul_table.ReplaceTables(h)
+    h = ul_table.RemoveComments(h)
+    h = ul_table.ReplaceTables(h)
 
     if 1:
         print('---')
         print('REPLACED')
-        print(h2)
+        print(h)
         print('')
 
-    return h2
+    return h
 
 
 class UlTableTest(unittest.TestCase):

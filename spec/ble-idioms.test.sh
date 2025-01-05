@@ -622,6 +622,7 @@ unset -v "a[-3]"
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 a=({1..9})
+var a = _a2sp(a)
 unset -v 'a[-1]'
 a[-1]=x
 declare -p a
@@ -630,8 +631,8 @@ a[-1]=x
 declare -p a
 
 ## STDOUT:
-declare -a a=(1 2 3 4 5 6 7 x)
-declare -a a=(1 2 3 4 5 6 x)
+declare -a a=([0]=1 [1]=2 [2]=3 [3]=4 [4]=5 [5]=6 [6]=7 [7]=x)
+declare -a a=([0]=1 [1]=2 [2]=3 [3]=4 [4]=5 [5]=6 [6]=x)
 ## END
 
 ## N-I bash/zsh/mksh/ash STDOUT:
@@ -1061,4 +1062,330 @@ echo "[${a[@]: -4}][${a[*]: -4}]"
 ## END
 
 ## N-I zsh/mksh/ash STDOUT:
+## END
+
+
+#### SparseArray: ${a[@]}
+
+case $SH in zsh|mksh|ash) exit ;; esac
+
+a=(v{0..9})
+unset -v 'a[2]' 'a[3]' 'a[4]' 'a[7]'
+case ${SH##*/} in osh) eval 'var a = _a2sp(a)' ;; esac
+
+argv.py "${a[@]}"
+argv.py "abc${a[@]}xyz"
+
+## STDOUT:
+['v0', 'v1', 'v5', 'v6', 'v8', 'v9']
+['abcv0', 'v1', 'v5', 'v6', 'v8', 'v9xyz']
+## END
+
+## N-I zsh/mksh/ash STDOUT:
+## END
+
+
+#### SparseArray: ${a[@]#...}
+
+case $SH in zsh|mksh|ash) exit ;; esac
+
+a=(v{0..9})
+unset -v 'a[2]' 'a[3]' 'a[4]' 'a[7]'
+case ${SH##*/} in osh) eval 'var a = _a2sp(a)' ;; esac
+
+argv.py "${a[@]#v}"
+argv.py "abc${a[@]#v}xyz"
+argv.py "${a[@]%[0-5]}"
+argv.py "abc${a[@]%[0-5]}xyz"
+argv.py "${a[@]#v?}"
+
+## STDOUT:
+['0', '1', '5', '6', '8', '9']
+['abc0', '1', '5', '6', '8', '9xyz']
+['v', 'v', 'v', 'v6', 'v8', 'v9']
+['abcv', 'v', 'v', 'v6', 'v8', 'v9xyz']
+['', '', '', '', '', '']
+## END
+
+## N-I zsh/mksh/ash STDOUT:
+## END
+
+
+#### SparseArray: ${a[@]/pat/rep}
+
+case $SH in zsh|mksh|ash) exit ;; esac
+
+a=(v{0..9})
+unset -v 'a[2]' 'a[3]' 'a[4]' 'a[7]'
+case ${SH##*/} in osh) eval 'var a = _a2sp(a)' ;; esac
+
+argv.py "${a[@]/?}"
+argv.py "${a[@]//?}"
+argv.py "${a[@]/#?}"
+argv.py "${a[@]/%?}"
+
+argv.py "${a[@]/v/x}"
+argv.py "${a[@]//v/x}"
+argv.py "${a[@]/[0-5]/D}"
+argv.py "${a[@]//[!0-5]/_}"
+
+## STDOUT:
+['0', '1', '5', '6', '8', '9']
+['', '', '', '', '', '']
+['0', '1', '5', '6', '8', '9']
+['v', 'v', 'v', 'v', 'v', 'v']
+['x0', 'x1', 'x5', 'x6', 'x8', 'x9']
+['x0', 'x1', 'x5', 'x6', 'x8', 'x9']
+['vD', 'vD', 'vD', 'v6', 'v8', 'v9']
+['_0', '_1', '_5', '__', '__', '__']
+## END
+
+## N-I zsh/mksh/ash STDOUT:
+## END
+
+
+#### SparseArray: ${a[@]@P}, ${a[@]@Q}, and ${a[@]@a}
+case $SH in zsh|mksh|ash) exit ;; esac
+
+a=(v{0..9})
+unset -v 'a[2]' 'a[3]' 'a[4]' 'a[7]'
+case ${SH##*/} in osh) eval 'var a = _a2sp(a)' ;; esac
+
+argv.py "${a[@]@P}"
+argv.py "${a[*]@P}"
+argv.py "${a[@]@Q}"
+argv.py "${a[*]@Q}"
+argv.py "${a[@]@a}"
+argv.py "${a[*]@a}"
+
+## STDOUT:
+['v0', 'v1', 'v5', 'v6', 'v8', 'v9']
+['v0 v1 v5 v6 v8 v9']
+['v0', 'v1', 'v5', 'v6', 'v8', 'v9']
+['v0 v1 v5 v6 v8 v9']
+['a', 'a', 'a', 'a', 'a', 'a']
+['a a a a a a']
+## END
+
+## OK bash STDOUT:
+['v0', 'v1', 'v5', 'v6', 'v8', 'v9']
+['v0 v1 v5 v6 v8 v9']
+["'v0'", "'v1'", "'v5'", "'v6'", "'v8'", "'v9'"]
+["'v0' 'v1' 'v5' 'v6' 'v8' 'v9'"]
+['a', 'a', 'a', 'a', 'a', 'a']
+['a a a a a a']
+## END
+
+## N-I zsh/mksh/ash STDOUT:
+## END
+
+
+#### SparseArray: ${a[@]-unset}, ${a[@]:-empty}, etc.
+case $SH in zsh|mksh|ash) exit ;; esac
+
+a1=()
+a2=("")
+a3=("" "")
+
+case $SH in
+bash) ;;
+*) eval "var a1 = _a2sp(a1); var a2 = _a2sp(a2); var a3 = _a2sp(a3)" ;;
+esac
+
+echo "a1 unset: [${a1[@]-unset}]"
+echo "a1 empty: [${a1[@]:-empty}]"
+echo "a2 unset: [${a2[@]-unset}]"
+echo "a2 empty: [${a2[@]:-empty}]"
+echo "a3 unset: [${a3[@]-unset}]"
+echo "a3 empty: [${a3[@]:-empty}]"
+
+## STDOUT:
+a1 unset: [unset]
+a1 empty: [empty]
+a2 unset: []
+a2 empty: [empty]
+a3 unset: [ ]
+a3 empty: [ ]
+## END
+
+## N-I zsh/mksh/ash STDOUT:
+## END
+
+
+#### SparseArray: ${a-}
+case $SH in zsh|mksh|ash) exit ;; esac
+
+a1=()
+a2=("" "")
+a3=(foo bar)
+
+case ${SH##*/} in osh) eval 'var a1 = _a2sp(a1); var a2 = _a2sp(a2); var a3 = _a2sp(a3)' ;; esac
+
+echo "$a1, ${a1-(unset)}, ${a1:-(empty)};"
+echo "$a2, ${a2-(unset)}, ${a2:-(empty)};"
+echo "$a3, ${a3-(unset)}, ${a3:-(empty)};"
+
+## STDOUT:
+, (unset), (empty);
+, , (empty);
+foo, foo, foo;
+## END
+
+## N-I zsh/mksh/ash STDOUT:
+## END
+
+
+#### SparseArray: compgen -F _set_COMPREPLY
+case $SH in zsh|mksh|ash) exit ;; esac
+
+a=({0..9})
+unset -v 'a[2]' 'a[4]' 'a[6]'
+
+case ${SH##*/} in
+osh)
+  eval '_set_COMPREPLY() { setglobal COMPREPLY = _a2sp(a); }'
+  ;;
+*)
+  _set_COMPREPLY() { COMPREPLY=("${a[@]}"); }
+  ;;
+esac
+
+compgen -F _set_COMPREPLY
+
+## STDOUT:
+0
+1
+3
+5
+7
+8
+9
+## END
+
+## N-I zsh/mksh/ash STDOUT:
+## END
+
+
+#### SparseArray: compgen -F _set_COMPREPLY
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+a=(echo 'Hello,' 'Bash' 'world!')
+var COMP_ARGV = _a2sp(a)
+compadjust cur prev words cword
+argv.py "$cur" "$prev" "$cword"
+argv.py "${words[@]}"
+
+## STDOUT:
+['world!', 'Bash', '3']
+['echo', 'Hello,', 'Bash', 'world!']
+## END
+
+## N-I bash/zsh/mksh/ash STDOUT:
+## END
+
+
+#### SparseArray (YSH): $[a1 === a2]
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+a1=(1 2 3)
+unset -v 'a1[1]'
+a2=(1 2 3)
+unset -v 'a2[1]'
+a3=(1 2 4)
+unset -v 'a3[1]'
+a4=(1 2 3)
+var a1 = _a2sp(a1)
+var a2 = _a2sp(a2)
+var a3 = _a2sp(a3)
+var a4 = _a2sp(a4)
+
+echo $[a1 === a1]
+echo $[a1 === a2]
+echo $[a1 === a3]
+echo $[a1 === a4]
+echo $[a2 === a1]
+echo $[a3 === a1]
+echo $[a4 === a1]
+
+## STDOUT:
+true
+true
+false
+false
+true
+false
+false
+## END
+
+## N-I bash/zsh/mksh/ash STDOUT:
+## END
+
+
+#### SparseArray (YSH): append v1 v2... (a)
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+a=(1 2 3)
+unset -v 'a[1]'
+var a = _a2sp(a)
+append 'x' 'y' 'z' (a)
+= a
+
+## STDOUT:
+(SparseArray [0]='1' [2]='3' [3]='x' [4]='y' [5]='z')
+## END
+
+## N-I bash/zsh/mksh/ash STDOUT:
+## END
+
+
+#### SparseArray (YSH): $[bool(a)]
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+a1=()
+a2=(0)
+a3=(0 1 2)
+a4=(0 0)
+unset -v 'a4[0]'
+var a1 = _a2sp(a1)
+var a2 = _a2sp(a2)
+var a3 = _a2sp(a3)
+var a4 = _a2sp(a4)
+
+echo $[bool(a1)]
+echo $[bool(a2)]
+echo $[bool(a3)]
+echo $[bool(a4)]
+
+## STDOUT:
+false
+true
+true
+true
+## END
+
+## N-I bash/zsh/mksh/ash STDOUT:
+## END
+
+
+#### SparseArray: crash dump
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+OILS_CRASH_DUMP_DIR=$TMP $SH -ec 'a=({0..3}); unset -v "a[2]"; var a = _a2sp(a); false'
+json read (&crash_dump) < $TMP/*.json
+json write (crash_dump.var_stack[0].a)
+
+## STDOUT:
+{
+  "val": {
+    "type": "SparseArray",
+    "data": {
+      "0": "0",
+      "1": "1",
+      "3": "3"
+    }
+  }
+}
+## END
+
+## N-I bash/zsh/mksh/ash STDOUT:
 ## END

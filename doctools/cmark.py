@@ -392,7 +392,7 @@ def Render(opts, meta, in_file, out_file, use_fastlex=True, debug_out=None):
                         opts.code_block_output)
                 text = oils_doc.ExtractCode(html, f)
 
-        html = oils_doc.RemoveComments(html)
+        html = ul_table.RemoveComments(html)
 
         # Hack for allowing tables without <p> in cells, which CommonMark seems
         # to require?

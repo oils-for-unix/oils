@@ -193,7 +193,7 @@ class Pool {
   std::vector<Block*> blocks_;
   MarkSet mark_set_;
 
-  DISALLOW_COPY_AND_ASSIGN(Pool<CellsPerBlock COMMA CellSize>);
+  DISALLOW_COPY_AND_ASSIGN(Pool);
 };
 
 class MarkSweepHeap {

@@ -1,5 +1,5 @@
 ## compare_shells: bash mksh
-## oils_failures_allowed: 3
+## oils_failures_allowed: 2
 
 #### nounset / set -u with empty array (bug in bash 4.3, fixed in 4.4)
 
@@ -385,6 +385,7 @@ ls foo=(1 2)
 # 2024-06 - bash 5.2 and mksh now match, bash 4.4 differed.
 # Could change OSH
 # zsh agrees with OSH, but it fails most test cases
+# 2025-01 We changed OSH.
 
 single=('')
 argv.py ${single[@]:-none} x "${single[@]:-none}"

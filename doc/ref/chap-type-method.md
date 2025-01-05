@@ -628,15 +628,36 @@ TODO
 
 ### Command
 
-An unevaluated command.  You can create a `Command` with a "block expression"
-([block-expr][]):
+A value of type `Command` represents an unevaluated command.  There are **two**
+syntaxes for such values:
 
-    var block = ^(echo $PWD; ls *.txt)
+1. In [expression mode][command-vs-expression-mode], a [block
+   expression][block-expr] looks like this:
 
-The Command is bound to a stack frame.  This frame will be pushed as an
+       var block = ^(echo $PWD; ls *.txt)
+
+   This is similar to `$(echo $PWD)` in shell.
+
+2. In [command mode][command-vs-expression-mode], an argument to a user-defined
+   proc is also of type `Command`:
+
+       myproc { 
+         echo $PWD
+       }
+
+   This is similar to `{ echo $PWD; }` in shell.  This syntax is a YSH
+   [block-arg][].
+
+---
+
+The `Command` value is bound to a stack frame.  This frame will be pushed as an
 "enclosed frame" when the command is evaluated.
 
 [block-expr]: chap-expr-lang.html#block-expr
+
+[command-vs-expression-mode]: ../command-vs-expression-mode.html
+
+[block-arg]: chap-cmd-lang.html#block-arg
 
 ### CommandFrag
 
@@ -644,12 +665,37 @@ A command that's not bound to a stack frame.
 
 ### Expr
 
-An unevaluated expression.  You can create an `Expr` with an expression literal
-([expr-literal][]):
+A value of type `Expr` represents an unevaluated expression.  There are **three**
+syntaxes for such values:
 
-    var expr = ^[42 + a[i]]
+1. In [expression mode][command-vs-expression-mode], an
+   [expression literal][expr-literal] looks like this:
 
-The Command is bound to a stack frame.  This frame will be pushed as an
+       var expr = ^[42 + a[i]]
+
+1. There's also a shortcut for string literals:
+
+       var s = "foo".replace('o', ^"-$0-")
+       echo $s  # => f-o--o-
+
+   The syntax `^"-$0-"` is short for `^["-$0-"]`.  You can omit the brackets.
+
+1. In [command mode][command-vs-expression-mode], an argument to a user-defined
+   proc is also of type `Expr`:
+
+       ls | my-where [size > 42]
+
+   This is a shortcut for:
+
+       ls | my-where (^[size > 42])  # same as syntax 1
+
+   This syntax is a YSH [lazy-expr-arg][].
+
+[lazy-expr-arg]: chap-cmd-lang.html#lazy-expr-arg
+
+---
+
+The `Expr` value is bound to a stack frame.  This frame will be pushed as an
 "enclosed frame" when the expression is evaluated.
 
 [expr-literal]: chap-expr-lang.html#expr-lit

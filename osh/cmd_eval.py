@@ -208,7 +208,8 @@ def PlusEquals(old_val, val):
                 str_to_append = cast(value.Str, UP_val)
                 val = value.Str(old_val.s + str_to_append.s)
 
-            elif tag in (value_e.BashArray, value_e.SparseArray):
+            elif tag in (value_e.BashArray, value_e.SparseArray,
+                         value_e.BashAssoc):
                 e_die("Can't append array to string")
 
             else:
@@ -236,12 +237,18 @@ def PlusEquals(old_val, val):
                     bash_impl.SparseArray_AppendValues(sparse_lhs, strs)
                     val = sparse_lhs
 
+            elif tag == value_e.BashAssoc:
+                e_die("Can't append an associative array to an indexed array")
+
             else:
                 raise AssertionError()  # parsing should prevent this
 
         elif case(value_e.BashAssoc):
             if tag == value_e.Str:
                 e_die("Can't append string to associative arrays")
+
+            elif tag in (value_e.BashArray, value_e.SparseArray):
+                e_die("Can't append an assoxiative array to indexed arrays")
 
             elif tag == value_e.BashAssoc:
                 assoc_lhs = cast(value.BashAssoc, UP_old_val)
@@ -1532,10 +1539,15 @@ class CommandEvaluator(object):
         except error.RedirectEval as e:
             self.errfmt.PrettyPrintError(e)
             redirects = None
-        except error.FailGlob as e:  # e.g. echo hi > foo-*
+        except error.WordFailure as e:
+            # This happens e.g. with the following cases:
+            #
+            #   $ echo hi > foo-*   # with failglob (FailGlob)
+            #   $ echo > ${!undef}  # (VarSubFailure)
+            #
             if not e.HasLocation():
                 e.location = self.mem.GetFallbackLocation()
-            self.errfmt.PrettyPrintError(e, prefix='failglob: ')
+            self.errfmt.PrettyPrintError(e)
             redirects = None
 
         if redirects is None:
@@ -1890,12 +1902,12 @@ class CommandEvaluator(object):
         with vm.ctx_ProcessSub(self.shell_ex, process_sub_st):  # for wait()
             try:
                 status = self._Dispatch(node, cmd_st)
-            except error.FailGlob as e:
+            except error.WordFailure as e:  # e.g. echo hi > ${!undef}
                 if not e.HasLocation():  # Last resort!
                     e.location = self.mem.GetFallbackLocation()
-                self.errfmt.PrettyPrintError(e, prefix='failglob: ')
+                self.errfmt.PrettyPrintError(e)
                 status = 1  # another redirect word eval error
-                cmd_st.check_errexit = True  # failglob + errexit
+                cmd_st.check_errexit = True  # errexit for e.g. a=${!undef}
 
         # Now we've waited for process subs
 

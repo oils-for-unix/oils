@@ -1,5 +1,5 @@
-## compare_shells: bash dash mksh
-## oils_failures_allowed: 9
+## compare_shells: bash dash mksh ash yash
+## oils_failures_allowed: 10
 
 # NOTE on bash bug:  After setting IFS to array, it never splits anymore?  Even
 # if you assign IFS again.
@@ -79,6 +79,11 @@ argv.py $empty
 [' ']
 []
 ## END
+## BUG yash STDOUT:
+[]
+[' ']
+[]
+## END
 
 #### Leading/trailing word elision with non-whitespace IFS
 # This behavior is weird.
@@ -153,25 +158,18 @@ argv.py 1${undefined:-"2_3"x_x"4_5"}6
 
 #### IFS empty doesn't do splitting
 IFS=''
-x=$(echo -e ' a b\tc\n')
+x=$(python2 -c 'print(" a b\tc\n")')
 argv.py $x
 ## STDOUT:
 [' a b\tc']
 ## END
-## N-I dash STDOUT:
-['-e  a b\tc']
-## END
-
 
 #### IFS unset behaves like $' \t\n'
 unset IFS
-x=$(echo -e ' a b\tc\n')
+x=$(python2 -c 'print(" a b\tc\n")')
 argv.py $x
 ## STDOUT:
 ['a', 'b', 'c']
-## END
-## N-I dash STDOUT:
-['-e', 'a', 'b', 'c']
 ## END
 
 #### IFS='\'
@@ -285,7 +283,7 @@ argv.py "$s"
 ['x y z']
 ['x:y z']
 ## END
-## OK dash STDOUT:
+## BUG dash/ash/yash STDOUT:
 ['x:y z']
 ['x:y z']
 ['x:y z']
@@ -325,10 +323,6 @@ argv.py star $*
 ['at', 'a', 'b c']
 ['star', 'a', 'b c']
 ## END
-## BUG ash STDOUT:
-['at', 'ab c']
-['star', 'ab c']
-## END
 
 #### IFS='' with $@ and $* and printf (bug #627)
 set -- a 'b c'
@@ -340,10 +334,6 @@ printf '[%s]\n' $*
 [b c]
 [a]
 [b c]
-## END
-## BUG ash STDOUT:
-[ab c]
-[ab c]
 ## END
 
 #### IFS='' with ${a[@]} and ${a[*]} (bug #627)
@@ -456,3 +446,25 @@ sum 12 30 # fails with "fatal: Undefined variable '2'" on res=$(($1 + $2))
 12 + 30 = 42
 12 + 30 = 42
 ## END
+
+#### Unicode in IFS
+
+# bash, zsh, and yash support unicode in IFS, but dash/mksh/ash don't.
+
+# for zsh, though we're not testing it here
+setopt SH_WORD_SPLIT
+
+x=çx IFS=ç
+printf "<%s>\n" $x
+
+## STDOUT:
+<>
+<x>
+## END
+
+## BUG dash/mksh/ash STDOUT:
+<>
+<>
+<x>
+## END
+

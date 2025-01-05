@@ -1,4 +1,5 @@
 ## compare_shells: bash-4.4 mksh
+## oils_failures_allowed: 1
 
 
 # Extended assignment language, e.g. typeset, declare, arrays, etc.
@@ -77,6 +78,31 @@ declare -f ek
 ## END
 ## N-I mksh stdout-json: ""
 ## N-I mksh status: 127
+
+#### declare -F with shopt -s extdebug prints more info
+case $SH in mksh) exit ;; esac
+
+source $REPO_ROOT/spec/testdata/bash-source-2.sh
+
+shopt -s extdebug
+
+add () { expr 4 + 4; }
+
+declare -F 
+echo
+
+declare -F add
+# in bash-source-2
+declare -F g | sed "s;$REPO_ROOT;ROOT;g"
+
+## STDOUT:
+declare -f add
+declare -f g
+
+add 7 main
+g 3 ROOT/spec/testdata/bash-source-2.sh
+## END
+## N-I mksh stdout-json: ""
 
 #### declare -p var (exit status)
 var1() { echo func; }  # function names are NOT found.

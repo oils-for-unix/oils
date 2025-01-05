@@ -107,10 +107,7 @@ def TokenName(tok_id):
 
 
 def MakeLexer(rules):
-    return [
-        # DOTALL is for the comment
-        (re.compile(pat, re.VERBOSE | re.DOTALL), i) for (pat, i) in rules
-    ]
+    return [(re.compile(pat, re.VERBOSE), i) for (pat, i) in rules]
 
 
 #
@@ -152,8 +149,16 @@ LEXER = [
     # https://news.ycombinator.com/item?id=27099798
     #
     # Maybe try combining all of these for speed.
-    (r'<!-- .*? -->', Tok.Comment),
-    (r'<\? .*? \?>', Tok.Processing),
+
+    # . is any char except newline
+    # https://re2c.org/manual/manual_c.html
+
+    # Hack from Claude: \s\S instead of re.DOTALL.  I don't like this
+    #(r'<!-- [\s\S]*? -->', Tok.Comment),
+    (r'<!-- (?:.|[\n])*? -->', Tok.Comment),
+
+    #(r'<!-- .*? -->', Tok.Comment),
+    (r'<\? (?:.|\n)*? \?>', Tok.Processing),
 
     # NOTE: < is allowed in these.
     (r'<! [^>]+ >', Tok.Decl),  # <!DOCTYPE html>

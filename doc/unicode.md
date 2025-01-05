@@ -19,10 +19,14 @@ UTF-8, while the latter use arrays of code points or UTF-16 code units.
 
 ## A Mental Model
 
-### Program Encoding
+### Program Encoding - OSH vs. YSH
 
-Shell **programs** should be encoded in UTF-8 (or its ASCII subset).  Unicode
-characters can be encoded directly in the source:
+- The source files of OSH programs may have arbitrary bytes, for backward
+  compatibility.
+- The source files of YSH programs should be should be encoded in UTF-8 (or its
+  ASCII subset).  TODO: Enforce this with `shopt --set utf8_source`
+
+Unicode characters can be encoded directly in the source:
 
 <pre>
 echo '&#x03bc;'
@@ -38,8 +42,8 @@ or denoted in ASCII with C-escaped strings:
 
 ### Data Encoding
 
-Strings in OSH are arbitrary sequences of **bytes**, which may be valid UTF-8.
-Details:
+Strings in OSH are arbitrary sequences of **bytes**, which may or may not be
+valid UTF-8.  Details:
 
 - When passed to external programs, strings are truncated at the first `NUL`
   (`'\0'`) byte.  This is a consequence of how Unix and C work.
@@ -51,20 +55,30 @@ Details:
 
 ### OSH / bash
 
-These operations are currently implemented in Python, in `osh/string_ops.py`:
+These operations are implemented in Python.
+
+In `osh/string_ops.py`:
 
 - `${#s}` -- length in code points (buggy in bash)
   - Note: YSH `len(s)` returns a number of bytes, not code points.
 - `${s:1:2}` -- index and length are a number of code points
 - `${x#glob?}` and `${x##glob?}` (see below)
 
-More:
+In `builtin/`:
 
-- `${foo,}` and `${foo^}` for lowercase / uppercase
-- `[[ a < b ]]` and `[ a '<' b ]` for sorting
-  - these can use libc `strcoll()`?
 - `printf '%d' \'c` where `c` is an arbitrary character.  This is an obscure
   syntax for `ord()`, i.e. getting an integer from an encoded character.
+
+More:
+
+- `$IFS` word splitting.  Affects `shSplit()` builtin
+  - Doesn't respect unicode in dash, ash, mksh.  But it does in bash, yash, and
+    zsh with `setopt SH_WORD_SPLIT`.
+  - TODO: Oils should probably respect it
+- `${foo,}` and `${foo^}` for lowercase / uppercase
+  - TODO: doesn't respect unicode
+- `[[ a < b ]]` and `[ a '<' b ]` for sorting
+  - these can use libc `strcoll()`?
 
 #### Globs
 
@@ -109,10 +123,11 @@ Other:
 - Eggex matching depends on ERE semantics.
   - `mystr ~ / [ \xff ] /` 
   - `case (x) { / dot / }`
-- `for offset, rune in (runes(mystr))` decodes UTF-8, like Go
 - `Str.{trim,trimLeft,trimRight}` respect unicode space, like JavaScript does
-- `Str.{upper,lower}` also need unicode case folding
-- `split()` respects unicode space?
+- TODO: `Str.{upper,lower}` also need unicode case folding
+- TODO: `s.split()` doesn't have a default "split by space", which should
+  probably respect unicode space, like `trim()` does
+- TODO: `for offset, rune in (runes(mystr))` decodes UTF-8, like Go
 
 Not unicode aware:
 
@@ -182,8 +197,6 @@ June 2024 notes:
 - glob() and fnmatch() seem to be OK?   As long as locale is UTF-8.
 
 -->
-
-
 
 <!--
 

@@ -6,7 +6,6 @@ from __future__ import print_function
 
 import unittest
 
-from _devbuild.gen.value_asdl import value
 from core import state
 from core import test_lib
 from frontend import match
@@ -25,13 +24,12 @@ class PromptTest(unittest.TestCase):
 
     def testEvaluator(self):
         # Regression for caching bug!
-        self.assertEqual('foo', self.p.EvalPrompt(value.Str('foo')))
-        self.assertEqual('foo', self.p.EvalPrompt(value.Str('foo')))
+        self.assertEqual('foo', self.p.EvalPrompt('foo'))
+        self.assertEqual('foo', self.p.EvalPrompt('foo'))
 
     def testNoEscapes(self):
         for prompt_str in ["> ", "osh>", "[[]][[]][][]]][["]:
-            self.assertEqual(self.p.EvalPrompt(value.Str(prompt_str)),
-                             prompt_str)
+            self.assertEqual(self.p.EvalPrompt(prompt_str), prompt_str)
 
     def testValidEscapes(self):
         for prompt_str in [
@@ -39,7 +37,7 @@ class PromptTest(unittest.TestCase):
                 r"\[\] hi \[hi\] \[\] hello"
         ]:
             self.assertEqual(
-                self.p.EvalPrompt(value.Str(prompt_str)),
+                self.p.EvalPrompt(prompt_str),
                 prompt_str.replace(r"\[", "\x01").replace(r"\]", "\x02"))
 
     def testInvalidEscapes(self):

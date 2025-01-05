@@ -299,13 +299,6 @@ status=0
 
 status=0
 ## END
-## OK osh STDOUT:
-status=1
-a $'b\\nc'
-status=0
-a
-status=0
-## END
 
 #### assoc array and @P @Q @a
 
@@ -314,7 +307,7 @@ $SH -c 'declare -A A=(["x"]="y"); echo ${A@P} - ${A[@]@P}'
 echo status=$?
 
 # note: "y z" causes a bug!
-$SH -c 'declare -A A=(["x"]="y"); echo ${A@Q} - ${A[@]@Q}'
+$SH -c 'declare -A A=(["x"]="y"); echo ${A@Q} - ${A[@]@Q}' | sed 's/^- y$/- '\''y'\''/'
 echo status=$?
 
 $SH -c 'declare -A A=(["x"]=y); echo ${A@a} - ${A[@]@a}'
@@ -323,13 +316,6 @@ echo status=$?
 - y
 status=0
 - 'y'
-status=0
-A - A
-status=0
-## END
-## OK osh STDOUT:
-status=1
-- y
 status=0
 A - A
 status=0
@@ -351,11 +337,6 @@ if test $? -ne 0; then echo fail; fi
 
 
 # END
-## OK osh STDOUT:
-fail
-'x y'
-a
-## END
 
 #### ${#var@X} is a parse error
 # note: "y z" causes a bug!
@@ -377,14 +358,24 @@ fail
 #### ${!A@a} and ${!A[@]@a}
 declare -A A=(["x"]=y)
 echo x=${!A[@]@a}
-echo x=${!A@a}
+echo invalid=${!A@a}
 
 # OSH prints 'a' for indexed array because the AssocArray with ! turns into
 # it.  Disallowing it would be the other reasonable behavior.
 
+## status: 1
 ## STDOUT:
 x=
+## END
+
+# Bash succeeds with ${!A@a}, which references the variable named as $A (i.e.,
+# '').  This must be a Bash bug since the behavior is inconsistent with the
+# fact that ${!undef@a} and ${!empty@a} fail.
+
+## BUG bash status: 0
+## BUG bash STDOUT:
 x=
+invalid=
 ## END
 
 #### undef vs. empty string in var ops
@@ -427,4 +418,119 @@ set -u
 stat: 1
 stat: 1
 stat: 1
+## END
+
+
+#### ${a[0]@a} and ${a@a}
+
+a=(1 2 3)
+echo "attr = '${a[0]@a}'"
+echo "attr = '${a@a}'"
+
+## STDOUT:
+attr = 'a'
+attr = 'a'
+## END
+
+
+#### ${!r@a} with r='a[0]' (attribute for indirect expansion of an array element)
+
+a=(1 2 3)
+r='a'
+echo ${!r@a}
+r='a[0]'
+echo ${!r@a}
+
+declare -A d=([0]=foo [1]=bar)
+r='d'
+echo ${!r@a}
+r='d[0]'
+echo ${!r@a}
+
+## STDOUT:
+a
+a
+A
+A
+## END
+
+
+#### Array expansion with nullary var op @Q
+declare -a a=({1..9})
+declare -A A=(['a']=hello ['b']=world ['c']=osh ['d']=ysh)
+
+argv.py "${a[@]@Q}"
+argv.py "${a[*]@Q}"
+argv.py "${A[@]@Q}"
+argv.py "${A[*]@Q}"
+argv.py "${u[@]@Q}"
+argv.py "${u[*]@Q}"
+
+## STDOUT:
+['1', '2', '3', '4', '5', '6', '7', '8', '9']
+['1 2 3 4 5 6 7 8 9']
+['hello', 'world', 'osh', 'ysh']
+['hello world osh ysh']
+[]
+['']
+## END
+
+## OK bash STDOUT:
+["'1'", "'2'", "'3'", "'4'", "'5'", "'6'", "'7'", "'8'", "'9'"]
+["'1' '2' '3' '4' '5' '6' '7' '8' '9'"]
+["'ysh'", "'osh'", "'world'", "'hello'"]
+["'ysh' 'osh' 'world' 'hello'"]
+[]
+['']
+## END
+
+
+#### Array expansion with nullary var op @P
+declare -a a=({1..9})
+declare -A A=(['a']=hello ['b']=world ['c']=osh ['d']=ysh)
+
+argv.py "${a[@]@P}"
+argv.py "${a[*]@P}"
+argv.py "${A[@]@P}"
+argv.py "${A[*]@P}"
+argv.py "${u[@]@P}"
+argv.py "${u[*]@P}"
+
+## STDOUT:
+['1', '2', '3', '4', '5', '6', '7', '8', '9']
+['1 2 3 4 5 6 7 8 9']
+['hello', 'world', 'osh', 'ysh']
+['hello world osh ysh']
+[]
+['']
+## END
+
+## OK bash STDOUT:
+['1', '2', '3', '4', '5', '6', '7', '8', '9']
+['1 2 3 4 5 6 7 8 9']
+['ysh', 'osh', 'world', 'hello']
+['ysh osh world hello']
+[]
+['']
+## END
+
+
+#### Array expansion with nullary var op @a
+declare -a a=({1..9})
+declare -A A=(['a']=hello ['b']=world ['c']=osh ['d']=ysh)
+
+argv.py "${a[@]@a}"
+argv.py "${a[*]@a}"
+argv.py "${A[@]@a}"
+argv.py "${A[*]@a}"
+argv.py "${u[@]@a}"
+argv.py "${u[*]@a}"
+
+## STDOUT:
+['a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a']
+['a a a a a a a a a']
+['A', 'A', 'A', 'A']
+['A A A A']
+[]
+['']
 ## END

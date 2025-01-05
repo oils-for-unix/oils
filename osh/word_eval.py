@@ -110,9 +110,16 @@ def ShouldArrayDecay(var_name, exec_opts, is_plain_var_sub=True):
 def DecayArray(val):
     # type: (value_t) -> value_t
     """Resolve ${array} to ${array[0]}."""
-    if val.tag() == value_e.BashArray:
-        array_val = cast(value.BashArray, val)
-        s, error_code = bash_impl.BashArray_GetElement(array_val, 0)
+    if val.tag() in (value_e.BashArray, value_e.SparseArray):
+        if val.tag() == value_e.BashArray:
+            array_val = cast(value.BashArray, val)
+            s, error_code = bash_impl.BashArray_GetElement(array_val, 0)
+        elif val.tag() == value_e.SparseArray:
+            sparse_val = cast(value.SparseArray, val)
+            s, error_code = bash_impl.SparseArray_GetElement(
+                sparse_val, mops.ZERO)
+        else:
+            raise AssertionError(val.tag())
 
         # Note: index 0 should never cause the out-of-bound index error.
         assert error_code == error_code_e.OK
@@ -218,6 +225,10 @@ def _ValueToPartValue(val, quoted, part_loc):
             val = cast(value.BashArray, UP_val)
             return part_value.Array(bash_impl.BashArray_GetValues(val))
 
+        elif case(value_e.SparseArray):
+            val = cast(value.SparseArray, UP_val)
+            return part_value.Array(bash_impl.SparseArray_GetValues(val))
+
         elif case(value_e.BashAssoc):
             val = cast(value.BashAssoc, UP_val)
             # bash behavior: splice values!
@@ -290,8 +301,8 @@ def _MakeWordFrames(part_vals):
                     if s is None:
                         continue  # ignore undefined array entries
 
-                    # Arrays parts are always quoted; otherwise they would have decayed to
-                    # a string.
+                    # Arrays parts are always quoted; otherwise they would have
+                    # decayed to a string.
                     piece = Piece(s, True, False)
                     if is_first:
                         current.append(piece)
@@ -640,6 +651,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             part_vals,  # type: Optional[List[part_value_t]]
             vtest_place,  # type: VTestPlace
             blame_token,  # type: Token
+            vsub_state,  # type: VarSubState
     ):
         # type: (...) -> bool
         """
@@ -651,8 +663,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
           ${a:?error} returns error word?
           ${a:=} returns part_value[] but also needs self.mem for side effects.
 
-          So I guess it should return part_value[], and then a flag for raising an
-          error, and then a flag for assigning it?
+          So I guess it should return part_value[], and then a flag for raising
+          an error, and then a flag for assigning it?
           The original BracedVarSub will have the name.
 
         Example of needing multiple part_value[]
@@ -684,14 +696,45 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 else:
                     is_falsey = False
 
-            elif case(value_e.BashArray):
-                val = cast(value.BashArray, UP_val)
-                # TODO: allow undefined
-                is_falsey = len(val.strs) == 0
+            elif case(value_e.BashArray, value_e.SparseArray,
+                      value_e.BashAssoc):
+                if val.tag() == value_e.BashArray:
+                    val = cast(value.BashArray, UP_val)
+                    strs = bash_impl.BashArray_GetValues(val)
+                elif val.tag() == value_e.SparseArray:
+                    val = cast(value.SparseArray, UP_val)
+                    strs = bash_impl.SparseArray_GetValues(val)
+                elif val.tag() == value_e.BashAssoc:
+                    val = cast(value.BashAssoc, UP_val)
+                    strs = bash_impl.BashAssoc_GetValues(val)
+                else:
+                    raise AssertionError()
 
-            elif case(value_e.BashAssoc):
-                val = cast(value.BashAssoc, UP_val)
-                is_falsey = len(val.d) == 0
+                if tok.id in (Id.VTest_ColonHyphen, Id.VTest_ColonEquals,
+                              Id.VTest_ColonQMark, Id.VTest_ColonPlus):
+                    # "$*"           - the separator is the first character of IFS
+                    #  $*  $@  "$@"  - the separator is a space
+                    if quoted and vsub_state.join_array:
+                        sep_width = len(self.splitter.GetJoinChar())
+                    else:
+                        sep_width = 1
+
+                    # We test whether the joined string will be empty.  When
+                    # the separator is empty, all the elements need to be
+                    # empty.  When the separator is non-empty, one element is
+                    # allowed at most and needs to be an empty string if any.
+                    if sep_width == 0:
+                        is_falsey = True
+                        for s in strs:
+                            if len(s) != 0:
+                                is_falsey = False
+                                break
+                    else:
+                        is_falsey = len(strs) == 0 or (len(strs) == 1 and
+                                                       len(strs[0]) == 0)
+                else:
+                    # TODO: allow undefined
+                    is_falsey = len(strs) == 0
 
             else:
                 # value.Eggex, etc. are all false
@@ -893,6 +936,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             elif case(value_e.BashArray):  # caught earlier but OK
                 val = cast(value.BashArray, UP_val)
+                # When there are more than one element in the array, this
+                # produces a wrong variable name containing spaces.
                 var_ref_str = ' '.join(bash_impl.BashArray_GetValues(val))
 
             elif case(value_e.BashAssoc):  # caught earlier but OK
@@ -902,7 +947,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
             else:
                 raise error.TypeErr(val, 'Var Ref op expected Str', blame_tok)
 
-        bvs_part = self.unsafe_arith.ParseVarRef(var_ref_str, blame_tok)
+        try:
+            bvs_part = self.unsafe_arith.ParseVarRef(var_ref_str, blame_tok)
+        except error.FatalRuntime as e:
+            raise error.VarSubFailure(e.msg, e.location)
+
         return self._VarRefValue(bvs_part, quoted, vsub_state, vtest_place)
 
     def _ApplyUnarySuffixOp(self, val, op):
@@ -927,11 +976,15 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     #log('%r %r -> %r', val.s, arg_val.s, s)
                     new_val = value.Str(s)  # type: value_t
 
-                elif case(value_e.BashArray, value_e.BashAssoc):
+                elif case(value_e.BashArray, value_e.SparseArray,
+                          value_e.BashAssoc):
                     # get values
                     if val.tag() == value_e.BashArray:
                         val = cast(value.BashArray, UP_val)
                         values = bash_impl.BashArray_GetValues(val)
+                    elif val.tag() == value_e.SparseArray:
+                        val = cast(value.SparseArray, UP_val)
+                        values = bash_impl.SparseArray_GetValues(val)
                     elif val.tag() == value_e.BashAssoc:
                         val = cast(value.BashAssoc, UP_val)
                         values = bash_impl.BashAssoc_GetValues(val)
@@ -990,10 +1043,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 s = replacer.Replace(str_val.s, op)
                 val = value.Str(s)
 
-            elif case2(value_e.BashArray, value_e.BashAssoc):
+            elif case2(value_e.BashArray, value_e.SparseArray,
+                       value_e.BashAssoc):
                 if val.tag() == value_e.BashArray:
                     array_val = cast(value.BashArray, val)
                     values = bash_impl.BashArray_GetValues(array_val)
+                elif val.tag() == value_e.SparseArray:
+                    sparse_val = cast(value.SparseArray, val)
+                    values = bash_impl.SparseArray_GetValues(sparse_val)
                 elif val.tag() == value_e.BashAssoc:
                     assoc_val = cast(value.BashAssoc, val)
                     values = bash_impl.BashAssoc_GetValues(assoc_val)
@@ -1042,7 +1099,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         return val
 
     def _Nullary(self, val, op, var_name, vsub_token, vsub_state):
-        # type: (value_t, Token, Optional[str], Token, VarSubState) -> Tuple[value.Str, bool]
+        # type: (value_t, Token, Optional[str], Token, VarSubState) -> Tuple[value_t, bool]
 
         quoted2 = False
         op_id = op.id
@@ -1051,13 +1108,35 @@ class AbstractWordEvaluator(StringWordEvaluator):
             UP_val = val
             with tagswitch(val) as case:
                 if case(value_e.Undef):
-                    result = value.Str('')
+                    result = value.Str('')  # type: value_t
                 elif case(value_e.Str):
                     str_val = cast(value.Str, UP_val)
-                    prompt = self.prompt_ev.EvalPrompt(str_val)
+                    prompt = self.prompt_ev.EvalPrompt(str_val.s)
                     # readline gets rid of these, so we should too.
                     p = prompt.replace('\x01', '').replace('\x02', '')
                     result = value.Str(p)
+                elif case(value_e.BashArray, value_e.SparseArray,
+                          value_e.BashAssoc):
+                    if val.tag() == value_e.BashArray:
+                        val = cast(value.BashArray, UP_val)
+                        values = [
+                            s for s in bash_impl.BashArray_GetValues(val)
+                            if s is not None
+                        ]
+                    elif val.tag() == value_e.SparseArray:
+                        val = cast(value.SparseArray, UP_val)
+                        values = bash_impl.SparseArray_GetValues(val)
+                    elif val.tag() == value_e.BashAssoc:
+                        val = cast(value.BashAssoc, UP_val)
+                        values = bash_impl.BashAssoc_GetValues(val)
+                    else:
+                        raise AssertionError()
+
+                    tmp = [
+                        self.prompt_ev.EvalPrompt(s).replace(
+                            '\x01', '').replace('\x02', '') for s in values
+                    ]
+                    result = value.BashArray(tmp)
                 else:
                     e_die("Can't use @P on %s" % ui.ValType(val), op)
 
@@ -1072,7 +1151,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     self._ProcessUndef(val, vsub_token, vsub_state)
 
                     # For unset variables, we do not generate any quoted words.
-                    result = value.Str('')
+                    if vsub_state.array_ref is not None:
+                        result = value.BashArray([])
+                    else:
+                        result = value.Str('')
 
                 elif case(value_e.Str):
                     str_val = cast(value.Str, UP_val)
@@ -1080,10 +1162,17 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     # oddly, 'echo ${x@Q}' is equivalent to 'echo "${x@Q}"' in
                     # bash
                     quoted2 = True
-                elif case(value_e.BashArray, value_e.BashAssoc):
+                elif case(value_e.BashArray, value_e.SparseArray,
+                          value_e.BashAssoc):
                     if val.tag() == value_e.BashArray:
                         val = cast(value.BashArray, UP_val)
-                        values = [s for s in bash_impl.BashArray_GetValues(val) if s is not None]
+                        values = [
+                            s for s in bash_impl.BashArray_GetValues(val)
+                            if s is not None
+                        ]
+                    elif val.tag() == value_e.SparseArray:
+                        val = cast(value.SparseArray, UP_val)
+                        values = bash_impl.SparseArray_GetValues(val)
                     elif val.tag() == value_e.BashAssoc:
                         val = cast(value.BashAssoc, UP_val)
                         values = bash_impl.BashAssoc_GetValues(val)
@@ -1094,7 +1183,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         # TODO: should use fastfunc.ShellEncode
                         j8_lite.MaybeShellEncode(s) for s in values
                     ]
-                    result = value.Str(' '.join(tmp))
+                    result = value.BashArray(tmp)
                 else:
                     e_die("Can't use @Q on %s" % ui.ValType(val), op)
 
@@ -1104,8 +1193,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
             # We're ONLY simluating -a and -A, not -r -x -n for now.  See
             # spec/ble-idioms.test.sh.
             chars = []  # type: List[str]
-            with tagswitch(val) as case:
-                if case(value_e.BashArray):
+            with tagswitch(vsub_state.h_value) as case:
+                if case(value_e.BashArray, value_e.SparseArray):
                     chars.append('a')
                 elif case(value_e.BashAssoc):
                     chars.append('A')
@@ -1120,7 +1209,21 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     if cell.nameref:
                         chars.append('n')
 
-            result = value.Str(''.join(chars))
+            count = 1
+            with tagswitch(val) as case:
+                if case(value_e.Undef):
+                    count = 0
+                elif case(value_e.BashArray):
+                    val = cast(value.BashArray, UP_val)
+                    count = bash_impl.BashArray_Count(val)
+                elif case(value_e.SparseArray):
+                    val = cast(value.SparseArray, UP_val)
+                    count = bash_impl.SparseArray_Count(val)
+                elif case(value_e.BashAssoc):
+                    val = cast(value.BashAssoc, UP_val)
+                    count = bash_impl.BashAssoc_Count(val)
+
+            result = value.BashArray([''.join(chars)] * count)
 
         else:
             e_die('Var op %r not implemented' % lexer.TokenVal(op), op)
@@ -1323,8 +1426,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
         else:  # no bracket op
             var_name = vtest_place.name
             if (var_name is not None and
-                    val.tag() in (value_e.BashArray, value_e.BashAssoc) and
-                    not vsub_state.is_type_query):
+                    val.tag() in (value_e.BashArray, value_e.SparseArray,
+                                  value_e.BashAssoc)):
                 if ShouldArrayDecay(var_name, self.exec_opts,
                                     not (part.prefix_op or part.suffix_op)):
                     # for ${BASH_SOURCE}, etc.
@@ -1353,6 +1456,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
         else:
             # $* decays
             val = self._EvalSpecialVar(part.name_tok.id, quoted, vsub_state)
+
+        # update h-value (i.e., the holder of the current value)
+        vsub_state.h_value = val
 
         # We don't need var_index because it's only for L-Values of test ops?
         if self.exec_opts.eval_unsafe_arith():
@@ -1446,15 +1552,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         suffix_op_ = part.suffix_op
         if suffix_op_:
             UP_op = suffix_op_
-            with tagswitch(suffix_op_) as case:
-                if case(suffix_op_e.Nullary):
-                    suffix_op_ = cast(Token, UP_op)
-
-                    # Type query ${array@a} is a STRING, not an array
-                    # NOTE: ${array@Q} is ${array[0]@Q} in bash, which is different than
-                    # ${array[@]@Q}
-                    if suffix_op_.id == Id.VOp0_a:
-                        vsub_state.is_type_query = True
+        vsub_state.h_value = val
 
         # 2. Bracket Op
         val = self._EvalBracketOp(val, part, quoted, vsub_state, vtest_place)
@@ -1510,7 +1608,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         # '') is not applied to the VTest operators such as
                         # ${a:-def}, ${a+set}, etc.
                         if self._ApplyTestOp(val, op, quoted, part_vals,
-                                             vtest_place, part.name_tok):
+                                             vtest_place, part.name_tok,
+                                             vsub_state):
                             # e.g. to evaluate ${undef:-'default'}, we already appended
                             # what we need
                             return
@@ -1607,7 +1706,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
             var_name = lexer.LazyStr(token)
             # TODO: Special case for LINENO
             val = self.mem.GetValue(var_name)
-            if val.tag() in (value_e.BashArray, value_e.BashAssoc):
+            if val.tag() in (value_e.BashArray, value_e.SparseArray,
+                             value_e.BashAssoc):
                 if ShouldArrayDecay(var_name, self.exec_opts):
                     # for $BASH_SOURCE, etc.
                     val = DecayArray(val)

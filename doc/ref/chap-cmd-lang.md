@@ -488,6 +488,10 @@ Redirects can also appear after the lazy typed args:
 
     assert [42 === x] >out.txt
 
+- Related: [Expr][] type
+
+[Expr]: chap-type-method.html#Expr
+
 ### block-arg
 
 Blocks can be passed to simple commands, either literally:
@@ -522,7 +526,13 @@ Redirects can appear after the block arg:
     } >out.txt
 
 
-- Related: [sh-block](#sh-block) in OSH.
+Related:
+
+- [sh-block](#sh-block) in OSH.
+- [Command][] and [CommandFrag][] types.
+
+[Command]: chap-type-method.html#Command
+[CommandFrag]: chap-type-method.html#CommandFrag
 
 ## YSH Cond
 

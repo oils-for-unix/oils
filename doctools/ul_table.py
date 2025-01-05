@@ -11,6 +11,32 @@ import sys
 from doctools.util import log
 from lazylex import html
 
+
+def RemoveComments(s):
+    """Remove <!-- comments -->
+
+    This is a required preprocessing step for ul-table.
+    """
+    f = StringIO()
+    out = html.Output(s, f)
+
+    tag_lexer = html.TagLexer(s)
+
+    pos = 0
+
+    for tok_id, end_pos in html.ValidTokens(s):
+        if tok_id == html.Comment:
+            value = s[pos:end_pos]
+            # doc/release-index.md has <!-- REPLACE_WITH_DATE --> etc.
+            if 'REPLACE' not in value:
+                out.PrintUntil(pos)
+                out.SkipTo(end_pos)
+        pos = end_pos
+
+    out.PrintTheRest()
+    return f.getvalue()
+
+
 _WHITESPACE_RE = re.compile(r'\s*')
 
 
@@ -28,18 +54,21 @@ class UlTableParser(object):
         part = self.lexer.s[self.start_pos:self.end_pos]
         return part
 
-    def _Next(self):
+    def _Next(self, comment_ok=False):
         """
         Advance and set self.tok_id, self.start_pos, self.end_pos
         """
         self.start_pos = self.end_pos
         self.tok_id, self.end_pos = self.lexer.Read()
+
+        # Should have called RemoveComments() beforehand.  That can still leave
+        # some REPLACE cmoments
+        if not comment_ok and self.tok_id == html.Comment:
+            raise html.ParseError('Unexpected HTML comment')
+
         if 0:
             part = self._CurrentString()
             log('[%3d - %3d] %r', self.start_pos, self.end_pos, part)
-
-        #self.tok_id = html.EndOfStream
-        # Don't change self.end_pos
 
     def _EatRawData(self, regex):
         # type: (str) -> None
@@ -97,7 +126,7 @@ class UlTableParser(object):
 
         # Find first table
         while True:
-            self._Next()
+            self._Next(comment_ok=True)
             if self.tok_id == html.EndOfStream:
                 return -1
 
@@ -105,7 +134,7 @@ class UlTableParser(object):
             if (self.tok_id == html.StartTag and
                     tag_lexer.TagName() == 'table'):
                 while True:
-                    self._Next()
+                    self._Next(comment_ok=True)
                     if self.tok_id != html.RawData:
                         break
 
@@ -506,4 +535,7 @@ def ReplaceTables(s, debug_out=None):
 
 if __name__ == '__main__':
     # Simple CLI filter
-    sys.stdout.write(ReplaceTables(sys.stdin.read()))
+    h = sys.stdin.read()
+    h = RemoveComments(h)
+    h = ReplaceTables(h)
+    sys.stdout.write(h)

@@ -24,6 +24,28 @@ def _PrintTokens(lex):
         log('%s %r', tok, lex.s[start:end])
 
 
+class RegexTest(unittest.TestCase):
+
+    def testDotAll(self):
+        import re
+
+        # Note that $ matches end of line, not end of string
+        p1 = re.compile(r'.')
+        print(p1.match('\n'))
+
+        p2 = re.compile(r'.', re.DOTALL)
+        print(p2.match('\n'))
+
+        #p3 = re.compile(r'[.\n]', re.VERBOSE)
+        p3 = re.compile(r'[.\n]')
+        print(p3.match('\n'))
+
+        print('Negation')
+
+        p4 = re.compile(r'[^>]')
+        print(p4.match('\n'))
+
+
 class TagLexerTest(unittest.TestCase):
 
     def testTagLexer(self):
@@ -93,6 +115,30 @@ class LexerTest(unittest.TestCase):
             if tok_id == html.Invalid:
                 raise RuntimeError()
             print(tok_id)
+
+        Tok = html.Tok
+        h = '''
+        hi <!-- line 1
+                line 2 --><br/>'''
+        print(repr(h))
+        lex = html.ValidTokens(h)
+
+        tok_id, pos = next(lex)
+        self.assertEqual(12, pos)
+        self.assertEqual(Tok.RawData, tok_id)
+
+        tok_id, pos = next(lex)
+        log('tok %r', html.TokenName(tok_id))
+        self.assertEqual(50, pos)
+        self.assertEqual(Tok.Comment, tok_id)
+
+        tok_id, pos = next(lex)
+        self.assertEqual(55, pos)
+        self.assertEqual(Tok.StartEndTag, tok_id)
+
+        tok_id, pos = next(lex)
+        self.assertEqual(55, pos)
+        self.assertEqual(Tok.EndOfStream, tok_id)
 
     def testValid(self):
         Tok = html.Tok

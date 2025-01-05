@@ -5,6 +5,7 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.syntax_asdl import loc
 from _devbuild.gen.value_asdl import (value, value_e)
 
+from core import bash_impl
 from core import completion
 from core import error
 from core import state
@@ -454,9 +455,13 @@ class CompAdjust(vm._Builtin):
         # TODO: How does the user test a completion function programmatically?  Set
         # COMP_ARGV?
         val = self.mem.GetValue('COMP_ARGV')
-        if val.tag() != value_e.BashArray:
+        if val.tag() == value_e.BashArray:
+            comp_argv = cast(value.BashArray, val).strs
+        elif val.tag() == value_e.SparseArray:
+            comp_argv = bash_impl.SparseArray_GetValues(
+                cast(value.SparseArray, val))
+        else:
             raise error.Usage("COMP_ARGV should be an array", loc.Missing)
-        comp_argv = cast(value.BashArray, val).strs
 
         # These are the ones from COMP_WORDBREAKS that we care about.  The rest occur
         # "outside" of words.
@@ -476,13 +481,14 @@ class CompAdjust(vm._Builtin):
         # argv adjusted according to 'break_chars'.
         adjusted_argv = []  # type: List[str]
         for a in comp_argv:
-            completion.AdjustArg(a, break_chars, adjusted_argv)
+            if a is not None:
+                completion.AdjustArg(a, break_chars, adjusted_argv)
 
         if 'words' in var_names:
             state.BuiltinSetArray(self.mem, 'words', adjusted_argv)
 
         n = len(adjusted_argv)
-        cur = adjusted_argv[-1]
+        cur = '' if n < 1 else adjusted_argv[-1]
         prev = '' if n < 2 else adjusted_argv[-2]
 
         if arg.s:

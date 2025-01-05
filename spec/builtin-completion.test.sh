@@ -594,3 +594,47 @@ bar
 compgen=0
 complete=0
 ## END
+
+
+#### compadjust with empty COMP_ARGV
+case $SH in bash) exit ;; esac
+
+COMP_ARGV=()
+compadjust words
+argv.py "${words[@]}"
+
+## STDOUT:
+[]
+## END
+
+## N-I bash STDOUT:
+## END
+
+
+#### compadjust with sparse COMP_ARGV
+case $SH in bash) exit ;; esac
+
+COMP_ARGV=({0..9})
+unset -v 'COMP_ARGV['{1,3,4,6,7,8}']'
+compadjust words
+argv.py "${words[@]}"
+
+## STDOUT:
+['0', '2', '5', '9']
+## END
+
+## N-I bash STDOUT:
+## END
+
+
+#### compgen -F with scalar COMPREPLY
+
+_comp_cmd_test() {
+  unset -v COMPREPLY
+  COMPREPLY=hello
+}
+compgen -F _comp_cmd_test
+
+## STDOUT:
+hello
+## END

@@ -217,6 +217,9 @@ class Append(vm._Builtin):
             if case(value_e.BashArray):
                 val = cast(value.BashArray, UP_val)
                 bash_impl.BashArray_AppendValues(val, arg_r.Rest())
+            elif case(value_e.SparseArray):
+                val = cast(value.SparseArray, UP_val)
+                bash_impl.SparseArray_AppendValues(val, arg_r.Rest())
             elif case(value_e.List):
                 val = cast(value.List, UP_val)
                 typed = [value.Str(s)
