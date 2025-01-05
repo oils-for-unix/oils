@@ -1395,7 +1395,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         self._EvalDoubleQuoted(dq_part.parts, part_vals)
         return self._ConcatPartVals(part_vals, dq_part.left)
 
-    def _DecayArray(self, val):
+    def _JoinArray(self, val):
         # type: (value.BashArray) -> value.Str
         """Decay $* to a string."""
         assert val.tag() == value_e.BashArray, val
@@ -1660,7 +1660,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         if val.tag() == value_e.BashArray:
             array_val = cast(value.BashArray, UP_val)
             if quoted and vsub_state.join_array:
-                val = self._DecayArray(array_val)
+                val = self._JoinArray(array_val)
             else:
                 val = array_val
 
@@ -1745,7 +1745,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         if val.tag() == value_e.BashArray:
             array_val = cast(value.BashArray, UP_val)
             if quoted and vsub_state.join_array:
-                val = self._DecayArray(array_val)
+                val = self._JoinArray(array_val)
             else:
                 val = array_val
 
