@@ -36,6 +36,7 @@ from mycpp.mylib import (log, print_stderr, str_switch, tagswitch, iteritems,
                          NewDict)
 from pylib import os_path
 
+from libc import GLOB_PERIOD
 import posix_ as posix
 
 from typing import Tuple, List, Dict, Optional, Any, cast, TYPE_CHECKING
@@ -344,6 +345,14 @@ def _SetOptionNum(opt_name):
     return opt_num
 
 
+def _MaybeWarnDotglob():
+    # type: () -> None
+    if GLOB_PERIOD == 0:  # invalid value that means it wasn't detected
+        # GNU libc and musl libc have GLOB_PERIOD, but Android doesn't
+        print_stderr(
+            "osh warning: GLOB_PERIOD wasn't found in libc, so 'shopt -s dotglob' won't work")
+
+
 class MutableOpts(object):
 
     def __init__(self, mem, environ, opt0_array, opt_stacks, opt_hook):
@@ -379,6 +388,9 @@ class MutableOpts(object):
 
     def Push(self, opt_num, b):
         # type: (int, bool) -> None
+        if opt_num == option_i.dotglob:
+            _MaybeWarnDotglob()
+
         overlay = self.opt_stacks[opt_num]
         if overlay is None or len(overlay) == 0:
             self.opt_stacks[opt_num] = [b]  # Allocate a new list
@@ -418,6 +430,8 @@ class MutableOpts(object):
 
         For bash compatibility in command sub.
         """
+        if opt_num == option_i.dotglob:
+            _MaybeWarnDotglob()
 
         # Like _Getter in core/optview.py
         overlay = self.opt_stacks[opt_num]
@@ -510,7 +524,7 @@ class MutableOpts(object):
             self.SetDeferredErrExit(b)
         else:
             if opt_num == option_i.verbose and b:
-                print_stderr('Warning: set -o verbose not implemented')
+                print_stderr('osh warning: set -o verbose not implemented')
             self._SetArrayByNum(opt_num, b)
 
         # note: may FAIL before we get here.

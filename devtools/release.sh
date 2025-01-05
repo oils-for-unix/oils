@@ -6,7 +6,8 @@
 #   devtools/release.sh <function name>
 #
 # Steps:
-#   edit oils-version.txt, build/doc.sh update-src-versions, bump devtools/release-note.sh
+#   edit oils-version.txt, build/doc.sh update-src-versions, and
+#     bump devtools/release-note.sh
 #   $0 make-release-branch
 #   $0 two-tarballs          # CPython, then oils-for-unix, which is INSTALLED
 #   demo/osh-debug.sh osh-for-release: Start a shell to dogfood

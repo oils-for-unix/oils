@@ -13,9 +13,10 @@ from _devbuild.gen.syntax_asdl import (
 )
 from core import pyutil
 from frontend import match
-from libc import GLOB_PERIOD
 from mycpp import mylib
 from mycpp.mylib import log, print_stderr
+
+from libc import GLOB_PERIOD
 
 from typing import List, Tuple, cast, TYPE_CHECKING
 if TYPE_CHECKING:

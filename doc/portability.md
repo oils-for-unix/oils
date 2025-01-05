@@ -30,8 +30,6 @@ which some libc's implement.
 
 This is unlike bash, which has its own glob library.
 
-TODO: `shopt -s dotglob` should give a warning when turned on.
-
 ### Atomic Assignments
 
 The signal handler assumes that int and pointer assignments are atomic.  This

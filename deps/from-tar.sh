@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 #
-# Handle build dependencies that are in tarballs.
+# Handle build dependencies that are in tarballs, like the wild
 #
 # Usage:
 #   deps/from-tar.sh <function name>
 #
-# Examples:
-#   deps/from-tar.sh download-re2c
-#   deps/from-tar.sh build-re2c
+# For releases:
 #
-# The executable will be in ../oil_DEPS/re2c/re2c.
+#   deps/from-tar.sh configure-python
+#   deps/from-tar.sh build-python
+#
+# Note: this is not a tarball; it's in the repo.
 
 set -o nounset
 set -o pipefail

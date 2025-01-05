@@ -70,16 +70,22 @@ FLAG_datarootdir=''  # default initialized after processing flags
 FLAG_with_readline=''  # Fail if it's not available.
 FLAG_without_readline=''  # Don't even check if it's available
 FLAG_readline=''
-FLAG_with_systemtap_sdt=''  # Fail if it's not available.
 FLAG_without_systemtap_sdt=''  # Don't even check if it's available
+FLAG_without_libc_features=''
 
 # These variables are set by detect_readline and used by echo_cpp and
 # echo_shell_vars
 detected_deps=''
+
 have_readline=''
 readline_dir=''
 
 have_systemtap_sdt=''
+
+# libc
+have_fnm_extmatch=''
+have_glob_period=''
+have_pwent=''
 
 parse_flags() {
   while true; do
@@ -111,12 +117,12 @@ parse_flags() {
         FLAG_readline=$1
         ;;
 
-      --with-systemtap_sdt)
-        FLAG_with_systemtap_sdt=1
+      --without-systemtap-sdt)
+        FLAG_without_systemtap_sdt=1
         ;;
 
-      --without-systemtap_sdt)
-        FLAG_without_systemtap_sdt=1
+      --without-libc-features)
+        FLAG_without_libc_features=1
         ;;
 
       # TODO: Maybe prefix only needs to be part of the install step?  I'm not
@@ -269,25 +275,51 @@ detect_systemtap_sdt() {
   fi
 }
 
+detect_libc() {
+  if test -n "$FLAG_without_libc_features"; then
+    return
+  fi
+
+  # Check if non-POSIX FNM_EXTMATCH is available
+  if cc_quiet build/detect-fnm-extmatch.c; then
+    have_fnm_extmatch=1
+  fi
+
+  # Check if non-POSIX GLOB_PERIOD is available
+  if cc_quiet build/detect-glob-period.c; then
+    have_glob_period=1
+  fi
+
+  # Check if pwent is callable. E.g. bionic libc (Android) doesn't have it
+  if cc_quiet build/detect-pwent.c; then
+    have_pwent=1
+  fi
+}
+
 echo_shell_vars() {
   if test "$detected_deps" != 1; then
     die 'called echo_shell_vars before detecting readline.'
   fi
+
+  # Present a consistent interface to build/ninja-rules-cpp.sh
   if test "$have_readline" = 1; then
     echo 'HAVE_READLINE=1'
     echo "READLINE_DIR=$readline_dir"
   else
     echo 'HAVE_READLINE='
-    # Present a consistent interface to build/ninja-rules-cpp.sh
     echo 'READLINE_DIR='
   fi
+
+  # TODO: I don't think we need this in shell
   if test "$have_systemtap_sdt" = 1; then
     echo 'HAVE_SYSTEMTAP_SDT=1'
   else
     echo 'HAVE_SYSTEMTAP_SDT='
   fi
+
   echo "PREFIX=$FLAG_prefix"
   echo "DATAROOTDIR=$FLAG_datarootdir"
+
   if cc_quiet build/detect-cc.c -Wl,--gc-sections; then
     echo 'STRIP_FLAGS=--gc-sections'
   elif cc_quiet build/detect-cc.c -Wl,-dead_strip; then
@@ -433,21 +465,22 @@ echo_cpp() {
     echo '/* #undef HAVE_READLINE */'
   fi
 
+  # Used by mycpp/probes.h
   if test "$have_systemtap_sdt" = 1; then
     echo '#define HAVE_SYSTEMTAP_SDT 1'
   else
     echo '/* #undef HAVE_SYSTEMTAP_SDT */'
   fi
 
-  # Check if pwent is callable. E.g. bionic libc (Android) doesn't have it
-  if cc_quiet build/detect-pwent.c; then
-    echo '#define HAVE_PWENT 1'
+  if test "$have_fnm_extmatch" = 1; then
+    echo '/* libc defines FNM_EXTMATCH */'
   else
-    echo '/* #undef HAVE_PWENT */'
+    # INVALID value that we can detect in code
+    # e.g. musl libc does not support this, but glibc does
+    echo '#define FNM_EXTMATCH 0'
   fi
 
-  # Check if non-POSIX GLOB_PERIOD is available
-  if cc_quiet build/detect-glob-period.c; then
+  if test "$have_glob_period" = 1; then
     echo '/* libc defines GLOB_PERIOD */'
   else
     # INVALID value that we can detect in code
@@ -455,13 +488,11 @@ echo_cpp() {
     echo '#define GLOB_PERIOD 0'
   fi
 
-  # Check if non-POSIX GLOB_PERIOD is available
-  if cc_quiet build/detect-fnm-extmatch.c; then
-    echo '/* libc defines FNM_EXTMATCH */'
+  # Used by cpp/core.cc
+  if test "$have_pwent" = 1; then
+    echo '#define HAVE_PWENT 1'
   else
-    # INVALID value that we can detect in code
-    # e.g. musl libc does not support this, but glibc does
-    echo '#define FNM_EXTMATCH 0'
+    echo '/* #undef HAVE_PWENT */'
   fi
 }
 
@@ -480,9 +511,11 @@ main() {
   # Sets globals $have_readline and $readline_dir
   detect_readline
 
+  detect_libc
+
   detect_systemtap_sdt
 
-  # Generate configuration for oil-native
+  # Generate configuration for oils-for-unix
   local cpp_out=_build/detected-cpp-config.h
   echo_cpp > $cpp_out
   log "Wrote $cpp_out"
