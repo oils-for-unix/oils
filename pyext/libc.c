@@ -411,6 +411,7 @@ void initlibc(void) {
   module = Py_InitModule("libc", methods);
   if (module != NULL) {
       PyModule_AddIntConstant(module, "GLOB_PERIOD", GLOB_PERIOD);
+      PyModule_AddIntConstant(module, "FNM_EXTMATCH", FNM_EXTMATCH);
       PyModule_AddIntConstant(module, "FNM_CASEFOLD", FNM_CASEFOLD);
       PyModule_AddIntConstant(module, "REG_ICASE", REG_ICASE);
       PyModule_AddIntConstant(module, "REG_NEWLINE", REG_NEWLINE);
