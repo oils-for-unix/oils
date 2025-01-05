@@ -448,9 +448,20 @@ echo_cpp() {
 
   # Check if non-POSIX GLOB_PERIOD is available
   if cc_quiet build/detect-glob-period.c; then
-    echo '/* GLOB_PERIOD already exists */'
+    echo '/* libc defines GLOB_PERIOD */'
   else
+    # INVALID value that we can detect in code
+    # e.g. Android does not support this, but glibc and musl libc do
     echo '#define GLOB_PERIOD 0'
+  fi
+
+  # Check if non-POSIX GLOB_PERIOD is available
+  if cc_quiet build/detect-fnm-extmatch.c; then
+    echo '/* libc defines FNM_EXTMATCH */'
+  else
+    # INVALID value that we can detect in code
+    # e.g. musl libc does not support this, but glibc does
+    echo '#define FNM_EXTMATCH 0'
   fi
 }
 

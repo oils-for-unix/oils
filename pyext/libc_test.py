@@ -20,6 +20,10 @@ IS_DARWIN = sys.platform == 'darwin'
 
 class LibcTest(unittest.TestCase):
 
+  def testConstants(self):
+      print('GLOB_PERIOD %d' % libc.GLOB_PERIOD)
+      print('FNM_EXTMATCH %d' % libc.FNM_EXTMATCH)
+
   def testFnmatch(self):
 
     cases = [
