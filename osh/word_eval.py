@@ -1399,15 +1399,23 @@ class AbstractWordEvaluator(StringWordEvaluator):
         # type: (value_t, bool, VarSubState) -> value_t
         """Decay "$*" to a string."""
 
-        UP_val = val
-        if val.tag() == value_e.BashArray:
-            val = cast(value.BashArray, UP_val)
-            if quoted and vsub_state.join_array:
-                sep = self.splitter.GetJoinChar()
-                tmp = [
-                    s for s in bash_impl.BashArray_GetValues(val)
-                    if s is not None
-                ]
+        if quoted and vsub_state.join_array:
+            sep = self.splitter.GetJoinChar()
+            tmp = None  # type: List[str]
+
+            UP_val = val
+            with tagswitch(val) as case:
+                if case(value_e.BashArray):
+                    val = cast(value.BashArray, UP_val)
+                    tmp = [
+                        s for s in bash_impl.BashArray_GetValues(val)
+                        if s is not None
+                    ]
+                elif case(value_e.BashAssoc):
+                    val = cast(value.BashAssoc, UP_val)
+                    tmp = bash_impl.BashAssoc_GetValues(val)
+
+            if tmp is not None:
                 return value.Str(sep.join(tmp))
 
         return val
