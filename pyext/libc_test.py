@@ -22,7 +22,8 @@ class LibcTest(unittest.TestCase):
 
   def testConstants(self):
       print('GLOB_PERIOD %d' % libc.GLOB_PERIOD)
-      print('FNM_EXTMATCH %d' % libc.FNM_EXTMATCH)
+      print('HAVE_GLOB_PERIOD %d' % libc.HAVE_GLOB_PERIOD)
+      print('HAVE_FNM_EXTMATCH %d' % libc.HAVE_FNM_EXTMATCH)
 
   def testFnmatch(self):
 

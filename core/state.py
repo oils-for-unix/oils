@@ -36,7 +36,7 @@ from mycpp.mylib import (log, print_stderr, str_switch, tagswitch, iteritems,
                          NewDict)
 from pylib import os_path
 
-from libc import GLOB_PERIOD
+from libc import HAVE_GLOB_PERIOD
 import posix_ as posix
 
 from typing import Tuple, List, Dict, Optional, Any, cast, TYPE_CHECKING
@@ -347,7 +347,7 @@ def _SetOptionNum(opt_name):
 
 def _MaybeWarnDotglob():
     # type: () -> None
-    if GLOB_PERIOD == 0:  # invalid value that means it wasn't detected
+    if HAVE_GLOB_PERIOD == 0:
         # GNU libc and musl libc have GLOB_PERIOD, but Android doesn't
         print_stderr(
             "osh warning: GLOB_PERIOD wasn't found in libc, so 'shopt -s dotglob' won't work")

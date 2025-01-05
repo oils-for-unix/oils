@@ -21,6 +21,8 @@
 
 #include <Python.h>
 
+#include "_build/detected-config.h"
+
 // Log messages to stderr.
 static void debug(const char* fmt, ...) {
 #ifdef LIBC_VERBOSE
@@ -410,8 +412,12 @@ void initlibc(void) {
 
   module = Py_InitModule("libc", methods);
   if (module != NULL) {
+      // ./configure values
+      PyModule_AddIntConstant(module, "HAVE_GLOB_PERIOD", HAVE_GLOB_PERIOD);
+      PyModule_AddIntConstant(module, "HAVE_FNM_EXTMATCH", HAVE_FNM_EXTMATCH);
+
+      // Actual libc values
       PyModule_AddIntConstant(module, "GLOB_PERIOD", GLOB_PERIOD);
-      PyModule_AddIntConstant(module, "FNM_EXTMATCH", FNM_EXTMATCH);
       PyModule_AddIntConstant(module, "FNM_CASEFOLD", FNM_CASEFOLD);
       PyModule_AddIntConstant(module, "REG_ICASE", REG_ICASE);
       PyModule_AddIntConstant(module, "REG_NEWLINE", REG_NEWLINE);
