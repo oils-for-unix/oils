@@ -123,7 +123,6 @@ test_echo_vars() {
   fi
   if ! test "$output" = 'HAVE_READLINE=
 READLINE_DIR=
-HAVE_SYSTEMTAP_SDT=
 PREFIX=/usr/local
 DATAROOTDIR=
 STRIP_FLAGS=--gc-sections'; then
@@ -138,7 +137,6 @@ STRIP_FLAGS=--gc-sections'; then
   fi
   if ! test "$output" = 'HAVE_READLINE=1
 READLINE_DIR=
-HAVE_SYSTEMTAP_SDT=
 PREFIX=/usr/local
 DATAROOTDIR=
 STRIP_FLAGS=--gc-sections'; then
@@ -154,7 +152,6 @@ STRIP_FLAGS=--gc-sections'; then
   fi
   if ! test "$output" = 'HAVE_READLINE=1
 READLINE_DIR=/path/to/readline
-HAVE_SYSTEMTAP_SDT=
 PREFIX=/usr/local
 DATAROOTDIR=
 STRIP_FLAGS=--gc-sections'; then
