@@ -940,12 +940,19 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 # produces a wrong variable name containing spaces.
                 var_ref_str = ' '.join(bash_impl.BashArray_GetValues(val))
 
+            elif case(value_e.SparseArray):  # caught earlier but OK
+                val = cast(value.SparseArray, UP_val)
+                var_ref_str = ' '.join(bash_impl.SparseArray_GetValues(val))
+
             elif case(value_e.BashAssoc):  # caught earlier but OK
                 val = cast(value.BashAssoc, UP_val)
                 var_ref_str = ' '.join(bash_impl.BashAssoc_GetValues(val))
 
             else:
-                raise error.TypeErr(val, 'Var Ref op expected Str', blame_tok)
+                raise error.TypeErr(
+                    val,
+                    'Var Ref op expected Str, BashArray, SparseArray, or BashAssoc',
+                    blame_tok)
 
         try:
             bvs_part = self.unsafe_arith.ParseVarRef(var_ref_str, blame_tok)

@@ -1235,6 +1235,24 @@ foo, foo, foo;
 ## END
 
 
+#### SparseArray: ${!a[0]}
+case $SH in zsh|mksh|ash) exit ;; esac
+
+v1=hello v2=world
+a=(v1 v2)
+
+case ${SH##*/} in osh) eval 'var a = _a2sp(a)' ;; esac
+
+echo "${!a[0]}, ${!a[1]}"
+
+## STDOUT:
+hello, world
+## END
+
+## N-I zsh/mksh/ash STDOUT:
+## END
+
+
 #### SparseArray: compgen -F _set_COMPREPLY
 case $SH in zsh|mksh|ash) exit ;; esac
 
