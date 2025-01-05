@@ -905,6 +905,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 indices = [str(i) for i in bash_impl.BashArray_GetKeys(val)]
                 return value.BashArray(indices)
 
+            elif case(value_e.SparseArray):
+                val = cast(value.SparseArray, UP_val)
+                indices = [
+                    mops.ToStr(i) for i in bash_impl.SparseArray_GetKeys(val)
+                ]
+                return value.BashArray(indices)
+
             elif case(value_e.BashAssoc):
                 val = cast(value.BashAssoc, UP_val)
                 assert val.d is not None  # for MyPy, so it's not Optional[]
@@ -914,7 +921,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 return value.BashArray(keys)
 
             else:
-                raise error.TypeErr(val, 'Keys op expected Str', token)
+                raise error.TypeErr(
+                    val,
+                    'Keys op expected Str, BashArray, SparseArray, or BashAssoc',
+                    token)
 
     def _EvalVarRef(self, val, blame_tok, quoted, vsub_state, vtest_place):
         # type: (value_t, Token, bool, VarSubState, VTestPlace) -> value_t

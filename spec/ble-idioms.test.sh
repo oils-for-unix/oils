@@ -1253,6 +1253,25 @@ hello, world
 ## END
 
 
+#### SparseArray: ${!a[0]}
+case $SH in zsh|mksh|ash) exit ;; esac
+
+a=(v{0..9})
+unset -v 'a[3]' 'a[4]' 'a[7]' 'a[9]'
+
+case ${SH##*/} in osh) eval 'var a = _a2sp(a)' ;; esac
+
+argv.py "${!a[@]}"
+
+
+## STDOUT:
+['0', '1', '2', '5', '6', '8']
+## END
+
+## N-I zsh/mksh/ash STDOUT:
+## END
+
+
 #### SparseArray: compgen -F _set_COMPREPLY
 case $SH in zsh|mksh|ash) exit ;; esac
 
