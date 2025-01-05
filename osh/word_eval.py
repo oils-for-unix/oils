@@ -1395,13 +1395,22 @@ class AbstractWordEvaluator(StringWordEvaluator):
         self._EvalDoubleQuoted(dq_part.parts, part_vals)
         return self._ConcatPartVals(part_vals, dq_part.left)
 
-    def _JoinArray(self, val):
-        # type: (value.BashArray) -> value.Str
-        """Decay $* to a string."""
-        assert val.tag() == value_e.BashArray, val
-        sep = self.splitter.GetJoinChar()
-        tmp = [s for s in bash_impl.BashArray_GetValues(val) if s is not None]
-        return value.Str(sep.join(tmp))
+    def _JoinArray(self, val, quoted, vsub_state):
+        # type: (value_t, bool, VarSubState) -> value_t
+        """Decay "$*" to a string."""
+
+        UP_val = val
+        if val.tag() == value_e.BashArray:
+            val = cast(value.BashArray, UP_val)
+            if quoted and vsub_state.join_array:
+                sep = self.splitter.GetJoinChar()
+                tmp = [
+                    s for s in bash_impl.BashArray_GetValues(val)
+                    if s is not None
+                ]
+                return value.Str(sep.join(tmp))
+
+        return val
 
     def _ProcessUndef(self, val, name_tok, vsub_state):
         # type: (value_t, Token, VarSubState) -> value_t
@@ -1656,13 +1665,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             val = self._ProcessUndef(val, part.name_tok, vsub_state)
 
         # After applying suffixes, process join_array here.
-        UP_val = val
-        if val.tag() == value_e.BashArray:
-            array_val = cast(value.BashArray, UP_val)
-            if quoted and vsub_state.join_array:
-                val = self._JoinArray(array_val)
-            else:
-                val = array_val
+        val = self._JoinArray(val, quoted, vsub_state)
 
         # For example, ${a} evaluates to value.Str(), but we want a
         # Piece().
@@ -1741,13 +1744,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         #log('SIMPLE %s', part)
         val = self._ProcessUndef(val, token, vsub_state)
-        UP_val = val
-        if val.tag() == value_e.BashArray:
-            array_val = cast(value.BashArray, UP_val)
-            if quoted and vsub_state.join_array:
-                val = self._JoinArray(array_val)
-            else:
-                val = array_val
+        val = self._JoinArray(val, quoted, vsub_state)
 
         v = _ValueToPartValue(val, quoted, part)
         part_vals.append(v)
