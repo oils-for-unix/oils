@@ -310,13 +310,6 @@ echo_shell_vars() {
     echo 'READLINE_DIR='
   fi
 
-  # TODO: I don't think we need this in shell
-  if test "$have_systemtap_sdt" = 1; then
-    echo 'HAVE_SYSTEMTAP_SDT=1'
-  else
-    echo 'HAVE_SYSTEMTAP_SDT='
-  fi
-
   echo "PREFIX=$FLAG_prefix"
   echo "DATAROOTDIR=$FLAG_datarootdir"
 

@@ -37,9 +37,12 @@ test-osh() {
   # GLOB_PERIOD
   $osh -x -c 'shopt -s dotglob'
 
-  # FNM_EXTMATCH
+  # FNM_EXTMATCH in glob()
   # Hm this will works
-  $osh -x -c 'echo */@(*.bash|*.asdl)'
+  $osh -x -c 'echo */*/t@(*.asdl|*.sh)'
+
+  # FNM_EXTMATCH in fnmatch()
+  $osh -x -c 'case foo.py in @(*.asdl|*.py)) echo py ;; esac'
 
   # HAVE_PWENT
   $osh -x -c 'compgen -A user'
