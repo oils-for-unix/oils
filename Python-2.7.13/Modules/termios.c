@@ -293,9 +293,6 @@ termios_tcflow(PyObject *self, PyObject *args)
     return Py_None;
 }
 
-#ifdef OVM_MAIN
-#include "Python-2.7.13/Modules/termios.c/termios_methods.def"
-#else
 static PyMethodDef termios_methods[] =
 {
     {"tcgetattr", termios_tcgetattr, METH_VARARGS, termios_tcgetattr__doc__},
@@ -306,7 +303,6 @@ static PyMethodDef termios_methods[] =
     {"tcflow", termios_tcflow, METH_VARARGS, termios_tcflow__doc__},
     {NULL, NULL}
 };
-#endif
 
 
 #if defined(VSWTCH) && !defined(VSWTC)

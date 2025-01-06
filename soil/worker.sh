@@ -335,7 +335,8 @@ ovm-tarball-tasks() {
   cat <<EOF
 os-info           soil/diagnose.sh os-info    -
 dump-env          soil/diagnose.sh dump-env   -
-py-all            build/py.sh all                        -
+py-all            build/py.sh all                           -
+configure         devtools/release.sh configure-for-release -
 make-tarball      devtools/release.sh py-tarball         _release/oil.tar
 ysh-ovm-tarball   test/spec-py.sh ysh-ovm-tarball        _tmp/spec/ysh-py/index.html
 syscall           test/syscall.sh soil-run               _tmp/syscall/-wwz-index

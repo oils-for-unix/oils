@@ -2165,9 +2165,6 @@ PyTypeObject PySet_Type = {
 /* frozenset object ********************************************************/
 
 
-#ifdef OVM_MAIN
-#include "Python-2.7.13/Objects/setobject.c/frozenset_methods.def"
-#else
 static PyMethodDef frozenset_methods[] = {
     {"__contains__",(PyCFunction)set_direct_contains,           METH_O | METH_COEXIST,
      contains_doc},
@@ -2193,7 +2190,6 @@ static PyMethodDef frozenset_methods[] = {
      union_doc},
     {NULL,              NULL}   /* sentinel */
 };
-#endif
 
 static PyNumberMethods frozenset_as_number = {
     0,                                  /*nb_add*/

@@ -1,5 +1,0 @@
-// Python-2.7.13/Objects/floatobject.c
-
-static PyMethodDef float_methods[] = {
-  {0},
-};

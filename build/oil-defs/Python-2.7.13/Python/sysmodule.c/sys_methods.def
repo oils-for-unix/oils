@@ -1,8 +1,0 @@
-// Python-2.7.13/Python/sysmodule.c
-
-static PyMethodDef sys_methods[] = {
-  {"displayhook", sys_displayhook, METH_O},
-  {"excepthook", sys_excepthook, METH_VARARGS},
-  {"exit", sys_exit, METH_VARARGS},
-  {0},
-};

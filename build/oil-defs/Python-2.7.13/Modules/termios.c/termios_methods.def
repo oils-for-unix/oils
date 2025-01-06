@@ -1,7 +1,0 @@
-// Python-2.7.13/Modules/termios.c
-
-static PyMethodDef termios_methods[] = {
-  {"tcgetattr", termios_tcgetattr, METH_VARARGS},
-  {"tcsetattr", termios_tcsetattr, METH_VARARGS},
-  {0},
-};

@@ -567,6 +567,7 @@ all-ref() {
   # A few text cards, and HELP_TOPICS dict for URLs, for flat namespace
   cards-from-chapters
 
+  return
   if command -v pysum; then
     # 19 KB of embedded help, seems OK.  Biggest card is 'ysh-option'.  Could
     # compress it.

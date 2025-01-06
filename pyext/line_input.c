@@ -1095,9 +1095,6 @@ Restore the previously saved keymap if one exists.");
 
 /* Table of functions exported by the module */
 
-#ifdef OVM_MAIN
-#include "pyext/line_input.c/readline_methods.def"
-#else
 static struct PyMethodDef readline_methods[] = {
     {"parse_and_bind", parse_and_bind, METH_VARARGS, doc_parse_and_bind},
     {"get_line_buffer", get_line_buffer, METH_NOARGS, doc_get_line_buffer},
@@ -1154,7 +1151,6 @@ static struct PyMethodDef readline_methods[] = {
     {"unbind_keyseq", unbind_keyseq, METH_VARARGS, doc_unbind_keyseq},
     {0, 0}
 };
-#endif
 
 
 /* C function to call the Python hooks. */

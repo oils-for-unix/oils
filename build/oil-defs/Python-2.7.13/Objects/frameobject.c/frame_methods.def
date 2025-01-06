@@ -1,5 +1,0 @@
-// Python-2.7.13/Objects/frameobject.c
-
-static PyMethodDef frame_methods[] = {
-  {0},
-};

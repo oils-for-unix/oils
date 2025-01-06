@@ -347,9 +347,6 @@ fastlex_LooksLikeYshFloat(PyObject *self, PyObject *args) {
   return PyBool_FromLong(LooksLikeYshFloat(name, len));
 }
 
-#ifdef OVM_MAIN
-#include "pyext/fastlex.c/methods.def"
-#else
 static PyMethodDef methods[] = {
   {"MatchOshToken", fastlex_MatchOshToken, METH_VARARGS,
    "(lexer mode, line, start_pos) -> (id, end_pos)."},
@@ -382,7 +379,6 @@ static PyMethodDef methods[] = {
   {"LooksLikeYshFloat", fastlex_LooksLikeYshFloat, METH_VARARGS, ""},
   {NULL, NULL},
 };
-#endif
 
 void initfastlex(void) {
   Py_InitModule("fastlex", methods);

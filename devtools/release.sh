@@ -794,12 +794,20 @@ native-tarball() {
   devtools/release-native.sh extract-for-benchmarks INSTALL
 }
 
+configure-for-release() {
+  # Run the slower configure, not configure-for-dev
+  ./configure
+}
+
 two-tarballs() {
   ### First step of release.  Assume that CI passes
 
   ensure-smooth-build
 
-  build/py.sh all
+  build/py.sh all  # runs ./configure-for-dev
+
+  configure-for-release
+
   # "Base state" for repo scripts
   ./NINJA-config.sh
 

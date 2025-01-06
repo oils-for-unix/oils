@@ -364,13 +364,15 @@ py-extensions() {
   fastfunc
 }
 
-do-configure() {
-  # Special _OIL_DEV for -D GC_TIMING
+configure-for-dev() {
+  # _OIL_DEV does two things:
+  #   -D GC_TIMING
+  #   Skip expensive "OVM" tarball stuff
   _OIL_DEV=1 ./configure
 }
 
 minimal() {
-  do-configure
+  configure-for-dev
 
   build/stamp.sh write-git-commit
 
@@ -417,7 +419,7 @@ time-helper() {
 }
 
 all() {
-  do-configure
+  configure-for-dev
 
   rm -f *.so  # 12/2019: to clear old symlinks, maybe get rid of
 
@@ -441,6 +443,13 @@ gitpod-minimal() {
 
   set -x
   bin/osh -c 'echo hi'
+}
+
+show-cpython-patches() {
+  # 2025-01: The patches for the "OVM" build
+  #
+  # After getting rid of build/oil-defs, this is significant, but maintainable.
+  git diff 1d2b97384e14d65b1241f67fd995277f5508db28..HEAD Python-2.7.13/
 }
 
 if test $(basename $0) = 'py.sh'; then

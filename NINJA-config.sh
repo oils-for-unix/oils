@@ -125,7 +125,6 @@ main() {
   yaks
 
   echo DEPS prebuilt/ninja/*/deps.txt
-
   echo
 
   # Reads the deps.txt files above

@@ -358,9 +358,6 @@ func_cpython_reset_locale(PyObject *self, PyObject *unused)
     Py_RETURN_NONE;
 }
 
-#ifdef OVM_MAIN
-#include "pyext/libc.c/methods.def"
-#else
 static PyMethodDef methods[] = {
   // Return the canonical version of a path with symlinks, or None if there is
   // an error.
@@ -398,7 +395,6 @@ static PyMethodDef methods[] = {
   {"cpython_reset_locale", func_cpython_reset_locale, METH_NOARGS, ""},
   {NULL, NULL},
 };
-#endif
 
 void initlibc(void) {
   PyObject *module;

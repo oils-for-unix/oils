@@ -1,6 +1,0 @@
-// Python-2.7.13/Modules/fcntlmodule.c
-
-static PyMethodDef fcntl_methods[] = {
-  {"fcntl", fcntl_fcntl, METH_VARARGS},
-  {0},
-};

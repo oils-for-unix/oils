@@ -418,7 +418,7 @@ def CardsFromIndex(sh, out_prefix):
                     section_name)  # section_id is printed dynamically
             f.write(text)
             #f.write('\n')  # extra
-        log('  Wrote %s', path)
+        #log('  Wrote %s', path)
         sections.append(section_id)
 
     log('  (doctools/make_help) -> %d sections -> %s', len(sections),

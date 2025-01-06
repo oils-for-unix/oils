@@ -1,5 +1,0 @@
-// Python-2.7.13/Objects/weakrefobject.c
-
-static PyMethodDef proxy_methods[] = {
-  {0},
-};
