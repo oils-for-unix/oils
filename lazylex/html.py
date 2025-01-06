@@ -158,6 +158,14 @@ LEXER = [
     (r'<!-- (?:.|[\n])*? -->', Tok.Comment),
 
     #(r'<!-- .*? -->', Tok.Comment),
+
+    # Processing instruction are XML only, but they are treated like a comment
+    # in HTML:
+    #
+    #   https://developer.mozilla.org/en-US/docs/Web/API/ProcessingInstruction
+    #
+    # We don't want to confuse them with start tags, so we recognize them at
+    # the top level.
     (r'<\? (?:.|\n)*? \?>', Tok.Processing),
 
     # NOTE: < is allowed in these.
@@ -273,23 +281,28 @@ def ValidTokens(s, left_pos=0, right_pos=-1):
 #
 # Allow - for td-attrs
 
-_TAG_RE = re.compile(r'/? \s* ([a-zA-Z][a-zA-Z0-9-]*)', re.VERBOSE)
+# Tag name, or attribue name
+_NAME = r'[a-zA-Z][a-zA-Z0-9_\-]*'  # must start with letter
+
+_ATTR_VALUE = r'[a-zA-Z0-9_\-]+'  # allow hyphens
+
+_TAG_RE = re.compile(r'/? \s* (%s)' % _NAME, re.VERBOSE)
 
 # To match href="foo"
 
 _ATTR_RE = re.compile(
     r'''
 \s+                     # Leading whitespace is required
-([a-z]+)                # Attribute name
+(%s)                    # Attribute name
 (?:                     # Optional attribute value
   \s* = \s*
   (?:
     " ([^>"]*) "        # double quoted value
-  | ([a-zA-Z0-9_\-]+)   # Just allow unquoted "identifiers"
+  | (%s)                # Attribute value
                         # TODO: relax this?  for href=$foo
   )
 )?             
-''', re.VERBOSE)
+''' % (_NAME, _ATTR_VALUE), re.VERBOSE)
 
 TagName, AttrName, UnquotedValue, QuotedValue = range(4)
 
@@ -540,7 +553,9 @@ def main(argv):
             #print('%d %s' % (len(tokens), name))
             i += 1
 
-        log('%d tokens in %d files', num_tokens, i)
+        log('')
+        log('  %d tokens in %d files', num_tokens, i)
+        log('  %d errors', len(errors))
         if 0:
             for name, e in errors:
                 log('Error in %r: %s', name, e)

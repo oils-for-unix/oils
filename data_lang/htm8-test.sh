@@ -66,9 +66,49 @@ test-site() {
   popd
 }
 
-test-wwz() {
-  echo 'TODO: download .wwz from CI'
+readonly WWZ_DIR=_tmp/8899
+
+sync-wwz() {
+  mkdir -p $WWZ_DIR
+  rsync --archive --verbose \
+    op.oilshell.org:op.oilshell.org/uuu/github-jobs/8899/ $WWZ_DIR/
 }
+
+extract-wwz() {
+  pushd $WWZ_DIR
+  for z in *.wwz; do
+    local name=$(basename $z .wwz)
+
+    mkdir -p $name
+    pushd $name >/dev/null
+
+    echo $name
+    unzip ../$z
+
+    popd >/dev/null
+  done
+  popd
+}
+
+tree-wwz() {
+  tree $WWZ_DIR
+}
+
+check-wwz() {
+  pushd $WWZ_DIR
+
+  find . -name '*.html' | $REPO_ROOT/$0 ht8-tool well-formed
+
+  popd
+}
+
+# OK we have to skip the <script> tag!  And <style>
+#
+# document.location = '#' + params.join('&');
+# gUrlHash = new UrlHash(location.hash);
+#
+# I think textarea we don't though?
+
 
 task-five "$@"
 exit

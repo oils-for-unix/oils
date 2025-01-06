@@ -116,6 +116,8 @@ class LexerTest(unittest.TestCase):
                 raise RuntimeError()
             print(tok_id)
 
+    def testCommentParse2(self):
+
         Tok = html.Tok
         h = '''
         hi <!-- line 1
@@ -138,6 +140,29 @@ class LexerTest(unittest.TestCase):
 
         tok_id, pos = next(lex)
         self.assertEqual(55, pos)
+        self.assertEqual(Tok.EndOfStream, tok_id)
+
+    def testProcessingInstruction(self):
+        # The TOP level should understand the <? ?> syntax, because otherwise
+        # it will be a start tag
+
+        Tok = html.Tok
+        h = 'hi <? err ?>'
+        print(repr(h))
+        lex = html.ValidTokens(h)
+
+        tok_id, pos = next(lex)
+        self.assertEqual(3, pos)
+        self.assertEqual(Tok.RawData, tok_id)
+
+        tok_id, pos = next(lex)
+        self.assertEqual(12, pos)
+        log('tok %r', html.TokenName(tok_id))
+        self.assertEqual(Tok.Processing, tok_id)
+
+        tok_id, pos = next(lex)
+        self.assertEqual(12, pos)
+        log('tok %r', html.TokenName(tok_id))
         self.assertEqual(Tok.EndOfStream, tok_id)
 
     def testValid(self):
