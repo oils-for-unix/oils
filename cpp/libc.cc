@@ -40,8 +40,7 @@ int fnmatch(BigStr* pat, BigStr* str, int flags) {
 #ifdef FNM_EXTMATCH
   flags |= FNM_EXTMATCH;
 #else
-  // TODO: We should detect this at ./configure time, and then maybe flag these
-  // at parse time, not runtime
+  // Detected by ./configure
 #endif
 
   int result = ::fnmatch(pat->data_, str->data_, flags);

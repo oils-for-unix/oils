@@ -37,15 +37,18 @@ test-osh() {
   # GLOB_PERIOD
   $osh -x -c 'shopt -s dotglob'
 
+  set +o errexit
+  # HAVE_PWENT
+  $osh -x -c 'compgen -A user'
+
   # FNM_EXTMATCH in glob()
   # Hm this will works
   $osh -x -c 'echo */*/t@(*.asdl|*.sh)'
+  echo status=$?
 
   # FNM_EXTMATCH in fnmatch()
   $osh -x -c 'case foo.py in @(*.asdl|*.py)) echo py ;; esac'
-
-  # HAVE_PWENT
-  $osh -x -c 'compgen -A user'
+  echo status=$?
 }
 
 cpp() {
@@ -58,6 +61,8 @@ py() {
   #prepare-py
 
   ln -s -f -v oil.ovm _bin/osh
+
+  #test-osh bin/osh
 
   test-osh _bin/osh
 }

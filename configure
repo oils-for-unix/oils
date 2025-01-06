@@ -369,7 +369,7 @@ check_sizeof() {
   echo "#define $pp_var $actual_bytes"
 }
 
-detect_c_language() {
+echo_libc() {
   # Exported by pyext/libc.c
   if test "$have_fnm_extmatch" = 1; then
     echo '#define HAVE_FNM_EXTMATCH 1'
@@ -382,6 +382,10 @@ detect_c_language() {
   else
     echo '#define HAVE_GLOB_PERIOD 0'
   fi
+}
+
+detect_c_language() {
+  echo_libc
   echo
 
   # This is the equivalent of AC_CHECK_SIZEOF(int, 4)
@@ -535,12 +539,16 @@ main() {
   echo_shell_vars > $sh_out
   log "Wrote $sh_out"
 
+  local c_out=_build/detected-config.h
+
   # Fast mode
   if test -n "$_OIL_DEV"; then
+    # Do only this subset
+    echo_libc > $c_out
+    log "Wrote $c_out"
     return
   fi
 
-  local c_out=_build/detected-config.h
   detect_c_language > $c_out
   log "Wrote $c_out"
 }

@@ -364,7 +364,14 @@ py-extensions() {
   fastfunc
 }
 
+do-configure() {
+  # Special _OIL_DEV for -D GC_TIMING
+  _OIL_DEV=1 ./configure
+}
+
 minimal() {
+  do-configure
+
   build/stamp.sh write-git-commit
 
   py-source
@@ -410,6 +417,8 @@ time-helper() {
 }
 
 all() {
+  do-configure
+
   rm -f *.so  # 12/2019: to clear old symlinks, maybe get rid of
 
   build/stamp.sh write-git-commit

@@ -350,7 +350,8 @@ def _MaybeWarnDotglob():
     if HAVE_GLOB_PERIOD == 0:
         # GNU libc and musl libc have GLOB_PERIOD, but Android doesn't
         print_stderr(
-            "osh warning: GLOB_PERIOD wasn't found in libc, so 'shopt -s dotglob' won't work")
+            "osh warning: GLOB_PERIOD wasn't found in libc, so 'shopt -s dotglob' won't work"
+        )
 
 
 class MutableOpts(object):

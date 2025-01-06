@@ -104,6 +104,8 @@ from osh import word_
 from osh import word_compile
 from mycpp.mylib import tagswitch
 
+from libc import HAVE_FNM_EXTMATCH
+
 from typing import List, Optional, Tuple, cast
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -1855,6 +1857,10 @@ class WordParser(WordEmitter):
                     done = True
 
                 else:
+                    if HAVE_FNM_EXTMATCH == 0:
+                        p_die(
+                            "Extended glob won't work without FNM_EXTMATCH support in libc",
+                            self.cur_token)
                     part = self._ReadExtGlob()
                 w.parts.append(part)
 
