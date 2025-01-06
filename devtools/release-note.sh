@@ -15,7 +15,7 @@ source build/dev-shell.sh  # PYTHONPATH
 source devtools/release-version.sh  # for escape-segments
 
 readonly OILS_VERSION=$(head -n 1 oils-version.txt)
-readonly PREV_VERSION='0.23.0'
+readonly PREV_VERSION='0.24.0'
 
 # adapted from release-version.sh
 _git-changelog-body() {
