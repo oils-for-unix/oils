@@ -515,3 +515,39 @@ def ToText(s, left_pos=0, right_pos=-1):
 
     out.PrintTheRest()
     return f.getvalue()
+
+
+def main(argv):
+    action = argv[1]
+
+    if action == 'well-formed':
+        num_tokens = 0
+        errors = []
+        i = 0
+        for line in sys.stdin:
+            name = line.strip()
+            with open(name) as f:
+                contents = f.read()
+
+            lx = ValidTokens(contents)
+            try:
+                tokens = list(lx)
+            except LexError as e:
+                log('Error in %r: %s', name, e)
+                errors.append((name, e))
+            else:
+                num_tokens += len(tokens)
+            #print('%d %s' % (len(tokens), name))
+            i += 1
+
+        log('%d tokens in %d files', num_tokens, i)
+        if 0:
+            for name, e in errors:
+                log('Error in %r: %s', name, e)
+
+    else:
+        raise RuntimeError('Invalid action %r' % action)
+
+
+if __name__ == '__main__':
+    main(sys.argv)
