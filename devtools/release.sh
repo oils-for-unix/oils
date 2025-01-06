@@ -373,7 +373,10 @@ benchmark-build() {
   if test -n "$HAVE_ROOT"; then
     _install
   fi
-  build/py.sh all
+
+  build/py.sh all  # runs configure-for-dev
+  configure-for-release
+
   _release-build
 }
 
@@ -805,7 +808,6 @@ two-tarballs() {
   ensure-smooth-build
 
   build/py.sh all  # runs ./configure-for-dev
-
   configure-for-release
 
   # "Base state" for repo scripts
