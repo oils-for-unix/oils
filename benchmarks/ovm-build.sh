@@ -233,7 +233,7 @@ build-task() {
           compiler='cxx'
           ;;
         (*clang)
-          # Note on slight mess: benchmarks/id.sh takes the provenanec of
+          # Note on slight mess: benchmarks/id.sh takes the provenance of
           # $CLANG.  We translate that to 'clang' here, and
           # _build/oils.sh uses $CLANGXX.
           compiler='clang'

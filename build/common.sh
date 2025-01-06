@@ -21,7 +21,12 @@ LLVM_VERSION=14.0.0
 readonly CLANG_DIR_RELATIVE="../oil_DEPS/clang+llvm-$LLVM_VERSION-x86_64-linux-gnu-ubuntu-18.04"
 
 CLANG_DIR_1=$REPO_ROOT/$CLANG_DIR_RELATIVE
-CLANG_DIR_FALLBACK=~/git/oilshell/oil/$CLANG_DIR_RELATIVE
+
+# When building tarballs for devtools/release.sh, $REPO_ROOT is not next to
+# ../oil_DEPS, so add this fallback.
+# TODO/BUG: Shouldn't hard-code the absolute path!
+CLANG_DIR_FALLBACK=~/git/oils-for-unix/oils/$CLANG_DIR_RELATIVE
+
 if test -d $CLANG_DIR_1; then
   CLANG_DIR=$CLANG_DIR_1
   CLANG_IS_MISSING=''
