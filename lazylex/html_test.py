@@ -165,6 +165,39 @@ class LexerTest(unittest.TestCase):
         log('tok %r', html.TokenName(tok_id))
         self.assertEqual(Tok.EndOfStream, tok_id)
 
+    def testScriptStyle(self):
+
+        Tok = html.Tok
+        h = '''
+        hi <script src=""> if (x < 1 && y > 2 ) { console.log(""); }
+        </script>
+        '''
+        print(repr(h))
+        lex = html.ValidTokens(h)
+
+        tok_id, pos = next(lex)
+        self.assertEqual(12, pos)
+        self.assertEqual(Tok.RawData, tok_id)
+
+        # <script>
+        tok_id, pos = next(lex)
+        self.assertEqual(27, pos)
+        self.assertEqual(Tok.CDataStartTag, tok_id)
+
+        return
+
+        # JavaScript code is CData
+        tok_id, pos = next(lex)
+        self.assertEqual(34, pos)
+        log('tok %r', html.TokenName(tok_id))
+        self.assertEqual(Tok.CData, tok_id)
+
+        # </script>
+        tok_id, pos = next(lex)
+        self.assertEqual(27, pos)
+        log('tok %r', html.TokenName(tok_id))
+        self.assertEqual(Tok.CDataEndTag, tok_id)
+
     def testValid(self):
         Tok = html.Tok
 
@@ -205,38 +238,25 @@ class LexerTest(unittest.TestCase):
     def testInvalid(self):
         Tok = html.Tok
 
-        lex = html.ValidTokens('<a>&')
+        INVALID = [
+            # Should be &amp;
+            '<a>&',
+            # Hm > is allowed?
+            #'a > b',
+            'a < b',
+            '<!-- unfinished comment',
+            '<? unfinished processing',
+        ]
 
-        tok_id, pos = next(lex)
-        self.assertEqual(3, pos)
-        self.assertEqual(Tok.StartTag, tok_id)
-
-        try:
-            tok_id, pos = next(lex)
-        except html.LexError as e:
-            print(e)
-        else:
-            self.fail('Expected LexError')
-
-        # Comment
-        lex = html.ValidTokens('<!-- unfinished comment')
-
-        try:
-            tok_id, pos = next(lex)
-        except html.LexError as e:
-            print(e)
-        else:
-            self.fail('Expected LexError')
-
-        # Processing
-        lex = html.ValidTokens('<? unfinished processing')
-
-        try:
-            tok_id, pos = next(lex)
-        except html.LexError as e:
-            print(e)
-        else:
-            self.fail('Expected LexError')
+        for s in INVALID:
+            lex = html.ValidTokens(s)
+            try:
+                for i in xrange(10):
+                    tok_id, pos = next(lex)
+            except html.LexError as e:
+                print(e)
+            else:
+                self.fail('Expected LexError')
 
 
 if __name__ == '__main__':

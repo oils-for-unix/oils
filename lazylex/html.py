@@ -81,7 +81,7 @@ class Output(object):
 
 # HTML Tokens
 # CommentBegin and ProcessingBegin are "pseudo-tokens", not visible
-TOKENS = 'Decl Comment CommentBegin Processing ProcessingBegin StartTag StartEndTag EndTag DecChar HexChar CharEntity RawData Invalid EndOfStream'.split(
+TOKENS = 'Decl Comment CommentBegin Processing ProcessingBegin StartTag StartEndTag EndTag DecChar HexChar CharEntity RawData CData CDataStartTag CDataEndTag Invalid EndOfStream'.split(
 )
 
 
@@ -168,6 +168,7 @@ LEXER = [
 
     # NOTE: < is allowed in these.
     (r'<! [^>]+ >', Tok.Decl),  # <!DOCTYPE html>
+    (r'<(?:script|style) [^>]+>', Tok.CDataStartTag),  # start <a>
     (r'</ [^>]+ >', Tok.EndTag),  # self-closing <br/>  comes FIRST
     (r'< [^>]+ />', Tok.StartEndTag),  # end </a>
     (r'< [^>]+  >', Tok.StartTag),  # start <a>
@@ -175,7 +176,9 @@ LEXER = [
     (r'&\# x[0-9a-fA-F]+ ;', Tok.HexChar),
     (r'& [a-zA-Z]+ ;', Tok.CharEntity),
 
-    # Note: > is allowed in raw data.
+    # HTML5 allows > in raw data - should we?  It's apparently not allowed in
+    # XML.
+    # But < is not allowed.
     # https://stackoverflow.com/questions/10462348/right-angle-bracket-in-html
     (r'[^&<]+', Tok.RawData),
     (r'.', Tok.Invalid),  # error!
@@ -224,6 +227,15 @@ class Lexer(object):
                         # unterminated <?
                         raise LexError(self.s, self.pos)
                     return Tok.Processing, pos + 2  # ?>
+
+                # TODO: we need to enter state so the NEXT call can be CData
+                # And then the one after that must be CDataEndTag.
+                if tok_id == Tok.CDataStartTag:
+                    end_tag = '</script>'
+                    pos = self.s.find(end_tag, self.pos)
+                    if pos == -1:
+                        # unterminated </script>
+                        raise LexError(self.s, self.pos)
 
                 return tok_id, m.end()
         else:
