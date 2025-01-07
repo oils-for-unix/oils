@@ -33,6 +33,7 @@ ht8-tool() {
 
 test-well-formed() {
   cat >_tmp/bad.html <<EOF
+unfinished <!--
 hi && bye
 EOF
   echo '_tmp/bad.html' | ht8-tool well-formed 
@@ -94,7 +95,7 @@ tree-wwz() {
   tree $WWZ_DIR
 }
 
-check-wwz() {
+test-wwz() {
   pushd $WWZ_DIR
 
   find . -name '*.html' | $REPO_ROOT/$0 ht8-tool well-formed

@@ -80,7 +80,8 @@ class Output(object):
 
 
 # HTML Tokens
-TOKENS = 'Decl Comment Processing StartTag StartEndTag EndTag DecChar HexChar CharEntity RawData Invalid EndOfStream'.split(
+# CommentBegin and ProcessingBegin are "pseudo-tokens", not visible
+TOKENS = 'Decl Comment CommentBegin Processing ProcessingBegin StartTag StartEndTag EndTag DecChar HexChar CharEntity RawData Invalid EndOfStream'.split(
 )
 
 
@@ -90,8 +91,6 @@ class Tok(object):
     """
     pass
 
-
-assert len(TOKENS) == 12, TOKENS
 
 TOKEN_NAMES = [None] * len(TOKENS)  # type: List[str]
 
@@ -140,10 +139,7 @@ def MakeLexer(rules):
 # EntityRef = / '&' dot{* N} ';' /
 
 LEXER = [
-    # TODO: instead of nongreedy matches, the loop can just do .find('-->') and
-    # .find('?>')
-
-    # Actually non-greedy matches are regular and can be matched in linear time
+    # Note non-greedy matches are regular and can be matched in linear time
     # with RE2.
     #
     # https://news.ycombinator.com/item?id=27099798
@@ -153,11 +149,13 @@ LEXER = [
     # . is any char except newline
     # https://re2c.org/manual/manual_c.html
 
+    # Discarded options
+    #(r'<!-- .*? -->', Tok.Comment),
+
     # Hack from Claude: \s\S instead of re.DOTALL.  I don't like this
     #(r'<!-- [\s\S]*? -->', Tok.Comment),
-    (r'<!-- (?:.|[\n])*? -->', Tok.Comment),
-
-    #(r'<!-- .*? -->', Tok.Comment),
+    #(r'<!-- (?:.|[\n])*? -->', Tok.Comment),
+    (r'<!--', Tok.CommentBegin),
 
     # Processing instruction are XML only, but they are treated like a comment
     # in HTML:
@@ -166,7 +164,7 @@ LEXER = [
     #
     # We don't want to confuse them with start tags, so we recognize them at
     # the top level.
-    (r'<\? (?:.|\n)*? \?>', Tok.Processing),
+    (r'<\?', Tok.ProcessingBegin),
 
     # NOTE: < is allowed in these.
     (r'<! [^>]+ >', Tok.Decl),  # <!DOCTYPE html>
@@ -213,6 +211,20 @@ class Lexer(object):
         for pat, tok_id in LEXER:
             m = pat.match(self.s, self.pos)
             if m:
+                if tok_id == Tok.CommentBegin:
+                    pos = self.s.find('-->', self.pos)
+                    if pos == -1:
+                        # unterminated <!--
+                        raise LexError(self.s, self.pos)
+                    return Tok.Comment, pos + 3  # -->
+
+                if tok_id == Tok.ProcessingBegin:
+                    pos = self.s.find('?>', self.pos)
+                    if pos == -1:
+                        # unterminated <?
+                        raise LexError(self.s, self.pos)
+                    return Tok.Processing, pos + 2  # ?>
+
                 return tok_id, m.end()
         else:
             raise AssertionError('Tok.Invalid rule should have matched')

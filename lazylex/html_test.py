@@ -218,6 +218,26 @@ class LexerTest(unittest.TestCase):
         else:
             self.fail('Expected LexError')
 
+        # Comment
+        lex = html.ValidTokens('<!-- unfinished comment')
+
+        try:
+            tok_id, pos = next(lex)
+        except html.LexError as e:
+            print(e)
+        else:
+            self.fail('Expected LexError')
+
+        # Processing
+        lex = html.ValidTokens('<? unfinished processing')
+
+        try:
+            tok_id, pos = next(lex)
+        except html.LexError as e:
+            print(e)
+        else:
+            self.fail('Expected LexError')
+
 
 if __name__ == '__main__':
     unittest.main()
