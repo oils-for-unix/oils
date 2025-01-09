@@ -107,6 +107,8 @@ readonly MARKDOWN_DOCS=(
   byo
   ysh-doc-processing
 
+  table-object-doc
+
   lib-osh
 
   doc-toolchain

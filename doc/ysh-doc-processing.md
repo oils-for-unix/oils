@@ -133,3 +133,7 @@ Safe HTML subset
     }
 
 If you want to take user HTML, then you first use an HTML5 -> HT8 converter.
+
+## Related
+
+- [table-object-doc.html](table-object-doc.html)

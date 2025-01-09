@@ -476,6 +476,7 @@ dplyr:
 - summarise vs. summarize vs. summary
 
 
+## Related
 
-
+- [table-object-doc.html](table-object-doc.html)
 
