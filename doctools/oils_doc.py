@@ -22,6 +22,11 @@ import sys
 from doctools.util import log
 from lazylex import html
 
+try:
+    import pygments
+except ImportError:
+    pygments = None
+
 
 class _Abbrev(object):
 
@@ -300,22 +305,13 @@ class PygmentsPlugin(_Plugin):
         self.lang = lang
 
     def PrintHighlighted(self, out):
-        try:
-            from pygments import lexers
-            from pygments import formatters
-            from pygments import highlight
-        except ImportError:
-            log("Warning: Couldn't import pygments, so skipping syntax highlighting"
-                )
-            return
-
         # unescape before passing to pygments, which will escape
         code = html.ToText(self.s, self.start_pos, self.end_pos)
 
-        lexer = lexers.get_lexer_by_name(self.lang)
-        formatter = formatters.HtmlFormatter()
+        lexer = pygments.lexers.get_lexer_by_name(self.lang)
+        formatter = pyments.formatters.HtmlFormatter()
 
-        highlighted = highlight(code, lexer, formatter)
+        highlighted = pygments.highlight(code, lexer, formatter)
         out.Print(highlighted)
 
 
@@ -492,6 +488,11 @@ def HighlightCode(s, default_highlighter, debug_out=None):
                             out.SkipTo(slash_code_left)
 
                         else:  # language-*: Use Pygments
+                            if pygments is None:
+                                log("Warning: Couldn't import pygments, so skipping syntax highlighting"
+                                    )
+                                continue
+
                             # We REMOVE the original <pre><code> because
                             # Pygments gives you a <pre> already
 
@@ -503,8 +504,8 @@ def HighlightCode(s, default_highlighter, debug_out=None):
                                 break
                             tag_lexer.Reset(slash_code_right, end_pos)
                             assert tok_id == html.EndTag, tok_id
-                            assert tag_lexer.TagName(
-                            ) == 'pre', tag_lexer.TagName()
+                            assert (tag_lexer.TagName() == 'pre'
+                                    ), tag_lexer.TagName()
                             slash_pre_right = end_pos
 
                             out.PrintUntil(pre_start_pos)
