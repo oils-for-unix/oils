@@ -2,6 +2,22 @@
 #
 # Usage:
 #   data_lang/htm8-test.sh
+#
+# TODO:
+# - Rename to DML8?  Because it can handle XML
+# - CDATA in XML, which is not a script
+#
+# Operations / Levels:
+#
+# - Lexing
+#   - lex-tags
+#   - lex-attrs - validate all Start tags, all StartEnd tags
+#   - lex-quoted-values - unescaping, etc.
+#     - are there invalid entities?
+# - Parsing
+#   - well-formed / tag balance check
+# - Schema
+#   - not sure if we check the HTML schema or not - it might be too restrictive
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 

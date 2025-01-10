@@ -244,12 +244,13 @@ class LexerTest(unittest.TestCase):
             'a < b',
             '<!-- unfinished comment',
             '<? unfinished processing',
+            '</div bad=attr> <a> <b>',
         ]
 
         for s in INVALID:
             lex = html.ValidTokens(s)
             try:
-                for i in xrange(10):
+                for i in xrange(5):
                     tok_id, pos = next(lex)
             except html.LexError as e:
                 print(e)

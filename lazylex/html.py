@@ -139,7 +139,8 @@ def MakeLexer(rules):
 # EntityRef = / '&' dot{* N} ';' /
 
 # Tag name, or attribute name
-_NAME = r'[a-zA-Z][a-zA-Z0-9_\-]*'  # must start with letter
+# colon is used in XML
+_NAME = r'[a-zA-Z][a-zA-Z0-9:_\-]*'  # must start with letter
 
 LEXER = [
     # Note non-greedy matches are regular and can be matched in linear time
@@ -165,19 +166,18 @@ LEXER = [
     #
     #   https://developer.mozilla.org/en-US/docs/Web/API/ProcessingInstruction
     #
-    # We don't want to confuse them with start tags, so we recognize them at
-    # the top level.
+    # They are used for the XML comment:
+    # <?xml version="1.0" encoding="UTF-8"?>
     (r'<\?', Tok.ProcessingBegin),
 
-    # NOTE: < is allowed in these.
+    # NOTE: < is allowed in these?
     (r'<! [^>]+ >', Tok.Decl),  # <!DOCTYPE html>
-    #(r'<(?:script|style) [^>]+>', Tok.CDataStartTag),  # start <a>
 
     # Notes:
     # - We look for a valid tag name, but we don't validate attributes.
     #   That's done in the tag lexer.
     # - We don't allow leading whitespace
-    (r'</ (%s) [^>]* >' % _NAME, Tok.EndTag),
+    (r'</ (%s) >' % _NAME, Tok.EndTag),
     # self-closing <br/>  comes before StarttTag
     (r'<  (%s) [^>]* />' % _NAME, Tok.StartEndTag),  # end </a>
     (r'<  (%s) [^>]* >' % _NAME, Tok.StartTag),  # start <a>
@@ -187,14 +187,16 @@ LEXER = [
 
     # HTML5 allows > in raw data - should we?  But < is not allowed.
     # https://stackoverflow.com/questions/10462348/right-angle-bracket-in-html
+    #
+    # - My early blog has THREE errors when disallowing >
+    # - So do some .wwz files
     (r'[^&<]+', Tok.RawData),
     (r'.', Tok.Invalid),  # error!
 ]
 
 # TODO:
-# - I think we should unescaped <, like XML does.  There should be "one way to
-#   do it", and it should catch bugs
-# - end tags shouldn't allow any other data, it has to be </foo>, not </foo x=y>
+# - should we disallowed unescaped >, like XML does?  There should be "one way to
+#   do it", and it could catch escaping bugs
 
 LEXER = MakeLexer(LEXER)
 
