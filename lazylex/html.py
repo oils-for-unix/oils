@@ -80,8 +80,8 @@ class Output(object):
 
 
 # HTML Tokens
-# CommentBegin and ProcessingBegin are "pseudo-tokens", not visible
-TOKENS = 'Decl Comment CommentBegin Processing ProcessingBegin StartTag StartEndTag EndTag DecChar HexChar CharEntity RawData CData Invalid EndOfStream'.split(
+# CommentBegin, ProcessingBegin, CDataBegin are "pseudo-tokens", not visible
+TOKENS = 'Decl Comment CommentBegin Processing ProcessingBegin CData CDataBegin StartTag StartEndTag EndTag DecChar HexChar CharEntity RawData HtmlCData Invalid EndOfStream'.split(
 )
 
 
@@ -169,6 +169,7 @@ LEXER = [
     # They are used for the XML comment:
     # <?xml version="1.0" encoding="UTF-8"?>
     (r'<\?', Tok.ProcessingBegin),
+    (r'<!\[CDATA\[', Tok.CDataBegin),  # <![CDATA[
 
     # NOTE: < is allowed in these?
     (r'<! [^>]+ >', Tok.Decl),  # <!DOCTYPE html>
@@ -229,13 +230,11 @@ class Lexer(object):
                 raise LexError(self.s, self.pos)
             self.search_state = None
             # beginning
-            return Tok.CData, pos
+            return Tok.HtmlCData, pos
 
         # Find the first match.
         # Note: frontend/match.py uses _LongestMatch(), which is different!
         # TODO: reconcile them.  This lexer should be expressible in re2c.
-
-        # TODO: Get rid of non-greedy match
 
         for pat, tok_id in LEXER:
             m = pat.match(self.s, self.pos)
@@ -253,6 +252,13 @@ class Lexer(object):
                         # unterminated <?
                         raise LexError(self.s, self.pos)
                     return Tok.Processing, pos + 2  # ?>
+
+                if tok_id == Tok.CDataBegin:
+                    pos = self.s.find(']]>', self.pos)
+                    if pos == -1:
+                        # unterminated <![CDATA[
+                        raise LexError(self.s, self.pos)
+                    return Tok.CData, pos + 3  # ]]>
 
                 if tok_id == Tok.StartTag:
                     tag_name = m.group(1)  # captured
@@ -331,7 +337,8 @@ def ValidTokens(s, left_pos=0, right_pos=-1):
 
 _ATTR_VALUE = r'[a-zA-Z0-9_\-]+'  # allow hyphens
 
-# TODO: capture tag name above?
+# TODO: we don't need to capture the tag name here?  That's done at the top
+# level
 _TAG_RE = re.compile(r'/? \s* (%s)' % _NAME, re.VERBOSE)
 
 # To match href="foo"

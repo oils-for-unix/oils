@@ -96,6 +96,15 @@ class TagLexerTest(unittest.TestCase):
         self.assertEqual([('href', '?foo=1&amp;bar=2')], lex.AllAttrsRaw())
 
 
+def Lex(h):
+    print(repr(h))
+    lex = html.ValidTokens(h)
+    tokens = list(lex)
+    for tok_id, end_pos in tokens:
+        log('%d %s', end_pos, html.TokenName(tok_id))
+    return tokens
+
+
 class LexerTest(unittest.TestCase):
 
     # IndexLinker in devtools/make_help.py
@@ -122,116 +131,77 @@ class LexerTest(unittest.TestCase):
         h = '''
         hi <!-- line 1
                 line 2 --><br/>'''
-        print(repr(h))
-        lex = html.ValidTokens(h)
+        tokens = Lex(h)
 
-        tok_id, pos = next(lex)
-        self.assertEqual(12, pos)
-        self.assertEqual(Tok.RawData, tok_id)
-
-        tok_id, pos = next(lex)
-        log('tok %r', html.TokenName(tok_id))
-        self.assertEqual(50, pos)
-        self.assertEqual(Tok.Comment, tok_id)
-
-        tok_id, pos = next(lex)
-        self.assertEqual(55, pos)
-        self.assertEqual(Tok.StartEndTag, tok_id)
-
-        tok_id, pos = next(lex)
-        self.assertEqual(55, pos)
-        self.assertEqual(Tok.EndOfStream, tok_id)
+        self.assertEqual(
+            [
+                (Tok.RawData, 12),
+                (Tok.Comment, 50),  # <? err ?>
+                (Tok.StartEndTag, 55),
+                (Tok.EndOfStream, 55),
+            ],
+            tokens)
 
     def testProcessingInstruction(self):
-        # The TOP level should understand the <? ?> syntax, because otherwise
-        # it will be a start tag
-
+        # <?xml ?> header
         Tok = html.Tok
         h = 'hi <? err ?>'
-        print(repr(h))
-        lex = html.ValidTokens(h)
+        tokens = Lex(h)
 
-        tok_id, pos = next(lex)
-        self.assertEqual(3, pos)
-        self.assertEqual(Tok.RawData, tok_id)
-
-        tok_id, pos = next(lex)
-        self.assertEqual(12, pos)
-        log('tok %r', html.TokenName(tok_id))
-        self.assertEqual(Tok.Processing, tok_id)
-
-        tok_id, pos = next(lex)
-        self.assertEqual(12, pos)
-        log('tok %r', html.TokenName(tok_id))
-        self.assertEqual(Tok.EndOfStream, tok_id)
+        self.assertEqual(
+            [
+                (Tok.RawData, 3),
+                (Tok.Processing, 12),  # <? err ?>
+                (Tok.EndOfStream, 12),
+            ],
+            tokens)
 
     def testScriptStyle(self):
-
         Tok = html.Tok
         h = '''
         hi <script src=""> if (x < 1 && y > 2 ) { console.log(""); }
         </script>
         '''
-        print(repr(h))
-        lex = html.ValidTokens(h)
+        tokens = Lex(h)
 
-        tok_id, pos = next(lex)
-        self.assertEqual(12, pos)
-        self.assertEqual(Tok.RawData, tok_id)
+        self.assertEqual(
+            [
+                (Tok.RawData, 12),
+                (Tok.StartTag, 27),  # <script>
+                (Tok.HtmlCData, 78),  # JavaScript code is HTML CData
+                (Tok.EndTag, 87),  # </script>
+                (Tok.RawData, 96),  # \n
+                (Tok.EndOfStream, 96),  # \n
+            ],
+            tokens)
 
-        # <script>
-        tok_id, pos = next(lex)
-        self.assertEqual(27, pos)
-        self.assertEqual(Tok.StartTag, tok_id)
-
-        # JavaScript code is CData
-        tok_id, pos = next(lex)
-        log('tok %r', html.TokenName(tok_id))
-        self.assertEqual(78, pos)
-        self.assertEqual(Tok.CData, tok_id)
-
-        # </script>
-        tok_id, pos = next(lex)
-        log('tok %r', html.TokenName(tok_id))
-        self.assertEqual(87, pos)
-        self.assertEqual(Tok.EndTag, tok_id)
-
-    def testValid(self):
+    def testCData(self):
         Tok = html.Tok
 
-        lex = html.ValidTokens('<a>hi</a>')
+        # from
+        # /home/andy/src/languages/Python-3.11.5/Lib/test/xmltestdata/c14n-20/inC14N4.xml
+        h = '<compute><![CDATA[value>"0" && value<"10" ?"valid":"error"]]></compute>'
+        tokens = Lex(h)
 
-        tok_id, pos = next(lex)
-        self.assertEqual(3, pos)
-        self.assertEqual(Tok.StartTag, tok_id)
+        self.assertEqual([
+            (Tok.StartTag, 9),
+            (Tok.CData, 61),
+            (Tok.EndTag, 71),
+            (Tok.EndOfStream, 71),
+        ], tokens)
 
-        tok_id, pos = next(lex)
-        self.assertEqual(5, pos)
-        self.assertEqual(Tok.RawData, tok_id)
+    def testStartTag(self):
+        Tok = html.Tok
 
-        tok_id, pos = next(lex)
-        self.assertEqual(9, pos)
-        self.assertEqual(Tok.EndTag, tok_id)
+        h = '<a>hi</a>'
+        tokens = Lex(h)
 
-        tok_id, pos = next(lex)
-        self.assertEqual(9, pos)
-        self.assertEqual(Tok.EndOfStream, tok_id)
-
-        lex = html.Lexer('<a>hi</a>')
-        while True:
-            tok_id, pos = lex.Read()
-            print('%d %s' % (pos, html.TokenName(tok_id)))
-            if tok_id == Tok.EndOfStream:
-                break
-
-        return
-        tok_id, pos = next(lex)
-        self.assertEqual(9, pos)
-        self.assertEqual(Tok.EndOfStream, tok_id)
-
-        while True:
-            tok_id, pos = next(lex)
-            print('%d %s' % (pos, html.TokenName(tok_id)))
+        self.assertEqual([
+            (Tok.StartTag, 3),
+            (Tok.RawData, 5),
+            (Tok.EndTag, 9),
+            (Tok.EndOfStream, 9),
+        ], tokens)
 
     def testInvalid(self):
         Tok = html.Tok
