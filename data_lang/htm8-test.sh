@@ -114,7 +114,7 @@ tree-wwz() {
 test-wwz() {
   pushd $WWZ_DIR
 
-  find . -name '*.html' | $REPO_ROOT/$0 ht8-tool well-formed
+  time find . -name '*.html' | $REPO_ROOT/$0 ht8-tool well-formed
 
   popd
 }

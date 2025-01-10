@@ -226,6 +226,8 @@ class LexerTest(unittest.TestCase):
         INVALID = [
             # Should be &amp;
             '<a>&',
+            '&amp',  # not finished
+            '&#',  # not finished
             # Hm > is allowed?
             #'a > b',
             'a < b',

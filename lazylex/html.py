@@ -594,8 +594,12 @@ def ToText(s, left_pos=0, right_pos=-1):
 def main(argv):
     action = argv[1]
 
-    if action == 'well-formed':
+    if action in ('lex-tags', 'lex-attrs', 'lex-attr-values', 'well-formed'):
         num_tokens = 0
+        num_start_tags = 0
+        num_start_end_tags = 0
+        num_attrs = 0
+
         errors = []
         i = 0
         for line in sys.stdin:
@@ -603,19 +607,60 @@ def main(argv):
             with open(name) as f:
                 contents = f.read()
 
+            tag_lexer = TagLexer(contents)
             lx = ValidTokens(contents)
+            tokens = []
+            start_pos = 0
+            tag_stack = []
             try:
-                tokens = list(lx)
+                for tok_id, end_pos in lx:
+                    tokens.append((tok_id, end_pos))
+                    if tok_id == Tok.StartEndTag:
+                        num_start_end_tags += 1
+                        if action in ('lex-attrs', 'lex-attr-values',
+                                      'well-formed'):
+                            tag_lexer.Reset(start_pos, end_pos)
+                            all_attrs = tag_lexer.AllAttrsRaw()
+                            num_attrs += len(all_attrs)
+                    elif tok_id == Tok.StartTag:
+                        num_start_tags += 1
+                        if action in ('lex-attrs', 'lex-attr-values',
+                                      'well-formed'):
+                            tag_lexer.Reset(start_pos, end_pos)
+                            all_attrs = tag_lexer.AllAttrsRaw()
+
+                            # TODO: we need to get the tag name here
+                            tag_stack.append('TODO')
+                    elif tok_id == Tok.EndTag:
+                        try:
+                            expected = tag_stack.pop()
+                        except IndexError:
+                            raise ParseError('Tag stack empty')
+
+                        # TODO: we need to get the tag name here
+                        actual = 'TODO'
+                        if expected != actual:
+                            raise ParseError(
+                                'Expected closing tag %r, got %r' %
+                                (expected, actual))
+
+                    start_pos = end_pos
             except LexError as e:
-                log('Error in %r: %s', name, e)
+                log('Lex error in %r: %s', name, e)
+                errors.append((name, e))
+            except ParseError as e:
+                log('Parse error in %r: %s', name, e)
                 errors.append((name, e))
             else:
                 num_tokens += len(tokens)
+
             #print('%d %s' % (len(tokens), name))
             i += 1
 
         log('')
-        log('  %d tokens in %d files', num_tokens, i)
+        log(
+            '  %d tokens, %d start/end tags, %d start tags, %d attrs in %d files',
+            num_tokens, num_start_end_tags, num_start_tags, num_attrs, i)
         log('  %d errors', len(errors))
         if 0:
             for name, e in errors:
