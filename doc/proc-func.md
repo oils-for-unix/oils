@@ -149,8 +149,8 @@ doc will elaborate on these issues.
   - `camelCase`
 - tr
   - [Syntax Mode](command-vs-expression-mode.html) of call site
-  - Command Mode</td>
-  - Expression Mode</td>
+  - Command Mode
+  - Expression Mode
 - tr
   - Kinds of Parameters / Arguments
   - <!-- empty -->

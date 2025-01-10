@@ -65,8 +65,8 @@ Design goals:
 
 ## Operations
 
-- doc('<p>') - validates it and creates a value.Obj
-- docQuery(mydoc, '#element') - does a simple search
+- `doc('<p>')` - validates it and creates a value.Obj
+- `docQuery(mydoc, '#element')` - does a simple search
 
 Constructors:
 

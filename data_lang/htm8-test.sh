@@ -66,13 +66,21 @@ EOF
 
 # Takes ~13 seconds
 test-site() {
+  local new_site=${1:-}
+
   # TODO: 
   # - test that the top level lexes
   #   - test that each tag lexers
   #     - test that each quoted attribute lexes
   # - test that tags are balanced
 
-  pushd ../../oilshell/oilshell.org__deploy 
+  if test -n "$new_site"; then
+    dir='../oils.pub__deploy'
+  else
+    dir='../../oilshell/oilshell.org__deploy'
+  fi
+
+  pushd $dir
 
   # Too many files
   # site-files | xargs wc -l | grep total

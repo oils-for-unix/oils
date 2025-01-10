@@ -269,7 +269,7 @@ These relationships might help you understand the 3 styles of strings:
 
 <b>&subset;</b>
 
-<span class="set">Strings representable by `b''`</span></br>
+<span class="set">Strings representable by `b''`</span><br/>
 &equals; All Byte Strings
 
 </div>
