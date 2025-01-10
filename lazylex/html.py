@@ -17,7 +17,7 @@ import re
 import sys
 
 if sys.version_info.major == 2:
-    from typing import List, Tuple
+    from typing import List, Tuple, Optional
 
 
 def log(msg, *args):
@@ -81,7 +81,7 @@ class Output(object):
 
 # HTML Tokens
 # CommentBegin and ProcessingBegin are "pseudo-tokens", not visible
-TOKENS = 'Decl Comment CommentBegin Processing ProcessingBegin StartTag StartEndTag EndTag DecChar HexChar CharEntity RawData CData CDataStartTag CDataEndTag Invalid EndOfStream'.split(
+TOKENS = 'Decl Comment CommentBegin Processing ProcessingBegin StartTag StartEndTag EndTag DecChar HexChar CharEntity RawData CData Invalid EndOfStream'.split(
 )
 
 
@@ -174,30 +174,27 @@ LEXER = [
     #(r'<(?:script|style) [^>]+>', Tok.CDataStartTag),  # start <a>
 
     # Notes:
-    # - We look for a valid tag name, but we don't validate attributes. 
+    # - We look for a valid tag name, but we don't validate attributes.
     #   That's done in the tag lexer.
     # - We don't allow leading whitespace
-    #
-    # TODO: do something different for <script> and <style>.  And maybe have a
-    # mode to also understand the difference between <pre> <textarea> and say
-    # <div>.
-    (r'</ (%s) [^>]* >' % _NAME, Tok.EndTag),  # self-closing <br/>  comes FIRST
+    (r'</ (%s) [^>]* >' % _NAME, Tok.EndTag),
+    # self-closing <br/>  comes before StarttTag
     (r'<  (%s) [^>]* />' % _NAME, Tok.StartEndTag),  # end </a>
     (r'<  (%s) [^>]* >' % _NAME, Tok.StartTag),  # start <a>
-
     (r'&\# [0-9]+ ;', Tok.DecChar),
     (r'&\# x[0-9a-fA-F]+ ;', Tok.HexChar),
     (r'& [a-zA-Z]+ ;', Tok.CharEntity),
 
     # HTML5 allows > in raw data - should we?  But < is not allowed.
     # https://stackoverflow.com/questions/10462348/right-angle-bracket-in-html
-    #
-    # TODO: I think we should disallow it, like XML does.  There should be "one
-    # way to do it".  There is a stronger distinction between <script> <style>
-    # this way.
     (r'[^&<]+', Tok.RawData),
     (r'.', Tok.Invalid),  # error!
 ]
+
+# TODO:
+# - I think we should unescaped <, like XML does.  There should be "one way to
+#   do it", and it should catch bugs
+# - end tags shouldn't allow any other data, it has to be </foo>, not </foo x=y>
 
 LEXER = MakeLexer(LEXER)
 
@@ -210,6 +207,9 @@ class Lexer(object):
         self.right_pos = len(s) if right_pos == -1 else right_pos
         self.cache = {}  # string -> compiled regex pattern object
 
+        # either </script> or </style> - we search until we see that
+        self.search_state = None  # type: Optional[str]
+
     def _Peek(self):
         # type: () -> Tuple[int, int]
         """
@@ -219,6 +219,15 @@ class Lexer(object):
             return Tok.EndOfStream, self.pos
 
         assert self.pos < self.right_pos, self.pos
+
+        if self.search_state is not None:
+            pos = self.s.find(self.search_state, self.pos)
+            if pos == -1:
+                # unterminated <script> or <style>
+                raise LexError(self.s, self.pos)
+            self.search_state = None
+            # beginning
+            return Tok.CData, pos
 
         # Find the first match.
         # Note: frontend/match.py uses _LongestMatch(), which is different!
@@ -243,14 +252,12 @@ class Lexer(object):
                         raise LexError(self.s, self.pos)
                     return Tok.Processing, pos + 2  # ?>
 
-                # TODO: we need to enter state so the NEXT call can be CData
-                # And then the one after that must be CDataEndTag.
-                if tok_id == Tok.CDataStartTag:
-                    end_tag = '</script>'
-                    pos = self.s.find(end_tag, self.pos)
-                    if pos == -1:
-                        # unterminated </script>
-                        raise LexError(self.s, self.pos)
+                if tok_id == Tok.StartTag:
+                    tag_name = m.group(1)  # captured
+                    if tag_name == 'script':
+                        self.search_state = '</script>'
+                    elif tag_name == 'style':
+                        self.search_state = '</style>'
 
                 return tok_id, m.end()
         else:

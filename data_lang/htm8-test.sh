@@ -103,6 +103,22 @@ test-wwz() {
   popd
 }
 
+find-xml() {
+  time find ~ -iname '*.xml' | tee _tmp/xml-files.txt
+}
+
+test-other-xml() {
+  # problem with &ent1;
+  # CDATA support!  haha OK
+  time cat _tmp/xml-files.txt | $REPO_ROOT/$0 ht8-tool well-formed
+}
+
+test-repo-xml() {
+  # OK these parse
+  time find . -name '_chroot' -a -prune -o -name '*.xml' -a -print \
+    | $REPO_ROOT/$0 ht8-tool well-formed
+}
+
 # OK we have to skip the <script> tag!  And <style>
 #
 # document.location = '#' + params.join('&');

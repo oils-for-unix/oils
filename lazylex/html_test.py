@@ -179,26 +179,22 @@ class LexerTest(unittest.TestCase):
         self.assertEqual(12, pos)
         self.assertEqual(Tok.RawData, tok_id)
 
-        return
-
         # <script>
         tok_id, pos = next(lex)
         self.assertEqual(27, pos)
-        self.assertEqual(Tok.CDataStartTag, tok_id)
-
-        return
+        self.assertEqual(Tok.StartTag, tok_id)
 
         # JavaScript code is CData
         tok_id, pos = next(lex)
-        self.assertEqual(34, pos)
         log('tok %r', html.TokenName(tok_id))
+        self.assertEqual(78, pos)
         self.assertEqual(Tok.CData, tok_id)
 
         # </script>
         tok_id, pos = next(lex)
-        self.assertEqual(27, pos)
         log('tok %r', html.TokenName(tok_id))
-        self.assertEqual(Tok.CDataEndTag, tok_id)
+        self.assertEqual(87, pos)
+        self.assertEqual(Tok.EndTag, tok_id)
 
     def testValid(self):
         Tok = html.Tok
