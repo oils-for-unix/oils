@@ -138,6 +138,9 @@ def MakeLexer(rules):
 #
 # EntityRef = / '&' dot{* N} ';' /
 
+# Tag name, or attribute name
+_NAME = r'[a-zA-Z][a-zA-Z0-9_\-]*'  # must start with letter
+
 LEXER = [
     # Note non-greedy matches are regular and can be matched in linear time
     # with RE2.
@@ -168,18 +171,30 @@ LEXER = [
 
     # NOTE: < is allowed in these.
     (r'<! [^>]+ >', Tok.Decl),  # <!DOCTYPE html>
-    (r'<(?:script|style) [^>]+>', Tok.CDataStartTag),  # start <a>
-    (r'</ [^>]+ >', Tok.EndTag),  # self-closing <br/>  comes FIRST
-    (r'< [^>]+ />', Tok.StartEndTag),  # end </a>
-    (r'< [^>]+  >', Tok.StartTag),  # start <a>
+    #(r'<(?:script|style) [^>]+>', Tok.CDataStartTag),  # start <a>
+
+    # Notes:
+    # - We look for a valid tag name, but we don't validate attributes. 
+    #   That's done in the tag lexer.
+    # - We don't allow leading whitespace
+    #
+    # TODO: do something different for <script> and <style>.  And maybe have a
+    # mode to also understand the difference between <pre> <textarea> and say
+    # <div>.
+    (r'</ (%s) [^>]* >' % _NAME, Tok.EndTag),  # self-closing <br/>  comes FIRST
+    (r'<  (%s) [^>]* />' % _NAME, Tok.StartEndTag),  # end </a>
+    (r'<  (%s) [^>]* >' % _NAME, Tok.StartTag),  # start <a>
+
     (r'&\# [0-9]+ ;', Tok.DecChar),
     (r'&\# x[0-9a-fA-F]+ ;', Tok.HexChar),
     (r'& [a-zA-Z]+ ;', Tok.CharEntity),
 
-    # HTML5 allows > in raw data - should we?  It's apparently not allowed in
-    # XML.
-    # But < is not allowed.
+    # HTML5 allows > in raw data - should we?  But < is not allowed.
     # https://stackoverflow.com/questions/10462348/right-angle-bracket-in-html
+    #
+    # TODO: I think we should disallow it, like XML does.  There should be "one
+    # way to do it".  There is a stronger distinction between <script> <style>
+    # this way.
     (r'[^&<]+', Tok.RawData),
     (r'.', Tok.Invalid),  # error!
 ]
@@ -305,11 +320,9 @@ def ValidTokens(s, left_pos=0, right_pos=-1):
 #
 # Allow - for td-attrs
 
-# Tag name, or attribue name
-_NAME = r'[a-zA-Z][a-zA-Z0-9_\-]*'  # must start with letter
-
 _ATTR_VALUE = r'[a-zA-Z0-9_\-]+'  # allow hyphens
 
+# TODO: capture tag name above?
 _TAG_RE = re.compile(r'/? \s* (%s)' % _NAME, re.VERBOSE)
 
 # To match href="foo"

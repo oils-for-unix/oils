@@ -161,7 +161,7 @@ This is part of **maximal** YSH!
   - you can escape everything, so you can put another HTM8 doc inside
   - and you can put JSON/JSON8 or TSV/TSV8
   - although are there whitespace rules?
-  - all nodes can be liek `<pre>` nodes, preserving whitespace, until
+  - all nodes can be like `<pre>` nodes, preserving whitespace, until
     - you apply another function to it
 
 ### HTML5 whitespace rules
