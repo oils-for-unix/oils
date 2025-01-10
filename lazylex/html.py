@@ -6,6 +6,18 @@ See lazylex/README.md for details.
 
 TODO: This should be an Oils library eventually.  It's a "lazily-parsed data
 structure" like TSV8
+
+Conflicts between HTML5 and XML:
+
+- In XML, <source> is like any tag, and must be closed,
+- In HTML, <source> is a VOID tag, and must NOT be closedlike any tag, and must be closed,
+
+- In XML, <script> and <style> don't have special treatment
+- In HTML, they do
+
+- The header is different - <!DOCTYPE html> vs.  <?xml version= ... ?>
+
+So do have a mode for <script> <style> and void tags?  Upgrade HX8 into HTM8?
 """
 from __future__ import print_function
 
@@ -681,7 +693,25 @@ VOID_ELEMENTS = [
 def main(argv):
     action = argv[1]
 
-    if action in ('lex-tags', 'lex-attrs', 'lex-attr-values', 'well-formed'):
+    if action == 'tokens':
+        contents = sys.stdin.read()
+
+        lx = Lexer(contents)
+        start_pos = 0
+        while True:
+            tok_id, end_pos = lx.Read()
+            if tok_id == Tok.Invalid:
+                raise LexError(contents, start_pos)
+            if tok_id == Tok.EndOfStream:
+                break
+
+            frag = contents[start_pos:end_pos]
+            log('%d %s %r', end_pos, TokenName(tok_id), frag)
+            start_pos = end_pos
+
+        return 0
+
+    elif action in ('lex-tags', 'lex-attrs', 'lex-attr-values', 'well-formed'):
         num_tokens = 0
         num_start_tags = 0
         num_start_end_tags = 0
@@ -729,6 +759,7 @@ def main(argv):
                             # Don't bother to check
                             if tag_name not in VOID_ELEMENTS:
                                 tag_stack.append(tag_name)
+
                             max_tag_stack = max(max_tag_stack, len(tag_stack))
                     elif tok_id == Tok.EndTag:
                         try:
@@ -741,8 +772,8 @@ def main(argv):
                         actual = lx.TagName()
                         if expected != actual:
                             raise ParseError(
-                                'Expected closing tag %r, got %r' %
-                                (expected, actual),
+                                'Got unexpected closing tag %r; opening tag was %r'
+                                % (contents[start_pos:end_pos], expected),
                                 s=contents,
                                 start_pos=start_pos)
 

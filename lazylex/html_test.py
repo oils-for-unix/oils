@@ -109,8 +109,11 @@ def Lex(h):
     print(repr(h))
     lex = html.ValidTokens(h)
     tokens = list(lex)
+    start_pos = 0
     for tok_id, end_pos in tokens:
-        log('%d %s', end_pos, html.TokenName(tok_id))
+        frag = h[start_pos:end_pos]
+        log('%d %s %r', end_pos, html.TokenName(tok_id), frag)
+        start_pos = end_pos
     return tokens
 
 
@@ -226,6 +229,36 @@ class LexerTest(unittest.TestCase):
             (Tok.StartTag, 3),
             (Tok.RawData, 5),
             (Tok.EndTag, 9),
+            (Tok.EndOfStream, 9),
+        ], tokens)
+
+        # Make sure we don't consume too much
+        h = '<a><source>1.7</source></a>'
+
+        tokens = Lex(h)
+
+        self.assertEqual([
+            (Tok.StartTag, 3),
+            (Tok.StartTag, 11),
+            (Tok.RawData, 14),
+            (Tok.EndTag, 23),
+            (Tok.EndTag, 27),
+            (Tok.EndOfStream, 27),
+        ], tokens)
+
+        return
+
+        h = '''
+        <configuration>
+          <source>1.7</source>
+        </configuration>'''
+
+        tokens = Lex(h)
+
+        self.assertEqual([
+            (Tok.RawData, 9),
+            (Tok.StartTag, 24),
+            (Tok.RawData, 9),
             (Tok.EndOfStream, 9),
         ], tokens)
 
