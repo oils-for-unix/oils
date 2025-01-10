@@ -91,7 +91,7 @@ test-site() {
   popd
 }
 
-readonly SOIL_ID=8913
+readonly SOIL_ID=8915
 readonly WWZ_DIR=_tmp/$SOIL_ID
 
 sync-wwz() {

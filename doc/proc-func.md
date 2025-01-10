@@ -300,9 +300,6 @@ This table shows simpler, more common cases.
     <td colspan=3 style="text-align: center; padding: 3em">...</td>
   </tr>
 
-</td>
-  </tr>
-
   <tr>
     <td>Named Args</td>
 <td>

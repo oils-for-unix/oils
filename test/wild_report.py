@@ -333,7 +333,7 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
 {.end}
 
 {.if test top_level_links}
-<a href="version-info.txt">Date and OSH version<a>
+<a href="version-info.txt">Date and OSH version</a>
 {.end}
 
 <!-- page globals -->

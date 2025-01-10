@@ -41,6 +41,21 @@ class LexError(Exception):
         return '(LexError %r)' % (self.s[self.start_pos:self.start_pos + 20])
 
 
+def FindLineNum(s, error_pos):
+    current_pos = 0
+    line_num = 1
+    while True:
+        newline_pos = s.find('\n', current_pos)
+        #log('current = %d, N %d, line %d', current_pos, newline_pos, line_num)
+
+        if newline_pos == -1:  # this is the last line
+            return line_num
+        if newline_pos >= error_pos:
+            return line_num
+        line_num += 1
+        current_pos = newline_pos + 1
+
+
 class ParseError(Exception):
     """
     Examples of parse errors
@@ -58,9 +73,13 @@ class ParseError(Exception):
         if self.s is not None:
             assert self.start_pos != -1, self.start_pos
             snippet = (self.s[self.start_pos:self.start_pos + 20])
+
+            line_num = FindLineNum(self.s, self.start_pos)
         else:
             snippet = ''
-        return '(ParseError %r %r)' % (self.msg, snippet)
+            line_num = -1
+        msg = 'line %d: %r %r' % (line_num, self.msg, snippet)
+        return msg
 
 
 class Output(object):

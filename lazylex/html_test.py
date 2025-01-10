@@ -46,6 +46,15 @@ class RegexTest(unittest.TestCase):
         print(p4.match('\n'))
 
 
+class FunctionsTest(unittest.TestCase):
+
+    def testFindLineNum(self):
+        s = 'foo\n' * 3
+        for pos in [1, 5, 10, 50]:  # out of bounds
+            line_num = html.FindLineNum(s, pos)
+            print(line_num)
+
+
 class TagLexerTest(unittest.TestCase):
 
     def testTagLexer(self):

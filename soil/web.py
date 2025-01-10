@@ -134,7 +134,7 @@ DETAILS_RUN_T = jsontemplate.Template('''\
 
 </tr>
 <tr class="spacer">
-  <td><td/>
+  <td></td>
 </tr>
 
 </table>
@@ -433,7 +433,7 @@ INDEX_RUN_ROW_T = jsontemplate.Template('''\
 
 </tr>
 <tr class="spacer">
-  <td colspan=2><td/>
+  <td colspan=2></td>
 </tr>
 ''')
 
