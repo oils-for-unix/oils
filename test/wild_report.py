@@ -281,7 +281,7 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
           <a class="fail" href="#stderr_parse_{name}">FAIL</a>
           <td>{parse_proc_secs}</td>
         {.or}
-          <span class="ok">OK</a>
+          <span class="ok">OK</span>
           <td>{parse_proc_secs}</td>
         {.end}
       </td>

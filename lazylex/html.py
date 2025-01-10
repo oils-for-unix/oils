@@ -176,8 +176,13 @@ LEXER = [
     # Not necessary in HTML5, but occurs in XML
     (r'<!\[CDATA\[', Tok.CDataBegin),  # <![CDATA[
 
-    # NOTE: < is allowed in these?
-    (r'<! [^>]+ >', Tok.Decl),  # <!DOCTYPE html>
+    # Markup declarations
+    # - In HTML5, there is only <!DOCTYPE html>
+    # - XML has 4 more declarations: <!ELEMENT ...> ATTLIST ENTITY NOTATION
+    #   - these seem to be part of DTD
+    #   - it's useful to skip these, and be able to parse the rest of the document
+    # - Note: < is allowed?
+    (r'<! [^>]+ >', Tok.Decl),
 
     # Tags
     # Notes:
@@ -237,6 +242,12 @@ class Lexer(object):
         # either </script> or </style> - we search until we see that
         self.search_state = None  # type: Optional[str]
 
+        # Position of tag name, if applicable
+        # - Set after you get a StartTag, EndTag, or StartEndTag
+        # - Unset on other tags
+        self.tag_pos_left = -1
+        self.tag_pos_right = -1
+
     def _Peek(self):
         # type: () -> Tuple[int, int]
         """
@@ -263,6 +274,14 @@ class Lexer(object):
         for pat, tok_id in LEXER:
             m = pat.match(self.s, self.pos)
             if m:
+                if tok_id in (Tok.StartTag, Tok.EndTag, Tok.StartEndTag):
+                    self.tag_pos_left = m.start(1)
+                    self.tag_pos_right = m.end(1)
+                else:
+                    # Reset state
+                    self.tag_pos_left = -1
+                    self.tag_pos_right = -1
+
                 if tok_id == Tok.CommentBegin:
                     pos = self.s.find('-->', self.pos)
                     if pos == -1:
@@ -285,15 +304,29 @@ class Lexer(object):
                     return Tok.CData, pos + 3  # ]]>
 
                 if tok_id == Tok.StartTag:
-                    tag_name = m.group(1)  # captured
-                    if tag_name == 'script':
+                    if self.TagNameEquals('script'):
                         self.search_state = '</script>'
-                    elif tag_name == 'style':
+                    elif self.TagNameEquals('style'):
                         self.search_state = '</style>'
 
                 return tok_id, m.end()
         else:
             raise AssertionError('Tok.Invalid rule should have matched')
+
+    def TagNameEquals(self, expected):
+        # type: (str) -> bool
+        assert self.tag_pos_left != -1, self.tag_pos_left
+        assert self.tag_pos_right != -1, self.tag_pos_right
+
+        # TODO: In C++, this does not need an allocation
+        return expected == self.s[self.tag_pos_left:self.tag_pos_right]
+
+    def TagName(self):
+        # type: () -> None
+        assert self.tag_pos_left != -1, self.tag_pos_left
+        assert self.tag_pos_right != -1, self.tag_pos_right
+
+        return self.s[self.tag_pos_left:self.tag_pos_right]
 
     def Read(self):
         # type: () -> Tuple[int, int]
@@ -607,6 +640,25 @@ def ToText(s, left_pos=0, right_pos=-1):
     return f.getvalue()
 
 
+# https://developer.mozilla.org/en-US/docs/Glossary/Void_element
+VOID_ELEMENTS = [
+    'area',
+    'base',
+    'br',
+    'col',
+    'embed',
+    'hr',
+    'img',
+    'input',
+    'link',
+    'meta',
+    'param',
+    'source',
+    'track',
+    'wbr',
+]
+
+
 def main(argv):
     action = argv[1]
 
@@ -625,13 +677,21 @@ def main(argv):
                 contents = f.read()
 
             tag_lexer = TagLexer(contents)
-            lx = ValidTokens(contents)
+            lx = Lexer(contents)
             tokens = []
             start_pos = 0
             tag_stack = []
             try:
-                for tok_id, end_pos in lx:
+                while True:
+                    tok_id, end_pos = lx.Read()
+
+                    if tok_id == Tok.Invalid:
+                        raise LexError(contents, start_pos)
+                    if tok_id == Tok.EndOfStream:
+                        break
+
                     tokens.append((tok_id, end_pos))
+
                     if tok_id == Tok.StartEndTag:
                         num_start_end_tags += 1
                         if action in ('lex-attrs', 'lex-attr-values',
@@ -646,8 +706,10 @@ def main(argv):
                             tag_lexer.Reset(start_pos, end_pos)
                             all_attrs = tag_lexer.AllAttrsRaw()
 
-                            # TODO: we need to get the tag name here
-                            tag_stack.append('TODO')
+                            tag_name = lx.TagName()
+                            # Don't bother to check
+                            if tag_name not in VOID_ELEMENTS:
+                                tag_stack.append(tag_name)
                             max_tag_stack = max(max_tag_stack, len(tag_stack))
                     elif tok_id == Tok.EndTag:
                         try:
@@ -657,8 +719,7 @@ def main(argv):
                                              s=contents,
                                              start_pos=start_pos)
 
-                        # TODO: we need to get the tag name here
-                        actual = 'TODO'
+                        actual = lx.TagName()
                         if expected != actual:
                             raise ParseError(
                                 'Expected closing tag %r, got %r' %

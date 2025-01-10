@@ -223,8 +223,6 @@ EOF
 
     <a href="image-layers.txt">image-layers.txt</a> <br/>
     <a href="image-layers.tsv">image-layers.tsv</a> <br/>
-  </body>
-</html>
 EOF
 
   table-sort-end image-layers
