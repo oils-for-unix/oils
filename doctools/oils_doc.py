@@ -309,7 +309,7 @@ class PygmentsPlugin(_Plugin):
         code = html.ToText(self.s, self.start_pos, self.end_pos)
 
         lexer = pygments.lexers.get_lexer_by_name(self.lang)
-        formatter = pyments.formatters.HtmlFormatter()
+        formatter = pygments.formatters.HtmlFormatter()
 
         highlighted = pygments.highlight(code, lexer, formatter)
         out.Print(highlighted)
