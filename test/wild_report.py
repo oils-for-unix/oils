@@ -326,7 +326,7 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
         {contents|html}
         </pre>
       </td>
-    <tr/>
+    </tr>
   {.end}
 
   </table>

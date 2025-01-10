@@ -91,12 +91,13 @@ test-site() {
   popd
 }
 
-readonly WWZ_DIR=_tmp/8899
+readonly SOIL_ID=8913
+readonly WWZ_DIR=_tmp/$SOIL_ID
 
 sync-wwz() {
   mkdir -p $WWZ_DIR
   rsync --archive --verbose \
-    op.oilshell.org:op.oilshell.org/uuu/github-jobs/8899/ $WWZ_DIR/
+    op.oilshell.org:op.oilshell.org/uuu/github-jobs/$SOIL_ID/ $WWZ_DIR/
 }
 
 extract-wwz() {

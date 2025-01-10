@@ -198,7 +198,6 @@ EOF
   cat $results_tmp
 
   cat <<EOF
-    </table>
   </body>
 </html>
 EOF
