@@ -26,25 +26,41 @@ def log(msg, *args):
 
 
 class LexError(Exception):
-    """For bad lexical elements like <> or &&"""
+    """
+    Examples of lex errors:
 
-    def __init__(self, s, pos):
+    - Tok.Invalid, like <> or &&
+    - Unclosed <!--  <?  <![CDATA[  <script>  <style>
+    """
+
+    def __init__(self, s, start_pos):
         self.s = s
-        self.pos = pos
+        self.start_pos = start_pos
 
     def __str__(self):
-        return '(LexError %r)' % (self.s[self.pos:self.pos + 20])
+        return '(LexError %r)' % (self.s[self.start_pos:self.start_pos + 20])
 
 
 class ParseError(Exception):
-    """For errors in the tag structure."""
+    """
+    Examples of parse errors
 
-    def __init__(self, msg, *args):
+    - unbalanced tag structure
+    - ul_table.py errors
+    """
+
+    def __init__(self, msg, s=None, start_pos=-1):
         self.msg = msg
-        self.args = args
+        self.s = s
+        self.start_pos = start_pos
 
     def __str__(self):
-        return '(ParseError %s)' % (self.msg % self.args)
+        if self.s is not None:
+            assert self.start_pos != -1, self.start_pos
+            snippet = (self.s[self.start_pos:self.start_pos + 20])
+        else:
+            snippet = ''
+        return '(ParseError %r %r)' % (self.msg, snippet)
 
 
 class Output(object):
@@ -514,7 +530,7 @@ def ReadUntilStartTag(it, tag_lexer, tag_name):
 
         pos = end_pos
 
-    raise ParseError('No start tag %r', tag_name)
+    raise ParseError('No start tag %r' % tag_name)
 
 
 def ReadUntilEndTag(it, tag_lexer, tag_name):
@@ -536,7 +552,7 @@ def ReadUntilEndTag(it, tag_lexer, tag_name):
 
         pos = end_pos
 
-    raise ParseError('No end tag %r', tag_name)
+    raise ParseError('No end tag %r' % tag_name)
 
 
 CHAR_ENTITY = {
@@ -552,7 +568,7 @@ def ToText(s, left_pos=0, right_pos=-1):
 
     Used by:
       doctools/oils_doc.py: PygmentsPlugin
-      doctool/make_help.py: HelpIndexCards
+      doctools/help_gen.py: HelpIndexCards
 
     In the latter case, we cold process some tags, like:
 
@@ -599,6 +615,7 @@ def main(argv):
         num_start_tags = 0
         num_start_end_tags = 0
         num_attrs = 0
+        max_tag_stack = 0
 
         errors = []
         i = 0
@@ -631,18 +648,23 @@ def main(argv):
 
                             # TODO: we need to get the tag name here
                             tag_stack.append('TODO')
+                            max_tag_stack = max(max_tag_stack, len(tag_stack))
                     elif tok_id == Tok.EndTag:
                         try:
                             expected = tag_stack.pop()
                         except IndexError:
-                            raise ParseError('Tag stack empty')
+                            raise ParseError('Tag stack empty',
+                                             s=contents,
+                                             start_pos=start_pos)
 
                         # TODO: we need to get the tag name here
                         actual = 'TODO'
                         if expected != actual:
                             raise ParseError(
                                 'Expected closing tag %r, got %r' %
-                                (expected, actual))
+                                (expected, actual),
+                                s=contents,
+                                start_pos=start_pos)
 
                     start_pos = end_pos
             except LexError as e:
@@ -659,8 +681,9 @@ def main(argv):
 
         log('')
         log(
-            '  %d tokens, %d start/end tags, %d start tags, %d attrs in %d files',
-            num_tokens, num_start_end_tags, num_start_tags, num_attrs, i)
+            '  %d tokens, %d start/end tags, %d start tags, %d attrs, %d max tag stack depth in %d files',
+            num_tokens, num_start_end_tags, num_start_tags, num_attrs,
+            max_tag_stack, i)
         log('  %d errors', len(errors))
         if 0:
             for name, e in errors:

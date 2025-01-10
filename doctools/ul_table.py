@@ -76,13 +76,13 @@ class UlTableParser(object):
         Assert that we got text data matching a regex, and advance
         """
         if self.tok_id != html.RawData:
-            raise html.ParseError('Expected RawData, got %s',
+            raise html.ParseError('Expected RawData, got %s' %
                                   html.TokenName(self.tok_id))
         actual = self._CurrentString()
         m = re.match(regex, actual)  # could compile this
         if m is None:
-            raise html.ParseError('Expected to match %r, got %r', regex,
-                                  actual)
+            raise html.ParseError('Expected to match %r, got %r' %
+                                  (regex, actual))
         self._Next()
 
     def _Eat(self, expected_id, expected_tag):
@@ -97,14 +97,14 @@ class UlTableParser(object):
                                html.EndTag), html.TokenName(expected_id)
 
         if self.tok_id != expected_id:
-            raise html.ParseError('Expected token %s, got %s',
-                                  html.TokenName(expected_id),
-                                  html.TokenName(self.tok_id))
+            raise html.ParseError(
+                'Expected token %s, got %s' %
+                (html.TokenName(expected_id), html.TokenName(self.tok_id)))
         self.tag_lexer.Reset(self.start_pos, self.end_pos)
         tag_name = self.tag_lexer.TagName()
         if expected_tag != tag_name:
-            raise html.ParseError('Expected tag %r, got %r', expected_tag,
-                                  tag_name)
+            raise html.ParseError('Expected tag %r, got %r' %
+                                  (expected_tag, tag_name))
 
         self._Next()
 
@@ -393,8 +393,8 @@ class UlTableParser(object):
             # Not validating because of colspan
             if 0:
                 if thead and len(tr) != len(thead):
-                    raise html.ParseError('Expected %d cells, got %d: %s',
-                                          len(thead), len(tr), tr)
+                    raise html.ParseError('Expected %d cells, got %d: %s' %
+                                          (len(thead), len(tr), tr))
 
             #log('___ TR %s', tr)
             table['tr'].append((tr_attrs, tr))
