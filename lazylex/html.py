@@ -140,40 +140,30 @@ def MakeLexer(rules):
 
 # Tag name, or attribute name
 # colon is used in XML
+
+# https://www.w3.org/TR/xml/#NT-Name
+# Hm there is a lot of unicode stuff.  We are simplifying parsing
+
 _NAME = r'[a-zA-Z][a-zA-Z0-9:_\-]*'  # must start with letter
 
 LEXER = [
-    # Note non-greedy matches are regular and can be matched in linear time
-    # with RE2.
-    #
-    # https://news.ycombinator.com/item?id=27099798
-    #
-    # Maybe try combining all of these for speed.
-
-    # . is any char except newline
-    # https://re2c.org/manual/manual_c.html
-
-    # Discarded options
-    #(r'<!-- .*? -->', Tok.Comment),
-
-    # Hack from Claude: \s\S instead of re.DOTALL.  I don't like this
-    #(r'<!-- [\s\S]*? -->', Tok.Comment),
-    #(r'<!-- (?:.|[\n])*? -->', Tok.Comment),
     (r'<!--', Tok.CommentBegin),
 
-    # Processing instruction are XML only, but they are treated like a comment
-    # in HTML:
+    # Processing instruction are used for the XML header:
+    # <?xml version="1.0" encoding="UTF-8"?>
+    # They are technically XML-only, but in HTML5, they are another kind of
+    # comment:
     #
     #   https://developer.mozilla.org/en-US/docs/Web/API/ProcessingInstruction
     #
-    # They are used for the XML comment:
-    # <?xml version="1.0" encoding="UTF-8"?>
     (r'<\?', Tok.ProcessingBegin),
+    # Not necessary in HTML5, but occurs in XML
     (r'<!\[CDATA\[', Tok.CDataBegin),  # <![CDATA[
 
     # NOTE: < is allowed in these?
     (r'<! [^>]+ >', Tok.Decl),  # <!DOCTYPE html>
 
+    # Tags
     # Notes:
     # - We look for a valid tag name, but we don't validate attributes.
     #   That's done in the tag lexer.
@@ -182,11 +172,14 @@ LEXER = [
     # self-closing <br/>  comes before StarttTag
     (r'<  (%s) [^>]* />' % _NAME, Tok.StartEndTag),  # end </a>
     (r'<  (%s) [^>]* >' % _NAME, Tok.StartTag),  # start <a>
+
+    # Characters
+    # https://www.w3.org/TR/xml/#sec-references
     (r'&\# [0-9]+ ;', Tok.DecChar),
     (r'&\# x[0-9a-fA-F]+ ;', Tok.HexChar),
-    (r'& [a-zA-Z]+ ;', Tok.CharEntity),
+    (r'& %s ;' % _NAME, Tok.CharEntity),
 
-    # HTML5 allows > in raw data - should we?  But < is not allowed.
+    # HTML5 allows unescaped > in raw data, but < is not allowed.
     # https://stackoverflow.com/questions/10462348/right-angle-bracket-in-html
     #
     # - My early blog has THREE errors when disallowing >
@@ -195,9 +188,24 @@ LEXER = [
     (r'.', Tok.Invalid),  # error!
 ]
 
-# TODO:
-# - should we disallowed unescaped >, like XML does?  There should be "one way to
-#   do it", and it could catch escaping bugs
+#  Old notes:
+#
+# Non-greedy matches are regular and can be matched in linear time
+# with RE2.
+#
+# https://news.ycombinator.com/item?id=27099798
+#
+# Maybe try combining all of these for speed.
+
+# . is any char except newline
+# https://re2c.org/manual/manual_c.html
+
+# Discarded options
+#(r'<!-- .*? -->', Tok.Comment),
+
+# Hack from Claude: \s\S instead of re.DOTALL.  I don't like this
+#(r'<!-- [\s\S]*? -->', Tok.Comment),
+#(r'<!-- (?:.|[\n])*? -->', Tok.Comment),
 
 LEXER = MakeLexer(LEXER)
 

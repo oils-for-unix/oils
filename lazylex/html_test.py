@@ -190,6 +190,23 @@ class LexerTest(unittest.TestCase):
             (Tok.EndOfStream, 71),
         ], tokens)
 
+    def testEntity(self):
+        Tok = html.Tok
+
+        # from
+        # /home/andy/src/Python-3.12.4/Lib/test/xmltestdata/c14n-20/inC14N5.xml
+        h = '&ent1;, &ent2;!'
+
+        tokens = Lex(h)
+
+        self.assertEqual([
+            (Tok.CharEntity, 6),
+            (Tok.RawData, 8),
+            (Tok.CharEntity, 14),
+            (Tok.RawData, 15),
+            (Tok.EndOfStream, 15),
+        ], tokens)
+
     def testStartTag(self):
         Tok = html.Tok
 
