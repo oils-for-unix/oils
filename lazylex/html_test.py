@@ -279,26 +279,94 @@ class LexerTest(unittest.TestCase):
     def testInvalid(self):
         Tok = html.Tok
 
-        INVALID = [
-            # Should be &amp;
-            '<a>&',
-            '&amp',  # not finished
-            '&#',  # not finished
-            # Hm > is allowed?
-            #'a > b',
-            'a < b',
-            '<!-- unfinished comment',
-            '<? unfinished processing',
-            '</div bad=attr> <a> <b>',
-        ]
-
-        for s in INVALID:
+        for s in INVALID_LEX:
             try:
                 tokens = html.ValidTokenList(s)
             except html.LexError as e:
                 print(e)
             else:
                 self.fail('Expected LexError')
+
+
+INVALID_LEX = [
+    # Should be &amp;
+    '<a>&',
+    '&amp',  # not finished
+    '&#',  # not finished
+    # Hm > is allowed?
+    #'a > b',
+    'a < b',
+    '<!-- unfinished comment',
+    '<? unfinished processing',
+    '</div bad=attr> <a> <b>',
+    # TODO: we should match up to > or />
+    #'<a foo=bar !></a>',  # bad attr
+    #'<a zz></a>',  # this is not invalid?
+
+    # TODO: should be escaped, invalid in XML
+    #'<a href="&"></a>',
+    #'<a href=">"></a>',
+]
+
+INVALID_PARSE = [
+    '<a></b>',
+    '<a>',  # missing closing tag
+    '<meta></meta>',  # this is a self-closing tag
+]
+
+VALID_PARSE = [
+    '<b><a href="foo">link</a></b>',
+    '<meta><a></a>',
+    # TODO: capitalization should be allowed
+    #'<META><a></a>',
+
+    # TODO:
+    #'<a foo="&"></a>',  # bad attr
+    #'<a foo=bar !></a>',  # bad attr
+    #'<a zz></a>',  # bad attr
+
+    # TODO: Test <svg> and <math> ?
+]
+
+VALID_XML = [
+    '<meta></meta>',
+]
+
+
+class ValidateTest(unittest.TestCase):
+
+    def testInvalid(self):
+        counters = html.Counters()
+        for s in INVALID_LEX:
+            try:
+                html.Validate(s, html.BALANCED_TAGS, counters)
+            except html.LexError as e:
+                print(e)
+            else:
+                self.fail('Expected LexError %r' % s)
+
+        for s in INVALID_PARSE:
+            try:
+                html.Validate(s, html.BALANCED_TAGS, counters)
+            except html.ParseError as e:
+                print(e)
+            else:
+                self.fail('Expected ParseError')
+
+    def testValid(self):
+        counters = html.Counters()
+        for s in VALID_PARSE:
+            html.Validate(s, html.BALANCED_TAGS, counters)
+            print('HTML5 %r' % s)
+            print('HTML5 attrs %r' % counters.debug_attrs)
+
+    def testValidXml(self):
+        counters = html.Counters()
+        for s in VALID_XML:
+            html.Validate(s, html.BALANCED_TAGS | html.NO_SPECIAL_TAGS,
+                          counters)
+            print('XML %r' % s)
+            print('XML attrs %r' % counters.debug_attrs)
 
 
 if __name__ == '__main__':

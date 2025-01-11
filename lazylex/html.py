@@ -448,6 +448,7 @@ _ATTR_VALUE = r'[a-zA-Z0-9_\-]+'  # allow hyphens
 _TAG_RE = re.compile(r'/? \s* (%s)' % _NAME, re.VERBOSE)
 
 # To match href="foo"
+# Note: in HTML5 and XML, single quoted attributes are also valid
 
 _ATTR_RE = re.compile(
     r'''
@@ -739,6 +740,7 @@ def Validate(contents, flags, counters):
             tag_lexer.Reset(start_pos, end_pos)
             all_attrs = tag_lexer.AllAttrsRaw()
             counters.num_attrs += len(all_attrs)
+            counters.debug_attrs.extend(all_attrs)
 
         elif tok_id == Tok.StartTag:
             counters.num_start_tags += 1
@@ -746,6 +748,7 @@ def Validate(contents, flags, counters):
             tag_lexer.Reset(start_pos, end_pos)
             all_attrs = tag_lexer.AllAttrsRaw()
             counters.num_attrs += len(all_attrs)
+            counters.debug_attrs.extend(all_attrs)
 
             if flags & BALANCED_TAGS:
                 tag_name = lx.TagName()
@@ -776,6 +779,13 @@ def Validate(contents, flags, counters):
                         start_pos=start_pos)
 
         start_pos = end_pos
+
+    if len(tag_stack) != 0:
+        raise ParseError('Missing closing tags at end of doc: %s' %
+                         ' '.join(tag_stack),
+                         s=contents,
+                         start_pos=start_pos)
+
     counters.num_tokens += len(tokens)
 
 
@@ -787,6 +797,8 @@ class Counters(object):
         self.num_start_end_tags = 0
         self.num_attrs = 0
         self.max_tag_stack = 0
+
+        self.debug_attrs = []
 
 
 def main(argv):

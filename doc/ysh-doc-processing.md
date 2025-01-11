@@ -134,22 +134,7 @@ Safe HTML subset
 
 If you want to take user HTML, then you first use an HTML5 -> HT8 converter.
 
-## Algorithms
-
-### Emitting HX8 as HTML5
-
-Just emit it!  This always work.
-
-### Converting HX8 to XML
-
-- Always quote all attributes
-- Always quote `>` - are we alloxing this in HX8?
-- Do something with `<script>` and `<style>`
-  - I guess turn them into normal tags, with escaping?
-  - Or maybe just disallow them?
-- Maybe validate any other declarations, like `<!DOCTYPE foo>`
-- Add XML header `<?xml version=>`, remove `<!DOCTYPE html>`
-
 ## Related
 
 - [table-object-doc.html](table-object-doc.html)
+- [htm8.html](htm8.html)

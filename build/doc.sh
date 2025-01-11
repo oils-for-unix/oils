@@ -101,6 +101,7 @@ readonly MARKDOWN_DOCS=(
   qsn
   qtt
   j8-notation
+  htm8
   # Protocol
   pretty-printing
   stream-table-process
