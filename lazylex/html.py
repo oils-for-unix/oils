@@ -267,10 +267,12 @@ LEXER = MakeLexer(LEXER)
 
 class Lexer(object):
 
-    def __init__(self, s, left_pos=0, right_pos=-1):
+    def __init__(self, s, left_pos=0, right_pos=-1, no_special_tags=False):
         self.s = s
         self.pos = left_pos
         self.right_pos = len(s) if right_pos == -1 else right_pos
+        self.no_special_tags = no_special_tags
+
         self.cache = {}  # string -> compiled regex pattern object
 
         # either </script> or </style> - we search until we see that
@@ -292,7 +294,7 @@ class Lexer(object):
 
         assert self.pos < self.right_pos, self.pos
 
-        if self.search_state is not None:
+        if self.search_state is not None and not self.no_special_tags:
             pos = self.s.find(self.search_state, self.pos)
             if pos == -1:
                 # unterminated <script> or <style>
@@ -353,6 +355,7 @@ class Lexer(object):
         assert self.tag_pos_right != -1, self.tag_pos_right
 
         # TODO: In C++, this does not need an allocation
+        # TODO: conditionally lower() case here (maybe not in XML mode)
         return expected == self.s[self.tag_pos_left:self.tag_pos_right]
 
     def TagName(self):
@@ -360,6 +363,7 @@ class Lexer(object):
         assert self.tag_pos_left != -1, self.tag_pos_left
         assert self.tag_pos_right != -1, self.tag_pos_right
 
+        # TODO: conditionally lower() case here (maybe not in XML mode)
         return self.s[self.tag_pos_left:self.tag_pos_right]
 
     def Read(self):
@@ -407,6 +411,23 @@ def ValidTokens(s, left_pos=0, right_pos=-1):
             raise LexError(s, pos)
         yield tok_id, end_pos
         pos = end_pos
+
+
+def ValidTokenList(s, no_special_tags=False):
+    """A wrapper that can be more easily translated to C++.  Doesn't use iterators."""
+
+    start_pos = 0
+    tokens = []
+    lx = Lexer(s, no_special_tags=no_special_tags)
+    while True:
+        tok_id, end_pos = lx.Read()
+        tokens.append((tok_id, end_pos))
+        if tok_id == Tok.EndOfStream:
+            break
+        if tok_id == Tok.Invalid:
+            raise LexError(s, start_pos)
+        start_pos = end_pos
+    return tokens
 
 
 # Tag names:
@@ -695,16 +716,15 @@ VOID_ELEMENTS = [
 LEX_ATTRS = 1 << 1
 LEX_QUOTED_VALUES = 1 << 2  # href="?x=42&amp;y=99"
 NO_SPECIAL_TAGS = 1 << 3  # <script> <style>, VOID tags, etc.
-CHECK_TAGS = 1 << 4  # balancing tags
+BALANCED_TAGS = 1 << 4  # are tags balanced?
 
 
-def Validate(contents, flags, counters=None):
-    # type: (str, int, Optional[Dict[str, int]]) -> None
-
-    action = 'well-formed'
+def Validate(contents, flags, counters):
+    # type: (str, int, Counters) -> None
 
     tag_lexer = TagLexer(contents)
-    lx = Lexer(contents)
+    no_special_tags = bool(flags & NO_SPECIAL_TAGS)
+    lx = Lexer(contents, no_special_tags=no_special_tags)
     tokens = []
     start_pos = 0
     tag_stack = []
@@ -720,39 +740,45 @@ def Validate(contents, flags, counters=None):
 
         if tok_id == Tok.StartEndTag:
             counters.num_start_end_tags += 1
-            if action in ('lex-attrs', 'lex-attr-values', 'well-formed'):
-                tag_lexer.Reset(start_pos, end_pos)
-                all_attrs = tag_lexer.AllAttrsRaw()
-                counters.num_attrs += len(all_attrs)
+
+            tag_lexer.Reset(start_pos, end_pos)
+            all_attrs = tag_lexer.AllAttrsRaw()
+            counters.num_attrs += len(all_attrs)
+
         elif tok_id == Tok.StartTag:
             counters.num_start_tags += 1
-            if action in ('lex-attrs', 'lex-attr-values', 'well-formed'):
-                tag_lexer.Reset(start_pos, end_pos)
-                all_attrs = tag_lexer.AllAttrsRaw()
-                counters.num_attrs += len(all_attrs)
 
+            tag_lexer.Reset(start_pos, end_pos)
+            all_attrs = tag_lexer.AllAttrsRaw()
+            counters.num_attrs += len(all_attrs)
+
+            if flags & BALANCED_TAGS:
                 tag_name = lx.TagName()
-                # Don't bother to check
-                if tag_name not in VOID_ELEMENTS:
+                if flags & NO_SPECIAL_TAGS:
                     tag_stack.append(tag_name)
+                else:
+                    # e.g. <meta> is considered self-closing, like <meta/>
+                    if tag_name not in VOID_ELEMENTS:
+                        tag_stack.append(tag_name)
 
-                counters.max_tag_stack = max(counters.max_tag_stack,
-                                             len(tag_stack))
+            counters.max_tag_stack = max(counters.max_tag_stack,
+                                         len(tag_stack))
         elif tok_id == Tok.EndTag:
-            try:
-                expected = tag_stack.pop()
-            except IndexError:
-                raise ParseError('Tag stack empty',
-                                 s=contents,
-                                 start_pos=start_pos)
+            if flags & BALANCED_TAGS:
+                try:
+                    expected = tag_stack.pop()
+                except IndexError:
+                    raise ParseError('Tag stack empty',
+                                     s=contents,
+                                     start_pos=start_pos)
 
-            actual = lx.TagName()
-            if expected != actual:
-                raise ParseError(
-                    'Got unexpected closing tag %r; opening tag was %r' %
-                    (contents[start_pos:end_pos], expected),
-                    s=contents,
-                    start_pos=start_pos)
+                actual = lx.TagName()
+                if expected != actual:
+                    raise ParseError(
+                        'Got unexpected closing tag %r; opening tag was %r' %
+                        (contents[start_pos:end_pos], expected),
+                        s=contents,
+                        start_pos=start_pos)
 
         start_pos = end_pos
     counters.num_tokens += len(tokens)
@@ -789,10 +815,16 @@ def main(argv):
 
         return 0
 
-    elif action == 'validate':
+    elif action in ('lex-htm8', 'parse-htm8', 'parse-xml'):
 
         errors = []
         counters = Counters()
+
+        flags = LEX_ATTRS | LEX_QUOTED_VALUES
+        if action.startswith('parse-'):
+            flags |= BALANCED_TAGS
+        if action == 'parse-xml':
+            flags |= NO_SPECIAL_TAGS
 
         i = 0
         for line in sys.stdin:
@@ -800,10 +832,8 @@ def main(argv):
             with open(filename) as f:
                 contents = f.read()
 
-            # TODO: xml version with NO_SPECIAL_TAGS
             try:
-                Validate(contents, LEX_ATTRS | LEX_QUOTED_VALUES | CHECK_TAGS,
-                         counters)
+                Validate(contents, flags, counters)
             except LexError as e:
                 log('Lex error in %r: %s', filename, e)
                 errors.append((filename, e))

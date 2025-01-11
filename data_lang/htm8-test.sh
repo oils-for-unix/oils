@@ -4,31 +4,29 @@
 #   data_lang/htm8-test.sh
 #
 # TODO:
-# - Refactor Validate(): take FLAGS, return stats optionally
-#   - add LEX_QUOTED_VALUES
-#   - and then re-run all the tests
-# - Rename to data_lang/htm8.py
-#   - it has NO_SPECIAL_TAGS mode for XML
-#
-# - Soil
-#   - Validate all the HTML in the repo - well-formed check
-#     - this should go in the CI
-#   - Automate some more tests:
+# - Validate()
+#   - add LEX_QUOTED_VALUES, along with counter for it
+#   - and then re-run all the tests - make sure they pass
 #     - site oils.pub, site oilshell.org
 #     - XML on my machine - turn that in to 'WILD' corpus for HTML/XML?
+# - Rename to data_lang/htm8.py
+#   - it has NO_SPECIAL_TAGS mode for XML
+#   - put iterators at a higher level in doctools/ ?
 #
 # - statically type it
 #   - revive pyannotate
 # - translate to C++
-#   - what to do about all the regexes?  Port to re2c directly?
+#   - how to handle the regexes in the lexer?  Port to re2c directly?
 #   - for find(), do we need a C++ primitive for it?
 #   - no allocation for TagName()
 #   - ASDL file for Tok.Foo?
 # - refactor TagName() API - remove it from the TagLexer?
 #   - that is really the AttrLexer()
 #
-# - build a DOM with objects in YSH?
-#   - rewrite ul-table in that?
+# Not working yet:
+# - understanding all entities &zz;
+#   - there are over 2000 of them, not sure I want to build them all into the Oils binaries
+# - capital letters <TR/> - I guess we can normalize the case
 #
 # YSH API
 # - Generating HTML/HTM8 is much more common than parsing it
@@ -36,10 +34,23 @@
 #   - that is the lowest level "sed" model
 # - For parsing, a minimum idea is:
 #   - lexer-based algorithms for query by tag, class name, and id
-#   - and then toTree()
+#   - and then toTree() - this is a DOM
 #     - .tag and .attrs?
 #     - .innerHTML() and .outerHTML() perhaps
-#     - and maybe you can mutate it directly
+#    - rewrite ul-table in that?
+#      - does that mean you mutate it, or construct text?
+#      - I think you can set the innerHTML probably
+#
+# - Testing of html.ysh aka htm8.ysh in the stdlib
+#
+# Cases:
+#   html 'hello <b>world</b>'
+#   html "hello <b>$name</b>"html
+#   html ["hello <b>$name</b>"]  # hm this isn't bad, it's an unevaluated expression?
+#   commonmark 'hello **world**'
+#   md 'hello **world**'
+#   md ['hello **$escape**'] ?   We don't have a good escaping algorithm
+
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
@@ -96,10 +107,14 @@ test-site() {
   #     - test that each quoted attribute lexes
   # - test that tags are balanced
 
+  local dir
+  local action
   if test -n "$new_site"; then
     dir='../oils.pub__deploy'
+    action='parse-htm8'
   else
     dir='../../oilshell/oilshell.org__deploy'
+    action='lex-htm8'
   fi
 
   pushd $dir
@@ -108,7 +123,7 @@ test-site() {
   # site-files | xargs wc -l | grep total
 
   # Not using xargs
-  time site-files | $REPO_ROOT/$0 htm8-tool validate
+  time site-files | $REPO_ROOT/$0 htm8-tool $action
 
   popd
 }
@@ -145,7 +160,7 @@ tree-wwz() {
 test-wwz() {
   pushd $WWZ_DIR
 
-  time find . -name '*.html' | $REPO_ROOT/$0 htm8-tool validate
+  time find . -name '*.html' | $REPO_ROOT/$0 htm8-tool parse-htm8
 
   popd
 }
@@ -157,21 +172,21 @@ find-xml() {
 test-other-xml() {
   # problem with &ent1;
   # CDATA support!  haha OK
-  time cat _tmp/xml-files.txt | $REPO_ROOT/$0 htm8-tool validate
+  time cat _tmp/xml-files.txt | $REPO_ROOT/$0 htm8-tool parse-xml
 }
 
 test-repo-xml() {
   # OK these parse
   time find . -name '_chroot' -a -prune -o -name '*.xml' -a -print \
-    | $REPO_ROOT/$0 htm8-tool validate
+    | $REPO_ROOT/$0 htm8-tool parse-xml
 }
 
 test-repo-html() {
-  time find . -name '*.html' | $REPO_ROOT/$0 htm8-tool validate
+  time find . -name '*.html' | $REPO_ROOT/$0 htm8-tool parse-htm8
 }
 
 test-docs() {
-  time find _release/VERSION -name '*.html' | $REPO_ROOT/$0 htm8-tool validate
+  time find _release/VERSION -name '*.html' | $REPO_ROOT/$0 htm8-tool parse-htm8
 }
 
 soil-run() {

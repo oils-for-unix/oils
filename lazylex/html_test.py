@@ -105,10 +105,9 @@ class TagLexerTest(unittest.TestCase):
         self.assertEqual([('href', '?foo=1&amp;bar=2')], lex.AllAttrsRaw())
 
 
-def Lex(h):
+def Lex(h, no_special_tags=False):
     print(repr(h))
-    lex = html.ValidTokens(h)
-    tokens = list(lex)
+    tokens = html.ValidTokenList(h, no_special_tags=no_special_tags)
     start_pos = 0
     for tok_id, end_pos in tokens:
         frag = h[start_pos:end_pos]
@@ -132,10 +131,7 @@ class LexerTest(unittest.TestCase):
 
     def testCommentParse(self):
         n = len(TEST_HTML)
-        for tok_id, end_pos in html._Tokens(TEST_HTML, 0, n):
-            if tok_id == html.Invalid:
-                raise RuntimeError()
-            print(tok_id)
+        tokens = Lex(TEST_HTML)
 
     def testCommentParse2(self):
 
@@ -184,6 +180,24 @@ class LexerTest(unittest.TestCase):
                 (Tok.EndTag, 87),  # </script>
                 (Tok.RawData, 96),  # \n
                 (Tok.EndOfStream, 96),  # \n
+            ],
+            tokens)
+
+    def testScriptStyleXml(self):
+        Tok = html.Tok
+        h = 'hi <script src=""> &lt; </script>'
+        # XML mode
+        tokens = Lex(h, no_special_tags=True)
+
+        self.assertEqual(
+            [
+                (Tok.RawData, 3),
+                (Tok.StartTag, 18),  # <script>
+                (Tok.RawData, 19),  # space
+                (Tok.CharEntity, 23),  # </script>
+                (Tok.RawData, 24),  # \n
+                (Tok.EndTag, 33),  # \n
+                (Tok.EndOfStream, 33),  # \n
             ],
             tokens)
 
@@ -279,10 +293,8 @@ class LexerTest(unittest.TestCase):
         ]
 
         for s in INVALID:
-            lex = html.ValidTokens(s)
             try:
-                for i in xrange(5):
-                    tok_id, pos = next(lex)
+                tokens = html.ValidTokenList(s)
             except html.LexError as e:
                 print(e)
             else:
