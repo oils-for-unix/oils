@@ -41,6 +41,11 @@ enum class Id {
   HereBegin,
   HereEnd,
 
+  // Html
+  StartTag,
+  EndTag,
+  StartEndTag,
+
   // Zero-width token to detect #ifdef and Python INDENT/DEDENT
   // StartLine,
 
@@ -668,6 +673,44 @@ bool Matcher<sh_mode_e>::Match(Lexer<sh_mode_e>* lexer, Token* tok) {
   lexer->p_current = p;
   return false;
 }
+
+enum class html_mode_e {
+  Outer,
+};
+
+// Returns whether EOL was hit
+template <>
+bool Matcher<html_mode_e>::Match(Lexer<html_mode_e>* lexer, Token* tok) {
+  const char* p = lexer->p_current;  // mutated by re2c
+  const char* YYMARKER = p;
+
+  switch (lexer->line_mode) {
+  case html_mode_e::Outer:
+    while (true) {
+      /*!re2c
+        nul       { return true; }
+
+        // Like _NAME in HTM8
+        name = [a-zA-Z][a-zA-Z0-9:_-]* ;
+
+        '</' name '>' { TOK(Id::EndTag); }
+        '<' name [^>\x00]* '/>' { TOK(Id::StartEndTag); }
+        '<' name [^>\x00]* '>' { TOK(Id::StartTag); }
+
+        // TODO: Fill in the rest of the HTM8 lexer.
+
+        *                      { TOK(Id::Other); }
+
+      */
+    }
+    break;
+  }
+
+  tok->end_col = p - lexer->line_;
+  lexer->p_current = p;
+  return false;
+}
+
 
 // TODO:
 // - Lua / Rust-style multi-line strings, with matching delimiters e.g. r###"

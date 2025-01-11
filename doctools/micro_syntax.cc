@@ -49,6 +49,7 @@ enum class lang_e {
   Py,
   Shell,
   Ysh,  // ''' etc.
+  Html,
   Asdl,
   R,  // uses # comments
 
@@ -326,6 +327,15 @@ class AnsiPrinter : public Printer {
     case Id::LBrace:
     case Id::RBrace:
       PrintColor(GREEN, p_start, num_bytes);
+      break;
+
+    case Id::StartTag:
+    case Id::EndTag:
+      PrintColor(PURPLE, p_start, num_bytes);
+      break;
+
+    case Id::StartEndTag:
+      PrintColor(RED2, p_start, num_bytes);
       break;
 
     case Id::Unknown:
@@ -955,6 +965,10 @@ int ScanFiles(const Flags& flag, std::vector<char*> files, OutputStream* out,
       status = ScanOne<R_mode_e>(reader, out, hook);
       break;
 
+    case lang_e::Html:
+      status = ScanOne<html_mode_e>(reader, out, hook);
+      break;
+
     default:
       assert(0);
     }
@@ -1040,6 +1054,9 @@ int main(int argc, char** argv) {
       } else if (strcmp(optarg, "yaml") == 0) {
         flag.lang = lang_e::PlainText;
 
+      } else if (strcmp(optarg, "html") == 0) {
+        flag.lang = lang_e::Html;
+
       } else if (strcmp(optarg, "txt") == 0) {
         flag.lang = lang_e::PlainText;
 
@@ -1047,7 +1064,7 @@ int main(int argc, char** argv) {
         flag.lang = lang_e::PlainText;
 
       } else {
-        Log("Expected -l LANG to be cpp|py|shell|asdl|R|js|css|md|yaml|txt, "
+        Log("Expected -l LANG to be cpp|py|shell|asdl|R|js|css|md|yaml|html|txt, "
             "got %s",
             optarg);
         return 2;

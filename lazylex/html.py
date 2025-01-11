@@ -218,7 +218,8 @@ LEXER = [
     #   That's done in the tag lexer.
     # - We don't allow leading whitespace
     (r'</ (%s) >' % _NAME, Tok.EndTag),
-    # self-closing <br/>  comes before StarttTag
+    # self-closing <br/>  comes before StartTag
+    # could/should these be collapsed into one rule?
     (r'<  (%s) [^>]* />' % _NAME, Tok.StartEndTag),  # end </a>
     (r'<  (%s) [^>]* >' % _NAME, Tok.StartTag),  # start <a>
 
@@ -441,7 +442,9 @@ def ValidTokenList(s, no_special_tags=False):
 #
 # Allow - for td-attrs
 
-_ATTR_VALUE = r'[a-zA-Z0-9_\-]+'  # allow hyphens
+# allow underscore/hyphen.  what about colons, like _NAME?
+# what about href=$foo ?
+_UNQUOTED_VALUE = r'[a-zA-Z0-9_\-]+'
 
 # TODO: we don't need to capture the tag name here?  That's done at the top
 # level
@@ -459,10 +462,9 @@ _ATTR_RE = re.compile(
   (?:
     " ([^>"]*) "        # double quoted value
   | (%s)                # Attribute value
-                        # TODO: relax this?  for href=$foo
   )
 )?             
-''' % (_NAME, _ATTR_VALUE), re.VERBOSE)
+''' % (_NAME, _UNQUOTED_VALUE), re.VERBOSE)
 
 TagName, AttrName, UnquotedValue, QuotedValue = range(4)
 

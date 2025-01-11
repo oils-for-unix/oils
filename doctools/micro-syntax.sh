@@ -213,6 +213,13 @@ readonly -a R_TESTS=(
   3')"
 )
 
+readonly -a HTML_TESTS=(
+  '<p>hi</p>'
+  'hi <br/>'
+  '<img src="foo"/>'
+  '<a href=foo>link</a>'
+)
+
 run-cases() {
   local lang=$1
   shift
@@ -246,6 +253,12 @@ test-R() {
   run-cases R "${R_TESTS[@]}"
 }
 
+test-html() {
+  build
+  run-cases html "${HTML_TESTS[@]}"
+}
+
+
 run-tests() {
   local bin=$BASE_DIR/micro_syntax
 
@@ -255,6 +268,7 @@ run-tests() {
   run-cases cpp "${CPP_TESTS[@]}"
   run-cases py "${PY_TESTS[@]}"
   run-cases R "${R_TESTS[@]}"
+  run-cases html "${HTML_TESTS[@]}"
 
   # No language specified
   echo '==== No language'
