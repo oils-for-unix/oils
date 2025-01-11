@@ -28,6 +28,11 @@
 #   - there are over 2000 of them, not sure I want to build them all into the Oils binaries
 # - capital letters <TR/> - I guess we can normalize the case
 #
+# Features:
+# - Are there special rules for <svg> and <math>?
+# - Do we need to know about <textarea> <pre>?  Those don't have the same
+#   whitespace rules
+#
 # YSH API
 # - Generating HTML/HTM8 is much more common than parsing it
 #   - although maybe we can do RemoveComments as a demo?

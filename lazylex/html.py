@@ -15,12 +15,6 @@ Conflicts between HTML5 and XML:
 - The header is different - <!DOCTYPE html> vs.  <?xml version= ... ?>
 
 So do have a mode for <script> <style> and void tags?  Upgrade HX8 into HTM8?
-
-TODO:
-
-- Are there special rules for <svg> and <math>?
-- Do we need to know about <textarea> <pre>?  Those don't have the same
-  whitespace rules
 """
 from __future__ import print_function
 
@@ -32,7 +26,7 @@ import re
 import sys
 
 if sys.version_info.major == 2:
-    from typing import List, Tuple, Optional, Dict
+    from typing import List, Tuple, Optional
 
 
 def log(msg, *args):
@@ -500,6 +494,9 @@ class TagLexer(object):
         return self.s[start:end]
 
     def GetSpanForAttrValue(self, attr_name):
+        """
+        Used by oils_doc.py, for href shortcuts
+        """
         # Algorithm: search for QuotedValue or UnquotedValue after AttrName
         # TODO: Could also cache these
 
@@ -528,8 +525,6 @@ class TagLexer(object):
         """
         Return the value, which may be UNESCAPED.
         """
-        # Algorithm: search for QuotedValue or UnquotedValue after AttrName
-        # TODO: Could also cache these
         start, end = self.GetSpanForAttrValue(attr_name)
         if start == -1:
             return None
