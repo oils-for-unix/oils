@@ -155,7 +155,7 @@ deploy-data() {
 soil-web-manifest() {
   PYTHONPATH=. /usr/bin/env python2 \
     build/dynamic_deps.py py-manifest soil.web \
-  | grep oilshell/oil  # only stuff in the repo
+  | grep oils-for-unix/oils  # only stuff in the repo
 
   # Add a shell script
   echo $PWD/soil/web.sh soil/web.sh

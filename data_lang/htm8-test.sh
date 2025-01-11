@@ -4,20 +4,42 @@
 #   data_lang/htm8-test.sh
 #
 # TODO:
-# - Rename to DML8?  Because it can handle XML
-# - CDATA in XML, which is not a script
+# - Refactor Validate(): take FLAGS, return stats optionally
+#   - add LEX_QUOTED_VALUES
+#   - and then re-run all the tests
+# - Rename to data_lang/htm8.py
+#   - it has NO_SPECIAL_TAGS mode for XML
 #
-# Operations / Levels:
+# - Soil
+#   - Validate all the HTML in the repo - well-formed check
+#     - this should go in the CI
+#   - Automate some more tests:
+#     - site oils.pub, site oilshell.org
+#     - XML on my machine - turn that in to 'WILD' corpus for HTML/XML?
 #
-# - Lexing
-#   - lex-tags
-#   - lex-attrs - validate all Start tags, all StartEnd tags
-#   - lex-quoted-values - unescaping, etc.
-#     - are there invalid entities?
-# - Parsing
-#   - well-formed / tag balance check
-# - Schema
-#   - not sure if we check the HTML schema or not - it might be too restrictive
+# - statically type it
+#   - revive pyannotate
+# - translate to C++
+#   - what to do about all the regexes?  Port to re2c directly?
+#   - for find(), do we need a C++ primitive for it?
+#   - no allocation for TagName()
+#   - ASDL file for Tok.Foo?
+# - refactor TagName() API - remove it from the TagLexer?
+#   - that is really the AttrLexer()
+#
+# - build a DOM with objects in YSH?
+#   - rewrite ul-table in that?
+#
+# YSH API
+# - Generating HTML/HTM8 is much more common than parsing it
+#   - although maybe we can do RemoveComments as a demo?
+#   - that is the lowest level "sed" model
+# - For parsing, a minimum idea is:
+#   - lexer-based algorithms for query by tag, class name, and id
+#   - and then toTree()
+#     - .tag and .attrs?
+#     - .innerHTML() and .outerHTML() perhaps
+#     - and maybe you can mutate it directly
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
@@ -42,7 +64,7 @@ site-files() {
 #   - can we change that with [.\n]*?
 # - nongreedy match for --> and ?>
 
-ht8-tool() {
+htm8-tool() {
   PYTHONPATH="$REPO_ROOT:$REPO_ROOT/vendor" \
     $REPO_ROOT/lazylex/html.py "$@"
 }
@@ -52,7 +74,7 @@ test-well-formed() {
 unfinished <!--
 hi && bye
 EOF
-  echo '_tmp/bad.html' | ht8-tool well-formed 
+  echo '_tmp/bad.html' | htm8-tool well-formed 
 }
 
 # site errors
@@ -86,12 +108,12 @@ test-site() {
   # site-files | xargs wc -l | grep total
 
   # Not using xargs
-  time site-files | $REPO_ROOT/$0 ht8-tool well-formed
+  time site-files | $REPO_ROOT/$0 htm8-tool validate
 
   popd
 }
 
-readonly SOIL_ID=8915
+readonly SOIL_ID=8917
 readonly WWZ_DIR=_tmp/$SOIL_ID
 
 sync-wwz() {
@@ -123,7 +145,7 @@ tree-wwz() {
 test-wwz() {
   pushd $WWZ_DIR
 
-  time find . -name '*.html' | $REPO_ROOT/$0 ht8-tool well-formed
+  time find . -name '*.html' | $REPO_ROOT/$0 htm8-tool validate
 
   popd
 }
@@ -135,13 +157,25 @@ find-xml() {
 test-other-xml() {
   # problem with &ent1;
   # CDATA support!  haha OK
-  time cat _tmp/xml-files.txt | $REPO_ROOT/$0 ht8-tool well-formed
+  time cat _tmp/xml-files.txt | $REPO_ROOT/$0 htm8-tool validate
 }
 
 test-repo-xml() {
   # OK these parse
   time find . -name '_chroot' -a -prune -o -name '*.xml' -a -print \
-    | $REPO_ROOT/$0 ht8-tool well-formed
+    | $REPO_ROOT/$0 htm8-tool validate
+}
+
+test-repo-html() {
+  time find . -name '*.html' | $REPO_ROOT/$0 htm8-tool validate
+}
+
+test-docs() {
+  time find _release/VERSION -name '*.html' | $REPO_ROOT/$0 htm8-tool validate
+}
+
+soil-run() {
+  test-docs
 }
 
 # OK we have to skip the <script> tag!  And <style>

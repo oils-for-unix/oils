@@ -4,9 +4,6 @@ lazylex/html.py - Low-Level HTML Processing.
 
 See lazylex/README.md for details.
 
-TODO: This should be an Oils library eventually.  It's a "lazily-parsed data
-structure" like TSV8
-
 Conflicts between HTML5 and XML:
 
 - In XML, <source> is like any tag, and must be closed,
@@ -18,6 +15,12 @@ Conflicts between HTML5 and XML:
 - The header is different - <!DOCTYPE html> vs.  <?xml version= ... ?>
 
 So do have a mode for <script> <style> and void tags?  Upgrade HX8 into HTM8?
+
+TODO:
+
+- Are there special rules for <svg> and <math>?
+- Do we need to know about <textarea> <pre>?  Those don't have the same
+  whitespace rules
 """
 from __future__ import print_function
 
@@ -29,7 +32,7 @@ import re
 import sys
 
 if sys.version_info.major == 2:
-    from typing import List, Tuple, Optional
+    from typing import List, Tuple, Optional, Dict
 
 
 def log(msg, *args):
@@ -689,6 +692,81 @@ VOID_ELEMENTS = [
     'wbr',
 ]
 
+LEX_ATTRS = 1 << 1
+LEX_QUOTED_VALUES = 1 << 2  # href="?x=42&amp;y=99"
+NO_SPECIAL_TAGS = 1 << 3  # <script> <style>, VOID tags, etc.
+CHECK_TAGS = 1 << 4  # balancing tags
+
+
+def Validate(contents, flags, counters=None):
+    # type: (str, int, Optional[Dict[str, int]]) -> None
+
+    action = 'well-formed'
+
+    tag_lexer = TagLexer(contents)
+    lx = Lexer(contents)
+    tokens = []
+    start_pos = 0
+    tag_stack = []
+    while True:
+        tok_id, end_pos = lx.Read()
+
+        if tok_id == Tok.Invalid:
+            raise LexError(contents, start_pos)
+        if tok_id == Tok.EndOfStream:
+            break
+
+        tokens.append((tok_id, end_pos))
+
+        if tok_id == Tok.StartEndTag:
+            counters.num_start_end_tags += 1
+            if action in ('lex-attrs', 'lex-attr-values', 'well-formed'):
+                tag_lexer.Reset(start_pos, end_pos)
+                all_attrs = tag_lexer.AllAttrsRaw()
+                counters.num_attrs += len(all_attrs)
+        elif tok_id == Tok.StartTag:
+            counters.num_start_tags += 1
+            if action in ('lex-attrs', 'lex-attr-values', 'well-formed'):
+                tag_lexer.Reset(start_pos, end_pos)
+                all_attrs = tag_lexer.AllAttrsRaw()
+                counters.num_attrs += len(all_attrs)
+
+                tag_name = lx.TagName()
+                # Don't bother to check
+                if tag_name not in VOID_ELEMENTS:
+                    tag_stack.append(tag_name)
+
+                counters.max_tag_stack = max(counters.max_tag_stack,
+                                             len(tag_stack))
+        elif tok_id == Tok.EndTag:
+            try:
+                expected = tag_stack.pop()
+            except IndexError:
+                raise ParseError('Tag stack empty',
+                                 s=contents,
+                                 start_pos=start_pos)
+
+            actual = lx.TagName()
+            if expected != actual:
+                raise ParseError(
+                    'Got unexpected closing tag %r; opening tag was %r' %
+                    (contents[start_pos:end_pos], expected),
+                    s=contents,
+                    start_pos=start_pos)
+
+        start_pos = end_pos
+    counters.num_tokens += len(tokens)
+
+
+class Counters(object):
+
+    def __init__(self):
+        self.num_tokens = 0
+        self.num_start_tags = 0
+        self.num_start_end_tags = 0
+        self.num_attrs = 0
+        self.max_tag_stack = 0
+
 
 def main(argv):
     action = argv[1]
@@ -711,98 +789,54 @@ def main(argv):
 
         return 0
 
-    elif action in ('lex-tags', 'lex-attrs', 'lex-attr-values', 'well-formed'):
-        num_tokens = 0
-        num_start_tags = 0
-        num_start_end_tags = 0
-        num_attrs = 0
-        max_tag_stack = 0
+    elif action == 'validate':
 
         errors = []
+        counters = Counters()
+
         i = 0
         for line in sys.stdin:
-            name = line.strip()
-            with open(name) as f:
+            filename = line.strip()
+            with open(filename) as f:
                 contents = f.read()
 
-            tag_lexer = TagLexer(contents)
-            lx = Lexer(contents)
-            tokens = []
-            start_pos = 0
-            tag_stack = []
+            # TODO: xml version with NO_SPECIAL_TAGS
             try:
-                while True:
-                    tok_id, end_pos = lx.Read()
-
-                    if tok_id == Tok.Invalid:
-                        raise LexError(contents, start_pos)
-                    if tok_id == Tok.EndOfStream:
-                        break
-
-                    tokens.append((tok_id, end_pos))
-
-                    if tok_id == Tok.StartEndTag:
-                        num_start_end_tags += 1
-                        if action in ('lex-attrs', 'lex-attr-values',
-                                      'well-formed'):
-                            tag_lexer.Reset(start_pos, end_pos)
-                            all_attrs = tag_lexer.AllAttrsRaw()
-                            num_attrs += len(all_attrs)
-                    elif tok_id == Tok.StartTag:
-                        num_start_tags += 1
-                        if action in ('lex-attrs', 'lex-attr-values',
-                                      'well-formed'):
-                            tag_lexer.Reset(start_pos, end_pos)
-                            all_attrs = tag_lexer.AllAttrsRaw()
-
-                            tag_name = lx.TagName()
-                            # Don't bother to check
-                            if tag_name not in VOID_ELEMENTS:
-                                tag_stack.append(tag_name)
-
-                            max_tag_stack = max(max_tag_stack, len(tag_stack))
-                    elif tok_id == Tok.EndTag:
-                        try:
-                            expected = tag_stack.pop()
-                        except IndexError:
-                            raise ParseError('Tag stack empty',
-                                             s=contents,
-                                             start_pos=start_pos)
-
-                        actual = lx.TagName()
-                        if expected != actual:
-                            raise ParseError(
-                                'Got unexpected closing tag %r; opening tag was %r'
-                                % (contents[start_pos:end_pos], expected),
-                                s=contents,
-                                start_pos=start_pos)
-
-                    start_pos = end_pos
+                Validate(contents, LEX_ATTRS | LEX_QUOTED_VALUES | CHECK_TAGS,
+                         counters)
             except LexError as e:
-                log('Lex error in %r: %s', name, e)
-                errors.append((name, e))
+                log('Lex error in %r: %s', filename, e)
+                errors.append((filename, e))
             except ParseError as e:
-                log('Parse error in %r: %s', name, e)
-                errors.append((name, e))
-            else:
-                num_tokens += len(tokens)
-
-            #print('%d %s' % (len(tokens), name))
+                log('Parse error in %r: %s', filename, e)
+                errors.append((filename, e))
             i += 1
 
         log('')
         log(
             '  %d tokens, %d start/end tags, %d start tags, %d attrs, %d max tag stack depth in %d files',
-            num_tokens, num_start_end_tags, num_start_tags, num_attrs,
-            max_tag_stack, i)
+            counters.num_tokens, counters.num_start_end_tags,
+            counters.num_start_tags, counters.num_attrs,
+            counters.max_tag_stack, i)
         log('  %d errors', len(errors))
-        if 0:
-            for name, e in errors:
-                log('Error in %r: %s', name, e)
+        if len(errors):
+            return 1
+        return 0
+
+    elif action == 'todo':
+        # Other algorithms:
+        #
+        # - select first subtree with given ID
+        #   - this requires understanding the void tags I suppose
+        # - select all subtrees that have a class
+        # - materialize DOM
+
+        # Safe-HTM8?  This is a filter
+        return 0
 
     else:
         raise RuntimeError('Invalid action %r' % action)
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    sys.exit(main(sys.argv))
