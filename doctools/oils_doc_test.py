@@ -26,9 +26,9 @@ class OilsDocTest(unittest.TestCase):
 
     def testExpandLinks(self):
         """
-        <a href=$xref:bash>bash</a>
+        <a href="$xref:bash">bash</a>
         ->
-        <a href=/cross-ref?tag=bash#bash>
+        <a href="/cross-ref?tag=bash#bash">
 
         NOTE: THIs could really be done with a ref like <a.*href="(.*)">
         But we're testing it

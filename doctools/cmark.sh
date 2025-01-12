@@ -102,7 +102,7 @@ demo-quirks() {
 
   export PYTHONPATH=.
 
-  cmark-py <<'EOF'
+  cmark-py --common-mark <<'EOF'
 1. what `<table>`
 EOF
 
@@ -162,7 +162,21 @@ EOF
 1. The Markdown translator produces a `<table> <ul> <li> ... </li> </ul>
    </table>` structure.
 EOF
+}
 
+demo-htm8() {
+  ### Cases that came from developing HTM8
+
+  export PYTHONPATH=.
+
+  cmark-py --common-mark <<'EOF'
+[bash]($xref:bash)
+
+[other][]
+
+[other]: $xref
+
+EOF
 }
 
 "$@"

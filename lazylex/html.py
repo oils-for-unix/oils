@@ -443,15 +443,18 @@ def ValidTokenList(s, no_special_tags=False):
 # Allow - for td-attrs
 
 # allow underscore/hyphen.  what about colons, like _NAME?
-# what about href=$foo ?
 _UNQUOTED_VALUE = r'[a-zA-Z0-9_\-]+'
 
 # TODO: we don't need to capture the tag name here?  That's done at the top
 # level
 _TAG_RE = re.compile(r'/? \s* (%s)' % _NAME, re.VERBOSE)
 
+_TAG_LAST_RE = re.compile(r'\s* /? >', re.VERBOSE)
+
 # To match href="foo"
 # Note: in HTML5 and XML, single quoted attributes are also valid
+
+# <button disabled> is standard usage
 
 _ATTR_RE = re.compile(
     r'''
@@ -577,13 +580,15 @@ class TagLexer(object):
         yield TagName, m.start(1), m.end(1)
 
         pos = m.end(0)
+        #log('POS %d', pos)
 
         while True:
             # don't search past the end
             m = _ATTR_RE.match(self.s, pos, self.end_pos)
             if not m:
-                # A validating parser would check that > or /> is next -- there's no junk
+                #log('BREAK pos %d', pos)
                 break
+            #log('AttrName %r', m.group(1))
 
             yield AttrName, m.start(1), m.end(1)
 
@@ -595,6 +600,14 @@ class TagLexer(object):
 
             # Skip past the "
             pos = m.end(0)
+
+        #log('TOK %r', self.s)
+
+        m = _TAG_LAST_RE.match(self.s, pos)
+        #log('_TAG_LAST_RE match %r', self.s[pos:])
+        if not m:
+            # Extra data at end of tag.  TODO: add messages for all these.
+            raise LexError(self.s, pos)
 
 
 def ReadUntilStartTag(it, tag_lexer, tag_name):

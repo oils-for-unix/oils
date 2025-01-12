@@ -104,6 +104,17 @@ class TagLexerTest(unittest.TestCase):
         lex = _MakeTagLexer('<a href="?foo=1&amp;bar=2" />')
         self.assertEqual([('href', '?foo=1&amp;bar=2')], lex.AllAttrsRaw())
 
+    def testAttrWithoutValue(self):
+        # equivalent to <button disabled="">
+        lex = _MakeTagLexer('<button disabled>')
+        all_attrs = lex.AllAttrsRaw()
+        log('all %s', all_attrs)
+
+        return
+        lex = _MakeTagLexer('<a foo=bar !></a>')
+        all_attrs = lex.AllAttrsRaw()
+        log('all %s', all_attrs)
+
 
 def Lex(h, no_special_tags=False):
     print(repr(h))
@@ -285,7 +296,7 @@ class LexerTest(unittest.TestCase):
             except html.LexError as e:
                 print(e)
             else:
-                self.fail('Expected LexError')
+                self.fail('Expected LexError %r' % s)
 
 
 INVALID_LEX = [
@@ -299,9 +310,6 @@ INVALID_LEX = [
     '<!-- unfinished comment',
     '<? unfinished processing',
     '</div bad=attr> <a> <b>',
-    # TODO: we should match up to > or />
-    #'<a foo=bar !></a>',  # bad attr
-    #'<a zz></a>',  # this is not invalid?
 
     # TODO: should be escaped, invalid in XML
     #'<a href="&"></a>',
@@ -317,13 +325,15 @@ INVALID_PARSE = [
 VALID_PARSE = [
     '<b><a href="foo">link</a></b>',
     '<meta><a></a>',
+    # no attribute
+    '<button disabled></button>',
+
     # TODO: capitalization should be allowed
     #'<META><a></a>',
 
     # TODO:
     #'<a foo="&"></a>',  # bad attr
     #'<a foo=bar !></a>',  # bad attr
-    #'<a zz></a>',  # bad attr
 
     # TODO: Test <svg> and <math> ?
 ]
@@ -332,12 +342,16 @@ VALID_XML = [
     '<meta></meta>',
 ]
 
+INVALID_TAG_LEX = [
+    '<a foo=bar !></a>',  # bad attr
+]
+
 
 class ValidateTest(unittest.TestCase):
 
     def testInvalid(self):
         counters = html.Counters()
-        for s in INVALID_LEX:
+        for s in INVALID_LEX + INVALID_TAG_LEX:
             try:
                 html.Validate(s, html.BALANCED_TAGS, counters)
             except html.LexError as e:
