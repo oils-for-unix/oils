@@ -11,19 +11,6 @@ with open('lazylex/testdata.html') as f:
     TEST_HTML = f.read()
 
 
-def _MakeTagLexer(s):
-    lex = html.TagLexer(s)
-    lex.Reset(0, len(s))
-    return lex
-
-
-def _PrintTokens(lex):
-    log('')
-    log('tag = %r', lex.TagName())
-    for tok, start, end in lex.Tokens():
-        log('%s %r', tok, lex.s[start:end])
-
-
 class RegexTest(unittest.TestCase):
 
     def testDotAll(self):
@@ -53,6 +40,19 @@ class FunctionsTest(unittest.TestCase):
         for pos in [1, 5, 10, 50]:  # out of bounds
             line_num = html.FindLineNum(s, pos)
             print(line_num)
+
+
+def _MakeTagLexer(s):
+    lex = html.TagLexer(s)
+    lex.Reset(0, len(s))
+    return lex
+
+
+def _PrintTokens(lex):
+    log('')
+    log('tag = %r', lex.TagName())
+    for tok, start, end in lex.Tokens():
+        log('%s %r', tok, lex.s[start:end])
 
 
 class TagLexerTest(unittest.TestCase):
@@ -117,6 +117,20 @@ class TagLexerTest(unittest.TestCase):
             print(e)
         else:
             self.fail('Expected LexError')
+
+
+def _MakeAttrValueLexer(s):
+    lex = html.AttrValueLexer(s)
+    lex.Reset(0, len(s))
+    return lex
+
+
+class AttrValueLexerTest(unittest.TestCase):
+
+    def testGood(self):
+        lex = _MakeAttrValueLexer('?foo=42&amp;bar=99')
+        n = lex.NumTokens()
+        self.assertEqual(3, n)
 
 
 def Lex(h, no_special_tags=False):
@@ -313,6 +327,9 @@ INVALID_LEX = [
     '<!-- unfinished comment',
     '<? unfinished processing',
     '</div bad=attr> <a> <b>',
+
+    # not allowed, but 3 > 4 is allowed
+    '<a> 3 < 4 </a>',
 ]
 
 INVALID_PARSE = [
@@ -322,6 +339,17 @@ INVALID_PARSE = [
 ]
 
 VALID_PARSE = [
+    '<!DOCTYPE html>\n',
+    '<!DOCTYPE>',
+
+    # empty strings
+    '<p x=""></p>',
+    "<p x=''></p>",
+
+    # allowed, but 3 < 4 is not allowed
+    '<a> 3 > 4 </a>',
+    # allowed, but 3 > 4 is not allowed
+    '<p x="3 < 4"></p>',
     '<b><a href="foo">link</a></b>',
     '<meta><a></a>',
     # no attribute
@@ -347,9 +375,11 @@ VALID_XML = [
 ]
 
 INVALID_TAG_LEX = [
+    # not allowed, but 3 < 4 is allowed
+    '<p x="3 > 4"></p>',
     '<a foo=bar !></a>',  # bad attr
 
-    # TODO: should be escaped, invalid in XML
+    # should be escaped
     #'<a href="&"></a>',
     #'<a href=">"></a>',
 ]

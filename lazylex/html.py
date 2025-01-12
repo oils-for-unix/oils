@@ -190,7 +190,15 @@ def MakeLexer(rules):
 
 _NAME = r'[a-zA-Z][a-zA-Z0-9:_\-]*'  # must start with letter
 
-LEXER = [
+CHAR_LEX = [
+    # Characters
+    # https://www.w3.org/TR/xml/#sec-references
+    (r'&\# [0-9]+ ;', Tok.DecChar),
+    (r'&\# x[0-9a-fA-F]+ ;', Tok.HexChar),
+    (r'& %s ;' % _NAME, Tok.CharEntity),
+]
+
+LEXER = CHAR_LEX + [
     (r'<!--', Tok.CommentBegin),
 
     # Processing instruction are used for the XML header:
@@ -210,7 +218,7 @@ LEXER = [
     #   - these seem to be part of DTD
     #   - it's useful to skip these, and be able to parse the rest of the document
     # - Note: < is allowed?
-    (r'<! [^>]+ >', Tok.Decl),
+    (r'<! [^>\x00]+ >', Tok.Decl),
 
     # Tags
     # Notes:
@@ -220,21 +228,15 @@ LEXER = [
     (r'</ (%s) >' % _NAME, Tok.EndTag),
     # self-closing <br/>  comes before StartTag
     # could/should these be collapsed into one rule?
-    (r'<  (%s) [^>]* />' % _NAME, Tok.StartEndTag),  # end </a>
-    (r'<  (%s) [^>]* >' % _NAME, Tok.StartTag),  # start <a>
-
-    # Characters
-    # https://www.w3.org/TR/xml/#sec-references
-    (r'&\# [0-9]+ ;', Tok.DecChar),
-    (r'&\# x[0-9a-fA-F]+ ;', Tok.HexChar),
-    (r'& %s ;' % _NAME, Tok.CharEntity),
+    (r'<  (%s) [^>\x00]* />' % _NAME, Tok.StartEndTag),  # end </a>
+    (r'<  (%s) [^>\x00]* >' % _NAME, Tok.StartTag),  # start <a>
 
     # HTML5 allows unescaped > in raw data, but < is not allowed.
     # https://stackoverflow.com/questions/10462348/right-angle-bracket-in-html
     #
     # - My early blog has THREE errors when disallowing >
     # - So do some .wwz files
-    (r'[^&<]+', Tok.RawData),
+    (r'[^&<\x00]+', Tok.RawData),
     (r'.', Tok.Invalid),  # error!
 ]
 
@@ -444,7 +446,7 @@ def ValidTokenList(s, no_special_tags=False):
 
 # Be very lenient - just no whitespace or special HTML chars
 # I don't think this is more lenient than HTML5, though we should check.
-_UNQUOTED_VALUE = r'''[^\x00 \t\r\n<>&"']*'''
+_UNQUOTED_VALUE = r'''[^ \t\r\n<>&"'\x00]*'''
 
 # TODO: we don't need to capture the tag name here?  That's done at the top
 # level
@@ -464,8 +466,8 @@ _ATTR_RE = re.compile(
 (?:                     # Optional attribute value
   \s* = \s*
   (?:
-    " ([^>"]*) "        # double quoted value
-  | ' ([^>']*) '        # single quoted value
+    " ([^>"\x00]*) "    # double quoted value
+  | ' ([^>'\x00]*) '    # single quoted value
   | (%s)                # Attribute value
   )
 )?             
@@ -490,6 +492,9 @@ class TagLexer(object):
 
     def Reset(self, start_pos, end_pos):
         """Reuse instances of this object."""
+        assert start_pos >= 0, start_pos
+        assert end_pos >= 0, end_pos
+
         self.start_pos = start_pos
         self.end_pos = end_pos
 
@@ -538,14 +543,11 @@ class TagLexer(object):
             return None
         return self.s[start:end]
 
-    def AllAttrsRaw(self):
+    def AllAttrsRawSlice(self):
         """
-        Get a list of pairs [('class', 'foo'), ('href', '?foo=1&amp;bar=2')]
-
-        The quoted values may be escaped.  We would need another lexer to
-        unescape them.
+        Get a list of pairs [('class', 3, 5), ('href', 9, 12)]
         """
-        pairs = []
+        slices = []
         events = self.Tokens()
         try:
             while True:
@@ -559,11 +561,27 @@ class TagLexer(object):
                         # Note: quoted values may have &amp;
                         # We would need ANOTHER lexer to unescape them, but we
                         # don't need that for ul-table
-
-                        val = self.s[start:end]
-                        pairs.append((name, val))
+                        slices.append((name, start, end))
+                    else:
+                        # TODO: no attribute?  <button disabled>?  Make it equivalent
+                        # to the empty string?  Or None?
+                        pass
+                        #slices.append((name, start, end))
         except StopIteration:
             pass
+        return slices
+
+    def AllAttrsRaw(self):
+        """
+        Get a list of pairs [('class', 'foo'), ('href', '?foo=1&amp;bar=2')]
+
+        The quoted values may be escaped.  We would need another lexer to
+        unescape them.
+        """
+        slices = self.AllAttrsRawSlice()
+        pairs = []
+        for name, start, end in slices:
+            pairs.append((name, self.s[start:end]))
         return pairs
 
     def Tokens(self):
@@ -613,6 +631,72 @@ class TagLexer(object):
         if not m:
             # Extra data at end of tag.  TODO: add messages for all these.
             raise LexError(self.s, pos)
+
+
+# This is similar but not identical to
+#    " ([^>"\x00]*) "    # double quoted value
+#  | ' ([^>'\x00]*) '    # single quoted value
+#
+# Note: for unquoted values, & isn't allowed, and thus &amp; and &#99; and
+# &#x99; are not allowed.  We could relax that?
+ATTR_VALUE_LEXER = CHAR_LEX + [
+    (r'[^>&\x00]+', Tok.RawData),
+    (r'.', Tok.Invalid),
+]
+
+ATTR_VALUE_LEXER = MakeLexer(ATTR_VALUE_LEXER)
+
+
+class AttrValueLexer(object):
+    """
+    <a href="foo=99&amp;bar">
+    <a href='foo=99&amp;bar'>
+    <a href=unquoted>
+    """
+
+    def __init__(self, s):
+        self.s = s
+        self.start_pos = -1  # Invalid
+        self.end_pos = -1
+
+    def Reset(self, start_pos, end_pos):
+        """Reuse instances of this object."""
+        assert start_pos >= 0, start_pos
+        assert end_pos >= 0, end_pos
+
+        self.start_pos = start_pos
+        self.end_pos = end_pos
+
+    def NumTokens(self):
+        num_tokens = 0
+        pos = self.start_pos
+        for tok_id, end_pos in self.Tokens():
+            if tok_id == Tok.Invalid:
+                raise LexError(self.s, pos)
+            pos = end_pos
+            #log('pos %d', pos)
+            num_tokens += 1
+        return num_tokens
+
+    def Tokens(self):
+        pos = self.start_pos
+        while pos < self.end_pos:
+            # Find the first match, like above.
+            # Note: frontend/match.py uses _LongestMatch(), which is different!
+            # TODO: reconcile them.  This lexer should be expressible in re2c.
+            for pat, tok_id in ATTR_VALUE_LEXER:
+                m = pat.match(self.s, pos)
+                if m:
+                    if 0:
+                        tok_str = m.group(0)
+                        log('token = %r', tok_str)
+
+                    end_pos = m.end(0)
+                    yield tok_id, end_pos
+                    pos = end_pos
+                    break
+            else:
+                raise AssertionError('Tok.Invalid rule should have matched')
 
 
 def ReadUntilStartTag(it, tag_lexer, tag_name):
@@ -739,6 +823,8 @@ def Validate(contents, flags, counters):
     # type: (str, int, Counters) -> None
 
     tag_lexer = TagLexer(contents)
+    val_lexer = AttrValueLexer(contents)
+
     no_special_tags = bool(flags & NO_SPECIAL_TAGS)
     lx = Lexer(contents, no_special_tags=no_special_tags)
     tokens = []
@@ -746,6 +832,7 @@ def Validate(contents, flags, counters):
     tag_stack = []
     while True:
         tok_id, end_pos = lx.Read()
+        #log('TOP %s %r', TokenName(tok_id), contents[start_pos:end_pos])
 
         if tok_id == Tok.Invalid:
             raise LexError(contents, start_pos)
@@ -758,16 +845,24 @@ def Validate(contents, flags, counters):
             counters.num_start_end_tags += 1
 
             tag_lexer.Reset(start_pos, end_pos)
-            all_attrs = tag_lexer.AllAttrsRaw()
+            all_attrs = tag_lexer.AllAttrsRawSlice()
             counters.num_attrs += len(all_attrs)
+            for name, val_start, val_end in all_attrs:
+                val_lexer.Reset(val_start, val_end)
+                counters.num_val_tokens += val_lexer.NumTokens()
+
             counters.debug_attrs.extend(all_attrs)
 
         elif tok_id == Tok.StartTag:
             counters.num_start_tags += 1
 
             tag_lexer.Reset(start_pos, end_pos)
-            all_attrs = tag_lexer.AllAttrsRaw()
+            all_attrs = tag_lexer.AllAttrsRawSlice()
             counters.num_attrs += len(all_attrs)
+            for name, val_start, val_end in all_attrs:
+                val_lexer.Reset(val_start, val_end)
+                counters.num_val_tokens += val_lexer.NumTokens()
+
             counters.debug_attrs.extend(all_attrs)
 
             if flags & BALANCED_TAGS:
@@ -817,6 +912,7 @@ class Counters(object):
         self.num_start_end_tags = 0
         self.num_attrs = 0
         self.max_tag_stack = 0
+        self.num_val_tokens = 0
 
         self.debug_attrs = []
 
@@ -870,12 +966,13 @@ def main(argv):
             i += 1
 
         log('')
-        log(
-            '  %d tokens, %d start/end tags, %d start tags, %d attrs, %d max tag stack depth in %d files',
-            counters.num_tokens, counters.num_start_end_tags,
-            counters.num_start_tags, counters.num_attrs,
-            counters.max_tag_stack, i)
-        log('  %d errors', len(errors))
+        log('%10d tokens', counters.num_tokens)
+        log('%10d start/end tags', counters.num_start_end_tags)
+        log('%10d start tags', counters.num_start_tags)
+        log('%10d attrs', counters.num_attrs)
+        log('%10d max tag stack depth', counters.max_tag_stack)
+        log('%10d attr val tokens', counters.num_val_tokens)
+        log('%10d errors', len(errors))
         if len(errors):
             return 1
         return 0
