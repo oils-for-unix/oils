@@ -442,8 +442,9 @@ def ValidTokenList(s, no_special_tags=False):
 #
 # Allow - for td-attrs
 
-# allow underscore/hyphen.  what about colons, like _NAME?
-_UNQUOTED_VALUE = r'[a-zA-Z0-9_\-]+'
+# Be very lenient - just no whitespace or special HTML chars
+# I don't think this is more lenient than HTML5, though we should check.
+_UNQUOTED_VALUE = r'''[^\x00 \t\r\n<>&"']*'''
 
 # TODO: we don't need to capture the tag name here?  That's done at the top
 # level
@@ -464,6 +465,7 @@ _ATTR_RE = re.compile(
   \s* = \s*
   (?:
     " ([^>"]*) "        # double quoted value
+  | ' ([^>']*) '        # single quoted value
   | (%s)                # Attribute value
   )
 )?             
@@ -592,11 +594,14 @@ class TagLexer(object):
 
             yield AttrName, m.start(1), m.end(1)
 
-            # Quoted is group 2, unquoted is group 3.
             if m.group(2) is not None:
+                # double quoted
                 yield QuotedValue, m.start(2), m.end(2)
             elif m.group(3) is not None:
-                yield UnquotedValue, m.start(3), m.end(3)
+                # single quoted - TODO: could have different token types
+                yield QuotedValue, m.start(3), m.end(3)
+            elif m.group(4) is not None:
+                yield UnquotedValue, m.start(4), m.end(4)
 
             # Skip past the "
             pos = m.end(0)

@@ -175,8 +175,7 @@ find-xml() {
 }
 
 test-other-xml() {
-  # problem with &ent1;
-  # CDATA support!  haha OK
+  # 6 errors, relating to value='<' in some Python testdata files, which seems invalid
   time cat _tmp/xml-files.txt | $REPO_ROOT/$0 htm8-tool parse-xml
 }
 

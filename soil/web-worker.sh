@@ -177,8 +177,12 @@ EOF
     </li>
     '
   fi
-
   echo '</ul>'
+
+  cat <<EOF
+  </body>
+</html>
+EOF
 }
 
 format-image-stats() {

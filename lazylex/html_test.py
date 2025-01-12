@@ -110,10 +110,13 @@ class TagLexerTest(unittest.TestCase):
         all_attrs = lex.AllAttrsRaw()
         log('all %s', all_attrs)
 
-        return
-        lex = _MakeTagLexer('<a foo=bar !></a>')
-        all_attrs = lex.AllAttrsRaw()
-        log('all %s', all_attrs)
+        try:
+            lex = _MakeTagLexer('<a foo=bar !></a>')
+            all_attrs = lex.AllAttrsRaw()
+        except html.LexError as e:
+            print(e)
+        else:
+            self.fail('Expected LexError')
 
 
 def Lex(h, no_special_tags=False):
@@ -310,10 +313,6 @@ INVALID_LEX = [
     '<!-- unfinished comment',
     '<? unfinished processing',
     '</div bad=attr> <a> <b>',
-
-    # TODO: should be escaped, invalid in XML
-    #'<a href="&"></a>',
-    #'<a href=">"></a>',
 ]
 
 INVALID_PARSE = [
@@ -327,13 +326,18 @@ VALID_PARSE = [
     '<meta><a></a>',
     # no attribute
     '<button disabled></button>',
+    '<button disabled=></button>',
+    '<button disabled= ></button>',
+
+    # single quoted is pretty common
+    "<a href='single'></a>",
+
+    # Conceding to reality - I used these myself
+    '<a href=ble.sh></a>',
+    '<a href=foo.html></a>',
 
     # TODO: capitalization should be allowed
     #'<META><a></a>',
-
-    # TODO:
-    #'<a foo="&"></a>',  # bad attr
-    #'<a foo=bar !></a>',  # bad attr
 
     # TODO: Test <svg> and <math> ?
 ]
@@ -344,6 +348,10 @@ VALID_XML = [
 
 INVALID_TAG_LEX = [
     '<a foo=bar !></a>',  # bad attr
+
+    # TODO: should be escaped, invalid in XML
+    #'<a href="&"></a>',
+    #'<a href=">"></a>',
 ]
 
 
