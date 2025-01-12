@@ -4,11 +4,6 @@
 #   data_lang/htm8-test.sh
 #
 # TODO:
-# - Validate()
-#   - add LEX_QUOTED_VALUES, along with counter for it
-#   - and then re-run all the tests - make sure they pass
-#     - site oils.pub, site oilshell.org
-#     - XML on my machine - turn that in to 'WILD' corpus for HTML/XML?
 # - Rename to data_lang/htm8.py
 #   - it has NO_SPECIAL_TAGS mode for XML
 #   - put iterators at a higher level in doctools/ ?
@@ -27,6 +22,14 @@
 # - understanding all entities &zz;
 #   - there are over 2000 of them, not sure I want to build them all into the Oils binaries
 # - capital letters <TR/> - I guess we can normalize the case
+#
+# Leniency:
+# - foo=1&bar=2 is extremely common
+# - well then does that mean you allow <p>a & b</b too?
+#   - and then it's not far from that to <p id="value >"> - the quotes help
+# - I guess you can have a rule for unescaped &, just like unescaped backslash
+#   - you can warn about it, but it doesn't cause much problem?
+# We are already firmly in HTML territory, not in XML ...
 #
 # Features:
 # - Are there special rules for <svg> and <math>?

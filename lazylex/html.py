@@ -459,12 +459,18 @@ _TAG_LAST_RE = re.compile(r'\s* /? >', re.VERBOSE)
 
 # <button disabled> is standard usage
 
+# NOTE: This used to allow whitespace around =
+# <a foo = "bar">  makes sense in XML
+# But then you also have
+# <a foo= bar> - which is TWO attributes, in HTML5
+# So the space is problematic
+
 _ATTR_RE = re.compile(
     r'''
 \s+                     # Leading whitespace is required
 (%s)                    # Attribute name
 (?:                     # Optional attribute value
-  \s* = \s*
+  =
   (?:
     " ([^>"\x00]*) "    # double quoted value
   | ' ([^>'\x00]*) '    # single quoted value
@@ -473,7 +479,7 @@ _ATTR_RE = re.compile(
 )?             
 ''' % (_NAME, _UNQUOTED_VALUE), re.VERBOSE)
 
-TagName, AttrName, UnquotedValue, QuotedValue = range(4)
+TagName, AttrName, UnquotedValue, QuotedValue, MissingValue = range(5)
 
 
 class TagLexer(object):
@@ -523,12 +529,10 @@ class TagLexer(object):
                     if name == attr_name:
                         # The value should come next
                         tok_id, start, end = next(events)
-                        if tok_id in (QuotedValue, UnquotedValue):
-                            # Note: quoted values may have &amp;
-                            # We would need ANOTHER lexer to unescape them.
-                            # Right now help_gen.py and oils_doc.py
-                            val = start, end
-                            break
+                        assert tok_id in (QuotedValue, UnquotedValue,
+                                          MissingValue), TokenName(tok_id)
+                        val = start, end
+                        break
 
         except StopIteration:
             pass
@@ -557,16 +561,12 @@ class TagLexer(object):
 
                     # The value should come next
                     tok_id, start, end = next(events)
-                    if tok_id in (QuotedValue, UnquotedValue):
-                        # Note: quoted values may have &amp;
-                        # We would need ANOTHER lexer to unescape them, but we
-                        # don't need that for ul-table
-                        slices.append((name, start, end))
-                    else:
-                        # TODO: no attribute?  <button disabled>?  Make it equivalent
-                        # to the empty string?  Or None?
-                        pass
-                        #slices.append((name, start, end))
+                    assert tok_id in (QuotedValue, UnquotedValue,
+                                      MissingValue), TokenName(tok_id)
+                    # Note: quoted values may have &amp;
+                    # We would need ANOTHER lexer to unescape them, but we
+                    # don't need that for ul-table
+                    slices.append((name, start, end))
         except StopIteration:
             pass
         return slices
@@ -612,6 +612,7 @@ class TagLexer(object):
 
             yield AttrName, m.start(1), m.end(1)
 
+            #log('m.groups() %r', m.groups())
             if m.group(2) is not None:
                 # double quoted
                 yield QuotedValue, m.start(2), m.end(2)
@@ -620,6 +621,10 @@ class TagLexer(object):
                 yield QuotedValue, m.start(3), m.end(3)
             elif m.group(4) is not None:
                 yield UnquotedValue, m.start(4), m.end(4)
+            else:
+                # <button disabled>
+                end = m.end(0)
+                yield MissingValue, end, end
 
             # Skip past the "
             pos = m.end(0)

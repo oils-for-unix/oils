@@ -127,13 +127,15 @@ Just emit it!  This always works, by design.
 
 ### What Doesn't This Cover?
 
-- single-quoted attributes?
-  - We should probably add those, it shouldn't be hard?
-
 - Encodings other than UTF-8.  HTM8 is always UTF-8.
 - Unicode Tag names and attribute names.
   - This is allowed in HTML5 and XML.
   - We leave those out for simpler lexing.  Text and attribute values may be unicode.
+
+- `<a href=">">` - no literal `>` inside quotes
+  - HTML5 handles it, but we want to easily scan the "top level" structure of the doc
+  - And it doesn't appear to be common in our testdata
+  - TODO: we will handle `<a href="&">`
 
 There are 5 kinds of tags:
 

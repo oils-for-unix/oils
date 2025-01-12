@@ -32,6 +32,11 @@ class RegexTest(unittest.TestCase):
         p4 = re.compile(r'[^>]')
         print(p4.match('\n'))
 
+    def testAttrRe(self):
+        _ATTR_RE = html._ATTR_RE
+        m = _ATTR_RE.match(' empty= missing')
+        print(m.groups())
+
 
 class FunctionsTest(unittest.TestCase):
 
@@ -69,9 +74,9 @@ class TagLexerTest(unittest.TestCase):
         _PrintTokens(lex)
 
         # Note: we could have a different HasAttr() method
-        # <a novalue> means lex.Get('novalue') == None
+        # <a novalue> means lex.Get('novalue') == ''
         # https://developer.mozilla.org/en-US/docs/Web/API/Element/hasAttribute
-        self.assertEqual(None, lex.GetAttrRaw('novalue'))
+        self.assertEqual('', lex.GetAttrRaw('novalue'))
 
         lex = _MakeTagLexer('<a href="double quoted">')
         _PrintTokens(lex)
@@ -104,12 +109,32 @@ class TagLexerTest(unittest.TestCase):
         lex = _MakeTagLexer('<a href="?foo=1&amp;bar=2" />')
         self.assertEqual([('href', '?foo=1&amp;bar=2')], lex.AllAttrsRaw())
 
-    def testAttrWithoutValue(self):
+    def testEmptyMissingValues(self):
         # equivalent to <button disabled="">
         lex = _MakeTagLexer('<button disabled>')
         all_attrs = lex.AllAttrsRaw()
+        self.assertEqual([('disabled', '')], all_attrs)
+
+        slices = lex.AllAttrsRawSlice()
+        log('slices %s', slices)
+
+        lex = _MakeTagLexer(
+            '''<p double="" single='' empty= missing missing2>''')
+        all_attrs = lex.AllAttrsRaw()
+        self.assertEqual([
+            ('double', ''),
+            ('single', ''),
+            ('empty', ''),
+            ('missing', ''),
+            ('missing2', ''),
+        ], all_attrs)
+        # TODO: should have
         log('all %s', all_attrs)
 
+        slices = lex.AllAttrsRawSlice()
+        log('slices %s', slices)
+
+    def testInvalidTag(self):
         try:
             lex = _MakeTagLexer('<a foo=bar !></a>')
             all_attrs = lex.AllAttrsRaw()
