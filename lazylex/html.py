@@ -3,18 +3,6 @@
 lazylex/html.py - Low-Level HTML Processing.
 
 See lazylex/README.md for details.
-
-Conflicts between HTML5 and XML:
-
-- In XML, <source> is like any tag, and must be closed,
-- In HTML, <source> is a VOID tag, and must NOT be closedlike any tag, and must be closed,
-
-- In XML, <script> and <style> don't have special treatment
-- In HTML, they do
-
-- The header is different - <!DOCTYPE html> vs.  <?xml version= ... ?>
-
-So do have a mode for <script> <style> and void tags?  Upgrade HX8 into HTM8?
 """
 from __future__ import print_function
 
@@ -470,7 +458,7 @@ _ATTR_RE = re.compile(
 \s+                     # Leading whitespace is required
 (%s)                    # Attribute name
 (?:                     # Optional attribute value
-  =
+  \s* = \s*             # Spaces allowed around =
   (?:
     " ([^>"\x00]*) "    # double quoted value
   | ' ([^>'\x00]*) '    # single quoted value

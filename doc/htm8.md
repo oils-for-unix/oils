@@ -108,6 +108,21 @@ Just emit it!  This always works, by design.
 
 - Set `NO_SPECIAL_TAGS`
 
+
+Conflicts between HTML5 and XML:
+
+- In XML, `<source>` is like any tag, and must be closed,
+- In HTML, `<source>` is a VOID tag, and must NOT be closedlike any tag, and must be closed,
+
+- In XML, `<script>` and `<style>` don't have special treatment
+- In HTML, they do
+
+- The header is different - `<!DOCTYPE html>` vs.  `<?xml version= ... ?>`
+
+- HTML: `<a empty= missing>` is two attributes
+- right now we don't handle `<a empty = "missing">` as a single attribute
+  - that is valid XML, so should we handle it?
+
 ### Converting to XML?
 
 - Always quote all attributes

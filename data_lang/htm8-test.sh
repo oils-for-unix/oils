@@ -4,9 +4,8 @@
 #   data_lang/htm8-test.sh
 #
 # TODO:
-# - Rename to data_lang/htm8.py
-#   - it has NO_SPECIAL_TAGS mode for XML
-#   - put iterators at a higher level in doctools/ ?
+# - Move code into data_lang/htm8.py
+#   - iterators stay in lazylex/html.py?
 #
 # - statically type it
 #   - revive pyannotate
@@ -15,8 +14,16 @@
 #   - for find(), do we need a C++ primitive for it?
 #   - no allocation for TagName()
 #   - ASDL file for Tok.Foo?
-# - refactor TagName() API - remove it from the TagLexer?
-#   - that is really the AttrLexer()
+# - remove TagName() from TagLexer(), it is on the Htm8Lexer
+#
+# re2c considerations:
+# - We need to use CAPTURES, so we can't use frontend/match directly
+# - Could we STREAM the lexer?
+#   - Instead of sentinel model, use something else!
+#   - default is sentinel with  padding, and there is YYFILL with padding
+#   - there is also the separate --storable-state option
+#   - because this can be used queries that don't allocate
+# - I may also want to do this with JSON
 #
 # Not working yet:
 # - understanding all entities &zz;
@@ -35,29 +42,6 @@
 # - Are there special rules for <svg> and <math>?
 # - Do we need to know about <textarea> <pre>?  Those don't have the same
 #   whitespace rules
-#
-# YSH API
-# - Generating HTML/HTM8 is much more common than parsing it
-#   - although maybe we can do RemoveComments as a demo?
-#   - that is the lowest level "sed" model
-# - For parsing, a minimum idea is:
-#   - lexer-based algorithms for query by tag, class name, and id
-#   - and then toTree() - this is a DOM
-#     - .tag and .attrs?
-#     - .innerHTML() and .outerHTML() perhaps
-#    - rewrite ul-table in that?
-#      - does that mean you mutate it, or construct text?
-#      - I think you can set the innerHTML probably
-#
-# - Testing of html.ysh aka htm8.ysh in the stdlib
-#
-# Cases:
-#   html 'hello <b>world</b>'
-#   html "hello <b>$name</b>"html
-#   html ["hello <b>$name</b>"]  # hm this isn't bad, it's an unevaluated expression?
-#   commonmark 'hello **world**'
-#   md 'hello **world**'
-#   md ['hello **$escape**'] ?   We don't have a good escaping algorithm
 
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)

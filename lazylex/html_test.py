@@ -34,7 +34,7 @@ class RegexTest(unittest.TestCase):
 
     def testAttrRe(self):
         _ATTR_RE = html._ATTR_RE
-        m = _ATTR_RE.match(' empty= missing')
+        m = _ATTR_RE.match(' empty= val')
         print(m.groups())
 
 
@@ -118,15 +118,13 @@ class TagLexerTest(unittest.TestCase):
         slices = lex.AllAttrsRawSlice()
         log('slices %s', slices)
 
-        lex = _MakeTagLexer(
-            '''<p double="" single='' empty= missing missing2>''')
+        lex = _MakeTagLexer('''<p double="" single='' empty= value missing>''')
         all_attrs = lex.AllAttrsRaw()
         self.assertEqual([
             ('double', ''),
             ('single', ''),
-            ('empty', ''),
+            ('empty', 'value'),
             ('missing', ''),
-            ('missing2', ''),
         ], all_attrs)
         # TODO: should have
         log('all %s', all_attrs)

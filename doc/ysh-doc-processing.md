@@ -134,6 +134,34 @@ Safe HTML subset
 
 If you want to take user HTML, then you first use an HTML5 -> HT8 converter.
 
+## More Notes
+
+YSH API
+
+- Generating HTML/HTM8 is much more common than parsing it
+  - although maybe we can do RemoveComments as a demo?
+  - that is the lowest level "sed" model
+
+- For parsing, a minimum idea is:
+  - lexer-based algorithms for query by tag, class name, and id
+  - and then toTree() - this is a DOM
+    - .tag and .attrs?
+    - .innerHTML() and .outerHTML() perhaps
+   - rewrite ul-table in that?
+     - does that mean you mutate it, or construct text?
+     - I think you can set the innerHTML probably
+
+- Testing of html.ysh aka htm8.ysh in the stdlib
+
+Cases:
+
+    html 'hello <b>world</b>'
+    html "hello <b>$name</b>"html
+    html ["hello <b>$name</b>"]  # hm this isn't bad, it's an unevaluated expression?
+    commonmark 'hello **world**'
+    md 'hello **world**'
+    md ['hello **$escape**'] ?   We don't have a good escaping algorithm
+
 ## Related
 
 - [table-object-doc.html](table-object-doc.html)
