@@ -113,7 +113,7 @@ class Output(object):
 
 # HTML Tokens
 # CommentBegin, ProcessingBegin, CDataBegin are "pseudo-tokens", not visible
-TOKENS = 'Decl Comment CommentBegin Processing ProcessingBegin CData CDataBegin StartTag StartEndTag EndTag DecChar HexChar CharEntity RawData HtmlCData Invalid EndOfStream'.split(
+TOKENS = 'Decl Comment CommentBegin Processing ProcessingBegin CData CDataBegin StartTag StartEndTag EndTag DecChar HexChar CharEntity RawData HtmlCData BadAmpersand Invalid EndOfStream'.split(
 )
 
 
@@ -184,6 +184,8 @@ CHAR_LEX = [
     (r'&\# [0-9]+ ;', Tok.DecChar),
     (r'&\# x[0-9a-fA-F]+ ;', Tok.HexChar),
     (r'& %s ;' % _NAME, Tok.CharEntity),
+    # Allow unquoted, and quoted
+    (r'&', Tok.BadAmpersand),
 ]
 
 LEXER = CHAR_LEX + [
@@ -741,6 +743,7 @@ CHAR_ENTITY = {
     'lt': '<',
     'gt': '>',
     'quot': '"',
+    'apos': "'",
 }
 
 
@@ -763,7 +766,7 @@ def ToText(s, left_pos=0, right_pos=-1):
 
     pos = left_pos
     for tok_id, end_pos in ValidTokens(s, left_pos, right_pos):
-        if tok_id == Tok.RawData:
+        if tok_id in (Tok.RawData, Tok.BadAmpersand):
             out.SkipTo(pos)
             out.PrintUntil(end_pos)
 
@@ -781,6 +784,10 @@ def ToText(s, left_pos=0, right_pos=-1):
 
         elif tok_id == Tok.DecChar:
             raise AssertionError('Dec Char %r' % s[pos:pos + 20])
+
+        else:
+            # Skip everything else
+            out.SkipTo(end_pos)
 
         pos = end_pos
 

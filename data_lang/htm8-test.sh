@@ -26,17 +26,8 @@
 # - I may also want to do this with JSON
 #
 # Not working yet:
-# - understanding all entities &zz;
-#   - there are over 2000 of them, not sure I want to build them all into the Oils binaries
 # - capital letters <TR/> - I guess we can normalize the case
-#
-# Leniency:
-# - foo=1&bar=2 is extremely common
-# - well then does that mean you allow <p>a & b</b too?
-#   - and then it's not far from that to <p id="value >"> - the quotes help
-# - I guess you can have a rule for unescaped &, just like unescaped backslash
-#   - you can warn about it, but it doesn't cause much problem?
-# We are already firmly in HTML territory, not in XML ...
+#   - islower()
 #
 # Features:
 # - Are there special rules for <svg> and <math>?

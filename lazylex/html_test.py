@@ -46,6 +46,10 @@ class FunctionsTest(unittest.TestCase):
             line_num = html.FindLineNum(s, pos)
             print(line_num)
 
+    def testToText(self):
+        t = html.ToText('<b name="&amp;"> three &lt; four && five </b>')
+        self.assertEqual(' three < four && five ', t)
+
 
 def _MakeTagLexer(s):
     lex = html.TagLexer(s)
@@ -118,13 +122,15 @@ class TagLexerTest(unittest.TestCase):
         slices = lex.AllAttrsRawSlice()
         log('slices %s', slices)
 
-        lex = _MakeTagLexer('''<p double="" single='' empty= value missing>''')
+        lex = _MakeTagLexer(
+            '''<p double="" single='' empty= value missing empty2=>''')
         all_attrs = lex.AllAttrsRaw()
         self.assertEqual([
             ('double', ''),
             ('single', ''),
             ('empty', 'value'),
             ('missing', ''),
+            ('empty2', ''),
         ], all_attrs)
         # TODO: should have
         log('all %s', all_attrs)
@@ -338,12 +344,25 @@ class LexerTest(unittest.TestCase):
             else:
                 self.fail('Expected LexError %r' % s)
 
+    def testValid(self):
+        for s in VALID_LEX:
+            tokens = Lex(s)
+            print()
+
+
+VALID_LEX = [
+    '<foo>',
+    '<foo x=y>',
+    '<foo x="&">',
+
+    # Allowed with BadAmpersand
+    '<p> x & y </p>',
+]
 
 INVALID_LEX = [
-    # Should be &amp;
-    '<a>&',
-    '&amp',  # not finished
-    '&#',  # not finished
+    '<a><',
+    '&amp<',
+    '&<',
     # Hm > is allowed?
     #'a > b',
     'a < b',
@@ -386,6 +405,7 @@ VALID_PARSE = [
     # Conceding to reality - I used these myself
     '<a href=ble.sh></a>',
     '<a href=foo.html></a>',
+    '<foo x="&"></foo>',
 
     # TODO: capitalization should be allowed
     #'<META><a></a>',

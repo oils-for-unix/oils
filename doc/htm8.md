@@ -133,6 +133,21 @@ Conflicts between HTML5 and XML:
 - Maybe validate any other declarations, like `<!DOCTYPE foo>`
 - Add XML header `<?xml version=>`, remove `<!DOCTYPE html>`
 
+## Leniency
+
+Angle brackets:
+
+- `<a foo="<">` is allowed, but `<a foo=">">` is disallowed
+- `<p> 4>3 </p>` is allowed, but `<p> 4<3 </p>` is disallowed
+
+This makes lexing the top-level structure easier.
+
+- unescaped `&` is allowed, unlike XML
+  - it's very common in `<a href="?foo=42&bar=99">`
+  - It's lexed as BadAmpersand, in case you want to fix it for XML.  Although
+    we don't do that for < and > consistently.
+
+
 ## Related
 
 - [ysh-doc-processing.html](ysh-doc-processing.html)
