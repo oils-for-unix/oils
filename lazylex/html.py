@@ -919,6 +919,20 @@ def Validate(contents, flags, counters):
     counters.num_tokens += len(tokens)
 
 
+def ToXml(h):
+    # type: (str) -> str
+
+    # TODO: 
+    # 1. Lex it
+    # 2. < & > must be escaped
+    #    a. in raw data
+    #    b. in quoted strings
+    # 3. <script> turned into CDATA
+    # 4. void tags turned into self-closing tags
+    # 5. case-sensitive tag matching - not sure about this
+    return h
+
+
 class Counters(object):
 
     def __init__(self):

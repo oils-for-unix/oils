@@ -348,19 +348,10 @@ class LexerTest(unittest.TestCase):
                 self.fail('Expected LexError %r' % s)
 
     def testValid(self):
-        for s in VALID_LEX:
+        for s, _ in VALID_LEX:
             tokens = Lex(s)
             print()
 
-
-VALID_LEX = [
-    '<foo>',
-    '<foo x=y>',
-    '<foo x="&">',
-
-    # Allowed with BadAmpersand
-    '<p> x & y </p>',
-]
 
 INVALID_LEX = [
     '<a><',
@@ -379,50 +370,71 @@ INVALID_LEX = [
     '<STYLEz><</STYLEz>',
 ]
 
+VALID_LEX = [
+    # TODO: convert these to XML
+    ('<foo></foo>', ''),
+    ('<foo x=y></foo>', ''),
+    ('<foo x="&"></foo>', ''),
+
+    # Allowed with BadAmpersand
+    ('<p> x & y </p>', ''),
+]
+
 INVALID_PARSE = [
     '<a></b>',
     '<a>',  # missing closing tag
     '<meta></meta>',  # this is a self-closing tag
 ]
 
+SKIP = 0
+UNCHANGED = 1
+
 VALID_PARSE = [
-    '<!DOCTYPE html>\n',
-    '<!DOCTYPE>',
+    ('<!DOCTYPE html>\n', ''),
+    ('<!DOCTYPE>', ''),
 
     # empty strings
-    '<p x=""></p>',
-    "<p x=''></p>",
+    ('<p x=""></p>', UNCHANGED),
+    ("<p x=''></p>", UNCHANGED),
+
+    ('<self-closing a="b" />', UNCHANGED),
+
+    # We could also normalize CDATA? 
+    # Note that CDATA has an escaping problem: you need to handle it ]]> with
+    # concatenation.  It just "pushes the problem around".
+    # So I think it's better to use ONE kind of escaping, which is &lt;
+    ('<script><![CDATA[ <wtf> >< ]]></script>', UNCHANGED),
 
     # allowed, but 3 < 4 is not allowed
-    '<a> 3 > 4 </a>',
+    ('<a> 3 > 4 </a>', ''),
     # allowed, but 3 > 4 is not allowed
-    '<p x="3 < 4"></p>',
-    '<b><a href="foo">link</a></b>',
-    '<meta><a></a>',
+    ('<p x="3 < 4"></p>', ''),
+    ('<b><a href="foo">link</a></b>', ''),
+    ('<meta><a></a>', ''),
     # no attribute
-    '<button disabled></button>',
-    '<button disabled=></button>',
-    '<button disabled= ></button>',
+    ('<button disabled></button>', ''),
+    ('<button disabled=></button>', ''),
+    ('<button disabled= ></button>', ''),
 
     # single quoted is pretty common
-    "<a href='single'></a>",
+    ("<a href='single'></a>", ''),
 
     # Conceding to reality - I used these myself
-    '<a href=ble.sh></a>',
-    '<a href=foo.html></a>',
-    '<foo x="&"></foo>',
+    ('<a href=ble.sh></a>', ''),
+    ('<a href=foo.html></a>', ''),
+    ('<foo x="&"></foo>', ''),
 
     # caps
-    '<foo></FOO>',
-    '<Foo></fOO>',
+    ('<foo></FOO>', ''),
+    ('<Foo></fOO>', ''),
 
     # capital VOID tag
-    '<META><a></a>',
-    '<script><</script>',
+    ('<META><a></a>', ''),
+    ('<script><</script>', ''),
     # matching
-    '<SCRipt><</SCRipt>',
-    '<SCRIPT><</SCRIPT>',
-    '<STYLE><</STYLE>',
+    ('<SCRipt><</SCRipt>', ''),
+    ('<SCRIPT><</SCRIPT>', ''),
+    ('<STYLE><</STYLE>', ''),
     #'<SCRipt><</script>',
 
     # Note: Python HTMLParser.py does DYNAMIC compilation of regex with re.I
@@ -467,7 +479,7 @@ class ValidateTest(unittest.TestCase):
 
     def testValid(self):
         counters = html.Counters()
-        for s in VALID_PARSE:
+        for s, _ in VALID_PARSE:
             html.Validate(s, html.BALANCED_TAGS, counters)
             print('HTML5 %r' % s)
             print('HTML5 attrs %r' % counters.debug_attrs)
@@ -479,6 +491,20 @@ class ValidateTest(unittest.TestCase):
                           counters)
             print('XML %r' % s)
             print('XML attrs %r' % counters.debug_attrs)
+
+
+class XmlTest(unittest.TestCase):
+
+    def testValid(self):
+        counters = html.Counters()
+        for h, expected_xml in VALID_LEX + VALID_PARSE:
+            actual = html.ToXml(h)
+            if expected_xml == UNCHANGED:  # Unchanged
+                self.assertEqual(h, actual)
+            elif expected_xml == '':  # Skip
+                pass
+            else:
+                self.assertEqual(expected_xml, actual)
 
 
 if __name__ == '__main__':
