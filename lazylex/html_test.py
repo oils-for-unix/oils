@@ -370,14 +370,18 @@ INVALID_LEX = [
     '<STYLEz><</STYLEz>',
 ]
 
+SKIP = 0
+UNCHANGED = 1
+
 VALID_LEX = [
     # TODO: convert these to XML
-    ('<foo></foo>', ''),
+    ('<foo></foo>', UNCHANGED),
     ('<foo x=y></foo>', ''),
+    #('<foo x="&"></foo>', '<foo x="&amp;"></foo>'),
     ('<foo x="&"></foo>', ''),
 
     # Allowed with BadAmpersand
-    ('<p> x & y </p>', ''),
+    ('<p> x & y </p>', '<p> x &amp; y </p>'),
 ]
 
 INVALID_PARSE = [
@@ -386,9 +390,6 @@ INVALID_PARSE = [
     '<meta></meta>',  # this is a self-closing tag
 ]
 
-SKIP = 0
-UNCHANGED = 1
-
 VALID_PARSE = [
     ('<!DOCTYPE html>\n', ''),
     ('<!DOCTYPE>', ''),
@@ -396,10 +397,9 @@ VALID_PARSE = [
     # empty strings
     ('<p x=""></p>', UNCHANGED),
     ("<p x=''></p>", UNCHANGED),
-
     ('<self-closing a="b" />', UNCHANGED),
 
-    # We could also normalize CDATA? 
+    # We could also normalize CDATA?
     # Note that CDATA has an escaping problem: you need to handle it ]]> with
     # concatenation.  It just "pushes the problem around".
     # So I think it's better to use ONE kind of escaping, which is &lt;
@@ -410,7 +410,9 @@ VALID_PARSE = [
     # allowed, but 3 > 4 is not allowed
     ('<p x="3 < 4"></p>', ''),
     ('<b><a href="foo">link</a></b>', ''),
+    #('<meta><a></a>', '<meta/><a></a>'),
     ('<meta><a></a>', ''),
+
     # no attribute
     ('<button disabled></button>', ''),
     ('<button disabled=></button>', ''),

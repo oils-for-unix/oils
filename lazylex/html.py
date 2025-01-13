@@ -919,10 +919,10 @@ def Validate(contents, flags, counters):
     counters.num_tokens += len(tokens)
 
 
-def ToXml(h):
+def ToXml(htm8_str):
     # type: (str) -> str
 
-    # TODO: 
+    # TODO:
     # 1. Lex it
     # 2. < & > must be escaped
     #    a. in raw data
@@ -930,7 +930,57 @@ def ToXml(h):
     # 3. <script> turned into CDATA
     # 4. void tags turned into self-closing tags
     # 5. case-sensitive tag matching - not sure about this
-    return h
+
+    tag_lexer = TagLexer(htm8_str)
+    val_lexer = AttrValueLexer(htm8_str)
+
+    f = StringIO()
+    out = Output(htm8_str, f)
+
+    lx = Lexer(htm8_str)
+
+    pos = 0
+    while True:
+        tok_id, end_pos = lx.Read()
+
+        if tok_id == Tok.Invalid:
+            raise LexError(htm8_str, pos)
+        if tok_id == Tok.EndOfStream:
+            break
+
+        if tok_id in (Tok.RawData, Tok.CharEntity, Tok.HexChar, Tok.DecChar):
+            out.PrintUntil(end_pos)
+        elif tok_id in (Tok.StartTag, Tok.StartEndTag):
+            tag_lexer.Reset(pos, end_pos)
+            # TODO: reduce allocations here
+            all_attrs = tag_lexer.AllAttrsRawSlice()
+            for name, val_start, val_end in all_attrs:
+                val_lexer.Reset(val_start, val_end)
+                # TODO: get the kind of string
+                #
+                # Quoted:   we need to replace & with &amp; and < with &lt;
+                #           note > is not allowed
+                # Unquoted: right now, we can just surround with double quotes
+                #           because we don't allow any bad chars
+                # Empty   : add "", so empty= becomes =""
+                # Missing : add ="", so missing becomes missing=""
+
+            tag_name = lx.CanonicalTagName()
+            if tok_id == Tok.StartTag and tag_name in VOID_ELEMENTS:
+                # TODO: instead of closing >, print />
+                pass
+
+        elif tok_id == Tok.BadAmpersand:
+            #out.SkipTo(pos)
+            out.Print('&amp;')
+            out.SkipTo(end_pos)
+        else:
+            out.PrintUntil(end_pos)
+
+        pos = end_pos
+
+    out.PrintTheRest()
+    return f.getvalue()
 
 
 class Counters(object):
