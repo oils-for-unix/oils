@@ -282,6 +282,7 @@ class Lexer(object):
         assert self.pos < self.right_pos, self.pos
 
         if self.search_state is not None and not self.no_special_tags:
+            # TODO: case-insensitive search for </SCRIPT> <SCRipt> ?
             pos = self.s.find(self.search_state, self.pos)
             if pos == -1:
                 # unterminated <script> or <style>
@@ -341,17 +342,22 @@ class Lexer(object):
         assert self.tag_pos_left != -1, self.tag_pos_left
         assert self.tag_pos_right != -1, self.tag_pos_right
 
-        # TODO: In C++, this does not need an allocation
-        # TODO: conditionally lower() case here (maybe not in XML mode)
-        return expected == self.s[self.tag_pos_left:self.tag_pos_right]
+        # TODO: In C++, this does not need an allocation.  Can we test
+        # directly?
+        return expected == self.CanonicalTagName()
 
-    def TagName(self):
+    def CanonicalTagName(self):
         # type: () -> None
         assert self.tag_pos_left != -1, self.tag_pos_left
         assert self.tag_pos_right != -1, self.tag_pos_right
 
-        # TODO: conditionally lower() case here (maybe not in XML mode)
-        return self.s[self.tag_pos_left:self.tag_pos_right]
+        tag_name = self.s[self.tag_pos_left:self.tag_pos_right]
+        # Most tags are already lower case, so avoid allocation with this conditional
+        # TODO: this could go in the mycpp runtime?
+        if tag_name.islower():
+            return tag_name
+        else:
+            return tag_name.lower()
 
     def Read(self):
         # type: () -> Tuple[int, int]
@@ -866,7 +872,7 @@ def Validate(contents, flags, counters):
             counters.debug_attrs.extend(all_attrs)
 
             if flags & BALANCED_TAGS:
-                tag_name = lx.TagName()
+                tag_name = lx.CanonicalTagName()
                 if flags & NO_SPECIAL_TAGS:
                     tag_stack.append(tag_name)
                 else:
@@ -885,7 +891,7 @@ def Validate(contents, flags, counters):
                                      s=contents,
                                      start_pos=start_pos)
 
-                actual = lx.TagName()
+                actual = lx.CanonicalTagName()
                 if expected != actual:
                     raise ParseError(
                         'Got unexpected closing tag %r; opening tag was %r' %

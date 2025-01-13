@@ -407,8 +407,19 @@ VALID_PARSE = [
     '<a href=foo.html></a>',
     '<foo x="&"></foo>',
 
-    # TODO: capitalization should be allowed
-    #'<META><a></a>',
+    # caps
+    '<foo></FOO>',
+    '<Foo></fOO>',
+
+    # capital VOID tag
+    '<META><a></a>',
+
+    '<script><</script>',
+    '<SCRipt><</script>',
+
+    # Note: Python HTMLParser.py does DYNAMIC compilation of regex with re.I
+    # flag to handle this!  Gah I want something faster.
+    #'<script><</SCRIPT>',
 
     # TODO: Test <svg> and <math> ?
 ]
@@ -420,11 +431,9 @@ VALID_XML = [
 INVALID_TAG_LEX = [
     # not allowed, but 3 < 4 is allowed
     '<p x="3 > 4"></p>',
+    # same thing
+    '<a href=">"></a>',
     '<a foo=bar !></a>',  # bad attr
-
-    # should be escaped
-    #'<a href="&"></a>',
-    #'<a href=">"></a>',
 ]
 
 
