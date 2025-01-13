@@ -336,6 +336,25 @@ class LexerTest(unittest.TestCase):
             (Tok.EndOfStream, 9),
         ], tokens)
 
+    def testBad(self):
+        Tok = html.Tok
+
+        h = '&'
+        tokens = Lex(h)
+
+        self.assertEqual([
+            (Tok.BadAmpersand, 1),
+            (Tok.EndOfStream, 1),
+        ], tokens)
+
+        h = '>'
+        tokens = Lex(h)
+
+        self.assertEqual([
+            (Tok.BadGreaterThan, 1),
+            (Tok.EndOfStream, 1),
+        ], tokens)
+
     def testInvalid(self):
         Tok = html.Tok
 
@@ -406,10 +425,12 @@ VALID_PARSE = [
     ('<script><![CDATA[ <wtf> >< ]]></script>', UNCHANGED),
 
     # allowed, but 3 < 4 is not allowed
-    ('<a> 3 > 4 </a>', ''),
+    ('<a> 3 > 4 </a>', '<a> 3 &gt; 4 </a>'),
     # allowed, but 3 > 4 is not allowed
     ('<p x="3 < 4"></p>', ''),
-    ('<b><a href="foo">link</a></b>', ''),
+    ('<b><a href="foo">link</a></b>', UNCHANGED),
+
+    # TODO: should be self-closing
     #('<meta><a></a>', '<meta/><a></a>'),
     ('<meta><a></a>', ''),
 

@@ -113,7 +113,7 @@ class Output(object):
 
 # HTML Tokens
 # CommentBegin, ProcessingBegin, CDataBegin are "pseudo-tokens", not visible
-TOKENS = 'Decl Comment CommentBegin Processing ProcessingBegin CData CDataBegin StartTag StartEndTag EndTag DecChar HexChar CharEntity RawData HtmlCData BadAmpersand Invalid EndOfStream'.split(
+TOKENS = 'Decl Comment CommentBegin Processing ProcessingBegin CData CDataBegin StartTag StartEndTag EndTag DecChar HexChar CharEntity RawData HtmlCData BadAmpersand BadGreaterThan BadLessThan Invalid EndOfStream'.split(
 )
 
 
@@ -226,8 +226,10 @@ LEXER = CHAR_LEX + [
     #
     # - My early blog has THREE errors when disallowing >
     # - So do some .wwz files
-    (r'[^&<\x00]+', Tok.RawData),
-    (r'.', Tok.Invalid),  # error!
+    (r'[^&<>\x00]+', Tok.RawData),
+    (r'>', Tok.BadGreaterThan),
+    # < is an error
+    (r'.', Tok.Invalid),
 ]
 
 #  Old notes:
@@ -781,7 +783,8 @@ def ToText(s, left_pos=0, right_pos=-1):
 
     pos = left_pos
     for tok_id, end_pos in ValidTokens(s, left_pos, right_pos):
-        if tok_id in (Tok.RawData, Tok.BadAmpersand):
+        if tok_id in (Tok.RawData, Tok.BadAmpersand, Tok.BadGreaterThan,
+                      Tok.BadLessThan):
             out.SkipTo(pos)
             out.PrintUntil(end_pos)
 
@@ -973,6 +976,11 @@ def ToXml(htm8_str):
         elif tok_id == Tok.BadAmpersand:
             #out.SkipTo(pos)
             out.Print('&amp;')
+            out.SkipTo(end_pos)
+
+        elif tok_id == Tok.BadGreaterThan:
+            #out.SkipTo(pos)
+            out.Print('&gt;')
             out.SkipTo(end_pos)
         else:
             out.PrintUntil(end_pos)
