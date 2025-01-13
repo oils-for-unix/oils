@@ -134,7 +134,9 @@ cleanup-status-api() {
       ls | head -n -30 | xargs --no-run-if-empty -- rm -r -f -v
       ;;
     true)
-      ls | head -n -30
+      # TODO: fix spew
+      #ls | head -n -30
+      ls | head 
       ;;
     *)
       log 'Expected true or false for dry_run'

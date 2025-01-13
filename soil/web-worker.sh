@@ -277,8 +277,9 @@ deploy-job-results() {
   local prefix=$1  # e.g. github- for example.com/github-jobs/
   local run_dir=$2  # e.g. 1234  # make this dir
   local job_name=$3  # e.g. cpp-small for example.com/github-jobs/1234/cpp-small.wwz
-  shift 2
+
   # rest of args are more env vars
+  shift 3
 
   # writes $job_name.wwz
   make-job-wwz $job_name
@@ -310,6 +311,16 @@ deploy-job-results() {
       --form "file3=@${job_name}.json" \
       $WWUP_URL
   fi
+
+  show-soil-urls $prefix $run_dir $job_name
+}
+
+show-soil-urls() {
+  # Same args as deploy-job-results
+
+  local prefix=$1  # e.g. github- for example.com/github-jobs/
+  local run_dir=$2  # e.g. 1234  # make this dir
+  local job_name=$3  # e.g. cpp-small for example.com/github-jobs/1234/cpp-small.wwz
 
   log ''
   log 'View CI results here:'

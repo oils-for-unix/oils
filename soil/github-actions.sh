@@ -22,6 +22,8 @@ publish-html-assuming-ssh-key() {
   local update_status_api=${2:-}
 
   if true; then
+    local prefix='github-'
+    local run_dir=$GITHUB_RUN_NUMBER 
     # https://docs.github.com/en/actions/reference/environment-variables
 
     # Recommended by the docs
@@ -30,7 +32,8 @@ publish-html-assuming-ssh-key() {
     # Note $GITHUB_RUN_NUMBER is a different sequence for all-builds.yml vs.
     # fast-subset.yml
 
-    soil/web-worker.sh deploy-job-results 'github-' $GITHUB_RUN_NUMBER $job_name \
+    # This function prints 'View CI results here:' with URLs to op.oilshell.org
+    soil/web-worker.sh deploy-job-results $prefix $run_dir $job_name \
       JOB_URL \
       GITHUB_WORKFLOW	\
       GITHUB_RUN_ID \
@@ -46,12 +49,15 @@ publish-html-assuming-ssh-key() {
   fi
 
   # Calls rewrite-jobs-index and cleanup-jobs-index
-  time soil/web-worker.sh remote-event-job-done 'github-' $GITHUB_RUN_NUMBER
+  time soil/web-worker.sh remote-event-job-done $prefix $run_dir
 
   if test -n "$update_status_api"; then
     soil/web-worker.sh scp-status-api "$GITHUB_RUN_ID" "$job_name"
     soil/web-worker.sh remote-cleanup-status-api
   fi
+
+  # Show URLs again, so users can find the logs
+  soil/web-worker.sh show-soil-urls $prefix $run_dir $job_name
 }
 
 # Notes on Github secrets:
@@ -116,9 +122,6 @@ run-job() {
   local job_name=$1
   local docker=${2:-docker}
 
-  # I think it starts in the repo
-  # cd $REPO_ROOT
-
   soil/host-shim.sh mount-perms $REPO_ROOT
   echo
   echo
@@ -127,15 +130,15 @@ run-job() {
 }
 
 publish-and-exit() {
-  ### Called by YAML config
+  ### Called by Github Actions YAML config
   local job_name=$1
   # second param is passed to publish-html
 
   # Unlike sourcehut, Github Actions runs one job per machine.  So we publish
   # HTML and exit in one step.
-
   publish-html "$@"
 
+  # Look on disk to see if all jobs suceeded
   soil/host-shim.sh did-all-succeed $job_name
 }
 
