@@ -283,6 +283,10 @@ class Lexer(object):
 
         if self.search_state is not None and not self.no_special_tags:
             # TODO: case-insensitive search for </SCRIPT> <SCRipt> ?
+            #
+            # Another strategy: enter a mode where we find ONLY the end tag
+            # regex, and any data that's not <, and then check the canonical
+            # tag name for 'script' or 'style'.
             pos = self.s.find(self.search_state, self.pos)
             if pos == -1:
                 # unterminated <script> or <style>
@@ -328,10 +332,11 @@ class Lexer(object):
                     return Tok.CData, pos + 3  # ]]>
 
                 if tok_id == Tok.StartTag:
-                    if self.TagNameEquals('script'):
-                        self.search_state = '</script>'
-                    elif self.TagNameEquals('style'):
-                        self.search_state = '</style>'
+                    # TODO: reduce allocations
+                    if (self.TagNameEquals('script') or
+                            self.TagNameEquals('style')):
+                        # <SCRipt a=b>  -> </SCRipt>
+                        self.search_state = '</' + self._LiteralTagName() + '>'
 
                 return tok_id, m.end()
         else:
@@ -346,12 +351,16 @@ class Lexer(object):
         # directly?
         return expected == self.CanonicalTagName()
 
-    def CanonicalTagName(self):
+    def _LiteralTagName(self):
         # type: () -> None
         assert self.tag_pos_left != -1, self.tag_pos_left
         assert self.tag_pos_right != -1, self.tag_pos_right
 
-        tag_name = self.s[self.tag_pos_left:self.tag_pos_right]
+        return self.s[self.tag_pos_left:self.tag_pos_right]
+
+    def CanonicalTagName(self):
+        # type: () -> None
+        tag_name = self._LiteralTagName()
         # Most tags are already lower case, so avoid allocation with this conditional
         # TODO: this could go in the mycpp runtime?
         if tag_name.islower():

@@ -229,16 +229,19 @@ class LexerTest(unittest.TestCase):
         '''
         tokens = Lex(h)
 
-        self.assertEqual(
-            [
-                (Tok.RawData, 12),
-                (Tok.StartTag, 27),  # <script>
-                (Tok.HtmlCData, 78),  # JavaScript code is HTML CData
-                (Tok.EndTag, 87),  # </script>
-                (Tok.RawData, 96),  # \n
-                (Tok.EndOfStream, 96),  # \n
-            ],
-            tokens)
+        expected = [
+            (Tok.RawData, 12),
+            (Tok.StartTag, 27),  # <script>
+            (Tok.HtmlCData, 78),  # JavaScript code is HTML CData
+            (Tok.EndTag, 87),  # </script>
+            (Tok.RawData, 96),  # \n
+            (Tok.EndOfStream, 96),  # \n
+        ]
+        self.assertEqual(expected, tokens)
+
+        # Test case matching
+        tokens = Lex(h.replace('script', 'scrIPT'))
+        self.assertEqual(expected, tokens)
 
     def testScriptStyleXml(self):
         Tok = html.Tok
@@ -372,6 +375,8 @@ INVALID_LEX = [
 
     # not allowed, but 3 > 4 is allowed
     '<a> 3 < 4 </a>',
+    # Not a CDATA tag
+    '<STYLEz><</STYLEz>',
 ]
 
 INVALID_PARSE = [
@@ -413,9 +418,12 @@ VALID_PARSE = [
 
     # capital VOID tag
     '<META><a></a>',
-
     '<script><</script>',
-    '<SCRipt><</script>',
+    # matching
+    '<SCRipt><</SCRipt>',
+    '<SCRIPT><</SCRIPT>',
+    '<STYLE><</STYLE>',
+    #'<SCRipt><</script>',
 
     # Note: Python HTMLParser.py does DYNAMIC compilation of regex with re.I
     # flag to handle this!  Gah I want something faster.

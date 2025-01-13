@@ -3,15 +3,32 @@ in_progress: yes
 default_highlighter: oils-sh
 ---
 
-HTM8 - Efficient HTML with Errors
+HTM8 - An Easy Subset of HTML5, With Errors
 =================================
 
 - Syntax Errors: It's a Subset
-- Efficient
+- Easy
   - Easy to Remember
   - Easy to Implement
   - Runs Efficiently - you don't have to materialize a big DOM tree, which
     causes many allocations
+- Convertable to XML?
+  - without allocations, with a `sed`-like transformation!
+  - low level lexing and matching
+
+<!--
+
+TODO: 99.9% of HTML documents from CommonCrawl should be convertible to XML,
+and then validated by an XML parser
+
+- lxml - this is supposed to be high quality
+
+- Python stdlib uses expat - https://libexpat.github.io/
+
+- Gah it's this huge thing, 8K lines: https://github.com/libexpat/libexpat/blob/master/expat/lib/xmlparse.c
+  - do they have the billion laughs bug?
+
+-->
 
 <div id="toc">
 </div> 
@@ -125,11 +142,18 @@ Conflicts between HTML5 and XML:
 
 ### Converting to XML?
 
-- Always quote all attributes
-- Always quote `>` - are we alloxing this in HX8?
-- Do something with `<script>` and `<style>`
-  - I guess turn them into normal tags, with escaping?
-  - Or maybe just disallow them?
+- Add quotes to unquoted attributes
+  - single and double quotes stay the same?
+- Quote special chars
+  - & BadAmpersand -> `&amp;`
+  - < BadLessThan -> `&lt;`
+  - > BadGreaterTnan -> `&gt;`
+- `<script>` and `<style>`
+  - either add `<![CDATA[`
+  - or simply escape their values with `&amp; &lt;`
+- what to do about case-insensitive tags?
+  - maybe you can just normalize them
+  - because we do strict matching
 - Maybe validate any other declarations, like `<!DOCTYPE foo>`
 - Add XML header `<?xml version=>`, remove `<!DOCTYPE html>`
 
@@ -157,6 +181,11 @@ This makes lexing the top-level structure easier.
 
 ### What Doesn't This Cover?
 
+- HTM8 tags must be balanced to convert them to XML
+
+- NUL bytes aren't allowed - currently due to re2c sentinel
+  - Although I think we could have the preprocessing pass to convert it to the
+    Unicode replacement char?  I think that HTML might mandate that
 - Encodings other than UTF-8.  HTM8 is always UTF-8.
 - Unicode Tag names and attribute names.
   - This is allowed in HTML5 and XML.
