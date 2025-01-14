@@ -14,6 +14,8 @@ TODO:
 
 """
 from __future__ import print_function
+
+from _devbuild.gen.htm8_asdl import h8_id, h8_id_str
 from typing import Iterator
 from typing import Union
 from typing import Any
@@ -41,7 +43,7 @@ class LexError(Exception):
     """
     Examples of lex errors:
 
-    - Tok.Invalid, like <> or &&
+    - h8_id.Invalid, like <> or &&
     - Unclosed <!--  <?  <![CDATA[  <script>  <style>
     """
 
@@ -158,11 +160,6 @@ for i, tok_str in enumerate(TOKENS):
     TOKEN_NAMES[i] = tok_str
 
 
-def TokenName(tok_id):
-    # type: (int) -> str
-    return TOKEN_NAMES[tok_id]
-
-
 def MakeLexer(rules):
     return [(re.compile(pat, re.VERBOSE), i) for (pat, i) in rules]
 
@@ -207,15 +204,15 @@ _NAME = r'[a-zA-Z][a-zA-Z0-9:_\-]*'  # must start with letter
 CHAR_LEX = [
     # Characters
     # https://www.w3.org/TR/xml/#sec-references
-    (r'&\# [0-9]+ ;', Tok.DecChar),
-    (r'&\# x[0-9a-fA-F]+ ;', Tok.HexChar),
-    (r'& %s ;' % _NAME, Tok.CharEntity),
+    (r'&\# [0-9]+ ;', h8_id.DecChar),
+    (r'&\# x[0-9a-fA-F]+ ;', h8_id.HexChar),
+    (r'& %s ;' % _NAME, h8_id.CharEntity),
     # Allow unquoted, and quoted
-    (r'&', Tok.BadAmpersand),
+    (r'&', h8_id.BadAmpersand),
 ]
 
 HTM8_LEX = CHAR_LEX + [
-    (r'<!--', Tok.CommentBegin),
+    (r'<!--', h8_id.CommentBegin),
 
     # Processing instruction are used for the XML header:
     # <?xml version="1.0" encoding="UTF-8"?>
@@ -224,9 +221,9 @@ HTM8_LEX = CHAR_LEX + [
     #
     #   https://developer.mozilla.org/en-US/docs/Web/API/ProcessingInstruction
     #
-    (r'<\?', Tok.ProcessingBegin),
+    (r'<\?', h8_id.ProcessingBegin),
     # Not necessary in HTML5, but occurs in XML
-    (r'<!\[CDATA\[', Tok.CDataBegin),  # <![CDATA[
+    (r'<!\[CDATA\[', h8_id.CDataBegin),  # <![CDATA[
 
     # Markup declarations
     # - In HTML5, there is only <!DOCTYPE html>
@@ -234,28 +231,28 @@ HTM8_LEX = CHAR_LEX + [
     #   - these seem to be part of DTD
     #   - it's useful to skip these, and be able to parse the rest of the document
     # - Note: < is allowed?
-    (r'<! [^>\x00]+ >', Tok.Decl),
+    (r'<! [^>\x00]+ >', h8_id.Decl),
 
     # Tags
     # Notes:
     # - We look for a valid tag name, but we don't validate attributes.
     #   That's done in the tag lexer.
     # - We don't allow leading whitespace
-    (r'</ (%s) >' % _NAME, Tok.EndTag),
+    (r'</ (%s) >' % _NAME, h8_id.EndTag),
     # self-closing <br/>  comes before StartTag
     # could/should these be collapsed into one rule?
-    (r'<  (%s) [^>\x00]* />' % _NAME, Tok.StartEndTag),  # end </a>
-    (r'<  (%s) [^>\x00]* >' % _NAME, Tok.StartTag),  # start <a>
+    (r'<  (%s) [^>\x00]* />' % _NAME, h8_id.StartEndTag),  # end </a>
+    (r'<  (%s) [^>\x00]* >' % _NAME, h8_id.StartTag),  # start <a>
 
     # HTML5 allows unescaped > in raw data, but < is not allowed.
     # https://stackoverflow.com/questions/10462348/right-angle-bracket-in-html
     #
     # - My early blog has THREE errors when disallowing >
     # - So do some .wwz files
-    (r'[^&<>\x00]+', Tok.RawData),
-    (r'>', Tok.BadGreaterThan),
+    (r'[^&<>\x00]+', h8_id.RawData),
+    (r'>', h8_id.BadGreaterThan),
     # < is an error
-    (r'.', Tok.Invalid),
+    (r'.', h8_id.Invalid),
 ]
 
 #  Old notes:
@@ -271,11 +268,11 @@ HTM8_LEX = CHAR_LEX + [
 # https://re2c.org/manual/manual_c.html
 
 # Discarded options
-#(r'<!-- .*? -->', Tok.Comment),
+#(r'<!-- .*? -->', h8_id.Comment),
 
 # Hack from Claude: \s\S instead of re.DOTALL.  I don't like this
-#(r'<!-- [\s\S]*? -->', Tok.Comment),
-#(r'<!-- (?:.|[\n])*? -->', Tok.Comment),
+#(r'<!-- [\s\S]*? -->', h8_id.Comment),
+#(r'<!-- (?:.|[\n])*? -->', h8_id.Comment),
 
 HTM8_LEX_COMPILED = MakeLexer(HTM8_LEX)
 
@@ -306,7 +303,7 @@ class Lexer(object):
         Note: not using _Peek() now
         """
         if self.pos == self.right_pos:
-            return Tok.EndOfStream, self.pos
+            return h8_id.EndOfStream, self.pos
 
         assert self.pos < self.right_pos, self.pos
 
@@ -322,7 +319,7 @@ class Lexer(object):
                 raise LexError(self.s, self.pos)
             self.search_state = None
             # beginning
-            return Tok.HtmlCData, pos
+            return h8_id.HtmlCData, pos
 
         # Find the first match.
         # Note: frontend/match.py uses _LongestMatch(), which is different!
@@ -331,7 +328,7 @@ class Lexer(object):
         for pat, tok_id in HTM8_LEX_COMPILED:
             m = pat.match(self.s, self.pos)
             if m:
-                if tok_id in (Tok.StartTag, Tok.EndTag, Tok.StartEndTag):
+                if tok_id in (h8_id.StartTag, h8_id.EndTag, h8_id.StartEndTag):
                     self.tag_pos_left = m.start(1)
                     self.tag_pos_right = m.end(1)
                 else:
@@ -339,28 +336,28 @@ class Lexer(object):
                     self.tag_pos_left = -1
                     self.tag_pos_right = -1
 
-                if tok_id == Tok.CommentBegin:
+                if tok_id == h8_id.CommentBegin:
                     pos = self.s.find('-->', self.pos)
                     if pos == -1:
                         # unterminated <!--
                         raise LexError(self.s, self.pos)
-                    return Tok.Comment, pos + 3  # -->
+                    return h8_id.Comment, pos + 3  # -->
 
-                if tok_id == Tok.ProcessingBegin:
+                if tok_id == h8_id.ProcessingBegin:
                     pos = self.s.find('?>', self.pos)
                     if pos == -1:
                         # unterminated <?
                         raise LexError(self.s, self.pos)
-                    return Tok.Processing, pos + 2  # ?>
+                    return h8_id.Processing, pos + 2  # ?>
 
-                if tok_id == Tok.CDataBegin:
+                if tok_id == h8_id.CDataBegin:
                     pos = self.s.find(']]>', self.pos)
                     if pos == -1:
                         # unterminated <![CDATA[
                         raise LexError(self.s, self.pos)
-                    return Tok.CData, pos + 3  # ]]>
+                    return h8_id.CData, pos + 3  # ]]>
 
-                if tok_id == Tok.StartTag:
+                if tok_id == h8_id.StartTag:
                     # TODO: reduce allocations
                     if (self.TagNameEquals('script') or
                             self.TagNameEquals('style')):
@@ -369,7 +366,7 @@ class Lexer(object):
 
                 return tok_id, m.end()
         else:
-            raise AssertionError('Tok.Invalid rule should have matched')
+            raise AssertionError('h8_id.Invalid rule should have matched')
 
     def TagNameEquals(self, expected):
         # type: (str) -> bool
@@ -427,7 +424,7 @@ def _Tokens(s, left_pos, right_pos):
     while True:
         tok_id, pos = lx.Read()
         yield tok_id, pos
-        if tok_id == Tok.EndOfStream:
+        if tok_id == h8_id.EndOfStream:
             break
 
 
@@ -441,7 +438,7 @@ def ValidTokens(s, left_pos=0, right_pos=-1):
     """
     pos = left_pos
     for tok_id, end_pos in _Tokens(s, left_pos, right_pos):
-        if tok_id == Tok.Invalid:
+        if tok_id == h8_id.Invalid:
             raise LexError(s, pos)
         yield tok_id, end_pos
         pos = end_pos
@@ -457,9 +454,9 @@ def ValidTokenList(s, no_special_tags=False):
     while True:
         tok_id, end_pos = lx.Read()
         tokens.append((tok_id, end_pos))
-        if tok_id == Tok.EndOfStream:
+        if tok_id == h8_id.EndOfStream:
             break
-        if tok_id == Tok.Invalid:
+        if tok_id == h8_id.Invalid:
             raise LexError(s, start_pos)
         start_pos = end_pos
     return tokens
@@ -572,7 +569,7 @@ class TagLexer(object):
                         # The value should come next
                         tok_id, start, end = next(events)
                         assert tok_id in (QuotedValue, UnquotedValue,
-                                          MissingValue), TokenName(tok_id)
+                                          MissingValue), h8_id_str(tok_id)
                         val = start, end
                         break
 
@@ -606,7 +603,7 @@ class TagLexer(object):
                     # The value should come next
                     tok_id, start, end = next(events)
                     assert tok_id in (QuotedValue, UnquotedValue,
-                                      MissingValue), TokenName(tok_id)
+                                      MissingValue), h8_id_str(tok_id)
                     # Note: quoted values may have &amp;
                     # We would need ANOTHER lexer to unescape them, but we
                     # don't need that for ul-table
@@ -691,8 +688,8 @@ class TagLexer(object):
 # Note: for unquoted values, & isn't allowed, and thus &amp; and &#99; and
 # &#x99; are not allowed.  We could relax that?
 ATTR_VALUE_LEXER = CHAR_LEX + [
-    (r'[^>&\x00]+', Tok.RawData),
-    (r'.', Tok.Invalid),
+    (r'[^>&\x00]+', h8_id.RawData),
+    (r'.', h8_id.Invalid),
 ]
 
 ATTR_VALUE_LEXER = MakeLexer(ATTR_VALUE_LEXER)
@@ -725,7 +722,7 @@ class AttrValueLexer(object):
         num_tokens = 0
         pos = self.start_pos
         for tok_id, end_pos in self.Tokens():
-            if tok_id == Tok.Invalid:
+            if tok_id == h8_id.Invalid:
                 raise LexError(self.s, pos)
             pos = end_pos
             #log('pos %d', pos)
@@ -751,7 +748,7 @@ class AttrValueLexer(object):
                     pos = end_pos
                     break
             else:
-                raise AssertionError('Tok.Invalid rule should have matched')
+                raise AssertionError('h8_id.Invalid rule should have matched')
 
 
 def ReadUntilStartTag(it, tag_lexer, tag_name):
@@ -768,7 +765,7 @@ def ReadUntilStartTag(it, tag_lexer, tag_name):
         except StopIteration:
             break
         tag_lexer.Reset(pos, end_pos)
-        if tok_id == Tok.StartTag and tag_lexer.TagName() == tag_name:
+        if tok_id == h8_id.StartTag and tag_lexer.TagName() == tag_name:
             return pos, end_pos
 
         pos = end_pos
@@ -791,7 +788,7 @@ def ReadUntilEndTag(it, tag_lexer, tag_name):
         except StopIteration:
             break
         tag_lexer.Reset(pos, end_pos)
-        if tok_id == Tok.EndTag and tag_lexer.TagName() == tag_name:
+        if tok_id == h8_id.EndTag and tag_lexer.TagName() == tag_name:
             return pos, end_pos
 
         pos = end_pos
@@ -828,12 +825,12 @@ def ToText(s, left_pos=0, right_pos=-1):
 
     pos = left_pos
     for tok_id, end_pos in ValidTokens(s, left_pos, right_pos):
-        if tok_id in (Tok.RawData, Tok.BadAmpersand, Tok.BadGreaterThan,
-                      Tok.BadLessThan):
+        if tok_id in (h8_id.RawData, h8_id.BadAmpersand, h8_id.BadGreaterThan,
+                      h8_id.BadLessThan):
             out.SkipTo(pos)
             out.PrintUntil(end_pos)
 
-        elif tok_id == Tok.CharEntity:  # &amp;
+        elif tok_id == h8_id.CharEntity:  # &amp;
 
             entity = s[pos + 1:end_pos - 1]
 
@@ -842,10 +839,10 @@ def ToText(s, left_pos=0, right_pos=-1):
             out.SkipTo(end_pos)
 
         # Not handling these yet
-        elif tok_id == Tok.HexChar:
+        elif tok_id == h8_id.HexChar:
             raise AssertionError('Hex Char %r' % s[pos:pos + 20])
 
-        elif tok_id == Tok.DecChar:
+        elif tok_id == h8_id.DecChar:
             raise AssertionError('Dec Char %r' % s[pos:pos + 20])
 
         else:
@@ -895,16 +892,16 @@ def Validate(contents, flags, counters):
     tag_stack = []
     while True:
         tok_id, end_pos = lx.Read()
-        #log('TOP %s %r', TokenName(tok_id), contents[start_pos:end_pos])
+        #log('TOP %s %r', h8_id_str(tok_id), contents[start_pos:end_pos])
 
-        if tok_id == Tok.Invalid:
+        if tok_id == h8_id.Invalid:
             raise LexError(contents, start_pos)
-        if tok_id == Tok.EndOfStream:
+        if tok_id == h8_id.EndOfStream:
             break
 
         tokens.append((tok_id, end_pos))
 
-        if tok_id == Tok.StartEndTag:
+        if tok_id == h8_id.StartEndTag:
             counters.num_start_end_tags += 1
 
             tag_lexer.Reset(start_pos, end_pos)
@@ -916,7 +913,7 @@ def Validate(contents, flags, counters):
 
             counters.debug_attrs.extend(all_attrs)
 
-        elif tok_id == Tok.StartTag:
+        elif tok_id == h8_id.StartTag:
             counters.num_start_tags += 1
 
             tag_lexer.Reset(start_pos, end_pos)
@@ -939,7 +936,7 @@ def Validate(contents, flags, counters):
 
             counters.max_tag_stack = max(counters.max_tag_stack,
                                          len(tag_stack))
-        elif tok_id == Tok.EndTag:
+        elif tok_id == h8_id.EndTag:
             if flags & BALANCED_TAGS:
                 try:
                     expected = tag_stack.pop()
@@ -991,14 +988,15 @@ def ToXml(htm8_str):
     while True:
         tok_id, end_pos = lx.Read()
 
-        if tok_id == Tok.Invalid:
+        if tok_id == h8_id.Invalid:
             raise LexError(htm8_str, pos)
-        if tok_id == Tok.EndOfStream:
+        if tok_id == h8_id.EndOfStream:
             break
 
-        if tok_id in (Tok.RawData, Tok.CharEntity, Tok.HexChar, Tok.DecChar):
+        if tok_id in (h8_id.RawData, h8_id.CharEntity, h8_id.HexChar,
+                      h8_id.DecChar):
             out.PrintUntil(end_pos)
-        elif tok_id in (Tok.StartTag, Tok.StartEndTag):
+        elif tok_id in (h8_id.StartTag, h8_id.StartEndTag):
             tag_lexer.Reset(pos, end_pos)
             # TODO: reduce allocations here
             all_attrs = tag_lexer.AllAttrsRawSlice()
@@ -1014,16 +1012,16 @@ def ToXml(htm8_str):
                 # Missing : add ="", so missing becomes missing=""
 
             tag_name = lx.CanonicalTagName()
-            if tok_id == Tok.StartTag and tag_name in VOID_ELEMENTS:
+            if tok_id == h8_id.StartTag and tag_name in VOID_ELEMENTS:
                 # TODO: instead of closing >, print />
                 pass
 
-        elif tok_id == Tok.BadAmpersand:
+        elif tok_id == h8_id.BadAmpersand:
             #out.SkipTo(pos)
             out.Print('&amp;')
             out.SkipTo(end_pos)
 
-        elif tok_id == Tok.BadGreaterThan:
+        elif tok_id == h8_id.BadGreaterThan:
             #out.SkipTo(pos)
             out.Print('&gt;')
             out.SkipTo(end_pos)
@@ -1060,13 +1058,13 @@ def main(argv):
         start_pos = 0
         while True:
             tok_id, end_pos = lx.Read()
-            if tok_id == Tok.Invalid:
+            if tok_id == h8_id.Invalid:
                 raise LexError(contents, start_pos)
-            if tok_id == Tok.EndOfStream:
+            if tok_id == h8_id.EndOfStream:
                 break
 
             frag = contents[start_pos:end_pos]
-            log('%d %s %r', end_pos, TokenName(tok_id), frag)
+            log('%d %s %r', end_pos, h8_id_str(tok_id), frag)
             start_pos = end_pos
 
         return 0

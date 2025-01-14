@@ -3,9 +3,10 @@ from __future__ import print_function
 
 import unittest
 
+from _devbuild.gen.htm8_asdl import h8_id, h8_id_str
 from lazylex import html  # module under test log = html.log
-from typing import List
-from typing import Tuple
+
+from typing import List, Tuple
 
 log = html.log
 
@@ -184,7 +185,7 @@ def Lex(h, no_special_tags=False):
     start_pos = 0
     for tok_id, end_pos in tokens:
         frag = h[start_pos:end_pos]
-        log('%d %s %r', end_pos, html.TokenName(tok_id), frag)
+        log('%d %s %r', end_pos, h8_id_str(tok_id), frag)
         start_pos = end_pos
     return tokens
 
@@ -219,10 +220,10 @@ class LexerTest(unittest.TestCase):
 
         self.assertEqual(
             [
-                (Tok.RawData, 12),
-                (Tok.Comment, 50),  # <? err ?>
-                (Tok.StartEndTag, 55),
-                (Tok.EndOfStream, 55),
+                (h8_id.RawData, 12),
+                (h8_id.Comment, 50),  # <? err ?>
+                (h8_id.StartEndTag, 55),
+                (h8_id.EndOfStream, 55),
             ],
             tokens)
 
@@ -235,9 +236,9 @@ class LexerTest(unittest.TestCase):
 
         self.assertEqual(
             [
-                (Tok.RawData, 3),
-                (Tok.Processing, 12),  # <? err ?>
-                (Tok.EndOfStream, 12),
+                (h8_id.RawData, 3),
+                (h8_id.Processing, 12),  # <? err ?>
+                (h8_id.EndOfStream, 12),
             ],
             tokens)
 
@@ -251,12 +252,12 @@ class LexerTest(unittest.TestCase):
         tokens = Lex(h)
 
         expected = [
-            (Tok.RawData, 12),
-            (Tok.StartTag, 27),  # <script>
-            (Tok.HtmlCData, 78),  # JavaScript code is HTML CData
-            (Tok.EndTag, 87),  # </script>
-            (Tok.RawData, 96),  # \n
-            (Tok.EndOfStream, 96),  # \n
+            (h8_id.RawData, 12),
+            (h8_id.StartTag, 27),  # <script>
+            (h8_id.HtmlCData, 78),  # JavaScript code is HTML CData
+            (h8_id.EndTag, 87),  # </script>
+            (h8_id.RawData, 96),  # \n
+            (h8_id.EndOfStream, 96),  # \n
         ]
         self.assertEqual(expected, tokens)
 
@@ -273,13 +274,13 @@ class LexerTest(unittest.TestCase):
 
         self.assertEqual(
             [
-                (Tok.RawData, 3),
-                (Tok.StartTag, 18),  # <script>
-                (Tok.RawData, 19),  # space
-                (Tok.CharEntity, 23),  # </script>
-                (Tok.RawData, 24),  # \n
-                (Tok.EndTag, 33),  # \n
-                (Tok.EndOfStream, 33),  # \n
+                (h8_id.RawData, 3),
+                (h8_id.StartTag, 18),  # <script>
+                (h8_id.RawData, 19),  # space
+                (h8_id.CharEntity, 23),  # </script>
+                (h8_id.RawData, 24),  # \n
+                (h8_id.EndTag, 33),  # \n
+                (h8_id.EndOfStream, 33),  # \n
             ],
             tokens)
 
@@ -293,10 +294,10 @@ class LexerTest(unittest.TestCase):
         tokens = Lex(h)
 
         self.assertEqual([
-            (Tok.StartTag, 9),
-            (Tok.CData, 61),
-            (Tok.EndTag, 71),
-            (Tok.EndOfStream, 71),
+            (h8_id.StartTag, 9),
+            (h8_id.CData, 61),
+            (h8_id.EndTag, 71),
+            (h8_id.EndOfStream, 71),
         ], tokens)
 
     def testEntity(self):
@@ -310,11 +311,11 @@ class LexerTest(unittest.TestCase):
         tokens = Lex(h)
 
         self.assertEqual([
-            (Tok.CharEntity, 6),
-            (Tok.RawData, 8),
-            (Tok.CharEntity, 14),
-            (Tok.RawData, 15),
-            (Tok.EndOfStream, 15),
+            (h8_id.CharEntity, 6),
+            (h8_id.RawData, 8),
+            (h8_id.CharEntity, 14),
+            (h8_id.RawData, 15),
+            (h8_id.EndOfStream, 15),
         ], tokens)
 
     def testStartTag(self):
@@ -325,10 +326,10 @@ class LexerTest(unittest.TestCase):
         tokens = Lex(h)
 
         self.assertEqual([
-            (Tok.StartTag, 3),
-            (Tok.RawData, 5),
-            (Tok.EndTag, 9),
-            (Tok.EndOfStream, 9),
+            (h8_id.StartTag, 3),
+            (h8_id.RawData, 5),
+            (h8_id.EndTag, 9),
+            (h8_id.EndOfStream, 9),
         ], tokens)
 
         # Make sure we don't consume too much
@@ -337,12 +338,12 @@ class LexerTest(unittest.TestCase):
         tokens = Lex(h)
 
         self.assertEqual([
-            (Tok.StartTag, 3),
-            (Tok.StartTag, 11),
-            (Tok.RawData, 14),
-            (Tok.EndTag, 23),
-            (Tok.EndTag, 27),
-            (Tok.EndOfStream, 27),
+            (h8_id.StartTag, 3),
+            (h8_id.StartTag, 11),
+            (h8_id.RawData, 14),
+            (h8_id.EndTag, 23),
+            (h8_id.EndTag, 27),
+            (h8_id.EndOfStream, 27),
         ], tokens)
 
         return
@@ -355,10 +356,10 @@ class LexerTest(unittest.TestCase):
         tokens = Lex(h)
 
         self.assertEqual([
-            (Tok.RawData, 9),
-            (Tok.StartTag, 24),
-            (Tok.RawData, 9),
-            (Tok.EndOfStream, 9),
+            (h8_id.RawData, 9),
+            (h8_id.StartTag, 24),
+            (h8_id.RawData, 9),
+            (h8_id.EndOfStream, 9),
         ], tokens)
 
     def testBad(self):
@@ -369,16 +370,16 @@ class LexerTest(unittest.TestCase):
         tokens = Lex(h)
 
         self.assertEqual([
-            (Tok.BadAmpersand, 1),
-            (Tok.EndOfStream, 1),
+            (h8_id.BadAmpersand, 1),
+            (h8_id.EndOfStream, 1),
         ], tokens)
 
         h = '>'
         tokens = Lex(h)
 
         self.assertEqual([
-            (Tok.BadGreaterThan, 1),
-            (Tok.EndOfStream, 1),
+            (h8_id.BadGreaterThan, 1),
+            (h8_id.EndOfStream, 1),
         ], tokens)
 
     def testInvalid(self):

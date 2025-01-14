@@ -11,6 +11,8 @@ Plugins:
 """
 from __future__ import print_function
 
+from _devbuild.gen.htm8_asdl import h8_id
+
 import cgi
 from typing import Iterator
 from typing import Any
@@ -121,7 +123,7 @@ def ExpandLinks(s):
         except StopIteration:
             break
 
-        if tok_id == html.StartTag:
+        if tok_id == h8_id.StartTag:
 
             tag_lexer.Reset(pos, end_pos)
             if tag_lexer.TagName() == 'a':
@@ -343,7 +345,7 @@ def SimpleHighlightCode(s):
         except StopIteration:
             break
 
-        if tok_id == html.StartTag:
+        if tok_id == h8_id.StartTag:
 
             tag_lexer.Reset(pos, end_pos)
             if tag_lexer.TagName() == 'pre':
@@ -403,7 +405,7 @@ def HighlightCode(s, default_highlighter, debug_out=None):
         except StopIteration:
             break
 
-        if tok_id == html.StartTag:
+        if tok_id == h8_id.StartTag:
 
             tag_lexer.Reset(pos, end_pos)
             if tag_lexer.TagName() == 'pre':
@@ -416,7 +418,7 @@ def HighlightCode(s, default_highlighter, debug_out=None):
                     break
 
                 tag_lexer.Reset(pos, end_pos)
-                if tok_id == html.StartTag and tag_lexer.TagName() == 'code':
+                if tok_id == h8_id.StartTag and tag_lexer.TagName() == 'code':
 
                     css_class = tag_lexer.GetAttrRaw('class')
                     code_start_pos = end_pos
@@ -514,7 +516,7 @@ def HighlightCode(s, default_highlighter, debug_out=None):
                             except StopIteration:
                                 break
                             tag_lexer.Reset(slash_code_right, end_pos)
-                            assert tok_id == html.EndTag, tok_id
+                            assert tok_id == h8_id.EndTag, tok_id
                             assert (tag_lexer.TagName() == 'pre'
                                     ), tag_lexer.TagName()
                             slash_pre_right = end_pos
@@ -559,7 +561,7 @@ def ExtractCode(s, f):
         except StopIteration:
             break
 
-        if tok_id == html.StartTag:
+        if tok_id == h8_id.StartTag:
             tag_lexer.Reset(pos, end_pos)
             if tag_lexer.TagName() == 'pre':
                 pre_start_pos = pos
@@ -571,7 +573,7 @@ def ExtractCode(s, f):
                     break
 
                 tag_lexer.Reset(pos, end_pos)
-                if tok_id == html.StartTag and tag_lexer.TagName() == 'code':
+                if tok_id == h8_id.StartTag and tag_lexer.TagName() == 'code':
 
                     css_class = tag_lexer.GetAttrRaw('class')
                     # Skip code blocks that look like ```foo

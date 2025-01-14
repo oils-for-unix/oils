@@ -1,6 +1,8 @@
 #!/usr/bin/env python2
 """ul_table.py: Markdown Tables Without New Syntax."""
 
+from _devbuild.gen.htm8_asdl import h8_id, h8_id_str
+
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -32,7 +34,7 @@ def RemoveComments(s):
     pos = 0
 
     for tok_id, end_pos in html.ValidTokens(s):
-        if tok_id == html.Comment:
+        if tok_id == h8_id.Comment:
             value = s[pos:end_pos]
             # doc/release-index.md has <!-- REPLACE_WITH_DATE --> etc.
             if 'REPLACE' not in value:
@@ -54,7 +56,7 @@ class UlTableParser(object):
         self.lexer = lexer
         self.tag_lexer = tag_lexer
 
-        self.tok_id = html.Invalid
+        self.tok_id = h8_id.Invalid
         self.start_pos = 0
         self.end_pos = 0
 
@@ -73,7 +75,7 @@ class UlTableParser(object):
 
         # Should have called RemoveComments() beforehand.  That can still leave
         # some REPLACE cmoments
-        if not comment_ok and self.tok_id == html.Comment:
+        if not comment_ok and self.tok_id == h8_id.Comment:
             raise html.ParseError('Unexpected HTML comment')
 
         if 0:
@@ -85,9 +87,9 @@ class UlTableParser(object):
         """
         Assert that we got text data matching a regex, and advance
         """
-        if self.tok_id != html.RawData:
+        if self.tok_id != h8_id.RawData:
             raise html.ParseError('Expected RawData, got %s' %
-                                  html.TokenName(self.tok_id))
+                                  h8_id_str(self.tok_id))
         actual = self._CurrentString()
         m = re.match(regex, actual)  # could compile this
         if m is None:
@@ -101,16 +103,16 @@ class UlTableParser(object):
         Assert that we got a start or end tag, with the given name, and advance
 
         Args:
-          expected_id: html.StartTag or html.EndTag
+          expected_id: h8_id.StartTag or h8_id.EndTag
           expected_tag: 'a', 'span', etc.
         """
-        assert expected_id in (html.StartTag,
-                               html.EndTag), html.TokenName(expected_id)
+        assert expected_id in (h8_id.StartTag,
+                               h8_id.EndTag), h8_id_str(expected_id)
 
         if self.tok_id != expected_id:
             raise html.ParseError(
                 'Expected token %s, got %s' %
-                (html.TokenName(expected_id), html.TokenName(self.tok_id)))
+                (h8_id_str(expected_id), h8_id_str(self.tok_id)))
         self.tag_lexer.Reset(self.start_pos, self.end_pos)
         tag_name = self.tag_lexer.TagName()
         if expected_tag != tag_name:
@@ -124,7 +126,7 @@ class UlTableParser(object):
         """
         Optional whitespace
         """
-        if (self.tok_id == html.RawData and
+        if (self.tok_id == h8_id.RawData and
                 _WHITESPACE_RE.match(self.lexer.s, self.start_pos)):
             self._Next()
 
@@ -140,19 +142,19 @@ class UlTableParser(object):
         # Find first table
         while True:
             self._Next(comment_ok=True)
-            if self.tok_id == html.EndOfStream:
+            if self.tok_id == h8_id.EndOfStream:
                 return -1
 
             tag_lexer.Reset(self.start_pos, self.end_pos)
-            if (self.tok_id == html.StartTag and
+            if (self.tok_id == h8_id.StartTag and
                     tag_lexer.TagName() == 'table'):
                 while True:
                     self._Next(comment_ok=True)
-                    if self.tok_id != html.RawData:
+                    if self.tok_id != h8_id.RawData:
                         break
 
                 tag_lexer.Reset(self.start_pos, self.end_pos)
-                if (self.tok_id == html.StartTag and
+                if (self.tok_id == h8_id.StartTag and
                         tag_lexer.TagName() == 'ul'):
                     return self.start_pos
         return -1
@@ -186,14 +188,14 @@ class UlTableParser(object):
         """
         self._WhitespaceOk()
 
-        if self.tok_id != html.StartTag:
+        if self.tok_id != h8_id.StartTag:
             return None, None
 
         inner_html = None
         td_attrs = None  # Can we also have col-attrs?
         td_attrs_span = None
 
-        self._Eat(html.StartTag, 'li')
+        self._Eat(h8_id.StartTag, 'li')
 
         left = self.start_pos
 
@@ -202,7 +204,7 @@ class UlTableParser(object):
         # because cells can have bulleted lists
         balance = 0
         while True:
-            if self.tok_id == html.StartEndTag:
+            if self.tok_id == h8_id.StartEndTag:
                 self.tag_lexer.Reset(self.start_pos, self.end_pos)
                 tag_name = self.tag_lexer.TagName()
                 # TODO: remove td-attrs backward compat
@@ -211,12 +213,12 @@ class UlTableParser(object):
                     td_attrs = self.tag_lexer.AllAttrsRaw()
                     #log('CELL ATTRS %r', self._CurrentString())
 
-            elif self.tok_id == html.StartTag:
+            elif self.tok_id == h8_id.StartTag:
                 self.tag_lexer.Reset(self.start_pos, self.end_pos)
                 if self.tag_lexer.TagName() == 'li':
                     balance += 1
 
-            elif self.tok_id == html.EndTag:
+            elif self.tok_id == h8_id.EndTag:
                 self.tag_lexer.Reset(self.start_pos, self.end_pos)
                 if self.tag_lexer.TagName() == 'li':
                     balance -= 1
@@ -236,7 +238,7 @@ class UlTableParser(object):
             inner_html = s[left:right]
         #log('RAW inner html %r', inner_html)
 
-        #self._Eat(html.EndTag, 'li')
+        #self._Eat(h8_id.EndTag, 'li')
         self._Next()
 
         return td_attrs, inner_html
@@ -284,7 +286,7 @@ class UlTableParser(object):
         cells = []
 
         self._WhitespaceOk()
-        self._Eat(html.StartTag, 'li')
+        self._Eat(h8_id.StartTag, 'li')
 
         # In CommonMark, r'thead\n' is enough, because it strips trailing
         # whitespace.  I'm not sure if other Markdown processors do that, so
@@ -292,7 +294,7 @@ class UlTableParser(object):
         self._EatRawData(r'thead\s+')
 
         # This is the row data
-        self._Eat(html.StartTag, 'ul')
+        self._Eat(h8_id.StartTag, 'ul')
 
         while True:
             td_attrs, inner_html = self._ListItem()
@@ -301,10 +303,10 @@ class UlTableParser(object):
             cells.append((td_attrs, inner_html))
         self._WhitespaceOk()
 
-        self._Eat(html.EndTag, 'ul')
+        self._Eat(h8_id.EndTag, 'ul')
 
         self._WhitespaceOk()
-        self._Eat(html.EndTag, 'li')
+        self._Eat(h8_id.EndTag, 'li')
 
         #log('_ParseTHead %s ', html.TOKEN_NAMES[self.tok_id])
         return cells
@@ -334,15 +336,15 @@ class UlTableParser(object):
         self._WhitespaceOk()
 
         # Could be a </ul>
-        if self.tok_id != html.StartTag:
+        if self.tok_id != h8_id.StartTag:
             return None, None
 
-        self._Eat(html.StartTag, 'li')
+        self._Eat(h8_id.StartTag, 'li')
 
         self._EatRawData(r'tr\s*')
 
         tr_attrs = None
-        if self.tok_id == html.StartEndTag:
+        if self.tok_id == h8_id.StartEndTag:
             self.tag_lexer.Reset(self.start_pos, self.end_pos)
             tag_name = self.tag_lexer.TagName()
             if tag_name != 'row-attrs':
@@ -352,7 +354,7 @@ class UlTableParser(object):
             self._WhitespaceOk()
 
         # This is the row data
-        self._Eat(html.StartTag, 'ul')
+        self._Eat(h8_id.StartTag, 'ul')
 
         while True:
             td_attrs, inner_html = self._ListItem()
@@ -363,10 +365,10 @@ class UlTableParser(object):
 
         self._WhitespaceOk()
 
-        self._Eat(html.EndTag, 'ul')
+        self._Eat(h8_id.EndTag, 'ul')
 
         self._WhitespaceOk()
-        self._Eat(html.EndTag, 'li')
+        self._Eat(h8_id.EndTag, 'li')
 
         #log('_ParseTHead %s ', html.TOKEN_NAMES[self.tok_id])
         return tr_attrs, cells
@@ -394,7 +396,7 @@ class UlTableParser(object):
         table = {'tr': []}
 
         ul_start = self.start_pos
-        self._Eat(html.StartTag, 'ul')
+        self._Eat(h8_id.StartTag, 'ul')
 
         # Look ahead 2 or 3 tokens:
         if self.lexer.LookAhead(r'\s*<li>thead\s+'):
@@ -416,7 +418,7 @@ class UlTableParser(object):
             #log('___ TR %s', tr)
             table['tr'].append((tr_attrs, tr))
 
-        self._Eat(html.EndTag, 'ul')
+        self._Eat(h8_id.EndTag, 'ul')
 
         self._WhitespaceOk()
 

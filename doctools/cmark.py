@@ -1,6 +1,11 @@
 #!/usr/bin/env python2
-"""Convert markdown to HTML, then parse the HTML, generate and insert a TOC,
-and insert anchors.
+"""Convert Markdown to HTML, with our enhancements
+
+- Parse the HTML
+- insert a TOC
+- <pstrip> hack - this is obsolete with ul-table?
+- Expand $xref links
+- Highlight code blocks
 
 I started from cmark-0.28.3/wrappers/wrapper.py.
 """

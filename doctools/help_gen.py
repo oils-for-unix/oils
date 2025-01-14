@@ -35,6 +35,7 @@ import pprint
 import re
 import sys
 
+from _devbuild.gen.htm8_asdl import h8_id
 from doctools import html_lib
 from doctools.util import log
 from lazylex import html
@@ -309,7 +310,7 @@ def ExtractBody(s):
         except StopIteration:
             break
 
-        if tok_id == html.StartTag:
+        if tok_id == h8_id.StartTag:
             tag_lexer.Reset(pos, end_pos)
             if tag_lexer.TagName() == 'body':
                 body_start_right = end_pos  # right after <body>
@@ -364,7 +365,7 @@ def HelpTopics(s):
         except StopIteration:
             break
 
-        if tok_id == html.StartTag:
+        if tok_id == h8_id.StartTag:
             tag_lexer.Reset(pos, end_pos)
             #log('%r', tag_lexer.TagString())
             #log('%r', tag_lexer.TagName())
