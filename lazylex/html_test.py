@@ -536,7 +536,7 @@ class ValidateTest(unittest.TestCase):
         for s, _ in VALID_PARSE:
             html.Validate(s, html.BALANCED_TAGS, counters)
             print('HTML5 %r' % s)
-            print('HTML5 attrs %r' % counters.debug_attrs)
+            #print('HTML5 attrs %r' % counters.debug_attrs)
 
     def testValidXml(self):
         # type: () -> None
@@ -545,7 +545,7 @@ class ValidateTest(unittest.TestCase):
             html.Validate(s, html.BALANCED_TAGS | html.NO_SPECIAL_TAGS,
                           counters)
             print('XML %r' % s)
-            print('XML attrs %r' % counters.debug_attrs)
+            #print('XML attrs %r' % counters.debug_attrs)
 
 
 class XmlTest(unittest.TestCase):

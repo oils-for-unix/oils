@@ -16,7 +16,7 @@ TODO:
 from __future__ import print_function
 
 from _devbuild.gen.htm8_asdl import h8_id, h8_id_t, h8_id_str
-from typing import Dict, Iterator, Union, Any, IO
+from typing import Dict, Iterator, Any, IO
 
 try:
     from cStringIO import StringIO
