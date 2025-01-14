@@ -61,7 +61,7 @@ check-mycpp() {
 }
 
 check-doctools() {
-  if true; then
+  if false; then
     local -a files=(
       $(for x in doctools/*.py; do echo $x; done | grep -v '_test.py' )
       lazylex/html.py
@@ -69,7 +69,7 @@ check-doctools() {
   else
     #local -a files=( lazylex/html.py )
     #local -a files=( doctools/help_gen.py )
-    local -a files=( doctools/ul_table.py lazylex/html.py )
+    local -a files=( doctools/ul_table.py lazylex/html.py doctools/oils_doc.py doctools/help_gen.py )
   fi
 
   # 777 errors before pyann

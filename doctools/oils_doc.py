@@ -14,10 +14,6 @@ from __future__ import print_function
 from _devbuild.gen.htm8_asdl import h8_id
 
 import cgi
-from typing import Iterator
-from typing import Any
-from typing import List
-from typing import Optional
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -25,6 +21,8 @@ except ImportError:
     from io import StringIO  # type: ignore
 import re
 import sys
+
+from typing import Iterator, Any, List, Optional, IO
 
 from doctools.util import log
 from lazylex import html
@@ -180,6 +178,7 @@ class _Plugin(object):
         self.end_pos = end_pos
 
     def PrintHighlighted(self, out):
+        # type: (html.Output) -> None
         raise NotImplementedError()
 
 
@@ -287,6 +286,7 @@ class HelpTopicsPlugin(_Plugin):
         self.linkify_stop_col = linkify_stop_col
 
     def PrintHighlighted(self, out):
+        # type: (html.Output) -> None
         from doctools import help_gen
 
         debug_out = []
@@ -318,6 +318,8 @@ class PygmentsPlugin(_Plugin):
         self.lang = lang
 
     def PrintHighlighted(self, out):
+        # type: (html.Output) -> None
+
         # unescape before passing to pygments, which will escape
         code = html.ToText(self.s, self.start_pos, self.end_pos)
 
@@ -329,6 +331,7 @@ class PygmentsPlugin(_Plugin):
 
 
 def SimpleHighlightCode(s):
+    # type: (str) -> str
     """Simple highlighting for test/shell-vs-shell.sh."""
 
     f = StringIO()
@@ -540,6 +543,7 @@ def HighlightCode(s, default_highlighter, debug_out=None):
 
 
 def ExtractCode(s, f):
+    # type: (str, IO[str]) -> None
     """Print code blocks to a plain text file.
 
     So we can at least validate the syntax.
@@ -637,6 +641,7 @@ class ShellSession(object):
     """
 
     def __init__(self, shell_exe, cache_dir):
+        # type: (str, str) -> None
         """
         Args:
           shell_exe: sh, bash, osh, or oil.  Use the one in the $PATH by default.
@@ -646,6 +651,7 @@ class ShellSession(object):
         self.cache_dir = cache_dir
 
     def PrintHighlighted(self, s, start_pos, end_pos, out):
+        # type: (str, int, int, html.Output) -> None
         """
         Args:
           s: an HTML string.
@@ -654,6 +660,7 @@ class ShellSession(object):
 
 
 def main(argv):
+    # type: (List[str]) -> None
     action = argv[1]
 
     if action == 'highlight':

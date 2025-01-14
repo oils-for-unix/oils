@@ -32,6 +32,8 @@ import pprint
 import re
 import sys
 
+from typing import AnyStr
+
 from _devbuild.gen.htm8_asdl import h8_id
 from doctools import html_lib
 from doctools.util import log
@@ -239,7 +241,7 @@ class Splitter(HTMLParser.HTMLParser):
             log(ind + msg, *args)
 
     def handle_starttag(self, tag, attrs):
-        # type: (str, List[Tuple[str, str]]) -> None
+        # type: (AnyStr, List[Tuple[AnyStr, AnyStr]]) -> None
         if tag in self.heading_tags:
             self.in_heading = True
             if self.cur_group:
@@ -251,7 +253,7 @@ class Splitter(HTMLParser.HTMLParser):
         self.indent += 1
 
     def handle_endtag(self, tag):
-        # type: (str) -> None
+        # type: (AnyStr) -> None
         if tag in self.heading_tags:
             self.in_heading = False
 
@@ -259,7 +261,7 @@ class Splitter(HTMLParser.HTMLParser):
         self.indent -= 1
 
     def handle_entityref(self, name):
-        # type: (str) -> None
+        # type: (AnyStr) -> None
         """
         From Python docs:
         This method is called to process a named character reference of the form
@@ -273,7 +275,7 @@ class Splitter(HTMLParser.HTMLParser):
                 self.cur_group[3].append(c)
 
     def handle_data(self, data):
-        # type: (str) -> None
+        # type: (AnyStr) -> None
         self.log('data %r', data)
         if self.in_heading:
             self.cur_group[2].append(data)
