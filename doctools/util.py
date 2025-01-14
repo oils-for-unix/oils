@@ -4,13 +4,13 @@ from __future__ import print_function
 
 import sys
 
-# many tools import this, causes ImportError
-# the oilshell.org/ repo also imports this
-#from typing import Any
+# Note: from typing import Any causes ImportError when PYTHONPATH is not .:vendor
+# So we import from vendor.typing which is a little inconsistent
+from vendor.typing import Any
 
 
 def log(msg, *args):
-    # disabled type: (str, Any) -> None
+    # type: (str, Any) -> None
     if args:
         msg = msg % args
     print(msg, file=sys.stderr)

@@ -193,7 +193,7 @@ split-and-render() {
 
   local css_files="$web_url/base.css $web_url/manual.css $web_url/toc.css $web_url/language.css $web_url/code.css"
 
-  doctools/split_doc.py \
+  PYTHONPATH='.:vendor' doctools/split_doc.py \
     -v build_timestamp="$TIMESTAMP" \
     -v oil_version="$OIL_VERSION" \
     -v css_files="$css_files" \
