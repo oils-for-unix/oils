@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 """ul_table.py: Markdown Tables Without New Syntax."""
 
-from _devbuild.gen.htm8_asdl import h8_id, h8_id_str
+from _devbuild.gen.htm8_asdl import h8_id, h8_id_t, h8_id_str
 
 try:
     from cStringIO import StringIO
@@ -98,7 +98,7 @@ class UlTableParser(object):
         self._Next()
 
     def _Eat(self, expected_id, expected_tag):
-        # type: (int, str) -> None
+        # type: (h8_id_t, str) -> None
         """
         Assert that we got a start or end tag, with the given name, and advance
 
@@ -393,7 +393,7 @@ class UlTableParser(object):
           TR*     
           [EndTag 'ul']
         """
-        table = {'tr': []}
+        table = {'tr': []}  # type: Dict[str, Any]
 
         ul_start = self.start_pos
         self._Eat(h8_id.StartTag, 'ul')

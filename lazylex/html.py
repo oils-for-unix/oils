@@ -15,11 +15,8 @@ TODO:
 """
 from __future__ import print_function
 
-from _devbuild.gen.htm8_asdl import h8_id, h8_id_str
-from typing import Iterator
-from typing import Union
-from typing import Any
-from typing import IO
+from _devbuild.gen.htm8_asdl import h8_id, h8_id_t, h8_id_str
+from typing import Dict, Iterator, Union, Any, IO
 
 try:
     from cStringIO import StringIO
@@ -286,7 +283,8 @@ class Lexer(object):
         self.right_pos = len(s) if right_pos == -1 else right_pos
         self.no_special_tags = no_special_tags
 
-        self.cache = {}  # string -> compiled regex pattern object
+        # string -> compiled regex pattern object
+        self.cache = {}  # type: Dict[str, Any]
 
         # either </script> or </style> - we search until we see that
         self.search_state = None  # type: Optional[str]
@@ -297,11 +295,8 @@ class Lexer(object):
         self.tag_pos_left = -1
         self.tag_pos_right = -1
 
-    def _Peek(self):
-        # type: () -> Tuple[int, int]
-        """
-        Note: not using _Peek() now
-        """
+    def _Read(self):
+        # type: () -> Tuple[h8_id_t, int]
         if self.pos == self.right_pos:
             return h8_id.EndOfStream, self.pos
 
@@ -395,8 +390,8 @@ class Lexer(object):
             return tag_name.lower()
 
     def Read(self):
-        # type: () -> Tuple[int, int]
-        tok_id, end_pos = self._Peek()
+        # type: () -> Tuple[h8_id_t, int]
+        tok_id, end_pos = self._Read()
         self.pos = end_pos  # advance
         return tok_id, end_pos
 
@@ -414,7 +409,7 @@ class Lexer(object):
 
 
 def _Tokens(s, left_pos, right_pos):
-    # type: (str, int, int) -> Iterator[Tuple[int, int]]
+    # type: (str, int, int) -> Iterator[Tuple[h8_id_t, int]]
     """
     Args:
       s: string to parse
@@ -445,7 +440,7 @@ def ValidTokens(s, left_pos=0, right_pos=-1):
 
 
 def ValidTokenList(s, no_special_tags=False):
-    # type: (str, bool) -> List[Tuple[int, int]]
+    # type: (str, bool) -> List[Tuple[h8_id_t, int]]
     """A wrapper that can be more easily translated to C++.  Doesn't use iterators."""
 
     start_pos = 0
@@ -542,6 +537,8 @@ class TagLexer(object):
         self.end_pos = end_pos
 
     def TagString(self):
+        # type: () -> str
+        """Return the entire tag string, e.g. <a href='foo'>"""
         return self.s[self.start_pos:self.end_pos]
 
     def TagName(self):
@@ -730,7 +727,7 @@ class AttrValueLexer(object):
         return num_tokens
 
     def Tokens(self):
-        # type: () -> Iterator[Union[Iterator, Iterator[Tuple[int, int]]]]
+        # type: () -> Iterator[Tuple[h8_id_t, int]]
         pos = self.start_pos
         while pos < self.end_pos:
             # Find the first match, like above.
@@ -752,6 +749,7 @@ class AttrValueLexer(object):
 
 
 def ReadUntilStartTag(it, tag_lexer, tag_name):
+    # type: (Iterator[Tuple[h8_id_t, int]], TagLexer, str) -> Tuple[int, int]
     """Find the next <foo>, returning its (start, end) positions
 
     Raise ParseError if it's not found.
@@ -774,7 +772,7 @@ def ReadUntilStartTag(it, tag_lexer, tag_name):
 
 
 def ReadUntilEndTag(it, tag_lexer, tag_name):
-    # type: (Iterator, TagLexer, str) -> Tuple[int, int]
+    # type: (Iterator[Tuple[h8_id_t, int]], TagLexer, str) -> Tuple[int, int]
     """Find the next </foo>, returning its (start, end) position
 
     Raise ParseError if it's not found.
@@ -911,7 +909,7 @@ def Validate(contents, flags, counters):
                 val_lexer.Reset(val_start, val_end)
                 counters.num_val_tokens += val_lexer.NumTokens()
 
-            counters.debug_attrs.extend(all_attrs)
+            #counters.debug_attrs.extend(all_attrs)
 
         elif tok_id == h8_id.StartTag:
             counters.num_start_tags += 1
@@ -923,7 +921,7 @@ def Validate(contents, flags, counters):
                 val_lexer.Reset(val_start, val_end)
                 counters.num_val_tokens += val_lexer.NumTokens()
 
-            counters.debug_attrs.extend(all_attrs)
+            #counters.debug_attrs.extend(all_attrs)
 
             if flags & BALANCED_TAGS:
                 tag_name = lx.CanonicalTagName()
@@ -1045,10 +1043,11 @@ class Counters(object):
         self.max_tag_stack = 0
         self.num_val_tokens = 0
 
-        self.debug_attrs = []
+        #self.debug_attrs = []
 
 
 def main(argv):
+    # type: (List[str]) -> int
     action = argv[1]
 
     if action == 'tokens':

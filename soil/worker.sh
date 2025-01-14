@@ -232,11 +232,11 @@ os-info          soil/diagnose.sh os-info              -
 dump-env         soil/diagnose.sh dump-env             -
 wait-for-tarball soil/wait.sh for-cpp-tarball          -
 test-tar         devtools/release-native.sh test-tar   -
-build-minimal    build/py.sh minimal                   -
+py-source        build/py.sh py-source                 -
 uftrace          benchmarks/uftrace.sh soil-run        _tmp/uftrace/index.html
 gc-cachegrind    benchmarks/gc-cachegrind.sh soil-run  _tmp/gc-cachegrind/index.html
 EOF
-  # 2025-01: added build-minimal because benchmarks use cmark.py, which uses
+  # 2025-01: added py-source because benchmarks use cmark.py, which uses
   # htm8_asdl to ExpandLinks() and so forth
 }
 
