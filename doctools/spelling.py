@@ -11,9 +11,11 @@ import re
 import sys
 
 from doctools.util import log
+from typing import Iterator
 
 
 def SplitWords(contents):
+    # type: (str) -> Iterator[str]
     # Remove URLs so path components don't show up as words
     contents = re.sub(r'(http|https|file)://\S+', '', contents)
 

@@ -14,6 +14,7 @@ with open('lazylex/testdata.html') as f:
 class OilsDocTest(unittest.TestCase):
 
     def testTopicCssClass(self):
+        # type: () -> None
 
         CASES = [
             ('language-chapter-links-expr-lang', True),
@@ -25,6 +26,7 @@ class OilsDocTest(unittest.TestCase):
             print(m.groups())
 
     def testExpandLinks(self):
+        # type: () -> None
         """
         <a href="$xref:bash">bash</a>
         ->
@@ -40,6 +42,7 @@ class OilsDocTest(unittest.TestCase):
         self.assertEqual('<a href="/cross-ref.html?tag=bash#bash">', h)
 
     def testShPrompt(self):
+        # type: () -> None
         r = oils_doc._PROMPT_LINE_RE
         line = 'oil$ ls -l&lt;TAB&gt;  # comment'
         m = r.match(line)
@@ -54,6 +57,7 @@ class OilsDocTest(unittest.TestCase):
         plugin.PrintHighlighted(out)
 
     def testHighlightCode(self):
+        # type: () -> None
         # lazylex/testdata.html has the language-sh-prompt
 
         h = oils_doc.HighlightCode(TEST_HTML, None)
@@ -61,6 +65,7 @@ class OilsDocTest(unittest.TestCase):
         #print(h)
 
     def testPygmentsPlugin(self):
+        # type: () -> None
         # TODO: Doesn't pass on Travis because pygments isn't there
         # use virtualenv or something?
         return

@@ -1,5 +1,9 @@
 #!/usr/bin/env python2
 from __future__ import print_function
+from typing import List
+from typing import Any
+from typing import Dict
+from typing import Iterator
 """help_gen.py
 
 Ideas for HTML -> ANSI converter:
@@ -85,6 +89,7 @@ X_LEFT_SPAN = '<span style="color: darkred">'
 class TopicHtmlRenderer(object):
 
     def __init__(self, chapter, debug_out, linkify_stop_col):
+        # type: (str, List, int) -> None
         self.chapter = chapter
         self.debug_out = debug_out
         self.linkify_stop_col = linkify_stop_col
@@ -92,6 +97,7 @@ class TopicHtmlRenderer(object):
         self.html_page = 'chap-%s.html' % chapter
 
     def _PrintTopic(self, m, out, line_info):
+        # type: (Any, html.Output, Dict[str, Any]) -> None
         # The X
         topic_impl = True
         if m.group(1):
@@ -111,6 +117,7 @@ class TopicHtmlRenderer(object):
         out.Print('</a>')
 
     def Render(self, line):
+        # type: (str) -> str
         """Convert a line of text to HTML.
 
         Topics are highlighted and X made red.
@@ -217,6 +224,7 @@ class Splitter(HTMLParser.HTMLParser):
     """
 
     def __init__(self, heading_tags, out):
+        # type: (List[str], List) -> None
         HTMLParser.HTMLParser.__init__(self)
         self.heading_tags = heading_tags
         self.out = out
@@ -271,6 +279,7 @@ class Splitter(HTMLParser.HTMLParser):
                 self.cur_group[3].append(data)
 
     def end(self):
+        # type: () -> None
         if self.cur_group:
             self.out.append(self.cur_group)
 
@@ -282,6 +291,7 @@ class Splitter(HTMLParser.HTMLParser):
 
 
 def ExtractBody(s):
+    # type: (str) -> str
     """Extract what's in between <body></body>
 
     The splitter needs balanced tags, and what's in <head> isn't
@@ -316,6 +326,7 @@ def ExtractBody(s):
 
 
 def SplitIntoCards(heading_tags, contents):
+    # type: (List[str], str) -> Iterator
     contents = ExtractBody(contents)
 
     groups = []

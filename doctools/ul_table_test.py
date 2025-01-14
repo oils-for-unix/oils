@@ -222,6 +222,7 @@ MIXED_TR = """\
 
 
 def MarkdownToTable(md):
+    # type: (str) -> str
     # markdown -> HTML
 
     h = cmark.md2html(md)
@@ -250,9 +251,11 @@ def MarkdownToTable(md):
 class UlTableTest(unittest.TestCase):
 
     def testOne(self):
+        # type: () -> None
         h = MarkdownToTable('hi\n' + TEST1 + '\n\n bye \n')
 
     def testNoHeader(self):
+        # type: () -> None
         # HTML looks like:
         #
         # <table>
@@ -277,6 +280,7 @@ class UlTableTest(unittest.TestCase):
         print(h)
 
     def testSimple(self):
+        # type: () -> None
         h = MarkdownToTable("""\
 <table>
 
@@ -313,6 +317,7 @@ class UlTableTest(unittest.TestCase):
 """, h)
 
     def testMultipleTables(self):
+        # type: () -> None
         # They can be right next to each other
         html_one = MarkdownToTable(TEST1)
 
@@ -327,13 +332,16 @@ class UlTableTest(unittest.TestCase):
         self.assertMultiLineEqual(html_one + html_one + '\n', html_two)
 
     def testMultipleTablesWithSpace(self):
+        # type: () -> None
         h = MarkdownToTable(TEST1 + '\n\n hi \n' + TEST1)
 
     def testTdAttrs(self):
+        # type: () -> None
         h = MarkdownToTable(TD_ATTRS)
         self.assertMultiLineEqual(TD_ATTRS_HTML, h)
 
     def testTdAttrsTrailing(self):
+        # type: () -> None
         self.maxDiff = 2000
         h = MarkdownToTable(TRAILING_ATTRS)
         if 1:
@@ -342,20 +350,24 @@ class UlTableTest(unittest.TestCase):
         self.assertMultiLineEqual(TRAILING_ATTRS_HTML, h)
 
     def testColspan(self):
+        # type: () -> None
         h = MarkdownToTable(COLSPAN)
         self.assertMultiLineEqual(COLSPAN_HTML, h)
 
     def testTrAttrs(self):
+        # type: () -> None
         h = MarkdownToTable(TR_ATTRS)
         self.assertMultiLineEqual(TR_ATTRS_HTML, h)
 
     def testMixedTr(self):
+        # type: () -> None
         # Not worth it
         return
         h = MarkdownToTable(MIXED_TR)
         #self.assertMultiLineEqual(MIXED_TR, h)
 
     def testSyntaxErrors(self):
+        # type: () -> None
         # Once we get <table><ul>, then we TAKE OVER, and start being STRICT
 
         try:
@@ -388,6 +400,7 @@ class UlTableTest(unittest.TestCase):
             self.fail('Expected parse error')
 
     def testColumnCheck(self):
+        # type: () -> None
         # Disabled because of colspan
         return
 

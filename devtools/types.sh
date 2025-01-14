@@ -62,11 +62,15 @@ check-mycpp() {
 
 check-doctools() {
   local -a files=(
-    doctools/oils_doc.py lazylex/html.py
+    $(for x in doctools/*.py; do echo $x; done | grep -v '_test.py' )
+    lazylex/html.py
   )
-  #local -a flags=( --py2 --no-strict-optional --strict )
-  local -a flags=( --py2 --no-strict-optional )
+  # 777 errors before pyann
+  # 583 afterward
+  local -a flags=( --py2 --no-strict-optional --strict )
+  #local -a flags=( --py2 --no-strict-optional )
 
+  set -x
   mypy-check "${flags[@]}" "${files[@]}"
 }
 

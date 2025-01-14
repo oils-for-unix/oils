@@ -9,6 +9,7 @@ from doctools import html_lib
 class FunctionsTest(unittest.TestCase):
 
     def testPrettyHref(self):
+        # type: () -> None
         self.assertEqual('foo-bar', html_lib.PrettyHref('foo  bar', False))
         self.assertEqual('why-not', html_lib.PrettyHref('Why Not??', False))
         self.assertEqual('backslash-foo',

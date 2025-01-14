@@ -4,6 +4,8 @@ from __future__ import print_function
 import unittest
 
 from lazylex import html  # module under test log = html.log
+from typing import List
+from typing import Tuple
 
 log = html.log
 
@@ -14,6 +16,7 @@ with open('lazylex/testdata.html') as f:
 class RegexTest(unittest.TestCase):
 
     def testDotAll(self):
+        # type: () -> None
         import re
 
         # Note that $ matches end of line, not end of string
@@ -33,6 +36,7 @@ class RegexTest(unittest.TestCase):
         print(p4.match('\n'))
 
     def testAttrRe(self):
+        # type: () -> None
         _ATTR_RE = html._ATTR_RE
         m = _ATTR_RE.match(' empty= val')
         print(m.groups())
@@ -41,23 +45,27 @@ class RegexTest(unittest.TestCase):
 class FunctionsTest(unittest.TestCase):
 
     def testFindLineNum(self):
+        # type: () -> None
         s = 'foo\n' * 3
         for pos in [1, 5, 10, 50]:  # out of bounds
             line_num = html.FindLineNum(s, pos)
             print(line_num)
 
     def testToText(self):
+        # type: () -> None
         t = html.ToText('<b name="&amp;"> three &lt; four && five </b>')
         self.assertEqual(' three < four && five ', t)
 
 
 def _MakeTagLexer(s):
+    # type: (str) -> html.TagLexer
     lex = html.TagLexer(s)
     lex.Reset(0, len(s))
     return lex
 
 
 def _PrintTokens(lex):
+    # type: (html.TagLexer) -> None
     log('')
     log('tag = %r', lex.TagName())
     for tok, start, end in lex.Tokens():
@@ -67,6 +75,7 @@ def _PrintTokens(lex):
 class TagLexerTest(unittest.TestCase):
 
     def testTagLexer(self):
+        # type: () -> None
         # Invalid!
         #lex = _MakeTagLexer('< >')
         #print(lex.Tag())
@@ -98,10 +107,12 @@ class TagLexerTest(unittest.TestCase):
         self.assertEqual('?foo=1&amp;bar=2', lex.GetAttrRaw('href'))
 
     def testTagName(self):
+        # type: () -> None
         lex = _MakeTagLexer('<a href=foo class="bar" />')
         self.assertEqual('a', lex.TagName())
 
     def testAllAttrs(self):
+        # type: () -> None
         """
         [('key', 'value')] for all
         """
@@ -114,6 +125,7 @@ class TagLexerTest(unittest.TestCase):
         self.assertEqual([('href', '?foo=1&amp;bar=2')], lex.AllAttrsRaw())
 
     def testEmptyMissingValues(self):
+        # type: () -> None
         # equivalent to <button disabled="">
         lex = _MakeTagLexer('<button disabled>')
         all_attrs = lex.AllAttrsRaw()
@@ -139,6 +151,7 @@ class TagLexerTest(unittest.TestCase):
         log('slices %s', slices)
 
     def testInvalidTag(self):
+        # type: () -> None
         try:
             lex = _MakeTagLexer('<a foo=bar !></a>')
             all_attrs = lex.AllAttrsRaw()
@@ -149,6 +162,7 @@ class TagLexerTest(unittest.TestCase):
 
 
 def _MakeAttrValueLexer(s):
+    # type: (str) -> html.AttrValueLexer
     lex = html.AttrValueLexer(s)
     lex.Reset(0, len(s))
     return lex
@@ -157,12 +171,14 @@ def _MakeAttrValueLexer(s):
 class AttrValueLexerTest(unittest.TestCase):
 
     def testGood(self):
+        # type: () -> None
         lex = _MakeAttrValueLexer('?foo=42&amp;bar=99')
         n = lex.NumTokens()
         self.assertEqual(3, n)
 
 
 def Lex(h, no_special_tags=False):
+    # type: (str, bool) -> List[Tuple[int, int]]
     print(repr(h))
     tokens = html.ValidTokenList(h, no_special_tags=no_special_tags)
     start_pos = 0
@@ -180,6 +196,7 @@ class LexerTest(unittest.TestCase):
     # TocExtractor in devtools/cmark.py
 
     def testPstrip(self):
+        # type: () -> None
         """Remove anything like this.
 
         <p><pstrip> </pstrip></p>
@@ -187,10 +204,12 @@ class LexerTest(unittest.TestCase):
         pass
 
     def testCommentParse(self):
+        # type: () -> None
         n = len(TEST_HTML)
         tokens = Lex(TEST_HTML)
 
     def testCommentParse2(self):
+        # type: () -> None
 
         Tok = html.Tok
         h = '''
@@ -208,6 +227,7 @@ class LexerTest(unittest.TestCase):
             tokens)
 
     def testProcessingInstruction(self):
+        # type: () -> None
         # <?xml ?> header
         Tok = html.Tok
         h = 'hi <? err ?>'
@@ -222,6 +242,7 @@ class LexerTest(unittest.TestCase):
             tokens)
 
     def testScriptStyle(self):
+        # type: () -> None
         Tok = html.Tok
         h = '''
         hi <script src=""> if (x < 1 && y > 2 ) { console.log(""); }
@@ -244,6 +265,7 @@ class LexerTest(unittest.TestCase):
         self.assertEqual(expected, tokens)
 
     def testScriptStyleXml(self):
+        # type: () -> None
         Tok = html.Tok
         h = 'hi <script src=""> &lt; </script>'
         # XML mode
@@ -262,6 +284,7 @@ class LexerTest(unittest.TestCase):
             tokens)
 
     def testCData(self):
+        # type: () -> None
         Tok = html.Tok
 
         # from
@@ -277,6 +300,7 @@ class LexerTest(unittest.TestCase):
         ], tokens)
 
     def testEntity(self):
+        # type: () -> None
         Tok = html.Tok
 
         # from
@@ -294,6 +318,7 @@ class LexerTest(unittest.TestCase):
         ], tokens)
 
     def testStartTag(self):
+        # type: () -> None
         Tok = html.Tok
 
         h = '<a>hi</a>'
@@ -337,6 +362,7 @@ class LexerTest(unittest.TestCase):
         ], tokens)
 
     def testBad(self):
+        # type: () -> None
         Tok = html.Tok
 
         h = '&'
@@ -356,6 +382,7 @@ class LexerTest(unittest.TestCase):
         ], tokens)
 
     def testInvalid(self):
+        # type: () -> None
         Tok = html.Tok
 
         for s in INVALID_LEX:
@@ -367,6 +394,7 @@ class LexerTest(unittest.TestCase):
                 self.fail('Expected LexError %r' % s)
 
     def testValid(self):
+        # type: () -> None
         for s, _ in VALID_LEX:
             tokens = Lex(s)
             print()
@@ -483,6 +511,7 @@ INVALID_TAG_LEX = [
 class ValidateTest(unittest.TestCase):
 
     def testInvalid(self):
+        # type: () -> None
         counters = html.Counters()
         for s in INVALID_LEX + INVALID_TAG_LEX:
             try:
@@ -501,6 +530,7 @@ class ValidateTest(unittest.TestCase):
                 self.fail('Expected ParseError')
 
     def testValid(self):
+        # type: () -> None
         counters = html.Counters()
         for s, _ in VALID_PARSE:
             html.Validate(s, html.BALANCED_TAGS, counters)
@@ -508,6 +538,7 @@ class ValidateTest(unittest.TestCase):
             print('HTML5 attrs %r' % counters.debug_attrs)
 
     def testValidXml(self):
+        # type: () -> None
         counters = html.Counters()
         for s in VALID_XML:
             html.Validate(s, html.BALANCED_TAGS | html.NO_SPECIAL_TAGS,
@@ -519,6 +550,7 @@ class ValidateTest(unittest.TestCase):
 class XmlTest(unittest.TestCase):
 
     def testValid(self):
+        # type: () -> None
         counters = html.Counters()
         for h, expected_xml in VALID_LEX + VALID_PARSE:
             actual = html.ToXml(h)

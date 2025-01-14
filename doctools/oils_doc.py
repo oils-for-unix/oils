@@ -12,6 +12,10 @@ Plugins:
 from __future__ import print_function
 
 import cgi
+from typing import Iterator
+from typing import Any
+from typing import List
+from typing import Optional
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -35,6 +39,7 @@ class _Abbrev(object):
         self.fmt = fmt
 
     def __call__(self, value):
+        # type: (str) -> str
         return self.fmt % {'value': value}
 
 
@@ -100,6 +105,7 @@ _SHORTCUT_RE = re.compile(r'\$ ([a-z\-]+) (?: : (\S+))?', re.VERBOSE)
 
 
 def ExpandLinks(s):
+    # type: (str) -> str
     """Expand $xref:bash and so forth."""
     f = StringIO()
     out = html.Output(s, f)
@@ -165,6 +171,7 @@ class _Plugin(object):
     """
 
     def __init__(self, s, start_pos, end_pos):
+        # type: (str, int, int) -> None
         self.s = s
         self.start_pos = start_pos
         self.end_pos = end_pos
@@ -201,6 +208,7 @@ _COMMENT_LINE_RE = re.compile(r'#.*')
 
 
 def Lines(s, start_pos, end_pos):
+    # type: (str, int, int) -> Iterator[int]
     """Yields positions in s that end a line."""
     pos = start_pos
     while pos < end_pos:
@@ -218,6 +226,7 @@ class ShPromptPlugin(_Plugin):
     """Highlight shell prompts."""
 
     def PrintHighlighted(self, out):
+        # type: (html.Output) -> None
         pos = self.start_pos
         for line_end in Lines(self.s, self.start_pos, self.end_pos):
 
@@ -368,6 +377,7 @@ CSS_CLASS_RE = re.compile(
 
 
 def HighlightCode(s, default_highlighter, debug_out=None):
+    # type: (str, Optional[Any], Optional[List]) -> str
     """
     Algorithm:
     1. Collect what's inside <pre><code> ...

@@ -3,8 +3,21 @@
 lazylex/html.py - Low-Level HTML Processing.
 
 See lazylex/README.md for details.
+
+TODO:
+- Get rid of AttrValueLexer - this should be in the TagLexer 
+  - this also means that unquoted values can be more similar
+  - We can use a single lexer mode for everything inside <>
+    - the SPACE is the only difference
+- UTF-8 check, like JSON8
+- Static typing
+
 """
 from __future__ import print_function
+from typing import Iterator
+from typing import Union
+from typing import Any
+from typing import IO
 
 try:
     from cStringIO import StringIO
@@ -19,6 +32,7 @@ if sys.version_info.major == 2:
 
 
 def log(msg, *args):
+    # type: (str, *Any) -> None
     msg = msg % args
     print(msg, file=sys.stderr)
 
@@ -32,14 +46,17 @@ class LexError(Exception):
     """
 
     def __init__(self, s, start_pos):
+        # type: (str, int) -> None
         self.s = s
         self.start_pos = start_pos
 
     def __str__(self):
+        # type: () -> str
         return '(LexError %r)' % (self.s[self.start_pos:self.start_pos + 20])
 
 
 def FindLineNum(s, error_pos):
+    # type: (str, int) -> int
     current_pos = 0
     line_num = 1
     while True:
@@ -63,11 +80,13 @@ class ParseError(Exception):
     """
 
     def __init__(self, msg, s=None, start_pos=-1):
+        # type: (str, Optional[str], int) -> None
         self.msg = msg
         self.s = s
         self.start_pos = start_pos
 
     def __str__(self):
+        # type: () -> str
         if self.s is not None:
             assert self.start_pos != -1, self.start_pos
             snippet = (self.s[self.start_pos:self.start_pos + 20])
@@ -88,26 +107,31 @@ class Output(object):
     """
 
     def __init__(self, s, f, left_pos=0, right_pos=-1):
+        # type: (str, IO[str], int, int) -> None
         self.s = s
         self.f = f
         self.pos = left_pos
         self.right_pos = len(s) if right_pos == -1 else right_pos
 
     def SkipTo(self, pos):
+        # type: (int) -> None
         """Skip to a position."""
         self.pos = pos
 
     def PrintUntil(self, pos):
+        # type: (int) -> None
         """Print until a position."""
         piece = self.s[self.pos:pos]
         self.f.write(piece)
         self.pos = pos
 
     def PrintTheRest(self):
+        # type: () -> None
         """Print until the end of the string."""
         self.PrintUntil(self.right_pos)
 
     def Print(self, s):
+        # type: (str) -> None
         """Print text to the underlying buffer."""
         self.f.write(s)
 
@@ -135,6 +159,7 @@ for i, tok_str in enumerate(TOKENS):
 
 
 def TokenName(tok_id):
+    # type: (int) -> str
     return TOKEN_NAMES[tok_id]
 
 
@@ -258,6 +283,7 @@ HTM8_LEX_COMPILED = MakeLexer(HTM8_LEX)
 class Lexer(object):
 
     def __init__(self, s, left_pos=0, right_pos=-1, no_special_tags=False):
+        # type: (str, int, int, bool) -> None
         self.s = s
         self.pos = left_pos
         self.right_pos = len(s) if right_pos == -1 else right_pos
@@ -378,6 +404,7 @@ class Lexer(object):
         return tok_id, end_pos
 
     def LookAhead(self, regex):
+        # type: (str) -> bool
         # Cache the regex compilation.  This could also be LookAheadFor(THEAD)
         # or something.
         pat = self.cache.get(regex)
@@ -390,6 +417,7 @@ class Lexer(object):
 
 
 def _Tokens(s, left_pos, right_pos):
+    # type: (str, int, int) -> Iterator[Tuple[int, int]]
     """
     Args:
       s: string to parse
@@ -404,6 +432,7 @@ def _Tokens(s, left_pos, right_pos):
 
 
 def ValidTokens(s, left_pos=0, right_pos=-1):
+    # type: (str, int, int) -> Iterator[Tuple[int, int]]
     """Wrapper around _Tokens to prevent callers from having to handle Invalid.
 
     I'm not combining the two functions because I might want to do a
@@ -419,6 +448,7 @@ def ValidTokens(s, left_pos=0, right_pos=-1):
 
 
 def ValidTokenList(s, no_special_tags=False):
+    # type: (str, bool) -> List[Tuple[int, int]]
     """A wrapper that can be more easily translated to C++.  Doesn't use iterators."""
 
     start_pos = 0
@@ -500,11 +530,13 @@ class TagLexer(object):
     """
 
     def __init__(self, s):
+        # type: (str) -> None
         self.s = s
         self.start_pos = -1  # Invalid
         self.end_pos = -1
 
     def Reset(self, start_pos, end_pos):
+        # type: (int, int) -> None
         """Reuse instances of this object."""
         assert start_pos >= 0, start_pos
         assert end_pos >= 0, end_pos
@@ -516,11 +548,13 @@ class TagLexer(object):
         return self.s[self.start_pos:self.end_pos]
 
     def TagName(self):
+        # type: () -> str
         # First event
         tok_id, start, end = next(self.Tokens())
         return self.s[start:end]
 
     def GetSpanForAttrValue(self, attr_name):
+        # type: (str) -> Tuple[int, int]
         """
         Used by oils_doc.py, for href shortcuts
         """
@@ -547,6 +581,7 @@ class TagLexer(object):
         return val
 
     def GetAttrRaw(self, attr_name):
+        # type: (str) -> Optional[str]
         """
         Return the value, which may be UNESCAPED.
         """
@@ -556,6 +591,7 @@ class TagLexer(object):
         return self.s[start:end]
 
     def AllAttrsRawSlice(self):
+        # type: () -> List[Tuple[str, int, int]]
         """
         Get a list of pairs [('class', 3, 5), ('href', 9, 12)]
         """
@@ -580,6 +616,7 @@ class TagLexer(object):
         return slices
 
     def AllAttrsRaw(self):
+        # type: () -> List[Tuple[str, str]]
         """
         Get a list of pairs [('class', 'foo'), ('href', '?foo=1&amp;bar=2')]
 
@@ -593,6 +630,7 @@ class TagLexer(object):
         return pairs
 
     def Tokens(self):
+        # type: () -> Iterator[Tuple[int, int, int]]
         """
         Yields a sequence of tokens: Tag (AttrName AttrValue?)*
 
@@ -668,11 +706,13 @@ class AttrValueLexer(object):
     """
 
     def __init__(self, s):
+        # type: (str) -> None
         self.s = s
         self.start_pos = -1  # Invalid
         self.end_pos = -1
 
     def Reset(self, start_pos, end_pos):
+        # type: (int, int) -> None
         """Reuse instances of this object."""
         assert start_pos >= 0, start_pos
         assert end_pos >= 0, end_pos
@@ -681,6 +721,7 @@ class AttrValueLexer(object):
         self.end_pos = end_pos
 
     def NumTokens(self):
+        # type: () -> int
         num_tokens = 0
         pos = self.start_pos
         for tok_id, end_pos in self.Tokens():
@@ -692,6 +733,7 @@ class AttrValueLexer(object):
         return num_tokens
 
     def Tokens(self):
+        # type: () -> Iterator[Union[Iterator, Iterator[Tuple[int, int]]]]
         pos = self.start_pos
         while pos < self.end_pos:
             # Find the first match, like above.
@@ -735,6 +777,7 @@ def ReadUntilStartTag(it, tag_lexer, tag_name):
 
 
 def ReadUntilEndTag(it, tag_lexer, tag_name):
+    # type: (Iterator, TagLexer, str) -> Tuple[int, int]
     """Find the next </foo>, returning its (start, end) position
 
     Raise ParseError if it's not found.
@@ -766,6 +809,7 @@ CHAR_ENTITY = {
 
 
 def ToText(s, left_pos=0, right_pos=-1):
+    # type: (str, int, int) -> str
     """Given HTML, return text by unquoting &gt; and &lt; etc.
 
     Used by:
@@ -995,6 +1039,7 @@ def ToXml(htm8_str):
 class Counters(object):
 
     def __init__(self):
+        # type: () -> None
         self.num_tokens = 0
         self.num_start_tags = 0
         self.num_start_end_tags = 0

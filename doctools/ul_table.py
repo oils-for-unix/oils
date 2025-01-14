@@ -10,9 +10,16 @@ import sys
 
 from doctools.util import log
 from lazylex import html
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
+from typing import Any
+from typing import Dict
 
 
 def RemoveComments(s):
+    # type: (str) -> str
     """Remove <!-- comments -->
 
     This is a required preprocessing step for ul-table.
@@ -43,6 +50,7 @@ _WHITESPACE_RE = re.compile(r'\s*')
 class UlTableParser(object):
 
     def __init__(self, lexer, tag_lexer):
+        # type: (html.Lexer, html.TagLexer) -> None
         self.lexer = lexer
         self.tag_lexer = tag_lexer
 
@@ -51,10 +59,12 @@ class UlTableParser(object):
         self.end_pos = 0
 
     def _CurrentString(self):
+        # type: () -> str
         part = self.lexer.s[self.start_pos:self.end_pos]
         return part
 
     def _Next(self, comment_ok=False):
+        # type: (bool) -> None
         """
         Advance and set self.tok_id, self.start_pos, self.end_pos
         """
@@ -86,6 +96,7 @@ class UlTableParser(object):
         self._Next()
 
     def _Eat(self, expected_id, expected_tag):
+        # type: (int, str) -> None
         """
         Assert that we got a start or end tag, with the given name, and advance
 
@@ -109,6 +120,7 @@ class UlTableParser(object):
         self._Next()
 
     def _WhitespaceOk(self):
+        # type: () -> None
         """
         Optional whitespace
         """
@@ -117,6 +129,7 @@ class UlTableParser(object):
             self._Next()
 
     def FindUlTable(self):
+        # type: () -> int
         """Find <table ...> <ul>
 
         Return the START position of the <ul>
@@ -145,6 +158,7 @@ class UlTableParser(object):
         return -1
 
     def _ListItem(self):
+        # type: () -> Tuple[Optional[List[Tuple[str, str]]], Optional[str]]
         """Parse a list item nested below thead or tr.
 
         Returns:
@@ -228,6 +242,7 @@ class UlTableParser(object):
         return td_attrs, inner_html
 
     def _ParseTHead(self):
+        # type: () -> Union[List[Tuple[List[Tuple[str, str]], str]], List[Tuple[Optional[List[Tuple[str, str]]], str]]]
         """
         Assume we're looking at the first <ul> tag.  Now we want to find
         <li>thead and the nested <ul>
@@ -295,6 +310,7 @@ class UlTableParser(object):
         return cells
 
     def _ParseTr(self):
+        # type: () -> Tuple[None, Union[List[Tuple[List[Tuple[str, str]], str]], List[Tuple[None, str]], None]]
         """
         Assume we're looking at the first <ul> tag.  Now we want to find
         <li>tr and the nested <ul>
@@ -356,6 +372,7 @@ class UlTableParser(object):
         return tr_attrs, cells
 
     def ParseTable(self):
+        # type: () -> Dict[str, Any]
         """
         Returns a structure like this
         { 'thead': [ 'col1', 'col2' ],  # TODO: columns can have CSS attributes
@@ -417,7 +434,11 @@ class UlTableParser(object):
         return table
 
 
-def MergeAttrs(thead_td_attrs, row_td_attrs):
+def MergeAttrs(
+        thead_td_attrs,  # type: Optional[List[Tuple[str, str]]]
+        row_td_attrs,  # type: Optional[List[Tuple[str, str]]]
+):
+    # type: (...) -> List[Tuple[str, str]]
     merged_attrs = []
 
     if row_td_attrs is None:
@@ -445,6 +466,7 @@ def MergeAttrs(thead_td_attrs, row_td_attrs):
 
 
 def ReplaceTables(s, debug_out=None):
+    # type: (str, Optional[Any]) -> str
     """
     ul-table: Write tables using bulleted list
     """

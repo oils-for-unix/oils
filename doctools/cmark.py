@@ -7,6 +7,12 @@ I started from cmark-0.28.3/wrappers/wrapper.py.
 from __future__ import print_function
 
 import ctypes
+from typing import List
+from typing import Tuple
+from typing import Union
+from typing import Optional
+from typing import IO
+from typing import Dict
 try:
     from HTMLParser import HTMLParser
 except ImportError:
@@ -74,6 +80,7 @@ CMARK_OPT_UNSAFE = (1 << 17)
 
 
 def md2html(md):
+    # type: (str) -> str
     if sys.version_info.major == 2:
         md_bytes = md
     else:
@@ -104,6 +111,7 @@ class TocExtractor(HTMLParser):
     """
 
     def __init__(self):
+        # type: () -> None
         HTMLParser.__init__(self)
 
         # make targets for these, regardless of whether the TOC links to them.
@@ -122,6 +130,7 @@ class TocExtractor(HTMLParser):
         self.headings = []
 
     def handle_starttag(self, tag, attrs):
+        # type: (str, List[Tuple[str, str]]) -> None
         if tag == 'div':
             if attrs == [('id', 'toc')]:
                 log('%s> %s %s', self.indent * '  ', tag, attrs)
@@ -149,6 +158,7 @@ class TocExtractor(HTMLParser):
             self.capturing = True  # record the text inside <h2></h2> etc.
 
     def handle_endtag(self, tag):
+        # type: (str) -> None
         # Debug print
         if tag == 'div':
             self.indent -= 1
@@ -164,6 +174,7 @@ class TocExtractor(HTMLParser):
             self._AppendHtml('</%s>' % tag)
 
     def handle_entityref(self, data):
+        # type: (str) -> None
         """
         From Python docs:
         This method is called to process a named character reference of the form
@@ -174,6 +185,7 @@ class TocExtractor(HTMLParser):
             self._AppendHtml('&%s;' % data)
 
     def handle_data(self, data):
+        # type: (str) -> None
         # Debug print
         if self.indent > 0:
             log('%s| %r', self.indent * '  ', data)
@@ -183,11 +195,13 @@ class TocExtractor(HTMLParser):
             self._AppendText(data)
 
     def _AppendText(self, text):
+        # type: (str) -> None
         """Accumulate text of the last heading."""
         _, _, _, _, text_parts = self.headings[-1]
         text_parts.append(text)
 
     def _AppendHtml(self, html):
+        # type: (str) -> None
         """Accumulate HTML of the last heading."""
         _, _, _, html_parts, _ = self.headings[-1]
         html_parts.append(html)
@@ -201,8 +215,14 @@ TAG_TO_CSS = {'h2': 'toclevel1', 'h3': 'toclevel2', 'h4': 'toclevel3'}
 ANCHOR_FMT = '<a name="%s"></a>\n'
 
 
-def _MakeTocInsertions(opts, toc_tags, headings, toc_pos,
-                       preserve_anchor_case):
+def _MakeTocInsertions(
+        opts,  # type: Any
+        toc_tags,  # type: Union[List[str], Tuple[str, str]]
+        headings,  # type: List[Tuple[int, str, None, List[str], List[str]]]
+        toc_pos,  # type: int
+        preserve_anchor_case,  # type: bool
+):
+    # type: (...) -> List[Tuple[int, str]]
     """Given extract headings list and TOC position, return a list of insertions.
 
     The insertions <div> for the TOC itself, and <a name=""> for the targets.
@@ -266,7 +286,12 @@ def _MakeTocInsertions(opts, toc_tags, headings, toc_pos,
     return insertions
 
 
-def _MakeTocInsertionsDense(headings, toc_pos, preserve_anchor_case):
+def _MakeTocInsertionsDense(
+        headings,  # type: List[Tuple[int, str, Optional[str], List[str], List[str]]]
+        toc_pos,  # type: int
+        preserve_anchor_case,  # type: bool
+):
+    # type: (...) -> List[Tuple[int, str]]
     """For the dense-toc style with columns, used by doc/ref
 
     The style above is simpler: it outputs a div for every line:
@@ -360,6 +385,7 @@ def _MakeTocInsertionsDense(headings, toc_pos, preserve_anchor_case):
 
 
 def _ApplyInsertions(lines, insertions, out_file):
+    # type: (List[str], List[Tuple[int, str]], IO[str]) -> None
     assert insertions, "Should be at least one insertion"
     j = 0
     n = len(insertions)
@@ -376,7 +402,15 @@ def _ApplyInsertions(lines, insertions, out_file):
         out_file.write(line)
 
 
-def Render(opts, meta, in_file, out_file, use_fastlex=True, debug_out=None):
+def Render(
+        opts,  # type: Any
+        meta,  # type: Dict
+        in_file,  # type: IO[str]
+        out_file,  # type: IO[str]
+        use_fastlex=True,  # type: bool
+        debug_out=None,  # type: Optional[Any]
+):
+    # type: (...) -> None
     if debug_out is None:
         debug_out = []
 
@@ -456,6 +490,7 @@ def Render(opts, meta, in_file, out_file, use_fastlex=True, debug_out=None):
 
 
 def Options():
+    # type: () -> Any
     p = optparse.OptionParser('cmark.py [options]')
 
     p.add_option('--common-mark',
