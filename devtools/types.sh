@@ -61,7 +61,7 @@ check-mycpp() {
 }
 
 check-doctools() {
-  if false; then
+  if true; then
     local -a files=(
       $(for x in doctools/*.py; do echo $x; done | grep -v '_test.py' )
       lazylex/html.py

@@ -15,7 +15,6 @@ from lazylex import html
 from typing import List
 from typing import Optional
 from typing import Tuple
-from typing import Union
 from typing import Any
 from typing import Dict
 
@@ -47,6 +46,8 @@ def RemoveComments(s):
 
 
 _WHITESPACE_RE = re.compile(r'\s*')
+
+TdAttrs = List[Tuple[str, str]]
 
 
 class UlTableParser(object):
@@ -160,7 +161,7 @@ class UlTableParser(object):
         return -1
 
     def _ListItem(self):
-        # type: () -> Tuple[Optional[List[Tuple[str, str]]], Optional[str]]
+        # type: () -> Tuple[Optional[TdAttrs], Optional[str]]
         """Parse a list item nested below thead or tr.
 
         Returns:
@@ -244,7 +245,7 @@ class UlTableParser(object):
         return td_attrs, inner_html
 
     def _ParseTHead(self):
-        # type: () -> Union[List[Tuple[List[Tuple[str, str]], str]], List[Tuple[Optional[List[Tuple[str, str]]], str]]]
+        # type: () -> List[Tuple[Optional[TdAttrs], str]]
         """
         Assume we're looking at the first <ul> tag.  Now we want to find
         <li>thead and the nested <ul>
@@ -312,7 +313,7 @@ class UlTableParser(object):
         return cells
 
     def _ParseTr(self):
-        # type: () -> Tuple[None, Union[List[Tuple[List[Tuple[str, str]], str]], List[Tuple[None, str]], None]]
+        # type: () -> Tuple[Optional[TdAttrs], List[Tuple[Optional[TdAttrs], str]]]
         """
         Assume we're looking at the first <ul> tag.  Now we want to find
         <li>tr and the nested <ul>
@@ -437,10 +438,10 @@ class UlTableParser(object):
 
 
 def MergeAttrs(
-        thead_td_attrs,  # type: Optional[List[Tuple[str, str]]]
-        row_td_attrs,  # type: Optional[List[Tuple[str, str]]]
+        thead_td_attrs,  # type: Optional[TdAttrs]
+        row_td_attrs,  # type: Optional[TdAttrs]
 ):
-    # type: (...) -> List[Tuple[str, str]]
+    # type: (...) -> TdAttrs
     merged_attrs = []
 
     if row_td_attrs is None:

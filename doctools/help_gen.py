@@ -1,9 +1,6 @@
 #!/usr/bin/env python2
 from __future__ import print_function
-from typing import List
-from typing import Any
-from typing import Dict
-from typing import Iterator
+from typing import List, Any, Dict, Iterator, Tuple, Optional, IO
 """help_gen.py
 
 Ideas for HTML -> ANSI converter:
@@ -236,11 +233,13 @@ class Splitter(HTMLParser.HTMLParser):
         self.indent = 0
 
     def log(self, msg, *args):
+        # type: (str, *Any) -> None
         ind = self.indent * ' '
         if 0:
             log(ind + msg, *args)
 
     def handle_starttag(self, tag, attrs):
+        # type: (str, List[Tuple[str, str]]) -> None
         if tag in self.heading_tags:
             self.in_heading = True
             if self.cur_group:
@@ -252,6 +251,7 @@ class Splitter(HTMLParser.HTMLParser):
         self.indent += 1
 
     def handle_endtag(self, tag):
+        # type: (str) -> None
         if tag in self.heading_tags:
             self.in_heading = False
 
@@ -259,6 +259,7 @@ class Splitter(HTMLParser.HTMLParser):
         self.indent -= 1
 
     def handle_entityref(self, name):
+        # type: (str) -> None
         """
         From Python docs:
         This method is called to process a named character reference of the form
@@ -272,6 +273,7 @@ class Splitter(HTMLParser.HTMLParser):
                 self.cur_group[3].append(c)
 
     def handle_data(self, data):
+        # type: (str) -> None
         self.log('data %r', data)
         if self.in_heading:
             self.cur_group[2].append(data)
@@ -407,6 +409,7 @@ class DocNode(object):
     """To visualize doc structure."""
 
     def __init__(self, name, attrs=None, text=None):
+        # type: (str, Optional[List[Tuple[str, str]]], Optional[str]) -> None
         self.name = name
         self.attrs = attrs  # for h2 and h3 links
         self.text = text
@@ -437,7 +440,12 @@ def CardsFromIndex(sh, out_prefix):
         out_prefix)
 
 
-def CardsFromChapters(out_dir, tag_level, paths):
+def CardsFromChapters(
+        out_dir,  # type: str
+        tag_level,  # type: str
+        paths,  # type: List[str]
+):
+    # type: (...) -> Tuple[Dict[str, Optional[str]], DocNode]
     """
     Args:
       paths: list of chap-*.html to read
@@ -511,11 +519,13 @@ def CardsFromChapters(out_dir, tag_level, paths):
 class StrPool(object):
 
     def __init__(self):
+        # type: () -> None
         self.var_names = {}
         self.global_strs = []
         self.unique_id = 1
 
     def Add(self, s):
+        # type: (str) -> None
         if s in self.var_names:
             return
 
@@ -531,6 +541,7 @@ class StrPool(object):
 
 
 def WriteTopicDict(topic_dict, header_f, cc_f):
+    # type: (Dict[str, Optional[str]], IO[bytes], IO[bytes]) -> None
     header_f.write('''
 #include "mycpp/runtime.h"
 
@@ -577,6 +588,7 @@ Dict<BigStr*, BigStr*>* TopicMetadata() {
 
 
 def main(argv):
+    # type: (List[str]) -> None
     action = argv[1]
 
     if action == 'cards-from-index':
