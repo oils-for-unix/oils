@@ -1,0 +1,24 @@
+
+module htm8
+{
+
+  h8_id =
+    Decl 
+
+    # CommentBegin, ProcessingBegin, CDataBegin are "pseudo-tokens", not visible
+  | Comment | CommentBegin 
+  | Processing | ProcessingBegin
+  | CData | CDataBegin
+
+  | StartTag | StartEndTag | EndTag 
+
+  | DecChar | HexChar | CharEntity 
+
+  | RawData | HtmlCData 
+
+  | BadAmpersand | BadGreaterThan | BadLessThan 
+
+  | Invalid
+  | EndOfStream
+  generate [no_namespace_suffix]  # cosmetic: call it h8_id, not h8_id_e
+}

@@ -7,7 +7,7 @@ import unittest
 from lazylex import html
 from doctools import oils_doc  # module under test
 
-with open('lazylex/testdata.html') as f:
+with open('data_lang/testdata/hello.htm8') as f:
     TEST_HTML = f.read()
 
 
@@ -58,7 +58,7 @@ class OilsDocTest(unittest.TestCase):
 
     def testHighlightCode(self):
         # type: () -> None
-        # lazylex/testdata.html has the language-sh-prompt
+        # data_lang/testdata/hello.htm8 has the language-sh-prompt
 
         h = oils_doc.HighlightCode(TEST_HTML, None)
         self.assert_('<span class="sh-prompt">' in h, h)

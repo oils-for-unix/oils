@@ -139,6 +139,7 @@ py-codegen() {
   # depends on syntax.asdl
   gen-asdl-py 'core/runtime.asdl'
   gen-asdl-py 'core/value.asdl'
+  gen-asdl-py 'data_lang/htm8.asdl'
   gen-asdl-py 'data_lang/nil8.asdl'
   gen-asdl-py 'display/pretty.asdl'
   gen-asdl-py 'mycpp/mycpp.asdl'

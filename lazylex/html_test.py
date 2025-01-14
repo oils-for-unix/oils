@@ -9,7 +9,7 @@ from typing import Tuple
 
 log = html.log
 
-with open('lazylex/testdata.html') as f:
+with open('data_lang/testdata/hello.htm8') as f:
     TEST_HTML = f.read()
 
 
