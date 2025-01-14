@@ -6,7 +6,7 @@ import json
 import optparse
 import re
 import sys
-from typing import Dict, IO
+from typing import List, Dict, IO
 
 DATE_RE = re.compile(r'(\d\d\d\d) / (\d\d) / (\d\d)', re.VERBOSE)
 
@@ -126,6 +126,7 @@ def Options():
 
 
 def main(argv):
+    # type: (List[str]) -> None
     o = Options()
     opts, argv = o.parse_args(argv)
 

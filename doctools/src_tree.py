@@ -22,6 +22,8 @@ import os
 import shutil
 import sys
 
+from vendor.typing import IO
+
 from doctools.util import log
 from doctools import html_head
 from test import wild_report
@@ -259,6 +261,7 @@ class DirNode:
     """
 
     def __init__(self):
+        # type: () -> None
         self.files = {}  # filename -> attrs dict
         self.dirs = {}  # subdir name -> DirNode object
 
@@ -378,6 +381,7 @@ def WriteDirsHtml(node, out_dir, rel_path='', base_url=''):
 
 
 def ReadNetString(in_f):
+    # type: (IO[str]) -> str
 
     digits = []
     for i in xrange(10):  # up to 10 digits

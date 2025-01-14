@@ -211,8 +211,6 @@ class LexerTest(unittest.TestCase):
 
     def testCommentParse2(self):
         # type: () -> None
-
-        Tok = html.Tok
         h = '''
         hi <!-- line 1
                 line 2 --><br/>'''
@@ -230,7 +228,6 @@ class LexerTest(unittest.TestCase):
     def testProcessingInstruction(self):
         # type: () -> None
         # <?xml ?> header
-        Tok = html.Tok
         h = 'hi <? err ?>'
         tokens = Lex(h)
 
@@ -244,7 +241,6 @@ class LexerTest(unittest.TestCase):
 
     def testScriptStyle(self):
         # type: () -> None
-        Tok = html.Tok
         h = '''
         hi <script src=""> if (x < 1 && y > 2 ) { console.log(""); }
         </script>
@@ -267,7 +263,6 @@ class LexerTest(unittest.TestCase):
 
     def testScriptStyleXml(self):
         # type: () -> None
-        Tok = html.Tok
         h = 'hi <script src=""> &lt; </script>'
         # XML mode
         tokens = Lex(h, no_special_tags=True)
@@ -286,7 +281,6 @@ class LexerTest(unittest.TestCase):
 
     def testCData(self):
         # type: () -> None
-        Tok = html.Tok
 
         # from
         # /home/andy/src/languages/Python-3.11.5/Lib/test/xmltestdata/c14n-20/inC14N4.xml
@@ -302,7 +296,6 @@ class LexerTest(unittest.TestCase):
 
     def testEntity(self):
         # type: () -> None
-        Tok = html.Tok
 
         # from
         # /home/andy/src/Python-3.12.4/Lib/test/xmltestdata/c14n-20/inC14N5.xml
@@ -320,7 +313,6 @@ class LexerTest(unittest.TestCase):
 
     def testStartTag(self):
         # type: () -> None
-        Tok = html.Tok
 
         h = '<a>hi</a>'
         tokens = Lex(h)
@@ -364,8 +356,6 @@ class LexerTest(unittest.TestCase):
 
     def testBad(self):
         # type: () -> None
-        Tok = html.Tok
-
         h = '&'
         tokens = Lex(h)
 
@@ -384,8 +374,6 @@ class LexerTest(unittest.TestCase):
 
     def testInvalid(self):
         # type: () -> None
-        Tok = html.Tok
-
         for s in INVALID_LEX:
             try:
                 tokens = html.ValidTokenList(s)

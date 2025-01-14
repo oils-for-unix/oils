@@ -21,4 +21,12 @@ module htm8
   | Invalid
   | EndOfStream
   generate [no_namespace_suffix]  # cosmetic: call it h8_id, not h8_id_e
+
+
+  h8_tag_id =
+    TagName
+  | AttrName
+  | UnquotedValue | QuotedValue | MissingValue 
+  generate [no_namespace_suffix] 
 }
+

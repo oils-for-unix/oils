@@ -15,7 +15,8 @@ TODO:
 """
 from __future__ import print_function
 
-from _devbuild.gen.htm8_asdl import h8_id, h8_id_t, h8_id_str
+from _devbuild.gen.htm8_asdl import (h8_id, h8_id_t, h8_id_str, h8_tag_id,
+                                     h8_tag_id_t, h8_tag_id_str)
 from typing import Dict, Iterator, Any, IO
 
 try:
@@ -133,28 +134,6 @@ class Output(object):
         # type: (str) -> None
         """Print text to the underlying buffer."""
         self.f.write(s)
-
-
-# HTML Tokens
-# CommentBegin, ProcessingBegin, CDataBegin are "pseudo-tokens", not visible
-TOKENS = 'Decl Comment CommentBegin Processing ProcessingBegin CData CDataBegin StartTag StartEndTag EndTag DecChar HexChar CharEntity RawData HtmlCData BadAmpersand BadGreaterThan BadLessThan Invalid EndOfStream'.split(
-)
-
-
-class Tok(object):
-    """
-    Avoid lint errors by using these aliases
-    """
-    pass
-
-
-TOKEN_NAMES = [None] * len(TOKENS)  # type: List[str]
-
-this_module = sys.modules[__name__]
-for i, tok_str in enumerate(TOKENS):
-    setattr(this_module, tok_str, i)
-    setattr(Tok, tok_str, i)
-    TOKEN_NAMES[i] = tok_str
 
 
 def MakeLexer(rules):
@@ -424,7 +403,7 @@ def _Tokens(s, left_pos, right_pos):
 
 
 def ValidTokens(s, left_pos=0, right_pos=-1):
-    # type: (str, int, int) -> Iterator[Tuple[int, int]]
+    # type: (str, int, int) -> Iterator[Tuple[h8_id_t, int]]
     """Wrapper around _Tokens to prevent callers from having to handle Invalid.
 
     I'm not combining the two functions because I might want to do a
@@ -509,8 +488,6 @@ _ATTR_RE = re.compile(
 )?             
 ''' % (_NAME, _UNQUOTED_VALUE), re.VERBOSE)
 
-TagName, AttrName, UnquotedValue, QuotedValue, MissingValue = range(5)
-
 
 class TagLexer(object):
     """
@@ -560,13 +537,14 @@ class TagLexer(object):
         try:
             while True:
                 tok_id, start, end = next(events)
-                if tok_id == AttrName:
+                if tok_id == h8_tag_id.AttrName:
                     name = self.s[start:end]
                     if name == attr_name:
                         # The value should come next
                         tok_id, start, end = next(events)
-                        assert tok_id in (QuotedValue, UnquotedValue,
-                                          MissingValue), h8_id_str(tok_id)
+                        assert tok_id in (
+                            h8_tag_id.QuotedValue, h8_tag_id.UnquotedValue,
+                            h8_tag_id.MissingValue), h8_tag_id_str(tok_id)
                         val = start, end
                         break
 
@@ -594,13 +572,14 @@ class TagLexer(object):
         try:
             while True:
                 tok_id, start, end = next(events)
-                if tok_id == AttrName:
+                if tok_id == h8_tag_id.AttrName:
                     name = self.s[start:end]
 
                     # The value should come next
                     tok_id, start, end = next(events)
-                    assert tok_id in (QuotedValue, UnquotedValue,
-                                      MissingValue), h8_id_str(tok_id)
+                    assert tok_id in (
+                        h8_tag_id.QuotedValue, h8_tag_id.UnquotedValue,
+                        h8_tag_id.MissingValue), h8_tag_id_str(tok_id)
                     # Note: quoted values may have &amp;
                     # We would need ANOTHER lexer to unescape them, but we
                     # don't need that for ul-table
@@ -624,7 +603,7 @@ class TagLexer(object):
         return pairs
 
     def Tokens(self):
-        # type: () -> Iterator[Tuple[int, int, int]]
+        # type: () -> Iterator[Tuple[h8_tag_id_t, int, int]]
         """
         Yields a sequence of tokens: Tag (AttrName AttrValue?)*
 
@@ -637,7 +616,7 @@ class TagLexer(object):
         if not m:
             raise RuntimeError("Couldn't find HTML tag in %r" %
                                self.TagString())
-        yield TagName, m.start(1), m.end(1)
+        yield h8_tag_id.TagName, m.start(1), m.end(1)
 
         pos = m.end(0)
         #log('POS %d', pos)
@@ -650,21 +629,21 @@ class TagLexer(object):
                 break
             #log('AttrName %r', m.group(1))
 
-            yield AttrName, m.start(1), m.end(1)
+            yield h8_tag_id.AttrName, m.start(1), m.end(1)
 
             #log('m.groups() %r', m.groups())
             if m.group(2) is not None:
                 # double quoted
-                yield QuotedValue, m.start(2), m.end(2)
+                yield h8_tag_id.QuotedValue, m.start(2), m.end(2)
             elif m.group(3) is not None:
                 # single quoted - TODO: could have different token types
-                yield QuotedValue, m.start(3), m.end(3)
+                yield h8_tag_id.QuotedValue, m.start(3), m.end(3)
             elif m.group(4) is not None:
-                yield UnquotedValue, m.start(4), m.end(4)
+                yield h8_tag_id.UnquotedValue, m.start(4), m.end(4)
             else:
                 # <button disabled>
                 end = m.end(0)
-                yield MissingValue, end, end
+                yield h8_tag_id.MissingValue, end, end
 
             # Skip past the "
             pos = m.end(0)

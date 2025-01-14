@@ -38,6 +38,7 @@ except ImportError:
 class _Abbrev(object):
 
     def __init__(self, fmt):
+        # type: (str) -> None
         self.fmt = fmt
 
     def __call__(self, value):
