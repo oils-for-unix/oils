@@ -10,7 +10,8 @@ import ctypes
 try:
     from HTMLParser import HTMLParser
 except ImportError:
-    from html.parser import HTMLParser  # python3
+    # python3
+    from html.parser import HTMLParser  # type: ignore
 import json
 import optparse
 import os

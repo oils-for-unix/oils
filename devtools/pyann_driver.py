@@ -58,9 +58,10 @@ def main():
   loader = unittest.TestLoader()
 
   g = glob.glob
-  py = g('frontend/*_test.py') + g('osh/*_test.py') + g('core/*_test.py') + g('')
+  py = g('lazylex/*_test.py') + g('doctools/*_test.py')
+  #py = g('frontend/*_test.py') + g('osh/*_test.py') + g('core/*_test.py') + g('')
   # hangs
-  py.remove('core/process_test.py')
+  #py.remove('core/process_test.py')
 
   modules = []
   for p in py:

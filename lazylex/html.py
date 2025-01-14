@@ -9,7 +9,8 @@ from __future__ import print_function
 try:
     from cStringIO import StringIO
 except ImportError:
-    from io import StringIO  # python3
+    # for python3
+    from io import StringIO  # type: ignore
 import re
 import sys
 
@@ -188,7 +189,7 @@ CHAR_LEX = [
     (r'&', Tok.BadAmpersand),
 ]
 
-LEXER = CHAR_LEX + [
+HTM8_LEX = CHAR_LEX + [
     (r'<!--', Tok.CommentBegin),
 
     # Processing instruction are used for the XML header:
@@ -251,7 +252,7 @@ LEXER = CHAR_LEX + [
 #(r'<!-- [\s\S]*? -->', Tok.Comment),
 #(r'<!-- (?:.|[\n])*? -->', Tok.Comment),
 
-LEXER = MakeLexer(LEXER)
+HTM8_LEX_COMPILED = MakeLexer(HTM8_LEX)
 
 
 class Lexer(object):
@@ -301,7 +302,7 @@ class Lexer(object):
         # Note: frontend/match.py uses _LongestMatch(), which is different!
         # TODO: reconcile them.  This lexer should be expressible in re2c.
 
-        for pat, tok_id in LEXER:
+        for pat, tok_id in HTM8_LEX_COMPILED:
             m = pat.match(self.s, self.pos)
             if m:
                 if tok_id in (Tok.StartTag, Tok.EndTag, Tok.StartEndTag):
@@ -354,14 +355,14 @@ class Lexer(object):
         return expected == self.CanonicalTagName()
 
     def _LiteralTagName(self):
-        # type: () -> None
+        # type: () -> str
         assert self.tag_pos_left != -1, self.tag_pos_left
         assert self.tag_pos_right != -1, self.tag_pos_right
 
         return self.s[self.tag_pos_left:self.tag_pos_right]
 
     def CanonicalTagName(self):
-        # type: () -> None
+        # type: () -> str
         tag_name = self._LiteralTagName()
         # Most tags are already lower case, so avoid allocation with this conditional
         # TODO: this could go in the mycpp runtime?

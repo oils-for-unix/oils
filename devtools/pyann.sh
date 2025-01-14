@@ -85,18 +85,98 @@ add-imports() {
 # This has a bug
 #pyannotate() { ~/.local/bin/pyannotate "$@"; }
 
-readonly PYANN_REPO=~/git/oilshell/pyannotate/
+readonly PYANN_REPO=~/git/oils-for-unix/pyannotate/
 
-pyann-patched() {
-  local tool=$PYANN_REPO/pyannotate_tools/annotations
-  export PYTHONPATH=$PYANN_REPO
-  # --dump can help
-  python $tool "$@"
+VENV=_tmp/pyann-venv
+
+make-venv() {
+  python3 -m venv $VENV
 }
 
+install-deps() {
+  . $VENV/bin/activate
+  python3 -m pip install -r $PYANN_REPO/requirements.txt
+}
+
+pyann-patched() {
+  . $VENV/bin/activate
+  local tool=$PYANN_REPO/pyannotate_tools/annotations
+  #export PYTHONPATH=$PYANN_REPO:vendor
+
+  # --dump can help
+  python3 $tool "$@"
+}
+
+
+#
+# Second try
+#
+
+VENV2=_tmp/pyann-venv2
+
+make-venv2() {
+  python3 -m venv $VENV2
+}
+
+install2() {
+  . $VENV2/bin/activate
+  python3 -m pip install pyannotate
+}
+
+tool-demo2() {
+  . $VENV2/bin/activate
+  python3 -m pyannotate_tools.annotations
+}
+
+lib-demo2() {
+  . $VENV2/bin/activate
+  #echo $PYTHONPATH
+
+  # DOES NOT WORK - this is Python 2 code!!!
+  python3 devtools/pyann_driver.py "$@"
+
+  ls -l type_info.json
+  wc -l type_info.json
+}
+
+#
+# Third try - the problem is python2
+#
+
+deps3() {
+  # Gah my custom python2 build doesn't have pip or venv!
+  python2 -m pip install -r $PYANN_REPO/requirements.txt
+}
+
+# September 2019
+PYANN_URL='https://files.pythonhosted.org/packages/0d/26/2f68c02fae0b88d9cefdbc632edad190d61621b5660c72c920be1e52631e/pyannotate-1.2.0.tar.gz'
+
+# October 2019
+MYPY_EXT_URL='https://files.pythonhosted.org/packages/63/60/0582ce2eaced55f65a4406fc97beba256de4b7a95a0034c6576458c6519f/mypy_extensions-0.4.3.tar.gz'
+
+# December 2024
+SIX_URL='https://files.pythonhosted.org/packages/94/e7/b2c673351809dca68a0e064b6af791aa332cf192da575fd474ed7d6f16a2/six-1.17.0.tar.gz'
+
+download-tarballs() {
+  wget --no-clobber --directory _tmp \
+    $PYANN_URL $MYPY_EXT_URL $SIX_URL
+}
+
+PY_PATH_2='.:vendor:_tmp/pyannotate-1.2.0:_tmp/mypy_extensions-0.4.3:_tmp/six-1.17.0'
+
 collect-types() {
-  export PYTHONPATH=".:$PYANN_REPO"
-  types/pyann_driver.py "$@"
+  # syntax error?
+  # Now it requires python3
+  # I think we need an old release
+  # https://pypi.org/project/mypy-extensions/
+  # https://github.com/python/mypy_extensions
+  # TypedDict
+  # https://github.com/python/mypy_extensions/commit/e0c6670e05a87507d59b7d3a0aa2eec88e9813b0
+
+  #local ext=~/git/oils-for-unix/mypy_extensions
+  #export PYTHONPATH=".:$PYANN_REPO:$ext"
+
+  PYTHONPATH=$PY_PATH_2 devtools/pyann_driver.py "$@"
 
   ls -l type_info.json
   wc -l type_info.json
@@ -133,11 +213,17 @@ peek-type-info() {
 apply-types() {
   local json=${1:-type_info.json}
   shift
-  local -a files=(osh/builtin_comp.py core/completion.py)
+  #local -a files=(osh/builtin_comp.py core/completion.py)
+  local -a files=(lazylex/*.py doctools/*.py)
 
   #local -a files=( $(cat _tmp/osh-parse-src.txt | grep -v syntax_asdl.py ) )
 
-  pyann-patched --type-info $json "${files[@]}" "$@"
+  # Use -w to write files
+  set -x
+  PYTHONPATH=$PY_PATH_2 \
+    python2 -m pyannotate_tools.annotations --type-info $json "${files[@]}" "$@"
+
+  #pyann-patched --type-info $json "${files[@]}" "$@"
 }
 
 apply-many() {

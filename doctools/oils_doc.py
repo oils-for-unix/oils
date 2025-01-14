@@ -15,7 +15,8 @@ import cgi
 try:
     from cStringIO import StringIO
 except ImportError:
-    from io import StringIO  # python3
+    # for python3
+    from io import StringIO  # type: ignore
 import re
 import sys
 
