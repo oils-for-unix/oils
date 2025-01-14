@@ -820,8 +820,8 @@ An API the wraps the `$PS1` language.  For example, to simulate `PS1='\w\$ '`:
 
     func renderPrompt(io) {
       var parts = []
-      call parts->append(io.promptval('w'))  # pass 'w' for \w
-      call parts->append(io.promptval('$'))  # pass '$' for \$
+      call parts->append(io.promptVal('w'))  # pass 'w' for \w
+      call parts->append(io.promptVal('$'))  # pass '$' for \$
       call parts->append(' ')
       return (join(parts))
     }
