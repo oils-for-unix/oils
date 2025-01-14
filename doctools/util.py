@@ -1,5 +1,4 @@
 #!/usr/bin/env python2
-"""util.py."""
 from __future__ import print_function
 
 import sys
