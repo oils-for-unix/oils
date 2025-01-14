@@ -53,7 +53,12 @@ source $LIB_OSH/task-five.sh
 #source $LIB_YSH/yblocks.ysh
 
 proc run-py {
+  ###  Run with the shebang setting
   PYTHONPATH='.:vendor/' @ARGV
+}
+
+proc run-py3 {
+  PYTHONPATH='.' python3 @ARGV
 }
 
 deps() {
@@ -76,7 +81,7 @@ test-unit-py2() {
 # Problem: We import cmark, which imports ctypes
 test-unit-py3() {
   # like test/unit.sh
-  run-py python3 doctools/ul_table_test.py
+  run-py3 doctools/ul_table_test.py
 }
 
 # Taken from unit test
@@ -116,7 +121,7 @@ test-without-cmark-py2() {
 }
 
 test-without-cmark-py3() {
-  echo $TD_ATTRS | cmark-bin --unsafe | run-py python3 doctools/ul_table.py
+  echo $TD_ATTRS | cmark-bin --unsafe | run-py3 doctools/ul_table.py
 }
 
 proc run-tests() {
