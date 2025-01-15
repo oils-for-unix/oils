@@ -11,7 +11,6 @@ import re
 import sys
 
 from doctools.util import log
-from lazylex import html
 from data_lang import htm8
 from typing import List
 from typing import Optional
@@ -28,12 +27,17 @@ def RemoveComments(s):
     """
     f = StringIO()
     out = htm8.Output(s, f)
-
-    tag_lexer = htm8.TagLexer(s)
+    lx = htm8.Lexer(s)
 
     pos = 0
+    while True:
+        tok_id, end_pos = lx.Read()
+        if tok_id == h8_id.EndOfStream:
+            break
 
-    for tok_id, end_pos in html.ValidTokens(s):
+        if tok_id == h8_id.Invalid:
+            raise htm8.LexError(s, pos)
+
         if tok_id == h8_id.Comment:
             value = s[pos:end_pos]
             # doc/release-index.md has <!-- REPLACE_WITH_DATE --> etc.

@@ -203,6 +203,9 @@ class TopicHtmlRenderer(object):
         return f.getvalue()
 
 
+CurGroup = Tuple[AnyStr, List[Tuple[AnyStr, AnyStr]], AnyStr, List[Any]]
+
+
 class Splitter(HTMLParser.HTMLParser):
     """Split an HTML stream starting at each of the heading tags.
 
@@ -225,12 +228,12 @@ class Splitter(HTMLParser.HTMLParser):
     """
 
     def __init__(self, heading_tags, out):
-        # type: (List[str], List) -> None
+        # type: (List[str], List[CurGroup]) -> None
         HTMLParser.HTMLParser.__init__(self)
         self.heading_tags = heading_tags
         self.out = out
 
-        self.cur_group = None  # type-not-checked: List[Tuple[str, str, List, List]]
+        self.cur_group = None  # type: CurGroup
         self.in_heading = False
 
         self.indent = 0
@@ -332,7 +335,7 @@ def ExtractBody(s):
 
 
 def SplitIntoCards(heading_tags, contents):
-    # type: (List[str], str) -> Iterator
+    # type: (List[str], str) -> Iterator[str, Any, str, str]
     contents = ExtractBody(contents)
 
     groups = []
@@ -355,6 +358,7 @@ def SplitIntoCards(heading_tags, contents):
 
 
 def HelpTopics(s):
+    # type: (str) -> Iterator[Tuple[str, str, str]]
     """
     Given a rendered toc-{osh,ysh}.html
 
@@ -421,6 +425,7 @@ class DocNode(object):
 
 
 def CardsFromIndex(sh, out_prefix):
+    # type: (str, str) -> None
     sections = []
     for section_id, section_name, text in HelpTopics(sys.stdin.read()):
         if 0:

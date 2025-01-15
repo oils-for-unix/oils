@@ -1,16 +1,8 @@
 #!/usr/bin/env python2
 """
-lazylex/html.py - Low-Level HTML Processing.
+lazylex/html.py - Wrapper around HTM8
 
-See lazylex/README.md for details.
-
-TODO:
-- Get rid of AttrValueLexer - this should be in the TagLexer 
-  - this also means that unquoted values can be more similar
-  - We can use a single lexer mode for everything inside <>
-    - the SPACE is the only difference
-- UTF-8 check, like JSON8
-- Static typing
+See doc/lazylex.md for details.
 
 """
 from __future__ import print_function

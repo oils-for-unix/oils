@@ -1,3 +1,25 @@
+"""data_lang/htm8.py
+
+TODO
+
+API:
+- Get rid of AttrValueLexer - this should be in the TagLexer 
+  - this also means that unquoted values can be more similar
+  - We can use a single lexer mode for everything inside <>
+    - the SPACE is the only difference
+- Deprecate tag_lexer.GetTagName() in favor of lx.CanonicalTagName() or
+  _LiteralTagName()
+- UTF-8 check, like JSON8
+- re2c
+  - port lexer, which will fix static typing issues
+  - the abstraction needs to support submatch?
+    - for finding the end of a tag, etc.?
+
+- LexError and ParseError need details
+  - harmonize with data_lang/j8.py, which uses error.Decode(msg, ...,
+    cur_line_num)
+"""
+
 import re
 
 from typing import Dict, List, Tuple, Optional, IO, Iterator, Any
@@ -584,12 +606,12 @@ class TagLexer(object):
 #
 # Note: for unquoted values, & isn't allowed, and thus &amp; and &#99; and
 # &#x99; are not allowed.  We could relax that?
-ATTR_VALUE_LEXER = CHAR_LEX + [
+ATTR_VALUE_LEX = CHAR_LEX + [
     (r'[^>&\x00]+', h8_id.RawData),
     (r'.', h8_id.Invalid),
 ]
 
-ATTR_VALUE_LEXER = MakeLexer(ATTR_VALUE_LEXER)
+ATTR_VALUE_LEX_COMPILED = MakeLexer(ATTR_VALUE_LEX)
 
 
 class AttrValueLexer(object):
@@ -633,7 +655,7 @@ class AttrValueLexer(object):
             # Find the first match, like above.
             # Note: frontend/match.py uses _LongestMatch(), which is different!
             # TODO: reconcile them.  This lexer should be expressible in re2c.
-            for pat, tok_id in ATTR_VALUE_LEXER:
+            for pat, tok_id in ATTR_VALUE_LEX_COMPILED:
                 m = pat.match(self.s, pos)
                 if m:
                     if 0:
