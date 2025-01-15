@@ -95,7 +95,7 @@ def ReadUntilStartTag(it, tag_lexer, tag_name):
         except StopIteration:
             break
         tag_lexer.Reset(pos, end_pos)
-        if tok_id == h8_id.StartTag and tag_lexer.TagName() == tag_name:
+        if tok_id == h8_id.StartTag and tag_lexer.GetTagName() == tag_name:
             return pos, end_pos
 
         pos = end_pos
@@ -118,7 +118,7 @@ def ReadUntilEndTag(it, tag_lexer, tag_name):
         except StopIteration:
             break
         tag_lexer.Reset(pos, end_pos)
-        if tok_id == h8_id.EndTag and tag_lexer.TagName() == tag_name:
+        if tok_id == h8_id.EndTag and tag_lexer.GetTagName() == tag_name:
             return pos, end_pos
 
         pos = end_pos

@@ -434,12 +434,12 @@ class TagLexer(object):
         self.start_pos = start_pos
         self.end_pos = end_pos
 
-    def TagString(self):
+    def WholeTagString(self):
         # type: () -> str
         """Return the entire tag string, e.g. <a href='foo'>"""
         return self.s[self.start_pos:self.end_pos]
 
-    def TagName(self):
+    def GetTagName(self):
         # type: () -> str
         # First event
         tok_id, start, end = next(self.Tokens())
@@ -536,7 +536,7 @@ class TagLexer(object):
         m = _TAG_RE.match(self.s, self.start_pos + 1)
         if not m:
             raise RuntimeError("Couldn't find HTML tag in %r" %
-                               self.TagString())
+                               self.WholeTagString())
         yield h8_tag_id.TagName, m.start(1), m.end(1)
 
         pos = m.end(0)

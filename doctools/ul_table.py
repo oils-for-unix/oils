@@ -116,7 +116,7 @@ class UlTableParser(object):
                 'Expected token %s, got %s' %
                 (h8_id_str(expected_id), h8_id_str(self.tok_id)))
         self.tag_lexer.Reset(self.start_pos, self.end_pos)
-        tag_name = self.tag_lexer.TagName()
+        tag_name = self.tag_lexer.GetTagName()
         if expected_tag != tag_name:
             raise htm8.ParseError('Expected tag %r, got %r' %
                                   (expected_tag, tag_name))
@@ -149,7 +149,7 @@ class UlTableParser(object):
 
             tag_lexer.Reset(self.start_pos, self.end_pos)
             if (self.tok_id == h8_id.StartTag and
-                    tag_lexer.TagName() == 'table'):
+                    tag_lexer.GetTagName() == 'table'):
                 while True:
                     self._Next(comment_ok=True)
                     if self.tok_id != h8_id.RawData:
@@ -157,7 +157,7 @@ class UlTableParser(object):
 
                 tag_lexer.Reset(self.start_pos, self.end_pos)
                 if (self.tok_id == h8_id.StartTag and
-                        tag_lexer.TagName() == 'ul'):
+                        tag_lexer.GetTagName() == 'ul'):
                     return self.start_pos
         return -1
 
@@ -208,7 +208,7 @@ class UlTableParser(object):
         while True:
             if self.tok_id == h8_id.StartEndTag:
                 self.tag_lexer.Reset(self.start_pos, self.end_pos)
-                tag_name = self.tag_lexer.TagName()
+                tag_name = self.tag_lexer.GetTagName()
                 # TODO: remove td-attrs backward compat
                 if tag_name in ('td-attrs', 'cell-attrs'):
                     td_attrs_span = self.start_pos, self.end_pos
@@ -217,12 +217,12 @@ class UlTableParser(object):
 
             elif self.tok_id == h8_id.StartTag:
                 self.tag_lexer.Reset(self.start_pos, self.end_pos)
-                if self.tag_lexer.TagName() == 'li':
+                if self.tag_lexer.GetTagName() == 'li':
                     balance += 1
 
             elif self.tok_id == h8_id.EndTag:
                 self.tag_lexer.Reset(self.start_pos, self.end_pos)
-                if self.tag_lexer.TagName() == 'li':
+                if self.tag_lexer.GetTagName() == 'li':
                     balance -= 1
                     if balance < 0:
                         break
@@ -348,7 +348,7 @@ class UlTableParser(object):
         tr_attrs = None
         if self.tok_id == h8_id.StartEndTag:
             self.tag_lexer.Reset(self.start_pos, self.end_pos)
-            tag_name = self.tag_lexer.TagName()
+            tag_name = self.tag_lexer.GetTagName()
             if tag_name != 'row-attrs':
                 raise htm8.ParseError('Expected row-attrs, got %r' % tag_name)
             tr_attrs = self.tag_lexer.AllAttrsRaw()

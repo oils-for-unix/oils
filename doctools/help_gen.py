@@ -317,7 +317,7 @@ def ExtractBody(s):
 
         if tok_id == h8_id.StartTag:
             tag_lexer.Reset(pos, end_pos)
-            if tag_lexer.TagName() == 'body':
+            if tag_lexer.GetTagName() == 'body':
                 body_start_right = end_pos  # right after <body>
 
                 out.SkipTo(body_start_right)
@@ -373,15 +373,16 @@ def HelpTopics(s):
         if tok_id == h8_id.StartTag:
             tag_lexer.Reset(pos, end_pos)
             #log('%r', tag_lexer.TagString())
-            #log('%r', tag_lexer.TagName())
+            #log('%r', tag_lexer.GetTagName())
 
             # Capture <h2 id="foo"> first
-            if tag_lexer.TagName() == 'h2':
+            if tag_lexer.GetTagName() == 'h2':
                 h2_start_right = end_pos
 
                 open_tag_right = end_pos
                 section_id = tag_lexer.GetAttrRaw('id')
-                assert section_id, 'Expected id= in %r' % tag_lexer.TagString()
+                assert section_id, 'Expected id= in %r' % tag_lexer.WholeTagString(
+                )
 
                 h2_end_left, _ = html.ReadUntilEndTag(it, tag_lexer, 'h2')
 
@@ -397,8 +398,8 @@ def HelpTopics(s):
                     it, tag_lexer, 'code')
                 css_class = tag_lexer.GetAttrRaw('class')
                 assert css_class is not None
-                assert css_class.startswith(
-                    'language-chapter-links-'), tag_lexer.TagString()
+                assert (css_class.startswith('language-chapter-links-')
+                        ), tag_lexer.WholeTagString()
 
                 code_end_left, _ = html.ReadUntilEndTag(it, tag_lexer, 'code')
 

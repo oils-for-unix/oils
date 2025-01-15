@@ -69,7 +69,7 @@ def _MakeTagLexer(s):
 def _PrintTokens(lex):
     # type: (html.TagLexer) -> None
     log('')
-    log('tag = %r', lex.TagName())
+    log('tag = %r', lex.GetTagName())
     for tok, start, end in lex.Tokens():
         log('%s %r', tok, lex.s[start:end])
 
@@ -111,7 +111,7 @@ class TagLexerTest(unittest.TestCase):
     def testTagName(self):
         # type: () -> None
         lex = _MakeTagLexer('<a href=foo class="bar" />')
-        self.assertEqual('a', lex.TagName())
+        self.assertEqual('a', lex.GetTagName())
 
     def testAllAttrs(self):
         # type: () -> None
