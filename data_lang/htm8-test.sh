@@ -4,17 +4,11 @@
 #   data_lang/htm8-test.sh
 #
 # TODO:
-# - Move code into data_lang/htm8.py
-#   - iterators stay in lazylex/html.py?
 #
-# - statically type it
-#   - revive pyannotate
 # - translate to C++
 #   - how to handle the regexes in the lexer?  Port to re2c directly?
 #   - for find(), do we need a C++ primitive for it?
 #   - no allocation for TagName()
-#   - ASDL file for Tok.Foo?
-# - remove TagName() from TagLexer(), it is on the Htm8Lexer
 #
 # re2c considerations:
 # - We need to use CAPTURES, so we can't use frontend/match directly
@@ -24,10 +18,6 @@
 #   - there is also the separate --storable-state option
 #   - because this can be used queries that don't allocate
 # - I may also want to do this with JSON
-#
-# Not working yet:
-# - capital letters <TR/> - I guess we can normalize the case
-#   - islower()
 #
 # Features:
 # - Are there special rules for <svg> and <math>?

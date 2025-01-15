@@ -28,5 +28,41 @@ module htm8
   | AttrName
   | UnquotedValue | QuotedValue | MissingValue 
   generate [no_namespace_suffix] 
+
+  attr_name =
+    Ok   # Found it
+  | Eof
+  | Error(int pos)  # LexError
+
+  attr_value =
+    Missing    # <a missing>
+  | Empty      # <a empty= >
+  | Unquoted   # <a unquoted=1 >
+  | Quoted     # <a quoted="1" >
+  generate [no_namespace_suffix] 
+
+  # This API is maybe more natural, but has more allocations
+  #
+  #  tag_lexer.Read()
+
+  #  # Unquoted, Quoted, Empty, Missing
+  #  (int tag_name_start, int tag_name_end, attr_value)
+
+  #  attr_value =
+  #    Missing                 # <a missing> - tag_name_end adds =""
+
+  #  | Empty (int equals_pos)  # <a empty=>
+
+  #    # <a unquoted=foo>
+  #    # the first one has end_pos 0, and can be h8_id.ZeroPosition?
+  #  | Unquoted (List[Tuple[h8_id, end_pos]] tokens)
+
+  #    # <a quoted="foo">
+  #  | Quoted (List[Tuple[h8_id, end_pos]] tokens)
+
+  #    # Rather than raise an exception, we should have this for bad data
+  #  | Invalid(int pos)
+
+
 }
 

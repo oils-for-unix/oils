@@ -7,25 +7,14 @@
 
 # TODO:
 #
-# - Run with another markdown processor other than cmark
+# - Run with a markdown processor other than cmark
 #   - Because markdown.pl doesn't support the inline HTML rule
 #   - markdown-it-py - https://github.com/executablebooks/markdown-it-py?tab=readme-ov-file
 #
+# - Fix bug where <table><caption> isn't allowed
+
 # - Put all tests in CI
 #   - maybe just pip install markdown-it
-#
-# - lazylex/html.py
-#   - fix the lexer not to use DOTALL
-#   - and make it data_lang/htm8.py?  
-# - Should the json8, tsv8, htm8 lexers be exposed?
-#   - as tools that print TSV?
-#   - similar to osh --tool tokens configure
-#     - you can pick the end col, or the whole thing
-#
-# - might want to run it through pyannotate too?
-#   - python2/python3 conflicts with mycpp distribution though
-#   - mylib.BufWriter() is different than cStringIo.StringIO aka io.StringIO
-#   - see {types,asdl}/pyann_driver.py
 #
 # Oils STDLIB:
 #
@@ -47,7 +36,6 @@
 #   - for doctools/ul-table-test.ysh <TAB>
 #
 # - Use 'byo test' - does that mean byo-server-lib also needs to be YSH?
-#
 
 source $LIB_OSH/task-five.sh
 #source $LIB_YSH/yblocks.ysh

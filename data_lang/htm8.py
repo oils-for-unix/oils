@@ -18,6 +18,24 @@ API:
 - LexError and ParseError need details
   - harmonize with data_lang/j8.py, which uses error.Decode(msg, ...,
     cur_line_num)
+
+- Copy all errors into doc/ref/chap-errors.md
+  - This helps understand the language
+
+- Update doc/htm8.md
+- list of Algorithms:
+  - lex just the top level
+  - lex both levels
+  - and match tags - this is the level for value.Htm8Frag?
+  - convert to XML!
+  - lazy selection by tag, or attr (id= and class=)
+  - lazy selection by CSS selector expression
+  - convert to DOMTree
+  - sed-like replacement of DOM Tree or element
+  - untrusted HTML filter, e.g. like StackOverflow / Reddit
+    - this is Safe HTM8
+    - should have a zero alloc way to support this, with good errors?
+      - I think most of them silently strip data
 """
 
 import re
@@ -25,7 +43,7 @@ import re
 from typing import Dict, List, Tuple, Optional, IO, Iterator, Any
 
 from _devbuild.gen.htm8_asdl import (h8_id, h8_id_t, h8_tag_id, h8_tag_id_t,
-                                     h8_tag_id_str)
+                                     h8_tag_id_str, attr_name_t, attr_value_t)
 from doctools.util import log
 
 
@@ -47,7 +65,7 @@ class LexError(Exception):
         return '(LexError %r)' % (self.s[self.start_pos:self.start_pos + 20])
 
 
-def FindLineNum(s, error_pos):
+def _FindLineNum(s, error_pos):
     # type: (str, int) -> int
     current_pos = 0
     line_num = 1
@@ -83,7 +101,7 @@ class ParseError(Exception):
             assert self.start_pos != -1, self.start_pos
             snippet = (self.s[self.start_pos:self.start_pos + 20])
 
-            line_num = FindLineNum(self.s, self.start_pos)
+            line_num = _FindLineNum(self.s, self.start_pos)
         else:
             snippet = ''
             line_num = -1
@@ -180,6 +198,8 @@ CHAR_LEX = [
 ]
 
 HTM8_LEX = CHAR_LEX + [
+    # TODO: CommentBegin, ProcessingBegin, CDataBegin could have an additional
+    # action associated with them?  The ending substring
     (r'<!--', h8_id.CommentBegin),
 
     # Processing instruction are used for the XML header:
@@ -230,7 +250,10 @@ HTM8_LEX = CHAR_LEX + [
 #
 # https://news.ycombinator.com/item?id=27099798
 #
-# Maybe try combining all of these for speed.
+
+# This person tried to do it with a regex:
+#
+# https://skeptric.com/html-comment-regexp/index.html
 
 # . is any char except newline
 # https://re2c.org/manual/manual_c.html
@@ -368,6 +391,10 @@ class Lexer(object):
 
     def LookAhead(self, regex):
         # type: (str) -> bool
+        """
+        Currently used for ul_table.py.  But taking a dynamic regex string is
+        not the right interface.
+        """
         # Cache the regex compilation.  This could also be LookAheadFor(THEAD)
         # or something.
         pat = self.cache.get(regex)
@@ -377,6 +404,122 @@ class Lexer(object):
 
         m = pat.match(self.s, self.pos)
         return m is not None
+
+
+class AttrLexer(object):
+    """
+    We can also invert this
+
+    Unquoted (List[h8_id] tok_ids, List[int] end_pos)
+
+    It would be nice to have a special case for the singleton, since that is
+    very common.
+
+    Simple (int tag_name_start, int tag_name_end, int attr_value_tag,
+            int value_start, int value_end)
+    This would cover many cases
+
+    The other option is to create many different events, and have AttrValueLexer
+    But I think that is annoying and overly detailed.
+
+    Operations:
+    - GetAttrRaw('foo')
+    - AllAttrsRaw()
+    - AllAttrsRawSlice()
+
+    class= query - well we can do this with Space tokens I think - we should
+      have an optimization
+    id= query - ditto, we should just have a predicate
+
+    Zero allocs:
+    tag query - TagNameEquals()
+
+    So I guess we have to write a HasClass('foo') and IdEquals('bar') on top of
+    this.  Yes.
+
+    tag_lx.Reset2(...)              # we should pass it the tag_name_end position
+    tag_lx.Read() -> bool           # success or fail?  Or Attr or Invalid
+          .AttrNameEquals('foo') -> bool   # id and class query
+          .GetAttrName() -> str            # for getting them all
+          .GetRawValue() -> Tuple[h8_tag_id, start, end]  # just beginning and end
+          .GetValueTokens() -> Tuple[h8_tag_id, TokenList]
+          .TokenList = Tuple[List[h8_id], List[int end_pos]
+
+    You could also have
+
+    tag_lx.GetValueTokenId() -> Tuple[h8_id, end_pos]
+
+    And then you read it until it's " or ' or space ?  We probably won't have
+    that use case to start.
+    """
+
+    def __init__(self, s):
+        # type: (str) -> None
+        self.s = s
+        self.tag_name_pos = -1  # Invalid
+        self.tag_end_pos = -1
+
+    def Init(self, tag_name_pos, end_pos):
+        # type: (int, int) -> None
+        """Initialize so we can read names and values.
+
+        Example:
+          'x <a y>'  # tag_name_pos=4, end_pos=6
+          'x <a>'    # tag_name_pos=4, end_pos=4
+
+        The Reset() method is used to reuse instances of the AttrLexer object.
+        """
+        assert tag_name_pos >= 0, tag_name_pos
+        assert end_pos >= 0, end_pos
+
+        self.tag_name_pos = tag_name_pos
+        self.end_pos = end_pos
+
+    def ReadName(self):
+        # type: () -> Tuple[attr_name_t, int, int]
+        """Reads the attribute name
+
+        EOF case: 
+          <a>
+          <a >
+
+        Error case:
+          <a !>
+          <a foo=bar !>
+        """
+        pass
+
+    def AttrNameEquals(self, s):
+        # type: (str) -> bool
+        """
+        TODO: Must call this after ReadName() ?
+        Because that can FAIL.
+        """
+        pass
+
+    def ReadRawValue(self):
+        # type: () -> Tuple[attr_value_t, int, int]
+        """Read the attribute value.
+
+        In general, it is escaped or "raw"
+
+        Note: Assuming ReadName() returned a value, this should NOT fail.
+        """
+        # NOTE: if = is not found, set state
+
+        pass
+
+    def SkipValue(self):
+        # type: () -> None
+        # Just ignore it and return
+        self.ReadRawValue()
+
+    def ReadValueAndDecode(self):
+        # type: () -> str
+        """Read the attribute vlaue
+        """
+        # TODO: tokenize it
+        pass
 
 
 # Tag names:
