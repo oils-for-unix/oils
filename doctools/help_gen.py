@@ -35,6 +35,7 @@ import sys
 from typing import AnyStr
 
 from _devbuild.gen.htm8_asdl import h8_id
+from data_lang import htm8
 from doctools import html_lib
 from doctools.util import log
 from lazylex import html
@@ -97,7 +98,7 @@ class TopicHtmlRenderer(object):
         self.html_page = 'chap-%s.html' % chapter
 
     def _PrintTopic(self, m, out, line_info):
-        # type: (Any, html.Output, Dict[str, Any]) -> None
+        # type: (Any, htm8.Output, Dict[str, Any]) -> None
         # The X
         topic_impl = True
         if m.group(1):
@@ -131,7 +132,7 @@ class TopicHtmlRenderer(object):
           The HTML with some tags inserted.
         """
         f = cStringIO.StringIO()
-        out = html.Output(line, f)
+        out = htm8.Output(line, f)
 
         pos = 0  # position within line
 
@@ -303,8 +304,8 @@ def ExtractBody(s):
     balanced.
     """
     f = cStringIO.StringIO()
-    out = html.Output(s, f)
-    tag_lexer = html.TagLexer(s)
+    out = htm8.Output(s, f)
+    tag_lexer = htm8.TagLexer(s)
 
     pos = 0
     it = html.ValidTokens(s)
@@ -359,7 +360,7 @@ def HelpTopics(s):
 
     yield groups (section_id, section_name, block of text)
     """
-    tag_lexer = html.TagLexer(s)
+    tag_lexer = htm8.TagLexer(s)
 
     pos = 0
     it = html.ValidTokens(s)

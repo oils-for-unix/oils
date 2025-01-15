@@ -4,6 +4,7 @@ from __future__ import print_function
 import unittest
 
 from _devbuild.gen.htm8_asdl import h8_id, h8_id_str
+from data_lang import htm8
 from lazylex import html  # module under test log = html.log
 
 from typing import List, Tuple
@@ -38,7 +39,7 @@ class RegexTest(unittest.TestCase):
 
     def testAttrRe(self):
         # type: () -> None
-        _ATTR_RE = html._ATTR_RE
+        _ATTR_RE = htm8._ATTR_RE
         m = _ATTR_RE.match(' empty= val')
         print(m.groups())
 
@@ -49,7 +50,7 @@ class FunctionsTest(unittest.TestCase):
         # type: () -> None
         s = 'foo\n' * 3
         for pos in [1, 5, 10, 50]:  # out of bounds
-            line_num = html.FindLineNum(s, pos)
+            line_num = htm8.FindLineNum(s, pos)
             print(line_num)
 
     def testToText(self):

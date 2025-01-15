@@ -12,6 +12,7 @@ import sys
 
 from doctools.util import log
 from lazylex import html
+from data_lang import htm8
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -26,9 +27,9 @@ def RemoveComments(s):
     This is a required preprocessing step for ul-table.
     """
     f = StringIO()
-    out = html.Output(s, f)
+    out = htm8.Output(s, f)
 
-    tag_lexer = html.TagLexer(s)
+    tag_lexer = htm8.TagLexer(s)
 
     pos = 0
 
@@ -53,7 +54,7 @@ TdAttrs = List[Tuple[str, str]]
 class UlTableParser(object):
 
     def __init__(self, lexer, tag_lexer):
-        # type: (html.Lexer, html.TagLexer) -> None
+        # type: (htm8.Lexer, htm8.TagLexer) -> None
         self.lexer = lexer
         self.tag_lexer = tag_lexer
 
@@ -77,7 +78,7 @@ class UlTableParser(object):
         # Should have called RemoveComments() beforehand.  That can still leave
         # some REPLACE cmoments
         if not comment_ok and self.tok_id == h8_id.Comment:
-            raise html.ParseError('Unexpected HTML comment')
+            raise htm8.ParseError('Unexpected HTML comment')
 
         if 0:
             part = self._CurrentString()
@@ -89,12 +90,12 @@ class UlTableParser(object):
         Assert that we got text data matching a regex, and advance
         """
         if self.tok_id != h8_id.RawData:
-            raise html.ParseError('Expected RawData, got %s' %
+            raise htm8.ParseError('Expected RawData, got %s' %
                                   h8_id_str(self.tok_id))
         actual = self._CurrentString()
         m = re.match(regex, actual)  # could compile this
         if m is None:
-            raise html.ParseError('Expected to match %r, got %r' %
+            raise htm8.ParseError('Expected to match %r, got %r' %
                                   (regex, actual))
         self._Next()
 
@@ -111,13 +112,13 @@ class UlTableParser(object):
                                h8_id.EndTag), h8_id_str(expected_id)
 
         if self.tok_id != expected_id:
-            raise html.ParseError(
+            raise htm8.ParseError(
                 'Expected token %s, got %s' %
                 (h8_id_str(expected_id), h8_id_str(self.tok_id)))
         self.tag_lexer.Reset(self.start_pos, self.end_pos)
         tag_name = self.tag_lexer.TagName()
         if expected_tag != tag_name:
-            raise html.ParseError('Expected tag %r, got %r' %
+            raise htm8.ParseError('Expected tag %r, got %r' %
                                   (expected_tag, tag_name))
 
         self._Next()
@@ -349,7 +350,7 @@ class UlTableParser(object):
             self.tag_lexer.Reset(self.start_pos, self.end_pos)
             tag_name = self.tag_lexer.TagName()
             if tag_name != 'row-attrs':
-                raise html.ParseError('Expected row-attrs, got %r' % tag_name)
+                raise htm8.ParseError('Expected row-attrs, got %r' % tag_name)
             tr_attrs = self.tag_lexer.AllAttrsRaw()
             self._Next()
             self._WhitespaceOk()
@@ -413,7 +414,7 @@ class UlTableParser(object):
             # Not validating because of colspan
             if 0:
                 if thead and len(tr) != len(thead):
-                    raise html.ParseError('Expected %d cells, got %d: %s' %
+                    raise htm8.ParseError('Expected %d cells, got %d: %s' %
                                           (len(thead), len(tr), tr))
 
             #log('___ TR %s', tr)
@@ -477,10 +478,10 @@ def ReplaceTables(s, debug_out=None):
         debug_out = []
 
     f = StringIO()
-    out = html.Output(s, f)
+    out = htm8.Output(s, f)
 
-    tag_lexer = html.TagLexer(s)
-    lexer = html.Lexer(s)
+    tag_lexer = htm8.TagLexer(s)
+    lexer = htm8.Lexer(s)
 
     p = UlTableParser(lexer, tag_lexer)
 

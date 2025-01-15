@@ -24,6 +24,7 @@ import sys
 
 from typing import Iterator, Any, List, Optional, IO
 
+from data_lang import htm8
 from doctools.util import log
 from lazylex import html
 
@@ -109,9 +110,9 @@ def ExpandLinks(s):
     # type: (str) -> str
     """Expand $xref:bash and so forth."""
     f = StringIO()
-    out = html.Output(s, f)
+    out = htm8.Output(s, f)
 
-    tag_lexer = html.TagLexer(s)
+    tag_lexer = htm8.TagLexer(s)
 
     pos = 0
 
@@ -178,7 +179,7 @@ class _Plugin(object):
         self.end_pos = end_pos
 
     def PrintHighlighted(self, out):
-        # type: (html.Output) -> None
+        # type: (htm8.Output) -> None
         raise NotImplementedError()
 
 
@@ -228,7 +229,7 @@ class ShPromptPlugin(_Plugin):
     """Highlight shell prompts."""
 
     def PrintHighlighted(self, out):
-        # type: (html.Output) -> None
+        # type: (htm8.Output) -> None
         pos = self.start_pos
         for line_end in Lines(self.s, self.start_pos, self.end_pos):
 
@@ -286,7 +287,7 @@ class HelpTopicsPlugin(_Plugin):
         self.linkify_stop_col = linkify_stop_col
 
     def PrintHighlighted(self, out):
-        # type: (html.Output) -> None
+        # type: (htm8.Output) -> None
         from doctools import help_gen
 
         debug_out = []
@@ -318,7 +319,7 @@ class PygmentsPlugin(_Plugin):
         self.lang = lang
 
     def PrintHighlighted(self, out):
-        # type: (html.Output) -> None
+        # type: (htm8.Output) -> None
 
         # unescape before passing to pygments, which will escape
         code = html.ToText(self.s, self.start_pos, self.end_pos)
@@ -335,9 +336,9 @@ def SimpleHighlightCode(s):
     """Simple highlighting for test/shell-vs-shell.sh."""
 
     f = StringIO()
-    out = html.Output(s, f)
+    out = htm8.Output(s, f)
 
-    tag_lexer = html.TagLexer(s)
+    tag_lexer = htm8.TagLexer(s)
 
     pos = 0
 
@@ -395,9 +396,9 @@ def HighlightCode(s, default_highlighter, debug_out=None):
         debug_out = []
 
     f = StringIO()
-    out = html.Output(s, f)
+    out = htm8.Output(s, f)
 
-    tag_lexer = html.TagLexer(s)
+    tag_lexer = htm8.TagLexer(s)
 
     pos = 0
 
@@ -553,8 +554,8 @@ def ExtractCode(s, f):
     1. Collect what's inside <pre><code> ...
     2. Decode &amp; -> &,e tc. and return it
     """
-    out = html.Output(s, f)
-    tag_lexer = html.TagLexer(s)
+    out = htm8.Output(s, f)
+    tag_lexer = htm8.TagLexer(s)
 
     block_num = 0
     pos = 0
@@ -651,7 +652,7 @@ class ShellSession(object):
         self.cache_dir = cache_dir
 
     def PrintHighlighted(self, s, start_pos, end_pos, out):
-        # type: (str, int, int, html.Output) -> None
+        # type: (str, int, int, htm8.Output) -> None
         """
         Args:
           s: an HTML string.
