@@ -43,7 +43,8 @@ import re
 from typing import Dict, List, Tuple, Optional, IO, Iterator, Any
 
 from _devbuild.gen.htm8_asdl import (h8_id, h8_id_t, h8_tag_id, h8_tag_id_t,
-                                     h8_tag_id_str, attr_name_t, attr_value_t)
+                                     h8_tag_id_str, attr_name, attr_name_t,
+                                     attr_value, attr_value_t)
 from doctools.util import log
 
 
@@ -239,6 +240,8 @@ HTM8_LEX = CHAR_LEX + [
     # - So do some .wwz files
     (r'[^&<>\x00]+', h8_id.RawData),
     (r'>', h8_id.BadGreaterThan),
+    # NUL is the end, an accomodation for re2c.  Like we do in frontend/match.
+    (r'\x00', h8_id.EndOfStream),
     # < is an error
     (r'.', h8_id.Invalid),
 ]
@@ -357,6 +360,11 @@ class Lexer(object):
         else:
             raise AssertionError('h8_id.Invalid rule should have matched')
 
+    def TagNamePos(self):
+        """The right position of the tag pos"""
+        assert self.tag_pos_right != -1, self.tag_pos_right
+        return self.tag_pos_right
+
     def TagNameEquals(self, expected):
         # type: (str) -> bool
         assert self.tag_pos_left != -1, self.tag_pos_left
@@ -472,6 +480,8 @@ class AttrLexer(object):
         assert tag_name_pos >= 0, tag_name_pos
         assert end_pos >= 0, end_pos
 
+        log('TAG NAME POS %d', tag_name_pos)
+
         self.tag_name_pos = tag_name_pos
         self.end_pos = end_pos
 
@@ -487,7 +497,7 @@ class AttrLexer(object):
           <a !>
           <a foo=bar !>
         """
-        pass
+        return attr_name.Done, -1, -1
 
     def AttrNameEquals(self, s):
         # type: (str) -> bool
@@ -506,6 +516,7 @@ class AttrLexer(object):
         Note: Assuming ReadName() returned a value, this should NOT fail.
         """
         # NOTE: if = is not found, set state
+        _ = attr_value
 
         pass
 

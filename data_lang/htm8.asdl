@@ -30,8 +30,8 @@ module htm8
   generate [no_namespace_suffix] 
 
   attr_name =
-    Ok   # Found it
-  | Eof
+    Ok    # Found an attribute
+  | Done  # No more attributes
   | Error(int pos)  # LexError
 
   attr_value =

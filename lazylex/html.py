@@ -54,24 +54,6 @@ def ValidTokens(s, left_pos=0, right_pos=-1):
         pos = end_pos
 
 
-def ValidTokenList(s, no_special_tags=False):
-    # type: (str, bool) -> List[Tuple[h8_id_t, int]]
-    """A wrapper that can be more easily translated to C++.  Doesn't use iterators."""
-
-    start_pos = 0
-    tokens = []
-    lx = Lexer(s, no_special_tags=no_special_tags)
-    while True:
-        tok_id, end_pos = lx.Read()
-        tokens.append((tok_id, end_pos))
-        if tok_id == h8_id.EndOfStream:
-            break
-        if tok_id == h8_id.Invalid:
-            raise LexError(s, start_pos)
-        start_pos = end_pos
-    return tokens
-
-
 def ReadUntilStartTag(it, tag_lexer, tag_name):
     # type: (Iterator[Tuple[h8_id_t, int]], TagLexer, str) -> Tuple[int, int]
     """Find the next <foo>, returning its (start, end) positions
