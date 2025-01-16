@@ -44,7 +44,7 @@ from typing import Dict, List, Tuple, Optional, IO, Iterator, Any
 
 from _devbuild.gen.htm8_asdl import (h8_id, h8_id_t, h8_tag_id, h8_tag_id_t,
                                      h8_tag_id_str, attr_name, attr_name_t,
-                                     attr_value, attr_value_t)
+                                     attr_value, attr_value_t, attr_value_id)
 from doctools.util import log
 
 
@@ -414,6 +414,61 @@ class Lexer(object):
         return m is not None
 
 
+A_NAME_LEX = [
+    # Leading whitespace is required, to separate attributes.
+    #
+    # If the = is not present, then we set the lexer in a state for
+    # attr_value.Missing.
+    (r'\s+ (%s) \s* (=)?' % _NAME, attr_name.Ok),
+    # unexpected EOF
+
+    # The closing > or /> is treated as end of stream, and it's not an error.
+    (r'\s* /? >', attr_name.Done),
+
+    # NUL should not be possible, because the top-level
+
+    # e.g. < is an error
+    (r'.', attr_name.Invalid),
+]
+
+A_NAME_LEX_COMPILED = MakeLexer(A_NAME_LEX)
+
+# Here we just loop on regular tokens
+#
+# Examples:
+# <a href = unquoted&amp;foo >
+# <a href = unquoted&foo >     # BadAmpersand is allowed I guess
+# <a href ="unquoted&foo" >    # double quoted
+# <a href ='unquoted&foo' >    # single quoted
+# <a href = what"foo" >        # HTML5 allows this, but we could disallow it if
+# it's not common.  It opens up the j"" and $"" extensions
+# <a href = what'foo' >        # ditto
+#
+# Problem:  <a href=foo/> - this is hard to recognize
+# Because is the unquoted value "foo/" or "foo" ?
+
+# Be very lenient - just no whitespace or special HTML chars
+# I don't think this is more lenient than HTML5, though we should check.
+#
+# Bug fix: Also disallow /
+
+_UNQUOTED_VALUE = r'''[^ \t\r\n<>&/"'\x00]*'''
+
+A_VALUE_LEX = CHAR_LEX + [
+    (r'"', attr_value_id.DoubleQuote),
+    (r"'", attr_value_id.SingleQuote),
+    (_UNQUOTED_VALUE, attr_value_id.UnquotedVal),
+
+    #(r'[ \r\n\t]', h8_id.Whitespace),  # terminates unquoted values
+    #(r'[^ \r\n\t&>\x00]', h8_id.RawData),
+    #(r'[>\x00]', h8_id.EndOfStream),
+    # e.g. < is an error
+    (r'.', attr_value_id.Invalid),
+]
+
+A_VALUE_LEX_COMPILED = MakeLexer(A_VALUE_LEX)
+
+
 class AttrLexer(object):
     """
     We can also invert this
@@ -466,6 +521,11 @@ class AttrLexer(object):
         self.s = s
         self.tag_name_pos = -1  # Invalid
         self.tag_end_pos = -1
+        self.pos = -1
+
+        self.name_start = -1
+        self.name_end = -1
+        self.next_value_is_missing = False
 
     def Init(self, tag_name_pos, end_pos):
         # type: (int, int) -> None
@@ -485,6 +545,8 @@ class AttrLexer(object):
         self.tag_name_pos = tag_name_pos
         self.end_pos = end_pos
 
+        self.pos = tag_name_pos
+
     def ReadName(self):
         # type: () -> Tuple[attr_name_t, int, int]
         """Reads the attribute name
@@ -497,15 +559,48 @@ class AttrLexer(object):
           <a !>
           <a foo=bar !>
         """
-        return attr_name.Done, -1, -1
+        for pat, a in A_NAME_LEX_COMPILED:
+            m = pat.match(self.s, self.pos)
+            if m:
+                if a == attr_name.Ok:
+                    #log('%r', m.groups())
+                    self.name_start = m.start(1)
+                    self.name_end = m.end(1)
+                    # Set state based on =
+                    if m.group(2) is None:
+                        self.next_value_is_missing = True
+                    return attr_name.Ok, self.name_start, self.name_end
+                else:
+                    # Reset state - e.g. you must call AttrNameEquals
+                    self.name_start = -1
+                    self.name_end = -1
+                    self.next_value_is_missing = False
 
-    def AttrNameEquals(self, s):
+                if a == attr_name.Invalid:
+                    return attr_name.Invalid, -1, -1
+                if a == attr_name.Done:
+                    return attr_name.Done, -1, -1
+        else:
+            raise AssertionError('h8_id.Invalid rule should have matched')
+
+    def _CanonicalAttrName(self):
+        # type: () -> str
+        assert self.name_start >= 0, self.name_start
+        assert self.name_end >= 0, self.name_end
+
+        attr_name = self.s[self.name_start:self.name_end]
+        if attr_name.islower():
+            return attr_name
+        else:
+            return attr_name.lower()
+
+    def AttrNameEquals(self, expected):
         # type: (str) -> bool
         """
         TODO: Must call this after ReadName() ?
         Because that can FAIL.
         """
-        pass
+        return expected == self._CanonicalAttrName()
 
     def ReadRawValue(self):
         # type: () -> Tuple[attr_value_t, int, int]
@@ -549,10 +644,6 @@ class AttrLexer(object):
 # https://infra.spec.whatwg.org/#namespaces
 #
 # Allow - for td-attrs
-
-# Be very lenient - just no whitespace or special HTML chars
-# I don't think this is more lenient than HTML5, though we should check.
-_UNQUOTED_VALUE = r'''[^ \t\r\n<>&"'\x00]*'''
 
 # TODO: we don't need to capture the tag name here?  That's done at the top
 # level

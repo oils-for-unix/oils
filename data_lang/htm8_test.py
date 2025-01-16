@@ -80,9 +80,61 @@ class AttrLexerTest(unittest.TestCase):
         self.assertEqual(-1, name_start)
         self.assertEqual(-1, name_end)
 
-    def testAttr(self):
+    def testInvalid(self):
+        h = '<a !>'
+        lx = htm8.Lexer(h)
 
-        h = '<a href=foo>'
+        tok_id, end_pos = lx.Read()
+        self.assertEqual(h8_id.StartTag, tok_id)
+
+        attr_lexer = htm8.AttrLexer(h)
+        attr_lexer.Init(lx.TagNamePos(), end_pos)
+
+        n, name_start, name_end = attr_lexer.ReadName()
+        self.assertEqual(n, attr_name.Invalid)
+        self.assertEqual(-1, name_start)
+        self.assertEqual(-1, name_end)
+
+    def testEmpty(self):
+        h = '<img src=/>'
+        lx = htm8.Lexer(h)
+
+        tok_id, end_pos = lx.Read()
+        self.assertEqual(h8_id.StartEndTag, tok_id)
+
+        attr_lexer = htm8.AttrLexer(h)
+        attr_lexer.Init(lx.TagNamePos(), end_pos)
+
+        n, name_start, name_end = attr_lexer.ReadName()
+        self.assertEqual(n, attr_name.Ok)
+        self.assertEqual(5, name_start)
+        self.assertEqual(8, name_end)
+        self.assertEqual(False, attr_lexer.next_value_is_missing)
+
+        self.assertEqual(True, attr_lexer.AttrNameEquals('src'))
+        self.assertEqual(False, attr_lexer.AttrNameEquals('srcz'))
+
+    def testMissing(self):
+        h = '<img SRC/>'
+        lx = htm8.Lexer(h)
+
+        tok_id, end_pos = lx.Read()
+        self.assertEqual(h8_id.StartEndTag, tok_id)
+
+        attr_lexer = htm8.AttrLexer(h)
+        attr_lexer.Init(lx.TagNamePos(), end_pos)
+
+        n, name_start, name_end = attr_lexer.ReadName()
+        self.assertEqual(n, attr_name.Ok)
+        self.assertEqual(5, name_start)
+        self.assertEqual(8, name_end)
+        self.assertEqual(True, attr_lexer.next_value_is_missing)
+
+        self.assertEqual(True, attr_lexer.AttrNameEquals('src'))
+        self.assertEqual(False, attr_lexer.AttrNameEquals('srcz'))
+
+    def testAttr(self):
+        h = '<a x=foo>'
         lx = htm8.Lexer(h)
 
         tok_id, end_pos = lx.Read()
@@ -91,6 +143,11 @@ class AttrLexerTest(unittest.TestCase):
         attr_lexer = htm8.AttrLexer(h)
         attr_lexer.Init(lx.TagNamePos(), end_pos)
         n, name_start, name_end = attr_lexer.ReadName()
+        self.assertEqual(n, attr_name.Ok)
+        self.assertEqual(3, name_start)
+        self.assertEqual(4, name_end)
+
+        # Note: internal state set according to =
 
 
 def ValidTokenList(s, no_special_tags=False):

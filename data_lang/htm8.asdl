@@ -20,6 +20,11 @@ module htm8
 
   | Invalid
   | EndOfStream
+
+    # Used by the AttrLexer
+  #| Whitespace
+  #| DoubleQuote
+  #| SingleQuote
   generate [no_namespace_suffix]  # cosmetic: call it h8_id, not h8_id_e
 
 
@@ -30,15 +35,25 @@ module htm8
   generate [no_namespace_suffix] 
 
   attr_name =
-    Ok    # Found an attribute
-  | Done  # No more attributes
-  | Error(int pos)  # LexError
+    Ok           # Found an attribute
+  | Done         # No more attributes
+  | Invalid      # e.g. <a !>
+  generate [no_namespace_suffix] 
+
+  attr_value_id = 
+    UnquotedVal
+  | DoubleQuote
+  | SingleQuote
+  | Invalid
+  generate [no_namespace_suffix] 
 
   attr_value =
-    Missing    # <a missing>
-  | Empty      # <a empty= >
-  | Unquoted   # <a unquoted=1 >
-  | Quoted     # <a quoted="1" >
+    Missing       # <a missing>
+  | Empty         # <a empty= >
+  | Unquoted      # <a unquoted=1 >
+  | DoubleQuote   # <a quoted="1" >
+  | SingleQuote   # <a quoted="1" >
+    # No end of stream here, it will just be Missing, and the next attr_name will fail
   generate [no_namespace_suffix] 
 
   # This API is maybe more natural, but has more allocations
