@@ -44,7 +44,8 @@ from typing import Dict, List, Tuple, Optional, IO, Iterator, Any
 
 from _devbuild.gen.htm8_asdl import (h8_id, h8_id_t, h8_tag_id, h8_tag_id_t,
                                      h8_tag_id_str, attr_name, attr_name_t,
-                                     attr_value_e, attr_value_t, h8_val_id)
+                                     attr_name_str, attr_value_e, attr_value_t,
+                                     h8_val_id)
 from doctools.util import log
 
 
@@ -517,6 +518,9 @@ class AttrLexer(object):
         self.name_end = -1
         self.next_value_is_missing = False
 
+        self.init_t = -1
+        self.init_e = -1
+
     def Init(self, tag_name_pos, end_pos):
         # type: (int, int) -> None
         """Initialize so we can read names and values.
@@ -530,12 +534,21 @@ class AttrLexer(object):
         assert tag_name_pos >= 0, tag_name_pos
         assert end_pos >= 0, end_pos
 
-        log('TAG NAME POS %d', tag_name_pos)
+        #log('TAG NAME POS %d', tag_name_pos)
 
         self.tag_name_pos = tag_name_pos
         self.end_pos = end_pos
 
         self.pos = tag_name_pos
+
+        # For Reset()
+        self.init_t = tag_name_pos
+        self.init_e = end_pos
+
+    def Reset(self):
+        self.tag_name_pos = self.init_t
+        self.end_pos = self.init_e
+        self.pos = self.init_t
 
     def ReadName(self):
         # type: () -> Tuple[attr_name_t, int, int]
@@ -551,16 +564,24 @@ class AttrLexer(object):
         """
         for pat, a in A_NAME_LEX_COMPILED:
             m = pat.match(self.s, self.pos)
+            #log('ReadName() matching %r at %d', self.s, self.pos)
             if m:
-                self.pos = m.end(0)  # Advance
+                #log('ReadName() tag_name_pos %d pos, %d %s', self.tag_name_pos, self.pos, m.groups())
+                if a == attr_name.Invalid:
+                    #log('m.groups %s', m.groups())
+                    return attr_name.Invalid, -1, -1
+
+                self.pos = m.end(0)  # Advance if it's not invalid
 
                 if a == attr_name.Ok:
                     #log('%r', m.groups())
                     self.name_start = m.start(1)
                     self.name_end = m.end(1)
-                    # Set state based on =
+                    # Is the equals sign missing?  Set state.
                     if m.group(2) is None:
                         self.next_value_is_missing = True
+                        # HACK: REWIND, since we don't want to consume whitespace
+                        self.pos = self.name_end
                     return attr_name.Ok, self.name_start, self.name_end
                 else:
                     # Reset state - e.g. you must call AttrNameEquals
@@ -568,15 +589,20 @@ class AttrLexer(object):
                     self.name_end = -1
                     self.next_value_is_missing = False
 
-                if a == attr_name.Invalid:
-                    return attr_name.Invalid, -1, -1
                 if a == attr_name.Done:
                     return attr_name.Done, -1, -1
         else:
-            raise AssertionError('h8_id.Invalid rule should have matched')
+            context = self.s[self.pos:]
+            #log('s %r %d', self.s, self.pos)
+            raise AssertionError('h8_id.Invalid rule should have matched %r' %
+                                 context)
 
     def _CanonicalAttrName(self):
         # type: () -> str
+        """Return the lower case attribute name.
+
+        Must call after ReadName()
+        """
         assert self.name_start >= 0, self.name_start
         assert self.name_end >= 0, self.name_end
 
@@ -589,8 +615,9 @@ class AttrLexer(object):
     def AttrNameEquals(self, expected):
         # type: (str) -> bool
         """
-        TODO: Must call this after ReadName() ?
-        Because that can FAIL.
+        Must call after ReadName()
+
+        TODO: This can be optimized to be "in place", with zero allocs.
         """
         return expected == self._CanonicalAttrName()
 
@@ -625,48 +652,104 @@ class AttrLexer(object):
         self.name_end = -1
 
         if self.next_value_is_missing:
+            # Do not advance self.pos
+            #log('-> MISSING pos %d : %r', self.pos, self.s[self.pos:])
             return attr_value_e.Missing, -1, -1
 
         # Now read " ', unquoted or empty= is valid too.
         for pat, a in A_VALUE_LEX_COMPILED:
             m = pat.match(self.s, self.pos)
             if m:
-                self.pos = m.end(0)  # Advance
-
+                first_end_pos = m.end(0)
                 #log('m %s', m.groups())
 
                 # Note: Unquoted value can't contain &amp; etc. now, so there
                 # is no unquoting, and no respecting tokens_raw.
                 if a == h8_val_id.UnquotedVal:
-                    return attr_value_e.Unquoted, m.start(0), m.end(0)
+                    self.pos = first_end_pos  # Advance
+                    return attr_value_e.Unquoted, m.start(0), first_end_pos
 
                 # TODO: respect tokens_out
                 if a == h8_val_id.DoubleQuote:
-                    left_inner = self.pos
+                    self.pos = first_end_pos
                     while True:
                         tok_id, q_end_pos = self._QuotedRead()
+                        #log('self.pos %d q_end_pos %d', self.pos, q_end_pos)
                         if tok_id == h8_id.Invalid:
                             raise LexError(self.s, self.pos)
                         if tok_id == h8_id.DoubleQuote:
-                            return attr_value_e.DoubleQuoted, left_inner, self.pos
-                        self.pos = q_end_pos  # advance
+                            right_pos = self.pos
+                            self.pos = q_end_pos  # Advance past "
+                            return attr_value_e.DoubleQuoted, first_end_pos, right_pos
+                        self.pos = q_end_pos  # Advance _QuotedRead
 
                 # TODO: respect tokens_out
                 if a == h8_val_id.SingleQuote:
-                    left_inner = self.pos
+                    self.pos = first_end_pos
                     while True:
                         tok_id, q_end_pos = self._QuotedRead()
                         if tok_id == h8_id.Invalid:
                             raise LexError(self.s, self.pos)
                         if tok_id == h8_id.SingleQuote:
-                            return attr_value_e.SingleQuoted, left_inner, self.pos
-                        self.pos = q_end_pos  # advance
+                            right_pos = self.pos
+                            self.pos = q_end_pos  # Advance past "
+                            return attr_value_e.SingleQuoted, first_end_pos, right_pos
+                        self.pos = q_end_pos  # Advance _QuotedRead
 
                 if a == h8_val_id.NoMatch:
                     # <a foo = >
                     return attr_value_e.Empty, -1, -1
         else:
             raise AssertionError('h8_val_id.NoMatch rule should have matched')
+
+
+def GetAttrRaw(attr_lx, name):
+    # type: (AttrLexer, str) -> Optional[str]
+    while True:
+        n, name_start, name_end = attr_lx.ReadName()
+        #log('==> ReadName %s %d %d', attr_name_str(n), name_start, name_end)
+        if n == attr_name.Ok:
+            if attr_lx.AttrNameEquals(name):
+                v, val_start, val_end = attr_lx.ReadValue()
+                return attr_lx.s[val_start:val_end]
+            else:
+                # Problem with stateful API: You are forced to either ReadValue()
+                # or SkipVlaue()
+                attr_lx.ReadValue()
+        elif n == attr_name.Done:
+            break
+        elif n == attr_name.Invalid:
+            raise LexError(attr_lx.s, attr_lx.pos)
+        else:
+            raise AssertionError()
+
+    return None
+
+
+def AllAttrsRaw(attr_lx):
+    # type: (AttrLexer) -> List[Tuple[str,str]]
+    result = []
+    while True:
+        n, name_start, name_end = attr_lx.ReadName()
+        if 0:
+            log('  AllAttrsRaw ==> ReadName %s %d %d', attr_name_str(n),
+                name_start, name_end)
+        if n == attr_name.Ok:
+            name = attr_lx.s[name_start:name_end]
+            #log('  Name %r', name)
+
+            v, val_start, val_end = attr_lx.ReadValue()
+            val = attr_lx.s[val_start:val_end]
+            #log('  ReadValue %r', val)
+            result.append((name, val))
+        elif n == attr_name.Done:
+            break
+        elif n == attr_name.Invalid:
+            raise LexError(attr_lx.s, attr_lx.pos)
+        else:
+            raise AssertionError()
+
+    return result
 
 
 #

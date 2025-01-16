@@ -2,7 +2,8 @@
 from __future__ import print_function
 
 from _devbuild.gen.htm8_asdl import (h8_id, h8_id_t, h8_id_str, attr_name,
-                                     attr_value_e, attr_value_str)
+                                     attr_name_str, attr_value_e,
+                                     attr_value_str)
 
 import unittest
 import re
@@ -102,6 +103,13 @@ class AttrLexerTest(unittest.TestCase):
         else:
             self.fail('should have failed')
 
+        try:
+            result = attr_lx.ReadName()
+        except AssertionError as e:
+            print(e)
+        else:
+            self.fail('should have failed')
+
     def testInvalid(self):
         h = '<a !>'
         attr_lx = _MakeAttrLexer(self, h)
@@ -137,6 +145,9 @@ class AttrLexerTest(unittest.TestCase):
         self.assertEqual(-1, attr_start)
         self.assertEqual(-1, attr_end)
 
+        n, name_start, name_end = attr_lx.ReadName()
+        self.assertEqual(n, attr_name.Done)
+
     def testMissing(self):
         h = '<img SRC/>'
         attr_lx = _MakeAttrLexer(self, h, expected_tag=h8_id.StartEndTag)
@@ -154,6 +165,9 @@ class AttrLexerTest(unittest.TestCase):
         self.assertEqual(attr_value_e.Missing, v)
         self.assertEqual(-1, attr_start)
         self.assertEqual(-1, attr_end)
+
+        n, name_start, name_end = attr_lx.ReadName()
+        self.assertEqual(n, attr_name.Done)
 
     def testUnquoted(self):
         # CAREFUL: /> is a StartEndTag, and / is not part of unquoted value
@@ -174,6 +188,9 @@ class AttrLexerTest(unittest.TestCase):
         self.assertEqual(5, attr_start)
         self.assertEqual(8, attr_end)
 
+        n, name_start, name_end = attr_lx.ReadName()
+        self.assertEqual(n, attr_name.Done)
+
     def testDoubleQuoted(self):
         h = '<a x="f&">'
         attr_lx = _MakeAttrLexer(self, h, expected_tag=h8_id.StartTag)
@@ -191,6 +208,11 @@ class AttrLexerTest(unittest.TestCase):
         self.assertEqual(attr_value_e.DoubleQuoted, v)
         self.assertEqual(6, attr_start)
         self.assertEqual(8, attr_end)
+        self.assertEqual(9, attr_lx.pos)
+
+        n, name_start, name_end = attr_lx.ReadName()
+        log('n = %r', attr_name_str(n))
+        self.assertEqual(n, attr_name.Done)
 
     def testSingleQuoted(self):
         h = "<a x='&f'>"
@@ -209,6 +231,11 @@ class AttrLexerTest(unittest.TestCase):
         self.assertEqual(attr_value_e.SingleQuoted, v)
         self.assertEqual(6, attr_start)
         self.assertEqual(8, attr_end)
+        self.assertEqual(9, attr_lx.pos)
+
+        n, name_start, name_end = attr_lx.ReadName()
+        #log('n = %r', attr_name_str(n))
+        self.assertEqual(n, attr_name.Done)
 
     def testDoubleQuoted_Bad(self):
         h = '<a x="foo>'
@@ -237,6 +264,114 @@ class AttrLexerTest(unittest.TestCase):
 
         try:
             v, attr_start, attr_end = attr_lx.ReadValue()
+        except htm8.LexError as e:
+            print(e)
+        else:
+            self.fail('Expected LexError')
+
+
+class AttrLexerWrapperTest(unittest.TestCase):
+
+    def testGetAttrRaw(self):
+        # type: () -> None
+        lex = _MakeAttrLexer(self, '<a>')
+        #_PrintTokens(lex)
+        self.assertEqual(None, htm8.GetAttrRaw(lex, 'oops'))
+
+        # <a novalue> means lex.Get('novalue') == ''
+        # https://developer.mozilla.org/en-US/docs/Web/API/Element/hasAttribute
+        # We are not distinguishing <a novalue=""> from <a novalue> in this API
+        lex = _MakeAttrLexer(self, '<a novalue>')
+        #_PrintTokens(lex)
+        self.assertEqual('', htm8.GetAttrRaw(lex, 'novalue'))
+
+    def testGetAttrRaw2(self):
+        lex = _MakeAttrLexer(self, '<a href="double quoted">')
+        #_PrintTokens(lex)
+
+        log('*** OOPS')
+        self.assertEqual(None, htm8.GetAttrRaw(lex, 'oops'))
+        lex.Reset()
+        log('*** DOUBLE')
+        self.assertEqual('double quoted', htm8.GetAttrRaw(lex, 'href'))
+
+    def testGetAttrRaw3(self):
+        """Reverse order vs. testGetAttrRaw2"""
+        lex = _MakeAttrLexer(self, '<a href="double quoted">')
+        #_PrintTokens(lex)
+
+        self.assertEqual('double quoted', htm8.GetAttrRaw(lex, 'href'))
+        lex.Reset()
+        self.assertEqual(None, htm8.GetAttrRaw(lex, 'oops'))
+
+    def testGetAttrRaw4(self):
+
+        lex = _MakeAttrLexer(self, '<a href=foo class="bar">')
+        #_PrintTokens(lex)
+        self.assertEqual('bar', htm8.GetAttrRaw(lex, 'class'))
+
+        lex = _MakeAttrLexer(self,
+                             '<a href=foo class="bar" />',
+                             expected_tag=h8_id.StartEndTag)
+        #_PrintTokens(lex)
+        self.assertEqual('bar', htm8.GetAttrRaw(lex, 'class'))
+
+        lex = _MakeAttrLexer(self,
+                             '<a href="?foo=1&amp;bar=2" />',
+                             expected_tag=h8_id.StartEndTag)
+        self.assertEqual('?foo=1&amp;bar=2', htm8.GetAttrRaw(lex, 'href'))
+
+    def testAllAttrs(self):
+        # type: () -> None
+        """
+        [('key', 'value')] for all
+        """
+        # closed
+        lex = _MakeAttrLexer(self,
+                             '<a href=foo class="bar" />',
+                             expected_tag=h8_id.StartEndTag)
+        self.assertEqual([('href', 'foo'), ('class', 'bar')],
+                         htm8.AllAttrsRaw(lex))
+
+        lex = _MakeAttrLexer(self,
+                             '<a href="?foo=1&amp;bar=2" />',
+                             expected_tag=h8_id.StartEndTag)
+        self.assertEqual([('href', '?foo=1&amp;bar=2')], htm8.AllAttrsRaw(lex))
+
+    def testEmptyMissingValues(self):
+        # type: () -> None
+        # equivalent to <button disabled="">
+        lex = _MakeAttrLexer(self, '<button disabled>')
+        all_attrs = htm8.AllAttrsRaw(lex)
+        self.assertEqual([('disabled', '')], all_attrs)
+
+        # TODO: restore this
+        if 0:
+            slices = lex.AllAttrsRawSlice()
+            log('slices %s', slices)
+
+        lex = _MakeAttrLexer(
+            self, '''<p double="" single='' empty= value missing empty2=>''')
+        all_attrs = htm8.AllAttrsRaw(lex)
+        self.assertEqual([
+            ('double', ''),
+            ('single', ''),
+            ('empty', 'value'),
+            ('missing', ''),
+            ('empty2', ''),
+        ], all_attrs)
+        # TODO: should have
+        log('all %s', all_attrs)
+
+        if 0:
+            slices = lex.AllAttrsRawSlice()
+            log('slices %s', slices)
+
+    def testInvalidTag(self):
+        # type: () -> None
+        try:
+            lex = _MakeAttrLexer(self, '<a foo=bar !></a>')
+            all_attrs = htm8.AllAttrsRaw(lex)
         except htm8.LexError as e:
             print(e)
         else:
