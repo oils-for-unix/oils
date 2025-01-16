@@ -1,3 +1,4 @@
+# HTM8 - An Easy Subset of HTML5
 
 module htm8
 {
@@ -27,33 +28,38 @@ module htm8
   #| SingleQuote
   generate [no_namespace_suffix]  # cosmetic: call it h8_id, not h8_id_e
 
-
-  h8_tag_id =
-    TagName
-  | AttrName
-  | UnquotedValue | QuotedValue | MissingValue 
-  generate [no_namespace_suffix] 
-
+  # "enum" returned by lexer
   attr_name =
     Ok           # Found an attribute
   | Done         # No more attributes
   | Invalid      # e.g. <a !>
   generate [no_namespace_suffix] 
 
-  attr_value_id = 
-    UnquotedVal
-  | DoubleQuote
-  | SingleQuote
-  | Invalid
+  # "enum" returned by lexer
+  h8_val_id = 
+    UnquotedVal  # a=foo
+  | DoubleQuote  # a="foo"
+  | SingleQuote  # a='foo'
+  | NoMatch      # anything else
   generate [no_namespace_suffix] 
 
+  # Returned by attr value parser
   attr_value =
     Missing       # <a missing>
   | Empty         # <a empty= >
   | Unquoted      # <a unquoted=1 >
-  | DoubleQuote   # <a quoted="1" >
-  | SingleQuote   # <a quoted="1" >
+  | DoubleQuoted  # <a quoted="1" >
+  | SingleQuoted  # <a quoted='1' >
     # No end of stream here, it will just be Missing, and the next attr_name will fail
+
+  #
+  # OLD
+  #
+
+  h8_tag_id =
+    TagName
+  | AttrName
+  | UnquotedValue | QuotedValue | MissingValue 
   generate [no_namespace_suffix] 
 
   # This API is maybe more natural, but has more allocations
@@ -77,7 +83,5 @@ module htm8
 
   #    # Rather than raise an exception, we should have this for bad data
   #  | Invalid(int pos)
-
-
 }
 

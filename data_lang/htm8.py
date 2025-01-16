@@ -44,7 +44,7 @@ from typing import Dict, List, Tuple, Optional, IO, Iterator, Any
 
 from _devbuild.gen.htm8_asdl import (h8_id, h8_id_t, h8_tag_id, h8_tag_id_t,
                                      h8_tag_id_str, attr_name, attr_name_t,
-                                     attr_value, attr_value_t, attr_value_id)
+                                     attr_value_e, attr_value_t, h8_val_id)
 from doctools.util import log
 
 
@@ -418,8 +418,8 @@ A_NAME_LEX = [
     # Leading whitespace is required, to separate attributes.
     #
     # If the = is not present, then we set the lexer in a state for
-    # attr_value.Missing.
-    (r'\s+ (%s) \s* (=)?' % _NAME, attr_name.Ok),
+    # attr_value_e.Missing.
+    (r'\s+ (%s) \s* (=)? \s*' % _NAME, attr_name.Ok),
     # unexpected EOF
 
     # The closing > or /> is treated as end of stream, and it's not an error.
@@ -452,18 +452,28 @@ A_NAME_LEX_COMPILED = MakeLexer(A_NAME_LEX)
 #
 # Bug fix: Also disallow /
 
-_UNQUOTED_VALUE = r'''[^ \t\r\n<>&/"'\x00]*'''
+# TODO: get rid of OLD copy
+_UNQUOTED_VALUE_OLD = r'''[^ \t\r\n<>&/"'\x00]*'''
+_UNQUOTED_VALUE = r'''[^ \t\r\n<>&/"'\x00]+'''
+
+# Restrictive definition, similar to _NAME
+# I was trying to capture #ble.sh and so forth
+# I also had unquoted //github.com, etc.
+
+# _UNQUOTED_VALUE = r'''[a-zA-Z0-9:_\-]+'''
+#
+# For now, I guess we live with <a href=?foo/>
 
 A_VALUE_LEX = CHAR_LEX + [
-    (r'"', attr_value_id.DoubleQuote),
-    (r"'", attr_value_id.SingleQuote),
-    (_UNQUOTED_VALUE, attr_value_id.UnquotedVal),
+    (r'"', h8_val_id.DoubleQuote),
+    (r"'", h8_val_id.SingleQuote),
+    (_UNQUOTED_VALUE, h8_val_id.UnquotedVal),
 
     #(r'[ \r\n\t]', h8_id.Whitespace),  # terminates unquoted values
     #(r'[^ \r\n\t&>\x00]', h8_id.RawData),
     #(r'[>\x00]', h8_id.EndOfStream),
     # e.g. < is an error
-    (r'.', attr_value_id.Invalid),
+    (r'.', h8_val_id.NoMatch),
 ]
 
 A_VALUE_LEX_COMPILED = MakeLexer(A_VALUE_LEX)
@@ -562,6 +572,8 @@ class AttrLexer(object):
         for pat, a in A_NAME_LEX_COMPILED:
             m = pat.match(self.s, self.pos)
             if m:
+                self.pos = m.end(0)  # Advance
+
                 if a == attr_name.Ok:
                     #log('%r', m.groups())
                     self.name_start = m.start(1)
@@ -608,12 +620,40 @@ class AttrLexer(object):
 
         In general, it is escaped or "raw"
 
-        Note: Assuming ReadName() returned a value, this should NOT fail.
+        Can only be called after a SUCCESSFUL ReadName().
+        Assuming ReadName() returned a value, this should NOT fail.
         """
-        # NOTE: if = is not found, set state
-        _ = attr_value
+        # ReadName() invariant
+        assert self.name_start >= 0, self.name_start
+        assert self.name_end >= 0, self.name_end
 
-        pass
+        self.name_start = -1
+        self.name_end = -1
+
+        if self.next_value_is_missing:
+            return attr_value_e.Missing, -1, -1
+        else:
+            # Now read " ', unquoted or empty= is valid too.
+            for pat, a in A_VALUE_LEX_COMPILED:
+                m = pat.match(self.s, self.pos)
+                if m:
+                    self.pos = m.end(0)  # Advance
+
+                    log('m %s', m.groups())
+                    if a == h8_val_id.UnquotedVal:
+                        return attr_value_e.Unquoted, m.start(0), m.end(0)
+                    if a == h8_val_id.DoubleQuote:
+                        # TODO: read until "
+                        return attr_value_e.DoubleQuoted, m.start(0), m.end(0)
+                    if a == h8_val_id.SingleQuote:
+                        # TODO: read until '
+                        return attr_value_e.SingleQuoted, m.start(0), m.end(0)
+                    if a == h8_val_id.NoMatch:
+                        # <a foo = >
+                        return attr_value_e.Empty, -1, -1
+            else:
+                raise AssertionError(
+                    'h8_val_id.NoMatch rule should have matched')
 
     def SkipValue(self):
         # type: () -> None
@@ -674,7 +714,7 @@ _ATTR_RE = re.compile(
   | (%s)                # Attribute value
   )
 )?             
-''' % (_NAME, _UNQUOTED_VALUE), re.VERBOSE)
+''' % (_NAME, _UNQUOTED_VALUE_OLD), re.VERBOSE)
 
 
 class TagLexer(object):
