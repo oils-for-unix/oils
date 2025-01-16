@@ -4,7 +4,6 @@ from __future__ import print_function
 import unittest
 
 from _devbuild.gen.htm8_asdl import h8_id, h8_id_str
-from data_lang import htm8
 from lazylex import html  # module under test log = html.log
 
 from typing import List, Tuple
@@ -17,12 +16,10 @@ with open('data_lang/testdata/hello.htm8') as f:
 
 class FunctionsTest(unittest.TestCase):
 
-    def testFindLineNum(self):
+    def testToText(self):
         # type: () -> None
-        s = 'foo\n' * 3
-        for pos in [1, 5, 10, 50]:  # out of bounds
-            line_num = htm8.FindLineNum(s, pos)
-            print(line_num)
+        t = html.ToText('<b name="&amp;"> three &lt; four && five </b>')
+        self.assertEqual(' three < four && five ', t)
 
 
 def _MakeTagLexer(s):
