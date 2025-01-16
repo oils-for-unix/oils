@@ -32,21 +32,22 @@ def _PrintTokens(lex):
 
 class TagLexerTest(unittest.TestCase):
 
-    def testTagLexer(self):
+    def testTagName_DEPRECATED(self):
         # type: () -> None
-        # Invalid!
-        #lex = _MakeTagLexer('< >')
-        #print(lex.Tag())
+        lex = _MakeTagLexer('<a href=foo class="bar" />')
+        self.assertEqual('a', lex.GetTagName())
 
+    def testGetAttrRaw(self):
+        # type: () -> None
         lex = _MakeTagLexer('<a>')
         _PrintTokens(lex)
+        self.assertEqual(None, lex.GetAttrRaw('oops'))
 
-        lex = _MakeTagLexer('<a novalue>')
-        _PrintTokens(lex)
-
-        # Note: we could have a different HasAttr() method
         # <a novalue> means lex.Get('novalue') == ''
         # https://developer.mozilla.org/en-US/docs/Web/API/Element/hasAttribute
+        # We are not distinguishing <a novalue=""> from <a novalue> in this API
+        lex = _MakeTagLexer('<a novalue>')
+        _PrintTokens(lex)
         self.assertEqual('', lex.GetAttrRaw('novalue'))
 
         lex = _MakeTagLexer('<a href="double quoted">')
@@ -57,17 +58,14 @@ class TagLexerTest(unittest.TestCase):
 
         lex = _MakeTagLexer('<a href=foo class="bar">')
         _PrintTokens(lex)
+        self.assertEqual('bar', lex.GetAttrRaw('class'))
 
         lex = _MakeTagLexer('<a href=foo class="bar" />')
         _PrintTokens(lex)
+        self.assertEqual('bar', lex.GetAttrRaw('class'))
 
         lex = _MakeTagLexer('<a href="?foo=1&amp;bar=2" />')
         self.assertEqual('?foo=1&amp;bar=2', lex.GetAttrRaw('href'))
-
-    def testTagName(self):
-        # type: () -> None
-        lex = _MakeTagLexer('<a href=foo class="bar" />')
-        self.assertEqual('a', lex.GetTagName())
 
     def testAllAttrs(self):
         # type: () -> None
@@ -159,6 +157,7 @@ class LexerTest(unittest.TestCase):
 
 
 INVALID_LEX = [
+    '< >',
     '<a><',
     '&amp<',
     '&<',

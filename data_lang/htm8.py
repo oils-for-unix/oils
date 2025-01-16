@@ -464,7 +464,8 @@ _UNQUOTED_VALUE = r'''[^ \t\r\n<>&/"'\x00]+'''
 #
 # For now, I guess we live with <a href=?foo/>
 
-A_VALUE_LEX = CHAR_LEX + [
+# What comes after = ?
+A_VALUE_LEX = [
     (r'"', h8_val_id.DoubleQuote),
     (r"'", h8_val_id.SingleQuote),
     (_UNQUOTED_VALUE, h8_val_id.UnquotedVal),
@@ -478,6 +479,18 @@ A_VALUE_LEX = CHAR_LEX + [
 
 A_VALUE_LEX_COMPILED = MakeLexer(A_VALUE_LEX)
 
+# What's inside "" or '' ?
+QUOTED_VALUE_LEX = CHAR_LEX + [
+    (r'"', h8_id.DoubleQuote),
+    (r"'", h8_id.SingleQuote),
+    (r'<', h8_id.BadLessThan),  # BadAmpersand is in CharLex
+    (r'''[^"'<>&\x00]+''', h8_id.RawData),
+    # This includes > - it is not BadGreaterThan because it's NOT recoverable
+    (r'.', h8_id.Invalid),
+]
+
+QUOTED_VALUE_LEX_COMPILED = MakeLexer(QUOTED_VALUE_LEX)
+
 
 class AttrLexer(object):
     """
@@ -490,7 +503,7 @@ class AttrLexer(object):
               print('div')
 
             # TODO: also pass Optional[List[]] out_tokens?
-            v, start_pos, end_pos = attr_lx.ReadRawValue()
+            v, start_pos, end_pos = attr_lx.ReadValue()
     """
 
     def __init__(self, s):
@@ -582,21 +595,21 @@ class AttrLexer(object):
         return expected == self._CanonicalAttrName()
 
     def _QuotedRead(self):
-        # type: () -> Tuple[h8_id, end_pos]
+        # type: () -> Tuple[h8_id_t, int]
 
         for pat, tok_id in QUOTED_VALUE_LEX_COMPILED:
             m = pat.match(self.s, self.pos)
             if m:
                 end_pos = m.end(0)  # Advance
-                log('_QuotedRead %r', self.s[self.pos:end_pos])
+                #log('_QuotedRead %r', self.s[self.pos:end_pos])
                 return tok_id, end_pos
         else:
             context = self.s[self.pos:self.pos + 10]
             raise AssertionError('h8_id.Invalid rule should have matched %r' %
                                  context)
 
-    def ReadRawValue(self):
-        # type: () -> Tuple[attr_value_t, int, int]
+    def ReadValue(self, tokens_out=None):
+        # type: (Optional[List[Tuple[h8_id, int]]]) -> Tuple[attr_value_t, int, int]
         """Read the attribute value.
 
         In general, it is escaped or "raw"
@@ -621,9 +634,13 @@ class AttrLexer(object):
                 self.pos = m.end(0)  # Advance
 
                 #log('m %s', m.groups())
+
+                # Note: Unquoted value can't contain &amp; etc. now, so there
+                # is no unquoting, and no respecting tokens_raw.
                 if a == h8_val_id.UnquotedVal:
                     return attr_value_e.Unquoted, m.start(0), m.end(0)
 
+                # TODO: respect tokens_out
                 if a == h8_val_id.DoubleQuote:
                     left_inner = self.pos
                     while True:
@@ -634,8 +651,8 @@ class AttrLexer(object):
                             return attr_value_e.DoubleQuoted, left_inner, self.pos
                         self.pos = q_end_pos  # advance
 
+                # TODO: respect tokens_out
                 if a == h8_val_id.SingleQuote:
-
                     left_inner = self.pos
                     while True:
                         tok_id, q_end_pos = self._QuotedRead()
@@ -651,18 +668,10 @@ class AttrLexer(object):
         else:
             raise AssertionError('h8_val_id.NoMatch rule should have matched')
 
-    def SkipValue(self):
-        # type: () -> None
-        # Just ignore it and return
-        self.ReadRawValue()
 
-    def ReadValueAndDecode(self):
-        # type: () -> str
-        """Read the attribute vlaue
-        """
-        # TODO: tokenize it
-        pass
-
+#
+# OLD API - REMOVE THIS
+#
 
 # Tag names:
 #   Match <a  or </a
@@ -893,17 +902,6 @@ ATTR_VALUE_LEX = CHAR_LEX + [
 ]
 
 ATTR_VALUE_LEX_COMPILED = MakeLexer(ATTR_VALUE_LEX)
-
-QUOTED_VALUE_LEX = CHAR_LEX + [
-    (r'"', h8_id.DoubleQuote),
-    (r"'", h8_id.SingleQuote),
-    (r'<', h8_id.BadLessThan),  # BadAmpersand is in CharLex
-    (r'''[^"'<>&\x00]+''', h8_id.RawData),
-    # This includes > - it is not BadGreaterThan because it's NOT recoverable
-    (r'.', h8_id.Invalid),
-]
-
-QUOTED_VALUE_LEX_COMPILED = MakeLexer(QUOTED_VALUE_LEX)
 
 
 class AttrValueLexer(object):

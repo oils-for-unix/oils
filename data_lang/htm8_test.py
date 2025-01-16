@@ -7,7 +7,7 @@ from _devbuild.gen.htm8_asdl import (h8_id, h8_id_t, h8_id_str, attr_name,
 import unittest
 import re
 
-from typing import List, Tuple
+from typing import List, Tuple, Any
 
 from data_lang import htm8
 from doctools.util import log
@@ -54,6 +54,20 @@ class FunctionsTest(unittest.TestCase):
             print(line_num)
 
 
+def _MakeAttrLexer(t, h, expected_tag=h8_id.StartTag):
+    # type: (Any, str) -> htm8.AttrLexer
+
+    lx = htm8.Lexer(h)
+
+    tok_id, end_pos = lx.Read()
+    t.assertEqual(expected_tag, tok_id)
+
+    attr_lx = htm8.AttrLexer(h)
+    attr_lx.Init(lx.TagNamePos(), end_pos)
+
+    return attr_lx
+
+
 class AttrLexerTest(unittest.TestCase):
 
     def testNoAttrs(self):
@@ -82,7 +96,7 @@ class AttrLexerTest(unittest.TestCase):
         self.assertEqual(-1, name_end)
 
         try:
-            result = attr_lx.ReadRawValue()
+            result = attr_lx.ReadValue()
         except AssertionError as e:
             print(e)
         else:
@@ -90,13 +104,7 @@ class AttrLexerTest(unittest.TestCase):
 
     def testInvalid(self):
         h = '<a !>'
-        lx = htm8.Lexer(h)
-
-        tok_id, end_pos = lx.Read()
-        self.assertEqual(h8_id.StartTag, tok_id)
-
-        attr_lx = htm8.AttrLexer(h)
-        attr_lx.Init(lx.TagNamePos(), end_pos)
+        attr_lx = _MakeAttrLexer(self, h)
 
         n, name_start, name_end = attr_lx.ReadName()
         self.assertEqual(n, attr_name.Invalid)
@@ -104,7 +112,7 @@ class AttrLexerTest(unittest.TestCase):
         self.assertEqual(-1, name_end)
 
         try:
-            result = attr_lx.ReadRawValue()
+            result = attr_lx.ReadValue()
         except AssertionError as e:
             print(e)
         else:
@@ -112,13 +120,7 @@ class AttrLexerTest(unittest.TestCase):
 
     def testEmpty(self):
         h = '<img src=/>'
-        lx = htm8.Lexer(h)
-
-        tok_id, end_pos = lx.Read()
-        self.assertEqual(h8_id.StartEndTag, tok_id)
-
-        attr_lx = htm8.AttrLexer(h)
-        attr_lx.Init(lx.TagNamePos(), end_pos)
+        attr_lx = _MakeAttrLexer(self, h, expected_tag=h8_id.StartEndTag)
 
         n, name_start, name_end = attr_lx.ReadName()
         self.assertEqual(n, attr_name.Ok)
@@ -129,7 +131,7 @@ class AttrLexerTest(unittest.TestCase):
         self.assertEqual(True, attr_lx.AttrNameEquals('src'))
         self.assertEqual(False, attr_lx.AttrNameEquals('srcz'))
 
-        v, attr_start, attr_end = attr_lx.ReadRawValue()
+        v, attr_start, attr_end = attr_lx.ReadValue()
         log('v = %s', attr_value_str(v))
         self.assertEqual(attr_value_e.Empty, v)
         self.assertEqual(-1, attr_start)
@@ -137,13 +139,7 @@ class AttrLexerTest(unittest.TestCase):
 
     def testMissing(self):
         h = '<img SRC/>'
-        lx = htm8.Lexer(h)
-
-        tok_id, end_pos = lx.Read()
-        self.assertEqual(h8_id.StartEndTag, tok_id)
-
-        attr_lx = htm8.AttrLexer(h)
-        attr_lx.Init(lx.TagNamePos(), end_pos)
+        attr_lx = _MakeAttrLexer(self, h, expected_tag=h8_id.StartEndTag)
 
         n, name_start, name_end = attr_lx.ReadName()
         self.assertEqual(n, attr_name.Ok)
@@ -154,7 +150,7 @@ class AttrLexerTest(unittest.TestCase):
         self.assertEqual(True, attr_lx.AttrNameEquals('src'))
         self.assertEqual(False, attr_lx.AttrNameEquals('srcz'))
 
-        v, attr_start, attr_end = attr_lx.ReadRawValue()
+        v, attr_start, attr_end = attr_lx.ReadValue()
         self.assertEqual(attr_value_e.Missing, v)
         self.assertEqual(-1, attr_start)
         self.assertEqual(-1, attr_end)
@@ -162,19 +158,14 @@ class AttrLexerTest(unittest.TestCase):
     def testUnquoted(self):
         # CAREFUL: /> is a StartEndTag, and / is not part of unquoted value
         h = '<a x=foo/>'
-        lx = htm8.Lexer(h)
+        attr_lx = _MakeAttrLexer(self, h, expected_tag=h8_id.StartEndTag)
 
-        tok_id, end_pos = lx.Read()
-        self.assertEqual(h8_id.StartEndTag, tok_id)
-
-        attr_lx = htm8.AttrLexer(h)
-        attr_lx.Init(lx.TagNamePos(), end_pos)
         n, name_start, name_end = attr_lx.ReadName()
         self.assertEqual(n, attr_name.Ok)
         self.assertEqual(3, name_start)
         self.assertEqual(4, name_end)
 
-        v, attr_start, attr_end = attr_lx.ReadRawValue()
+        v, attr_start, attr_end = attr_lx.ReadValue()
 
         log('v = %s', attr_value_str(v))
         log('unquoted val %r', h[attr_start:attr_end])
@@ -185,19 +176,14 @@ class AttrLexerTest(unittest.TestCase):
 
     def testDoubleQuoted(self):
         h = '<a x="f&">'
-        lx = htm8.Lexer(h)
+        attr_lx = _MakeAttrLexer(self, h, expected_tag=h8_id.StartTag)
 
-        tok_id, end_pos = lx.Read()
-        self.assertEqual(h8_id.StartTag, tok_id)
-
-        attr_lx = htm8.AttrLexer(h)
-        attr_lx.Init(lx.TagNamePos(), end_pos)
         n, name_start, name_end = attr_lx.ReadName()
         self.assertEqual(n, attr_name.Ok)
         self.assertEqual(3, name_start)
         self.assertEqual(4, name_end)
 
-        v, attr_start, attr_end = attr_lx.ReadRawValue()
+        v, attr_start, attr_end = attr_lx.ReadValue()
 
         log('v = %s', attr_value_str(v))
         log('val %r', h[attr_start:attr_end])
@@ -208,19 +194,14 @@ class AttrLexerTest(unittest.TestCase):
 
     def testSingleQuoted(self):
         h = "<a x='&f'>"
-        lx = htm8.Lexer(h)
+        attr_lx = _MakeAttrLexer(self, h, expected_tag=h8_id.StartTag)
 
-        tok_id, end_pos = lx.Read()
-        self.assertEqual(h8_id.StartTag, tok_id)
-
-        attr_lx = htm8.AttrLexer(h)
-        attr_lx.Init(lx.TagNamePos(), end_pos)
         n, name_start, name_end = attr_lx.ReadName()
         self.assertEqual(n, attr_name.Ok)
         self.assertEqual(3, name_start)
         self.assertEqual(4, name_end)
 
-        v, attr_start, attr_end = attr_lx.ReadRawValue()
+        v, attr_start, attr_end = attr_lx.ReadValue()
 
         log('v = %s', attr_value_str(v))
         log('unquoted val %r', h[attr_start:attr_end])
@@ -231,20 +212,15 @@ class AttrLexerTest(unittest.TestCase):
 
     def testDoubleQuoted_Bad(self):
         h = '<a x="foo>'
-        lx = htm8.Lexer(h)
+        attr_lx = _MakeAttrLexer(self, h, expected_tag=h8_id.StartTag)
 
-        tok_id, end_pos = lx.Read()
-        self.assertEqual(h8_id.StartTag, tok_id)
-
-        attr_lx = htm8.AttrLexer(h)
-        attr_lx.Init(lx.TagNamePos(), end_pos)
         n, name_start, name_end = attr_lx.ReadName()
         self.assertEqual(n, attr_name.Ok)
         self.assertEqual(3, name_start)
         self.assertEqual(4, name_end)
 
         try:
-            v, attr_start, attr_end = attr_lx.ReadRawValue()
+            v, attr_start, attr_end = attr_lx.ReadValue()
         except htm8.LexError as e:
             print(e)
         else:
@@ -252,20 +228,15 @@ class AttrLexerTest(unittest.TestCase):
 
     def testSingleQuoted_Bad(self):
         h = "<a x='foo>"
-        lx = htm8.Lexer(h)
+        attr_lx = _MakeAttrLexer(self, h, expected_tag=h8_id.StartTag)
 
-        tok_id, end_pos = lx.Read()
-        self.assertEqual(h8_id.StartTag, tok_id)
-
-        attr_lx = htm8.AttrLexer(h)
-        attr_lx.Init(lx.TagNamePos(), end_pos)
         n, name_start, name_end = attr_lx.ReadName()
         self.assertEqual(n, attr_name.Ok)
         self.assertEqual(3, name_start)
         self.assertEqual(4, name_end)
 
         try:
-            v, attr_start, attr_end = attr_lx.ReadRawValue()
+            v, attr_start, attr_end = attr_lx.ReadValue()
         except htm8.LexError as e:
             print(e)
         else:
