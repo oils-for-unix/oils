@@ -183,6 +183,94 @@ class AttrLexerTest(unittest.TestCase):
         self.assertEqual(5, attr_start)
         self.assertEqual(8, attr_end)
 
+    def testDoubleQuoted(self):
+        h = '<a x="f&">'
+        lx = htm8.Lexer(h)
+
+        tok_id, end_pos = lx.Read()
+        self.assertEqual(h8_id.StartTag, tok_id)
+
+        attr_lx = htm8.AttrLexer(h)
+        attr_lx.Init(lx.TagNamePos(), end_pos)
+        n, name_start, name_end = attr_lx.ReadName()
+        self.assertEqual(n, attr_name.Ok)
+        self.assertEqual(3, name_start)
+        self.assertEqual(4, name_end)
+
+        v, attr_start, attr_end = attr_lx.ReadRawValue()
+
+        log('v = %s', attr_value_str(v))
+        log('val %r', h[attr_start:attr_end])
+
+        self.assertEqual(attr_value_e.DoubleQuoted, v)
+        self.assertEqual(6, attr_start)
+        self.assertEqual(8, attr_end)
+
+    def testSingleQuoted(self):
+        h = "<a x='&f'>"
+        lx = htm8.Lexer(h)
+
+        tok_id, end_pos = lx.Read()
+        self.assertEqual(h8_id.StartTag, tok_id)
+
+        attr_lx = htm8.AttrLexer(h)
+        attr_lx.Init(lx.TagNamePos(), end_pos)
+        n, name_start, name_end = attr_lx.ReadName()
+        self.assertEqual(n, attr_name.Ok)
+        self.assertEqual(3, name_start)
+        self.assertEqual(4, name_end)
+
+        v, attr_start, attr_end = attr_lx.ReadRawValue()
+
+        log('v = %s', attr_value_str(v))
+        log('unquoted val %r', h[attr_start:attr_end])
+
+        self.assertEqual(attr_value_e.SingleQuoted, v)
+        self.assertEqual(6, attr_start)
+        self.assertEqual(8, attr_end)
+
+    def testDoubleQuoted_Bad(self):
+        h = '<a x="foo>'
+        lx = htm8.Lexer(h)
+
+        tok_id, end_pos = lx.Read()
+        self.assertEqual(h8_id.StartTag, tok_id)
+
+        attr_lx = htm8.AttrLexer(h)
+        attr_lx.Init(lx.TagNamePos(), end_pos)
+        n, name_start, name_end = attr_lx.ReadName()
+        self.assertEqual(n, attr_name.Ok)
+        self.assertEqual(3, name_start)
+        self.assertEqual(4, name_end)
+
+        try:
+            v, attr_start, attr_end = attr_lx.ReadRawValue()
+        except htm8.LexError as e:
+            print(e)
+        else:
+            self.fail('Expected LexError')
+
+    def testSingleQuoted_Bad(self):
+        h = "<a x='foo>"
+        lx = htm8.Lexer(h)
+
+        tok_id, end_pos = lx.Read()
+        self.assertEqual(h8_id.StartTag, tok_id)
+
+        attr_lx = htm8.AttrLexer(h)
+        attr_lx.Init(lx.TagNamePos(), end_pos)
+        n, name_start, name_end = attr_lx.ReadName()
+        self.assertEqual(n, attr_name.Ok)
+        self.assertEqual(3, name_start)
+        self.assertEqual(4, name_end)
+
+        try:
+            v, attr_start, attr_end = attr_lx.ReadRawValue()
+        except htm8.LexError as e:
+            print(e)
+        else:
+            self.fail('Expected LexError')
+
 
 def ValidTokenList(s, no_special_tags=False):
     # type: (str, bool) -> List[Tuple[h8_id_t, int]]

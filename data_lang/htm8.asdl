@@ -22,10 +22,9 @@ module htm8
   | Invalid
   | EndOfStream
 
-    # Used by the AttrLexer
-  #| Whitespace
-  #| DoubleQuote
-  #| SingleQuote
+    # Returned by QUOTED_VALUE_LEX, in addition to DecChar, HexChar, etc.
+  | DoubleQuote
+  | SingleQuote
   generate [no_namespace_suffix]  # cosmetic: call it h8_id, not h8_id_e
 
   # "enum" returned by lexer

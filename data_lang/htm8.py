@@ -242,7 +242,7 @@ HTM8_LEX = CHAR_LEX + [
     (r'>', h8_id.BadGreaterThan),
     # NUL is the end, an accomodation for re2c.  Like we do in frontend/match.
     (r'\x00', h8_id.EndOfStream),
-    # < is an error
+    # This includes < - it is not BadLessThan because it's NOT recoverable
     (r'.', h8_id.Invalid),
 ]
 
@@ -427,7 +427,7 @@ A_NAME_LEX = [
 
     # NUL should not be possible, because the top-level
 
-    # e.g. < is an error
+    # This includes < - it is not BadLessThan because it's NOT recoverable
     (r'.', attr_name.Invalid),
 ]
 
@@ -481,49 +481,16 @@ A_VALUE_LEX_COMPILED = MakeLexer(A_VALUE_LEX)
 
 class AttrLexer(object):
     """
-    We can also invert this
+    Typical usage:
 
-    Unquoted (List[h8_id] tok_ids, List[int] end_pos)
+    while True:
+        n, start_pos, end_pos = attr_lx.ReadName()
+        if n == attr_name.Ok:
+            if attr_lx.AttrNameEquals('div'):
+              print('div')
 
-    It would be nice to have a special case for the singleton, since that is
-    very common.
-
-    Simple (int tag_name_start, int tag_name_end, int attr_value_tag,
-            int value_start, int value_end)
-    This would cover many cases
-
-    The other option is to create many different events, and have AttrValueLexer
-    But I think that is annoying and overly detailed.
-
-    Operations:
-    - GetAttrRaw('foo')
-    - AllAttrsRaw()
-    - AllAttrsRawSlice()
-
-    class= query - well we can do this with Space tokens I think - we should
-      have an optimization
-    id= query - ditto, we should just have a predicate
-
-    Zero allocs:
-    tag query - TagNameEquals()
-
-    So I guess we have to write a HasClass('foo') and IdEquals('bar') on top of
-    this.  Yes.
-
-    tag_lx.Reset2(...)              # we should pass it the tag_name_end position
-    tag_lx.Read() -> bool           # success or fail?  Or Attr or Invalid
-          .AttrNameEquals('foo') -> bool   # id and class query
-          .GetAttrName() -> str            # for getting them all
-          .GetRawValue() -> Tuple[h8_tag_id, start, end]  # just beginning and end
-          .GetValueTokens() -> Tuple[h8_tag_id, TokenList]
-          .TokenList = Tuple[List[h8_id], List[int end_pos]
-
-    You could also have
-
-    tag_lx.GetValueTokenId() -> Tuple[h8_id, end_pos]
-
-    And then you read it until it's " or ' or space ?  We probably won't have
-    that use case to start.
+            # TODO: also pass Optional[List[]] out_tokens?
+            v, start_pos, end_pos = attr_lx.ReadRawValue()
     """
 
     def __init__(self, s):
@@ -614,6 +581,20 @@ class AttrLexer(object):
         """
         return expected == self._CanonicalAttrName()
 
+    def _QuotedRead(self):
+        # type: () -> Tuple[h8_id, end_pos]
+
+        for pat, tok_id in QUOTED_VALUE_LEX_COMPILED:
+            m = pat.match(self.s, self.pos)
+            if m:
+                end_pos = m.end(0)  # Advance
+                log('_QuotedRead %r', self.s[self.pos:end_pos])
+                return tok_id, end_pos
+        else:
+            context = self.s[self.pos:self.pos + 10]
+            raise AssertionError('h8_id.Invalid rule should have matched %r' %
+                                 context)
+
     def ReadRawValue(self):
         # type: () -> Tuple[attr_value_t, int, int]
         """Read the attribute value.
@@ -632,28 +613,43 @@ class AttrLexer(object):
 
         if self.next_value_is_missing:
             return attr_value_e.Missing, -1, -1
-        else:
-            # Now read " ', unquoted or empty= is valid too.
-            for pat, a in A_VALUE_LEX_COMPILED:
-                m = pat.match(self.s, self.pos)
-                if m:
-                    self.pos = m.end(0)  # Advance
 
-                    log('m %s', m.groups())
-                    if a == h8_val_id.UnquotedVal:
-                        return attr_value_e.Unquoted, m.start(0), m.end(0)
-                    if a == h8_val_id.DoubleQuote:
-                        # TODO: read until "
-                        return attr_value_e.DoubleQuoted, m.start(0), m.end(0)
-                    if a == h8_val_id.SingleQuote:
-                        # TODO: read until '
-                        return attr_value_e.SingleQuoted, m.start(0), m.end(0)
-                    if a == h8_val_id.NoMatch:
-                        # <a foo = >
-                        return attr_value_e.Empty, -1, -1
-            else:
-                raise AssertionError(
-                    'h8_val_id.NoMatch rule should have matched')
+        # Now read " ', unquoted or empty= is valid too.
+        for pat, a in A_VALUE_LEX_COMPILED:
+            m = pat.match(self.s, self.pos)
+            if m:
+                self.pos = m.end(0)  # Advance
+
+                #log('m %s', m.groups())
+                if a == h8_val_id.UnquotedVal:
+                    return attr_value_e.Unquoted, m.start(0), m.end(0)
+
+                if a == h8_val_id.DoubleQuote:
+                    left_inner = self.pos
+                    while True:
+                        tok_id, q_end_pos = self._QuotedRead()
+                        if tok_id == h8_id.Invalid:
+                            raise LexError(self.s, self.pos)
+                        if tok_id == h8_id.DoubleQuote:
+                            return attr_value_e.DoubleQuoted, left_inner, self.pos
+                        self.pos = q_end_pos  # advance
+
+                if a == h8_val_id.SingleQuote:
+
+                    left_inner = self.pos
+                    while True:
+                        tok_id, q_end_pos = self._QuotedRead()
+                        if tok_id == h8_id.Invalid:
+                            raise LexError(self.s, self.pos)
+                        if tok_id == h8_id.SingleQuote:
+                            return attr_value_e.SingleQuoted, left_inner, self.pos
+                        self.pos = q_end_pos  # advance
+
+                if a == h8_val_id.NoMatch:
+                    # <a foo = >
+                    return attr_value_e.Empty, -1, -1
+        else:
+            raise AssertionError('h8_val_id.NoMatch rule should have matched')
 
     def SkipValue(self):
         # type: () -> None
@@ -897,6 +893,17 @@ ATTR_VALUE_LEX = CHAR_LEX + [
 ]
 
 ATTR_VALUE_LEX_COMPILED = MakeLexer(ATTR_VALUE_LEX)
+
+QUOTED_VALUE_LEX = CHAR_LEX + [
+    (r'"', h8_id.DoubleQuote),
+    (r"'", h8_id.SingleQuote),
+    (r'<', h8_id.BadLessThan),  # BadAmpersand is in CharLex
+    (r'''[^"'<>&\x00]+''', h8_id.RawData),
+    # This includes > - it is not BadGreaterThan because it's NOT recoverable
+    (r'.', h8_id.Invalid),
+]
+
+QUOTED_VALUE_LEX_COMPILED = MakeLexer(QUOTED_VALUE_LEX)
 
 
 class AttrValueLexer(object):
