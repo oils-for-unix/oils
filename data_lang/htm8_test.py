@@ -391,7 +391,8 @@ def ValidTokenList(s, no_special_tags=False):
         if tok_id == h8_id.EndOfStream:
             break
         if tok_id == h8_id.Invalid:
-            raise htm8.LexError(s, start_pos)
+            raise htm8.LexError('ValidTokenList() got invalid token', s,
+                                start_pos)
         start_pos = end_pos
     return tokens
 

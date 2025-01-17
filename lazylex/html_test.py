@@ -245,6 +245,10 @@ VALID_PARSE = [
     ('<STYLE><</STYLE>', ''),
     #'<SCRipt><</script>',
 
+    # Regression test from blog
+    ('<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>',
+     '')
+
     # Note: Python HTMLParser.py does DYNAMIC compilation of regex with re.I
     # flag to handle this!  Gah I want something faster.
     #'<script><</SCRIPT>',

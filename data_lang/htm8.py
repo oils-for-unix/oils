@@ -591,12 +591,13 @@ class AttrLexer(object):
                         self.next_value_is_missing = True
                         # HACK: REWIND, since we don't want to consume whitespace
                         self.pos = self.name_end
+                    else:
+                        self.next_value_is_missing = False
                     return attr_name.Ok, self.name_start, self.name_end
                 else:
                     # Reset state - e.g. you must call AttrNameEquals
                     self.name_start = -1
                     self.name_end = -1
-                    self.next_value_is_missing = False
 
                 if a == attr_name.Done:
                     return attr_name.Done, -1, -1
@@ -746,8 +747,8 @@ def AllAttrsRaw(attr_lx):
     while True:
         n, name_start, name_end = attr_lx.ReadName()
         if 0:
-            log('  AllAttrsRaw ==> ReadName %s %d %d', attr_name_str(n),
-                name_start, name_end)
+            log('  AllAttrsRaw ==> ReadName %s %d %d %r', attr_name_str(n),
+                name_start, name_end, attr_lx.s[attr_lx.pos:attr_lx.pos + 10])
         if n == attr_name.Ok:
             name = attr_lx.s[name_start:name_end]
             #log('  Name %r', name)
