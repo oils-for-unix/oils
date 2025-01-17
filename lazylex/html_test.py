@@ -186,12 +186,25 @@ VALID_LEX = [
 
     # Allowed with BadAmpersand
     ('<p> x & y </p>', '<p> x &amp; y </p>'),
+
+    # No ambiguity
+    ('<img src=/ >', ''),
+    ('<img src="/">', ''),
+    ('<img src=foo/ >', ''),
 ]
 
 INVALID_PARSE = [
     '<a></b>',
     '<a>',  # missing closing tag
     '<meta></meta>',  # this is a self-closing tag
+]
+
+INVALID_ATTR_LEX = [
+    # Ambiguous, should be ""
+    '<img src=/>',
+    '<img src= />',
+    '<img src=foo/>',
+    '<img src= foo/>',
 ]
 
 VALID_PARSE = [
@@ -276,7 +289,7 @@ class ValidateTest(unittest.TestCase):
         counters = html.Counters()
         for s in INVALID_LEX + INVALID_TAG_LEX:
             try:
-                html.Validate(s, html.BALANCED_TAGS, counters)
+                html.ValidateOld(s, html.BALANCED_TAGS, counters)
             except html.LexError as e:
                 print(e)
             else:
@@ -284,7 +297,7 @@ class ValidateTest(unittest.TestCase):
 
         for s in INVALID_PARSE:
             try:
-                html.Validate(s, html.BALANCED_TAGS, counters)
+                html.ValidateOld(s, html.BALANCED_TAGS, counters)
             except html.ParseError as e:
                 print(e)
             else:
@@ -294,7 +307,7 @@ class ValidateTest(unittest.TestCase):
         # type: () -> None
         counters = html.Counters()
         for s, _ in VALID_PARSE:
-            html.Validate(s, html.BALANCED_TAGS, counters)
+            html.ValidateOld(s, html.BALANCED_TAGS, counters)
             print('HTML5 %r' % s)
             #print('HTML5 attrs %r' % counters.debug_attrs)
 
@@ -310,7 +323,7 @@ class ValidateTest(unittest.TestCase):
     def testInvalid(self):
         # type: () -> None
         counters = html.Counters()
-        for s in INVALID_LEX + INVALID_TAG_LEX:
+        for s in INVALID_LEX + INVALID_TAG_LEX + INVALID_ATTR_LEX:
             try:
                 html.Validate(s, html.BALANCED_TAGS, counters)
             except html.LexError as e:
@@ -330,17 +343,17 @@ class ValidateTest(unittest.TestCase):
         # type: () -> None
         counters = html.Counters()
         for s, _ in VALID_PARSE:
-            html.Validate(s, html.BALANCED_TAGS, counters)
             print('HTML5 %r' % s)
+            html.Validate(s, html.BALANCED_TAGS, counters)
             #print('HTML5 attrs %r' % counters.debug_attrs)
 
     def testValidXml(self):
         # type: () -> None
         counters = html.Counters()
         for s in VALID_XML:
+            print('XML %r' % s)
             html.Validate(s, html.BALANCED_TAGS | html.NO_SPECIAL_TAGS,
                           counters)
-            print('XML %r' % s)
             #print('XML attrs %r' % counters.debug_attrs)
 
 

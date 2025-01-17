@@ -64,7 +64,7 @@ def _MakeAttrLexer(t, h, expected_tag=h8_id.StartTag):
     t.assertEqual(expected_tag, tok_id)
 
     attr_lx = htm8.AttrLexer(h)
-    attr_lx.Init(lx.TagNamePos(), end_pos)
+    attr_lx.Init(tok_id, lx.TagNamePos(), end_pos)
 
     return attr_lx
 
@@ -88,7 +88,7 @@ class AttrLexerTest(unittest.TestCase):
         self.assertEqual(h8_id.StartTag, tok_id)
 
         attr_lx = htm8.AttrLexer(h)
-        attr_lx.Init(lx.TagNamePos(), end_pos)
+        attr_lx.Init(tok_id, lx.TagNamePos(), end_pos)
 
         # There is no tag
         n, name_start, name_end = attr_lx.ReadName()
@@ -127,8 +127,8 @@ class AttrLexerTest(unittest.TestCase):
             self.fail('should have failed')
 
     def testEmpty(self):
-        h = '<img src=/>'
-        attr_lx = _MakeAttrLexer(self, h, expected_tag=h8_id.StartEndTag)
+        h = '<img src=>'
+        attr_lx = _MakeAttrLexer(self, h, expected_tag=h8_id.StartTag)
 
         n, name_start, name_end = attr_lx.ReadName()
         self.assertEqual(n, attr_name.Ok)
@@ -171,7 +171,7 @@ class AttrLexerTest(unittest.TestCase):
 
     def testUnquoted(self):
         # CAREFUL: /> is a StartEndTag, and / is not part of unquoted value
-        h = '<a x=foo/>'
+        h = '<a x=foo />'
         attr_lx = _MakeAttrLexer(self, h, expected_tag=h8_id.StartEndTag)
 
         n, name_start, name_end = attr_lx.ReadName()

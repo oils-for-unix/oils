@@ -461,8 +461,8 @@ A_NAME_LEX_COMPILED = MakeLexer(A_NAME_LEX)
 # Bug fix: Also disallow /
 
 # TODO: get rid of OLD copy
-_UNQUOTED_VALUE_OLD = r'''[^ \t\r\n<>&/"'\x00]*'''
-_UNQUOTED_VALUE = r'''[^ \t\r\n<>&/"'\x00]+'''
+_UNQUOTED_VALUE_OLD = r'''[^ \t\r\n<>&"'\x00]*'''
+_UNQUOTED_VALUE = r'''[^ \t\r\n<>&"'\x00]+'''
 
 # Restrictive definition, similar to _NAME
 # I was trying to capture #ble.sh and so forth
@@ -515,8 +515,12 @@ class AttrLexer(object):
     def __init__(self, s):
         # type: (str) -> None
         self.s = s
+
+        self.tok_id = h8_id.Invalid  # Uninitialized
         self.tag_name_pos = -1  # Invalid
         self.tag_end_pos = -1
+        self.must_not_exceed_pos = -1
+
         self.pos = -1
 
         self.name_start = -1
@@ -526,8 +530,8 @@ class AttrLexer(object):
         self.init_t = -1
         self.init_e = -1
 
-    def Init(self, tag_name_pos, end_pos):
-        # type: (int, int) -> None
+    def Init(self, tok_id, tag_name_pos, end_pos):
+        # type: (h8_id_t, int, int) -> None
         """Initialize so we can read names and values.
 
         Example:
@@ -541,8 +545,17 @@ class AttrLexer(object):
 
         #log('TAG NAME POS %d', tag_name_pos)
 
+        self.tok_id = tok_id
         self.tag_name_pos = tag_name_pos
         self.end_pos = end_pos
+
+        # Check for ambiguous <img src=/>
+        if tok_id == h8_id.StartTag:
+            self.must_not_exceed_pos = end_pos - 1  # account for >
+        elif tok_id == h8_id.StartEndTag:
+            self.must_not_exceed_pos = end_pos - 2  # account for />
+        else:
+            raise AssertionError(tok_id)
 
         self.pos = tag_name_pos
 
@@ -671,11 +684,20 @@ class AttrLexer(object):
             m = pat.match(self.s, self.pos)
             if m:
                 first_end_pos = m.end(0)
+                # We shouldn't go past the end
+                assert first_end_pos <= self.end_pos, \
+                        'first_end_pos = %d should be less than self.end_pos = %d' % (first_end_pos, self.end_pos)
                 #log('m %s', m.groups())
 
                 # Note: Unquoted value can't contain &amp; etc. now, so there
                 # is no unquoting, and no respecting tokens_raw.
                 if a == h8_val_id.UnquotedVal:
+                    if first_end_pos > self.must_not_exceed_pos:
+                        #log('first_end_pos %d', first_end_pos)
+                        #log('must_not_exceed_pos %d', self.must_not_exceed_pos)
+                        raise LexError(
+                            'Ambiguous slash: last attribute should be quoted',
+                            self.s, first_end_pos)
                     self.pos = first_end_pos  # Advance
                     return attr_value_e.Unquoted, m.start(0), first_end_pos
 

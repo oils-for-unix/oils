@@ -294,7 +294,7 @@ def Validate(contents, flags, counters):
         if tok_id == h8_id.StartEndTag:
             counters.num_start_end_tags += 1
 
-            attr_lx.Init(lx.TagNamePos(), end_pos)
+            attr_lx.Init(tok_id, lx.TagNamePos(), end_pos)
             all_attrs = htm8.AllAttrsRaw(attr_lx)
             counters.num_attrs += len(all_attrs)
             # TODO: val_lexer.NumTokens() can be replaced with tokens_out
@@ -302,7 +302,7 @@ def Validate(contents, flags, counters):
         elif tok_id == h8_id.StartTag:
             counters.num_start_tags += 1
 
-            attr_lx.Init(lx.TagNamePos(), end_pos)
+            attr_lx.Init(tok_id, lx.TagNamePos(), end_pos)
             all_attrs = htm8.AllAttrsRaw(attr_lx)
             counters.num_attrs += len(all_attrs)
 
