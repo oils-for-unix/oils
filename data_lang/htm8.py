@@ -4,13 +4,13 @@ TODO
 
 Migrate:
 
-- Fix regtest errors from Validate(), remove ValidateOld()
 - doctools/ul_table.py should use new AttrLexer
   - AllAttrsRaw()
 - maybe: migrate everything off of TagLexer() 
   - and AttrValueLexer() - this should requires Validate()
 
 API:
+- Get rid of Reset()?
 - Deprecate tag_lexer.GetTagName() in favor of lx.CanonicalTagName() or
   _LiteralTagName()
 - UTF-8 check, like JSON8
@@ -20,9 +20,8 @@ API:
     - for finding the end of a tag, etc.?
   - and what about no match?
 
-- LexError and ParseError need details
-  - harmonize with data_lang/j8.py, which uses error.Decode(msg, ...,
-    cur_line_num)
+- harmonize LexError and ParseError with data_lang/j8.py, which uses
+  error.Decode(msg, ..., cur_line_num)
 
 - Copy all errors into doc/ref/chap-errors.md
   - This helps understand the language
@@ -119,8 +118,10 @@ class ParseError(Exception):
 
 
 class Output(object):
-    """Takes an underlying input buffer and an output file.  Maintains a
-    position in the input buffer.
+    """Output for sed-like "replacement" model.
+
+    Takes an underlying input buffer and an output file.  Maintains a position
+    in the input buffer.
 
     Print FROM the input or print new text to the output.
     """
@@ -160,39 +161,8 @@ def MakeLexer(rules):
 
 
 #
-# Eggex
+# Lexers
 #
-# Tag      = / ~['>']+ /
-
-# Is this valid?  A single character?
-# Tag      = / ~'>'* /
-
-# Maybe better: / [NOT '>']+/
-# capital letters not allowed there?
-#
-# But then this is confusing:
-# / [NOT ~digit]+/
-#
-# / [NOT digit] / is [^\d]
-# / ~digit /      is \D
-#
-# Or maybe:
-#
-# / [~ digit]+ /
-# / [~ '>']+ /
-# / [NOT '>']+ /
-
-# End      = / '</' Tag  '>' /
-# StartEnd = / '<'  Tag '/>' /
-# Start    = / '<'  Tag  '>' /
-#
-# EntityRef = / '&' dot{* N} ';' /
-
-# Tag name, or attribute name
-# colon is used in XML
-
-# https://www.w3.org/TR/xml/#NT-Name
-# Hm there is a lot of unicode stuff.  We are simplifying parsing
 
 _NAME = r'[a-zA-Z][a-zA-Z0-9:_\-]*'  # must start with letter
 
@@ -254,7 +224,7 @@ HTM8_LEX = CHAR_LEX + [
     (r'.', h8_id.Invalid),
 ]
 
-#  Old notes:
+# Old notes:
 #
 # Non-greedy matches are regular and can be matched in linear time
 # with RE2.
@@ -451,26 +421,10 @@ A_NAME_LEX_COMPILED = MakeLexer(A_NAME_LEX)
 # <a href = what"foo" >        # HTML5 allows this, but we could disallow it if
 # it's not common.  It opens up the j"" and $"" extensions
 # <a href = what'foo' >        # ditto
-#
-# Problem:  <a href=foo/> - this is hard to recognize
-# Because is the unquoted value "foo/" or "foo" ?
-
-# Be very lenient - just no whitespace or special HTML chars
-# I don't think this is more lenient than HTML5, though we should check.
-#
-# Bug fix: Also disallow /
 
 # TODO: get rid of OLD copy
 _UNQUOTED_VALUE_OLD = r'''[^ \t\r\n<>&"'\x00]*'''
 _UNQUOTED_VALUE = r'''[^ \t\r\n<>&"'\x00]+'''
-
-# Restrictive definition, similar to _NAME
-# I was trying to capture #ble.sh and so forth
-# I also had unquoted //github.com, etc.
-
-# _UNQUOTED_VALUE = r'''[a-zA-Z0-9:_\-]+'''
-#
-# For now, I guess we live with <a href=?foo/>
 
 # What comes after = ?
 A_VALUE_LEX = [
@@ -538,7 +492,7 @@ class AttrLexer(object):
           'x <a y>'  # tag_name_pos=4, end_pos=6
           'x <a>'    # tag_name_pos=4, end_pos=4
 
-        The Reset() method is used to reuse instances of the AttrLexer object.
+        The Init() method is used to reuse instances of the AttrLexer object.
         """
         assert tag_name_pos >= 0, tag_name_pos
         assert end_pos >= 0, end_pos
@@ -1008,73 +962,3 @@ class TagLexer(object):
         #log('_TAG_LAST_RE match %r', self.s[pos:])
         if not m:
             raise LexError('Extra data at end of tag', self.s, pos)
-
-
-# This is similar but not identical to
-#    " ([^>"\x00]*) "    # double quoted value
-#  | ' ([^>'\x00]*) '    # single quoted value
-#
-# Note: for unquoted values, & isn't allowed, and thus &amp; and &#99; and
-# &#x99; are not allowed.  We could relax that?
-ATTR_VALUE_LEX = CHAR_LEX + [
-    (r'[^>&\x00]+', h8_id.RawData),
-    (r'.', h8_id.Invalid),
-]
-
-ATTR_VALUE_LEX_COMPILED = MakeLexer(ATTR_VALUE_LEX)
-
-
-class AttrValueLexer(object):
-    """
-    <a href="foo=99&amp;bar">
-    <a href='foo=99&amp;bar'>
-    <a href=unquoted>
-    """
-
-    def __init__(self, s):
-        # type: (str) -> None
-        self.s = s
-        self.start_pos = -1  # Invalid
-        self.end_pos = -1
-
-    def Reset(self, start_pos, end_pos):
-        # type: (int, int) -> None
-        """Reuse instances of this object."""
-        assert start_pos >= 0, start_pos
-        assert end_pos >= 0, end_pos
-
-        self.start_pos = start_pos
-        self.end_pos = end_pos
-
-    def NumTokens(self):
-        # type: () -> int
-        num_tokens = 0
-        pos = self.start_pos
-        for tok_id, end_pos in self.Tokens():
-            if tok_id == h8_id.Invalid:
-                raise LexError('AttrValueLexer got invalid token', self.s, pos)
-            pos = end_pos
-            #log('pos %d', pos)
-            num_tokens += 1
-        return num_tokens
-
-    def Tokens(self):
-        # type: () -> Iterator[Tuple[h8_id_t, int]]
-        pos = self.start_pos
-        while pos < self.end_pos:
-            # Find the first match, like above.
-            # Note: frontend/match.py uses _LongestMatch(), which is different!
-            # TODO: reconcile them.  This lexer should be expressible in re2c.
-            for pat, tok_id in ATTR_VALUE_LEX_COMPILED:
-                m = pat.match(self.s, pos)
-                if m:
-                    if 0:
-                        tok_str = m.group(0)
-                        log('token = %r', tok_str)
-
-                    end_pos = m.end(0)
-                    yield tok_id, end_pos
-                    pos = end_pos
-                    break
-            else:
-                raise AssertionError('h8_id.Invalid rule should have matched')

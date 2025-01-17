@@ -9,8 +9,7 @@ from __future__ import print_function
 
 from _devbuild.gen.htm8_asdl import (h8_id, h8_id_t, h8_id_str)
 from data_lang import htm8
-from data_lang.htm8 import (Lexer, TagLexer, AttrValueLexer, LexError,
-                            ParseError, Output)
+from data_lang.htm8 import (Lexer, TagLexer, LexError, ParseError, Output)
 from doctools.util import log
 
 try:
@@ -184,92 +183,6 @@ NO_SPECIAL_TAGS = 1 << 3  # <script> <style>, VOID tags, etc.
 BALANCED_TAGS = 1 << 4  # are tags balanced?
 
 
-def ValidateOld(contents, flags, counters):
-    # type: (str, int, Counters) -> None
-
-    tag_lexer = TagLexer(contents)
-    val_lexer = AttrValueLexer(contents)
-
-    no_special_tags = bool(flags & NO_SPECIAL_TAGS)
-    lx = Lexer(contents, no_special_tags=no_special_tags)
-    tokens = []
-    start_pos = 0
-    tag_stack = []
-    while True:
-        tok_id, end_pos = lx.Read()
-        #log('TOP %s %r', h8_id_str(tok_id), contents[start_pos:end_pos])
-
-        if tok_id == h8_id.Invalid:
-            raise LexError('ValidateOld() got invalid token', contents,
-                           start_pos)
-        if tok_id == h8_id.EndOfStream:
-            break
-
-        tokens.append((tok_id, end_pos))
-
-        if tok_id == h8_id.StartEndTag:
-            counters.num_start_end_tags += 1
-
-            tag_lexer.Reset(start_pos, end_pos)
-            all_attrs = tag_lexer.AllAttrsRawSlice()
-            counters.num_attrs += len(all_attrs)
-            for name, val_start, val_end in all_attrs:
-                val_lexer.Reset(val_start, val_end)
-                counters.num_val_tokens += val_lexer.NumTokens()
-
-            #counters.debug_attrs.extend(all_attrs)
-
-        elif tok_id == h8_id.StartTag:
-            counters.num_start_tags += 1
-
-            tag_lexer.Reset(start_pos, end_pos)
-            all_attrs = tag_lexer.AllAttrsRawSlice()
-            counters.num_attrs += len(all_attrs)
-            for name, val_start, val_end in all_attrs:
-                val_lexer.Reset(val_start, val_end)
-                counters.num_val_tokens += val_lexer.NumTokens()
-
-            #counters.debug_attrs.extend(all_attrs)
-
-            if flags & BALANCED_TAGS:
-                tag_name = lx.CanonicalTagName()
-                if flags & NO_SPECIAL_TAGS:
-                    tag_stack.append(tag_name)
-                else:
-                    # e.g. <meta> is considered self-closing, like <meta/>
-                    if tag_name not in VOID_ELEMENTS:
-                        tag_stack.append(tag_name)
-
-            counters.max_tag_stack = max(counters.max_tag_stack,
-                                         len(tag_stack))
-        elif tok_id == h8_id.EndTag:
-            if flags & BALANCED_TAGS:
-                try:
-                    expected = tag_stack.pop()
-                except IndexError:
-                    raise ParseError('Tag stack empty',
-                                     s=contents,
-                                     start_pos=start_pos)
-
-                actual = lx.CanonicalTagName()
-                if expected != actual:
-                    raise ParseError(
-                        'Got unexpected closing tag %r; opening tag was %r' %
-                        (contents[start_pos:end_pos], expected),
-                        s=contents,
-                        start_pos=start_pos)
-
-        start_pos = end_pos
-
-    if len(tag_stack) != 0:
-        raise ParseError('Missing closing tags at end of doc: %s' %
-                         ' '.join(tag_stack),
-                         s=contents,
-                         start_pos=start_pos)
-
-    counters.num_tokens += len(tokens)
-
-
 def Validate(contents, flags, counters):
     # type: (str, int, Counters) -> None
 
@@ -360,7 +273,6 @@ def ToXml(htm8_str):
     # 5. case-sensitive tag matching - not sure about this
 
     tag_lexer = TagLexer(htm8_str)
-    val_lexer = AttrValueLexer(htm8_str)
 
     f = StringIO()
     out = Output(htm8_str, f)
@@ -384,7 +296,8 @@ def ToXml(htm8_str):
             # TODO: reduce allocations here
             all_attrs = tag_lexer.AllAttrsRawSlice()
             for name, val_start, val_end in all_attrs:
-                val_lexer.Reset(val_start, val_end)
+                #val_lexer.Reset(val_start, val_end)
+                pass
                 # TODO: get the kind of string
                 #
                 # Quoted:   we need to replace & with &amp; and < with &lt;

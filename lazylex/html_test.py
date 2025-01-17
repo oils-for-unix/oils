@@ -117,22 +117,6 @@ class TagLexerTest(unittest.TestCase):
             self.fail('Expected LexError')
 
 
-def _MakeAttrValueLexer(s):
-    # type: (str) -> html.AttrValueLexer
-    lex = html.AttrValueLexer(s)
-    lex.Reset(0, len(s))
-    return lex
-
-
-class AttrValueLexerTest(unittest.TestCase):
-
-    def testGood(self):
-        # type: () -> None
-        lex = _MakeAttrValueLexer('?foo=42&amp;bar=99')
-        n = lex.NumTokens()
-        self.assertEqual(3, n)
-
-
 class LexerTest(unittest.TestCase):
 
     def testInvalid(self):
@@ -205,6 +189,10 @@ INVALID_ATTR_LEX = [
     '<img src= />',
     '<img src=foo/>',
     '<img src= foo/>',
+
+    # Quoting
+    '<img src=x"y">',
+    "<img src=j''>",
 ]
 
 VALID_PARSE = [
@@ -283,42 +271,6 @@ INVALID_TAG_LEX = [
 
 
 class ValidateTest(unittest.TestCase):
-
-    def testInvalidOld(self):
-        # type: () -> None
-        counters = html.Counters()
-        for s in INVALID_LEX + INVALID_TAG_LEX:
-            try:
-                html.ValidateOld(s, html.BALANCED_TAGS, counters)
-            except html.LexError as e:
-                print(e)
-            else:
-                self.fail('Expected LexError %r' % s)
-
-        for s in INVALID_PARSE:
-            try:
-                html.ValidateOld(s, html.BALANCED_TAGS, counters)
-            except html.ParseError as e:
-                print(e)
-            else:
-                self.fail('Expected ParseError')
-
-    def testValidOld(self):
-        # type: () -> None
-        counters = html.Counters()
-        for s, _ in VALID_PARSE:
-            html.ValidateOld(s, html.BALANCED_TAGS, counters)
-            print('HTML5 %r' % s)
-            #print('HTML5 attrs %r' % counters.debug_attrs)
-
-    def testValidXmlOld(self):
-        # type: () -> None
-        counters = html.Counters()
-        for s in VALID_XML:
-            html.ValidateOld(s, html.BALANCED_TAGS | html.NO_SPECIAL_TAGS,
-                             counters)
-            print('XML %r' % s)
-            #print('XML attrs %r' % counters.debug_attrs)
 
     def testInvalid(self):
         # type: () -> None
