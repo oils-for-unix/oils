@@ -2,11 +2,15 @@
 
 TODO
 
+Migrate:
+
+- Fix regtest errors from Validate(), remove ValidateOld()
+- doctools/ul_table.py should use new AttrLexer
+  - AllAttrsRaw()
+- maybe: migrate everything off of TagLexer() 
+  - and AttrValueLexer() - this should requires Validate()
+
 API:
-- Get rid of AttrValueLexer - this should be in the TagLexer 
-  - this also means that unquoted values can be more similar
-  - We can use a single lexer mode for everything inside <>
-    - the SPACE is the only difference
 - Deprecate tag_lexer.GetTagName() in favor of lx.CanonicalTagName() or
   _LiteralTagName()
 - UTF-8 check, like JSON8
@@ -14,6 +18,7 @@ API:
   - port lexer, which will fix static typing issues
   - the abstraction needs to support submatch?
     - for finding the end of a tag, etc.?
+  - and what about no match?
 
 - LexError and ParseError need details
   - harmonize with data_lang/j8.py, which uses error.Decode(msg, ...,
@@ -57,14 +62,16 @@ class LexError(Exception):
     - Unclosed <!--  <?  <![CDATA[  <script>  <style>
     """
 
-    def __init__(self, s, start_pos):
-        # type: (str, int) -> None
-        self.s = s
+    def __init__(self, msg, code_str, start_pos):
+        # type: (str, str, int) -> None
+        self.msg = msg
+        self.code_str = code_str
         self.start_pos = start_pos
 
     def __str__(self):
         # type: () -> str
-        return '(LexError %r)' % (self.s[self.start_pos:self.start_pos + 20])
+        return '(LexError %r %r)' % (
+            self.msg, self.code_str[self.start_pos:self.start_pos + 20])
 
 
 def _FindLineNum(s, error_pos):
@@ -308,8 +315,8 @@ class Lexer(object):
             # tag name for 'script' or 'style'.
             pos = self.s.find(self.search_state, self.pos)
             if pos == -1:
-                # unterminated <script> or <style>
-                raise LexError(self.s, self.pos)
+                raise LexError('Unterminated <script> or <style>', self.s,
+                               self.pos)
             self.search_state = None
             # beginning
             return h8_id.HtmlCData, pos
@@ -332,22 +339,21 @@ class Lexer(object):
                 if tok_id == h8_id.CommentBegin:
                     pos = self.s.find('-->', self.pos)
                     if pos == -1:
-                        # unterminated <!--
-                        raise LexError(self.s, self.pos)
+                        raise LexError('Unterminated <!--', self.s, self.pos)
                     return h8_id.Comment, pos + 3  # -->
 
                 if tok_id == h8_id.ProcessingBegin:
                     pos = self.s.find('?>', self.pos)
                     if pos == -1:
-                        # unterminated <?
-                        raise LexError(self.s, self.pos)
+                        raise LexError('Unterminated <?', self.s, self.pos)
                     return h8_id.Processing, pos + 2  # ?>
 
                 if tok_id == h8_id.CDataBegin:
                     pos = self.s.find(']]>', self.pos)
                     if pos == -1:
                         # unterminated <![CDATA[
-                        raise LexError(self.s, self.pos)
+                        raise LexError('Unterminated <![CDATA[', self.s,
+                                       self.pos)
                     return h8_id.CData, pos + 3  # ]]>
 
                 if tok_id == h8_id.StartTag:
@@ -362,6 +368,7 @@ class Lexer(object):
             raise AssertionError('h8_id.Invalid rule should have matched')
 
     def TagNamePos(self):
+        # type: () -> int
         """The right position of the tag pos"""
         assert self.tag_pos_right != -1, self.tag_pos_right
         return self.tag_pos_right
@@ -470,11 +477,6 @@ A_VALUE_LEX = [
     (r'"', h8_val_id.DoubleQuote),
     (r"'", h8_val_id.SingleQuote),
     (_UNQUOTED_VALUE, h8_val_id.UnquotedVal),
-
-    #(r'[ \r\n\t]', h8_id.Whitespace),  # terminates unquoted values
-    #(r'[^ \r\n\t&>\x00]', h8_id.RawData),
-    #(r'[>\x00]', h8_id.EndOfStream),
-    # e.g. < is an error
     (r'.', h8_val_id.NoMatch),
 ]
 
@@ -485,6 +487,9 @@ QUOTED_VALUE_LEX = CHAR_LEX + [
     (r'"', h8_id.DoubleQuote),
     (r"'", h8_id.SingleQuote),
     (r'<', h8_id.BadLessThan),  # BadAmpersand is in CharLex
+
+    # TODO: think about whitespace for efficient class= queries?
+    #(r'[ \r\n\t]', h8_id.Whitespace),  # terminates unquoted values
     (r'''[^"'<>&\x00]+''', h8_id.RawData),
     # This includes > - it is not BadGreaterThan because it's NOT recoverable
     (r'.', h8_id.Invalid),
@@ -546,6 +551,10 @@ class AttrLexer(object):
         self.init_e = end_pos
 
     def Reset(self):
+        # type: () -> None
+
+        # TODO: maybe GetAttrRaw() should call this directly?  But not any of
+        # the AllAttrs() methods?
         self.tag_name_pos = self.init_t
         self.end_pos = self.init_e
         self.pos = self.init_t
@@ -676,7 +685,9 @@ class AttrLexer(object):
                         tok_id, q_end_pos = self._QuotedRead()
                         #log('self.pos %d q_end_pos %d', self.pos, q_end_pos)
                         if tok_id == h8_id.Invalid:
-                            raise LexError(self.s, self.pos)
+                            raise LexError(
+                                'ReadValue() got invalid token (DQ)', self.s,
+                                self.pos)
                         if tok_id == h8_id.DoubleQuote:
                             right_pos = self.pos
                             self.pos = q_end_pos  # Advance past "
@@ -689,7 +700,9 @@ class AttrLexer(object):
                     while True:
                         tok_id, q_end_pos = self._QuotedRead()
                         if tok_id == h8_id.Invalid:
-                            raise LexError(self.s, self.pos)
+                            raise LexError(
+                                'ReadValue() got invalid token (SQ)', self.s,
+                                self.pos)
                         if tok_id == h8_id.SingleQuote:
                             right_pos = self.pos
                             self.pos = q_end_pos  # Advance past "
@@ -719,7 +732,8 @@ def GetAttrRaw(attr_lx, name):
         elif n == attr_name.Done:
             break
         elif n == attr_name.Invalid:
-            raise LexError(attr_lx.s, attr_lx.pos)
+            raise LexError('GetAttrRaw() got invalid token', attr_lx.s,
+                           attr_lx.pos)
         else:
             raise AssertionError()
 
@@ -745,7 +759,8 @@ def AllAttrsRaw(attr_lx):
         elif n == attr_name.Done:
             break
         elif n == attr_name.Invalid:
-            raise LexError(attr_lx.s, attr_lx.pos)
+            raise LexError('AllAttrsRaw() got invalid token', attr_lx.s,
+                           attr_lx.pos)
         else:
             raise AssertionError()
 
@@ -969,8 +984,7 @@ class TagLexer(object):
         m = _TAG_LAST_RE.match(self.s, pos)
         #log('_TAG_LAST_RE match %r', self.s[pos:])
         if not m:
-            # Extra data at end of tag.  TODO: add messages for all these.
-            raise LexError(self.s, pos)
+            raise LexError('Extra data at end of tag', self.s, pos)
 
 
 # This is similar but not identical to
@@ -1015,7 +1029,7 @@ class AttrValueLexer(object):
         pos = self.start_pos
         for tok_id, end_pos in self.Tokens():
             if tok_id == h8_id.Invalid:
-                raise LexError(self.s, pos)
+                raise LexError('AttrValueLexer got invalid token', self.s, pos)
             pos = end_pos
             #log('pos %d', pos)
             num_tokens += 1

@@ -36,7 +36,7 @@ def RemoveComments(s):
             break
 
         if tok_id == h8_id.Invalid:
-            raise htm8.LexError(s, pos)
+            raise htm8.LexError('RemoveComments() got invalid token', s, pos)
 
         if tok_id == h8_id.Comment:
             value = s[pos:end_pos]

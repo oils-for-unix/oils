@@ -8,6 +8,7 @@ See doc/lazylex.md for details.
 from __future__ import print_function
 
 from _devbuild.gen.htm8_asdl import (h8_id, h8_id_t, h8_id_str)
+from data_lang import htm8
 from data_lang.htm8 import (Lexer, TagLexer, AttrValueLexer, LexError,
                             ParseError, Output)
 from doctools.util import log
@@ -49,7 +50,7 @@ def ValidTokens(s, left_pos=0, right_pos=-1):
     pos = left_pos
     for tok_id, end_pos in _Tokens(s, left_pos, right_pos):
         if tok_id == h8_id.Invalid:
-            raise LexError(s, pos)
+            raise LexError('ValidTokens() got invalid token', s, pos)
         yield tok_id, end_pos
         pos = end_pos
 
@@ -183,7 +184,7 @@ NO_SPECIAL_TAGS = 1 << 3  # <script> <style>, VOID tags, etc.
 BALANCED_TAGS = 1 << 4  # are tags balanced?
 
 
-def Validate(contents, flags, counters):
+def ValidateOld(contents, flags, counters):
     # type: (str, int, Counters) -> None
 
     tag_lexer = TagLexer(contents)
@@ -199,7 +200,8 @@ def Validate(contents, flags, counters):
         #log('TOP %s %r', h8_id_str(tok_id), contents[start_pos:end_pos])
 
         if tok_id == h8_id.Invalid:
-            raise LexError(contents, start_pos)
+            raise LexError('ValidateOld() got invalid token', contents,
+                           start_pos)
         if tok_id == h8_id.EndOfStream:
             break
 
@@ -268,6 +270,83 @@ def Validate(contents, flags, counters):
     counters.num_tokens += len(tokens)
 
 
+def Validate(contents, flags, counters):
+    # type: (str, int, Counters) -> None
+
+    attr_lx = htm8.AttrLexer(contents)
+
+    no_special_tags = bool(flags & NO_SPECIAL_TAGS)
+    lx = htm8.Lexer(contents, no_special_tags=no_special_tags)
+    tokens = []
+    start_pos = 0
+    tag_stack = []
+    while True:
+        tok_id, end_pos = lx.Read()
+        #log('TOP %s %r', h8_id_str(tok_id), contents[start_pos:end_pos])
+
+        if tok_id == h8_id.Invalid:
+            raise LexError('Validate() got invalid token', contents, start_pos)
+        if tok_id == h8_id.EndOfStream:
+            break
+
+        tokens.append((tok_id, end_pos))
+
+        if tok_id == h8_id.StartEndTag:
+            counters.num_start_end_tags += 1
+
+            attr_lx.Init(lx.TagNamePos(), end_pos)
+            all_attrs = htm8.AllAttrsRaw(attr_lx)
+            counters.num_attrs += len(all_attrs)
+            # TODO: val_lexer.NumTokens() can be replaced with tokens_out
+
+        elif tok_id == h8_id.StartTag:
+            counters.num_start_tags += 1
+
+            attr_lx.Init(lx.TagNamePos(), end_pos)
+            all_attrs = htm8.AllAttrsRaw(attr_lx)
+            counters.num_attrs += len(all_attrs)
+
+            #counters.debug_attrs.extend(all_attrs)
+
+            if flags & BALANCED_TAGS:
+                tag_name = lx.CanonicalTagName()
+                if flags & NO_SPECIAL_TAGS:
+                    tag_stack.append(tag_name)
+                else:
+                    # e.g. <meta> is considered self-closing, like <meta/>
+                    if tag_name not in VOID_ELEMENTS:
+                        tag_stack.append(tag_name)
+
+            counters.max_tag_stack = max(counters.max_tag_stack,
+                                         len(tag_stack))
+        elif tok_id == h8_id.EndTag:
+            if flags & BALANCED_TAGS:
+                try:
+                    expected = tag_stack.pop()
+                except IndexError:
+                    raise ParseError('Tag stack empty',
+                                     s=contents,
+                                     start_pos=start_pos)
+
+                actual = lx.CanonicalTagName()
+                if expected != actual:
+                    raise ParseError(
+                        'Got unexpected closing tag %r; opening tag was %r' %
+                        (contents[start_pos:end_pos], expected),
+                        s=contents,
+                        start_pos=start_pos)
+
+        start_pos = end_pos
+
+    if len(tag_stack) != 0:
+        raise ParseError('Missing closing tags at end of doc: %s' %
+                         ' '.join(tag_stack),
+                         s=contents,
+                         start_pos=start_pos)
+
+    counters.num_tokens += len(tokens)
+
+
 def ToXml(htm8_str):
     # type: (str) -> str
 
@@ -293,7 +372,7 @@ def ToXml(htm8_str):
         tok_id, end_pos = lx.Read()
 
         if tok_id == h8_id.Invalid:
-            raise LexError(htm8_str, pos)
+            raise LexError('ToXml() got invalid token', htm8_str, pos)
         if tok_id == h8_id.EndOfStream:
             break
 
@@ -364,7 +443,7 @@ def main(argv):
         while True:
             tok_id, end_pos = lx.Read()
             if tok_id == h8_id.Invalid:
-                raise LexError(contents, start_pos)
+                raise LexError('Invalid token', contents, start_pos)
             if tok_id == h8_id.EndOfStream:
                 break
 

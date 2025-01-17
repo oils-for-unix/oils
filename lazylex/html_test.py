@@ -267,6 +267,42 @@ INVALID_TAG_LEX = [
 
 class ValidateTest(unittest.TestCase):
 
+    def testInvalidOld(self):
+        # type: () -> None
+        counters = html.Counters()
+        for s in INVALID_LEX + INVALID_TAG_LEX:
+            try:
+                html.Validate(s, html.BALANCED_TAGS, counters)
+            except html.LexError as e:
+                print(e)
+            else:
+                self.fail('Expected LexError %r' % s)
+
+        for s in INVALID_PARSE:
+            try:
+                html.Validate(s, html.BALANCED_TAGS, counters)
+            except html.ParseError as e:
+                print(e)
+            else:
+                self.fail('Expected ParseError')
+
+    def testValidOld(self):
+        # type: () -> None
+        counters = html.Counters()
+        for s, _ in VALID_PARSE:
+            html.Validate(s, html.BALANCED_TAGS, counters)
+            print('HTML5 %r' % s)
+            #print('HTML5 attrs %r' % counters.debug_attrs)
+
+    def testValidXmlOld(self):
+        # type: () -> None
+        counters = html.Counters()
+        for s in VALID_XML:
+            html.ValidateOld(s, html.BALANCED_TAGS | html.NO_SPECIAL_TAGS,
+                             counters)
+            print('XML %r' % s)
+            #print('XML attrs %r' % counters.debug_attrs)
+
     def testInvalid(self):
         # type: () -> None
         counters = html.Counters()
