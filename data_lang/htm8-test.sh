@@ -50,7 +50,7 @@ site-files() {
 
 htm8-tool() {
   PYTHONPATH="$REPO_ROOT:$REPO_ROOT/vendor" \
-    $REPO_ROOT/lazylex/html.py "$@"
+    $REPO_ROOT/data_lang/htm8_util.py "$@"
 }
 
 test-well-formed() {

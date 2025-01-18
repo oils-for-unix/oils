@@ -6,7 +6,6 @@ from _devbuild.gen.htm8_asdl import (h8_id, h8_id_t, h8_id_str, attr_name,
                                      attr_value_str)
 
 import unittest
-import re
 
 from typing import List, Tuple, Any
 
