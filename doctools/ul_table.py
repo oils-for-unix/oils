@@ -57,10 +57,10 @@ TdAttrs = List[Tuple[str, str]]
 
 class UlTableParser(object):
 
-    def __init__(self, lexer, tag_lexer):
-        # type: (htm8.Lexer, htm8.TagLexer) -> None
+    def __init__(self, lexer):
+        # type: (htm8.Lexer) -> None
         self.lexer = lexer
-        self.tag_lexer = tag_lexer
+        self.attr_lexer = htm8.AttrLexer(lexer.s)
 
         self.tok_id = h8_id.Invalid
         self.start_pos = 0
@@ -210,11 +210,12 @@ class UlTableParser(object):
         balance = 0
         while True:
             if self.tok_id == h8_id.StartEndTag:
-                self.tag_lexer.Reset(self.start_pos, self.end_pos)
+                self.attr_lexer.Init(self.tok_id, self.lexer.TagNamePos(),
+                                     self.end_pos)
                 # TODO: remove td-attrs backward compat
                 if self.tag_name in ('td-attrs', 'cell-attrs'):
                     td_attrs_span = self.start_pos, self.end_pos
-                    td_attrs = self.tag_lexer.AllAttrsRaw()
+                    td_attrs = htm8.AllAttrsRaw(self.attr_lexer)
                     #log('CELL ATTRS %r', self._CurrentString())
 
             elif self.tok_id == h8_id.StartTag:
@@ -347,11 +348,12 @@ class UlTableParser(object):
 
         tr_attrs = None
         if self.tok_id == h8_id.StartEndTag:
-            self.tag_lexer.Reset(self.start_pos, self.end_pos)
+            self.attr_lexer.Init(self.tok_id, self.lexer.TagNamePos(),
+                                 self.end_pos)
             if self.tag_name != 'row-attrs':
                 raise htm8.ParseError('Expected row-attrs, got %r' %
                                       self.tag_name)
-            tr_attrs = self.tag_lexer.AllAttrsRaw()
+            tr_attrs = htm8.AllAttrsRaw(self.attr_lexer)
             self._Next()
             self._WhitespaceOk()
 
@@ -480,10 +482,9 @@ def ReplaceTables(s, debug_out=None):
     f = StringIO()
     out = htm8.Output(s, f)
 
-    tag_lexer = htm8.TagLexer(s)
     lexer = htm8.Lexer(s)
 
-    p = UlTableParser(lexer, tag_lexer)
+    p = UlTableParser(lexer)
 
     while True:
         ul_start = p.FindUlTable()
