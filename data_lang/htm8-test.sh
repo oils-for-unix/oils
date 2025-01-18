@@ -51,12 +51,26 @@ htm8-tool() {
     $REPO_ROOT/data_lang/htm8_util.py "$@"
 }
 
-test-well-formed() {
-  cat >_tmp/bad.html <<EOF
+test-quick-scan() {
+  cat >_tmp/bad-top.html <<EOF
 unfinished <!--
 hi && bye
 EOF
-  echo '_tmp/bad.html' | htm8-tool well-formed 
+
+  set +o errexit
+  echo '_tmp/bad-top.html' | htm8-tool quick-scan
+
+  echo '_tmp/bad-top.html' | htm8-tool lex-htm8
+
+  cat >_tmp/bad-attr.html <<EOF
+hi <a href !>
+EOF
+
+  echo '*** bad-attr quick-scan'
+  echo '_tmp/bad-attr.html' | htm8-tool quick-scan
+
+  echo '*** bad-attr lex-htm8'
+  echo '_tmp/bad-attr.html' | htm8-tool lex-htm8
 }
 
 # site errors

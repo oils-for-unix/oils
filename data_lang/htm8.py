@@ -9,11 +9,15 @@ TODO
 
 API:
 - Get rid of Reset()?
-- Validate()  can be improved
 
 Features:
 
 - work on ToXml() test cases?  This is another text of AttrLexer
+
+Docs:
+
+- Copy all errors into doc/ref/chap-errors.md
+  - This helps understand the language
 
 C++:
 - UTF-8 check, like JSON8
@@ -25,24 +29,6 @@ C++:
 
 - harmonize LexError and ParseError with data_lang/j8.py, which uses
   error.Decode(msg, ..., cur_line_num)
-
-- Copy all errors into doc/ref/chap-errors.md
-  - This helps understand the language
-
-- Update doc/htm8.md
-- list of Algorithms:
-  - lex just the top level
-  - lex both levels
-  - and match tags - this is the level for value.Htm8Frag?
-  - convert to XML!
-  - lazy selection by tag, or attr (id= and class=)
-  - lazy selection by CSS selector expression
-  - convert to DOMTree
-  - sed-like replacement of DOM Tree or element
-  - untrusted HTML filter, e.g. like StackOverflow / Reddit
-    - this is Safe HTM8
-    - should have a zero alloc way to support this, with good errors?
-      - I think most of them silently strip data
 """
 
 import re
@@ -605,6 +591,8 @@ class AttrLexer(object):
         # type: () -> Tuple[h8_id_t, int]
 
         for pat, tok_id in QUOTED_VALUE_LEX_COMPILED:
+            # BUG: We can OVER-READ what the segement lexer gave us, e.g. with
+            # <a href=">"> - the inside > ends it
             m = pat.match(self.s, self.pos)
             if m:
                 end_pos = m.end(0)  # Advance

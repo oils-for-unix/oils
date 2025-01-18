@@ -153,11 +153,25 @@ VALID_XML = [
 ]
 
 INVALID_TAG_LEX = [
-    # not allowed, but 3 < 4 is allowed
+    # bad attr
+    '<a foo=bar !></a>',
+
+    # BUG: are we "overshooting" here?  We don't have a sentinel
+    # I wonder if a one-pass lex is just simpler:
+    # - It works with micro-syntax
+    # - And it doesn't have this problem, as well as the stupid / problem
+    # - You can add a sentinel, but then you mess up COW of forked processes,
+    #   potentially
+    # - As long as you don't allocate, I think it's not going to be any faster
+    # to skip the attributes
+    # - We could also handle <a href=">"> then
+ 
+    # Not allowed, but 3 < 4 is allowed
     '<p x="3 > 4"></p>',
-    # same thing
+    # with single quotes
+    "<p x='3 > 4'></p>",
+    # Same thing
     '<a href=">"></a>',
-    '<a foo=bar !></a>',  # bad attr
 ]
 
 

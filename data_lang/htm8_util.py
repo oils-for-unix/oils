@@ -32,10 +32,9 @@ VOID_ELEMENTS = [
     'wbr',
 ]
 
-LEX_ATTRS = 1 << 1
-LEX_QUOTED_VALUES = 1 << 2  # href="?x=42&amp;y=99"
-NO_SPECIAL_TAGS = 1 << 3  # <script> <style>, VOID tags, etc.
-BALANCED_TAGS = 1 << 4  # are tags balanced?
+NO_LEX_ATTRS = 1 << 1  # skip href="?x=42&amp;y=99"
+NO_SPECIAL_TAGS = 1 << 2  # <script> <style>, VOID tags, etc.
+BALANCED_TAGS = 1 << 3  # are tags balanced?
 
 
 def Validate(contents, flags, counters):
@@ -63,16 +62,18 @@ def Validate(contents, flags, counters):
             counters.num_start_end_tags += 1
 
             attr_lx.Init(tok_id, lx.TagNamePos(), end_pos)
-            all_attrs = htm8.AllAttrsRaw(attr_lx)
-            counters.num_attrs += len(all_attrs)
+            if not bool(flags & NO_LEX_ATTRS):
+                all_attrs = htm8.AllAttrsRaw(attr_lx)
+                counters.num_attrs += len(all_attrs)
             # TODO: val_lexer.NumTokens() can be replaced with tokens_out
 
         elif tok_id == h8_id.StartTag:
             counters.num_start_tags += 1
 
             attr_lx.Init(tok_id, lx.TagNamePos(), end_pos)
-            all_attrs = htm8.AllAttrsRaw(attr_lx)
-            counters.num_attrs += len(all_attrs)
+            if not bool(flags & NO_LEX_ATTRS):
+                all_attrs = htm8.AllAttrsRaw(attr_lx)
+                counters.num_attrs += len(all_attrs)
 
             #counters.debug_attrs.extend(all_attrs)
 
@@ -233,12 +234,14 @@ def main(argv):
 
         return 0
 
-    elif action in ('lex-htm8', 'parse-htm8', 'parse-xml'):
+    elif action in ('quick-scan', 'lex-htm8', 'parse-htm8', 'parse-xml'):
 
         errors = []
         counters = Counters()
 
-        flags = LEX_ATTRS | LEX_QUOTED_VALUES
+        flags = 0
+        if action == 'quick-scan':
+            flags |= NO_LEX_ATTRS
         if action.startswith('parse-'):
             flags |= BALANCED_TAGS
         if action == 'parse-xml':
