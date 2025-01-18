@@ -4,8 +4,6 @@ TODO
 
 Migrate:
 
-- doctools/ul_table.py should use new AttrLexer
-  - AllAttrsRaw()
 - maybe: migrate everything off of TagLexer() 
   - and AttrValueLexer() - this should requires Validate()
 
@@ -717,8 +715,8 @@ def GetAttrRaw(attr_lx, name):
     return None
 
 
-def AllAttrsRaw(attr_lx):
-    # type: (AttrLexer) -> List[Tuple[str,str]]
+def AllAttrsRawSlice(attr_lx):
+    # type: (AttrLexer) -> List[Tuple[int, int, attr_value_t, int, int]]
     result = []
     while True:
         n, name_start, name_end = attr_lx.ReadName()
@@ -726,13 +724,13 @@ def AllAttrsRaw(attr_lx):
             log('  AllAttrsRaw ==> ReadName %s %d %d %r', attr_name_str(n),
                 name_start, name_end, attr_lx.s[attr_lx.pos:attr_lx.pos + 10])
         if n == attr_name.Ok:
-            name = attr_lx.s[name_start:name_end]
+            #name = attr_lx.s[name_start:name_end]
             #log('  Name %r', name)
 
             v, val_start, val_end = attr_lx.ReadValue()
-            val = attr_lx.s[val_start:val_end]
+            #val = attr_lx.s[val_start:val_end]
             #log('  ReadValue %r', val)
-            result.append((name, val))
+            result.append((name_start, name_end, v, val_start, val_end))
         elif n == attr_name.Done:
             break
         elif n == attr_name.Invalid:
@@ -742,6 +740,24 @@ def AllAttrsRaw(attr_lx):
             raise AssertionError()
 
     return result
+
+
+def AllAttrsRaw(attr_lx):
+    # type: (AttrLexer) -> List[Tuple[str, str]]
+    """
+    Get a list of pairs [('class', 'foo'), ('href', '?foo=1&amp;bar=2')]
+
+    The quoted values may be escaped.  We would need another lexer to
+    unescape them.
+    """
+    slices = AllAttrsRawSlice(attr_lx)
+    pairs = []
+    s = attr_lx.s
+    for name_start, name_end, val_id, val_start, val_end in slices:
+        n = s[name_start:name_end]
+        v = s[val_start:val_end]
+        pairs.append((n, v))
+    return pairs
 
 
 #

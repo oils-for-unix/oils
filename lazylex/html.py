@@ -272,7 +272,7 @@ def ToXml(htm8_str):
     # 4. void tags turned into self-closing tags
     # 5. case-sensitive tag matching - not sure about this
 
-    tag_lexer = TagLexer(htm8_str)
+    attr_lexer = htm8.AttrLexer(htm8_str)
 
     f = StringIO()
     out = Output(htm8_str, f)
@@ -292,10 +292,9 @@ def ToXml(htm8_str):
                       h8_id.DecChar):
             out.PrintUntil(end_pos)
         elif tok_id in (h8_id.StartTag, h8_id.StartEndTag):
-            tag_lexer.Reset(pos, end_pos)
-            # TODO: reduce allocations here
-            all_attrs = tag_lexer.AllAttrsRawSlice()
-            for name, val_start, val_end in all_attrs:
+            attr_lexer.Init(tok_id, lx.TagNamePos(), end_pos)
+            all_attrs = htm8.AllAttrsRawSlice(attr_lexer)
+            for name_start, name_end, v, val_start, val_end in all_attrs:
                 #val_lexer.Reset(val_start, val_end)
                 pass
                 # TODO: get the kind of string
