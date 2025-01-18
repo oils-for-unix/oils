@@ -62,7 +62,7 @@ class AttrLexerTest(unittest.TestCase):
         attr_lx.Init(tok_id, lx.TagNamePos(), end_pos)
 
         # There is no tag
-        n, name_start, name_end = attr_lx.ReadName()
+        n, name_start, name_end, _ = attr_lx.ReadName()
         self.assertEqual(n, attr_name.Done)
         self.assertEqual(-1, name_start)
         self.assertEqual(-1, name_end)
@@ -85,7 +85,7 @@ class AttrLexerTest(unittest.TestCase):
         h = '<a !>'
         attr_lx = _MakeAttrLexer(self, h)
 
-        n, name_start, name_end = attr_lx.ReadName()
+        n, name_start, name_end, _ = attr_lx.ReadName()
         self.assertEqual(n, attr_name.Invalid)
         self.assertEqual(-1, name_start)
         self.assertEqual(-1, name_end)
@@ -101,7 +101,7 @@ class AttrLexerTest(unittest.TestCase):
         h = '<img src=>'
         attr_lx = _MakeAttrLexer(self, h, expected_tag=h8_id.StartTag)
 
-        n, name_start, name_end = attr_lx.ReadName()
+        n, name_start, name_end, _ = attr_lx.ReadName()
         self.assertEqual(n, attr_name.Ok)
         self.assertEqual(5, name_start)
         self.assertEqual(8, name_end)
@@ -116,14 +116,14 @@ class AttrLexerTest(unittest.TestCase):
         self.assertEqual(-1, attr_start)
         self.assertEqual(-1, attr_end)
 
-        n, name_start, name_end = attr_lx.ReadName()
+        n, name_start, name_end, _ = attr_lx.ReadName()
         self.assertEqual(n, attr_name.Done)
 
     def testMissing(self):
         h = '<img SRC/>'
         attr_lx = _MakeAttrLexer(self, h, expected_tag=h8_id.StartEndTag)
 
-        n, name_start, name_end = attr_lx.ReadName()
+        n, name_start, name_end, _ = attr_lx.ReadName()
         self.assertEqual(n, attr_name.Ok)
         self.assertEqual(5, name_start)
         self.assertEqual(8, name_end)
@@ -137,7 +137,7 @@ class AttrLexerTest(unittest.TestCase):
         self.assertEqual(-1, attr_start)
         self.assertEqual(-1, attr_end)
 
-        n, name_start, name_end = attr_lx.ReadName()
+        n, name_start, name_end, _ = attr_lx.ReadName()
         self.assertEqual(n, attr_name.Done)
 
     def testUnquoted(self):
@@ -145,7 +145,7 @@ class AttrLexerTest(unittest.TestCase):
         h = '<a x=foo />'
         attr_lx = _MakeAttrLexer(self, h, expected_tag=h8_id.StartEndTag)
 
-        n, name_start, name_end = attr_lx.ReadName()
+        n, name_start, name_end, _ = attr_lx.ReadName()
         self.assertEqual(n, attr_name.Ok)
         self.assertEqual(3, name_start)
         self.assertEqual(4, name_end)
@@ -159,14 +159,14 @@ class AttrLexerTest(unittest.TestCase):
         self.assertEqual(5, attr_start)
         self.assertEqual(8, attr_end)
 
-        n, name_start, name_end = attr_lx.ReadName()
+        n, name_start, name_end, _ = attr_lx.ReadName()
         self.assertEqual(n, attr_name.Done)
 
     def testDoubleQuoted(self):
         h = '<a x="f&">'
         attr_lx = _MakeAttrLexer(self, h, expected_tag=h8_id.StartTag)
 
-        n, name_start, name_end = attr_lx.ReadName()
+        n, name_start, name_end, _ = attr_lx.ReadName()
         self.assertEqual(n, attr_name.Ok)
         self.assertEqual(3, name_start)
         self.assertEqual(4, name_end)
@@ -181,7 +181,7 @@ class AttrLexerTest(unittest.TestCase):
         self.assertEqual(8, attr_end)
         self.assertEqual(9, attr_lx.pos)
 
-        n, name_start, name_end = attr_lx.ReadName()
+        n, name_start, name_end, _ = attr_lx.ReadName()
         log('n = %r', attr_name_str(n))
         self.assertEqual(n, attr_name.Done)
 
@@ -189,7 +189,7 @@ class AttrLexerTest(unittest.TestCase):
         h = "<a x='&f'>"
         attr_lx = _MakeAttrLexer(self, h, expected_tag=h8_id.StartTag)
 
-        n, name_start, name_end = attr_lx.ReadName()
+        n, name_start, name_end, _ = attr_lx.ReadName()
         self.assertEqual(n, attr_name.Ok)
         self.assertEqual(3, name_start)
         self.assertEqual(4, name_end)
@@ -204,7 +204,7 @@ class AttrLexerTest(unittest.TestCase):
         self.assertEqual(8, attr_end)
         self.assertEqual(9, attr_lx.pos)
 
-        n, name_start, name_end = attr_lx.ReadName()
+        n, name_start, name_end, _ = attr_lx.ReadName()
         #log('n = %r', attr_name_str(n))
         self.assertEqual(n, attr_name.Done)
 
@@ -212,7 +212,7 @@ class AttrLexerTest(unittest.TestCase):
         h = '<a x="foo>'
         attr_lx = _MakeAttrLexer(self, h, expected_tag=h8_id.StartTag)
 
-        n, name_start, name_end = attr_lx.ReadName()
+        n, name_start, name_end, _ = attr_lx.ReadName()
         self.assertEqual(n, attr_name.Ok)
         self.assertEqual(3, name_start)
         self.assertEqual(4, name_end)
@@ -228,7 +228,7 @@ class AttrLexerTest(unittest.TestCase):
         h = "<a x='foo>"
         attr_lx = _MakeAttrLexer(self, h, expected_tag=h8_id.StartTag)
 
-        n, name_start, name_end = attr_lx.ReadName()
+        n, name_start, name_end, _ = attr_lx.ReadName()
         self.assertEqual(n, attr_name.Ok)
         self.assertEqual(3, name_start)
         self.assertEqual(4, name_end)

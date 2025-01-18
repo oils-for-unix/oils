@@ -9,7 +9,7 @@ import sys
 
 from typing import List
 
-from _devbuild.gen.htm8_asdl import (h8_id, h8_id_str)
+from _devbuild.gen.htm8_asdl import (h8_id, h8_id_str, attr_value_e)
 from data_lang import htm8
 from data_lang.htm8 import (Lexer, LexError, ParseError, Output)
 from doctools.util import log
@@ -149,7 +149,20 @@ def ToXml(htm8_str):
         elif tok_id in (h8_id.StartTag, h8_id.StartEndTag):
             attr_lexer.Init(tok_id, lx.TagNamePos(), end_pos)
             all_attrs = htm8.AllAttrsRawSlice(attr_lexer)
-            for name_start, name_end, v, val_start, val_end in all_attrs:
+            for name_start, name_end, equal_end, v, val_start, val_end in all_attrs:
+                if v == attr_value_e.Missing:  # <a missing>
+                    out.PrintUntil(name_end)
+                    out.Print('=""')
+                elif v == attr_value_e.Empty:  # <a empty=>
+                    out.PrintUntil(equal_end)
+                    out.Print('""')
+                elif v == attr_value_e.Unquoted:  # <a foo=bar>
+                    # Because we disallow ", we can just surround with quotes
+                    out.PrintUntil(val_start)
+                    out.Print('"')
+                    out.PrintUntil(val_end)
+                    out.Print('"')
+
                 #val_lexer.Reset(val_start, val_end)
                 pass
                 # TODO: get the kind of string

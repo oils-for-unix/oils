@@ -2,15 +2,20 @@
 
 TODO
 
-Migrate:
-
-- maybe: migrate everything off of TagLexer() 
-  - and AttrValueLexer() - this should requires Validate()
+- would be nice: migrate everything off of TagLexer() 
+  - oils_doc.py and help_gen.py 
+  - this old API is stateful and uses Python iterators, which is problematic
+  - maybe we can use a better CSS selector abstraction
 
 API:
 - Get rid of Reset()?
-- Deprecate tag_lexer.GetTagName() in favor of lx.CanonicalTagName() or
-  _LiteralTagName()
+- Validate()  can be improved
+
+Features:
+
+- work on ToXml() test cases?  This is another text of AttrLexer
+
+C++:
 - UTF-8 check, like JSON8
 - re2c
   - port lexer, which will fix static typing issues
@@ -475,6 +480,7 @@ class AttrLexer(object):
 
         self.name_start = -1
         self.name_end = -1
+        self.equal_end = -1
         self.next_value_is_missing = False
 
         self.init_t = -1
@@ -523,7 +529,7 @@ class AttrLexer(object):
         self.pos = self.init_t
 
     def ReadName(self):
-        # type: () -> Tuple[attr_name_t, int, int]
+        # type: () -> Tuple[attr_name_t, int, int, int]
         """Reads the attribute name
 
         EOF case: 
@@ -541,7 +547,7 @@ class AttrLexer(object):
                 #log('ReadName() tag_name_pos %d pos, %d %s', self.tag_name_pos, self.pos, m.groups())
                 if a == attr_name.Invalid:
                     #log('m.groups %s', m.groups())
-                    return attr_name.Invalid, -1, -1
+                    return attr_name.Invalid, -1, -1, -1
 
                 self.pos = m.end(0)  # Advance if it's not invalid
 
@@ -549,6 +555,7 @@ class AttrLexer(object):
                     #log('%r', m.groups())
                     self.name_start = m.start(1)
                     self.name_end = m.end(1)
+                    self.equal_end = m.end(0)  # XML conversion needs this
                     # Is the equals sign missing?  Set state.
                     if m.group(2) is None:
                         self.next_value_is_missing = True
@@ -556,14 +563,14 @@ class AttrLexer(object):
                         self.pos = self.name_end
                     else:
                         self.next_value_is_missing = False
-                    return attr_name.Ok, self.name_start, self.name_end
+                    return attr_name.Ok, self.name_start, self.name_end, self.equal_end
                 else:
                     # Reset state - e.g. you must call AttrNameEquals
                     self.name_start = -1
                     self.name_end = -1
 
                 if a == attr_name.Done:
-                    return attr_name.Done, -1, -1
+                    return attr_name.Done, -1, -1, -1
         else:
             context = self.s[self.pos:]
             #log('s %r %d', self.s, self.pos)
@@ -692,7 +699,7 @@ class AttrLexer(object):
 def GetAttrRaw(attr_lx, name):
     # type: (AttrLexer, str) -> Optional[str]
     while True:
-        n, name_start, name_end = attr_lx.ReadName()
+        n, name_start, name_end, _ = attr_lx.ReadName()
         #log('==> ReadName %s %d %d', attr_name_str(n), name_start, name_end)
         if n == attr_name.Ok:
             if attr_lx.AttrNameEquals(name):
@@ -714,10 +721,10 @@ def GetAttrRaw(attr_lx, name):
 
 
 def AllAttrsRawSlice(attr_lx):
-    # type: (AttrLexer) -> List[Tuple[int, int, attr_value_t, int, int]]
+    # type: (AttrLexer) -> List[Tuple[int, int, int, attr_value_t, int, int]]
     result = []
     while True:
-        n, name_start, name_end = attr_lx.ReadName()
+        n, name_start, name_end, equal_end = attr_lx.ReadName()
         if 0:
             log('  AllAttrsRaw ==> ReadName %s %d %d %r', attr_name_str(n),
                 name_start, name_end, attr_lx.s[attr_lx.pos:attr_lx.pos + 10])
@@ -728,7 +735,8 @@ def AllAttrsRawSlice(attr_lx):
             v, val_start, val_end = attr_lx.ReadValue()
             #val = attr_lx.s[val_start:val_end]
             #log('  ReadValue %r', val)
-            result.append((name_start, name_end, v, val_start, val_end))
+            result.append(
+                (name_start, name_end, equal_end, v, val_start, val_end))
         elif n == attr_name.Done:
             break
         elif n == attr_name.Invalid:
@@ -751,7 +759,7 @@ def AllAttrsRaw(attr_lx):
     slices = AllAttrsRawSlice(attr_lx)
     pairs = []
     s = attr_lx.s
-    for name_start, name_end, val_id, val_start, val_end in slices:
+    for name_start, name_end, equal_end, val_id, val_start, val_end in slices:
         n = s[name_start:name_end]
         v = s[val_start:val_end]
         pairs.append((n, v))

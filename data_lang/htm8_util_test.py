@@ -55,7 +55,7 @@ UNCHANGED = 1
 VALID_LEX = [
     # TODO: convert these to XML
     ('<foo></foo>', UNCHANGED),
-    ('<foo x=y></foo>', ''),
+    ('<foo x=y></foo>', '<foo x="y"></foo>'),
     #('<foo x="&"></foo>', '<foo x="&amp;"></foo>'),
     ('<foo x="&"></foo>', ''),
 
@@ -63,9 +63,9 @@ VALID_LEX = [
     ('<p> x & y </p>', '<p> x &amp; y </p>'),
 
     # No ambiguity
-    ('<img src=/ >', ''),
-    ('<img src="/">', ''),
-    ('<img src=foo/ >', ''),
+    ('<img src=/ >', '<img src="/" >'),
+    ('<img src="/">', UNCHANGED),
+    ('<img src=foo/ >', '<img src="foo/" >'),
 ]
 
 INVALID_PARSE = [
@@ -112,16 +112,16 @@ VALID_PARSE = [
     ('<meta><a></a>', ''),
 
     # no attribute
-    ('<button disabled></button>', ''),
-    ('<button disabled=></button>', ''),
-    ('<button disabled= ></button>', ''),
+    ('<button disabled></button>', '<button disabled=""></button>'),
+    ('<button disabled=></button>', '<button disabled=""></button>'),
+    ('<button disabled= ></button>', '<button disabled= ""></button>'),
 
     # single quoted is pretty common
     ("<a href='single'></a>", ''),
 
     # Conceding to reality - I used these myself
-    ('<a href=ble.sh></a>', ''),
-    ('<a href=foo.html></a>', ''),
+    ('<a href=ble.sh></a>', '<a href="ble.sh"></a>'),
+    ('<a href=foo.html></a>', '<a href="foo.html"></a>'),
     ('<foo x="&"></foo>', ''),
 
     # caps
