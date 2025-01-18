@@ -65,6 +65,9 @@ class UlTableParser(object):
         self.tok_id = h8_id.Invalid
         self.start_pos = 0
         self.end_pos = 0
+        # The tag name is only populated when we are "looking at"
+        # h8_id.{StartTag,EndTag,StartEndTag}
+        self.tag_name = None  # type: Optional[str]
 
     def _CurrentString(self):
         # type: () -> str
@@ -78,6 +81,10 @@ class UlTableParser(object):
         """
         self.start_pos = self.end_pos
         self.tok_id, self.end_pos = self.lexer.Read()
+        if self.tok_id in (h8_id.StartTag, h8_id.EndTag, h8_id.StartEndTag):
+            self.tag_name = self.lexer.CanonicalTagName()
+        else:
+            self.tag_name = None
 
         # Should have called RemoveComments() beforehand.  That can still leave
         # some REPLACE cmoments
@@ -119,11 +126,9 @@ class UlTableParser(object):
             raise htm8.ParseError(
                 'Expected token %s, got %s' %
                 (h8_id_str(expected_id), h8_id_str(self.tok_id)))
-        self.tag_lexer.Reset(self.start_pos, self.end_pos)
-        tag_name = self.tag_lexer.GetTagName()
-        if expected_tag != tag_name:
+        if expected_tag != self.tag_name:
             raise htm8.ParseError('Expected tag %r, got %r' %
-                                  (expected_tag, tag_name))
+                                  (expected_tag, self.tag_name))
 
         self._Next()
 
@@ -143,25 +148,19 @@ class UlTableParser(object):
         Return the START position of the <ul>
         Similar algorithm as html.ReadUntilStartTag()
         """
-        tag_lexer = self.tag_lexer
-
         # Find first table
         while True:
             self._Next(comment_ok=True)
             if self.tok_id == h8_id.EndOfStream:
                 return -1
 
-            tag_lexer.Reset(self.start_pos, self.end_pos)
-            if (self.tok_id == h8_id.StartTag and
-                    tag_lexer.GetTagName() == 'table'):
+            if (self.tok_id == h8_id.StartTag and self.tag_name == 'table'):
                 while True:
                     self._Next(comment_ok=True)
                     if self.tok_id != h8_id.RawData:
                         break
 
-                tag_lexer.Reset(self.start_pos, self.end_pos)
-                if (self.tok_id == h8_id.StartTag and
-                        tag_lexer.GetTagName() == 'ul'):
+                if (self.tok_id == h8_id.StartTag and self.tag_name == 'ul'):
                     return self.start_pos
         return -1
 
@@ -212,21 +211,18 @@ class UlTableParser(object):
         while True:
             if self.tok_id == h8_id.StartEndTag:
                 self.tag_lexer.Reset(self.start_pos, self.end_pos)
-                tag_name = self.tag_lexer.GetTagName()
                 # TODO: remove td-attrs backward compat
-                if tag_name in ('td-attrs', 'cell-attrs'):
+                if self.tag_name in ('td-attrs', 'cell-attrs'):
                     td_attrs_span = self.start_pos, self.end_pos
                     td_attrs = self.tag_lexer.AllAttrsRaw()
                     #log('CELL ATTRS %r', self._CurrentString())
 
             elif self.tok_id == h8_id.StartTag:
-                self.tag_lexer.Reset(self.start_pos, self.end_pos)
-                if self.tag_lexer.GetTagName() == 'li':
+                if self.tag_name == 'li':
                     balance += 1
 
             elif self.tok_id == h8_id.EndTag:
-                self.tag_lexer.Reset(self.start_pos, self.end_pos)
-                if self.tag_lexer.GetTagName() == 'li':
+                if self.tag_name == 'li':
                     balance -= 1
                     if balance < 0:
                         break
@@ -234,7 +230,7 @@ class UlTableParser(object):
 
         right = self.start_pos  # start of the end tag
 
-        s = self.tag_lexer.s
+        s = self.lexer.s
         if td_attrs_span:
             # everything except the <cell-attrs />
             inner_html = s[left:td_attrs_span[0]] + s[td_attrs_span[1]:right]
@@ -352,9 +348,9 @@ class UlTableParser(object):
         tr_attrs = None
         if self.tok_id == h8_id.StartEndTag:
             self.tag_lexer.Reset(self.start_pos, self.end_pos)
-            tag_name = self.tag_lexer.GetTagName()
-            if tag_name != 'row-attrs':
-                raise htm8.ParseError('Expected row-attrs, got %r' % tag_name)
+            if self.tag_name != 'row-attrs':
+                raise htm8.ParseError('Expected row-attrs, got %r' %
+                                      self.tag_name)
             tr_attrs = self.tag_lexer.AllAttrsRaw()
             self._Next()
             self._WhitespaceOk()
