@@ -112,7 +112,7 @@ def ExpandLinks(s):
     f = StringIO()
     out = htm8.Output(s, f)
 
-    tag_lexer = htm8.TagLexer(s)
+    tag_lexer = html.TagLexer(s)
 
     pos = 0
 
@@ -338,7 +338,7 @@ def SimpleHighlightCode(s):
     f = StringIO()
     out = htm8.Output(s, f)
 
-    tag_lexer = htm8.TagLexer(s)
+    tag_lexer = html.TagLexer(s)
 
     pos = 0
 
@@ -398,7 +398,7 @@ def HighlightCode(s, default_highlighter, debug_out=None):
     f = StringIO()
     out = htm8.Output(s, f)
 
-    tag_lexer = htm8.TagLexer(s)
+    tag_lexer = html.TagLexer(s)
 
     pos = 0
 
@@ -556,7 +556,7 @@ def ExtractCode(s, f):
     2. Decode &amp; -> &,e tc. and return it
     """
     out = htm8.Output(s, f)
-    tag_lexer = htm8.TagLexer(s)
+    tag_lexer = html.TagLexer(s)
 
     block_num = 0
     pos = 0

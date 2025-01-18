@@ -1,10 +1,39 @@
 #!/usr/bin/env python2
 from __future__ import print_function
 
+import re
 import unittest
 
 from lazylex import html  # module under test log = html.log
 from doctools.util import log
+
+
+class RegexTest(unittest.TestCase):
+
+    def testDotAll(self):
+        # type: () -> None
+
+        # Note that $ matches end of line, not end of string
+        p1 = re.compile(r'.')
+        print(p1.match('\n'))
+
+        p2 = re.compile(r'.', re.DOTALL)
+        print(p2.match('\n'))
+
+        #p3 = re.compile(r'[.\n]', re.VERBOSE)
+        p3 = re.compile(r'[.\n]')
+        print(p3.match('\n'))
+
+        print('Negation')
+
+        p4 = re.compile(r'[^>]')
+        print(p4.match('\n'))
+
+    def testAttrRe(self):
+        # type: () -> None
+        _ATTR_RE = html._ATTR_RE
+        m = _ATTR_RE.match(' empty= val')
+        print(m.groups())
 
 
 class FunctionsTest(unittest.TestCase):

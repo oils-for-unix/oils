@@ -173,7 +173,7 @@ readonly MARKDOWN_DOCS=(
 # A better fix would be to implement json_utf8.load(f), which doesn't decode
 # into unicode instances.  This would remove useless conversions.
 
-readonly TIMESTAMP=$(date --rfc-email)
+DOC_TIMESTAMP=${DOC_TIMESTAMP:-$(date --rfc-email)}
 
 split-and-render() {
   local src=${1:-doc/known-differences.md}
@@ -194,7 +194,7 @@ split-and-render() {
   local css_files="$web_url/base.css $web_url/manual.css $web_url/toc.css $web_url/language.css $web_url/code.css"
 
   PYTHONPATH='.:vendor' doctools/split_doc.py \
-    -v build_timestamp="$TIMESTAMP" \
+    -v build_timestamp="$DOC_TIMESTAMP" \
     -v oil_version="$OIL_VERSION" \
     -v css_files="$css_files" \
     -v all_docs_url='.' \
@@ -268,7 +268,7 @@ render-only() {
   "css_files": "$css_files",
   "all_docs_url": ".",
 
-  "build_timestamp": "$TIMESTAMP",
+  "build_timestamp": "$DOC_TIMESTAMP",
   "oil_version": "$OIL_VERSION"
 }
 EOF
@@ -748,6 +748,28 @@ soil-run() {
   build/stamp.sh write-release-date
 
   run-for-release
+}
+
+#
+# Golden tests
+#
+# $0 golden-tree
+# $0 determnistic-build  # with new code
+# $0 compare-golden
+
+deterministic() {
+  # build without varying timestamp
+  DOC_TIMESTAMP='GOLD' $0 soil-run
+}
+
+golden-tree() {
+  rm -r -f _release/VERSION/ _release/VERSION_gold/
+  deterministic
+  cp -r _release/VERSION/ _release/VERSION_gold
+}
+
+compare-golden() {
+  diff -r -u _release/VERSION_gold _release/VERSION/ 
 }
 
 "$@"

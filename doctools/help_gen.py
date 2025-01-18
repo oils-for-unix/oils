@@ -308,7 +308,7 @@ def ExtractBody(s):
     """
     f = cStringIO.StringIO()
     out = htm8.Output(s, f)
-    tag_lexer = htm8.TagLexer(s)
+    tag_lexer = html.TagLexer(s)
 
     pos = 0
     it = html.ValidTokens(s)
@@ -364,7 +364,7 @@ def HelpTopics(s):
 
     yield groups (section_id, section_name, block of text)
     """
-    tag_lexer = htm8.TagLexer(s)
+    tag_lexer = html.TagLexer(s)
 
     pos = 0
     it = html.ValidTokens(s)

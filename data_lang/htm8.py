@@ -42,10 +42,9 @@ API:
 
 import re
 
-from typing import Dict, List, Tuple, Optional, IO, Iterator, Any
+from typing import Dict, List, Tuple, Optional, IO, Any
 
-from _devbuild.gen.htm8_asdl import (h8_id, h8_id_t, h8_tag_id, h8_tag_id_t,
-                                     h8_tag_id_str, attr_name, attr_name_t,
+from _devbuild.gen.htm8_asdl import (h8_id, h8_id_t, attr_name, attr_name_t,
                                      attr_name_str, attr_value_e, attr_value_t,
                                      h8_val_id)
 from doctools.util import log
@@ -162,14 +161,15 @@ def MakeLexer(rules):
 # Lexers
 #
 
-_NAME = r'[a-zA-Z][a-zA-Z0-9:_\-]*'  # must start with letter
+_NAME_RE = r'[a-zA-Z][a-zA-Z0-9:_\-]*'  # must start with letter
 
 CHAR_LEX = [
     # Characters
     # https://www.w3.org/TR/xml/#sec-references
     (r'&\# [0-9]+ ;', h8_id.DecChar),
     (r'&\# x[0-9a-fA-F]+ ;', h8_id.HexChar),
-    (r'& %s ;' % _NAME, h8_id.CharEntity),
+    # TODO: shouldn't use _NAME_RE?  Just letters
+    (r'& %s ;' % _NAME_RE, h8_id.CharEntity),
     # Allow unquoted, and quoted
     (r'&', h8_id.BadAmpersand),
 ]
@@ -203,11 +203,11 @@ HTM8_LEX = CHAR_LEX + [
     # - We look for a valid tag name, but we don't validate attributes.
     #   That's done in the tag lexer.
     # - We don't allow leading whitespace
-    (r'</ (%s) >' % _NAME, h8_id.EndTag),
+    (r'</ (%s) >' % _NAME_RE, h8_id.EndTag),
     # self-closing <br/>  comes before StartTag
     # could/should these be collapsed into one rule?
-    (r'<  (%s) [^>\x00]* />' % _NAME, h8_id.StartEndTag),  # end </a>
-    (r'<  (%s) [^>\x00]* >' % _NAME, h8_id.StartTag),  # start <a>
+    (r'<  (%s) [^>\x00]* />' % _NAME_RE, h8_id.StartEndTag),  # end </a>
+    (r'<  (%s) [^>\x00]* >' % _NAME_RE, h8_id.StartTag),  # start <a>
 
     # HTML5 allows unescaped > in raw data, but < is not allowed.
     # https://stackoverflow.com/questions/10462348/right-angle-bracket-in-html
@@ -395,7 +395,7 @@ A_NAME_LEX = [
     #
     # If the = is not present, then we set the lexer in a state for
     # attr_value_e.Missing.
-    (r'\s+ (%s) \s* (=)? \s*' % _NAME, attr_name.Ok),
+    (r'\s+ (%s) \s* (=)? \s*' % _NAME_RE, attr_name.Ok),
     # unexpected EOF
 
     # The closing > or /> is treated as end of stream, and it's not an error.
@@ -420,8 +420,6 @@ A_NAME_LEX_COMPILED = MakeLexer(A_NAME_LEX)
 # it's not common.  It opens up the j"" and $"" extensions
 # <a href = what'foo' >        # ditto
 
-# TODO: get rid of OLD copy
-_UNQUOTED_VALUE_OLD = r'''[^ \t\r\n<>&"'\x00]*'''
 _UNQUOTED_VALUE = r'''[^ \t\r\n<>&"'\x00]+'''
 
 # What comes after = ?
@@ -758,223 +756,3 @@ def AllAttrsRaw(attr_lx):
         v = s[val_start:val_end]
         pairs.append((n, v))
     return pairs
-
-
-#
-# OLD API - REMOVE THIS
-#
-
-# Tag names:
-#   Match <a  or </a
-#   Match <h2, but not <2h
-#
-# HTML 5 doesn't restrict tag names at all
-#   https://html.spec.whatwg.org/#toc-syntax
-#
-# XML allows : - .
-#  https://www.w3.org/TR/xml/#NT-NameChar
-
-# Namespaces for MathML, SVG
-# XLink, XML, XMLNS
-#
-# https://infra.spec.whatwg.org/#namespaces
-#
-# Allow - for td-attrs
-
-# TODO: we don't need to capture the tag name here?  That's done at the top
-# level
-_TAG_RE = re.compile(r'/? \s* (%s)' % _NAME, re.VERBOSE)
-
-_TAG_LAST_RE = re.compile(r'\s* /? >', re.VERBOSE)
-
-# To match href="foo"
-# Note: in HTML5 and XML, single quoted attributes are also valid
-
-# <button disabled> is standard usage
-
-# NOTE: This used to allow whitespace around =
-# <a foo = "bar">  makes sense in XML
-# But then you also have
-# <a foo= bar> - which is TWO attributes, in HTML5
-# So the space is problematic
-
-_ATTR_RE = re.compile(
-    r'''
-\s+                     # Leading whitespace is required
-(%s)                    # Attribute name
-(?:                     # Optional attribute value
-  \s* = \s*             # Spaces allowed around =
-  (?:
-    " ([^>"\x00]*) "    # double quoted value
-  | ' ([^>'\x00]*) '    # single quoted value
-  | (%s)                # Attribute value
-  )
-)?             
-''' % (_NAME, _UNQUOTED_VALUE_OLD), re.VERBOSE)
-
-
-class TagLexer(object):
-    """
-    Given a tag like <a href="..."> or <link type="..." />, the TagLexer
-    provides a few operations:
-
-    - What is the tag?
-    - Iterate through the attributes, giving (name, value_start_pos, value_end_pos)
-    """
-
-    def __init__(self, s):
-        # type: (str) -> None
-        self.s = s
-        self.start_pos = -1  # Invalid
-        self.end_pos = -1
-
-    def Reset(self, start_pos, end_pos):
-        # type: (int, int) -> None
-        """Reuse instances of this object."""
-        assert start_pos >= 0, start_pos
-        assert end_pos >= 0, end_pos
-
-        self.start_pos = start_pos
-        self.end_pos = end_pos
-
-    def WholeTagString(self):
-        # type: () -> str
-        """Return the entire tag string, e.g. <a href='foo'>"""
-        return self.s[self.start_pos:self.end_pos]
-
-    def GetTagName(self):
-        # type: () -> str
-        # First event
-        tok_id, start, end = next(self.Tokens())
-        return self.s[start:end]
-
-    def GetSpanForAttrValue(self, attr_name):
-        # type: (str) -> Tuple[int, int]
-        """
-        Used by oils_doc.py, for href shortcuts
-        """
-        # Algorithm: search for QuotedValue or UnquotedValue after AttrName
-        # TODO: Could also cache these
-
-        events = self.Tokens()
-        val = (-1, -1)
-        try:
-            while True:
-                tok_id, start, end = next(events)
-                if tok_id == h8_tag_id.AttrName:
-                    name = self.s[start:end]
-                    if name == attr_name:
-                        # The value should come next
-                        tok_id, start, end = next(events)
-                        assert tok_id in (
-                            h8_tag_id.QuotedValue, h8_tag_id.UnquotedValue,
-                            h8_tag_id.MissingValue), h8_tag_id_str(tok_id)
-                        val = start, end
-                        break
-
-        except StopIteration:
-            pass
-        return val
-
-    def GetAttrRaw(self, attr_name):
-        # type: (str) -> Optional[str]
-        """
-        Return the value, which may be UNESCAPED.
-        """
-        start, end = self.GetSpanForAttrValue(attr_name)
-        if start == -1:
-            return None
-        return self.s[start:end]
-
-    def AllAttrsRawSlice(self):
-        # type: () -> List[Tuple[str, int, int]]
-        """
-        Get a list of pairs [('class', 3, 5), ('href', 9, 12)]
-        """
-        slices = []
-        events = self.Tokens()
-        try:
-            while True:
-                tok_id, start, end = next(events)
-                if tok_id == h8_tag_id.AttrName:
-                    name = self.s[start:end]
-
-                    # The value should come next
-                    tok_id, start, end = next(events)
-                    assert tok_id in (
-                        h8_tag_id.QuotedValue, h8_tag_id.UnquotedValue,
-                        h8_tag_id.MissingValue), h8_tag_id_str(tok_id)
-                    # Note: quoted values may have &amp;
-                    # We would need ANOTHER lexer to unescape them, but we
-                    # don't need that for ul-table
-                    slices.append((name, start, end))
-        except StopIteration:
-            pass
-        return slices
-
-    def AllAttrsRaw(self):
-        # type: () -> List[Tuple[str, str]]
-        """
-        Get a list of pairs [('class', 'foo'), ('href', '?foo=1&amp;bar=2')]
-
-        The quoted values may be escaped.  We would need another lexer to
-        unescape them.
-        """
-        slices = self.AllAttrsRawSlice()
-        pairs = []
-        for name, start, end in slices:
-            pairs.append((name, self.s[start:end]))
-        return pairs
-
-    def Tokens(self):
-        # type: () -> Iterator[Tuple[h8_tag_id_t, int, int]]
-        """
-        Yields a sequence of tokens: Tag (AttrName AttrValue?)*
-
-        Where each Token is (Type, start_pos, end_pos)
-
-        Note that start and end are NOT redundant!  We skip over some unwanted
-        characters.
-        """
-        m = _TAG_RE.match(self.s, self.start_pos + 1)
-        if not m:
-            raise RuntimeError("Couldn't find HTML tag in %r" %
-                               self.WholeTagString())
-        yield h8_tag_id.TagName, m.start(1), m.end(1)
-
-        pos = m.end(0)
-        #log('POS %d', pos)
-
-        while True:
-            # don't search past the end
-            m = _ATTR_RE.match(self.s, pos, self.end_pos)
-            if not m:
-                #log('BREAK pos %d', pos)
-                break
-            #log('AttrName %r', m.group(1))
-
-            yield h8_tag_id.AttrName, m.start(1), m.end(1)
-
-            #log('m.groups() %r', m.groups())
-            if m.group(2) is not None:
-                # double quoted
-                yield h8_tag_id.QuotedValue, m.start(2), m.end(2)
-            elif m.group(3) is not None:
-                # single quoted - TODO: could have different token types
-                yield h8_tag_id.QuotedValue, m.start(3), m.end(3)
-            elif m.group(4) is not None:
-                yield h8_tag_id.UnquotedValue, m.start(4), m.end(4)
-            else:
-                # <button disabled>
-                end = m.end(0)
-                yield h8_tag_id.MissingValue, end, end
-
-            # Skip past the "
-            pos = m.end(0)
-
-        #log('TOK %r', self.s)
-
-        m = _TAG_LAST_RE.match(self.s, pos)
-        #log('_TAG_LAST_RE match %r', self.s[pos:])
-        if not m:
-            raise LexError('Extra data at end of tag', self.s, pos)
