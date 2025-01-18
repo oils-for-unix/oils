@@ -38,7 +38,7 @@ from _devbuild.gen.htm8_asdl import h8_id
 from data_lang import htm8
 from doctools import html_lib
 from doctools.util import log
-from lazylex import html
+from doctools import html_old
 
 #from typing import List, Tuple
 
@@ -211,7 +211,7 @@ class Splitter(HTMLParser.HTMLParser):
 
     For *-help.html.
 
-    TODO: Rewrite with this with lazylex!
+    TODO: Rewrite with this with HTM8!
 
     Algorithm:
     - ExtractBody() first, then match balanced tags
@@ -271,7 +271,7 @@ class Splitter(HTMLParser.HTMLParser):
         This method is called to process a named character reference of the form
         &name; (e.g. &gt;), where name is a general entity reference (e.g. 'gt').
         """
-        c = html.CHAR_ENTITY[name]
+        c = html_old.CHAR_ENTITY[name]
         if self.in_heading:
             self.cur_group[2].append(c)
         else:
@@ -308,10 +308,10 @@ def ExtractBody(s):
     """
     f = cStringIO.StringIO()
     out = htm8.Output(s, f)
-    tag_lexer = html.TagLexer(s)
+    tag_lexer = html_old.TagLexer(s)
 
     pos = 0
-    it = html.ValidTokens(s)
+    it = html_old.ValidTokens(s)
     while True:
         try:
             tok_id, end_pos = next(it)
@@ -324,7 +324,8 @@ def ExtractBody(s):
                 body_start_right = end_pos  # right after <body>
 
                 out.SkipTo(body_start_right)
-                body_end_left, _ = html.ReadUntilEndTag(it, tag_lexer, 'body')
+                body_end_left, _ = html_old.ReadUntilEndTag(
+                    it, tag_lexer, 'body')
 
                 out.PrintUntil(body_end_left)
                 break
@@ -364,10 +365,10 @@ def HelpTopics(s):
 
     yield groups (section_id, section_name, block of text)
     """
-    tag_lexer = html.TagLexer(s)
+    tag_lexer = html_old.TagLexer(s)
 
     pos = 0
-    it = html.ValidTokens(s)
+    it = html_old.ValidTokens(s)
     while True:
         try:
             tok_id, end_pos = next(it)
@@ -388,7 +389,7 @@ def HelpTopics(s):
                 assert section_id, 'Expected id= in %r' % tag_lexer.WholeTagString(
                 )
 
-                h2_end_left, _ = html.ReadUntilEndTag(it, tag_lexer, 'h2')
+                h2_end_left, _ = html_old.ReadUntilEndTag(it, tag_lexer, 'h2')
 
                 anchor_html = s[h2_start_right:h2_end_left]
                 paren_pos = anchor_html.find('<')  # remove HTML link
@@ -398,16 +399,17 @@ def HelpTopics(s):
                     section_name = anchor_html[:paren_pos].strip()
 
                 # Now find the <code></code> span
-                _, code_start_right = html.ReadUntilStartTag(
+                _, code_start_right = html_old.ReadUntilStartTag(
                     it, tag_lexer, 'code')
                 css_class = tag_lexer.GetAttrRaw('class')
                 assert css_class is not None
                 assert (css_class.startswith('language-chapter-links-')
                         ), tag_lexer.WholeTagString()
 
-                code_end_left, _ = html.ReadUntilEndTag(it, tag_lexer, 'code')
+                code_end_left, _ = html_old.ReadUntilEndTag(
+                    it, tag_lexer, 'code')
 
-                text = html.ToText(s, code_start_right, code_end_left)
+                text = html_old.ToText(s, code_start_right, code_end_left)
                 yield section_id, section_name, text
 
         pos = end_pos

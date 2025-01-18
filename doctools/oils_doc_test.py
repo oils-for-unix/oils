@@ -4,7 +4,7 @@ from __future__ import print_function
 import sys
 import unittest
 
-from lazylex import html
+from data_lang import htm8
 from doctools import oils_doc  # module under test
 
 with open('data_lang/testdata/hello.htm8') as f:
@@ -53,7 +53,7 @@ class OilsDocTest(unittest.TestCase):
             print(m.end(2))
 
         plugin = oils_doc.ShPromptPlugin(line, 0, len(line))
-        out = html.Output(line, sys.stdout)
+        out = htm8.Output(line, sys.stdout)
         plugin.PrintHighlighted(out)
 
     def testHighlightCode(self):

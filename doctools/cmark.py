@@ -33,7 +33,7 @@ from doctools import html_lib
 from doctools import doc_html  # templates
 from doctools import oils_doc
 from doctools import ul_table
-from lazylex import html as lazylex_html
+from data_lang import htm8
 
 if sys.version_info.major == 2:
     from typing import Any
@@ -441,7 +441,7 @@ def Render(
 
         try:
             html = ul_table.ReplaceTables(html)
-        except lazylex_html.ParseError as e:
+        except htm8.ParseError as e:
             print('Error rendering file %r' % in_file, file=sys.stderr)
             raise
 

@@ -26,7 +26,7 @@ from typing import Iterator, Any, List, Optional, IO
 
 from data_lang import htm8
 from doctools.util import log
-from lazylex import html
+from doctools import html_old
 
 try:
     import pygments
@@ -112,11 +112,11 @@ def ExpandLinks(s):
     f = StringIO()
     out = htm8.Output(s, f)
 
-    tag_lexer = html.TagLexer(s)
+    tag_lexer = html_old.TagLexer(s)
 
     pos = 0
 
-    it = html.ValidTokens(s)
+    it = html_old.ValidTokens(s)
     while True:
         try:
             tok_id, end_pos = next(it)
@@ -140,7 +140,7 @@ def ExpandLinks(s):
                 if m:
                     abbrev_name, arg = m.groups()
                     if not arg:
-                        close_tag_left, _ = html.ReadUntilEndTag(
+                        close_tag_left, _ = html_old.ReadUntilEndTag(
                             it, tag_lexer, 'a')
                         arg = s[open_tag_right:close_tag_left]
 
@@ -322,7 +322,7 @@ class PygmentsPlugin(_Plugin):
         # type: (htm8.Output) -> None
 
         # unescape before passing to pygments, which will escape
-        code = html.ToText(self.s, self.start_pos, self.end_pos)
+        code = html_old.ToText(self.s, self.start_pos, self.end_pos)
 
         lexer = pygments.lexers.get_lexer_by_name(self.lang)
         formatter = pygments.formatters.HtmlFormatter()
@@ -338,11 +338,11 @@ def SimpleHighlightCode(s):
     f = StringIO()
     out = htm8.Output(s, f)
 
-    tag_lexer = html.TagLexer(s)
+    tag_lexer = html_old.TagLexer(s)
 
     pos = 0
 
-    it = html.ValidTokens(s)
+    it = html_old.ValidTokens(s)
 
     while True:
         try:
@@ -358,7 +358,7 @@ def SimpleHighlightCode(s):
                 pre_end_pos = end_pos
 
                 slash_pre_right, slash_pre_right = \
-                    html.ReadUntilEndTag(it, tag_lexer, 'pre')
+                    html_old.ReadUntilEndTag(it, tag_lexer, 'pre')
 
                 out.PrintUntil(pre_end_pos)
 
@@ -398,11 +398,11 @@ def HighlightCode(s, default_highlighter, debug_out=None):
     f = StringIO()
     out = htm8.Output(s, f)
 
-    tag_lexer = html.TagLexer(s)
+    tag_lexer = html_old.TagLexer(s)
 
     pos = 0
 
-    it = html.ValidTokens(s)
+    it = html_old.ValidTokens(s)
 
     while True:
         try:
@@ -431,7 +431,7 @@ def HighlightCode(s, default_highlighter, debug_out=None):
 
                     if css_class is None:
                         slash_code_left, slash_code_right = \
-                            html.ReadUntilEndTag(it, tag_lexer, 'code')
+                            html_old.ReadUntilEndTag(it, tag_lexer, 'code')
 
                         if default_highlighter is not None:
                             # TODO: Refactor this to remove duplication with
@@ -456,7 +456,7 @@ def HighlightCode(s, default_highlighter, debug_out=None):
 
                     elif css_class.startswith('language'):
                         slash_code_left, slash_code_right = \
-                            html.ReadUntilEndTag(it, tag_lexer, 'code')
+                            html_old.ReadUntilEndTag(it, tag_lexer, 'code')
 
                         if css_class == 'language-none':
                             # Allow ```none
@@ -556,11 +556,11 @@ def ExtractCode(s, f):
     2. Decode &amp; -> &,e tc. and return it
     """
     out = htm8.Output(s, f)
-    tag_lexer = html.TagLexer(s)
+    tag_lexer = html_old.TagLexer(s)
 
     block_num = 0
     pos = 0
-    it = html.ValidTokens(s)
+    it = html_old.ValidTokens(s)
 
     while True:
         try:
@@ -596,9 +596,10 @@ def ExtractCode(s, f):
                         out.Print('\n')
 
                         slash_code_left, slash_code_right = \
-                            html.ReadUntilEndTag(it, tag_lexer, 'code')
+                            html_old.ReadUntilEndTag(it, tag_lexer, 'code')
 
-                        text = html.ToText(s, code_start_pos, slash_code_left)
+                        text = html_old.ToText(s, code_start_pos,
+                                               slash_code_left)
                         out.SkipTo(slash_code_left)
 
                         out.Print(text)

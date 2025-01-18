@@ -5,7 +5,7 @@ import cmark  # Oils dev dependency
 
 import unittest
 
-from lazylex import html
+from data_lang import htm8
 from doctools import ul_table
 
 # <ulcol> is a special annotation
@@ -378,7 +378,7 @@ class UlTableTest(unittest.TestCase):
   - one
   - two
 """)
-        except html.ParseError as e:
+        except htm8.ParseError as e:
             print(e)
         else:
             self.fail('Expected parse error')
@@ -394,7 +394,7 @@ class UlTableTest(unittest.TestCase):
   - 1
   - 2
 """)
-        except html.ParseError as e:
+        except htm8.ParseError as e:
             print(e)
         else:
             self.fail('Expected parse error')
@@ -422,7 +422,7 @@ class UlTableTest(unittest.TestCase):
 
 </table>
 """)
-        except html.ParseError as e:
+        except htm8.ParseError as e:
             print(e)
         else:
             self.fail('Expected parse error')

@@ -32,8 +32,6 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source $LIB_OSH/bash-strict.sh
 source $LIB_OSH/task-five.sh
 
-# parse with lazylex/html.py, or data_lang/htm8.py
-
 site-files() {
   #find ../../oilshell/oilshell.org__deploy -name '*.html'
 

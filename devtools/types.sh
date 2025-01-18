@@ -64,12 +64,12 @@ check-doctools() {
   if false; then
     local -a files=(
       $(for x in doctools/*.py; do echo $x; done | grep -v '_test.py' )
-      lazylex/html.py
     )
   else
-    #local -a files=( lazylex/html.py )
     #local -a files=( doctools/help_gen.py )
-    local -a files=( doctools/ul_table.py lazylex/html.py doctools/oils_doc.py doctools/help_gen.py data_lang/htm8.py data_lang/htm8_util.py )
+    local -a files=( doctools/ul_table.py doctools/html_old.py doctools/oils_doc.py
+      doctools/help_gen.py data_lang/htm8.py data_lang/htm8_util.py )
+
   fi
 
   # 777 errors before pyann

@@ -75,7 +75,6 @@ readonly -a CODE_DIRS=(
 
   prebuilt
   pyext
-  lazylex
   benchmarks
   build
 

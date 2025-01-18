@@ -4,7 +4,7 @@ from __future__ import print_function
 import re
 import unittest
 
-from lazylex import html  # module under test log = html.log
+from doctools import html_old as html
 from doctools.util import log
 
 

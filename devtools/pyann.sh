@@ -68,7 +68,7 @@ apply-types() {
   local json=${1:-type_info.json}
   shift
   #local -a files=(osh/builtin_comp.py core/completion.py)
-  local -a files=(lazylex/*.py doctools/*.py)
+  local -a files=(doctools/*.py)
 
   #local -a files=( $(cat _tmp/osh-parse-src.txt | grep -v syntax_asdl.py ) )
 

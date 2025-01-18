@@ -1,9 +1,8 @@
 #!/usr/bin/env python2
 """
-lazylex/html.py - Wrapper around HTM8
+doctools/html_old.py - APIs that should be replaced by data_lang/htm8.py
 
 See doc/lazylex.md for details.
-
 """
 from __future__ import print_function
 

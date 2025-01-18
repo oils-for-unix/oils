@@ -3,7 +3,6 @@ from __future__ import print_function
 
 import unittest
 
-from lazylex import html  # module under test log = html.log
 from data_lang import htm8
 from data_lang import htm8_util
 #from doctools.util import log
@@ -17,7 +16,7 @@ class LexerTest(unittest.TestCase):
         for s in INVALID_LEX:
             try:
                 tokens = ValidTokenList(s)
-            except html.LexError as e:
+            except htm8.LexError as e:
                 print(e)
             else:
                 self.fail('Expected LexError %r' % s)
