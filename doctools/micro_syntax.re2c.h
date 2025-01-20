@@ -683,10 +683,12 @@ bool Matcher<sh_mode_e>::Match(Lexer<sh_mode_e>* lexer, Token* tok) {
 }
 
 enum class html_mode_e {
-  Outer,     // <NAME enters the TAG state
-  AttrName,  // NAME="  NAME='  NAME=  NAME
-  SQ,        // respects Chars, can contain "
-  DQ,        // respects Chars, can contain '
+  Outer,      // <NAME enters the TAG state
+  AttrName,   // NAME="  NAME='  NAME=  NAME
+  AttrValue,  // NAME="  NAME='  NAME=
+  UnquotedValue,
+  SQ,  // respects Chars, can contain "
+  DQ,  // respects Chars, can contain '
 };
 
 // LeftStartTag -> RightStartTag  <a href=/ >
@@ -699,31 +701,43 @@ bool Matcher<html_mode_e>::Match(Lexer<html_mode_e>* lexer, Token* tok) {
   const char* YYMARKER = p;
 
   /*!re2c
-     // Common definitions
+    // Common definitions
 
-     // Like _NAME_RE in HTM8
-     name     = [a-zA-Z][a-zA-Z0-9:_-]* ;
+                // Like _NAME_RE in HTM8
+    name      = [a-zA-Z][a-zA-Z0-9:_-]* ;
 
                 // TODO: check this pattern
-    char_name = '&'   [a-zA-Z][a-zA-Z0-9] ';' ;
+    char_name = '&'   [a-zA-Z][a-zA-Z0-9]* ';' ;
     char_dec  = '&#'  [0-9]+ ';'              ;
     char_hex  = '&#x' [0-9a-fA-F]+ ';'        ;
-    */
+  */
 
   switch (lexer->line_mode) {
   case html_mode_e::Outer:
     while (true) {
       /*!re2c
-        nul       { return true; }
+                      // accepted EOF
+        nul           { return true; }
 
         char_name     { TOK(Id::CharEscape); }
         char_dec      { TOK(Id::CharEscape); }
         char_hex      { TOK(Id::CharEscape); }
         '&'           { TOK(Id::BadAmpersand); }
 
+        '>'           { TOK(Id::BadGreaterThan); }
+
         '</' name '>' { TOK(Id::EndTag); }
         '<'  name     { TOK_MODE(Id::TagNameLeft, html_mode_e::AttrName); }
 
+        '<!' [^\x00>]* '>'  { TOK(Id::Str); }
+
+        // TODO:
+        // <!-- comment
+        // <? ?> comment
+        // CDATA
+        // <script> - well this may be special logic
+
+                      // Like RawData
         *             { TOK(Id::Other); }
 
       */
@@ -732,32 +746,71 @@ bool Matcher<html_mode_e>::Match(Lexer<html_mode_e>* lexer, Token* tok) {
   case html_mode_e::AttrName:
     while (true) {
       /*!re2c
-        '>'            { TOK_MODE(Id::TagNameRight, html_mode_e::Outer); }
-        '/>'           { TOK_MODE(Id::SelfClose, html_mode_e::Outer); }
+        nul           { return true; }  // TODO: error
 
-        // NAME NAME= NAME=' NAME="
-        space_required name ( whitespace '=' whitespace ('"' | "'" )?)?  {
-           // TODO: conditionally enter SQ, DQ, or Unquoted modes
-           TOK(Id::AttrName);
+        '>'           { TOK_MODE(Id::TagNameRight, html_mode_e::Outer); }
+        '/>'          { TOK_MODE(Id::SelfClose, html_mode_e::Outer); }
+
+        space_required name {
+          // <a missing> - stay in the AttrName mode
+          TOK(Id::AttrName);
         }
-        *             { TOK(Id::Other); }
+
+        space_required name whitespace '=' whitespace {
+          // NAME= NAME=' NAME=" - expecting a value
+          TOK_MODE(Id::AttrName, html_mode_e::AttrValue);
+        }
+
+        *             { TOK(Id::Unknown); }
+      */
+    }
+    break;
+  case html_mode_e::AttrValue:
+    while (true) {
+      /*!re2c
+        nul            { return true; }  // TODO: error
+
+        '"'            { TOK_MODE(Id::Str, html_mode_e::DQ); }
+        "'"            { TOK_MODE(Id::Str, html_mode_e::SQ); }
+
+        // Unquoted value - a single token
+        unquoted_value = [^\x00 \r\n\t<>&"']+ ;
+
+        unquoted_value { TOK_MODE(Id::Other, html_mode_e::AttrName); }
+
+        *              { TOK(Id::Unknown); }
+      */
+    }
+    break;
+
+  case html_mode_e::DQ:
+    while (true) {
+      /*!re2c
+        nul           { return true; }  // TODO: error
+        char_name     { TOK(Id::CharEscape); }
+        char_dec      { TOK(Id::CharEscape); }
+        char_hex      { TOK(Id::CharEscape); }
+        '&'           { TOK(Id::BadAmpersand); }
+        '"'           { TOK_MODE(Id::Str, html_mode_e::AttrName); }
+        *             { TOK(Id::Str); }
       */
     }
     break;
   case html_mode_e::SQ:
     while (true) {
       /*!re2c
-       *             { TOK(Id::Other); }
-       */
+        nul           { return true; }  // TODO: error
+        char_name     { TOK(Id::CharEscape); }
+        char_dec      { TOK(Id::CharEscape); }
+        char_hex      { TOK(Id::CharEscape); }
+        '&'           { TOK(Id::BadAmpersand); }
+        "'"           { TOK_MODE(Id::Str, html_mode_e::AttrName); }
+        *             { TOK(Id::Str); }
+      */
     }
     break;
-  case html_mode_e::DQ:
-    while (true) {
-      /*!re2c
-       *             { TOK(Id::Other); }
-       */
-    }
-    break;
+  default:
+    assert(0);
   }
 
   tok->end_col = p - lexer->line_;

@@ -165,7 +165,7 @@ INVALID_TAG_LEX = [
     # - As long as you don't allocate, I think it's not going to be any faster
     # to skip the attributes
     # - We could also handle <a href=">"> then
- 
+
     # Not allowed, but 3 < 4 is allowed
     '<p x="3 > 4"></p>',
     # with single quotes

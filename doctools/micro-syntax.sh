@@ -214,19 +214,31 @@ readonly -a R_TESTS=(
 )
 
 readonly -a HTML_TESTS=(
-  '<p>hi</p>'
+  '<p>hi &amp; </p>'
+  '<p double="3 &lt; 4">hi </p>'
+  "<p missing single='4 &gt; 3'>hi </p>"
+  '<p unquoted=value missing missing double="z">'
+  '<p !badname>'
+  '<p badvalue=&>'
   '<ul> <li>hi</li> </ul>'
   'hi <br/>'
-  # TODO: Are we allowing this ambiguity?
-  '<a href=/>'
   '<a href=foo>link</a>'
-  '<img src="foo"/>'
+  # All of these are values
+  '<a href=/>'
+  '<a href=//>'
+  '<a href= />'  
+  # Fixed
+  '<a href="/">'  
+  '<a href="foo"/>'  
   'decl <!DOCTYPE html>'
   'decl <?xml version="1.0"?>'
-  'hello <!-- comment -->'
-  'foo <![CDATA[ hello ]]>'
-  '<script>if (x < 42) { console.log("hi"); } </script>'
+  'hello <!-- comment <not-a-tag> -->'
+  'foo <![CDATA[ hello <not-a-tag> ]]>'
+  '<script>if (x<y) { console.log("hi"); } </script>'
   '<style>p { background-color: red; } </style>'
+
+  # Attributes
+  '<div missing unquoted = foo double="d" single='\'\''>hi</div>'
 )
 
 run-cases() {

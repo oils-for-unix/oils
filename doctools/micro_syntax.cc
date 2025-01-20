@@ -329,6 +329,10 @@ class AnsiPrinter : public Printer {
       PrintColor(GREEN, p_start, num_bytes);
       break;
 
+    case Id::AttrName:
+      PrintColor(GREEN, p_start, num_bytes);
+      break;
+
     case Id::TagNameLeft:
     case Id::TagNameRight:
       PrintColor(PURPLE, p_start, num_bytes);
@@ -339,7 +343,14 @@ class AnsiPrinter : public Printer {
       PrintColor(RED2, p_start, num_bytes);
       break;
 
+    case Id::CharEscape:
+      PrintColor(BLUE, p_start, num_bytes);
+      break;
+
     case Id::Unknown:
+    case Id::BadAmpersand:
+    case Id::BadGreaterThan:
+    case Id::BadLessThan:
       // Make errors red
       fputs(REVERSE, stdout);
       PrintColor(RED, p_start, num_bytes);
