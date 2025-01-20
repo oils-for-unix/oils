@@ -144,6 +144,10 @@ This makes lexing the top-level structure easier.
 
 - HTM8 tags must be balanced to convert them to XML
 
+- `<script></SCRIPT>` isn't matched
+  - the begin and end tags must match exactly, like `<SCRipt></SCRipt>`
+  - likewise for `<style>`
+
 - NUL bytes aren't allowed - currently due to re2c sentinel.  Two options:
   1. Make it a syntax error - like JSON8
   1. we could have a reprocessing pass to convert it to the Unicode replacement

@@ -777,6 +777,9 @@ class WordParser(WordEmitter):
         if self.token_type == Id.Left_DollarBracket:
             return self._ReadExprSub(lex_mode_e.DQ)
 
+        if self.token_type == Id.Left_DollarBraceZsh:
+            return self._ReadZshVarSub(self.cur_token)
+
         raise AssertionError(self.cur_token)
 
     def _ReadYshSingleQuoted(self, left_id):
