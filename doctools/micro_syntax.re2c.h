@@ -683,11 +683,14 @@ bool Matcher<sh_mode_e>::Match(Lexer<sh_mode_e>* lexer, Token* tok) {
 }
 
 enum class html_mode_e {
-  Outer,      // <NAME enters the TAG state
-  AttrName,   // NAME="  NAME='  NAME=  NAME
-  AttrValue,  // NAME="  NAME='  NAME=
-  SQ,         // respects Chars, can contain "
-  DQ,         // respects Chars, can contain '
+  Outer,          // <NAME enters the TAG state
+  AttrName,       // NAME="  NAME='  NAME=  NAME
+  AttrValue,      // NAME="  NAME='  NAME=
+  SQ,             // respects Chars, can contain "
+  DQ,             // respects Chars, can contain '
+  Comm,           // <!-- -->
+  Preprocessing,  // <? ?>
+  CData,          // <![CDATA[ x  ]]>
 };
 
 // LeftStartTag -> RightStartTag  <a href=/ >
@@ -735,12 +738,9 @@ bool Matcher<html_mode_e>::Match(Lexer<html_mode_e>* lexer, Token* tok) {
 
         '<!' [^\x00>]* '>'  { TOK(Id::Str); }
 
-        // TODO: use strstr() to end these?
-        // Problem: they all need their own mode, just like cpp_mode_e::Comm
-        // html_mode_e::{Comm,Processing,CData,Script,Style}
-        '<!--'        { TOK(Id::Str); }
-        '<?'          { TOK(Id::Str); }
-        '<![CDATA['   { TOK(Id::Str); }
+        '<!--'        { TOK_MODE(Id::Comm, html_mode_e::Comm); }
+        '<?'          { TOK_MODE(Id::Comm, html_mode_e::Preprocessing); }
+        '<![CDATA['   { TOK_MODE(Id::Str, html_mode_e::CData); }
 
 
                       // Like RawData
@@ -827,6 +827,52 @@ bool Matcher<html_mode_e>::Match(Lexer<html_mode_e>* lexer, Token* tok) {
       */
     }
     break;
+  case html_mode_e::Comm:
+    // Search until next -->
+    while (true) {
+      /*!re2c
+        nul       { return true; }
+
+        "-->"     { TOK_MODE(Id::Comm, html_mode_e::Outer); }
+
+        [^\x00-]* { TOK(Id::Comm); }
+
+        *         { TOK(Id::Comm); }
+
+      */
+    }
+    break;
+  case html_mode_e::Preprocessing:
+    // Search until next ?>
+    while (true) {
+      /*!re2c
+        nul       { return true; }
+
+        "?>"      { TOK_MODE(Id::Comm, html_mode_e::Outer); }
+
+        [^\x00?]* { TOK(Id::Comm); }
+
+        *         { TOK(Id::Comm); }
+
+      */
+    }
+    break;
+  case html_mode_e::CData:
+    // Search until next ]]>
+    while (true) {
+      /*!re2c
+        nul        { return true; }
+
+        "]]>"      { TOK_MODE(Id::Str, html_mode_e::Outer); }
+
+        [^\x00\]]* { TOK(Id::Str); }
+
+        *          { TOK(Id::Str); }
+
+      */
+    }
+    break;
+
   default:
     assert(0);
   }
