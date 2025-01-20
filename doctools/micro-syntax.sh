@@ -215,14 +215,23 @@ readonly -a R_TESTS=(
 
 readonly -a HTML_TESTS=(
   '<p>hi &amp; </p>'
+  '<li dec="dec &#123;"> dec &#123; </li>'
+  '<li hex="hex &#x00ff;"> hex &#x00ff; </li>'
+
   '<p double="3 &lt; 4">hi </p>'
   "<p missing single='4 &gt; 3'>hi </p>"
   '<p unquoted=value missing missing double="z">'
+
+  # Errors
   '<p !badname>'
   '<p badvalue=&>'
+  'less < greater > amp & foo'
+  '<p quoted="less < greater > amp & foo">'
+  "<p quoted='less < greater > amp & foo'>"
   '<ul> <li>hi</li> </ul>'
   'hi <br/>'
   '<a href=foo>link</a>'
+
   # All of these are values
   '<a href=/>'
   '<a href=//>'
@@ -230,15 +239,36 @@ readonly -a HTML_TESTS=(
   # Fixed
   '<a href="/">'  
   '<a href="foo"/>'  
-  'decl <!DOCTYPE html>'
-  'decl <?xml version="1.0"?>'
-  'hello <!-- comment <not-a-tag> -->'
-  'foo <![CDATA[ hello <not-a-tag> ]]>'
-  '<script>if (x<y) { console.log("hi"); } </script>'
-  '<style>p { background-color: red; } </style>'
+
+  # More
+  'decl <!DOCTYPE html> z'
+  'decl <?xml version="1.0"?> z'
+  'hello <!-- comment 
+    <not-a-tag> --> more <p>'
+  'foo <![CDATA[ hello 
+    <not-a-tag> ]]> more <p>'
+  '<script>if (x<y) {
+    console.log("hi"); } </script> hi <p>'
+  '<style>p { background-color: red;
+    } </style> more <p>'
 
   # Attributes
   '<div missing unquoted = foo double="d" single='\'\''>hi</div>'
+  )
+
+readonly -a HTML_ERRORS=(
+  # premature EOF - TODO: how do we show errors?
+  '<a'  # in AttrName state
+  '<a name'  # in AttrValue state
+  '<a name=foo' 
+  '<a name="double'  # DQ state
+  "<a name='single"  # SQ state
+  'a <!DOCTYPE'
+  'a <!-- comm'
+  'a <![CDATA[ foo ]]'
+  '<script a=y> zzz'
+  '<style a=y> zzz'
+
 )
 
 run-cases() {
@@ -276,7 +306,7 @@ test-R() {
 
 test-html() {
   build
-  run-cases html "${HTML_TESTS[@]}"
+  run-cases html "${HTML_TESTS[@]}" #"${HTML_ERRORS[@]}"
 }
 
 
@@ -289,7 +319,7 @@ run-tests() {
   run-cases cpp "${CPP_TESTS[@]}"
   run-cases py "${PY_TESTS[@]}"
   run-cases R "${R_TESTS[@]}"
-  run-cases html "${HTML_TESTS[@]}"
+  run-cases html "${HTML_TESTS[@]}" "${HTML_ERRORS[@]}"
 
   # No language specified
   echo '==== No language'

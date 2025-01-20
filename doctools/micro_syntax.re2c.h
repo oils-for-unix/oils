@@ -686,9 +686,8 @@ enum class html_mode_e {
   Outer,      // <NAME enters the TAG state
   AttrName,   // NAME="  NAME='  NAME=  NAME
   AttrValue,  // NAME="  NAME='  NAME=
-  UnquotedValue,
-  SQ,  // respects Chars, can contain "
-  DQ,  // respects Chars, can contain '
+  SQ,         // respects Chars, can contain "
+  DQ,         // respects Chars, can contain '
 };
 
 // LeftStartTag -> RightStartTag  <a href=/ >
@@ -722,20 +721,27 @@ bool Matcher<html_mode_e>::Match(Lexer<html_mode_e>* lexer, Token* tok) {
         char_name     { TOK(Id::CharEscape); }
         char_dec      { TOK(Id::CharEscape); }
         char_hex      { TOK(Id::CharEscape); }
-        '&'           { TOK(Id::BadAmpersand); }
 
+        '&'           { TOK(Id::BadAmpersand); }
         '>'           { TOK(Id::BadGreaterThan); }
+        '<'           { TOK(Id::BadLessThan); }
 
         '</' name '>' { TOK(Id::EndTag); }
-        '<'  name     { TOK_MODE(Id::TagNameLeft, html_mode_e::AttrName); }
+
+        '<'  name     {
+          TOK_MODE(Id::TagNameLeft, html_mode_e::AttrName);
+          // TODO: <script> <style> - special logic for strstr()
+        }
 
         '<!' [^\x00>]* '>'  { TOK(Id::Str); }
 
-        // TODO:
-        // <!-- comment
-        // <? ?> comment
-        // CDATA
-        // <script> - well this may be special logic
+        // TODO: use strstr() to end these?
+        // Problem: they all need their own mode, just like cpp_mode_e::Comm
+        // html_mode_e::{Comm,Processing,CData,Script,Style}
+        '<!--'        { TOK(Id::Str); }
+        '<?'          { TOK(Id::Str); }
+        '<![CDATA['   { TOK(Id::Str); }
+
 
                       // Like RawData
         *             { TOK(Id::Other); }
@@ -776,7 +782,7 @@ bool Matcher<html_mode_e>::Match(Lexer<html_mode_e>* lexer, Token* tok) {
         // Unquoted value - a single token
         unquoted_value = [^\x00 \r\n\t<>&"']+ ;
 
-        unquoted_value { TOK_MODE(Id::Other, html_mode_e::AttrName); }
+        unquoted_value { TOK_MODE(Id::Str, html_mode_e::AttrName); }
 
         *              { TOK(Id::Unknown); }
       */
@@ -790,7 +796,13 @@ bool Matcher<html_mode_e>::Match(Lexer<html_mode_e>* lexer, Token* tok) {
         char_name     { TOK(Id::CharEscape); }
         char_dec      { TOK(Id::CharEscape); }
         char_hex      { TOK(Id::CharEscape); }
+
+                      // we would only need these for translation to XML, not
+                      // highlighting?
         '&'           { TOK(Id::BadAmpersand); }
+        '>'           { TOK(Id::BadGreaterThan); }
+        '<'           { TOK(Id::BadLessThan); }
+
         '"'           { TOK_MODE(Id::Str, html_mode_e::AttrName); }
         *             { TOK(Id::Str); }
       */
@@ -803,8 +815,14 @@ bool Matcher<html_mode_e>::Match(Lexer<html_mode_e>* lexer, Token* tok) {
         char_name     { TOK(Id::CharEscape); }
         char_dec      { TOK(Id::CharEscape); }
         char_hex      { TOK(Id::CharEscape); }
+
+                      // we would only need these for translation to XML, not
+                      // highlighting?
         '&'           { TOK(Id::BadAmpersand); }
+        '>'           { TOK(Id::BadGreaterThan); }
+        '<'           { TOK(Id::BadLessThan); }
         "'"           { TOK_MODE(Id::Str, html_mode_e::AttrName); }
+
         *             { TOK(Id::Str); }
       */
     }

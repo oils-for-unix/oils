@@ -329,10 +329,6 @@ class AnsiPrinter : public Printer {
       PrintColor(GREEN, p_start, num_bytes);
       break;
 
-    case Id::AttrName:
-      PrintColor(GREEN, p_start, num_bytes);
-      break;
-
     case Id::TagNameLeft:
     case Id::TagNameRight:
       PrintColor(PURPLE, p_start, num_bytes);
