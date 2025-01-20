@@ -851,6 +851,15 @@ int ScanOne(Reader* reader, OutputStream* out, Hook* hook) {
         }
       } break;
 
+      // TODO: I think we need a mode to escape into strstr(), for
+      // C++  - ending */
+      // HTML - ending -->  ?>  ]]>  </SCRipt>
+      //
+      // So instead of returning 'eol', we can return a string to search for?
+      // Then we keep looking for more lines.
+      //
+      // This is similar to the problems of here doc and C++ multi-line
+      // strings.  The main difference is that we're not using a submatch.
       default:
         break;
       }

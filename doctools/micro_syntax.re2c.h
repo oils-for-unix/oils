@@ -691,6 +691,7 @@ enum class html_mode_e {
   Comm,           // <!-- -->
   Preprocessing,  // <? ?>
   CData,          // <![CDATA[ x  ]]>
+  HtmlCData,      // <script> <style>
 };
 
 // LeftStartTag -> RightStartTag  <a href=/ >
@@ -709,9 +710,9 @@ bool Matcher<html_mode_e>::Match(Lexer<html_mode_e>* lexer, Token* tok) {
     name      = [a-zA-Z][a-zA-Z0-9:_-]* ;
 
                 // TODO: check this pattern
-    char_name = '&'   [a-zA-Z][a-zA-Z0-9]* ';' ;
-    char_dec  = '&#'  [0-9]+ ';'              ;
-    char_hex  = '&#x' [0-9a-fA-F]+ ';'        ;
+    char_name = "&"   [a-zA-Z][a-zA-Z0-9]* ";" ;
+    char_dec  = "&#"  [0-9]+ ";"              ;
+    char_hex  = "&#x" [0-9a-fA-F]+ ";"        ;
   */
 
   switch (lexer->line_mode) {
@@ -725,22 +726,24 @@ bool Matcher<html_mode_e>::Match(Lexer<html_mode_e>* lexer, Token* tok) {
         char_dec      { TOK(Id::CharEscape); }
         char_hex      { TOK(Id::CharEscape); }
 
-        '&'           { TOK(Id::BadAmpersand); }
-        '>'           { TOK(Id::BadGreaterThan); }
-        '<'           { TOK(Id::BadLessThan); }
+        "&"           { TOK(Id::BadAmpersand); }
+        ">"           { TOK(Id::BadGreaterThan); }
+        "<"           { TOK(Id::BadLessThan); }
 
-        '</' name '>' { TOK(Id::EndTag); }
+        "</" name ">" { TOK(Id::EndTag); }
 
-        '<'  name     {
+        "<"  name     {
           TOK_MODE(Id::TagNameLeft, html_mode_e::AttrName);
           // TODO: <script> <style> - special logic for strstr()
         }
 
-        '<!' [^\x00>]* '>'  { TOK(Id::Str); }
+        // Problem: these can span more than one linee ... it needs to be
+        // another mode?  The end tag might be technically the same.
+        "<!" [^\x00>]* ">"  { TOK(Id::Comm); }
 
-        '<!--'        { TOK_MODE(Id::Comm, html_mode_e::Comm); }
-        '<?'          { TOK_MODE(Id::Comm, html_mode_e::Preprocessing); }
-        '<![CDATA['   { TOK_MODE(Id::Str, html_mode_e::CData); }
+        "<!--"        { TOK_MODE(Id::Comm, html_mode_e::Comm); }
+        "<?"          { TOK_MODE(Id::Comm, html_mode_e::Preprocessing); }
+        "<![CDATA["   { TOK_MODE(Id::Str, html_mode_e::CData); }
 
 
                       // Like RawData
@@ -754,8 +757,11 @@ bool Matcher<html_mode_e>::Match(Lexer<html_mode_e>* lexer, Token* tok) {
       /*!re2c
         nul           { return true; }  // TODO: error
 
-        '>'           { TOK_MODE(Id::TagNameRight, html_mode_e::Outer); }
-        '/>'          { TOK_MODE(Id::SelfClose, html_mode_e::Outer); }
+        // TODO: If the tag was <script> or <STYLE>, then we want to enter
+        // HtmlCData mode, until we hit </script> or </STYLE>.
+        // This is live throughout AttrName, AttrValue, SQ, DQ states?
+        ">"           { TOK_MODE(Id::TagNameRight, html_mode_e::Outer); }
+        "/>"          { TOK_MODE(Id::SelfClose, html_mode_e::Outer); }
 
         space_required name {
           // <a missing> - stay in the AttrName mode
@@ -776,8 +782,8 @@ bool Matcher<html_mode_e>::Match(Lexer<html_mode_e>* lexer, Token* tok) {
       /*!re2c
         nul            { return true; }  // TODO: error
 
-        '"'            { TOK_MODE(Id::Str, html_mode_e::DQ); }
-        "'"            { TOK_MODE(Id::Str, html_mode_e::SQ); }
+        ["]            { TOK_MODE(Id::Str, html_mode_e::DQ); }
+        [']            { TOK_MODE(Id::Str, html_mode_e::SQ); }
 
         // Unquoted value - a single token
         unquoted_value = [^\x00 \r\n\t<>&"']+ ;
@@ -799,11 +805,11 @@ bool Matcher<html_mode_e>::Match(Lexer<html_mode_e>* lexer, Token* tok) {
 
                       // we would only need these for translation to XML, not
                       // highlighting?
-        '&'           { TOK(Id::BadAmpersand); }
-        '>'           { TOK(Id::BadGreaterThan); }
-        '<'           { TOK(Id::BadLessThan); }
+        "&"           { TOK(Id::BadAmpersand); }
+        ">"           { TOK(Id::BadGreaterThan); }
+        "<"           { TOK(Id::BadLessThan); }
 
-        '"'           { TOK_MODE(Id::Str, html_mode_e::AttrName); }
+        ["]           { TOK_MODE(Id::Str, html_mode_e::AttrName); }
         *             { TOK(Id::Str); }
       */
     }
@@ -818,10 +824,10 @@ bool Matcher<html_mode_e>::Match(Lexer<html_mode_e>* lexer, Token* tok) {
 
                       // we would only need these for translation to XML, not
                       // highlighting?
-        '&'           { TOK(Id::BadAmpersand); }
-        '>'           { TOK(Id::BadGreaterThan); }
-        '<'           { TOK(Id::BadLessThan); }
-        "'"           { TOK_MODE(Id::Str, html_mode_e::AttrName); }
+        "&"           { TOK(Id::BadAmpersand); }
+        ">"           { TOK(Id::BadGreaterThan); }
+        "<"           { TOK(Id::BadLessThan); }
+        [']           { TOK_MODE(Id::Str, html_mode_e::AttrName); }
 
         *             { TOK(Id::Str); }
       */

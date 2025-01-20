@@ -247,6 +247,8 @@ readonly -a HTML_TESTS=(
     <not-a-tag> --> more <p>'
   'foo <![CDATA[ hello 
     <not-a-tag> ]]> more <p>'
+  'not-cdata <![cdata[ hello 
+    <not-a-tag> ]]> more <p>'
   '<script>if (x<y) {
     console.log("hi"); } </script> hi <p>'
   '<style>p { background-color: red;
