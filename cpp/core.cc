@@ -153,9 +153,9 @@ List<PasswdEntry*>* GetAllUsers() {
 
   return ret;
 #else
-  fprintf(
-      stderr,
-      "oils: Can't list users because *pwent() functions weren't found in libc\n");
+  fprintf(stderr,
+          "oils: Can't list users because *pwent() functions weren't found in "
+          "libc\n");
   return NewList<PasswdEntry*>();
 #endif
 }

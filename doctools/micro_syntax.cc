@@ -329,12 +329,13 @@ class AnsiPrinter : public Printer {
       PrintColor(GREEN, p_start, num_bytes);
       break;
 
-    case Id::StartTag:
-    case Id::EndTag:
+    case Id::TagNameLeft:
+    case Id::TagNameRight:
       PrintColor(PURPLE, p_start, num_bytes);
       break;
 
-    case Id::StartEndTag:
+    case Id::SelfClose:
+    case Id::EndTag:
       PrintColor(RED2, p_start, num_bytes);
       break;
 
@@ -1064,7 +1065,8 @@ int main(int argc, char** argv) {
         flag.lang = lang_e::PlainText;
 
       } else {
-        Log("Expected -l LANG to be cpp|py|shell|asdl|R|js|css|md|yaml|html|txt, "
+        Log("Expected -l LANG to be "
+            "cpp|py|shell|asdl|R|js|css|md|yaml|html|txt, "
             "got %s",
             optarg);
         return 2;

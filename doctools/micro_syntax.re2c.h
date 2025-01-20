@@ -42,9 +42,16 @@ enum class Id {
   HereEnd,
 
   // Html
-  StartTag,
-  EndTag,
-  StartEndTag,
+  TagNameLeft,   // start <a> or <br id=foo />
+  SelfClose,     // />
+  TagNameRight,  // >
+  EndTag,        // </a>
+  CharEscape,    // &amp;
+  AttrName,      // foo=
+  BadAmpersand,
+  BadLessThan,
+  BadGreaterThan,
+  // Reused: Str Other
 
   // Zero-width token to detect #ifdef and Python INDENT/DEDENT
   // StartLine,
@@ -123,6 +130,7 @@ class Matcher {
 
   // Whitespace is needed for SLOC, to tell if a line is entirely blank
   whitespace = [ \t\r\n]*;
+  space_required = [ \t\r\n]+;
 
   identifier = [_a-zA-Z][_a-zA-Z0-9]*;
 
@@ -675,8 +683,14 @@ bool Matcher<sh_mode_e>::Match(Lexer<sh_mode_e>* lexer, Token* tok) {
 }
 
 enum class html_mode_e {
-  Outer,
+  Outer,     // <NAME enters the TAG state
+  AttrName,  // NAME="  NAME='  NAME=  NAME
+  SQ,        // respects Chars, can contain "
+  DQ,        // respects Chars, can contain '
 };
+
+// LeftStartTag -> RightStartTag  <a href=/ >
+// LeftStartTag -> SelfClose      <br id=foo />
 
 // Returns whether EOL was hit
 template <>
@@ -684,24 +698,64 @@ bool Matcher<html_mode_e>::Match(Lexer<html_mode_e>* lexer, Token* tok) {
   const char* p = lexer->p_current;  // mutated by re2c
   const char* YYMARKER = p;
 
+  /*!re2c
+     // Common definitions
+
+     // Like _NAME_RE in HTM8
+     name     = [a-zA-Z][a-zA-Z0-9:_-]* ;
+
+                // TODO: check this pattern
+    char_name = '&'   [a-zA-Z][a-zA-Z0-9] ';' ;
+    char_dec  = '&#'  [0-9]+ ';'              ;
+    char_hex  = '&#x' [0-9a-fA-F]+ ';'        ;
+    */
+
   switch (lexer->line_mode) {
   case html_mode_e::Outer:
     while (true) {
       /*!re2c
         nul       { return true; }
 
-        // Like _NAME in HTM8
-        name = [a-zA-Z][a-zA-Z0-9:_-]* ;
+        char_name     { TOK(Id::CharEscape); }
+        char_dec      { TOK(Id::CharEscape); }
+        char_hex      { TOK(Id::CharEscape); }
+        '&'           { TOK(Id::BadAmpersand); }
 
         '</' name '>' { TOK(Id::EndTag); }
-        '<' name [^>\x00]* '/>' { TOK(Id::StartEndTag); }
-        '<' name [^>\x00]* '>' { TOK(Id::StartTag); }
+        '<'  name     { TOK_MODE(Id::TagNameLeft, html_mode_e::AttrName); }
 
-        // TODO: Fill in the rest of the HTM8 lexer.
-
-        *                      { TOK(Id::Other); }
+        *             { TOK(Id::Other); }
 
       */
+    }
+    break;
+  case html_mode_e::AttrName:
+    while (true) {
+      /*!re2c
+        '>'            { TOK_MODE(Id::TagNameRight, html_mode_e::Outer); }
+        '/>'           { TOK_MODE(Id::SelfClose, html_mode_e::Outer); }
+
+        // NAME NAME= NAME=' NAME="
+        space_required name ( whitespace '=' whitespace ('"' | "'" )?)?  {
+           // TODO: conditionally enter SQ, DQ, or Unquoted modes
+           TOK(Id::AttrName);
+        }
+        *             { TOK(Id::Other); }
+      */
+    }
+    break;
+  case html_mode_e::SQ:
+    while (true) {
+      /*!re2c
+       *             { TOK(Id::Other); }
+       */
+    }
+    break;
+  case html_mode_e::DQ:
+    while (true) {
+      /*!re2c
+       *             { TOK(Id::Other); }
+       */
     }
     break;
   }
@@ -710,7 +764,6 @@ bool Matcher<html_mode_e>::Match(Lexer<html_mode_e>* lexer, Token* tok) {
   lexer->p_current = p;
   return false;
 }
-
 
 // TODO:
 // - Lua / Rust-style multi-line strings, with matching delimiters e.g. r###"

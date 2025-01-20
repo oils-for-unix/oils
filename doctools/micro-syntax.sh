@@ -215,9 +215,18 @@ readonly -a R_TESTS=(
 
 readonly -a HTML_TESTS=(
   '<p>hi</p>'
+  '<ul> <li>hi</li> </ul>'
   'hi <br/>'
-  '<img src="foo"/>'
+  # TODO: Are we allowing this ambiguity?
+  '<a href=/>'
   '<a href=foo>link</a>'
+  '<img src="foo"/>'
+  'decl <!DOCTYPE html>'
+  'decl <?xml version="1.0"?>'
+  'hello <!-- comment -->'
+  'foo <![CDATA[ hello ]]>'
+  '<script>if (x < 42) { console.log("hi"); } </script>'
+  '<style>p { background-color: red; } </style>'
 )
 
 run-cases() {
