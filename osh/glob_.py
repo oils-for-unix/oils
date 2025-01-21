@@ -16,7 +16,7 @@ from frontend import match
 from mycpp import mylib
 from mycpp.mylib import log, print_stderr
 
-from libc import GLOB_PERIOD, HAVE_GLOB_PERIOD
+from libc import GLOB_PERIOD
 
 from typing import List, Tuple, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -416,7 +416,9 @@ class Globber(object):
         # type: (str, List[str]) -> int
         try:
             flags = 0
-            if self.exec_opts.dotglob() and HAVE_GLOB_PERIOD:
+            if self.exec_opts.dotglob():
+                # If HAVE_GLOB_PERIOD is false, then ./configure stubs out
+                # GLOB_PERIOD as 0, a no-op
                 flags |= GLOB_PERIOD
             results = libc.glob(arg, flags)
         except RuntimeError as e:

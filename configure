@@ -381,6 +381,7 @@ echo_libc() {
     echo '#define HAVE_GLOB_PERIOD 1'
   else
     echo '#define HAVE_GLOB_PERIOD 0'
+    echo '#define GLOB_PERIOD 0  /* define bit flag to have no effect */'
   fi
 }
 
