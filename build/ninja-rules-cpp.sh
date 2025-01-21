@@ -309,9 +309,10 @@ compile_one() {
     # Show timing info on the most expensive translation unit
     case $in in
       */oils_for_unix.*)
-        # Must have external 'time', so we test with 'which', not 'command -v'.
-        # busybox time supports -f but not --format.
-        if which time >/dev/null; then
+        # Must have external 'time', and it must have -f
+        # Notes: OS X has no time -f
+        #        busybox time supports -f but not --format.
+        if command time -f '%e %M' true >/dev/null; then
           set -- \
             time -f "$out { elapsed: %e, max_RSS: %M }" -- \
             "$@"
