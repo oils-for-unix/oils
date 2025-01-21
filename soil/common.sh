@@ -22,8 +22,8 @@ dump-env() {
 
 # dh, mb, op
 #_soil_service=op
-#_soil_service=mb
-_soil_service=dh
+_soil_service=mb
+#_soil_service=dh
 
 case $_soil_service in
   dh)
