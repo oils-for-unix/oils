@@ -39,25 +39,30 @@ test_cc_statements() {
 test_parse_flags() {
   parse_flags --prefix /usr --datarootdir /usr/local/share
 
-  if ! test "$FLAG_prefix" = '/usr'; then
-    die "FAILED - prefix is $FLAG_prefix not /usr"
+  if test "$FLAG_prefix" != '/usr'; then
+    die "FAILED - expected prefix /usr, got $FLAG_prefix"
+  fi
+  if test "$FLAG_datarootdir" != '/usr/local/share'; then
+    die "FAILED - expected datarootdir /usr/local/share, got $FLAG_datarootdir"
   fi
 
-  if ! test "$FLAG_datarootdir" = '/usr/local/share'; then
-    die "FAILED - datarootdir is $FLAG_datarootdir not /usr/local/share"
-  fi
+  init_flags  # Reset
 
-  FLAG_prefix='/usr/local'
-  FLAG_datarootdir=''
-
+  # Test fallback to --prefix
   parse_flags --prefix /usr
 
-  if ! test "$FLAG_datarootdir" = '/usr/share'; then
-    die "FAILED - datarootdir is $FLAG_datarootdir not /usr/share"
+  if test "$FLAG_datarootdir" != '/usr/share'; then
+    die "FAILED - expected datarootdir /usr/share, got $FLAG_datarootdir"
   fi
 
-  FLAG_prefix='/usr/local'
-  FLAG_datarootdir=''
+  init_flags  # Reset
+
+  parse_flags --cxx foo
+  if test "$FLAG_cxx" != 'foo'; then
+    die "FAILED - expected cxx foo, got $FLAG_cxx"
+  fi
+
+  init_flags  # Reset
 }
 
 test_echo_cpp() {

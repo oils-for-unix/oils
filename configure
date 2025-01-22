@@ -39,11 +39,14 @@ Usage:
   ./configure FLAG*
   ./configure --help
 
-Installation directories:
-  --prefix=PREFIX               Prefix for the bin/ directory [/usr/local]
-  --datarootdir=DATAROOTDIR     Prefix for data files, including man page [PREFIX/share]
+Flags:
+  --cxx CXX                     Use this compiler to test for system features [cc]
 
-Optional features:
+Installation dirs:
+  --prefix PREFIX               Prefix for the bin/ directory [/usr/local]
+  --datarootdir DATAROOTDIR     Prefix for data files, including man page [PREFIX/share]
+
+Dependencies:
   --with-readline               Fail unless readline is available.
   --without-readline            Don't compile with readline, even if it's available.
                                 The shell won't have any interactive features.
@@ -65,13 +68,21 @@ EOF
 # listed on the above documents, it accepts most of them in the --arg=value
 # form as noops. This helps automated build-systems passing preconfigured
 # sets of arguments to configure oil.
-FLAG_prefix='/usr/local'
-FLAG_datarootdir=''  # default initialized after processing flags
-FLAG_with_readline=''  # Fail if it's not available.
-FLAG_without_readline=''  # Don't even check if it's available
-FLAG_readline=''
-FLAG_without_systemtap_sdt=''  # Don't even check if it's available
-FLAG_without_libc_features=''
+
+init_flags() {
+  ### Used in tests
+  FLAG_cxx=cc  # use a C compiler by default
+  FLAG_prefix='/usr/local'
+  FLAG_datarootdir=''  # default initialized after processing flags
+  FLAG_with_readline=''  # Fail if it's not available.
+  FLAG_without_readline=''  # Don't even check if it's available
+  FLAG_readline=''
+  FLAG_without_systemtap_sdt=''  # Don't even check if it's available
+  FLAG_without_libc_features=''
+}
+
+init_flags  # Set GLOBALS
+
 
 # These variables are set by detect_readline and used by echo_cpp and
 # echo_shell_vars
@@ -96,6 +107,17 @@ parse_flags() {
       --help)
         show_help
         exit 0
+        ;;
+
+      --cxx=*)
+        FLAG_cxx="${1#*=}"
+        ;;
+      --cxx)
+        if test $# -eq 1; then
+          die "--cxxrequires an argument"
+        fi
+        shift
+        FLAG_cxx=$1
         ;;
 
       --with-readline)
@@ -188,7 +210,7 @@ parse_flags() {
 # No output file, no logging, no stderr.
 # TODO: Maybe send stdout/stderr to config.log?
 cc_quiet() {
-  cc "$@" -o /dev/null >/dev/null 2>&1
+  $FLAG_cxx "$@" -o /dev/null >/dev/null 2>&1
 }
 
 cc_or_die() {
