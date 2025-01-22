@@ -277,15 +277,77 @@ EOF
   log "Wrote $out"
 }
 
+help-mirror-md() {
+  echo '
+Oils Help Mirror
+=====
+
+<style>
+/* Exclude <pre><code>.  Is there a better way to do this?  */
+p code, div code, li code, h2 code, h3 code {
+  color: green;
+}
+</style>
+
+This doc mirrors the `--help` for the 3 shell tools in the build sytsem:
+
+1. `configure` - Detect system settings
+1. `_build/oils.sh` - Compile `oils-for-unix` source into an executable
+1. `install` - Install the binary, and symlinks to it
+
+Related: [INSTALL.html](INSTALL.html)
+
+<div id="toc">
+</div>
+
+## configure
+
+```'
+  ./configure --help
+
+  echo '```
+
+## _build/oils.sh
+
+```'
+
+  devtools/release-native.sh gen-oils-sh
+  _build/oils.sh --help
+
+  echo '```
+
+## install
+
+```'
+  ./install --help
+  echo '```'
+}
+
+help-mirror() {
+  ### Mirror --help to HTML
+
+  local md=_tmp/doc/help-mirror.md
+
+  help-mirror-md > $md
+
+  local web_dir='../web'
+  #local css="$web_dir/base.css $web_dir/install.css $web_dir/toc.css" 
+  local css="$web_dir/base.css $web_dir/toc.css" 
+  render-only $md '' "$css" 'Oils Build Help Mirror'
+}
+
 special() {
   # TODO: do all READMEs
   split-and-render mycpp/README.md \
     $HTML_BASE_DIR/doc/oils-repo/mycpp/README.html \
     ../../../web
 
+  # TODO: README can just be a pointer to other docs, like "Repo Overview"
   local web_dir='../../web'
   render-only 'README.md' $HTML_BASE_DIR/doc/oils-repo/README.html \
     "$web_dir/base.css $web_dir/manual.css $web_dir/toc.css" 'Oils Source Code'
+
+  help-mirror
 
   local web_dir='../web'
   render-only INSTALL.txt '' \

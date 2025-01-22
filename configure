@@ -40,19 +40,26 @@ Usage:
   ./configure --help
 
 Flags:
-  --cxx CXX                     Use this compiler to test for system features [cc]
+
+  --cxx CXX [default 'cc']
+    Use this compiler to test for system features
 
 Installation dirs:
-  --prefix PREFIX               Prefix for the bin/ directory [/usr/local]
-  --datarootdir DATAROOTDIR     Prefix for data files, including man page [PREFIX/share]
+
+  --prefix PREFIX [default '/usr/local']
+    Prefix for the bin/ directory 
+
+  --datarootdir DATAROOTDIR [default $PREFIX/share]
+    Prefix for data files, including man page 
 
 Dependencies:
-  --with-readline               Fail unless readline is available.
-  --without-readline            Don't compile with readline, even if it's available.
-                                The shell won't have any interactive features.
-  --readline=DIR                An alternative readline installation to link against
-  --with-systemtap-sdt          Fail unless systemtap-sdt is available.
-  --without-systemtap-sdt       Don't compile with systemtap-sdt, even if it's available.
+
+  --with-readline          Fail unless readline is available
+  --without-readline       Don't compile with readline, even if it's available.
+                           The shell won't have any interactive features.
+  --readline DIR           An alternative readline installation to link against
+  --with-systemtap-sdt     Fail unless systemtap-sdt is available
+  --without-systemtap-sdt  Don't compile with systemtap-sdt, even if it's available
 
 EOF
 }

@@ -54,7 +54,7 @@ More Documentation
 
 Every release has a home page with links:
 
-    https://oilshell.org/release/0.26.0/
+- <https://oils.pub/release/0.26.0/>
 
 System Requirements
 -------------------
@@ -81,7 +81,7 @@ Alpine Linux:
 Oils has been tested on several Linux distros and OS X.  It aims to run on any
 POSIX system.  If it doesn't, file a bug here:
 
-    https://github.com/oilshell/oil/issues
+- <https://github.com/oilshell/oil/issues>
 
 Non-root Install
 ----------------
@@ -113,8 +113,11 @@ Build Options
 Show options with:
 
     ./configure --help 
+    _build/oils.sh --help
+    ./install --help
+
     
-Common flags:
+Common flags to `configure`:
 
     --prefix
     --with-readline
@@ -124,6 +127,8 @@ Common flags:
 Links
 -----
 
+- Mirror the help text:
+  <https://oils.pub/release/0.26.0/doc/help-mirror.html>
 - Notes on portability:
-  https://oilshell.org/release/0.26.0/doc/portability.html
+  <https://oils.pub/release/0.26.0/doc/portability.html>
 

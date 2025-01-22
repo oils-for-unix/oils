@@ -26,7 +26,7 @@ gen-oils-sh() {
   local out=_build/oils.sh
   _gen-oils-sh > $out
   chmod +x $out
-  echo "  (build/ninja_main.py) -> $out"
+  echo "  (build/ninja_main.py) -> $out" >&2
 }
 
 tarball-manifest() {
