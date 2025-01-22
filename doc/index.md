@@ -30,6 +30,7 @@ See [Published Docs](published.html) for those that are ready to read.
 
 - [INSTALL](INSTALL.html). How do I install Oils?  This text file is also in
   the `oils-for-unix` tarball.
+  - [Oils Help Mirror](help-mirror.html)
   - [Portability](portability.html)
 - [Getting Started](getting-started.html).  How do I use the shell?
 

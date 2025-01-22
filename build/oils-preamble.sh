@@ -25,9 +25,6 @@ Flags:
   --variant ARG [default 'opt']
     The build variant, e.g. dbg, opt, asan, which adds compile and link flags.
 
-  --ldflags LDFLAGS [default '']
-    Space-separated list of additional linker flags.
-
   --translator ARG [default 'mycpp']
     Which bundle of translated source code to compile: mycpp, mycpp-souffle
 
@@ -42,27 +39,35 @@ Env vars respected:
   OILS_CXX_VERBOSE=    [default '']
     Set to 1 to show build details.
 
-Compiler flags:
+Compile/link flags:
 
   BASE_CXXFLAGS=       (defined in build/common.sh)
     Override this to disable basic flags like -fno-omit-frame-pointer
 
-  CXXFLAGS=            (defined in build/ninja-rules-cpp.sh)
-    You can add space-separated compiler flags here.
+  CXXFLAGS=            [default ''] (defined in build/ninja-rules-cpp.sh)
+    Space-separated list of more compiler flags
+
+  LDFLAGS=             [default ''] (defined in build/ninja-rules-cpp.sh)
+    Space-separated list of more linker flags
 
 Compiler flags come from 4 sources:
 
-  1. $BASE_CXXFLAGS
+  1. The $BASE_CXXFLAGS var
   2. -I $REPO_ROOT is hard-coded
   3. The build --variant, e.g. 'asan' adds -fsanitizer=address and more
-  4. $CXXFLAGS
+  4. The $CXXFLAGS var
+
+Linker flags come from 3 sources:
+
+  1. The build --variant, e.g. 'asan' adds -fsanitizer=address
+  2. $STRIP_FLAGS, a variable detected by ./configure
+  3. The $LDFLAGS var
 
 EOF
 }
 
 FLAG_cxx=cxx           # default is system compiler
 FLAG_variant=opt       # default is optimized build
-FLAG_ldflags=          # default is no flags
 
 FLAG_translator=mycpp  # or mycpp-souffle
 FLAG_skip_rebuild=''   # false
@@ -88,14 +93,6 @@ parse_flags() {
         fi
         shift
         FLAG_cxx=$1
-        ;;
-
-      --ldflags)
-        if test $# -eq 1; then
-          die "--ldflags requires an argument"
-        fi
-        shift
-        FLAG_ldflags=$1
         ;;
 
       --variant)

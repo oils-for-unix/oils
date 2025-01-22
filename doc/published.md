@@ -14,6 +14,13 @@ See [All Docs](index.html) for links to drafts.
 - [FAQ on Docs](faq-doc.html).  **Look here if you can't find
   something**.
 
+Build/packaging:
+
+- [INSTALL](INSTALL.html). How do I install Oils?  This text file is also in
+  the `oils-for-unix` tarball.
+  - [Oils Help Mirror](help-mirror.html)
+  - [Portability](portability.html)
+
 [help]: ref/chap-builtin-cmd.html#help
 
 ## More

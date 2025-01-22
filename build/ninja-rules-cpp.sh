@@ -240,6 +240,11 @@ setglobal_link_flags() {
   if test -n "${STRIP_FLAGS:-}"; then
     link_flags="$link_flags -Wl,$STRIP_FLAGS"
   fi
+
+  local env_flags=${LDFLAGS:-}
+  if test -n "$env_flags"; then
+    link_flags="$link_flags $env_flags"
+  fi
 }
 
 compile_one() {

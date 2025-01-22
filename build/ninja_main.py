@@ -208,7 +208,7 @@ main() {
 
     print('  echo "LINK $out"', file=f)
     # note: can't have spaces in filenames
-    print('  link "$compiler" "$variant" "$FLAG_ldflags" "$out" \\', file=f)
+    print('  link "$compiler" "$variant" "" "$out" \\', file=f)
     # put each object on its own line, and indent by 4
     print('    %s' % (' \\\n    '.join(objects)), file=f)
     print('', file=f)

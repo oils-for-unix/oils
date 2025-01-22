@@ -77,6 +77,11 @@ See the [Unicode doc][] for details on Unicode-aware operations.
 
 [Unicode doc]: unicode.html
 
+## Related
+
+- [INSTALL](INSTALL.html)
+- [Oils Help Mirror](help-mirror.html)
+
 <!--
 
 TODO: ./configure could detect some of these
