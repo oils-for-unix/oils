@@ -114,7 +114,7 @@ parse_flags() {
         ;;
       --cxx)
         if test $# -eq 1; then
-          die "--cxxrequires an argument"
+          die "--cxx requires an argument"
         fi
         shift
         FLAG_cxx=$1

@@ -225,7 +225,7 @@ main() {
     # out_name=$out_name.stripped
   fi
 
-  cd $out_dir
+  cd "$out_dir"  # dir may have spaces
   for symlink in osh ysh; do
     # like ln -v, which we can't use portably
     echo "    $symlink -> $out_name"
