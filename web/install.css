@@ -20,8 +20,8 @@ h2 {
   font-family: serif;
 }
 
-/* Exclude <pre><code>.  Is there a better way to do this?  */
-p code, div code, li code, h2 code, h3 code {
+/* Exclude Markdown <pre><code> */
+code:not(pre code) {
   color: green;
 }
 

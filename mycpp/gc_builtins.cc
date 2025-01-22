@@ -182,7 +182,7 @@ bool StringToInt64(const char* s, int length, int base, int64_t* result) {
   }
 
   // These should be the same type
-  static_assert(sizeof(long long) == sizeof(int64_t));
+  static_assert(sizeof(long long) == sizeof(int64_t), "");
 
   char* pos;  // mutated by strtol
 

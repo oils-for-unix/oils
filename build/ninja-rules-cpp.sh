@@ -72,21 +72,12 @@ setglobal_compile_flags() {
   # flags from Ninja/shell respected
   flags="$BASE_CXXFLAGS -I $REPO_ROOT $more_cxx_flags"
 
-  # Flags from env
-  # Similar to
-  # - GNU make - https://www.gnu.org/software/make/manual/html_node/Implicit-Variables.html
-  #   CXXFLAGS "Extra flags to give to the C++ compiler"
-  # - CMake - https://cmake.org/cmake/help/latest/envvar/CXXFLAGS.html 
-  #   "Add default compilation flags to be used when compiling CXX (C++) files."
-
-  local env_flags=${CXXFLAGS:-}
-  if test -n "$env_flags"; then
-    flags="$flags $env_flags"
-  fi
-
-  if test -n "$READLINE_DIR"; then
-    flags="$flags -I${READLINE_DIR}/include"
-  fi
+  # flags needed to strip unused symbols
+  # TODO: should these go in BASE_CXXFLAGS?
+  #
+  # https://stackoverflow.com/questions/6687630/how-to-remove-unused-c-c-symbols-with-gcc-and-ld
+  flags="$flags -fdata-sections -ffunction-sections"
+  # Note: -ftlo doesn't do anything for size?
 
   case $variant in
     *+bumpleak|*+bumproot)
@@ -183,12 +174,22 @@ setglobal_compile_flags() {
       ;;
   esac
 
-  # needed to strip unused symbols
-  # https://stackoverflow.com/questions/6687630/how-to-remove-unused-c-c-symbols-with-gcc-and-ld
+  # Detected by ./configure
+  if test -n "$READLINE_DIR"; then
+    flags="$flags -I${READLINE_DIR}/include"
+  fi
 
-  # Note: -ftlo doesn't do anything for size?
+  # Flags from env
+  # Similar to
+  # - GNU make - https://www.gnu.org/software/make/manual/html_node/Implicit-Variables.html
+  #   CXXFLAGS "Extra flags to give to the C++ compiler"
+  # - CMake - https://cmake.org/cmake/help/latest/envvar/CXXFLAGS.html 
+  #   "Add default compilation flags to be used when compiling CXX (C++) files."
 
-  flags="$flags -fdata-sections -ffunction-sections"
+  local env_flags=${CXXFLAGS:-}
+  if test -n "$env_flags"; then
+    flags="$flags $env_flags"
+  fi
 
   # https://ninja-build.org/manual.html#ref_headers
   if test -n "$dotd"; then

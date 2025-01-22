@@ -279,12 +279,16 @@ EOF
 
 help-mirror-md() {
   echo '
-Oils Help Mirror
+Oils Build `--help` Mirror
 =====
 
 <style>
-/* Exclude <pre><code>.  Is there a better way to do this?  */
-p code, div code, li code, h2 code, h3 code {
+/* Similar to web/install.css */
+h1 { font-size: 1.5em; }
+h2 { font-size: 1.2em; }
+
+/* Exclude Markdown <pre><code> */
+code:not(pre code) {
   color: green;
 }
 </style>
@@ -293,9 +297,7 @@ This doc mirrors the `--help` for the 3 shell tools in the build sytsem:
 
 1. `configure` - Detect system settings
 1. `_build/oils.sh` - Compile `oils-for-unix` source into an executable
-1. `install` - Install the binary, and symlinks to it
-
-Related: [INSTALL.html](INSTALL.html)
+1. `install` - Install the executable, and symlinks to it
 
 <div id="toc">
 </div>
@@ -320,7 +322,15 @@ Related: [INSTALL.html](INSTALL.html)
 
 ```'
   ./install --help
-  echo '```'
+  echo '```
+
+## Links
+
+- [INSTALL.html](INSTALL.html)
+- [Oils Packaging Guidelines]($wiki) (wiki)
+- [Oils Packaging Tips]($wiki) (wiki)
+
+  '
 }
 
 help-mirror() {
