@@ -347,13 +347,16 @@ osh-spec          test/spec-py.sh osh-all-serial         _tmp/spec/osh-py/index.
 gold              test/gold.sh soil-run                  -
 osh-usage         test/osh-usage.sh soil-run             -
 tools-deps        test/tools-deps.sh soil-run            -
+ninja-config      soil/worker.sh ninja-config            -
 docs              build/doc.sh soil-run                  _release/VERSION/index.html
 doc-metrics       echo no-op                             _release/VERSION/doc/metrics.txt
 check-docs        data_lang/htm8-test.sh soil-run        -
 EOF
-# doc-metrics is a no-op, just for the link.  Because soil-run just runs the
-# release, which creates metrics.
-
+# Notes:
+# - 'docs' depends on 'ninja-config' to run build/ninja_main.py, which makes
+#   _build/oils.sh.  Maybe all the docs need to be in Ninja
+# - doc-metrics is a no-op, just for the link.  Because soil-run just runs the
+#   release, which creates metrics.
 }
 
 # Reuse ovm-tarball container

@@ -58,6 +58,7 @@ Dependencies:
   --without-readline       Don't compile with readline, even if it's available.
                            The shell won't have any interactive features.
   --readline DIR           An alternative readline installation to link against
+  --without-libc-features  Assume no FNM_EXTMATCH, GLOB_PERIOD, *pwent()
   --with-systemtap-sdt     Fail unless systemtap-sdt is available
   --without-systemtap-sdt  Don't compile with systemtap-sdt, even if it's available
 
