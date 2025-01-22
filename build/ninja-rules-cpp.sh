@@ -66,7 +66,7 @@ setglobal_compile_flags() {
   ### Set flags based on $variant $more_cxx_flags and $dotd
 
   local variant=$1
-  local more_cxx_flags=$2
+  local more_cxx_flags=$2  # e.g. NINJA_subgraph.py sets -D CPP_UNIT_TEST
   local dotd=${3:-}
 
   # flags from Ninja/shell respected
@@ -198,29 +198,39 @@ setglobal_compile_flags() {
 
 setglobal_link_flags() {
   local variant=$1
+  local more_link_flags=${2:-}  # from NINJA_subgraph.py, e.g. Souffle datalog
 
+  link_flags="$more_link_flags"  # initialize
+
+  # Linker flags based on build variant
+  local variant_flags=''
   case $variant in
     # Must REPEAT these flags, otherwise we lose sanitizers / coverage
     asan*)
-      link_flags='-fsanitize=address'
+      variant_flags='-fsanitize=address'
       ;;
 
     tcmalloc)
       # Need to tell the dynamic loader where to find tcmalloc
-      link_flags='-ltcmalloc -Wl,-rpath,/usr/local/lib'
+      variant_flags='-ltcmalloc -Wl,-rpath,/usr/local/lib'
       ;;
 
     tsan)
-      link_flags='-fsanitize=thread'
+      variant_flags='-fsanitize=thread'
       ;;
     ubsan*)
-      link_flags='-fsanitize=undefined'
+      variant_flags='-fsanitize=undefined'
       ;;
     coverage*)
-      link_flags='-fprofile-instr-generate -fcoverage-mapping'
+      variant_flags='-fprofile-instr-generate -fcoverage-mapping'
       ;;
   esac
 
+  if test -n "$variant_flags"; then
+    link_flags="$link_flags $variant_flags"
+  fi
+
+  # More build variant flags, and GNU readline flags
   case $variant in
     # TODO: 32-bit variants can't handle -l readline right now.
     *32*)
@@ -237,10 +247,12 @@ setglobal_link_flags() {
       ;;
   esac
 
+  # Detected by ./configure
   if test -n "${STRIP_FLAGS:-}"; then
     link_flags="$link_flags -Wl,$STRIP_FLAGS"
   fi
 
+  # Set by user/packager
   local env_flags=${LDFLAGS:-}
   if test -n "$env_flags"; then
     link_flags="$link_flags $env_flags"
@@ -335,14 +347,14 @@ link() {
 
   local compiler=$1
   local variant=$2
-  local more_link_flags=$3
+  local more_link_flags=$3  # Used by Souffle datalog rules
   local out=$4
   shift 4
   # rest are inputs
 
-  setglobal_link_flags $variant
+  setglobal_link_flags "$variant" "$more_link_flags"
 
-  setglobal_cxx $compiler
+  setglobal_cxx "$compiler"
 
   if test "$compiler" = 'clang'; then
     case $variant in
@@ -355,7 +367,7 @@ link() {
   #
   # IMPORTANT: Flags like -ltcmalloc have to come AFTER objects!  Weird but
   # true.
-  set -- "$cxx" -o "$out" "$@" $link_flags $more_link_flags
+  set -- "$cxx" -o "$out" "$@" $link_flags
 
   if test -n "${OILS_CXX_VERBOSE:-}"; then
     echo '__' "$@" >&2
