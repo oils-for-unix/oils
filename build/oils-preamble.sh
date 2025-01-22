@@ -24,6 +24,9 @@ Flags:
   --variant ARG [default 'opt']
     The build variant, e.g. dbg, opt, asan
 
+  --ldflags LDFLAGS [default '']
+    Space-separated list of additional linker flags.
+
   --translator ARG [default 'mycpp']
     Which bundle of translated source code to compile: mycpp, mycpp-souffle
 
@@ -42,6 +45,7 @@ EOF
 
 FLAG_cxx=cxx           # default is system compiler
 FLAG_variant=opt       # default is optimized build
+FLAG_ldflags=          # default is no flags
 
 FLAG_translator=mycpp  # or mycpp-souffle
 FLAG_skip_rebuild=''   # false
@@ -67,6 +71,14 @@ parse_flags() {
         fi
         shift
         FLAG_cxx=$1
+        ;;
+
+      --ldflags)
+        if test $# -eq 1; then
+          die "--ldflags requires an argument"
+        fi
+        shift
+        FLAG_ldflags=$1
         ;;
 
       --variant)
