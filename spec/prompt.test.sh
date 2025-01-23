@@ -173,7 +173,7 @@ status=0
 
 #### \t for 24h time (HH:MM:SS)
 PS1='foo \t bar'
-echo "${PS1@P}" | egrep -q 'foo [0-2][0-9]:[0-2][0-9]:[0-5][0-9] bar'
+echo "${PS1@P}" | egrep -q 'foo [0-2][0-9]:[0-5][0-9]:[0-5][0-9] bar'
 echo matched=$?
 
 ## STDOUT:
@@ -182,7 +182,7 @@ matched=0
 
 #### \T for 12h time (HH:MM:SS)
 PS1='foo \T bar'
-echo "${PS1@P}" | egrep -q 'foo [0-1][0-9]:[0-2][0-9]:[0-5][0-9] bar'
+echo "${PS1@P}" | egrep -q 'foo [0-1][0-9]:[0-5][0-9]:[0-5][0-9] bar'
 echo matched=$?
 
 ## STDOUT:
@@ -191,7 +191,7 @@ matched=0
 
 #### \@ for 12h time (HH:MM AM/PM)
 PS1='foo \@ bar'
-echo "${PS1@P}" | egrep -q 'foo [0-1][0-9]:[0-2][0-9] (A|P)M bar'
+echo "${PS1@P}" | egrep -q 'foo [0-1][0-9]:[0-5][0-9] (A|P)M bar'
 echo matched=$?
 
 ## STDOUT:
@@ -200,7 +200,7 @@ matched=0
 
 #### \A for 24h time (HH:MM)
 PS1='foo \A bar'
-echo "${PS1@P}" | egrep -q 'foo [0-2][0-9]:[0-2][0-9] bar'
+echo "${PS1@P}" | egrep -q 'foo [0-2][0-9]:[0-5][0-9] bar'
 echo matched=$?
 ## STDOUT:
 matched=0
