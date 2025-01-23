@@ -50,17 +50,19 @@ Compile/link flags:
   LDFLAGS=             [default ''] (defined in build/ninja-rules-cpp.sh)
     Space-separated list of more linker flags
 
-Compiler flags come from 4 sources:
+Compiler flags come from these sources:
 
   1. The $BASE_CXXFLAGS var
   2. -I $REPO_ROOT is hard-coded
   3. The build --variant, e.g. 'asan' adds -fsanitizer=address and more
-  4. The $CXXFLAGS var
+  4. Flags detected by ./configure, e.g. for GNU readline
+  5. The $CXXFLAGS var
 
-Linker flags come from 3 sources:
+Linker flags come from tehse sources:
 
   1. The build --variant, e.g. 'asan' adds -fsanitizer=address
-  2. $STRIP_FLAGS, a variable detected by ./configure
+  2. Flags detected by ./configure, like $STRIP_FLAGS and -lreadline for GNU
+     readline
   3. The $LDFLAGS var
 
 EOF

@@ -18,7 +18,7 @@ Build/packaging:
 
 - [INSTALL](INSTALL.html). How do I install Oils?  This text file is also in
   the `oils-for-unix` tarball.
-  - [Oils Help Mirror](help-mirror.html)
+  - [Oils Build `--help` Mirror](help-mirror.html)
   - [Portability](portability.html)
 
 [help]: ref/chap-builtin-cmd.html#help
