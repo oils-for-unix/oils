@@ -58,7 +58,7 @@ Compiler flags come from these sources:
   4. Flags detected by ./configure, e.g. for GNU readline
   5. The $CXXFLAGS var
 
-Linker flags come from tehse sources:
+Linker flags come from these sources:
 
   1. The build --variant, e.g. 'asan' adds -fsanitizer=address
   2. Flags detected by ./configure, like $STRIP_FLAGS and -lreadline for GNU

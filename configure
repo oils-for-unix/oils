@@ -33,7 +33,7 @@ die() {
 
 show_help() {
   cat <<'EOF'
-Detect system settings before a build of oils-for-unix.
+Detect system features before a build of oils-for-unix.
 
 Usage:
   ./configure FLAG*
@@ -41,8 +41,8 @@ Usage:
 
 Flags:
 
-  --cxx CXX [default 'cc']
-    Use this compiler to test for system features
+  --cxx-for-configure CXX [default 'cc']
+    Use this compiler to detect system features
 
 Installation dirs:
 
@@ -79,7 +79,7 @@ EOF
 
 init_flags() {
   ### Used in tests
-  FLAG_cxx=cc  # use a C compiler by default
+  FLAG_cxx_for_configure=cc  # use a C compiler by default
   FLAG_prefix='/usr/local'
   FLAG_datarootdir=''  # default initialized after processing flags
   FLAG_with_readline=''  # Fail if it's not available.
@@ -117,15 +117,15 @@ parse_flags() {
         exit 0
         ;;
 
-      --cxx=*)
-        FLAG_cxx="${1#*=}"
+      --cxx-for-configure=*)
+        FLAG_cxx_for_configure="${1#*=}"
         ;;
-      --cxx)
+      --cxx-for-configure)
         if test $# -eq 1; then
-          die "--cxx requires an argument"
+          die "--cxx-for-configure requires an argument"
         fi
         shift
-        FLAG_cxx=$1
+        FLAG_cxx_for_configure=$1
         ;;
 
       --with-readline)
@@ -218,7 +218,7 @@ parse_flags() {
 # No output file, no logging, no stderr.
 # TODO: Maybe send stdout/stderr to config.log?
 cc_quiet() {
-  $FLAG_cxx "$@" -o /dev/null >/dev/null 2>&1
+  $FLAG_cxx_for_configure "$@" -o /dev/null >/dev/null 2>&1
 }
 
 cc_or_die() {

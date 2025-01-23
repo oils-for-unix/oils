@@ -295,12 +295,27 @@ code:not(pre code) {
 
 This doc mirrors the `--help` for the 3 shell tools in the build sytsem:
 
-1. `configure` - Detect system settings
+1. `configure` - Detect system features
 1. `_build/oils.sh` - Compile `oils-for-unix` source into an executable
 1. `install` - Install the executable, and symlinks to it
 
 <div id="toc">
 </div>
+
+## Note: Usage is Different Than Autotools
+
+To minimize build deps, all 3 of these tools are hand-written POSIX shell
+scripts.  So this build system does **not** use GNU autotools, and it does not
+use `make`.
+
+Keep these differences in mind:
+
+- Settings are configured with **either** flags or env vars, as described
+  below.
+  - For example, use `./configure --cxx-for-configure mycc`, not `CXX=mycc
+  configure`.
+- If you pass `./configure --cxx-for-configure mycc`, you should also pass
+  `_build/oils.sh --cxx mycc`.  The flag value is not remembered.
 
 ## configure
 
@@ -326,9 +341,9 @@ This doc mirrors the `--help` for the 3 shell tools in the build sytsem:
 
 ## Links
 
-- [INSTALL.html](INSTALL.html)
-- [Oils Packaging Guidelines]($wiki) (wiki)
-- [Oils Packaging Tips]($wiki) (wiki)
+- [INSTALL.html](INSTALL.html) - Quick guide for end users.
+- [Oils Packaging Guidelines]($wiki) wiki
+- [Oils Packaging Tips]($wiki) wiki - free free to edit this page.
 
   '
 }
