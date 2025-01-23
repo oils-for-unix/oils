@@ -171,9 +171,36 @@ echo status=$?
 status=0
 ## END
 
-#### \A for 24 hour time
+#### \t for 24h time (HH:MM:SS)
+PS1='foo \t bar'
+echo "${PS1@P}" | egrep -q 'foo [0-2][0-9]:[0-2][0-9]:[0-5][0-9] bar'
+echo matched=$?
+
+## STDOUT:
+matched=0
+## END
+
+#### \T for 12h time (HH:MM:SS)
+PS1='foo \T bar'
+echo "${PS1@P}" | egrep -q 'foo [0-1][0-9]:[0-2][0-9]:[0-5][0-9] bar'
+echo matched=$?
+
+## STDOUT:
+matched=0
+## END
+
+#### \@ for 12h time (HH:MM AM/PM)
+PS1='foo \@ bar'
+echo "${PS1@P}" | egrep -q 'foo [0-1][0-9]:[0-2][0-9] (A|P)M bar'
+echo matched=$?
+
+## STDOUT:
+matched=0
+## END
+
+#### \A for 24h time (HH:MM)
 PS1='foo \A bar'
-echo "${PS1@P}" | egrep -q 'foo [0-9][0-9]:[0-9][0-9] bar'
+echo "${PS1@P}" | egrep -q 'foo [0-2][0-9]:[0-2][0-9] bar'
 echo matched=$?
 ## STDOUT:
 matched=0
@@ -203,42 +230,6 @@ matched=0
 ## END
 
 #### \D{} for locale specific strftime
-
-#### \t for time
-PS1='foo \t bar'
-echo "${PS1@P}" | egrep -q 'foo [0-9]{2}:[0-9]{2}:[0-9]{2} bar'
-echo matched=$?
-
-## STDOUT:
-matched=0
-## END
-
-#### \t for time (24h)
-PS1='foo \t bar'
-echo "${PS1@P}" | egrep -q 'foo [0-2][0-9]:[0-2][0-9] bar'
-echo matched=$?
-
-## STDOUT:
-matched=0
-## END
-
-#### \t for time (12h)
-PS1='foo \t bar'
-echo "${PS1@P}" | egrep -q 'foo [0-1][0-9]:[0-2][0-9] bar'
-echo matched=$?
-
-## STDOUT:
-matched=0
-## END
-
-#### \@ for time (12h AM/PM)
-PS1='foo \t bar'
-echo "${PS1@P}" | egrep -q 'foo [0-1][0-9]:[0-2][0-9] (A|P)M bar'
-echo matched=$?
-
-## STDOUT:
-matched=0
-## END
 
 # In bash y.tab.c uses %X when string is empty
 # This doesn't seem to match exactly, but meh for now.
