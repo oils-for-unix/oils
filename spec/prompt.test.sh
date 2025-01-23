@@ -294,8 +294,11 @@ PS1='foo \! bar'
 history -c # clear history
 echo "${PS1@P}" | egrep -q "foo 1 bar"
 echo matched=$?
+echo "_${PS1@P}" | egrep -q "foo 2 bar"
+echo matched=$?
 
 ## STDOUT:
+matched=0
 matched=0
 ## END
 
