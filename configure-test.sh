@@ -57,9 +57,9 @@ test_parse_flags() {
 
   init_flags  # Reset
 
-  parse_flags --cxx foo
-  if test "$FLAG_cxx" != 'foo'; then
-    die "FAILED - expected cxx foo, got $FLAG_cxx"
+  parse_flags --cxx-for-configure foo
+  if test "$FLAG_cxx_for_configure" != 'foo'; then
+    die "FAILED - expected cxx foo, got $FLAG_cxx_for_configure"
   fi
 
   init_flags  # Reset
