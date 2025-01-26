@@ -303,12 +303,9 @@ matched=0
 ## END
 
 #### \# for command number
-(
-osh -i <<EOF
 PS1='foo \# bar'
-echo "${PS1@P}"
-EOF
-) | tee >(egrep -q 'foo 2 bar') >(egrep -q 'foo 3 bar')
+prev_cmd_num="$(echo "${PS1@P}" | grep -oP '(?<=foo )\d+(?= bar)')"
+echo "${PS1@P}" | egrep -q "foo $((prev_cmd_num + 1)) bar"
 echo matched=$?
 
 ## STDOUT:
