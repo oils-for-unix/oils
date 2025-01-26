@@ -277,6 +277,7 @@ echo matched=$?
 ## STDOUT:
 matched=0
 matched=0
+sleep 5
 matched=0
 ## END
 
