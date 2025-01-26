@@ -283,8 +283,14 @@ matched=0
 
 #### \l for TTY device basename
 PS1='foo \l bar'
-tty_device_basename="$(basename "$(tty)")"
-echo "${PS1@P}" | egrep -q "foo $tty_device_basename bar"
+# FIXME this never an actual TTY when using ./test/spec.sh
+tty="$(tty)"
+if [[ "$tty" == "not a tty" ]]; then
+    expected="tty"
+else
+    expected="$(basename "$tty")"
+fi
+echo "${PS1@P}" | egrep -q "foo $expected bar"
 echo matched=$?
 
 ## STDOUT:
