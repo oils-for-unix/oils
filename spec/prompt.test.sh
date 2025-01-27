@@ -262,7 +262,7 @@ match=0
 
 
 #### \j for number of jobs
-set -m
+set -m # enable job control
 PS1='foo \j bar'
 echo "${PS1@P}" | egrep -q 'foo 0 bar'
 echo matched=$?
