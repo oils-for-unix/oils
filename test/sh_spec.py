@@ -646,6 +646,13 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
             subprocess.call(['which', sh])
 
     #pprint.pprint(cases)
+    if isinstance(case_predicate, spec_lib.RangePredicate) and (
+        case_predicate.begin > len(cases)
+    ):
+        raise RuntimeError(
+            "valid case indexes are from 0 to %s. given range: %s-%s"
+            % (len(cases), case_predicate.begin, case_predicate.end)
+        )
 
     sh_labels = [sh_label for sh_label, _ in shells]
 
