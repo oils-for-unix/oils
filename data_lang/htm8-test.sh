@@ -5,6 +5,11 @@
 #
 # TODO:
 #
+# - htm8.py should use one-pass algorithm
+# - micro-syntax should check all errors
+#   - with tests
+#   - and then download CommonCrawl data set?
+#
 # - translate to C++
 #   - how to handle the regexes in the lexer?  Port to re2c directly?
 #   - for find(), do we need a C++ primitive for it?

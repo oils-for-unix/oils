@@ -108,7 +108,14 @@ class Evaluator(object):
 
         assert lang in ('osh', 'ysh'), lang
         self.lang = lang
-        self.version_str = version_str
+        self.version_str = version_str  # e.g. OSH version 0.26.0 is \V
+
+        # Calculate "0.26" for \v - shortened string that bash uses.  I guess
+        # this saves 2 chars in OSH too.
+        i = version_str.rfind('.')
+        assert i != -1, version_str
+        self.version_str_short = version_str[:i]
+
         self.parse_ctx = parse_ctx
         self.mem = mem
         # Cache to save syscalls / libc calls.
@@ -157,6 +164,9 @@ class Evaluator(object):
             r = self.lang
 
         elif ch == 'v':
+            r = self.version_str_short
+
+        elif ch == 'V':
             r = self.version_str
 
         elif ch == 'A':

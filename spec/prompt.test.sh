@@ -1,5 +1,5 @@
 ## compare_shells: bash
-## oils_failures_allowed: 9
+## oils_failures_allowed: 8
 
 #### sh -i
 # Notes:
