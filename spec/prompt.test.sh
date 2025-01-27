@@ -1,4 +1,5 @@
 ## compare_shells: bash
+## oils_failures_allowed: 9
 
 #### sh -i
 # Notes:
@@ -171,10 +172,46 @@ echo status=$?
 status=0
 ## END
 
-#### \A for 24 hour time
-PS1='foo \A bar'
-echo "${PS1@P}" | egrep -q 'foo [0-9][0-9]:[0-9][0-9] bar'
+#### \t for 24h time (HH:MM:SS)
+PS1='foo \t bar'
+echo "${PS1@P}" | egrep -q 'foo [0-2][0-9]:[0-5][0-9]:[0-5][0-9] bar'
 echo matched=$?
+
+## STDOUT:
+matched=0
+## END
+
+#### \T for 12h time (HH:MM:SS)
+PS1='foo \T bar'
+echo "${PS1@P}" | egrep -q 'foo [0-1][0-9]:[0-5][0-9]:[0-5][0-9] bar'
+echo matched=$?
+
+## STDOUT:
+matched=0
+## END
+
+#### \@ for 12h time (HH:MM AM/PM)
+PS1='foo \@ bar'
+echo "${PS1@P}" | egrep -q 'foo [0-1][0-9]:[0-5][0-9] (A|P)M bar'
+echo matched=$?
+
+## STDOUT:
+matched=0
+## END
+
+#### \A for 24h time (HH:MM)
+PS1='foo \A bar'
+echo "${PS1@P}" | egrep -q 'foo [0-2][0-9]:[0-5][0-9] bar'
+echo matched=$?
+## STDOUT:
+matched=0
+## END
+
+#### \d for date
+PS1='foo \d bar'
+echo "${PS1@P}" | egrep -q 'foo [A-Z][a-z]+ [A-Z][a-z]+ [0-9]+ bar'
+echo matched=$?
+
 ## STDOUT:
 matched=0
 ## END
@@ -205,18 +242,84 @@ echo matched=$?
 matched=0
 ## END
 
-#### \s and \v for shell and version
+#### \s for shell, \v for major.minor version, and \V for full version
 PS1='foo \s bar'
 echo "${PS1@P}" | egrep -q '^foo (bash|osh) bar$'
 echo match=$?
 
 PS1='foo \v bar'
-echo "${PS1@P}" | egrep -q '^foo [0-9.]+ bar$'
+echo "${PS1@P}" | egrep -q '^foo [0-9]+\.[0-9]+ bar$'
+echo match=$?
+
+PS1='foo \V bar'
+echo "${PS1@P}" | egrep -q '^foo [0-9]+\.[0-9]+\.[0-9]+ bar$'
 echo match=$?
 
 ## STDOUT:
 match=0
 match=0
+match=0
+## END
+
+
+#### \j for number of jobs
+set -m # enable job control
+PS1='foo \j bar'
+echo "${PS1@P}" | egrep -q 'foo 0 bar'
+echo matched=$?
+sleep 5 &
+echo "${PS1@P}" | egrep -q 'foo 1 bar'
+echo matched=$?
+kill %%
+fg
+echo "${PS1@P}" | egrep -q 'foo 0 bar'
+echo matched=$?
+
+## STDOUT:
+matched=0
+matched=0
+sleep 5
+matched=0
+## END
+
+#### \l for TTY device basename
+PS1='foo \l bar'
+# FIXME this never an actual TTY when using ./test/spec.sh
+tty="$(tty)"
+if [[ "$tty" == "not a tty" ]]; then
+    expected="tty"
+else
+    expected="$(basename "$tty")"
+fi
+echo "${PS1@P}" | egrep -q "foo $expected bar"
+echo matched=$?
+
+## STDOUT:
+matched=0
+## END
+
+#### \! for history number
+set -o history # enable history
+PS1='foo \! bar'
+history -c # clear history
+echo "${PS1@P}" | egrep -q "foo 1 bar"
+echo matched=$?
+echo "_${PS1@P}" | egrep -q "foo 3 bar"
+echo matched=$?
+
+## STDOUT:
+matched=0
+matched=0
+## END
+
+#### \# for command number
+PS1='foo \# bar'
+prev_cmd_num="$(echo "${PS1@P}" | egrep -o 'foo [0-9]+ bar' | sed -E 's/foo ([0-9]+) bar/\1/')"
+echo "${PS1@P}" | egrep -q "foo $((prev_cmd_num + 1)) bar"
+echo matched=$?
+
+## STDOUT:
+matched=0
 ## END
 
 #### @P with array
@@ -244,4 +347,3 @@ $SH $flags -i -c 'echo "_${PS1}_"'
 ## STDOUT:
 _\s-\v\$ _
 ## END
-
