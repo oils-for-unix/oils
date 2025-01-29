@@ -2,6 +2,7 @@
 from __future__ import print_function
 
 from core import completion
+from core import state
 from display import ansi
 from display import pp_value
 import libc
@@ -26,6 +27,7 @@ if 0:
     PROMPT_UNDERLINE = '\x01%s\x02' % ansi.UNDERLINE
     PROMPT_REVERSE = '\x01%s\x02' % ansi.REVERSE
 
+HORIZONTAL_SCROLL_ENV = 'OILS_READLINE_HORIZONTAL_SCROLL_MODE'
 
 def _PromptLen(prompt_str):
     # type: (str) -> int
@@ -85,13 +87,14 @@ class State(object):
 class _IDisplay(object):
     """Interface for completion displays."""
 
-    def __init__(self, comp_state, prompt_state, num_lines_cap, f, debug_f):
-        # type: (State, PromptState, int, mylib.Writer, _DebugFile) -> None
+    def __init__(self, comp_state, prompt_state, num_lines_cap, f, debug_f, horizontal_scroll_mode):
+        # type: (State, PromptState, int, mylib.Writer, _DebugFile, str) -> None
         self.comp_state = comp_state
         self.prompt_state = prompt_state
         self.num_lines_cap = num_lines_cap
         self.f = f
         self.debug_f = debug_f
+        self.horizontal_scroll_mode = horizontal_scroll_mode
 
     def PrintCandidates(self, unused_subst, matches, unused_match_len):
         # type: (Optional[str], List[str], int) -> None
@@ -145,7 +148,7 @@ class MinimalDisplay(_IDisplay):
     def __init__(self, comp_state, prompt_state, debug_f):
         # type: (State, PromptState, _DebugFile) -> None
         _IDisplay.__init__(self, comp_state, prompt_state, 10, mylib.Stdout(),
-                           debug_f)
+                           debug_f, 'on')
 
     def _RedrawPrompt(self):
         # type: () -> None
@@ -315,15 +318,18 @@ class NiceDisplay(_IDisplay):
             debug_f,  # type: _DebugFile
             readline,  # type: Optional[Readline]
             signal_safe,  # type: iolib.SignalSafe
+            mem,  # type: state.Mem
     ):
         # type: (...) -> None
         """
     Args:
       bold_line: Should user's entry be bold?
     """
+        environ = mem.GetEnv()
         _IDisplay.__init__(self, comp_state, prompt_state, 10, mylib.Stdout(),
-                           debug_f)
+                           debug_f, environ.get(HORIZONTAL_SCROLL_ENV, 'on'))
 
+        self.mem = mem
         self.term_width = term_width  # initial terminal width; will be invalidated
 
         self.readline = readline
@@ -345,6 +351,15 @@ class NiceDisplay(_IDisplay):
         """Call this in between commands."""
         self.num_lines_last_displayed = 0
         self.dupes.clear()
+
+        environ = self.mem.GetEnv()
+        horizontal_scroll_mode = environ.get(
+            HORIZONTAL_SCROLL_ENV, self.horizontal_scroll_mode)
+        if horizontal_scroll_mode != self.horizontal_scroll_mode:
+            self.horizontal_scroll_mode = horizontal_scroll_mode
+            self.readline.parse_and_bind(
+                'set horizontal-scroll-mode %s' % horizontal_scroll_mode)
+
 
     def _ReturnToPrompt(self, num_lines):
         # type: (int) -> None
@@ -548,7 +563,7 @@ def InitReadline(
 
     readline.parse_and_bind('tab: complete')
 
-    readline.parse_and_bind('set horizontal-scroll-mode on')
+    readline.parse_and_bind('set horizontal-scroll-mode %s' % display.horizontal_scroll_mode)
 
     # How does this map to C?
     # https://cnswww.cns.cwru.edu/php/chet/readline/readline.html#SEC45

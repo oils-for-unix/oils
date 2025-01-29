@@ -1093,7 +1093,8 @@ def Main(
             if term_width != 0:
                 display = comp_ui.NiceDisplay(
                     term_width, comp_ui_state, prompt_state, debug_f, readline,
-                    signal_safe)  # type: comp_ui._IDisplay
+                    signal_safe, mem)  # type: comp_ui._IDisplay
+
             else:
                 display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state,
                                                  debug_f)
@@ -1126,6 +1127,7 @@ def Main(
 
             assert line_reader is not None
             line_reader.Reset()  # After sourcing startup file, render $PS1
+            display.Reset()
 
             prompt_plugin = prompt.UserPlugin(mem, parse_ctx, cmd_ev, errfmt)
             try:

@@ -7,6 +7,7 @@ import sys
 import unittest
 
 from core import comp_ui  # module under test
+from core import state
 from core import util
 from mycpp import iolib
 
@@ -118,10 +119,11 @@ class UiTest(unittest.TestCase):
         prompt_state = comp_ui.PromptState()
         debug_f = util.DebugFile(sys.stdout)
         signal_safe = iolib.InitSignalSafe()
+        mem = state.Mem()
 
         # terminal width
         d1 = comp_ui.NiceDisplay(80, comp_ui_state, prompt_state, debug_f,
-                                 line_input, signal_safe)
+                                 line_input, signal_safe, mem)
         d2 = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 
         prompt_state.SetLastPrompt('$ ')
