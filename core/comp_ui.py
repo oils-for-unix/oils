@@ -93,6 +93,10 @@ class _IDisplay(object):
         self.f = f
         self.debug_f = debug_f
 
+    def ReadlineInitCommands(self):
+        # type: () -> List[str]
+        return []
+
     def PrintCandidates(self, unused_subst, matches, unused_match_len):
         # type: (Optional[str], List[str], int) -> None
         try:
@@ -340,6 +344,10 @@ class NiceDisplay(_IDisplay):
         # hash of matches -> count.  Has exactly ONE entry at a time.
         self.dupes = {}  # type: Dict[int, int]
 
+    def ReadlineInitCommands(self):
+        # type: () -> List[str]
+        return ['set horizontal-scroll-mode on']
+
     def Reset(self):
         # type: () -> None
         """Call this in between commands."""
@@ -548,7 +556,8 @@ def InitReadline(
 
     readline.parse_and_bind('tab: complete')
 
-    readline.parse_and_bind('set horizontal-scroll-mode on')
+    for cmd in display.ReadlineInitCommands():
+        readline.parse_and_bind(cmd)
 
     # How does this map to C?
     # https://cnswww.cns.cwru.edu/php/chet/readline/readline.html#SEC45
