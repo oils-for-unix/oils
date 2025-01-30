@@ -146,10 +146,13 @@ class MinimalDisplay(_IDisplay):
     without testing it.
     """
 
-    def __init__(self, comp_state, prompt_state, debug_f):
-        # type: (State, PromptState, _DebugFile) -> None
+    def __init__(self, comp_state, prompt_state, debug_f, term_width, signal_safe):
+        # type: (State, PromptState, _DebugFile, int, iolib.SignalSafe) -> None
         _IDisplay.__init__(self, comp_state, prompt_state, 10, mylib.Stdout(),
                            debug_f)
+
+        self.signal_safe = signal_safe
+        self.term_width = term_width
 
     def _RedrawPrompt(self):
         # type: () -> None
@@ -158,6 +161,19 @@ class MinimalDisplay(_IDisplay):
         self.f.write(self.prompt_state.last_prompt_str)
         self.f.write(self.comp_state.line_until_tab)
 
+    def _GetTerminalWidth(self):
+        # type: () -> int
+        if self.signal_safe.PollSigWinch():  # is our value dirty?
+            try:
+                self.term_width = libc.get_terminal_width()
+            except (IOError, OSError):
+                # This shouldn't raise IOError because we did it at startup!  Under
+                # rare circumstances stdin can change, e.g. if you do exec <&
+                # input.txt.  So we have a fallback.
+                self.term_width = 80
+
+        return self.term_width
+
     def _PrintCandidates(self, unused_subst, matches, unused_match_len):
         # type: (Optional[str], List[str], int) -> None
         #log('_PrintCandidates %s', matches)
@@ -165,22 +181,11 @@ class MinimalDisplay(_IDisplay):
         display_pos = self.comp_state.display_pos
         assert display_pos != -1
 
-        too_many = False
-        i = 0
-        for m in matches:
-            self.f.write(' %s\n' % m[display_pos:])
-
-            if i == self.num_lines_cap:
-                too_many = True
-                i += 1  # Count this one
-                break
-
-            i += 1
-
-        if too_many:
-            num_left = len(matches) - i
-            if num_left:
-                self.f.write(' ... and %d more\n' % num_left)
+        to_display = [m[display_pos:] for m in matches]
+        lens = [len(m) for m in to_display]
+        max_match_len = max(lens)
+        term_width = self._GetTerminalWidth()
+        _PrintPacked(to_display, max_match_len, term_width, -1, self.f)
 
         self._RedrawPrompt()
 
