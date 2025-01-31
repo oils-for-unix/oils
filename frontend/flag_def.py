@@ -272,7 +272,7 @@ MAIN_SPEC.LongFlag('--ast-format',
                    default='abbrev-text')
 
 # Defines completion style.
-MAIN_SPEC.LongFlag('--completion-display', ['minimal', 'nice'], default='nice')
+MAIN_SPEC.LongFlag('--completion-display', ['minimal', 'nice'], default='minimal')
 # TODO: Add option for YSH prompt style?  RHS prompt?
 
 MAIN_SPEC.LongFlag('--completion-demo')
