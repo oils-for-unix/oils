@@ -24,6 +24,21 @@ for x in mylist:
     mylist.append(99)
   print(x)
 '
+
+  echo ---
+  echo PY comp
+
+  python3 -c '
+def myappend(li, i):
+  if i == 1:
+    li.append(99)
+  print(i)
+  return i
+
+mylist = [1,2,3]
+y = [myappend(mylist, i) for i in mylist]
+print(y)
+'
 }
 
 mutate-js() {
@@ -94,6 +109,5 @@ compare-mutate() {
   mutate-sh osh
   mutate-ysh
 }
-
 
 "$@"
