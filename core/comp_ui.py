@@ -26,6 +26,9 @@ if 0:
     PROMPT_UNDERLINE = '\x01%s\x02' % ansi.UNDERLINE
     PROMPT_REVERSE = '\x01%s\x02' % ansi.REVERSE
 
+DEFAULT_TERM_WIDTH = 80
+DEFAULT_MATCH_LINE_LIMIT = 10
+
 
 def _PromptLen(prompt_str):
     # type: (str) -> int
@@ -85,13 +88,33 @@ class State(object):
 class _IDisplay(object):
     """Interface for completion displays."""
 
-    def __init__(self, comp_state, prompt_state, num_lines_cap, f, debug_f):
-        # type: (State, PromptState, int, mylib.Writer, _DebugFile) -> None
+    def __init__(self, comp_state, prompt_state, num_lines_cap, f, debug_f, signal_safe):
+        # type: (State, PromptState, int, mylib.Writer, _DebugFile, iolib.SignalSafe) -> None
         self.comp_state = comp_state
         self.prompt_state = prompt_state
         self.num_lines_cap = num_lines_cap
         self.f = f
         self.debug_f = debug_f
+        self.term_width = DEFAULT_TERM_WIDTH
+        try:
+            self.term_width = libc.get_terminal_width()
+        except (IOError, OSError):  # stdin not a terminal
+            pass
+
+        self.signal_safe = signal_safe
+
+    def _GetTerminalWidth(self):
+        # type: () -> int
+        if self.signal_safe.PollSigWinch():  # is our value dirty?
+            try:
+                self.term_width = libc.get_terminal_width()
+            except (IOError, OSError):
+                # This shouldn't raise IOError because we did it at startup!  Under
+                # rare circumstances stdin can change, e.g. if you do exec <&
+                # input.txt.  So we have a fallback.
+                self.term_width = DEFAULT_TERM_WIDTH
+
+        return self.term_width
 
     def ReadlineInitCommands(self):
         # type: () -> List[str]
@@ -146,13 +169,11 @@ class MinimalDisplay(_IDisplay):
     without testing it.
     """
 
-    def __init__(self, comp_state, prompt_state, debug_f, term_width, signal_safe):
-        # type: (State, PromptState, _DebugFile, int, iolib.SignalSafe) -> None
-        _IDisplay.__init__(self, comp_state, prompt_state, 10, mylib.Stdout(),
-                           debug_f)
-
-        self.signal_safe = signal_safe
-        self.term_width = term_width
+    def __init__(self, comp_state, prompt_state, debug_f, signal_safe):
+        # type: (State, PromptState, _DebugFile, iolib.SignalSafe) -> None
+        _IDisplay.__init__(self, comp_state, prompt_state,
+                           DEFAULT_MATCH_LINE_LIMIT, mylib.Stdout(), debug_f,
+                           signal_safe)
 
     def _RedrawPrompt(self):
         # type: () -> None
@@ -160,19 +181,6 @@ class MinimalDisplay(_IDisplay):
         # Like bash, we SAVE the prompt and print it, rather than re-evaluating it.
         self.f.write(self.prompt_state.last_prompt_str)
         self.f.write(self.comp_state.line_until_tab)
-
-    def _GetTerminalWidth(self):
-        # type: () -> int
-        if self.signal_safe.PollSigWinch():  # is our value dirty?
-            try:
-                self.term_width = libc.get_terminal_width()
-            except (IOError, OSError):
-                # This shouldn't raise IOError because we did it at startup!  Under
-                # rare circumstances stdin can change, e.g. if you do exec <&
-                # input.txt.  So we have a fallback.
-                self.term_width = 80
-
-        return self.term_width
 
     def _PrintCandidates(self, unused_subst, matches, unused_match_len):
         # type: (Optional[str], List[str], int) -> None
@@ -185,7 +193,7 @@ class MinimalDisplay(_IDisplay):
         lens = [len(m) for m in to_display]
         max_match_len = max(lens)
         term_width = self._GetTerminalWidth()
-        _PrintPacked(to_display, max_match_len, term_width, -1, self.f)
+        _PrintPacked(to_display, max_match_len, term_width, self.num_lines_cap, self.f)
 
         self._RedrawPrompt()
 
@@ -318,7 +326,6 @@ class NiceDisplay(_IDisplay):
 
     def __init__(
             self,
-            term_width,  # type: int
             comp_state,  # type: State
             prompt_state,  # type: PromptState
             debug_f,  # type: _DebugFile
@@ -330,13 +337,11 @@ class NiceDisplay(_IDisplay):
     Args:
       bold_line: Should user's entry be bold?
     """
-        _IDisplay.__init__(self, comp_state, prompt_state, 10, mylib.Stdout(),
-                           debug_f)
-
-        self.term_width = term_width  # initial terminal width; will be invalidated
+        _IDisplay.__init__(self, comp_state, prompt_state,
+                           DEFAULT_MATCH_LINE_LIMIT, mylib.Stdout(), debug_f,
+                           signal_safe)
 
         self.readline = readline
-        self.signal_safe = signal_safe
 
         self.bold_line = False
 
@@ -524,18 +529,6 @@ class NiceDisplay(_IDisplay):
         # Now go back up
         self.f.write('\x1b[%dA' % n)
         self.f.flush()  # Without this, output will look messed up
-
-    def _GetTerminalWidth(self):
-        # type: () -> int
-        if self.signal_safe.PollSigWinch():  # is our value dirty?
-            try:
-                self.term_width = libc.get_terminal_width()
-            except (IOError, OSError):
-                # This shouldn't raise IOError because we did it at startup!  Under
-                # rare circumstances stdin can change, e.g. if you do exec <&
-                # input.txt.  So we have a fallback.
-                self.term_width = 80
-        return self.term_width
 
 
 def ExecutePrintCandidates(display, sub, matches, max_len):

@@ -101,8 +101,6 @@ if mylib.PYTHON:
     except ImportError:
         help_meta = None
 
-DEFAULT_TERM_WIDTH = 80
-
 
 def _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup):
     # type: (cmd_eval.CommandEvaluator, completion_osh.Complete, completion.Lookup) -> None
@@ -1085,23 +1083,12 @@ def Main(
         mutable_opts.set_redefine_source()
 
         if readline:
-            term_width = 0
-            try:
-                term_width = libc.get_terminal_width()
-            except (IOError, OSError):  # stdin not a terminal
-                pass
-
-            if flag.completion_display == 'nice' and term_width != 0:
-                display = comp_ui.NiceDisplay(
-                    term_width, comp_ui_state, prompt_state, debug_f, readline,
-                    signal_safe)  # type: comp_ui._IDisplay
+            if flag.completion_display == 'nice':
+                display = comp_ui.NiceDisplay(comp_ui_state, prompt_state,
+                    debug_f, readline, signal_safe)  # type: comp_ui._IDisplay
             else:
-                if term_width == 0:
-                    term_width = DEFAULT_TERM_WIDTH
-
                 display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state,
-                                                 debug_f, term_width,
-                                                 signal_safe)
+                                                 debug_f, signal_safe)
 
             comp_ui.InitReadline(readline, sh_files.HistoryFile(), root_comp,
                                  display, debug_f)
@@ -1111,8 +1098,7 @@ def Main(
 
         else:  # Without readline module
             display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state,
-                                             debug_f, DEFAULT_TERM_WIDTH,
-                                             signal_safe)
+                                             debug_f, signal_safe)
 
         process.InitInteractiveShell(signal_safe)  # Set signal handlers
 
