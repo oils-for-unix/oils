@@ -330,11 +330,21 @@ compile_one() {
         # Must have external 'time', and it must have -f
         # Notes: OS X has no time -f
         #        busybox time supports -f but not --format.
-        if command time -f '%e %M' true >/dev/null; then
-          set -- \
-            time -f "$out { elapsed: %e, max_RSS: %M }" -- \
-            "$@"
-        fi
+        case ${BASH_VERSION:-} in
+          3*)
+            # bash 3.2.x on macos has a bizarre bug that leads to weird
+            # interactions between errexit and `command time -f` when this
+            # function gets run as a background job (like it does in the
+            # tarball build script). Don't bother timing in this case.
+            ;;
+          *)
+            if command time -f '%e %M' true >/dev/null; then
+              set -- \
+                time -f "$out { elapsed: %e, max_RSS: %M }" -- \
+                "$@"
+            fi
+            ;;
+          esac
         ;;
     esac
   fi
