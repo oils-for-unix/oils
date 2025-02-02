@@ -453,6 +453,7 @@ show-cpython-patches() {
   git diff 1d2b97384e14d65b1241f67fd995277f5508db28..HEAD Python-2.7.13/
 }
 
-if test $(basename $0) = 'py.sh'; then
+name=$(basename $0)
+if test "$name" = 'py.sh'; then
   task-five "$@"
 fi

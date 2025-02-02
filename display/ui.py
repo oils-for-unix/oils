@@ -154,6 +154,40 @@ def _PrintTokenTooLong(loc_tok, f):
     f.write(buf.getvalue())
 
 
+def GetFilenameString(line):
+    # type: (SourceLine) -> str
+    """Get the path of the file that a line appears in.
+
+    Returns "main" if it's stdin or -c
+    Returns "?" if it's not in a file.
+
+    Used by declare -F, with shopt -s extdebug.
+    """
+    src = line.src
+    UP_src = src
+
+    filename_str = '?'  # default
+    with tagswitch(src) as case:
+        # Copying bash, it uses the string 'main'.
+        # I think ? would be better here, because this can get confused with a
+        # file 'main'.  But it's fine for our task file usage.
+        if case(source_e.CFlag):
+            filename_str = 'main'
+        elif case(source_e.Stdin):
+            filename_str = 'main'
+
+        elif case(source_e.MainFile):
+            src = cast(source.MainFile, UP_src)
+            filename_str = src.path
+        elif case(source_e.OtherFile):
+            src = cast(source.OtherFile, UP_src)
+            filename_str = src.path
+
+        else:
+            pass
+    return filename_str
+
+
 def GetLineSourceString(line, quote_filename=False):
     # type: (SourceLine, bool) -> str
     """Returns a human-readable string for dev tools.

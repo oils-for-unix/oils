@@ -16,6 +16,7 @@ from core import error
 from core.error import e_usage
 from core import state
 from core import vm
+from display import ui
 from frontend import flag_util
 from frontend import args
 from mycpp.mylib import log, NewDict
@@ -27,7 +28,6 @@ from typing import cast, Dict, List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.state import Mem
     from core import optview
-    from display import ui
     from frontend.args import _Attributes
 
 _ = log
@@ -353,8 +353,17 @@ class NewVar(vm._AssignBuiltin):
         # type: (List[str]) -> int
         status = 0
         for name in names:
-            if self.procs.GetShellFunc(name):
-                print(name)
+            proc_val = self.procs.GetShellFunc(name)
+            if proc_val:
+                if self.exec_opts.extdebug():
+                    tok = proc_val.name_tok
+                    assert tok is not None, tok
+                    assert tok.line is not None, tok.line
+                    filename_str = ui.GetFilenameString(tok.line)
+                    line = '%s %s %s' % (name, tok.line.line_num, filename_str)
+                    print(line)
+                else:
+                    print(name)
                 # TODO: Could print LST for -f, or render LST.  Bash does this.  'trap'
                 # could use that too.
             else:
