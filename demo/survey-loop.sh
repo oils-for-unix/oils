@@ -26,6 +26,20 @@ for x in mylist:
 '
 
   echo ---
+  echo PY REMOVE
+
+  # Hm doesn't print 3
+  python3 -c '
+mylist = [1,2,3,4]
+for x in mylist:
+  if x == 2:
+    # skips one iteration
+    mylist.remove(1)
+    #mylist.pop()
+  print(x)
+'
+
+  echo ---
   echo PY DICT
 
 if false; then
@@ -70,7 +84,21 @@ for (let x of mylist) {
 '
 
   echo ---
-  echo 'JS let in OBJ'
+  echo 'JS remove'
+
+  nodejs -e '
+let mylist = [1,2,3,4]
+for (let x of mylist) {
+  if (x === 2) {
+    mylist.shift()  // remove first item
+    // mylist.pop()  // remove last item
+  }
+  console.log(x)
+}
+'
+
+  echo ---
+  echo 'JS ADD OBJ'
 
   nodejs -e '
 let myobj = {"1": null, "2": null, "3": null}
@@ -81,6 +109,21 @@ for (let x in myobj) {
   console.log(x)
 }
 '
+
+  echo ---
+  echo 'JS REMOVE OBJ'
+
+  nodejs -e '
+let myobj = {"1": null, "2": null, "3": null, "4": null}
+for (let x in myobj) {
+  if (x === "2") {
+    delete myobj["1"];
+    delete myobj["3"];
+  }
+  console.log(x)
+}
+'
+
 
   echo ---
   echo 'JS var'

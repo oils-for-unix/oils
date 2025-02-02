@@ -301,14 +301,13 @@ class ListIterator(Iterator):
     def __init__(self, val):
         # type: (value.List) -> None
         Iterator.__init__(self)
-        self.val = val
-        self.n = len(val.items)
+        self.items = val.items
 
     def FirstValue(self):
         # type: () -> Optional[value_t]
-        if self.i == self.n:
+        if self.i == len(self.items):
             return None
-        return self.val.items[self.i]
+        return self.items[self.i]
 
 
 class DictIterator(Iterator):

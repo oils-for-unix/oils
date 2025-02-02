@@ -1,5 +1,4 @@
 ## our_shell: ysh
-## oils_failures_allowed: 1
 
 #### For loop over expression: List
 var mylist = [1, 2, 3]
@@ -191,7 +190,7 @@ fi
 pass
 ## END
 
-#### Mutating List in loop extends the loop (matches JS)
+#### Append to List in loop extends the loop (matches JS)
 
 # see demo/survey-loop
 
@@ -209,7 +208,24 @@ for x in (mylist) {
 99
 ## END
 
-#### Mutating Dict in loop does NOT extend the loop (matches JS)
+#### Remove from List in loop shortens it (matches JS)
+
+# see demo/survey-loop
+
+var mylist = [1,2,3,4]
+for x in (mylist) {
+  if (x === 2) {
+    call mylist->pop()
+  }
+  echo $x
+}
+## STDOUT:
+1
+2
+3
+## END
+
+#### Adding to Dict in loop does NOT extend the loop (matches JS)
 
 # see demo/survey-loop
 
@@ -224,4 +240,23 @@ for x in (mydict) {
 1
 2
 3
+## END
+
+#### Removing from Dict in loop does NOT change the loop (does NOT match JS)
+
+# see demo/survey-loop
+
+var mydict = {"1": null, "2": null, "3": null, "4": null}
+for x in (mydict) {
+  if (x === "2") {
+    call mydict->erase("1")
+    call mydict->erase("3")
+  }
+  echo $x
+}
+## STDOUT:
+1
+2
+3
+4
 ## END

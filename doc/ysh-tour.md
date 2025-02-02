@@ -460,7 +460,7 @@ Shell-style for loops iterate over **words**:
     # peanut
     # coconut
 
-You can also request the loop index:
+You can ask for the loop index with `i,`:
 
     for i, word in README.md *.py {
       echo "$i - $word"
@@ -472,7 +472,7 @@ You can also request the loop index:
 #### Typed Data
 
 To iterate over a typed data, use parentheses around an **expression**.  The
-expression should evaluate to an integer `Range`, `List`, `Dict`, or `Stdin`.
+expression should evaluate to an integer `Range`, `List`, `Dict`, or `io.stdin`.
 
 Range:
 
@@ -497,20 +497,32 @@ Again, you can request the index with `for i, item in ...`.
 
 ---
 
-Here's the most general form of the loop over `Dict`:
+There are **three** ways of iterating over a `Dict`:
 
     var mydict = {pea: 42, nut: 10}
-    for i, k, v in (mydict) {
-      echo "$i - $k - $v"
+    for key in (mydict) {
+      echo $key
+    }
+    # =>
+    # pea
+    # nut
+
+    for key, value in (mydict) {
+      echo "$key $value"
+    }
+    # =>
+    # pea - 42
+    # nut - 10
+
+    for i, key, value in (mydict) {
+      echo "$i $key $value"
     }
     # =>
     # 0 - pea - 42
     # 1 - nut - 10
 
-There are two simpler forms:
-
-- One variable gives you the key: `for k in (mydict)`
-- Two variables gives you the key and value: `for k, v in (mydict)`
+That is, if you ask for two things, you'll get the key and value.  If you ask
+for three, you'll also get the index.
 
 (One way to think of it: `for` loops in YSH have the functionality Python's
 `enumerate()`, `items()`, `keys()`, and `values()`.)
