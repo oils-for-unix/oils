@@ -1091,8 +1091,12 @@ def Main(
                 except util.UserExit as e:
                     return e.status
 
+        completion_display = state.MaybeString(mem, 'OILS_COMP_UI')
+        if completion_display is None:
+            completion_display = flag.completion_display
+
         if readline:
-            if flag.completion_display == 'nice':
+            if completion_display == 'nice':
                 display = comp_ui.NiceDisplay(comp_ui_state, prompt_state,
                     debug_f, readline, signal_safe)  # type: comp_ui._IDisplay
             else:
