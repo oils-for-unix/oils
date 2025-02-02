@@ -360,7 +360,9 @@ class NewVar(vm._AssignBuiltin):
                     assert tok is not None, tok
                     assert tok.line is not None, tok.line
                     filename_str = ui.GetFilenameString(tok.line)
-                    line = '%s %s %s' % (name, tok.line.line_num, filename_str)
+                    # Note: the filename could have a newline, and this won't
+                    # be a single line.  But meh, this is a bash feature.
+                    line = '%s %d %s' % (name, tok.line.line_num, filename_str)
                     print(line)
                 else:
                     print(name)

@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 
 #### For loop over expression: List
 var mylist = [1, 2, 3]
@@ -66,7 +66,7 @@ for i, bad, bad in a b c {
 }
 ## status: 2
 
-#### Any for loop can't have 4 indiecs
+#### Any for loop can't have 4 indices
 for a, b, c, d in (['foo']) {
   echo $i $item
 }
@@ -189,4 +189,39 @@ fi
 
 ## STDOUT:
 pass
+## END
+
+#### Mutating List in loop extends the loop (matches JS)
+
+# see demo/survey-loop
+
+var mylist = [1,2,3]
+for x in (mylist) {
+  if (x === 2) {
+    call mylist->append(99)
+  }
+  echo $x
+}
+## STDOUT:
+1
+2
+3
+99
+## END
+
+#### Mutating Dict in loop does NOT extend the loop (matches JS)
+
+# see demo/survey-loop
+
+var mydict = {"1": null, "2": null, "3": null}
+for x in (mydict) {
+  if (x === "2") {
+    setvar mydict["99"] = null
+  }
+  echo $x
+}
+## STDOUT:
+1
+2
+3
 ## END
