@@ -1082,6 +1082,15 @@ def Main(
         mutable_opts.set_redefine_const()
         mutable_opts.set_redefine_source()
 
+        # NOTE: rc files loaded AFTER _InitDefaultCompletions.
+        for rc_path in rc_paths:
+            with state.ctx_ThisDir(mem, rc_path):
+                try:
+                    SourceStartupFile(fd_state, rc_path, lang, parse_ctx,
+                                      cmd_ev, errfmt)
+                except util.UserExit as e:
+                    return e.status
+
         if readline:
             if flag.completion_display == 'nice':
                 display = comp_ui.NiceDisplay(comp_ui_state, prompt_state,
@@ -1101,20 +1110,10 @@ def Main(
                                              debug_f, signal_safe)
 
         process.InitInteractiveShell(signal_safe)  # Set signal handlers
-
         # The interactive shell leads a process group which controls the terminal.
         # It MUST give up the terminal afterward, otherwise we get SIGTTIN /
         # SIGTTOU bugs.
         with process.ctx_TerminalControl(job_control, errfmt):
-
-            # NOTE: rc files loaded AFTER _InitDefaultCompletions.
-            for rc_path in rc_paths:
-                with state.ctx_ThisDir(mem, rc_path):
-                    try:
-                        SourceStartupFile(fd_state, rc_path, lang, parse_ctx,
-                                          cmd_ev, errfmt)
-                    except util.UserExit as e:
-                        return e.status
 
             assert line_reader is not None
             line_reader.Reset()  # After sourcing startup file, render $PS1
