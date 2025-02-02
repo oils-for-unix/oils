@@ -30,6 +30,17 @@ DEFAULT_TERM_WIDTH = 80
 DEFAULT_MATCH_LINE_LIMIT = 10
 
 
+def _GetTerminalWidth():
+    # type: () -> int
+    try:
+        return libc.get_terminal_width()
+    except (IOError, OSError):
+        # This shouldn't raise IOError because we did it at startup!  Under
+        # rare circumstances stdin can change, e.g. if you do exec <&
+        # input.txt.  So we have a fallback.
+        return DEFAULT_TERM_WIDTH
+
+
 def _PromptLen(prompt_str):
     # type: (str) -> int
     """Ignore all characters between \x01 and \x02 and handle unicode
@@ -95,24 +106,13 @@ class _IDisplay(object):
         self.num_lines_cap = num_lines_cap
         self.f = f
         self.debug_f = debug_f
-        self.term_width = DEFAULT_TERM_WIDTH
-        try:
-            self.term_width = libc.get_terminal_width()
-        except (IOError, OSError):  # stdin not a terminal
-            pass
-
+        self.term_width = _GetTerminalWidth()
         self.signal_safe = signal_safe
 
     def _GetTerminalWidth(self):
         # type: () -> int
         if self.signal_safe.PollSigWinch():  # is our value dirty?
-            try:
-                self.term_width = libc.get_terminal_width()
-            except (IOError, OSError):
-                # This shouldn't raise IOError because we did it at startup!  Under
-                # rare circumstances stdin can change, e.g. if you do exec <&
-                # input.txt.  So we have a fallback.
-                self.term_width = DEFAULT_TERM_WIDTH
+            self.term_width = _GetTerminalWidth()
 
         return self.term_width
 
@@ -356,6 +356,8 @@ class NiceDisplay(_IDisplay):
 
     def ReadlineInitCommands(self):
         # type: () -> List[str]
+        # NOTE: This setting prevents line-wrapping from clobbering completion
+        # output. See https://github.com/oils-for-unix/oils/issues/257
         return ['set horizontal-scroll-mode on']
 
     def Reset(self):
