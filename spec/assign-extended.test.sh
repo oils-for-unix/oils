@@ -1,6 +1,4 @@
 ## compare_shells: bash-4.4 mksh
-## oils_failures_allowed: 1
-
 
 # Extended assignment language, e.g. typeset, declare, arrays, etc.
 # Things that dash doesn't support.
