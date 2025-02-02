@@ -366,6 +366,7 @@ X [External Lang] BEGIN   END   when (awk)
   [YSH Tracing]   SHX_indent          SHX_punct             SHX_pid_str
   [YSH read]      _reply
   [History]       YSH_HISTFILE
+  [Interactive]   OILS_COMP_UI
   [Oils VM]       OILS_VERSION
                   OILS_GC_THRESHOLD   OILS_GC_ON_EXIT
                   OILS_GC_STATS       OILS_GC_STATS_FD
