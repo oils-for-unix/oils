@@ -109,7 +109,7 @@ class _IDisplay(object):
         self.term_width = _GetTerminalWidth()
         self.signal_safe = signal_safe
 
-    def _GetTerminalWidth(self):
+    def _GetTermWidth(self):
         # type: () -> int
         if self.signal_safe.PollSigWinch():  # is our value dirty?
             self.term_width = _GetTerminalWidth()
@@ -192,7 +192,7 @@ class MinimalDisplay(_IDisplay):
         to_display = [m[display_pos:] for m in matches]
         lens = [len(m) for m in to_display]
         max_match_len = max(lens)
-        term_width = self._GetTerminalWidth()
+        term_width = self._GetTermWidth()
         _PrintPacked(to_display, max_match_len, term_width, self.num_lines_cap, self.f)
 
         self._RedrawPrompt()
@@ -380,7 +380,7 @@ class NiceDisplay(_IDisplay):
 
         # Go right, but not more than the terminal width.
         n = orig_len + last_prompt_len
-        n = n % self._GetTerminalWidth()
+        n = n % self._GetTermWidth()
         self.f.write('\x1b[%dC' % n)  # RIGHT
 
         if self.bold_line:
@@ -390,7 +390,7 @@ class NiceDisplay(_IDisplay):
 
     def _PrintCandidates(self, unused_subst, matches, unused_max_match_len):
         # type: (Optional[str], List[str], int) -> None
-        term_width = self._GetTerminalWidth()
+        term_width = self._GetTermWidth()
 
         # Variables set by the completion generator.  They should always exist,
         # because we can't get "matches" without calling that function.
@@ -470,7 +470,7 @@ class NiceDisplay(_IDisplay):
             #log('PrintOptional %r', msg, file=DEBUG_F)
 
             # Truncate to terminal width
-            max_len = self._GetTerminalWidth() - 2
+            max_len = self._GetTermWidth() - 2
             if len(msg) > max_len:
                 msg = msg[:max_len - 5] + ' ... '
 
@@ -491,7 +491,7 @@ class NiceDisplay(_IDisplay):
 
     def ShowPromptOnRight(self, rendered):
         # type: (str) -> None
-        n = self._GetTerminalWidth() - 2 - len(rendered)
+        n = self._GetTermWidth() - 2 - len(rendered)
         spaces = ' ' * n
 
         # We avoid drawing problems if we print it on its own line:
