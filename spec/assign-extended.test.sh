@@ -1,6 +1,4 @@
 ## compare_shells: bash-4.4 mksh
-## oils_failures_allowed: 1
-
 
 # Extended assignment language, e.g. typeset, declare, arrays, etc.
 # Things that dash doesn't support.
@@ -102,7 +100,23 @@ declare -f g
 add 7 main
 g 3 ROOT/spec/testdata/bash-source-2.sh
 ## END
-## N-I mksh stdout-json: ""
+## N-I mksh STDOUT:
+## END
+
+#### declare -F with shopt -s extdebug and main file
+case $SH in mksh) exit ;; esac
+
+$SH $REPO_ROOT/spec/testdata/extdebug.sh | sed "s;$REPO_ROOT;ROOT;g"
+
+## STDOUT:
+declare -f add
+declare -f g
+
+add 5 ROOT/spec/testdata/extdebug.sh
+g 3 ROOT/spec/testdata/bash-source-2.sh
+## END
+## N-I mksh STDOUT:
+## END
 
 #### declare -p var (exit status)
 var1() { echo func; }  # function names are NOT found.

@@ -24,6 +24,49 @@ for x in mylist:
     mylist.append(99)
   print(x)
 '
+
+  echo ---
+  echo PY REMOVE
+
+  # Hm doesn't print 3
+  python3 -c '
+mylist = [1,2,3,4]
+for x in mylist:
+  if x == 2:
+    # skips one iteration
+    mylist.remove(1)
+    #mylist.pop()
+  print(x)
+'
+
+  echo ---
+  echo PY DICT
+
+if false; then
+  # dict size changed during iteration!!
+  python3 -c '
+mydict = {1: None, 2: None, 3: None}
+for x in mydict:
+  if x == 2:
+    mydict[99] = None
+  print(x)
+'
+fi
+
+  echo ---
+  echo PY comp
+
+  python3 -c '
+def myappend(li, i):
+  if i == 1:
+    li.append(99)
+  print(i)
+  return i
+
+mylist = [1,2,3]
+y = [myappend(mylist, i) for i in mylist]
+print(y)
+'
 }
 
 mutate-js() {
@@ -39,6 +82,48 @@ for (let x of mylist) {
   console.log(x)
 }
 '
+
+  echo ---
+  echo 'JS remove'
+
+  nodejs -e '
+let mylist = [1,2,3,4]
+for (let x of mylist) {
+  if (x === 2) {
+    mylist.shift()  // remove first item
+    // mylist.pop()  // remove last item
+  }
+  console.log(x)
+}
+'
+
+  echo ---
+  echo 'JS ADD OBJ'
+
+  nodejs -e '
+let myobj = {"1": null, "2": null, "3": null}
+for (let x in myobj) {
+  if (x === "2") {
+    myobj["99"] = null;
+  }
+  console.log(x)
+}
+'
+
+  echo ---
+  echo 'JS REMOVE OBJ'
+
+  nodejs -e '
+let myobj = {"1": null, "2": null, "3": null, "4": null}
+for (let x in myobj) {
+  if (x === "2") {
+    delete myobj["1"];
+    delete myobj["3"];
+  }
+  console.log(x)
+}
+'
+
 
   echo ---
   echo 'JS var'
@@ -72,15 +157,30 @@ mutate-sh() {
 '
 }
 
+YSH=${YSH:-bin/ysh}
+
 mutate-ysh() {
   echo ---
-  echo 'YSH'
+  echo 'YSH List'
 
-  ysh -c '
+  $YSH -c '
 var mylist = [1,2,3]
 for x in (mylist) {
   if (x === 2) {
     call mylist->append(99)
+  }
+  echo $x
+}
+'
+
+  echo ---
+  echo 'YSH Dict'
+
+  $YSH -c '
+var mydict = {"1": null, "2": null, "3": null}
+for x in (mydict) {
+  if (x === "2") {
+    setvar mydict["99"] = null
   }
   echo $x
 }
@@ -94,6 +194,5 @@ compare-mutate() {
   mutate-sh osh
   mutate-ysh
 }
-
 
 "$@"

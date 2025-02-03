@@ -89,13 +89,28 @@ called `-rf`.
 
 ## Debugging
 
-These options are from POSIX shell:
+<h3 id="xtrace">xtrace (-x)</h3>
 
-    xtrace   verbose
+Show execution traces.
 
-From bash:
+- In OSH, the [PS4][] variables control the display.
+- In YSH, the `SHX_*` variables control the display.
 
-    extdebug
+[PS4]: chap-special-var.html#PS4
+
+This option is also `set -x`.  It's required by POSIX shell.
+
+### verbose
+
+Not implemented.
+
+This option is from POSIX shell.
+
+
+### extdebug
+
+Show more info in when printing functions with `declare -f`.  Used by
+`task-five.sh`.
 
 ## Interactive
 
