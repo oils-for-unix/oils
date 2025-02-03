@@ -669,16 +669,30 @@ The `io.stdin` object iterates over lines:
     }
     # lines are buffered, so it's much faster than `while read --raw-line`
 
+---
+
+(This section is based on [A Tour of YSH](../ysh-tour.html).)
+
+#### Closing Over the Loop Variable
+
+Each iteration of a `for` loop creates a new frame, which may be captured.
+
+    var x = 42  # outside the loop
+    for i in (0 ..< 3) {
+      var j = i + 2
+
+      var expr = ^"$x: i = $i, j = $j"  # captures x, i, and j
+
+      my-task {
+        echo "$x: i = $i, j = $j"       # also captures x, i, and j
+      }
+    }
 
 #### Mutating Containers in a `for` Loop
 
 - If you append or remove from a `List` while iterating over it, the loop **will** be affected.
 - If you mutate a `Dict` while iterating over it, the loop will **not** be
   affected.
-
----
-
-(This section is based on [A Tour of YSH](../ysh-tour.html).)
 
 ### ysh-while
 

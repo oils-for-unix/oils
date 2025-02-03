@@ -1304,7 +1304,8 @@ class CommandEvaluator(object):
         status = 0  # in case we loop zero times
         with ctx_LoopLevel(self):
             while True:
-                with state.ctx_LoopFrame(self.mem, name1.name):
+                with state.ctx_LoopFrame(self.mem,
+                                         self.exec_opts.for_loop_frames()):
                     first = it2.FirstValue()
                     #log('first %s', first)
                     if first is None:  # for StdinIterator

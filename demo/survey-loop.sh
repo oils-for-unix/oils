@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
 #
-# Survey loop behavior
+# Survey loop behavior - mutating the container while iterating over it
+#
+# List - Python and JS are consistent
+# Dict - Python and JS are different - Python 3 introduced version number check
+#   JS and Python 2 may have "unknown" results
 #
 # Usage:
-#   demo/survey-str-api.sh <function name>
+#   demo/survey-loop.sh <function name>
 
 set -o nounset
 set -o pipefail
 set -o errexit
 
 source build/dev-shell.sh  # python3 in $PATH
-
-# Python and JS string and regex replacement APIs
 
 mutate-py() {
   echo ---

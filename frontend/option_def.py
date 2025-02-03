@@ -130,6 +130,9 @@ _UPGRADE_RUNTIME_OPTS = [
 
     # create ENV at startup; read from it when starting processes
     ('env_obj', False),
+
+    # Can create closures from loop variables, like JS / C# / Go
+    ('for_loop_frames', False),
 ]
 
 # TODO: Add strict_arg_parse?  For example, 'trap 1 2 3' shouldn't be

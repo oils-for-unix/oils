@@ -41,6 +41,9 @@ p
 ## END
 
 #### Expr Closures in a Loop !
+
+# see demo/survey-closure.sh
+
 shopt --set ysh:upgrade
 
 proc task (; tasks, expr) {
@@ -50,8 +53,7 @@ proc task (; tasks, expr) {
 func makeTasks() {
   var tasks = []
   var x = 'x'
-  for __hack__ in (0 ..< 3) {
-    var i = __hack__
+  for i in (0 ..< 3) {
     var j = i + 2
     task (tasks, ^"$x: i = $i, j = $j")
   }
@@ -82,8 +84,7 @@ proc task (; tasks; ; b) {
 func makeTasks() {
   var tasks = []
   var x = 'x'
-  for __hack__ in (0 ..< 3) {
-    var i = __hack__
+  for i in (0 ..< 3) {
     var j = i + 2
     task (tasks) { echo "$x: i = $i, j = $j" }
   }

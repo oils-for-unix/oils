@@ -898,11 +898,10 @@ def _MakeArgvCell(argv):
 
 class ctx_LoopFrame(object):
 
-    def __init__(self, mem, name1):
-        # type: (Mem, str) -> None
+    def __init__(self, mem, do_new_frame):
+        # type: (Mem, bool) -> None
         self.mem = mem
-        self.name1 = name1
-        self.do_new_frame = name1 == '__hack__'
+        self.do_new_frame = do_new_frame
 
         if self.do_new_frame:
             to_enclose = self.mem.var_stack[-1]

@@ -108,7 +108,7 @@ loops() {
   console.assert(functions[1]() === 1, "Test 4.2 failed");
   console.assert(functions[2]() === 2, "Test 4.3 failed");
 
-  console.log(functions[2]())
+  console.log(functions[1]())
   '
 
   echo 'LOOPS PYTHON'
@@ -137,7 +137,7 @@ for i in range(3):
   actual = functions[i]()
   assert i == actual, "%d != %d" % (i, actual)
 
-print(functions[2]())
+print(functions[1]())
     '
 }
 
