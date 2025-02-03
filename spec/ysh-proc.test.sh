@@ -271,10 +271,12 @@ G
 
 shopt --set ysh:upgrade
 
+var p = null
 for x in 1 2 {
-  proc p {
+  proc inner {
     echo 'loop'
   }
+  setvar p = inner
 }
 p
 

@@ -111,6 +111,22 @@ loops() {
   console.log(functions[1]())
   '
 
+  # similar to proc p example
+  echo
+  echo 'JS define function'
+  echo
+
+  nodejs -e '
+  for (let i = 0; i < 5; i++) {
+    // this works, is it like let?
+    function inner() { return i; }
+    // let inner = function() { return i; }
+  }
+  console.log("INNER");
+  console.log(inner());
+  '
+
+  echo
   echo 'LOOPS PYTHON'
   echo
 

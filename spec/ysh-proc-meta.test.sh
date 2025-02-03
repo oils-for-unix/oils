@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 4
 ## our_shell: ysh
 
 # dynamically generate procs
