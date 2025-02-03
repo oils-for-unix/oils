@@ -379,6 +379,17 @@ Override the default OSH history location.
 
 Override the default YSH history location.
 
+## Interactive
+
+### OILS_COMP_UI
+
+Set which completion UI to use. Defaults to `minimal`.
+
+- `minimal` - a UI that approximates the default behavior of GNU readline.
+- `nice` - a UI with a fancy pager and a prompt with horizontal scrolling instead of wrapping.
+
+This variable is currently only checked once during shell initialization.
+
 ## cd
 
 ### PWD

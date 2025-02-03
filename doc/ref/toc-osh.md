@@ -199,6 +199,7 @@ X [Unsupported]   enable
 </h2>
 
 ```chapter-links-special-var
+  [Interactive]   OILS_COMP_UI
   [Oils VM]       OILS_VERSION      LIB_OSH
   [POSIX Special] $@  $*  $#     $?  $-     $$  $!   $0  $9
   [Shell Vars]    IFS             X LANG       X GLOBIGNORE
