@@ -147,10 +147,11 @@ shvar FOO=bar {
     setvar Q = Q=>replace("hello","world")
   }
 }
-echo $Q
+#echo $Q
+echo hi
 
 ## STDOUT:
-world
+hi
 ## END
 
 

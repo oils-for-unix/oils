@@ -166,6 +166,7 @@ shopt -s command_sub_errexit
 shopt -u dashglob
 shopt -s env_obj
 shopt -s errexit
+shopt -s for_loop_frames
 shopt -s inherit_errexit
 shopt -s nounset
 shopt -s nullglob
