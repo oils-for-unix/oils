@@ -148,8 +148,10 @@ class SetVar(vm._Callable):
         # type: (typed_args.Reader) -> value_t
         var_name = rd.PosStr()
         val = rd.PosValue()
+        set_global = rd.NamedBool('global', False)
         rd.Done()
-        self.mem.SetNamed(location.LName(var_name), val, scope_e.LocalOnly)
+        scope = scope_e.GlobalOnly if set_global else scope_e.LocalOnly
+        self.mem.SetNamed(location.LName(var_name), val, scope)
         return value.Null
 
 

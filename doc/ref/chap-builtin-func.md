@@ -427,6 +427,16 @@ This is like
 
 except the name can is a string, which can be constructed at runtime.
 
+---
+
+You can also bind globals:
+
+    call setVar('myname', 42, global=true)
+
+which is like
+
+    setglobal myname = 42
+
 ### `parseCommand()`
 
 Given a code string, parse it as a command (with the current parse options).
