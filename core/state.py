@@ -1465,7 +1465,6 @@ class Mem(object):
           def_tok: Token where proc or func was defined, used to compute
                    BASH_SOURCE.
         """
-        # self.token_for_line can be None?
         self.debug_stack.append(
             debug_frame.Call(self.token_for_line, def_tok, func_name))
 

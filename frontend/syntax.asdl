@@ -109,13 +109,21 @@ module syntax
   | TokenTooLong(SourceLine line, id id, int length, int col)
 
   debug_frame = 
+    # TODO: consider
+    # debug_frame.MainFile
+    # debug_frame.SourceFlagFile  # for --source
+    # debug_frame.{CFile,Stdin}  # -c
+    # 
+    # bash won't print those
+
     Main(str dollar0)
-    # call_loc => BASH_LINENO
-    # call_loc may be None with new --source flag?
+    # call_tok => BASH_LINENO
+    # call_tok may be None with new --source flag?
   | Source(Token? call_tok, str source_name)
+    # proc or func call (TODO: could add a bit to distinguish them)
     # def_tok => BASH_SOURCE
-    # call_loc may be None if invoked via RunFuncForCompletion?
-  | Call(Token? call_tok, Token def_tok, str func_name)
+  | Call(Token call_tok, Token def_tok, str func_name)
+    # TODO: What about eval '' ?
 
   #
   # Shell language

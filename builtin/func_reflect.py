@@ -20,7 +20,7 @@ from frontend import typed_args
 from mycpp import mops
 from mycpp.mylib import log, tagswitch
 
-from typing import TYPE_CHECKING
+from typing import List, TYPE_CHECKING
 if TYPE_CHECKING:
     from frontend import parse_lib
     from display import ui
@@ -101,6 +101,23 @@ class BindFrame(vm._Callable):
         return value.Null
         # TODO: I guess you have to bind 2 frames?
         #return Command(cmd_frag.Expr(frag), frame, None)
+
+
+class GetDebugStack(vm._Callable):
+
+    def __init__(self, mem):
+        # type: (state.Mem) -> None
+        vm._Callable.__init__(self)
+        self.mem = mem
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        unused_self = rd.PosObj()
+        rd.Done()
+
+        debug_frames = [value.DebugFrame(fr)
+                        for fr in self.mem.debug_stack]  # type: List[value_t]
+        return value.List(debug_frames)
 
 
 class Shvar_get(vm._Callable):

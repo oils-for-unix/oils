@@ -12,6 +12,7 @@ module value
     NameType
     EggexFlag
     BraceGroup SourceLine
+    debug_frame
   }
 
   use core runtime {
@@ -151,6 +152,7 @@ module value
     # ctx_Eval()
     # TODO: ASDL should let us "collapse" this Dict directly into value_t
   | Frame(Dict[str, Cell] frame)
+  | DebugFrame(debug_frame frame)
 
   #
   # Code units: BoundFunc, BuiltinFunc, Func, BuiltinProc, Proc

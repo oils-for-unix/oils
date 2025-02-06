@@ -248,3 +248,21 @@ pp test_ (cmd)
 
 ## STDOUT:
 ## END
+
+#### vm.getDebugStack()
+
+proc p {
+  echo $[len(vm.getDebugStack())]
+}
+
+proc p2 {
+  p
+}
+
+p
+p2
+
+## STDOUT:
+1
+2
+## END

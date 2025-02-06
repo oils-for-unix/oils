@@ -288,13 +288,15 @@ def Main(
         return status
 
     debug_stack = []  # type: List[debug_frame_t]
-    if arg_r.AtEnd():
+    if arg_r.AtEnd():  # -c input, or stdin
         dollar0 = argv0
     else:
-        dollar0 = arg_r.Peek()  # the script name, or the arg after -c
+        dollar0 = arg_r.Peek()  # the script name
 
         frame0 = debug_frame.Main(dollar0)
         debug_stack.append(frame0)
+
+    #log('STACK %s', debug_stack)
 
     script_name = arg_r.Peek()  # type: Optional[str]
     arg_r.Next()
@@ -540,6 +542,8 @@ def Main(
     vm_methods = NewDict()  # type: Dict[str, value_t]
     # These are methods, not free functions, because they reflect VM state
     vm_methods['getFrame'] = value.BuiltinFunc(func_reflect.GetFrame(mem))
+    vm_methods['getDebugStack'] = value.BuiltinFunc(
+        func_reflect.GetDebugStack(mem))
     vm_methods['id'] = value.BuiltinFunc(func_reflect.Id())
 
     vm_props = NewDict()  # type: Dict[str, value_t]
@@ -1097,8 +1101,9 @@ def Main(
 
         if readline:
             if completion_display == 'nice':
-                display = comp_ui.NiceDisplay(comp_ui_state, prompt_state,
-                    debug_f, readline, signal_safe)  # type: comp_ui._IDisplay
+                display = comp_ui.NiceDisplay(
+                    comp_ui_state, prompt_state, debug_f, readline,
+                    signal_safe)  # type: comp_ui._IDisplay
             else:
                 display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state,
                                                  debug_f, signal_safe)
