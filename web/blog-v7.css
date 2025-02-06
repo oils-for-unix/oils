@@ -45,8 +45,8 @@ h4 {
   padding-top: 1em;  /* separate sections */
 }
 
-/* Exclude <pre><code>*/
-p code, div code, li code, h2 code, h3 code {
+/* Exclude Markdown <pre><code> */
+code:not(pre code) {
   color: green;
 }
 
