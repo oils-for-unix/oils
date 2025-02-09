@@ -242,7 +242,7 @@ var frag = ^(echo $i)
 # TODO: should be fragment
 pp test_ (frag)
 
-var cmd = bindFrame(frag, getFrame(0))
+var cmd = bindFrame(frag, vm.getFrame(0))
 
 pp test_ (cmd)
 

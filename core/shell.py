@@ -292,10 +292,8 @@ def Main(
 
     if script_name is None:
         dollar0 = argv0
-        if flag.c is None:
-            frame0 = debug_frame.MainEntry('[ stdin ]')  # type: debug_frame_t
-        else:
-            frame0 = debug_frame.MainEntry('[ -c flag ]')
+        # placeholder for -c or stdin (depending on flag.c)
+        frame0 = debug_frame.Dummy  # type: debug_frame_t
     else:
         dollar0 = script_name
         frame0 = debug_frame.MainFile(script_name)

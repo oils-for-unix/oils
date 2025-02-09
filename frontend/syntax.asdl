@@ -109,15 +109,11 @@ module syntax
   | TokenTooLong(SourceLine line, id id, int length, int col)
 
   debug_frame = 
-    # TODO: consider
-    # debug_frame.MainFile
-    # debug_frame.SourceFlagFile  # for --source
-    # debug_frame.{CFile,Stdin}  # -c
-    # 
-    # bash won't print those
+    Dummy  # -c or stdin, not used by BASH_* vars
+  | MainFile(str main_filename)  # for BASH_*
 
-    MainEntry(str description)  # -c or stdin
-  | MainFile(str main_filename)
+    # Source and Call are for both OSH and YSH
+
     # call_tok => BASH_LINENO
     # call_tok may be None with new --source flag?
   | Source(Token? call_tok, str source_name)

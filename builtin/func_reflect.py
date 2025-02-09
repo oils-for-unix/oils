@@ -115,8 +115,10 @@ class GetDebugStack(vm._Callable):
         unused_self = rd.PosObj()
         rd.Done()
 
-        debug_frames = [value.DebugFrame(fr)
-                        for fr in self.mem.debug_stack]  # type: List[value_t]
+        debug_frames = [
+            value.DebugFrame(fr) for fr in self.mem.debug_stack
+            if fr.tag() in (debug_frame_e.Call, debug_frame_e.Source)
+        ]  # type: List[value_t]
         return value.List(debug_frames)
 
 
@@ -134,13 +136,7 @@ class FormatDebugFrame(vm._Callable):
         UP_frame = frame
         result = ''
         with tagswitch(frame) as case:
-            if case(debug_frame_e.MainEntry):
-                frame = cast(debug_frame.MainEntry, UP_frame)
-                result = 'main entry %s' % frame.description
-            elif case(debug_frame_e.MainFile):
-                frame = cast(debug_frame.MainFile, UP_frame)
-                result = 'main file %s' % frame.main_filename
-            elif case(debug_frame_e.Call):
+            if case(debug_frame_e.Call):
                 frame = cast(debug_frame.Call, UP_frame)
                 result = 'call'
             elif case(debug_frame_e.Source):
