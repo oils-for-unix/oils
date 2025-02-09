@@ -1314,17 +1314,17 @@ class Mem(object):
         # Reuse these immutable objects
         t_call = value.Str('Call')
         t_source = value.Str('Source')
-        t_main = value.Str('MainFile')
 
         for frame in reversed(self.debug_stack):
             UP_frame = frame
+            d = None  # type: Optional[Dict[str, value_t]]
             with tagswitch(frame) as case:
                 if case(debug_frame_e.Call):
                     frame = cast(debug_frame.Call, UP_frame)
                     d = {
                         'type': t_call,
                         'func_name': value.Str(frame.func_name)
-                    }  # type: Dict[str, value_t]
+                    }
 
                     _AddCallToken(d, frame.call_tok)
                     # TODO: Add def_tok
@@ -1337,14 +1337,10 @@ class Mem(object):
                     }
                     _AddCallToken(d, frame.call_tok)
 
-                elif case(debug_frame_e.MainFile):
-                    frame = cast(debug_frame.MainFile, UP_frame)
-                    d = {
-                        'type': t_main,
-                        'filename': value.Str(frame.main_filename)
-                    }
+            # Note: Skip debug_frame.MainFile
+            if d:
+                debug_stack.append(value.Dict(d))
 
-            debug_stack.append(value.Dict(d))
         return var_stack, argv_stack, debug_stack
 
     def SetLastArgument(self, s):
