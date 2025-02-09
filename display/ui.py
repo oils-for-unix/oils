@@ -92,12 +92,20 @@ def PrettyDir(dir_name, home_dir):
     return dir_name
 
 
+def PrintCaretLine(line, col, length, f):
+    # type: (str, int, int, mylib.Writer) -> None
+    # preserve tabs
+    for c in line[:col]:
+        f.write('\t' if c == '\t' else ' ')
+    f.write('^')
+    f.write('~' * (length - 1))
+    f.write('\n')
+
+
 def _PrintCodeExcerpt(line, col, length, f):
     # type: (str, int, int, mylib.Writer) -> None
 
     buf = mylib.BufWriter()
-
-    buf.write('  ')
 
     # TODO: Be smart about horizontal space when printing code snippet
     # - Accept max_width param, which is terminal width or perhaps 100
@@ -111,18 +119,14 @@ def _PrintCodeExcerpt(line, col, length, f):
     #
     #   ^col 80  ^~~~~ error
 
+    buf.write('  ')  # indent
     buf.write(line.rstrip())
 
-    buf.write('\n  ')
-    # preserve tabs
-    for c in line[:col]:
-        buf.write('\t' if c == '\t' else ' ')
-    buf.write('^')
-    buf.write('~' * (length - 1))
-    buf.write('\n')
+    buf.write('\n  ')  # indent
+    PrintCaretLine(line, col, length, buf)
 
     # Do this all in a single write() call so it's less likely to be
-    # interleaved.  See test/runtime-errors.sh errexit_multiple_processes
+    # interleaved.  See test/runtime-errors.sh test-errexit-multiple-processes
     f.write(buf.getvalue())
 
 

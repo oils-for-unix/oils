@@ -1,14 +1,25 @@
 
-proc p {
-  for fr in (vm.getDebugStack()) {
-    echo $[formatDebugFrame(fr)]
+proc print-stack {
+  for i, fr in (vm.getDebugStack()) {
+    write --end '' -- $[formatDebugFrame(fr, i+1)]
+    #write -- $[formatDebugFrame(fr, i+1)]
   }
 }
 
-proc p2 {
-  p
+proc my-proc {
+  print-stack
 }
 
-p
-echo
-p2
+proc call-func {
+  var x = myfunc(99)
+  echo $x
+}
+
+func myfunc2(a, b) {
+  print-stack
+  return (a + b)
+}
+
+func myfunc(x) {
+  return (myfunc2(x+1, 42))
+}

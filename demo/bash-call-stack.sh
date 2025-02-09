@@ -54,7 +54,7 @@ python() {
   cat >_tmp/callstack.py <<EOF
 def f():
   print("hi from f")
-  g()
+  exec("g()")
 
 def g():
   print("hi from g")

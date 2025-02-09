@@ -115,8 +115,7 @@ module syntax
     # Source and Call are for both OSH and YSH
 
     # call_tok => BASH_LINENO
-    # call_tok may be None with new --source flag?
-  | Source(Token? call_tok, str source_name)
+  | Source(Token call_tok, str source_name)
     # proc or func call (TODO: could add a bit to distinguish them)
     # def_tok => BASH_SOURCE
   | Call(Token call_tok, Token def_tok, str func_name)

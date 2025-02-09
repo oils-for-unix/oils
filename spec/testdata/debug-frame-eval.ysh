@@ -1,7 +1,7 @@
-
 source $_this_dir/debug-frame-lib.ysh
 
-print-stack
-echo
+proc p3 {
+  eval 'my-proc x y'
+}
 
-my-proc
+p3

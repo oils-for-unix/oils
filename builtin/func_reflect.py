@@ -5,7 +5,8 @@ func_reflect.py - Functions for reflecting on Oils code - OSH or YSH.
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import scope_e
-from _devbuild.gen.syntax_asdl import (source, debug_frame, debug_frame_e)
+from _devbuild.gen.syntax_asdl import (Token, source, debug_frame,
+                                       debug_frame_e)
 from _devbuild.gen.value_asdl import (value, value_e, value_t, cmd_frag)
 
 from core import alloc
@@ -14,16 +15,17 @@ from core import main_loop
 from core import state
 from core import vm
 from data_lang import j8
+from display import ui
 from frontend import location
 from frontend import reader
 from frontend import typed_args
 from mycpp import mops
+from mycpp import mylib
 from mycpp.mylib import log, tagswitch
 
 from typing import List, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from frontend import parse_lib
-    from display import ui
 
 _ = log
 
@@ -122,6 +124,37 @@ class GetDebugStack(vm._Callable):
         return value.List(debug_frames)
 
 
+def _FormatDebugFrame(buf, frame_index, token):
+    # type: (mylib.Writer, int, Token) -> None
+    """
+    Based on _AddCallToken in core/state.py
+    Should probably move that into core/dev.py or something, and unify them
+
+    We also want the column number so we can print ^==
+    """
+    # note: absolute path can be lon,g, but Python prints it too
+    call_source = ui.GetLineSourceString(token.line)
+    line_num = token.line.line_num
+    call_line = token.line.content
+
+    func_str = ''
+    # This gives the wrong token?  If we are calling p, it gives the definition
+    # of p.  It doesn't give the func/proc that contains the call to p.
+
+    #if def_tok is not None:
+    #    #log('DEF_TOK %s', def_tok)
+    #    func_str = ' in %s' % lexer.TokenVal(def_tok)
+
+    # should be exactly 1 line
+    buf.write('  #%d %s:%d\n' % (frame_index, call_source, line_num))
+
+    maybe_newline = '' if call_line.endswith('\n') else '\n'
+    buf.write('    %s%s' % (call_line, maybe_newline))
+
+    buf.write('    ')  # prefix
+    ui.PrintCaretLine(call_line, token.col, token.length, buf)
+
+
 class FormatDebugFrame(vm._Callable):
 
     def __init__(self):
@@ -131,20 +164,26 @@ class FormatDebugFrame(vm._Callable):
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
         frame = rd.PosDebugFrame()
+
+        # the frame index may be useful if you have concurrent stack traces?
+        frame_index = mops.BigTruncate(rd.PosInt())
+
         rd.Done()
 
         UP_frame = frame
-        result = ''
+        buf = mylib.BufWriter()
         with tagswitch(frame) as case:
             if case(debug_frame_e.Call):
                 frame = cast(debug_frame.Call, UP_frame)
-                result = 'call'
+                #result = 'call '
+                _FormatDebugFrame(buf, frame_index, frame.call_tok)
             elif case(debug_frame_e.Source):
                 frame = cast(debug_frame.Source, UP_frame)
-                result = 'source'
+                #result = 'source '
+                _FormatDebugFrame(buf, frame_index, frame.call_tok)
             else:
                 raise AssertionError()
-        return value.Str(result)
+        return value.Str(buf.getvalue())
 
 
 class Shvar_get(vm._Callable):

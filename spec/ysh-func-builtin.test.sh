@@ -270,18 +270,28 @@ p2
 #### formatDebugFrame()
 
 $[ENV.SH] $[ENV.REPO_ROOT]/spec/testdata/debug-frame-main.ysh
-
-echo
-
-# -c
-$[ENV.SH] -c 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh'
-
 echo
 
 # stdin
-echo 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh' | $[ENV.SH]
+echo 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh; my-proc' | $[ENV.SH]
+echo
+
+# -c
+$[ENV.SH] -c 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh; my-proc'
+echo
+
+# -c and eval
+$[ENV.SH] -c 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh; eval "my-proc a b"'
+echo
+
+# eval
+$[ENV.SH] -c 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-eval.ysh'
+echo
+
+# functions
+$[ENV.SH] -c 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh; call-func'
+echo
 
 ## STDOUT:
 z
 ## END
-
