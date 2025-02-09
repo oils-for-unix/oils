@@ -1314,7 +1314,7 @@ class Mem(object):
         # Reuse these immutable objects
         t_call = value.Str('Call')
         t_source = value.Str('Source')
-        t_main = value.Str('Main')
+        t_main = value.Str('MainFile')
 
         for frame in reversed(self.debug_stack):
             UP_frame = frame
@@ -1337,9 +1337,12 @@ class Mem(object):
                     }
                     _AddCallToken(d, frame.call_tok)
 
-                elif case(debug_frame_e.Main):
-                    frame = cast(debug_frame.Main, UP_frame)
-                    d = {'type': t_main, 'dollar0': value.Str(frame.dollar0)}
+                elif case(debug_frame_e.MainFile):
+                    frame = cast(debug_frame.MainFile, UP_frame)
+                    d = {
+                        'type': t_main,
+                        'filename': value.Str(frame.main_filename)
+                    }
 
             debug_stack.append(value.Dict(d))
         return var_stack, argv_stack, debug_stack
@@ -2140,8 +2143,11 @@ class Mem(object):
                             # bash doesn't tell you the filename sourced
                             strs.append('source')
 
-                        elif case2(debug_frame_e.Main):
+                        elif case2(debug_frame_e.MainFile):
                             strs.append('main')  # also bash behavior
+
+                        else:  # ignore
+                            pass
 
                 return value.BashArray(strs)  # TODO: Reuse this object too?
 
@@ -2172,9 +2178,12 @@ class Mem(object):
                             # Is this right?
                             strs.append(frame.source_name)
 
-                        elif case2(debug_frame_e.Main):
-                            frame = cast(debug_frame.Main, UP_frame)
-                            strs.append(frame.dollar0)
+                        elif case2(debug_frame_e.MainFile):
+                            frame = cast(debug_frame.MainFile, UP_frame)
+                            strs.append(frame.main_filename)
+
+                        else:  # ignore
+                            pass
 
                 return value.BashArray(strs)  # TODO: Reuse this object too?
 
@@ -2191,9 +2200,12 @@ class Mem(object):
                             frame = cast(debug_frame.Source, UP_frame)
                             strs.append(_LineNumber(frame.call_tok))
 
-                        elif case2(debug_frame_e.Main):
+                        elif case2(debug_frame_e.MainFile):
                             # Bash does this to line up with 'main'
                             strs.append('0')
+
+                        else:  # ignore
+                            pass
 
                 return value.BashArray(strs)  # TODO: Reuse this object too?
 

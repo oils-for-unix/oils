@@ -1,0 +1,14 @@
+
+proc p {
+  for fr in (vm.getDebugStack()) {
+    echo $[formatDebugFrame(fr)]
+  }
+}
+
+proc p2 {
+  p
+}
+
+p
+echo
+p2

@@ -116,7 +116,8 @@ module syntax
     # 
     # bash won't print those
 
-    Main(str dollar0)
+    MainEntry(str description)  # -c or stdin
+  | MainFile(str main_filename)
     # call_tok => BASH_LINENO
     # call_tok may be None with new --source flag?
   | Source(Token? call_tok, str source_name)

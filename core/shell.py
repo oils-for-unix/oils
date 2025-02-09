@@ -287,19 +287,20 @@ def Main(
                 status = 1
         return status
 
-    debug_stack = []  # type: List[debug_frame_t]
-    if arg_r.AtEnd():  # -c input, or stdin
-        dollar0 = argv0
-    else:
-        dollar0 = arg_r.Peek()  # the script name
-
-        frame0 = debug_frame.Main(dollar0)
-        debug_stack.append(frame0)
-
-    #log('STACK %s', debug_stack)
-
     script_name = arg_r.Peek()  # type: Optional[str]
     arg_r.Next()
+
+    if script_name is None:
+        dollar0 = argv0
+        if flag.c is None:
+            frame0 = debug_frame.MainEntry('[ stdin ]')  # type: debug_frame_t
+        else:
+            frame0 = debug_frame.MainEntry('[ -c flag ]')
+    else:
+        dollar0 = script_name
+        frame0 = debug_frame.MainFile(script_name)
+
+    debug_stack = [frame0]
 
     env_dict = NewDict()  # type: Dict[str, value_t]
     defaults = NewDict()  # type: Dict[str, value_t]
@@ -942,6 +943,8 @@ def Main(
 
     _AddBuiltinFunc(mem, 'fromJson8', func_misc.FromJson8(True))
     _AddBuiltinFunc(mem, 'fromJson', func_misc.FromJson8(False))
+
+    _AddBuiltinFunc(mem, 'formatDebugFrame', func_reflect.FormatDebugFrame())
 
     # Demos
     _AddBuiltinFunc(mem, '_a2sp', func_misc.BashArrayToSparse())

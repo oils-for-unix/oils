@@ -4,8 +4,8 @@ func_reflect.py - Functions for reflecting on Oils code - OSH or YSH.
 """
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import (scope_e)
-from _devbuild.gen.syntax_asdl import source
+from _devbuild.gen.runtime_asdl import scope_e
+from _devbuild.gen.syntax_asdl import (source, debug_frame, debug_frame_e)
 from _devbuild.gen.value_asdl import (value, value_e, value_t, cmd_frag)
 
 from core import alloc
@@ -20,7 +20,7 @@ from frontend import typed_args
 from mycpp import mops
 from mycpp.mylib import log, tagswitch
 
-from typing import List, TYPE_CHECKING
+from typing import List, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from frontend import parse_lib
     from display import ui
@@ -118,6 +118,37 @@ class GetDebugStack(vm._Callable):
         debug_frames = [value.DebugFrame(fr)
                         for fr in self.mem.debug_stack]  # type: List[value_t]
         return value.List(debug_frames)
+
+
+class FormatDebugFrame(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Callable.__init__(self)
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        frame = rd.PosDebugFrame()
+        rd.Done()
+
+        UP_frame = frame
+        result = ''
+        with tagswitch(frame) as case:
+            if case(debug_frame_e.MainEntry):
+                frame = cast(debug_frame.MainEntry, UP_frame)
+                result = 'main entry %s' % frame.description
+            elif case(debug_frame_e.MainFile):
+                frame = cast(debug_frame.MainFile, UP_frame)
+                result = 'main file %s' % frame.main_filename
+            elif case(debug_frame_e.Call):
+                frame = cast(debug_frame.Call, UP_frame)
+                result = 'call'
+            elif case(debug_frame_e.Source):
+                frame = cast(debug_frame.Source, UP_frame)
+                result = 'source'
+            else:
+                raise AssertionError()
+        return value.Str(result)
 
 
 class Shvar_get(vm._Callable):

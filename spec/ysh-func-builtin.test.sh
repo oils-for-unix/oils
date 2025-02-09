@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 ## our_shell: ysh
 
 #### join()
@@ -266,3 +266,22 @@ p2
 1
 2
 ## END
+
+#### formatDebugFrame()
+
+$[ENV.SH] $[ENV.REPO_ROOT]/spec/testdata/debug-frame-main.ysh
+
+echo
+
+# -c
+$[ENV.SH] -c 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh'
+
+echo
+
+# stdin
+echo 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh' | $[ENV.SH]
+
+## STDOUT:
+z
+## END
+

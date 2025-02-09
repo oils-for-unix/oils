@@ -2,7 +2,8 @@
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import cmd_value, ProcArgs, Cell
-from _devbuild.gen.syntax_asdl import (loc, loc_t, ArgList, command_t, Token)
+from _devbuild.gen.syntax_asdl import (loc, loc_t, ArgList, command_t, Token,
+                                       debug_frame_t)
 from _devbuild.gen.value_asdl import (value, value_e, value_t, RegexMatch, Obj,
                                       cmd_frag, cmd_frag_e, cmd_frag_str,
                                       LiteralBlock)
@@ -368,6 +369,15 @@ class Reader(object):
                             'Arg %d should be a Frame' % self.pos_consumed,
                             self.BlamePos())
 
+    def _ToDebugFrame(self, val):
+        # type: (value_t) -> debug_frame_t
+        if val.tag() == value_e.DebugFrame:
+            return cast(value.DebugFrame, val).frame
+
+        raise error.TypeErr(
+            val, 'Arg %d should be a DebugFrame' % self.pos_consumed,
+            self.BlamePos())
+
     def _ToCommandFrag(self, val):
         # type: (value_t) -> command_t
         if val.tag() == value_e.CommandFrag:
@@ -490,6 +500,11 @@ class Reader(object):
         # type: () -> Dict[str, Cell]
         val = self.PosValue()
         return self._ToFrame(val)
+
+    def PosDebugFrame(self):
+        # type: () -> debug_frame_t
+        val = self.PosValue()
+        return self._ToDebugFrame(val)
 
     def PosCommandFrag(self):
         # type: () -> command_t
