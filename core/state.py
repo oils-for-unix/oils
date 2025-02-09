@@ -1338,7 +1338,7 @@ class Mem(object):
                     _AddCallToken(d, frame.call_tok)
 
             # Note: Skip debug_frame.MainFile
-            if d:
+            if d is not None:
                 debug_stack.append(value.Dict(d))
 
         return var_stack, argv_stack, debug_stack
