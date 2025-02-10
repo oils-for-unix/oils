@@ -1,0 +1,5 @@
+const __provide__ = []
+
+use $_this_dir/debug-frame-lib.ysh
+
+debug-frame-lib my-proc

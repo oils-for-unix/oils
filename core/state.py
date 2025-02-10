@@ -1036,12 +1036,18 @@ class ctx_ModuleEval(object):
         self.to_restore = self.mem.is_main
         self.mem.is_main = False
 
+        # Equivalent of PushSource()
+        # Would be nice to have a more precise location
+        mem.debug_stack.append(debug_frame.Use(mem.token_for_line))
+
     def __enter__(self):
         # type: () -> None
         pass
 
     def __exit__(self, type, value_, traceback):
         # type: (Any, Any, Any) -> None
+
+        self.mem.debug_stack.pop()
 
         self.mem.is_main = self.to_restore
 

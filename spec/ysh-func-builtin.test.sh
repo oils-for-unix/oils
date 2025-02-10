@@ -292,6 +292,33 @@ echo
 $[ENV.SH] -c 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh; call-func'
 echo
 
+# use
+$[ENV.SH] -c 'use $[ENV.REPO_ROOT]/spec/testdata/debug-frame-use.ysh'
+#$[ENV.SH] $[ENV.REPO_ROOT]/spec/testdata/debug-frame-use.ysh
+echo
+
 ## STDOUT:
 z
+## END
+
+#### formatDebugFrame() with 'use' builtin
+
+# Work around spec test builtin limitation: line starting with # is treated as
+# a comment
+
+$[ENV.SH] -c 'use $[ENV.REPO_ROOT]/spec/testdata/debug-frame-use.ysh' | 
+  sed -e "s;$[ENV.REPO_ROOT];MYROOT;g" -e 's;#;%;g'
+
+#write -- $[ENV.REPO_ROOT] | sed "s;$[ENV.REPO_ROOT];REPO_ROOT;g"
+
+## STDOUT:
+  %1 [ -c flag ]:1
+    use $[ENV.REPO_ROOT]/spec/testdata/debug-frame-use.ysh
+    ^~~
+  %2 MYROOT/spec/testdata/debug-frame-use.ysh:5
+    debug-frame-lib my-proc
+    ^~~~~~~~~~~~~~~
+  %3 MYROOT/spec/testdata/debug-frame-lib.ysh:11
+      print-stack
+      ^~~~~~~~~~~
 ## END

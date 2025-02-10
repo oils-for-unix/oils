@@ -121,6 +121,9 @@ module syntax
   | Call(Token call_tok, Token def_tok, str func_name)
     # TODO: What about eval '' ?
 
+    # YSH only
+  | Use(Token call_tok)
+
   #
   # Shell language
   #
