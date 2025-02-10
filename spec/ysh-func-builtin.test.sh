@@ -306,6 +306,8 @@ z
 # Work around spec test builtin limitation: line starting with # is treated as
 # a comment
 
+#echo $[ENV.REPO_ROOT]
+
 $[ENV.SH] -c 'use $[ENV.REPO_ROOT]/spec/testdata/debug-frame-use.ysh' | 
   sed -e "s;$[ENV.REPO_ROOT];MYROOT;g" -e 's;#;%;g'
 
