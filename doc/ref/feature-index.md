@@ -123,7 +123,7 @@ OSH:
 [compadjust]: chap-builtin-cmd.html#compadjust
 [compexport]: chap-builtin-cmd.html#compexport
 
-### Tracing
+### Tracing Execution
 
 - `set -x` aka `set -o xtrace`
 - [PS4][]
@@ -131,7 +131,7 @@ OSH:
 
 [PS4]: chap-plugin.html#PS4
 
-### Reflection
+### Introspecting the Call Stack
 
 OSH Debug Stack:
 
@@ -145,7 +145,17 @@ YSH Debug Stack:
   - [toString()](chap-type-method.html#toString) method
 - [vm.getDebugStack()](chap-type-method.html#getDebugStack)
 
-YSH:
+These may be combined with
+
+- [trap][] `ERR`
+- [set][] `-o errtrace` aka `set -E`
+
+[trap]: chap-builtin-cmd.html#trap
+[set]: chap-builtin-cmd.html#set
+
+### Reflection
+
+Other YSH reflection:
 
 - The [`io`][io] object has `eval()` methods, etc.
 - The [`vm`][vm] object for inspecting interpreter structures

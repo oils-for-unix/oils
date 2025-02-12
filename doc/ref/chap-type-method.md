@@ -719,11 +719,10 @@ Likewise, it can be found to a `ExprFrag`, producing an `Expr`.
 
 ### DebugFrame
 
-An opaque value returned by [vm.getDebugStack()][], and accepted by
-[formatDebugFrame()][].
+An opaque value returned by [vm.getDebugStack()][], which has a `toString()`
+method.
 
 [vm.getDebugStack()]: chap-type-method.html#getDebugStack
-[formatDebugFrame()]: chap-builtin-func.html#formatDebugFrame
 
 Logically, it represents one of:
 
@@ -735,11 +734,11 @@ Logically, it represents one of:
 [source]: chap-builtin-cmd.html#source
 [use]: chap-builtin-cmd.html#use
 
-### `toString()`
+### toString()
 
 Return a string representing the `DebugFrame` value.
 
-We recommend that you add an integer prefix to each frame, like this:
+We recommend that you print each frame with a numeric prefix, like this:
 
 <!-- bug: highlighting finds # within "" -->
 
@@ -904,7 +903,9 @@ If the index is out of range, an error is raised.
 
 ### getDebugStack()
 
-TODO
+Returns a list of [DebugFrame][] values, representing the current call stack.
+
+[DebugFrame]: #DebugFrame
 
 ### id()
 

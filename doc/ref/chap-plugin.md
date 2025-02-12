@@ -75,7 +75,12 @@ trap, pipelines, and interactive shells.
 
 ### ERR
 
-TODO
+The `ERR` trap runs when a command fails, i.e. in the situations where `set -o
+errexit` aka `set -e` exits the shell.
+
+To enable it in functions and subshells, use `set -o errtrace`, aka `set -E`.
+
+It's designed to be compatible with bash.
 
 ### EXIT
 

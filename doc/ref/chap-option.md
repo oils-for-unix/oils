@@ -85,7 +85,7 @@ called `-rf`.
 ## Other Option
 
     noclobber -C  # Redirects can't overwrite files
-    errtrace -E   # Enable ERR trap is both shell functions and subshells
+    errtrace -E   # Enable ERR trap in both shell functions and subshells
 
 ## Debugging
 

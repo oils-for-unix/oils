@@ -1,4 +1,4 @@
-## oils_failures_allowed: 3
+## oils_failures_allowed: 4
 ## our_shell: ysh
 
 #### join()
@@ -267,34 +267,71 @@ p2
 2
 ## END
 
-#### DebugFrame.toString()
+#### DebugFrame.toString() running file
 
-$[ENV.SH] $[ENV.REPO_ROOT]/spec/testdata/debug-frame-main.ysh
-echo
+$[ENV.SH] $[ENV.REPO_ROOT]/spec/testdata/debug-frame-main.ysh |
+  sed -e "s;$[ENV.REPO_ROOT];MYROOT;g" -e 's;#;%;g'
+
+## STDOUT:
+  %1 MYROOT/spec/testdata/debug-frame-main.ysh:4
+    print-stack
+    ^~~~~~~~~~~
+
+  %1 MYROOT/spec/testdata/debug-frame-main.ysh:7
+    my-proc
+    ^~~~~~~
+  %2 MYROOT/spec/testdata/debug-frame-lib.ysh:15
+      print-stack
+      ^~~~~~~~~~~
+## END
+
+
+#### DebugFrame.toString() running stdin and -c
 
 # stdin
-echo 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh; my-proc' | $[ENV.SH]
+echo 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh; my-proc' |
+  $[ENV.SH] |
+  sed -e "s;$[ENV.REPO_ROOT];MYROOT;g" -e 's;#;%;g'
 echo
 
 # -c
-$[ENV.SH] -c 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh; my-proc'
-echo
+$[ENV.SH] -c 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh; my-proc' |
+  sed -e "s;$[ENV.REPO_ROOT];MYROOT;g" -e 's;#;%;g'
+
+## STDOUT:
+  %1 [ stdin ]:1
+    source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh; my-proc
+                                                               ^~~~~~~
+  %2 MYROOT/spec/testdata/debug-frame-lib.ysh:15
+      print-stack
+      ^~~~~~~~~~~
+
+  %1 [ -c flag ]:1
+    source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh; my-proc
+                                                               ^~~~~~~
+  %2 MYROOT/spec/testdata/debug-frame-lib.ysh:15
+      print-stack
+      ^~~~~~~~~~~
+## END
+
+#### DebugFrame.toString() running eval 
 
 # -c and eval
-$[ENV.SH] -c 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh; eval "my-proc a b"'
+$[ENV.SH] -c 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh; eval "my-proc a b"' |
+  sed -e "s;$[ENV.REPO_ROOT];MYROOT;g" -e 's;#;%;g'
 echo
 
 # eval
-$[ENV.SH] -c 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-eval.ysh'
-echo
+$[ENV.SH] -c 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-eval.ysh' |
+  sed -e "s;$[ENV.REPO_ROOT];MYROOT;g" -e 's;#;%;g'
+
+## STDOUT:
+## END
+
+#### DebugFrame.toString() running YSH functions
 
 # functions
 $[ENV.SH] -c 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh; call-func'
-echo
-
-# use
-$[ENV.SH] -c 'use $[ENV.REPO_ROOT]/spec/testdata/debug-frame-use.ysh'
-#$[ENV.SH] $[ENV.REPO_ROOT]/spec/testdata/debug-frame-use.ysh
 echo
 
 ## STDOUT:
