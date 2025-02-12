@@ -136,3 +136,25 @@ class LastIndexOf(vm._Callable):
                 return num.ToBig(i)
             i -= 1
         return value.Int(mops.MINUS_ONE)
+
+
+class Remove(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        li = rd.PosList()
+        to_remove = rd.PosValue()
+        rd.Done()
+
+        i = 0
+        while i < len(li):
+            if val_ops.ExactlyEqual(li[i], to_remove, rd.LeftParenToken()):
+                li.pop(i)
+                return value.Null
+            i += 1
+        return value.Null

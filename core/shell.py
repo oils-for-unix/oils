@@ -826,7 +826,7 @@ def Main(
         'M/extend': method_list.Extend(),
         'M/pop': method_list.Pop(),
         'M/insert': None,  # insert object before index
-        'M/remove': None,  # insert object before index
+        'M/remove': method_list.Remove(),
         'indexOf': method_list.IndexOf(),  # return first index of value, or -1
         # Python list() has index(), which raises ValueError
         # But this is consistent with Str->find(), and doesn't

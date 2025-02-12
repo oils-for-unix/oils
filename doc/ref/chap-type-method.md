@@ -491,6 +491,13 @@ element in the list, or -1 if it's not present.
 
 ### remove()
 
+Remove the first instance of the specified element from the list, if it exists.
+Returns `null`, even if the element did not exist.
+
+    var lakes = :| coniston derwent wast |
+    call lakes->remove("wast")
+    echo @lakes  # => coniston derwent
+
 ### reverse()
 
 Reverses a list in place.
