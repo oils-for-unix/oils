@@ -741,21 +741,26 @@ Return a string representing the `DebugFrame` value.
 
 We recommend that you add an integer prefix to each frame, like this:
 
-    proc print-stack {
-      for i, frame in (vm.getDebugStack()) {
-        write --end '' -- "  #$[i+1] $[frame.toString()]"
-      }
-    }
+<!-- bug: highlighting finds # within "" -->
+
+```none
+proc print-stack {
+  for i, frame in (vm.getDebugStack()) {
+    write --end '' -- "  #$[i+1] $[frame.toString()]"
+  }
+}
+```
 
 Then the output will look like:
 
-    #1 main.ysh
-      source lib.ysh
-      ^~~~~~~~~
-    #2 lib.ysh
-      print-stack
-      ^~~~~~~~~~~
- 
+```none
+  #1 main.ysh
+    source lib.ysh
+    ^~~~~~
+  #2 lib.ysh
+    print-stack
+    ^~~~~~~~~~~
+``` 
 
 ### io
 

@@ -1,9 +1,13 @@
 const __provide__ = :| print-stack my-proc |
 
-proc print-stack {
+proc print-stack (; ; prefix=true) {
   for i, frame in (vm.getDebugStack()) {
     #write --end '' -- $[formatDebugFrame(fr, prefix="  #$[i+1] ")]
-    write --end '' -- "  #$[i+1] $[frame.toString()]"
+    if (prefix) {
+      write --end '' -- "  #$[i+1] $[frame.toString()]"
+    } else {
+      write --end '' -- "$[frame.toString()]"
+    }
   }
 }
 

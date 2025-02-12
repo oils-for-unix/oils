@@ -267,7 +267,7 @@ p2
 2
 ## END
 
-#### formatDebugFrame()
+#### DebugFrame.toString()
 
 $[ENV.SH] $[ENV.REPO_ROOT]/spec/testdata/debug-frame-main.ysh
 echo
@@ -301,7 +301,7 @@ echo
 z
 ## END
 
-#### formatDebugFrame() with 'use' builtin
+#### DebugFrame.toString() with 'use' builtin
 
 # Work around spec test builtin limitation: line starting with # is treated as
 # a comment
@@ -320,7 +320,37 @@ $[ENV.SH] -c 'use $[ENV.REPO_ROOT]/spec/testdata/debug-frame-use.ysh' |
   %2 MYROOT/spec/testdata/debug-frame-use.ysh:5
     debug-frame-lib my-proc
     ^~~~~~~~~~~~~~~
-  %3 MYROOT/spec/testdata/debug-frame-lib.ysh:11
+  %3 MYROOT/spec/testdata/debug-frame-lib.ysh:15
       print-stack
       ^~~~~~~~~~~
+## END
+
+#### DebugFrame.toString() with trap ERR
+
+source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh
+
+trap 'print-stack (prefix=false)' ERR
+set -o errtrace  # enable always
+
+proc f {
+  g
+}
+
+proc g {
+  false
+}
+
+f
+
+## status: 1
+## STDOUT:
+[ stdin ]:14
+    f
+    ^
+[ stdin ]:7
+      g
+      ^
+[ stdin ]:11
+      false
+      ^~~~~
 ## END
