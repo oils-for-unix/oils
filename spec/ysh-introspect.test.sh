@@ -1,4 +1,4 @@
-## oils_failures_allowed: 3
+## oils_failures_allowed: 4
 ## our_shell: ysh
 
 #### getFrame()
@@ -211,7 +211,7 @@ $[ENV.SH] -c 'use $[ENV.REPO_ROOT]/spec/testdata/debug-frame-use.ysh' |
     ^~~
   %2 MYROOT/spec/testdata/debug-frame-use.ysh:5
     debug-frame-lib my-proc
-    ^~~~~~~~~~~~~~~
+                    ^~~~~~~
   %3 MYROOT/spec/testdata/debug-frame-lib.ysh:15
       print-stack
       ^~~~~~~~~~~
@@ -243,7 +243,7 @@ p
 [ stdin ]
 ## END
 
-#### DebugFrame.toString() with trap ERR
+#### DebugFrame.toString() with trap ERR - external failure
 
 source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh
 
@@ -271,4 +271,32 @@ f
 [ stdin ]:11
       false
       ^~~~~
+## END
+
+#### DebugFrame.toString() with trap ERR - proc failure
+
+source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh
+
+trap 'print-stack (prefix=false)' ERR
+set -o errtrace  # enable always
+
+proc f {
+  g
+}
+
+proc g {
+  ( exit 42 )
+  #return 42
+}
+
+f
+
+## status: 42
+## STDOUT:
+[ stdin ]:14
+    f
+    ^
+[ stdin ]:11
+      return 42
+      ^~~~~~
 ## END

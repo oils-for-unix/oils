@@ -117,12 +117,20 @@ class GetDebugStack(vm._Callable):
         unused_self = rd.PosObj()
         rd.Done()
 
-        debug_frames = [
-            value.DebugFrame(fr) for fr in self.mem.debug_stack
+        debug_frames = []  # type: List[value_t]
+        for fr in self.mem.debug_stack:
             if fr.tag() in (debug_frame_e.ProcLike, debug_frame_e.Func,
                             debug_frame_e.Source, debug_frame_e.Use,
-                            debug_frame_e.EvalBuiltin)
-        ]  # type: List[value_t]
+                            debug_frame_e.EvalBuiltin,
+                            debug_frame_e.BeforeErrTrap):
+                debug_frames.append(value.DebugFrame(fr))
+            # Don't report stuff inside the err trap
+            if fr.tag() == debug_frame_e.BeforeErrTrap:
+                break
+
+        if 0:
+            for fr in debug_frames:
+                log('%s', fr.frame)
         return value.List(debug_frames)
 
 
@@ -174,7 +182,10 @@ class DebugFrameToString(vm._Callable):
         with tagswitch(frame) as case:
             if case(debug_frame_e.ProcLike):
                 frame = cast(debug_frame.ProcLike, UP_frame)
-                _FormatDebugFrame(buf, frame.call_tok)
+                invoke_token = location.LeftTokenForCompoundWord(
+                    frame.invoke_loc)
+                assert invoke_token is not None, frame.invoke_loc
+                _FormatDebugFrame(buf, invoke_token)
             elif case(debug_frame_e.Func):
                 frame = cast(debug_frame.Func, UP_frame)
                 _FormatDebugFrame(buf, frame.call_tok)
@@ -187,6 +198,9 @@ class DebugFrameToString(vm._Callable):
             elif case(debug_frame_e.EvalBuiltin):
                 frame = cast(debug_frame.EvalBuiltin, UP_frame)
                 _FormatDebugFrame(buf, frame.invoke_tok)
+            elif case(debug_frame_e.BeforeErrTrap):
+                frame = cast(debug_frame.BeforeErrTrap, UP_frame)
+                _FormatDebugFrame(buf, frame.tok)
             else:
                 raise AssertionError()
         return value.Str(buf.getvalue())

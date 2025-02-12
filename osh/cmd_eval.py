@@ -52,6 +52,7 @@ from _devbuild.gen.syntax_asdl import (
     word,
     Eggex,
     List_of_command,
+    debug_frame,
 )
 from _devbuild.gen.runtime_asdl import (
     cmd_value,
@@ -2272,10 +2273,23 @@ class CommandEvaluator(object):
         # NOTE: Don't set option_i._running_trap, because that's for
         # RunPendingTraps() in the MAIN LOOP
 
+        # To make a better stack trace from vm.getDebugStack(), add the last
+        # thing that failed, even if it's not a proc/func.  This can be an
+        # external command.
+        self.mem.debug_stack.append(
+            debug_frame.BeforeErrTrap(self.mem.token_for_line))
+
         with dev.ctx_Tracer(self.tracer, 'trap ERR', None):
+            # TODO:
+            # - use debug_frame.Trap
+            # - use the original location of the 'trap' command?
+            # - combine ctx_Tracer and debug stack?  They are similar
+            #with state.ctx_EvalDebugFrame(self.mem, self.mem.token_for_line):
+
             # In bash, the PIPESTATUS register leaks.  See spec/builtin-trap-err.
             # So unlike other traps, we don't isolate registers.
             #with state.ctx_Registers(self.mem):  # prevent setting $? etc.
+
             with state.ctx_ErrTrap(self.mem):
                 self._Execute(node)
 

@@ -13,8 +13,9 @@ import time as time_  # avoid name conflict
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import (error_code_e, scope_e, scope_t, Cell)
-from _devbuild.gen.syntax_asdl import (loc, loc_t, Token, debug_frame,
-                                       debug_frame_e, debug_frame_t)
+from _devbuild.gen.syntax_asdl import (CompoundWord, loc, loc_t, Token,
+                                       debug_frame, debug_frame_e,
+                                       debug_frame_t)
 from _devbuild.gen.types_asdl import opt_group_i
 from _devbuild.gen.value_asdl import (value, value_e, value_t, Obj, sh_lvalue,
                                       sh_lvalue_e, sh_lvalue_t, LeftName,
@@ -743,8 +744,8 @@ class ctx_FuncCall(object):
 class ctx_ProcCall(object):
     """For proc calls, including shell functions."""
 
-    def __init__(self, mem, mutable_opts, proc, argv, unused_invoke_loc):
-        # type: (Mem, MutableOpts, value.Proc, List[str], loc_t) -> None
+    def __init__(self, mem, mutable_opts, proc, argv, invoke_loc):
+        # type: (Mem, MutableOpts, value.Proc, List[str], CompoundWord) -> None
 
         # TODO:
         # should we separate procs and shell functions?
@@ -778,7 +779,7 @@ class ctx_ProcCall(object):
         # Then print-stack gets blamed, not the actual command that failed.  So
         # mem.token_for_line seems better.  See spec/ysh-introspect.
         mem.debug_stack.append(
-            debug_frame.ProcLike(mem.token_for_line, proc.name_tok, proc.name))
+            debug_frame.ProcLike(invoke_loc, proc.name_tok, proc.name))
 
         # Dynamic scope is only for shell functions
         mutable_opts.PushDynamicScope(proc.sh_compat)
@@ -1361,7 +1362,10 @@ class Mem(object):
                         'func_name': value.Str(frame.proc_name)
                     }
 
-                    _AddCallToken(d, frame.call_tok)
+                    invoke_token = location.LeftTokenForCompoundWord(
+                        frame.invoke_loc)
+                    assert invoke_token is not None, frame.invoke_loc
+                    _AddCallToken(d, invoke_token)
                     # TODO: Add def_tok
 
                 elif case(debug_frame_e.Source):
@@ -2202,7 +2206,10 @@ class Mem(object):
                     with tagswitch(frame) as case2:
                         if case2(debug_frame_e.ProcLike):
                             frame = cast(debug_frame.ProcLike, UP_frame)
-                            strs.append(_LineNumber(frame.call_tok))
+                            invoke_token = location.LeftTokenForCompoundWord(
+                                frame.invoke_loc)
+                            assert invoke_token is not None, frame.invoke_loc
+                            strs.append(_LineNumber(invoke_token))
 
                         elif case2(debug_frame_e.Source):
                             frame = cast(debug_frame.Source, UP_frame)
