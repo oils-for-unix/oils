@@ -131,6 +131,29 @@ OSH:
 
 [PS4]: chap-plugin.html#PS4
 
+### Reflection
+
+OSH Debug Stack:
+
+- [BASH_SOURCE](chap-special-var.html#BASH_SOURCE)
+- [FUNCNAME](chap-special-var.html#FUNCNAME)
+- [BASH_LINENO](chap-special-var.html#BASH_LINENO)
+
+YSH Debug Stack:
+
+- [DebugFrame](chap-type-method.html#DebugFrame)
+  - [toString()](chap-type-method.html#toString) method
+- [vm.getDebugStack()](chap-type-method.html#getDebugStack)
+
+YSH:
+
+- The [`io`][io] object has `eval()` methods, etc.
+- The [`vm`][vm] object for inspecting interpreter structures
+
+[io]: chap-type-method.html#io
+[vm]: chap-type-method.html#vm
+
+
 ### Unicode
 
 - TODO: which functions respect Unicode?
@@ -166,14 +189,6 @@ Also see [the Unicode doc](../unicode.html).
 - [`ysh-func-call`](chap-expr-lang.html#ysh-func-call)
 
 [__call__]: chap-type-method.html#__call__
-
-### Reflection
-
-- The [`io`][io] object has `eval()` methods, etc.
-- The [`vm`][vm] object for inspecting interpreter structures
-
-[io]: chap-type-method.html#io
-[vm]: chap-type-method.html#vm
 
 ### Namespaces
 

@@ -854,6 +854,10 @@ def Main(
         'export': None,
     }
 
+    methods[value_e.DebugFrame] = {
+        'toString': func_reflect.DebugFrameToString(),
+    }
+
     #
     # Initialize Built-in Funcs
     #
@@ -941,8 +945,6 @@ def Main(
 
     _AddBuiltinFunc(mem, 'fromJson8', func_misc.FromJson8(True))
     _AddBuiltinFunc(mem, 'fromJson', func_misc.FromJson8(False))
-
-    _AddBuiltinFunc(mem, 'formatDebugFrame', func_reflect.FormatDebugFrame())
 
     # Demos
     _AddBuiltinFunc(mem, '_a2sp', func_misc.BashArrayToSparse())

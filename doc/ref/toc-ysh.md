@@ -46,34 +46,35 @@ error handling, and more.
                    Range
   [String]         Str       X find()         X findLast()
                              X contains()       replace()
-                               trim()           trimStart()      trimEnd()
+                               trim()           trimStart()       trimEnd()
                                startsWith()     endsWith()
                                upper()          lower()
                                search()         leftMatch()
                                split()
   [Patterns]       Eggex
-                   Match       group()          start()          end()
+                   Match       group()          start()           end()
                              X groups()       X groupDict()
-  [Containers]     List        List/append()    pop()            extend()
-                               indexOf()        lastIndexOf()  X includes()
+  [Containers]     List        List/append()    pop()             extend()
+                               indexOf()        lastIndexOf()   X includes()
                              X insert()       X remove()
                                reverse()        List/clear()
-                   Dict        erase()        X Dict/clear()   X accum()
+                   Dict        erase()        X Dict/clear()    X accum()
                              X update()
                    Place       setValue()
   [Code Types]     Func        BuiltinFunc      BoundFunc
                    Proc        BuiltinProc
   [Objects]        Obj         __invoke__       new
-                             X __call__       __index__        X __str__
+                             X __call__       __index__         X __str__
   [Reflection]     Command     CommandFrag
                    Expr
                    Frame
+                   DebugFrame  toString()
                    io          stdin            evalExpr()
                                eval()           evalToDict()
                                captureStdout()
                                promptVal()
-                             X time()         X strftime()     X glob()
-                   vm          getFrame()       id() 
+                             X time()         X strftime()      X glob()
+                   vm          getFrame()       getDebugStack()   id() 
 ```
 
 <h2 id="builtin-func">

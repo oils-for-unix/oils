@@ -451,6 +451,10 @@ Given a code string, parse it as an expression.
 
 Returns a `value.Expr` instance, or raises an error.
 
+### `bindFrame()`
+
+TODO
+
 ## Hay Config
 
 ### parseHay()

@@ -125,8 +125,8 @@ class GetDebugStack(vm._Callable):
         return value.List(debug_frames)
 
 
-def _FormatDebugFrame(buf, prefix, token):
-    # type: (mylib.Writer, str, Token) -> None
+def _FormatDebugFrame(buf, token):
+    # type: (mylib.Writer, Token) -> None
     """
     Based on _AddCallToken in core/state.py
     Should probably move that into core/dev.py or something, and unify them
@@ -147,7 +147,7 @@ def _FormatDebugFrame(buf, prefix, token):
     #    func_str = ' in %s' % lexer.TokenVal(def_tok)
 
     # should be exactly 1 line
-    buf.write('%s%s:%d\n' % (prefix, call_source, line_num))
+    buf.write('%s:%d\n' % (call_source, line_num))
 
     maybe_newline = '' if call_line.endswith('\n') else '\n'
     buf.write('    %s%s' % (call_line, maybe_newline))
@@ -156,7 +156,7 @@ def _FormatDebugFrame(buf, prefix, token):
     ui.PrintCaretLine(call_line, token.col, token.length, buf)
 
 
-class FormatDebugFrame(vm._Callable):
+class DebugFrameToString(vm._Callable):
 
     def __init__(self):
         # type: () -> None
@@ -166,9 +166,6 @@ class FormatDebugFrame(vm._Callable):
         # type: (typed_args.Reader) -> value_t
         frame = rd.PosDebugFrame()
 
-        # the frame index may be useful if you have concurrent stack traces?
-        prefix = rd.NamedStr('prefix', '')
-
         rd.Done()
 
         UP_frame = frame
@@ -176,13 +173,13 @@ class FormatDebugFrame(vm._Callable):
         with tagswitch(frame) as case:
             if case(debug_frame_e.Call):
                 frame = cast(debug_frame.Call, UP_frame)
-                _FormatDebugFrame(buf, prefix, frame.call_tok)
+                _FormatDebugFrame(buf, frame.call_tok)
             elif case(debug_frame_e.Source):
                 frame = cast(debug_frame.Source, UP_frame)
-                _FormatDebugFrame(buf, prefix, frame.call_tok)
+                _FormatDebugFrame(buf, frame.call_tok)
             elif case(debug_frame_e.Use):
                 frame = cast(debug_frame.Use, UP_frame)
-                _FormatDebugFrame(buf, prefix, frame.call_tok)
+                _FormatDebugFrame(buf, frame.call_tok)
             else:
                 raise AssertionError()
         return value.Str(buf.getvalue())

@@ -717,6 +717,45 @@ producing a `Command`.
 
 Likewise, it can be found to a `ExprFrag`, producing an `Expr`.
 
+### DebugFrame
+
+An opaque value returned by [vm.getDebugStack()][], and accepted by
+[formatDebugFrame()][].
+
+[vm.getDebugStack()]: chap-type-method.html#getDebugStack
+[formatDebugFrame()]: chap-builtin-func.html#formatDebugFrame
+
+Logically, it represents one of:
+
+1. An invocation of a proc or shell function 
+1. A YSH func call
+1. The OSH [source][] builtin
+1. The YSH [use][] builtin
+
+[source]: chap-builtin-cmd.html#source
+[use]: chap-builtin-cmd.html#use
+
+### `toString()`
+
+Return a string representing the `DebugFrame` value.
+
+We recommend that you add an integer prefix to each frame, like this:
+
+    proc print-stack {
+      for i, frame in (vm.getDebugStack()) {
+        write --end '' -- "  #$[i+1] $[frame.toString()]"
+      }
+    }
+
+Then the output will look like:
+
+    #1 main.ysh
+      source lib.ysh
+      ^~~~~~~~~
+    #2 lib.ysh
+      print-stack
+      ^~~~~~~~~~~
+ 
 
 ### io
 
@@ -857,6 +896,10 @@ Given an index, get a handle to a call stack frame.
     var frame = vm.getFrame(-2)  # the calling frame
 
 If the index is out of range, an error is raised.
+
+### getDebugStack()
+
+TODO
 
 ### id()
 
