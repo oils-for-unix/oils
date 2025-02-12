@@ -93,11 +93,12 @@ class Eval(vm._Builtin):
         # TODO: Add debug_frame here, with ctx_Eval or ctx_EvalDebugFrame
         src = source.Dynamic('eval arg', eval_loc)
         with dev.ctx_Tracer(self.tracer, 'eval', None):
-            with alloc.ctx_SourceCode(self.arena, src):
-                return main_loop.Batch(self.cmd_ev,
-                                       c_parser,
-                                       self.errfmt,
-                                       cmd_flags=cmd_eval.RaiseControlFlow)
+            with state.ctx_EvalDebugFrame(self.mem, self.mem.token_for_line):
+                with alloc.ctx_SourceCode(self.arena, src):
+                    return main_loop.Batch(self.cmd_ev,
+                                           c_parser,
+                                           self.errfmt,
+                                           cmd_flags=cmd_eval.RaiseControlFlow)
 
 
 def _VarName(module_path):

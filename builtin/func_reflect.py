@@ -120,7 +120,8 @@ class GetDebugStack(vm._Callable):
         debug_frames = [
             value.DebugFrame(fr) for fr in self.mem.debug_stack
             if fr.tag() in (debug_frame_e.ProcLike, debug_frame_e.Func,
-                            debug_frame_e.Source, debug_frame_e.Use)
+                            debug_frame_e.Source, debug_frame_e.Use,
+                            debug_frame_e.EvalBuiltin)
         ]  # type: List[value_t]
         return value.List(debug_frames)
 
@@ -182,7 +183,10 @@ class DebugFrameToString(vm._Callable):
                 _FormatDebugFrame(buf, frame.call_tok)
             elif case(debug_frame_e.Use):
                 frame = cast(debug_frame.Use, UP_frame)
-                _FormatDebugFrame(buf, frame.call_tok)
+                _FormatDebugFrame(buf, frame.invoke_tok)
+            elif case(debug_frame_e.EvalBuiltin):
+                frame = cast(debug_frame.EvalBuiltin, UP_frame)
+                _FormatDebugFrame(buf, frame.invoke_tok)
             else:
                 raise AssertionError()
         return value.Str(buf.getvalue())

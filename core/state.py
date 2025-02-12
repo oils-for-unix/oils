@@ -743,7 +743,7 @@ class ctx_FuncCall(object):
 class ctx_ProcCall(object):
     """For proc calls, including shell functions."""
 
-    def __init__(self, mem, mutable_opts, proc, argv, invoke_loc):
+    def __init__(self, mem, mutable_opts, proc, argv, unused_invoke_loc):
         # type: (Mem, MutableOpts, value.Proc, List[str], loc_t) -> None
 
         # TODO:
@@ -770,9 +770,15 @@ class ctx_ProcCall(object):
 
         mem.var_stack.append(frame)
 
+        # Note: Instead of mem.token_for_line, I tried passing the invoke_loc
+        # cmd_val.arg_locs[0].  But if we then have:
+        #
+        #   trap 'print-stack' ERR
+        #
+        # Then print-stack gets blamed, not the actual command that failed.  So
+        # mem.token_for_line seems better.  See spec/ysh-introspect.
         mem.debug_stack.append(
             debug_frame.ProcLike(mem.token_for_line, proc.name_tok, proc.name))
-        #debug_frame.ProcLike(invoke_loc, proc.name_tok, proc.name))
 
         # Dynamic scope is only for shell functions
         mutable_opts.PushDynamicScope(proc.sh_compat)
@@ -998,6 +1004,22 @@ class ctx_EnclosedFrame(object):
 
         if self.module_frame is not None:
             self.mem.var_stack[0] = self.saved_globals
+
+
+class ctx_EvalDebugFrame(object):
+
+    def __init__(self, mem, invoke_tok):
+        # type: (Mem, Token) -> None
+        mem.debug_stack.append(debug_frame.EvalBuiltin(invoke_tok))
+        self.mem = mem
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value_, traceback):
+        # type: (Any, Any, Any) -> None
+        self.mem.debug_stack.pop()
 
 
 class ctx_ModuleEval(object):

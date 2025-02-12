@@ -109,22 +109,26 @@ module syntax
   | TokenTooLong(SourceLine line, id id, int length, int col)
 
   debug_frame = 
-    Dummy  # -c or stdin, not used by BASH_* vars
-  | MainFile(str main_filename)  # for BASH_*
+    # OSH: used by BASH_* vars
+    MainFile(str main_filename)
+    # YSH
+  | Dummy                        # -c or stdin, not used by BASH_* vars
 
-    # Source and Call are for both OSH and YSH
-
-    # call_tok => BASH_LINENO
+    # OSH: call_tok => BASH_LINENO
   | Source(Token call_tok, str source_name)
-    # proc or func call (TODO: could add a bit to distinguish them)
-    # def_tok => BASH_SOURCE
-    # loc invoke_loc
-  | ProcLike(Token call_tok, Token def_tok, str proc_name)
-  | Func(Token call_tok)
-    # TODO: What about eval '' ?
-
     # YSH only
-  | Use(Token call_tok)
+  | Use(Token invoke_tok)  # TODO: invoke_loc
+
+    # OSH: def_tok => BASH_SOURCE
+    # YSH: procs - TODO: invoke_loc
+  | ProcLike(Token call_tok, Token def_tok, str proc_name)
+    # YSH only
+  | Func(Token call_tok)
+
+    # OSH
+  | EvalBuiltin(Token invoke_tok)  # TODO: invoke_loc
+    # YSH
+  | EvalMethod(Token call_tok)
 
   #
   # Shell language

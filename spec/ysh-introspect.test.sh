@@ -145,6 +145,42 @@ $[ENV.SH] -c 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-eval.ysh' |
   sed -e "s;$[ENV.REPO_ROOT];MYROOT;g" -e 's;#;%;g'
 
 ## STDOUT:
+  %1 [ -c flag ]:1
+    source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh; eval "my-proc a b"
+                                                               ^~~~
+  %2 [ eval arg at line 1 of [ -c flag ] ]:1
+    my-proc a b
+    ^~~~~~~
+  %3 MYROOT/spec/testdata/debug-frame-lib.ysh:15
+      print-stack
+      ^~~~~~~~~~~
+
+  %1 [ -c flag ]:1
+    source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-eval.ysh
+    ^~~~~~
+  %2 MYROOT/spec/testdata/debug-frame-eval.ysh:7
+    p3
+    ^~
+  %3 MYROOT/spec/testdata/debug-frame-eval.ysh:4
+      eval 'my-proc x y'
+      ^~~~
+  %4 [ eval arg at line 4 of MYROOT/spec/testdata/debug-frame-eval.ysh ]:1
+    my-proc x y
+    ^~~~~~~
+  %5 MYROOT/spec/testdata/debug-frame-lib.ysh:15
+      print-stack
+      ^~~~~~~~~~~
+## END
+
+#### DebugFrame.toString() running eval  methods
+$[ENV.SH] -c '
+source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh
+var b = ^(my-proc a b)
+call io->eval(b)
+' | sed -e "s;$[ENV.REPO_ROOT];MYROOT;g" -e 's;#;%;g'
+
+## STDOUT:
+z
 ## END
 
 #### DebugFrame.toString() running YSH functions
