@@ -406,7 +406,11 @@ class MutableOpts(object):
 
     def PushDynamicScope(self, b):
         # type: (bool) -> None
-        """B: False if it's a proc, and True if it's a shell function."""
+        """
+        Args
+          b: dynamic scope?  False if it's a proc, and True if it's a shell
+             function.
+        """
         # If it's already disabled, keep it disabled
         if not self.Get(option_i.dynamic_scope):
             b = False
@@ -719,7 +723,8 @@ class ctx_FuncCall(object):
         frame = NewDict()  # type: Dict[str, Cell]
         mem.var_stack.append(frame)
 
-        mem.PushCall(func.name, func.parsed.name)
+        # TODO: Use location of (
+        mem.debug_stack.append(debug_frame.Func(mem.token_for_line))
 
         self.mem = mem
 
@@ -729,7 +734,7 @@ class ctx_FuncCall(object):
 
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
-        self.mem.PopCall()
+        self.mem.debug_stack.pop()
         self.mem.var_stack.pop()
 
         self.mem.var_stack[0] = self.saved_globals
@@ -738,8 +743,8 @@ class ctx_FuncCall(object):
 class ctx_ProcCall(object):
     """For proc calls, including shell functions."""
 
-    def __init__(self, mem, mutable_opts, proc, argv):
-        # type: (Mem, MutableOpts, value.Proc, List[str]) -> None
+    def __init__(self, mem, mutable_opts, proc, argv, invoke_loc):
+        # type: (Mem, MutableOpts, value.Proc, List[str], loc_t) -> None
 
         # TODO:
         # should we separate procs and shell functions?
@@ -765,7 +770,9 @@ class ctx_ProcCall(object):
 
         mem.var_stack.append(frame)
 
-        mem.PushCall(proc.name, proc.name_tok)
+        mem.debug_stack.append(
+            debug_frame.ProcLike(mem.token_for_line, proc.name_tok, proc.name))
+        #debug_frame.ProcLike(invoke_loc, proc.name_tok, proc.name))
 
         # Dynamic scope is only for shell functions
         mutable_opts.PushDynamicScope(proc.sh_compat)
@@ -783,7 +790,7 @@ class ctx_ProcCall(object):
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
         self.mutable_opts.PopDynamicScope()
-        self.mem.PopCall()
+        self.mem.debug_stack.pop()
         self.mem.var_stack.pop()
 
         if self.sh_compat:
@@ -1325,11 +1332,11 @@ class Mem(object):
             UP_frame = frame
             d = None  # type: Optional[Dict[str, value_t]]
             with tagswitch(frame) as case:
-                if case(debug_frame_e.Call):
-                    frame = cast(debug_frame.Call, UP_frame)
+                if case(debug_frame_e.ProcLike):
+                    frame = cast(debug_frame.ProcLike, UP_frame)
                     d = {
                         'type': t_call,
-                        'func_name': value.Str(frame.func_name)
+                        'func_name': value.Str(frame.proc_name)
                     }
 
                     _AddCallToken(d, frame.call_tok)
@@ -1458,29 +1465,6 @@ class Mem(object):
     #
     # Call Stack
     #
-
-    def PushCall(self, func_name, def_tok):
-        # type: (str, Token) -> None
-        """Push argv, var, and debug stack frames.
-
-        Currently used for proc and func calls.  TODO: New func evaluator may
-        not use it.
-
-        Args:
-          def_tok: Token where proc or func was defined, used to compute
-                   BASH_SOURCE.
-        """
-        self.debug_stack.append(
-            debug_frame.Call(self.token_for_line, def_tok, func_name))
-
-    def PopCall(self):
-        # type: () -> None
-        """
-        Args:
-          should_pop_argv_stack: Pass False if PushCall was given None for argv
-          True for proc, False for func
-        """
-        self.debug_stack.pop()
 
     def ShouldRunDebugTrap(self):
         # type: () -> bool
@@ -2137,9 +2121,9 @@ class Mem(object):
                 for frame in reversed(self.debug_stack):
                     UP_frame = frame
                     with tagswitch(frame) as case2:
-                        if case2(debug_frame_e.Call):
-                            frame = cast(debug_frame.Call, UP_frame)
-                            strs.append(frame.func_name)
+                        if case2(debug_frame_e.ProcLike):
+                            frame = cast(debug_frame.ProcLike, UP_frame)
+                            strs.append(frame.proc_name)
 
                         elif case2(debug_frame_e.Source):
                             # bash doesn't tell you the filename sourced
@@ -2166,8 +2150,8 @@ class Mem(object):
                 for frame in reversed(self.debug_stack):
                     UP_frame = frame
                     with tagswitch(frame) as case2:
-                        if case2(debug_frame_e.Call):
-                            frame = cast(debug_frame.Call, UP_frame)
+                        if case2(debug_frame_e.ProcLike):
+                            frame = cast(debug_frame.ProcLike, UP_frame)
 
                             # Weird bash behavior
                             assert frame.def_tok.line is not None
@@ -2194,8 +2178,8 @@ class Mem(object):
                 for frame in reversed(self.debug_stack):
                     UP_frame = frame
                     with tagswitch(frame) as case2:
-                        if case2(debug_frame_e.Call):
-                            frame = cast(debug_frame.Call, UP_frame)
+                        if case2(debug_frame_e.ProcLike):
+                            frame = cast(debug_frame.ProcLike, UP_frame)
                             strs.append(_LineNumber(frame.call_tok))
 
                         elif case2(debug_frame_e.Source):

@@ -119,8 +119,8 @@ class GetDebugStack(vm._Callable):
 
         debug_frames = [
             value.DebugFrame(fr) for fr in self.mem.debug_stack
-            if fr.tag() in (debug_frame_e.Call, debug_frame_e.Source,
-                            debug_frame_e.Use)
+            if fr.tag() in (debug_frame_e.ProcLike, debug_frame_e.Func,
+                            debug_frame_e.Source, debug_frame_e.Use)
         ]  # type: List[value_t]
         return value.List(debug_frames)
 
@@ -171,8 +171,11 @@ class DebugFrameToString(vm._Callable):
         UP_frame = frame
         buf = mylib.BufWriter()
         with tagswitch(frame) as case:
-            if case(debug_frame_e.Call):
-                frame = cast(debug_frame.Call, UP_frame)
+            if case(debug_frame_e.ProcLike):
+                frame = cast(debug_frame.ProcLike, UP_frame)
+                _FormatDebugFrame(buf, frame.call_tok)
+            elif case(debug_frame_e.Func):
+                frame = cast(debug_frame.Func, UP_frame)
                 _FormatDebugFrame(buf, frame.call_tok)
             elif case(debug_frame_e.Source):
                 frame = cast(debug_frame.Source, UP_frame)

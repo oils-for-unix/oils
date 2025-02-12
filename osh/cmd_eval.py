@@ -2293,7 +2293,8 @@ class CommandEvaluator(object):
             proc_argv = cmd_val.argv[1:]
 
         # Hm this sets "$@".  TODO: Set ARGV only
-        with state.ctx_ProcCall(self.mem, self.mutable_opts, proc, proc_argv):
+        with state.ctx_ProcCall(self.mem, self.mutable_opts, proc, proc_argv,
+                                cmd_val.arg_locs[0]):
             func_proc.BindProcArgs(proc, cmd_val, self.mem)
 
             # Redirects still valid for functions.

@@ -40,11 +40,11 @@ class MemTest(unittest.TestCase):
         mem.argv_stack.append(state._ArgFrame(argv))
         frame = NewDict()
         mem.var_stack.append(frame)
-        mem.PushCall(name, tok)
+        #mem.PushCall(name, tok)
 
     def _PopShellCall(self, mem):
         """ simulate shell function """
-        mem.PopCall()
+        #mem.PopCall()
         mem.var_stack.pop()
         mem.argv_stack.pop()
 

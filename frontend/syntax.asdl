@@ -118,7 +118,9 @@ module syntax
   | Source(Token call_tok, str source_name)
     # proc or func call (TODO: could add a bit to distinguish them)
     # def_tok => BASH_SOURCE
-  | Call(Token call_tok, Token def_tok, str func_name)
+    # loc invoke_loc
+  | ProcLike(Token call_tok, Token def_tok, str proc_name)
+  | Func(Token call_tok)
     # TODO: What about eval '' ?
 
     # YSH only

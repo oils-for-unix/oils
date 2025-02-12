@@ -1,4 +1,4 @@
-## oils_failures_allowed: 4
+## oils_failures_allowed: 3
 ## our_shell: ysh
 
 #### getFrame()
@@ -193,8 +193,7 @@ func f(x) {
   return (g(x))
 }
 
-# Well we can allow it in procs I guess?  There's no cost to doing so?  Unless
-# we have a separate filter for shell function vs. proc
+# We can allow it in procs -- there's no cost to doing so? 
 
 proc p {
   call f(42)
@@ -203,6 +202,9 @@ proc p {
 p
 
 ## STDOUT:
+p
+16
+[ stdin ]
 ## END
 
 #### DebugFrame.toString() with trap ERR
