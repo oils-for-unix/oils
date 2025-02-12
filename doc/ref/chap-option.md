@@ -85,9 +85,21 @@ called `-rf`.
 ## Other Option
 
     noclobber -C  # Redirects can't overwrite files
-    errtrace -E   # Enable ERR trap in both shell functions and subshells
 
 ## Debugging
+
+<h3 id="errtrace">errtrace (-E)</h3>
+
+Enable the ERR [trap][] in both shell functions and subshells.
+
+The option is also `set -E`.  It's designed to be compatible with bash.
+
+[trap]: chap-builtin-cmd.html#trap
+
+### extdebug
+
+Show more info in when printing functions with `declare -f`.  Used by
+`task-five.sh`.
 
 <h3 id="xtrace">xtrace (-x)</h3>
 
@@ -96,7 +108,7 @@ Show execution traces.
 - In OSH, the [PS4][] variables control the display.
 - In YSH, the `SHX_*` variables control the display.
 
-[PS4]: chap-special-var.html#PS4
+[PS4]: chap-plugin.html#PS4
 
 This option is also `set -x`.  It's required by POSIX shell.
 
@@ -105,12 +117,6 @@ This option is also `set -x`.  It's required by POSIX shell.
 Not implemented.
 
 This option is from POSIX shell.
-
-
-### extdebug
-
-Show more info in when printing functions with `declare -f`.  Used by
-`task-five.sh`.
 
 ## Interactive
 

@@ -90,6 +90,7 @@ class Eval(vm._Builtin):
         line_reader = reader.StringLineReader(code_str, self.arena)
         c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
+        # TODO: Add debug_frame here, with ctx_Eval or ctx_EvalDebugFrame
         src = source.Dynamic('eval arg', eval_loc)
         with dev.ctx_Tracer(self.tracer, 'eval', None):
             with alloc.ctx_SourceCode(self.arena, src):

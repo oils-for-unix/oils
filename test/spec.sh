@@ -692,6 +692,10 @@ ysh-completion() {
   run-file ysh-completion "$@"
 }
 
+ysh-introspect() {
+  run-file ysh-introspect "$@"
+}
+
 ysh-stdlib() {
   run-file ysh-stdlib "$@"
 }

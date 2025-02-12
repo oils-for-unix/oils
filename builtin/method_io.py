@@ -135,6 +135,7 @@ class Eval(vm._Callable):
 
         pos_args = _CheckPosArgs(pos_args_raw, rd.LeftParenToken())
 
+        # TODO: Add debug_frame here, with ctx_Eval or ctx_EvalDebugFrame
         if self.which == EVAL_NULL:
             # _PrintFrame('[captured]', captured_frame)
             with state.ctx_EnclosedFrame(self.mem, bound.captured_frame,
@@ -146,6 +147,7 @@ class Eval(vm._Callable):
 
         elif self.which == EVAL_DICT:
             # TODO: dollar0, pos_args, vars_ not supported
+            #
             # Does ctx_EnclosedFrame has different scoping rules?  For "vars"?
 
             bindings = NewDict()  # type: Dict[str, value_t]

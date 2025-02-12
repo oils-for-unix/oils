@@ -1,0 +1,236 @@
+## oils_failures_allowed: 4
+## our_shell: ysh
+
+#### getFrame()
+
+var fr = vm.getFrame(0)
+pp test_ (fr)
+var d = dict(fr)
+pp test_ (d.ARGV)
+echo
+
+proc p1 {
+  var p1_var = 'x'
+  p2
+}
+
+proc p2 {
+  echo 'p2 frame -1'
+  var fr = vm.getFrame(-1)
+  var d = dict(fr)
+
+  pp test_ (fr)
+  pp test_ (d)
+  pp test_ (keys(d))
+  echo
+
+  echo 'p2 frame -2'
+  setvar fr = vm.getFrame(-2)
+  setvar d = dict(fr)
+
+  pp test_ (fr)
+  pp test_ (keys(d))
+  echo
+}
+
+p1
+
+var fr = vm.getFrame(99)  # fails
+
+## status: 3
+## STDOUT:
+<Frame>
+(List)   []
+
+p2 frame -1
+<Frame>
+(Dict)   {"ARGV":[],"fr":<Frame>}
+(List)   ["ARGV","fr"]
+
+p2 frame -2
+<Frame>
+(List)   ["ARGV","p1_var"]
+
+## END
+
+
+#### bindFrame()
+
+var frag = ^(echo $i)
+
+# TODO: should be fragment
+pp test_ (frag)
+
+var cmd = bindFrame(frag, vm.getFrame(0))
+
+pp test_ (cmd)
+
+## STDOUT:
+## END
+
+#### vm.getDebugStack()
+
+proc p {
+  echo $[len(vm.getDebugStack())]
+}
+
+proc p2 {
+  p
+}
+
+p
+p2
+
+## STDOUT:
+1
+2
+## END
+
+#### DebugFrame.toString() running file
+
+$[ENV.SH] $[ENV.REPO_ROOT]/spec/testdata/debug-frame-main.ysh |
+  sed -e "s;$[ENV.REPO_ROOT];MYROOT;g" -e 's;#;%;g'
+
+## STDOUT:
+  %1 MYROOT/spec/testdata/debug-frame-main.ysh:4
+    print-stack
+    ^~~~~~~~~~~
+
+  %1 MYROOT/spec/testdata/debug-frame-main.ysh:7
+    my-proc
+    ^~~~~~~
+  %2 MYROOT/spec/testdata/debug-frame-lib.ysh:15
+      print-stack
+      ^~~~~~~~~~~
+## END
+
+
+#### DebugFrame.toString() running stdin and -c
+
+# stdin
+echo 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh; my-proc' |
+  $[ENV.SH] |
+  sed -e "s;$[ENV.REPO_ROOT];MYROOT;g" -e 's;#;%;g'
+echo
+
+# -c
+$[ENV.SH] -c 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh; my-proc' |
+  sed -e "s;$[ENV.REPO_ROOT];MYROOT;g" -e 's;#;%;g'
+
+## STDOUT:
+  %1 [ stdin ]:1
+    source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh; my-proc
+                                                               ^~~~~~~
+  %2 MYROOT/spec/testdata/debug-frame-lib.ysh:15
+      print-stack
+      ^~~~~~~~~~~
+
+  %1 [ -c flag ]:1
+    source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh; my-proc
+                                                               ^~~~~~~
+  %2 MYROOT/spec/testdata/debug-frame-lib.ysh:15
+      print-stack
+      ^~~~~~~~~~~
+## END
+
+#### DebugFrame.toString() running eval 
+
+# -c and eval
+$[ENV.SH] -c 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh; eval "my-proc a b"' |
+  sed -e "s;$[ENV.REPO_ROOT];MYROOT;g" -e 's;#;%;g'
+echo
+
+# eval
+$[ENV.SH] -c 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-eval.ysh' |
+  sed -e "s;$[ENV.REPO_ROOT];MYROOT;g" -e 's;#;%;g'
+
+## STDOUT:
+## END
+
+#### DebugFrame.toString() running YSH functions
+
+# functions
+$[ENV.SH] -c 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh; call-func'
+echo
+
+## STDOUT:
+z
+## END
+
+#### DebugFrame.toString() with 'use' builtin
+
+# Work around spec test builtin limitation: line starting with # is treated as
+# a comment
+
+#echo $[ENV.REPO_ROOT]
+
+$[ENV.SH] -c 'use $[ENV.REPO_ROOT]/spec/testdata/debug-frame-use.ysh' | 
+  sed -e "s;$[ENV.REPO_ROOT];MYROOT;g" -e 's;#;%;g'
+
+#write -- $[ENV.REPO_ROOT] | sed "s;$[ENV.REPO_ROOT];REPO_ROOT;g"
+
+## STDOUT:
+  %1 [ -c flag ]:1
+    use $[ENV.REPO_ROOT]/spec/testdata/debug-frame-use.ysh
+    ^~~
+  %2 MYROOT/spec/testdata/debug-frame-use.ysh:5
+    debug-frame-lib my-proc
+    ^~~~~~~~~~~~~~~
+  %3 MYROOT/spec/testdata/debug-frame-lib.ysh:15
+      print-stack
+      ^~~~~~~~~~~
+## END
+
+#### FUNCNAME BASH_LINENO BASH_SOURCE not available with YSH functions
+
+func g(x) {
+  echo ${FUNCNAME[@]}
+  echo ${BASH_LINENO[@]}
+  echo ${BASH_SOURCE[@]}
+}
+
+func f(x) {
+  return (g(x))
+}
+
+# Well we can allow it in procs I guess?  There's no cost to doing so?  Unless
+# we have a separate filter for shell function vs. proc
+
+proc p {
+  call f(42)
+}
+
+p
+
+## STDOUT:
+## END
+
+#### DebugFrame.toString() with trap ERR
+
+source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh
+
+trap 'print-stack (prefix=false)' ERR
+set -o errtrace  # enable always
+
+proc f {
+  g
+}
+
+proc g {
+  false
+}
+
+f
+
+## status: 1
+## STDOUT:
+[ stdin ]:14
+    f
+    ^
+[ stdin ]:7
+      g
+      ^
+[ stdin ]:11
+      false
+      ^~~~~
+## END
