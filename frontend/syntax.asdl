@@ -122,13 +122,16 @@ module syntax
   | Dummy                        # -c or stdin, not used by BASH_* vars
 
     # OSH: call_tok => BASH_LINENO, source_name => BASH_SOURCE
-  | Source(Token call_tok, str source_name)
+  | Source(CompoundWord source_loc, str source_name)
 
     # OSH: call_tok => BASH_LINENO, def_tok => BASH_SOURCE
     # YSH: procs
   | ProcLike(CompoundWord invoke_loc, Token def_tok, str proc_name)
     # YSH only
   | Func(Token call_tok)
+
+    # for io->eval, myfunc()
+  | Token %Token
 
     # For 'eval', 'use', ...
   | CompoundWord %CompoundWord

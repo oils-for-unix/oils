@@ -187,17 +187,24 @@ class DebugFrameToString(vm._Callable):
                     frame.invoke_loc)
                 assert invoke_token is not None, frame.invoke_loc
                 _FormatDebugFrame(buf, invoke_token)
-            elif case(debug_frame_e.Func):
-                frame = cast(debug_frame.Func, UP_frame)
-                _FormatDebugFrame(buf, frame.call_tok)
+
             elif case(debug_frame_e.Source):
                 frame = cast(debug_frame.Source, UP_frame)
-                _FormatDebugFrame(buf, frame.call_tok)
+                invoke_token = location.LeftTokenForCompoundWord(
+                    frame.source_loc)
+                assert invoke_token is not None, frame.source_loc
+                _FormatDebugFrame(buf, invoke_token)
+
             elif case(debug_frame_e.CompoundWord):
                 frame = cast(CompoundWord, UP_frame)
                 invoke_token = location.LeftTokenForCompoundWord(frame)
                 assert invoke_token is not None, frame
                 _FormatDebugFrame(buf, invoke_token)
+
+            elif case(debug_frame_e.Func):
+                frame = cast(debug_frame.Func, UP_frame)
+                _FormatDebugFrame(buf, frame.call_tok)
+
             elif case(debug_frame_e.BeforeErrTrap):
                 frame = cast(debug_frame.BeforeErrTrap, UP_frame)
                 _FormatDebugFrame(buf, frame.tok)

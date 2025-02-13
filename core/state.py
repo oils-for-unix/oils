@@ -61,9 +61,9 @@ ClearNameref = 1 << 5
 class ctx_Source(object):
     """For source builtin."""
 
-    def __init__(self, mem, source_name, argv):
-        # type: (Mem, str, List[str]) -> None
-        mem.PushSource(source_name, argv)
+    def __init__(self, mem, source_name, argv, source_loc):
+        # type: (Mem, str, List[str], CompoundWord) -> None
+        mem.PushSource(source_name, argv, source_loc)
         self.mem = mem
         self.argv = argv
 
@@ -771,13 +771,6 @@ class ctx_ProcCall(object):
 
         mem.var_stack.append(frame)
 
-        # Note: Instead of mem.token_for_line, I tried passing the invoke_loc
-        # cmd_val.arg_locs[0].  But if we then have:
-        #
-        #   trap 'print-stack' ERR
-        #
-        # Then print-stack gets blamed, not the actual command that failed.  So
-        # mem.token_for_line seems better.  See spec/ysh-introspect.
         mem.debug_stack.append(
             debug_frame.ProcLike(invoke_loc, proc.name_tok, proc.name))
 
@@ -1067,7 +1060,6 @@ class ctx_ModuleEval(object):
         self.mem.is_main = False
 
         # Equivalent of PushSource()
-        # Would be nice to have a more precise location
         mem.debug_stack.append(use_loc)
 
     def __enter__(self):
@@ -1374,7 +1366,10 @@ class Mem(object):
                         'type': t_source,
                         'source_name': value.Str(frame.source_name)
                     }
-                    _AddCallToken(d, frame.call_tok)
+                    invoke_token = location.LeftTokenForCompoundWord(
+                        frame.source_loc)
+                    assert invoke_token is not None, frame.source_loc
+                    _AddCallToken(d, invoke_token)
 
             # Note: Skip debug_frame.MainFile
             if d is not None:
@@ -1538,15 +1533,13 @@ class Mem(object):
         """For attaching a stack frame to a value.Block"""
         return self.var_stack[-1]
 
-    def PushSource(self, source_name, argv):
-        # type: (str, List[str]) -> None
+    def PushSource(self, source_name, argv, source_loc):
+        # type: (str, List[str], CompoundWord) -> None
         """ For 'source foo.sh 1 2 3' """
         if len(argv):
             self.argv_stack.append(_ArgFrame(argv))
 
-        # self.token_for_line can be None?
-        self.debug_stack.append(
-            debug_frame.Source(self.token_for_line, source_name))
+        self.debug_stack.append(debug_frame.Source(source_loc, source_name))
 
     def PopSource(self, argv):
         # type: (List[str]) -> None
@@ -2213,7 +2206,10 @@ class Mem(object):
 
                         elif case2(debug_frame_e.Source):
                             frame = cast(debug_frame.Source, UP_frame)
-                            strs.append(_LineNumber(frame.call_tok))
+                            invoke_token = location.LeftTokenForCompoundWord(
+                                frame.source_loc)
+                            assert invoke_token is not None, frame.source_loc
+                            strs.append(_LineNumber(invoke_token))
 
                         elif case2(debug_frame_e.MainFile):
                             # Bash does this to line up with 'main'

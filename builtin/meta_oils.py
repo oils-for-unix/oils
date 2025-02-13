@@ -222,7 +222,7 @@ class ShellFile(vm._Builtin):
 
         with dev.ctx_Tracer(self.tracer, 'source', cmd_val.argv):
             source_argv = arg_r.Rest()
-            with state.ctx_Source(self.mem, path, source_argv):
+            with state.ctx_Source(self.mem, path, source_argv, call_loc):
                 with state.ctx_ThisDir(self.mem, path):
                     src = source.OtherFile(path, call_loc)
                     with alloc.ctx_SourceCode(self.arena, src):
