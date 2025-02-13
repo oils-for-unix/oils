@@ -1016,6 +1016,22 @@ class ctx_CompoundWordDebugFrame(object):
         self.mem.debug_stack.pop()
 
 
+class ctx_TokenDebugFrame(object):
+
+    def __init__(self, mem, tok):
+        # type: (Mem, Token) -> None
+        mem.debug_stack.append(tok)
+        self.mem = mem
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value_, traceback):
+        # type: (Any, Any, Any) -> None
+        self.mem.debug_stack.pop()
+
+
 class ctx_ModuleEval(object):
     """Evaluate a module with a new global stack frame.
 

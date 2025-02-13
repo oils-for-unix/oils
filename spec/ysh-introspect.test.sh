@@ -1,4 +1,4 @@
-## oils_failures_allowed: 4
+## oils_failures_allowed: 3
 ## our_shell: ysh
 
 #### getFrame()
@@ -176,11 +176,25 @@ $[ENV.SH] -c 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-eval.ysh' |
 $[ENV.SH] -c '
 source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh
 var b = ^(my-proc a b)
-call io->eval(b)
+proc p {
+  call io->eval(b)
+}
+p
 ' | sed -e "s;$[ENV.REPO_ROOT];MYROOT;g" -e 's;#;%;g'
 
 ## STDOUT:
-z
+  %1 [ -c flag ]:7
+    p
+    ^
+  %2 [ -c flag ]:5
+      call io->eval(b)
+                   ^
+  %3 [ -c flag ]:3
+    var b = ^(my-proc a b)
+              ^~~~~~~
+  %4 MYROOT/spec/testdata/debug-frame-lib.ysh:15
+      print-stack
+      ^~~~~~~~~~~
 ## END
 
 #### DebugFrame.toString() running YSH functions

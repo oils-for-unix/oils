@@ -136,28 +136,29 @@ class Eval(vm._Callable):
         pos_args = _CheckPosArgs(pos_args_raw, rd.LeftParenToken())
 
         # TODO: Add debug_frame here, with ctx_Eval or ctx_EvalDebugFrame
-        if self.which == EVAL_NULL:
-            # _PrintFrame('[captured]', captured_frame)
-            with state.ctx_EnclosedFrame(self.mem, bound.captured_frame,
-                                         bound.module_frame, None):
-                # _PrintFrame('[new]', self.cmd_ev.mem.var_stack[-1])
-                with state.ctx_Eval(self.mem, dollar0, pos_args, vars_):
+        with state.ctx_TokenDebugFrame(self.mem, rd.LeftParenToken()):
+            if self.which == EVAL_NULL:
+                # _PrintFrame('[captured]', captured_frame)
+                with state.ctx_EnclosedFrame(self.mem, bound.captured_frame,
+                                             bound.module_frame, None):
+                    # _PrintFrame('[new]', self.cmd_ev.mem.var_stack[-1])
+                    with state.ctx_Eval(self.mem, dollar0, pos_args, vars_):
+                        unused_status = self.cmd_ev.EvalCommandFrag(cmd)
+                return value.Null
+
+            elif self.which == EVAL_DICT:
+                # TODO: dollar0, pos_args, vars_ not supported
+                #
+                # Does ctx_EnclosedFrame has different scoping rules?  For "vars"?
+
+                bindings = NewDict()  # type: Dict[str, value_t]
+                with state.ctx_EnclosedFrame(self.mem, bound.captured_frame,
+                                             bound.module_frame, bindings):
                     unused_status = self.cmd_ev.EvalCommandFrag(cmd)
-            return value.Null
+                return value.Dict(bindings)
 
-        elif self.which == EVAL_DICT:
-            # TODO: dollar0, pos_args, vars_ not supported
-            #
-            # Does ctx_EnclosedFrame has different scoping rules?  For "vars"?
-
-            bindings = NewDict()  # type: Dict[str, value_t]
-            with state.ctx_EnclosedFrame(self.mem, bound.captured_frame,
-                                         bound.module_frame, bindings):
-                unused_status = self.cmd_ev.EvalCommandFrag(cmd)
-            return value.Dict(bindings)
-
-        else:
-            raise AssertionError()
+            else:
+                raise AssertionError()
 
 
 class CaptureStdout(vm._Callable):
