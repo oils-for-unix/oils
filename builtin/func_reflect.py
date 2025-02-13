@@ -119,15 +119,13 @@ class GetDebugStack(vm._Callable):
 
         debug_frames = []  # type: List[value_t]
         for fr in self.mem.debug_stack:
-            #if fr.tag() == debug_frame_e.BeforeErrTrap:
-            #    break
-            if fr.tag() in (debug_frame_e.ProcLike, debug_frame_e.Source,
-                            debug_frame_e.CompoundWord, debug_frame_e.Token,
-                            debug_frame_e.BeforeErrTrap):
-                debug_frames.append(value.DebugFrame(fr))
-            # Don't report stuff inside the ERR trap
+            # Don't show stack frames created when running the ERR trap - we
+            # want the main stuff
             if fr.tag() == debug_frame_e.BeforeErrTrap:
                 break
+            if fr.tag() in (debug_frame_e.ProcLike, debug_frame_e.Source,
+                            debug_frame_e.CompoundWord, debug_frame_e.Token):
+                debug_frames.append(value.DebugFrame(fr))
 
         if 0:
             for fr in debug_frames:
@@ -205,9 +203,10 @@ class DebugFrameToString(vm._Callable):
                 frame = cast(Token, UP_frame)
                 _FormatDebugFrame(buf, frame)
 
-            elif case(debug_frame_e.BeforeErrTrap):
-                frame = cast(debug_frame.BeforeErrTrap, UP_frame)
-                _FormatDebugFrame(buf, frame.tok)
+            # The location is unused; it is a sentinel
+            #elif case(debug_frame_e.BeforeErrTrap):
+            #    frame = cast(debug_frame.BeforeErrTrap, UP_frame)
+            #    _FormatDebugFrame(buf, frame.tok)
 
             else:
                 raise AssertionError()

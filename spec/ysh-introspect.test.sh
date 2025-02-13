@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 ## our_shell: ysh
 
 #### getFrame()
@@ -269,7 +269,7 @@ p
 [ stdin ]
 ## END
 
-#### DebugFrame.toString() with trap ERR - external failure
+#### trap ERR - external failure
 
 source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh
 
@@ -294,9 +294,6 @@ f
 [ stdin ]:7
       g
       ^
-[ stdin ]:11
-      false
-      ^~~~~
 ## END
 
 #### trap ERR - proc subshell failure
@@ -322,9 +319,9 @@ f
 [ stdin ]:14
     f
     ^
-[ stdin ]:11
-      return 42
-      ^~~~~~
+[ stdin ]:7
+      g
+      ^
 ## END
 
 #### trap ERR - proc non-zero return status
@@ -346,13 +343,10 @@ f
 
 ## status: 42
 
-# Hm we do not get the "g" call here?
+# Hm we do not get the "g" call here?  Because we get an exception raised
 
 ## STDOUT:
 [ stdin ]:14
     f
     ^
-[ stdin ]:11
-      return 42
-      ^~~~~~
 ## END

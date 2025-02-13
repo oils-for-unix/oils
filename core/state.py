@@ -1387,6 +1387,15 @@ class Mem(object):
                     assert invoke_token is not None, frame.source_loc
                     _AddCallToken(d, invoke_token)
 
+                # TODO: func_reflect.py DebugFrameToString handles these cases
+                # We might also want to use CrashDumper there?  For 'set -u'
+                # etc.
+                elif case(debug_frame_e.CompoundWord):
+                    pass
+
+                elif case(debug_frame_e.Token):
+                    pass
+
             # Note: Skip debug_frame.MainFile
             if d is not None:
                 debug_stack.append(value.Dict(d))
