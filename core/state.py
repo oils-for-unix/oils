@@ -713,8 +713,8 @@ def _AddCallToken(d, token):
 class ctx_FuncCall(object):
     """For func calls."""
 
-    def __init__(self, mem, func):
-        # type: (Mem, value.Func) -> None
+    def __init__(self, mem, func, blame_tok):
+        # type: (Mem, value.Func, Token) -> None
 
         self.saved_globals = mem.var_stack[0]
 
@@ -724,8 +724,8 @@ class ctx_FuncCall(object):
         frame = NewDict()  # type: Dict[str, Cell]
         mem.var_stack.append(frame)
 
-        # TODO: Use location of (
-        mem.debug_stack.append(debug_frame.Func(mem.token_for_line))
+        # blame the location of (
+        mem.debug_stack.append(blame_tok)
 
         self.mem = mem
 

@@ -120,6 +120,10 @@ module syntax
     MainFile(str main_filename)
     # YSH
   | Dummy                        # -c or stdin, not used by BASH_* vars
+    # Note: we could have more "frame 0" than MainFile and Dummy -
+    # - Completion hooks - dev.Tracer is missing these
+    # - PS1
+    # - PROMPT_COMMAND
 
     # OSH: call_tok => BASH_LINENO, source_name => BASH_SOURCE
   | Source(CompoundWord source_loc, str source_name)
@@ -127,8 +131,6 @@ module syntax
     # OSH: call_tok => BASH_LINENO, def_tok => BASH_SOURCE
     # YSH: procs
   | ProcLike(CompoundWord invoke_loc, Token def_tok, str proc_name)
-    # YSH only
-  | Func(Token call_tok)
 
     # for io->eval, myfunc()
   | Token %Token
@@ -138,15 +140,6 @@ module syntax
 
     # Special frame added when running 'trap ERR', for more info, and as a sentinel
   | BeforeErrTrap(Token tok)
-
-    # Other callbacks:
-    # - Completion hooks - dev.Tracer is missing these
-    # - PS1
-    # - PROMPT_COMMAND
-    # These are similar to loc_t then.
-    # Do we need a stack_base_t?  For -c, stdin, plugins, hooks, etc.
-    # 
-    # Should we have a generic "main"?  Or rely on 'trap arg'?
 
   #
   # Shell language

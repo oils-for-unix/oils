@@ -15,16 +15,21 @@ proc my-proc {
   print-stack
 }
 
+func myfunc2(a, b) {
+  return (a + b)
+}
+
+func identity(x) {
+  print-stack
+  return (x)
+}
+
+func myfunc(x) {
+  return (identity(myfunc2(42, x+1)))
+}
+
 proc call-func {
   var x = myfunc(99)
   echo $x
 }
 
-func myfunc2(a, b) {
-  print-stack
-  return (a + b)
-}
-
-func myfunc(x) {
-  return (myfunc2(x+1, 42))
-}

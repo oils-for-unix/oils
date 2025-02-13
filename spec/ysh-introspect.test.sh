@@ -1,4 +1,4 @@
-## oils_failures_allowed: 3
+## oils_failures_allowed: 2
 ## our_shell: ysh
 
 #### getFrame()
@@ -200,11 +200,23 @@ p
 #### DebugFrame.toString() running YSH functions
 
 # functions
-$[ENV.SH] -c 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh; call-func'
-echo
+$[ENV.SH] -c 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh; call-func' |
+  sed -e "s;$[ENV.REPO_ROOT];MYROOT;g" -e 's;#;%;g'
 
 ## STDOUT:
-z
+  %1 [ -c flag ]:1
+    source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh; call-func
+                                                               ^~~~~~~~~
+  %2 MYROOT/spec/testdata/debug-frame-lib.ysh:32
+      var x = myfunc(99)
+                    ^
+  %3 MYROOT/spec/testdata/debug-frame-lib.ysh:28
+      return (identity(myfunc2(42, x+1)))
+                      ^
+  %4 MYROOT/spec/testdata/debug-frame-lib.ysh:23
+      print-stack
+      ^~~~~~~~~~~
+142
 ## END
 
 #### DebugFrame.toString() with 'use' builtin
@@ -287,7 +299,7 @@ f
       ^~~~~
 ## END
 
-#### DebugFrame.toString() with trap ERR - proc failure
+#### trap ERR - proc subshell failure
 
 source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh
 
@@ -306,6 +318,36 @@ proc g {
 f
 
 ## status: 42
+## STDOUT:
+[ stdin ]:14
+    f
+    ^
+[ stdin ]:11
+      return 42
+      ^~~~~~
+## END
+
+#### trap ERR - proc non-zero return status
+
+source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh
+
+trap 'print-stack (prefix=false)' ERR
+set -o errtrace  # enable always
+
+proc f {
+  g
+}
+
+proc g {
+  return 42
+}
+
+f
+
+## status: 42
+
+# Hm we do not get the "g" call here?
+
 ## STDOUT:
 [ stdin ]:14
     f

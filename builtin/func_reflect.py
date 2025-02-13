@@ -121,9 +121,9 @@ class GetDebugStack(vm._Callable):
         for fr in self.mem.debug_stack:
             #if fr.tag() == debug_frame_e.BeforeErrTrap:
             #    break
-            if fr.tag() in (debug_frame_e.ProcLike, debug_frame_e.Func,
-                            debug_frame_e.Source, debug_frame_e.CompoundWord,
-                            debug_frame_e.Token, debug_frame_e.BeforeErrTrap):
+            if fr.tag() in (debug_frame_e.ProcLike, debug_frame_e.Source,
+                            debug_frame_e.CompoundWord, debug_frame_e.Token,
+                            debug_frame_e.BeforeErrTrap):
                 debug_frames.append(value.DebugFrame(fr))
             # Don't report stuff inside the ERR trap
             if fr.tag() == debug_frame_e.BeforeErrTrap:
@@ -201,10 +201,6 @@ class DebugFrameToString(vm._Callable):
                 assert invoke_token is not None, frame
                 _FormatDebugFrame(buf, invoke_token)
 
-            elif case(debug_frame_e.Func):
-                frame = cast(debug_frame.Func, UP_frame)
-                _FormatDebugFrame(buf, frame.call_tok)
-
             elif case(debug_frame_e.Token):
                 frame = cast(Token, UP_frame)
                 _FormatDebugFrame(buf, frame)
@@ -212,8 +208,10 @@ class DebugFrameToString(vm._Callable):
             elif case(debug_frame_e.BeforeErrTrap):
                 frame = cast(debug_frame.BeforeErrTrap, UP_frame)
                 _FormatDebugFrame(buf, frame.tok)
+
             else:
                 raise AssertionError()
+
         return value.Str(buf.getvalue())
 
 
