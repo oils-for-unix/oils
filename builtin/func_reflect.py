@@ -5,8 +5,8 @@ func_reflect.py - Functions for reflecting on Oils code - OSH or YSH.
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import scope_e
-from _devbuild.gen.syntax_asdl import (Token, source, debug_frame,
-                                       debug_frame_e)
+from _devbuild.gen.syntax_asdl import (Token, CompoundWord, source,
+                                       debug_frame, debug_frame_e)
 from _devbuild.gen.value_asdl import (value, value_e, value_t, cmd_frag)
 
 from core import alloc
@@ -119,12 +119,13 @@ class GetDebugStack(vm._Callable):
 
         debug_frames = []  # type: List[value_t]
         for fr in self.mem.debug_stack:
+            #if fr.tag() == debug_frame_e.BeforeErrTrap:
+            #    break
             if fr.tag() in (debug_frame_e.ProcLike, debug_frame_e.Func,
-                            debug_frame_e.Source, debug_frame_e.Use,
-                            debug_frame_e.EvalBuiltin,
+                            debug_frame_e.Source, debug_frame_e.CompoundWord,
                             debug_frame_e.BeforeErrTrap):
                 debug_frames.append(value.DebugFrame(fr))
-            # Don't report stuff inside the err trap
+            # Don't report stuff inside the ERR trap
             if fr.tag() == debug_frame_e.BeforeErrTrap:
                 break
 
@@ -192,12 +193,11 @@ class DebugFrameToString(vm._Callable):
             elif case(debug_frame_e.Source):
                 frame = cast(debug_frame.Source, UP_frame)
                 _FormatDebugFrame(buf, frame.call_tok)
-            elif case(debug_frame_e.Use):
-                frame = cast(debug_frame.Use, UP_frame)
-                _FormatDebugFrame(buf, frame.invoke_tok)
-            elif case(debug_frame_e.EvalBuiltin):
-                frame = cast(debug_frame.EvalBuiltin, UP_frame)
-                _FormatDebugFrame(buf, frame.invoke_tok)
+            elif case(debug_frame_e.CompoundWord):
+                frame = cast(CompoundWord, UP_frame)
+                invoke_token = location.LeftTokenForCompoundWord(frame)
+                assert invoke_token is not None, frame
+                _FormatDebugFrame(buf, invoke_token)
             elif case(debug_frame_e.BeforeErrTrap):
                 frame = cast(debug_frame.BeforeErrTrap, UP_frame)
                 _FormatDebugFrame(buf, frame.tok)

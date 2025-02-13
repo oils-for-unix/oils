@@ -2276,6 +2276,10 @@ class CommandEvaluator(object):
         # To make a better stack trace from vm.getDebugStack(), add the last
         # thing that failed, even if it's not a proc/func.  This can be an
         # external command.
+        #
+        # TODO: this can lead to duplicate stack frames
+        # - We might only want this if it's an external command?
+        # - Or maybe we need a different trap to trigger stack traces ...
         self.mem.debug_stack.append(
             debug_frame.BeforeErrTrap(self.mem.token_for_line))
 

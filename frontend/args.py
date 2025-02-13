@@ -192,7 +192,7 @@ class Reader(object):
         return arg
 
     def ReadRequired2(self, error_msg):
-        # type: (str) -> Tuple[str, loc_t]
+        # type: (str) -> Tuple[str, CompoundWord]
         arg = self.Peek()
         if arg is None:
             # point at argv[0]

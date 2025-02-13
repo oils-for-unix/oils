@@ -123,19 +123,15 @@ module syntax
 
     # OSH: call_tok => BASH_LINENO, source_name => BASH_SOURCE
   | Source(Token call_tok, str source_name)
-    # YSH only
-  | Use(Token invoke_tok)  # TODO: invoke_loc
 
     # OSH: call_tok => BASH_LINENO, def_tok => BASH_SOURCE
-    # YSH: procs - TODO: invoke_loc
+    # YSH: procs
   | ProcLike(CompoundWord invoke_loc, Token def_tok, str proc_name)
     # YSH only
   | Func(Token call_tok)
 
-    # OSH
-  | EvalBuiltin(Token invoke_tok)  # TODO: invoke_loc
-    # YSH
-  | EvalMethod(Token call_tok)
+    # For 'eval', 'use', ...
+  | CompoundWord %CompoundWord
 
     # Special frame added when running 'trap ERR', for more info, and as a sentinel
   | BeforeErrTrap(Token tok)

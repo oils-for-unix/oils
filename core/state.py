@@ -1007,11 +1007,11 @@ class ctx_EnclosedFrame(object):
             self.mem.var_stack[0] = self.saved_globals
 
 
-class ctx_EvalDebugFrame(object):
+class ctx_CompoundWordDebugFrame(object):
 
-    def __init__(self, mem, invoke_tok):
-        # type: (Mem, Token) -> None
-        mem.debug_stack.append(debug_frame.EvalBuiltin(invoke_tok))
+    def __init__(self, mem, w):
+        # type: (Mem, CompoundWord) -> None
+        mem.debug_stack.append(w)
         self.mem = mem
 
     def __enter__(self):
@@ -1032,8 +1032,8 @@ class ctx_ModuleEval(object):
     the old frame.
     """
 
-    def __init__(self, mem, out_dict, out_errors):
-        # type: (Mem, Dict[str, value_t], List[str]) -> None
+    def __init__(self, mem, use_loc, out_dict, out_errors):
+        # type: (Mem, CompoundWord, Dict[str, value_t], List[str]) -> None
         self.mem = mem
         self.out_dict = out_dict
         self.out_errors = out_errors
@@ -1068,7 +1068,7 @@ class ctx_ModuleEval(object):
 
         # Equivalent of PushSource()
         # Would be nice to have a more precise location
-        mem.debug_stack.append(debug_frame.Use(mem.token_for_line))
+        mem.debug_stack.append(use_loc)
 
     def __enter__(self):
         # type: () -> None

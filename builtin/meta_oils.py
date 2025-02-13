@@ -93,7 +93,7 @@ class Eval(vm._Builtin):
         # TODO: Add debug_frame here, with ctx_Eval or ctx_EvalDebugFrame
         src = source.Dynamic('eval arg', eval_loc)
         with dev.ctx_Tracer(self.tracer, 'eval', None):
-            with state.ctx_EvalDebugFrame(self.mem, self.mem.token_for_line):
+            with state.ctx_CompoundWordDebugFrame(self.mem, eval_loc):
                 with alloc.ctx_SourceCode(self.arena, src):
                     return main_loop.Batch(self.cmd_ev,
                                            c_parser,
@@ -265,7 +265,8 @@ class ShellFile(vm._Builtin):
         error_strs = []  # type: List[str]
 
         with dev.ctx_Tracer(self.tracer, 'use', cmd_val.argv):
-            with state.ctx_ModuleEval(self.mem, props, error_strs):
+            with state.ctx_ModuleEval(self.mem, cmd_val.arg_locs[0], props,
+                                      error_strs):
                 with state.ctx_ThisDir(self.mem, path):
                     src = source.OtherFile(path, path_loc)
                     with alloc.ctx_SourceCode(self.arena, src):

@@ -147,7 +147,7 @@ $[ENV.SH] -c 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-eval.ysh' |
 ## STDOUT:
   %1 [ -c flag ]:1
     source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh; eval "my-proc a b"
-                                                               ^~~~
+                                                                    ^
   %2 [ eval arg at line 1 of [ -c flag ] ]:1
     my-proc a b
     ^~~~~~~
@@ -163,7 +163,7 @@ $[ENV.SH] -c 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-eval.ysh' |
     ^~
   %3 MYROOT/spec/testdata/debug-frame-eval.ysh:4
       eval 'my-proc x y'
-      ^~~~
+           ^
   %4 [ eval arg at line 4 of MYROOT/spec/testdata/debug-frame-eval.ysh ]:1
     my-proc x y
     ^~~~~~~
