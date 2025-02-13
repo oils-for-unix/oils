@@ -214,3 +214,57 @@ echo pass
 ## STDOUT:
 pass
 ## END
+
+#### List insert()
+shopt -s ysh:all
+var l = :| foo bar |
+call l->insert(0, "baz")
+var want = :| baz foo bar |
+assert [l === want]
+call l->insert(2, "bat")
+var want = :| baz foo bat bar |
+assert [l === want]
+echo pass
+## STDOUT:
+pass
+## END
+
+#### List insert() overflow
+shopt -s ysh:all
+var l = :| foo bar baz |
+call l->insert(123, "bat")
+call l->insert(123, "bam")
+var want = :| foo bar baz bat bam |
+assert [l === want]
+echo pass
+## STDOUT:
+pass
+## END
+
+#### List insert() negative
+shopt -s ysh:all
+var l = :| foo bar |
+call l->insert(-1, "baz")
+var want = :| foo bar baz |
+assert [l === want]
+call l->insert(-4, "bat")
+var want = :| bat foo bar baz |
+assert [l === want]
+echo pass
+## STDOUT:
+pass
+## END
+
+#### List insert() negative overflow
+shopt -s ysh:all
+var l = :| foo bar |
+call l->insert(-100, "baz")
+var want = :| baz foo bar |
+assert [l === want]
+call l->insert(-100, "bat")
+var want = :| bat baz foo bar |
+assert [l === want]
+echo pass
+## STDOUT:
+pass
+## END

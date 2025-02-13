@@ -480,6 +480,15 @@ Returns the first index of the element in the list, or -1 if it's not present.
 
 ### insert()
 
+Insert an element into the list at the given.
+Negative indices index backwards from the back of the list. Indices greater than
+than the number of elements in the list insert at the back of the list.
+
+    var hills = :| pillar glaramara helvellyn |
+    call hills->insert(1, "raise")
+    echo @hills  # => pillar raise glaramara helvellyn
+
+
 ### lastIndexOf()
 
 Returns the index of the last occurring instance of the specified

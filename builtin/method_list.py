@@ -158,3 +158,31 @@ class Remove(vm._Callable):
                 return value.Null
             i += 1
         return value.Null
+
+class Insert(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        li = rd.PosList()
+        idx = rd.PosInt()
+        to_insert = rd.PosValue()
+        rd.Done()
+
+        i = len(li)
+        li.append(None)
+        index = idx.i
+        if index < 0:
+            if index < -(i + 1): # clamp -ve index to minimum -ve value
+                index = -(i + 1)
+            index = i + index + 1  # Turn -ve index into equivalent +ve index
+        while i > index:
+            li[i] = li[i-1]
+            i -= 1
+        li[i] = to_insert
+
+        return value.Null
