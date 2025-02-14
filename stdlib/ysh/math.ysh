@@ -1,4 +1,4 @@
-const __provide__ = :| identity max min abs |
+const __provide__ = :| identity max min abs sum |
 
 func identity(x) {
   ### The identity function. Returns its argument.
@@ -84,4 +84,15 @@ func abs(x) {
   } else {
     return (x)
   }
+}
+
+func sum(list; start=0) {
+  ### Returns the sum of all elements in the list.
+  # Empty list: returns 0
+
+  var sum = start
+  for item in (list) {
+    setvar sum += item
+  }
+  return (sum)
 }

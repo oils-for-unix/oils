@@ -1,6 +1,6 @@
 #!bin/ysh
 
-use $LIB_YSH/math.ysh --pick max min abs
+use $LIB_YSH/math.ysh --pick max min abs sum
 
 # Change to 'use'?
 source $LIB_OSH/byo-server.sh
@@ -56,6 +56,16 @@ proc test-abs {
   assert [1 === abs(1)]
   assert [42 === abs(42)]
   assert [42 === abs(-42)]
+}
+
+proc test-sum {
+  assert [0 === sum([])]
+  assert [0 === sum([0])]
+  assert [6 === sum([1, 2, 3])]
+
+  assert [3 === sum( 0 ..< 3 )]
+  assert [45 === sum( 0 ..< 3; start=42)]
+  assert [42 === sum( 0 ..< 0, start=42)]
 }
 
 if is-main {
