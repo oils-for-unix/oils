@@ -538,13 +538,14 @@ class Split(vm._Callable):
 
             cursor = 0
             chunks = []  # type: List[value_t]
-            while cursor < len(string) and count != 0:
-                next = string.find(string_sep, cursor)
-                if next == -1:
+            length = len(string)
+            while cursor < length and count != 0:
+                next_pos = string.find(string_sep, cursor)
+                if next_pos == -1:
                     break
 
-                chunks.append(value.Str(string[cursor:next]))
-                cursor = next + len(string_sep)
+                chunks.append(value.Str(string[cursor:next_pos]))
+                cursor = next_pos + len(string_sep)
                 count -= 1
 
             chunks.append(value.Str(string[cursor:]))
@@ -585,3 +586,33 @@ class Split(vm._Callable):
             return value.List(chunks)
 
         raise AssertionError()
+
+
+class Lines(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        string = rd.PosStr()
+        eol = rd.NamedStr('eol', '\n')
+
+        # Adapted from Str.split() above, except for the handling of the last item
+
+        cursor = 0
+        chunks = []  # type: List[value_t]
+        length = len(string)
+        while cursor < length:
+            next_pos = string.find(eol, cursor)
+            if next_pos == -1:
+                break
+
+            chunks.append(value.Str(string[cursor:next_pos]))
+            cursor = next_pos + len(eol)
+
+        if cursor < length:
+            chunks.append(value.Str(string[cursor:]))
+
+        return value.List(chunks)

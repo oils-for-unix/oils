@@ -780,6 +780,7 @@ def Main(
         'upper': method_str.Upper(),
         'lower': method_str.Lower(),
         'split': method_str.Split(),
+        'lines': method_str.Lines(),
 
         # finds a substring, optional position to start at
         'find': None,

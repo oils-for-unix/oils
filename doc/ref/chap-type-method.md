@@ -349,6 +349,34 @@ Splitting by an `Eggex` has some limitations:
 - The string to split cannot contain NUL bytes because we use the libc regex
   engine.
 
+### lines()
+
+Split a string into lines N lines, where N is the number of newlines.
+
+    var s = u'foo\nbar\n'  # 2 lines
+    = s.lines()            # => ['foo', 'bar']
+
+Notice that the result has 2 lines, where as `s.split('\n')` would have 3.
+
+---
+
+Pass `eol=` to override the default delimiter of `\n`:
+
+    var s = b'foo\y00bar\y00'  # 2 lines terminated by NUL
+    = s.lines(eol=\y00)        # => ['foo', 'bar']
+
+(This is useful for the output of `find . -print0`.)
+
+Notes:
+
+- Use `read --all` and `_reply.lines()` to replace the bash builtin
+  [readarray][] aka [mapfile][].
+- There is no special handling of carriage returns (`\r`), although you can
+  pass `eol=u'\r\n'`.
+
+[readarray]: chap-builtin-cmd.html#readarray
+[mapfile]: chap-builtin-cmd.html#mapfile
+
 ## Patterns
 
 ### Eggex

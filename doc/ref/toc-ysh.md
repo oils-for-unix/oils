@@ -50,7 +50,7 @@ error handling, and more.
                                startsWith()     endsWith()
                                upper()          lower()
                                search()         leftMatch()
-                               split()
+                               split()          lines()
   [Patterns]       Eggex
                    Match       group()          start()           end()
                              X groups()       X groupDict()
@@ -162,11 +162,11 @@ X [Wok]           _field()
 </h2>
 
 ```chapter-links-stdlib
-  [math]          abs()         max()          min()   X round()
+  [math]          abs()         max()          min()    X round()
                   sum()     
   [list]          all()         any()          repeat()
   [yblocks]       yb-capture    yb-capture-2
-  [args]          parser        flag           arg       rest
+  [args]          parser        flag           arg        rest
                   parseArgs()
 ```
 

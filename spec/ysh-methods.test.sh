@@ -462,6 +462,73 @@ pp test_ ('🌞🌝🌞🌝🌞'.split(/ '🌝' /))
 (List)   ["🌞","🌞","🌞"]
 ## END
 
+#### Str.lines()
+
+var empty = u''
+pp test_ (empty.lines())
+
+var one = u'\n'
+pp test_ (one.lines())
+
+var two = u'\n\n'
+pp test_ (two.lines())
+
+var three = u'one\ntwo\nthree'  # no trailing newline
+pp test_ (three.lines())
+
+var foo = u'foo'  # no trailing newline
+pp test_ (foo.lines())
+
+echo
+
+var s = u'foo\nbar\n'
+pp test_ (s.lines())
+
+var z = b'foo\y00bar\y00'
+pp test_ (z.lines(eol=\y00))
+
+var r = u'foo\r\nbar\r\n'
+pp test_ (r.lines(eol=u'\r\n'))
+
+echo
+
+pp test_ (empty.lines(eol=\y00))
+pp test_ (z.lines())
+pp test_ (r.lines())
+
+## STDOUT:
+(List)   []
+(List)   [""]
+(List)   ["",""]
+(List)   ["one","two","three"]
+(List)   ["foo"]
+
+(List)   ["foo","bar"]
+(List)   ["foo","bar"]
+(List)   ["foo","bar"]
+
+(List)   []
+(List)   ["foo\u0000bar\u0000"]
+(List)   ["foo\r","bar\r"]
+## END
+
+#### read-lines can be built on top of read --all and Str.lines()
+
+proc read-lines (; out) {
+  read --all 
+  call out->setValue(_reply.lines())
+}
+
+seq 4 7 > tmp.txt
+
+read-lines (&x) < tmp.txt
+
+pp test_ (x)
+
+## STDOUT:
+(List)   ["4","5","6","7"]
+## END
+
 #### Dict => values()
 var en2fr = {}
 setvar en2fr["hello"] = "bonjour"
