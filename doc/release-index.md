@@ -4,7 +4,7 @@ all_docs_url: -
 version_url: -
 ---
 
-Oils 0.26.0
+Oils 0.27.0
 ===========
 
 <!-- NOTE: This file is published to /release/$VERSION/index.html -->
@@ -13,7 +13,7 @@ Oils 0.26.0
 <!-- REPLACE_WITH_DATE -->
 </span>
 
-This is the home page for version 0.26.0 of Oils, a Unix shell.  To use it,
+This is the home page for version 0.27.0 of Oils, a Unix shell.  To use it,
 
 1. Download a source tarball.
 2. Build it and do a "smoke test", as described in [INSTALL][].
