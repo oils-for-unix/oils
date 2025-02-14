@@ -227,7 +227,7 @@ class Export(vm._AssignBuiltin):
         # type: (cmd_value.Assign) -> int
         if self.mem.exec_opts.no_exported():
             self.errfmt.Print_(
-                'export builtin is disabled in YSH (shopt --set no_exported)',
+                "YSH doesn't have 'export'.  Hint: setglobal ENV.FOO = 'bar'",
                 cmd_val.arg_locs[0])
             return 1
 
