@@ -34,6 +34,14 @@ class BigInt(object):
         # Used for hashing
         return self.i == other.i
 
+    def __lt__(self, other):
+        # type: (object) -> bool
+        raise AssertionError('Use functions in mops.py')
+
+    def __le__(self, other):
+        # type: (object) -> bool
+        raise AssertionError('Use functions in mops.py')
+
     def __gt__(self, other):
         # type: (object) -> bool
         raise AssertionError('Use functions in mops.py')
