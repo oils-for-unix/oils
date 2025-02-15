@@ -155,8 +155,11 @@ class Remove(vm._Callable):
         while i < len(li):
             if val_ops.ExactlyEqual(li[i], to_remove, rd.LeftParenToken()):
                 li.pop(i)
-                return value.Null
+                break
             i += 1
+
+        # Like Dict.erase(), we don't raise an exception.  We ensure that there
+        # is one less occurrence, and zero occurrences is OK.
         return value.Null
 
 
@@ -170,8 +173,8 @@ class Insert(vm._Callable):
         # type: (typed_args.Reader) -> value_t
 
         li = rd.PosList()
-        at_index = mops.BigTruncate(
-            rd.PosInt())  # List limited to 2^32 entries
+        # List limited to 2^32 entries
+        at_index = mops.BigTruncate(rd.PosInt())
         to_insert = rd.PosValue()
         rd.Done()
 
