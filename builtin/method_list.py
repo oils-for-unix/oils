@@ -169,18 +169,21 @@ class Insert(vm._Callable):
         # type: (typed_args.Reader) -> value_t
 
         li = rd.PosList()
-        idx = rd.PosInt()
+        at_index = mops.BigTruncate(rd.PosInt())  # List limited to 2^32 entries
         to_insert = rd.PosValue()
         rd.Done()
 
         i = len(li)
+        if at_index < 0:
+            if at_index < -(i + 1): # clamp -ve index to minimum -ve value
+                at_index = -(i + 1)
+            at_index = i + at_index + 1  # Turn -ve index into equivalent +ve index
+
+        # Add extra item at the end
         li.append(None)
-        index = idx.i
-        if index < 0:
-            if index < -(i + 1): # clamp -ve index to minimum -ve value
-                index = -(i + 1)
-            index = i + index + 1  # Turn -ve index into equivalent +ve index
-        while i > index:
+
+        # Shift everything
+        while i > at_index:
             li[i] = li[i-1]
             i -= 1
         li[i] = to_insert
