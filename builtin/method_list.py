@@ -179,10 +179,15 @@ class Insert(vm._Callable):
         rd.Done()
 
         i = len(li)
+
+        # Handle negative indices and overflow
         if at_index < 0:
             if at_index < -(i + 1):  # clamp -ve index to minimum -ve value
                 at_index = -(i + 1)
             at_index = i + at_index + 1  # Turn -ve index into equivalent +ve index
+
+        # Note: Positive overflow isn't a special case because there will be no
+        # shifting (unlike mycpp SLICE_ADJUST())
 
         # Add extra item at the end
         li.append(None)

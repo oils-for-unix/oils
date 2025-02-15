@@ -480,14 +480,18 @@ Returns the first index of the element in the list, or -1 if it's not present.
 
 ### insert()
 
-Insert an element into the list at the given.
-Negative indices index backwards from the back of the list. Indices greater than
-than the number of elements in the list insert at the back of the list.
+Insert an element into the list at the given index.
 
     var hills = :| pillar glaramara helvellyn |
     call hills->insert(1, "raise")
     echo @hills  # => pillar raise glaramara helvellyn
 
+- If you pass an index greater than the list length, the item will be inserted
+  at the end.
+- If you pass a negative index, it's interpreted as relative to the end of the
+  list, like slicing.
+  - If the negative index is out of bounds, the item will be inserted at the
+    beginning of the list.
 
 ### lastIndexOf()
 
