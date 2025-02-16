@@ -57,14 +57,16 @@ class EvalExpr(vm._Callable):
         vars_ = rd.NamedDict("vars", None)
         rd.Done()
 
-        pos_args = _CheckPosArgs(pos_args_raw, rd.LeftParenToken())
+        blame_tok = rd.LeftParenToken()
+        pos_args = _CheckPosArgs(pos_args_raw, blame_tok)
 
         # Note: ctx_Eval is on the outside, while ctx_EnclosedFrame is used in
         # EvalExprClosure
-        with state.ctx_EnclosedFrame(self.mem, lazy.captured_frame,
-                                     lazy.module_frame, None):
-            with state.ctx_Eval(self.mem, dollar0, pos_args, vars_):
-                result = self.expr_ev.EvalExpr(lazy.e, rd.LeftParenToken())
+        with state.ctx_TokenDebugFrame(self.mem, blame_tok):
+            with state.ctx_EnclosedFrame(self.mem, lazy.captured_frame,
+                                         lazy.module_frame, None):
+                with state.ctx_Eval(self.mem, dollar0, pos_args, vars_):
+                    result = self.expr_ev.EvalExpr(lazy.e, blame_tok)
 
         return result
 

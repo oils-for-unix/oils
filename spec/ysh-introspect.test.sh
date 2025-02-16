@@ -172,7 +172,7 @@ $[ENV.SH] -c 'source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-eval.ysh' |
       ^~~~~~~~~~~
 ## END
 
-#### DebugFrame.toString() running eval  methods
+#### DebugFrame.toString() running io->eval() on command
 $[ENV.SH] -c '
 source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh
 var b = ^(my-proc a b)
@@ -194,6 +194,42 @@ p
               ^~~~~~~
   %4 MYROOT/spec/testdata/debug-frame-lib.ysh:15
       print-stack
+      ^~~~~~~~~~~
+## END
+
+#### DebugFrame.toString() running io->evalExpr()
+
+$[ENV.SH] -c '
+source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh
+
+proc print-num {
+  print-stack > stack-trace.txt
+  echo 42
+}
+
+var e = ^[2 + $(print-num)]
+
+proc p {
+  call io->evalExpr(e)
+}
+
+p
+' 
+
+sed 's;#;%;g' stack-trace.txt
+
+## STDOUT:
+  %1 [ -c flag ]:15
+    p
+    ^
+  %2 [ -c flag ]:12
+      call io->evalExpr(e)
+                       ^
+  %3 [ -c flag ]:9
+    var e = ^[2 + $(print-num)]
+                    ^~~~~~~~~
+  %4 [ -c flag ]:5
+      print-stack > stack-trace.txt
       ^~~~~~~~~~~
 ## END
 
