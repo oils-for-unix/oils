@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh ash yash
-## oils_failures_allowed: 10
+## oils_failures_allowed: 11
 
 # NOTE on bash bug:  After setting IFS to array, it never splits anymore?  Even
 # if you assign IFS again.
@@ -468,3 +468,30 @@ printf "<%s>\n" $x
 <x>
 ## END
 
+#### 4 x 2 table: (IFS='', default IFS) x ( $* "$*" $@ "$@" )
+
+set -- 'a b' c
+
+argv.py '  $*  '  $*
+argv.py ' "$*" ' "$*"
+argv.py '  $@  '  $@
+argv.py ' "$@" ' "$@"
+echo
+
+IFS=''
+argv.py '  $*  '  $*
+argv.py ' "$*" ' "$*"
+argv.py '  $@  '  $@
+argv.py ' "$@" ' "$@"
+
+## STDOUT:
+['  $*  ', 'a', 'b', 'c']
+[' "$*" ', 'a b c']
+['  $@  ', 'a', 'b', 'c']
+[' "$@" ', 'a b', 'c']
+
+['  $*  ', 'a b', 'c']
+[' "$*" ', 'a bc']
+['  $@  ', 'a b', 'c']
+[' "$@" ', 'a b', 'c']
+## END
