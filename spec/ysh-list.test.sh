@@ -183,12 +183,12 @@ shopt -s ysh:all
 
 var l = list(1..=3)
 call l->remove(2)
-assert [l === [1, 3]]
+assert [ [1, 3] === l ]
 
 # first instance only
 var l = :|foo bar baz foo foo|
 call l->remove("foo")
-assert [l === :|bar baz foo foo|]
+assert [ :|bar baz foo foo| === l ]
 
 echo pass
 ## STDOUT:
@@ -200,7 +200,7 @@ shopt -s ysh:all
 
 var l = :| a b c |
 call l->remove("d")
-assert [l === :| a b c |]
+assert [ :| a b c | === l ]
 
 echo pass
 ## STDOUT:
@@ -209,25 +209,29 @@ pass
 
 #### List insert()
 shopt -s ysh:all
+
 var l = :| foo bar |
 call l->insert(0, "baz")
-var want = :| baz foo bar |
-assert [l === want]
-call l->insert(2, "bat")
-var want = :| baz foo bat bar |
-assert [l === want]
+assert [ :| baz foo bar | === l ]
+
+call l->insert(2, "zzz")
+assert [ :| baz foo zzz bar | === l ]
+
 echo pass
+
 ## STDOUT:
 pass
 ## END
 
 #### List insert() overflow
 shopt -s ysh:all
+
 var l = :| foo bar baz |
-call l->insert(123, "bat")
-call l->insert(123, "bam")
-var want = :| foo bar baz bat bam |
-assert [l === want]
+call l->insert(123, "yyy")
+call l->insert(123, "zzz")
+
+assert [ :| foo bar baz yyy zzz | === l ]
+
 echo pass
 ## STDOUT:
 pass
@@ -235,13 +239,14 @@ pass
 
 #### List insert() negative
 shopt -s ysh:all
+
 var l = :| foo bar |
 call l->insert(-1, "baz")
-var want = :| foo bar baz |
-assert [l === want]
+assert [ :| foo bar baz | === l ]
+
 call l->insert(-4, "bat")
-var want = :| bat foo bar baz |
-assert [l === want]
+assert [ :| bat foo bar baz | === l ]
+
 echo pass
 ## STDOUT:
 pass
@@ -249,13 +254,14 @@ pass
 
 #### List insert() negative overflow
 shopt -s ysh:all
+
 var l = :| foo bar |
 call l->insert(-100, "baz")
-var want = :| baz foo bar |
-assert [l === want]
+assert [ :| baz foo bar | === l ]
+
 call l->insert(-100, "bat")
-var want = :| bat baz foo bar |
-assert [l === want]
+assert [ :| bat baz foo bar | === l ]
+
 echo pass
 ## STDOUT:
 pass
