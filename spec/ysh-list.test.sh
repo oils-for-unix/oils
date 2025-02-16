@@ -178,27 +178,18 @@ echo pass
 pass
 ## END
 
-#### List remove()
+#### List remove() removes elements
 shopt -s ysh:all
+
 var l = list(1..=3)
 call l->remove(2)
-var want = [1, 3]
-assert [l === want]
-var l = :|foo bar baz|
-call l->remove("foo")
-var want = :|bar baz|
-assert [l === want]
-echo pass
-## STDOUT:
-pass
-## END
+assert [l === [1, 3]]
 
-#### List remove() removes first instance only
-shopt -s ysh:all
-var l = :| foo bar foo baz bat foo |
+# first instance only
+var l = :|foo bar baz foo foo|
 call l->remove("foo")
-var want = :| bar foo baz bat foo |
-assert [l === want]
+assert [l === :|bar baz foo foo|]
+
 echo pass
 ## STDOUT:
 pass
@@ -206,10 +197,11 @@ pass
 
 #### List remove() does nothing if element does not exist
 shopt -s ysh:all
+
 var l = :| a b c |
 call l->remove("d")
-var want = :| a b c |
-assert [l === want]
+assert [l === :| a b c |]
+
 echo pass
 ## STDOUT:
 pass
