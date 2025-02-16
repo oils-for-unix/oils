@@ -241,11 +241,11 @@ pass
 shopt -s ysh:all
 
 var l = :| foo bar |
-call l->insert(-1, "baz")
-assert [ :| foo bar baz | === l ]
+call l->insert(-1, "yyy")
+assert [ :| foo yyy bar | === l ]
 
-call l->insert(-4, "bat")
-assert [ :| bat foo bar baz | === l ]
+call l->insert(-3, "zzz")
+assert [ :| zzz foo yyy bar | === l ]
 
 echo pass
 ## STDOUT:
@@ -256,11 +256,14 @@ pass
 shopt -s ysh:all
 
 var l = :| foo bar |
-call l->insert(-100, "baz")
-assert [ :| baz foo bar | === l ]
 
-call l->insert(-100, "bat")
-assert [ :| bat baz foo bar | === l ]
+for pos in ([-2, -3, -4]) {
+  call l->insert(pos, str(pos))
+}
+assert [ :| -4 -3 -2 foo bar | === l ]
+
+call l->insert(-100, "zzz")
+assert [ :| zzz -4 -3 -2 foo bar | === l ]
 
 echo pass
 ## STDOUT:

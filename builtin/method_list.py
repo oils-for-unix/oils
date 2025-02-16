@@ -178,13 +178,14 @@ class Insert(vm._Callable):
         to_insert = rd.PosValue()
         rd.Done()
 
-        i = len(li)
+        length = len(li)
 
-        # Handle negative indices and overflow
         if at_index < 0:
-            if at_index < -(i + 1):  # clamp -ve index to minimum -ve value
-                at_index = -(i + 1)
-            at_index = i + at_index + 1  # Turn -ve index into equivalent +ve index
+            # Negative index is relative to the end
+            at_index += length
+            # If it's still less than 0, insert at the beginning
+            if at_index < 0:
+                at_index = 0
 
         # Note: Positive overflow isn't a special case because there will be no
         # shifting (unlike mycpp SLICE_ADJUST())
@@ -193,6 +194,7 @@ class Insert(vm._Callable):
         li.append(None)
 
         # Shift everything
+        i = length
         while i > at_index:
             li[i] = li[i - 1]
             i -= 1
