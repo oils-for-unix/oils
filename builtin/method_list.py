@@ -193,11 +193,13 @@ class Insert(vm._Callable):
         # Add extra item at the end
         li.append(None)
 
-        # Shift everything
+        # Shift items at positions greater than at_index
         i = length
         while i > at_index:
             li[i] = li[i - 1]
             i -= 1
+
+        # New item
         li[i] = to_insert
 
         return value.Null
