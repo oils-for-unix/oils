@@ -56,7 +56,7 @@ error handling, and more.
                              X groups()       X groupDict()
   [Containers]     List        List/append()    pop()             extend()
                                indexOf()        lastIndexOf()   X includes()
-                             X insert()       X remove()
+                               insert()         remove()
                                reverse()        List/clear()
                    Dict        erase()        X Dict/clear()    X accum()
                              X update()
