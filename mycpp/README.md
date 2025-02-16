@@ -12,9 +12,19 @@ It's inspired by both mypyc and Shed Skin.  These posts give background:
 As of March 2024, the translation to C++ is **done**.  So it's no longer
 experimental!
 
-However, it's still pretty **hacky**.  This doc exists mainly to explain the
-hacks.  (We may want to rewrite mycpp as "yaks", although it's low priority
-right now.)
+---
+
+`mycpp` started as a **hack**, but it worked because its output is fairly
+strongly-typed C++.
+
+That is, the C++ type system catches many errors!  But it doesn't catch all of
+them, so we've gradually made `mycpp` more strict.
+
+As of December 2024, `mycpp` is a pretty clean program, although there are
+still many heuristics.  This doc explains the heuristics.
+
+(I'd like to gradually rewrite mycpp as a more principled "yaks" language,
+although this isn't a high priority.)
 
 ---
 
