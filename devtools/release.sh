@@ -24,7 +24,7 @@
 #
 # Resume manual work
 #
-#   Commit files to oilshell/benchmark-data repo and sync.
+#   Commit files to oils-for-unix/benchmark-data repo and sync.
 #   benchmarks/report.sh all
 #   $0 deploy-tar  # needed to publish tarball checksum in HTML
 #   build/doc.sh run-for-release

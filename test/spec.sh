@@ -620,7 +620,7 @@ _one-html() {
   local tmp_dir=_tmp/src-smoosh
   mkdir -p $out_dir $out_dir
 
-  doctools/src_tree.py smoosh-file \
+  PYTHONPATH='.:vendor' doctools/src_tree.py smoosh-file \
     _tmp/$spec_name.test.sh \
     $out_dir/$spec_name.test.html
 

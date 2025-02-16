@@ -140,7 +140,7 @@ domain-specific languages and code generation.
 - [ysh/grammar.pgen2](pub/src-tree.wwz/ysh/grammar.pgen2.html). The
   expression grammar for YSH.  In contrast, the OSH parsers are hand-written.
 
-Also see the [oilshell/oil](https://github.com/oilshell/oil) repository.
+Also see the [oils-for-unix/oils](https://github.com/oils-for-unix/oils) repository.
 
 ## Old
 
