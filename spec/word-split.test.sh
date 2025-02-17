@@ -280,7 +280,7 @@ argv.py "$s"
 s=$@
 argv.py "$s"
 
-s"$*"
+s="$*"
 argv.py "$s"
 
 s=$*
@@ -292,7 +292,7 @@ argv.py "$s"
 ## STDOUT:
 ['x y z']
 ['x y z']
-['x y z']
+['x:y z']
 ['x:y z']
 ## END
 ## BUG dash/ash/yash STDOUT:
