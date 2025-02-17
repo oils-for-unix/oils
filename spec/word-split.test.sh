@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh ash yash
-## oils_failures_allowed: 7
+## oils_failures_allowed: 9
 
 # NOTE on bash bug:  After setting IFS to array, it never splits anymore?  Even
 # if you assign IFS again.
@@ -661,4 +661,93 @@ argv.py ' "$@" ' "$@"
 ## END
 
 ## N-I yash STDOUT:
+## END
+
+#### IFS=x and '' and $@ (#2)
+
+set -- "" "" "" "" ""
+argv.py =$@=
+argv.py =$*=
+IFS=
+argv.py =$@=
+argv.py =$*=
+IFS=x
+argv.py =$@=
+argv.py =$*=
+
+## STDOUT:
+['=', '=']
+['=', '=']
+['=', '=']
+['=', '=']
+['=', '=']
+['=', '=']
+## END
+
+## OK bash/mksh/osh STDOUT:
+['=', '=']
+['=', '=']
+['=', '=']
+['=', '=']
+['=', '', '', '', '=']
+['=', '', '', '', '=']
+## END
+
+# yash-2.49 seems to behave in a strange way, but this behavior seems to have
+# been fixed at least in yash-2.57.
+
+## BUG yash STDOUT:
+['=', '', '', '', '=']
+['=', '', '', '', '=']
+['=', '', '', '', '=']
+['=', '', '', '', '=']
+['=', '', '', '', '=']
+['=', '', '', '', '=']
+## END
+
+#### IFS=x and '' and $@ (#3)
+
+IFS=x
+set -- "" "" "" "" ""
+argv.py $*
+set -- $*
+argv.py $*
+set -- $*
+argv.py $*
+set -- $*
+argv.py $*
+set -- $*
+argv.py $*
+
+
+## STDOUT:
+[]
+[]
+[]
+[]
+[]
+## END
+
+## OK bash/osh STDOUT:
+['', '', '', '']
+['', '', '']
+['', '']
+['']
+[]
+## END
+
+## OK mksh STDOUT:
+['', '', '']
+['']
+[]
+[]
+[]
+## END
+
+## BUG yash STDOUT:
+['', '', '', '', '']
+['', '', '', '', '']
+['', '', '', '', '']
+['', '', '', '', '']
+['', '', '', '', '']
 ## END
