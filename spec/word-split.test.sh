@@ -619,3 +619,46 @@ echo -n ' "$@" ';  for i in "$@"; do echo -n ' '; echo -n -$i-; done; echo
 ## END
 ## N-I yash STDOUT:
 ## END
+
+#### IFS=x and '' and $@ - same bug as spec/toysh-posix case #12
+
+case $SH in yash) exit ;; esac  # no echo -n
+
+set -- one '' two
+
+IFS=zx
+echo -n '  $*  ';  for i in  $*;  do echo -n ' '; echo -n -$i-; done; echo
+echo -n ' "$*" ';  for i in "$*"; do echo -n ' '; echo -n -$i-; done; echo
+echo -n '  $@  ';  for i in  $@;  do echo -n ' '; echo -n -$i-; done; echo
+echo -n ' "$@" ';  for i in "$@"; do echo -n ' '; echo -n -$i-; done; echo
+
+argv.py '  $*  '  $*
+argv.py ' "$*" ' "$*"
+argv.py '  $@  '  $@
+argv.py ' "$@" ' "$@"
+
+
+## STDOUT:
+  $*   -one- -- -two-
+ "$*"  -one  two-
+  $@   -one- -- -two-
+ "$@"  -one- -- -two-
+['  $*  ', 'one', '', 'two']
+[' "$*" ', 'onezztwo']
+['  $@  ', 'one', '', 'two']
+[' "$@" ', 'one', '', 'two']
+## END
+
+## BUG dash/ash STDOUT:
+  $*   -one- -two-
+ "$*"  -one  two-
+  $@   -one- -two-
+ "$@"  -one- -- -two-
+['  $*  ', 'one', 'two']
+[' "$*" ', 'onezztwo']
+['  $@  ', 'one', 'two']
+[' "$@" ', 'one', '', 'two']
+## END
+
+## N-I yash STDOUT:
+## END
