@@ -520,6 +520,8 @@ printf "<%s>\n" $x
 
 #### 4 x 3 table: (default IFS, IFS='', IFS=zx) x ( $* "$*" $@ "$@" )
 
+setopt SH_WORD_SPLIT  # for zsh
+
 set -- 'a b' c ''
 
 # default IFS
@@ -559,6 +561,27 @@ argv.py ' "$@" ' "$@"
 [' "$@" ', 'a b', 'c', '']
 ## END
 
+# zsh disagrees on
+# - $@ with default IFS an
+# - $@ with IFS=zx
+
+## BUG zsh STDOUT:
+['  $*  ', 'a', 'b', 'c']
+[' "$*" ', 'a b c ']
+['  $@  ', 'a b', 'c']
+[' "$@" ', 'a b', 'c', '']
+
+['  $*  ', 'a b', 'c']
+[' "$*" ', 'a bc']
+['  $@  ', 'a b', 'c']
+[' "$@" ', 'a b', 'c', '']
+
+['  $*  ', 'a b', 'c', '']
+[' "$*" ', 'a bzcz']
+['  $@  ', 'a b', 'c']
+[' "$@" ', 'a b', 'c', '']
+## END
+
 ## BUG yash STDOUT:
 ['  $*  ', 'a', 'b', 'c', '']
 [' "$*" ', 'a b c ']
@@ -578,6 +601,8 @@ argv.py ' "$@" ' "$@"
 
 #### 4 x 3 table - with for loop
 case $SH in yash) exit ;; esac  # no echo -n
+
+setopt SH_WORD_SPLIT  # for zsh
 
 set -- 'a b' c ''
 
@@ -617,12 +642,14 @@ echo -n ' "$@" ';  for i in "$@"; do echo -n ' '; echo -n -$i-; done; echo
   $@   -a b- -c-
  "$@"  -a b- -c- --
 ## END
+
 ## N-I yash STDOUT:
 ## END
 
 #### IFS=x and '' and $@ - same bug as spec/toysh-posix case #12
-
 case $SH in yash) exit ;; esac  # no echo -n
+
+setopt SH_WORD_SPLIT  # for zsh
 
 set -- one '' two
 
@@ -664,6 +691,7 @@ argv.py ' "$@" ' "$@"
 ## END
 
 #### IFS=x and '' and $@ (#2)
+setopt SH_WORD_SPLIT  # for zsh
 
 set -- "" "" "" "" ""
 argv.py =$@=
@@ -706,6 +734,7 @@ argv.py =$*=
 ## END
 
 #### IFS=x and '' and $@ (#3)
+setopt SH_WORD_SPLIT  # for zsh
 
 IFS=x
 set -- "" "" "" "" ""
@@ -744,7 +773,7 @@ argv.py $*
 []
 ## END
 
-## BUG yash STDOUT:
+## BUG zsh/yash STDOUT:
 ['', '', '', '', '']
 ['', '', '', '', '']
 ['', '', '', '', '']
