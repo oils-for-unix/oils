@@ -185,18 +185,20 @@ myfunc one "" two
 =ghi=
 ---
 =one=
+==
 =two=
 ## END
-## BUG bash/mksh/yash STDOUT:
+
+## BUG dash/ash STDOUT:
 =one=
 =abc=
 =d f=
 =ghi=
 ---
 =one=
-==
 =two=
 ## END
+
 ## N-I zsh STDOUT:
 ## END
 
@@ -204,30 +206,25 @@ myfunc one "" two
 case $SH in zsh) exit ;; esac
 
 set -- one "" two
-argv.py $@
 
 IFS=x
+
+argv.py $@
+
 for i in $@; do
   echo =$i=
 done
 
 ## STDOUT:
-['one', 'two']
-=one=
-=two=
-## END
-
-## BUG bash/mksh STDOUT:
-['one', 'two']
-=one=
-==
-=two=
-## END
-
-## BUG yash STDOUT:
 ['one', '', 'two']
 =one=
 ==
+=two=
+## END
+
+## BUG dash/ash STDOUT:
+['one', 'two']
+=one=
 =two=
 ## END
 
