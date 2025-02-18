@@ -1,12 +1,12 @@
 ## oils_failures_allowed: 3
-## compare_shells: bash dash mksh zsh yash
+## compare_shells: bash dash mksh zsh ash yash
 
 #### Fatal error
 # http://landley.net/notes.html#20-06-2020
 
 abc=${a?bc} echo hello; echo blah
 ## status: 1
-## OK yash/dash status: 2
+## OK yash/dash/ash status: 2
 ## stdout-json: ""
 
 #### setting readonly var (bash is only one where it's non-fatal)
@@ -59,11 +59,12 @@ abc=
 abc=def
 abc=def
 ## END
-## OK dash/mksh STDOUT:
+## OK dash/ash/mksh STDOUT:
 abc=
 ## END
 ## OK dash status: 2
 ## OK mksh status: 1
+## OK ash status: 1
 
 #### Evaluation order of redirect and ${undef?error}
 # http://landley.net/notes.html#12-06-2020
@@ -167,6 +168,7 @@ hello
 
 
 #### IFS - http://landley.net/notes.html#05-03-2020
+case $SH in zsh) exit ;; esac
 
 IFS=x
 chicken() { for i in "$@"; do echo =$i=; done;}
@@ -183,20 +185,54 @@ myfunc one "" two
 =ghi=
 ---
 =one=
-==
 =two=
 ## END
-## BUG dash STDOUT:
+## BUG bash/mksh/yash STDOUT:
 =one=
 =abc=
 =d f=
 =ghi=
 ---
 =one=
+==
 =two=
 ## END
-## BUG zsh status: 1
-## BUG zsh stdout-json: ""
+## N-I zsh STDOUT:
+## END
+
+#### Compare $@ in argv to $@ in loop - reduction of case above
+case $SH in zsh) exit ;; esac
+
+set -- one "" two
+argv.py $@
+
+IFS=x
+for i in $@; do
+  echo =$i=
+done
+
+## STDOUT:
+['one', 'two']
+=one=
+=two=
+## END
+
+## BUG bash/mksh STDOUT:
+['one', 'two']
+=one=
+==
+=two=
+## END
+
+## BUG yash STDOUT:
+['one', '', 'two']
+=one=
+==
+=two=
+## END
+
+## N-I zsh STDOUT:
+## END
 
 #### for loop parsing - http://landley.net/notes.html#04-03-2020
 
@@ -266,18 +302,20 @@ onextwoxxthree
 ## END
 
 #### IFS 4
+case $SH in zsh) exit ;; esac  # buggy
+
 IFS=x
 cc() { echo =$*=; for i in $*; do echo -$i-; done;}; cc "" ""
 cc() { echo ="$*"=; for i in =$*=; do echo -$i-; done;}; cc "" ""
 ## STDOUT:
 = =
---
 =x=
 -=-
 -=-
 ## END
-## BUG mksh/dash STDOUT:
+## BUG bash STDOUT:
 = =
+--
 =x=
 -=-
 -=-
@@ -290,10 +328,8 @@ cc() { echo ="$*"=; for i in =$*=; do echo -$i-; done;}; cc "" ""
 -=-
 -=-
 ## END
-## BUG zsh STDOUT:
-= =
+## N-I zsh STDOUT:
 ## END
-## BUG zsh status: 1
 
 #### IFS 5
 cc() { for i in $*; do echo -$i-; done;}; cc "" "" "" "" ""
