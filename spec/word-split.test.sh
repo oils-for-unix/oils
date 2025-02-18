@@ -520,8 +520,9 @@ printf "<%s>\n" $x
 
 #### 4 x 3 table: (default IFS, IFS='', IFS=zx) x ( $* "$*" $@ "$@" )
 
-set -- 'a b' c
+set -- 'a b' c ''
 
+# default IFS
 argv.py '  $*  '  $*
 argv.py ' "$*" ' "$*"
 argv.py '  $@  '  $@
@@ -543,17 +544,78 @@ argv.py ' "$@" ' "$@"
 
 ## STDOUT:
 ['  $*  ', 'a', 'b', 'c']
-[' "$*" ', 'a b c']
+[' "$*" ', 'a b c ']
 ['  $@  ', 'a', 'b', 'c']
-[' "$@" ', 'a b', 'c']
+[' "$@" ', 'a b', 'c', '']
 
 ['  $*  ', 'a b', 'c']
 [' "$*" ', 'a bc']
 ['  $@  ', 'a b', 'c']
-[' "$@" ', 'a b', 'c']
+[' "$@" ', 'a b', 'c', '']
 
 ['  $*  ', 'a b', 'c']
-[' "$*" ', 'a bzc']
+[' "$*" ', 'a bzcz']
 ['  $@  ', 'a b', 'c']
-[' "$@" ', 'a b', 'c']
+[' "$@" ', 'a b', 'c', '']
+## END
+
+## BUG yash STDOUT:
+['  $*  ', 'a', 'b', 'c', '']
+[' "$*" ', 'a b c ']
+['  $@  ', 'a', 'b', 'c', '']
+[' "$@" ', 'a b', 'c', '']
+
+['  $*  ', 'a b', 'c', '']
+[' "$*" ', 'a bc']
+['  $@  ', 'a b', 'c', '']
+[' "$@" ', 'a b', 'c', '']
+
+['  $*  ', 'a b', 'c', '']
+[' "$*" ', 'a bzcz']
+['  $@  ', 'a b', 'c', '']
+[' "$@" ', 'a b', 'c', '']
+## END
+
+#### 4 x 3 table - with for loop
+case $SH in yash) exit ;; esac  # no echo -n
+
+set -- 'a b' c ''
+
+# default IFS
+echo -n '  $*  ';  for i in  $*; do echo -n "[$i]"; done; echo
+echo -n ' "$*" ';  for i in "$*"; do echo -n "[$i]"; done; echo
+echo -n '  $@  ';  for i in  $@; do echo -n "[$i]"; done; echo
+echo -n ' "$@" ';  for i in "$@"; do echo -n "[$i]"; done; echo
+echo
+
+IFS=''
+echo -n '  $*  ';  for i in  $*; do echo -n "[$i]"; done; echo
+echo -n ' "$*" ';  for i in "$*"; do echo -n "[$i]"; done; echo
+echo -n '  $@  ';  for i in  $@; do echo -n "[$i]"; done; echo
+echo -n ' "$@" ';  for i in "$@"; do echo -n "[$i]"; done; echo
+echo
+
+IFS=zx
+echo -n '  $*  ';  for i in  $*; do echo -n "[$i]"; done; echo
+echo -n ' "$*" ';  for i in "$*"; do echo -n "[$i]"; done; echo
+echo -n '  $@  ';  for i in  $@; do echo -n "[$i]"; done; echo
+echo -n ' "$@" ';  for i in "$@"; do echo -n "[$i]"; done; echo
+
+## STDOUT:
+  $*  [a][b][c]
+ "$*" [a b c ]
+  $@  [a][b][c]
+ "$@" [a b][c][]
+
+  $*  [a b][c]
+ "$*" [a bc]
+  $@  [a b][c]
+ "$@" [a b][c][]
+
+  $*  [a b][c]
+ "$*" [a bzcz]
+  $@  [a b][c]
+ "$@" [a b][c][]
+## END
+## N-I yash STDOUT:
 ## END
