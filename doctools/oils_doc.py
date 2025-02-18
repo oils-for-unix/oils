@@ -52,6 +52,7 @@ _ABBREVIATIONS = {
     # alias for osh-help, for backward compatibility
     # to link to the same version
 
+    # OBSOLETE
     # TODO: Remove all of these broken links!
     'help':
     _Abbrev('osh-help.html?topic=%(value)s#%(value)s'),
@@ -59,6 +60,15 @@ _ABBREVIATIONS = {
     _Abbrev('osh-help.html?topic=%(value)s#%(value)s'),
     'oil-help':
     _Abbrev('oil-help.html?topic=%(value)s#%(value)s'),
+    'osh-help-latest':
+    _Abbrev(
+        '//oilshell.org/release/latest/doc/osh-help.html?topic=%(value)s#%(value)s'
+    ),
+    'oil-help-latest':
+    _Abbrev(
+        '//oilshell.org/release/latest/doc/oil-help.html?topic=%(value)s#%(value)s'
+    ),
+
 
     # New style: one for every chapter?
     # Problem: can't use relative links here, because some are from doc/ref, and
@@ -70,37 +80,51 @@ _ABBREVIATIONS = {
     'chap-builtin-cmd':
     _Abbrev('chap-builtin-cmd.html?topic=%(value)s#%(value)s'),
 
-    # for blog
-    'osh-help-latest':
-    _Abbrev(
-        '//oilshell.org/release/latest/doc/osh-help.html?topic=%(value)s#%(value)s'
-    ),
-    'oil-help-latest':
-    _Abbrev(
-        '//oilshell.org/release/latest/doc/oil-help.html?topic=%(value)s#%(value)s'
-    ),
-
-    # For the blog
-    'oils-doc':
+    # old
+    'oil-doc':
     _Abbrev('//www.oilshell.org/release/latest/doc/%(value)s'),
+    # new
+    'oils-doc':
+    _Abbrev('//oils.pub/release/latest/doc/%(value)s'),
+
+    # old AND new
     'blog-tag':
     _Abbrev('/blog/tags.html?tag=%(value)s#%(value)s'),
-    'oils-commit':
+
+    # For linkins from oils.pub -> oilshell.org
+    'oilshell-blog-tag':
+    _Abbrev('https://www.oilshell.org/blog/tags.html?tag=%(value)s#%(value)s'),
+
+    # old
+    'oil-commit':
     _Abbrev('https://github.com/oilshell/oil/commit/%(value)s'),
-    'oils-src':
+    # new
+    'oils-commit':
+    _Abbrev('https://github.com/oils-for-unix/oils/commit/%(value)s'),
+
+    # old
+    'oil-src':
     _Abbrev('https://github.com/oilshell/oil/blob/master/%(value)s'),
+    # new
+    'oils-src':
+    _Abbrev('https://github.com/oils-for-unix/oils/blob/master/%(value)s'),
+
+    # old
     'blog-code-src':
     _Abbrev('https://github.com/oilshell/blog-code/blob/master/%(value)s'),
     'issue':
     _Abbrev('https://github.com/oilshell/oil/issues/%(value)s'),
     'wiki':
     _Abbrev('https://github.com/oilshell/oil/wiki/%(value)s'),
-}
 
-# Backward compatibility
-_ABBREVIATIONS['oil-src'] = _ABBREVIATIONS['oils-src']
-_ABBREVIATIONS['oil-commit'] = _ABBREVIATIONS['oils-commit']
-_ABBREVIATIONS['oil-doc'] = _ABBREVIATIONS['oils-doc']
+    # new
+    'oils-blog-code-src':
+    _Abbrev('https://github.com/oils-for-unix/blog-code/blob/master/%(value)s'),
+    'oils-issue':
+    _Abbrev('https://github.com/oils-for-unix/oils/issues/%(value)s'),
+    'oils-wiki':
+    _Abbrev('https://github.com/oils-for-unix/oils/wiki/%(value)s'),
+}
 
 # $xref:foo
 _SHORTCUT_RE = re.compile(r'\$ ([a-z\-]+) (?: : (\S+))?', re.VERBOSE)
