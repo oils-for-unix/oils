@@ -202,7 +202,7 @@ myfunc one "" two
 ## N-I zsh STDOUT:
 ## END
 
-#### IFS=x and '' and unquoted $@ - reduction of case above
+#### IFS=x and '' and unquoted $@ - reduction of case above - copied into spec/word-split
 
 setopt SH_WORD_SPLIT
 #set -x
@@ -260,14 +260,20 @@ if test $? -ne 0; then echo fail; fi
 
 #### IFS - http://landley.net/notes.html#15-02-2020 (TODO: osh)
 
-IFS=x; A=xabcxx; for i in $A; do echo =$i=; done
+IFS=x
+A=xabcxx
+for i in $A; do echo =$i=; done
+echo
 
-unset IFS; A="   abc   def   "; for i in ""$A""; do echo =$i=; done
+unset IFS
+A="   abc   def   "
+for i in ""$A""; do echo =$i=; done
 
 ## STDOUT:
 ==
 =abc=
 ==
+
 ==
 =abc=
 =def=
@@ -276,8 +282,8 @@ unset IFS; A="   abc   def   "; for i in ""$A""; do echo =$i=; done
 ## BUG zsh status: 1
 ## BUG zsh stdout-json: ""
 
-#### IFS 2 (TODO: osh)
-this one appears different between osh and bash
+#### IFS 2 - copied into spec/word-split
+# this one appears different between osh and bash
 A="   abc   def   "; for i in ""x""$A""; do echo =$i=; done
 
 ## STDOUT:

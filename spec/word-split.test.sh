@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh ash yash
-## oils_failures_allowed: 6
+## oils_failures_allowed: 7
 
 # NOTE on bash bug:  After setting IFS to array, it never splits anymore?  Even
 # if you assign IFS again.
@@ -789,4 +789,41 @@ argv.py $*
 ['', '', '', '', '']
 ['', '', '', '', '']
 ['', '', '', '', '']
+## END
+
+#### ""$A"" - empty string on both sides - derived from spec/toysh-posix #15
+
+A="   abc   def   "
+for i in $A; do echo =$i=; done
+echo
+
+A="   abc   def   "
+for i in ""$A""; do echo =$i=; done
+echo
+
+unset IFS
+
+A="   abc   def   "
+for i in $A; do echo =$i=; done
+echo
+
+A="   abc   def   "
+for i in ""$A""; do echo =$i=; done
+
+## STDOUT:
+=abc=
+=def=
+
+==
+=abc=
+=def=
+==
+
+=abc=
+=def=
+
+==
+=abc=
+=def=
+==
 ## END
