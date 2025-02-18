@@ -696,9 +696,13 @@ setopt SH_WORD_SPLIT  # for zsh
 set -- "" "" "" "" ""
 argv.py =$@=
 argv.py =$*=
+echo
+
 IFS=
 argv.py =$@=
 argv.py =$*=
+echo
+
 IFS=x
 argv.py =$@=
 argv.py =$*=
@@ -706,17 +710,21 @@ argv.py =$*=
 ## STDOUT:
 ['=', '=']
 ['=', '=']
+
 ['=', '=']
 ['=', '=']
+
 ['=', '=']
 ['=', '=']
 ## END
 
-## OK bash/mksh/osh STDOUT:
+## OK bash/mksh STDOUT:
 ['=', '=']
 ['=', '=']
+
 ['=', '=']
 ['=', '=']
+
 ['=', '', '', '', '=']
 ['=', '', '', '', '=']
 ## END
@@ -727,8 +735,10 @@ argv.py =$*=
 ## BUG yash STDOUT:
 ['=', '', '', '', '=']
 ['=', '', '', '', '=']
+
 ['=', '', '', '', '=']
 ['=', '', '', '', '=']
+
 ['=', '', '', '', '=']
 ['=', '', '', '', '=']
 ## END
@@ -738,16 +748,16 @@ setopt SH_WORD_SPLIT  # for zsh
 
 IFS=x
 set -- "" "" "" "" ""
-argv.py $*
-set -- $*
-argv.py $*
-set -- $*
-argv.py $*
-set -- $*
-argv.py $*
-set -- $*
-argv.py $*
 
+argv.py $*
+set -- $*
+argv.py $*
+set -- $*
+argv.py $*
+set -- $*
+argv.py $*
+set -- $*
+argv.py $*
 
 ## STDOUT:
 []
@@ -757,7 +767,7 @@ argv.py $*
 []
 ## END
 
-## OK bash/osh STDOUT:
+## OK bash STDOUT:
 ['', '', '', '']
 ['', '', '']
 ['', '']
