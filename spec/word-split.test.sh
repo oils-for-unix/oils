@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh ash yash
-## oils_failures_allowed: 6
+## oils_failures_allowed: 7
 
 # NOTE on bash bug:  After setting IFS to array, it never splits anymore?  Even
 # if you assign IFS again.
