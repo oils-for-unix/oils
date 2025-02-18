@@ -202,7 +202,7 @@ myfunc one "" two
 ## N-I zsh STDOUT:
 ## END
 
-#### Compare $@ in argv to $@ in loop - reduction of case above
+#### Behavior of IFS=x and unquoted $@ - reduction of case above
 case $SH in zsh) exit ;; esac
 
 set -- one "" two
