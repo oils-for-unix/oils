@@ -202,8 +202,10 @@ myfunc one "" two
 ## N-I zsh STDOUT:
 ## END
 
-#### Behavior of IFS=x and unquoted $@ - reduction of case above
-case $SH in zsh) exit ;; esac
+#### IFS=x and '' and unquoted $@ - reduction of case above
+
+setopt SH_WORD_SPLIT
+#set -x
 
 set -- one "" two
 
@@ -212,24 +214,22 @@ IFS=x
 argv.py $@
 
 for i in $@; do
-  echo =$i=
+  echo -$i-
 done
 
 ## STDOUT:
 ['one', '', 'two']
-=one=
-==
-=two=
+-one-
+--
+-two-
 ## END
 
-## BUG dash/ash STDOUT:
+## BUG dash/ash/zsh STDOUT:
 ['one', 'two']
-=one=
-=two=
+-one-
+-two-
 ## END
 
-## N-I zsh STDOUT:
-## END
 
 #### for loop parsing - http://landley.net/notes.html#04-03-2020
 

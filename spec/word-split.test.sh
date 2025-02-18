@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh ash yash
-## oils_failures_allowed: 9
+## oils_failures_allowed: 6
 
 # NOTE on bash bug:  After setting IFS to array, it never splits anymore?  Even
 # if you assign IFS again.
@@ -665,7 +665,7 @@ argv.py '  $@  '  $@
 argv.py ' "$@" ' "$@"
 
 
-## STDOUT:
+## OK bash/mksh STDOUT:
   $*   -one- -- -two-
  "$*"  -one  two-
   $@   -one- -- -two-
@@ -676,7 +676,7 @@ argv.py ' "$@" ' "$@"
 [' "$@" ', 'one', '', 'two']
 ## END
 
-## BUG dash/ash STDOUT:
+## STDOUT:
   $*   -one- -two-
  "$*"  -one  two-
   $@   -one- -two-
