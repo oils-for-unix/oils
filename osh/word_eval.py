@@ -2165,7 +2165,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 array_words = part0.words
                 words = braces.BraceExpandWords(array_words)
                 strs = self.EvalWordSequence(words)
-                return value.BashArray(strs)
+                return bash_impl.SparseArray_FromList(strs)
 
             if tag == word_part_e.BashAssocLiteral:
                 part0 = cast(word_part.BashAssocLiteral, UP_part0)

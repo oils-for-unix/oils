@@ -274,19 +274,20 @@ def _ReconcileTypes(rval, flag_a, flag_A, blame_word):
 
     Shared between NewVar and Readonly.
     """
-    if flag_a and rval is not None and rval.tag() != value_e.BashArray:
+    if flag_a and rval is not None and rval.tag() not in (value_e.BashArray,
+                                                          value_e.SparseArray):
         e_usage("Got -a but RHS isn't an array", loc.Word(blame_word))
 
     if flag_A and rval:
         # Special case: declare -A A=() is OK.  The () is changed to mean an empty
         # associative array.
-        if rval.tag() == value_e.BashArray:
-            array_val = cast(value.BashArray, rval)
-            if len(array_val.strs) == 0:
+        if rval.tag() == value_e.SparseArray:
+            sparse_val = cast(value.SparseArray, rval)
+            if bash_impl.SparseArray_IsEmpty(sparse_val):
                 # mycpp limitation: NewDict() needs to be typed
                 tmp = NewDict()  # type: Dict[str, str]
                 return value.BashAssoc(tmp)
-                #return value.BashArray([])
+                #return bash_impl.SparseArray_FromList([])
 
         if rval.tag() != value_e.BashAssoc:
             e_usage("Got -A but RHS isn't an associative array",
@@ -319,7 +320,7 @@ class Readonly(vm._AssignBuiltin):
         for pair in cmd_val.pairs:
             if pair.rval is None:
                 if arg.a:
-                    rval = value.BashArray([])  # type: value_t
+                    rval = bash_impl.SparseArray_FromList([])  # type: value_t
                 elif arg.A:
                     # mycpp limitation: NewDict() needs to be typed
                     tmp = NewDict()  # type: Dict[str, str]
@@ -454,7 +455,7 @@ class NewVar(vm._AssignBuiltin):
                 if arg.a:
                     if old_val.tag() not in (value_e.BashArray,
                                              value_e.SparseArray):
-                        rval = value.BashArray([])
+                        rval = bash_impl.SparseArray_FromList([])
                 elif arg.A:
                     if old_val.tag() != value_e.BashAssoc:
                         # mycpp limitation: NewDict() needs to be typed

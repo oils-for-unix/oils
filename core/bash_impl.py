@@ -344,6 +344,19 @@ def BashAssoc_ToStrForShellPrint(assoc_val):
 # SparseArray come here.
 
 
+def SparseArray_FromList(strs):
+    # type: (List[str]) -> value.SparseArray
+
+    d = {}  # type: Dict[mops.BigInt, str]
+    max_index = mops.MINUS_ONE  # max index for empty array
+    for s in strs:
+        max_index = mops.Add(max_index, mops.ONE)
+        if s is not None:
+            d[max_index] = s
+
+    return value.SparseArray(d, max_index)
+
+
 def SparseArray_IsEmpty(sparse_val):
     # type: (value.SparseArray) -> bool
     return len(sparse_val.d) == 0

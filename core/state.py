@@ -2083,7 +2083,7 @@ class Mem(object):
         no_str = None  # type: Optional[str]
         items = [no_str] * lval.index
         items.append(val.s)
-        new_value = value.BashArray(items)
+        new_value = bash_impl.SparseArray_FromList(items)
 
         # arrays can't be exported; can't have BashAssoc flag
         readonly = bool(flags & SetReadOnly)
@@ -2751,7 +2751,8 @@ def BuiltinSetArray(mem, name, a):
     Used by compadjust, read -a, etc.
     """
     assert isinstance(a, list)
-    BuiltinSetValue(mem, location.LName(name), value.BashArray(a))
+    BuiltinSetValue(mem, location.LName(name),
+                    bash_impl.SparseArray_FromList(a))
 
 
 def SetGlobalString(mem, name, s):
@@ -2766,7 +2767,8 @@ def SetGlobalArray(mem, name, a):
     # type: (Mem, str, List[str]) -> None
     """Used by completion, shell initialization, etc."""
     assert isinstance(a, list)
-    mem.SetNamed(location.LName(name), value.BashArray(a), scope_e.GlobalOnly)
+    mem.SetNamed(location.LName(name), bash_impl.SparseArray_FromList(a),
+                 scope_e.GlobalOnly)
 
 
 def SetGlobalValue(mem, name, val):

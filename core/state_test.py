@@ -9,6 +9,7 @@ from _devbuild.gen.runtime_asdl import scope_e
 from _devbuild.gen.syntax_asdl import source, SourceLine
 from _devbuild.gen.value_asdl import (value, value_e, sh_lvalue)
 from asdl import runtime
+from core import bash_impl
 from core import error
 from core import executor
 from core import test_lib
@@ -189,7 +190,8 @@ class MemTest(unittest.TestCase):
         # COMPREPLY=(1 2 3)
         # invariant to enforce: arrays can't be exported
         mem.SetValue(location.LName('COMPREPLY'),
-                     value.BashArray(['1', '2', '3']), scope_e.GlobalOnly)
+                     bash_impl.SparseArray_FromList(['1', '2', '3']),
+                     scope_e.GlobalOnly)
         self.assertEqual(['1', '2', '3'],
                          mem.var_stack[0]['COMPREPLY'].val.strs)
 
