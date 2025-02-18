@@ -280,7 +280,7 @@ argv.py "$s"
 s=$@
 argv.py "$s"
 
-s"$*"
+s="$*"
 argv.py "$s"
 
 s=$*
@@ -292,7 +292,7 @@ argv.py "$s"
 ## STDOUT:
 ['x y z']
 ['x y z']
-['x y z']
+['x:y z']
 ['x:y z']
 ## END
 ## BUG dash/ash/yash STDOUT:
@@ -520,6 +520,8 @@ printf "<%s>\n" $x
 
 #### 4 x 3 table: (default IFS, IFS='', IFS=zx) x ( $* "$*" $@ "$@" )
 
+setopt SH_WORD_SPLIT  # for zsh
+
 set -- 'a b' c ''
 
 # default IFS
@@ -559,6 +561,27 @@ argv.py ' "$@" ' "$@"
 [' "$@" ', 'a b', 'c', '']
 ## END
 
+# zsh disagrees on
+# - $@ with default IFS an
+# - $@ with IFS=zx
+
+## BUG zsh STDOUT:
+['  $*  ', 'a', 'b', 'c']
+[' "$*" ', 'a b c ']
+['  $@  ', 'a b', 'c']
+[' "$@" ', 'a b', 'c', '']
+
+['  $*  ', 'a b', 'c']
+[' "$*" ', 'a bc']
+['  $@  ', 'a b', 'c']
+[' "$@" ', 'a b', 'c', '']
+
+['  $*  ', 'a b', 'c', '']
+[' "$*" ', 'a bzcz']
+['  $@  ', 'a b', 'c']
+[' "$@" ', 'a b', 'c', '']
+## END
+
 ## BUG yash STDOUT:
 ['  $*  ', 'a', 'b', 'c', '']
 [' "$*" ', 'a b c ']
@@ -578,6 +601,8 @@ argv.py ' "$@" ' "$@"
 
 #### 4 x 3 table - with for loop
 case $SH in yash) exit ;; esac  # no echo -n
+
+setopt SH_WORD_SPLIT  # for zsh
 
 set -- 'a b' c ''
 
@@ -617,12 +642,14 @@ echo -n ' "$@" ';  for i in "$@"; do echo -n ' '; echo -n -$i-; done; echo
   $@   -a b- -c-
  "$@"  -a b- -c- --
 ## END
+
 ## N-I yash STDOUT:
 ## END
 
 #### IFS=x and '' and $@ - same bug as spec/toysh-posix case #12
-
 case $SH in yash) exit ;; esac  # no echo -n
+
+setopt SH_WORD_SPLIT  # for zsh
 
 set -- one '' two
 
@@ -638,7 +665,7 @@ argv.py '  $@  '  $@
 argv.py ' "$@" ' "$@"
 
 
-## STDOUT:
+## OK bash/mksh STDOUT:
   $*   -one- -- -two-
  "$*"  -one  two-
   $@   -one- -- -two-
@@ -649,7 +676,7 @@ argv.py ' "$@" ' "$@"
 [' "$@" ', 'one', '', 'two']
 ## END
 
-## BUG dash/ash STDOUT:
+## STDOUT:
   $*   -one- -two-
  "$*"  -one  two-
   $@   -one- -two-
@@ -661,4 +688,142 @@ argv.py ' "$@" ' "$@"
 ## END
 
 ## N-I yash STDOUT:
+## END
+
+#### IFS=x and '' and $@ (#2)
+setopt SH_WORD_SPLIT  # for zsh
+
+set -- "" "" "" "" ""
+argv.py =$@=
+argv.py =$*=
+echo
+
+IFS=
+argv.py =$@=
+argv.py =$*=
+echo
+
+IFS=x
+argv.py =$@=
+argv.py =$*=
+
+## STDOUT:
+['=', '=']
+['=', '=']
+
+['=', '=']
+['=', '=']
+
+['=', '=']
+['=', '=']
+## END
+
+## OK bash/mksh STDOUT:
+['=', '=']
+['=', '=']
+
+['=', '=']
+['=', '=']
+
+['=', '', '', '', '=']
+['=', '', '', '', '=']
+## END
+
+# yash-2.49 seems to behave in a strange way, but this behavior seems to have
+# been fixed at least in yash-2.57.
+
+## BUG yash STDOUT:
+['=', '', '', '', '=']
+['=', '', '', '', '=']
+
+['=', '', '', '', '=']
+['=', '', '', '', '=']
+
+['=', '', '', '', '=']
+['=', '', '', '', '=']
+## END
+
+#### IFS=x and '' and $@ (#3)
+setopt SH_WORD_SPLIT  # for zsh
+
+IFS=x
+set -- "" "" "" "" ""
+
+argv.py $*
+set -- $*
+argv.py $*
+set -- $*
+argv.py $*
+set -- $*
+argv.py $*
+set -- $*
+argv.py $*
+
+## STDOUT:
+[]
+[]
+[]
+[]
+[]
+## END
+
+## OK bash STDOUT:
+['', '', '', '']
+['', '', '']
+['', '']
+['']
+[]
+## END
+
+## OK mksh STDOUT:
+['', '', '']
+['']
+[]
+[]
+[]
+## END
+
+## BUG zsh/yash STDOUT:
+['', '', '', '', '']
+['', '', '', '', '']
+['', '', '', '', '']
+['', '', '', '', '']
+['', '', '', '', '']
+## END
+
+#### ""$A"" - empty string on both sides - derived from spec/toysh-posix #15
+
+A="   abc   def   "
+for i in $A; do echo =$i=; done
+echo
+
+A="   abc   def   "
+for i in ""$A""; do echo =$i=; done
+echo
+
+unset IFS
+
+A="   abc   def   "
+for i in $A; do echo =$i=; done
+echo
+
+A="   abc   def   "
+for i in ""$A""; do echo =$i=; done
+
+## STDOUT:
+=abc=
+=def=
+
+==
+=abc=
+=def=
+==
+
+=abc=
+=def=
+
+==
+=abc=
+=def=
+==
 ## END

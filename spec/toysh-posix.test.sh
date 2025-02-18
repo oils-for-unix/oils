@@ -202,8 +202,10 @@ myfunc one "" two
 ## N-I zsh STDOUT:
 ## END
 
-#### Behavior of IFS=x and unquoted $@ - reduction of case above
-case $SH in zsh) exit ;; esac
+#### IFS=x and '' and unquoted $@ - reduction of case above - copied into spec/word-split
+
+setopt SH_WORD_SPLIT
+#set -x
 
 set -- one "" two
 
@@ -212,24 +214,22 @@ IFS=x
 argv.py $@
 
 for i in $@; do
-  echo =$i=
+  echo -$i-
 done
 
 ## STDOUT:
 ['one', '', 'two']
-=one=
-==
-=two=
+-one-
+--
+-two-
 ## END
 
-## BUG dash/ash STDOUT:
+## BUG dash/ash/zsh STDOUT:
 ['one', 'two']
-=one=
-=two=
+-one-
+-two-
 ## END
 
-## N-I zsh STDOUT:
-## END
 
 #### for loop parsing - http://landley.net/notes.html#04-03-2020
 
@@ -260,14 +260,20 @@ if test $? -ne 0; then echo fail; fi
 
 #### IFS - http://landley.net/notes.html#15-02-2020 (TODO: osh)
 
-IFS=x; A=xabcxx; for i in $A; do echo =$i=; done
+IFS=x
+A=xabcxx
+for i in $A; do echo =$i=; done
+echo
 
-unset IFS; A="   abc   def   "; for i in ""$A""; do echo =$i=; done
+unset IFS
+A="   abc   def   "
+for i in ""$A""; do echo =$i=; done
 
 ## STDOUT:
 ==
 =abc=
 ==
+
 ==
 =abc=
 =def=
@@ -276,8 +282,8 @@ unset IFS; A="   abc   def   "; for i in ""$A""; do echo =$i=; done
 ## BUG zsh status: 1
 ## BUG zsh stdout-json: ""
 
-#### IFS 2 (TODO: osh)
-this one appears different between osh and bash
+#### IFS 2 - copied into spec/word-split
+# this one appears different between osh and bash
 A="   abc   def   "; for i in ""x""$A""; do echo =$i=; done
 
 ## STDOUT:
@@ -299,12 +305,13 @@ onextwoxxthree
 ## END
 
 #### IFS 4
-case $SH in zsh) exit ;; esac  # buggy
+
+setopt SH_WORD_SPLIT
 
 IFS=x
 
 func1() {
-  echo =$*=
+  echo /$*/
   for i in $*; do echo -$i-; done
 }
 func1 "" ""
@@ -312,36 +319,34 @@ func1 "" ""
 echo
 
 func2() {
-  echo ="$*"=
+  echo /"$*"/
   for i in =$*=; do echo -$i-; done
 }
 func2 "" ""
 
 ## STDOUT:
-= =
+/ /
 
-=x=
+/x/
 -=-
 -=-
 ## END
 ## BUG bash STDOUT:
-= =
+/ /
 --
 
-=x=
+/x/
 -=-
 -=-
 ## END
-## BUG yash STDOUT:
-= =
+## BUG yash/zsh STDOUT:
+/ /
 --
 --
 
-=x=
+/x/
 -=-
 -=-
-## END
-## N-I zsh STDOUT:
 ## END
 
 #### IFS 5
