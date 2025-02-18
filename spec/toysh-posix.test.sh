@@ -299,12 +299,13 @@ onextwoxxthree
 ## END
 
 #### IFS 4
-case $SH in zsh) exit ;; esac  # buggy
+
+setopt SH_WORD_SPLIT
 
 IFS=x
 
 func1() {
-  echo =$*=
+  echo /$*/
   for i in $*; do echo -$i-; done
 }
 func1 "" ""
@@ -312,36 +313,34 @@ func1 "" ""
 echo
 
 func2() {
-  echo ="$*"=
+  echo /"$*"/
   for i in =$*=; do echo -$i-; done
 }
 func2 "" ""
 
 ## STDOUT:
-= =
+/ /
 
-=x=
+/x/
 -=-
 -=-
 ## END
 ## BUG bash STDOUT:
-= =
+/ /
 --
 
-=x=
+/x/
 -=-
 -=-
 ## END
-## BUG yash STDOUT:
-= =
+## BUG yash/zsh STDOUT:
+/ /
 --
 --
 
-=x=
+/x/
 -=-
 -=-
-## END
-## N-I zsh STDOUT:
 ## END
 
 #### IFS 5
