@@ -305,10 +305,24 @@ onextwoxxthree
 case $SH in zsh) exit ;; esac  # buggy
 
 IFS=x
-cc() { echo =$*=; for i in $*; do echo -$i-; done;}; cc "" ""
-cc() { echo ="$*"=; for i in =$*=; do echo -$i-; done;}; cc "" ""
+
+func1() {
+  echo =$*=
+  for i in $*; do echo -$i-; done
+}
+func1 "" ""
+
+echo
+
+func2() {
+  echo ="$*"=
+  for i in =$*=; do echo -$i-; done
+}
+func2 "" ""
+
 ## STDOUT:
 = =
+
 =x=
 -=-
 -=-
@@ -316,6 +330,7 @@ cc() { echo ="$*"=; for i in =$*=; do echo -$i-; done;}; cc "" ""
 ## BUG bash STDOUT:
 = =
 --
+
 =x=
 -=-
 -=-
@@ -324,6 +339,7 @@ cc() { echo ="$*"=; for i in =$*=; do echo -$i-; done;}; cc "" ""
 = =
 --
 --
+
 =x=
 -=-
 -=-
