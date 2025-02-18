@@ -52,7 +52,7 @@ module runtime
 
     # "$@" or "${a[@]}" # never globbed or split (though other shells
     # split them)
-  | Array(List[str] strs)
+  | Array(List[str] strs, bool quoted)
     # only produced when EXTGLOB_FS flag is passed
   | ExtGlob(List[part_value] part_vals)
 

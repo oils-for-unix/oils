@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh ash yash
-## oils_failures_allowed: 11
+## oils_failures_allowed: 7
 
 # NOTE on bash bug:  After setting IFS to array, it never splits anymore?  Even
 # if you assign IFS again.
@@ -59,6 +59,18 @@ fun "a 1" "b 2" "c 3"
 #### empty argv
 argv.py 1 "$@" 2 $@ 3 "$*" 4 $* 5
 ## stdout: ['1', '2', '3', '', '4', '5']
+
+#### $* with empty IFS
+set -- "1 2" "3  4"
+
+IFS=
+argv.py $*
+argv.py "$*"
+
+## STDOUT:
+['1 2', '3  4']
+['1 23  4']
+## END
 
 #### Word elision with space
 s1=' '
@@ -337,6 +349,8 @@ printf '[%s]\n' $*
 ## END
 
 #### IFS='' with ${a[@]} and ${a[*]} (bug #627)
+case $SH in dash | ash) exit 0 ;; esac
+
 myarray=(a 'b c')
 IFS=''
 argv.py at ${myarray[@]}
@@ -346,8 +360,44 @@ argv.py star ${myarray[*]}
 ['at', 'a', 'b c']
 ['star', 'a', 'b c']
 ## END
-## N-I dash/ash status: 2
 ## N-I dash/ash stdout-json: ""
+
+#### IFS='' with ${!prefix@} and ${!prefix*} (bug #627)
+case $SH in dash | mksh | ash | yash) exit 0 ;; esac
+
+gLwbmGzS_var1=1
+gLwbmGzS_var2=2
+IFS=''
+argv.py at ${!gLwbmGzS_@}
+argv.py star ${!gLwbmGzS_*}
+
+## STDOUT:
+['at', 'gLwbmGzS_var1', 'gLwbmGzS_var2']
+['star', 'gLwbmGzS_var1', 'gLwbmGzS_var2']
+## END
+## BUG bash STDOUT:
+['at', 'gLwbmGzS_var1', 'gLwbmGzS_var2']
+['star', 'gLwbmGzS_var1gLwbmGzS_var2']
+## END
+## N-I dash/mksh/ash/yash stdout-json: ""
+
+#### IFS='' with ${!a[@]} and ${!a[*]} (bug #627)
+case $SH in dash | mksh | ash | yash) exit 0 ;; esac
+
+IFS=''
+a=(v1 v2 v3)
+argv.py at ${!a[@]}
+argv.py star ${!a[*]}
+
+## STDOUT:
+['at', '0', '1', '2']
+['star', '0', '1', '2']
+## END
+## BUG bash STDOUT:
+['at', '0', '1', '2']
+['star', '0 1 2']
+## END
+## N-I dash/mksh/ash/yash stdout-json: ""
 
 #### Bug #628 split on : with : in literal word
 IFS=':'
@@ -468,10 +518,11 @@ printf "<%s>\n" $x
 <x>
 ## END
 
-#### 4 x 2 table: (IFS='', default IFS) x ( $* "$*" $@ "$@" )
+#### 4 x 3 table: (default IFS, IFS='', IFS=zx) x ( $* "$*" $@ "$@" )
 
-set -- 'a b' c
+set -- 'a b' c ''
 
+# default IFS
 argv.py '  $*  '  $*
 argv.py ' "$*" ' "$*"
 argv.py '  $@  '  $@
@@ -483,15 +534,131 @@ argv.py '  $*  '  $*
 argv.py ' "$*" ' "$*"
 argv.py '  $@  '  $@
 argv.py ' "$@" ' "$@"
+echo
+
+IFS=zx
+argv.py '  $*  '  $*
+argv.py ' "$*" ' "$*"
+argv.py '  $@  '  $@
+argv.py ' "$@" ' "$@"
 
 ## STDOUT:
 ['  $*  ', 'a', 'b', 'c']
-[' "$*" ', 'a b c']
+[' "$*" ', 'a b c ']
 ['  $@  ', 'a', 'b', 'c']
-[' "$@" ', 'a b', 'c']
+[' "$@" ', 'a b', 'c', '']
 
 ['  $*  ', 'a b', 'c']
 [' "$*" ', 'a bc']
 ['  $@  ', 'a b', 'c']
-[' "$@" ', 'a b', 'c']
+[' "$@" ', 'a b', 'c', '']
+
+['  $*  ', 'a b', 'c']
+[' "$*" ', 'a bzcz']
+['  $@  ', 'a b', 'c']
+[' "$@" ', 'a b', 'c', '']
+## END
+
+## BUG yash STDOUT:
+['  $*  ', 'a', 'b', 'c', '']
+[' "$*" ', 'a b c ']
+['  $@  ', 'a', 'b', 'c', '']
+[' "$@" ', 'a b', 'c', '']
+
+['  $*  ', 'a b', 'c', '']
+[' "$*" ', 'a bc']
+['  $@  ', 'a b', 'c', '']
+[' "$@" ', 'a b', 'c', '']
+
+['  $*  ', 'a b', 'c', '']
+[' "$*" ', 'a bzcz']
+['  $@  ', 'a b', 'c', '']
+[' "$@" ', 'a b', 'c', '']
+## END
+
+#### 4 x 3 table - with for loop
+case $SH in yash) exit ;; esac  # no echo -n
+
+set -- 'a b' c ''
+
+# default IFS
+echo -n '  $*  ';  for i in  $*;  do echo -n ' '; echo -n -$i-; done; echo
+echo -n ' "$*" ';  for i in "$*"; do echo -n ' '; echo -n -$i-; done; echo
+echo -n '  $@  ';  for i in  $@;  do echo -n ' '; echo -n -$i-; done; echo
+echo -n ' "$@" ';  for i in "$@"; do echo -n ' '; echo -n -$i-; done; echo
+echo
+
+IFS=''
+echo -n '  $*  ';  for i in  $*;  do echo -n ' '; echo -n -$i-; done; echo
+echo -n ' "$*" ';  for i in "$*"; do echo -n ' '; echo -n -$i-; done; echo
+echo -n '  $@  ';  for i in  $@;  do echo -n ' '; echo -n -$i-; done; echo
+echo -n ' "$@" ';  for i in "$@"; do echo -n ' '; echo -n -$i-; done; echo
+echo
+
+IFS=zx
+echo -n '  $*  ';  for i in  $*;  do echo -n ' '; echo -n -$i-; done; echo
+echo -n ' "$*" ';  for i in "$*"; do echo -n ' '; echo -n -$i-; done; echo
+echo -n '  $@  ';  for i in  $@;  do echo -n ' '; echo -n -$i-; done; echo
+echo -n ' "$@" ';  for i in "$@"; do echo -n ' '; echo -n -$i-; done; echo
+
+## STDOUT:
+  $*   -a- -b- -c-
+ "$*"  -a b c -
+  $@   -a- -b- -c-
+ "$@"  -a b- -c- --
+
+  $*   -a b- -c-
+ "$*"  -a bc-
+  $@   -a b- -c-
+ "$@"  -a b- -c- --
+
+  $*   -a b- -c-
+ "$*"  -a b c -
+  $@   -a b- -c-
+ "$@"  -a b- -c- --
+## END
+## N-I yash STDOUT:
+## END
+
+#### IFS=x and '' and $@ - same bug as spec/toysh-posix case #12
+
+case $SH in yash) exit ;; esac  # no echo -n
+
+set -- one '' two
+
+IFS=zx
+echo -n '  $*  ';  for i in  $*;  do echo -n ' '; echo -n -$i-; done; echo
+echo -n ' "$*" ';  for i in "$*"; do echo -n ' '; echo -n -$i-; done; echo
+echo -n '  $@  ';  for i in  $@;  do echo -n ' '; echo -n -$i-; done; echo
+echo -n ' "$@" ';  for i in "$@"; do echo -n ' '; echo -n -$i-; done; echo
+
+argv.py '  $*  '  $*
+argv.py ' "$*" ' "$*"
+argv.py '  $@  '  $@
+argv.py ' "$@" ' "$@"
+
+
+## STDOUT:
+  $*   -one- -- -two-
+ "$*"  -one  two-
+  $@   -one- -- -two-
+ "$@"  -one- -- -two-
+['  $*  ', 'one', '', 'two']
+[' "$*" ', 'onezztwo']
+['  $@  ', 'one', '', 'two']
+[' "$@" ', 'one', '', 'two']
+## END
+
+## BUG dash/ash STDOUT:
+  $*   -one- -two-
+ "$*"  -one  two-
+  $@   -one- -two-
+ "$@"  -one- -- -two-
+['  $*  ', 'one', 'two']
+[' "$*" ', 'onezztwo']
+['  $@  ', 'one', 'two']
+[' "$@" ', 'one', '', 'two']
+## END
+
+## N-I yash STDOUT:
 ## END

@@ -223,16 +223,16 @@ def _ValueToPartValue(val, quoted, part_loc):
 
         elif case(value_e.BashArray):
             val = cast(value.BashArray, UP_val)
-            return part_value.Array(bash_impl.BashArray_GetValues(val))
+            return part_value.Array(bash_impl.BashArray_GetValues(val), quoted)
 
         elif case(value_e.SparseArray):
             val = cast(value.SparseArray, UP_val)
-            return part_value.Array(bash_impl.SparseArray_GetValues(val))
+            return part_value.Array(bash_impl.SparseArray_GetValues(val), quoted)
 
         elif case(value_e.BashAssoc):
             val = cast(value.BashAssoc, UP_val)
             # bash behavior: splice values!
-            return part_value.Array(bash_impl.BashAssoc_GetValues(val))
+            return part_value.Array(bash_impl.BashAssoc_GetValues(val), quoted)
 
         # Cases added for YSH
         # value_e.List is also here - we use val_ops.Stringify()s err message
@@ -301,9 +301,8 @@ def _MakeWordFrames(part_vals):
                     if s is None:
                         continue  # ignore undefined array entries
 
-                    # Arrays parts are always quoted; otherwise they would have
-                    # decayed to a string.
-                    piece = Piece(s, True, False)
+                    # Arrays parts are not quoted for $* and $@
+                    piece = Piece(s, p.quoted, not p.quoted)
                     if is_first:
                         current.append(piece)
                         is_first = False
@@ -1547,11 +1546,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     names = self.mem.VarNamesStartingWith(part.var_name)
                     names.sort()
 
-                    if quoted and nullary_op.id == Id.VOp3_At:
-                        part_vals.append(part_value.Array(names))
-                    else:
+                    if quoted and nullary_op.id == Id.VOp3_Star:
                         sep = self.splitter.GetJoinChar()
                         part_vals.append(Piece(sep.join(names), quoted, True))
+                    else:
+                        part_vals.append(part_value.Array(names, quoted))
                     return  # EARLY RETURN
 
             var_name = part.var_name
@@ -1660,7 +1659,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         UP_val = val
         if val.tag() == value_e.BashArray:
             array_val = cast(value.BashArray, UP_val)
-            if vsub_state.join_array:
+            if quoted and vsub_state.join_array:
                 val = self._DecayArray(array_val)
             else:
                 val = array_val
@@ -1745,7 +1744,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         UP_val = val
         if val.tag() == value_e.BashArray:
             array_val = cast(value.BashArray, UP_val)
-            if vsub_state.join_array:
+            if quoted and vsub_state.join_array:
                 val = self._DecayArray(array_val)
             else:
                 val = array_val
@@ -1919,7 +1918,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 val = self.mem.GetValue(part.var_name)
 
                 strs = self.expr_ev.SpliceValue(val, part)
-                part_vals.append(part_value.Array(strs))
+                part_vals.append(part_value.Array(strs, True))
 
             elif case(word_part_e.ExprSub):
                 part = cast(word_part.ExprSub, UP_part)
@@ -1997,7 +1996,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     raise error.FailGlob(
                         'Extended glob %r matched no files' % fnmatch_pat, w)
 
-                part_vals.append(part_value.Array(results))
+                part_vals.append(part_value.Array(results, True))
             elif bool(eval_flags & EXTGLOB_NESTED):
                 # We only glob at the TOP level of @(nested|@(pattern))
                 part_vals.extend(word_part_vals)
@@ -2601,7 +2600,7 @@ class NormalWordEvaluator(AbstractWordEvaluator):
                 raise error.Structured(4, e.Message(), cs_part.left_token)
 
             #strs = self.splitter.SplitForWordEval(stdout_str)
-            return part_value.Array(strs)
+            return part_value.Array(strs, True)
         else:
             return Piece(stdout_str, quoted, not quoted)
 
@@ -2646,7 +2645,7 @@ class CompletionWordEvaluator(AbstractWordEvaluator):
     def _EvalCommandSub(self, cs_part, quoted):
         # type: (CommandSub, bool) -> part_value_t
         if cs_part.left_token.id == Id.Left_AtParen:
-            return part_value.Array([_DUMMY])
+            return part_value.Array([_DUMMY], quoted)
         else:
             return Piece(_DUMMY, quoted, not quoted)
 

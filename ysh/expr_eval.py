@@ -417,7 +417,7 @@ class ExprEvaluator(object):
             elif case(Id.Lit_AtLBracket):  # @[split(x)]
                 strs = val_ops.ToShellArray(val, loc.WordPart(part),
                                             'Expr splice ')
-                return part_value.Array(strs)
+                return part_value.Array(strs, True)
 
             else:
                 raise AssertionError(part.left)
