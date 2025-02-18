@@ -582,40 +582,40 @@ case $SH in yash) exit ;; esac  # no echo -n
 set -- 'a b' c ''
 
 # default IFS
-echo -n '  $*  ';  for i in  $*; do echo -n "[$i]"; done; echo
-echo -n ' "$*" ';  for i in "$*"; do echo -n "[$i]"; done; echo
-echo -n '  $@  ';  for i in  $@; do echo -n "[$i]"; done; echo
-echo -n ' "$@" ';  for i in "$@"; do echo -n "[$i]"; done; echo
+echo -n '  $*  ';  for i in  $*;  do echo -n ' '; echo -n -$i-; done; echo
+echo -n ' "$*" ';  for i in "$*"; do echo -n ' '; echo -n -$i-; done; echo
+echo -n '  $@  ';  for i in  $@;  do echo -n ' '; echo -n -$i-; done; echo
+echo -n ' "$@" ';  for i in "$@"; do echo -n ' '; echo -n -$i-; done; echo
 echo
 
 IFS=''
-echo -n '  $*  ';  for i in  $*; do echo -n "[$i]"; done; echo
-echo -n ' "$*" ';  for i in "$*"; do echo -n "[$i]"; done; echo
-echo -n '  $@  ';  for i in  $@; do echo -n "[$i]"; done; echo
-echo -n ' "$@" ';  for i in "$@"; do echo -n "[$i]"; done; echo
+echo -n '  $*  ';  for i in  $*;  do echo -n ' '; echo -n -$i-; done; echo
+echo -n ' "$*" ';  for i in "$*"; do echo -n ' '; echo -n -$i-; done; echo
+echo -n '  $@  ';  for i in  $@;  do echo -n ' '; echo -n -$i-; done; echo
+echo -n ' "$@" ';  for i in "$@"; do echo -n ' '; echo -n -$i-; done; echo
 echo
 
 IFS=zx
-echo -n '  $*  ';  for i in  $*; do echo -n "[$i]"; done; echo
-echo -n ' "$*" ';  for i in "$*"; do echo -n "[$i]"; done; echo
-echo -n '  $@  ';  for i in  $@; do echo -n "[$i]"; done; echo
-echo -n ' "$@" ';  for i in "$@"; do echo -n "[$i]"; done; echo
+echo -n '  $*  ';  for i in  $*;  do echo -n ' '; echo -n -$i-; done; echo
+echo -n ' "$*" ';  for i in "$*"; do echo -n ' '; echo -n -$i-; done; echo
+echo -n '  $@  ';  for i in  $@;  do echo -n ' '; echo -n -$i-; done; echo
+echo -n ' "$@" ';  for i in "$@"; do echo -n ' '; echo -n -$i-; done; echo
 
 ## STDOUT:
-  $*  [a][b][c]
- "$*" [a b c ]
-  $@  [a][b][c]
- "$@" [a b][c][]
+  $*   -a- -b- -c-
+ "$*"  -a b c -
+  $@   -a- -b- -c-
+ "$@"  -a b- -c- --
 
-  $*  [a b][c]
- "$*" [a bc]
-  $@  [a b][c]
- "$@" [a b][c][]
+  $*   -a b- -c-
+ "$*"  -a bc-
+  $@   -a b- -c-
+ "$@"  -a b- -c- --
 
-  $*  [a b][c]
- "$*" [a bzcz]
-  $@  [a b][c]
- "$@" [a b][c][]
+  $*   -a b- -c-
+ "$*"  -a b c -
+  $@   -a b- -c-
+ "$@"  -a b- -c- --
 ## END
 ## N-I yash STDOUT:
 ## END
