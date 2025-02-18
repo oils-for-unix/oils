@@ -518,7 +518,7 @@ printf "<%s>\n" $x
 <x>
 ## END
 
-#### 4 x 2 table: (IFS='', default IFS) x ( $* "$*" $@ "$@" )
+#### 4 x 3 table: (default IFS, IFS='', IFS=zx) x ( $* "$*" $@ "$@" )
 
 set -- 'a b' c
 
@@ -533,6 +533,13 @@ argv.py '  $*  '  $*
 argv.py ' "$*" ' "$*"
 argv.py '  $@  '  $@
 argv.py ' "$@" ' "$@"
+echo
+
+IFS=zx
+argv.py '  $*  '  $*
+argv.py ' "$*" ' "$*"
+argv.py '  $@  '  $@
+argv.py ' "$@" ' "$@"
 
 ## STDOUT:
 ['  $*  ', 'a', 'b', 'c']
@@ -542,6 +549,11 @@ argv.py ' "$@" ' "$@"
 
 ['  $*  ', 'a b', 'c']
 [' "$*" ', 'a bc']
+['  $@  ', 'a b', 'c']
+[' "$@" ', 'a b', 'c']
+
+['  $*  ', 'a b', 'c']
+[' "$*" ', 'a bzc']
 ['  $@  ', 'a b', 'c']
 [' "$@" ', 'a b', 'c']
 ## END
