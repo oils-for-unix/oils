@@ -384,8 +384,8 @@ declare -p a0 a1 a2 sp
 
 ## STDOUT:
 declare -a a0=()
-declare -a a1=([0]=1)
-declare -a a2=([0]=1 [1]=2)
+declare -a a1=(1)
+declare -a a2=(1 2)
 declare -a sp=([0]=x [1]=y [2]=z [3]=w [500]=100 [1000]=100)
 ## END
 
@@ -582,7 +582,7 @@ unset -v "a[0]"
 declare -p a
 
 ## STDOUT:
-declare -a a=([0]=1 [1]=2 [2]=3 [3]=4 [4]=5 [5]=6 [6]=7 [7]=8 [8]=9)
+declare -a a=(1 2 3 4 5 6 7 8 9)
 declare -a a=([0]=1 [2]=3 [3]=4 [4]=5 [5]=6 [6]=7 [7]=8 [8]=9)
 declare -a a=([0]=1 [2]=3 [3]=4 [4]=5 [5]=6 [6]=7 [7]=8 [8]=9)
 declare -a a=([2]=3 [3]=4 [4]=5 [5]=6 [6]=7 [7]=8 [8]=9)
@@ -631,8 +631,8 @@ a[-1]=x
 declare -p a
 
 ## STDOUT:
-declare -a a=([0]=1 [1]=2 [2]=3 [3]=4 [4]=5 [5]=6 [6]=7 [7]=x)
-declare -a a=([0]=1 [1]=2 [2]=3 [3]=4 [4]=5 [5]=6 [6]=x)
+declare -a a=(1 2 3 4 5 6 7 x)
+declare -a a=(1 2 3 4 5 6 x)
 ## END
 
 ## N-I bash/zsh/mksh/ash STDOUT:
