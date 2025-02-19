@@ -26,7 +26,7 @@ echo $length
 3
 ## END
 
-#### Length doesn't apply to BashArray
+#### Length doesn't apply to SparseArray
 x=(a b c)
 x[10]=A
 x[20]=B

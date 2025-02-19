@@ -1202,7 +1202,7 @@ pp test_ (_reply)
 ## STDOUT:
 ## END
 
-#### BashArray can be serialized
+#### SparseArray can be serialized
 
 declare -a empty_array
 
@@ -1214,11 +1214,11 @@ json write (array)
 
 ## STDOUT:
 {
-  "type": "BashArray",
+  "type": "SparseArray",
   "data": {}
 }
 {
-  "type": "BashArray",
+  "type": "SparseArray",
   "data": {
     "0": "x",
     "1": "y",

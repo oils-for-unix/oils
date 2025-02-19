@@ -1,6 +1,6 @@
 ## oils_failures_allowed: 3
 
-#### append onto BashArray a=(1 2)
+#### append onto SparseArray a=(1 2)
 shopt -s parse_at
 a=(1 2)
 append '3 4' '5' (a)

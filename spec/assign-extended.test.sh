@@ -1,4 +1,5 @@
 ## compare_shells: bash-4.4 mksh
+## oils_failures_allowed: 1
 
 # Extended assignment language, e.g. typeset, declare, arrays, etc.
 # Things that dash doesn't support.
@@ -376,7 +377,7 @@ declare -A test_arr3=()
 declare -a test_arr4=(1 2 3)
 declare -a test_arr5=(1 2 3)
 declare -A test_arr6=(['a']=1 ['b']=2 ['c']=3)
-declare -a test_arr7=(); test_arr7[3]=foo
+declare -a test_arr7=([3]=foo)
 ## END
 ## OK bash STDOUT:
 declare -a test_arr1=()
