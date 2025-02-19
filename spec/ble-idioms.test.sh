@@ -1254,7 +1254,7 @@ hello, world
 ## END
 
 
-#### BashArray: ${!a[0]}
+#### BashArray: ${!a[@]}
 case $SH in zsh|mksh|ash) exit ;; esac
 
 a=(v{0..9})
@@ -1326,7 +1326,7 @@ compgen -F _set_COMPREPLY
 ## END
 
 
-#### BashArray: compgen -F _set_COMPREPLY
+#### BashArray: compadjust
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 a=(echo 'Hello,' 'Bash' 'world!')
