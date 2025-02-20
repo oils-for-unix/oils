@@ -171,7 +171,7 @@ declare -a array=(a b)
 array[5]=c
 argv.py "${array[@]}"
 
-# TODO: Should print this like this bash, with value.BashArray
+# TODO: Should print this like this bash, with value.SparseArray
 declare -a
 
 for i, item in (array) {
@@ -181,7 +181,7 @@ for i, item in (array) {
 ## status: 3
 ## STDOUT:
 ['a', 'b', 'c']
-array=(); array[0]=a array[1]=b array[5]=c
+array=([0]=a [1]=b [5]=c)
 ## END
 
 #### Slice bash array isn't allowed

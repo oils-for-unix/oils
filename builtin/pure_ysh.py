@@ -226,7 +226,8 @@ class Append(vm._Builtin):
                          for s in arg_r.Rest()]  # type: List[value_t]
                 val.items.extend(typed)
             else:
-                raise error.TypeErr(val, 'expected List or BashArray',
-                                    loc.Missing)
+                raise error.TypeErr(
+                    val, 'expected List, BashArray, or SparseArray',
+                    loc.Missing)
 
         return 0

@@ -120,7 +120,7 @@ pp test_ ({k: array_1})
 (Dict)   {"k":{"type":"SparseArray","data":{"0":"hello","5":"5"}}}
 ## END
 
-#### BashArray, short
+#### SparseArray, short
 declare -a empty=()
 declare -a array_1=(hello)
 
@@ -140,20 +140,20 @@ pp test_ ({k: empty})
 pp test_ ({k: array_1})
 
 ## STDOUT:
-(BashArray)
-(BashArray 'hello')
+(SparseArray)
+(SparseArray [0]='hello')
 
-(Dict)  {k: (BashArray)}
-(Dict)  {k: (BashArray 'hello')}
+(Dict)  {k: (SparseArray)}
+(Dict)  {k: (SparseArray [0]='hello')}
 
-{"type":"BashArray","data":{}}
-{"type":"BashArray","data":{"0":"hello"}}
+{"type":"SparseArray","data":{}}
+{"type":"SparseArray","data":{"0":"hello"}}
 
-(Dict)   {"k":{"type":"BashArray","data":{}}}
-(Dict)   {"k":{"type":"BashArray","data":{"0":"hello"}}}
+(Dict)   {"k":{"type":"SparseArray","data":{}}}
+(Dict)   {"k":{"type":"SparseArray","data":{"0":"hello"}}}
 ## END
 
-#### BashArray, long
+#### SparseArray, long
 declare -a array_3
 array_3[0]="world"
 array_3[2]=*.py
@@ -162,11 +162,19 @@ do eiusmod.)
 = array_3
 = array_long
 ## STDOUT:
-(BashArray 'world' null '*.py')
-(BashArray
-    'Lorem'       'ipsum'       'dolor'       'sit'         'amet,'
-    'consectetur' 'adipiscing'  'elit,'       'sed'         'do'
-    'eiusmod.'
+(SparseArray [0]='world' [2]='*.py')
+(SparseArray
+    [0]='Lorem'
+    [1]='ipsum'
+    [2]='dolor'
+    [3]='sit'
+    [4]='amet,'
+    [5]='consectetur'
+    [6]='adipiscing'
+    [7]='elit,'
+    [8]='sed'
+    [9]='do'
+    [10]='eiusmod.'
 )
 ## END
 

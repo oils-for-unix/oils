@@ -1016,7 +1016,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
                 else:
                     raise error.TypeErr(
-                        val, 'Unary op expected Str, BashArray, BashAssoc',
+                        val,
+                        'Unary op expected Str, BashArray, SparseArray, or BashAssoc',
                         op.op)
 
         else:
@@ -1077,7 +1078,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             else:
                 raise error.TypeErr(
-                    val, 'Pat Sub op expected Str, BashArray, BashAssoc',
+                    val,
+                    'Pat Sub op expected Str, BashArray, SparseArray, or BashAssoc',
                     op.slash_tok)
 
         return val
@@ -1352,9 +1354,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     val = value.Str(s)
 
             else:
-                raise error.TypeErr(val,
-                                    'Index op expected BashArray, BashAssoc',
-                                    loc.WordPart(part))
+                raise error.TypeErr(
+                    val,
+                    'Index op expected BashArray, SparseArray, or BashAssoc',
+                    loc.WordPart(part))
 
         return val
 
@@ -2165,7 +2168,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 array_words = part0.words
                 words = braces.BraceExpandWords(array_words)
                 strs = self.EvalWordSequence(words)
-                return value.BashArray(strs)
+                return bash_impl.SparseArray_FromList(strs)
 
             if tag == word_part_e.BashAssocLiteral:
                 part0 = cast(word_part.BashAssocLiteral, UP_part0)

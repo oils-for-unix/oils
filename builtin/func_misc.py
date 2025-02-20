@@ -6,6 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str, Obj)
 
+from core import bash_impl
 from core import error
 from core import num
 from display import pp_value
@@ -618,19 +619,27 @@ class BashArrayToSparse(vm._Callable):
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        strs = rd.PosBashArray()
+        val = rd.PosValue()
         rd.Done()
 
-        d = {}  # type: Dict[mops.BigInt, str]
-        max_index = mops.MINUS_ONE  # max index for empty array
-        for i, s in enumerate(strs):
-            if s is not None:
-                big_i = mops.IntWiden(i)
-                d[big_i] = s
-                if mops.Greater(big_i, max_index):
-                    max_index = big_i
+        UP_val = val
+        if val.tag() == value_e.BashArray:
+            val = cast(value.BashArray, UP_val)
+            return bash_impl.SparseArray_FromList(val.strs)
+        elif val.tag() == value_e.SparseArray:
+            val = cast(value.SparseArray, UP_val)
 
-        return value.SparseArray(d, max_index)
+            # d = val.d.copy()
+            # d = dict(val.d)
+            d = {}  # type: Dict[mops.BigInt, str]
+            for k, v in iteritems(val.d):
+                d[k] = v
+
+            return value.SparseArray(d, val.max_index)
+        else:
+            raise error.TypeErr(
+                val, 'Arg %d should be a BashArray or SparseArray' %
+                rd.pos_consumed, rd.BlamePos())
 
 
 class SparseOp(vm._Callable):
@@ -765,7 +774,20 @@ class SparseOp(vm._Callable):
             return value.BashArray(items2)
 
         elif op_name == 'append':  # a+=(x y)
-            strs = rd.PosBashArray()
+            val = rd.PosValue()
+            rd.Done()
+
+            UP_val = val
+            if val.tag() == value_e.BashArray:
+                val = cast(value.BashArray, UP_val)
+                strs = bash_impl.BashArray_GetValues(val)
+            elif val.tag() == value_e.SparseArray:
+                val = cast(value.SparseArray, UP_val)
+                strs = bash_impl.SparseArray_GetValues(val)
+            else:
+                raise error.TypeErr(
+                    val, 'Arg %d should be a BashArray or SparseArray' %
+                    rd.pos_consumed, rd.BlamePos())
 
             # TODO: We can maintain the max index in the value.SparseArray(),
             # so that it's O(1) to append rather than O(n)
