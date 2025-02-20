@@ -1272,6 +1272,28 @@ argv.py "${!a[@]}"
 ## END
 
 
+#### SparseArray: "${a[*]}"
+case $SH in zsh|mksh|ash) exit ;; esac
+
+a=(v{0..9})
+unset -v 'a[3]' 'a[4]' 'a[7]' 'a[9]'
+
+echo "${a[*]}"
+IFS=
+echo "${a[*]}"
+IFS=/
+echo "${a[*]}"
+
+## STDOUT:
+v0 v1 v2 v5 v6 v8
+v0v1v2v5v6v8
+v0/v1/v2/v5/v6/v8
+## END
+
+## N-I zsh/mksh/ash STDOUT:
+## END
+
+
 #### SparseArray: compgen -F _set_COMPREPLY
 case $SH in zsh|mksh|ash) exit ;; esac
 
