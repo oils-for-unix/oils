@@ -681,7 +681,7 @@ def _DumpVarFrame(frame):
                 cell_json['val'] = value.Null
 
             elif case(value_e.Str, value_e.InternalStringArray,
-                      value_e.BashAssoc, value_e.SparseArray):
+                      value_e.BashAssoc, value_e.BashArray):
                 cell_json['val'] = cell.val
 
             else:
@@ -2035,12 +2035,12 @@ class Mem(object):
                                 % (lval.index, n), left_loc)
                         return
 
-                    elif case2(value_e.SparseArray):
-                        lhs_sp = cast(value.SparseArray, UP_cell_val)
-                        error_code = bash_impl.SparseArray_SetElement(
+                    elif case2(value_e.BashArray):
+                        lhs_sp = cast(value.BashArray, UP_cell_val)
+                        error_code = bash_impl.BashArray_SetElement(
                             lhs_sp, mops.IntWiden(lval.index), rval.s)
                         if error_code == error_code_e.IndexOutOfRange:
-                            n_big = bash_impl.SparseArray_Length(lhs_sp)
+                            n_big = bash_impl.BashArray_Length(lhs_sp)
                             e_die(
                                 "Index %d is out of bounds for array of length %s"
                                 % (lval.index, mops.ToStr(n_big)), left_loc)
@@ -2083,7 +2083,7 @@ class Mem(object):
         no_str = None  # type: Optional[str]
         items = [no_str] * lval.index
         items.append(val.s)
-        new_value = bash_impl.SparseArray_FromList(items)
+        new_value = bash_impl.BashArray_FromList(items)
 
         # arrays can't be exported; can't have BashAssoc flag
         readonly = bool(flags & SetReadOnly)
@@ -2363,12 +2363,12 @@ class Mem(object):
                         raise error.Runtime(
                             "%s[%d]: Index is out of bounds for array of length %d"
                             % (var_name, lval.index, n))
-                elif val.tag() == value_e.SparseArray:
-                    val = cast(value.SparseArray, UP_val)
-                    error_code = bash_impl.SparseArray_UnsetElement(
+                elif val.tag() == value_e.BashArray:
+                    val = cast(value.BashArray, UP_val)
+                    error_code = bash_impl.BashArray_UnsetElement(
                         val, mops.IntWiden(lval.index))
                     if error_code == error_code_e.IndexOutOfRange:
-                        big_length = bash_impl.SparseArray_Length(val)
+                        big_length = bash_impl.BashArray_Length(val)
                         raise error.Runtime(
                             "%s[%d]: Index is out of bounds for array of length %s"
                             % (var_name, lval.index, mops.ToStr(big_length)))
@@ -2754,8 +2754,7 @@ def BuiltinSetArray(mem, name, a):
     Used by compadjust, read -a, etc.
     """
     assert isinstance(a, list)
-    BuiltinSetValue(mem, location.LName(name),
-                    bash_impl.SparseArray_FromList(a))
+    BuiltinSetValue(mem, location.LName(name), bash_impl.BashArray_FromList(a))
 
 
 def SetGlobalString(mem, name, s):
@@ -2770,7 +2769,7 @@ def SetGlobalArray(mem, name, a):
     # type: (Mem, str, List[str]) -> None
     """Used by completion, shell initialization, etc."""
     assert isinstance(a, list)
-    mem.SetNamed(location.LName(name), bash_impl.SparseArray_FromList(a),
+    mem.SetNamed(location.LName(name), bash_impl.BashArray_FromList(a),
                  scope_e.GlobalOnly)
 
 

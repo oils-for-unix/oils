@@ -206,14 +206,14 @@ class ValueEncoder(pp_hnode.BaseEncoder):
         return self._SurroundedAndPrefixed('(', type_name, ' ',
                                            self._Join(mdocs, '', ' '), ')')
 
-    def _SparseArray(self, val):
-        # type: (value.SparseArray) -> MeasuredDoc
-        type_name = self._Styled(self.type_style, AsciiText('SparseArray'))
-        if bash_impl.SparseArray_Count(val) == 0:
+    def _BashArray(self, val):
+        # type: (value.BashArray) -> MeasuredDoc
+        type_name = self._Styled(self.type_style, AsciiText('BashArray'))
+        if bash_impl.BashArray_Count(val) == 0:
             return _Concat([AsciiText('('), type_name, AsciiText(')')])
         mdocs = []  # type: List[MeasuredDoc]
-        for k2 in bash_impl.SparseArray_GetKeys(val):
-            v2, error_code = bash_impl.SparseArray_GetElement(val, k2)
+        for k2 in bash_impl.BashArray_GetKeys(val):
+            v2, error_code = bash_impl.BashArray_GetElement(val, k2)
             assert error_code == error_code_e.OK, error_code
             mdocs.append(
                 _Concat([
@@ -307,9 +307,9 @@ class ValueEncoder(pp_hnode.BaseEncoder):
                     self.visiting[heap_id] = False
                     return result
 
-            elif case(value_e.SparseArray):
-                sparse = cast(value.SparseArray, val)
-                return self._SparseArray(sparse)
+            elif case(value_e.BashArray):
+                sparse = cast(value.BashArray, val)
+                return self._BashArray(sparse)
 
             elif case(value_e.InternalStringArray):
                 varray = cast(value.InternalStringArray, val)

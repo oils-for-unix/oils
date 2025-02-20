@@ -271,7 +271,7 @@ echo "${a[@]}"
 ## END
 
 
-#### SparseArray Performance demo
+#### BashArray Performance demo
 
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
@@ -314,7 +314,7 @@ echo subst: @[_opsp(sp, 'subst')]
 echo keys: @[_opsp(sp, 'keys')]
 
 ## STDOUT:
-SparseArray
+BashArray
 len: 6
 subst: foo 25 26 27 bar sparse
 keys: 0 1 2 3 4 10
@@ -335,7 +335,7 @@ keys: 0 1 2 3 4 10 12
 ## END
 
 
-#### SparseArray: test length
+#### BashArray: test length
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 declare -a a=(x y z)
@@ -360,7 +360,7 @@ len=5
 ## END
 
 
-#### SparseArray: test "declare -p sp"
+#### BashArray: test "declare -p sp"
 case $SH in zsh|ash) exit ;; esac
 
 a0=()
@@ -414,7 +414,7 @@ typeset a[1000]=100
 ## N-I zsh/ash STDOUT:
 ## END
 
-#### SparseArray: +=
+#### BashArray: +=
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 sp1[10]=a
@@ -434,7 +434,7 @@ declare -a sp1=([10]=a [20]=b [99]=c [100]=1 [101]=2 [102]=3)
 ## END
 
 
-#### SparseArray: a[i]=v
+#### BashArray: a[i]=v
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 sp1[10]=a
@@ -456,7 +456,7 @@ declare -a sp1=([10]=X [20]=b [25]=Y [30]=c [90]=Z)
 ## END
 
 
-#### SparseArray: Negative index with a[i]=v
+#### BashArray: Negative index with a[i]=v
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 sp1[9]=x
@@ -478,7 +478,7 @@ declare -a sp1=([0]=D [2]=C [6]=B [9]=A)
 ## END
 
 
-#### SparseArray: a[i]=v with BigInt
+#### BashArray: a[i]=v with BigInt
 case $SH in zsh|mksh|ash) exit ;; esac
 
 sp1[1]=x
@@ -505,7 +505,7 @@ echo "${#sp1[@]}"
 ## END
 
 
-#### SparseArray: Negative out-of-bound index with a[i]=v (1/2)
+#### BashArray: Negative out-of-bound index with a[i]=v (1/2)
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 sp1[9]=x
@@ -528,7 +528,7 @@ declare -p sp1
 ## END
 
 
-#### SparseArray: Negative out-of-bound index with a[i]=v (2/2)
+#### BashArray: Negative out-of-bound index with a[i]=v (2/2)
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 sp1[9]=x
@@ -551,7 +551,7 @@ declare -p sp1
 ## END
 
 
-#### SparseArray: xtrace a+=()
+#### BashArray: xtrace a+=()
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 sp1=(1)
@@ -567,7 +567,7 @@ sp1+=(2)
 ## END
 
 
-#### SparseArray: unset -v a[i]
+#### BashArray: unset -v a[i]
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 a=({1..9})
@@ -592,7 +592,7 @@ declare -a a=([2]=3 [3]=4 [4]=5 [5]=6 [6]=7 [7]=8 [8]=9)
 ## END
 
 
-#### SparseArray: unset -v a[i] with out-of-bound negative index
+#### BashArray: unset -v a[i] with out-of-bound negative index
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 a=(1)
@@ -618,7 +618,7 @@ unset -v "a[-3]"
 ## END
 
 
-#### SparseArray: unset -v a[i] for max index
+#### BashArray: unset -v a[i] for max index
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 a=({1..9})
@@ -639,7 +639,7 @@ declare -a a=(1 2 3 4 5 6 x)
 ## END
 
 
-#### SparseArray: [[ -v a[i] ]]
+#### BashArray: [[ -v a[i] ]]
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 a=()
@@ -690,7 +690,7 @@ var sp3 = _a2sp(a)
 ## END
 
 
-#### SparseArray: [[ -v a[i] ]] with invalid negative index
+#### BashArray: [[ -v a[i] ]] with invalid negative index
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 a=()
@@ -722,7 +722,7 @@ var sp3 = _a2sp(a)
 ## END
 
 
-#### SparseArray: ((sp[i])) and ((sp[i]++))
+#### BashArray: ((sp[i])) and ((sp[i]++))
 case $SH in zsh|mksh|ash) exit ;; esac
 
 a=({1..9})
@@ -774,7 +774,7 @@ echo $((a[7] = 100, a[7]))
 ## END
 
 
-#### SparseArray: ((sp[i])) and ((sp[i]++)) with invalid negative index
+#### BashArray: ((sp[i])) and ((sp[i]++)) with invalid negative index
 case $SH in zsh|mksh|ash) exit ;; esac
 
 a=({1..9})
@@ -802,7 +802,7 @@ bash: line 7: a: bad array subscript
 ## END
 
 
-#### SparseArray: ${sp[i]}
+#### BashArray: ${sp[i]}
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 a=({1..9})
@@ -842,7 +842,7 @@ sp[-9]: '1'.
 ## END
 
 
-#### SparseArray: ${sp[i]} with negative invalid index
+#### BashArray: ${sp[i]} with negative invalid index
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 a=({1..9})
@@ -878,7 +878,7 @@ sp[-19]: ''.
 ## END
 
 
-#### SparseArray (YSH): @[sp] and @sp
+#### BashArray (YSH): @[sp] and @sp
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 a=({0..5})
@@ -897,7 +897,7 @@ argv.py @a
 ## END
 
 
-#### SparseArray: ${a[@]:offset:length}
+#### BashArray: ${a[@]:offset:length}
 case $SH in zsh|mksh|ash) exit ;; esac
 
 a=(v{0..9})
@@ -1016,7 +1016,7 @@ set -- v{1..9}
 ## END
 
 
-#### SparseArray: ${a[@]:BigInt}
+#### BashArray: ${a[@]:BigInt}
 case $SH in zsh|mksh|ash) exit ;; esac
 
 case $SH in
@@ -1065,7 +1065,7 @@ echo "[${a[@]: -4}][${a[*]: -4}]"
 ## END
 
 
-#### SparseArray: ${a[@]}
+#### BashArray: ${a[@]}
 
 case $SH in zsh|mksh|ash) exit ;; esac
 
@@ -1085,7 +1085,7 @@ argv.py "abc${a[@]}xyz"
 ## END
 
 
-#### SparseArray: ${a[@]#...}
+#### BashArray: ${a[@]#...}
 
 case $SH in zsh|mksh|ash) exit ;; esac
 
@@ -1111,7 +1111,7 @@ argv.py "${a[@]#v?}"
 ## END
 
 
-#### SparseArray: ${a[@]/pat/rep}
+#### BashArray: ${a[@]/pat/rep}
 
 case $SH in zsh|mksh|ash) exit ;; esac
 
@@ -1144,7 +1144,7 @@ argv.py "${a[@]//[!0-5]/_}"
 ## END
 
 
-#### SparseArray: ${a[@]@P}, ${a[@]@Q}, and ${a[@]@a}
+#### BashArray: ${a[@]@P}, ${a[@]@Q}, and ${a[@]@a}
 case $SH in zsh|mksh|ash) exit ;; esac
 
 a=(v{0..9})
@@ -1180,7 +1180,7 @@ argv.py "${a[*]@a}"
 ## END
 
 
-#### SparseArray: ${a[@]-unset}, ${a[@]:-empty}, etc.
+#### BashArray: ${a[@]-unset}, ${a[@]:-empty}, etc.
 case $SH in zsh|mksh|ash) exit ;; esac
 
 a1=()
@@ -1212,7 +1212,7 @@ a3 empty: [ ]
 ## END
 
 
-#### SparseArray: ${a-}
+#### BashArray: ${a-}
 case $SH in zsh|mksh|ash) exit ;; esac
 
 a1=()
@@ -1235,7 +1235,7 @@ foo, foo, foo;
 ## END
 
 
-#### SparseArray: ${!a[0]}
+#### BashArray: ${!a[0]}
 case $SH in zsh|mksh|ash) exit ;; esac
 
 v1=hello v2=world
@@ -1253,7 +1253,7 @@ hello, world
 ## END
 
 
-#### SparseArray: ${!a[0]}
+#### BashArray: ${!a[0]}
 case $SH in zsh|mksh|ash) exit ;; esac
 
 a=(v{0..9})
@@ -1272,7 +1272,7 @@ argv.py "${!a[@]}"
 ## END
 
 
-#### SparseArray: "${a[*]}"
+#### BashArray: "${a[*]}"
 case $SH in zsh|mksh|ash) exit ;; esac
 
 a=(v{0..9})
@@ -1294,7 +1294,7 @@ v0/v1/v2/v5/v6/v8
 ## END
 
 
-#### SparseArray: compgen -F _set_COMPREPLY
+#### BashArray: compgen -F _set_COMPREPLY
 case $SH in zsh|mksh|ash) exit ;; esac
 
 a=({0..9})
@@ -1325,7 +1325,7 @@ compgen -F _set_COMPREPLY
 ## END
 
 
-#### SparseArray: compgen -F _set_COMPREPLY
+#### BashArray: compgen -F _set_COMPREPLY
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 a=(echo 'Hello,' 'Bash' 'world!')
@@ -1343,7 +1343,7 @@ argv.py "${words[@]}"
 ## END
 
 
-#### SparseArray (YSH): $[a1 === a2]
+#### BashArray (YSH): $[a1 === a2]
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 a1=(1 2 3)
@@ -1380,7 +1380,7 @@ false
 ## END
 
 
-#### SparseArray (YSH): append v1 v2... (a)
+#### BashArray (YSH): append v1 v2... (a)
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 a=(1 2 3)
@@ -1390,14 +1390,14 @@ append 'x' 'y' 'z' (a)
 = a
 
 ## STDOUT:
-(SparseArray [0]='1' [2]='3' [3]='x' [4]='y' [5]='z')
+(BashArray [0]='1' [2]='3' [3]='x' [4]='y' [5]='z')
 ## END
 
 ## N-I bash/zsh/mksh/ash STDOUT:
 ## END
 
 
-#### SparseArray (YSH): $[bool(a)]
+#### BashArray (YSH): $[bool(a)]
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 a1=()
@@ -1426,7 +1426,7 @@ true
 ## END
 
 
-#### SparseArray: crash dump
+#### BashArray: crash dump
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
 OILS_CRASH_DUMP_DIR=$TMP $SH -ec 'a=({0..3}); unset -v "a[2]"; var a = _a2sp(a); false'
@@ -1436,7 +1436,7 @@ json write (crash_dump.var_stack[0].a)
 ## STDOUT:
 {
   "val": {
-    "type": "SparseArray",
+    "type": "BashArray",
     "data": {
       "0": "0",
       "1": "1",

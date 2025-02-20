@@ -190,7 +190,7 @@ class MemTest(unittest.TestCase):
         # COMPREPLY=(1 2 3)
         # invariant to enforce: arrays can't be exported
         mem.SetValue(location.LName('COMPREPLY'),
-                     bash_impl.SparseArray_FromList(['1', '2', '3']),
+                     bash_impl.BashArray_FromList(['1', '2', '3']),
                      scope_e.GlobalOnly)
         compreply_val = mem.var_stack[0]['COMPREPLY'].val
         self.assertEqual(['1', '2', '3'], sorted(compreply_val.d.values()))

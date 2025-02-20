@@ -869,7 +869,7 @@ mksh: <stdin>[2]: syntax error: 'e[-1]' unexpected operator/operand
 ## END
 
 
-#### a+=() modifies existing instance of SparseArray
+#### a+=() modifies existing instance of BashArray
 case $SH in mksh|bash) exit ;; esac
 
 a=(1 2 3)

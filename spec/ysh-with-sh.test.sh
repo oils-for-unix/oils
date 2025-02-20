@@ -171,7 +171,7 @@ declare -a array=(a b)
 array[5]=c
 argv.py "${array[@]}"
 
-# TODO: Should print this like this bash, with value.SparseArray
+# TODO: Should print this like this bash, with value.BashArray
 declare -a
 
 for i, item in (array) {

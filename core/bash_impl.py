@@ -343,12 +343,12 @@ def BashAssoc_ToStrForShellPrint(assoc_val):
 
 
 #------------------------------------------------------------------------------
-# All SparseArray operations depending on the internal representation of
-# SparseArray come here.
+# All BashArray operations depending on the internal representation of
+# BashArray come here.
 
 
-def SparseArray_FromList(strs):
-    # type: (List[str]) -> value.SparseArray
+def BashArray_FromList(strs):
+    # type: (List[str]) -> value.BashArray
 
     d = {}  # type: Dict[mops.BigInt, str]
     max_index = mops.MINUS_ONE  # max index for empty array
@@ -357,33 +357,33 @@ def SparseArray_FromList(strs):
         if s is not None:
             d[max_index] = s
 
-    return value.SparseArray(d, max_index)
+    return value.BashArray(d, max_index)
 
 
-def SparseArray_IsEmpty(sparse_val):
-    # type: (value.SparseArray) -> bool
+def BashArray_IsEmpty(sparse_val):
+    # type: (value.BashArray) -> bool
     return len(sparse_val.d) == 0
 
 
-def SparseArray_Count(sparse_val):
-    # type: (value.SparseArray) -> int
+def BashArray_Count(sparse_val):
+    # type: (value.BashArray) -> int
     return len(sparse_val.d)
 
 
-def SparseArray_Length(sparse_val):
-    # type: (value.SparseArray) -> mops.BigInt
+def BashArray_Length(sparse_val):
+    # type: (value.BashArray) -> mops.BigInt
     return mops.Add(sparse_val.max_index, mops.ONE)
 
 
-def SparseArray_GetKeys(sparse_val):
-    # type: (value.SparseArray) -> List[mops.BigInt]
+def BashArray_GetKeys(sparse_val):
+    # type: (value.BashArray) -> List[mops.BigInt]
     keys = sparse_val.d.keys()
     mylib.BigIntSort(keys)
     return keys
 
 
-def SparseArray_GetValues(sparse_val):
-    # type: (value.SparseArray) -> List[str]
+def BashArray_GetValues(sparse_val):
+    # type: (value.BashArray) -> List[str]
     """Get the list of values.  This function does not fill None for
     the unset elements, so the index in the returned list does not
     match the index in a sparse array.
@@ -391,20 +391,20 @@ def SparseArray_GetValues(sparse_val):
     """
 
     values = []  # type: List[str]
-    for index in SparseArray_GetKeys(sparse_val):
+    for index in BashArray_GetKeys(sparse_val):
         values.append(sparse_val.d[index])
     return values
 
 
-def SparseArray_AppendValues(sparse_val, strs):
-    # type: (value.SparseArray, List[str]) ->  None
+def BashArray_AppendValues(sparse_val, strs):
+    # type: (value.BashArray, List[str]) ->  None
     for s in strs:
         sparse_val.max_index = mops.Add(sparse_val.max_index, mops.ONE)
         sparse_val.d[sparse_val.max_index] = s
 
 
-def _SparseArray_CanonicalizeIndex(sparse_val, index):
-    # type: (value.SparseArray, mops.BigInt) -> Tuple[mops.BigInt, error_code_t]
+def _BashArray_CanonicalizeIndex(sparse_val, index):
+    # type: (value.BashArray, mops.BigInt) -> Tuple[mops.BigInt, error_code_t]
     """This function returns (mops.BigInt(-1),
     error_code_e.IndexOutOfRange) when
     the specified index is out of range.  For example, it includes the
@@ -420,25 +420,25 @@ def _SparseArray_CanonicalizeIndex(sparse_val, index):
     return index, error_code_e.OK
 
 
-def SparseArray_HasElement(sparse_val, index):
-    # type: (value.SparseArray, mops.BigInt) -> Tuple[bool, error_code_t]
-    index, error_code = _SparseArray_CanonicalizeIndex(sparse_val, index)
+def BashArray_HasElement(sparse_val, index):
+    # type: (value.BashArray, mops.BigInt) -> Tuple[bool, error_code_t]
+    index, error_code = _BashArray_CanonicalizeIndex(sparse_val, index)
     if error_code != error_code_e.OK:
         return False, error_code
     return index in sparse_val.d, error_code_e.OK
 
 
-def SparseArray_GetElement(sparse_val, index):
-    # type: (value.SparseArray, mops.BigInt) -> Tuple[Optional[str], error_code_t]
-    index, error_code = _SparseArray_CanonicalizeIndex(sparse_val, index)
+def BashArray_GetElement(sparse_val, index):
+    # type: (value.BashArray, mops.BigInt) -> Tuple[Optional[str], error_code_t]
+    index, error_code = _BashArray_CanonicalizeIndex(sparse_val, index)
     if error_code != error_code_e.OK:
         return None, error_code
     return sparse_val.d.get(index), error_code_e.OK
 
 
-def SparseArray_SetElement(sparse_val, index, s):
-    # type: (value.SparseArray, mops.BigInt, str) -> error_code_t
-    index, error_code = _SparseArray_CanonicalizeIndex(sparse_val, index)
+def BashArray_SetElement(sparse_val, index, s):
+    # type: (value.BashArray, mops.BigInt, str) -> error_code_t
+    index, error_code = _BashArray_CanonicalizeIndex(sparse_val, index)
     if error_code != error_code_e.OK:
         return error_code
     if BigInt_Greater(index, sparse_val.max_index):
@@ -447,9 +447,9 @@ def SparseArray_SetElement(sparse_val, index, s):
     return error_code_e.OK
 
 
-def SparseArray_UnsetElement(sparse_val, index):
-    # type: (value.SparseArray, mops.BigInt) -> error_code_t
-    index, error_code = _SparseArray_CanonicalizeIndex(sparse_val, index)
+def BashArray_UnsetElement(sparse_val, index):
+    # type: (value.BashArray, mops.BigInt) -> error_code_t
+    index, error_code = _BashArray_CanonicalizeIndex(sparse_val, index)
     if error_code != error_code_e.OK:
         return error_code
     mylib.dict_erase(sparse_val.d, index)
@@ -463,8 +463,8 @@ def SparseArray_UnsetElement(sparse_val, index):
     return error_code_e.OK
 
 
-def SparseArray_Equals(lhs, rhs):
-    # type: (value.SparseArray, value.SparseArray) -> bool
+def BashArray_Equals(lhs, rhs):
+    # type: (value.BashArray, value.BashArray) -> bool
     len_lhs = len(lhs.d)
     len_rhs = len(rhs.d)
     if len_lhs != len_rhs:
@@ -477,14 +477,14 @@ def SparseArray_Equals(lhs, rhs):
     return True
 
 
-def SparseArray_ToStrForShellPrint(sparse_val):
-    # type: (value.SparseArray) -> str
+def BashArray_ToStrForShellPrint(sparse_val):
+    # type: (value.BashArray) -> str
     body = []  # type: List[str]
 
-    is_sparse = not mops.Equal(mops.IntWiden(SparseArray_Count(sparse_val)),
-                               SparseArray_Length(sparse_val))
+    is_sparse = not mops.Equal(mops.IntWiden(BashArray_Count(sparse_val)),
+                               BashArray_Length(sparse_val))
 
-    for index in SparseArray_GetKeys(sparse_val):
+    for index in BashArray_GetKeys(sparse_val):
         if len(body) > 0:
             body.append(" ")
         if is_sparse:

@@ -179,9 +179,9 @@ def ToShellArray(val, blame_loc, prefix=''):
             array_val = cast(value.InternalStringArray, UP_val)
             strs = bash_impl.InternalStringArray_GetValues(array_val)
 
-        elif case2(value_e.SparseArray):
-            sparse_val = cast(value.SparseArray, UP_val)
-            strs = bash_impl.SparseArray_GetValues(sparse_val)
+        elif case2(value_e.BashArray):
+            sparse_val = cast(value.BashArray, UP_val)
+            strs = bash_impl.BashArray_GetValues(sparse_val)
 
         else:
             raise error.TypeErr(val, "%sexpected List" % prefix, blame_loc)
@@ -362,9 +362,9 @@ def ToBool(val):
             val = cast(value.BashAssoc, UP_val)
             return not bash_impl.BashAssoc_IsEmpty(val)
 
-        elif case(value_e.SparseArray):
-            val = cast(value.SparseArray, UP_val)
-            return not bash_impl.SparseArray_IsEmpty(val)
+        elif case(value_e.BashArray):
+            val = cast(value.BashArray, UP_val)
+            return not bash_impl.BashArray_IsEmpty(val)
 
         elif case(value_e.Bool):
             val = cast(value.Bool, UP_val)
@@ -432,10 +432,10 @@ def ExactlyEqual(left, right, blame_loc):
             right = cast(value.InternalStringArray, UP_right)
             return bash_impl.InternalStringArray_Equals(left, right)
 
-        elif case(value_e.SparseArray):
-            left = cast(value.SparseArray, UP_left)
-            right = cast(value.SparseArray, UP_right)
-            return bash_impl.SparseArray_Equals(left, right)
+        elif case(value_e.BashArray):
+            left = cast(value.BashArray, UP_left)
+            right = cast(value.BashArray, UP_right)
+            return bash_impl.BashArray_Equals(left, right)
 
         elif case(value_e.List):
             left = cast(value.List, UP_left)

@@ -11,7 +11,7 @@
 #     _opsp
 #   builtin/func_misc.py is where they are implemented
 #
-#   core/value.asdl defines value.{InternalStringArray,SparseArray}
+#   core/value.asdl defines value.{InternalStringArray,BashArray}
 #
 #   _gen/core/value.asdl.* - generated from value.asdl
 #
@@ -40,7 +40,7 @@ compare-x() {
   ninja $osh
 
   echo ===
-  echo $osh SparseArray
+  echo $osh BashArray
   echo
   my-time sparse-$x $osh
 
@@ -112,7 +112,7 @@ f() {
   a=()
   var sp = _a2sp(a)  # empty sparse array
 
-  # Populate SparseArray 0 .. n-1
+  # Populate BashArray 0 .. n-1
   for (( i = 0; i < n; ++i )); do
     to_append=( $i )
     call _opsp(sp, 'append', to_append)

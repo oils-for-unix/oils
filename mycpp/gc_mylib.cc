@@ -45,7 +45,7 @@ BigStr* JoinBytes(List<int>* byte_list) {
   return result;
 }
 
-// For SparseArray
+// For BashArray
 void BigIntSort(List<mops::BigInt>* keys) {
   keys->sort();
 }

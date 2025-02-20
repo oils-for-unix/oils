@@ -344,7 +344,7 @@ class InstancePrinter(object):
         self.buf.write('"type":')
         self._MaybeSpace()
         self.buf.write(
-            type_str)  # "InternalStringArray", "SparseArray", or "BashAssoc",
+            type_str)  # "InternalStringArray", "BashArray", or "BashAssoc",
 
         self._MaybeNewline()
 
@@ -358,20 +358,19 @@ class InstancePrinter(object):
         self._BracketIndent(level)
         self.buf.write('}')
 
-    def _PrintSparseArray(self, val, level):
-        # type: (value.SparseArray, int) -> None
+    def _PrintBashArray(self, val, level):
+        # type: (value.BashArray, int) -> None
 
-        self._PrintBashPrefix('"SparseArray",', level)
+        self._PrintBashPrefix('"BashArray",', level)
 
-        if bash_impl.SparseArray_Count(
-                val) == 0:  # Special case like Python/JS
+        if bash_impl.BashArray_Count(val) == 0:  # Special case like Python/JS
             self.buf.write('{}')
         else:
             self.buf.write('{')
             self._MaybeNewline()
 
             i = 0
-            for k in bash_impl.SparseArray_GetKeys(val):
+            for k in bash_impl.BashArray_GetKeys(val):
                 if i != 0:
                     self.buf.write(',')
                     self._MaybeNewline()
@@ -382,7 +381,7 @@ class InstancePrinter(object):
                 self.buf.write(':')
                 self._MaybeSpace()
 
-                v, error_code = bash_impl.SparseArray_GetElement(val, k)
+                v, error_code = bash_impl.BashArray_GetElement(val, k)
                 assert error_code == error_code_e.OK, error_code
                 pyj8.WriteString(v, self.options, self.buf)
 
@@ -596,9 +595,9 @@ class InstancePrinter(object):
                     self._PrintObj(val, level)
                     self.visiting[heap_id] = False
 
-            elif case(value_e.SparseArray):
-                val = cast(value.SparseArray, UP_val)
-                self._PrintSparseArray(val, level)
+            elif case(value_e.BashArray):
+                val = cast(value.BashArray, UP_val)
+                self._PrintBashArray(val, level)
 
             elif case(value_e.InternalStringArray):
                 val = cast(value.InternalStringArray, UP_val)

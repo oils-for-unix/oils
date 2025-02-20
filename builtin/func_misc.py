@@ -609,7 +609,7 @@ class FromJson8(vm._Callable):
 
 class InternalStringArrayToSparse(vm._Callable):
     """
-    value.InternalStringArray -> value.SparseArray, for testing
+    value.InternalStringArray -> value.BashArray, for testing
     """
 
     def __init__(self):
@@ -625,9 +625,9 @@ class InternalStringArrayToSparse(vm._Callable):
         UP_val = val
         if val.tag() == value_e.InternalStringArray:
             val = cast(value.InternalStringArray, UP_val)
-            return bash_impl.SparseArray_FromList(val.strs)
-        elif val.tag() == value_e.SparseArray:
-            val = cast(value.SparseArray, UP_val)
+            return bash_impl.BashArray_FromList(val.strs)
+        elif val.tag() == value_e.BashArray:
+            val = cast(value.BashArray, UP_val)
 
             # d = val.d.copy()
             # d = dict(val.d)
@@ -635,16 +635,16 @@ class InternalStringArrayToSparse(vm._Callable):
             for k, v in iteritems(val.d):
                 d[k] = v
 
-            return value.SparseArray(d, val.max_index)
+            return value.BashArray(d, val.max_index)
         else:
             raise error.TypeErr(
-                val, 'Arg %d should be a InternalStringArray or SparseArray' %
+                val, 'Arg %d should be a InternalStringArray or BashArray' %
                 rd.pos_consumed, rd.BlamePos())
 
 
 class SparseOp(vm._Callable):
     """
-    All ops on value.SparseArray, for testing performance
+    All ops on value.BashArray, for testing performance
     """
 
     def __init__(self):
@@ -654,7 +654,7 @@ class SparseOp(vm._Callable):
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        sp = rd.PosSparseArray()
+        sp = rd.PosBashArray()
         d = sp.d
         #i = mops.BigTruncate(rd.PosInt())
         op_name = rd.PosStr()
@@ -734,7 +734,7 @@ class SparseOp(vm._Callable):
             mylib.BigIntSort(keys)
             items = [mops.ToStr(k) for k in keys]
 
-            # TODO: return SparseArray
+            # TODO: return BashArray
             return value.InternalStringArray(items)
 
         elif op_name == 'slice':  # "${a[@]:0:5}"
@@ -770,7 +770,7 @@ class SparseOp(vm._Callable):
 
                 i = mops.Add(i, mops.ONE)  # i += 1
 
-            # TODO: return SparseArray
+            # TODO: return BashArray
             return value.InternalStringArray(items2)
 
         elif op_name == 'append':  # a+=(x y)
@@ -781,16 +781,16 @@ class SparseOp(vm._Callable):
             if val.tag() == value_e.InternalStringArray:
                 val = cast(value.InternalStringArray, UP_val)
                 strs = bash_impl.InternalStringArray_GetValues(val)
-            elif val.tag() == value_e.SparseArray:
-                val = cast(value.SparseArray, UP_val)
-                strs = bash_impl.SparseArray_GetValues(val)
+            elif val.tag() == value_e.BashArray:
+                val = cast(value.BashArray, UP_val)
+                strs = bash_impl.BashArray_GetValues(val)
             else:
                 raise error.TypeErr(
                     val,
-                    'Arg %d should be a InternalStringArray or SparseArray' %
+                    'Arg %d should be a InternalStringArray or BashArray' %
                     rd.pos_consumed, rd.BlamePos())
 
-            # TODO: We can maintain the max index in the value.SparseArray(),
+            # TODO: We can maintain the max index in the value.BashArray(),
             # so that it's O(1) to append rather than O(n)
             # - Update on 'set' is O(1)
             # - Update on 'unset' is potentially O(n)
@@ -813,5 +813,5 @@ class SparseOp(vm._Callable):
             return value.Int(mops.ZERO)
 
         else:
-            print('Invalid SparseArray operation %r' % op_name)
+            print('Invalid BashArray operation %r' % op_name)
             return value.Int(mops.ZERO)

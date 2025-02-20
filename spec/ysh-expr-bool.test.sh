@@ -159,7 +159,7 @@ OR
 AND
 ## END
 
-#### or SparseArray, or BashAssoc
+#### or BashArray, or BashAssoc
 declare -a array=(1 2 3)
 pp test_ (array or 'yy')
 
@@ -167,7 +167,7 @@ declare -A assoc=([k]=v)
 pp test_ (assoc or 'zz')
 
 ## STDOUT:
-{"type":"SparseArray","data":{"0":"1","1":"2","2":"3"}}
+{"type":"BashArray","data":{"0":"1","1":"2","2":"3"}}
 {"type":"BashAssoc","data":{"k":"v"}}
 ## END
 

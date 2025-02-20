@@ -111,7 +111,7 @@ def JoinBytes(byte_list):
 
 
 #
-# For SparseArray
+# For BashArray
 #
 
 

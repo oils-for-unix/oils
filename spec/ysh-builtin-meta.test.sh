@@ -245,7 +245,7 @@ array = (Cell
   exported:F
   readonly:F
   nameref:F
-  val:(value.SparseArray d:{3 42 5 99} max_index:5)
+  val:(value.BashArray d:{3 42 5 99} max_index:5)
 )
 ## END
 
@@ -292,7 +292,7 @@ pp [42] | sed 's/0x[a-f0-9]\+/[replaced]/'
 [ stdin ]:5: <Expr [replaced]>
 ## END
 
-#### pp test_ supports SparseArray, BashAssoc
+#### pp test_ supports BashArray, BashAssoc
 
 declare -a array=(a b c)
 pp test_ (array)
@@ -309,8 +309,8 @@ assoc['k3']=
 pp test_ (assoc)
 
 ## STDOUT:
-{"type":"SparseArray","data":{"0":"a","1":"b","2":"c"}}
-{"type":"SparseArray","data":{"0":"a","1":"b","2":"c","5":"z"}}
+{"type":"BashArray","data":{"0":"a","1":"b","2":"c"}}
+{"type":"BashArray","data":{"0":"a","1":"b","2":"c","5":"z"}}
 {"type":"BashAssoc","data":{"k":"v","k2":"v2"}}
 {"type":"BashAssoc","data":{"k":"v","k2":"v2","k3":""}}
 ## END
