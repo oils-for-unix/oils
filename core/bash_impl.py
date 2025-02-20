@@ -464,12 +464,15 @@ def SparseArray_Equals(lhs, rhs):
 def SparseArray_ToStrForShellPrint(sparse_val):
     # type: (value.SparseArray) -> str
     body = []  # type: List[str]
+
+    is_sparse = not mops.Equal(mops.IntWiden(SparseArray_Count(sparse_val)),
+                               SparseArray_Length(sparse_val))
+
     for index in SparseArray_GetKeys(sparse_val):
         if len(body) > 0:
             body.append(" ")
-        body.extend([
-            "[",
-            mops.ToStr(index), "]=",
-            j8_lite.MaybeShellEncode(sparse_val.d[index])
-        ])
+        if is_sparse:
+            body.extend(["[", mops.ToStr(index), "]="])
+
+        body.append(j8_lite.MaybeShellEncode(sparse_val.d[index]))
     return "(%s)" % ''.join(body)
