@@ -192,8 +192,8 @@ class MemTest(unittest.TestCase):
         mem.SetValue(location.LName('COMPREPLY'),
                      bash_impl.SparseArray_FromList(['1', '2', '3']),
                      scope_e.GlobalOnly)
-        self.assertEqual(['1', '2', '3'],
-                         mem.var_stack[0]['COMPREPLY'].val.strs)
+        compreply_val = mem.var_stack[0]['COMPREPLY'].val
+        self.assertEqual(['1', '2', '3'], sorted(compreply_val.d.values()))
 
         # export COMPREPLY - allowed when strict_array not set
         mem.SetValue(location.LName('COMPREPLY'),
@@ -237,11 +237,11 @@ class MemTest(unittest.TestCase):
         lhs = sh_lvalue.Indexed('a', 1, runtime.NO_SPID)
         # a[1]=2
         mem.SetValue(lhs, value.Str('2'), scope_e.Dynamic)
-        self.assertEqual([None, '2'], mem.var_stack[0]['a'].val.strs)
+        self.assertEqual(['2'], mem.var_stack[0]['a'].val.d.values())
 
         # a[1]=3
         mem.SetValue(lhs, value.Str('3'), scope_e.Dynamic)
-        self.assertEqual([None, '3'], mem.var_stack[0]['a'].val.strs)
+        self.assertEqual(['3'], mem.var_stack[0]['a'].val.d.values())
 
         # a[1]=(x y z)  # illegal but doesn't parse anyway
         if 0:
