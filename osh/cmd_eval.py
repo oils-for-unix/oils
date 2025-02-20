@@ -209,29 +209,29 @@ def PlusEquals(old_val, val):
                 str_to_append = cast(value.Str, UP_val)
                 val = value.Str(old_val.s + str_to_append.s)
 
-            elif tag in (value_e.BashArray, value_e.SparseArray,
+            elif tag in (value_e.InternalStringArray, value_e.SparseArray,
                          value_e.BashAssoc):
                 e_die("Can't append array to string")
 
             else:
                 raise AssertionError()  # parsing should prevent this
 
-        elif case(value_e.BashArray, value_e.SparseArray):
+        elif case(value_e.InternalStringArray, value_e.SparseArray):
             if tag == value_e.Str:
                 e_die("Can't append string to array")
-            elif tag in (value_e.BashArray, value_e.SparseArray):
-                if tag == value_e.BashArray:
-                    array_rhs = cast(value.BashArray, UP_val)
-                    strs = bash_impl.BashArray_GetValues(array_rhs)
+            elif tag in (value_e.InternalStringArray, value_e.SparseArray):
+                if tag == value_e.InternalStringArray:
+                    array_rhs = cast(value.InternalStringArray, UP_val)
+                    strs = bash_impl.InternalStringArray_GetValues(array_rhs)
                 else:
                     sparse_rhs = cast(value.SparseArray, UP_val)
                     strs = bash_impl.SparseArray_GetValues(sparse_rhs)
 
                 # We modify the original instance so that change is
                 # visible to other references (which may exist in YSH)
-                if old_val.tag() == value_e.BashArray:
-                    array_lhs = cast(value.BashArray, UP_old_val)
-                    bash_impl.BashArray_AppendValues(array_lhs, strs)
+                if old_val.tag() == value_e.InternalStringArray:
+                    array_lhs = cast(value.InternalStringArray, UP_old_val)
+                    bash_impl.InternalStringArray_AppendValues(array_lhs, strs)
                     val = array_lhs
                 else:
                     sparse_lhs = cast(value.SparseArray, UP_old_val)
@@ -248,7 +248,7 @@ def PlusEquals(old_val, val):
             if tag == value_e.Str:
                 e_die("Can't append string to associative arrays")
 
-            elif tag in (value_e.BashArray, value_e.SparseArray):
+            elif tag in (value_e.InternalStringArray, value_e.SparseArray):
                 e_die("Can't append an assoxiative array to indexed arrays")
 
             elif tag == value_e.BashAssoc:

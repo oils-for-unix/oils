@@ -246,7 +246,7 @@ class MemTest(unittest.TestCase):
         # a[1]=(x y z)  # illegal but doesn't parse anyway
         if 0:
             try:
-                mem.SetValue(lhs, value.BashArray(['x', 'y', 'z']),
+                mem.SetValue(lhs, value.InternalStringArray(['x', 'y', 'z']),
                              scope_e.Dynamic)
             except error.FatalRuntime as e:
                 pass

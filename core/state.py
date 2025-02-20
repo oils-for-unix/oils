@@ -670,7 +670,7 @@ def _DumpVarFrame(frame):
         # TODO:
         # - Use packle for crash dumps!  Then we can represent object cycles
         #   - Right now the JSON serializer will probably crash
-        #   - although BashArray and BashAssoc may need 'type' tags
+        #   - although InternalStringArray and BashAssoc may need 'type' tags
         #     - they don't round trip correctly
         #     - maybe add value.Tombstone here or something?
         #   - value.{Func,Eggex,...} may have value.Tombstone and
@@ -680,8 +680,8 @@ def _DumpVarFrame(frame):
             if case(value_e.Undef):
                 cell_json['val'] = value.Null
 
-            elif case(value_e.Str, value_e.BashArray, value_e.BashAssoc,
-                      value_e.SparseArray):
+            elif case(value_e.Str, value_e.InternalStringArray,
+                      value_e.BashAssoc, value_e.SparseArray):
                 cell_json['val'] = cell.val
 
             else:
@@ -2024,12 +2024,12 @@ class Mem(object):
                         # s[1]=y  # invalid
                         e_die("Can't assign to items in a string", left_loc)
 
-                    elif case2(value_e.BashArray):
-                        cell_val = cast(value.BashArray, UP_cell_val)
-                        error_code = bash_impl.BashArray_SetElement(
+                    elif case2(value_e.InternalStringArray):
+                        cell_val = cast(value.InternalStringArray, UP_cell_val)
+                        error_code = bash_impl.InternalStringArray_SetElement(
                             cell_val, lval.index, rval.s)
                         if error_code == error_code_e.IndexOutOfRange:
-                            n = bash_impl.BashArray_Length(cell_val)
+                            n = bash_impl.InternalStringArray_Length(cell_val)
                             e_die(
                                 "Index %d is out of bounds for array of length %d"
                                 % (lval.index, n), left_loc)
@@ -2133,7 +2133,7 @@ class Mem(object):
             elif case('PIPESTATUS'):
                 strs2 = [str(i)
                          for i in self.pipe_status[-1]]  # type: List[str]
-                return value.BashArray(strs2)
+                return value.InternalStringArray(strs2)
 
             elif case('_pipeline_status'):
                 items = [num.ToBig(i)
@@ -2152,7 +2152,7 @@ class Mem(object):
                     elif case2(regex_match_e.Yes):
                         m = cast(RegexMatch, top_match)
                         groups = util.RegexGroupStrings(m.s, m.indices)
-                return value.BashArray(groups)
+                return value.InternalStringArray(groups)
 
             # Do lookup of system globals before looking at user variables.  Note: we
             # could optimize this at compile-time like $?.  That would break
@@ -2179,7 +2179,8 @@ class Mem(object):
                         else:  # ignore
                             pass
 
-                return value.BashArray(strs)  # TODO: Reuse this object too?
+                return value.InternalStringArray(
+                    strs)  # TODO: Reuse this object too?
 
             # $BASH_SOURCE and $BASH_LINENO have OFF BY ONE design bugs:
             #
@@ -2215,7 +2216,8 @@ class Mem(object):
                         else:  # ignore
                             pass
 
-                return value.BashArray(strs)  # TODO: Reuse this object too?
+                return value.InternalStringArray(
+                    strs)  # TODO: Reuse this object too?
 
             elif case('BASH_LINENO'):
                 strs = []
@@ -2243,7 +2245,8 @@ class Mem(object):
                         else:  # ignore
                             pass
 
-                return value.BashArray(strs)  # TODO: Reuse this object too?
+                return value.InternalStringArray(
+                    strs)  # TODO: Reuse this object too?
 
             elif case('LINENO'):
                 assert self.token_for_line is not None
@@ -2351,12 +2354,12 @@ class Mem(object):
 
                 val = cell.val
                 UP_val = val
-                if val.tag() == value_e.BashArray:
-                    val = cast(value.BashArray, UP_val)
-                    error_code = bash_impl.BashArray_UnsetElement(
+                if val.tag() == value_e.InternalStringArray:
+                    val = cast(value.InternalStringArray, UP_val)
+                    error_code = bash_impl.InternalStringArray_UnsetElement(
                         val, lval.index)
                     if error_code == error_code_e.IndexOutOfRange:
-                        n = bash_impl.BashArray_Length(val)
+                        n = bash_impl.InternalStringArray_Length(val)
                         raise error.Runtime(
                             "%s[%d]: Index is out of bounds for array of length %d"
                             % (var_name, lval.index, n))

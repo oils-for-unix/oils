@@ -214,9 +214,9 @@ class Append(vm._Builtin):
 
         UP_val = val
         with tagswitch(val) as case:
-            if case(value_e.BashArray):
-                val = cast(value.BashArray, UP_val)
-                bash_impl.BashArray_AppendValues(val, arg_r.Rest())
+            if case(value_e.InternalStringArray):
+                val = cast(value.InternalStringArray, UP_val)
+                bash_impl.InternalStringArray_AppendValues(val, arg_r.Rest())
             elif case(value_e.SparseArray):
                 val = cast(value.SparseArray, UP_val)
                 bash_impl.SparseArray_AppendValues(val, arg_r.Rest())
@@ -227,7 +227,7 @@ class Append(vm._Builtin):
                 val.items.extend(typed)
             else:
                 raise error.TypeErr(
-                    val, 'expected List, BashArray, or SparseArray',
+                    val, 'expected List, InternalStringArray, or SparseArray',
                     loc.Missing)
 
         return 0

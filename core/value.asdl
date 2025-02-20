@@ -103,7 +103,7 @@ module value
   | Str(str s)
 
     # "holes" in the array are represented by None
-  | BashArray(List[str] strs)
+  | InternalStringArray(List[str] strs)
     # TODO: Switch to this more efficient representation.  max_index makes
     # append-sparse workload faster, and normal append loops too
   | SparseArray(Dict[BigInt, str] d, BigInt max_index)

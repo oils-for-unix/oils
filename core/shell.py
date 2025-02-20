@@ -948,7 +948,7 @@ def Main(
     _AddBuiltinFunc(mem, 'fromJson', func_misc.FromJson8(False))
 
     # Demos
-    _AddBuiltinFunc(mem, '_a2sp', func_misc.BashArrayToSparse())
+    _AddBuiltinFunc(mem, '_a2sp', func_misc.InternalStringArrayToSparse())
     _AddBuiltinFunc(mem, '_opsp', func_misc.SparseOp())
 
     mem.AddBuiltin('io', io_obj)

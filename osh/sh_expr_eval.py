@@ -142,12 +142,12 @@ def OldValue(lval, mem, exec_opts):
             with tagswitch(val) as case2:
                 if case2(value_e.Undef):
                     s = None  # type: Optional[str]
-                elif case2(value_e.BashArray):
-                    array_val = cast(value.BashArray, UP_val)
-                    s, _ = bash_impl.BashArray_GetElement(
+                elif case2(value_e.InternalStringArray):
+                    array_val = cast(value.InternalStringArray, UP_val)
+                    s, _ = bash_impl.InternalStringArray_GetElement(
                         array_val, lval.index)
                     # Note: We ignore error_code in the return value of
-                    # BashArray_GetElement because an invalid index will be
+                    # InternalStringArray_GetElement because an invalid index will be
                     # reported on the assignment stage anyway.
                 elif case2(value_e.SparseArray):
                     sparse_val = cast(value.SparseArray, UP_val)
@@ -515,19 +515,20 @@ class ArithEvaluator(object):
         val = OldValue(lval, self.mem, self.exec_opts)
 
         # BASH_LINENO, arr (array name without strict_array), etc.
-        if (val.tag() in (value_e.BashArray, value_e.BashAssoc,
+        if (val.tag() in (value_e.InternalStringArray, value_e.BashAssoc,
                           value_e.SparseArray) and
                 lval.tag() == sh_lvalue_e.Var):
             named_lval = cast(LeftName, lval)
             if word_eval.ShouldArrayDecay(named_lval.name, self.exec_opts):
-                if val.tag() in (value_e.BashArray, value_e.SparseArray):
+                if val.tag() in (value_e.InternalStringArray,
+                                 value_e.SparseArray):
                     lval = sh_lvalue.Indexed(named_lval.name, 0, loc.Missing)
                 elif val.tag() == value_e.BashAssoc:
                     lval = sh_lvalue.Keyed(named_lval.name, '0', loc.Missing)
                 val = word_eval.DecayArray(val)
 
         # This error message could be better, but we already have one
-        #if val.tag() in (value_e.BashArray, value_e.SparseArray):
+        #if val.tag() in (value_e.InternalStringArray, value_e.SparseArray):
         #  e_die("Can't use assignment like ++ or += on arrays")
 
         i = self._ValToIntOrError(val, node)
@@ -547,7 +548,7 @@ class ArithEvaluator(object):
         val = self.Eval(node)
 
         # BASH_LINENO, arr (array name without strict_array), etc.
-        if (val.tag() in (value_e.BashArray, value_e.BashAssoc,
+        if (val.tag() in (value_e.InternalStringArray, value_e.BashAssoc,
                           value_e.SparseArray) and
                 node.tag() == arith_expr_e.VarSub):
             vsub = cast(Token, node)
@@ -567,7 +568,7 @@ class ArithEvaluator(object):
         Returns:
           None for Undef  (e.g. empty cell)  TODO: Don't return 0!
           int for Str
-          List[int] for BashArray and SparseArray
+          List[int] for InternalStringArray and SparseArray
           Dict[str, str] for BashAssoc (TODO: Should we support this?)
 
         NOTE: (( A['x'] = 'x' )) and (( x = A['x'] )) are syntactically valid in
@@ -733,17 +734,18 @@ class ArithEvaluator(object):
                     left = self.Eval(node.left)
                     UP_left = left
                     with tagswitch(left) as case:
-                        if case(value_e.BashArray):
-                            array_val = cast(value.BashArray, UP_left)
+                        if case(value_e.InternalStringArray):
+                            array_val = cast(value.InternalStringArray,
+                                             UP_left)
                             small_i = mops.BigTruncate(
                                 self.EvalToBigInt(node.right))
-                            s, error_code = bash_impl.BashArray_GetElement(
+                            s, error_code = bash_impl.InternalStringArray_GetElement(
                                 array_val, small_i)
                             if error_code == error_code_e.IndexOutOfRange:
                                 # Note: Bash outputs warning but does not make
                                 # it a real error.  We follow the Bash behavior
                                 # here.
-                                small_length = bash_impl.BashArray_Length(
+                                small_length = bash_impl.InternalStringArray_Length(
                                     array_val)
                                 self.errfmt.Print_(
                                     "Index %d out of bounds for array of length %d"
@@ -1047,23 +1049,24 @@ class BoolEvaluator(ArithEvaluator):
 
         UP_val = val
         with tagswitch(val) as case:
-            if case(value_e.BashArray, value_e.SparseArray):
+            if case(value_e.InternalStringArray, value_e.SparseArray):
                 try:
                     # could use mops.FromStr?
                     index = int(index_str)
                 except ValueError as e:
                     if self.exec_opts.strict_word_eval():
                         e_die(
-                            '-v got BashArray and invalid index %r' %
+                            '-v got InternalStringArray and invalid index %r' %
                             index_str, blame_loc)
                     return False
 
-                if val.tag() == value_e.BashArray:
-                    array_val = cast(value.BashArray, UP_val)
-                    result, error_code = bash_impl.BashArray_HasElement(
+                if val.tag() == value_e.InternalStringArray:
+                    array_val = cast(value.InternalStringArray, UP_val)
+                    result, error_code = bash_impl.InternalStringArray_HasElement(
                         array_val, index)
                     if error_code == error_code_e.IndexOutOfRange:
-                        length = bash_impl.BashArray_Length(array_val)
+                        length = bash_impl.InternalStringArray_Length(
+                            array_val)
                         e_die(
                             '-v got index %s, which is out of bounds for array of length %d'
                             % (index_str, length), blame_loc)
@@ -1093,7 +1096,8 @@ class BoolEvaluator(ArithEvaluator):
 
                 if self.exec_opts.strict_word_eval():
                     raise error.TypeErr(
-                        val, 'Expected BashArray, SparseArray, or BashAssoc',
+                        val,
+                        'Expected InternalStringArray, SparseArray, or BashAssoc',
                         blame_loc)
                 return False
         raise AssertionError()

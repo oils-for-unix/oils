@@ -41,7 +41,7 @@ def NewLeaf(s, e_color):
     i.e. PrettyTree() could be a free function using static dispatch, not a
     member.  And then it can handle the nullptr case.
     """
-    # for repr of BashArray, which can have 'None'
+    # for repr of InternalStringArray, which can have 'None'
     if s is None:
         return hnode.Leaf('_', color_e.OtherConst)
     else:

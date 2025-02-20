@@ -634,9 +634,9 @@ class ShellFuncAction(CompletionAction):
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
                 strs = [val.s]
-            elif case(value_e.BashArray):
-                val = cast(value.BashArray, UP_val)
-                strs = bash_impl.BashArray_GetValues(val)
+            elif case(value_e.InternalStringArray):
+                val = cast(value.InternalStringArray, UP_val)
+                strs = bash_impl.InternalStringArray_GetValues(val)
             elif case(value_e.SparseArray):
                 val = cast(value.SparseArray, UP_val)
                 strs = bash_impl.SparseArray_GetValues(val)

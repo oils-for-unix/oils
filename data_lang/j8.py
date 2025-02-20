@@ -343,7 +343,8 @@ class InstancePrinter(object):
         self._ItemIndent(level)
         self.buf.write('"type":')
         self._MaybeSpace()
-        self.buf.write(type_str)  # "BashArray", "SparseArray", or "BashAssoc",
+        self.buf.write(
+            type_str)  # "InternalStringArray", "SparseArray", or "BashAssoc",
 
         self._MaybeNewline()
 
@@ -394,19 +395,21 @@ class InstancePrinter(object):
 
         self._PrintBashSuffix(level)
 
-    def _PrintBashArray(self, val, level):
-        # type: (value.BashArray, int) -> None
+    def _PrintInternalStringArray(self, val, level):
+        # type: (value.InternalStringArray, int) -> None
 
-        self._PrintBashPrefix('"BashArray",', level)
+        self._PrintBashPrefix('"InternalStringArray",', level)
 
-        if bash_impl.BashArray_Count(val) == 0:  # Special case like Python/JS
+        if bash_impl.InternalStringArray_Count(
+                val) == 0:  # Special case like Python/JS
             self.buf.write('{}')
         else:
             self.buf.write('{')
             self._MaybeNewline()
 
             first = True
-            for i, s in enumerate(bash_impl.BashArray_GetValues(val)):
+            for i, s in enumerate(
+                    bash_impl.InternalStringArray_GetValues(val)):
                 if s is None:
                     continue
 
@@ -597,9 +600,9 @@ class InstancePrinter(object):
                 val = cast(value.SparseArray, UP_val)
                 self._PrintSparseArray(val, level)
 
-            elif case(value_e.BashArray):
-                val = cast(value.BashArray, UP_val)
-                self._PrintBashArray(val, level)
+            elif case(value_e.InternalStringArray):
+                val = cast(value.InternalStringArray, UP_val)
+                self._PrintInternalStringArray(val, level)
 
             elif case(value_e.BashAssoc):
                 val = cast(value.BashAssoc, UP_val)

@@ -455,8 +455,8 @@ class CompAdjust(vm._Builtin):
         # TODO: How does the user test a completion function programmatically?  Set
         # COMP_ARGV?
         val = self.mem.GetValue('COMP_ARGV')
-        if val.tag() == value_e.BashArray:
-            comp_argv = cast(value.BashArray, val).strs
+        if val.tag() == value_e.InternalStringArray:
+            comp_argv = cast(value.InternalStringArray, val).strs
         elif val.tag() == value_e.SparseArray:
             comp_argv = bash_impl.SparseArray_GetValues(
                 cast(value.SparseArray, val))

@@ -607,9 +607,9 @@ class FromJson8(vm._Callable):
         return val
 
 
-class BashArrayToSparse(vm._Callable):
+class InternalStringArrayToSparse(vm._Callable):
     """
-    value.BashArray -> value.SparseArray, for testing
+    value.InternalStringArray -> value.SparseArray, for testing
     """
 
     def __init__(self):
@@ -623,8 +623,8 @@ class BashArrayToSparse(vm._Callable):
         rd.Done()
 
         UP_val = val
-        if val.tag() == value_e.BashArray:
-            val = cast(value.BashArray, UP_val)
+        if val.tag() == value_e.InternalStringArray:
+            val = cast(value.InternalStringArray, UP_val)
             return bash_impl.SparseArray_FromList(val.strs)
         elif val.tag() == value_e.SparseArray:
             val = cast(value.SparseArray, UP_val)
@@ -638,7 +638,7 @@ class BashArrayToSparse(vm._Callable):
             return value.SparseArray(d, val.max_index)
         else:
             raise error.TypeErr(
-                val, 'Arg %d should be a BashArray or SparseArray' %
+                val, 'Arg %d should be a InternalStringArray or SparseArray' %
                 rd.pos_consumed, rd.BlamePos())
 
 
@@ -727,7 +727,7 @@ class SparseOp(vm._Callable):
                 assert s is not None
                 items[j] = s
                 j += 1
-            return value.BashArray(items)
+            return value.InternalStringArray(items)
 
         elif op_name == 'keys':  # "${!a[@]}"
             keys = d.keys()
@@ -735,7 +735,7 @@ class SparseOp(vm._Callable):
             items = [mops.ToStr(k) for k in keys]
 
             # TODO: return SparseArray
-            return value.BashArray(items)
+            return value.InternalStringArray(items)
 
         elif op_name == 'slice':  # "${a[@]:0:5}"
             start = rd.PosInt()
@@ -771,22 +771,23 @@ class SparseOp(vm._Callable):
                 i = mops.Add(i, mops.ONE)  # i += 1
 
             # TODO: return SparseArray
-            return value.BashArray(items2)
+            return value.InternalStringArray(items2)
 
         elif op_name == 'append':  # a+=(x y)
             val = rd.PosValue()
             rd.Done()
 
             UP_val = val
-            if val.tag() == value_e.BashArray:
-                val = cast(value.BashArray, UP_val)
-                strs = bash_impl.BashArray_GetValues(val)
+            if val.tag() == value_e.InternalStringArray:
+                val = cast(value.InternalStringArray, UP_val)
+                strs = bash_impl.InternalStringArray_GetValues(val)
             elif val.tag() == value_e.SparseArray:
                 val = cast(value.SparseArray, UP_val)
                 strs = bash_impl.SparseArray_GetValues(val)
             else:
                 raise error.TypeErr(
-                    val, 'Arg %d should be a BashArray or SparseArray' %
+                    val,
+                    'Arg %d should be a InternalStringArray or SparseArray' %
                     rd.pos_consumed, rd.BlamePos())
 
             # TODO: We can maintain the max index in the value.SparseArray(),

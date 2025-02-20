@@ -132,7 +132,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
         if flag_x == '+' and cell.exported:
             continue
 
-        if flag_a and val.tag() not in (value_e.BashArray,
+        if flag_a and val.tag() not in (value_e.InternalStringArray,
                                         value_e.SparseArray):
             continue
         if flag_A and val.tag() != value_e.BashAssoc:
@@ -147,7 +147,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
                 flags.append('r')
             if cell.exported:
                 flags.append('x')
-            if val.tag() in (value_e.BashArray, value_e.SparseArray):
+            if val.tag() in (value_e.InternalStringArray, value_e.SparseArray):
                 flags.append('a')
             elif val.tag() == value_e.BashAssoc:
                 flags.append('A')
@@ -162,11 +162,13 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
             str_val = cast(value.Str, val)
             decl.extend(["=", j8_lite.MaybeShellEncode(str_val.s)])
 
-        elif val.tag() == value_e.BashArray:
-            array_val = cast(value.BashArray, val)
-            decl.extend(
-                ["=",
-                 bash_impl.BashArray_ToStrForShellPrint(array_val, name)])
+        elif val.tag() == value_e.InternalStringArray:
+            array_val = cast(value.InternalStringArray, val)
+            decl.extend([
+                "=",
+                bash_impl.InternalStringArray_ToStrForShellPrint(
+                    array_val, name)
+            ])
 
         elif val.tag() == value_e.BashAssoc:
             assoc_val = cast(value.BashAssoc, val)
@@ -274,8 +276,8 @@ def _ReconcileTypes(rval, flag_a, flag_A, blame_word):
 
     Shared between NewVar and Readonly.
     """
-    if flag_a and rval is not None and rval.tag() not in (value_e.BashArray,
-                                                          value_e.SparseArray):
+    if flag_a and rval is not None and rval.tag() not in (
+            value_e.InternalStringArray, value_e.SparseArray):
         e_usage("Got -a but RHS isn't an array", loc.Word(blame_word))
 
     if flag_A and rval:
@@ -453,7 +455,7 @@ class NewVar(vm._AssignBuiltin):
             if rval is None and (arg.a or arg.A):
                 old_val = self.mem.GetValue(pair.var_name)
                 if arg.a:
-                    if old_val.tag() not in (value_e.BashArray,
+                    if old_val.tag() not in (value_e.InternalStringArray,
                                              value_e.SparseArray):
                         rval = bash_impl.SparseArray_FromList([])
                 elif arg.A:

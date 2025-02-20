@@ -11,7 +11,7 @@
 #     _opsp
 #   builtin/func_misc.py is where they are implemented
 #
-#   core/value.asdl defines value.{BashArray,SparseArray}
+#   core/value.asdl defines value.{InternalStringArray,SparseArray}
 #
 #   _gen/core/value.asdl.* - generated from value.asdl
 #
@@ -139,7 +139,7 @@ f() {
 
     #echo sum=$sum
 
-    # Slice to BashArray
+    # Slice to InternalStringArray
     var a = _opsp(sp, 'slice', 1, length)
 
     # Convert back - is this slow?

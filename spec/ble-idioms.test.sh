@@ -173,7 +173,7 @@ array 0
 
 #### Sparse array with big index
 
-# TODO: more BashArray idioms / stress tests ?
+# TODO: more InternalStringArray idioms / stress tests ?
 
 a=()
 

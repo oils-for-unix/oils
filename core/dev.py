@@ -212,9 +212,10 @@ def _PrintShValue(val, buf):
             val = cast(value.Str, UP_val)
             result = j8_lite.MaybeShellEncode(val.s)
 
-        elif case(value_e.BashArray):
-            val = cast(value.BashArray, UP_val)
-            result = bash_impl.BashArray_ToStrForShellPrint(val, None)
+        elif case(value_e.InternalStringArray):
+            val = cast(value.InternalStringArray, UP_val)
+            result = bash_impl.InternalStringArray_ToStrForShellPrint(
+                val, None)
 
         elif case(value_e.BashAssoc):
             val = cast(value.BashAssoc, UP_val)

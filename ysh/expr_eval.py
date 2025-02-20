@@ -1221,7 +1221,7 @@ class ExprEvaluator(object):
                 words = braces.BraceExpandWords(node.words)
                 strs = self.word_ev.EvalWordSequence(words)
                 #log('ARRAY LITERAL EVALUATED TO -> %s', strs)
-                #return value.BashArray(strs)
+                #return value.InternalStringArray(strs)
 
                 # It's equivalent to ['foo', 'bar']
                 items = [value.Str(s) for s in strs]
