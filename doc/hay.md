@@ -530,20 +530,14 @@ Or on the outside:
 Procs can wrap blocks:
 
     proc myrule(name) {
+      Rule dbg/$name.o {      # node
+        inputs = ["$name.c"]
+        flags = ['-O0']
+      }
 
-      # needed for blocks to use variables higher on the stack
-      shopt --set dynamic_scope {
-
-        Rule dbg/$name.o {      # node
-          inputs = ["$name.c"]
-          flags = ['-O0']
-        }
-
-        Rule opt/$name.o {      # node
-          inputs = ["$name.c"]
-          flags = ['-O2']
-        }
-        
+      Rule opt/$name.o {      # node
+        inputs = ["$name.c"]
+        flags = ['-O2']
       }
     }
 

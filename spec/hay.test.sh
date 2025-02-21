@@ -647,7 +647,7 @@ hay define when
 # Ah this is because of 'haynode'
 # 'haynode' could silently pass through blocks and typed args?
 
-when NAME (x > 0) { 
+when NAME [x > 0] { 
   const version = '1.0'
   const other = 'str'
 }
@@ -662,6 +662,7 @@ when NAME (x > 0) {
 
 source $REPO_ROOT/spec/testdata/config/osh-hay.osh
 
+# TODO: code not serialized correctly - Samuel brought this up
 
 ## STDOUT:
 backticks
@@ -672,4 +673,3 @@ CODE
     eval 'echo task eval'
   ___
 ## END
-

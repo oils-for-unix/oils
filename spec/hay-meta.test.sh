@@ -223,14 +223,8 @@ shopt --set ysh:all
 hay define Rule
 
 proc myrule(name) {
-
-  # Each haynode has its own scope.  But then it can't see the args!  Oops.
-  # Is there a better way to do this?
-
-  shopt --set dynamic_scope {
-    Rule $name {
-      path = "/usr/bin/$name"
-    }
+  Rule $name {
+    path = "/usr/bin/$name"
   }
 }
 
@@ -266,7 +260,6 @@ proc gen_service(; ; variant=null) {
 
   pp test_ (variant)
 
-  shopt --set dynamic_scope {
   Service auth.example.com {    # node taking a block
     pp test_ (variant)
     if (variant === 'local') {  # condition
@@ -274,7 +267,6 @@ proc gen_service(; ; variant=null) {
     } else {
       port = 80
     }
-  }
   }
 }
 

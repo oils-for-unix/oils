@@ -10,8 +10,8 @@ Foo {
   # alias ll='ls -l'
   # ll _test
 
-  # Dynamic parsing allowed in OSH, not Oil
-  b[1]=1
+  # Dynamic parsing allowed in OSH, not YSH
+  #b[1]=1
 
   echo `echo backticks`
   eval 'echo eval'
@@ -24,11 +24,11 @@ Foo {
   }
 }
 
-const children = _hay()->children[0]->children
+const children = _hay().children[0].children
 
 for child in (children) {
-  echo "TYPE $[child->type]"
-  if (child->type === 'TASK') {
-    echo "CODE $[child->code_str]___"
+  echo "TYPE $[child.type]"
+  if (child.type === 'TASK') {
+    echo "CODE $[child.code_str]___"
   }
 }
