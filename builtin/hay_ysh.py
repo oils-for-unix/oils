@@ -312,34 +312,6 @@ class Hay(vm._Builtin):
         return 0
 
 
-def OptionalLiteralBlock(cmd_val):
-    # type: (cmd_value.Argv) -> Optional[LiteralBlock]
-    """Helper for Hay """
-
-    if cmd_val.proc_args:
-        r = typed_args.ReaderForProc(cmd_val)
-        cmd = r.OptionalCommand()
-        r.Done()
-
-        if cmd:
-            frag = cmd.frag
-            with tagswitch(frag) as case:
-                if case(cmd_frag_e.LiteralBlock):
-                    lit = cast(LiteralBlock, frag)
-                    return lit
-                elif case(cmd_frag_e.Expr):
-                    c = cast(cmd_frag.Expr, frag).c
-                    # This can happen with Node (; ; ^(echo hi))
-                    # The problem is that it doesn't have "backing lines",
-                    # which the Hay API uses.
-                    e_die("Hay expected block literal, like { echo x }",
-                          loc.Command(c))
-                else:
-                    raise AssertionError()
-
-    return None
-
-
 class HayNode_(vm._Builtin):
     """The FIXED builtin that is run after 'hay define'.
 
@@ -377,6 +349,26 @@ class HayNode_(vm._Builtin):
             arg_r.Next()
             hay_name = None  # don't validate
 
+        rd = typed_args.ReaderForProc(cmd_val)
+        cmd = rd.OptionalCommand()
+        rd.Done()
+
+        lit_block = None  # type: Optional[LiteralBlock]
+        if cmd:
+            frag = cmd.frag
+            with tagswitch(frag) as case:
+                if case(cmd_frag_e.LiteralBlock):
+                    lit_block = cast(LiteralBlock, frag)
+                elif case(cmd_frag_e.Expr):
+                    c = cast(cmd_frag.Expr, frag).c
+                    # This can happen with Node (; ; ^(echo hi))
+                    # The problem is that it doesn't have "backing lines",
+                    # which the Hay API uses.
+                    e_die("Hay expected block literal, like { echo x }",
+                          loc.Command(c))
+                else:
+                    raise AssertionError()
+
         # Should we call hay_state.AddChild() so it can be mutated?
         result = NewDict()  # type: Dict[str, value_t]
 
@@ -385,8 +377,6 @@ class HayNode_(vm._Builtin):
 
         arg_r.Next()
         arguments = arg_r.Rest()
-
-        lit_block = OptionalLiteralBlock(cmd_val)
 
         # package { ... } is not valid
         if len(arguments) == 0 and lit_block is None:
