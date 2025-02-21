@@ -986,6 +986,11 @@ ble-idioms() {
   run-file ble-idioms "$@"
 }
 
+ble-sparse() {
+  sh-spec spec/ble-sparse.test.sh \
+    $BASH $MKSH $OSH_LIST "$@"
+}
+
 ble-features() {
   run-file ble-features "$@"
 }
