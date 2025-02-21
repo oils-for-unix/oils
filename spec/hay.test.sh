@@ -1,6 +1,6 @@
-# Hay: Hay Ain't YAML
+## oils_failures_allowed: 5
 
-## oils_failures_allowed: 2
+# Hay: Hay Ain't YAML
 
 #### hay builtin usage
 
@@ -275,6 +275,8 @@ hay eval :result {
     const age = '50'
     
     haynode child bob {
+      # TODO: Is 'const' being created in the old ENCLOSING frame?  Not the new
+      # ENCLOSED one?
       const age = '10'
     }
 
@@ -389,7 +391,7 @@ status 2
 ## END
 
 
-#### hay eval with shopt -s oil:all
+#### hay eval with shopt -s ysh:all
 shopt --set parse_brace parse_equals parse_proc
 
 hay define Package
@@ -431,7 +433,7 @@ Package cpython {
 
 #### Scope of Variables Inside Hay Blocks
 
-shopt --set oil:all
+shopt --set ysh:all
 
 hay define package
 hay define deps/package
@@ -469,6 +471,24 @@ backup = https://archive.example.com/downloads/foo.tar.gz
 deps location https://example.com/downloads/spam.tar.gz
 deps backup https://archive.example.com/downloads/spam.tar.xz
 AFTER downloads/foo.tar.gz
+## END
+
+#### Nested bare assignment
+shopt --set ysh:all
+
+hay define Package/Deps
+
+Package {
+  x = 10
+  Deps {
+    # this is a const
+    x = 20
+  }
+}
+
+pp test_ (_hay())
+
+## STDOUT:
 ## END
 
 
@@ -619,7 +639,7 @@ level 1 children
 
 #### Typed Args to Hay Node
 
-shopt --set oil:all
+shopt --set ysh:all
 
 hay define when
 

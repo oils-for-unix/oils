@@ -421,9 +421,11 @@ class HayNode_(vm._Builtin):
                 # Note: this is based on evalToDict()
                 unbound_frag = typed_args.GetCommandFrag(cmd)
                 bindings = NewDict()  # type: Dict[str, value_t]
-                with state.ctx_EnclosedFrame(self.mem, cmd.captured_frame,
-                                             cmd.module_frame, bindings):
-                    unused_status = self.cmd_ev.EvalCommandFrag(unbound_frag)
+                with ctx_HayNode(self.hay_state, hay_name):
+                    with state.ctx_EnclosedFrame(self.mem, cmd.captured_frame,
+                                                 cmd.module_frame, bindings):
+                        unused_status = self.cmd_ev.EvalCommandFrag(
+                            unbound_frag)
 
                 result['attrs'] = value.Dict(bindings)
 
