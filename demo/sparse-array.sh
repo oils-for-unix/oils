@@ -40,7 +40,7 @@ compare-x() {
   ninja $osh
 
   echo ===
-  echo $osh BashArray
+  echo $osh SparseArray demo
   echo
   my-time sparse-$x $osh
 
@@ -133,7 +133,7 @@ f() {
 
     #echo ZERO $sum $[_opsp(sp, 'get', 0)]
     #echo ONE $sum $[_opsp(sp, 'get', 1)]
-    for i in (0 .. length) {
+    for i in (0 ..< length) {
       setvar sum += _opsp(sp, 'get', i)
     }
 
