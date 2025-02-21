@@ -3,7 +3,8 @@ from __future__ import print_function
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import (scope_e, HayNode)
 from _devbuild.gen.syntax_asdl import loc
-from _devbuild.gen.value_asdl import (value, value_e, value_t)
+from _devbuild.gen.value_asdl import (value, value_e, value_t, LiteralBlock,
+                                      cmd_frag, cmd_frag_e)
 
 from asdl import format as fmt
 from core import alloc
@@ -17,7 +18,7 @@ from frontend import consts
 from frontend import location
 from frontend import typed_args
 from mycpp import mylib
-from mycpp.mylib import iteritems, NewDict, log
+from mycpp.mylib import tagswitch, iteritems, NewDict, log
 
 from typing import List, Dict, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -311,6 +312,34 @@ class Hay(vm._Builtin):
         return 0
 
 
+def OptionalLiteralBlock(cmd_val):
+    # type: (cmd_value.Argv) -> Optional[LiteralBlock]
+    """Helper for Hay """
+
+    if cmd_val.proc_args:
+        r = typed_args.ReaderForProc(cmd_val)
+        cmd = r.OptionalCommand()
+        r.Done()
+
+        if cmd:
+            frag = cmd.frag
+            with tagswitch(frag) as case:
+                if case(cmd_frag_e.LiteralBlock):
+                    lit = cast(LiteralBlock, frag)
+                    return lit
+                elif case(cmd_frag_e.Expr):
+                    c = cast(cmd_frag.Expr, frag).c
+                    # This can happen with Node (; ; ^(echo hi))
+                    # The problem is that it doesn't have "backing lines",
+                    # which the Hay API uses.
+                    e_die("Hay expected block literal, like { echo x }",
+                          loc.Command(c))
+                else:
+                    raise AssertionError()
+
+    return None
+
+
 class HayNode_(vm._Builtin):
     """The FIXED builtin that is run after 'hay define'.
 
@@ -357,7 +386,7 @@ class HayNode_(vm._Builtin):
         arg_r.Next()
         arguments = arg_r.Rest()
 
-        lit_block = typed_args.OptionalLiteralBlock(cmd_val)
+        lit_block = OptionalLiteralBlock(cmd_val)
 
         # package { ... } is not valid
         if len(arguments) == 0 and lit_block is None:
@@ -372,27 +401,22 @@ class HayNode_(vm._Builtin):
                 e_usage('command node requires a literal block argument',
                         loc.Missing)
 
-            if 0:  # self.hay_state.to_expr ?
-                result['expr'] = lit_block  # UNEVALUATED block
-            else:
-                # We can only extract code if the block arg is literal like package
-                # foo { ... }, not if it's like package foo (myblock)
+            # We can only extract code if the block arg is literal like package
+            # foo { ... }, not if it's like package foo (myblock)
 
-                brace_group = lit_block.brace_group
-                # BraceGroup has location for {
-                line = brace_group.left.line
+            brace_group = lit_block.brace_group
+            # BraceGroup has location for {
+            line = brace_group.left.line
 
-                # for the user to pass back to --location-str
-                result['location_str'] = value.Str(
-                    ui.GetLineSourceString(line))
-                result['location_start_line'] = num.ToBig(line.line_num)
+            # for the user to pass back to --location-str
+            result['location_str'] = value.Str(ui.GetLineSourceString(line))
+            result['location_start_line'] = num.ToBig(line.line_num)
 
-                # Between { and }
-                code_str = alloc.SnipCodeBlock(brace_group.left,
-                                               brace_group.right,
-                                               lit_block.lines)
+            # Between { and }
+            code_str = alloc.SnipCodeBlock(brace_group.left, brace_group.right,
+                                           lit_block.lines)
 
-                result['code_str'] = value.Str(code_str)
+            result['code_str'] = value.Str(code_str)
 
             # Append after validation
             self.hay_state.AppendResult(result)
@@ -404,7 +428,15 @@ class HayNode_(vm._Builtin):
             if lit_block:  # 'package foo' is OK
                 result['children'] = value.List([])
 
-                # Evaluate in its own stack frame.  TODO: Turn on dynamic scope?
+                # Evaluate in its own stack frame so that we can capture the
+                # dictionary.
+
+                # TODO:
+                # - there is a dynamic scope hack here?
+                # - this should be like evalToDict()?  with ctx_EnclosedFrame
+                # - then the LiteralBlock needs to capture?
+                #   - the backing lines are an issue - it is self.block_arg
+
                 with state.ctx_Temp(self.mem):
                     with ctx_HayNode(self.hay_state, hay_name):
                         # Note: we want all haynode invocations in the block to appear as

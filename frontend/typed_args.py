@@ -60,18 +60,6 @@ def RequiredBlockAsFrag(cmd_val):
     return cmd
 
 
-def OptionalLiteralBlock(cmd_val):
-    # type: (cmd_value.Argv) -> Optional[LiteralBlock]
-    """Helper for Hay """
-
-    block = None  # type: Optional[LiteralBlock]
-    if cmd_val.proc_args:
-        r = ReaderForProc(cmd_val)
-        block = r.OptionalLiteralBlock()
-        r.Done()
-    return block
-
-
 def GetCommandFrag(bound):
     # type: (value.Command) -> command_t
 
@@ -406,22 +394,6 @@ class Reader(object):
                             'Arg %d should be a Command' % self.pos_consumed,
                             self.BlamePos())
 
-    def _ToLiteralBlock(self, val):
-        # type: (value_t) -> LiteralBlock
-        """ Used by Hay """
-        if val.tag() == value_e.Command:
-            frag = cast(value.Command, val).frag
-            with tagswitch(frag) as case:
-                if case(cmd_frag_e.LiteralBlock):
-                    lit = cast(LiteralBlock, frag)
-                    return lit
-                else:
-                    raise AssertionError()
-
-        raise error.TypeErr(
-            val, 'Arg %d should be a LiteralBlock' % self.pos_consumed,
-            self.BlamePos())
-
     def PosStr(self):
         # type: () -> str
         val = self.PosValue()
@@ -525,13 +497,11 @@ class Reader(object):
     # Block arg
     #
 
-    if 0:
-
-        def OptionalCommandBlock(self):
-            # type: () -> Optional[value.Command]
-            if self.block_arg is None:
-                return None
-            return self._ToCommand(self.block_arg)
+    def OptionalCommand(self):
+        # type: () -> Optional[value.Command]
+        if self.block_arg is None:
+            return None
+        return self._ToCommand(self.block_arg)
 
     def RequiredBlockAsFrag(self):
         # type: () -> command_t
@@ -545,15 +515,6 @@ class Reader(object):
         if self.block_arg is None:
             return None
         return self._ToCommandFrag(self.block_arg)
-
-    def OptionalLiteralBlock(self):
-        # type: () -> Optional[LiteralBlock]
-        """
-        Used by Hay
-        """
-        if self.block_arg is None:
-            return None
-        return self._ToLiteralBlock(self.block_arg)
 
     def RestPos(self):
         # type: () -> List[value_t]

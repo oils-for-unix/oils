@@ -556,9 +556,9 @@ Or they can be invoked from within blocks:
       call out->setValue("localhost:$port_num")
     }
 
-    Service foo {      # node
-      set-port 80 :p1  # call proc
-      set-port 81 :p2  # call proc
+    Service foo {        # node
+      set-port 80 (&p1)  # call proc
+      set-port 81 (&p2)  # call proc
     }
 
 ## More Usage Patterns
@@ -567,7 +567,7 @@ Or they can be invoked from within blocks:
 
 The general pattern is:
 
-    ./my-evaluator.ysh my-config.hay | json read :result
+    ./my-evaluator.ysh my-config.hay | json read (&result)
 
 The evaluator does the following:
 

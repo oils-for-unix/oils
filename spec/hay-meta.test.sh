@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 
 # Hay Metaprogramming
 
@@ -255,3 +255,44 @@ EOF
 ## STDOUT:
 ## END
 
+#### Param scope issue (Zulip)
+shopt --set ysh:all
+
+hay define Service
+
+setvar variant = 'local'
+
+proc gen_service(; ; variant=null) {
+
+  pp test_ (variant)
+
+  shopt --set dynamic_scope {
+  Service auth.example.com {    # node taking a block
+    pp test_ (variant)
+    if (variant === 'local') {  # condition
+      port = 8001
+    } else {
+      port = 80
+    }
+  }
+  }
+}
+
+gen_service (variant='remote')
+const result = _hay()
+json write (result)
+
+## STDOUT:
+## END
+
+
+#### Hay node with exression block arg now allowed - Node (; ; ^(var x = 1))
+shopt --set ysh:all
+
+hay define Foo
+
+Foo (; ; ^(echo hi))
+
+## status: 1
+## STDOUT:
+## END
