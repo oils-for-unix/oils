@@ -18,7 +18,7 @@ from frontend import consts
 from frontend import location
 from frontend import typed_args
 from mycpp import mylib
-from mycpp.mylib import tagswitch, iteritems, NewDict, log
+from mycpp.mylib import tagswitch, NewDict, log
 
 from typing import List, Dict, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -418,34 +418,13 @@ class HayNode_(vm._Builtin):
             if lit_block:  # 'package foo' is OK
                 result['children'] = value.List([])
 
-                # Evaluate in its own stack frame so that we can capture the
-                # dictionary.
+                # Note: this is based on evalToDict()
+                unbound_frag = typed_args.GetCommandFrag(cmd)
+                bindings = NewDict()  # type: Dict[str, value_t]
+                with state.ctx_EnclosedFrame(self.mem, cmd.captured_frame,
+                                             cmd.module_frame, bindings):
+                    unused_status = self.cmd_ev.EvalCommandFrag(unbound_frag)
 
-                # TODO:
-                # - there is a dynamic scope hack here?
-                # - this should be like evalToDict()?  with ctx_EnclosedFrame
-                # - then the LiteralBlock needs to capture?
-                #   - the backing lines are an issue - it is self.block_arg
-
-                with state.ctx_Temp(self.mem):
-                    with ctx_HayNode(self.hay_state, hay_name):
-                        # Note: we want all haynode invocations in the block to appear as
-                        # our 'children', recursively
-                        self.cmd_ev.EvalCommandFrag(lit_block.brace_group)
-
-                    # Treat the vars as a Dict
-                    block_attrs = self.mem.CurrentFrame()
-
-                attrs = NewDict()  # type: Dict[str, value_t]
-                for name, cell in iteritems(block_attrs):
-
-                    # User can hide variables with _ suffix
-                    # e.g. for i_ in foo bar { echo $i_ }
-                    if name.endswith('_'):
-                        continue
-
-                    attrs[name] = cell.val
-
-                result['attrs'] = value.Dict(attrs)
+                result['attrs'] = value.Dict(bindings)
 
         return 0

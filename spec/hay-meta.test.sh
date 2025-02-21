@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 0
 
 # Hay Metaprogramming
 
@@ -255,7 +255,7 @@ EOF
 ## STDOUT:
 ## END
 
-#### Param scope issue (Zulip)
+#### Param scope issue (from Zulip, 2025-02)
 shopt --set ysh:all
 
 hay define Service
@@ -283,6 +283,23 @@ const result = _hay()
 json write (result)
 
 ## STDOUT:
+(Str)   "remote"
+(Str)   "remote"
+{
+  "source": null,
+  "children": [
+    {
+      "type": "Service",
+      "args": [
+        "auth.example.com"
+      ],
+      "children": [],
+      "attrs": {
+        "port": 80
+      }
+    }
+  ]
+}
 ## END
 
 

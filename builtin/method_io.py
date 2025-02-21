@@ -96,7 +96,7 @@ class EvalInFrame(vm._Callable):
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
         frag = rd.PosCommandFrag()
-        bound = rd.PosFrame()
+        frame = rd.PosFrame()
 
         # TODO: EvalCommandFrag()
 
@@ -128,7 +128,7 @@ class Eval(vm._Callable):
         unused = rd.PosValue()
         bound = rd.PosCommand()
 
-        cmd = typed_args.GetCommandFrag(bound)
+        frag = typed_args.GetCommandFrag(bound)
 
         dollar0 = rd.NamedStr("dollar0", None)
         pos_args_raw = rd.NamedList("pos_args", None)
@@ -145,7 +145,7 @@ class Eval(vm._Callable):
                                              bound.module_frame, None):
                     # _PrintFrame('[new]', self.cmd_ev.mem.var_stack[-1])
                     with state.ctx_Eval(self.mem, dollar0, pos_args, vars_):
-                        unused_status = self.cmd_ev.EvalCommandFrag(cmd)
+                        unused_status = self.cmd_ev.EvalCommandFrag(frag)
                 return value.Null
 
             elif self.which == EVAL_DICT:
@@ -156,7 +156,7 @@ class Eval(vm._Callable):
                 bindings = NewDict()  # type: Dict[str, value_t]
                 with state.ctx_EnclosedFrame(self.mem, bound.captured_frame,
                                              bound.module_frame, bindings):
-                    unused_status = self.cmd_ev.EvalCommandFrag(cmd)
+                    unused_status = self.cmd_ev.EvalCommandFrag(frag)
                 return value.Dict(bindings)
 
             else:
