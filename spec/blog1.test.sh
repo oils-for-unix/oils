@@ -1,4 +1,5 @@
-#
+## compare_shells: dash bash mksh zsh
+
 # Tests for the blog.
 #
 # Fun game: try to come up with an expression that behaves differently on ALL

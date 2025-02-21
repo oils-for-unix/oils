@@ -1,4 +1,5 @@
-#
+## compare_shells: dash bash mksh
+
 # Tests that explore parsing corner cases.
 
 #### Length of length of ARGS!

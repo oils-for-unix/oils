@@ -96,8 +96,7 @@ spec-harness-bug() {
 }
 
 blog1() {
-  sh-spec spec/blog1.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file blog1 "$@"
 }
 
 blog2() {
@@ -105,8 +104,7 @@ blog2() {
 }
 
 blog-other1() {
-  sh-spec spec/blog-other1.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file blog-other1 "$@"
 }
 
 alias() {
@@ -318,13 +316,15 @@ arith-dynamic() {
 }
 
 command-sub() {
-  sh-spec spec/command-sub.test.sh \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file command-sub "$@"
+}
+
+command-sub-ksh() {
+  run-file command-sub-ksh "$@"
 }
 
 command_() {
-  sh-spec spec/command_.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file command_ "$@"
 }
 
 pipeline() {
@@ -332,8 +332,7 @@ pipeline() {
 }
 
 explore-parsing() {
-  sh-spec spec/explore-parsing.test.sh \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file explore-parsing "$@"
 }
 
 parse-errors() {
@@ -381,8 +380,7 @@ var-op-test() {
 }
 
 var-op-len() {
-  sh-spec spec/var-op-len.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file var-op-len "$@"
 }
 
 var-op-patsub() {
@@ -399,8 +397,7 @@ var-op-bash() {
 }
 
 var-op-strip() {
-  sh-spec spec/var-op-strip.test.sh \
-    ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
+  run-file var-op-strip "$@"
 }
 
 var-sub() {
@@ -448,8 +445,7 @@ errexit-osh() {
 }
 
 fatal-errors() {
-  sh-spec spec/fatal-errors.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file fatal-errors "$@"
 }
 
 # 
@@ -547,13 +543,13 @@ for-expr() {
 }
 
 empty-bodies() {
-  sh-spec spec/empty-bodies.test.sh "${REF_SHELLS[@]}" $ZSH $OSH_LIST "$@"
+  run-file empty-bodies "$@"
 }
 
-# TODO: This is for the ANTLR grammars, in the oil-sketch repo.
-# osh has infinite loop?
+# Note: This was for the ANTLR grammars, in the oil-sketch repo.
+# this is "suite: disabled"
 shell-grammar() {
-  sh-spec spec/shell-grammar.test.sh $BASH $MKSH $ZSH "$@"
+  run-file shell-grammar "$@"
 }
 
 serialize() {
@@ -987,8 +983,7 @@ zsh-idioms() {
 }
 
 ble-idioms() {
-  sh-spec spec/ble-idioms.test.sh \
-    $BASH $ZSH $MKSH $BUSYBOX_ASH $OSH_LIST "$@"
+  run-file ble-idioms "$@"
 }
 
 ble-features() {

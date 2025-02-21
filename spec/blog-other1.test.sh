@@ -1,4 +1,5 @@
-#
+## compare_shells: dash bash mksh zsh
+
 # From:
 #
 # https://lobste.rs/s/xhtim1/problems_with_shells_test_builtin_what

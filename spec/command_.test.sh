@@ -1,4 +1,5 @@
-#
+## compare_shells: dash bash mksh zsh
+
 # Miscellaneous tests for the command language.
 
 #### Command block

@@ -1,4 +1,5 @@
-#
+## compare_shells: dash bash mksh zsh
+
 # Test the length oeprator, which dash supports.  Dash doesn't support most
 # other ops.
 

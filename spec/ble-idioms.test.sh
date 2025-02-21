@@ -1,3 +1,4 @@
+## compare_shells: bash zsh mksh ash
 ## oils_cpp_failures_allowed: 2
 
 #### recursive arith: one level

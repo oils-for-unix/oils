@@ -1,3 +1,4 @@
+## compare_shells: dash bash mksh
 
 #### case
 foo=a; case $foo in [0-9]) echo number;; [a-z]) echo letter;; esac
