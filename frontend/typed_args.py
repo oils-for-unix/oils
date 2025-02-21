@@ -277,7 +277,7 @@ class Reader(object):
             return cast(value.InternalStringArray, val).strs
 
         raise error.TypeErr(
-            val, 'Arg %d should be a InternalStringArray' % self.pos_consumed,
+            val, 'Arg %d should be an InternalStringArray' % self.pos_consumed,
             self.BlamePos())
 
     def _ToBashArray(self, val):

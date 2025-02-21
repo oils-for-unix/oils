@@ -27,7 +27,7 @@ _ = log
 
 def ValType(val):
     # type: (value_t) -> str
-    """Returns a user-facing string like Int, Eggex, InternalStringArray, etc."""
+    """Returns a user-facing string like Int, Eggex, BashArray, etc."""
     return value_str(val.tag(), dot=False)
 
 

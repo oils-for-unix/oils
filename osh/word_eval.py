@@ -471,9 +471,8 @@ def _PerformSlice(
             e_die("Can't slice associative arrays", loc.WordPart(part))
 
         else:
-            raise error.TypeErr(
-                val, 'Slice op expected Str or InternalStringArray',
-                loc.WordPart(part))
+            raise error.TypeErr(val, 'Slice op expected Str or BashArray',
+                                loc.WordPart(part))
 
     return result
 
@@ -891,8 +890,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             else:
                 raise error.TypeErr(
-                    val,
-                    "Length op expected Str, InternalStringArray, BashAssoc",
+                    val, "Length op expected Str, BashArray, or BashAssoc",
                     token)
 
         return count
@@ -927,8 +925,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             else:
                 raise error.TypeErr(
-                    val,
-                    'Keys op expected Str, InternalStringArray, BashArray, or BashAssoc',
+                    val, 'Keys op expected Str, BashArray, or BashAssoc',
                     token)
 
     def _EvalVarRef(self, val, blame_tok, quoted, vsub_state, vtest_place):
@@ -966,8 +963,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             else:
                 raise error.TypeErr(
-                    val,
-                    'Var Ref op expected Str, InternalStringArray, BashArray, or BashAssoc',
+                    val, 'Var Ref op expected Str, BashArray, or BashAssoc',
                     blame_tok)
 
         try:
@@ -1023,8 +1019,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
                 else:
                     raise error.TypeErr(
-                        val,
-                        'Unary op expected Str, InternalStringArray, BashArray, or BashAssoc',
+                        val, 'Unary op expected Str, BashArray, or BashAssoc',
                         op.op)
 
         else:
@@ -1085,8 +1080,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             else:
                 raise error.TypeErr(
-                    val,
-                    'Pat Sub op expected Str, InternalStringArray, BashArray, or BashAssoc',
+                    val, 'Pat Sub op expected Str, BashArray, or BashAssoc',
                     op.slash_tok)
 
         return val
@@ -1363,8 +1357,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             else:
                 raise error.TypeErr(
-                    val,
-                    'Index op expected InternalStringArray, BashArray, or BashAssoc',
+                    val, 'Index op expected BashArray or BashAssoc',
                     loc.WordPart(part))
 
         return val
