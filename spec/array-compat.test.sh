@@ -103,7 +103,7 @@ argv.py "${a[*]#-}"
 ## N-I mksh status: 1
 ## N-I mksh stdout-json: ""
 
-#### value.SparseArray internal representation - Indexed
+#### value.BashArray internal representation - Indexed
 
 case $SH in mksh) exit ;; esac
 
@@ -156,7 +156,7 @@ status=1
 ## N-I mksh STDOUT:
 ## END
 
-#### value.SparseArray internal representation - Assoc (ordering is a problem)
+#### value.BashArray internal representation - Assoc (ordering is a problem)
 
 case $SH in mksh) exit ;; esac
 

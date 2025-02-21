@@ -132,8 +132,8 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
         if flag_x == '+' and cell.exported:
             continue
 
-        if flag_a and val.tag() not in (value_e.BashArray,
-                                        value_e.SparseArray):
+        if flag_a and val.tag() not in (value_e.InternalStringArray,
+                                        value_e.BashArray):
             continue
         if flag_A and val.tag() != value_e.BashAssoc:
             continue
@@ -147,7 +147,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
                 flags.append('r')
             if cell.exported:
                 flags.append('x')
-            if val.tag() in (value_e.BashArray, value_e.SparseArray):
+            if val.tag() in (value_e.InternalStringArray, value_e.BashArray):
                 flags.append('a')
             elif val.tag() == value_e.BashAssoc:
                 flags.append('A')
@@ -162,22 +162,23 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
             str_val = cast(value.Str, val)
             decl.extend(["=", j8_lite.MaybeShellEncode(str_val.s)])
 
-        elif val.tag() == value_e.BashArray:
-            array_val = cast(value.BashArray, val)
-            decl.extend(
-                ["=",
-                 bash_impl.BashArray_ToStrForShellPrint(array_val, name)])
+        elif val.tag() == value_e.InternalStringArray:
+            array_val = cast(value.InternalStringArray, val)
+            decl.extend([
+                "=",
+                bash_impl.InternalStringArray_ToStrForShellPrint(
+                    array_val, name)
+            ])
 
         elif val.tag() == value_e.BashAssoc:
             assoc_val = cast(value.BashAssoc, val)
             decl.extend(
                 ["=", bash_impl.BashAssoc_ToStrForShellPrint(assoc_val)])
 
-        elif val.tag() == value_e.SparseArray:
-            sparse_val = cast(value.SparseArray, val)
+        elif val.tag() == value_e.BashArray:
+            sparse_val = cast(value.BashArray, val)
             decl.extend(
-                ["=",
-                 bash_impl.SparseArray_ToStrForShellPrint(sparse_val)])
+                ["=", bash_impl.BashArray_ToStrForShellPrint(sparse_val)])
 
         else:
             pass  # note: other types silently ignored
@@ -274,20 +275,20 @@ def _ReconcileTypes(rval, flag_a, flag_A, blame_word):
 
     Shared between NewVar and Readonly.
     """
-    if flag_a and rval is not None and rval.tag() not in (value_e.BashArray,
-                                                          value_e.SparseArray):
+    if flag_a and rval is not None and rval.tag() not in (
+            value_e.InternalStringArray, value_e.BashArray):
         e_usage("Got -a but RHS isn't an array", loc.Word(blame_word))
 
     if flag_A and rval:
         # Special case: declare -A A=() is OK.  The () is changed to mean an empty
         # associative array.
-        if rval.tag() == value_e.SparseArray:
-            sparse_val = cast(value.SparseArray, rval)
-            if bash_impl.SparseArray_IsEmpty(sparse_val):
+        if rval.tag() == value_e.BashArray:
+            sparse_val = cast(value.BashArray, rval)
+            if bash_impl.BashArray_IsEmpty(sparse_val):
                 # mycpp limitation: NewDict() needs to be typed
                 tmp = NewDict()  # type: Dict[str, str]
                 return value.BashAssoc(tmp)
-                #return bash_impl.SparseArray_FromList([])
+                #return bash_impl.BashArray_FromList([])
 
         if rval.tag() != value_e.BashAssoc:
             e_usage("Got -A but RHS isn't an associative array",
@@ -320,7 +321,7 @@ class Readonly(vm._AssignBuiltin):
         for pair in cmd_val.pairs:
             if pair.rval is None:
                 if arg.a:
-                    rval = bash_impl.SparseArray_FromList([])  # type: value_t
+                    rval = bash_impl.BashArray_FromList([])  # type: value_t
                 elif arg.A:
                     # mycpp limitation: NewDict() needs to be typed
                     tmp = NewDict()  # type: Dict[str, str]
@@ -453,9 +454,9 @@ class NewVar(vm._AssignBuiltin):
             if rval is None and (arg.a or arg.A):
                 old_val = self.mem.GetValue(pair.var_name)
                 if arg.a:
-                    if old_val.tag() not in (value_e.BashArray,
-                                             value_e.SparseArray):
-                        rval = bash_impl.SparseArray_FromList([])
+                    if old_val.tag() not in (value_e.InternalStringArray,
+                                             value_e.BashArray):
+                        rval = bash_impl.BashArray_FromList([])
                 elif arg.A:
                     if old_val.tag() != value_e.BashAssoc:
                         # mycpp limitation: NewDict() needs to be typed

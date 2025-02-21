@@ -283,23 +283,23 @@ class Reader(object):
                             'Arg %d should be a Float' % self.pos_consumed,
                             self.BlamePos())
 
-    def _ToBashArray(self, val):
+    def _ToInternalStringArray(self, val):
         # type: (value_t) -> List[str]
+        if val.tag() == value_e.InternalStringArray:
+            return cast(value.InternalStringArray, val).strs
+
+        raise error.TypeErr(
+            val, 'Arg %d should be a InternalStringArray' % self.pos_consumed,
+            self.BlamePos())
+
+    def _ToBashArray(self, val):
+        # type: (value_t) -> value.BashArray
         if val.tag() == value_e.BashArray:
-            return cast(value.BashArray, val).strs
+            return cast(value.BashArray, val)
 
         raise error.TypeErr(val,
                             'Arg %d should be a BashArray' % self.pos_consumed,
                             self.BlamePos())
-
-    def _ToSparseArray(self, val):
-        # type: (value_t) -> value.SparseArray
-        if val.tag() == value_e.SparseArray:
-            return cast(value.SparseArray, val)
-
-        raise error.TypeErr(
-            val, 'Arg %d should be a SparseArray' % self.pos_consumed,
-            self.BlamePos())
 
     def _ToList(self, val):
         # type: (value_t) -> List[value_t]
@@ -456,15 +456,15 @@ class Reader(object):
         val = self.PosValue()
         return self._ToFloat(val)
 
-    def PosBashArray(self):
+    def PosInternalStringArray(self):
         # type: () -> List[str]
         val = self.PosValue()
-        return self._ToBashArray(val)
+        return self._ToInternalStringArray(val)
 
-    def PosSparseArray(self):
-        # type: () -> value.SparseArray
+    def PosBashArray(self):
+        # type: () -> value.BashArray
         val = self.PosValue()
-        return self._ToSparseArray(val)
+        return self._ToBashArray(val)
 
     def PosList(self):
         # type: () -> List[value_t]

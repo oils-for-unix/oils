@@ -83,7 +83,7 @@ pp test_ ({k: pat})
 (Dict)   {"k":<Eggex>}
 ## END
 
-#### SparseArray, new representation for bash array
+#### BashArray, new representation for bash array
 declare -a empty=()
 declare -a array_1=(hello)
 array_1[5]=5
@@ -107,20 +107,20 @@ pp test_ ({k: empty})
 pp test_ ({k: array_1})
 
 ## STDOUT:
-(SparseArray)
-(SparseArray [0]='hello' [5]='5')
+(BashArray)
+(BashArray [0]='hello' [5]='5')
 
-(Dict)  {k: (SparseArray)}
-(Dict)  {k: (SparseArray [0]='hello' [5]='5')}
+(Dict)  {k: (BashArray)}
+(Dict)  {k: (BashArray [0]='hello' [5]='5')}
 
-{"type":"SparseArray","data":{}}
-{"type":"SparseArray","data":{"0":"hello","5":"5"}}
+{"type":"BashArray","data":{}}
+{"type":"BashArray","data":{"0":"hello","5":"5"}}
 
-(Dict)   {"k":{"type":"SparseArray","data":{}}}
-(Dict)   {"k":{"type":"SparseArray","data":{"0":"hello","5":"5"}}}
+(Dict)   {"k":{"type":"BashArray","data":{}}}
+(Dict)   {"k":{"type":"BashArray","data":{"0":"hello","5":"5"}}}
 ## END
 
-#### SparseArray, short
+#### BashArray, short
 declare -a empty=()
 declare -a array_1=(hello)
 
@@ -140,20 +140,20 @@ pp test_ ({k: empty})
 pp test_ ({k: array_1})
 
 ## STDOUT:
-(SparseArray)
-(SparseArray [0]='hello')
+(BashArray)
+(BashArray [0]='hello')
 
-(Dict)  {k: (SparseArray)}
-(Dict)  {k: (SparseArray [0]='hello')}
+(Dict)  {k: (BashArray)}
+(Dict)  {k: (BashArray [0]='hello')}
 
-{"type":"SparseArray","data":{}}
-{"type":"SparseArray","data":{"0":"hello"}}
+{"type":"BashArray","data":{}}
+{"type":"BashArray","data":{"0":"hello"}}
 
-(Dict)   {"k":{"type":"SparseArray","data":{}}}
-(Dict)   {"k":{"type":"SparseArray","data":{"0":"hello"}}}
+(Dict)   {"k":{"type":"BashArray","data":{}}}
+(Dict)   {"k":{"type":"BashArray","data":{"0":"hello"}}}
 ## END
 
-#### SparseArray, long
+#### BashArray, long
 declare -a array_3
 array_3[0]="world"
 array_3[2]=*.py
@@ -162,8 +162,8 @@ do eiusmod.)
 = array_3
 = array_long
 ## STDOUT:
-(SparseArray [0]='world' [2]='*.py')
-(SparseArray
+(BashArray [0]='world' [2]='*.py')
+(BashArray
     [0]='Lorem'
     [1]='ipsum'
     [2]='dolor'

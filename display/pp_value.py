@@ -27,7 +27,7 @@ _ = log
 
 def ValType(val):
     # type: (value_t) -> str
-    """Returns a user-facing string like Int, Eggex, BashArray, etc."""
+    """Returns a user-facing string like Int, Eggex, InternalStringArray, etc."""
     return value_str(val.tag(), dot=False)
 
 
@@ -140,7 +140,7 @@ class ValueEncoder(pp_hnode.BaseEncoder):
         #
         # $ declare -a array=($'\\')
         # $ = array
-        # (BashArray)   (BashArray $'\\')
+        # (InternalStringArray)   (InternalStringArray $'\\')
         #
         # $ declare -A assoc=([k]=$'\\')
         # $ = assoc
@@ -174,13 +174,14 @@ class ValueEncoder(pp_hnode.BaseEncoder):
         mdocs = self._DictMdocs(vdict.d)
         return self._Surrounded('{', self._Join(mdocs, ',', ' '), '}')
 
-    def _BashArray(self, varray):
-        # type: (value.BashArray) -> MeasuredDoc
-        type_name = self._Styled(self.type_style, AsciiText('BashArray'))
-        if bash_impl.BashArray_Count(varray) == 0:
+    def _InternalStringArray(self, varray):
+        # type: (value.InternalStringArray) -> MeasuredDoc
+        type_name = self._Styled(self.type_style,
+                                 AsciiText('InternalStringArray'))
+        if bash_impl.InternalStringArray_Count(varray) == 0:
             return _Concat([AsciiText('('), type_name, AsciiText(')')])
         mdocs = []  # type: List[MeasuredDoc]
-        for s in bash_impl.BashArray_GetValues(varray):
+        for s in bash_impl.InternalStringArray_GetValues(varray):
             if s is None:
                 mdocs.append(AsciiText('null'))
             else:
@@ -205,14 +206,14 @@ class ValueEncoder(pp_hnode.BaseEncoder):
         return self._SurroundedAndPrefixed('(', type_name, ' ',
                                            self._Join(mdocs, '', ' '), ')')
 
-    def _SparseArray(self, val):
-        # type: (value.SparseArray) -> MeasuredDoc
-        type_name = self._Styled(self.type_style, AsciiText('SparseArray'))
-        if bash_impl.SparseArray_Count(val) == 0:
+    def _BashArray(self, val):
+        # type: (value.BashArray) -> MeasuredDoc
+        type_name = self._Styled(self.type_style, AsciiText('BashArray'))
+        if bash_impl.BashArray_Count(val) == 0:
             return _Concat([AsciiText('('), type_name, AsciiText(')')])
         mdocs = []  # type: List[MeasuredDoc]
-        for k2 in bash_impl.SparseArray_GetKeys(val):
-            v2, error_code = bash_impl.SparseArray_GetElement(val, k2)
+        for k2 in bash_impl.BashArray_GetKeys(val):
+            v2, error_code = bash_impl.BashArray_GetElement(val, k2)
             assert error_code == error_code_e.OK, error_code
             mdocs.append(
                 _Concat([
@@ -306,13 +307,13 @@ class ValueEncoder(pp_hnode.BaseEncoder):
                     self.visiting[heap_id] = False
                     return result
 
-            elif case(value_e.SparseArray):
-                sparse = cast(value.SparseArray, val)
-                return self._SparseArray(sparse)
-
             elif case(value_e.BashArray):
-                varray = cast(value.BashArray, val)
-                return self._BashArray(varray)
+                sparse = cast(value.BashArray, val)
+                return self._BashArray(sparse)
+
+            elif case(value_e.InternalStringArray):
+                varray = cast(value.InternalStringArray, val)
+                return self._InternalStringArray(varray)
 
             elif case(value_e.BashAssoc):
                 vassoc = cast(value.BashAssoc, val)
