@@ -1404,7 +1404,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
         """Decay "$*" to a string."""
 
         if quoted and vsub_state.join_array:
-            sep = self.splitter.GetJoinChar()
             tmp = None  # type: List[str]
 
             UP_val = val
@@ -1423,6 +1422,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     tmp = bash_impl.BashAssoc_GetValues(val)
 
             if tmp is not None:
+                sep = self.splitter.GetJoinChar()
                 return value.Str(sep.join(tmp))
 
         return val
