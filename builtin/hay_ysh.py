@@ -402,6 +402,7 @@ class HayNode_(vm._Builtin):
             result['location_str'] = value.Str(ui.GetLineSourceString(line))
             result['location_start_line'] = num.ToBig(line.line_num)
 
+            #log('LINES %s', lit_block.lines)
             # Between { and }
             code_str = alloc.SnipCodeBlock(brace_group.left, brace_group.right,
                                            lit_block.lines)

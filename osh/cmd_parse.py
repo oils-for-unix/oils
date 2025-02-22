@@ -1005,6 +1005,10 @@ class CommandParser(object):
             # So we can get the source code back later
             lines = self.arena.SaveLinesAndDiscard(brace_group.left,
                                                    brace_group.right)
+
+            # BUG: this is wrong because we don't take into account re-parsing, e.g. of backticks
+            #log('lines %s', lines)
+
             block = LiteralBlock(brace_group, lines)
 
             self.hay_attrs_stack.pop()

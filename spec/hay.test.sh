@@ -1,4 +1,4 @@
-## oils_failures_allowed: 5
+## oils_failures_allowed: 7
 
 # Hay: Hay Ain't YAML
 
@@ -638,7 +638,6 @@ level 1 children
 
 
 #### Typed Args to Hay Node
-
 shopt --set ysh:all
 
 hay define when
@@ -672,4 +671,56 @@ CODE
     echo `echo task backticks`
     eval 'echo task eval'
   ___
+## END
+
+#### CODE node provides code_str, serialized code - issue #2050
+shopt --set ysh:all
+
+hay define Package
+hay define Package/INSTALL
+
+Package {
+  name = "osh"
+  INSTALL {
+    #echo hi
+
+    # The block causes a bug?  Nesting?
+    cd dist {
+      ./install
+    }
+  }
+}
+
+= _hay()
+
+## STDOUT:
+## END
+
+#### Proc within Hay node
+shopt --set ysh:all
+
+hay define Package
+
+Package cpython {
+  version = '3.11'
+
+  proc build {
+    # procs have to capture
+    echo "version=$version"
+    make
+  }
+}
+
+# OK we have the proc
+= _hay()
+
+var build_proc = _hay().children[0].attrs.build
+
+= build_proc
+
+build_proc
+
+#json write (_hay())
+
+## STDOUT:
 ## END
