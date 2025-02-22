@@ -1055,7 +1055,7 @@ class BoolEvaluator(ArithEvaluator):
                 except ValueError as e:
                     if self.exec_opts.strict_word_eval():
                         e_die(
-                            '-v got InternalStringArray and invalid index %r' %
+                            '-v got BashArray and invalid index %r' %
                             index_str, blame_loc)
                     return False
 
@@ -1094,10 +1094,8 @@ class BoolEvaluator(ArithEvaluator):
                 pass
 
                 if self.exec_opts.strict_word_eval():
-                    raise error.TypeErr(
-                        val,
-                        'Expected InternalStringArray, BashArray, or BashAssoc',
-                        blame_loc)
+                    raise error.TypeErr(val, 'Expected BashArray or BashAssoc',
+                                        blame_loc)
                 return False
         raise AssertionError()
 
