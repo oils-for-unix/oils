@@ -88,9 +88,6 @@ declare -a empty=()
 declare -a array_1=(hello)
 array_1[5]=5
 
-var empty = _a2sp(empty)
-var array_1 = _a2sp(array_1)
-
 pp value (empty)
 pp value (array_1)
 echo

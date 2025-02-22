@@ -6,11 +6,10 @@ case $SH in bash|mksh) exit ;; esac
 
 #pp test_ (a)
 
-a=( foo {25..27} bar )
+sp=( foo {25..27} bar )
 
-a[10]='sparse'
+sp[10]='sparse'
 
-var sp = _a2sp(a)
 echo $[type(sp)]
 
 echo len: $[_opsp(sp, 'len')]
@@ -65,27 +64,19 @@ keys: 0 1 2 3 4 10 12
 
 
 #### test length
-case $SH in bash|mksh) exit ;; esac
+sp=(x y z)
 
-declare -a a=(x y z)
-
-a[5]=z
-var sp = _a2sp(a)
+sp[5]=z
 
 echo len=${#sp[@]}
 
-a[10]=z
-var sp = _a2sp(a)
+sp[10]=z
 
 echo len=${#sp[@]}
-
 
 ## STDOUT:
 len=4
 len=5
-## END
-
-## N-I bash/mksh STDOUT:
 ## END
 
 
@@ -103,17 +94,13 @@ bash|mksh)
   exit ;;
 esac
 
-var a0 = _a2sp(a0)
-var a1 = _a2sp(a1)
-var a2 = _a2sp(a2)
-var sp = _a2sp(a)
-declare -p a0 a1 a2 sp
+declare -p a0 a1 a2 a
 
 ## STDOUT:
 declare -a a0=()
 declare -a a1=(1)
 declare -a a2=(1 2)
-declare -a sp=([0]=x [1]=y [2]=z [3]=w [500]=100 [1000]=100)
+declare -a a=([0]=x [1]=y [2]=z [3]=w [500]=100 [1000]=100)
 ## END
 
 ## OK bash STDOUT:
@@ -139,66 +126,81 @@ typeset a[1000]=100
 ## END
 
 #### +=
-case $SH in bash|mksh) exit ;; esac
-
 sp1[10]=a
 sp1[20]=b
 sp1[99]=c
-var sp1 = _a2sp(sp1)
-declare -p sp1
+typeset -p sp1 | sed 's/"//g'
 sp1+=(1 2 3)
-declare -p sp1
+typeset -p sp1 | sed 's/"//g'
 
 ## STDOUT:
 declare -a sp1=([10]=a [20]=b [99]=c)
 declare -a sp1=([10]=a [20]=b [99]=c [100]=1 [101]=2 [102]=3)
 ## END
 
-## N-I bash/mksh STDOUT:
+
+## OK mksh STDOUT:
+set -A sp1
+typeset sp1[10]=a
+typeset sp1[20]=b
+typeset sp1[99]=c
+set -A sp1
+typeset sp1[10]=a
+typeset sp1[20]=b
+typeset sp1[99]=c
+typeset sp1[100]=1
+typeset sp1[101]=2
+typeset sp1[102]=3
 ## END
 
 
 #### a[i]=v
-case $SH in bash|mksh) exit ;; esac
-
 sp1[10]=a
 sp1[20]=b
 sp1[30]=c
-var sp1 = _a2sp(sp1)
-declare -p sp1
+typeset -p sp1 | sed 's/"//g'
 sp1[10]=X
 sp1[25]=Y
 sp1[90]=Z
-declare -p sp1
+typeset -p sp1 | sed 's/"//g'
 
 ## STDOUT:
 declare -a sp1=([10]=a [20]=b [30]=c)
 declare -a sp1=([10]=X [20]=b [25]=Y [30]=c [90]=Z)
 ## END
 
-## N-I bash/mksh STDOUT:
+## OK mksh STDOUT:
+set -A sp1
+typeset sp1[10]=a
+typeset sp1[20]=b
+typeset sp1[30]=c
+set -A sp1
+typeset sp1[10]=X
+typeset sp1[20]=b
+typeset sp1[25]=Y
+typeset sp1[30]=c
+typeset sp1[90]=Z
 ## END
 
 
 #### Negative index with a[i]=v
-case $SH in bash|mksh) exit ;; esac
+case $SH in mksh) exit ;; esac
 
 sp1[9]=x
-var sp1 = _a2sp(sp1)
+typeset -p sp1 | sed 's/"//g'
 
-declare -p sp1
 sp1[-1]=A
 sp1[-4]=B
 sp1[-8]=C
 sp1[-10]=D
-declare -p sp1
+typeset -p sp1 | sed 's/"//g'
 
 ## STDOUT:
 declare -a sp1=([9]=x)
 declare -a sp1=([0]=D [2]=C [6]=B [9]=A)
 ## END
 
-## N-I bash/mksh STDOUT:
+## N-I mksh STDOUT:
 ## END
 
 
@@ -208,7 +210,6 @@ case $SH in mksh) exit ;; esac
 sp1[1]=x
 sp1[5]=y
 sp1[9]=z
-case ${SH##*/} in osh) eval 'var sp1 = _a2sp(sp1)' ;; esac
 
 echo "${#sp1[@]}"
 sp1[0x7FFFFFFFFFFFFFFF]=a
@@ -230,11 +231,9 @@ echo "${#sp1[@]}"
 
 
 #### Negative out-of-bound index with a[i]=v (1/2)
-case $SH in bash|mksh) exit ;; esac
+case $SH in mksh) exit ;; esac
 
 sp1[9]=x
-var sp1 = _a2sp(sp1)
-
 sp1[-11]=E
 declare -p sp1
 
@@ -244,19 +243,26 @@ declare -p sp1
 ## STDERR:
   sp1[-11]=E
   ^~~~
-[ stdin ]:6: fatal: Index -11 is out of bounds for array of length 10
+[ stdin ]:4: fatal: Index -11 is out of bounds for array of length 10
 ## END
 
-## N-I bash/mksh status: 0
-## N-I bash/mksh STDERR:
+## OK bash status: 0
+## OK bash STDOUT:
+declare -a sp1=([9]="x")
 ## END
+## OK bash STDERR:
+bash: line 4: sp1[-11]: bad array subscript
+## END
+
+## N-I mksh status: 0
+## N-I mksh stdout-json: ""
+## N-I mksh stderr-json: ""
 
 
 #### Negative out-of-bound index with a[i]=v (2/2)
-case $SH in bash|mksh) exit ;; esac
+case $SH in mksh) exit ;; esac
 
 sp1[9]=x
-var sp1 = _a2sp(sp1)
 
 sp1[-21]=F
 declare -p sp1
@@ -267,19 +273,26 @@ declare -p sp1
 ## STDERR:
   sp1[-21]=F
   ^~~~
-[ stdin ]:6: fatal: Index -21 is out of bounds for array of length 10
+[ stdin ]:5: fatal: Index -21 is out of bounds for array of length 10
 ## END
 
-## N-I bash/mksh status: 0
-## N-I bash/mksh STDERR:
+## OK bash status: 0
+## OK bash STDOUT:
+declare -a sp1=([9]="x")
 ## END
+## OK bash STDERR:
+bash: line 5: sp1[-21]: bad array subscript
+## END
+
+## N-I mksh status: 0
+## N-I mksh stdout-json: ""
+## N-I mksh stderr-json: ""
 
 
 #### xtrace a+=()
-case $SH in bash|mksh) exit ;; esac
+#case $SH in mksh) exit ;; esac
 
 sp1=(1)
-var sp1 = _a2sp(sp1)
 set -x
 sp1+=(2)
 
@@ -287,23 +300,20 @@ sp1+=(2)
 + sp1+=(2)
 ## END
 
-## N-I bash/mksh STDERR:
+## OK mksh STDERR:
++ set -A sp1+ -- 2
 ## END
 
 
 #### unset -v a[i]
-case $SH in bash|mksh) exit ;; esac
-
-a=({1..9})
-var a = _a2sp(a)
-
-declare -p a
+a=(1 2 3 4 5 6 7 8 9)
+typeset -p a
 unset -v "a[1]"
-declare -p a
+typeset -p a
 unset -v "a[9]"
-declare -p a
+typeset -p a
 unset -v "a[0]"
-declare -p a
+typeset -p a
 
 ## STDOUT:
 declare -a a=(1 2 3 4 5 6 7 8 9)
@@ -312,15 +322,57 @@ declare -a a=([0]=1 [2]=3 [3]=4 [4]=5 [5]=6 [6]=7 [7]=8 [8]=9)
 declare -a a=([2]=3 [3]=4 [4]=5 [5]=6 [6]=7 [7]=8 [8]=9)
 ## END
 
-## N-I bash/mksh STDOUT:
+## OK bash STDOUT:
+declare -a a=([0]="1" [1]="2" [2]="3" [3]="4" [4]="5" [5]="6" [6]="7" [7]="8" [8]="9")
+declare -a a=([0]="1" [2]="3" [3]="4" [4]="5" [5]="6" [6]="7" [7]="8" [8]="9")
+declare -a a=([0]="1" [2]="3" [3]="4" [4]="5" [5]="6" [6]="7" [7]="8" [8]="9")
+declare -a a=([2]="3" [3]="4" [4]="5" [5]="6" [6]="7" [7]="8" [8]="9")
+## END
+
+## OK mksh STDOUT:
+set -A a
+typeset a[0]=1
+typeset a[1]=2
+typeset a[2]=3
+typeset a[3]=4
+typeset a[4]=5
+typeset a[5]=6
+typeset a[6]=7
+typeset a[7]=8
+typeset a[8]=9
+set -A a
+typeset a[0]=1
+typeset a[2]=3
+typeset a[3]=4
+typeset a[4]=5
+typeset a[5]=6
+typeset a[6]=7
+typeset a[7]=8
+typeset a[8]=9
+set -A a
+typeset a[0]=1
+typeset a[2]=3
+typeset a[3]=4
+typeset a[4]=5
+typeset a[5]=6
+typeset a[6]=7
+typeset a[7]=8
+typeset a[8]=9
+set -A a
+typeset a[2]=3
+typeset a[3]=4
+typeset a[4]=5
+typeset a[5]=6
+typeset a[6]=7
+typeset a[7]=8
+typeset a[8]=9
 ## END
 
 
 #### unset -v a[i] with out-of-bound negative index
-case $SH in bash|mksh) exit ;; esac
+case $SH in mksh) exit ;; esac
 
 a=(1)
-var a = _a2sp(a)
 
 unset -v "a[-2]"
 unset -v "a[-3]"
@@ -331,22 +383,26 @@ unset -v "a[-3]"
 ## STDERR:
   unset -v "a[-2]"
            ^
-[ stdin ]:6: a[-2]: Index is out of bounds for array of length 1
+[ stdin ]:5: a[-2]: Index is out of bounds for array of length 1
   unset -v "a[-3]"
            ^
-[ stdin ]:7: a[-3]: Index is out of bounds for array of length 1
+[ stdin ]:6: a[-3]: Index is out of bounds for array of length 1
 ## END
 
-## N-I bash/mksh status: 0
-## N-I bash/mksh STDERR:
+## OK bash STDERR:
+bash: line 5: unset: [-2]: bad array subscript
+bash: line 6: unset: [-3]: bad array subscript
+## END
+
+## N-I mksh status: 0
+## N-I mksh STDERR:
 ## END
 
 
 #### unset -v a[i] for max index
-case $SH in bash|mksh) exit ;; esac
+case $SH in mksh) exit ;; esac
 
 a=({1..9})
-var a = _a2sp(a)
 unset -v 'a[-1]'
 a[-1]=x
 declare -p a
@@ -359,20 +415,23 @@ declare -a a=(1 2 3 4 5 6 7 x)
 declare -a a=(1 2 3 4 5 6 x)
 ## END
 
-## N-I bash/mksh STDOUT:
+## OK bash STDOUT:
+declare -a a=([0]="1" [1]="2" [2]="3" [3]="4" [4]="5" [5]="6" [6]="7" [7]="x")
+declare -a a=([0]="1" [1]="2" [2]="3" [3]="4" [4]="5" [5]="6" [6]="x")
+## END
+
+## N-I mksh STDOUT:
 ## END
 
 
 #### [[ -v a[i] ]]
-case $SH in bash|mksh) exit ;; esac
+case $SH in mksh) exit ;; esac
 
-a=()
-var sp1 = _a2sp(a)
+sp1=()
 [[ -v sp1[0] ]]; echo "$? (expect 1)"
 [[ -v sp1[9] ]]; echo "$? (expect 1)"
 
-a=({1..9})
-var sp2 = _a2sp(a)
+sp2=({1..9})
 [[ -v sp2[0] ]]; echo "$? (expect 0)"
 [[ -v sp2[8] ]]; echo "$? (expect 0)"
 [[ -v sp2[9] ]]; echo "$? (expect 1)"
@@ -380,8 +439,8 @@ var sp2 = _a2sp(a)
 [[ -v sp2[-2] ]]; echo "$? (expect 0)"
 [[ -v sp2[-9] ]]; echo "$? (expect 0)"
 
-unset -v 'a[4]'
-var sp3 = _a2sp(a)
+sp3=({1..9})
+unset -v 'sp3[4]'
 [[ -v sp3[3] ]]; echo "$? (expect 0)"
 [[ -v sp3[4] ]]; echo "$? (expect 1)"
 [[ -v sp3[5] ]]; echo "$? (expect 0)"
@@ -410,20 +469,19 @@ var sp3 = _a2sp(a)
 0 (expect 0)
 ## END
 
-## N-I bash/mksh STDOUT:
+## N-I mksh STDOUT:
 ## END
 
 
 #### [[ -v a[i] ]] with invalid negative index
-case $SH in bash|mksh) exit ;; esac
+case $SH in mksh) exit ;; esac
 
-a=()
-var sp1 = _a2sp(a)
+sp1=()
 ([[ -v sp1[-1] ]]; echo "$? (expect 1)")
-a=({1..9})
-var sp2 = _a2sp(a)
+sp2=({1..9})
 ([[ -v sp2[-10] ]]; echo "$? (expect 1)")
-var sp3 = _a2sp(a)
+sp3=({1..9})
+unset -v 'sp3[4]'
 ([[ -v sp3[-10] ]]; echo "$? (expect 1)")
 
 ## status: 1
@@ -432,26 +490,35 @@ var sp3 = _a2sp(a)
 ## STDERR:
   ([[ -v sp1[-1] ]]; echo "$? (expect 1)")
          ^~~
-[ stdin ]:5: fatal: -v got index -1, which is out of bounds for array of length 0
+[ stdin ]:4: fatal: -v got index -1, which is out of bounds for array of length 0
   ([[ -v sp2[-10] ]]; echo "$? (expect 1)")
          ^~~
-[ stdin ]:8: fatal: -v got index -10, which is out of bounds for array of length 9
+[ stdin ]:6: fatal: -v got index -10, which is out of bounds for array of length 9
   ([[ -v sp3[-10] ]]; echo "$? (expect 1)")
          ^~~
-[ stdin ]:10: fatal: -v got index -10, which is out of bounds for array of length 9
+[ stdin ]:9: fatal: -v got index -10, which is out of bounds for array of length 9
 ## END
 
-## N-I bash/mksh status: 0
-## N-I bash/mksh STDERR:
+## OK bash status: 0
+## OK bash STDOUT:
+1 (expect 1)
+1 (expect 1)
+1 (expect 1)
 ## END
+## OK bash STDERR:
+bash: line 4: sp1: bad array subscript
+bash: line 6: sp2: bad array subscript
+bash: line 9: sp3: bad array subscript
+## END
+
+## N-I mksh status: 0
+## N-I mksh stdout-json: ""
+## N-I mksh stderr-json: ""
 
 
 #### ((sp[i])) and ((sp[i]++))
-case $SH in mksh) exit ;; esac
-
-a=({1..9})
+a=(1 2 3 4 5 6 7 8 9)
 unset -v 'a[2]' 'a[3]' 'a[7]'
-case $SH in osh) eval 'var a = _a2sp(a)' ;; esac
 
 echo $((a[0]))
 echo $((a[1]))
@@ -494,16 +561,12 @@ echo $((a[7] = 100, a[7]))
 100
 ## END
 
-## N-I mksh STDOUT:
-## END
-
 
 #### ((sp[i])) and ((sp[i]++)) with invalid negative index
 case $SH in mksh) exit ;; esac
 
 a=({1..9})
 unset -v 'a[2]' 'a[3]' 'a[7]'
-case $SH in osh) eval 'var a = _a2sp(a)' ;; esac
 
 echo $((a[-10]))
 
@@ -513,11 +576,11 @@ echo $((a[-10]))
 ## STDERR:
   echo $((a[-10]))
            ^
-[ stdin ]:7: Index -10 out of bounds for array of length 9
+[ stdin ]:6: Index -10 out of bounds for array of length 9
 ## END
 
 ## OK bash STDERR:
-bash: line 7: a: bad array subscript
+bash: line 6: a: bad array subscript
 ## END
 
 ## N-I mksh STDOUT:
@@ -527,13 +590,12 @@ bash: line 7: a: bad array subscript
 
 
 #### ${sp[i]}
-case $SH in bash|mksh) exit ;; esac
+case $SH in mksh) exit ;; esac
 
-a=({1..9})
-unset -v 'a[2]'
-unset -v 'a[3]'
-unset -v 'a[7]'
-var sp = _a2sp(a)
+sp=({1..9})
+unset -v 'sp[2]'
+unset -v 'sp[3]'
+unset -v 'sp[7]'
 
 echo "sp[0]: '${sp[0]}', ${sp[0]:-(empty)}, ${sp[0]+set}."
 echo "sp[1]: '${sp[1]}', ${sp[1]:-(empty)}, ${sp[1]+set}."
@@ -562,18 +624,17 @@ sp[-4]: '6'.
 sp[-9]: '1'.
 ## END
 
-## N-I bash/mksh STDOUT:
+## N-I mksh STDOUT:
 ## END
 
 
 #### ${sp[i]} with negative invalid index
-case $SH in bash|mksh) exit ;; esac
+case $SH in mksh) exit ;; esac
 
-a=({1..9})
-unset -v 'a[2]'
-unset -v 'a[3]'
-unset -v 'a[7]'
-var sp = _a2sp(a)
+sp=({1..9})
+unset -v 'sp[2]'
+unset -v 'sp[3]'
+unset -v 'sp[7]'
 
 echo "sp[-10]: '${sp[-10]}'."
 echo "sp[-11]: '${sp[-11]}'."
@@ -587,37 +648,24 @@ sp[-19]: ''.
 ## STDERR:
   echo "sp[-10]: '${sp[-10]}'."
                     ^~
-[ stdin ]:9: Index -10 out of bounds for array of length 9
+[ stdin ]:8: Index -10 out of bounds for array of length 9
   echo "sp[-11]: '${sp[-11]}'."
                     ^~
-[ stdin ]:10: Index -11 out of bounds for array of length 9
+[ stdin ]:9: Index -11 out of bounds for array of length 9
   echo "sp[-19]: '${sp[-19]}'."
                     ^~
-[ stdin ]:11: Index -19 out of bounds for array of length 9
+[ stdin ]:10: Index -19 out of bounds for array of length 9
 ## END
 
-## N-I bash/mksh STDOUT:
-## END
-## N-I bash/mksh STDERR:
-## END
-
-
-#### (YSH) @[sp] and @sp
-case $SH in bash|mksh) exit ;; esac
-
-a=({0..5})
-unset -v 'a[1]' 'a[2]' 'a[4]'
-var a = _a2sp(a)
-
-shopt -s parse_at
-argv.py @[a]
-argv.py @a
-## STDOUT:
-['0', '3', '5']
-['0', '3', '5']
+## OK bash STDERR:
+bash: line 8: sp: bad array subscript
+bash: line 9: sp: bad array subscript
+bash: line 10: sp: bad array subscript
 ## END
 
-## N-I bash/mksh STDOUT:
+## N-I mksh STDOUT:
+## END
+## N-I mksh STDERR:
 ## END
 
 
@@ -626,7 +674,6 @@ case $SH in mksh) exit ;; esac
 
 a=(v{0..9})
 unset -v 'a[2]' 'a[3]' 'a[4]' 'a[7]'
-case ${SH##*/} in osh) eval 'var a = _a2sp(a)' ;; esac
 
 echo '==== ${a[@]:offset} ===='
 echo "[${a[@]:0}][${a[*]:0}]"
@@ -768,7 +815,6 @@ EOF
 esac
 
 a=(1 2 3)
-case ${SH##*/} in osh) eval 'var a = _a2sp(a)' ;; esac
 a[0x7FFFFFFFFFFFFFFF]=x
 a[0x7FFFFFFFFFFFFFFE]=y
 a[0x7FFFFFFFFFFFFFFD]=z
@@ -790,12 +836,8 @@ echo "[${a[@]: -4}][${a[*]: -4}]"
 
 
 #### ${a[@]}
-
-case $SH in mksh) exit ;; esac
-
-a=(v{0..9})
+a=(v{0,1,2,3,4,5,6,7,8,9})
 unset -v 'a[2]' 'a[3]' 'a[4]' 'a[7]'
-case ${SH##*/} in osh) eval 'var a = _a2sp(a)' ;; esac
 
 argv.py "${a[@]}"
 argv.py "abc${a[@]}xyz"
@@ -805,17 +847,12 @@ argv.py "abc${a[@]}xyz"
 ['abcv0', 'v1', 'v5', 'v6', 'v8', 'v9xyz']
 ## END
 
-## N-I mksh STDOUT:
-## END
-
 
 #### ${a[@]#...}
-
 case $SH in mksh) exit ;; esac
 
 a=(v{0..9})
 unset -v 'a[2]' 'a[3]' 'a[4]' 'a[7]'
-case ${SH##*/} in osh) eval 'var a = _a2sp(a)' ;; esac
 
 argv.py "${a[@]#v}"
 argv.py "abc${a[@]#v}xyz"
@@ -841,7 +878,6 @@ case $SH in mksh) exit ;; esac
 
 a=(v{0..9})
 unset -v 'a[2]' 'a[3]' 'a[4]' 'a[7]'
-case ${SH##*/} in osh) eval 'var a = _a2sp(a)' ;; esac
 
 argv.py "${a[@]/?}"
 argv.py "${a[@]//?}"
@@ -873,7 +909,6 @@ case $SH in mksh) exit ;; esac
 
 a=(v{0..9})
 unset -v 'a[2]' 'a[3]' 'a[4]' 'a[7]'
-case ${SH##*/} in osh) eval 'var a = _a2sp(a)' ;; esac
 
 argv.py "${a[@]@P}"
 argv.py "${a[*]@P}"
@@ -905,16 +940,9 @@ argv.py "${a[*]@a}"
 
 
 #### ${a[@]-unset}, ${a[@]:-empty}, etc.
-case $SH in mksh) exit ;; esac
-
 a1=()
 a2=("")
 a3=("" "")
-
-case $SH in
-bash) ;;
-*) eval "var a1 = _a2sp(a1); var a2 = _a2sp(a2); var a3 = _a2sp(a3)" ;;
-esac
 
 echo "a1 unset: [${a1[@]-unset}]"
 echo "a1 empty: [${a1[@]:-empty}]"
@@ -932,18 +960,11 @@ a3 unset: [ ]
 a3 empty: [ ]
 ## END
 
-## N-I mksh STDOUT:
-## END
-
 
 #### ${a-}
-case $SH in mksh) exit ;; esac
-
 a1=()
 a2=("" "")
 a3=(foo bar)
-
-case ${SH##*/} in osh) eval 'var a1 = _a2sp(a1); var a2 = _a2sp(a2); var a3 = _a2sp(a3)' ;; esac
 
 echo "$a1, ${a1-(unset)}, ${a1:-(empty)};"
 echo "$a2, ${a2-(unset)}, ${a2:-(empty)};"
@@ -955,17 +976,12 @@ echo "$a3, ${a3-(unset)}, ${a3:-(empty)};"
 foo, foo, foo;
 ## END
 
-## N-I mksh STDOUT:
-## END
-
 
 #### ${!a[0]}
 case $SH in mksh) exit ;; esac
 
 v1=hello v2=world
 a=(v1 v2)
-
-case ${SH##*/} in osh) eval 'var a = _a2sp(a)' ;; esac
 
 echo "${!a[0]}, ${!a[1]}"
 
@@ -983,10 +999,7 @@ case $SH in mksh) exit ;; esac
 a=(v{0..9})
 unset -v 'a[3]' 'a[4]' 'a[7]' 'a[9]'
 
-case ${SH##*/} in osh) eval 'var a = _a2sp(a)' ;; esac
-
 argv.py "${!a[@]}"
-
 
 ## STDOUT:
 ['0', '1', '2', '5', '6', '8']
@@ -997,9 +1010,7 @@ argv.py "${!a[@]}"
 
 
 #### "${a[*]}"
-case $SH in mksh) exit ;; esac
-
-a=(v{0..9})
+a=(v{0,1,2,3,4,5,6,7,8,9})
 unset -v 'a[3]' 'a[4]' 'a[7]' 'a[9]'
 
 echo "${a[*]}"
@@ -1014,24 +1025,14 @@ v0v1v2v5v6v8
 v0/v1/v2/v5/v6/v8
 ## END
 
-## N-I mksh STDOUT:
-## END
-
 
 #### compgen -F _set_COMPREPLY
 case $SH in mksh) exit ;; esac
 
-a=({0..9})
-unset -v 'a[2]' 'a[4]' 'a[6]'
-
-case ${SH##*/} in
-osh)
-  eval '_set_COMPREPLY() { setglobal COMPREPLY = _a2sp(a); }'
-  ;;
-*)
-  _set_COMPREPLY() { COMPREPLY=("${a[@]}"); }
-  ;;
-esac
+_set_COMPREPLY() {
+  COMPREPLY=({0..9})
+  unset -v 'COMPREPLY[2]' 'COMPREPLY[4]' 'COMPREPLY[6]'
+}
 
 compgen -F _set_COMPREPLY
 
@@ -1052,8 +1053,7 @@ compgen -F _set_COMPREPLY
 #### compadjust
 case $SH in bash|mksh) exit ;; esac
 
-a=(echo 'Hello,' 'Bash' 'world!')
-var COMP_ARGV = _a2sp(a)
+COMP_ARGV=(echo 'Hello,' 'Bash' 'world!')
 compadjust cur prev words cword
 argv.py "$cur" "$prev" "$cword"
 argv.py "${words[@]}"
@@ -1061,6 +1061,24 @@ argv.py "${words[@]}"
 ## STDOUT:
 ['world!', 'Bash', '3']
 ['echo', 'Hello,', 'Bash', 'world!']
+## END
+
+## N-I bash/mksh STDOUT:
+## END
+
+
+#### (YSH) @[sp] and @sp
+case $SH in bash|mksh) exit ;; esac
+
+a=({0..5})
+unset -v 'a[1]' 'a[2]' 'a[4]'
+
+shopt -s parse_at
+argv.py @[a]
+argv.py @a
+## STDOUT:
+['0', '3', '5']
+['0', '3', '5']
 ## END
 
 ## N-I bash/mksh STDOUT:
@@ -1077,10 +1095,6 @@ unset -v 'a2[1]'
 a3=(1 2 4)
 unset -v 'a3[1]'
 a4=(1 2 3)
-var a1 = _a2sp(a1)
-var a2 = _a2sp(a2)
-var a3 = _a2sp(a3)
-var a4 = _a2sp(a4)
 
 echo $[a1 === a1]
 echo $[a1 === a2]
@@ -1109,7 +1123,6 @@ case $SH in bash|mksh) exit ;; esac
 
 a=(1 2 3)
 unset -v 'a[1]'
-var a = _a2sp(a)
 append 'x' 'y' 'z' (a)
 = a
 
@@ -1129,10 +1142,6 @@ a2=(0)
 a3=(0 1 2)
 a4=(0 0)
 unset -v 'a4[0]'
-var a1 = _a2sp(a1)
-var a2 = _a2sp(a2)
-var a3 = _a2sp(a3)
-var a4 = _a2sp(a4)
 
 echo $[bool(a1)]
 echo $[bool(a2)]
@@ -1153,7 +1162,7 @@ true
 #### crash dump
 case $SH in bash|mksh) exit ;; esac
 
-OILS_CRASH_DUMP_DIR=$TMP $SH -ec 'a=({0..3}); unset -v "a[2]"; var a = _a2sp(a); false'
+OILS_CRASH_DUMP_DIR=$TMP $SH -ec 'a=({0..3}); unset -v "a[2]"; false'
 json read (&crash_dump) < $TMP/*.json
 json write (crash_dump.var_stack[0].a)
 
