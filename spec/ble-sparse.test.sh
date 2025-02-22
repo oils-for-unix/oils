@@ -12,34 +12,34 @@ sp[10]='sparse'
 
 echo $[type(sp)]
 
-echo len: $[_opsp(sp, 'len')]
+echo len: "${#sp[@]}"
 
 #echo $[len(sp)]
 
 shopt -s ysh:upgrade
 
-echo subst: @[_opsp(sp, 'subst')]
-echo keys: @[_opsp(sp, 'keys')]
+echo subst: "${sp[@]}"
+echo keys: "${!sp[@]}"
 
-echo slice: @[_opsp(sp, 'slice', 2, 5)]
+echo slice: "${sp[@]:2:3}"
 
-call _opsp(sp, 'set', 0, 'set0')
+sp[0]=set0
 
-echo get0: $[_opsp(sp, 'get', 0)]
-echo get1: $[_opsp(sp, 'get', 1)]
+echo get0: "${sp[0]}"
+echo get1: "${sp[1]}"
 echo ---
 
 to_append=(x y)
 echo append
-call _opsp(sp, 'append', to_append)
-echo subst: @[_opsp(sp, 'subst')]
-echo keys: @[_opsp(sp, 'keys')]
+sp+=("${to_append[@]}")
+echo subst: "${sp[@]}"
+echo keys: "${!sp[@]}"
 echo ---
 
 echo unset
-call _opsp(sp, 'unset', 11)
-echo subst: @[_opsp(sp, 'subst')]
-echo keys: @[_opsp(sp, 'keys')]
+unset -v 'sp[11]'
+echo subst: "${sp[@]}"
+echo keys: "${!sp[@]}"
 
 ## STDOUT:
 BashArray
