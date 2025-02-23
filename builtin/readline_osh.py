@@ -6,13 +6,12 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value
-from _devbuild.gen.syntax_asdl import loc, CompoundWord
+from _devbuild.gen.syntax_asdl import loc
 from _devbuild.gen.value_asdl import value_e
 from core import pyutil
 from core import vm
 from core.error import e_usage
 from frontend import flag_util
-from frontend import location
 from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log
@@ -47,6 +46,40 @@ class ctx_Keymap(object):
         if self.orig_keymap_name is not None:
             self.readline.restore_orig_keymap()
 
+class BindXCallback(object):
+    """A callable we pass to readline for executing shell commands."""
+
+    def __init__(self, eval):
+        # type: (Eval) -> None
+        self.eval = eval
+
+    def __call__(self, cmd, line_buffer, point):
+        # type: (str, str, int) -> Tuple[int, str, str]
+        """Execute a shell command through the evaluator.
+
+        Args:
+          cmd: The shell command to execute
+          line_buffer: The current line buffer
+          point: The current cursor position
+        """
+        print("Setting READLINE_LINE to: %s" % line_buffer)
+        print("Setting READLINE_POINT to: %s" % point)
+        print("Executing cmd: %s" % cmd)
+
+        # TODO: add READLINE_* env vars later
+        # assert isinstance(line_buffer, str)
+        # self.mem.SetNamed(location.LName("READLINE_LINE"),
+        #                  value.Str(line_buffer),
+        #                  scope_e.GlobalOnly,
+        #                  flags=SetExport)
+        
+        # TODO: refactor out shared code from Eval, cache parse tree?
+        
+        cmd_val = cmd_eval.MakeBuiltinArgv([cmd])
+        status = self.eval.Run(cmd_val)
+
+        return (status, line_buffer, str(point))
+
 
 class Bind(vm._Builtin):
     """Interactive interface to readline bindings"""
@@ -58,13 +91,12 @@ class Bind(vm._Builtin):
         self.mem = mem
         self.eval = evaluator
         self.exclusive_flags = ["q", "u", "r", "x", "f"]
-
-        readline.set_bind_shell_command_hook(
-            lambda *args: self.bind_shell_command_hook(*args))
+        self.bindx_cb = None # type: Optional[BindXCallback]
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
         readline = self.readline
+
         if not readline:
             e_usage("is disabled because Oils wasn't compiled with 'readline'",
                     loc.Missing)
@@ -183,29 +215,6 @@ class Bind(vm._Builtin):
             return 1
 
         return 0
-
-    def bind_shell_command_hook(self, cmd, line_buffer, point):
-        # type: (str, str, int) -> Tuple[int, str, str]
-        '''
-        Invoked from readline to execute arbitrary shell commands
-        '''
-        
-        print("Setting READLINE_LINE to: %s" % line_buffer)
-        print("Setting READLINE_POINT to: %s" % point)
-        print("Executing cmd: %s" % cmd)
-
-        # TODO: add READLINE_* env vars later
-        # assert isinstance(line_buffer, str)
-        # self.mem.SetNamed(location.LName("READLINE_LINE"),
-        #                  value.Str(line_buffer),
-        #                  scope_e.GlobalOnly,
-        #                  flags=SetExport)
-        
-        
-        cmd_val = cmd_eval.MakeBuiltinArgv([cmd])
-        status = self.eval.Run(cmd_val)
-
-        return (status, line_buffer, str(point))
 
 
 class History(vm._Builtin):
