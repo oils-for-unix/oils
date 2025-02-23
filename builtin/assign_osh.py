@@ -14,7 +14,7 @@ from _devbuild.gen.syntax_asdl import loc, loc_t
 
 from core import bash_impl
 from core import error
-from core.error import e_usage
+from core.error import e_usage, e_die
 from core import state
 from core import vm
 from display import ui
@@ -193,8 +193,9 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
         return 1
 
 
-def _AssignVarForBuiltin(mem, rval, pair, which_scopes, flags):
-    # type: (Mem, value_t, AssignArg, scope_t, int) -> None
+def _AssignVarForBuiltin(mem, rval, pair, which_scopes, flags, arith_ev,
+                         flag_a, flag_A):
+    # type: (Mem, value_t, AssignArg, scope_t, int, sh_expr_eval.ArithEvaluator, bool, bool) -> None
     """For 'export', 'readonly', and NewVar to respect += and flags.
 
     Like 'setvar' (scope_e.LocalOnly), unless dynamic scope is on.  That is, it
@@ -203,28 +204,76 @@ def _AssignVarForBuiltin(mem, rval, pair, which_scopes, flags):
     Used for assignment builtins, (( a = b )), {fd}>out, ${x=}, etc.
     """
     lval = LeftName(pair.var_name, pair.blame_word)
-    if pair.plus_eq:
+
+    initializer = None  # type: value.InitializerList
+    if rval is None:
+        # When 'export e+=', then rval is value.Str('')
+        # When 'export foo', the pair.plus_eq flag is false.
+        # Thus, when rval is None, plus_eq cannot be True.
+        assert not pair.plus_eq, pair.plus_eq
+        # NOTE: when rval is None, only flags are changed
+        val = None  # type: value_t
+    elif rval.tag() == value_e.InitializerList:
         old_val = sh_expr_eval.OldValue(
             lval,
             mem,
             None,  # ignore set -u
             pair.blame_word)
-        # When 'export e+=', then rval is value.Str('')
-        # When 'export foo', the pair.plus_eq flag is false.
-        assert rval is not None
+        initializer = cast(value.InitializerList, rval)
+
+        val = old_val
+        if flag_a:
+            if old_val.tag() == value_e.BashAssoc:
+                # Note: OSH allows overwriting an existing BashArray with an
+                #   empty BashArray.  Bash does not allow this.
+                val = bash_impl.BashArray_New()
+            elif old_val.tag() in (value_e.Undef, value_e.Str,
+                                   value_e.BashArray):
+                # We do not need adjustemnts for -a.  These types are
+                # consistently handled within ListInitialize
+                pass
+            else:
+                e_die(
+                    "Can't convert type %s into BashArray" %
+                    ui.ValType(old_val), pair.blame_word)
+        elif flag_A:
+            if old_val.tag() in (value_e.Undef, value_e.Str,
+                                 value_e.BashArray):
+                # Note: We explicitly initialize BashAssoc for Undef.
+                # Note: OSH allows overwriting an existing BashArray with an
+                #   empty BashAssoc.  Bash does not allow this.
+                val = bash_impl.BashAssoc_New()
+            elif old_val.tag() == value_e.BashAssoc:
+                # We do not need adjustments for -A.
+                pass
+            else:
+                e_die(
+                    "Can't convert type %s into BashAssoc" %
+                    ui.ValType(old_val), pair.blame_word)
+
+        val = cmd_eval.ListInitializeTarget(val, pair.plus_eq, pair.blame_word)
+    elif pair.plus_eq:
+        old_val = sh_expr_eval.OldValue(
+            lval,
+            mem,
+            None,  # ignore set -u
+            pair.blame_word)
         val = cmd_eval.PlusEquals(old_val, rval)
     else:
-        # NOTE: when rval is None, only flags are changed
         val = rval
 
     mem.SetNamed(lval, val, which_scopes, flags=flags)
+    if initializer is not None:
+        cmd_eval.ListInitialize(val, initializer, pair.plus_eq,
+                                pair.blame_word, arith_ev)
 
 
 class Export(vm._AssignBuiltin):
 
-    def __init__(self, mem, errfmt):
-        # type: (Mem, ui.ErrorFormatter) -> None
+    def __init__(self, mem, arith_ev, errfmt):
+        # type: (Mem, sh_expr_eval.ArithEvaluator, ui.ErrorFormatter) -> None
         self.mem = mem
+        self.arith_ev = arith_ev
         self.errfmt = errfmt
 
     def Run(self, cmd_val):
@@ -266,7 +315,8 @@ class Export(vm._AssignBuiltin):
             which_scopes = self.mem.ScopesForWriting()
             for pair in cmd_val.pairs:
                 _AssignVarForBuiltin(self.mem, pair.rval, pair, which_scopes,
-                                     state.SetExport)
+                                     state.SetExport, self.arith_ev, False,
+                                     False)
 
         return 0
 
@@ -298,22 +348,12 @@ def _ReconcileTypes(rval, flag_a, flag_A, pair, mem):
                 rval = bash_impl.BashAssoc_New()
     else:
         if flag_a:
-            if rval.tag() not in (value_e.InternalStringArray,
-                                  value_e.BashArray):
-                e_usage("Got -a but RHS isn't an array",
+            if rval.tag() != value_e.InitializerList:
+                e_usage("Got -a but RHS isn't an initializer list",
                         loc.Word(pair.blame_word))
-
         elif flag_A:
-            # Special case: declare -A A=() is OK.  The () is changed to mean
-            # an empty associative array.
-            if rval.tag() == value_e.BashArray:
-                sparse_val = cast(value.BashArray, rval)
-                if bash_impl.BashArray_IsEmpty(sparse_val):
-                    return bash_impl.BashAssoc_New()
-                    #return bash_impl.BashArray_New()
-
-            if rval.tag() != value_e.BashAssoc:
-                e_usage("Got -A but RHS isn't an associative array",
+            if rval.tag() != value_e.InitializerList:
+                e_usage("Got -A but RHS isn't an initializer list",
                         loc.Word(pair.blame_word))
 
     return rval
@@ -321,9 +361,10 @@ def _ReconcileTypes(rval, flag_a, flag_A, pair, mem):
 
 class Readonly(vm._AssignBuiltin):
 
-    def __init__(self, mem, errfmt):
-        # type: (Mem, ui.ErrorFormatter) -> None
+    def __init__(self, mem, arith_ev, errfmt):
+        # type: (Mem, sh_expr_eval.ArithEvaluator, ui.ErrorFormatter) -> None
         self.mem = mem
+        self.arith_ev = arith_ev
         self.errfmt = errfmt
 
     def Run(self, cmd_val):
@@ -348,7 +389,8 @@ class Readonly(vm._AssignBuiltin):
             # - when rval is None, only flags are changed
             # - dynamic scope because flags on locals can be changed, etc.
             _AssignVarForBuiltin(self.mem, rval, pair, which_scopes,
-                                 state.SetReadOnly)
+                                 state.SetReadOnly, self.arith_ev, arg.a,
+                                 arg.A)
 
         return 0
 
@@ -356,11 +398,12 @@ class Readonly(vm._AssignBuiltin):
 class NewVar(vm._AssignBuiltin):
     """declare/typeset/local."""
 
-    def __init__(self, mem, procs, exec_opts, errfmt):
-        # type: (Mem, state.Procs, optview.Exec, ui.ErrorFormatter) -> None
+    def __init__(self, mem, procs, exec_opts, arith_ev, errfmt):
+        # type: (Mem, state.Procs, optview.Exec, sh_expr_eval.ArithEvaluator, ui.ErrorFormatter) -> None
         self.mem = mem
         self.procs = procs
         self.exec_opts = exec_opts
+        self.arith_ev = arith_ev
         self.errfmt = errfmt
 
     def _PrintFuncs(self, names):
@@ -463,7 +506,8 @@ class NewVar(vm._AssignBuiltin):
         for pair in cmd_val.pairs:
             rval = _ReconcileTypes(pair.rval, arg.a, arg.A, pair, self.mem)
 
-            _AssignVarForBuiltin(self.mem, rval, pair, which_scopes, flags)
+            _AssignVarForBuiltin(self.mem, rval, pair, which_scopes, flags,
+                                 self.arith_ev, arg.a, arg.A)
 
         return status
 

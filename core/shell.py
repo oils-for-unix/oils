@@ -211,19 +211,20 @@ def InitAssignmentBuiltins(
         mem,  # type: state.Mem
         procs,  # type: state.Procs
         exec_opts,  # type: optview.Exec
+        arith_ev,  # type: sh_expr_eval.ArithEvaluator
         errfmt,  # type: ui.ErrorFormatter
 ):
     # type: (...) -> Dict[int, vm._AssignBuiltin]
 
     assign_b = {}  # type: Dict[int, vm._AssignBuiltin]
 
-    new_var = assign_osh.NewVar(mem, procs, exec_opts, errfmt)
+    new_var = assign_osh.NewVar(mem, procs, exec_opts, arith_ev, errfmt)
     assign_b[builtin_i.declare] = new_var
     assign_b[builtin_i.typeset] = new_var
     assign_b[builtin_i.local] = new_var
 
-    assign_b[builtin_i.export_] = assign_osh.Export(mem, errfmt)
-    assign_b[builtin_i.readonly] = assign_osh.Readonly(mem, errfmt)
+    assign_b[builtin_i.export_] = assign_osh.Export(mem, arith_ev, errfmt)
+    assign_b[builtin_i.readonly] = assign_osh.Readonly(mem, arith_ev, errfmt)
 
     return assign_b
 
@@ -506,7 +507,7 @@ def Main(
     word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
                                             tilde_ev, splitter, errfmt)
 
-    assign_b = InitAssignmentBuiltins(mem, procs, exec_opts, errfmt)
+    assign_b = InitAssignmentBuiltins(mem, procs, exec_opts, arith_ev, errfmt)
     cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs, assign_b,
                                        arena, cmd_deps, trap_state,
                                        signal_safe)
