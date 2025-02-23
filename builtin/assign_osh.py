@@ -193,7 +193,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
         return 1
 
 
-def _ExportReadonlyNewVar(mem, rval, pair, which_scopes, flags):
+def _AssignVarForBuiltin(mem, rval, pair, which_scopes, flags):
     # type: (Mem, value_t, AssignArg, scope_t, int) -> None
     """For 'export', 'readonly', and NewVar to respect += and flags.
 
@@ -261,8 +261,8 @@ class Export(vm._AssignBuiltin):
         else:
             which_scopes = self.mem.ScopesForWriting()
             for pair in cmd_val.pairs:
-                _ExportReadonlyNewVar(self.mem, pair.rval, pair, which_scopes,
-                                      state.SetExport)
+                _AssignVarForBuiltin(self.mem, pair.rval, pair, which_scopes,
+                                     state.SetExport)
 
         return 0
 
@@ -338,8 +338,8 @@ class Readonly(vm._AssignBuiltin):
             # NOTE:
             # - when rval is None, only flags are changed
             # - dynamic scope because flags on locals can be changed, etc.
-            _ExportReadonlyNewVar(self.mem, rval, pair, which_scopes,
-                                  state.SetReadOnly)
+            _AssignVarForBuiltin(self.mem, rval, pair, which_scopes,
+                                 state.SetReadOnly)
 
         return 0
 
@@ -468,7 +468,7 @@ class NewVar(vm._AssignBuiltin):
 
             rval = _ReconcileTypes(rval, arg.a, arg.A, pair.blame_word)
 
-            _ExportReadonlyNewVar(self.mem, rval, pair, which_scopes, flags)
+            _AssignVarForBuiltin(self.mem, rval, pair, which_scopes, flags)
 
         return status
 
