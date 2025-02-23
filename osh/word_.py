@@ -531,7 +531,11 @@ def DetectAssocPair(w):
             value = CompoundWord(parts[i + 1:])  # $a$b from
 
             # Type-annotated intermediate value for mycpp translation
-            return AssocPair(key, value)
+
+            # XXX---Isn't there a better way to detect "]+="?
+            has_plus = cast(Token, parts[i]).length == 3
+
+            return AssocPair(key, value, has_plus)
 
     return None
 
