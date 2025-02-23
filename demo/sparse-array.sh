@@ -40,15 +40,17 @@ compare-x() {
   local osh_souffle=_bin/cxx-opt+souffle/osh
   ninja $osh $osh_souffle
 
-  # Souffle build is slightly faster
+  # Souffle build is sometimes slightly faster
   #local shells=(bash $osh $osh_souffle)
 
   local shells=(bash $osh)
 
-  echo ===
-  echo $osh SparseArray demo
-  echo
-  my-time sparse-$x $osh
+  if false; then
+    echo ===
+    echo $osh SparseArray demo
+    echo
+    my-time sparse-$x $osh
+  fi
 
   for sh in ${shells[@]}; do
     echo ===

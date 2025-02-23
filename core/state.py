@@ -1532,14 +1532,16 @@ class Mem(object):
         local -g uses this, probably because bash does the wrong thing and
         prints LOCALS, not globals.
         """
+        # TODO: check for bugs where temp frames FOO=bar make the var stack
+        # non-empty, at global scope (like the removed ParsingChangesAllowed())
+
         return len(self.var_stack) == 1
 
     def InsideFunction(self):
         # type: () -> bool
         """For the ERR trap, and use builtin"""
-
-        # TODO: Should this be unified with ParsingChangesAllowed()?  Slightly
-        # different logic.
+        # TODO: check for bugs where temp frames FOO=bar make the var stack
+        # non-empty, at global scope (like the removed ParsingChangesAllowed())
 
         # Don't run it inside functions
         return len(self.var_stack) > 1
