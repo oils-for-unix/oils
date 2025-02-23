@@ -25,6 +25,9 @@ from _devbuild.gen.syntax_asdl import (
     rhs_word_t,
     word_part,
     word_part_e,
+    AssocPair,
+    InitializerWord,
+    InitializerWord_e,
 )
 from _devbuild.gen.runtime_asdl import (
     part_value,
@@ -1842,8 +1845,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
             if case(word_part_e.ShArrayLiteral):
                 part = cast(ShArrayLiteral, UP_part)
                 e_die("Unexpected array literal", loc.WordPart(part))
-            elif case(word_part_e.BashAssocLiteral):
-                part = cast(word_part.BashAssocLiteral, UP_part)
+            elif case(word_part_e.InitializerLiteral):
+                part = cast(word_part.InitializerLiteral, UP_part)
                 e_die("Unexpected associative array literal",
                       loc.WordPart(part))
 
@@ -2162,22 +2165,18 @@ class AbstractWordEvaluator(StringWordEvaluator):
             part0 = w.parts[0]
             UP_part0 = part0
             tag = part0.tag()
-            # Special case for a=(1 2).  ShArrayLiteral won't appear in words that
-            # don't look like assignments.
-            if tag == word_part_e.ShArrayLiteral:
-                part0 = cast(ShArrayLiteral, UP_part0)
-                array_words = part0.words
-                words = braces.BraceExpandWords(array_words)
-                strs = self.EvalWordSequence(words)
-                return bash_impl.BashArray_FromList(strs)
-
-            if tag == word_part_e.BashAssocLiteral:
-                part0 = cast(word_part.BashAssocLiteral, UP_part0)
+            if tag == word_part_e.InitializerLiteral:
+                part0 = cast(word_part.InitializerLiteral, UP_part0)
                 d = NewDict()  # type: Dict[str, str]
                 for pair in part0.pairs:
-                    k = self.EvalWordToString(pair.key)
-                    v = self.EvalWordToString(pair.value)
-                    d[k.s] = v.s
+                    UP_pair = pair
+                    if pair.tag() == InitializerWord_e.AssocPair:
+                        pair = cast(AssocPair, UP_pair)
+                        k = self.EvalWordToString(pair.key)
+                        v = self.EvalWordToString(pair.value)
+                        d[k.s] = v.s
+                    else:
+                        raise AssertionError('Not yet implemented')
                 return value.BashAssoc(d)
 
         # If RHS doesn't look like a=( ... ), then it must be a string.
