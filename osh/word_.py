@@ -97,7 +97,7 @@ def _EvalWordPart(part):
 
             return True, ''.join(strs), True  # At least one part was quoted!
 
-        elif case(word_part_e.ShArrayLiteral, word_part_e.BashAssocLiteral,
+        elif case(word_part_e.ShArrayLiteral, word_part_e.InitializerLiteral,
                   word_part_e.ZshVarSub, word_part_e.CommandSub,
                   word_part_e.SimpleVarSub, word_part_e.BracedVarSub,
                   word_part_e.TildeSub, word_part_e.ArithSub,
@@ -398,8 +398,7 @@ def HasArrayPart(w):
     # type: (CompoundWord) -> bool
     """Used in cmd_parse."""
     for part in w.parts:
-        if part.tag() in (word_part_e.ShArrayLiteral,
-                          word_part_e.BashAssocLiteral):
+        if part.tag() == word_part_e.InitializerLiteral:
             return True
     return False
 
@@ -530,8 +529,10 @@ def DetectAssocPair(w):
             key = CompoundWord(parts[1:i])  # $x$y
             value = CompoundWord(parts[i + 1:])  # $a$b from
 
+            has_plus = lexer.IsPlusEquals(cast(Token, parts[i]))
+
             # Type-annotated intermediate value for mycpp translation
-            return AssocPair(key, value)
+            return AssocPair(key, value, has_plus)
 
     return None
 

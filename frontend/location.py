@@ -221,8 +221,8 @@ def LeftTokenForWordPart(part):
             part = cast(ShArrayLiteral, UP_part)
             return part.left
 
-        elif case(word_part_e.BashAssocLiteral):
-            part = cast(word_part.BashAssocLiteral, UP_part)
+        elif case(word_part_e.InitializerLiteral):
+            part = cast(word_part.InitializerLiteral, UP_part)
             return part.left
 
         elif case(word_part_e.Literal):
@@ -294,8 +294,8 @@ def _RightTokenForWordPart(part):
             part = cast(ShArrayLiteral, UP_part)
             return part.right
 
-        elif case(word_part_e.BashAssocLiteral):
-            part = cast(word_part.BashAssocLiteral, UP_part)
+        elif case(word_part_e.InitializerLiteral):
+            part = cast(word_part.InitializerLiteral, UP_part)
             return part.right
 
         elif case(word_part_e.Literal):

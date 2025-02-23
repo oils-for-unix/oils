@@ -1019,7 +1019,7 @@ class YshPrinter(object):
         UP_node = node
 
         with tagswitch(node) as case:
-            if case(word_part_e.ShArrayLiteral, word_part_e.BashAssocLiteral,
+            if case(word_part_e.ShArrayLiteral, word_part_e.InitializerLiteral,
                     word_part_e.TildeSub, word_part_e.ExtGlob):
                 pass
 
