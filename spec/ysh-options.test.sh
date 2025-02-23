@@ -1,3 +1,5 @@
+## oils_failures_allowed: 1
+
 # Test shell execution options.
 
 #### simple_word_eval doesn't split, glob, or elide empty
@@ -75,7 +77,11 @@ argv.py @words
 ['a', 'b c']
 ## END
 
-#### parse_at can't be used outside top level
+#### DISABLED: parse_at can't be used outside top level
+
+# shopt -u expand_aliases conflicted with ble.sh, and it was also broken for
+# proc/func
+
 f() {
   shopt -s parse_at
   echo status=$?

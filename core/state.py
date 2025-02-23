@@ -466,10 +466,18 @@ class MutableOpts(object):
 
     def _SetArrayByNum(self, opt_num, b):
         # type: (int, bool) -> None
+        """
+        Disabled check: ParsingChangesAllowed() worked for shell functions, but
+        was broken for proc and func.  Because they don't use the argv stack.
+
+        It also doesn't work for 'eval' and 'source', as shown by ble.sh.
+        (Although source inside a function is an odd usage.)
+
         if (opt_num in consts.PARSE_OPTION_NUMS and
                 not self.mem.ParsingChangesAllowed()):
             e_die('Syntax options must be set at the top level '
                   '(outside any function)')
+        """
 
         self._Set(opt_num, b)
 
@@ -1334,15 +1342,6 @@ class Mem(object):
         # type: (str) -> None
         """Used by builtins."""
         self.pwd = pwd
-
-    def ParsingChangesAllowed(self):
-        # type: () -> bool
-        """For checking that syntax options are only used at the top level."""
-
-        # DISALLOW proc calls     : they push argv_stack, var_stack, debug_stack
-        # ALLOW source foo.sh arg1: pushes argv_stack, debug_stack
-        # ALLOW FOO=bar           : pushes var_stack
-        return len(self.var_stack) == 1 or len(self.argv_stack) == 1
 
     def Dump(self):
         # type: () -> Tuple[List[value_t], List[value_t], List[value_t]]
