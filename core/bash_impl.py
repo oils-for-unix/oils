@@ -347,9 +347,15 @@ def BashAssoc_ToStrForShellPrint(assoc_val):
 # BashArray come here.
 
 
+def BashArray_New():
+    # type: () -> value.BashArray
+    d = {}  # type: Dict[mops.BigInt, str]
+    max_index = mops.MINUS_ONE  # max index for empty array
+    return value.BashArray(d, max_index)
+
+
 def BashArray_FromList(strs):
     # type: (List[str]) -> value.BashArray
-
     d = {}  # type: Dict[mops.BigInt, str]
     max_index = mops.MINUS_ONE  # max index for empty array
     for s in strs:
