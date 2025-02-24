@@ -260,6 +260,13 @@ def InternalStringArray_ToStrForShellPrint(array_val, name):
 # BashAssoc come here.
 
 
+def BashAssoc_New():
+    # type: () -> value.BashAssoc
+    # mycpp limitation: NewDict() needs to be typed
+    d = mylib.NewDict()  # type: Dict[str, str]
+    return value.BashAssoc(d)
+
+
 def BashAssoc_IsEmpty(assoc_val):
     # type: (value.BashAssoc) -> bool
     return len(assoc_val.d) == 0
