@@ -212,8 +212,13 @@ def _ListInitializeBashArray(val, initializer, has_plus, blame_loc, arith_ev):
                                        indices)
 
 
-def ListInitialize(old_val, initializer, has_plus, blame_loc, arith_ev):
-    # type: (value_t, value.InitializerList, bool, loc_t,  sh_expr_eval.ArithEvaluator) -> value_t
+def ListInitialize(old_val,
+                   initializer,
+                   has_plus,
+                   blame_loc,
+                   arith_ev,
+                   destructive=True):
+    # type: (value_t, value.InitializerList, bool, loc_t,  sh_expr_eval.ArithEvaluator, bool) -> value_t
     UP_old_val = old_val
     with tagswitch(old_val) as case:
         if case(value_e.Undef):
@@ -231,11 +236,21 @@ def ListInitialize(old_val, initializer, has_plus, blame_loc, arith_ev):
             return new_val
         elif case(value_e.BashArray):
             old_val = cast(value.BashArray, UP_old_val)
+            if not destructive:
+                if has_plus:
+                    old_val = bash_impl.BashArray_Copy(old_val)
+                else:
+                    old_val = bash_impl.BashArray_New()
             _ListInitializeBashArray(old_val, initializer, has_plus, blame_loc,
                                      arith_ev)
             return old_val
         elif case(value_e.BashAssoc):
             old_val = cast(value.BashAssoc, UP_old_val)
+            if not destructive:
+                if has_plus:
+                    old_val = bash_impl.BashAssoc_Copy(old_val)
+                else:
+                    old_val = bash_impl.BashAssoc_New()
             bash_impl.BashAssoc_ListInitialize(old_val, initializer, has_plus,
                                                blame_loc)
             return old_val
@@ -647,6 +662,21 @@ class CommandEvaluator(object):
         """For FOO=1 cmd."""
         for e_pair in more_env:
             val = self.word_ev.EvalRhsWord(e_pair.val)
+
+            if val.tag() == value_e.InitializerList:
+                initializer = cast(value.InitializerList, val)
+
+                lval = LeftName(e_pair.name, e_pair.left)
+                old_val = sh_expr_eval.OldValue(lval, self.mem,
+                                                None)  # No nounset
+                has_plus = False
+                val = ListInitialize(old_val,
+                                     initializer,
+                                     has_plus,
+                                     e_pair.left,
+                                     self.arith_ev,
+                                     destructive=False)
+
             # Set each var so the next one can reference it.  Example:
             # FOO=1 BAR=$FOO ls /
             self.mem.SetNamed(location.LName(e_pair.name),

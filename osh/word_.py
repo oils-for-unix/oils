@@ -398,8 +398,7 @@ def HasArrayPart(w):
     # type: (CompoundWord) -> bool
     """Used in cmd_parse."""
     for part in w.parts:
-        if part.tag() in (word_part_e.ShArrayLiteral,
-                          word_part_e.BashAssocLiteral):
+        if part.tag() == word_part_e.InitializerLiteral:
             return True
     return False
 
