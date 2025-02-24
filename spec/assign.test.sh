@@ -672,3 +672,39 @@ dict:3
 ## N-I dash/mksh status: 99
 ## N-I dash/mksh stdout-json: ""
 
+
+#### "declare -a arr" and "readonly -a a" creates an empty array (OSH)
+case $SH in (dash|mksh) exit 99;; esac # dash/mksh does not support associative arrays
+
+declare -a arr1
+readonly -a arr2
+declare -A dict1
+readonly -A dict2
+
+declare -p arr1 arr2 dict1 dict2
+## STDOUT:
+declare -a arr1=()
+declare -ra arr2=()
+declare -A dict1=()
+declare -rA dict2=()
+## END
+## N-I bash STDOUT:
+declare -a arr1
+declare -r arr2
+declare -A dict1
+declare -r dict2
+## END
+## OK zsh STDOUT:
+typeset -a arr1
+arr1=(  )
+typeset -a arr2
+arr2=(  )
+typeset -ar arr2
+typeset -A dict1
+dict1=( )
+typeset -a dict2
+dict2=( )
+typeset -Ar dict2
+## END
+## N-I dash/mksh status: 99
+## N-I dash/mksh stdout-json: ""

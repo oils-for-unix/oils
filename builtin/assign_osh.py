@@ -192,8 +192,8 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
         return 1
 
 
-def _ExportReadonly(mem, pair, flags):
-    # type: (Mem, AssignArg, int) -> None
+def _ExportReadonly(mem, rval, pair, flags):
+    # type: (Mem, value_t, AssignArg, int) -> None
     """For 'export' and 'readonly' to respect += and flags.
 
     Like 'setvar' (scope_e.LocalOnly), unless dynamic scope is on.  That is, it
@@ -208,11 +208,11 @@ def _ExportReadonly(mem, pair, flags):
         old_val = sh_expr_eval.OldValue(lval, mem, None)  # ignore set -u
         # When 'export e+=', then rval is value.Str('')
         # When 'export foo', the pair.plus_eq flag is false.
-        assert pair.rval is not None
-        val = cmd_eval.PlusEquals(old_val, pair.rval)
+        assert rval is not None
+        val = cmd_eval.PlusEquals(old_val, rval)
     else:
         # NOTE: when rval is None, only flags are changed
-        val = pair.rval
+        val = rval
 
     mem.SetNamed(lval, val, which_scopes, flags=flags)
 
@@ -261,7 +261,7 @@ class Export(vm._AssignBuiltin):
                 self.mem.ClearFlag(pair.var_name, state.ClearExport)
         else:
             for pair in cmd_val.pairs:
-                _ExportReadonly(self.mem, pair, state.SetExport)
+                _ExportReadonly(self.mem, pair.rval, pair, state.SetExport)
 
         return 0
 
@@ -336,7 +336,7 @@ class Readonly(vm._AssignBuiltin):
             # NOTE:
             # - when rval is None, only flags are changed
             # - dynamic scope because flags on locals can be changed, etc.
-            _ExportReadonly(self.mem, pair, state.SetReadOnly)
+            _ExportReadonly(self.mem, rval, pair, state.SetReadOnly)
 
         return 0
 
