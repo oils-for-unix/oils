@@ -973,8 +973,13 @@ class CommandEvaluator(object):
         which_scopes = self.mem.ScopesForWriting()
 
         for pair in node.pairs:
+            # The shell assignments should always have RHS.  An AssignPair
+            # stored in command_e.ShAssignment is constructed in
+            # cmd_parse._MakeAssignPair, where rhs is explicitly constructed to
+            # be CompoundWord or rhs_word.Empty.
+            assert pair.rhs, pair.rhs
+
             if pair.op == assign_op_e.PlusEqual:
-                assert pair.rhs, pair.rhs  # I don't think a+= is valid?
                 rhs = self.word_ev.EvalRhsWord(pair.rhs)
 
                 lval = self.arith_ev.EvalShellLhs(pair.lhs, which_scopes)
@@ -987,12 +992,8 @@ class CommandEvaluator(object):
                 lval = self.arith_ev.EvalShellLhs(pair.lhs, which_scopes)
 
                 # RHS can be a string or array.
-                if pair.rhs:
-                    rhs = self.word_ev.EvalRhsWord(pair.rhs)
-                    assert isinstance(rhs, value_t), rhs
-
-                else:  # e.g. 'readonly x' or 'local x'
-                    rhs = None
+                rhs = self.word_ev.EvalRhsWord(pair.rhs)
+                assert isinstance(rhs, value_t), rhs
 
                 val = rhs
 
