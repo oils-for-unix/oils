@@ -289,7 +289,7 @@ def _ReconcileTypes(rval, flag_a, flag_A, blame_word):
                 # mycpp limitation: NewDict() needs to be typed
                 tmp = NewDict()  # type: Dict[str, str]
                 return value.BashAssoc(tmp)
-                #return bash_impl.BashArray_FromList([])
+                #return bash_impl.BashArray_New()
 
         if rval.tag() != value_e.BashAssoc:
             e_usage("Got -A but RHS isn't an associative array",
@@ -323,7 +323,7 @@ class Readonly(vm._AssignBuiltin):
         for pair in cmd_val.pairs:
             if pair.rval is None:
                 if arg.a:
-                    rval = bash_impl.BashArray_FromList([])  # type: value_t
+                    rval = bash_impl.BashArray_New()  # type: value_t
                 elif arg.A:
                     # mycpp limitation: NewDict() needs to be typed
                     tmp = NewDict()  # type: Dict[str, str]
@@ -459,7 +459,7 @@ class NewVar(vm._AssignBuiltin):
                 if arg.a:
                     if old_val.tag() not in (value_e.InternalStringArray,
                                              value_e.BashArray):
-                        rval = bash_impl.BashArray_FromList([])
+                        rval = bash_impl.BashArray_New()
                 elif arg.A:
                     if old_val.tag() != value_e.BashAssoc:
                         # mycpp limitation: NewDict() needs to be typed

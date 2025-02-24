@@ -1181,3 +1181,23 @@ json write (crash_dump.var_stack[0].a)
 
 ## N-I bash/mksh STDOUT:
 ## END
+
+
+#### Regression: a[-1]=1
+case $SH in mksh) exit ;; esac
+
+a[-1]=1
+
+## status: 1
+## STDOUT:
+## END
+## STDERR:
+  a[-1]=1
+  ^~
+[ stdin ]:3: fatal: Index %d is out of bounds for array of length 0
+## END
+## OK bash STDERR:
+bash: line 3: a[-1]: bad array subscript
+## END
+## N-I mksh status: 0
+## N-I mksh stderr-json: ""
