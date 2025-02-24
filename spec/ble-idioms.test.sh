@@ -270,6 +270,7 @@ echo "${a[@]}"
 ## N-I mksh/ash STDOUT:
 ## END
 
+
 #### shopt -u expand_aliases and eval
 case $SH in zsh|mksh|ash) exit ;; esac
 
@@ -289,3 +290,26 @@ hello
 ## N-I zsh/mksh/ash STDOUT:
 ## END
 
+
+#### Tilde expansions in RHS of designated array initialization
+case $SH in zsh|mksh|ash) exit ;; esac
+
+HOME=/home/user
+declare -A a
+declare -A a=(['home']=~ ['hello']=~:~:~)
+echo "${a['home']}"
+echo "${a['hello']}"
+
+## STDOUT:
+/home/user
+/home/user:/home/user:/home/user
+## END
+
+# Note: bash-5.2 has a bug that the tilde doesn't expand on the right hand side
+# of [key]=value.  This problem doesn't happen in bash-3.1..5.1 and bash-5.3.
+## BUG bash STDOUT:
+~
+~:~:~
+## END
+
+## N-I zsh/mksh/ash stdout-json: ""
