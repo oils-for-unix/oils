@@ -1666,6 +1666,7 @@ class WordParser(WordEmitter):
         # If the first one is a key/value pair, then the rest are assumed to be.
         pair = word_.DetectAssocPair(words[0])
         if pair:
+            word_.TildeDetectAssign(pair.value)  # pair.value is modified
             pairs.append(pair)
 
             n = len(words)
@@ -1675,6 +1676,7 @@ class WordParser(WordEmitter):
                 if not pair:
                     p_die("Expected associative array pair", loc.Word(w2))
 
+                word_.TildeDetectAssign(pair.value)  # pair.value is modified
                 pairs.append(pair)
 
             # invariant List?
