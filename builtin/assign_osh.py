@@ -5,6 +5,7 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import (
     scope_e,
+    scope_t,
     cmd_value,
     AssignArg,
 )
@@ -192,17 +193,15 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
         return 1
 
 
-def _ExportReadonly(mem, rval, pair, flags):
-    # type: (Mem, value_t, AssignArg, int) -> None
-    """For 'export' and 'readonly' to respect += and flags.
+def _AssignVarForBuiltin(mem, rval, pair, which_scopes, flags):
+    # type: (Mem, value_t, AssignArg, scope_t, int) -> None
+    """For 'export', 'readonly', and NewVar to respect += and flags.
 
     Like 'setvar' (scope_e.LocalOnly), unless dynamic scope is on.  That is, it
     respects shopt --unset dynamic_scope.
 
     Used for assignment builtins, (( a = b )), {fd}>out, ${x=}, etc.
     """
-    which_scopes = mem.ScopesForWriting()
-
     lval = LeftName(pair.var_name, pair.blame_word)
     if pair.plus_eq:
         old_val = sh_expr_eval.OldValue(lval, mem, None)  # ignore set -u
@@ -260,8 +259,10 @@ class Export(vm._AssignBuiltin):
                 # NOTE: we don't care if it wasn't found, like bash.
                 self.mem.ClearFlag(pair.var_name, state.ClearExport)
         else:
+            which_scopes = self.mem.ScopesForWriting()
             for pair in cmd_val.pairs:
-                _ExportReadonly(self.mem, pair.rval, pair, state.SetExport)
+                _AssignVarForBuiltin(self.mem, pair.rval, pair, which_scopes,
+                                     state.SetExport)
 
         return 0
 
@@ -318,6 +319,7 @@ class Readonly(vm._AssignBuiltin):
                                    True,
                                    builtin=_READONLY)
 
+        which_scopes = self.mem.ScopesForWriting()
         for pair in cmd_val.pairs:
             if pair.rval is None:
                 if arg.a:
@@ -336,7 +338,8 @@ class Readonly(vm._AssignBuiltin):
             # NOTE:
             # - when rval is None, only flags are changed
             # - dynamic scope because flags on locals can be changed, etc.
-            _ExportReadonly(self.mem, rval, pair, state.SetReadOnly)
+            _AssignVarForBuiltin(self.mem, rval, pair, which_scopes,
+                                 state.SetReadOnly)
 
         return 0
 
@@ -463,19 +466,9 @@ class NewVar(vm._AssignBuiltin):
                         tmp = NewDict()  # type: Dict[str, str]
                         rval = value.BashAssoc(tmp)
 
-            lval = LeftName(pair.var_name, pair.blame_word)
+            rval = _ReconcileTypes(rval, arg.a, arg.A, pair.blame_word)
 
-            if pair.plus_eq:
-                old_val = sh_expr_eval.OldValue(lval, self.mem,
-                                                None)  # ignore set -u
-                # When 'typeset e+=', then rval is value.Str('')
-                # When 'typeset foo', the pair.plus_eq flag is false.
-                assert pair.rval is not None
-                rval = cmd_eval.PlusEquals(old_val, pair.rval)
-            else:
-                rval = _ReconcileTypes(rval, arg.a, arg.A, pair.blame_word)
-
-            self.mem.SetNamed(lval, rval, which_scopes, flags=flags)
+            _AssignVarForBuiltin(self.mem, rval, pair, which_scopes, flags)
 
         return status
 
