@@ -159,14 +159,14 @@ def InternalStringArray_SetElement(array_val, index, s):
         return error_code
 
     if index < n:
-        array_val.strs[index] = s
+        strs[index] = s
     else:
         # Fill it in with None.  It could look like this:
         # ['1', 2, 3, None, None, '4', None]
         # Then ${#a[@]} counts the entries that are not None.
         for i in xrange(index - n + 1):
-            array_val.strs.append(None)
-        array_val.strs[index] = s
+            strs.append(None)
+        strs[index] = s
 
     return error_code_e.OK
 
