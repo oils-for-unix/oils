@@ -1845,8 +1845,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
             if case(word_part_e.ShArrayLiteral):
                 part = cast(ShArrayLiteral, UP_part)
                 e_die("Unexpected array literal", loc.WordPart(part))
-            elif case(word_part_e.BashAssocLiteral):
-                part = cast(word_part.BashAssocLiteral, UP_part)
+            elif case(word_part_e.InitializerLiteral):
+                part = cast(word_part.InitializerLiteral, UP_part)
                 e_die("Unexpected associative array literal",
                       loc.WordPart(part))
 
@@ -2167,8 +2167,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             tag = part0.tag()
             if tag == word_part_e.InitializerLiteral:
                 part0 = cast(word_part.InitializerLiteral, UP_part0)
-
-                assigns = []  # type: List[InitializerValue]
+                d = NewDict()  # type: Dict[str, str]
                 for pair in part0.pairs:
                     UP_pair = pair
                     if pair.tag() == InitializerWord_e.AssocPair:

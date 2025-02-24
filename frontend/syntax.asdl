@@ -203,7 +203,7 @@ module syntax
 
   word_part = 
     ShArrayLiteral %ShArrayLiteral
-  | BashAssocLiteral(Token left, List[InitializerWord] pairs, Token right)
+  | InitializerLiteral(Token left, List[InitializerWord] pairs, Token right)
   | Literal %Token
     # escaped case is separate so the evaluator doesn't have to check token ID
   | EscapedLiteral(Token token, str ch)

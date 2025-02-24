@@ -1672,7 +1672,8 @@ class WordParser(WordEmitter):
                 initializer_words.append(InitializerWord.ArrayWord(w3))
 
         # invariant List?
-        return word_part.BashAssocLiteral(left_token, initializer_words, right_token)
+        return word_part.InitializerLiteral(left_token, initializer_words,
+                                            right_token)
 
     def ParseProcCallArgs(self, start_symbol):
         # type: (int) -> ArgList
