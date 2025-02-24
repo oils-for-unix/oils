@@ -2210,7 +2210,9 @@ class Mem(object):
                                                     mops.IntWiden(lval.index),
                                                     val.s)
         if error_code == error_code_e.IndexOutOfRange:
-            e_die("Index %d is out of bounds for array of length 0", blame_loc)
+            e_die(
+                "Index %d is out of bounds for array of length 0" % lval.index,
+                blame_loc)
 
         # arrays can't be exported; can't have BashAssoc flag
         readonly = bool(flags & SetReadOnly)

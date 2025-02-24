@@ -1202,7 +1202,7 @@ a[-1]=1
 ## STDERR:
   a[-1]=1
   ^~
-[ stdin ]:3: fatal: Index %d is out of bounds for array of length 0
+[ stdin ]:3: fatal: Index -1 is out of bounds for array of length 0
 ## END
 ## OK bash STDERR:
 bash: line 3: a[-1]: bad array subscript
