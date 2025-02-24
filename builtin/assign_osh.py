@@ -20,12 +20,12 @@ from core import vm
 from display import ui
 from frontend import flag_util
 from frontend import args
-from mycpp.mylib import log, NewDict
+from mycpp.mylib import log
 from osh import cmd_eval
 from osh import sh_expr_eval
 from data_lang import j8_lite
 
-from typing import cast, Dict, List, Optional, TYPE_CHECKING
+from typing import cast, List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.state import Mem
     from core import optview
@@ -286,9 +286,7 @@ def _ReconcileTypes(rval, flag_a, flag_A, blame_word):
         if rval.tag() == value_e.BashArray:
             sparse_val = cast(value.BashArray, rval)
             if bash_impl.BashArray_IsEmpty(sparse_val):
-                # mycpp limitation: NewDict() needs to be typed
-                tmp = NewDict()  # type: Dict[str, str]
-                return value.BashAssoc(tmp)
+                return bash_impl.BashAssoc_New()
                 #return bash_impl.BashArray_New()
 
         if rval.tag() != value_e.BashAssoc:
@@ -325,9 +323,7 @@ class Readonly(vm._AssignBuiltin):
                 if arg.a:
                     rval = bash_impl.BashArray_New()  # type: value_t
                 elif arg.A:
-                    # mycpp limitation: NewDict() needs to be typed
-                    tmp = NewDict()  # type: Dict[str, str]
-                    rval = value.BashAssoc(tmp)
+                    rval = bash_impl.BashAssoc_New()
                 else:
                     rval = None
             else:
@@ -462,9 +458,7 @@ class NewVar(vm._AssignBuiltin):
                         rval = bash_impl.BashArray_New()
                 elif arg.A:
                     if old_val.tag() != value_e.BashAssoc:
-                        # mycpp limitation: NewDict() needs to be typed
-                        tmp = NewDict()  # type: Dict[str, str]
-                        rval = value.BashAssoc(tmp)
+                        rval = bash_impl.BashAssoc_New()
 
             rval = _ReconcileTypes(rval, arg.a, arg.A, pair.blame_word)
 
