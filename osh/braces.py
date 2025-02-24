@@ -227,6 +227,12 @@ def BraceDetect(w):
     # {a,b}{ - Stack depth doesn't end at 0
     # {a}    - no comma, and also not an numeric range
 
+    # The shortest possible brace expansion is {,}.  This heuristic prevents a
+    # lot of garbage from being created, since otherwise nearly every word
+    # would be checked.  We could be even more precise but this is cheap.
+    if len(w.parts) < 3:
+        return None
+
     cur_parts = []  # type: List[word_part_t]
     stack = []  # type: List[_StackFrame]
 
@@ -315,14 +321,10 @@ def BraceDetectAll(words):
     """Return a new list of words, possibly with BracedTree instances."""
     out = []  # type: List[word_t]
     for w in words:
-        # The shortest possible brace expansion is {,}.  This heuristic prevents
-        # a lot of garbage from being created, since otherwise nearly every word
-        # would be checked.  We could be even more precise but this is cheap.
-        if len(w.parts) >= 3:
-            brace_tree = BraceDetect(w)
-            if brace_tree:
-                out.append(brace_tree)
-                continue
+        brace_tree = BraceDetect(w)
+        if brace_tree:
+            out.append(brace_tree)
+            continue
         out.append(w)
     return out
 
