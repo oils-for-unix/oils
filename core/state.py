@@ -2004,7 +2004,8 @@ class Mem(object):
                 cell, var_frame, _ = self._ResolveNameOrRef(
                     lval.name, which_scopes)
                 if not cell:
-                    self._BindNewArrayWithEntry(var_frame, lval, rval, flags)
+                    self._BindNewArrayWithEntry(var_frame, lval, rval, flags,
+                                                left_loc)
                     return
 
                 if cell.readonly:
@@ -2015,7 +2016,7 @@ class Mem(object):
                 with tagswitch(UP_cell_val) as case2:
                     if case2(value_e.Undef):
                         self._BindNewArrayWithEntry(var_frame, lval, rval,
-                                                    flags)
+                                                    flags, left_loc)
                         return
 
                     elif case2(value_e.Str):
@@ -2076,13 +2077,16 @@ class Mem(object):
             else:
                 raise AssertionError(lval.tag())
 
-    def _BindNewArrayWithEntry(self, var_frame, lval, val, flags):
-        # type: (Dict[str, Cell], sh_lvalue.Indexed, value.Str, int) -> None
+    def _BindNewArrayWithEntry(self, var_frame, lval, val, flags, blame_loc):
+        # type: (Dict[str, Cell], sh_lvalue.Indexed, value.Str, int, loc_t) -> None
         """Fill 'var_frame' with a new indexed array entry."""
-        no_str = None  # type: Optional[str]
-        items = [no_str] * lval.index
-        items.append(val.s)
-        new_value = bash_impl.BashArray_FromList(items)
+
+        new_value = bash_impl.BashArray_New()
+        error_code = bash_impl.BashArray_SetElement(new_value,
+                                                    mops.IntWiden(lval.index),
+                                                    val.s)
+        if error_code == error_code_e.IndexOutOfRange:
+            e_die("Index %d is out of bounds for array of length 0", blame_loc)
 
         # arrays can't be exported; can't have BashAssoc flag
         readonly = bool(flags & SetReadOnly)
