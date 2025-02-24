@@ -12,7 +12,6 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, sh_lvalue,
 
 from core import bash_impl
 from core import error
-from core import bash_impl
 from core import optview
 from core import num
 from core import state
