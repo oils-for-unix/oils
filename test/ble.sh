@@ -73,7 +73,7 @@ HISTFILE=$HOME/.osh_history
 #	lib/test-canvas.sh \
 
 for script in \
-  out/ble.osh \
+  "out/ble.osh --lib" \
 	lib/test-main.sh \
 	lib/test-util.sh \
 	lib/test-decode.sh
