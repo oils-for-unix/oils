@@ -284,6 +284,15 @@ def BashAssoc_New():
     return value.BashAssoc(d)
 
 
+def BashAssoc_Copy(val):
+    # type: (value.BashAssoc) -> value.BashAssoc
+    # mycpp limitation: NewDict() needs to be typed
+    d = mylib.NewDict()  # type: Dict[str, str]
+    for key in val.d:
+        d[key] = val.d[key]
+    return value.BashAssoc(d)
+
+
 def BashAssoc_ListInitialize(val, initializer, has_plus, blame_loc):
     # type: (value.BashAssoc, value.InitializerList, bool, loc_t) -> None
 
@@ -396,6 +405,14 @@ def BashArray_New():
     d = {}  # type: Dict[mops.BigInt, str]
     max_index = mops.MINUS_ONE  # max index for empty array
     return value.BashArray(d, max_index)
+
+
+def BashArray_Copy(val):
+    # type: (value.BashArray) -> value.BashArray
+    d = {}  # type: Dict[mops.BigInt, str]
+    for index in val.d:
+        d[index] = val.d[index]
+    return value.BashArray(d, val.max_index)
 
 
 def BashArray_FromList(strs):
