@@ -190,8 +190,8 @@ def _HasManyStatuses(node):
     return node
 
 
-def ListInitializeTarget(old_val, has_plus, blame_loc):
-    # type: (value_t, bool, loc_t) -> value_t
+def ListInitializeTarget(old_val, has_plus, blame_loc, destructive=True):
+    # type: (value_t, bool, loc_t, bool) -> value_t
     UP_old_val = old_val
     with tagswitch(old_val) as case:
         if case(value_e.Undef):
@@ -203,9 +203,19 @@ def ListInitializeTarget(old_val, has_plus, blame_loc):
             return bash_impl.BashArray_New()
         elif case(value_e.BashArray):
             old_val = cast(value.BashArray, UP_old_val)
+            if not destructive:
+                if has_plus:
+                    old_val = bash_impl.BashArray_Copy(old_val)
+                else:
+                    old_val = bash_impl.BashArray_New()
             return old_val
         elif case(value_e.BashAssoc):
             old_val = cast(value.BashAssoc, UP_old_val)
+            if not destructive:
+                if has_plus:
+                    old_val = bash_impl.BashAssoc_Copy(old_val)
+                else:
+                    old_val = bash_impl.BashAssoc_New()
             return old_val
         else:
             e_die(
@@ -627,12 +637,33 @@ class CommandEvaluator(object):
         """For FOO=1 cmd."""
         for e_pair in more_env:
             val = self.word_ev.EvalRhsWord(e_pair.val)
+
+            has_plus = False  # We currently do not support tmpenv+=()
+            initializer = None  # type: value.InitializerList
+            if val.tag() == value_e.InitializerList:
+                initializer = cast(value.InitializerList, val)
+
+                lval = LeftName(e_pair.name, e_pair.left)
+                old_val = sh_expr_eval.OldValue(
+                    lval,
+                    self.mem,
+                    None,  # No nounset
+                    e_pair.left)
+                val = ListInitializeTarget(old_val,
+                                           has_plus,
+                                           e_pair.left,
+                                           destructive=False)
+
             # Set each var so the next one can reference it.  Example:
             # FOO=1 BAR=$FOO ls /
             self.mem.SetNamed(location.LName(e_pair.name),
                               val,
                               scope_e.LocalOnly,
                               flags=flags)
+
+            if initializer is not None:
+                ListInitialize(val, initializer, has_plus, e_pair.left,
+                               self.arith_ev)
 
     def _StrictErrExit(self, node):
         # type: (command_t) -> None
