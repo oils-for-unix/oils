@@ -672,6 +672,28 @@ dict:3
 ## N-I dash/mksh status: 99
 ## N-I dash/mksh stdout-json: ""
 
+#### "readonly -a arr" and "readonly -A dict" should not not remove existing arrays
+# mksh's readonly does not support the -a option.
+# dash/mksh does not support associative arrays.
+case $SH in (dash|mksh) exit 99;; esac
+
+declare -a arr
+arr=(foo bar baz)
+declare -A dict
+dict['foo']=hello
+dict['bar']=oil
+dict['baz']=world
+
+readonly -a arr
+echo arr:${#arr[@]}
+readonly -A dict
+echo dict:${#dict[@]}
+## STDOUT:
+arr:3
+dict:3
+## END
+## N-I dash/mksh status: 99
+## N-I dash/mksh stdout-json: ""
 
 #### "declare -a arr" and "readonly -a a" creates an empty array (OSH)
 case $SH in (dash|mksh) exit 99;; esac # dash/mksh does not support associative arrays
