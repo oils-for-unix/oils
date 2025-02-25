@@ -10,7 +10,7 @@ from _devbuild.gen.runtime_asdl import (
     AssignArg,
 )
 from _devbuild.gen.value_asdl import (value, value_e, value_t, LeftName)
-from _devbuild.gen.syntax_asdl import loc, loc_t, word_t
+from _devbuild.gen.syntax_asdl import loc, loc_t
 
 from core import bash_impl
 from core import error
@@ -267,31 +267,50 @@ class Export(vm._AssignBuiltin):
         return 0
 
 
-def _ReconcileTypes(rval, flag_a, flag_A, blame_word):
-    # type: (Optional[value_t], bool, bool, word_t) -> value_t
+def _ReconcileTypes(rval, flag_a, flag_A, pair, mem):
+    # type: (Optional[value_t], bool, bool, AssignArg, Mem) -> value_t
     """Check that -a and -A flags are consistent with RHS.
+
+    If RHS is empty and the current value of LHS has a different type from the
+    one expected by the -a and -A flags, we create an empty array.
 
     Special case: () is allowed to mean empty indexed array or empty assoc array
     if the context is clear.
 
     Shared between NewVar and Readonly.
+
     """
-    if flag_a and rval is not None and rval.tag() not in (
-            value_e.InternalStringArray, value_e.BashArray):
-        e_usage("Got -a but RHS isn't an array", loc.Word(blame_word))
 
-    if flag_A and rval:
-        # Special case: declare -A A=() is OK.  The () is changed to mean an empty
-        # associative array.
-        if rval.tag() == value_e.BashArray:
-            sparse_val = cast(value.BashArray, rval)
-            if bash_impl.BashArray_IsEmpty(sparse_val):
-                return bash_impl.BashAssoc_New()
-                #return bash_impl.BashArray_New()
+    if rval is None:
+        # declare -a foo=(a b); declare -a foo; should not reset to empty array
+        if flag_a:
+            old_val = mem.GetValue(pair.var_name)
+            if old_val.tag() not in (value_e.InternalStringArray,
+                                     value_e.BashArray):
+                rval = bash_impl.BashArray_New()
+        elif flag_A:
+            old_val = mem.GetValue(pair.var_name)
+            if old_val.tag() != value_e.BashAssoc:
+                rval = bash_impl.BashAssoc_New()
+    else:
+        if flag_a:
+            if rval.tag() not in (value_e.InternalStringArray,
+                                  value_e.BashArray):
+                e_usage("Got -a but RHS isn't an array",
+                        loc.Word(pair.blame_word))
 
-        if rval.tag() != value_e.BashAssoc:
-            e_usage("Got -A but RHS isn't an associative array",
-                    loc.Word(blame_word))
+        elif flag_A:
+            # Special case: declare -A A=() is OK.  The () is changed to mean
+            # an empty associative array.
+            if rval.tag() == value_e.BashArray:
+                sparse_val = cast(value.BashArray, rval)
+                if bash_impl.BashArray_IsEmpty(sparse_val):
+                    return bash_impl.BashAssoc_New()
+                    #return bash_impl.BashArray_New()
+
+            if rval.tag() != value_e.BashAssoc:
+                e_usage("Got -A but RHS isn't an associative array",
+                        loc.Word(pair.blame_word))
 
     return rval
 
@@ -319,17 +338,7 @@ class Readonly(vm._AssignBuiltin):
 
         which_scopes = self.mem.ScopesForWriting()
         for pair in cmd_val.pairs:
-            if pair.rval is None:
-                if arg.a:
-                    rval = bash_impl.BashArray_New()  # type: value_t
-                elif arg.A:
-                    rval = bash_impl.BashAssoc_New()
-                else:
-                    rval = None
-            else:
-                rval = pair.rval
-
-            rval = _ReconcileTypes(rval, arg.a, arg.A, pair.blame_word)
+            rval = _ReconcileTypes(pair.rval, arg.a, arg.A, pair, self.mem)
 
             # NOTE:
             # - when rval is None, only flags are changed
@@ -448,19 +457,7 @@ class NewVar(vm._AssignBuiltin):
             flags |= state.ClearNameref
 
         for pair in cmd_val.pairs:
-            rval = pair.rval
-            # declare -a foo=(a b); declare -a foo;  should not reset to empty array
-            if rval is None and (arg.a or arg.A):
-                old_val = self.mem.GetValue(pair.var_name)
-                if arg.a:
-                    if old_val.tag() not in (value_e.InternalStringArray,
-                                             value_e.BashArray):
-                        rval = bash_impl.BashArray_New()
-                elif arg.A:
-                    if old_val.tag() != value_e.BashAssoc:
-                        rval = bash_impl.BashAssoc_New()
-
-            rval = _ReconcileTypes(rval, arg.a, arg.A, pair.blame_word)
+            rval = _ReconcileTypes(pair.rval, arg.a, arg.A, pair, self.mem)
 
             _AssignVarForBuiltin(self.mem, rval, pair, which_scopes, flags)
 
