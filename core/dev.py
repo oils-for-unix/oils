@@ -225,6 +225,10 @@ def _PrintShValue(val, buf):
             val = cast(value.BashArray, UP_val)
             result = bash_impl.BashArray_ToStrForShellPrint(val)
 
+        elif case(value_e.InitializerList):
+            val = cast(value.InitializerList, UP_val)
+            result = bash_impl.InitializerList_ToStrForShellPrint(val)
+
     buf.write(result)
 
 
