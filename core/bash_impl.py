@@ -299,6 +299,23 @@ def BashAssoc_ListInitialize(val, initializer, has_plus, blame_loc):
     if not has_plus:
         val.d.clear()
 
+    if len(initializer.assigns) > 0 and initializer.assigns[0].key is None:
+        # Process the form "a=(key1 value1 key2 value2 ...)"
+        k = None  # type: Optional[str]
+        for assign in initializer.assigns:
+            s = assign.rval
+            if assign.key is not None:
+                s = '[%s]%s%s' % (assign.key, '+=' if assign.plus_eq else '=',
+                                  s)
+            if k is not None:
+                val.d[k] = s
+                k = None
+            else:
+                k = s
+        if k is not None:
+            val.d[k] = ''
+        return
+
     for triplet in initializer.assigns:
         if triplet.key is None:
             e_die(
