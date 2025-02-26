@@ -190,8 +190,12 @@ def _HasManyStatuses(node):
     return node
 
 
-def ListInitializeTarget(old_val, has_plus, blame_loc, destructive=True):
-    # type: (value_t, bool, loc_t, bool) -> value_t
+def ListInitializeTarget(old_val,
+                         initializer,
+                         has_plus,
+                         blame_loc,
+                         destructive=True):
+    # type: (value_t, value.InitializerList, bool, loc_t, bool) -> value_t
     UP_old_val = old_val
     with tagswitch(old_val) as case:
         if case(value_e.Undef):
@@ -210,6 +214,13 @@ def ListInitializeTarget(old_val, has_plus, blame_loc, destructive=True):
                     old_val = bash_impl.BashArray_New()
             return old_val
         elif case(value_e.BashAssoc):
+            # OSH compatibility: assoc=(1 2) will create a new array.  This
+            # code will soon be removed when the initialization of the form
+            # "assoc=(key value)" is supported.
+            if (not has_plus and len(initializer.assigns) > 0 and
+                    initializer.assigns[0].key is None):
+                return bash_impl.BashArray_New()
+
             old_val = cast(value.BashAssoc, UP_old_val)
             if not destructive:
                 if has_plus:
@@ -650,6 +661,7 @@ class CommandEvaluator(object):
                     None,  # No nounset
                     e_pair.left)
                 val = ListInitializeTarget(old_val,
+                                           initializer,
                                            has_plus,
                                            e_pair.left,
                                            destructive=False)
@@ -1066,7 +1078,8 @@ class CommandEvaluator(object):
                 old_val = sh_expr_eval.OldValue(lval, self.mem, None,
                                                 node.left)
 
-                val = ListInitializeTarget(old_val, has_plus, pair.left)
+                val = ListInitializeTarget(old_val, initializer, has_plus,
+                                           pair.left)
 
             elif has_plus:
                 # do not respect set -u
