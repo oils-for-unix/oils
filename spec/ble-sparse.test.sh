@@ -1185,7 +1185,7 @@ json write (crash_dump.var_stack[0].a)
 
 
 #### Regression: a[-1]=1
-case $SH in mksh) exit ;; esac
+case $SH in mksh) exit 99;; esac
 
 a[-1]=1
 
@@ -1200,5 +1200,49 @@ a[-1]=1
 ## OK bash STDERR:
 bash: line 3: a[-1]: bad array subscript
 ## END
-## N-I mksh status: 0
+## N-I mksh status: 99
 ## N-I mksh stderr-json: ""
+
+
+#### Initializing indexed array with ([index]=value)
+case $SH in mksh) exit 99;; esac
+declare -a a=([xx]=1 [yy]=2 [zz]=3)
+echo status=$?
+argv.py "${a[@]}"
+## STDOUT:
+status=0
+['3']
+## END
+## N-I mksh status: 99
+## N-I mksh stdout-json: ""
+
+
+#### bash mangles indexed array #1 (keys undergoes arithmetic evaluation)
+case $SH in mksh) exit 99;; esac
+# Note: This and next tests have originally been in "spec/assign.test.sh" and
+# compared the behavior of OSH's BashAssoc and Bash's indexed array.  After
+# supporting "arr=([index]=value)" for indexed arrays, the test was adjusted
+# and copied here. See also the corresponding tests in "spec/assign.test.sh"
+a=([k1]=v1 [k2]=v2)
+echo ${a["k1"]}
+echo ${a["k2"]}
+## STDOUT:
+v2
+v2
+## END
+## N-I mksh status: 99
+## N-I mksh stdout-json: ""
+
+
+#### bash mangles indexed array #2 (Bash does not recognize [index]=brace-expansion)
+case $SH in mksh) exit 99;; esac
+a=([k2]=-{a,b}-)
+echo ${a["k2"]}
+## STDOUT:
+-{a,b}-
+## END
+## BUG bash STDOUT:
+[k2]=-a-
+## END
+## N-I mksh status: 99
+## N-I mksh stdout-json: ""

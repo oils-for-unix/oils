@@ -212,8 +212,8 @@ pp test_ ({k:assoc})
 #### BashAssoc, long
 declare -A assoc_0=()
 declare -A assoc_1=([1]=one)
-declare assoc_3=([1]=one [two]=2 [3]=three)
-declare assoc_long=([Lorem]=ipsum [dolor]="sit amet," ['consectetur adipiscing']="elit, sed" [do]="eiusmod.")
+declare -A assoc_3=([1]=one [two]=2 [3]=three)
+declare -A assoc_long=([Lorem]=ipsum [dolor]="sit amet," ['consectetur adipiscing']="elit, sed" [do]="eiusmod.")
 = assoc_0
 = assoc_1
 = assoc_3
