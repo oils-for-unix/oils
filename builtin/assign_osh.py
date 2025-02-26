@@ -216,6 +216,14 @@ def _AssignVarForBuiltin(mem, rval, pair, which_scopes, flags, arith_ev,
         old_val = sh_expr_eval.OldValue(lval, mem, None)  # ignore set -u
         initializer = cast(value.InitializerList, rval)
 
+        # OSH compatibility: "declare -A assoc=(1 2)" is a usage
+        # error.  This code will soon be removed when the
+        # initialization of the form "assoc=(key value)" is supported.
+        if flag_A and len(initializer.assigns
+                          ) > 0 and initializer.assigns[0].key is None:
+            e_usage("Can't initialize assoc array with indexed array",
+                    pair.blame_word)
+
         val = old_val
         if flag_a:
             if old_val.tag() == value_e.BashAssoc:
