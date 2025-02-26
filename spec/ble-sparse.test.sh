@@ -1201,3 +1201,38 @@ bash: line 3: a[-1]: bad array subscript
 ## END
 ## N-I mksh status: 0
 ## N-I mksh stderr-json: ""
+
+
+#### Initializing indexed array with ([index]=value)
+declare -a a=([xx]=1 [yy]=2 [zz]=3)
+echo status=$?
+argv.py "${a[@]}"
+## STDOUT:
+status=0
+['3']
+## END
+
+
+#### bash mangles indexed array #1 (keys undergoes arithmetic evaluation)
+# Note: This and next tests have originally been in "spec/assign.test.sh" and
+# compared the behavior of OSH's BashAssoc and Bash's indexed array.  After
+# supporting "arr=([index]=value)" for indexed arrays, the test was adjusted
+# and copied here. See also the corresponding tests in "spec/assign.test.sh"
+a=([k1]=v1 [k2]=v2)
+echo ${a["k1"]}
+echo ${a["k2"]}
+## STDOUT:
+v2
+v2
+## END
+
+
+#### bash mangles indexed array #2 (Bash does not recognize [index]=brace-expansion)
+a=([k2]=-{a,b}-)
+echo ${a["k2"]}
+## STDOUT:
+-{a,b}-
+## END
+## BUG bash STDOUT:
+[k2]=-a-
+## END
