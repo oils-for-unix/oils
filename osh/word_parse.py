@@ -1641,7 +1641,7 @@ class WordParser(WordEmitter):
             with tagswitch(w) as case:
                 if case(word_e.Operator):
                     tok = cast(Token, w)
-                    if tok.id == Id.Right_ShArrayLiteral:
+                    if tok.id == Id.Right_Initializer:
                         right_token = tok
                         done = True  # can't use break here
                     # Unlike command parsing, array parsing allows embedded \n.
@@ -1710,7 +1710,7 @@ class WordParser(WordEmitter):
             # _ReadWord.
             next_id = self.lexer.LookPastSpace(lex_mode)
             if next_id == Id.Op_LParen:
-                self.lexer.PushHint(Id.Op_RParen, Id.Right_ShArrayLiteral)
+                self.lexer.PushHint(Id.Op_RParen, Id.Right_Initializer)
                 part2 = self._ReadArrayLiteral()
                 parts.append(part2)
 
@@ -2006,8 +2006,7 @@ class WordParser(WordEmitter):
 
         elif self.token_kind == Kind.Right:
             if self.token_type not in (Id.Right_Subshell, Id.Right_ShFunction,
-                                       Id.Right_CasePat,
-                                       Id.Right_ShArrayLiteral):
+                                       Id.Right_CasePat, Id.Right_Initializer):
                 raise AssertionError(self.cur_token)
 
             self._SetNext(lex_mode)

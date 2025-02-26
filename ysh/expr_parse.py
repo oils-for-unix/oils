@@ -180,7 +180,7 @@ def _PushYshTokens(parse_ctx, gr, p, lex):
                       Id.Left_PercentParen):  # :|  %(  LEGACY!
             left_tok = tok
             if tok.id == Id.Left_PercentParen:
-                lex.PushHint(Id.Op_RParen, Id.Right_ShArrayLiteral)
+                lex.PushHint(Id.Op_RParen, Id.Right_Initializer)
 
             # Blame the opening token
             line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
@@ -193,7 +193,7 @@ def _PushYshTokens(parse_ctx, gr, p, lex):
                 with tagswitch(w) as case:
                     if case(word_e.Operator):
                         tok = cast(Token, w)
-                        if tok.id == Id.Right_ShArrayLiteral:
+                        if tok.id == Id.Right_Initializer:
                             if left_tok.id != Id.Left_PercentParen:
                                 p_die('Expected ) to close', left_tok)
                             close_tok = tok

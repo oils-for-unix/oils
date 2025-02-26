@@ -252,7 +252,7 @@ array_item: (
 sh_array_literal: ':|' Expr_CastedDummy Op_Pipe
 
 # TODO: remove old array
-old_sh_array_literal: '%(' Expr_CastedDummy Right_ShArrayLiteral
+old_sh_array_literal: '%(' Expr_CastedDummy Right_Initializer
 sh_command_sub: ( '$(' | '@(' | '^(' ) Expr_CastedDummy Eof_RParen
 
 # "   $"   """   $"""   ^" 
