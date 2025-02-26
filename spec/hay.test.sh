@@ -724,3 +724,41 @@ build_proc
 
 ## STDOUT:
 ## END
+
+
+#### Using Hay node from another module
+shopt --set ysh:all
+
+hay define Package/INSTALL
+
+use $[ENV.REPO_ROOT]/spec/testdata/config/use-hay.ysh
+
+#pp test_ (_hay())
+json write (_hay().children[0].attrs)
+
+## STDOUT:
+{
+  "version": "3.3"
+}
+## END
+
+#### Defining Hay node in another module
+shopt --set ysh:all
+
+use $[ENV.REPO_ROOT]/spec/testdata/config/define-hay.ysh
+
+Package foo {
+  version = '3.3'
+  INSTALL {
+    echo version=$version
+  }
+}
+
+json write (_hay().children[0].attrs)
+
+## STDOUT:
+{
+  "version": "3.3"
+}
+## END
+
