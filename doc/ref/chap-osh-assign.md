@@ -240,8 +240,6 @@ item in order.  An item in the initializer list must be in the forms
     declare -A a=()             # This creates an empty BashAssoc
     declare -A a=([a]=1 [b]=2)  # This creates a BashAssoc with two elements
 
-    declare -A a=(1 2)          # This is an error (OSH)
-
     k=10
     declare -A a=([k]=v)        # This creates a BashAssoc with one element,
                                 # (['k']=1).  Unlike BashArray, "k" is not
@@ -250,6 +248,13 @@ item in order.  An item in the initializer list must be in the forms
                                 # The result is ([a]=3 [b]=4 [k]=v)
     a+=([k]=5)                  # This overwrites an element in the original
                                 # array. The result is ([a]=3 [b]=4 [k]=5).
+
+As a special rule, when the first initializer form does not have `[<key>]=` or
+`[<key>]+=`, the initializer items are treated as a sequence of `key1 value1
+key2 value2 key3 value3 ...`.
+
+    declare -A a=(1 2 3 4)       # This creates a BashAssoc with two elements,
+                                 # ([1]=2 [3]=4)
 
 In YSH, use a [dict-literal][] to create a [Dict][] instance.
 
