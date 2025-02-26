@@ -221,7 +221,11 @@ def ListInitialize(old_val,
     # type: (value_t, value.InitializerList, bool, loc_t,  sh_expr_eval.ArithEvaluator, bool) -> value_t
     UP_old_val = old_val
     with tagswitch(old_val) as case:
-        if case(value_e.Undef):
+        if case(value_e.Undef, value_e.BuiltinFunc, value_e.Obj):
+            # Note (BuiltinFunc, Obj): Some names, such as dict, are
+            # pre-defined to be builtin functions or objects available within
+            # YSH expression.  Not to break Bash scripts using the variables of
+            # conflicting names, we treat them as Undef in this context.
             new_val = bash_impl.BashArray_New()
             _ListInitializeBashArray(new_val, initializer, has_plus, blame_loc,
                                      arith_ev)

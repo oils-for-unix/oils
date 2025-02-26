@@ -223,7 +223,8 @@ def _AssignVarForBuiltin(mem, rval, pair, which_scopes, flags, arith_ev,
                 #   empty BashArray.  Bash does not allow this.
                 val = bash_impl.BashArray_New()
             elif old_val.tag() in (value_e.Undef, value_e.Str,
-                                   value_e.BashArray):
+                                   value_e.BashArray, value_e.BuiltinFunc,
+                                   value_e.Obj):
                 # We do not need adjustemnts for -a.  These types are
                 # consistently handled within ListInitialize
                 pass
@@ -232,8 +233,8 @@ def _AssignVarForBuiltin(mem, rval, pair, which_scopes, flags, arith_ev,
                     "Can't convert type %s into BashArray" %
                     ui.ValType(old_val), pair.blame_word)
         elif flag_A:
-            if old_val.tag() in (value_e.Undef, value_e.Str,
-                                 value_e.BashArray):
+            if old_val.tag() in (value_e.Undef, value_e.Str, value_e.BashArray,
+                                 value_e.BuiltinFunc, value_e.Obj):
                 # Note: We explicitly initialize BashAssoc for Undef.
                 # Note: OSH allows overwriting an existing BashArray with an
                 #   empty BashAssoc.  Bash does not allow this.
