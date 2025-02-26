@@ -70,10 +70,9 @@ The details of the actual modification depends on the type of the LHS:
 - When the LHS variable is unset, the assignment creates an empty indexed array
   and apply the initializer list to the created array (see
   [sh-array](#sh-array)).
-- When the LHS is a scalar string, if the assignment operator is `=`, the
-  assignment overwrites the string with an empty array and applies the
-  initializer list to the array (see [sh-array](#sh-array)).  If the assignment
-  operator is `+=`, it causes an error.
+- When the LHS is a scalar string, the assignment promotes the string to an
+  indexed array with a single element at index 0 and applies the initializer
+  list to the array (see [sh-array](#sh-array)).
 - When the LHS is an indexed or associative arrays, the initializer list is
   applied to the original array following [sh-array](#sh-array) (for an indexed
   array) or [sh-assoc](#sh-assoc) (for an assoative array).

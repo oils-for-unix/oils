@@ -243,10 +243,16 @@ def _AssignVarForBuiltin(mem, rval, pair, which_scopes, flags, arith_ev,
         elif flag_A:
             if old_val.tag() in (value_e.Undef, value_e.Str, value_e.BashArray,
                                  value_e.BuiltinFunc, value_e.Obj):
-                # Note: We explicitly initialize BashAssoc for Undef.
+                # Note: We explicitly initialize BashAssoc for Undef and Str.
+                #   When applying +=() to Str, we associate an old value to the
+                #   key '0'.
                 # Note: OSH allows overwriting an existing BashArray with an
                 #   empty BashAssoc.  Bash does not allow this.
-                val = bash_impl.BashAssoc_New()
+                assoc_val = bash_impl.BashAssoc_New()
+                if pair.plus_eq and old_val.tag() == value_e.Str:
+                    bash_impl.BashAssoc_SetElement(assoc_val, '0',
+                                                   cast(value.Str, old_val).s)
+                val = assoc_val
             elif old_val.tag() == value_e.BashAssoc:
                 # We do not need adjustments for -A.
                 pass

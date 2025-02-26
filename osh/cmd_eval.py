@@ -231,10 +231,8 @@ def ListInitialize(old_val,
                                      arith_ev)
             return new_val
         elif case(value_e.Str):
-            if has_plus:
-                e_die("Can't append array to string")
-
-            new_val = bash_impl.BashArray_New()
+            old_val = cast(value.Str, UP_old_val)
+            new_val = bash_impl.BashArray_FromList([old_val.s])
             _ListInitializeBashArray(new_val, initializer, has_plus, blame_loc,
                                      arith_ev)
             return new_val
