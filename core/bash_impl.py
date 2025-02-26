@@ -49,8 +49,8 @@ class ArrayIndexEvaluator(object):
 
 
 #------------------------------------------------------------------------------
-# All InternalStringArray operations depending on the internal representation
-# of InternalStringArray come here.
+# All InternalStringArray operations depending on its internal representation
+# come here.
 
 
 def InternalStringArray_IsEmpty(array_val):
@@ -274,8 +274,7 @@ def InternalStringArray_ToStrForShellPrint(array_val, name):
 
 
 #------------------------------------------------------------------------------
-# All BashAssoc operations depending on the internal representation of
-# BashAssoc come here.
+# All BashAssoc operations depending on its internal representation come here.
 
 
 def BashAssoc_New():
@@ -419,8 +418,7 @@ def BashAssoc_ToStrForShellPrint(assoc_val):
 
 
 #------------------------------------------------------------------------------
-# All BashArray operations depending on the internal representation of
-# BashArray come here.
+# All BashArray operations depending on its internal representation come here.
 
 
 def BashArray_New():
