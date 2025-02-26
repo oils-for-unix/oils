@@ -38,6 +38,7 @@ check-survey-shells() {
 # TODO: remove this stub after we hollow out this file
 
 run-file() { test/spec-py.sh run-file "$@"; }
+run-file() { test/spec-cpp.sh run-file "$@"; }
 
 #
 # Misc
