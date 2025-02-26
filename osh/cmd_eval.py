@@ -247,17 +247,6 @@ def ListInitialize(old_val,
                                      arith_ev)
             return old_val
         elif case(value_e.BashAssoc):
-            # OSH compatibility: assoc=(1 2) will create a new array.  This
-            # code will soon be removed when the initialization of the form
-            # "assoc=(key value)" is supported.
-            if not has_plus and len(
-                    initializer.assigns
-            ) > 0 and initializer.assigns[0].key is None:
-                new_val = bash_impl.BashArray_New()
-                _ListInitializeBashArray(new_val, initializer, has_plus,
-                                         blame_loc, arith_ev)
-                return new_val
-
             old_val = cast(value.BashAssoc, UP_old_val)
             if not destructive:
                 if has_plus:
