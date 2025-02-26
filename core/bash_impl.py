@@ -583,3 +583,26 @@ def BashArray_ToStrForShellPrint(sparse_val):
 
         body.append(j8_lite.MaybeShellEncode(sparse_val.d[index]))
     return "(%s)" % ''.join(body)
+
+
+#------------------------------------------------------------------------------
+# InitializerList operations depending on its internal representation come
+# here.
+
+
+def InitializerList_ToStrForShellPrint(val):
+    # type: (value.InitializerList) -> str
+    body = []  # type: List[str]
+
+    for init in val.assigns:
+        if len(body) > 0:
+            body.append(" ")
+        if init.key is not None:
+            key = j8_lite.MaybeShellEncode(init.key)
+            if init.plus_eq:
+                body.extend(["[", key, "]+="])
+            else:
+                body.extend(["[", key, "]="])
+        body.append(j8_lite.MaybeShellEncode(init.rval))
+
+    return "(%s)" % ''.join(body)
