@@ -202,9 +202,10 @@ def ListInitializeTarget(old_val,
             return bash_impl.BashArray_New()
         elif case(value_e.Str):
             if has_plus:
-                e_die("Can't append array to string")
-
-            return bash_impl.BashArray_New()
+                old_val = cast(value.Str, UP_old_val)
+                return bash_impl.BashArray_FromList([old_val.s])
+            else:
+                return bash_impl.BashArray_New()
         elif case(value_e.BashArray):
             old_val = cast(value.BashArray, UP_old_val)
             if not destructive:
