@@ -984,7 +984,8 @@ class CommandEvaluator(object):
 
                 lval = self.arith_ev.EvalShellLhs(pair.lhs, which_scopes)
                 # do not respect set -u
-                old_val = sh_expr_eval.OldValue(lval, self.mem, None)
+                old_val = sh_expr_eval.OldValue(lval, self.mem, None,
+                                                node.left)
 
                 val = PlusEquals(old_val, rhs)
 

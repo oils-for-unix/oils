@@ -92,8 +92,8 @@ _ = log
 #
 
 
-def OldValue(lval, mem, exec_opts):
-    # type: (sh_lvalue_t, state.Mem, Optional[optview.Exec]) -> value_t
+def OldValue(lval, mem, exec_opts, blame_loc):
+    # type: (sh_lvalue_t, state.Mem, Optional[optview.Exec], loc_t) -> value_t
     """Look up for augmented assignment.
 
     For s+=val and (( i += 1 ))
@@ -129,7 +129,7 @@ def OldValue(lval, mem, exec_opts):
 
     val = mem.GetValue(var_name)
     if exec_opts and exec_opts.nounset() and val.tag() == value_e.Undef:
-        e_die('Undefined variable %r' % var_name)  # TODO: location info
+        e_die('Undefined variable %r' % var_name, blame_loc)
 
     UP_val = val
     with tagswitch(lval) as case:
@@ -512,7 +512,8 @@ class ArithEvaluator(object):
         """ For x = y  and   x += y  and  ++x """
 
         lval = self.EvalArithLhs(node)
-        val = OldValue(lval, self.mem, self.exec_opts)
+        val = OldValue(lval, self.mem, self.exec_opts,
+                       location.TokenForArith(node))
 
         # BASH_LINENO, arr (array name without strict_array), etc.
         if (val.tag() in (value_e.InternalStringArray, value_e.BashAssoc,
