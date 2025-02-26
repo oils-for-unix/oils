@@ -33,7 +33,7 @@ declare -A assoc=([k1]=foo [k2]='spam eggs')
 for v in "${assoc[@]}"; do echo $v; done | sort
 for v in "${!assoc[@]}"; do echo $v; done | sort
 
-# disallow this in OSH?  Changing type?
+# Bash 5.1 assoc=(key value). Bash 4.4 does not implement this.
 
 assoc=(foo 'spam eggs')
 argv.py "${assoc[@]}"
@@ -44,10 +44,10 @@ foo
 spam eggs
 k1
 k2
-['foo', 'spam eggs']
-['0', '1']
+['spam eggs']
+['foo']
 ## END
-## BUG bash STDOUT:
+## N-I bash STDOUT:
 foo
 spam eggs
 k1
@@ -56,16 +56,22 @@ k2
 []
 ## END
 
-#### Can't initialize assoc array with indexed array
+#### Can initialize assoc array with the "(key value ...)" sequence
 declare -A A=(1 2 3)
 echo status=$?
+argv.py "${!A[@]}"
+argv.py "${A[@]}"
 ## STDOUT:
-status=2
+status=0
+['1', '3']
+['2', '']
 ## END
 
-# bash prints warnings to stderr but gives no indication of the problem
+# bash-4.4 prints warnings to stderr but gives no indication of the problem
 ## BUG bash STDOUT:
 status=0
+[]
+[]
 ## END
 
 #### create empty assoc array, put, then get
