@@ -730,3 +730,19 @@ typeset -Ar dict2
 ## END
 ## N-I dash/mksh status: 99
 ## N-I dash/mksh stdout-json: ""
+
+#### readonly array should not be modified by a+=(1)
+case $SH in (dash) exit 99;; esac # dash/mksh does not support associative arrays
+
+a=(1 2 3)
+readonly -a a
+eval 'a+=(4)'
+argv.py "${a[@]}"
+
+## STDOUT:
+['1', '2', '3']
+## END
+## OK mksh status: 1
+## OK mksh stdout-json: ""
+## N-I dash status: 99
+## N-I dash stdout-json: ""

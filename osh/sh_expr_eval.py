@@ -127,7 +127,7 @@ def OldValue(lval, mem, exec_opts, blame_loc):
         else:
             raise AssertionError()
 
-    val = mem.GetValue(var_name)
+    val = mem.GetValueForRewrite(var_name, blame_loc)
     if exec_opts and exec_opts.nounset() and val.tag() == value_e.Undef:
         e_die('Undefined variable %r' % var_name, blame_loc)
 
