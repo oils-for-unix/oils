@@ -30,42 +30,36 @@ c
 
 #### set associative array to indexed array literal (very surprising bash behavior)
 declare -A assoc=([k1]=foo [k2]='spam eggs')
-for v in "${assoc[@]}"; do echo $v; done | sort
-for v in "${!assoc[@]}"; do echo $v; done | sort
+declare -p assoc
 
-# disallow this in OSH?  Changing type?
+# Bash 5.1 assoc=(key value). Bash 5.0 (including the currently tested 4.4)
+# does not implement this.
 
 assoc=(foo 'spam eggs')
-argv.py "${assoc[@]}"
-argv.py "${!assoc[@]}"
+declare -p assoc
 
 ## STDOUT:
-foo
-spam eggs
-k1
-k2
-['foo', 'spam eggs']
-['0', '1']
+declare -A assoc=(['k1']=foo ['k2']='spam eggs')
+declare -A assoc=(['foo']='spam eggs')
 ## END
-## BUG bash STDOUT:
-foo
-spam eggs
-k1
-k2
-[]
-[]
+## N-I bash STDOUT:
+declare -A assoc=([k1]="foo" [k2]="spam eggs" )
+declare -A assoc=()
 ## END
 
-#### Can't initialize assoc array with indexed array
+#### Can initialize assoc array with the "(key value ...)" sequence
 declare -A A=(1 2 3)
 echo status=$?
+declare -p A
 ## STDOUT:
-status=2
+status=0
+declare -A A=(['1']=2 ['3']='')
 ## END
 
-# bash prints warnings to stderr but gives no indication of the problem
+# bash-4.4 prints warnings to stderr but gives no indication of the problem
 ## BUG bash STDOUT:
 status=0
+declare -A A=()
 ## END
 
 #### create empty assoc array, put, then get
