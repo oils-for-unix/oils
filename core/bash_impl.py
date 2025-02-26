@@ -9,7 +9,7 @@ from data_lang import j8_lite
 from mycpp import mops
 from mycpp import mylib
 
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 
 def BigInt_Greater(a, b):
@@ -429,18 +429,17 @@ def BashArray_FromList(strs):
     return value.BashArray(d, max_index)
 
 
-def BashArray_ListInitialize(val, initializer, has_plus, blame_loc, indices):
-    # type: (value.BashArray, value.InitializerList, bool, loc_t, List[mops.BigInt]) -> None
-    assert len(indices) == len(initializer.assigns), indices
-
+def BashArray_ListInitialize(val, initializer, has_plus, blame_loc, arith):
+    # type: (value.BashArray, value.InitializerList, bool, loc_t, Callable[[str], mops.BigInt]) -> None
     if not has_plus:
         val.d.clear()
         val.max_index = mops.MINUS_ONE
 
-    i = 0
     for triplet in initializer.assigns:
-        array_index = indices[i]
-        i = i + 1
+        if triplet.key is not None:
+            array_index = arith(triplet.key)
+        else:
+            array_index = mops.Add(array_index, mops.ONE)
 
         s = triplet.rval
         if triplet.plus_eq:

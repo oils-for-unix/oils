@@ -193,23 +193,9 @@ def _HasManyStatuses(node):
 # Evaluate indices before clearing the content of the array
 def _ListInitializeBashArray(val, initializer, has_plus, blame_loc, arith_ev):
     # type: (value.BashArray, value.InitializerList, bool, loc_t, sh_expr_eval.ArithEvaluator) -> None
-    indices = []  # type: List[mops.BigInt]
-    if has_plus:
-        array_index = mops.Sub(bash_impl.BashArray_Length(val), mops.ONE)
-    else:
-        array_index = mops.MINUS_ONE
-    for triplet in initializer.assigns:
-        if triplet.key is not None:
-            # XXX---We now specify the loc_t of the LHS of the
-            # compound assignment.  However, we may save "loc_t" in
-            # InitializerList for a better error reporting.
-            array_index = arith_ev._StringToBigInt(triplet.key, blame_loc)
-        else:
-            array_index = mops.Add(array_index, mops.ONE)
-        indices.append(array_index)
-
-    bash_impl.BashArray_ListInitialize(val, initializer, has_plus, blame_loc,
-                                       indices)
+    bash_impl.BashArray_ListInitialize(
+        val, initializer, has_plus, blame_loc,
+        lambda s: arith_ev._StringToBigInt(s, blame_loc))
 
 
 def ListInitialize(old_val,
