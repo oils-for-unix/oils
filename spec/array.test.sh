@@ -281,6 +281,14 @@ A=a B=(b b) printenv.py A B
 ## OK bash status: 0
 ## OK mksh status: 1
 
+#### Associative arrays can't be used as env bindings either
+A=a B=([k]=v) printenv.py A B
+## status: 2
+## stdout-json: ""
+## OK bash stdout-json: "a\n([k]=v)\n"
+## OK bash status: 0
+## OK mksh status: 1
+
 #### Set element
 a=(1 '2 3')
 a[0]=9
