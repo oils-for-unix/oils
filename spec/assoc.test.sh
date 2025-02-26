@@ -68,20 +68,6 @@ status=2
 status=0
 ## END
 
-
-#### Initializing indexed array with assoc array
-declare -a a=([xx]=1 [yy]=2 [zz]=3)
-echo status=$?
-argv.py "${a[@]}"
-## STDOUT:
-status=2
-[]
-## END
-## BUG bash STDOUT:
-status=0
-['3']
-## END
-
 #### create empty assoc array, put, then get
 declare -A A  # still undefined
 argv.py "${A[@]}"
@@ -439,7 +425,8 @@ v
 -{a,b}-
 ## END
 
-#### bash mangles array #1
+#### bash mangles indexed array #1 (associative array is OK)
+declare -A a
 a=([k1]=v1 [k2]=v2)
 echo ${a["k1"]}
 echo ${a["k2"]}
@@ -447,19 +434,13 @@ echo ${a["k2"]}
 v1
 v2
 ## END
-## BUG bash STDOUT:
-v2
-v2
-## END
 
-#### bash mangles array and brace #2
+#### bash mangles indexed array #2 (associative array is OK)
+declare -A a
 a=([k2]=-{a,b}-)
 echo ${a["k2"]}
 ## STDOUT:
 -{a,b}-
-## END
-## BUG bash STDOUT:
-[k2]=-a-
 ## END
 
 #### declare -A A=() allowed
