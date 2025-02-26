@@ -272,7 +272,12 @@ status=2
 status=1
 status=1
 ## END
-## OK bash stdout-json: "\nstatus=0\n\nstatus=0\n"
+## OK bash STDOUT:
+
+status=0
+
+status=0
+## END
 
 
 #### Empty command sub $() (command::NoOp)

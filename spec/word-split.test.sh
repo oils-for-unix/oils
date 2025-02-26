@@ -10,19 +10,27 @@ word=abcd
 f() { local IFS=c; argv.py $word; }
 f
 argv.py $word
-## stdout-json: "['ab', 'd']\n['a', 'cd']\n"
+## STDOUT:
+['ab', 'd']
+['a', 'cd']
+## END
 
 #### Tilde sub is not split, but var sub is
 HOME="foo bar"
 argv.py ~
 argv.py $HOME
-## stdout-json: "['foo bar']\n['foo', 'bar']\n"
+## STDOUT:
+['foo bar']
+['foo', 'bar']
+## END
 
 #### Word splitting
 a="1 2"
 b="3 4"
 argv.py $a"$b"
-## stdout-json: "['1', '23 4']\n"
+## STDOUT:
+['1', '23 4']
+## END
 
 #### Word splitting 2
 a="1 2"
@@ -30,7 +38,9 @@ b="3 4"
 c="5 6"
 d="7 8"
 argv.py $a"$b"$c"$d"
-## stdout-json: "['1', '23 45', '67 8']\n"
+## STDOUT:
+['1', '23 45', '67 8']
+## END
 
 # Has tests on differences between  $*  "$*"  $@  "$@"
 # http://stackoverflow.com/questions/448407/bash-script-to-receive-and-repass-quoted-parameters

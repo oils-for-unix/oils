@@ -9,9 +9,17 @@ echo $i
 echo ${undefined:-$((i++))}
 echo $i  # i is one because the alternative was only evaluated once
 ## status: 0
-## stdout-json: "x\n0\n0\n1\n"
+## STDOUT:
+x
+0
+0
+1
+## END
 ## N-I dash status: 2
-## N-I dash stdout-json: "x\n0\n"
+## N-I dash STDOUT:
+x
+0
+## END
 
 #### Default value when empty
 empty=''
@@ -379,7 +387,10 @@ a3=plus
 ['plus']
 ## END
 ## N-I dash stdout-json: ""
-## N-I zsh stdout-json: "empty=\na1=\n"
+## N-I zsh STDOUT:
+empty=
+a1=
+## END
 ## N-I zsh status: 1
 
 #### $@ (empty) and - and +
@@ -560,7 +571,9 @@ echo ${#arr[@]}
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 ## N-I zsh status: 1
-## N-I zsh stdout-json: "0\n"
+## N-I zsh STDOUT:
+0
+## END
 
 #### assoc array ${arr["k"]=x}
 # note: this also works in zsh

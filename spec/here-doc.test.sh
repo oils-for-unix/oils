@@ -1,13 +1,19 @@
 
 #### Here string
 cat <<< 'hi'
-## stdout-json: "hi\n"
+## STDOUT:
+hi
+## END
 ## N-I dash stdout-json: ""
 ## N-I dash status: 2
 
 #### Here string with $
 cat <<< $'one\ntwo\n'
-## stdout-json: "one\ntwo\n\n"
+## STDOUT:
+one
+two
+
+## END
 ## N-I dash stdout-json: ""
 ## N-I dash status: 2
 
@@ -117,7 +123,10 @@ cat <<'EOF'"2"
 one
 two
 EOF2
-## stdout-json: "one\ntwo\n"
+## STDOUT:
+one
+two
+## END
 
 #### Here doc with multiline double quoted string
 cat <<EOF; echo "two
@@ -255,7 +264,11 @@ cat <<-EOF; echo --; cat <<EOF2
 EOF
 two
 EOF2
-## stdout-json: "one\n--\ntwo\n"
+## STDOUT:
+one
+--
+two
+## END
 
 
 
@@ -267,14 +280,25 @@ EOF
 3
 4
 EOF2
-## stdout-json: "X 1\nX 2\n==\nY 3\nY 4\n"
+## STDOUT:
+X 1
+X 2
+==
+Y 3
+Y 4
+## END
 
 #### Function def and execution with here doc
 fun() { cat; } <<EOF; echo before; fun; echo after 
 1
 2
 EOF
-## stdout-json: "before\n1\n2\nafter\n"
+## STDOUT:
+before
+1
+2
+after
+## END
 
 #### Here doc as command prefix
 <<EOF tac
@@ -282,7 +306,11 @@ EOF
 2
 3
 EOF
-## stdout-json: "3\n2\n1\n"
+## STDOUT:
+3
+2
+1
+## END
 
   # NOTE that you can have redirection AFTER the here doc thing.  And you don't
   # need a space!  Those are operators.

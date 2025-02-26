@@ -151,7 +151,10 @@ touch _tmp/spec-tmp/a.zz _tmp/spec-tmp/b.zz
 echo _tmp/spec-tmp/*.zz
 set -o noglob
 echo _tmp/spec-tmp/*.zz
-## stdout-json: "_tmp/spec-tmp/a.zz _tmp/spec-tmp/b.zz\n_tmp/spec-tmp/*.zz\n"
+## STDOUT:
+_tmp/spec-tmp/a.zz _tmp/spec-tmp/b.zz
+_tmp/spec-tmp/*.zz
+## END
 
 #### set -o noglob (bug #698)
 var='\z'
@@ -165,8 +168,14 @@ echo $var
 argv.py _tmp/spec-tmp/*.nonexistent
 shopt -s nullglob
 argv.py _tmp/spec-tmp/*.nonexistent
-## stdout-json: "['_tmp/spec-tmp/*.nonexistent']\n[]\n"
-## N-I dash/mksh/ash stdout-json: "['_tmp/spec-tmp/*.nonexistent']\n['_tmp/spec-tmp/*.nonexistent']\n"
+## STDOUT:
+['_tmp/spec-tmp/*.nonexistent']
+[]
+## END
+## N-I dash/mksh/ash STDOUT:
+['_tmp/spec-tmp/*.nonexistent']
+['_tmp/spec-tmp/*.nonexistent']
+## END
 
 #### shopt -s failglob in command context
 argv.py *.ZZ

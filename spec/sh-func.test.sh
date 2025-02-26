@@ -75,7 +75,10 @@ f() {
 }
 f
 echo "[$mylocal $myglobal]"
-## stdout-json: "[L G]\n[ G]\n"
+## STDOUT:
+[L G]
+[ G]
+## END
 ## status: 0
 
 #### Return without args gives previous

@@ -453,8 +453,12 @@ echo "[$x|$y]"
 echo '\a \b \c \d \e \f \g \h \x65 \145 \i' > $TMP/read-c.txt
 read line < $TMP/read-c.txt
 echo $line
-## stdout-json: "a b c d e f g h x65 145 i\n"
-## BUG ash stdout-json: "abcdefghx65 145 i\n"
+## STDOUT:
+a b c d e f g h x65 145 i
+## END
+## BUG ash STDOUT:
+abcdefghx65 145 i
+## END
 ## BUG dash/zsh stdout-json: "\u0007 \u0008\n"
 ## BUG mksh stdout-json: "\u0007 \u0008 d \u001b \u000c g h e 145 i\n"
 

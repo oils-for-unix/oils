@@ -31,7 +31,10 @@ echo $?
 _
 0
 ## END
-## BUG mksh stdout-json: "\n0\n"
+## BUG mksh STDOUT:
+
+0
+## END
 
 #### Out of range string slice: length
 # OK in both bash and mksh
@@ -42,7 +45,10 @@ echo $?
 _defg
 0
 ## END
-## BUG mksh stdout-json: "_defg\n0\n"
+## BUG mksh STDOUT:
+_defg
+0
+## END
 
 #### Negative start index
 foo=abcdefg

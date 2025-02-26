@@ -3,7 +3,10 @@
 #### (( )) result
 (( 1 )) && echo True
 (( 0 )) || echo False
-## stdout-json: "True\nFalse\n"
+## STDOUT:
+True
+False
+## END
 
 #### negative number is true
 (( -1 )) && echo True

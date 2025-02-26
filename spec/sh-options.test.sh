@@ -372,8 +372,12 @@ read -n 1 <&3
 echo -n . >&3
 exec 3>&-
 cat $TMP/no-clobber
-## stdout-json: "f.o\n"
-## N-I dash stdout-json: ".oo\n"
+## STDOUT:
+f.o
+## END
+## N-I dash STDOUT:
+.oo
+## END
 
 #### SHELLOPTS is updated when options are changed
 echo $SHELLOPTS | grep -q xtrace

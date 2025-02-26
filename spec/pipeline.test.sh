@@ -10,20 +10,30 @@
 
 #### Brace group in pipeline
 { echo one; echo two; } | tac
-## stdout-json: "two\none\n"
+## STDOUT:
+two
+one
+## END
 
 #### For loop starts pipeline
 for w in one two; do
   echo $w
 done | tac
-## stdout-json: "two\none\n"
+## STDOUT:
+two
+one
+## END
 
 #### While Loop ends pipeline
 seq 3 | while read i
 do
   echo ".$i"
 done
-## stdout-json: ".1\n.2\n.3\n"
+## STDOUT:
+.1
+.2
+.3
+## END
 
 #### Redirect in Pipeline
 echo hi 1>&2 | wc -l
@@ -108,22 +118,36 @@ if ! echo hi; then
 else
   echo FALSE
 fi
-## stdout-json: "hi\nFALSE\n"
+## STDOUT:
+hi
+FALSE
+## END
 ## status: 0
 
 #### ! with ||
 ! echo hi || echo FAILED
-## stdout-json: "hi\nFAILED\n"
+## STDOUT:
+hi
+FAILED
+## END
 ## status: 0
 
 #### ! with { }
 ! { echo 1; echo 2; } || echo FAILED
-## stdout-json: "1\n2\nFAILED\n"
+## STDOUT:
+1
+2
+FAILED
+## END
 ## status: 0
 
 #### ! with ( )
 ! ( echo 1; echo 2 ) || echo FAILED
-## stdout-json: "1\n2\nFAILED\n"
+## STDOUT:
+1
+2
+FAILED
+## END
 ## status: 0
 
 #### ! is not a command
