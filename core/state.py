@@ -2307,6 +2307,17 @@ class Mem(object):
         cell, _ = self._ResolveNameOnly(name, which_scopes)
         return cell
 
+    def GetCellDeref(self, name, which_scopes=scope_e.Shopt):
+        # type: (str, scope_t) -> Cell
+        """Get both the value and flags. Unlike GetCell, this resolves
+        name references.
+        """
+        if which_scopes == scope_e.Shopt:
+            which_scopes = self.ScopesForReading()
+
+        cell, _, _ = self._ResolveNameOrRef(name, which_scopes)
+        return cell
+
     def Unset(self, lval, which_scopes):
         # type: (sh_lvalue_t, scope_t) -> bool
         """

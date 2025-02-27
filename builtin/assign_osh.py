@@ -204,7 +204,11 @@ def _AssignVarForBuiltin(mem, rval, pair, which_scopes, flags):
     """
     lval = LeftName(pair.var_name, pair.blame_word)
     if pair.plus_eq:
-        old_val = sh_expr_eval.OldValue(lval, mem, None)  # ignore set -u
+        old_val = sh_expr_eval.OldValue(
+            lval,
+            mem,
+            None,  # ignore set -u
+            pair.blame_word)
         # When 'export e+=', then rval is value.Str('')
         # When 'export foo', the pair.plus_eq flag is false.
         assert rval is not None
