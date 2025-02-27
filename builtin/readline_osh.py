@@ -5,6 +5,7 @@ readline_osh.py - Builtins that are dependent on GNU readline.
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
+from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import loc
 from _devbuild.gen.value_asdl import value_e
 from core import pyutil
@@ -14,12 +15,15 @@ from frontend import flag_util
 from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log
+from osh import cmd_eval
 
-from typing import Optional, Any, TYPE_CHECKING
+from typing import Optional, Tuple, Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value
+    from builtin.meta_oils import Eval
     from frontend.py_readline import Readline
     from core import sh_init
+    from core.state import Mem
     from display import ui
 
 _ = log
@@ -28,7 +32,7 @@ _ = log
 class ctx_Keymap(object):
 
     def __init__(self, readline, keymap_name=None):
-        # type: (Readline, str) -> None
+        # type: (Readline, Optional[str]) -> None
         self.readline = readline
         self.orig_keymap_name = keymap_name
 
@@ -42,19 +46,57 @@ class ctx_Keymap(object):
         if self.orig_keymap_name is not None:
             self.readline.restore_orig_keymap()
 
+class BindXCallback(object):
+    """A callable we pass to readline for executing shell commands."""
+
+    def __init__(self, eval):
+        # type: (Eval) -> None
+        self.eval = eval
+
+    def __call__(self, cmd, line_buffer, point):
+        # type: (str, str, int) -> Tuple[int, str, str]
+        """Execute a shell command through the evaluator.
+
+        Args:
+          cmd: The shell command to execute
+          line_buffer: The current line buffer
+          point: The current cursor position
+        """
+        print("Setting READLINE_LINE to: %s" % line_buffer)
+        print("Setting READLINE_POINT to: %s" % point)
+        print("Executing cmd: %s" % cmd)
+
+        # TODO: add READLINE_* env vars later
+        # assert isinstance(line_buffer, str)
+        # self.mem.SetNamed(location.LName("READLINE_LINE"),
+        #                  value.Str(line_buffer),
+        #                  scope_e.GlobalOnly,
+        #                  flags=SetExport)
+        
+        # TODO: refactor out shared code from Eval, cache parse tree?
+        
+        cmd_val = cmd_eval.MakeBuiltinArgv([cmd])
+        status = self.eval.Run(cmd_val)
+
+        return (status, line_buffer, str(point))
+
 
 class Bind(vm._Builtin):
     """Interactive interface to readline bindings"""
 
-    def __init__(self, readline, errfmt):
-        # type: (Optional[Readline], ui.ErrorFormatter) -> None
+    def __init__(self, readline, errfmt, mem, evaluator):
+        # type: (Optional[Readline], ui.ErrorFormatter, Mem, Eval) -> None
         self.readline = readline
         self.errfmt = errfmt
+        self.mem = mem
+        self.eval = evaluator
         self.exclusive_flags = ["q", "u", "r", "x", "f"]
+        self.bindx_cb = None # type: Optional[BindXCallback]
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
         readline = self.readline
+
         if not readline:
             e_usage("is disabled because Oils wasn't compiled with 'readline'",
                     loc.Missing)
@@ -63,8 +105,8 @@ class Bind(vm._Builtin):
 
         # print("attrs:\n", attrs)
         # print("attrs.attrs:\n", attrs.attrs)
-        # print("attrs.attrs.m:\n", attrs.attrs["m"])
-        # print("type(attrs.attrs.m):\n", type(attrs.attrs["m"]))
+        # print("attrs.attrs[m]:\n", attrs.attrs["m"])
+        # print("type(attrs.attrs[m]):\n", type(attrs.attrs["m"]))
         # print("type(attrs.attrs[m]):\n", type(attrs.attrs["m"]))
         # print("attrs.attrs[m].tag() :\n", attrs.attrs["m"].tag())
         # print("attrs.attrs[m].tag() == value_e.Undef:\n", attrs.attrs["m"].tag() == value_e.Undef)
@@ -79,7 +121,7 @@ class Bind(vm._Builtin):
                 # print("\tFound flag: {0} with tag: {1}".format(flag, attrs.attrs[flag].tag()))
                 if found:
                     self.errfmt.Print_(
-                        "error: can only use one of the following flags at a time: -"
+                        "error: Can only use one of the following flags at a time: -"
                         + ", -".join(self.exclusive_flags),
                         blame_loc=cmd_val.arg_locs[0])
                     return 1
@@ -87,8 +129,8 @@ class Bind(vm._Builtin):
                     found = True
         if found and not arg_r.AtEnd():
             self.errfmt.Print_(
-                "error: cannot mix bind commands with the following flags: -" +
-                ", -".join(self.exclusive_flags),
+                "error: Too many arguments. Check your quoting. Also, you cannot mix normal bindings with the following flags: -"
+                + ", -".join(self.exclusive_flags),
                 blame_loc=cmd_val.arg_locs[0])
             return 1
 
@@ -142,9 +184,10 @@ class Bind(vm._Builtin):
                     readline.unbind_keyseq(arg.r)
 
                 if arg.x is not None:
-                    self.errfmt.Print_("warning: bind -x isn't implemented",
-                                       blame_loc=cmd_val.arg_locs[0])
-                    return 1
+                    if self.bindx_cb is None:
+                        self.bindx_cb = BindXCallback(self.eval)
+                        readline.set_bind_shell_command_hook(self.bindx_cb)
+                    readline.bind_shell_command(arg.x)
 
                 if arg.X:
                     readline.print_shell_cmd_map()
