@@ -558,7 +558,9 @@ echo "$var"
 foo
 bar
 ## END
-## N-I dash stdout-json: "\n"
+## N-I dash STDOUT:
+
+## END
 
 #### read -d when there's no delimiter
 { read -d : part

@@ -106,7 +106,9 @@ $'"quoted" with spaces and \\'
 ## END
 ## N-I dash/ash stdout-json: ""
 ## N-I dash/ash status: 2
-## N-I mksh stdout-json: "\n"
+## N-I mksh STDOUT:
+
+## END
 ## N-I zsh stdout-json: ""
 ## N-I zsh status: 1
 

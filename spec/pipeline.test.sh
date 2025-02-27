@@ -60,7 +60,9 @@ echo ${PIPESTATUS[@]}
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 ## N-I zsh status: 0
-## N-I zsh stdout-json: "\n"
+## N-I zsh STDOUT:
+
+## END
 
 #### PIPESTATUS is set on simple commands, but NOT in OSH
 case $SH in dash|zsh) exit ;; esac
@@ -88,7 +90,9 @@ echo ${PIPESTATUS[@]}
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 ## N-I zsh status: 0
-## N-I zsh stdout-json: "\n"
+## N-I zsh STDOUT:
+
+## END
 
 #### |&
 stdout_stderr.py |& cat

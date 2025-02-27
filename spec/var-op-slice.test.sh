@@ -183,7 +183,9 @@ argv.py ${@:2}
 ['5', '6']
 ## END
 ## N-I mksh status: 1
-## N-I mksh stdout-json: "\n"
+## N-I mksh STDOUT:
+
+## END
 
 
 #### ${@:offset} and ${*:offset}
@@ -303,7 +305,9 @@ echo ${result//"$0"/'SHELL'}
 ## STDOUT:
 SHELL
 ## END
-## N-I mksh stdout-json: "\n"
+## N-I mksh STDOUT:
+
+## END
 
 #### Permutations of implicit begin and length
 array=(1 2 3)
