@@ -328,14 +328,32 @@ parse-errors() {
 }
 
 here-doc() {
-  # NOTE: The last two tests, 31 and 32, have different behavior on my Ubuntu
-  # and Debian machines.
+  # Old notes:
+  # The last two tests, 31 and 32, have different behavior on my Ubuntu and
+  # Debian machines.
   # - On Ubuntu, read_from_fd.py fails with Errno 9 -- bad file descriptor.
   # - On Debian, the whole process hangs.
   # Is this due to Python 3.2 vs 3.4?  Either way osh doesn't implement the
   # functionality, so it's probably best to just implement it.
   sh-spec spec/here-doc.test.sh --range 0-31 \
     dash bash mksh $OSH_LIST "$@"
+
+
+  # 2025-02 update: why do these pass in CI?  But not on my local Debian
+  # machine
+  #
+  # [??? no location ???] I/O error applying redirect: Bad file descriptor
+  # close failed in file object destructor:
+  # sys.excepthook is missing
+  # lost sys.stderr
+  #
+  # read_from_fd.py gives that error somehow - because the FD isn't closed?
+  #
+  # - Could this be the descriptor 100 bug in the here doc process?
+  #   https://github.com/oils-for-unix/oils/issues/2068
+  # - Also look at [??? no location ???] issue
+
+  #run-file here-doc "$@"
 }
 
 redirect() {

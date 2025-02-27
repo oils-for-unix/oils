@@ -1,3 +1,6 @@
+# NOTE: not enabled, see test/spec.sh here-doc
+# oils_failures_allowed: 2
+# compare_shells: dash bash mksh
 
 #### Here string
 cat <<< 'hi'
@@ -370,16 +373,20 @@ inside
 ## END
 
 #### Multiple here docs in pipeline
-# SKIPPED: hangs with osh on Debian
+
 # The second instance reads its stdin from the pipe, and fd 5 from a here doc.
 read_from_fd.py 3 3<<EOF3 | read_from_fd.py 0 5 5<<EOF5
 fd3
 EOF3
 fd5
 EOF5
+
+echo ok
+
 ## STDOUT:
 0: 3: fd3
 5: fd5
+ok
 ## END
 
 #### Multiple here docs in pipeline on multiple lines
@@ -391,8 +398,12 @@ EOF3
 read_from_fd.py 0 5 5<<EOF5
 fd5
 EOF5
+
+echo ok
+
 ## STDOUT:
 0: 3: fd3
 5: fd5
+ok
 ## END
 

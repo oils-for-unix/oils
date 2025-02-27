@@ -21,7 +21,8 @@ def main(argv):
             sys.exit(1)
 
         s = '%d: ' % fd
-        sys.stdout.write(s.encode('utf-8'))
+        #sys.stdout.write(s.encode('utf-8'))
+        sys.stdout.write(s)
         sys.stdout.write(in_str)  # write binary data to stdout
 
 

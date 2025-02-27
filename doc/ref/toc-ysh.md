@@ -168,6 +168,8 @@ X [Wok]           _field()
   [yblocks]       yb-capture    yb-capture-2
   [args]          parser        flag           arg        rest
                   parseArgs()
+  [binascii]    X toBase16()  X fromBase16()
+                X toBase64()  X fromBase64()
 ```
 
 <!-- linkify_stop_col is 42 -->
