@@ -1,3 +1,4 @@
+## oils_failures_allowed: 2
 
 #### Here string
 cat <<< 'hi'

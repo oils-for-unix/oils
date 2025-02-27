@@ -328,8 +328,12 @@ parse-errors() {
 }
 
 here-doc() {
-  # NOTE: The last two tests, 31 and 32, have different behavior on my Ubuntu
-  # and Debian machines.
+  run-file here-doc "$@"
+
+  return
+  # Old notes:
+  # The last two tests, 31 and 32, have different behavior on my Ubuntu and
+  # Debian machines.
   # - On Ubuntu, read_from_fd.py fails with Errno 9 -- bad file descriptor.
   # - On Debian, the whole process hangs.
   # Is this due to Python 3.2 vs 3.4?  Either way osh doesn't implement the
