@@ -1,4 +1,5 @@
 ## compare_shells: dash bash mksh ash
+## oils_failures_allowed: 3
 
 #### getopts empty
 set -- 
@@ -140,32 +141,33 @@ echo $OPTIND
 while getopts "hc:" opt; do
   echo '-'
 done
-echo $OPTIND
+echo OPTIND=$OPTIND
 
 set -- -h -c foo x y z
 while getopts "hc:" opt; do
   echo '-'
 done
-echo $OPTIND
+echo OPTIND=$OPTIND
 
 set --
 while getopts "hc:" opt; do
   echo '-'
 done
-echo $OPTIND
+echo OPTIND=$OPTIND
+
 ## STDOUT:
-1
+OPTIND=1
 -
 -
-4
-1
+OPTIND=4
+OPTIND=1
 ## END
-## BUG mksh/osh STDOUT:
-1
+## BUG mksh STDOUT:
+OPTIND=1
 -
 -
-4
-4
+OPTIND=4
+OPTIND=4
 ## END
 
 #### OPTIND after multiple getopts with different spec
@@ -175,44 +177,45 @@ set -- -a
 while getopts "ab:" opt; do
   echo '.'
 done
-echo $OPTIND
+echo OPTIND=$OPTIND
 
 set -- -c -d -e foo
 while getopts "cde:" opt; do
   echo '-'
 done
-echo $OPTIND
+echo OPTIND=$OPTIND
 
 set -- -f
 while getopts "f:" opt; do
   echo '_'
 done
-echo $OPTIND
+echo OPTIND=$OPTIND
+
 ## STDOUT:
 .
-2
+OPTIND=2
 -
 -
-5
-2
+OPTIND=5
+OPTIND=2
 ## END
 ## BUG ash/dash STDOUT:
 .
-2
+OPTIND=2
 -
 -
 -
-5
+OPTIND=5
 _
-2
+OPTIND=2
 ## END
-## BUG mksh/osh STDOUT:
+## BUG mksh STDOUT:
 .
-2
+OPTIND=2
 -
 -
-5
-5
+OPTIND=5
+OPTIND=5
 ## END
 
 #### OPTIND narrowed down
@@ -228,7 +231,7 @@ while getopts "ab:" opt; do
     b) FLAG_b="$OPTARG" ;;
   esac
 done
-# Bash doesn't reset optind!  It skips over c!  mksh at least warns about this!
+# Bash doesn't reset OPTIND!  It skips over c!  mksh at least warns about this!
 # You have to reset OPTIND yourself.
 
 set -- -c -d -e E
@@ -241,8 +244,14 @@ while getopts "cde:" opt; do
 done
 
 echo a=$FLAG_a b=$FLAG_b c=$FLAG_c d=$FLAG_d e=$FLAG_e
-## stdout: a=1 b= c=1 d=1 e=E
-## BUG bash/mksh/osh stdout: a=1 b= c= d=1 e=E
+
+## STDOUT:
+a=1 b= c=1 d=1 e=E
+## END
+
+## BUG bash/mksh STDOUT:
+a=1 b= c= d=1 e=E
+## END
 
 
 #### Getopts parses the function's arguments
