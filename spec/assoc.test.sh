@@ -1,5 +1,5 @@
 ## compare_shells: bash-4.4
-## oils_failures_allowed: 3
+## oils_failures_allowed: 2
 
 
 # NOTE:
@@ -66,20 +66,6 @@ status=2
 # bash prints warnings to stderr but gives no indication of the problem
 ## BUG bash STDOUT:
 status=0
-## END
-
-
-#### Initializing indexed array with assoc array
-declare -a a=([xx]=1 [yy]=2 [zz]=3)
-echo status=$?
-argv.py "${a[@]}"
-## STDOUT:
-status=2
-[]
-## END
-## BUG bash STDOUT:
-status=0
-['3']
 ## END
 
 #### create empty assoc array, put, then get
@@ -439,7 +425,8 @@ v
 -{a,b}-
 ## END
 
-#### bash mangles array #1
+#### bash mangles indexed array #1 (associative array is OK)
+declare -A a
 a=([k1]=v1 [k2]=v2)
 echo ${a["k1"]}
 echo ${a["k2"]}
@@ -447,19 +434,13 @@ echo ${a["k2"]}
 v1
 v2
 ## END
-## BUG bash STDOUT:
-v2
-v2
-## END
 
-#### bash mangles array and brace #2
+#### bash mangles indexed array #2 (associative array is OK)
+declare -A a
 a=([k2]=-{a,b}-)
 echo ${a["k2"]}
 ## STDOUT:
 -{a,b}-
-## END
-## BUG bash STDOUT:
-[k2]=-a-
 ## END
 
 #### declare -A A=() allowed
@@ -636,8 +617,6 @@ argv.py "${A[@]}"
 declare -a arr=( [30]=a b [40]=x y)
 argv.py "${!arr[@]}"
 argv.py "${arr[@]}"
-
-# osh says "expected associative array pair"
 
 ## STDOUT:
 ['30', '31', '40', '41']

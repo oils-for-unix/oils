@@ -484,7 +484,7 @@ def AddKinds(spec):
             'Subshell',  # )
             'ShFunction',  # )
             'CasePat',  # )
-            'ShArrayLiteral',  # )
+            'Initializer',  # )
             'ExtGlob',  # )
             'BashRegexGroup',  # )
             'BlockLiteral',  # } that matches &{ echo hi }
