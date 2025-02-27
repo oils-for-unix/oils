@@ -143,8 +143,13 @@ echo $'[\n]'
 + echo '[
 ]'
 ## END
-## N-I dash stdout-json: "$[\n]\n"
-## N-I dash stderr-json: "+ echo $[\\n]\n"
+## N-I dash STDOUT:
+$[
+]
+## END
+## N-I dash STDERR:
++ echo $[\n]
+## END
 
 #### xtrace written before command executes
 set -x

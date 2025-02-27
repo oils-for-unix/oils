@@ -145,7 +145,10 @@ shift
 echo "$@"
 shift 2
 echo "$@"
-## stdout-json: "2 3 4\n4\n"
+## STDOUT:
+2 3 4
+4
+## END
 ## status: 0
 
 #### Shifting too far

@@ -9,7 +9,9 @@ touch _tmp/-n _tmp/zzzzz
 cd _tmp  # this fail in osh
 GLOBIGNORE=-*:zzzzz  # colon-separated pattern list
 echo -* hello zzzz?
-## stdout-json: "-* hello zzzz?\n"
+## STDOUT:
+-* hello zzzz?
+## END
 ## N-I dash/mksh/ash stdout-json: "hello zzzzz"
 ## status: 0
 

@@ -189,9 +189,13 @@ false
 echo status=$?
 ## stdout-json: ""
 ## status: 2
-## BUG bash stdout-json: "status=2\n"
+## BUG bash STDOUT:
+status=2
+## END
 ## BUG bash status: 0
-## BUG zsh stdout-json: "status=1\n"
+## BUG zsh STDOUT:
+status=1
+## END
 ## BUG zsh status: 0
 
 #### Fatal error inside [[ =~ ]]

@@ -165,7 +165,9 @@ set | grep zz
 ## STDOUT:
 zz=$'one\ntwo'
 ## END
-## OK ash stdout-json: "zz='one\n"
+## OK ash STDOUT:
+zz='one
+## END
 ## BUG zsh stdout-json: ""
 
 

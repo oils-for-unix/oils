@@ -119,7 +119,10 @@ umask 0022
 echo two > $TMP/umask-two
 stat -c '%a' $TMP/umask-one $TMP/umask-two
 ## status: 0
-## stdout-json: "664\n644\n"
+## STDOUT:
+664
+644
+## END
 ## stderr-json: ""
 
 #### set umask symbolically

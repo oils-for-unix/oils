@@ -220,7 +220,9 @@ pushd $HOME
 dirs
 ## status: 0
 # zsh doesn't duplicate the stack I guess.
-## OK zsh stdout-json: "~ /\n"
+## OK zsh STDOUT:
+~ /
+## END
 ## STDOUT:
 ~ /
 ~ /

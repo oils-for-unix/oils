@@ -23,7 +23,11 @@ paths=`tr '\n' ':' | sed -e 's/:$//'<<EOPATHS
 /baz
 EOPATHS`
 echo "$paths"
-## stdout-json: "/foo\n/bar\n/baz\n"
+## STDOUT:
+/foo
+/bar
+/baz
+## END
 
 #### Rewrite of Blog Post Example
 paths=$(tr '\n' ':' | sed -e 's/:$//' <<EOPATHS
@@ -33,7 +37,11 @@ paths=$(tr '\n' ':' | sed -e 's/:$//' <<EOPATHS
 EOPATHS
 )
 echo "$paths"
-## stdout-json: "/foo\n/bar\n/baz\n"
+## STDOUT:
+/foo
+/bar
+/baz
+## END
 
 #### Simpler example
 foo=`cat`<<EOM

@@ -44,7 +44,11 @@ assoc=(k1 v1 k2 v2 k3 v3)
 for k v ("${(@kv)assoc}"); do
   echo "$k: $v"
 done
-## stdout-json: "k1: v1\nk2: v2\nk3: v3\n"
+## STDOUT:
+k1: v1
+k2: v2
+k3: v3
+## END
 
 #### get length
 typeset -A assoc

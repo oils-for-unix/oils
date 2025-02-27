@@ -60,7 +60,11 @@ echo status=$?
 echo one 1>&2
 echo two 1 >&2
 echo three 1>& 2
-## stderr-json: "one\ntwo 1\nthree\n"
+## STDERR:
+one
+two 1
+three
+## END
 
 #### Filename redirect with spaces
 # This time 1 *is* a descriptor, not a word.  If you add a space between 1 and
@@ -226,7 +230,10 @@ exec 3>&1
 exec 4>&1
 echo three 1>&3
 echo four 1>&4
-## stdout-json: "three\nfour\n"
+## STDOUT:
+three
+four
+## END
 ## status: 0
 
 #### >| to clobber
@@ -296,7 +303,9 @@ echo hello >&5
 exec 5>&-
 echo world >&5
 cat "$TMP/f.txt"
-## stdout-json: "hello\n"
+## STDOUT:
+hello
+## END
 
 #### 1>&2- to move file descriptor
 exec 5> "$TMP/f.txt"
@@ -306,7 +315,10 @@ echo world5 >&5
 echo world6 >&6
 exec 6>&-
 cat "$TMP/f.txt"
-## stdout-json: "hello5\nworld6\n"
+## STDOUT:
+hello5
+world6
+## END
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 ## N-I mksh status: 1
@@ -355,7 +367,12 @@ echo line=$line
 echo second 1>&8
 echo CONTENTS
 cat $TMP/rw.txt
-## stdout-json: "line=first\nCONTENTS\nfirst\nsecond\n"
+## STDOUT:
+line=first
+CONTENTS
+first
+second
+## END
 
 #### <> for read/write named pipes
 rm -f "$TMP/f.pipe"

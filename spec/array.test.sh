@@ -277,7 +277,10 @@ None
 A=a B=(b b) printenv.py A B
 ## status: 2
 ## stdout-json: ""
-## OK bash stdout-json: "a\n(b b)\n"
+## OK bash STDOUT:
+a
+(b b)
+## END
 ## OK bash status: 0
 ## OK mksh status: 1
 
@@ -285,7 +288,9 @@ A=a B=(b b) printenv.py A B
 A=a B=([k]=v) printenv.py A B
 ## status: 2
 ## stdout-json: ""
-## OK bash stdout-json: "a\n([k]=v)\n"
+## OK bash STDOUT:
+a
+([k]=v)
 ## OK bash status: 0
 ## OK mksh status: 1
 
@@ -368,7 +373,10 @@ a=(1 '2 3')
 for v in "${a[@]}"; do
   echo $v
 done
-## stdout-json: "1\n2 3\n"
+## STDOUT:
+1
+2 3
+## END
 
 #### glob within array yields separate elements
 touch _tmp/y.Y _tmp/yy.Y

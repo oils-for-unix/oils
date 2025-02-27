@@ -153,8 +153,20 @@ while getopts "hc:" opt; do
   echo '-'
 done
 echo $OPTIND
-## stdout-json: "1\n-\n-\n4\n1\n"
-## BUG mksh/osh stdout-json: "1\n-\n-\n4\n4\n"
+## STDOUT:
+1
+-
+-
+4
+1
+## END
+## BUG mksh/osh STDOUT:
+1
+-
+-
+4
+4
+## END
 
 #### OPTIND after multiple getopts with different spec
 # Wow this is poorly specified!  A fundamental design problem with the global
@@ -176,9 +188,32 @@ while getopts "f:" opt; do
   echo '_'
 done
 echo $OPTIND
-## stdout-json: ".\n2\n-\n-\n5\n2\n"
-## BUG ash/dash stdout-json: ".\n2\n-\n-\n-\n5\n_\n2\n"
-## BUG mksh/osh stdout-json: ".\n2\n-\n-\n5\n5\n"
+## STDOUT:
+.
+2
+-
+-
+5
+2
+## END
+## BUG ash/dash STDOUT:
+.
+2
+-
+-
+-
+5
+_
+2
+## END
+## BUG mksh/osh STDOUT:
+.
+2
+-
+-
+5
+5
+## END
 
 #### OPTIND narrowed down
 FLAG_a=

@@ -247,9 +247,13 @@ FALSE
 TRUE
 ## END
 ## BUG dash status: 127
-## BUG dash stdout-json: "FALSE\n"
+## BUG dash STDOUT:
+FALSE
+## END
 ## BUG mksh status: 1
-## BUG mksh stdout-json: "FALSE\n"
+## BUG mksh STDOUT:
+FALSE
+## END
 
 #### Eval in bash does tilde expansion in array
 

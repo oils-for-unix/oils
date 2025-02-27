@@ -463,7 +463,10 @@ echo $x
 one
 2
 ## END
-## N-I dash stdout-json: "one\n\n"
+## N-I dash STDOUT:
+one
+
+## END
 
 #### $LINENO in for loop
 # hm bash doesn't take into account the word break.  That's OK; we won't either.

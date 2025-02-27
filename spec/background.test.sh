@@ -93,7 +93,10 @@ wait $pid2
 echo "status=$?"
 wait $pid1
 echo "status=$?"
-## stdout-json: "status=7\nstatus=9\n"
+## STDOUT:
+status=7
+status=9
+## END
 
 #### Wait on multiple specific IDs returns last status
 { sleep 0.08; exit 8; } &
@@ -127,7 +130,11 @@ for i in 1 2 3; do
   sleep 0.0$i
 done &
 wait
-## stdout-json: "1\n2\n3\n"
+## STDOUT:
+1
+2
+3
+## END
 ## status: 0
 
 #### Background process doesn't affect parent
@@ -136,7 +143,12 @@ echo $foo
 echo ${bar=2} &
 wait
 echo $bar  # bar is NOT SET in the parent process
-## stdout-json: "1\n1\n2\n\n"
+## STDOUT:
+1
+1
+2
+
+## END
 
 #### Background process and then a singleton pipeline
 
