@@ -1,5 +1,7 @@
 ## compare_shells: bash
 
+# mksh has completely different behavior for this syntax.  Not worth testing.
+
 # Var refs are done with ${!a}
 #
 # local/declare -n is tested in spec/named-ref.test.sh.

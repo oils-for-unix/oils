@@ -51,6 +51,41 @@ write-suite-manifests() {
     spec/*.test.sh > _tmp/spec/SUITE-osh-minimal.txt
 }
 
+_print-task-file() {
+  cat <<'EOF'
+#!/usr/bin/env bash
+#
+# This file is GENERATED -- DO NOT EDIT.
+#
+# Update it with:
+#   test/spec-runner.sh gen-task-file
+#
+# Usage:
+#   test/spec.sh <function name>
+
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
+
+source build/dev-shell.sh
+EOF
+
+  while read spec_name; do
+    echo "
+$spec_name() {
+  test/spec-py.sh run-file $spec_name "$@"
+}"
+  done
+
+  echo
+  echo 'task-five "$@"'
+}
+
+gen-task-file() {
+  test/sh_spec.py --print-table spec/*.test.sh | while read suite name; do
+    echo $name
+  done | _print-task-file > test/spec.sh
+}
 
 diff-manifest() {
   ### temporary test
