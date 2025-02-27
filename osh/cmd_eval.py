@@ -250,7 +250,6 @@ def ListInitialize(val, initializer, has_plus, blame_loc, arith_ev):
             raise AssertionError(val.tag())
 
 
-# XXX---Remove the cases for BashArray/BashAssoc on rhs.
 def PlusEquals(old_val, val):
     # type: (value_t, value_t) -> value_t
     """Implement s+=val, typeset s+=val, etc."""
@@ -269,58 +268,20 @@ def PlusEquals(old_val, val):
                 old_val = cast(value.Str, UP_old_val)
                 str_to_append = cast(value.Str, UP_val)
                 val = value.Str(old_val.s + str_to_append.s)
-
-            elif tag in (value_e.InternalStringArray, value_e.BashArray,
-                         value_e.BashAssoc):
-                e_die("Can't append array to string")
-
             else:
                 raise AssertionError()  # parsing should prevent this
 
         elif case(value_e.InternalStringArray, value_e.BashArray):
             if tag == value_e.Str:
                 e_die("Can't append string to array")
-            elif tag in (value_e.InternalStringArray, value_e.BashArray):
-                if tag == value_e.InternalStringArray:
-                    array_rhs = cast(value.InternalStringArray, UP_val)
-                    strs = bash_impl.InternalStringArray_GetValues(array_rhs)
-                else:
-                    sparse_rhs = cast(value.BashArray, UP_val)
-                    strs = bash_impl.BashArray_GetValues(sparse_rhs)
-
-                # We modify the original instance so that change is
-                # visible to other references (which may exist in YSH)
-                if old_val.tag() == value_e.InternalStringArray:
-                    array_lhs = cast(value.InternalStringArray, UP_old_val)
-                    bash_impl.InternalStringArray_AppendValues(array_lhs, strs)
-                    val = array_lhs
-                else:
-                    sparse_lhs = cast(value.BashArray, UP_old_val)
-                    bash_impl.BashArray_AppendValues(sparse_lhs, strs)
-                    val = sparse_lhs
-
-            elif tag == value_e.BashAssoc:
-                e_die("Can't append an associative array to an indexed array")
-
             else:
                 raise AssertionError()  # parsing should prevent this
 
         elif case(value_e.BashAssoc):
             if tag == value_e.Str:
                 e_die("Can't append string to associative arrays")
-
-            elif tag in (value_e.InternalStringArray, value_e.BashArray):
-                e_die("Can't append an assoxiative array to indexed arrays")
-
-            elif tag == value_e.BashAssoc:
-                assoc_lhs = cast(value.BashAssoc, UP_old_val)
-                assoc_rhs = cast(value.BashAssoc, UP_val)
-                d = bash_impl.BashAssoc_GetDict(assoc_rhs)
-                bash_impl.BashAssoc_AppendDict(assoc_lhs, d)
-                val = assoc_lhs
-
             else:
-                raise AssertionError()  # parsing should prevent this
+                raise AssertionError()  # parsing should prrevent this
 
         else:
             e_die("Can't append to value of type %s" % ui.ValType(old_val))
