@@ -16,37 +16,36 @@ if test -z "${IN_NIX_SHELL:-}"; then
   source build/dev-shell.sh  # to run 'dash', etc.
 fi
 
-check-survey-shells() {
-  ### Make sure bash, zsh, OSH, etc. exist
-
-  # Note: yash isn't here, but it is used in a couple tests
-
-  test/spec-runner.sh shell-sanity-check dash bash mksh zsh ash $OSH_LIST
-}
-
 # TODO: remove this stub after we hollow out this file
-
 run-file() { test/spec-py.sh run-file "$@"; }
 
-#
-# Misc
-#
+here-doc() {
+  # Old notes:
+  # The last two tests, 31 and 32, have different behavior on my Ubuntu and
+  # Debian machines.
+  # - On Ubuntu, read_from_fd.py fails with Errno 9 -- bad file descriptor.
+  # - On Debian, the whole process hangs.
+  # Is this due to Python 3.2 vs 3.4?  Either way osh doesn't implement the
+  # functionality, so it's probably best to just implement it.
+  sh-spec spec/here-doc.test.sh --range 0-31 \
+    dash bash mksh $OSH_LIST "$@"
 
-# Really what I want is enter(func) and exit(func), and filter by regex?
-trace-var-sub() {
-  local out=_tmp/coverage
-  mkdir -p $out
 
-  # This creates *.cover files, with line counts.
-  #python -m trace --count -C $out \
+  # 2025-02 update: why do these pass in CI?  But not on my local Debian
+  # machine
+  #
+  # [??? no location ???] I/O error applying redirect: Bad file descriptor
+  # close failed in file object destructor:
+  # sys.excepthook is missing
+  # lost sys.stderr
+  #
+  # read_from_fd.py gives that error somehow - because the FD isn't closed?
+  #
+  # - Could this be the descriptor 100 bug in the here doc process?
+  #   https://github.com/oils-for-unix/oils/issues/2068
+  # - Also look at [??? no location ???] issue
 
-  # This prints trace with line numbers to stdout.
-  #python -m trace --trace -C $out \
-  PYTHONPATH=. python -m trace --trackcalls -C $out \
-    test/sh_spec.py spec/var-sub.test.sh dash bash "$@"
-
-  ls -l $out
-  head $out/*.cover
+  #run-file here-doc "$@"
 }
 
 #
@@ -327,35 +326,6 @@ parse-errors() {
   run-file parse-errors "$@"
 }
 
-here-doc() {
-  # Old notes:
-  # The last two tests, 31 and 32, have different behavior on my Ubuntu and
-  # Debian machines.
-  # - On Ubuntu, read_from_fd.py fails with Errno 9 -- bad file descriptor.
-  # - On Debian, the whole process hangs.
-  # Is this due to Python 3.2 vs 3.4?  Either way osh doesn't implement the
-  # functionality, so it's probably best to just implement it.
-  sh-spec spec/here-doc.test.sh --range 0-31 \
-    dash bash mksh $OSH_LIST "$@"
-
-
-  # 2025-02 update: why do these pass in CI?  But not on my local Debian
-  # machine
-  #
-  # [??? no location ???] I/O error applying redirect: Bad file descriptor
-  # close failed in file object destructor:
-  # sys.excepthook is missing
-  # lost sys.stderr
-  #
-  # read_from_fd.py gives that error somehow - because the FD isn't closed?
-  #
-  # - Could this be the descriptor 100 bug in the here doc process?
-  #   https://github.com/oils-for-unix/oils/issues/2068
-  # - Also look at [??? no location ???] issue
-
-  #run-file here-doc "$@"
-}
-
 redirect() {
   run-file redirect "$@"
 }
@@ -556,106 +526,6 @@ shell-grammar() {
 
 serialize() {
   run-file serialize "$@"
-}
-
-#
-# Smoosh
-#
-
-readonly SMOOSH_REPO=~/git/languages/smoosh
-
-sh-spec-smoosh-env() {
-  local test_file=$1
-  shift
-
-  # - smoosh tests use $TEST_SHELL instead of $SH
-  # - cd $TMP to avoid littering repo
-  # - pass -o posix
-  # - timeout of 1 second
-  # - Some tests in smoosh use $HOME and $LOGNAME
-
-  sh-spec $test_file \
-    --sh-env-var-name TEST_SHELL \
-    --posix \
-    --env-pair "TEST_UTIL=$SMOOSH_REPO/tests/util" \
-    --env-pair "LOGNAME=$LOGNAME" \
-    --env-pair "HOME=$HOME" \
-    --timeout 1 \
-    --oils-bin-dir $REPO_ROOT/bin \
-    --compare-shells \
-    "$@"
-}
-
-# For speed, only run with one copy of OSH.
-readonly smoosh_osh_list=$OSH_CPYTHON
-
-smoosh() {
-  ### Run case smoosh from the console
-
-  # TODO: Use --oils-bin-dir
-  # our_shells, etc.
-
-  sh-spec-smoosh-env _tmp/smoosh.test.sh \
-    dash bash mksh $smoosh_osh_list \
-    "$@"
-}
-
-smoosh-hang() {
-  ### Run case smoosh-hang from the console
-
-  # Need the smoosh timeout tool to run correctly.
-  sh-spec-smoosh-env _tmp/smoosh-hang.test.sh \
-    --timeout-bin "$SMOOSH_REPO/tests/util/timeout" \
-    --timeout 1 \
-    "$@"
-}
-
-_one-html() {
-  local spec_name=$1
-  shift
-
-  local out_dir=_tmp/spec/smoosh
-  local tmp_dir=_tmp/src-smoosh
-  mkdir -p $out_dir $out_dir
-
-  PYTHONPATH='.:vendor' doctools/src_tree.py smoosh-file \
-    _tmp/$spec_name.test.sh \
-    $out_dir/$spec_name.test.html
-
-  local out=$out_dir/${spec_name}.html
-  set +o errexit
-  # Shell function is smoosh or smoosh-hang
-  time $spec_name --format html "$@" > $out
-  set -o errexit
-
-  echo
-  echo "Wrote $out"
-
-  # NOTE: This IGNORES the exit status.
-}
-
-# TODO:
-# - Put these tests in the CI
-# - Import smoosh spec tests into the repo, with 'test/smoosh.sh'
-
-smoosh-html() {
-  ### Run by devtools/release.sh
-  _one-html smoosh "$@"
-}
-
-smoosh-hang-html() {
-  ### Run by devtools/release.sh
-  _one-html smoosh-hang "$@"
-}
-
-html-demo() {
-  ### Test for --format html
-
-  local out=_tmp/spec/demo.html
-  builtin-special --format html "$@" > $out
-
-  echo
-  echo "Wrote $out"
 }
 
 #
