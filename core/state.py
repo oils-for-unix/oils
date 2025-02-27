@@ -2111,14 +2111,6 @@ class Mem(object):
 
     def GetValue(self, name, which_scopes=scope_e.Shopt):
         # type: (str, scope_t) -> value_t
-        return self._GetValue(name, which_scopes, False, loc.Missing)
-
-    def GetValueForRewrite(self, name, blame_loc, which_scopes=scope_e.Shopt):
-        # type: (str, loc_t, scope_t) -> value_t
-        return self._GetValue(name, which_scopes, True, blame_loc)
-
-    def _GetValue(self, name, which_scopes, to_write, blame_loc):
-        # type: (str, scope_t, bool, loc_t) -> value_t
         """Used by the WordEvaluator, ArithEvaluator, ExprEvaluator, etc."""
         assert isinstance(name, str), name
 
@@ -2288,9 +2280,6 @@ class Mem(object):
                 #    We still need a ref_trail to detect cycles.
                 cell, _, _ = self._ResolveNameOrRef(name, which_scopes)
                 if cell:
-                    if to_write and cell.readonly:
-                        e_die("Can't assign to readonly variable %r" % name,
-                              blame_loc)
                     return cell.val
 
                 builtin_val = self.builtins.get(name)
@@ -2316,6 +2305,17 @@ class Mem(object):
             which_scopes = self.ScopesForReading()
 
         cell, _ = self._ResolveNameOnly(name, which_scopes)
+        return cell
+
+    def GetCellDeref(self, name, which_scopes=scope_e.Shopt):
+        # type: (str, scope_t) -> Cell
+        """Get both the value and flags. Unlike GetCell, this resolves
+        name references.
+        """
+        if which_scopes == scope_e.Shopt:
+            which_scopes = self.ScopesForReading()
+
+        cell, _, _ = self._ResolveNameOrRef(name, which_scopes)
         return cell
 
     def Unset(self, lval, which_scopes):

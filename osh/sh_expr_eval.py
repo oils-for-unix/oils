@@ -127,7 +127,14 @@ def OldValue(lval, mem, exec_opts, blame_loc):
         else:
             raise AssertionError()
 
-    val = mem.GetValueForRewrite(var_name, blame_loc)
+    cell = mem.GetCellDeref(var_name)
+    if cell is not None:
+        if cell.readonly:
+            e_die("Can't assign to readonly variable %r" % var_name, blame_loc)
+        val = cell.val
+    else:
+        val = value.Undef
+
     if exec_opts and exec_opts.nounset() and val.tag() == value_e.Undef:
         e_die('Undefined variable %r' % var_name, blame_loc)
 

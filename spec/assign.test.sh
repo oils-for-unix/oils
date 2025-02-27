@@ -738,8 +738,11 @@ a=(1 2 3)
 readonly -a a
 eval 'a+=(4)'
 argv.py "${a[@]}"
+eval 'declare -n r=a; r+=(4)'
+argv.py "${a[@]}"
 
 ## STDOUT:
+['1', '2', '3']
 ['1', '2', '3']
 ## END
 ## OK mksh status: 1
