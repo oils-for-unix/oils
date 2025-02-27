@@ -87,7 +87,8 @@ dispatch-one() {
   local -a prefix
   case $compare_mode in
 
-    compare-py)     prefix=(test/spec.sh) ;;
+    #compare-py)     prefix=(test/spec.sh) ;;
+    compare-py)     prefix=(test/spec-py.sh run-file) ;;
 
     compare-cpp)    prefix=(test/spec-cpp.sh run-file) ;;
 

@@ -20,6 +20,10 @@ fi
 run-file() { test/spec-py.sh run-file "$@"; }
 
 here-doc() {
+  run-file here-doc "$@"
+}
+
+OLD-here-doc() {
   # Old notes:
   # The last two tests, 31 and 32, have different behavior on my Ubuntu and
   # Debian machines.
