@@ -1,3 +1,4 @@
+## compare_shells: bash mksh
 ## oils_cpp_failures_allowed: 2
 
 #### Performance demo

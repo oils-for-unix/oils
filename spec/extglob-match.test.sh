@@ -1,3 +1,5 @@
+## compare_shells: bash mksh
+
 # Test extended glob matching with [[, case, etc.
 
 #### @ matches exactly one

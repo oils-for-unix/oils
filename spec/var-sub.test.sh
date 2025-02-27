@@ -1,4 +1,5 @@
-#
+## compare_shells: dash bash mksh
+
 # Corner cases in var sub.  Maybe rename this file.
 
 #### Bad var sub

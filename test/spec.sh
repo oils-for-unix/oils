@@ -16,23 +16,12 @@ if test -z "${IN_NIX_SHELL:-}"; then
   source build/dev-shell.sh  # to run 'dash', etc.
 fi
 
-# TODO: Just use 'dash bash' and $PATH
-readonly DASH=dash
-readonly BASH=bash
-readonly MKSH=mksh
-readonly ZSH=zsh
-readonly BUSYBOX_ASH=ash
-
-# ash and dash are similar, so not including ash by default.  zsh is not quite
-# POSIX.
-readonly REF_SHELLS=($DASH $BASH $MKSH)
-
 check-survey-shells() {
   ### Make sure bash, zsh, OSH, etc. exist
 
   # Note: yash isn't here, but it is used in a couple tests
 
-  test/spec-runner.sh shell-sanity-check "${REF_SHELLS[@]}" $ZSH $BUSYBOX_ASH $OSH_LIST
+  test/spec-runner.sh shell-sanity-check dash bash mksh zsh ash $OSH_LIST
 }
 
 # TODO: remove this stub after we hollow out this file
@@ -54,7 +43,7 @@ trace-var-sub() {
   # This prints trace with line numbers to stdout.
   #python -m trace --trace -C $out \
   PYTHONPATH=. python -m trace --trackcalls -C $out \
-    test/sh_spec.py spec/var-sub.test.sh $DASH $BASH "$@"
+    test/sh_spec.py spec/var-sub.test.sh dash bash "$@"
 
   ls -l $out
   head $out/*.cover
@@ -112,7 +101,7 @@ alias() {
 }
 
 comments() {
-  sh-spec spec/comments.test.sh ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file comments "$@"
 }
 
 word-split() {
@@ -120,8 +109,7 @@ word-split() {
 }
 
 word-eval() {
-  sh-spec spec/word-eval.test.sh \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file word-eval "$@"
 }
 
 # These cases apply to many shells.
@@ -347,7 +335,7 @@ here-doc() {
   # Is this due to Python 3.2 vs 3.4?  Either way osh doesn't implement the
   # functionality, so it's probably best to just implement it.
   sh-spec spec/here-doc.test.sh --range 0-31 \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+    dash bash mksh $OSH_LIST "$@"
 }
 
 redirect() {
@@ -363,8 +351,7 @@ redirect-multi() {
 }
 
 posix() {
-  sh-spec spec/posix.test.sh \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file posix "$@"
 }
 
 introspect() {
@@ -403,8 +390,7 @@ var-op-strip() {
 var-sub() {
   # NOTE: ZSH has interesting behavior, like echo hi > "$@" can write to TWO
   # FILES!  But ultimately we don't really care, so I disabled it.
-  sh-spec spec/var-sub.test.sh \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file var-sub "$@"
 }
 
 var-num() {
@@ -412,8 +398,7 @@ var-num() {
 }
 
 var-sub-quote() {
-  sh-spec spec/var-sub-quote.test.sh \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file var-sub-quote "$@"
 }
 
 sh-usage() {
@@ -515,8 +500,7 @@ extglob-files() {
 
 # This does string matching.
 extglob-match() {
-  sh-spec spec/extglob-match.test.sh \
-    $BASH $MKSH $OSH_LIST "$@"
+  run-file extglob-match "$@"
 }
 
 nocasematch-match() {
@@ -594,7 +578,7 @@ smoosh() {
   # our_shells, etc.
 
   sh-spec-smoosh-env _tmp/smoosh.test.sh \
-    ${REF_SHELLS[@]} $smoosh_osh_list \
+    dash bash mksh $smoosh_osh_list \
     "$@"
 }
 
@@ -987,8 +971,7 @@ ble-idioms() {
 }
 
 ble-sparse() {
-  sh-spec spec/ble-sparse.test.sh \
-    $BASH $MKSH $OSH_LIST "$@"
+  run-file ble-sparse "$@"
 }
 
 ble-features() {
