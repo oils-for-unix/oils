@@ -73,7 +73,7 @@ EOF
   while read spec_name; do
     echo "
 $spec_name() {
-  test/spec-py.sh run-file $spec_name "$@"
+  test/spec-py.sh run-file $spec_name \"\$@\"
 }"
   done
 
