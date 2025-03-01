@@ -1215,34 +1215,3 @@ status=0
 ## END
 ## N-I mksh status: 99
 ## N-I mksh stdout-json: ""
-
-
-#### bash mangles indexed array #1 (keys undergoes arithmetic evaluation)
-case $SH in mksh) exit 99;; esac
-# Note: This and next tests have originally been in "spec/assign.test.sh" and
-# compared the behavior of OSH's BashAssoc and Bash's indexed array.  After
-# supporting "arr=([index]=value)" for indexed arrays, the test was adjusted
-# and copied here. See also the corresponding tests in "spec/assign.test.sh"
-a=([k1]=v1 [k2]=v2)
-echo ${a["k1"]}
-echo ${a["k2"]}
-## STDOUT:
-v2
-v2
-## END
-## N-I mksh status: 99
-## N-I mksh stdout-json: ""
-
-
-#### bash mangles indexed array #2 (Bash does not recognize [index]=brace-expansion)
-case $SH in mksh) exit 99;; esac
-a=([k2]=-{a,b}-)
-echo ${a["k2"]}
-## STDOUT:
--{a,b}-
-## END
-## BUG bash STDOUT:
-[k2]=-a-
-## END
-## N-I mksh status: 99
-## N-I mksh stdout-json: ""

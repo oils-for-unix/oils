@@ -425,24 +425,6 @@ v
 -{a,b}-
 ## END
 
-#### bash mangles indexed array #1 (associative array is OK)
-declare -A a
-a=([k1]=v1 [k2]=v2)
-echo ${a["k1"]}
-echo ${a["k2"]}
-## STDOUT:
-v1
-v2
-## END
-
-#### bash mangles indexed array #2 (associative array is OK)
-declare -A a
-a=([k2]=-{a,b}-)
-echo ${a["k2"]}
-## STDOUT:
--{a,b}-
-## END
-
 #### declare -A A=() allowed
 set -o nounset
 shopt -s strict_arith || true

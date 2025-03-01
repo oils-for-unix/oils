@@ -46,6 +46,10 @@ array-compat() {
   test/spec-py.sh run-file array-compat "$@"
 }
 
+array-literal() {
+  test/spec-py.sh run-file array-literal "$@"
+}
+
 array-sparse() {
   test/spec-py.sh run-file array-sparse "$@"
 }
