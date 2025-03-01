@@ -399,13 +399,13 @@ class ArrayTest(unittest.TestCase):
         # Empty array
         node = assert_ParseCommandList(self, 'empty=()')
         self.assertEqual(['empty'], [p.lhs.name for p in node.pairs])
-        self.assertEqual([], node.pairs[0].rhs.parts[0].words)  # No words
+        self.assertEqual([], node.pairs[0].rhs.parts[0].pairs)  # No words
         self.assertEqual(command_e.ShAssignment, node.tag())
 
         # Array with 3 elements
         node = assert_ParseCommandList(self, 'array=(a b c)')
         self.assertEqual(['array'], [p.lhs.name for p in node.pairs])
-        self.assertEqual(3, len(node.pairs[0].rhs.parts[0].words))
+        self.assertEqual(3, len(node.pairs[0].rhs.parts[0].pairs))
         self.assertEqual(command_e.ShAssignment, node.tag())
 
         # Array literal can't come after word

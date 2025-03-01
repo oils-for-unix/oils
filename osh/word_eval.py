@@ -14,7 +14,7 @@ from _devbuild.gen.syntax_asdl import (
     bracket_op_e,
     suffix_op,
     suffix_op_e,
-    ShArrayLiteral,
+    YshArrayLiteral,
     SingleQuoted,
     DoubleQuoted,
     word_e,
@@ -25,6 +25,9 @@ from _devbuild.gen.syntax_asdl import (
     rhs_word_t,
     word_part,
     word_part_e,
+    AssocPair,
+    InitializerWord,
+    InitializerWord_e,
 )
 from _devbuild.gen.runtime_asdl import (
     part_value,
@@ -48,6 +51,7 @@ from _devbuild.gen.value_asdl import (
     value_t,
     sh_lvalue,
     sh_lvalue_t,
+    InitializerValue,
 )
 from core import bash_impl
 from core import error
@@ -63,7 +67,7 @@ from frontend import consts
 from frontend import lexer
 from frontend import location
 from mycpp import mops
-from mycpp.mylib import log, tagswitch, NewDict
+from mycpp.mylib import log, tagswitch
 from osh import braces
 from osh import glob_
 from osh import string_ops
@@ -71,7 +75,7 @@ from osh import word_
 from ysh import expr_eval
 from ysh import val_ops
 
-from typing import Optional, Tuple, List, Dict, cast, TYPE_CHECKING
+from typing import Optional, Tuple, List, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import word_part_t
@@ -1839,11 +1843,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         UP_part = part
         with tagswitch(part) as case:
-            if case(word_part_e.ShArrayLiteral):
-                part = cast(ShArrayLiteral, UP_part)
+            if case(word_part_e.YshArrayLiteral):
+                part = cast(YshArrayLiteral, UP_part)
                 e_die("Unexpected array literal", loc.WordPart(part))
-            elif case(word_part_e.BashAssocLiteral):
-                part = cast(word_part.BashAssocLiteral, UP_part)
+            elif case(word_part_e.InitializerLiteral):
+                part = cast(word_part.InitializerLiteral, UP_part)
                 e_die("Unexpected associative array literal",
                       loc.WordPart(part))
 
@@ -2162,23 +2166,29 @@ class AbstractWordEvaluator(StringWordEvaluator):
             part0 = w.parts[0]
             UP_part0 = part0
             tag = part0.tag()
-            # Special case for a=(1 2).  ShArrayLiteral won't appear in words that
-            # don't look like assignments.
-            if tag == word_part_e.ShArrayLiteral:
-                part0 = cast(ShArrayLiteral, UP_part0)
-                array_words = part0.words
-                words = braces.BraceExpandWords(array_words)
-                strs = self.EvalWordSequence(words)
-                return bash_impl.BashArray_FromList(strs)
+            if tag == word_part_e.InitializerLiteral:
+                part0 = cast(word_part.InitializerLiteral, UP_part0)
 
-            if tag == word_part_e.BashAssocLiteral:
-                part0 = cast(word_part.BashAssocLiteral, UP_part0)
-                d = NewDict()  # type: Dict[str, str]
+                assigns = []  # type: List[InitializerValue]
                 for pair in part0.pairs:
-                    k = self.EvalWordToString(pair.key)
-                    v = self.EvalWordToString(pair.value)
-                    d[k.s] = v.s
-                return value.BashAssoc(d)
+                    UP_pair = pair
+                    with tagswitch(pair) as case:
+                        if case(InitializerWord_e.ArrayWord):
+                            pair = cast(InitializerWord.ArrayWord, UP_pair)
+                            words = braces.BraceExpandWords([pair.w])
+                            for v in self.EvalWordSequence(words):
+                                assigns.append(InitializerValue(
+                                    None, v, False))
+                        elif case(InitializerWord_e.AssocPair):
+                            pair = cast(AssocPair, UP_pair)
+                            k = self.EvalWordToString(pair.key).s
+                            v = self.EvalWordToString(pair.value).s
+                            assigns.append(
+                                InitializerValue(k, v, pair.has_plus))
+                        else:
+                            raise AssertionError(pair.tag())
+
+                return value.InitializerList(assigns)
 
         # If RHS doesn't look like a=( ... ), then it must be a string.
         return self.EvalWordToString(w)

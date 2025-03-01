@@ -2,7 +2,7 @@
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (loc, Token, DoubleQuoted, SingleQuoted,
-                                       CommandSub, ShArrayLiteral,
+                                       CommandSub, YshArrayLiteral,
                                        CompoundWord, word_part_t, word_e)
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_str
 from _devbuild.gen.types_asdl import lex_mode_e
@@ -180,7 +180,7 @@ def _PushYshTokens(parse_ctx, gr, p, lex):
                       Id.Left_PercentParen):  # :|  %(  LEGACY!
             left_tok = tok
             if tok.id == Id.Left_PercentParen:
-                lex.PushHint(Id.Op_RParen, Id.Right_ShArrayLiteral)
+                lex.PushHint(Id.Op_RParen, Id.Right_Initializer)
 
             # Blame the opening token
             line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
@@ -193,7 +193,7 @@ def _PushYshTokens(parse_ctx, gr, p, lex):
                 with tagswitch(w) as case:
                     if case(word_e.Operator):
                         tok = cast(Token, w)
-                        if tok.id == Id.Right_ShArrayLiteral:
+                        if tok.id == Id.Right_Initializer:
                             if left_tok.id != Id.Left_PercentParen:
                                 p_die('Expected ) to close', left_tok)
                             close_tok = tok
@@ -220,7 +220,7 @@ def _PushYshTokens(parse_ctx, gr, p, lex):
 
             typ = Id.Expr_CastedDummy
 
-            lit_part = ShArrayLiteral(left_tok, words3, close_tok)
+            lit_part = YshArrayLiteral(left_tok, words3, close_tok)
             opaque = cast(Token, lit_part)  # HACK for expr_to_ast
             done = p.addtoken(typ, opaque, gr.tokens[typ])
             assert not done  # can't end the expression

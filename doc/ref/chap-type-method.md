@@ -26,19 +26,21 @@ These two types are for OSH code only.
 
 ### BashArray
 
-A bash array holds a sequence of strings.  Some entries may be unset, i.e.
-*not* an empty string.
+A bash array holds a sequence of strings.  Some entries may be **unset** (not
+an empty string).
 
-See [sh-array][] for details.  In YSH, prefer to use [List](#List) instances.
+See [sh-init-list][] and [sh-array][] for creation/mutation of BashArray.
+In YSH, prefer to use [List](#List) instances.
 
 [sh-array]: chap-osh-assign.html#sh-array
-
+[sh-init-list]: chap-osh-assign.html#sh-init-list
 
 ### BashAssoc
 
 A bash associative array is a mapping from strings to strings.
 
-See [sh-assoc][] for details.  In YSH, prefer to use [Dict](#Dict) instances.
+See [sh-init-list][] and [sh-assoc][] for creation/mutation of BashAssoc.  In
+YSH, prefer to use [Dict](#Dict) instances.
 
 [sh-assoc]: chap-osh-assign.html#sh-assoc
 

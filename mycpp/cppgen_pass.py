@@ -67,7 +67,7 @@ def _GetCastKind(module_path: str, cast_to_type: str) -> str:
     # Hack for Id.Expr_CastedDummy in expr_to_ast.py
     if 'expr_to_ast.py' in module_path:
         for name in (
-                'ShArrayLiteral',
+                'YshArrayLiteral',
                 'CommandSub',
                 'BracedVarSub',
                 'DoubleQuoted',
@@ -966,8 +966,8 @@ class Impl(_Shared):
     def oils_visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> None:
         callee_name = o.callee.name
 
-        #    return cast(ShArrayLiteral, tok)
-        # -> return static_cast<ShArrayLiteral*>(tok)
+        #    return cast(YshArrayLiteral, tok)
+        # -> return static_cast<YshArrayLiteral*>(tok)
 
         # TODO: Consolidate this with AssignmentExpr logic.
         if callee_name == 'cast':

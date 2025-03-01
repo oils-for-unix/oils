@@ -61,8 +61,8 @@ from _devbuild.gen.syntax_asdl import (
     SingleQuoted,
     BracedVarSub,
     CommandSub,
-    ShArrayLiteral,
-    AssocPair,
+    InitializerWord,
+    InitializerWord_t,
     bracket_op,
     bracket_op_t,
     suffix_op,
@@ -1641,7 +1641,7 @@ class WordParser(WordEmitter):
             with tagswitch(w) as case:
                 if case(word_e.Operator):
                     tok = cast(Token, w)
-                    if tok.id == Id.Right_ShArrayLiteral:
+                    if tok.id == Id.Right_Initializer:
                         right_token = tok
                         done = True  # can't use break here
                     # Unlike command parsing, array parsing allows embedded \n.
@@ -1656,36 +1656,24 @@ class WordParser(WordEmitter):
                 else:
                     raise AssertionError()
 
-        if len(words) == 0:  # a=() is empty indexed array
-            # Needed for type safety, doh
-            no_words = []  # type: List[word_t]
-            node = ShArrayLiteral(left_token, no_words, right_token)
-            return node
-
-        pairs = []  # type: List[AssocPair]
-        # If the first one is a key/value pair, then the rest are assumed to be.
-        pair = word_.DetectAssocPair(words[0])
-        if pair:
-            word_.TildeDetectAssign(pair.value)  # pair.value is modified
-            pairs.append(pair)
-
-            n = len(words)
-            for i in xrange(1, n):
-                w2 = words[i]
-                pair = word_.DetectAssocPair(w2)
-                if not pair:
-                    p_die("Expected associative array pair", loc.Word(w2))
-
+        initializer_words = []  # type: List[InitializerWord_t]
+        for w in words:
+            pair = word_.DetectAssocPair(w)
+            if pair is not None:
                 word_.TildeDetectAssign(pair.value)  # pair.value is modified
-                pairs.append(pair)
+                initializer_words.append(pair)
+            else:
+                w2 = braces.BraceDetect(w)  # type: word_t
+                if w2 is None:
+                    w2 = w
+                w3 = word_.TildeDetect(w2)  # type: word_t
+                if w3 is None:
+                    w3 = w2
+                initializer_words.append(InitializerWord.ArrayWord(w3))
 
-            # invariant List?
-            return word_part.BashAssocLiteral(left_token, pairs, right_token)
-
-        # Brace detection for arrays but NOT associative arrays
-        words2 = braces.BraceDetectAll(words)
-        words3 = word_.TildeDetectAll(words2)
-        return ShArrayLiteral(left_token, words3, right_token)
+        # invariant List?
+        return word_part.InitializerLiteral(left_token, initializer_words,
+                                            right_token)
 
     def ParseProcCallArgs(self, start_symbol):
         # type: (int) -> ArgList
@@ -1722,7 +1710,7 @@ class WordParser(WordEmitter):
             # _ReadWord.
             next_id = self.lexer.LookPastSpace(lex_mode)
             if next_id == Id.Op_LParen:
-                self.lexer.PushHint(Id.Op_RParen, Id.Right_ShArrayLiteral)
+                self.lexer.PushHint(Id.Op_RParen, Id.Right_Initializer)
                 part2 = self._ReadArrayLiteral()
                 parts.append(part2)
 
@@ -2018,8 +2006,7 @@ class WordParser(WordEmitter):
 
         elif self.token_kind == Kind.Right:
             if self.token_type not in (Id.Right_Subshell, Id.Right_ShFunction,
-                                       Id.Right_CasePat,
-                                       Id.Right_ShArrayLiteral):
+                                       Id.Right_CasePat, Id.Right_Initializer):
                 raise AssertionError(self.cur_token)
 
             self._SetNext(lex_mode)

@@ -201,7 +201,7 @@ def PrintTokens(arena):
         print('%s' % arena.tokens[0])
         return
 
-    # TODO: 
+    # TODO:
     # - TSV8: end position, token type
     #   - then an option to print token text, as a J8 string
     # - and then there can be a separate tool to number the columns
@@ -1019,8 +1019,9 @@ class YshPrinter(object):
         UP_node = node
 
         with tagswitch(node) as case:
-            if case(word_part_e.ShArrayLiteral, word_part_e.BashAssocLiteral,
-                    word_part_e.TildeSub, word_part_e.ExtGlob):
+            if case(word_part_e.YshArrayLiteral,
+                    word_part_e.InitializerLiteral, word_part_e.TildeSub,
+                    word_part_e.ExtGlob):
                 pass
 
             elif case(word_part_e.EscapedLiteral):
