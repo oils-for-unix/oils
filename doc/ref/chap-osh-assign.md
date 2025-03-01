@@ -115,7 +115,7 @@ These rules are summarized in the following table.
 - tr
   - <!-- empty -->
   - `-A`
-  - an empty BashArray
+  - an empty BashAssoc
   - <!-- empty -->
 - tr
   - Str
