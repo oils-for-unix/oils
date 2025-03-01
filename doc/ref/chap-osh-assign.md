@@ -73,7 +73,7 @@ applied.
 In the first phase, the type adjustment is performed in the following way:
 
 - When the LHS variable is unset, the assignment creates an empty indexed array
-  (BashArray) and apply the initializer list to the created array.  If the
+  (BashArray).  If the
   assignment is performed through an assignment builtin and flag `-A` is
   supplied to the builtin, an empty associative array (BashAssoc) is created
   instead of an empty BashArray.
@@ -84,9 +84,8 @@ In the first phase, the type adjustment is performed in the following way:
   original value is stored at key `"0"` instead of a BashArray.  If the
   assignment operator is `+=`, OSH issues an error "Can't append an array to
   string", while Bash is permissive.
-- When the LHS is an indexed or associative arrays, the initializer list is
-  applied to the original array following [sh-array](#sh-array) (for an indexed
-  array) or [sh-assoc](#sh-assoc) (for an associative array).  If the
+- When the LHS is an indexed or associative arrays, the original array is
+  directly used for the modification target.  If the
   assignemnt is performed through an assignment builtin and mismatching flag
   (i.e., `-A` and `-a` for BashArray and BashAssoc, respectively) is supplied,
   OSH discards the original array and creates a new empty BashArray (for flag
