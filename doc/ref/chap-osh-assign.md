@@ -151,8 +151,8 @@ These rules are summarized in the following table.
 - tr
   - <!-- empty -->
   - `-A`
-  - an empty BashAssoc
-  - Error in Bash
+  - N/A
+  - Error
 - tr
   - BashAssoc
   - (none)
@@ -161,8 +161,8 @@ These rules are summarized in the following table.
 - tr
   - <!-- empty -->
   - `-a`
-  - an empty BashArray
-  - Error in Bash
+  - N/A
+  - Error
 - tr
   - <!-- empty -->
   - `-A`
