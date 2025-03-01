@@ -34,12 +34,24 @@ arith() {
   test/spec-py.sh run-file arith "$@"
 }
 
+array-assoc() {
+  test/spec-py.sh run-file array-assoc "$@"
+}
+
 array-basic() {
   test/spec-py.sh run-file array-basic "$@"
 }
 
 array-compat() {
   test/spec-py.sh run-file array-compat "$@"
+}
+
+array-literal() {
+  test/spec-py.sh run-file array-literal "$@"
+}
+
+array-sparse() {
+  test/spec-py.sh run-file array-sparse "$@"
 }
 
 array() {
@@ -62,14 +74,6 @@ assign() {
   test/spec-py.sh run-file assign "$@"
 }
 
-assoc() {
-  test/spec-py.sh run-file assoc "$@"
-}
-
-assoc-zsh() {
-  test/spec-py.sh run-file assoc-zsh "$@"
-}
-
 background() {
   test/spec-py.sh run-file background "$@"
 }
@@ -80,10 +84,6 @@ ble-features() {
 
 ble-idioms() {
   test/spec-py.sh run-file ble-idioms "$@"
-}
-
-ble-sparse() {
-  test/spec-py.sh run-file ble-sparse "$@"
 }
 
 blog1() {
@@ -784,6 +784,10 @@ ysh-word-eval() {
 
 ysh-xtrace() {
   test/spec-py.sh run-file ysh-xtrace "$@"
+}
+
+zsh-assoc() {
+  test/spec-py.sh run-file zsh-assoc "$@"
 }
 
 zsh-idioms() {
