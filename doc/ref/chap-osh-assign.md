@@ -81,7 +81,7 @@ In the first phase, the type adjustment is performed in the following way:
   element, where the original value is stored at index `0`.  If the assignment
   is performed through an assignment builtin and flag `-A` is supplied to the
   builtin, the assignment creates a BashAssoc with one element, where the
-  original value is stored at key `"0"` instead of a BashArray.  If the
+  original value is stored at key `"0"`, instead of a BashArray.  If the
   assignment operator is `+=`, OSH issues an error "Can't append an array to
   string", while Bash is permissive.
 - When the LHS is an indexed or associative arrays, the original array is
