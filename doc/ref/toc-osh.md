@@ -121,9 +121,9 @@ X [Unsupported]   enable
 </h2>
 
 ```chapter-links-osh-assign
-  [Literals]      sh-init-list  a=(v1 [i]=v2 [k]+=v3) a+=(v1 [i]=v2 [k]+=v3)
-                  sh-array      array=(a b c)   array[1]=B   "${a[@]}"
-                  sh-assoc      assoc=(['a']=1 ['b']=2)   assoc['x']=b
+  [Literals]      sh-init-list  a=(v1 [i]=v2 [k]+=v3)   a+=(v1 [i]=v2 [k]+=v3)
+                  sh-array      array[123]=v   "${array[@]}"
+                  sh-assoc      assoc['k']=v   "${assoc[@]}"   "${!assoc[@]}"  
   [Operators]     sh-assign     str='xyz'
                   sh-append     str+='abc'
   [Builtins]      local     readonly    export   unset   shift
