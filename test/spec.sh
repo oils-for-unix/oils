@@ -70,10 +70,6 @@ assign() {
   test/spec-py.sh run-file assign "$@"
 }
 
-assoc-zsh() {
-  test/spec-py.sh run-file assoc-zsh "$@"
-}
-
 background() {
   test/spec-py.sh run-file background "$@"
 }
@@ -784,6 +780,10 @@ ysh-word-eval() {
 
 ysh-xtrace() {
   test/spec-py.sh run-file ysh-xtrace "$@"
+}
+
+zsh-assoc() {
+  test/spec-py.sh run-file zsh-assoc "$@"
 }
 
 zsh-idioms() {
