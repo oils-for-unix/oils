@@ -15,7 +15,7 @@ from _devbuild.gen.syntax_asdl import (
     SingleQuoted,
     DoubleQuoted,
     BracedVarSub,
-    ShArrayLiteral,
+    YshArrayLiteral,
     CommandSub,
     expr,
     expr_e,
@@ -1216,8 +1216,8 @@ class ExprEvaluator(object):
                     else:
                         return value.Str(stdout_str)
 
-            elif case(expr_e.ShArrayLiteral):  # var x = :| foo *.py |
-                node = cast(ShArrayLiteral, UP_node)
+            elif case(expr_e.YshArrayLiteral):  # var x = :| foo *.py |
+                node = cast(YshArrayLiteral, UP_node)
                 words = braces.BraceExpandWords(node.words)
                 strs = self.word_ev.EvalWordSequence(words)
                 #log('ARRAY LITERAL EVALUATED TO -> %s', strs)

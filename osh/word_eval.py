@@ -14,7 +14,7 @@ from _devbuild.gen.syntax_asdl import (
     bracket_op_e,
     suffix_op,
     suffix_op_e,
-    ShArrayLiteral,
+    YshArrayLiteral,
     SingleQuoted,
     DoubleQuoted,
     word_e,
@@ -1843,8 +1843,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         UP_part = part
         with tagswitch(part) as case:
-            if case(word_part_e.ShArrayLiteral):
-                part = cast(ShArrayLiteral, UP_part)
+            if case(word_part_e.YshArrayLiteral):
+                part = cast(YshArrayLiteral, UP_part)
                 e_die("Unexpected array literal", loc.WordPart(part))
             elif case(word_part_e.InitializerLiteral):
                 part = cast(word_part.InitializerLiteral, UP_part)

@@ -97,7 +97,7 @@ def _EvalWordPart(part):
 
             return True, ''.join(strs), True  # At least one part was quoted!
 
-        elif case(word_part_e.ShArrayLiteral, word_part_e.InitializerLiteral,
+        elif case(word_part_e.YshArrayLiteral, word_part_e.InitializerLiteral,
                   word_part_e.ZshVarSub, word_part_e.CommandSub,
                   word_part_e.SimpleVarSub, word_part_e.BracedVarSub,
                   word_part_e.TildeSub, word_part_e.ArithSub,

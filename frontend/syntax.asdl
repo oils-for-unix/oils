@@ -184,7 +184,7 @@ module syntax
 
   # - can contain word.BracedTree
   # - no 'Token right' for now, doesn't appear to be used
-  ShArrayLiteral = (Token left, List[word] words, Token right)
+  YshArrayLiteral = (Token left, List[word] words, Token right)
 
   # Unevaluated, typed arguments for func and proc.
   # Note that ...arg is expr.Spread.
@@ -202,7 +202,7 @@ module syntax
   | AssocPair %AssocPair
 
   word_part = 
-    ShArrayLiteral %ShArrayLiteral
+    YshArrayLiteral %YshArrayLiteral
   | InitializerLiteral(Token left, List[InitializerWord] pairs, Token right)
   | Literal %Token
     # escaped case is separate so the evaluator doesn't have to check token ID
@@ -251,7 +251,7 @@ module syntax
     # overhead and seems like overkill.  Note that DoubleQuoted can't
     # contain a SingleQuoted, etc. either.
   | Compound %CompoundWord
-    # For word sequences command.Simple, ShArrayLiteral, for_iter.Words
+    # For word sequences command.Simple, YshArrayLiteral, for_iter.Words
     # Could be its own type
   | BracedTree(List[word_part] parts)
     # For dynamic parsing of test aka [ - the string is already evaluated.
@@ -359,7 +359,7 @@ module syntax
   for_iter =
     Args                          # for x; do echo $x; done # implicit "$@"
   | Words(List[word] words)       # for x in 'foo' *.py { echo $x }
-                                  # like ShArrayLiteral, but no location for %(
+                                  # like YshArrayLiteral, but no location for %(
   | YshExpr(expr e, Token blame)  # for x in (mylist) { echo $x }
   #| Files(Token left, List[word] words)
                                   # for x in <> {
@@ -551,7 +551,7 @@ module syntax
   | Place(Token blame_tok, str var_name, place_op* ops)
 
     # :| one 'two' "$three" |
-  | ShArrayLiteral %ShArrayLiteral
+  | YshArrayLiteral %YshArrayLiteral
 
     # / d+ ; ignorecase; %python /
   | Eggex %Eggex
