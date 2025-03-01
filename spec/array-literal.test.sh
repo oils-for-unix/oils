@@ -1,6 +1,6 @@
 ## compare_shells: bash
 
-#### bash mangles indexed array #1 (keys undergoes arithmetic evaluation)
+#### [k1]=v1 (BashArray)
 # Note: This and next tests have originally been in "spec/assign.test.sh" and
 # compared the behavior of OSH's BashAssoc and Bash's indexed array.  After
 # supporting "arr=([index]=value)" for indexed arrays, the test was adjusted
@@ -13,7 +13,7 @@ v2
 v2
 ## END
 
-#### bash mangles indexed array #1 (associative array is OK)
+#### [k1]=v1 (BashAssoc)
 declare -A a
 a=([k1]=v1 [k2]=v2)
 echo ${a["k1"]}
@@ -23,7 +23,7 @@ v1
 v2
 ## END
 
-#### bash mangles indexed array #2 (associative array is OK)
+#### [k1]=v1 looking like brace expansions (BashArray)
 declare -A a
 a=([k2]=-{a,b}-)
 echo ${a["k2"]}
@@ -31,7 +31,7 @@ echo ${a["k2"]}
 -{a,b}-
 ## END
 
-#### bash mangles indexed array #2 (Bash does not recognize [index]=brace-expansion)
+#### [k1]=v1 looking like brace expansions (BashAssoc)
 a=([k2]=-{a,b}-)
 echo ${a["k2"]}
 ## STDOUT:
