@@ -162,6 +162,11 @@ These rules are summarized in the following table.
   - `-A`
   - the original BashAssoc
   - <!-- empty -->
+- tr
+  - (others)
+  - <!-- empty -->
+  - N/A
+  - Error
 
 </table>
 
