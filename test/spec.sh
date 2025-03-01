@@ -34,6 +34,10 @@ arith() {
   test/spec-py.sh run-file arith "$@"
 }
 
+array-assoc() {
+  test/spec-py.sh run-file array-assoc "$@"
+}
+
 array-basic() {
   test/spec-py.sh run-file array-basic "$@"
 }
@@ -64,10 +68,6 @@ assign-extended() {
 
 assign() {
   test/spec-py.sh run-file assign "$@"
-}
-
-assoc() {
-  test/spec-py.sh run-file assoc "$@"
 }
 
 assoc-zsh() {
