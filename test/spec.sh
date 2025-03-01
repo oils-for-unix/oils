@@ -42,6 +42,10 @@ array-compat() {
   test/spec-py.sh run-file array-compat "$@"
 }
 
+array-sparse() {
+  test/spec-py.sh run-file array-sparse "$@"
+}
+
 array() {
   test/spec-py.sh run-file array "$@"
 }
@@ -80,10 +84,6 @@ ble-features() {
 
 ble-idioms() {
   test/spec-py.sh run-file ble-idioms "$@"
-}
-
-ble-sparse() {
-  test/spec-py.sh run-file ble-sparse "$@"
 }
 
 blog1() {
