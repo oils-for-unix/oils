@@ -45,21 +45,21 @@ cleared before starting the modifications.  When the assignment is performed
 with `+=`, the modifications are applied to the existing content of the LHS
 value.
 
-An initializer list has the following form: `(<items>...)`, where each item has
-one of the following forms:
+An initializer list has the following form: `'(' ITEMS* ')'`, where each item
+has one of the following forms:
 
-- `[<key>]=<value>` ... This assigns `<value>` to an element of the LHS
-  specified by `<key>`.  The `<value>` is not subject to word splitting and
-  pathname expansions as if it is the RHS of an assignment.
-- `[<key>]+=<value>` ... This appends `<value>` to an element of the LHS
-  specified by `<key>`.  If the corresponding element does not exist, it simply
-  assigns `<value>` to a new element associated with `<key>`.  The `<value>` is
-  not subject to word splitting and pathname expansions.
-- `<value>` ... If the item does not have the above two forms, it is considered
-  a normal word.  In this case, this assigns `<value>` to the *next* element,
-  where the next element is determined by the LHS.  Unlike the previous two
-  forms, the `<value>` is subject to word splitting and pathname expansions as
-  if it is a normal argument to a command.
+- `[KEY]=VALUE` ... This assigns `VALUE` to an element of the LHS specified by
+  `KEY`.  The `VALUE` is not subject to word splitting and pathname expansions
+  as if it is the RHS of an assignment.
+- `[KEY]+=VALUE` ... This appends `VALUE` to an element of the LHS specified by
+  `KEY`.  If the corresponding element does not exist, it simply assigns
+  `VALUE` to a new element associated with `KEY`.  The `VALUE` is not subject
+  to word splitting and pathname expansions.
+- `VALUE` ... If the item does not have the above two forms, it is considered a
+  normal word.  In this case, this assigns `VALUE` to the *next* element, where
+  the next element is determined by the LHS.  Unlike the previous two forms,
+  the `VALUE` is subject to word splitting and pathname expansions as if it is
+  a normal argument to a command.
 
 The above three forms can be mixed within one initializer list, though there
 may be additional limitations depending on the type of the LHS of the
@@ -190,14 +190,14 @@ cleared if the assignment operator is `=`.  Then, an element of the array is
 modified for each item in the initializer list in order.  The index of the
 element to be modified is determined in the following way:
 
-- When the first initializer item does not have `[<key>]=` or `[<key>]+=`, the
+- When the first initializer item does not have `[KEY]=` or `[KEY]+=`, the
   index is the maximum existing index in the array plus one, or `0` if the
   array is empty.
-- When the second or later initializer item does not have `[<key>]=` or
-  `[<key>]+=`, the index is larger by one than the one modified by the previous
+- When the second or later initializer item does not have `[KEY]=` or
+  `[KEY]+=`, the index is larger by one than the one modified by the previous
   initializer item.
-- When the initializer item has `[<key>]=` or `[<key>]+=`, an arithmetic
-  evaluation is applied to `<key>` to obtain the index in `BigInt`
+- When the initializer item has `[KEY]=` or `[KEY]+=`, an arithmetic evaluation
+  is applied to `KEY` to obtain the index in `BigInt`
 
 Here are examples:
 
@@ -235,8 +235,8 @@ The initialization/mutation of BashAssoc is performed in a manner similar to
 BashArray.  The associative array is first cleared if the assignment operator
 is `=`.  Then, the modification of an element is performed for each initializer
 item in order.  An item in the initializer list must be in the forms
-`[<key>]=<value>` or `[<key>]=<value>`.  The element to be modified is
-specified by `<key>`.
+`[KEY]=VALUE` or `[KEY]=VALUE`.  The element to be modified is specified by
+`KEY`.
 
     declare -A a                # This creates an empty BashAssoc (OSH)
     declare -A a=()             # This creates an empty BashAssoc
