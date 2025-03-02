@@ -172,7 +172,7 @@ These rules are summarized in the following table.
 
 In the second phase, the modifications are applied depending on the result of
 the first phase.  When the result is BashArray, see [sh-array](#sh-array).
-When the result is BashAssoc, see [sh-array](#sh-array).
+When the result is BashAssoc, see [sh-assoc](#sh-assoc).
 
 ### sh-array
 
