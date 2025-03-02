@@ -242,12 +242,18 @@ def _AssignVarForBuiltin(mem, rval, pair, which_scopes, flags, arith_ev,
                     "Can't convert type %s into BashArray" %
                     ui.ValType(old_val), pair.blame_word)
         elif flag_A:
-            if old_val.tag() in (value_e.Undef, value_e.Str):
-                # Note: We explicitly initialize BashAssoc for Undef and Str.
-                #   When applying +=() to Str, we associate an old value to the
-                #   key '0'.
+            if old_val.tag() == value_e.Undef:
+                # Note: We explicitly initialize BashAssoc for Undef.
+                val = bash_impl.BashAssoc_New()
+            elif old_val.tag() == value_e.Str:
+                # Note: We explicitly initialize BashAssoc for Str.  When
+                #   applying +=() to Str, we associate an old value to the key
+                #   '0'.  OSH disables this when strict_array is turned on.
                 assoc_val = bash_impl.BashAssoc_New()
-                if pair.plus_eq and old_val.tag() == value_e.Str:
+                if pair.plus_eq:
+                    if mem.exec_opts.strict_array():
+                        e_die("Can't convert Str to BashAssoc (strict_array)",
+                              pair.blame_word)
                     bash_impl.BashAssoc_SetElement(assoc_val, '0',
                                                    cast(value.Str, old_val).s)
                 val = assoc_val

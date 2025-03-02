@@ -119,17 +119,17 @@ These rules are summarized in the following table.
   - Str
   - (none)
   - BashArray with one element, with the original string at index 0
-  - <!-- empty -->
+  - Error with `strict_array`
 - tr
   - <!-- empty -->
   - `-a`
   - BashArray with one element, with the original string at index 0
-  - <!-- empty -->
+  - Error with `strict_array`
 - tr
   - <!-- empty -->
   - `-A`
   - BashAssoc with one element, with the original string at key `"0"`
-  - <!-- empty -->
+  - Error with `strict_array`
 - tr
   - BashArray
   - (none)

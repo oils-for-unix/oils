@@ -203,6 +203,9 @@ def ListInitializeTarget(old_val,
             return bash_impl.BashArray_New()
         elif case(value_e.Str):
             if has_plus:
+                if exec_opts.strict_array():
+                    e_die("Can't convert Str to BashArray (strict_array)",
+                          blame_loc)
                 old_val = cast(value.Str, UP_old_val)
                 return bash_impl.BashArray_FromList([old_val.s])
             else:
