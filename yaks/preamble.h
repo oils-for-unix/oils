@@ -2,6 +2,7 @@
 
 #include <errno.h>
 
+#include "_gen/core/optview.h"  // added because bash_impl uses it, via j8
 #include "_gen/core/value.asdl.h"  // could break this dep from j8?
 #include "_gen/data_lang/nil8.asdl.h"
 #include "_gen/display/pretty.asdl.h"

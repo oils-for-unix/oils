@@ -4,6 +4,7 @@ from _devbuild.gen.runtime_asdl import error_code_e, error_code_t
 from _devbuild.gen.value_asdl import value
 from _devbuild.gen.syntax_asdl import loc_t
 
+from core import optview
 from core.error import e_die
 from data_lang import j8_lite
 from mycpp import mops
@@ -293,11 +294,33 @@ def BashAssoc_Copy(val):
     return value.BashAssoc(d)
 
 
-def BashAssoc_ListInitialize(val, initializer, has_plus, blame_loc):
-    # type: (value.BashAssoc, value.InitializerList, bool, loc_t) -> None
+def BashAssoc_ListInitialize(val, initializer, has_plus, exec_opts, blame_loc):
+    # type: (value.BashAssoc, value.InitializerList, bool, optview.Exec, loc_t) -> None
 
     if not has_plus:
         val.d.clear()
+
+    if len(initializer.assigns) > 0 and initializer.assigns[0].key is None:
+        if exec_opts.strict_array():
+            e_die(
+                "BashAssoc cannot be list-initialzied by (KEY VALUE ...) (strict_array)",
+                blame_loc)
+
+        # Process the form "a=(key1 value1 key2 value2 ...)"
+        k = None  # type: Optional[str]
+        for assign in initializer.assigns:
+            s = assign.rval
+            if assign.key is not None:
+                s = '[%s]%s%s' % (assign.key, '+=' if assign.plus_eq else '=',
+                                  s)
+            if k is not None:
+                val.d[k] = s
+                k = None
+            else:
+                k = s
+        if k is not None:
+            val.d[k] = ''
+        return
 
     for triplet in initializer.assigns:
         if triplet.key is None:

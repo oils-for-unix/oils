@@ -191,12 +191,11 @@ def _HasManyStatuses(node):
 
 
 def ListInitializeTarget(old_val,
-                         initializer,
                          has_plus,
                          exec_opts,
                          blame_loc,
                          destructive=True):
-    # type: (value_t, value.InitializerList, bool, optview.Exec, loc_t, bool) -> value_t
+    # type: (value_t, bool, optview.Exec, loc_t, bool) -> value_t
     UP_old_val = old_val
     with tagswitch(old_val) as case:
         if case(value_e.Undef):
@@ -219,13 +218,6 @@ def ListInitializeTarget(old_val,
                     old_val = bash_impl.BashArray_New()
             return old_val
         elif case(value_e.BashAssoc):
-            # OSH compatibility: assoc=(1 2) will create a new array.  This
-            # code will soon be removed when the initialization of the form
-            # "assoc=(key value)" is supported.
-            if (not has_plus and len(initializer.assigns) > 0 and
-                    initializer.assigns[0].key is None):
-                return bash_impl.BashArray_New()
-
             old_val = cast(value.BashAssoc, UP_old_val)
             if not destructive:
                 if has_plus:
@@ -239,8 +231,8 @@ def ListInitializeTarget(old_val,
                 ui.ValType(old_val), blame_loc)
 
 
-def ListInitialize(val, initializer, has_plus, blame_loc, arith_ev):
-    # type: (value_t, value.InitializerList, bool, loc_t, sh_expr_eval.ArithEvaluator) -> None
+def ListInitialize(val, initializer, has_plus, exec_opts, blame_loc, arith_ev):
+    # type: (value_t, value.InitializerList, bool, optview.Exec, loc_t, sh_expr_eval.ArithEvaluator) -> None
     UP_val = val
     with tagswitch(val) as case:
         if case(value_e.BashArray):
@@ -250,7 +242,7 @@ def ListInitialize(val, initializer, has_plus, blame_loc, arith_ev):
         elif case(value_e.BashAssoc):
             val = cast(value.BashAssoc, UP_val)
             bash_impl.BashAssoc_ListInitialize(val, initializer, has_plus,
-                                               blame_loc)
+                                               exec_opts, blame_loc)
         else:
             raise AssertionError(val.tag())
 
@@ -627,7 +619,6 @@ class CommandEvaluator(object):
                     None,  # No nounset
                     e_pair.left)
                 val = ListInitializeTarget(old_val,
-                                           initializer,
                                            has_plus,
                                            self.exec_opts,
                                            e_pair.left,
@@ -641,8 +632,8 @@ class CommandEvaluator(object):
                               flags=flags)
 
             if initializer is not None:
-                ListInitialize(val, initializer, has_plus, e_pair.left,
-                               self.arith_ev)
+                ListInitialize(val, initializer, has_plus, self.exec_opts,
+                               e_pair.left, self.arith_ev)
 
     def _StrictErrExit(self, node):
         # type: (command_t) -> None
@@ -1045,8 +1036,8 @@ class CommandEvaluator(object):
                 old_val = sh_expr_eval.OldValue(lval, self.mem, None,
                                                 node.left)
 
-                val = ListInitializeTarget(old_val, initializer, has_plus,
-                                           self.exec_opts, pair.left)
+                val = ListInitializeTarget(old_val, has_plus, self.exec_opts,
+                                           pair.left)
 
             elif has_plus:
                 # do not respect set -u
@@ -1065,8 +1056,8 @@ class CommandEvaluator(object):
             flags = 0  # for tracing
             self.mem.SetValue(lval, val, which_scopes, flags=flags)
             if initializer is not None:
-                ListInitialize(val, initializer, has_plus, pair.left,
-                               self.arith_ev)
+                ListInitialize(val, initializer, has_plus, self.exec_opts,
+                               pair.left, self.arith_ev)
 
             self.tracer.OnShAssignment(lval, pair.op, rhs, flags, which_scopes)
 
