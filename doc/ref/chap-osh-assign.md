@@ -86,7 +86,7 @@ In the first phase, the type adjustment is performed in the following way:
   string", while Bash is permissive.
 - When the LHS is an indexed or associative arrays, the original array is
   directly used for the modification target.  If the
-  assignemnt is performed through an assignment builtin and mismatching flag
+  assignment is performed through an assignment builtin and mismatching flag
   (i.e., `-A` and `-a` for BashArray and BashAssoc, respectively) is supplied,
   OSH discards the original array and creates a new empty BashArray (for flag
   `-a`) or BashAssoc (for flag `-A`), while Bash issues an error preserving the
@@ -196,7 +196,7 @@ element to be modified is determined in the following way:
 - When the second or later initializer item does not have `[<key>]=` or
   `[<key>]+=`, the index is larger by one than the one modified by the previous
   initializer item.
-- When the initialier item has `[<key>]=` or `[<key>]+=`, an arithmetic
+- When the initializer item has `[<key>]=` or `[<key>]+=`, an arithmetic
   evaluation is applied to `<key>` to obtain the index in `BigInt`
 
 Here are examples:
