@@ -144,6 +144,29 @@ printf '%s\r\n' {1..5..2} | {
 ## N-I dash/mksh/zsh/ash STDOUT:
 ## END
 
+#### mapfile -t bugs (ble.sh)
+
+# empty line
+mapfile -t lines <<< $'hello\n\nworld'
+echo len=${#lines[@]}
+#declare -p lines
+
+# initial newline
+mapfile -t lines <<< $'\nhello'
+echo len=${#lines[@]}
+#declare -p lines
+
+# trailing newline
+mapfile -t lines <<< $'hello\n'
+echo len=${#lines[@]}
+#declare -p lines
+
+## STDOUT:
+len=3
+len=2
+len=2
+## END
+
 #### mapfile (store position): -O start
 type mapfile >/dev/null 2>&1 || exit 0
 printf '%s\n' a{0..2} | {

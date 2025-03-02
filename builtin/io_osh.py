@@ -131,12 +131,13 @@ class MapFile(vm._Builtin):
         while True:
             # bash uses this slow algorithm; YSH could provide read --all-lines
             try:
-                line = read_osh.ReadLineSlowly(self.cmd_ev, with_eol=not arg.t)
+                line, eof = read_osh.ReadLineSlowly(self.cmd_ev,
+                                                    with_eol=not arg.t)
             except pyos.ReadError as e:
                 self.errfmt.PrintMessage("mapfile: read() error: %s" %
                                          posix.strerror(e.err_num))
                 return 1
-            if len(line) == 0:
+            if eof:
                 break
             lines.append(line)
 
@@ -152,7 +153,6 @@ class Cat(vm._Builtin):
 
     def __init__(self):
         # type: () -> None
-        """Empty constructor for mycpp."""
         vm._Builtin.__init__(self)
 
     def Run(self, cmd_val):

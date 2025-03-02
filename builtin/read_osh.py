@@ -155,8 +155,9 @@ def _ReadPortion(delim_byte, max_chars, cmd_ev):
 
     The delimiter is not included in the result.
     """
-    eof = False
     ch_array = []  # type: List[int]
+    eof = False
+
     bytes_read = 0
     while True:
         if max_chars >= 0 and bytes_read >= max_chars:
@@ -186,7 +187,7 @@ def _ReadPortion(delim_byte, max_chars, cmd_ev):
 
 
 def ReadLineSlowly(cmd_ev, with_eol=True):
-    # type: (CommandEvaluator, bool) -> str
+    # type: (CommandEvaluator, bool) -> Tuple[str, bool]
     """Read a line from stdin, unbuffered 
 
     Used by mapfile and read --raw-line.
@@ -196,8 +197,11 @@ def ReadLineSlowly(cmd_ev, with_eol=True):
     with read(0, 1).
     """
     ch_array = []  # type: List[int]
+    eof = False
+    is_first_byte = True
     while True:
         ch, err_num = pyos.ReadByte(0)
+        #log('   ch %d', ch)
 
         if ch < 0:
             if err_num == EINTR:
@@ -207,17 +211,21 @@ def ReadLineSlowly(cmd_ev, with_eol=True):
                 raise pyos.ReadError(err_num)
 
         elif ch == pyos.EOF_SENTINEL:
+            if is_first_byte:
+                eof = True
+            break
+
+        elif ch == pyos.NEWLINE_CH:
+            if with_eol:
+                ch_array.append(ch)
             break
 
         else:
             ch_array.append(ch)
 
-        if ch == pyos.NEWLINE_CH:
-            if not with_eol:
-                ch_array.pop()
-            break
+        is_first_byte = False
 
-    return pyutil.ChArrayToString(ch_array)
+    return pyutil.ChArrayToString(ch_array), eof
 
 
 def ReadAll():
@@ -371,10 +379,10 @@ class Read(vm._Builtin):
             status = 0
 
         elif arg.raw_line:  # read --raw-line is unbuffered
-            contents = ReadLineSlowly(self.cmd_ev, with_eol=arg.with_eol)
+            contents, eof = ReadLineSlowly(self.cmd_ev, with_eol=arg.with_eol)
             #log('EOF %s', eof)
             #status = 1 if eof else 0
-            status = 0 if len(contents) else 1
+            status = 1 if eof else 0
 
         elif arg.all:  # read --all
             contents = ReadAll()
