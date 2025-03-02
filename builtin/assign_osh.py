@@ -261,7 +261,7 @@ def _AssignVarForBuiltin(mem, rval, pair, which_scopes, flags, arith_ev,
                     ui.ValType(old_val), pair.blame_word)
 
         val = cmd_eval.ListInitializeTarget(val, initializer, pair.plus_eq,
-                                            pair.blame_word)
+                                            mem.exec_opts, pair.blame_word)
     elif pair.plus_eq:
         old_val = sh_expr_eval.OldValue(
             lval,

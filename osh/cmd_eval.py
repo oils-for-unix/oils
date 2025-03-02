@@ -193,9 +193,10 @@ def _HasManyStatuses(node):
 def ListInitializeTarget(old_val,
                          initializer,
                          has_plus,
+                         exec_opts,
                          blame_loc,
                          destructive=True):
-    # type: (value_t, value.InitializerList, bool, loc_t, bool) -> value_t
+    # type: (value_t, value.InitializerList, bool, optview.Exec, loc_t, bool) -> value_t
     UP_old_val = old_val
     with tagswitch(old_val) as case:
         if case(value_e.Undef):
@@ -625,6 +626,7 @@ class CommandEvaluator(object):
                 val = ListInitializeTarget(old_val,
                                            initializer,
                                            has_plus,
+                                           self.exec_opts,
                                            e_pair.left,
                                            destructive=False)
 
@@ -1041,7 +1043,7 @@ class CommandEvaluator(object):
                                                 node.left)
 
                 val = ListInitializeTarget(old_val, initializer, has_plus,
-                                           pair.left)
+                                           self.exec_opts, pair.left)
 
             elif has_plus:
                 # do not respect set -u
