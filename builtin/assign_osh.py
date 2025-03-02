@@ -276,7 +276,7 @@ def _AssignVarForBuiltin(mem, rval, pair, which_scopes, flags, arith_ev,
 
     mem.SetNamed(lval, val, which_scopes, flags=flags)
     if initializer is not None:
-        cmd_eval.ListInitialize(val, initializer, pair.plus_eq,
+        cmd_eval.ListInitialize(val, initializer, pair.plus_eq, mem.exec_opts,
                                 pair.blame_word, arith_ev)
 
 

@@ -4,6 +4,7 @@ from _devbuild.gen.runtime_asdl import error_code_e, error_code_t
 from _devbuild.gen.value_asdl import value
 from _devbuild.gen.syntax_asdl import loc_t
 
+from core import optview
 from core.error import e_die
 from data_lang import j8_lite
 from mycpp import mops
@@ -293,8 +294,8 @@ def BashAssoc_Copy(val):
     return value.BashAssoc(d)
 
 
-def BashAssoc_ListInitialize(val, initializer, has_plus, blame_loc):
-    # type: (value.BashAssoc, value.InitializerList, bool, loc_t) -> None
+def BashAssoc_ListInitialize(val, initializer, has_plus, exec_opts, blame_loc):
+    # type: (value.BashAssoc, value.InitializerList, bool, optview.Exec, loc_t) -> None
 
     if not has_plus:
         val.d.clear()

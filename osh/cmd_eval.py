@@ -231,8 +231,8 @@ def ListInitializeTarget(old_val,
                 ui.ValType(old_val), blame_loc)
 
 
-def ListInitialize(val, initializer, has_plus, blame_loc, arith_ev):
-    # type: (value_t, value.InitializerList, bool, loc_t, sh_expr_eval.ArithEvaluator) -> None
+def ListInitialize(val, initializer, has_plus, exec_opts, blame_loc, arith_ev):
+    # type: (value_t, value.InitializerList, bool, optview.Exec, loc_t, sh_expr_eval.ArithEvaluator) -> None
     UP_val = val
     with tagswitch(val) as case:
         if case(value_e.BashArray):
@@ -242,7 +242,7 @@ def ListInitialize(val, initializer, has_plus, blame_loc, arith_ev):
         elif case(value_e.BashAssoc):
             val = cast(value.BashAssoc, UP_val)
             bash_impl.BashAssoc_ListInitialize(val, initializer, has_plus,
-                                               blame_loc)
+                                               exec_opts, blame_loc)
         else:
             raise AssertionError(val.tag())
 
@@ -632,8 +632,8 @@ class CommandEvaluator(object):
                               flags=flags)
 
             if initializer is not None:
-                ListInitialize(val, initializer, has_plus, e_pair.left,
-                               self.arith_ev)
+                ListInitialize(val, initializer, has_plus, self.exec_opts,
+                               e_pair.left, self.arith_ev)
 
     def _StrictErrExit(self, node):
         # type: (command_t) -> None
@@ -1056,8 +1056,8 @@ class CommandEvaluator(object):
             flags = 0  # for tracing
             self.mem.SetValue(lval, val, which_scopes, flags=flags)
             if initializer is not None:
-                ListInitialize(val, initializer, has_plus, pair.left,
-                               self.arith_ev)
+                ListInitialize(val, initializer, has_plus, self.exec_opts,
+                               pair.left, self.arith_ev)
 
             self.tracer.OnShAssignment(lval, pair.op, rhs, flags, which_scopes)
 
