@@ -301,6 +301,11 @@ def BashAssoc_ListInitialize(val, initializer, has_plus, exec_opts, blame_loc):
         val.d.clear()
 
     if len(initializer.assigns) > 0 and initializer.assigns[0].key is None:
+        if exec_opts.strict_array():
+            e_die(
+                "BashAssoc cannot be list-initialzied by (KEY VALUE ...) (strict_array)",
+                blame_loc)
+
         # Process the form "a=(key1 value1 key2 value2 ...)"
         k = None  # type: Optional[str]
         for assign in initializer.assigns:

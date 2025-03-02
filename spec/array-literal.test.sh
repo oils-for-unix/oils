@@ -111,3 +111,16 @@ declare -A s1=([b]="y" [a]="x" )
 status=0
 declare -A s2=([0]="world" [b]="y" [a]="x" )
 ## END
+
+#### assoc=(key value ...) is not allowed in the strict_array mode
+case $SH in bash) ;; *) shopt --set strict_array;; esac
+
+declare -A a=([a]=b)
+eval "a=(1 2 3 4)"
+declare -p a
+## STDOUT:
+declare -A a=()
+## END
+## N-I bash STDOUT:
+declare -A a=([3]="4" [1]="2" )
+## END
