@@ -201,18 +201,18 @@ element to be modified is determined in the following way:
 
 Here are examples:
 
-    declare -a a             # This creates an empty array (OSH)
-    declare -a a=()          # This creates an empty array
-    declare -a a=(1 2)       # This creates an array with two elements: (1 2)
+    declare -a a            # This creates an empty array (OSH)
+    declare -a a=()         # This creates an empty array
+    declare -a a=(1 2)      # This creates an array with two elements: (1 2)
 
     k=10
-    declare -a a=([k]=v 2)   # This creates a sparse array with two elements,
-                             # ([10]=v [11]=2)
+    declare -a a=([k]=v 2)  # This creates a sparse array with two elements,
+                            # ([10]=v [11]=2)
 
-    declare -a a+=(3 4)      # This appends two values to the existing array:
-                             # ([10]=v [11]=2 [12]=3 [13]=4)
-    declare -a a+=([k]=5 6)  # This overwrites two elements in the existing
-                             # array: ([10]=5 [11]=6 [12]=3 [13]=4)
+    a+=(3 4)                # This appends two values to the existing array:
+                            # ([10]=v [11]=2 [12]=3 [13]=4)
+    a+=([k]=5 6)            # This overwrites two elements in the existing
+                            # array: ([10]=5 [11]=6 [12]=3 [13]=4)
 
 In YSH, use a [list-literal][] to create a [List][] instance.
 
@@ -238,21 +238,20 @@ item in order.  An item in the initializer list must be in the forms
 `[<key>]=<value>` or `[<key>]=<value>`.  The element to be modified is
 specified by `<key>`.
 
-    declare -A a                 # This creates an empty BashAssoc (OSH)
-    declare -A a=()              # This creates an empty BashAssoc
-    declare -A a=([a]=1 [b]=2)   # This creates a BashAssoc with two elements
+    declare -A a                # This creates an empty BashAssoc (OSH)
+    declare -A a=()             # This creates an empty BashAssoc
+    declare -A a=([a]=1 [b]=2)  # This creates a BashAssoc with two elements
 
-    declare -A a=(1 2)           # This is an error (OSH)
+    declare -A a=(1 2)          # This is an error (OSH)
 
     k=10
-    declare -A a=([k]=v)         # This creates a BashAssoc with one element,
-                                 # (['k']=1).  Unlike BashArray, "k" is not
-                                 # processed by arithmetic expansion.
-    declare -a a+=([a]=3 [b]=4)  # This adds two elements to the original
-                                 # array.
-                                 # The result is ([a]=3 [b]=4 [k]=v)
-    declare -a a+=([k]=5)        # This overwrites an element in the original
-                                 # array. The result is ([a]=3 [b]=4 [k]=5).
+    declare -A a=([k]=v)        # This creates a BashAssoc with one element,
+                                # (['k']=1).  Unlike BashArray, "k" is not
+                                # processed by arithmetic expansion.
+    a+=([a]=3 [b]=4)            # This adds two elements to the original array.
+                                # The result is ([a]=3 [b]=4 [k]=v)
+    a+=([k]=5)                  # This overwrites an element in the original
+                                # array. The result is ([a]=3 [b]=4 [k]=5).
 
 In YSH, use a [dict-literal][] to create a [Dict][] instance.
 
