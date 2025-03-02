@@ -9,6 +9,7 @@ module runtime
     CompoundWord DoubleQuoted
     ArgList re redir_loc proc_sig 
     Func
+    assign_op
   }
 
   use core value {
@@ -18,6 +19,7 @@ module runtime
   # Evaluating SimpleCommand results in either an argv array or an assignment.
   # in 'local foo', rval is None.
   AssignArg = (str var_name, value? rval, bool plus_eq, CompoundWord blame_word)
+  AssignArg2 = (str var_name, value? rval, assign_op op, CompoundWord blame_word)
 
   ProcArgs = (
     # Unevaluated args
