@@ -231,30 +231,25 @@ def _AssignVarForBuiltin(mem, rval, pair, which_scopes, flags, arith_ev,
 
         val = old_val
         if flag_a:
-            if old_val.tag() == value_e.BashAssoc:
-                # Note: OSH allows overwriting an existing BashArray with an
-                #   empty BashArray.  Bash does not allow this.
-                val = bash_impl.BashArray_New()
-            elif old_val.tag() in (value_e.Undef, value_e.Str,
-                                   value_e.BashArray):
+            if old_val.tag() in (value_e.Undef, value_e.Str,
+                                 value_e.BashArray):
                 # We do not need adjustemnts for -a.  These types are
                 # consistently handled within ListInitialize
                 pass
             else:
+                # Note: BashAssoc cannot be converted to a BashArray
                 e_die(
                     "Can't convert type %s into BashArray" %
                     ui.ValType(old_val), pair.blame_word)
         elif flag_A:
-            if old_val.tag() in (value_e.Undef, value_e.Str,
-                                 value_e.BashArray):
+            if old_val.tag() in (value_e.Undef, value_e.Str):
                 # Note: We explicitly initialize BashAssoc for Undef.
-                # Note: OSH allows overwriting an existing BashArray with an
-                #   empty BashAssoc.  Bash does not allow this.
                 val = bash_impl.BashAssoc_New()
             elif old_val.tag() == value_e.BashAssoc:
                 # We do not need adjustments for -A.
                 pass
             else:
+                # Note: BashArray cannot be converted to a BashAssoc
                 e_die(
                     "Can't convert type %s into BashAssoc" %
                     ui.ValType(old_val), pair.blame_word)
