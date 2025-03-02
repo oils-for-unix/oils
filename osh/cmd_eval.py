@@ -193,18 +193,23 @@ def _HasManyStatuses(node):
 def ListInitializeTarget(old_val,
                          initializer,
                          has_plus,
+                         exec_opts,
                          blame_loc,
                          destructive=True):
-    # type: (value_t, value.InitializerList, bool, loc_t, bool) -> value_t
+    # type: (value_t, value.InitializerList, bool, optview.Exec, loc_t, bool) -> value_t
     UP_old_val = old_val
     with tagswitch(old_val) as case:
         if case(value_e.Undef):
             return bash_impl.BashArray_New()
         elif case(value_e.Str):
             if has_plus:
-                e_die("Can't append array to string")
-
-            return bash_impl.BashArray_New()
+                if exec_opts.strict_array():
+                    e_die("Can't convert Str to BashArray (strict_array)",
+                          blame_loc)
+                old_val = cast(value.Str, UP_old_val)
+                return bash_impl.BashArray_FromList([old_val.s])
+            else:
+                return bash_impl.BashArray_New()
         elif case(value_e.BashArray):
             old_val = cast(value.BashArray, UP_old_val)
             if not destructive:
@@ -624,6 +629,7 @@ class CommandEvaluator(object):
                 val = ListInitializeTarget(old_val,
                                            initializer,
                                            has_plus,
+                                           self.exec_opts,
                                            e_pair.left,
                                            destructive=False)
 
@@ -1040,7 +1046,7 @@ class CommandEvaluator(object):
                                                 node.left)
 
                 val = ListInitializeTarget(old_val, initializer, has_plus,
-                                           pair.left)
+                                           self.exec_opts, pair.left)
 
             elif has_plus:
                 # do not respect set -u

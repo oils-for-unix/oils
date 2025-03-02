@@ -81,9 +81,7 @@ In the first phase, the type adjustment is performed in the following way:
   element, where the original value is stored at index `0`.  If the assignment
   is performed through an assignment builtin and flag `-A` is supplied to the
   builtin, the assignment creates a BashAssoc with one element, where the
-  original value is stored at key `"0"`, instead of a BashArray.  If the
-  assignment operator is `+=`, OSH issues an error "Can't append an array to
-  string", while Bash is permissive.
+  original value is stored at key `"0"`, instead of a BashArray.
 - When the LHS is an indexed or associative arrays, the original array is
   directly used for the modification target.  If the
   assignment is performed through an assignment builtin and mismatching flag
@@ -121,17 +119,17 @@ These rules are summarized in the following table.
   - Str
   - (none)
   - BashArray with one element, with the original string at index 0
-  - OSH does not accept `+=`, so the element is never used
+  - Error with `strict_array`
 - tr
   - <!-- empty -->
   - `-a`
   - BashArray with one element, with the original string at index 0
-  - OSH does not accept `+=`, so the element is never used
+  - Error with `strict_array`
 - tr
   - <!-- empty -->
   - `-A`
   - BashAssoc with one element, with the original string at key `"0"`
-  - OSH does not accept `+=`, so the element is never used
+  - Error with `strict_array`
 - tr
   - BashArray
   - (none)

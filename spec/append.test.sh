@@ -48,13 +48,11 @@ argv.py "${y[@]}"
 #### error: s+=(my array)
 s='abc'
 s+=(d e f)
-echo $s
-## status: 1
-## stdout-json: ""
-## BUG bash/mksh status: 0
-## BUG bash/mksh stdout: abc
-## OK zsh status: 0
-## OK zsh stdout: abc d e f
+argv.py "${s[@]}"
+## status: 0
+## STDOUT:
+['abc', 'd', 'e', 'f']
+## END
 
 #### error: myarray+=s
 
@@ -78,16 +76,16 @@ typeset s+=(d e f)
 echo status=$?
 argv.py "${s[@]}"
 
-## status: 1
+## status: 0
 ## STDOUT:
-abc
-## END
-## OK bash status: 0
-## OK bash STDOUT:
 abc
 status=0
 ['abc', 'd', 'e', 'f']
 ## END
+## N-I mksh/zsh status: 1
+## N-I mksh/zsh stdout: abc
+## N-I mksh stderr: mksh: <stdin>[4]: syntax error: '(' unexpected
+## N-I zsh stderr: typeset: not valid in this context: s+
 
 #### error: typeset myarray+=s
 typeset a=(x y)

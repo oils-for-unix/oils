@@ -57,3 +57,57 @@ status=1
 status=1
 ['x', 'y', 'z']
 ## END
+
+#### s+=() with strict_array
+case $SH in bash) ;; *) shopt --set strict_array;; esac
+
+s1=hello
+s2=world
+
+# Overwriting Str with a new BashArray is allowed
+eval 's1=(1 2 3 4)'
+echo status=$?
+declare -p s1
+# Promoting Str to a BashArray is disallowed
+eval 's2+=(1 2 3 4)'
+echo status=$?
+declare -p s2
+## STDOUT:
+status=0
+declare -a s1=(1 2 3 4)
+status=1
+declare -- s2=world
+## END
+## N-I bash STDOUT:
+status=0
+declare -a s1=([0]="1" [1]="2" [2]="3" [3]="4")
+status=0
+declare -a s2=([0]="world" [1]="1" [2]="2" [3]="3" [4]="4")
+## END
+
+#### declare -A s+=() with strict_array
+case $SH in bash) ;; *) shopt --set strict_array;; esac
+
+s1=hello
+s2=world
+
+# Overwriting Str with a new BashAssoc is allowed
+eval 'declare -A s1=([a]=x [b]=y)'
+echo status=$?
+declare -p s1
+# Promoting Str to a BashAssoc is disallowed
+eval 'declare -A s2+=([a]=x [b]=y)'
+echo status=$?
+declare -p s2
+## STDOUT:
+status=0
+declare -A s1=(['a']=x ['b']=y)
+status=1
+declare -- s2=world
+## END
+## N-I bash STDOUT:
+status=0
+declare -A s1=([b]="y" [a]="x" )
+status=0
+declare -A s2=([0]="world" [b]="y" [a]="x" )
+## END
