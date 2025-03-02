@@ -45,7 +45,7 @@ cleared before starting the modifications.  When the assignment is performed
 with `+=`, the modifications are applied to the existing content of the LHS
 value.
 
-An initializer list has the following form: `(<words>...)`, where each word has
+An initializer list has the following form: `(<items>...)`, where each item has
 one of the following forms:
 
 - `[<key>]=<value>` ... This assigns `<value>` to an element of the LHS
@@ -55,7 +55,7 @@ one of the following forms:
   specified by `<key>`.  If the corresponding element does not exist, it simply
   assigns `<value>` to a new element associated with `<key>`.  The `<value>` is
   not subject to word splitting and pathname expansions.
-- `<value>` ... If the word does not have the above two forms, it is considered
+- `<value>` ... If the item does not have the above two forms, it is considered
   a normal word.  In this case, this assigns `<value>` to the *next* element,
   where the next element is determined by the LHS.  Unlike the previous two
   forms, the `<value>` is subject to word splitting and pathname expansions as
