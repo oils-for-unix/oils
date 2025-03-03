@@ -1,5 +1,15 @@
 ## compare_shells: bash
 
+#### Tilde expansions in RHS of [k]=v (BashArray)
+HOME=/home/user
+a=([2]=~ [4]=~:~:~)
+echo "${a[2]}"
+echo "${a[4]}"
+## STDOUT:
+/home/user
+/home/user:/home/user:/home/user
+## END
+
 #### Tilde expansions in RHS of [k]=v (BashAssoc)
 # Note: bash-5.2 has a bug that the tilde doesn't expand on the right hand side
 # of [key]=value.  This problem doesn't happen in bash-3.1..5.1 and bash-5.3.
