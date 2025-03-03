@@ -223,7 +223,7 @@ v1
 v2
 ## END
 
-#### [k1]=v1 looking like brace expansions (BashArray)
+#### [k1]=v1 looking like brace expansions (BashAssoc)
 declare -A a
 a=([k2]=-{a,b}-)
 echo ${a["k2"]}
@@ -231,7 +231,7 @@ echo ${a["k2"]}
 -{a,b}-
 ## END
 
-#### [k1]=v1 looking like brace expansions (BashAssoc)
+#### [k1]=v1 looking like brace expansions (BashArray)
 a=([k2]=-{a,b}-)
 echo ${a["k2"]}
 ## STDOUT:
@@ -258,7 +258,7 @@ status=1
 ['x', 'y', 'z']
 ## END
 
-#### s+=() with strict_array
+#### (strict_array) s+=()
 case $SH in bash) ;; *) shopt --set strict_array;; esac
 
 s1=hello
@@ -285,7 +285,7 @@ status=0
 declare -a s2=([0]="world" [1]="1" [2]="2" [3]="3" [4]="4")
 ## END
 
-#### declare -A s+=() with strict_array
+#### (strict_array) declare -A s+=()
 case $SH in bash) ;; *) shopt --set strict_array;; esac
 
 s1=hello
@@ -312,7 +312,7 @@ status=0
 declare -A s2=([0]="world" [b]="y" [a]="x" )
 ## END
 
-#### assoc=(key value ...) is not allowed in the strict_array mode
+#### (strict_array) assoc=(key value ...) is not allowed
 case $SH in bash) ;; *) shopt --set strict_array;; esac
 
 declare -A a=([a]=b)
