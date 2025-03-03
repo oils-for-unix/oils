@@ -807,6 +807,23 @@ class ctx_ProcCall(object):
         self.mem.var_stack[0] = self.saved_globals
 
 
+class ctx_EvalInFrame(object):
+
+    def __init__(self, mem, frame):
+        # type: (Mem, Dict[str, Cell]) -> None
+        mem.var_stack.append(frame)
+
+        self.mem = mem
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        self.mem.var_stack.pop()
+
+
 class ctx_Temp(object):
     """ POSIX shell FOO=bar mycommand """
 

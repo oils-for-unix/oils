@@ -71,7 +71,7 @@ error handling, and more.
                    Frame
                    DebugFrame  toString()
                    io          stdin            evalExpr()
-                               eval()           evalToDict()
+                               eval()           evalToDict()      evalInFrame()
                                captureStdout()
                                promptVal()
                              X time()         X strftime()      X glob()

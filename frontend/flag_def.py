@@ -265,6 +265,13 @@ MAIN_SPEC.ShortFlag('-l')  # login - currently no-op
 MAIN_SPEC.LongFlag('--login')  # login - currently no-op
 MAIN_SPEC.LongFlag('--headless')  # accepts ECMD, etc.
 
+# --eval is not processed in interactive mode
+# TODO: This should be a list
+MAIN_SPEC.LongFlag('--eval', args.String)
+
+# TODO: relative order of --eval and --eval-pure should be preserved
+MAIN_SPEC.LongFlag('--eval-pure', args.String)
+
 # TODO: -h too
 # the output format when passing -n
 MAIN_SPEC.LongFlag('--ast-format',
@@ -272,7 +279,8 @@ MAIN_SPEC.LongFlag('--ast-format',
                    default='abbrev-text')
 
 # Defines completion style.
-MAIN_SPEC.LongFlag('--completion-display', ['minimal', 'nice'], default='minimal')
+MAIN_SPEC.LongFlag('--completion-display', ['minimal', 'nice'],
+                   default='minimal')
 # TODO: Add option for YSH prompt style?  RHS prompt?
 
 MAIN_SPEC.LongFlag('--completion-demo')

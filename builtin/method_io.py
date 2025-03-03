@@ -95,10 +95,23 @@ class EvalInFrame(vm._Callable):
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
-        frag = rd.PosCommandFrag()
-        frame = rd.PosFrame()
+        unused = rd.PosValue()
 
-        # TODO: EvalCommandFrag()
+        #frag = rd.PosCommandFrag()
+        cmd = rd.PosCommand()
+        in_frame = rd.PosFrame()
+
+        #cmd.captured_frame = frame
+        frag = typed_args.GetCommandFrag(cmd)
+
+        # Note that 'cd' uses cmd_ev.EvalCommandFrag(), because a builtin does
+        # NOT push a new stack frame.  But a proc does.  So we need
+        # evalInFrame().
+
+        with state.ctx_TokenDebugFrame(self.mem, rd.LeftParenToken()):
+            # Evaluate with the given frame at the TOP of the stack
+            with state.ctx_EvalInFrame(self.mem, in_frame):
+                unused_status = self.cmd_ev.EvalCommandFrag(frag)
 
         return value.Null
 

@@ -1,7 +1,7 @@
 # YSH specific features of eval
 
 ## our_shell: ysh
-## oils_failures_allowed: 4
+## oils_failures_allowed: 2
 
 #### eval builtin does not take a literal block - can restore this later
 
@@ -575,66 +575,58 @@ inner2=z
 
 #### io->evalInFrame() can express try, cd builtins
 
-var frag = ^(echo $i)
-
 proc my-cd (new_dir; ; ; block) {
-  pushd $new_dir
+  pushd $new_dir >/dev/null
 
+  # Get calling frame.  (The top-most frame, this one, has index -1)
   var calling_frame = vm.getFrame(-2)
 
-  # could call this "unbound"?  or unbind()?  What about procs and funcs and
-  # exprs?
-  var frag = getCommandFrag(block)
+  call io->evalInFrame(block, calling_frame)
 
-  call io->evalInFrame(frag, calling_frame)
-
-  popd
+  popd >/dev/null
 }
 
 var i = 42
 my-cd /tmp {
   echo $PWD
+  var my_pwd = PWD
   var j = i + 1
 }
+echo "my_pwd=$my_pwd"
 echo "j = $j"
 
 ## STDOUT:
-x: i = 0, j = 2
-x: i = 1, j = 3
-x: i = 2, j = 4
+/tmp
+my_pwd=/tmp
+j = 43
 ## END
 
 
-#### parseCommand(), io->evalInFrame(frag, frame) can behave like eval $mystr
-
-# NO LONGER WORKS, but is this a feature rather than a bug?
+#### io->evalInFrame(frag, frame) can behave like eval $mystr
 
 proc p2(code_str) {
   var mylocal = 42
+  # mylocal is visible
   eval $code_str
 }
 
-p2 'echo mylocal=$mylocal'
+p2 'echo "eval string mylocal=$mylocal"'
 
 proc p (;;; block) {
-  # To behave like eval $code_str, without variable capture:
-  #
-  # var frag = getCommandFrag(block)
-  # var this_frame = vm.getFrame(-1)
-  # call io->evalInFrame(frag, this_frame)
+  var this_frame = vm.getFrame(-1)
 
+  # mylocal is visible
   var mylocal = 99
-  call io->eval(block)
+  call io->evalInFrame(block, this_frame)
 }
 
 p {
-  echo mylocal=$mylocal
+  echo "evalInFrame mylocal=$mylocal"
 }
 
-
 ## STDOUT:
-mylocal=42
-mylocal=99
+eval string mylocal=42
+evalInFrame mylocal=99
 ## END
 
 #### eval should have a sandboxed mode

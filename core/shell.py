@@ -954,6 +954,14 @@ def Main(
     # Special case for testing
     mem.AddBuiltin('module-invoke', value.BuiltinProc(module_invoke))
 
+    # First, process --eval flags.  In interactive mode, this comes before --rcfile.
+    # (It could be used for the headless shell.  Although terminals have a bootstrap process.)
+    # Note that --eval
+    if flag.eval:
+        raise AssertionError()
+    if flag.eval_pure:
+        raise AssertionError('pure')
+
     #
     # Is the shell interactive?
     #
@@ -1203,7 +1211,7 @@ def Main(
         return 0
 
     #
-    # Run a shell script
+    # Batch mode: shell script or -c
     #
 
     with state.ctx_ThisDir(mem, script_name):
