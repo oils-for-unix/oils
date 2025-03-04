@@ -713,7 +713,10 @@ class CommandEvaluator(object):
 
     def _DoVarDecl(self, node):
         # type: (command.VarDecl) -> int
-        # x = 'foo' in Hay blocks
+
+        flags = state.YshDecl
+
+        # x = 'foo' in Hay blocks is like 'const'
         if node.keyword is None:
             # Note: there's only one LHS
             lhs0 = node.lhs[0]
@@ -721,13 +724,14 @@ class CommandEvaluator(object):
             assert node.rhs is not None, node
             val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
+            flags |= state.SetReadOnly
             self.mem.SetNamed(lval,
                               val,
                               scope_e.LocalOnly,
-                              flags=state.SetReadOnly)
+                              flags=flags)
 
         else:  # var or const
-            flags = (state.SetReadOnly
+            flags |= (state.SetReadOnly
                      if node.keyword.id == Id.KW_Const else 0)
 
             # var x, y does null initialization
