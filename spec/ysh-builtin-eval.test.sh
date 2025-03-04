@@ -385,6 +385,16 @@ Dict (&d) {
 
 pp test_ (d)
 
+
+# Same problem as Hay test cases!
+const c = 99
+
+Dict (&d2) {
+  const c = 101
+}
+
+pp test_ (d2)
+
 exit
 
 # restored to the shadowed values
