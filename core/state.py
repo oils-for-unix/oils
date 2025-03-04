@@ -1742,7 +1742,6 @@ class Mem(object):
             return None, self.var_stack[0]  # set in global var_frame
 
         if which_scopes == scope_e.LocalOnly:
-            log('Local %r', name)
             # Stack:
             # CommandEvaluator::_DoVarDecl
             # Mem::SetNamed - do we need a flag for 'var'?
