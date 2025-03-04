@@ -1721,10 +1721,13 @@ class Mem(object):
 
     def _ResolveNameOnly(self, name, which_scopes):
         # type: (str, scope_t) -> Tuple[Optional[Cell], Dict[str, Cell]]
-        """Helper for getting and setting variable.
+        """Given a variable name, and scope rule, return a Cell and Frame.
+
+        This function does not resolve 'nameref'.  It's used to get and set
+        variables.
 
         Returns:
-          cell: The cell corresponding to looking up 'name' with the given mode, or
+          cell: The cell corresponding to looking up 'name' with the given scope, or
             None if it's not found.
           var_frame: The frame it should be set to or deleted from.
         """
@@ -1737,6 +1740,14 @@ class Mem(object):
             return None, self.var_stack[0]  # set in global var_frame
 
         if which_scopes == scope_e.LocalOnly:
+            log('Local %r', name)
+            # Stack:
+            # CommandEvaluator::_DoVarDecl
+            # Mem::SetNamed - do we need a flag for 'var'?
+            # Mem::_ResolveNameOrRef
+            # Mem::_ResolveNameOnly
+            #raise AssertionError()
+
             var_frame = self.var_stack[-1]
             cell, result_frame = _FrameLookup(var_frame, name)
             if cell:
@@ -1775,7 +1786,7 @@ class Mem(object):
             ref_trail=None,  # type: Optional[List[str]]
     ):
         # type: (...) -> Tuple[Optional[Cell], Dict[str, Cell], str]
-        """Look up a cell and namespace, but respect the nameref flag.
+        """Look up a cell and frame, but respect the nameref flag.
 
         Resolving namerefs does RECURSIVE calls.
         """
@@ -1890,6 +1901,8 @@ class Mem(object):
 
         # Equivalent to
         # self._ResolveNameOnly(lval.name, scope_e.LocalOnly)
+
+        # Note: doesn't use _FrameLookup
         var_frame = self.var_stack[-1]
         cell = var_frame.get(lval.name)
 
