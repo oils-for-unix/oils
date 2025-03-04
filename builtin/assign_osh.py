@@ -196,7 +196,7 @@ def _PrintVariables(
                 ["=", bash_impl.BashArray_ToStrForShellPrint(sparse_val)])
 
         else:
-            pass  # note: other types silently ignored
+            continue  # note: other types silently ignored
 
         print(''.join(decl))
         count += 1
