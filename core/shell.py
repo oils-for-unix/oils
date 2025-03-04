@@ -957,9 +957,9 @@ def Main(
     # First, process --eval flags.  In interactive mode, this comes before --rcfile.
     # (It could be used for the headless shell.  Although terminals have a bootstrap process.)
     # Note that --eval
-    if flag.eval:
+    if flag.eval is not None:
         raise AssertionError()
-    if flag.eval_pure:
+    if flag.eval_pure is not None:
         raise AssertionError('pure')
 
     #
