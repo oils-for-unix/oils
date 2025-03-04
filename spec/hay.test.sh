@@ -1,4 +1,4 @@
-## oils_failures_allowed: 8
+## oils_failures_allowed: 4
 
 # Hay: Hay Ain't YAML
 
