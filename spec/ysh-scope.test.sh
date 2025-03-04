@@ -766,3 +766,59 @@ shvar IFS=z
 null
 ## END
 
+
+#### func and proc are like var, with respect to closures
+shopt --set ysh:all
+
+proc test-var {
+  var x = 'outer'
+  proc inner {
+    var x = 'inner'
+    # note: static check is broken now
+    #setvar x = 'inner'
+    echo "inner $x"
+  }
+  inner
+  echo "outer $x"
+}
+
+# Note: state.YshDecl flag somehow doesn't make a difference here?
+proc test-func {
+  func x() { return ('outer') }
+  proc inner2 {
+    func x() { return ('inner') }
+    echo "inner $[x()]"
+  }
+  inner2
+  echo "outer $[x()]"
+}
+
+proc test-proc {
+  proc x { echo 'outer' }
+  proc inner3 {
+    proc x { echo 'inner' }
+    x
+  }
+  inner3
+  x
+}
+
+
+test-var
+echo
+
+test-func
+echo
+
+test-proc
+
+## STDOUT:
+inner inner
+outer outer
+
+inner inner
+outer outer
+
+inner
+outer
+## END

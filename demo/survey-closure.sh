@@ -254,6 +254,51 @@ assert nested(3) == 6, "Test 2 failed"
     '
 }
 
+js-mutate-var-let() {
+  nodejs -e '
+  function outer() {
+    var x = "X_outer";
+    var y = "Y_outer";
+
+    function inner() {
+      var x = "X_inner";
+      y = "Y_inner";
+
+      console.log(`inner: x=${x} y=${y}`);
+    }
+
+    inner();
+
+    console.log(`outer: x=${x} y=${y}`);
+  }
+
+  outer();
+  '
+
+  echo
+
+  # Does not change eanything
+  nodejs -e '
+  function outer() {
+    let x = "X_outer";
+    let y = "Y_outer";
+
+    function inner() {
+      let x = "X_inner";
+      y = "Y_inner";
+
+      console.log(`let inner: x=${x} y=${y}`);
+    }
+
+    inner();
+
+    console.log(`let outer: x=${x} y=${y}`);
+  }
+
+  outer();
+  '
+}
+
 value-or-var() {
   # Good point from HN thread, this doesn't work
   #

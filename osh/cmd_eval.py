@@ -713,10 +713,10 @@ class CommandEvaluator(object):
 
     def _DoVarDecl(self, node):
         # type: (command.VarDecl) -> int
+        # x = 'foo' in Hay blocks
 
         flags = state.YshDecl
 
-        # x = 'foo' in Hay blocks is like 'const'
         if node.keyword is None:
             # Note: there's only one LHS
             lhs0 = node.lhs[0]
@@ -725,23 +725,20 @@ class CommandEvaluator(object):
             val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
             flags |= state.SetReadOnly
-            self.mem.SetNamed(lval,
-                              val,
-                              scope_e.LocalOnly,
-                              flags=flags)
+            self.mem.SetNamedYsh(lval, val, scope_e.LocalOnly, flags=flags)
 
         else:  # var or const
             flags |= (state.SetReadOnly
-                     if node.keyword.id == Id.KW_Const else 0)
+                      if node.keyword.id == Id.KW_Const else 0)
 
             # var x, y does null initialization
             if node.rhs is None:
                 for i, lhs_val in enumerate(node.lhs):
                     lval = LeftName(lhs_val.name, lhs_val.left)
-                    self.mem.SetNamed(lval,
-                                      value.Null,
-                                      scope_e.LocalOnly,
-                                      flags=flags)
+                    self.mem.SetNamedYsh(lval,
+                                         value.Null,
+                                         scope_e.LocalOnly,
+                                         flags=flags)
                 return 0
 
             right_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
@@ -773,7 +770,10 @@ class CommandEvaluator(object):
 
             for i, lval in enumerate(lvals):
                 rval = rhs_vals[i]
-                self.mem.SetNamed(lval, rval, scope_e.LocalOnly, flags=flags)
+                self.mem.SetNamedYsh(lval,
+                                     rval,
+                                     scope_e.LocalOnly,
+                                     flags=flags)
 
         return 0
 
@@ -826,7 +826,7 @@ class CommandEvaluator(object):
                 if lval.tag() == y_lvalue_e.Local:
                     lval = cast(LeftName, UP_lval)
 
-                    self.mem.SetNamed(lval, rval, which_scopes)
+                    self.mem.SetNamedYsh(lval, rval, which_scopes)
 
                 elif lval.tag() == y_lvalue_e.Container:
                     lval = cast(y_lvalue.Container, UP_lval)
@@ -1468,7 +1468,10 @@ class CommandEvaluator(object):
         func_val = value.Func(name, node, pos_defaults, named_defaults,
                               self.mem.GlobalFrame())
 
-        self.mem.SetNamed(lval, func_val, scope_e.LocalOnly)
+        # TODO: I'm not observing a difference with the YshDecl flag?  That
+        # should prevent the parent scope from being modified.
+        #self.mem.SetNamedYsh(lval, func_val, scope_e.LocalOnly, flags=state.YshDecl)
+        self.mem.SetNamedYsh(lval, func_val, scope_e.LocalOnly)
 
     def _DoIf(self, node):
         # type: (command.If) -> int
