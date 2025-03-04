@@ -56,6 +56,7 @@ SetExport = 1 << 2
 ClearExport = 1 << 3
 SetNameref = 1 << 4
 ClearNameref = 1 << 5
+YshDecl = 1 << 6
 
 
 class ctx_Source(object):
@@ -1217,8 +1218,8 @@ class ctx_Eval(object):
                 self.mem.SetNamed(lval, old_val, scope_e.LocalOnly)
 
 
-def _FrameLookup(frame, name):
-    # type: (Dict[str, Cell], str) -> Tuple[Optional[Cell], Dict[str, Cell]]
+def _FrameLookup(frame, name, ysh_decl):
+    # type: (Dict[str, Cell], str, bool) -> Tuple[Optional[Cell], Dict[str, Cell]]
     """
     Look for a name in the frame, then recursively into the enclosing __E__
     frame, if it exists
@@ -1227,13 +1228,14 @@ def _FrameLookup(frame, name):
     if cell:
         return cell, frame
 
-    rear_cell = frame.get('__E__')  # ctx_EnclosedFrame() sets this
-    if rear_cell:
-        rear_val = rear_cell.val
-        assert rear_val, rear_val
-        if rear_val.tag() == value_e.Frame:
-            to_enclose = cast(value.Frame, rear_val).frame
-            return _FrameLookup(to_enclose, name)  # recursive call
+    if not ysh_decl:
+        rear_cell = frame.get('__E__')  # ctx_EnclosedFrame() sets this
+        if rear_cell:
+            rear_val = rear_cell.val
+            assert rear_val, rear_val
+            if rear_val.tag() == value_e.Frame:
+                to_enclose = cast(value.Frame, rear_val).frame
+                return _FrameLookup(to_enclose, name, ysh_decl)  # recursive call
 
     return None, None
 
@@ -1719,33 +1721,43 @@ class Mem(object):
     # Named Vars
     #
 
-    def _ResolveNameOnly(self, name, which_scopes):
-        # type: (str, scope_t) -> Tuple[Optional[Cell], Dict[str, Cell]]
-        """Helper for getting and setting variable.
+    def _ResolveNameOnly(self, name, which_scopes, flags):
+        # type: (str, scope_t, int) -> Tuple[Optional[Cell], Dict[str, Cell]]
+        """Given a variable name, and scope rule, return a Cell and Frame.
+
+        This function does not resolve 'nameref'.  It's used to get and set
+        variables.
 
         Returns:
-          cell: The cell corresponding to looking up 'name' with the given mode, or
+          cell: The cell corresponding to looking up 'name' with the given scope, or
             None if it's not found.
           var_frame: The frame it should be set to or deleted from.
         """
         if which_scopes == scope_e.Dynamic:
             for i in xrange(len(self.var_stack) - 1, -1, -1):
                 var_frame = self.var_stack[i]
-                cell, result_frame = _FrameLookup(var_frame, name)
+                cell, result_frame = _FrameLookup(var_frame, name, bool(flags & YshDecl))
                 if cell:
                     return cell, result_frame
             return None, self.var_stack[0]  # set in global var_frame
 
         if which_scopes == scope_e.LocalOnly:
+            # Stack:
+            # CommandEvaluator::_DoVarDecl
+            # Mem::SetNamed - do we need a flag for 'var'?
+            # Mem::_ResolveNameOrRef
+            # Mem::_ResolveNameOnly
+            #raise AssertionError()
+
             var_frame = self.var_stack[-1]
-            cell, result_frame = _FrameLookup(var_frame, name)
+            cell, result_frame = _FrameLookup(var_frame, name, bool(flags & YshDecl))
             if cell:
                 return cell, result_frame
             return None, var_frame
 
         if which_scopes == scope_e.GlobalOnly:
             var_frame = self.var_stack[0]
-            cell, result_frame = _FrameLookup(var_frame, name)
+            cell, result_frame = _FrameLookup(var_frame, name, bool(flags & YshDecl))
             if cell:
                 return cell, result_frame
 
@@ -1754,13 +1766,13 @@ class Mem(object):
         if which_scopes == scope_e.LocalOrGlobal:
             # Local
             var_frame = self.var_stack[-1]
-            cell, result_frame = _FrameLookup(var_frame, name)
+            cell, result_frame = _FrameLookup(var_frame, name, bool(flags & YshDecl))
             if cell:
                 return cell, result_frame
 
             # Global
             var_frame = self.var_stack[0]
-            cell, result_frame = _FrameLookup(var_frame, name)
+            cell, result_frame = _FrameLookup(var_frame, name, bool(flags & YshDecl))
             if cell:
                 return cell, result_frame
 
@@ -1772,14 +1784,15 @@ class Mem(object):
             self,
             name,  # type: str
             which_scopes,  # type: scope_t
+            flags,  # type: int
             ref_trail=None,  # type: Optional[List[str]]
     ):
         # type: (...) -> Tuple[Optional[Cell], Dict[str, Cell], str]
-        """Look up a cell and namespace, but respect the nameref flag.
+        """Look up a cell and frame, but respect the nameref flag.
 
         Resolving namerefs does RECURSIVE calls.
         """
-        cell, var_frame = self._ResolveNameOnly(name, which_scopes)
+        cell, var_frame = self._ResolveNameOnly(name, which_scopes, flags)
 
         if cell is None or not cell.nameref:
             return cell, var_frame, name  # not a nameref
@@ -1827,7 +1840,7 @@ class Mem(object):
 
         # 'declare -n' uses dynamic scope.
         cell, var_frame, cell_name = self._ResolveNameOrRef(
-            new_name, scope_e.Dynamic, ref_trail=ref_trail)
+            new_name, scope_e.Dynamic, flags, ref_trail=ref_trail)
         return cell, var_frame, cell_name
 
     def IsBashAssoc(self, name):
@@ -1837,7 +1850,7 @@ class Mem(object):
         We need to know this to evaluate the index expression properly
         -- should it be coerced to an integer or not?
         """
-        cell, _, _ = self._ResolveNameOrRef(name, self.ScopesForReading())
+        cell, _, _ = self._ResolveNameOrRef(name, self.ScopesForReading(), 0)
         # foo=([key]=value)
         return cell is not None and cell.val.tag() == value_e.BashAssoc
 
@@ -1890,6 +1903,8 @@ class Mem(object):
 
         # Equivalent to
         # self._ResolveNameOnly(lval.name, scope_e.LocalOnly)
+
+        # Note: doesn't use _FrameLookup
         var_frame = self.var_stack[-1]
         cell = var_frame.get(lval.name)
 
@@ -1906,7 +1921,7 @@ class Mem(object):
         # type: (LeftName, value_t, scope_t, int) -> None
         if flags & SetNameref or flags & ClearNameref:
             # declare -n ref=x  # refers to the ref itself
-            cell, var_frame = self._ResolveNameOnly(lval.name, which_scopes)
+            cell, var_frame = self._ResolveNameOnly(lval.name, which_scopes, flags)
             cell_name = lval.name
         else:
             # ref=x  # mutates THROUGH the reference
@@ -1918,7 +1933,7 @@ class Mem(object):
             # 3. Turn BracedVarSub into an sh_lvalue, and call
             #    self.unsafe_arith.SetValue() wrapper with ref_trail
             cell, var_frame, cell_name = self._ResolveNameOrRef(
-                lval.name, which_scopes)
+                lval.name, which_scopes, flags)
 
         if cell:
             # Clear before checking readonly bit.
@@ -2021,7 +2036,7 @@ class Mem(object):
                 # Undef, which then turns into an INDEXED array.  (Undef means that set
                 # -o nounset fails.)
                 cell, var_frame, _ = self._ResolveNameOrRef(
-                    lval.name, which_scopes)
+                    lval.name, which_scopes, flags)
                 if not cell:
                     self._BindNewArrayWithEntry(var_frame, lval, rval, flags,
                                                 left_loc)
@@ -2083,7 +2098,7 @@ class Mem(object):
                 left_loc = lval.blame_loc
 
                 cell, var_frame, _ = self._ResolveNameOrRef(
-                    lval.name, which_scopes)
+                    lval.name, which_scopes, flags)
                 if cell.readonly:
                     e_die("Can't assign to readonly associative array",
                           left_loc)
@@ -2295,7 +2310,7 @@ class Mem(object):
                 # 1. Call self.unsafe_arith.ParseVarRef() -> BracedVarSub
                 # 2. Call self.unsafe_arith.GetNameref(bvs_part), and get a value_t
                 #    We still need a ref_trail to detect cycles.
-                cell, _, _ = self._ResolveNameOrRef(name, which_scopes)
+                cell, _, _ = self._ResolveNameOrRef(name, which_scopes, 0)
                 if cell:
                     return cell.val
 
@@ -2321,7 +2336,7 @@ class Mem(object):
         if which_scopes == scope_e.Shopt:
             which_scopes = self.ScopesForReading()
 
-        cell, _ = self._ResolveNameOnly(name, which_scopes)
+        cell, _ = self._ResolveNameOnly(name, which_scopes, 0)
         return cell
 
     def GetCellDeref(self, name, which_scopes=scope_e.Shopt):
@@ -2332,7 +2347,7 @@ class Mem(object):
         if which_scopes == scope_e.Shopt:
             which_scopes = self.ScopesForReading()
 
-        cell, _, _ = self._ResolveNameOrRef(name, which_scopes)
+        cell, _, _ = self._ResolveNameOrRef(name, which_scopes, 0)
         return cell
 
     def Unset(self, lval, which_scopes):
@@ -2361,7 +2376,7 @@ class Mem(object):
             which_scopes = self.ScopesForWriting()
 
         cell, var_frame, cell_name = self._ResolveNameOrRef(
-            var_name, which_scopes)
+            var_name, which_scopes, 0)
         if not cell:
             return False  # 'unset' builtin falls back on functions
         if cell.readonly:
@@ -2445,7 +2460,7 @@ class Mem(object):
         We don't use SetValue() because even if rval is None, it will make an
         Undef value in a scope.
         """
-        cell, var_frame = self._ResolveNameOnly(name, self.ScopesForReading())
+        cell, var_frame = self._ResolveNameOnly(name, self.ScopesForReading(), 0)
         if cell:
             if flag & ClearExport:
                 cell.exported = False

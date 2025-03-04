@@ -1,7 +1,7 @@
 # YSH specific features of eval
 
 ## our_shell: ysh
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 
 #### eval builtin does not take a literal block - can restore this later
 
@@ -385,6 +385,16 @@ Dict (&d) {
 
 pp test_ (d)
 
+
+# Same problem as Hay test cases!
+const c = 99
+
+Dict (&d2) {
+  const c = 101
+}
+
+pp test_ (d2)
+
 exit
 
 # restored to the shadowed values
@@ -402,6 +412,8 @@ proc p {
 }
 
 ## STDOUT:
+(Dict)   {"bare":42,"k":"k-block-mutated","k3":"k3"}
+(Dict)   {"c":101}
 ## END
 
 #### block in Dict (&d) { ... } can read from outer scope

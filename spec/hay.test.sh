@@ -1,4 +1,4 @@
-## oils_failures_allowed: 7
+## oils_failures_allowed: 4
 
 # Hay: Hay Ain't YAML
 
@@ -486,9 +486,58 @@ Package {
   }
 }
 
-pp test_ (_hay())
+json write (_hay())
 
 ## STDOUT:
+{
+  "source": null,
+  "children": [
+    {
+      "type": "Package",
+      "args": [],
+      "children": [
+        {
+          "type": "Deps",
+          "args": [],
+          "children": [],
+          "attrs": {
+            "x": 20
+          }
+        }
+      ],
+      "attrs": {
+        "x": 10
+      }
+    }
+  ]
+}
+## END
+
+#### Param with same name as Hay attribute
+shopt --set ysh:all
+
+# Danilo reported this on Zulip
+
+hay define Service
+
+proc gen-service(; ; variant = null) {
+  Service {
+    variant = variant
+    port = 80
+  }
+}
+
+gen-service 
+gen-service (variant = 'z')
+
+var attrs = _hay().children[0].attrs
+json write (attrs)
+
+## STDOUT:
+{
+  "variant": null,
+  "port": 80
+}
 ## END
 
 
