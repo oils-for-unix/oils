@@ -1,4 +1,5 @@
 ## our_shell: ysh
+## oils_failures_allowed: 3
 
 #### !== operator
 var a = 'bar'
@@ -126,7 +127,7 @@ json write (e)
 ## END
 
 #### Invalid op on string
-shopt -s oil:all
+shopt -s ysh:all
 
 var clients = {'email': 'foo', 'e2': 'bar'}
 for c in (clients) {
@@ -138,4 +139,74 @@ for c in (clients) {
 ## status: 3
 ## STDOUT:
 email
+## END
+
+
+#### var in both branches of if (Julian)
+
+# remove static check?
+
+proc scopetest(; var) {
+  if (var === 2) {
+    var tmp = "hello"
+    write $tmp
+  } else {
+    var tmp = "world"
+    write $tmp
+  }
+}
+
+scopetest (1)
+scopetest (2)
+
+## STDOUT:
+## END
+
+#### var in branches of case (Aidan)
+shopt -s ysh:all
+
+# at top level, there is no static check
+case (1) {
+  (1) { var name = "one" }
+  (2) { var name = "two" }
+}
+echo name=$name
+
+proc my-proc {
+  case (1) {
+    (1) { var name = "one" }
+    (2) { var name = "two" }
+  }
+}
+
+## STDOUT:
+## END
+
+#### Modify for loop variable with var or setvar? (Machine Stops)
+
+proc do-var {
+  for x in a b {
+    echo $x
+    var x = 'zz'
+    echo $x
+  }
+}
+
+proc do-setvar {
+  for x in a b {
+    echo $x
+    setvar x = 'zz'
+    echo $x
+  }
+}
+
+do-var
+echo
+do-setvar
+
+## STDOUT:
+a
+zz
+b
+zz
 ## END
