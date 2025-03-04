@@ -486,9 +486,31 @@ Package {
   }
 }
 
-pp test_ (_hay())
+json write (_hay())
 
 ## STDOUT:
+{
+  "source": null,
+  "children": [
+    {
+      "type": "Package",
+      "args": [],
+      "children": [
+        {
+          "type": "Deps",
+          "args": [],
+          "children": [],
+          "attrs": {
+            "x": 20
+          }
+        }
+      ],
+      "attrs": {
+        "x": 10
+      }
+    }
+  ]
+}
 ## END
 
 #### Param with same name as Hay attribute
@@ -512,6 +534,10 @@ var attrs = _hay().children[0].attrs
 json write (attrs)
 
 ## STDOUT:
+{
+  "variant": null,
+  "port": 80
+}
 ## END
 
 
