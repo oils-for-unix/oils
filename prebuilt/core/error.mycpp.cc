@@ -12,14 +12,13 @@ namespace runtime {  // forward declare
 namespace num {  // forward declare
 }
 
-GLOBAL_STR(S_BEl, " (line %d, offset %d-%d: %r)");
-GLOBAL_STR(S_xFg, "%s, got %s");
 GLOBAL_STR(S_ijB, "(");
 GLOBAL_STR(S_hxb, ")");
 GLOBAL_STR(S_gFh, "F");
 GLOBAL_STR(S_cor, "T");
 GLOBAL_STR(S_tci, "_");
 GLOBAL_STR(S_gFE, "code");
+GLOBAL_STR(S_xho, "failglob: ");
 GLOBAL_STR(S_pBg, "message");
 
 namespace runtime {  // declare
@@ -124,7 +123,13 @@ Usage::Usage(BigStr* msg, syntax_asdl::loc_t* location) : ::error::_ErrorWithLoc
 Parse::Parse(BigStr* msg, syntax_asdl::loc_t* location) : ::error::_ErrorWithLocation(msg, location) {
 }
 
-FailGlob::FailGlob(BigStr* msg, syntax_asdl::loc_t* location) : ::error::_ErrorWithLocation(msg, location) {
+WordFailure::WordFailure(BigStr* msg, syntax_asdl::loc_t* location) : ::error::_ErrorWithLocation(msg, location) {
+}
+
+FailGlob::FailGlob(BigStr* msg, syntax_asdl::loc_t* location) : ::error::WordFailure(str_concat(S_xho, msg), location) {
+}
+
+VarSubFailure::VarSubFailure(BigStr* msg, syntax_asdl::loc_t* location) : ::error::WordFailure(msg, location) {
 }
 
 RedirectEval::RedirectEval(BigStr* msg, syntax_asdl::loc_t* location) : ::error::_ErrorWithLocation(msg, location) {

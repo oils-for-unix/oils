@@ -18,7 +18,9 @@ namespace error {  // forward declare
   class _ErrorWithLocation;
   class Usage;
   class Parse;
+  class WordFailure;
   class FailGlob;
+  class VarSubFailure;
   class RedirectEval;
   class FatalRuntime;
   class Strict;
@@ -86,12 +88,27 @@ class Parse : public ::error::_ErrorWithLocation {
   DISALLOW_COPY_AND_ASSIGN(Parse)
 };
 
-class FailGlob : public ::error::_ErrorWithLocation {
+class WordFailure : public ::error::_ErrorWithLocation {
+ public:
+  WordFailure(BigStr* msg, syntax_asdl::loc_t* location);
+  
+  static constexpr uint32_t field_mask() {
+    return ::error::_ErrorWithLocation::field_mask();
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(WordFailure));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(WordFailure)
+};
+
+class FailGlob : public ::error::WordFailure {
  public:
   FailGlob(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
-    return ::error::_ErrorWithLocation::field_mask();
+    return ::error::WordFailure::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -99,6 +116,21 @@ class FailGlob : public ::error::_ErrorWithLocation {
   }
 
   DISALLOW_COPY_AND_ASSIGN(FailGlob)
+};
+
+class VarSubFailure : public ::error::WordFailure {
+ public:
+  VarSubFailure(BigStr* msg, syntax_asdl::loc_t* location);
+  
+  static constexpr uint32_t field_mask() {
+    return ::error::WordFailure::field_mask();
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(VarSubFailure));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(VarSubFailure)
 };
 
 class RedirectEval : public ::error::_ErrorWithLocation {

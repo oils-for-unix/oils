@@ -28,6 +28,7 @@ namespace args {  // forward declare
   class _Attributes;
   class Reader;
   class _Action;
+  class AppendEvalFlag;
   class _ArgAction;
   class SetToInt;
   class SetToFloat;
@@ -86,12 +87,13 @@ class _Attributes {
   Dict<BigStr*, value_asdl::value_t*>* attrs{};
   List<Tuple2<BigStr*, bool>*>* opt_changes{};
   List<Tuple2<BigStr*, bool>*>* shopt_changes{};
+  List<Tuple2<BigStr*, bool>*>* eval_flags{};
   List<BigStr*>* actions{};
   bool show_options{};
   bool saw_double_dash{};
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassScanned(4, sizeof(_Attributes));
+    return ObjHeader::ClassScanned(5, sizeof(_Attributes));
   }
 
   DISALLOW_COPY_AND_ASSIGN(_Attributes)
@@ -104,7 +106,7 @@ class Reader {
   BigStr* Peek();
   Tuple2<BigStr*, syntax_asdl::loc_t*> Peek2();
   BigStr* ReadRequired(BigStr* error_msg);
-  Tuple2<BigStr*, syntax_asdl::loc_t*> ReadRequired2(BigStr* error_msg);
+  Tuple2<BigStr*, syntax_asdl::CompoundWord*> ReadRequired2(BigStr* error_msg);
   List<BigStr*>* Rest();
   Tuple2<List<BigStr*>*, List<syntax_asdl::CompoundWord*>*> Rest2();
   bool AtEnd();
@@ -137,6 +139,26 @@ class _Action {
   }
 
   DISALLOW_COPY_AND_ASSIGN(_Action)
+};
+
+class AppendEvalFlag : public ::args::_Action {
+ public:
+  AppendEvalFlag(BigStr* name);
+  virtual bool OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out);
+
+  bool is_pure{};
+  BigStr* name{};
+  
+  static constexpr uint32_t field_mask() {
+    return ::args::_Action::field_mask()
+         | maskbit(offsetof(AppendEvalFlag, name));
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(AppendEvalFlag));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(AppendEvalFlag)
 };
 
 class _ArgAction : public ::args::_Action {

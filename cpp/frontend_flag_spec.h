@@ -47,6 +47,8 @@ enum class ActionType_c {
   SetNamedOption_shopt,  // no args, valid
   SetAction,             // name
   SetNamedAction,        // no args, valid
+
+  AppendEvalFlag,  // no args, valid
 };
 
 // TODO: Figure out the difference between name and key

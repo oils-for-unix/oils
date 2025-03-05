@@ -959,11 +959,10 @@ def Main(
     # (It could be used for the headless shell.  Although terminals have a bootstrap process.)
     # Note that --eval
 
-    # TODO: process these in a loop, in order
-    if flag.eval is not None:
+    for path, is_pure in attrs.eval_flags:
+        # TODO: respect is_pure
         try:
-            ok = main_loop.EvalFile(flag.eval, fd_state, parse_ctx, cmd_ev,
-                                    lang)
+            ok = main_loop.EvalFile(path, fd_state, parse_ctx, cmd_ev, lang)
         except util.UserExit as e:
             # Doesn't seem like we need this, and verbose_errexit isn't the right option
             #if exec_opts.verbose_errexit():
@@ -971,10 +970,6 @@ def Main(
             return e.status
         if not ok:  # parse error or I/O error was already printed
             return 1
-
-    if flag.eval_pure is not None:
-        # TODO: Same as above, except we restrict
-        raise AssertionError('pure')
 
     #
     # Is the shell interactive?

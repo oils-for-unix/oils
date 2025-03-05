@@ -128,6 +128,10 @@ def _WriteActions(f, var_name, actions, counter):
         elif isinstance(action, args.SetNamedAction):
             action_type = 'SetNamedAction'
 
+        elif isinstance(action, args.AppendEvalFlag):
+            action_type = 'AppendEvalFlag'
+            name = action.name
+
         else:
             raise AssertionError(action)
 

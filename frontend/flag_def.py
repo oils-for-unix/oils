@@ -243,6 +243,9 @@ def _AddShellOptions(spec):
 
 MAIN_SPEC = FlagSpecAndMore('main')
 
+# Special case: Define --eval and --eval-pure
+MAIN_SPEC.EvalFlags()
+
 MAIN_SPEC.ShortFlag('-c', args.String,
                     quit_parsing_flags=True)  # command string
 MAIN_SPEC.LongFlag('--help')
@@ -264,13 +267,6 @@ MAIN_SPEC.ShortFlag('-i')  # interactive
 MAIN_SPEC.ShortFlag('-l')  # login - currently no-op
 MAIN_SPEC.LongFlag('--login')  # login - currently no-op
 MAIN_SPEC.LongFlag('--headless')  # accepts ECMD, etc.
-
-# --eval is not processed in interactive mode
-# TODO: This should be a list
-MAIN_SPEC.LongFlag('--eval', args.String)
-
-# TODO: relative order of --eval and --eval-pure should be preserved
-MAIN_SPEC.LongFlag('--eval-pure', args.String)
 
 # TODO: -h too
 # the output format when passing -n

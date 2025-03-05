@@ -37,14 +37,12 @@ GLOBAL_STR(S_rpo, "\u001b[37m");
 GLOBAL_STR(S_sCc, "\u001b[4m");
 GLOBAL_STR(S_woy, "\u001b[7m");
 GLOBAL_STR(S_yfw, " ");
-GLOBAL_STR(S_ctw, "%s%s%s");
 GLOBAL_STR(S_Clt, "&");
 GLOBAL_STR(S_usD, "&amp;");
 GLOBAL_STR(S_dyr, "&gt;");
 GLOBAL_STR(S_Dcl, "&lt;");
 GLOBAL_STR(S_ijB, "(");
 GLOBAL_STR(S_hxb, ")");
-GLOBAL_STR(S_Cpi, "...0x%s");
 GLOBAL_STR(S_fyj, ":");
 GLOBAL_STR(S_eox, "<");
 GLOBAL_STR(S_jye, ">");
@@ -54,9 +52,7 @@ GLOBAL_STR(S_Eax, "[");
 GLOBAL_STR(S_xmu, "[]");
 GLOBAL_STR(S_pcD, "]");
 GLOBAL_STR(S_tci, "_");
-GLOBAL_STR(S_bme, "___ DOC COUNT %d");
 GLOBAL_STR(S_gfw, "___ GC: after printing");
-GLOBAL_STR(S_ray, "___ HNODE COUNT %d");
 
 namespace ansi {  // declare
 

@@ -27,7 +27,9 @@ namespace error {  // forward declare
   class _ErrorWithLocation;
   class Usage;
   class Parse;
+  class WordFailure;
   class FailGlob;
+  class VarSubFailure;
   class RedirectEval;
   class FatalRuntime;
   class Strict;
@@ -59,9 +61,6 @@ GLOBAL_STR(S_rpo, "\u001b[37m");
 GLOBAL_STR(S_sCc, "\u001b[4m");
 GLOBAL_STR(S_woy, "\u001b[7m");
 GLOBAL_STR(S_yfw, " ");
-GLOBAL_STR(S_BEl, " (line %d, offset %d-%d: %r)");
-GLOBAL_STR(S_ctw, "%s%s%s");
-GLOBAL_STR(S_xFg, "%s, got %s");
 GLOBAL_STR(S_Clt, "&");
 GLOBAL_STR(S_usD, "&amp;");
 GLOBAL_STR(S_dyr, "&gt;");
@@ -71,7 +70,6 @@ GLOBAL_STR(S_hxb, ")");
 GLOBAL_STR(S_jnE, "+");
 GLOBAL_STR(S_Bjq, "-");
 GLOBAL_STR(S_gpk, "--");
-GLOBAL_STR(S_Cpi, "...0x%s");
 GLOBAL_STR(S_wfw, "0");
 GLOBAL_STR(S_vrA, "1");
 GLOBAL_STR(S_fyj, ":");
@@ -81,8 +79,6 @@ GLOBAL_STR(S_jye, ">");
 GLOBAL_STR(S_qsa, "Expected argument for action");
 GLOBAL_STR(S_gFh, "F");
 GLOBAL_STR(S_xmt, "False");
-GLOBAL_STR(S_aym, "Invalid action name %r");
-GLOBAL_STR(S_xBE, "Invalid option %r");
 GLOBAL_STR(S_cor, "T");
 GLOBAL_STR(S_iCm, "True");
 GLOBAL_STR(S_qCh, "Z");
@@ -90,23 +86,13 @@ GLOBAL_STR(S_Eax, "[");
 GLOBAL_STR(S_xmu, "[]");
 GLOBAL_STR(S_pcD, "]");
 GLOBAL_STR(S_tci, "_");
-GLOBAL_STR(S_bme, "___ DOC COUNT %d");
 GLOBAL_STR(S_gfw, "___ GC: after printing");
-GLOBAL_STR(S_ray, "___ HNODE COUNT %d");
 GLOBAL_STR(S_gFE, "code");
-GLOBAL_STR(S_xow, "doesn't accept flag %s");
-GLOBAL_STR(S_rjE, "doesn't accept option %s");
-GLOBAL_STR(S_qsy, "expected argument to %r");
-GLOBAL_STR(S_ehc, "expected integer after %s, got %r");
-GLOBAL_STR(S_zdo, "expected number after %r, got %r");
+GLOBAL_STR(S_enh, "eval-pure");
 GLOBAL_STR(S_Fvh, "extern");
 GLOBAL_STR(S_xaw, "extern_");
+GLOBAL_STR(S_xho, "failglob: ");
 GLOBAL_STR(S_Ctn, "false");
-GLOBAL_STR(S_fvs, "got invalid argument %r to %r, expected one of: %s");
-GLOBAL_STR(S_edd, "got invalid argument to boolean flag: %r");
-GLOBAL_STR(S_mph, "got invalid flag %r");
-GLOBAL_STR(S_qfj, "got invalid float for %s: %s");
-GLOBAL_STR(S_dzs, "got invalid integer for %s: %s");
 GLOBAL_STR(S_sAk, "got too many arguments");
 GLOBAL_STR(S_pBg, "message");
 GLOBAL_STR(S_FsF, "true");
@@ -284,12 +270,27 @@ class Parse : public ::error::_ErrorWithLocation {
   DISALLOW_COPY_AND_ASSIGN(Parse)
 };
 
-class FailGlob : public ::error::_ErrorWithLocation {
+class WordFailure : public ::error::_ErrorWithLocation {
+ public:
+  WordFailure(BigStr* msg, syntax_asdl::loc_t* location);
+  
+  static constexpr uint32_t field_mask() {
+    return ::error::_ErrorWithLocation::field_mask();
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(WordFailure));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(WordFailure)
+};
+
+class FailGlob : public ::error::WordFailure {
  public:
   FailGlob(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
-    return ::error::_ErrorWithLocation::field_mask();
+    return ::error::WordFailure::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -297,6 +298,21 @@ class FailGlob : public ::error::_ErrorWithLocation {
   }
 
   DISALLOW_COPY_AND_ASSIGN(FailGlob)
+};
+
+class VarSubFailure : public ::error::WordFailure {
+ public:
+  VarSubFailure(BigStr* msg, syntax_asdl::loc_t* location);
+  
+  static constexpr uint32_t field_mask() {
+    return ::error::WordFailure::field_mask();
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(VarSubFailure));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(VarSubFailure)
 };
 
 class RedirectEval : public ::error::_ErrorWithLocation {
@@ -1341,7 +1357,13 @@ Usage::Usage(BigStr* msg, syntax_asdl::loc_t* location) : ::error::_ErrorWithLoc
 Parse::Parse(BigStr* msg, syntax_asdl::loc_t* location) : ::error::_ErrorWithLocation(msg, location) {
 }
 
-FailGlob::FailGlob(BigStr* msg, syntax_asdl::loc_t* location) : ::error::_ErrorWithLocation(msg, location) {
+WordFailure::WordFailure(BigStr* msg, syntax_asdl::loc_t* location) : ::error::_ErrorWithLocation(msg, location) {
+}
+
+FailGlob::FailGlob(BigStr* msg, syntax_asdl::loc_t* location) : ::error::WordFailure(str_concat(S_xho, msg), location) {
+}
+
+VarSubFailure::VarSubFailure(BigStr* msg, syntax_asdl::loc_t* location) : ::error::WordFailure(msg, location) {
 }
 
 RedirectEval::RedirectEval(BigStr* msg, syntax_asdl::loc_t* location) : ::error::_ErrorWithLocation(msg, location) {
@@ -1495,7 +1517,6 @@ using syntax_asdl::loc;
 using syntax_asdl::loc_t;
 using syntax_asdl::CompoundWord;
 using value_asdl::value;
-using value_asdl::value_e;
 using value_asdl::value_t;
 using error::e_usage;
 int String = 1;
@@ -1507,6 +1528,7 @@ _Attributes::_Attributes(Dict<BigStr*, value_asdl::value_t*>* defaults) {
   this->attrs = Alloc<Dict<BigStr*, value_asdl::value_t*>>();
   this->opt_changes = Alloc<List<Tuple2<BigStr*, bool>*>>();
   this->shopt_changes = Alloc<List<Tuple2<BigStr*, bool>*>>();
+  this->eval_flags = Alloc<List<Tuple2<BigStr*, bool>*>>();
   this->show_options = false;
   this->actions = Alloc<List<BigStr*>>();
   this->saw_double_dash = false;
@@ -1576,7 +1598,7 @@ BigStr* Reader::ReadRequired(BigStr* error_msg) {
   return arg;
 }
 
-Tuple2<BigStr*, syntax_asdl::loc_t*> Reader::ReadRequired2(BigStr* error_msg) {
+Tuple2<BigStr*, syntax_asdl::CompoundWord*> Reader::ReadRequired2(BigStr* error_msg) {
   BigStr* arg = nullptr;
   syntax_asdl::CompoundWord* location = nullptr;
   StackRoot _root0(&error_msg);
@@ -1589,7 +1611,7 @@ Tuple2<BigStr*, syntax_asdl::loc_t*> Reader::ReadRequired2(BigStr* error_msg) {
   }
   location = this->locs->at(this->i);
   this->Next();
-  return Tuple2<BigStr*, syntax_asdl::loc_t*>(arg, location);
+  return Tuple2<BigStr*, syntax_asdl::CompoundWord*>(arg, location);
 }
 
 List<BigStr*>* Reader::Rest() {
@@ -1650,6 +1672,27 @@ bool _Action::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attribut
   StackRoot _root2(&out);
 
   FAIL(kNotImplemented);  // Python NotImplementedError
+}
+
+AppendEvalFlag::AppendEvalFlag(BigStr* name) : ::args::_Action() {
+  this->name = name;
+  this->is_pure = str_equals(name, S_enh);
+}
+
+bool AppendEvalFlag::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out) {
+  BigStr* arg = nullptr;
+  StackRoot _root0(&attached_arg);
+  StackRoot _root1(&arg_r);
+  StackRoot _root2(&out);
+  StackRoot _root3(&arg);
+
+  arg_r->Next();
+  arg = arg_r->Peek();
+  if (arg == nullptr) {
+    e_usage(StrFormat("expected argument to %r", str_concat(S_gpk, this->name)), arg_r->Location());
+  }
+  out->eval_flags->append((Alloc<Tuple2<BigStr*, bool>>(arg, this->is_pure)));
+  return false;
 }
 
 _ArgAction::_ArgAction(BigStr* name, bool quit_parsing_flags, List<BigStr*>* valid) {

@@ -266,6 +266,11 @@ class _FlagSpecAndMore(object):
         self.actions_short['O'] = args.SetNamedOption(shopt=True)  # -O and +O
         self.plus_flags.append('O')
 
+    def EvalFlags(self):
+        # type: () -> None
+        self.actions_long['eval'] = args.AppendEvalFlag('eval')
+        self.actions_long['eval-pure'] = args.AppendEvalFlag('eval-pure')
+
     def ShortFlag(self,
                   short_name,
                   arg_type=None,

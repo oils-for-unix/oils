@@ -24,36 +24,30 @@ line 10
 
 #### ysh --eval
 
-echo 'echo one --eval' >one.ysh
-$[ENV.SH] --eval one.ysh -c 'echo flag -c'
+# args are available in both, similar to --rcfile
+echo 'echo one --eval: @ARGV' >one.ysh
+$[ENV.SH] --eval one.ysh -c 'echo flag -c: @ARGV' dummy x y z
 echo
 
-echo 'echo myscript' >myscript.sh
-$[ENV.SH] --eval one.ysh myscript.sh
+echo 'echo myscript: @ARGV' >myscript.sh
+$[ENV.SH] --eval one.ysh myscript.sh a b c
 echo
 
 # eval comes before oshrc
-echo 'echo oshrc' >oshrc
-$[ENV.SH] --rcfile oshrc --eval one.ysh -i -c 'echo flag -c'
+echo 'echo yshrc: @ARGV' >yshrc
+$[ENV.SH] --rcfile yshrc --eval one.ysh -i -c 'echo flag -c: @ARGV' dummy P Q
 echo
 
-exit
-
-echo 'echo two --eval' >two.ysh
-
-$[ENV.SH] --eval one.ysh --eval two.ysh -c 'echo flag -c'
-
-
 ## STDOUT:
-one --eval
-flag -c
+one --eval: x y z
+flag -c: x y z
 
-one --eval
-myscript
+one --eval: a b c
+myscript: a b c
 
-one --eval
-oshrc
-flag -c
+one --eval: P Q
+yshrc: P Q
+flag -c: P Q
 
 ## END
 
@@ -120,6 +114,41 @@ $[ENV.SH] --eval $dir/one.ysh -c 'echo flag -c'
 one
 two
 flag -c
+## END
+
+#### Multiple ysh --eval values
+
+echo 'echo 1' > one.ysh
+echo 'echo 2' > two.ysh
+echo 'echo 3' > three.ysh
+echo 'echo 4; ( FAIL' > four.ysh
+
+#$[ENV.SH] -c 'echo flag -c'
+
+... $[ENV.SH]
+  --eval one.ysh
+  --eval two.ysh
+  -c 'echo flag -c'
+  ;
+echo ---
+
+... $[ENV.SH]
+  --eval one.ysh
+  --eval two.ysh
+  --eval three.ysh
+  --eval four.ysh
+  -c 'echo flag -c'
+  ;
+
+## status: 1
+## STDOUT:
+1
+2
+flag -c
+---
+1
+2
+3
 ## END
 
 
