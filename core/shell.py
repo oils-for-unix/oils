@@ -164,7 +164,8 @@ def SourceStartupFile(
     rc_c_parser = parse_ctx.MakeOshParser(rc_line_reader)
 
     with alloc.ctx_SourceCode(arena, source.MainFile(rc_path)):
-        # TODO: handle status, e.g. 2 for ParseError
+        # Note: bash keep going after parse error in startup file.  Should we
+        # have a strict mode for this?
         unused = main_loop.Batch(cmd_ev, rc_c_parser, errfmt)
 
     f.close()
@@ -957,9 +958,23 @@ def Main(
     # First, process --eval flags.  In interactive mode, this comes before --rcfile.
     # (It could be used for the headless shell.  Although terminals have a bootstrap process.)
     # Note that --eval
+
+    # TODO: process these in a loop, in order
     if flag.eval is not None:
-        raise AssertionError()
+        try:
+            ok = main_loop.EvalFile(flag.eval, fd_state, parse_ctx, cmd_ev)
+        except util.UserExit as e:
+            # TODO:
+            # do we need this?
+            # should there be a different shopt?  Could be verbose in YSH
+            if exec_opts.verbose_errexit():
+                errfmt.StderrLine('oils: --eval exit')
+            return e.status
+        if not ok:  # parse error or I/O error was already printed
+            return 1
+
     if flag.eval_pure is not None:
+        # TODO: Same as above, except we restrict
         raise AssertionError('pure')
 
     #

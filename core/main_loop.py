@@ -12,11 +12,14 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.syntax_asdl import (command, command_t, parse_result,
-                                       parse_result_e)
+                                       parse_result_e, loc, source)
+from core import alloc
 from core import error
 from core import process
-from display import ui
+from core import pyutil
+from core import state
 from core import util
+from display import ui
 from frontend import reader
 from osh import cmd_eval
 from mycpp import mylib
@@ -28,9 +31,10 @@ import posix_ as posix
 from typing import cast, Any, List, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.comp_ui import _IDisplay
+    from core import process
     from frontend import parse_lib
-    from osh.cmd_parse import CommandParser
-    from osh.cmd_eval import CommandEvaluator
+    from osh import cmd_parse
+    from osh import cmd_eval
     from osh.prompt import UserPlugin
 
 _ = log
@@ -100,7 +104,7 @@ class Headless(object):
     """Main loop for headless mode."""
 
     def __init__(self, cmd_ev, parse_ctx, errfmt):
-        # type: (CommandEvaluator, parse_lib.ParseContext, ui.ErrorFormatter) -> None
+        # type: (cmd_eval.CommandEvaluator, parse_lib.ParseContext, ui.ErrorFormatter) -> None
         self.cmd_ev = cmd_ev
         self.parse_ctx = parse_ctx
         self.errfmt = errfmt
@@ -191,8 +195,8 @@ class Headless(object):
 
 def Interactive(
         flag,  # type: arg_types.main
-        cmd_ev,  # type: CommandEvaluator 
-        c_parser,  # type: CommandParser
+        cmd_ev,  # type: cmd_eval.CommandEvaluator 
+        c_parser,  # type: cmd_parse.CommandParser
         display,  # type: _IDisplay
         prompt_plugin,  # type: UserPlugin
         waiter,  # type: process.Waiter
@@ -321,7 +325,7 @@ def Interactive(
 
 
 def Batch(cmd_ev, c_parser, errfmt, cmd_flags=0):
-    # type: (CommandEvaluator, CommandParser, ui.ErrorFormatter, int) -> int
+    # type: (cmd_eval.CommandEvaluator, cmd_parse.CommandParser, ui.ErrorFormatter, int) -> int
     """Loop for batch execution.
 
     Returns:
@@ -387,7 +391,7 @@ def Batch(cmd_ev, c_parser, errfmt, cmd_flags=0):
 
 
 def ParseWholeFile(c_parser):
-    # type: (CommandParser) -> command_t
+    # type: (cmd_parse.CommandParser) -> command_t
     """Parse an entire shell script.
 
     This uses the same logic as Batch().  Used by:
@@ -411,3 +415,46 @@ def ParseWholeFile(c_parser):
         return children[0]
     else:
         return command.CommandList(children)
+
+def EvalFile(fs_path, fd_state, parse_ctx, cmd_ev):
+    # type: (str, process.FdState, parse_lib.ParseContext, cmd_eval.CommandEvaluator) -> bool
+    """Evaluate a disk file, for --eval --eval-pure
+
+    Copied and adapted from the 'source' builtin in builtin/meta_oils.py.
+
+    (Note that bind -x has to eval from a string, like Eval)
+
+    Raises:
+      util.UserExit
+    Returns:
+      ok: whether processing should continue
+    """
+    mem = cmd_ev.mem
+    arena = cmd_ev.arena
+    errfmt = cmd_ev.errfmt
+
+    # _LoadDiskFile
+    blame_loc = loc.Missing
+    try:
+        f = fd_state.Open(fs_path)
+    except (IOError, OSError) as e:
+        errfmt.Print_(
+            'Error reading %r: %s' % (fs_path, pyutil.strerror(e)),
+            blame_loc=blame_loc)
+        return False
+
+    line_reader = reader.FileLineReader(f, arena)
+    c_parser = parse_ctx.MakeOshParser(line_reader)
+
+    # TODO:
+    # - Improve error locations
+    # - parse error should be fatal
+
+    with process.ctx_FileCloser(f):
+        with state.ctx_ThisDir(mem, fs_path):
+            src = source.MainFile(fs_path)
+            with alloc.ctx_SourceCode(arena, src):
+                # May raise util.UserExit
+                unused = Batch(cmd_ev, c_parser, errfmt)
+
+    return True

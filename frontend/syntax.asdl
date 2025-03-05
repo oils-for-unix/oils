@@ -46,12 +46,14 @@ module syntax
   | CFlag
   | Stdin(str comment)
 
-    # MainFile is for main.{osh,ysh}, as well as oshrc/yshrc.  They're files
-    # loaded directly by the shell.
+    # MainFile is for main.{osh,ysh}, --eval oshrc/yshrc.  They're files loaded
+    # directly by the shell.
   | MainFile(str path)
     # A file loaded by 'source' or 'use'.
-    # TODO: provide a chain of locations back to the sourced script!  I guess
-    # the debug_stack can do that too.
+    # TODO: we probably don't need this location?  The debug stack provides a
+    # chain of locations back to the sourced script.  Maybe we need to point to
+    # a debug_frame instead?
+    # It could be DiskFileShell and DiskFileUser, or just DiskFile.
   | OtherFile(str path, loc location)
 
     # Code parsed from a word.  (TODO: rename source.Word?)

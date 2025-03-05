@@ -1,6 +1,7 @@
 ## our_shell: ysh
+## oils_failures_allowed: 2
 
-#### ysh usage
+#### ysh --location-str --location-start-line
 
 set +o errexit
 
@@ -20,6 +21,106 @@ cat err.txt | fgrep -o -- '-- [ stdin ]:11: Unexpected'
 line 10
 -- [ stdin ]:11: Unexpected
 ## END
+
+#### ysh --eval
+
+echo 'echo one --eval' >one.ysh
+$[ENV.SH] --eval one.ysh -c 'echo flag -c'
+echo
+
+echo 'echo myscript' >myscript.sh
+$[ENV.SH] --eval one.ysh myscript.sh
+echo
+
+# eval comes before oshrc
+echo 'echo oshrc' >oshrc
+$[ENV.SH] --rcfile oshrc --eval one.ysh -i -c 'echo flag -c'
+echo
+
+exit
+
+echo 'echo two --eval' >two.ysh
+
+$[ENV.SH] --eval one.ysh --eval two.ysh -c 'echo flag -c'
+
+
+## STDOUT:
+one --eval
+flag -c
+
+one --eval
+myscript
+
+one --eval
+oshrc
+flag -c
+
+## END
+
+#### ysh --eval-pure
+
+echo TODO
+
+## STDOUT:
+## END
+
+#### ysh --eval cannot load file
+
+$[ENV.SH] --eval nonexistent.ysh -c 'echo flag -c'
+
+## status: 1
+## STDOUT:
+## END
+
+#### ysh --eval parse error
+
+echo 'echo zz; ( echo' >bad.ysh
+
+$[ENV.SH] --eval bad.ysh -c 'echo hi'
+
+## STDOUT:
+## END
+
+#### ysh --eval runtime error
+
+echo 'echo flag --eval; false; echo bye' >bad.ysh
+
+$[ENV.SH] --eval bad.ysh -c 'echo flag -c'
+
+## STDOUT:
+flag --eval
+flag -c
+## END
+
+#### ysh --eval exit status
+
+echo 'echo hi; exit 99; echo bye' >e.ysh
+
+$[ENV.SH] --eval e.ysh -c 'echo hi'
+
+## status: 99
+## STDOUT:
+hi
+## END
+
+#### ysh --eval respects _this_dir
+
+#echo tmp=$[ENV.TMP]
+
+var dir = "$[ENV.TMP]/code"
+mkdir -p $dir
+
+echo 'echo one; source $_this_dir/two.ysh' > $dir/one.ysh
+echo 'echo two' > $dir/two.ysh
+
+$[ENV.SH] --eval $dir/one.ysh -c 'echo flag -c'
+
+## STDOUT:
+one
+two
+flag -c
+## END
+
 
 #### --debug-file
 var TMP = ENV.TMP
