@@ -962,13 +962,12 @@ def Main(
     # TODO: process these in a loop, in order
     if flag.eval is not None:
         try:
-            ok = main_loop.EvalFile(flag.eval, fd_state, parse_ctx, cmd_ev)
+            ok = main_loop.EvalFile(flag.eval, fd_state, parse_ctx, cmd_ev,
+                                    lang)
         except util.UserExit as e:
-            # TODO:
-            # do we need this?
-            # should there be a different shopt?  Could be verbose in YSH
-            if exec_opts.verbose_errexit():
-                errfmt.StderrLine('oils: --eval exit')
+            # Doesn't seem like we need this, and verbose_errexit isn't the right option
+            #if exec_opts.verbose_errexit():
+            #    print-stderr('oils: --eval exit')
             return e.status
         if not ok:  # parse error or I/O error was already printed
             return 1

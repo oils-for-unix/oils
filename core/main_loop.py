@@ -12,11 +12,10 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.syntax_asdl import (command, command_t, parse_result,
-                                       parse_result_e, loc, source)
+                                       parse_result_e, source)
 from core import alloc
 from core import error
 from core import process
-from core import pyutil
 from core import state
 from core import util
 from display import ui
@@ -28,7 +27,7 @@ from mycpp.mylib import log, print_stderr, probe, tagswitch
 import fanos
 import posix_ as posix
 
-from typing import cast, Any, List, TYPE_CHECKING
+from typing import cast, Any, List, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.comp_ui import _IDisplay
     from core import process
@@ -324,8 +323,29 @@ def Interactive(
     return status
 
 
-def Batch(cmd_ev, c_parser, errfmt, cmd_flags=0):
-    # type: (cmd_eval.CommandEvaluator, cmd_parse.CommandParser, ui.ErrorFormatter, int) -> int
+def Batch(
+        cmd_ev,  # type: cmd_eval.CommandEvaluator
+        c_parser,  # type: cmd_parse.CommandParser
+        errfmt,  # type: ui.ErrorFormatter
+        cmd_flags=0,  # type: int
+):
+    # type: (...) -> int
+    """
+    source, eval, etc. treat parse errors as error code 2.  But the --eval flag does not.
+    """
+    was_parsed, status = Batch2(cmd_ev, c_parser, errfmt, cmd_flags=cmd_flags)
+    if not was_parsed:
+        return 2
+    return status
+
+
+def Batch2(
+        cmd_ev,  # type: cmd_eval.CommandEvaluator
+        c_parser,  # type: cmd_parse.CommandParser
+        errfmt,  # type: ui.ErrorFormatter
+        cmd_flags=0,  # type: int
+):
+    # type: (...) -> Tuple[bool, int]
     """Loop for batch execution.
 
     Returns:
@@ -347,6 +367,7 @@ def Batch(cmd_ev, c_parser, errfmt, cmd_flags=0):
     - In contrast, 'trap' should parse up front?
     - What about $() ?
     """
+    was_parsed = True
     status = 0
     while True:
         probe('main_loop', 'Batch_parse_enter')
@@ -357,7 +378,8 @@ def Batch(cmd_ev, c_parser, errfmt, cmd_flags=0):
                 break
         except error.Parse as e:
             errfmt.PrettyPrintError(e)
-            status = 2
+            was_parsed = False
+            status = -1  # invalid value
             break
 
         # After every "logical line", no lines will be referenced by the Arena.
@@ -387,7 +409,7 @@ def Batch(cmd_ev, c_parser, errfmt, cmd_flags=0):
         mylib.MaybeCollect()  # manual GC point
         probe('main_loop', 'Batch_collect_exit')
 
-    return status
+    return was_parsed, status
 
 
 def ParseWholeFile(c_parser):
@@ -416,8 +438,15 @@ def ParseWholeFile(c_parser):
     else:
         return command.CommandList(children)
 
-def EvalFile(fs_path, fd_state, parse_ctx, cmd_ev):
-    # type: (str, process.FdState, parse_lib.ParseContext, cmd_eval.CommandEvaluator) -> bool
+
+def EvalFile(
+        fs_path,  # type: str
+        fd_state,  # type: process.FdState
+        parse_ctx,  # type: parse_lib.ParseContext
+        cmd_ev,  # type: cmd_eval.CommandEvaluator
+        lang,  # type: str
+):
+    # type: (...) -> bool
     """Evaluate a disk file, for --eval --eval-pure
 
     Copied and adapted from the 'source' builtin in builtin/meta_oils.py.
@@ -429,21 +458,14 @@ def EvalFile(fs_path, fd_state, parse_ctx, cmd_ev):
     Returns:
       ok: whether processing should continue
     """
-    mem = cmd_ev.mem
-    arena = cmd_ev.arena
-    errfmt = cmd_ev.errfmt
-
-    # _LoadDiskFile
-    blame_loc = loc.Missing
     try:
         f = fd_state.Open(fs_path)
     except (IOError, OSError) as e:
-        errfmt.Print_(
-            'Error reading %r: %s' % (fs_path, pyutil.strerror(e)),
-            blame_loc=blame_loc)
+        print_stderr("%s: Couldn't open %r for --eval: %s" %
+                     (lang, fs_path, posix.strerror(e.errno)))
         return False
 
-    line_reader = reader.FileLineReader(f, arena)
+    line_reader = reader.FileLineReader(f, cmd_ev.arena)
     c_parser = parse_ctx.MakeOshParser(line_reader)
 
     # TODO:
@@ -451,10 +473,12 @@ def EvalFile(fs_path, fd_state, parse_ctx, cmd_ev):
     # - parse error should be fatal
 
     with process.ctx_FileCloser(f):
-        with state.ctx_ThisDir(mem, fs_path):
+        with state.ctx_ThisDir(cmd_ev.mem, fs_path):
             src = source.MainFile(fs_path)
-            with alloc.ctx_SourceCode(arena, src):
+            with alloc.ctx_SourceCode(cmd_ev.arena, src):
                 # May raise util.UserExit
-                unused = Batch(cmd_ev, c_parser, errfmt)
+                was_parsed, unused = Batch2(cmd_ev, c_parser, cmd_ev.errfmt)
+                if not was_parsed:
+                    return False
 
     return True

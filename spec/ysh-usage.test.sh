@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 
 #### ysh --location-str --location-start-line
 
@@ -76,8 +76,9 @@ $[ENV.SH] --eval nonexistent.ysh -c 'echo flag -c'
 
 echo 'echo zz; ( echo' >bad.ysh
 
-$[ENV.SH] --eval bad.ysh -c 'echo hi'
+$[ENV.SH] --eval bad.ysh -c 'echo flag -c'
 
+## status: 1
 ## STDOUT:
 ## END
 
