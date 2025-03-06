@@ -301,7 +301,13 @@ Add indentation by passing the `space` param:
     $ = toJson([42], space=2)
     (Str)   "[\n  42\n]"
 
-Similar to `json write (x)`, except the default value of `space` is 0.
+Turn non-serializable types into `null`, instead of raising an error:
+
+    $ = toJson(/d+/, type_errors=false)
+    (Str)   'null'
+
+The `toJson()` function is to `json write (x)`, except the default value of
+`space` is 0.
 
 See [err-json-encode][] for errors.
 

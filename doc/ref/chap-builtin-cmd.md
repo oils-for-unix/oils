@@ -665,8 +665,10 @@ When a block is long, the former is more readable.
 Write JSON:
 
     var d = {name: 'bob', age: 42}
-    json write (d)           # default indentation of 2
-    json write (d, space=0)  # no indentation
+    json write (d)                     # default indent of 2, type errors
+    json write (d, space=0)            # no indent
+    json write (d, type_errors=false)  # non-serializable types become null
+                                       # (e.g. Obj, Proc, Eggex)
 
 Read JSON:
 

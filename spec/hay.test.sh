@@ -837,7 +837,7 @@ Package cpython {
 #
 # When type_errors=false (default), any unserializable value becomes null
 
-echo 'json write (_hay())' > stage-1.ysh
+echo 'json write (_hay(), type_errors=false)' > stage-1.ysh
 
 # Stage 1
 
@@ -865,7 +865,6 @@ build_proc
   --eval stage-2.ysh  # This one isn't pure
   -c ''
   ;
-
 
 
 ## STDOUT:

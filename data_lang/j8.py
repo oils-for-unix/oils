@@ -577,6 +577,9 @@ class InstancePrinter(object):
 
                 if self.options & NON_DATA_IS_ERROR:
                     raise error.Encode("Can't encode value of type Obj")
+                elif self.options & NON_DATA_IS_NULL:
+                    self.buf.write('null')
+                    return
 
                 # Cycle detection, only for containers that can be in cycles
                 heap_id = HeapValueId(val)
@@ -612,6 +615,8 @@ class InstancePrinter(object):
                 if self.options & NON_DATA_IS_ERROR:
                     raise error.Encode("Can't serialize object of type %s" %
                                        ValType(val))
+                elif self.options & NON_DATA_IS_NULL:
+                    self.buf.write('null')
                 else:
                     # Similar to = operator, ui.DebugPrint()
                     # TODO: that prints value.Range in a special way
