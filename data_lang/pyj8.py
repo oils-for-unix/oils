@@ -8,7 +8,7 @@ import fastfunc
 
 _ = log
 
-LOSSY_JSON = 1 << 3
+LOSSY_JSON_STRINGS = 1 << 3
 
 
 def WriteString(s, options, buf):
@@ -17,7 +17,7 @@ def WriteString(s, options, buf):
 
     The C++ version is optimized to avoid the intermediate string.
     """
-    j8_fallback = not (options & LOSSY_JSON)
+    j8_fallback = not (options & LOSSY_JSON_STRINGS)
     #print('j8_fallback %d' % j8_fallback)
     buf.write(fastfunc.J8EncodeString(s, j8_fallback))
 
