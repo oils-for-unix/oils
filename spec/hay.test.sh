@@ -821,37 +821,52 @@ echo '
 Package cpython {
   version = "3.12"
   url = "https://python.org/"
-  if (false) {
   proc build {
+    echo "hi from build proc"
     echo $version
   }
-}
 }
 ' >def.hay
 
 # TODO:
-# - nullify_fields=true - well some of them aren't fields
-# - nullify=true
-# - errors='null'
-# - on_error=null
-# - drop_with='error' drop_with='null'
-# - degrade_to_null=true
-# - replace_with_null=true
-# - null_replace=true
-# - null_replacer=true  # replacer can be a function?
-# - errors=false  # too vague?
-# 
+# null_replacer=true
 # JavaScript has a second "replacer" arg, which can be a function, or an array
 # I guess you can specify replacer=null
+#
+# Invert it: Or maybe type_errors=true
+#
+# When type_errors=false (default), any unserializable value becomes null
 
-echo 'json write (_hay())' > post.ysh
+echo 'json write (_hay())' > stage-1.ysh
+
+# Stage 1
 
 ... $[ENV.SH] -o ysh:all
-  --eval pre.ysh
-  --eval def.hay
-  --eval post.ysh
+  --eval-pure pre.ysh
+  --eval-pure def.hay
+  --eval-pure stage-1.ysh
+  -c '' 
+  || true
+  ;
+
+# Stage 2
+
+echo '
+var pkg = _hay().children[0]
+var build_proc = pkg.attrs.build
+build_proc
+' > stage-2.ysh
+
+# Stage 1
+
+... $[ENV.SH] -o ysh:all
+  --eval-pure pre.ysh
+  --eval-pure def.hay
+  --eval stage-2.ysh  # This one isn't pure
   -c ''
   ;
+
+
 
 ## STDOUT:
 a
