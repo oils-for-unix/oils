@@ -106,16 +106,16 @@ They also accept these flags:
     -n                Parse the program but don't execute it.  Print the AST.
     --ast-format FMT  The format for the AST (text|text-abbrev)
     --eval FILE       Evaluate the given file, similar to the 'source' builtin.
-                      Specify it multiple times to run multiple files.  The
-                      shell stops on normal errors, as well as when $? is
-                      non-zero after evaluating a file (even if errexit is
-                      off).
+                      Specify it multiple times to run multiple files.  If the
+                      errexit option is on (e.g. in YSH), then the shell stops
+                      when $? is non-zero after evaluating a file.
     --tool            Run a tool instead of the shell (cat-em|syntax-tree)
 
 Examples:
 
-    osh -n -c 'hello'                    # pretty-print the AST
-    ysh --ast-format text -n -c 'hello'  # print it full
+    ysh --eval one.ysh --eval two.ysh -c 'echo hi'  # Run 2 files first
+    osh -n -c 'hello'                               # pretty-print the AST
+    ysh --ast-format text -n -c 'hello'             # in unabridged format
 ```
 
 <h3 id="config" class="osh-ysh-topic">config</h3>

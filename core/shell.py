@@ -974,8 +974,8 @@ def Main(
         if not ok:
             return 1
 
-        # Runtime error
-        if status != 0:
+        # YSH will stop on errors.  OSH keep going, a bit like 'source'.
+        if status != 0 and exec_opts.errexit():
             return status
 
     #
