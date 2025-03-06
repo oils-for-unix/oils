@@ -70,6 +70,7 @@ class Json(vm._Builtin):
             val = rd.PosValue()
             # default is 2, rather than 0 for toJson()
             space = mops.BigTruncate(rd.NamedInt('space', 2))
+            type_errors = rd.NamedBool('type_errors', True)
             rd.Done()
 
             # Convert from external JS-like API to internal API.
@@ -81,9 +82,9 @@ class Json(vm._Builtin):
             buf = mylib.BufWriter()
             try:
                 if self.is_j8:
-                    j8.PrintMessage(val, buf, indent)
+                    j8.PrintMessage(val, buf, indent, type_errors)
                 else:
-                    j8.PrintJsonMessage(val, buf, indent)
+                    j8.PrintJsonMessage(val, buf, indent, type_errors)
             except error.Encode as e:
                 self.errfmt.PrintMessage(
                     '%s write: %s' % (self.name, e.Message()), action_loc)

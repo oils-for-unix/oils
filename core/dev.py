@@ -155,7 +155,7 @@ class CrashDumper(object):
 
         # TODO: This should be JSON with unicode replacement char?
         buf = mylib.BufWriter()
-        j8.PrintMessage(value.Dict(d), buf, 2)
+        j8.PrintMessage(value.Dict(d), buf, 2, False)
         json_str = buf.getvalue()
 
         try:
@@ -359,7 +359,7 @@ class MultiTracer(object):
         path = os_path.join(self.out_dir, '%d.argv0.json' % self.this_pid)
 
         buf = mylib.BufWriter()
-        j8.PrintMessage(value.Dict(j), buf, 2)
+        j8.PrintMessage(value.Dict(j), buf, 2, False)
         json8_str = buf.getvalue()
 
         try:

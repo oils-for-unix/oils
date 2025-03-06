@@ -136,13 +136,12 @@ def Utf8Encode(code):
 
 
 SHOW_CYCLES = 1 << 1  # show as [...] or {...} or (...), with object ID
-NON_DATA_PRETTY_PRINT = 1 << 2  # non-data objects like Eggex can be <Eggex 0xff>
 LOSSY_JSON_STRINGS = 1 << 3  # JSON may lose data about strings
 INF_NAN_ARE_NULL = 1 << 4  # another lossy json issue
 
-# TODO:
-# - default is NON_DATA_PRETTY_PRINT
-# - opt into either NON_DATA_IS_ERROR or NON_DATA_IS_NULL
+NON_DATA_IS_NULL = 1 << 6
+NON_DATA_IS_ERROR = 1 << 7
+# Otherwise, non-data objects like Eggex will be <Eggex 0xff>
 
 # Hack until we fully translate
 assert pyj8.LOSSY_JSON_STRINGS == LOSSY_JSON_STRINGS
@@ -158,23 +157,33 @@ def _Print(val, buf, indent, options=0):
     p.Print(val)
 
 
-def PrintMessage(val, buf, indent):
-    # type: (value_t, mylib.BufWriter, int) -> None
+def PrintMessage(val, buf, indent, type_errors):
+    # type: (value_t, mylib.BufWriter, int, bool) -> None
     """ For json8 write (x) and toJson8() 
 
     Caller must handle error.Encode
     """
-    _Print(val, buf, indent)
+    options = 0
+    if type_errors:
+        options |= NON_DATA_IS_ERROR
+    else:
+        options |= NON_DATA_IS_NULL
+    _Print(val, buf, indent, options=options)
 
 
-def PrintJsonMessage(val, buf, indent):
-    # type: (value_t, mylib.BufWriter, int) -> None
+def PrintJsonMessage(val, buf, indent, type_errors):
+    # type: (value_t, mylib.BufWriter, int, bool) -> None
     """ For json write (x) and toJson()
 
     Caller must handle error.Encode()
     Doesn't decay to b'' strings - will use Unicode replacement char.
     """
-    _Print(val, buf, indent, options=LOSSY_JSON_STRINGS | INF_NAN_ARE_NULL)
+    options = LOSSY_JSON_STRINGS | INF_NAN_ARE_NULL
+    if type_errors:
+        options |= NON_DATA_IS_ERROR
+    else:
+        options |= NON_DATA_IS_NULL
+    _Print(val, buf, indent, options=options)
 
 
 def PrintLine(val, f):
@@ -184,7 +193,7 @@ def PrintLine(val, f):
     # error.Encode should be impossible - we show cycles and non-data
     buf = mylib.BufWriter()
 
-    _Print(val, buf, -1, options=SHOW_CYCLES | NON_DATA_PRETTY_PRINT)
+    _Print(val, buf, -1, options=SHOW_CYCLES)
 
     f.write(buf.getvalue())
     f.write('\n')
@@ -566,7 +575,7 @@ class InstancePrinter(object):
             elif case(value_e.Obj):
                 val = cast(Obj, UP_val)
 
-                if not (self.options & NON_DATA_PRETTY_PRINT):
+                if self.options & NON_DATA_IS_ERROR:
                     raise error.Encode("Can't encode value of type Obj")
 
                 # Cycle detection, only for containers that can be in cycles
@@ -600,16 +609,16 @@ class InstancePrinter(object):
 
             else:
                 pass  # mycpp workaround
-                if self.options & NON_DATA_PRETTY_PRINT:
+                if self.options & NON_DATA_IS_ERROR:
+                    raise error.Encode("Can't serialize object of type %s" %
+                                       ValType(val))
+                else:
                     # Similar to = operator, ui.DebugPrint()
                     # TODO: that prints value.Range in a special way
                     ysh_type = ValType(val)
                     # Don't show ID in 'pp test_'
                     #id_str = ValueIdString(val)
                     self.buf.write('<%s>' % ysh_type)
-                else:
-                    raise error.Encode("Can't serialize object of type %s" %
-                                       ValType(val))
 
 
 class LexerDecoder(object):

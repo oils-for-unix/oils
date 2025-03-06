@@ -555,6 +555,7 @@ class ToJson8(vm._Callable):
 
         val = rd.PosValue()
         space = mops.BigTruncate(rd.NamedInt('space', 0))
+        type_errors = rd.NamedBool('type_errors', True)
         rd.Done()
 
         # Convert from external JS-like API to internal API.
@@ -566,9 +567,9 @@ class ToJson8(vm._Callable):
         buf = mylib.BufWriter()
         try:
             if self.is_j8:
-                j8.PrintMessage(val, buf, indent)
+                j8.PrintMessage(val, buf, indent, type_errors)
             else:
-                j8.PrintJsonMessage(val, buf, indent)
+                j8.PrintJsonMessage(val, buf, indent, type_errors)
         except error.Encode as e:
             # status code 4 is special, for encode/decode errors.
             raise error.Structured(4, e.Message(), rd.LeftParenToken())
