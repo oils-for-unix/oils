@@ -446,7 +446,7 @@ def EvalFile(
         cmd_ev,  # type: cmd_eval.CommandEvaluator
         lang,  # type: str
 ):
-    # type: (...) -> bool
+    # type: (...) -> Tuple[bool, int]
     """Evaluate a disk file, for --eval --eval-pure
 
     Copied and adapted from the 'source' builtin in builtin/meta_oils.py.
@@ -463,7 +463,7 @@ def EvalFile(
     except (IOError, OSError) as e:
         print_stderr("%s: Couldn't open %r for --eval: %s" %
                      (lang, fs_path, posix.strerror(e.errno)))
-        return False
+        return False, -1
 
     line_reader = reader.FileLineReader(f, cmd_ev.arena)
     c_parser = parse_ctx.MakeOshParser(line_reader)
@@ -477,8 +477,8 @@ def EvalFile(
             src = source.MainFile(fs_path)
             with alloc.ctx_SourceCode(cmd_ev.arena, src):
                 # May raise util.UserExit
-                was_parsed, unused = Batch2(cmd_ev, c_parser, cmd_ev.errfmt)
+                was_parsed, status = Batch2(cmd_ev, c_parser, cmd_ev.errfmt)
                 if not was_parsed:
-                    return False
+                    return False, -1
 
-    return True
+    return True, status

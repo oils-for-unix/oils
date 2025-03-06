@@ -962,14 +962,21 @@ def Main(
     for path, is_pure in attrs.eval_flags:
         # TODO: respect is_pure
         try:
-            ok = main_loop.EvalFile(path, fd_state, parse_ctx, cmd_ev, lang)
+            ok, status = main_loop.EvalFile(path, fd_state, parse_ctx, cmd_ev,
+                                            lang)
         except util.UserExit as e:
             # Doesn't seem like we need this, and verbose_errexit isn't the right option
             #if exec_opts.verbose_errexit():
             #    print-stderr('oils: --eval exit')
             return e.status
-        if not ok:  # parse error or I/O error was already printed
+
+        # I/O error opening file, parse error.  Message was # already printed.
+        if not ok:
             return 1
+
+        # Runtime error
+        if status != 0:
+            return status
 
     #
     # Is the shell interactive?

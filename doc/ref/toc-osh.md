@@ -91,8 +91,9 @@ X [Unsupported]   enable
 </h2>
 
 ```chapter-links-front-end
-  [Usage]         oils-usage   osh-usage             config
-                  startup      line-editing          exit-codes
+  [Usage]         oils-usage   osh-usage             shell-flags
+                  config       startup               line-editing          
+                  exit-codes
   [Lexing]        comment #    line-continuation \   ascii-whitespace [ \t\r\n]
 ```
 

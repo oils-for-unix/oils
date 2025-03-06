@@ -160,6 +160,10 @@ def HelpFlag(loader, topic_id, f):
     # Note: could assert this in C++ too
     assert found, 'Missing %s' % topic_id
 
+    found = PrintEmbeddedHelp(loader, 'shell-flags', f)
+    # Note: could assert this in C++ too
+    assert found, 'Missing %s' % topic_id
+
 
 def VersionFlag(loader, f):
     # type: (pyutil._ResourceLoader, mylib.Writer) -> None

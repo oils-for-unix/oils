@@ -1,4 +1,4 @@
-## oils_failures_allowed: 4
+## oils_failures_allowed: 5
 
 # Hay: Hay Ain't YAML
 
@@ -811,3 +811,48 @@ json write (_hay().children[0].attrs)
 }
 ## END
 
+
+#### Using Hay with --eval flags
+shopt --set ysh:all
+
+echo 'hay define Package' >pre.ysh 
+
+echo '
+Package cpython {
+  version = "3.12"
+  url = "https://python.org/"
+  if (false) {
+  proc build {
+    echo $version
+  }
+}
+}
+' >def.hay
+
+# TODO:
+# - nullify_fields=true - well some of them aren't fields
+# - nullify=true
+# - errors='null'
+# - on_error=null
+# - drop_with='error' drop_with='null'
+# - degrade_to_null=true
+# - replace_with_null=true
+# - null_replace=true
+# - null_replacer=true  # replacer can be a function?
+# - errors=false  # too vague?
+# 
+# JavaScript has a second "replacer" arg, which can be a function, or an array
+# I guess you can specify replacer=null
+
+echo 'json write (_hay())' > post.ysh
+
+... $[ENV.SH] -o ysh:all
+  --eval pre.ysh
+  --eval def.hay
+  --eval post.ysh
+  -c ''
+  ;
+
+## STDOUT:
+a
+## END

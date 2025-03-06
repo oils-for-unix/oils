@@ -220,10 +220,12 @@ X [External Lang] BEGIN   END   when (awk)
 </h2>
 
 ```chapter-links-front-end
-  [Usage]         oils-usage                   ysh-usage
-  [Lexing]        ascii-whitespace [ \t\r\n]
-                  doc-comment ###              multiline-command ...
-  [Tools]         cat-em
+  [Usage]         oils-usage   ysh-usage             shell-flags
+                  config       startup               line-editing          
+                  exit-codes
+  [Lexing]        comment #    line-continuation \   ascii-whitespace [ \t\r\n]
+  [Lexing]        doc-comment ###                    multiline-command ...
+  [Tools]         cat-em                             syntax-tree
 ```
 
 <h2 id="cmd-lang">

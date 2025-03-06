@@ -82,9 +82,9 @@ echo 'echo flag --eval; false; echo bye' >bad.ysh
 
 $[ENV.SH] --eval bad.ysh -c 'echo flag -c'
 
+## status: 1
 ## STDOUT:
 flag --eval
-flag -c
 ## END
 
 #### ysh --eval exit status
