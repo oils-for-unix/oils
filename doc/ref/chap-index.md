@@ -39,6 +39,16 @@ The name `clear` can refer to:
 [List/clear]: chap-type-method.html#List/clear
 [Dict/clear]: chap-type-method.html#Dict/clear
 
+### eval
+
+The name `eval` can refer to:
+
+- The [eval builtin][cmd/eval]
+- The [io method eval][io/eval]
+
+[cmd/eval]: chap-builtin-cmd.html#cmd/eval
+[io/eval]: chap-type-method.html#io/eval
+
 ### false
 
 The name `false` can refer to:

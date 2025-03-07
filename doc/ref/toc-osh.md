@@ -55,21 +55,21 @@ preserve_anchor_case: yes
 </h2>
 
 ```chapter-links-builtin-cmd
-  [I/O]           read        echo      printf
+  [I/O]           read        echo       printf
                   readarray   mapfile
-  [Run Code]      source .    eval      trap
+  [Run Code]      source .    cmd/eval   trap
   [Set Options]   set         shopt
-  [Working Dir]   cd          pwd       pushd     popd         dirs
-  [Completion]    complete    compgen   compopt   compadjust   compexport
+  [Working Dir]   cd          pwd        pushd     popd         dirs
+  [Completion]    complete    compgen    compopt   compadjust   compexport
   [Shell Process] exec      X logout 
-                  umask       ulimit    times
+                  umask       ulimit     times
   [Child Process] jobs        wait
-                  fg        X bg      X kill        X disown 
+                  fg        X bg       X kill        X disown 
   [External]      test [      getopts
   [Conditional]   cmd/true    cmd/false               colon :
-  [Introspection] help        hash      cmd/type    X caller
+  [Introspection] help        hash       cmd/type    X caller
   [Word Lookup]   command     builtin
-  [Interactive]   alias       unalias   history     X fc     X bind
+  [Interactive]   alias       unalias    history     X fc     X bind
 X [Unsupported]   enable
 ```
 

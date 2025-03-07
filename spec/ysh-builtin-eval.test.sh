@@ -318,6 +318,85 @@ p param
 (Dict)   {"foo":42,"g":"-global","p":"-param","L":"-local"}
 ## END
 
+#### io->evalToDict() with dollar0, pos_args, vars
+
+proc Dict ( ; out; ; block) {
+  var d = io->evalToDict(block, dollar0='zero', pos_args=:|a b c|,
+                         vars={X: 'X', _Y: '_Y'})
+  call out->setValue(d)
+}
+
+var global = 'global'
+
+Dict (&d) {
+  foo = global
+  z = $0
+  one = $1
+  two = ${2}
+  three = "+$3"
+  # Note: X does NOT appear in the output, ctx_Eval makes it work.
+  x = X
+  y = _Y
+}
+
+json write (d)
+
+## STDOUT:
+{
+  "foo": "global",
+  "z": "zero",
+  "one": "a",
+  "two": "b",
+  "three": "+c",
+  "x": "X",
+  "y": "_Y"
+}
+## END
+
+#### io->evalToDict() with in_captured_frame=true
+
+proc Dict ( ; out; ; block) {
+  var d = io->evalToDict(block, dollar0='zero', pos_args=:|a b c|,
+                         vars={X: 'X', _Y: '_Y'}, in_captured_frame=true)
+  call out->setValue(d)
+}
+
+var global = 'global'
+
+func makeDict() {
+  var var_in_p_frame = 'p'
+
+  Dict (&d) {
+    foo = global
+    z = $0
+    one = $1
+    two = ${2}
+    three = "+$3"
+    # Note: X does NOT appear in the output, ctx_Eval makes it work.
+    x = X
+    y = _Y
+  }
+
+  return (d)
+}
+
+var d = makeDict()
+json write (d)
+
+## STDOUT:
+{
+  "var_in_p_frame": "p",
+  "foo": "global",
+  "z": "zero",
+  "one": "a",
+  "two": "b",
+  "three": "+c",
+  "x": "X",
+  "y": "_Y"
+}
+## END
+
+
 #### parseCommand then io->evalToDict() - in global scope
 
 var g = 'global'

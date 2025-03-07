@@ -709,10 +709,6 @@ The `Command` value is bound to a stack frame.  This frame will be pushed as an
 
 [block-arg]: chap-cmd-lang.html#block-arg
 
-### CommandFrag
-
-A command that's not bound to a stack frame.
-
 ### Expr
 
 A value of type `Expr` represents an unevaluated expression.  There are **three**
@@ -750,22 +746,11 @@ The `Expr` value is bound to a stack frame.  This frame will be pushed as an
 
 [expr-literal]: chap-expr-lang.html#expr-lit
 
-<!--
-
-### ExprFrag
-
-An expression command that's not bound to a stack frame.
-
-(TODO)
-
--->
-
 ### Frame
 
-A value that represents a stack frame.  It can be bound to a `CommandFrag`,
-producing a `Command`.
+A value that represents a stack frame.
 
-Likewise, it can be found to a `ExprFrag`, producing an `Expr`.
+You can turn it into a Dict with `dict(myframe)`.
 
 ### DebugFrame
 
@@ -850,19 +835,22 @@ Note that these expressions that have effects:
 - `^[ myplace->setValue(42) ]` - memory operation
 - `^[ $(echo 42 > hi) ]` - I/O operation
 
-### eval()
+### io/eval()
 
-Evaluate a command, and return `null`.
+Given a `Command` value (e.g. a block argument), execute it, and return `null`.
 
     var cmd = ^(echo hi)
-    call io->eval(cmd)
+    call io->eval(cmd)  # => hi
 
-It's similar to the `eval` builtin, and is meant to be used in pure functions.
+This method is more principled and flexible than shell's [eval][] builtin.
+It's especially useful in pure functions.
+
+[eval]: chap-builtin-cmd.html#cmd/eval
 
 It accepts optional args that let you control name binding:
 
-- `pos_args` for `$1 $2 $3`
 - `dollar0` for `$0`
+- `pos_args` for `$1 $2 $3`
 - `vars` for named variables
 
 Example:
@@ -870,6 +858,25 @@ Example:
     var cmd = ^(echo "zero $0, one $1, named $x")
     call io->eval(cmd, dollar0="z", pos_args=['one'], vars={x: "x"})
     # => zero z, one one, named x
+
+Scoping rules:
+
+- The frame that contains the `Command`, e.g.  `^(echo hi)` or `p { echo hi }`,
+  is called the *captured* frame.
+- Normally, a `Command` is evaluated in a new stack frame, which "encloses" the
+  captured frame.  That is, a `Command` is a *closure*.
+
+The `in_captured_frame` argument changes this behavior:
+
+    call io->eval(cmd, in_captured_frame=true)
+
+In this case, the captured frame becomes the local frame.  It's useful for
+creating procs that behave like builtins:
+
+    my-cd /tmp {           # my-cd is a proc, which pushes a new stack frame
+      var listing = $(ls)  # This variable is created in the captured frame
+    }
+    echo $listing          # It's still visible after the proc returns
 
 <!--
 TODO: document in_captured_frame=true
@@ -880,10 +887,12 @@ TODO: document in_captured_frame=true
 The `evalToDict()` method is like the `eval()` method, but it returns a
 Dict of bindings.
 
-It pushes a new "enclosed frame", and executes the given code.
+By default:
 
-Then it copies the frame's bindings into a Dict, and returns it.  Only the
-names that don't end with an underscore `_` are copied.
+1. It pushes a new stack frame, enclosing the captured frame
+1. Executes the given block of code (`Command`)
+1. Copies the top frame's bindings into a Dict, and returns it.
+   - Only the names that don't end with an underscore `_` are copied.
 
 Example:
 
@@ -894,9 +903,10 @@ Example:
 
     pp (d)  # => {a: 42, b: 11}
 
-<!--
-TODO: support pos_args
--->
+It supports the same optional arguments as `io->eval()`:
+
+- `dollar0 pos_args vars`
+- `in_captured_frame`
 
 ### captureStdout()
 

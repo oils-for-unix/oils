@@ -859,7 +859,7 @@ and OSH.
 [cat-em]: chap-front-end.html#cat-em
 
 
-### eval
+### cmd/eval
 
     eval ARG+
 

@@ -66,12 +66,11 @@ error handling, and more.
   [Objects]        Obj         __invoke__       new
                              X __call__       __index__         X __str__
   [Reflection]     Command
-                   CommandFrag
                    Expr
                    Frame
                    DebugFrame  toString()
                    io          stdin            evalExpr()
-                               eval()           evalToDict()
+                               io/eval()        evalToDict()
                                captureStdout()
                                promptVal()
                              X time()         X strftime()      X glob()
