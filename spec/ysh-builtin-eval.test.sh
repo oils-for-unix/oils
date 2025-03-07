@@ -1,7 +1,5 @@
-# YSH specific features of eval
-
 ## our_shell: ysh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 
 #### eval builtin does not take a literal block - can restore this later
 
@@ -585,7 +583,7 @@ inner=z
 inner2=z
 ## END
 
-#### io->evalInFrame() can express try, cd builtins
+#### io->eval with in_captured_frame=true can express cd builtin
 
 proc my-cd (new_dir; ; ; block) {
   pushd $new_dir >/dev/null
@@ -593,7 +591,13 @@ proc my-cd (new_dir; ; ; block) {
   # Get calling frame.  (The top-most frame, this one, has index -1)
   var calling_frame = vm.getFrame(-2)
 
-  call io->evalInFrame(block, calling_frame)
+  # Both work
+  if (0) {
+    call io->evalInFrame(block, calling_frame)
+  } else {
+    #call io->evalInCapturedFrame(block)
+    call io->eval(block, in_captured_frame=true)
+  }
 
   popd >/dev/null
 }
@@ -614,7 +618,45 @@ j = 43
 ## END
 
 
-#### io->evalInFrame(frag, frame) can behave like eval $mystr
+#### io->eval with in_captured_frame=true can express cd builtin in different module
+
+echo >lib.ysh '''
+const __provide__ = :| my-cd |
+
+proc my-cd (new_dir; ; ; block) {
+  pushd $new_dir >/dev/null
+
+  # Get calling frame.  (The top-most frame, this one, has index -1)
+  var calling_frame = vm.getFrame(-2)
+
+  # Both work
+  if (0) {
+    call io->evalInFrame(block, calling_frame)
+  } else {
+    #call io->evalInCapturedFrame(block)
+    call io->eval(block, in_captured_frame=true)
+  }
+
+  popd >/dev/null
+}
+'''
+
+use ./lib.ysh
+
+var i = 42
+lib my-cd /tmp {
+  #echo $PWD
+  #var my_pwd = PWD
+  var j = i + 1
+}
+#echo "my_pwd=$my_pwd"
+echo "j = $j"
+
+## STDOUT:
+j = 43
+## END
+
+#### io->eval with in_captured_frame=true CANNOT behave like eval $mystr ?
 
 proc p2(code_str) {
   var mylocal = 42
@@ -629,7 +671,13 @@ proc p (;;; block) {
 
   # mylocal is visible
   var mylocal = 99
-  call io->evalInFrame(block, this_frame)
+  # Both work
+  if (0) {
+    call io->evalInFrame(block, this_frame)
+  } else {
+    #call io->evalInCapturedFrame(block)
+    call io->eval(block, in_captured_frame=true)
+  }
 }
 
 p {
@@ -639,6 +687,41 @@ p {
 ## STDOUT:
 eval string mylocal=42
 evalInFrame mylocal=99
+## END
+
+#### io->eval with in_captured_frame=true and setglobal
+
+echo >lib.ysh '''
+const __provide__ = :| p x |
+
+var x = "lib"
+
+proc p (;;; block) {
+  call io->eval(block, in_captured_frame=true)
+}
+'''
+
+use ./lib.ysh
+
+var x = 'main'
+
+lib p {
+  echo "block arg x = $x"
+  setglobal x = "ZZ"
+  echo "mutated = $x"
+  var result = 'result'
+}
+#pp test_ (result)
+
+# NOTE: we can modify our own x, but not lib.x!
+pp test_ (x)
+pp test_ (lib.x)
+
+## STDOUT:
+block arg x = main
+mutated = ZZ
+(Str)   "ZZ"
+(Str)   "lib"
 ## END
 
 #### eval should have a sandboxed mode

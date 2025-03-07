@@ -984,6 +984,7 @@ class ctx_EnclosedFrame(object):
             to_enclose,  # type: Dict[str, Cell]
             module_frame,  # type: Dict[str, Cell]
             out_dict,  # type: Optional[Dict[str, value_t]]
+            inside=False,  # type: bool
     ):
         # type: (...) -> None
         self.mem = mem
@@ -995,10 +996,13 @@ class ctx_EnclosedFrame(object):
             self.saved_globals = self.mem.var_stack[0]
             self.mem.var_stack[0] = module_frame
 
-        # __E__ gets a lookup rule
-        self.new_frame = NewDict()  # type: Dict[str, Cell]
-        self.new_frame['__E__'] = Cell(False, False, False,
-                                       value.Frame(to_enclose))
+        if inside:
+            self.new_frame = to_enclose
+        else:
+            # __E__ gets a lookup rule
+            self.new_frame = NewDict()
+            self.new_frame['__E__'] = Cell(False, False, False,
+                                           value.Frame(to_enclose))
 
         mem.var_stack.append(self.new_frame)
 

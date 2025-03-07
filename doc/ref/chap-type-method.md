@@ -871,6 +871,10 @@ Example:
     call io->eval(cmd, dollar0="z", pos_args=['one'], vars={x: "x"})
     # => zero z, one one, named x
 
+<!--
+TODO: document in_captured_frame=true
+-->
+
 ### evalToDict()
 
 The `evalToDict()` method is like the `eval()` method, but it returns a
@@ -890,36 +894,9 @@ Example:
 
     pp (d)  # => {a: 42, b: 11}
 
-### evalInFrame()
-
-Evaluate a block in the given frame.  Example:
-
-    proc my-cd (new_dir; ; ; block) {
-      pushd $new_dir >/dev/null
-
-      # Get calling frame.  (The top-most frame, this one, has index -1)
-      var calling_frame = vm.getFrame(-2)
-
-      call io->evalInFrame(block, calling_frame)
-
-      popd >/dev/null
-    }
-
-    var i = 42
-    my-cd /tmp {
-      var my_pwd = PWD
-      var j = i + 1
-    }
-
-    # In contrast to using io->eval(), vars in the block are still visible.
-    # The block was evaluated in this frame.
-    echo "$my_pwd"  # => /tmp
-    echo "$j"       # => 43
-
-Design note: this API has similar use cases as Tcl's [uplevel][].
-
-[uplevel]: https://www.tcl-lang.org/man/tcl8.4/TclCmd/uplevel.htm
-
+<!--
+TODO: support pos_args
+-->
 
 ### captureStdout()
 

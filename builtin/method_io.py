@@ -97,11 +97,10 @@ class EvalInFrame(vm._Callable):
         # type: (typed_args.Reader) -> value_t
         unused = rd.PosValue()
 
-        #frag = rd.PosCommandFrag()
         cmd = rd.PosCommand()
         in_frame = rd.PosFrame()
+        rd.Done()
 
-        #cmd.captured_frame = frame
         frag = typed_args.GetCommandFrag(cmd)
 
         # Note that 'cd' uses cmd_ev.EvalCommandFrag(), because a builtin does
@@ -146,6 +145,7 @@ class Eval(vm._Callable):
         dollar0 = rd.NamedStr("dollar0", None)
         pos_args_raw = rd.NamedList("pos_args", None)
         vars_ = rd.NamedDict("vars", None)
+        in_captured_frame = rd.NamedBool("in_captured_frame", None)
         rd.Done()
 
         pos_args = _CheckPosArgs(pos_args_raw, rd.LeftParenToken())
@@ -154,8 +154,11 @@ class Eval(vm._Callable):
         with state.ctx_TokenDebugFrame(self.mem, rd.LeftParenToken()):
             if self.which == EVAL_NULL:
                 # _PrintFrame('[captured]', captured_frame)
-                with state.ctx_EnclosedFrame(self.mem, bound.captured_frame,
-                                             bound.module_frame, None):
+                with state.ctx_EnclosedFrame(self.mem,
+                                             bound.captured_frame,
+                                             bound.module_frame,
+                                             None,
+                                             inside=in_captured_frame):
                     # _PrintFrame('[new]', self.cmd_ev.mem.var_stack[-1])
                     with state.ctx_Eval(self.mem, dollar0, pos_args, vars_):
                         unused_status = self.cmd_ev.EvalCommandFrag(frag)
@@ -167,8 +170,11 @@ class Eval(vm._Callable):
                 # Does ctx_EnclosedFrame has different scoping rules?  For "vars"?
 
                 bindings = NewDict()  # type: Dict[str, value_t]
-                with state.ctx_EnclosedFrame(self.mem, bound.captured_frame,
-                                             bound.module_frame, bindings):
+                with state.ctx_EnclosedFrame(self.mem,
+                                             bound.captured_frame,
+                                             bound.module_frame,
+                                             bindings,
+                                             inside=in_captured_frame):
                     unused_status = self.cmd_ev.EvalCommandFrag(frag)
                 return value.Dict(bindings)
 
