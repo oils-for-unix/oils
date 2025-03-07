@@ -153,7 +153,7 @@ class Eval(vm._Callable):
         dollar0 = rd.NamedStr("dollar0", None)
         pos_args_raw = rd.NamedList("pos_args", None)
         vars_ = rd.NamedDict("vars", None)
-        in_captured_frame = rd.NamedBool("in_captured_frame", None)
+        in_captured_frame = rd.NamedBool("in_captured_frame", False)
         rd.Done()
 
         frag = typed_args.GetCommandFrag(bound)

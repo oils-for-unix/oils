@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 
 #### eval builtin does not take a literal block - can restore this later
 
@@ -667,11 +667,10 @@ inner2=z
 proc my-cd (new_dir; ; ; block) {
   pushd $new_dir >/dev/null
 
-  # Get calling frame.  (The top-most frame, this one, has index -1)
-  var calling_frame = vm.getFrame(-2)
-
-  # Both work
   if (0) {
+    # Get calling frame.  (The top-most frame, this one, has index -1)
+    # This idiom does NOT work with modules
+    var calling_frame = vm.getFrame(-2)
     call io->evalInFrame(block, calling_frame)
   } else {
     #call io->evalInCapturedFrame(block)
@@ -705,16 +704,7 @@ const __provide__ = :| my-cd |
 proc my-cd (new_dir; ; ; block) {
   pushd $new_dir >/dev/null
 
-  # Get calling frame.  (The top-most frame, this one, has index -1)
-  var calling_frame = vm.getFrame(-2)
-
-  # Both work
-  if (0) {
-    call io->evalInFrame(block, calling_frame)
-  } else {
-    #call io->evalInCapturedFrame(block)
-    call io->eval(block, in_captured_frame=true)
-  }
+  call io->eval(block, in_captured_frame=true)
 
   popd >/dev/null
 }
@@ -735,37 +725,30 @@ echo "j = $j"
 j = 43
 ## END
 
-#### io->eval with in_captured_frame=true CANNOT behave like eval $mystr ?
+#### io->eval() has cleaner scoping than shell's eval builtin
 
-proc p2(code_str) {
-  var mylocal = 42
-  # mylocal is visible
-  eval $code_str
+#shopt --unset ysh:all
+shopt --set ysh:upgrade
+
+sh-eval() {
+  local do_not_leak=42  # this is visible
+  eval $1
 }
 
-p2 'echo "eval string mylocal=$mylocal"'
+sh-eval 'echo "eval string do_not_leak=$do_not_leak"'
 
-proc p (;;; block) {
-  var this_frame = vm.getFrame(-1)
-
-  # mylocal is visible
-  var mylocal = 99
-  # Both work
-  if (0) {
-    call io->evalInFrame(block, this_frame)
-  } else {
-    #call io->evalInCapturedFrame(block)
-    call io->eval(block, in_captured_frame=true)
-  }
+proc ysh-eval (;;; block) {
+  var do_not_leak = 99
+  call io->eval(block, in_captured_frame=true)
 }
 
-p {
-  echo "evalInFrame mylocal=$mylocal"
+ysh-eval {
+  echo "ysh block do_not_leak=$do_not_leak"
 }
 
+## status: 1
 ## STDOUT:
-eval string mylocal=42
-evalInFrame mylocal=99
+eval string do_not_leak=42
 ## END
 
 #### io->eval with in_captured_frame=true and setglobal
@@ -808,12 +791,19 @@ mutated = ZZ
 proc p (;;; block) {
   var this = 42
 
-  # like push-registers?  Not sure
-  # We could use state.ctx_Temp ?  There's also ctx_FuncCall etc.
-  #
-  # I think we want to provide full control over the stack.
-  push-frame {
+  # like --eval-pure, and like func?
+  with-pure {
+    # Do we still use io->eval?
     call io->eval(block)
+  }
+
+  # Or maybe we have free functions, like func/eval func/evalToDict
+  # There is no with-pure
+  call eval(cmd)
+  var d = evalToDict(cmd)
+
+  eval-pure --dump d {
+    var d = {}
   }
 }
 
