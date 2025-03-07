@@ -665,9 +665,9 @@ def _DumpVarFrame(frame):
     # type: (Dict[str, Cell]) -> Dict[str, value_t]
     """Dump the stack frame as reasonably compact and readable JSON."""
 
-    vars_json = {}  # type: Dict[str, value_t]
+    vars_json = NewDict()  # type: Dict[str, value_t]
     for name, cell in iteritems(frame):
-        cell_json = {}  # type: Dict[str, value_t]
+        cell_json = NewDict()  # type: Dict[str, value_t]
 
         buf = mylib.BufWriter()
         if cell.exported:
@@ -875,7 +875,8 @@ class ctx_Registers(object):
         last = mem.last_status[-1]
         mem.last_status.append(last)
         mem.try_status.append(0)
-        mem.try_error.append(value.Dict({}))
+        tmp = NewDict()  # type: Dict[str, value_t]
+        mem.try_error.append(value.Dict(tmp))
 
         # TODO: We should also copy these values!  Turn the whole thing into a
         # frame.
@@ -1320,7 +1321,9 @@ class Mem(object):
         # - push-registers builtin
         self.last_status = [0]  # type: List[int]  # a stack
         self.try_status = [0]  # type: List[int]  # a stack
-        self.try_error = [value.Dict({})]  # type: List[value.Dict]  # a stack
+        tmp = NewDict()  # type: Dict[str, value_t]
+        # a stack
+        self.try_error = [value.Dict(tmp)]  # type: List[value.Dict]
         self.pipe_status = [[]]  # type: List[List[int]]  # stack
         self.process_sub_status = [[]]  # type: List[List[int]]  # stack
 
@@ -2569,7 +2572,7 @@ class Mem(object):
         - If an exported variable is changed
         - If the set of exported variables changes.
         """
-        new_env = {}  # type: Dict[str, str]
+        new_env = NewDict()  # type: Dict[str, str]
 
         # Note: ysh:upgrade has both of these behaviors
 
@@ -2610,7 +2613,7 @@ class Mem(object):
     def GetAllVars(self):
         # type: () -> Dict[str, str]
         """Get all variables and their values, for 'set' builtin."""
-        result = {}  # type: Dict[str, str]
+        result = NewDict()  # type: Dict[str, str]
         for scope in self.var_stack:
             for name, cell in iteritems(scope):
                 # TODO: Show other types?
@@ -2623,7 +2626,7 @@ class Mem(object):
     def GetAllCells(self, which_scopes):
         # type: (scope_t) -> Dict[str, Cell]
         """Get all variables and their values, for 'set' builtin."""
-        result = {}  # type: Dict[str, Cell]
+        result = NewDict()  # type: Dict[str, Cell]
 
         if which_scopes == scope_e.Dynamic:
             scopes = self.var_stack
@@ -2720,7 +2723,7 @@ class Procs(object):
     def __init__(self, mem):
         # type: (Mem) -> None
         self.mem = mem
-        self.sh_funcs = {}  # type: Dict[str, value.Proc]
+        self.sh_funcs = NewDict()  # type: Dict[str, value.Proc]
 
     def DefineShellFunc(self, name, proc):
         # type: (str, value.Proc) -> None
