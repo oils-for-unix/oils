@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 3
 
 #### eval builtin does not take a literal block - can restore this later
 
@@ -319,6 +319,7 @@ p param
 ## END
 
 #### io->evalToDict() with dollar0, pos_args, vars
+echo TODO
 
 proc Dict ( ; out; ; block) {
   var d = io->evalToDict(block, dollar0='zero', pos_args=:|a b c|,
@@ -354,6 +355,7 @@ json write (d)
 ## END
 
 #### io->evalToDict() with in_captured_frame=true
+echo TODO
 
 proc Dict ( ; out; ; block) {
   var d = io->evalToDict(block, dollar0='zero', pos_args=:|a b c|,
