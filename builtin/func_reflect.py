@@ -78,9 +78,12 @@ class GetFrame(vm._Callable):
 
         length = len(self.mem.var_stack)
         if index < 0:
-            index += length
-        if 0 <= index and index < length:
-            return value.Frame(self.mem.var_stack[index])
+            i = index + length
+        else:
+            i = index
+
+        if 0 <= i and i < length:
+            return value.Frame(self.mem.var_stack[i])
         else:
             raise error.Structured(3, "Invalid frame %d" % index,
                                    rd.LeftParenToken())
