@@ -12,7 +12,7 @@ from core.error import e_usage
 from frontend import location
 from mycpp import mops
 from mycpp import mylib
-from mycpp.mylib import log, tagswitch
+from mycpp.mylib import log, tagswitch, NewDict
 
 from typing import Dict, List, Optional, cast
 
@@ -84,15 +84,18 @@ def ReaderForProc(cmd_val):
         # mycpp rewrite: doesn't understand 'or' pattern
         pos_args = (proc_args.pos_args
                     if proc_args.pos_args is not None else [])
-        named_args = (proc_args.named_args
-                      if proc_args.named_args is not None else {})
+        # mycpp rewrite: mycpp should support NewDict() within conditional expression
+        if proc_args.named_args is not None:
+            named_args = proc_args.named_args
+        else:
+            named_args = NewDict()
 
         arg_list = (proc_args.typed_args if proc_args.typed_args is not None
                     else ArgList.CreateNull())
         block_arg = proc_args.block_arg
     else:
         pos_args = []
-        named_args = {}
+        named_args = NewDict()
         arg_list = ArgList.CreateNull()
         block_arg = None
 
@@ -623,7 +626,7 @@ class Reader(object):
     def RestNamed(self):
         # type: () -> Dict[str, value_t]
         ret = self.named_args
-        self.named_args = {}
+        self.named_args = NewDict()
         return ret
 
     def Done(self):

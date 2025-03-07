@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 3
+## oils_failures_allowed: 4
 
 #### eval builtin does not take a literal block - can restore this later
 
@@ -318,6 +318,42 @@ p param
 (Dict)   {"foo":42,"g":"-global","p":"-param","L":"-local"}
 ## END
 
+#### io->evalToDict() dict ordering (regression for vars=)
+echo TODO
+
+proc Dict ( ; out; ; block) {
+  #var d = io->evalToDict(block)  # does not cause bug
+  var d = io->evalToDict(block, vars={X: 'X'})
+  call out->setValue(d)
+}
+
+var global = 'global'
+
+Dict (&d) {
+  foo = global
+  z = 'zero'
+  one = '1'
+  two = '2'
+  three = '3'
+  #four = '4'
+  # Note: X does NOT appear in the output, ctx_Eval makes it work.
+  #x = X
+  #y = _Y
+}
+
+json write (d)
+
+## STDOUT:
+{
+  "foo": "global",
+  "z": "zero",
+  "one": "1",
+  "two": "2",
+  "three": "3"
+}
+## END
+
+
 #### io->evalToDict() with dollar0, pos_args, vars
 echo TODO
 
@@ -341,6 +377,7 @@ Dict (&d) {
 }
 
 json write (d)
+#pp test_ (d)
 
 ## STDOUT:
 {

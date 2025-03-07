@@ -432,7 +432,7 @@ class ExprEvaluator(object):
         """
         with state.ctx_YshExpr(self.mutable_opts):
             with state.ctx_Registers(self.mem):  # to sandbox globals
-                named_args = {}  # type: Dict[str, value_t]
+                named_args = NewDict()  # type: Dict[str, value_t]
                 arg_list = ArgList.CreateNull()  # There's no call site
                 rd = typed_args.Reader(pos_args, named_args, None, arg_list)
 
@@ -456,7 +456,7 @@ class ExprEvaluator(object):
         """ For Eggex captures """
         with state.ctx_YshExpr(self.mutable_opts):
             pos_args = [arg]
-            named_args = {}  # type: Dict[str, value_t]
+            named_args = NewDict()  # type: Dict[str, value_t]
             arg_list = ArgList.CreateNull()  # There's no call site
             rd = typed_args.Reader(pos_args, named_args, None, arg_list)
             rd.SetFallbackLocation(convert_tok)
@@ -475,7 +475,7 @@ class ExprEvaluator(object):
     def _CallMetaMethod(self, func_val, pos_args, blame_loc):
         # type: (value_t, List[value_t], loc_t) -> value_t
 
-        named_args = {}  # type: Dict[str, value_t]
+        named_args = NewDict()  # type: Dict[str, value_t]
         arg_list = ArgList.CreateNull()  # There's no call site
         rd = typed_args.Reader(pos_args, named_args, None, arg_list)
         rd.SetFallbackLocation(blame_loc)
