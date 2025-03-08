@@ -210,7 +210,7 @@ class CompletionTest(unittest.TestCase):
         frame = cmd_ev.mem.var_stack[0]
         assert frame is not None
         proc = value.Proc(node.name, node.name_tok, proc_sig.Open, node.body,
-                          [], True, frame)
+                          [], True, None, frame)
 
         comp_lookup = completion.Lookup()
         a = completion.ShellFuncAction(cmd_ev, proc, comp_lookup)
