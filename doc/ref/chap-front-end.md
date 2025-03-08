@@ -103,13 +103,22 @@ osh and ysh accept standard POSIX shell flags, like:
 
 They also accept these flags:
 
+    --eval FILE
+        Evaluate the given file, similar to the 'source' builtin.  Specify it
+        multiple times to run multiple files.  If the errexit option is on
+        (e.g. in YSH), then the shell stops when $? is non-zero after
+        evaluating a file.
+
+    --location-str
+        Use this string to display error messages.
+        See 'help sourceCode' for an example.
+
+    --location-start-line
+        Use this line number offset to display error messages.
+
+    --tool            Run a tool instead of the shell (cat-em|syntax-tree)
     -n                Parse the program but don't execute it.  Print the AST.
     --ast-format FMT  The format for the AST (text|text-abbrev)
-    --eval FILE       Evaluate the given file, similar to the 'source' builtin.
-                      Specify it multiple times to run multiple files.  If the
-                      errexit option is on (e.g. in YSH), then the shell stops
-                      when $? is non-zero after evaluating a file.
-    --tool            Run a tool instead of the shell (cat-em|syntax-tree)
 
 Examples:
 

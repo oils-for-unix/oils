@@ -746,6 +746,11 @@ method returns `null`:
     var cmd = ^(echo hi)
     = cmd.sourceCode()  # => null
 
+Related topic: [shell-flags][] documents the `--location-str` and
+`--location-start-line` flags.
+
+[shell-flags]: chap-front-end.html#shell-flags
+
 ### Expr
 
 A value of type `Expr` represents an unevaluated expression.  There are **three**

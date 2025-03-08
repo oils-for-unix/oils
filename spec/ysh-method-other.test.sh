@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 
 #### Command.sourceCode() on literal block: p { echo hi }
 
@@ -66,4 +66,27 @@ p ( ; ; cmd)
 
 ## STDOUT:
 <Command>
+## END
+
+
+#### Command.sourceCode() works with reparsing, e.g. backticks
+
+# TODO: fix this bug - same as Hay bug
+
+proc p ( ; ; ; block) {
+  var src = block.sourceCode()
+
+  #pp test_ (src.code_str)
+
+  # Re-parsing messes this up
+  echo $[src.code_str]
+}
+
+shopt --set parse_backticks
+
+p { 
+  echo "greeting `echo hi`"
+}
+
+## STDOUT:
 ## END
