@@ -116,7 +116,6 @@ Related issues in other shells:
 - bash: <https://superuser.com/questions/1084406/chained-pipes-in-bash-throws-operation-not-permitted>
 - fish: <https://github.com/fish-shell/fish-shell/issues/7474>
 
-
 <!--
 
 ### errexit message and optimized subshells
