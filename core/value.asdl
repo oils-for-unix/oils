@@ -171,6 +171,7 @@ module value
 
   | Func(str name, Func parsed,
          List[value] pos_defaults, Dict[str, value] named_defaults,
+         Dict[str, Cell] captured_frame,
          # module is where "global" lookups happen
          Dict[str, Cell] module_frame)
 

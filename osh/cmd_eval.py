@@ -1469,7 +1469,7 @@ class CommandEvaluator(object):
         pos_defaults, named_defaults = func_proc.EvalFuncDefaults(
             self.expr_ev, node)
         func_val = value.Func(name, node, pos_defaults, named_defaults,
-                              self.mem.GlobalFrame())
+                              self.mem.CurrentFrame(), self.mem.GlobalFrame())
 
         # TODO: I'm not observing a difference with the YshDecl flag?  That
         # should prevent the parent scope from being modified.

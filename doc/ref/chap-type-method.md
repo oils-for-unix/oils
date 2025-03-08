@@ -593,7 +593,10 @@ A Place is used as an "out param" by calling setValue():
 
 ### Func
 
-User-defined functions.
+The type of a user-defined function.
+
+A Func captures the stack frame it was defined in, making it a closure.  It
+also captures the frame of the module it was defined in.
 
 ### BuiltinFunc
 
@@ -611,7 +614,10 @@ The [thin-arrow][] and [fat-arrow][] create bound funcs:
 
 ### Proc
 
-User-defined procs.
+The type of a user-defined proc &mdash; i.e. a "procedure" or "process".
+
+A Proc captures the stack frame it was defined in, making it a closure.  It
+also captures the frame of the module it was defined in.
 
 ### BuiltinProc
 

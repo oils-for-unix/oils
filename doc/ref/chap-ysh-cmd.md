@@ -121,8 +121,10 @@ The `call` keyword evaluates an expression and throws away the result:
 
 ### proc
 
-Procs are shell-like functions, but with named parameters, and without dynamic
-scope.
+Procs are like POSIX shell "functions", but with named parameters.
+
+Instead of using shell's "dynamic scope" rules, they obey lexical scope.  In
+other words, they are closures.
 
 Here's a simple proc:
 
@@ -150,13 +152,15 @@ Compare with [sh-func](chap-builtin-cmd.html#sh-func).
 
 ### func
 
-Define pure functions, in the style of Python and JavaScript:
+Funcs are pure functions, in the style of Python and JavaScript:
 
     func add(x, y) {
       return (x + y)
     }
 
     echo $[add(3, 2)]  # => 5
+
+Like procs, funcs are closures.
 
 See the [Guide to Procs and Funcs](../proc-func.html) for details.
 

@@ -733,6 +733,11 @@ class ctx_FuncCall(object):
         mem.var_stack[0] = func.module_frame
 
         frame = NewDict()  # type: Dict[str, Cell]
+
+        assert func.captured_frame is not None, func
+        frame['__E__'] = Cell(False, False, False,
+                              value.Frame(func.captured_frame))
+
         mem.var_stack.append(frame)
 
         # blame the location of (
