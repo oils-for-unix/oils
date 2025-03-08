@@ -666,6 +666,10 @@ ysh-method-io() {
   test/spec-py.sh run-file ysh-method-io "$@"
 }
 
+ysh-method-other() {
+  test/spec-py.sh run-file ysh-method-other "$@"
+}
+
 ysh-methods() {
   test/spec-py.sh run-file ysh-methods "$@"
 }

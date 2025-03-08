@@ -850,11 +850,12 @@ def Main(
         'M/setValue': method_other.SetValue(mem),
     }
 
-    methods[value_e.CommandFrag] = {
+    methods[value_e.Command] = {
         # var x = ^(echo hi)
-        # Export source code and line number
-        # Useful for test frameworks and so forth
-        'export': None,
+        # p { echo hi }
+        # Export source code and location
+        # Useful for test frameworks, built systems and so forth
+        'sourceCode': method_other.SourceCode(),
     }
 
     methods[value_e.DebugFrame] = {

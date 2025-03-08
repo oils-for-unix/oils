@@ -65,7 +65,7 @@ error handling, and more.
                    Proc        BuiltinProc
   [Objects]        Obj         __invoke__       new
                              X __call__       __index__         X __str__
-  [Reflection]     Command
+  [Reflection]     Command     sourceCode()
                    Expr
                    Frame
                    DebugFrame  toString()

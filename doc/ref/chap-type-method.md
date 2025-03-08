@@ -715,6 +715,37 @@ The `Command` value is bound to a stack frame.  This frame will be pushed as an
 
 [block-arg]: chap-cmd-lang.html#block-arg
 
+### sourceCode
+
+The `Command.sourceCode()` method returns a `Dict` with the source code and
+location info for a literal block.
+
+    # define a proc
+    proc p ( ; ; ; block) {
+      = block.sourceCode()
+    }
+
+    # call it with a literal block, getting the source code
+    p { echo hi }  # => { location_str:        "[stdin]",
+                   #      location_start_line: 1,
+                   #      code_str:            "echo hi\n" }
+
+The `location_str` and `location_start_line` fields can be passed back into the
+YSH interpreter, so that error messages blame the original location, not new
+locations from `code_str`:
+
+    ... ysh 
+        --location-str        $[src.location_str]
+        --location-start-line $[src.location_start_line]
+        file_with_code_str.ysh
+        ;
+
+Currently, you can't extract the source code of an `Command` expression.  The
+method returns `null`:
+
+    var cmd = ^(echo hi)
+    = cmd.sourceCode()  # => null
+
 ### Expr
 
 A value of type `Expr` represents an unevaluated expression.  There are **three**
