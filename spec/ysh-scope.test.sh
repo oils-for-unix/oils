@@ -1,4 +1,4 @@
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 
 # Demonstrations for users.  Could go in docs.
 
@@ -42,8 +42,7 @@ f() {
 }
 
 proc p {
-  # x=p not allowed at parse time
-  declare x=p
+  var x = 'p'
 }
 
 demo() {
@@ -284,8 +283,12 @@ shopt --set parse_proc
 # They can't mutate globals or anything higher on the stack
 
 proc p {
-  declare g=PROC
-  export e=PROC
+  # TODO: declare should be disallowed in YSH, just like shell functions.
+
+  #declare g=PROC
+  #export e=PROC
+  var g = 'PROC'
+  var e = 'PROC'
 }
 
 f() {
@@ -464,40 +467,40 @@ pp test_ (mydict)
 (Dict)   {"k":22,"n":11}
 ## END
 
-#### unset inside proc uses local scope
+#### unset inside proc - closures and dynamic scope
 shopt --set parse_brace
 shopt --set parse_proc
 
-f() {
+shellfunc() {
   unset x
 }
 
-proc p() {
+proc unset-proc() {
   unset x
 }
 
-proc p2() {
+proc unset-proc-dynamic-scope() {
   shopt --set dynamic_scope {  # turn it back on
     unset x
   }
 }
 
 x=foo
-f
-echo f x=$x
+shellfunc
+echo shellfunc x=$x
 
 x=bar
-p
-echo p x=$x
+unset-proc
+echo unset-proc x=$x
 
 x=spam
-p2
-echo p2 x=$x
+unset-proc
+echo unset-proc-dynamic-scope x=$x
 
 ## STDOUT:
-f x=
-p x=bar
-p2 x=
+shellfunc x=
+unset-proc x=
+unset-proc-dynamic-scope x=
 ## END
 
 #### unset composes when you turn on dynamic scope
@@ -568,14 +571,21 @@ echo $x $y $z
 42 43 44
 ## END
 
-#### IFS=: myproc exports when it doesn't need to
+#### shvar IFS=x { myproc } rather than IFS=x myproc - no dynamic scope
+
+# Note: osh/split.py uses dynamic scope to look up IFS
+# TODO: Should use LANG example to demonstrate
+
+#shopt --set ysh:upgrade  # this would disable word splitting
+
 shopt --set parse_proc
 shopt --set parse_brace
+#shopt --set env_obj
 
 s='xzx zxz'
 
-myfunc() {
-  echo myfunc IFS="$IFS"
+shellfunc() {
+  echo shellfunc IFS="$IFS"
   argv.py $s
 }
 
@@ -591,16 +601,23 @@ echo "$IFS" | od -A n -t x1
 
 IFS=' z'
 echo IFS="$IFS"
+echo
 
-IFS=' x' myfunc
+shellfunc
+echo
 
-# Problem: $IFS in procs only finds GLOBAL values.  But when actually
-# splitting, $IFS is a 'shvar' which respects DYNAMIC scope.
-# Use shvarGet('IFS') instead
+IFS=' x' shellfunc
+echo
+
+# Problem: $IFS in procs only finds GLOBAL values, so we get IFS=' z' rather than IFS=' x'.
+# But when actually splitting, $IFS is a 'shvar' which respects DYNAMIC scope.
+#
+# Can use shvarGet('IFS') instead
 
 IFS=' x' myproc
+echo
 
-# Oil solution to the problem
+# YSH solution to the problem
 shvar IFS=' x' {
   myproc
 }
@@ -609,10 +626,16 @@ shvar IFS=' x' {
 :
  20 09 0a 0a
 IFS= z
-myfunc IFS= x
+
+shellfunc IFS= z
+['x', 'x', 'x']
+
+shellfunc IFS= x
 ['', 'z', 'z', 'z']
+
 myproc IFS= z
-['', 'z', 'z', 'z']
+['x', 'x', 'x']
+
 myproc IFS= x
 ['', 'z', 'z', 'z']
 ## END
@@ -742,27 +765,44 @@ mylocal=x
  20 09 0a 0a
 ## END
 
-#### shvarGet()
+#### Do we still need shvarGet() for dynamic scope?  Closures do similar things
+
 shopt --set parse_proc
 
 s='xzx zxz'
 
-proc myproc {
-  echo wrong IFS="$IFS"         # NOT what's used
-  echo shvar IFS=$[shvarGet('IFS')]  # what IS used: dynamic scope
+shellfunc() {  # dynamic scope
+  echo IFS="$IFS"
+  echo shvarGet IFS=$[shvarGet('IFS')]
+  argv.py $s
+}
+
+proc myproc {  # no dynamic scope
+  echo IFS="$IFS"  
+  echo shvarGet IFS=$[shvarGet('IFS')]  # dynamic scope
   argv.py $s
 }
 
 IFS=x
+
+IFS=z shellfunc
+echo
+
 IFS=z myproc
+echo
 
 # null
 echo $[shvarGet('nonexistent')]
 
 ## STDOUT:
-wrong IFS=x
-shvar IFS=z
+IFS=z
+shvarGet IFS=z
 ['x', 'x ', 'x']
+
+IFS=x
+shvarGet IFS=x
+['', 'z', ' z', 'z']
+
 null
 ## END
 

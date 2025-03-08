@@ -184,6 +184,7 @@ module value
   | BuiltinProc(any builtin)
   | Proc(str name, Token name_tok, proc_sig sig, command body,
          ProcDefaults? defaults, bool sh_compat,
+         Dict[str, Cell] captured_frame,
          # module is where "global" lookups happen
          Dict[str, Cell] module_frame)
 

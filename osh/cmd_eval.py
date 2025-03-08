@@ -1436,11 +1436,13 @@ class CommandEvaluator(object):
     def _DoShFunction(self, node):
         # type: (command.ShFunction) -> None
 
-        # Note: shell functions can read vars from the file they're defined in
-        # But they don't appear in the module itself -- rather it is __sh_funcs__
-        # Though we could consider disallowing them though on 'import'.
-        sh_func = value.Proc(node.name, node.name_tok, proc_sig.Open,
-                             node.body, None, True, self.mem.GlobalFrame())
+        # Note: shell functions don't have a captured frame.  TODO: Get rid of
+        # GlobalFrame as well.  I think shell functions will be disallowed in
+        # pure YSH.  They appear in the __sh_funcs__, NOT in modules!
+
+        sh_func = value.Proc(node.name, node.name_tok,
+                             proc_sig.Open, node.body, None, True, None,
+                             self.mem.GlobalFrame())
         self.procs.DefineShellFunc(node.name, sh_func)
 
     def _DoProc(self, node):
@@ -1455,7 +1457,8 @@ class CommandEvaluator(object):
 
         # no dynamic scope
         proc = value.Proc(proc_name, node.name, node.sig, node.body,
-                          proc_defaults, False, self.mem.GlobalFrame())
+                          proc_defaults, False, self.mem.CurrentFrame(),
+                          self.mem.GlobalFrame())
         self.procs.DefineProc(proc_name, proc)
 
     def _DoFunc(self, node):

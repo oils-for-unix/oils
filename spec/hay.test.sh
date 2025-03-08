@@ -1,4 +1,4 @@
-## oils_failures_allowed: 5
+## oils_failures_allowed: 4
 
 # Hay: Hay Ain't YAML
 
@@ -820,10 +820,9 @@ echo 'hay define Package' >pre.ysh
 echo '
 Package cpython {
   version = "3.12"
-  url = "https://python.org/"
+  url = "https://python.org/release/$version/"
   proc build {
-    echo "hi from build proc"
-    echo $version
+    echo "version = $version, url = $url"
   }
 }
 ' >def.hay
@@ -837,7 +836,7 @@ Package cpython {
 #
 # When type_errors=false (default), any unserializable value becomes null
 
-echo 'json write (_hay(), type_errors=false)' > stage-1.ysh
+echo 'json write (_hay().children[0], type_errors=false)' > stage-1.ysh
 
 # Stage 1
 
@@ -868,5 +867,17 @@ build_proc
 
 
 ## STDOUT:
-a
+{
+  "type": "Package",
+  "args": [
+    "cpython"
+  ],
+  "children": [],
+  "attrs": {
+    "version": "3.12",
+    "url": "https://python.org/release/3.12/",
+    "build": null
+  }
+}
+version = 3.12, url = https://python.org/release/3.12/
 ## END

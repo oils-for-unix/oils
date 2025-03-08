@@ -44,12 +44,12 @@ var fr = vm.getFrame(99)  # fails
 
 p2 frame -1
 <Frame>
-(Dict)   {"ARGV":[],"fr":<Frame>}
-(List)   ["ARGV","fr"]
+(Dict)   {"__E__":<Frame>,"ARGV":[],"fr":<Frame>}
+(List)   ["__E__","ARGV","fr"]
 
 p2 frame -2
 <Frame>
-(List)   ["ARGV","p1_var"]
+(List)   ["__E__","ARGV","p1_var"]
 
 ## END
 

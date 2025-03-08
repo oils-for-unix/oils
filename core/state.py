@@ -769,6 +769,9 @@ class ctx_ProcCall(object):
         mem.var_stack[0] = proc.module_frame
 
         frame = NewDict()  # type: Dict[str, Cell]
+        if proc.captured_frame:  # shell functions don't capture a frame
+            frame['__E__'] = Cell(False, False, False,
+                                  value.Frame(proc.captured_frame))
 
         assert argv is not None
         if proc.sh_compat:
@@ -2759,6 +2762,8 @@ class Procs(object):
         procs are defined in the local scope.
         """
         self.mem.var_stack[-1][name] = Cell(False, False, False, proc)
+        # Doesn't make a difference?
+        #self.mem.SetNamedYsh(location.LName(name), proc, scope_e.LocalOnly, flags=YshDecl)
 
     def IsProc(self, name):
         # type: (str) -> bool
