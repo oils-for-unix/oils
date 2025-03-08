@@ -769,7 +769,9 @@ class ctx_ProcCall(object):
         mem.var_stack[0] = proc.module_frame
 
         frame = NewDict()  # type: Dict[str, Cell]
-        if proc.captured_frame:  # shell functions don't capture a frame
+
+        # shell functions don't capture a frame
+        if proc.captured_frame is not None:
             frame['__E__'] = Cell(False, False, False,
                                   value.Frame(proc.captured_frame))
 

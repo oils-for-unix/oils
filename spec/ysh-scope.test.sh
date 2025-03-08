@@ -1,7 +1,5 @@
 ## oils_failures_allowed: 1
 
-# Demonstrations for users.  Could go in docs.
-
 #### GetValue scope and shopt --unset dynamic_scope
 shopt --set parse_proc
 
@@ -10,7 +8,7 @@ f() {
 }
 
 proc p {
-  echo "oil x=$x"
+  echo "ysh x=$x"
 }
 
 demo() {
@@ -28,7 +26,7 @@ echo x=$x
 
 ## STDOUT:
 sh x=dynamic
-oil x=global
+ysh x=global
 sh x=global
 x=global
 ## END
@@ -554,7 +552,7 @@ bar
 ## END
 
 #### cd blocks don't introduce new scopes
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 
 var x = 42
 cd / {
@@ -640,8 +638,8 @@ myproc IFS= x
 ['', 'z', 'z', 'z']
 ## END
 
-#### shvar usage 
-shopt --set oil:upgrade
+#### shvar builtin syntax
+shopt --set ysh:upgrade
 shopt --unset errexit
 
 # no block
@@ -663,8 +661,40 @@ status=2
 status=2
 ## END
 
+
+#### shvar and shvarGet() obey dynamic scope
+
+# On the other hand, in YSH
+# - $x does local/closure/global scope
+# - FOO=foo mycommand modifies the ENV object - shopt --set env_obj
+
+shopt --set ysh:all
+
+proc p3 {
+  echo FOO=$[shvarGet('FOO')]  # dynamic scope
+  echo FOO=$FOO                # fails, not dynamic scope
+}
+
+proc p2 {
+  p3
+}
+
+proc p {
+  shvar FOO=foo {
+    p2
+  }
+}
+
+p
+
+## status: 1
+## STDOUT:
+FOO=foo
+## END
+
+
 #### shvar global
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 shopt --unset nounset
 
 echo _ESCAPER=$_ESCAPER
@@ -719,7 +749,7 @@ _DIALECT=bar
 ## END
 
 #### shvar local
-shopt --set oil:upgrade  # blocks
+shopt --set ysh:upgrade  # blocks
 shopt --unset simple_word_eval  # test word splitting
 
 proc foo {
@@ -744,7 +774,7 @@ MYTEMP=undef
 ## END
 
 #### shvar IFS
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 
 proc myproc() {
   echo "$IFS" | od -A n -t x1
@@ -765,22 +795,33 @@ mylocal=x
  20 09 0a 0a
 ## END
 
-#### Do we still need shvarGet() for dynamic scope?  Closures do similar things
+#### Compare shell func vs. proc, $IFS vs. shvarGet('IFS')
 
 shopt --set parse_proc
 
 s='xzx zxz'
 
-shellfunc() {  # dynamic scope
+shellfunc() {  # dynamic scope everywhere
+  echo shellfunc
   echo IFS="$IFS"
   echo shvarGet IFS=$[shvarGet('IFS')]
   argv.py $s
 }
 
 proc myproc {  # no dynamic scope
-  echo IFS="$IFS"  
-  echo shvarGet IFS=$[shvarGet('IFS')]  # dynamic scope
-  argv.py $s
+
+  # Subtle behavior: we see 'x' rather than "temp frame" 'z' - I think because
+  # there is a CHAIN of __E__ enclosed scopes, up to the global frame.
+  #
+  # That frame comes FIRST.   That seems OK, but it changed when procs became closures.
+  proc p2 {
+    echo "myproc -> p2"
+    echo IFS="$IFS"  
+    echo shvarGet IFS=$[shvarGet('IFS')]  # dynamic scope opt-in
+    argv.py $s  # dynamic scope in osh/split.py
+  }
+
+  p2 
 }
 
 IFS=x
@@ -788,6 +829,7 @@ IFS=x
 IFS=z shellfunc
 echo
 
+# this makes a temp frame, but the proc can't see it?
 IFS=z myproc
 echo
 
@@ -795,17 +837,18 @@ echo
 echo $[shvarGet('nonexistent')]
 
 ## STDOUT:
+shellfunc
 IFS=z
 shvarGet IFS=z
 ['x', 'x ', 'x']
 
+myproc -> p2
 IFS=x
 shvarGet IFS=x
 ['', 'z', ' z', 'z']
 
 null
 ## END
-
 
 #### func and proc are like var, with respect to closures
 shopt --set ysh:all
