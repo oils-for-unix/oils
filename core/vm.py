@@ -179,7 +179,7 @@ class _Executor(object):
 
     def RunBuiltin(self, builtin_id, cmd_val):
         # type: (int, cmd_value.Argv) -> int
-        """The 'builtin' builtin in osh/builtin_meta.py needs this."""
+        """Called by the 'builtin' builtin in osh/builtin_meta.py."""
         return 0
 
     def RunSimpleCommand(self, cmd_val, cmd_st, run_flags):

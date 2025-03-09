@@ -230,7 +230,7 @@ class PureExecutor(vm._Executor):
 
     def RunBuiltin(self, builtin_id, cmd_val):
         # type: (int, cmd_value.Argv) -> int
-        """The 'builtin' builtin in osh/builtin_meta.py needs this."""
+        """Called by the 'builtin' builtin in osh/builtin_meta.py."""
         e_die("Can't run builtin in pure mode", cmd_val.arg_locs[0])
         return 1
 
@@ -245,7 +245,7 @@ class PureExecutor(vm._Executor):
 
     def RunPipeline(self, node, status_out):
         # type: (command.Pipeline, CommandStatus) -> None
-        pass
+        e_die("Pipelines aren't allowed in pure mode (OILS-ERR-204)", loc.Command(node))
 
     def RunSubshell(self, node):
         # type: (command_t) -> int
@@ -253,11 +253,14 @@ class PureExecutor(vm._Executor):
 
     def CaptureStdout(self, node):
         # type: (command_t) -> Tuple[int, str]
+        """
+        Used by io->captureStdout() method, and called by command sub
+        """
         return 0, ''
 
     def RunCommandSub(self, cs_part):
         # type: (CommandSub) -> str
-        e_die("Can't run command sub in pure mode", loc.WordPart(cs_part))
+        e_die("Command subs aren't allowed in pure mode (OILS-ERR-204)", loc.WordPart(cs_part))
         return ''
 
     def RunProcessSub(self, cs_part):

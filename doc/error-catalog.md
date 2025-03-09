@@ -425,6 +425,25 @@ Or:
 - Do you have an element that can't be stringified in a list, like `['good',
   {bad: true}]`?
 
+### OILS-ERR-204
+
+<!--
+Generated with:
+test/ysh-runtime-errors.sh test-purity
+-->
+
+```
+  x=$(date)
+    ^~
+impure.sh:1: fatal: Command subs aren't allowed in pure mode (OILS-ERR-204)
+```
+
+In **pure mode**, the shell can't do I/O.  It's intended for config file
+evaluation and pure functions.
+
+- Did you mean to use `--eval` instead of `--eval-pure`?
+- Did you mean to use a `proc`, rather than a `func`?
+
 
 <!-- TODO -->
 
