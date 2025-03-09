@@ -224,10 +224,61 @@ class PureExecutor(vm._Executor):
     ):
         pass
 
+    def CheckCircularDeps(self):
+        # type: () -> None
+        pass
+
+    def RunBuiltin(self, builtin_id, cmd_val):
+        # type: (int, cmd_value.Argv) -> int
+        """The 'builtin' builtin in osh/builtin_meta.py needs this."""
+        e_die("Can't run builtin in pure mode", cmd_val.arg_locs[0])
+        return 1
+
     def RunSimpleCommand(self, cmd_val, cmd_st, run_flags):
         # type: (cmd_value.Argv, CommandStatus, int) -> int
         log('RunSimpleCommand')
         return 0
+
+    def RunBackgroundJob(self, node):
+        # type: (command_t) -> int
+        return 0
+
+    def RunPipeline(self, node, status_out):
+        # type: (command.Pipeline, CommandStatus) -> None
+        pass
+
+    def RunSubshell(self, node):
+        # type: (command_t) -> int
+        return 0
+
+    def CaptureStdout(self, node):
+        # type: (command_t) -> Tuple[int, str]
+        return 0, ''
+
+    def RunCommandSub(self, cs_part):
+        # type: (CommandSub) -> str
+        e_die("Can't run command sub in pure mode", loc.WordPart(cs_part))
+        return ''
+
+    def RunProcessSub(self, cs_part):
+        # type: (CommandSub) -> str
+        return ''
+
+    def PushRedirects(self, redirects, err_out):
+        # type: (List[RedirValue], List[error.IOError_OSError]) -> None
+        pass
+
+    def PopRedirects(self, num_redirects, err_out):
+        # type: (int, List[error.IOError_OSError]) -> None
+        pass
+
+    def PushProcessSub(self):
+        # type: () -> None
+        pass
+
+    def PopProcessSub(self, compound_st):
+        # type: (StatusArray) -> None
+        pass
 
 
 class ShellExecutor(vm._Executor):

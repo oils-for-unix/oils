@@ -714,6 +714,10 @@ ysh-prompt() {
   test/spec-py.sh run-file ysh-prompt "$@"
 }
 
+ysh-purity() {
+  test/spec-py.sh run-file ysh-purity "$@"
+}
+
 ysh-regex-api() {
   test/spec-py.sh run-file ysh-regex-api "$@"
 }

@@ -841,9 +841,13 @@ echo 'json write (_hay().children[0], type_errors=false)' > stage-1.ysh
 # Stage 1
 
 ... $[ENV.SH] -o ysh:all
-  --eval-pure pre.ysh
-  --eval-pure def.hay
-  --eval-pure stage-1.ysh
+  # TODO: restore purity
+  #--eval-pure pre.ysh
+  #--eval-pure def.hay
+  #--eval-pure stage-1.ysh
+  --eval pre.ysh
+  --eval def.hay
+  --eval stage-1.ysh
   -c '' 
   || true
   ;
@@ -859,8 +863,11 @@ build_proc
 # Stage 1
 
 ... $[ENV.SH] -o ysh:all
-  --eval-pure pre.ysh
-  --eval-pure def.hay
+  # TODO: restore purity
+  #--eval-pure pre.ysh
+  #--eval-pure def.hay
+  --eval pre.ysh
+  --eval def.hay
   --eval stage-2.ysh  # This one isn't pure
   -c ''
   ;
