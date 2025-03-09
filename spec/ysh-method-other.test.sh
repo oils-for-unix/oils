@@ -80,12 +80,28 @@ proc p ( ; ; ; block) {
 
   # Re-parsing messes this up
   echo $[src.code_str]
+  echo
 }
 
 shopt --set parse_backticks
 
 p { 
   echo "greeting `echo hi`"
+}
+
+shopt --set expand_aliases
+
+
+alias e='echo hi'
+
+p {
+  e foo
+}
+
+shopt --set parse_sh_arith
+
+p {
+  a[i++]=y
 }
 
 ## STDOUT:

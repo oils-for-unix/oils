@@ -1,6 +1,5 @@
 """
-alloc.py - strategies for managing SourceLine and Token
-
+alloc.py - Arena manages SourceLine and Token instances (could rename)
 """
 
 from _devbuild.gen.syntax_asdl import source_t, Token, SourceLine, loc
@@ -19,7 +18,9 @@ def SnipCodeBlock(left, right, lines):
 
     Meaning { } are not included.
 
-    Used for Hay evaluation. Similar to SnipCodeString().
+    Used for Command.sourceCode() and Hay evaluation. Similar to SnipCodeString().
+
+    TODO: This algorithm is wrong when re-parsing occurs, e.g. bacticks, aliases, a[i++]=1.
     """
     pieces = []  # type: List[str]
 

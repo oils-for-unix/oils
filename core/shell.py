@@ -499,6 +499,9 @@ def Main(
                                       ext_prog, waiter, tracer, job_control,
                                       job_list, fd_state, trap_state, errfmt)
 
+    pure_ex = executor.PureExecutor(mem, exec_opts, mutable_opts, procs,
+                                    hay_state, builtins, tracer, errfmt)
+
     arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, mutable_opts,
                                            parse_ctx, errfmt)
     bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, mutable_opts,
@@ -961,15 +964,16 @@ def Main(
     # Note that --eval
 
     for path, is_pure in attrs.eval_flags:
-        # TODO: respect is_pure
-        try:
-            ok, status = main_loop.EvalFile(path, fd_state, parse_ctx, cmd_ev,
-                                            lang)
-        except util.UserExit as e:
-            # Doesn't seem like we need this, and verbose_errexit isn't the right option
-            #if exec_opts.verbose_errexit():
-            #    print-stderr('oils: --eval exit')
-            return e.status
+        ex = pure_ex if is_pure else None
+        with vm.ctx_MaybePure(ex, cmd_ev, word_ev, expr_ev):
+            try:
+                ok, status = main_loop.EvalFile(path, fd_state, parse_ctx,
+                                                cmd_ev, lang)
+            except util.UserExit as e:
+                # Doesn't seem like we need this, and verbose_errexit isn't the right option
+                #if exec_opts.verbose_errexit():
+                #    print-stderr('oils: --eval exit')
+                return e.status
 
         # I/O error opening file, parse error.  Message was # already printed.
         if not ok:

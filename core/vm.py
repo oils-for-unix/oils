@@ -10,7 +10,7 @@ from core import error
 from core import pyos
 from mycpp.mylib import log
 
-from typing import List, Tuple, Any, TYPE_CHECKING
+from typing import List, Tuple, Optional, Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value, RedirValue
     from _devbuild.gen.syntax_asdl import (command, command_t, CommandSub)
@@ -18,9 +18,9 @@ if TYPE_CHECKING:
     from osh import sh_expr_eval
     from osh.sh_expr_eval import ArithEvaluator
     from osh.sh_expr_eval import BoolEvaluator
-    from ysh.expr_eval import ExprEvaluator
-    from osh.word_eval import NormalWordEvaluator
-    from osh.cmd_eval import CommandEvaluator
+    from ysh import expr_eval
+    from osh import word_eval
+    from osh import cmd_eval
     from osh import prompt
     from core import dev
     from core import state
@@ -109,7 +109,7 @@ class ValueControlFlow(Exception):
 
 
 def InitUnsafeArith(mem, word_ev, unsafe_arith):
-    # type: (state.Mem, NormalWordEvaluator, sh_expr_eval.UnsafeArith) -> None
+    # type: (state.Mem, word_eval.NormalWordEvaluator, sh_expr_eval.UnsafeArith) -> None
     """Wire up circular dependencies for UnsafeArith."""
     mem.unsafe_arith = unsafe_arith  # for 'declare -n' nameref expansion of a[i]
     word_ev.unsafe_arith = unsafe_arith  # for ${!ref} expansion of a[i]
@@ -118,10 +118,10 @@ def InitUnsafeArith(mem, word_ev, unsafe_arith):
 def InitCircularDeps(
         arith_ev,  # type: ArithEvaluator
         bool_ev,  # type: BoolEvaluator
-        expr_ev,  # type: ExprEvaluator
-        word_ev,  # type: NormalWordEvaluator
-        cmd_ev,  # type: CommandEvaluator
-        shell_ex,  # type:  _Executor
+        expr_ev,  # type: expr_eval.ExprEvaluator
+        word_ev,  # type: word_eval.NormalWordEvaluator
+        cmd_ev,  # type: cmd_eval.CommandEvaluator
+        shell_ex,  # type: _Executor
         prompt_ev,  # type: prompt.Evaluator
         global_io,  # type: Obj
         tracer,  # type: dev.Tracer
@@ -171,7 +171,7 @@ class _Executor(object):
 
     def __init__(self):
         # type: () -> None
-        self.cmd_ev = None  # type: CommandEvaluator
+        self.cmd_ev = None  # type: cmd_eval.CommandEvaluator
 
     def CheckCircularDeps(self):
         # type: () -> None
@@ -272,6 +272,54 @@ class _Callable(object):
     def Call(self, args):
         # type: (typed_args.Reader) -> value_t
         raise NotImplementedError()
+
+
+class ctx_MaybePure(object):
+    """Enforce purity of the shell interpreter
+
+    Use this for:
+
+      --eval-pure
+      func - pure functions
+      eval() evalToDict() - builtin pure functions, not methods
+    """
+
+    def __init__(
+        self,
+        pure_ex,  # type: Optional[_Executor]
+        cmd_ev,  # type: cmd_eval.CommandEvaluator
+        word_ev,  # type: word_eval.NormalWordEvaluator
+        expr_ev  # type: expr_eval.ExprEvaluator
+    ):
+        # type: (...) -> None
+        self.pure_ex = pure_ex
+        if not pure_ex:
+            return  # do nothing
+
+        self.saved = cmd_ev.shell_ex
+        assert self.saved is word_ev.shell_ex
+        assert self.saved is expr_ev.shell_ex
+
+        cmd_ev.shell_ex = pure_ex
+        word_ev.shell_ex = pure_ex
+        expr_ev.shell_ex = pure_ex
+
+        self.cmd_ev = cmd_ev
+        self.word_ev = word_ev
+        self.expr_ev = expr_ev
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        if not self.pure_ex:
+            return  # do nothing
+
+        self.cmd_ev.shell_ex = self.saved
+        self.word_ev.shell_ex = self.saved
+        self.expr_ev.shell_ex = self.saved
 
 
 class ctx_Redirect(object):

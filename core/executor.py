@@ -209,6 +209,27 @@ DEFAULT_PATH = [
 ]
 
 
+class PureExecutor(vm._Executor):
+
+    def __init__(
+            self,
+            mem,  # type: state.Mem
+            exec_opts,  # type: optview.Exec
+            mutable_opts,  # type: state.MutableOpts
+            procs,  # type: state.Procs
+            hay_state,  # type: hay_ysh.HayState
+            builtins,  # type: Dict[int, vm._Builtin]
+            tracer,  # type: dev.Tracer
+            errfmt  # type: ui.ErrorFormatter
+    ):
+        pass
+
+    def RunSimpleCommand(self, cmd_val, cmd_st, run_flags):
+        # type: (cmd_value.Argv, CommandStatus, int) -> int
+        log('RunSimpleCommand')
+        return 0
+
+
 class ShellExecutor(vm._Executor):
     """An executor combined with the OSH language evaluators in osh/ to create
     a shell interpreter."""

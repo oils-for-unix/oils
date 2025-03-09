@@ -51,12 +51,46 @@ flag -c: P Q
 
 ## END
 
-#### ysh --eval-pure
+#### ysh --eval-pure can evaluate funcs and procs
 
-echo TODO
+echo >pure.ysh '
+proc my-proc { echo "my-proc" }
+func myFunc() { return ("myFunc") }
+'
+
+$[ENV.SH] --eval-pure pure.ysh -c 'my-proc; echo $[myFunc()]'
 
 ## STDOUT:
+my-proc
+myFunc
 ## END
+
+#### ysh --eval-pure can't run impure
+
+echo >pure.ysh '
+proc my-proc { echo "my-proc" }
+func myFunc() { return ("myFunc") }
+'
+
+echo >impure.ysh 'my-proc; echo $[myFunc()]'
+
+# There should be an error on 'echo' - it can't even write to stdout?
+#
+# Or definitely ls
+#
+# Can this print to stdout?
+#
+# call myFunc() 
+#
+# Right now we can do this:
+# { call myFunc() } | wc -l
+
+$[ENV.SH] --eval-pure pure.ysh --eval-pure impure.ysh -c ''
+
+## status: 1
+## STDOUT:
+## END
+
 
 #### ysh --eval cannot load file
 
