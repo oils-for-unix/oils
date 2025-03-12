@@ -244,7 +244,10 @@ class PureExecutor(vm._Executor):
 
     def RunBackgroundJob(self, node):
         # type: (command_t) -> int
-        return 0
+        raise error.Structured(
+            _PURITY_STATUS,
+            "Background jobs aren't allowed in pure mode (OILS-ERR-204)",
+            loc.Command(node))
 
     def RunPipeline(self, node, status_out):
         # type: (command.Pipeline, CommandStatus) -> None
@@ -255,7 +258,10 @@ class PureExecutor(vm._Executor):
 
     def RunSubshell(self, node):
         # type: (command_t) -> int
-        return 0
+        raise error.Structured(
+            _PURITY_STATUS,
+            "Subshells aren't allowed in pure mode (OILS-ERR-204)",
+            loc.Command(node))
 
     def CaptureStdout(self, node):
         # type: (command_t) -> Tuple[int, str]
@@ -273,7 +279,10 @@ class PureExecutor(vm._Executor):
 
     def RunProcessSub(self, cs_part):
         # type: (CommandSub) -> str
-        return ''
+        raise error.Structured(
+            _PURITY_STATUS,
+            "Process subs aren't allowed in pure mode (OILS-ERR-204)",
+            loc.WordPart(cs_part))
 
     def PushRedirects(self, redirects, err_out):
         # type: (List[RedirValue], List[error.IOError_OSError]) -> None

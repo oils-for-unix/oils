@@ -1150,7 +1150,7 @@ p 1 2 3
 
 test-purity() {
   echo 'x=$(date)' > _tmp/impure.sh
-  _assert-sh-status 1 $YSH 'Should fail' --eval-pure _tmp/impure.sh -c 'echo hi'
+  _assert-sh-status 5 $YSH 'Should fail' --eval-pure _tmp/impure.sh -c 'echo hi'
 }
 
 soil-run-py() {

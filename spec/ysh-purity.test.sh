@@ -114,7 +114,7 @@ echo TODO
 ## END
 
 
-#### Executor: Command subs, pipelines, etc. not allowed
+#### Command subs, pipelines not allowed with --eval-pure
 
 echo >command-sub.sh 'x=$(echo command sub)'
 echo >command-sub.ysh 'var x = $(echo command sub)'
@@ -142,21 +142,98 @@ eval
 pipeline.sh=5
 ## END
 
-#### Executor: Builtins not allowed
+#### Process subs, subshells not allowed with eval()
+shopt --set ysh:upgrade
 
-var cmd = ^(
-  mapfile lines < <(seq 3)
-  echo "${lines[@]}"
-)
+var cmd = ^( cat <(echo 1) <(echo 2) )
+call io->eval(cmd)
 
-var cmd = ^(
-  builtin echo hi
-)
+try {
+  call eval(cmd)
+}
+echo code=$[_error.code] message=$[_error.message]
+echo
 
-call eval(cmd)
+var cmd = ^(( echo subshell ) )
+call io->eval(cmd)
+
+try {
+  call eval(cmd)
+}
+echo code=$[_error.code] message=$[_error.message]
 
 ## STDOUT:
-what
+1
+2
+code=5 message=Process subs aren't allowed in pure mode (OILS-ERR-204)
+
+subshell
+code=5 message=Subshells aren't allowed in pure mode (OILS-ERR-204)
+## END
+
+#### Background job &
+shopt --set ysh:upgrade
+
+var cmd = ^( sleep 0.01 & wait )
+call io->eval(cmd)
+
+try {
+  call eval(cmd)
+}
+echo code=$[_error.code] message=$[_error.message]
+
+var cmd = ^( seq 3 | wc -l )
+call io->eval(cmd)
+
+try {
+  call eval(cmd)
+}
+echo code=$[_error.code] message=$[_error.message]
+
+## STDOUT:
+code=5 message=Background jobs aren't allowed in pure mode (OILS-ERR-204)
+3
+code=5 message=Pipelines aren't allowed in pure mode (OILS-ERR-204)
+## END
+
+#### Are any builtins allowed?  true, false
+
+# what other builtins should be allowed?
+# - set and shopt could be dangerous?
+# - set -- 1 2 3 may be OK
+# - test -n is safe, but test --file is not
+#   - YSH mostly won't need it
+# - not part of YSH
+#   - unset
+#   - printf -v (otherwise printf does I/O)
+#   - shift - use ARGV
+#   - getopts
+#   - alias
+# Other:
+#   - type - some of this does I/O
+#
+# If we only consider YSH, everything has a trivial replacement, e.g. true and
+# false.  false can be assert [false]
+
+var cmd = ^(
+  true
+  echo true
+  builtin true
+  echo builtin true
+  command true
+  echo command true
+
+  builtin false
+  echo builtin false
+)
+
+call eval (cmd)
+
+## status: 1
+## STDOUT:
+true
+builtin true
+command true
 ## END
 
 #### Are source or use builtins allowed?
