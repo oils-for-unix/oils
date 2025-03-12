@@ -222,11 +222,7 @@ class PureExecutor(vm._Executor):
             tracer,  # type: dev.Tracer
             errfmt  # type: ui.ErrorFormatter
     ):
-        pass
-
-    def CheckCircularDeps(self):
-        # type: () -> None
-        pass
+        vm._Executor.__init__(self)
 
     def RunBuiltin(self, builtin_id, cmd_val):
         # type: (int, cmd_value.Argv) -> int
@@ -245,7 +241,8 @@ class PureExecutor(vm._Executor):
 
     def RunPipeline(self, node, status_out):
         # type: (command.Pipeline, CommandStatus) -> None
-        e_die("Pipelines aren't allowed in pure mode (OILS-ERR-204)", loc.Command(node))
+        e_die("Pipelines aren't allowed in pure mode (OILS-ERR-204)",
+              loc.Command(node))
 
     def RunSubshell(self, node):
         # type: (command_t) -> int
@@ -260,7 +257,8 @@ class PureExecutor(vm._Executor):
 
     def RunCommandSub(self, cs_part):
         # type: (CommandSub) -> str
-        e_die("Command subs aren't allowed in pure mode (OILS-ERR-204)", loc.WordPart(cs_part))
+        e_die("Command subs aren't allowed in pure mode (OILS-ERR-204)",
+              loc.WordPart(cs_part))
         return ''
 
     def RunProcessSub(self, cs_part):
@@ -336,10 +334,6 @@ class ShellExecutor(vm._Executor):
         # any pipelines started within subshells run in their parent's process
         # group, we only need one pointer here, not some collection.
         self.fg_pipeline = None  # type: Optional[process.Pipeline]
-
-    def CheckCircularDeps(self):
-        # type: () -> None
-        assert self.cmd_ev is not None
 
     def _MakeProcess(self, node, inherit_errexit, inherit_errtrace):
         # type: (command_t, bool, bool) -> process.Process

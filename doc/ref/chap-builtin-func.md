@@ -373,6 +373,31 @@ Like `Match => end()`, but accesses the global match created by `~`:
       echo $[_end(0)]  # => 5
     }
 
+## Reflection
+
+### func/eval()
+
+This function is like [`io->eval()`][io/eval], but it disallows I/O.
+
+Example:
+
+    var cmd = ^(const x = 42)
+    var d = eval(cmd, to_dict=true)  # {x: 42}
+
+[io/eval]: chap-type-method.html#io/eval
+
+### func/evalExpr()
+
+This function is like [`io->evalExpr()`][io/evalExpr], but it disallows I/O.
+
+Example:
+
+    var x = 42
+    var expr = ^[x + 1]
+    var val = evalExpr(expr)  # 43
+
+[io/evalExpr]: chap-type-method.html#io/evalExpr
+
 ## Introspect
 
 ### `shvarGet()`

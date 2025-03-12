@@ -851,32 +851,6 @@ Returns the singleton `stdin` value, which you can iterate over:
 This is buffered line-based I/O, as opposed to the unbuffered I/O of the `read`
 builtin.
 
-### evalExpr()
-
-Given an `Expr` value, evaluate it and return its value:
-
-    var i = 42
-    var expr = ^[i + 1] 
-
-    = io->evalExpr(expr)  # => 43
-
-It accepts optional args that let you control name binding:
-
-- `pos_args` for `$1 $2 $3`
-- `dollar0` for `$0`
-- `vars` for named variables
-
-Example:
-
-    var expr = ^["zero $0, one $1, named $x"]
-    var s = io->evalExpr(expr, dollar0="z", pos_args=['one'], vars={x: "x"})
-    echo $s  # => zero z, one one, named x
-
-Note that these expressions that have effects:
-
-- `^[ myplace->setValue(42) ]` - memory operation
-- `^[ $(echo 42 > hi) ]` - I/O operation
-
 ### io/eval()
 
 Given a `Command` value (e.g. a block argument), execute it, and return `null`.
@@ -936,6 +910,44 @@ Example:
 
 Names that end with an underscore `_` are not copied, so `hidden_` is not in
 the `Dict`.
+
+---
+
+To evaluate "purely", use the [`eval()`][func/eval] function.
+
+[func/eval]: chap-builtin-func.html#func/eval
+
+### io/evalExpr()
+
+Given an `Expr` value, evaluate it and return its value:
+
+    var i = 42
+    var expr = ^[i + 1] 
+
+    = io->evalExpr(expr)  # => 43
+
+It accepts optional args that let you control name binding:
+
+- `pos_args` for `$1 $2 $3`
+- `dollar0` for `$0`
+- `vars` for named variables
+
+Example:
+
+    var expr = ^["zero $0, one $1, named $x"]
+    var s = io->evalExpr(expr, dollar0="z", pos_args=['one'], vars={x: "x"})
+    echo $s  # => zero z, one one, named x
+
+Note that these expressions that have effects:
+
+- `^[ myplace->setValue(42) ]` - memory operation
+- `^[ $(echo 42 > hi) ]` - I/O operation
+
+---
+
+To evaluate "purely", use the [`evalExpr()`][func/evalExpr] function.
+
+[func/evalExpr]: chap-builtin-func.html#func/evalExpr
 
 ### captureStdout()
 

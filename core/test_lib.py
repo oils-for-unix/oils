@@ -290,13 +290,15 @@ def InitCommandEvaluator(parse_ctx=None,
                                       hay_state, builtins, search_path,
                                       ext_prog, waiter, tracer, job_control,
                                       job_list, fd_state, trap_state, errfmt)
+    pure_ex = executor.PureExecutor(mem, exec_opts, mutable_opts, procs,
+                                    hay_state, builtins, tracer, errfmt)
 
     assert cmd_ev.mutable_opts is not None, cmd_ev
     prompt_ev = prompt.Evaluator('osh', '0.0.0', parse_ctx, mem)
 
     global_io = Obj(None, None)
     vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
-                        prompt_ev, global_io, tracer)
+                        pure_ex, prompt_ev, global_io, tracer)
 
     try:
         from _devbuild.gen.help_meta import TOPICS

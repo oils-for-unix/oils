@@ -524,8 +524,9 @@ def Main(
 
     # The M/ prefix means it's io->eval()
     io_methods['M/eval'] = value.BuiltinFunc(
-        method_io.Eval(mem, cmd_ev, method_io.EVAL_NULL))
-    io_methods['M/evalExpr'] = value.BuiltinFunc(method_io.EvalExpr(expr_ev))
+        method_io.Eval(mem, cmd_ev, None, method_io.EVAL_NULL))
+    io_methods['M/evalExpr'] = value.BuiltinFunc(
+        method_io.EvalExpr(expr_ev, None, None))
 
     # Identical to command sub
     io_methods['captureStdout'] = value.BuiltinFunc(
@@ -533,7 +534,7 @@ def Main(
 
     # TODO: remove these 2 deprecated methods
     io_methods['M/evalToDict'] = value.BuiltinFunc(
-        method_io.Eval(mem, cmd_ev, method_io.EVAL_DICT))
+        method_io.Eval(mem, cmd_ev, None, method_io.EVAL_DICT))
     io_methods['M/evalInFrame'] = value.BuiltinFunc(
         method_io.EvalInFrame(mem, cmd_ev))
 
@@ -600,7 +601,7 @@ def Main(
 
     # Wire up circular dependencies.
     vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
-                        prompt_ev, io_obj, tracer)
+                        pure_ex, prompt_ev, io_obj, tracer)
 
     unsafe_arith = sh_expr_eval.UnsafeArith(mem, exec_opts, mutable_opts,
                                             parse_ctx, arith_ev, errfmt)
@@ -871,6 +872,12 @@ def Main(
     # Initialize Built-in Funcs
     #
 
+    # Pure functions
+    _AddBuiltinFunc(mem, 'eval',
+                    method_io.Eval(mem, cmd_ev, pure_ex, method_io.EVAL_NULL))
+    _AddBuiltinFunc(mem, 'evalExpr',
+                    method_io.EvalExpr(expr_ev, pure_ex, cmd_ev))
+
     parse_hay = func_hay.ParseHay(fd_state, parse_ctx, mem, errfmt)
     eval_hay = func_hay.EvalHay(hay_state, mutable_opts, mem, cmd_ev)
     hay_func = func_hay.HayFunc(hay_state)
@@ -967,7 +974,7 @@ def Main(
 
     for path, is_pure in attrs.eval_flags:
         ex = pure_ex if is_pure else None
-        with vm.ctx_MaybePure(ex, cmd_ev, word_ev, expr_ev):
+        with vm.ctx_MaybePure(ex, cmd_ev):
             try:
                 ok, status = main_loop.EvalFile(path, fd_state, parse_ctx,
                                                 cmd_ev, lang)

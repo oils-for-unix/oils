@@ -3,6 +3,40 @@
 # Not disallowed:
 #   setglobal, mutating arguments with setvar
 
+#### eval() is a pure function
+shopt --set ysh:upgrade
+
+var pure = ^(
+  const a = 1
+  const b = 2
+)
+
+var d = eval(pure, to_dict=true)
+pp test_ (d)
+
+var impure = ^(seq 3 | wc -l)
+
+call eval(impure)
+
+## status: 1
+## STDOUT:
+(Dict)   {"a":1,"b":2}
+## END
+
+#### evalExpr() is a pure function
+
+var x = 42
+var pure = ^[x + 1]
+echo pure=$[evalExpr(pure)]
+
+var impure = ^[x + $(echo 1)]
+echo impure=$[evalExpr(impure)]
+
+## status: 1
+## STDOUT:
+pure=43
+## END
+
 #### Idiom to handle purity errors from untrusted config files
 
 echo "TODO: what's the idiom?"

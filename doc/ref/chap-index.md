@@ -43,11 +43,23 @@ The name `clear` can refer to:
 
 The name `eval` can refer to:
 
-- The [eval builtin][cmd/eval]
-- The [io method eval][io/eval]
+- The [eval builtin command][cmd/eval]
+- The [io method eval()][io/eval]
+- The [pure function eval()][func/eval]
 
 [cmd/eval]: chap-builtin-cmd.html#cmd/eval
 [io/eval]: chap-type-method.html#io/eval
+[func/eval]: chap-builtin-func.html#func/eval
+
+### evalExpr
+
+The name `eval` can refer to:
+
+- The [io method evalExpr()][io/evalExpr]
+- The [pure function evalExpr()][func/evalExpr]
+
+[io/evalExpr]: chap-type-method.html#io/evalExpr
+[func/evalExpr]: chap-builtin-func.html#func/evalExpr
 
 ### false
 

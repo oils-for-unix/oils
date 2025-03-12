@@ -44,20 +44,28 @@ class EvalExpr(vm._Callable):
     """io->evalExpr(ex) evaluates an expression 
 
     Notes compared with io->eval(cmd):
-    - there is no evalToDict variant - doesn't make sense
+    - there is no to_dict=true variant - doesn't make sense
     - Does it need in_captured_frame=true?
       - That is for "inline procs" like cd, but doesn't seem to be necessary
         for expressions.  Unless we had mutations in expressions.
     """
 
-    def __init__(self, expr_ev):
-        # type: (expr_eval.ExprEvaluator) -> None
+    def __init__(
+            self,
+            expr_ev,  # type: expr_eval.ExprEvaluator
+            pure_ex,  # type: Optional[vm._Executor]
+            cmd_ev,  # type: Optional[cmd_eval.CommandEvaluator]
+    ):
+        # type: (...) -> None
         self.expr_ev = expr_ev
+        self.pure_ex = pure_ex
+        self.cmd_ev = cmd_ev
         self.mem = expr_ev.mem
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
-        unused_self = rd.PosObj()
+        if self.pure_ex is None:
+            unused_self = rd.PosObj()
         lazy = rd.PosExpr()
 
         dollar0 = rd.NamedStr("dollar0", None)
@@ -74,7 +82,8 @@ class EvalExpr(vm._Callable):
             with state.ctx_EnclosedFrame(self.mem, lazy.captured_frame,
                                          lazy.module_frame, None):
                 with state.ctx_Eval(self.mem, dollar0, pos_args, vars_):
-                    result = self.expr_ev.EvalExpr(lazy.e, blame_tok)
+                    with vm.ctx_MaybePure(self.pure_ex, self.cmd_ev):
+                        result = self.expr_ev.EvalExpr(lazy.e, blame_tok)
 
         return result
 
@@ -139,15 +148,17 @@ class Eval(vm._Callable):
     The CALLER must handle errors.
     """
 
-    def __init__(self, mem, cmd_ev, which):
-        # type: (state.Mem, cmd_eval.CommandEvaluator, int) -> None
+    def __init__(self, mem, cmd_ev, pure_ex, which):
+        # type: (state.Mem, cmd_eval.CommandEvaluator, Optional[vm._Executor], int) -> None
         self.mem = mem
         self.cmd_ev = cmd_ev
+        self.pure_ex = pure_ex
         self.which = which
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
-        unused = rd.PosValue()
+        if self.pure_ex is None:
+            unused = rd.PosValue()
         bound = rd.PosCommand()
 
         dollar0 = rd.NamedStr("dollar0", None)
@@ -180,7 +191,8 @@ class Eval(vm._Callable):
                                          inside=in_captured_frame):
                 # _PrintFrame('[new]', self.cmd_ev.mem.var_stack[-1])
                 with state.ctx_Eval(self.mem, dollar0, pos_args, vars_):
-                    unused_status = self.cmd_ev.EvalCommandFrag(frag)
+                    with vm.ctx_MaybePure(self.pure_ex, self.cmd_ev):
+                        unused_status = self.cmd_ev.EvalCommandFrag(frag)
 
             if bindings is not None:
                 return value.Dict(bindings)

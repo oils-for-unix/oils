@@ -335,7 +335,7 @@ class CommandEvaluator(object):
         self.arith_ev = None  # type: sh_expr_eval.ArithEvaluator
         self.bool_ev = None  # type: sh_expr_eval.BoolEvaluator
         self.expr_ev = None  # type: expr_eval.ExprEvaluator
-        self.word_ev = None  # type: word_eval.AbstractWordEvaluator
+        self.word_ev = None  # type: word_eval.NormalWordEvaluator
         self.tracer = None  # type: dev.Tracer
 
         self.mem = mem

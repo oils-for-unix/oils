@@ -122,6 +122,7 @@ def InitCircularDeps(
         word_ev,  # type: word_eval.NormalWordEvaluator
         cmd_ev,  # type: cmd_eval.CommandEvaluator
         shell_ex,  # type: _Executor
+        pure_ex,  # type: _Executor
         prompt_ev,  # type: prompt.Evaluator
         global_io,  # type: Obj
         tracer,  # type: dev.Tracer
@@ -149,6 +150,7 @@ def InitCircularDeps(
     cmd_ev.tracer = tracer
 
     shell_ex.cmd_ev = cmd_ev
+    pure_ex.cmd_ev = cmd_ev
 
     prompt_ev.word_ev = word_ev
     prompt_ev.expr_ev = expr_ev
@@ -163,6 +165,7 @@ def InitCircularDeps(
     word_ev.CheckCircularDeps()
     cmd_ev.CheckCircularDeps()
     shell_ex.CheckCircularDeps()
+    pure_ex.CheckCircularDeps()
     prompt_ev.CheckCircularDeps()
     tracer.CheckCircularDeps()
 
@@ -175,7 +178,7 @@ class _Executor(object):
 
     def CheckCircularDeps(self):
         # type: () -> None
-        pass
+        assert self.cmd_ev is not None
 
     def RunBuiltin(self, builtin_id, cmd_val):
         # type: (int, cmd_value.Argv) -> int
@@ -285,28 +288,29 @@ class ctx_MaybePure(object):
     """
 
     def __init__(
-        self,
-        pure_ex,  # type: Optional[_Executor]
-        cmd_ev,  # type: cmd_eval.CommandEvaluator
-        word_ev,  # type: word_eval.NormalWordEvaluator
-        expr_ev  # type: expr_eval.ExprEvaluator
+            self,
+            pure_ex,  # type: Optional[_Executor]
+            cmd_ev,  # type: cmd_eval.CommandEvaluator
     ):
         # type: (...) -> None
         self.pure_ex = pure_ex
         if not pure_ex:
             return  # do nothing
 
+        word_ev = cmd_ev.word_ev
+        expr_ev = cmd_ev.expr_ev
+
+        # Save the Shell Executor
         self.saved = cmd_ev.shell_ex
         assert self.saved is word_ev.shell_ex
         assert self.saved is expr_ev.shell_ex
 
+        # Patch evaluators to use the Pure Executor
         cmd_ev.shell_ex = pure_ex
         word_ev.shell_ex = pure_ex
         expr_ev.shell_ex = pure_ex
 
         self.cmd_ev = cmd_ev
-        self.word_ev = word_ev
-        self.expr_ev = expr_ev
 
     def __enter__(self):
         # type: () -> None
@@ -317,9 +321,10 @@ class ctx_MaybePure(object):
         if not self.pure_ex:
             return  # do nothing
 
+        # Unpatch the evaluators
         self.cmd_ev.shell_ex = self.saved
-        self.word_ev.shell_ex = self.saved
-        self.expr_ev.shell_ex = self.saved
+        self.cmd_ev.word_ev.shell_ex = self.saved
+        self.cmd_ev.expr_ev.shell_ex = self.saved
 
 
 class ctx_Redirect(object):
