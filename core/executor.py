@@ -208,6 +208,8 @@ DEFAULT_PATH = [
     '/bin'
 ]
 
+_PURITY_STATUS = 5
+
 
 class PureExecutor(vm._Executor):
 
@@ -226,9 +228,14 @@ class PureExecutor(vm._Executor):
 
     def RunBuiltin(self, builtin_id, cmd_val):
         # type: (int, cmd_value.Argv) -> int
-        """Called by the 'builtin' builtin in osh/builtin_meta.py."""
-        e_die("Can't run builtin in pure mode", cmd_val.arg_locs[0])
-        return 1
+        """Called by the 'builtin' builtin in builtin/meta_oils.py."""
+
+        # TODO: RunSimpleCommand will allow 'true false'
+        #
+        # Then this function should allow
+        #   builtin true
+        #   builtin false
+        raise AssertionError()
 
     def RunSimpleCommand(self, cmd_val, cmd_st, run_flags):
         # type: (cmd_value.Argv, CommandStatus, int) -> int
@@ -241,8 +248,10 @@ class PureExecutor(vm._Executor):
 
     def RunPipeline(self, node, status_out):
         # type: (command.Pipeline, CommandStatus) -> None
-        e_die("Pipelines aren't allowed in pure mode (OILS-ERR-204)",
-              loc.Command(node))
+        raise error.Structured(
+            _PURITY_STATUS,
+            "Pipelines aren't allowed in pure mode (OILS-ERR-204)",
+            loc.Command(node))
 
     def RunSubshell(self, node):
         # type: (command_t) -> int
@@ -257,9 +266,10 @@ class PureExecutor(vm._Executor):
 
     def RunCommandSub(self, cs_part):
         # type: (CommandSub) -> str
-        e_die("Command subs aren't allowed in pure mode (OILS-ERR-204)",
-              loc.WordPart(cs_part))
-        return ''
+        raise error.Structured(
+            _PURITY_STATUS,
+            "Command subs aren't allowed in pure mode (OILS-ERR-204)",
+            loc.WordPart(cs_part))
 
     def RunProcessSub(self, cs_part):
         # type: (CommandSub) -> str

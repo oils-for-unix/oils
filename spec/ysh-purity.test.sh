@@ -16,25 +16,41 @@ pp test_ (d)
 
 var impure = ^(seq 3 | wc -l)
 
-call eval(impure)
+try {
+  call eval(impure)
+}
+#= _error
+echo impure code=$[_error.code]
 
-## status: 1
+# Can run impure code after pure code
+call io->eval(impure)
+
 ## STDOUT:
 (Dict)   {"a":1,"b":2}
+impure code=5
+3
 ## END
 
 #### evalExpr() is a pure function
+shopt --set ysh:upgrade
 
 var x = 42
 var pure = ^[x + 1]
 echo pure=$[evalExpr(pure)]
 
-var impure = ^[x + $(echo 1)]
-echo impure=$[evalExpr(impure)]
+var impure = ^[x + $(echo 3)]
+try {
+  echo impure code=$[evalExpr(impure)]
+}
+echo impure code=$[_error.code]
 
-## status: 1
+# Can run impure code after pure code
+echo impure=$[io->evalExpr(impure)]
+
 ## STDOUT:
 pure=43
+impure code=5
+impure=45
 ## END
 
 #### Idiom to handle purity errors from untrusted config files
@@ -118,20 +134,29 @@ $SH --eval-pure pipeline.sh -c 'echo pipeline.sh=$?'
 ## status: 0
 ## STDOUT:
 command sub
-command-sub.sh=1
-command-sub.ysh=1
+command-sub.sh=5
+command-sub.ysh=5
 
 3
 eval
-pipeline.sh=1
+pipeline.sh=5
 ## END
 
 #### Executor: Builtins not allowed
 
-mapfile lines < <(seq 3)
-echo "${lines[@]}"
+var cmd = ^(
+  mapfile lines < <(seq 3)
+  echo "${lines[@]}"
+)
+
+var cmd = ^(
+  builtin echo hi
+)
+
+call eval(cmd)
 
 ## STDOUT:
+what
 ## END
 
 #### Are source or use builtins allowed?
