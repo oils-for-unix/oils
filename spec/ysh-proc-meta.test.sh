@@ -98,7 +98,7 @@ proc p {
     # note: this creates its own frame, unlike 'eval'
     # call io->eval(cmd)
 
-    var d = io->evalToDict(cmd)
+    var d = io->eval(cmd, to_dict=true)
 
     # bind my_echo_a globally
     call setVar("my_echo_$param", d["echo_$param"], global=true)

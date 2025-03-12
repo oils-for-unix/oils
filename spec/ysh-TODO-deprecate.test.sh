@@ -142,3 +142,18 @@ echo $[_error.code]
 (Null)   null
 0
 ## END
+
+#### evalInFrame() and evalToDict()
+
+var cmd = ^(echo hi)
+
+call io->evalInFrame(cmd, vm.getFrame(-1))
+
+var d = io->evalToDict(cmd)
+pp test_ (d)
+
+## STDOUT:
+hi
+hi
+(Dict)   {}
+## END

@@ -154,6 +154,7 @@ class Eval(vm._Callable):
         pos_args_raw = rd.NamedList("pos_args", None)
         vars_ = rd.NamedDict("vars", None)
         in_captured_frame = rd.NamedBool("in_captured_frame", False)
+        to_dict = rd.NamedBool("to_dict", False)
         rd.Done()
 
         frag = typed_args.GetCommandFrag(bound)
@@ -162,8 +163,11 @@ class Eval(vm._Callable):
 
         with state.ctx_TokenDebugFrame(self.mem, rd.LeftParenToken()):
             if self.which == EVAL_NULL:
-                bindings = None  # type: Optional[Dict[str, value_t]]
-            elif self.which == EVAL_DICT:
+                if to_dict:
+                    bindings = NewDict()  # type: Optional[Dict[str, value_t]]
+                else:
+                    bindings = None
+            elif self.which == EVAL_DICT:  # TODO: remove evalToDict()
                 bindings = NewDict()
             else:
                 raise AssertionError()
@@ -178,10 +182,10 @@ class Eval(vm._Callable):
                 with state.ctx_Eval(self.mem, dollar0, pos_args, vars_):
                     unused_status = self.cmd_ev.EvalCommandFrag(frag)
 
-            if self.which == EVAL_NULL:
-                return value.Null
-            else:
+            if bindings is not None:
                 return value.Dict(bindings)
+            else:
+                return value.Null
 
 
 class CaptureStdout(vm._Callable):

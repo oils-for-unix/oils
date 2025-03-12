@@ -291,12 +291,12 @@ one
 (Dict)   {"code":1}
 ## END
 
-#### io->evalToDict() - local and global
+#### io->eval(to_dict=true) - local and global
 
 var g = 'global'
 
 # in the global frame
-var d = io->evalToDict(^(var foo = 42; var bar = g;))
+var d = io->eval(^(var foo = 42; var bar = g;), to_dict=true)
 pp test_ (d)
 
 # Same thing in a local frame
@@ -309,7 +309,7 @@ proc p (myparam) {
     var p = "-$myparam"
     var L = "-$mylocal"
   )
-  var d = io->evalToDict(cmd)
+  var d = io->eval(cmd, to_dict=true)
   pp test_ (d)
 }
 p param
@@ -319,14 +319,14 @@ p param
 (Dict)   {"foo":42,"g":"-global","p":"-param","L":"-local"}
 ## END
 
-#### io->evalToDict() with dollar0, pos_args, vars - dict ordering bug
+#### io->eval(to_dict=true) with dollar0, pos_args, vars - dict ordering bug
 
 # TODO: mycpp/gc_dict.h should preserve insertion order, in the presence of
 # deletions, like CPython
 
 proc Dict ( ; out; ; block) {
-  var d = io->evalToDict(block, dollar0='zero', pos_args=:|a b c|,
-                         vars={X: 'X', _Y: '_Y'})
+  var d = io->eval(block, dollar0='zero', pos_args=:|a b c|,
+                   vars={X: 'X', _Y: '_Y'}, to_dict=true)
   call out->setValue(d)
 }
 
@@ -358,11 +358,11 @@ json write (d)
 }
 ## END
 
-#### io->evalToDict() with in_captured_frame=true
+#### io->eval(to_dict=true) with in_captured_frame=true
 
 proc Dict ( ; out; ; block) {
-  var d = io->evalToDict(block, dollar0='zero', pos_args=:|a b c|,
-                         vars={X: 'X', _Y: '_Y'}, in_captured_frame=true)
+  var d = io->eval(block, dollar0='zero', pos_args=:|a b c|,
+                   vars={X: 'X', _Y: '_Y'}, in_captured_frame=true, to_dict=true)
   call out->setValue(d)
 }
 
@@ -402,7 +402,7 @@ json write (d)
 ## END
 
 
-#### parseCommand then io->evalToDict() - in global scope
+#### parseCommand then io->eval(to_dict=true) - in global scope
 
 var g = 'global'
 var cmd = parseCommand('var x = 42; echo hi; var y = g')
@@ -411,7 +411,7 @@ var cmd = parseCommand('var x = 42; echo hi; var y = g')
 pp test_ (cmd)
 #pp asdl_ (cmd)
 
-var d = io->evalToDict(cmd)
+var d = io->eval(cmd, to_dict=true)
 
 pp test_ (d)
 
@@ -436,7 +436,7 @@ pp test_ (_error)
 #### Dict (&d) { ... } converts frame to dict
 
 proc Dict ( ; out; ; block) {
-  var d = io->evalToDict(block)
+  var d = io->eval(block, to_dict=true)
   call out->setValue(d)
 }
 
@@ -501,7 +501,7 @@ proc p {
 #### block in Dict (&d) { ... } can read from outer scope
 
 proc Dict ( ; out; ; block) {
-  var d = io->evalToDict(block)
+  var d = io->eval(block, to_dict=true)
   call out->setValue(d)
 }
 
@@ -559,9 +559,8 @@ pp test_ (result)
 
 proc Dict ( ; out; ; block) {
   echo "Dict proc global outer=$outer"
-  var d = io->evalToDict(block)
+  var d = io->eval(block, to_dict=true)
 
-  #echo 'proc Dict frame after evalToDict'
   #pp frame_vars_
 
   #echo "Dict outer2=$outer2"
@@ -622,7 +621,7 @@ after p outer=zz
 #### Dict (&d) and setglobal
 
 proc Dict ( ; out; ; block) {
-  var d = io->evalToDict(block)
+  var d = io->eval(block, to_dict=true)
   call out->setValue(d)
 }
 
@@ -648,7 +647,7 @@ echo g=$g
 g=zz
 ## END
 
-#### bindings created shvar persist, which is different than evalToDict()
+#### bindings created shvar persist, which is different than eval(to_dict=true)
 
 var a = 'a'
 shvar IFS=: a='b' {
@@ -802,10 +801,10 @@ proc p (;;; block) {
     call io->eval(block)
   }
 
-  # Or maybe we have free functions, like func/eval func/evalToDict
+  # Or maybe we have free functions, like func/eval
   # There is no with-pure
   call eval(cmd)
-  var d = evalToDict(cmd)
+  var d = eval(cmd, to_dict=true)
 
   eval-pure --dump d {
     var d = {}

@@ -920,21 +920,10 @@ creating procs that behave like builtins:
     }
     echo $listing          # It's still visible after the proc returns
 
-<!--
-TODO: document in_captured_frame=true
--->
+---
 
-### evalToDict()
-
-The `evalToDict()` method is like the `eval()` method, but it returns a
-Dict of bindings.
-
-By default:
-
-1. It pushes a new stack frame, enclosing the captured frame
-1. Executes the given block of code (`Command`)
-1. Copies the top frame's bindings into a Dict, and returns it.
-   - Only the names that don't end with an underscore `_` are copied.
+When the `eval()` method is passed `to_dict=true`, it returns a `Dict`
+corresponding to the stack frame that the `Command` is evaluated in.
 
 Example:
 
@@ -945,10 +934,8 @@ Example:
 
     pp (d)  # => {a: 42, b: 11}
 
-It supports the same optional arguments as `io->eval()`:
-
-- `dollar0 pos_args vars`
-- `in_captured_frame`
+Names that end with an underscore `_` are not copied, so `hidden_` is not in
+the `Dict`.
 
 ### captureStdout()
 

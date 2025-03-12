@@ -70,8 +70,7 @@ error handling, and more.
                    Frame
                    DebugFrame  toString()
                    io          stdin            evalExpr()
-                               io/eval()        evalToDict()
-                               captureStdout()
+                               io/eval()        captureStdout()
                                promptVal()
                              X time()         X strftime()      X glob()
                    vm          getFrame()       getDebugStack()   id() 
@@ -394,7 +393,7 @@ ENV.{PS1,PS4,YSH_HISTFILE}
   - should be populate ENV.HOME?
 
 Notes:
-  [Module] __E__ - for evalToDict()?
+  [Module] __E__ - for closures
 X [Builtin Sub]   _buffer
 
 Ideas:

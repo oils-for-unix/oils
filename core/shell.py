@@ -525,15 +525,17 @@ def Main(
     # The M/ prefix means it's io->eval()
     io_methods['M/eval'] = value.BuiltinFunc(
         method_io.Eval(mem, cmd_ev, method_io.EVAL_NULL))
-    io_methods['M/evalToDict'] = value.BuiltinFunc(
-        method_io.Eval(mem, cmd_ev, method_io.EVAL_DICT))
-    io_methods['M/evalInFrame'] = value.BuiltinFunc(
-        method_io.EvalInFrame(mem, cmd_ev))
     io_methods['M/evalExpr'] = value.BuiltinFunc(method_io.EvalExpr(expr_ev))
 
     # Identical to command sub
     io_methods['captureStdout'] = value.BuiltinFunc(
         method_io.CaptureStdout(mem, shell_ex))
+
+    # TODO: remove these 2 deprecated methods
+    io_methods['M/evalToDict'] = value.BuiltinFunc(
+        method_io.Eval(mem, cmd_ev, method_io.EVAL_DICT))
+    io_methods['M/evalInFrame'] = value.BuiltinFunc(
+        method_io.EvalInFrame(mem, cmd_ev))
 
     # TODO:
     io_methods['time'] = value.BuiltinFunc(method_io.Time())
