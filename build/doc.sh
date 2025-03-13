@@ -128,6 +128,8 @@ readonly MARKDOWN_DOCS=(
   syntax-feelings
   command-vs-expression-mode
 
+  repo-overview
+
   # needs polish
   # Note: docs about the YSH are prefixed 'ysh-'.
   # data-model and command-vs-expression-mode span both OSH and YSH
