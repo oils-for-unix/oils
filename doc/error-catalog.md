@@ -264,7 +264,7 @@ test/runtime-errors.sh test-command-not-found
 ```
   findz
   ^~~~~
-[ -c flag ]:1: 'findz' not found (OILS-ERR-100)
+[ -c flag ]:1: Command 'findz' not found (OILS-ERR-100)
 ```
 
 The shell tried to execute an external command, but couldn't.

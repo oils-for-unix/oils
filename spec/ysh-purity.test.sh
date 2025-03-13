@@ -230,6 +230,8 @@ code=5 message=Pipelines aren't allowed in pure mode (OILS-ERR-204)
 ## END
 
 #### Are any builtins allowed?  true, false
+shopt --set ysh:upgrade
+
 
 # what other builtins should be allowed?
 # - set and shopt could be dangerous?
@@ -260,9 +262,10 @@ var cmd = ^(
   echo builtin false
 )
 
-call eval (cmd)
+call io->eval(cmd)
+call eval(cmd)
+echo
 
-## status: 1
 ## STDOUT:
 true
 builtin true
@@ -270,6 +273,7 @@ command true
 ## END
 
 #### Are source or use builtins allowed?
+shopt --set ysh:upgrade
 
 # Problem: they cna "steal" information with directory traversal attacks?
 # maybe only allow them in the same dirs
@@ -281,14 +285,32 @@ command true
 #
 # use foo.ysh  # relative to the path
 
-echo TODO
+var cmd = ^(
+  source foo.ysh
+  use foo.ysh
+)
+
+call eval (cmd)
 
 ## STDOUT:
 ## END
 
 #### Can log to stderr in pure mode
+shopt --set ysh:upgrade
 
-echo "TODO: log builtin?"
+var cmd = ^(
+  var name = 'world'
+
+  # I think this should be allowed
+  # And maybe log can be customized with:
+  # - xtrace unification?  hierarchy
+  # - timestamps
+
+  log "hi $name"
+)
+
+call io->eval(cmd)
+call eval (cmd)
 
 ## STDOUT:
 ## END
@@ -296,15 +318,21 @@ echo "TODO: log builtin?"
 
 #### io and vm are not allowed
 
-= vm.getFrame(-1)
-= vm.id({})
+var cmd = ^(
+  = vm.getFrame(-1)
+  = vm.id({})
 
-= io.stdin
+  = io.stdin
+)
+
+call io->eval(cmd)
+call eval (cmd)
 
 ## STDOUT:
 ## END
 
 #### Can't make an alias of io->eval and call it, etc.
+shopt --set ysh:upgrade
 
 # The --eval-pure could be make an alias, and then "trick" the post-amble into
 # calling it.
@@ -322,15 +350,26 @@ call f(cmd)
 
 # TODO: should be @[io.glob('*.txt')]
 # That is a bit verbose
-echo *.txt
+var cmd = ^(
+  echo *.txt
+)
+
+call io->eval(cmd)
+call eval(cmd)
 
 ## STDOUT:
 ## END
 
 #### $RANDOM $SECONDS
+shopt --set ysh:upgrade
 
-echo not-implemented=$RANDOM
-echo $SECONDS
+var cmd = ^(
+  echo not-implemented=$RANDOM
+  echo $SECONDS
+)
+
+call io->eval(cmd)
+call eval(cmd)
 
 ## STDOUT:
 ## END
@@ -339,7 +378,12 @@ echo $SECONDS
 
 # this follows from 'no builtins', but probably good to test
 
-echo TODO
+var cmd = ^(
+  trap 'echo INT' INT
+)
+
+call io->eval(cmd)
+call eval(cmd)
 
 ## STDOUT:
 ## END
