@@ -33,6 +33,3 @@ Tests for different implementations:
 
     utf8_test.cc
 
-## Packle
-
-TODO

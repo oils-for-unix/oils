@@ -128,6 +128,8 @@ readonly MARKDOWN_DOCS=(
   syntax-feelings
   command-vs-expression-mode
 
+  repo-overview
+
   # needs polish
   # Note: docs about the YSH are prefixed 'ysh-'.
   # data-model and command-vs-expression-mode span both OSH and YSH
@@ -838,10 +840,36 @@ soil-run() {
 }
 
 #
+# Generator
+#
+
+_gen-readme-index() {
+  # Use relative markdown links
+  echo '
+Oils Repo READMEs
+=================
+
+This page is useful for finding docs that are out of date.
+
+Generate it with:
+
+    build/doc.sh gen-readme-index
+
+'
+  for path in */README.md; do
+    echo "- [$path]($path)"
+  done
+}
+
+gen-readme-index() {
+  _gen-readme-index > README-index.md
+}
+
+#
 # Golden tests
 #
 # $0 golden-tree
-# $0 determnistic-build  # with new code
+# $0 determinstic-build  # with new code
 # $0 compare-golden
 
 deterministic() {

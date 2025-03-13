@@ -143,6 +143,7 @@ Internal details:
 
 - [README.md](oils-repo/README.html).  If you want to modify Oils, start here.
   We welcome contributions!
+- [Oils Repo Overview](repo-overview.html)
 - [Doc Toolchain](doc-toolchain.html) and [Doc Plugins](doc-plugins.html).
   - [ul-table: Markdown Tables Without New Syntax](ul-table.html)
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)

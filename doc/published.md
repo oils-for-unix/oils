@@ -71,5 +71,9 @@ Reference:
 
 For contributors:
 
+- [README.md](oils-repo/README.html).  If you want to modify Oils, start here.
+  We welcome contributions!
+- [Oils Repo Overview](repo-overview.html)
+- [mycpp/README](oils-repo/mycpp/README.html) - How we translate typed Python to
+  C++.
 - [ul-table: Markdown Tables Without New Syntax](ul-table.html)
-
