@@ -840,10 +840,32 @@ soil-run() {
 }
 
 #
+# Generator
+#
+
+_gen-readme-index() {
+  # Use relative markdown links
+  echo '
+Oils Repo READMEs
+=================
+
+This page is useful for finding docs that are out of date.
+
+'
+  for path in */README.md; do
+    echo "[$path]($path)"
+  done
+}
+
+gen-readme-index() {
+  _gen-readme-index > doc/readme-index.md
+}
+
+#
 # Golden tests
 #
 # $0 golden-tree
-# $0 determnistic-build  # with new code
+# $0 determinstic-build  # with new code
 # $0 compare-golden
 
 deterministic() {
