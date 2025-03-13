@@ -109,6 +109,9 @@ They also accept these flags:
         (e.g. in YSH), then the shell stops when $? is non-zero after
         evaluating a file.
 
+    --eval-pure FILE
+        Like --eval, but disallow I/O (known as "pure mode").
+
     --location-str
         Use this string to display error messages.
         See 'help sourceCode' for an example.

@@ -205,6 +205,15 @@ Also see [the Unicode doc](../unicode.html).
 - [`ENV`](chap-special-var.html#ENV)
 - [`__builtins__`](chap-special-var.html#__builtins__)
 
+### Purity
+
+- [`shell-flags`](chap-front-end.html#shell-flags) for `--eval-pure`
+- [`func/eval`](chap-builtin-func.html#func/eval) and
+  [`func/evalExpr`](chap-builtin-func.html#func/evalExpr)
+- [`func`](chap-ysh-cmd.html#func) - functions are pure
+- [`io`](chap-type-method.html#io) and [`vm`](chap-type-method.html#vm) - impure
+  behavior is attached to these objects
+
 <!--
 
 TODO:

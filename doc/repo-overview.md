@@ -25,7 +25,6 @@ languages, Zephyr ASDL, and a statically-typed subset of Python.
     data_lang/        # Languages based on JSON
     core/             # Other code shared between OSH and YSH
     builtin/          # Builtin commands and functions
-    pyext/            # Python extension modules, e.g. libc.c
     pylib/            # Borrowed from the Python standard library.
     tools/            # User-facing tools, e.g. the osh2oil translator
     display/          # User interface
@@ -38,31 +37,42 @@ Here are the tools that transform that high-level code to efficient code:
     pgen2/            # Parser Generator, borrowed from CPython
     mycpp/            # Experimental translator from typed Python to C++.
                       # Depends on MyPy.  See mycpp/README.md
-    pea/              # Perhaps a cleaner version of mycpp
+    pea/              # Experiment: a cleaner version of mycpp?
     opy/              # Obsolete Python compiler
 
-### Native Code and Build System
+## Multiple Build Systems
 
-We have native code to support both the dev build (running under CPython) and
-the `oils-for-unix` build (pure C++):
+### Dev Build Runs Under CPython
 
-    NINJA-config.sh   # Generates build.ninja
+The Oils interpreter can run under a regular Python interpreter!  This build is
+**slow**.
 
-    build/            # High level build
-      NINJA-steps.sh
-      NINJA_main.py   # invoked by NINJA-config.sh
-      NINJA_subgraph.py
+    build/ 
       py.sh           # For development builds, running CPython
-    cpp/              # C++ code which complements the mycpp translation
-      NINJA-steps.sh
-      NINJA_subgraph.py
-    mycpp/            # Runtime for the translator
-      NINJA-steps.sh
-      NINJA_subgraph.py
-
-    prebuilt/         # Prebuilt files committed to git, instead of in _gen/
-
+    pyext/            # Python extension modules, e.g. libc.c
     Python-2.7.13/    # For the slow Python build
+    Makefile          # For the tarball
+
+### Generate C++, and Build Native Code with a `ninja` Wrapper
+
+We have native code to support the `oils-for-unix` build, which is pure C++.
+
+We build it with a Bazel-like wrapper around `ninja`:
+
+    NINJA-config.sh       # Generates build.ninja
+
+    build/                # High level build
+      ninja_main.py       # invoked by NINJA-config.sh
+      ninja_lib.py        # build rules
+      ninja-rules-cpp.sh
+      ninja-rules-py.sh
+    cpp/                  # C++ code which complements the mycpp translation
+      NINJA_subgraph.py
+    mycpp/                # Runtime for the translator
+      NINJA_subgraph.py
+
+    prebuilt/             # Prebuilt files committed to git, instead of in
+                          # _gen/
 
     # Temp dirs (see below)
     _bin/
@@ -70,19 +80,41 @@ the `oils-for-unix` build (pure C++):
     _gen/
     _test/
 
-## Build System for End Users
+### End User Build System Has Few Dependencies
 
-These files make the slow "Oils Python" build, which is very different than the
-**developer build** of Oils.
+Distro maintainers or end users should build from the `oils-for-unix` tarball,
+not the repo.  ([The Oils Repo Is Different From the Tarball
+Releases](https://github.com/oils-for-unix/oils/wiki/The-Oils-Repo-Is-Different-From-the-Tarball-Releases).)
 
-    Makefile
+We ship these files in the tarball:
+
     configure
+    _build/
+      oils.sh  # generated shell script
     install
 
-These files are for the C++ `oils-for-unix` tarball:
+So instead of running `ninja`, end users run `_build/oils.sh`, which invokes
+the same "actions" as `ninja`.  
 
-    _build/
-      oils.sh
+This means they don't need to install `ninja` &mdash; they only need a C++
+compiler and a shell.
+
+### Build Dependencies
+
+TODO: this section is out of date.  We now use "wedges" in `~/wedge`.
+
+These tools are built from shell scripts in `soil/`.  The `oil_DEPS` dir is
+"parallel" to Oils because it works better with container bind mounds.
+
+    ../oil_DEPS/
+      re2c/           # to build the lexer
+      cmark/          # for building docs
+      spec-bin/       # shells to run spec tests against
+      mypy/           # MyPy repo
+      mycpp-venv/     # MyPy binaries deps in a VirtualEnv
+
+      py3/            # for mycpp and pea/
+      cpython-full/   # for bootstrapping Oils-CPython
 
 ## Dev Tools
 
@@ -156,23 +188,6 @@ above create and use these dirs.
       vm-baseline/
       startup/
       ...
-
-### Build Dependencies
-
-TODO: this section is out of date.  We now use "wedges" in `~/wedge`.
-
-These tools are built from shell scripts in `soil/`.  The `oil_DEPS` dir is
-"parallel" to Oils because it works better with container bind mounds.
-
-    ../oil_DEPS/
-      re2c/           # to build the lexer
-      cmark/          # for building docs
-      spec-bin/       # shells to run spec tests against
-      mypy/           # MyPy repo
-      mycpp-venv/     # MyPy binaries deps in a VirtualEnv
-
-      py3/            # for mycpp and pea/
-      cpython-full/   # for bootstrapping Oils-CPython
 
 ## Docs
 

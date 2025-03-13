@@ -110,7 +110,7 @@ me.
 
 Thank you for the contributions!
 
-### Docs
+## Docs
 
 The [Wiki](https://github.com/oils-for-unix/oils/wiki) has many developer docs.  Feel
 free to edit them.  If you make a major change, let us know on Zulip!
