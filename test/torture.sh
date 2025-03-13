@@ -6,10 +6,19 @@
 #   test/torture.sh <function name>
 
 : ${LIB_OSH=stdlib/osh}
-source $LIB_OSH/bash-strict.sh
-source $LIB_OSH/no-quotes.sh
+source $LIB_OSH/task-five.sh
 
-source test/common.sh  # run-test-funcs
+test-infinite-func() {
+  local sh=${1:-bash}
+
+  # bash goes forever?
+  # mksh  segfaults
+  # ash: default
+  # dash limits to 1000; zsh limits to FUNCNEST
+  # osh: seg fault
+
+  $sh -c 'f() { f; }; f'
+}
 
 test-infinite-redir() {
   local sh=${1:-bash}
@@ -25,13 +34,4 @@ test-infinite-redir() {
   $sh -c 'f() { f > /dev/null; }; f'
 }
 
-
-run-for-release() {
-  run-other-suite-for-release torture run-test-funcs
-}
-
-soil-run() {
-  run-test-funcs
-}
-
-"$@"
+task-five "$@"
