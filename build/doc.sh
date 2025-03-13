@@ -851,14 +851,18 @@ Oils Repo READMEs
 
 This page is useful for finding docs that are out of date.
 
+Generate it with:
+
+    build/doc.sh gen-readme-index
+
 '
   for path in */README.md; do
-    echo "[$path]($path)"
+    echo "- [$path]($path)"
   done
 }
 
 gen-readme-index() {
-  _gen-readme-index > doc/readme-index.md
+  _gen-readme-index > README-index.md
 }
 
 #
