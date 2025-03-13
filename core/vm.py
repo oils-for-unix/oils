@@ -204,11 +204,6 @@ class _Executor(object):
         # type: () -> None
         assert self.cmd_ev is not None
 
-    def RunBuiltin(self, builtin_id, cmd_val):
-        # type: (int, cmd_value.Argv) -> int
-        """Called by the 'builtin' builtin in osh/builtin_meta.py."""
-        return 0
-
     def RunSimpleCommand(self, cmd_val, cmd_st, run_flags):
         # type: (cmd_value.Argv, CommandStatus, int) -> int
         """Shared between ShellExecutor and PureExecutor"""
@@ -232,7 +227,19 @@ class _Executor(object):
         # type: (str, loc_t, cmd_value.Argv, CommandStatus, int) -> int
         raise NotImplementedError()
 
-    def RunBuiltinProc(self, builtin_proc, cmd_val):
+    def RunBuiltin(self, builtin_id, cmd_val):
+        # type: (int, cmd_value.Argv) -> int
+        """Run a builtin.
+
+        Also called by the 'builtin' builtin, in builtin/meta_oils.py
+        """
+        self.tracer.OnBuiltin(builtin_id, cmd_val.argv)
+
+        builtin_proc = self.builtins[builtin_id]
+
+        return self._RunBuiltinProc(builtin_proc, cmd_val)
+
+    def _RunBuiltinProc(self, builtin_proc, cmd_val):
         # type: (_Builtin, cmd_value.Argv) -> int
 
         io_errors = []  # type: List[error.IOError_OSError]
@@ -286,7 +293,7 @@ class _Executor(object):
                 # created by 'use util.ysh'
                 builtin_proc = cast(value.BuiltinProc, proc_val)
                 b = cast(_Builtin, builtin_proc.builtin)
-                status = self.RunBuiltinProc(b, cmd_val)
+                status = self._RunBuiltinProc(b, cmd_val)
 
             elif case(value_e.Proc):
                 proc = cast(value.Proc, proc_val)

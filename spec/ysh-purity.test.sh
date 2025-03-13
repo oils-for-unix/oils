@@ -1,4 +1,4 @@
-## oils_failures_allowed: 10
+## oils_failures_allowed: 9
 
 # Not disallowed:
 #   setglobal, mutating arguments with setvar
@@ -107,24 +107,27 @@ pp test_ (g)
 (List)   ["p-outside","p-inside"]
 ## END
 
-#### Executor: can run Hay (for now)
+#### Executor: can run Hay (while Hay is hard-coded)
 
 shopt --set ysh:upgrade
 
-if false { 
-  hay define Package/INSTALL
+hay define Package/INSTALL
 
+var cmd = ^(
   Package foo {
     version = '1.1'
     INSTALL { echo hi }
   }
+)
 
-  = _hay()
-}
+call eval(cmd)
 
+json write (_hay().children[0].attrs)
 
 ## STDOUT:
-d
+{
+  "version": "1.1"
+}
 ## END
 
 
@@ -132,9 +135,15 @@ d
 
 var cmd = ^(seq 3)
 
+call io->eval(cmd)
+
 call eval(cmd)
 
+## status: 127
 ## STDOUT:
+1
+2
+3
 ## END
 
 
@@ -305,6 +314,15 @@ var f = io->eval
 var cmd = ^(echo hi)
 
 call f(cmd)
+
+## STDOUT:
+## END
+
+#### Globbing not allowed
+
+# TODO: should be @[io.glob('*.txt')]
+# That is a bit verbose
+echo *.txt
 
 ## STDOUT:
 ## END

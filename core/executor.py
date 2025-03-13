@@ -226,20 +226,8 @@ class PureExecutor(vm._Executor):
         vm._Executor.__init__(self, mem, exec_opts, mutable_opts, procs,
                               hay_state, builtins, tracer, errfmt)
 
-    def RunBuiltin(self, builtin_id, cmd_val):
-        # type: (int, cmd_value.Argv) -> int
-        """Called by the 'builtin' builtin in builtin/meta_oils.py."""
-
-        # TODO: RunSimpleCommand will allow 'true false'
-        #
-        # Then this function should allow
-        #   builtin true
-        #   builtin false
-        raise AssertionError()
-
     def _RunSimpleCommand(self, arg0, arg0_loc, cmd_val, cmd_st, run_flags):
         # type: (str, loc_t, cmd_value.Argv, CommandStatus, int) -> int
-        #log('_RunSimpleCommand')
 
         call_procs = not (run_flags & NO_CALL_PROCS)
         if call_procs:
@@ -248,8 +236,12 @@ class PureExecutor(vm._Executor):
                 return self._RunInvokable(proc_val, self_obj, arg0_loc,
                                           cmd_val)
 
-        self.errfmt.Print_('Command %r not found in pure mode (OILS-ERR-102)' % arg0,
-                           arg0_loc)
+        if self.hay_state.Resolve(arg0):
+            return self.RunBuiltin(builtin_i.haynode, cmd_val)
+
+        self.errfmt.Print_(
+            'Command %r not found in pure mode (OILS-ERR-102)' % arg0,
+            arg0_loc)
         return 127
 
     def RunBackgroundJob(self, node):
@@ -390,18 +382,6 @@ class ShellExecutor(vm._Executor):
         p = process.Process(thunk, self.job_control, self.job_list,
                             self.tracer)
         return p
-
-    def RunBuiltin(self, builtin_id, cmd_val):
-        # type: (int, cmd_value.Argv) -> int
-        """Run a builtin.
-
-        Also called by the 'builtin' builtin.
-        """
-        self.tracer.OnBuiltin(builtin_id, cmd_val.argv)
-
-        builtin_proc = self.builtins[builtin_id]
-
-        return self.RunBuiltinProc(builtin_proc, cmd_val)
 
     def _RunSimpleCommand(self, arg0, arg0_loc, cmd_val, cmd_st, run_flags):
         # type: (str, loc_t, cmd_value.Argv, CommandStatus, int) -> int
