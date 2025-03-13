@@ -77,38 +77,62 @@ echo "TODO: what's the idiom?"
 ## STDOUT:
 ## END
 
-#### Can log to stderr in pure mode
-
-echo "TODO: log builtin?"
-
-## STDOUT:
-## END
-
-#### Executor: can run user-defined Procs (and Hay, for now)
+#### Executor: can run user-defined Procs 
 shopt --set ysh:upgrade
 
-hay define Package/INSTALL
+var g = []
 
-Package foo {
-  version = '1.1'
-  INSTALL { echo hi }
+proc p-outside {
+  # note: append builtin would be nice
+  call g->append('p-outside')
 }
 
-= _hay()
+# The Hay file can call any procs?   That seems wrong actually
+# We want to hide some of them
 
-proc p {
-  echo myproc
-}
+var cmd = ^(
+  p-outside
 
-p
+  proc p-inside {
+    call g->append('p-inside')
+  }
+  p-inside
+)
+
+call eval(cmd)
+
+pp test_ (g)
 
 ## STDOUT:
+(List)   ["p-outside","p-inside"]
+## END
+
+#### Executor: can run Hay (for now)
+
+shopt --set ysh:upgrade
+
+if false { 
+  hay define Package/INSTALL
+
+  Package foo {
+    version = '1.1'
+    INSTALL { echo hi }
+  }
+
+  = _hay()
+}
+
+
+## STDOUT:
+d
 ## END
 
 
 #### Executor: External Commands not allowed
 
-echo TODO
+var cmd = ^(seq 3)
+
+call eval(cmd)
 
 ## STDOUT:
 ## END
@@ -244,13 +268,22 @@ command true
 # Or maybe have a $PATH - $OILS_LIB_PATH
 # and it can only be set by the caller, via command line flag?
 #
+# ysh --oils-path dir1:dir2 --eval
+#
 # use foo.ysh  # relative to the path
-
 
 echo TODO
 
 ## STDOUT:
 ## END
+
+#### Can log to stderr in pure mode
+
+echo "TODO: log builtin?"
+
+## STDOUT:
+## END
+
 
 #### io and vm are not allowed
 

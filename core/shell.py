@@ -495,9 +495,10 @@ def Main(
     hay_state = hay_ysh.HayState()
 
     shell_ex = executor.ShellExecutor(mem, exec_opts, mutable_opts, procs,
-                                      hay_state, builtins, search_path,
-                                      ext_prog, waiter, tracer, job_control,
-                                      job_list, fd_state, trap_state, errfmt)
+                                      hay_state, builtins, tracer, errfmt,
+                                      search_path, ext_prog, waiter,
+                                      job_control, job_list, fd_state,
+                                      trap_state)
 
     pure_ex = executor.PureExecutor(mem, exec_opts, mutable_opts, procs,
                                     hay_state, builtins, tracer, errfmt)

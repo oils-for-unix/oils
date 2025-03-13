@@ -267,6 +267,8 @@ test/runtime-errors.sh test-command-not-found
 [ -c flag ]:1: 'findz' not found (OILS-ERR-100)
 ```
 
+The shell tried to execute an external command, but couldn't.
+
 - Did you misspell a command name?
 - Did you misspell a shell function or a YSH `proc`?
 - Is the file in your `$PATH`?  The `PATH` variable is a colon-separated list
@@ -332,6 +334,22 @@ To fix it, consider using **single quotes**:
   Undecidable](https://www.oilshell.org/blog/2016/10/20.html) (2016)
 - Also mentioned in [Known Differences](known-differences.html)
 
+
+### OILS-ERR-102
+
+```
+  var cmd = ^(seq 3)
+              ^~~
+[ stdin ]:1: Command 'seq' not found in pure mode (OILS-ERR-102)
+```
+
+The shell tried to execute a command in pure mode, but couldn't.
+
+In pure mode, only user-defined procs and a few builtin commands can be the "first word".
+
+- Did you misspell a proc name?
+- Are you trying to run an external command?  Such commands aren't allowed in
+  pure mode.
 
 ## Runtime Errors - Oils and YSH
 

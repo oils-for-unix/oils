@@ -14,21 +14,19 @@ from _devbuild.gen.syntax_asdl import (
     loc,
     loc_t,
 )
-from _devbuild.gen.value_asdl import value, value_e
 from builtin import hay_ysh
 from core import dev
 from core import error
-from core import process
 from core.error import e_die, e_die_status
+from core import process
 from core import pyos
-from core import pyutil
 from core import state
 from core import vm
 from display import ui
 from frontend import consts
 from frontend import lexer
 from mycpp import mylib
-from mycpp.mylib import log, print_stderr, tagswitch
+from mycpp.mylib import log, print_stderr
 from pylib import os_path
 from pylib import path_stat
 
@@ -213,6 +211,7 @@ _PURITY_STATUS = 5
 
 class PureExecutor(vm._Executor):
 
+    # mycpp needs this duplicate constructor
     def __init__(
             self,
             mem,  # type: state.Mem
@@ -224,7 +223,8 @@ class PureExecutor(vm._Executor):
             tracer,  # type: dev.Tracer
             errfmt  # type: ui.ErrorFormatter
     ):
-        vm._Executor.__init__(self)
+        vm._Executor.__init__(self, mem, exec_opts, mutable_opts, procs,
+                              hay_state, builtins, tracer, errfmt)
 
     def RunBuiltin(self, builtin_id, cmd_val):
         # type: (int, cmd_value.Argv) -> int
@@ -237,10 +237,20 @@ class PureExecutor(vm._Executor):
         #   builtin false
         raise AssertionError()
 
-    def RunSimpleCommand(self, cmd_val, cmd_st, run_flags):
-        # type: (cmd_value.Argv, CommandStatus, int) -> int
-        log('RunSimpleCommand')
-        return 0
+    def _RunSimpleCommand(self, arg0, arg0_loc, cmd_val, cmd_st, run_flags):
+        # type: (str, loc_t, cmd_value.Argv, CommandStatus, int) -> int
+        #log('_RunSimpleCommand')
+
+        call_procs = not (run_flags & NO_CALL_PROCS)
+        if call_procs:
+            proc_val, self_obj = self.procs.GetInvokable(arg0)
+            if proc_val is not None:
+                return self._RunInvokable(proc_val, self_obj, arg0_loc,
+                                          cmd_val)
+
+        self.errfmt.Print_('Command %r not found in pure mode (OILS-ERR-102)' % arg0,
+                           arg0_loc)
+        return 127
 
     def RunBackgroundJob(self, node):
         # type: (command_t) -> int
@@ -313,35 +323,28 @@ class ShellExecutor(vm._Executor):
             procs,  # type: state.Procs
             hay_state,  # type: hay_ysh.HayState
             builtins,  # type: Dict[int, vm._Builtin]
+            tracer,  # type: dev.Tracer
+            errfmt,  # type: ui.ErrorFormatter
             search_path,  # type: SearchPath
             ext_prog,  # type: process.ExternalProgram
             waiter,  # type: process.Waiter
-            tracer,  # type: dev.Tracer
             job_control,  # type: process.JobControl
             job_list,  # type: process.JobList
             fd_state,  # type: process.FdState
             trap_state,  # type: trap_osh.TrapState
-            errfmt  # type: ui.ErrorFormatter
     ):
         # type: (...) -> None
-        vm._Executor.__init__(self)
-        self.mem = mem
-        self.exec_opts = exec_opts
-        self.mutable_opts = mutable_opts  # for IsDisabled(), not mutating
-        self.procs = procs
-        self.hay_state = hay_state
-        self.builtins = builtins
+        vm._Executor.__init__(self, mem, exec_opts, mutable_opts, procs,
+                              hay_state, builtins, tracer, errfmt)
         self.search_path = search_path
         self.ext_prog = ext_prog
         self.waiter = waiter
-        self.tracer = tracer
         self.multi_trace = tracer.multi_trace
         self.job_control = job_control
         # sleep 5 & puts a (PID, job#) entry here.  And then "jobs" displays it.
         self.job_list = job_list
         self.fd_state = fd_state
         self.trap_state = trap_state
-        self.errfmt = errfmt
         self.process_sub_stack = []  # type: List[_ProcessSubFrame]
         self.clean_frame_pool = []  # type: List[_ProcessSubFrame]
 
@@ -400,39 +403,8 @@ class ShellExecutor(vm._Executor):
 
         return self.RunBuiltinProc(builtin_proc, cmd_val)
 
-    def RunBuiltinProc(self, builtin_proc, cmd_val):
-        # type: (vm._Builtin, cmd_value.Argv) -> int
-
-        io_errors = []  # type: List[error.IOError_OSError]
-        with vm.ctx_FlushStdout(io_errors):
-            # note: could be second word, like 'builtin read'
-            with ui.ctx_Location(self.errfmt, cmd_val.arg_locs[0]):
-                try:
-                    status = builtin_proc.Run(cmd_val)
-                    assert isinstance(status, int)
-                except (IOError, OSError) as e:
-                    self.errfmt.PrintMessage(
-                        '%s builtin I/O error: %s' %
-                        (cmd_val.argv[0], pyutil.strerror(e)),
-                        cmd_val.arg_locs[0])
-                    return 1
-                except error.Usage as e:
-                    arg0 = cmd_val.argv[0]
-                    # e.g. 'type' doesn't accept flag '-x'
-                    self.errfmt.PrefixPrint(e.msg, '%r ' % arg0, e.location)
-                    return 2  # consistent error code for usage error
-
-        if len(io_errors):  # e.g. disk full, ulimit
-            self.errfmt.PrintMessage(
-                '%s builtin I/O error: %s' %
-                (cmd_val.argv[0], pyutil.strerror(io_errors[0])),
-                cmd_val.arg_locs[0])
-            return 1
-
-        return status
-
-    def RunSimpleCommand(self, cmd_val, cmd_st, run_flags):
-        # type: (cmd_value.Argv, CommandStatus, int) -> int
+    def _RunSimpleCommand(self, arg0, arg0_loc, cmd_val, cmd_st, run_flags):
+        # type: (str, loc_t, cmd_value.Argv, CommandStatus, int) -> int
         """Run builtins, functions, external commands.
 
         Possible variations:
@@ -440,20 +412,6 @@ class ShellExecutor(vm._Executor):
         - YSH might have OILS_PATH = :| /bin /usr/bin | or something.
         - Interpreters might want to define all their own builtins.
         """
-        argv = cmd_val.argv
-        if len(cmd_val.arg_locs):
-            arg0_loc = cmd_val.arg_locs[0]  # type: loc_t
-        else:
-            arg0_loc = loc.Missing
-
-        # This happens when you write "$@" but have no arguments.
-        if len(argv) == 0:
-            if self.exec_opts.strict_argv():
-                e_die("Command evaluated to an empty argv array", arg0_loc)
-            else:
-                return 0  # status 0, or skip it?
-
-        arg0 = argv[0]
 
         builtin_id = consts.LookupAssignBuiltin(arg0)
         if builtin_id != consts.NO_INDEX:
@@ -473,45 +431,13 @@ class ShellExecutor(vm._Executor):
             #  e_die_status(status, 'special builtin failed')
             return status
 
-        # Builtins like 'true' can be redefined as functions.
+        # Call procs first.  Builtins like 'true' can be redefined.
         call_procs = not (run_flags & NO_CALL_PROCS)
         if call_procs:
             proc_val, self_obj = self.procs.GetInvokable(arg0)
-            cmd_val.self_obj = self_obj  # MAYBE bind self
-
             if proc_val is not None:
-                if self.exec_opts.strict_errexit():
-                    disabled_tok = self.mutable_opts.ErrExitDisabledToken()
-                    if disabled_tok:
-                        self.errfmt.Print_(
-                            'errexit was disabled for this construct',
-                            disabled_tok)
-                        self.errfmt.StderrLine('')
-                        e_die(
-                            "Can't run a proc while errexit is disabled. "
-                            "Use 'try' or wrap it in a process with $0 myproc",
-                            arg0_loc)
-
-                with tagswitch(proc_val) as case:
-                    if case(value_e.BuiltinProc):
-                        # Handle the special case of the BUILTIN proc
-                        # module_ysh.ModuleInvoke, which is returned on the Obj
-                        # created by 'use util.ysh'
-                        builtin_proc = cast(value.BuiltinProc, proc_val)
-                        b = cast(vm._Builtin, builtin_proc.builtin)
-                        status = self.RunBuiltinProc(b, cmd_val)
-
-                    elif case(value_e.Proc):
-                        proc = cast(value.Proc, proc_val)
-                        with dev.ctx_Tracer(self.tracer, 'proc', argv):
-                            # NOTE: Functions could call 'exit 42' directly, etc.
-                            status = self.cmd_ev.RunProc(proc, cmd_val)
-
-                    else:
-                        # GetInvokable() should only return 1 of 2 things
-                        raise AssertionError()
-
-                return status
+                return self._RunInvokable(proc_val, self_obj, arg0_loc,
+                                          cmd_val)
 
         # Notes:
         # - procs shadow hay names
