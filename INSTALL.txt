@@ -2,7 +2,9 @@ Building and Installing Oils
 ============================
 
 Oils is a new Unix shell.  This file describes how to configure, build, and
-install it from source code.
+install it from the release tarball (NOT the git repo).
+
+This doc is aimed at end users and distro maintainers.
 
 Quick Start
 -----------
@@ -127,8 +129,7 @@ Common flags to `configure`:
 Links
 -----
 
-- Mirror the help text:
+- Mirror of the help text:
   <https://oils.pub/release/0.27.0/doc/help-mirror.html>
 - Notes on portability:
   <https://oils.pub/release/0.27.0/doc/portability.html>
-

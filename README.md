@@ -50,7 +50,7 @@ This README is at the root of the [git repo][git-repo].
 
 [Contributing]: https://github.com/oils-for-unix/oils/wiki/Contributing
 [oilshell.zulipchat.com]: https://oilshell.zulipchat.com/
-[blog]: https://www.oilshell.org/blog/
+[blog]: https://oils.pub/blog/
 
 ### Quick Start on Linux
 
@@ -121,23 +121,16 @@ produce a pointer and/or improve the docs.
 Docs for **end users** are linked from each [release
 page](https://oils.pub/releases.html).
 
-## Repository Structure
+## Links
 
-See the [Oils Repo Overview][repo-overview], and
-[README-index.md](README-index.md).
+* The [Oils Home Page][home-page] has all the important links.
+* Related:
+  * Repository Structure: See the [Oils Repo Overview][repo-overview]
+  * The [README-index.md](README-index.md) links to docs for some
+    subdirectories.  For example, [mycpp/README.md](mycpp/README.md) is pretty
+    detailed.
+  * FAQ: [The Oils Repo Is Different From the Tarball][repo-tarball-faq]
 
 [repo-overview]: doc/repo-overview.md
 
-## More info
-
-There are README files in many subdirectories, like
-[mycpp/README.md](mycpp/README.md).
-
-* [The blog][blog] has updates on the project status.
-* [Oils Home Page][home-page]
-* [oilshell.zulipchat.com][] is for any kind of discussion
-* Subscribe for updates:
-  * [/r/oilshell on Reddit](https://www.reddit.com/r/oilshell/)
-  * [@oilsforunix on Twitter](https://twitter.com/oilsforunix)
-
-
+[repo-tarball-faq]: https://github.com/oils-for-unix/oils/wiki/The-Oils-Repo-Is-Different-From-the-Tarball-Releases

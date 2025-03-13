@@ -97,6 +97,8 @@ readonly MARKDOWN_DOCS=(
   objects
   types
 
+  pure-mode
+
   # Data language
   qsn
   qtt

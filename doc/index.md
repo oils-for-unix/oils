@@ -127,6 +127,7 @@ the wire, **not** the other way around.
 ## The Shared Oils Runtime
 
 - [Types in the Oils Runtime](types.html)
+- [Pure Mode: For Config Files and Functions](pure-mode.html)
 - [YSH Fixes Shell's Error Handling (`errexit`)](error-handling.html)
 - [Oils Error Catalog, With Hints](error-catalog.html)
 - [Tracing Execution](xtrace.html).  YSH enhances shell's `set -x`.

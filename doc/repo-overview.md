@@ -39,7 +39,7 @@ Here are the tools that transform that high-level code to efficient code:
     mycpp/            # Experimental translator from typed Python to C++.
                       # Depends on MyPy.  See mycpp/README.md
     pea/              # Perhaps a cleaner version of mycpp
-    opy/              # Python compiler in Python (mycpp/ will replace it)
+    opy/              # Obsolete Python compiler
 
 ### Native Code and Build System
 
@@ -52,7 +52,6 @@ the `oils-for-unix` build (pure C++):
       NINJA-steps.sh
       NINJA_main.py   # invoked by NINJA-config.sh
       NINJA_subgraph.py
-      oil-defs/       # Files that define our slice of CPython.
       py.sh           # For development builds, running CPython
     cpp/              # C++ code which complements the mycpp translation
       NINJA-steps.sh
@@ -155,11 +154,12 @@ above create and use these dirs.
       osh-parser/
       osh-runtime/
       vm-baseline/
-      oheap/
       startup/
       ...
 
-### Build Dependencies in `../oil_DEPS`
+### Build Dependencies
+
+TODO: this section is out of date.  We now use "wedges" in `~/wedge`.
 
 These tools are built from shell scripts in `soil/`.  The `oil_DEPS` dir is
 "parallel" to Oils because it works better with container bind mounds.
@@ -178,12 +178,11 @@ These tools are built from shell scripts in `soil/`.  The `oil_DEPS` dir is
 
     doc/              # A mix of docs
     doctools/         # Tools that use lazylex/ to transform Markdown/HTML
-    lazylex/          # An HTML lexer which doctools/ builds upon.
+    data_lang/        # doctools/ builds upon the "HTM8" subset in this dir
     README.md         # This page, which is For Oils developers
 
     LICENSE.txt       # For end users
     INSTALL.txt
-
 
 ## Related
 
