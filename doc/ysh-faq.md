@@ -259,6 +259,31 @@ This issue is similar to the `shopt -s lastpipe` issue:
 In bash, `read` runs in a subshell, but in `zsh` and OSH, it runs in the main
 shell.
 
+## Why are `Dict` and `Obj` different types?
+
+*JavaScript has a single Object type, while Python has separate dicts and
+objects.*
+
+In YSH, we draw a line between data and code.
+
+- A `Dict` is pure **data**, and may correspond to JSON from untrusted sources.
+- An `Obj` bundles both data and **code**, and can't be serialized by default.
+
+You can create an `Obj` from a `Dict` with the `Obj` constructor.  Conversely,
+you can get the first Dict in an object with [first(myobj)][first].
+
+There is no special `__proto__` or `prototype` name, which reduces the
+likelihood of "prototype pollution" vulnerabilities.
+
+---
+
+This is essentially the [Interior vs. Exterior][interior-exterior] distinction:
+An Obj lives inside the shell process, while a Dict may come from outside the
+process (user input).
+
+[first]: ref/chap-builtin-func.html#first
+[interior-exterior]: https://www.oilshell.org/blog/2023/06/ysh-design.html
+
 ## Why are `Command` and `Proc` different types?
 
 *Could a `Command` be a `Proc` with no arguments?  Similarly, could an `Expr` be a

@@ -32,6 +32,7 @@ An `Obj` that's populated with environment variables.  Example usage:
 
     var x = ENV.PYTHONPATH
     echo $[ENV.SSH_AUTH_SOCK]
+    setglobal ENV.PYTHONPATH = '.'
 
 It's initialized exactly **once** per process, in any of these situations:
 

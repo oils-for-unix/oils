@@ -770,6 +770,25 @@ More flexible style:
 
 ## Use YSH Expressions, Initializations, and Assignments (var, setvar)
 
+### Set an Environment Variable Globally
+
+No:
+
+    export PYTHONPATH=.  # export is disabled in YSH
+
+Yes:
+
+    setglobal ENV.PYTHONPATH = '.'  
+
+That is, enviroments use the [ENV][] object/namespace, rather than being global
+variables.
+
+[ENV]: ref/chap-special-var.html#ENV
+
+Note: the idiom for setting an env var locally is unchanged:
+
+    PYTHONPATH=. myscript.py
+
 ### Initialize and Assign Strings and Integers
 
 No:
