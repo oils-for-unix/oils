@@ -53,6 +53,7 @@ from _devbuild.gen.value_asdl import (
     sh_lvalue_t,
     InitializerValue,
 )
+from core import bash_impl
 from core import error
 from core import pyos
 from core import pyutil
