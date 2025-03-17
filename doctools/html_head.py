@@ -12,7 +12,8 @@ import sys
 try:
     import html
 except ImportError:
-    import cgi as html  # only for cgi.escape -> html.escape
+    # only for cgi.escape -> html.escape
+    import cgi as html  # type: ignore
 try:
     import cStringIO
 except ImportError:

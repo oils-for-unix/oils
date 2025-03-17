@@ -1,7 +1,0 @@
-// Python-2.7.13/Modules/selectmodule.c
-
-static PyMethodDef select_methods[] = {
-  {"select", select_select, METH_VARARGS},
-  {"poll", select_poll, METH_NOARGS},
-  {0},
-};

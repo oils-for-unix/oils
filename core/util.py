@@ -149,7 +149,7 @@ def PrintEmbeddedHelp(loader, topic_id, f):
 def _PrintVersionLine(loader, f):
     # type: (pyutil._ResourceLoader, mylib.Writer) -> None
     v = pyutil.GetVersion(loader)
-    f.write('Oils %s\t\thttps://www.oilshell.org/\n' % v)
+    f.write('Oils %s\t\thttps://oils.pub/\n' % v)
 
 
 def HelpFlag(loader, topic_id, f):
@@ -157,6 +157,10 @@ def HelpFlag(loader, topic_id, f):
     _PrintVersionLine(loader, f)
     f.write('\n')
     found = PrintEmbeddedHelp(loader, topic_id, f)
+    # Note: could assert this in C++ too
+    assert found, 'Missing %s' % topic_id
+
+    found = PrintEmbeddedHelp(loader, 'shell-flags', f)
     # Note: could assert this in C++ too
     assert found, 'Missing %s' % topic_id
 

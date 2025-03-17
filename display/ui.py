@@ -92,12 +92,20 @@ def PrettyDir(dir_name, home_dir):
     return dir_name
 
 
+def PrintCaretLine(line, col, length, f):
+    # type: (str, int, int, mylib.Writer) -> None
+    # preserve tabs
+    for c in line[:col]:
+        f.write('\t' if c == '\t' else ' ')
+    f.write('^')
+    f.write('~' * (length - 1))
+    f.write('\n')
+
+
 def _PrintCodeExcerpt(line, col, length, f):
     # type: (str, int, int, mylib.Writer) -> None
 
     buf = mylib.BufWriter()
-
-    buf.write('  ')
 
     # TODO: Be smart about horizontal space when printing code snippet
     # - Accept max_width param, which is terminal width or perhaps 100
@@ -111,18 +119,14 @@ def _PrintCodeExcerpt(line, col, length, f):
     #
     #   ^col 80  ^~~~~ error
 
+    buf.write('  ')  # indent
     buf.write(line.rstrip())
 
-    buf.write('\n  ')
-    # preserve tabs
-    for c in line[:col]:
-        buf.write('\t' if c == '\t' else ' ')
-    buf.write('^')
-    buf.write('~' * (length - 1))
-    buf.write('\n')
+    buf.write('\n  ')  # indent
+    PrintCaretLine(line, col, length, buf)
 
     # Do this all in a single write() call so it's less likely to be
-    # interleaved.  See test/runtime-errors.sh errexit_multiple_processes
+    # interleaved.  See test/runtime-errors.sh test-errexit-multiple-processes
     f.write(buf.getvalue())
 
 
@@ -152,6 +156,40 @@ def _PrintTokenTooLong(loc_tok, f):
 
     # single write() call
     f.write(buf.getvalue())
+
+
+def GetFilenameString(line):
+    # type: (SourceLine) -> str
+    """Get the path of the file that a line appears in.
+
+    Returns "main" if it's stdin or -c
+    Returns "?" if it's not in a file.
+
+    Used by declare -F, with shopt -s extdebug.
+    """
+    src = line.src
+    UP_src = src
+
+    filename_str = '?'  # default
+    with tagswitch(src) as case:
+        # Copying bash, it uses the string 'main'.
+        # I think ? would be better here, because this can get confused with a
+        # file 'main'.  But it's fine for our task file usage.
+        if case(source_e.CFlag):
+            filename_str = 'main'
+        elif case(source_e.Stdin):
+            filename_str = 'main'
+
+        elif case(source_e.MainFile):
+            src = cast(source.MainFile, UP_src)
+            filename_str = src.path
+        elif case(source_e.OtherFile):
+            src = cast(source.OtherFile, UP_src)
+            filename_str = src.path
+
+        else:
+            pass
+    return filename_str
 
 
 def GetLineSourceString(line, quote_filename=False):

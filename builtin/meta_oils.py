@@ -90,13 +90,15 @@ class Eval(vm._Builtin):
         line_reader = reader.StringLineReader(code_str, self.arena)
         c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
+        # TODO: Add debug_frame here, with ctx_Eval or ctx_EvalDebugFrame
         src = source.Dynamic('eval arg', eval_loc)
         with dev.ctx_Tracer(self.tracer, 'eval', None):
-            with alloc.ctx_SourceCode(self.arena, src):
-                return main_loop.Batch(self.cmd_ev,
-                                       c_parser,
-                                       self.errfmt,
-                                       cmd_flags=cmd_eval.RaiseControlFlow)
+            with state.ctx_CompoundWordDebugFrame(self.mem, eval_loc):
+                with alloc.ctx_SourceCode(self.arena, src):
+                    return main_loop.Batch(self.cmd_ev,
+                                           c_parser,
+                                           self.errfmt,
+                                           cmd_flags=cmd_eval.RaiseControlFlow)
 
 
 def _VarName(module_path):
@@ -220,7 +222,7 @@ class ShellFile(vm._Builtin):
 
         with dev.ctx_Tracer(self.tracer, 'source', cmd_val.argv):
             source_argv = arg_r.Rest()
-            with state.ctx_Source(self.mem, path, source_argv):
+            with state.ctx_Source(self.mem, path, source_argv, call_loc):
                 with state.ctx_ThisDir(self.mem, path):
                     src = source.OtherFile(path, call_loc)
                     with alloc.ctx_SourceCode(self.arena, src):
@@ -263,7 +265,8 @@ class ShellFile(vm._Builtin):
         error_strs = []  # type: List[str]
 
         with dev.ctx_Tracer(self.tracer, 'use', cmd_val.argv):
-            with state.ctx_ModuleEval(self.mem, props, error_strs):
+            with state.ctx_ModuleEval(self.mem, cmd_val.arg_locs[0], props,
+                                      error_strs):
                 with state.ctx_ThisDir(self.mem, path):
                     src = source.OtherFile(path, path_loc)
                     with alloc.ctx_SourceCode(self.arena, src):

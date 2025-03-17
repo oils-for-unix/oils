@@ -6,6 +6,7 @@ import json
 import optparse
 import re
 import sys
+from typing import List, Dict, IO
 
 DATE_RE = re.compile(r'(\d\d\d\d) / (\d\d) / (\d\d)', re.VERBOSE)
 
@@ -13,6 +14,7 @@ META_RE = re.compile(r'(\S+): [ ]* (.*)', re.VERBOSE)
 
 
 def SplitDocument(default_vals, entry_f, meta_f, content_f, strict=False):
+    # type: (Dict[str, str], IO[str], IO[str], IO[str], bool) -> None
     """Split a document into metadata JSON and content Markdown.
 
     Used for blog posts and index.md / cross-ref.md.
@@ -124,6 +126,7 @@ def Options():
 
 
 def main(argv):
+    # type: (List[str]) -> None
     o = Options()
     opts, argv = o.parse_args(argv)
 

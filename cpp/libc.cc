@@ -40,8 +40,7 @@ int fnmatch(BigStr* pat, BigStr* str, int flags) {
 #ifdef FNM_EXTMATCH
   flags |= FNM_EXTMATCH;
 #else
-  // TODO: We should detect this at ./configure time, and then maybe flag these
-  // at parse time, not runtime
+  // Detected by ./configure
 #endif
 
   int result = ::fnmatch(pat->data_, str->data_, flags);
@@ -56,11 +55,10 @@ int fnmatch(BigStr* pat, BigStr* str, int flags) {
   }
 }
 
-List<BigStr*>* glob(BigStr* pat) {
+List<BigStr*>* glob(BigStr* pat, int flags) {
   glob_t results;
   // Hm, it's weird that the first one can't be called with GLOB_APPEND.  You
   // get a segfault.
-  int flags = 0;
   // int flags = GLOB_APPEND;
   // flags |= GLOB_NOMAGIC;
   int ret = glob(pat->data_, flags, NULL, &results);

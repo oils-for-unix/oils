@@ -15,8 +15,8 @@ There are many ways to use Oils!
 As of 2024, [OSH][] is mature, and [YSH][YSH] is under development.  See [blog
 posts tagged #FAQ][blog-faqs] for more detail.
 
-[OSH]: https://www.oilshell.org/cross-ref.html?tag=OSH#OSH
-[YSH]: https://www.oilshell.org/cross-ref.html?tag=YSH#YSH
+[OSH]: https://oils.pub/cross-ref.html?tag=OSH#OSH
+[YSH]: https://oils.pub/cross-ref.html?tag=YSH#YSH
 
 This doc walks you through setting up Oils, explains some concepts, and links
 to more documentation.
@@ -28,7 +28,7 @@ to more documentation.
 
 ### Downloading Oils
 
-The [releases page](https://www.oilshell.org/releases.html) links to source
+The [releases page](https://oils.pub/releases.html) links to source
 tarballs for every release.  It also links to the documentation tree, which
 includes this page.
 
@@ -54,12 +54,44 @@ It's very hard to tell when and if `/etc/profile`, `~/.bashrc`,
 OSH and YSH intentionally avoid this.  If you want those files, simply `source`
 them in your `oshrc`.
 
+- Related: the [config][] reference topic.
+
+[config]: ref/chap-front-end.html#config
+
 [mess]: https://shreevatsa.wordpress.com/2008/03/30/zshbash-startup-files-loading-order-bashrc-zshrc-etc/
 
 [original]: http://www.solipsys.co.uk/new/BashInitialisationFiles.html
 
 I describe my own `oshrc` file on the Wiki: [How To Test
-OSH](https://github.com/oilshell/oil/wiki/How-To-Test-OSH).
+OSH](https://github.com/ols-for-unix/oils/wiki/How-To-Test-OSH).
+
+### Setting the Prompt
+
+OSH supports the `$PS1` variable, with bash-style escape codes.  See [PS1][] for details.
+
+Example:
+
+    # oshrc
+    PS1='\s '
+
+YSH has the [renderPrompt()][renderPrompt] hook, which is a YSH function.  It
+often uses [io.promptVal()][promptVal].
+
+Example:
+
+    # yshrc
+    func renderPrompt(io) {
+      return (io.promptVal('s') ++ ' ')
+    }
+
+[PS1]: ref/chap-plugin.html#PS1
+[renderPrompt]: ref/chap-plugin.html#renderPrompt
+[promptVal]: ref/chap-type-method.html#promptVal
+
+## Getting Help
+
+Type `help` in `osh` or `ysh`, which links to URLs in the [Oils
+Reference](ref/index.html).
 
 ## Tips
 
@@ -189,24 +221,13 @@ Related:
 - The `--xtrace-to-debug-file` flag sends `set -o xtrace` output to that file
   instead of to `stderr`.
 
+<!--
 ### Crash Dumps
 
-- TODO: `OSH_CRASH_DUMP_DIR`
-
-This is implemented, but a JSON library isn't in the release build.
-
-### More
-
-For more features unique to Oils, see [Why Use Oils?][why]
-
-[why]: https://www.oilshell.org/why.html
-
+- TODO: `OILS_CRASH_DUMP_DIR`
+-->
 
 ## Appendix
-
-### Bugs
-
-- OSH runs shell scripts too slowly.  Speeding it up is a top priority.
 
 ### Links
 

@@ -428,3 +428,43 @@ TODO: Document chaining parsers / sub-commands
       - Or can use `rest rest` and `parseArgs` again on `rest`
 TODO: Document the help named argument. Punting while we do not generate help messages
 -->
+
+## binascii
+
+<!--
+
+2025-02: Added because terminals like Jetbrains/Warp shell out to 'od', to fit
+data in OSC escapes.  In OSH you should be able to do it within the process.
+
+And these should be FAST - that's a good test of any algorithm.
+
+I also wonder about quoteHtml(), unquoteHtml(), quoteSh(), unquoteSh, etc. -
+those are also translations.  Do we need a string.translate API?
+
+https://docs.python.org/3/library/base64.html
+
+https://github.com/python/cpython/blob/3.13/Lib/base64.py
+
+https://docs.python.org/2.7/library/binascii.html#module-binascii
+
+I chose the name "binascii" because base64.toBase16 is a little weird
+
+Could be "codec" too?
+
+-->
+
+### toBase16
+
+TODO
+
+### fromBase16
+
+TODO
+
+### toBase64
+
+TODO
+
+### fromBase64
+
+TODO

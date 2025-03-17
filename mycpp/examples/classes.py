@@ -36,8 +36,8 @@ class TextOutput(ColorOutput):
     def __init__(self, f):
         # type: (mylib.Writer) -> None
         """
-    This docstring used to interfere with __init__ detection
-    """
+        This docstring used to interfere with __init__ detection
+        """
         # Note: translated into an initializer list.
         ColorOutput.__init__(self, f)
         print('TextOutput constructor')
@@ -294,5 +294,3 @@ if __name__ == '__main__':
         run_benchmarks()
     else:
         run_tests()
-
-# vim: sw=2

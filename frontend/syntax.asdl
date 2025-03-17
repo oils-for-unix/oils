@@ -46,28 +46,34 @@ module syntax
   | CFlag
   | Stdin(str comment)
 
-    # oshrc/ysh are considered a MainFile - loaded directly by the shell
+    # MainFile is for main.{osh,ysh}, --eval oshrc/yshrc.  They're files loaded
+    # directly by the shell.
   | MainFile(str path)
-    # TODO: if it's not the main script, it's sourced or a module/ and you
-    # could provide a chain of locations back to the sourced script!
+    # A file loaded by 'source' or 'use'.
+    # TODO: we probably don't need this location?  The debug stack provides a
+    # chain of locations back to the sourced script.  Maybe we need to point to
+    # a debug_frame instead?
+    # It could be DiskFileShell and DiskFileUser, or just DiskFile.
   | OtherFile(str path, loc location)
 
-    # code parsed from a word
-    # used for 'eval', 'trap', 'printf', 'complete -W', parseCommand()
+    # Code parsed from a word.  (TODO: rename source.Word?)
+    # used for 'eval arg', 'trap arg', 'printf arg',
+    # parseCommand() - this is a string?
+    # dynamic LHS - move this to Reparsed?
+    # complete -W
   | Dynamic(str what, loc location)
+
+    # Point to the original variable reference
+  | VarRef(Token orig_tok)
 
     # code parsed from the value of a variable
     # used for $PS1 $PROMPT_COMMAND
   | Variable(str var_name, loc location)
 
-    # Point to the original variable reference
-  | VarRef(Token orig_tok)
-
     # alias expansion (location of first word)
   | Alias(str argv0, loc argv0_loc)
 
     # 2 kinds of reparsing: backticks, and x+1 in a[x+1]=y
-    # TODO: use this for eval_unsafe_arith instead of Variable
   | Reparsed(str what, Token left_token, Token right_token)
 
     # For --location-str
@@ -108,14 +114,34 @@ module syntax
     # the location of a token that's too long
   | TokenTooLong(SourceLine line, id id, int length, int col)
 
+  # debug_frame_t is an EXECUTION stack (proc func source use eval), while
+  # source_t (in some cases) is like a PARSING stack (files, strings from vars,
+  # etc.)
   debug_frame = 
-    Main(str dollar0)
-    # call_loc => BASH_LINENO
-    # call_loc may be None with new --source flag?
-  | Source(Token? call_tok, str source_name)
-    # def_tok => BASH_SOURCE
-    # call_loc may be None if invoked via RunFuncForCompletion?
-  | Call(Token? call_tok, Token def_tok, str func_name)
+    # OSH: main_filename => BASH_SOURCE
+    MainFile(str main_filename)
+    # YSH
+  | Dummy                        # -c or stdin, not used by BASH_* vars
+    # Note: we could have more "frame 0" than MainFile and Dummy -
+    # - Completion hooks - dev.Tracer is missing these
+    # - PS1
+    # - PROMPT_COMMAND
+
+    # OSH: call_tok => BASH_LINENO, source_name => BASH_SOURCE
+  | Source(CompoundWord source_loc, str source_name)
+
+    # OSH: call_tok => BASH_LINENO, def_tok => BASH_SOURCE
+    # YSH: procs
+  | ProcLike(CompoundWord invoke_loc, Token def_tok, str proc_name)
+
+    # for io->eval, myfunc()
+  | Token %Token
+
+    # For 'eval', 'use', ...
+  | CompoundWord %CompoundWord
+
+    # Special frame added when running 'trap ERR', for more info, and as a sentinel
+  | BeforeErrTrap(Token tok)
 
   #
   # Shell language
@@ -137,7 +163,7 @@ module syntax
 
   BracedVarSub = (
       Token left,        # in dynamic ParseVarRef, same as name_tok
-      Token token,       # location for the name
+      Token name_tok,    # location for the name
       str var_name,      # the name - TODO: remove this, use LazyStr() instead
       Token? prefix_op,  # prefix # or ! operators
       bracket_op? bracket_op,
@@ -160,7 +186,7 @@ module syntax
 
   # - can contain word.BracedTree
   # - no 'Token right' for now, doesn't appear to be used
-  ShArrayLiteral = (Token left, List[word] words, Token right)
+  YshArrayLiteral = (Token left, List[word] words, Token right)
 
   # Unevaluated, typed arguments for func and proc.
   # Note that ...arg is expr.Spread.
@@ -171,11 +197,15 @@ module syntax
      Token right
   )
 
-  AssocPair = (CompoundWord key, CompoundWord value)
+  AssocPair = (CompoundWord key, CompoundWord value, bool has_plus)
+
+  InitializerWord =
+    ArrayWord(word w)
+  | AssocPair %AssocPair
 
   word_part = 
-    ShArrayLiteral %ShArrayLiteral
-  | BashAssocLiteral(Token left, List[AssocPair] pairs, Token right)
+    YshArrayLiteral %YshArrayLiteral
+  | InitializerLiteral(Token left, List[InitializerWord] pairs, Token right)
   | Literal %Token
     # escaped case is separate so the evaluator doesn't have to check token ID
   | EscapedLiteral(Token token, str ch)
@@ -223,7 +253,7 @@ module syntax
     # overhead and seems like overkill.  Note that DoubleQuoted can't
     # contain a SingleQuoted, etc. either.
   | Compound %CompoundWord
-    # For word sequences command.Simple, ShArrayLiteral, for_iter.Words
+    # For word sequences command.Simple, YshArrayLiteral, for_iter.Words
     # Could be its own type
   | BracedTree(List[word_part] parts)
     # For dynamic parsing of test aka [ - the string is already evaluated.
@@ -331,7 +361,7 @@ module syntax
   for_iter =
     Args                          # for x; do echo $x; done # implicit "$@"
   | Words(List[word] words)       # for x in 'foo' *.py { echo $x }
-                                  # like ShArrayLiteral, but no location for %(
+                                  # like YshArrayLiteral, but no location for %(
   | YshExpr(expr e, Token blame)  # for x in (mylist) { echo $x }
   #| Files(Token left, List[word] words)
                                   # for x in <> {
@@ -523,7 +553,7 @@ module syntax
   | Place(Token blame_tok, str var_name, place_op* ops)
 
     # :| one 'two' "$three" |
-  | ShArrayLiteral %ShArrayLiteral
+  | YshArrayLiteral %YshArrayLiteral
 
     # / d+ ; ignorecase; %python /
   | Eggex %Eggex

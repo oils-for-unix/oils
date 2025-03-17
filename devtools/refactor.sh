@@ -292,4 +292,19 @@ singleton-primitive() {
   echo
 }
 
+htm8() {
+  for prefix in Tok html; do
+    for name in \
+      Decl Comment CommentBegin Processing ProcessingBegin \
+      CData CDataBegin \
+  StartTag StartEndTag EndTag  \
+  DecChar HexChar CharEntity  \
+  RawData HtmlCData \
+  BadAmpersand BadGreaterThan BadLessThan  \
+  Invalid EndOfStream; do
+      sed -i "s/$prefix.$name/h8_id.$name/g" */*.py
+    done
+done
+}
+
 task-five "$@"

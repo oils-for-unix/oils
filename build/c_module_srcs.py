@@ -4,8 +4,6 @@ from __future__ import print_function
 c_module_srcs.py
 """
 
-import os
-import glob
 import sys
 
 
@@ -20,7 +18,8 @@ def main(argv):
       mod_name, rel_path = line.split(None, 2)
       manifest[mod_name] = rel_path
 
-  #print manifest
+  #print(manifest, file=sys.stderr)
+
   with open(discovered) as f:
     for line in f:
       line = line.strip()
@@ -71,21 +70,6 @@ def main(argv):
         print('Modules/_io/stringio.c')
         print('Modules/_io/textio.c')
 
-      elif mod_name == 'yajl':
-        # Not including headers
-        globs = [
-            'py-yajl/*.c',
-            'py-yajl/yajl/src/*.c',
-        ]
-        paths = []
-        for g in globs:
-          paths.extend(glob.glob(g))
-        for path in paths:
-          # UNUSED file.  It's an optional layer on top.
-          if os.path.basename(path) == 'yajl_tree.c':
-            continue
-          print('../' + path)
-
       else:
         print(manifest[mod_name])
 
@@ -96,3 +80,5 @@ if __name__ == '__main__':
   except RuntimeError as e:
     print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)
+
+# vim: ts=2

@@ -1,4 +1,5 @@
-#
+## compare_shells: dash bash mksh zsh
+
 # Some shell errors are unrecoverable!  Like divide by zero (except in bash.
 #
 # Any others?

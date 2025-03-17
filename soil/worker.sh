@@ -121,10 +121,12 @@ pea-tasks() {
 os-info          soil/diagnose.sh os-info    -
 dump-env         soil/diagnose.sh dump-env   -
 py-source        build/py.sh py-source       -
-check-types      pea/TEST.sh check-types     -
-run-tests        pea/TEST.sh run-tests       -
+typecheck        pea/TEST.sh check-with-latest-mypy -
 parse-all        pea/TEST.sh parse-all       -
 EOF
+
+# Moved this to cpp-small, because it depends on py-all-and-ninja
+# run-tests        pea/TEST.sh run-tests       -
 }
 
 dev-minimal-tasks() {
@@ -150,6 +152,7 @@ ysh-runtime-errors  test/ysh-runtime-errors.sh soil-run-py       -
 ysh-every-string    test/ysh-every-string.sh soil-run-py         -
 ysh-large           ysh/run.sh soil-run                          -
 j8-errors           data_lang/j8-errors.sh soil-run-py           -
+error-catalog       doc/error-catalog.sh soil-run-py             -
 link-busybox-ash    test/spec-bin.sh link-busybox-ash            -
 osh-minimal         test/spec-py.sh osh-minimal                  _tmp/spec/osh-minimal/index.html
 headless            client/run.sh soil-run-py                    -
@@ -229,9 +232,12 @@ os-info          soil/diagnose.sh os-info              -
 dump-env         soil/diagnose.sh dump-env             -
 wait-for-tarball soil/wait.sh for-cpp-tarball          -
 test-tar         devtools/release-native.sh test-tar   -
+py-source        build/py.sh py-source                 -
 uftrace          benchmarks/uftrace.sh soil-run        _tmp/uftrace/index.html
 gc-cachegrind    benchmarks/gc-cachegrind.sh soil-run  _tmp/gc-cachegrind/index.html
 EOF
+  # 2025-01: added py-source because benchmarks use cmark.py, which uses
+  # htm8_asdl to ExpandLinks() and so forth
 }
 
 cpp-spec-tasks() {
@@ -280,6 +286,7 @@ dump-env         soil/diagnose.sh dump-env   -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
 py-unit          test/unit.sh all                      _test/py-unit/
 yaks             yaks/TEST.sh soil-run                 -
+pea              pea/TEST.sh run-tests                 -
 oils-cpp-smoke   build/native.sh soil-run              -
 cpp-unit         test/cpp-unit.sh soil-run             _test/-wwz-index
 headless         client/run.sh soil-run-cpp            -
@@ -297,6 +304,7 @@ ysh-runtime-errors test/ysh-runtime-errors.sh soil-run-cpp -
 ysh-every-string test/ysh-every-string.sh soil-run-cpp -
 ysh-large        ysh/run.sh soil-run-cpp               -
 j8-errors        data_lang/j8-errors.sh soil-run-cpp   -
+error-catalog    doc/error-catalog.sh soil-run-cpp     -
 houston-fp       demo/houston-fp/run.sh soil-run       -
 souffle-smoke-test       test/souffle-smoke.sh soil-run       -
 EOF
@@ -330,22 +338,25 @@ ovm-tarball-tasks() {
   cat <<EOF
 os-info           soil/diagnose.sh os-info    -
 dump-env          soil/diagnose.sh dump-env   -
-py-all            build/py.sh all                        -
+py-all            build/py.sh all                           -
+configure         devtools/release.sh configure-for-release -
+make-tarball      devtools/release.sh py-tarball         _release/oil.tar
+ysh-ovm-tarball   test/spec-py.sh ysh-ovm-tarball        _tmp/spec/ysh-py/index.html
 syscall           test/syscall.sh soil-run               _tmp/syscall/-wwz-index
 osh-spec          test/spec-py.sh osh-all-serial         _tmp/spec/osh-py/index.html
 gold              test/gold.sh soil-run                  -
 osh-usage         test/osh-usage.sh soil-run             -
 tools-deps        test/tools-deps.sh soil-run            -
+ninja-config      soil/worker.sh ninja-config            -
 docs              build/doc.sh soil-run                  _release/VERSION/index.html
 doc-metrics       echo no-op                             _release/VERSION/doc/metrics.txt
+check-docs        data_lang/htm8-test.sh soil-run        -
 EOF
-
-# TODO: restore these after fixing fallout from vendor/typing.py
-# make-tarball      devtools/release.sh py-tarball         _release/oil.tar
-# ysh-ovm-tarball   test/spec-py.sh ysh-ovm-tarball        _tmp/spec/ysh-py/index.html
-
-# doc-metrics is a no-op, just for the link.  Because soil-run just runs the
-# release, which creates metrics.
+# Notes:
+# - 'docs' depends on 'ninja-config' to run build/ninja_main.py, which makes
+#   _build/oils.sh.  Maybe all the docs need to be in Ninja
+# - doc-metrics is a no-op, just for the link.  Because soil-run just runs the
+#   release, which creates metrics.
 }
 
 # Reuse ovm-tarball container
@@ -357,12 +368,14 @@ dump-env          soil/diagnose.sh dump-env            -
 py-all            build/py.sh all                      -
 ble-clone         test/ble.sh clone                    -
 ble-build         test/ble.sh build                    -
-ble-bash-suite    test/ble.sh bash-suite               -
 ble-test-osh-py   test/ble.sh run-tests-osh-py         -
 wait-for-tarball  soil/wait.sh for-cpp-tarball         -
 test-tar          devtools/release-native.sh test-tar  -
 ble-test-osh-cpp  test/ble.sh run-tests-osh-cpp        -
 EOF
+
+# 2025-02 - times out after 15 minutes?  This is just bash, not OSH?
+# ble-bash-suite    test/ble.sh bash-suite               -
 
 # This doesn't work
 # ble-test-osh-bash test/ble.sh run-tests-osh-bash       -

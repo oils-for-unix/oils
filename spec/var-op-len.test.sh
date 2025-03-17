@@ -1,4 +1,5 @@
-#
+## compare_shells: dash bash mksh zsh
+
 # Test the length oeprator, which dash supports.  Dash doesn't support most
 # other ops.
 
@@ -70,7 +71,7 @@ true  # exit 0
 9
 7
 ## END
-## BUG dash/mksh stderr-json: ""
+## N-I dash/mksh stderr-json: ""
 ## N-I dash/mksh STDOUT:
 0
 1

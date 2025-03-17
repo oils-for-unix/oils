@@ -1,6 +1,6 @@
-# Hay: Hay Ain't YAML
+## oils_failures_allowed: 4
 
-## oils_failures_allowed: 2
+# Hay: Hay Ain't YAML
 
 #### hay builtin usage
 
@@ -275,6 +275,8 @@ hay eval :result {
     const age = '50'
     
     haynode child bob {
+      # TODO: Is 'const' being created in the old ENCLOSING frame?  Not the new
+      # ENCLOSED one?
       const age = '10'
     }
 
@@ -389,7 +391,7 @@ status 2
 ## END
 
 
-#### hay eval with shopt -s oil:all
+#### hay eval with shopt -s ysh:all
 shopt --set parse_brace parse_equals parse_proc
 
 hay define Package
@@ -431,7 +433,7 @@ Package cpython {
 
 #### Scope of Variables Inside Hay Blocks
 
-shopt --set oil:all
+shopt --set ysh:all
 
 hay define package
 hay define deps/package
@@ -469,6 +471,73 @@ backup = https://archive.example.com/downloads/foo.tar.gz
 deps location https://example.com/downloads/spam.tar.gz
 deps backup https://archive.example.com/downloads/spam.tar.xz
 AFTER downloads/foo.tar.gz
+## END
+
+#### Nested bare assignment
+shopt --set ysh:all
+
+hay define Package/Deps
+
+Package {
+  x = 10
+  Deps {
+    # this is a const
+    x = 20
+  }
+}
+
+json write (_hay())
+
+## STDOUT:
+{
+  "source": null,
+  "children": [
+    {
+      "type": "Package",
+      "args": [],
+      "children": [
+        {
+          "type": "Deps",
+          "args": [],
+          "children": [],
+          "attrs": {
+            "x": 20
+          }
+        }
+      ],
+      "attrs": {
+        "x": 10
+      }
+    }
+  ]
+}
+## END
+
+#### Param with same name as Hay attribute
+shopt --set ysh:all
+
+# Danilo reported this on Zulip
+
+hay define Service
+
+proc gen-service(; ; variant = null) {
+  Service {
+    variant = variant
+    port = 80
+  }
+}
+
+gen-service 
+gen-service (variant = 'z')
+
+var attrs = _hay().children[0].attrs
+json write (attrs)
+
+## STDOUT:
+{
+  "variant": null,
+  "port": 80
+}
 ## END
 
 
@@ -618,8 +687,7 @@ level 1 children
 
 
 #### Typed Args to Hay Node
-
-shopt --set oil:all
+shopt --set ysh:all
 
 hay define when
 
@@ -627,7 +695,7 @@ hay define when
 # Ah this is because of 'haynode'
 # 'haynode' could silently pass through blocks and typed args?
 
-when NAME (x > 0) { 
+when NAME [x > 0] { 
   const version = '1.0'
   const other = 'str'
 }
@@ -642,6 +710,7 @@ when NAME (x > 0) {
 
 source $REPO_ROOT/spec/testdata/config/osh-hay.osh
 
+# TODO: code not serialized correctly - Samuel brought this up
 
 ## STDOUT:
 backticks
@@ -653,3 +722,169 @@ CODE
   ___
 ## END
 
+#### CODE node provides code_str, serialized code - issue #2050
+shopt --set ysh:all
+
+hay define Package
+hay define Package/INSTALL
+
+Package {
+  name = "osh"
+  INSTALL {
+    #echo hi
+
+    # The block causes a bug?  Nesting?
+    cd dist {
+      ./install
+    }
+  }
+}
+
+= _hay()
+
+## STDOUT:
+## END
+
+#### Proc within Hay node
+shopt --set ysh:all
+
+hay define Package
+
+Package cpython {
+  version = '3.11'
+
+  proc build {
+    # procs have to capture
+    echo "version=$version"
+    make
+  }
+}
+
+# OK we have the proc
+= _hay()
+
+var build_proc = _hay().children[0].attrs.build
+
+= build_proc
+
+build_proc
+
+#json write (_hay())
+
+## STDOUT:
+## END
+
+
+#### Using Hay node from another module
+shopt --set ysh:all
+
+hay define Package/INSTALL
+
+use $[ENV.REPO_ROOT]/spec/testdata/config/use-hay.ysh
+
+#pp test_ (_hay())
+json write (_hay().children[0].attrs)
+
+## STDOUT:
+{
+  "version": "3.3"
+}
+## END
+
+#### Defining Hay node in another module
+shopt --set ysh:all
+
+use $[ENV.REPO_ROOT]/spec/testdata/config/define-hay.ysh
+
+Package foo {
+  version = '3.3'
+  INSTALL {
+    echo version=$version
+  }
+}
+
+json write (_hay().children[0].attrs)
+
+## STDOUT:
+{
+  "version": "3.3"
+}
+## END
+
+
+#### Using Hay with --eval flags
+shopt --set ysh:all
+
+echo 'hay define Package' >pre.ysh 
+
+echo '
+Package cpython {
+  version = "3.12"
+  url = "https://python.org/release/$version/"
+  proc build {
+    echo "version = $version, url = $url"
+  }
+}
+' >def.hay
+
+# TODO:
+# null_replacer=true
+# JavaScript has a second "replacer" arg, which can be a function, or an array
+# I guess you can specify replacer=null
+#
+# Invert it: Or maybe type_errors=true
+#
+# When type_errors=false (default), any unserializable value becomes null
+
+echo 'json write (_hay().children[0], type_errors=false)' > stage-1.ysh
+
+# Stage 1
+
+... $[ENV.SH] -o ysh:all
+  # TODO: restore purity
+  #--eval-pure pre.ysh
+  #--eval-pure def.hay
+  #--eval-pure stage-1.ysh
+  --eval pre.ysh
+  --eval def.hay
+  --eval stage-1.ysh
+  -c '' 
+  || true
+  ;
+
+# Stage 2
+
+echo '
+var pkg = _hay().children[0]
+var build_proc = pkg.attrs.build
+build_proc
+' > stage-2.ysh
+
+# Stage 1
+
+... $[ENV.SH] -o ysh:all
+  # TODO: restore purity
+  #--eval-pure pre.ysh
+  #--eval-pure def.hay
+  --eval pre.ysh
+  --eval def.hay
+  --eval stage-2.ysh  # This one isn't pure
+  -c ''
+  ;
+
+
+## STDOUT:
+{
+  "type": "Package",
+  "args": [
+    "cpython"
+  ],
+  "children": [],
+  "attrs": {
+    "version": "3.12",
+    "url": "https://python.org/release/3.12/",
+    "build": null
+  }
+}
+version = 3.12, url = https://python.org/release/3.12/
+## END

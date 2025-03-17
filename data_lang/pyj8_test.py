@@ -42,7 +42,7 @@ class PyJ8Test(unittest.TestCase):
         en = _EncodeString('hello \xbc\xbc there', 0)
         print(en)
 
-        en = _EncodeString('hello \xbc\xbc there', pyj8.LOSSY_JSON)
+        en = _EncodeString('hello \xbc\xbc there', pyj8.LOSSY_JSON_STRINGS)
         print(en)
 
 

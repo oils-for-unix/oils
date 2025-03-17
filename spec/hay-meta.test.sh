@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 # Hay Metaprogramming
 
@@ -223,14 +223,8 @@ shopt --set ysh:all
 hay define Rule
 
 proc myrule(name) {
-
-  # Each haynode has its own scope.  But then it can't see the args!  Oops.
-  # Is there a better way to do this?
-
-  shopt --set dynamic_scope {
-    Rule $name {
-      path = "/usr/bin/$name"
-    }
+  Rule $name {
+    path = "/usr/bin/$name"
   }
 }
 
@@ -255,3 +249,59 @@ EOF
 ## STDOUT:
 ## END
 
+#### Param scope issue (from Zulip, 2025-02)
+shopt --set ysh:all
+
+hay define Service
+
+setvar variant = 'local'
+
+proc gen_service(; ; variant=null) {
+
+  pp test_ (variant)
+
+  Service auth.example.com {    # node taking a block
+    pp test_ (variant)
+    if (variant === 'local') {  # condition
+      port = 8001
+    } else {
+      port = 80
+    }
+  }
+}
+
+gen_service (variant='remote')
+const result = _hay()
+json write (result)
+
+## STDOUT:
+(Str)   "remote"
+(Str)   "remote"
+{
+  "source": null,
+  "children": [
+    {
+      "type": "Service",
+      "args": [
+        "auth.example.com"
+      ],
+      "children": [],
+      "attrs": {
+        "port": 80
+      }
+    }
+  ]
+}
+## END
+
+
+#### Hay node with exression block arg now allowed - Node (; ; ^(var x = 1))
+shopt --set ysh:all
+
+hay define Foo
+
+Foo (; ; ^(echo hi))
+
+## status: 1
+## STDOUT:
+## END

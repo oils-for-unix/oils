@@ -41,15 +41,31 @@ def _CheckPosArgs(pos_args_raw, blame_loc):
 
 
 class EvalExpr(vm._Callable):
+    """io->evalExpr(ex) evaluates an expression 
 
-    def __init__(self, expr_ev):
-        # type: (expr_eval.ExprEvaluator) -> None
+    Notes compared with io->eval(cmd):
+    - there is no to_dict=true variant - doesn't make sense
+    - Does it need in_captured_frame=true?
+      - That is for "inline procs" like cd, but doesn't seem to be necessary
+        for expressions.  Unless we had mutations in expressions.
+    """
+
+    def __init__(
+            self,
+            expr_ev,  # type: expr_eval.ExprEvaluator
+            pure_ex,  # type: Optional[vm._Executor]
+            cmd_ev,  # type: Optional[cmd_eval.CommandEvaluator]
+    ):
+        # type: (...) -> None
         self.expr_ev = expr_ev
+        self.pure_ex = pure_ex
+        self.cmd_ev = cmd_ev
         self.mem = expr_ev.mem
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
-        unused_self = rd.PosObj()
+        if self.pure_ex is None:
+            unused_self = rd.PosObj()
         lazy = rd.PosExpr()
 
         dollar0 = rd.NamedStr("dollar0", None)
@@ -57,33 +73,38 @@ class EvalExpr(vm._Callable):
         vars_ = rd.NamedDict("vars", None)
         rd.Done()
 
-        pos_args = _CheckPosArgs(pos_args_raw, rd.LeftParenToken())
+        blame_tok = rd.LeftParenToken()
+        pos_args = _CheckPosArgs(pos_args_raw, blame_tok)
 
         # Note: ctx_Eval is on the outside, while ctx_EnclosedFrame is used in
         # EvalExprClosure
-        with state.ctx_EnclosedFrame(self.mem, lazy.captured_frame,
-                                     lazy.module_frame, None):
-            with state.ctx_Eval(self.mem, dollar0, pos_args, vars_):
-                result = self.expr_ev.EvalExpr(lazy.e, rd.LeftParenToken())
+        with state.ctx_TokenDebugFrame(self.mem, blame_tok):
+            with state.ctx_EnclosedFrame(self.mem, lazy.captured_frame,
+                                         lazy.module_frame, None):
+                with state.ctx_Eval(self.mem, dollar0, pos_args, vars_):
+                    with vm.ctx_MaybePure(self.pure_ex, self.cmd_ev):
+                        result = self.expr_ev.EvalExpr(lazy.e, blame_tok)
 
         return result
 
 
-def _PrintFrame(prefix, frame):
-    # type: (str, Dict[str, Cell]) -> None
-    print('%s %s' % (prefix, ' '.join(frame.keys())))
+if 0:
 
-    rear = frame.get('__E__')
-    if rear:
-        rear_val = rear.val
-        if rear_val.tag() == value_e.Frame:
-            r = cast(value.Frame, rear_val)
-            _PrintFrame('--> ' + prefix, r.frame)
+    def _PrintFrame(prefix, frame):
+        # type: (str, Dict[str, Cell]) -> None
+        print('%s %s' % (prefix, ' '.join(frame.keys())))
+
+        rear = frame.get('__E__')
+        if rear:
+            rear_val = rear.val
+            if rear_val.tag() == value_e.Frame:
+                r = cast(value.Frame, rear_val)
+                _PrintFrame('--> ' + prefix, r.frame)
 
 
 class EvalInFrame(vm._Callable):
     """
-    For making "inline procs"
+    DEPRECATED, replaced by eval(b, in_captured_frame=true)
     """
 
     def __init__(self, mem, cmd_ev):
@@ -93,10 +114,22 @@ class EvalInFrame(vm._Callable):
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
-        frag = rd.PosCommandFrag()
-        bound = rd.PosFrame()
+        unused = rd.PosValue()
 
-        # TODO: EvalCommandFrag()
+        cmd = rd.PosCommand()
+        in_frame = rd.PosFrame()
+        rd.Done()
+
+        frag = typed_args.GetCommandFrag(cmd)
+
+        # Note that 'cd' uses cmd_ev.EvalCommandFrag(), because a builtin does
+        # NOT push a new stack frame.  But a proc does.  So we need
+        # evalInFrame().
+
+        with state.ctx_TokenDebugFrame(self.mem, rd.LeftParenToken()):
+            # Evaluate with the given frame at the TOP of the stack
+            with state.ctx_EvalInFrame(self.mem, in_frame):
+                unused_status = self.cmd_ev.EvalCommandFrag(frag)
 
         return value.Null
 
@@ -115,47 +148,56 @@ class Eval(vm._Callable):
     The CALLER must handle errors.
     """
 
-    def __init__(self, mem, cmd_ev, which):
-        # type: (state.Mem, cmd_eval.CommandEvaluator, int) -> None
+    def __init__(self, mem, cmd_ev, pure_ex, which):
+        # type: (state.Mem, cmd_eval.CommandEvaluator, Optional[vm._Executor], int) -> None
         self.mem = mem
         self.cmd_ev = cmd_ev
+        self.pure_ex = pure_ex
         self.which = which
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
-        unused = rd.PosValue()
+        if self.pure_ex is None:
+            unused = rd.PosValue()
         bound = rd.PosCommand()
-
-        cmd = typed_args.GetCommandFrag(bound)
 
         dollar0 = rd.NamedStr("dollar0", None)
         pos_args_raw = rd.NamedList("pos_args", None)
         vars_ = rd.NamedDict("vars", None)
+        in_captured_frame = rd.NamedBool("in_captured_frame", False)
+        to_dict = rd.NamedBool("to_dict", False)
         rd.Done()
+
+        frag = typed_args.GetCommandFrag(bound)
 
         pos_args = _CheckPosArgs(pos_args_raw, rd.LeftParenToken())
 
-        if self.which == EVAL_NULL:
+        with state.ctx_TokenDebugFrame(self.mem, rd.LeftParenToken()):
+            if self.which == EVAL_NULL:
+                if to_dict:
+                    bindings = NewDict()  # type: Optional[Dict[str, value_t]]
+                else:
+                    bindings = None
+            elif self.which == EVAL_DICT:  # TODO: remove evalToDict()
+                bindings = NewDict()
+            else:
+                raise AssertionError()
+
             # _PrintFrame('[captured]', captured_frame)
-            with state.ctx_EnclosedFrame(self.mem, bound.captured_frame,
-                                         bound.module_frame, None):
+            with state.ctx_EnclosedFrame(self.mem,
+                                         bound.captured_frame,
+                                         bound.module_frame,
+                                         bindings,
+                                         inside=in_captured_frame):
                 # _PrintFrame('[new]', self.cmd_ev.mem.var_stack[-1])
                 with state.ctx_Eval(self.mem, dollar0, pos_args, vars_):
-                    unused_status = self.cmd_ev.EvalCommandFrag(cmd)
-            return value.Null
+                    with vm.ctx_MaybePure(self.pure_ex, self.cmd_ev):
+                        unused_status = self.cmd_ev.EvalCommandFrag(frag)
 
-        elif self.which == EVAL_DICT:
-            # TODO: dollar0, pos_args, vars_ not supported
-            # Does ctx_EnclosedFrame has different scoping rules?  For "vars"?
-
-            bindings = NewDict()  # type: Dict[str, value_t]
-            with state.ctx_EnclosedFrame(self.mem, bound.captured_frame,
-                                         bound.module_frame, bindings):
-                unused_status = self.cmd_ev.EvalCommandFrag(cmd)
-            return value.Dict(bindings)
-
-        else:
-            raise AssertionError()
+            if bindings is not None:
+                return value.Dict(bindings)
+            else:
+                return value.Null
 
 
 class CaptureStdout(vm._Callable):

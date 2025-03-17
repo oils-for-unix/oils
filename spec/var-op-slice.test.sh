@@ -31,7 +31,10 @@ echo $?
 _
 0
 ## END
-## BUG mksh stdout-json: "\n0\n"
+## BUG mksh STDOUT:
+
+0
+## END
 
 #### Out of range string slice: length
 # OK in both bash and mksh
@@ -42,7 +45,10 @@ echo $?
 _defg
 0
 ## END
-## BUG mksh stdout-json: "_defg\n0\n"
+## BUG mksh STDOUT:
+_defg
+0
+## END
 
 #### Negative start index
 foo=abcdefg
@@ -177,7 +183,9 @@ argv.py ${@:2}
 ['5', '6']
 ## END
 ## N-I mksh status: 1
-## N-I mksh stdout-json: "\n"
+## N-I mksh STDOUT:
+
+## END
 
 
 #### ${@:offset} and ${*:offset}
@@ -297,7 +305,9 @@ echo ${result//"$0"/'SHELL'}
 ## STDOUT:
 SHELL
 ## END
-## N-I mksh stdout-json: "\n"
+## N-I mksh STDOUT:
+
+## END
 
 #### Permutations of implicit begin and length
 array=(1 2 3)
@@ -385,9 +395,6 @@ echo
 set -- 1 2 3
 argv.py ${@::}
 argv.py ${@:0:}
-
-## status: 0
-## STDOUT:
 
 ## status: 0
 ## STDOUT:

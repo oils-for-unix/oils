@@ -108,6 +108,7 @@ hello one.
 class RenderTest(unittest.TestCase):
 
     def testRender(self):
+        # type: () -> None
         opts, _ = cmark.Options().parse_args([])
 
         out_file = cStringIO.StringIO()
@@ -119,6 +120,7 @@ class RenderTest(unittest.TestCase):
         print(out_file.getvalue())
 
     def testNewRender(self):
+        # type: () -> None
         # New style of doc
 
         new_flags = ['--toc-tag', 'h2', '--toc-tag', 'h3']
@@ -132,6 +134,7 @@ class RenderTest(unittest.TestCase):
         self.assert_('<div class="toclevel1"><a href="#one">' in h, h)
 
     def testNewPrettyHref(self):
+        # type: () -> None
         # New style of doc
 
         new_flags = ['--toc-tag', 'h2', '--toc-tag', 'h3', '--toc-pretty-href']
@@ -147,6 +150,7 @@ class RenderTest(unittest.TestCase):
         print(h)
 
     def testExtractor(self):
+        # type: () -> None
         parser = cmark.TocExtractor()
         parser.feed(_HTML_1)
         self.assertEqual(5, parser.toc_begin_line)
@@ -187,6 +191,7 @@ class RenderTest(unittest.TestCase):
         self.assertEqual('Two', ''.join(text))
 
     def testExtractorDense(self):
+        # type: () -> None
         parser = cmark.TocExtractor()
         parser.feed(_HTML_1.replace('"toc"', '"dense-toc"'))
 

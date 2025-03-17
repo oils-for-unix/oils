@@ -1,13 +1,28 @@
 #!/usr/bin/env python2
-"""Convert markdown to HTML, then parse the HTML, generate and insert a TOC,
-and insert anchors.
+"""Convert Markdown to HTML, with our enhancements
+
+- Parse the HTML
+- insert a TOC
+- <pstrip> hack - this is obsolete with ul-table?
+- Expand $xref links
+- Highlight code blocks
 
 I started from cmark-0.28.3/wrappers/wrapper.py.
 """
 from __future__ import print_function
 
 import ctypes
-import HTMLParser
+from typing import List
+from typing import Tuple
+from typing import Union
+from typing import Optional
+from typing import IO
+from typing import Dict
+try:
+    from HTMLParser import HTMLParser
+except ImportError:
+    # python3
+    from html.parser import HTMLParser  # type: ignore
 import json
 import optparse
 import os
@@ -17,6 +32,11 @@ import sys
 from doctools import html_lib
 from doctools import doc_html  # templates
 from doctools import oils_doc
+from doctools import ul_table
+from data_lang import htm8
+
+if sys.version_info.major == 2:
+    from typing import Any
 
 # Geez find_library returns the filename and not the path?  Just hardcode it as
 # a workaround.
@@ -52,6 +72,7 @@ markdown.argtypes = [ctypes.c_char_p, ctypes.c_long, ctypes.c_long]
 
 
 def log(msg, *args):
+    # type: (str, Any) -> None
     if args:
         msg = msg % args
 
@@ -63,17 +84,27 @@ def log(msg, *args):
 CMARK_OPT_UNSAFE = (1 << 17)
 
 
-def md2html(text):
-    textbytes = text
-    textlen = len(text)
-    return markdown(textbytes, textlen, CMARK_OPT_UNSAFE)
+def md2html(md):
+    # type: (str) -> str
+    if sys.version_info.major == 2:
+        md_bytes = md
+    else:
+        md_bytes = md.encode('utf-8')
+
+    md_len = len(md)
+    html = markdown(md_bytes, md_len, CMARK_OPT_UNSAFE)
+
+    if sys.version_info.major == 2:
+        return html
+    else:
+        return html.decode('utf-8')
 
 
 def demo():
     sys.stdout.write(md2html('*hi*'))
 
 
-class TocExtractor(HTMLParser.HTMLParser):
+class TocExtractor(HTMLParser):
     """Extract Table of Contents
 
     When we hit h_tags (h2, h3, h4, etc.), append to self.headings, recording
@@ -85,7 +116,8 @@ class TocExtractor(HTMLParser.HTMLParser):
     """
 
     def __init__(self):
-        HTMLParser.HTMLParser.__init__(self)
+        # type: () -> None
+        HTMLParser.__init__(self)
 
         # make targets for these, regardless of whether the TOC links to them.
         self.h_tags = ['h2', 'h3', 'h4']
@@ -103,6 +135,7 @@ class TocExtractor(HTMLParser.HTMLParser):
         self.headings = []
 
     def handle_starttag(self, tag, attrs):
+        # type: (str, List[Tuple[str, str]]) -> None
         if tag == 'div':
             if attrs == [('id', 'toc')]:
                 log('%s> %s %s', self.indent * '  ', tag, attrs)
@@ -130,6 +163,7 @@ class TocExtractor(HTMLParser.HTMLParser):
             self.capturing = True  # record the text inside <h2></h2> etc.
 
     def handle_endtag(self, tag):
+        # type: (str) -> None
         # Debug print
         if tag == 'div':
             self.indent -= 1
@@ -145,6 +179,7 @@ class TocExtractor(HTMLParser.HTMLParser):
             self._AppendHtml('</%s>' % tag)
 
     def handle_entityref(self, data):
+        # type: (str) -> None
         """
         From Python docs:
         This method is called to process a named character reference of the form
@@ -155,6 +190,7 @@ class TocExtractor(HTMLParser.HTMLParser):
             self._AppendHtml('&%s;' % data)
 
     def handle_data(self, data):
+        # type: (str) -> None
         # Debug print
         if self.indent > 0:
             log('%s| %r', self.indent * '  ', data)
@@ -164,11 +200,13 @@ class TocExtractor(HTMLParser.HTMLParser):
             self._AppendText(data)
 
     def _AppendText(self, text):
+        # type: (str) -> None
         """Accumulate text of the last heading."""
         _, _, _, _, text_parts = self.headings[-1]
         text_parts.append(text)
 
     def _AppendHtml(self, html):
+        # type: (str) -> None
         """Accumulate HTML of the last heading."""
         _, _, _, html_parts, _ = self.headings[-1]
         html_parts.append(html)
@@ -182,8 +220,14 @@ TAG_TO_CSS = {'h2': 'toclevel1', 'h3': 'toclevel2', 'h4': 'toclevel3'}
 ANCHOR_FMT = '<a name="%s"></a>\n'
 
 
-def _MakeTocInsertions(opts, toc_tags, headings, toc_pos,
-                       preserve_anchor_case):
+def _MakeTocInsertions(
+        opts,  # type: Any
+        toc_tags,  # type: Union[List[str], Tuple[str, str]]
+        headings,  # type: List[Tuple[int, str, None, List[str], List[str]]]
+        toc_pos,  # type: int
+        preserve_anchor_case,  # type: bool
+):
+    # type: (...) -> List[Tuple[int, str]]
     """Given extract headings list and TOC position, return a list of insertions.
 
     The insertions <div> for the TOC itself, and <a name=""> for the targets.
@@ -247,7 +291,12 @@ def _MakeTocInsertions(opts, toc_tags, headings, toc_pos,
     return insertions
 
 
-def _MakeTocInsertionsDense(headings, toc_pos, preserve_anchor_case):
+def _MakeTocInsertionsDense(
+        headings,  # type: List[Tuple[int, str, Optional[str], List[str], List[str]]]
+        toc_pos,  # type: int
+        preserve_anchor_case,  # type: bool
+):
+    # type: (...) -> List[Tuple[int, str]]
     """For the dense-toc style with columns, used by doc/ref
 
     The style above is simpler: it outputs a div for every line:
@@ -341,6 +390,7 @@ def _MakeTocInsertionsDense(headings, toc_pos, preserve_anchor_case):
 
 
 def _ApplyInsertions(lines, insertions, out_file):
+    # type: (List[str], List[Tuple[int, str]], IO[str]) -> None
     assert insertions, "Should be at least one insertion"
     j = 0
     n = len(insertions)
@@ -357,12 +407,21 @@ def _ApplyInsertions(lines, insertions, out_file):
         out_file.write(line)
 
 
-def Render(opts, meta, in_file, out_file, use_fastlex=True, debug_out=None):
+def Render(
+        opts,  # type: Any
+        meta,  # type: Dict
+        in_file,  # type: IO[str]
+        out_file,  # type: IO[str]
+        use_fastlex=True,  # type: bool
+        debug_out=None,  # type: Optional[Any]
+):
+    # type: (...) -> None
     if debug_out is None:
         debug_out = []
 
     # First convert to HTML
     html = md2html(in_file.read())
+    #print(html, file=sys.stderr)
 
     # Now process HTML with oils_doc
     if use_fastlex:
@@ -373,12 +432,18 @@ def Render(opts, meta, in_file, out_file, use_fastlex=True, debug_out=None):
                         opts.code_block_output)
                 text = oils_doc.ExtractCode(html, f)
 
-        html = oils_doc.RemoveComments(html)
+        html = ul_table.RemoveComments(html)
 
-        # Hack for allowing tables without <p> in cells, which CommonMark seems to
-        # require?
+        # Hack for allowing tables without <p> in cells, which CommonMark seems
+        # to require?
         html = html.replace('<p><pstrip>', '')
         html = html.replace('</pstrip></p>', '')
+
+        try:
+            html = ul_table.ReplaceTables(html)
+        except htm8.ParseError as e:
+            print('Error rendering file %r' % in_file, file=sys.stderr)
+            raise
 
         # Expand $xref, etc.
         html = oils_doc.ExpandLinks(html)
@@ -430,7 +495,13 @@ def Render(opts, meta, in_file, out_file, use_fastlex=True, debug_out=None):
 
 
 def Options():
+    # type: () -> Any
     p = optparse.OptionParser('cmark.py [options]')
+
+    p.add_option('--common-mark',
+                 action='store_true',
+                 default=False,
+                 help='Only do CommonMark conversion')
 
     p.add_option(
         '--toc-pretty-href',
@@ -464,6 +535,10 @@ def main(argv):
     o = Options()
     opts, argv = o.parse_args(argv)
     assert all(tag.startswith('h') for tag in opts.toc_tags), opts.toc_tags
+
+    if opts.common_mark:
+        print(md2html(sys.stdin.read()))
+        return
 
     meta = dict(DEFAULT_META)
 

@@ -1,6 +1,4 @@
-## oils_failures_allowed: 0
-
-# Demonstrations for users.  Could go in docs.
+## oils_failures_allowed: 1
 
 #### GetValue scope and shopt --unset dynamic_scope
 shopt --set parse_proc
@@ -10,7 +8,7 @@ f() {
 }
 
 proc p {
-  echo "oil x=$x"
+  echo "ysh x=$x"
 }
 
 demo() {
@@ -28,7 +26,7 @@ echo x=$x
 
 ## STDOUT:
 sh x=dynamic
-oil x=global
+ysh x=global
 sh x=global
 x=global
 ## END
@@ -42,8 +40,7 @@ f() {
 }
 
 proc p {
-  # x=p not allowed at parse time
-  declare x=p
+  var x = 'p'
 }
 
 demo() {
@@ -284,8 +281,12 @@ shopt --set parse_proc
 # They can't mutate globals or anything higher on the stack
 
 proc p {
-  declare g=PROC
-  export e=PROC
+  # TODO: declare should be disallowed in YSH, just like shell functions.
+
+  #declare g=PROC
+  #export e=PROC
+  var g = 'PROC'
+  var e = 'PROC'
 }
 
 f() {
@@ -464,40 +465,40 @@ pp test_ (mydict)
 (Dict)   {"k":22,"n":11}
 ## END
 
-#### unset inside proc uses local scope
+#### unset inside proc - closures and dynamic scope
 shopt --set parse_brace
 shopt --set parse_proc
 
-f() {
+shellfunc() {
   unset x
 }
 
-proc p() {
+proc unset-proc() {
   unset x
 }
 
-proc p2() {
+proc unset-proc-dynamic-scope() {
   shopt --set dynamic_scope {  # turn it back on
     unset x
   }
 }
 
 x=foo
-f
-echo f x=$x
+shellfunc
+echo shellfunc x=$x
 
 x=bar
-p
-echo p x=$x
+unset-proc
+echo unset-proc x=$x
 
 x=spam
-p2
-echo p2 x=$x
+unset-proc
+echo unset-proc-dynamic-scope x=$x
 
 ## STDOUT:
-f x=
-p x=bar
-p2 x=
+shellfunc x=
+unset-proc x=
+unset-proc-dynamic-scope x=
 ## END
 
 #### unset composes when you turn on dynamic scope
@@ -551,7 +552,7 @@ bar
 ## END
 
 #### cd blocks don't introduce new scopes
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 
 var x = 42
 cd / {
@@ -568,14 +569,21 @@ echo $x $y $z
 42 43 44
 ## END
 
-#### IFS=: myproc exports when it doesn't need to
+#### shvar IFS=x { myproc } rather than IFS=x myproc - no dynamic scope
+
+# Note: osh/split.py uses dynamic scope to look up IFS
+# TODO: Should use LANG example to demonstrate
+
+#shopt --set ysh:upgrade  # this would disable word splitting
+
 shopt --set parse_proc
 shopt --set parse_brace
+#shopt --set env_obj
 
 s='xzx zxz'
 
-myfunc() {
-  echo myfunc IFS="$IFS"
+shellfunc() {
+  echo shellfunc IFS="$IFS"
   argv.py $s
 }
 
@@ -591,16 +599,23 @@ echo "$IFS" | od -A n -t x1
 
 IFS=' z'
 echo IFS="$IFS"
+echo
 
-IFS=' x' myfunc
+shellfunc
+echo
 
-# Problem: $IFS in procs only finds GLOBAL values.  But when actually
-# splitting, $IFS is a 'shvar' which respects DYNAMIC scope.
-# Use shvarGet('IFS') instead
+IFS=' x' shellfunc
+echo
+
+# Problem: $IFS in procs only finds GLOBAL values, so we get IFS=' z' rather than IFS=' x'.
+# But when actually splitting, $IFS is a 'shvar' which respects DYNAMIC scope.
+#
+# Can use shvarGet('IFS') instead
 
 IFS=' x' myproc
+echo
 
-# Oil solution to the problem
+# YSH solution to the problem
 shvar IFS=' x' {
   myproc
 }
@@ -609,16 +624,22 @@ shvar IFS=' x' {
 :
  20 09 0a 0a
 IFS= z
-myfunc IFS= x
+
+shellfunc IFS= z
+['x', 'x', 'x']
+
+shellfunc IFS= x
 ['', 'z', 'z', 'z']
+
 myproc IFS= z
-['', 'z', 'z', 'z']
+['x', 'x', 'x']
+
 myproc IFS= x
 ['', 'z', 'z', 'z']
 ## END
 
-#### shvar usage 
-shopt --set oil:upgrade
+#### shvar builtin syntax
+shopt --set ysh:upgrade
 shopt --unset errexit
 
 # no block
@@ -640,8 +661,40 @@ status=2
 status=2
 ## END
 
+
+#### shvar and shvarGet() obey dynamic scope
+
+# On the other hand, in YSH
+# - $x does local/closure/global scope
+# - FOO=foo mycommand modifies the ENV object - shopt --set env_obj
+
+shopt --set ysh:all
+
+proc p3 {
+  echo FOO=$[shvarGet('FOO')]  # dynamic scope
+  echo FOO=$FOO                # fails, not dynamic scope
+}
+
+proc p2 {
+  p3
+}
+
+proc p {
+  shvar FOO=foo {
+    p2
+  }
+}
+
+p
+
+## status: 1
+## STDOUT:
+FOO=foo
+## END
+
+
 #### shvar global
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 shopt --unset nounset
 
 echo _ESCAPER=$_ESCAPER
@@ -696,7 +749,7 @@ _DIALECT=bar
 ## END
 
 #### shvar local
-shopt --set oil:upgrade  # blocks
+shopt --set ysh:upgrade  # blocks
 shopt --unset simple_word_eval  # test word splitting
 
 proc foo {
@@ -721,7 +774,7 @@ MYTEMP=undef
 ## END
 
 #### shvar IFS
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 
 proc myproc() {
   echo "$IFS" | od -A n -t x1
@@ -742,27 +795,113 @@ mylocal=x
  20 09 0a 0a
 ## END
 
-#### shvarGet()
+#### Compare shell func vs. proc, $IFS vs. shvarGet('IFS')
+
 shopt --set parse_proc
 
 s='xzx zxz'
 
-proc myproc {
-  echo wrong IFS="$IFS"         # NOT what's used
-  echo shvar IFS=$[shvarGet('IFS')]  # what IS used: dynamic scope
+shellfunc() {  # dynamic scope everywhere
+  echo shellfunc
+  echo IFS="$IFS"
+  echo shvarGet IFS=$[shvarGet('IFS')]
   argv.py $s
 }
 
+proc myproc {  # no dynamic scope
+
+  # Subtle behavior: we see 'x' rather than "temp frame" 'z' - I think because
+  # there is a CHAIN of __E__ enclosed scopes, up to the global frame.
+  #
+  # That frame comes FIRST.   That seems OK, but it changed when procs became closures.
+  proc p2 {
+    echo "myproc -> p2"
+    echo IFS="$IFS"  
+    echo shvarGet IFS=$[shvarGet('IFS')]  # dynamic scope opt-in
+    argv.py $s  # dynamic scope in osh/split.py
+  }
+
+  p2 
+}
+
 IFS=x
+
+IFS=z shellfunc
+echo
+
+# this makes a temp frame, but the proc can't see it?
 IFS=z myproc
+echo
 
 # null
 echo $[shvarGet('nonexistent')]
 
 ## STDOUT:
-wrong IFS=x
-shvar IFS=z
+shellfunc
+IFS=z
+shvarGet IFS=z
 ['x', 'x ', 'x']
+
+myproc -> p2
+IFS=x
+shvarGet IFS=x
+['', 'z', ' z', 'z']
+
 null
 ## END
 
+#### func and proc are like var, with respect to closures
+shopt --set ysh:all
+
+proc test-var {
+  var x = 'outer'
+  proc inner {
+    var x = 'inner'
+    # note: static check is broken now
+    #setvar x = 'inner'
+    echo "inner $x"
+  }
+  inner
+  echo "outer $x"
+}
+
+# Note: state.YshDecl flag somehow doesn't make a difference here?
+proc test-func {
+  func x() { return ('outer') }
+  proc inner2 {
+    func x() { return ('inner') }
+    echo "inner $[x()]"
+  }
+  inner2
+  echo "outer $[x()]"
+}
+
+proc test-proc {
+  proc x { echo 'outer' }
+  proc inner3 {
+    proc x { echo 'inner' }
+    x
+  }
+  inner3
+  x
+}
+
+
+test-var
+echo
+
+test-func
+echo
+
+test-proc
+
+## STDOUT:
+inner inner
+outer outer
+
+inner inner
+outer outer
+
+inner
+outer
+## END

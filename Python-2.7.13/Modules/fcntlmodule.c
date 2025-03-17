@@ -405,9 +405,6 @@ starts.  whence is as with fileobj.seek(), specifically:\n\
 
 /* List of functions */
 
-#ifdef OVM_MAIN
-#include "Python-2.7.13/Modules/fcntlmodule.c/fcntl_methods.def"
-#else
 static PyMethodDef fcntl_methods[] = {
     {"fcntl",           fcntl_fcntl, METH_VARARGS, fcntl_doc},
     {"ioctl",           fcntl_ioctl, METH_VARARGS, ioctl_doc},
@@ -415,7 +412,6 @@ static PyMethodDef fcntl_methods[] = {
     {"lockf",       fcntl_lockf, METH_VARARGS, lockf_doc},
     {NULL,              NULL}           /* sentinel */
 };
-#endif
 
 
 PyDoc_STRVAR(module_doc,

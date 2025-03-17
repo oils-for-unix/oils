@@ -1,12 +1,12 @@
-## oils_failures_allowed: 3
-## compare_shells: bash dash mksh zsh yash
+## oils_failures_allowed: 5
+## compare_shells: bash dash mksh zsh ash yash
 
 #### Fatal error
 # http://landley.net/notes.html#20-06-2020
 
 abc=${a?bc} echo hello; echo blah
 ## status: 1
-## OK yash/dash status: 2
+## OK yash/dash/ash status: 2
 ## stdout-json: ""
 
 #### setting readonly var (bash is only one where it's non-fatal)
@@ -18,7 +18,7 @@ echo status=$?
 ## status: 2
 ## stdout-json: ""
 ## OK osh/zsh status: 1
-## OK bash status: 0
+## BUG bash status: 0
 ## BUG bash STDOUT:
 status=1
 ## END
@@ -59,11 +59,12 @@ abc=
 abc=def
 abc=def
 ## END
-## OK dash/mksh STDOUT:
+## OK dash/ash/mksh STDOUT:
 abc=
 ## END
 ## OK dash status: 2
 ## OK mksh status: 1
+## OK ash status: 1
 
 #### Evaluation order of redirect and ${undef?error}
 # http://landley.net/notes.html#12-06-2020
@@ -167,6 +168,7 @@ hello
 
 
 #### IFS - http://landley.net/notes.html#05-03-2020
+case $SH in zsh) exit ;; esac
 
 IFS=x
 chicken() { for i in "$@"; do echo =$i=; done;}
@@ -186,7 +188,8 @@ myfunc one "" two
 ==
 =two=
 ## END
-## BUG dash STDOUT:
+
+## BUG dash/ash STDOUT:
 =one=
 =abc=
 =d f=
@@ -195,8 +198,38 @@ myfunc one "" two
 =one=
 =two=
 ## END
-## BUG zsh status: 1
-## BUG zsh stdout-json: ""
+
+## N-I zsh STDOUT:
+## END
+
+#### IFS=x and '' and unquoted $@ - reduction of case above - copied into spec/word-split
+
+setopt SH_WORD_SPLIT
+#set -x
+
+set -- one "" two
+
+IFS=x
+
+argv.py $@
+
+for i in $@; do
+  echo -$i-
+done
+
+## STDOUT:
+['one', '', 'two']
+-one-
+--
+-two-
+## END
+
+## BUG dash/ash/zsh STDOUT:
+['one', 'two']
+-one-
+-two-
+## END
+
 
 #### for loop parsing - http://landley.net/notes.html#04-03-2020
 
@@ -227,14 +260,20 @@ if test $? -ne 0; then echo fail; fi
 
 #### IFS - http://landley.net/notes.html#15-02-2020 (TODO: osh)
 
-IFS=x; A=xabcxx; for i in $A; do echo =$i=; done
+IFS=x
+A=xabcxx
+for i in $A; do echo =$i=; done
+echo
 
-unset IFS; A="   abc   def   "; for i in ""$A""; do echo =$i=; done
+unset IFS
+A="   abc   def   "
+for i in ""$A""; do echo =$i=; done
 
 ## STDOUT:
 ==
 =abc=
 ==
+
 ==
 =abc=
 =def=
@@ -243,8 +282,8 @@ unset IFS; A="   abc   def   "; for i in ""$A""; do echo =$i=; done
 ## BUG zsh status: 1
 ## BUG zsh stdout-json: ""
 
-#### IFS 2 (TODO: osh)
-this one appears different between osh and bash
+#### IFS 2 - copied into spec/word-split
+# this one appears different between osh and bash
 A="   abc   def   "; for i in ""x""$A""; do echo =$i=; done
 
 ## STDOUT:
@@ -266,34 +305,49 @@ onextwoxxthree
 ## END
 
 #### IFS 4
+
+setopt SH_WORD_SPLIT
+
 IFS=x
-cc() { echo =$*=; for i in $*; do echo -$i-; done;}; cc "" ""
-cc() { echo ="$*"=; for i in =$*=; do echo -$i-; done;}; cc "" ""
+
+func1() {
+  echo /$*/
+  for i in $*; do echo -$i-; done
+}
+func1 "" ""
+
+echo
+
+func2() {
+  echo /"$*"/
+  for i in =$*=; do echo -$i-; done
+}
+func2 "" ""
+
 ## STDOUT:
-= =
+/ /
+
+/x/
+-=-
+-=-
+## END
+## BUG bash STDOUT:
+/ /
 --
-=x=
+
+/x/
 -=-
 -=-
 ## END
-## BUG mksh/dash STDOUT:
-= =
-=x=
--=-
--=-
-## END
-## BUG yash STDOUT:
-= =
+## BUG yash/zsh STDOUT:
+/ /
 --
 --
-=x=
+
+/x/
 -=-
 -=-
 ## END
-## BUG zsh STDOUT:
-= =
-## END
-## BUG zsh status: 1
 
 #### IFS 5
 cc() { for i in $*; do echo -$i-; done;}; cc "" "" "" "" ""

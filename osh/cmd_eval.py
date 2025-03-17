@@ -52,6 +52,7 @@ from _devbuild.gen.syntax_asdl import (
     word,
     Eggex,
     List_of_command,
+    debug_frame,
 )
 from _devbuild.gen.runtime_asdl import (
     cmd_value,
@@ -68,6 +69,7 @@ from _devbuild.gen.types_asdl import redir_arg_type_e
 from _devbuild.gen.value_asdl import (value, value_e, value_t, y_lvalue,
                                       y_lvalue_e, y_lvalue_t, LeftName, Obj)
 
+from core import bash_impl
 from core import dev
 from core import error
 from core import executor
@@ -188,6 +190,63 @@ def _HasManyStatuses(node):
     return node
 
 
+def ListInitializeTarget(old_val,
+                         has_plus,
+                         exec_opts,
+                         blame_loc,
+                         destructive=True):
+    # type: (value_t, bool, optview.Exec, loc_t, bool) -> value_t
+    UP_old_val = old_val
+    with tagswitch(old_val) as case:
+        if case(value_e.Undef):
+            return bash_impl.BashArray_New()
+        elif case(value_e.Str):
+            if has_plus:
+                if exec_opts.strict_array():
+                    e_die("Can't convert Str to BashArray (strict_array)",
+                          blame_loc)
+                old_val = cast(value.Str, UP_old_val)
+                return bash_impl.BashArray_FromList([old_val.s])
+            else:
+                return bash_impl.BashArray_New()
+        elif case(value_e.BashArray):
+            old_val = cast(value.BashArray, UP_old_val)
+            if not destructive:
+                if has_plus:
+                    old_val = bash_impl.BashArray_Copy(old_val)
+                else:
+                    old_val = bash_impl.BashArray_New()
+            return old_val
+        elif case(value_e.BashAssoc):
+            old_val = cast(value.BashAssoc, UP_old_val)
+            if not destructive:
+                if has_plus:
+                    old_val = bash_impl.BashAssoc_Copy(old_val)
+                else:
+                    old_val = bash_impl.BashAssoc_New()
+            return old_val
+        else:
+            e_die(
+                "Can't list-initialize a value of type %s" %
+                ui.ValType(old_val), blame_loc)
+
+
+def ListInitialize(val, initializer, has_plus, exec_opts, blame_loc, arith_ev):
+    # type: (value_t, value.InitializerList, bool, optview.Exec, loc_t, sh_expr_eval.ArithEvaluator) -> None
+    UP_val = val
+    with tagswitch(val) as case:
+        if case(value_e.BashArray):
+            val = cast(value.BashArray, UP_val)
+            bash_impl.BashArray_ListInitialize(val, initializer, has_plus,
+                                               blame_loc, arith_ev)
+        elif case(value_e.BashAssoc):
+            val = cast(value.BashAssoc, UP_val)
+            bash_impl.BashAssoc_ListInitialize(val, initializer, has_plus,
+                                               exec_opts, blame_loc)
+        else:
+            raise AssertionError(val.tag())
+
+
 def PlusEquals(old_val, val):
     # type: (value_t, value_t) -> value_t
     """Implement s+=val, typeset s+=val, etc."""
@@ -206,33 +265,20 @@ def PlusEquals(old_val, val):
                 old_val = cast(value.Str, UP_old_val)
                 str_to_append = cast(value.Str, UP_val)
                 val = value.Str(old_val.s + str_to_append.s)
-
-            elif tag == value_e.BashArray:
-                e_die("Can't append array to string")
-
             else:
                 raise AssertionError()  # parsing should prevent this
 
-        elif case(value_e.BashArray):
+        elif case(value_e.InternalStringArray, value_e.BashArray):
             if tag == value_e.Str:
                 e_die("Can't append string to array")
-
-            elif tag == value_e.BashArray:
-                old_val = cast(value.BashArray, UP_old_val)
-                to_append = cast(value.BashArray, UP_val)
-
-                # TODO: MUTATE the existing value for efficiency?
-                strs = []  # type: List[str]
-                strs.extend(old_val.strs)
-                strs.extend(to_append.strs)
-                val = value.BashArray(strs)
-
             else:
                 raise AssertionError()  # parsing should prevent this
 
         elif case(value_e.BashAssoc):
-            # TODO: Could try to match bash, it will append to ${A[0]}
-            pass
+            if tag == value_e.Str:
+                e_die("Can't append string to associative arrays")
+            else:
+                raise AssertionError()  # parsing should prrevent this
 
         else:
             e_die("Can't append to value of type %s" % ui.ValType(old_val))
@@ -289,7 +335,7 @@ class CommandEvaluator(object):
         self.arith_ev = None  # type: sh_expr_eval.ArithEvaluator
         self.bool_ev = None  # type: sh_expr_eval.BoolEvaluator
         self.expr_ev = None  # type: expr_eval.ExprEvaluator
-        self.word_ev = None  # type: word_eval.AbstractWordEvaluator
+        self.word_ev = None  # type: word_eval.NormalWordEvaluator
         self.tracer = None  # type: dev.Tracer
 
         self.mem = mem
@@ -560,12 +606,34 @@ class CommandEvaluator(object):
         """For FOO=1 cmd."""
         for e_pair in more_env:
             val = self.word_ev.EvalRhsWord(e_pair.val)
+
+            has_plus = False  # We currently do not support tmpenv+=()
+            initializer = None  # type: value.InitializerList
+            if val.tag() == value_e.InitializerList:
+                initializer = cast(value.InitializerList, val)
+
+                lval = LeftName(e_pair.name, e_pair.left)
+                old_val = sh_expr_eval.OldValue(
+                    lval,
+                    self.mem,
+                    None,  # No nounset
+                    e_pair.left)
+                val = ListInitializeTarget(old_val,
+                                           has_plus,
+                                           self.exec_opts,
+                                           e_pair.left,
+                                           destructive=False)
+
             # Set each var so the next one can reference it.  Example:
             # FOO=1 BAR=$FOO ls /
             self.mem.SetNamed(location.LName(e_pair.name),
                               val,
                               scope_e.LocalOnly,
                               flags=flags)
+
+            if initializer is not None:
+                ListInitialize(val, initializer, has_plus, self.exec_opts,
+                               e_pair.left, self.arith_ev)
 
     def _StrictErrExit(self, node):
         # type: (command_t) -> None
@@ -646,6 +714,9 @@ class CommandEvaluator(object):
     def _DoVarDecl(self, node):
         # type: (command.VarDecl) -> int
         # x = 'foo' in Hay blocks
+
+        flags = state.YshDecl
+
         if node.keyword is None:
             # Note: there's only one LHS
             lhs0 = node.lhs[0]
@@ -653,23 +724,21 @@ class CommandEvaluator(object):
             assert node.rhs is not None, node
             val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
-            self.mem.SetNamed(lval,
-                              val,
-                              scope_e.LocalOnly,
-                              flags=state.SetReadOnly)
+            flags |= state.SetReadOnly
+            self.mem.SetNamedYsh(lval, val, scope_e.LocalOnly, flags=flags)
 
         else:  # var or const
-            flags = (state.SetReadOnly
-                     if node.keyword.id == Id.KW_Const else 0)
+            flags |= (state.SetReadOnly
+                      if node.keyword.id == Id.KW_Const else 0)
 
             # var x, y does null initialization
             if node.rhs is None:
                 for i, lhs_val in enumerate(node.lhs):
                     lval = LeftName(lhs_val.name, lhs_val.left)
-                    self.mem.SetNamed(lval,
-                                      value.Null,
-                                      scope_e.LocalOnly,
-                                      flags=flags)
+                    self.mem.SetNamedYsh(lval,
+                                         value.Null,
+                                         scope_e.LocalOnly,
+                                         flags=flags)
                 return 0
 
             right_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
@@ -701,7 +770,10 @@ class CommandEvaluator(object):
 
             for i, lval in enumerate(lvals):
                 rval = rhs_vals[i]
-                self.mem.SetNamed(lval, rval, scope_e.LocalOnly, flags=flags)
+                self.mem.SetNamedYsh(lval,
+                                     rval,
+                                     scope_e.LocalOnly,
+                                     flags=flags)
 
         return 0
 
@@ -754,7 +826,7 @@ class CommandEvaluator(object):
                 if lval.tag() == y_lvalue_e.Local:
                     lval = cast(LeftName, UP_lval)
 
-                    self.mem.SetNamed(lval, rval, which_scopes)
+                    self.mem.SetNamedYsh(lval, rval, which_scopes)
 
                 elif lval.tag() == y_lvalue_e.Container:
                     lval = cast(y_lvalue.Container, UP_lval)
@@ -946,33 +1018,52 @@ class CommandEvaluator(object):
         which_scopes = self.mem.ScopesForWriting()
 
         for pair in node.pairs:
-            if pair.op == assign_op_e.PlusEqual:
-                assert pair.rhs, pair.rhs  # I don't think a+= is valid?
-                rhs = self.word_ev.EvalRhsWord(pair.rhs)
+            # The shell assignments should always have RHS.  An AssignPair
+            # stored in command_e.ShAssignment is constructed in
+            # cmd_parse._MakeAssignPair, where rhs is explicitly constructed to
+            # be CompoundWord or rhs_word.Empty.
+            assert pair.rhs, pair.rhs
 
-                lval = self.arith_ev.EvalShellLhs(pair.lhs, which_scopes)
+            # RHS can be a string or initializer list.
+            rhs = self.word_ev.EvalRhsWord(pair.rhs)
+            assert isinstance(rhs, value_t), rhs
+
+            lval = self.arith_ev.EvalShellLhs(pair.lhs, which_scopes)
+            has_plus = pair.op == assign_op_e.PlusEqual
+
+            initializer = None  # type: value.InitializerList
+            if rhs.tag() == value_e.InitializerList:
+                initializer = cast(value.InitializerList, rhs)
+
+                # If rhs is an initializer list, we perform the initialization
+                # of LHS.
+                old_val = sh_expr_eval.OldValue(lval, self.mem, None,
+                                                node.left)
+
+                val = ListInitializeTarget(old_val, has_plus, self.exec_opts,
+                                           pair.left)
+
+            elif has_plus:
                 # do not respect set -u
-                old_val = sh_expr_eval.OldValue(lval, self.mem, None)
+                old_val = sh_expr_eval.OldValue(lval, self.mem, None,
+                                                node.left)
 
                 val = PlusEquals(old_val, rhs)
 
-            else:  # plain assignment
-                lval = self.arith_ev.EvalShellLhs(pair.lhs, which_scopes)
-
-                # RHS can be a string or array.
-                if pair.rhs:
-                    val = self.word_ev.EvalRhsWord(pair.rhs)
-                    assert isinstance(val, value_t), val
-
-                else:  # e.g. 'readonly x' or 'local x'
-                    val = None
+            elif pair.rhs:
+                # plain assignment
+                val = rhs
 
             # NOTE: In bash and mksh, declare -a myarray makes an empty cell
             # with Undef value, but the 'array' attribute.
 
             flags = 0  # for tracing
             self.mem.SetValue(lval, val, which_scopes, flags=flags)
-            self.tracer.OnShAssignment(lval, pair.op, val, flags, which_scopes)
+            if initializer is not None:
+                ListInitialize(val, initializer, has_plus, self.exec_opts,
+                               pair.left, self.arith_ev)
+
+            self.tracer.OnShAssignment(lval, pair.op, rhs, flags, which_scopes)
 
         # PATCH to be compatible with existing shells: If the assignment had a
         # command sub like:
@@ -1276,7 +1367,8 @@ class CommandEvaluator(object):
         status = 0  # in case we loop zero times
         with ctx_LoopLevel(self):
             while True:
-                with state.ctx_LoopFrame(self.mem, name1.name):
+                with state.ctx_LoopFrame(self.mem,
+                                         self.exec_opts.for_loop_frames()):
                     first = it2.FirstValue()
                     #log('first %s', first)
                     if first is None:  # for StdinIterator
@@ -1344,11 +1436,13 @@ class CommandEvaluator(object):
     def _DoShFunction(self, node):
         # type: (command.ShFunction) -> None
 
-        # Note: shell functions can read vars from the file they're defined in
-        # But they don't appear in the module itself -- rather it is __sh_funcs__
-        # Though we could consider disallowing them though on 'import'.
-        sh_func = value.Proc(node.name, node.name_tok, proc_sig.Open,
-                             node.body, None, True, self.mem.GlobalFrame())
+        # Note: shell functions don't have a captured frame.  TODO: Get rid of
+        # GlobalFrame as well.  I think shell functions will be disallowed in
+        # pure YSH.  They appear in the __sh_funcs__, NOT in modules!
+
+        sh_func = value.Proc(node.name, node.name_tok,
+                             proc_sig.Open, node.body, None, True, None,
+                             self.mem.GlobalFrame())
         self.procs.DefineShellFunc(node.name, sh_func)
 
     def _DoProc(self, node):
@@ -1363,7 +1457,8 @@ class CommandEvaluator(object):
 
         # no dynamic scope
         proc = value.Proc(proc_name, node.name, node.sig, node.body,
-                          proc_defaults, False, self.mem.GlobalFrame())
+                          proc_defaults, False, self.mem.CurrentFrame(),
+                          self.mem.GlobalFrame())
         self.procs.DefineProc(proc_name, proc)
 
     def _DoFunc(self, node):
@@ -1374,9 +1469,12 @@ class CommandEvaluator(object):
         pos_defaults, named_defaults = func_proc.EvalFuncDefaults(
             self.expr_ev, node)
         func_val = value.Func(name, node, pos_defaults, named_defaults,
-                              self.mem.GlobalFrame())
+                              self.mem.CurrentFrame(), self.mem.GlobalFrame())
 
-        self.mem.SetNamed(lval, func_val, scope_e.LocalOnly)
+        # TODO: I'm not observing a difference with the YshDecl flag?  That
+        # should prevent the parent scope from being modified.
+        #self.mem.SetNamedYsh(lval, func_val, scope_e.LocalOnly, flags=state.YshDecl)
+        self.mem.SetNamedYsh(lval, func_val, scope_e.LocalOnly)
 
     def _DoIf(self, node):
         # type: (command.If) -> int
@@ -1511,10 +1609,15 @@ class CommandEvaluator(object):
         except error.RedirectEval as e:
             self.errfmt.PrettyPrintError(e)
             redirects = None
-        except error.FailGlob as e:  # e.g. echo hi > foo-*
+        except error.WordFailure as e:
+            # This happens e.g. with the following cases:
+            #
+            #   $ echo hi > foo-*   # with failglob (FailGlob)
+            #   $ echo > ${!undef}  # (VarSubFailure)
+            #
             if not e.HasLocation():
                 e.location = self.mem.GetFallbackLocation()
-            self.errfmt.PrettyPrintError(e, prefix='failglob: ')
+            self.errfmt.PrettyPrintError(e)
             redirects = None
 
         if redirects is None:
@@ -1869,12 +1972,12 @@ class CommandEvaluator(object):
         with vm.ctx_ProcessSub(self.shell_ex, process_sub_st):  # for wait()
             try:
                 status = self._Dispatch(node, cmd_st)
-            except error.FailGlob as e:
+            except error.WordFailure as e:  # e.g. echo hi > ${!undef}
                 if not e.HasLocation():  # Last resort!
                     e.location = self.mem.GetFallbackLocation()
-                self.errfmt.PrettyPrintError(e, prefix='failglob: ')
+                self.errfmt.PrettyPrintError(e)
                 status = 1  # another redirect word eval error
-                cmd_st.check_errexit = True  # failglob + errexit
+                cmd_st.check_errexit = True  # errexit for e.g. a=${!undef}
 
         # Now we've waited for process subs
 
@@ -2238,10 +2341,27 @@ class CommandEvaluator(object):
         # NOTE: Don't set option_i._running_trap, because that's for
         # RunPendingTraps() in the MAIN LOOP
 
+        # To make a better stack trace from vm.getDebugStack(), add the last
+        # thing that failed, even if it's not a proc/func.  This can be an
+        # external command.
+        #
+        # TODO: this can lead to duplicate stack frames
+        # - We might only want this if it's an external command?
+        # - Or maybe we need a different trap to trigger stack traces ...
+        self.mem.debug_stack.append(
+            debug_frame.BeforeErrTrap(self.mem.token_for_line))
+
         with dev.ctx_Tracer(self.tracer, 'trap ERR', None):
+            # TODO:
+            # - use debug_frame.Trap
+            # - use the original location of the 'trap' command?
+            # - combine ctx_Tracer and debug stack?  They are similar
+            #with state.ctx_EvalDebugFrame(self.mem, self.mem.token_for_line):
+
             # In bash, the PIPESTATUS register leaks.  See spec/builtin-trap-err.
             # So unlike other traps, we don't isolate registers.
             #with state.ctx_Registers(self.mem):  # prevent setting $? etc.
+
             with state.ctx_ErrTrap(self.mem):
                 self._Execute(node)
 
@@ -2259,7 +2379,8 @@ class CommandEvaluator(object):
             proc_argv = cmd_val.argv[1:]
 
         # Hm this sets "$@".  TODO: Set ARGV only
-        with state.ctx_ProcCall(self.mem, self.mutable_opts, proc, proc_argv):
+        with state.ctx_ProcCall(self.mem, self.mutable_opts, proc, proc_argv,
+                                cmd_val.arg_locs[0]):
             func_proc.BindProcArgs(proc, cmd_val, self.mem)
 
             # Redirects still valid for functions.

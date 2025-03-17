@@ -225,13 +225,15 @@ def InitCommandEvaluator(parse_ctx=None,
 
     readline = None  # simulate not having it
 
-    new_var = assign_osh.NewVar(mem, procs, exec_opts, errfmt)
+    arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, mutable_opts,
+                                           parse_ctx, errfmt)
+    new_var = assign_osh.NewVar(mem, procs, exec_opts, arith_ev, errfmt)
     assign_builtins = {
         builtin_i.declare: new_var,
         builtin_i.typeset: new_var,
         builtin_i.local: new_var,
-        builtin_i.export_: assign_osh.Export(mem, errfmt),
-        builtin_i.readonly: assign_osh.Readonly(mem, errfmt),
+        builtin_i.export_: assign_osh.Export(mem, arith_ev, errfmt),
+        builtin_i.readonly: assign_osh.Readonly(mem, arith_ev, errfmt),
     }
     builtins = {  # Lookup
         builtin_i.echo: io_osh.Echo(exec_opts),
@@ -265,8 +267,6 @@ def InitCommandEvaluator(parse_ctx=None,
 
     splitter = split.SplitContext(mem)
 
-    arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, mutable_opts,
-                                           parse_ctx, errfmt)
     bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, mutable_opts,
                                          parse_ctx, errfmt)
     expr_ev = expr_eval.ExprEvaluator(mem, mutable_opts, methods, splitter,
@@ -287,16 +287,19 @@ def InitCommandEvaluator(parse_ctx=None,
 
     hay_state = hay_ysh.HayState()
     shell_ex = executor.ShellExecutor(mem, exec_opts, mutable_opts, procs,
-                                      hay_state, builtins, search_path,
-                                      ext_prog, waiter, tracer, job_control,
-                                      job_list, fd_state, trap_state, errfmt)
+                                      hay_state, builtins, tracer, errfmt,
+                                      search_path, ext_prog, waiter,
+                                      job_control, job_list, fd_state,
+                                      trap_state)
+    pure_ex = executor.PureExecutor(mem, exec_opts, mutable_opts, procs,
+                                    hay_state, builtins, tracer, errfmt)
 
     assert cmd_ev.mutable_opts is not None, cmd_ev
     prompt_ev = prompt.Evaluator('osh', '0.0.0', parse_ctx, mem)
 
     global_io = Obj(None, None)
     vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
-                        prompt_ev, global_io, tracer)
+                        pure_ex, prompt_ev, global_io, tracer)
 
     try:
         from _devbuild.gen.help_meta import TOPICS

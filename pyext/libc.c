@@ -21,6 +21,8 @@
 
 #include <Python.h>
 
+#include "_build/detected-config.h"
+
 // Log messages to stderr.
 static void debug(const char* fmt, ...) {
 #ifdef LIBC_VERBOSE
@@ -61,15 +63,8 @@ func_fnmatch(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  // NOTE: Testing for __GLIBC__ is the version detection anti-pattern.  We
-  // should really use feature detection in our configure script.  But I plan
-  // to get rid of the dependency on FNM_EXTMATCH because it doesn't work on
-  // musl libc (or OS X).  Instead we should compile extended globs to extended
-  // regex syntax.
-#ifdef __GLIBC__
+#ifdef FNM_EXTMATCH
   flags |= FNM_EXTMATCH;
-#else
-  debug("Warning: FNM_EXTMATCH is not defined");
 #endif
 
   int ret = fnmatch(pattern, str, flags);
@@ -107,14 +102,14 @@ int globerr(const char *path, int errno_) {
 static PyObject *
 func_glob(PyObject *self, PyObject *args) {
   const char* pattern;
-  if (!PyArg_ParseTuple(args, "s", &pattern)) {
+  int flags = 0;
+  if (!PyArg_ParseTuple(args, "s|i", &pattern, &flags)) {
     return NULL;
   }
 
   glob_t results;
   // Hm, it's weird that the first one can't be called with GLOB_APPEND.  You
   // get a segfault.
-  int flags = 0;
   // int flags = GLOB_APPEND;
   //flags |= GLOB_NOMAGIC;
   int ret = glob(pattern, flags, NULL, &results);
@@ -363,9 +358,6 @@ func_cpython_reset_locale(PyObject *self, PyObject *unused)
     Py_RETURN_NONE;
 }
 
-#ifdef OVM_MAIN
-#include "pyext/libc.c/methods.def"
-#else
 static PyMethodDef methods[] = {
   // Return the canonical version of a path with symlinks, or None if there is
   // an error.
@@ -403,13 +395,18 @@ static PyMethodDef methods[] = {
   {"cpython_reset_locale", func_cpython_reset_locale, METH_NOARGS, ""},
   {NULL, NULL},
 };
-#endif
 
 void initlibc(void) {
   PyObject *module;
 
   module = Py_InitModule("libc", methods);
   if (module != NULL) {
+      // ./configure values
+      PyModule_AddIntConstant(module, "HAVE_GLOB_PERIOD", HAVE_GLOB_PERIOD);
+      PyModule_AddIntConstant(module, "HAVE_FNM_EXTMATCH", HAVE_FNM_EXTMATCH);
+
+      // Actual libc values
+      PyModule_AddIntConstant(module, "GLOB_PERIOD", GLOB_PERIOD);
       PyModule_AddIntConstant(module, "FNM_CASEFOLD", FNM_CASEFOLD);
       PyModule_AddIntConstant(module, "REG_ICASE", REG_ICASE);
       PyModule_AddIntConstant(module, "REG_NEWLINE", REG_NEWLINE);

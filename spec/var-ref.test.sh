@@ -1,4 +1,6 @@
-## compare_shells: bash-4.4
+## compare_shells: bash
+
+# mksh has completely different behavior for this syntax.  Not worth testing.
 
 # Var refs are done with ${!a}
 #
@@ -29,7 +31,7 @@ x=foo
 ## END
 
 #### ${!undef:-}
-# bash gives empty string, but I feel like this could be an error
+# bash 4.4 gives empty string, but I feel like this could be an error
 echo undef=${!undef-'default'}
 echo undef=${!undef}
 
@@ -40,11 +42,17 @@ echo undef=${!undef}
 
 ## status: 1
 ## STDOUT:
-undef=default
-undef=
 NOUNSET
-undef=default
 ## END
+
+# Bash 4.4 had been generating an empty string, but it was fixed in Bash 5.0.
+#
+# ## BUG bash STDOUT:
+# undef=default
+# undef=
+# NOUNSET
+# undef=default
+# ## END
 
 #### comparison to ${!array[@]} keys (similar SYNTAX)
 
@@ -58,13 +66,24 @@ echo a_nobrackets=$?
 echo ---
 declare -A A=([A]=a [B]=b)
 
-argv.py ${!A[@]}
+argv.py $(printf '%s\n' ${!A[@]} | sort)
 echo A_keys=$?
 
-argv.py "${!A}"  # missing [] is equivalent to ${!A[0]} ?
+(argv.py "${!A}")  # missing [] is equivalent to ${!A[0]} ?
 echo A_nobrackets=$?
 
 ## STDOUT:
+['0', '1']
+a_keys=0
+['']
+a_nobrackets=0
+---
+['A', 'B']
+A_keys=0
+A_nobrackets=1
+## END
+
+## BUG bash STDOUT:
 ['0', '1']
 a_keys=0
 ['']
@@ -76,26 +95,35 @@ A_keys=0
 A_nobrackets=0
 ## END
 
-#### ${!a[@]-'default'} is illegal
+#### ${!a[@]-'default'} is legal but fails with more than one element
 
-# bash disallows this when a is an array.  We make it an error because [@]
-# implies it's an array.
+# bash allows this construct, but the indirection fails when the array has more
+# than one element because the variable name contains a space.  OSH originally
+# made it an error unconditionally because [@] implies it's an array, so the
+# behavior has been different from Bash when the array has a single element.
+# We now changed it to follow Bash even when the array has a single element.
 
-argv.py "${!a[@]-default}"
+(argv.py "${!a[@]-default}")
 echo status=$?
 
 a=(x y z)
-argv.py "${!a[@]-default}"
+(argv.py "${!a[@]-default}")
 echo status=$?
-## status: 1
+## status: 0
 ## STDOUT:
-## END
-## BUG bash status: 0
-## BUG bash STDOUT:
-['default']
-status=0
+status=1
 status=1
 ## END
+
+# Bash 4.4 had been generating an empty string for ${!undef[@]-}, but this was
+# fixed in Bash 5.0.
+#
+# ## BUG bash status: 0
+# ## BUG bash STDOUT:
+# ['default']
+# status=0
+# status=1
+# ## END
 
 
 #### var ref to $@ with @
@@ -384,10 +412,13 @@ PWD=1
 ref='a[~+]'
 echo ${!ref}
 ## status: 1
-## BUG bash status: 0
-## BUG bash STDOUT:
-y
-## END
+
+# Bash 4.4 had a bug, which was fixed in Bash 5.0.
+#
+# ## BUG bash status: 0
+# ## BUG bash STDOUT:
+# y
+# ## END
 
 #### Indirect expansion TO fancy expansion features bash disallows
 
@@ -419,12 +450,10 @@ check_indir "!a@"    "a aa"
 check_indir "#x"      1
 check_indir "x#y"
 check_indir "x/y/foo" foo
-check_indir "x@Q"    "'y'"
+check_indir "x@Q"     y
 echo done
-## status: 1
-## stdout-json: ""
-## OK bash status: 0
-## OK bash stdout: done
+## status: 0
+## stdout: done
 
 #### Bad var ref
 a='bad var name'
@@ -434,8 +463,6 @@ echo status=$?
 ## STDOUT:
 status=1
 ## END
-## OK osh stdout-json: ""
-## OK osh status: 1
 
 #### Bad var ref 2
 b='/'  # really bad
@@ -444,8 +471,6 @@ echo status=$?
 ## STDOUT:
 status=1
 ## END
-## OK osh stdout-json: ""
-## OK osh status: 1
 
 #### ${!OPTIND} (used by bash completion
 set -- a b c
@@ -506,4 +531,239 @@ fi
 42
 PWNED
 0
+## END
+
+#### ${!array_ref:-set} and ${!array_ref:=assign}
+
+ref='a[@]'
+a=('' '' '')
+
+echo "==== check ===="
+
+argv.py "${!ref:-set}"
+argv.py "${a[@]:-set}"
+
+echo "==== assign ===="
+
+argv.py "${!ref:=assign}"
+argv.py "${!ref}"
+a=('' '' '') # revert the state in case it is modified
+
+argv.py "${a[@]:=assign}"
+argv.py "${a[@]}"
+
+## STDOUT:
+==== check ====
+['', '', '']
+['', '', '']
+==== assign ====
+['', '', '']
+['', '', '']
+['', '', '']
+['', '', '']
+## END
+
+#### Array indirect expansion with suffix operators
+
+declare -A ref=(['dummy']=v1)
+function test-suffixes {
+  echo "==== $1 ===="
+  ref['dummy']=$1
+  argv.py "${!ref[@]:2}"
+  argv.py "${!ref[@]:1:2}"
+  argv.py "${!ref[@]:-empty}"
+  argv.py "${!ref[@]:+set}"
+  argv.py "${!ref[@]:=assign}"
+}
+
+v1=value
+test-suffixes v1
+echo "v1=$v1"
+
+v2=
+test-suffixes v2
+echo "v2=$v2"
+
+a1=()
+test-suffixes a1
+argv.py "${a1[@]}"
+
+a2=(element)
+test-suffixes 'a2[0]'
+argv.py "${a2[@]}"
+
+a3=(1 2 3)
+test-suffixes 'a3[@]'
+argv.py "${a3[@]}"
+
+## STDOUT:
+==== v1 ====
+['lue']
+['al']
+['value']
+['set']
+['value']
+v1=value
+==== v2 ====
+['']
+['']
+['empty']
+['']
+['assign']
+v2=assign
+==== a1 ====
+['']
+['']
+['empty']
+['']
+['assign']
+['assign']
+==== a2[0] ====
+['ement']
+['le']
+['element']
+['set']
+['element']
+['element']
+==== a3[@] ====
+['3']
+['2', '3']
+['1', '2', '3']
+['set']
+['1', '2', '3']
+['1', '2', '3']
+## END
+
+#### Array indirect expansion with replacements
+
+declare -A ref=(['dummy']=v1)
+function test-rep {
+  echo "==== $1 ===="
+  ref['dummy']=$1
+  argv.py "${!ref[@]#?}"
+  argv.py "${!ref[@]%?}"
+  argv.py "${!ref[@]//[a-f]}"
+  argv.py "${!ref[@]//[a-f]/x}"
+}
+
+v1=value
+test-rep v1
+
+v2=
+test-rep v2
+
+a1=()
+test-rep a1
+
+a2=(element)
+test-rep 'a2[0]'
+
+a3=(1 2 3)
+test-rep 'a3[@]'
+
+## STDOUT:
+==== v1 ====
+['alue']
+['valu']
+['vlu']
+['vxlux']
+==== v2 ====
+['']
+['']
+['']
+['']
+==== a1 ====
+['']
+['']
+['']
+['']
+==== a2[0] ====
+['lement']
+['elemen']
+['lmnt']
+['xlxmxnt']
+==== a3[@] ====
+['', '', '']
+['', '', '']
+['1', '2', '3']
+['1', '2', '3']
+## END
+
+#### Array indirect expansion with @? conversion
+
+declare -A ref=(['dummy']=v1)
+function test-op0 {
+  echo "==== $1 ===="
+  ref['dummy']=$1
+  argv.py "${!ref[@]@Q}"
+  argv.py "${!ref[@]@P}"
+  argv.py "${!ref[@]@a}"
+}
+
+v1=value
+test-op0 v1
+
+v2=
+test-op0 v2
+
+a1=()
+test-op0 a1
+
+a2=(element)
+test-op0 'a2[0]'
+
+a3=(1 2 3)
+test-op0 'a3[@]'
+
+## STDOUT:
+==== v1 ====
+['value']
+['value']
+['']
+==== v2 ====
+["''"]
+['']
+['']
+==== a1 ====
+['']
+['']
+['a']
+==== a2[0] ====
+['element']
+['element']
+['a']
+==== a3[@] ====
+['1', '2', '3']
+['1', '2', '3']
+['a', 'a', 'a']
+## END
+
+# Bash 4.4 had a bug in the section "==== a3[@] ====":
+#
+# ==== a3[@] ====
+# []
+# []
+# []
+
+## OK bash STDOUT:
+==== v1 ====
+["'value'"]
+['value']
+['']
+==== v2 ====
+["''"]
+['']
+['']
+==== a1 ====
+['']
+['']
+['a']
+==== a2[0] ====
+["'element'"]
+['element']
+['a']
+==== a3[@] ====
+["'1'", "'2'", "'3'"]
+['1', '2', '3']
+['a', 'a', 'a']
 ## END

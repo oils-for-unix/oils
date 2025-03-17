@@ -6,12 +6,14 @@ fun() {
   for i; do
     echo $i
   done
+  echo "finished=$i"
 }
 fun 1 2 3
 ## STDOUT:
 1
 2
 3
+finished=3
 ## END
 
 #### empty for loop (has "in")
@@ -19,7 +21,8 @@ set -- 1 2 3
 for i in ; do
   echo $i
 done
-## stdout-json: ""
+## STDOUT:
+## END
 
 #### for loop with invalid identifier
 # should be compile time error, but runtime error is OK too
@@ -37,10 +40,12 @@ done
 for in in a b c; do
   echo $in
 done
+echo finished=$in
 ## STDOUT:
 a
 b
 c
+finished=c
 ## END
 
 #### Tilde expansion within for loop
@@ -283,7 +288,7 @@ echo --
 a
 --
 ## END
-## OK bash status: 0
+## BUG bash status: 0
 ## BUG dash/mksh/zsh STDOUT:
 a
 b

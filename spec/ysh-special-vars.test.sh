@@ -10,10 +10,10 @@ $[ENV.SH] -i --rcfile $[ENV.REPO_ROOT]/spec/testdata/module/this_dir.ysh -c 'ech
 
 ## STDOUT:
 hi from this_dir.ysh
-$_this_dir = REPLACED/oil/spec/testdata/module
+$_this_dir = REPLACED/oils/spec/testdata/module
 interactive
 hi from this_dir.ysh
-$_this_dir = REPLACED/oil/spec/testdata/module
+$_this_dir = REPLACED/oils/spec/testdata/module
 -c
 ## END
 
@@ -29,7 +29,7 @@ not yet
 source $[ENV.REPO_ROOT]/spec/testdata/module/this_dir.ysh
 ## STDOUT:
 hi from this_dir.ysh
-$_this_dir = REPLACED/oil/spec/testdata/module
+$_this_dir = REPLACED/oils/spec/testdata/module
 ## END
 
 
@@ -38,7 +38,7 @@ cd /tmp
 source $[ENV.REPO_ROOT]/spec/testdata/module/this_dir.ysh
 ## STDOUT:
 hi from this_dir.ysh
-$_this_dir = REPLACED/oil/spec/testdata/module
+$_this_dir = REPLACED/oils/spec/testdata/module
 ## END
 
 #### _this_dir used with relative path
@@ -46,5 +46,5 @@ cd $[ENV.REPO_ROOT]
 source spec/testdata/module/this_dir.ysh
 ## STDOUT:
 hi from this_dir.ysh
-$_this_dir = REPLACED/oil/spec/testdata/module
+$_this_dir = REPLACED/oils/spec/testdata/module
 ## END

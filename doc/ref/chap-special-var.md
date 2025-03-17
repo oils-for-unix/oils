@@ -32,6 +32,7 @@ An `Obj` that's populated with environment variables.  Example usage:
 
     var x = ENV.PYTHONPATH
     echo $[ENV.SSH_AUTH_SOCK]
+    setglobal ENV.PYTHONPATH = '.'
 
 It's initialized exactly **once** per process, in any of these situations:
 
@@ -378,6 +379,17 @@ Override the default OSH history location.
 ### YSH_HISTFILE
 
 Override the default YSH history location.
+
+## Interactive
+
+### OILS_COMP_UI
+
+Set which completion UI to use. Defaults to `minimal`.
+
+- `minimal` - a UI that approximates the default behavior of GNU readline.
+- `nice` - a UI with a fancy pager and a prompt with horizontal scrolling instead of wrapping.
+
+This variable is currently only checked once during shell initialization.
 
 ## cd
 

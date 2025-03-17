@@ -488,6 +488,10 @@ Redirects can also appear after the lazy typed args:
 
     assert [42 === x] >out.txt
 
+- Related: [Expr][] type
+
+[Expr]: chap-type-method.html#Expr
+
 ### block-arg
 
 Blocks can be passed to simple commands, either literally:
@@ -522,7 +526,13 @@ Redirects can appear after the block arg:
     } >out.txt
 
 
-- Related: [sh-block](#sh-block) in OSH.
+Related:
+
+- [sh-block](#sh-block) in OSH.
+- [Command][] and [CommandFrag][] types.
+
+[Command]: chap-type-method.html#Command
+[CommandFrag]: chap-type-method.html#CommandFrag
 
 ## YSH Cond
 
@@ -577,13 +587,16 @@ You can also use an expression:
 
 This is a shell-style loop over "words":
 
-    for name in README.md *.py {
-      echo $name
+    for word in 'oils' $num_beans {pea,coco}nut {
+      echo $word
     }
-    # => README.md
-    # => foo.py
+    # =>
+    # oils
+    # 13
+    # peanut
+    # coconut
 
-You can also ask for the index:
+You can ask for the loop index with `i,`:
 
     for i, name in README.md *.py {
       echo "$i $name"
@@ -591,15 +604,95 @@ You can also ask for the index:
     # => 0 README.md
     # => 1 foo.py
 
-#### Lines of `stdin`
+#### Expressions Over Typed Data
 
-Here's how to iterate over the lines of stdin:
+Expressions are enclosed in `()`.  You can iterate over a `Range`, `List`,
+`Dict`, or `io.stdin`.
+
+Range:
+
+    for i in (3 ..< 5) {  # range operator ..<
+      echo "i = $i"
+    }
+    # =>
+    # i = 3
+    # i = 4
+
+List:
+
+    var foods = ['ale', 'bean']
+    for item in (foods) {
+      echo $item
+    }
+    # =>
+    # ale
+    # bean
+
+---
+
+There are **three** ways of iterating over a `Dict`:
+
+    var mydict = {pea: 42, nut: 10}
+    for key in (mydict) {
+      echo $key
+    }
+    # =>
+    # pea
+    # nut
+
+    for key, value in (mydict) {
+      echo "$key $value"
+    }
+    # =>
+    # pea - 42
+    # nut - 10
+
+    for i, key, value in (mydict) {
+      echo "$i $key $value"
+    }
+    # =>
+    # 0 - pea - 42
+    # 1 - nut - 10
+
+That is, if you ask for two things, you'll get the key and value.  If you ask
+for three, you'll also get the index.
+
+(One way to think of it: `for` loops in YSH have the functionality Python's
+`enumerate()`, `items()`, `keys()`, and `values()`.)
+
+---
+
+The `io.stdin` object iterates over lines:
 
     for line in (io.stdin) {
       echo $line
     }
+    # lines are buffered, so it's much faster than `while read --raw-line`
 
-Likewise, you can ask for the index with `for i, line in (io.stdin) { ...`.
+---
+
+(This section is based on [A Tour of YSH](../ysh-tour.html).)
+
+#### Closing Over the Loop Variable
+
+Each iteration of a `for` loop creates a new frame, which may be captured.
+
+    var x = 42  # outside the loop
+    for i in (0 ..< 3) {
+      var j = i + 2
+
+      var expr = ^"$x: i = $i, j = $j"  # captures x, i, and j
+
+      my-task {
+        echo "$x: i = $i, j = $j"       # also captures x, i, and j
+      }
+    }
+
+#### Mutating Containers in a `for` Loop
+
+- If you append or remove from a `List` while iterating over it, the loop **will** be affected.
+- If you mutate a `Dict` while iterating over it, the loop will **not** be
+  affected.
 
 ### ysh-while
 
@@ -616,41 +709,4 @@ You or a command:
       echo 'myfile'
       sleep 1
     }
-
-#### Expressions
-
-Expressions are enclosed in `()`.
-
-Iterating over a `List` or `Range` is like iterating over words or lines:
-
-    var mylist = [42, 43]
-    for item in (mylist) {
-      echo $item
-    }
-    # => 42
-    # => 43
-
-    var n = 5
-    for i in (3 .. n) {
-      echo $i
-    }
-    # => 3
-    # => 4
-
-However, there are **three** ways of iterating over a `Dict`:
-
-    for key in (mydict) {
-      echo $key
-    }
-
-    for key, value in (mydict) {
-      echo "$key $value"
-    }
-
-    for i, key, value in (mydict) {
-      echo "$i $key $value"
-    }
-
-That is, if you ask for two things, you'll get the key and value.  If you ask
-for three, you'll also get the index.
 

@@ -8824,9 +8824,6 @@ posix_getresgid (PyObject *self, PyObject *noargs)
 }
 #endif
 
-#ifdef OVM_MAIN
-#include "Python-2.7.13/Modules/posixmodule.c/posix_methods.def"
-#else
 static PyMethodDef posix_methods[] = {
     {"access",          posix_access, METH_VARARGS, posix_access__doc__},
 #ifdef HAVE_TTYNAME
@@ -9139,7 +9136,6 @@ static PyMethodDef posix_methods[] = {
     {"urandom",         posix_urandom,   METH_VARARGS, posix_urandom__doc__},
     {NULL,              NULL}            /* Sentinel */
 };
-#endif
 
 
 static int

@@ -20,9 +20,9 @@ using typed_arith_asdl::arith_expr__FuncCall;
 using typed_arith_asdl::arith_expr__Unary;
 using typed_arith_asdl::arith_expr__Var;
 
-using typed_demo_asdl::bool_expr_t;
 using typed_demo_asdl::bool_expr__Binary;
 using typed_demo_asdl::bool_expr__LogicalBinary;
+using typed_demo_asdl::bool_expr_t;
 using typed_demo_asdl::op_array;
 using typed_demo_asdl::op_id_e;
 

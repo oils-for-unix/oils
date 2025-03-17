@@ -75,7 +75,6 @@ readonly -a CODE_DIRS=(
 
   prebuilt
   pyext
-  lazylex
   benchmarks
   build
 
@@ -109,7 +108,7 @@ py2() {
 }
 
 py3-files() {
-  for f in mycpp/*.py; do
+  for f in mycpp/*.py pea/*.py; do
     echo $f
   done
 }
@@ -243,6 +242,8 @@ print-first-line() {
 }
 
 check-shebangs() {
+  banner 'Checking Python and shell shebang lines'
+
   set +o errexit
 
   if true; then

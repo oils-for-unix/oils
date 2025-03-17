@@ -1,0 +1,9 @@
+const __provide__ = :||
+
+Package {
+  version = '3.3'
+  INSTALL {
+    echo version=$version
+  }
+}
+

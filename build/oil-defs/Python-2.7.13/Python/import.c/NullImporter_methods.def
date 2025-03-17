@@ -1,5 +1,0 @@
-// Python-2.7.13/Python/import.c
-
-static PyMethodDef NullImporter_methods[] = {
-  {0},
-};

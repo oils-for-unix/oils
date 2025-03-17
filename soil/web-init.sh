@@ -33,7 +33,7 @@ home-page() {
   cat <<EOF
   <body class="width40">
     <p id="home-link">
-      <a href="//oilshell.org/">oilshell.org</a>
+      <a href="//oils.pub/">oils.pub</a>
     </p>
 
     <h1>$title</h1>
@@ -155,7 +155,7 @@ deploy-data() {
 soil-web-manifest() {
   PYTHONPATH=. /usr/bin/env python2 \
     build/dynamic_deps.py py-manifest soil.web \
-  | grep oilshell/oil  # only stuff in the repo
+  | grep oils-for-unix/oils  # only stuff in the repo
 
   # Add a shell script
   echo $PWD/soil/web.sh soil/web.sh

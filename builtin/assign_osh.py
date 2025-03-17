@@ -5,29 +5,30 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import (
     scope_e,
+    scope_t,
     cmd_value,
     AssignArg,
 )
 from _devbuild.gen.value_asdl import (value, value_e, value_t, LeftName)
-from _devbuild.gen.syntax_asdl import loc, loc_t, word_t
+from _devbuild.gen.syntax_asdl import loc, loc_t
 
 from core import bash_impl
 from core import error
-from core.error import e_usage
+from core.error import e_usage, e_die
 from core import state
 from core import vm
+from display import ui
 from frontend import flag_util
 from frontend import args
-from mycpp.mylib import log
+from mycpp.mylib import log, tagswitch
 from osh import cmd_eval
 from osh import sh_expr_eval
 from data_lang import j8_lite
 
-from typing import cast, Optional, List, TYPE_CHECKING
+from typing import cast, List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.state import Mem
     from core import optview
-    from display import ui
     from frontend.args import _Attributes
 
 _ = log
@@ -132,7 +133,8 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
         if flag_x == '+' and cell.exported:
             continue
 
-        if flag_a and val.tag() not in [value_e.BashArray, value_e.SparseArray]:
+        if flag_a and val.tag() not in (value_e.InternalStringArray,
+                                        value_e.BashArray):
             continue
         if flag_A and val.tag() != value_e.BashAssoc:
             continue
@@ -146,7 +148,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
                 flags.append('r')
             if cell.exported:
                 flags.append('x')
-            if val.tag() in [value_e.BashArray, value_e.SparseArray]:
+            if val.tag() in (value_e.InternalStringArray, value_e.BashArray):
                 flags.append('a')
             elif val.tag() == value_e.BashAssoc:
                 flags.append('A')
@@ -161,56 +163,23 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
             str_val = cast(value.Str, val)
             decl.extend(["=", j8_lite.MaybeShellEncode(str_val.s)])
 
-        elif val.tag() == value_e.BashArray:
-            array_val = cast(value.BashArray, val)
-
-            # mycpp rewrite: None in array_val.strs
-            has_holes = False
-            for s in array_val.strs:
-                if s is None:
-                    has_holes = True
-                    break
-
-            if has_holes:
-                # Note: Arrays with unset elements are printed in the form:
-                #   declare -p arr=(); arr[3]='' arr[4]='foo' ...
-                decl.append("=()")
-                first = True
-                for i, element in enumerate(array_val.strs):
-                    if element is not None:
-                        if first:
-                            decl.append(";")
-                            first = False
-                        decl.extend([
-                            " ", name, "[",
-                            str(i), "]=",
-                            j8_lite.MaybeShellEncode(element)
-                        ])
-            else:
-                body = []  # type: List[str]
-                for element in array_val.strs:
-                    if len(body) > 0:
-                        body.append(" ")
-                    body.append(j8_lite.MaybeShellEncode(element))
-                decl.extend(["=(", ''.join(body), ")"])
+        elif val.tag() == value_e.InternalStringArray:
+            array_val = cast(value.InternalStringArray, val)
+            decl.extend([
+                "=",
+                bash_impl.InternalStringArray_ToStrForShellPrint(
+                    array_val, name)
+            ])
 
         elif val.tag() == value_e.BashAssoc:
             assoc_val = cast(value.BashAssoc, val)
-            body = []
-            for key in sorted(assoc_val.d):
-                if len(body) > 0:
-                    body.append(" ")
+            decl.extend(
+                ["=", bash_impl.BashAssoc_ToStrForShellPrint(assoc_val)])
 
-                key_quoted = j8_lite.ShellEncode(key)
-                value_quoted = j8_lite.MaybeShellEncode(assoc_val.d[key])
-
-                body.extend(["[", key_quoted, "]=", value_quoted])
-            if len(body) > 0:
-                decl.extend(["=(", ''.join(body), ")"])
-
-        elif val.tag() == value_e.SparseArray:
-            sparse_val = cast(value.SparseArray, val)
-            decl.extend(["=", bash_impl.SparseArray_ToStrForShellPrint(sparse_val)])
+        elif val.tag() == value_e.BashArray:
+            sparse_val = cast(value.BashArray, val)
+            decl.extend(
+                ["=", bash_impl.BashArray_ToStrForShellPrint(sparse_val)])
 
         else:
             pass  # note: other types silently ignored
@@ -224,43 +193,106 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
         return 1
 
 
-def _ExportReadonly(mem, pair, flags):
-    # type: (Mem, AssignArg, int) -> None
-    """For 'export' and 'readonly' to respect += and flags.
+def _AssignVarForBuiltin(mem, rval, pair, which_scopes, flags, arith_ev,
+                         flag_a, flag_A):
+    # type: (Mem, value_t, AssignArg, scope_t, int, sh_expr_eval.ArithEvaluator, bool, bool) -> None
+    """For 'export', 'readonly', and NewVar to respect += and flags.
 
     Like 'setvar' (scope_e.LocalOnly), unless dynamic scope is on.  That is, it
     respects shopt --unset dynamic_scope.
 
     Used for assignment builtins, (( a = b )), {fd}>out, ${x=}, etc.
     """
-    which_scopes = mem.ScopesForWriting()
-
     lval = LeftName(pair.var_name, pair.blame_word)
-    if pair.plus_eq:
-        old_val = sh_expr_eval.OldValue(lval, mem, None)  # ignore set -u
+
+    initializer = None  # type: value.InitializerList
+    if rval is None:
         # When 'export e+=', then rval is value.Str('')
         # When 'export foo', the pair.plus_eq flag is false.
-        assert pair.rval is not None
-        val = cmd_eval.PlusEquals(old_val, pair.rval)
-    else:
+        # Thus, when rval is None, plus_eq cannot be True.
+        assert not pair.plus_eq, pair.plus_eq
         # NOTE: when rval is None, only flags are changed
-        val = pair.rval
+        val = None  # type: value_t
+    elif rval.tag() == value_e.InitializerList:
+        old_val = sh_expr_eval.OldValue(
+            lval,
+            mem,
+            None,  # ignore set -u
+            pair.blame_word)
+        initializer = cast(value.InitializerList, rval)
+
+        val = old_val
+        if flag_a:
+            if old_val.tag() in (value_e.Undef, value_e.Str,
+                                 value_e.BashArray):
+                # We do not need adjustemnts for -a.  These types are
+                # consistently handled within ListInitialize
+                pass
+            else:
+                # Note: BashAssoc cannot be converted to a BashArray
+                e_die(
+                    "Can't convert type %s into BashArray" %
+                    ui.ValType(old_val), pair.blame_word)
+        elif flag_A:
+            with tagswitch(old_val) as case:
+                if case(value_e.Undef):
+                    # Note: We explicitly initialize BashAssoc for Undef.
+                    val = bash_impl.BashAssoc_New()
+                elif case(value_e.Str):
+                    # Note: We explicitly initialize BashAssoc for Str.  When
+                    #   applying +=() to Str, we associate an old value to the
+                    #   key '0'.  OSH disables this when strict_array is turned
+                    #   on.
+                    assoc_val = bash_impl.BashAssoc_New()
+                    if pair.plus_eq:
+                        if mem.exec_opts.strict_array():
+                            e_die(
+                                "Can't convert Str to BashAssoc (strict_array)",
+                                pair.blame_word)
+                        bash_impl.BashAssoc_SetElement(
+                            assoc_val, '0',
+                            cast(value.Str, old_val).s)
+                    val = assoc_val
+                elif case(value_e.BashAssoc):
+                    # We do not need adjustments for -A.
+                    pass
+                else:
+                    # Note: BashArray cannot be converted to a BashAssoc
+                    e_die(
+                        "Can't convert type %s into BashAssoc" %
+                        ui.ValType(old_val), pair.blame_word)
+
+        val = cmd_eval.ListInitializeTarget(val, pair.plus_eq, mem.exec_opts,
+                                            pair.blame_word)
+    elif pair.plus_eq:
+        old_val = sh_expr_eval.OldValue(
+            lval,
+            mem,
+            None,  # ignore set -u
+            pair.blame_word)
+        val = cmd_eval.PlusEquals(old_val, rval)
+    else:
+        val = rval
 
     mem.SetNamed(lval, val, which_scopes, flags=flags)
+    if initializer is not None:
+        cmd_eval.ListInitialize(val, initializer, pair.plus_eq, mem.exec_opts,
+                                pair.blame_word, arith_ev)
 
 
 class Export(vm._AssignBuiltin):
 
-    def __init__(self, mem, errfmt):
-        # type: (Mem, ui.ErrorFormatter) -> None
+    def __init__(self, mem, arith_ev, errfmt):
+        # type: (Mem, sh_expr_eval.ArithEvaluator, ui.ErrorFormatter) -> None
         self.mem = mem
+        self.arith_ev = arith_ev
         self.errfmt = errfmt
 
     def Run(self, cmd_val):
         # type: (cmd_value.Assign) -> int
         if self.mem.exec_opts.no_exported():
             self.errfmt.Print_(
-                'export builtin is disabled in YSH (shopt --set no_exported)',
+                "YSH doesn't have 'export'.  Hint: setglobal ENV.FOO = 'bar'",
                 cmd_val.arg_locs[0])
             return 1
 
@@ -292,45 +324,59 @@ class Export(vm._AssignBuiltin):
                 # NOTE: we don't care if it wasn't found, like bash.
                 self.mem.ClearFlag(pair.var_name, state.ClearExport)
         else:
+            which_scopes = self.mem.ScopesForWriting()
             for pair in cmd_val.pairs:
-                _ExportReadonly(self.mem, pair, state.SetExport)
+                _AssignVarForBuiltin(self.mem, pair.rval, pair, which_scopes,
+                                     state.SetExport, self.arith_ev, False,
+                                     False)
 
         return 0
 
 
-def _ReconcileTypes(rval, flag_a, flag_A, blame_word):
-    # type: (Optional[value_t], bool, bool, word_t) -> value_t
+def _ReconcileTypes(rval, flag_a, flag_A, pair, mem):
+    # type: (Optional[value_t], bool, bool, AssignArg, Mem) -> value_t
     """Check that -a and -A flags are consistent with RHS.
+
+    If RHS is empty and the current value of LHS has a different type from the
+    one expected by the -a and -A flags, we create an empty array.
 
     Special case: () is allowed to mean empty indexed array or empty assoc array
     if the context is clear.
 
     Shared between NewVar and Readonly.
+
     """
-    if flag_a and rval is not None and rval.tag() != value_e.BashArray:
-        e_usage("Got -a but RHS isn't an array", loc.Word(blame_word))
 
-    if flag_A and rval:
-        # Special case: declare -A A=() is OK.  The () is changed to mean an empty
-        # associative array.
-        if rval.tag() == value_e.BashArray:
-            array_val = cast(value.BashArray, rval)
-            if len(array_val.strs) == 0:
-                return value.BashAssoc({})
-                #return value.BashArray([])
-
-        if rval.tag() != value_e.BashAssoc:
-            e_usage("Got -A but RHS isn't an associative array",
-                    loc.Word(blame_word))
+    if rval is None:
+        # declare -a foo=(a b); declare -a foo; should not reset to empty array
+        if flag_a:
+            old_val = mem.GetValue(pair.var_name)
+            if old_val.tag() not in (value_e.InternalStringArray,
+                                     value_e.BashArray):
+                rval = bash_impl.BashArray_New()
+        elif flag_A:
+            old_val = mem.GetValue(pair.var_name)
+            if old_val.tag() != value_e.BashAssoc:
+                rval = bash_impl.BashAssoc_New()
+    else:
+        if flag_a:
+            if rval.tag() != value_e.InitializerList:
+                e_usage("Got -a but RHS isn't an initializer list",
+                        loc.Word(pair.blame_word))
+        elif flag_A:
+            if rval.tag() != value_e.InitializerList:
+                e_usage("Got -A but RHS isn't an initializer list",
+                        loc.Word(pair.blame_word))
 
     return rval
 
 
 class Readonly(vm._AssignBuiltin):
 
-    def __init__(self, mem, errfmt):
-        # type: (Mem, ui.ErrorFormatter) -> None
+    def __init__(self, mem, arith_ev, errfmt):
+        # type: (Mem, sh_expr_eval.ArithEvaluator, ui.ErrorFormatter) -> None
         self.mem = mem
+        self.arith_ev = arith_ev
         self.errfmt = errfmt
 
     def Run(self, cmd_val):
@@ -347,23 +393,16 @@ class Readonly(vm._AssignBuiltin):
                                    True,
                                    builtin=_READONLY)
 
+        which_scopes = self.mem.ScopesForWriting()
         for pair in cmd_val.pairs:
-            if pair.rval is None:
-                if arg.a:
-                    rval = value.BashArray([])  # type: value_t
-                elif arg.A:
-                    rval = value.BashAssoc({})
-                else:
-                    rval = None
-            else:
-                rval = pair.rval
-
-            rval = _ReconcileTypes(rval, arg.a, arg.A, pair.blame_word)
+            rval = _ReconcileTypes(pair.rval, arg.a, arg.A, pair, self.mem)
 
             # NOTE:
             # - when rval is None, only flags are changed
             # - dynamic scope because flags on locals can be changed, etc.
-            _ExportReadonly(self.mem, pair, state.SetReadOnly)
+            _AssignVarForBuiltin(self.mem, rval, pair, which_scopes,
+                                 state.SetReadOnly, self.arith_ev, arg.a,
+                                 arg.A)
 
         return 0
 
@@ -371,19 +410,31 @@ class Readonly(vm._AssignBuiltin):
 class NewVar(vm._AssignBuiltin):
     """declare/typeset/local."""
 
-    def __init__(self, mem, procs, exec_opts, errfmt):
-        # type: (Mem, state.Procs, optview.Exec, ui.ErrorFormatter) -> None
+    def __init__(self, mem, procs, exec_opts, arith_ev, errfmt):
+        # type: (Mem, state.Procs, optview.Exec, sh_expr_eval.ArithEvaluator, ui.ErrorFormatter) -> None
         self.mem = mem
         self.procs = procs
         self.exec_opts = exec_opts
+        self.arith_ev = arith_ev
         self.errfmt = errfmt
 
     def _PrintFuncs(self, names):
         # type: (List[str]) -> int
         status = 0
         for name in names:
-            if self.procs.GetShellFunc(name):
-                print(name)
+            proc_val = self.procs.GetShellFunc(name)
+            if proc_val:
+                if self.exec_opts.extdebug():
+                    tok = proc_val.name_tok
+                    assert tok is not None, tok
+                    assert tok.line is not None, tok.line
+                    filename_str = ui.GetFilenameString(tok.line)
+                    # Note: the filename could have a newline, and this won't
+                    # be a single line.  But meh, this is a bash feature.
+                    line = '%s %d %s' % (name, tok.line.line_num, filename_str)
+                    print(line)
+                else:
+                    print(name)
                 # TODO: Could print LST for -f, or render LST.  Bash does this.  'trap'
                 # could use that too.
             else:
@@ -465,30 +516,10 @@ class NewVar(vm._AssignBuiltin):
             flags |= state.ClearNameref
 
         for pair in cmd_val.pairs:
-            rval = pair.rval
-            # declare -a foo=(a b); declare -a foo;  should not reset to empty array
-            if rval is None and (arg.a or arg.A):
-                old_val = self.mem.GetValue(pair.var_name)
-                if arg.a:
-                    if old_val.tag() != value_e.BashArray:
-                        rval = value.BashArray([])
-                elif arg.A:
-                    if old_val.tag() != value_e.BashAssoc:
-                        rval = value.BashAssoc({})
+            rval = _ReconcileTypes(pair.rval, arg.a, arg.A, pair, self.mem)
 
-            lval = LeftName(pair.var_name, pair.blame_word)
-
-            if pair.plus_eq:
-                old_val = sh_expr_eval.OldValue(lval, self.mem,
-                                                None)  # ignore set -u
-                # When 'typeset e+=', then rval is value.Str('')
-                # When 'typeset foo', the pair.plus_eq flag is false.
-                assert pair.rval is not None
-                rval = cmd_eval.PlusEquals(old_val, pair.rval)
-            else:
-                rval = _ReconcileTypes(rval, arg.a, arg.A, pair.blame_word)
-
-            self.mem.SetNamed(lval, rval, which_scopes, flags=flags)
+            _AssignVarForBuiltin(self.mem, rval, pair, which_scopes, flags,
+                                 self.arith_ev, arg.a, arg.A)
 
         return status
 

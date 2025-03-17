@@ -642,14 +642,27 @@ Does string match an **eggex**?
 
     var filename = 'x42.py'
     if (filename ~ / d+ /) {
-      echo 'number'
-    }
+      echo 'yes'
+    }  # => yes
+
+This performs a **search**.  To change that, add `%start` or `%end` anchors to
+the pattern:
+
+    if (filename ~ / %start d+ %end /) {
+      echo 'yes'
+    }  # nothing printed
+
+---
 
 Does a string match a POSIX regular expression (ERE syntax)?
 
     if (filename ~ '[[:digit:]]+') {
       echo 'number'
     }
+
+This is also a search, which can be anchored with `^` and `$`.
+
+---
 
 Negate the result with the `!~` operator:
 
@@ -661,17 +674,22 @@ Negate the result with the `!~` operator:
       echo 'no space'
     }
 
+---
+
 Does a string match a **glob**?
 
     if (filename ~~ '*.py') {
       echo 'Python'
-    }
+    }  # => Python
 
-    if (filename !~~ '*.py') {
+    if (filename !~~ '*.py') {  # negation
       echo 'not Python'
-    }
+    }  # nothing printed
 
 Take care not to confuse glob patterns and regular expressions.
+
+For example, globs don't have `%start %end` or `^ $`.  They are always
+"anchored".
 
 - Related doc: [YSH Regex API](../ysh-regex-api.html)
 

@@ -45,7 +45,7 @@ h4 {
   padding-top: 1em;  /* separate sections */
 }
 
-/* Exclude <pre><code>.  Is there a better way to do this?  */
+/* Exclude <pre><code>*/
 p code, div code, li code, h2 code, h3 code {
   color: green;
 }

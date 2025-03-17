@@ -4,7 +4,7 @@ all_docs_url: -
 version_url: -
 ---
 
-Oils 0.24.0 Quality
+Oils 0.28.0 Quality
 ===================
 
 <!-- NOTE: This file is published to /release/$VERSION/quality.html -->
@@ -140,7 +140,7 @@ domain-specific languages and code generation.
 - [ysh/grammar.pgen2](pub/src-tree.wwz/ysh/grammar.pgen2.html). The
   expression grammar for YSH.  In contrast, the OSH parsers are hand-written.
 
-Also see the [oilshell/oil](https://github.com/oilshell/oil) repository.
+Also see the [oils-for-unix/oils](https://github.com/oils-for-unix/oils) repository.
 
 ## Old
 
@@ -162,6 +162,3 @@ the "experimental" version of Oils.
     compiled with CPython (for comparison).
   - [src-bin-ratio-with-opy](pub/metrics.wwz/bytecode/src-bin-ratio-with-opy.txt) -
     How big is the compiled output?
-- OVM / CPython
-  - [cpython-defs/overview](pub/metrics.wwz/cpython-defs/overview.txt) - We try to
-    ship as little of CPython as possible, and this is what's left.

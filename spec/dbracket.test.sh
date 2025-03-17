@@ -7,7 +7,10 @@
 #### [[ glob matching, [[ has no glob expansion
 [[ foo.py == *.py ]] && echo true
 [[ foo.p  == *.py ]] || echo false
-## stdout-json: "true\nfalse\n"
+## STDOUT:
+true
+false
+## END
 
 #### [[ glob matching with escapes
 [[ 'foo.*' == *."*" ]] && echo true
@@ -17,20 +20,29 @@
 #### equality
 [[ '*.py' == '*.py' ]] && echo true
 [[ foo.py == '*.py' ]] || echo false
-## stdout-json: "true\nfalse\n"
+## STDOUT:
+true
+false
+## END
 
 #### [[ glob matching with unquoted var
 pat=*.py
 [[ foo.py == $pat ]] && echo true
 [[ foo.p  == $pat ]] || echo false
-## stdout-json: "true\nfalse\n"
+## STDOUT:
+true
+false
+## END
 
 #### [[ regex matching
 # mksh doesn't have this syntax of regex matching.  I guess it comes from perl?
 regex='.*\.py'
 [[ foo.py =~ $regex ]] && echo true
 [[ foo.p  =~ $regex ]] || echo false
-## stdout-json: "true\nfalse\n"
+## STDOUT:
+true
+false
+## END
 ## N-I mksh stdout-json: ""
 ## N-I mksh status: 1
 
@@ -53,7 +65,10 @@ var='one two'
 #### [[ empty string is false
 [[ 'a' ]] && echo true
 [[ ''  ]] || echo false
-## stdout-json: "true\nfalse\n"
+## STDOUT:
+true
+false
+## END
 
 #### && chain
 [[ t && t && '' ]] || echo false
@@ -109,7 +124,10 @@ decimal=15
 hex=0x0f    # = 15 (decimal)
 [[ $decimal -eq $hex ]] && echo true
 [[ $decimal -eq ZZZ$hex ]] || echo false
-## stdout-json: "true\nfalse\n"
+## STDOUT:
+true
+false
+## END
 ## N-I mksh stdout: false
 
 # TODO: Add tests for this
@@ -121,13 +139,19 @@ hex=0x0f    # = 15 (decimal)
 # NOTE: < doesn't need space, even though == does?  That's silly.
 [[ b>a ]] && echo true
 [[ b<a ]] || echo false
-## stdout-json: "true\nfalse\n"
+## STDOUT:
+true
+false
+## END
 
 #### != on strings
 # NOTE: b!=a does NOT work
 [[ b != a ]] && echo true
 [[ a != a ]] || echo false
-## stdout-json: "true\nfalse\n"
+## STDOUT:
+true
+false
+## END
 
 #### -eq on strings 
 # This is lame behavior: it does a conversion to 0 first for any string
@@ -143,7 +167,10 @@ true
 var=-f
 [[ $var == -f ]] && echo true
 [[ '-f' == $var ]] && echo true
-## stdout-json: "true\ntrue\n"
+## STDOUT:
+true
+true
+## END
 
 #### [[ with op variable (compare with test-builtin.test.sh)
 # Parse error -- parsed BEFORE evaluation of vars

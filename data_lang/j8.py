@@ -26,9 +26,11 @@ Later:
 import math
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
-from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str, Obj)
 from _devbuild.gen.nil8_asdl import (nvalue, nvalue_t)
+from _devbuild.gen.runtime_asdl import error_code_e
+from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str, Obj)
 
+from core import bash_impl
 from core import error
 from data_lang import pyj8
 # dependency issue: consts.py pulls in frontend/option_def.py
@@ -134,12 +136,15 @@ def Utf8Encode(code):
 
 
 SHOW_CYCLES = 1 << 1  # show as [...] or {...} or (...), with object ID
-SHOW_NON_DATA = 1 << 2  # non-data objects like Eggex can be <Eggex 0xff>
-LOSSY_JSON = 1 << 3  # JSON may lose data about strings
-INF_NAN_ARE_NULL = 1 << 4  # for JSON
+LOSSY_JSON_STRINGS = 1 << 3  # JSON may lose data about strings
+INF_NAN_ARE_NULL = 1 << 4  # another lossy json issue
+
+NON_DATA_IS_NULL = 1 << 6
+NON_DATA_IS_ERROR = 1 << 7
+# Otherwise, non-data objects like Eggex will be <Eggex 0xff>
 
 # Hack until we fully translate
-assert pyj8.LOSSY_JSON == LOSSY_JSON
+assert pyj8.LOSSY_JSON_STRINGS == LOSSY_JSON_STRINGS
 
 
 def _Print(val, buf, indent, options=0):
@@ -152,49 +157,46 @@ def _Print(val, buf, indent, options=0):
     p.Print(val)
 
 
-def PrintMessage(val, buf, indent):
-    # type: (value_t, mylib.BufWriter, int) -> None
+def PrintMessage(val, buf, indent, type_errors):
+    # type: (value_t, mylib.BufWriter, int, bool) -> None
     """ For json8 write (x) and toJson8() 
 
     Caller must handle error.Encode
     """
-    _Print(val, buf, indent)
+    options = 0
+    if type_errors:
+        options |= NON_DATA_IS_ERROR
+    else:
+        options |= NON_DATA_IS_NULL
+    _Print(val, buf, indent, options=options)
 
 
-def PrintJsonMessage(val, buf, indent):
-    # type: (value_t, mylib.BufWriter, int) -> None
+def PrintJsonMessage(val, buf, indent, type_errors):
+    # type: (value_t, mylib.BufWriter, int, bool) -> None
     """ For json write (x) and toJson()
 
     Caller must handle error.Encode()
     Doesn't decay to b'' strings - will use Unicode replacement char.
     """
-    _Print(val, buf, indent, options=LOSSY_JSON | INF_NAN_ARE_NULL)
+    options = LOSSY_JSON_STRINGS | INF_NAN_ARE_NULL
+    if type_errors:
+        options |= NON_DATA_IS_ERROR
+    else:
+        options |= NON_DATA_IS_NULL
+    _Print(val, buf, indent, options=options)
 
 
 def PrintLine(val, f):
     # type: (value_t, mylib.Writer) -> None
-    """ For pp line (x) """
+    """ For pp test_ (x) """
 
     # error.Encode should be impossible - we show cycles and non-data
     buf = mylib.BufWriter()
 
-    _Print(val, buf, -1, options=SHOW_CYCLES | SHOW_NON_DATA)
+    _Print(val, buf, -1, options=SHOW_CYCLES)
 
     f.write(buf.getvalue())
     f.write('\n')
-
-
-if 0:
-
-    def Repr(val):
-        # type: (value_t) -> str
-        """ Unused
-        This is like Python's repr
-        """
-        # error.Encode should be impossible - we show cycles and non-data
-        buf = mylib.BufWriter()
-        _Print(val, buf, -1, options=SHOW_CYCLES | SHOW_NON_DATA)
-        return buf.getvalue()
 
 
 def EncodeString(s, buf, unquoted_ok=False):
@@ -227,7 +229,7 @@ def MaybeEncodeJsonString(s):
     # TODO: add unquoted_ok here?
     # /usr/local/foo-bar/x.y/a_b
     buf = mylib.BufWriter()
-    _Print(value.Str(s), buf, -1, options=LOSSY_JSON)
+    _Print(value.Str(s), buf, -1, options=LOSSY_JSON_STRINGS)
     return buf.getvalue()
 
 
@@ -341,7 +343,8 @@ class InstancePrinter(object):
         self._ItemIndent(level)
         self.buf.write('"type":')
         self._MaybeSpace()
-        self.buf.write(type_str)  # "BashArray",  or "BashAssoc",
+        self.buf.write(
+            type_str)  # "InternalStringArray", "BashArray", or "BashAssoc",
 
         self._MaybeNewline()
 
@@ -355,19 +358,19 @@ class InstancePrinter(object):
         self._BracketIndent(level)
         self.buf.write('}')
 
-    def _PrintSparseArray(self, val, level):
-        # type: (value.SparseArray, int) -> None
+    def _PrintBashArray(self, val, level):
+        # type: (value.BashArray, int) -> None
 
-        self._PrintBashPrefix('"SparseArray",', level)
+        self._PrintBashPrefix('"BashArray",', level)
 
-        if len(val.d) == 0:  # Special case like Python/JS
+        if bash_impl.BashArray_Count(val) == 0:  # Special case like Python/JS
             self.buf.write('{}')
         else:
             self.buf.write('{')
             self._MaybeNewline()
 
             i = 0
-            for k, v in iteritems(val.d):
+            for k in bash_impl.BashArray_GetKeys(val):
                 if i != 0:
                     self.buf.write(',')
                     self._MaybeNewline()
@@ -378,6 +381,8 @@ class InstancePrinter(object):
                 self.buf.write(':')
                 self._MaybeSpace()
 
+                v, error_code = bash_impl.BashArray_GetElement(val, k)
+                assert error_code == error_code_e.OK, error_code
                 pyj8.WriteString(v, self.options, self.buf)
 
                 i += 1
@@ -389,19 +394,21 @@ class InstancePrinter(object):
 
         self._PrintBashSuffix(level)
 
-    def _PrintBashArray(self, val, level):
-        # type: (value.BashArray, int) -> None
+    def _PrintInternalStringArray(self, val, level):
+        # type: (value.InternalStringArray, int) -> None
 
-        self._PrintBashPrefix('"BashArray",', level)
+        self._PrintBashPrefix('"InternalStringArray",', level)
 
-        if len(val.strs) == 0:  # Special case like Python/JS
+        if bash_impl.InternalStringArray_Count(
+                val) == 0:  # Special case like Python/JS
             self.buf.write('{}')
         else:
             self.buf.write('{')
             self._MaybeNewline()
 
             first = True
-            for i, s in enumerate(val.strs):
+            for i, s in enumerate(
+                    bash_impl.InternalStringArray_GetValues(val)):
                 if s is None:
                     continue
 
@@ -431,14 +438,14 @@ class InstancePrinter(object):
 
         self._PrintBashPrefix('"BashAssoc",', level)
 
-        if len(val.d) == 0:  # Special case like Python/JS
+        if bash_impl.BashAssoc_Count(val) == 0:  # Special case like Python/JS
             self.buf.write('{}')
         else:
             self.buf.write('{')
             self._MaybeNewline()
 
             i = 0
-            for k2, v2 in iteritems(val.d):
+            for k2, v2 in iteritems(bash_impl.BashAssoc_GetDict(val)):
                 if i != 0:
                     self.buf.write(',')
                     self._MaybeNewline()
@@ -568,8 +575,11 @@ class InstancePrinter(object):
             elif case(value_e.Obj):
                 val = cast(Obj, UP_val)
 
-                if not (self.options & SHOW_NON_DATA):
+                if self.options & NON_DATA_IS_ERROR:
                     raise error.Encode("Can't encode value of type Obj")
+                elif self.options & NON_DATA_IS_NULL:
+                    self.buf.write('null')
+                    return
 
                 # Cycle detection, only for containers that can be in cycles
                 heap_id = HeapValueId(val)
@@ -588,13 +598,13 @@ class InstancePrinter(object):
                     self._PrintObj(val, level)
                     self.visiting[heap_id] = False
 
-            elif case(value_e.SparseArray):
-                val = cast(value.SparseArray, UP_val)
-                self._PrintSparseArray(val, level)
-
             elif case(value_e.BashArray):
                 val = cast(value.BashArray, UP_val)
                 self._PrintBashArray(val, level)
+
+            elif case(value_e.InternalStringArray):
+                val = cast(value.InternalStringArray, UP_val)
+                self._PrintInternalStringArray(val, level)
 
             elif case(value_e.BashAssoc):
                 val = cast(value.BashAssoc, UP_val)
@@ -602,16 +612,18 @@ class InstancePrinter(object):
 
             else:
                 pass  # mycpp workaround
-                if self.options & SHOW_NON_DATA:
+                if self.options & NON_DATA_IS_ERROR:
+                    raise error.Encode("Can't serialize object of type %s" %
+                                       ValType(val))
+                elif self.options & NON_DATA_IS_NULL:
+                    self.buf.write('null')
+                else:
                     # Similar to = operator, ui.DebugPrint()
                     # TODO: that prints value.Range in a special way
                     ysh_type = ValType(val)
                     # Don't show ID in 'pp test_'
                     #id_str = ValueIdString(val)
                     self.buf.write('<%s>' % ysh_type)
-                else:
-                    raise error.Encode("Can't serialize object of type %s" %
-                                       ValType(val))
 
 
 class LexerDecoder(object):

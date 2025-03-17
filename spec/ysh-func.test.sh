@@ -494,3 +494,21 @@ echo mysum=$mysum
 mysum=6
 mysum=1
 ## END
+
+#### Funcs are closures (capture their environment)
+
+func makeFunc() {
+  var x = 42
+  func inner() {
+    echo "x = $x"
+  }
+  setvar x += 1
+  return (inner)
+}
+
+const f = makeFunc()
+call f()
+
+## STDOUT:
+x = 43
+## END

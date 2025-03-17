@@ -107,7 +107,7 @@ def _BracedVarSub(obj):
         return None  # we have other fields to display; don't abbreviate
 
     p_node.unnamed_fields = []
-    _AbbreviateToken(obj.token, p_node.unnamed_fields)
+    _AbbreviateToken(obj.name_tok, p_node.unnamed_fields)
     return p_node
 
 

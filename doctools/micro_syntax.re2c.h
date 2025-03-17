@@ -41,6 +41,18 @@ enum class Id {
   HereBegin,
   HereEnd,
 
+  // Html
+  TagNameLeft,   // start <a> or <br id=foo />
+  SelfClose,     // />
+  TagNameRight,  // >
+  EndTag,        // </a>
+  CharEscape,    // &amp;
+  AttrName,      // foo=
+  BadAmpersand,
+  BadLessThan,
+  BadGreaterThan,
+  // Reused: Str Other
+
   // Zero-width token to detect #ifdef and Python INDENT/DEDENT
   // StartLine,
 
@@ -118,6 +130,7 @@ class Matcher {
 
   // Whitespace is needed for SLOC, to tell if a line is entirely blank
   whitespace = [ \t\r\n]*;
+  space_required = [ \t\r\n]+;
 
   identifier = [_a-zA-Z][_a-zA-Z0-9]*;
 
@@ -661,6 +674,212 @@ bool Matcher<sh_mode_e>::Match(Lexer<sh_mode_e>* lexer, Token* tok) {
   case sh_mode_e::YshSQ:
   case sh_mode_e::YshDQ:
   case sh_mode_e::YshJ:
+    assert(0);
+  }
+
+  tok->end_col = p - lexer->line_;
+  lexer->p_current = p;
+  return false;
+}
+
+enum class html_mode_e {
+  Outer,          // <NAME enters the TAG state
+  AttrName,       // NAME="  NAME='  NAME=  NAME
+  AttrValue,      // NAME="  NAME='  NAME=
+  SQ,             // respects Chars, can contain "
+  DQ,             // respects Chars, can contain '
+  Comm,           // <!-- -->
+  Preprocessing,  // <? ?>
+  CData,          // <![CDATA[ x  ]]>
+  HtmlCData,      // <script> <style>
+};
+
+// LeftStartTag -> RightStartTag  <a href=/ >
+// LeftStartTag -> SelfClose      <br id=foo />
+
+// Returns whether EOL was hit
+template <>
+bool Matcher<html_mode_e>::Match(Lexer<html_mode_e>* lexer, Token* tok) {
+  const char* p = lexer->p_current;  // mutated by re2c
+  const char* YYMARKER = p;
+
+  /*!re2c
+    // Common definitions
+
+                // Like _NAME_RE in HTM8
+    name      = [a-zA-Z][a-zA-Z0-9:_-]* ;
+
+                // TODO: check this pattern
+    char_name = "&"   [a-zA-Z][a-zA-Z0-9]* ";" ;
+    char_dec  = "&#"  [0-9]+ ";"              ;
+    char_hex  = "&#x" [0-9a-fA-F]+ ";"        ;
+  */
+
+  switch (lexer->line_mode) {
+  case html_mode_e::Outer:
+    while (true) {
+      /*!re2c
+                      // accepted EOF
+        nul           { return true; }
+
+        char_name     { TOK(Id::CharEscape); }
+        char_dec      { TOK(Id::CharEscape); }
+        char_hex      { TOK(Id::CharEscape); }
+
+        "&"           { TOK(Id::BadAmpersand); }
+        ">"           { TOK(Id::BadGreaterThan); }
+        "<"           { TOK(Id::BadLessThan); }
+
+        "</" name ">" { TOK(Id::EndTag); }
+
+        "<"  name     {
+          TOK_MODE(Id::TagNameLeft, html_mode_e::AttrName);
+          // TODO: <script> <style> - special logic for strstr()
+        }
+
+        // Problem: these can span more than one linee ... it needs to be
+        // another mode?  The end tag might be technically the same.
+        "<!" [^\x00>]* ">"  { TOK(Id::Comm); }
+
+        "<!--"        { TOK_MODE(Id::Comm, html_mode_e::Comm); }
+        "<?"          { TOK_MODE(Id::Comm, html_mode_e::Preprocessing); }
+        "<![CDATA["   { TOK_MODE(Id::Str, html_mode_e::CData); }
+
+
+                      // Like RawData
+        *             { TOK(Id::Other); }
+
+      */
+    }
+    break;
+  case html_mode_e::AttrName:
+    while (true) {
+      /*!re2c
+        nul           { return true; }  // TODO: error
+
+        // TODO: If the tag was <script> or <STYLE>, then we want to enter
+        // HtmlCData mode, until we hit </script> or </STYLE>.
+        // This is live throughout AttrName, AttrValue, SQ, DQ states?
+        ">"           { TOK_MODE(Id::TagNameRight, html_mode_e::Outer); }
+        "/>"          { TOK_MODE(Id::SelfClose, html_mode_e::Outer); }
+
+        space_required name {
+          // <a missing> - stay in the AttrName mode
+          TOK(Id::AttrName);
+        }
+
+        space_required name whitespace '=' whitespace {
+          // NAME= NAME=' NAME=" - expecting a value
+          TOK_MODE(Id::AttrName, html_mode_e::AttrValue);
+        }
+
+        *             { TOK(Id::Unknown); }
+      */
+    }
+    break;
+  case html_mode_e::AttrValue:
+    while (true) {
+      /*!re2c
+        nul            { return true; }  // TODO: error
+
+        ["]            { TOK_MODE(Id::Str, html_mode_e::DQ); }
+        [']            { TOK_MODE(Id::Str, html_mode_e::SQ); }
+
+        // Unquoted value - a single token
+        unquoted_value = [^\x00 \r\n\t<>&"']+ ;
+
+        unquoted_value { TOK_MODE(Id::Str, html_mode_e::AttrName); }
+
+        *              { TOK(Id::Unknown); }
+      */
+    }
+    break;
+
+  case html_mode_e::DQ:
+    while (true) {
+      /*!re2c
+        nul           { return true; }  // TODO: error
+        char_name     { TOK(Id::CharEscape); }
+        char_dec      { TOK(Id::CharEscape); }
+        char_hex      { TOK(Id::CharEscape); }
+
+                      // we would only need these for translation to XML, not
+                      // highlighting?
+        "&"           { TOK(Id::BadAmpersand); }
+        ">"           { TOK(Id::BadGreaterThan); }
+        "<"           { TOK(Id::BadLessThan); }
+
+        ["]           { TOK_MODE(Id::Str, html_mode_e::AttrName); }
+        *             { TOK(Id::Str); }
+      */
+    }
+    break;
+  case html_mode_e::SQ:
+    while (true) {
+      /*!re2c
+        nul           { return true; }  // TODO: error
+        char_name     { TOK(Id::CharEscape); }
+        char_dec      { TOK(Id::CharEscape); }
+        char_hex      { TOK(Id::CharEscape); }
+
+                      // we would only need these for translation to XML, not
+                      // highlighting?
+        "&"           { TOK(Id::BadAmpersand); }
+        ">"           { TOK(Id::BadGreaterThan); }
+        "<"           { TOK(Id::BadLessThan); }
+        [']           { TOK_MODE(Id::Str, html_mode_e::AttrName); }
+
+        *             { TOK(Id::Str); }
+      */
+    }
+    break;
+  case html_mode_e::Comm:
+    // Search until next -->
+    while (true) {
+      /*!re2c
+        nul       { return true; }
+
+        "-->"     { TOK_MODE(Id::Comm, html_mode_e::Outer); }
+
+        [^\x00-]* { TOK(Id::Comm); }
+
+        *         { TOK(Id::Comm); }
+
+      */
+    }
+    break;
+  case html_mode_e::Preprocessing:
+    // Search until next ?>
+    while (true) {
+      /*!re2c
+        nul       { return true; }
+
+        "?>"      { TOK_MODE(Id::Comm, html_mode_e::Outer); }
+
+        [^\x00?]* { TOK(Id::Comm); }
+
+        *         { TOK(Id::Comm); }
+
+      */
+    }
+    break;
+  case html_mode_e::CData:
+    // Search until next ]]>
+    while (true) {
+      /*!re2c
+        nul        { return true; }
+
+        "]]>"      { TOK_MODE(Id::Str, html_mode_e::Outer); }
+
+        [^\x00\]]* { TOK(Id::Str); }
+
+        *          { TOK(Id::Str); }
+
+      */
+    }
+    break;
+
+  default:
     assert(0);
   }
 

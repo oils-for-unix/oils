@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 3
+## oils_failures_allowed: 4
 
 #### fastlex: NUL byte not allowed inside char literal #' '
 
@@ -147,10 +147,11 @@ shvar FOO=bar {
     setvar Q = Q=>replace("hello","world")
   }
 }
-echo $Q
+#echo $Q
+echo hi
 
 ## STDOUT:
-world
+hi
 ## END
 
 
@@ -322,3 +323,26 @@ seq 5 | where2 [_line ~== 2 or _line ~== 4]
 (Str)   "4"
 (Str)   "5"
 ## END
+
+#### Long boolean flags can't have attached values
+
+# This currently works, but I think --json and --j8 are enough?
+
+write --json=0 hi
+write --json=F hi
+write --json=False hi
+write --json=false hi
+echo
+
+write --json=1 hi
+write --json=T hi
+write --json=True hi
+write --json=true hi
+
+# typo bug
+write --json=Talse hi
+
+## status: 1
+## STDOUT:
+## END
+

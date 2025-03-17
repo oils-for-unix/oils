@@ -1369,9 +1369,6 @@ PyDoc_STRVAR(gc__doc__,
 "get_referrers() -- Return the list of objects that refer to an object.\n"
 "get_referents() -- Return the list of objects that an object refers to.\n");
 
-#ifdef OVM_MAIN
-#include "Python-2.7.13/Modules/gcmodule.c/GcMethods.def"
-#else
 static PyMethodDef GcMethods[] = {
     {"enable",             gc_enable,     METH_NOARGS,  gc_enable__doc__},
     {"disable",            gc_disable,    METH_NOARGS,  gc_disable__doc__},
@@ -1391,7 +1388,6 @@ static PyMethodDef GcMethods[] = {
         gc_get_referents__doc__},
     {NULL,      NULL}           /* Sentinel */
 };
-#endif
 
 #ifndef OBJECTS_ONLY
 PyMODINIT_FUNC

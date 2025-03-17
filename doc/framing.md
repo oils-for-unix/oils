@@ -167,7 +167,23 @@ Traditional shells mostly support newline-based records.  YSH supports:
 
 1. Length-prefixed records
 1. Delimiter-based records
-  - fixed delimiter: newline or `NUL`
-  - chosen delimiter: TODO?  with regex capture?
+   - fixed delimiter: newline or `NUL`
+   - chosen delimiter: TODO?  with regex capture?
 1. Escaping-based records with [JSON][] and the [J8 Notation][] extension.
-  - But we avoid formats that are purely based on escaping.
+   - But we avoid formats that are purely based on escaping.
+
+[J8 Notation]: j8-notation.html
+
+## Appendix
+
+### Notes on HTTP 1.1
+
+It has a messy mix of strategies:
+
+- The HTTP headers and body are separated by a blank line - a fixed **delimiter**
+- The `Content-Length:` header is a **length prefix** for the request or
+  response body
+- But you can also use `Transfer-Encoding: chunked`, which makes the body a
+  **stream** of length-prefixed chunks.  The stream is terminated by a sentinel
+  (a delimiter).
+- Multipart MIME file uploads use a **chosen delimiter** to separate files.

@@ -780,9 +780,6 @@ PyDoc_STRVAR(warn_doc,
 PyDoc_STRVAR(warn_explicit_doc,
 "Low-level inferface to warnings functionality.");
 
-#ifdef OVM_MAIN
-#include "Python-2.7.13/Python/_warnings.c/warnings_functions.def"
-#else
 static PyMethodDef warnings_functions[] = {
     {"warn", (PyCFunction)warnings_warn, METH_VARARGS | METH_KEYWORDS,
         warn_doc},
@@ -792,7 +789,6 @@ static PyMethodDef warnings_functions[] = {
     /* XXX(brett.cannon): Reasonable to add formatwarning? */
     {NULL, NULL}	        /* sentinel */
 };
-#endif
 
 
 static PyObject *

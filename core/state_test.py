@@ -9,6 +9,7 @@ from _devbuild.gen.runtime_asdl import scope_e
 from _devbuild.gen.syntax_asdl import source, SourceLine
 from _devbuild.gen.value_asdl import (value, value_e, sh_lvalue)
 from asdl import runtime
+from core import bash_impl
 from core import error
 from core import executor
 from core import test_lib
@@ -40,11 +41,11 @@ class MemTest(unittest.TestCase):
         mem.argv_stack.append(state._ArgFrame(argv))
         frame = NewDict()
         mem.var_stack.append(frame)
-        mem.PushCall(name, tok)
+        #mem.PushCall(name, tok)
 
     def _PopShellCall(self, mem):
         """ simulate shell function """
-        mem.PopCall()
+        #mem.PopCall()
         mem.var_stack.pop()
         mem.argv_stack.pop()
 
@@ -189,9 +190,10 @@ class MemTest(unittest.TestCase):
         # COMPREPLY=(1 2 3)
         # invariant to enforce: arrays can't be exported
         mem.SetValue(location.LName('COMPREPLY'),
-                     value.BashArray(['1', '2', '3']), scope_e.GlobalOnly)
-        self.assertEqual(['1', '2', '3'],
-                         mem.var_stack[0]['COMPREPLY'].val.strs)
+                     bash_impl.BashArray_FromList(['1', '2', '3']),
+                     scope_e.GlobalOnly)
+        compreply_val = mem.var_stack[0]['COMPREPLY'].val
+        self.assertEqual(['1', '2', '3'], sorted(compreply_val.d.values()))
 
         # export COMPREPLY - allowed when strict_array not set
         mem.SetValue(location.LName('COMPREPLY'),
@@ -235,16 +237,16 @@ class MemTest(unittest.TestCase):
         lhs = sh_lvalue.Indexed('a', 1, runtime.NO_SPID)
         # a[1]=2
         mem.SetValue(lhs, value.Str('2'), scope_e.Dynamic)
-        self.assertEqual([None, '2'], mem.var_stack[0]['a'].val.strs)
+        self.assertEqual(['2'], mem.var_stack[0]['a'].val.d.values())
 
         # a[1]=3
         mem.SetValue(lhs, value.Str('3'), scope_e.Dynamic)
-        self.assertEqual([None, '3'], mem.var_stack[0]['a'].val.strs)
+        self.assertEqual(['3'], mem.var_stack[0]['a'].val.d.values())
 
         # a[1]=(x y z)  # illegal but doesn't parse anyway
         if 0:
             try:
-                mem.SetValue(lhs, value.BashArray(['x', 'y', 'z']),
+                mem.SetValue(lhs, value.InternalStringArray(['x', 'y', 'z']),
                              scope_e.Dynamic)
             except error.FatalRuntime as e:
                 pass

@@ -1,9 +1,0 @@
-// Python-2.7.13/Modules/selectmodule.c
-
-static PyMethodDef poll_methods[] = {
-  {"register", (PyCFunction)poll_register, METH_VARARGS},
-  {"modify", (PyCFunction)poll_modify, METH_VARARGS},
-  {"unregister", (PyCFunction)poll_unregister, METH_O},
-  {"poll", (PyCFunction)poll_poll, METH_VARARGS},
-  {0},
-};

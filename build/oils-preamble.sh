@@ -13,16 +13,17 @@ show_help() {
 Compile the oils-for-unix source into an executable.
 
 Usage:
-  _build/oils.sh FLAGS* 
+  _build/oils.sh FLAG* 
   _build/oils.sh --help
 
 Flags:
 
   --cxx CXX [default 'cxx']
-    The C++ compiler to use: 'cxx' for system compiler, 'clang', or custom string
-
+    The C++ compiler to use: 'cxx' for system compiler, 'clang', or custom
+    string
+  
   --variant ARG [default 'opt']
-    The build variant, e.g. dbg, opt, asan
+    The build variant, e.g. dbg, opt, asan, which adds compile and link flags.
 
   --translator ARG [default 'mycpp']
     Which bundle of translated source code to compile: mycpp, mycpp-souffle
@@ -30,12 +31,39 @@ Flags:
   --skip-rebuild
     If the output exists, skip the build
 
-Environment variable respected:
+Env vars respected:
 
-  OILS_PARALLEL_BUILD=
-  BASE_CXXFLAGS=        # See build/ninja-rules-cpp.sh for details
-  CXXFLAGS=
-  OILS_CXX_VERBOSE=
+  OILS_PARALLEL_BUILD= [default 1]
+    Set to 0 to disable parallel compilation.
+
+  OILS_CXX_VERBOSE=    [default '']
+    Set to 1 to show build details.
+
+Compile/link flags:
+
+  BASE_CXXFLAGS=       (defined in build/common.sh)
+    Override this to disable basic flags like -fno-omit-frame-pointer
+
+  CXXFLAGS=            [default ''] (defined in build/ninja-rules-cpp.sh)
+    Space-separated list of more compiler flags
+
+  LDFLAGS=             [default ''] (defined in build/ninja-rules-cpp.sh)
+    Space-separated list of more linker flags
+
+Compiler flags come from these sources:
+
+  1. The $BASE_CXXFLAGS var
+  2. -I $REPO_ROOT is hard-coded
+  3. The build --variant, e.g. 'asan' adds -fsanitizer=address and more
+  4. Flags detected by ./configure, e.g. for GNU readline
+  5. The $CXXFLAGS var
+
+Linker flags come from these sources:
+
+  1. The build --variant, e.g. 'asan' adds -fsanitizer=address
+  2. Flags detected by ./configure, like $STRIP_FLAGS and -lreadline for GNU
+     readline
+  3. The $LDFLAGS var
 
 EOF
 }

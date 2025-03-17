@@ -7,7 +7,9 @@ Render Oils value_t -> doc_t, so it can be pretty printed
 import math
 
 from _devbuild.gen.pretty_asdl import (doc, Measure, MeasuredDoc)
+from _devbuild.gen.runtime_asdl import error_code_e
 from _devbuild.gen.value_asdl import Obj, value, value_e, value_t, value_str
+from core import bash_impl
 from data_lang import j8
 from data_lang import j8_lite
 from display import ansi
@@ -138,7 +140,7 @@ class ValueEncoder(pp_hnode.BaseEncoder):
         #
         # $ declare -a array=($'\\')
         # $ = array
-        # (BashArray)   (BashArray $'\\')
+        # (InternalStringArray)   (InternalStringArray $'\\')
         #
         # $ declare -A assoc=([k]=$'\\')
         # $ = assoc
@@ -172,13 +174,14 @@ class ValueEncoder(pp_hnode.BaseEncoder):
         mdocs = self._DictMdocs(vdict.d)
         return self._Surrounded('{', self._Join(mdocs, ',', ' '), '}')
 
-    def _BashArray(self, varray):
-        # type: (value.BashArray) -> MeasuredDoc
-        type_name = self._Styled(self.type_style, AsciiText('BashArray'))
-        if len(varray.strs) == 0:
+    def _InternalStringArray(self, varray):
+        # type: (value.InternalStringArray) -> MeasuredDoc
+        type_name = self._Styled(self.type_style,
+                                 AsciiText('InternalStringArray'))
+        if bash_impl.InternalStringArray_Count(varray) == 0:
             return _Concat([AsciiText('('), type_name, AsciiText(')')])
         mdocs = []  # type: List[MeasuredDoc]
-        for s in varray.strs:
+        for s in bash_impl.InternalStringArray_GetValues(varray):
             if s is None:
                 mdocs.append(AsciiText('null'))
             else:
@@ -189,10 +192,10 @@ class ValueEncoder(pp_hnode.BaseEncoder):
     def _BashAssoc(self, vassoc):
         # type: (value.BashAssoc) -> MeasuredDoc
         type_name = self._Styled(self.type_style, AsciiText('BashAssoc'))
-        if len(vassoc.d) == 0:
+        if bash_impl.BashAssoc_Count(vassoc) == 0:
             return _Concat([AsciiText('('), type_name, AsciiText(')')])
         mdocs = []  # type: List[MeasuredDoc]
-        for k2, v2 in iteritems(vassoc.d):
+        for k2, v2 in iteritems(bash_impl.BashAssoc_GetDict(vassoc)):
             mdocs.append(
                 _Concat([
                     AsciiText('['),
@@ -203,13 +206,15 @@ class ValueEncoder(pp_hnode.BaseEncoder):
         return self._SurroundedAndPrefixed('(', type_name, ' ',
                                            self._Join(mdocs, '', ' '), ')')
 
-    def _SparseArray(self, val):
-        # type: (value.SparseArray) -> MeasuredDoc
-        type_name = self._Styled(self.type_style, AsciiText('SparseArray'))
-        if len(val.d) == 0:
+    def _BashArray(self, val):
+        # type: (value.BashArray) -> MeasuredDoc
+        type_name = self._Styled(self.type_style, AsciiText('BashArray'))
+        if bash_impl.BashArray_Count(val) == 0:
             return _Concat([AsciiText('('), type_name, AsciiText(')')])
         mdocs = []  # type: List[MeasuredDoc]
-        for k2, v2 in iteritems(val.d):
+        for k2 in bash_impl.BashArray_GetKeys(val):
+            v2, error_code = bash_impl.BashArray_GetElement(val, k2)
+            assert error_code == error_code_e.OK, error_code
             mdocs.append(
                 _Concat([
                     AsciiText('['),
@@ -302,13 +307,13 @@ class ValueEncoder(pp_hnode.BaseEncoder):
                     self.visiting[heap_id] = False
                     return result
 
-            elif case(value_e.SparseArray):
-                sparse = cast(value.SparseArray, val)
-                return self._SparseArray(sparse)
-
             elif case(value_e.BashArray):
-                varray = cast(value.BashArray, val)
-                return self._BashArray(varray)
+                sparse = cast(value.BashArray, val)
+                return self._BashArray(sparse)
+
+            elif case(value_e.InternalStringArray):
+                varray = cast(value.InternalStringArray, val)
+                return self._InternalStringArray(varray)
 
             elif case(value_e.BashAssoc):
                 vassoc = cast(value.BashAssoc, val)

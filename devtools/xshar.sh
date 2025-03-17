@@ -102,7 +102,7 @@ create-hello() {
 test-oils-manifest() {
   echo '_release/oils-for-unix.tar'
 
-  echo 'oil-version.txt'
+  echo 'oils-version.txt'
 
   echo 'benchmarks/time_.py'
   echo 'benchmarks/time-helper.c'

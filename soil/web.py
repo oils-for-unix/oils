@@ -134,7 +134,7 @@ DETAILS_RUN_T = jsontemplate.Template('''\
 
 </tr>
 <tr class="spacer">
-  <td><td/>
+  <td></td>
 </tr>
 
 </table>
@@ -373,7 +373,7 @@ HTML_BODY_TOP_T = jsontemplate.Template('''
     <p id="home-link">
         <a href="..">Up</a>
       | <a href="/">Home</a>
-      | <a href="//oilshell.org/">oilshell.org</a>
+      | <a href="//oils.pub/">oils.pub</a>
     </p>
 
     <h1>{title|html}</h1>
@@ -433,7 +433,7 @@ INDEX_RUN_ROW_T = jsontemplate.Template('''\
 
 </tr>
 <tr class="spacer">
-  <td colspan=2><td/>
+  <td colspan=2></td>
 </tr>
 ''')
 
@@ -758,7 +758,7 @@ def main(argv):
     # Another option is to use a real database, rather than the file system!
 
     # Sort by 999 here
-    # travis-ci.oilshell.org/github-jobs/999/foo.json
+    # op.oilshell.org/github-jobs/999/foo.json
 
     prefixes.sort(key = lambda path: int(path.split('/')[-2]))
 

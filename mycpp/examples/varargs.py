@@ -12,9 +12,6 @@ from mycpp.mylib import log, print_stderr
 
 from typing import Any
 
-CONST = "myconst"
-
-
 def run_tests():
     # type: () -> None
 
@@ -27,8 +24,6 @@ def run_tests():
 
     # Escaped %%
     log("[%%] %d %s", 42, "LL")
-
-    log(CONST)
 
 
 def run_benchmarks():

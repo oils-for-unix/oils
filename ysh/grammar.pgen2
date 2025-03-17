@@ -80,6 +80,10 @@ factor: ('+'|'-'|'~') factor | power
 # YSH: removed Python 3 'await'
 power: atom trailer* ['**' factor]
 
+# Note: I think splat_expr is not for list comprehensions, it's only for
+# literals like [42, *x] in Python, or [42, ...x] in YSH.  This is new in
+# Python 3.
+# I think splat_expr expressed awkwardly because of pgen limitations.
 testlist_comp: (test|splat_expr) ( comp_for | (',' (test|splat_expr))* [','] )
 
 atom: (
@@ -248,7 +252,7 @@ array_item: (
 sh_array_literal: ':|' Expr_CastedDummy Op_Pipe
 
 # TODO: remove old array
-old_sh_array_literal: '%(' Expr_CastedDummy Right_ShArrayLiteral
+old_sh_array_literal: '%(' Expr_CastedDummy Right_Initializer
 sh_command_sub: ( '$(' | '@(' | '^(' ) Expr_CastedDummy Eof_RParen
 
 # "   $"   """   $"""   ^" 

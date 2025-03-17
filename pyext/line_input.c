@@ -990,9 +990,6 @@ Print all bindings for shell commands in the current keymap.");
 static PyObject*
 unbind_keyseq(PyObject *self, PyObject *args)
 {
-    /* Disabled because of rl_function_of_keyseq_len() error */
-    Py_RETURN_NONE;
-#if 0
     char *seq, *keyseq;
     int kslen, type;
     rl_command_func_t *fn;
@@ -1000,37 +997,52 @@ unbind_keyseq(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "s:unbind_keyseq", &seq))
         return NULL;
 
-    keyseq = (char *)malloc((2 * strlen(seq)) + 1);
-    if (rl_translate_keyseq(seq, keyseq, &kslen) != 0) {
-        free(keyseq);
-        PyErr_Format(PyExc_ValueError, "'%s': cannot translate key sequence", seq);
-        return NULL;
-    }
+    // Commented code below based on bash 5.x unbinding code, which fails on 
+    // readline versions before 2019.
 
-    fn = rl_function_of_keyseq_len(keyseq, kslen, (Keymap)NULL, &type);
-    if (!fn) {
-        free(keyseq);
-        Py_RETURN_NONE;
-    }
+    // keyseq = (char *)malloc((2 * strlen(seq)) + 1);
+    // if (rl_translate_keyseq(seq, keyseq, &kslen) != 0) {
+    //     free(keyseq);
+    //     PyErr_Format(PyExc_ValueError, "'%s': cannot translate key sequence", seq);
+    //     return NULL;
+    // }
 
-    if (type == ISKMAP) {
-        fn = ((Keymap)fn)[ANYOTHERKEY].function;
-    }
+    // fn = rl_function_of_keyseq_len(keyseq, kslen, (Keymap)NULL, &type);
+    // if (!fn) {
+    //     free(keyseq);
+    //     Py_RETURN_NONE;
+    // }
 
-    if (rl_bind_keyseq(seq, (rl_command_func_t *)NULL) != 0) {
-        free(keyseq);
+    // if (type == ISKMAP) {
+    //     fn = ((Keymap)fn)[ANYOTHERKEY].function;
+    // }
+
+    // if (rl_bind_keyseq(seq, (rl_command_func_t *)NULL) != 0) {
+    //     free(keyseq);
+    //     PyErr_Format(PyExc_ValueError, "'%s': cannot unbind", seq);
+    //     return NULL;
+    // }
+
+    // /* 
+    // TODO: Handle shell command unbinding if f == bash_execute_unix_command or
+    // rather, whatever the osh equivalent will be
+    // */
+
+    // free(keyseq);
+    // Py_RETURN_NONE;
+
+    // End bash 5.x unbinding code
+
+
+
+    // Code below based on bash 4 unbinding code from 2011
+
+    if (rl_bind_keyseq (seq, (rl_command_func_t *)NULL) != 0) {
         PyErr_Format(PyExc_ValueError, "'%s': cannot unbind", seq);
         return NULL;
     }
 
-    /* 
-    TODO: Handle shell command unbinding if f == bash_execute_unix_command or
-    rather, whatever the osh equivalent will be
-    */
-
-    free(keyseq);
     Py_RETURN_NONE;
-#endif
 }
 
 PyDoc_STRVAR(doc_unbind_keyseq,
@@ -1083,9 +1095,6 @@ Restore the previously saved keymap if one exists.");
 
 /* Table of functions exported by the module */
 
-#ifdef OVM_MAIN
-#include "pyext/line_input.c/readline_methods.def"
-#else
 static struct PyMethodDef readline_methods[] = {
     {"parse_and_bind", parse_and_bind, METH_VARARGS, doc_parse_and_bind},
     {"get_line_buffer", get_line_buffer, METH_NOARGS, doc_get_line_buffer},
@@ -1142,7 +1151,6 @@ static struct PyMethodDef readline_methods[] = {
     {"unbind_keyseq", unbind_keyseq, METH_VARARGS, doc_unbind_keyseq},
     {0, 0}
 };
-#endif
 
 
 /* C function to call the Python hooks. */

@@ -14,15 +14,21 @@ These are some notes that supplement [INSTALL](INSTALL.html).
 
 ## Issues in the core of Oils
 
-### GNU libc for extended globs
+### libc - `FNM_EXTMATCH` is not in POSIX
 
-For matching extended globs like `@(*.cc|*.h)`, Oils relies on GNU libc
-support.
+To match extended globs like `@(*.cc|*.h)`, OSH relies on `FNM_EXTMATCH` from
+GNU libc.
 
-- This is not a POSIX feature.
-- It's also unlike bash, which has its own extended glob support.
+This is unlike bash, which has its own extended glob library.
 
 TODO: when using other libc, using this syntax should be an error.
+
+### libc - `GLOB_PERIOD` is not in POSIX
+
+To implement the bash feature `shopt -s dotglob`, OSH relies on `GLOB_PERIOD`,
+which some libc's implement.
+
+This is unlike bash, which has its own glob library.
 
 ### Atomic Assignments
 
@@ -70,6 +76,11 @@ We use `libc` functions that may depend on the global locale setting, like
 See the [Unicode doc][] for details on Unicode-aware operations.
 
 [Unicode doc]: unicode.html
+
+## Related
+
+- [INSTALL](INSTALL.html)
+- [Oils Help Mirror](help-mirror.html)
 
 <!--
 

@@ -12,6 +12,7 @@ module value
     NameType
     EggexFlag
     BraceGroup SourceLine
+    debug_frame
   }
 
   use core runtime {
@@ -25,6 +26,8 @@ module value
   # extern [ core vm _Callable ] # for value.BuiltinFunc, below
 
   IntBox = (int i)
+
+  InitializerValue = (str? key, str rval, bool plus_eq)
 
   ProcDefaults = (
     List[value]? for_word,  # all of them are value.Str
@@ -101,11 +104,13 @@ module value
 
   | Str(str s)
 
+  | InitializerList(List[InitializerValue] assigns)
+
     # "holes" in the array are represented by None
-  | BashArray(List[str] strs)
+  | InternalStringArray(List[str] strs)
     # TODO: Switch to this more efficient representation.  max_index makes
     # append-sparse workload faster, and normal append loops too
-  | SparseArray(Dict[BigInt, str] d, BigInt max_index)
+  | BashArray(Dict[BigInt, str] d, BigInt max_index)
 
   | BashAssoc(Dict[str, str] d)
 
@@ -151,6 +156,7 @@ module value
     # ctx_Eval()
     # TODO: ASDL should let us "collapse" this Dict directly into value_t
   | Frame(Dict[str, Cell] frame)
+  | DebugFrame(debug_frame frame)
 
   #
   # Code units: BoundFunc, BuiltinFunc, Func, BuiltinProc, Proc
@@ -165,6 +171,7 @@ module value
 
   | Func(str name, Func parsed,
          List[value] pos_defaults, Dict[str, value] named_defaults,
+         Dict[str, Cell] captured_frame,
          # module is where "global" lookups happen
          Dict[str, Cell] module_frame)
 
@@ -178,6 +185,7 @@ module value
   | BuiltinProc(any builtin)
   | Proc(str name, Token name_tok, proc_sig sig, command body,
          ProcDefaults? defaults, bool sh_compat,
+         Dict[str, Cell] captured_frame,
          # module is where "global" lookups happen
          Dict[str, Cell] module_frame)
 

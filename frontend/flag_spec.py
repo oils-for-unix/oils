@@ -66,11 +66,13 @@ def _FlagType(arg_type):
     return typ
 
 
-def _MakeAction(arg_type, name, quit_parsing_flags=False):
+def _ActionForOneArg(arg_type, name, quit_parsing_flags=False):
     # type: (Union[None, int, List[str]], str, bool) -> args._Action
 
     if arg_type == args.Bool:
         assert not quit_parsing_flags
+        # TODO: remove all usages of --long=false, since it has a bug
+        #log('ATTACHED %r', name)
         action = args.SetAttachedBool(name)  # type: args._Action
 
     elif arg_type == args.Int:
@@ -177,14 +179,14 @@ class _FlagSpec(object):
         if arg_type is None:
             self.arity0.append(char)
         else:
-            self.arity1[char] = _MakeAction(arg_type, char)
+            self.arity1[char] = _ActionForOneArg(arg_type, char)
 
         if long_name is not None:
             name = long_name[2:]  # key for parsing
             if arg_type is None:
                 self.actions_long[name] = args.SetToTrue(char)
             else:
-                self.actions_long[name] = _MakeAction(arg_type, char)
+                self.actions_long[name] = _ActionForOneArg(arg_type, char)
 
         self.defaults[char] = _Default(arg_type)
         self.fields[char] = typ
@@ -205,7 +207,7 @@ class _FlagSpec(object):
         if arg_type is None:
             self.actions_long[name] = args.SetToTrue(name)
         else:
-            self.actions_long[name] = _MakeAction(arg_type, name)
+            self.actions_long[name] = _ActionForOneArg(arg_type, name)
 
         self.defaults[name] = _Default(arg_type, arg_default=default)
         self.fields[name] = typ
@@ -264,6 +266,11 @@ class _FlagSpecAndMore(object):
         self.actions_short['O'] = args.SetNamedOption(shopt=True)  # -O and +O
         self.plus_flags.append('O')
 
+    def EvalFlags(self):
+        # type: () -> None
+        self.actions_long['eval'] = args.AppendEvalFlag('eval')
+        self.actions_long['eval-pure'] = args.AppendEvalFlag('eval-pure')
+
     def ShortFlag(self,
                   short_name,
                   arg_type=None,
@@ -281,7 +288,7 @@ class _FlagSpecAndMore(object):
             assert quit_parsing_flags == False
             self.actions_short[char] = args.SetToTrue(char)
         else:
-            self.actions_short[char] = _MakeAction(
+            self.actions_short[char] = _ActionForOneArg(
                 arg_type, char, quit_parsing_flags=quit_parsing_flags)
 
         self.defaults[char] = _Default(arg_type, arg_default=default)
@@ -303,7 +310,7 @@ class _FlagSpecAndMore(object):
         if arg_type is None:
             self.actions_long[name] = args.SetToTrue(name)
         else:
-            self.actions_long[name] = _MakeAction(arg_type, name)
+            self.actions_long[name] = _ActionForOneArg(arg_type, name)
 
         attr_name = name.replace('-', '_')
         self.defaults[attr_name] = _Default(arg_type, arg_default=default)

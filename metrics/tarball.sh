@@ -66,7 +66,7 @@ linecount-oils-cpp() {
 
   # The release runs extract-for-benchmarks
   local version
-  version=$(head -n 1 oil-version.txt)
+  version=$(head -n 1 oils-version.txt)
   local second="../benchmark-data/src/oils-for-unix-$version"
 
   local dir

@@ -52,13 +52,13 @@ echo Dict $?
 $SH -c '
 declare -A A=()
 A+=1
-declare -A
 '
-#echo AssocArray $?
+echo BashAssoc $?
 
 ## STDOUT:
 eggex 1
 Dict 1
+BashAssoc 1
 ## END
 
 #### Shell ${x:-default} with YSH List (issue #954)
@@ -181,7 +181,7 @@ for i, item in (array) {
 ## status: 3
 ## STDOUT:
 ['a', 'b', 'c']
-array=(); array[0]=a array[1]=b array[5]=c
+array=([0]=a [1]=b [5]=c)
 ## END
 
 #### Slice bash array isn't allowed

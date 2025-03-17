@@ -1,5 +1,5 @@
 ## compare_shells: bash mksh
-## oils_failures_allowed: 3
+## oils_failures_allowed: 2
 
 #### nounset / set -u with empty array (bug in bash 4.3, fixed in 4.4)
 
@@ -277,7 +277,20 @@ None
 A=a B=(b b) printenv.py A B
 ## status: 2
 ## stdout-json: ""
-## OK bash stdout-json: "a\n(b b)\n"
+## OK bash STDOUT:
+a
+(b b)
+## END
+## OK bash status: 0
+## OK mksh status: 1
+
+#### Associative arrays can't be used as env bindings either
+A=a B=([k]=v) printenv.py A B
+## status: 2
+## stdout-json: ""
+## OK bash STDOUT:
+a
+([k]=v)
 ## OK bash status: 0
 ## OK mksh status: 1
 
@@ -360,7 +373,10 @@ a=(1 '2 3')
 for v in "${a[@]}"; do
   echo $v
 done
-## stdout-json: "1\n2 3\n"
+## STDOUT:
+1
+2 3
+## END
 
 #### glob within array yields separate elements
 touch _tmp/y.Y _tmp/yy.Y
@@ -385,6 +401,7 @@ ls foo=(1 2)
 # 2024-06 - bash 5.2 and mksh now match, bash 4.4 differed.
 # Could change OSH
 # zsh agrees with OSH, but it fails most test cases
+# 2025-01 We changed OSH.
 
 single=('')
 argv.py ${single[@]:-none} x "${single[@]:-none}"
@@ -802,7 +819,8 @@ two=1
 ## N-I mksh STDOUT:
 ## END
 
-#### Assigning with out-of-range negative index
+
+#### Regression: Assigning with out-of-range negative index
 a=()
 a[-1]=1
 
@@ -812,7 +830,7 @@ a[-1]=1
 ## STDERR:
   a[-1]=1
   ^~
-[ stdin ]:2: fatal: Index -1 is out of range
+[ stdin ]:2: fatal: Index -1 is out of bounds for array of length 0
 ## END
 
 ## OK bash STDERR:
@@ -825,7 +843,7 @@ bash: line 2: a[-1]: bad array subscript
 ## END
 
 
-#### Negative index in [[ -v a[index] ]]
+#### Regression: Negative index in [[ -v a[index] ]]
 a[0]=x
 a[5]=y
 a[10]=z
@@ -847,7 +865,7 @@ a has -11
 ## END
 
 
-#### Negative out-of-range index in [[ -v a[index] ]]
+#### Regression: Negative out-of-range index in [[ -v a[index] ]]
 e=()
 [[ -v e[-1] ]] && echo 'e has -1'
 
@@ -864,4 +882,146 @@ bash: line 2: e: bad array subscript
 
 ## N-I mksh STDERR:
 mksh: <stdin>[2]: syntax error: 'e[-1]' unexpected operator/operand
+## END
+
+
+#### a+=() modifies existing instance of BashArray
+case $SH in mksh|bash) exit ;; esac
+
+a=(1 2 3)
+var b = a
+a+=(4 5)
+echo "a=(${a[*]})"
+echo "b=(${b[*]})"
+
+## STDOUT:
+a=(1 2 3 4 5)
+b=(1 2 3 4 5)
+## END
+
+## N-I mksh/bash STDOUT:
+## END
+
+
+#### Regression: unset a[-2]: out-of-bound negative index should cause error
+case $SH in mksh) exit ;; esac
+
+a=(1)
+unset -v 'a[-2]'
+
+## status: 1
+## STDOUT:
+## END
+## STDERR:
+  unset -v 'a[-2]'
+           ^
+[ stdin ]:4: a[-2]: Index is out of bounds for array of length 1
+## END
+
+## OK bash STDERR:
+bash: line 4: unset: [-2]: bad array subscript
+## END
+
+## N-I mksh status: 0
+## N-I mksh STDERR:
+## END
+
+
+#### Regression: Out-of-bound negative offset for ${a[@]:offset}
+case $SH in mksh) exit ;; esac
+
+a=(1 2 3 4)
+echo "a=(${a[*]})"
+echo "begin=-1 -> (${a[*]: -1})"
+echo "begin=-2 -> (${a[*]: -2})"
+echo "begin=-3 -> (${a[*]: -3})"
+echo "begin=-4 -> (${a[*]: -4})"
+echo "begin=-5 -> (${a[*]: -5})"
+
+## STDOUT:
+a=(1 2 3 4)
+begin=-1 -> (4)
+begin=-2 -> (3 4)
+begin=-3 -> (2 3 4)
+begin=-4 -> (1 2 3 4)
+begin=-5 -> ()
+## END
+
+## N-I mksh STDOUT:
+## END
+
+
+#### Regression: Array length after unset
+case $SH in mksh) exit ;; esac
+
+a=(x)
+a[9]=y
+echo "len ${#a[@]};"
+
+unset -v 'a[-1]'
+echo "len ${#a[@]};"
+echo "last ${a[@]: -1};"
+
+## STDOUT:
+len 2;
+len 1;
+last x;
+## END
+
+## N-I mksh STDOUT:
+## END
+
+
+#### Regression: ${a[@]@Q} crash with `a[0]=x a[2]=y`
+case $SH in mksh) exit ;; esac
+
+a[0]=x
+a[2]=y
+echo "quoted = (${a[@]@Q})"
+
+## STDOUT:
+quoted = (x y)
+## END
+
+## OK bash STDOUT:
+quoted = ('x' 'y')
+## END
+
+## N-I mksh STDOUT:
+## END
+
+
+#### Regression: silent out-of-bound negative index in ${a[-2]} and $((a[-2]))
+case $SH in mksh) exit ;; esac
+
+a=(x)
+echo "[${a[-2]}]"
+echo $?
+echo "[$((a[-2]))]"
+echo $?
+
+## STDOUT:
+[]
+0
+[0]
+0
+## END
+## STDERR:
+  echo "[${a[-2]}]"
+           ^
+[ stdin ]:4: Index -2 out of bounds for array of length 1
+  echo "[$((a[-2]))]"
+             ^
+[ stdin ]:6: Index -2 out of bounds for array of length 1
+## END
+
+## OK bash STDERR:
+bash: line 4: a: bad array subscript
+bash: line 6: a: bad array subscript
+## END
+
+## N-I mksh status: 0
+## N-I mksh STDOUT:
+## END
+## N-I mksh STDERR:
 ## END

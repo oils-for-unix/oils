@@ -1,4 +1,3 @@
-## oils_failures_allowed: 1
 ## our_shell: ysh
 
 # dynamically generate procs
@@ -11,6 +10,8 @@ for param in a b {
     echo \$prefix $param
   }
   """
+  # We need to "escape" the for loop scope
+  call setVar("echo_$param", getVar("echo_$param"), global=true)
 }
 
 echo_a prefix
@@ -30,23 +31,27 @@ proc p {
       echo \$prefix $param
     }
     """
+    # We need to "escape" the for loop scope
+    call setVar("echo_$param", getVar("echo_$param"), global=true)
   }
 
+  # calling globals
   echo_a prefix
   echo_b prefix
 }
 
 p
 
-echo_a prefix  # not available here!
+# the global is available
+echo_a prefix
 
-## status: 127
 ## STDOUT:
 prefix a
 prefix b
+prefix a
 ## END
 
-#### with eval builtin command, making them global with names() and setVar()
+#### with eval builtin command, reeturning Dict
 
 func genProcs() {
   var result = {}
@@ -58,12 +63,6 @@ func genProcs() {
     """
     setvar result["echo_$param"] = getVar("echo_$param")
   }
-
-  echo 'local'
-  echo_a prefix
-  echo_b prefix
-  echo
-
   return (result)
 }
 
@@ -71,19 +70,13 @@ var procs = genProcs()
 
 # bind to global scope
 for name in (procs) {
-  call setVar("my_$name", procs[name])
+  call setVar("my_$name", procs[name], global=true)
 }
 
-echo 'global'
 my_echo_a prefix
 my_echo_b prefix
 
 ## STDOUT:
-local
-prefix a
-prefix b
-
-global
 prefix a
 prefix b
 ## END
@@ -94,43 +87,39 @@ proc p {
   var result = {}
   for param in a b {
     var s = """
-    proc echo_$param(prefix) {
+    proc echo_$param (prefix) {
       echo \$prefix $param
     }
     """
     var cmd = parseCommand(s)
     #pp test_ (cmd)
-    pp asdl_ (cmd)
+    #pp asdl_ (cmd)
 
-    # Oh so then echo_a is defined in the front frame
-    # And then the front frame is discarded?
-    #
-    # OK I see
-    #
-    # So you only use evalToDict()?
-    #
-    # Or parseCommand() returns something UNBOUND, so it has the same power
-    # as eval $mystr
+    # note: this creates its own frame, unlike 'eval'
+    # call io->eval(cmd)
 
-    call io->eval(cmd)
+    var d = io->eval(cmd, to_dict=true)
 
-    #call io->evalToDict(cmd)
-    #pp (echo_a)
-    echo_a zz
+    # bind my_echo_a globally
+    call setVar("my_echo_$param", d["echo_$param"], global=true)
   }
 
-  echo_a prefix
-  echo_b prefix
+  #= dict(vm.getFrame(0))
+
+  my_echo_a in-proc
+  my_echo_b in-proc
 }
 
 p
 
-echo_a not_defined
+my_echo_a global
+my_echo_b global
 
-## status: 127
 ## STDOUT:
-prefix a
-prefix b
+in-proc a
+in-proc b
+global a
+global b
 ## END
 
 #### with parseCommand() then io->eval(cmd, vars={out_dict: {}})

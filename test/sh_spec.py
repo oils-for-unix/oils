@@ -187,11 +187,27 @@ class Tokenizer(object):
         return self.cursor
 
 
-def AddMetadataToCase(case, qualifier, shells, name, value):
+def AddMetadataToCase(case, qualifier, shells, name, value, line_num):
     shells = shells.split('/')  # bash/dash/mksh
     for shell in shells:
         if shell not in case:
             case[shell] = {}
+
+        # Check a duplicate specification
+        name_without_type = re.sub(r'-(json|repr)$', '', name)
+        if (name_without_type in case[shell] or
+                name_without_type + '-json' in case[shell] or
+                name_without_type + '-repr' in case[shell]):
+            raise ParseError('Line %d: duplicate spec %r for %r' %
+                             (line_num, name, shell))
+
+        # Check inconsistent qualifier
+        if 'qualifier' in case[shell] and qualifier != case[shell]['qualifier']:
+            raise ParseError(
+                'Line %d: inconsistent qualifier %r is specified for %r, '
+                'but %r was previously specified.  '
+                % (line_num, qualifier, shell, case[shell]['qualifier']))
+
         case[shell][name] = value
         case[shell]['qualifier'] = qualifier
 
@@ -251,7 +267,8 @@ def ParseKeyValue(tokens, case):
 
             name = name.lower()  # STDOUT -> stdout
             if qualifier:
-                AddMetadataToCase(case, qualifier, shells, name, value)
+                AddMetadataToCase(case, qualifier, shells, name, value,
+                                  line_num)
             else:
                 case[name] = value
 
@@ -263,7 +280,8 @@ def ParseKeyValue(tokens, case):
             qualifier, shells, name, value = item
 
             if qualifier:
-                AddMetadataToCase(case, qualifier, shells, name, value)
+                AddMetadataToCase(case, qualifier, shells, name, value,
+                                  line_num)
             else:
                 case[name] = value
 
@@ -479,6 +497,17 @@ class Result(object):
     length = 6  # for loops
 
 
+def QualifierToResult(qualifier):
+    # type: (str) -> Result
+    if qualifier == 'BUG':  # equal, but known bad
+        return Result.BUG
+    if qualifier == 'N-I':  # equal, and known UNIMPLEMENTED
+        return Result.NI
+    if qualifier == 'OK':  # equal, but ok (not ideal)
+        return Result.OK
+    return Result.PASS  # ideal behavior
+
+
 class EqualAssertion(object):
     """Check that two values are equal."""
 
@@ -513,13 +542,8 @@ Got      %r
                     print(repr(line))
 
             return Result.FAIL, msg
-        if self.qualifier == 'BUG':  # equal, but known bad
-            return Result.BUG, ''
-        if self.qualifier == 'N-I':  # equal, and known UNIMPLEMENTED
-            return Result.NI, ''
-        if self.qualifier == 'OK':  # equal, but ok (not ideal)
-            return Result.OK, ''
-        return Result.PASS, ''  # ideal behavior
+
+        return QualifierToResult(self.qualifier), ''
 
 
 class SubstringAssertion(object):
@@ -622,6 +646,14 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
             subprocess.call(['which', sh])
 
     #pprint.pprint(cases)
+
+    if isinstance(case_predicate, spec_lib.RangePredicate) and (
+        case_predicate.begin > (len(cases) - 1)
+    ):
+        raise RuntimeError(
+            "valid case indexes are from 0 to %s. given range: %s-%s"
+            % ((len(cases) - 1), case_predicate.begin, case_predicate.end)
+        )
 
     sh_labels = [sh_label for sh_label, _ in shells]
 
@@ -1040,7 +1072,7 @@ class HtmlOutput(Output):
     <p id="home-link">
       <a href=".">spec test index</a>
       /
-      <a href="/">oilshell.org</a>
+      <a href="/">oils.pub</a>
     </p>
     <h1>Results for %s</h1>
     <table>
@@ -1259,6 +1291,9 @@ def ParseTestList(test_files):
             except RuntimeError as e:
                 log('ERROR in %r', test_file)
                 raise
+            except ParseError as e:
+                log('PARSE ERROR in %r', test_file)
+                raise
 
         tmp = os.path.basename(test_file)
         spec_name = tmp.split('.')[0]  # foo.test.sh -> foo
@@ -1453,7 +1488,7 @@ def _SuccessOrFailure(test_name, stats):
     if oils_cpp_count != 0:
         if oils_cpp_count != allowed_cpp:
             errors.append('Got %d Oils C++ failures, but %d are allowed' %
-                          (oils_cpp_count, allowed))
+                          (oils_cpp_count, allowed_cpp))
         else:
             if allowed_cpp != 0:
                 log('%s: note: Got %d allowed Oils C++ failures', test_name,

@@ -9,9 +9,11 @@ from __future__ import print_function
 
 import cgi
 import re
+from typing import List
 
 
 def AttrsToString(attrs):
+    # type: (List) -> str
     if not attrs:
         return ''
 
@@ -21,6 +23,7 @@ def AttrsToString(attrs):
 
 
 def PrettyHref(s, preserve_anchor_case=False):
+    # type: (str, bool) -> str
     """Turn arbitrary heading text into href with no special characters.
 
     This is modeled after what github does.  It makes everything lower case.

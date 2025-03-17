@@ -201,9 +201,16 @@ def PrintTokens(arena):
         print('%s' % arena.tokens[0])
         return
 
+    # TODO:
+    # - TSV8: end position, token type
+    #   - then an option to print token text, as a J8 string
+    # - and then there can be a separate tool to number the columns
+    #
+    # - Do we also have JSON8 / HTM8 / TSV8 tokens?
+    # - And mini-languages like glob, etc.
     for i, tok in enumerate(arena.tokens):
         piece = tok.line.content[tok.col:tok.col + tok.length]
-        print('%5d %-20s %r' % (i, Id_str(tok.id), piece))
+        print('%5d %-20s %r' % (i, Id_str(tok.id, dot=False), piece))
     print_stderr('(%d tokens)' % len(arena.tokens))
 
 
@@ -1012,8 +1019,9 @@ class YshPrinter(object):
         UP_node = node
 
         with tagswitch(node) as case:
-            if case(word_part_e.ShArrayLiteral, word_part_e.BashAssocLiteral,
-                    word_part_e.TildeSub, word_part_e.ExtGlob):
+            if case(word_part_e.YshArrayLiteral,
+                    word_part_e.InitializerLiteral, word_part_e.TildeSub,
+                    word_part_e.ExtGlob):
                 pass
 
             elif case(word_part_e.EscapedLiteral):
@@ -1098,9 +1106,9 @@ class YshPrinter(object):
                 if node.suffix_op:
                     pass
 
-                op_id = node.token.id
+                op_id = node.name_tok.id
                 if op_id == Id.VSub_QMark:
-                    self.cursor.PrintIncluding(node.token)
+                    self.cursor.PrintIncluding(node.name_tok)
 
                 self.cursor.PrintIncluding(node.right)
 

@@ -7,8 +7,16 @@
 echo -
 echo --
 echo ---
-## stdout-json: "-\n--\n---\n"
-## BUG zsh stdout-json: "\n--\n---\n"
+## STDOUT:
+-
+--
+---
+## END
+## BUG zsh STDOUT:
+
+--
+---
+## END
 
 #### echo backslashes
 echo \\
@@ -72,8 +80,15 @@ echo (x)
 
 #### echo -en
 echo -en 'abc\ndef\n'
-## stdout-json: "abc\ndef\n"
-## N-I dash stdout-json: "-en abc\ndef\n\n"
+## STDOUT:
+abc
+def
+## END
+## N-I dash STDOUT:
+-en abc
+def
+
+## END
 
 #### echo -ez (invalid flag)
 # bash differs from the other three shells, but its behavior is possibly more
@@ -81,8 +96,13 @@ echo -en 'abc\ndef\n'
 # the 'e' to mean 2 different things simultaneously: flag and literal to be
 # printed.
 echo -ez 'abc\n'
-## stdout-json: "-ez abc\\n\n"
-## OK dash/mksh/zsh stdout-json: "-ez abc\n\n"
+## STDOUT:
+-ez abc\n
+## END
+## OK dash/mksh/zsh STDOUT:
+-ez abc
+
+## END
 
 #### echo -e with embedded newline
 flags='-e'
@@ -134,15 +154,21 @@ echo $flags xy  'ab\cde'  'zzz'
 
 #### echo -e with hex escape
 echo -e 'abcd\x65f'
-## stdout-json: "abcdef\n"
-## N-I dash stdout-json: "-e abcd\\x65f\n"
+## STDOUT:
+abcdef
+## END
+## N-I dash STDOUT:
+-e abcd\x65f
+## END
 
 #### echo -e with octal escape
 flags='-e'
 case $SH in dash) flags='' ;; esac
 
 echo $flags 'abcd\044e'
-## stdout-json: "abcd$e\n"
+## STDOUT:
+abcd$e
+## END
 
 #### echo -e with 4 digit unicode escape
 flags='-e'
@@ -152,7 +178,9 @@ echo $flags 'abcd\u0065f'
 ## STDOUT:
 abcdef
 ## END
-## N-I dash/ash stdout-json: "abcd\\u0065f\n"
+## N-I dash/ash STDOUT:
+abcd\u0065f
+## END
 
 #### echo -e with 8 digit unicode escape
 flags='-e'
@@ -162,61 +190,101 @@ echo $flags 'abcd\U00000065f'
 ## STDOUT:
 abcdef
 ## END
-## N-I dash/ash stdout-json: "abcd\\U00000065f\n"
+## N-I dash/ash STDOUT:
+abcd\U00000065f
+## END
 
 #### \0377 is the highest octal byte
 echo -en '\03777' | od -A n -t x1 | sed 's/ \+/ /g'
-## stdout-json: " ff 37\n"
-## N-I dash stdout-json: " 2d 65 6e 20 ff 37 0a\n"
+## STDOUT:
+ ff 37
+## END
+## N-I dash STDOUT:
+ 2d 65 6e 20 ff 37 0a
+## END
 
 #### \0400 is one more than the highest octal byte
 # It is 256 % 256 which gets interpreted as a NUL byte.
 echo -en '\04000' | od -A n -t x1 | sed 's/ \+/ /g'
-## stdout-json: " 00 30\n"
-## BUG ash stdout-json: " 20 30 30\n"
-## N-I dash stdout-json: " 2d 65 6e 20 00 30 0a\n"
+## STDOUT:
+ 00 30
+## END
+## BUG ash STDOUT:
+ 20 30 30
+## END
+## N-I dash STDOUT:
+ 2d 65 6e 20 00 30 0a
+## END
 
 #### \0777 is out of range
 flags='-en'
 case $SH in dash) flags='-n' ;; esac
 
 echo $flags '\0777' | od -A n -t x1 | sed 's/ \+/ /g'
-## stdout-json: " ff\n"
-## BUG mksh stdout-json: " c3 bf\n"
-## BUG ash stdout-json: " 3f 37\n"
+## STDOUT:
+ ff
+## END
+## BUG mksh STDOUT:
+ c3 bf
+## END
+## BUG ash STDOUT:
+ 3f 37
+## END
 
 #### incomplete hex escape
 echo -en 'abcd\x6' | od -A n -c | sed 's/ \+/ /g'
-## stdout-json: " a b c d 006\n"
-## N-I dash stdout-json: " - e n a b c d \\ x 6 \\n\n"
+## STDOUT:
+ a b c d 006
+## END
+## N-I dash STDOUT:
+ - e n a b c d \ x 6 \n
+## END
 
 #### \x
 # I consider mksh and zsh a bug because \x is not an escape
 echo -e '\x' '\xg' | od -A n -c | sed 's/ \+/ /g'
-## stdout-json: " \\ x \\ x g \\n\n"
-## N-I dash stdout-json: " - e \\ x \\ x g \\n\n"
-## BUG mksh/zsh stdout-json: " \\0 \\0 g \\n\n"
+## STDOUT:
+ \ x \ x g \n
+## END
+## N-I dash STDOUT:
+ - e \ x \ x g \n
+## END
+## BUG mksh/zsh STDOUT:
+ \0 \0 g \n
+## END
 
 #### incomplete octal escape
 flags='-en'
 case $SH in dash) flags='-n' ;; esac
 
 echo $flags 'abcd\04' | od -A n -c | sed 's/ \+/ /g'
-## stdout-json: " a b c d 004\n"
+## STDOUT:
+ a b c d 004
+## END
 
 #### incomplete unicode escape
 echo -en 'abcd\u006' | od -A n -c | sed 's/ \+/ /g'
-## stdout-json: " a b c d 006\n"
-## N-I dash stdout-json: " - e n a b c d \\ u 0 0 6 \\n\n"
-## BUG ash stdout-json: " a b c d \\ u 0 0 6\n"
+## STDOUT:
+ a b c d 006
+## END
+## N-I dash STDOUT:
+ - e n a b c d \ u 0 0 6 \n
+## END
+## BUG ash STDOUT:
+ a b c d \ u 0 0 6
+## END
 
 #### \u6
 flags='-en'
 case $SH in dash) flags='-n' ;; esac
 
 echo $flags '\u6' | od -A n -c | sed 's/ \+/ /g'
-## stdout-json: " 006\n"
-## N-I dash/ash stdout-json: " \\ u 6\n"
+## STDOUT:
+ 006
+## END
+## N-I dash/ash STDOUT:
+ \ u 6
+## END
 
 #### \0 \1 \8
 # \0 is special, but \1 isn't in bash
@@ -225,8 +293,12 @@ flags='-en'
 case $SH in dash) flags='-n' ;; esac
 
 echo $flags '\0' '\1' '\8' | od -A n -c | sed 's/ \+/ /g'
-## stdout-json: " \\0 \\ 1 \\ 8\n"
-## BUG dash/ash stdout-json: " \\0 001 \\ 8\n"
+## STDOUT:
+ \0 \ 1 \ 8
+## END
+## BUG dash/ash STDOUT:
+ \0 001 \ 8
+## END
 
 
 #### echo to redirected directory is an error

@@ -75,7 +75,12 @@ trap, pipelines, and interactive shells.
 
 ### ERR
 
-TODO
+The `ERR` trap runs when a command fails, i.e. in the situations where `set -o
+errexit` aka `set -e` exits the shell.
+
+To enable it in functions and subshells, use `set -o errtrace`, aka `set -E`.
+
+It's designed to be compatible with bash.
 
 ### EXIT
 
@@ -87,13 +92,17 @@ TODO
 
 ## Words
 
-<!--
-<h3 id="PS1">PS1</h3>
--->
-
 ### PS1
 
-First line of the shell prompt.
+The `PS1` variable controls the first line of the shell prompt.  It is designed
+to be bash-compatible.
+
+See the [Bash Manual > Controlling the Prompt][bash-prompt].
+
+[bash-prompt]: https://www.gnu.org/software/bash/manual/html_node/Controlling-the-Prompt.html
+
+Note that the general `\D{format}` is implemented, but some of the more
+specific time formats are not implemented.
 
 ### PS2
 
@@ -145,5 +154,4 @@ To render the prompt, YSH first checks if this function exists.  Otherwise, it
 uses [`$PS1`]($chap-plugin:PS1) with a `ysh` prefix.
 
 <!-- note: doctools/cmark.py turns promptVal -> promptval -->
-
 

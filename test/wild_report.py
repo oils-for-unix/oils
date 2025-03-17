@@ -73,7 +73,7 @@ BODY_STYLE = jsontemplate.Template("""\
         class="width60">
     <p id="status"></p>
 
-    <p style="text-align: right"><a href="/">oilshell.org</a></p>
+    <p style="text-align: right"><a href="/">oils.pub</a></p>
 <p>
 {.template NAV}
 </p>
@@ -281,7 +281,7 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
           <a class="fail" href="#stderr_parse_{name}">FAIL</a>
           <td>{parse_proc_secs}</td>
         {.or}
-          <span class="ok">OK</a>
+          <span class="ok">OK</span>
           <td>{parse_proc_secs}</td>
         {.end}
       </td>
@@ -326,14 +326,14 @@ PAGE_TEMPLATES['LISTING'] = MakeHtmlGroup(
         {contents|html}
         </pre>
       </td>
-    <tr/>
+    </tr>
   {.end}
 
   </table>
 {.end}
 
 {.if test top_level_links}
-<a href="version-info.txt">Date and OSH version<a>
+<a href="version-info.txt">Date and OSH version</a>
 {.end}
 
 <!-- page globals -->

@@ -7,7 +7,7 @@ from __future__ import print_function
 import os
 
 from mycpp import mylib
-from mycpp.mylib import log, iteritems
+from mycpp.mylib import log, iteritems, NewDict
 
 from typing import Dict
 
@@ -24,7 +24,7 @@ def TestListComp():
     log("y[0] = %d", y[0])
     log("y[-1] = %d", y[-1])
 
-    log('--- list comprehension changing type')
+    log('--- list comprehension over strings')
 
     z = ['[%d]' % i for i in x[1:-1]]
 
@@ -40,10 +40,7 @@ def TestListComp():
     log("z[0] = %s", z[0])
     log("z[-1] = %s", z[-1])
 
-    pairs = [('one', 1), ('two', 2)]
-    first = [s for s, _ in pairs]
-    for s2 in first:
-        log('first = %s', s2)
+    log('-- list comprehension filtering')
 
     parts = ['a', None, 'b']
     tmp = [s for s in parts if s is not None]
@@ -51,6 +48,57 @@ def TestListComp():
 
     tmp2 = [s for s in tmp if s.startswith('-')]
     print(''.join(tmp2))
+
+
+def TestListCompParity():
+    # type: () -> None
+    """
+    Does it have all the same features as 'for' loops?
+
+    - Integers
+      - xrange()
+    - Any type
+      - enumerate()
+
+    - List
+      - unpacking of tuples
+    - Dict
+      - iterate directly over dict
+      - iteritem()
+    """
+    log('-- list comp xrange')
+    # BUG: it only works iterating over an List[T]
+    #numbers = [i+1 for i in xrange(3, 5)]
+    #PrintListStr(numbers)
+
+    log('-- list comp enumerate')
+    mylist = [3, 4, 5]
+    # BUG: crashes on tuple expression
+    # enum = [i+item for i, item in enumerate(mylist)]
+
+    log('-- list comp tuple unpacking')
+
+    pairs = [('one', 1), ('two', 2)]
+
+    # Note: listcomp_iter_var is at TOP level, but it could be SCOPED.  It is
+    # also rooted at the top level.
+    first = [listcomp_iter_var for listcomp_iter_var, _ in pairs]
+
+    for s2 in first:
+        log('first = %s', s2)
+
+    log('-- list comp dict')
+    d = NewDict()  # type: Dict[str, str]
+    d['k'] = 'v'
+    d['k2'] = 'v2'
+
+    # BUG: generates TODO_DICT
+    #keys = [k for k in d]
+
+    log('-- list comp iteritems')
+
+    # BUG: generates TODO_DICT
+    #values = [v for k, v in iteritems(d)]
 
 
 def TestDict():
@@ -74,12 +122,9 @@ def TestDict():
 
 CATS = ['big', 'small', 'hairless']
 
-#EMPTY_DICT = {}  # type: Dict[int, int]
 
-
-def run_tests():
+def TestForLoop():
     # type: () -> None
-
     log('--- iterate over bytes in string')
     for ch in 'abc':
         log('ch = %s', ch)
@@ -88,14 +133,14 @@ def run_tests():
     for item in ['xx', 'yy']:
         log('item = %s', item)
 
-    # TODO: iterate over items in dict
-    # DictIter gives pairs?  Just do .Key() and .Value()?  Hm that makes sense.
-
     log('--- tuple unpacking')
 
+    # Note: tuple_iter_1 and tuple_iter_2 are also top-level locals, and are
+    # rooted at the top level.
+    # They could be SCOPED.
     list_of_tuples = [(5, 'five'), (6, 'six')]
-    for i, item in list_of_tuples:
-        log("- [%d] %s", i, item)
+    for tuple_iter_1, tuple_iter_2 in list_of_tuples:
+        log("- [%d] %s", tuple_iter_1, tuple_iter_2)
 
     log('--- one arg xrange()')
 
@@ -144,7 +189,14 @@ def run_tests():
     for i, item in reversed(list_of_tuples):
         log("- [%d] %s", i, item)
 
+
+def run_tests():
+    # type: () -> None
+
+    TestForLoop()
+
     TestListComp()
+    TestListCompParity()
 
     TestDict()
 

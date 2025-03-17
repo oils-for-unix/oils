@@ -9,15 +9,15 @@ examples.classes.BenchmarkSimpleNode	3	$LocalVariable(examples.classes.Benchmark
 examples.classes.BenchmarkSimpleNode	5	$LocalVariable(examples.classes.BenchmarkSimpleNode, node)	$HeapObject(h14)
 examples.classes.BenchmarkSimpleNode	6	$LocalVariable(examples.classes.BenchmarkSimpleNode, next_)	$Ref($LocalVariable(examples.classes.BenchmarkSimpleNode, node))
 examples.classes.BenchmarkVirtualNodes	0	$LocalVariable(examples.classes.BenchmarkVirtualNodes, n)	$Empty
-examples.classes.BenchmarkVirtualNodes	3	$LocalVariable(examples.classes.BenchmarkVirtualNodes, next_)	$HeapObject(h16)
-examples.classes.BenchmarkVirtualNodes	5	$LocalVariable(examples.classes.BenchmarkVirtualNodes, node1)	$HeapObject(h17)
-examples.classes.BenchmarkVirtualNodes	6	$LocalVariable(examples.classes.BenchmarkVirtualNodes, s1)	$HeapObject(h18)
-examples.classes.BenchmarkVirtualNodes	7	$LocalVariable(examples.classes.BenchmarkVirtualNodes, s2)	$HeapObject(h19)
-examples.classes.BenchmarkVirtualNodes	8	$LocalVariable(examples.classes.BenchmarkVirtualNodes, node2)	$HeapObject(h20)
-examples.classes.BenchmarkVirtualNodes	9	$LocalVariable(examples.classes.BenchmarkVirtualNodes, node3)	$HeapObject(h21)
-examples.classes.BenchmarkVirtualNodes	10	$LocalVariable(examples.classes.BenchmarkVirtualNodes, next_)	$Ref($LocalVariable(examples.classes.BenchmarkVirtualNodes, node3))
-examples.classes.BenchmarkVirtualNodes	11	$LocalVariable(examples.classes.BenchmarkVirtualNodes, current)	$HeapObject(h22)
-examples.classes.BenchmarkVirtualNodes	12	$LocalVariable(examples.classes.BenchmarkVirtualNodes, current)	$Ref($LocalVariable(examples.classes.BenchmarkVirtualNodes, node3))
+examples.classes.BenchmarkVirtualNodes	4	$LocalVariable(examples.classes.BenchmarkVirtualNodes, next_)	$HeapObject(h16)
+examples.classes.BenchmarkVirtualNodes	6	$LocalVariable(examples.classes.BenchmarkVirtualNodes, node1)	$HeapObject(h17)
+examples.classes.BenchmarkVirtualNodes	7	$LocalVariable(examples.classes.BenchmarkVirtualNodes, s1)	$HeapObject(h18)
+examples.classes.BenchmarkVirtualNodes	8	$LocalVariable(examples.classes.BenchmarkVirtualNodes, s2)	$HeapObject(h19)
+examples.classes.BenchmarkVirtualNodes	9	$LocalVariable(examples.classes.BenchmarkVirtualNodes, node2)	$HeapObject(h20)
+examples.classes.BenchmarkVirtualNodes	10	$LocalVariable(examples.classes.BenchmarkVirtualNodes, node3)	$HeapObject(h21)
+examples.classes.BenchmarkVirtualNodes	11	$LocalVariable(examples.classes.BenchmarkVirtualNodes, next_)	$Ref($LocalVariable(examples.classes.BenchmarkVirtualNodes, node3))
+examples.classes.BenchmarkVirtualNodes	12	$LocalVariable(examples.classes.BenchmarkVirtualNodes, current)	$HeapObject(h22)
+examples.classes.BenchmarkVirtualNodes	13	$LocalVariable(examples.classes.BenchmarkVirtualNodes, current)	$Ref($LocalVariable(examples.classes.BenchmarkVirtualNodes, node3))
 examples.classes.BenchmarkWriter	0	$LocalVariable(examples.classes.BenchmarkWriter, n)	$Empty
 examples.classes.BenchmarkWriter	3	$LocalVariable(examples.classes.BenchmarkWriter, f)	$HeapObject(h9)
 examples.classes.BenchmarkWriter	4	$LocalVariable(examples.classes.BenchmarkWriter, out)	$HeapObject(h10)
@@ -64,5 +64,5 @@ examples.classes.TextOutput.MutateFields	2	$ObjectMember(self, i)	$HeapObject(h3
 examples.classes.TextOutput.PrintFields	0	$LocalVariable(examples.classes.TextOutput.PrintFields, self)	$Empty
 examples.classes.TextOutput.__init__	0	$LocalVariable(examples.classes.TextOutput.__init__, self)	$Empty
 examples.classes.TextOutput.__init__	0	$LocalVariable(examples.classes.TextOutput.__init__, f)	$Empty
-examples.classes.TextOutput.__init__	3	$ObjectMember(self, i)	$HeapObject(h1)
+examples.classes.TextOutput.__init__	4	$ObjectMember(self, i)	$HeapObject(h1)
 examples.classes.f	0	$LocalVariable(examples.classes.f, obj)	$Empty

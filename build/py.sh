@@ -139,8 +139,10 @@ py-codegen() {
   # depends on syntax.asdl
   gen-asdl-py 'core/runtime.asdl'
   gen-asdl-py 'core/value.asdl'
+  gen-asdl-py 'data_lang/htm8.asdl'
   gen-asdl-py 'data_lang/nil8.asdl'
   gen-asdl-py 'display/pretty.asdl'
+  gen-asdl-py 'mycpp/mycpp.asdl'
 
   gen-asdl-py 'tools/find/find.asdl'
 
@@ -363,7 +365,16 @@ py-extensions() {
   fastfunc
 }
 
+configure-for-dev() {
+  # _OIL_DEV does two things:
+  #   -D GC_TIMING
+  #   Skip expensive "OVM" tarball stuff
+  _OIL_DEV=1 ./configure
+}
+
 minimal() {
+  configure-for-dev
+
   build/stamp.sh write-git-commit
 
   py-source
@@ -409,6 +420,8 @@ time-helper() {
 }
 
 all() {
+  configure-for-dev
+
   rm -f *.so  # 12/2019: to clear old symlinks, maybe get rid of
 
   build/stamp.sh write-git-commit
@@ -433,6 +446,14 @@ gitpod-minimal() {
   bin/osh -c 'echo hi'
 }
 
-if test $(basename $0) = 'py.sh'; then
+show-cpython-patches() {
+  # 2025-01: The patches for the "OVM" build
+  #
+  # After getting rid of build/oil-defs, this is significant, but maintainable.
+  git diff 1d2b97384e14d65b1241f67fd995277f5508db28..HEAD Python-2.7.13/
+}
+
+name=$(basename $0)
+if test "$name" = 'py.sh'; then
   task-five "$@"
 fi

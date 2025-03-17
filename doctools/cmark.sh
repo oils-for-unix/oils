@@ -33,6 +33,9 @@ readonly URL="https://github.com/commonmark/cmark/archive/$CMARK_VERSION.tar.gz"
 #
 # It's only used in the blog, so let's just put it in the oilshell.org repo,
 # not the oil repo
+#
+# 12/2024: I want a Markdown highlighter for doc/ul-table.md.  It will look
+# nicer.
 
 download-old-pygments() {
   wget --directory _tmp --no-clobber \
@@ -43,16 +46,20 @@ demo-theirs() {
   echo '*hi*' | cmark
 }
 
+cmark-py() {
+  PYTHONPATH='.:vendor' doctools/cmark.py "$@"
+}
+
 demo-ours() {
   export PYTHONPATH=.
 
-  echo '*hi*' | doctools/cmark.py
+  echo '*hi*' | cmark-py
 
   # This translates to <code class="language-sh"> which is cool.
   #
   # We could do syntax highlighting in JavaScript, or simply post-process HTML
 
-  doctools/cmark.py <<'EOF'
+  cmark-py <<'EOF'
 ```sh
 code
 block
@@ -72,7 +79,7 @@ EOF
   # $oil-source-file
   # $oil-commit
 
-  doctools/cmark.py <<'EOF'
+  cmark-py <<'EOF'
 [click here]($xref:re2c)
 EOF
 
@@ -80,7 +87,7 @@ EOF
   # to text, we would have to indent and insert blank lines?  I guess we can
   # parse <p> and wrap it.
 
-  doctools/cmark.py <<'EOF'
+  cmark-py <<'EOF'
 Test spacing out:
 
     echo one
@@ -88,7 +95,88 @@ Test spacing out:
 
 Another paragraph with `code`.
 EOF
+}
 
+demo-quirks() {
+  ### Cases that came from writing ul-table
+
+  export PYTHONPATH=.
+
+  cmark-py --common-mark <<'EOF'
+1. what `<table>`
+EOF
+
+  # Very annoying: list items can't be empty
+  # <span />
+  cmark-py --common-mark <<'EOF'
+<table>
+
+- thead
+  - <!-- list item can't be empty -->
+  - Proc
+  - Func
+
+</table>
+EOF
+
+  cmark-py --common-mark <<'EOF'
+- <tr-attrs class=foo /> text required here
+  - one
+  - two
+EOF
+
+cmark-py --common-mark <<'EOF'
+- tr <tr-attrs class=foo />
+  - one
+  - two
+EOF
+
+  # Weird case - the `proc` is sometimes not expanded to <code>proc</code>
+  cmark-py --common-mark <<'EOF'
+- <span /> ... More `proc` features
+- <span />
+  More `proc` features 
+- <span /> <!-- why does this fix it? -->
+  More `proc` features 
+EOF
+
+  # This has &amp; in an attr value, which our HTML lexer needs to handle
+  cmark-py --common-mark <<'EOF'
+from [ampersand][]
+
+[ampersand]: http://google.com/?q=foo&z=z
+EOF
+
+  # Only &nbsp; is standard
+  cmark-py --common-mark <<'EOF'
+- tr
+  - &nbsp; -
+  - &sp; -
+  - &zwsp; -
+EOF
+
+  # BUG: parse error because backticks span a line
+
+  return
+  cmark-py <<'EOF'
+1. The Markdown translator produces a `<table> <ul> <li> ... </li> </ul>
+   </table>` structure.
+EOF
+}
+
+demo-htm8() {
+  ### Cases that came from developing HTM8
+
+  export PYTHONPATH=.
+
+  cmark-py --common-mark <<'EOF'
+[bash]($xref:bash)
+
+[other][]
+
+[other]: $xref
+
+EOF
 }
 
 "$@"

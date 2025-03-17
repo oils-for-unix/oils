@@ -123,7 +123,10 @@ void _CreateActions(Action_c* in, Dict<BigStr*, args::_Action*>* out) {
       }
       action = a;
     } break;
-    }
+    case ActionType_c::AppendEvalFlag:
+      action = Alloc<args::AppendEvalFlag>(StrFromC(p->name));
+      break;
+    }  // switch
 
     if (action) {
       out->set(StrFromC(p->key), action);

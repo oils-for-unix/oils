@@ -11,7 +11,7 @@ from _devbuild.gen.syntax_asdl import (
     SingleQuoted,
     BracedVarSub,
     CommandSub,
-    ShArrayLiteral,
+    YshArrayLiteral,
     command,
     expr,
     expr_e,
@@ -324,7 +324,11 @@ class Transformer(object):
 
         n = p_node.NumChildren()
         if n > 1 and p_node.GetChild(1).typ == grammar_nt.comp_for:
-            elt = self.Expr(p_node.GetChild(0))
+            child0 = p_node.GetChild(0)
+            if child0.typ == grammar_nt.splat_expr:
+                p_die('Splat not currently supported', child0.tok)
+            elt = self.Expr(child0)
+
             comp = self._CompFor(p_node.GetChild(1))
             if id0 == Id.Op_LParen:  # (x+1 for x in y)
                 return expr.GeneratorExp(elt, [comp])
@@ -346,7 +350,10 @@ class Transformer(object):
         if id0 == Id.Op_LBracket:  # List [1,2,3]
             elts = []  # type: List[expr_t]
             for i in xrange(0, n, 2):  # skip commas
-                elts.append(self.Expr(p_node.GetChild(i)))
+                child = p_node.GetChild(i)
+                if child.typ == grammar_nt.splat_expr:
+                    p_die('Splat not currently supported', child.tok)
+                elts.append(self.Expr(child))
 
             return expr.List(parent.tok, elts,
                              expr_context_e.Store)  # unused expr_context_e
@@ -682,10 +689,10 @@ class Transformer(object):
         #
 
         elif typ == grammar_nt.sh_array_literal:
-            return cast(ShArrayLiteral, pnode.GetChild(1).tok)
+            return cast(YshArrayLiteral, pnode.GetChild(1).tok)
 
         elif typ == grammar_nt.old_sh_array_literal:
-            return cast(ShArrayLiteral, pnode.GetChild(1).tok)
+            return cast(YshArrayLiteral, pnode.GetChild(1).tok)
 
         elif typ == grammar_nt.sh_command_sub:
             return cast(CommandSub, pnode.GetChild(1).tok)

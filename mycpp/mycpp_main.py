@@ -1,30 +1,32 @@
 #!/usr/bin/env python3
+from __future__ import print_function
 """
 mycpp_main.py - Translate a subset of Python to C++, using MyPy's typed AST.
 """
-from __future__ import print_function
 
 import optparse
 import os
 import sys
-import tempfile
+import time
 
-from typing import List, Optional, Tuple
+START_TIME = time.time()  # measure before imports
 
+# MyPy deps
 from mypy.build import build as mypy_build
-from mypy.build import BuildSource
 from mypy.main import process_options
 
-from mycpp import ir_pass
-from mycpp import const_pass
-from mycpp import cppgen_pass
-from mycpp import debug_pass
-from mycpp import control_flow_pass
-from mycpp import pass_state
 from mycpp.util import log
+from mycpp import translate
+
+from typing import (List, Optional, Tuple, Any, Iterator, TYPE_CHECKING)
+
+if TYPE_CHECKING:
+    from mypy.nodes import MypyFile
+    from mypy.modulefinder import BuildSource
+    from mypy.build import BuildResult
 
 
-def Options():
+def Options() -> optparse.OptionParser:
     """Returns an option parser instance."""
 
     p = optparse.OptionParser()
@@ -69,8 +71,8 @@ def Options():
 
 # Copied from mypyc/build.py
 def get_mypy_config(
-        paths: List[str], mypy_options: Optional[List[str]]
-) -> Tuple[List[BuildSource], Options]:
+        paths: List[str],
+        mypy_options: Optional[List[str]]) -> Tuple[List['BuildSource'], Any]:
     """Construct mypy BuildSources and Options from file and options lists"""
     # It is kind of silly to do this but oh well
     mypy_options = mypy_options or []
@@ -104,7 +106,8 @@ _FIRST = ('asdl.runtime', 'core.vm')
 _LAST = ('builtin.bracket_osh', 'builtin.completion_osh', 'core.shell')
 
 
-def ModulesToCompile(result, mod_names):
+def ModulesToCompile(result: 'BuildResult',
+                     mod_names: List[str]) -> Iterator[Tuple[str, 'MypyFile']]:
     # HACK TO PUT asdl/runtime FIRST.
     #
     # Another fix is to hoist those to the declaration phase?  Not sure if that
@@ -135,8 +138,31 @@ def ModulesToCompile(result, mod_names):
             yield name, module
 
 
-def main(argv):
-    # TODO: Put these in the shell script
+def _DedupeHack(
+        to_compile: List[Tuple[str,
+                               'MypyFile']]) -> List[Tuple[str, 'MypyFile']]:
+    # Filtering step
+    filtered = []
+    seen = set()
+    for name, module in to_compile:
+        # HACK: Why do I get oil.asdl.tdop in addition to asdl.tdop?
+        if name.startswith('oil.'):
+            name = name[4:]
+
+        # ditto with testpkg.module1
+        if name.startswith('mycpp.'):
+            name = name[6:]
+
+        if name not in seen:  # remove dupe
+            filtered.append((name, module))
+            seen.add(name)
+    return filtered
+
+
+def main(argv: List[str]) -> int:
+    timer = translate.Timer(START_TIME)
+
+    # Hack:
     mypy_options = [
         '--py2',
         '--strict',
@@ -149,10 +175,10 @@ def main(argv):
 
     o = Options()
     opts, argv = o.parse_args(argv)
-
     paths = argv[1:]  # e.g. asdl/typed_arith_parse.py
 
-    log('\tmycpp: LOADING %s', ' '.join(paths))
+    timer.Section('mycpp: LOADING %s', ' '.join(paths))
+
     #log('\tmycpp: MYPYPATH = %r', os.getenv('MYPYPATH'))
 
     if 0:
@@ -166,10 +192,6 @@ def main(argv):
 
     # Ditto
     to_header = opts.to_header
-    #if to_header:
-    if 0:
-        to_header = [os.path.basename(p) for p in to_header]
-        to_header = [os.path.splitext(name)[0] for name in to_header]
 
     #log('to_header %s', to_header)
 
@@ -180,11 +202,10 @@ def main(argv):
         log('')
     #log('options %s', options)
 
-    #result = emitmodule.parse_and_typecheck(sources, options)
-    import time
-    start_time = time.time()
+    #
+    # Type checking, which builds a Dict[Expression, Type] (12+ seconds)
+    #
     result = mypy_build(sources=sources, options=options)
-    #log('elapsed 1: %f', time.time() - start_time)
 
     if result.errors:
         log('')
@@ -195,223 +216,41 @@ def main(argv):
         log('')
         return 1
 
-    # Important functions in mypyc/build.py:
-    #
-    # generate_c (251 lines)
-    #   parse_and_typecheck
-    #   compile_modules_to_c
-
-    # mypyc/emitmodule.py (487 lines)
-    # def compile_modules_to_c(result: BuildResult, module_names: List[str],
-    # class ModuleGenerator:
-    #   # This generates a whole bunch of textual code!
-
-    # literals, modules, errors = genops.build_ir(file_nodes, result.graph,
-    # result.types)
-
-    # TODO: Debug what comes out of here.
-    #build.dump_graph(result.graph)
-    #return
-
     # no-op
     if 0:
         for name in result.graph:
             log('result %s %s', name, result.graph[name])
         log('')
 
-    # GLOBAL Constant pass over all modules.  We want to collect duplicate
-    # strings together.  And have globally unique IDs str0, str1, ... strN.
-    const_lookup = {}  # Dict {StrExpr node => string name}
-    const_code = []
-    pass1 = const_pass.Collect(result.types, const_lookup, const_code)
-
     to_compile = list(ModulesToCompile(result, mod_names))
+    to_compile = _DedupeHack(to_compile)
 
-    # HACK: Why do I get oil.asdl.tdop in addition to asdl.tdop?
-    #names = set(name for name, _ in to_compile)
-
-    filtered = []
-    seen = set()
-    for name, module in to_compile:
-        if name.startswith('oil.'):
-            name = name[4:]
-
-        # ditto with testpkg.module1
-        if name.startswith('mycpp.'):
-            name = name[6:]
-
-        if name not in seen:  # remove dupe
-            filtered.append((name, module))
-            seen.add(name)
-
-    to_compile = filtered
-
-    #import pickle
     if 0:
         for name, module in to_compile:
             log('to_compile %s', name)
         log('')
-
+        #import pickle
         # can't pickle but now I see deserialize() nodes and stuff
         #s = pickle.dumps(module)
         #log('%d pickle', len(s))
-
-    # Print the tree for debugging
-    if 0:
-        for name, module in to_compile:
-            builder = debug_pass.Print(result.types)
-            builder.visit_mypy_file(module)
-        return
 
     if opts.cc_out:
         f = open(opts.cc_out, 'w')
     else:
         f = sys.stdout
 
-    f.write("""\
-// BEGIN mycpp output
-
-#include "mycpp/runtime.h"
-
-""")
-
-    # Convert the mypy AST into our own IR.
-    dot_exprs = {}  # module name -> {expr node -> access type}
-    log('\tmycpp pass: IR')
-    for _, module in to_compile:
-        p = ir_pass.Build(result.types)
-        p.visit_mypy_file(module)
-        dot_exprs[module.path] = p.dot_exprs
-
-    # Collect constants and then emit code.
-    log('\tmycpp pass: CONST')
-    for name, module in to_compile:
-        pass1.visit_mypy_file(module)
-
-    # Instead of top-level code, should we generate a function and call it from
-    # main?
-    for line in const_code:
-        f.write('%s\n' % line)
-    f.write('\n')
-
-    # Note: doesn't take into account module names!
-    virtual = pass_state.Virtual()
-
+    header_f = None
     if opts.header_out:
         header_f = open(opts.header_out, 'w')  # Not closed
 
-    log('\tmycpp pass: FORWARD DECL')
-
-    # Forward declarations first.
-    # class Foo; class Bar;
-    for name, module in to_compile:
-        #log('forward decl name %s', name)
-        if name in to_header:
-            out_f = header_f
-        else:
-            out_f = f
-        p2 = cppgen_pass.Generate(result.types,
-                                  const_lookup,
-                                  out_f,
-                                  virtual=virtual,
-                                  forward_decl=True,
-                                  dot_exprs=dot_exprs[module.path])
-
-        p2.visit_mypy_file(module)
-        MaybeExitWithErrors(p2)
-
-    # After seeing class and method names in the first pass, figure out which
-    # ones are virtual.  We use this info in the second pass.
-    virtual.Calculate()
-    if 0:
-        log('virtuals %s', virtual.virtuals)
-        log('has_vtable %s', virtual.has_vtable)
-
-    local_vars = {}  # FuncDef node -> (name, c_type) list
-    ctx_member_vars = {
-    }  # Dict[ClassDef node for ctx_Foo, Dict[member_name: str, Type]]
-
-    log('\tmycpp pass: PROTOTYPES')
-
-    # First generate ALL C++ declarations / "headers".
-    # class Foo { void method(); }; class Bar { void method(); };
-    for name, module in to_compile:
-        #log('decl name %s', name)
-        if name in to_header:
-            out_f = header_f
-        else:
-            out_f = f
-        p3 = cppgen_pass.Generate(result.types,
-                                  const_lookup,
-                                  out_f,
-                                  local_vars=local_vars,
-                                  ctx_member_vars=ctx_member_vars,
-                                  virtual=virtual,
-                                  decl=True,
-                                  dot_exprs=dot_exprs[module.path])
-
-        p3.visit_mypy_file(module)
-        MaybeExitWithErrors(p3)
-
-    if 0:
-        log('\tctx_member_vars')
-        from pprint import pformat
-        print(pformat(ctx_member_vars), file=sys.stderr)
-
-    log('\tmycpp pass: CONTROL FLOW')
-
-    cfgs = {}  # fully qualified function name -> control flow graph
-    for name, module in to_compile:
-        cfg_pass = control_flow_pass.Build(result.types, virtual, local_vars,
-                                           dot_exprs[module.path])
-        cfg_pass.visit_mypy_file(module)
-        cfgs.update(cfg_pass.cfgs)
-
-    log('\tmycpp pass: DATAFLOW')
-    stack_roots = None
-    if opts.minimize_stack_roots:
-        # souffle_dir contains two subdirectories.
-        #   facts: TSV files for the souffle inputs generated by mycpp
-        #   outputs: TSV files for the solver's output relations
-        souffle_dir = os.getenv('MYCPP_SOUFFLE_DIR', None)
-        if souffle_dir is None:
-            tmp_dir = tempfile.TemporaryDirectory()
-            souffle_dir = tmp_dir.name
-        stack_roots = pass_state.ComputeMinimalStackRoots(
-            cfgs, souffle_dir=souffle_dir)
-    else:
-        pass_state.DumpControlFlowGraphs(cfgs)
-
-    log('\tmycpp pass: IMPL')
-
-    # Now the definitions / implementations.
-    # void Foo:method() { ... }
-    # void Bar:method() { ... }
-    for name, module in to_compile:
-        p4 = cppgen_pass.Generate(result.types,
-                                  const_lookup,
-                                  f,
-                                  local_vars=local_vars,
-                                  ctx_member_vars=ctx_member_vars,
-                                  stack_roots_warn=opts.stack_roots_warn,
-                                  dot_exprs=dot_exprs[module.path],
-                                  stack_roots=stack_roots)
-        p4.visit_mypy_file(module)
-        MaybeExitWithErrors(p4)
-
-    return 0  # success
-
-
-def MaybeExitWithErrors(p):
-    # Check for errors we collected
-    num_errors = len(p.errors_keep_going)
-    if num_errors != 0:
-        log('')
-        log('%s: %d translation errors (after type checking)', sys.argv[0],
-            num_errors)
-
-        # A little hack to tell the test-invalid-examples harness how many errors we had
-        sys.exit(min(num_errors, 255))
+    return translate.Run(timer,
+                         f,
+                         header_f,
+                         result.types,
+                         to_header,
+                         to_compile,
+                         stack_roots_warn=opts.stack_roots_warn,
+                         minimize_stack_roots=opts.minimize_stack_roots)
 
 
 if __name__ == '__main__':

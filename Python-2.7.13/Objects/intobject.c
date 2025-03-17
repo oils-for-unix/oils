@@ -1312,9 +1312,6 @@ int_is_finite(PyObject *v)
 }
 #endif
 
-#ifdef OVM_MAIN
-#include "Python-2.7.13/Objects/intobject.c/int_methods.def"
-#else
 static PyMethodDef int_methods[] = {
     {"conjugate",       (PyCFunction)int_int,   METH_NOARGS,
      "Returns self, the complex conjugate of any int."},
@@ -1332,7 +1329,6 @@ static PyMethodDef int_methods[] = {
 #endif
     {NULL,              NULL}           /* sentinel */
 };
-#endif
 
 static PyGetSetDef int_getset[] = {
     {"real",

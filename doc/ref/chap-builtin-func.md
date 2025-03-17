@@ -301,7 +301,13 @@ Add indentation by passing the `space` param:
     $ = toJson([42], space=2)
     (Str)   "[\n  42\n]"
 
-Similar to `json write (x)`, except the default value of `space` is 0.
+Turn non-serializable types into `null`, instead of raising an error:
+
+    $ = toJson(/d+/, type_errors=false)
+    (Str)   'null'
+
+The `toJson()` function is to `json write (x)`, except the default value of
+`space` is 0.
 
 See [err-json-encode][] for errors.
 
@@ -367,6 +373,31 @@ Like `Match => end()`, but accesses the global match created by `~`:
       echo $[_end(0)]  # => 5
     }
 
+## Reflection
+
+### func/eval()
+
+This function is like [`io->eval()`][io/eval], but it disallows I/O.
+
+Example:
+
+    var cmd = ^(const x = 42)
+    var d = eval(cmd, to_dict=true)  # {x: 42}
+
+[io/eval]: chap-type-method.html#io/eval
+
+### func/evalExpr()
+
+This function is like [`io->evalExpr()`][io/evalExpr], but it disallows I/O.
+
+Example:
+
+    var x = 42
+    var expr = ^[x + 1]
+    var val = evalExpr(expr)  # 43
+
+[io/evalExpr]: chap-type-method.html#io/evalExpr
+
 ## Introspect
 
 ### `shvarGet()`
@@ -427,6 +458,16 @@ This is like
 
 except the name can is a string, which can be constructed at runtime.
 
+---
+
+You can also bind globals:
+
+    call setVar('myname', 42, global=true)
+
+which is like
+
+    setglobal myname = 42
+
 ### `parseCommand()`
 
 Given a code string, parse it as a command (with the current parse options).
@@ -440,6 +481,10 @@ TODO:
 Given a code string, parse it as an expression.
 
 Returns a `value.Expr` instance, or raises an error.
+
+### `bindFrame()`
+
+TODO
 
 ## Hay Config
 

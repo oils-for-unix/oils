@@ -52,14 +52,15 @@ module runtime
 
     # "$@" or "${a[@]}" # never globbed or split (though other shells
     # split them)
-  | Array(List[str] strs)
+  | Array(List[str] strs, bool quoted)
     # only produced when EXTGLOB_FS flag is passed
   | ExtGlob(List[part_value] part_vals)
 
   coerced = Int | Float | Neither
 
-  # evaluation state for BracedVarSub 
-  VarSubState = (bool join_array, bool is_type_query, bool has_test_op)
+  # evaluation state for BracedVarSub.  See "doc/ref/chap-word-lang.md" for
+  # the description of h-value of a variable substitution.
+  VarSubState = (bool join_array, value h_value, Token array_ref)
 
   # A Cell is a wrapper for a value.
   # TODO: add location for declaration for 'assigning const' error
@@ -162,6 +163,9 @@ module runtime
   # - Pipelines go Running to Done.  They are never stopped; only the processes
   #   inside them are stopped.
   job_state = Running | Done | Stopped
+
+  # core/bash_impl.py
+  error_code = OK | IndexOutOfRange
 
   # Flag arguments can be any of these types.
   flag_type = Bool | Int | Float | Str

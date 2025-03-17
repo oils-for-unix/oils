@@ -134,12 +134,16 @@ And utilities to read and write JSON:
 
     echo '["str", 42]' | json read  # sets '_reply' variable by default
 
+### Tip: Use the `=` operator interactively
+
 The `=` keyword evaluates and prints an expression:
 
     = _reply
     # => (List)   ["str", 42]
 
 (Think of it like `var x = _reply`, without the `var`.)
+
+The **best way** to learn YSH is to type these examples and see what happens!
 
 ## Word Language: Expressions for Strings (and Arrays)
 
@@ -368,20 +372,32 @@ Here are the most common idioms for using `stderr` (identical to shell):
 
 ### ARGV and ENV
 
-The `ARGV` list holds the arguments passed to the shell:
+At the top level, the `ARGV` list holds the arguments passed to the shell:
 
     var num_args = len(ARGV)
     ls /tmp @ARGV            # pass shell's arguments through
+
+Inside a `proc` without declared parameters, `ARGV` holds the arguments passed
+to the `proc`.  (Procs are explained below.)
 
 ---
 
 You can add to the environment of a new process with a *prefix binding*:
 
-    PYTHONPATH=vendor ./demo.py
+    PYTHONPATH=vendor ./demo.py  # os.environ will have {'PYTHONPATH': 'vendor'}
 
-The `ENV` object reflects the current environment:
+Under the hood, the prefix binding temporarily augments the `ENV` object, which
+is the current environment.
 
-    echo $[ENV.PYTHONPATH]   # => vendor
+You can also mutate the `ENV` object:
+
+    setglobal ENV.PYTHONPATH = '.'
+    ./demo.py  # all future invocations have a different PYTHONPATH
+    ./demo.py
+
+And get its attributes:
+
+    echo $[ENV.PYTHONPATH]  # => .
 
 ### Pipelines
 
@@ -460,7 +476,7 @@ Shell-style for loops iterate over **words**:
     # peanut
     # coconut
 
-You can also request the loop index:
+You can ask for the loop index with `i,`:
 
     for i, word in README.md *.py {
       echo "$i - $word"
@@ -472,7 +488,7 @@ You can also request the loop index:
 #### Typed Data
 
 To iterate over a typed data, use parentheses around an **expression**.  The
-expression should evaluate to an integer `Range`, `List`, `Dict`, or `Stdin`.
+expression should evaluate to an integer `Range`, `List`, `Dict`, or `io.stdin`.
 
 Range:
 
@@ -497,20 +513,32 @@ Again, you can request the index with `for i, item in ...`.
 
 ---
 
-Here's the most general form of the loop over `Dict`:
+There are **three** ways of iterating over a `Dict`:
 
     var mydict = {pea: 42, nut: 10}
-    for i, k, v in (mydict) {
-      echo "$i - $k - $v"
+    for key in (mydict) {
+      echo $key
+    }
+    # =>
+    # pea
+    # nut
+
+    for key, value in (mydict) {
+      echo "$key $value"
+    }
+    # =>
+    # pea - 42
+    # nut - 10
+
+    for i, key, value in (mydict) {
+      echo "$i $key $value"
     }
     # =>
     # 0 - pea - 42
     # 1 - nut - 10
 
-There are two simpler forms:
-
-- One variable gives you the key: `for k in (mydict)`
-- Two variables gives you the key and value: `for k, v in (mydict)`
+That is, if you ask for two things, you'll get the key and value.  If you ask
+for three, you'll also get the index.
 
 (One way to think of it: `for` loops in YSH have the functionality Python's
 `enumerate()`, `items()`, `keys()`, and `values()`.)
@@ -648,16 +676,22 @@ The other 3 control flow keywords behave like they do in Python and JavaScript.
 You can define units of code with the `proc` keyword.  A `proc` is like a
 *procedure* or *process*.
 
+    proc my-ls {
+      ls -a -l @ARGV  # pass args through
+    }
+
+Simple procs like this are invoked like a shell command:
+
+    my-ls /dev/null /etc/passwd
+
+You can name the parameters, and add a doc comment with  `###`:
+
     proc mycopy (src, dest) {
       ### Copy verbosely
 
       mkdir -p $dest
       cp --verbose $src $dest
     }
-
-The `###` line is a "doc comment".  Simple procs like this are invoked like a
-shell command:
-
     touch log.txt
     mycopy log.txt /tmp   # first word 'mycopy' is a proc
 

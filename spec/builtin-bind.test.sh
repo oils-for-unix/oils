@@ -1,5 +1,5 @@
 ## oils_failures_allowed: 0
-## oils_cpp_failures_allowed: 3
+## oils_cpp_failures_allowed: 4
 ## compare_shells: bash
 
 # NB: This is only for NON-interactive tests of bind. 
@@ -78,4 +78,24 @@ vi-subst is not bound to any keys.
 status=1
 yank can be invoked via "\C-y".
 status=0
+## END
+
+
+#### bind -r 
+bind -q yank | grep -oF '\C-o\C-s\C-h'
+echo status=$?
+
+bind '"\C-o\C-s\C-h": yank'
+bind -q yank | grep -oF '\C-o\C-s\C-h'
+echo status=$?
+
+bind -r "\C-o\C-s\C-h"
+bind -q yank | grep -oF '\C-o\C-s\C-h'
+echo status=$?
+
+## STDOUT:
+status=1
+\C-o\C-s\C-h
+status=0
+status=1
 ## END

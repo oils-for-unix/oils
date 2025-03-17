@@ -83,13 +83,10 @@ pp test_ ({k: pat})
 (Dict)   {"k":<Eggex>}
 ## END
 
-#### SparseArray, new representation for bash array
+#### BashArray, new representation for bash array
 declare -a empty=()
 declare -a array_1=(hello)
 array_1[5]=5
-
-var empty = _a2sp(empty)
-var array_1 = _a2sp(array_1)
 
 pp value (empty)
 pp value (array_1)
@@ -107,17 +104,17 @@ pp test_ ({k: empty})
 pp test_ ({k: array_1})
 
 ## STDOUT:
-(SparseArray)
-(SparseArray [0]='hello' [5]='5')
+(BashArray)
+(BashArray [0]='hello' [5]='5')
 
-(Dict)  {k: (SparseArray)}
-(Dict)  {k: (SparseArray [0]='hello' [5]='5')}
+(Dict)  {k: (BashArray)}
+(Dict)  {k: (BashArray [0]='hello' [5]='5')}
 
-{"type":"SparseArray","data":{}}
-{"type":"SparseArray","data":{"0":"hello","5":"5"}}
+{"type":"BashArray","data":{}}
+{"type":"BashArray","data":{"0":"hello","5":"5"}}
 
-(Dict)   {"k":{"type":"SparseArray","data":{}}}
-(Dict)   {"k":{"type":"SparseArray","data":{"0":"hello","5":"5"}}}
+(Dict)   {"k":{"type":"BashArray","data":{}}}
+(Dict)   {"k":{"type":"BashArray","data":{"0":"hello","5":"5"}}}
 ## END
 
 #### BashArray, short
@@ -141,10 +138,10 @@ pp test_ ({k: array_1})
 
 ## STDOUT:
 (BashArray)
-(BashArray 'hello')
+(BashArray [0]='hello')
 
 (Dict)  {k: (BashArray)}
-(Dict)  {k: (BashArray 'hello')}
+(Dict)  {k: (BashArray [0]='hello')}
 
 {"type":"BashArray","data":{}}
 {"type":"BashArray","data":{"0":"hello"}}
@@ -162,11 +159,19 @@ do eiusmod.)
 = array_3
 = array_long
 ## STDOUT:
-(BashArray 'world' null '*.py')
+(BashArray [0]='world' [2]='*.py')
 (BashArray
-    'Lorem'       'ipsum'       'dolor'       'sit'         'amet,'
-    'consectetur' 'adipiscing'  'elit,'       'sed'         'do'
-    'eiusmod.'
+    [0]='Lorem'
+    [1]='ipsum'
+    [2]='dolor'
+    [3]='sit'
+    [4]='amet,'
+    [5]='consectetur'
+    [6]='adipiscing'
+    [7]='elit,'
+    [8]='sed'
+    [9]='do'
+    [10]='eiusmod.'
 )
 ## END
 
@@ -207,8 +212,8 @@ pp test_ ({k:assoc})
 #### BashAssoc, long
 declare -A assoc_0=()
 declare -A assoc_1=([1]=one)
-declare assoc_3=([1]=one [two]=2 [3]=three)
-declare assoc_long=([Lorem]=ipsum [dolor]="sit amet," ['consectetur adipiscing']="elit, sed" [do]="eiusmod.")
+declare -A assoc_3=([1]=one [two]=2 [3]=three)
+declare -A assoc_long=([Lorem]=ipsum [dolor]="sit amet," ['consectetur adipiscing']="elit, sed" [do]="eiusmod.")
 = assoc_0
 = assoc_1
 = assoc_3

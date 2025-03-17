@@ -13,7 +13,7 @@ set -o errexit
 #    INSTALL.html
 #    INSTALL-old.html
 
-readonly OIL_VERSION=$(head -n 1 oil-version.txt)
+readonly OIL_VERSION=$(head -n 1 oils-version.txt)
 export OIL_VERSION  # for quick_ref.py
 
 THIS_DIR=$(readlink -f $(dirname $0))
@@ -60,12 +60,12 @@ mandoc() {
 
 # Run with environment variable
 help-gen() {
-  PYTHONPATH=. doctools/help_gen.py "$@"
+  PYTHONPATH=.:vendor doctools/help_gen.py "$@"
 }
 
 cmark() {
   # h2 and h3 are shown in TOC.  The blog uses "legacy" h3 and h4.
-  PYTHONPATH=. doctools/cmark.py --toc-tag h2 --toc-tag h3 --toc-pretty-href "$@"
+  PYTHONPATH=.:vendor doctools/cmark.py --toc-tag h2 --toc-tag h3 --toc-pretty-href "$@"
 }
 
 readonly MARKDOWN_DOCS=(
@@ -97,20 +97,27 @@ readonly MARKDOWN_DOCS=(
   objects
   types
 
+  pure-mode
+
   # Data language
   qsn
   qtt
   j8-notation
+  htm8
   # Protocol
   pretty-printing
   stream-table-process
   byo
   ysh-doc-processing
 
+  table-object-doc
+
   lib-osh
 
   doc-toolchain
   doc-plugins
+  ul-table
+  ul-table-compare
   idioms
   shell-idioms
   ysh-faq
@@ -122,6 +129,8 @@ readonly MARKDOWN_DOCS=(
   syntactic-concepts
   syntax-feelings
   command-vs-expression-mode
+
+  repo-overview
 
   # needs polish
   # Note: docs about the YSH are prefixed 'ysh-'.
@@ -168,7 +177,7 @@ readonly MARKDOWN_DOCS=(
 # A better fix would be to implement json_utf8.load(f), which doesn't decode
 # into unicode instances.  This would remove useless conversions.
 
-readonly TIMESTAMP=$(date --rfc-email)
+DOC_TIMESTAMP=${DOC_TIMESTAMP:-$(date --rfc-email)}
 
 split-and-render() {
   local src=${1:-doc/known-differences.md}
@@ -188,8 +197,8 @@ split-and-render() {
 
   local css_files="$web_url/base.css $web_url/manual.css $web_url/toc.css $web_url/language.css $web_url/code.css"
 
-  doctools/split_doc.py \
-    -v build_timestamp="$TIMESTAMP" \
+  PYTHONPATH='.:vendor' doctools/split_doc.py \
+    -v build_timestamp="$DOC_TIMESTAMP" \
     -v oil_version="$OIL_VERSION" \
     -v css_files="$css_files" \
     -v all_docs_url='.' \
@@ -263,7 +272,7 @@ render-only() {
   "css_files": "$css_files",
   "all_docs_url": ".",
 
-  "build_timestamp": "$TIMESTAMP",
+  "build_timestamp": "$DOC_TIMESTAMP",
   "oil_version": "$OIL_VERSION"
 }
 EOF
@@ -272,15 +281,102 @@ EOF
   log "Wrote $out"
 }
 
+help-mirror-md() {
+  echo '
+Oils Build `--help` Mirror
+=====
+
+<style>
+/* Similar to web/install.css */
+h1 { font-size: 1.5em; }
+h2 { font-size: 1.2em; }
+
+/* Exclude Markdown <pre><code> */
+code:not(pre code) {
+  color: green;
+}
+</style>
+
+This doc mirrors the `--help` for the 3 shell tools in the build sytsem:
+
+1. `configure` - Detect system features
+1. `_build/oils.sh` - Compile `oils-for-unix` source into an executable
+1. `install` - Install the executable, and symlinks to it
+
+<div id="toc">
+</div>
+
+## Note: Usage is Different Than Autotools
+
+To minimize build deps, all 3 of these tools are hand-written POSIX shell
+scripts.  So this build system does **not** use GNU autotools, and it does not
+use `make`.
+
+Keep these differences in mind:
+
+- Settings are configured with **either** flags or env vars, as described
+  below.
+  - For example, use `./configure --cxx-for-configure mycc`, not `CXX=mycc
+  configure`.
+- If you pass `./configure --cxx-for-configure mycc`, you should also pass
+  `_build/oils.sh --cxx mycc`.  The flag value is not remembered.
+
+## configure
+
+```'
+  ./configure --help
+
+  echo '```
+
+## _build/oils.sh
+
+```'
+
+  devtools/release-native.sh gen-oils-sh
+  _build/oils.sh --help
+
+  echo '```
+
+## install
+
+```'
+  ./install --help
+  echo '```
+
+## Links
+
+- [INSTALL.html](INSTALL.html) - Quick guide for end users.
+- [Oils Packaging Guidelines]($wiki) wiki
+- [Oils Packaging Tips]($wiki) wiki - free free to edit this page.
+
+  '
+}
+
+help-mirror() {
+  ### Mirror --help to HTML
+
+  local md=_tmp/doc/help-mirror.md
+
+  help-mirror-md > $md
+
+  local web_dir='../web'
+  #local css="$web_dir/base.css $web_dir/install.css $web_dir/toc.css" 
+  local css="$web_dir/base.css $web_dir/toc.css" 
+  render-only $md '' "$css" 'Oils Build Help Mirror'
+}
+
 special() {
   # TODO: do all READMEs
   split-and-render mycpp/README.md \
     $HTML_BASE_DIR/doc/oils-repo/mycpp/README.html \
     ../../../web
 
+  # TODO: README can just be a pointer to other docs, like "Repo Overview"
   local web_dir='../../web'
   render-only 'README.md' $HTML_BASE_DIR/doc/oils-repo/README.html \
     "$web_dir/base.css $web_dir/manual.css $web_dir/toc.css" 'Oils Source Code'
+
+  help-mirror
 
   local web_dir='../web'
   render-only INSTALL.txt '' \
@@ -420,7 +516,7 @@ ref-check() {
 }
 
 fmt-check() {
-  PYTHONPATH=. doctools/fmt_check.py _release/VERSION/doc/ref/*.html
+  PYTHONPATH=.:vendor doctools/fmt_check.py _release/VERSION/doc/ref/*.html
 }
 
 
@@ -565,6 +661,7 @@ all-ref() {
   # A few text cards, and HELP_TOPICS dict for URLs, for flat namespace
   cards-from-chapters
 
+  return
   if command -v pysum; then
     # 19 KB of embedded help, seems OK.  Biggest card is 'ysh-option'.  Could
     # compress it.
@@ -623,7 +720,7 @@ EOF
     oil-native-$version.tar.xz; do
 
     local url="/download/$name"  # The server URL
-    local path="../oilshell.org__deploy/download/$name"
+    local path="../oils.pub__deploy/download/$name"
 
     # Don't show tarballs that don't exist
     if [[ $name == oils-for-unix-* && ! -f $path ]]; then
@@ -710,7 +807,7 @@ run-for-release() {
   tour
 
   # Metadata
-  cp -v _build/release-date.txt oil-version.txt $root
+  cp -v _build/release-date.txt oils-version.txt $root
 
   # Docs
   # Writes _release/VERSION and _tmp/release-index.html
@@ -742,6 +839,54 @@ soil-run() {
   build/stamp.sh write-release-date
 
   run-for-release
+}
+
+#
+# Generator
+#
+
+_gen-readme-index() {
+  # Use relative markdown links
+  echo '
+Oils Repo READMEs
+=================
+
+This page is useful for finding docs that are out of date.
+
+Generate it with:
+
+    build/doc.sh gen-readme-index
+
+'
+  for path in */README.md; do
+    echo "- [$path]($path)"
+  done
+}
+
+gen-readme-index() {
+  _gen-readme-index > README-index.md
+}
+
+#
+# Golden tests
+#
+# $0 golden-tree
+# $0 determinstic-build  # with new code
+# $0 compare-golden
+
+deterministic() {
+  # build without varying timestamp
+  DOC_TIMESTAMP='GOLD' $0 soil-run
+}
+
+golden-tree() {
+  rm -r -f _release/VERSION/ _release/VERSION_gold/
+  deterministic
+  cp -r _release/VERSION/ _release/VERSION_gold
+}
+
+compare-golden() {
+  diff -r -u _release/VERSION_gold _release/VERSION/ 
 }
 
 "$@"

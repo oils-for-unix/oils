@@ -153,7 +153,6 @@ list-gen() {
 # users might not have Python 3.10
 
 write-pea() {
-  # PYTHONPATH=$PY_PATH 
   local module='pea.pea_main'
   local dir=prebuilt/ninja/$module
   mkdir -p $dir
@@ -161,7 +160,7 @@ write-pea() {
   source build/dev-shell.sh  # python3
 
   # Can't use vendor/typing.py
-  PYTHONPATH=. python3 \
+  python3 \
     build/dynamic_deps.py py-manifest $module \
   > $dir/all-pairs.txt
 
@@ -196,9 +195,6 @@ write-mycpp() {
     | exclude-filter py-tool \
     | mysort \
     | tee $deps
-
-  # EXTRA FILE
-  echo '_bin/datalog/dataflow' >> $deps
 
   echo
   echo $dir/*

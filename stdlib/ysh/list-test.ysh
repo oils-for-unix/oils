@@ -1,6 +1,6 @@
 #!bin/ysh
 
-use $LIB_YSH/list.ysh --pick any all sum repeat
+use $LIB_YSH/list.ysh --pick any all repeat
 
 # Change to 'use'?
 source $LIB_OSH/byo-server.sh
@@ -38,16 +38,6 @@ proc test-more-any-all {
   assert [true === any( :|yes yes| ) ]
   assert [true === any( :|yes ''| ) ]
   assert [false === any( :|'' ''| ) ]
-}
-
-proc test-sum {
-  assert [0 === sum([])]
-  assert [0 === sum([0])]
-  assert [6 === sum([1, 2, 3])]
-
-  assert [3 === sum( 0 ..< 3 )]
-  assert [45 === sum( 0 ..< 3; start=42)]
-  assert [42 === sum( 0 ..< 0, start=42)]
 }
 
 proc test-repeat-str {

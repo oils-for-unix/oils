@@ -42,8 +42,6 @@ Faster way:
 
     ## oils_failures_allowed: 1     # number of failures we allow
 
-TODO: Start upgrading tests to bash 5.2, etc.  Add a label for that.
-
 ## More Docs
 
 - <https://github.com/oilshell/oil/wiki/Spec-Tests>

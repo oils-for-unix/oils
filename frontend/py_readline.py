@@ -5,6 +5,10 @@ py_readline.py: GNU readline wrapper that's also implemented in C++
 try:
     import line_input
 except ImportError:
+    # Note: build/ovm-compile.sh doesn't build pyext/line_input.c unless shell
+    # var $HAVE_READLINE is set
+    # On the other hand, cpp/frontend_pyreadline.cc uses -D HAVE_READLINE, a
+    # C++ preprocessor var
     line_input = None
 
 from typing import Optional, TYPE_CHECKING

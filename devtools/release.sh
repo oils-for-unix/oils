@@ -6,7 +6,8 @@
 #   devtools/release.sh <function name>
 #
 # Steps:
-#   edit oil-version.txt, build/doc.sh update-src-versions, bump devtools/release-note.sh
+#   edit oils-version.txt, build/doc.sh update-src-versions, and
+#     bump devtools/release-note.sh
 #   $0 make-release-branch
 #   $0 two-tarballs          # CPython, then oils-for-unix, which is INSTALLED
 #   demo/osh-debug.sh osh-for-release: Start a shell to dogfood
@@ -23,7 +24,7 @@
 #
 # Resume manual work
 #
-#   Commit files to oilshell/benchmark-data repo and sync.
+#   Commit files to oils-for-unix/benchmark-data repo and sync.
 #   benchmarks/report.sh all
 #   $0 deploy-tar  # needed to publish tarball checksum in HTML
 #   build/doc.sh run-for-release
@@ -35,13 +36,13 @@
 #
 #   demo/osh-debug.sh analyze  # see what you ran
 # 
-# - Go to oilshell.org repo and do:
+# - Go to oils.pub repo and do:
 #   ./deploy.sh site                  # copy release
 #   ./deploy.sh bump-index-version
 #   make
 #   ./deploy.sh site                  # copy new index
 #   ./deploy.sh bump-release-version
-# - Go to oilshell.org__deploy and "git add release/$VERSION".
+# - Go to oils.pub__deploy and "git add release/$VERSION".
 #   - git commit -a
 
 set -o nounset
@@ -51,7 +52,7 @@ set -o errexit
 shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
 REPO_ROOT=$(cd $(dirname $0)/.. ; pwd)
-OIL_VERSION=$(head -n 1 oil-version.txt)
+OIL_VERSION=$(head -n 1 oils-version.txt)
 
 source devtools/common.sh  # banner
 source benchmarks/common.sh  # BENCHMARK_DATA_OILS, OSH_CPP_BENCHMARK_DATA
@@ -127,12 +128,12 @@ auto-machine2() {
 # TODO:
 # - enforce that there is a release/$VERSION branch?
 
-# oilshell.org__deploy/
+# oils.pub__deploy/
 #   releases.html
 #   release/
 #     $VERSION/
 #       index.html  # release page, from doc/release-index.md
-#       oil-version.txt
+#       oils-version.txt
 #       release-date.txt
 #       announcement.html  # HTML redirect
 #       changelog.html
@@ -203,7 +204,7 @@ _test-tarball() {
 
 test-oil-tar() {
   local install=${1:-}  # non-empty to install
-  _test-tarball oil $(head -n 1 oil-version.txt) "$install"
+  _test-tarball oil $(head -n 1 oils-version.txt) "$install"
 }
 
 _release-build() {
@@ -233,6 +234,10 @@ readonly -a MORE_TESTS=(
   osh-usage tools-deps
   syscall
 )
+# TODO: Unify with CI, and clean up
+# doc/error-catalog.sh
+# data_lang/j8-errors.sh
+# ysh/run.sh
 
 run-more-tests() {
   for name in "${MORE_TESTS[@]}"; do
@@ -368,7 +373,10 @@ benchmark-build() {
   if test -n "$HAVE_ROOT"; then
     _install
   fi
-  build/py.sh all
+
+  build/py.sh all  # runs configure-for-dev
+  configure-for-release
+
   _release-build
 }
 
@@ -524,16 +532,18 @@ metrics() {
 
   metrics/bytecode.sh run-for-release
   metrics/native-code.sh run-for-release
-  build/cpython-defs.sh run-for-release
+  # Disabled 2024-12
+  # build/cpython-defs.sh run-for-release
 
   tree $out
 }
 
 deploy-doc() {
-  local deploy_repo='../oilshell.org__deploy'
+  local deploy_repo='../oils.pub__deploy'
   local release_root_dir="$deploy_repo/release"
   local release_dir="$release_root_dir/$OIL_VERSION"
 
+  mkdir -p $release_dir
   cp -v -r --force --no-target-directory \
     _release/VERSION/ $release_dir/
 
@@ -546,7 +556,7 @@ deploy-doc() {
   ls -l $deploy_repo/releases.html
 }
 
-readonly DOWNLOAD_DIR='../oilshell.org__deploy/download/'
+readonly DOWNLOAD_DIR='../oils.pub__deploy/download/'
 
 # Generating releases.html requires the old tarballs!
 sync-old-tar() {
@@ -613,7 +623,7 @@ _html-index() {
     local dir=$entry
 
     local version
-    version=$(head -n 1 $dir/oil-version.txt)
+    version=$(head -n 1 $dir/oils-version.txt)
     local release_date
     release_date=$(head -n 1 $dir/release-date.txt)
 
@@ -691,7 +701,7 @@ cat <<EOF
   </head>
   <body class="width50">
     <p id="home-link">
-      <a href="/">oilshell.org</a>
+      <a href="/">oils.pub</a>
     </p>
     <h1>Oils Releases</h1>
 
@@ -787,12 +797,19 @@ native-tarball() {
   devtools/release-native.sh extract-for-benchmarks INSTALL
 }
 
+configure-for-release() {
+  # Run the slower configure, not configure-for-dev
+  ./configure
+}
+
 two-tarballs() {
   ### First step of release.  Assume that CI passes
 
   ensure-smooth-build
 
-  build/py.sh all
+  build/py.sh all  # runs ./configure-for-dev
+  configure-for-release
+
   # "Base state" for repo scripts
   ./NINJA-config.sh
 

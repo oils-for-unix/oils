@@ -75,7 +75,10 @@ f() {
 }
 f
 echo "[$mylocal $myglobal]"
-## stdout-json: "[L G]\n[ G]\n"
+## STDOUT:
+[L G]
+[ G]
+## END
 ## status: 0
 
 #### Return without args gives previous
@@ -149,4 +152,35 @@ echo status=$?
 ## STDOUT:
 status=42
 status=42
+## END
+
+
+#### Scope of global variable when sourced in function (Shell Functions aren't Closures)
+set -u
+
+echo >tmp.sh '
+g="global"
+local L="local"
+
+test_func() {
+  echo "g = $g"
+  echo "L = $L"
+}
+'
+
+main() {
+  # a becomes local here
+  # test_func is defined globally
+  . ./tmp.sh
+}
+
+main
+
+# a is not defined
+test_func
+
+## status: 1
+## OK dash status: 2
+## STDOUT:
+g = global
 ## END

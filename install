@@ -106,6 +106,8 @@ Usage:
   ./install _bin/cxx-opt-sh/oils-for-unix  # or a given binary
   ./install --help                         # show this help
 
+Env vars respected:
+
   DESTDIR=/tmp/foo ./install
 
 The DESTDIR var allows staged installs.  This means that the installed files

@@ -1249,3 +1249,37 @@ json write (assoc)
   }
 }
 ## END
+
+#### type_errors=false
+
+var o = Obj.new({}, null)
+
+#json write (o)
+json write (o, type_errors=false)
+
+var pat = /d+/
+#json write (pat)
+json write (pat, type_errors=false)
+
+var d = {key: pat, key2: o}
+json write (d, type_errors=false)
+
+echo
+
+echo $[toJson(o, type_errors=false)]
+echo $[toJson8(o, type_errors=false)]
+echo $[toJson8(d, type_errors=false)]
+
+## STDOUT:
+null
+null
+{
+  "key": null,
+  "key2": null
+}
+
+null
+null
+{"key":null,"key2":null}
+## END
+

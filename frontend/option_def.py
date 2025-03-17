@@ -130,6 +130,9 @@ _UPGRADE_RUNTIME_OPTS = [
 
     # create ENV at startup; read from it when starting processes
     ('env_obj', False),
+
+    # Can create closures from loop variables, like JS / C# / Go
+    ('for_loop_frames', False),
 ]
 
 # TODO: Add strict_arg_parse?  For example, 'trap 1 2 3' shouldn't be
@@ -217,9 +220,7 @@ _NO_OPS = [
     # through 4.2.
     'direxpand',
     'dirspell',
-    'dotglob',
     'execfail',
-    'extdebug',  # for --debugger?
     'extquote',
     'force_fignore',
     'globasciiranges',
@@ -285,6 +286,9 @@ def _Init(opt_def):
     opt_def.Add('failglob')
     opt_def.Add('extglob')
     opt_def.Add('nocasematch')
+    opt_def.Add('dotglob')
+
+    opt_def.Add('extdebug')  # for task files
 
     # recursive parsing and evaluation - for compatibility, ble.sh, etc.
     opt_def.Add('eval_unsafe_arith')

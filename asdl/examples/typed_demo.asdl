@@ -1,7 +1,7 @@
 -- To test how all ASDL construct generate typed code.
 
 module arith {
-  use asdl examples demo_lib { value }
+  use asdl examples demo_lib { value, LibToken }
 
   extern [ asdl examples typed_demo _Callable ]
 
@@ -64,4 +64,7 @@ module arith {
   | CompoundWord %CompoundWord
 
   foo = (_Callable x, _Callable y)
+
+  # Bug fix
+  ContainsLib = (LibToken t)
 }

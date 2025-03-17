@@ -177,3 +177,95 @@ echo pass
 ## STDOUT:
 pass
 ## END
+
+#### List remove() removes elements
+shopt -s ysh:all
+
+var l = list(1..=3)
+call l->remove(2)
+assert [ [1, 3] === l ]
+
+# first instance only
+var l = :|foo bar baz foo foo|
+call l->remove("foo")
+assert [ :|bar baz foo foo| === l ]
+
+echo pass
+## STDOUT:
+pass
+## END
+
+#### List remove() does nothing if element does not exist
+shopt -s ysh:all
+
+var l = :| a b c |
+call l->remove("d")
+assert [ :| a b c | === l ]
+
+echo pass
+## STDOUT:
+pass
+## END
+
+#### List insert()
+shopt -s ysh:all
+
+var l = :| foo bar |
+call l->insert(0, "baz")
+assert [ :| baz foo bar | === l ]
+
+call l->insert(2, "zzz")
+assert [ :| baz foo zzz bar | === l ]
+
+echo pass
+
+## STDOUT:
+pass
+## END
+
+#### List insert() overflow
+shopt -s ysh:all
+
+var l = :| foo bar baz |
+call l->insert(123, "yyy")
+call l->insert(123, "zzz")
+
+assert [ :| foo bar baz yyy zzz | === l ]
+
+echo pass
+## STDOUT:
+pass
+## END
+
+#### List insert() negative
+shopt -s ysh:all
+
+var l = :| foo bar |
+call l->insert(-1, "yyy")
+assert [ :| foo yyy bar | === l ]
+
+call l->insert(-3, "zzz")
+assert [ :| zzz foo yyy bar | === l ]
+
+echo pass
+## STDOUT:
+pass
+## END
+
+#### List insert() negative overflow
+shopt -s ysh:all
+
+var l = :| foo bar |
+
+for pos in ([-2, -3, -4]) {
+  call l->insert(pos, str(pos))
+}
+assert [ :| -4 -3 -2 foo bar | === l ]
+
+call l->insert(-100, "zzz")
+assert [ :| zzz -4 -3 -2 foo bar | === l ]
+
+echo pass
+## STDOUT:
+pass
+## END

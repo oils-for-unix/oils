@@ -1,0 +1,7 @@
+
+source $_this_dir/debug-frame-lib.ysh
+
+print-stack
+echo
+
+my-proc

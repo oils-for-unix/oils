@@ -10,7 +10,7 @@
 # - Shared debugging
 # - Running tests on machines without a web server.
 #
-# Releases publish HTML the oilshell.org__deploy repo, but here we publish
+# Releases publish HTML the oils.pub__deploy repo, but here we publish
 # directly to web servers.
 
 set -o nounset

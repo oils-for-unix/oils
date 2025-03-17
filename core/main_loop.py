@@ -12,11 +12,13 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.syntax_asdl import (command, command_t, parse_result,
-                                       parse_result_e)
+                                       parse_result_e, source)
+from core import alloc
 from core import error
 from core import process
-from display import ui
+from core import state
 from core import util
+from display import ui
 from frontend import reader
 from osh import cmd_eval
 from mycpp import mylib
@@ -25,12 +27,13 @@ from mycpp.mylib import log, print_stderr, probe, tagswitch
 import fanos
 import posix_ as posix
 
-from typing import cast, Any, List, TYPE_CHECKING
+from typing import cast, Any, List, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.comp_ui import _IDisplay
+    from core import process
     from frontend import parse_lib
-    from osh.cmd_parse import CommandParser
-    from osh.cmd_eval import CommandEvaluator
+    from osh import cmd_parse
+    from osh import cmd_eval
     from osh.prompt import UserPlugin
 
 _ = log
@@ -100,7 +103,7 @@ class Headless(object):
     """Main loop for headless mode."""
 
     def __init__(self, cmd_ev, parse_ctx, errfmt):
-        # type: (CommandEvaluator, parse_lib.ParseContext, ui.ErrorFormatter) -> None
+        # type: (cmd_eval.CommandEvaluator, parse_lib.ParseContext, ui.ErrorFormatter) -> None
         self.cmd_ev = cmd_ev
         self.parse_ctx = parse_ctx
         self.errfmt = errfmt
@@ -191,8 +194,8 @@ class Headless(object):
 
 def Interactive(
         flag,  # type: arg_types.main
-        cmd_ev,  # type: CommandEvaluator 
-        c_parser,  # type: CommandParser
+        cmd_ev,  # type: cmd_eval.CommandEvaluator 
+        c_parser,  # type: cmd_parse.CommandParser
         display,  # type: _IDisplay
         prompt_plugin,  # type: UserPlugin
         waiter,  # type: process.Waiter
@@ -320,8 +323,29 @@ def Interactive(
     return status
 
 
-def Batch(cmd_ev, c_parser, errfmt, cmd_flags=0):
-    # type: (CommandEvaluator, CommandParser, ui.ErrorFormatter, int) -> int
+def Batch(
+        cmd_ev,  # type: cmd_eval.CommandEvaluator
+        c_parser,  # type: cmd_parse.CommandParser
+        errfmt,  # type: ui.ErrorFormatter
+        cmd_flags=0,  # type: int
+):
+    # type: (...) -> int
+    """
+    source, eval, etc. treat parse errors as error code 2.  But the --eval flag does not.
+    """
+    was_parsed, status = Batch2(cmd_ev, c_parser, errfmt, cmd_flags=cmd_flags)
+    if not was_parsed:
+        return 2
+    return status
+
+
+def Batch2(
+        cmd_ev,  # type: cmd_eval.CommandEvaluator
+        c_parser,  # type: cmd_parse.CommandParser
+        errfmt,  # type: ui.ErrorFormatter
+        cmd_flags=0,  # type: int
+):
+    # type: (...) -> Tuple[bool, int]
     """Loop for batch execution.
 
     Returns:
@@ -343,6 +367,7 @@ def Batch(cmd_ev, c_parser, errfmt, cmd_flags=0):
     - In contrast, 'trap' should parse up front?
     - What about $() ?
     """
+    was_parsed = True
     status = 0
     while True:
         probe('main_loop', 'Batch_parse_enter')
@@ -353,7 +378,8 @@ def Batch(cmd_ev, c_parser, errfmt, cmd_flags=0):
                 break
         except error.Parse as e:
             errfmt.PrettyPrintError(e)
-            status = 2
+            was_parsed = False
+            status = -1  # invalid value
             break
 
         # After every "logical line", no lines will be referenced by the Arena.
@@ -383,11 +409,11 @@ def Batch(cmd_ev, c_parser, errfmt, cmd_flags=0):
         mylib.MaybeCollect()  # manual GC point
         probe('main_loop', 'Batch_collect_exit')
 
-    return status
+    return was_parsed, status
 
 
 def ParseWholeFile(c_parser):
-    # type: (CommandParser) -> command_t
+    # type: (cmd_parse.CommandParser) -> command_t
     """Parse an entire shell script.
 
     This uses the same logic as Batch().  Used by:
@@ -411,3 +437,48 @@ def ParseWholeFile(c_parser):
         return children[0]
     else:
         return command.CommandList(children)
+
+
+def EvalFile(
+        fs_path,  # type: str
+        fd_state,  # type: process.FdState
+        parse_ctx,  # type: parse_lib.ParseContext
+        cmd_ev,  # type: cmd_eval.CommandEvaluator
+        lang,  # type: str
+):
+    # type: (...) -> Tuple[bool, int]
+    """Evaluate a disk file, for --eval --eval-pure
+
+    Copied and adapted from the 'source' builtin in builtin/meta_oils.py.
+
+    (Note that bind -x has to eval from a string, like Eval)
+
+    Raises:
+      util.UserExit
+    Returns:
+      ok: whether processing should continue
+    """
+    try:
+        f = fd_state.Open(fs_path)
+    except (IOError, OSError) as e:
+        print_stderr("%s: Couldn't open %r for --eval: %s" %
+                     (lang, fs_path, posix.strerror(e.errno)))
+        return False, -1
+
+    line_reader = reader.FileLineReader(f, cmd_ev.arena)
+    c_parser = parse_ctx.MakeOshParser(line_reader)
+
+    # TODO:
+    # - Improve error locations
+    # - parse error should be fatal
+
+    with process.ctx_FileCloser(f):
+        with state.ctx_ThisDir(cmd_ev.mem, fs_path):
+            src = source.MainFile(fs_path)
+            with alloc.ctx_SourceCode(cmd_ev.arena, src):
+                # May raise util.UserExit
+                was_parsed, status = Batch2(cmd_ev, c_parser, cmd_ev.errfmt)
+                if not was_parsed:
+                    return False, -1
+
+    return True, status

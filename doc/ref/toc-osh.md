@@ -55,21 +55,21 @@ preserve_anchor_case: yes
 </h2>
 
 ```chapter-links-builtin-cmd
-  [I/O]           read        echo      printf
+  [I/O]           read        echo       printf
                   readarray   mapfile
-  [Run Code]      source .    eval      trap
+  [Run Code]      source .    cmd/eval   trap
   [Set Options]   set         shopt
-  [Working Dir]   cd          pwd       pushd     popd         dirs
-  [Completion]    complete    compgen   compopt   compadjust   compexport
+  [Working Dir]   cd          pwd        pushd     popd         dirs
+  [Completion]    complete    compgen    compopt   compadjust   compexport
   [Shell Process] exec      X logout 
-                  umask       ulimit    times
+                  umask       ulimit     times
   [Child Process] jobs        wait
-                  fg        X bg      X kill        X disown 
+                  fg        X bg       X kill        X disown 
   [External]      test [      getopts
   [Conditional]   cmd/true    cmd/false               colon :
-  [Introspection] help        hash      cmd/type    X caller
+  [Introspection] help        hash       cmd/type    X caller
   [Word Lookup]   command     builtin
-  [Interactive]   alias       unalias   history     X fc     X bind
+  [Interactive]   alias       unalias    history     X fc     X bind
 X [Unsupported]   enable
 ```
 
@@ -91,8 +91,9 @@ X [Unsupported]   enable
 </h2>
 
 ```chapter-links-front-end
-  [Usage]         oils-usage   osh-usage             config
-                  startup      line-editing          exit-codes
+  [Usage]         oils-usage   osh-usage             shell-flags
+                  config       startup               line-editing          
+                  exit-codes
   [Lexing]        comment #    line-continuation \   ascii-whitespace [ \t\r\n]
 ```
 
@@ -121,8 +122,9 @@ X [Unsupported]   enable
 </h2>
 
 ```chapter-links-osh-assign
-  [Literals]      sh-array      array=(a b c)   array[1]=B   "${a[@]}"
-                  sh-assoc      assoc=(['a']=1 ['b']=2)   assoc['x']=b
+  [Literals]      sh-init-list  a=(v1 [i]=v2 [k]+=v3)   a+=(v1 [i]=v2 [k]+=v3)
+                  sh-array      array[123]=v   "${array[@]}"
+                  sh-assoc      assoc['k']=v   "${assoc[@]}"   "${!assoc[@]}"  
   [Operators]     sh-assign     str='xyz'
                   sh-append     str+='abc'
   [Builtins]      local     readonly    export   unset   shift
@@ -142,12 +144,13 @@ X [Unsupported]   enable
                   arith-sub     $((1 + 2))
                   tilde-sub     ~/src
                   proc-sub      diff <(sort L.txt) <(sort R.txt)
-  [Var Ops]       op-test       ${x:-default}  
+  [Var Ops]       op-bracket    ${a[i+1]}, ${a[*]}
+                  op-indirect   ${!x}
+                  op-test       ${x:-default}
                   op-strip      ${x%%suffix}  etc.
                   op-patsub     ${x//y/z}
-                  op-index      ${a[i+1}
                   op-slice      ${a[@]:0:1}
-                  op-format     ${x@P}
+                  op-format     ${x@P} ${x@Q} etc.
 ```
 
 <h2 id="mini-lang">
@@ -186,8 +189,8 @@ X [Unsupported]   enable
   [Errors]         nounset -u      errexit -e   inherit_errexit   pipefail
   [Globbing]       noglob -f       nullglob     failglob        X dotglob
                    dashglob (true)
-  [Other Option]   noclobber -C    errtrace -E
-  [Debugging]      xtrace        X verbose    X extdebug
+  [Other Option]   noclobber -C
+  [Debugging]      errtrace -E     extdebug   X verbose           xtrace -x     
   [Interactive]    emacs           vi
   [Compat]         eval_unsafe_arith            ignore_flags_not_impl
                    ignore_shopt_not_impl
@@ -198,6 +201,7 @@ X [Unsupported]   enable
 </h2>
 
 ```chapter-links-special-var
+  [Interactive]   OILS_COMP_UI
   [Oils VM]       OILS_VERSION      LIB_OSH
   [POSIX Special] $@  $*  $#     $?  $-     $$  $!   $0  $9
   [Shell Vars]    IFS             X LANG       X GLOBIGNORE

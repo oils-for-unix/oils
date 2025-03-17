@@ -66,27 +66,18 @@ setglobal_compile_flags() {
   ### Set flags based on $variant $more_cxx_flags and $dotd
 
   local variant=$1
-  local more_cxx_flags=$2
+  local more_cxx_flags=$2  # e.g. NINJA_subgraph.py sets -D CPP_UNIT_TEST
   local dotd=${3:-}
 
   # flags from Ninja/shell respected
   flags="$BASE_CXXFLAGS -I $REPO_ROOT $more_cxx_flags"
 
-  # Flags from env
-  # Similar to
-  # - GNU make - https://www.gnu.org/software/make/manual/html_node/Implicit-Variables.html
-  #   CXXFLAGS "Extra flags to give to the C++ compiler"
-  # - CMake - https://cmake.org/cmake/help/latest/envvar/CXXFLAGS.html 
-  #   "Add default compilation flags to be used when compiling CXX (C++) files."
-
-  local env_flags=${CXXFLAGS:-}
-  if test -n "$env_flags"; then
-    flags="$flags $env_flags"
-  fi
-
-  if test -n "$READLINE_DIR"; then
-    flags="$flags -I${READLINE_DIR}/include"
-  fi
+  # flags needed to strip unused symbols
+  # TODO: should these go in BASE_CXXFLAGS?
+  #
+  # https://stackoverflow.com/questions/6687630/how-to-remove-unused-c-c-symbols-with-gcc-and-ld
+  flags="$flags -fdata-sections -ffunction-sections"
+  # Note: -ftlo doesn't do anything for size?
 
   case $variant in
     *+bumpleak|*+bumproot)
@@ -183,12 +174,22 @@ setglobal_compile_flags() {
       ;;
   esac
 
-  # needed to strip unused symbols
-  # https://stackoverflow.com/questions/6687630/how-to-remove-unused-c-c-symbols-with-gcc-and-ld
+  # Detected by ./configure
+  if test -n "$READLINE_DIR"; then
+    flags="$flags -I${READLINE_DIR}/include"
+  fi
 
-  # Note: -ftlo doesn't do anything for size?
+  # Flags from env
+  # Similar to
+  # - GNU make - https://www.gnu.org/software/make/manual/html_node/Implicit-Variables.html
+  #   CXXFLAGS "Extra flags to give to the C++ compiler"
+  # - CMake - https://cmake.org/cmake/help/latest/envvar/CXXFLAGS.html 
+  #   "Add default compilation flags to be used when compiling CXX (C++) files."
 
-  flags="$flags -fdata-sections -ffunction-sections"
+  local env_flags=${CXXFLAGS:-}
+  if test -n "$env_flags"; then
+    flags="$flags $env_flags"
+  fi
 
   # https://ninja-build.org/manual.html#ref_headers
   if test -n "$dotd"; then
@@ -198,29 +199,39 @@ setglobal_compile_flags() {
 
 setglobal_link_flags() {
   local variant=$1
+  local more_link_flags=${2:-}  # from NINJA_subgraph.py, e.g. Souffle datalog
 
+  link_flags="$more_link_flags"  # initialize
+
+  # Linker flags based on build variant
+  local variant_flags=''
   case $variant in
     # Must REPEAT these flags, otherwise we lose sanitizers / coverage
     asan*)
-      link_flags='-fsanitize=address'
+      variant_flags='-fsanitize=address'
       ;;
 
     tcmalloc)
       # Need to tell the dynamic loader where to find tcmalloc
-      link_flags='-ltcmalloc -Wl,-rpath,/usr/local/lib'
+      variant_flags='-ltcmalloc -Wl,-rpath,/usr/local/lib'
       ;;
 
     tsan)
-      link_flags='-fsanitize=thread'
+      variant_flags='-fsanitize=thread'
       ;;
     ubsan*)
-      link_flags='-fsanitize=undefined'
+      variant_flags='-fsanitize=undefined'
       ;;
     coverage*)
-      link_flags='-fprofile-instr-generate -fcoverage-mapping'
+      variant_flags='-fprofile-instr-generate -fcoverage-mapping'
       ;;
   esac
 
+  if test -n "$variant_flags"; then
+    link_flags="$link_flags $variant_flags"
+  fi
+
+  # More build variant flags, and GNU readline flags
   case $variant in
     # TODO: 32-bit variants can't handle -l readline right now.
     *32*)
@@ -237,8 +248,15 @@ setglobal_link_flags() {
       ;;
   esac
 
+  # Detected by ./configure
   if test -n "${STRIP_FLAGS:-}"; then
     link_flags="$link_flags -Wl,$STRIP_FLAGS"
+  fi
+
+  # Set by user/packager
+  local env_flags=${LDFLAGS:-}
+  if test -n "$env_flags"; then
+    link_flags="$link_flags $env_flags"
   fi
 }
 
@@ -291,17 +309,48 @@ compile_one() {
 
   setglobal_cxx $compiler
 
+  # The command we want to run.  Not using arrays because this is POSIX shell
+  set -- "$cxx" $flags -o "$out" -c "$in"
+
   if test -n "${OILS_CXX_VERBOSE:-}"; then
-    echo '__' "$cxx" $flags -o "$out" -c "$in" >&2
+    echo '__' "$@" >&2
   fi
 
-  # Not using arrays because this is POSIX shell
-  local prefix=''
+  # Maybe add timing prefix
   if test -n "${TIME_TSV_OUT:-}"; then
-    prefix="benchmarks/time_.py --tsv --out $TIME_TSV_OUT --append --rusage --field compile_one --field $out --"
+    set -- \
+      benchmarks/time_.py --tsv \
+      --out "$TIME_TSV_OUT" --append \
+      --rusage --field compile_one --field $out -- \
+      "$@"
+  else
+    # Show timing info on the most expensive translation unit
+    case $in in
+      */oils_for_unix.*)
+        # Must have external 'time', and it must have -f
+        # Notes: OS X has no time -f
+        #        busybox time supports -f but not --format.
+        case ${BASH_VERSION:-} in
+          3*)
+            # bash 3.2.x on macos has a bizarre bug that leads to weird
+            # interactions between errexit and `command time -f` when this
+            # function gets run as a background job (like it does in the
+            # tarball build script). Don't bother timing in this case.
+            ;;
+          *)
+            if command time -f '%e %M' true >/dev/null; then
+              set -- \
+                time -f "$out { elapsed: %e, max_RSS: %M }" -- \
+                "$@"
+            fi
+            ;;
+          esac
+        ;;
+    esac
   fi
 
-  $prefix "$cxx" $flags -o "$out" -c "$in"
+  # Run the command
+  "$@"
 }
 
 link() {
@@ -309,14 +358,14 @@ link() {
 
   local compiler=$1
   local variant=$2
-  local more_link_flags=$3
+  local more_link_flags=$3  # Used by Souffle datalog rules
   local out=$4
   shift 4
   # rest are inputs
 
-  setglobal_link_flags $variant
+  setglobal_link_flags "$variant" "$more_link_flags"
 
-  setglobal_cxx $compiler
+  setglobal_cxx "$compiler"
 
   if test "$compiler" = 'clang'; then
     case $variant in
@@ -325,17 +374,27 @@ link() {
     esac
   fi
 
-  local prefix=''
-  if test -n "${TIME_TSV_OUT:-}"; then
-    prefix="benchmarks/time_.py --tsv --out $TIME_TSV_OUT --append --rusage --field link --field $out --"
-  fi
-
-  if test -n "${OILS_CXX_VERBOSE:-}"; then
-    echo "__ $prefix $cxx -o $out $@ $link_flags" >&2
-  fi
+  # The command we want to run.  Not using arrays because this is POSIX shell
+  #
   # IMPORTANT: Flags like -ltcmalloc have to come AFTER objects!  Weird but
   # true.
-  $prefix "$cxx" -o "$out" "$@" $link_flags $more_link_flags
+  set -- "$cxx" -o "$out" "$@" $link_flags
+
+  if test -n "${OILS_CXX_VERBOSE:-}"; then
+    echo '__' "$@" >&2
+  fi
+
+  # Maybe add timing prefix
+  if test -n "${TIME_TSV_OUT:-}"; then
+    set -- \
+      benchmarks/time_.py --tsv \
+      --out "$TIME_TSV_OUT" --append \
+      --rusage --field link --field $out -- \
+      "$@"
+  fi
+
+  # Run the command
+  "$@"
 }
 
 compile_and_link() {

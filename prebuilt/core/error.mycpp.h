@@ -15,11 +15,12 @@
 using value_asdl::value;  // This is a bit ad hoc
 
 namespace error {  // forward declare
-
   class _ErrorWithLocation;
   class Usage;
   class Parse;
+  class WordFailure;
   class FailGlob;
+  class VarSubFailure;
   class RedirectEval;
   class FatalRuntime;
   class Strict;
@@ -32,12 +33,10 @@ namespace error {  // forward declare
   class Runtime;
   class Decode;
   class Encode;
-
-}  // forward declare namespace error
+}
 
 namespace error {  // declare
 
-using syntax_asdl::loc;
 BigStr* _ValType(value_asdl::value_t* val);
 class _ErrorWithLocation {
  public:
@@ -89,12 +88,27 @@ class Parse : public ::error::_ErrorWithLocation {
   DISALLOW_COPY_AND_ASSIGN(Parse)
 };
 
-class FailGlob : public ::error::_ErrorWithLocation {
+class WordFailure : public ::error::_ErrorWithLocation {
+ public:
+  WordFailure(BigStr* msg, syntax_asdl::loc_t* location);
+  
+  static constexpr uint32_t field_mask() {
+    return ::error::_ErrorWithLocation::field_mask();
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(WordFailure));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(WordFailure)
+};
+
+class FailGlob : public ::error::WordFailure {
  public:
   FailGlob(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
-    return ::error::_ErrorWithLocation::field_mask();
+    return ::error::WordFailure::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -102,6 +116,21 @@ class FailGlob : public ::error::_ErrorWithLocation {
   }
 
   DISALLOW_COPY_AND_ASSIGN(FailGlob)
+};
+
+class VarSubFailure : public ::error::WordFailure {
+ public:
+  VarSubFailure(BigStr* msg, syntax_asdl::loc_t* location);
+  
+  static constexpr uint32_t field_mask() {
+    return ::error::WordFailure::field_mask();
+  }
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(VarSubFailure));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(VarSubFailure)
 };
 
 class RedirectEval : public ::error::_ErrorWithLocation {

@@ -143,8 +143,13 @@ echo $'[\n]'
 + echo '[
 ]'
 ## END
-## N-I dash stdout-json: "$[\n]\n"
-## N-I dash stderr-json: "+ echo $[\\n]\n"
+## N-I dash STDOUT:
+$[
+]
+## END
+## N-I dash STDERR:
++ echo $[\n]
+## END
 
 #### xtrace written before command executes
 set -x
@@ -175,11 +180,6 @@ x=1 x=2; echo $x; readonly x=3
 ## STDERR:
 + x=1
 + x=2
-+ echo 2
-+ readonly x=3
-## END
-## OK dash STDERR:
-+ x=1 x=2
 + echo 2
 + readonly x=3
 ## END
@@ -366,4 +366,34 @@ ok
 ## OK osh STDERR:
 [last=0] 'false'
 [last=1] echo ok
+## END
+
+
+#### Regression: xtrace for "declare -a a+=(v)"
+case $SH in dash|mksh) exit ;; esac
+
+a=(1)
+set -x
+declare a+=(2)
+## STDERR:
++ declare a+=(2)
+## END
+## OK bash STDERR:
++ a+=('2')
++ declare a
+## END
+## N-I dash/mksh STDERR:
+## END
+
+
+#### Regression: xtrace for "a+=(v)"
+case $SH in dash|mksh) exit ;; esac
+
+a=(1)
+set -x
+a+=(2)
+## STDERR:
++ a+=(2)
+## END
+## N-I dash/mksh STDERR:
 ## END

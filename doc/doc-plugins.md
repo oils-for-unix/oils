@@ -16,11 +16,22 @@ Related: [How We Build Oils Documentation](doc-toolchain.html).
 ## Link Shortcuts with `$`
 
 - `$xref`: [bash]($xref)
-- `$blog-tag`: [oil-release]($blog-tag)
+- `$blog-tag`: [oils-release]($blog-tag)
+  - `$oilshell-blog-tag`: [zephyr-asdl]($oilshell-blog-tag)
+
+Links to Github:
+
 - `$oils-src`: [INSTALL.txt]($oils-src), [INSTALL.txt]($oils-src:INSTALL.txt)
-- `$blog-code-src`: [interactive-shell/README.md]($blog-code-src)
-- `$issue`: [issue 11]($issue:11)
+- `$oils-blog-code-src`: [interactive-shell/README.md]($oils-blog-code-src)
+- `$oils-issue`: [issue 11]($oils-issue:11)
 - `$oils-commit`: [this commit]($oils-commit:a1dad10d53b1fb94a164888d9ec277249ae98b58)
+- `$oils-wiki`: [Surveys and Comparisons]($oils-wiki)
+
+Links to the Oils Refernce:
+
+- `$oils-doc`: [J8 Notation]($oils-doc:j8-notation.html)
+- `$chap-type-method`: [Str]($chap-type-method:Str)
+
 
 ## Syntax Highlighting Specified In Front matter
 

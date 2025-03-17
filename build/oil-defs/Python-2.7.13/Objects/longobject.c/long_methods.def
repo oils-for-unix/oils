@@ -1,5 +1,0 @@
-// Python-2.7.13/Objects/longobject.c
-
-static PyMethodDef long_methods[] = {
-  {0},
-};

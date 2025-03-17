@@ -245,7 +245,7 @@ array = (Cell
   exported:F
   readonly:F
   nameref:F
-  val:(value.BashArray strs:[_ _ _ 42 _ 99])
+  val:(value.BashArray d:{3 42 5 99} max_index:5)
 )
 ## END
 

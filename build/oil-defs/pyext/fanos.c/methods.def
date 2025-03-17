@@ -1,7 +1,0 @@
-// pyext/fanos.c
-
-static PyMethodDef methods[] = {
-  {"recv", func_recv, METH_VARARGS},
-  {"send", func_send, METH_VARARGS},
-  {0},
-};

@@ -3,4 +3,6 @@ module lib {
   t2 = (int a, int b)
   t3 = (int a, int b)
   t4 = (int a, int b)
+
+  LibToken = (string s, int i)
 }

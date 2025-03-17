@@ -1,4 +1,5 @@
-#
+## compare_shells: dash bash mksh
+
 # Cases from
 # http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html
 
@@ -108,7 +109,11 @@ do
   echo $x
   x=$(($x-1))
 done
-## stdout-json: "3\n2\n1\n"
+## STDOUT:
+3
+2
+1
+## END
 
 #### Newlines in compound lists
 x=3
@@ -138,7 +143,10 @@ one
 EOF1
 two
 EOF2
-## stdout-json: "one\ntwo\n"
+## STDOUT:
+one
+two
+## END
 
 #### cat here doc; echo; cat here doc
 cat <<EOF1; echo two; cat <<EOF2

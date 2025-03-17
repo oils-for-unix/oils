@@ -1,0 +1,35 @@
+const __provide__ = :| print-stack my-proc |
+
+proc print-stack (; ; prefix=true) {
+  for i, frame in (vm.getDebugStack()) {
+    #write --end '' -- $[formatDebugFrame(fr, prefix="  #$[i+1] ")]
+    if (prefix) {
+      write --end '' -- "  #$[i+1] $[frame.toString()]"
+    } else {
+      write --end '' -- "$[frame.toString()]"
+    }
+  }
+}
+
+proc my-proc {
+  print-stack
+}
+
+func myfunc2(a, b) {
+  return (a + b)
+}
+
+func identity(x) {
+  print-stack
+  return (x)
+}
+
+func myfunc(x) {
+  return (identity(myfunc2(42, x+1)))
+}
+
+proc call-func {
+  var x = myfunc(99)
+  echo $x
+}
+

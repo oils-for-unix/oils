@@ -29,6 +29,7 @@ If you see an error that you don't understand:
    below.
 1. Add a tagged section below, with hints and explanations.
    - Quote the error message.  You may want copy and paste from the output of
+     `doc/error-catalog.sh`, or
      `test/{parse,runtime,ysh-parse,ysh-runtime}-errors.sh`.  Add an HTML
      comment `<!-- -->` about that.
    - Link to relevant sections in the [**Oils Reference**](ref/index.html).
@@ -176,36 +177,44 @@ Examples:
 
 ### OILS-ERR-15
 
-Incorrect:
+```
+      if (a || b && c) {
+            ^~
+[ -c flag ]:2: Use 'or' in expression mode (OILS-ERR-15)
+```
 
-    # Expression mode
+Expression mode uses `not or and`, rather than `! || &&`.  See [Command vs.
+Expression Mode](command-vs-expression-mode.html) for details.
+
+
+No:
+
     if (!a || b && c) {
       echo no
     }
+
+Yes:
+
+    if (not a or b and c) {
+      echo yes
+    }
+
+
+Command mode is the opposite; it uses `! || &&`, rather than `not or and`:
+
+No:
 
     # Command mode
     if not test --dir a or test --dir b and test --dir c {
       echo no
     }
 
-Correct:
-
-    # Expression mode
-    if (not a or b and c) {
-      echo yes
-    }
+Yes:
 
     # Command mode
     if ! test --dir a || test --dir b && test --dir c {
       echo yes
     }
-
-In general, code within parentheses `()` is parsed as Python-like expressions
--- referred to as [expression mode](command-vs-expression-mode.html). The
-standard boolean operators are written as `a and b`, `a or b` and `not a`.
-
-This differs from [command mode](command-vs-expression-mode.html) which uses
-shell-like `||` for "OR", `&&` for "AND" and `!` for "NOT".
 
 ### OILS-ERR-16
 
@@ -214,6 +223,11 @@ shell-like `||` for "OR", `&&` for "AND" and `!` for "NOT".
               ^~
 [ -c flag ]:1: Use ..< for half-open range, or ..= for closed range (OILS-ERR-16)
 ```
+
+<!-- 
+Similar to
+test/ysh-parse-errors.sh test-expr-range
+-->
 
 There are two ways to construct a [Range](ref/chap-expr-lang#range). The `..<`
 operator is for half-open ranges and the `..=` operator is for closed ranges:
@@ -250,8 +264,10 @@ test/runtime-errors.sh test-command-not-found
 ```
   findz
   ^~~~~
-[ -c flag ]:1: 'findz' not found (OILS-ERR-100)
+[ -c flag ]:1: Command 'findz' not found (OILS-ERR-100)
 ```
+
+The shell tried to execute an external command, but couldn't.
 
 - Did you misspell a command name?
 - Did you misspell a shell function or a YSH `proc`?
@@ -318,6 +334,22 @@ To fix it, consider using **single quotes**:
   Undecidable](https://www.oilshell.org/blog/2016/10/20.html) (2016)
 - Also mentioned in [Known Differences](known-differences.html)
 
+
+### OILS-ERR-102
+
+```
+  var cmd = ^(seq 3)
+              ^~~
+[ stdin ]:1: Command 'seq' not found in pure mode (OILS-ERR-102)
+```
+
+The shell tried to execute a command in pure mode, but couldn't.
+
+In pure mode, only user-defined procs and a few builtin commands can be the "first word".
+
+- Did you misspell a proc name?
+- Are you trying to run an external command?  Such commands aren't allowed in
+  pure mode.
 
 ## Runtime Errors - Oils and YSH
 
@@ -411,6 +443,25 @@ Or:
 - Do you have an element that can't be stringified in a list, like `['good',
   {bad: true}]`?
 
+### OILS-ERR-204
+
+<!--
+Generated with:
+test/ysh-runtime-errors.sh test-purity
+-->
+
+```
+  x=$(date)
+    ^~
+impure.sh:1: fatal: Command subs aren't allowed in pure mode (OILS-ERR-204)
+```
+
+In **pure mode**, the shell can't do I/O.  It's intended for config file
+evaluation and pure functions.
+
+- Did you mean to use `--eval` instead of `--eval-pure`?
+- Did you mean to use a `proc`, rather than a `func`?
+
 
 <!-- TODO -->
 
@@ -434,7 +485,7 @@ This YSH idiom is more explicit:
     try {
       ls | wc -l
     }
-    if (_error.code !== 0) {
+    if failed {
       echo failed
     }
 

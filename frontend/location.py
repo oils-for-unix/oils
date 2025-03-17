@@ -13,6 +13,7 @@ from _devbuild.gen.syntax_asdl import (
     loc,
     loc_t,
     loc_e,
+    loc_str,
     command,
     command_e,
     command_t,
@@ -28,7 +29,7 @@ from _devbuild.gen.syntax_asdl import (
     CompoundWord,
     Token,
     SimpleVarSub,
-    ShArrayLiteral,
+    YshArrayLiteral,
     SingleQuoted,
     DoubleQuoted,
     CommandSub,
@@ -110,7 +111,7 @@ def TokenFor(loc_):
                 return None
 
         else:
-            raise AssertionError()
+            raise AssertionError(loc_str(loc_.tag()))
 
     raise AssertionError()
 
@@ -216,12 +217,12 @@ def LeftTokenForWordPart(part):
     # type: (word_part_t) -> Optional[Token]
     UP_part = part
     with tagswitch(part) as case:
-        if case(word_part_e.ShArrayLiteral):
-            part = cast(ShArrayLiteral, UP_part)
+        if case(word_part_e.YshArrayLiteral):
+            part = cast(YshArrayLiteral, UP_part)
             return part.left
 
-        elif case(word_part_e.BashAssocLiteral):
-            part = cast(word_part.BashAssocLiteral, UP_part)
+        elif case(word_part_e.InitializerLiteral):
+            part = cast(word_part.InitializerLiteral, UP_part)
             return part.left
 
         elif case(word_part_e.Literal):
@@ -289,12 +290,12 @@ def _RightTokenForWordPart(part):
     # type: (word_part_t) -> Token
     UP_part = part
     with tagswitch(part) as case:
-        if case(word_part_e.ShArrayLiteral):
-            part = cast(ShArrayLiteral, UP_part)
+        if case(word_part_e.YshArrayLiteral):
+            part = cast(YshArrayLiteral, UP_part)
             return part.right
 
-        elif case(word_part_e.BashAssocLiteral):
-            part = cast(word_part.BashAssocLiteral, UP_part)
+        elif case(word_part_e.InitializerLiteral):
+            part = cast(word_part.InitializerLiteral, UP_part)
             return part.right
 
         elif case(word_part_e.Literal):
@@ -487,8 +488,8 @@ def TokenForExpr(node):
             node = cast(CommandSub, UP_node)
             return node.left_token
 
-        elif case(expr_e.ShArrayLiteral):
-            node = cast(ShArrayLiteral, UP_node)
+        elif case(expr_e.YshArrayLiteral):
+            node = cast(YshArrayLiteral, UP_node)
             return node.left
 
         elif case(expr_e.DoubleQuoted):

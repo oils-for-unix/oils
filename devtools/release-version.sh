@@ -626,6 +626,26 @@ git-changelog-0.24.0() {
     > _release/VERSION/changelog.html
 }
 
+git-changelog-0.25.0() {
+  _git-changelog origin/release/0.24.0 release/0.25.0 \
+    > _release/VERSION/changelog.html
+}
+
+git-changelog-0.26.0() {
+  _git-changelog origin/release/0.25.0 release/0.26.0 \
+    > _release/VERSION/changelog.html
+}
+
+git-changelog-0.27.0() {
+  _git-changelog origin/release/0.26.0 release/0.27.0 \
+    > _release/VERSION/changelog.html
+}
+
+git-changelog-0.28.0() {
+  _git-changelog origin/release/0.27.0 release/0.28.0 \
+    > _release/VERSION/changelog.html
+}
+
 # For announcement.html
 html-redirect() {
   local url=$1
@@ -658,7 +678,7 @@ write-no-announcement() {
   no-announcement > _release/VERSION/announcement.html
 }
 
-readonly SITE_DEPLOY_DIR='../oilshell.org__deploy'
+readonly SITE_DEPLOY_DIR='../../oilshell/oilshell.org__deploy'
 
 announcement-0.0() {
   html-redirect '/blog/2017/07/23.html' \
@@ -979,7 +999,7 @@ announcement-0.12.6() {
 }
 
 announcement-0.12.7() {
-  write-no-announcement
+  html-redirect '/blog/2022/10/garbage-collector.html' > $SITE_DEPLOY_DIR/release/0.12.7/announcement.html
 }
 
 announcement-0.12.8() {
@@ -1007,46 +1027,62 @@ announcement-0.14.1() {
 }
 
 announcement-0.14.2() {
-  write-no-announcement
+  html-redirect '/blog/2023/03/release-0.14.2.html' > $SITE_DEPLOY_DIR/release/0.14.2/announcement.html
 }
 
 announcement-0.15.0() {
-  write-no-announcement
+  html-redirect '/blog/2023/05/release-0.15.0.html' > $SITE_DEPLOY_DIR/release/0.15.0/announcement.html
 }
 
 announcement-0.16.0() {
-  write-no-announcement
+  html-redirect '/blog/2023/06/release-0.16.0.html' > $SITE_DEPLOY_DIR/release/0.16.0/announcement.html
 }
 
 announcement-0.17.0() {
-  write-no-announcement
+  html-redirect '/blog/2023/08/release-0.17.0.html' > $SITE_DEPLOY_DIR/release/0.17.0/announcement.html
 }
 
 announcement-0.18.0() {
-  write-no-announcement
+  html-redirect '/blog/2023/09/release-0.18.0.html' > $SITE_DEPLOY_DIR/release/0.18.0/announcement.html
 }
 
 announcement-0.19.0() {
-  write-no-announcement
+  html-redirect '/blog/2024/01/release-0.19.0.html' > $SITE_DEPLOY_DIR/release/0.19.0/announcement.html
 }
 
 announcement-0.20.0() {
-  write-no-announcement
+  html-redirect '/blog/2024/02/release-0.20.0.html' > $SITE_DEPLOY_DIR/release/0.20.0/announcement.html
 }
 
 announcement-0.21.0() {
-  write-no-announcement
+  html-redirect '/blog/2024/03/release-0.21.0.html' > $SITE_DEPLOY_DIR/release/0.21.0/announcement.html
 }
 
 announcement-0.22.0() {
-  write-no-announcement
+  html-redirect '/blog/2024/06/release-0.22.0.html' > $SITE_DEPLOY_DIR/release/0.22.0/announcement.html
 }
 
 announcement-0.23.0() {
-  write-no-announcement
+  html-redirect '/blog/2024/11/release-0.23.0.html' > $SITE_DEPLOY_DIR/release/0.23.0/announcement.html
 }
 
 announcement-0.24.0() {
+  html-redirect '/blog/2025/01/release-0.24.0.html' > $SITE_DEPLOY_DIR/release/0.24.0/announcement.html
+}
+
+announcement-0.25.0() {
+  write-no-announcement
+}
+
+announcement-0.26.0() {
+  write-no-announcement
+}
+
+announcement-0.27.0() {
+  write-no-announcement
+}
+
+announcement-0.28.0() {
   write-no-announcement
 }
 

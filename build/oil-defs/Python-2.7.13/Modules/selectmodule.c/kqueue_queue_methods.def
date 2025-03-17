@@ -1,9 +1,0 @@
-// Python-2.7.13/Modules/selectmodule.c
-
-static PyMethodDef kqueue_queue_methods[] = {
-  {"fromfd", (PyCFunction)kqueue_queue_fromfd, METH_VARARGS | METH_CLASS},
-  {"close", (PyCFunction)kqueue_queue_close, METH_NOARGS},
-  {"fileno", (PyCFunction)kqueue_queue_fileno, METH_NOARGS},
-  {"control", (PyCFunction)kqueue_queue_control, METH_VARARGS },
-  {0},
-};

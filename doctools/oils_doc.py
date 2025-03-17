@@ -11,43 +11,37 @@ Plugins:
 """
 from __future__ import print_function
 
+from _devbuild.gen.htm8_asdl import h8_id
+
 import cgi
-import cStringIO
+try:
+    from cStringIO import StringIO
+except ImportError:
+    # for python3
+    from io import StringIO  # type: ignore
 import re
 import sys
 
+from typing import Iterator, Any, List, Optional, IO
+
+from data_lang import htm8
 from doctools.util import log
-from lazylex import html
+from doctools import html_old
 
-
-def RemoveComments(s):
-    """Remove <!-- comments -->"""
-    f = cStringIO.StringIO()
-    out = html.Output(s, f)
-
-    tag_lexer = html.TagLexer(s)
-
-    pos = 0
-
-    for tok_id, end_pos in html.ValidTokens(s):
-        if tok_id == html.Comment:
-            value = s[pos:end_pos]
-            # doc/release-index.md has <!-- REPLACE_WITH_DATE --> etc.
-            if 'REPLACE' not in value:
-                out.PrintUntil(pos)
-                out.SkipTo(end_pos)
-        pos = end_pos
-
-    out.PrintTheRest()
-    return f.getvalue()
+try:
+    import pygments
+except ImportError:
+    pygments = None
 
 
 class _Abbrev(object):
 
     def __init__(self, fmt):
+        # type: (str) -> None
         self.fmt = fmt
 
     def __call__(self, value):
+        # type: (str) -> str
         return self.fmt % {'value': value}
 
 
@@ -58,6 +52,7 @@ _ABBREVIATIONS = {
     # alias for osh-help, for backward compatibility
     # to link to the same version
 
+    # OBSOLETE
     # TODO: Remove all of these broken links!
     'help':
     _Abbrev('osh-help.html?topic=%(value)s#%(value)s'),
@@ -65,6 +60,15 @@ _ABBREVIATIONS = {
     _Abbrev('osh-help.html?topic=%(value)s#%(value)s'),
     'oil-help':
     _Abbrev('oil-help.html?topic=%(value)s#%(value)s'),
+    'osh-help-latest':
+    _Abbrev(
+        '//oilshell.org/release/latest/doc/osh-help.html?topic=%(value)s#%(value)s'
+    ),
+    'oil-help-latest':
+    _Abbrev(
+        '//oilshell.org/release/latest/doc/oil-help.html?topic=%(value)s#%(value)s'
+    ),
+
 
     # New style: one for every chapter?
     # Problem: can't use relative links here, because some are from doc/ref, and
@@ -76,82 +80,96 @@ _ABBREVIATIONS = {
     'chap-builtin-cmd':
     _Abbrev('chap-builtin-cmd.html?topic=%(value)s#%(value)s'),
 
-    # for blog
-    'osh-help-latest':
-    _Abbrev(
-        '//oilshell.org/release/latest/doc/osh-help.html?topic=%(value)s#%(value)s'
-    ),
-    'oil-help-latest':
-    _Abbrev(
-        '//oilshell.org/release/latest/doc/oil-help.html?topic=%(value)s#%(value)s'
-    ),
-
-    # For the blog
-    'oils-doc':
+    # old
+    'oil-doc':
     _Abbrev('//www.oilshell.org/release/latest/doc/%(value)s'),
+    # new
+    'oils-doc':
+    _Abbrev('//oils.pub/release/latest/doc/%(value)s'),
+
+    # old AND new
     'blog-tag':
     _Abbrev('/blog/tags.html?tag=%(value)s#%(value)s'),
-    'oils-commit':
+
+    # For linkins from oils.pub -> oilshell.org
+    'oilshell-blog-tag':
+    _Abbrev('https://www.oilshell.org/blog/tags.html?tag=%(value)s#%(value)s'),
+
+    # old
+    'oil-commit':
     _Abbrev('https://github.com/oilshell/oil/commit/%(value)s'),
-    'oils-src':
+    # new
+    'oils-commit':
+    _Abbrev('https://github.com/oils-for-unix/oils/commit/%(value)s'),
+
+    # old
+    'oil-src':
     _Abbrev('https://github.com/oilshell/oil/blob/master/%(value)s'),
+    # new
+    'oils-src':
+    _Abbrev('https://github.com/oils-for-unix/oils/blob/master/%(value)s'),
+
+    # old
     'blog-code-src':
     _Abbrev('https://github.com/oilshell/blog-code/blob/master/%(value)s'),
     'issue':
     _Abbrev('https://github.com/oilshell/oil/issues/%(value)s'),
     'wiki':
     _Abbrev('https://github.com/oilshell/oil/wiki/%(value)s'),
-}
 
-# Backward compatibility
-_ABBREVIATIONS['oil-src'] = _ABBREVIATIONS['oils-src']
-_ABBREVIATIONS['oil-commit'] = _ABBREVIATIONS['oils-commit']
-_ABBREVIATIONS['oil-doc'] = _ABBREVIATIONS['oils-doc']
+    # new
+    'oils-blog-code-src':
+    _Abbrev('https://github.com/oils-for-unix/blog-code/blob/master/%(value)s'),
+    'oils-issue':
+    _Abbrev('https://github.com/oils-for-unix/oils/issues/%(value)s'),
+    'oils-wiki':
+    _Abbrev('https://github.com/oils-for-unix/oils/wiki/%(value)s'),
+}
 
 # $xref:foo
 _SHORTCUT_RE = re.compile(r'\$ ([a-z\-]+) (?: : (\S+))?', re.VERBOSE)
 
 
 def ExpandLinks(s):
+    # type: (str) -> str
     """Expand $xref:bash and so forth."""
-    f = cStringIO.StringIO()
-    out = html.Output(s, f)
+    f = StringIO()
+    out = htm8.Output(s, f)
 
-    tag_lexer = html.TagLexer(s)
+    tag_lexer = html_old.TagLexer(s)
 
     pos = 0
 
-    it = html.ValidTokens(s)
+    it = html_old.ValidTokens(s)
     while True:
         try:
             tok_id, end_pos = next(it)
         except StopIteration:
             break
 
-        if tok_id == html.StartTag:
+        if tok_id == h8_id.StartTag:
 
             tag_lexer.Reset(pos, end_pos)
-            if tag_lexer.TagName() == 'a':
+            if tag_lexer.GetTagName() == 'a':
                 open_tag_right = end_pos
 
                 href_start, href_end = tag_lexer.GetSpanForAttrValue('href')
                 if href_start == -1:
                     continue
 
-                # TODO: Need to unescape like GetAttr()
-                href = s[href_start:href_end]
+                href_raw = s[href_start:href_end]
 
                 new = None
-                m = _SHORTCUT_RE.match(href)
+                m = _SHORTCUT_RE.match(href_raw)
                 if m:
                     abbrev_name, arg = m.groups()
                     if not arg:
-                        close_tag_left, _ = html.ReadUntilEndTag(
+                        close_tag_left, _ = html_old.ReadUntilEndTag(
                             it, tag_lexer, 'a')
                         arg = s[open_tag_right:close_tag_left]
 
-                    # Hack to so we can write [Wiki Page]($wiki) and have the link look
-                    # like /Wiki-Page/
+                    # Hack to so we can write [Wiki Page]($wiki) and have the
+                    # link look like /Wiki-Page/
                     if abbrev_name == 'wiki':
                         arg = arg.replace(' ', '-')
 
@@ -174,13 +192,18 @@ def ExpandLinks(s):
 
 
 class _Plugin(object):
+    """
+    A plugin for HighlightCode(), which modifies <pre><code> ... </code></pre>
+    """
 
     def __init__(self, s, start_pos, end_pos):
+        # type: (str, int, int) -> None
         self.s = s
         self.start_pos = start_pos
         self.end_pos = end_pos
 
     def PrintHighlighted(self, out):
+        # type: (htm8.Output) -> None
         raise NotImplementedError()
 
 
@@ -212,6 +235,8 @@ _COMMENT_LINE_RE = re.compile(r'#.*')
 
 
 def Lines(s, start_pos, end_pos):
+    # type: (str, int, int) -> Iterator[int]
+    """Yields positions in s that end a line."""
     pos = start_pos
     while pos < end_pos:
         m = _LINE_RE.match(s, pos, end_pos)
@@ -228,6 +253,7 @@ class ShPromptPlugin(_Plugin):
     """Highlight shell prompts."""
 
     def PrintHighlighted(self, out):
+        # type: (htm8.Output) -> None
         pos = self.start_pos
         for line_end in Lines(self.s, self.start_pos, self.end_pos):
 
@@ -285,6 +311,7 @@ class HelpTopicsPlugin(_Plugin):
         self.linkify_stop_col = linkify_stop_col
 
     def PrintHighlighted(self, out):
+        # type: (htm8.Output) -> None
         from doctools import help_gen
 
         debug_out = []
@@ -316,36 +343,30 @@ class PygmentsPlugin(_Plugin):
         self.lang = lang
 
     def PrintHighlighted(self, out):
-        try:
-            from pygments import lexers
-            from pygments import formatters
-            from pygments import highlight
-        except ImportError:
-            log("Warning: Couldn't import pygments, so skipping syntax highlighting"
-                )
-            return
+        # type: (htm8.Output) -> None
 
         # unescape before passing to pygments, which will escape
-        code = html.ToText(self.s, self.start_pos, self.end_pos)
+        code = html_old.ToText(self.s, self.start_pos, self.end_pos)
 
-        lexer = lexers.get_lexer_by_name(self.lang)
-        formatter = formatters.HtmlFormatter()
+        lexer = pygments.lexers.get_lexer_by_name(self.lang)
+        formatter = pygments.formatters.HtmlFormatter()
 
-        highlighted = highlight(code, lexer, formatter)
+        highlighted = pygments.highlight(code, lexer, formatter)
         out.Print(highlighted)
 
 
 def SimpleHighlightCode(s):
+    # type: (str) -> str
     """Simple highlighting for test/shell-vs-shell.sh."""
 
-    f = cStringIO.StringIO()
-    out = html.Output(s, f)
+    f = StringIO()
+    out = htm8.Output(s, f)
 
-    tag_lexer = html.TagLexer(s)
+    tag_lexer = html_old.TagLexer(s)
 
     pos = 0
 
-    it = html.ValidTokens(s)
+    it = html_old.ValidTokens(s)
 
     while True:
         try:
@@ -353,15 +374,15 @@ def SimpleHighlightCode(s):
         except StopIteration:
             break
 
-        if tok_id == html.StartTag:
+        if tok_id == h8_id.StartTag:
 
             tag_lexer.Reset(pos, end_pos)
-            if tag_lexer.TagName() == 'pre':
+            if tag_lexer.GetTagName() == 'pre':
                 pre_start_pos = pos
                 pre_end_pos = end_pos
 
                 slash_pre_right, slash_pre_right = \
-                    html.ReadUntilEndTag(it, tag_lexer, 'pre')
+                    html_old.ReadUntilEndTag(it, tag_lexer, 'pre')
 
                 out.PrintUntil(pre_end_pos)
 
@@ -387,6 +408,7 @@ CSS_CLASS_RE = re.compile(
 
 
 def HighlightCode(s, default_highlighter, debug_out=None):
+    # type: (str, Optional[Any], Optional[List]) -> str
     """
     Algorithm:
     1. Collect what's inside <pre><code> ...
@@ -397,14 +419,14 @@ def HighlightCode(s, default_highlighter, debug_out=None):
     if debug_out is None:
         debug_out = []
 
-    f = cStringIO.StringIO()
-    out = html.Output(s, f)
+    f = StringIO()
+    out = htm8.Output(s, f)
 
-    tag_lexer = html.TagLexer(s)
+    tag_lexer = html_old.TagLexer(s)
 
     pos = 0
 
-    it = html.ValidTokens(s)
+    it = html_old.ValidTokens(s)
 
     while True:
         try:
@@ -412,10 +434,10 @@ def HighlightCode(s, default_highlighter, debug_out=None):
         except StopIteration:
             break
 
-        if tok_id == html.StartTag:
+        if tok_id == h8_id.StartTag:
 
             tag_lexer.Reset(pos, end_pos)
-            if tag_lexer.TagName() == 'pre':
+            if tag_lexer.GetTagName() == 'pre':
                 pre_start_pos = pos
                 pos = end_pos
 
@@ -425,14 +447,15 @@ def HighlightCode(s, default_highlighter, debug_out=None):
                     break
 
                 tag_lexer.Reset(pos, end_pos)
-                if tok_id == html.StartTag and tag_lexer.TagName() == 'code':
+                if (tok_id == h8_id.StartTag and
+                        tag_lexer.GetTagName() == 'code'):
 
-                    css_class = tag_lexer.GetAttr('class')
+                    css_class = tag_lexer.GetAttrRaw('class')
                     code_start_pos = end_pos
 
                     if css_class is None:
                         slash_code_left, slash_code_right = \
-                            html.ReadUntilEndTag(it, tag_lexer, 'code')
+                            html_old.ReadUntilEndTag(it, tag_lexer, 'code')
 
                         if default_highlighter is not None:
                             # TODO: Refactor this to remove duplication with
@@ -457,7 +480,7 @@ def HighlightCode(s, default_highlighter, debug_out=None):
 
                     elif css_class.startswith('language'):
                         slash_code_left, slash_code_right = \
-                            html.ReadUntilEndTag(it, tag_lexer, 'code')
+                            html_old.ReadUntilEndTag(it, tag_lexer, 'code')
 
                         if css_class == 'language-none':
                             # Allow ```none
@@ -508,18 +531,24 @@ def HighlightCode(s, default_highlighter, debug_out=None):
                             out.SkipTo(slash_code_left)
 
                         else:  # language-*: Use Pygments
+                            if pygments is None:
+                                log("Warning: Couldn't import pygments, so skipping syntax highlighting"
+                                    )
+                                continue
 
-                            # We REMOVE the original <pre><code> because Pygments gives you a <pre> already
+                            # We REMOVE the original <pre><code> because
+                            # Pygments gives you a <pre> already
 
-                            # We just read closing </code>, and the next one should be </pre>.
+                            # We just read closing </code>, and the next one
+                            # should be </pre>.
                             try:
                                 tok_id, end_pos = next(it)
                             except StopIteration:
                                 break
                             tag_lexer.Reset(slash_code_right, end_pos)
-                            assert tok_id == html.EndTag, tok_id
-                            assert tag_lexer.TagName(
-                            ) == 'pre', tag_lexer.TagName()
+                            assert tok_id == h8_id.EndTag, tok_id
+                            assert (tag_lexer.GetTagName() == 'pre'
+                                    ), tag_lexer.GetTagName()
                             slash_pre_right = end_pos
 
                             out.PrintUntil(pre_start_pos)
@@ -540,6 +569,7 @@ def HighlightCode(s, default_highlighter, debug_out=None):
 
 
 def ExtractCode(s, f):
+    # type: (str, IO[str]) -> None
     """Print code blocks to a plain text file.
 
     So we can at least validate the syntax.
@@ -549,12 +579,12 @@ def ExtractCode(s, f):
     1. Collect what's inside <pre><code> ...
     2. Decode &amp; -> &,e tc. and return it
     """
-    out = html.Output(s, f)
-    tag_lexer = html.TagLexer(s)
+    out = htm8.Output(s, f)
+    tag_lexer = html_old.TagLexer(s)
 
     block_num = 0
     pos = 0
-    it = html.ValidTokens(s)
+    it = html_old.ValidTokens(s)
 
     while True:
         try:
@@ -562,9 +592,9 @@ def ExtractCode(s, f):
         except StopIteration:
             break
 
-        if tok_id == html.StartTag:
+        if tok_id == h8_id.StartTag:
             tag_lexer.Reset(pos, end_pos)
-            if tag_lexer.TagName() == 'pre':
+            if tag_lexer.GetTagName() == 'pre':
                 pre_start_pos = pos
                 pos = end_pos
 
@@ -574,13 +604,14 @@ def ExtractCode(s, f):
                     break
 
                 tag_lexer.Reset(pos, end_pos)
-                if tok_id == html.StartTag and tag_lexer.TagName() == 'code':
+                if (tok_id == h8_id.StartTag and
+                        tag_lexer.GetTagName() == 'code'):
 
-                    css_class = tag_lexer.GetAttr('class')
+                    css_class = tag_lexer.GetAttrRaw('class')
                     # Skip code blocks that look like ```foo
-                    # Usually we use 'oil-sh' as the default_highlighter, and all those
-                    # code blocks should be extracted.  TODO: maybe this should be
-                    # oil-language?
+                    # Usually we use 'oil-sh' as the default_highlighter, and
+                    # all those code blocks should be extracted.  TODO: maybe
+                    # this should be oil-language?
                     if css_class is None:
                         code_start_pos = end_pos
 
@@ -589,9 +620,10 @@ def ExtractCode(s, f):
                         out.Print('\n')
 
                         slash_code_left, slash_code_right = \
-                            html.ReadUntilEndTag(it, tag_lexer, 'code')
+                            html_old.ReadUntilEndTag(it, tag_lexer, 'code')
 
-                        text = html.ToText(s, code_start_pos, slash_code_left)
+                        text = html_old.ToText(s, code_start_pos,
+                                               slash_code_left)
                         out.SkipTo(slash_code_left)
 
                         out.Print(text)
@@ -637,6 +669,7 @@ class ShellSession(object):
     """
 
     def __init__(self, shell_exe, cache_dir):
+        # type: (str, str) -> None
         """
         Args:
           shell_exe: sh, bash, osh, or oil.  Use the one in the $PATH by default.
@@ -646,6 +679,7 @@ class ShellSession(object):
         self.cache_dir = cache_dir
 
     def PrintHighlighted(self, s, start_pos, end_pos, out):
+        # type: (str, int, int, htm8.Output) -> None
         """
         Args:
           s: an HTML string.
@@ -654,6 +688,7 @@ class ShellSession(object):
 
 
 def main(argv):
+    # type: (List[str]) -> None
     action = argv[1]
 
     if action == 'highlight':

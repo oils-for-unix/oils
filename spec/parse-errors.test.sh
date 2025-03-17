@@ -104,7 +104,7 @@ echo done
 ## stdout-json: ""
 ## status: 2
 ## OK mksh status: 1
-## OK bash status: 0
+## BUG bash status: 0
 ## BUG bash stdout: done
 
 #### bad var name globally isn't parsed like an assignment

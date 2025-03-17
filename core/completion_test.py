@@ -157,7 +157,7 @@ class CompletionTest(unittest.TestCase):
         # that shouldn't go away.
         ADD_SLASH_CASES = [
             # Dirs and files
-            ('o', ['oil-version.txt', 'opy/', 'osh/']),
+            ('o', ['oils-version.txt', 'opy/', 'osh/']),
             ('nonexistent/', []),
             ('README.', ['README.md']),
             # Directory should be completed to core/ ?
@@ -171,7 +171,7 @@ class CompletionTest(unittest.TestCase):
                 '/tmp/oil_comp_test/three',
                 '/tmp/oil_comp_test/two',
             ]),
-            ('./o', ['./oil-version.txt', './opy/', './osh/']),
+            ('./o', ['./oils-version.txt', './opy/', './osh/']),
         ]
 
         a = completion.FileSystemAction(False, False, True)
@@ -210,7 +210,7 @@ class CompletionTest(unittest.TestCase):
         frame = cmd_ev.mem.var_stack[0]
         assert frame is not None
         proc = value.Proc(node.name, node.name_tok, proc_sig.Open, node.body,
-                          [], True, frame)
+                          [], True, None, frame)
 
         comp_lookup = completion.Lookup()
         a = completion.ShellFuncAction(cmd_ev, proc, comp_lookup)
@@ -796,7 +796,7 @@ class InitCompletionTest(unittest.TestCase):
             val = mem.GetValue('PASSED')
             self.assertEqual(value_e.BashArray, val.tag(),
                              "[case %d] Expected array, got %s" % (i, val))
-            actually_passed = val.strs
+            actually_passed = val.d.values()
 
             should_pass = [
                 'COMP_WORDS',

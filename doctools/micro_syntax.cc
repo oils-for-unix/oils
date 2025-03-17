@@ -49,6 +49,7 @@ enum class lang_e {
   Py,
   Shell,
   Ysh,  // ''' etc.
+  Html,
   Asdl,
   R,  // uses # comments
 
@@ -328,7 +329,24 @@ class AnsiPrinter : public Printer {
       PrintColor(GREEN, p_start, num_bytes);
       break;
 
+    case Id::TagNameLeft:
+    case Id::TagNameRight:
+      PrintColor(PURPLE, p_start, num_bytes);
+      break;
+
+    case Id::SelfClose:
+    case Id::EndTag:
+      PrintColor(RED2, p_start, num_bytes);
+      break;
+
+    case Id::CharEscape:
+      PrintColor(BLUE, p_start, num_bytes);
+      break;
+
     case Id::Unknown:
+    case Id::BadAmpersand:
+    case Id::BadGreaterThan:
+    case Id::BadLessThan:
       // Make errors red
       fputs(REVERSE, stdout);
       PrintColor(RED, p_start, num_bytes);
@@ -833,6 +851,15 @@ int ScanOne(Reader* reader, OutputStream* out, Hook* hook) {
         }
       } break;
 
+      // TODO: I think we need a mode to escape into strstr(), for
+      // C++  - ending */
+      // HTML - ending -->  ?>  ]]>  </SCRipt>
+      //
+      // So instead of returning 'eol', we can return a string to search for?
+      // Then we keep looking for more lines.
+      //
+      // This is similar to the problems of here doc and C++ multi-line
+      // strings.  The main difference is that we're not using a submatch.
       default:
         break;
       }
@@ -955,6 +982,10 @@ int ScanFiles(const Flags& flag, std::vector<char*> files, OutputStream* out,
       status = ScanOne<R_mode_e>(reader, out, hook);
       break;
 
+    case lang_e::Html:
+      status = ScanOne<html_mode_e>(reader, out, hook);
+      break;
+
     default:
       assert(0);
     }
@@ -1040,6 +1071,9 @@ int main(int argc, char** argv) {
       } else if (strcmp(optarg, "yaml") == 0) {
         flag.lang = lang_e::PlainText;
 
+      } else if (strcmp(optarg, "html") == 0) {
+        flag.lang = lang_e::Html;
+
       } else if (strcmp(optarg, "txt") == 0) {
         flag.lang = lang_e::PlainText;
 
@@ -1047,7 +1081,8 @@ int main(int argc, char** argv) {
         flag.lang = lang_e::PlainText;
 
       } else {
-        Log("Expected -l LANG to be cpp|py|shell|asdl|R|js|css|md|yaml|txt, "
+        Log("Expected -l LANG to be "
+            "cpp|py|shell|asdl|R|js|css|md|yaml|html|txt, "
             "got %s",
             optarg);
         return 2;

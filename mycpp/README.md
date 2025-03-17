@@ -12,9 +12,19 @@ It's inspired by both mypyc and Shed Skin.  These posts give background:
 As of March 2024, the translation to C++ is **done**.  So it's no longer
 experimental!
 
-However, it's still pretty **hacky**.  This doc exists mainly to explain the
-hacks.  (We may want to rewrite mycpp as "yaks", although it's low priority
-right now.)
+---
+
+`mycpp` started as a **hack**, but it worked because its output is fairly
+strongly-typed C++.
+
+That is, the C++ type system catches many errors!  But it doesn't catch all of
+them, so we've gradually made `mycpp` more strict.
+
+As of December 2024, `mycpp` is a pretty clean program, although there are
+still many heuristics.  This doc explains the heuristics.
+
+(I'd like to gradually rewrite mycpp as a more principled "yaks" language,
+although this isn't a high priority.)
 
 ---
 
@@ -475,11 +485,13 @@ Issue on mycpp improvements: <https://github.com/oilshell/oil/issues/568>
 - Collection literals turn into initializer lists
   - And there is a C++ type inference issue which requires an explicit
     `std::initializer_list<int>{1, 2, 3}`, not just `{1, 2, 3}`
-- Python's polymorphic iteration &rarr; `StrIter`, `ListIter<T>`, `DictIter<K,
-  V`
+- `for` loops, i.e. Python's polymorphic iteration &rarr; `StrIter`,
+  `ListIter<T>`, `DictIter<K, V`
+  - `xrange()`
+  - `enumerate()`
+  - `reversed(mylist)` &rarr; `ReverseListIter`
   - `d.iteritems()` is rewritten `mylib.iteritems()` &rarr; `DictIter`
     - TODO: can we be smarter about this?
-  - `reversed(mylist)` &rarr; `ReverseListIter`
 - Python's `in` operator:
   - `s in mystr` &rarr; `str_contains(mystr, s)`
   - `x in mylist` &rarr; `list_contains(mylist, x)`

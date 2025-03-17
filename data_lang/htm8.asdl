@@ -1,0 +1,86 @@
+# HTM8 - An Easy Subset of HTML5
+
+module htm8
+{
+
+  h8_id =
+    Decl 
+
+    # CommentBegin, ProcessingBegin, CDataBegin are "pseudo-tokens", not visible
+  | Comment | CommentBegin 
+  | Processing | ProcessingBegin
+  | CData | CDataBegin
+
+  | StartTag | StartEndTag | EndTag 
+
+  | DecChar | HexChar | CharEntity 
+
+  | RawData | HtmlCData 
+
+  | BadAmpersand | BadGreaterThan | BadLessThan 
+
+  | Invalid
+  | EndOfStream
+
+    # Returned by QUOTED_VALUE_LEX, in addition to DecChar, HexChar, etc.
+  | DoubleQuote
+  | SingleQuote
+  generate [no_namespace_suffix]  # cosmetic: call it h8_id, not h8_id_e
+
+  # "enum" returned by lexer
+  attr_name =
+    Ok           # Found an attribute
+  | Done         # No more attributes
+  | Invalid      # e.g. <a !>
+  generate [no_namespace_suffix] 
+
+  # "enum" returned by lexer
+  h8_val_id = 
+    UnquotedVal  # a=foo
+  | DoubleQuote  # a="foo"
+  | SingleQuote  # a='foo'
+  | NoMatch      # anything else
+  generate [no_namespace_suffix] 
+
+  # Returned by attr value parser
+  attr_value =
+    Missing       # <a missing>
+  | Empty         # <a empty= >
+  | Unquoted      # <a unquoted=1 >
+  | DoubleQuoted  # <a quoted="1" >
+  | SingleQuoted  # <a quoted='1' >
+    # No end of stream here, it will just be Missing, and the next attr_name will fail
+
+  #
+  # OLD
+  #
+
+  h8_tag_id =
+    TagName
+  | AttrName
+  | UnquotedValue | QuotedValue | MissingValue 
+  generate [no_namespace_suffix] 
+
+  # This API is maybe more natural, but has more allocations
+  #
+  #  tag_lexer.Read()
+
+  #  # Unquoted, Quoted, Empty, Missing
+  #  (int tag_name_start, int tag_name_end, attr_value)
+
+  #  attr_value =
+  #    Missing                 # <a missing> - tag_name_end adds =""
+
+  #  | Empty (int equals_pos)  # <a empty=>
+
+  #    # <a unquoted=foo>
+  #    # the first one has end_pos 0, and can be h8_id.ZeroPosition?
+  #  | Unquoted (List[Tuple[h8_id, end_pos]] tokens)
+
+  #    # <a quoted="foo">
+  #  | Quoted (List[Tuple[h8_id, end_pos]] tokens)
+
+  #    # Rather than raise an exception, we should have this for bad data
+  #  | Invalid(int pos)
+}
+

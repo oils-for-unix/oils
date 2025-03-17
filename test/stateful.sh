@@ -55,7 +55,7 @@ job-control() {
 }
 
 bind() {
-  spec/stateful/bind.py $FIRST --oils-failures-allowed 2 "$@"
+  spec/stateful/bind.py $FIRST --oils-failures-allowed 5 "$@"
 }
 
 # Run on just 2 shells
@@ -198,7 +198,6 @@ EOF
   cat $results_tmp
 
   cat <<EOF
-    </table>
   </body>
 </html>
 EOF

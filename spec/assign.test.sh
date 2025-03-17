@@ -672,3 +672,80 @@ dict:3
 ## N-I dash/mksh status: 99
 ## N-I dash/mksh stdout-json: ""
 
+#### "readonly -a arr" and "readonly -A dict" should not not remove existing arrays
+# mksh's readonly does not support the -a option.
+# dash/mksh does not support associative arrays.
+case $SH in (dash|mksh) exit 99;; esac
+
+declare -a arr
+arr=(foo bar baz)
+declare -A dict
+dict['foo']=hello
+dict['bar']=oil
+dict['baz']=world
+
+readonly -a arr
+echo arr:${#arr[@]}
+readonly -A dict
+echo dict:${#dict[@]}
+## STDOUT:
+arr:3
+dict:3
+## END
+## N-I dash/mksh status: 99
+## N-I dash/mksh stdout-json: ""
+
+#### "declare -a arr" and "readonly -a a" creates an empty array (OSH)
+case $SH in (dash|mksh) exit 99;; esac # dash/mksh does not support associative arrays
+
+declare -a arr1
+readonly -a arr2
+declare -A dict1
+readonly -A dict2
+
+declare -p arr1 arr2 dict1 dict2
+## STDOUT:
+declare -a arr1=()
+declare -ra arr2=()
+declare -A dict1=()
+declare -rA dict2=()
+## END
+## N-I bash STDOUT:
+declare -a arr1
+declare -r arr2
+declare -A dict1
+declare -r dict2
+## END
+## OK zsh STDOUT:
+typeset -a arr1
+arr1=(  )
+typeset -a arr2
+arr2=(  )
+typeset -ar arr2
+typeset -A dict1
+dict1=( )
+typeset -a dict2
+dict2=( )
+typeset -Ar dict2
+## END
+## N-I dash/mksh status: 99
+## N-I dash/mksh stdout-json: ""
+
+#### readonly array should not be modified by a+=(1)
+case $SH in (dash) exit 99;; esac # dash/mksh does not support associative arrays
+
+a=(1 2 3)
+readonly -a a
+eval 'a+=(4)'
+argv.py "${a[@]}"
+eval 'declare -n r=a; r+=(4)'
+argv.py "${a[@]}"
+
+## STDOUT:
+['1', '2', '3']
+['1', '2', '3']
+## END
+## OK mksh status: 1
+## OK mksh stdout-json: ""
+## N-I dash status: 99
+## N-I dash stdout-json: ""

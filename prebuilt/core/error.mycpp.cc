@@ -5,31 +5,24 @@
 
 #include "mycpp/runtime.h"
 
-GLOBAL_STR(str0, "(");
-GLOBAL_STR(str1, ")");
-GLOBAL_STR(str2, "_");
-GLOBAL_STR(str3, "T");
-GLOBAL_STR(str4, "F");
-GLOBAL_STR(str5, "<%s %r>");
-GLOBAL_STR(str6, "code");
-GLOBAL_STR(str7, "message");
-GLOBAL_STR(str8, "%s, got %s");
-GLOBAL_STR(str9, " (line %d, offset %d-%d: %r)");
-
 namespace runtime {  // forward declare
-
   class TraversalState;
-
-}  // forward declare namespace runtime
+}
 
 namespace num {  // forward declare
+}
 
-
-}  // forward declare namespace num
+GLOBAL_STR(S_ijB, "(");
+GLOBAL_STR(S_hxb, ")");
+GLOBAL_STR(S_gFh, "F");
+GLOBAL_STR(S_cor, "T");
+GLOBAL_STR(S_tci, "_");
+GLOBAL_STR(S_gFE, "code");
+GLOBAL_STR(S_xho, "failglob: ");
+GLOBAL_STR(S_pBg, "message");
 
 namespace runtime {  // declare
 
-using hnode_asdl::hnode;
 extern int NO_SPID;
 hnode::Record* NewRecord(BigStr* node_type);
 hnode::Leaf* NewLeaf(BigStr* s, hnode_asdl::color_t e_color);
@@ -68,14 +61,14 @@ int NO_SPID = -1;
 hnode::Record* NewRecord(BigStr* node_type) {
   StackRoot _root0(&node_type);
 
-  return Alloc<hnode::Record>(node_type, str0, str1, Alloc<List<hnode_asdl::Field*>>(), nullptr);
+  return Alloc<hnode::Record>(node_type, S_ijB, S_hxb, Alloc<List<hnode_asdl::Field*>>(), nullptr);
 }
 
 hnode::Leaf* NewLeaf(BigStr* s, hnode_asdl::color_t e_color) {
   StackRoot _root0(&s);
 
   if (s == nullptr) {
-    return Alloc<hnode::Leaf>(str2, color_e::OtherConst);
+    return Alloc<hnode::Leaf>(S_tci, color_e::OtherConst);
   }
   else {
     return Alloc<hnode::Leaf>(s, e_color);
@@ -86,8 +79,8 @@ TraversalState::TraversalState() {
   this->seen = Alloc<Dict<int, bool>>();
   this->ref_count = Alloc<Dict<int, int>>();
 }
-BigStr* TRUE_STR = str3;
-BigStr* FALSE_STR = str4;
+BigStr* TRUE_STR = S_cor;
+BigStr* FALSE_STR = S_gFh;
 
 }  // define namespace runtime
 
@@ -130,7 +123,13 @@ Usage::Usage(BigStr* msg, syntax_asdl::loc_t* location) : ::error::_ErrorWithLoc
 Parse::Parse(BigStr* msg, syntax_asdl::loc_t* location) : ::error::_ErrorWithLocation(msg, location) {
 }
 
-FailGlob::FailGlob(BigStr* msg, syntax_asdl::loc_t* location) : ::error::_ErrorWithLocation(msg, location) {
+WordFailure::WordFailure(BigStr* msg, syntax_asdl::loc_t* location) : ::error::_ErrorWithLocation(msg, location) {
+}
+
+FailGlob::FailGlob(BigStr* msg, syntax_asdl::loc_t* location) : ::error::WordFailure(str_concat(S_xho, msg), location) {
+}
+
+VarSubFailure::VarSubFailure(BigStr* msg, syntax_asdl::loc_t* location) : ::error::WordFailure(msg, location) {
 }
 
 RedirectEval::RedirectEval(BigStr* msg, syntax_asdl::loc_t* location) : ::error::_ErrorWithLocation(msg, location) {
@@ -166,8 +165,8 @@ value::Dict* Structured::ToDict() {
   if (this->properties != nullptr) {
     d->update(this->properties);
   }
-  d->set(str6, num::ToBig(this->ExitStatus()));
-  d->set(str7, Alloc<value::Str>(this->msg));
+  d->set(S_gFE, num::ToBig(this->ExitStatus()));
+  d->set(S_pBg, Alloc<value::Str>(this->msg));
   return Alloc<value::Dict>(d);
 }
 

@@ -10,10 +10,6 @@ body {
   font-family: monospace;
 }
 
-p, ul, ol {
-  margin-left: 2em;
-}
-
 h1 {
   font-size: 1.5em;  /* reduce to what browsers apparently use for h2 */
   font-family: serif;
@@ -24,12 +20,9 @@ h2 {
   font-family: serif;
 }
 
-pre {
-  margin-left: 2em;
-}
-
-code {
-  color: darkgreen;
+/* Exclude Markdown <pre><code> */
+code:not(pre code) {
+  color: green;
 }
 
 #home-link {

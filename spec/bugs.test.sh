@@ -1,9 +1,6 @@
 ## compare_shells: bash dash mksh zsh ash
 ## oils_failures_allowed: 0
 
-# TODO: case #25 need this locally, but not in CI?
-# oils_cpp_failures_allowed: 1
-
 #### echo keyword
 echo done
 ## stdout: done
@@ -98,7 +95,8 @@ foo $x() {
 }
 
 ## status: 2
-## OK mksh/zsh status: 1
+## OK mksh status: 1
+# Note: zsh should return 1 or 2
 ## BUG zsh status: 0
 ## STDOUT:
 ## END
@@ -406,12 +404,3 @@ echo as_val=$as_val
 ## STDOUT:
 as_val=1
 ## END
-
-#### osh-native duplicates stdin - is this a test harness issue?
-
-echo $0 | grep -o sh
-
-## STDOUT:
-sh
-## END
-

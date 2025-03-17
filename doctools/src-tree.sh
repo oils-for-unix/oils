@@ -16,6 +16,10 @@ source build/common.sh  # log
 
 export PYTHONPATH=.
 
+src-tree-py() {
+  PYTHONPATH='.:vendor/' doctools/src_tree.py "$@"
+}
+
 install-deps() {
   sudo apt-get install moreutils  # for isutf8
 }
@@ -141,7 +145,7 @@ all-html-to-files() {
     log "=== $lang ===" 
 
     cat $BASE_DIR/$lang.txt | xargs _tmp/micro-syntax/micro_syntax -l $lang -w \
-      | doctools/src_tree.py write-html-fragments $out_dir
+      | $0 src-tree-py write-html-fragments $out_dir
     log ''
   done
 }
@@ -184,7 +188,7 @@ highlight() {
   time all-html-to-files $www_dir > $attrs
 
   # Now write index.html dir listings
-  time doctools/src_tree.py dirs $www_dir < $attrs
+  time src-tree-py dirs $www_dir < $attrs
 }
 
 soil-run() {

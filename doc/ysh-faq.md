@@ -70,6 +70,10 @@ unary operator and a variable, not some kind of string substitution.
 Also, quoted `"~"` is a literal tilde, and shells disagree on what `~""` means.
 The rules are subtle, so we avoid inventing new ones.
 
+<!--
+TODO: I want the ${ ~/src } syntax though it's complicated by ksh command sub
+-->
+
 ## How do I write the equivalent of `echo -e` or `echo -n`?
 
 To echo special characters denoted by backslash escapes, use a
@@ -254,6 +258,60 @@ This issue is similar to the `shopt -s lastpipe` issue:
 
 In bash, `read` runs in a subshell, but in `zsh` and OSH, it runs in the main
 shell.
+
+## Why are `Dict` and `Obj` different types?
+
+*JavaScript has a single Object type, while Python has separate dicts and
+objects.*
+
+In YSH, we draw a line between data and code.
+
+- A `Dict` is pure **data**, and may correspond to JSON from untrusted sources.
+- An `Obj` bundles both data and **code**, and can't be serialized by default.
+
+You can create an `Obj` from a `Dict` with the `Obj` constructor.  Conversely,
+you can get the first Dict in an object with [first(myobj)][first].
+
+There is no special `__proto__` or `prototype` name, which reduces the
+likelihood of "prototype pollution" vulnerabilities.
+
+---
+
+This is essentially the [Interior vs. Exterior][interior-exterior] distinction:
+An Obj lives inside the shell process, while a Dict may come from outside the
+process (user input).
+
+[first]: ref/chap-builtin-func.html#first
+[interior-exterior]: https://www.oilshell.org/blog/2023/06/ysh-design.html
+
+## Why are `Command` and `Proc` different types?
+
+*Could a `Command` be a `Proc` with no arguments?  Similarly, could an `Expr` be a
+`Func` with no arguments?*
+
+Procs and Funcs both push a new stack frame, and bind arguments to declared
+parameters.
+
+On the other hand, `Command` and `Expr` are more "raw" and flexible:
+
+- They can be evaluated in different stack frames &mdash;
+  e.g. `io->eval(b, in_captured_frame)`
+- They can have "undeclared" variable bindings &mdash; 
+  e.g. `io->eval(b, vars={x: 42})`.
+
+In other words, they're low-level, reflective types that allow users to create
+expressive APIs, like:
+
+    cd /tmp {                    # Command literal (block)
+      ls -l
+    }
+    my-table | where [size > 3]  # Expr literal
+
+---
+
+Another way to think about it: we could have removed procs from the core YSH
+language, and implemented them in terms of command blocks and `io->eval()`.
+But that seems too low-level!
 
 ## Related
 

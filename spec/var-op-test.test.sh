@@ -1,4 +1,5 @@
-## compare_shells: bash-4.4 dash mksh zsh
+## compare_shells: bash dash mksh zsh
+## oils_failures_allowed: 0
 
 #### Lazy Evaluation of Alternative
 i=0
@@ -8,9 +9,17 @@ echo $i
 echo ${undefined:-$((i++))}
 echo $i  # i is one because the alternative was only evaluated once
 ## status: 0
-## stdout-json: "x\n0\n0\n1\n"
+## STDOUT:
+x
+0
+0
+1
+## END
 ## N-I dash status: 2
-## N-I dash stdout-json: "x\n0\n"
+## N-I dash STDOUT:
+x
+0
+## END
 
 #### Default value when empty
 empty=''
@@ -47,10 +56,14 @@ argv.py "X${unset=x$@x}X"  # OSH is the same here
 ['Xx1 2 3 4xX']
 ['Xx1 2 3 4xX']
 ## END
-## BUG bash STDOUT:
-['Xx1', '2', '3', '4xX']
-['Xx1 2 3 4xX']
-## END
+
+# Bash 4.2..4.4 had a bug. This was fixed in Bash 5.0.
+#
+# ## BUG bash STDOUT:
+# ['Xx1', '2', '3', '4xX']
+# ['Xx1 2 3 4xX']
+# ## END
+
 ## OK osh STDOUT:
 ['Xx1 2', '3 4xX']
 ['Xx1 2 3 4xX']
@@ -101,7 +114,7 @@ argv.py "${with_icc+set}" = set
 ## STDOUT:
 ['', '=', 'set']
 ## END
-     
+
 #### ${s+foo} and ${s:+foo} when set -u
 set -u
 v=v
@@ -193,21 +206,6 @@ echo '+:' /"${array[@]:+foo}"/
 echo
 
 
-## STDOUT:
-+  //
-+: //
-
-+  //
-+: //
-
-+  /foo/
-+: /foo/
-
-+  /foo/
-+: /foo/
-
-## END
-
 ## BUG mksh STDOUT:
 +  //
 +: //
@@ -222,6 +220,25 @@ echo
 +: /foo/
 
 ## END
+
+# Bash 2.0..4.4 has a bug that "${a[@]:-xxx}" produces an empty string.  It
+# seemed to consider a[@] and a[*] are non-empty when there is at least one
+# element even if the element is empty.  This was fixed in Bash 5.0.
+#
+# ## BUG bash STDOUT:
+# +  //
+# +: //
+#
+# +  //
+# +: //
+#
+# +  /foo/
+# +: /foo/
+#
+# +  /foo/
+# +: /foo/
+#
+# ## END
 
 ## BUG zsh STDOUT:
 +  //
@@ -249,6 +266,10 @@ case $SH in dash|mksh|zsh) exit ;; esac
 
 # https://oilshell.zulipchat.com/#narrow/stream/307442-nix/topic/Replacing.20bash.20with.20osh.20in.20Nixpkgs.20stdenv
 
+(argv.py ${!hooksSlice+"${!hooksSlice}"})
+
+hooksSlice=x
+
 argv.py ${!hooksSlice+"${!hooksSlice}"}
 
 declare -a hookSlice=()
@@ -258,15 +279,24 @@ argv.py ${!hooksSlice+"${!hooksSlice}"}
 foo=42
 bar=43
 
-declare -a hookSlice=(foo bar spam eggs)
+declare -a hooksSlice=(foo bar spam eggs)
 
 argv.py ${!hooksSlice+"${!hooksSlice}"}
 
 ## STDOUT:
 []
 []
-[]
+['42']
 ## END
+
+# Bash 4.4 has a bug that ${!undef-} successfully generates an empty word.
+#
+# ## BUG bash STDOUT:
+# []
+# []
+# []
+# ['42']
+# ## END
 
 ## OK dash/mksh/zsh STDOUT:
 ## END
@@ -357,10 +387,13 @@ a3=plus
 ['plus']
 ## END
 ## N-I dash stdout-json: ""
-## N-I zsh stdout-json: "empty=\na1=\n"
+## N-I zsh STDOUT:
+empty=
+a1=
+## END
 ## N-I zsh status: 1
 
-#### $@ and - and +
+#### $@ (empty) and - and +
 echo argv=${@-minus}
 echo argv=${@+plus}
 echo argv=${@:-minus}
@@ -372,6 +405,76 @@ argv=minus
 argv=
 ## END
 ## BUG dash/zsh STDOUT:
+argv=
+argv=plus
+argv=minus
+argv=
+## END
+
+#### $@ ("") and - and +
+set -- ""
+echo argv=${@-minus}
+echo argv=${@+plus}
+echo argv=${@:-minus}
+echo argv=${@:+plus}
+## STDOUT:
+argv=
+argv=plus
+argv=minus
+argv=
+## END
+
+# Zsh treats $@ as an array unlike Bash converting it to a string by joining it
+# with a space.
+
+## OK zsh STDOUT:
+argv=
+argv=plus
+argv=
+argv=plus
+## END
+
+#### $@ ("" "") and - and +
+set -- "" ""
+echo argv=${@-minus}
+echo argv=${@+plus}
+echo argv=${@:-minus}
+echo argv=${@:+plus}
+## STDOUT:
+argv=
+argv=plus
+argv=
+argv=plus
+## END
+
+#### $* ("" "") and - and + (IFS=)
+set -- "" ""
+IFS=
+echo argv=${*-minus}
+echo argv=${*+plus}
+echo argv=${*:-minus}
+echo argv=${*:+plus}
+## STDOUT:
+argv=
+argv=plus
+argv=
+argv=plus
+## END
+## BUG mksh STDOUT:
+argv=
+argv=plus
+argv=minus
+argv=
+## END
+
+#### "$*" ("" "") and - and + (IFS=)
+set -- "" ""
+IFS=
+echo "argv=${*-minus}"
+echo "argv=${*+plus}"
+echo "argv=${*:-minus}"
+echo "argv=${*:+plus}"
+## STDOUT:
 argv=
 argv=plus
 argv=minus
@@ -455,7 +558,7 @@ x
 hello=x
 hello=x
 ## END
- 
+
 #### array ${arr[0]=x}
 arr=()
 echo ${#arr[@]}
@@ -468,7 +571,9 @@ echo ${#arr[@]}
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 ## N-I zsh status: 1
-## N-I zsh stdout-json: "0\n"
+## N-I zsh STDOUT:
+0
+## END
 
 #### assoc array ${arr["k"]=x}
 # note: this also works in zsh
@@ -509,6 +614,8 @@ z
 `
 \
 ## END
+# Note: this line terminates the quoting by ` not to confuse the text editor.
+
 
 #### "\e" as arg
 echo "${undef-\e}"
@@ -518,3 +625,205 @@ echo "${undef-\e}"
 ## BUG zsh/mksh stdout-repr: '\x1b\n'
 ## BUG yash stdout: e
 
+
+#### op-test for ${a} and ${a[0]}
+case $SH in dash) exit ;; esac
+
+test-hyphen() {
+  echo "a   : '${a-no-colon}' '${a:-with-colon}'"
+  echo "a[0]: '${a[0]-no-colon}' '${a[0]:-with-colon}'"
+}
+
+a=()
+test-hyphen
+a=("")
+test-hyphen
+a=("" "")
+test-hyphen
+IFS=
+test-hyphen
+
+## STDOUT:
+a   : 'no-colon' 'with-colon'
+a[0]: 'no-colon' 'with-colon'
+a   : '' 'with-colon'
+a[0]: '' 'with-colon'
+a   : '' 'with-colon'
+a[0]: '' 'with-colon'
+a   : '' 'with-colon'
+a[0]: '' 'with-colon'
+## END
+
+# Zsh's ${a} and ${a[@]} implement something different from the other shells'.
+
+## OK zsh STDOUT:
+a   : '' 'with-colon'
+a[0]: 'no-colon' 'with-colon'
+a   : '' 'with-colon'
+a[0]: 'no-colon' 'with-colon'
+a   : ' ' ' '
+a[0]: 'no-colon' 'with-colon'
+a   : '' 'with-colon'
+a[0]: 'no-colon' 'with-colon'
+## END
+
+## N-I dash STDOUT:
+## END:
+
+
+#### op-test for ${a[@]} and ${a[*]}
+case $SH in dash) exit ;; esac
+
+test-hyphen() {
+  echo "a[@]: '${a[@]-no-colon}' '${a[@]:-with-colon}'"
+  echo "a[*]: '${a[*]-no-colon}' '${a[*]:-with-colon}'"
+}
+
+a=()
+test-hyphen
+a=("")
+test-hyphen
+a=("" "")
+test-hyphen
+IFS=
+test-hyphen
+
+## STDOUT:
+a[@]: 'no-colon' 'with-colon'
+a[*]: 'no-colon' 'with-colon'
+a[@]: '' 'with-colon'
+a[*]: '' 'with-colon'
+a[@]: ' ' ' '
+a[*]: ' ' ' '
+a[@]: ' ' ' '
+a[*]: '' 'with-colon'
+## END
+
+# Bash 2.0..4.4 has a bug that "${a[@]:-xxx}" produces an empty string.  It
+# seemed to consider a[@] and a[*] are non-empty when there is at least one
+# element even if the element is empty.  This was fixed in Bash 5.0.
+#
+# ## BUG bash STDOUT:
+# a[@]: 'no-colon' 'with-colon'
+# a[*]: 'no-colon' 'with-colon'
+# a[@]: '' ''
+# a[*]: '' ''
+# a[@]: ' ' ' '
+# a[*]: ' ' ' '
+# a[@]: ' ' ' '
+# a[*]: '' ''
+# ## END
+
+# Zsh's ${a} and ${a[@]} implement something different from the other shells'.
+
+## OK zsh STDOUT:
+a[@]: '' 'with-colon'
+a[*]: '' 'with-colon'
+a[@]: '' ''
+a[*]: '' 'with-colon'
+a[@]: ' ' ' '
+a[*]: ' ' ' '
+a[@]: ' ' ' '
+a[*]: '' 'with-colon'
+## END
+
+## N-I dash STDOUT:
+## END:
+
+
+#### op-test for ${!array} with array="a" and array="a[0]"
+case $SH in dash|mksh|zsh) exit ;; esac
+
+test-hyphen() {
+  ref='a'
+  echo "ref=a   : '${!ref-no-colon}' '${!ref:-with-colon}'"
+  ref='a[0]'
+  echo "ref=a[0]: '${!ref-no-colon}' '${!ref:-with-colon}'"
+}
+
+a=()
+test-hyphen
+a=("")
+test-hyphen
+a=("" "")
+test-hyphen
+IFS=
+test-hyphen
+
+## STDOUT:
+ref=a   : 'no-colon' 'with-colon'
+ref=a[0]: 'no-colon' 'with-colon'
+ref=a   : '' 'with-colon'
+ref=a[0]: '' 'with-colon'
+ref=a   : '' 'with-colon'
+ref=a[0]: '' 'with-colon'
+ref=a   : '' 'with-colon'
+ref=a[0]: '' 'with-colon'
+## END
+
+## N-I dash/mksh/zsh STDOUT:
+## END:
+
+
+#### op-test for ${!array} with array="a[@]" or array="a[*]"
+case $SH in dash|mksh|zsh) exit ;; esac
+
+test-hyphen() {
+  ref='a[@]'
+  echo "ref=a[@]: '${!ref-no-colon}' '${!ref:-with-colon}'"
+  ref='a[*]'
+  echo "ref=a[*]: '${!ref-no-colon}' '${!ref:-with-colon}'"
+}
+
+a=()
+test-hyphen
+a=("")
+test-hyphen
+a=("" "")
+test-hyphen
+IFS=
+test-hyphen
+
+## STDOUT:
+ref=a[@]: 'no-colon' 'with-colon'
+ref=a[*]: 'no-colon' 'with-colon'
+ref=a[@]: '' 'with-colon'
+ref=a[*]: '' 'with-colon'
+ref=a[@]: ' ' ' '
+ref=a[*]: ' ' ' '
+ref=a[@]: ' ' ' '
+ref=a[*]: '' 'with-colon'
+## END
+
+## BUG bash STDOUT:
+ref=a[@]: 'no-colon' 'with-colon'
+ref=a[*]: 'no-colon' 'with-colon'
+ref=a[@]: '' ''
+ref=a[*]: '' ''
+ref=a[@]: ' ' ' '
+ref=a[*]: ' ' ' '
+ref=a[@]: ' ' ' '
+ref=a[*]: '' ''
+## END
+
+## N-I dash/mksh/zsh STDOUT:
+## END:
+
+
+#### op-test for unquoted ${a[*]:-empty} with IFS=
+case $SH in dash) exit ;; esac
+
+IFS=
+a=("" "")
+argv.py ${a[*]:-empty}
+
+## STDOUT:
+[]
+## END
+
+## BUG mksh STDOUT:
+['empty']
+## END
+
+## N-I dash STDOUT:
+## END:

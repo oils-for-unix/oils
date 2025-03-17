@@ -17,15 +17,15 @@ set -o errexit
 #   ~/git/oilshell/oilshell.org -> ../oil/doctools/spelling.sh
 
 # This file is doctools/spelling.sh
-OIL_ROOT=$(dirname $(dirname $(readlink -f $0)))
-readonly OIL_ROOT
-echo $OIL_ROOT
+OILS_ROOT=$(dirname $(dirname $(readlink -f $0)))
+readonly OILS_ROOT
+echo $OILS_ROOT
 
-readonly SPELLING_PY=$OIL_ROOT/doctools/spelling.py
+readonly SPELLING_PY=$OILS_ROOT/doctools/spelling.py
 readonly BASE_DIR=_tmp/spelling  # relative path
 
 spelling() {
-  PYTHONPATH=$OIL_ROOT $SPELLING_PY "$@"
+  PYTHONPATH=$OILS_ROOT:$OILS_ROOT/vendor $SPELLING_PY "$@"
 }
 
 to-ninja() {
@@ -35,7 +35,7 @@ rule text-dump
   description = text-dump $in $out
 
 rule word-split
-  command = cat $in | PYTHONPATH='"$OIL_ROOT $SPELLING_PY"' word-split > $out
+  command = cat $in | PYTHONPATH='"$OILS_ROOT:$OILS_ROOT/vendor $SPELLING_PY"' word-split > $out
   description = word-split $in $out
 
 '

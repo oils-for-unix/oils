@@ -26,6 +26,20 @@ if 0:
     PROMPT_UNDERLINE = '\x01%s\x02' % ansi.UNDERLINE
     PROMPT_REVERSE = '\x01%s\x02' % ansi.REVERSE
 
+DEFAULT_TERM_WIDTH = 80
+DEFAULT_MATCH_LINE_LIMIT = 10
+
+
+def _GetTerminalWidth():
+    # type: () -> int
+    try:
+        return libc.get_terminal_width()
+    except (IOError, OSError):
+        # This shouldn't raise IOError because we did it at startup!  Under
+        # rare circumstances stdin can change, e.g. if you do exec <&
+        # input.txt.  So we have a fallback.
+        return DEFAULT_TERM_WIDTH
+
 
 def _PromptLen(prompt_str):
     # type: (str) -> int
@@ -85,13 +99,26 @@ class State(object):
 class _IDisplay(object):
     """Interface for completion displays."""
 
-    def __init__(self, comp_state, prompt_state, num_lines_cap, f, debug_f):
-        # type: (State, PromptState, int, mylib.Writer, _DebugFile) -> None
+    def __init__(self, comp_state, prompt_state, num_lines_cap, f, debug_f, signal_safe):
+        # type: (State, PromptState, int, mylib.Writer, _DebugFile, iolib.SignalSafe) -> None
         self.comp_state = comp_state
         self.prompt_state = prompt_state
         self.num_lines_cap = num_lines_cap
         self.f = f
         self.debug_f = debug_f
+        self.term_width = _GetTerminalWidth()
+        self.signal_safe = signal_safe
+
+    def _GetTermWidth(self):
+        # type: () -> int
+        if self.signal_safe.PollSigWinch():  # is our value dirty?
+            self.term_width = _GetTerminalWidth()
+
+        return self.term_width
+
+    def ReadlineInitCommands(self):
+        # type: () -> List[str]
+        return []
 
     def PrintCandidates(self, unused_subst, matches, unused_match_len):
         # type: (Optional[str], List[str], int) -> None
@@ -142,12 +169,11 @@ class MinimalDisplay(_IDisplay):
     without testing it.
     """
 
-    def __init__(self, comp_state, prompt_state, debug_f):
-        # type: (State, PromptState, _DebugFile) -> None
-        _IDisplay.__init__(self, comp_state, prompt_state, 10, mylib.Stdout(),
-                           debug_f)
-
-        self.reader = None
+    def __init__(self, comp_state, prompt_state, debug_f, signal_safe):
+        # type: (State, PromptState, _DebugFile, iolib.SignalSafe) -> None
+        _IDisplay.__init__(self, comp_state, prompt_state,
+                           DEFAULT_MATCH_LINE_LIMIT, mylib.Stdout(), debug_f,
+                           signal_safe)
 
     def _RedrawPrompt(self):
         # type: () -> None
@@ -163,22 +189,11 @@ class MinimalDisplay(_IDisplay):
         display_pos = self.comp_state.display_pos
         assert display_pos != -1
 
-        too_many = False
-        i = 0
-        for m in matches:
-            self.f.write(' %s\n' % m[display_pos:])
-
-            if i == self.num_lines_cap:
-                too_many = True
-                i += 1  # Count this one
-                break
-
-            i += 1
-
-        if too_many:
-            num_left = len(matches) - i
-            if num_left:
-                self.f.write(' ... and %d more\n' % num_left)
+        to_display = [m[display_pos:] for m in matches]
+        lens = [len(m) for m in to_display]
+        max_match_len = max(lens)
+        term_width = self._GetTermWidth()
+        _PrintPacked(to_display, max_match_len, term_width, self.num_lines_cap, self.f)
 
         self._RedrawPrompt()
 
@@ -311,7 +326,6 @@ class NiceDisplay(_IDisplay):
 
     def __init__(
             self,
-            term_width,  # type: int
             comp_state,  # type: State
             prompt_state,  # type: PromptState
             debug_f,  # type: _DebugFile
@@ -323,13 +337,11 @@ class NiceDisplay(_IDisplay):
     Args:
       bold_line: Should user's entry be bold?
     """
-        _IDisplay.__init__(self, comp_state, prompt_state, 10, mylib.Stdout(),
-                           debug_f)
-
-        self.term_width = term_width  # initial terminal width; will be invalidated
+        _IDisplay.__init__(self, comp_state, prompt_state,
+                           DEFAULT_MATCH_LINE_LIMIT, mylib.Stdout(), debug_f,
+                           signal_safe)
 
         self.readline = readline
-        self.signal_safe = signal_safe
 
         self.bold_line = False
 
@@ -341,6 +353,12 @@ class NiceDisplay(_IDisplay):
 
         # hash of matches -> count.  Has exactly ONE entry at a time.
         self.dupes = {}  # type: Dict[int, int]
+
+    def ReadlineInitCommands(self):
+        # type: () -> List[str]
+        # NOTE: This setting prevents line-wrapping from clobbering completion
+        # output. See https://github.com/oils-for-unix/oils/issues/257
+        return ['set horizontal-scroll-mode on']
 
     def Reset(self):
         # type: () -> None
@@ -362,7 +380,7 @@ class NiceDisplay(_IDisplay):
 
         # Go right, but not more than the terminal width.
         n = orig_len + last_prompt_len
-        n = n % self._GetTerminalWidth()
+        n = n % self._GetTermWidth()
         self.f.write('\x1b[%dC' % n)  # RIGHT
 
         if self.bold_line:
@@ -372,7 +390,7 @@ class NiceDisplay(_IDisplay):
 
     def _PrintCandidates(self, unused_subst, matches, unused_max_match_len):
         # type: (Optional[str], List[str], int) -> None
-        term_width = self._GetTerminalWidth()
+        term_width = self._GetTermWidth()
 
         # Variables set by the completion generator.  They should always exist,
         # because we can't get "matches" without calling that function.
@@ -452,7 +470,7 @@ class NiceDisplay(_IDisplay):
             #log('PrintOptional %r', msg, file=DEBUG_F)
 
             # Truncate to terminal width
-            max_len = self._GetTerminalWidth() - 2
+            max_len = self._GetTermWidth() - 2
             if len(msg) > max_len:
                 msg = msg[:max_len - 5] + ' ... '
 
@@ -473,7 +491,7 @@ class NiceDisplay(_IDisplay):
 
     def ShowPromptOnRight(self, rendered):
         # type: (str) -> None
-        n = self._GetTerminalWidth() - 2 - len(rendered)
+        n = self._GetTermWidth() - 2 - len(rendered)
         spaces = ' ' * n
 
         # We avoid drawing problems if we print it on its own line:
@@ -514,18 +532,6 @@ class NiceDisplay(_IDisplay):
         self.f.write('\x1b[%dA' % n)
         self.f.flush()  # Without this, output will look messed up
 
-    def _GetTerminalWidth(self):
-        # type: () -> int
-        if self.signal_safe.PollSigWinch():  # is our value dirty?
-            try:
-                self.term_width = libc.get_terminal_width()
-            except (IOError, OSError):
-                # This shouldn't raise IOError because we did it at startup!  Under
-                # rare circumstances stdin can change, e.g. if you do exec <&
-                # input.txt.  So we have a fallback.
-                self.term_width = 80
-        return self.term_width
-
 
 def ExecutePrintCandidates(display, sub, matches, max_len):
     # type: (_IDisplay, str, List[str], int) -> None
@@ -550,7 +556,8 @@ def InitReadline(
 
     readline.parse_and_bind('tab: complete')
 
-    readline.parse_and_bind('set horizontal-scroll-mode on')
+    for cmd in display.ReadlineInitCommands():
+        readline.parse_and_bind(cmd)
 
     # How does this map to C?
     # https://cnswww.cns.cwru.edu/php/chet/readline/readline.html#SEC45

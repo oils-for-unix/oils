@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 #
+# This file is GENERATED -- DO NOT EDIT.
+#
+# Update it with:
+#   test/spec-runner.sh gen-task-file
+#
 # Usage:
 #   test/spec.sh <function name>
 
@@ -7,988 +12,794 @@
 source $LIB_OSH/bash-strict.sh
 source $LIB_OSH/task-five.sh
 
-REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
-
-source test/common.sh
-source test/spec-common.sh
-
-if test -z "${IN_NIX_SHELL:-}"; then
-  source build/dev-shell.sh  # to run 'dash', etc.
-fi
-
-# TODO: Just use 'dash bash' and $PATH
-readonly DASH=dash
-readonly BASH=bash
-readonly MKSH=mksh
-readonly ZSH=zsh
-readonly BUSYBOX_ASH=ash
-
-# ash and dash are similar, so not including ash by default.  zsh is not quite
-# POSIX.
-readonly REF_SHELLS=($DASH $BASH $MKSH)
-
-check-survey-shells() {
-  ### Make sure bash, zsh, OSH, etc. exist
-
-  # Note: yash isn't here, but it is used in a couple tests
-
-  test/spec-runner.sh shell-sanity-check "${REF_SHELLS[@]}" $ZSH $BUSYBOX_ASH $OSH_LIST
-}
-
-# TODO: remove this stub after we hollow out this file
-
-run-file() { test/spec-py.sh run-file "$@"; }
-
-#
-# Misc
-#
-
-# Really what I want is enter(func) and exit(func), and filter by regex?
-trace-var-sub() {
-  local out=_tmp/coverage
-  mkdir -p $out
-
-  # This creates *.cover files, with line counts.
-  #python -m trace --count -C $out \
-
-  # This prints trace with line numbers to stdout.
-  #python -m trace --trace -C $out \
-  PYTHONPATH=. python -m trace --trackcalls -C $out \
-    test/sh_spec.py spec/var-sub.test.sh $DASH $BASH "$@"
-
-  ls -l $out
-  head $out/*.cover
-}
-
-#
-# Individual tests.
-#
-# We configure the shells they run on and the number of allowed failures (to
-# prevent regressions.)
-#
-
-interactive-parse() {
-  run-file interactive-parse "$@"
-}
-
-smoke() {
-  run-file smoke "$@"
-}
-
-interactive() {
-  run-file interactive "$@"
-}
-
-prompt() {
-  run-file prompt "$@"
-}
-
-bugs() {
-  run-file bugs "$@"
-}
-
-osh-bugs() {
-  run-file osh-bugs "$@"
-}
-
-blog1() {
-  sh-spec spec/blog1.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
-}
-
-blog2() {
-  run-file blog2 "$@"
-}
-
-blog-other1() {
-  sh-spec spec/blog-other1.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
-}
+source build/dev-shell.sh
 
 alias() {
-  run-file alias "$@"
+  test/spec-py.sh run-file alias "$@"
 }
 
-comments() {
-  sh-spec spec/comments.test.sh ${REF_SHELLS[@]} $OSH_LIST "$@"
+append() {
+  test/spec-py.sh run-file append "$@"
 }
 
-word-split() {
-  run-file word-split "$@"
-}
-
-word-eval() {
-  sh-spec spec/word-eval.test.sh \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
-}
-
-# These cases apply to many shells.
-assign() {
-  run-file assign "$@"
-}
-
-# These cases apply to a few shells.
-assign-extended() {
-  run-file assign-extended "$@"
-}
-
-# Corner cases that OSH doesn't handle
-assign-deferred() {
-  run-file assign-deferred "$@"
-}
-
-# These test associative arrays
-assign-dialects() {
-  run-file assign-dialects "$@"
-}
-
-background() {
-  run-file background "$@"
-}
-
-subshell() {
-  run-file subshell "$@"
-}
-
-quote() {
-  run-file quote "$@"
-}
-
-unicode() {
-  run-file unicode "$@"
-}
-
-loop() {
-  run-file loop "$@"
-}
-
-case_() {
-  run-file case_ "$@"
-}
-
-if_() {
-  run-file if_ "$@"
-}
-
-builtin-misc() {
-  run-file builtin-misc "$@"
-}
-
-builtin-process() {
-  run-file builtin-process "$@"
-}
-
-builtin-cd() {
-  run-file builtin-cd "$@"
-}
-
-builtin-eval-source() {
-  run-file builtin-eval-source "$@"
-}
-
-builtin-echo() {
-  run-file builtin-echo "$@"
-}
-
-builtin-read() {
-  run-file builtin-read "$@"
-}
-
-nul-bytes() {
-  run-file nul-bytes "$@"
-}
-
-whitespace() {
-  run-file whitespace "$@"
-}
-
-# Special bash printf things like -v and %q.  Portable stuff goes in builtin-io.
-builtin-printf() {
-  run-file builtin-printf "$@"
-}
-
-builtin-meta() {
-  run-file builtin-meta  "$@"
-}
-
-builtin-history() {
-  run-file builtin-history "$@"
-}
-
-builtin-dirs() {
-  run-file builtin-dirs "$@"
-}
-
-builtin-vars() {
-  run-file builtin-vars "$@"
-}
-
-builtin-getopts() {
-  run-file builtin-getopts "$@"
-}
-
-builtin-bracket() {
-  run-file builtin-bracket "$@"
-}
-
-builtin-trap() {
-  run-file builtin-trap "$@"
-}
-
-builtin-trap-err() {
-  run-file builtin-trap-err "$@"
-}
-
-builtin-trap-bash() {
-  run-file builtin-trap-bash "$@"
-}
-
-# Bash implements type -t, but no other shell does.  For Nix.
-# zsh/mksh/dash don't have the 'help' builtin.
-builtin-bash() {
-  run-file builtin-bash "$@"
-}
-
-builtin-bind() {
-  run-file builtin-bind "$@"
-}
-
-builtin-type() {
-  run-file builtin-type "$@"
-}
-
-builtin-type-bash() {
-  run-file builtin-type-bash "$@"
-}
-
-vars-bash() {
-  run-file vars-bash "$@"
-}
-
-vars-special() {
-  run-file vars-special "$@"
-}
-
-builtin-completion() {
-  run-file builtin-completion "$@"
-}
-
-builtin-special() {
-  run-file builtin-special "$@"
-}
-
-builtin-times() {
-  run-file builtin-times "$@"
-}
-
-command-parsing() {
-  run-file command-parsing "$@"
-}
-
-func-parsing() {
-  run-file func-parsing "$@"
-}
-
-sh-func() {
-  run-file sh-func "$@"
-}
-
-glob() {
-  run-file glob "$@"
-}
-
-globignore() {
-  run-file globignore "$@"
-}
-
-arith() {
-  run-file arith "$@"
+arith-context() {
+  test/spec-py.sh run-file arith-context "$@"
 }
 
 arith-dynamic() {
-  run-file arith-dynamic "$@"
+  test/spec-py.sh run-file arith-dynamic "$@"
 }
 
-command-sub() {
-  sh-spec spec/command-sub.test.sh \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+arith() {
+  test/spec-py.sh run-file arith "$@"
 }
 
-command_() {
-  sh-spec spec/command_.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
-}
-
-pipeline() {
-  run-file pipeline "$@"
-}
-
-explore-parsing() {
-  sh-spec spec/explore-parsing.test.sh \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
-}
-
-parse-errors() {
-  run-file parse-errors "$@"
-}
-
-here-doc() {
-  # NOTE: The last two tests, 31 and 32, have different behavior on my Ubuntu
-  # and Debian machines.
-  # - On Ubuntu, read_from_fd.py fails with Errno 9 -- bad file descriptor.
-  # - On Debian, the whole process hangs.
-  # Is this due to Python 3.2 vs 3.4?  Either way osh doesn't implement the
-  # functionality, so it's probably best to just implement it.
-  sh-spec spec/here-doc.test.sh --range 0-31 \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
-}
-
-redirect() {
-  run-file redirect "$@"
-}
-
-redirect-command() {
-  run-file redirect-command "$@"
-}
-
-redirect-multi() {
-  run-file redirect-multi "$@"
-}
-
-posix() {
-  sh-spec spec/posix.test.sh \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
-}
-
-introspect() {
-  run-file introspect "$@"
-}
-
-tilde() {
-  run-file tilde "$@"
-}
-
-var-op-test() {
-  run-file var-op-test "$@"
-}
-
-var-op-len() {
-  sh-spec spec/var-op-len.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
-}
-
-var-op-patsub() {
-  # 1 unicode failure, and [^]] which is a parsing divergence
-  run-file var-op-patsub "$@"
-}
-
-var-op-slice() {
-  run-file var-op-slice "$@"
-}
-
-var-op-bash() {
-  run-file var-op-bash "$@"
-}
-
-var-op-strip() {
-  sh-spec spec/var-op-strip.test.sh \
-    ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
-}
-
-var-sub() {
-  # NOTE: ZSH has interesting behavior, like echo hi > "$@" can write to TWO
-  # FILES!  But ultimately we don't really care, so I disabled it.
-  sh-spec spec/var-sub.test.sh \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
-}
-
-var-num() {
-  run-file var-num "$@"
-}
-
-var-sub-quote() {
-  sh-spec spec/var-sub-quote.test.sh \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
-}
-
-sh-usage() {
-  run-file sh-usage "$@"
-}
-
-sh-options() {
-  run-file sh-options "$@"
-}
-
-xtrace() {
-  run-file xtrace "$@"
-}
-
-strict-options() {
-  run-file strict-options "$@"
-}
-
-exit-status() {
-  run-file exit-status "$@"
-}
-
-errexit() {
-  run-file errexit "$@"
-}
-
-errexit-osh() {
-  run-file errexit-osh "$@"
-}
-
-fatal-errors() {
-  sh-spec spec/fatal-errors.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
-}
-
-# 
-# Non-POSIX extensions: arrays, brace expansion, [[, ((, etc.
-#
-
-# There as many non-POSIX arithmetic contexts.
-arith-context() {
-  run-file arith-context "$@"
-}
-
-array() {
-  run-file array "$@"
+array-assoc() {
+  test/spec-py.sh run-file array-assoc "$@"
 }
 
 array-basic() {
-  run-file array-basic "$@"
+  test/spec-py.sh run-file array-basic "$@"
 }
 
 array-compat() {
-  run-file array-compat "$@"
+  test/spec-py.sh run-file array-compat "$@"
 }
 
-type-compat() {
-  run-file type-compat "$@"
+array-literal() {
+  test/spec-py.sh run-file array-literal "$@"
 }
 
-# += is not POSIX and not in dash.
-append() {
-  run-file append "$@"
+array-sparse() {
+  test/spec-py.sh run-file array-sparse "$@"
 }
 
-# associative array -- mksh and zsh implement different associative arrays.
-assoc() {
-  run-file assoc "$@"
+array() {
+  test/spec-py.sh run-file array "$@"
 }
 
-# ZSH also has associative arrays
-assoc-zsh() {
-  run-file assoc-zsh "$@"
+assign-deferred() {
+  test/spec-py.sh run-file assign-deferred "$@"
 }
 
-dbracket() {
-  run-file dbracket "$@"
+assign-dialects() {
+  test/spec-py.sh run-file assign-dialects "$@"
 }
 
-dparen() {
-  run-file dparen "$@"
+assign-extended() {
+  test/spec-py.sh run-file assign-extended "$@"
 }
 
-brace-expansion() {
-  run-file brace-expansion "$@"
+assign() {
+  test/spec-py.sh run-file assign "$@"
 }
 
-regex() {
-  run-file regex "$@"
-}
-
-process-sub() {
-  run-file process-sub "$@"
-}
-
-# This does file system globbing
-extglob-files() {
-  run-file extglob-files "$@"
-}
-
-# This does string matching.
-extglob-match() {
-  sh-spec spec/extglob-match.test.sh \
-    $BASH $MKSH $OSH_LIST "$@"
-}
-
-nocasematch-match() {
-  run-file nocasematch-match "$@"
-}
-
-# ${!var} syntax -- oil should replace this with associative arrays.
-# mksh has completely different behavior for this syntax.  Not worth testing.
-var-ref() {
-  run-file var-ref "$@"
-}
-
-nameref() {
-  ### declare -n / local -n
-  run-file nameref "$@"
-}
-
-let() {
-  run-file let "$@"
-}
-
-for-expr() {
-  run-file for-expr "$@"
-}
-
-empty-bodies() {
-  sh-spec spec/empty-bodies.test.sh "${REF_SHELLS[@]}" $ZSH $OSH_LIST "$@"
-}
-
-# TODO: This is for the ANTLR grammars, in the oil-sketch repo.
-# osh has infinite loop?
-shell-grammar() {
-  sh-spec spec/shell-grammar.test.sh $BASH $MKSH $ZSH "$@"
-}
-
-serialize() {
-  run-file serialize "$@"
-}
-
-#
-# Smoosh
-#
-
-readonly SMOOSH_REPO=~/git/languages/smoosh
-
-sh-spec-smoosh-env() {
-  local test_file=$1
-  shift
-
-  # - smoosh tests use $TEST_SHELL instead of $SH
-  # - cd $TMP to avoid littering repo
-  # - pass -o posix
-  # - timeout of 1 second
-  # - Some tests in smoosh use $HOME and $LOGNAME
-
-  sh-spec $test_file \
-    --sh-env-var-name TEST_SHELL \
-    --posix \
-    --env-pair "TEST_UTIL=$SMOOSH_REPO/tests/util" \
-    --env-pair "LOGNAME=$LOGNAME" \
-    --env-pair "HOME=$HOME" \
-    --timeout 1 \
-    --oils-bin-dir $REPO_ROOT/bin \
-    --compare-shells \
-    "$@"
-}
-
-# For speed, only run with one copy of OSH.
-readonly smoosh_osh_list=$OSH_CPYTHON
-
-smoosh() {
-  ### Run case smoosh from the console
-
-  # TODO: Use --oils-bin-dir
-  # our_shells, etc.
-
-  sh-spec-smoosh-env _tmp/smoosh.test.sh \
-    ${REF_SHELLS[@]} $smoosh_osh_list \
-    "$@"
-}
-
-smoosh-hang() {
-  ### Run case smoosh-hang from the console
-
-  # Need the smoosh timeout tool to run correctly.
-  sh-spec-smoosh-env _tmp/smoosh-hang.test.sh \
-    --timeout-bin "$SMOOSH_REPO/tests/util/timeout" \
-    --timeout 1 \
-    "$@"
-}
-
-_one-html() {
-  local spec_name=$1
-  shift
-
-  local out_dir=_tmp/spec/smoosh
-  local tmp_dir=_tmp/src-smoosh
-  mkdir -p $out_dir $out_dir
-
-  doctools/src_tree.py smoosh-file \
-    _tmp/$spec_name.test.sh \
-    $out_dir/$spec_name.test.html
-
-  local out=$out_dir/${spec_name}.html
-  set +o errexit
-  # Shell function is smoosh or smoosh-hang
-  time $spec_name --format html "$@" > $out
-  set -o errexit
-
-  echo
-  echo "Wrote $out"
-
-  # NOTE: This IGNORES the exit status.
-}
-
-# TODO:
-# - Put these tests in the CI
-# - Import smoosh spec tests into the repo, with 'test/smoosh.sh'
-
-smoosh-html() {
-  ### Run by devtools/release.sh
-  _one-html smoosh "$@"
-}
-
-smoosh-hang-html() {
-  ### Run by devtools/release.sh
-  _one-html smoosh-hang "$@"
-}
-
-html-demo() {
-  ### Test for --format html
-
-  local out=_tmp/spec/demo.html
-  builtin-special --format html "$@" > $out
-
-  echo
-  echo "Wrote $out"
-}
-
-#
-# Hay is part of the YSH suite
-#
-
-hay() {
-  run-file hay "$@"
-}
-
-hay-isolation() {
-  run-file hay-isolation "$@"
-}
-
-hay-meta() {
-  run-file hay-meta "$@"
-}
-
-#
-# YSH
-#
-
-ysh-TODO-deprecate() {
-  run-file ysh-TODO-deprecate "$@"
-}
-
-ysh-convert() {
-  run-file ysh-convert "$@"
-}
-
-ysh-completion() {
-  run-file ysh-completion "$@"
-}
-
-ysh-stdlib() {
-  run-file ysh-stdlib "$@"
-}
-
-ysh-stdlib-args() {
-  run-file ysh-stdlib-args "$@"
-}
-
-ysh-stdlib-synch() {
-  run-file ysh-stdlib-synch "$@"
-}
-
-ysh-source() {
-  run-file ysh-source "$@"
-}
-
-ysh-usage() {
-  run-file ysh-usage "$@"
-}
-
-ysh-unicode() {
-  run-file ysh-unicode "$@"
-}
-
-ysh-bin() {
-  run-file ysh-bin "$@"
-}
-
-ysh-dict() {
-  run-file ysh-dict "$@"
-}
-
-ysh-list() {
-  run-file ysh-list "$@"
-}
-
-ysh-place() {
-  run-file ysh-place "$@"
-}
-
-ysh-prompt() {
-  run-file ysh-prompt "$@"
-}
-
-ysh-assign() {
-  run-file ysh-assign "$@"
-}
-
-ysh-augmented() {
-  run-file ysh-augmented "$@"
-}
-
-ysh-blocks() {
-  run-file ysh-blocks "$@"
-}
-
-ysh-control-flow() {
-  run-file ysh-control-flow "$@"
-}
-
-ysh-bugs() {
-  run-file ysh-bugs "$@"
-}
-
-ysh-builtins() {
-  run-file ysh-builtins "$@"
-}
-
-ysh-builtin-module() {
-  run-file ysh-builtin-module "$@"
-}
-
-ysh-builtin-eval() {
-  run-file ysh-builtin-eval "$@"
-}
-
-# Related to errexit-oil
-ysh-builtin-error() {
-  run-file ysh-builtin-error "$@"
-}
-
-ysh-builtin-meta() {
-  run-file ysh-builtin-meta "$@"
-}
-
-ysh-builtin-process() {
-  run-file ysh-builtin-process "$@"
-}
-
-ysh-builtin-shopt() {
-  run-file ysh-builtin-shopt "$@"
-}
-
-ysh-case() {
-  run-file ysh-case "$@"
-}
-
-ysh-command-sub() {
-  run-file ysh-command-sub "$@"
-}
-
-ysh-demo() {
-  run-file ysh-demo "$@"
-}
-
-ysh-env() {
-  run-file ysh-env "$@"
-}
-
-ysh-expr() {
-  run-file ysh-expr "$@"
-}
-
-ysh-int-float() {
-  run-file ysh-int-float "$@"
-}
-
-ysh-expr-bool() {
-  run-file ysh-expr-bool "$@"
-}
-
-ysh-expr-arith() {
-  run-file ysh-expr-arith "$@"
-}
-
-ysh-expr-compare() {
-  run-file ysh-expr-compare "$@"
-}
-
-ysh-expr-sub() {
-  run-file ysh-expr-sub "$@"
-}
-
-ysh-cmd-lang() {
-  run-file ysh-cmd-lang "$@"
-}
-
-ysh-for() {
-  run-file ysh-for "$@"
-}
-
-ysh-methods() {
-  run-file ysh-methods "$@"
-}
-
-ysh-method-io() {
-  run-file ysh-method-io "$@"
-}
-
-ysh-namespaces() {
-  run-file ysh-namespaces "$@"
-}
-
-ysh-object() {
-  run-file ysh-object "$@"
-}
-
-ysh-closures() {
-  run-file ysh-closures "$@"
-}
-
-ysh-func() {
-  run-file ysh-func "$@"
-}
-
-ysh-func-builtin() {
-  run-file ysh-func-builtin "$@"
-}
-
-ysh-funcs-external() {
-  run-file ysh-funcs-external "$@"
-}
-
-ysh-interactive() {
-  run-file ysh-interactive "$@"
-}
-
-ysh-json() {
-  run-file ysh-json "$@"
-}
-
-ysh-keywords() {
-  run-file ysh-keywords "$@"
-}
-
-ysh-multiline() {
-  run-file ysh-multiline "$@"
-}
-
-ysh-options() {
-  run-file ysh-options "$@"
-}
-
-ysh-options-assign() {
-  run-file ysh-options-assign "$@"
-}
-
-ysh-proc() {
-  run-file ysh-proc "$@"
-}
-
-ysh-proc-meta() {
-  run-file ysh-proc-meta "$@"
-}
-
-ysh-regex() {
-  run-file ysh-regex "$@"
-}
-
-ysh-regex-api() {
-  run-file ysh-regex-api "$@"
-}
-
-ysh-reserved() {
-  run-file ysh-reserved "$@"
-}
-
-ysh-scope() {
-  run-file ysh-scope "$@"
-}
-
-ysh-slice-range() {
-  run-file ysh-slice-range "$@"
-}
-
-ysh-string() {
-  run-file ysh-string "$@"
-}
-
-ysh-special-vars() {
-  run-file ysh-special-vars "$@"
-}
-
-ysh-tuple() {
-  run-file ysh-tuple "$@"
-}
-
-ysh-var-sub() {
-  run-file ysh-var-sub "$@"
-}
-
-ysh-with-sh() {
-  run-file ysh-with-sh "$@"
-}
-
-ysh-word-eval() {
-  run-file ysh-word-eval "$@"
-}
-
-ysh-xtrace() {
-  run-file ysh-xtrace "$@"
-}
-
-ysh-user-feedback() {
-  run-file ysh-user-feedback "$@"
-}
-
-ysh-builtin-ctx() {
-  run-file ysh-builtin-ctx "$@"
-}
-
-ysh-builtin-error() {
-  run-file ysh-builtin-error "$@"
-}
-
-ysh-builtin-help() {
-  run-file ysh-builtin-help "$@"
-}
-
-ysh-dev() {
-  run-file ysh-dev "$@"
-}
-
-ysh-printing() {
-  run-file ysh-printing "$@"
-}
-
-
-#
-# More OSH
-#
-
-nix-idioms() {
-  run-file nix-idioms "$@"
-}
-
-zsh-idioms() {
-  run-file zsh-idioms "$@"
-}
-
-ble-idioms() {
-  sh-spec spec/ble-idioms.test.sh \
-    $BASH $ZSH $MKSH $BUSYBOX_ASH $OSH_LIST "$@"
+background() {
+  test/spec-py.sh run-file background "$@"
 }
 
 ble-features() {
-  run-file ble-features "$@"
+  test/spec-py.sh run-file ble-features "$@"
 }
 
-toysh() {
-  run-file toysh "$@"
+ble-idioms() {
+  test/spec-py.sh run-file ble-idioms "$@"
+}
+
+blog1() {
+  test/spec-py.sh run-file blog1 "$@"
+}
+
+blog2() {
+  test/spec-py.sh run-file blog2 "$@"
+}
+
+blog-other1() {
+  test/spec-py.sh run-file blog-other1 "$@"
+}
+
+brace-expansion() {
+  test/spec-py.sh run-file brace-expansion "$@"
+}
+
+bugs() {
+  test/spec-py.sh run-file bugs "$@"
+}
+
+builtin-bash() {
+  test/spec-py.sh run-file builtin-bash "$@"
+}
+
+builtin-bind() {
+  test/spec-py.sh run-file builtin-bind "$@"
+}
+
+builtin-bracket() {
+  test/spec-py.sh run-file builtin-bracket "$@"
+}
+
+builtin-cd() {
+  test/spec-py.sh run-file builtin-cd "$@"
+}
+
+builtin-completion() {
+  test/spec-py.sh run-file builtin-completion "$@"
+}
+
+builtin-dirs() {
+  test/spec-py.sh run-file builtin-dirs "$@"
+}
+
+builtin-echo() {
+  test/spec-py.sh run-file builtin-echo "$@"
+}
+
+builtin-eval-source() {
+  test/spec-py.sh run-file builtin-eval-source "$@"
+}
+
+builtin-getopts() {
+  test/spec-py.sh run-file builtin-getopts "$@"
+}
+
+builtin-history() {
+  test/spec-py.sh run-file builtin-history "$@"
+}
+
+builtin-meta() {
+  test/spec-py.sh run-file builtin-meta "$@"
+}
+
+builtin-misc() {
+  test/spec-py.sh run-file builtin-misc "$@"
+}
+
+builtin-printf() {
+  test/spec-py.sh run-file builtin-printf "$@"
+}
+
+builtin-process() {
+  test/spec-py.sh run-file builtin-process "$@"
+}
+
+builtin-read() {
+  test/spec-py.sh run-file builtin-read "$@"
+}
+
+builtin-special() {
+  test/spec-py.sh run-file builtin-special "$@"
+}
+
+builtin-times() {
+  test/spec-py.sh run-file builtin-times "$@"
+}
+
+builtin-trap-bash() {
+  test/spec-py.sh run-file builtin-trap-bash "$@"
+}
+
+builtin-trap-err() {
+  test/spec-py.sh run-file builtin-trap-err "$@"
+}
+
+builtin-trap() {
+  test/spec-py.sh run-file builtin-trap "$@"
+}
+
+builtin-type-bash() {
+  test/spec-py.sh run-file builtin-type-bash "$@"
+}
+
+builtin-type() {
+  test/spec-py.sh run-file builtin-type "$@"
+}
+
+builtin-vars() {
+  test/spec-py.sh run-file builtin-vars "$@"
+}
+
+case_() {
+  test/spec-py.sh run-file case_ "$@"
+}
+
+command-parsing() {
+  test/spec-py.sh run-file command-parsing "$@"
+}
+
+command-sub-ksh() {
+  test/spec-py.sh run-file command-sub-ksh "$@"
+}
+
+command-sub() {
+  test/spec-py.sh run-file command-sub "$@"
+}
+
+command_() {
+  test/spec-py.sh run-file command_ "$@"
+}
+
+comments() {
+  test/spec-py.sh run-file comments "$@"
+}
+
+dbracket() {
+  test/spec-py.sh run-file dbracket "$@"
+}
+
+dparen() {
+  test/spec-py.sh run-file dparen "$@"
+}
+
+empty-bodies() {
+  test/spec-py.sh run-file empty-bodies "$@"
+}
+
+errexit-osh() {
+  test/spec-py.sh run-file errexit-osh "$@"
+}
+
+errexit() {
+  test/spec-py.sh run-file errexit "$@"
+}
+
+exit-status() {
+  test/spec-py.sh run-file exit-status "$@"
+}
+
+explore-parsing() {
+  test/spec-py.sh run-file explore-parsing "$@"
+}
+
+extglob-files() {
+  test/spec-py.sh run-file extglob-files "$@"
+}
+
+extglob-match() {
+  test/spec-py.sh run-file extglob-match "$@"
+}
+
+fatal-errors() {
+  test/spec-py.sh run-file fatal-errors "$@"
+}
+
+for-expr() {
+  test/spec-py.sh run-file for-expr "$@"
+}
+
+func-parsing() {
+  test/spec-py.sh run-file func-parsing "$@"
+}
+
+globignore() {
+  test/spec-py.sh run-file globignore "$@"
+}
+
+globstar() {
+  test/spec-py.sh run-file globstar "$@"
+}
+
+glob() {
+  test/spec-py.sh run-file glob "$@"
+}
+
+hay-isolation() {
+  test/spec-py.sh run-file hay-isolation "$@"
+}
+
+hay-meta() {
+  test/spec-py.sh run-file hay-meta "$@"
+}
+
+hay() {
+  test/spec-py.sh run-file hay "$@"
+}
+
+here-doc() {
+  test/spec-py.sh run-file here-doc "$@"
+}
+
+if_() {
+  test/spec-py.sh run-file if_ "$@"
+}
+
+interactive-parse() {
+  test/spec-py.sh run-file interactive-parse "$@"
+}
+
+interactive() {
+  test/spec-py.sh run-file interactive "$@"
+}
+
+introspect() {
+  test/spec-py.sh run-file introspect "$@"
+}
+
+let() {
+  test/spec-py.sh run-file let "$@"
+}
+
+loop() {
+  test/spec-py.sh run-file loop "$@"
+}
+
+nameref() {
+  test/spec-py.sh run-file nameref "$@"
+}
+
+nix-idioms() {
+  test/spec-py.sh run-file nix-idioms "$@"
+}
+
+nocasematch-match() {
+  test/spec-py.sh run-file nocasematch-match "$@"
+}
+
+nul-bytes() {
+  test/spec-py.sh run-file nul-bytes "$@"
+}
+
+osh-bugs() {
+  test/spec-py.sh run-file osh-bugs "$@"
+}
+
+parse-errors() {
+  test/spec-py.sh run-file parse-errors "$@"
+}
+
+pipeline() {
+  test/spec-py.sh run-file pipeline "$@"
+}
+
+posix() {
+  test/spec-py.sh run-file posix "$@"
+}
+
+process-sub() {
+  test/spec-py.sh run-file process-sub "$@"
+}
+
+prompt() {
+  test/spec-py.sh run-file prompt "$@"
+}
+
+quote() {
+  test/spec-py.sh run-file quote "$@"
+}
+
+redirect-command() {
+  test/spec-py.sh run-file redirect-command "$@"
+}
+
+redirect-multi() {
+  test/spec-py.sh run-file redirect-multi "$@"
+}
+
+redirect() {
+  test/spec-py.sh run-file redirect "$@"
+}
+
+regex() {
+  test/spec-py.sh run-file regex "$@"
+}
+
+serialize() {
+  test/spec-py.sh run-file serialize "$@"
+}
+
+shell-grammar() {
+  test/spec-py.sh run-file shell-grammar "$@"
+}
+
+sh-func() {
+  test/spec-py.sh run-file sh-func "$@"
+}
+
+sh-options() {
+  test/spec-py.sh run-file sh-options "$@"
+}
+
+sh-usage() {
+  test/spec-py.sh run-file sh-usage "$@"
+}
+
+smoke() {
+  test/spec-py.sh run-file smoke "$@"
+}
+
+spec-harness-bug() {
+  test/spec-py.sh run-file spec-harness-bug "$@"
+}
+
+strict-options() {
+  test/spec-py.sh run-file strict-options "$@"
+}
+
+subshell() {
+  test/spec-py.sh run-file subshell "$@"
+}
+
+tilde() {
+  test/spec-py.sh run-file tilde "$@"
 }
 
 toysh-posix() {
-  run-file toysh-posix "$@"
+  test/spec-py.sh run-file toysh-posix "$@"
+}
+
+toysh() {
+  test/spec-py.sh run-file toysh "$@"
+}
+
+type-compat() {
+  test/spec-py.sh run-file type-compat "$@"
+}
+
+unicode() {
+  test/spec-py.sh run-file unicode "$@"
+}
+
+var-num() {
+  test/spec-py.sh run-file var-num "$@"
+}
+
+var-op-bash() {
+  test/spec-py.sh run-file var-op-bash "$@"
+}
+
+var-op-len() {
+  test/spec-py.sh run-file var-op-len "$@"
+}
+
+var-op-patsub() {
+  test/spec-py.sh run-file var-op-patsub "$@"
+}
+
+var-op-slice() {
+  test/spec-py.sh run-file var-op-slice "$@"
+}
+
+var-op-strip() {
+  test/spec-py.sh run-file var-op-strip "$@"
+}
+
+var-op-test() {
+  test/spec-py.sh run-file var-op-test "$@"
+}
+
+var-ref() {
+  test/spec-py.sh run-file var-ref "$@"
+}
+
+vars-bash() {
+  test/spec-py.sh run-file vars-bash "$@"
+}
+
+vars-special() {
+  test/spec-py.sh run-file vars-special "$@"
+}
+
+var-sub-quote() {
+  test/spec-py.sh run-file var-sub-quote "$@"
+}
+
+var-sub() {
+  test/spec-py.sh run-file var-sub "$@"
+}
+
+whitespace() {
+  test/spec-py.sh run-file whitespace "$@"
+}
+
+word-eval() {
+  test/spec-py.sh run-file word-eval "$@"
+}
+
+word-split() {
+  test/spec-py.sh run-file word-split "$@"
+}
+
+xtrace() {
+  test/spec-py.sh run-file xtrace "$@"
+}
+
+ysh-assign() {
+  test/spec-py.sh run-file ysh-assign "$@"
+}
+
+ysh-augmented() {
+  test/spec-py.sh run-file ysh-augmented "$@"
+}
+
+ysh-bin() {
+  test/spec-py.sh run-file ysh-bin "$@"
+}
+
+ysh-blocks() {
+  test/spec-py.sh run-file ysh-blocks "$@"
+}
+
+ysh-bugs() {
+  test/spec-py.sh run-file ysh-bugs "$@"
+}
+
+ysh-builtin-ctx() {
+  test/spec-py.sh run-file ysh-builtin-ctx "$@"
+}
+
+ysh-builtin-error() {
+  test/spec-py.sh run-file ysh-builtin-error "$@"
+}
+
+ysh-builtin-eval() {
+  test/spec-py.sh run-file ysh-builtin-eval "$@"
+}
+
+ysh-builtin-help() {
+  test/spec-py.sh run-file ysh-builtin-help "$@"
+}
+
+ysh-builtin-meta() {
+  test/spec-py.sh run-file ysh-builtin-meta "$@"
+}
+
+ysh-builtin-module() {
+  test/spec-py.sh run-file ysh-builtin-module "$@"
+}
+
+ysh-builtin-process() {
+  test/spec-py.sh run-file ysh-builtin-process "$@"
+}
+
+ysh-builtin-shopt() {
+  test/spec-py.sh run-file ysh-builtin-shopt "$@"
+}
+
+ysh-builtins() {
+  test/spec-py.sh run-file ysh-builtins "$@"
+}
+
+ysh-case() {
+  test/spec-py.sh run-file ysh-case "$@"
+}
+
+ysh-closures() {
+  test/spec-py.sh run-file ysh-closures "$@"
+}
+
+ysh-cmd-lang() {
+  test/spec-py.sh run-file ysh-cmd-lang "$@"
+}
+
+ysh-command-sub() {
+  test/spec-py.sh run-file ysh-command-sub "$@"
+}
+
+ysh-completion() {
+  test/spec-py.sh run-file ysh-completion "$@"
+}
+
+ysh-control-flow() {
+  test/spec-py.sh run-file ysh-control-flow "$@"
+}
+
+ysh-convert() {
+  test/spec-py.sh run-file ysh-convert "$@"
+}
+
+ysh-demo() {
+  test/spec-py.sh run-file ysh-demo "$@"
+}
+
+ysh-dev() {
+  test/spec-py.sh run-file ysh-dev "$@"
+}
+
+ysh-dict() {
+  test/spec-py.sh run-file ysh-dict "$@"
+}
+
+ysh-env() {
+  test/spec-py.sh run-file ysh-env "$@"
+}
+
+ysh-expr-arith() {
+  test/spec-py.sh run-file ysh-expr-arith "$@"
+}
+
+ysh-expr-bool() {
+  test/spec-py.sh run-file ysh-expr-bool "$@"
+}
+
+ysh-expr-compare() {
+  test/spec-py.sh run-file ysh-expr-compare "$@"
+}
+
+ysh-expr-sub() {
+  test/spec-py.sh run-file ysh-expr-sub "$@"
+}
+
+ysh-expr() {
+  test/spec-py.sh run-file ysh-expr "$@"
+}
+
+ysh-for() {
+  test/spec-py.sh run-file ysh-for "$@"
+}
+
+ysh-func-builtin() {
+  test/spec-py.sh run-file ysh-func-builtin "$@"
+}
+
+ysh-funcs-external() {
+  test/spec-py.sh run-file ysh-funcs-external "$@"
+}
+
+ysh-func() {
+  test/spec-py.sh run-file ysh-func "$@"
+}
+
+ysh-interactive() {
+  test/spec-py.sh run-file ysh-interactive "$@"
+}
+
+ysh-int-float() {
+  test/spec-py.sh run-file ysh-int-float "$@"
+}
+
+ysh-introspect() {
+  test/spec-py.sh run-file ysh-introspect "$@"
+}
+
+ysh-json() {
+  test/spec-py.sh run-file ysh-json "$@"
+}
+
+ysh-keywords() {
+  test/spec-py.sh run-file ysh-keywords "$@"
+}
+
+ysh-list() {
+  test/spec-py.sh run-file ysh-list "$@"
+}
+
+ysh-method-io() {
+  test/spec-py.sh run-file ysh-method-io "$@"
+}
+
+ysh-method-other() {
+  test/spec-py.sh run-file ysh-method-other "$@"
+}
+
+ysh-methods() {
+  test/spec-py.sh run-file ysh-methods "$@"
+}
+
+ysh-multiline() {
+  test/spec-py.sh run-file ysh-multiline "$@"
+}
+
+ysh-namespaces() {
+  test/spec-py.sh run-file ysh-namespaces "$@"
+}
+
+ysh-object() {
+  test/spec-py.sh run-file ysh-object "$@"
+}
+
+ysh-options-assign() {
+  test/spec-py.sh run-file ysh-options-assign "$@"
+}
+
+ysh-options() {
+  test/spec-py.sh run-file ysh-options "$@"
+}
+
+ysh-place() {
+  test/spec-py.sh run-file ysh-place "$@"
+}
+
+ysh-printing() {
+  test/spec-py.sh run-file ysh-printing "$@"
+}
+
+ysh-proc-meta() {
+  test/spec-py.sh run-file ysh-proc-meta "$@"
+}
+
+ysh-proc() {
+  test/spec-py.sh run-file ysh-proc "$@"
+}
+
+ysh-prompt() {
+  test/spec-py.sh run-file ysh-prompt "$@"
+}
+
+ysh-purity() {
+  test/spec-py.sh run-file ysh-purity "$@"
+}
+
+ysh-regex-api() {
+  test/spec-py.sh run-file ysh-regex-api "$@"
+}
+
+ysh-regex() {
+  test/spec-py.sh run-file ysh-regex "$@"
+}
+
+ysh-reserved() {
+  test/spec-py.sh run-file ysh-reserved "$@"
+}
+
+ysh-scope() {
+  test/spec-py.sh run-file ysh-scope "$@"
+}
+
+ysh-slice-range() {
+  test/spec-py.sh run-file ysh-slice-range "$@"
+}
+
+ysh-source() {
+  test/spec-py.sh run-file ysh-source "$@"
+}
+
+ysh-special-vars() {
+  test/spec-py.sh run-file ysh-special-vars "$@"
+}
+
+ysh-stdlib-args() {
+  test/spec-py.sh run-file ysh-stdlib-args "$@"
+}
+
+ysh-stdlib() {
+  test/spec-py.sh run-file ysh-stdlib "$@"
+}
+
+ysh-string() {
+  test/spec-py.sh run-file ysh-string "$@"
+}
+
+ysh-TODO-deprecate() {
+  test/spec-py.sh run-file ysh-TODO-deprecate "$@"
+}
+
+ysh-tuple() {
+  test/spec-py.sh run-file ysh-tuple "$@"
+}
+
+ysh-unicode() {
+  test/spec-py.sh run-file ysh-unicode "$@"
+}
+
+ysh-usage() {
+  test/spec-py.sh run-file ysh-usage "$@"
+}
+
+ysh-user-feedback() {
+  test/spec-py.sh run-file ysh-user-feedback "$@"
+}
+
+ysh-var-sub() {
+  test/spec-py.sh run-file ysh-var-sub "$@"
+}
+
+ysh-with-sh() {
+  test/spec-py.sh run-file ysh-with-sh "$@"
+}
+
+ysh-word-eval() {
+  test/spec-py.sh run-file ysh-word-eval "$@"
+}
+
+ysh-xtrace() {
+  test/spec-py.sh run-file ysh-xtrace "$@"
+}
+
+zsh-assoc() {
+  test/spec-py.sh run-file zsh-assoc "$@"
+}
+
+zsh-idioms() {
+  test/spec-py.sh run-file zsh-idioms "$@"
 }
 
 task-five "$@"

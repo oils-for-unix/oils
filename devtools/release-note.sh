@@ -14,8 +14,8 @@ set -o errexit
 source build/dev-shell.sh  # PYTHONPATH
 source devtools/release-version.sh  # for escape-segments
 
-readonly OILS_VERSION=$(head -n 1 oil-version.txt)
-readonly PREV_VERSION='0.23.0'
+readonly OILS_VERSION=$(head -n 1 oils-version.txt)
+readonly PREV_VERSION='0.27.0'
 
 # adapted from release-version.sh
 _git-changelog-body() {
@@ -68,7 +68,7 @@ issues-table() {
 }
 
 readonly DATE_DIR=$(date +%Y/%m)
-readonly BLOG_DIR="../oilshell.org/blog/$DATE_DIR"
+readonly BLOG_DIR="../oils.pub/blog/$DATE_DIR"
 
 write-template() {
   ### New blog post
@@ -81,10 +81,11 @@ write-template() {
 write-zulip-thread() {
   local bot_email=$1
   local bot_api_key=$2
+  local version=${3:-$OILS_VERSION}
   
-  local out=$BLOG_DIR/release-thread.txt
+  local out=$BLOG_DIR/release-thread-$version.txt
   devtools/services/zulip.sh print-thread \
-    "$bot_email" "$bot_api_key" oil-dev "Oils $OILS_VERSION Release" \
+    "$bot_email" "$bot_api_key" oil-dev "Oils $version Release" \
     | tee $out
 
   echo
@@ -201,52 +202,52 @@ with the previous one, version [$metric_prev](/release/$metric_prev).
 
 The Python reference implementation foo foo
 
-- [OSH spec tests for $metric_prev](https://www.oilshell.org/release/$metric_prev/test/spec.wwz/osh-py/index.html): **2023** tests, 
+- [OSH spec tests for $metric_prev](https://oils.pub/release/$metric_prev/test/spec.wwz/osh-py/index.html): **2023** tests, 
 **1789** passing, **91** failing
-- [OSH spec tests for $OILS_VERSION](https://www.oilshell.org/release/$OILS_VERSION/test/spec.wwz/osh-py/index.html): **2042** tests, **1814** passing, **89** failing
+- [OSH spec tests for $OILS_VERSION](https://oils.pub/release/$OILS_VERSION/test/spec.wwz/osh-py/index.html): **2042** tests, **1814** passing, **89** failing
 
 And the C++ translation foo foo
 
-- [C++ spec tests for $metric_prev](https://www.oilshell.org/release/$metric_prev/test/spec.wwz/osh-cpp/compare.html) - **1684** of **1792** passing
-- [C++ spec tests for $OILS_VERSION](https://www.oilshell.org/release/$OILS_VERSION/test/spec.wwz/osh-cpp/compare.html) - **1801** of **1817** passing
+- [C++ spec tests for $metric_prev](https://oils.pub/release/$metric_prev/test/spec.wwz/osh-cpp/compare.html) - **1684** of **1792** passing
+- [C++ spec tests for $OILS_VERSION](https://oils.pub/release/$OILS_VERSION/test/spec.wwz/osh-cpp/compare.html) - **1801** of **1817** passing
 
 YSH got a lot of new behavior:
 
-- [YSH spec tests for $metric_prev](https://www.oilshell.org/release/$metric_prev/test/spec.wwz/ysh-py/index.html): **561** tests, **514** passing, **47** failing
-- [YSH spec tests for $OILS_VERSION](https://www.oilshell.org/release/$OILS_VERSION/test/spec.wwz/ysh-py/index.html): **630** tests, **571** passing, **59** failing
+- [YSH spec tests for $metric_prev](https://oils.pub/release/$metric_prev/test/spec.wwz/ysh-py/index.html): **561** tests, **514** passing, **47** failing
+- [YSH spec tests for $OILS_VERSION](https://oils.pub/release/$OILS_VERSION/test/spec.wwz/ysh-py/index.html): **630** tests, **571** passing, **59** failing
 
 And the C++ tarball is catching up rapidly:
 
-- [YSH C++ spec tests for $metric_prev](https://www.oilshell.org/release/$metric_prev/test/spec.wwz/ysh-cpp/compare.html): **357** of **514** passing, delta **157**
-- [YSH C++ spec tests for $OILS_VERSION](https://www.oilshell.org/release/$OILS_VERSION/test/spec.wwz/ysh-cpp/compare.html): **492** of **569** passing, delta **77**
+- [YSH C++ spec tests for $metric_prev](https://oils.pub/release/$metric_prev/test/spec.wwz/ysh-cpp/compare.html): **357** of **514** passing, delta **157**
+- [YSH C++ spec tests for $OILS_VERSION](https://oils.pub/release/$OILS_VERSION/test/spec.wwz/ysh-cpp/compare.html): **492** of **569** passing, delta **77**
 
 
 ### Benchmarks
 
 Bar Bar
 
-- [Parser Performance for $metric_prev](https://www.oilshell.org/release/$metric_prev/benchmarks.wwz/osh-parser/): **21.8**
+- [Parser Performance for $metric_prev](https://oils.pub/release/$metric_prev/benchmarks.wwz/osh-parser/): **21.8**
   thousand irefs per line
-- [Parser Performance for $OILS_VERSION](https://www.oilshell.org/release/$OILS_VERSION/benchmarks.wwz/osh-parser/): **26.0**
+- [Parser Performance for $OILS_VERSION](https://oils.pub/release/$OILS_VERSION/benchmarks.wwz/osh-parser/): **26.0**
   thousand irefs per line
 
 G G
 
-- [benchmarks/gc for $metric_prev](https://www.oilshell.org/release/$metric_prev/benchmarks.wwz/gc/): \`parse.configure-coreutils\`
+- [benchmarks/gc for $metric_prev](https://oils.pub/release/$metric_prev/benchmarks.wwz/gc/): \`parse.configure-coreutils\`
   **1.83 M** objects comprising **62.1 MB**, max RSS **68.9 MB**
-- [benchmarks/gc for $OILS_VERSION](https://www.oilshell.org/release/$OILS_VERSION/benchmarks.wwz/gc/): \`parse.configure-coreutils\` **1.83 M** objects comprising **65.0 MB**, max RSS **69.3 MB**
+- [benchmarks/gc for $OILS_VERSION](https://oils.pub/release/$OILS_VERSION/benchmarks.wwz/gc/): \`parse.configure-coreutils\` **1.83 M** objects comprising **65.0 MB**, max RSS **69.3 MB**
 
 G G
 
-- [benchmarks/gc-cachegrind for $metric_prev](https://www.oilshell.org/release/$metric_prev/benchmarks.wwz/gc-cachegrind/) - \`fib\` takes **61.6** million irefs, mut+alloc+free+gc
-- [benchmarks/gc-cachegrind for $OILS_VERSION](https://www.oilshell.org/release/$OILS_VERSION/benchmarks.wwz/gc-cachegrind/) - \`fib\` takes **65.4** million irefs, mut+alloc+free+gc
+- [benchmarks/gc-cachegrind for $metric_prev](https://oils.pub/release/$metric_prev/benchmarks.wwz/gc-cachegrind/) - \`fib\` takes **61.6** million irefs, mut+alloc+free+gc
+- [benchmarks/gc-cachegrind for $OILS_VERSION](https://oils.pub/release/$OILS_VERSION/benchmarks.wwz/gc-cachegrind/) - \`fib\` takes **65.4** million irefs, mut+alloc+free+gc
 
 
 
 Foo Foo
 
-- [Runtime Performance for $metric_prev](https://www.oilshell.org/release/$metric_prev/benchmarks.wwz/osh-runtime/): **68.7** and **56.9** seconds running CPython's \`configure\`
-- [Runtime Performance for $OILS_VERSION](https://www.oilshell.org/release/$OILS_VERSION/benchmarks.wwz/osh-runtime/):
+- [Runtime Performance for $metric_prev](https://oils.pub/release/$metric_prev/benchmarks.wwz/osh-runtime/): **68.7** and **56.9** seconds running CPython's \`configure\`
+- [Runtime Performance for $OILS_VERSION](https://oils.pub/release/$OILS_VERSION/benchmarks.wwz/osh-runtime/):
   **35.2** and **22.5** seconds running CPython's \`configure\`
 - [bash](\$xref): **26.8** and **16.2** seconds running CPython's \`configure\`
 
@@ -257,21 +258,21 @@ The executable spec foo foo
 
 Significant lines:
 
-- [cloc for $metric_prev](https://www.oilshell.org/release/$metric_prev/pub/metrics.wwz/line-counts/cloc-report.txt):
+- [cloc for $metric_prev](https://oils.pub/release/$metric_prev/pub/metrics.wwz/line-counts/cloc-report.txt):
   **19,581** lines of Python and C, **355** lines of ASDL
-- [cloc for $OILS_VERSION](https://www.oilshell.org/release/$OILS_VERSION/pub/metrics.wwz/line-counts/cloc-report.txt):
+- [cloc for $OILS_VERSION](https://oils.pub/release/$OILS_VERSION/pub/metrics.wwz/line-counts/cloc-report.txt):
   **19,491** lines of Python and C, **363** lines of ASDL
   
 Code in the \`oils-for-unix\` C++ tarball, much of which is generated:
 
-- [oil-cpp for $metric_prev](https://www.oilshell.org/release/$metric_prev/pub/metrics.wwz/line-counts/oil-cpp.txt) - **86,985** lines
-- [oil-cpp for $OILS_VERSION](https://www.oilshell.org/release/$OILS_VERSION/pub/metrics.wwz/line-counts/oil-cpp.txt) - **90,682** lines
+- [oil-cpp for $metric_prev](https://oils.pub/release/$metric_prev/pub/metrics.wwz/line-counts/oil-cpp.txt) - **86,985** lines
+- [oil-cpp for $OILS_VERSION](https://oils.pub/release/$OILS_VERSION/pub/metrics.wwz/line-counts/oil-cpp.txt) - **90,682** lines
 
 Compiled binary size:
 
-- [ovm-build for $metric_prev](https://www.oilshell.org/release/$metric_prev/benchmarks.wwz/ovm-build/):
+- [ovm-build for $metric_prev](https://oils.pub/release/$metric_prev/benchmarks.wwz/ovm-build/):
   **1.18 MB** of native code (under GCC)
-- [ovm-build for $OILS_VERSION](https://www.oilshell.org/release/$OILS_VERSION/benchmarks.wwz/ovm-build/):
+- [ovm-build for $OILS_VERSION](https://oils.pub/release/$OILS_VERSION/benchmarks.wwz/ovm-build/):
   **1.23 MB** of native code (under GCC)
 
 &nbsp;

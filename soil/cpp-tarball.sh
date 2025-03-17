@@ -12,7 +12,7 @@ set -o errexit
 #REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 #source soil/common.sh
 
-OILS_VERSION=$(head -n 1 oil-version.txt)
+OILS_VERSION=$(head -n 1 oils-version.txt)
 OILS_TRANSLATOR=${OILS_TRANSLATOR:-mycpp}
 
 build-like-ninja() {

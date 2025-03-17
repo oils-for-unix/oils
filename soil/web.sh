@@ -127,19 +127,23 @@ cleanup-status-api() {
 
   local dir=$SOIL_HOST_DIR/uuu/status-api/github
 
-  pushd $dir
+  pushd $dir > /dev/null
   case $dry_run in
     false)
       # delete all but the last 30
       ls | head -n -30 | xargs --no-run-if-empty -- rm -r -f -v
       ;;
     true)
-      ls | head -n -30
+      # TODO: fix spew
+      #ls | head -n -30
+      echo 'Last 10 status entries'
+      echo
+      ls | tail
       ;;
     *)
       log 'Expected true or false for dry_run'
   esac
-  popd
+  popd > /dev/null
 }
 
 event-job-done() {

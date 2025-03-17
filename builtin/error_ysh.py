@@ -23,7 +23,6 @@ _ = log
 
 from typing import Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
-    from display import ui
     from osh import cmd_eval
     from ysh import expr_eval
 

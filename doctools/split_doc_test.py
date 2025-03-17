@@ -11,6 +11,7 @@ import split_doc  # module under test
 class FooTest(unittest.TestCase):
 
     def testStrict(self):
+        # type: () -> None
         entry_f = StringIO('''\
 Title
 =====
@@ -33,6 +34,7 @@ hello
         print(content_f.getvalue())
 
     def testMetadataAndTitle(self):
+        # type: () -> None
         print('_' * 40)
         print()
 
@@ -57,6 +59,7 @@ hello
         print(content_f.getvalue())
 
     def testMetadataAndTitleNoSpace(self):
+        # type: () -> None
         print('_' * 40)
         print()
 
@@ -80,6 +83,7 @@ hello
         print(content_f.getvalue())
 
     def testTitleOnly(self):
+        # type: () -> None
         print('_' * 40)
         print()
 

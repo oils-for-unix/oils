@@ -1,8 +1,10 @@
+## compare_shells: bash mksh zsh
+
 # Test cases for the grammar.  It uses pidgin shell because we don't have a
 # proper lexer in ANTLR (ANTLR's lexers don't have states anyway.)
 #
-# These tests should run under the normal shell.  But REAL shel tests won't run
-# under the fake shells grammar/shell*.sh
+# These tests should run under the normal shell.  But REAL shell tests won't
+# run under the fake shells grammar/shell*.sh
 
 ## suite: disabled
 

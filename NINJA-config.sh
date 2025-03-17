@@ -125,10 +125,7 @@ main() {
   yaks
 
   echo DEPS prebuilt/ninja/*/deps.txt
-
   echo
-  # Special _OIL_DEV for -D GC_TIMING
-  _OIL_DEV=1 ./configure
 
   # Reads the deps.txt files above
   PYTHONPATH=. build/ninja_main.py

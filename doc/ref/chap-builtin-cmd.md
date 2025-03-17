@@ -665,8 +665,10 @@ When a block is long, the former is more readable.
 Write JSON:
 
     var d = {name: 'bob', age: 42}
-    json write (d)           # default indentation of 2
-    json write (d, space=0)  # no indentation
+    json write (d)                     # default indent of 2, type errors
+    json write (d, space=0)            # no indent
+    json write (d, type_errors=false)  # non-serializable types become null
+                                       # (e.g. Obj, Proc, Eggex)
 
 Read JSON:
 
@@ -857,7 +859,7 @@ and OSH.
 [cat-em]: chap-front-end.html#cat-em
 
 
-### eval
+### cmd/eval
 
     eval ARG+
 
@@ -894,6 +896,9 @@ Tip:
 
 Prefer passing the name of a shell function to `trap`.
 
+See [Chapter: Plugins and Hooks > Traps](chap-plugin.html#Traps) for a list of
+traps, like `trap '' EXIT`.
+
 ## Set Options
 
 The `set` and `shopt` builtins set global shell options.  YSH code should use
@@ -915,6 +920,8 @@ Set the arguments array:
 
     set -- 1 2 3
 
+See [Chapter: Global Shell Options](chap-option.html) for a list of options.
+
 ### shopt
 
     shopt FLAG* OPTION* BLOCK?
@@ -931,6 +938,8 @@ Flags:
 
 This command is compatible with `shopt` in bash.  See [ysh-shopt](#ysh-shopt) for
 details on YSH enhancements.
+
+See [Chapter: Global Shell Options](chap-option.html) for a list of options.
 
 ## Working Dir
 

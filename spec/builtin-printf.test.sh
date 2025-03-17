@@ -106,7 +106,9 @@ $'"quoted" with spaces and \\'
 ## END
 ## N-I dash/ash stdout-json: ""
 ## N-I dash/ash status: 2
-## N-I mksh stdout-json: "\n"
+## N-I mksh STDOUT:
+
+## END
 ## N-I zsh stdout-json: ""
 ## N-I zsh status: 1
 
@@ -1041,7 +1043,7 @@ echo status=$?
 [     2019-]
 status=0
 ## END
-## N-I dash/mksh/zsh/ash STDOUT:
+## N-I mksh/zsh/ash STDOUT:
 [[status=1
 ## END
 ## N-I dash STDOUT:

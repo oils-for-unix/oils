@@ -8,7 +8,7 @@ from mypy.nodes import (CallExpr, IfStmt, Block, Expression, MypyFile,
                         MemberExpr, IntExpr, NameExpr, ComparisonExpr)
 from mypy.types import Instance, Type
 
-from typing import Any, Sequence, Optional
+from typing import Any, Optional, List, Tuple, Union
 
 # Used by cppgen_pass and const_pass
 
@@ -17,7 +17,7 @@ from typing import Any, Sequence, Optional
 
 SMALL_STR = False
 
-SymbolPath = Sequence[str]
+SymbolPath = Tuple[str, ...]
 
 
 def log(msg: str, *args: Any) -> None:
@@ -26,9 +26,9 @@ def log(msg: str, *args: Any) -> None:
     print(msg, file=sys.stderr)
 
 
-def join_name(parts: SymbolPath,
-              strip_package: bool = False,
-              delim: str = '::') -> str:
+def SymbolToString(parts: SymbolPath,
+                   strip_package: bool = False,
+                   delim: str = '::') -> str:
     """
     Join the given name path into a string with the given delimiter.
     Use strip_package to remove the top-level directory (e.g. `core`, `ysh`)
@@ -43,7 +43,7 @@ def join_name(parts: SymbolPath,
     return parts[0]
 
 
-def split_py_name(name: str) -> SymbolPath:
+def SplitPyName(name: str) -> SymbolPath:
     ret = tuple(name.split('.'))
     if len(ret) and ret[0] == 'mycpp':
         # Drop the prefix 'mycpp.' if present. This makes names compatible with
@@ -53,10 +53,16 @@ def split_py_name(name: str) -> SymbolPath:
     return ret
 
 
-def _collect_cases(module_path: str,
-                   if_node: IfStmt,
-                   out: list[tuple[Expression, Block]],
-                   errors=None) -> Optional[Block] | bool:
+CaseList = List[Tuple[Expression, Block]]
+
+CaseError = Tuple[str, int, str]
+
+
+def CollectSwitchCases(
+        module_path: str,
+        if_node: IfStmt,
+        out: CaseList,
+        errors: Optional[List[CaseError]] = None) -> Union[Block, int]:
     """
     The MyPy AST has a recursive structure for if-elif-elif rather than a
     flat one.  It's a bit confusing.
@@ -79,7 +85,7 @@ def _collect_cases(module_path: str,
         if errors is not None:
             errors.append((module_path, expr.line,
                            'Expected call like case(x), got %s' % expr))
-        return
+        return -1  # error code
 
     out.append((expr, body))
 
@@ -91,12 +97,12 @@ def _collect_cases(module_path: str,
         #   if 0:
 
         if isinstance(first_of_block, IfStmt):
-            return _collect_cases(module_path, first_of_block, out, errors)
+            return CollectSwitchCases(module_path, first_of_block, out, errors)
         else:
             # default case - no expression
             return if_node.else_body
 
-    return False  # NO DEFAULT BLOCK - Different than None
+    return -2  # NO DEFAULT BLOCK
 
 
 def ShouldSkipPyFile(node: MypyFile) -> bool:
@@ -108,7 +114,7 @@ def ShouldSkipPyFile(node: MypyFile) -> bool:
                              'cStringIO', 're', 'builtins')
 
 
-def IsStr(t: Type):
+def IsStr(t: Type) -> bool:
     """Helper to check if a type is a string."""
     return isinstance(t, Instance) and t.type.fullname == 'builtins.str'
 
@@ -175,3 +181,20 @@ def ShouldVisitElseBody(stmt: IfStmt) -> bool:
         return False
 
     return stmt.else_body is not None
+
+
+def IsUnusedVar(var_name: str) -> bool:
+    return var_name == '_' or var_name.startswith('unused')
+
+
+def SkipAssignment(var_name: str) -> bool:
+    """
+    Skip at the top level:
+      _ = log 
+      unused1 = log
+
+    Always skip:
+      x, _ = mytuple  # no second var
+    """
+    # __all__ should be excluded
+    return IsUnusedVar(var_name)

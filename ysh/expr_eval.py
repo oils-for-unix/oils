@@ -15,7 +15,7 @@ from _devbuild.gen.syntax_asdl import (
     SingleQuoted,
     DoubleQuoted,
     BracedVarSub,
-    ShArrayLiteral,
+    YshArrayLiteral,
     CommandSub,
     expr,
     expr_e,
@@ -417,7 +417,7 @@ class ExprEvaluator(object):
             elif case(Id.Lit_AtLBracket):  # @[split(x)]
                 strs = val_ops.ToShellArray(val, loc.WordPart(part),
                                             'Expr splice ')
-                return part_value.Array(strs)
+                return part_value.Array(strs, True)
 
             else:
                 raise AssertionError(part.left)
@@ -432,7 +432,7 @@ class ExprEvaluator(object):
         """
         with state.ctx_YshExpr(self.mutable_opts):
             with state.ctx_Registers(self.mem):  # to sandbox globals
-                named_args = {}  # type: Dict[str, value_t]
+                named_args = NewDict()  # type: Dict[str, value_t]
                 arg_list = ArgList.CreateNull()  # There's no call site
                 rd = typed_args.Reader(pos_args, named_args, None, arg_list)
 
@@ -456,7 +456,7 @@ class ExprEvaluator(object):
         """ For Eggex captures """
         with state.ctx_YshExpr(self.mutable_opts):
             pos_args = [arg]
-            named_args = {}  # type: Dict[str, value_t]
+            named_args = NewDict()  # type: Dict[str, value_t]
             arg_list = ArgList.CreateNull()  # There's no call site
             rd = typed_args.Reader(pos_args, named_args, None, arg_list)
             rd.SetFallbackLocation(convert_tok)
@@ -475,7 +475,7 @@ class ExprEvaluator(object):
     def _CallMetaMethod(self, func_val, pos_args, blame_loc):
         # type: (value_t, List[value_t], loc_t) -> value_t
 
-        named_args = {}  # type: Dict[str, value_t]
+        named_args = NewDict()  # type: Dict[str, value_t]
         arg_list = ArgList.CreateNull()  # There's no call site
         rd = typed_args.Reader(pos_args, named_args, None, arg_list)
         rd.SetFallbackLocation(blame_loc)
@@ -1216,12 +1216,12 @@ class ExprEvaluator(object):
                     else:
                         return value.Str(stdout_str)
 
-            elif case(expr_e.ShArrayLiteral):  # var x = :| foo *.py |
-                node = cast(ShArrayLiteral, UP_node)
+            elif case(expr_e.YshArrayLiteral):  # var x = :| foo *.py |
+                node = cast(YshArrayLiteral, UP_node)
                 words = braces.BraceExpandWords(node.words)
                 strs = self.word_ev.EvalWordSequence(words)
                 #log('ARRAY LITERAL EVALUATED TO -> %s', strs)
-                #return value.BashArray(strs)
+                #return value.InternalStringArray(strs)
 
                 # It's equivalent to ['foo', 'bar']
                 items = [value.Str(s) for s in strs]
@@ -1420,7 +1420,7 @@ class EggexEvaluator(object):
         UP_term = term
 
         # These 2 vars will be initialized if we don't return early
-        s = None  # type: str
+        s = None  # type: Optional[str]
         char_code_tok = None  # type: Token
 
         with tagswitch(term) as case:

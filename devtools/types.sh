@@ -43,6 +43,44 @@ check-more() {
     | xargs -- $0 typecheck-files
 }
 
+mypy-check() {
+  local p=".:$MYPY_WEDGE:$PY3_LIBS_WEDGE"
+
+  # the path is fiddly
+  PYTHONPATH=$p MYPYPATH=$MYPY_WEDGE \
+    python3 -m mypy "$@"
+}
+
+check-mycpp() {
+  local -a files=(
+    mycpp/{pass_state,util,crash,format_strings,visitor,const_pass,control_flow_pass,mycpp_main,cppgen_pass,conversion_pass}.py
+  )
+  local -a flags=( --strict --no-strict-optional --follow-imports=silent )
+
+  mypy-check "${flags[@]}" "${files[@]}"
+}
+
+check-doctools() {
+  if false; then
+    local -a files=(
+      $(for x in doctools/*.py; do echo $x; done | grep -v '_test.py' )
+    )
+  else
+    #local -a files=( doctools/help_gen.py )
+    local -a files=( doctools/ul_table.py doctools/html_old.py doctools/oils_doc.py
+      doctools/help_gen.py data_lang/htm8.py data_lang/htm8_util.py )
+
+  fi
+
+  # 777 errors before pyann
+  # 583 afterward
+  local -a flags=( --py2 --no-strict-optional --strict --follow-imports=silent )
+  #local -a flags=( --py2 --no-strict-optional )
+
+  set -x
+  mypy-check "${flags[@]}" "${files[@]}"
+}
+
 check-all() {
   ### Run this locally
 

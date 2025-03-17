@@ -67,7 +67,7 @@ class List {
   // Used in osh/word_parse.py to remove from front
   T pop(int i);
 
-  // Remove the first occourence of x from the list.
+  // Remove the first occurence of x from the list.
   void remove(T x);
 
   void clear();

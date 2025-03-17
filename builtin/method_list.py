@@ -136,3 +136,70 @@ class LastIndexOf(vm._Callable):
                 return num.ToBig(i)
             i -= 1
         return value.Int(mops.MINUS_ONE)
+
+
+class Remove(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        li = rd.PosList()
+        to_remove = rd.PosValue()
+        rd.Done()
+
+        i = 0
+        while i < len(li):
+            if val_ops.ExactlyEqual(li[i], to_remove, rd.LeftParenToken()):
+                li.pop(i)
+                break
+            i += 1
+
+        # Like Dict.erase(), we don't raise an exception.  We ensure that there
+        # is one less occurrence, and zero occurrences is OK.
+        return value.Null
+
+
+class Insert(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        li = rd.PosList()
+        # List limited to 2^32 entries
+        at_index = mops.BigTruncate(rd.PosInt())
+        to_insert = rd.PosValue()
+        rd.Done()
+
+        length = len(li)
+
+        if at_index < 0:
+            # Negative index is relative to the end
+            at_index += length
+            # If it's still less than 0, insert at the beginning
+            if at_index < 0:
+                at_index = 0
+
+        # Note: Positive overflow isn't a special case because there will be no
+        # shifting (unlike mycpp SLICE_ADJUST())
+
+        # Add extra item at the end
+        li.append(None)
+
+        # Shift items at positions greater than at_index
+        i = length
+        while i > at_index:
+            li[i] = li[i - 1]
+            i -= 1
+
+        # New item
+        li[i] = to_insert
+
+        return value.Null

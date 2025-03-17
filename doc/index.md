@@ -30,6 +30,7 @@ See [Published Docs](published.html) for those that are ready to read.
 
 - [INSTALL](INSTALL.html). How do I install Oils?  This text file is also in
   the `oils-for-unix` tarball.
+  - [Oils Build `--help` Mirror](help-mirror.html)
   - [Portability](portability.html)
 - [Getting Started](getting-started.html).  How do I use the shell?
 
@@ -126,6 +127,7 @@ the wire, **not** the other way around.
 ## The Shared Oils Runtime
 
 - [Types in the Oils Runtime](types.html)
+- [Pure Mode: For Config Files and Functions](pure-mode.html)
 - [YSH Fixes Shell's Error Handling (`errexit`)](error-handling.html)
 - [Oils Error Catalog, With Hints](error-catalog.html)
 - [Tracing Execution](xtrace.html).  YSH enhances shell's `set -x`.
@@ -142,7 +144,9 @@ Internal details:
 
 - [README.md](oils-repo/README.html).  If you want to modify Oils, start here.
   We welcome contributions!
+- [Oils Repo Overview](repo-overview.html)
 - [Doc Toolchain](doc-toolchain.html) and [Doc Plugins](doc-plugins.html).
+  - [ul-table: Markdown Tables Without New Syntax](ul-table.html)
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
 - [Old Docs](old/index.html).  Drafts that may be deleted.
 

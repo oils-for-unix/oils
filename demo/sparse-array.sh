@@ -11,7 +11,7 @@
 #     _opsp
 #   builtin/func_misc.py is where they are implemented
 #
-#   core/value.asdl defines value.{BashArray,SparseArray}
+#   core/value.asdl defines value.{InternalStringArray,BashArray}
 #
 #   _gen/core/value.asdl.* - generated from value.asdl
 #
@@ -37,14 +37,22 @@ compare-x() {
   local x=$1
 
   local osh=_bin/cxx-opt/osh
-  ninja $osh
+  local osh_souffle=_bin/cxx-opt+souffle/osh
+  ninja $osh $osh_souffle
 
-  echo ===
-  echo $osh SparseArray
-  echo
-  my-time sparse-$x $osh
+  # Souffle build is sometimes slightly faster
+  #local shells=(bash $osh $osh_souffle)
 
-  for sh in bash $osh; do
+  local shells=(bash $osh)
+
+  if false; then
+    echo ===
+    echo $osh SparseArray demo
+    echo
+    my-time sparse-$x $osh
+  fi
+
+  for sh in ${shells[@]}; do
     echo ===
     echo $sh
     echo
@@ -112,7 +120,7 @@ f() {
   a=()
   var sp = _a2sp(a)  # empty sparse array
 
-  # Populate SparseArray 0 .. n-1
+  # Populate BashArray 0 .. n-1
   for (( i = 0; i < n; ++i )); do
     to_append=( $i )
     call _opsp(sp, 'append', to_append)
@@ -133,13 +141,13 @@ f() {
 
     #echo ZERO $sum $[_opsp(sp, 'get', 0)]
     #echo ONE $sum $[_opsp(sp, 'get', 1)]
-    for i in (0 .. length) {
+    for i in (0 ..< length) {
       setvar sum += _opsp(sp, 'get', i)
     }
 
     #echo sum=$sum
 
-    # Slice to BashArray
+    # Slice to InternalStringArray
     var a = _opsp(sp, 'slice', 1, length)
 
     # Convert back - is this slow?

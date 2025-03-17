@@ -37,6 +37,19 @@ RCFILE
 2
 ## END
 
+#### --rcfile with parse error - shell is executed anyway
+cat >$TMP/rcfile <<EOF
+echo RCFILE; ( echo
+EOF
+
+$SH --rcfile $TMP/rcfile -i -c 'echo flag -c'
+echo status=$?
+
+## STDOUT:
+flag -c
+status=0
+## END
+
 #### interactive shell loads files in rcdir (when combined with -c)
 
 $SH -c 'echo A'

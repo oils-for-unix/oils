@@ -13,6 +13,12 @@ try:
 except ImportError:
     import collections as collections_abc  # Fallback for PY3.2.
 
+# MINIMAL OVM_MAIN PATCH - stub out 'unicode' builtin, because the legacy OVM
+# build doesn't have unicodeobject.c, and it is hard to undo the build hacks.
+#
+# It should be type(u''), but type('') runs under OVM, and doesn't appear to
+# break type checking.
+unicode = type('')
 
 # Please keep __all__ alphabetized within each category.
 __all__ = [
@@ -2059,7 +2065,8 @@ class ByteString(Sequence[int]):
 
 
 ByteString.register(str)
-ByteString.register(bytearray)
+# OVM_MAIN PATCH: don't need bytearray
+#ByteString.register(bytearray)
 
 
 class List(list, MutableSequence[T]):

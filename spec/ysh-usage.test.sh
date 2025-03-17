@@ -1,6 +1,7 @@
 ## our_shell: ysh
+## oils_failures_allowed: 1
 
-#### ysh usage
+#### ysh --location-str --location-start-line
 
 set +o errexit
 
@@ -20,6 +21,170 @@ cat err.txt | fgrep -o -- '-- [ stdin ]:11: Unexpected'
 line 10
 -- [ stdin ]:11: Unexpected
 ## END
+
+#### ysh --eval
+
+# args are available in both, similar to --rcfile
+echo 'echo one --eval: @ARGV' >one.ysh
+$[ENV.SH] --eval one.ysh -c 'echo flag -c: @ARGV' dummy x y z
+echo
+
+echo 'echo myscript: @ARGV' >myscript.sh
+$[ENV.SH] --eval one.ysh myscript.sh a b c
+echo
+
+# eval comes before oshrc
+echo 'echo yshrc: @ARGV' >yshrc
+$[ENV.SH] --rcfile yshrc --eval one.ysh -i -c 'echo flag -c: @ARGV' dummy P Q
+echo
+
+## STDOUT:
+one --eval: x y z
+flag -c: x y z
+
+one --eval: a b c
+myscript: a b c
+
+one --eval: P Q
+yshrc: P Q
+flag -c: P Q
+
+## END
+
+#### ysh --eval-pure can evaluate funcs and procs
+
+echo >pure.ysh '
+proc my-proc { echo "my-proc" }
+func myFunc() { return ("myFunc") }
+'
+
+$[ENV.SH] --eval-pure pure.ysh -c 'my-proc; echo $[myFunc()]'
+
+## STDOUT:
+my-proc
+myFunc
+## END
+
+#### ysh --eval-pure can't run impure
+
+echo >pure.ysh '
+proc my-proc { echo "my-proc" }
+func myFunc() { return ("myFunc") }
+'
+
+echo >impure.ysh 'my-proc; echo $[myFunc()]'
+
+# There should be an error on 'echo' - it can't even write to stdout?
+#
+# Or definitely ls
+#
+# Can this print to stdout?
+#
+# call myFunc() 
+#
+# Right now we can do this:
+# { call myFunc() } | wc -l
+
+$[ENV.SH] --eval-pure pure.ysh --eval-pure impure.ysh -c ''
+
+## status: 1
+## STDOUT:
+## END
+
+
+#### ysh --eval cannot load file
+
+$[ENV.SH] --eval nonexistent.ysh -c 'echo flag -c'
+
+## status: 1
+## STDOUT:
+## END
+
+#### ysh --eval parse error
+
+echo 'echo zz; ( echo' >bad.ysh
+
+$[ENV.SH] --eval bad.ysh -c 'echo flag -c'
+
+## status: 1
+## STDOUT:
+## END
+
+#### ysh --eval runtime error
+
+echo 'echo flag --eval; false; echo bye' >bad.ysh
+
+$[ENV.SH] --eval bad.ysh -c 'echo flag -c'
+
+## status: 1
+## STDOUT:
+flag --eval
+## END
+
+#### ysh --eval exit status
+
+echo 'echo hi; exit 99; echo bye' >e.ysh
+
+$[ENV.SH] --eval e.ysh -c 'echo hi'
+
+## status: 99
+## STDOUT:
+hi
+## END
+
+#### ysh --eval respects _this_dir
+
+#echo tmp=$[ENV.TMP]
+
+var dir = "$[ENV.TMP]/code"
+mkdir -p $dir
+
+echo 'echo one; source $_this_dir/two.ysh' > $dir/one.ysh
+echo 'echo two' > $dir/two.ysh
+
+$[ENV.SH] --eval $dir/one.ysh -c 'echo flag -c'
+
+## STDOUT:
+one
+two
+flag -c
+## END
+
+#### Multiple ysh --eval values
+
+echo 'echo 1' > one.ysh
+echo 'echo 2' > two.ysh
+echo 'echo 3' > three.ysh
+echo 'echo 4; ( FAIL' > four.ysh
+
+#$[ENV.SH] -c 'echo flag -c'
+
+... $[ENV.SH]
+  --eval one.ysh
+  --eval two.ysh
+  -c 'echo flag -c'
+  ;
+echo ---
+
+... $[ENV.SH]
+  --eval one.ysh
+  --eval two.ysh
+  --eval three.ysh
+  --eval four.ysh
+  -c 'echo flag -c'
+  ;
+
+## status: 1
+## STDOUT:
+1
+2
+flag -c
+---
+1
+2
+3
+## END
+
 
 #### --debug-file
 var TMP = ENV.TMP

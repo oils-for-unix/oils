@@ -31,8 +31,9 @@ This chapter describes command line usage and lexing.
 ```
 bin/oils-for-unix is an executable that contains OSH, YSH, and more.
 
-Usage: oils-for-unix MAIN_NAME ARG*
-       MAIN_NAME ARG*
+Usage:
+    oils-for-unix MAIN_NAME ARG*
+    MAIN_NAME ARG*
 
 It behaves like busybox.  The command name can be passed as the first argument:
 
@@ -54,25 +55,16 @@ behave like that command:
 ```
 bin/osh is compatible with POSIX shell, bash, and other shells.
 
-Usage: osh FLAG* SCRIPT ARG*
-       osh FLAG* -c COMMAND ARG*
-       osh FLAG*
+Usage:
+   osh FLAG* SCRIPT ARG*
+   osh FLAG* -c COMMAND ARG*
+   osh FLAG*
 
-The command line accepted by `bin/osh` is compatible with /bin/sh and bash.
-
+Examples:
     osh -c 'echo hi'
     osh myscript.sh
     echo 'echo hi' | osh
 
-It also has a few enhancements:
-
-    osh -n -c 'hello'                    # pretty-print the AST
-    osh --ast-format text -n -c 'hello'  # print it full
-
-osh accepts POSIX sh flags, with these additions:
-
-    -n             parse the program but don't execute it.  Print the AST.
-    --ast-format   what format the AST should be in
 ```
 
 <h3 id="ysh-usage" class="ysh-topic" oils-embed="1">
@@ -84,23 +76,59 @@ osh accepts POSIX sh flags, with these additions:
 ```
 bin/ysh is the shell with data tYpes, influenced by pYthon, JavaScript, ...
 
-Usage: ysh FLAG* SCRIPT ARG*
-       ysh FLAG* -c COMMAND ARG*
-       ysh FLAG*
+Usage:
+    ysh FLAG* SCRIPT ARG*
+    ysh FLAG* -c COMMAND ARG*
+    ysh FLAG*
 
 Examples:
-
     ysh -c 'echo hi'
     ysh myscript.ysh
     echo 'echo hi' | ysh
 
-bin/ysh is the same as bin/osh with a the ysh:all option group set.  So bin/ysh
-also accepts shell flags.  Examples:
-
-    bin/ysh -n myfile.ysh
-    bin/ysh +o errexit -c 'false; echo ok'
+Note that bin/ysh is the same as bin/osh with the ysh:all option group set:
+    osh -o ysh:all -c 'echo hi'  # Same as YSH
 ```
 
+<h3 id="shell-flags" oils-embed="1">
+  shell-flags
+</h3>
+
+```
+osh and ysh accept standard POSIX shell flags, like:
+
+    bin/osh -o errexit -c 'false'
+    bin/ysh -n myfile.ysh
+    bin/ysh +o errexit -c 'false; echo ok'
+
+They also accept these flags:
+
+    --eval FILE
+        Evaluate the given file, similar to the 'source' builtin.  Specify it
+        multiple times to run multiple files.  If the errexit option is on
+        (e.g. in YSH), then the shell stops when $? is non-zero after
+        evaluating a file.
+
+    --eval-pure FILE
+        Like --eval, but disallow I/O (known as "pure mode").
+
+    --location-str
+        Use this string to display error messages.
+        See 'help sourceCode' for an example.
+
+    --location-start-line
+        Use this line number offset to display error messages.
+
+    --tool            Run a tool instead of the shell (cat-em|syntax-tree)
+    -n                Parse the program but don't execute it.  Print the AST.
+    --ast-format FMT  The format for the AST (text|text-abbrev)
+
+Examples:
+
+    ysh --eval one.ysh --eval two.ysh -c 'echo hi'  # Run 2 files first
+    osh -n -c 'hello'                               # pretty-print the AST
+    ysh --ast-format text -n -c 'hello'             # in unabridged format
+```
 
 <h3 id="config" class="osh-ysh-topic">config</h3>
 
@@ -123,7 +151,10 @@ Pass --norc to disable the startup directory.
 
 <h3 id="startup" class="osh-ysh-topic">startup</h3>
 
-History is read?
+TODO:
+
+1. History is read
+1. ...
 
 <h3 id="line-editing" class="osh-ysh-topic">line-editing</h3>
 
@@ -301,6 +332,16 @@ Long pipelines and and-or chains:
 Print files embedded in the `oils-for-unix` binary to stdout.  Example:
 
     osh --tool cat-em stdlib/math.ysh stdlib/other.ysh
+
+### syntax-tree
+
+Print the syntax tree in a debug format.
+
+    osh --tool syntax-tree stdlib/ysh/math.ysh
+
+The `-n` flag is a shortcut:
+
+    osh -n stdlib/ysh/math.ysh
 
 
 ## Help Chapters

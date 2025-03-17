@@ -19,7 +19,7 @@ from ysh import val_ops
 import libc
 from libc import REG_NOTBOL
 
-from typing import cast, Dict, List, Tuple
+from typing import cast, Dict, List, Optional, Tuple
 
 _ = log
 
@@ -130,7 +130,7 @@ class HasAffix(vm._Callable):
 
         string = rd.PosStr()
         pattern_val = rd.PosValue()
-        pattern_str = None  # type: str
+        pattern_str = None  # type: Optional[str]
         pattern_eggex = None  # type: value.Eggex
         with tagswitch(pattern_val) as case:
             if case(value_e.Eggex):
@@ -187,7 +187,7 @@ class Trim(vm._Callable):
 
         string = rd.PosStr()
         pattern_val = rd.OptionalValue()
-        pattern_str = None  # type: str
+        pattern_str = None  # type: Optional[str]
         pattern_eggex = None  # type: value.Eggex
         if pattern_val:
             with tagswitch(pattern_val) as case:
@@ -425,7 +425,7 @@ class Replace(vm._Callable):
                     break
 
                 # Collect captures
-                arg0 = None  # type: str
+                arg0 = None  # type: Optional[str]
                 argv = []  # type: List[str]
                 named_vars = {}  # type: Dict[str, value_t]
                 num_groups = len(indices) / 2
@@ -507,7 +507,7 @@ class Split(vm._Callable):
         """
         string = rd.PosStr()
 
-        string_sep = None  # type: str
+        string_sep = None  # type: Optional[str]
         eggex_sep = None  # type: value.Eggex
 
         sep = rd.PosValue()
@@ -538,13 +538,14 @@ class Split(vm._Callable):
 
             cursor = 0
             chunks = []  # type: List[value_t]
-            while cursor < len(string) and count != 0:
-                next = string.find(string_sep, cursor)
-                if next == -1:
+            length = len(string)
+            while cursor < length and count != 0:
+                next_pos = string.find(string_sep, cursor)
+                if next_pos == -1:
                     break
 
-                chunks.append(value.Str(string[cursor:next]))
-                cursor = next + len(string_sep)
+                chunks.append(value.Str(string[cursor:next_pos]))
+                cursor = next_pos + len(string_sep)
                 count -= 1
 
             chunks.append(value.Str(string[cursor:]))
@@ -585,3 +586,33 @@ class Split(vm._Callable):
             return value.List(chunks)
 
         raise AssertionError()
+
+
+class Lines(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        string = rd.PosStr()
+        eol = rd.NamedStr('eol', '\n')
+
+        # Adapted from Str.split() above, except for the handling of the last item
+
+        cursor = 0
+        chunks = []  # type: List[value_t]
+        length = len(string)
+        while cursor < length:
+            next_pos = string.find(eol, cursor)
+            if next_pos == -1:
+                break
+
+            chunks.append(value.Str(string[cursor:next_pos]))
+            cursor = next_pos + len(eol)
+
+        if cursor < length:
+            chunks.append(value.Str(string[cursor:]))
+
+        return value.List(chunks)

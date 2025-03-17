@@ -2,7 +2,8 @@
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import cmd_value, ProcArgs, Cell
-from _devbuild.gen.syntax_asdl import (loc, loc_t, ArgList, command_t, Token)
+from _devbuild.gen.syntax_asdl import (loc, loc_t, ArgList, command_t, Token,
+                                       debug_frame_t)
 from _devbuild.gen.value_asdl import (value, value_e, value_t, RegexMatch, Obj,
                                       cmd_frag, cmd_frag_e, cmd_frag_str,
                                       LiteralBlock)
@@ -11,7 +12,7 @@ from core.error import e_usage
 from frontend import location
 from mycpp import mops
 from mycpp import mylib
-from mycpp.mylib import log, tagswitch
+from mycpp.mylib import log, tagswitch, NewDict
 
 from typing import Dict, List, Optional, cast
 
@@ -59,18 +60,6 @@ def RequiredBlockAsFrag(cmd_val):
     return cmd
 
 
-def OptionalLiteralBlock(cmd_val):
-    # type: (cmd_value.Argv) -> Optional[LiteralBlock]
-    """Helper for Hay """
-
-    block = None  # type: Optional[LiteralBlock]
-    if cmd_val.proc_args:
-        r = ReaderForProc(cmd_val)
-        block = r.OptionalLiteralBlock()
-        r.Done()
-    return block
-
-
 def GetCommandFrag(bound):
     # type: (value.Command) -> command_t
 
@@ -95,15 +84,18 @@ def ReaderForProc(cmd_val):
         # mycpp rewrite: doesn't understand 'or' pattern
         pos_args = (proc_args.pos_args
                     if proc_args.pos_args is not None else [])
-        named_args = (proc_args.named_args
-                      if proc_args.named_args is not None else {})
+        # mycpp rewrite: mycpp should support NewDict() within conditional expression
+        if proc_args.named_args is not None:
+            named_args = proc_args.named_args
+        else:
+            named_args = NewDict()
 
         arg_list = (proc_args.typed_args if proc_args.typed_args is not None
                     else ArgList.CreateNull())
         block_arg = proc_args.block_arg
     else:
         pos_args = []
-        named_args = {}
+        named_args = NewDict()
         arg_list = ArgList.CreateNull()
         block_arg = None
 
@@ -282,23 +274,23 @@ class Reader(object):
                             'Arg %d should be a Float' % self.pos_consumed,
                             self.BlamePos())
 
-    def _ToBashArray(self, val):
+    def _ToInternalStringArray(self, val):
         # type: (value_t) -> List[str]
+        if val.tag() == value_e.InternalStringArray:
+            return cast(value.InternalStringArray, val).strs
+
+        raise error.TypeErr(
+            val, 'Arg %d should be an InternalStringArray' % self.pos_consumed,
+            self.BlamePos())
+
+    def _ToBashArray(self, val):
+        # type: (value_t) -> value.BashArray
         if val.tag() == value_e.BashArray:
-            return cast(value.BashArray, val).strs
+            return cast(value.BashArray, val)
 
         raise error.TypeErr(val,
                             'Arg %d should be a BashArray' % self.pos_consumed,
                             self.BlamePos())
-
-    def _ToSparseArray(self, val):
-        # type: (value_t) -> value.SparseArray
-        if val.tag() == value_e.SparseArray:
-            return cast(value.SparseArray, val)
-
-        raise error.TypeErr(
-            val, 'Arg %d should be a SparseArray' % self.pos_consumed,
-            self.BlamePos())
 
     def _ToList(self, val):
         # type: (value_t) -> List[value_t]
@@ -368,6 +360,15 @@ class Reader(object):
                             'Arg %d should be a Frame' % self.pos_consumed,
                             self.BlamePos())
 
+    def _ToDebugFrame(self, val):
+        # type: (value_t) -> debug_frame_t
+        if val.tag() == value_e.DebugFrame:
+            return cast(value.DebugFrame, val).frame
+
+        raise error.TypeErr(
+            val, 'Arg %d should be a DebugFrame' % self.pos_consumed,
+            self.BlamePos())
+
     def _ToCommandFrag(self, val):
         # type: (value_t) -> command_t
         if val.tag() == value_e.CommandFrag:
@@ -396,22 +397,6 @@ class Reader(object):
                             'Arg %d should be a Command' % self.pos_consumed,
                             self.BlamePos())
 
-    def _ToLiteralBlock(self, val):
-        # type: (value_t) -> LiteralBlock
-        """ Used by Hay """
-        if val.tag() == value_e.Command:
-            frag = cast(value.Command, val).frag
-            with tagswitch(frag) as case:
-                if case(cmd_frag_e.LiteralBlock):
-                    lit = cast(LiteralBlock, frag)
-                    return lit
-                else:
-                    raise AssertionError()
-
-        raise error.TypeErr(
-            val, 'Arg %d should be a LiteralBlock' % self.pos_consumed,
-            self.BlamePos())
-
     def PosStr(self):
         # type: () -> str
         val = self.PosValue()
@@ -438,7 +423,7 @@ class Reader(object):
         # type: (int) -> mops.BigInt
         val = self.OptionalValue()
         if val is None:
-            return mops.BigInt(default_)
+            return mops.IntWiden(default_)
         return self._ToInt(val)
 
     def PosFloat(self):
@@ -446,15 +431,15 @@ class Reader(object):
         val = self.PosValue()
         return self._ToFloat(val)
 
-    def PosBashArray(self):
+    def PosInternalStringArray(self):
         # type: () -> List[str]
         val = self.PosValue()
-        return self._ToBashArray(val)
+        return self._ToInternalStringArray(val)
 
-    def PosSparseArray(self):
-        # type: () -> value.SparseArray
+    def PosBashArray(self):
+        # type: () -> value.BashArray
         val = self.PosValue()
-        return self._ToSparseArray(val)
+        return self._ToBashArray(val)
 
     def PosList(self):
         # type: () -> List[value_t]
@@ -491,6 +476,11 @@ class Reader(object):
         val = self.PosValue()
         return self._ToFrame(val)
 
+    def PosDebugFrame(self):
+        # type: () -> debug_frame_t
+        val = self.PosValue()
+        return self._ToDebugFrame(val)
+
     def PosCommandFrag(self):
         # type: () -> command_t
         val = self.PosValue()
@@ -510,13 +500,11 @@ class Reader(object):
     # Block arg
     #
 
-    if 0:
-
-        def OptionalCommandBlock(self):
-            # type: () -> Optional[value.Command]
-            if self.block_arg is None:
-                return None
-            return self._ToCommand(self.block_arg)
+    def OptionalCommand(self):
+        # type: () -> Optional[value.Command]
+        if self.block_arg is None:
+            return None
+        return self._ToCommand(self.block_arg)
 
     def RequiredBlockAsFrag(self):
         # type: () -> command_t
@@ -530,15 +518,6 @@ class Reader(object):
         if self.block_arg is None:
             return None
         return self._ToCommandFrag(self.block_arg)
-
-    def OptionalLiteralBlock(self):
-        # type: () -> Optional[LiteralBlock]
-        """
-        Used by Hay
-        """
-        if self.block_arg is None:
-            return None
-        return self._ToLiteralBlock(self.block_arg)
 
     def RestPos(self):
         # type: () -> List[value_t]
@@ -587,7 +566,7 @@ class Reader(object):
     def NamedInt(self, param_name, default_):
         # type: (str, int) -> mops.BigInt
         if param_name not in self.named_args:
-            return mops.BigInt(default_)
+            return mops.IntWiden(default_)
 
         val = self.named_args[param_name]
         UP_val = val
@@ -647,7 +626,7 @@ class Reader(object):
     def RestNamed(self):
         # type: () -> Dict[str, value_t]
         ret = self.named_args
-        self.named_args = {}
+        self.named_args = NewDict()
         return ret
 
     def Done(self):

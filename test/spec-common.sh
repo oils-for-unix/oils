@@ -15,12 +15,12 @@ sh-spec() {
     die "Test file should end with .test.sh"
   fi
 
-  local this_dir
-  this_dir=$(cd $(dirname $0); pwd)
+  local repo_root
+  repo_root=$(cd "$(dirname $0)/.."; pwd)
 
   # Create under PID dir
   local tmp_env
-  tmp_env=$this_dir/../_tmp/spec-tmp/$(basename $test_file).$$
+  tmp_env=$repo_root/_tmp/spec-tmp/$(basename $test_file).$$
 
   # In the rare case that the PID dir exists, blow it away
   if test -d $tmp_env; then
@@ -44,11 +44,11 @@ sh-spec() {
 
   PYTHONPATH=. test/sh_spec.py \
       --tmp-env "$tmp_env" \
-      --path-env "$this_dir/../spec/bin:$PATH" \
+      --path-env "$repo_root/spec/bin:$PATH" \
       --env-pair 'LC_ALL=C.UTF-8' \
       --env-pair "LOCALE_ARCHIVE=${LOCALE_ARCHIVE:-}" \
       --env-pair "OILS_GC_ON_EXIT=${OILS_GC_ON_EXIT:-}" \
-      --env-pair "REPO_ROOT=$this_dir/.." \
+      --env-pair "REPO_ROOT=$repo_root" \
       "$test_file" \
       "$@"
 

@@ -115,6 +115,24 @@ Parsing:
 - but if you reuse Python's lexer, it's probably not incremental
   - see Python's tokenize.py
 
+### Lexing Model: micro-syntax vs. Oils `data_lang/`
+
+- micro-syntax is line-based; Oils is file-based
+- micro-syntax is for syntax highlighting and may not capture everything; Oils
+  has to capture everything
+  - micro-syntax may produce multiple tokens for `/* */`, because it doesn't matter for syntax hihlighting.
+  - In Oils we want to produce one token for `<!-- -->` and `<? ?>` etc.
+- micro-syntax doesn't have errors except for Id::Unknown
+  - Oils has hard lex errors (and parse errors)
+- micro-syntax uses raw re2c; Oils has `frontend/match`
+- micro-syntax has the model of a "lexer mode" that runs on its own, plus
+  - `hook->TryPreprocess()`
+  - here docs
+  - delimited strings
+  - FixShellComments()
+
+Not sure we can unify them, but HTM8 was a useful experiment.
+
 ## Notes
 
 Why not reuse off-the-shelf tools?

@@ -1,6 +1,5 @@
 ## compare_shells: bash-4.4 mksh
 
-
 # Extended assignment language, e.g. typeset, declare, arrays, etc.
 # Things that dash doesn't support.
 
@@ -77,6 +76,47 @@ declare -f ek
 ## END
 ## N-I mksh stdout-json: ""
 ## N-I mksh status: 127
+
+#### declare -F with shopt -s extdebug prints more info
+case $SH in mksh) exit ;; esac
+
+source $REPO_ROOT/spec/testdata/bash-source-2.sh
+
+shopt -s extdebug
+
+add () { expr 4 + 4; }
+
+declare -F 
+echo
+
+declare -F add
+# in bash-source-2
+declare -F g | sed "s;$REPO_ROOT;ROOT;g"
+
+## STDOUT:
+declare -f add
+declare -f g
+
+add 7 main
+g 3 ROOT/spec/testdata/bash-source-2.sh
+## END
+## N-I mksh STDOUT:
+## END
+
+#### declare -F with shopt -s extdebug and main file
+case $SH in mksh) exit ;; esac
+
+$SH $REPO_ROOT/spec/testdata/extdebug.sh | sed "s;$REPO_ROOT;ROOT;g"
+
+## STDOUT:
+declare -f add
+declare -f g
+
+add 5 ROOT/spec/testdata/extdebug.sh
+g 3 ROOT/spec/testdata/bash-source-2.sh
+## END
+## N-I mksh STDOUT:
+## END
 
 #### declare -p var (exit status)
 var1() { echo func; }  # function names are NOT found.
@@ -332,11 +372,11 @@ declare -p test_arr{1..7}
 ## STDOUT:
 declare -a test_arr1=()
 declare -a test_arr2=()
-declare -A test_arr3
+declare -A test_arr3=()
 declare -a test_arr4=(1 2 3)
 declare -a test_arr5=(1 2 3)
 declare -A test_arr6=(['a']=1 ['b']=2 ['c']=3)
-declare -a test_arr7=(); test_arr7[3]=foo
+declare -a test_arr7=([3]=foo)
 ## END
 ## OK bash STDOUT:
 declare -a test_arr1=()
@@ -422,7 +462,7 @@ f1
 [declare -pa]
 declare -a test_var6=()
 [declare -pA]
-declare -A test_var7
+declare -A test_var7=()
 ## END
 ## OK bash STDOUT:
 [declare -pa]
@@ -698,7 +738,7 @@ None
 2
 3
 ## END
-## OK mksh status: 0
+## BUG mksh status: 0
 
 #### syntax error in array assignment
 a=x b[0+]=y c=z

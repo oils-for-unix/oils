@@ -1,0 +1,123 @@
+#!bin/ysh
+#
+# System tests for ul-table.
+#
+# Usage:
+#   doctools/ul-table-test.ysh <function name>
+
+# TODO:
+#
+# - Run with a markdown processor other than cmark
+#   - Because markdown.pl doesn't support the inline HTML rule
+#   - markdown-it-py - https://github.com/executablebooks/markdown-it-py?tab=readme-ov-file
+#
+# - Fix bug where <table><caption> isn't allowed
+
+# - Put all tests in CI
+#   - maybe just pip install markdown-it
+#
+# Oils STDLIB:
+#
+# - task-five needs support for proc!
+#   - we might need to discover procs differently
+#   - right now we're using _bash-print-funcs, which uses shopt -s extdebug,
+#
+# task files
+# - OSH should support shopt -s extdebug!  So it can run our task files
+# - always use bash, never use awk/gawk to parse compgen -F
+#   - we don't need to worry about awk FS space/tab
+#   - if the filename contains newlines, then we are kinda screwed, but we can 
+#     detect that with bash regex I think - every line must have 3 fields
+# - well I also wanted docstrings, but I think that can be an OSH/YSH-only
+#   feature, not a bash feature.
+#   - Oils can used for bash completion when necessary
+#
+# - my own bash completion needs to discover procs via the BYO protocol
+#   - for doctools/ul-table-test.ysh <TAB>
+#
+# - Use 'byo test' - does that mean byo-server-lib also needs to be YSH?
+
+source $LIB_OSH/task-five.sh
+#source $LIB_YSH/yblocks.ysh
+
+proc run-py {
+  ###  Run with the shebang setting
+  PYTHONPATH='.:vendor/' @ARGV
+}
+
+proc run-py3 {
+  PYTHONPATH='.' python3 @ARGV
+}
+
+deps() {
+  # Good: only 3 files: ul_table, lazylex/html, util.py
+  build/dynamic-deps.sh py-tool doctools.ul_table
+}
+
+# proc doesn't work with task-five!
+# we need task-five.ysh?
+proc test-unit-py2 {
+  # like test/unit.sh
+  run-py doctools/ul_table_test.py
+}
+
+test-unit-py2() {
+  # like test/unit.sh
+  run-py doctools/ul_table_test.py
+}
+
+# Problem: We import cmark, which imports ctypes
+test-unit-py3() {
+  # like test/unit.sh
+  run-py3 doctools/ul_table_test.py
+}
+
+# Taken from unit test
+# TODO: need YSH syntax highlighting of '''
+const TD_ATTRS = '''
+<table>
+
+- thead
+  - <cell-attrs class=unquoted /> name
+  - <cell-attrs class=quoted /> age
+  - role
+- tr <!-- comment --> <!-- comment 2 -->
+  - <cell-attrs class="cool" /> alice
+  - 30
+  - parent
+- tr
+  - bob
+  - 42
+  - <cell-attrs class=child /> child
+
+</table>
+'''
+
+const CMARK_DIR = '/wedge/oils-for-unix.org/pkg/cmark/0.29.0'
+
+proc cmark-bin {
+  $CMARK_DIR/bin/cmark @ARGV
+}
+
+test-without-cmark-py2() {
+  # Oh markdown.pl doesn't have the embedded HTML rule?
+
+  # cmark omits raw HTML by default
+  # cmark-bin --help
+
+  echo $TD_ATTRS | cmark-bin --unsafe | run-py doctools/ul_table.py
+}
+
+test-without-cmark-py3() {
+  echo $TD_ATTRS | cmark-bin --unsafe | run-py3 doctools/ul_table.py
+}
+
+proc run-tests() {
+  devtools/byo.sh test $0
+}
+
+proc soil-run {
+  echo TODO
+}
+
+task-five "$@"

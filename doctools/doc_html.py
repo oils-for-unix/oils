@@ -55,7 +55,7 @@ def Header(meta, f, draft_warning=False):
 
     f.write('''\
       <a href="/releases.html">all versions</a> |
-      <a href="/">oilshell.org</a>
+      <a href="/">oils.pub</a>
 ''' % meta)
 
     if draft_warning:

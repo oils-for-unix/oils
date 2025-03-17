@@ -12,14 +12,16 @@ import time as time_  # avoid name conflict
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import option_i
-from _devbuild.gen.runtime_asdl import (scope_e, scope_t, Cell)
-from _devbuild.gen.syntax_asdl import (loc, loc_t, Token, debug_frame,
-                                       debug_frame_e, debug_frame_t)
+from _devbuild.gen.runtime_asdl import (error_code_e, scope_e, scope_t, Cell)
+from _devbuild.gen.syntax_asdl import (CompoundWord, loc, loc_t, Token,
+                                       debug_frame, debug_frame_e,
+                                       debug_frame_t)
 from _devbuild.gen.types_asdl import opt_group_i
 from _devbuild.gen.value_asdl import (value, value_e, value_t, Obj, sh_lvalue,
                                       sh_lvalue_e, sh_lvalue_t, LeftName,
                                       y_lvalue_e, regex_match, regex_match_e,
                                       regex_match_t, RegexMatch)
+from core import bash_impl
 from core import error
 from core.error import e_usage, e_die
 from core import num
@@ -35,6 +37,7 @@ from mycpp.mylib import (log, print_stderr, str_switch, tagswitch, iteritems,
                          NewDict)
 from pylib import os_path
 
+from libc import HAVE_GLOB_PERIOD
 import posix_ as posix
 
 from typing import Tuple, List, Dict, Optional, Any, cast, TYPE_CHECKING
@@ -54,13 +57,16 @@ ClearExport = 1 << 3
 SetNameref = 1 << 4
 ClearNameref = 1 << 5
 
+# For SetNamedYsh
+YshDecl = 1 << 6
+
 
 class ctx_Source(object):
     """For source builtin."""
 
-    def __init__(self, mem, source_name, argv):
-        # type: (Mem, str, List[str]) -> None
-        mem.PushSource(source_name, argv)
+    def __init__(self, mem, source_name, argv, source_loc):
+        # type: (Mem, str, List[str], CompoundWord) -> None
+        mem.PushSource(source_name, argv, source_loc)
         self.mem = mem
         self.argv = argv
 
@@ -343,6 +349,15 @@ def _SetOptionNum(opt_name):
     return opt_num
 
 
+def _MaybeWarnDotglob():
+    # type: () -> None
+    if HAVE_GLOB_PERIOD == 0:
+        # GNU libc and musl libc have GLOB_PERIOD, but Android doesn't
+        print_stderr(
+            "osh warning: GLOB_PERIOD wasn't found in libc, so 'shopt -s dotglob' won't work"
+        )
+
+
 class MutableOpts(object):
 
     def __init__(self, mem, environ, opt0_array, opt_stacks, opt_hook):
@@ -378,6 +393,9 @@ class MutableOpts(object):
 
     def Push(self, opt_num, b):
         # type: (int, bool) -> None
+        if opt_num == option_i.dotglob:
+            _MaybeWarnDotglob()
+
         overlay = self.opt_stacks[opt_num]
         if overlay is None or len(overlay) == 0:
             self.opt_stacks[opt_num] = [b]  # Allocate a new list
@@ -392,7 +410,11 @@ class MutableOpts(object):
 
     def PushDynamicScope(self, b):
         # type: (bool) -> None
-        """B: False if it's a proc, and True if it's a shell function."""
+        """
+        Args
+          b: dynamic scope?  False if it's a proc, and True if it's a shell
+             function.
+        """
         # If it's already disabled, keep it disabled
         if not self.Get(option_i.dynamic_scope):
             b = False
@@ -417,6 +439,8 @@ class MutableOpts(object):
 
         For bash compatibility in command sub.
         """
+        if opt_num == option_i.dotglob:
+            _MaybeWarnDotglob()
 
         # Like _Getter in core/optview.py
         overlay = self.opt_stacks[opt_num]
@@ -445,10 +469,18 @@ class MutableOpts(object):
 
     def _SetArrayByNum(self, opt_num, b):
         # type: (int, bool) -> None
+        """
+        Disabled check: ParsingChangesAllowed() worked for shell functions, but
+        was broken for proc and func.  Because they don't use the argv stack.
+
+        It also doesn't work for 'eval' and 'source', as shown by ble.sh.
+        (Although source inside a function is an odd usage.)
+
         if (opt_num in consts.PARSE_OPTION_NUMS and
                 not self.mem.ParsingChangesAllowed()):
             e_die('Syntax options must be set at the top level '
                   '(outside any function)')
+        """
 
         self._Set(opt_num, b)
 
@@ -509,7 +541,7 @@ class MutableOpts(object):
             self.SetDeferredErrExit(b)
         else:
             if opt_num == option_i.verbose and b:
-                print_stderr('Warning: set -o verbose not implemented')
+                print_stderr('osh warning: set -o verbose not implemented')
             self._SetArrayByNum(opt_num, b)
 
         # note: may FAIL before we get here.
@@ -633,9 +665,9 @@ def _DumpVarFrame(frame):
     # type: (Dict[str, Cell]) -> Dict[str, value_t]
     """Dump the stack frame as reasonably compact and readable JSON."""
 
-    vars_json = {}  # type: Dict[str, value_t]
+    vars_json = NewDict()  # type: Dict[str, value_t]
     for name, cell in iteritems(frame):
-        cell_json = {}  # type: Dict[str, value_t]
+        cell_json = NewDict()  # type: Dict[str, value_t]
 
         buf = mylib.BufWriter()
         if cell.exported:
@@ -649,7 +681,7 @@ def _DumpVarFrame(frame):
         # TODO:
         # - Use packle for crash dumps!  Then we can represent object cycles
         #   - Right now the JSON serializer will probably crash
-        #   - although BashArray and BashAssoc may need 'type' tags
+        #   - although InternalStringArray and BashAssoc may need 'type' tags
         #     - they don't round trip correctly
         #     - maybe add value.Tombstone here or something?
         #   - value.{Func,Eggex,...} may have value.Tombstone and
@@ -659,7 +691,8 @@ def _DumpVarFrame(frame):
             if case(value_e.Undef):
                 cell_json['val'] = value.Null
 
-            elif case(value_e.Str, value_e.BashArray, value_e.BashAssoc):
+            elif case(value_e.Str, value_e.InternalStringArray,
+                      value_e.BashAssoc, value_e.BashArray):
                 cell_json['val'] = cell.val
 
             else:
@@ -691,8 +724,8 @@ def _AddCallToken(d, token):
 class ctx_FuncCall(object):
     """For func calls."""
 
-    def __init__(self, mem, func):
-        # type: (Mem, value.Func) -> None
+    def __init__(self, mem, func, blame_tok):
+        # type: (Mem, value.Func, Token) -> None
 
         self.saved_globals = mem.var_stack[0]
 
@@ -700,9 +733,15 @@ class ctx_FuncCall(object):
         mem.var_stack[0] = func.module_frame
 
         frame = NewDict()  # type: Dict[str, Cell]
+
+        assert func.captured_frame is not None, func
+        frame['__E__'] = Cell(False, False, False,
+                              value.Frame(func.captured_frame))
+
         mem.var_stack.append(frame)
 
-        mem.PushCall(func.name, func.parsed.name)
+        # blame the location of (
+        mem.debug_stack.append(blame_tok)
 
         self.mem = mem
 
@@ -712,7 +751,7 @@ class ctx_FuncCall(object):
 
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
-        self.mem.PopCall()
+        self.mem.debug_stack.pop()
         self.mem.var_stack.pop()
 
         self.mem.var_stack[0] = self.saved_globals
@@ -721,8 +760,8 @@ class ctx_FuncCall(object):
 class ctx_ProcCall(object):
     """For proc calls, including shell functions."""
 
-    def __init__(self, mem, mutable_opts, proc, argv):
-        # type: (Mem, MutableOpts, value.Proc, List[str]) -> None
+    def __init__(self, mem, mutable_opts, proc, argv, invoke_loc):
+        # type: (Mem, MutableOpts, value.Proc, List[str], CompoundWord) -> None
 
         # TODO:
         # should we separate procs and shell functions?
@@ -736,6 +775,11 @@ class ctx_ProcCall(object):
 
         frame = NewDict()  # type: Dict[str, Cell]
 
+        # shell functions don't capture a frame
+        if proc.captured_frame is not None:
+            frame['__E__'] = Cell(False, False, False,
+                                  value.Frame(proc.captured_frame))
+
         assert argv is not None
         if proc.sh_compat:
             # shell function
@@ -748,7 +792,8 @@ class ctx_ProcCall(object):
 
         mem.var_stack.append(frame)
 
-        mem.PushCall(proc.name, proc.name_tok)
+        mem.debug_stack.append(
+            debug_frame.ProcLike(invoke_loc, proc.name_tok, proc.name))
 
         # Dynamic scope is only for shell functions
         mutable_opts.PushDynamicScope(proc.sh_compat)
@@ -766,13 +811,30 @@ class ctx_ProcCall(object):
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
         self.mutable_opts.PopDynamicScope()
-        self.mem.PopCall()
+        self.mem.debug_stack.pop()
         self.mem.var_stack.pop()
 
         if self.sh_compat:
             self.mem.argv_stack.pop()
 
         self.mem.var_stack[0] = self.saved_globals
+
+
+class ctx_EvalInFrame(object):
+
+    def __init__(self, mem, frame):
+        # type: (Mem, Dict[str, Cell]) -> None
+        mem.var_stack.append(frame)
+
+        self.mem = mem
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        self.mem.var_stack.pop()
 
 
 class ctx_Temp(object):
@@ -823,7 +885,8 @@ class ctx_Registers(object):
         last = mem.last_status[-1]
         mem.last_status.append(last)
         mem.try_status.append(0)
-        mem.try_error.append(value.Dict({}))
+        tmp = NewDict()  # type: Dict[str, value_t]
+        mem.try_error.append(value.Dict(tmp))
 
         # TODO: We should also copy these values!  Turn the whole thing into a
         # frame.
@@ -881,11 +944,10 @@ def _MakeArgvCell(argv):
 
 class ctx_LoopFrame(object):
 
-    def __init__(self, mem, name1):
-        # type: (Mem, str) -> None
+    def __init__(self, mem, do_new_frame):
+        # type: (Mem, bool) -> None
         self.mem = mem
-        self.name1 = name1
-        self.do_new_frame = name1 == '__hack__'
+        self.do_new_frame = do_new_frame
 
         if self.do_new_frame:
             to_enclose = self.mem.var_stack[-1]
@@ -933,6 +995,7 @@ class ctx_EnclosedFrame(object):
             to_enclose,  # type: Dict[str, Cell]
             module_frame,  # type: Dict[str, Cell]
             out_dict,  # type: Optional[Dict[str, value_t]]
+            inside=False,  # type: bool
     ):
         # type: (...) -> None
         self.mem = mem
@@ -944,10 +1007,13 @@ class ctx_EnclosedFrame(object):
             self.saved_globals = self.mem.var_stack[0]
             self.mem.var_stack[0] = module_frame
 
-        # __E__ gets a lookup rule
-        self.new_frame = NewDict()  # type: Dict[str, Cell]
-        self.new_frame['__E__'] = Cell(False, False, False,
-                                       value.Frame(to_enclose))
+        if inside:
+            self.new_frame = to_enclose
+        else:
+            # __E__ gets a lookup rule
+            self.new_frame = NewDict()
+            self.new_frame['__E__'] = Cell(False, False, False,
+                                           value.Frame(to_enclose))
 
         mem.var_stack.append(self.new_frame)
 
@@ -977,6 +1043,38 @@ class ctx_EnclosedFrame(object):
             self.mem.var_stack[0] = self.saved_globals
 
 
+class ctx_CompoundWordDebugFrame(object):
+
+    def __init__(self, mem, w):
+        # type: (Mem, CompoundWord) -> None
+        mem.debug_stack.append(w)
+        self.mem = mem
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value_, traceback):
+        # type: (Any, Any, Any) -> None
+        self.mem.debug_stack.pop()
+
+
+class ctx_TokenDebugFrame(object):
+
+    def __init__(self, mem, tok):
+        # type: (Mem, Token) -> None
+        mem.debug_stack.append(tok)
+        self.mem = mem
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value_, traceback):
+        # type: (Any, Any, Any) -> None
+        self.mem.debug_stack.pop()
+
+
 class ctx_ModuleEval(object):
     """Evaluate a module with a new global stack frame.
 
@@ -986,8 +1084,8 @@ class ctx_ModuleEval(object):
     the old frame.
     """
 
-    def __init__(self, mem, out_dict, out_errors):
-        # type: (Mem, Dict[str, value_t], List[str]) -> None
+    def __init__(self, mem, use_loc, out_dict, out_errors):
+        # type: (Mem, CompoundWord, Dict[str, value_t], List[str]) -> None
         self.mem = mem
         self.out_dict = out_dict
         self.out_errors = out_errors
@@ -1016,12 +1114,23 @@ class ctx_ModuleEval(object):
         assert len(mem.var_stack) == 1
         mem.var_stack[0] = self.new_frame
 
+        # Whenever we're use-ing, the 'is-main' builtin will return 1 (false)
+        self.to_restore = self.mem.is_main
+        self.mem.is_main = False
+
+        # Equivalent of PushSource()
+        mem.debug_stack.append(use_loc)
+
     def __enter__(self):
         # type: () -> None
         pass
 
     def __exit__(self, type, value_, traceback):
         # type: (Any, Any, Any) -> None
+
+        self.mem.debug_stack.pop()
+
+        self.mem.is_main = self.to_restore
 
         assert len(self.mem.var_stack) == 1
         self.mem.var_stack[0] = self.saved_frame
@@ -1126,8 +1235,8 @@ class ctx_Eval(object):
                 self.mem.SetNamed(lval, old_val, scope_e.LocalOnly)
 
 
-def _FrameLookup(frame, name):
-    # type: (Dict[str, Cell], str) -> Tuple[Optional[Cell], Dict[str, Cell]]
+def _FrameLookup(frame, name, ysh_decl):
+    # type: (Dict[str, Cell], str, bool) -> Tuple[Optional[Cell], Dict[str, Cell]]
     """
     Look for a name in the frame, then recursively into the enclosing __E__
     frame, if it exists
@@ -1136,13 +1245,17 @@ def _FrameLookup(frame, name):
     if cell:
         return cell, frame
 
-    rear_cell = frame.get('__E__')  # ctx_EnclosedFrame() sets this
-    if rear_cell:
-        rear_val = rear_cell.val
-        assert rear_val, rear_val
-        if rear_val.tag() == value_e.Frame:
-            to_enclose = cast(value.Frame, rear_val).frame
-            return _FrameLookup(to_enclose, name)  # recursive call
+    # var, const are declarations
+    # TODO: what about proc, func?
+    if not ysh_decl:
+        rear_cell = frame.get('__E__')  # ctx_EnclosedFrame() sets this
+        if rear_cell:
+            rear_val = rear_cell.val
+            assert rear_val, rear_val
+            if rear_val.tag() == value_e.Frame:
+                to_enclose = cast(value.Frame, rear_val).frame
+                return _FrameLookup(to_enclose, name,
+                                    ysh_decl)  # recursive call
 
     return None, None
 
@@ -1218,7 +1331,9 @@ class Mem(object):
         # - push-registers builtin
         self.last_status = [0]  # type: List[int]  # a stack
         self.try_status = [0]  # type: List[int]  # a stack
-        self.try_error = [value.Dict({})]  # type: List[value.Dict]  # a stack
+        tmp = NewDict()  # type: Dict[str, value_t]
+        # a stack
+        self.try_error = [value.Dict(tmp)]  # type: List[value.Dict]
         self.pipe_status = [[]]  # type: List[List[int]]  # stack
         self.process_sub_status = [[]]  # type: List[List[int]]  # stack
 
@@ -1269,15 +1384,6 @@ class Mem(object):
         """Used by builtins."""
         self.pwd = pwd
 
-    def ParsingChangesAllowed(self):
-        # type: () -> bool
-        """For checking that syntax options are only used at the top level."""
-
-        # DISALLOW proc calls     : they push argv_stack, var_stack, debug_stack
-        # ALLOW source foo.sh arg1: pushes argv_stack, debug_stack
-        # ALLOW FOO=bar           : pushes var_stack
-        return len(self.var_stack) == 1 or len(self.argv_stack) == 1
-
     def Dump(self):
         # type: () -> Tuple[List[value_t], List[value_t], List[value_t]]
         """Copy state before unwinding the stack."""
@@ -1292,19 +1398,22 @@ class Mem(object):
         # Reuse these immutable objects
         t_call = value.Str('Call')
         t_source = value.Str('Source')
-        t_main = value.Str('Main')
 
         for frame in reversed(self.debug_stack):
             UP_frame = frame
+            d = None  # type: Optional[Dict[str, value_t]]
             with tagswitch(frame) as case:
-                if case(debug_frame_e.Call):
-                    frame = cast(debug_frame.Call, UP_frame)
+                if case(debug_frame_e.ProcLike):
+                    frame = cast(debug_frame.ProcLike, UP_frame)
                     d = {
                         'type': t_call,
-                        'func_name': value.Str(frame.func_name)
-                    }  # type: Dict[str, value_t]
+                        'func_name': value.Str(frame.proc_name)
+                    }
 
-                    _AddCallToken(d, frame.call_tok)
+                    invoke_token = location.LeftTokenForCompoundWord(
+                        frame.invoke_loc)
+                    assert invoke_token is not None, frame.invoke_loc
+                    _AddCallToken(d, invoke_token)
                     # TODO: Add def_tok
 
                 elif case(debug_frame_e.Source):
@@ -1313,13 +1422,24 @@ class Mem(object):
                         'type': t_source,
                         'source_name': value.Str(frame.source_name)
                     }
-                    _AddCallToken(d, frame.call_tok)
+                    invoke_token = location.LeftTokenForCompoundWord(
+                        frame.source_loc)
+                    assert invoke_token is not None, frame.source_loc
+                    _AddCallToken(d, invoke_token)
 
-                elif case(debug_frame_e.Main):
-                    frame = cast(debug_frame.Main, UP_frame)
-                    d = {'type': t_main, 'dollar0': value.Str(frame.dollar0)}
+                # TODO: func_reflect.py DebugFrameToString handles these cases
+                # We might also want to use CrashDumper there?  For 'set -u'
+                # etc.
+                elif case(debug_frame_e.CompoundWord):
+                    pass
 
-            debug_stack.append(value.Dict(d))
+                elif case(debug_frame_e.Token):
+                    pass
+
+            # Note: Skip debug_frame.MainFile
+            if d is not None:
+                debug_stack.append(value.Dict(d))
+
         return var_stack, argv_stack, debug_stack
 
     def SetLastArgument(self, s):
@@ -1351,6 +1471,10 @@ class Mem(object):
         #import traceback
         #traceback.print_stack()
         #return
+
+        # Reset the expression fallback location on every line.  It REFINES the
+        # line-based fallback location.
+        self.loc_for_expr = loc.Missing
 
         self.token_for_line = tok
 
@@ -1428,30 +1552,6 @@ class Mem(object):
     # Call Stack
     #
 
-    def PushCall(self, func_name, def_tok):
-        # type: (str, Token) -> None
-        """Push argv, var, and debug stack frames.
-
-        Currently used for proc and func calls.  TODO: New func evaluator may
-        not use it.
-
-        Args:
-          def_tok: Token where proc or func was defined, used to compute
-                   BASH_SOURCE.
-        """
-        # self.token_for_line can be None?
-        self.debug_stack.append(
-            debug_frame.Call(self.token_for_line, def_tok, func_name))
-
-    def PopCall(self):
-        # type: () -> None
-        """
-        Args:
-          should_pop_argv_stack: Pass False if PushCall was given None for argv
-          True for proc, False for func
-        """
-        self.debug_stack.pop()
-
     def ShouldRunDebugTrap(self):
         # type: () -> bool
 
@@ -1473,14 +1573,16 @@ class Mem(object):
         local -g uses this, probably because bash does the wrong thing and
         prints LOCALS, not globals.
         """
+        # TODO: check for bugs where temp frames FOO=bar make the var stack
+        # non-empty, at global scope (like the removed ParsingChangesAllowed())
+
         return len(self.var_stack) == 1
 
     def InsideFunction(self):
         # type: () -> bool
         """For the ERR trap, and use builtin"""
-
-        # TODO: Should this be unified with ParsingChangesAllowed()?  Slightly
-        # different logic.
+        # TODO: check for bugs where temp frames FOO=bar make the var stack
+        # non-empty, at global scope (like the removed ParsingChangesAllowed())
 
         # Don't run it inside functions
         return len(self.var_stack) > 1
@@ -1498,15 +1600,13 @@ class Mem(object):
         """For attaching a stack frame to a value.Block"""
         return self.var_stack[-1]
 
-    def PushSource(self, source_name, argv):
-        # type: (str, List[str]) -> None
+    def PushSource(self, source_name, argv, source_loc):
+        # type: (str, List[str], CompoundWord) -> None
         """ For 'source foo.sh 1 2 3' """
         if len(argv):
             self.argv_stack.append(_ArgFrame(argv))
 
-        # self.token_for_line can be None?
-        self.debug_stack.append(
-            debug_frame.Source(self.token_for_line, source_name))
+        self.debug_stack.append(debug_frame.Source(source_loc, source_name))
 
     def PopSource(self, argv):
         # type: (List[str]) -> None
@@ -1643,6 +1743,30 @@ class Mem(object):
     # Named Vars
     #
 
+    def _ResolveNameForYshMutation(self, name, which_scopes, ysh_decl):
+        # type: (str, scope_t, bool) -> Tuple[Optional[Cell], Dict[str, Cell]]
+        """Simpler version of _ResolveNameOnly for YSH.
+
+        YSH has no namerefs, and it only has local and global mutation (setvar
+        and setglobal).
+        """
+        if which_scopes == scope_e.LocalOnly:
+            var_frame = self.var_stack[-1]
+            cell, result_frame = _FrameLookup(var_frame, name, ysh_decl)
+            if cell:
+                return cell, result_frame
+            return None, var_frame
+
+        if which_scopes == scope_e.GlobalOnly:
+            var_frame = self.var_stack[0]
+            cell, result_frame = _FrameLookup(var_frame, name, ysh_decl)
+            if cell:
+                return cell, result_frame
+
+            return None, var_frame
+
+        raise AssertionError()
+
     def _ResolveNameOnly(self, name, which_scopes):
         # type: (str, scope_t) -> Tuple[Optional[Cell], Dict[str, Cell]]
         """Helper for getting and setting variable.
@@ -1655,21 +1779,21 @@ class Mem(object):
         if which_scopes == scope_e.Dynamic:
             for i in xrange(len(self.var_stack) - 1, -1, -1):
                 var_frame = self.var_stack[i]
-                cell, result_frame = _FrameLookup(var_frame, name)
+                cell, result_frame = _FrameLookup(var_frame, name, False)
                 if cell:
                     return cell, result_frame
             return None, self.var_stack[0]  # set in global var_frame
 
         if which_scopes == scope_e.LocalOnly:
             var_frame = self.var_stack[-1]
-            cell, result_frame = _FrameLookup(var_frame, name)
+            cell, result_frame = _FrameLookup(var_frame, name, False)
             if cell:
                 return cell, result_frame
             return None, var_frame
 
         if which_scopes == scope_e.GlobalOnly:
             var_frame = self.var_stack[0]
-            cell, result_frame = _FrameLookup(var_frame, name)
+            cell, result_frame = _FrameLookup(var_frame, name, False)
             if cell:
                 return cell, result_frame
 
@@ -1678,13 +1802,13 @@ class Mem(object):
         if which_scopes == scope_e.LocalOrGlobal:
             # Local
             var_frame = self.var_stack[-1]
-            cell, result_frame = _FrameLookup(var_frame, name)
+            cell, result_frame = _FrameLookup(var_frame, name, False)
             if cell:
                 return cell, result_frame
 
             # Global
             var_frame = self.var_stack[0]
-            cell, result_frame = _FrameLookup(var_frame, name)
+            cell, result_frame = _FrameLookup(var_frame, name, False)
             if cell:
                 return cell, result_frame
 
@@ -1826,8 +1950,52 @@ class Mem(object):
             cell = Cell(False, False, False, val)
             var_frame[lval.name] = cell
 
-    def SetNamed(self, lval, val, which_scopes, flags=0):
+    def SetNamedYsh(self, lval, val, which_scopes, flags=0):
         # type: (LeftName, value_t, scope_t, int) -> None
+        """Set the value of a named variable, for YSH.
+
+        This has simpler logic than Mem.SetNamed().  It also handles 'const'
+        and 'var' in closures, via the YshDecl flag.
+        """
+        # Scopes to handle: LocalOnly (setvar), GlobalOnly (setglobal)
+        assert which_scopes in (scope_e.LocalOnly,
+                                scope_e.GlobalOnly), which_scopes
+
+        # Flags to handle: SetReadOnly (const), YshDecl (const, var)
+        assert flags & ClearReadOnly == 0, flags
+
+        assert flags & SetExport == 0, flags
+        assert flags & ClearExport == 0, flags
+
+        assert flags & SetNameref == 0, flags
+        assert flags & ClearNameref == 0, flags
+
+        cell, var_frame = self._ResolveNameForYshMutation(
+            lval.name, which_scopes, bool(flags & YshDecl))
+
+        if cell:
+            # Note: this DYNAMIC check means we can't have 'const' in a loop.
+            # But that's true for 'readonly' too, and hoisting it makes more
+            # sense anyway.
+            if cell.readonly:
+                e_die("Can't assign to readonly value %r" % lval.name,
+                      lval.blame_loc)
+            cell.val = val  # CHANGE VAL
+
+            if flags & SetReadOnly:
+                cell.readonly = True
+
+        else:
+            cell = Cell(False, bool(flags & SetReadOnly), False, val)
+            var_frame[lval.name] = cell
+
+        # Maintain invariant that only strings and undefined cells can be
+        # exported.
+        assert cell.val is not None, cell
+
+    def SetNamed(self, lval, val, which_scopes, flags=0):
+        # type: (LeftName, Optional[value_t], scope_t, int) -> None
+        """Set the value of a named variable."""
         if flags & SetNameref or flags & ClearNameref:
             # declare -n ref=x  # refers to the ref itself
             cell, var_frame = self._ResolveNameOnly(lval.name, which_scopes)
@@ -1947,7 +2115,8 @@ class Mem(object):
                 cell, var_frame, _ = self._ResolveNameOrRef(
                     lval.name, which_scopes)
                 if not cell:
-                    self._BindNewArrayWithEntry(var_frame, lval, rval, flags)
+                    self._BindNewArrayWithEntry(var_frame, lval, rval, flags,
+                                                left_loc)
                     return
 
                 if cell.readonly:
@@ -1958,7 +2127,7 @@ class Mem(object):
                 with tagswitch(UP_cell_val) as case2:
                     if case2(value_e.Undef):
                         self._BindNewArrayWithEntry(var_frame, lval, rval,
-                                                    flags)
+                                                    flags, left_loc)
                         return
 
                     elif case2(value_e.Str):
@@ -1966,27 +2135,26 @@ class Mem(object):
                         # s[1]=y  # invalid
                         e_die("Can't assign to items in a string", left_loc)
 
+                    elif case2(value_e.InternalStringArray):
+                        cell_val = cast(value.InternalStringArray, UP_cell_val)
+                        error_code = bash_impl.InternalStringArray_SetElement(
+                            cell_val, lval.index, rval.s)
+                        if error_code == error_code_e.IndexOutOfRange:
+                            n = bash_impl.InternalStringArray_Length(cell_val)
+                            e_die(
+                                "Index %d is out of bounds for array of length %d"
+                                % (lval.index, n), left_loc)
+                        return
+
                     elif case2(value_e.BashArray):
-                        cell_val = cast(value.BashArray, UP_cell_val)
-                        strs = cell_val.strs
-
-                        n = len(strs)
-                        index = lval.index
-                        if index < 0:  # a[-1]++ computes this twice; could we avoid it?
-                            index += n
-                            if index < 0:
-                                e_die("Index %d is out of range" % lval.index, left_loc)
-
-                        if index < n:
-                            strs[index] = rval.s
-                        else:
-                            # Fill it in with None.  It could look like this:
-                            # ['1', 2, 3, None, None, '4', None]
-                            # Then ${#a[@]} counts the entries that are not None.
-                            n = index - len(strs) + 1
-                            for i in xrange(n):
-                                strs.append(None)
-                            strs[lval.index] = rval.s
+                        lhs_sp = cast(value.BashArray, UP_cell_val)
+                        error_code = bash_impl.BashArray_SetElement(
+                            lhs_sp, mops.IntWiden(lval.index), rval.s)
+                        if error_code == error_code_e.IndexOutOfRange:
+                            n_big = bash_impl.BashArray_Length(lhs_sp)
+                            e_die(
+                                "Index %d is out of bounds for array of length %s"
+                                % (lval.index, mops.ToStr(n_big)), left_loc)
                         return
 
                 # This could be an object, eggex object, etc.  It won't be
@@ -2015,19 +2183,21 @@ class Mem(object):
                 # We already looked it up before making the sh_lvalue
                 assert cell.val.tag() == value_e.BashAssoc, cell
                 cell_val2 = cast(value.BashAssoc, cell.val)
-
-                cell_val2.d[lval.key] = rval.s
+                bash_impl.BashAssoc_SetElement(cell_val2, lval.key, rval.s)
 
             else:
                 raise AssertionError(lval.tag())
 
-    def _BindNewArrayWithEntry(self, var_frame, lval, val, flags):
-        # type: (Dict[str, Cell], sh_lvalue.Indexed, value.Str, int) -> None
+    def _BindNewArrayWithEntry(self, var_frame, lval, val, flags, blame_loc):
+        # type: (Dict[str, Cell], sh_lvalue.Indexed, value.Str, int, loc_t) -> None
         """Fill 'var_frame' with a new indexed array entry."""
-        no_str = None  # type: Optional[str]
-        items = [no_str] * lval.index
-        items.append(val.s)
-        new_value = value.BashArray(items)
+
+        new_value = bash_impl.BashArray_New()
+        error_code = bash_impl.BashArray_SetElement(new_value,
+                                                    mops.IntWiden(lval.index),
+                                                    val.s)
+        if error_code == error_code_e.IndexOutOfRange:
+            e_die("Index %d is out of bounds for array of length 0", blame_loc)
 
         # arrays can't be exported; can't have BashAssoc flag
         readonly = bool(flags & SetReadOnly)
@@ -2077,7 +2247,7 @@ class Mem(object):
             elif case('PIPESTATUS'):
                 strs2 = [str(i)
                          for i in self.pipe_status[-1]]  # type: List[str]
-                return value.BashArray(strs2)
+                return value.InternalStringArray(strs2)
 
             elif case('_pipeline_status'):
                 items = [num.ToBig(i)
@@ -2096,7 +2266,7 @@ class Mem(object):
                     elif case2(regex_match_e.Yes):
                         m = cast(RegexMatch, top_match)
                         groups = util.RegexGroupStrings(m.s, m.indices)
-                return value.BashArray(groups)
+                return value.InternalStringArray(groups)
 
             # Do lookup of system globals before looking at user variables.  Note: we
             # could optimize this at compile-time like $?.  That would break
@@ -2109,18 +2279,22 @@ class Mem(object):
                 for frame in reversed(self.debug_stack):
                     UP_frame = frame
                     with tagswitch(frame) as case2:
-                        if case2(debug_frame_e.Call):
-                            frame = cast(debug_frame.Call, UP_frame)
-                            strs.append(frame.func_name)
+                        if case2(debug_frame_e.ProcLike):
+                            frame = cast(debug_frame.ProcLike, UP_frame)
+                            strs.append(frame.proc_name)
 
                         elif case2(debug_frame_e.Source):
                             # bash doesn't tell you the filename sourced
                             strs.append('source')
 
-                        elif case2(debug_frame_e.Main):
+                        elif case2(debug_frame_e.MainFile):
                             strs.append('main')  # also bash behavior
 
-                return value.BashArray(strs)  # TODO: Reuse this object too?
+                        else:  # ignore
+                            pass
+
+                return value.InternalStringArray(
+                    strs)  # TODO: Reuse this object too?
 
             # $BASH_SOURCE and $BASH_LINENO have OFF BY ONE design bugs:
             #
@@ -2135,8 +2309,8 @@ class Mem(object):
                 for frame in reversed(self.debug_stack):
                     UP_frame = frame
                     with tagswitch(frame) as case2:
-                        if case2(debug_frame_e.Call):
-                            frame = cast(debug_frame.Call, UP_frame)
+                        if case2(debug_frame_e.ProcLike):
+                            frame = cast(debug_frame.ProcLike, UP_frame)
 
                             # Weird bash behavior
                             assert frame.def_tok.line is not None
@@ -2149,30 +2323,44 @@ class Mem(object):
                             # Is this right?
                             strs.append(frame.source_name)
 
-                        elif case2(debug_frame_e.Main):
-                            frame = cast(debug_frame.Main, UP_frame)
-                            strs.append(frame.dollar0)
+                        elif case2(debug_frame_e.MainFile):
+                            frame = cast(debug_frame.MainFile, UP_frame)
+                            strs.append(frame.main_filename)
 
-                return value.BashArray(strs)  # TODO: Reuse this object too?
+                        else:  # ignore
+                            pass
+
+                return value.InternalStringArray(
+                    strs)  # TODO: Reuse this object too?
 
             elif case('BASH_LINENO'):
                 strs = []
                 for frame in reversed(self.debug_stack):
                     UP_frame = frame
                     with tagswitch(frame) as case2:
-                        if case2(debug_frame_e.Call):
-                            frame = cast(debug_frame.Call, UP_frame)
-                            strs.append(_LineNumber(frame.call_tok))
+                        if case2(debug_frame_e.ProcLike):
+                            frame = cast(debug_frame.ProcLike, UP_frame)
+                            invoke_token = location.LeftTokenForCompoundWord(
+                                frame.invoke_loc)
+                            assert invoke_token is not None, frame.invoke_loc
+                            strs.append(_LineNumber(invoke_token))
 
                         elif case2(debug_frame_e.Source):
                             frame = cast(debug_frame.Source, UP_frame)
-                            strs.append(_LineNumber(frame.call_tok))
+                            invoke_token = location.LeftTokenForCompoundWord(
+                                frame.source_loc)
+                            assert invoke_token is not None, frame.source_loc
+                            strs.append(_LineNumber(invoke_token))
 
-                        elif case2(debug_frame_e.Main):
+                        elif case2(debug_frame_e.MainFile):
                             # Bash does this to line up with 'main'
                             strs.append('0')
 
-                return value.BashArray(strs)  # TODO: Reuse this object too?
+                        else:  # ignore
+                            pass
+
+                return value.InternalStringArray(
+                    strs)  # TODO: Reuse this object too?
 
             elif case('LINENO'):
                 assert self.token_for_line is not None
@@ -2228,6 +2416,17 @@ class Mem(object):
         cell, _ = self._ResolveNameOnly(name, which_scopes)
         return cell
 
+    def GetCellDeref(self, name, which_scopes=scope_e.Shopt):
+        # type: (str, scope_t) -> Cell
+        """Get both the value and flags. Unlike GetCell, this resolves
+        name references.
+        """
+        if which_scopes == scope_e.Shopt:
+            which_scopes = self.ScopesForReading()
+
+        cell, _, _ = self._ResolveNameOrRef(name, which_scopes)
+        return cell
+
     def Unset(self, lval, which_scopes):
         # type: (sh_lvalue_t, scope_t) -> bool
         """
@@ -2280,31 +2479,26 @@ class Mem(object):
 
                 val = cell.val
                 UP_val = val
-                if val.tag() != value_e.BashArray:
-                    raise error.Runtime("%r isn't an array" % var_name)
-
-                val = cast(value.BashArray, UP_val)
-                strs = val.strs
-
-                n = len(strs)
-                last_index = n - 1
-                index = lval.index
-                if index < 0:
-                    index += n
-
-                if index == last_index:
-                    # Special case: The array SHORTENS if you unset from the end.  You
-                    # can tell with a+=(3 4)
-                    strs.pop()
-                elif 0 <= index and index < last_index:
-                    strs[index] = None
+                if val.tag() == value_e.InternalStringArray:
+                    val = cast(value.InternalStringArray, UP_val)
+                    error_code = bash_impl.InternalStringArray_UnsetElement(
+                        val, lval.index)
+                    if error_code == error_code_e.IndexOutOfRange:
+                        n = bash_impl.InternalStringArray_Length(val)
+                        raise error.Runtime(
+                            "%s[%d]: Index is out of bounds for array of length %d"
+                            % (var_name, lval.index, n))
+                elif val.tag() == value_e.BashArray:
+                    val = cast(value.BashArray, UP_val)
+                    error_code = bash_impl.BashArray_UnsetElement(
+                        val, mops.IntWiden(lval.index))
+                    if error_code == error_code_e.IndexOutOfRange:
+                        big_length = bash_impl.BashArray_Length(val)
+                        raise error.Runtime(
+                            "%s[%d]: Index is out of bounds for array of length %s"
+                            % (var_name, lval.index, mops.ToStr(big_length)))
                 else:
-                    # If it's not found, it's not an error.  In other words, 'unset'
-                    # ensures that a value doesn't exist, regardless of whether it
-                    # existed.  It's idempotent.
-                    # (Ousterhout specifically argues that the strict behavior was a
-                    # mistake for Tcl!)
-                    pass
+                    raise error.Runtime("%r isn't an array" % var_name)
 
             elif case(sh_lvalue_e.Keyed):  # unset 'A["K"]'
                 lval = cast(sh_lvalue.Keyed, UP_lval)
@@ -2317,7 +2511,7 @@ class Mem(object):
                 #  raise error.Runtime("%r isn't an associative array" % lval.name)
 
                 val = cast(value.BashAssoc, UP_val)
-                mylib.dict_erase(val.d, lval.key)
+                bash_impl.BashAssoc_UnsetElement(val, lval.key)
 
             else:
                 raise AssertionError(lval)
@@ -2388,7 +2582,7 @@ class Mem(object):
         - If an exported variable is changed
         - If the set of exported variables changes.
         """
-        new_env = {}  # type: Dict[str, str]
+        new_env = NewDict()  # type: Dict[str, str]
 
         # Note: ysh:upgrade has both of these behaviors
 
@@ -2429,7 +2623,7 @@ class Mem(object):
     def GetAllVars(self):
         # type: () -> Dict[str, str]
         """Get all variables and their values, for 'set' builtin."""
-        result = {}  # type: Dict[str, str]
+        result = NewDict()  # type: Dict[str, str]
         for scope in self.var_stack:
             for name, cell in iteritems(scope):
                 # TODO: Show other types?
@@ -2442,7 +2636,7 @@ class Mem(object):
     def GetAllCells(self, which_scopes):
         # type: (scope_t) -> Dict[str, Cell]
         """Get all variables and their values, for 'set' builtin."""
-        result = {}  # type: Dict[str, Cell]
+        result = NewDict()  # type: Dict[str, Cell]
 
         if which_scopes == scope_e.Dynamic:
             scopes = self.var_stack
@@ -2539,7 +2733,7 @@ class Procs(object):
     def __init__(self, mem):
         # type: (Mem) -> None
         self.mem = mem
-        self.sh_funcs = {}  # type: Dict[str, value.Proc]
+        self.sh_funcs = NewDict()  # type: Dict[str, value.Proc]
 
     def DefineShellFunc(self, name, proc):
         # type: (str, value.Proc) -> None
@@ -2575,6 +2769,8 @@ class Procs(object):
         procs are defined in the local scope.
         """
         self.mem.var_stack[-1][name] = Cell(False, False, False, proc)
+        # Doesn't make a difference?
+        #self.mem.SetNamedYsh(location.LName(name), proc, scope_e.LocalOnly, flags=YshDecl)
 
     def IsProc(self, name):
         # type: (str) -> bool
@@ -2685,7 +2881,7 @@ def BuiltinSetArray(mem, name, a):
     Used by compadjust, read -a, etc.
     """
     assert isinstance(a, list)
-    BuiltinSetValue(mem, location.LName(name), value.BashArray(a))
+    BuiltinSetValue(mem, location.LName(name), bash_impl.BashArray_FromList(a))
 
 
 def SetGlobalString(mem, name, s):
@@ -2700,7 +2896,8 @@ def SetGlobalArray(mem, name, a):
     # type: (Mem, str, List[str]) -> None
     """Used by completion, shell initialization, etc."""
     assert isinstance(a, list)
-    mem.SetNamed(location.LName(name), value.BashArray(a), scope_e.GlobalOnly)
+    mem.SetNamed(location.LName(name), bash_impl.BashArray_FromList(a),
+                 scope_e.GlobalOnly)
 
 
 def SetGlobalValue(mem, name, val):

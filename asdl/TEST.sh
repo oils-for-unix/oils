@@ -105,7 +105,7 @@ pretty-demo() {
 
   # Show Dict[BigInt, str]
   for i in 12 50 80; do
-    $OSH -c 'declare -a a=(a b); a[$1]=zzz; pp asdl_ (a); pp asdl_ (_a2sp(a))' dummy $i
+    $OSH -c 'declare -a a=(a b); a[$1]=zzz; pp asdl_ (a)' dummy $i
     echo
   done
 

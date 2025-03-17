@@ -1,4 +1,4 @@
-const __provide__ = :| any all sum repeat |
+const __provide__ = :| any all repeat |
 
 func any(list) {
   ### Returns true if any value in the list is truthy.
@@ -24,19 +24,8 @@ func all(list) {
   return (true)
 }
 
-func sum(list; start=0) {
-  ### Returns the sum of all elements in the list.
-  # Empty list: returns 0
-
-  var sum = start
-  for item in (list) {
-    setvar sum += item
-  }
-  return (sum)
-}
-
 func repeat(x, n) {
-  ### Returns a list with the given string or list repeated
+  ### Repeats a given Str or List, returning another Str or List
 
   # Like Python's 'foo'*3 or ['foo', 'bar']*3
   # negative numbers are like 0 in Python

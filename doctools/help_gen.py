@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 from __future__ import print_function
+from typing import List, Any, Dict, Iterator, Tuple, Optional, IO
 """help_gen.py
 
 Ideas for HTML -> ANSI converter:
@@ -31,9 +32,13 @@ import pprint
 import re
 import sys
 
+from typing import AnyStr
+
+from _devbuild.gen.htm8_asdl import h8_id
+from data_lang import htm8
 from doctools import html_lib
 from doctools.util import log
-from lazylex import html
+from doctools import html_old
 
 #from typing import List, Tuple
 
@@ -85,6 +90,7 @@ X_LEFT_SPAN = '<span style="color: darkred">'
 class TopicHtmlRenderer(object):
 
     def __init__(self, chapter, debug_out, linkify_stop_col):
+        # type: (str, List, int) -> None
         self.chapter = chapter
         self.debug_out = debug_out
         self.linkify_stop_col = linkify_stop_col
@@ -92,6 +98,7 @@ class TopicHtmlRenderer(object):
         self.html_page = 'chap-%s.html' % chapter
 
     def _PrintTopic(self, m, out, line_info):
+        # type: (Any, htm8.Output, Dict[str, Any]) -> None
         # The X
         topic_impl = True
         if m.group(1):
@@ -111,6 +118,7 @@ class TopicHtmlRenderer(object):
         out.Print('</a>')
 
     def Render(self, line):
+        # type: (str) -> str
         """Convert a line of text to HTML.
 
         Topics are highlighted and X made red.
@@ -124,7 +132,7 @@ class TopicHtmlRenderer(object):
           The HTML with some tags inserted.
         """
         f = cStringIO.StringIO()
-        out = html.Output(line, f)
+        out = htm8.Output(line, f)
 
         pos = 0  # position within line
 
@@ -195,12 +203,15 @@ class TopicHtmlRenderer(object):
         return f.getvalue()
 
 
+CurGroup = Tuple[AnyStr, List[Tuple[AnyStr, AnyStr]], AnyStr, List[Any]]
+
+
 class Splitter(HTMLParser.HTMLParser):
     """Split an HTML stream starting at each of the heading tags.
 
     For *-help.html.
 
-    TODO: Rewrite with this with lazylex!
+    TODO: Rewrite with this with HTM8!
 
     Algorithm:
     - ExtractBody() first, then match balanced tags
@@ -217,21 +228,24 @@ class Splitter(HTMLParser.HTMLParser):
     """
 
     def __init__(self, heading_tags, out):
+        # type: (List[str], List[CurGroup]) -> None
         HTMLParser.HTMLParser.__init__(self)
         self.heading_tags = heading_tags
         self.out = out
 
-        self.cur_group = None  # type-not-checked: List[Tuple[str, str, List, List]]
+        self.cur_group = None  # type: CurGroup
         self.in_heading = False
 
         self.indent = 0
 
     def log(self, msg, *args):
+        # type: (str, *Any) -> None
         ind = self.indent * ' '
         if 0:
             log(ind + msg, *args)
 
     def handle_starttag(self, tag, attrs):
+        # type: (AnyStr, List[Tuple[AnyStr, AnyStr]]) -> None
         if tag in self.heading_tags:
             self.in_heading = True
             if self.cur_group:
@@ -243,6 +257,7 @@ class Splitter(HTMLParser.HTMLParser):
         self.indent += 1
 
     def handle_endtag(self, tag):
+        # type: (AnyStr) -> None
         if tag in self.heading_tags:
             self.in_heading = False
 
@@ -250,12 +265,13 @@ class Splitter(HTMLParser.HTMLParser):
         self.indent -= 1
 
     def handle_entityref(self, name):
+        # type: (AnyStr) -> None
         """
         From Python docs:
         This method is called to process a named character reference of the form
         &name; (e.g. &gt;), where name is a general entity reference (e.g. 'gt').
         """
-        c = html.CHAR_ENTITY[name]
+        c = html_old.CHAR_ENTITY[name]
         if self.in_heading:
             self.cur_group[2].append(c)
         else:
@@ -263,6 +279,7 @@ class Splitter(HTMLParser.HTMLParser):
                 self.cur_group[3].append(c)
 
     def handle_data(self, data):
+        # type: (AnyStr) -> None
         self.log('data %r', data)
         if self.in_heading:
             self.cur_group[2].append(data)
@@ -271,6 +288,7 @@ class Splitter(HTMLParser.HTMLParser):
                 self.cur_group[3].append(data)
 
     def end(self):
+        # type: () -> None
         if self.cur_group:
             self.out.append(self.cur_group)
 
@@ -282,30 +300,32 @@ class Splitter(HTMLParser.HTMLParser):
 
 
 def ExtractBody(s):
+    # type: (str) -> str
     """Extract what's in between <body></body>
 
     The splitter needs balanced tags, and what's in <head> isn't
     balanced.
     """
     f = cStringIO.StringIO()
-    out = html.Output(s, f)
-    tag_lexer = html.TagLexer(s)
+    out = htm8.Output(s, f)
+    tag_lexer = html_old.TagLexer(s)
 
     pos = 0
-    it = html.ValidTokens(s)
+    it = html_old.ValidTokens(s)
     while True:
         try:
             tok_id, end_pos = next(it)
         except StopIteration:
             break
 
-        if tok_id == html.StartTag:
+        if tok_id == h8_id.StartTag:
             tag_lexer.Reset(pos, end_pos)
-            if tag_lexer.TagName() == 'body':
+            if tag_lexer.GetTagName() == 'body':
                 body_start_right = end_pos  # right after <body>
 
                 out.SkipTo(body_start_right)
-                body_end_left, _ = html.ReadUntilEndTag(it, tag_lexer, 'body')
+                body_end_left, _ = html_old.ReadUntilEndTag(
+                    it, tag_lexer, 'body')
 
                 out.PrintUntil(body_end_left)
                 break
@@ -316,6 +336,7 @@ def ExtractBody(s):
 
 
 def SplitIntoCards(heading_tags, contents):
+    # type: (List[str], str) -> Iterator[str, Any, str, str]
     contents = ExtractBody(contents)
 
     groups = []
@@ -338,35 +359,37 @@ def SplitIntoCards(heading_tags, contents):
 
 
 def HelpTopics(s):
+    # type: (str) -> Iterator[Tuple[str, str, str]]
     """
     Given a rendered toc-{osh,ysh}.html
 
     yield groups (section_id, section_name, block of text)
     """
-    tag_lexer = html.TagLexer(s)
+    tag_lexer = html_old.TagLexer(s)
 
     pos = 0
-    it = html.ValidTokens(s)
+    it = html_old.ValidTokens(s)
     while True:
         try:
             tok_id, end_pos = next(it)
         except StopIteration:
             break
 
-        if tok_id == html.StartTag:
+        if tok_id == h8_id.StartTag:
             tag_lexer.Reset(pos, end_pos)
             #log('%r', tag_lexer.TagString())
-            #log('%r', tag_lexer.TagName())
+            #log('%r', tag_lexer.GetTagName())
 
             # Capture <h2 id="foo"> first
-            if tag_lexer.TagName() == 'h2':
+            if tag_lexer.GetTagName() == 'h2':
                 h2_start_right = end_pos
 
                 open_tag_right = end_pos
-                section_id = tag_lexer.GetAttr('id')
-                assert section_id, 'Expected id= in %r' % tag_lexer.TagString()
+                section_id = tag_lexer.GetAttrRaw('id')
+                assert section_id, 'Expected id= in %r' % tag_lexer.WholeTagString(
+                )
 
-                h2_end_left, _ = html.ReadUntilEndTag(it, tag_lexer, 'h2')
+                h2_end_left, _ = html_old.ReadUntilEndTag(it, tag_lexer, 'h2')
 
                 anchor_html = s[h2_start_right:h2_end_left]
                 paren_pos = anchor_html.find('<')  # remove HTML link
@@ -376,16 +399,17 @@ def HelpTopics(s):
                     section_name = anchor_html[:paren_pos].strip()
 
                 # Now find the <code></code> span
-                _, code_start_right = html.ReadUntilStartTag(
+                _, code_start_right = html_old.ReadUntilStartTag(
                     it, tag_lexer, 'code')
-                css_class = tag_lexer.GetAttr('class')
+                css_class = tag_lexer.GetAttrRaw('class')
                 assert css_class is not None
-                assert css_class.startswith(
-                    'language-chapter-links-'), tag_lexer.TagString()
+                assert (css_class.startswith('language-chapter-links-')
+                        ), tag_lexer.WholeTagString()
 
-                code_end_left, _ = html.ReadUntilEndTag(it, tag_lexer, 'code')
+                code_end_left, _ = html_old.ReadUntilEndTag(
+                    it, tag_lexer, 'code')
 
-                text = html.ToText(s, code_start_right, code_end_left)
+                text = html_old.ToText(s, code_start_right, code_end_left)
                 yield section_id, section_name, text
 
         pos = end_pos
@@ -395,6 +419,7 @@ class DocNode(object):
     """To visualize doc structure."""
 
     def __init__(self, name, attrs=None, text=None):
+        # type: (str, Optional[List[Tuple[str, str]]], Optional[str]) -> None
         self.name = name
         self.attrs = attrs  # for h2 and h3 links
         self.text = text
@@ -402,6 +427,7 @@ class DocNode(object):
 
 
 def CardsFromIndex(sh, out_prefix):
+    # type: (str, str) -> None
     sections = []
     for section_id, section_name, text in HelpTopics(sys.stdin.read()):
         if 0:
@@ -418,14 +444,19 @@ def CardsFromIndex(sh, out_prefix):
                     section_name)  # section_id is printed dynamically
             f.write(text)
             #f.write('\n')  # extra
-        log('  Wrote %s', path)
+        #log('  Wrote %s', path)
         sections.append(section_id)
 
     log('  (doctools/make_help) -> %d sections -> %s', len(sections),
         out_prefix)
 
 
-def CardsFromChapters(out_dir, tag_level, paths):
+def CardsFromChapters(
+        out_dir,  # type: str
+        tag_level,  # type: str
+        paths,  # type: List[str]
+):
+    # type: (...) -> Tuple[Dict[str, Optional[str]], DocNode]
     """
     Args:
       paths: list of chap-*.html to read
@@ -499,11 +530,13 @@ def CardsFromChapters(out_dir, tag_level, paths):
 class StrPool(object):
 
     def __init__(self):
+        # type: () -> None
         self.var_names = {}
         self.global_strs = []
         self.unique_id = 1
 
     def Add(self, s):
+        # type: (str) -> None
         if s in self.var_names:
             return
 
@@ -519,6 +552,7 @@ class StrPool(object):
 
 
 def WriteTopicDict(topic_dict, header_f, cc_f):
+    # type: (Dict[str, Optional[str]], IO[bytes], IO[bytes]) -> None
     header_f.write('''
 #include "mycpp/runtime.h"
 
@@ -565,6 +599,7 @@ Dict<BigStr*, BigStr*>* TopicMetadata() {
 
 
 def main(argv):
+    # type: (List[str]) -> None
     action = argv[1]
 
     if action == 'cards-from-index':

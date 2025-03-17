@@ -1,63 +1,43 @@
 """
-cppgen.py - AST pass to that prints C++ code
+cppgen_pass.py - AST pass that prints C++ code
 """
 import itertools
 import json  # for "C escaping"
 
-from typing import overload, Union, Optional, Dict
+from typing import Union, Optional, Dict
 
 import mypy
-from mypy.visitor import ExpressionVisitor, StatementVisitor
-from mypy.types import (Type, AnyType, NoneTyp, TupleType, Instance, NoneType,
+from mycpp import visitor
+from mypy.types import (Type, AnyType, NoneTyp, TupleType, Instance,
                         Overloaded, CallableType, UnionType, UninhabitedType,
                         PartialType, TypeAliasType)
 from mypy.nodes import (Expression, Statement, NameExpr, IndexExpr, MemberExpr,
                         TupleExpr, ExpressionStmt, IfStmt, StrExpr, SliceExpr,
                         FuncDef, UnaryExpr, OpExpr, CallExpr, ListExpr,
-                        DictExpr, ListComprehension)
+                        DictExpr, ClassDef, ForStmt, AssignmentStmt)
 
 from mycpp import format_strings
-from mycpp.crash import catch_errors
-from mycpp.util import log, join_name, split_py_name, IsStr
 from mycpp import pass_state
 from mycpp import util
+from mycpp.util import log, SymbolToString, SplitPyName
 
-from typing import Tuple, List
-
-T = None
-
-NAME_CONFLICTS = ('stdin', 'stdout', 'stderr')
-
-
-class UnsupportedException(Exception):
-    pass
+from typing import Tuple, List, Any, TYPE_CHECKING
+if TYPE_CHECKING:
+    from mycpp import const_pass
+    from mycpp import conversion_pass
 
 
-def _IsContextManager(class_name):
+def _IsContextManager(class_name: util.SymbolPath) -> bool:
     return class_name[-1].startswith('ctx_')
 
 
-def _IsUnusedVar(var_name):
-    return var_name == '_' or var_name.startswith('unused')
-
-
-def _SkipAssignment(var_name):
-    """
-    Skip at the top level:
-      _ = log 
-      unused1 = log
-
-    Always skip:
-      x, _ = mytuple  # no second var
-    """
-    return _IsUnusedVar(var_name)
-
-
-def _GetCTypeForCast(type_expr):
+def _GetCTypeForCast(type_expr: Expression) -> str:
     """ MyPy cast() """
 
     if isinstance(type_expr, MemberExpr):
-        subtype_name = '%s::%s' % (type_expr.expr.name, type_expr.name)
+        left = type_expr.expr
+        assert isinstance(left, NameExpr), left  # assume it's module.Type
+        subtype_name = '%s::%s' % (left.name, type_expr.name)
     elif isinstance(type_expr, IndexExpr):
         # List[word_t] would be a problem.
         # But worked around it in osh/word_parse.py
@@ -66,8 +46,10 @@ def _GetCTypeForCast(type_expr):
     elif isinstance(type_expr, StrExpr):
         parts = type_expr.value.split('.')
         subtype_name = '::'.join(parts)
-    else:
+    elif isinstance(type_expr, NameExpr):
         subtype_name = type_expr.name
+    else:
+        raise AssertionError()
 
     # Hack for now
     if subtype_name != 'int' and subtype_name != 'mops::BigInt':
@@ -75,7 +57,7 @@ def _GetCTypeForCast(type_expr):
     return subtype_name
 
 
-def _GetCastKind(module_path, cast_to_type):
+def _GetCastKind(module_path: str, cast_to_type: str) -> str:
     """Translate MyPy cast to C++ cast.
 
     Prefer static_cast, but sometimes we need reinterpret_cast.
@@ -85,7 +67,7 @@ def _GetCastKind(module_path, cast_to_type):
     # Hack for Id.Expr_CastedDummy in expr_to_ast.py
     if 'expr_to_ast.py' in module_path:
         for name in (
-                'ShArrayLiteral',
+                'YshArrayLiteral',
                 'CommandSub',
                 'BracedVarSub',
                 'DoubleQuoted',
@@ -110,7 +92,7 @@ def _GetCastKind(module_path, cast_to_type):
     return cast_kind
 
 
-def _GetContainsFunc(t):
+def _ContainsFunc(t: Type) -> Optional[str]:
     """ x in y """
     contains_func = None
 
@@ -134,17 +116,17 @@ def _GetContainsFunc(t):
         if not isinstance(t.items[1], NoneTyp):
             raise NotImplementedError('Expected Optional, got %s' % t)
 
-        contains_func = _GetContainsFunc(t.items[0])
+        contains_func = _ContainsFunc(t.items[0])
 
     return contains_func  # None checked later
 
 
-def _EqualsFunc(left_type):
-    if IsStr(left_type):
+def _EqualsFunc(left_type: Type) -> Optional[str]:
+    if util.IsStr(left_type):
         return 'str_equals'
 
     if (isinstance(left_type, UnionType) and len(left_type.items) == 2 and
-            IsStr(left_type.items[0]) and
+            util.IsStr(left_type.items[0]) and
             isinstance(left_type.items[1], NoneTyp)):
         return 'maybe_str_equals'
 
@@ -154,7 +136,7 @@ def _EqualsFunc(left_type):
 _EXPLICIT = ('builtins.str', 'builtins.list', 'builtins.dict')
 
 
-def _CheckCondition(node, types):
+def _CheckCondition(node: Expression, types: Dict[Expression, Type]) -> bool:
     """
     Ban
         if (mystr)
@@ -172,8 +154,8 @@ def _CheckCondition(node, types):
         #log('OpExpr node %s %s', node, dir(node))
 
         # if x > 0 and not mylist, etc.
-        return _CheckCondition(node.left, types) and _CheckCondition(
-            node.right, types)
+        return (_CheckCondition(node.left, types) and
+                _CheckCondition(node.right, types))
 
     t = types[node]
 
@@ -185,14 +167,14 @@ def _CheckCondition(node, types):
     elif isinstance(t, UnionType):
         if len(t.items) == 2 and isinstance(t.items[1], NoneTyp):
             t2 = t.items[0]
+            assert isinstance(t2, Instance), t2
             if t2.type.fullname in _EXPLICIT:
                 return False
 
     return True
 
 
-def CTypeIsManaged(c_type):
-    # type: (str) -> bool
+def CTypeIsManaged(c_type: str) -> bool:
     """For rooting and field masks."""
     assert c_type != 'void'
 
@@ -204,26 +186,50 @@ def CTypeIsManaged(c_type):
     return c_type.endswith('*')
 
 
-def GetCType(t, param=False, local=False):
+def GetCType(t: Type) -> str:
     """Recursively translate MyPy type to C++ type."""
     is_pointer = False
 
-    if isinstance(t, NoneTyp):  # e.g. a function that doesn't return anything
+    if isinstance(t, UninhabitedType):
+        # UninhabitedType is used by def e_usage() -> NoReturn
+        # TODO: we could add [[noreturn]] here!
+        c_type = 'void'
+
+    elif isinstance(t, PartialType):
+        # I removed the last instance of this!  It was dead code in comp_ui.py.
+        raise AssertionError()
+        #c_type = 'void'
+        #is_pointer = True
+
+    elif isinstance(t,
+                    NoneTyp):  # e.g. a function that doesn't return anything
         return 'void'
 
     elif isinstance(t, AnyType):
-        # Note: this usually results in another compile-time error.  We should get
-        # rid of the 'Any' types.
+        # 'any' in ASDL becomes void*
+        # It's useful for value::BuiltinFunc(void* f) which is a vm::_Callable*
         c_type = 'void'
         is_pointer = True
 
-    elif isinstance(t, PartialType):
-        # Note: bin/oil.py has some of these?  Not sure why.
-        c_type = 'void'
-        is_pointer = True
+    elif isinstance(t, CallableType):
+        # Function types are expanded
+        #    Callable[[Parser, Token, int], arith_expr_t]
+        # -> arith_expr_t* (*f)(Parser*, Token*, int) nud;
 
-    # TODO: It seems better not to check for string equality, but that's what
-    # mypyc/genops.py does?
+        ret_type = GetCType(t.ret_type)
+        arg_types = [GetCType(typ) for typ in t.arg_types]
+        c_type = '%s (*f)(%s)' % (ret_type, ', '.join(arg_types))
+
+    elif isinstance(t, TypeAliasType):
+        if 0:
+            log('***')
+            log('%s', t)
+            log('%s', dir(t))
+            log('%s', t.alias)
+            log('%s', dir(t.alias))
+            log('%s', t.alias.target)
+            log('***')
+        return GetCType(t.alias.target)
 
     elif isinstance(t, Instance):
         type_name = t.type.fullname
@@ -246,6 +252,17 @@ def GetCType(t, param=False, local=False):
                 c_type = 'BigStr'
                 is_pointer = True
 
+        elif 'BigInt' in type_name:
+            # also spelled mycpp.mylib.BigInt
+
+            c_type = 'mops::BigInt'
+            # Not a pointer!
+
+        elif type_name == 'typing.IO':
+            c_type = 'mylib::File'
+            is_pointer = True
+
+        # Parameterized types: List, Dict, Iterator
         elif type_name == 'builtins.list':
             assert len(t.args) == 1, t.args
             type_param = t.args[0]
@@ -260,16 +277,6 @@ def GetCType(t, param=False, local=False):
             c_type = 'Dict<%s>' % ', '.join(params)
             is_pointer = True
 
-        elif 'BigInt' in type_name:
-            # also spelled mycpp.mylib.BigInt
-
-            c_type = 'mops::BigInt'
-            # Not a pointer!
-
-        elif type_name == 'typing.IO':
-            c_type = 'mylib::File'
-            is_pointer = True
-
         elif type_name == 'typing.Iterator':
             assert len(t.args) == 1, t.args
             type_param = t.args[0]
@@ -277,10 +284,11 @@ def GetCType(t, param=False, local=False):
             c_type = 'ListIter<%s>' % inner_c_type
 
         else:
+            parts = t.type.fullname.split('.')
+            c_type = '%s::%s' % (parts[-2], parts[-1])
+
             # note: fullname => 'parse.Lexer'; name => 'Lexer'
             base_class_names = [b.type.fullname for b in t.type.bases]
-
-            #log('** base_class_names %s', base_class_names)
 
             # Check base class for pybase.SimpleObj so we can output
             # expr_asdl::tok_t instead of expr_asdl::tok_t*.  That is a enum, while
@@ -291,37 +299,24 @@ def GetCType(t, param=False, local=False):
             if 'asdl.pybase.SimpleObj' not in base_class_names:
                 is_pointer = True
 
-            parts = t.type.fullname.split('.')
-            c_type = '%s::%s' % (parts[-2], parts[-1])
-
-    elif isinstance(t, UninhabitedType):
-        # UninhabitedType has a NoReturn flag
-        c_type = 'void'
-
     elif isinstance(t, TupleType):
-        inner_c_types = []
-        for inner_type in t.items:
-            c_type = GetCType(inner_type)
-            if c_type == 'void':
-                # Why does MyPy give us 'None' instead of type declared with type: ?
-                # log('**** items %s', t.items)
-                pass
-            inner_c_types.append(c_type)
-
+        inner_c_types = [GetCType(inner) for inner in t.items]
         c_type = 'Tuple%d<%s>' % (len(t.items), ', '.join(inner_c_types))
         is_pointer = True
 
-    elif isinstance(t, UnionType):
-        # Special case for Optional[IOError_OSError]
-        # == Union[IOError, OSError, None]
+    elif isinstance(t, UnionType):  # Optional[T]
 
         num_items = len(t.items)
 
         if num_items == 3:
+            # Special case for Optional[IOError_OSError] ==
+            # Union[IOError, # OSError, None]
             t0 = t.items[0]
             t1 = t.items[1]
             t2 = t.items[2]
 
+            assert isinstance(t0, Instance), t0
+            assert isinstance(t1, Instance), t1
             t0_name = t0.type.fullname
             t1_name = t1.type.fullname
 
@@ -343,14 +338,18 @@ def GetCType(t, param=False, local=False):
             is_pointer = True
 
         elif num_items == 2:
+            # Optional[T]
 
             t0 = t.items[0]
             t1 = t.items[1]
 
             c_type = None
-            if isinstance(t1, NoneTyp):  # Optional[T0]
+            if isinstance(t1, NoneTyp):
                 c_type = GetCType(t.items[0])
             else:
+                assert isinstance(t0, Instance), t0
+                assert isinstance(t1, Instance), t1
+
                 # Detect type alias defined in core/error.py
                 # IOError_OSError = Union[IOError, OSError]
                 t0_name = t0.type.fullname
@@ -367,39 +366,16 @@ def GetCType(t, param=False, local=False):
             raise NotImplementedError(
                 'Expected 2 or 3 items in Union, got %s' % num_items)
 
-    elif isinstance(t, CallableType):
-        # Function types are expanded
-        #    Callable[[Parser, Token, int], arith_expr_t]
-        # -> arith_expr_t* (*f)(Parser*, Token*, int) nud;
-
-        ret_type = GetCType(t.ret_type)
-        arg_types = [GetCType(typ) for typ in t.arg_types]
-        c_type = '%s (*f)(%s)' % (ret_type, ', '.join(arg_types))
-
-    elif isinstance(t, TypeAliasType):
-        if 0:
-            log('***')
-            log('%s', t)
-            log('%s', dir(t))
-            log('%s', t.alias)
-            log('%s', dir(t.alias))
-            log('%s', t.alias.target)
-            log('***')
-        return GetCType(t.alias.target)
-
     else:
         raise NotImplementedError('MyPy type: %s %s' % (type(t), t))
 
     if is_pointer:
-        if param or local:
-            c_type = 'Local<%s>' % c_type
-        else:
-            c_type += '*'
+        c_type += '*'
 
     return c_type
 
 
-def GetCReturnType(t) -> Tuple[str, bool, Optional[str]]:
+def GetCReturnType(t: Type) -> Tuple[str, bool, Optional[str]]:
     """
     Returns a C string, whether the tuple-by-value optimization was applied,
     and the C type of an extra output param if the function is a generator.
@@ -428,318 +404,497 @@ def PythonStringLiteral(s: str) -> str:
     return json.dumps(format_strings.DecodeMyPyString(s))
 
 
-class Generate(ExpressionVisitor[T], StatementVisitor[None]):
+def _GetNoReturn(func_name: str) -> str:
+    # Avoid C++ warnings by prepending [[noreturn]]
+    if func_name in ('e_die', 'e_die_status', 'e_strict', 'e_usage', 'p_die'):
+        return '[[noreturn]] '
+    else:
+        return ''
 
-    def __init__(self,
-                 types: Dict[Expression, Type],
-                 const_lookup,
-                 f,
-                 virtual=None,
-                 local_vars=None,
-                 ctx_member_vars=None,
-                 decl=False,
-                 forward_decl=False,
-                 stack_roots_warn=None,
-                 dot_exprs=None,
-                 stack_roots=None):
-        self.types = types
-        self.const_lookup = const_lookup
-        self.f = f
 
-        self.virtual = virtual
+# name, type, is_param
+LocalVar = Tuple[str, Type, bool]
 
-        # We collect local_vars and ctx-member_vars in the DECL phase, and
-        # write them in the IMPL phase.
-        self.local_vars = local_vars  # Dict[FuncDef node, list of type, var]
-        self.ctx_member_vars = ctx_member_vars  # for rooting
+# lval_type, c_type, is_managed
+MemberVar = Tuple[Type, str, bool]
 
-        self.decl = decl
-        self.forward_decl = forward_decl
-        self.stack_roots_warn = stack_roots_warn
+AllMemberVars = Dict[ClassDef, Dict[str, MemberVar]]
 
-        self.unique_id = 0
+AllLocalVars = Dict[FuncDef, List[Tuple[str, Type]]]
 
-        self.indent = 0
-        self.local_var_list = []  # Collected at assignment
-        self.prepend_to_block = None  # For writing vars after {
 
-        # Temporary lists to use as output params for generators
-        self.yield_accumulators = {
-        }  # type: Dict[Union[Statement, FuncDef], Tuple[str, str]]
+class _Shared(visitor.TypedVisitor):
 
-        self.current_func_node = None
-        self.current_stmt_node = None
+    def __init__(
+        self,
+        types: Dict[Expression, Type],
+        global_strings: 'const_pass.GlobalStrings',
+        yield_out_params: Dict[FuncDef, Tuple[str, str]],  # input
+        # all_member_vars:
+        # - Decl for declaring members in class { }
+        # - Impl for rooting context managers
+        all_member_vars: Optional[AllMemberVars] = None,
+    ) -> None:
+        visitor.TypedVisitor.__init__(self, types)
+        self.global_strings = global_strings
+        self.yield_out_params = yield_out_params
+        self.all_member_vars = all_member_vars  # for class def, and rooting
 
-        # DECL pass: self.current_member_vars holds the vars for the current
-        # class.  It's cleared when we start looking at a class.  Then we visit
-        # all the methods, and accumulate the types of everything that looks
-        # like self.foo = 1.  Then we write C++ class member declarations at
-        # the end of the class.
-        self.current_member_vars: Dict[str, Type] = {}
-        self.current_class_name = None  # for prototypes
-        self.current_method_name = None
+    # Primitives shared for default values
 
-        self.dot_exprs = dot_exprs
-        self.stack_roots = stack_roots
+    def visit_int_expr(self, o: 'mypy.nodes.IntExpr') -> None:
+        self.write(str(o.value))
 
-        # So we can report multiple at once
-        # module path, line number, message
-        self.errors_keep_going: List[Tuple[str, int, str]] = []
+    def visit_float_expr(self, o: 'mypy.nodes.FloatExpr') -> None:
+        # e.g. for arg.t > 0.0
+        self.write(str(o.value))
 
-        self.writing_default_arg = False
+    def visit_str_expr(self, o: 'mypy.nodes.StrExpr') -> None:
+        self.write(self.global_strings.GetVarName(o))
 
-    def log(self, msg, *args):
-        ind_str = self.indent * '  '
-        log(ind_str + msg, *args)
-
-    def always_write(self, msg, *args):
-        """Write unconditionally - forward decl, decl, def """
-        if args:
-            msg = msg % args
-        self.f.write(msg)
-
-    def always_write_ind(self, msg, *args):
-        ind_str = self.indent * '  '
-        self.always_write(ind_str + msg, *args)
-
-    def def_write(self, msg, *args):
-        """Write only in definitions."""
-
-        if self.forward_decl:
+    def oils_visit_name_expr(self, o: 'mypy.nodes.NameExpr') -> None:
+        if o.name == 'None':
+            self.write('nullptr')
+            return
+        if o.name == 'True':
+            self.write('true')
+            return
+        if o.name == 'False':
+            self.write('false')
+            return
+        if o.name == 'self':
+            self.write('this')
             return
 
-        if self.decl and not self.writing_default_arg:
-            return
+        self.write(o.name)
 
-        if args:
-            msg = msg % args
-        self.f.write(msg)
-
-    def def_write_ind(self, msg, *args):
-        ind_str = self.indent * '  '
-        self.def_write(ind_str + msg, *args)
-
-    def decl_write(self, msg, *args):
-        """Write only in the decl stage (not forward declarations)"""
-        if not self.decl:
-            return
-
-        if args:
-            msg = msg % args
-        self.f.write(msg)
-
-    def decl_write_ind(self, msg, *args):
-        ind_str = self.indent * '  '
-        self.decl_write(ind_str + msg, *args)
-
-    #
-    # COPIED from IRBuilder
-    #
-
-    @overload
-    def accept(self, node: Expression) -> T:
-        ...
-
-    @overload
-    def accept(self, node: Statement) -> None:
-        ...
-
-    def accept(self, node: Union[Statement, Expression]) -> Optional[T]:
-        with catch_errors(self.module_path, node.line):
-            if isinstance(node, Expression):
-                try:
-                    res = node.accept(self)
-                    #res = self.coerce(res, self.node_type(node), node.line)
-
-                # If we hit an error during compilation, we want to
-                # keep trying, so we can produce more error
-                # messages. Generate a temp of the right type to keep
-                # from causing more downstream trouble.
-                except UnsupportedException:
-                    res = self.alloc_temp(self.node_type(node))
-                return res
-            else:
-                try:
-                    node.accept(self)
-                except UnsupportedException:
-                    pass
-                return None
-
-    def report_error(self, node: Union[Statement, Expression], msg: str):
-        err = (self.module_path, node.line, msg)
-        self.errors_keep_going.append(err)
-
-    def not_translated(self, node: Union[Statement, Expression], name: str):
-        self.report_error(node, '%s not translated' % name)
-
-    def not_python2(self, node: Union[Statement, Expression], name: str):
-        self.report_error(node, "%s: shouldn't get here in Python 2" % name)
-
-    # Not in superclasses:
-
-    def visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> T:
-        if util.ShouldSkipPyFile(o):
-            return
-
-        #self.log('')
-        #self.log('mypyfile %s', o.fullname)
-
-        mod_parts = o.fullname.split('.')
-        if self.forward_decl:
-            comment = 'forward declare'
-        elif self.decl:
-            comment = 'declare'
+    def visit_unary_expr(self, o: 'mypy.nodes.UnaryExpr') -> None:
+        # e.g. a[-1] or 'not x'
+        if o.op == 'not':
+            op_str = '!'
         else:
-            comment = 'define'
+            op_str = o.op
+        self.write(op_str)
+        self.accept(o.expr)
 
-        self.always_write_ind('namespace %s {  // %s\n', mod_parts[-1],
-                              comment)
-        self.always_write('\n')
+    def _NamespaceComment(self) -> str:
+        # abstract method
+        raise NotImplementedError()
 
-        self.module_path = o.path
+    def oils_visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> None:
+        mod_parts = o.fullname.split('.')
+        comment = self._NamespaceComment()
 
-        if self.forward_decl:
-            self.indent += 1
+        self.write_ind('namespace %s {  // %s\n', mod_parts[-1], comment)
+        self.write('\n')
 
         #self.log('defs %s', o.defs)
         for node in o.defs:
-            # skip module docstring
-            if (isinstance(node, ExpressionStmt) and
-                    isinstance(node.expr, StrExpr)):
-                continue
             self.accept(node)
 
-        if self.forward_decl:
-            self.indent -= 1
+        self.write('\n')
+        self.write_ind('}  // %s namespace %s\n', comment, mod_parts[-1])
+        self.write('\n')
 
-        self.always_write('\n')
-        self.always_write_ind('}  // %s namespace %s\n', comment,
-                              mod_parts[-1])
-        self.always_write('\n')
+    def _WriteFuncParams(self,
+                         func_def: FuncDef,
+                         write_defaults: bool = False) -> None:
+        """Write params for function/method signatures."""
+        arg_types = func_def.type.arg_types
+        arguments = func_def.arguments
 
-        for path, line_num, msg in self.errors_keep_going:
-            self.log('%s:%s %s', path, line_num, msg)
+        is_first = True  # EXCLUDING 'self'
+        for arg_type, arg in zip(arg_types, arguments):
+            if not is_first:
+                self.write(', ')
 
-    # NOTE: Copied ExpressionVisitor and StatementVisitor nodes below!
+            c_type = GetCType(arg_type)
 
-    # LITERALS
+            arg_name = arg.variable.name
 
-    def visit_int_expr(self, o: 'mypy.nodes.IntExpr') -> T:
-        self.def_write(str(o.value))
+            # C++ has implicit 'this'
+            if arg_name == 'self':
+                continue
 
-    def visit_float_expr(self, o: 'mypy.nodes.FloatExpr') -> T:
-        # e.g. for arg.t > 0.0
-        self.def_write(str(o.value))
+            # int foo
+            self.write('%s %s', c_type, arg_name)
 
-    def visit_str_expr(self, o: 'mypy.nodes.StrExpr') -> T:
-        self.def_write(self.const_lookup[o])
+            if write_defaults and arg.initializer:  # int foo = 42
+                self.write(' = ')
+                self.accept(arg.initializer)
 
-    # UNHANDLED
+            is_first = False
 
-    def visit_bytes_expr(self, o: 'mypy.nodes.BytesExpr') -> T:
-        self.not_python2(o, 'bytes expr')
+            if 0:
+                self.log('Argument %s', arg.variable)
+                self.log('  type_annotation %s', arg.type_annotation)
+                # I think these are for default values
+                self.log('  initializer %s', arg.initializer)
+                self.log('  kind %s', arg.kind)
 
-    def visit_unicode_expr(self, o: 'mypy.nodes.UnicodeExpr') -> T:
-        self.not_translated(o, 'unicode expr')
+        # Is the function we're writing params for an iterator?
+        if func_def in self.yield_out_params:
+            self.write(', ')
 
-    def visit_complex_expr(self, o: 'mypy.nodes.ComplexExpr') -> T:
-        self.not_translated(o, 'complex expr')
+            arg_name, c_type = self.yield_out_params[func_def]
+            self.write('%s %s', c_type, arg_name)
 
-    def visit_ellipsis(self, o: 'mypy.nodes.EllipsisExpr') -> T:
-        # is this in .pyi files only?
-        self.not_translated(o, 'ellipsis')
 
-    # Expressions
+class Decl(_Shared):
 
-    def visit_star_expr(self, o: 'mypy.nodes.StarExpr') -> T:
-        # mycpp/examples/invalid_python.py doesn't hit this?
-        self.not_translated(o, 'star expr')
+    def __init__(
+        self,
+        types: Dict[Expression, Type],
+        global_strings: 'const_pass.GlobalStrings',
+        yield_out_params: Dict[FuncDef, Tuple[str, str]],  # input
+        virtual: pass_state.Virtual = None,
+        all_member_vars: Optional[AllMemberVars] = None,
+    ) -> None:
+        _Shared.__init__(
+            self,
+            types,
+            global_strings,
+            yield_out_params,
+            all_member_vars=all_member_vars,
+        )
+        self.virtual = virtual
 
-    def visit_name_expr(self, o: 'mypy.nodes.NameExpr') -> T:
-        if o.name == 'None':
-            self.def_write('nullptr')
-            return
-        if o.name == 'True':
-            self.def_write('true')
-            return
-        if o.name == 'False':
-            self.def_write('false')
-            return
-        if o.name == 'self':
-            self.def_write('this')
-            return
+    def _NamespaceComment(self) -> str:
+        # abstract method
+        return 'declare'
 
-        if o.name in NAME_CONFLICTS:
-            self.report_error(
-                o,
-                "The name %r conflicts with C macros on some platforms; choose a different name"
-                % o.name)
-            return
+    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
+        # Avoid C++ warnings by prepending [[noreturn]]
+        noreturn = _GetNoReturn(o.name)
 
-        self.def_write(o.name)
+        virtual = ''
+        if self.virtual.IsVirtual(self.current_class_name, o.name):
+            virtual = 'virtual '
 
-    def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> T:
-        if o.expr:
-            dot_expr = self.dot_exprs[o]
+        # declaration inside class { }
+        func_name = o.name
 
-            if isinstance(dot_expr, pass_state.StackObjectMember):
-                op = '.'
+        # Why can't we get this Type object with self.types[o]?
+        c_ret_type, _, _ = GetCReturnType(o.type.ret_type)
 
-            elif isinstance(dot_expr,
-                            pass_state.StaticObjectMember) or isinstance(
-                                dot_expr, pass_state.ModuleMember):
-                op = '::'
+        self.write_ind('%s%s%s %s(', noreturn, virtual, c_ret_type, func_name)
 
-            elif isinstance(dot_expr, pass_state.HeapObjectMember):
-                op = '->'
+        self._WriteFuncParams(o, write_defaults=True)
+        self.write(');\n')
 
-            else:
-                assert False, o
+    def oils_visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
+        # In declarations, 'a.b' is only used for default argument
+        # values 'a::b'
+        self.accept(o.expr)
+        # TODO: remove write() in Decl pass
+        self.write('::')
+        self.write(o.name)
 
-            self.accept(o.expr)
-            self.def_write(op)
+    def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
+                                   lval: Expression, rval: Expression) -> None:
+        # Declare constant strings.  They have to be at the top level.
+
+        # TODO: self.at_global_scope doesn't work for context managers and so forth
+        if self.indent == 0:
+            # Top level can't have foo.bar = baz
+            assert isinstance(lval, NameExpr), lval
+            if not util.SkipAssignment(lval.name):
+                c_type = GetCType(self.types[lval])
+                self.write('extern %s %s;\n', c_type, lval.name)
+
+        # TODO: we don't traverse here, so _CheckCondition() isn't called
+        # e.g. x = 'a' if mylist else 'b'
+
+    def oils_visit_constructor(self, o: ClassDef, stmt: FuncDef,
+                               base_class_sym: util.SymbolPath) -> None:
+        self.indent += 1
+        self.write_ind('%s(', o.name)
+        self._WriteFuncParams(stmt, write_defaults=True)
+        self.write(');\n')
+        self.indent -= 1
+
+    def oils_visit_dunder_exit(self, o: ClassDef, stmt: FuncDef,
+                               base_class_sym: util.SymbolPath) -> None:
+        self.indent += 1
+        # Turn it into a destructor with NO ARGS
+        self.write_ind('~%s();\n', o.name)
+        self.indent -= 1
+
+    def oils_visit_method(self, o: ClassDef, stmt: FuncDef,
+                          base_class_sym: util.SymbolPath) -> None:
+        self.indent += 1
+        self.accept(stmt)
+        self.indent -= 1
+
+    def oils_visit_class_members(self, o: ClassDef,
+                                 base_class_sym: util.SymbolPath) -> None:
+        # Write member variables
+        self.indent += 1
+        self._MemberDecl(o, base_class_sym)
+        self.indent -= 1
+
+    def oils_visit_class_def(
+            self, o: 'mypy.nodes.ClassDef',
+            base_class_sym: Optional[util.SymbolPath]) -> None:
+        self.write_ind('class %s', o.name)  # block after this
+
+        # e.g. class TextOutput : public ColorOutput
+        if base_class_sym:
+            self.write(' : public %s',
+                       SymbolToString(base_class_sym, strip_package=True))
+
+        self.write(' {\n')
+        self.write_ind(' public:\n')
+
+        # This visits all the methods, with self.indent += 1, param
+        # base_class_sym, self.current_method_name
+
+        super().oils_visit_class_def(o, base_class_sym)
+
+        self.write_ind('};\n')
+        self.write('\n')
+
+    def _GcHeaderDecl(self, o: 'mypy.nodes.ClassDef',
+                      field_gc: Tuple[str, str], mask_bits: List[str]) -> None:
+        if mask_bits:
+            self.write_ind('\n')
+            self.write_ind('static constexpr uint32_t field_mask() {\n')
+            self.write_ind('  return ')
+            for i, b in enumerate(mask_bits):
+                if i != 0:
+                    self.write('\n')
+                    self.write_ind('       | ')
+                self.write(b)
+            self.write(';\n')
+            self.write_ind('}\n')
+
+        obj_tag, obj_arg = field_gc
+        if obj_tag == 'HeapTag::FixedSize':
+            obj_mask = obj_arg
+            obj_header = 'ObjHeader::ClassFixed(%s, sizeof(%s))' % (obj_mask,
+                                                                    o.name)
+        elif obj_tag == 'HeapTag::Scanned':
+            num_pointers = obj_arg
+            obj_header = 'ObjHeader::ClassScanned(%s, sizeof(%s))' % (
+                num_pointers, o.name)
+        else:
+            raise AssertionError(o.name)
+
+        self.write('\n')
+        self.write_ind('static constexpr ObjHeader obj_header() {\n')
+        self.write_ind('  return %s;\n' % obj_header)
+        self.write_ind('}\n')
+
+    def _MemberDecl(self, o: 'mypy.nodes.ClassDef',
+                    base_class_sym: util.SymbolPath) -> None:
+        member_vars = self.all_member_vars[o]
+
+        # List of field mask expressions
+        mask_bits = []
+        if self.virtual.CanReorderFields(SplitPyName(o.fullname)):
+            # No inheritance, so we are free to REORDER member vars, putting
+            # pointers at the front.
+
+            pointer_members = []
+            non_pointer_members = []
+
+            for name in member_vars:
+                _, c_type, is_managed = member_vars[name]
+                if is_managed:
+                    pointer_members.append(name)
+                else:
+                    non_pointer_members.append(name)
+
+            # So we declare them in the right order
+            sorted_member_names = pointer_members + non_pointer_members
+
+            field_gc = ('HeapTag::Scanned', str(len(pointer_members)))
+        else:
+            # Has inheritance
+
+            # The field mask of a derived class is unioned with its base's
+            # field mask.
+            if base_class_sym:
+                mask_bits.append(
+                    '%s::field_mask()' %
+                    SymbolToString(base_class_sym, strip_package=True))
+
+            for name in sorted(member_vars):
+                _, c_type, is_managed = member_vars[name]
+                if is_managed:
+                    mask_bits.append('maskbit(offsetof(%s, %s))' %
+                                     (o.name, name))
+
+            # A base class with no fields has kZeroMask.
+            if not base_class_sym and not mask_bits:
+                mask_bits.append('kZeroMask')
+
+            sorted_member_names = sorted(member_vars)
+
+            field_gc = ('HeapTag::FixedSize', 'field_mask()')
+
+        # Write member variables
+
+        #log('MEMBERS for %s: %s', o.name, list(self.member_vars.keys()))
+        if len(member_vars):
+            if base_class_sym:
+                self.write('\n')  # separate from functions
+
+            for name in sorted_member_names:
+                _, c_type, _ = member_vars[name]
+                # use default zero initialization for all members
+                # (context managers may be on the stack)
+                self.write_ind('%s %s{};\n', c_type, name)
+
+        # Context managers aren't GC objects
+        if not _IsContextManager(self.current_class_name):
+            self._GcHeaderDecl(o, field_gc, mask_bits)
+
+        self.write('\n')
+        self.write_ind('DISALLOW_COPY_AND_ASSIGN(%s)\n', o.name)
+
+
+class Impl(_Shared):
+
+    def __init__(
+            self,
+            types: Dict[Expression, Type],
+            global_strings: 'const_pass.GlobalStrings',
+            yield_out_params: Dict[FuncDef, Tuple[str, str]],  # input
+            all_member_vars: Optional[AllMemberVars] = None,
+            local_vars: Optional[AllLocalVars] = None,
+            dot_exprs: Optional['conversion_pass.DotExprs'] = None,
+            stack_roots_warn: Optional[int] = None,
+            stack_roots: Optional[pass_state.StackRoots] = None) -> None:
+        _Shared.__init__(self,
+                         types,
+                         global_strings,
+                         yield_out_params,
+                         all_member_vars=all_member_vars)
+        self.local_vars = local_vars
+
+        # Computed in previous passes
+        self.dot_exprs = dot_exprs
+        self.stack_roots_warn = stack_roots_warn
+        self.stack_roots = stack_roots
+
+        # Traversal state used to to create an EAGER List<T>
+        self.yield_eager_assign: Dict[AssignmentStmt, Tuple[str, str]] = {}
+        self.yield_eager_for: Dict[ForStmt, Tuple[str, str]] = {}
+
+        self.yield_assign_node: Optional[AssignmentStmt] = None
+        self.yield_for_node: Optional[ForStmt] = None
+
+        # More Traversal state
+        self.current_func_node: Optional[FuncDef] = None
+
+        self.unique_id = 0
+
+    def _NamespaceComment(self) -> str:
+        # abstract method
+        return 'define'
+
+    def oils_visit_func_def(self, o: 'mypy.nodes.FuncDef') -> None:
+        if self.current_class_name:
+            # definition looks like
+            # void Class::method(...);
+            func_name = SymbolToString((self.current_class_name[-1], o.name))
+            noreturn = ''
+        else:
+            func_name = o.name
+            noreturn = _GetNoReturn(o.name)
+
+        self.write('\n')
+
+        # Why can't we get this Type object with self.types[o]?
+        c_ret_type, _, _ = GetCReturnType(o.type.ret_type)
+
+        self.write_ind('%s%s %s(', noreturn, c_ret_type, func_name)
+
+        self.current_func_node = o
+        self._WriteFuncParams(o, write_defaults=False)
+
+        self.write(') ')
+        arg_names = [arg.variable.name for arg in o.arguments]
+        #log('arg_names %s', arg_names)
+        #log('local_vars %s', self.local_vars[o])
+        local_var_list: List[LocalVar] = []
+        for (lval_name, lval_type) in self.local_vars[o]:
+            local_var_list.append((lval_name, lval_type, lval_name
+                                   in arg_names))
+
+        self.write('{\n')
+
+        self.indent += 1
+        self._WriteLocals(local_var_list)
+        self._WriteBody(o.body.body)
+        self.indent -= 1
+
+        self.write('}\n')
+
+        self.current_func_node = None
+
+    def visit_yield_expr(self, o: 'mypy.nodes.YieldExpr') -> None:
+        assert self.current_func_node in self.yield_out_params
+        self.write('%s->append(',
+                   self.yield_out_params[self.current_func_node][0])
+        self.accept(o.expr)
+        self.write(')')
+
+    def _WriteArgList(self, args: List[Expression]) -> None:
+        self.write('(')
+        for i, arg in enumerate(args):
+            if i != 0:
+                self.write(', ')
+            self.accept(arg)
+
+        # Pass an extra arg like my_generator(42, &accum)
+        #
+        # Two cases:
+        #   ForStmt:         for y in generator(42): =>
+        #                    generator(42, &y)
+        #   AssignmentStmt:  it = generator(42)     =>
+        #                    List<int> _iter_buf_it;
+        #                    generator(42, &iter_buf_it);   # eagerly append
+
+        eager_pair = (self.yield_eager_assign.get(self.yield_assign_node) or
+                      self.yield_eager_for.get(self.yield_for_node))
+
+        if eager_pair:
+            if len(args) > 0:
+                self.write(', ')
+
+            eager_list_name, _ = eager_pair
+            self.write('&%s', eager_list_name)
+
+        self.write(')')
+
+    def oils_visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> None:
+        dot_expr = self.dot_exprs[o]
+
+        if isinstance(dot_expr, pass_state.StackObjectMember):
+            op = '.'
+
+        elif (isinstance(dot_expr, pass_state.StaticClassMember) or
+              isinstance(dot_expr, pass_state.ModuleMember)):
+            op = '::'
+
+        elif isinstance(dot_expr, pass_state.HeapObjectMember):
+            op = '->'
+
+        else:
+            raise AssertionError()
+
+        self.accept(o.expr)
+        self.write(op)
 
         if o.name == 'errno':
             # e->errno -> e->errno_ to avoid conflict with C macro
-            self.def_write('errno_')
-        elif o.name in NAME_CONFLICTS:
-            self.report_error(
-                o,
-                "The name %r conflicts with C macros on some platforms; choose a different name"
-                % o.name)
+            self.write('errno_')
         else:
-            self.def_write('%s', o.name)
+            self.write('%s', o.name)
 
-    def visit_yield_from_expr(self, o: 'mypy.nodes.YieldFromExpr') -> T:
-        self.not_python2(o, 'yield from')
-
-    def visit_yield_expr(self, o: 'mypy.nodes.YieldExpr') -> T:
-        assert self.current_func_node in self.yield_accumulators
-        self.def_write_ind('%s->append(',
-                           self.yield_accumulators[self.current_func_node][0])
-        self.accept(o.expr)
-        self.def_write(');\n')
-
-    def _WriteArgList(self, o):
-        self.def_write('(')
-        for i, arg in enumerate(o.args):
-            if i != 0:
-                self.def_write(', ')
-            self.accept(arg)
-
-        # Will be set if we're:
-        # a) accumulating the output of an iterator
-        # b) constructing an iterator with the result of (a)
-        if self.current_stmt_node in self.yield_accumulators:
-            if len(o.args) > 0:
-                self.def_write(', ')
-
-            arg_name, _ = self.yield_accumulators[self.current_stmt_node]
-            self.def_write('&%s', arg_name)
-
-        self.def_write(')')
-
-    def _IsInstantiation(self, o):
+    def _IsInstantiation(self, o: 'mypy.nodes.CallExpr') -> bool:
         callee_name = o.callee.name
         callee_type = self.types[o.callee]
 
@@ -754,22 +909,21 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # 'Alloc<>'.  f = Foo() => f = Alloc<Foo>().
             ret_type = callee_type.ret_type
 
-            # str(i) doesn't need new.  For now it's a free function.
-            # TODO: rename int_to_str?  or BigStr::from_int()?
+            # e.g. str(i) is a free function
             if (callee_name not in ('str', 'bool', 'float') and
                     'BigInt' not in callee_name and
                     isinstance(ret_type, Instance)):
 
                 ret_type_name = ret_type.type.name
 
-                # HACK: Const is the callee; expr.Const is the return type
+                # HACK: Const is the callee; expr__Const is the return type
                 if (ret_type_name == callee_name or
                         ret_type_name.endswith('__' + callee_name)):
                     return True
 
         return False
 
-    def _ProbeExpr(self, o):
+    def oils_visit_probe_call(self, o: 'mypy.nodes.CallExpr') -> None:
         assert len(o.args) >= 2 and len(o.args) < 13, o.args
         assert isinstance(o.args[0], mypy.nodes.StrExpr), o.args[0]
         assert isinstance(o.args[1], mypy.nodes.StrExpr), o.args[1]
@@ -778,102 +932,123 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if arity > 0:
             macro = 'DTRACE_PROBE%d' % arity
 
-        self.def_write('%s(%s, %s', macro, o.args[0].value, o.args[1].value)
+        self.write('%s(%s, %s', macro, o.args[0].value, o.args[1].value)
 
         for arg in o.args[2:]:
             arg_type = self.types[arg]
-            self.def_write(', ')
-            if (isinstance(arg_type, Instance) and
-                    arg_type.type.fullname == 'builtins.str'):
-                self.def_write('%s->data()' % arg.name)
+            self.write(', ')
+            if util.IsStr(arg_type):  # TODO: doesn't know it's an Instance
+                self.write('%s->data()' % arg.name)
             else:
                 self.accept(arg)
 
-        self.def_write(')')
+        self.write(')')
 
-    def _LogExpr(self, o):
-        args = o.args
-        if len(args) == 1:  # log(CONST)
-            self.def_write('mylib::print_stderr(')
-            self.accept(args[0])
-            self.def_write(')')
+    def oils_visit_log_call(self, fmt: StrExpr,
+                            args: List[Expression]) -> None:
+        if len(args) == 0:  # log('const') -> print_stderr(S_xyz)
+            # This is a GC string
+            self.write('mylib::print_stderr(')
+            self.accept(fmt)
+            self.write(')')
             return
 
-        quoted_fmt = PythonStringLiteral(args[0].value)
+        # log('const %s', a) -> print_stderr(StrFormat("const %s", a))
+        quoted_fmt = PythonStringLiteral(fmt.value)
+        self.write('mylib::print_stderr(StrFormat(%s, ' % quoted_fmt)
 
-        self.def_write('mylib::print_stderr(StrFormat(%s, ' % quoted_fmt)
-        for i, arg in enumerate(args[1:]):
+        for i, arg in enumerate(args):
             if i != 0:
-                self.def_write(', ')
+                self.write(', ')
             self.accept(arg)
-        self.def_write('))')
+        self.write('))')
 
-    def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> T:
-        if o.callee.name == 'probe':
-            self._ProbeExpr(o)
-            return
+    def oils_visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> None:
+        callee_name = o.callee.name
 
-        if o.callee.name == 'isinstance':
-            self.report_error(o, 'isinstance() not allowed')
-            return
-
-        #    return cast(ShArrayLiteral, tok)
-        # -> return static_cast<ShArrayLiteral*>(tok)
+        #    return cast(YshArrayLiteral, tok)
+        # -> return static_cast<YshArrayLiteral*>(tok)
 
         # TODO: Consolidate this with AssignmentExpr logic.
-
-        if o.callee.name == 'cast':
+        if callee_name == 'cast':
             call = o
             type_expr = call.args[0]
 
             subtype_name = _GetCTypeForCast(type_expr)
             cast_kind = _GetCastKind(self.module_path, subtype_name)
-            self.def_write('%s<%s>(', cast_kind, subtype_name)
+            self.write('%s<%s>(', cast_kind, subtype_name)
             self.accept(call.args[1])  # variable being casted
-            self.def_write(')')
+            self.write(')')
             return
-
-        # Translate printf-style varargs:
-        #
-        # log('foo %s', x)
-        #   =>
-        # log(StrFormat('foo %s', x))
-        if o.callee.name == 'log':
-            self._LogExpr(o)
-            return
-
-        callee_name = o.callee.name
 
         if isinstance(o.callee, MemberExpr) and callee_name == 'next':
             self.accept(o.callee.expr)
-            self.def_write('.iterNext')
-            self._WriteArgList(o)
+            self.write('.iterNext')
+            self._WriteArgList(o.args)
             return
 
         if self._IsInstantiation(o):
-            self.def_write('Alloc<')
+            self.write('Alloc<')
             self.accept(o.callee)
-            self.def_write('>')
-            self._WriteArgList(o)
+            self.write('>')
+            self._WriteArgList(o.args)
             return
 
         # Namespace.
         if callee_name == 'int':  # int('foo') in Python conflicts with keyword
-            self.def_write('to_int')
+            self.write('to_int')
         elif callee_name == 'float':
-            self.def_write('to_float')
+            self.write('to_float')
         elif callee_name == 'bool':
-            self.def_write('to_bool')
+            self.write('to_bool')
         else:
             self.accept(o.callee)  # could be f() or obj.method()
 
-        self._WriteArgList(o)
+        self._WriteArgList(o.args)
 
-        # TODO: look at keyword arguments!
+        # TODO: we could check that keyword arguments are passed as named args?
         #self.log('  arg_kinds %s', o.arg_kinds)
         #self.log('  arg_names %s', o.arg_names)
 
-    def visit_op_expr(self, o: 'mypy.nodes.OpExpr') -> T:
+    def oils_visit_format_expr(self, left: Expression,
+                               right: Expression) -> None:
+        self.write('StrFormat(')
+        if isinstance(left, StrExpr):
+            self.write(PythonStringLiteral(left.value))
+        else:
+            self.accept(left)
+        #log('right_type %s', right_type)
+
+        right_type = self.types[right]
+
+        # TODO: Can we restore some type checking?
+        if 0:
+            if isinstance(right_type, Instance):
+                fmt_types: List[Type] = [right_type]
+            elif isinstance(right_type, TupleType):
+                fmt_types = right_type.items
+            # Handle Optional[str]
+            elif (isinstance(right_type, UnionType) and
+                  len(right_type.items) == 2 and
+                  isinstance(right_type.items[1], NoneTyp)):
+                fmt_types = [right_type.items[0]]
+            else:
+                raise AssertionError(right_type)
+
+        # In the definition pass, write the call site.
+        if isinstance(right_type, TupleType):
+            assert isinstance(right, TupleExpr), right
+            for i, item in enumerate(right.items):
+                self.write(', ')
+                self.accept(item)
+
+        else:  # '[%s]' % x
+            self.write(', ')
+            self.accept(right)
+
+        self.write(')')
+
+    def oils_visit_op_expr(self, o: 'mypy.nodes.OpExpr') -> None:
         # a + b when a and b are strings.  (Can't use operator overloading
         # because they're pointers.)
         left_type = self.types[o.left]
@@ -891,62 +1066,30 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         # 'abc' + 'def'
         if left_ctype == right_ctype == 'BigStr*' and c_op == '+':
-            self.def_write('str_concat(')
+            self.write('str_concat(')
             self.accept(o.left)
-            self.def_write(', ')
+            self.write(', ')
             self.accept(o.right)
-            self.def_write(')')
+            self.write(')')
             return
 
         # 'abc' * 3
         if left_ctype == 'BigStr*' and right_ctype == 'int' and c_op == '*':
-            self.def_write('str_repeat(')
+            self.write('str_repeat(')
             self.accept(o.left)
-            self.def_write(', ')
+            self.write(', ')
             self.accept(o.right)
-            self.def_write(')')
+            self.write(')')
             return
 
         # [None] * 3  =>  list_repeat(None, 3)
-        if left_ctype.startswith(
-                'List<') and right_ctype == 'int' and c_op == '*':
-            self.def_write('list_repeat(')
+        if (left_ctype.startswith('List<') and right_ctype == 'int' and
+                c_op == '*'):
+            self.write('list_repeat(')
             self.accept(o.left.items[0])
-            self.def_write(', ')
+            self.write(', ')
             self.accept(o.right)
-            self.def_write(')')
-            return
-
-        # RHS can be primitive or tuple
-        if left_ctype == 'BigStr*' and c_op == '%':
-            self.def_write('StrFormat(')
-            if isinstance(o.left, StrExpr):
-                self.def_write(PythonStringLiteral(o.left.value))
-            else:
-                self.accept(o.left)
-            #log('right_type %s', right_type)
-            if isinstance(right_type, Instance):
-                fmt_types = [right_type]
-            elif isinstance(right_type, TupleType):
-                fmt_types = right_type.items
-            # Handle Optional[str]
-            elif (isinstance(right_type, UnionType) and
-                  len(right_type.items) == 2 and
-                  isinstance(right_type.items[1], NoneTyp)):
-                fmt_types = [right_type.items[0]]
-            else:
-                raise AssertionError(right_type)
-
-            # In the definition pass, write the call site.
-            if isinstance(right_type, TupleType):
-                for i, item in enumerate(o.right.items):
-                    self.def_write(', ')
-                    self.accept(item)
-            else:  # '[%s]' % x
-                self.def_write(', ')
-                self.accept(o.right)
-
-            self.def_write(')')
+            self.write(')')
             return
 
         # These parens are sometimes extra, but sometimes required.  Example:
@@ -954,13 +1097,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # if ((a and (false or true))) {  # right
         # vs.
         # if (a and false or true)) {  # wrong
-        self.def_write('(')
+        self.write('(')
         self.accept(o.left)
-        self.def_write(' %s ', c_op)
+        self.write(' %s ', c_op)
         self.accept(o.right)
-        self.def_write(')')
+        self.write(')')
 
-    def visit_comparison_expr(self, o: 'mypy.nodes.ComparisonExpr') -> T:
+    def visit_comparison_expr(self, o: 'mypy.nodes.ComparisonExpr') -> None:
         # Make sure it's binary
         assert len(o.operators) == 1, o.operators
         assert len(o.operands) == 2, o.operands
@@ -972,63 +1115,62 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # Assume is and is not are for None / nullptr comparison.
         if operator == 'is':  # foo is None => foo == nullptr
             self.accept(o.operands[0])
-            self.def_write(' == ')
+            self.write(' == ')
             self.accept(o.operands[1])
             return
 
         if operator == 'is not':  # foo is not None => foo != nullptr
             self.accept(o.operands[0])
-            self.def_write(' != ')
+            self.write(' != ')
             self.accept(o.operands[1])
             return
 
-        # TODO: Change Optional[T] to T for our purposes?
         t0 = self.types[left]
         t1 = self.types[right]
 
         # 0: not a special case
         # 1: str
         # 2: Optional[str] which is Union[str, None]
-        left_type = 0  # not a special case
-        right_type = 0  # not a special case
+        left_type_i = 0  # not a special case
+        right_type_i = 0  # not a special case
 
-        if IsStr(t0):
-            left_type = 1
+        if util.IsStr(t0):
+            left_type_i = 1
         elif (isinstance(t0, UnionType) and len(t0.items) == 2 and
-              IsStr(t0.items[0]) and isinstance(t0.items[1], NoneTyp)):
-            left_type = 2
+              util.IsStr(t0.items[0]) and isinstance(t0.items[1], NoneTyp)):
+            left_type_i = 2
 
-        if IsStr(t1):
-            right_type = 1
+        if util.IsStr(t1):
+            right_type_i = 1
         elif (isinstance(t1, UnionType) and len(t1.items) == 2 and
-              IsStr(t1.items[0]) and isinstance(t1.items[1], NoneTyp)):
-            right_type = 2
+              util.IsStr(t1.items[0]) and isinstance(t1.items[1], NoneTyp)):
+            right_type_i = 2
 
-        #self.log('left_type %s right_type %s', left_type, right_type)
+        #self.log('left_type_i %s right_type_i %s', left_type, right_type)
 
-        if left_type > 0 and right_type > 0 and operator in ('==', '!='):
+        if left_type_i > 0 and right_type_i > 0 and operator in ('==', '!='):
             if operator == '!=':
-                self.def_write('!(')
+                self.write('!(')
 
             # NOTE: This could also be str_equals(left, right)?  Does it make a
             # difference?
-            if left_type > 1 or right_type > 1:
-                self.def_write('maybe_str_equals(')
+            if left_type_i > 1 or right_type_i > 1:
+                self.write('maybe_str_equals(')
             else:
-                self.def_write('str_equals(')
+                self.write('str_equals(')
             self.accept(left)
-            self.def_write(', ')
+            self.write(', ')
             self.accept(right)
-            self.def_write(')')
+            self.write(')')
 
             if operator == '!=':
-                self.def_write(')')
+                self.write(')')
             return
 
         # Note: we could get rid of this altogether and rely on C++ function
         # overloading.  But somehow I like it more explicit, closer to C (even
         # though we use templates).
-        contains_func = _GetContainsFunc(t1)
+        contains_func = _ContainsFunc(t1)
 
         if operator == 'in':
             if isinstance(right, TupleExpr):
@@ -1037,33 +1179,33 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 equals_func = _EqualsFunc(left_type)
 
                 # x in (1, 2, 3) => (x == 1 || x == 2 || x == 3)
-                self.def_write('(')
+                self.write('(')
 
                 for i, item in enumerate(right.items):
                     if i != 0:
-                        self.def_write(' || ')
+                        self.write(' || ')
 
                     if equals_func:
-                        self.def_write('%s(' % equals_func)
+                        self.write('%s(' % equals_func)
                         self.accept(left)
-                        self.def_write(', ')
+                        self.write(', ')
                         self.accept(item)
-                        self.def_write(')')
+                        self.write(')')
                     else:
                         self.accept(left)
-                        self.def_write(' == ')
+                        self.write(' == ')
                         self.accept(item)
 
-                self.def_write(')')
+                self.write(')')
                 return
 
             assert contains_func, "RHS of 'in' has type %r" % t1
             # x in mylist => list_contains(mylist, x)
-            self.def_write('%s(', contains_func)
+            self.write('%s(', contains_func)
             self.accept(right)
-            self.def_write(', ')
+            self.write(', ')
             self.accept(left)
-            self.def_write(')')
+            self.write(')')
             return
 
         if operator == 'not in':
@@ -1072,73 +1214,57 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 equals_func = _EqualsFunc(left_type)
 
                 # x not in (1, 2, 3) => (x != 1 && x != 2 && x != 3)
-                self.def_write('(')
+                self.write('(')
 
                 for i, item in enumerate(right.items):
                     if i != 0:
-                        self.def_write(' && ')
+                        self.write(' && ')
 
                     if equals_func:
-                        self.def_write('!%s(' % equals_func)
+                        self.write('!%s(' % equals_func)
                         self.accept(left)
-                        self.def_write(', ')
+                        self.write(', ')
                         self.accept(item)
-                        self.def_write(')')
+                        self.write(')')
                     else:
                         self.accept(left)
-                        self.def_write(' != ')
+                        self.write(' != ')
                         self.accept(item)
 
-                self.def_write(')')
+                self.write(')')
                 return
 
             assert contains_func, t1
 
             # x not in mylist => !list_contains(mylist, x)
-            self.def_write('!%s(', contains_func)
+            self.write('!%s(', contains_func)
             self.accept(right)
-            self.def_write(', ')
+            self.write(', ')
             self.accept(left)
-            self.def_write(')')
+            self.write(')')
             return
 
         # Default case
         self.accept(o.operands[0])
-        self.def_write(' %s ', o.operators[0])
+        self.write(' %s ', o.operators[0])
         self.accept(o.operands[1])
 
-    def visit_cast_expr(self, o: 'mypy.nodes.CastExpr') -> T:
-        pass
-
-    def visit_reveal_expr(self, o: 'mypy.nodes.RevealExpr') -> T:
-        pass
-
-    def visit_super_expr(self, o: 'mypy.nodes.SuperExpr') -> T:
-        self.not_translated(o, 'super expr')
-
-    def visit_assignment_expr(self, o: 'mypy.nodes.AssignmentExpr') -> T:
-        self.not_translated(o, 'assign expr')
-
-    def visit_unary_expr(self, o: 'mypy.nodes.UnaryExpr') -> T:
-        # e.g. a[-1] or 'not x'
-        if o.op == 'not':
-            op_str = '!'
-        else:
-            op_str = o.op
-        self.def_write(op_str)
-        self.accept(o.expr)
-
-    def _WriteListElements(self, items, sep=', '):
+    def _WriteListElements(self,
+                           items: List[Expression],
+                           sep: str = ', ') -> None:
         # sep may be 'COMMA' for a macro
-        self.def_write('{')
+        self.write('{')
         for i, item in enumerate(items):
             if i != 0:
-                self.def_write(sep)
+                self.write(sep)
             self.accept(item)
-        self.def_write('}')
+        self.write('}')
 
-    def visit_list_expr(self, o: 'mypy.nodes.ListExpr') -> T:
+    def visit_list_expr(self, o: 'mypy.nodes.ListExpr') -> None:
         list_type = self.types[o]
+        # Note: need a lookup function that understands ListExpr -> Instance
+        assert isinstance(list_type, Instance), list_type
+
         #self.log('**** list_type = %s', list_type)
         c_type = GetCType(list_type)
 
@@ -1149,15 +1275,18 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         c_type = c_type[:-1]  # HACK TO CLEAN UP
 
         if len(o.items) == 0:
-            self.def_write('Alloc<%s>()' % c_type)
+            self.write('Alloc<%s>()' % c_type)
         else:
-            self.def_write('NewList<%s>(std::initializer_list<%s>' %
-                           (item_c_type, item_c_type))
+            self.write('NewList<%s>(std::initializer_list<%s>' %
+                       (item_c_type, item_c_type))
             self._WriteListElements(o.items)
-            self.def_write(')')
+            self.write(')')
 
-    def visit_dict_expr(self, o: 'mypy.nodes.DictExpr') -> T:
+    def visit_dict_expr(self, o: 'mypy.nodes.DictExpr') -> None:
         dict_type = self.types[o]
+        # Note: need a lookup function that understands DictExpr -> Instance
+        assert isinstance(dict_type, Instance), dict_type
+
         c_type = GetCType(dict_type)
         assert c_type.endswith('*'), c_type
         c_type = c_type[:-1]  # HACK TO CLEAN UP
@@ -1166,38 +1295,35 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         key_c_type = GetCType(key_type)
         val_c_type = GetCType(val_type)
 
-        self.def_write('Alloc<%s>(' % c_type)
-        #self.def_write('NewDict<%s, %s>(' % (key_c_type, val_c_type))
+        self.write('Alloc<%s>(' % c_type)
+        #self.write('NewDict<%s, %s>(' % (key_c_type, val_c_type))
         if o.items:
             keys = [k for k, _ in o.items]
             values = [v for _, v in o.items]
 
-            self.def_write('std::initializer_list<%s>' % key_c_type)
+            self.write('std::initializer_list<%s>' % key_c_type)
             self._WriteListElements(keys)
-            self.def_write(', ')
+            self.write(', ')
 
-            self.def_write('std::initializer_list<%s>' % val_c_type)
+            self.write('std::initializer_list<%s>' % val_c_type)
             self._WriteListElements(values)
 
-        self.def_write(')')
+        self.write(')')
 
-    def visit_tuple_expr(self, o: 'mypy.nodes.TupleExpr') -> T:
+    def visit_tuple_expr(self, o: 'mypy.nodes.TupleExpr') -> None:
         tuple_type = self.types[o]
         c_type = GetCType(tuple_type)
         assert c_type.endswith('*'), c_type
         c_type = c_type[:-1]  # HACK TO CLEAN UP
 
-        self.def_write('(Alloc<%s>(' % c_type)
+        self.write('(Alloc<%s>(' % c_type)
         for i, item in enumerate(o.items):
             if i != 0:
-                self.def_write(', ')
+                self.write(', ')
             self.accept(item)
-        self.def_write('))')
+        self.write('))')
 
-    def visit_set_expr(self, o: 'mypy.nodes.SetExpr') -> T:
-        self.not_translated(o, 'set expr')
-
-    def visit_index_expr(self, o: 'mypy.nodes.IndexExpr') -> T:
+    def visit_index_expr(self, o: 'mypy.nodes.IndexExpr') -> None:
         self.accept(o.base)
 
         #base_type = self.types[o.base]
@@ -1208,41 +1334,22 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         else:
             # it's hard syntactically to do (*a)[0], so do it this way.
             if util.SMALL_STR:
-                self.def_write('.at(')
+                self.write('.at(')
             else:
-                self.def_write('->at(')
+                self.write('->at(')
 
             self.accept(o.index)
-            self.def_write(')')
+            self.write(')')
 
-    def visit_type_application(self, o: 'mypy.nodes.TypeApplication') -> T:
-        pass
-
-    def visit_lambda_expr(self, o: 'mypy.nodes.LambdaExpr') -> T:
-        pass
-
-    def visit_list_comprehension(self, o: 'mypy.nodes.ListComprehension') -> T:
-        pass
-
-    def visit_set_comprehension(self, o: 'mypy.nodes.SetComprehension') -> T:
-        pass
-
-    def visit_dictionary_comprehension(
-            self, o: 'mypy.nodes.DictionaryComprehension') -> T:
-        pass
-
-    def visit_generator_expr(self, o: 'mypy.nodes.GeneratorExpr') -> T:
-        pass
-
-    def visit_slice_expr(self, o: 'mypy.nodes.SliceExpr') -> T:
-        self.def_write('->slice(')
+    def visit_slice_expr(self, o: 'mypy.nodes.SliceExpr') -> None:
+        self.write('->slice(')
         if o.begin_index:
             self.accept(o.begin_index)
         else:
-            self.def_write('0')  # implicit beginning
+            self.write('0')  # implicit beginning
 
         if o.end_index:
-            self.def_write(', ')
+            self.write(', ')
             self.accept(o.end_index)
 
         if o.stride:
@@ -1250,12 +1357,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 raise AssertionError(
                     'Stride only supported with beginning and ending index')
 
-            self.def_write(', ')
+            self.write(', ')
             self.accept(o.stride)
 
-        self.def_write(')')
+        self.write(')')
 
-    def visit_conditional_expr(self, o: 'mypy.nodes.ConditionalExpr') -> T:
+    def visit_conditional_expr(self, o: 'mypy.nodes.ConditionalExpr') -> None:
         if not _CheckCondition(o.cond, self.types):
             self.report_error(
                 o,
@@ -1265,158 +1372,66 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         # 0 if b else 1 -> b ? 0 : 1
         self.accept(o.cond)
-        self.def_write(' ? ')
+        self.write(' ? ')
         self.accept(o.if_expr)
-        self.def_write(' : ')
+        self.write(' : ')
         self.accept(o.else_expr)
 
-    def visit_backquote_expr(self, o: 'mypy.nodes.BackquoteExpr') -> T:
-        pass
+    def _WriteTupleUnpacking(self,
+                             temp_name: str,
+                             lval_items: List[Expression],
+                             item_types: List[Type],
+                             is_return: bool = False) -> None:
+        """Used by assignment and for loops.
 
-    def visit_type_var_expr(self, o: 'mypy.nodes.TypeVarExpr') -> T:
-        pass
+        is_return is a special case for:
 
-    def visit_type_alias_expr(self, o: 'mypy.nodes.TypeAliasExpr') -> T:
-        pass
-
-    def visit_namedtuple_expr(self, o: 'mypy.nodes.NamedTupleExpr') -> T:
-        pass
-
-    def visit_enum_call_expr(self, o: 'mypy.nodes.EnumCallExpr') -> T:
-        pass
-
-    def visit_typeddict_expr(self, o: 'mypy.nodes.TypedDictExpr') -> T:
-        pass
-
-    def visit_newtype_expr(self, o: 'mypy.nodes.NewTypeExpr') -> T:
-        pass
-
-    def visit__promote_expr(self, o: 'mypy.nodes.PromoteExpr') -> T:
-        pass
-
-    def visit_await_expr(self, o: 'mypy.nodes.AwaitExpr') -> T:
-        pass
-
-    def visit_temp_node(self, o: 'mypy.nodes.TempNode') -> T:
-        pass
-
-    def _write_tuple_unpacking(self,
-                               temp_name,
-                               lval_items,
-                               item_types,
-                               is_return=False):
-        """Used by assignment and for loops."""
+            # return Tuple2<A, B> by VALUE, not Tuple2<A, B>* pointer
+            a, b = myfunc()
+        """
         for i, (lval_item, item_type) in enumerate(zip(lval_items,
                                                        item_types)):
-            #self.log('*** %s :: %s', lval_item, item_type)
             if isinstance(lval_item, NameExpr):
-                if _SkipAssignment(lval_item.name):
+                if util.SkipAssignment(lval_item.name):
                     continue
-
-                # declare it at the top of the function
-                if self.decl:
-                    self.local_var_list.append((lval_item.name, item_type))
-                self.def_write_ind('%s', lval_item.name)
+                self.write_ind('%s', lval_item.name)
             else:
                 # Could be MemberExpr like self.foo, self.bar = baz
-                self.def_write_ind('')
+                self.write_ind('')
                 self.accept(lval_item)
 
             # Tuples that are return values aren't pointers
             op = '.' if is_return else '->'
-            self.def_write(' = %s%sat%d();\n', temp_name, op, i)  # RHS
+            self.write(' = %s%sat%d();\n', temp_name, op, i)  # RHS
 
-    def _ListComprehensionImpl(self, o, lval, c_type):
-        """
-        Special case for list comprehensions.  Note that the LHS MUST be on the
-        LHS, so we can append to it.
-        
-        y = [i+1 for i in x[1:] if i]
-          =>
-        y = []
-        for i in x[1:]:
-          if i:
-            y.append(i+1)
-        (but in C++)
-        """
-        gen = o.rvalue.generator  # GeneratorExpr
-        left_expr = gen.left_expr
-        index_expr = gen.indices[0]
-        seq = gen.sequences[0]
-        cond = gen.condlists[0]
-
-        # BUG: can't use this to filter
-        # results = [x for x in results]
-        if isinstance(seq, NameExpr) and seq.name == lval.name:
-            raise AssertionError(
-                "Can't use var %r in list comprehension because it would "
-                "be overwritten" % lval.name)
-
-        # Write empty container as initialization.
-        assert c_type.endswith('*'), c_type  # Hack
-        self.def_write('Alloc<%s>();\n' % c_type[:-1])
-
-        over_type = self.types[seq]
-
-        if over_type.type.fullname == 'builtins.list':
-            c_type = GetCType(over_type)
-            assert c_type.endswith('*'), c_type
-            c_iter_type = c_type.replace('List', 'ListIter',
-                                         1)[:-1]  # remove *
-        else:
-            # Example: assoc == Optional[Dict[str, str]]
-            c_iter_type = 'TODO_ASSOC'
-
-        self.def_write_ind('for (%s it(', c_iter_type)
-        self.accept(seq)
-        self.def_write('); !it.Done(); it.Next()) {\n')
-
-        item_type = over_type.args[0]  # get 'int' from 'List<int>'
-
-        if isinstance(item_type, Instance):
-            self.def_write_ind('  %s ', GetCType(item_type))
-            # TODO(StackRoots): for ch in 'abc'
-            self.accept(index_expr)
-            self.def_write(' = it.Value();\n')
-
-        elif isinstance(item_type, TupleType):  # for x, y in pairs
+    def _WriteTupleUnpackingInLoop(self, temp_name: str,
+                                   lval_items: List[Expression],
+                                   item_types: List[Type]) -> None:
+        for i, (lval_item, item_type) in enumerate(zip(lval_items,
+                                                       item_types)):
             c_item_type = GetCType(item_type)
 
-            if isinstance(index_expr, TupleExpr):
-                temp_name = 'tup%d' % self.unique_id
-                self.unique_id += 1
-                self.def_write_ind('  %s %s = it.Value();\n', c_item_type,
-                                   temp_name)
+            if isinstance(lval_item, NameExpr):
+                if util.SkipAssignment(lval_item.name):
+                    continue
 
-                self.indent += 1
-
-                self._write_tuple_unpacking(temp_name, index_expr.items,
-                                            item_type.items)
-
-                self.indent -= 1
+                self.write_ind('%s %s', c_item_type, lval_item.name)
             else:
-                raise AssertionError()
+                # Could be MemberExpr like self.foo, self.bar = baz
+                self.write_ind('')
+                self.accept(lval_item)
 
-        else:
-            raise AssertionError('Unexpected type %s' % item_type)
+            op = '->'
+            self.write(' = %s%sat%d();\n', temp_name, op, i)  # RHS
 
-        if cond:
-            self.indent += 1
-            self.def_write_ind('if (')
-            self.accept(cond[0])  # Just the first one
-            self.def_write(') {\n')
+            # Note: it would be nice to eliminate these roots, just like
+            # StackRoots _for() below
+            if isinstance(lval_item, NameExpr):
+                if CTypeIsManaged(c_item_type) and not self.stack_roots:
+                    self.write_ind('StackRoot _unpack_%d(&%s);\n' %
+                                   (i, lval_item.name))
 
-        self.def_write_ind('  %s->append(', lval.name)
-        self.accept(left_expr)
-        self.def_write(');\n')
-
-        if cond:
-            self.def_write_ind('}\n')
-            self.indent -= 1
-
-        self.def_write_ind('}\n')
-
-    def _AssignNewDictImpl(self, lval, prefix=''):
+    def _AssignNewDictImpl(self, lval: Expression, prefix: str = '') -> None:
         """Translate NewDict() -> Alloc<Dict<K, V>>
 
         This function is a specal case because the RHS need TYPES from the LHS.
@@ -1445,13 +1460,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             lval_type = lval_type.items[0]
 
         c_type = GetCType(lval_type)
-        if self.decl:
-            self.local_var_list.append((lval.name, lval_type))
-
         assert c_type.endswith('*')
-        self.def_write('Alloc<%s>()', c_type[:-1])
+        self.write('Alloc<%s>()', c_type[:-1])
 
-    def _AssignCastImpl(self, o, lval):
+    def _AssignCastImpl(self, lval: Expression, rval: CallExpr) -> None:
         """
         is_downcast_and_shadow idiom:
         
@@ -1459,75 +1471,168 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         -> source__SourcedFile* src = static_cast<source__SourcedFile>(UP_src)
         """
         assert isinstance(lval, NameExpr)
-        call = o.rvalue
-        type_expr = call.args[0]
+        type_expr = rval.args[0]
         subtype_name = _GetCTypeForCast(type_expr)
 
         cast_kind = _GetCastKind(self.module_path, subtype_name)
 
         is_downcast_and_shadow = False
-        to_cast = call.args[1]
+        to_cast = rval.args[1]
         if isinstance(to_cast, NameExpr):
             if to_cast.name.startswith('UP_'):
                 is_downcast_and_shadow = True
 
         if is_downcast_and_shadow:
             # Declare NEW local variable inside case, which shadows it
-            self.def_write_ind('%s %s = %s<%s>(', subtype_name, lval.name,
-                               cast_kind, subtype_name)
+            self.write_ind('%s %s = %s<%s>(', subtype_name, lval.name,
+                           cast_kind, subtype_name)
         else:
             # Normal variable
-            if self.decl:
-                self.local_var_list.append((lval.name, subtype_name))
-            self.def_write_ind('%s = %s<%s>(', lval.name, cast_kind,
-                               subtype_name)
+            self.write_ind('%s = %s<%s>(', lval.name, cast_kind, subtype_name)
 
-        self.accept(call.args[1])  # variable being casted
-        self.def_write(');\n')
+        self.accept(rval.args[1])  # variable being casted
+        self.write(');\n')
 
-    def _IteratorImpl(self, o, lval, rval_type):
+    def _AssignToGenerator(self, o: 'mypy.nodes.AssignmentStmt',
+                           lval: Expression, rval_type: Instance) -> None:
+        """
+        it_f = f(42)
+
+        translates to
+
+        List<int> _iter_buf_it;
+        f(42, &_iter_buf_it);
+        """
         # We're calling a generator. Create a temporary List<T> on the stack
         # to accumulate the results in one big batch, then wrap it in
         # ListIter<T>.
         assert len(rval_type.args) == 1, rval_type.args
         c_type = GetCType(rval_type)
+
         type_param = rval_type.args[0]
         inner_c_type = GetCType(type_param)
-        iter_buf = ('_iter_buf_%s' % lval.name, 'List<%s>*' % inner_c_type)
-        self.def_write_ind('List<%s> %s;\n', inner_c_type, iter_buf[0])
-        self.current_stmt_node = o
-        self.yield_accumulators[o] = iter_buf
-        self.def_write_ind('')
+
+        assert isinstance(lval, NameExpr), lval
+        eager_list_name = 'YIELD_%s' % lval.name
+        eager_list_type = 'List<%s>*' % inner_c_type
+
+        # write the variable to accumulate into
+        self.write_ind('List<%s> %s;\n', inner_c_type, eager_list_name)
+
+        # AssignmentStmt key, like:
+        #     it_f = f()
+        # maybe call them self.generator_func, generator_assign
+        # In MyPy, the type is Iterator though
+        self.yield_eager_assign[o] = (eager_list_name, eager_list_type)
+        self.write_ind('')
+
+        self.yield_assign_node = o  # AssignmentStmt
         self.accept(o.rvalue)
-        self.current_stmt_node = None
-        self.def_write(';\n')
-        self.def_write_ind('%s %s(&%s);\n', c_type, lval.name, iter_buf[0])
+        self.yield_assign_node = None
 
-    def _MaybeAddMember(self, lval, current_member_vars):
-        if isinstance(lval.expr, NameExpr) and lval.expr.name == 'self':
-            #log('    lval.name %s', lval.name)
-            lval_type = self.types[lval]
-            c_type = GetCType(lval_type)
-            is_managed = CTypeIsManaged(c_type)
-            current_member_vars[lval.name] = (lval_type, c_type, is_managed)
+        self.write(';\n')
 
-    def visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt') -> T:
-        # Declare constant strings.  They have to be at the top level.
-        if self.decl and self.indent == 0 and len(o.lvalues) == 1:
-            lval = o.lvalues[0]
-            c_type = GetCType(self.types[lval])
-            if not _SkipAssignment(lval.name):
-                self.always_write('extern %s %s;\n', c_type, lval.name)
+        self.write_ind('%s %s(&%s);\n', c_type, lval.name, eager_list_name)
 
-        # I think there are more than one when you do a = b = 1, which I never
-        # use.
-        assert len(o.lvalues) == 1, o.lvalues
-        lval = o.lvalues[0]
+    def oils_visit_assign_to_listcomp(self, lval: NameExpr,
+                                      left_expr: Expression,
+                                      index_expr: Expression, seq: Expression,
+                                      cond: Expression) -> None:
+        """
+        Special case for list comprehensions.  Note that the LHS MUST be on the
+        LHS, so we can append to it.
+        
+        y = [i+1 for i in x[1:] if i]
+          =>
+        y = []
+        for i in x[1:]:
+          if i:
+            y.append(i+1)
+        (but in C++)
+        """
+        self.write_ind('%s = ', lval.name)
+
+        # BUG: can't use this to filter
+        # results = [x for x in results]
+        if isinstance(seq, NameExpr) and seq.name == lval.name:
+            raise AssertionError(
+                "Can't use var %r in list comprehension because it would "
+                "be overwritten" % lval.name)
+
+        c_type = GetCType(self.types[lval])
+        # Write empty container as initialization.
+        assert c_type.endswith('*'), c_type  # Hack
+        self.write('Alloc<%s>();\n' % c_type[:-1])
+
+        over_type = self.types[seq]
+        assert isinstance(over_type, Instance), over_type
+
+        if over_type.type.fullname == 'builtins.list':
+            c_type = GetCType(over_type)
+            # remove *
+            assert c_type.endswith('*'), c_type
+            c_iter_type = c_type.replace('List', 'ListIter', 1)[:-1]
+        else:
+            # List comprehension over dictionary not implemented
+            c_iter_type = 'TODO_DICT'
+
+        self.write_ind('for (%s it(', c_iter_type)
+        self.accept(seq)
+        self.write('); !it.Done(); it.Next()) {\n')
+
+        item_type = over_type.args[0]  # get 'int' from 'List<int>'
+
+        if isinstance(item_type, Instance):
+            self.write_ind('  %s ', GetCType(item_type))
+            # TODO(StackRoots): for ch in 'abc'
+            self.accept(index_expr)
+            self.write(' = it.Value();\n')
+
+        elif isinstance(item_type, TupleType):  # [x for x, y in pairs]
+            c_item_type = GetCType(item_type)
+
+            if isinstance(index_expr, TupleExpr):
+                temp_name = 'tup%d' % self.unique_id
+                self.unique_id += 1
+                self.write_ind('  %s %s = it.Value();\n', c_item_type,
+                               temp_name)
+
+                self.indent += 1
+
+                # list comp
+                self._WriteTupleUnpackingInLoop(temp_name, index_expr.items,
+                                                item_type.items)
+
+                self.indent -= 1
+            else:
+                raise AssertionError()
+
+        else:
+            raise AssertionError('Unexpected type %s' % item_type)
+
+        if cond is not None:
+            self.indent += 1
+            self.write_ind('if (')
+            self.accept(cond)
+            self.write(') {\n')
+
+        self.write_ind('  %s->append(', lval.name)
+        self.accept(left_expr)
+        self.write(');\n')
+
+        if cond:
+            self.write_ind('}\n')
+            self.indent -= 1
+
+        self.write_ind('}\n')
+
+    def oils_visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt',
+                                   lval: Expression, rval: Expression) -> None:
 
         # GLOBAL CONSTANTS - Avoid Alloc<T>, since that can't be done until main().
         if self.indent == 0:
             assert isinstance(lval, NameExpr), lval
-            if _SkipAssignment(lval.name):
+            if util.SkipAssignment(lval.name):
                 return
             #self.log('    GLOBAL: %s', lval.name)
 
@@ -1535,44 +1640,48 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             # Global
             #   L = [1, 2]  # type: List[int]
-            if isinstance(o.rvalue, ListExpr):
+            if isinstance(rval, ListExpr):
+                assert isinstance(lval_type, Instance), lval_type
+
                 item_type = lval_type.args[0]
                 item_c_type = GetCType(item_type)
 
                 # Any constant strings will have already been written
                 # TODO: Assert that every item is a constant?
-                self.def_write('GLOBAL_LIST(%s, %s, %d, ', lval.name,
-                               item_c_type, len(o.rvalue.items))
+                self.write('GLOBAL_LIST(%s, %s, %d, ', lval.name, item_c_type,
+                           len(rval.items))
 
-                self._WriteListElements(o.rvalue.items, sep=' COMMA ')
+                self._WriteListElements(rval.items, sep=' COMMA ')
 
-                self.def_write(');\n')
+                self.write(');\n')
                 return
 
             # Global
             #   D = {"foo": "bar"}  # type: Dict[str, str]
-            if isinstance(o.rvalue, DictExpr):
+            if isinstance(rval, DictExpr):
+                assert isinstance(lval_type, Instance), lval_type
+
                 key_type, val_type = lval_type.args
 
                 key_c_type = GetCType(key_type)
                 val_c_type = GetCType(val_type)
 
-                dict_expr = o.rvalue
-                self.def_write('GLOBAL_DICT(%s, %s, %s, %d, ', lval.name,
-                               key_c_type, val_c_type, len(dict_expr.items))
+                dict_expr = rval
+                self.write('GLOBAL_DICT(%s, %s, %s, %d, ', lval.name,
+                           key_c_type, val_c_type, len(dict_expr.items))
 
                 keys = [k for k, _ in dict_expr.items]
                 values = [v for _, v in dict_expr.items]
 
                 self._WriteListElements(keys, sep=' COMMA ')
-                self.def_write(', ')
+                self.write(', ')
                 self._WriteListElements(values, sep=' COMMA ')
 
-                self.def_write(');\n')
+                self.write(');\n')
                 return
 
             # We could do GcGlobal<> for ASDL classes, but Oils doesn't use them
-            if isinstance(o.rvalue, CallExpr):
+            if isinstance(rval, CallExpr):
                 self.report_error(
                     o,
                     "Can't initialize objects at the top level, only BigStr List Dict"
@@ -1585,36 +1694,33 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # Non-top-level
         #
 
-        if isinstance(o.rvalue, CallExpr):
-            callee = o.rvalue.callee
+        if isinstance(rval, CallExpr):
+            callee = rval.callee
+            callee_name = callee.name
 
-            if callee.name == 'NewDict':
-                self.def_write_ind('')
+            if callee_name == 'NewDict':
+                self.write_ind('')
 
                 # Hack for non-members - why does this work?
                 # Tests cases in mycpp/examples/containers.py
-                if not isinstance(
-                        lval, MemberExpr) and self.current_func_node is None:
-                    self.def_write('auto* ')
+                if (not isinstance(lval, MemberExpr) and
+                        self.current_func_node is None):
+                    self.write('auto* ')
 
                 self.accept(lval)
-                self.def_write(' = ')
+                self.write(' = ')
                 self._AssignNewDictImpl(lval)  # uses lval, not rval
-                self.def_write(';\n')
-
-                if isinstance(lval, MemberExpr):
-                    # Bug fix: self.front_frame = NewDict() needs to register member
-                    self._MaybeAddMember(lval, self.current_member_vars)
+                self.write(';\n')
                 return
 
-            if callee.name == 'cast':
-                self._AssignCastImpl(o, lval)
+            if callee_name == 'cast':
+                self._AssignCastImpl(lval, rval)
                 return
 
-            rval_type = self.types[o.rvalue]
+            rval_type = self.types[rval]
             if (isinstance(rval_type, Instance) and
                     rval_type.type.fullname == 'typing.Iterator'):
-                self._IteratorImpl(o, lval, rval_type)
+                self._AssignToGenerator(o, lval, rval_type)
                 return
 
         if isinstance(lval, NameExpr):
@@ -1622,51 +1728,34 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             #c_type = GetCType(lval_type, local=self.indent != 0)
             c_type = GetCType(lval_type)
 
-            # for "hoisting" to the top of the function
-            if self.current_func_node:
-                self.def_write_ind('%s = ', lval.name)
-                if self.decl:
-                    self.local_var_list.append((lval.name, lval_type))
-            else:
+            if self.at_global_scope:
                 # globals always get a type -- they're not mutated
-                self.def_write_ind('%s %s = ', c_type, lval.name)
+                self.write_ind('%s %s = ', c_type, lval.name)
+            else:
+                # local declarations are "hoisted" to the top of the function
+                self.write_ind('%s = ', lval.name)
 
-            if isinstance(o.rvalue, ListComprehension):
-                self._ListComprehensionImpl(o, lval, c_type)
-                return
-
-            self.accept(o.rvalue)
-            self.def_write(';\n')
+            self.accept(rval)
+            self.write(';\n')
             return
 
         if isinstance(lval, MemberExpr):  # self.x = foo
-            self.def_write_ind('')
+            self.write_ind('')
             self.accept(lval)
-            self.def_write(' = ')
-            self.accept(o.rvalue)
-            self.def_write(';\n')
-
-            if self.current_method_name in ('__init__', 'Reset'):
-                # Collect statements that look like self.foo = 1
-                # Only do this in __init__ so that a derived class mutating a field
-                # from the base class doesn't cause duplicate C++ fields.  (C++
-                # allows two fields of the same name!)
-                #
-                # HACK for WordParser: also include Reset().  We could change them
-                # all up front but I kinda like this.
-
-                self._MaybeAddMember(lval, self.current_member_vars)
+            self.write(' = ')
+            self.accept(rval)
+            self.write(';\n')
             return
 
         if isinstance(lval, IndexExpr):  # a[x] = 1
             # d->set(x, 1) for both List and Dict
-            self.def_write_ind('')
+            self.write_ind('')
             self.accept(lval.base)
-            self.def_write('->set(')
+            self.write('->set(')
             self.accept(lval.index)
-            self.def_write(', ')
-            self.accept(o.rvalue)
-            self.def_write(');\n')
+            self.write(', ')
+            self.accept(rval)
+            self.write(');\n')
             return
 
         if isinstance(lval, TupleExpr):
@@ -1678,94 +1767,93 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # int x = tup1->at0()
             # BigStr* y = tup1->at1()
 
-            rvalue_type = self.types[o.rvalue]
+            rvalue_type = self.types[rval]
 
             # type alias upgrade for MyPy 0.780
             if isinstance(rvalue_type, TypeAliasType):
                 rvalue_type = rvalue_type.alias.target
 
+            assert isinstance(rvalue_type, TupleType), rvalue_type
+
             c_type = GetCType(rvalue_type)
 
-            is_return = (isinstance(o.rvalue, CallExpr) and
-                         o.rvalue.callee.name != "next")
+            is_return = (isinstance(rval, CallExpr) and
+                         rval.callee.name != "next")
             if is_return:
                 assert c_type.endswith('*')
                 c_type = c_type[:-1]
 
             temp_name = 'tup%d' % self.unique_id
             self.unique_id += 1
-            self.def_write_ind('%s %s = ', c_type, temp_name)
+            self.write_ind('%s %s = ', c_type, temp_name)
 
-            self.accept(o.rvalue)
-            self.def_write(';\n')
+            self.accept(rval)
+            self.write(';\n')
 
-            self._write_tuple_unpacking(temp_name,
-                                        lval.items,
-                                        rvalue_type.items,
-                                        is_return=is_return)
+            # assignment
+            self._WriteTupleUnpacking(temp_name,
+                                      lval.items,
+                                      rvalue_type.items,
+                                      is_return=is_return)
             return
 
         raise AssertionError(lval)
 
-    def _write_body(self, body):
+    def _WriteBody(self, body: List[Statement]) -> None:
         """Write a block without the { }."""
         for stmt in body:
-            # Ignore things that look like docstrings
-            if (isinstance(stmt, ExpressionStmt) and
-                    isinstance(stmt.expr, StrExpr)):
-                continue
-
-            #log('-- %d', self.indent)
             self.accept(stmt)
 
-    def visit_for_stmt(self, o: 'mypy.nodes.ForStmt') -> T:
+    def oils_visit_for_stmt(self, o: 'mypy.nodes.ForStmt',
+                            func_name: Optional[str]) -> None:
         if 0:
             self.log('ForStmt')
             self.log('  index_type %s', o.index_type)
             self.log('  inferred_item_type %s', o.inferred_item_type)
             self.log('  inferred_iterator_type %s', o.inferred_iterator_type)
 
-        func_name = None  # does the loop look like 'for x in func():' ?
-        if (isinstance(o.expr, CallExpr) and
-                isinstance(o.expr.callee, NameExpr)):
-            func_name = o.expr.callee.name
+        if func_name:
+            assert isinstance(o.expr, CallExpr), o.expr  # caller ensured it
+            args = o.expr.args
 
         # special case: 'for i in xrange(3)'
         if func_name == 'xrange':
+            assert isinstance(o.index, NameExpr), o.index
             index_name = o.index.name
-            args = o.expr.args
+
+            assert isinstance(o.expr, CallExpr), o.expr  # caller ensured it
             num_args = len(args)
 
             if num_args == 1:  # xrange(end)
-                self.def_write_ind('for (int %s = 0; %s < ', index_name,
-                                   index_name)
+                self.write_ind('for (int %s = 0; %s < ', index_name,
+                               index_name)
                 self.accept(args[0])
-                self.def_write('; ++%s) ', index_name)
+                self.write('; ++%s) ', index_name)
 
             elif num_args == 2:  # xrange(being, end)
-                self.def_write_ind('for (int %s = ', index_name)
+                self.write_ind('for (int %s = ', index_name)
                 self.accept(args[0])
-                self.def_write('; %s < ', index_name)
+                self.write('; %s < ', index_name)
                 self.accept(args[1])
-                self.def_write('; ++%s) ', index_name)
+                self.write('; ++%s) ', index_name)
 
             elif num_args == 3:  # xrange(being, end, step)
-                # Special case to detect a constant -1.  This is a static
-                # heuristic, because it could be negative dynamically.  TODO:
-                # mylib.reverse_xrange() or something?
+                # Special case to detect a step of -1.  This is a static
+                # heuristic, because it could be negative dynamically.
+                # TODO: could add an API like mylib.reverse_xrange()
                 step = args[2]
                 if isinstance(step, UnaryExpr) and step.op == '-':
                     comparison_op = '>'
                 else:
                     comparison_op = '<'
 
-                self.def_write_ind('for (int %s = ', index_name)
+                self.write_ind('for (int %s = ', index_name)
                 self.accept(args[0])
-                self.def_write('; %s %s ', index_name, comparison_op)
+                self.write('; %s %s ', index_name, comparison_op)
                 self.accept(args[1])
-                self.def_write('; %s += ', index_name)
+                self.write('; %s += ', index_name)
                 self.accept(step)
-                self.def_write(') ')
+                self.write(') ')
 
             else:
                 raise AssertionError()
@@ -1780,16 +1868,20 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if func_name == 'enumerate':
             assert isinstance(o.index, TupleExpr), o.index
             index0 = o.index.items[0]
+
             assert isinstance(index0, NameExpr), index0
             index0_name = index0.name  # generate int i = 0; ; ++i
 
-            # type of 'x' in 'for i, x in enumerate(...)'
+            # Get type of 'x' in 'for i, x in enumerate(...)'
+            assert isinstance(o.inferred_item_type,
+                              TupleType), o.inferred_item_type
             item_type = o.inferred_item_type.items[1]
             index_expr = o.index.items[1]
 
+            assert isinstance(o.expr, CallExpr), o.expr  # caller ensured
             # enumerate(mylist) turns into iteration over mylist with variable i
-            assert len(o.expr.args) == 1, o.expr.args
-            iterated_over = o.expr.args[0]
+            assert len(args) == 1, args
+            iterated_over = args[0]
 
         elif func_name == 'reversed':
             # NOTE: enumerate() and reversed() can't be mixed yet.  But you CAN
@@ -1797,7 +1889,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             item_type = o.inferred_item_type
             index_expr = o.index
 
-            args = o.expr.args
             assert len(args) == 1, args
             iterated_over = args[0]
 
@@ -1807,7 +1898,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             item_type = o.inferred_item_type
             index_expr = o.index
 
-            args = o.expr.args
             assert len(args) == 1, args
             # This should be a dict
             iterated_over = args[0]
@@ -1824,6 +1914,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if isinstance(over_type, TypeAliasType):
             over_type = over_type.alias.target
 
+        assert isinstance(over_type, Instance), over_type
+
         if 0:
             log("***** OVER %s %s", over_type, dir(over_type))
             t = over_type.type
@@ -1835,7 +1927,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             #self.log('  iterating over type %s', over_type)
             #self.log('  iterating over type %s', over_type.type.fullname)
 
-        yield_acc = None
+        eager_list_name: Optional[str] = None
 
         over_list = False
         over_dict = False
@@ -1881,52 +1973,67 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             assert not reverse  # can't reverse iterate over string yet
 
         elif over_type.type.fullname == 'typing.Iterator':
-            # We're iterating over a generator. Create a temporary List<T> on the stack
-            # to accumulate the results in one big batch.
+            # We're iterating over a generator. Create a temporary List<T> on
+            # the stack to accumulate the results in one big batch.
             c_iter_type = GetCType(over_type)
+
             assert len(over_type.args) == 1, over_type.args
             inner_c_type = GetCType(over_type.args[0])
-            yield_acc = ('_for_yield_acc%d' % self.unique_id,
-                         'List<%s>*' % inner_c_type)
+
+            # eager_list_name is used below
+            eager_list_name = 'YIELD_for_%d' % self.unique_id
+            eager_list_type = 'List<%s>*' % inner_c_type
             self.unique_id += 1
-            self.def_write_ind('List<%s> %s;\n', inner_c_type, yield_acc[0])
-            self.def_write_ind('')
-            self.yield_accumulators[o] = yield_acc
-            self.current_stmt_node = o
+
+            self.write_ind('List<%s> %s;\n', inner_c_type, eager_list_name)
+            self.write_ind('')
+
+            # ForStmt - could be self.generator_for_stmt
+            #
+            # for x in my_generator(42):
+            #   log('x = %s', x)
+            #
+            # Turns into
+            # List<T> _for_yield_acc3;
+            # my_generator(42, &_for_yield_acc3);
+            # for (ListIter it(_for_yield_acc3) ...)
+
+            self.yield_eager_for[o] = (eager_list_name, eager_list_type)
+
+            self.yield_for_node = o  # ForStmt
             self.accept(iterated_over)
-            self.current_stmt_node = None
-            self.def_write(';\n')
+            self.yield_for_node = None
+
+            self.write(';\n')
 
         else:  # assume it's like d.iteritems()?  Iterator type
             assert False, over_type
 
         if index0_name:
             # can't initialize two things in a for loop, so do it on a separate line
-            if self.decl:
-                self.local_var_list.append((index0_name, 'int'))
-            self.def_write_ind('%s = 0;\n', index0_name)
+            self.write_ind('%s = 0;\n', index0_name)
             index_update = ', ++%s' % index0_name
         else:
             index_update = ''
 
-        self.def_write_ind('for (%s it(', c_iter_type)
-        if yield_acc:
-            self.def_write('&%s', yield_acc[0])
+        self.write_ind('for (%s it(', c_iter_type)
+        if eager_list_name:
+            self.write('&%s', eager_list_name)
         else:
             self.accept(iterated_over)  # the thing being iterated over
-        self.def_write('); !it.Done(); it.Next()%s) {\n', index_update)
+        self.write('); !it.Done(); it.Next()%s) {\n', index_update)
 
         # for x in it: ...
         # for i, x in enumerate(pairs): ...
 
         if isinstance(item_type, Instance) or index0_name:
             c_item_type = GetCType(item_type)
-            self.def_write_ind('  %s ', c_item_type)
+            self.write_ind('  %s ', c_item_type)
             self.accept(index_expr)
             if over_dict:
-                self.def_write(' = it.Key();\n')
+                self.write(' = it.Key();\n')
             else:
-                self.def_write(' = it.Value();\n')
+                self.write(' = it.Value();\n')
 
             # Register loop variable as a stack root.
             # Note we have mylib.Collect() in CommandEvaluator::_Execute(), and
@@ -1934,9 +2041,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # variable is already live by other means.
             # TODO: Test how much this affects performance.
             if CTypeIsManaged(c_item_type) and not self.stack_roots:
-                self.def_write_ind('  StackRoot _for(&')
+                self.write_ind('  StackRoot _for(&')
                 self.accept(index_expr)
-                self.def_write_ind(');\n')
+                self.write_ind(');\n')
 
         elif isinstance(item_type, TupleType):  # for x, y in pairs
             if over_dict:
@@ -1951,11 +2058,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 #log('** %s key_type %s', item_type.items[0], key_type)
                 #log('** %s val_type %s', item_type.items[1], val_type)
 
+                assert isinstance(index_items[0], NameExpr), index_items[0]
+                assert isinstance(index_items[1], NameExpr), index_items[1]
+
                 # TODO(StackRoots): k, v
-                self.def_write_ind('  %s %s = it.Key();\n', key_type,
-                                   index_items[0].name)
-                self.def_write_ind('  %s %s = it.Value();\n', val_type,
-                                   index_items[1].name)
+                self.write_ind('  %s %s = it.Key();\n', key_type,
+                               index_items[0].name)
+                self.write_ind('  %s %s = it.Value();\n', val_type,
+                               index_items[1].name)
 
             else:
                 # Example:
@@ -1972,19 +2082,22 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                     # TODO(StackRoots)
                     temp_name = 'tup%d' % self.unique_id
                     self.unique_id += 1
-                    self.def_write_ind('  %s %s = it.Value();\n', c_item_type,
-                                       temp_name)
+                    self.write_ind('  %s %s = it.Value();\n', c_item_type,
+                                   temp_name)
 
+                    # loop - for x, y in other:
                     self.indent += 1
-
-                    self._write_tuple_unpacking(temp_name, o.index.items,
-                                                item_type.items)
-
+                    self._WriteTupleUnpackingInLoop(temp_name, o.index.items,
+                                                    item_type.items)
                     self.indent -= 1
+
+                elif isinstance(o.index, NameExpr):
+                    self.write_ind('  %s %s = it.Value();\n', c_item_type,
+                                   o.index.name)
+                    #self.write_ind('  StackRoots _for(&%s)\n;', o.index.name)
+
                 else:
-                    self.def_write_ind('  %s %s = it.Value();\n', c_item_type,
-                                       o.index.name)
-                    #self.def_write_ind('  StackRoots _for(&%s)\n;', o.index.name)
+                    raise AssertionError()
 
         else:
             raise AssertionError('Unexpected type %s' % item_type)
@@ -1992,14 +2105,15 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # Copy of visit_block, without opening {
         self.indent += 1
         block = o.body
-        self._write_body(block.body)
+        self._WriteBody(block.body)
         self.indent -= 1
-        self.def_write_ind('}\n')
+        self.write_ind('}\n')
 
         if o.else_body:
             raise AssertionError("can't translate for-else")
 
-    def _write_cases(self, switch_expr, cases, default_block):
+    def _WriteCases(self, switch_expr: Expression, cases: util.CaseList,
+                    default_block: Union['mypy.nodes.Block', int]) -> None:
         """ Write a list of (expr, block) pairs """
 
         for expr, body in cases:
@@ -2011,86 +2125,90 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             for i, arg in enumerate(expr.args):
                 if i != 0:
-                    self.def_write('\n')
-                self.def_write_ind('case ')
+                    self.write('\n')
+                self.write_ind('case ')
                 self.accept(arg)
-                self.def_write(': ')
+                self.write(': ')
 
             self.accept(body)
-            self.def_write_ind('  break;\n')
+            self.write_ind('  break;\n')
 
-        if default_block is None:
+        if default_block == -1:
             # an error occurred
             return
-        if default_block is False:
+        if default_block == -2:
             # This is too restrictive
             #self.report_error(switch_expr,
             #                  'switch got no else: for default block')
             return
 
-        self.def_write_ind('default: ')
+        # Narrow the type
+        assert not isinstance(default_block, int), default_block
+
+        self.write_ind('default: ')
         self.accept(default_block)
         # don't write 'break'
 
-    def _write_switch(self, expr, o):
+    def _WriteSwitch(self, expr: CallExpr, o: 'mypy.nodes.WithStmt') -> None:
         """Write a switch statement over integers."""
         assert len(expr.args) == 1, expr.args
 
-        self.def_write_ind('switch (')
+        self.write_ind('switch (')
         self.accept(expr.args[0])
-        self.def_write(') {\n')
+        self.write(') {\n')
 
         assert len(o.body.body) == 1, o.body.body
         if_node = o.body.body[0]
         assert isinstance(if_node, IfStmt), if_node
 
         self.indent += 1
-        cases = []
-        default_block = util._collect_cases(self.module_path,
-                                            if_node,
-                                            cases,
-                                            errors=self.errors_keep_going)
-        self._write_cases(expr, cases, default_block)
+        cases: util.CaseList = []
+        default_block = util.CollectSwitchCases(self.module_path,
+                                                if_node,
+                                                cases,
+                                                errors=self.errors_keep_going)
+        self._WriteCases(expr, cases, default_block)
 
         self.indent -= 1
-        self.def_write_ind('}\n')
+        self.write_ind('}\n')
 
-    def _write_tag_switch(self, expr, o):
+    def _WriteTagSwitch(self, expr: CallExpr,
+                        o: 'mypy.nodes.WithStmt') -> None:
         """Write a switch statement over ASDL types."""
         assert len(expr.args) == 1, expr.args
 
-        self.def_write_ind('switch (')
+        self.write_ind('switch (')
         self.accept(expr.args[0])
-        self.def_write('->tag()) {\n')
+        self.write('->tag()) {\n')
 
         assert len(o.body.body) == 1, o.body.body
         if_node = o.body.body[0]
         assert isinstance(if_node, IfStmt), if_node
 
         self.indent += 1
-        cases = []
-        default_block = util._collect_cases(self.module_path,
-                                            if_node,
-                                            cases,
-                                            errors=self.errors_keep_going)
-        self._write_cases(expr, cases, default_block)
+        cases: util.CaseList = []
+        default_block = util.CollectSwitchCases(self.module_path,
+                                                if_node,
+                                                cases,
+                                                errors=self.errors_keep_going)
+        self._WriteCases(expr, cases, default_block)
 
         self.indent -= 1
-        self.def_write_ind('}\n')
+        self.write_ind('}\n')
 
-    def _str_switch_cases(self, cases):
-        cases2 = []
+    def _StrSwitchCases(self, cases: util.CaseList) -> Any:
+        cases2: List[Tuple[int, str, 'mypy.nodes.Block']] = []
         for expr, body in cases:
             if not isinstance(expr, CallExpr):
-                # non-fatal check from _collect_cases
+                # non-fatal check from CollectSwitchCases
                 break
 
             args = expr.args
             if len(args) != 1:
                 self.report_error(
                     expr,
-                    'str_switch can only have case("x"), not case("x", "y")' %
-                    args)
+                    'str_switch can only have case("x"), not case("x", "y"): got %r'
+                    % args)
                 break
 
             if not isinstance(args[0], StrExpr):
@@ -2108,7 +2226,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         grouped = itertools.groupby(cases2, key=lambda pair: pair[0])
         return grouped
 
-    def _write_str_switch(self, expr, o):
+    def _WriteStrSwitch(self, expr: CallExpr,
+                        o: 'mypy.nodes.WithStmt') -> None:
         """Write a switch statement over strings."""
         assert len(expr.args) == 1, expr.args
 
@@ -2122,7 +2241,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 switch_var)
             return
 
-        self.def_write_ind('switch (len(%s)) {\n' % switch_var.name)
+        self.write_ind('switch (len(%s)) {\n' % switch_var.name)
 
         # There can only be one thing under 'with str_switch'
         assert len(o.body.body) == 1, o.body.body
@@ -2131,57 +2250,60 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.indent += 1
 
-        cases = []
-        default_block = util._collect_cases(self.module_path,
-                                            if_node,
-                                            cases,
-                                            errors=self.errors_keep_going)
+        cases: util.CaseList = []
+        default_block = util.CollectSwitchCases(self.module_path,
+                                                if_node,
+                                                cases,
+                                                errors=self.errors_keep_going)
 
-        grouped_cases = self._str_switch_cases(cases)
+        grouped_cases = self._StrSwitchCases(cases)
         # Warning: this consumes internal iterator
         #self.log('grouped %s', list(grouped_cases))
 
         for str_len, group in grouped_cases:
-            self.def_write_ind('case %s: {\n' % str_len)
+            self.write_ind('case %s: {\n' % str_len)
             if_num = 0
             for _, case_str, block in group:
                 self.indent += 1
 
                 else_str = '' if if_num == 0 else 'else '
-                self.def_write_ind('%sif (str_equals_c(%s, %s, %d)) ' %
-                                   (else_str, switch_var.name,
-                                    PythonStringLiteral(case_str), str_len))
+                self.write_ind('%sif (str_equals_c(%s, %s, %d)) ' %
+                               (else_str, switch_var.name,
+                                PythonStringLiteral(case_str), str_len))
                 self.accept(block)
 
                 self.indent -= 1
                 if_num += 1
 
             self.indent += 1
-            self.def_write_ind('else {\n')
-            self.def_write_ind('  goto str_switch_default;\n')
-            self.def_write_ind('}\n')
+            self.write_ind('else {\n')
+            self.write_ind('  goto str_switch_default;\n')
+            self.write_ind('}\n')
             self.indent -= 1
 
-            self.def_write_ind('}\n')
-            self.def_write_ind('  break;\n')
+            self.write_ind('}\n')
+            self.write_ind('  break;\n')
 
-        if default_block is None:
+        if default_block == -1:
             # an error occurred
             return
-        if default_block is False:
+        if default_block == -2:
             self.report_error(switch_expr,
                               'str_switch got no else: for default block')
             return
 
-        self.def_write('\n')
-        self.def_write_ind('str_switch_default:\n')
-        self.def_write_ind('default: ')
+        # Narrow the type
+        assert not isinstance(default_block, int), default_block
+
+        self.write('\n')
+        self.write_ind('str_switch_default:\n')
+        self.write_ind('default: ')
         self.accept(default_block)
 
         self.indent -= 1
-        self.def_write_ind('}\n')
+        self.write_ind('}\n')
 
-    def visit_with_stmt(self, o: 'mypy.nodes.WithStmt') -> T:
+    def visit_with_stmt(self, o: 'mypy.nodes.WithStmt') -> None:
         """
         Translate only blocks of this form:
 
@@ -2195,7 +2317,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         switch(x) {
           case 0:
-            # TODO: need casting here
             print('zero')
             break;
           case 1:
@@ -2226,41 +2347,44 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         expr = o.expr[0]
         assert isinstance(expr, CallExpr), expr
 
+        # There is no 'with mylib.tagswitch(x)', only 'with tagswitch(x)'
+        # But we have with alloc.ctx_SourceCode
+        #assert isinstance(expr.callee, NameExpr), expr.callee
+
         callee_name = expr.callee.name
         if callee_name == 'switch':
-            self._write_switch(expr, o)
+            self._WriteSwitch(expr, o)
         elif callee_name == 'str_switch':
-            self._write_str_switch(expr, o)
+            self._WriteStrSwitch(expr, o)
         elif callee_name == 'tagswitch':
-            self._write_tag_switch(expr, o)
+            self._WriteTagSwitch(expr, o)
         else:
             assert isinstance(expr, CallExpr), expr
-            self.def_write_ind('{  // with\n')
+            self.write_ind('{  // with\n')
             self.indent += 1
 
-            self.def_write_ind('')
+            self.write_ind('')
             self.accept(expr.callee)
 
             # FIX: Use braced initialization to avoid most-vexing parse when
             # there are 0 args!
-            self.def_write(' ctx{')
+            self.write(' ctx{')
             for i, arg in enumerate(expr.args):
                 if i != 0:
-                    self.def_write(', ')
+                    self.write(', ')
                 self.accept(arg)
-            self.def_write('};\n\n')
+            self.write('};\n\n')
 
-            #self.def_write_ind('')
-            self._write_body(o.body.body)
+            self._WriteBody(o.body.body)
 
             self.indent -= 1
-            self.def_write_ind('}\n')
+            self.write_ind('}\n')
 
-    def visit_del_stmt(self, o: 'mypy.nodes.DelStmt') -> T:
+    def visit_del_stmt(self, o: 'mypy.nodes.DelStmt') -> None:
 
         d = o.expr
         if isinstance(d, IndexExpr):
-            self.def_write_ind('')
+            self.write_ind('')
             self.accept(d.base)
 
             if isinstance(d.index, SliceExpr):
@@ -2269,368 +2393,20 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 sl = d.index
                 assert sl.begin_index is None, sl
                 assert sl.end_index is None, sl
-                self.def_write('->clear()')
+                self.write('->clear()')
             else:
                 # del mydict[mykey] raises KeyError, which we don't want
                 raise AssertionError(
                     'Use mylib.dict_erase(d, key) instead of del d[key]')
 
-            self.def_write(';\n')
-
-    def _WriteFuncParams(self,
-                         arg_types,
-                         arguments,
-                         update_locals=False,
-                         write_defaults=False):
-        """Write params for function/method signatures.
-
-        Optionally mutate self.local_vars, and optionally write default arguments.
-        """
-        if write_defaults:
-            # Check if default args are valid first
-
-            num_defaults = 0
-            for arg in arguments:
-                if arg.initializer:
-                    t = self.types[arg.initializer]
-
-                    valid = False
-                    if isinstance(t, NoneType):
-                        valid = True
-                    if isinstance(t, Instance):
-                        # Allowing strings since they're immutable, e.g.
-                        # prefix='' seems OK
-                        if t.type.fullname in ('builtins.bool', 'builtins.int',
-                                               'builtins.float',
-                                               'builtins.str'):
-                            valid = True
-
-                        # ASDL enums lex_mode_t, scope_t, ...
-                        if t.type.fullname.endswith('_t'):
-                            valid = True
-
-                        # Hack for loc__Missing.  Should detect the general case.
-                        if t.type.fullname.endswith('loc__Missing'):
-                            valid = True
-
-                    if not valid:
-                        self.report_error(
-                            arg,
-                            'Invalid default arg %r of type %s (not None, bool, int, float, ASDL enum)'
-                            % (arg.initializer, t))
-                        return
-
-                    num_defaults += 1
-
-            if num_defaults > 1:
-                name = '[TODO]'
-                #if class_name:
-                #  name = '%s::%s' % (class_name, func_name)
-                #else:
-                #  name = func_name
-
-                # Report on first arg
-                self.report_error(
-                    arg, '%s has %d default arguments.  Only 1 is allowed' %
-                    (name, num_defaults))
-                return
-
-        first = True  # first NOT including self
-        for arg_type, arg in zip(arg_types, arguments):
-            if not first:
-                self.always_write(', ')
-
-            # TODO: Turn this on.  Having stdlib problems, e.g.
-            # examples/cartesian.
-            c_type = GetCType(arg_type, param=False)
-
-            arg_name = arg.variable.name
-
-            # C++ has implicit 'this'
-            if arg_name == 'self':
-                continue
-
-            self.always_write('%s %s', c_type, arg_name)
-            if write_defaults and arg.initializer:
-                self.always_write(' = ')
-
-                # Silly mechanism to activate self.def_write()
-                self.writing_default_arg = True
-                self.accept(arg.initializer)
-                self.writing_default_arg = False
-
-            first = False
-
-            # Params are locals.  There are 4 callers to _WriteFuncParams and we
-            # only do it in one place.  TODO: Check if locals are used in
-            # __init__ after allocation.
-            if update_locals:
-                self.local_var_list.append((arg_name, arg_type))
-
-            # We can't use __str__ on these Argument objects?  That seems like an
-            # oversight
-            #self.log('%r', arg)
-
-            if 0:
-                self.log('Argument %s', arg.variable)
-                self.log('  type_annotation %s', arg.type_annotation)
-                # I think these are for default values
-                self.log('  initializer %s', arg.initializer)
-                self.log('  kind %s', arg.kind)
-
-        # Will be set if we're declaring or defining a function that returns
-        # Iterator[T].
-        if self.current_func_node in self.yield_accumulators:
-            if not first:
-                self.always_write(', ')
-
-            arg_name, c_type = self.yield_accumulators[self.current_func_node]
-            self.always_write('%s %s', c_type, arg_name)
-
-    def visit_func_def(self, o: 'mypy.nodes.FuncDef') -> T:
-        if o.name == '__repr__':  # Don't translate
-            return
-
-        # No function prototypes when forward declaring.
-        if self.forward_decl:
-            self.virtual.OnMethod(self.current_class_name, o.name)
-            return
-
-        func_name = o.name
-
-        virtual = ''
-        if self.decl:
-            self.local_var_list = []  # Make a new instance to collect from
-            self.local_vars[o] = self.local_var_list
-
-            if self.virtual.IsVirtual(self.current_class_name, o.name):
-                virtual = 'virtual '
-
-        if not self.decl and self.current_class_name:
-            # definition looks like
-            # void Class::method(...);
-            func_name = join_name((self.current_class_name[-1], o.name))
-        else:
-            # declaration inside class { }
-            func_name = o.name
-
-        self.def_write('\n')
-
-        c_ret_type, _, c_iter_list_type = GetCReturnType(o.type.ret_type)
-        if c_iter_list_type is not None:
-            # The function is a generator. Add an output param that references an
-            # accumulator for the results.
-            self.yield_accumulators[o] = ('_out_yield_acc', c_iter_list_type)
-
-        # Avoid C++ warnings by prepending [[noreturn]]
-        noreturn = ''
-        if func_name in ('e_die', 'e_die_status', 'e_strict', 'e_usage',
-                         'p_die'):
-            noreturn = '[[noreturn]] '
-
-        self.always_write_ind('%s%s%s %s(', noreturn, virtual, c_ret_type,
-                              func_name)
-
-        self.current_func_node = o
-        self._WriteFuncParams(
-            o.type.arg_types,
-            o.arguments,
-            update_locals=True,
-            # write default values in the declaration only
-            write_defaults=self.decl)
-
-        if self.decl:
-            self.always_write(');\n')
-        else:
-            self.def_write(') ')
-            if not self.forward_decl:
-                arg_names = [arg.variable.name for arg in o.arguments]
-                #log('arg_names %s', arg_names)
-                #log('local_vars %s', self.local_vars[o])
-                self.prepend_to_block = []
-                for (lval_name, lval_type) in self.local_vars[o]:
-                    c_type = lval_type
-                    if not isinstance(lval_type, str):
-                        c_type = GetCType(lval_type)
-
-                    self.prepend_to_block.append((lval_name, c_type, lval_name
-                                                  in arg_names))
-
-        self.accept(o.body)
-        self.current_func_node = None
-
-    def visit_overloaded_func_def(self,
-                                  o: 'mypy.nodes.OverloadedFuncDef') -> T:
-        pass
-
-    def _TracingMetadataDecl(self, o, field_gc, mask_bits):
-        if mask_bits:
-            self.always_write_ind('\n')
-            self.always_write_ind('static constexpr uint32_t field_mask() {\n')
-            self.always_write_ind('  return ')
-            for i, b in enumerate(mask_bits):
-                if i != 0:
-                    self.always_write('\n')
-                    self.always_write_ind('       | ')
-                self.always_write(b)
-            self.always_write(';\n')
-            self.always_write_ind('}\n')
-
-        obj_tag, obj_arg = field_gc
-        if obj_tag == 'HeapTag::FixedSize':
-            obj_mask = obj_arg
-            obj_header = 'ObjHeader::ClassFixed(%s, sizeof(%s))' % (obj_mask,
-                                                                    o.name)
-        elif obj_tag == 'HeapTag::Scanned':
-            num_pointers = obj_arg
-            obj_header = 'ObjHeader::ClassScanned(%s, sizeof(%s))' % (
-                num_pointers, o.name)
-        else:
-            raise AssertionError(o.name)
-
-        self.always_write('\n')
-        self.always_write_ind('static constexpr ObjHeader obj_header() {\n')
-        self.always_write_ind('  return %s;\n' % obj_header)
-        self.always_write_ind('}\n')
-
-    def _MemberDecl(self, o, base_class_name):
-        # List of field mask expressions
-        mask_bits = []
-        if self.virtual.CanReorderFields(split_py_name(o.fullname)):
-            # No inheritance, so we are free to REORDER member vars, putting
-            # pointers at the front.
-
-            pointer_members = []
-            non_pointer_members = []
-
-            for name in self.current_member_vars:
-                _, c_type, is_managed = self.current_member_vars[name]
-                if is_managed:
-                    pointer_members.append(name)
-                else:
-                    non_pointer_members.append(name)
-
-            # So we declare them in the right order
-            sorted_member_names = pointer_members + non_pointer_members
-
-            field_gc = ('HeapTag::Scanned', len(pointer_members))
-        else:
-            # Has inheritance
-
-            # The field mask of a derived class is unioned with its base's
-            # field mask.
-            if base_class_name:
-                mask_bits.append(
-                    '%s::field_mask()' %
-                    join_name(base_class_name, strip_package=True))
-
-            for name in sorted(self.current_member_vars):
-                _, c_type, is_managed = self.current_member_vars[name]
-                if is_managed:
-                    mask_bits.append('maskbit(offsetof(%s, %s))' %
-                                     (o.name, name))
-
-            # A base class with no fields has kZeroMask.
-            if not base_class_name and not mask_bits:
-                mask_bits.append('kZeroMask')
-
-            sorted_member_names = sorted(self.current_member_vars)
-
-            field_gc = ('HeapTag::FixedSize', 'field_mask()')
-
-        # Write member variables
-
-        #log('MEMBERS for %s: %s', o.name, list(self.current_member_vars.keys()))
-        if len(self.current_member_vars):
-            if base_class_name:
-                self.always_write('\n')  # separate from functions
-
-            for name in sorted_member_names:
-                _, c_type, _ = self.current_member_vars[name]
-                # use default zero initialization for all members
-                # (context managers may be on the stack)
-                self.always_write_ind('%s %s{};\n', c_type, name)
-
-        if _IsContextManager(self.current_class_name):
-            # Copy ctx member vars out of this class
-            assert self.ctx_member_vars is not None
-            self.ctx_member_vars[o] = dict(self.current_member_vars)
-        else:
-            self._TracingMetadataDecl(o, field_gc, mask_bits)
-
-        self.always_write('\n')
-        self.always_write_ind('DISALLOW_COPY_AND_ASSIGN(%s)\n', o.name)
-        self.indent -= 1
-        self.always_write_ind('};\n')
-        self.always_write('\n')
-
-    def _ClassDefDecl(self, o, base_class_name):
-        self.current_member_vars.clear()  # make a new list
-
-        self.always_write_ind('class %s', o.name)  # block after this
-
-        # e.g. class TextOutput : public ColorOutput
-        if base_class_name:
-            self.always_write(' : public %s',
-                              join_name(base_class_name, strip_package=True))
-
-        self.always_write(' {\n')
-        self.always_write_ind(' public:\n')
-
-        block = o.defs
-
-        self.indent += 1
-        for stmt in block.body:
-
-            # Ignore things that look like docstrings
-            if (isinstance(stmt, ExpressionStmt) and
-                    isinstance(stmt.expr, StrExpr)):
-                continue
-
-            # Constructor is named after class
-            if isinstance(stmt, FuncDef):
-                method_name = stmt.name
-                if method_name == '__init__':
-                    self.always_write_ind('%s(', o.name)
-                    self._WriteFuncParams(stmt.type.arg_types,
-                                          stmt.arguments,
-                                          write_defaults=True)
-                    self.always_write(');\n')
-
-                    # Visit for member vars
-                    self.current_method_name = method_name
-                    self.accept(stmt.body)
-                    self.current_method_name = None
-                    continue
-
-                if method_name == '__enter__':
-                    continue
-
-                if method_name == '__exit__':
-                    # Turn it into a destructor with NO ARGS
-                    self.always_write_ind('~%s();\n', o.name)
-                    continue
-
-                if method_name == '__repr__':
-                    # skip during declaration, just like visit_func_def does during definition
-                    continue
-
-                # Any other function: Visit for member vars
-                self.current_method_name = method_name
-                self.accept(stmt)
-                self.current_method_name = None
-                continue
-
-            # TODO: Remove this?  Everything under a class is a method?
-            self.accept(stmt)
-
-        self._MemberDecl(o, base_class_name)
-
-    def _ConstructorImpl(self, o, stmt, base_class_name):
-        self.def_write('\n')
-        self.def_write('%s::%s(', o.name, o.name)
-        self._WriteFuncParams(stmt.type.arg_types, stmt.arguments)
-        self.def_write(')')
+            self.write(';\n')
+
+    def oils_visit_constructor(self, o: ClassDef, stmt: FuncDef,
+                               base_class_sym: util.SymbolPath) -> None:
+        self.write('\n')
+        self.write('%s::%s(', o.name, o.name)
+        self._WriteFuncParams(stmt, write_defaults=False)
+        self.write(')')
 
         first_index = 0
 
@@ -2652,19 +2428,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if (isinstance(callee, MemberExpr) and callee.name == '__init__'):
                 base_constructor_args = expr.args
                 #log('ARGS %s', base_constructor_args)
-                self.def_write(' : %s(',
-                               join_name(base_class_name, strip_package=True))
+                self.write(' : %s(',
+                           SymbolToString(base_class_sym, strip_package=True))
                 for i, arg in enumerate(base_constructor_args):
                     if i == 0:
                         continue  # Skip 'this'
                     if i != 1:
-                        self.def_write(', ')
+                        self.write(', ')
                     self.accept(arg)
-                self.def_write(')')
+                self.write(')')
 
                 first_index += 1
 
-        self.def_write(' {\n')
+        self.write(' {\n')
 
         # Now visit the rest of the statements
         self.indent += 1
@@ -2672,27 +2448,28 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if _IsContextManager(self.current_class_name):
             # For ctx_* classes only, do gHeap.PushRoot() for all the pointer
             # members
-            member_vars = self.ctx_member_vars[o]
+            member_vars = self.all_member_vars[o]
             for name in sorted(member_vars):
                 _, c_type, is_managed = member_vars[name]
                 if is_managed:
                     # VALIDATE_ROOTS doesn't complain even if it's not
                     # initialized?  Should be initialized after PushRoot().
-                    #self.def_write_ind('this->%s = nullptr;\n' % name)
-                    self.def_write_ind(
+                    #self.write_ind('this->%s = nullptr;\n' % name)
+                    self.write_ind(
                         'gHeap.PushRoot(reinterpret_cast<RawObject**>(&(this->%s)));\n'
                         % name)
 
         for node in stmt.body.body[first_index:]:
             self.accept(node)
         self.indent -= 1
-        self.def_write('}\n')
+        self.write('}\n')
 
-    def _DestructorImpl(self, o, stmt, base_class_name):
-        self.always_write('\n')
-        self.always_write_ind('%s::~%s()', o.name, o.name)
+    def oils_visit_dunder_exit(self, o: ClassDef, stmt: FuncDef,
+                               base_class_sym: util.SymbolPath) -> None:
+        self.write('\n')
+        self.write_ind('%s::~%s()', o.name, o.name)
 
-        self.def_write(' {\n')
+        self.write(' {\n')
         self.indent += 1
 
         # TODO:
@@ -2705,11 +2482,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         # For ctx_* classes only , gHeap.PopRoot() for all the pointer members
         if _IsContextManager(self.current_class_name):
-            member_vars = self.ctx_member_vars[o]
+            member_vars = self.all_member_vars[o]
             for name in sorted(member_vars):
                 _, c_type, is_managed = member_vars[name]
                 if is_managed:
-                    self.def_write_ind('gHeap.PopRoot();\n')
+                    self.write_ind('gHeap.PopRoot();\n')
         else:
             self.report_error(
                 o, 'Any class with __exit__ should be named ctx_Foo (%s)' %
@@ -2717,78 +2494,18 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             return
 
         self.indent -= 1
-        self.def_write('}\n')
+        self.write('}\n')
 
-    def _ClassDefImpl(self, o, base_class_name):
-        block = o.defs
-        for stmt in block.body:
-            if isinstance(stmt, FuncDef):
-                if stmt.name == '__init__':
-                    self._ConstructorImpl(o, stmt, base_class_name)
-                    continue
-
-                if stmt.name == '__enter__':  # We never use these
-                    continue
-
-                if stmt.name == '__exit__':
-                    self._DestructorImpl(o, stmt, base_class_name)
-                    continue
-
-                self.accept(stmt)
-
-    def visit_class_def(self, o: 'mypy.nodes.ClassDef') -> T:
-        #log('  CLASS %s', o.name)
-
-        base_class_name = None  # single inheritance only
-        for b in o.base_type_exprs:
-            if isinstance(b, NameExpr):
-                # TODO: inherit from std::exception?
-                if b.name != 'object' and b.name != 'Exception':
-                    base_class_name = split_py_name(b.fullname)
-            elif isinstance(b, MemberExpr):  # vm._Executor -> vm::_Executor
-                assert isinstance(b.expr, NameExpr), b
-                base_class_name = split_py_name(b.expr.fullname) + (b.name, )
-
-        # Forward declare types because they may be used in prototypes
-        if self.forward_decl:
-            self.always_write_ind('class %s;\n', o.name)
-            if base_class_name:
-                self.virtual.OnSubclass(base_class_name,
-                                        split_py_name(o.fullname))
-            # Visit class body so we get method declarations
-            self.current_class_name = split_py_name(o.fullname)
-            self._write_body(o.defs.body)
-            self.current_class_name = None
-            return
-
-        if self.decl:
-            self.current_class_name = split_py_name(o.fullname)
-            self._ClassDefDecl(o, base_class_name)
-            self.current_class_name = None
-            return
-
-        self.current_class_name = split_py_name(o.fullname)
-        self._ClassDefImpl(o, base_class_name)
-        self.current_class_name = None  # Stop prefixing functions with class
-
-    def visit_global_decl(self, o: 'mypy.nodes.GlobalDecl') -> T:
-        self.report_error(o, 'global not allowed')
-
-    def visit_nonlocal_decl(self, o: 'mypy.nodes.NonlocalDecl') -> T:
-        pass
-
-    def visit_decorator(self, o: 'mypy.nodes.Decorator') -> T:
-        pass
-
-    def visit_var(self, o: 'mypy.nodes.Var') -> T:
-        pass
+    def oils_visit_method(self, o: ClassDef, stmt: FuncDef,
+                          base_class_sym: util.SymbolPath) -> None:
+        self.accept(stmt)
 
     # Module structure
 
-    def visit_import(self, o: 'mypy.nodes.Import') -> T:
+    def visit_import(self, o: 'mypy.nodes.Import') -> None:
         pass
 
-    def visit_import_from(self, o: 'mypy.nodes.ImportFrom') -> T:
+    def visit_import_from(self, o: 'mypy.nodes.ImportFrom') -> None:
         """
         Write C++ namespace aliases and 'using' for imports.
         We need them in the 'decl' phase for default arguments like
@@ -2797,14 +2514,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if o.id in ('__future__', 'typing'):
             return  # do nothing
 
-        #self.log('    %s ImportFrom id: %s', self.decl, o.id)
-
         for name, alias in o.names:
             #self.log('ImportFrom id: %s name: %s alias: %s', o.id, name, alias)
 
             if name == 'log':  # varargs translation
-                continue
-            if name == 'stderr_line':  # TODO: remove this
                 continue
 
             if o.id == 'mycpp.mylib':
@@ -2816,7 +2529,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 if name == 'STDIN_FILENO':
                     continue
 
-            # A heuristic that works for the Oil import style.
+            # A heuristic that works for the Oils import style.
             if '.' in o.id:
                 # from mycpp.mylib import log => using mylib::log
                 translate_import = True
@@ -2840,30 +2553,21 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 # Problem:
                 # - The decl stage has to return yaks_asdl::mod_def, so imports should go there
                 # - But if you change this to decl_write() instead of
-                #   def_write(), you end up 'using error::e_usage' in say
+                #   write(), you end up 'using error::e_usage' in say
                 #   'assign_osh', and it hasn't been defined yet.
 
                 if alias:
                     # using runtime_asdl::emit_e = EMIT;
-                    self.def_write_ind('using %s = %s::%s;\n', alias,
-                                       last_dotted, name)
+                    self.write_ind('using %s = %s::%s;\n', alias, last_dotted,
+                                   name)
                 else:
                     #    from _devbuild.gen.id_kind_asdl import Id
                     # -> using id_kind_asdl::Id.
-
                     using_str = 'using %s::%s;\n' % (last_dotted, name)
-                    self.def_write_ind(using_str)
+                    self.write_ind(using_str)
 
                     # Fully qualified:
-                    # self.def_write_ind('using %s::%s;\n', '::'.join(dotted_parts), name)
-
-                    # Hack for default args.  Without this limitation, we write
-                    # 'using' of names that aren't declared yet.
-                    # suffix_op is needed for string_ops.py, for some reason
-                    if (name in ('Id', 'scope_e', 'lex_mode_e', 'suffix_op',
-                                 'sh_lvalue', 'part_value', 'loc', 'word',
-                                 'word_part', 'cmd_value', 'hnode')):
-                        self.decl_write(using_str)
+                    # self.write_ind('using %s::%s;\n', '::'.join(dotted_parts), name)
 
             else:
                 # If we're importing a module without an alias, we don't need to do
@@ -2873,101 +2577,92 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
                 #    from asdl import format as fmt
                 # -> namespace fmt = format;
-                self.def_write_ind('namespace %s = %s;\n', alias, name)
-
-    def visit_import_all(self, o: 'mypy.nodes.ImportAll') -> T:
-        pass
+                self.write_ind('namespace %s = %s;\n', alias, name)
 
     # Statements
 
-    def visit_block(self, block: 'mypy.nodes.Block') -> T:
-        self.def_write('{\n')  # not indented to use same line as while/if
+    def _WriteLocals(self, local_var_list: List[LocalVar]) -> None:
+        # TODO: put the pointers first, and then register a single
+        # StackRoots record.
+        done = set()
+        for lval_name, lval_type, is_param in local_var_list:
+            c_type = GetCType(lval_type)
+            if not is_param and lval_name not in done:
+                if util.SMALL_STR and c_type == 'Str':
+                    self.write_ind('%s %s(nullptr);\n', c_type, lval_name)
+                else:
+                    rhs = ' = nullptr' if CTypeIsManaged(c_type) else ''
+                    self.write_ind('%s %s%s;\n', c_type, lval_name, rhs)
+
+                    # TODO: we're not skipping the assignment, because of
+                    # the RHS
+                    if util.IsUnusedVar(lval_name):
+                        # suppress C++ unused var compiler warnings!
+                        self.write_ind('(void)%s;\n' % lval_name)
+
+                done.add(lval_name)
+
+        # Figure out if we have any roots to write with StackRoots
+        roots = []  # keep it sorted
+        full_func_name = None
+        if self.current_func_node:
+            full_func_name = SplitPyName(self.current_func_node.fullname)
+
+        for lval_name, lval_type, is_param in local_var_list:
+            c_type = GetCType(lval_type)
+            #self.log('%s %s %s', lval_name, c_type, is_param)
+            if lval_name not in roots and CTypeIsManaged(c_type):
+                if (not self.stack_roots or self.stack_roots.needs_root(
+                        full_func_name, SplitPyName(lval_name))):
+                    roots.append(lval_name)
+
+        #self.log('roots %s', roots)
+
+        if len(roots):
+            if (self.stack_roots_warn and len(roots) > self.stack_roots_warn):
+                log('WARNING: %s() has %d stack roots. Consider refactoring this function.'
+                    % (self.current_func_node.fullname, len(roots)))
+
+            for i, r in enumerate(roots):
+                self.write_ind('StackRoot _root%d(&%s);\n' % (i, r))
+
+            self.write('\n')
+
+    def visit_block(self, block: 'mypy.nodes.Block') -> None:
+        self.write('{\n')  # not indented to use same line as while/if
 
         self.indent += 1
-
-        if self.prepend_to_block:
-            # TODO: put the pointers first, and then register a single
-            # StackRoots record.
-            done = set()
-            for lval_name, c_type, is_param in self.prepend_to_block:
-                if not is_param and lval_name not in done:
-                    if util.SMALL_STR and c_type == 'Str':
-                        self.def_write_ind('%s %s(nullptr);\n', c_type,
-                                           lval_name)
-                    else:
-                        rhs = ' = nullptr' if CTypeIsManaged(c_type) else ''
-                        self.def_write_ind('%s %s%s;\n', c_type, lval_name,
-                                           rhs)
-
-                        # TODO: we're not skipping the assignment, because of
-                        # the RHS
-                        if _IsUnusedVar(lval_name):
-                            # suppress C++ unused var compiler warnings!
-                            self.def_write_ind('(void)%s;\n' % lval_name)
-
-                    done.add(lval_name)
-
-            # Figure out if we have any roots to write with StackRoots
-            roots = []  # keep it sorted
-            full_func_name = None
-            if self.current_func_node:
-                full_func_name = split_py_name(self.current_func_node.fullname)
-
-            for lval_name, c_type, is_param in self.prepend_to_block:
-                #self.log('%s %s %s', lval_name, c_type, is_param)
-                if lval_name not in roots and CTypeIsManaged(c_type):
-                    if (not self.stack_roots or self.stack_roots.needs_root(
-                            full_func_name, split_py_name(lval_name))):
-                        roots.append(lval_name)
-
-            #self.log('roots %s', roots)
-
-            if len(roots):
-                if (self.stack_roots_warn and
-                        len(roots) > self.stack_roots_warn):
-                    log('WARNING: %s() has %d stack roots. Consider refactoring this function.'
-                        % (self.current_func_node.fullname, len(roots)))
-
-                for i, r in enumerate(roots):
-                    self.def_write_ind('StackRoot _root%d(&%s);\n' % (i, r))
-
-                self.def_write('\n')
-
-            self.prepend_to_block = None
-
-        self._write_body(block.body)
-
+        self._WriteBody(block.body)
         self.indent -= 1
-        self.def_write_ind('}\n')
 
-    def visit_expression_stmt(self, o: 'mypy.nodes.ExpressionStmt') -> T:
-        # TODO: Avoid writing docstrings.
-        # If it's just a string, then we don't need it.
+        self.write_ind('}\n')
 
-        self.def_write_ind('')
+    def oils_visit_expression_stmt(self,
+                                   o: 'mypy.nodes.ExpressionStmt') -> None:
+        self.write_ind('')
         self.accept(o.expr)
-        self.def_write(';\n')
+        self.write(';\n')
 
     def visit_operator_assignment_stmt(
-            self, o: 'mypy.nodes.OperatorAssignmentStmt') -> T:
-        self.def_write_ind('')
+            self, o: 'mypy.nodes.OperatorAssignmentStmt') -> None:
+        self.write_ind('')
         self.accept(o.lvalue)
-        self.def_write(' %s= ', o.op)  # + to +=
+        self.write(' %s= ', o.op)  # + to +=
         self.accept(o.rvalue)
-        self.def_write(';\n')
+        self.write(';\n')
 
-    def visit_while_stmt(self, o: 'mypy.nodes.WhileStmt') -> T:
-        self.def_write_ind('while (')
+    def visit_while_stmt(self, o: 'mypy.nodes.WhileStmt') -> None:
+        self.write_ind('while (')
         self.accept(o.expr)
-        self.def_write(') ')
+        self.write(') ')
         self.accept(o.body)
 
-    def visit_return_stmt(self, o: 'mypy.nodes.ReturnStmt') -> T:
+    def visit_return_stmt(self, o: 'mypy.nodes.ReturnStmt') -> None:
         # Examples:
         # return
         # return None
         # return my_int + 3;
-        self.def_write_ind('return ')
+        self.write_ind('return ')
         if o.expr:
             if not (isinstance(o.expr, NameExpr) and o.expr.name == 'None'):
 
@@ -2982,29 +2677,26 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 #   but NOT
                 # return tuple_func()
                 if returning_tuple and isinstance(o.expr, TupleExpr):
-                    self.def_write('%s(' % c_ret_type)
+                    self.write('%s(' % c_ret_type)
                     for i, item in enumerate(o.expr.items):
                         if i != 0:
-                            self.def_write(', ')
+                            self.write(', ')
                         self.accept(item)
-                    self.def_write(');\n')
+                    self.write(');\n')
                     return
 
             # Not returning tuple
             self.accept(o.expr)
 
-        self.def_write(';\n')
+        self.write(';\n')
 
-    def visit_assert_stmt(self, o: 'mypy.nodes.AssertStmt') -> T:
-        pass
-
-    def visit_if_stmt(self, o: 'mypy.nodes.IfStmt') -> T:
+    def visit_if_stmt(self, o: 'mypy.nodes.IfStmt') -> None:
         # Not sure why this wouldn't be true
         assert len(o.expr) == 1, o.expr
 
-        cond = o.expr[0]
+        condition = o.expr[0]
 
-        if not _CheckCondition(cond, self.types):
+        if not _CheckCondition(condition, self.types):
             self.report_error(
                 o,
                 "Use explicit len(obj) or 'obj is not None' for mystr, mylist, mydict"
@@ -3012,65 +2704,71 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             return
 
         if util.ShouldVisitIfExpr(o):
-            self.def_write_ind('if (')
+            self.write_ind('if (')
             for e in o.expr:
                 self.accept(e)
-            self.def_write(') ')
+            self.write(') ')
 
         if util.ShouldVisitIfBody(o):
             cond = util.GetSpecialIfCondition(o)
             if cond == 'CPP':
-                self.def_write_ind('// if MYCPP\n')
-                self.def_write_ind('')
+                self.write_ind('// if MYCPP\n')
+                self.write_ind('')
 
             for body in o.body:
                 self.accept(body)
 
             if cond == 'CPP':
-                self.def_write_ind('// endif MYCPP\n')
+                self.write_ind('// endif MYCPP\n')
 
         if util.ShouldVisitElseBody(o):
             cond = util.GetSpecialIfCondition(o)
             if cond == 'PYTHON':
-                self.def_write_ind('// if not PYTHON\n')
-                self.def_write_ind('')
+                self.write_ind('// if not PYTHON\n')
+                self.write_ind('')
 
             if util.ShouldVisitIfBody(o):
-                self.def_write_ind('else ')
+                self.write_ind('else ')
 
             self.accept(o.else_body)
 
             if cond == 'PYTHON':
-                self.def_write_ind('// endif MYCPP\n')
+                self.write_ind('// endif MYCPP\n')
 
-    def visit_break_stmt(self, o: 'mypy.nodes.BreakStmt') -> T:
-        self.def_write_ind('break;\n')
+    def visit_break_stmt(self, o: 'mypy.nodes.BreakStmt') -> None:
+        self.write_ind('break;\n')
 
-    def visit_continue_stmt(self, o: 'mypy.nodes.ContinueStmt') -> T:
-        self.def_write_ind('continue;\n')
+    def visit_continue_stmt(self, o: 'mypy.nodes.ContinueStmt') -> None:
+        self.write_ind('continue;\n')
 
-    def visit_pass_stmt(self, o: 'mypy.nodes.PassStmt') -> T:
-        self.def_write_ind(';  // pass\n')
+    def visit_pass_stmt(self, o: 'mypy.nodes.PassStmt') -> None:
+        self.write_ind(';  // pass\n')
 
-    def visit_raise_stmt(self, o: 'mypy.nodes.RaiseStmt') -> T:
-        # C++ compiler is aware of assert(0) for unreachable code
-        if o.expr and isinstance(o.expr, CallExpr):
-            if o.expr.callee.name == 'AssertionError':
-                self.def_write_ind('assert(0);  // AssertionError\n')
-                return
-            if o.expr.callee.name == 'NotImplementedError':
-                self.def_write_ind(
-                    'FAIL(kNotImplemented);  // Python NotImplementedError\n')
-                return
+    def visit_raise_stmt(self, o: 'mypy.nodes.RaiseStmt') -> None:
+        to_raise = o.expr
 
-        self.def_write_ind('throw ')
-        # it could be raise -> throw ; .  OSH uses that.
-        if o.expr:
-            self.accept(o.expr)
-        self.def_write(';\n')
+        if to_raise:
+            if isinstance(to_raise, CallExpr) and isinstance(
+                    to_raise.callee, NameExpr):
+                callee_name = to_raise.callee.name
+                if callee_name == 'AssertionError':
+                    # C++ compiler is aware of assert(0) for unreachable code
+                    self.write_ind('assert(0);  // AssertionError\n')
+                    return
+                if callee_name == 'NotImplementedError':
+                    self.write_ind(
+                        'FAIL(kNotImplemented);  // Python NotImplementedError\n'
+                    )
+                    return
+            self.write_ind('throw ')
+            self.accept(to_raise)
+            self.write(';\n')
+        else:
+            # raise without arg
+            self.write_ind('throw;\n')
 
-    def visit_try_stmt(self, o: 'mypy.nodes.TryStmt') -> T:
-        self.def_write_ind('try ')
+    def visit_try_stmt(self, o: 'mypy.nodes.TryStmt') -> None:
+        self.write_ind('try ')
         self.accept(o.body)
         caught = False
 
@@ -3086,7 +2784,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 c_type = '%s*' % t.name
 
             elif isinstance(t, MemberExpr):
-                # Heuristic
+                # We never use 'except foo.bar.T', only `foo.T'
+                assert isinstance(t.expr, NameExpr), t.expr
                 c_type = '%s::%s*' % (t.expr.name, t.name)
 
             elif isinstance(t, TupleExpr):
@@ -3103,31 +2802,22 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 raise AssertionError()
 
             if c_type is None:
-                c_type = 'INVALID_TRY_EXCEPT'  # Causes compile error
+                self.report_error(o, "try couldn't determine c_type")
+                return
 
             if v:
-                self.def_write_ind('catch (%s %s) ', c_type, v.name)
+                self.write_ind('catch (%s %s) ', c_type, v.name)
             else:
-                self.def_write_ind('catch (%s) ', c_type)
+                self.write_ind('catch (%s) ', c_type)
             self.accept(handler)
 
             caught = True
 
-        # DUMMY to prevent compile errors
-        # TODO: Remove this
         if not caught:
-            self.def_write_ind('catch (std::exception const&) { }\n')
+            self.report_error(o, 'try should have an except')
 
         if o.else_body:
             self.report_error(o, 'try/else not supported')
 
         if o.finally_body:
             self.report_error(o, 'try/finally not supported')
-
-    def visit_print_stmt(self, o: 'mypy.nodes.PrintStmt') -> T:
-        self.report_error(
-            o,
-            'File should start with "from __future__ import print_function"')
-
-    def visit_exec_stmt(self, o: 'mypy.nodes.ExecStmt') -> T:
-        self.report_error(o, 'exec not allowed')

@@ -225,7 +225,7 @@ main() {
     # out_name=$out_name.stripped
   fi
 
-  cd $out_dir
+  cd "$out_dir"  # dir may have spaces
   for symlink in osh ysh; do
     # like ln -v, which we can't use portably
     echo "    $symlink -> $out_name"
@@ -328,13 +328,17 @@ def InitSteps(n):
         description='make-pystub $out $in')
     n.newline()
 
+    # Trivial build rule, for bin/mycpp_main -> _bin/shwrap/mycpp_souffle
+    # while adding implicit deps
+    n.rule('cp', command='cp $in $out', description='cp $in $out')
+    n.newline()
+
     n.rule(
         'gen-oils-for-unix',
         command=
-        'build/ninja-rules-py.sh gen-oils-for-unix $main_name $translator $out_prefix $preamble $extra_mycpp_opts $in',
+        'build/ninja-rules-py.sh gen-oils-for-unix $main_name $shwrap_path $out_prefix $preamble $in',
         description=
-        'gen-oils-for-unix $main_name $translator $out_prefix $preamble $extra_mycpp_opts $in'
-    )
+        'gen-oils-for-unix $main_name $shwarp_path $out_prefix $preamble $in')
     n.newline()
 
 

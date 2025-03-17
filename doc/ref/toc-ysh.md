@@ -46,34 +46,33 @@ error handling, and more.
                    Range
   [String]         Str       X find()         X findLast()
                              X contains()       replace()
-                               trim()           trimStart()      trimEnd()
+                               trim()           trimStart()       trimEnd()
                                startsWith()     endsWith()
                                upper()          lower()
                                search()         leftMatch()
-                               split()
+                               split()          lines()
   [Patterns]       Eggex
-                   Match       group()          start()          end()
+                   Match       group()          start()           end()
                              X groups()       X groupDict()
-  [Containers]     List        List/append()    pop()            extend()
-                               indexOf()        lastIndexOf()  X includes()
-                             X insert()       X remove()
+  [Containers]     List        List/append()    pop()             extend()
+                               indexOf()        lastIndexOf()   X includes()
+                               insert()         remove()
                                reverse()        List/clear()
-                   Dict        erase()        X Dict/clear()   X accum()
+                   Dict        erase()        X Dict/clear()    X accum()
                              X update()
                    Place       setValue()
   [Code Types]     Func        BuiltinFunc      BoundFunc
                    Proc        BuiltinProc
   [Objects]        Obj         __invoke__       new
-                             X __call__       __index__        X __str__
-  [Reflection]     Command     CommandFrag
+                             X __call__         __index__       X __str__
+  [Reflection]     Command     sourceCode()
                    Expr
                    Frame
-                   io          stdin            evalExpr()
-                               eval()           evalToDict()
-                               captureStdout()
-                               promptVal()
-                             X time()         X strftime()     X glob()
-                   vm          getFrame()       id() 
+                   DebugFrame  toString()
+                   io          stdin            io/eval()         io/evalExpr()
+                               captureStdout()  promptVal()
+                             X time()         X strftime()      X glob()
+                   vm          getFrame()       getDebugStack()   id() 
 ```
 
 <h2 id="builtin-func">
@@ -82,23 +81,24 @@ error handling, and more.
 
 ```chapter-links-builtin-func
   [Values]        len()             func/type()
-  [Conversions]   bool()            int()           float()
-                  str()             list()          dict()
+  [Conversions]   bool()            int()            float()
+                  str()             list()           dict()
                 X runes()         X encodeRunes()
                 X bytes()         X encodeBytes()
   [Str]         X strcmp()          shSplit()
   [List]          join()       
-  [Dict]          keys()            values()        get()       
-  [Float]         floatsEqual()   X isinf()       X isnan()
-  [Obj]           first()           rest()          get()
+  [Dict]          keys()            values()         get()       
+  [Float]         floatsEqual()   X isinf()        X isnan()
+  [Obj]           first()           rest()           get()
   [Word]          glob()            maybe()
   [Serialize]     toJson()          fromJson()
                   toJson8()         fromJson8()
                 X toJ8Line()      X fromJ8Line()
-X [Quoting]       quoteJ8()         quoteSh()       quoteHtml()
-  [Pattern]       _group()          _start()        _end()
-  [Introspect]    shvarGet()        getVar()        setVar()  
-                  parseCommand()  X parseExpr()   X bindFrame()
+X [Quoting]       quoteJ8()         quoteSh()        quoteHtml()
+  [Pattern]       _group()          _start()         _end()
+  [Reflection]    func/eval()       func/evalExpr()
+  [Introspect]    shvarGet()        getVar()         setVar()  
+                  parseCommand()  X parseExpr()    X bindFrame()
   [Hay Config]    parseHay()        evalHay()
 X [Hashing]       sha1dc()          sha256()
 ```
@@ -160,12 +160,14 @@ X [Wok]           _field()
 </h2>
 
 ```chapter-links-stdlib
-  [math]          abs()         max()          min()   X round()
+  [math]          abs()         max()          min()    X round()
                   sum()     
   [list]          all()         any()          repeat()
   [yblocks]       yb-capture    yb-capture-2
-  [args]          parser        flag           arg       rest
+  [args]          parser        flag           arg        rest
                   parseArgs()
+  [binascii]    X toBase16()  X fromBase16()
+                X toBase64()  X fromBase64()
 ```
 
 <!-- linkify_stop_col is 42 -->
@@ -216,10 +218,12 @@ X [External Lang] BEGIN   END   when (awk)
 </h2>
 
 ```chapter-links-front-end
-  [Usage]         oils-usage                   ysh-usage
-  [Lexing]        ascii-whitespace [ \t\r\n]
-                  doc-comment ###              multiline-command ...
-  [Tools]         cat-em
+  [Usage]         oils-usage   ysh-usage             shell-flags
+                  config       startup               line-editing          
+                  exit-codes
+  [Lexing]        comment #    line-continuation \   ascii-whitespace [ \t\r\n]
+  [Lexing]        doc-comment ###                    multiline-command ...
+  [Tools]         cat-em                             syntax-tree
 ```
 
 <h2 id="cmd-lang">
@@ -366,6 +370,7 @@ X [External Lang] BEGIN   END   when (awk)
   [YSH Tracing]   SHX_indent          SHX_punct             SHX_pid_str
   [YSH read]      _reply
   [History]       YSH_HISTFILE
+  [Interactive]   OILS_COMP_UI
   [Oils VM]       OILS_VERSION
                   OILS_GC_THRESHOLD   OILS_GC_ON_EXIT
                   OILS_GC_STATS       OILS_GC_STATS_FD
@@ -388,7 +393,7 @@ ENV.{PS1,PS4,YSH_HISTFILE}
   - should be populate ENV.HOME?
 
 Notes:
-  [Module] __E__ - for evalToDict()?
+  [Module] __E__ - for closures
 X [Builtin Sub]   _buffer
 
 Ideas:

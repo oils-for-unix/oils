@@ -1,3 +1,4 @@
+## compare_shells: bash zsh mksh ash
 
 #### recursive arith: one level
 a='b=123'
@@ -172,7 +173,7 @@ array 0
 
 #### Sparse array with big index
 
-# TODO: more BashArray idioms / stress tests ?
+# TODO: more InternalStringArray idioms / stress tests ?
 
 a=()
 
@@ -270,145 +271,260 @@ echo "${a[@]}"
 ## END
 
 
-#### SparseArray Performance demo
+#### shopt -u expand_aliases and eval
+case $SH in zsh|mksh|ash) exit ;; esac
 
-case $SH in bash|zsh|mksh|ash) exit ;; esac
+alias echo=false
 
-#pp test_ (a)
+function f {
+  shopt -u expand_aliases
+  eval -- "$1"
+  shopt -s expand_aliases
+}
 
-a=( foo {25..27} bar )
-
-a[10]='sparse'
-
-var sp = _a2sp(a)
-echo $[type(sp)]
-
-echo len: $[_opsp(sp, 'len')]
-
-#echo $[len(sp)]
-
-shopt -s ysh:upgrade
-
-echo subst: @[_opsp(sp, 'subst')]
-echo keys: @[_opsp(sp, 'keys')]
-
-echo slice: @[_opsp(sp, 'slice', 2, 5)]
-
-call _opsp(sp, 'set', 0, 'set0')
-
-echo get0: $[_opsp(sp, 'get', 0)]
-echo get1: $[_opsp(sp, 'get', 1)]
-echo ---
-
-to_append=(x y)
-echo append
-call _opsp(sp, 'append', to_append)
-echo subst: @[_opsp(sp, 'subst')]
-echo keys: @[_opsp(sp, 'keys')]
-echo ---
-
-echo unset
-call _opsp(sp, 'unset', 11)
-echo subst: @[_opsp(sp, 'subst')]
-echo keys: @[_opsp(sp, 'keys')]
+f 'echo hello'
 
 ## STDOUT:
-SparseArray
-len: 6
-subst: foo 25 26 27 bar sparse
-keys: 0 1 2 3 4 10
-slice: 26 27 bar
-get0: set0
-get1: 25
----
-append
-subst: set0 25 26 27 bar sparse x y
-keys: 0 1 2 3 4 10 11 12
----
-unset
-subst: set0 25 26 27 bar sparse y
-keys: 0 1 2 3 4 10 12
+hello
 ## END
-
-## N-I bash/zsh/mksh/ash STDOUT:
+## N-I zsh/mksh/ash STDOUT:
 ## END
 
 
-#### SparseArray: test length
-case $SH in bash|zsh|mksh|ash) exit ;; esac
+#### Tilde expansions in RHS of designated array initialization
+case $SH in zsh|mksh|ash) exit ;; esac
 
-declare -a a=(x y z)
-
-a[5]=z
-var sp = _a2sp(a)
-
-echo len=${#sp[@]}
-
-a[10]=z
-var sp = _a2sp(a)
-
-echo len=${#sp[@]}
-
+HOME=/home/user
+declare -A a
+declare -A a=(['home']=~ ['hello']=~:~:~)
+echo "${a['home']}"
+echo "${a['hello']}"
 
 ## STDOUT:
-len=4
-len=5
+/home/user
+/home/user:/home/user:/home/user
 ## END
 
-## N-I bash/zsh/mksh/ash STDOUT:
+# Note: bash-5.2 has a bug that the tilde doesn't expand on the right hand side
+# of [key]=value.  This problem doesn't happen in bash-3.1..5.1 and bash-5.3.
+## BUG bash STDOUT:
+~
+~:~:~
 ## END
 
+## N-I zsh/mksh/ash stdout-json: ""
 
-#### SparseArray: test "declare -p sp"
-case $SH in zsh|ash) exit ;; esac
 
-a0=()
-a1=(1)
-a2=(1 2)
-a=(x y z w)
-a[500]=100
-a[1000]=100
-
-case $SH in
-bash|mksh)
-  typeset -p a0 a1 a2 a
-  exit ;;
-esac
-
-var a0 = _a2sp(a0)
-var a1 = _a2sp(a1)
-var a2 = _a2sp(a2)
-var sp = _a2sp(a)
-declare -p a0 a1 a2 sp
-
+#### InitializerList (BashArray): index increments with
+case $SH in zsh|mksh|ash) exit 99;; esac
+a=([100]=1 2 3 4)
+printf 'keys: '; argv.py "${!a[@]}"
+printf 'vals: '; argv.py "${a[@]}"
+a=([100]=1 2 3 4 [5]=a b c d)
+printf 'keys: '; argv.py "${!a[@]}"
+printf 'vals: '; argv.py "${a[@]}"
 ## STDOUT:
-declare -a a0=()
-declare -a a1=([0]=1)
-declare -a a2=([0]=1 [1]=2)
-declare -a sp=([0]=x [1]=y [2]=z [3]=w [500]=100 [1000]=100)
+keys: ['100', '101', '102', '103']
+vals: ['1', '2', '3', '4']
+keys: ['5', '6', '7', '8', '100', '101', '102', '103']
+vals: ['a', 'b', 'c', 'd', '1', '2', '3', '4']
 ## END
+## N-I zsh/mksh/ash status: 99
+## N-I zsh/mksh/ash stdout-json: ""
 
-## OK bash STDOUT:
-declare -a a0=()
-declare -a a1=([0]="1")
-declare -a a2=([0]="1" [1]="2")
-declare -a a=([0]="x" [1]="y" [2]="z" [3]="w" [500]="100" [1000]="100")
-## END
+#### InitializerList (BashArray): [k]=$v and [k]="$@"
+case $SH in zsh|mksh|ash) exit 99;; esac
+i=5
+v='1 2 3'
+a=($v [i]=$v)
+printf 'keys: '; argv.py "${!a[@]}"
+printf 'vals: '; argv.py "${a[@]}"
 
-## OK mksh STDOUT:
-set -A a1
-typeset a1[0]=1
-set -A a2
-typeset a2[0]=1
-typeset a2[1]=2
-set -A a
-typeset a[0]=x
-typeset a[1]=y
-typeset a[2]=z
-typeset a[3]=w
-typeset a[500]=100
-typeset a[1000]=100
+x=(3 5 7)
+a=($v [i]="${x[*]}")
+printf 'keys: '; argv.py "${!a[@]}"
+printf 'vals: '; argv.py "${a[@]}"
+a=($v [i]="${x[@]}")
+printf 'keys: '; argv.py "${!a[@]}"
+printf 'vals: '; argv.py "${a[@]}"
+a=($v [i]=${x[*]})
+printf 'keys: '; argv.py "${!a[@]}"
+printf 'vals: '; argv.py "${a[@]}"
+a=($v [i]=${x[@]})
+printf 'keys: '; argv.py "${!a[@]}"
+printf 'vals: '; argv.py "${a[@]}"
+## STDOUT:
+keys: ['0', '1', '2', '5']
+vals: ['1', '2', '3', '1 2 3']
+keys: ['0', '1', '2', '5']
+vals: ['1', '2', '3', '3 5 7']
+keys: ['0', '1', '2', '5']
+vals: ['1', '2', '3', '3 5 7']
+keys: ['0', '1', '2', '5']
+vals: ['1', '2', '3', '3 5 7']
+keys: ['0', '1', '2', '5']
+vals: ['1', '2', '3', '3 5 7']
 ## END
+## N-I zsh/mksh/ash status: 99
+## N-I zsh/mksh/ash stdout-json: ""
 
-## N-I zsh/ash STDOUT:
+
+#### InitializerList (BashAssoc): [k]=$v and [k]="$@"
+case $SH in zsh|mksh|ash) exit 99;; esac
+i=5
+v='1 2 3'
+declare -A a
+a=([i]=$v)
+printf 'keys: '; argv.py "${!a[@]}"
+printf 'vals: '; argv.py "${a[@]}"
+
+x=(3 5 7)
+a=([i]="${x[*]}")
+printf 'keys: '; argv.py "${!a[@]}"
+printf 'vals: '; argv.py "${a[@]}"
+a=([i]="${x[@]}")
+printf 'keys: '; argv.py "${!a[@]}"
+printf 'vals: '; argv.py "${a[@]}"
+a=([i]=${x[*]})
+printf 'keys: '; argv.py "${!a[@]}"
+printf 'vals: '; argv.py "${a[@]}"
+a=([i]=${x[@]})
+printf 'keys: '; argv.py "${!a[@]}"
+printf 'vals: '; argv.py "${a[@]}"
+## STDOUT:
+keys: ['i']
+vals: ['1 2 3']
+keys: ['i']
+vals: ['3 5 7']
+keys: ['i']
+vals: ['3 5 7']
+keys: ['i']
+vals: ['3 5 7']
+keys: ['i']
+vals: ['3 5 7']
 ## END
+## N-I zsh/mksh/ash status: 99
+## N-I zsh/mksh/ash stdout-json: ""
+
+#### InitializerList (BashArray): append to element
+case $SH in zsh|mksh|ash) exit 99;; esac
+hello=100
+a=([hello]=1 [hello]+=2)
+printf 'keys: '; argv.py "${!a[@]}"
+printf 'vals: '; argv.py "${a[@]}"
+a+=([hello]+=:34 [hello]+=:56)
+printf 'keys: '; argv.py "${!a[@]}"
+printf 'vals: '; argv.py "${a[@]}"
+## STDOUT:
+keys: ['100']
+vals: ['12']
+keys: ['100']
+vals: ['12:34:56']
+## END
+## N-I zsh/mksh/ash status: 99
+## N-I zsh/mksh/ash stdout-json: ""
+
+#### InitializerList (BashAssoc): append to element
+case $SH in zsh|mksh|ash) exit 99;; esac
+declare -A a
+hello=100
+a=([hello]=1 [hello]+=2)
+printf 'keys: '; argv.py "${!a[@]}"
+printf 'vals: '; argv.py "${a[@]}"
+a+=([hello]+=:34 [hello]+=:56)
+printf 'keys: '; argv.py "${!a[@]}"
+printf 'vals: '; argv.py "${a[@]}"
+## STDOUT:
+keys: ['hello']
+vals: ['12']
+keys: ['hello']
+vals: ['12:34:56']
+## END
+# Bash >= 5.1 has a bug. Bash <= 5.0 is OK.
+## BUG bash STDOUT:
+keys: ['hello']
+vals: ['2']
+keys: ['hello']
+vals: ['2:34:56']
+## END
+## N-I zsh/mksh/ash status: 99
+## N-I zsh/mksh/ash stdout-json: ""
+
+#### InitializerList (BashAssoc): non-index forms of element
+case $SH in zsh|mksh|ash) exit 99;; esac
+declare -A a
+a=([j]=1 2 3 4)
+echo "status=$?"
+printf 'keys: '; argv.py "${!a[@]}"
+printf 'vals: '; argv.py "${a[@]}"
+## status: 1
+## STDOUT:
+## END
+# Bash outputs warning messages and succeeds (exit status 0)
+## BUG bash status: 0
+## BUG bash STDOUT:
+status=0
+keys: ['j']
+vals: ['1']
+## END
+## BUG bash STDERR:
+bash: line 3: a: 2: must use subscript when assigning associative array
+bash: line 3: a: 3: must use subscript when assigning associative array
+bash: line 3: a: 4: must use subscript when assigning associative array
+## END
+## N-I zsh/mksh/ash status: 99
+## N-I zsh/mksh/ash stdout-json: ""
+
+
+#### InitializerList (BashArray): evaluation order (1)
+# RHS of [k]=v are expanded when the initializer list is instanciated.  For the
+# indexed array, the array indices are evaluated when the array is modified.
+case $SH in zsh|mksh|ash) exit 99;; esac
+i=1
+a=([100+i++]=$((i++)) [200+i++]=$((i++)) [300+i++]=$((i++)))
+printf 'keys: '; argv.py "${!a[@]}"
+printf 'vals: '; argv.py "${a[@]}"
+## STDOUT:
+keys: ['104', '205', '306']
+vals: ['1', '2', '3']
+## END
+## N-I zsh/mksh/ash status: 99
+## N-I zsh/mksh/ash stdout-json: ""
+
+
+#### InitializerList (BashArray): evaluation order (2)
+# When evaluating the index, the modification to the array by the previous item
+# of the initializer list is visible to the current item.
+case $SH in zsh|mksh|ash) exit 99;; esac
+a=([0]=1+2+3 [a[0]]=10 [a[6]]=hello)
+printf 'keys: '; argv.py "${!a[@]}"
+printf 'vals: '; argv.py "${a[@]}"
+## STDOUT:
+keys: ['0', '6', '10']
+vals: ['1+2+3', '10', 'hello']
+## END
+## N-I zsh/mksh/ash status: 99
+## N-I zsh/mksh/ash stdout-json: ""
+
+
+#### InitializerList (BashArray): evaluation order (3)
+# RHS should be expanded before any modification to the array.
+case $SH in zsh|mksh|ash) exit 99;; esac
+a=(old1 old2 old3)
+a=("${a[2]}" "${a[0]}" "${a[1]}" "${a[2]}" "${a[0]}")
+printf 'keys: '; argv.py "${!a[@]}"
+printf 'vals: '; argv.py "${a[@]}"
+a=(old1 old2 old3)
+old1=101 old2=102 old3=103
+new1=201 new2=202 new3=203
+a+=([0]=new1 [1]=new2 [2]=new3 [5]="${a[2]}" [a[0]]="${a[0]}" [a[1]]="${a[1]}")
+printf 'keys: '; argv.py "${!a[@]}"
+printf 'vals: '; argv.py "${a[@]}"
+## STDOUT:
+keys: ['0', '1', '2', '3', '4']
+vals: ['old3', 'old1', 'old2', 'old3', 'old1']
+keys: ['0', '1', '2', '5', '201', '202']
+vals: ['new1', 'new2', 'new3', 'old3', 'old1', 'old2']
+## END
+## N-I zsh/mksh/ash status: 99
+## N-I zsh/mksh/ash stdout-json: ""

@@ -108,9 +108,25 @@ loops() {
   console.assert(functions[1]() === 1, "Test 4.2 failed");
   console.assert(functions[2]() === 2, "Test 4.3 failed");
 
-  console.log(functions[2]())
+  console.log(functions[1]())
   '
 
+  # similar to proc p example
+  echo
+  echo 'JS define function'
+  echo
+
+  nodejs -e '
+  for (let i = 0; i < 5; i++) {
+    // this works, is it like let?
+    function inner() { return i; }
+    // let inner = function() { return i; }
+  }
+  console.log("INNER");
+  console.log(inner());
+  '
+
+  echo
   echo 'LOOPS PYTHON'
   echo
 
@@ -137,7 +153,7 @@ for i in range(3):
   actual = functions[i]()
   assert i == actual, "%d != %d" % (i, actual)
 
-print(functions[2]())
+print(functions[1]())
     '
 }
 
@@ -236,6 +252,51 @@ def outer(x):
 nested = outer(1)(2)
 assert nested(3) == 6, "Test 2 failed"
     '
+}
+
+js-mutate-var-let() {
+  nodejs -e '
+  function outer() {
+    var x = "X_outer";
+    var y = "Y_outer";
+
+    function inner() {
+      var x = "X_inner";
+      y = "Y_inner";
+
+      console.log(`inner: x=${x} y=${y}`);
+    }
+
+    inner();
+
+    console.log(`outer: x=${x} y=${y}`);
+  }
+
+  outer();
+  '
+
+  echo
+
+  # Does not change eanything
+  nodejs -e '
+  function outer() {
+    let x = "X_outer";
+    let y = "Y_outer";
+
+    function inner() {
+      let x = "X_inner";
+      y = "Y_inner";
+
+      console.log(`let inner: x=${x} y=${y}`);
+    }
+
+    inner();
+
+    console.log(`let outer: x=${x} y=${y}`);
+  }
+
+  outer();
+  '
 }
 
 value-or-var() {

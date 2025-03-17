@@ -11,14 +11,18 @@ from collections import defaultdict
 from mypy.types import Type
 from mypy.nodes import Expression
 
-from mycpp.util import join_name, log, split_py_name, SymbolPath
+from mycpp.util import SymbolToString, log, SplitPyName, SymbolPath
 
-from typing import Optional
+from typing import Optional, List, Dict, Tuple, Set, Any
 
 _ = log
 
 
-class ModuleMember(object):
+class member_t(object):
+    pass
+
+
+class ModuleMember(member_t):
     """
     A member of a Python module.
 
@@ -30,19 +34,19 @@ class ModuleMember(object):
         self.member = member
 
 
-class StaticObjectMember(object):
+class StaticClassMember(member_t):
     """
     A static member of an object. Usually a a method like an alternative constructor.
 
     e.g. runtime_asdl.Cell.CreateNull() => runtime_asdl::Cell::CreateNull()
     """
 
-    def __init__(self, base_type_name: SymbolPath, member: str) -> None:
-        self.base_type_name = base_type_name
+    def __init__(self, type_name: str, member: str) -> None:
+        self.type_name = type_name
         self.member = member
 
 
-class HeapObjectMember(object):
+class HeapObjectMember(member_t):
     """
     A member of a heap-allocated object.
 
@@ -56,7 +60,7 @@ class HeapObjectMember(object):
         self.member = member
 
 
-class StackObjectMember(object):
+class StackObjectMember(member_t):
     """
     A member of a stack-allocated object.
 
@@ -65,7 +69,7 @@ class StackObjectMember(object):
 
     def __init__(self, object_expr: Expression, object_type: Type,
                  member: str) -> None:
-        self.ojbect_expr = object_expr
+        self.object_expr = object_expr
         self.object_type = object_type
         self.member = member
 
@@ -77,19 +81,19 @@ class Virtual(object):
     """
 
     def __init__(self) -> None:
-        self.methods: dict[SymbolPath, list[str]] = defaultdict(list)
-        self.subclasses: dict[SymbolPath, list[tuple[str]]] = defaultdict(list)
-        self.virtuals: dict[tuple[SymbolPath, str], Optional[tuple[SymbolPath,
+        self.methods: Dict[SymbolPath, List[str]] = defaultdict(list)
+        self.subclasses: Dict[SymbolPath, List[SymbolPath]] = defaultdict(list)
+        self.virtuals: Dict[Tuple[SymbolPath, str], Optional[Tuple[SymbolPath,
                                                                    str]]] = {}
-        self.has_vtable: dict[SymbolPath, bool] = {}
-        self.can_reorder_fields: dict[SymbolPath, bool] = {}
+        self.has_vtable: Dict[SymbolPath, bool] = {}
+        self.can_reorder_fields: Dict[SymbolPath, bool] = {}
 
         # _Executor -> vm::_Executor
-        self.base_class_unique: dict[str, SymbolPath] = {}
+        self.base_class_unique: Dict[str, SymbolPath] = {}
 
     # These are called on the Forward Declare pass
     def OnMethod(self, class_name: SymbolPath, method_name: str) -> None:
-        #log('OnMethod %s %s', class_name, method_name)
+        #log('VIRTUAL OnMethod %s %s', class_name, method_name)
 
         # __init__ and so forth don't count
         if method_name.startswith('__') and method_name.endswith('__'):
@@ -98,6 +102,7 @@ class Virtual(object):
         self.methods[class_name].append(method_name)
 
     def OnSubclass(self, base_class: SymbolPath, subclass: SymbolPath) -> None:
+        #log('VIRTUAL OnSubclass base %s -> %s', base_class, subclass)
         if len(base_class) > 1:
             # Hack for
             #
@@ -116,9 +121,6 @@ class Virtual(object):
                         ), base_class
             else:
                 self.base_class_unique[base_key] = base_class
-
-        else:
-            base_key = base_class
 
         self.subclasses[base_class].append(subclass)
 
@@ -156,8 +158,8 @@ class Virtual(object):
 
 def SymbolPathToReference(func: str, p: SymbolPath) -> str:
     if len(p) > 1:
-        return '$ObjectMember({}, {})'.format(join_name(p[:-1], delim='.'),
-                                              p[-1])
+        return '$ObjectMember({}, {})'.format(
+            SymbolToString(p[:-1], delim='.'), p[-1])
 
     return '$LocalVariable({}, {})'.format(func, p[0])
 
@@ -281,7 +283,7 @@ class Bind(Fact):
     def Generate(self, func: str, statement: int) -> str:
         return '{}\t{}\t{}\t{}\t{}\n'.format(
             func, statement, SymbolPathToReference(func, self.ref),
-            join_name(self.callee, delim='.'), self.arg_pos)
+            SymbolToString(self.callee, delim='.'), self.arg_pos)
 
 
 class ControlFlowGraph(object):
@@ -323,14 +325,14 @@ class ControlFlowGraph(object):
 
     def __init__(self) -> None:
         self.statement_counter: int = 0
-        self.edges: set[tuple[int, int]] = set({})
-        self.block_stack: list[int] = []
-        self.predecessors: set[int] = set({})
-        self.deadends: set[int] = set({})
+        self.edges: Set[Tuple[int, int]] = set({})
+        self.block_stack: List[int] = []
+        self.predecessors: Set[int] = set({})
+        self.deadends: Set[int] = set({})
 
         # order doesn't actually matter here, but sets require elements to be
         # hashable
-        self.facts: dict[int, list[Fact]] = defaultdict(list)
+        self.facts: Dict[int, List[Fact]] = defaultdict(list)
 
     def AddEdge(self, pred: int, succ: int) -> None:
         """
@@ -343,7 +345,7 @@ class ControlFlowGraph(object):
         else:
             self.edges.add((pred, succ))
 
-    def AddDeadend(self, statement: int):
+    def AddDeadend(self, statement: int) -> None:
         """
         Mark a statement as a dead-end (e.g. return or continue).
         """
@@ -423,10 +425,10 @@ class CfgBlockContext(object):
         self.entry = self.cfg._PushBlock(begin)
         self.exit = self.entry
 
-    def __enter__(self) -> None:
+    def __enter__(self) -> Optional['CfgBlockContext']:
         return self if self.cfg else None
 
-    def __exit__(self, *args) -> None:
+    def __exit__(self, *args: Any) -> None:
         if not self.cfg:
             return
 
@@ -445,10 +447,10 @@ class CfgBranchContext(object):
         if cfg is None:
             return
 
-        self.arms = []
+        self.arms: List[CfgBranchContext] = []
         self.pushed = False
 
-    def AddBranch(self, entry: Optional[int] = None):
+    def AddBranch(self, entry: Optional[int] = None) -> 'CfgBranchContext':
         if not self.cfg:
             return CfgBranchContext(None, None)
 
@@ -457,10 +459,10 @@ class CfgBranchContext(object):
         self.arms[-1].pushed = True
         return self.arms[-1]
 
-    def __enter__(self) -> None:
+    def __enter__(self) -> 'CfgBranchContext':
         return self
 
-    def __exit__(self, *args) -> None:
+    def __exit__(self, *args: Any) -> None:
         if not self.cfg:
             return
 
@@ -481,7 +483,7 @@ class CfgLoopContext(object):
                  cfg: ControlFlowGraph,
                  entry: Optional[int] = None) -> None:
         self.cfg = cfg
-        self.breaks = set({})
+        self.breaks: Set[int] = set()
         if cfg is None:
             return
 
@@ -497,10 +499,10 @@ class CfgLoopContext(object):
         self.cfg.AddEdge(statement, self.entry)
         self.cfg.AddDeadend(statement)
 
-    def __enter__(self) -> None:
+    def __enter__(self) -> Optional['CfgLoopContext']:
         return self if self.cfg else None
 
-    def __exit__(self, *args) -> None:
+    def __exit__(self, *args: Any) -> None:
         if not self.cfg:
             return
 
@@ -527,7 +529,7 @@ class StackRoots(object):
     Output of the souffle stack roots solver.
     """
 
-    def __init__(self, tuples: set[tuple[SymbolPath, SymbolPath]]) -> None:
+    def __init__(self, tuples: Set[Tuple[SymbolPath, SymbolPath]]) -> None:
         self.root_tuples = tuples
 
     def needs_root(self, func: SymbolPath, reference: SymbolPath) -> bool:
@@ -537,8 +539,8 @@ class StackRoots(object):
         return (func, reference) in self.root_tuples
 
 
-def DumpControlFlowGraphs(cfgs: dict[str, ControlFlowGraph],
-                          facts_dir='_tmp/mycpp-facts') -> None:
+def DumpControlFlowGraphs(cfgs: Dict[SymbolPath, ControlFlowGraph],
+                          facts_dir: str = '_tmp/mycpp-facts') -> None:
     """
     Dump the given control flow graphs and associated facts into the given
     directory as text files that can be consumed by datalog.
@@ -556,7 +558,7 @@ def DumpControlFlowGraphs(cfgs: dict[str, ControlFlowGraph],
     }
     with open(edge_facts, 'w') as cfg_f:
         for func, cfg in sorted(cfgs.items()):
-            joined = join_name(func, delim='.')
+            joined = SymbolToString(func, delim='.')
             for (u, v) in sorted(cfg.edges):
                 cfg_f.write('{}\t{}\t{}\n'.format(joined, u, v))
 
@@ -569,7 +571,7 @@ def DumpControlFlowGraphs(cfgs: dict[str, ControlFlowGraph],
         f.close()
 
 
-def ComputeMinimalStackRoots(cfgs: dict[str, ControlFlowGraph],
+def ComputeMinimalStackRoots(cfgs: Dict[SymbolPath, ControlFlowGraph],
                              souffle_dir: str = '_tmp') -> StackRoots:
     """
     Run the the souffle stack roots solver and translate its output in a format
@@ -589,7 +591,7 @@ def ComputeMinimalStackRoots(cfgs: dict[str, ControlFlowGraph],
         output_dir,
     ])
 
-    tuples: set[tuple[SymbolPath, SymbolPath]] = set({})
+    tuples: Set[Tuple[SymbolPath, SymbolPath]] = set({})
     with open('{}/stack_root_vars.tsv'.format(output_dir), 'r') as roots_f:
         pat = re.compile(r'\$(.*)\((.*), (.*)\)')
         for line in roots_f:
@@ -599,11 +601,11 @@ def ComputeMinimalStackRoots(cfgs: dict[str, ControlFlowGraph],
             if m.group(1) == 'LocalVariable':
                 _, ref_func, var_name = m.groups()
                 assert ref_func == function
-                tuples.add((split_py_name(function), (var_name, )))
+                tuples.add((SplitPyName(function), (var_name, )))
 
             if m.group(1) == 'ObjectMember':
                 _, base_obj, member_name = m.groups()
-                tuples.add((split_py_name(function),
-                            split_py_name(base_obj) + (member_name, )))
+                tuples.add((SplitPyName(function),
+                            SplitPyName(base_obj) + (member_name, )))
 
     return StackRoots(tuples)

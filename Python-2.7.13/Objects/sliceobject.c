@@ -286,9 +286,6 @@ slice_reduce(PySliceObject* self)
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
-#ifdef OVM_MAIN
-#include "Python-2.7.13/Objects/sliceobject.c/slice_methods.def"
-#else
 static PyMethodDef slice_methods[] = {
     {"indices",         (PyCFunction)slice_indices,
      METH_O,            slice_indices_doc},
@@ -296,7 +293,6 @@ static PyMethodDef slice_methods[] = {
      METH_NOARGS,       reduce_doc},
     {NULL, NULL}
 };
-#endif
 
 static int
 slice_compare(PySliceObject *v, PySliceObject *w)

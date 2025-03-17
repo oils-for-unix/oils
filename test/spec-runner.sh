@@ -51,6 +51,41 @@ write-suite-manifests() {
     spec/*.test.sh > _tmp/spec/SUITE-osh-minimal.txt
 }
 
+_print-task-file() {
+  cat <<'EOF'
+#!/usr/bin/env bash
+#
+# This file is GENERATED -- DO NOT EDIT.
+#
+# Update it with:
+#   test/spec-runner.sh gen-task-file
+#
+# Usage:
+#   test/spec.sh <function name>
+
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
+
+source build/dev-shell.sh
+EOF
+
+  while read spec_name; do
+    echo "
+$spec_name() {
+  test/spec-py.sh run-file $spec_name \"\$@\"
+}"
+  done
+
+  echo
+  echo 'task-five "$@"'
+}
+
+gen-task-file() {
+  test/sh_spec.py --print-table spec/*.test.sh | while read suite name; do
+    echo $name
+  done | _print-task-file > test/spec.sh
+}
 
 diff-manifest() {
   ### temporary test
@@ -87,7 +122,8 @@ dispatch-one() {
   local -a prefix
   case $compare_mode in
 
-    compare-py)     prefix=(test/spec.sh) ;;
+    #compare-py)     prefix=(test/spec.sh) ;;
+    compare-py)     prefix=(test/spec-py.sh run-file) ;;
 
     compare-cpp)    prefix=(test/spec-cpp.sh run-file) ;;
 
@@ -132,7 +168,7 @@ _html-summary() {
 <p id="home-link">
   <!-- The release index is two dirs up -->
   <a href="../..">Up</a> |
-  <a href="/">oilshell.org</a>
+  <a href="/">oils.pub</a>
 </p>
 
 <h1>Spec Test Results Summary</h1>
@@ -345,12 +381,16 @@ all-parallel() {
   time $0 _all-parallel "$@"
 }
 
+src-tree-py() {
+  PYTHONPATH='.:vendor/' doctools/src_tree.py "$@"
+}
+
 all-tests-to-html() {
   local manifest=$1
   local output_base_dir=$2
   # ignore attrs output
   head -n $NUM_SPEC_TASKS $manifest \
-    | xargs --verbose -- doctools/src_tree.py spec-files $output_base_dir >/dev/null
+    | xargs --verbose -- $0 src-tree-py spec-files $output_base_dir >/dev/null
 
     #| xargs -n 1 -P $MAX_PROCS -- $0 test-to-html $output_base_dir
   log "done: all-tests-to-html"

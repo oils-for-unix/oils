@@ -5,4 +5,3 @@ display/ansi.py
 display/pp_hnode.py
 display/pretty.py
 mycpp/examples/parse.py
-pylib/cgi.py

@@ -164,7 +164,8 @@ def SourceStartupFile(
     rc_c_parser = parse_ctx.MakeOshParser(rc_line_reader)
 
     with alloc.ctx_SourceCode(arena, source.MainFile(rc_path)):
-        # TODO: handle status, e.g. 2 for ParseError
+        # Note: bash keep going after parse error in startup file.  Should we
+        # have a strict mode for this?
         unused = main_loop.Batch(cmd_ev, rc_c_parser, errfmt)
 
     f.close()
@@ -211,19 +212,20 @@ def InitAssignmentBuiltins(
         mem,  # type: state.Mem
         procs,  # type: state.Procs
         exec_opts,  # type: optview.Exec
+        arith_ev,  # type: sh_expr_eval.ArithEvaluator
         errfmt,  # type: ui.ErrorFormatter
 ):
     # type: (...) -> Dict[int, vm._AssignBuiltin]
 
     assign_b = {}  # type: Dict[int, vm._AssignBuiltin]
 
-    new_var = assign_osh.NewVar(mem, procs, exec_opts, errfmt)
+    new_var = assign_osh.NewVar(mem, procs, exec_opts, arith_ev, errfmt)
     assign_b[builtin_i.declare] = new_var
     assign_b[builtin_i.typeset] = new_var
     assign_b[builtin_i.local] = new_var
 
-    assign_b[builtin_i.export_] = assign_osh.Export(mem, errfmt)
-    assign_b[builtin_i.readonly] = assign_osh.Readonly(mem, errfmt)
+    assign_b[builtin_i.export_] = assign_osh.Export(mem, arith_ev, errfmt)
+    assign_b[builtin_i.readonly] = assign_osh.Readonly(mem, arith_ev, errfmt)
 
     return assign_b
 
@@ -287,17 +289,18 @@ def Main(
                 status = 1
         return status
 
-    debug_stack = []  # type: List[debug_frame_t]
-    if arg_r.AtEnd():
-        dollar0 = argv0
-    else:
-        dollar0 = arg_r.Peek()  # the script name, or the arg after -c
-
-        frame0 = debug_frame.Main(dollar0)
-        debug_stack.append(frame0)
-
     script_name = arg_r.Peek()  # type: Optional[str]
     arg_r.Next()
+
+    if script_name is None:
+        dollar0 = argv0
+        # placeholder for -c or stdin (depending on flag.c)
+        frame0 = debug_frame.Dummy  # type: debug_frame_t
+    else:
+        dollar0 = script_name
+        frame0 = debug_frame.MainFile(script_name)
+
+    debug_stack = [frame0]
 
     env_dict = NewDict()  # type: Dict[str, value_t]
     defaults = NewDict()  # type: Dict[str, value_t]
@@ -492,9 +495,13 @@ def Main(
     hay_state = hay_ysh.HayState()
 
     shell_ex = executor.ShellExecutor(mem, exec_opts, mutable_opts, procs,
-                                      hay_state, builtins, search_path,
-                                      ext_prog, waiter, tracer, job_control,
-                                      job_list, fd_state, trap_state, errfmt)
+                                      hay_state, builtins, tracer, errfmt,
+                                      search_path, ext_prog, waiter,
+                                      job_control, job_list, fd_state,
+                                      trap_state)
+
+    pure_ex = executor.PureExecutor(mem, exec_opts, mutable_opts, procs,
+                                    hay_state, builtins, tracer, errfmt)
 
     arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, mutable_opts,
                                            parse_ctx, errfmt)
@@ -505,7 +512,7 @@ def Main(
     word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
                                             tilde_ev, splitter, errfmt)
 
-    assign_b = InitAssignmentBuiltins(mem, procs, exec_opts, errfmt)
+    assign_b = InitAssignmentBuiltins(mem, procs, exec_opts, arith_ev, errfmt)
     cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs, assign_b,
                                        arena, cmd_deps, trap_state,
                                        signal_safe)
@@ -518,16 +525,19 @@ def Main(
 
     # The M/ prefix means it's io->eval()
     io_methods['M/eval'] = value.BuiltinFunc(
-        method_io.Eval(mem, cmd_ev, method_io.EVAL_NULL))
-    io_methods['M/evalToDict'] = value.BuiltinFunc(
-        method_io.Eval(mem, cmd_ev, method_io.EVAL_DICT))
-    io_methods['M/evalInFrame'] = value.BuiltinFunc(
-        method_io.EvalInFrame(mem, cmd_ev))
-    io_methods['M/evalExpr'] = value.BuiltinFunc(method_io.EvalExpr(expr_ev))
+        method_io.Eval(mem, cmd_ev, None, method_io.EVAL_NULL))
+    io_methods['M/evalExpr'] = value.BuiltinFunc(
+        method_io.EvalExpr(expr_ev, None, None))
 
     # Identical to command sub
     io_methods['captureStdout'] = value.BuiltinFunc(
         method_io.CaptureStdout(mem, shell_ex))
+
+    # TODO: remove these 2 deprecated methods
+    io_methods['M/evalToDict'] = value.BuiltinFunc(
+        method_io.Eval(mem, cmd_ev, None, method_io.EVAL_DICT))
+    io_methods['M/evalInFrame'] = value.BuiltinFunc(
+        method_io.EvalInFrame(mem, cmd_ev))
 
     # TODO:
     io_methods['time'] = value.BuiltinFunc(method_io.Time())
@@ -540,6 +550,8 @@ def Main(
     vm_methods = NewDict()  # type: Dict[str, value_t]
     # These are methods, not free functions, because they reflect VM state
     vm_methods['getFrame'] = value.BuiltinFunc(func_reflect.GetFrame(mem))
+    vm_methods['getDebugStack'] = value.BuiltinFunc(
+        func_reflect.GetDebugStack(mem))
     vm_methods['id'] = value.BuiltinFunc(func_reflect.Id())
 
     vm_props = NewDict()  # type: Dict[str, value_t]
@@ -590,7 +602,7 @@ def Main(
 
     # Wire up circular dependencies.
     vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
-                        prompt_ev, io_obj, tracer)
+                        pure_ex, prompt_ev, io_obj, tracer)
 
     unsafe_arith = sh_expr_eval.UnsafeArith(mem, exec_opts, mutable_opts,
                                             parse_ctx, arith_ev, errfmt)
@@ -777,6 +789,7 @@ def Main(
         'upper': method_str.Upper(),
         'lower': method_str.Lower(),
         'split': method_str.Split(),
+        'lines': method_str.Lines(),
 
         # finds a substring, optional position to start at
         'find': None,
@@ -821,8 +834,8 @@ def Main(
         'M/clear': method_list.Clear(),
         'M/extend': method_list.Extend(),
         'M/pop': method_list.Pop(),
-        'M/insert': None,  # insert object before index
-        'M/remove': None,  # insert object before index
+        'M/insert': method_list.Insert(),
+        'M/remove': method_list.Remove(),
         'indexOf': method_list.IndexOf(),  # return first index of value, or -1
         # Python list() has index(), which raises ValueError
         # But this is consistent with Str->find(), and doesn't
@@ -844,16 +857,27 @@ def Main(
         'M/setValue': method_other.SetValue(mem),
     }
 
-    methods[value_e.CommandFrag] = {
+    methods[value_e.Command] = {
         # var x = ^(echo hi)
-        # Export source code and line number
-        # Useful for test frameworks and so forth
-        'export': None,
+        # p { echo hi }
+        # Export source code and location
+        # Useful for test frameworks, built systems and so forth
+        'sourceCode': method_other.SourceCode(),
+    }
+
+    methods[value_e.DebugFrame] = {
+        'toString': func_reflect.DebugFrameToString(),
     }
 
     #
     # Initialize Built-in Funcs
     #
+
+    # Pure functions
+    _AddBuiltinFunc(mem, 'eval',
+                    method_io.Eval(mem, cmd_ev, pure_ex, method_io.EVAL_NULL))
+    _AddBuiltinFunc(mem, 'evalExpr',
+                    method_io.EvalExpr(expr_ev, pure_ex, cmd_ev))
 
     parse_hay = func_hay.ParseHay(fd_state, parse_ctx, mem, errfmt)
     eval_hay = func_hay.EvalHay(hay_state, mutable_opts, mem, cmd_ev)
@@ -939,15 +963,35 @@ def Main(
     _AddBuiltinFunc(mem, 'fromJson8', func_misc.FromJson8(True))
     _AddBuiltinFunc(mem, 'fromJson', func_misc.FromJson8(False))
 
-    # Demos
-    _AddBuiltinFunc(mem, '_a2sp', func_misc.BashArrayToSparse())
-    _AddBuiltinFunc(mem, '_opsp', func_misc.SparseOp())
-
     mem.AddBuiltin('io', io_obj)
     mem.AddBuiltin('vm', vm_obj)
 
     # Special case for testing
     mem.AddBuiltin('module-invoke', value.BuiltinProc(module_invoke))
+
+    # First, process --eval flags.  In interactive mode, this comes before --rcfile.
+    # (It could be used for the headless shell.  Although terminals have a bootstrap process.)
+    # Note that --eval
+
+    for path, is_pure in attrs.eval_flags:
+        ex = pure_ex if is_pure else None
+        with vm.ctx_MaybePure(ex, cmd_ev):
+            try:
+                ok, status = main_loop.EvalFile(path, fd_state, parse_ctx,
+                                                cmd_ev, lang)
+            except util.UserExit as e:
+                # Doesn't seem like we need this, and verbose_errexit isn't the right option
+                #if exec_opts.verbose_errexit():
+                #    print-stderr('oils: --eval exit')
+                return e.status
+
+        # I/O error opening file, parse error.  Message was # already printed.
+        if not ok:
+            return 1
+
+        # YSH will stop on errors.  OSH keep going, a bit like 'source'.
+        if status != 0 and exec_opts.errexit():
+            return status
 
     #
     # Is the shell interactive?
@@ -1038,7 +1082,7 @@ def Main(
                 rc_dir = os_path.join(home_dir,
                                       '%s/%src.d' % (config_dir, lang))
 
-            rc_paths.extend(libc.glob(os_path.join(rc_dir, '*')))
+            rc_paths.extend(libc.glob(os_path.join(rc_dir, '*'), 0))
 
     # Initialize even in non-interactive shell, for 'compexport'
     _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
@@ -1082,21 +1126,27 @@ def Main(
         mutable_opts.set_redefine_const()
         mutable_opts.set_redefine_source()
 
-        if readline:
-            term_width = 0
-            if flag.completion_display == 'nice':
+        # NOTE: rc files loaded AFTER _InitDefaultCompletions.
+        for rc_path in rc_paths:
+            with state.ctx_ThisDir(mem, rc_path):
                 try:
-                    term_width = libc.get_terminal_width()
-                except (IOError, OSError):  # stdin not a terminal
-                    pass
+                    SourceStartupFile(fd_state, rc_path, lang, parse_ctx,
+                                      cmd_ev, errfmt)
+                except util.UserExit as e:
+                    return e.status
 
-            if term_width != 0:
+        completion_display = state.MaybeString(mem, 'OILS_COMP_UI')
+        if completion_display is None:
+            completion_display = flag.completion_display
+
+        if readline:
+            if completion_display == 'nice':
                 display = comp_ui.NiceDisplay(
-                    term_width, comp_ui_state, prompt_state, debug_f, readline,
+                    comp_ui_state, prompt_state, debug_f, readline,
                     signal_safe)  # type: comp_ui._IDisplay
             else:
                 display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state,
-                                                 debug_f)
+                                                 debug_f, signal_safe)
 
             comp_ui.InitReadline(readline, sh_files.HistoryFile(), root_comp,
                                  display, debug_f)
@@ -1106,23 +1156,13 @@ def Main(
 
         else:  # Without readline module
             display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state,
-                                             debug_f)
+                                             debug_f, signal_safe)
 
         process.InitInteractiveShell(signal_safe)  # Set signal handlers
-
         # The interactive shell leads a process group which controls the terminal.
         # It MUST give up the terminal afterward, otherwise we get SIGTTIN /
         # SIGTTOU bugs.
         with process.ctx_TerminalControl(job_control, errfmt):
-
-            # NOTE: rc files loaded AFTER _InitDefaultCompletions.
-            for rc_path in rc_paths:
-                with state.ctx_ThisDir(mem, rc_path):
-                    try:
-                        SourceStartupFile(fd_state, rc_path, lang, parse_ctx,
-                                          cmd_ev, errfmt)
-                    except util.UserExit as e:
-                        return e.status
 
             assert line_reader is not None
             line_reader.Reset()  # After sourcing startup file, render $PS1
@@ -1202,7 +1242,7 @@ def Main(
         return 0
 
     #
-    # Run a shell script
+    # Batch mode: shell script or -c
     #
 
     with state.ctx_ThisDir(mem, script_name):

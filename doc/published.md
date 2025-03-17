@@ -14,6 +14,13 @@ See [All Docs](index.html) for links to drafts.
 - [FAQ on Docs](faq-doc.html).  **Look here if you can't find
   something**.
 
+Build/packaging:
+
+- [INSTALL](INSTALL.html). How do I install Oils?  This text file is also in
+  the `oils-for-unix` tarball.
+  - [Oils Build `--help` Mirror](help-mirror.html)
+  - [Portability](portability.html)
+
 [help]: ref/chap-builtin-cmd.html#help
 
 ## More
@@ -62,3 +69,11 @@ Reference:
 
 - [Oils Error Catalog, With Hints](error-catalog.html)
 
+For contributors:
+
+- [README.md](oils-repo/README.html).  If you want to modify Oils, start here.
+  We welcome contributions!
+- [Oils Repo Overview](repo-overview.html)
+- [mycpp/README](oils-repo/mycpp/README.html) - How we translate typed Python to
+  C++.
+- [ul-table: Markdown Tables Without New Syntax](ul-table.html)

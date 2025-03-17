@@ -22,15 +22,10 @@ namespace syntax_asdl {
 }
 
 namespace syntax_abbrev {  // forward declare
-
-
-}  // forward declare namespace syntax_abbrev
+}
 
 namespace syntax_abbrev {  // declare
 
-using id_kind_asdl::Id;
-using hnode_asdl::hnode;
-extern List<BigStr*>* __all__;
 void _AbbreviateToken(syntax_asdl::Token* tok, List<hnode_asdl::hnode_t*>* out);
 hnode_asdl::hnode_t* _Token(syntax_asdl::Token* obj);
 hnode_asdl::hnode_t* _CompoundWord(syntax_asdl::CompoundWord* obj);

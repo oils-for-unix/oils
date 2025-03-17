@@ -123,13 +123,46 @@ OSH:
 [compadjust]: chap-builtin-cmd.html#compadjust
 [compexport]: chap-builtin-cmd.html#compexport
 
-### Tracing
+### Tracing Execution
 
 - `set -x` aka `set -o xtrace`
 - [PS4][]
 - `SHX_*`
 
 [PS4]: chap-plugin.html#PS4
+
+### Introspecting the Call Stack
+
+OSH Debug Stack:
+
+- [BASH_SOURCE](chap-special-var.html#BASH_SOURCE)
+- [FUNCNAME](chap-special-var.html#FUNCNAME)
+- [BASH_LINENO](chap-special-var.html#BASH_LINENO)
+
+YSH Debug Stack:
+
+- [DebugFrame](chap-type-method.html#DebugFrame)
+  - [toString()](chap-type-method.html#toString) method
+- [vm.getDebugStack()](chap-type-method.html#getDebugStack)
+
+These may be combined with
+
+- [trap][] `ERR`
+- [set][] `-o errtrace` aka `set -E`
+
+[trap]: chap-builtin-cmd.html#trap
+[set]: chap-builtin-cmd.html#set
+
+### Reflection
+
+Other YSH reflection:
+
+- The [`io`][io] object has `eval()` methods, etc.
+- The [`vm`][vm] object for inspecting interpreter structures
+
+[io]: chap-type-method.html#io
+[vm]: chap-type-method.html#vm
+
 
 ### Unicode
 
@@ -143,11 +176,16 @@ Also see [the Unicode doc](../unicode.html).
 ### Objects
 
 - [`Obj`][Obj]
-  - `__invoke__` and `__call__`
-  - `propView()` and `prototype()` - may be renamed `first() rest()`
+  - [`__invoke__`][__invoke__]
+  - TODO: `__call__`
+  - [`first()`][first] and [`rest()`][first]
   - [`ENV`][ENV] is an `Obj`
 - operator `.` [ysh-attr](chap-expr-lang.html#ysh-attr)
 - operator `->` [thin-arrow](chap-expr-lang.html#thin-arrow)
+
+
+[first]: chap-builtin-func.html#first
+[rest]: chap-builtin-func.html#rest
 
 ### Closures
 
@@ -162,18 +200,19 @@ Also see [the Unicode doc](../unicode.html).
 
 [__call__]: chap-type-method.html#__call__
 
-### Reflection
-
-- The [`io`][io] object has `eval()` methods, etc.
-- The [`vm`][vm] object for inspecting interpreter structures
-
-[io]: chap-type-method.html#io
-[vm]: chap-type-method.html#vm
-
 ### Namespaces
 
 - [`ENV`](chap-special-var.html#ENV)
 - [`__builtins__`](chap-special-var.html#__builtins__)
+
+### Purity
+
+- [`shell-flags`](chap-front-end.html#shell-flags) for `--eval-pure`
+- [`func/eval`](chap-builtin-func.html#func/eval) and
+  [`func/evalExpr`](chap-builtin-func.html#func/evalExpr)
+- [`func`](chap-ysh-cmd.html#func) - functions are pure
+- [`io`](chap-type-method.html#io) and [`vm`](chap-type-method.html#vm) - impure
+  behavior is attached to these objects
 
 <!--
 

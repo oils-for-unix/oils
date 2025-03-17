@@ -26,19 +26,21 @@ These two types are for OSH code only.
 
 ### BashArray
 
-A bash array holds a sequence of strings.  Some entries may be unset, i.e.
-*not* an empty string.
+A bash array holds a sequence of strings.  Some entries may be **unset** (not
+an empty string).
 
-See [sh-array][] for details.  In YSH, prefer to use [List](#List) instances.
+See [sh-init-list][] and [sh-array][] for creation/mutation of BashArray.
+In YSH, prefer to use [List](#List) instances.
 
 [sh-array]: chap-osh-assign.html#sh-array
-
+[sh-init-list]: chap-osh-assign.html#sh-init-list
 
 ### BashAssoc
 
 A bash associative array is a mapping from strings to strings.
 
-See [sh-assoc][] for details.  In YSH, prefer to use [Dict](#Dict) instances.
+See [sh-init-list][] and [sh-assoc][] for creation/mutation of BashAssoc.  In
+YSH, prefer to use [Dict](#Dict) instances.
 
 [sh-assoc]: chap-osh-assign.html#sh-assoc
 
@@ -349,6 +351,34 @@ Splitting by an `Eggex` has some limitations:
 - The string to split cannot contain NUL bytes because we use the libc regex
   engine.
 
+### lines()
+
+Split a string into lines N lines, where N is the number of newlines.
+
+    var s = u'foo\nbar\n'  # 2 lines
+    = s.lines()            # => ['foo', 'bar']
+
+Notice that the result has 2 lines, where as `s.split('\n')` would have 3.
+
+---
+
+Pass `eol=` to override the default delimiter of `\n`:
+
+    var s = b'foo\y00bar\y00'  # 2 lines terminated by NUL
+    = s.lines(eol=\y00)        # => ['foo', 'bar']
+
+(This is useful for the output of `find . -print0`.)
+
+Notes:
+
+- Use `read --all` and `_reply.lines()` to replace the bash builtin
+  [readarray][] aka [mapfile][].
+- There is no special handling of carriage returns (`\r`), although you can
+  pass `eol=u'\r\n'`.
+
+[readarray]: chap-builtin-cmd.html#readarray
+[mapfile]: chap-builtin-cmd.html#mapfile
+
 ## Patterns
 
 ### Eggex
@@ -452,6 +482,19 @@ Returns the first index of the element in the list, or -1 if it's not present.
 
 ### insert()
 
+Insert an element into the list at the given index.
+
+    var hills = :| pillar glaramara helvellyn |
+    call hills->insert(1, "raise")
+    echo @hills  # => pillar raise glaramara helvellyn
+
+- If you pass an index greater than the list length, the item will be inserted
+  at the end.
+- If you pass a negative index, it's interpreted as relative to the end of the
+  list, like slicing.
+  - If the negative index is out of bounds, the item will be inserted at the
+    beginning of the list.
+
 ### lastIndexOf()
 
 Returns the index of the last occurring instance of the specified
@@ -462,6 +505,13 @@ element in the list, or -1 if it's not present.
     echo $[names => lastIndexOf("Simon")]  # => -1
 
 ### remove()
+
+Remove the first instance of the specified element from the list, if it exists.
+Returns `null`, even if the element did not exist.
+
+    var lakes = :| coniston derwent wast |
+    call lakes->remove("wast")
+    echo @lakes  # => coniston derwent
 
 ### reverse()
 
@@ -543,7 +593,10 @@ A Place is used as an "out param" by calling setValue():
 
 ### Func
 
-User-defined functions.
+The type of a user-defined function.
+
+A Func captures the stack frame it was defined in, making it a closure.  It
+also captures the frame of the module it was defined in.
 
 ### BuiltinFunc
 
@@ -561,7 +614,10 @@ The [thin-arrow][] and [fat-arrow][] create bound funcs:
 
 ### Proc
 
-User-defined procs.
+The type of a user-defined proc &mdash; i.e. a "procedure" or "process".
+
+A Proc captures the stack frame it was defined in, making it a closure.  It
+also captures the frame of the module it was defined in.
 
 ### BuiltinProc
 
@@ -628,49 +684,159 @@ TODO
 
 ### Command
 
-An unevaluated command.  You can create a `Command` with a "block expression"
-([block-expr][]):
+A value of type `Command` represents an unevaluated command.  There are **two**
+syntaxes for such values:
 
-    var block = ^(echo $PWD; ls *.txt)
+1. In [expression mode][command-vs-expression-mode], a [block
+   expression][block-expr] looks like this:
 
-The Command is bound to a stack frame.  This frame will be pushed as an
+       var block = ^(echo $PWD; ls *.txt)
+
+   This is similar to `$(echo $PWD)` in shell.
+
+2. In [command mode][command-vs-expression-mode], an argument to a user-defined
+   proc is also of type `Command`:
+
+       myproc { 
+         echo $PWD
+       }
+
+   This is similar to `{ echo $PWD; }` in shell.  This syntax is a YSH
+   [block-arg][].
+
+---
+
+The `Command` value is bound to a stack frame.  This frame will be pushed as an
 "enclosed frame" when the command is evaluated.
 
 [block-expr]: chap-expr-lang.html#block-expr
 
-### CommandFrag
+[command-vs-expression-mode]: ../command-vs-expression-mode.html
 
-A command that's not bound to a stack frame.
+[block-arg]: chap-cmd-lang.html#block-arg
+
+### sourceCode
+
+The `Command.sourceCode()` method returns a `Dict` with the source code and
+location info for a literal block.
+
+    # define a proc
+    proc p ( ; ; ; block) {
+      = block.sourceCode()
+    }
+
+    # call it with a literal block, getting the source code
+    p { echo hi }  # => { location_str:        "[stdin]",
+                   #      location_start_line: 1,
+                   #      code_str:            "echo hi\n" }
+
+The `location_str` and `location_start_line` fields can be passed back into the
+YSH interpreter, so that error messages blame the original location, not new
+locations from `code_str`:
+
+    ... ysh 
+        --location-str        $[src.location_str]
+        --location-start-line $[src.location_start_line]
+        file_with_code_str.ysh
+        ;
+
+Currently, you can't extract the source code of an `Command` expression.  The
+method returns `null`:
+
+    var cmd = ^(echo hi)
+    = cmd.sourceCode()  # => null
+
+Related topic: [shell-flags][] documents the `--location-str` and
+`--location-start-line` flags.
+
+[shell-flags]: chap-front-end.html#shell-flags
 
 ### Expr
 
-An unevaluated expression.  You can create an `Expr` with an expression literal
-([expr-literal][]):
+A value of type `Expr` represents an unevaluated expression.  There are **three**
+syntaxes for such values:
 
-    var expr = ^[42 + a[i]]
+1. In [expression mode][command-vs-expression-mode], an
+   [expression literal][expr-literal] looks like this:
 
-The Command is bound to a stack frame.  This frame will be pushed as an
+       var expr = ^[42 + a[i]]
+
+1. There's also a shortcut for string literals:
+
+       var s = "foo".replace('o', ^"-$0-")
+       echo $s  # => f-o--o-
+
+   The syntax `^"-$0-"` is short for `^["-$0-"]`.  You can omit the brackets.
+
+1. In [command mode][command-vs-expression-mode], an argument to a user-defined
+   proc is also of type `Expr`:
+
+       ls | my-where [size > 42]
+
+   This is a shortcut for:
+
+       ls | my-where (^[size > 42])  # same as syntax 1
+
+   This syntax is a YSH [lazy-expr-arg][].
+
+[lazy-expr-arg]: chap-cmd-lang.html#lazy-expr-arg
+
+---
+
+The `Expr` value is bound to a stack frame.  This frame will be pushed as an
 "enclosed frame" when the expression is evaluated.
 
 [expr-literal]: chap-expr-lang.html#expr-lit
 
-<!--
-
-### ExprFrag
-
-An expression command that's not bound to a stack frame.
-
-(TODO)
-
--->
-
 ### Frame
 
-A value that represents a stack frame.  It can be bound to a `CommandFrag`,
-producing a `Command`.
+A value that represents a stack frame.
 
-Likewise, it can be found to a `ExprFrag`, producing an `Expr`.
+You can turn it into a Dict with `dict(myframe)`.
 
+### DebugFrame
+
+An opaque value returned by [vm.getDebugStack()][], which has a `toString()`
+method.
+
+[vm.getDebugStack()]: chap-type-method.html#getDebugStack
+
+Logically, it represents one of:
+
+1. An invocation of a proc or shell function 
+1. A YSH func call
+1. The OSH [source][] builtin
+1. The YSH [use][] builtin
+
+[source]: chap-builtin-cmd.html#source
+[use]: chap-builtin-cmd.html#use
+
+### toString()
+
+Return a string representing the `DebugFrame` value.
+
+We recommend that you print each frame with a numeric prefix, like this:
+
+<!-- bug: highlighting finds # within "" -->
+
+```none
+proc print-stack {
+  for i, frame in (vm.getDebugStack()) {
+    write --end '' -- "  #$[i+1] $[frame.toString()]"
+  }
+}
+```
+
+Then the output will look like:
+
+```none
+  #1 main.ysh
+    source lib.ysh
+    ^~~~~~
+  #2 lib.ysh
+    print-stack
+    ^~~~~~~~~~~
+``` 
 
 ### io
 
@@ -685,7 +851,73 @@ Returns the singleton `stdin` value, which you can iterate over:
 This is buffered line-based I/O, as opposed to the unbuffered I/O of the `read`
 builtin.
 
-### evalExpr()
+### io/eval()
+
+Given a `Command` value (e.g. a block argument), execute it, and return `null`.
+
+    var cmd = ^(echo hi)
+    call io->eval(cmd)  # => hi
+
+This method is more principled and flexible than shell's [eval][] builtin.
+It's especially useful in pure functions.
+
+[eval]: chap-builtin-cmd.html#cmd/eval
+
+It accepts optional args that let you control name binding:
+
+- `dollar0` for `$0`
+- `pos_args` for `$1 $2 $3`
+- `vars` for named variables
+
+Example:
+
+    var cmd = ^(echo "zero $0, one $1, named $x")
+    call io->eval(cmd, dollar0="z", pos_args=['one'], vars={x: "x"})
+    # => zero z, one one, named x
+
+Scoping rules:
+
+- The frame that contains the `Command`, e.g.  `^(echo hi)` or `p { echo hi }`,
+  is called the *captured* frame.
+- Normally, a `Command` is evaluated in a new stack frame, which "encloses" the
+  captured frame.  That is, a `Command` is a *closure*.
+
+The `in_captured_frame` argument changes this behavior:
+
+    call io->eval(cmd, in_captured_frame=true)
+
+In this case, the captured frame becomes the local frame.  It's useful for
+creating procs that behave like builtins:
+
+    my-cd /tmp {           # my-cd is a proc, which pushes a new stack frame
+      var listing = $(ls)  # This variable is created in the captured frame
+    }
+    echo $listing          # It's still visible after the proc returns
+
+---
+
+When the `eval()` method is passed `to_dict=true`, it returns a `Dict`
+corresponding to the stack frame that the `Command` is evaluated in.
+
+Example:
+
+    var x = 10  # captured
+    var cmd = ^(var a = 42; var hidden_ = 'h'; var b = x + 1)
+
+    var d = io->evalToDict(cmd)
+
+    pp (d)  # => {a: 42, b: 11}
+
+Names that end with an underscore `_` are not copied, so `hidden_` is not in
+the `Dict`.
+
+---
+
+To evaluate "purely", use the [`eval()`][func/eval] function.
+
+[func/eval]: chap-builtin-func.html#func/eval
+
+### io/evalExpr()
 
 Given an `Expr` value, evaluate it and return its value:
 
@@ -711,45 +943,11 @@ Note that these expressions that have effects:
 - `^[ myplace->setValue(42) ]` - memory operation
 - `^[ $(echo 42 > hi) ]` - I/O operation
 
-### eval()
+---
 
-Evaluate a command, and return `null`.
+To evaluate "purely", use the [`evalExpr()`][func/evalExpr] function.
 
-    var cmd = ^(echo hi)
-    call io->eval(cmd)
-
-It's similar to the `eval` builtin, and is meant to be used in pure functions.
-
-It accepts optional args that let you control name binding:
-
-- `pos_args` for `$1 $2 $3`
-- `dollar0` for `$0`
-- `vars` for named variables
-
-Example:
-
-    var cmd = ^(echo "zero $0, one $1, named $x")
-    call io->eval(cmd, dollar0="z", pos_args=['one'], vars={x: "x"})
-    # => zero z, one one, named x
-
-### evalToDict()
-
-The `evalToDict()` method is like the `eval()` method, but it returns a
-Dict of bindings.
-
-It pushes a new "enclosed frame", and executes the given code.
-
-Then it copies the frame's bindings into a Dict, and returns it.  Only the
-names that don't end with an underscore `_` are copied.
-
-Example:
-
-    var x = 10  # captured
-    var cmd = ^(var a = 42; var hidden_ = 'h'; var b = x + 1)
-
-    var d = io->evalToDict(cmd)
-
-    pp (d)  # => {a: 42, b: 11}
+[func/evalExpr]: chap-builtin-func.html#func/evalExpr
 
 ### captureStdout()
 
@@ -774,8 +972,8 @@ An API the wraps the `$PS1` language.  For example, to simulate `PS1='\w\$ '`:
 
     func renderPrompt(io) {
       var parts = []
-      call parts->append(io.promptval('w'))  # pass 'w' for \w
-      call parts->append(io.promptval('$'))  # pass '$' for \$
+      call parts->append(io.promptVal('w'))  # pass 'w' for \w
+      call parts->append(io.promptVal('$'))  # pass '$' for \$
       call parts->append(' ')
       return (join(parts))
     }
@@ -811,6 +1009,12 @@ Given an index, get a handle to a call stack frame.
     var frame = vm.getFrame(-2)  # the calling frame
 
 If the index is out of range, an error is raised.
+
+### getDebugStack()
+
+Returns a list of [DebugFrame][] values, representing the current call stack.
+
+[DebugFrame]: #DebugFrame
 
 ### id()
 

@@ -14,7 +14,7 @@ from _devbuild.gen.syntax_asdl import (
     bracket_op_e,
     suffix_op,
     suffix_op_e,
-    ShArrayLiteral,
+    YshArrayLiteral,
     SingleQuoted,
     DoubleQuoted,
     word_e,
@@ -25,6 +25,9 @@ from _devbuild.gen.syntax_asdl import (
     rhs_word_t,
     word_part,
     word_part_e,
+    AssocPair,
+    InitializerWord,
+    InitializerWord_e,
 )
 from _devbuild.gen.runtime_asdl import (
     part_value,
@@ -33,6 +36,7 @@ from _devbuild.gen.runtime_asdl import (
     cmd_value,
     cmd_value_e,
     cmd_value_t,
+    error_code_e,
     AssignArg,
     a_index,
     a_index_e,
@@ -47,6 +51,7 @@ from _devbuild.gen.value_asdl import (
     value_t,
     sh_lvalue,
     sh_lvalue_t,
+    InitializerValue,
 )
 from core import error
 from core import pyos
@@ -61,7 +66,7 @@ from frontend import consts
 from frontend import lexer
 from frontend import location
 from mycpp import mops
-from mycpp.mylib import log, tagswitch, NewDict
+from mycpp.mylib import log, tagswitch
 from osh import braces
 from osh import glob_
 from osh import string_ops
@@ -69,7 +74,7 @@ from osh import word_
 from ysh import expr_eval
 from ysh import val_ops
 
-from typing import Optional, Tuple, List, Dict, cast, TYPE_CHECKING
+from typing import Optional, Tuple, List, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import word_part_t
@@ -108,12 +113,24 @@ def ShouldArrayDecay(var_name, exec_opts, is_plain_var_sub=True):
 def DecayArray(val):
     # type: (value_t) -> value_t
     """Resolve ${array} to ${array[0]}."""
-    if val.tag() == value_e.BashArray:
-        array_val = cast(value.BashArray, val)
-        s = array_val.strs[0] if len(array_val.strs) else None
+    if val.tag() in (value_e.InternalStringArray, value_e.BashArray):
+        if val.tag() == value_e.InternalStringArray:
+            array_val = cast(value.InternalStringArray, val)
+            s, error_code = bash_impl.InternalStringArray_GetElement(
+                array_val, 0)
+        elif val.tag() == value_e.BashArray:
+            sparse_val = cast(value.BashArray, val)
+            s, error_code = bash_impl.BashArray_GetElement(
+                sparse_val, mops.ZERO)
+        else:
+            raise AssertionError(val.tag())
+
+        # Note: index 0 should never cause the out-of-bound index error.
+        assert error_code == error_code_e.OK
+
     elif val.tag() == value_e.BashAssoc:
         assoc_val = cast(value.BashAssoc, val)
-        s = assoc_val.d['0'] if '0' in assoc_val.d else None
+        s = bash_impl.BashAssoc_GetElement(assoc_val, '0')
     else:
         raise AssertionError(val.tag())
 
@@ -121,22 +138,6 @@ def DecayArray(val):
         return value.Undef
     else:
         return value.Str(s)
-
-
-def GetArrayItem(strs, index):
-    # type: (List[str], int) -> Optional[str]
-
-    n = len(strs)
-    if index < 0:
-        index += n
-
-    if 0 <= index and index < n:
-        # TODO: strs->index() has a redundant check for (i < 0)
-        s = strs[index]
-        # note: s could be None because representation is sparse
-    else:
-        s = None
-    return s
 
 
 def _DetectMetaBuiltinStr(s):
@@ -216,7 +217,7 @@ def _ValueToPartValue(val, quoted, part_loc):
 
     with tagswitch(val) as case:
         if case(value_e.Undef):
-            # This happens in the case of ${undef+foo}.  We skipped _EmptyStrOrError,
+            # This happens in the case of ${undef+foo}.  We skipped _ProcessUndef,
             # but we have to append to the empty string.
             return Piece('', quoted, not quoted)
 
@@ -224,20 +225,25 @@ def _ValueToPartValue(val, quoted, part_loc):
             val = cast(value.Str, UP_val)
             return Piece(val.s, quoted, not quoted)
 
+        elif case(value_e.InternalStringArray):
+            val = cast(value.InternalStringArray, UP_val)
+            return part_value.Array(
+                bash_impl.InternalStringArray_GetValues(val), quoted)
+
         elif case(value_e.BashArray):
             val = cast(value.BashArray, UP_val)
-            return part_value.Array(val.strs)
+            return part_value.Array(bash_impl.BashArray_GetValues(val), quoted)
 
         elif case(value_e.BashAssoc):
             val = cast(value.BashAssoc, UP_val)
             # bash behavior: splice values!
-            return part_value.Array(val.d.values())
+            return part_value.Array(bash_impl.BashAssoc_GetValues(val), quoted)
 
         # Cases added for YSH
         # value_e.List is also here - we use val_ops.Stringify()s err message
         elif case(value_e.Null, value_e.Bool, value_e.Int, value_e.Float,
                   value_e.Eggex, value_e.List):
-            s = val_ops.Stringify(val, loc.Missing, 'Word eval ')
+            s = val_ops.Stringify(val, loc.WordPart(part_loc), 'Word eval ')
             return Piece(s, quoted, not quoted)
 
         else:
@@ -300,9 +306,8 @@ def _MakeWordFrames(part_vals):
                     if s is None:
                         continue  # ignore undefined array entries
 
-                    # Arrays parts are always quoted; otherwise they would have decayed to
-                    # a string.
-                    piece = Piece(s, True, False)
+                    # Arrays parts are not quoted for $* and $@
+                    piece = Piece(s, p.quoted, not p.quoted)
                     if is_first:
                         current.append(piece)
                         is_first = False
@@ -339,7 +344,7 @@ def _DecayPartValuesToString(part_vals, join_char):
 
 def _PerformSlice(
         val,  # type: value_t
-        begin,  # type: int
+        offset,  # type: mops.BigInt
         length,  # type: int
         has_length,  # type: bool
         part,  # type: BracedVarSub
@@ -353,6 +358,7 @@ def _PerformSlice(
             s = val.s
             n = len(s)
 
+            begin = mops.BigTruncate(offset)
             if begin < 0:  # Compute offset with unicode
                 byte_begin = n
                 num_iters = -begin
@@ -377,38 +383,92 @@ def _PerformSlice(
             substr = s[byte_begin:byte_end]
             result = value.Str(substr)  # type: value_t
 
-        elif case(value_e.BashArray):  # Slice array entries.
-            val = cast(value.BashArray, UP_val)
+        elif case(value_e.InternalStringArray,
+                  value_e.BashArray):  # Slice array entries.
             # NOTE: This error is ALWAYS fatal in bash.  It's inconsistent with
             # strings.
             if has_length and length < 0:
                 e_die("Array slice can't have negative length: %d" % length,
                       loc.WordPart(part))
 
-            # Quirk: "begin" for positional arguments ($@ and $*) counts $0.
-            if arg0_val is not None:
-                orig = [arg0_val.s]
-                orig.extend(val.strs)
-            else:
-                orig = val.strs
+            if bash_impl.BigInt_Less(offset, mops.ZERO):
+                # ${@:-3} starts counts from the end
+                if val.tag() == value_e.InternalStringArray:
+                    val = cast(value.InternalStringArray, UP_val)
+                    array_length = mops.IntWiden(
+                        bash_impl.InternalStringArray_Length(val))
+                elif val.tag() == value_e.BashArray:
+                    val = cast(value.BashArray, UP_val)
+                    array_length = bash_impl.BashArray_Length(val)
+                else:
+                    raise AssertionError()
 
-            n = len(orig)
-            if begin < 0:
-                i = n + begin  # ${@:-3} starts counts from the end
-            else:
-                i = begin
-            strs = []  # type: List[str]
-            count = 0
-            while i < n:
-                if has_length and count == length:  # length could be 0
-                    break
-                s = orig[i]
-                if s is not None:  # Unset elements don't count towards the length
-                    strs.append(s)
-                    count += 1
-                i += 1
+                # The array length counts $0 for $@ and $*
+                if arg0_val is not None:
+                    array_length = mops.Add(array_length, mops.ONE)
 
-            result = value.BashArray(strs)
+                offset = mops.Add(offset, array_length)
+
+            if bash_impl.BigInt_Less(offset, mops.ZERO):
+                strs = []  # type: List[str]
+            else:
+                # Quirk: "offset" for positional arguments ($@ and $*) counts $0.
+                prepends_arg0 = False
+                if arg0_val is not None:
+                    if bash_impl.BigInt_Greater(offset, mops.ZERO):
+                        offset = mops.Sub(offset, mops.ONE)
+                    elif not has_length or length >= 1:
+                        prepends_arg0 = True
+                        length = length - 1
+
+                if has_length and length == 0:
+                    strs = []
+
+                elif val.tag() == value_e.InternalStringArray:
+                    val = cast(value.InternalStringArray, UP_val)
+                    orig = bash_impl.InternalStringArray_GetValues(val)
+                    n = len(orig)
+
+                    strs = []
+                    i = mops.BigTruncate(offset)
+                    count = 0
+                    while i < n:
+                        if has_length and count == length:  # length could be 0
+                            break
+                        s = orig[i]
+                        if s is not None:  # Unset elements don't count towards the length
+                            strs.append(s)
+                            count += 1
+                        i += 1
+
+                elif val.tag() == value_e.BashArray:
+                    val = cast(value.BashArray, UP_val)
+
+                    # TODO: We may optimize this by finding the first index
+                    # using the binary search.  Furthermore, the sorting by
+                    # BashArray_GetKeys can be replaced with the heap sort so
+                    # that we only extract the first LENGTH elements of the
+                    # indices greater or equal to OFFSET.
+                    i = 0
+                    for index in bash_impl.BashArray_GetKeys(val):
+                        if bash_impl.BigInt_GreaterEq(index, offset):
+                            break
+                        i = i + 1
+
+                    if has_length:
+                        strs = bash_impl.BashArray_GetValues(val)[i:i + length]
+                    else:
+                        strs = bash_impl.BashArray_GetValues(val)[i:]
+
+                else:
+                    raise AssertionError()
+
+                if prepends_arg0:
+                    new_list = [arg0_val.s]
+                    new_list.extend(strs)
+                    strs = new_list
+
+            result = value.InternalStringArray(strs)
 
         elif case(value_e.BashAssoc):
             e_die("Can't slice associative arrays", loc.WordPart(part))
@@ -631,7 +691,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         if op_id in (Id.VSub_At, Id.VSub_Star):
             argv = self.mem.GetArgv()
-            val = value.BashArray(argv)  # type: value_t
+            val = value.InternalStringArray(argv)  # type: value_t
             if op_id == Id.VSub_At:
                 # "$@" evaluates to an array, $@ should be decayed
                 vsub_state.join_array = not quoted
@@ -654,6 +714,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             part_vals,  # type: Optional[List[part_value_t]]
             vtest_place,  # type: VTestPlace
             blame_token,  # type: Token
+            vsub_state,  # type: VarSubState
     ):
         # type: (...) -> bool
         """
@@ -665,8 +726,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
           ${a:?error} returns error word?
           ${a:=} returns part_value[] but also needs self.mem for side effects.
 
-          So I guess it should return part_value[], and then a flag for raising an
-          error, and then a flag for assigning it?
+          So I guess it should return part_value[], and then a flag for raising
+          an error, and then a flag for assigning it?
           The original BracedVarSub will have the name.
 
         Example of needing multiple part_value[]
@@ -698,14 +759,45 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 else:
                     is_falsey = False
 
-            elif case(value_e.BashArray):
-                val = cast(value.BashArray, UP_val)
-                # TODO: allow undefined
-                is_falsey = len(val.strs) == 0
+            elif case(value_e.InternalStringArray, value_e.BashArray,
+                      value_e.BashAssoc):
+                if val.tag() == value_e.InternalStringArray:
+                    val = cast(value.InternalStringArray, UP_val)
+                    strs = bash_impl.InternalStringArray_GetValues(val)
+                elif val.tag() == value_e.BashArray:
+                    val = cast(value.BashArray, UP_val)
+                    strs = bash_impl.BashArray_GetValues(val)
+                elif val.tag() == value_e.BashAssoc:
+                    val = cast(value.BashAssoc, UP_val)
+                    strs = bash_impl.BashAssoc_GetValues(val)
+                else:
+                    raise AssertionError()
 
-            elif case(value_e.BashAssoc):
-                val = cast(value.BashAssoc, UP_val)
-                is_falsey = len(val.d) == 0
+                if tok.id in (Id.VTest_ColonHyphen, Id.VTest_ColonEquals,
+                              Id.VTest_ColonQMark, Id.VTest_ColonPlus):
+                    # "$*"           - the separator is the first character of IFS
+                    #  $*  $@  "$@"  - the separator is a space
+                    if quoted and vsub_state.join_array:
+                        sep_width = len(self.splitter.GetJoinChar())
+                    else:
+                        sep_width = 1
+
+                    # We test whether the joined string will be empty.  When
+                    # the separator is empty, all the elements need to be
+                    # empty.  When the separator is non-empty, one element is
+                    # allowed at most and needs to be an empty string if any.
+                    if sep_width == 0:
+                        is_falsey = True
+                        for s in strs:
+                            if len(s) != 0:
+                                is_falsey = False
+                                break
+                    else:
+                        is_falsey = len(strs) == 0 or (len(strs) == 1 and
+                                                       len(strs[0]) == 0)
+                else:
+                    # TODO: allow undefined
+                    is_falsey = len(strs) == 0
 
             else:
                 # value.Eggex, etc. are all false
@@ -818,7 +910,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         else:
             raise AssertionError(tok.id)
 
-    def _Length(self, val, token):
+    def _Count(self, val, token):
         # type: (value_t, Token) -> int
         """Returns the length of the value, for ${#var}"""
         UP_val = val
@@ -832,7 +924,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
                 # https://stackoverflow.com/questions/17368067/length-of-string-in-bash
                 try:
-                    length = string_ops.CountUtf8Chars(val.s)
+                    count = string_ops.CountUtf8Chars(val.s)
                 except error.Strict as e:
                     # Add this here so we don't have to add it so far down the stack.
                     # TODO: It's better to show BOTH this CODE an the actual DATA
@@ -847,27 +939,24 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         self.errfmt.PrettyPrintError(e, prefix='warning: ')
                         return -1
 
-            elif case(value_e.BashArray):
-                val = cast(value.BashArray, UP_val)
-                # There can be empty placeholder values in the array.
-                length = 0
-                for s in val.strs:
-                    if s is not None:
-                        length += 1
-
-            elif case(value_e.SparseArray):
-                val = cast(value.SparseArray, UP_val)
-                length = len(val.d)
+            elif case(value_e.InternalStringArray):
+                val = cast(value.InternalStringArray, UP_val)
+                count = bash_impl.InternalStringArray_Count(val)
 
             elif case(value_e.BashAssoc):
                 val = cast(value.BashAssoc, UP_val)
-                length = len(val.d)
+                count = bash_impl.BashAssoc_Count(val)
+
+            elif case(value_e.BashArray):
+                val = cast(value.BashArray, UP_val)
+                count = bash_impl.BashArray_Count(val)
 
             else:
                 raise error.TypeErr(
-                    val, "Length op expected Str, BashArray, BashAssoc", token)
+                    val, "Length op expected Str, BashArray, or BashAssoc",
+                    token)
 
-        return length
+        return count
 
     def _Keys(self, val, token):
         # type: (value_t, Token) -> value_t
@@ -875,25 +964,32 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         UP_val = val
         with tagswitch(val) as case:
-            if case(value_e.BashArray):
+            if case(value_e.InternalStringArray):
+                val = cast(value.InternalStringArray, UP_val)
+                indices = [
+                    str(i) for i in bash_impl.InternalStringArray_GetKeys(val)
+                ]
+                return value.InternalStringArray(indices)
+
+            elif case(value_e.BashArray):
                 val = cast(value.BashArray, UP_val)
-                # translation issue: tuple indices not supported in list comprehensions
-                #indices = [str(i) for i, s in enumerate(val.strs) if s is not None]
-                indices = []  # type: List[str]
-                for i, s in enumerate(val.strs):
-                    if s is not None:
-                        indices.append(str(i))
-                return value.BashArray(indices)
+                indices = [
+                    mops.ToStr(i) for i in bash_impl.BashArray_GetKeys(val)
+                ]
+                return value.InternalStringArray(indices)
 
             elif case(value_e.BashAssoc):
                 val = cast(value.BashAssoc, UP_val)
                 assert val.d is not None  # for MyPy, so it's not Optional[]
 
                 # BUG: Keys aren't ordered according to insertion!
-                return value.BashArray(val.d.keys())
+                keys = bash_impl.BashAssoc_GetKeys(val)
+                return value.InternalStringArray(keys)
 
             else:
-                raise error.TypeErr(val, 'Keys op expected Str', token)
+                raise error.TypeErr(
+                    val, 'Keys op expected Str, BashArray, or BashAssoc',
+                    token)
 
     def _EvalVarRef(self, val, blame_tok, quoted, vsub_state, vtest_place):
         # type: (value_t, Token, bool, VarSubState, VTestPlace) -> value_t
@@ -905,22 +1001,40 @@ class AbstractWordEvaluator(StringWordEvaluator):
         UP_val = val
         with tagswitch(val) as case:
             if case(value_e.Undef):
-                return value.Undef  # ${!undef} is just weird bash behavior
+                # bash-4.4 returned value.Undef here. bash-5.0 started to treat
+                # the variable name to be empty so that the indirection fails.
+                var_ref_str = ''
 
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
-                bvs_part = self.unsafe_arith.ParseVarRef(val.s, blame_tok)
-                return self._VarRefValue(bvs_part, quoted, vsub_state,
-                                         vtest_place)
+                var_ref_str = val.s
+
+            elif case(value_e.InternalStringArray):  # caught earlier but OK
+                val = cast(value.InternalStringArray, UP_val)
+                # When there are more than one element in the array, this
+                # produces a wrong variable name containing spaces.
+                var_ref_str = ' '.join(
+                    bash_impl.InternalStringArray_GetValues(val))
 
             elif case(value_e.BashArray):  # caught earlier but OK
-                e_die('Indirect expansion of array')
+                val = cast(value.BashArray, UP_val)
+                var_ref_str = ' '.join(bash_impl.BashArray_GetValues(val))
 
             elif case(value_e.BashAssoc):  # caught earlier but OK
-                e_die('Indirect expansion of assoc array')
+                val = cast(value.BashAssoc, UP_val)
+                var_ref_str = ' '.join(bash_impl.BashAssoc_GetValues(val))
 
             else:
-                raise error.TypeErr(val, 'Var Ref op expected Str', blame_tok)
+                raise error.TypeErr(
+                    val, 'Var Ref op expected Str, BashArray, or BashAssoc',
+                    blame_tok)
+
+        try:
+            bvs_part = self.unsafe_arith.ParseVarRef(var_ref_str, blame_tok)
+        except error.FatalRuntime as e:
+            raise error.VarSubFailure(e.msg, e.location)
+
+        return self._VarRefValue(bvs_part, quoted, vsub_state, vtest_place)
 
     def _ApplyUnarySuffixOp(self, val, op):
         # type: (value_t, suffix_op.Unary) -> value_t
@@ -944,29 +1058,31 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     #log('%r %r -> %r', val.s, arg_val.s, s)
                     new_val = value.Str(s)  # type: value_t
 
-                elif case(value_e.BashArray):
-                    val = cast(value.BashArray, UP_val)
-                    # ${a[@]#prefix} is VECTORIZED on arrays.  YSH should have this too.
-                    strs = []  # type: List[str]
-                    for s in val.strs:
-                        if s is not None:
-                            strs.append(
-                                string_ops.DoUnarySuffixOp(
-                                    s, op.op, arg_val.s, has_extglob))
-                    new_val = value.BashArray(strs)
+                elif case(value_e.InternalStringArray, value_e.BashArray,
+                          value_e.BashAssoc):
+                    # get values
+                    if val.tag() == value_e.InternalStringArray:
+                        val = cast(value.InternalStringArray, UP_val)
+                        values = bash_impl.InternalStringArray_GetValues(val)
+                    elif val.tag() == value_e.BashArray:
+                        val = cast(value.BashArray, UP_val)
+                        values = bash_impl.BashArray_GetValues(val)
+                    elif val.tag() == value_e.BashAssoc:
+                        val = cast(value.BashAssoc, UP_val)
+                        values = bash_impl.BashAssoc_GetValues(val)
+                    else:
+                        raise AssertionError()
 
-                elif case(value_e.BashAssoc):
-                    val = cast(value.BashAssoc, UP_val)
-                    strs = []
-                    for s in val.d.values():
-                        strs.append(
-                            string_ops.DoUnarySuffixOp(s, op.op, arg_val.s,
-                                                       has_extglob))
-                    new_val = value.BashArray(strs)
+                    # ${a[@]#prefix} is VECTORIZED on arrays.  YSH should have this too.
+                    strs = [
+                        string_ops.DoUnarySuffixOp(s, op.op, arg_val.s,
+                                                   has_extglob) for s in values
+                    ]
+                    new_val = value.InternalStringArray(strs)
 
                 else:
                     raise error.TypeErr(
-                        val, 'Unary op expected Str, BashArray, BashAssoc',
+                        val, 'Unary op expected Str, BashArray, or BashAssoc',
                         op.op)
 
         else:
@@ -1009,24 +1125,25 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 s = replacer.Replace(str_val.s, op)
                 val = value.Str(s)
 
-            elif case2(value_e.BashArray):
-                array_val = cast(value.BashArray, val)
-                strs = []  # type: List[str]
-                for s in array_val.strs:
-                    if s is not None:
-                        strs.append(replacer.Replace(s, op))
-                val = value.BashArray(strs)
-
-            elif case2(value_e.BashAssoc):
-                assoc_val = cast(value.BashAssoc, val)
-                strs = []
-                for s in assoc_val.d.values():
-                    strs.append(replacer.Replace(s, op))
-                val = value.BashArray(strs)
+            elif case2(value_e.InternalStringArray, value_e.BashArray,
+                       value_e.BashAssoc):
+                if val.tag() == value_e.InternalStringArray:
+                    array_val = cast(value.InternalStringArray, val)
+                    values = bash_impl.InternalStringArray_GetValues(array_val)
+                elif val.tag() == value_e.BashArray:
+                    sparse_val = cast(value.BashArray, val)
+                    values = bash_impl.BashArray_GetValues(sparse_val)
+                elif val.tag() == value_e.BashAssoc:
+                    assoc_val = cast(value.BashAssoc, val)
+                    values = bash_impl.BashAssoc_GetValues(assoc_val)
+                else:
+                    raise AssertionError()
+                strs = [replacer.Replace(s, op) for s in values]
+                val = value.InternalStringArray(strs)
 
             else:
                 raise error.TypeErr(
-                    val, 'Pat Sub op expected Str, BashArray, BashAssoc',
+                    val, 'Pat Sub op expected Str, BashArray, or BashAssoc',
                     op.slash_tok)
 
         return val
@@ -1034,7 +1151,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     def _Slice(self, val, op, var_name, part):
         # type: (value_t, suffix_op.Slice, Optional[str], BracedVarSub) -> value_t
 
-        begin = self.arith_ev.EvalToInt(op.begin)
+        begin = self.arith_ev.EvalToBigInt(op.begin)
 
         # Note: bash allows lengths to be negative (with odd semantics), but
         # we don't allow that right now.
@@ -1057,52 +1174,109 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 with tagswitch(val) as case2:
                     if case2(value_e.Str):
                         val = value.Str('')
-                    elif case2(value_e.BashArray):
-                        val = value.BashArray([])
+                    elif case2(value_e.InternalStringArray):
+                        val = value.InternalStringArray([])
                     else:
                         raise NotImplementedError()
         return val
 
-    def _Nullary(self, val, op, var_name):
-        # type: (value_t, Token, Optional[str]) -> Tuple[value.Str, bool]
+    def _Nullary(self, val, op, var_name, vsub_token, vsub_state):
+        # type: (value_t, Token, Optional[str], Token, VarSubState) -> Tuple[value_t, bool]
 
-        UP_val = val
         quoted2 = False
         op_id = op.id
         if op_id == Id.VOp0_P:
+            val = self._ProcessUndef(val, vsub_token, vsub_state)
+            UP_val = val
             with tagswitch(val) as case:
-                if case(value_e.Str):
+                if case(value_e.Undef):
+                    result = value.Str('')  # type: value_t
+                elif case(value_e.Str):
                     str_val = cast(value.Str, UP_val)
-                    prompt = self.prompt_ev.EvalPrompt(str_val)
+                    prompt = self.prompt_ev.EvalPrompt(str_val.s)
                     # readline gets rid of these, so we should too.
                     p = prompt.replace('\x01', '').replace('\x02', '')
                     result = value.Str(p)
+                elif case(value_e.InternalStringArray, value_e.BashArray,
+                          value_e.BashAssoc):
+                    if val.tag() == value_e.InternalStringArray:
+                        val = cast(value.InternalStringArray, UP_val)
+                        values = [
+                            s for s in bash_impl.InternalStringArray_GetValues(
+                                val) if s is not None
+                        ]
+                    elif val.tag() == value_e.BashArray:
+                        val = cast(value.BashArray, UP_val)
+                        values = bash_impl.BashArray_GetValues(val)
+                    elif val.tag() == value_e.BashAssoc:
+                        val = cast(value.BashAssoc, UP_val)
+                        values = bash_impl.BashAssoc_GetValues(val)
+                    else:
+                        raise AssertionError()
+
+                    tmp = [
+                        self.prompt_ev.EvalPrompt(s).replace(
+                            '\x01', '').replace('\x02', '') for s in values
+                    ]
+                    result = value.InternalStringArray(tmp)
                 else:
                     e_die("Can't use @P on %s" % ui.ValType(val), op)
 
         elif op_id == Id.VOp0_Q:
+            UP_val = val
             with tagswitch(val) as case:
-                if case(value_e.Str):
+                if case(value_e.Undef):
+                    # We need to issue an error when "-o nounset" is enabled.
+                    # Although we do not need to check val for value_e.Undef,
+                    # we call _ProcessUndef for consistency in the error
+                    # message.
+                    self._ProcessUndef(val, vsub_token, vsub_state)
+
+                    # For unset variables, we do not generate any quoted words.
+                    if vsub_state.array_ref is not None:
+                        result = value.InternalStringArray([])
+                    else:
+                        result = value.Str('')
+
+                elif case(value_e.Str):
                     str_val = cast(value.Str, UP_val)
                     result = value.Str(j8_lite.MaybeShellEncode(str_val.s))
                     # oddly, 'echo ${x@Q}' is equivalent to 'echo "${x@Q}"' in
                     # bash
                     quoted2 = True
-                elif case(value_e.BashArray):
-                    array_val = cast(value.BashArray, UP_val)
+                elif case(value_e.InternalStringArray, value_e.BashArray,
+                          value_e.BashAssoc):
+                    if val.tag() == value_e.InternalStringArray:
+                        val = cast(value.InternalStringArray, UP_val)
+                        values = [
+                            s for s in bash_impl.InternalStringArray_GetValues(
+                                val) if s is not None
+                        ]
+                    elif val.tag() == value_e.BashArray:
+                        val = cast(value.BashArray, UP_val)
+                        values = bash_impl.BashArray_GetValues(val)
+                    elif val.tag() == value_e.BashAssoc:
+                        val = cast(value.BashAssoc, UP_val)
+                        values = bash_impl.BashAssoc_GetValues(val)
+                    else:
+                        raise AssertionError()
 
-                    # TODO: should use fastfunc.ShellEncode
-                    tmp = [j8_lite.MaybeShellEncode(s) for s in array_val.strs]
-                    result = value.Str(' '.join(tmp))
+                    tmp = [
+                        # TODO: should use fastfunc.ShellEncode
+                        j8_lite.MaybeShellEncode(s) for s in values
+                    ]
+                    result = value.InternalStringArray(tmp)
                 else:
                     e_die("Can't use @Q on %s" % ui.ValType(val), op)
 
         elif op_id == Id.VOp0_a:
+            val = self._ProcessUndef(val, vsub_token, vsub_state)
+            UP_val = val
             # We're ONLY simluating -a and -A, not -r -x -n for now.  See
             # spec/ble-idioms.test.sh.
             chars = []  # type: List[str]
-            with tagswitch(val) as case:
-                if case(value_e.BashArray):
+            with tagswitch(vsub_state.h_value) as case:
+                if case(value_e.InternalStringArray, value_e.BashArray):
                     chars.append('a')
                 elif case(value_e.BashAssoc):
                     chars.append('A')
@@ -1117,7 +1291,21 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     if cell.nameref:
                         chars.append('n')
 
-            result = value.Str(''.join(chars))
+            count = 1
+            with tagswitch(val) as case:
+                if case(value_e.Undef):
+                    count = 0
+                elif case(value_e.InternalStringArray):
+                    val = cast(value.InternalStringArray, UP_val)
+                    count = bash_impl.InternalStringArray_Count(val)
+                elif case(value_e.BashArray):
+                    val = cast(value.BashArray, UP_val)
+                    count = bash_impl.BashArray_Count(val)
+                elif case(value_e.BashAssoc):
+                    val = cast(value.BashAssoc, UP_val)
+                    count = bash_impl.BashAssoc_Count(val)
+
+            result = value.InternalStringArray([''.join(chars)] * count)
 
         else:
             e_die('Var op %r not implemented' % lexer.TokenVal(op), op)
@@ -1129,33 +1317,31 @@ class AbstractWordEvaluator(StringWordEvaluator):
         op_id = cast(bracket_op.WholeArray, part.bracket_op).op_id
 
         if op_id == Id.Lit_At:
+            op_str = '@'
             vsub_state.join_array = not quoted  # ${a[@]} decays but "${a[@]}" doesn't
-            UP_val = val
-            with tagswitch(val) as case2:
-                if case2(value_e.Undef):
-                    if not vsub_state.has_test_op:
-                        val = self._EmptyBashArrayOrError(part.token)
-                elif case2(value_e.Str):
-                    if self.exec_opts.strict_array():
-                        e_die("Can't index string with @", loc.WordPart(part))
-                elif case2(value_e.BashArray):
-                    pass  # no-op
-
         elif op_id == Id.Arith_Star:
+            op_str = '*'
             vsub_state.join_array = True  # both ${a[*]} and "${a[*]}" decay
-            UP_val = val
-            with tagswitch(val) as case2:
-                if case2(value_e.Undef):
-                    if not vsub_state.has_test_op:
-                        val = self._EmptyBashArrayOrError(part.token)
-                elif case2(value_e.Str):
-                    if self.exec_opts.strict_array():
-                        e_die("Can't index string with *", loc.WordPart(part))
-                elif case2(value_e.BashArray):
-                    pass  # no-op
-
         else:
             raise AssertionError(op_id)  # unknown
+
+        with tagswitch(val) as case2:
+            if case2(value_e.Undef):
+                # For an undefined array, we save the token of the array
+                # reference for the later error message.
+                vsub_state.array_ref = part.name_tok
+            elif case2(value_e.Str):
+                if self.exec_opts.strict_array():
+                    e_die("Can't index string with %s" % op_str,
+                          loc.WordPart(part))
+            elif case2(value_e.InternalStringArray, value_e.BashArray,
+                       value_e.BashAssoc):
+                pass  # no-op
+            else:
+                # The other YSH types such as List, Dict, and Float are not
+                # supported.  Error messages will be printed later, so we here
+                # return the unsupported objects without modification.
+                pass  # no-op
 
         return val
 
@@ -1173,14 +1359,44 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 # Bash treats any string as an array, so we can't add our own
                 # behavior here without making valid OSH invalid bash.
                 e_die("Can't index string %r with integer" % part.var_name,
-                      part.token)
+                      part.name_tok)
 
-            elif case2(value_e.BashArray):
-                array_val = cast(value.BashArray, UP_val)
+            elif case2(value_e.InternalStringArray):
+                array_val = cast(value.InternalStringArray, UP_val)
                 index = self.arith_ev.EvalToInt(anode)
                 vtest_place.index = a_index.Int(index)
 
-                s = GetArrayItem(array_val.strs, index)
+                s, error_code = bash_impl.InternalStringArray_GetElement(
+                    array_val, index)
+                if error_code == error_code_e.IndexOutOfRange:
+                    # Note: Bash outputs warning but does not make it a real
+                    # error.  We follow the Bash behavior here.
+                    self.errfmt.Print_(
+                        "Index %d out of bounds for array of length %d" %
+                        (index,
+                         bash_impl.InternalStringArray_Length(array_val)),
+                        blame_loc=part.name_tok)
+
+                if s is None:
+                    val = value.Undef
+                else:
+                    val = value.Str(s)
+
+            elif case2(value_e.BashArray):
+                sparse_val = cast(value.BashArray, UP_val)
+                big_index = self.arith_ev.EvalToBigInt(anode)
+                vtest_place.index = a_index.Int(mops.BigTruncate(big_index))
+
+                s, error_code = bash_impl.BashArray_GetElement(
+                    sparse_val, big_index)
+                if error_code == error_code_e.IndexOutOfRange:
+                    # Note: Bash outputs warning but does not make it a real
+                    # error.  We follow the Bash behavior here.
+                    big_length = bash_impl.BashArray_Length(sparse_val)
+                    self.errfmt.Print_(
+                        "Index %s out of bounds for array of length %s" %
+                        (mops.ToStr(big_index), mops.ToStr(big_length)),
+                        blame_loc=part.name_tok)
 
                 if s is None:
                     val = value.Undef
@@ -1195,7 +1411,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     anode, blame_loc=location.TokenForArith(anode))
 
                 vtest_place.index = a_index.Str(key)  # out param
-                s = assoc_val.d.get(key)
+                s = bash_impl.BashAssoc_GetElement(assoc_val, key)
 
                 if s is None:
                     val = value.Undef
@@ -1203,9 +1419,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     val = value.Str(s)
 
             else:
-                raise error.TypeErr(val,
-                                    'Index op expected BashArray, BashAssoc',
-                                    loc.WordPart(part))
+                raise error.TypeErr(
+                    val, 'Index op expected BashArray or BashAssoc',
+                    loc.WordPart(part))
 
         return val
 
@@ -1246,33 +1462,55 @@ class AbstractWordEvaluator(StringWordEvaluator):
         self._EvalDoubleQuoted(dq_part.parts, part_vals)
         return self._ConcatPartVals(part_vals, dq_part.left)
 
-    def _DecayArray(self, val):
-        # type: (value.BashArray) -> value.Str
-        """Decay $* to a string."""
-        assert val.tag() == value_e.BashArray, val
-        sep = self.splitter.GetJoinChar()
-        tmp = [s for s in val.strs if s is not None]
-        return value.Str(sep.join(tmp))
+    def _JoinArray(self, val, quoted, vsub_state):
+        # type: (value_t, bool, VarSubState) -> value_t
+        """Decay "$*" to a string."""
 
-    def _EmptyStrOrError(self, val, token):
-        # type: (value_t, Token) -> value_t
+        if quoted and vsub_state.join_array:
+            sep = self.splitter.GetJoinChar()
+            tmp = None  # type: List[str]
+
+            UP_val = val
+            with tagswitch(val) as case:
+                if case(value_e.InternalStringArray):
+                    val = cast(value.InternalStringArray, UP_val)
+                    tmp = [
+                        s for s in bash_impl.InternalStringArray_GetValues(val)
+                        if s is not None
+                    ]
+                elif case(value_e.BashArray):
+                    val = cast(value.BashArray, UP_val)
+                    tmp = bash_impl.BashArray_GetValues(val)
+                elif case(value_e.BashAssoc):
+                    val = cast(value.BashAssoc, UP_val)
+                    tmp = bash_impl.BashAssoc_GetValues(val)
+
+            if tmp is not None:
+                return value.Str(sep.join(tmp))
+
+        return val
+
+    def _ProcessUndef(self, val, name_tok, vsub_state):
+        # type: (value_t, Token, VarSubState) -> value_t
+        assert name_tok is not None
+
         if val.tag() != value_e.Undef:
             return val
 
-        if not self.exec_opts.nounset():
-            return value.Str('')
-
-        tok_str = lexer.TokenVal(token)
-        name = tok_str[1:] if tok_str.startswith('$') else tok_str
-        e_die('Undefined variable %r' % name, token)
-
-    def _EmptyBashArrayOrError(self, token):
-        # type: (Token) -> value_t
-        assert token is not None
-        if self.exec_opts.nounset():
-            e_die('Undefined array %r' % lexer.TokenVal(token), token)
+        if vsub_state.array_ref is not None:
+            array_tok = vsub_state.array_ref
+            if self.exec_opts.nounset():
+                e_die('Undefined array %r' % lexer.TokenVal(array_tok),
+                      array_tok)
+            else:
+                return value.InternalStringArray([])
         else:
-            return value.BashArray([])
+            if self.exec_opts.nounset():
+                tok_str = lexer.TokenVal(name_tok)
+                name = tok_str[1:] if tok_str.startswith('$') else tok_str
+                e_die('Undefined variable %r' % name, name_tok)
+            else:
+                return value.Str('')
 
     def _EvalBracketOp(self, val, part, quoted, vsub_state, vtest_place):
         # type: (value_t, BracedVarSub, bool, VarSubState, VTestPlace) -> value_t
@@ -1291,8 +1529,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
         else:  # no bracket op
             var_name = vtest_place.name
             if (var_name is not None and
-                    val.tag() in (value_e.BashArray, value_e.BashAssoc) and
-                    not vsub_state.is_type_query):
+                    val.tag() in (value_e.InternalStringArray,
+                                  value_e.BashArray, value_e.BashAssoc)):
                 if ShouldArrayDecay(var_name, self.exec_opts,
                                     not (part.prefix_op or part.suffix_op)):
                     # for ${BASH_SOURCE}, etc.
@@ -1310,17 +1548,20 @@ class AbstractWordEvaluator(StringWordEvaluator):
         value_t."""
 
         # 1. Evaluate from (var_name, var_num, token Id) -> value
-        if part.token.id == Id.VSub_Name:
+        if part.name_tok.id == Id.VSub_Name:
             vtest_place.name = part.var_name
             val = self.mem.GetValue(part.var_name)
 
-        elif part.token.id == Id.VSub_Number:
+        elif part.name_tok.id == Id.VSub_Number:
             var_num = int(part.var_name)
             val = self._EvalVarNum(var_num)
 
         else:
             # $* decays
-            val = self._EvalSpecialVar(part.token.id, quoted, vsub_state)
+            val = self._EvalSpecialVar(part.name_tok.id, quoted, vsub_state)
+
+        # update h-value (i.e., the holder of the current value)
+        vsub_state.h_value = val
 
         # We don't need var_index because it's only for L-Values of test ops?
         if self.exec_opts.eval_unsafe_arith():
@@ -1380,7 +1621,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         vsub_state = VarSubState.CreateNull()  # for $*, ${a[*]}, etc.
 
         # 1. Evaluate from (var_name, var_num, token Id) -> value
-        if part.token.id == Id.VSub_Name:
+        if part.name_tok.id == Id.VSub_Name:
             # Handle ${!prefix@} first, since that looks at names and not values
             # Do NOT handle ${!A[@]@a} here!
             if (part.prefix_op is not None and part.bracket_op is None and
@@ -1392,11 +1633,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     names = self.mem.VarNamesStartingWith(part.var_name)
                     names.sort()
 
-                    if quoted and nullary_op.id == Id.VOp3_At:
-                        part_vals.append(part_value.Array(names))
-                    else:
+                    if quoted and nullary_op.id == Id.VOp3_Star:
                         sep = self.splitter.GetJoinChar()
                         part_vals.append(Piece(sep.join(names), quoted, True))
+                    else:
+                        part_vals.append(part_value.Array(names, quoted))
                     return  # EARLY RETURN
 
             var_name = part.var_name
@@ -1404,58 +1645,39 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             val = self.mem.GetValue(var_name)
 
-        elif part.token.id == Id.VSub_Number:
+        elif part.name_tok.id == Id.VSub_Number:
             var_num = int(part.var_name)
             val = self._EvalVarNum(var_num)
         else:
             # $* decays
-            val = self._EvalSpecialVar(part.token.id, quoted, vsub_state)
+            val = self._EvalSpecialVar(part.name_tok.id, quoted, vsub_state)
 
         suffix_op_ = part.suffix_op
         if suffix_op_:
             UP_op = suffix_op_
-            with tagswitch(suffix_op_) as case:
-                if case(suffix_op_e.Nullary):
-                    suffix_op_ = cast(Token, UP_op)
-
-                    # Type query ${array@a} is a STRING, not an array
-                    # NOTE: ${array@Q} is ${array[0]@Q} in bash, which is different than
-                    # ${array[@]@Q}
-                    if suffix_op_.id == Id.VOp0_a:
-                        vsub_state.is_type_query = True
-
-                elif case(suffix_op_e.Unary):
-                    suffix_op_ = cast(suffix_op.Unary, UP_op)
-
-                    # Do the _EmptyStrOrError/_EmptyBashArrayOrError up front, EXCEPT in
-                    # the case of Kind.VTest
-                    if consts.GetKind(suffix_op_.op.id) == Kind.VTest:
-                        vsub_state.has_test_op = True
+        vsub_state.h_value = val
 
         # 2. Bracket Op
         val = self._EvalBracketOp(val, part, quoted, vsub_state, vtest_place)
 
         if part.prefix_op:
             if part.prefix_op.id == Id.VSub_Pound:  # ${#var} for length
-                if not vsub_state.has_test_op:  # undef -> '' BEFORE length
-                    val = self._EmptyStrOrError(val, part.token)
+                # undef -> '' BEFORE length
+                val = self._ProcessUndef(val, part.name_tok, vsub_state)
 
-                n = self._Length(val, part.token)
+                n = self._Count(val, part.name_tok)
                 part_vals.append(Piece(str(n), quoted, False))
                 return  # EARLY EXIT: nothing else can come after length
 
             elif part.prefix_op.id == Id.VSub_Bang:
                 if (part.bracket_op and
-                        part.bracket_op.tag() == bracket_op_e.WholeArray):
-                    if vsub_state.has_test_op:
-                        # ${!a[@]-'default'} is a non-fatal runtime error in bash.  Here
-                        # it's fatal.
-                        op_tok = cast(suffix_op.Unary, UP_op).op
-                        e_die('Test operation not allowed with ${!array[@]}',
-                              op_tok)
+                        part.bracket_op.tag() == bracket_op_e.WholeArray and
+                        not suffix_op_):
+                    # undef -> empty array
+                    val = self._ProcessUndef(val, part.name_tok, vsub_state)
 
                     # ${!array[@]} to get indices/keys
-                    val = self._Keys(val, part.token)
+                    val = self._Keys(val, part.name_tok)
                     # already set vsub_State.join_array ABOVE
                 else:
                     # Process ${!ref}.  SURPRISE: ${!a[0]} is an indirect expansion unlike
@@ -1466,18 +1688,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     vtest_place.name = None
                     vtest_place.index = None
 
-                    val = self._EvalVarRef(val, part.token, quoted, vsub_state,
-                                           vtest_place)
-
-                    if not vsub_state.has_test_op:  # undef -> '' AFTER indirection
-                        val = self._EmptyStrOrError(val, part.token)
+                    val = self._EvalVarRef(val, part.name_tok, quoted,
+                                           vsub_state, vtest_place)
 
             else:
                 raise AssertionError(part.prefix_op)
-
-        else:
-            if not vsub_state.has_test_op:  # undef -> '' if no prefix op
-                val = self._EmptyStrOrError(val, part.token)
 
         quoted2 = False  # another bit for @Q
         if suffix_op_:
@@ -1486,27 +1701,36 @@ class AbstractWordEvaluator(StringWordEvaluator):
             with tagswitch(suffix_op_) as case:
                 if case(suffix_op_e.Nullary):
                     op = cast(Token, UP_op)
-                    val, quoted2 = self._Nullary(val, op, var_name)
+                    val, quoted2 = self._Nullary(val, op, var_name,
+                                                 part.name_tok, vsub_state)
 
                 elif case(suffix_op_e.Unary):
                     op = cast(suffix_op.Unary, UP_op)
                     if consts.GetKind(op.op.id) == Kind.VTest:
+                        # Note: _ProcessUndef (i.e., the conversion of undef ->
+                        # '') is not applied to the VTest operators such as
+                        # ${a:-def}, ${a+set}, etc.
                         if self._ApplyTestOp(val, op, quoted, part_vals,
-                                             vtest_place, part.token):
+                                             vtest_place, part.name_tok,
+                                             vsub_state):
                             # e.g. to evaluate ${undef:-'default'}, we already appended
                             # what we need
                             return
 
                     else:
                         # Other suffix: value -> value
+                        val = self._ProcessUndef(val, part.name_tok,
+                                                 vsub_state)
                         val = self._ApplyUnarySuffixOp(val, op)
 
                 elif case(suffix_op_e.PatSub):  # PatSub, vectorized
                     op = cast(suffix_op.PatSub, UP_op)
+                    val = self._ProcessUndef(val, part.name_tok, vsub_state)
                     val = self._PatSub(val, op)
 
                 elif case(suffix_op_e.Slice):
                     op = cast(suffix_op.Slice, UP_op)
+                    val = self._ProcessUndef(val, part.name_tok, vsub_state)
                     val = self._Slice(val, op, var_name, part)
 
                 elif case(suffix_op_e.Static):
@@ -1515,15 +1739,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
                 else:
                     raise AssertionError()
+        else:
+            val = self._ProcessUndef(val, part.name_tok, vsub_state)
 
         # After applying suffixes, process join_array here.
-        UP_val = val
-        if val.tag() == value_e.BashArray:
-            array_val = cast(value.BashArray, UP_val)
-            if vsub_state.join_array:
-                val = self._DecayArray(array_val)
-            else:
-                val = array_val
+        val = self._JoinArray(val, quoted, vsub_state)
 
         # For example, ${a} evaluates to value.Str(), but we want a
         # Piece().
@@ -1583,7 +1803,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
             var_name = lexer.LazyStr(token)
             # TODO: Special case for LINENO
             val = self.mem.GetValue(var_name)
-            if val.tag() in (value_e.BashArray, value_e.BashAssoc):
+            if val.tag() in (value_e.InternalStringArray, value_e.BashArray,
+                             value_e.BashAssoc):
                 if ShouldArrayDecay(var_name, self.exec_opts):
                     # for $BASH_SOURCE, etc.
                     val = DecayArray(val)
@@ -1600,14 +1821,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
             val = self._EvalSpecialVar(token.id, quoted, vsub_state)
 
         #log('SIMPLE %s', part)
-        val = self._EmptyStrOrError(val, token)
-        UP_val = val
-        if val.tag() == value_e.BashArray:
-            array_val = cast(value.BashArray, UP_val)
-            if vsub_state.join_array:
-                val = self._DecayArray(array_val)
-            else:
-                val = array_val
+        val = self._ProcessUndef(val, token, vsub_state)
+        val = self._JoinArray(val, quoted, vsub_state)
 
         v = _ValueToPartValue(val, quoted, part)
         part_vals.append(v)
@@ -1687,11 +1902,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         UP_part = part
         with tagswitch(part) as case:
-            if case(word_part_e.ShArrayLiteral):
-                part = cast(ShArrayLiteral, UP_part)
+            if case(word_part_e.YshArrayLiteral):
+                part = cast(YshArrayLiteral, UP_part)
                 e_die("Unexpected array literal", loc.WordPart(part))
-            elif case(word_part_e.BashAssocLiteral):
-                part = cast(word_part.BashAssocLiteral, UP_part)
+            elif case(word_part_e.InitializerLiteral):
+                part = cast(word_part.InitializerLiteral, UP_part)
                 e_die("Unexpected associative array literal",
                       loc.WordPart(part))
 
@@ -1778,7 +1993,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 val = self.mem.GetValue(part.var_name)
 
                 strs = self.expr_ev.SpliceValue(val, part)
-                part_vals.append(part_value.Array(strs))
+                part_vals.append(part_value.Array(strs, True))
 
             elif case(word_part_e.ExprSub):
                 part = cast(word_part.ExprSub, UP_part)
@@ -1856,7 +2071,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     raise error.FailGlob(
                         'Extended glob %r matched no files' % fnmatch_pat, w)
 
-                part_vals.append(part_value.Array(results))
+                part_vals.append(part_value.Array(results, True))
             elif bool(eval_flags & EXTGLOB_NESTED):
                 # We only glob at the TOP level of @(nested|@(pattern))
                 part_vals.extend(word_part_vals)
@@ -2010,23 +2225,29 @@ class AbstractWordEvaluator(StringWordEvaluator):
             part0 = w.parts[0]
             UP_part0 = part0
             tag = part0.tag()
-            # Special case for a=(1 2).  ShArrayLiteral won't appear in words that
-            # don't look like assignments.
-            if tag == word_part_e.ShArrayLiteral:
-                part0 = cast(ShArrayLiteral, UP_part0)
-                array_words = part0.words
-                words = braces.BraceExpandWords(array_words)
-                strs = self.EvalWordSequence(words)
-                return value.BashArray(strs)
+            if tag == word_part_e.InitializerLiteral:
+                part0 = cast(word_part.InitializerLiteral, UP_part0)
 
-            if tag == word_part_e.BashAssocLiteral:
-                part0 = cast(word_part.BashAssocLiteral, UP_part0)
-                d = NewDict()  # type: Dict[str, str]
+                assigns = []  # type: List[InitializerValue]
                 for pair in part0.pairs:
-                    k = self.EvalWordToString(pair.key)
-                    v = self.EvalWordToString(pair.value)
-                    d[k.s] = v.s
-                return value.BashAssoc(d)
+                    UP_pair = pair
+                    with tagswitch(pair) as case:
+                        if case(InitializerWord_e.ArrayWord):
+                            pair = cast(InitializerWord.ArrayWord, UP_pair)
+                            words = braces.BraceExpandWords([pair.w])
+                            for v in self.EvalWordSequence(words):
+                                assigns.append(InitializerValue(
+                                    None, v, False))
+                        elif case(InitializerWord_e.AssocPair):
+                            pair = cast(AssocPair, UP_pair)
+                            k = self.EvalWordToString(pair.key).s
+                            v = self.EvalWordToString(pair.value).s
+                            assigns.append(
+                                InitializerValue(k, v, pair.has_plus))
+                        else:
+                            raise AssertionError(pair.tag())
+
+                return value.InitializerList(assigns)
 
         # If RHS doesn't look like a=( ... ), then it must be a string.
         return self.EvalWordToString(w)
@@ -2291,7 +2512,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         Unlike the EvalWord*() methods, it does globbing.
 
         Args:
-          allow_assign: True for command.Simple, False for BashArray a=(1 2 3)
+          allow_assign: True for command.Simple, False for InternalStringArray a=(1 2 3)
         """
         if self.exec_opts.simple_word_eval():
             return self.SimpleEvalWordSequence2(words, is_last_cmd,
@@ -2441,7 +2662,7 @@ class NormalWordEvaluator(AbstractWordEvaluator):
                 raise error.Structured(4, e.Message(), cs_part.left_token)
 
             #strs = self.splitter.SplitForWordEval(stdout_str)
-            return part_value.Array(strs)
+            return part_value.Array(strs, True)
         else:
             return Piece(stdout_str, quoted, not quoted)
 
@@ -2486,7 +2707,7 @@ class CompletionWordEvaluator(AbstractWordEvaluator):
     def _EvalCommandSub(self, cs_part, quoted):
         # type: (CommandSub, bool) -> part_value_t
         if cs_part.left_token.id == Id.Left_AtParen:
-            return part_value.Array([_DUMMY])
+            return part_value.Array([_DUMMY], quoted)
         else:
             return Piece(_DUMMY, quoted, not quoted)
 

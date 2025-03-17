@@ -1,4 +1,5 @@
-#
+## compare_shells: dash bash mksh
+
 # word-eval.test.sh: Test the word evaluation pipeline in order.
 #
 # Part evaluation, splitting, joining, elision, globbing.

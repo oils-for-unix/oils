@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-invalid_too_many_defaults.py
+Invalid conditions: if s: --> if len(s):
 """
 from __future__ import print_function
 

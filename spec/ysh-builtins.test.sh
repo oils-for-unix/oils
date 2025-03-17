@@ -172,42 +172,51 @@ len=2
 pass
 ## END
 
-#### read --raw-line handles line without end, --with-eol
+#### read --raw-line in a loop
 
-write --end '' $'a\nb\n' | while read --raw-line; do
+write --end '' $'\na\nb\n\n' | while read --raw-line; do
   pp test_ (_reply)
 done
 
 echo
 
-write --end '' $'a\nb' | while read --raw-line; do
-  pp test_ (_reply)
-done
-
-echo
-
-write --end '' $'a\nb\n' | while read --raw-line --with-eol; do
-  pp test_ (_reply)
-done
-
-echo
-
-write --end '' $'a\nb' | while read --raw-line --with-eol; do
+write --end '' $'a\n\nb' | while read --raw-line; do
   pp test_ (_reply)
 done
 
 
 ## STDOUT:
+(Str)   ""
 (Str)   "a"
 (Str)   "b"
+(Str)   ""
 
 (Str)   "a"
+(Str)   ""
 (Str)   "b"
+## END
 
+
+#### read --raw-line --with-eol in a loop
+
+write --end '' $'\na\nb\n\n' | while read --raw-line --with-eol; do
+  pp test_ (_reply)
+done
+
+echo
+
+write --end '' $'a\n\nb' | while read --raw-line --with-eol; do
+  pp test_ (_reply)
+done
+
+## STDOUT:
+(Str)   "\n"
 (Str)   "a\n"
 (Str)   "b\n"
+(Str)   "\n"
 
 (Str)   "a\n"
+(Str)   "\n"
 (Str)   "b"
 ## END
 

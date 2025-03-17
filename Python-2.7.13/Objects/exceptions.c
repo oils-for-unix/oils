@@ -212,9 +212,6 @@ BaseException_setstate(PyObject *self, PyObject *state)
 }
 
 
-#ifdef OVM_MAIN
-#include "Python-2.7.13/Objects/exceptions.c/BaseException_methods.def"
-#else
 static PyMethodDef BaseException_methods[] = {
    {"__reduce__", (PyCFunction)BaseException_reduce, METH_NOARGS },
    {"__setstate__", (PyCFunction)BaseException_setstate, METH_O },
@@ -223,7 +220,6 @@ static PyMethodDef BaseException_methods[] = {
 #endif
    {NULL, NULL, 0, NULL},
 };
-#endif
 
 
 
@@ -796,14 +792,10 @@ EnvironmentError_reduce(PyEnvironmentErrorObject *self)
 }
 
 
-#ifdef OVM_MAIN
-#include "Python-2.7.13/Objects/exceptions.c/EnvironmentError_methods.def"
-#else
 static PyMethodDef EnvironmentError_methods[] = {
     {"__reduce__", (PyCFunction)EnvironmentError_reduce, METH_NOARGS},
     {NULL}
 };
-#endif
 
 ComplexExtendsException(PyExc_StandardError, EnvironmentError,
                         EnvironmentError, EnvironmentError_dealloc,
@@ -2044,14 +2036,10 @@ PyObject *PyExc_MemoryErrorInst=NULL;
 PyObject *PyExc_RecursionErrorInst = NULL;
 
 /* module global functions */
-#ifdef OVM_MAIN
-#include "Python-2.7.13/Objects/exceptions.c/functions.def"
-#else
 static PyMethodDef functions[] = {
     /* Sentinel */
     {NULL, NULL}
 };
-#endif
 
 #define PRE_INIT(TYPE) if (PyType_Ready(&_PyExc_ ## TYPE) < 0) \
     Py_FatalError("exceptions bootstrapping error.");

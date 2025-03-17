@@ -117,6 +117,7 @@ Modules/gcmodule.c
 MODOBJS='
 Modules/errnomodule.c
 Modules/pwdmodule.c
+Modules/_sre.c
 Modules/_weakref.c
 Modules/zipimport.c
 Modules/signalmodule.c
@@ -343,7 +344,7 @@ make-tar() {
   local version_file
   case $app_name in
     oil)
-      version_file=oil-version.txt
+      version_file=oils-version.txt
       ;;
     hello)
       version_file=build/testdata/hello-version.txt

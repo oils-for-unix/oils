@@ -179,7 +179,7 @@ interactive() {
 # oil-tar functions
 #
 
-readonly OIL_VERSION=$(head -n 1 oil-version.txt)
+readonly OIL_VERSION=$(head -n 1 oils-version.txt)
 
 _copy-tar() {
   local chroot_dir=${1:-$CHROOT_OIL_TAR}

@@ -20,7 +20,10 @@ echo unquoted' and single-quoted'
 #### newline inside single-quoted string
 echo 'newline
 inside single-quoted string'
-## stdout-json: "newline\ninside single-quoted string\n"
+## STDOUT:
+newline
+inside single-quoted string
+## END
 
 #### Double-quoted
 echo "double   quoted"
@@ -130,7 +133,10 @@ echo $\
 
 #### Semicolon
 echo separated; echo by semi-colon
-## stdout-json: "separated\nby semi-colon\n"
+## STDOUT:
+separated
+by semi-colon
+## END
 
 #
 # TODO: Variable substitution operators.
@@ -161,9 +167,17 @@ echo $'single \' double \"'
 
 #### $'' with newlines
 echo $'col1\ncol2\ncol3'
-## stdout-json: "col1\ncol2\ncol3\n"
+## STDOUT:
+col1
+col2
+col3
+## END
 # In dash, \n is special within single quotes
-## N-I dash stdout-json: "$col1\ncol2\ncol3\n"
+## N-I dash STDOUT:
+$col1
+col2
+col3
+## END
 
 #### $'' octal escapes don't have leading 0
 # echo -e syntax is echo -e \0377

@@ -1,0 +1,121 @@
+# Is this Yaks?  Well there is no CST / S-expression layer?
+#
+# Or should we call this "Pea" or "Tea"?
+
+module mycpp
+{
+  # Should these be Python types, or C++ types?
+  #
+  # Python: mops.BigInt, C++ mops::BigInt
+  # Python: float, C++: double
+
+  mtype = Foo()
+
+  yaks_type =
+    NoneType  # -> None
+  | NoReturn  # -> NoReturn
+
+    # Are we using typing.IO?
+  | IOError_OSError  # Special thing for exceptions?
+
+    # Builtin types
+    # MyPy Float is C++ double
+  | Bool | Int | Float | Str
+
+    # e.g. state::Mem, mops::BigInt
+  | Class(List[str] mod_parts, str name)
+  | Callable(List[yaks_type] args, yaks_type return_)  # Callable[[float, float], float]
+
+  # Parameterized types
+
+  | Dict_(yaks_type k, yaks_type v)  # Dict[K, V]
+  | List_(yaks_type t)  # List[T]
+  | Iterator(yaks_type t)  # Iterator[T]
+
+    # Will be turns into Tuple2, Tuple3, Tuple4<A, B, C, D>
+  | Tuple(List[yaks_type] children)
+  | Optional(yaks_type child)  # Optional[T]
+
+  | Alias(yaks_type child)
+
+
+  # Using names that are like MyPy
+  # Compare with Python.asdl, which has Num(object n) and Str(string s)
+
+  # This is the language we accept
+
+  yaks_expr =
+    BoolExpr(bool value)
+  | IntExpr(int value)  # constant expression can't be big?
+  | FloatExpr(float value)
+  | StrExpr(str value)
+    # Disambiguate . and -> and ::
+  | MemberExpr()
+  | CallExpr()
+
+  | Cast()
+
+  yaks_stmt =
+    PassStmt()
+
+    # Should this just be a function call?
+    # Well there is also Yield
+    # But yeah we don't translate it, so it might be good to clamp down on it?
+
+    # log()
+    # probe()
+
+  | ExpressionStmt()
+
+    # This could be translated first?  del mylist[:]
+  | DelStmt()
+  | RaiseStmt()
+
+    # Python assignment, no separation between var and setvar
+    # we remove __all__
+    # we also have d = NewDict()
+    # a = [x for x in other]
+  | AssignmentStmt()
+
+    # remove if __name__
+    # top level is STATIC
+  | IfStmt()
+
+    # xrange()
+    # reversed()
+    # enumerate()
+    # iteritems()
+    # tuple unpacking
+    # over dict, and over list
+  | ForStmt()
+  | WhileStmt()
+
+    # When there are zero args
+  | Break
+  | Continue
+  | Return(yaks_expr val)
+
+    # context manager
+    # 3 kinds of switches
+  | WithStmt()
+
+  | TryStmt()
+
+    # Constructor __init__
+    # __exit__
+    # method
+    # free function
+  | FuncDef(str name)
+
+  | ClassDef(str name)
+
+  | ImportFrom()
+
+    # TODO: revive this, at least for Python
+	  # attributes (int lineno, int col_offset)
+
+  yaks_file = (str name, List[yaks_stmt] defs)
+}
+
+# vim: sw=2
+

@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 ## our_shell: ysh
 
 #### join()
@@ -182,69 +182,3 @@ echo $[y => lower()]
 áé
 ## END
 
-#### getFrame()
-
-var fr = vm.getFrame(0)
-pp test_ (fr)
-var d = dict(fr)
-pp test_ (d.ARGV)
-echo
-
-proc p1 {
-  var p1_var = 'x'
-  p2
-}
-
-proc p2 {
-  echo 'p2 frame -1'
-  var fr = vm.getFrame(-1)
-  var d = dict(fr)
-
-  pp test_ (fr)
-  pp test_ (d)
-  pp test_ (keys(d))
-  echo
-
-  echo 'p2 frame -2'
-  setvar fr = vm.getFrame(-2)
-  setvar d = dict(fr)
-
-  pp test_ (fr)
-  pp test_ (keys(d))
-  echo
-}
-
-p1
-
-var fr = vm.getFrame(99)  # fails
-
-## status: 3
-## STDOUT:
-<Frame>
-(List)   []
-
-p2 frame -1
-<Frame>
-(Dict)   {"ARGV":[],"fr":<Frame>}
-(List)   ["ARGV","fr"]
-
-p2 frame -2
-<Frame>
-(List)   ["ARGV","p1_var"]
-
-## END
-
-
-#### bindFrame()
-
-var frag = ^(echo $i)
-
-# TODO: should be fragment
-pp test_ (frag)
-
-var cmd = bindFrame(frag, getFrame(0))
-
-pp test_ (cmd)
-
-## STDOUT:
-## END

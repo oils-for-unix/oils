@@ -26,6 +26,10 @@ build.ninja
 tags
 .vagrant
 
+# clangd
+/.cache/
+/compile_commands.json
+
 # Our own temp dirs
 _bin/
 _build/

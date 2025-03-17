@@ -61,17 +61,21 @@ tags.
 
 ### Link Shortcuts, e.g. `$xref`
 
-Here's an example of how it works.  This Markdown:
+Markdown:
 
     The [GNU bash shell]($xref:bash)
 
-is translated to HTML by [CommonMark][]:
+After [CommonMark][]:
 
     The <a href="$xref:bash">GNU bash shell</a>
 
-Our `$xref:` plugin expands it to:
+After our `$xref:` plugin:
 
     The <a href="/cross-ref.html#bash">GNU bash shell</a>
+
+Example: The [GNU bash shell]($xref:bash)
+
+---
 
 If the argument is omitted, then the **anchor text** is used.  So you can just write:
 
@@ -80,6 +84,10 @@ If the argument is omitted, then the **anchor text** is used.  So you can just w
 and it will become:
 
     The <a href="/cross-ref.html#bash">bash</a>
+
+Example: [bash][]
+
+[bash]: $xref
 
 List of plugins:
 
@@ -98,23 +106,34 @@ See the raw and rendered versions of this doc for more:
 
 Use Markdown's fenced code blocks like this:
 
-    ``` sh-prompt
+    ```oil-sh
     ysh$ var x = 'hello world'
     ysh$ echo $x
     hello world
     ```
 
+Example:
+
+```oil-sh
+ysh$ var x = 'hello world'
+ysh$ echo $x
+hello world
+```
+
+
 Or you can set `default_highlighter` for blocks indented by 4 spaces.
 
 Again see [doc-plugins.md][] for examples.
 
-## The Help Toolchain Renders to HTML and ANSI
+## Convenient Tables with `ul-table`
 
-This is done with `doctools/`
-
+See this doc: [ul-table: Markdown Tables Without New Syntax](ul-table.html)
 ## Code Location
 
 - [build/doc.sh]($oils-src) drives the tools in [doctools/]($oils-src).
 - Markdown files are in [doc/]($oils-src).
 
+## Related
 
+- [Examples of HTML Plugins](doc-plugins.html)
+- [ul-table: Markdown Tables Without New Syntax](ul-table.html)

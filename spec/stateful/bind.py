@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """
-spec/stateful/bind.py
+Interactively tests shell bindings.
+
+To invoke this file, run the shell wrapper:
+
+    test/stateful.sh bind-quick
 """
 from __future__ import print_function
 
 import sys
-import tempfile
 import time
 
 import harness
@@ -49,8 +52,11 @@ def bind_plain(sh):
 
 
 @register(not_impl_shells=['dash', 'mksh'])
-def bind_r(sh):
-    "test bind -r for removing bindings"
+def bind_r_for_bind_x_osh_fn(sh):
+    """
+    test bind -r for removing bindings to arbitrary cmds made with bind -x
+    (regular readline fn bind removal is tested in noninteractive builtin-bind.test.sh)
+    """
     expect_prompt(sh)
 
     add_foo_fn(sh)
@@ -89,6 +95,75 @@ def bind_x(sh):
     time.sleep(0.1)
 
     sh.expect("FOO")
+
+
+@register(not_impl_shells=['dash', 'mksh'])
+def bind_x_runtime_envvar_vals(sh):
+    "test bind -x for using env var runtime values (e.g., 'echo $PWD' should change with dir)"
+    expect_prompt(sh)
+
+    sh.sendline("export BIND_X_VAR=foo")
+
+    send_bind(sh, """-x '"\C-x\C-f": echo $BIND_X_VAR' """)
+    expect_prompt(sh)
+
+    sh.sendline("export BIND_X_VAR=bar")
+    expect_prompt(sh)
+
+    sh.sendcontrol('x')
+    sh.sendcontrol('f')
+    time.sleep(0.1)
+
+    sh.expect("bar")
+
+
+@register(not_impl_shells=['dash', 'mksh'])
+def bind_x_readline_line(sh):
+    "test bind -x for correctly setting $READLINE_LINE for the cmd"
+    expect_prompt(sh)
+
+    send_bind(sh, """-x '"\C-x\C-f": echo Current line is: $READLINE_LINE' """)
+    expect_prompt(sh)
+
+    sh.send('abcdefghijklmnopqrstuvwxyz')
+
+    sh.sendcontrol('x')
+    sh.sendcontrol('f')
+    time.sleep(0.1)
+
+    # must not match any other output (like debug output or shell names)
+    sh.expect("Current line is: abcdefghijklmnopqrstuvwxyz")
+
+    sh.sendline(
+        '[[ -v READLINE_LINE ]] && echo "READLINE_LINE is set" || echo "READLINE_LINE is unset"'
+    )
+    sh.expect("READLINE_LINE is unset")
+
+
+@register(not_impl_shells=['dash', 'mksh'])
+def bind_x_readline_point(sh):
+    "test bind -x for correctly setting $READLINE_POINT for the cmd"
+    cmd_str = 'abcdefghijklmnop'
+    expected_rl_point = len(cmd_str)
+
+    expect_prompt(sh)
+
+    send_bind(sh,
+              """-x '"\C-x\C-f": echo Cursor point at: $READLINE_POINT' """)
+    expect_prompt(sh)
+
+    sh.send(cmd_str)
+
+    sh.sendcontrol('x')
+    sh.sendcontrol('f')
+    time.sleep(0.1)
+
+    sh.expect("Cursor point at: " + str(expected_rl_point))
+
+    sh.sendline(
+        '[[ -v READLINE_POINT ]] && echo "READLINE_POINT is set" || echo "READLINE_POINT is unset"'
+    )
+    sh.expect("READLINE_POINT is unset")
 
 
 @register(not_impl_shells=['dash', 'mksh'])

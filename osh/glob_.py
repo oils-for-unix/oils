@@ -16,6 +16,8 @@ from frontend import match
 from mycpp import mylib
 from mycpp.mylib import log, print_stderr
 
+from libc import GLOB_PERIOD
+
 from typing import List, Tuple, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from core import optview
@@ -413,7 +415,12 @@ class Globber(object):
     def _Glob(self, arg, out):
         # type: (str, List[str]) -> int
         try:
-            results = libc.glob(arg)
+            flags = 0
+            if self.exec_opts.dotglob():
+                # If HAVE_GLOB_PERIOD is false, then ./configure stubs out
+                # GLOB_PERIOD as 0, a no-op
+                flags |= GLOB_PERIOD
+            results = libc.glob(arg, flags)
         except RuntimeError as e:
             # These errors should be rare: I/O error, out of memory, or unknown
             # There are no syntax errors.  (But see comment about globerr() in
@@ -433,7 +440,17 @@ class Globber(object):
                 results = tmp  # idiom to work around mycpp limitation
                 n = len(results)
 
-            out.extend(results)
+            # XXX: libc's glob function can return '.' and '..', which
+            # are typically not of interest. Filtering in this manner
+            # is similar (but not identical) to the default bash
+            # setting of 'setopt -s globskipdots'. Supporting that
+            # option fully would require more than simply wrapping
+            # this in an if statement.
+            n = 0
+            for s in results:
+                if s not in ('.', '..'):
+                    out.append(s)
+                    n += 1
             return n
 
         return 0

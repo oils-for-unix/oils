@@ -684,11 +684,11 @@ install-py3-libs-from-cache() {
 
 install-py3-libs() {
   ### Invoked by Dockerfile.cpp-small, etc.
+  local mypy_dir=${1:-}
 
-  download-py3-libs
-  install-py3-libs-from-cache
+  download-py3-libs "$mypy_dir"
+  install-py3-libs-from-cache "$mypy_dir"
 }
-
 
 # zsh notes
   # Fedora compiler error
@@ -892,7 +892,7 @@ index-html()  {
 
   cat <<EOF
     <p id="home-link">
-      <a href="/">oilshell.org</a>
+      <a href="/">oils.pub</a>
     </p>
 
   <h1>Wedge Builds</h1>
@@ -1097,21 +1097,24 @@ boxed-wedges() {
 }
 
 boxed-spec-bin() {
+  if false; then
+    deps/wedge.sh boxed deps/source.medo/bash '4.4'
+  fi
+
   if true; then
-    #deps/wedge.sh boxed deps/source.medo/bash '4.4'
     deps/wedge.sh boxed deps/source.medo/bash '5.2.21'
   fi
 
-  if false; then
+  if true; then
     deps/wedge.sh boxed deps/source.medo/dash
     deps/wedge.sh boxed deps/source.medo/mksh
   fi
 
-  if false; then
+  if true; then
     # Note: zsh requires libncursesw5-dev
-    #deps/wedge.sh boxed deps/source.medo/zsh
+    deps/wedge.sh boxed deps/source.medo/zsh
 
-    #deps/wedge.sh boxed deps/source.medo/busybox
+    deps/wedge.sh boxed deps/source.medo/busybox
 
     # Problem with out of tree build, as above.  Skipping for now
     deps/wedge.sh boxed deps/source.medo/yash

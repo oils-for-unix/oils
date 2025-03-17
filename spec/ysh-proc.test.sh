@@ -271,10 +271,12 @@ G
 
 shopt --set ysh:upgrade
 
+var p = null
 for x in 1 2 {
-  proc p {
+  proc inner {
     echo 'loop'
   }
+  setvar p = inner
 }
 p
 
@@ -559,7 +561,7 @@ if false {
 }
 
 ## STDOUT:
-    [frame_vars_] ARGV localproc
+    [frame_vars_] __E__ ARGV localproc
 ## END
 
 
@@ -811,4 +813,23 @@ counter (3)
 counter = 1
 counter = 3
 counter = 6
+## END
+
+#### Procs are closures (capture their environment)
+shopt --set ysh:upgrade
+
+func makeProc() {
+  var x = 42
+  proc inner {
+    echo "x = $x"
+  }
+  setvar x += 1
+  return (inner)
+}
+
+const p = makeProc()
+p
+
+## STDOUT:
+x = 43
 ## END

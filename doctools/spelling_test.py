@@ -10,6 +10,7 @@ import spelling  # module under test
 class SpellingTest(unittest.TestCase):
 
     def testSplitWords(self):
+        # type: () -> None
 
         docs = [
             r'''

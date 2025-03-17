@@ -5,11 +5,12 @@
 # Usage:
 #   mycpp/TEST.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+
 source build/common.sh
 source build/ninja-rules-cpp.sh
 source devtools/common.sh
@@ -41,7 +42,10 @@ examples-variant() {
 
   for b in _bin/$compiler-$variant/mycpp/examples/*; do
     case $b in
-      (*.stripped)  # just run the unstripped binary
+      *.pea)  # for now, don't run pea_hello.pea, it fails on purpose
+        continue
+        ;;
+      *.stripped)  # just run the unstripped binary
         continue
         ;;
     esac
@@ -49,7 +53,7 @@ examples-variant() {
     local prefix="$log_dir/$(basename $b)"
 
     case $variant in
-      (coverage)
+      coverage)
         export LLVM_PROFILE_FILE=$prefix.profraw
         ;;
     esac
@@ -179,7 +183,7 @@ run-unit-tests() {
     local asan_options=''
     case $b in
       # leaks with malloc
-      (*/demo/hash_table|*/demo/target_lang|*/demo/gc_header|*/small_str_test)
+      */demo/hash_table|*/demo/target_lang|*/demo/gc_header|*/small_str_test)
         asan_options='detect_leaks=0'
         ;;
     esac
@@ -218,14 +222,17 @@ test-invalid-examples() {
       */invalid_condition.py)
         expected_status=8
         ;;
+      */invalid_other.py)
+        expected_status=6
+        ;;
       */invalid_default_args.py)
-        expected_status=4
+        expected_status=5
         ;;
       */invalid_try_else.py)
         expected_status=3
         ;;
       */invalid_except.py)
-        expected_status=3
+        expected_status=4
         ;;
       */invalid_global.py)
         expected_status=2
@@ -354,8 +361,70 @@ examples-coverage() {
   test/coverage.sh html-report $out_dir clang-coverage/mycpp/examples
 }
 
-# Call function $1 with arguments $2 $3 $4
-#
-# mycpp/TEST.sh examples-variant '' asan
+files() {
+  wc -l mycpp/*.py | sort -n
+}
 
-"$@"
+copy-golden() {
+  local dir=testdata/mycpp
+  mkdir -p $dir
+  cp -v _gen/bin/oils_for_unix.mycpp.cc $dir
+}
+
+compare-golden() {
+  local -a files=(
+    testdata/mycpp/oils_for_unix.mycpp.cc _gen/bin/oils_for_unix.mycpp.cc 
+  )
+
+  wc -l "${files[@]}"
+  echo
+
+  if diff -u "${files[@]}"; then
+    echo EQUAL
+  else
+    echo 'NOT EQUAL'
+  fi
+}
+
+compare-souffle() {
+  # Show less rooting in examples
+  ninja _bin/cxx-asan/mycpp/examples/test_iterators.mycpp{,-souffle}
+
+  local -a files=(
+    _gen/mycpp/examples/test_iterators.mycpp{,-souffle}.cc 
+  )
+  if diff -u "${files[@]}"; then
+    die 'Should not be equal'
+  fi
+
+  ninja _bin/cxx-asan/mycpp-souffle/osh
+  local -a files=(
+    _gen/bin/oils_for_unix.mycpp{,-souffle}.cc 
+  )
+  if diff -u "${files[@]}"; then
+    die 'Should not be equal'
+  fi
+}
+
+const-pass() {
+  python3 mycpp/const_pass.py "$@"
+}
+
+str-hash-demo() {
+  local file=benchmarks/testdata/configure-coreutils
+
+  # We have ~1600 strings - let's say it doubles
+  #
+  # 1613 unique strings -> 34 collisions of length 2, 1 of length 3
+  # 2618 unique strings -> 108 collisions of length 2, 6 of length 3
+  #
+  # So yes 3 is good
+
+  for n in 180 1800 3600 18000; do
+    echo "=== Number of strings $n ==="
+    head -n $n $file | const-pass
+    echo
+  done
+}
+
+task-five "$@"

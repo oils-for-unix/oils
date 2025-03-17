@@ -1,5 +1,9 @@
-#
+## compare_shells: dash bash mksh
+
 # Corner cases in var sub.  Maybe rename this file.
+
+# NOTE: ZSH has interesting behavior, like echo hi > "$@" can write to TWO
+# FILES!
 
 #### Bad var sub
 echo ${a&}

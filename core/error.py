@@ -69,8 +69,8 @@ class Parse(_ErrorWithLocation):
         _ErrorWithLocation.__init__(self, msg, location)
 
 
-class FailGlob(_ErrorWithLocation):
-    """Raised when a glob matches nothing when failglob is set.
+class WordFailure(_ErrorWithLocation):
+    """Raised for failure of word evaluation
 
     Meant to be caught.
     """
@@ -78,6 +78,30 @@ class FailGlob(_ErrorWithLocation):
     def __init__(self, msg, location):
         # type: (str, loc_t) -> None
         _ErrorWithLocation.__init__(self, msg, location)
+
+
+class FailGlob(WordFailure):
+    """Raised when a glob matches nothing when failglob is set.
+
+    Meant to be caught.
+    """
+
+    def __init__(self, msg, location):
+        # type: (str, loc_t) -> None
+        WordFailure.__init__(self, 'failglob: ' + msg, location)
+
+
+class VarSubFailure(WordFailure):
+    """Raised when a variable substitution fails.  For example, this
+    is thrown with ${!ref} when the variable "ref" contains invalid
+    variable name such as ref="a b c".
+
+    Meant to be caught.
+    """
+
+    def __init__(self, msg, location):
+        # type: (str, loc_t) -> None
+        WordFailure.__init__(self, msg, location)
 
 
 class RedirectEval(_ErrorWithLocation):

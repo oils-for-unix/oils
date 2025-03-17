@@ -4,8 +4,9 @@ func_reflect.py - Functions for reflecting on Oils code - OSH or YSH.
 """
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import (scope_e)
-from _devbuild.gen.syntax_asdl import source
+from _devbuild.gen.runtime_asdl import scope_e
+from _devbuild.gen.syntax_asdl import (Token, CompoundWord, source,
+                                       debug_frame, debug_frame_e)
 from _devbuild.gen.value_asdl import (value, value_e, value_t, cmd_frag)
 
 from core import alloc
@@ -14,16 +15,17 @@ from core import main_loop
 from core import state
 from core import vm
 from data_lang import j8
+from display import ui
 from frontend import location
 from frontend import reader
 from frontend import typed_args
 from mycpp import mops
+from mycpp import mylib
 from mycpp.mylib import log, tagswitch
 
-from typing import TYPE_CHECKING
+from typing import List, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from frontend import parse_lib
-    from display import ui
 
 _ = log
 
@@ -76,9 +78,12 @@ class GetFrame(vm._Callable):
 
         length = len(self.mem.var_stack)
         if index < 0:
-            index += length
-        if 0 <= index and index < length:
-            return value.Frame(self.mem.var_stack[index])
+            i = index + length
+        else:
+            i = index
+
+        if 0 <= i and i < length:
+            return value.Frame(self.mem.var_stack[i])
         else:
             raise error.Structured(3, "Invalid frame %d" % index,
                                    rd.LeftParenToken())
@@ -101,6 +106,115 @@ class BindFrame(vm._Callable):
         return value.Null
         # TODO: I guess you have to bind 2 frames?
         #return Command(cmd_frag.Expr(frag), frame, None)
+
+
+class GetDebugStack(vm._Callable):
+
+    def __init__(self, mem):
+        # type: (state.Mem) -> None
+        vm._Callable.__init__(self)
+        self.mem = mem
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        unused_self = rd.PosObj()
+        rd.Done()
+
+        debug_frames = []  # type: List[value_t]
+        for fr in self.mem.debug_stack:
+            # Don't show stack frames created when running the ERR trap - we
+            # want the main stuff
+            if fr.tag() == debug_frame_e.BeforeErrTrap:
+                break
+            if fr.tag() in (debug_frame_e.ProcLike, debug_frame_e.Source,
+                            debug_frame_e.CompoundWord, debug_frame_e.Token):
+                debug_frames.append(value.DebugFrame(fr))
+
+        if 0:
+            for fr in debug_frames:
+                log('%s', fr.frame)
+        return value.List(debug_frames)
+
+
+def _FormatDebugFrame(buf, token):
+    # type: (mylib.Writer, Token) -> None
+    """
+    Based on _AddCallToken in core/state.py
+    Should probably move that into core/dev.py or something, and unify them
+
+    We also want the column number so we can print ^==
+    """
+    # note: absolute path can be lon,g, but Python prints it too
+    call_source = ui.GetLineSourceString(token.line)
+    line_num = token.line.line_num
+    call_line = token.line.content
+
+    func_str = ''
+    # This gives the wrong token?  If we are calling p, it gives the definition
+    # of p.  It doesn't give the func/proc that contains the call to p.
+
+    #if def_tok is not None:
+    #    #log('DEF_TOK %s', def_tok)
+    #    func_str = ' in %s' % lexer.TokenVal(def_tok)
+
+    # should be exactly 1 line
+    buf.write('%s:%d\n' % (call_source, line_num))
+
+    maybe_newline = '' if call_line.endswith('\n') else '\n'
+    buf.write('    %s%s' % (call_line, maybe_newline))
+
+    buf.write('    ')  # prefix
+    ui.PrintCaretLine(call_line, token.col, token.length, buf)
+
+
+class DebugFrameToString(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        vm._Callable.__init__(self)
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        frame = rd.PosDebugFrame()
+
+        rd.Done()
+
+        UP_frame = frame
+        buf = mylib.BufWriter()
+        with tagswitch(frame) as case:
+            if case(debug_frame_e.ProcLike):
+                frame = cast(debug_frame.ProcLike, UP_frame)
+                invoke_token = location.LeftTokenForCompoundWord(
+                    frame.invoke_loc)
+                assert invoke_token is not None, frame.invoke_loc
+                _FormatDebugFrame(buf, invoke_token)
+
+            elif case(debug_frame_e.Source):
+                frame = cast(debug_frame.Source, UP_frame)
+                invoke_token = location.LeftTokenForCompoundWord(
+                    frame.source_loc)
+                assert invoke_token is not None, frame.source_loc
+                _FormatDebugFrame(buf, invoke_token)
+
+            elif case(debug_frame_e.CompoundWord):
+                frame = cast(CompoundWord, UP_frame)
+                invoke_token = location.LeftTokenForCompoundWord(frame)
+                assert invoke_token is not None, frame
+                _FormatDebugFrame(buf, invoke_token)
+
+            elif case(debug_frame_e.Token):
+                frame = cast(Token, UP_frame)
+                _FormatDebugFrame(buf, frame)
+
+            # The location is unused; it is a sentinel
+            #elif case(debug_frame_e.BeforeErrTrap):
+            #    frame = cast(debug_frame.BeforeErrTrap, UP_frame)
+            #    _FormatDebugFrame(buf, frame.tok)
+
+            else:
+                raise AssertionError()
+
+        return value.Str(buf.getvalue())
 
 
 class Shvar_get(vm._Callable):
@@ -148,8 +262,10 @@ class SetVar(vm._Callable):
         # type: (typed_args.Reader) -> value_t
         var_name = rd.PosStr()
         val = rd.PosValue()
+        set_global = rd.NamedBool('global', False)
         rd.Done()
-        self.mem.SetNamed(location.LName(var_name), val, scope_e.LocalOnly)
+        scope = scope_e.GlobalOnly if set_global else scope_e.LocalOnly
+        self.mem.SetNamed(location.LName(var_name), val, scope)
         return value.Null
 
 

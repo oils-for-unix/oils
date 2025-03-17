@@ -1703,6 +1703,13 @@ test-int-overflow() {
   _ysh-parse-error '= 0x123456789_123456789_123456789'
 }
 
+test-splat-expr() {
+  _ysh-parse-error '= ...y'
+  _ysh-parse-error '= [42, ...y]'
+  _ysh-parse-error '= (...x for x in [1,2,3])'
+  _ysh-parse-error '= [...x for x in [1,2,3]]'
+}
+
 #
 # Entry Points
 #

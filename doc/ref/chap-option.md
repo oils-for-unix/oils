@@ -85,17 +85,38 @@ called `-rf`.
 ## Other Option
 
     noclobber -C  # Redirects can't overwrite files
-    errtrace -E   # Enable ERR trap is both shell functions and subshells
 
 ## Debugging
 
-These options are from POSIX shell:
+<h3 id="errtrace">errtrace (-E)</h3>
 
-    xtrace   verbose
+Enable the ERR [trap][] in both shell functions and subshells.
 
-From bash:
+The option is also `set -E`.  It's designed to be compatible with bash.
 
-    extdebug
+[trap]: chap-builtin-cmd.html#trap
+
+### extdebug
+
+Show more info in when printing functions with `declare -f`.  Used by
+`task-five.sh`.
+
+<h3 id="xtrace">xtrace (-x)</h3>
+
+Show execution traces.
+
+- In OSH, the [PS4][] variables control the display.
+- In YSH, the `SHX_*` variables control the display.
+
+[PS4]: chap-plugin.html#PS4
+
+This option is also `set -x`.  It's required by POSIX shell.
+
+### verbose
+
+Not implemented.
+
+This option is from POSIX shell.
 
 ## Interactive
 
@@ -190,8 +211,9 @@ Details on each option:
       xtrace_rich             Hierarchical and process tracing
       xtrace_details (-u)     Disable most tracing with +
       dashglob (-u)           Disabled to avoid files like -rf
-      no_exported             Environ doesn't correspond to exported (-x) vars
-
+      env_obj                 Init ENV Obj at startup; use it when starting
+                              child processes
+      for_loop_frames         YSH can create closures from loop vars
 
 <h3 id="ysh:all">ysh:all</h3>
 
@@ -217,7 +239,7 @@ Details on options that are not in `ysh:upgrade` and `strict:all`:
                               ... source  unset  printf  [un]alias
                               ... getopts
     X old_syntax (-u)         ( )   ${x%prefix}  ${a[@]}   $$
-      env_obj                 Populate the ENV object
+      no_exported             Environ doesn't correspond to exported (-x) vars
       no_init_globals         At startup, don't set vars like PWD, SHELLOPTS
       simple_echo             echo doesn't accept flags -e -n
       simple_eval_builtin     eval takes exactly 1 argument

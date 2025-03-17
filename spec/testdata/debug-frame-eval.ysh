@@ -1,0 +1,7 @@
+source $_this_dir/debug-frame-lib.ysh
+
+proc p3 {
+  eval 'my-proc x y'
+}
+
+p3

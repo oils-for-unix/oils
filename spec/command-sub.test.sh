@@ -1,3 +1,4 @@
+## compare_shells: dash bash mksh
 
 #### case
 foo=a; case $foo in [0-9]) echo number;; [a-z]) echo letter;; esac
@@ -243,16 +244,24 @@ echo `echo \\"foo\\"`
 ## END
 
 #### More levels of double quotes in backticks
+
 # Shells don't agree here, some of them give you form feeds!
 # There are two levels of processing I don't understand.
-echo BUG
-exit
-echo `echo \\\"foo\\\"`
-echo `echo \\\\"foo\\\\"`
-echo `echo \\\\\"foo\\\\\"`
-## BUG bash/dash/mksh/osh STDOUT:
-BUG
+
+#echo BUG
+#exit
+
+echo `echo \\\"foo\\\"` -
+echo `echo \\\\"foo\\\\"` -
+echo `echo \\\\\"foo\\\\\"` -
+
+## STDOUT:
+\foo\ -
+\foo\ -
+\"foo\" -
 ## END
+
+## BUG dash/mksh stdout-json: "\u000coo\\ -\n\u000coo\\ -\n\\\"foo\\\" -\n"
 
 #### Syntax errors with double quotes within backticks
 
@@ -271,7 +280,12 @@ status=2
 status=1
 status=1
 ## END
-## OK bash stdout-json: "\nstatus=0\n\nstatus=0\n"
+## OK bash STDOUT:
+
+status=0
+
+status=0
+## END
 
 
 #### Empty command sub $() (command::NoOp)

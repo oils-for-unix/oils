@@ -5,27 +5,76 @@ default_highlighter: oils-sh
 Command vs. Expression Mode
 ===========================
 
-This is an essential [syntactic concept](syntactic-concepts.html) in YSH.
+[YSH][] extends the shell **command** language with a Python-like
+**expression** language.
 
-YSH extends the shell **command** language with a Python-like **expression**
-language.
+Commands and expressions each have a **lexer mode**, which is an essential
+[syntactic concept](syntactic-concepts.html) in YSH.
 
-To implement that, the lexer enters "expression mode".
+This doc lists the places where [YSH][] switches between modes.
 
-The key difference is that when lexing commands, `unquoted` is a string, while
-`$dollar` is a variable:
-
-    ls /bin/str $myvar
-
-On the other hand, when lexing expressions, `'quoted'` is a string, while
-`unquoted` is a variable:
-
-    var s = myfunc('str', myvar)
-
-This doc lists the places where we switch modes.
+[YSH]: $xref
 
 <div id="toc">
 </div>
+
+## Summary
+
+A main difference is whether you write strings like `unquoted` or `'quoted'`,
+and whether you write variables like `$dollar` or `unquoted`:
+
+<style>
+thead { text-align: left; }
+table {
+  width: 100%;
+  margin-left: 2em; /* match */
+}
+</style>
+
+<table>
+
+- thead
+  - Description
+  - Lexing Mode
+  - String
+  - Variable
+  - Example
+- tr
+  - Shell-Like
+  - Command
+  - `unquoted`
+  - `$dollar`
+  - ```
+    ls foo/bar $myvar
+    ```
+- tr
+  - Python-like
+  - Expression
+  - `'quoted'`
+  - `unquoted` 
+  - ```
+    var s = myfunc('str', myvar)
+    ```
+
+</table>
+
+More examples:
+
+    ls foo/bar         # foo and bar are strings - command
+    var x = foo / bar  # foo and bar are the names of variables - expression
+
+And:
+
+    echo $filename.py           # $filename is a var - command
+    var x = filename ++ '.py'   #  filename is a var - expression
+
+<!--
+Shell has a similar difference:
+
+    ls foo/bar        # foo and bar are strings
+    a=$(( foo/bar ))  # foo and bar are the names of variables
+-->
+
 
 ## From Command Mode to Expression Mode
 
@@ -46,7 +95,7 @@ This includes *bare assignments* in Hay blocks:
 
 ### `=` and `call` keywords
 
-Likewise, everything after `=` or `::` is in expression mode:
+Likewise, everything after `=` or `call` is in expression mode:
 
     = 42 + f(x)
 
@@ -102,8 +151,8 @@ Lazy arguments:
 
 Parameters aren't expressions, but they're parsed with the same lexer:
 
-    proc p(x, y) {    # what's between () is in expression mode
-      echo "$x $y"    # back to command mode
+    proc p (x, y) {    # what's between () is in expression mode
+      echo "$x $y"     # back to command mode
     }
 
     func f(x) {
@@ -128,7 +177,7 @@ This is a command literal:
 
     var b = ^(echo $PWD)
 
-## Examples
+## More Examples
 
 ### How Are Glob Patterns Written in Each Mode?
 
@@ -167,5 +216,3 @@ syntax:
       echo 'Python'
     }
 
-
-## vim: sw=2

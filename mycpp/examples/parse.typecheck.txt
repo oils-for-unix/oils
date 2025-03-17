@@ -10,4 +10,3 @@ display/pp_hnode.py
 display/pretty.py
 mycpp/examples/parse.py
 mycpp/mops.py
-pylib/cgi.py

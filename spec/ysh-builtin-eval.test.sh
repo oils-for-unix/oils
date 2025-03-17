@@ -1,7 +1,6 @@
-# YSH specific features of eval
-
 ## our_shell: ysh
-## oils_failures_allowed: 4
+## oils_failures_allowed: 1
+## oils_cpp_failures_allowed: 3
 
 #### eval builtin does not take a literal block - can restore this later
 
@@ -292,12 +291,12 @@ one
 (Dict)   {"code":1}
 ## END
 
-#### io->evalToDict() - local and global
+#### io->eval(to_dict=true) - local and global
 
 var g = 'global'
 
 # in the global frame
-var d = io->evalToDict(^(var foo = 42; var bar = g;))
+var d = io->eval(^(var foo = 42; var bar = g;), to_dict=true)
 pp test_ (d)
 
 # Same thing in a local frame
@@ -310,7 +309,7 @@ proc p (myparam) {
     var p = "-$myparam"
     var L = "-$mylocal"
   )
-  var d = io->evalToDict(cmd)
+  var d = io->eval(cmd, to_dict=true)
   pp test_ (d)
 }
 p param
@@ -320,7 +319,90 @@ p param
 (Dict)   {"foo":42,"g":"-global","p":"-param","L":"-local"}
 ## END
 
-#### parseCommand then io->evalToDict() - in global scope
+#### io->eval(to_dict=true) with dollar0, pos_args, vars - dict ordering bug
+
+# TODO: mycpp/gc_dict.h should preserve insertion order, in the presence of
+# deletions, like CPython
+
+proc Dict ( ; out; ; block) {
+  var d = io->eval(block, dollar0='zero', pos_args=:|a b c|,
+                   vars={X: 'X', _Y: '_Y'}, to_dict=true)
+  call out->setValue(d)
+}
+
+var global = 'global'
+
+Dict (&d) {
+  foo = global
+  z = $0
+  one = $1
+  two = ${2}
+  three = "+$3"
+  # Note: X does NOT appear in the output, ctx_Eval makes it work.
+  x = X
+  y = _Y
+}
+
+json write (d)
+#pp test_ (d)
+
+## STDOUT:
+{
+  "foo": "global",
+  "z": "zero",
+  "one": "a",
+  "two": "b",
+  "three": "+c",
+  "x": "X",
+  "y": "_Y"
+}
+## END
+
+#### io->eval(to_dict=true) with in_captured_frame=true
+
+proc Dict ( ; out; ; block) {
+  var d = io->eval(block, dollar0='zero', pos_args=:|a b c|,
+                   vars={X: 'X', _Y: '_Y'}, in_captured_frame=true, to_dict=true)
+  call out->setValue(d)
+}
+
+var global = 'global'
+
+func makeDict() {
+  var var_in_p_frame = 'p'
+
+  Dict (&d) {
+    foo = global
+    z = $0
+    one = $1
+    two = ${2}
+    three = "+$3"
+    # Note: X does NOT appear in the output, ctx_Eval makes it work.
+    x = X
+    y = _Y
+  }
+
+  return (d)
+}
+
+var d = makeDict()
+json write (d)
+
+## STDOUT:
+{
+  "var_in_p_frame": "p",
+  "foo": "global",
+  "z": "zero",
+  "one": "a",
+  "two": "b",
+  "three": "+c",
+  "x": "X",
+  "y": "_Y"
+}
+## END
+
+
+#### parseCommand then io->eval(to_dict=true) - in global scope
 
 var g = 'global'
 var cmd = parseCommand('var x = 42; echo hi; var y = g')
@@ -329,7 +411,7 @@ var cmd = parseCommand('var x = 42; echo hi; var y = g')
 pp test_ (cmd)
 #pp asdl_ (cmd)
 
-var d = io->evalToDict(cmd)
+var d = io->eval(cmd, to_dict=true)
 
 pp test_ (d)
 
@@ -354,7 +436,7 @@ pp test_ (_error)
 #### Dict (&d) { ... } converts frame to dict
 
 proc Dict ( ; out; ; block) {
-  var d = io->evalToDict(block)
+  var d = io->eval(block, to_dict=true)
   call out->setValue(d)
 }
 
@@ -385,6 +467,16 @@ Dict (&d) {
 
 pp test_ (d)
 
+
+# Same problem as Hay test cases!
+const c = 99
+
+Dict (&d2) {
+  const c = 101
+}
+
+pp test_ (d2)
+
 exit
 
 # restored to the shadowed values
@@ -402,12 +494,14 @@ proc p {
 }
 
 ## STDOUT:
+(Dict)   {"bare":42,"k":"k-block-mutated","k3":"k3"}
+(Dict)   {"c":101}
 ## END
 
 #### block in Dict (&d) { ... } can read from outer scope
 
 proc Dict ( ; out; ; block) {
-  var d = io->evalToDict(block)
+  var d = io->eval(block, to_dict=true)
   call out->setValue(d)
 }
 
@@ -465,9 +559,8 @@ pp test_ (result)
 
 proc Dict ( ; out; ; block) {
   echo "Dict proc global outer=$outer"
-  var d = io->evalToDict(block)
+  var d = io->eval(block, to_dict=true)
 
-  #echo 'proc Dict frame after evalToDict'
   #pp frame_vars_
 
   #echo "Dict outer2=$outer2"
@@ -528,7 +621,7 @@ after p outer=zz
 #### Dict (&d) and setglobal
 
 proc Dict ( ; out; ; block) {
-  var d = io->evalToDict(block)
+  var d = io->eval(block, to_dict=true)
   call out->setValue(d)
 }
 
@@ -554,7 +647,7 @@ echo g=$g
 g=zz
 ## END
 
-#### bindings created shvar persist, which is different than evalToDict()
+#### bindings created shvar persist, which is different than eval(to_dict=true)
 
 var a = 'a'
 shvar IFS=: a='b' {
@@ -573,68 +666,128 @@ inner=z
 inner2=z
 ## END
 
-#### io->evalInFrame() can express try, cd builtins
-
-var frag = ^(echo $i)
+#### io->eval with in_captured_frame=true can express cd builtin
 
 proc my-cd (new_dir; ; ; block) {
-  pushd $new_dir
+  pushd $new_dir >/dev/null
 
-  var calling_frame = vm.getFrame(-2)
+  if (0) {
+    # Get calling frame.  (The top-most frame, this one, has index -1)
+    # This idiom does NOT work with modules
+    var calling_frame = vm.getFrame(-2)
+    call io->evalInFrame(block, calling_frame)
+  } else {
+    #call io->evalInCapturedFrame(block)
+    call io->eval(block, in_captured_frame=true)
+  }
 
-  # could call this "unbound"?  or unbind()?  What about procs and funcs and
-  # exprs?
-  var frag = getCommandFrag(block)
-
-  call io->evalInFrame(frag, calling_frame)
-
-  popd
+  popd >/dev/null
 }
 
 var i = 42
 my-cd /tmp {
   echo $PWD
+  var my_pwd = PWD
   var j = i + 1
 }
+echo "my_pwd=$my_pwd"
 echo "j = $j"
 
 ## STDOUT:
-x: i = 0, j = 2
-x: i = 1, j = 3
-x: i = 2, j = 4
+/tmp
+my_pwd=/tmp
+j = 43
 ## END
 
 
-#### parseCommand(), io->evalInFrame(frag, frame) can behave like eval $mystr
+#### io->eval with in_captured_frame=true can express cd builtin in different module
 
-# NO LONGER WORKS, but is this a feature rather than a bug?
+echo >lib.ysh '''
+const __provide__ = :| my-cd |
 
-proc p2(code_str) {
-  var mylocal = 42
-  eval $code_str
+proc my-cd (new_dir; ; ; block) {
+  pushd $new_dir >/dev/null
+
+  call io->eval(block, in_captured_frame=true)
+
+  popd >/dev/null
 }
+'''
 
-p2 'echo mylocal=$mylocal'
+use ./lib.ysh
 
-proc p (;;; block) {
-  # To behave like eval $code_str, without variable capture:
-  #
-  # var frag = getCommandFrag(block)
-  # var this_frame = vm.getFrame(-1)
-  # call io->evalInFrame(frag, this_frame)
-
-  var mylocal = 99
-  call io->eval(block)
+var i = 42
+lib my-cd /tmp {
+  #echo $PWD
+  #var my_pwd = PWD
+  var j = i + 1
 }
-
-p {
-  echo mylocal=$mylocal
-}
-
+#echo "my_pwd=$my_pwd"
+echo "j = $j"
 
 ## STDOUT:
-mylocal=42
-mylocal=99
+j = 43
+## END
+
+#### io->eval() has cleaner scoping than shell's eval builtin
+
+#shopt --unset ysh:all
+shopt --set ysh:upgrade
+
+sh-eval() {
+  local do_not_leak=42  # this is visible
+  eval $1
+}
+
+sh-eval 'echo "eval string do_not_leak=$do_not_leak"'
+
+proc ysh-eval (;;; block) {
+  var do_not_leak = 99
+  call io->eval(block, in_captured_frame=true)
+}
+
+ysh-eval {
+  echo "ysh block do_not_leak=$do_not_leak"
+}
+
+## status: 1
+## STDOUT:
+eval string do_not_leak=42
+## END
+
+#### io->eval with in_captured_frame=true and setglobal
+
+echo >lib.ysh '''
+const __provide__ = :| p x |
+
+var x = "lib"
+
+proc p (;;; block) {
+  call io->eval(block, in_captured_frame=true)
+}
+'''
+
+use ./lib.ysh
+
+var x = 'main'
+
+lib p {
+  echo "block arg x = $x"
+  setglobal x = "ZZ"
+  echo "mutated = $x"
+  var result = 'result'
+}
+#pp test_ (result)
+
+# NOTE: we can modify our own x, but not lib.x!
+pp test_ (x)
+pp test_ (lib.x)
+
+## STDOUT:
+block arg x = main
+mutated = ZZ
+(Str)   "ZZ"
+(Str)   "lib"
 ## END
 
 #### eval should have a sandboxed mode
@@ -642,12 +795,19 @@ mylocal=99
 proc p (;;; block) {
   var this = 42
 
-  # like push-registers?  Not sure
-  # We could use state.ctx_Temp ?  There's also ctx_FuncCall etc.
-  #
-  # I think we want to provide full control over the stack.
-  push-frame {
+  # like --eval-pure, and like func?
+  with-pure {
+    # Do we still use io->eval?
     call io->eval(block)
+  }
+
+  # Or maybe we have free functions, like func/eval
+  # There is no with-pure
+  call eval(cmd)
+  var d = eval(cmd, to_dict=true)
+
+  eval-pure --dump d {
+    var d = {}
   }
 }
 

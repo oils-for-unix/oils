@@ -18,6 +18,11 @@ source build/dev-shell.sh  # python2 in $PATH
 #source devtools/types.sh  # typecheck-files
 source $REPO_ROOT/test/tsv-lib.sh  # time-tsv
 
+die() {
+  echo "$@" >& 2
+  exit 1
+}
+
 example-main-wrapper() {
   ### Used by mycpp/examples
 
@@ -64,14 +69,13 @@ EOF
 
 gen-oils-for-unix() {
   local main_name=$1
-  local translator=$2
+  local shwrap_path=$2
   local out_prefix=$3
   local preamble=$4
-  local mycpp_opts=$5
-  shift 5  # rest are inputs
+  shift 4  # rest are inputs
 
   # Put it in _build/tmp so it's not in the tarball
-  local tmp=_build/tmp/$translator
+  local tmp=_build/tmp/$(basename $shwrap_path)
   mkdir -p $tmp
 
   local raw_cc=$tmp/${main_name}_raw.cc
@@ -82,9 +86,8 @@ gen-oils-for-unix() {
 
   local mypypath="$REPO_ROOT:$REPO_ROOT/pyext"
 
-  _bin/shwrap/mycpp_main $mypypath $raw_cc \
+  $shwrap_path $mypypath $raw_cc \
     --header-out $raw_header \
-    $mycpp_opts \
     ${EXTRA_MYCPP_ARGS:-} \
     "$@"
 
@@ -133,17 +136,18 @@ print-wrap-cc() {
 
    # main() function
    case $translator in
-     mycpp)
+     mycpp_main|mycpp_main_souffle)
        example-main-wrapper $main_module
        ;;
-     yaks)
+     yaks_main)
        main-wrapper $main_module
        ;;
-     pea)
-        echo '#include <stdio.h>'
-        echo 'int main() { printf("stub\n"); return 1; }'
+     pea_main)
+       main-wrapper $main_module
+       #echo '#include <stdio.h>'
+       #echo 'int main() { printf("stub\n"); return 1; }'
        ;;
-     (*)
+     *)
        die "Invalid translator $translator"
        ;;
    esac
@@ -282,8 +286,19 @@ shift 2
 
 tmp=$out.tmp  # avoid creating partial files
 
-MYPYPATH="$MYPYPATH" \
-  python3 mycpp/mycpp_main.py --cc-out $tmp "$@"
+# The command we want to run
+set -- python3 mycpp/mycpp_main.py --cc-out $tmp "$@"
+
+# If 'time' is on the system, add timing info.  (It's not present on some
+# Debian CI images)
+if which time >/dev/null; then
+  # 'busybox time' supports -f but not --format.
+  set -- \
+    time -f 'MYCPP { elapsed: %e, max_RSS: %M }' -- \
+    "$@"
+fi
+
+MYPYPATH="$MYPYPATH" "$@"
 status=$?
 
 mv $tmp $out
@@ -301,8 +316,19 @@ shift 2
 
 tmp=$out.tmp  # avoid creating partial files
 
-PYTHONPATH="$REPO_ROOT:$TODO_MYPY_REPO" MYPYPATH="$MYPYPATH" \
-  python3 pea/pea_main.py cpp "$@" > $tmp
+# copied from build/dev-shell.sh
+
+USER_WEDGE_DIR=~/wedge/oils-for-unix.org
+
+MYPY_VERSION=0.780
+MYPY_WEDGE=$USER_WEDGE_DIR/pkg/mypy/$MYPY_VERSION
+
+PY3_LIBS_VERSION=2023-03-04
+site_packages=lib/python3.10/site-packages
+PY3_LIBS_WEDGE=$USER_WEDGE_DIR/pkg/py3-libs/$PY3_LIBS_VERSION/$site_packages
+
+PYTHONPATH="$REPO_ROOT:$MYPY_WEDGE:$PY3_LIBS_WEDGE" MYPYPATH="$MYPYPATH" \
+  python3 pea/pea_main.py mycpp "$@" > $tmp
 status=$?
 
 mv $tmp $out
@@ -322,18 +348,18 @@ REPO_ROOT=$(cd "$(dirname $0)/../.."; pwd)
 EOF
 
   case $template in
-    (py)
+    py)
       local main=$1  # additional arg
       shift
       shwrap-py $main
       ;;
-    (mycpp)
+    mycpp)
       shwrap-mycpp
       ;;
-    (pea)
+    pea)
       shwrap-pea
       ;;
-    (*)
+    *)
       die "Invalid template '$template'"
       ;;
   esac

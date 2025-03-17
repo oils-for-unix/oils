@@ -463,7 +463,10 @@ echo $x
 one
 2
 ## END
-## N-I dash stdout-json: "one\n\n"
+## N-I dash STDOUT:
+one
+
+## END
 
 #### $LINENO in for loop
 # hm bash doesn't take into account the word break.  That's OK; we won't either.
@@ -777,14 +780,12 @@ no version
 
 #### $SECONDS
 
-# should be zero seconds
-echo seconds=$SECONDS
+# most likely 0 seconds, but in CI I've seen 1 second
+echo $SECONDS | awk '/[0-9]+/ { print "ok" }'
 
 ## status: 0
 ## STDOUT:
-seconds=0
+ok
 ## END
 ## N-I dash STDOUT:
-seconds=
 ## END
-

@@ -4224,9 +4224,6 @@ long_is_finite(PyObject *v)
 }
 #endif
 
-#ifdef OVM_MAIN
-#include "Python-2.7.13/Objects/longobject.c/long_methods.def"
-#else
 static PyMethodDef long_methods[] = {
     {"conjugate",       (PyCFunction)long_long, METH_NOARGS,
      "Returns self, the complex conjugate of any long."},
@@ -4246,7 +4243,6 @@ static PyMethodDef long_methods[] = {
      "Returns size in memory, in bytes"},
     {NULL,              NULL}           /* sentinel */
 };
-#endif
 
 static PyGetSetDef long_getset[] = {
     {"real",

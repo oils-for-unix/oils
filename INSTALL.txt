@@ -2,15 +2,17 @@ Building and Installing Oils
 ============================
 
 Oils is a new Unix shell.  This file describes how to configure, build, and
-install it from source code.
+install it from the release tarball (NOT the git repo).
+
+This doc is aimed at end users and distro maintainers.
 
 Quick Start
 -----------
 
 If you haven't already done so, extract the tarball:
  
-    tar -x --gz < oils-for-unix-0.24.0.tar.gz
-    cd oils-for-unix-0.24.0
+    tar -x --gz < oils-for-unix-0.28.0.tar.gz
+    cd oils-for-unix-0.28.0
 
 This is the traditional way to install it:
 
@@ -54,7 +56,7 @@ More Documentation
 
 Every release has a home page with links:
 
-    https://oilshell.org/release/0.24.0/
+- <https://oils.pub/release/0.28.0/>
 
 System Requirements
 -------------------
@@ -81,7 +83,7 @@ Alpine Linux:
 Oils has been tested on several Linux distros and OS X.  It aims to run on any
 POSIX system.  If it doesn't, file a bug here:
 
-    https://github.com/oilshell/oil/issues
+- <https://github.com/oilshell/oil/issues>
 
 Non-root Install
 ----------------
@@ -105,7 +107,7 @@ This doesn't require root access, but it requires:
   $MANPATH.)
 
 NOTE: Out-of-tree builds are NOT currently supported, so you have to be in the
-oils-for-unix-0.24.0 directory.
+oils-for-unix-0.28.0 directory.
 
 Build Options
 -------------
@@ -113,8 +115,11 @@ Build Options
 Show options with:
 
     ./configure --help 
+    _build/oils.sh --help
+    ./install --help
+
     
-Common flags:
+Common flags to `configure`:
 
     --prefix
     --with-readline
@@ -124,6 +129,7 @@ Common flags:
 Links
 -----
 
+- Mirror of the help text:
+  <https://oils.pub/release/0.28.0/doc/help-mirror.html>
 - Notes on portability:
-  https://oilshell.org/release/0.24.0/doc/portability.html
-
+  <https://oils.pub/release/0.28.0/doc/portability.html>

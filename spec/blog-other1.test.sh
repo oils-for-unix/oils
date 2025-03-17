@@ -1,4 +1,5 @@
-#
+## compare_shells: dash bash mksh zsh
+
 # From:
 #
 # https://lobste.rs/s/xhtim1/problems_with_shells_test_builtin_what
@@ -22,7 +23,11 @@ paths=`tr '\n' ':' | sed -e 's/:$//'<<EOPATHS
 /baz
 EOPATHS`
 echo "$paths"
-## stdout-json: "/foo\n/bar\n/baz\n"
+## STDOUT:
+/foo
+/bar
+/baz
+## END
 
 #### Rewrite of Blog Post Example
 paths=$(tr '\n' ':' | sed -e 's/:$//' <<EOPATHS
@@ -32,7 +37,11 @@ paths=$(tr '\n' ':' | sed -e 's/:$//' <<EOPATHS
 EOPATHS
 )
 echo "$paths"
-## stdout-json: "/foo\n/bar\n/baz\n"
+## STDOUT:
+/foo
+/bar
+/baz
+## END
 
 #### Simpler example
 foo=`cat`<<EOM

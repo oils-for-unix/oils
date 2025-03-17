@@ -11,6 +11,7 @@ from doctools import help_gen  # module under test
 class HelpGenTest(unittest.TestCase):
 
     def testTopicRe(self):
+        # type: () -> None
         CASES = [
             ('hello   ', True),
             ('X hello   ', True),
@@ -29,6 +30,7 @@ class HelpGenTest(unittest.TestCase):
             self.assertEqual(matched, bool(m))
 
     def testTopicHtml(self):
+        # type: () -> None
         os.environ['OILS_VERSION'] = '0.7.pre5'
 
         # Three spaces before
@@ -91,6 +93,7 @@ class HelpGenTest(unittest.TestCase):
             print()
 
     def testSplitIntoCards(self):
+        # type: () -> None
         contents = """
 <h2>YSH Expression Language</h2>
 

@@ -54,16 +54,15 @@ However I don't see these used anywhere!  I only see ':' used.
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import loc, loc_t, CompoundWord
-from _devbuild.gen.value_asdl import (value, value_e, value_t)
+from _devbuild.gen.value_asdl import (value, value_t)
 
 from core.error import e_usage
-#from frontend import match
 from mycpp import mops
-from mycpp.mylib import log, tagswitch, iteritems
+from mycpp.mylib import log, iteritems
 
 _ = log
 
-from typing import (cast, Tuple, Optional, Dict, List, Any, TYPE_CHECKING)
+from typing import (Tuple, Optional, Dict, List, TYPE_CHECKING)
 if TYPE_CHECKING:
     from frontend import flag_spec
     OptChange = Tuple[str, bool]
@@ -87,9 +86,18 @@ class _Attributes(object):
         # New style
         self.attrs = {}  # type: Dict[str, value_t]
 
-        self.opt_changes = []  # type: List[OptChange]  # -o errexit +o nounset
-        self.shopt_changes = [
-        ]  # type: List[OptChange]  # -O nullglob +O nullglob
+        # -o errexit +o nounset
+        self.opt_changes = []  # type: List[OptChange]
+
+        # -O nullglob +O nullglob
+        self.shopt_changes = []  # type: List[OptChange]
+
+        # Special case for --eval and --eval-pure?  For bin/osh.  It seems OK
+        # to have one now.  The pool tells us if it was pure or not.
+        # Note: MAIN_SPEC is different than SET_SPEC, so set --eval does
+        # nothing.
+        self.eval_flags = []  # type: List[Tuple[str, bool]]
+
         self.show_options = False  # 'set -o' without an argument
         self.actions = []  # type: List[str]  # for compgen -A
         self.saw_double_dash = False  # for set --
@@ -111,24 +119,6 @@ class _Attributes(object):
             name = 'extern_'
 
         self.attrs[name] = val
-
-        if 0:
-            # Backward compatibility!
-            with tagswitch(val) as case:
-                if case(value_e.Undef):
-                    py_val = None  # type: Any
-                elif case(value_e.Bool):
-                    py_val = cast(value.Bool, val).b
-                elif case(value_e.Int):
-                    py_val = cast(value.Int, val).i
-                elif case(value_e.Float):
-                    py_val = cast(value.Float, val).f
-                elif case(value_e.Str):
-                    py_val = cast(value.Str, val).s
-                else:
-                    raise AssertionError(val)
-
-            setattr(self, name, py_val)
 
     def __repr__(self):
         # type: () -> str
@@ -192,7 +182,7 @@ class Reader(object):
         return arg
 
     def ReadRequired2(self, error_msg):
-        # type: (str) -> Tuple[str, loc_t]
+        # type: (str) -> Tuple[str, CompoundWord]
         arg = self.Peek()
         if arg is None:
             # point at argv[0]
@@ -264,6 +254,31 @@ class _Action(object):
           True if flag parsing should be aborted.
         """
         raise NotImplementedError()
+
+
+class AppendEvalFlag(_Action):
+
+    def __init__(self, name):
+        # type: (str) -> None
+        _Action.__init__(self)
+        self.name = name
+        self.is_pure = (name == 'eval-pure')
+
+    def OnMatch(self, attached_arg, arg_r, out):
+        # type: (Optional[str], Reader, _Attributes) -> bool
+        """Called when the flag matches."""
+
+        assert attached_arg is None, attached_arg
+
+        arg_r.Next()
+        arg = arg_r.Peek()
+        if arg is None:
+            e_usage('expected argument to %r' % ('--' + self.name),
+                    arg_r.Location())
+
+        # is_pure is True for --eval-pure
+        out.eval_flags.append((arg, self.is_pure))
+        return False
 
 
 class _ArgAction(_Action):
@@ -386,10 +401,9 @@ class SetAttachedBool(_Action):
         # 'attached_arg' is also used for -t0 though, which is weird
 
         if attached_arg is not None:  # '0' in --verbose=0
-            if attached_arg in ('0', 'F', 'false',
-                                'False'):  # TODO: incorrect translation
+            if attached_arg in ('0', 'F', 'false', 'False'):
                 b = False
-            elif attached_arg in ('1', 'T', 'true', 'Talse'):
+            elif attached_arg in ('1', 'T', 'true', 'True'):
                 b = True
             else:
                 e_usage(

@@ -530,20 +530,14 @@ Or on the outside:
 Procs can wrap blocks:
 
     proc myrule(name) {
+      Rule dbg/$name.o {      # node
+        inputs = ["$name.c"]
+        flags = ['-O0']
+      }
 
-      # needed for blocks to use variables higher on the stack
-      shopt --set dynamic_scope {
-
-        Rule dbg/$name.o {      # node
-          inputs = ["$name.c"]
-          flags = ['-O0']
-        }
-
-        Rule opt/$name.o {      # node
-          inputs = ["$name.c"]
-          flags = ['-O2']
-        }
-        
+      Rule opt/$name.o {      # node
+        inputs = ["$name.c"]
+        flags = ['-O2']
       }
     }
 
@@ -556,9 +550,9 @@ Or they can be invoked from within blocks:
       call out->setValue("localhost:$port_num")
     }
 
-    Service foo {      # node
-      set-port 80 :p1  # call proc
-      set-port 81 :p2  # call proc
+    Service foo {        # node
+      set-port 80 (&p1)  # call proc
+      set-port 81 (&p2)  # call proc
     }
 
 ## More Usage Patterns
@@ -567,7 +561,7 @@ Or they can be invoked from within blocks:
 
 The general pattern is:
 
-    ./my-evaluator.ysh my-config.hay | json read :result
+    ./my-evaluator.ysh my-config.hay | json read (&result)
 
 The evaluator does the following:
 

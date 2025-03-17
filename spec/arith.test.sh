@@ -191,15 +191,24 @@ echo $((a>b?5:10))
 a=4
 echo $((++a))
 echo $a
-## stdout-json: "5\n5\n"
+## STDOUT:
+5
+5
+## END
 ## N-I dash status: 0
-## N-I dash stdout-json: "4\n4\n"
+## N-I dash STDOUT:
+4
+4
+## END
 
 #### Postincrement
 a=4
 echo $((a++))
 echo $a
-## stdout-json: "4\n5\n"
+## STDOUT:
+4
+5
+## END
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 
@@ -231,7 +240,9 @@ echo "[$undef1][$undef2]"
 ## status: 1
 ## OK dash status: 2
 ## BUG mksh/zsh status: 0
-## BUG mksh/zsh stdout-json: "[1][1]\n"
+## BUG mksh/zsh STDOUT:
+[1][1]
+## END
 
 #### Comma operator (borrowed from C)
 a=1
@@ -245,7 +256,10 @@ echo $((a,(b+1)))
 a=4
 echo $((a+=1))
 echo $a
-## stdout-json: "5\n5\n"
+## STDOUT:
+5
+5
+## END
 
 #### Comparison Ops
 echo $(( 1 == 1 ))
@@ -254,13 +268,24 @@ echo $(( 1 < 1 ))
 echo $(( 1 <= 1 ))
 echo $(( 1 > 1 ))
 echo $(( 1 >= 1 ))
-## stdout-json: "1\n0\n0\n1\n0\n1\n"
+## STDOUT:
+1
+0
+0
+1
+0
+1
+## END
 
 #### Logical Ops
 echo $((1 || 2))
 echo $((1 && 2))
 echo $((!(1 || 2)))
-## stdout-json: "1\n1\n0\n"
+## STDOUT:
+1
+1
+0
+## END
 
 #### Logical Ops Short Circuit
 x=11
@@ -272,21 +297,38 @@ echo $x
 echo $x
 (( 1 && (x = 55) ))
 echo $x
-## stdout-json: "11\n33\n33\n55\n"
-## N-I dash stdout-json: "11\n11\n11\n11\n"
+## STDOUT:
+11
+33
+33
+55
+## END
+## N-I dash STDOUT:
+11
+11
+11
+11
+## END
 
 #### Bitwise ops
 echo $((1|2))
 echo $((1&2))
 echo $((1^2))
 echo $((~(1|2)))
-## stdout-json: "3\n0\n3\n-4\n"
+## STDOUT:
+3
+0
+3
+-4
+## END
 
 #### Unary minus and plus
 a=1
 b=3
 echo $((- a + + b))
-## stdout-json: "2\n"
+## STDOUT:
+2
+## END
 
 #### No floating point
 echo $((1 + 2.3))
@@ -859,7 +901,7 @@ echo ---
 ---
 ## END
 
-## OK bash/dash/mksh/zsh STDOUT:
+## OK bash/dash/zsh STDOUT:
 10
 5
 -9223372036854775808

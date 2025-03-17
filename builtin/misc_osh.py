@@ -53,7 +53,7 @@ class Help(vm._Builtin):
     def _ShowTopic(self, topic_id, blame_loc):
         # type: (str, loc_t) -> int
 
-        prefix = 'https://www.oilshell.org/release'
+        prefix = 'https://oils.pub/release'
 
         # For local preview
         if 0:
@@ -116,7 +116,7 @@ class Help(vm._Builtin):
                                            blame_loc) == 0
             assert unused_found
 
-            print('All docs: https://www.oilshell.org/release/%s/doc/' %
+            print('All docs: https://oils.pub/release/%s/doc/' %
                   self.version_str)
             print('')
 

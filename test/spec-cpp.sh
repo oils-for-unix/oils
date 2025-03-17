@@ -53,6 +53,7 @@ run-file() {
   case $suite in
     osh) spec_subdir='osh-cpp' ;;
     ysh) spec_subdir='ysh-cpp' ;;
+    disabled) spec_subdir='disabled-cpp' ;;
     *)   die "Invalid suite $suite" ;;
   esac
 
@@ -80,14 +81,18 @@ osh-all() {
 
   local spec_subdir=osh-cpp 
 
-  # TODO: spec/nul-bytes passes when it should probably fail -- we get 1
-  # failure instead of 2.
-
+  local status
+  set +o errexit
   # $suite $compare_mode
   test/spec-runner.sh all-parallel \
     osh compare-cpp $spec_subdir "$@"
+  status=$?
+  set -o errexit
 
+  # Write comparison even if we failed
   write-compare-html $spec_subdir
+
+  return $status
 }
 
 ysh-all() {
@@ -272,7 +277,7 @@ html-summary-header() {
 <p id="home-link">
   <!-- The release index is two dirs up -->
   <a href="../..">Up</a> |
-  <a href="/">oilshell.org</a>
+  <a href="/">oils.pub</a>
 </p>
 
 <h1>Python vs C++</h1>

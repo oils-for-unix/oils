@@ -51,7 +51,7 @@ test-manifest() {
     case $test_path in
       # For build/py.sh minimal: if we didn't build fastlex.so,
       # then skip a unit test that will fail.
-      pyext/fastlex_test.py|doctools/cmark_test.py)
+      pyext/fastlex_test.py|doctools/cmark_test.py|doctools/ul_table_test.py)
         minimal=exclude
         ;;
 
@@ -188,7 +188,7 @@ print-report() {
   cat <<EOF
   <body class="width40">
     <p id="home-link">
-      <a href="/">oilshell.org</a>
+      <a href="/">oils.pub</a>
     </p>
     <h2>Unit Test Results</h2>
 

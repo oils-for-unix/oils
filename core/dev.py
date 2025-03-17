@@ -10,7 +10,9 @@ from _devbuild.gen.syntax_asdl import assign_op_e, Token
 from _devbuild.gen.value_asdl import (value, value_e, value_t, sh_lvalue,
                                       sh_lvalue_e, LeftName)
 
+from core import bash_impl
 from core import error
+from core import bash_impl
 from core import optview
 from core import num
 from core import state
@@ -153,7 +155,7 @@ class CrashDumper(object):
 
         # TODO: This should be JSON with unicode replacement char?
         buf = mylib.BufWriter()
-        j8.PrintMessage(value.Dict(d), buf, 2)
+        j8.PrintMessage(value.Dict(d), buf, 2, False)
         json_str = buf.getvalue()
 
         try:
@@ -210,24 +212,22 @@ def _PrintShValue(val, buf):
             val = cast(value.Str, UP_val)
             result = j8_lite.MaybeShellEncode(val.s)
 
-        elif case(value_e.BashArray):
-            val = cast(value.BashArray, UP_val)
-            parts = ['(']
-            for s in val.strs:
-                parts.append(j8_lite.MaybeShellEncode(s))
-            parts.append(')')
-            result = ' '.join(parts)
+        elif case(value_e.InternalStringArray):
+            val = cast(value.InternalStringArray, UP_val)
+            result = bash_impl.InternalStringArray_ToStrForShellPrint(
+                val, None)
 
         elif case(value_e.BashAssoc):
             val = cast(value.BashAssoc, UP_val)
-            parts = ['(']
-            for k, v in iteritems(val.d):
-                # key must be quoted
-                parts.append(
-                    '[%s]=%s' %
-                    (j8_lite.ShellEncode(k), j8_lite.MaybeShellEncode(v)))
-            parts.append(')')
-            result = ' '.join(parts)
+            result = bash_impl.BashAssoc_ToStrForShellPrint(val)
+
+        elif case(value_e.BashArray):
+            val = cast(value.BashArray, UP_val)
+            result = bash_impl.BashArray_ToStrForShellPrint(val)
+
+        elif case(value_e.InitializerList):
+            val = cast(value.InitializerList, UP_val)
+            result = bash_impl.InitializerList_ToStrForShellPrint(val)
 
     buf.write(result)
 
@@ -359,7 +359,7 @@ class MultiTracer(object):
         path = os_path.join(self.out_dir, '%d.argv0.json' % self.this_pid)
 
         buf = mylib.BufWriter()
-        j8.PrintMessage(value.Dict(j), buf, 2)
+        j8.PrintMessage(value.Dict(j), buf, 2, False)
         json8_str = buf.getvalue()
 
         try:
@@ -687,7 +687,7 @@ class Tracer(object):
         for pair in cmd_val.pairs:
             buf.write(' ')
             buf.write(pair.var_name)
-            buf.write('=')
+            buf.write('+=' if pair.plus_eq else '=')
             if pair.rval:
                 _PrintShValue(pair.rval, buf)
 

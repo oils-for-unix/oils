@@ -1,0 +1,209 @@
+/* oilshell/oil/web/blog-v6.css 
+ *
+ * Blog style as of May 2022.  Added spacing to avoid manual &nbsp;
+ * Did not change font size, though it annoys me on Chrome Linux
+ */
+
+@media screen and (min-width: 801px) {
+  body {
+    font-size: large;
+  }
+}
+
+#latch-status {
+  text-align: center;
+  color: grey;
+}
+
+h1 {
+  text-align: center;
+}
+
+.blog-post-title {
+  text-align: left;
+  font-size: 1.3em;
+}
+
+h2 {
+  /* x-large is too big; causes most titles to wrap badly (on Chrome/Firefox desktop). */
+  font-size: 1.2em;
+  padding-top: 2em;  /* separate sections */
+}
+
+h3 {
+  margin: 0em;
+  color: darkgreen;
+  font-size: 1.0em;  /* Similar to default h4 */
+
+  padding-top: 1em;  /* separate sections */
+}
+
+/* Same as h4, but doesn't appear in TOC */
+h4 {
+  margin: 0em;
+  font-size: 1.0em;
+  padding-top: 1em;  /* separate sections */
+}
+
+/* Exclude Markdown <pre><code> */
+code:not(pre code) {
+  color: green;
+}
+
+/* Compared with v4 */
+blockquote {
+  font-family: sans-serif;
+  font-size: medium;  /* seems to look better */
+  font-style: italic;
+  color: black;
+
+  margin: 0;
+  border-left: 10px solid #ccc;
+  /* Only 1px vertical because <blockquote><p> produces "bulge" */
+  padding: 1px 1em;
+}
+
+.link-box {
+  margin: 1em 0;  /* div needs separation */
+  padding: 1px 1em;
+  background-color: #eee;
+}
+
+.title-without-link {
+  color: darkgreen;
+}
+
+.footnotes {
+  font-size: small;
+}
+
+.date {
+  font-size: medium;
+  color: #555;
+  padding-left: 1em;
+  padding-right: 1em;
+  white-space: nowrap;
+}
+
+/* BEGIN blog/ */
+
+.sep-row {
+  vertical-align: center;
+}
+
+.post-list tr {
+  vertical-align: top;
+}
+.post-list a {
+  text-decoration: none;
+}
+.post-list a:hover {
+  text-decoration: underline;
+}
+/* Save space */
+.post-list .date {
+  padding-left: 0em;
+}
+
+/* Subtly stand out */
+.alt-month .date {
+  color: #000;
+}
+
+#all-posts tbody {
+  /* NOTE: This seems to make the table background solid like border-collapse:
+   * collapse, but doesn't mess with spacing.
+   */
+  display: block;
+}
+
+/* on blog/index.html */
+#blog-tag-list {
+  /* text-align: justify; */
+  color: gray;
+}
+
+.tag-count {
+  white-space: nowrap;
+}
+
+/* END blog/ */
+
+/* For post bodies: */
+
+.blog-tag {
+  font-family: sans-serif;
+}
+
+#post-footer {
+  background-color: #DEE;
+  padding: 0.5em;
+}
+
+.attention {
+  text-align: center;
+  background-color: #DEE;
+  padding: 1px 0.5em;
+}
+
+/* anchors in cross-ref.html */
+a[name] {
+  color: green;
+}
+
+/* Links to cross-ref.html.  I copied color values from code.css for visual
+harmony. */
+a[href^="/cross-ref.html"] {
+  color: #4070a0 /* Literal.String */
+}
+
+a[href^="/cross-ref.html"]:visited {
+  /* color: #bb60d5 /* Name.Variable */
+  color: purple;
+}
+
+/* Internal links.  This is so that cross-ref.html is consistent.  Technically
+we might want to exclude other internal links, but I don't have many of those
+right now. */
+a[href^="#"] {
+  color: #4070a0 /* Literal.String (light blue) */
+}
+
+a[href^="#"]:visited {
+  /* color: #bb60d5 /* Name.Variable (light purple) */
+  color: purple;
+}
+.book-text-link-td {
+  padding: 1em;
+  border-top: solid 1px #BBB;
+}
+
+.book-image-td {
+  width: 30%
+}
+
+.book-desc-td {
+  vertical-align: top;
+}
+
+/* For books and others */
+hr {
+  border: none;
+  height: 1px;
+  background-color: #BBB;
+}
+
+/* For blog release notes.  Copied from web/changelog.css */
+.checksum {
+  font-family: monospace;
+}
+.issue-num {
+  font-family: monospace;
+  width: 3em;
+}
+.issue-title {
+  font-family: sans-serif;
+}
+.subject {
+  font-family: sans-serif;
+}

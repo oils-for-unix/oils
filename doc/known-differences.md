@@ -341,8 +341,7 @@ Here is how you can create arrays in OSH, in a bash-compatible way:
     local -a indexed=(foo bar)            # -a is redundant
     echo ${indexed[1]}                    # bar
 
-    local assoc=(['one']=1 ['two']=2)
-    local -A assoc=(['one']=1 ['two']=2)  # -A is redundant
+    local -A assoc=(['one']=1 ['two']=2)  # -A is necessary
     echo ${assoc['one']}                  # 1
 
 In bash, the distinction between the two is blurry, with cases like this:
@@ -350,7 +349,8 @@ In bash, the distinction between the two is blurry, with cases like this:
     local -A x=(foo bar)                  # -A disagrees with literal
     local -a y=(['one']=1 ['two']=2)      # -a disagrees with literal
 
-These are disallowed in OSH.
+The latter was disallowed in OSH, but `osh >= 0.28.0` has started to support
+it.
 
 Notes:
 

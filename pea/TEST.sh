@@ -7,45 +7,96 @@
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 source $LIB_OSH/no-quotes.sh
 
-source test/common.sh  # run-test-funcs
 source devtools/common.sh
 
 source build/dev-shell.sh  # find python3 in /wedge PATH component
 
-# This is just like the yapf problem in devtools/format.sh !
-# Pea needs a newer version of MyPy -- one that supports 'math'
-
-# 2024-09 - there is a conflict between:
-# parse-all - 'import mypy' for mycpp/pass_state.py
-# check-types - uses a newer version of MyPy
-#
-# The problem is importing MyPy as a LIBRARY vs. using it as a TOOL
-
-unset PYTHONPATH
-export PYTHONPATH=.
-
 readonly MYPY_VENV='_tmp/mypy-venv'
 
-install-mypy() {
+show-python-config() {
+  which python3
+  echo
+
+  python3 -V
+  echo
+
+  echo PYTHONPATH=$PYTHONPATH
+  echo
+}
+
+install-latest-mypy() {
   local venv=$MYPY_VENV
+
+  export PYTHONPATH=.
 
   rm -r -f -v $venv
 
+  show-python-config
+
+  echo "Creating venv in $venv"
   python3 -m venv $venv
 
   . $venv/bin/activate
 
+  echo "venv $venv is activated"
+  show-python-config
+
+
   python3 -m pip install mypy
 
-  # Says 1.5.1 (compiled: yes)
-  mypy-version
+  # 2022:                   1.5.1 (compiled: yes)
+  # 2024-12 Debian desktop: 1.13.0 (compiled: yes)
+  # 2024-12 Soil CI image:  1.10.0 
+  python3 -m mypy --version
 }
 
-mypy-version() {
-  . $MYPY_VENV/bin/activate
+pea-files() {
+  for f in pea/*.py; do
+    case $f in 
+      *NINJA_subgraph.py)
+        continue
+        ;;
+    esac
+
+    echo $f
+  done
+}
+
+count-lines() {
+  pea-files | xargs wc -l
+}
+
+_check-types() {
+  echo PYTHONPATH=$PYTHONPATH
+  echo
+
   python3 -m mypy --version
+  echo
+
+  time pea-files | xargs python3 -m mypy --strict 
+}
+
+check-with-our-mypy() {
+  _check-types
+}
+
+check-with-latest-mypy() {
+  ### soil/worker.sh call this
+
+  # This disables the MyPy wedge< and uses the latest MyPy installed above
+  # It'
+  export PYTHONPATH=.
+
+  # install-mypy creates this.  May not be present in CI machine.
+  local activate=$MYPY_VENV/bin/activate
+  if test -f $activate; then
+    . $activate
+  fi
+
+  _check-types
 }
 
 #
@@ -80,7 +131,8 @@ all-files() {
 }
 
 parse-all() {
-  #source $MYPY_VENV/bin/activate
+  ### soil/worker.sh call this
+
   time all-files | xargs --verbose -- $0 pea-main parse
 }
 
@@ -303,42 +355,57 @@ mypy-compare() {
   devtools/types.sh check-oils
 }
 
-check-types() {
-
-  # install-mypy creates this.  May not be present in CI machine.
-  local activate=$MYPY_VENV/bin/activate
-  if test -f $activate; then
-    . $activate
-  fi
-
-  time python3 -m mypy --strict pea/pea_main.py
-}
-
 test-translate() {
   translate-cpp bin/oils_for_unix.py
 }
 
 test-syntax-error() {
-  set +o errexit
+  local status stdout
 
   # error in Python syntax
-  parse-one pea/testdata/py_err.py
-  nq-assert $? -eq 1
+  nq-capture status stdout \
+    parse-one pea/testdata/py_err.py
+  nq-assert 1 = $status
 
   # error in signature
-  parse-one pea/testdata/sig_err.py
-  nq-assert $? -eq 1
+  nq-capture status stdout \
+    parse-one pea/testdata/sig_err.py
+  nq-assert 1 = $status
 
   # error in assignment
-  parse-one pea/testdata/assign_err.py
-  nq-assert $? -eq 1
+  nq-capture status stdout \
+    parse-one pea/testdata/assign_err.py
+  nq-assert 1 = $status
+}
+
+test-mycpp-integration() {
+  # In Soil CI, we are importing a compiled MyPy?
+  # We don't have the WEDGE
+  # OK I can just add that
+  #return
+
+  # Works
+  echo ---
+  pea-main mycpp 
+
+  echo ---
+  pea-main mycpp mycpp/examples/test_small_str.py
+}
+
+test-example-hello() {
+  local bin=_bin/cxx-asan/mycpp/examples/pea_hello.pea
+  ninja $bin
+
+  local status stdout
+  nq-capture status stdout \
+    $bin 
+  nq-assert 42 = $status
 }
 
 run-tests() {
-  # Making this separate for soil/worker.sh
+  ### soil/worker.sh call this
 
-  echo 'Running test functions'
-  run-test-funcs
+  devtools/byo.sh test $0
 }
 
-"$@"
+task-five "$@"
