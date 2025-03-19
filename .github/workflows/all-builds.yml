@@ -1,6 +1,6 @@
 # Soil wrapped in Github Actions.
 
-name: oil
+name: oils
 on:
   # We are running into the pitfall here
   # https://fusectore.dev/2022/09/25/github-actions-pitfalls.html
