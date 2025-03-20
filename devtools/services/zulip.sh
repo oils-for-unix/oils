@@ -14,8 +14,9 @@ set -o pipefail
 set -o errexit
 
 my-curl() {
+  # --get affects -d
   curl \
-    -s -S -X GET -G \
+    --silent --show-error --get \
     "$@"
 }
 

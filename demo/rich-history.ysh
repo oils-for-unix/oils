@@ -1,0 +1,145 @@
+# Demo of rich history feature
+#
+# Command + Output > Zulip
+#                 or Github gist 
+#                 or Sourcehut pages
+#                 or Custom server
+#                 or Markdown file / notebook
+
+: '''
+Interface:
+
+  rh config {
+    module = 'rich-history'
+
+    # register a service
+    service zulip {
+    }
+    service github {
+    }
+  } 
+  rh config  # show configuration
+
+  rh config read < config.json
+
+
+  rh start      # start recording history
+
+  rh post       # make an HTTP post of the last one
+  rh post -n 2  # the last 2
+
+  rh post-all   # continually POST until we stop
+
+  rh stop       # don't record
+
+Logic:
+
+  rh start
+    create Unix socket, store the descriptor in _rich_history_fd or something
+
+  main_loop.Interactive
+    create netstring with command
+    create PTY file descriptor
+    bundle these in a FANOS message and send it  across the _rich_history_fd
+
+    Problem:
+    # fork { sleep 5 } | wc -l  blocks the whole thing - because we wait on the
+    # It's like { sleep 5 & } | wc -l.  Bash has the same behavior though
+    # I guess you can create a special case
+
+  # This 
+  then start configured command
+    rich-history.ysh --max-lines 1000 --buf-size 3 --service zulip
+
+'''
+
+# make this file a test server
+source $LIB_OSH/task-five.sh
+
+proc server {
+  ### Accept FANOS messages
+
+  while true {
+
+    # pass file descriptor 0, and read result
+    # This can raise exceptions too, on malformed FANOS messages?
+    fanos read (0, &result)
+
+    # result has 2 keys
+    # result = {
+    #   # the blob can be CMD {} JSON too
+    #   blob: 'CMD ls /tmp; sleep 5' 
+    #   fd_list: [4],  # there should only be one fanos FD
+    # }
+
+    var fd = fd_list[0]
+    redir < $fd {
+      # discard more than --max-lines?
+      for line in (io.stdin) {
+        :
+      }
+    }
+
+    # TODO: Construct Markdown for Zulip
+    #
+    # ```shell-sesesion
+    # $ ls /tmp; sleep 5
+    # ```
+
+    # Output
+    # ```
+    # foo
+    # bar
+    # ```
+    #
+    # must handle:
+    # - triple backticks
+    # - terminal escapes
+    #   - if it's a pty()
+    # - other bad UTF-8: surrogates, unprintable characters
+    #   - we might want a cleanText() function for this
+    #   - Claude AI says Go has bytes.ToValidUTF8, Rust has String::from_utf8_lossy
+    #
+    # Now construct curl command for Zulip
+  }
+}
+
+# Copied from devtools/services/zulip.sh
+proc my-curl {
+  ... curl
+      --silent
+      --show-error
+      @ARGV
+      ;
+}
+
+proc post-message (bot_email, bot_api_key; stream='misc', subject='Test Zulip API',
+                   content=u'```shell-session\n$ ls /tmp\n```\n') {
+
+  # copied from example at https://zulip.com/api/get-messages 
+  ... my-curl 
+    -u "$bot_email:$bot_api_key" 
+    -d 'type=stream' 
+    -d "to=$stream"
+    -d "subject=$subject"
+    -d "content=$content$[ \n ]$(date)"
+    -X POST
+    https://oilshell.zulipchat.com/api/v1/messages 
+    ;
+
+    # doesn't work
+    # --data-urlencode narrow='[{"operand": "0.8.4 Release Notes", "operator": "topic"}]' \
+}
+
+proc test-foo {
+  echo hi
+}
+
+# task-five needs a YSH version
+#foo() { echo hi; }
+#task-five @ARGV
+
+byo-maybe-run
+
+#set -x
+@ARGV

@@ -51,6 +51,9 @@ soil-run() {
   devtools/byo.sh test $YSH stdlib/ysh/stream.ysh 
   devtools/byo.sh test $YSH stdlib/ysh/table.ysh 
 
+  # special demo
+  devtools/byo.sh test $YSH demo/rich-history.ysh
+
   # Run shebang, bash
   devtools/byo.sh test stdlib/osh/two-test.sh 
   devtools/byo.sh test stdlib/osh/no-quotes-test.sh 

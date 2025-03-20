@@ -179,4 +179,60 @@ demo-htm8() {
 EOF
 }
 
+demo-quarto() {
+  ### Cases that came from developing HTM8
+
+  export PYTHONPATH=.
+
+  # Standard Markdown
+  cmark-py --common-mark <<'EOF'
+
+Hello
+
+    code
+    block
+
+Python:
+
+```python
+print("hi")
+```
+EOF
+
+  # Quarto extensions
+  # Turns out as class="language-{python} which isn't ideal
+  cmark-py --common-mark <<'EOF'
+
+Executable Python
+
+```{python}
+print("hi")
+```
+
+With attributes
+
+```{python}
+#| attr: value
+#| fig-cap: "A line plot"
+print("hi")
+```
+EOF
+
+  # Another syntax I saw
+  # This appears to be  R Markdown, which is an older syntax that Quarto
+  # doesn't use
+  # But it accepts
+  #
+  # Hm cmark omits everything after the space
+
+  cmark-py --common-mark <<'EOF'
+
+Executable Python
+
+```{r setup, include=FALSE}
+print("hi")
+```
+EOF
+}
+
 "$@"
