@@ -163,13 +163,13 @@ def _DetectMetaBuiltinStr(s):
             in (builtin_i.builtin, builtin_i.command))
 
 
-def _DetectMetaBuiltinFromParts(val0):
-    # type: (part_value_t) -> bool
-    UP_val0 = val0
+def _DetectMetaBuiltinFromParts(part_vals):
+    # type: (List[part_value_t]) -> bool
+    val0 = part_vals[0]
     if val0.tag() == part_value_e.String:
-        val0 = cast(Piece, UP_val0)
-        if not val0.quoted:
-            return _DetectMetaBuiltinStr(val0.s)
+        val = cast(Piece, val0)
+        if not val.quoted:
+            return _DetectMetaBuiltinStr(val.s)
     return False
 
 
@@ -2412,13 +2412,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
                                            meta_offset)
         return None
 
-    def _DetectAssignBuiltinFromParts(self, val0, words, meta_offset):
-        # type: (part_value_t, List[CompoundWord], int) -> Optional[cmd_value.Assign]
-        UP_val0 = val0
+    def _DetectAssignBuiltinFromParts(self, part_vals, words, meta_offset):
+        # type: (List[part_value_t], List[CompoundWord], int) -> Optional[cmd_value.Assign]
+        val0 = part_vals[0]
         if val0.tag() == part_value_e.String:
-            val0 = cast(Piece, UP_val0)
-            if not val0.quoted:
-                return self._DetectAssignBuiltinStr(val0.s, words, meta_offset)
+            val = cast(Piece, val0)
+            if not val.quoted:
+                return self._DetectAssignBuiltinStr(val.s, words, meta_offset)
         return None
 
     def SimpleEvalWordSequence2(self, words, is_last_cmd, allow_assign):
@@ -2556,16 +2556,15 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             # \builtin and \command need to be detected - they have two parts
             #log('part_vals %s', part_vals)
-            if len(part_vals) == 1:
-                if allow_assign and i == meta_offset:
-                    cmd_val = self._DetectAssignBuiltinFromParts(
-                        part_vals[0], words, meta_offset)
-                    if cmd_val:
-                        return cmd_val
+            if allow_assign and i == meta_offset:
+                cmd_val = self._DetectAssignBuiltinFromParts(
+                    part_vals, words, meta_offset)
+                if cmd_val:
+                    return cmd_val
 
-                if i <= meta_offset and _DetectMetaBuiltinFromParts(
-                        part_vals[0]):
-                    meta_offset += 1
+            if i <= meta_offset and _DetectMetaBuiltinFromParts(
+                    part_vals):
+                meta_offset += 1
 
             if 0:
                 log('')

@@ -1,5 +1,5 @@
 ## oils_failures_allowed: 3
-## compare_shells: dash bash mksh zsh
+## compare_shells: dash bash mksh zsh ash
 
 #### command -v
 myfunc() { echo x; }
@@ -119,7 +119,8 @@ echo status=$?
 command -V echo
 echo status=$?
 
-command -V myfunc
+# Paper over insignificant difference
+command -V myfunc | sed 's/shell function/function/'
 echo status=$?
 
 command -V nonexistent  # doesn't print anything
@@ -133,7 +134,7 @@ ll is an alias for "ls -l"
 status=0
 echo is a shell builtin
 status=0
-myfunc is a shell function
+myfunc is a function
 status=0
 status=1
 for is a shell keyword
@@ -145,7 +146,7 @@ ll is an alias for ls -l
 status=0
 echo is a shell builtin
 status=0
-myfunc is a shell function
+myfunc is a function
 status=0
 nonexistent not found
 status=1
@@ -182,12 +183,12 @@ for is a reserved word
 status=0
 ## END
 
-## OK dash STDOUT:
+## OK dash/ash STDOUT:
 ll is an alias for ls -l
 status=0
 echo is a shell builtin
 status=0
-myfunc is a shell function
+myfunc is a function
 status=0
 nonexistent: not found
 status=127
@@ -210,7 +211,7 @@ nonexistent not found
 status=1
 ## END
 
-## BUG dash STDOUT:
+## BUG dash/ash STDOUT:
 nonexistent: not found
 status=127
 ## END
@@ -311,29 +312,29 @@ unset -f cd
 hi
 /
 ## END
-## N-I dash STDOUT:
+## N-I dash/ash STDOUT:
 hi
 ## END
 
 #### builtin ls not found
 builtin ls
 ## status: 1
-## N-I dash status: 127
+## N-I dash/ash status: 127
 
 #### builtin no args
 builtin
 ## status: 0
-## N-I dash status: 127
+## N-I dash/ash status: 127
 
 #### builtin command echo hi
 builtin command echo hi
 ## status: 0
 ## stdout: hi
-## N-I dash status: 127
-## N-I dash stdout-json: ""
+## N-I dash/ash status: 127
+## N-I dash/ash stdout-json: ""
 
 #### builtin typeset / export / readonly
-case $SH in dash) exit ;; esac
+case $SH in dash|ash) exit ;; esac
 
 builtin typeset s=typeset
 echo s=$s
@@ -364,11 +365,11 @@ s2=typeset
 s2=export
 s2=readonly
 ## END
-## N-I dash STDOUT:
+## N-I dash/ash STDOUT:
 ## END
 
 #### builtin declare / local
-case $SH in dash|mksh) exit ;; esac
+case $SH in dash|ash|mksh) exit ;; esac
 
 builtin declare s=declare
 echo s=$s
@@ -384,7 +385,7 @@ f
 s=declare
 s=local
 ## END
-## N-I dash/mksh STDOUT:
+## N-I dash/ash/mksh STDOUT:
 ## END
 
 #### builtin declare a=(x y) etc.
@@ -449,13 +450,18 @@ f
 ## STDOUT:
 s=local
 ## END
-## BUG dash/mksh/zsh STDOUT:
+
+## BUG dash/ash STDOUT:
+s=
+## END
+
+## N-I mksh/zsh STDOUT:
 s=
 ## END
 
 
 #### static builtin command ASSIGN, command builtin ASSIGN
-case $SH in dash|zsh) exit ;; esac
+case $SH in dash|ash|zsh) exit ;; esac
 
 # dash doesn't have declare typeset
 
@@ -480,11 +486,11 @@ bc=readonly
 cb=export
 cb=readonly
 ## END
-## N-I dash/zsh STDOUT:
+## N-I dash/ash/zsh STDOUT:
 ## END
 
 #### dynamic builtin command ASSIGN, command builtin ASSIGN
-case $SH in dash|zsh) exit ;; esac
+case $SH in dash|ash|zsh) exit ;; esac
 
 b=builtin
 c=command
@@ -534,33 +540,7 @@ bcr=readonly
 cbe=export
 cbr=readonly
 ## END
-## N-I dash/zsh STDOUT:
-## END
-
-
-#### Assignment builtins and word splitting, even after builtin/command
-
-x='a b'
-
-readonly y=$x
-echo $x
-
-command readonly z=$x
-echo $z
-
-## STDOUT:
-a b
-a b
-## END
-
-## BUG dash/bash STDOUT:
-a b
-a
-## END
-
-## N-I zsh STDOUT:
-a b
-
+## N-I dash/ash/zsh STDOUT:
 ## END
 
 #### More word splitting
@@ -588,8 +568,13 @@ a
 
 ## END
 
+## N-I ash STDOUT:
+a b
+
+## END
+
 #### \builtin declare - ble.sh relies on it
-case $SH in dash|mksh) exit ;; esac
+case $SH in dash|mksh|ash) exit ;; esac
 
 x='a b'
 
@@ -626,7 +611,7 @@ a
 a
 ## END
 
-## N-I dash/mksh STDOUT:
+## N-I dash/ash/mksh STDOUT:
 ## END
 
 #### \command readonly - similar issue
@@ -636,6 +621,9 @@ case $SH in zsh) exit ;; esac
 # except dash implements it
 
 x='a b'
+
+readonly b=$x
+echo $b
 
 command readonly c=$x
 echo $c
@@ -653,10 +641,19 @@ echo $e
 a b
 a b
 a b
+a b
 ## END
 
+## BUG bash STDOUT:
+a b
+a
+a
+a
+## END
 
-## BUG bash/dash STDOUT:
+# note: later versions of dash are fixed
+## BUG dash STDOUT:
+a
 a
 a
 a
@@ -684,11 +681,6 @@ a b
 ## END
 
 ## BUG bash/dash STDOUT:
-a
-a
-## END
-
-## STDOUT:
 a
 a
 ## END
