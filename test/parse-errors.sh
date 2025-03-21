@@ -726,11 +726,16 @@ trap_parse_error() {
   '
 }
 
-test-proc_func_reserved() {
+test-proc-func-reserved() {
   ### Prevents confusion
 
   _osh-parse-error 'proc p (x) { echo hi }'
   _osh-parse-error 'func f (x) { return (x) }'
+
+  # In expression mode, reserved for
+  # var x = proc (x; y) ^( echo hi )
+  _osh-parse-error '= func'
+  _osh-parse-error '= proc'
 }
 
 # Cases in their own file

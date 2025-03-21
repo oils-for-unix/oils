@@ -371,9 +371,12 @@ def AddKinds(spec):
             'In',
             'If',
             'Else',
-            'Func',  # For function literals
             'Capture',
             'As',
+
+            # Unused
+            'Func',
+            'Proc',
         ])
 
     # For C-escaped strings.

@@ -241,9 +241,14 @@ EXPR_WORDS = [
     C('if', Id.Expr_If),
     C('else', Id.Expr_Else),
 
-    # Unused: could be for function literals, although we also have
-    # |x| x+1 lambdas
+    # Unused: could be for func and proc litearls
+    #
+    # Note: we also have lambda literals |x| x+1
+    # I don't think we need them now, but the difference vs func is that the
+    # body is an expression.  Note: JavaScript uses (x, y) => x + y which
+    # causes parsing problems.
     C('func', Id.Expr_Func),
+    C('proc', Id.Expr_Proc),
 
     # / <capture d+/
     C('capture', Id.Expr_Capture),
