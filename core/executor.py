@@ -2,6 +2,7 @@
 from __future__ import print_function
 
 from errno import EINTR
+import select
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import builtin_i
