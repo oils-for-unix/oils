@@ -617,7 +617,7 @@ class ShellExecutor(vm._Executor):
         posix.close(w2)  # not going to write
         eofcount = 0
         while True:
-            fds, w, exc = select.select([r,r2], [], [r,r2], -1)
+            fds, w, exc = select.select([r,r2], [], [r,r2])
             # TODO: is this assumption right?
             if len(fds) == 0:
                 break
