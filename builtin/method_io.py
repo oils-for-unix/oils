@@ -208,7 +208,7 @@ class CaptureStdout(vm._Callable):
         self.shell_ex = shell_ex
 
     def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
+        # type: (typed_args.Reader) -> Dict[str, value_t]
 
         unused = rd.PosValue()
         cmd = rd.PosCommand()
@@ -229,7 +229,7 @@ class CaptureStdout(vm._Callable):
                 4, 'captureStdout(): command failed with status %d' % status,
                 rd.LeftParenToken(), properties)
 
-        return {stdout: value.Str(stdout_str), stderr: value.Str(stderr_str)}
+        return { 'stdout': value.Str(stdout_str), 'stderr': value.Str(stderr_str) }
 
 
 class PromptVal(vm._Callable):
