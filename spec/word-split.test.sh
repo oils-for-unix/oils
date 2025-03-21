@@ -410,6 +410,15 @@ argv.py star ${!a[*]}
 ## N-I dash/mksh/ash/yash stdout-json: ""
 
 #### Bug #628 split on : with : in literal word
+
+# 2025-03: What's the cause of this bug?
+#
+# OSH is very wrong here
+#   ['a', '\\', 'b']
+# Is this a fundamental problem with the IFS state machine?
+# It definitely relates to the use of backslashes.
+# So we have at least 4 backslash bugs
+
 IFS=':'
 word='a:'
 argv.py ${word}:b
@@ -804,23 +813,38 @@ argv.py $*
 #### ""$A"" - empty string on both sides - derived from spec/toysh-posix #15
 
 A="   abc   def   "
+
+argv.py $A
+argv.py ""$A""
+
+unset IFS
+
+argv.py $A
+argv.py ""$A""
+
+echo
+
+# Do the same thing in a for loop - this is IDENTICAL behavior
+
 for i in $A; do echo =$i=; done
 echo
 
-A="   abc   def   "
 for i in ""$A""; do echo =$i=; done
 echo
 
 unset IFS
 
-A="   abc   def   "
 for i in $A; do echo =$i=; done
 echo
 
-A="   abc   def   "
 for i in ""$A""; do echo =$i=; done
 
 ## STDOUT:
+['abc', 'def']
+['', 'abc', 'def', '']
+['abc', 'def']
+['', 'abc', 'def', '']
+
 =abc=
 =def=
 

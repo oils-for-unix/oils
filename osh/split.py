@@ -239,9 +239,6 @@ class IfsSplitter(_BaseSplitter):
 
         Returns:
           List of (runtime.span, end_index) pairs
-
-        TODO: This should be (frag, do_split) pairs, to avoid IFS='\'
-        double-escaping issue.
         """
         ws_chars = self.ifs_whitespace
         other_chars = self.ifs_other
@@ -256,6 +253,8 @@ class IfsSplitter(_BaseSplitter):
         # Ad hoc rule from POSIX: ignore leading whitespace.
         # "IFS white space shall be ignored at the beginning and end of the input"
         # This can't really be handled by the state machine.
+
+        # 2025-03: This causes a bug with splitting ""$A"" when there's no IFS
 
         i = 0
         while i < n and mylib.ByteInSet(mylib.ByteAt(s, i), ws_chars):

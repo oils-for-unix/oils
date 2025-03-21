@@ -441,6 +441,26 @@ Related:
 
 - <https://akrzemi1.wordpress.com/2011/09/21/destructors-that-throw/>
 
+## Translation Errors
+
+### Hoisting of C++ variables May Undefined Vars in Python
+
+I ran into this bug in `osh/word_eval.py` in March 2025:
+
+    if cond():
+        a = ''
+
+    if n < 0:
+        # UnboundLocalError: local variable 'a' referenced before assignment
+        raise error.FailGlob('Pattern %r matched no files' % a,
+                             loc.Missing)
+
+So the variable is not defined in Python &mdash; *dynamically*.  But in C++,
+the variable `a` is "hoisted" to the top and declared, which masks the bug.
+
+This is also not a MyPy error!  Usually one of MyPy or mycpp will catch
+undefined variables.
+
 ## More Translation Notes
 
 ### Hacky Heuristics

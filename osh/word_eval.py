@@ -2218,8 +2218,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         # don't do word splitting or globbing.
         if all_quoted:
             tmp = [piece.s for piece in frame]
-            a = ''.join(tmp)
-            argv.append(a)
+            argv.append(''.join(tmp))
             return
 
         will_glob = not self.exec_opts.noglob()
@@ -2231,20 +2230,36 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 log('(%d) %s', i, piece)
             log('')
 
+        # BUG:
+        #   A=' abc def '; argv.py ""$A""
+        #
+        # In all shells, we get ['', 'abc', 'def', '']
+        # In OSH, we get ['', '']
+        #
+        # What happens to these pieces?  What should happen?
+        #   (Piece s:"" quoted:T do_split:F)
+        # Problem: osh/split.py Split() has ad hoc rule to ignore the leading
+        # whitespace: "it can't really be handled by the state machine."
+
         # Array of strings, some of which are BOTH IFS-escaped and GLOB escaped!
         frags = []  # type: List[str]
         for piece in frame:
+            # Note: if we have a literal \, we may turn it into \\\\.
+            # Splitting takes \\\\ -> \\
+            # Globbing takes \\ to \ if it doesn't match
+
             if will_glob and piece.quoted:
+                # Ensure this quoted piece is not globbed, by escaping
                 frag = glob_.GlobEscape(piece.s)
             else:
-                # If we have a literal \, then we turn it into \\\\.
-                # Splitting takes \\\\ -> \\
-                # Globbing takes \\ to \ if it doesn't match
+                # we're globbing an unquoted substitution, or not globbing at
+                # all?
                 frag = _BackslashEscape(piece.s)
 
             if piece.do_split:
                 frag = _BackslashEscape(frag)
             else:
+                # Ensure this piece is not split, by escaping
                 frag = self.splitter.Escape(frag)
 
             frags.append(frag)
