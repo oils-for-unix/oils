@@ -163,16 +163,6 @@ def _DetectMetaBuiltinStr(s):
             in (builtin_i.builtin, builtin_i.command))
 
 
-def _DetectMetaBuiltinFromParts(part_vals):
-    # type: (List[part_value_t]) -> bool
-    val0 = part_vals[0]
-    if val0.tag() == part_value_e.String:
-        val = cast(Piece, val0)
-        if not val.quoted:
-            return _DetectMetaBuiltinStr(val.s)
-    return False
-
-
 def _SplitAssignArg(arg, blame_word):
     # type: (str, CompoundWord) -> AssignArg
     """Dynamically parse argument to declare, export, etc.
@@ -2412,15 +2402,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
                                            meta_offset)
         return None
 
-    def _DetectAssignBuiltinFromParts(self, part_vals, words, meta_offset):
-        # type: (List[part_value_t], List[CompoundWord], int) -> Optional[cmd_value.Assign]
-        val0 = part_vals[0]
-        if val0.tag() == part_value_e.String:
-            val = cast(Piece, val0)
-            if not val.quoted:
-                return self._DetectAssignBuiltinStr(val.s, words, meta_offset)
-        return None
-
     def SimpleEvalWordSequence2(self, words, is_last_cmd, allow_assign):
         # type: (List[CompoundWord], bool, bool) -> cmd_value_t
         """Simple word evaluation for YSH."""
@@ -2526,15 +2507,18 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 strs.append(fast_str)
                 locs.append(w)
 
-                # e.g. the 'local' in 'local a=b c=d' will be here
-                if allow_assign and i == meta_offset:
-                    cmd_val = self._DetectAssignBuiltinStr(
-                        fast_str, words, meta_offset)
-                    if cmd_val:
-                        return cmd_val
+                # Detect local x=$foo
+                #        builtin local x=$foo
+                #        builtin builtin local x=$foo
+                if allow_assign and i <= meta_offset:
+                    if i == meta_offset:
+                        cmd_val = self._DetectAssignBuiltinStr(
+                            fast_str, words, meta_offset)
+                        if cmd_val:
+                            return cmd_val
 
-                if i <= meta_offset and _DetectMetaBuiltinStr(fast_str):
-                    meta_offset += 1
+                    if _DetectMetaBuiltinStr(fast_str):
+                        meta_offset += 1
 
                 # Bug fix: n must be updated on every loop iteration
                 n = len(strs)
@@ -2543,28 +2527,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             part_vals = []  # type: List[part_value_t]
             self._EvalWordToParts(w, part_vals, EXTGLOB_FILES)
-
-            # DYNAMICALLY detect if we're going to run an assignment builtin, and
-            # change the rest of the evaluation algorithm if so.
-            #
-            # We want to allow:
-            #   e=export
-            #   $e foo=bar
-            #
-            # But we don't want to evaluate the first word twice in the case of:
-            #   $(some-command) --flag
-
-            # \builtin and \command need to be detected - they have two parts
-            #log('part_vals %s', part_vals)
-            if allow_assign and i == meta_offset:
-                cmd_val = self._DetectAssignBuiltinFromParts(
-                    part_vals, words, meta_offset)
-                if cmd_val:
-                    return cmd_val
-
-            if i <= meta_offset and _DetectMetaBuiltinFromParts(
-                    part_vals):
-                meta_offset += 1
 
             if 0:
                 log('')
@@ -2578,6 +2540,31 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 log('frames after _MakeWordFrames:')
                 for entry in frames:
                     log('  %s', entry)
+
+            # DYNAMICALLY detect if we're going to run an assignment builtin
+            #        b=builtin
+            #        $b local x=$foo
+            #        $b $b local x=$foo
+            # As well as
+            #        \builtin local x=$foo
+            #        \builtin \builtin local x=$foo
+
+            # Note that we don't evaluate the first word twice in the case of:
+            #   $(some-command) --flag
+
+            if allow_assign and i <= meta_offset:
+                frame0 = frames[0]
+                hint_buf = [piece.s for piece in frame0]
+                hint_str = ''.join(hint_buf)
+
+                if i == meta_offset:
+                    cmd_val = self._DetectAssignBuiltinStr(
+                        hint_str, words, meta_offset)
+                    if cmd_val:
+                        return cmd_val
+
+                if _DetectMetaBuiltinStr(hint_str):
+                    meta_offset += 1
 
             # Do splitting and globbing.  Each frame will append zero or more args.
             for frame in frames:
