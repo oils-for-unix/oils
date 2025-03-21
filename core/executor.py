@@ -266,11 +266,11 @@ class PureExecutor(vm._Executor):
             loc.Command(node))
 
     def CaptureStdout(self, node):
-        # type: (command_t) -> Tuple[int, str]
+        # type: (command_t) -> Tuple[int, str, str]
         """
         Used by io->captureStdout() method, and called by command sub
         """
-        return 0, ''
+        return 0, '', ''
 
     def RunCommandSub(self, cs_part):
         # type: (CommandSub) -> str
@@ -595,7 +595,7 @@ class ShellExecutor(vm._Executor):
         return p.RunProcess(self.waiter, trace.ForkWait)
 
     def CaptureStdout(self, node):
-        # type: (command_t) -> Tuple[int, str]
+        # type: (command_t) -> Tuple[int, str, str]
 
         p = self._MakeProcess(node, self.exec_opts.inherit_errexit(),
                               self.exec_opts.errtrace())
@@ -603,33 +603,53 @@ class ShellExecutor(vm._Executor):
         # don't use p.AddStateChange(process.SetPgid(...))
 
         r, w = posix.pipe()
+        r2, w2 = posix.pipe()
         p.AddStateChange(process.StdoutToPipe(r, w))
+        p.AddStateChange(process.StderrToPipe(r2, w2))
 
         p.StartProcess(trace.CommandSub)
         #log('Command sub started %d', pid)
 
         chunks = []  # type: List[str]
+        chunks2 = []  # type: List[str]
         posix.close(w)  # not going to write
+        posix.close(w2)  # not going to write
+        eofcount = 0
         while True:
-            n, err_num = pyos.Read(r, 4096, chunks)
-
-            if n < 0:
-                if err_num == EINTR:
-                    pass  # retry
-                else:
-                    # Like the top level IOError handler
-                    e_die_status(
-                        2,
-                        'Oils I/O error (read): %s' % posix.strerror(err_num))
-
-            elif n == 0:  # EOF
+            fds, w, exc = select.select([r,r2], [], [r,r2], -1)
+            # TODO: is this assumption right?
+            if len(fds) == 0:
                 break
+            # TODO: handle IOErr
+
+            for fd in fds:
+                if fd == r:
+                    n, err_num = pyos.Read(fd, 4096, chunks)
+                else:
+                    n, err_num = pyos.Read(fd, 4096, chunks2)
+
+                if n < 0:
+                    if err_num == EINTR:
+                        pass  # retry
+                    else:
+                        # Like the top level IOError handler
+                        e_die_status(
+                            2,
+                            'Oils I/O error (read): %s' % posix.strerror(err_num))
+
+                elif n == 0:  # EOF
+                    eofcount += 1
+                if eofcount > 1:
+                    # todo does it break the outer loop?
+                    break
         posix.close(r)
+        posix.close(r2)
 
         status = p.Wait(self.waiter)
         stdout_str = ''.join(chunks).rstrip('\n')
+        stderr_str = ''.join(chunks2).rstrip('\n')
 
-        return status, stdout_str
+        return status, stdout_str, stderr_str
 
     def RunCommandSub(self, cs_part):
         # type: (CommandSub) -> str
@@ -668,7 +688,7 @@ class ShellExecutor(vm._Executor):
                 # MUTATE redir node so it's like $(<file _cat)
                 redir_node.child = simple
 
-        status, stdout_str = self.CaptureStdout(node)
+        status, stdout_str, stderr_str = self.CaptureStdout(node)
 
         # OSH has the concept of aborting in the middle of a WORD.  We're not
         # waiting until the command is over!

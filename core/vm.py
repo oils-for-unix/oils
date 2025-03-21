@@ -321,7 +321,7 @@ class _Executor(object):
 
     def CaptureStdout(self, node):
         # type: (command_t) -> Tuple[int, str]
-        return 0, ''
+        return 0, '', ''
 
     def RunCommandSub(self, cs_part):
         # type: (CommandSub) -> str

@@ -1826,7 +1826,7 @@ class _Executor {
   virtual int RunBackgroundJob(syntax_asdl::command_t* node);
   virtual void RunPipeline(command::Pipeline* node, runtime_asdl::CommandStatus* status_out);
   virtual int RunSubshell(syntax_asdl::command_t* node);
-  virtual Tuple2<int, BigStr*> CaptureStdout(syntax_asdl::command_t* node);
+  virtual Tuple3<int, BigStr*, BigStr*> CaptureStdout(syntax_asdl::command_t* node);
   virtual BigStr* RunCommandSub(syntax_asdl::CommandSub* cs_part);
   virtual BigStr* RunProcessSub(syntax_asdl::CommandSub* cs_part);
   virtual void PushRedirects(List<runtime_asdl::RedirValue*>* redirects, List<IOError_OSError*>* err_out);
@@ -6093,7 +6093,7 @@ class ShellExecutor : public ::vm::_Executor {
   virtual int RunBackgroundJob(syntax_asdl::command_t* node);
   virtual void RunPipeline(command::Pipeline* node, runtime_asdl::CommandStatus* status_out);
   virtual int RunSubshell(syntax_asdl::command_t* node);
-  virtual Tuple2<int, BigStr*> CaptureStdout(syntax_asdl::command_t* node);
+  virtual Tuple3<int, BigStr*, BigStr*> CaptureStdout(syntax_asdl::command_t* node);
   virtual BigStr* RunCommandSub(syntax_asdl::CommandSub* cs_part);
   virtual BigStr* RunProcessSub(syntax_asdl::CommandSub* cs_part);
   virtual void PushRedirects(List<runtime_asdl::RedirValue*>* redirects, List<IOError_OSError*>* err_out);
@@ -10281,10 +10281,10 @@ int _Executor::RunSubshell(syntax_asdl::command_t* node) {
   return 0;
 }
 
-Tuple2<int, BigStr*> _Executor::CaptureStdout(syntax_asdl::command_t* node) {
+Tuple3<int, BigStr*, BigStr*> _Executor::CaptureStdout(syntax_asdl::command_t* node) {
   StackRoot _root0(&node);
 
-  return Tuple2<int, BigStr*>(0, S_Aoo);
+  return Tuple3<int, BigStr*, BigStr*>(0, S_Aoo);
 }
 
 BigStr* _Executor::RunCommandSub(syntax_asdl::CommandSub* cs_part) {
@@ -24076,7 +24076,7 @@ int ShellExecutor::RunSubshell(syntax_asdl::command_t* node) {
   return p->RunProcess(this->waiter, trace::ForkWait);
 }
 
-Tuple2<int, BigStr*> ShellExecutor::CaptureStdout(syntax_asdl::command_t* node) {
+Tuple3<int, BigStr*, BigStr*> ShellExecutor::CaptureStdout(syntax_asdl::command_t* node) {
   process::Process* p = nullptr;
   int r;
   int w;
@@ -24164,7 +24164,7 @@ BigStr* ShellExecutor::RunCommandSub(syntax_asdl::CommandSub* cs_part) {
       redir_node->child = simple;
     }
   }
-  Tuple2<int, BigStr*> tup3 = this->CaptureStdout(node);
+  Tuple3<int, BigStr*, BigStr*> tup3 = this->CaptureStdout(node);
   status = tup3.at0();
   stdout_str = tup3.at1();
   if (this->exec_opts->command_sub_errexit()) {
