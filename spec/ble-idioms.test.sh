@@ -1,4 +1,5 @@
 ## compare_shells: bash zsh mksh ash
+## oils_failures_allowed: 1
 
 #### recursive arith: one level
 a='b=123'
@@ -528,3 +529,28 @@ vals: ['new1', 'new2', 'new3', 'old3', 'old1', 'old2']
 ## END
 ## N-I zsh/mksh/ash status: 99
 ## N-I zsh/mksh/ash stdout-json: ""
+
+
+#### Issue #1069 [57] - Variable v is invisible after IFS= eval 'local v=...'
+
+set -u
+
+f() {
+  # The temp env messes it up
+  IFS= eval "local v=\"\$*\""
+
+  # Bug does not appear with only eval
+  # eval "local v=\"\$*\""
+
+  #declare -p v
+  echo v=$v
+
+  # test -v v; echo "v defined $?"
+}
+
+f h e l l o
+
+## STDOUT:
+v=hello
+## END
+

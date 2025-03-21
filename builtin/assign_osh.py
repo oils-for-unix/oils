@@ -17,17 +17,16 @@ from core import error
 from core.error import e_usage, e_die
 from core import state
 from core import vm
+from data_lang import j8_lite
 from display import ui
 from frontend import flag_util
 from frontend import args
 from mycpp.mylib import log, tagswitch
 from osh import cmd_eval
 from osh import sh_expr_eval
-from data_lang import j8_lite
 
 from typing import cast, List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
-    from core.state import Mem
     from core import optview
     from frontend.args import _Attributes
 
@@ -38,10 +37,18 @@ _READONLY = 1
 _EXPORT = 2
 
 
-def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
-    # type: (Mem, cmd_value.Assign, _Attributes, bool, int) -> int
+def _PrintVariables(
+        mem,  # type: state.Mem
+        errfmt,  # type: ui.ErrorFormatter
+        cmd_val,  # type: cmd_value.Assign
+        attrs,  # type: _Attributes
+        print_flags,  # type: bool
+        builtin=_OTHER,  # type: int
+):
+    # type: (...) -> int
     """
     Args:
+      attrs: flag attributes
       print_flags: whether to print flags
       builtin: is it the readonly or export builtin?
     """
@@ -109,11 +116,20 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
     for name in names:
         cell = cells[name]
         if cell is None:
-            continue  # Invalid
+            if builtin == _OTHER:
+                # This is specified for declare/typeset -p x y
+                # Notes:
+                #   local -p behaves differently in bash 4 and bash 5!
+                #   location info?
+                errfmt.PrintMessage(
+                    'osh: %s: %r is not defined' % (cmd_val.argv[0], name),
+                    cmd_val.arg_locs[0])
+            continue  # not defined
+
         val = cell.val
         #log('name %r %s', name, val)
 
-        if val.tag() == value_e.Undef:
+        if val.tag() == value_e.Undef:  # TODO: this can be an assertion
             continue
         if builtin == _READONLY and not cell.readonly:
             continue
@@ -193,9 +209,17 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
         return 1
 
 
-def _AssignVarForBuiltin(mem, rval, pair, which_scopes, flags, arith_ev,
-                         flag_a, flag_A):
-    # type: (Mem, value_t, AssignArg, scope_t, int, sh_expr_eval.ArithEvaluator, bool, bool) -> None
+def _AssignVarForBuiltin(
+        mem,  # type: state.Mem
+        rval,  # type: value_t
+        pair,  # type: AssignArg
+        which_scopes,  # type: scope_t
+        flags,  # type: int
+        arith_ev,  # type: sh_expr_eval.ArithEvaluator
+        flag_a,  # type: bool
+        flag_A,  # type: bool
+):
+    # type: (...) -> None
     """For 'export', 'readonly', and NewVar to respect += and flags.
 
     Like 'setvar' (scope_e.LocalOnly), unless dynamic scope is on.  That is, it
@@ -283,7 +307,7 @@ def _AssignVarForBuiltin(mem, rval, pair, which_scopes, flags, arith_ev,
 class Export(vm._AssignBuiltin):
 
     def __init__(self, mem, arith_ev, errfmt):
-        # type: (Mem, sh_expr_eval.ArithEvaluator, ui.ErrorFormatter) -> None
+        # type: (state.Mem, sh_expr_eval.ArithEvaluator, ui.ErrorFormatter) -> None
         self.mem = mem
         self.arith_ev = arith_ev
         self.errfmt = errfmt
@@ -310,6 +334,7 @@ class Export(vm._AssignBuiltin):
 
         if arg.p or len(cmd_val.pairs) == 0:
             return _PrintVariables(self.mem,
+                                   self.errfmt,
                                    cmd_val,
                                    attrs,
                                    True,
@@ -334,7 +359,7 @@ class Export(vm._AssignBuiltin):
 
 
 def _ReconcileTypes(rval, flag_a, flag_A, pair, mem):
-    # type: (Optional[value_t], bool, bool, AssignArg, Mem) -> value_t
+    # type: (Optional[value_t], bool, bool, AssignArg, state.Mem) -> value_t
     """Check that -a and -A flags are consistent with RHS.
 
     If RHS is empty and the current value of LHS has a different type from the
@@ -374,7 +399,7 @@ def _ReconcileTypes(rval, flag_a, flag_A, pair, mem):
 class Readonly(vm._AssignBuiltin):
 
     def __init__(self, mem, arith_ev, errfmt):
-        # type: (Mem, sh_expr_eval.ArithEvaluator, ui.ErrorFormatter) -> None
+        # type: (state.Mem, sh_expr_eval.ArithEvaluator, ui.ErrorFormatter) -> None
         self.mem = mem
         self.arith_ev = arith_ev
         self.errfmt = errfmt
@@ -388,6 +413,7 @@ class Readonly(vm._AssignBuiltin):
 
         if arg.p or len(cmd_val.pairs) == 0:
             return _PrintVariables(self.mem,
+                                   self.errfmt,
                                    cmd_val,
                                    attrs,
                                    True,
@@ -410,8 +436,15 @@ class Readonly(vm._AssignBuiltin):
 class NewVar(vm._AssignBuiltin):
     """declare/typeset/local."""
 
-    def __init__(self, mem, procs, exec_opts, arith_ev, errfmt):
-        # type: (Mem, state.Procs, optview.Exec, sh_expr_eval.ArithEvaluator, ui.ErrorFormatter) -> None
+    def __init__(
+            self,
+            mem,  # type: state.Mem
+            procs,  # type: state.Procs
+            exec_opts,  # type: optview.Exec
+            arith_ev,  # type: sh_expr_eval.ArithEvaluator
+            errfmt,  # type: ui.ErrorFormatter
+    ):
+        # type: (...) -> None
         self.mem = mem
         self.procs = procs
         self.exec_opts = exec_opts
@@ -472,9 +505,10 @@ class NewVar(vm._AssignBuiltin):
             return status
 
         if arg.p:  # Lookup and print variables.
-            return _PrintVariables(self.mem, cmd_val, attrs, True)
+            return _PrintVariables(self.mem, self.errfmt, cmd_val, attrs, True)
         elif len(cmd_val.pairs) == 0:
-            return _PrintVariables(self.mem, cmd_val, attrs, False)
+            return _PrintVariables(self.mem, self.errfmt, cmd_val, attrs,
+                                   False)
 
         if not self.exec_opts.ignore_flags_not_impl():
             if arg.i:
@@ -597,7 +631,7 @@ class Unset(vm._Builtin):
 class Shift(vm._Builtin):
 
     def __init__(self, mem):
-        # type: (Mem) -> None
+        # type: (state.Mem) -> None
         self.mem = mem
 
     def Run(self, cmd_val):

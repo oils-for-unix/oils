@@ -604,6 +604,61 @@ arr[4]: set ... [foo]
 ## N-I mksh stdout-json: ""
 ## N-I mksh status: 1
 
+#### declare -p UNDEF (and typeset) -- prints something to stderr
+
+x=42
+readonly x
+export x
+
+declare -p x undef1 undef2 2> de
+
+typeset -p x undef1 undef2 2> ty
+
+# readonly -p and export -p don't accept args!  They only print all
+#
+# These do not accept args
+# readonly -p x undef1 undef2 2> re
+# export -p x undef1 undef2 2> ex
+
+f() {
+  # it behaves weird with x
+  #local -p undef1 undef2 2>lo
+  local -p a b b>lo
+  #local -p x undef1 undef2 2> lo
+}
+# local behaves differently in bash 4.4 and bash 5, not specifying now
+# f
+# files='de ty lo'
+
+files='de ty'
+
+wc -l $files
+#cat $files
+
+## STDOUT:
+declare -rx x="42"
+declare -rx x="42"
+  2 de
+  2 ty
+  4 total
+## END
+
+## OK osh STDOUT:
+declare -rx x=42
+declare -rx x=42
+  2 de
+  2 ty
+  4 total
+## END
+
+## N-I mksh STDOUT:
+typeset -x -r x=42
+ 1 de
+ 0 ty
+ 1 total
+## END
+
+
 #### typeset -f 
 # mksh implement typeset but not declare
 typeset  -f myfunc func2
