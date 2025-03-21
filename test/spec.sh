@@ -146,6 +146,10 @@ builtin-history() {
   test/spec-py.sh run-file builtin-history "$@"
 }
 
+builtin-meta-assign() {
+  test/spec-py.sh run-file builtin-meta-assign "$@"
+}
+
 builtin-meta() {
   test/spec-py.sh run-file builtin-meta "$@"
 }
