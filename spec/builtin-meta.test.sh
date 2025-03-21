@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 3
 ## compare_shells: dash bash mksh zsh
 
 #### command -v
@@ -27,7 +27,7 @@ nonexistent=1
 empty=1
 for
 0
-## OK dash STDOUT:
+## OK dash/ash STDOUT:
 echo
 0
 myfunc
@@ -71,7 +71,7 @@ echo
 myfunc
 for
 status=0
-## BUG dash STDOUT: 
+## BUG dash/ash STDOUT: 
 echo
 status=0
 ## OK mksh STDOUT: 
@@ -99,7 +99,7 @@ _tmp/executable
 status=0
 ## END
 
-## BUG dash STDOUT:
+## BUG dash/ash STDOUT:
 _tmp/non-executable
 status=0
 _tmp/executable
@@ -589,17 +589,62 @@ a
 ## END
 
 #### \builtin declare - ble.sh relies on it
+case $SH in dash|mksh) exit ;; esac
+
+x='a b'
+
+builtin declare c=$x
+echo $c
+
+\builtin declare d=$x
+echo $d
+
+'builtin' declare e=$x
+echo $e
+
+b=builtin
+$b declare f=$x
+echo $f
+
+b=b
+${b}uiltin declare g=$x
+echo $g
+
+## STDOUT:
+a b
+a b
+a b
+a b
+a b
+## END
+
+## BUG bash STDOUT:
+a
+a
+a
+a
+a
+## END
+
+## N-I dash/mksh STDOUT:
+## END
+
+#### \command readonly - similar issue
+case $SH in zsh) exit ;; esac
 
 # \command readonly is equivalent to \builtin declare
 # except dash implements it
 
 x='a b'
 
-command readonly y=$x
-echo $y
+command readonly c=$x
+echo $c
 
-\command readonly z=$x
-echo $z
+\command readonly d=$x
+echo $d
+
+'command' readonly e=$x
+echo $e
 
 # The issue here is that we have a heuristic in EvalWordSequence2:
 # fs len(part_vals) == 1
@@ -607,14 +652,51 @@ echo $z
 ## STDOUT:
 a b
 a b
+a b
 ## END
 
-## OK bash/dash STDOUT:
+
+## BUG bash/dash STDOUT:
+a
 a
 a
 ## END
 
 ## N-I zsh STDOUT:
+## END
 
+#### Dynamic $c readonly - bash and dash change behavior, mksh bug
+case $SH in zsh) exit ;; esac
 
+x='a b'
+
+z=command
+$z readonly c=$x
+echo $c
+
+z=c
+${z}ommand readonly d=$x
+echo $d
+
+## STDOUT:
+a b
+a b
+## END
+
+## BUG bash/dash STDOUT:
+a
+a
+## END
+
+## STDOUT:
+a
+a
+## END
+
+## BUG mksh status: 2
+## BUG mksh STDOUT:
+a
+## END
+
+## N-I zsh STDOUT:
 ## END

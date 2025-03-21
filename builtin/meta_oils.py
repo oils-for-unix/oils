@@ -623,8 +623,8 @@ class Builtin(vm._Builtin):
         if to_run == consts.NO_INDEX:
             location = cmd_val.arg_locs[1]
             if consts.LookupAssignBuiltin(name) != consts.NO_INDEX:
-                # NOTE: There's a similar restriction for 'command'
-                self.errfmt.Print_("Can't run assignment builtin recursively",
+                # NOTE: core/executor.py has a similar restriction for 'command'
+                self.errfmt.Print_("'builtin' can't run assignment builtin",
                                    blame_loc=location)
             else:
                 self.errfmt.Print_("%r isn't a shell builtin" % name,

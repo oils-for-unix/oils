@@ -151,6 +151,10 @@ def _DetectMetaBuiltinStr(s):
         builtin builtin local
         builtin command local
 
+        # TODO:
+        \\builtin local
+        \\command local
+
     Fundamentally, assignment builtins have different WORD EVALUATION RULES
     for a=$x (no word splitting), so it seems hard to do this in
     meta_oils.Builtin() or meta_oils.Command()
@@ -159,7 +163,7 @@ def _DetectMetaBuiltinStr(s):
             in (builtin_i.builtin, builtin_i.command))
 
 
-def _DetectMetaBuiltin(val0):
+def _DetectMetaBuiltinFromParts(val0):
     # type: (part_value_t) -> bool
     UP_val0 = val0
     if val0.tag() == part_value_e.String:
@@ -2408,7 +2412,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                                            meta_offset)
         return None
 
-    def _DetectAssignBuiltin(self, val0, words, meta_offset):
+    def _DetectAssignBuiltinFromParts(self, val0, words, meta_offset):
         # type: (part_value_t, List[CompoundWord], int) -> Optional[cmd_value.Assign]
         UP_val0 = val0
         if val0.tag() == part_value_e.String:
@@ -2549,14 +2553,18 @@ class AbstractWordEvaluator(StringWordEvaluator):
             #
             # But we don't want to evaluate the first word twice in the case of:
             #   $(some-command) --flag
+
+            # \builtin and \command need to be detected - they have two parts
+            #log('part_vals %s', part_vals)
             if len(part_vals) == 1:
                 if allow_assign and i == meta_offset:
-                    cmd_val = self._DetectAssignBuiltin(
+                    cmd_val = self._DetectAssignBuiltinFromParts(
                         part_vals[0], words, meta_offset)
                     if cmd_val:
                         return cmd_val
 
-                if i <= meta_offset and _DetectMetaBuiltin(part_vals[0]):
+                if i <= meta_offset and _DetectMetaBuiltinFromParts(
+                        part_vals[0]):
                     meta_offset += 1
 
             if 0:

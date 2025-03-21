@@ -1,5 +1,5 @@
 ## compare_shells: bash zsh mksh ash
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 
 #### recursive arith: one level
 a='b=123'
@@ -554,3 +554,29 @@ f h e l l o
 v=hello
 ## END
 
+#### Issue #1069 [57] - Assigning Str to BashArray/BashAssoc should not remove BashArray/BashAssoc
+case $SH in zsh|ash) exit ;; esac
+
+a=(1 2 3)
+a=99
+typeset -p a
+
+typeset -A A=([k]=v)
+A=99
+typeset -p A
+
+## STDOUT:
+declare -a a=([0]="99" [1]="2" [2]="3")
+declare -A A=([0]="99" [k]="v" )
+## END
+
+## OK mksh status: 1
+## OK mksh STDOUT:
+set -A a
+typeset a[0]=99
+typeset a[1]=2
+typeset a[2]=3
+## END
+
+## N-I zsh/ash STDOUT:
+## END
