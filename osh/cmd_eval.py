@@ -303,6 +303,28 @@ class ctx_LoopLevel(object):
         self.cmd_ev.loop_level -= 1
 
 
+def _IsSpecialBuiltin(cmd_val):
+    # type: (cmd_value_t) -> bool
+    """
+    Note: I tried calculating this in EvalWordSequence2() and
+    SimpleEvalWordSequence2().  They have special hint_str logic for assignment
+    builtins.
+
+    But the hint_str doesn't respect word splitting, so it's better done here.
+    And it's annoying to have duplication in SimpleEvalWordSequence2().
+    """
+    UP_cmd_val = cmd_val
+    with tagswitch(cmd_val) as case:
+        if case(cmd_value_e.Assign):
+            # assignment builtins are special
+            return True
+        elif case(cmd_value_e.Argv):
+            cmd_val = cast(cmd_value.Argv, UP_cmd_val)
+            if consts.LookupSpecialBuiltin(cmd_val.argv[0]) != consts.NO_INDEX:
+                return True
+    return False
+
+
 class CommandEvaluator(object):
     """Executes the program by tree-walking.
 
@@ -945,8 +967,7 @@ class CommandEvaluator(object):
                     status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
 
             else:  # OSH
-                is_other_special = consts.LookupSpecialBuiltin(cmd_val.argv[0]) != consts.NO_INDEX
-                if cmd_val.tag() == cmd_value_e.Assign or is_other_special:
+                if _IsSpecialBuiltin(cmd_val):
                     # Special builtins have their temp env persisted.
                     self._EvalTempEnv(node.more_env, 0)
                     status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
