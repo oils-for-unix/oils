@@ -115,3 +115,34 @@ status=127
 ## END
 ## BUG dash/ash STDERR:
 ## END
+
+#### special builtins are called out
+type cd
+type eval
+type :
+type true
+type export
+
+## STDOUT:
+cd is a shell builtin
+eval is a special shell builtin
+: is a special shell builtin
+true is a shell builtin
+export is a special shell builtin
+## END
+
+## N-I bash STDOUT:
+cd is a shell builtin
+eval is a shell builtin
+: is a shell builtin
+true is a shell builtin
+export is a shell builtin
+## END
+
+## N-I zsh STDOUT:
+cd is a shell builtin
+eval is a shell builtin
+: is a shell builtin
+true is a shell builtin
+export is a reserved word
+## END

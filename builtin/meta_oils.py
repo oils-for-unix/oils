@@ -90,7 +90,6 @@ class Eval(vm._Builtin):
         line_reader = reader.StringLineReader(code_str, self.arena)
         c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
-        # TODO: Add debug_frame here, with ctx_Eval or ctx_EvalDebugFrame
         src = source.Dynamic('eval arg', eval_loc)
         with dev.ctx_Tracer(self.tracer, 'eval', None):
             with state.ctx_CompoundWordDebugFrame(self.mem, eval_loc):
@@ -490,17 +489,23 @@ class ShellFile(vm._Builtin):
 
 def _PrintFreeForm(row):
     # type: (Tuple[str, str, Optional[str]]) -> None
-    name, kind, resolved = row
+    name, kind, detail = row
 
     if kind == 'file':
-        what = resolved
+        what = detail  # file path
     elif kind == 'alias':
         what = ('an alias for %s' %
-                j8_lite.EncodeString(resolved, unquoted_ok=True))
+                j8_lite.EncodeString(detail, unquoted_ok=True))
     elif kind in ('proc', 'invokable'):
         # Note: haynode should be an invokable
         what = 'a YSH %s' % kind
-    else:  # builtin, function, keyword
+    elif kind == 'builtin':
+        if detail is None:
+            prefix = ''
+        else:
+            prefix = 'special '
+        what = 'a %sshell %s' % (prefix, kind)
+    else:  # function, keyword
         what = 'a shell %s' % kind
 
     print('%s is %s' % (name, what))
@@ -512,7 +517,7 @@ def _PrintFreeForm(row):
 def _PrintEntry(arg, row):
     # type: (arg_types.type, Tuple[str, str, Optional[str]]) -> None
 
-    _, kind, resolved = row
+    _, kind, detail = row
     assert kind is not None
 
     if arg.t:  # short string
@@ -521,7 +526,7 @@ def _PrintEntry(arg, row):
     elif arg.p:
         #log('%s %s %s', name, kind, resolved)
         if kind == 'file':
-            print(resolved)
+            print(detail)  # print the file path
 
     else:  # free-form text
         _PrintFreeForm(row)
@@ -752,7 +757,10 @@ def _ResolveName(
     # type: (...) -> List[Tuple[str, str, Optional[str]]]
     """
     Returns:
-      A list of (name, type, optional file system path)
+      A list of (name, type, optional arg arg)
+
+    When type == 'file', arg is the path
+    When type == 'builtin', arg is 's' for special, or None otherwise
 
     TODO: All of these could be in YSH:
 
@@ -782,9 +790,9 @@ def _ResolveName(
     if consts.LookupNormalBuiltin(name) != 0:
         results.append((name, 'builtin', no_str))
     elif consts.LookupSpecialBuiltin(name) != 0:
-        results.append((name, 'builtin', no_str))
+        results.append((name, 'builtin', 's'))
     elif consts.LookupAssignBuiltin(name) != 0:
-        results.append((name, 'builtin', no_str))
+        results.append((name, 'builtin', 's'))
 
     # See if it's a keyword
     if consts.IsControlFlow(name):  # continue, etc.
