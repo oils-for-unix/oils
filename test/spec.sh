@@ -422,6 +422,10 @@ subshell() {
   test/spec-py.sh run-file subshell "$@"
 }
 
+temp-binding() {
+  test/spec-py.sh run-file temp-binding "$@"
+}
+
 tilde() {
   test/spec-py.sh run-file tilde "$@"
 }

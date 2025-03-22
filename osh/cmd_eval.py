@@ -303,8 +303,8 @@ class ctx_LoopLevel(object):
         self.cmd_ev.loop_level -= 1
 
 
-def _IsSpecialBuiltin(cmd_val, exec_opts):
-    # type: (cmd_value_t, optview.Exec) -> bool
+def _IsSpecialBuiltin(cmd_val, posix_mode):
+    # type: (cmd_value_t, bool) -> bool
     """
     Note: I tried calculating this in EvalWordSequence2() and
     SimpleEvalWordSequence2().  They have special hint_str logic for assignment
@@ -313,6 +313,8 @@ def _IsSpecialBuiltin(cmd_val, exec_opts):
     But the hint_str doesn't respect word splitting, so it's better done here.
     And it's annoying to have duplication in SimpleEvalWordSequence2().
     """
+    #posix_mode = True
+
     UP_cmd_val = cmd_val
     with tagswitch(cmd_val) as case:
         if case(cmd_value_e.Assign):
@@ -320,8 +322,8 @@ def _IsSpecialBuiltin(cmd_val, exec_opts):
             return True
         elif case(cmd_value_e.Argv):
             cmd_val = cast(cmd_value.Argv, UP_cmd_val)
-            if (exec_opts.posix() and consts.LookupSpecialBuiltin(
-                    cmd_val.argv[0]) != consts.NO_INDEX):
+            if (posix_mode and consts.LookupSpecialBuiltin(cmd_val.argv[0])
+                    != consts.NO_INDEX):
                 return True
     return False
 
@@ -968,7 +970,7 @@ class CommandEvaluator(object):
                     status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
 
             else:  # OSH
-                if _IsSpecialBuiltin(cmd_val, self.exec_opts):
+                if _IsSpecialBuiltin(cmd_val, self.exec_opts.posix()):
                     # Special builtins have their temp env persisted.
                     self._EvalTempEnv(node.more_env, state.SetExport)
                     status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
