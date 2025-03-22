@@ -121,6 +121,8 @@ type cd
 type eval
 type :
 type true
+
+echo
 type export
 
 ## STDOUT:
@@ -128,6 +130,7 @@ cd is a shell builtin
 eval is a special shell builtin
 : is a special shell builtin
 true is a shell builtin
+
 export is a special shell builtin
 ## END
 
@@ -136,6 +139,7 @@ cd is a shell builtin
 eval is a shell builtin
 : is a shell builtin
 true is a shell builtin
+
 export is a shell builtin
 ## END
 
@@ -144,5 +148,29 @@ cd is a shell builtin
 eval is a shell builtin
 : is a shell builtin
 true is a shell builtin
+
 export is a reserved word
+## END
+
+#### more special builtins 
+case $SH in bash|zsh|dash) exit ;; esac
+
+type .
+type source
+
+# no agreement here!
+# type local
+# type typeset
+
+## STDOUT:
+. is a special shell builtin
+source is a shell builtin
+## END
+
+## BUG ash STDOUT:
+. is a special shell builtin
+source is a special shell builtin
+## END
+
+## N-I bash/zsh/dash STDOUT:
 ## END
