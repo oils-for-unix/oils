@@ -11,9 +11,6 @@ Metadata:
 - Should be reflected in the contents of the 'help' builtin
 
 NOTE: bash has help -d -m -s.  Default is -s, like a man page.
-
-Links on special builtins:
-http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_14
 """
 from __future__ import print_function
 
@@ -108,6 +105,8 @@ def _Init(b):
     #
     # Special builtins
     #
+    # List:
+    # http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_14
 
     b.Add(':', enum_name='colon', kind='special')
     b.Add('.', enum_name='dot', kind='special')

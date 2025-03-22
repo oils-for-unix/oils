@@ -1,5 +1,5 @@
 ## compare_shells: bash zsh mksh ash
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 
 #### recursive arith: one level
 a='b=123'
@@ -554,7 +554,7 @@ f h e l l o
 v=hello
 ## END
 
-#### Issue #1069 [57] - Assigning Str to BashArray/BashAssoc should not remove BashArray/BashAssoc
+#### Issue #1069 [59] - Assigning Str to BashArray/BashAssoc should not remove BashArray/BashAssoc
 case $SH in zsh|ash) exit ;; esac
 
 a=(1 2 3)

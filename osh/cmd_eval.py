@@ -945,7 +945,7 @@ class CommandEvaluator(object):
                     status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
 
             else:  # OSH
-                is_other_special = False  # TODO: There are other special builtins too!
+                is_other_special = consts.LookupSpecialBuiltin(cmd_val.argv[0]) != consts.NO_INDEX
                 if cmd_val.tag() == cmd_value_e.Assign or is_other_special:
                     # Special builtins have their temp env persisted.
                     self._EvalTempEnv(node.more_env, 0)
