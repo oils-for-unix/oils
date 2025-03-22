@@ -1,5 +1,5 @@
 ## compare_shells: bash zsh mksh ash
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 
 #### recursive arith: one level
 a='b=123'

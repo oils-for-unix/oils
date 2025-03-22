@@ -313,7 +313,8 @@ def _IsSpecialBuiltin(cmd_val, posix_mode):
     But the hint_str doesn't respect word splitting, so it's better done here.
     And it's annoying to have duplication in SimpleEvalWordSequence2().
     """
-    #posix_mode = True
+    # set eval : etc. are always special builtins.  TODO: remove this param
+    posix_mode = True
 
     UP_cmd_val = cmd_val
     with tagswitch(cmd_val) as case:

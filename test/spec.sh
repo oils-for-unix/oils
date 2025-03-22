@@ -86,6 +86,10 @@ ble-idioms() {
   test/spec-py.sh run-file ble-idioms "$@"
 }
 
+ble-unset() {
+  test/spec-py.sh run-file ble-unset "$@"
+}
+
 blog1() {
   test/spec-py.sh run-file blog1 "$@"
 }
