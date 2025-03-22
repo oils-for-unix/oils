@@ -208,7 +208,7 @@ class CaptureStdout(vm._Callable):
         self.shell_ex = shell_ex
 
     def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
+        # type: (typed_args.Reader) -> Dict[str, value_t]
 
         unused = rd.PosValue()
         cmd = rd.PosCommand()
@@ -217,7 +217,7 @@ class CaptureStdout(vm._Callable):
         frag = typed_args.GetCommandFrag(cmd)
         with state.ctx_EnclosedFrame(self.mem, cmd.captured_frame,
                                      cmd.module_frame, None):
-            status, stdout_str = self.shell_ex.CaptureStdout(frag)
+            status, stdout_str, stderr_str = self.shell_ex.CaptureStdout(frag)
         if status != 0:
             # Note that $() raises error.ErrExit with the status.
             # But I think that results in a more confusing error message, so we
@@ -229,7 +229,7 @@ class CaptureStdout(vm._Callable):
                 4, 'captureStdout(): command failed with status %d' % status,
                 rd.LeftParenToken(), properties)
 
-        return value.Str(stdout_str)
+        return { 'stdout': value.Str(stdout_str), 'stderr': value.Str(stderr_str) }
 
 
 class PromptVal(vm._Callable):
