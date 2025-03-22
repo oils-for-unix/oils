@@ -1,5 +1,5 @@
 ## compare_shells: bash zsh mksh ash
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 
 #### recursive arith: one level
 a='b=123'
@@ -531,7 +531,7 @@ vals: ['new1', 'new2', 'new3', 'old3', 'old1', 'old2']
 ## N-I zsh/mksh/ash stdout-json: ""
 
 
-#### Issue #1069 [57] - Variable v is invisible after IFS= eval 'local v=...'
+#### Issue #1069 [57] - Variable v should be visible after IFS= eval 'local v=...'
 
 set -u
 

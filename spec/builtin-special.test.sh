@@ -6,9 +6,9 @@
 #
 # https://www.reddit.com/r/oilshell/comments/5ykpi3/oildev_is_alive/
 
-#### : is special and prefix assignments persist after special builtins
+#### : is special and prefix assignments persist after special builtins (set -o posix)
 case $SH in
-  dash|zsh|*osh)
+  dash|zsh)
     ;;
   *)
     # for bash
@@ -33,11 +33,11 @@ foo=
 z=
 ## END
 
-#### readonly is special and prefix assignments persist
+#### readonly is special and prefix assignments persist (set -o posix)
 
 # Bash only implements it behind the posix option
 case $SH in
-  dash|zsh|*osh)
+  dash|zsh)
     ;;
   *)
     # for bash
@@ -51,13 +51,15 @@ echo spam=$spam
 # should NOT be exported
 printenv.py foo
 printenv.py spam
+
 ## STDOUT:
 foo=bar
 spam=eggs
 None
 None
 ## END
-## BUG bash STDOUT:
+
+## OK bash/osh STDOUT:
 foo=bar
 spam=eggs
 bar

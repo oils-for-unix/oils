@@ -70,9 +70,7 @@ _OTHER_SET_OPTIONS = [
     ('f', 'noglob'),
     ('C', 'noclobber'),
     ('E', 'errtrace'),
-
-    # A no-op for modernish.
-    (None, 'posix'),
+    (None, 'posix'),  # controls special builtins
     (None, 'vi'),
     (None, 'emacs'),
 ]
