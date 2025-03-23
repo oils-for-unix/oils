@@ -97,7 +97,7 @@ KEY_VALUE_RE = re.compile(
     r'''
    [#][#] \s+
    # optional prefix with qualifier and shells
-   (?: (OK|BUG|N-I) \s+ ([\w+/]+) \s+ )?
+   (?: (OK(?:-\d)? | BUG | N-I) \s+ ([\w+/]+) \s+ )?
    ([\w\-]+)              # key
    :
    \s* (.*)               # value
@@ -492,9 +492,12 @@ class Result(object):
     BUG = 2
     NI = 3
     OK = 4
-    PASS = 5
+    OK_2 = 5
+    OK_3 = 6
+    OK_4 = 7
+    PASS = 8
 
-    length = 6  # for loops
+    length = 9  # for loops
 
 
 def QualifierToResult(qualifier):
@@ -503,8 +506,16 @@ def QualifierToResult(qualifier):
         return Result.BUG
     if qualifier == 'N-I':  # equal, and known UNIMPLEMENTED
         return Result.NI
+
     if qualifier == 'OK':  # equal, but ok (not ideal)
         return Result.OK
+    if qualifier == 'OK-2':
+        return Result.OK_2
+    if qualifier == 'OK-3':
+        return Result.OK_3
+    if qualifier == 'OK-4':
+        return Result.OK_4
+
     return Result.PASS  # ideal behavior
 
 
@@ -617,7 +628,7 @@ class Stats(object):
             c['num_bug'] += 1
         elif cell_result == Result.NI:
             c['num_ni'] += 1
-        elif cell_result == Result.OK:
+        elif cell_result in (Result.OK, Result.OK_2, Result.OK_3, Result.OK_4):
             c['num_ok'] += 1
         elif cell_result == Result.PASS:
             c['num_passed'] += 1
@@ -839,7 +850,10 @@ _BOLD = '\033[1m'
 _RED = '\033[31m'
 _GREEN = '\033[32m'
 _YELLOW = '\033[33m'
+_BLUE = '\033[34m'
 _PURPLE = '\033[35m'
+_CYAN = '\033[36m'
+_WHITE = '\033[37m'
 
 TEXT_CELLS = {
     Result.TIMEOUT: 'TIME',
@@ -847,6 +861,9 @@ TEXT_CELLS = {
     Result.BUG: 'BUG',
     Result.NI: 'N-I',
     Result.OK: 'ok',
+    Result.OK_2: 'ok-2',
+    Result.OK_3: 'ok-3',
+    Result.OK_4: 'ok-4',
     Result.PASS: 'pass',
 }
 
@@ -856,6 +873,9 @@ ANSI_COLORS = {
     Result.BUG: _YELLOW,
     Result.NI: _YELLOW,
     Result.OK: _YELLOW,
+    Result.OK_2: _BLUE,
+    Result.OK_3: _CYAN,
+    Result.OK_4: _WHITE,
     Result.PASS: _GREEN,
 }
 
@@ -875,6 +895,9 @@ HTML_CELLS = {
     Result.BUG: '<td class="bug">BUG',
     Result.NI: '<td class="n-i">N-I',
     Result.OK: '<td class="ok">ok',
+    Result.OK_2: '<td class="ok-2">ok-2',
+    Result.OK_3: '<td class="ok-3">ok-3',
+    Result.OK_4: '<td class="ok-4">ok-4',
     Result.PASS: '<td class="pass">pass',
 }
 

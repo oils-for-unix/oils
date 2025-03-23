@@ -58,7 +58,7 @@ v=tempenv1 f2 global,tempenv1
 # [global,tempenv1,local1,tempenv2,(eval),local2,(unset)] v: local1
 # [global,tempenv1,local1,tempenv2,(eval),local2,(unlocal)] v: local1
 
-## OK zsh/ash/dash STDOUT:
+## OK-2 zsh/ash/dash STDOUT:
 # always-value-unset
 [global,tempenv1,local1,tempenv2,(eval),local2,(unset)] v: (unset)
 [global,tempenv1,local1,tempenv2,(eval),local2,(unlocal)] v: (unset)
@@ -94,7 +94,7 @@ f3() {
 v=global
 v=tempenv1 f3 global,tempenv1
 
-## STDOUT:
+## OK bash STDOUT:
 # cell-unset x localvar-tempenv-share x tempenv-in-localctx
 [global,tempenv1/local1,tempenv2/local2,tempenv3/local3] v: local3
 [global,tempenv1/local1,tempenv2/local2,tempenv3/local3] v: local2 (unlocal 1)
@@ -103,7 +103,7 @@ v=tempenv1 f3 global,tempenv1
 [global,tempenv1/local1,tempenv2/local2,tempenv3/local3] v: (unset) (unlocal 4)
 ## END
 
-## OK zsh/ash/dash STDOUT:
+## OK-2 zsh/ash/dash STDOUT:
 # value-unset
 [global,tempenv1/local1,tempenv2/local2,tempenv3/local3] v: local3
 [global,tempenv1/local1,tempenv2/local2,tempenv3/local3] v: (unset) (unlocal 1)
@@ -112,7 +112,7 @@ v=tempenv1 f3 global,tempenv1
 [global,tempenv1/local1,tempenv2/local2,tempenv3/local3] v: (unset) (unlocal 4)
 ## END
 
-## OK osh/yash STDOUT:
+## STDOUT:
 # cell-unset (remove all localvar)
 [global,tempenv1/local1,tempenv2/local2,tempenv3/local3] v: local3
 [global,tempenv1/local1,tempenv2/local2,tempenv3/local3] v: tempenv1 (unlocal 1)
@@ -121,7 +121,7 @@ v=tempenv1 f3 global,tempenv1
 [global,tempenv1/local1,tempenv2/local2,tempenv3/local3] v: (unset) (unlocal 4)
 ## END
 
-## OK mksh STDOUT:
+## OK-3 mksh STDOUT:
 # cell-unset (remove all localvar/tempenv) x tempenv-value-unset
 [global,tempenv1/local1,tempenv2/local2,tempenv3/local3] v: local3
 [global,tempenv1/local1,tempenv2/local2,tempenv3/local3] v: tempenv1 (unlocal 1)
@@ -152,7 +152,7 @@ f4_unlocal() {
 v=global
 v=tempenv1 f4_unlocal global,tempenv1
 
-## STDOUT:
+## OK bash STDOUT:
 [global,tempenv1,tempenv2,tempenv3] v: tempenv3
 [global,tempenv1,tempenv2,tempenv3] v: tempenv2 (unlocal 1)
 [global,tempenv1,tempenv2,tempenv3] v: tempenv1 (unlocal 2)
@@ -160,7 +160,7 @@ v=tempenv1 f4_unlocal global,tempenv1
 [global,tempenv1,tempenv2,tempenv3] v: (unset) (unlocal 4)
 ## END
 
-## OK zsh/ash/dash/mksh STDOUT:
+## STDOUT:
 # value-unset, mksh-unset
 [global,tempenv1,tempenv2,tempenv3] v: tempenv3
 [global,tempenv1,tempenv2,tempenv3] v: (unset) (unlocal 1)
@@ -169,7 +169,7 @@ v=tempenv1 f4_unlocal global,tempenv1
 [global,tempenv1,tempenv2,tempenv3] v: (unset) (unlocal 4)
 ## END
 
-## OK osh STDOUT:
+## OK-3 osh STDOUT:
 # cell-unset
 [global,tempenv1,tempenv2,tempenv3] v: tempenv3
 [global,tempenv1,tempenv2,tempenv3] v: tempenv1 (unlocal 1)
@@ -178,7 +178,7 @@ v=tempenv1 f4_unlocal global,tempenv1
 [global,tempenv1,tempenv2,tempenv3] v: (unset) (unlocal 4)
 ## END
 
-## OK yash STDOUT:
+## OK-2 yash STDOUT:
 # remove all tempenv3
 [global,tempenv1,tempenv2,tempenv3] v: tempenv3
 [global,tempenv1,tempenv2,tempenv3] v: (unset) (unlocal 1)
@@ -206,7 +206,7 @@ f4_unset() {
 v=global
 v=tempenv1 f4_unset global,tempenv1
 
-## STDOUT:
+## OK bash STDOUT:
 [global,tempenv1,tempenv2,tempenv3] v: tempenv3
 [global,tempenv1,tempenv2,tempenv3] v: tempenv2 (unset 1)
 [global,tempenv1,tempenv2,tempenv3] v: tempenv1 (unset 2)
@@ -214,7 +214,7 @@ v=tempenv1 f4_unset global,tempenv1
 [global,tempenv1,tempenv2,tempenv3] v: (unset) (unset 4)
 ## END
 
-## OK zsh/ash/dash/mksh STDOUT:
+## STDOUT:
 # value-unset, mksh-unset, tempenv-value-unset?
 [global,tempenv1,tempenv2,tempenv3] v: tempenv3
 [global,tempenv1,tempenv2,tempenv3] v: (unset) (unset 1)
@@ -223,7 +223,7 @@ v=tempenv1 f4_unset global,tempenv1
 [global,tempenv1,tempenv2,tempenv3] v: (unset) (unset 4)
 ## END
 
-## OK osh STDOUT:
+## OK-2 osh STDOUT:
 # cell-unset
 [global,tempenv1,tempenv2,tempenv3] v: tempenv3
 [global,tempenv1,tempenv2,tempenv3] v: tempenv1 (unset 1)
