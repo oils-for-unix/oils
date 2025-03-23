@@ -1,4 +1,4 @@
-## compare_shells: bash zsh mksh ash
+## compare_shells: dash bash zsh mksh ash yash
 ## oils_failures_allowed: 1
 
 # forked from spec/ble-idioms
@@ -47,12 +47,13 @@ f() {
   eval 'local y=y'
   tmp='' eval 'local ty=ty'
 
-  # Why does this have an effect in OSH?
+  # Why does this have an effect in OSH?  Oh because 'unset' is a special
+  # builtin
   if true; then
-    x='' unset x
-    tx='' unset tx
-    y='' unset y
-    ty='' unset ty
+    x='X' unset x
+    tx='TX' unset tx
+    y='Y' unset y
+    ty='TY' unset ty
   fi
 
   #unset y
@@ -73,7 +74,7 @@ y=y
 ty=ty
 ## END
 
-## BUG mksh/ash STDOUT:
+## BUG mksh/ash/dash/yash STDOUT:
 x=
 tx=
 y=
@@ -139,7 +140,7 @@ x=42
 x=42
 ## END
 
-## BUG mksh/ash/dash STDOUT:
+## BUG mksh/ash/dash/yash STDOUT:
 x=
 ---
 x=

@@ -1,4 +1,4 @@
-## compare_shells: bash-4.4 zsh mksh ash dash yash
+## compare_shells: bash zsh mksh ash dash yash
 ## oils_failures_allowed: 0
 
 # Some tests moved here for spec/ble-features
@@ -48,17 +48,15 @@ f2() {
 v=global
 v=tempenv1 f2 global,tempenv1
 
-## STDOUT:
+## OK bash STDOUT:
 # bash-unset (bash-5.1)
 [global,tempenv1,local1,tempenv2,(eval),local2,(unset)] v: (unset)
 [global,tempenv1,local1,tempenv2,(eval),local2,(unlocal)] v: local1
 ## END
 
-## BUG bash STDOUT:
-# bash-unset (bash-4.3..5.0 bug)
-[global,tempenv1,local1,tempenv2,(eval),local2,(unset)] v: local1
-[global,tempenv1,local1,tempenv2,(eval),local2,(unlocal)] v: local1
-## END
+# Note that bash-4.3 to bash 5.0 behave differently
+# [global,tempenv1,local1,tempenv2,(eval),local2,(unset)] v: local1
+# [global,tempenv1,local1,tempenv2,(eval),local2,(unlocal)] v: local1
 
 ## OK zsh/ash/dash STDOUT:
 # always-value-unset
