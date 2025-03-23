@@ -52,7 +52,7 @@ td {
 .ok   { color: #660; font-size: large; }
 .ok-2 { color: brown; font-size: large; }
 .ok-3 { color: darkcyan; font-size: large; }
-.ok-4 { color: gray; font-size: large; }
+.ok-4 { color: #444; font-size: large; }
 .n-i  { color: #660; font-size: large; }
 .bug  { color: #660; font-size: large; }
 .fail { color: darkred; font-size: large; }

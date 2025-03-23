@@ -1,4 +1,4 @@
-## compare_shells: bash-4.4 zsh mksh ash dash yash
+## compare_shells: bash zsh mksh ash dash yash
 
 #### [bash_unset] local-unset / dynamic-unset for localvar
 unlocal() { unset -v "$1"; }
@@ -35,7 +35,7 @@ f1 'global'
 [global,local,(unlocal)] v: global
 ## END
 
-## OK zsh/ash/dash STDOUT:
+## OK-2 zsh/ash/dash STDOUT:
 # always-value-unset
 #   local-unset   = value-unset
 #   dynamic-unset = value-unset
@@ -71,11 +71,9 @@ v=tempenv f1 'global,tempenv'
 [global,tempenv,local,(unlocal)] v: global
 ## END
 
-## BUG bash STDOUT:
-# bash-unset (bash-4.3..5.0 bug)
-[global,tempenv,local,(unset)] v: global
-[global,tempenv,local,(unlocal)] v: global
-## END
+# Note on bug in bash 4.3 to bash 5.0
+# [global,tempenv,local,(unset)] v: global
+# [global,tempenv,local,(unlocal)] v: global
 
 ## OK osh/mksh/yash STDOUT:
 # always-cell-unset
@@ -85,7 +83,7 @@ v=tempenv f1 'global,tempenv'
 [global,tempenv,local,(unlocal)] v: tempenv
 ## END
 
-## OK zsh/ash/dash STDOUT:
+## OK-2 zsh/ash/dash STDOUT:
 # always-value-unset
 #   local-unset   = value-unset
 #   dynamic-unset = value-unset
@@ -160,23 +158,21 @@ v=tempenv eval 'f5 "global,tempenv,(eval)"'
 [global,tempenv,(eval),local+unlocal] v: tempenv
 ## END
 
-## BUG bash STDOUT:
-# bash-unset (bash-4.3..5.0 bug)
-[global] v: global
-[global,local] v: (unset)
-[global,local+unset] v: (unset)
-[global,local+unlocal] v: global
-[global,tempenv] v: tempenv
-[global,tempenv,local] v: tempenv
-[global,tempenv,local+unset] v: global
-[global,tempenv,local+unlocal] v: global
-[global,tempenv,(eval)] v: tempenv
-[global,tempenv,(eval),local] v: tempenv
-[global,tempenv,(eval),local+unset] v: (unset)
-[global,tempenv,(eval),local+unlocal] v: tempenv
-## END
+# Note on bug in bash 4.3 to bash 5.0
+# [global] v: global
+# [global,local] v: (unset)
+# [global,local+unset] v: (unset)
+# [global,local+unlocal] v: global
+# [global,tempenv] v: tempenv
+# [global,tempenv,local] v: tempenv
+# [global,tempenv,local+unset] v: global
+# [global,tempenv,local+unlocal] v: global
+# [global,tempenv,(eval)] v: tempenv
+# [global,tempenv,(eval),local] v: tempenv
+# [global,tempenv,(eval),local+unset] v: (unset)
+# [global,tempenv,(eval),local+unlocal] v: tempenv
 
-## OK ash STDOUT:
+## OK-2 ash STDOUT:
 # always-value-unset x init.unset
 [global] v: global
 [global,local] v: (unset)
@@ -192,7 +188,7 @@ v=tempenv eval 'f5 "global,tempenv,(eval)"'
 [global,tempenv,(eval),local+unlocal] v: (unset)
 ## END
 
-## OK zsh STDOUT:
+## OK-3 zsh STDOUT:
 # always-value-unset x init.empty
 [global] v: global
 [global,local] v: 
@@ -208,7 +204,7 @@ v=tempenv eval 'f5 "global,tempenv,(eval)"'
 [global,tempenv,(eval),local+unlocal] v: (unset)
 ## END
 
-## OK dash STDOUT:
+## OK-4 dash STDOUT:
 # always-value-unset x init.inherit
 [global] v: global
 [global,local] v: global
@@ -289,7 +285,7 @@ f3 'global'
 [global,local,(func),(local)] v: (unset)
 ## END
 
-## OK ash STDOUT:
+## OK-2 ash STDOUT:
 # init.unset x tempenv-in-localctx
 [global,(local)] v: (unset)
 [global,tempenv,(local)] v: tempenv
@@ -300,7 +296,7 @@ f3 'global'
 [global,local,(func),(local)] v: (unset)
 ## END
 
-## OK zsh STDOUT:
+## OK-3 zsh STDOUT:
 # init.empty
 [global,(local)] v: 
 [global,tempenv,(local)] v: 
@@ -311,7 +307,7 @@ f3 'global'
 [global,local,(func),(local)] v: 
 ## END
 
-## OK dash STDOUT:
+## OK-4 dash STDOUT:
 # init.inherit
 [global,(local)] v: global
 [global,tempenv,(local)] v: tempenv

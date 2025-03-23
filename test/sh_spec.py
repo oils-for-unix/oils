@@ -853,7 +853,7 @@ _YELLOW = '\033[33m'
 _BLUE = '\033[34m'
 _PURPLE = '\033[35m'
 _CYAN = '\033[36m'
-_WHITE = '\033[37m'
+#_WHITE = '\033[37m'
 
 TEXT_CELLS = {
     Result.TIMEOUT: 'TIME',
@@ -875,7 +875,7 @@ ANSI_COLORS = {
     Result.OK: _YELLOW,
     Result.OK_2: _BLUE,
     Result.OK_3: _CYAN,
-    Result.OK_4: _WHITE,
+    Result.OK_4: _PURPLE,
     Result.PASS: _GREEN,
 }
 
