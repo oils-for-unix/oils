@@ -116,21 +116,19 @@ def _PrintVariables(
     for name in names:
         cell = cells[name]
         if cell is None:
-            if builtin == _OTHER:
-                # This is specified for declare/typeset -p x y
-                # Notes:
-                #   local -p behaves differently in bash 4 and bash 5!
-                #   location info?
-                errfmt.PrintMessage(
-                    'osh: %s: %r is not defined' % (cmd_val.argv[0], name),
-                    cmd_val.arg_locs[0])
+            # declare/typeset/local -p var1 var2 print an error
+            # There is no readonly/export -p var1 var2
+            errfmt.PrintMessage(
+                'osh: %s: %r is not defined' % (cmd_val.argv[0], name),
+                cmd_val.arg_locs[0])
             continue  # not defined
 
         val = cell.val
+        # Mem.var_stack does not store value.Undef
+        assert val.tag() != value_e.Undef, val
+
         #log('name %r %s', name, val)
 
-        if val.tag() == value_e.Undef:  # TODO: this can be an assertion
-            continue
         if builtin == _READONLY and not cell.readonly:
             continue
         if builtin == _EXPORT and not cell.exported:
