@@ -284,7 +284,7 @@ shopt --set ysh:all
 
 for x in a b c { 
   echo $x
-  if (x === 'b') {
+  if (x === 'a') {
     break
   }
 }
@@ -292,33 +292,35 @@ for x in a b c {
 echo ---
 
 for keyword in break continue return exit {
-  $[ENV.SH] -o ysh:all -c '
-  var k = $1
-  for x in a b c { 
-    echo $x
-    if (x === "b") {
-      $k
+  try {
+    $[ENV.SH] -o ysh:all -c '
+    var k = $1
+    for x in a b c { 
+      echo $x
+      if (x === "a") {
+        $k
+      }
     }
+    ' unused $keyword
   }
-  ' unused $keyword || true
+  echo code=$[_error.code]
   echo '==='
 }
 
 ## STDOUT:
 a
-b
 ---
 a
-b
+code=1
 ===
 a
-b
+code=1
 ===
 a
-b
+code=1
 ===
 a
-b
+code=1
 ===
 ## END
 
