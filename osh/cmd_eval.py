@@ -1135,27 +1135,30 @@ class CommandEvaluator(object):
 
     def _DoControlFlow(self, node):
         # type: (command.ControlFlow) -> int
-        keyword = node.keyword
-
         if node.arg_word:  # Evaluate the argument
-            str_val = self.word_ev.EvalWordToString(node.arg_word)
+            arg_str = self.word_ev.EvalWordToString(node.arg_word).s
+        else:
+            arg_str = None
 
+        keyword = node.keyword
+        keyword_str = consts.ControlFlowName(keyword.id)
+
+        if arg_str is not None:
             # Quirk: We need 'return $empty' to be valid for libtool.  This is
             # another meaning of strict_control_flow, which also has to do with
             # break/continue at top level.  It has the side effect of making
             # 'return ""' valid, which shells other than zsh fail on.
-            if (len(str_val.s) == 0 and
+            if (len(arg_str) == 0 and
                     not self.exec_opts.strict_control_flow()):
-                arg = 0
+                arg_int = 0
             else:
                 try:
-                    arg = int(str_val.s)  # all control flow takes an integer
+                    arg_int = int(arg_str)  # all control flow takes an integer
                 except ValueError:
                     # Either a bad argument, or integer overflow
                     e_die(
                         '%r expected a small integer, got %r' %
-                        (lexer.TokenVal(keyword), str_val.s),
-                        loc.Word(node.arg_word))
+                        (keyword_str, arg_str), loc.Word(node.arg_word))
 
                 # C++ int() does range checking, but Python doesn't.  So let's
                 # simulate it here for spec tests.
@@ -1165,18 +1168,17 @@ class CommandEvaluator(object):
                 if mylib.PYTHON:
                     max_int = (1 << 31) - 1
                     min_int = -(1 << 31)
-                    if not (min_int <= arg <= max_int):
+                    if not (min_int <= arg_int <= max_int):
                         e_die(
                             '%r expected a small integer, got %r' %
-                            (lexer.TokenVal(keyword), str_val.s),
-                            loc.Word(node.arg_word))
+                            (keyword_str, arg_str), loc.Word(node.arg_word))
         else:
             if keyword.id in (Id.ControlFlow_Exit, Id.ControlFlow_Return):
-                arg = self.mem.LastStatus()
+                arg_int = self.mem.LastStatus()
             else:
-                arg = 1  # break or continue 1 level by default
+                arg_int = 1  # break or continue 1 level by default
 
-        self.tracer.OnControlFlow(consts.ControlFlowName(keyword.id), arg)
+        self.tracer.OnControlFlow(keyword_str, arg_int)
 
         # NOTE: A top-level 'return' is OK, unlike in bash.  If you can return
         # from a sourced script, it makes sense to return from a main script.
@@ -1193,9 +1195,9 @@ class CommandEvaluator(object):
 
         if keyword.id == Id.ControlFlow_Exit:
             # handled differently than other control flow
-            raise util.UserExit(arg)
+            raise util.UserExit(arg_int)
         else:
-            raise vm.IntControlFlow(keyword, arg)
+            raise vm.IntControlFlow(keyword, arg_int)
 
     def _DoAndOr(self, node, cmd_st):
         # type: (command.AndOr, CommandStatus) -> int

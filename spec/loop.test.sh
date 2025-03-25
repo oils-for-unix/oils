@@ -1,4 +1,5 @@
 ## compare_shells: dash bash-4.4 mksh zsh
+## oils_failures_allowed: 2
 
 #### implicit for loop
 # This is like "for i in $@".
@@ -118,24 +119,6 @@ done
 a
 b
 ## END
-
-#### dynamic control flow (KNOWN INCOMPATIBILITY)
-# hm would it be saner to make FATAL builtins called break/continue/etc.?
-# On the other hand, this spits out errors loudly.
-b=break
-for i in 1 2 3; do
-  echo $i
-  $b
-done
-## STDOUT:
-1
-## END
-## OK osh STDOUT:
-1
-2
-3
-## END
-## OK osh status: 127
 
 #### while in while condition
 # This is a consequence of the grammar
@@ -476,4 +459,102 @@ done
 2 a
 ## END
 
- 
+#### $b break, $c continue, $r return, $e exit
+
+# hm would it be saner to make FATAL builtins called break/continue/etc.?
+# On the other hand, this spits out errors loudly.
+
+echo '- break'
+b=break
+for i in 1 2 3; do
+  echo $i
+  $b
+done
+
+echo '- continue'
+c='continue'
+for i in 1 2 3; do
+  if test $i = 2; then
+    $c
+  fi
+  echo $i
+done
+
+r='return'
+f() {
+  echo '- return'
+  for i in 1 2 3; do
+    echo $i
+    if test $i = 2; then
+      $r 99
+    fi
+  done
+}
+f
+echo status=$?
+
+echo '- exit'
+e='exit'
+$e 5
+echo 'not executed'
+
+## status: 5
+## STDOUT:
+- break
+1
+- continue
+1
+3
+- return
+1
+2
+status=99
+- exit
+## END
+
+#### \break \continue \return \exit
+
+echo '- break'
+for i in 1 2 3; do
+  echo $i
+  \break
+done
+
+echo '- continue'
+for i in 1 2 3; do
+  if test $i = 2; then
+    \continue
+  fi
+  echo $i
+done
+
+f() {
+  echo '- return'
+  for i in 1 2 3; do
+    echo $i
+    if test $i = 2; then
+      \return 99
+    fi
+  done
+}
+f
+echo status=$?
+
+echo '- exit'
+\exit 5
+echo 'not executed'
+
+## status: 5
+## STDOUT:
+- break
+1
+- continue
+1
+3
+- return
+1
+2
+status=99
+- exit
+## END
+
