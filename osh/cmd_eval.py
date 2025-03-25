@@ -329,6 +329,23 @@ def _IsSpecialBuiltin(cmd_val, posix_mode):
     return False
 
 
+def _ToInteger(s):
+    # type: (str) -> int
+    integer = int(s)
+
+    # Do extra range checking in Python.  C++ to_int() in gc_builtins.py does
+    # this with INT_MAX and INT_MIN.
+    # TODO: move this to mylib.StringToInt32()?
+    # We don't want the check to depend on the machine architecture.
+    #if 0:
+    if mylib.PYTHON:
+        max_int = (1 << 31) - 1
+        min_int = -(1 << 31)
+        if not (min_int <= integer <= max_int):
+            raise ValueError()
+    return integer
+
+
 class CommandEvaluator(object):
     """Executes the program by tree-walking.
 
@@ -1143,6 +1160,11 @@ class CommandEvaluator(object):
         keyword = node.keyword
         keyword_str = consts.ControlFlowName(keyword.id)
 
+        # self.cflow.KeywordEval(keyword_id, arg_str)
+        # self.cflow.Run(cmd_val)
+
+        # return _DoControlFlow(mem, exec_opts, tracer, errfmt, keyword_id, arg_str)
+
         if arg_str is not None:
             # Quirk: We need 'return $empty' to be valid for libtool.  This is
             # another meaning of strict_control_flow, which also has to do with
@@ -1153,25 +1175,15 @@ class CommandEvaluator(object):
                 arg_int = 0
             else:
                 try:
-                    arg_int = int(arg_str)  # all control flow takes an integer
+                    arg_int = _ToInteger(arg_str)
                 except ValueError:
                     # Either a bad argument, or integer overflow
                     e_die(
                         '%r expected a small integer, got %r' %
                         (keyword_str, arg_str), loc.Word(node.arg_word))
+                    # Note: there is another truncation to 256 in core/vm.py,
+                    # but it does NOT cause an error.
 
-                # C++ int() does range checking, but Python doesn't.  So let's
-                # simulate it here for spec tests.
-                # TODO: could be mylib.ToMachineInt()?  Problem: 'int' in C/C++
-                # could be more than 4 bytes.  We are testing INT_MAX and
-                # INT_MIN in gc_builtins.cc - those could be hard-coded.
-                if mylib.PYTHON:
-                    max_int = (1 << 31) - 1
-                    min_int = -(1 << 31)
-                    if not (min_int <= arg_int <= max_int):
-                        e_die(
-                            '%r expected a small integer, got %r' %
-                            (keyword_str, arg_str), loc.Word(node.arg_word))
         else:
             if keyword.id in (Id.ControlFlow_Exit, Id.ControlFlow_Return):
                 arg_int = self.mem.LastStatus()
