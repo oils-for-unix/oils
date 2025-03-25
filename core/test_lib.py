@@ -276,14 +276,18 @@ def InitCommandEvaluator(parse_ctx=None,
                                             tilde_ev, splitter, errfmt)
     signal_safe = iolib.InitSignalSafe()
     trap_state = trap_osh.TrapState(signal_safe)
-    cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
-                                       assign_builtins, arena, cmd_deps,
-                                       trap_state, signal_safe)
 
     multi_trace = dev.MultiTracer(posix.getpid(), '', '', '', fd_state)
     tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, debug_f,
                         multi_trace)
     waiter = process.Waiter(job_list, exec_opts, trap_state, tracer)
+
+    cmd_deps.cflow_builtin = cmd_eval.ControlFlowBuiltin(mem, exec_opts,
+                                                         tracer, errfmt)
+
+    cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
+                                       assign_builtins, arena, cmd_deps,
+                                       trap_state, signal_safe)
 
     hay_state = hay_ysh.HayState()
     shell_ex = executor.ShellExecutor(mem, exec_opts, mutable_opts, procs,
