@@ -435,6 +435,9 @@ def Main(
 
     cmd_deps.debug_f = debug_f
 
+    cflow_builtin = cmd_eval.ControlFlowBuiltin(mem, exec_opts, tracer, errfmt)
+    cmd_deps.cflow_builtin = cflow_builtin
+
     now = time_.time()
     iso_stamp = time_.strftime("%Y-%m-%d %H:%M:%S", time_.localtime(now))
 
@@ -624,7 +627,6 @@ def Main(
     b[builtin_i.help] = misc_osh.Help(lang, loader, help_data, errfmt)
 
     # Control flow
-    cflow_builtin = cmd_eval.ControlFlowBuiltin(mem, exec_opts, tracer, errfmt)
     b[builtin_i.break_] = cflow_builtin
     b[builtin_i.continue_] = cflow_builtin
     b[builtin_i.return_] = cflow_builtin

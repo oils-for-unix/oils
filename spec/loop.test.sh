@@ -1,5 +1,5 @@
 ## compare_shells: dash bash mksh zsh
-## oils_failures_allowed: 3
+## oils_failures_allowed: 0
 
 #### implicit for loop
 # This is like "for i in $@".

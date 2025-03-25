@@ -1,7 +1,7 @@
 """vm.py: Library for executing shell."""
 from __future__ import print_function
 
-from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.runtime_asdl import (CommandStatus, StatusArray, flow_e,
                                         flow_t)
 from _devbuild.gen.syntax_asdl import Token, loc, loc_t
@@ -45,27 +45,37 @@ class ControlFlow(Exception):
 
 class IntControlFlow(Exception):
 
-    def __init__(self, token, arg):
-        # type: (Token, int) -> None
+    def __init__(self, keyword_id, keyword_str, keyword_loc, arg):
+        # type: (Id_t, str, loc_t, int) -> None
         """
         Args:
           token: the keyword token
           arg: exit code to 'return', or number of levels to break/continue
         """
-        self.token = token
+        self.keyword_id = keyword_id
+        self.keyword_str = keyword_str
+        self.keyword_loc = keyword_loc
         self.arg = arg
+
+    def Keyword(self):
+        # type: () -> str
+        return self.keyword_str
+
+    def Location(self):
+        # type: () -> loc_t
+        return self.keyword_loc
 
     def IsReturn(self):
         # type: () -> bool
-        return self.token.id == Id.ControlFlow_Return
+        return self.keyword_id == Id.ControlFlow_Return
 
     def IsBreak(self):
         # type: () -> bool
-        return self.token.id == Id.ControlFlow_Break
+        return self.keyword_id == Id.ControlFlow_Break
 
     def IsContinue(self):
         # type: () -> bool
-        return self.token.id == Id.ControlFlow_Continue
+        return self.keyword_id == Id.ControlFlow_Continue
 
     def StatusCode(self):
         # type: () -> int
@@ -93,7 +103,7 @@ class IntControlFlow(Exception):
 
     def __repr__(self):
         # type: () -> str
-        return '<IntControlFlow %s %s>' % (self.token, self.arg)
+        return '<IntControlFlow %s %s>' % (Id_str(self.keyword_id), self.arg)
 
 
 class ValueControlFlow(Exception):

@@ -91,7 +91,7 @@ from osh import word_eval
 from mycpp import iolib
 from mycpp import mops
 from mycpp import mylib
-from mycpp.mylib import log, probe, switch, tagswitch, NewDict
+from mycpp.mylib import log, probe, switch, tagswitch, str_switch, NewDict
 from ysh import expr_eval
 from ysh import func_proc
 from ysh import val_ops
@@ -139,6 +139,7 @@ class Deps(object):
         self.mutable_opts = None  # type: state.MutableOpts
         self.dumper = None  # type: dev.CrashDumper
         self.debug_f = None  # type: util._DebugFile
+        self.cflow_builtin = None  # type: ControlFlowBuiltin
 
 
 def _HasManyStatuses(node):
@@ -344,9 +345,55 @@ class ControlFlowBuiltin(vm._Builtin):
         self.tracer = tracer
         self.errfmt = errfmt
 
-    def Static(self, keyword_id, keyword_str, keyword_loc, arg_str):
-        # type: (Id_t, str, loc_t, Optional[str]) -> int
-        return 0
+    def Static(self, keyword_id, keyword_str, keyword_loc, arg_str, arg_loc):
+        # type: (Id_t, str, loc_t, Optional[str], loc_t) -> int
+
+        if arg_str is not None:
+            # Quirk: We need 'return $empty' to be valid for libtool.  This is
+            # another meaning of strict_control_flow, which also has to do with
+            # break/continue at top level.  It has the side effect of making
+            # 'return ""' valid, which shells other than zsh fail on.
+            if (len(arg_str) == 0 and
+                    not self.exec_opts.strict_control_flow()):
+                arg_int = 0
+            else:
+                try:
+                    arg_int = _ToInteger(arg_str)
+                except ValueError:
+                    # Either a bad argument, or integer overflow
+                    e_die(
+                        '%r expected a small integer, got %r' %
+                        (keyword_str, arg_str), arg_loc)
+                    # Note: there is another truncation to 256 in core/vm.py,
+                    # but it does NOT cause an error.
+
+        else:
+            if keyword_id in (Id.ControlFlow_Exit, Id.ControlFlow_Return):
+                arg_int = self.mem.LastStatus()
+            else:
+                arg_int = 1  # break or continue 1 level by default
+
+        self.tracer.OnControlFlow(keyword_str, arg_int)
+
+        # NOTE: A top-level 'return' is OK, unlike in bash.  If you can return
+        # from a sourced script, it makes sense to return from a main script.
+        if (self.loop_state.loop_level == 0 and
+                keyword_id in (Id.ControlFlow_Break, Id.ControlFlow_Continue)):
+            msg = 'Invalid control flow at top level'
+            if self.exec_opts.strict_control_flow():
+                e_die(msg, keyword_loc)
+            else:
+                # Only print warnings, never fatal.
+                # Bash oddly only exits 1 for 'return', but no other shell does.
+                self.errfmt.PrefixPrint(msg, 'warning: ', keyword_loc)
+                return 0
+
+        if keyword_id == Id.ControlFlow_Exit:
+            # handled differently than other control flow
+            raise util.UserExit(arg_int)
+        else:
+            raise vm.IntControlFlow(keyword_id, keyword_str, keyword_loc,
+                                    arg_int)
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -357,12 +404,34 @@ class ControlFlowBuiltin(vm._Builtin):
         from frontend import args
         arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
         arg_r.Next()  # Skip first
-        arg_str = arg_r.Peek()
+
+        # Note: most shells allow break -- 2, so this isn't correct
+        arg_str, arg_loc = arg_r.Peek2()
 
         keyword_str = cmd_val.argv[0]
-        keyword_id = consts.LookupNormalBuiltin(keyword_str)
+
+        # TODO: Can we get rid of str_switch?  We calculated the builtin_id of
+        # type builtin_t in _RunSimpleCommand, but here we are using Id_t.
+        # (Id_t is static, and builtin_t is dynamic.)
+
+        # Returns builtin_t
+        #keyword_id = consts.LookupNormalBuiltin(keyword_str)
+
+        keyword_id = Id.Unknown_Tok
+        with str_switch(keyword_str) as case:
+            if case('break'):
+                keyword_id = Id.ControlFlow_Break
+            elif case('continue'):
+                keyword_id = Id.ControlFlow_Continue
+            elif case('return'):
+                keyword_id = Id.ControlFlow_Return
+            elif case('exit'):
+                keyword_id = Id.ControlFlow_Exit
+            else:
+                raise AssertionError()
+
         return self.Static(keyword_id, keyword_str, cmd_val.arg_locs[0],
-                           arg_str)
+                           arg_str, arg_loc)
 
 
 class CommandEvaluator(object):
@@ -412,6 +481,7 @@ class CommandEvaluator(object):
         self.mutable_opts = cmd_deps.mutable_opts
         self.dumper = cmd_deps.dumper
         self.debug_f = cmd_deps.debug_f  # Used by ShellFuncAction too
+        self.cflow_builtin = cmd_deps.cflow_builtin
 
         self.trap_state = trap_state
         self.signal_safe = signal_safe
@@ -419,9 +489,6 @@ class CommandEvaluator(object):
         self.check_command_sub_status = False  # a hack.  Modified by ShellExecutor
 
         self.status_array_pool = []  # type: List[StatusArray]
-
-        self.cflow_builtin = ControlFlowBuiltin(mem, exec_opts, self.tracer,
-                                                errfmt)
 
     def CheckCircularDeps(self):
         # type: () -> None
@@ -1174,63 +1241,31 @@ class CommandEvaluator(object):
 
     def _DoControlFlow(self, node):
         # type: (command.ControlFlow) -> int
+        """
+        TODO: Does it make sense to get rid of this statically parsed control
+        flow?  In favor of the dynamic builtin?
 
-        if node.arg_word:  # Evaluate the argument
-            arg_str = self.word_ev.EvalWordToString(node.arg_word).s
+        One reason to be static was to have a static control flow graph, so we
+        could possibly compile shell to bytecode.  That is MAYBE a step toward
+        getting rid of the "C++ exceptions are slow when they throw" problem.
+
+        But we still need dynamic control flow - or do we?  (We might special
+        case \\return?)
+        """
+        w = node.arg_word
+        if w:  # Evaluate the argument
+            arg_str = self.word_ev.EvalWordToString(w).s
+            arg_loc = w  # type: loc_t
         else:
             arg_str = None
+            arg_loc = loc.Missing
 
         keyword = node.keyword
         # This is static, so we could also use lexer.TokenVal()
         keyword_str = consts.ControlFlowName(keyword.id)
 
-        #return self.cflow_builtin.Static(keyword.id, keyword_str, keyword, arg_str)
-
-        if arg_str is not None:
-            # Quirk: We need 'return $empty' to be valid for libtool.  This is
-            # another meaning of strict_control_flow, which also has to do with
-            # break/continue at top level.  It has the side effect of making
-            # 'return ""' valid, which shells other than zsh fail on.
-            if (len(arg_str) == 0 and
-                    not self.exec_opts.strict_control_flow()):
-                arg_int = 0
-            else:
-                try:
-                    arg_int = _ToInteger(arg_str)
-                except ValueError:
-                    # Either a bad argument, or integer overflow
-                    e_die(
-                        '%r expected a small integer, got %r' %
-                        (keyword_str, arg_str), loc.Word(node.arg_word))
-                    # Note: there is another truncation to 256 in core/vm.py,
-                    # but it does NOT cause an error.
-
-        else:
-            if keyword.id in (Id.ControlFlow_Exit, Id.ControlFlow_Return):
-                arg_int = self.mem.LastStatus()
-            else:
-                arg_int = 1  # break or continue 1 level by default
-
-        self.tracer.OnControlFlow(keyword_str, arg_int)
-
-        # NOTE: A top-level 'return' is OK, unlike in bash.  If you can return
-        # from a sourced script, it makes sense to return from a main script.
-        if (self.loop_state.loop_level == 0 and
-                keyword.id in (Id.ControlFlow_Break, Id.ControlFlow_Continue)):
-            msg = 'Invalid control flow at top level'
-            if self.exec_opts.strict_control_flow():
-                e_die(msg, keyword)
-            else:
-                # Only print warnings, never fatal.
-                # Bash oddly only exits 1 for 'return', but no other shell does.
-                self.errfmt.PrefixPrint(msg, 'warning: ', keyword)
-                return 0
-
-        if keyword.id == Id.ControlFlow_Exit:
-            # handled differently than other control flow
-            raise util.UserExit(arg_int)
-        else:
-            raise vm.IntControlFlow(keyword, arg_int)
+        return self.cflow_builtin.Static(keyword.id, keyword_str, keyword,
+                                         arg_str, arg_loc)
 
     def _DoAndOr(self, node, cmd_st):
         # type: (command.AndOr, CommandStatus) -> int
@@ -2242,13 +2277,13 @@ class CommandEvaluator(object):
                     is_return = True
                     status = e.StatusCode()
                 else:
-                    # TODO: This error message is invalid.  Can also happen in eval.
-                    # We need a flag.
+                    # TODO: This error message is invalid.  It can also happen
+                    # in eval.  Perhaps we need a flag.
 
                     # Invalid control flow
                     self.errfmt.Print_(
                         "Loop and control flow can't be in different processes",
-                        blame_loc=e.token)
+                        blame_loc=e.Location())
                     is_fatal = True
                     # All shells exit 0 here.  It could be hidden behind
                     # strict_control_flow if the incompatibility causes problems.
@@ -2452,9 +2487,8 @@ class CommandEvaluator(object):
                     status = e.StatusCode()
                 else:
                     # break/continue used in the wrong place.
-                    e_die(
-                        'Unexpected %r (in proc call)' %
-                        lexer.TokenVal(e.token), e.token)
+                    e_die('Unexpected %r (in proc call)' % e.Keyword(),
+                          e.Location())
             except error.FatalRuntime as e:
                 # Dump the stack before unwinding it
                 self.dumper.MaybeRecord(self, e)
@@ -2480,7 +2514,7 @@ class CommandEvaluator(object):
             # shouldn't be able to exit the shell from a completion hook!
             # TODO: Avoid overwriting the prompt!
             self.errfmt.Print_('Attempted to exit from completion hook.',
-                               blame_loc=e.token)
+                               blame_loc=e.Location())
 
             status = 1
         # NOTE: (IOError, OSError) are caught in completion.py:ReadlineCallback

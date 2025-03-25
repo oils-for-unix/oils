@@ -35,16 +35,11 @@ keyword
 ## END
 
 #### type -t control flow
-
-# this differs from bash, but don't lie!
 type -t break continue return exit
+
+# Note: we also have static keywords for now
+
 ## STDOUT:
-keyword
-keyword
-keyword
-keyword
-## END
-## OK bash STDOUT:
 builtin
 builtin
 builtin
