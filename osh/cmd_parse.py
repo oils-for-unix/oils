@@ -1315,7 +1315,7 @@ class CommandParser(object):
 
             # Attach the token for errors.  (ShAssignment may not need it.)
             if len(suffix_words) == 1:
-                arg_word = None  # type: Optional[word_t]
+                arg_word = None  # type: Optional[CompoundWord]
             elif len(suffix_words) == 2:
                 arg_word = suffix_words[1]
             else:

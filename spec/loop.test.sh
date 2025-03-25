@@ -452,7 +452,6 @@ for i in 1 2; do
   done
 done
 
-
 ## STDOUT:
 1 a
 1 c

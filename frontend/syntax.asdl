@@ -414,7 +414,7 @@ module syntax
     # Token left is redundant with pairs[0].left
   | ShAssignment(Token left, List[AssignPair] pairs)
 
-  | ControlFlow(Token keyword, word? arg_word)
+  | ControlFlow(Token keyword, CompoundWord? arg_word)
 
     # ops are |  |&
   | Pipeline(Token? negated, List[command] children, List[Token] ops)

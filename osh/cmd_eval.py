@@ -17,7 +17,7 @@ from __future__ import print_function
 
 import sys
 
-from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.syntax_asdl import (
     IntParamBox,
@@ -346,6 +346,47 @@ def _ToInteger(s):
     return integer
 
 
+class ControlFlowBuiltin(vm._Builtin):
+
+    def __init__(
+            self,
+            mem,  # type: state.Mem
+            exec_opts,  # type: optview.Exec
+            tracer,  # type: dev.Tracer
+            errfmt,  # type: ui.ErrorFormatter
+    ):
+        self.mem = mem
+        self.exec_opts = exec_opts
+        self.tracer = tracer
+        self.errfmt = errfmt
+        self.cmd_ev = None  # type: CommandEvaluator
+
+        # Should we have one keyword_id for each builtin?
+        #
+        # Or can we somehow have a singleton?  Then we can put loop_level in
+        # here, which means less indirection
+
+    def Static(self, keyword_id, keyword_str, keyword_loc, arg_str):
+        # type: (Id_t, str, loc_t, Optional[str]) -> int
+        return 0
+
+    def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+
+        # This is redundant with _RunSimpleCommand, but the vm._Builtin doesn't
+        # (yet) allow reusing it
+
+        from frontend import args
+        arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
+        arg_r.Next()  # Skip first
+        arg_str = arg_r.Peek()
+
+        keyword_str = cmd_val.argv[0]
+        keyword_id = consts.LookupNormalBuiltin(keyword_str)
+        return self.Static(keyword_id, keyword_str, cmd_val.arg_locs[0],
+                           arg_str)
+
+
 class CommandEvaluator(object):
     """Executes the program by tree-walking.
 
@@ -401,11 +442,14 @@ class CommandEvaluator(object):
 
         self.status_array_pool = []  # type: List[StatusArray]
 
+        self.cflow_builtin = ControlFlowBuiltin(mem, exec_opts, self.tracer,
+                                                errfmt)
+
     def CheckCircularDeps(self):
         # type: () -> None
         assert self.arith_ev is not None
         assert self.bool_ev is not None
-        # Disabled for push OSH
+        # TODO: re-enable this?
         #assert self.expr_ev is not None
         assert self.word_ev is not None
 
@@ -1152,18 +1196,17 @@ class CommandEvaluator(object):
 
     def _DoControlFlow(self, node):
         # type: (command.ControlFlow) -> int
+
         if node.arg_word:  # Evaluate the argument
             arg_str = self.word_ev.EvalWordToString(node.arg_word).s
         else:
             arg_str = None
 
         keyword = node.keyword
+        # This is static, so we could also use lexer.TokenVal()
         keyword_str = consts.ControlFlowName(keyword.id)
 
-        # self.cflow.KeywordEval(keyword_id, arg_str)
-        # self.cflow.Run(cmd_val)
-
-        # return _DoControlFlow(mem, exec_opts, tracer, errfmt, keyword_id, arg_str)
+        #return self.cflow_builtin.Static(keyword.id, keyword_str, keyword, arg_str)
 
         if arg_str is not None:
             # Quirk: We need 'return $empty' to be valid for libtool.  This is
