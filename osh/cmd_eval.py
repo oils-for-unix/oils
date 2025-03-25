@@ -81,6 +81,7 @@ from core import state
 from display import ui
 from core import util
 from core import vm
+from frontend import args
 from frontend import consts
 from frontend import lexer
 from frontend import location
@@ -397,18 +398,19 @@ class ControlFlowBuiltin(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
+        keyword_str = cmd_val.argv[0]
+        keyword_loc = cmd_val.arg_locs[0]
 
-        # This is redundant with _RunSimpleCommand, but the vm._Builtin doesn't
-        # (yet) allow reusing it
+        if self.exec_opts.strict_control_flow():
+            e_die(
+                "Control flow %r must be static in YSH (strict_control_flow)" %
+                keyword_str, keyword_loc)
 
-        from frontend import args
         arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
         arg_r.Next()  # Skip first
 
         # Note: most shells allow break -- 2, so this isn't correct
         arg_str, arg_loc = arg_r.Peek2()
-
-        keyword_str = cmd_val.argv[0]
 
         # TODO: Can we get rid of str_switch?  We calculated the builtin_id of
         # type builtin_t in _RunSimpleCommand, but here we are using Id_t.
@@ -430,8 +432,8 @@ class ControlFlowBuiltin(vm._Builtin):
             else:
                 raise AssertionError()
 
-        return self.Static(keyword_id, keyword_str, cmd_val.arg_locs[0],
-                           arg_str, arg_loc)
+        return self.Static(keyword_id, keyword_str, keyword_loc, arg_str,
+                           arg_loc)
 
 
 class ctx_LoopLevel(object):
@@ -1258,15 +1260,12 @@ class CommandEvaluator(object):
     def _DoControlFlow(self, node):
         # type: (command.ControlFlow) -> int
         """
-        TODO: Does it make sense to get rid of this statically parsed control
-        flow?  In favor of the dynamic builtin?
+        Note: YSH control flow is static, while OSH control flow may be dynamic
+        (without shopt -s strict_control_flow)
 
-        One reason to be static was to have a static control flow graph, so we
-        could possibly compile shell to bytecode.  That is MAYBE a step toward
-        getting rid of the "C++ exceptions are slow when they throw" problem.
-
-        But we still need dynamic control flow - or do we?  (We might special
-        case \\return?)
+        One reason is to have a static control flow graph, so we could possibly
+        compile shell to bytecode.  That is MAYBE a step toward getting rid of
+        the "C++ exceptions are slow when they throw" problem.
         """
         w = node.arg_word
         if w:  # Evaluate the argument

@@ -275,3 +275,52 @@ status=2
 
 ## N-I bash/dash/mksh STDOUT:
 ## END
+
+
+#### Control flow must be static in YSH (strict_control_flow)
+case $SH in bash*|dash|mksh) exit ;; esac
+
+shopt --set ysh:all
+
+for x in a b c { 
+  echo $x
+  if (x === 'b') {
+    break
+  }
+}
+
+echo ---
+
+for keyword in break continue return exit {
+  $[ENV.SH] -o ysh:all -c '
+  var k = $1
+  for x in a b c { 
+    echo $x
+    if (x === "b") {
+      $k
+    }
+  }
+  ' unused $keyword || true
+  echo '==='
+}
+
+## STDOUT:
+a
+b
+---
+a
+b
+===
+a
+b
+===
+a
+b
+===
+a
+b
+===
+## END
+
+## N-I bash/dash/mksh STDOUT:
+## END
