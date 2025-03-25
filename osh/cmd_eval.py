@@ -101,7 +101,7 @@ import libc  # for fnmatch
 # Import this name directly because the C++ translation uses macros literally.
 from libc import FNM_CASEFOLD
 
-from typing import List, Dict, Tuple, Optional, Any, cast, TYPE_CHECKING
+from typing import List, Dict, Tuple, Optional, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from _devbuild.gen.option_asdl import builtin_t
@@ -286,23 +286,6 @@ def PlusEquals(old_val, val):
     return val
 
 
-class ctx_LoopLevel(object):
-    """For checking for invalid control flow."""
-
-    def __init__(self, cmd_ev):
-        # type: (CommandEvaluator) -> None
-        cmd_ev.loop_level += 1
-        self.cmd_ev = cmd_ev
-
-    def __enter__(self):
-        # type: () -> None
-        pass
-
-    def __exit__(self, type, value, traceback):
-        # type: (Any, Any, Any) -> None
-        self.cmd_ev.loop_level -= 1
-
-
 def _IsSpecialBuiltin(cmd_val, posix_mode):
     # type: (cmd_value_t, bool) -> bool
     """
@@ -356,15 +339,10 @@ class ControlFlowBuiltin(vm._Builtin):
             errfmt,  # type: ui.ErrorFormatter
     ):
         self.mem = mem
+        self.loop_state = mem.loop_state
         self.exec_opts = exec_opts
         self.tracer = tracer
         self.errfmt = errfmt
-        self.cmd_ev = None  # type: CommandEvaluator
-
-        # Should we have one keyword_id for each builtin?
-        #
-        # Or can we somehow have a singleton?  Then we can put loop_level in
-        # here, which means less indirection
 
     def Static(self, keyword_id, keyword_str, keyword_loc, arg_str):
         # type: (Id_t, str, loc_t, Optional[str]) -> int
@@ -423,6 +401,7 @@ class CommandEvaluator(object):
         self.tracer = None  # type: dev.Tracer
 
         self.mem = mem
+        self.loop_state = mem.loop_state
         # This is for shopt and set -o.  They are initialized by flags.
         self.exec_opts = exec_opts
         self.errfmt = errfmt
@@ -437,7 +416,6 @@ class CommandEvaluator(object):
         self.trap_state = trap_state
         self.signal_safe = signal_safe
 
-        self.loop_level = 0  # for detecting bad top-level break/continue
         self.check_command_sub_status = False  # a hack.  Modified by ShellExecutor
 
         self.status_array_pool = []  # type: List[StatusArray]
@@ -1237,8 +1215,8 @@ class CommandEvaluator(object):
 
         # NOTE: A top-level 'return' is OK, unlike in bash.  If you can return
         # from a sourced script, it makes sense to return from a main script.
-        if (keyword.id in (Id.ControlFlow_Break, Id.ControlFlow_Continue) and
-                self.loop_level == 0):
+        if (self.loop_state.loop_level == 0 and
+                keyword.id in (Id.ControlFlow_Break, Id.ControlFlow_Continue)):
             msg = 'Invalid control flow at top level'
             if self.exec_opts.strict_control_flow():
                 e_die(msg, keyword)
@@ -1299,7 +1277,7 @@ class CommandEvaluator(object):
     def _DoWhileUntil(self, node):
         # type: (command.WhileUntil) -> int
         status = 0
-        with ctx_LoopLevel(self):
+        with state.ctx_LoopLevel(self.loop_state):
             while True:
                 try:
                     # blame while/until spid
@@ -1447,7 +1425,7 @@ class CommandEvaluator(object):
                     node.keyword)
 
         status = 0  # in case we loop zero times
-        with ctx_LoopLevel(self):
+        with state.ctx_LoopLevel(self.loop_state):
             while True:
                 with state.ctx_LoopFrame(self.mem,
                                          self.exec_opts.for_loop_frames()):
@@ -1494,7 +1472,7 @@ class CommandEvaluator(object):
         update = node.update
 
         self.arith_ev.Eval(init)
-        with ctx_LoopLevel(self):
+        with state.ctx_LoopLevel(self.loop_state):
             while True:
                 # We only accept integers as conditions
                 cond_int = self.arith_ev.EvalToBigInt(for_cond)

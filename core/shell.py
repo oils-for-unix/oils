@@ -623,6 +623,13 @@ def Main(
         help_data = help_meta.TopicMetadata()
     b[builtin_i.help] = misc_osh.Help(lang, loader, help_data, errfmt)
 
+    # Control flow
+    cflow_builtin = cmd_eval.ControlFlowBuiltin(mem, exec_opts, tracer, errfmt)
+    b[builtin_i.break_] = cflow_builtin
+    b[builtin_i.continue_] = cflow_builtin
+    b[builtin_i.return_] = cflow_builtin
+    b[builtin_i.exit] = cflow_builtin
+
     # Interpreter state
     b[builtin_i.set] = pure_osh.Set(mutable_opts, mem)
     b[builtin_i.shopt] = pure_osh.Shopt(exec_opts, mutable_opts, cmd_ev, mem,

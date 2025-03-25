@@ -130,6 +130,12 @@ def _Init(b):
     b.Add('try', enum_name='try_')
     b.Add('assert', enum_name='assert_')  # avoid Python keyword
 
+    # Control flow
+    b.Add('break', enum_name='break_')
+    b.Add('continue', enum_name='continue_')
+    b.Add('return', enum_name='return_')
+    b.Add('exit')
+
     for name in _NORMAL_BUILTINS:
         b.Add(name)
 
