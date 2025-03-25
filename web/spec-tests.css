@@ -55,6 +55,7 @@ td {
 .ok-4 { color: #444; font-size: large; }
 .n-i  { color: #660; font-size: large; }
 .bug  { color: #660; font-size: large; }
+.bug-2 { color: brown; font-size: large; }
 .fail { color: darkred; font-size: large; }
 .timeout { color: purple; font-size: large; }
 

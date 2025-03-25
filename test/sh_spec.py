@@ -97,7 +97,7 @@ KEY_VALUE_RE = re.compile(
     r'''
    [#][#] \s+
    # optional prefix with qualifier and shells
-   (?: (OK(?:-\d)? | BUG | N-I) \s+ ([\w+/]+) \s+ )?
+   (?: (OK(?:-\d)? | BUG(?:-\d)? | N-I) \s+ ([\w+/]+) \s+ )?
    ([\w\-]+)              # key
    :
    \s* (.*)               # value
@@ -205,8 +205,8 @@ def AddMetadataToCase(case, qualifier, shells, name, value, line_num):
         if 'qualifier' in case[shell] and qualifier != case[shell]['qualifier']:
             raise ParseError(
                 'Line %d: inconsistent qualifier %r is specified for %r, '
-                'but %r was previously specified.  '
-                % (line_num, qualifier, shell, case[shell]['qualifier']))
+                'but %r was previously specified.  ' %
+                (line_num, qualifier, shell, case[shell]['qualifier']))
 
         case[shell][name] = value
         case[shell]['qualifier'] = qualifier
@@ -490,20 +490,24 @@ class Result(object):
     TIMEOUT = 0  # ONLY a cell result, not an assertion result
     FAIL = 1
     BUG = 2
-    NI = 3
-    OK = 4
-    OK_2 = 5
-    OK_3 = 6
-    OK_4 = 7
-    PASS = 8
+    BUG_2 = 3
+    NI = 4
+    OK = 5
+    OK_2 = 6
+    OK_3 = 7
+    OK_4 = 8
+    PASS = 9
 
-    length = 9  # for loops
+    length = 10  # for loops
 
 
 def QualifierToResult(qualifier):
     # type: (str) -> Result
     if qualifier == 'BUG':  # equal, but known bad
         return Result.BUG
+    if qualifier == 'BUG-2':
+        return Result.BUG_2
+
     if qualifier == 'N-I':  # equal, and known UNIMPLEMENTED
         return Result.NI
 
@@ -624,7 +628,7 @@ class Stats(object):
 
             if sh_label in ('osh-cpp', 'ysh-cpp'):
                 c['oils_cpp_num_failed'] += 1
-        elif cell_result == Result.BUG:
+        elif cell_result in (Result.BUG, Result.BUG_2):
             c['num_bug'] += 1
         elif cell_result == Result.NI:
             c['num_ni'] += 1
@@ -658,13 +662,11 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
 
     #pprint.pprint(cases)
 
-    if isinstance(case_predicate, spec_lib.RangePredicate) and (
-        case_predicate.begin > (len(cases) - 1)
-    ):
+    if (isinstance(case_predicate, spec_lib.RangePredicate) and
+        (case_predicate.begin > (len(cases) - 1))):
         raise RuntimeError(
-            "valid case indexes are from 0 to %s. given range: %s-%s"
-            % ((len(cases) - 1), case_predicate.begin, case_predicate.end)
-        )
+            "valid case indexes are from 0 to %s. given range: %s-%s" %
+            ((len(cases) - 1), case_predicate.begin, case_predicate.end))
 
     sh_labels = [sh_label for sh_label, _ in shells]
 
@@ -859,6 +861,7 @@ TEXT_CELLS = {
     Result.TIMEOUT: 'TIME',
     Result.FAIL: 'FAIL',
     Result.BUG: 'BUG',
+    Result.BUG_2: 'BUG-2',
     Result.NI: 'N-I',
     Result.OK: 'ok',
     Result.OK_2: 'ok-2',
@@ -871,6 +874,7 @@ ANSI_COLORS = {
     Result.TIMEOUT: _PURPLE,
     Result.FAIL: _RED,
     Result.BUG: _YELLOW,
+    Result.BUG_2: _BLUE,
     Result.NI: _YELLOW,
     Result.OK: _YELLOW,
     Result.OK_2: _BLUE,
@@ -893,6 +897,7 @@ HTML_CELLS = {
     Result.TIMEOUT: '<td class="timeout">TIME',
     Result.FAIL: '<td class="fail">FAIL',
     Result.BUG: '<td class="bug">BUG',
+    Result.BUG_2: '<td class="bug-2">BUG-2',
     Result.NI: '<td class="n-i">N-I',
     Result.OK: '<td class="ok">ok',
     Result.OK_2: '<td class="ok-2">ok-2',

@@ -1,4 +1,4 @@
-## compare_shells: dash bash-4.4 mksh zsh
+## compare_shells: dash bash mksh zsh
 ## oils_failures_allowed: 2
 
 #### implicit for loop
@@ -192,7 +192,7 @@ subshell status=1
 subshell status=1
 . 2
 ## END
-## OK dash/bash/zsh STDOUT:
+## OK dash/zsh STDOUT:
 > 1
 subshell status=0
 . 1
@@ -200,7 +200,7 @@ subshell status=0
 subshell status=0
 . 2
 ## END
-## BUG mksh STDOUT:
+## BUG mksh/bash STDOUT:
 > 1
 Should not print
 subshell status=0
@@ -220,11 +220,13 @@ for i in $(seq 2); do
   echo 'should fail after subshell'
   echo ". $i"
 done
+
 ## STDOUT:
 > 1
 ## END
 ## status: 1
-## BUG dash/bash/zsh STDOUT:
+
+## BUG-2 dash/zsh STDOUT:
 > 1
 should fail after subshell
 . 1
@@ -232,8 +234,9 @@ should fail after subshell
 should fail after subshell
 . 2
 ## END
-## BUG dash/bash/zsh status: 0
-## BUG mksh STDOUT:
+## BUG-2 dash/zsh status: 0
+
+## BUG mksh/bash STDOUT:
 > 1
 Should not print
 should fail after subshell
@@ -243,7 +246,7 @@ Should not print
 should fail after subshell
 . 2
 ## END
-## BUG mksh status: 0
+## BUG mksh/bash status: 0
 
 #### bad arg to break
 x=oops
@@ -272,13 +275,13 @@ a
 --
 ## END
 ## BUG bash status: 0
-## BUG dash/mksh/zsh STDOUT:
+## BUG-2 dash/mksh/zsh STDOUT:
 a
 b
 c
 --
 ## END
-## BUG dash/mksh/zsh status: 0
+## BUG-2 dash/mksh/zsh status: 0
 
 #### break in condition of loop
 while break; do
@@ -389,11 +392,12 @@ $SH -c 'return; echo return=$?'
 break=0
 continue=0
 ## END
-## BUG zsh stdout-json: ""
+## BUG-2 zsh STDOUT:
+## END
 ## BUG bash STDOUT:
 break=0
 continue=0
-return=1
+return=2
 ## END
 
 
