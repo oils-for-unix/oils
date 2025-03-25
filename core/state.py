@@ -1235,34 +1235,6 @@ class ctx_Eval(object):
                 self.mem.SetNamed(lval, old_val, scope_e.LocalOnly)
 
 
-class ctx_LoopLevel(object):
-    """For checking for invalid control flow."""
-
-    def __init__(self, st):
-        # type: (LoopState) -> None
-        st.loop_level += 1
-        self.st = st
-
-    def __enter__(self):
-        # type: () -> None
-        pass
-
-    def __exit__(self, type, value, traceback):
-        # type: (Any, Any, Any) -> None
-        self.st.loop_level -= 1
-
-
-class LoopState(object):
-    """
-    Tiny class to avoid circular dependencies between CommandEvaluator and
-    ControlFlowBuiltin.
-    """
-
-    def __init__(self):
-        # type: () -> None
-        self.loop_level = 0
-
-
 def _FrameLookup(frame, name, ysh_decl):
     # type: (Dict[str, Cell], str, bool) -> Tuple[Optional[Cell], Dict[str, Cell]]
     """
@@ -1391,7 +1363,6 @@ class Mem(object):
 
         from core import sh_init
         self.env_config = sh_init.EnvConfig(self, defaults)
-        self.loop_state = LoopState()
 
     def __repr__(self):
         # type: () -> str

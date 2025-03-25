@@ -101,7 +101,7 @@ import libc  # for fnmatch
 # Import this name directly because the C++ translation uses macros literally.
 from libc import FNM_CASEFOLD
 
-from typing import List, Dict, Tuple, Optional, cast, TYPE_CHECKING
+from typing import List, Dict, Tuple, Optional, Any, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from _devbuild.gen.option_asdl import builtin_t
@@ -340,10 +340,10 @@ class ControlFlowBuiltin(vm._Builtin):
             errfmt,  # type: ui.ErrorFormatter
     ):
         self.mem = mem
-        self.loop_state = mem.loop_state
         self.exec_opts = exec_opts
         self.tracer = tracer
         self.errfmt = errfmt
+        self.loop_level = 0
 
     def Static(self, keyword_id, keyword_str, keyword_loc, arg_str, arg_loc):
         # type: (Id_t, str, loc_t, Optional[str], loc_t) -> int
@@ -377,7 +377,7 @@ class ControlFlowBuiltin(vm._Builtin):
 
         # NOTE: A top-level 'return' is OK, unlike in bash.  If you can return
         # from a sourced script, it makes sense to return from a main script.
-        if (self.loop_state.loop_level == 0 and
+        if (self.loop_level == 0 and
                 keyword_id in (Id.ControlFlow_Break, Id.ControlFlow_Continue)):
             msg = 'Invalid control flow at top level'
             if self.exec_opts.strict_control_flow():
@@ -434,6 +434,23 @@ class ControlFlowBuiltin(vm._Builtin):
                            arg_str, arg_loc)
 
 
+class ctx_LoopLevel(object):
+    """For checking for invalid control flow."""
+
+    def __init__(self, cflow):
+        # type: (ControlFlowBuiltin) -> None
+        cflow.loop_level += 1
+        self.cflow = cflow
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        self.cflow.loop_level -= 1
+
+
 class CommandEvaluator(object):
     """Executes the program by tree-walking.
 
@@ -470,7 +487,6 @@ class CommandEvaluator(object):
         self.tracer = None  # type: dev.Tracer
 
         self.mem = mem
-        self.loop_state = mem.loop_state
         # This is for shopt and set -o.  They are initialized by flags.
         self.exec_opts = exec_opts
         self.errfmt = errfmt
@@ -1312,7 +1328,7 @@ class CommandEvaluator(object):
     def _DoWhileUntil(self, node):
         # type: (command.WhileUntil) -> int
         status = 0
-        with state.ctx_LoopLevel(self.loop_state):
+        with ctx_LoopLevel(self.cflow_builtin):
             while True:
                 try:
                     # blame while/until spid
@@ -1460,7 +1476,7 @@ class CommandEvaluator(object):
                     node.keyword)
 
         status = 0  # in case we loop zero times
-        with state.ctx_LoopLevel(self.loop_state):
+        with ctx_LoopLevel(self.cflow_builtin):
             while True:
                 with state.ctx_LoopFrame(self.mem,
                                          self.exec_opts.for_loop_frames()):
@@ -1507,7 +1523,7 @@ class CommandEvaluator(object):
         update = node.update
 
         self.arith_ev.Eval(init)
-        with state.ctx_LoopLevel(self.loop_state):
+        with ctx_LoopLevel(self.cflow_builtin):
             while True:
                 # We only accept integers as conditions
                 cond_int = self.arith_ev.EvalToBigInt(for_cond)
