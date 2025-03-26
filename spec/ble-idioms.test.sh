@@ -1,5 +1,5 @@
 ## compare_shells: bash zsh mksh ash
-## oils_failures_allowed: 3
+## oils_failures_allowed: 2
 
 #### recursive arith: one level
 a='b=123'
@@ -582,14 +582,14 @@ typeset a[2]=3
 ## N-I zsh/ash STDOUT:
 ## END
 
-#### Issue #1069 [53] - LHS array parsing a[1 + 2]=3, etc.
-case $SH in zsh|mksh|ash) exit ;; esac
+#### Issue #1069 [53] - LHS array parsing a[1 + 2]=3 (see spec/array-assign for more)
+case $SH in zsh|ash) exit ;; esac
 
 a[1 + 2]=7
 a[3|4]=8
 a[(1+2)*3]=9
 
-declare -p a
+typeset -p a
 
 # Dynamic parsing
 expr='1 + 2'
@@ -599,38 +599,25 @@ b=(42)
 expr='b[0]'
 a[3 + $expr - 4]=66
 
-declare -p a
+typeset -p a
 
 ## STDOUT:
 declare -a a=([3]="7" [7]="8" [9]="9")
 declare -a a=([3]="55" [7]="8" [9]="9" [41]="66")
 ## END
 
-## N-I zsh/mksh/ash STDOUT:
+## OK mksh STDOUT:
+set -A a
+typeset a[3]=7
+typeset a[7]=8
+typeset a[9]=9
+set -A a
+typeset a[3]=55
+typeset a[7]=8
+typeset a[9]=9
+typeset a[41]=66
 ## END
 
-#### LHS array is protected with shopt -s eval_unsafe_arith, e.g. 'a[$(echo 2)]'
-case $SH in zsh|mksh|ash) exit ;; esac
-
-a=(0 1 2)
-b=(3 4 5)
-declare -p b
-
-expr='a[$(echo 2)]' 
-
-echo 'get' "${b[expr]}"
-
-b[expr]=zzz
-
-echo 'set' "${b[expr]}"
-declare -p b
-
-## STDOUT:
-declare -a b=([0]="3" [1]="4" [2]="5")
-get 5
-set zzz
-declare -a b=([0]="3" [1]="4" [2]="zzz")
+## N-I zsh/ash STDOUT:
 ## END
 
-## N-I zsh/mksh/ash STDOUT:
-## END

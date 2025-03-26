@@ -34,6 +34,10 @@ arith() {
   test/spec-py.sh run-file arith "$@"
 }
 
+array-assign() {
+  test/spec-py.sh run-file array-assign "$@"
+}
+
 array-assoc() {
   test/spec-py.sh run-file array-assoc "$@"
 }

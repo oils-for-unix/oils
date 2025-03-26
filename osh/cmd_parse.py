@@ -2591,6 +2591,10 @@ class CommandParser(object):
 
     def ParseAndOr(self):
         # type: () -> command_t
+
+        # TODO: Lookahead for a[1 + 2]=3 && b[3 + 4]=5 here ?
+        # Like LookAheadFuncParens() ?
+
         self._GetWord()
         if self.c_id == Id.Lit_TDot:
             # We got '...', so parse in multiline mode
