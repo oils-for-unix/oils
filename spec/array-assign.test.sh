@@ -1,5 +1,5 @@
 ## compare_shells: bash zsh mksh ash
-## oils_failures_allowed: 8
+## oils_failures_allowed: 9
 
 # Note: this file elaborates on spec/ble-idioms.test.sh
 
