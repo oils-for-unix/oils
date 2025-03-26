@@ -1,4 +1,5 @@
 ## compare_shells: bash-4.4 mksh
+## oils_failures_allowed: 1
 
 # Extended assignment language, e.g. typeset, declare, arrays, etc.
 # Things that dash doesn't support.
@@ -574,6 +575,27 @@ arr[3]=a10
 ## END
 ## N-I mksh stdout-json: ""
 ## N-I mksh status: 1
+
+#### declare -p and value.Undef
+
+# This is a regression for a crash
+# But actually there is also an incompatibility -- we don't print anything
+
+declare x
+declare -p x
+
+function f { local x; declare -p x; }
+x=1
+f
+
+## STDOUT:
+declare -- x
+declare -- x
+## END
+
+## N-I mksh status: 127
+## N-I mksh STDOUT:
+## END
 
 #### eval -- "$(declare -p arr)" (restore arrays w/ unset elements)
 arr=(1 2 3)

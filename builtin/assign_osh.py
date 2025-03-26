@@ -124,10 +124,10 @@ def _PrintVariables(
             continue  # not defined
 
         val = cell.val
-        # Mem.var_stack does not store value.Undef
-        assert val.tag() != value_e.Undef, val
 
-        #log('name %r %s', name, val)
+        # Mem.var_stack CAN store value.Undef
+        if val.tag() == value_e.Undef:
+            continue
 
         if builtin == _READONLY and not cell.readonly:
             continue
