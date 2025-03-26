@@ -1,5 +1,5 @@
 ## compare_shells: bash zsh mksh ash
-## oils_failures_allowed: 6
+## oils_failures_allowed: 8
 
 # Note: this file elaborates on spec/ble-idioms.test.sh
 
@@ -40,7 +40,24 @@ argv.py "${a[@]}"
 status=0
 ['x', 'z']
 ## END
+## N-I zsh/ash STDOUT:
+## END
 
+#### Nested a[i[0]]=0
+case $SH in zsh|ash) exit ;; esac
+
+i=(0 1 2)
+
+a[i[0]]=0
+a[ i[1] ]=1
+a[ i[2] ]=2
+a[ i[1]+i[2] ]=3
+
+argv.py "${a[@]}"
+
+## STDOUT:
+['0', '1', '2', '3']
+## END
 ## N-I zsh/ash STDOUT:
 ## END
 
@@ -279,3 +296,81 @@ status=0 len=2
 status=1 len=2
 ## END
 
+#### Tricky parsing - a[ a[0]=1 ]=X  a[ a[0]+=1 ]+=X
+case $SH in zsh|mksh|ash) exit ;; esac
+
+# the nested [] means we can't use regular language lookahead?
+
+echo assign=$(( z[0] = 42 ))
+
+a[a[0]=1]=X
+declare -p a
+
+a[ a[2]=3 ]=Y
+declare -p a
+
+echo ---
+
+a[ a[0]+=1 ]+=X
+declare -p a
+
+## STDOUT:
+assign=42
+declare -a a=([0]="1" [1]="X")
+declare -a a=([0]="1" [1]="X" [2]="3" [3]="Y")
+---
+declare -a a=([0]="2" [1]="X" [2]="3X" [3]="Y")
+## END
+
+## N-I zsh/mksh/ash STDOUT:
+## END
+
+#### argv.py a[1 + 2]=
+case $SH in zsh|ash) exit ;; esac
+
+# This tests that the worse parser doesn't unconditinoally treat a[ as special
+
+a[1 + 2]= argv.py a[1 + 2]=
+echo status=$?
+
+a[1 + 2]+= argv.py a[1 + 2]+=
+echo status=$?
+
+argv.py a[3 + 4]=
+
+argv.py a[3 + 4]+=
+
+## STDOUT:
+['a[1', '+', '2]=']
+status=0
+['a[1', '+', '2]+=']
+status=0
+['a[3', '+', '4]=']
+['a[3', '+', '4]+=']
+## END
+
+## N-I zsh/ash STDOUT:
+## END
+
+#### declare builtin doesn't allow spaces
+case $SH in zsh|mksh|ash) exit ;; esac
+
+# OSH doesn't allow this
+declare a[a[0]=1]=X
+declare -p a
+
+# neither bash nor OSH allow this
+declare a[ a[2]=3 ]=Y
+declare -p a
+
+## STDOUT:
+declare -a a=([0]="1" [1]="X")
+declare -a a=([0]="1" [1]="X" [2]="3")
+## END
+
+## OK osh status: 1
+## OK osh STDOUT:
+## END
+
+## N-I zsh/mksh/ash STDOUT:
+## END
