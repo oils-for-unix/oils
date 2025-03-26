@@ -1,5 +1,5 @@
 ## compare_shells: bash zsh mksh ash
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 
 #### recursive arith: one level
 a='b=123'
@@ -580,4 +580,20 @@ typeset a[2]=3
 ## END
 
 ## N-I zsh/ash STDOUT:
+## END
+
+#### Issue #1069 [53] - LHS array parsing a[1 + 2]=3, etc.
+case $SH in zsh|mksh|ash) exit ;; esac
+
+a[1 + 2]=7
+a[3|4]=8
+a[(1+2)*3]=9
+
+declare -p a
+
+## STDOUT:
+declare -a a=([3]="7" [7]="8" [9]="9")
+## END
+
+## N-I zsh/mksh/ash STDOUT:
 ## END
