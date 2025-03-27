@@ -136,4 +136,18 @@ bash-suite() {
   # 100.0% [section] ble/complete: 7/7 (0 fail, 0 crash, 0 skip)
 }
 
+find-lhs-array-one() {
+  local path=$1
+
+  #echo "finding $path"
+  bin/osh --tool find-lhs-array $path
+}
+
+find-lhs-array() {
+  local root=../ble.sh
+  #find $root/src $root/lib -name '*.sh' | xargs wc -l
+
+  find $root/src $root/lib -name '*.sh' | xargs -n 1 --verbose -- $0 find-lhs-array-one
+}
+
 "$@"

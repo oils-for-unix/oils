@@ -57,6 +57,7 @@ from _devbuild.gen.syntax_asdl import (
     SingleQuoted,
     word_e,
     word_t,
+    #word_str,
     word_part,
     word_part_e,
     word_part_t,
@@ -66,6 +67,7 @@ from _devbuild.gen.syntax_asdl import (
     sh_lhs_e,
     command,
     command_e,
+    #command_str,
     BraceGroup,
     for_iter_e,
     case_arg_e,
@@ -78,6 +80,7 @@ from _devbuild.gen.syntax_asdl import (
 )
 from asdl import runtime
 from core.error import p_die
+from display import ui
 from frontend import lexer
 from frontend import location
 from osh import word_
@@ -212,6 +215,186 @@ def PrintTokens(arena):
         piece = tok.line.content[tok.col:tok.col + tok.length]
         print('%5d %-20s %r' % (i, Id_str(tok.id, dot=False), piece))
     print_stderr('(%d tokens)' % len(arena.tokens))
+
+
+def TreeFind(arena, node, errfmt):
+    # type: (alloc.Arena, command_t, ui.ErrorFormatter) -> None
+    """
+    Find various constructs in the tree.  TODO: could this be like query
+    language?
+    TreeSitter has a query language for CSTs.  But those are untyped, whereas
+    we are strongly typed.
+    """
+    fi = Finder(arena, errfmt)
+    fi.DoCommand(node)
+
+
+class Finder(object):
+    """
+    Walk an OSH command_t syntax tree, looking for certain constructs.
+
+    Note: it might be nice to have some kind of visitor, so we don't have to
+    repeat the traversal logic?
+
+    Or even better would be a homogeneous traversal, or query language.
+    """
+
+    def __init__(self, arena, errfmt):
+        # type: (alloc.Arena, ui.ErrorFormatter) -> None
+        self.arena = arena
+        self.errfmt = errfmt
+
+    def DoWordPart(self, p):
+        # type: (word_part_t) -> None
+        UP_p = p
+        with tagswitch(p) as case:
+            if case(word_part_e.Literal):
+                tok = cast(Token, UP_p)
+                if tok.id == Id.Lit_ArrayLhsOpen:
+                    #log('*** %s', tok)
+                    self.errfmt.Print_('BAD parse?', tok)
+            elif case(word_part_e.CommandSub):
+                p = cast(CommandSub, UP_p)
+                self.DoCommand(p.child)
+
+    def DoWord(self, w):
+        # type: (word_t) -> None
+        UP_w = w
+        with tagswitch(w) as case:
+            if case(word_e.Compound):
+                w = cast(CompoundWord, UP_w)
+                part0 = w.parts[0]
+                self.DoWordPart(part0)
+                #log('p %r', part0)
+            else:
+                #log('?Word? %s', word_str(w.tag()))
+                pass
+
+    def DoRhsWord(self, w):
+        # type: (rhs_word_t) -> None
+        UP_w = w
+        with tagswitch(w) as case:
+            if case(rhs_word_e.Compound):
+                w = cast(CompoundWord, UP_w)
+                self.DoWord(w)
+            elif case(rhs_word_e.Empty):
+                pass
+            else:
+                raise AssertionError()
+
+    def DoCommand(self, node):
+        # type: (command_t) -> None
+
+        UP_node = node
+        with tagswitch(node) as case:
+            if case(command_e.Simple):
+                node = cast(command.Simple, UP_node)
+                # Only first word has a[
+                if len(node.words):
+                    self.DoWord(node.words[0])
+
+            elif case(command_e.Sentence):
+                node = cast(command.Sentence, UP_node)
+                self.DoCommand(node.child)
+
+            elif case(command_e.ShAssignment):
+                node = cast(command.ShAssignment, UP_node)
+                for pair in node.pairs:
+                    # FYI
+                    if 0:
+                        if pair.left.id == Id.Lit_ArrayLhsOpen:
+                            self.errfmt.Print_('OK', pair.left)
+
+                    self.DoRhsWord(pair.rhs)
+
+            elif case(command_e.CommandList):
+                node = cast(command.CommandList, UP_node)
+                for child in node.children:
+                    self.DoCommand(child)
+
+            elif case(command_e.Redirect):
+                node = cast(command.Redirect, UP_node)
+                self.DoCommand(node.child)
+
+            elif case(command_e.Pipeline):
+                node = cast(command.Pipeline, UP_node)
+                for child in node.children:
+                    self.DoCommand(child)
+
+            elif case(command_e.AndOr):
+                node = cast(command.AndOr, UP_node)
+                for child in node.children:
+                    self.DoCommand(child)
+
+            # This has to be different in the function case.
+            elif case(command_e.BraceGroup):
+                node = cast(BraceGroup, UP_node)
+                for child in node.children:
+                    self.DoCommand(child)
+
+            elif case(command_e.Subshell):
+                node = cast(command.Subshell, UP_node)
+                self.DoCommand(node.child)
+
+            elif case(command_e.ShFunction):
+                node = cast(command.ShFunction, UP_node)
+                self.DoCommand(node.body)
+
+            elif case(command_e.DoGroup):
+                node = cast(command.DoGroup, UP_node)
+                for child in node.children:
+                    self.DoCommand(child)
+
+            elif case(command_e.ForEach):
+                node = cast(command.ForEach, UP_node)
+                self.DoCommand(node.body)
+
+            elif case(command_e.WhileUntil):
+                node = cast(command.WhileUntil, UP_node)
+                # TODO: cond
+                self.DoCommand(node.body)
+
+            elif case(command_e.If):
+                node = cast(command.If, UP_node)
+
+                for i, arm in enumerate(node.arms):
+                    # TODO: cond
+                    for child in arm.action:
+                        self.DoCommand(child)
+
+                # else -> } else {
+                if len(node.else_action):
+                    for child in node.else_action:
+                        self.DoCommand(child)
+
+            elif case(command_e.Case):
+                node = cast(command.Case, UP_node)
+
+                for case_arm in node.arms:
+                    for child in case_arm.action:
+                        self.DoCommand(child)
+
+            elif case(command_e.TimeBlock):
+                node = cast(command.TimeBlock, UP_node)
+                self.DoCommand(node.pipeline)
+
+            elif case(command_e.DParen):
+                node = cast(command.DParen, UP_node)
+                # TODO: arith expressions can words with command subs
+                pass
+
+            elif case(command_e.DBracket):
+                node = cast(command.DBracket, UP_node)
+
+                # TODO: bool_expr_t can have words with command subs
+                pass
+
+            else:
+                #log('?Command? %s', command_str(node.tag()))
+                pass
+
+        #cursor = Cursor(arena, mylib.Stdout())
+        #cursor.PrintUntilEnd()
 
 
 def Ysh_ify(arena, node):

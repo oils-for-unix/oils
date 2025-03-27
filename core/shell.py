@@ -1213,7 +1213,7 @@ def Main(
     tool_name = 'syntax-tree' if exec_opts.noexec() else flag.tool
 
     if len(tool_name):
-        # Don't save tokens becaues it's slow
+        # Don't save tokens because it's slow
         if tool_name != 'syntax-tree':
             arena.SaveTokens()
 
@@ -1229,6 +1229,9 @@ def Main(
         elif tool_name == 'tokens':
             ysh_ify.PrintTokens(arena)
 
+        elif tool_name == 'find-lhs-array':
+            ysh_ify.TreeFind(arena, node, errfmt)
+
         elif tool_name == 'lossless-cat':  # for test/lossless.sh
             ysh_ify.LosslessCat(arena)
 
@@ -1236,6 +1239,7 @@ def Main(
             fmt.Format(arena, node)
 
         elif tool_name == 'test':
+            # Do we need this?  Couldn't this just be a YSH script?
             raise AssertionError('TODO')
 
         elif tool_name == 'ysh-ify':
