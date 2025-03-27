@@ -387,7 +387,7 @@ class MutableOpts(object):
 
         Inverse of InitFromEnv.  TODO: BASHOPTS string.
         """
-        names = []
+        names = []  # type: List[str]
         for opt_num in consts.SET_OPTION_NUMS:
             if self.Get(opt_num):
                 name = consts.OptionName(opt_num)

@@ -225,6 +225,8 @@ def InitVarsAfterEnv(mem, mutable_opts):
                 # If it's not in the environment, construct the string
                 state.SetGlobalString(mem, 'SHELLOPTS',
                                       mutable_opts.ShelloptsString())
+            else:
+                raise AssertionError()
 
         # Mark it readonly, like bash
         mem.SetNamed(location.LName('SHELLOPTS'),
