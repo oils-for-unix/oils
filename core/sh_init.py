@@ -8,7 +8,7 @@ from core import pyutil
 from core import optview
 from core import state
 from frontend import location
-from mycpp.mylib import iteritems, log
+from mycpp.mylib import iteritems, tagswitch, log
 from osh import split
 from pylib import os_path
 
@@ -200,8 +200,8 @@ def CopyVarsFromEnv(exec_opts, environ, mem):
         mem.MaybeInitEnvDict(environ)
 
 
-def InitVarsAfterEnv(mem):
-    # type: (state.Mem) -> None
+def InitVarsAfterEnv(mem, mutable_opts):
+    # type: (state.Mem, state.MutableOpts) -> None
 
     # If PATH SHELLOPTS PWD are not in environ, then initialize them.
     s = mem.env_config.Get('PATH')
@@ -210,17 +210,29 @@ def InitVarsAfterEnv(mem):
         # dash add {,/usr/,/usr/local}/{bin,sbin}
         mem.env_config.SetDefault('PATH', '/bin:/usr/bin')
 
-    if not mem.exec_opts.no_init_globals():
+    if mem.exec_opts.no_init_globals():
+        # YSH initialization
+        mem.SetPwd(GetWorkingDir())
+    else:
         # OSH initialization
-        val = mem.GetValue('SHELLOPTS')
-        if val.tag() == value_e.Undef:
-            # Divergence: bash constructs a string here too, it doesn't just read it
-            state.SetGlobalString(mem, 'SHELLOPTS', '')
-        # It's readonly, even if it's not set
+        shellopts = mem.GetValue('SHELLOPTS')
+        UP_shellopts = shellopts
+        with tagswitch(shellopts) as case:
+            if case(value_e.Str):
+                shellopts = cast(value.Str, UP_shellopts)
+                mutable_opts.InitFromEnv(shellopts.s)
+            elif case(value_e.Undef):
+                # Divergence: bash constructs a string here too, it doesn't
+                # just read it
+                state.SetGlobalString(mem, 'SHELLOPTS', '')
+
+        # Mark it readonly, like bash
         mem.SetNamed(location.LName('SHELLOPTS'),
                      None,
                      scope_e.GlobalOnly,
                      flags=state.SetReadOnly)
+        #val = mem.GetValue('SHELLOPTS')
+
         # NOTE: bash also has BASHOPTS
 
         val = mem.GetValue('PWD')
@@ -239,10 +251,6 @@ def InitVarsAfterEnv(mem):
         assert val.tag() == value_e.Str, val
         pwd = cast(value.Str, val).s
         mem.SetPwd(pwd)
-
-    else:
-        # YSH initialization
-        mem.SetPwd(GetWorkingDir())
 
 
 def InitInteractive(mem, sh_files, lang):

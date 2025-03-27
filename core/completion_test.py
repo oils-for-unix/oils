@@ -59,7 +59,7 @@ def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
     mem.exec_opts = exec_opts
 
     sh_init.InitDefaultVars(mem)
-    mutable_opts.Init()
+    mutable_opts.InitFromEnv('')
 
     if not parse_ctx:
         parse_ctx = test_lib.InitParseContext(parse_opts=parse_opts,
@@ -760,7 +760,7 @@ class InitCompletionTest(unittest.TestCase):
             parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
             mem.exec_opts = exec_opts
 
-            mutable_opts.Init()
+            mutable_opts.InitFromEnv('')
 
             #
             # Allow our code to access oracle data

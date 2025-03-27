@@ -1,5 +1,5 @@
 ## compare_shells: bash
-## oils_failures_allowed: 3
+## oils_failures_allowed: 2
 
 #### SHELLOPTS is updated when options are changed
 echo $SHELLOPTS | grep -q xtrace
@@ -31,9 +31,16 @@ echo status=$?
 ## OK osh status: 1
 ## OK osh stdout-json: ""
 
-#### SHELLOPTS and BASHOPTS are set
+#### SHELLOPTS and BASHOPTS are non-empty
 
 # 2024-06 - tickled by Samuel testing Gentoo
+
+if test -v SHELLOPTS; then
+  echo 'shellopts is set'
+fi
+if test -v BASHOPTS; then
+	echo 'bashopts is set'
+fi
 
 # bash: braceexpand:hashall etc.
 
@@ -41,6 +48,8 @@ echo shellopts ${SHELLOPTS:?} > /dev/null
 echo bashopts ${BASHOPTS:?} > /dev/null
 
 ## STDOUT:
+shellopts is set
+bashopts is set
 ## END
 
 ## N-I dash status: 2

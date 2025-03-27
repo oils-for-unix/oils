@@ -371,18 +371,7 @@ class MutableOpts(object):
         # Used for 'set -o vi/emacs'
         self.opt_hook = opt_hook
 
-    def Init(self):
-        # type: () -> None
-
-        # This comes after all the 'set' options.
-        shellopts = self.mem.GetValue('SHELLOPTS')
-
-        # True in OSH, but not in YSH (no_init_globals)
-        if shellopts.tag() == value_e.Str:
-            s = cast(value.Str, shellopts).s
-            self._InitOptionsFromEnv(s)
-
-    def _InitOptionsFromEnv(self, shellopts):
+    def InitFromEnv(self, shellopts):
         # type: (str) -> None
         # e.g. errexit:nounset:pipefail
         lookup = shellopts.split(':')

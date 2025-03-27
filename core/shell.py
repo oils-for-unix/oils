@@ -316,7 +316,6 @@ def Main(
     parse_opts, exec_opts, mutable_opts = state.MakeOpts(
         mem, environ, opt_hook)
     mem.exec_opts = exec_opts  # circular dep
-    mutable_opts.Init()
 
     # Set these BEFORE processing flags, so they can be overridden.
     if lang == 'ysh':
@@ -331,8 +330,9 @@ def Main(
 
     sh_init.CopyVarsFromEnv(exec_opts, environ, mem)
 
-    # PATH PWD SHELLOPTS, etc. must be set after CopyVarsFromEnv()
-    sh_init.InitVarsAfterEnv(mem)
+    # PATH PWD, etc. must be set after CopyVarsFromEnv()
+    # Also mutate options from SHELLOPTS, if set
+    sh_init.InitVarsAfterEnv(mem, mutable_opts)
 
     if attrs.show_options:  # special case: sh -o
         pure_osh.ShowOptions(mutable_opts, [])
