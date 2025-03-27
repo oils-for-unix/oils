@@ -406,6 +406,10 @@ sh-func() {
   test/spec-py.sh run-file sh-func "$@"
 }
 
+sh-options-bash() {
+  test/spec-py.sh run-file sh-options-bash "$@"
+}
+
 sh-options() {
   test/spec-py.sh run-file sh-options "$@"
 }

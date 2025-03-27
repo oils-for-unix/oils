@@ -562,7 +562,7 @@ class MutableOpts(object):
 
             # Now check if SHELLOPTS needs to be updated.  It may be exported.
             #
-            # NOTE: It might be better to skip rewriting SEHLLOPTS in the common case
+            # NOTE: It might be better to skip rewriting SHELLOPTS in the common case
             # where it is not used.  We could do it lazily upon GET.
 
             # Also, it would be slightly more efficient to update SHELLOPTS if
@@ -571,17 +571,24 @@ class MutableOpts(object):
             # - shopt -s foo bar
             if b:
                 if opt_name not in shellopts:
-                    new_val = value.Str('%s:%s' % (shellopts, opt_name))
-                    self.mem.InternalSetGlobal('SHELLOPTS', new_val)
+                    # Append it to the end, : separated
+                    if len(shellopts) == 0:
+                        new_val = opt_name
+                    else:
+                        new_val = '%s:%s' % (shellopts, opt_name)
+                    self.mem.InternalSetGlobal('SHELLOPTS', value.Str(new_val))
             else:
                 if opt_name in shellopts:
                     names = [n for n in shellopts.split(':') if n != opt_name]
-                    new_val = value.Str(':'.join(names))
-                    self.mem.InternalSetGlobal('SHELLOPTS', new_val)
+                    new_val = ':'.join(names)
+                    self.mem.InternalSetGlobal('SHELLOPTS', value.Str(new_val))
 
     def SetAnyOption(self, opt_name, b, ignore_shopt_not_impl=False):
         # type: (str, bool, bool) -> None
-        """For shopt -s/-u and sh -O/+O."""
+        """For shopt -s/-u and sh -O/+O.
+
+        Problem: we allow shopt --set xtrace, but this doesn't update SHELLOPTS
+        """
 
         # shopt -s ysh:all turns on all YSH options, which includes all strict
         # options
