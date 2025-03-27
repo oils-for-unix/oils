@@ -222,16 +222,15 @@ def InitVarsAfterEnv(mem, mutable_opts):
                 shellopts = cast(value.Str, UP_shellopts)
                 mutable_opts.InitFromEnv(shellopts.s)
             elif case(value_e.Undef):
-                # Divergence: bash constructs a string here too, it doesn't
-                # just read it
-                state.SetGlobalString(mem, 'SHELLOPTS', '')
+                # If it's not in the environment, construct the string
+                state.SetGlobalString(mem, 'SHELLOPTS',
+                                      mutable_opts.ShelloptsString())
 
         # Mark it readonly, like bash
         mem.SetNamed(location.LName('SHELLOPTS'),
                      None,
                      scope_e.GlobalOnly,
                      flags=state.SetReadOnly)
-        #val = mem.GetValue('SHELLOPTS')
 
         # NOTE: bash also has BASHOPTS
 

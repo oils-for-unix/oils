@@ -55,6 +55,14 @@ bashopts is set
 ## N-I dash status: 2
 ## N-I mksh status: 1
 
+#### SHELLOPTS reflects flags like sh -x
+
+$SH -x -c 'echo $SHELLOPTS' | grep -o xtrace
+
+## STDOUT:
+xtrace
+## END
+
 #### export SHELLOPTS does cross-process tracing
 
 $SH -c '
@@ -130,3 +138,4 @@ SHELLOPTS=
 ## END
 ## N-I bash STDOUT:
 ## END
+

@@ -373,12 +373,26 @@ class MutableOpts(object):
 
     def InitFromEnv(self, shellopts):
         # type: (str) -> None
+        """Given an environment string, set the state of this object."""
         # e.g. errexit:nounset:pipefail
         lookup = shellopts.split(':')
         for opt_num in consts.SET_OPTION_NUMS:
             name = consts.OptionName(opt_num)
             if name in lookup:
                 self._SetOldOption(name, True)
+
+    def ShelloptsString(self):
+        # type: () -> str
+        """Return the state of this object, with respect to 'set'
+
+        Inverse of InitFromEnv.  TODO: BASHOPTS string.
+        """
+        names = []
+        for opt_num in consts.SET_OPTION_NUMS:
+            if self.Get(opt_num):
+                name = consts.OptionName(opt_num)
+                names.append(name)
+        return ':'.join(names)
 
     def Push(self, opt_num, b):
         # type: (int, bool) -> None
