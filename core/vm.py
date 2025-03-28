@@ -333,6 +333,10 @@ class _Executor(object):
         # type: (command_t) -> Tuple[int, str]
         return 0, ''
 
+    def CaptureOutputs(self, node):
+        # type: (command_t) -> Tuple[int, str, str]
+        return 0, '', ''
+
     def RunCommandSub(self, cs_part):
         # type: (CommandSub) -> str
         return ''
