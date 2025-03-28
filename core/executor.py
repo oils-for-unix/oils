@@ -272,6 +272,13 @@ class PureExecutor(vm._Executor):
         """
         return 0, ''
 
+    def CaptureOutputs(self, node):
+        # type: (command_t) -> Tuple[int, str, str]
+        """
+        Used by io->captureOutputs() method, and called by command sub
+        """
+        return 0, '', ''
+
     def RunCommandSub(self, cs_part):
         # type: (CommandSub) -> str
         raise error.Structured(
@@ -631,6 +638,64 @@ class ShellExecutor(vm._Executor):
         stdout_str = ''.join(chunks).rstrip('\n')
 
         return status, stdout_str
+
+    def CaptureOutputs(self, node):
+        # type: (command_t) -> Tuple[int, str, str]
+
+        p = self._MakeProcess(node, self.exec_opts.inherit_errexit(),
+                              self.exec_opts.errtrace())
+        # Shell quirk: Command subs remain part of the shell's process group, so we
+        # don't use p.AddStateChange(process.SetPgid(...))
+
+        stdout, w = posix.pipe()
+        stderr, w2 = posix.pipe()
+        p.AddStateChange(process.StdoutToPipe(stdout, w))
+        p.AddStateChange(process.StderrToPipe(stderr, w2))
+
+        p.StartProcess(trace.CommandSub)
+        #log('Command sub started %d', pid)
+
+        stdout_chunks = []  # type: List[str]
+        stderr_chunks = []  # type: List[str]
+        posix.close(w)  # not going to write
+        posix.close(w2)  # not going to write
+        eofcount = 0
+        finished = False
+        while True:
+            fds = pyos.WaitForInputs([stdout, stderr])
+
+            # zero outputs mean something went wrong
+            if len(fds) == 0:
+                break
+
+            for fd in fds:
+                if fd == stdout:
+                    n, err_num = pyos.Read(fd, 4096, stdout_chunks)
+                else:
+                    n, err_num = pyos.Read(fd, 4096, stderr_chunks)
+                if n < 0:
+                    if err_num == EINTR:
+                        pass  # retry
+                    else:
+                        # Like the top level IOError handler
+                        e_die_status(
+                            2,
+                            'Oils I/O error (read): %s' % posix.strerror(err_num))
+                elif n == 0:  # EOF
+                    eofcount += 1
+                if eofcount > 1:
+                    finished = True
+            if finished:
+                break
+
+        posix.close(stdout)
+        posix.close(stderr)
+
+        status = p.Wait(self.waiter)
+        stdout_str = ''.join(stdout_chunks).rstrip('\n')
+        stderr_str = ''.join(stderr_chunks).rstrip('\n')
+
+        return status, stdout_str, stderr_str
 
     def RunCommandSub(self, cs_part):
         # type: (CommandSub) -> str

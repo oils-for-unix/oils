@@ -966,6 +966,24 @@ with `try`.
       var s = _io->captureStdout(c)
     }
 
+### captureOutputs()
+
+Capture stdout and stderr of a command a string.
+
+    var c = ^(echo hi; echo hello >&2;)
+    var outputs = _io.captureOutputs(c)  # => { stdout: "hi", stderr: "hello" }
+
+It's like captureOutputs but captures both stdout and stferr.  Trailing newlines `\n` are
+removed.
+
+If the command fails, `captureOutputs()` raises an error, which can be caught
+with `try`. It will also add the contents of `stderr` to the error for examination.
+
+    try {
+      var s = _io->captureOutputs(c)
+    }
+
+
 ### promptVal()
 
 An API the wraps the `$PS1` language.  For example, to simulate `PS1='\w\$ '`:

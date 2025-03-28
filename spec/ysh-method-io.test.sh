@@ -51,6 +51,42 @@ two
 status=null
 ## END
 
+#### captureOutputs() is like $() but captures stderr as well
+
+proc p {
+  var captured = 'captured'
+  var cmd = ^(echo stdout; echo stderr >&2; echo $captured; echo $captured >&2;)
+
+  var stdout = io.captureOutputs(cmd)
+  pp test_ (stdout)
+}
+
+p
+
+## STDOUT:
+(Dict)   {"stdout":"stdout\ncaptured","stderr":"stderr\ncaptured"}
+## END
+
+#### captureOutputs() failure
+
+var c = ^(echo one; false; echo two)
+
+# Hm this prints a message, but no stack trace
+# Should make it fail I think
+
+try {
+  var x = io.captureOutputs(c)
+}
+# This has {"code": 3} because it's an expression error.  Should probably
+pp test_ (_error)
+
+var x = io.captureOutputs(c)
+
+## status: 4
+## STDOUT:
+(Dict)   {"status":1,"code":4,"message":"captureOutput(): command failed with status 1"}
+## END
+
 #### io->eval() with failing command - caller must handle
 
 var c = ^(echo one; false; echo two)
