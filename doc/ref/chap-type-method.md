@@ -954,7 +954,7 @@ To evaluate "purely", use the [`evalExpr()`][func/evalExpr] function.
 Capture stdout of a command a string.
 
     var c = ^(echo hi)
-    var stdout_str = _io.captureStdout(c)  # => "hi"
+    var stdout_str = io.captureStdout(c)  # => "hi"
 
 It's like `$()`, but useful in pure functions.  Trailing newlines `\n` are
 removed.
@@ -963,7 +963,7 @@ If the command fails, `captureStdout()` raises an error, which can be caught
 with `try`.
 
     try {
-      var s = _io->captureStdout(c)
+      var s = io.captureStdout(c)
     }
 
 ### captureOutputs()
@@ -971,18 +971,21 @@ with `try`.
 Capture stdout and stderr of a command a string.
 
     var c = ^(echo hi; echo hello >&2;)
-    var outputs = _io.captureOutputs(c)  # => { stdout: "hi", stderr: "hello" }
+    var outputs = _io.captureOutputs(c)  # => { stdout: "hi", stderr: "hello", status: 0 }
 
-It's like captureOutputs but captures both stdout and stferr.  Trailing newlines `\n` are
+It's like `io.captureStdout` but captures both stdout and stderr.  Trailing newlines `\n` are
 removed.
 
 If the command fails, `captureOutputs()` raises an error, which can be caught
-with `try`. It will also add the contents of `stderr` to the error for examination.
+with `try`.
 
     try {
       var s = _io->captureOutputs(c)
     }
 
+Alternatively it's possible to pass the argument `fail=false` so that it won't fail:
+
+    var s = _io->captureOutputs(c, fail=false)
 
 ### promptVal()
 
