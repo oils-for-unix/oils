@@ -282,6 +282,14 @@ def InputAvailable(fd):
     return len(r) != 0
 
 
+def WaitForInputs(fd):
+    # type: (List[int]) -> List[int]
+    # Get a list of fds and return fds which have available input
+    # read, write, except
+    r, w, exc = select.select(fd, [], fd)
+    return r
+
+
 def MakeDirCacheKey(path):
     # type: (str) -> Tuple[str, int]
     """Returns a pair (path with last modified time) that can be used to cache

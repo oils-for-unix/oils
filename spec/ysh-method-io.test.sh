@@ -51,6 +51,62 @@ two
 status=null
 ## END
 
+#### captureOutputs() is like $() but captures stderr as well
+
+proc p {
+  var captured = 'captured'
+  var cmd = ^(echo stdout; echo stderr >&2; echo $captured; echo $captured >&2;)
+
+  var stdout = io.captureOutputs(cmd)
+  pp test_ (stdout)
+}
+
+p
+
+## STDOUT:
+(Dict)   {"stdout":"stdout\ncaptured","stderr":"stderr\ncaptured","status":0}
+## END
+
+#### captureOutputs() failure
+
+var c = ^(shopt --unset verbose_errexit; echo one; false; echo two)
+
+# Hm this prints a message, but no stack trace
+# Should make it fail I think
+
+try {
+  var x = io.captureOutputs(c)
+}
+# This has {"code": 3} because it's an expression error.  Should probably
+pp test_ (_error)
+
+var x = io.captureOutputs(c)
+
+## status: 4
+## STDOUT:
+(Dict)   {"status":1,"code":4,"message":"captureOutputs(): command failed with status 1"}
+## END
+
+#### captureOutputs() with fail=false
+
+var c = ^(shopt --unset verbose_errexit; echo out; echo err >&2; false; echo two)
+
+# Hm this prints a message, but no stack trace
+# Should make it fail I think
+
+try {
+  var x = io.captureOutputs(c, fail=false)
+}
+# This has {"code": 3} because it's an expression error.  Should probably
+pp test_ (_error)
+pp test_ (x)
+
+## status: 0
+## STDOUT:
+(Dict)   {"code":0}
+(Dict)   {"stdout":"out","stderr":"err","status":1}
+## END
+
 #### io->eval() with failing command - caller must handle
 
 var c = ^(echo one; false; echo two)

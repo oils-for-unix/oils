@@ -629,6 +629,26 @@ class StdoutToPipe(ChildStateChange):
         #log('child CLOSE r %d pid=%d', self.r, posix.getpid())
 
 
+class StderrToPipe(ChildStateChange):
+
+    def __init__(self, r, pipe_write_fd):
+        # type: (int, int) -> None
+        self.r = r
+        self.w = pipe_write_fd
+
+    def __repr__(self):
+        # type: () -> str
+        return '<StderrToPipe %d %d>' % (self.r, self.w)
+
+    def Apply(self):
+        # type: () -> None
+        posix.dup2(self.w, 2)
+        posix.close(self.w)  # close after dup
+
+        posix.close(self.r)  # we're writing to the pipe, not reading
+        #log('child CLOSE r %d pid=%d', self.r, posix.getpid())
+
+
 INVALID_PGID = -1
 # argument to setpgid() that means the process is its own leader
 OWN_LEADER = 0

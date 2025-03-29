@@ -254,6 +254,27 @@ bool InputAvailable(int fd) {
   return select(FD_SETSIZE, &fds, NULL, NULL, &timeout) > 0;
 }
 
+List<int>* WaitForInputs(List<int>* fds_in) {
+  auto* ret = NewList<int>();
+  fd_set fds;
+  FD_ZERO(&fds);
+  int n = len(fds_in);
+  for (int i = 0; i < n; ++i) {
+    FD_SET(fds_in->at(i), &fds);
+  }
+  int out = select(FD_SETSIZE, &fds, NULL, NULL, NULL);
+  for (int i = 0; i < n; ++i) {
+    if (FD_ISSET(fds_in->at(i), &fds)) {
+      ret->append(fds_in->at(i));
+    }
+    if (len(ret) == out) {
+      break;
+    }
+  }
+  return ret;
+}
+
+
 IOError_OSError* FlushStdout() {
   // Flush libc buffers
   if (::fflush(stdout) != 0) {
