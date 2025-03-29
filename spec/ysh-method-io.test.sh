@@ -69,7 +69,7 @@ p
 
 #### captureOutputs() failure
 
-var c = ^(echo one; false; echo two)
+var c = ^(shopt --unset verbose_errexit; echo one; false; echo two)
 
 # Hm this prints a message, but no stack trace
 # Should make it fail I think
@@ -89,7 +89,7 @@ var x = io.captureOutputs(c)
 
 #### captureOutputs() with fail=false
 
-var c = ^(echo one; false; echo two)
+var c = ^(shopt --unset verbose_errexit; echo out; echo err >&2; false; echo two)
 
 # Hm this prints a message, but no stack trace
 # Should make it fail I think
@@ -104,7 +104,7 @@ pp test_ (x)
 ## status: 0
 ## STDOUT:
 (Dict)   {"code":0}
-(Dict)   {"stdout":"one","stderr":"","status":1}
+(Dict)   {"stdout":"out","stderr":"err","status":1}
 ## END
 
 #### io->eval() with failing command - caller must handle
