@@ -84,14 +84,15 @@ class BindXCallback(object):
 class Bind(vm._Builtin):
     """Interactive interface to readline bindings"""
 
-    def __init__(self, readline, errfmt, mem, evaluator):
-        # type: (Optional[Readline], ui.ErrorFormatter, Mem, Eval) -> None
+    def __init__(self, readline, errfmt, mem, bindx_cb):
+        # type: (Optional[Readline], ui.ErrorFormatter, Mem, BindXCallback) -> None
         self.readline = readline
         self.errfmt = errfmt
         self.mem = mem
-        self.eval = evaluator
         self.exclusive_flags = ["q", "u", "r", "x", "f"]
-        self.bindx_cb = None # type: Optional[BindXCallback]
+        self.bindx_cb = bindx_cb
+        if self.readline:
+            self.readline.set_bind_shell_command_hook(self.bindx_cb)
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -184,10 +185,7 @@ class Bind(vm._Builtin):
                     readline.unbind_keyseq(arg.r)
 
                 if arg.x is not None:
-                    if self.bindx_cb is None:
-                        self.bindx_cb = BindXCallback(self.eval)
-                        readline.set_bind_shell_command_hook(self.bindx_cb)
-                    readline.bind_shell_command(arg.x)
+                    self._BindShellCmd(arg.x)
 
                 if arg.X:
                     readline.print_shell_cmd_map()
@@ -215,6 +213,32 @@ class Bind(vm._Builtin):
             return 1
 
         return 0
+    
+    
+    def _BindShellCmd(self, bindseq):
+        # type: (str) -> None
+        
+        # print("bind -x '%s'" % bindseq)
+                
+        # print("hex bindseq: %s" % bindseq.join('%02x' % ord(c) for c in s))
+        # print("stripped bindseq: %s" % bindseq.strip())
+        cmdseq_split = bindseq.strip().split(":", 1)
+        if len(cmdseq_split) != 2:
+            raise ValueError("%s: missing colon separator" % bindseq)
+
+        # Below checks prevent need to do so in C, but also ensure rl_generic_bind
+        # will not try to incorrectly xfree `cmd`/`data`, which doesn't belong to it
+        keyseq = cmdseq_split[0].rstrip()
+        if len(keyseq) <= 2:
+            raise ValueError("%s: empty/invalid key sequence" % keyseq)
+        if keyseq[0] != '"' or keyseq[-1] != '"':
+            raise ValueError(
+                "%s: missing double-quotes around the key sequence" % keyseq)
+        keyseq = keyseq[1:-1]
+
+        cmd = cmdseq_split[1]
+        
+        self.readline.bind_shell_command(keyseq, cmd)
 
 
 class History(vm._Builtin):

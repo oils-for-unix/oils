@@ -1105,23 +1105,24 @@ get_bound_command(Keymap cmd_map) {
         return NULL;
     }
     
-    debug_print("Found bound command: '%s'", cmd);
+    // debug_print("Found bound command: '%s'", cmd);
     return cmd;
 }
 
 static void
 clear_current_line(int use_ce) {
     if (use_ce) {
-        debug_print("Clearing line with termcap 'ce'");
+        // debug_print("Clearing line with termcap 'ce'");
         rl_clear_visible_line();
         fflush(rl_outstream);
     } else {
-        debug_print("No termcap 'ce', using newline");
+        // debug_print("No termcap 'ce', using newline");
         rl_crlf();
     }
 }
 
 
+#if 0
 /* Save readline state to Python variables */
 static int
 save_readline_state(void) {
@@ -1204,6 +1205,8 @@ restore_readline_state(void) {
 
     return 1;
 }
+#endif
+
 
 /* Main entry point for executing shell commands. Based on bash_execute_unix_command */
 
@@ -1223,6 +1226,10 @@ on_bind_shell_command_hook(int count /* unused */, int key /* unused */) {
 
     debug_print("Starting shell command execution");
 
+#ifdef WITH_THREAD
+    gilstate = PyGILState_Ensure();
+#endif
+
     if (bind_shell_command_hook == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "No bind_shell_command_hook set");
         return 1;
@@ -1240,13 +1247,9 @@ on_bind_shell_command_hook(int count /* unused */, int key /* unused */) {
     use_ce = rl_get_termcap("ce") != NULL;
     clear_current_line(use_ce);
 
-    debug_print("Preparing to execute shell command: '%s'", cmd);
-    debug_print("rl_line_buffer: '%s'", rl_line_buffer);
-    debug_print("rl_point: '%i'", rl_point);
-
-#ifdef WITH_THREAD
-    gilstate = PyGILState_Ensure();
-#endif
+    // debug_print("Preparing to execute shell command: '%s'", cmd);
+    // debug_print("rl_line_buffer: '%s'", rl_line_buffer);
+    // debug_print("rl_point: '%i'", rl_point);
 
     r = PyObject_CallFunction(bind_shell_command_hook,
                             "ssi", cmd, rl_line_buffer, rl_point);
@@ -1261,9 +1264,9 @@ on_bind_shell_command_hook(int count /* unused */, int key /* unused */) {
         goto cleanup;
     }
 
-    debug_print("Command return code: %d", cmd_return_code);
-    debug_print("New line buffer: '%s'", line_buffer);
-    debug_print("New point: '%s'", point);
+    // debug_print("Command return code: %d", cmd_return_code);
+    // debug_print("New line buffer: '%s'", line_buffer);
+    // debug_print("New point: '%s'", point);
 
     // if (save_readline_state() != 1 || restore_readline_state() != 1) {
     //     PyErr_SetString(PyExc_RuntimeError, "Failed to update readline state");
@@ -1279,7 +1282,7 @@ on_bind_shell_command_hook(int count /* unused */, int key /* unused */) {
         rl_forced_update_display();
 
     result = 0; 
-    debug_print("Completed shell command execution");
+    // debug_print("Completed shell command execution");
 
 cleanup:
     Py_XDECREF(r);
@@ -1299,17 +1302,19 @@ bind_shell_command(PyObject *self, PyObject *args) {
     const char *cmd, *cparam;
     Keymap kmap, cmd_xmap;
 
-    // if (!PyArg_ParseTuple(args, "ss:bind_shell_command", &kseq, &cmd)) {
-    //     return NULL;
-    // }
-    if (!PyArg_ParseTuple(args, "eses:bind_shell_command", "utf-8", &kseq, "utf-8", &cmd)) {
+    if (!PyArg_ParseTuple(args, "ss:bind_shell_command", &kseq, &cparam)) {
         return NULL;
+    }
+
+    /* readline will own the cmd string, so we need to make a copy */
+    cmd = strdup(cparam);
+    if (cmd == NULL) {
+        return PyErr_NoMemory();
     }
 
     kmap = rl_get_keymap();
     cmd_xmap = _get_associated_cmd_map(kmap);
 
-    printf("Binding %s to: %s.\n", kseq, cmd); 
     
     if (rl_generic_bind(ISMACR, kseq, (char *)cmd, cmd_xmap) != 0 
         || rl_bind_keyseq_in_map (kseq, on_bind_shell_command_hook, kmap) != 0) {

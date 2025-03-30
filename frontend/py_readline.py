@@ -18,7 +18,10 @@ if TYPE_CHECKING:
 
 
 class Readline(object):
-    """A thin wrapper around GNU readline to make it usable from C++."""
+    """
+    A thin wrapper around GNU readline to make it usable from C++.
+    Try to avoid adding any logic here.
+    """
 
     def __init__(self):
         # type: () -> None
@@ -142,33 +145,18 @@ class Readline(object):
         # type: (str) -> None
         line_input.unbind_keyseq(keyseq)    
 
-    def bind_shell_command(self, bindseq):
-        # type: (str) -> None
-        cmdseq_split = bindseq.strip().split(":", 1)
-        if len(cmdseq_split) != 2:
-            raise ValueError("%s: missing colon separator" % bindseq)
-
-        # Below checks prevent need to do so in C, but also ensure rl_generic_bind
-        # will not try to incorrectly xfree `cmd`/`data`, which doesn't belong to it
-        keyseq = cmdseq_split[0].rstrip()
-        if len(keyseq) <= 2:
-            raise ValueError("%s: empty/invalid key sequence" % keyseq)
-        if keyseq[0] != '"' or keyseq[-1] != '"':
-            raise ValueError(
-                "%s: missing double-quotes around the key sequence" % keyseq)
-        keyseq = keyseq[1:-1]
-
-        cmd = cmdseq_split[1]
+    def bind_shell_command(self, keyseq, cmd):
+        # type: (str, str) -> None
+        
+        # print("bind_shell_command: setting '%s' to '%s'" % (keyseq, cmd))
         line_input.bind_shell_command(keyseq, cmd)
 
     def set_bind_shell_command_hook(self, hook):
         # type: (Callable[[str, str, int], Tuple[int, str, str]]) -> None
-
-        if hook is None:
-            raise ValueError("missing bind shell command hook function")
+        assert hook is not None
 
         line_input.set_bind_shell_command_hook(hook)
-
+        
 
 def MaybeGetReadline():
     # type: () -> Optional[Readline]
