@@ -373,7 +373,7 @@ void Readline::unbind_keyseq(BigStr* keyseq) {
   // assert(0);  // not implemented
 }
 
-void Readline::bind_shell_command(BigStr* bindseq) {
+void Readline::bind_shell_command(BigStr* keyseq, BigStr* cmd) {
   // assert(0);  // not implemented
 }
 

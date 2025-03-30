@@ -57,7 +57,7 @@ class Readline {
   void restore_orig_keymap();
   void print_shell_cmd_map();
   void unbind_keyseq(BigStr* keyseq);
-  void bind_shell_command(BigStr* bindseq);
+  void bind_shell_command(BigStr* keyseq, BigStr* cmd);
   void set_bind_shell_command_hook(readline_osh::BindXCallback* hook);
 
   static constexpr uint32_t field_mask() {

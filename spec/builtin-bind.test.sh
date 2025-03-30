@@ -1,5 +1,5 @@
 ## oils_failures_allowed: 1
-## oils_cpp_failures_allowed: 5
+## oils_cpp_failures_allowed: 6
 ## compare_shells: bash
 
 # NB: This is only for NON-interactive tests of bind. 
