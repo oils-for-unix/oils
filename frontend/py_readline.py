@@ -143,11 +143,11 @@ class Readline(object):
 
     def unbind_keyseq(self, keyseq):
         # type: (str) -> None
-        line_input.unbind_keyseq(keyseq)    
+        line_input.unbind_keyseq(keyseq)
 
     def bind_shell_command(self, keyseq, cmd):
         # type: (str, str) -> None
-        
+
         # print("bind_shell_command: setting '%s' to '%s'" % (keyseq, cmd))
         line_input.bind_shell_command(keyseq, cmd)
 
@@ -156,7 +156,7 @@ class Readline(object):
         assert hook is not None
 
         line_input.set_bind_shell_command_hook(hook)
-        
+
 
 def MaybeGetReadline():
     # type: () -> Optional[Readline]

@@ -46,6 +46,7 @@ class ctx_Keymap(object):
         if self.orig_keymap_name is not None:
             self.readline.restore_orig_keymap()
 
+
 class BindXCallback(object):
     """A callable we pass to readline for executing shell commands."""
 
@@ -72,9 +73,9 @@ class BindXCallback(object):
         #                  value.Str(line_buffer),
         #                  scope_e.GlobalOnly,
         #                  flags=SetExport)
-        
+
         # TODO: refactor out shared code from Eval, cache parse tree?
-        
+
         cmd_val = cmd_eval.MakeBuiltinArgv([cmd])
         status = self.eval.Run(cmd_val)
 
@@ -213,13 +214,12 @@ class Bind(vm._Builtin):
             return 1
 
         return 0
-    
-    
+
     def _BindShellCmd(self, bindseq):
         # type: (str) -> None
-        
+
         # print("bind -x '%s'" % bindseq)
-                
+
         # print("hex bindseq: %s" % bindseq.join('%02x' % ord(c) for c in s))
         # print("stripped bindseq: %s" % bindseq.strip())
         cmdseq_split = bindseq.strip().split(":", 1)
@@ -237,7 +237,7 @@ class Bind(vm._Builtin):
         keyseq = keyseq[1:-1]
 
         cmd = cmdseq_split[1]
-        
+
         self.readline.bind_shell_command(keyseq, cmd)
 
 

@@ -165,6 +165,7 @@ def bind_x_readline_point(sh):
     )
     sh.expect("READLINE_POINT is unset")
 
+
 @register(not_impl_shells=['dash', 'mksh'])
 def bind_x_unicode(sh):
     "test bind -x code for handling unicode"

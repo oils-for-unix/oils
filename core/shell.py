@@ -673,7 +673,7 @@ def Main(
     b[builtin_i.source] = source_builtin
     b[builtin_i.dot] = source_builtin
     eval_builtin = meta_oils.Eval(parse_ctx, exec_opts, cmd_ev, tracer, errfmt,
-                               mem)
+                                  mem)
     b[builtin_i.eval] = eval_builtin
 
     # Module builtins

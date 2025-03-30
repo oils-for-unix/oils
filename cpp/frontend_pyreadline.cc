@@ -377,7 +377,8 @@ void Readline::bind_shell_command(BigStr* keyseq, BigStr* cmd) {
   // assert(0);  // not implemented
 }
 
-void Readline::set_bind_shell_command_hook(readline_osh::BindXCallback* bindx_cb) {
+void Readline::set_bind_shell_command_hook(
+    readline_osh::BindXCallback* bindx_cb) {
 #if HAVE_READLINE
   bindx_cb_ = bindx_cb;
 #else
