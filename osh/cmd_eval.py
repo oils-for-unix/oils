@@ -583,8 +583,9 @@ class CommandEvaluator(object):
                     # errexit, inherit_errexit, verbose_errexit are on, but
                     # command_sub_errexit is off!
 
-                # Note: a subshell often doesn't fail on its own.
                 elif case(command_e.Subshell):
+                    # Note: a subshell fails on it own with something like
+                    # '( exit 2 )', not ( false ).
                     node = cast(command.Subshell, UP_node)
                     cmd_st.show_code = True  # not sure about this, e.g. ( exit 42 )
 
@@ -593,7 +594,12 @@ class CommandEvaluator(object):
                     cmd_st.show_code = True  # not sure about this
                     # TODO: We should show which element of the pipeline failed!
 
-            desc = command_str(node.tag())
+            with tagswitch(node) as case:
+                if case(command_e.Simple):
+                    desc = 'Command'
+                else:
+                    desc = command_str(node.tag(), dot=False)
+            msg = '%s failed with status %d' % (desc, status)
 
             # Override location if explicitly passed.
             # Note: this produces better results for process sub
@@ -605,7 +611,6 @@ class CommandEvaluator(object):
             else:
                 blame_loc = location.TokenForCommand(node)
 
-            msg = '%s failed with status %d' % (desc, status)
             raise error.ErrExit(status,
                                 msg,
                                 blame_loc,
