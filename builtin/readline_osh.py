@@ -19,7 +19,6 @@ from osh import cmd_eval
 
 from typing import Optional, Tuple, Any, TYPE_CHECKING
 if TYPE_CHECKING:
-    from _devbuild.gen.runtime_asdl import cmd_value
     from builtin.meta_oils import Eval
     from frontend.py_readline import Readline
     from core import sh_init
@@ -131,7 +130,7 @@ class Bind(vm._Builtin):
                     found = True
         if found and not arg_r.AtEnd():
             self.errfmt.Print_(
-                "error: Too many arguments. Check your quoting. Also, you cannot mix normal bindings with the following flags: -"
+                "error: Too many arguments. Also, you cannot mix normal bindings with the following flags: -"
                 + ", -".join(self.exclusive_flags),
                 blame_loc=cmd_val.arg_locs[0])
             return 1
