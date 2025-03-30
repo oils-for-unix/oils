@@ -6,7 +6,6 @@ from __future__ import print_function
 
 import unittest
 
-from core import state
 from core import test_lib
 from frontend import match
 from osh import prompt  # module under test
@@ -16,7 +15,7 @@ class PromptTest(unittest.TestCase):
 
     def setUp(self):
         arena = test_lib.MakeArena('<ui_test.py>')
-        mem = state.Mem('', [], arena, [], {})
+        mem = test_lib.MakeMem(arena)
         parse_ctx = test_lib.InitParseContext()
         self.p = prompt.Evaluator('osh', '0.0.0', parse_ctx, mem)
         # note: this has a separate 'mem' object

@@ -8,6 +8,7 @@ import time as time_
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import option_i, builtin_i
+from _devbuild.gen.runtime_asdl import Cell
 from _devbuild.gen.syntax_asdl import (loc, source, source_t, IntParamBox,
                                        debug_frame, debug_frame_t)
 from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str, Obj)
@@ -302,10 +303,16 @@ def Main(
 
     debug_stack = [frame0]
 
+    argv = arg_r.Rest()
+    var_frame0 = NewDict()  # type: Dict[str, Cell]
+    if lang == 'ysh':
+        var_frame0['ARGV'] = state._MakeArgvCell(argv)
+
     env_dict = NewDict()  # type: Dict[str, value_t]
     defaults = NewDict()  # type: Dict[str, value_t]
     mem = state.Mem(dollar0,
-                    arg_r.Rest(),
+                    argv,
+                    var_frame0,
                     arena,
                     debug_stack,
                     env_dict,

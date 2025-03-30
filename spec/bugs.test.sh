@@ -372,10 +372,9 @@ printf '%u\n' 2147483648
 ## END
 
 #### (( status bug
+case $SH in dash|ash) exit ;; esac
 
 # from Koiche on Zulip
-
-case $SH in dash|ash) exit ;; esac
 
 (( 1 << 32 ))
 echo status=$?
@@ -403,4 +402,27 @@ as_fn_arith 0 + 1
 echo as_val=$as_val
 ## STDOUT:
 as_val=1
+## END
+
+#### OSH can use ARGV name
+case $SH in dash|ash) exit ;; esac
+
+foo() {
+  if test -v ARGV; then
+    echo 'BUG local'
+  fi
+  ARGV=( a b )
+  echo len=${#ARGV[@]}
+}
+
+if test -v ARGV; then
+  echo 'BUG global'
+fi
+foo
+
+## STDOUT:
+len=2
+## END
+
+## N-I dash/ash STDOUT:
 ## END

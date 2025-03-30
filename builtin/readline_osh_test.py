@@ -88,7 +88,7 @@ echo bye
 def _TestHistory(argv):
     f = cStringIO.StringIO()
     arena = alloc.Arena()
-    mem = state.Mem('', [], arena, [], {})
+    mem = state.Mem('', [], {}, arena, [], {})
     errfmt = ui.ErrorFormatter()
     b = readline_osh.History(readline, mem, errfmt, f)
     cmd_val = test_lib.MakeBuiltinArgv(argv)

@@ -1,0 +1,34 @@
+#!bin/ysh
+
+proc precise {
+  ls | grep + | wc -l
+}
+
+proc errors {
+  var x = $(date %D)
+  echo hi
+}
+
+proc no-word-split {
+  var mystr = 'a string with spaces'
+  var myarray = :| and an array |
+  write -- $mystr @myarray @ARGV
+
+  echo
+  shopt --unset simple_word_eval
+  for s in $mystr @myarray @ARGV; do
+    echo $s
+  done
+}
+
+proc safe {
+  #var tricky = u'hi\nthere.txt'
+  #var tricky = $(find build/testdata -type f -a -print0)
+  #var tricky = $(head --bytes 10 $(which cat))
+
+  var tricky = $(printf '\x00 \n \xff')
+  json8 write (tricky) | json8 read (&round_tripped)   
+  assert [round_tripped === tricky]
+}
+
+@ARGV

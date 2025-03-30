@@ -510,7 +510,7 @@ Iteration can also go on the inside of a block:
 
       # variables ending with _ are "hidden" from block evaluation
       for name_ in *.cc {
-        if name_ !== 'skipped.cc' {
+        if (name_ !== 'skipped.cc') {
           call inputs->append(name_)
         }
       }
