@@ -373,6 +373,19 @@ void Readline::unbind_keyseq(BigStr* keyseq) {
   // assert(0);  // not implemented
 }
 
+void Readline::bind_shell_command(BigStr* keyseq, BigStr* cmd) {
+  // assert(0);  // not implemented
+}
+
+void Readline::set_bind_shell_command_hook(
+    readline_osh::BindXCallback* bindx_cb) {
+#if HAVE_READLINE
+  bindx_cb_ = bindx_cb;
+#else
+  assert(0);  // not implemented
+#endif
+}
+
 Readline* MaybeGetReadline() {
 #if HAVE_READLINE
   gReadline = Alloc<Readline>();

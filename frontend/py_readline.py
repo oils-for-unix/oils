@@ -11,14 +11,17 @@ except ImportError:
     # C++ preprocessor var
     line_input = None
 
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, Callable, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.completion import ReadlineCallback
     from core.comp_ui import _IDisplay
 
 
 class Readline(object):
-    """A thin wrapper around GNU readline to make it usable from C++."""
+    """
+    A thin wrapper around GNU readline to make it usable from C++.
+    Try to avoid adding any logic here.
+    """
 
     def __init__(self):
         # type: () -> None
@@ -141,6 +144,18 @@ class Readline(object):
     def unbind_keyseq(self, keyseq):
         # type: (str) -> None
         line_input.unbind_keyseq(keyseq)
+
+    def bind_shell_command(self, keyseq, cmd):
+        # type: (str, str) -> None
+
+        # print("bind_shell_command: setting '%s' to '%s'" % (keyseq, cmd))
+        line_input.bind_shell_command(keyseq, cmd)
+
+    def set_bind_shell_command_hook(self, hook):
+        # type: (Callable[[str, str, int], Tuple[int, str, str]]) -> None
+        assert hook is not None
+
+        line_input.set_bind_shell_command_hook(hook)
 
 
 def MaybeGetReadline():

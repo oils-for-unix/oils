@@ -1,5 +1,5 @@
-## oils_failures_allowed: 0
-## oils_cpp_failures_allowed: 4
+## oils_failures_allowed: 1
+## oils_cpp_failures_allowed: 6
 ## compare_shells: bash
 
 # NB: This is only for NON-interactive tests of bind. 
@@ -8,7 +8,6 @@
 #### bind -l should report readline functions
 
 # This test depends on the exact version
-
 # bind -l | sort > _tmp/this-shell-bind-l.txt
 # comm -23 $REPO_ROOT/spec/testdata/bind/bind_l_function_list.txt _tmp/this-shell-bind-l.txt
 
@@ -81,6 +80,23 @@ status=0
 ## END
 
 
+#### bind -X
+bind -X | grep -oF '\C-o\C-s\C-h'
+echo status=$?
+
+bind -x '"\C-o\C-s\C-h": echo foo'
+bind -X | grep -oF '\C-o\C-s\C-h'
+bind -X | grep -oF 'echo foo'
+echo status=$?
+
+## STDOUT:
+status=1
+\C-o\C-s\C-h
+echo foo
+status=0
+## END
+
+
 #### bind -r 
 bind -q yank | grep -oF '\C-o\C-s\C-h'
 echo status=$?
@@ -91,6 +107,26 @@ echo status=$?
 
 bind -r "\C-o\C-s\C-h"
 bind -q yank | grep -oF '\C-o\C-s\C-h'
+echo status=$?
+
+## STDOUT:
+status=1
+\C-o\C-s\C-h
+status=0
+status=1
+## END
+
+
+#### bind -r of bind -x commands
+bind -X | grep -oF '\C-o\C-s\C-h'
+echo status=$?
+
+bind -x '"\C-o\C-s\C-h": echo foo'
+bind -X | grep -oF '\C-o\C-s\C-h'
+echo status=$?
+
+bind -r "\C-o\C-s\C-h"
+bind -X | grep -oF '\C-o\C-s\C-h'
 echo status=$?
 
 ## STDOUT:

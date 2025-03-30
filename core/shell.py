@@ -672,8 +672,9 @@ def Main(
                                          fd_state, tracer, errfmt, loader)
     b[builtin_i.source] = source_builtin
     b[builtin_i.dot] = source_builtin
-    b[builtin_i.eval] = meta_oils.Eval(parse_ctx, exec_opts, cmd_ev, tracer,
-                                       errfmt, mem)
+    eval_builtin = meta_oils.Eval(parse_ctx, exec_opts, cmd_ev, tracer, errfmt,
+                                  mem)
+    b[builtin_i.eval] = eval_builtin
 
     # Module builtins
     guards = NewDict()  # type: Dict[str, bool]
@@ -758,7 +759,8 @@ def Main(
     b[builtin_i.forkwait] = process_osh.ForkWait(shell_ex)
 
     # Interactive builtins depend on readline
-    b[builtin_i.bind] = readline_osh.Bind(readline, errfmt)
+    bindx_cb = readline_osh.BindXCallback(eval_builtin)
+    b[builtin_i.bind] = readline_osh.Bind(readline, errfmt, mem, bindx_cb)
     b[builtin_i.history] = readline_osh.History(readline, sh_files, errfmt,
                                                 mylib.Stdout())
 
