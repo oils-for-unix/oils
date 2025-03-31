@@ -242,23 +242,11 @@ class CaptureOutputs(vm._Callable):
         # type: (typed_args.Reader) -> value_t
         unused = rd.PosValue()
         cmd = rd.PosCommand()
-        # Allow us to not fail on error
-        fail = rd.NamedBool("fail", True)
         rd.Done()  # no more args
         frag = typed_args.GetCommandFrag(cmd)
         with state.ctx_EnclosedFrame(self.mem, cmd.captured_frame,
                                      cmd.module_frame, None):
             status, stdout_str, stderr_str = self.shell_ex.CaptureOutputs(frag)
-        if status != 0 and fail:
-            # Note that $() raises error.ErrExit with the status.
-            # But I think that results in a more confusing error message, so we
-            # "wrap" the errors.
-            properties = {
-                'status': num.ToBig(status),
-            }  # type: Dict[str, value_t]
-            raise error.Structured(
-                4, 'captureOutputs(): command failed with status %d' % status,
-                rd.LeftParenToken(), properties)
 
         out = NewDict() # type: Dict[str, value_t]
         out['stdout'] = value.Str(stdout_str)

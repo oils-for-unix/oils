@@ -973,19 +973,18 @@ Capture stdout and stderr of a command a string.
     var c = ^(echo hi; echo hello >&2;)
     var outputs = _io.captureOutputs(c)  # => { stdout: "hi", stderr: "hello", status: 0 }
 
-It's like `io.captureStdout` but captures both stdout and stderr.  Trailing newlines `\n` are
-removed.
+It's vaguely similar to `io.captureStdout` but captures both stdout, stderr into a `dict`.
+Trailing newlines `\n` are **not** removed.
 
-If the command fails, `captureOutputs()` raises an error, which can be caught
-with `try`.
+The exit code is also captured, which means that `captureOutputs()` does not fail on exit status != 0.
 
-    try {
-      var s = _io->captureOutputs(c)
+    = io.captureOutputs(^(echo stdout; echo stderr >&2; exit 3))
+    (Dict)
+    {
+        stdout: 'stdout\n',
+        stderr: 'stderr\n',
+        status: 3
     }
-
-Alternatively it's possible to pass the argument `fail=false` so that it won't fail:
-
-    var s = _io->captureOutputs(c, fail=false)
 
 ### promptVal()
 

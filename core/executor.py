@@ -692,8 +692,8 @@ class ShellExecutor(vm._Executor):
         posix.close(stderr_fd)
 
         status = p.Wait(self.waiter)
-        stdout_str = ''.join(stdout_chunks).rstrip('\n')
-        stderr_str = ''.join(stderr_chunks).rstrip('\n')
+        stdout_str = ''.join(stdout_chunks)
+        stderr_str = ''.join(stderr_chunks)
 
         return status, stdout_str, stderr_str
 
