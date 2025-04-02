@@ -51,13 +51,13 @@ two
 status=null
 ## END
 
-#### captureOutputs() is like $() but captures stderr as well
+#### captureAll() is like $() but captures stderr as well
 
 proc p {
   var captured = 'captured'
   var cmd = ^(echo stdout; echo stderr >&2; echo $captured; echo $captured >&2;)
 
-  var stdout = io.captureOutputs(cmd)
+  var stdout = io.captureAll(cmd)
   pp test_ (stdout)
 }
 
@@ -67,7 +67,7 @@ p
 (Dict)   {"stdout":"stdout\ncaptured\n","stderr":"stderr\ncaptured\n","status":0}
 ## END
 
-#### captureOutputs() doesn't fail
+#### captureAll() doesn't fail
 
 var c = ^(shopt --unset verbose_errexit; echo out; echo err >&2; false; echo two)
 
@@ -75,7 +75,7 @@ var c = ^(shopt --unset verbose_errexit; echo out; echo err >&2; false; echo two
 # Should make it fail I think
 
 try {
-  var x = io.captureOutputs(c)
+  var x = io.captureAll(c)
 }
 # This has {"code": 3} because it's an expression error.  Should probably
 pp test_ (_error)

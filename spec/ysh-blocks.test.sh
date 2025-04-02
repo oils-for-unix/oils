@@ -79,7 +79,7 @@ p
 ## STDOUT:
 ## END
 
-#### io->eval() and io.captureStdout()/io.captureOutputs() passed a block in different scope
+#### io->eval() and io.captureStdout()/io.captureAll() passed a block in different scope
 shopt --set ysh:upgrade
 
 proc my-cd (; b) {
@@ -93,7 +93,7 @@ proc my-cd (; b) {
   var s = io.captureStdout(b)
   echo "stdout $s"
 
-  setvar s = io.captureOutputs(b)
+  setvar s = io.captureAll(b)
   echo "stdout $[s.stdout]" # Adds a newline
 }
 

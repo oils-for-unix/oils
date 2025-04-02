@@ -536,7 +536,7 @@ def Main(
     io_methods['captureStdout'] = value.BuiltinFunc(
         method_io.CaptureStdout(mem, shell_ex))
     # Like captureStdout but capture stderr, too
-    io_methods['captureOutputs'] = value.BuiltinFunc(
+    io_methods['captureAll'] = value.BuiltinFunc(
         method_io.CaptureOutputs(mem, shell_ex))
 
     # TODO: remove these 2 deprecated methods

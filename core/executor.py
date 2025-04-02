@@ -275,7 +275,7 @@ class PureExecutor(vm._Executor):
     def CaptureOutputs(self, node):
         # type: (command_t) -> Tuple[int, str, str]
         """
-        Used by io->captureOutputs() method, and called by command sub
+        Used by io->captureAll() method, and called by command sub
         """
         return 0, '', ''
 
