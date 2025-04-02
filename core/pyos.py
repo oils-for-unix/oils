@@ -282,11 +282,11 @@ def InputAvailable(fd):
     return len(r) != 0
 
 
-def WaitForReading(fd):
+def WaitForReading(fd_list):
     # type: (List[int]) -> List[int]
     # Get a list of fds and return fds which have available input
     # read, write, except
-    r, _, _ = select.select(fd, [], [])
+    r, _, _ = select.select(fd_list, [], [])
     return r
 
 

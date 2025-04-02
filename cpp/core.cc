@@ -262,12 +262,12 @@ List<int>* WaitForReading(List<int>* fd_list) {
   for (int i = 0; i < n; ++i) {
     FD_SET(fd_list->at(i), &fd_bits);
   }
-  int out = select(FD_SETSIZE, &fd_bits, NULL, NULL, NULL);
+  int num_ready = select(FD_SETSIZE, &fd_bits, NULL, NULL, NULL);
   for (int i = 0; i < n; ++i) {
     if (FD_ISSET(fd_list->at(i), &fd_bits)) {
       ret->append(fd_list->at(i));
     }
-    if (len(ret) == out) {
+    if (len(ret) == num_ready) {
       break;
     }
   }

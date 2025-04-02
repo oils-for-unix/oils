@@ -971,7 +971,7 @@ with `try`.
 Capture stdout and stderr and status of a command.
 
     var c = ^(echo hi; echo hello >&2;)
-    var outputs = _io.captureAll(c)  # => { stdout: "hi", stderr: "hello", status: 0 }
+    var outputs = io.captureAll(c)  # => { stdout: "hi", stderr: "hello", status: 0 }
 
 It's vaguely similar to `io.captureStdout` but captures both stdout, stderr into a `dict`.
 Trailing newlines `\n` are **not** removed.
