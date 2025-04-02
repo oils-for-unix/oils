@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 
 #### cd accepts a block, runs it in different dir
 shopt -s ysh:all
@@ -94,7 +94,7 @@ proc my-cd (; b) {
   echo "stdout $s"
 
   setvar s = io.captureOutputs(b)
-  echo "stdout $[s.stdout]"
+  echo "stdout $[s.stdout]" # Adds a newline
 }
 
 proc p {
@@ -107,6 +107,12 @@ proc p {
 p
 
 ## STDOUT:
+i = 42
+i = 42
+(Dict)   {"x":"x"}
+stdout i = 42
+stdout i = 42
+
 ## END
 
 #### block doesn't have its own scope

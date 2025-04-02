@@ -659,10 +659,9 @@ class ShellExecutor(vm._Executor):
         stderr_chunks = []  # type: List[str]
         posix.close(w)  # not going to write
         posix.close(w2)  # not going to write
-        eofcount = 0
-        finished = False
+        open_fds = [stdout_fd, stderr_fd]
         while True:
-            fds = pyos.WaitForInputs([stdout_fd, stderr_fd])
+            fds = pyos.WaitForReading(open_fds)
 
             # zero outputs mean something went wrong
             if len(fds) == 0:
@@ -682,10 +681,9 @@ class ShellExecutor(vm._Executor):
                             2,
                             'Oils I/O error (read): %s' % posix.strerror(err_num))
                 elif n == 0:  # EOF
-                    eofcount += 1
-                if eofcount > 1:
-                    finished = True
-            if finished:
+                    open_fds.remove(fd)
+
+            if len(open_fds) == 0:
                 break
 
         posix.close(stdout_fd)

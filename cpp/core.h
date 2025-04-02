@@ -80,7 +80,7 @@ void PrintTimes();
 
 bool InputAvailable(int fd);
 
-List<int>* WaitForInputs(List<int>* fds_in);
+List<int>* WaitForReading(List<int>* fds_in);
 
 IOError_OSError* FlushStdout();
 
