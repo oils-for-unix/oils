@@ -24,7 +24,26 @@ This chapter describes special variables for OSH and YSH.
 
 ### ARGV
 
-Replacement for `"$@"`
+ARGV is List of strings contaning an argument array.  This is the YSH
+replacement for shell's `"$@"`.
+
+- At the top level, it contains the arguments passed to the shell.
+- Inside an **open** [proc][], it contains the arguments passed to the proc.
+
+For example:
+
+    proc p {    # open proc, ARGV is swithout signature
+      echo @ARGV
+    }
+    p a b c  # => a b c
+
+In contrast, inside a closed proc, `ARGV` is empty.
+
+    proc p () {  # closed proc
+      echo @ARGV
+    }
+ 
+[proc]: chap-ysh-cmd.html#proc
 
 ### ENV
 

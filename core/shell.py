@@ -305,8 +305,6 @@ def Main(
 
     argv = arg_r.Rest()
     var_frame0 = NewDict()  # type: Dict[str, Cell]
-    if lang == 'ysh':
-        var_frame0['ARGV'] = state._MakeArgvCell(argv)
 
     env_dict = NewDict()  # type: Dict[str, value_t]
     defaults = NewDict()  # type: Dict[str, value_t]
@@ -333,7 +331,7 @@ def Main(
 
     version_str = pyutil.GetVersion(loader)
     sh_init.InitBuiltins(mem, version_str, defaults)
-    sh_init.InitDefaultVars(mem)
+    sh_init.InitDefaultVars(mem, argv)
 
     sh_init.CopyVarsFromEnv(exec_opts, environ, mem)
 

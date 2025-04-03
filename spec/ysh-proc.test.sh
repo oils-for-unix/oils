@@ -359,12 +359,13 @@ Command
 ## END
 
 #### Global and local ARGV, like "$@"
-shopt -s parse_at
+
+$SH -o ysh:upgrade -c '
 argv.py "$@"
 argv.py @ARGV
 #argv.py "${ARGV[@]}"  # not useful, but it works!
 
-set -- 'a b' c
+set -- "a b" c
 argv.py "$@"
 argv.py @ARGV  # separate from the argv stack
 
@@ -372,7 +373,9 @@ f() {
   argv.py "$@"
   argv.py @ARGV  # separate from the argv stack
 }
-f 1 '2 3'
+f 1 "2 3"
+'
+
 ## STDOUT:
 []
 []
@@ -385,9 +388,7 @@ f 1 '2 3'
 
 #### Mutating global ARGV
 
-$SH -c '
-shopt -s ysh:upgrade
-
+$SH -o ysh:upgrade -c '
 argv.py global @ARGV
 
 # should not be ignored
@@ -402,9 +403,7 @@ argv.py global @ARGV
 
 #### Mutating local ARGV
 
-$SH -c '
-shopt -s ysh:upgrade
-
+$SH -o ysh:upgrade -c '
 argv.py global @ARGV
 
 proc p {

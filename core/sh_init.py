@@ -15,7 +15,7 @@ from pylib import os_path
 import libc
 import posix_ as posix
 
-from typing import Dict, Optional, cast, TYPE_CHECKING
+from typing import List, Dict, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen import arg_types
 
@@ -136,8 +136,14 @@ def GetWorkingDir():
 _READLINE_DELIMS = ' \t\n"\'><=;|&(:'
 
 
-def InitDefaultVars(mem):
-    # type: (state.Mem) -> None
+def InitDefaultVars(mem, argv):
+    # type: (state.Mem, List[str]) -> None
+
+    # Problem: if you do shopt --set ysh:upgrade, the variable won't be
+    # initialized.  So this is not different than lang == 'ysh'
+    if mem.exec_opts.init_ysh_globals():  # YSH init
+        # mem is initialized with a global frame
+        mem.var_stack[0]['ARGV'] = state._MakeArgvCell(argv)
 
     # These 3 are special, can't be changed
     state.SetGlobalString(mem, 'UID', str(posix.getuid()))
@@ -213,6 +219,12 @@ def InitVarsAfterEnv(mem, mutable_opts):
     if mem.exec_opts.no_init_globals():
         # YSH initialization
         mem.SetPwd(GetWorkingDir())
+
+        # TODO: YSH can use cross-process tracing with SHELLOPTS, BASHOPTS, and
+        # OILS_OPTS?
+        # Or at least the xtrace stuff should be in OILS_OPTS.  Bash has a
+        # quirk where these env vars turn options ON, but they don't turn
+        # options OFF.  So it is perhaps not a great mechanism.
     else:
         # OSH initialization
         shellopts = mem.GetValue('SHELLOPTS')

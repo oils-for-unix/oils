@@ -174,6 +174,7 @@ shopt -s env_obj
 shopt -s errexit
 shopt -s for_loop_frames
 shopt -s inherit_errexit
+shopt -s init_ysh_globals
 shopt -s nounset
 shopt -s nullglob
 shopt -s parse_at

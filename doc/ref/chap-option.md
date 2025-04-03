@@ -213,6 +213,7 @@ Details on each option:
       dashglob (-u)           Disabled to avoid files like -rf
       env_obj                 Init ENV Obj at startup; use it when starting
                               child processes
+      init_ysh_globals        Init ARGV List at startup
       for_loop_frames         YSH can create closures from loop vars
 
 <h3 id="ysh:all">ysh:all</h3>
@@ -246,6 +247,15 @@ Details on options that are not in `ysh:upgrade` and `strict:all`:
       simple_test_builtin     3 args or fewer; use test not [
     X simple_trap             Function name only
       verbose_errexit         Whether to print detailed errors
+
+**Caveat**: Some options only affect shell startup.  For example:
+
+- If you start with `osh`, and the script runs `shopt --set ysh:all`, then the
+  YSH [ARGV][] var won't be initialized.
+- In contrast, if you run `osh -o ysh:all -c 'echo @ARGV'`, then [ARGV][] will
+  be initialized.  That is, shell startup is done "the YSH way".
+
+[ARGV]: chap-special-var.html#ARGV
 
 ## YSH Details
 
