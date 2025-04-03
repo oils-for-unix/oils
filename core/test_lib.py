@@ -54,7 +54,7 @@ import posix_ as posix
 
 
 def MakeMem(arena):
-    return state.Mem('', [], {}, arena, [], {})
+    return state.Mem('', [], arena, [], {})
 
 
 def MakeBuiltinArgv(argv):
@@ -174,7 +174,7 @@ def InitWordEvaluator(exec_opts=None):
     if exec_opts is None:
         parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
         mem.exec_opts = exec_opts  # circular dep
-        sh_init.InitDefaultVars(mem)
+        sh_init.InitDefaultVars(mem, [])
         mutable_opts.InitFromEnv('')
     else:
         mutable_opts = None
@@ -210,7 +210,7 @@ def InitCommandEvaluator(parse_ctx=None,
     mutable_opts = state.MutableOpts(mem, {}, opt0_array, opt_stacks, None)
     mem.exec_opts = exec_opts
     #state.InitMem(mem, {}, '0.1')
-    sh_init.InitDefaultVars(mem)
+    sh_init.InitDefaultVars(mem, [])
     mutable_opts.InitFromEnv('')
 
     # No 'readline' in the tests.
@@ -337,7 +337,7 @@ def EvalCode(code_str, parse_ctx, comp_lookup=None, mem=None, aliases=None):
     mem.exec_opts = exec_opts
 
     #state.InitMem(mem, {}, '0.1')
-    sh_init.InitDefaultVars(mem)
+    sh_init.InitDefaultVars(mem, [])
     mutable_opts.InitFromEnv('')
 
     line_reader, _ = InitLexer(code_str, arena)

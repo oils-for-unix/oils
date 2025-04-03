@@ -39,7 +39,7 @@ def ParseAndEval(code_str):
     parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
     mem.exec_opts = exec_opts
     #state.InitMem(mem, {}, '0.1')
-    sh_init.InitDefaultVars(mem)
+    sh_init.InitDefaultVars(mem, [])
 
     splitter = split.SplitContext(mem)
     errfmt = ui.ErrorFormatter()

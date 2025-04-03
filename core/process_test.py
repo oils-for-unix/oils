@@ -58,7 +58,7 @@ class ProcessTest(unittest.TestCase):
         mem.exec_opts = exec_opts
 
         #state.InitMem(mem, {}, '0.1')
-        sh_init.InitDefaultVars(mem)
+        sh_init.InitDefaultVars(mem, [])
 
         self.job_control = process.JobControl()
         self.job_list = process.JobList()

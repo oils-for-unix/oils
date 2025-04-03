@@ -304,13 +304,10 @@ def Main(
     debug_stack = [frame0]
 
     argv = arg_r.Rest()
-    var_frame0 = NewDict()  # type: Dict[str, Cell]
-
     env_dict = NewDict()  # type: Dict[str, value_t]
     defaults = NewDict()  # type: Dict[str, value_t]
     mem = state.Mem(dollar0,
                     argv,
-                    var_frame0,
                     arena,
                     debug_stack,
                     env_dict,

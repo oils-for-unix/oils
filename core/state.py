@@ -1286,7 +1286,6 @@ class Mem(object):
             self,
             dollar0,  # type: str
             argv,  # type: List[str]
-            frame0,  # type: Dict[str, Cell]
             arena,  # type: alloc.Arena
             debug_stack,  # type: List[debug_frame_t]
             env_dict,  # type: Dict[str, value_t]
@@ -1305,6 +1304,7 @@ class Mem(object):
         # If you only use YSH procs and funcs, this will remain at length 1.
         self.argv_stack = [_ArgFrame(argv)]
 
+        frame0 = NewDict()  # type: Dict[str, Cell]
         self.var_stack = [frame0]
 
         # The debug_stack isn't strictly necessary for execution.  We use it
