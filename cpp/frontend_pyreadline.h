@@ -17,6 +17,11 @@ class _IDisplay;
 void ExecutePrintCandidates(_IDisplay*, BigStr*, List<BigStr*>*, int);
 }  // namespace comp_ui
 
+// hacky forward decl
+namespace readline_osh {
+class BindXCallback;
+}  // namespace readline_osh
+
 namespace py_readline {
 
 class Readline {
@@ -52,6 +57,8 @@ class Readline {
   void restore_orig_keymap();
   void print_shell_cmd_map();
   void unbind_keyseq(BigStr* keyseq);
+  void bind_shell_command(BigStr* keyseq, BigStr* cmd);
+  void set_bind_shell_command_hook(readline_osh::BindXCallback* hook);
 
   static constexpr uint32_t field_mask() {
     return maskbit(offsetof(Readline, completer_delims_)) |
@@ -68,6 +75,7 @@ class Readline {
   BigStr* completer_delims_;
   completion::ReadlineCallback* completer_;
   comp_ui::_IDisplay* display_;
+  readline_osh::BindXCallback* bindx_cb_;
 
   // readline will set this to NULL when EOF is received, else this will point
   // to a line of input.
