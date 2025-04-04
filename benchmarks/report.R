@@ -132,15 +132,15 @@ ShellLabels = function(shell_name, shell_hash, num_hosts) {
   return(labels)
 }
 
-# Simple version of the above, used by benchmarks/gc
+# Simple version of the above, used by benchmarks/{gc,osh-runtime}
 ShellLabelFromPath = function(sh_path) {
   labels = c()
   for (i in 1:length(sh_path)) {
     sh = sh_path[i]
 
     if (endsWith(sh, osh_opt_suffix1) || endsWith(sh, osh_opt_suffix2)) {
-      # the opt binary is osh-native
-      label = 'opt/osh'
+      # the opt binary is called osh-native - the osh-runtime report relies on this
+      label = 'osh-native'
 
     } else if (endsWith(sh, ysh_opt_suffix1) || endsWith(sh, ysh_opt_suffix2)) {
       label = 'opt/ysh'

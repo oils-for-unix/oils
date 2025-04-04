@@ -17,6 +17,16 @@
 # - parse_help: realistic shell-only string processing, which I didn't write.
 #
 # TODO:
+# - Fix the BUGS
+#   - palindrome doesn't work?  Unicode?  Does UTF-8 decode
+#   - bubble sort depend on locale too - there is an LC_ALL here
+#
+# - This file is annoying to TEST
+#   - to add to it, you also have to change benchmarks/report.R
+#   - and there is a loop in 'stage1' as well
+#   - why can't it behave like other benchmarks?
+#   - they are using this "big table" pattern
+
 # - vary problem size, which is different than iters
 #   - bubble sort: array length, to test complexity of array indexing
 #   - palindrome: longer lines, to test complexity of unicode/byte slicing
@@ -24,16 +34,23 @@
 # - for_loop and fib are kinda similar
 #   - maybe for_loop can introduce some conditionals
 #
-# - add awk versions of each benchmark (could be contributed)
+# - other languages
+#   - awk, mawk, etc.
+#   - we are going for Awk speed!
 #
-# - Fix the BUGS
-#   - palindrome doesn't work?  Unicode?  Does UTF-8 decode
-#
-# - This file is annoying to TEST
-#   - to add to it, you also have to change benchmarks/report.R
-#   - and there is a loop in 'stage1' as well
-#   - why can't it behave like other benchmarks?
-#   - they are using this "big table" pattern
+# Questions to answer
+# - Can fast bytecode runtime be as fast as Python?
+#   - measurement issue: Python kills at fib/for_loop - it's mostly process
+#     startup time
+# - bubble_sort and word_freq are a bit more work 
+#   - can add YSH versions of those
+#   - I wonder if they are testing data structures or the actual interpreter
+#   loop though
+#   - it's possible that speeding up the interpreter loop doesn't help much
+# - the real motivations behind bytecode:
+#   - to fix 'break continue'
+#   - add coroutine support too - that suspends and resumes a frame, which we
+#   can't do
 
 set -o nounset
 set -o pipefail
