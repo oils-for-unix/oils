@@ -21,7 +21,19 @@
 #   - bubble sort: array length, to test complexity of array indexing
 #   - palindrome: longer lines, to test complexity of unicode/byte slicing
 #   - word_freq: more unique words, to test complexity of assoc array
-# - write awk versions of each benchmark (could be contributed)
+# - for_loop and fib are kinda similar
+#   - maybe for_loop can introduce some conditionals
+#
+# - add awk versions of each benchmark (could be contributed)
+#
+# - Fix the BUGS
+#   - palindrome doesn't work?  Unicode?  Does UTF-8 decode
+#
+# - This file is annoying to TEST
+#   - to add to it, you also have to change benchmarks/report.R
+#   - and there is a loop in 'stage1' as well
+#   - why can't it behave like other benchmarks?
+#   - they are using this "big table" pattern
 
 set -o nounset
 set -o pipefail
@@ -55,8 +67,10 @@ hello-tasks() {
 fib-tasks() {
   local provenance=$1
 
+  local runtime_regex='_bin/cxx-opt/(osh|ysh)'
+
   # Add 1 field for each of 5 fields.
-  cat $provenance | filter-provenance python2 bash dash "$OSH_CPP_REGEX" |
+  cat $provenance | filter-provenance python2 bash dash "$runtime_regex" |
   while read fields; do
     echo 'fib 200 44' | xargs -n 3 -- echo "$fields"
   done
@@ -66,8 +80,7 @@ fib-tasks() {
 for_loop-tasks() {
   local provenance=$1
 
-  # bumpleak segfaults!  Probably because it runs out of memory
-  # TODO: souffle is excluded by OSH_CPP_REGEX
+  # bumpleak segfaults on for_loop!  Probably because it runs out of memory
   local runtime_regex='_bin/cxx-opt/(osh|ysh)'
 
   # TODO: add YSH too

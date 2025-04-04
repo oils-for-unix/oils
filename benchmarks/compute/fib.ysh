@@ -1,0 +1,21 @@
+# fib.ysh
+
+var iters = ${1:-5}  # first argument of every benchmark should be the number of iterations
+var n = ${2:-10}  # fib(n)
+
+var i = 0
+while (i < iters) {
+  var j = 0
+  var a = 1
+  var b = 1
+
+  while (j < n) {
+    setvar a, b = b, a+b
+    setvar j += 1
+  }
+
+  echo $b
+
+  setvar i += 1
+}
+

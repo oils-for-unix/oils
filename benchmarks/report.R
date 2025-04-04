@@ -78,10 +78,14 @@ GetOshLabel = function(shell_hash, prov_dir) {
   return(label)
 }
 
-opt_suffix1 = '_bin/cxx-opt/osh'
-opt_suffix2 = '_bin/cxx-opt-sh/osh'
-opt_suffix3 = '_bin/cxx-opt/mycpp-souffle/osh'
-opt_suffix4 = '_bin/cxx-opt-sh/mycpp-souffle/osh'
+osh_opt_suffix1 = '_bin/cxx-opt/osh'
+osh_opt_suffix2 = '_bin/cxx-opt-sh/osh'
+
+osh_souffle_suffix1 = '_bin/cxx-opt/mycpp-souffle/osh'
+osh_souffle_suffix2 = '_bin/cxx-opt-sh/mycpp-souffle/osh'
+
+ysh_opt_suffix1 = '_bin/cxx-opt/ysh'
+ysh_opt_suffix2 = '_bin/cxx-opt-sh/ysh'
 
 ShellLabels = function(shell_name, shell_hash, num_hosts) {
   ### Given 2 vectors, return a vector of readable labels.
@@ -105,10 +109,13 @@ ShellLabels = function(shell_name, shell_hash, num_hosts) {
     if (sh == 'osh') {
       label = GetOshLabel(shell_hash[i], prov_dir)
 
-    } else if (endsWith(sh, opt_suffix1) || endsWith(sh, opt_suffix2)) {
+    } else if (endsWith(sh, osh_opt_suffix1) || endsWith(sh, osh_opt_suffix2)) {
       label = 'opt/osh'
 
-    } else if (endsWith(sh, opt_suffix3) || endsWith(sh, opt_suffix4)) {
+    } else if (endsWith(sh, ysh_opt_suffix1) || endsWith(sh, ysh_opt_suffix2)) {
+      label = 'opt/ysh'
+
+    } else if (endsWith(sh, osh_souffle_suffix1) || endsWith(sh, osh_souffle_suffix2)) {
       label = 'opt/osh-souffle'
 
     } else if (endsWith(sh, '_bin/cxx-opt+bumpleak/osh')) {
@@ -131,12 +138,14 @@ ShellLabelFromPath = function(sh_path) {
   for (i in 1:length(sh_path)) {
     sh = sh_path[i]
 
-    if (endsWith(sh, opt_suffix1) || endsWith(sh, opt_suffix2)) {
+    if (endsWith(sh, osh_opt_suffix1) || endsWith(sh, osh_opt_suffix2)) {
       # the opt binary is osh-native
-      label = 'osh-native'
+      label = 'opt/osh'
 
-	} else if (endsWith(sh, opt_suffix3) || endsWith(sh, opt_suffix4)) {
-      # the opt binary is osh-native
+    } else if (endsWith(sh, ysh_opt_suffix1) || endsWith(sh, ysh_opt_suffix2)) {
+      label = 'opt/ysh'
+
+	  } else if (endsWith(sh, osh_souffle_suffix1) || endsWith(sh, osh_souffle_suffix2)) {
       label = 'osh-native-souffle'
 
     } else if (endsWith(sh, '_bin/cxx-opt+bumpleak/osh')) {
