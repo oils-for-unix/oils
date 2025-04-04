@@ -120,7 +120,10 @@ dump-shell-id() {
       esac
       ;;
     ysh)
-      $sh_path --version > $out_dir/osh-version.txt
+      $sh_path --version > $out_dir/ysh-version.txt
+      ;;
+    awk)
+      $sh_path --version > $out_dir/awk-version.txt
       ;;
 
     # oils-for-unix|oils-for-unix.stripped)

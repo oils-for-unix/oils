@@ -74,7 +74,7 @@ hello-tasks() {
   local provenance=$1
 
   # Add 1 field for each of 5 fields.
-  cat $provenance | filter-provenance python2 bash dash "$OSH_CPP_REGEX" |
+  cat $provenance | filter-provenance python2 awk bash dash "$OSH_CPP_REGEX" |
   while read fields; do
     echo 'hello _ _' | xargs -n 3 -- echo "$fields"
   done
@@ -87,7 +87,7 @@ fib-tasks() {
   local runtime_regex='_bin/cxx-opt/(osh|ysh)'
 
   # Add 1 field for each of 5 fields.
-  cat $provenance | filter-provenance python2 bash dash "$runtime_regex" |
+  cat $provenance | filter-provenance python2 awk bash dash "$runtime_regex" |
   while read fields; do
     echo 'fib 200 44' | xargs -n 3 -- echo "$fields"
   done
@@ -100,8 +100,7 @@ for_loop-tasks() {
   # bumpleak segfaults on for_loop!  Probably because it runs out of memory
   local runtime_regex='_bin/cxx-opt/(osh|ysh)'
 
-  # TODO: add YSH too
-  cat $provenance | filter-provenance python2 bash dash "$runtime_regex" |
+  cat $provenance | filter-provenance python2 awk bash dash "$runtime_regex" |
   while read fields; do
     echo 'for_loop 50000 _' | xargs -n 3 -- echo "$fields"
   done
@@ -198,6 +197,9 @@ ext() {
   case $runtime in 
     python2)
       echo 'py'
+      ;;
+    awk)
+      echo 'awk'
       ;;
     *ysh*)
       echo 'ysh'
@@ -350,12 +352,18 @@ task-all() {
 
     local -a cmd
     case $task_name in
-      (hello|fib|for_loop)
+      hello|fib|for_loop)
         # Run it DIRECTLY, do not run $0.  Because we do NOT want to fork bash
         # then dash, because bash uses more memory.
-        cmd=($runtime benchmarks/compute/$task_name.$(ext $runtime) "$arg1" "$arg2")
+        args=(benchmarks/compute/$task_name.$(ext $runtime) "$arg1" "$arg2")
+
+        case $runtime in
+          # add -f flag
+          awk) cmd=($runtime -f "${args[@]}") ;;
+          *) cmd=($runtime "${args[@]}") ;;
+        esac
         ;;
-      (*)
+      *)
         cmd=($0 ${task_name}-one "$task_name" "$runtime" "$arg1" "$arg2")
         ;;
     esac
@@ -480,7 +488,7 @@ soil-run() {
 
   benchmarks/id.sh shell-provenance-2 \
     $single_machine $job_id _tmp \
-    bash dash python2 "${oils_bin[@]}"
+    bash dash python2 awk "${oils_bin[@]}"
 
   local provenance=_tmp/provenance.txt
   local host_job_id="$single_machine.$job_id"
