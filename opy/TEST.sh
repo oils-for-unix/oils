@@ -131,22 +131,22 @@ opy-unit() {
 # IndexError: list index out of range
 
 generator-exception() {
-  testdata/generator_exception.py
-  ../bin/opyc run testdata/generator_exception.py 
+  gold/generator_exception.py
+  ../bin/opyc run gold/generator_exception.py 
 }
 
 generator-exception-diff() {
-  rm -f -v testdata/generator_exception.pyc
-  testdata/generator_exception.py
+  rm -f -v gold/generator_exception.pyc
+  gold/generator_exception.py
 
-  pushd testdata 
+  pushd gold
   python -c 'import generator_exception'
   popd
 
   echo ---
-  ../bin/opyc compile testdata/generator_exception.py _tmp/ge-opy.pyc
+  ../bin/opyc compile gold/generator_exception.py _tmp/ge-opy.pyc
 
-  ../bin/opyc dis testdata/generator_exception.pyc > _tmp/ge-cpython.txt
+  ../bin/opyc dis gold/generator_exception.pyc > _tmp/ge-cpython.txt
   ../bin/opyc dis _tmp/ge-opy.pyc > _tmp/ge-opy.txt
 
   diff -u _tmp/ge-{cpython,opy}.txt
@@ -156,9 +156,9 @@ generator-exception-diff() {
 # first argument (got tuple instance instead) 
 
 regex-compile() {
-  testdata/regex_compile.py
+  gold/regex_compile.py
   echo ---
-  ../bin/opyc run testdata/regex_compile.py
+  ../bin/opyc run gold/regex_compile.py
 }
 
 re-dis() {

@@ -4,7 +4,8 @@ parse_lib.py - Consolidate various parser instantiations here.
 
 from _devbuild.gen.id_kind_asdl import Id_t
 from _devbuild.gen.syntax_asdl import (Token, CompoundWord, expr_t, Redir,
-                                       ArgList, Proc, Func, command, pat_t)
+                                       ArgList, Proc, Func, pat_t, VarDecl,
+                                       Mutation)
 from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen import grammar_nt
 
@@ -298,7 +299,7 @@ class ParseContext(object):
         return expr_parse.ExprParser(self, self.ysh_grammar)
 
     def ParseVarDecl(self, kw_token, lexer):
-        # type: (Token, Lexer) -> Tuple[command.VarDecl, Token]
+        # type: (Token, Lexer) -> Tuple[VarDecl, Token]
         """ var mylist = [1, 2, 3] """
         e_parser = self._YshParser()
         with ctx_PNodeAllocator(e_parser):
@@ -313,7 +314,7 @@ class ParseContext(object):
         return ast_node, last_token
 
     def ParseMutation(self, kw_token, lexer):
-        # type: (Token, Lexer) -> Tuple[command.Mutation, Token]
+        # type: (Token, Lexer) -> Tuple[Mutation, Token]
         """ setvar d['a'] += 1 """
         e_parser = self._YshParser()
         with ctx_PNodeAllocator(e_parser):

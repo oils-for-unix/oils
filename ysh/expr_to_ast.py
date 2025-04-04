@@ -12,7 +12,6 @@ from _devbuild.gen.syntax_asdl import (
     BracedVarSub,
     CommandSub,
     YshArrayLiteral,
-    command,
     expr,
     expr_e,
     expr_t,
@@ -45,6 +44,8 @@ from _devbuild.gen.syntax_asdl import (
     EggexFlag,
     CharCode,
     CharRange,
+    VarDecl,
+    Mutation,
 )
 from _devbuild.gen.value_asdl import value, value_t
 from _devbuild.gen import grammar_nt
@@ -867,7 +868,7 @@ class Transformer(object):
         return lhs_list
 
     def MakeVarDecl(self, p_node):
-        # type: (PNode) -> command.VarDecl
+        # type: (PNode) -> VarDecl
         """
         ysh_var_decl: name_type_list ['=' testlist] end_stmt
         """
@@ -887,10 +888,10 @@ class Transformer(object):
             rhs = None
 
         # The caller should fill in the keyword token.
-        return command.VarDecl(None, lhs, rhs)
+        return VarDecl(None, lhs, rhs)
 
     def MakeMutation(self, p_node):
-        # type: (PNode) -> command.Mutation
+        # type: (PNode) -> Mutation
         """
         ysh_mutation: lhs_list (augassign | '=') testlist end_stmt
         """
@@ -901,7 +902,7 @@ class Transformer(object):
         if len(lhs_list) > 1 and op_tok.id != Id.Arith_Equal:
             p_die('Multiple assignment must use =', op_tok)
         rhs = self.Expr(p_node.GetChild(2))
-        return command.Mutation(None, lhs_list, op_tok, rhs)
+        return Mutation(None, lhs_list, op_tok, rhs)
 
     def _EggexFlag(self, p_node):
         # type: (PNode) -> EggexFlag

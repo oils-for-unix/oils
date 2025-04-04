@@ -577,6 +577,15 @@ def CallUserFunc(
 
     # Push a new stack frame
 
+    # TODO:
+    # - lazily compile into b_command bytecode, storing the result on the
+    #   value.Func instance
+    # - this will disallow many things statically
+    # - we could disallow redirects this way?  Currently we don't
+
+    if func.name.startswith('__b__'):
+        raise AssertionError()
+
     # TODO: ctx_Eval() can replace io with DummyIO type!  It can possibly
     # implement __getattr__ and __get_mutating__?
     with state.ctx_FuncCall(mem, func, rd.LeftParenToken()):
