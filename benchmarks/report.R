@@ -794,6 +794,7 @@ ComputeReport = function(in_dir, out_dir) {
   times %>% filter(task_name == 'hello') %>% unique_stdout_md5sum(1)
   times %>% filter(task_name == 'fib') %>% unique_stdout_md5sum(1)
   times %>% filter(task_name == 'for_loop') %>% unique_stdout_md5sum(1)
+  times %>% filter(task_name == 'control_flow') %>% unique_stdout_md5sum(1)
   times %>% filter(task_name == 'word_freq') %>% unique_stdout_md5sum(1)
   # 3 different inputs
   times %>% filter(task_name == 'parse_help') %>% unique_stdout_md5sum(3)
@@ -853,6 +854,7 @@ ComputeReport = function(in_dir, out_dir) {
   details %>% filter(task_name == 'hello') %>% select(-c(task_name)) -> hello
   details %>% filter(task_name == 'fib') %>% select(-c(task_name)) -> fib
   details %>% filter(task_name == 'for_loop') %>% select(-c(task_name)) -> for_loop
+  details %>% filter(task_name == 'control_flow') %>% select(-c(task_name)) -> control_flow
   details %>% filter(task_name == 'word_freq') %>% select(-c(task_name)) -> word_freq
   # There's no arg2
   details %>% filter(task_name == 'parse_help') %>% select(-c(task_name, arg2)) -> parse_help
@@ -869,6 +871,7 @@ ComputeReport = function(in_dir, out_dir) {
   writeTsv(fib, file.path(out_dir, 'fib'), precision)
   writeTsv(word_freq, file.path(out_dir, 'word_freq'), precision)
   writeTsv(for_loop, file.path(out_dir, 'for_loop'), precision)
+  writeTsv(control_flow, file.path(out_dir, 'control_flow'), precision)
   writeTsv(parse_help, file.path(out_dir, 'parse_help'), precision)
 
   writeTsv(bubble_sort, file.path(out_dir, 'bubble_sort'), precision)

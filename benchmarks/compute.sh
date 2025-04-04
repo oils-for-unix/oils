@@ -106,6 +106,18 @@ for_loop-tasks() {
   done
 }
 
+# task_name,iter,args
+control_flow-tasks() {
+  local provenance=$1
+
+  local runtime_regex='_bin/cxx-opt/osh'
+
+  cat $provenance | filter-provenance bash dash "$runtime_regex" |
+  while read fields; do
+    echo 'control_flow do_return 200' | xargs -n 3 -- echo "$fields"
+  done
+}
+
 word_freq-tasks() {
   local provenance=$1
 
@@ -289,6 +301,7 @@ parse_help-one() {
 hello-all() { task-all hello "$@"; }
 fib-all() { task-all fib "$@"; }
 for_loop-all() { task-all for_loop "$@"; }
+control_flow-all() { task-all control_flow "$@"; }
 word_freq-all() { task-all word_freq "$@"; }
 assoc_array-all() { task-all assoc_array "$@"; }
 
@@ -352,7 +365,7 @@ task-all() {
 
     local -a cmd
     case $task_name in
-      hello|fib|for_loop)
+      hello|fib|for_loop|control_flow)
         # Run it DIRECTLY, do not run $0.  Because we do NOT want to fork bash
         # then dash, because bash uses more memory.
         args=(benchmarks/compute/$task_name.$(ext $runtime) "$arg1" "$arg2")
@@ -439,6 +452,7 @@ measure() {
   fib-all $provenance $host_job_id $out_dir
 
   for_loop-all $provenance $host_job_id $out_dir
+  control_flow-all $provenance $host_job_id $out_dir
 
   # TODO: doesn't work because we would need duplicate logic in stage1
   #if test -n "${QUICKLY:-}"; then
@@ -525,7 +539,7 @@ stage1() {
   local -a raw=()
 
   # TODO: We should respect QUICKLY=1
-  for metric in hello fib for_loop word_freq parse_help bubble_sort palindrome; do
+  for metric in hello fib for_loop control_flow word_freq parse_help bubble_sort palindrome; do
     local dir=$raw_dir/$metric
 
     if test -n "$single_machine"; then
@@ -588,10 +602,18 @@ EOF
   cmark <<EOF
 ### for loop
 
-- arg2: the N to sum
+- arg1: the N to sum
 EOF
 
   tsv2html $in_dir/for_loop.tsv
+
+  cmark <<EOF
+### control flow
+
+- arg1: the N to sum
+EOF
+
+  tsv2html $in_dir/control_flow.tsv
 
   cmark <<EOF
 ### word_freq (associative arrays / hash tables)
@@ -659,7 +681,7 @@ EOF
 EOF
 }
 
-control-flow() {
+run-control-flow() {
   ### Reproduce OSH perf bug because of C++ exceptions
 
   # do_neither:  0.288 dash, 0.872 bash, 0.865 OSH
@@ -671,13 +693,14 @@ control-flow() {
 
   ninja $osh
 
-  for func in do_neither do_continue do_break; do
+  for func in do_none do_continue do_break do_return; do
+  #for func in do_return; do
     echo "=== $func"
     echo
     for sh in dash bash $osh; do
       echo "--- $sh"
       # TIMEFORMAT above
-      time $sh benchmarks/compute/control_flow.sh $func 500
+      time $sh benchmarks/compute/control_flow.sh $func 200
       echo
     done
   done

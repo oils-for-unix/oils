@@ -42,7 +42,7 @@ do_break() {
       j=$(( j + 1 ))
       sum=$((sum + 1))
 
-      # Extra break statement!
+      # Extra break statement!  Expensive in OSH!
       if test $j -eq $i; then
         break;
       fi
@@ -56,9 +56,37 @@ do_break() {
   echo "    sum=$sum"
 }
 
+inner_loop_return() {
+  # relies on dynamic scope
+  if true; then
+    sum=$((sum + 1))
 
+    # test extra return.  This is expensive in OSH!
+    return
+  fi
+}
 
-do_neither() {
+do_return() {
+  local n=$1
+  local i=0
+  local sum=0
+
+  while test $i -lt $n; do
+    local j=0
+
+    while test $j -lt $n; do
+      j=$(( j + 1 ))
+      inner_loop_return
+    done
+
+    i=$(( i + 1 ))
+
+  done
+
+  echo "    sum=$sum"
+}
+
+do_none() {
   local n=$1
   local i=0
   local sum=0
