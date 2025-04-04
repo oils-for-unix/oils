@@ -9,6 +9,7 @@
 # List of benchmarks:
 #
 # - fib: integer, loop, assignment (shells don't have real integers
+# - for_loop: 2025 update, taken from benchmarks/ysh-for.sh
 # - word_freq: hash table / assoc array (OSH uses a vector<pair<>> now!)
 #              also integer counter
 # - bubble_sort: indexed array (bash uses a linked list?)
@@ -21,9 +22,6 @@
 #   - palindrome: longer lines, to test complexity of unicode/byte slicing
 #   - word_freq: more unique words, to test complexity of assoc array
 # - write awk versions of each benchmark (could be contributed)
-# - assert that stdout is identical
-# - create data frames and publish results
-#   - leave holes for Python, other shells, etc.
 
 set -o nounset
 set -o pipefail
@@ -61,6 +59,21 @@ fib-tasks() {
   cat $provenance | filter-provenance python2 bash dash "$OSH_CPP_REGEX" |
   while read fields; do
     echo 'fib 200 44' | xargs -n 3 -- echo "$fields"
+  done
+}
+
+# task_name,iter,args
+for_loop-tasks() {
+  local provenance=$1
+
+  # bumpleak segfaults!  Probably because it runs out of memory
+  # TODO: souffle is excluded by OSH_CPP_REGEX
+  local runtime_regex='_bin/cxx-opt/(osh|ysh)'
+
+  # TODO: add YSH too
+  cat $provenance | filter-provenance python2 bash dash "$runtime_regex" |
+  while read fields; do
+    echo 'for_loop 50000 _' | xargs -n 3 -- echo "$fields"
   done
 }
 
@@ -153,10 +166,13 @@ parse_help-tasks() {
 ext() {
   local ext
   case $runtime in 
-    (python2)
+    python2)
       echo 'py'
       ;;
-    (*sh | *osh*)
+    *ysh*)
+      echo 'ysh'
+      ;;
+    *sh | *osh*)
       echo 'sh'
       ;;
   esac
@@ -240,6 +256,7 @@ parse_help-one() {
 
 hello-all() { task-all hello "$@"; }
 fib-all() { task-all fib "$@"; }
+for_loop-all() { task-all for_loop "$@"; }
 word_freq-all() { task-all word_freq "$@"; }
 assoc_array-all() { task-all assoc_array "$@"; }
 
@@ -267,6 +284,8 @@ task-all() {
   rm -f $times_tsv
 
   mkdir -p $tmp_dir $out_dir/$task_name
+
+  banner "*** $task_name ***"
 
   # header
   tsv-row \
@@ -301,7 +320,7 @@ task-all() {
 
     local -a cmd
     case $task_name in
-      (hello|fib)
+      (hello|fib|for_loop)
         # Run it DIRECTLY, do not run $0.  Because we do NOT want to fork bash
         # then dash, because bash uses more memory.
         cmd=($runtime benchmarks/compute/$task_name.$(ext $runtime) "$arg1" "$arg2")
@@ -381,6 +400,8 @@ measure() {
   hello-all $provenance $host_job_id $out_dir
   fib-all $provenance $host_job_id $out_dir
 
+  for_loop-all $provenance $host_job_id $out_dir
+
   # TODO: doesn't work because we would need duplicate logic in stage1
   #if test -n "${QUICKLY:-}"; then
   #  return
@@ -411,8 +432,11 @@ soil-run() {
   mkdir -p $BASE_DIR
 
   # Test the one that's IN TREE, NOT in ../benchmark-data
-  local -a osh_bin=( $OSH_CPP_NINJA_BUILD $OSH_SOUFFLE_CPP_NINJA_BUILD _bin/cxx-opt+bumpleak/osh)
-  ninja "${osh_bin[@]}"
+  local -a oils_bin=(
+    _bin/cxx-opt/osh _bin/cxx-opt+bumpleak/osh _bin/cxx-opt/mycpp-souffle/osh 
+    _bin/cxx-opt/ysh _bin/cxx-opt+bumpleak/ysh _bin/cxx-opt/mycpp-souffle/ysh 
+  )
+  ninja "${oils_bin[@]}"
 
   local single_machine='no-host'
 
@@ -426,7 +450,7 @@ soil-run() {
 
   benchmarks/id.sh shell-provenance-2 \
     $single_machine $job_id _tmp \
-    bash dash python2 "${osh_bin[@]}"
+    bash dash python2 "${oils_bin[@]}"
 
   local provenance=_tmp/provenance.txt
   local host_job_id="$single_machine.$job_id"
@@ -463,7 +487,7 @@ stage1() {
   local -a raw=()
 
   # TODO: We should respect QUICKLY=1
-  for metric in hello fib word_freq parse_help bubble_sort palindrome; do
+  for metric in hello fib for_loop word_freq parse_help bubble_sort palindrome; do
     local dir=$raw_dir/$metric
 
     if test -n "$single_machine"; then
@@ -522,6 +546,14 @@ EOF
 EOF
 
   tsv2html $in_dir/fib.tsv
+
+  cmark <<EOF
+### for loop
+
+- arg2: the N to sum
+EOF
+
+  tsv2html $in_dir/for_loop.tsv
 
   cmark <<EOF
 ### word_freq (associative arrays / hash tables)
