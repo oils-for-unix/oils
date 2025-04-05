@@ -264,7 +264,7 @@ var x = 42 + a
   (w <Lit_Chars echo>)
   (w (DQ <Lit_Chars "hi "> ($ x) <Lit_Chars " "> (${ VSub_Name y)))
 )
-(command.VarDecl
+(VarDecl
   keyword:<KW_Var var>
   lhs:[(NameType left:<Expr_Name x> name:x)]
   rhs:(expr.Binary op:<Arith_Plus "+"> left:(Const Expr_DecInt _) right:(Var a))
