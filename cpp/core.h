@@ -80,6 +80,8 @@ void PrintTimes();
 
 bool InputAvailable(int fd);
 
+List<int>* WaitForReading(List<int>* fd_list);
+
 IOError_OSError* FlushStdout();
 
 Tuple2<int, void*> PushTermAttrs(int fd, int mask);

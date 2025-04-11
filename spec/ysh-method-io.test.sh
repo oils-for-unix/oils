@@ -51,6 +51,42 @@ two
 status=null
 ## END
 
+#### captureAll() is like $() but captures stderr as well
+
+proc p {
+  var captured = 'captured'
+  var cmd = ^(echo stdout; echo stderr >&2; echo $captured; echo $captured >&2;)
+
+  var stdout = io.captureAll(cmd)
+  pp test_ (stdout)
+}
+
+p
+
+## STDOUT:
+(Dict)   {"stdout":"stdout\ncaptured\n","stderr":"stderr\ncaptured\n","status":0}
+## END
+
+#### captureAll() doesn't fail
+
+var c = ^(shopt --unset verbose_errexit; echo out; echo err >&2; false; echo two)
+
+# Hm this prints a message, but no stack trace
+# Should make it fail I think
+
+try {
+  var x = io.captureAll(c)
+}
+# This has {"code": 3} because it's an expression error.  Should probably
+pp test_ (_error)
+pp test_ (x)
+
+## status: 0
+## STDOUT:
+(Dict)   {"code":0}
+(Dict)   {"stdout":"out\n","stderr":"err\n","status":1}
+## END
+
 #### io->eval() with failing command - caller must handle
 
 var c = ^(echo one; false; echo two)
