@@ -204,5 +204,26 @@ class RenderTest(unittest.TestCase):
         pprint(insertions)
 
 
+class CompareTest(unittest.TestCase):
+
+    def testChildProcess(self):
+        # OK it adds a newline
+        md = '*hi*'
+        h = cmark.md2html(md)
+        print(repr(h))
+
+        h2 = cmark.cmark_bin(md)
+        print(repr(h2))
+
+    def testHtml(self):
+        md2 = '*hi* <script>alert("hi");</script>'
+        h = cmark.md2html(md2)
+        print(repr(h))
+
+        # OK this omits the HTML, which we need
+        h2 = cmark.cmark_bin(md2)
+        print(repr(h2))
+
+
 if __name__ == '__main__':
     unittest.main()

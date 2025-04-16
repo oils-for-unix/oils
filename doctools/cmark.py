@@ -12,12 +12,6 @@ I started from cmark-0.28.3/wrappers/wrapper.py.
 from __future__ import print_function
 
 import ctypes
-from typing import List
-from typing import Tuple
-from typing import Union
-from typing import Optional
-from typing import IO
-from typing import Dict
 try:
     from HTMLParser import HTMLParser
 except ImportError:
@@ -27,6 +21,7 @@ import json
 import optparse
 import os
 import pprint
+import subprocess
 import sys
 
 from doctools import html_lib
@@ -36,7 +31,7 @@ from doctools import ul_table
 from data_lang import htm8
 
 if sys.version_info.major == 2:
-    from typing import Any
+    from typing import Any, List, Dict, Tuple, Union, Optional, IO
 
 # Geez find_library returns the filename and not the path?  Just hardcode it as
 # a workaround.
@@ -53,7 +48,8 @@ this_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
 
 cmark1 = os.environ.get('_NIX_SHELL_LIBCMARK')
 cmark2 = os.path.join(this_dir, '../../oil_DEPS/libcmark.so')
-cmark3 = '/wedge/oils-for-unix.org/pkg/cmark/0.29.0/lib/libcmark.so'  # a symlink
+CMARK_WEDGE_DIR = '/wedge/oils-for-unix.org/pkg/cmark/0.29.0'
+cmark3 = os.path.join(CMARK_WEDGE_DIR, 'lib/libcmark.so')  # a symlink
 
 if cmark1 is not None and os.path.exists(cmark1):
     libname = cmark1
@@ -100,8 +96,15 @@ def md2html(md):
         return html.decode('utf-8')
 
 
-def demo():
-    sys.stdout.write(md2html('*hi*'))
+def cmark_bin(md):
+    # type: (str) -> str
+    b = os.path.join(CMARK_WEDGE_DIR, 'bin/cmark')
+    # Need to render raw HTML
+    p = subprocess.Popen([b, '--unsafe'],
+                         stdin=subprocess.PIPE,
+                         stdout=subprocess.PIPE)
+    stdout, _ = p.communicate(input=md)
+    return stdout
 
 
 class TocExtractor(HTMLParser):
@@ -542,7 +545,8 @@ def main(argv):
 
     meta = dict(DEFAULT_META)
 
-    if len(argv) == 3:  # It's Oils documentation
+    if len(argv) == 3:
+        # Oils docs take 2 args: JSON and content HTML
         with open(argv[1]) as f:
             meta.update(json.load(f))
 
@@ -552,7 +556,7 @@ def main(argv):
             Render(opts, meta, content_f, sys.stdout)
             doc_html.Footer(meta, sys.stdout)
     else:
-        # Filter for blog and for benchmarks.
+        # Filter usage for blog and for benchmarks.
 
         # Metadata is optional here
         try:

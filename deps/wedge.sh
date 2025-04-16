@@ -512,6 +512,6 @@ case $1 in
     ;;
 
   *)
-    die "$Invalid action '$1'"
+    die "Invalid action '$1'"
     ;;
 esac

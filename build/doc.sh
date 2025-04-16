@@ -648,18 +648,20 @@ all-ref() {
   make-dirs
 
   # Make the indexes and chapters
-  for d in doc/ref/*.md; do
-    split-and-render $d '' '../../web'
+  for d in doc/ref/*.md; do 
+    # do ~23 docs in parallel; this saves more than one second on my machine
+    split-and-render $d '' '../../web' &
   done
+  wait  # wait for all of them
 
   # Note: if we want a $ref-topic shortcut, we might want to use Ninja to
   # extract topics from all chapters first, and then make help_meta.json, like
   # we have _devbuild/gen/help_meta.py.
 
   # Text cards
-  cards-from-indices
+  cards-from-indices  # 3 help_gen.py processes
   # A few text cards, and HELP_TOPICS dict for URLs, for flat namespace
-  cards-from-chapters
+  cards-from-chapters  # 1 help_gen.py process
 
   return
   if command -v pysum; then
