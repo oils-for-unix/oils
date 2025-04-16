@@ -172,12 +172,19 @@ readonly MARKDOWN_DOCS=(
 # encoding in Python 2 is still 'ascii', which means that '%s' % u_str may
 # fail.
 #
-# I believe --rfc-e-mail should never output a Unicode character.
+# I believe --rfc-email should never output a Unicode character.
 #
 # A better fix would be to implement json_utf8.load(f), which doesn't decode
 # into unicode instances.  This would remove useless conversions.
 
-DOC_TIMESTAMP=${DOC_TIMESTAMP:-$(date --rfc-email)}
+default-doc-timestamp() {
+  # Note: this flag doesn't exist on Alpine Linux
+  if ! date --rfc-email; then
+    echo '(error: No DOC_TIMESTAMP and no date --rfc-e-mail)'
+  fi
+}
+
+DOC_TIMESTAMP=${DOC_TIMESTAMP:-$(default-doc-timestamp)}
 
 split-and-render() {
   local src=${1:-doc/known-differences.md}
