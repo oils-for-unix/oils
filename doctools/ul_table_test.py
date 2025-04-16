@@ -225,7 +225,7 @@ def MarkdownToTable(md):
     # type: (str) -> str
     # markdown -> HTML
 
-    h = cmark.md2html(md)
+    h = cmark.cmark_bin(md)
     # Markdown adds a newline
     if h.endswith('\n'):
         print('ENDS WITH NEWLINE %r' % h[-10:])
