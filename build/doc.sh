@@ -427,6 +427,7 @@ EOF
 }
 
 all-redirects() {
+  log '*** Writing redirects'
   redirect-pairs | while read -r from_page to_page; do
     redir-body "$to_page.html" | tee "_release/VERSION/doc/$from_page.html"
   done
@@ -524,6 +525,8 @@ write-metrics() {
   ### Check indexes and chapters against each other
 
   local out=_release/VERSION/doc/metrics.txt
+
+  log '*** ref-check'
 
   # send stderr to the log file too
   ref-check > $out 2>&1
@@ -714,8 +717,8 @@ tarball-links-row-html() {
 </tr>
 EOF
 
-  # we switched to .gz for oils-for-unix
-  # note: legacy names for old releases
+  # We switched to .gz for oils-for-unix
+  # Note: legacy names are needed for old releases
   for name in \
     oils-for-unix-$version.tar.{gz,xz} \
     oil-$version.tar.{gz,xz} \
@@ -725,10 +728,14 @@ EOF
     local path="../oils.pub__deploy/download/$name"
 
     # Don't show tarballs that don't exist
-    if [[ $name == oils-for-unix-* && ! -f $path ]]; then
-      continue
-    fi
-    if [[ $name == oil-native-* && ! -f $path ]]; then
+    if ! test -f "$path"; then
+      case $name in
+        oils-for-unix-*|oil-native-*)
+          ;;
+        *)
+          log "Warning: Expected tarball $name to exist"
+          ;;
+      esac
       continue
     fi
 
