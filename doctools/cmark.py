@@ -423,7 +423,10 @@ def Render(
         debug_out = []
 
     # First convert to HTML
-    html = md2html(in_file.read())
+    if 0:
+        html = md2html(in_file.read())
+    else:
+        html = cmark_bin(in_file.read())
     #print(html, file=sys.stderr)
 
     # Now process HTML with oils_doc
