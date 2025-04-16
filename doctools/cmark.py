@@ -371,10 +371,7 @@ def Render(
         debug_out = []
 
     # First convert to HTML
-    if 0:
-        html = md2html(in_file.read())
-    else:
-        html = cmark_bin(in_file.read())
+    html = cmark_bin(in_file.read())
     #print(html, file=sys.stderr)
 
     # Now process HTML with oils_doc
@@ -491,7 +488,7 @@ def main(argv):
     assert all(tag.startswith('h') for tag in opts.toc_tags), opts.toc_tags
 
     if opts.common_mark:
-        print(md2html(sys.stdin.read()))
+        print(cmark_bin(sys.stdin.read()))
         return
 
     meta = dict(DEFAULT_META)
