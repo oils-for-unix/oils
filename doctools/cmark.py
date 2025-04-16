@@ -11,7 +11,6 @@ I started from cmark-0.28.3/wrappers/wrapper.py.
 """
 from __future__ import print_function
 
-import ctypes
 try:
     from HTMLParser import HTMLParser
 except ImportError:
@@ -33,39 +32,6 @@ from data_lang import htm8
 if sys.version_info.major == 2:
     from typing import Any, List, Dict, Tuple, Union, Optional, IO
 
-# Geez find_library returns the filename and not the path?  Just hardcode it as
-# a workaround.
-# https://bugs.python.org/issue21042
-
-#from ctypes.util import find_library
-#libname = find_library("cmark")
-#assert libname, "cmark not found"
-
-# There's some ongoing discussion about how to deal with the same in Nix.
-# I think normally you'd just patch/substitute this path during the Nix build.
-# See note in shell.nix
-this_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
-
-cmark1 = os.environ.get('_NIX_SHELL_LIBCMARK')
-cmark2 = os.path.join(this_dir, '../../oil_DEPS/libcmark.so')
-CMARK_WEDGE_DIR = '/wedge/oils-for-unix.org/pkg/cmark/0.29.0'
-cmark3 = os.path.join(CMARK_WEDGE_DIR, 'lib/libcmark.so')  # a symlink
-
-if cmark1 is not None and os.path.exists(cmark1):
-    libname = cmark1
-elif os.path.exists(cmark2):
-    libname = cmark2
-elif os.path.exists(cmark3):
-    libname = cmark3
-else:
-    raise AssertionError("Couldn't find libcmark.so")
-
-cmark = ctypes.CDLL(libname)
-
-markdown = cmark.cmark_markdown_to_html
-markdown.restype = ctypes.c_char_p
-markdown.argtypes = [ctypes.c_char_p, ctypes.c_long, ctypes.c_long]
-
 
 def log(msg, *args):
     # type: (str, Any) -> None
@@ -76,24 +42,7 @@ def log(msg, *args):
         print(msg, file=sys.stderr)
 
 
-# Version 0.29.0 disallowed raw HTML by default!
-CMARK_OPT_UNSAFE = (1 << 17)
-
-
-def md2html(md):
-    # type: (str) -> str
-    if sys.version_info.major == 2:
-        md_bytes = md
-    else:
-        md_bytes = md.encode('utf-8')
-
-    md_len = len(md)
-    html = markdown(md_bytes, md_len, CMARK_OPT_UNSAFE)
-
-    if sys.version_info.major == 2:
-        return html
-    else:
-        return html.decode('utf-8')
+CMARK_WEDGE_DIR = '/wedge/oils-for-unix.org/pkg/cmark/0.29.0'
 
 
 def cmark_bin(md):
@@ -423,10 +372,7 @@ def Render(
         debug_out = []
 
     # First convert to HTML
-    if 0:
-        html = md2html(in_file.read())
-    else:
-        html = cmark_bin(in_file.read())
+    html = cmark_bin(in_file.read())
     #print(html, file=sys.stderr)
 
     # Now process HTML with oils_doc
@@ -543,7 +489,7 @@ def main(argv):
     assert all(tag.startswith('h') for tag in opts.toc_tags), opts.toc_tags
 
     if opts.common_mark:
-        print(md2html(sys.stdin.read()))
+        print(cmark_bin(sys.stdin.read()))
         return
 
     meta = dict(DEFAULT_META)

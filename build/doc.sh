@@ -172,12 +172,19 @@ readonly MARKDOWN_DOCS=(
 # encoding in Python 2 is still 'ascii', which means that '%s' % u_str may
 # fail.
 #
-# I believe --rfc-e-mail should never output a Unicode character.
+# I believe --rfc-email should never output a Unicode character.
 #
 # A better fix would be to implement json_utf8.load(f), which doesn't decode
 # into unicode instances.  This would remove useless conversions.
 
-DOC_TIMESTAMP=${DOC_TIMESTAMP:-$(date --rfc-email)}
+default-doc-timestamp() {
+  # Note: this flag doesn't exist on Alpine Linux
+  if ! date --rfc-email; then
+    echo '(error: No DOC_TIMESTAMP and no date --rfc-e-mail)'
+  fi
+}
+
+DOC_TIMESTAMP=${DOC_TIMESTAMP:-$(default-doc-timestamp)}
 
 split-and-render() {
   local src=${1:-doc/known-differences.md}
@@ -427,6 +434,7 @@ EOF
 }
 
 all-redirects() {
+  log '*** Writing redirects'
   redirect-pairs | while read -r from_page to_page; do
     redir-body "$to_page.html" | tee "_release/VERSION/doc/$from_page.html"
   done
@@ -524,6 +532,8 @@ write-metrics() {
   ### Check indexes and chapters against each other
 
   local out=_release/VERSION/doc/metrics.txt
+
+  log '*** ref-check'
 
   # send stderr to the log file too
   ref-check > $out 2>&1
@@ -714,8 +724,8 @@ tarball-links-row-html() {
 </tr>
 EOF
 
-  # we switched to .gz for oils-for-unix
-  # note: legacy names for old releases
+  # We switched to .gz for oils-for-unix
+  # Note: legacy names are needed for old releases
   for name in \
     oils-for-unix-$version.tar.{gz,xz} \
     oil-$version.tar.{gz,xz} \
@@ -725,10 +735,14 @@ EOF
     local path="../oils.pub__deploy/download/$name"
 
     # Don't show tarballs that don't exist
-    if [[ $name == oils-for-unix-* && ! -f $path ]]; then
-      continue
-    fi
-    if [[ $name == oil-native-* && ! -f $path ]]; then
+    if ! test -f "$path"; then
+      case $name in
+        oils-for-unix-*|oil-native-*)
+          ;;
+        *)
+          log "Warning: Expected tarball $name to exist"
+          ;;
+      esac
       continue
     fi
 
