@@ -209,22 +209,23 @@ class RenderTest(unittest.TestCase):
 def InitCMark():
     import ctypes
 
-# Geez find_library returns the filename and not the path?  Just hardcode it as
-# a workaround.
-# https://bugs.python.org/issue21042
+    # Geez find_library returns the filename and not the path?  Just hardcode it as
+    # a workaround.
+    # https://bugs.python.org/issue21042
 
-#from ctypes.util import find_library
-#libname = find_library("cmark")
-#assert libname, "cmark not found"
+    #from ctypes.util import find_library
+    #libname = find_library("cmark")
+    #assert libname, "cmark not found"
 
-# There's some ongoing discussion about how to deal with the same in Nix.
-# I think normally you'd just patch/substitute this path during the Nix build.
-# See note in shell.nix
+    # There's some ongoing discussion about how to deal with the same in Nix.
+    # I think normally you'd just patch/substitute this path during the Nix build.
+    # See note in shell.nix
     this_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
 
     cmark1 = os.environ.get('_NIX_SHELL_LIBCMARK')
     cmark2 = os.path.join(this_dir, '../../oil_DEPS/libcmark.so')
-    cmark3 = os.path.join(cmark.CMARK_WEDGE_DIR, 'lib/libcmark.so')  # a symlink
+    cmark3 = os.path.join(cmark.CMARK_WEDGE_DIR,
+                          'lib/libcmark.so')  # a symlink
 
     if cmark1 is not None and os.path.exists(cmark1):
         libname = cmark1

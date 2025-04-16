@@ -44,6 +44,7 @@ def log(msg, *args):
 
 CMARK_WEDGE_DIR = '/wedge/oils-for-unix.org/pkg/cmark/0.29.0'
 
+
 def cmark_bin(md):
     # type: (str) -> str
     b = os.path.join(CMARK_WEDGE_DIR, 'bin/cmark')
