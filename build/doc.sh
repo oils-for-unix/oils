@@ -194,6 +194,7 @@ split-and-render() {
 
   local out=${2:-$HTML_BASE_DIR/$rel_path.html}
   local web_url=${3:-'../web'}
+  local quiet=${4:-}
 
   mkdir -v -p $(dirname $out) $tmp_prefix
 
@@ -224,7 +225,9 @@ split-and-render() {
     --code-block-output $code_out \
     ${tmp_prefix}_meta.json ${tmp_prefix}_content.md > $out
 
-  log "$tmp_prefix -> (doctools/cmark) -> $out"
+  if test -z "$quiet"; then
+    log "$tmp_prefix -> (doctools/cmark) -> $out"
+  fi
 }
 
 render-from-kate() {
@@ -650,19 +653,48 @@ one-ref() {
   split-and-render $md '' '../../web'
 }
 
+indices-chapters() {
+
+  log "Building doc/ref"
+  local -a sources=( doc/ref/*.md )
+  local -A pid_map=()
+  for d in ${sources[@]}; do 
+    # do ~23 docs in parallel; this saves more than one second on my machine
+    split-and-render $d '' '../../web' QUIET &
+    pid_map[$!]=$d
+  done
+
+  local failed=''
+  for pid in "${!pid_map[@]}"; do
+    #echo "WAIT $pid"
+
+    # Funny dance to get exit code
+    set +o errexit
+    wait $pid
+    status=$?
+    set -o errexit
+
+    if test $status -ne 0; then
+      local d=${pid_map[$pid]}
+      echo
+      echo "*** Building '$d' failed ***"
+      echo
+      failed=T
+    fi
+  done
+
+  if test -n "$failed"; then
+    return 1
+  fi
+}
+
 all-ref() {
   ### Build doc/ref in text and HTML.  Depends on libcmark.so
 
-  log "Removing $TEXT_DIR/*"
   rm -f $TEXT_DIR/*
   make-dirs
 
-  # Make the indexes and chapters
-  for d in doc/ref/*.md; do 
-    # do ~23 docs in parallel; this saves more than one second on my machine
-    split-and-render $d '' '../../web' &
-  done
-  wait  # wait for all of them
+  indices-chapters
 
   # Note: if we want a $ref-topic shortcut, we might want to use Ninja to
   # extract topics from all chapters first, and then make help_meta.json, like
@@ -674,13 +706,13 @@ all-ref() {
   cards-from-chapters  # 1 help_gen.py process
 
   return
+
   if command -v pysum; then
     # 19 KB of embedded help, seems OK.  Biggest card is 'ysh-option'.  Could
     # compress it.
     echo 'Size of embedded help:'
     ls -l $TEXT_DIR | tee /dev/stderr | awk '{print $5}' | pysum
   fi
-
   # Better sorting
   #LANG=C ls -l $TEXT_DIR
 }
