@@ -236,13 +236,25 @@ validate() {
   load-wedge $wedge "$version_requested"
 }
 
+abs-wedge-dir() {
+  local wedge_dir=$1
+  case $wedge_dir in
+    /*)  # it's already absolute
+      echo $wedge_dir
+      ;;
+    *)
+      echo $PWD/$wedge_dir
+      ;;
+  esac
+}
+
 unboxed-make() {
   ### Build on the host
 
-  local wedge=$1  # e.g. re2c.wedge.sh
+  local wedge_dir=$1  # e.g. re2c.wedge.sh
   local version_requested=${2:-}  # e.g. 5.2
 
-  load-wedge $wedge "$version_requested"
+  load-wedge $wedge_dir "$version_requested"
 
   local source_dir
   source_dir=$(source-dir) 
@@ -255,17 +267,20 @@ unboxed-make() {
   local install_dir
   install_dir=$(install-dir)
 
+  local abs_wedge_dir
+  abs_wedge_dir=$(abs-wedge-dir $wedge_dir)
+
   rm -r -f -v $build_dir
   mkdir -p $build_dir
 
   if declare -f wedge-make-from-source-dir; then
     # e.g. for yash, which can't build outside the source tree
     pushd $source_dir
-    wedge-make-from-source-dir $source_dir $install_dir
+    wedge-make-from-source-dir $source_dir $install_dir $abs_wedge_dir
     popd
   else
     pushd $build_dir
-    wedge-make $source_dir $build_dir $install_dir
+    wedge-make $source_dir $build_dir $install_dir $abs_wedge_dir
     popd
   fi
 }
@@ -332,14 +347,7 @@ unboxed-smoke-test() {
   echo '  SMOKE TEST'
 
   local abs_wedge_dir
-  case $wedge_dir in
-    /*)  # it's already absolute
-      abs_wedge_dir=$wedge_dir
-      ;;
-    *)
-      abs_wedge_dir=$PWD/$wedge_dir
-      ;;
-  esac
+  abs_wedge_dir=$(abs-wedge-dir $wedge_dir)
 
   # TODO: To ensure a clean dir, it might be better to test that it does NOT
   # exist first, and just make it.  If it exists, then remove everything.

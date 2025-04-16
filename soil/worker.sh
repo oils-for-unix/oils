@@ -657,7 +657,7 @@ list-jobs() {
 
   # 2025-04: temporarily disable dev-setup-debian, after cmake build issue
   # Need to rewrite that with a shell script!
-  compgen -A function | grep -- '^JOB-' | sed 's/^JOB-//g' | egrep -v 'maybe-merge|dev-setup-fedora|dev-setup-alpine|dev-setup-debian'
+  compgen -A function | grep -- '^JOB-' | sed 's/^JOB-//g' | egrep -v 'maybe-merge|dev-setup-fedora|dev-setup-alpine'
 }
 
 "$@"

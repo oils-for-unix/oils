@@ -656,7 +656,7 @@ def TopicMetadata():
 
                 # First convert to HTML
                 with open(path) as in_file:
-                    html = cmark.md2html(in_file.read())
+                    html = cmark.cmark_bin(in_file.read())
 
                 # Now highlight code, which # which gives debug output for the
                 # language-chapter-links-*
