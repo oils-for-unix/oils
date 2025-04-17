@@ -614,7 +614,14 @@ class ShellExecutor(vm._Executor):
         while True:
             n, err_num = pyos.Read(r, 4096, chunks)
 
-            if n < 0:
+            if n == 0:  # EOF
+                break
+
+            elif n > 0:
+                # common shell behavior: remove NUL from stdout
+                chunks[-1] = chunks[-1].replace('\0', '')
+
+            else:  # n < 0
                 if err_num == EINTR:
                     pass  # retry
                 else:
@@ -623,8 +630,6 @@ class ShellExecutor(vm._Executor):
                         2,
                         'Oils I/O error (read): %s' % posix.strerror(err_num))
 
-            elif n == 0:  # EOF
-                break
         posix.close(r)
 
         status = p.Wait(self.waiter)
