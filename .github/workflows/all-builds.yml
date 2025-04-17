@@ -49,12 +49,7 @@ jobs:
           soil/github-actions.sh publish-and-exit raw-vm T
 
   dev-setup-debian:
-    # 2025-04-02: Downgrade from 22.04 to 20.04 because cmark 0.29.0 (from 2019) doesn't build
-    # on the latest point release 22.04.5, due to a CMake upgrade.  I guess
-    # this is legit sign that people developing on newer Ubuntu will be broken,
-    # so we should upgrade cmark.  We don't have a great way of testing that
-    # change though.  Should test it manually with diffs.
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
@@ -354,7 +349,7 @@ jobs:
     env:
       REPO_ROOT: ${{ github.workspace }}
     # List of tasks to wait on.  Copied from soil/worker.sh list-jobs
-    needs: ['dummy', 'bloaty', 'benchmarks', 'benchmarks2', 'dev-minimal', 'cpp-coverage', 'cpp-small', 'cpp-spec', 'cpp-tarball', 'interactive', 'ovm-tarball', 'pea', 'other-tests', 'app-tests', 'wild', 'raw-vm'] #, 'dev-setup-debian']
+    needs: ['dummy', 'bloaty', 'benchmarks', 'benchmarks2', 'dev-minimal', 'cpp-coverage', 'cpp-small', 'cpp-spec', 'cpp-tarball', 'interactive', 'ovm-tarball', 'pea', 'other-tests', 'app-tests', 'wild', 'raw-vm', 'dev-setup-debian']
     #needs: ['dummy', 'pea', 'other-tests']
     steps:
       - name: Check out repository code
