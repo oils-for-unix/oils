@@ -358,7 +358,7 @@ py-source() {
 
 # No fastlex, because we don't want to require re2c installation.
 py-extensions() {
-  local minimal=${1:-T}
+  local minimal=${1:-}
 
   # Parallel build
   mkdir -p _tmp/pyext
