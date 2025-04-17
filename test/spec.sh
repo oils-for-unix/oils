@@ -706,6 +706,10 @@ ysh-namespaces() {
   test/spec-py.sh run-file ysh-namespaces "$@"
 }
 
+ysh-nul-bytes() {
+  test/spec-py.sh run-file ysh-nul-bytes "$@"
+}
+
 ysh-object() {
   test/spec-py.sh run-file ysh-object "$@"
 }

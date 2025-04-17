@@ -198,11 +198,17 @@ len=1
 
 # Hm same odd behavior
 
-printf '.\001.' | { read s; echo len=${#s}; echo -n "$s" | od -A n -t x1; }
+show_string() {
+  read s
+  echo len=${#s}
+  echo -n "$s" | od -A n -t x1
+}
 
-printf '.\000.' | { read s; echo len=${#s}; echo -n "$s" | od -A n -t x1; }
+printf '.\001.' | show_string
 
-printf '\000' | { read s; echo len=${#s}; echo -n "$s" | od -A n -t x1; }
+printf '.\000.' | show_string
+
+printf '\000' | show_string
 
 ## STDOUT:
 len=3
@@ -219,6 +225,76 @@ len=3
  2e 00 2e
 len=1
  00
+## END
+
+#### Compare \x00 byte versus \x01 byte - read -n
+case $SH in dash) exit ;; esac
+
+show_string() {
+  read -n 3 s
+  echo len=${#s}
+  echo -n "$s" | od -A n -t x1
+}
+
+
+printf '.\001.' | show_string
+
+printf '.\000.' | show_string
+
+printf '\000' | show_string
+
+## STDOUT:
+len=3
+ 2e 01 2e
+len=2
+ 2e 2e
+len=0
+## END
+
+## BUG-2 mksh STDOUT:
+len=3
+ 2e 01 2e
+len=1
+ 2e
+len=0
+## END
+
+## BUG zsh STDOUT:
+len=0
+len=1
+ 2e
+len=0
+## END
+
+## N-I dash STDOUT:
+## END
+
+
+#### Compare \x00 byte versus \x01 byte - mapfile builtin
+case $SH in dash|mksh|zsh|ash) exit ;; esac
+
+{ 
+  printf '.\000.\n'
+  printf '.\000.\n'
+} |
+{ mapfile LINES
+  echo len=${#LINES[@]}
+  for line in ${LINES[@]}; do
+    echo -n "$line" | od -A n -t x1
+  done
+}
+
+# bash is INCONSISTENT:
+# - it TRUNCATES at \0, with 'mapfile'
+# - rather than just IGNORING \0, with 'read'
+
+## STDOUT:
+len=2
+ 2e
+ 2e
+## END
+
+## N-I dash/mksh/zsh/ash STDOUT:
 ## END
 
 #### Issue 2269 Reduction
