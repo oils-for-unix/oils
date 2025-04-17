@@ -383,12 +383,21 @@ def DoUnarySuffixOp(s, op_tok, arg, is_extglob):
     #
     # (Although honestly this whole construct is nuts and should be deprecated.)
 
-    n = len(s)
+    # Bug fix: libc.fnmatch() takes NUL-terminated strings, so truncate it here
+    # to avoid disagreement about the length.
+    i = s.find('\0')
+    if i == -1:
+        n = len(s)
+    else:
+        s = s[:i]
+        n = i
 
     if id_ == Id.VOp1_Pound:  # shortest prefix
         # 'abcd': match '', 'a', 'ab', 'abc', ...
         i = 0
+        #log('# %r', s)
         while True:
+            #log('  i %d', i)
             assert i <= n
             #log('Matching pattern %r with %r', arg, s[:i])
             if libc.fnmatch(arg, s[:i]):

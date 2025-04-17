@@ -1,6 +1,6 @@
 ## compare_shells: dash bash mksh zsh ash
-## oils_failures_allowed: 5
-## oils_cpp_failures_allowed: 4
+## oils_failures_allowed: 7
+## oils_cpp_failures_allowed: 6
 
 #### NUL bytes with echo -e
 case $SH in (dash) exit ;; esac
@@ -163,19 +163,21 @@ nul=1
 # https://stackoverflow.com/questions/32722007/is-skipping-ignoring-nul-bytes-on-process-substitution-standardized
 # bash contains a warning!
 
-# doesn't make sense?
+show_bytes() {
+  echo -n "$1" | od -A n -t x1
+}
 
 s=$(printf '.\001.')
 echo len=${#s}
-echo -n "$s" | od -A n -t x1
+show_bytes "$s"
 
 s=$(printf '.\000.')
 echo len=${#s}
-echo -n "$s" | od -A n -t x1
+show_bytes "$s"
 
 s=$(printf '\000')
 echo len=${#s} 
-echo -n "$s" | od -A n -t x1
+show_bytes "$s"
 
 ## STDOUT:
 len=3
@@ -297,26 +299,103 @@ len=2
 ## N-I dash/mksh/zsh/ash STDOUT:
 ## END
 
+#### Strip ops # ## % %% with NUL bytes
+
+show_bytes() {
+  echo -n "$1" | od -A n -t x1
+}
+
+s=$(printf '\000.\000')
+echo len=${#s}
+show_bytes "$s"
+
+echo ---
+
+t=${s#?}
+echo len=${#t}
+show_bytes "$t"
+
+t=${s##?}
+echo len=${#t}
+show_bytes "$t"
+
+t=${s%?}
+echo len=${#t}
+show_bytes "$t"
+
+t=${s%%?}
+echo len=${#t}
+show_bytes "$t"
+
+## STDOUT:
+len=1
+ 2e
+---
+len=0
+len=0
+len=0
+len=0
+## END
+
+## BUG zsh STDOUT:
+len=3
+ 00 2e 00
+---
+len=2
+ 2e 00
+len=2
+ 2e 00
+len=2
+ 00 2e
+len=2
+ 00 2e
+## END
+
 #### Issue 2269 Reduction
 
-s=$(printf "\000x")
-echo len=${#s}  # why is the length of this 1?
-echo -n "$s" | od -A n -t x1
+show_bytes() {
+  echo -n "$1" | od -A n -t x1
+}
+
+s=$(printf '\000x')
+echo len=${#s}
+show_bytes "$s"
 
 # strip one char from the front
 s=${s#?}
 echo len=${#s}
-echo -n "$s" | od -A n -t x1
+show_bytes "$s"
+
+echo ---
+
+s=$(printf '\001x')
+echo len=${#s}
+show_bytes "$s"
+
+# strip one char from the front
+s=${s#?}
+echo len=${#s}
+show_bytes "$s"
 
 ## STDOUT:
 len=1
  78
 len=0
+---
+len=2
+ 01 78
+len=1
+ 78
 ## END
 
 ## BUG zsh STDOUT:
 len=2
  00 78
+len=1
+ 78
+---
+len=2
+ 01 78
 len=1
  78
 ## END
@@ -339,19 +418,33 @@ escape_arg() {
 
 # encode
 phrase="$(escape_arg "that's it!")"
-echo phrase "$phrase"
+echo escaped "$phrase"
 
 # decode
 eval "printf '%s\\n' '$phrase'"
 
+echo ---
+
 # harder input: NUL surrounded with ::
-arg="$(printf ":\000:")" 
+arg="$(printf ':\000:')" 
 #echo "arg=$arg"
 
-exit
-arg="$(escape_arg "$arg")"
+case $SH in
+  zsh) echo 'writes binary data' ;;
+  *) echo escaped "$(escape_arg "$arg")" ;;
+esac
+#echo "arg=$arg"
 
 ## STDOUT:
-phrase that'"'"'s it!
+escaped that'"'"'s it!
 that's it!
+---
+escaped ::
+## END
+
+## OK zsh STDOUT:
+escaped that'"'"'s it!
+that's it!
+---
+writes binary data
 ## END
