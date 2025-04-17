@@ -1,6 +1,6 @@
 ## compare_shells: dash bash mksh zsh ash
-## oils_failures_allowed: 3
-## oils_cpp_failures_allowed: 2
+## oils_failures_allowed: 5
+## oils_cpp_failures_allowed: 4
 
 #### NUL bytes with echo -e
 case $SH in (dash) exit ;; esac
@@ -158,46 +158,91 @@ nul=1
 ## N-I dash STDOUT:
 ## END
 
+#### Compare \x00 byte versus \x01 byte - command sub
+
+# https://stackoverflow.com/questions/32722007/is-skipping-ignoring-nul-bytes-on-process-substitution-standardized
+# bash contains a warning!
+
+# doesn't make sense?
+
+s=$(printf '.\001.')
+echo len=${#s}
+echo -n "$s" | od -A n -t x1
+
+s=$(printf '.\000.')
+echo len=${#s}
+echo -n "$s" | od -A n -t x1
+
+s=$(printf '\000')
+echo len=${#s} 
+echo -n "$s" | od -A n -t x1
+
+## STDOUT:
+len=3
+ 2e 01 2e
+len=2
+ 2e 2e
+len=0
+## END
+
+## BUG zsh STDOUT:
+len=3
+ 2e 01 2e
+len=3
+ 2e 00 2e
+len=1
+ 00
+## END
+
+#### Compare \x00 byte versus \x01 byte - read builtin
+
+# Hm same odd behavior
+
+printf '.\001.' | { read s; echo len=${#s}; echo -n "$s" | od -A n -t x1; }
+
+printf '.\000.' | { read s; echo len=${#s}; echo -n "$s" | od -A n -t x1; }
+
+printf '\000' | { read s; echo len=${#s}; echo -n "$s" | od -A n -t x1; }
+
+## STDOUT:
+len=3
+ 2e 01 2e
+len=2
+ 2e 2e
+len=0
+## END
+
+## BUG zsh STDOUT:
+len=3
+ 2e 01 2e
+len=3
+ 2e 00 2e
+len=1
+ 00
+## END
+
 #### Issue 2269 Reduction
 
 s=$(printf "\000x")
 echo len=${#s}  # why is the length of this 1?
-echo "$s" | od -A n -t x1
+echo -n "$s" | od -A n -t x1
 
 # strip one char from the front
 s=${s#?}
 echo len=${#s}
-echo "$s" | od -A n -t x1
-
-exit
-
-escape_arg() {
-	a="$1"
-	until [ -z "$a" ]; do
-		a="${a#?}"
-    #echo len=${#a} >&2
-    echo len=${#a}
-  done
-}
-
-escape_arg abc
-echo ---
-
-arg="$(printf "ab\000c")" 
-escape_arg "$arg"
+echo -n "$s" | od -A n -t x1
 
 ## STDOUT:
 len=1
- 78 0a
+ 78
 len=0
- 0a
 ## END
 
 ## BUG zsh STDOUT:
 len=2
- 00 78 0a
+ 00 78
 len=1
- 78 0a
+ 78
 ## END
 
 #### Issue 2269 - Do NUL bytes match ? in ${a#?}
