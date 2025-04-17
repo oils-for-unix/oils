@@ -1,7 +1,7 @@
 # Demonstrations for users.  Could go in docs.
 
 #### Iterate over command sub output with split()
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 
 output=$(echo '1 one'; echo '2 two')
 
@@ -47,9 +47,11 @@ done
 #### split on \0 delimiters
 shopt -s ysh:upgrade
 
-output=$(echo $'1 one\x002 two\x00')
+write --end '' -- b'1 one\y002 two\y00' | read --all (&output)
 
-for x in @[split(output, $'\0')]; do
+#json8 write (split(output, b'\y00'))
+
+for x in @[split(output, b'\y00')]; do
   write -- $x
 done
 
