@@ -956,8 +956,12 @@ Capture stdout of a command a string.
     var c = ^(echo hi)
     var stdout_str = _io.captureStdout(c)  # => "hi"
 
-It's like `$()`, but useful in pure functions.  Trailing newlines `\n` are
-removed.
+It's like `$()` [command subs][command-sub], but can be used in pure functions
+that have access to `io`.
+
+[command-sub]: chap-word-lang.html#command-sub
+
+`NUL` bytes and any trailing newline `\n` is removed,
 
 If the command fails, `captureStdout()` raises an error, which can be caught
 with `try`.

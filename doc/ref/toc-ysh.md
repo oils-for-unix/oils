@@ -252,16 +252,16 @@ X [External Lang] BEGIN   END   when (awk)
   YSH Command Language Keywords <a class="group-link" href="chap-ysh-cmd.html">ysh-cmd</a>
 </h2>
 
-```chapter-links-ysh-cmd_39
-  [Assignment]    const   var         Declare variables
-                  setvar              setvar a[i] = 42
-                  setglobal           setglobal d.key = 'foo'
-  [Expression]    equal =             = 1 + 2*3
-                  call                call mylist->append(42)
-  [Definitions]   proc                proc p (s, ...rest) {
-                                      typed proc p (; typed, ...rest; n=0; b) {
-                  func                func f(x; opt1, opt2) { return (x + 1) }
-                  ysh-return          return (myexpr)
+```chapter-links-ysh-cmd_33
+  [Assignment]    const   var     Declare variables
+                  setvar          setvar a[i] = 42
+                  setglobal       setglobal d.key = 'foo'
+  [Expression]    equal =         = 1 + 2*3
+                  call            call mylist->append(42)
+  [Definitions]   proc            proc p (s, ...rest) {
+                                  typed proc p (; typed, ...rest; n=0; b) {
+                  func            func f(x; opt1, opt2) { return (x + 1) }
+                  ysh-return      return (myexpr)
 ```
 
 <h2 id="expr-lang">
@@ -322,19 +322,20 @@ X [External Lang] BEGIN   END   when (awk)
   Word Language <a class="group-link" href="chap-word-lang.html">word-lang</a>
 </h2>
 
-<!-- linkify_stop_col is 33 -->
+<!-- linkify_stop_col is 34 -->
 
-```chapter-links-word-lang_33
-  [Quotes]        ysh-string    "x is $x"  $"x is $x"  r'[a-z]\n'
-                                u'line\n'  b'byte \yff'
-                  triple-quoted """  $"""  r'''  u'''  b'''
-                X tagged-str    "<span id=$x>"html
-  [Substitutions] expr-sub      echo $[42 + a[i]]
-                  expr-splice   echo @[split(x)]
-                  var-splice    @myarray @ARGV
-                  command-sub   @(cat my-j8-lines.txt)
-  [Formatting]  X ysh-printf    ${x %.3f}
-                X ysh-format    ${x|html}
+```chapter-links-word-lang_34
+  [Quotes]        ysh-string       "x is $x"  $"x is $x"  r'[a-z]\n'
+                                   u'line\n'  b'byte \yff'
+                  triple-quoted    """  $"""  r'''  u'''  b'''
+                X tagged-str       "<span id=$x>"html
+  [Substitutions] expr-sub         echo $[42 + a[i]]
+                  expr-splice      echo @[split(x)]
+                  var-splice       @myarray @ARGV
+                  command-sub      $(date)
+                  ysh-command-sub  @(cat my-j8-lines.txt)
+  [Formatting]  X ysh-printf       ${x %.3f}
+                X ysh-format       ${x|html}
 ```
 
 <h2 id="mini-lang">
