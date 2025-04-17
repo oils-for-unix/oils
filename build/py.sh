@@ -358,20 +358,16 @@ py-source() {
 
 # No fastlex, because we don't want to require re2c installation.
 py-extensions() {
-  if false; then
-    # Serial build
-    pylibc
-    line-input
-    posix_
-    fanos
-    fastfunc
-    fastlex
-  fi
+  local minimal=${1:-T}
 
   # Parallel build
   mkdir -p _tmp/pyext
 
-  local -a tasks=(pylibc line-input posix_ fanos fastfunc fastlex)
+  local -a tasks=(pylibc line-input posix_ fanos fastfunc)
+  if test -z "$minimal"; then
+    tasks+=(fastlex)
+  fi
+
   local -A pid_map=()
   for task in "${tasks[@]}"; do
     local log="_tmp/pyext/$task.log"
@@ -419,7 +415,7 @@ minimal() {
   build/stamp.sh write-git-commit
 
   py-source
-  py-extensions
+  py-extensions MINIMAL
 
   cat <<EOF
 
@@ -468,7 +464,7 @@ all() {
   build/stamp.sh write-git-commit
 
   py-source
-  py-extensions  # no re2c
+  py-extensions
   time-helper
 
   # help topics and chapter links are extracted from doc/ref
