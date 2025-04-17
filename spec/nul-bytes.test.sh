@@ -1,6 +1,6 @@
 ## compare_shells: dash bash mksh zsh ash
-## oils_failures_allowed: 2
-## oils_cpp_failures_allowed: 1
+## oils_failures_allowed: 3
+## oils_cpp_failures_allowed: 2
 
 #### NUL bytes with echo -e
 case $SH in (dash) exit ;; esac
@@ -156,4 +156,81 @@ nul=1
 ## END
 
 ## N-I dash STDOUT:
+## END
+
+#### Issue 2269 Reduction
+
+s=$(printf "\000x")
+echo len=${#s}  # why is the length of this 1?
+echo "$s" | od -A n -t x1
+
+# strip one char from the front
+s=${s#?}
+echo len=${#s}
+echo "$s" | od -A n -t x1
+
+exit
+
+escape_arg() {
+	a="$1"
+	until [ -z "$a" ]; do
+		a="${a#?}"
+    #echo len=${#a} >&2
+    echo len=${#a}
+  done
+}
+
+escape_arg abc
+echo ---
+
+arg="$(printf "ab\000c")" 
+escape_arg "$arg"
+
+## STDOUT:
+len=1
+ 78 0a
+len=0
+ 0a
+## END
+
+## BUG zsh STDOUT:
+len=2
+ 00 78 0a
+len=1
+ 78 0a
+## END
+
+#### Issue 2269 - Do NUL bytes match ? in ${a#?}
+
+# https://github.com/oils-for-unix/oils/issues/2269
+
+escape_arg() {
+	a="$1"
+	until [ -z "$a" ]; do
+		case "$a" in
+		(\'*) printf "'\"'\"'";;
+		(*) printf %.1s "$a";;
+		esac
+		a="${a#?}"
+    echo len=${#a} >&2
+	done
+}
+
+# encode
+phrase="$(escape_arg "that's it!")"
+echo phrase "$phrase"
+
+# decode
+eval "printf '%s\\n' '$phrase'"
+
+# harder input: NUL surrounded with ::
+arg="$(printf ":\000:")" 
+#echo "arg=$arg"
+
+exit
+arg="$(escape_arg "$arg")"
+
+## STDOUT:
+phrase that'"'"'s it!
+that's it!
 ## END
