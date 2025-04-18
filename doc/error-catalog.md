@@ -489,6 +489,35 @@ This YSH idiom is more explicit:
       echo failed
     }
 
+### OILS-ERR-301
+
+<!--
+Generated with demo/home-page.sh strict-mode
+-->
+
+```
+    if shell-func; then
+       ^~~~~~~~~~
+foo.sh:9: fatal: Can't run functions or procs while errexit is disabled (OILS-ERR-301)
+```
+
+This error prevents you from hitting a **pitfall** with `set -e` aka `errexit`,
+as it's defined in POSIX shell.
+
+Here are some shell-compatible solutions:
+
+- Rewrite your code to avoid the function call within `if`, `||`, etc.
+- Wrap the function in another process, like `if $0 shell-func`
+  - This is what we call the [$0 Dispatch Pattern](https://www.oilshell.org/blog/2021/08/xargs.html)
+
+In YSH, use the [try][] builtin instead of `if`.
+
+[try]: ref/chap-builtin-cmd.html#try
+
+- [Guide to YSH Error Handling](ysh-error.html)
+- Technical details: [YSH Fixes Shell's Error Handling (`errexit`)](error-handling.html)
+
+
 ## Appendix
 
 ### Kinds of Errors from Oils

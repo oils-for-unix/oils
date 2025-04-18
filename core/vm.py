@@ -292,8 +292,7 @@ class _Executor(object):
                                    disabled_tok)
                 self.errfmt.StderrLine('')
                 e_die(
-                    "Can't run a proc while errexit is disabled. "
-                    "Use 'try' or wrap it in a process with $0 myproc",
+                    "Can't run functions or procs while errexit is disabled (OILS-ERR-301)",
                     arg0_loc)
 
         with tagswitch(proc_val) as case:
