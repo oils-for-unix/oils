@@ -973,7 +973,7 @@ Capture stdout and stderr and status of a command.
     var c = ^(echo hi; echo hello >&2;)
     var outputs = io.captureAll(c)  # => { stdout: "hi", stderr: "hello", status: 0 }
 
-It's vaguely similar to `io.captureStdout` but captures both stdout, stderr into a `dict`.
+It's similar to `io.captureStdout` but captures both stdout, stderr into a `Dict`.
 Trailing newlines `\n` are **not** removed.
 
 The exit code is also captured, which means that `captureAll()` does not fail on exit status != 0.

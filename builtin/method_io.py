@@ -232,7 +232,7 @@ class CaptureStdout(vm._Callable):
         return value.Str(stdout_str)
 
 
-class CaptureOutputs(vm._Callable):
+class CaptureAll(vm._Callable):
     def __init__(self, mem, shell_ex):
         # type: (state.Mem, vm._Executor) -> None
         self.mem = mem
@@ -246,7 +246,7 @@ class CaptureOutputs(vm._Callable):
         frag = typed_args.GetCommandFrag(cmd)
         with state.ctx_EnclosedFrame(self.mem, cmd.captured_frame,
                                      cmd.module_frame, None):
-            status, stdout_str, stderr_str = self.shell_ex.CaptureOutputs(frag)
+            status, stdout_str, stderr_str = self.shell_ex.Capture3(frag)
 
         out = NewDict() # type: Dict[str, value_t]
         out['stdout'] = value.Str(stdout_str)

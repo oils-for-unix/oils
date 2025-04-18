@@ -272,7 +272,7 @@ class PureExecutor(vm._Executor):
         """
         return 0, ''
 
-    def CaptureOutputs(self, node):
+    def Capture3(self, node):
         # type: (command_t) -> Tuple[int, str, str]
         """
         Used by io->captureAll() method, and called by command sub
@@ -639,7 +639,7 @@ class ShellExecutor(vm._Executor):
 
         return status, stdout_str
 
-    def CaptureOutputs(self, node):
+    def Capture3(self, node):
         # type: (command_t) -> Tuple[int, str, str]
 
         p = self._MakeProcess(node, self.exec_opts.inherit_errexit(),
