@@ -51,11 +51,18 @@ two
 status=null
 ## END
 
-#### captureAll() is like $() but captures stderr as well
+#### captureAll() is like $() but captures stderr and status
 
 proc p {
   var captured = 'captured'
-  var cmd = ^(echo stdout; echo stderr >&2; echo $captured; echo $captured >&2;)
+  var cmd = ^(
+    echo stdout
+    echo stderr >&2
+    echo $captured
+    echo $captured >&2
+    printf '\000'
+    exit 42
+  )
 
   var stdout = io.captureAll(cmd)
   pp test_ (stdout)
@@ -64,7 +71,7 @@ proc p {
 p
 
 ## STDOUT:
-(Dict)   {"stdout":"stdout\ncaptured\n","stderr":"stderr\ncaptured\n","status":0}
+(Dict)   {"stdout":"stdout\ncaptured\n\u0000","stderr":"stderr\ncaptured\n","status":42}
 ## END
 
 #### captureAll() doesn't fail
