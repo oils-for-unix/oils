@@ -951,7 +951,7 @@ To evaluate "purely", use the [`evalExpr()`][func/evalExpr] function.
 
 ### captureStdout()
 
-Capture stdout of a command a string.
+Run a Command, and return its stdout as a astring.
 
     var c = ^(echo hi)
     var stdout_str = io.captureStdout(c)  # => "hi"
@@ -972,15 +972,16 @@ with `try`.
 
 ### captureAll()
 
-Capture stdout and stderr and status of a command.
+Run a Command, and return its `stdout` string, `stderr` string, and integer
+`status`.
 
-    var c = ^(echo hi; echo hello >&2;)
-    var outputs = io.captureAll(c)  # => { stdout: "hi", stderr: "hello", status: 0 }
+    var c = ^(echo out; echo err >&2)
+    var r = io.captureAll(c)  # => { stdout: "out", stderr: "err", status: 0 }
 
-It's similar to `io.captureStdout` but captures both stdout, stderr into a `Dict`.
-Trailing newlines `\n` are **not** removed.
+It's similar to `io.captureStdout`, but returns more info.
 
-The exit code is also captured, which means that `captureAll()` does not fail on exit status != 0.
+- NUL bytes and trailing newlines `\n` are **not** removed.
+- Because it captures the status, it doesn't fail when the status is non-zero.
 
     = io.captureAll(^(echo stdout; echo stderr >&2; exit 3))
     (Dict)
