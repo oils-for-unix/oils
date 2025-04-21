@@ -190,8 +190,8 @@ py-ext() {
   local arch
   arch=$(uname -m)
 
-  # global opts come first
-  $setup_script --quiet build_ext --inplace
+  # send compiler output to stdout, which goes to a log
+  $setup_script --quiet build_ext --inplace 2>&1
 
   #file $name.so
 }
@@ -214,12 +214,12 @@ py-ext-test() {
   set -o errexit
 
   if test $status -eq 0; then
-    log "OK $log_path"
+    log "    OK $log_path"
   else
     echo
     cat $log_path
     echo
-    die "FAIL $log_path"
+    die "  FAIL $log_path"
   fi
 }
 
@@ -358,11 +358,48 @@ py-source() {
 
 # No fastlex, because we don't want to require re2c installation.
 py-extensions() {
-  pylibc
-  line-input
-  posix_
-  fanos
-  fastfunc
+  local minimal=${1:-}
+
+  # Parallel build
+  mkdir -p _tmp/pyext
+
+  local -a tasks=(pylibc line-input posix_ fanos fastfunc)
+  if test -z "$minimal"; then
+    tasks+=(fastlex)
+  fi
+
+  local -A pid_map=()
+  for task in "${tasks[@]}"; do
+    local log="_tmp/pyext/$task.log"
+    $task > $log &
+    pid_map[$!]=$task
+    log " PYEXT $log"
+  done
+  #log PIDS "${!pid_map[@]}"
+
+  local failed=''
+  for pid in "${!pid_map[@]}"; do
+    #echo "WAIT $pid"
+
+    # Funny dance to get exit code
+    set +o errexit
+    wait $pid
+    status=$?
+    set -o errexit
+
+    if test $status -ne 0; then
+      local task=${pid_map[$pid]}
+      echo
+      echo "*** Building '$task' failed: _tmp/pyext/$task.log:"
+      echo
+      cat "_tmp/pyext/$task.log"
+      failed=T
+    fi
+  done
+
+  if test -n "$failed"; then
+    return 1
+  fi
 }
 
 configure-for-dev() {
@@ -378,7 +415,7 @@ minimal() {
   build/stamp.sh write-git-commit
 
   py-source
-  py-extensions
+  py-extensions MINIMAL
 
   cat <<EOF
 
@@ -416,7 +453,7 @@ time-helper() {
   mkdir -p $(dirname $out)
 
   cc -std=c99 -Wall -o $out $in
-  log "  CC $in"
+  log "    CC $in"
 }
 
 all() {
@@ -427,10 +464,7 @@ all() {
   build/stamp.sh write-git-commit
 
   py-source
-  py-extensions  # no re2c
-
-  # requires re2c: deps/from-tar.sh layer-re2c
-  fastlex
+  py-extensions
   time-helper
 
   # help topics and chapter links are extracted from doc/ref

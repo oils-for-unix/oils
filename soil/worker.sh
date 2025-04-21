@@ -654,6 +654,9 @@ JOB-maybe-merge() { job-main 'maybe-merge'; }
 
 list-jobs() {
   # dev-setup-fedora for Fedora, disable
+
+  # 2025-04: temporarily disable dev-setup-debian, after cmake build issue
+  # Need to rewrite that with a shell script!
   compgen -A function | grep -- '^JOB-' | sed 's/^JOB-//g' | egrep -v 'maybe-merge|dev-setup-fedora|dev-setup-alpine'
 }
 

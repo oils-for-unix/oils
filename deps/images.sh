@@ -162,20 +162,8 @@ push() {
   #sudo -E $DOCKER --log-level=debug push $image
 }
 
-smoke() {
-  ### Smoke test of container
-  local name=${1:-soil-dummy}
-  local tag=${2:-$LATEST_TAG}
-  local docker=${3:-$DOCKER}
-  local prefix=${4:-}
-
-  #sudo docker run oilshell/$name
-  #sudo docker run oilshell/$name python2 -c 'print("python2")'
-
-  # Need to point at registries.conf ?
-  #export-podman
-
-  sudo $docker run ${prefix}oilshell/$name:$tag bash -c '
+smoke-test-script() {
+  echo '
 for file in /etc/debian_version /etc/lsb-release; do
   if test -f $file; then
     # spec/ble-idioms tests this
@@ -206,6 +194,26 @@ echo PATH=$PATH
 
 curl https://ci.oilshell.org/
 '
+}
+
+smoke() {
+  sudo $0 _smoke "$@"
+}
+
+_smoke() {
+  ### Smoke test of container
+  local name=${1:-soil-dummy}
+  local tag=${2:-$LATEST_TAG}
+  local docker=${3:-$DOCKER}
+  local prefix=${4:-}
+
+  #sudo docker run oilshell/$name
+  #sudo docker run oilshell/$name python2 -c 'print("python2")'
+
+  # Need to point at registries.conf ?
+  #export-podman
+
+  $docker run ${prefix}oilshell/$name:$tag bash -c "$(smoke-test-script)"
 
   # Python 2.7 build/prepare.sh requires this
   #sudo docker run oilshell/$name python -V
@@ -216,8 +224,16 @@ curl https://ci.oilshell.org/
 smoke-podman() {
   local name=${1:-dummy}
 
+  # 2025-04: I need to do 'podman login docker.io'
+  #
+  # Running without root
+
   # need explicit docker.io prefix with podman
-  smoke $name latest podman docker.io/
+  # smoke $name latest podman docker.io/
+
+  local tag='latest'
+  local prefix='docker.io/'
+  smoke-test-script | podman run -i ${prefix}oilshell/soil-$name:$tag bash
 }
 
 cmd() {

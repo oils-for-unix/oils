@@ -178,6 +178,10 @@ def _ReadPortion(delim_byte, max_chars, cmd_ev):
         elif ch == delim_byte:
             break
 
+        elif ch == 0:
+            # Quirk of most shells except zsh: they ignore NUL bytes!
+            pass
+
         else:
             ch_array.append(ch)
 

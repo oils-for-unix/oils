@@ -464,6 +464,9 @@ And a convenience:
 
 You may want to use `fromJson8()` or `fromJson()` after reading a line.
 
+(Unlike OSH [read](#read), none of these features remove NUL bytes.)
+
+
 <!--
 
 TODO:
@@ -716,13 +719,18 @@ These builtins take input and output.  They're often used with redirects.
 
     read FLAG* VAR*
 
-Read a line from stdin, split it into tokens with the `$IFS` algorithm,
-and assign the tokens to the given variables.  When no VARs are given,
-assign to `$REPLY`.
+Read input from `stdin`.  Without flags, it does the following:
 
-Note: When writing ySH, prefer the extensions documented in
-[ysh-read](#ysh-read).  The `read` builtin is confusing because `-r` needs to
-be explicitly enabled.
+1. Read a line from stdin, respecting `\` escapes and line continuations
+   - Any NUL bytes are removed from the input.
+1. Use the `$IFS` algorithm to split the line into N pieces, where `N` is the
+   number of `VAR` specified.  Each piece is assigned to the corresponding
+   variable.
+   - If no VARs are given, assign to the `$REPLY` var.
+
+Note: When writing YSH, prefer the `--long-flag` modes documented in
+[ysh-read](#ysh-read).  The algorithm above can be confusing, e.g. because `-r`
+is not the default.
 
 Flags:
 

@@ -393,6 +393,17 @@ module syntax
   # Represents all these case:  s=1  s+=1  s[x]=1 ...
   ParsedAssignment = (Token? left, Token? close, int part_offset, CompoundWord w)
 
+  # var, const.
+  # - Keyword is None for hay blocks.  TODO: consider using BareDecl?
+  # - 'var x' allowed - RHS is None; idiomatic with value.Place
+  VarDecl = (Token? keyword, List[NameType] lhs, expr? rhs)
+
+  # setvar, maybe 'auto' later
+  Mutation = (Token keyword, List[y_lhs] lhs, Token op, expr rhs)
+
+  # call f(x)   = 42
+  ExprCommand = (Token keyword, expr e)
+
   command =
     NoOp
 
@@ -461,22 +472,21 @@ module syntax
 
     # YSH command constructs
 
-    # var, const.
-    # - Keyword is None for hay blocks
-    # - RHS is None, for use with value.Place
-    # - TODO: consider using BareDecl
-  | VarDecl(Token? keyword, List[NameType] lhs, expr? rhs)
+  | VarDecl %VarDecl
 
     # this can behave like 'var', can be desugared
   | BareDecl(Token lhs, expr rhs)
 
-    # setvar, maybe 'auto' later
-  | Mutation(Token keyword, List[y_lhs] lhs, Token op, expr rhs)
-    # = keyword
-  | Expr(Token keyword, expr e)
+  | Mutation %Mutation
+  | Expr %ExprCommand
   | Proc %Proc
   | Func %Func
   | Retval(Token keyword, expr val)
+
+  # bytecode
+  b_command =
+    VarDecl %VarDecl
+  | Mutation %Mutation
 
   #
   # Glob representation, for converting ${x//} to extended regexes.

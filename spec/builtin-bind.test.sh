@@ -1,5 +1,5 @@
-## oils_failures_allowed: 1
-## oils_cpp_failures_allowed: 6
+## oils_failures_allowed: 0
+## oils_cpp_failures_allowed: 7
 ## compare_shells: bash
 
 # NB: This is only for NON-interactive tests of bind. 
@@ -93,6 +93,27 @@ echo status=$?
 status=1
 \C-o\C-s\C-h
 echo foo
+status=0
+## END
+
+
+#### bind -m with bind -x/-X
+bind -X | grep -oF 'emacs|vi'
+echo status=$?
+
+bind -m emacs -x '"\C-o\C-s\C-h": echo emacs'
+bind -m emacs -X | grep -oF 'emacs'
+echo status=$?
+
+bind -m vi -x '"\C-o\C-s\C-h": echo vi'
+bind -m vi -X | grep -oF 'vi'
+echo status=$?
+
+## STDOUT:
+status=1
+emacs
+status=0
+vi
 status=0
 ## END
 

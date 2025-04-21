@@ -578,6 +578,10 @@ ysh-builtins() {
   test/spec-py.sh run-file ysh-builtins "$@"
 }
 
+ysh-bytecode() {
+  test/spec-py.sh run-file ysh-bytecode "$@"
+}
+
 ysh-case() {
   test/spec-py.sh run-file ysh-case "$@"
 }
@@ -700,6 +704,10 @@ ysh-multiline() {
 
 ysh-namespaces() {
   test/spec-py.sh run-file ysh-namespaces "$@"
+}
+
+ysh-nul-bytes() {
+  test/spec-py.sh run-file ysh-nul-bytes "$@"
 }
 
 ysh-object() {

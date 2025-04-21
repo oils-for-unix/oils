@@ -172,12 +172,19 @@ readonly MARKDOWN_DOCS=(
 # encoding in Python 2 is still 'ascii', which means that '%s' % u_str may
 # fail.
 #
-# I believe --rfc-e-mail should never output a Unicode character.
+# I believe --rfc-email should never output a Unicode character.
 #
 # A better fix would be to implement json_utf8.load(f), which doesn't decode
 # into unicode instances.  This would remove useless conversions.
 
-DOC_TIMESTAMP=${DOC_TIMESTAMP:-$(date --rfc-email)}
+default-doc-timestamp() {
+  # Note: this flag doesn't exist on Alpine Linux
+  if ! date --rfc-email; then
+    echo '(error: No DOC_TIMESTAMP and no date --rfc-e-mail)'
+  fi
+}
+
+DOC_TIMESTAMP=${DOC_TIMESTAMP:-$(default-doc-timestamp)}
 
 split-and-render() {
   local src=${1:-doc/known-differences.md}
@@ -187,6 +194,7 @@ split-and-render() {
 
   local out=${2:-$HTML_BASE_DIR/$rel_path.html}
   local web_url=${3:-'../web'}
+  local quiet=${4:-}
 
   mkdir -v -p $(dirname $out) $tmp_prefix
 
@@ -217,7 +225,9 @@ split-and-render() {
     --code-block-output $code_out \
     ${tmp_prefix}_meta.json ${tmp_prefix}_content.md > $out
 
-  log "$tmp_prefix -> (doctools/cmark) -> $out"
+  if test -z "$quiet"; then
+    log "$tmp_prefix -> (doctools/cmark) -> $out"
+  fi
 }
 
 render-from-kate() {
@@ -427,6 +437,7 @@ EOF
 }
 
 all-redirects() {
+  log '*** Writing redirects'
   redirect-pairs | while read -r from_page to_page; do
     redir-body "$to_page.html" | tee "_release/VERSION/doc/$from_page.html"
   done
@@ -524,6 +535,8 @@ write-metrics() {
   ### Check indexes and chapters against each other
 
   local out=_release/VERSION/doc/metrics.txt
+
+  log '*** ref-check'
 
   # send stderr to the log file too
   ref-check > $out 2>&1
@@ -640,35 +653,66 @@ one-ref() {
   split-and-render $md '' '../../web'
 }
 
+indices-chapters() {
+
+  log "Building doc/ref"
+  local -a sources=( doc/ref/*.md )
+  local -A pid_map=()
+  for d in ${sources[@]}; do 
+    # do ~23 docs in parallel; this saves more than one second on my machine
+    split-and-render $d '' '../../web' QUIET &
+    pid_map[$!]=$d
+  done
+
+  local failed=''
+  for pid in "${!pid_map[@]}"; do
+    #echo "WAIT $pid"
+
+    # Funny dance to get exit code
+    set +o errexit
+    wait $pid
+    status=$?
+    set -o errexit
+
+    if test $status -ne 0; then
+      local d=${pid_map[$pid]}
+      echo
+      echo "*** Building '$d' failed ***"
+      echo
+      failed=T
+    fi
+  done
+
+  if test -n "$failed"; then
+    return 1
+  fi
+}
+
 all-ref() {
   ### Build doc/ref in text and HTML.  Depends on libcmark.so
 
-  log "Removing $TEXT_DIR/*"
   rm -f $TEXT_DIR/*
   make-dirs
 
-  # Make the indexes and chapters
-  for d in doc/ref/*.md; do
-    split-and-render $d '' '../../web'
-  done
+  indices-chapters
 
   # Note: if we want a $ref-topic shortcut, we might want to use Ninja to
   # extract topics from all chapters first, and then make help_meta.json, like
   # we have _devbuild/gen/help_meta.py.
 
   # Text cards
-  cards-from-indices
+  cards-from-indices  # 3 help_gen.py processes
   # A few text cards, and HELP_TOPICS dict for URLs, for flat namespace
-  cards-from-chapters
+  cards-from-chapters  # 1 help_gen.py process
 
   return
+
   if command -v pysum; then
     # 19 KB of embedded help, seems OK.  Biggest card is 'ysh-option'.  Could
     # compress it.
     echo 'Size of embedded help:'
     ls -l $TEXT_DIR | tee /dev/stderr | awk '{print $5}' | pysum
   fi
-
   # Better sorting
   #LANG=C ls -l $TEXT_DIR
 }
@@ -712,8 +756,8 @@ tarball-links-row-html() {
 </tr>
 EOF
 
-  # we switched to .gz for oils-for-unix
-  # note: legacy names for old releases
+  # We switched to .gz for oils-for-unix
+  # Note: legacy names are needed for old releases
   for name in \
     oils-for-unix-$version.tar.{gz,xz} \
     oil-$version.tar.{gz,xz} \
@@ -723,10 +767,14 @@ EOF
     local path="../oils.pub__deploy/download/$name"
 
     # Don't show tarballs that don't exist
-    if [[ $name == oils-for-unix-* && ! -f $path ]]; then
-      continue
-    fi
-    if [[ $name == oil-native-* && ! -f $path ]]; then
+    if ! test -f "$path"; then
+      case $name in
+        oils-for-unix-*|oil-native-*)
+          ;;
+        *)
+          log "Warning: Expected tarball $name to exist"
+          ;;
+      esac
       continue
     fi
 

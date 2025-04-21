@@ -7,7 +7,6 @@
 #
 # TODO: All of these can use BYO
 #
-# - benchmarks/ysh-for
 # - benchmarks/ysh-json
 # - benchmarks/io/read-lines.sh  # buffered and unbuffered, not hooked up
 # - benchmarks/compute
@@ -25,6 +24,7 @@ YSH=_bin/cxx-opt/ysh
 OSH=_bin/cxx-opt/osh
 
 readonly JSON_FILE=_tmp/github-issues.json
+readonly BIG_FILE=_tmp/compute/big.json
 
 fetch-issues() {
   # only gets 25 issues by default
@@ -36,70 +36,123 @@ fetch-issues() {
   curl $url > $JSON_FILE
 
   ls -l -h $JSON_FILE
+
+  jq \
+    -s \
+    --arg n "$n" \
+    '. as $original | [range(0; $n|tonumber)] | map($original) | flatten' \
+    $JSON_FILE > $BIG_FILE
+
+  ls -l -h $BIG_FILE
 }
 
 with-ysh() {
+  local n=${1:-100}
   ninja $YSH
 
-  # TODO: turn this into some bigger data
+if false; then
 
-  # 262 ms
   time $YSH -c '
-  for i in (1 ..= 1000) {
+  var n = int($2)
+  for i in (1 ..= n) {
     json read < $1
   }
-  ' dummy $JSON_FILE
+  ' dummy $JSON_FILE $n
+fi
+
+  echo '  YSH'
+  time $YSH -c 'json read < $1' dummy $BIG_FILE
 }
 
 with-cpython() {
+  local n=${1:-100}
+
+if false; then
   local prog='
 import json
 import sys
-for i in range(1000):
+n = int(sys.argv[2])
+for i in range(n):
   with open(sys.argv[1]) as f:
     json.load(f)
 '
 
+  echo 'PY2'
   # 391 ms
-  time python2 -c "$prog" $JSON_FILE
+  time python2 -c "$prog" $JSON_FILE $n
 
+  echo 'PY3'
   # 175 ms
-  time python3 -c "$prog" $JSON_FILE
+  time python3 -c "$prog" $JSON_FILE $n
+fi
+
+  local prog='
+import json
+import sys
+with open(sys.argv[1]) as f:
+  json.load(f)
+'
+
+  echo 'PY2'
+  # 391 ms
+  time python2 -c "$prog" $BIG_FILE
+
+  echo 'PY3'
+  # 175 ms
+  time python3 -c "$prog" $BIG_FILE
 }
 
 with-js() {
+  local n=${1:-100}
+
+if false; then
   # 195 ms, minus ~100 ms startup time = 90 ms
-  time cat $JSON_FILE | nodejs -e '
+  time nodejs -e '
 var fs = require("fs")
-var stdin = fs.readFileSync(0, "utf-8")
+var filename = process.argv[1];
+var n = process.argv[2];
 
-for (let i = 0; i < 1000; ++i) {
-  JSON.parse(stdin)
+//console.log("FILE " + filename);
+var json = fs.readFileSync(filename, "utf-8");
+
+for (let i = 0; i < n; ++i) {
+  JSON.parse(json)
 }
-'
+' $JSON_FILE $n
+fi
 
-  # 100 ms startupt ime
-  time nodejs -e 'console.log("hi")'
+  time nodejs -e '
+var fs = require("fs")
+var filename = process.argv[1];
 
+//console.log("FILE " + filename);
+var json = fs.readFileSync(filename, "utf-8");
+
+JSON.parse(json)
+' $BIG_FILE
+
+  # 100 ms startup time is misleading
+  #time nodejs -e 'console.log("hi")' 
 }
 
 with-jq() {
-  # TODO: make the data bigger
+  local n=${1:-100}
 
-  # jq is also printing it here - we can take the length
-  time jq '. | length' < $JSON_FILE
+  wc -l $JSON_FILE
+
+  time jq '. | length' $BIG_FILE >/dev/null
 }
 
 
 compare() {
-  local n=${1:-1000000}
+  local n=${1:-100}
   local OILS_GC_STATS=${2:-}
 
   ninja $OSH $YSH
 
   for bin in ysh cpython js jq; do
     echo "=== $bin ==="
-    with-$bin
+    with-$bin $n
     echo
   done
 }

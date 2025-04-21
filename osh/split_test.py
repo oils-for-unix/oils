@@ -5,7 +5,6 @@ split.test.py: Tests for split.py
 
 import unittest
 
-from core import state
 from core import test_lib
 from osh import split  # module under test
 
@@ -166,7 +165,7 @@ class SplitContextTest(unittest.TestCase):
 
     def testSplitForWordEval(self):
         arena = test_lib.MakeArena('<SplitContextTest>')
-        mem = state.Mem('', [], arena, [], {})
+        mem = test_lib.MakeMem(arena)
         # This is the default
         #state.SetGlobalString(mem, 'IFS', split.DEFAULT_IFS)
 

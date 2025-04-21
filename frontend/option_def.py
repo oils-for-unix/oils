@@ -128,6 +128,7 @@ _UPGRADE_RUNTIME_OPTS = [
 
     # create ENV at startup; read from it when starting processes
     ('env_obj', False),
+    ('init_ysh_globals', False),  # initialize ARGV
 
     # Can create closures from loop variables, like JS / C# / Go
     ('for_loop_frames', False),

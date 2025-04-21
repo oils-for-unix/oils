@@ -52,6 +52,11 @@ die() {
   exit 1
 }
 
+# Used in benchmarks/gc and benchmarks/compute
+banner() {
+  echo -----
+  echo "$@"
+}
 
 cmark() {
   # A filter to making reports

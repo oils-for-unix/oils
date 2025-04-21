@@ -53,12 +53,12 @@ class ProcessTest(unittest.TestCase):
     def setUp(self):
         self.arena = test_lib.MakeArena('process_test.py')
 
-        mem = state.Mem('', [], self.arena, [], {})
+        mem = test_lib.MakeMem(self.arena)
         parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
         mem.exec_opts = exec_opts
 
         #state.InitMem(mem, {}, '0.1')
-        sh_init.InitDefaultVars(mem)
+        sh_init.InitDefaultVars(mem, [])
 
         self.job_control = process.JobControl()
         self.job_list = process.JobList()

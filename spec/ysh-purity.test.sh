@@ -1,4 +1,4 @@
-## oils_failures_allowed: 9
+## oils_failures_allowed: 10
 
 # Not disallowed:
 #   setglobal, mutating arguments with setvar
@@ -227,6 +227,24 @@ echo code=$[_error.code] message=$[_error.message]
 code=5 message=Background jobs aren't allowed in pure mode (OILS-ERR-204)
 3
 code=5 message=Pipelines aren't allowed in pure mode (OILS-ERR-204)
+## END
+
+#### Redirects
+shopt --set ysh:upgrade
+
+hay define Package
+var cmd = ^( Package foo > out.txt )
+call io->eval(cmd)
+rm -v out.txt
+
+try {
+  call eval(cmd)
+}
+# not created, but there's also no error?
+# oh it's because of the PureExecutor
+
+## STDOUT:
+TODO
 ## END
 
 #### Are any builtins allowed?  true, false

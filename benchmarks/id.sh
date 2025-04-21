@@ -88,7 +88,7 @@ dump-shell-id() {
 
   # Add extra repository info for osh.
   case $sh_path in
-    */osh*)
+    */osh*|*/ysh*)
       local commit_hash=$out_dir/git-commit-hash.txt
 
       if test -n "${XSHAR_GIT_COMMIT:-}"; then
@@ -111,7 +111,7 @@ dump-shell-id() {
       ;;
     osh)
       case $sh_path in
-        *_bin/*/osh)
+        *_bin/*/osh)  # Is this branch dead?
           # Doesn't support --version yet
           ;;
         *)
@@ -119,6 +119,13 @@ dump-shell-id() {
           ;;
       esac
       ;;
+    ysh)
+      $sh_path --version > $out_dir/ysh-version.txt
+      ;;
+    awk)
+      $sh_path --version > $out_dir/awk-version.txt
+      ;;
+
     # oils-for-unix|oils-for-unix.stripped)
     #  ;;
     dash|mksh)

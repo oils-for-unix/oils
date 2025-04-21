@@ -114,8 +114,7 @@ Not done.
 
 Executes a command and captures its stdout.
 
-OSH has shell-compatible command sub like `$(echo hi)`.  If a trailing newline
-is returned, it's removed:
+If stdout has a trailing newline, it's removed:
 
     $ hostname
     example.com
@@ -123,8 +122,14 @@ is returned, it's removed:
     $ echo "/tmp/$(hostname)"
     /tmp/example.com
 
-YSH has spliced command subs, enabled by `shopt --set parse_at`.  The result is
-a **List** of strings, rather than a single string.
+If stdout has any NUL bytes, they are removed (regardless of position).
+
+Related: [captureStdout()](chap-type-method.html#captureStdout)
+
+### ysh-command-sub
+
+YSH also has spliced command subs, enabled by `shopt --set parse_at`.  The
+result is a **List** of strings, rather than a single string.
 
     $ write -- @(echo foo; echo 'with spaces')
     foo

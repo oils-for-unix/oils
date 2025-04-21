@@ -139,7 +139,7 @@ X [Unsupported]   enable
 
 ```chapter-links-word-lang_33
   [Quotes]        osh-string    'abc'  $'line\n'  "$var"
-  [Substitutions] command-sub   $(command)   `command`
+  [Substitutions] command-sub   $(date)   `date`
                   var-sub       ${var}   $0   $9   
                   arith-sub     $((1 + 2))
                   tilde-sub     ~/src

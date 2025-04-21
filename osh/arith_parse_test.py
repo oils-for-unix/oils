@@ -35,11 +35,11 @@ def ParseAndEval(code_str):
 
     print('node:', anode)
 
-    mem = state.Mem('', [], arena, [], {})
+    mem = test_lib.MakeMem(arena)
     parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
     mem.exec_opts = exec_opts
     #state.InitMem(mem, {}, '0.1')
-    sh_init.InitDefaultVars(mem)
+    sh_init.InitDefaultVars(mem, [])
 
     splitter = split.SplitContext(mem)
     errfmt = ui.ErrorFormatter()

@@ -354,3 +354,48 @@ echo status=$?
 ## STDOUT:
 status=0
 ## END
+
+#### HISTFILE=my-history loads history from that file, and writes back to it
+
+echo 'echo 1' > my-history
+
+# paper over OSH difference by deleting the ^D line
+echo 'echo 2
+history' | HISTFILE=my-history $SH --rcfile /dev/null -i | sed '/\^D/d'
+
+echo
+echo '-- after shell exit --'
+cat my-history
+
+## STDOUT:
+2
+    1  echo 1
+    2  echo 2
+    3  history
+
+-- after shell exit --
+echo 1
+echo 2
+history
+## END
+
+#### HISTFILE=my-history with history -a
+
+echo 'echo 1' > my-history
+
+# paper over OSH difference by deleting the ^D line
+echo 'history -a
+echo 2' | HISTFILE=my-history $SH --rcfile /dev/null -i | sed '/\^D/d'
+
+echo
+echo '-- after shell exit --'
+cat my-history
+
+## STDOUT:
+2
+
+-- after shell exit --
+echo 1
+history -a
+echo 2
+## END

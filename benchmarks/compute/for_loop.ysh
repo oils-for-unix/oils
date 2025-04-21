@@ -1,0 +1,8 @@
+
+var sum = 0
+var n = $1
+for i in (0 ..< n) {
+  setvar sum += i
+}
+echo "n = $n"
+echo "sum = $sum"

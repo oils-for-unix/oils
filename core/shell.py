@@ -302,10 +302,11 @@ def Main(
 
     debug_stack = [frame0]
 
+    argv = arg_r.Rest()
     env_dict = NewDict()  # type: Dict[str, value_t]
     defaults = NewDict()  # type: Dict[str, value_t]
     mem = state.Mem(dollar0,
-                    arg_r.Rest(),
+                    argv,
                     arena,
                     debug_stack,
                     env_dict,
@@ -326,7 +327,7 @@ def Main(
 
     version_str = pyutil.GetVersion(loader)
     sh_init.InitBuiltins(mem, version_str, defaults)
-    sh_init.InitDefaultVars(mem)
+    sh_init.InitDefaultVars(mem, argv)
 
     sh_init.CopyVarsFromEnv(exec_opts, environ, mem)
 

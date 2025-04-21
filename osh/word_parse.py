@@ -88,6 +88,8 @@ from _devbuild.gen.syntax_asdl import (
     Subscript,
     Attribute,
     arith_expr,
+    VarDecl,
+    Mutation,
 )
 from core import alloc
 from core.error import p_die
@@ -1233,7 +1235,7 @@ class WordParser(WordEmitter):
         return word_part.ExprSub(left_token, enode, right_token)
 
     def ParseVarDecl(self, kw_token):
-        # type: (Token) -> command.VarDecl
+        # type: (Token) -> VarDecl
         """
         oil_var_decl: name_type_list '=' testlist end_stmt
 
@@ -1256,7 +1258,7 @@ class WordParser(WordEmitter):
         return enode
 
     def ParseMutation(self, kw_token, var_checker):
-        # type: (Token, VarChecker) -> command.Mutation
+        # type: (Token, VarChecker) -> Mutation
         """
         setvar i = 42
         setvar i += 1

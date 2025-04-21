@@ -3,6 +3,8 @@
 from __future__ import print_function
 
 import cStringIO
+import os
+import sys
 import unittest
 from pprint import pprint
 
@@ -202,6 +204,92 @@ class RenderTest(unittest.TestCase):
                                                    parser.dense_toc_begin_line,
                                                    True)
         pprint(insertions)
+
+
+def InitCMark():
+    import ctypes
+
+    # Geez find_library returns the filename and not the path?  Just hardcode it as
+    # a workaround.
+    # https://bugs.python.org/issue21042
+
+    #from ctypes.util import find_library
+    #libname = find_library("cmark")
+    #assert libname, "cmark not found"
+
+    # There's some ongoing discussion about how to deal with the same in Nix.
+    # I think normally you'd just patch/substitute this path during the Nix build.
+    # See note in shell.nix
+    this_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
+
+    cmark1 = os.environ.get('_NIX_SHELL_LIBCMARK')
+    cmark2 = os.path.join(this_dir, '../../oil_DEPS/libcmark.so')
+    cmark3 = os.path.join(cmark.CMARK_WEDGE_DIR,
+                          'lib/libcmark.so')  # a symlink
+
+    if cmark1 is not None and os.path.exists(cmark1):
+        libname = cmark1
+    elif os.path.exists(cmark2):
+        libname = cmark2
+    elif os.path.exists(cmark3):
+        libname = cmark3
+    else:
+        raise AssertionError("Couldn't find libcmark.so")
+
+    cmark_dll = ctypes.CDLL(libname)
+
+    markdown = cmark_dll.cmark_markdown_to_html
+    markdown.restype = ctypes.c_char_p
+    markdown.argtypes = [ctypes.c_char_p, ctypes.c_long, ctypes.c_long]
+    return markdown
+
+
+# Version 0.29.0 disallowed raw HTML by default!
+CMARK_OPT_UNSAFE = (1 << 17)
+
+
+def md2html(md):
+    # type: (str) -> str
+    markdown = InitCMark()
+
+    if sys.version_info.major == 2:
+        md_bytes = md
+    else:
+        md_bytes = md.encode('utf-8')
+
+    md_len = len(md)
+    html = markdown(md_bytes, md_len, CMARK_OPT_UNSAFE)
+
+    if sys.version_info.major == 2:
+        return html
+    else:
+        return html.decode('utf-8')
+
+
+class CompareTest(unittest.TestCase):
+    """Test that the child process behaves like the shared library"""
+
+    def OLD_testChildProcess(self):
+        # OK it adds a newline
+        md = '*hi*'
+        h = md2html(md)
+        print(repr(h))
+
+        h2 = cmark.cmark_bin(md)
+        print(repr(h2))
+
+        self.assertEqual(h, h2)
+
+    def OLD_testHtml(self):
+        md2 = '*hi* <script>alert("hi");</script>'
+        h = md2html(md2)
+        print(repr(h))
+
+        # OK this omits the HTML, which we need
+        h2 = cmark.cmark_bin(md2)
+        print(repr(h2))
+
+        self.assertEqual(h, h2)
 
 
 if __name__ == '__main__':

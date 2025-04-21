@@ -56,10 +56,12 @@ func_realpath(PyObject *self, PyObject *args) {
 static PyObject *
 func_fnmatch(PyObject *self, PyObject *args) {
   const char *pattern;
+  int pattern_len;
   const char *str;
+  int str_len;
   int flags = 0;
 
-  if (!PyArg_ParseTuple(args, "ss|i", &pattern, &str, &flags)) {
+  if (!PyArg_ParseTuple(args, "s#s#|i", &pattern, &pattern_len, &str, &str_len, &flags)) {
     return NULL;
   }
 

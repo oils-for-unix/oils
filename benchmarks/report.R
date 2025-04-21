@@ -78,10 +78,14 @@ GetOshLabel = function(shell_hash, prov_dir) {
   return(label)
 }
 
-opt_suffix1 = '_bin/cxx-opt/osh'
-opt_suffix2 = '_bin/cxx-opt-sh/osh'
-opt_suffix3 = '_bin/cxx-opt/mycpp-souffle/osh'
-opt_suffix4 = '_bin/cxx-opt-sh/mycpp-souffle/osh'
+osh_opt_suffix1 = '_bin/cxx-opt/osh'
+osh_opt_suffix2 = '_bin/cxx-opt-sh/osh'
+
+osh_souffle_suffix1 = '_bin/cxx-opt/mycpp-souffle/osh'
+osh_souffle_suffix2 = '_bin/cxx-opt-sh/mycpp-souffle/osh'
+
+ysh_opt_suffix1 = '_bin/cxx-opt/ysh'
+ysh_opt_suffix2 = '_bin/cxx-opt-sh/ysh'
 
 ShellLabels = function(shell_name, shell_hash, num_hosts) {
   ### Given 2 vectors, return a vector of readable labels.
@@ -105,10 +109,13 @@ ShellLabels = function(shell_name, shell_hash, num_hosts) {
     if (sh == 'osh') {
       label = GetOshLabel(shell_hash[i], prov_dir)
 
-    } else if (endsWith(sh, opt_suffix1) || endsWith(sh, opt_suffix2)) {
+    } else if (endsWith(sh, osh_opt_suffix1) || endsWith(sh, osh_opt_suffix2)) {
       label = 'opt/osh'
 
-    } else if (endsWith(sh, opt_suffix3) || endsWith(sh, opt_suffix4)) {
+    } else if (endsWith(sh, ysh_opt_suffix1) || endsWith(sh, ysh_opt_suffix2)) {
+      label = 'opt/ysh'
+
+    } else if (endsWith(sh, osh_souffle_suffix1) || endsWith(sh, osh_souffle_suffix2)) {
       label = 'opt/osh-souffle'
 
     } else if (endsWith(sh, '_bin/cxx-opt+bumpleak/osh')) {
@@ -125,18 +132,20 @@ ShellLabels = function(shell_name, shell_hash, num_hosts) {
   return(labels)
 }
 
-# Simple version of the above, used by benchmarks/gc
+# Simple version of the above, used by benchmarks/{gc,osh-runtime}
 ShellLabelFromPath = function(sh_path) {
   labels = c()
   for (i in 1:length(sh_path)) {
     sh = sh_path[i]
 
-    if (endsWith(sh, opt_suffix1) || endsWith(sh, opt_suffix2)) {
-      # the opt binary is osh-native
+    if (endsWith(sh, osh_opt_suffix1) || endsWith(sh, osh_opt_suffix2)) {
+      # the opt binary is called osh-native - the osh-runtime report relies on this
       label = 'osh-native'
 
-	} else if (endsWith(sh, opt_suffix3) || endsWith(sh, opt_suffix4)) {
-      # the opt binary is osh-native
+    } else if (endsWith(sh, ysh_opt_suffix1) || endsWith(sh, ysh_opt_suffix2)) {
+      label = 'opt/ysh'
+
+	  } else if (endsWith(sh, osh_souffle_suffix1) || endsWith(sh, osh_souffle_suffix2)) {
       label = 'osh-native-souffle'
 
     } else if (endsWith(sh, '_bin/cxx-opt+bumpleak/osh')) {
@@ -784,6 +793,8 @@ ComputeReport = function(in_dir, out_dir) {
 
   times %>% filter(task_name == 'hello') %>% unique_stdout_md5sum(1)
   times %>% filter(task_name == 'fib') %>% unique_stdout_md5sum(1)
+  times %>% filter(task_name == 'for_loop') %>% unique_stdout_md5sum(1)
+  times %>% filter(task_name == 'control_flow') %>% unique_stdout_md5sum(1)
   times %>% filter(task_name == 'word_freq') %>% unique_stdout_md5sum(1)
   # 3 different inputs
   times %>% filter(task_name == 'parse_help') %>% unique_stdout_md5sum(3)
@@ -842,6 +853,8 @@ ComputeReport = function(in_dir, out_dir) {
 
   details %>% filter(task_name == 'hello') %>% select(-c(task_name)) -> hello
   details %>% filter(task_name == 'fib') %>% select(-c(task_name)) -> fib
+  details %>% filter(task_name == 'for_loop') %>% select(-c(task_name)) -> for_loop
+  details %>% filter(task_name == 'control_flow') %>% select(-c(task_name)) -> control_flow
   details %>% filter(task_name == 'word_freq') %>% select(-c(task_name)) -> word_freq
   # There's no arg2
   details %>% filter(task_name == 'parse_help') %>% select(-c(task_name, arg2)) -> parse_help
@@ -857,6 +870,8 @@ ComputeReport = function(in_dir, out_dir) {
   writeTsv(hello, file.path(out_dir, 'hello'), precision)
   writeTsv(fib, file.path(out_dir, 'fib'), precision)
   writeTsv(word_freq, file.path(out_dir, 'word_freq'), precision)
+  writeTsv(for_loop, file.path(out_dir, 'for_loop'), precision)
+  writeTsv(control_flow, file.path(out_dir, 'control_flow'), precision)
   writeTsv(parse_help, file.path(out_dir, 'parse_help'), precision)
 
   writeTsv(bubble_sort, file.path(out_dir, 'bubble_sort'), precision)

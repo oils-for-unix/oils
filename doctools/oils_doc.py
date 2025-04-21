@@ -487,7 +487,8 @@ def HighlightCode(s, default_highlighter, debug_out=None):
                             pass
 
                         elif css_class in ('language-sh-prompt',
-                                           'language-oil-sh'):
+                                           'language-oil-sh',
+                                           'language-oils-sh'):
                             # Here's we're KEEPING the original <pre><code>
                             # Print everything up to and including <pre><code language="...">
                             out.PrintUntil(code_start_pos)

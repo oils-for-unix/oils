@@ -1304,11 +1304,8 @@ class Mem(object):
         # If you only use YSH procs and funcs, this will remain at length 1.
         self.argv_stack = [_ArgFrame(argv)]
 
-        frame = NewDict()  # type: Dict[str, Cell]
-
-        frame['ARGV'] = _MakeArgvCell(argv)
-
-        self.var_stack = [frame]
+        frame0 = NewDict()  # type: Dict[str, Cell]
+        self.var_stack = [frame0]
 
         # The debug_stack isn't strictly necessary for execution.  We use it
         # for crash dumps and for 3 parallel arrays: BASH_SOURCE, FUNCNAME, and

@@ -56,6 +56,8 @@ from _devbuild.gen.syntax_asdl import (
     SingleQuoted,
     DoubleQuoted,
     List_of_command,
+    VarDecl,
+    ExprCommand,
 )
 from _devbuild.gen.value_asdl import LiteralBlock
 from core import alloc
@@ -2468,7 +2470,7 @@ class CommandParser(object):
             assert keyword is not None
             self._SetNext()
             enode = self.w_parser.ParseCommandExpr()
-            return command.Expr(keyword, enode)
+            return ExprCommand(keyword, enode)
 
         if self.c_id == Id.KW_Function:
             return self.ParseKshFunctionDef()
@@ -2520,7 +2522,7 @@ class CommandParser(object):
                             self._SetNext()  # Somehow this is necessary
                             # TODO: Use BareDecl here.  Well, do that when we
                             # treat it as const or lazy.
-                            return command.VarDecl(
+                            return VarDecl(
                                 None,
                                 [NameType(tok, lexer.TokenVal(tok), None)],
                                 enode)

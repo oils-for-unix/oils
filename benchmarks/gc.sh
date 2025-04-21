@@ -84,11 +84,6 @@ compare-m32() {
   done
 }
 
-banner() {
-  echo -----
-  echo "$@"
-}
-
 print-tasks() {
   local mycpp_souffle=${1:-}
 

@@ -9,6 +9,7 @@
 # List of benchmarks:
 #
 # - fib: integer, loop, assignment (shells don't have real integers
+# - for_loop: 2025 update, taken from benchmarks/ysh-for.sh
 # - word_freq: hash table / assoc array (OSH uses a vector<pair<>> now!)
 #              also integer counter
 # - bubble_sort: indexed array (bash uses a linked list?)
@@ -16,14 +17,40 @@
 # - parse_help: realistic shell-only string processing, which I didn't write.
 #
 # TODO:
+# - Fix the BUGS
+#   - palindrome doesn't work?  Unicode?  Does UTF-8 decode
+#   - bubble sort depend on locale too - there is an LC_ALL here
+#
+# - This file is annoying to TEST
+#   - to add to it, you also have to change benchmarks/report.R
+#   - and there is a loop in 'stage1' as well
+#   - why can't it behave like other benchmarks?
+#   - they are using this "big table" pattern
+
 # - vary problem size, which is different than iters
 #   - bubble sort: array length, to test complexity of array indexing
 #   - palindrome: longer lines, to test complexity of unicode/byte slicing
 #   - word_freq: more unique words, to test complexity of assoc array
-# - write awk versions of each benchmark (could be contributed)
-# - assert that stdout is identical
-# - create data frames and publish results
-#   - leave holes for Python, other shells, etc.
+# - for_loop and fib are kinda similar
+#   - maybe for_loop can introduce some conditionals
+#
+# - other languages
+#   - awk, mawk, etc.
+#   - we are going for Awk speed!
+#
+# Questions to answer
+# - Can fast bytecode runtime be as fast as Python?
+#   - measurement issue: Python kills at fib/for_loop - it's mostly process
+#     startup time
+# - bubble_sort and word_freq are a bit more work 
+#   - can add YSH versions of those
+#   - I wonder if they are testing data structures or the actual interpreter
+#   loop though
+#   - it's possible that speeding up the interpreter loop doesn't help much
+# - the real motivations behind bytecode:
+#   - to fix 'break continue'
+#   - add coroutine support too - that suspends and resumes a frame, which we
+#   can't do
 
 set -o nounset
 set -o pipefail
@@ -47,7 +74,7 @@ hello-tasks() {
   local provenance=$1
 
   # Add 1 field for each of 5 fields.
-  cat $provenance | filter-provenance python2 bash dash "$OSH_CPP_REGEX" |
+  cat $provenance | filter-provenance python2 awk bash dash "$OSH_CPP_REGEX" |
   while read fields; do
     echo 'hello _ _' | xargs -n 3 -- echo "$fields"
   done
@@ -57,10 +84,37 @@ hello-tasks() {
 fib-tasks() {
   local provenance=$1
 
+  local runtime_regex='_bin/cxx-opt/(osh|ysh)'
+
   # Add 1 field for each of 5 fields.
-  cat $provenance | filter-provenance python2 bash dash "$OSH_CPP_REGEX" |
+  cat $provenance | filter-provenance python2 awk bash dash "$runtime_regex" |
   while read fields; do
     echo 'fib 200 44' | xargs -n 3 -- echo "$fields"
+  done
+}
+
+# task_name,iter,args
+for_loop-tasks() {
+  local provenance=$1
+
+  # bumpleak segfaults on for_loop!  Probably because it runs out of memory
+  local runtime_regex='_bin/cxx-opt/(osh|ysh)'
+
+  cat $provenance | filter-provenance python2 awk bash dash "$runtime_regex" |
+  while read fields; do
+    echo 'for_loop 50000 _' | xargs -n 3 -- echo "$fields"
+  done
+}
+
+# task_name,iter,args
+control_flow-tasks() {
+  local provenance=$1
+
+  local runtime_regex='_bin/cxx-opt/osh'
+
+  cat $provenance | filter-provenance bash dash "$runtime_regex" |
+  while read fields; do
+    echo 'control_flow do_return 200' | xargs -n 3 -- echo "$fields"
   done
 }
 
@@ -153,10 +207,16 @@ parse_help-tasks() {
 ext() {
   local ext
   case $runtime in 
-    (python2)
+    python2)
       echo 'py'
       ;;
-    (*sh | *osh*)
+    awk)
+      echo 'awk'
+      ;;
+    *ysh*)
+      echo 'ysh'
+      ;;
+    *sh | *osh*)
       echo 'sh'
       ;;
   esac
@@ -240,6 +300,8 @@ parse_help-one() {
 
 hello-all() { task-all hello "$@"; }
 fib-all() { task-all fib "$@"; }
+for_loop-all() { task-all for_loop "$@"; }
+control_flow-all() { task-all control_flow "$@"; }
 word_freq-all() { task-all word_freq "$@"; }
 assoc_array-all() { task-all assoc_array "$@"; }
 
@@ -267,6 +329,8 @@ task-all() {
   rm -f $times_tsv
 
   mkdir -p $tmp_dir $out_dir/$task_name
+
+  banner "*** $task_name ***"
 
   # header
   tsv-row \
@@ -301,12 +365,18 @@ task-all() {
 
     local -a cmd
     case $task_name in
-      (hello|fib)
+      hello|fib|for_loop|control_flow)
         # Run it DIRECTLY, do not run $0.  Because we do NOT want to fork bash
         # then dash, because bash uses more memory.
-        cmd=($runtime benchmarks/compute/$task_name.$(ext $runtime) "$arg1" "$arg2")
+        args=(benchmarks/compute/$task_name.$(ext $runtime) "$arg1" "$arg2")
+
+        case $runtime in
+          # add -f flag
+          awk) cmd=($runtime -f "${args[@]}") ;;
+          *) cmd=($runtime "${args[@]}") ;;
+        esac
         ;;
-      (*)
+      *)
         cmd=($0 ${task_name}-one "$task_name" "$runtime" "$arg1" "$arg2")
         ;;
     esac
@@ -381,6 +451,9 @@ measure() {
   hello-all $provenance $host_job_id $out_dir
   fib-all $provenance $host_job_id $out_dir
 
+  for_loop-all $provenance $host_job_id $out_dir
+  control_flow-all $provenance $host_job_id $out_dir
+
   # TODO: doesn't work because we would need duplicate logic in stage1
   #if test -n "${QUICKLY:-}"; then
   #  return
@@ -411,8 +484,11 @@ soil-run() {
   mkdir -p $BASE_DIR
 
   # Test the one that's IN TREE, NOT in ../benchmark-data
-  local -a osh_bin=( $OSH_CPP_NINJA_BUILD $OSH_SOUFFLE_CPP_NINJA_BUILD _bin/cxx-opt+bumpleak/osh)
-  ninja "${osh_bin[@]}"
+  local -a oils_bin=(
+    _bin/cxx-opt/osh _bin/cxx-opt+bumpleak/osh _bin/cxx-opt/mycpp-souffle/osh 
+    _bin/cxx-opt/ysh _bin/cxx-opt+bumpleak/ysh _bin/cxx-opt/mycpp-souffle/ysh 
+  )
+  ninja "${oils_bin[@]}"
 
   local single_machine='no-host'
 
@@ -426,7 +502,7 @@ soil-run() {
 
   benchmarks/id.sh shell-provenance-2 \
     $single_machine $job_id _tmp \
-    bash dash python2 "${osh_bin[@]}"
+    bash dash python2 awk "${oils_bin[@]}"
 
   local provenance=_tmp/provenance.txt
   local host_job_id="$single_machine.$job_id"
@@ -463,7 +539,7 @@ stage1() {
   local -a raw=()
 
   # TODO: We should respect QUICKLY=1
-  for metric in hello fib word_freq parse_help bubble_sort palindrome; do
+  for metric in hello fib for_loop control_flow word_freq parse_help bubble_sort palindrome; do
     local dir=$raw_dir/$metric
 
     if test -n "$single_machine"; then
@@ -522,6 +598,22 @@ EOF
 EOF
 
   tsv2html $in_dir/fib.tsv
+
+  cmark <<EOF
+### for loop
+
+- arg1: the N to sum
+EOF
+
+  tsv2html $in_dir/for_loop.tsv
+
+  cmark <<EOF
+### control flow
+
+- arg1: the N to sum
+EOF
+
+  tsv2html $in_dir/control_flow.tsv
 
   cmark <<EOF
 ### word_freq (associative arrays / hash tables)
@@ -589,7 +681,7 @@ EOF
 EOF
 }
 
-control-flow() {
+run-control-flow() {
   ### Reproduce OSH perf bug because of C++ exceptions
 
   # do_neither:  0.288 dash, 0.872 bash, 0.865 OSH
@@ -601,13 +693,14 @@ control-flow() {
 
   ninja $osh
 
-  for func in do_neither do_continue do_break; do
+  for func in do_none do_continue do_break do_return; do
+  #for func in do_return; do
     echo "=== $func"
     echo
     for sh in dash bash $osh; do
       echo "--- $sh"
       # TIMEFORMAT above
-      time $sh benchmarks/compute/control_flow.sh $func 500
+      time $sh benchmarks/compute/control_flow.sh $func 200
       echo
     done
   done

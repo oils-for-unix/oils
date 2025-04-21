@@ -53,6 +53,9 @@ from _devbuild.gen.syntax_asdl import (
     Eggex,
     List_of_command,
     debug_frame,
+    VarDecl,
+    Mutation,
+    ExprCommand,
 )
 from _devbuild.gen.runtime_asdl import (
     cmd_value,
@@ -867,7 +870,7 @@ class CommandEvaluator(object):
                 raise NotImplementedError()
 
     def _DoVarDecl(self, node):
-        # type: (command.VarDecl) -> int
+        # type: (VarDecl) -> int
         # x = 'foo' in Hay blocks
 
         flags = state.YshDecl
@@ -933,7 +936,7 @@ class CommandEvaluator(object):
         return 0
 
     def _DoMutation(self, node):
-        # type: (command.Mutation) -> None
+        # type: (Mutation) -> None
 
         with switch(node.keyword.id) as case2:
             if case2(Id.KW_SetVar):
@@ -1238,7 +1241,7 @@ class CommandEvaluator(object):
             return 0
 
     def _DoExpr(self, node):
-        # type: (command.Expr) -> int
+        # type: (ExprCommand) -> int
 
         # call f(x) or = f(x)
         val = self.expr_ev.EvalExpr(node.e, loc.Missing)
@@ -1790,6 +1793,38 @@ class CommandEvaluator(object):
         # Manual GC point before every statement
         mylib.MaybeCollect()
 
+    def _DispatchFast(self, node, cmd_st):
+        # type: (command_t, CommandStatus) -> int
+        """
+        TODO: protoype YSH fast_cmd_t
+
+        var x = 5
+        while (x > 0) {
+          echo "x = $x"
+          if (x === 3) {
+            break
+          }
+          setvar x -= 1
+        }
+
+        Nodes to compile:
+            While, If, ControlFlow
+            While has BraceGroup body though
+        New nodes:
+            Jump(int index)   # index into what?
+            JumpIfFalse( ? )  # this usually takes the top of stack?
+
+        Nodes that stay the same:
+            VarDecl, Mutation, Simple
+
+        Do a very simple interpretation, ignoring ctx_*
+
+        And then introduce mem.exec_stack ?  These are like the Python VMs frame.
+
+        - Second option: return an enum
+        """
+        pass
+
     def _Dispatch(self, node, cmd_st):
         # type: (command_t, CommandStatus) -> int
         """Switch on the command_t variants and execute them."""
@@ -1876,7 +1911,7 @@ class CommandEvaluator(object):
                 status = 0  # make it true
 
             elif case(command_e.VarDecl):  # YSH LEAF command
-                node = cast(command.VarDecl, UP_node)
+                node = cast(VarDecl, UP_node)
 
                 # Point to var name (bare assignment has no keyword)
                 self.mem.SetTokenForLine(node.lhs[0].left)
@@ -1884,7 +1919,7 @@ class CommandEvaluator(object):
                 self._LeafTick()
 
             elif case(command_e.Mutation):  # YSH LEAF command
-                node = cast(command.Mutation, UP_node)
+                node = cast(Mutation, UP_node)
 
                 self.mem.SetTokenForLine(node.keyword)  # point to setvar/set
                 self._DoMutation(node)
@@ -1892,7 +1927,7 @@ class CommandEvaluator(object):
                 self._LeafTick()
 
             elif case(command_e.Expr):  # YSH LEAF command
-                node = cast(command.Expr, UP_node)
+                node = cast(ExprCommand, UP_node)
 
                 self.mem.SetTokenForLine(node.keyword)
                 # YSH debug trap?
