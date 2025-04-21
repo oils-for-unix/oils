@@ -62,18 +62,16 @@ def bind_r_for_bind_x_osh_fn(sh):
     add_foo_fn(sh)
     expect_prompt(sh)
 
-    send_bind(sh, """-x '"\C-x\C-f": foo' """)
+    send_bind(sh, """-x '"\C-o": foo' """)
     expect_prompt(sh)
 
-    sh.sendcontrol('x')
-    sh.sendcontrol('f')
+    sh.sendcontrol('o')
     time.sleep(0.1)
     sh.expect("FOO")
 
-    send_bind(sh, '-r "\C-x\C-f" ')
+    send_bind(sh, '-r "\C-o" ')
 
-    sh.sendcontrol('x')
-    sh.sendcontrol('f')
+    sh.sendcontrol('o')
     time.sleep(0.1)
 
     expect_prompt(sh)
@@ -87,11 +85,10 @@ def bind_x(sh):
     add_foo_fn(sh)
     expect_prompt(sh)
 
-    send_bind(sh, """-x '"\C-x\C-f": foo' """)
+    send_bind(sh, """-x '"\C-o": foo' """)
     expect_prompt(sh)
 
-    sh.sendcontrol('x')
-    sh.sendcontrol('f')
+    sh.sendcontrol('o')
     time.sleep(0.1)
 
     sh.expect("FOO")
@@ -104,14 +101,13 @@ def bind_x_runtime_envvar_vals(sh):
 
     sh.sendline("export BIND_X_VAR=foo")
 
-    send_bind(sh, """-x '"\C-x\C-f": echo $BIND_X_VAR' """)
+    send_bind(sh, """-x '"\C-o": echo $BIND_X_VAR' """)
     expect_prompt(sh)
 
     sh.sendline("export BIND_X_VAR=bar")
     expect_prompt(sh)
 
-    sh.sendcontrol('x')
-    sh.sendcontrol('f')
+    sh.sendcontrol('o')
     time.sleep(0.1)
 
     sh.expect("bar")
@@ -122,13 +118,12 @@ def bind_x_readline_line(sh):
     "test bind -x for correctly setting $READLINE_LINE for the cmd"
     expect_prompt(sh)
 
-    send_bind(sh, """-x '"\C-x\C-f": echo Current line is: $READLINE_LINE' """)
+    send_bind(sh, """-x '"\C-o": echo Current line is: $READLINE_LINE' """)
     expect_prompt(sh)
 
     sh.send('abcdefghijklmnopqrstuvwxyz')
 
-    sh.sendcontrol('x')
-    sh.sendcontrol('f')
+    sh.sendcontrol('o')
     time.sleep(0.1)
 
     # must not match any other output (like debug output or shell names)
@@ -141,6 +136,25 @@ def bind_x_readline_line(sh):
 
 
 @register(not_impl_shells=['dash', 'mksh'])
+def bind_x_set_readline_line_to_uppercase(sh):
+    """test bind -x for correctly using $READLINE_LINE changes"""
+    expect_prompt(sh)
+
+    send_bind(sh, """-x '"\C-o": READLINE_LINE=${READLINE_LINE^^}' """)
+    expect_prompt(sh)
+
+    sh.send('abcdefghijklmnopqrstuvwxyz')
+
+    sh.sendcontrol('o')
+    time.sleep(0.1)
+
+    sh.sendline('')
+    
+    # Expect the uppercase command to be executed (and likely fail as 'command not found')
+    sh.expect("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+
+@register(not_impl_shells=['dash', 'mksh'])
 def bind_x_readline_point(sh):
     "test bind -x for correctly setting $READLINE_POINT for the cmd"
     cmd_str = 'abcdefghijklmnop'
@@ -148,14 +162,12 @@ def bind_x_readline_point(sh):
 
     expect_prompt(sh)
 
-    send_bind(sh,
-              """-x '"\C-x\C-f": echo Cursor point at: $READLINE_POINT' """)
+    send_bind(sh, """-x '"\C-o": echo Cursor point at: $READLINE_POINT' """)
     expect_prompt(sh)
 
     sh.send(cmd_str)
 
-    sh.sendcontrol('x')
-    sh.sendcontrol('f')
+    sh.sendcontrol('o')
     time.sleep(0.1)
 
     sh.expect("Cursor point at: " + str(expected_rl_point))
@@ -164,6 +176,57 @@ def bind_x_readline_point(sh):
         '[[ -v READLINE_POINT ]] && echo "READLINE_POINT is set" || echo "READLINE_POINT is unset"'
     )
     sh.expect("READLINE_POINT is unset")
+    
+    
+# # This test is commented out for the moment, as I haven't figured out a way 
+# # to get it to work with pexpect. Might be possible with the pyte lib
+# @register(not_impl_shells=['dash', 'mksh'])
+# def bind_x_set_readline_point_to_insert(sh):
+#     "test bind -x for correctly using $READLINE_POINT to overwrite the cmd"
+#     sh.logfile = sys.stdout
+    
+#     # # switch to raw mode
+#     # sh.sendline('stty -icanon')
+#     # time.sleep(0.1)
+    
+#     test_status = "failing"
+#     cmd_str = f'# this test is {test_status}'
+#     new_rl_point = len(cmd_str) - len(test_status)
+
+#     expect_prompt(sh)
+
+#     send_bind(sh, f"""-x '"\C-o": READLINE_POINT={new_rl_point}'""")
+#     expect_prompt(sh)
+
+#     sh.send(cmd_str)
+#     time.sleep(0.1)
+
+#     sh.sendcontrol('o')
+#     time.sleep(0.1)
+    
+#     print("\nBefore alteration:", str(sh))
+    
+#     sh.send("no longer ")
+#     time.sleep(0.1)
+#     # sh.sendcontrol('e')
+#     # time.sleep(0.1)
+#     sh.sendline('')
+#     time.sleep(0.1)
+    
+#     # expect_prompt(sh)
+#     # print("Before:", sh.before)
+#     # print("After:", sh.after)
+    
+#     try:
+#         i = sh.expect("this test is no longer failing")
+#         print("Expect result:", i)
+#     except:
+#         print("Exception was thrown")
+#         print("debug information:")
+#         print(str(sh))
+    
+    
+    
 
 
 @register(not_impl_shells=['dash', 'mksh'])
@@ -171,11 +234,10 @@ def bind_x_unicode(sh):
     "test bind -x code for handling unicode"
     expect_prompt(sh)
 
-    send_bind(sh, """-x '"\C-x\C-f": echo 🅾️' """)
+    send_bind(sh, r"""-x '"\C-o": echo 🅾️' """)
     expect_prompt(sh)
 
-    sh.sendcontrol('x')
-    sh.sendcontrol('f')
+    sh.sendcontrol('o')
     time.sleep(0.1)
 
     sh.expect("🅾️")
