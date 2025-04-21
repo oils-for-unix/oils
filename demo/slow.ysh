@@ -1,0 +1,19 @@
+#!bin/ysh
+
+source $LIB_YSH/list.ysh
+
+var captured = 'captured'
+
+proc p (;n) {
+  for i in (0 ..< n) {
+    write -- $[join(repeat([i], i))]
+    echo x >&2
+    sleep 0.01
+  }
+}
+
+var cmd = ^( p (50) )
+var result = io.captureAll(cmd)
+= result
+
+assert [repeat(b'x\n', 50) === result.stderr]

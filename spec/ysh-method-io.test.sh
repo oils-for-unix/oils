@@ -64,8 +64,8 @@ proc p {
     exit 42
   )
 
-  var stdout = io.captureAll(cmd)
-  pp test_ (stdout)
+  var result = io.captureAll(cmd)
+  pp test_ (result)
 }
 
 p
