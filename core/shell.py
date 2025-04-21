@@ -536,6 +536,9 @@ def Main(
     # Identical to command sub
     io_methods['captureStdout'] = value.BuiltinFunc(
         method_io.CaptureStdout(mem, shell_ex))
+    # Like captureStdout but capture stderr, too
+    io_methods['captureAll'] = value.BuiltinFunc(
+        method_io.CaptureAll(mem, shell_ex))
 
     # TODO: remove these 2 deprecated methods
     io_methods['M/evalToDict'] = value.BuiltinFunc(

@@ -64,7 +64,7 @@ let
 
   binary = [ re2c ];
   doctools = [ cmark ];
-  c_deps = [ readline ];
+  c_deps = [ readline70 ];
 
   shell_deps = [
     gawk
@@ -97,7 +97,8 @@ in mkShell rec {
   # weigh in if there's a better way to handle this.
   #
   # Note: Nix automatically adds identifiers declared here to the environment!
-  _NIX_SHELL_LIBCMARK = "${cmark}/lib/libcmark${stdenv.hostPlatform.extensions.sharedLibrary}";
+  _NIX_SHELL_LIBCMARK =
+    "${cmark}/lib/libcmark${stdenv.hostPlatform.extensions.sharedLibrary}";
 
   # Need nix to relax before it'll link against a local file.
   NIX_ENFORCE_PURITY = 0;

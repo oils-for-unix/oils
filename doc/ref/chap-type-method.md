@@ -951,10 +951,10 @@ To evaluate "purely", use the [`evalExpr()`][func/evalExpr] function.
 
 ### captureStdout()
 
-Capture stdout of a command a string.
+Run a Command, and return its stdout as a astring.
 
     var c = ^(echo hi)
-    var stdout_str = _io.captureStdout(c)  # => "hi"
+    var stdout_str = io.captureStdout(c)  # => "hi"
 
 It's like `$()` [command subs][command-sub], but can be used in pure functions
 that have access to `io`.
@@ -967,7 +967,28 @@ If the command fails, `captureStdout()` raises an error, which can be caught
 with `try`.
 
     try {
-      var s = _io->captureStdout(c)
+      var s = io.captureStdout(c)
+    }
+
+### captureAll()
+
+Run a Command, and return its `stdout` string, `stderr` string, and integer
+`status`.
+
+    var c = ^(echo out; echo err >&2)
+    var r = io.captureAll(c)  # => { stdout: "out", stderr: "err", status: 0 }
+
+It's similar to `io.captureStdout`, but returns more info.
+
+- NUL bytes and trailing newlines `\n` are **not** removed.
+- Because it captures the status, it doesn't fail when the status is non-zero.
+
+    = io.captureAll(^(echo stdout; echo stderr >&2; exit 3))
+    (Dict)
+    {
+        stdout: 'stdout\n',
+        stderr: 'stderr\n',
+        status: 3
     }
 
 ### promptVal()

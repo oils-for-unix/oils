@@ -276,10 +276,16 @@ def OsType():
 
 def InputAvailable(fd):
     # type: (int) -> bool
-    # similar to lib/sh/input_avail.c in bash
     # read, write, except
-    r, w, exc = select.select([fd], [], [fd], 0)
+    r, _, _ = select.select([fd], [], [], 0)
     return len(r) != 0
+
+
+def WaitForReading(fd_list):
+    # type: (List[int]) -> List[int]
+    # read, write, except
+    r, _, _ = select.select(fd_list, [], [])
+    return r
 
 
 def MakeDirCacheKey(path):

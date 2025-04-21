@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 
 #### cd accepts a block, runs it in different dir
 shopt -s ysh:all
@@ -79,7 +79,7 @@ p
 ## STDOUT:
 ## END
 
-#### io->eval() and io.captureStdout() passed a block in different scope
+#### io->eval() and io.captureStdout()/io.captureAll() passed a block in different scope
 shopt --set ysh:upgrade
 
 proc my-cd (; b) {
@@ -92,6 +92,9 @@ proc my-cd (; b) {
   # Yup, this is a problem
   var s = io.captureStdout(b)
   echo "stdout $s"
+
+  setvar s = io.captureAll(b)
+  echo "stdout $[s.stdout]" # Adds a newline
 }
 
 proc p {
@@ -104,6 +107,12 @@ proc p {
 p
 
 ## STDOUT:
+i = 42
+i = 42
+(Dict)   {"x":"x"}
+stdout i = 42
+stdout i = 42
+
 ## END
 
 #### block doesn't have its own scope
