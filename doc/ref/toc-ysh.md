@@ -70,7 +70,7 @@ error handling, and more.
                    Frame
                    DebugFrame  toString()
                    io          stdin            io/eval()         io/evalExpr()
-                               captureStdout()  captureAll()  promptVal()
+                               captureStdout()  captureAll()      promptVal()
                              X time()         X strftime()      X glob()
                    vm          getFrame()       getDebugStack()   id() 
 ```
