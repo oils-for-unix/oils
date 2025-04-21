@@ -10,26 +10,28 @@ Here are all types of values in the Oils runtime, organized for understanding.
 <div id="toc">
 </div> 
 
-## Eight Atoms
+## Nine Atoms
 
 Values of these types are immutable:
 
-- `Null`
-- `Str Int Float` - data types
-- `Range` - iteration over `3 .. 5`
-- `Eggex Match` - pattern matching
+### Serialiable
 
-A type with one value:
+- `Null Bool`
+- `Int Float` 
+- `Str`
+  - The only type shared between OSH and YSH.
 
-- `Stdin` - used for buffered line I/O in the YSH `for` loop
+### More
+
+- `Eggex Match` - to match patterns
+- `Range` - to iterate over `3 .. 5`
+- `Stdin` - to iterate over lines (has a singleton value)
 
 <!--
 It seems like stdin could be a file descriptor, but that doesn't fit with the
 shell I/O model.  You always REDIRECT first, then read from stdin.  And you
 don't read incrementally from multiple files at once.
 -->
-
-The `Str` type is the only type shared between OSH and YSH.
 
 <!--
 
@@ -39,32 +41,27 @@ These are variants of VALIDATED strings, with lazily materialized views?
 
 -->
 
-## Five Mutable Types
+## Six Containers
 
-YSH containers:
+- `List Dict` - YSH containers are arbitrarily recursive
+- `Place` is for "out parmas"
+   - created with `&myvar`, mutated with `call place->setValue(42)`
+- `BashArray BashAssoc` are for bash compatibility in OSH:
 
-- `List Dict` - arbitrarily recursive
-
-A special YSH type for "out params":
-
-- `Place` - created by `&myvar`, and mutated by `call place->setValue(42)`
-
-Containers for bash compatibility in OSH:
-
-- `BashArray BashAssoc` - flat
-
-## `Obj` is for User-defined Types
+### `Obj` is for User-defined Types
 
 - `Obj` - has a prototype chain
 
 Objects allow **polymorphism**.  See [YSH Objects](objects.html).
 
+#### Examples of Objects
+
 Modules and types are represented by `Obj` instances of a certain shape, not by
 primitive types.
 
-1. Modules are `Obj` with attributes, and an `__invoke__` method.
-1. Types are `Obj` with a `__str__` method, and are often compared for
-   identity.
+1. Modules are `Obj` instances with attributes, and an `__invoke__` method.
+1. Types are `Obj` instances with an `__index__` method, and are often compared
+   for identity.
 
 In general, Objects are mutable.  Do not mutate modules or types!
 
@@ -76,16 +73,11 @@ Values of these types are immutable:
 - `BuiltinFunc Func`
 - `BuiltinProc Proc`
 
-## Five Types for Reflection
+## Four Types for Reflection
 
-Values of these types are immutable:
-
-- `CommandFrag Command`
-- `Expr` (no `ExprFrag` for now)
-
-A handle to a stack frame:
-
-- `Frame` - implicitly mutable, by `setvar`, etc.
+- `Command Expr` - custom evaluation of commands and expressions <!-- no CommandFrag, ExprFrag) -->
+- `Frame` - a frame on the call stack (`proc` and `func`)
+- `DebugFrame` - to trace `eval()` calls, and more
 
 ## Appendix
 
@@ -118,5 +110,5 @@ These types used internally:
 
 - [Types and Methods](ref/chap-type-method.html) in the [Oils
   Reference](ref/index.html)
-
+- [core/value.asdl]($oils-src)
 
