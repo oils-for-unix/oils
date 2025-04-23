@@ -55,7 +55,7 @@ job-control() {
 }
 
 bind() {
-  spec/stateful/bind.py $FIRST --oils-failures-allowed 3 "$@"
+  spec/stateful/bind.py $FIRST --oils-failures-allowed 4 "$@"
 }
 
 # Run on just 2 shells

@@ -10,9 +10,11 @@ from __future__ import print_function
 
 import sys
 import time
+import pexpect
+import pyte
 
 import harness
-from harness import expect_prompt, register
+from harness import expect_prompt, register, TTY_DIMENSIONS
 
 from test.spec_lib import log
 
@@ -177,56 +179,53 @@ def bind_x_readline_point(sh):
     )
     sh.expect("READLINE_POINT is unset")
     
+        
+@register(not_impl_shells=['dash', 'mksh'])
+def bind_x_set_readline_point_to_insert(sh):
+    "test bind -x for correctly using $READLINE_POINT to overwrite the cmd"
     
-# # This test is commented out for the moment, as I haven't figured out a way 
-# # to get it to work with pexpect. Might be possible with the pyte lib
-# @register(not_impl_shells=['dash', 'mksh'])
-# def bind_x_set_readline_point_to_insert(sh):
-#     "test bind -x for correctly using $READLINE_POINT to overwrite the cmd"
-#     sh.logfile = sys.stdout
+    failing = "failing"
+    echo_cmd = 'echo "this test is %s"' % failing
+    expected_cmd = 'echo "this test is no longer %s"' % failing
+    new_rl_point = len(echo_cmd) - len(failing) - 1
     
-#     # # switch to raw mode
-#     # sh.sendline('stty -icanon')
-#     # time.sleep(0.1)
+    bind_cmd = r"""bind -x '"\C-y": READLINE_POINT=%d' """ % new_rl_point
     
-#     test_status = "failing"
-#     cmd_str = f'# this test is {test_status}'
-#     new_rl_point = len(cmd_str) - len(test_status)
+    screen = pyte.Screen(TTY_DIMENSIONS[1], TTY_DIMENSIONS[0])
+    stream = pyte.Stream(screen)
+    
+    # Need to echo, because we don't want just output
+    sh.setecho(True)
 
-#     expect_prompt(sh)
+    def _emulate_ansi_terminal(raw_output):
+        stream.feed(raw_output)
 
-#     send_bind(sh, f"""-x '"\C-o": READLINE_POINT={new_rl_point}'""")
-#     expect_prompt(sh)
+        lines = screen.display
+        screen.reset()
 
-#     sh.send(cmd_str)
-#     time.sleep(0.1)
+        return '\n'.join(lines)
+    
 
-#     sh.sendcontrol('o')
-#     time.sleep(0.1)
+    # sh.sendline('stty -icanon')
+    # time.sleep(0.1)
+
+    sh.sendline(bind_cmd) 
+    time.sleep(0.1)
+        
+    sh.send(echo_cmd) 
+    time.sleep(0.1)
+            
+    sh.sendcontrol('y')
+    time.sleep(0.2)
+
+    sh.send("no longer ") 
+    time.sleep(0.1)
     
-#     print("\nBefore alteration:", str(sh))
+    sh.expect(pexpect.TIMEOUT, timeout=2)
     
-#     sh.send("no longer ")
-#     time.sleep(0.1)
-#     # sh.sendcontrol('e')
-#     # time.sleep(0.1)
-#     sh.sendline('')
-#     time.sleep(0.1)
-    
-#     # expect_prompt(sh)
-#     # print("Before:", sh.before)
-#     # print("After:", sh.after)
-    
-#     try:
-#         i = sh.expect("this test is no longer failing")
-#         print("Expect result:", i)
-#     except:
-#         print("Exception was thrown")
-#         print("debug information:")
-#         print(str(sh))
-    
-    
-    
+    screen_contents = _emulate_ansi_terminal(sh.before)
+    if expected_cmd not in screen_contents:
+        raise Exception(f"Expected command '{expected_cmd}' not found in screen contents:\n{screen_contents}")
 
 
 @register(not_impl_shells=['dash', 'mksh'])

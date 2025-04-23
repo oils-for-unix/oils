@@ -19,6 +19,9 @@ from test import spec_lib  # Using this for a common interface
 
 log = spec_lib.log
 
+# pexpect/ptyprocess default; NB: it's the opposite order of os.terminal_size
+TTY_DIMENSIONS = (24, 80) 
+
 
 def expect_prompt(sh):
     sh.expect(r'.*\$')
@@ -84,34 +87,54 @@ class TestRunner(object):
             sh_argv.append('--norc')
         #print(sh_argv)
 
-        # Python 3: encoding required
-        sh = pexpect.spawn(shell_path,
-                           sh_argv,
-                           encoding='utf-8',
-                           timeout=self.pexpect_timeout)
-
-        sh.shell_label = shell_label  # for tests to use
-
-        # Generally don't want local echo, it gets confusing fast.
-        sh.setecho(False)
-
-        if self.verbose:
-            sh.logfile = sys.stdout
-
-        ok = True
+        # Set LINES and COLUMNS in case a program needs them
+        # Setting the dimensions kw param is not enough
+        original_lines = os.environ.get('LINES')
+        original_columns = os.environ.get('COLUMNS')
+        os.environ['LINES'] = str(TTY_DIMENSIONS[0])
+        os.environ['COLUMNS'] = str(TTY_DIMENSIONS[1])
+        
         try:
-            func(sh)
-        except Exception as e:
-            import traceback
-            traceback.print_exc(file=sys.stderr)
-            return Result.FAIL
-            ok = False
+            # Python 3: encoding required
+            sh = pexpect.spawn(
+                shell_path,
+                sh_argv,
+                encoding="utf-8",
+                dimensions=TTY_DIMENSIONS,
+                echo=False,  # Generally don't want local echo of input, it gets confusing fast.
+                timeout=self.pexpect_timeout,
+            )
+            
 
+            sh.shell_label = shell_label  # for tests to use
+
+            if self.verbose:
+                sh.logfile = sys.stdout
+
+            ok = True
+            try:
+                func(sh)
+            except Exception as e:
+                import traceback
+                traceback.print_exc(file=sys.stderr)
+                return Result.FAIL
+                ok = False
+
+            finally:
+                sh.close()
+
+            if ok:
+                return Result.OK
         finally:
-            sh.close()
-
-        if ok:
-            return Result.OK
+            if original_lines is None:
+                del os.environ['LINES']
+            else:
+                os.environ['LINES'] = original_lines
+            if original_columns is None :
+                del os.environ['COLUMNS']
+            else:
+                os.environ['COLUMNS'] = original_columns
+                
 
     def RunCase(self, shell_path, shell_label, func):
         result = self.RunOnce(shell_path, shell_label, func)
