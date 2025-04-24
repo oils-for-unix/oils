@@ -426,3 +426,11 @@ len=2
 
 ## N-I dash/ash STDOUT:
 ## END
+
+#### Crash in {1..10} - issue #2296
+
+{1..10}
+
+## status: 127
+## STDOUT:
+## END

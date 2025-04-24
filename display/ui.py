@@ -318,7 +318,8 @@ def _PrintWithLocation(prefix, msg, blame_loc, show_code):
         return
 
     blame_tok = location.TokenFor(blame_loc)
-    if blame_tok is None:  # When does this happen?
+    # lexer.DummyToken() gives you a Lit_Chars Token with no line
+    if blame_tok is None or blame_tok.line is None:
         f.write('[??? no location ???] %s%s\n' % (prefix, msg))
         return
 
