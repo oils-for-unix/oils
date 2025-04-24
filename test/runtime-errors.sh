@@ -1225,6 +1225,12 @@ test-bind() {
   _osh-error-1 'bind "\eQ: yank-pop" "\eQ: yank-pop" "c"'
 }
 
+test-brace-range() {
+  _osh-error-X 127 '{35..37}'
+  _osh-error-X 127 'x{35..37}'
+  _osh-error-X 127 '{35..37}"x"'
+}
+
 #
 # TEST DRIVER
 #
