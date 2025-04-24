@@ -461,7 +461,9 @@ def _ExpandPart(
                     # TODO: Preserve location info
                     #log('s %r', s)
                     #t = Token(Id.Lit_Chars, expand_part.locs[0], s)
-                    t = lexer.DummyToken(Id.Lit_Chars, s)
+                    orig_tok = expand_part.blame_tok
+                    t = Token(Id.Lit_Chars, orig_tok.length, orig_tok.col, orig_tok.line, s)
+                    #t = lexer.DummyToken(Id.Lit_Chars, s)
 
                     out_parts_.append(t)
                     out_parts_.extend(suffix)
