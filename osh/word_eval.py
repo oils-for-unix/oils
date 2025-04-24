@@ -1852,6 +1852,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 v = Piece(lexer.LazyStr(part), quoted, is_subst)
                 part_vals.append(v)
 
+            elif case(word_part_e.BracedRangeDigit):
+                part = cast(word_part.BracedRangeDigit, UP_part)
+                # This is the '5' in {1..10} - whether it's quoted should not
+                # matter
+                v = Piece(part.s, False, False)
+                part_vals.append(v)
+
             elif case(word_part_e.EscapedLiteral):
                 part = cast(word_part.EscapedLiteral, UP_part)
                 v = Piece(part.ch, True, False)

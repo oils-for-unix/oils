@@ -269,6 +269,10 @@ def LeftTokenForWordPart(part):
             part = cast(word_part.BracedRange, UP_part)
             return part.blame_tok
 
+        elif case(word_part_e.BracedRangeDigit):
+            part = cast(word_part.BracedRangeDigit, UP_part)
+            return part.orig_tok
+
         elif case(word_part_e.BracedTuple):
             part = cast(word_part.BracedTuple, UP_part)
             # TODO: Derive token from part.words[0]

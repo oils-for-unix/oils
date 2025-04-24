@@ -458,14 +458,9 @@ def _ExpandPart(
                     out_parts_ = []  # type: List[word_part_t]
                     out_parts_.extend(prefix)
 
-                    # TODO: Preserve location info
-                    #log('s %r', s)
-                    #t = Token(Id.Lit_Chars, expand_part.locs[0], s)
-                    orig_tok = expand_part.blame_tok
-                    t = Token(Id.Lit_Chars, orig_tok.length, orig_tok.col, orig_tok.line, s)
-                    #t = lexer.DummyToken(Id.Lit_Chars, s)
-
+                    t = word_part.BracedRangeDigit(s, expand_part.blame_tok)
                     out_parts_.append(t)
+
                     out_parts_.extend(suffix)
                     out.append(out_parts_)
 

@@ -228,6 +228,8 @@ module syntax
     # {a..f} or {a..f..2} or {a..f..-2}
     # the whole range is one Token,
   | BracedRange(Token blame_tok, id kind, str start, str end, int step)
+    # expanded version of {1..10}
+  | BracedRangeDigit(str s, Token orig_tok)
     # extended globs are parsed statically, unlike globs
   | ExtGlob(Token op, List[CompoundWord] arms, Token right)
     # a regex group is similar to an extended glob part
