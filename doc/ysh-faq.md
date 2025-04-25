@@ -355,6 +355,6 @@ But that seems too low-level!
 
 ## Related
 
-- [Oil Language FAQ]($wiki) on the wiki has more answers.  They may be migrated
-  here at some point.
+- [YSH FAQ]($wiki) on the wiki has more answers.  We may be migrate some of
+  them here.
 
