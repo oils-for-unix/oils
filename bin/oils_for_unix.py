@@ -101,8 +101,8 @@ def AppBundleMain(argv):
     else:
         bundle = 'oils-for-unix'  # _bin/cxx-dbg/oils-for-unix
 
-    # for legacy oil.ovm
-    if main_name == bundle or (main_name == 'oil' and len(ext)):
+    # for legacy oils-ref.ovm
+    if main_name == bundle or (main_name == 'oils-ref' and len(ext)):
         arg_r.Next()
         first_arg = arg_r.Peek()
         if first_arg is None:
@@ -133,7 +133,7 @@ def AppBundleMain(argv):
 
     environ = pyos.Environ()
 
-    if applet.startswith('ysh') or applet == 'oil':
+    if applet.startswith('ysh'):
         return shell.Main('ysh', arg_r, environ, login_shell, loader, readline)
 
     elif applet.startswith('osh') or applet.endswith(
