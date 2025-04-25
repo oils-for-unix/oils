@@ -50,9 +50,9 @@ test-run-osh() {
 
     local skip=''
     case $prog in
-      (*/assign.osh) skip=T ;;
-      (*/no-dynamic-scope.osh) skip=T ;;
-      (*/inline-function-calls.sh) skip=T ;;
+      */assign.osh) skip=T ;;
+      */no-dynamic-scope.osh) skip=T ;;
+      */inline-function-calls.sh) skip=T ;;
     esac
 
     if test -n "$skip"; then
