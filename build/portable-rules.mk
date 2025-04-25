@@ -3,13 +3,13 @@
 # Non-portable rules involves C compilers, and must be done on the target
 # machine.
 
-# The root of this repo, e.g. ~/git/oil, should be our PYTHONPATH for
-# detecting dependencies.
+# The root of this repo, e.g. ~/git/oils-for-unix/oils, should be our
+# PYTHONPATH for detecting dependencies.
 # 
 # From this link:
 # https://stackoverflow.com/questions/322936/common-gnu-makefile-directory-path
 # Except we're using 'firstword' instead of 'lastword', because
-# _build/oil/ovm.d is the last one.
+# _build/oils-ref/ovm.d is the last one.
 REPO_ROOT := $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 
 #
@@ -64,7 +64,7 @@ _build/opy/py27.grammar.marshal: opy/py27.grammar
 	bin/opyc pgen2 $^ $@
 
 # NOTE: This should really depend on all the .py files.
-# I should make a _build/oil/py.d file and include it?
+# I should make a _build/oils-ref/py.d file and include it?
 # This depends on the grammar pickle because it's the first one that calls opy
 # compile.
 _build/%/opy-app-deps.txt: _build/opy/py27.grammar.marshal _build/%/all-deps-py.txt
