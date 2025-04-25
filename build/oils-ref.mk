@@ -3,7 +3,7 @@
 # C module dependencies
 -include _build/oils-ref/ovm.d
 
-_build/oil/main_name.c:
+_build/oils-ref/main_name.c:
 	$(ACTIONS_SH) main-name bin.oil oils-ref.ovm > $@
 
 OIL_PYPATH := $(REPO_ROOT):$(REPO_ROOT)/vendor
