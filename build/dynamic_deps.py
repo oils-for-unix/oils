@@ -1,6 +1,6 @@
 # NO SHEBANG because we call it directly.
 """
-app_deps.py
+dynamic_deps.py
 
 Dynamically discover Python and C modules.  We import the main module and
 inspect sys.modules before and after.  That is, we use the exact logic that the

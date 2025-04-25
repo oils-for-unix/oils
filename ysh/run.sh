@@ -9,8 +9,7 @@ set -o errexit
 
 source test/common.sh
 
-# TODO: Rename to ysh
-OIL=${OIL:-'bin/oil'}
+YSH=${YSH:-'bin/ysh'}
 OSH_CPP=_bin/cxx-asan/osh
 # Assertion failed
 #OSH_CPP=_bin/cxx-dbg/osh
@@ -51,9 +50,9 @@ test-run-osh() {
 
     local skip=''
     case $prog in
-      (*/assign.osh) skip=T ;;
-      (*/no-dynamic-scope.osh) skip=T ;;
-      (*/inline-function-calls.sh) skip=T ;;
+      */assign.osh) skip=T ;;
+      */no-dynamic-scope.osh) skip=T ;;
+      */inline-function-calls.sh) skip=T ;;
     esac
 
     if test -n "$skip"; then
@@ -71,7 +70,7 @@ test-run-ysh() {
 
   for prog in ysh/testdata/*.ysh; do
     echo ---
-    $OIL $prog all
+    $YSH $prog all
   done
 }
 

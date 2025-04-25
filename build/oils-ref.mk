@@ -1,10 +1,10 @@
-# oil.mk: Build rules for oil.ovm.
+# oils-ref.mk: Build rules for oils-ref.ovm.
 
 # C module dependencies
--include _build/oil/ovm.d
+-include _build/oils-ref/ovm.d
 
-_build/oil/main_name.c:
-	$(ACTIONS_SH) main-name bin.oil oil.ovm > $@
+_build/oils-ref/main_name.c:
+	$(ACTIONS_SH) main-name bin.oil oils-ref.ovm > $@
 
 OIL_PYPATH := $(REPO_ROOT):$(REPO_ROOT)/vendor
 
@@ -15,12 +15,12 @@ OIL_PYPATH := $(REPO_ROOT):$(REPO_ROOT)/vendor
 #
 # BUG: Running 'make' the first time files because it can't find the '_build'
 # package.  build/doc.sh currently makes _build/__init__.py.
-_build/oil/app-deps-%.txt: _build/detected-config.sh build/dynamic_deps.py
-	test -d _build/oil && \
-	  $(ACTIONS_SH) app-deps oil $(OIL_PYPATH) bin.oil
+_build/oils-ref/app-deps-%.txt: _build/detected-config.sh build/dynamic_deps.py
+	test -d _build/oils-ref && \
+	  $(ACTIONS_SH) app-deps oils-ref $(OIL_PYPATH) bin.oil
 
-_build/oil/py-to-compile.txt: _build/detected-config.sh build/dynamic_deps.py
-	test -d _build/oil && \
+_build/oils-ref/py-to-compile.txt: _build/detected-config.sh build/dynamic_deps.py
+	test -d _build/oils-ref && \
 		$(ACTIONS_SH) py-to-compile $(OIL_PYPATH) bin.oil > $@
 
 # NOTE: I should really depend on every file in build/oil-manifest.txt!
@@ -37,25 +37,25 @@ OIL_BYTECODE_DEPS := \
 #   in dev mode.
 # - Do we need $(OIL_SRCS) as dependencies?
 
-_build/oil/bytecode-cpython-manifest.txt: $(OIL_BYTECODE_DEPS) \
-                         _build/oil/app-deps-cpython.txt
+_build/oils-ref/bytecode-cpython-manifest.txt: $(OIL_BYTECODE_DEPS) \
+                         _build/oils-ref/app-deps-cpython.txt
 	{ echo '_build/release-date.txt release-date.txt'; \
 	  cat build/oil-manifest.txt \
-	      _build/oil/app-deps-cpython.txt \
+	      _build/oils-ref/app-deps-cpython.txt \
 	  $(ACTIONS_SH) help-manifest _devbuild/help; \
 	  $(ACTIONS_SH) pyc-version-manifest $@; \
 	} > $@
 
-_build/oil/bytecode-opy-manifest.txt: $(OIL_BYTECODE_DEPS) \
-                         _build/oil/opy-app-deps.txt
+_build/oils-ref/bytecode-opy-manifest.txt: $(OIL_BYTECODE_DEPS) \
+                         _build/oils-ref/opy-app-deps.txt
 	{ echo '_build/release-date.txt release-date.txt'; \
 	  cat build/oil-manifest.txt \
-	      _build/oil/opy-app-deps.txt; \
+	      _build/oils-ref/opy-app-deps.txt; \
 	  $(ACTIONS_SH) help-manifest _devbuild/help; \
 	  $(ACTIONS_SH) ysh-stdlib-manifest; \
 	  $(ACTIONS_SH) pyc-version-manifest $@; \
 	} > $@
 
-_build/oil/bytecode-%.zip: _build/oil/bytecode-%-manifest.txt
+_build/oils-ref/bytecode-%.zip: _build/oils-ref/bytecode-%-manifest.txt
 	build/make_zip.py $@ < $^
 

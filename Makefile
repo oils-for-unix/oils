@@ -6,12 +6,12 @@
 #
 # Tarball layout (see build/compile.sh for details):
 #
-# oil.tar/
+# oils-ref.tar/
 #   configure
 #   install
 #   Makefile
 #   _build/                 # Intermediate files
-#     oil/                  # The app name
+#     oils-ref/                 # The app name
 #       bytecode-opy.zip        # Arch-independent
 #       main_name.c
 #       module_init.c       # Python module initializer
@@ -36,10 +36,10 @@
 #   cpython-full/           # Full CPython build, for dynamically
 #                           # discovering Python/C dependencies
 #   c-module-toc.txt        # What files each module is in
-#   oil/                    # App-specific dir
+#   oils-ref/               # App-specific dir
 #     py-to-compile.txt
 #     all-deps-py.txt       # input to compiler: _build/py-to-compile +
-                            # _build/oil/py-to-compile
+                            # _build/oils-ref/py-to-compile
 #     opy-app-deps.txt      # compiled with OPy, name DOESN'T match app-deps-% !
 #     all-deps-c.txt        # App deps plus CPython platform deps
 #     app-deps-cpython.txt  # compiled with CPython
@@ -51,10 +51,10 @@
 #     ovm.d                 # Make fragment
 #     ovm, ovm-dbg          # OVM executables (without bytecode)
 # _release/
-#   oil.tar                 # See tarball layout above
+#   oils-ref.tar            # See tarball layout above
 # _bin/                     # Concatenated App Bundles
-#   oil.ovm
-#   oil.ovm-dbg
+#   oils-ref.ovm
+#   oils-ref.ovm-dbg
 #   hello.ovm
 #   hello.ovm-dbg
 
@@ -69,7 +69,7 @@
 .SUFFIXES:
 
 # Make all directories before every build.
-$(shell mkdir -p _bin _release _tmp _build/hello _build/oil _build/opy)
+$(shell mkdir -p _bin _release _tmp _build/hello _build/oils-ref _build/opy)
 
 STAMP_SH := build/stamp.sh
 ACTIONS_SH := build/ovm-actions.sh
@@ -88,18 +88,18 @@ BYTECODE_ZIP := bytecode-opy.zip
 HAVE_OBJCOPY := $(shell command -v objcopy 2>/dev/null)
 
 # For faster testing of builds
-#default: _bin/oil.ovm-dbg
+#default: _bin/oils-ref.ovm-dbg
 
 # What the end user should build when they type 'make'.
-default: _bin/oil.ovm
+default: _bin/oils-ref.ovm
 
 # Debug bundles and release tarballs.
 all: \
-	_bin/hello.ovm _bin/oil.ovm \
-	_bin/hello.ovm-dbg _bin/oil.ovm-dbg \
-	_release/hello.tar _release/oil.tar
+	_bin/hello.ovm _bin/oils-ref.ovm \
+	_bin/hello.ovm-dbg _bin/oils-ref.ovm-dbg \
+	_release/hello.tar _release/oils-ref.tar
 
-# Take care not to remove _build/oil/bytecode-opy.zip, etc.
+# Take care not to remove _build/oils-ref/bytecode-opy.zip, etc.
 clean:
 	$(CLEAN_SH) source-tarball-build
 
@@ -120,13 +120,13 @@ print-%:
 	@echo $*=$($*)
 
 # These files is intentionally NOT included in release tarballs.  For example,
-# we don't want try to rebuild _build/oil/bytecode-opy.zip, which is already
+# we don't want try to rebuild _build/oils-ref/bytecode-opy.zip, which is already
 # included in the release tarball.  Portable rules can be run on the developer
 # machine rather than on the end-user machine.
 
 -include build/portable-rules.mk  # Must come first
 -include build/hello.mk
--include build/oil.mk
+-include build/oils-ref.mk
 
 #
 # Native Builds
@@ -153,7 +153,7 @@ _build/%/ovm-opt.symbols: _build/%/ovm-opt
 
 _build/%/ovm-opt.stripped: _build/%/ovm-opt _build/%/ovm-opt.symbols
 	strip -o $@ _build/$*/ovm-opt  # What's the difference with debug symbols?
-	# We need a relative path since it will be _bin/oil.ovm
+	# We need a relative path since it will be _bin/oils-ref.ovm
 	objcopy --add-gnu-debuglink=_build/$*/ovm-opt.symbols $@
 
 else

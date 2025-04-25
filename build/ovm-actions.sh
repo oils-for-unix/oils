@@ -75,7 +75,7 @@ py-to-compile() {
     $PREPARE_DIR/python -S build/dynamic_deps.py py $main_module
 }
 
-# For embedding in oil/bytecode.zip.
+# For embedding in oils-ref/bytecode.zip.
 help-manifest() {
   local dir=$1
   for path in $dir/*; do
@@ -90,7 +90,7 @@ ysh-stdlib-manifest() {
 }
 
 pyc-version-manifest() {
-  local manifest_path=${1:-_build/oil/bytecode-opy-manifest.txt}  # For example
+  local manifest_path=${1:-_build/oils-ref/bytecode-opy-manifest.txt}  # For example
 
   # Just show a string like "bytecode-opy.zip" for now.  There is no OPy
   # version yet.
@@ -177,7 +177,7 @@ gen-module-init() {
 
 join-modules() {
   local static=${1:-static-c-modules.txt}
-  local discovered=${2:-_build/oil/all-deps-c.txt}
+  local discovered=${2:-_build/oils-ref/all-deps-c.txt}
 
   # Filter out comments, print the first line.
   #
