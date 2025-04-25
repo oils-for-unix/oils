@@ -15,6 +15,46 @@ Old and new constructs exist side-by-side.  New constructs have fewer
 <div id="toc">
 </div>
 
+## Can I freely mix OSH and YSH code?
+
+*If YSH is equivalent to OSH with `shopt --set ysh:all`, it seems like this
+could be possible?*
+
+Currently we recommend only combining OSH and YSH when they're in **different
+processes**.
+
+While you may be able to source OSH from YSH like this:
+
+```
+shopt --unset ysh:all {
+  source lib.osh
+}
+```
+
+and perhaps source YSH from OSH like this:
+
+```
+shopt --set ysh:all
+source lib.ysh
+```
+
+... actually calling shell functions and procs is **a problem**.  This is
+because the `shopt` options are **global**, and you can end up with "mixed
+stacks".
+
+For example, consider a call stack that looks like :
+
+```
+OSH -> YSH -> OSH -> YSH
+```
+
+Reasoning about code mixed this way is difficult.
+
+Instead, you may want limited mixing, where you "shell out" to OSH from YSH, or
+vice versa.  This is similar to shelling out to `awk` from `sh`, for example.
+
+(The [$0 Dispatch Pattern]($xref:0-dispatch) may be useful.)
+
 ## What's the difference `myvar`, `$myvar`, and `"$myvar"` ?
 
 YSH is more like Python/JavaScript rather than PHP/Perl, so it doesn't use the
