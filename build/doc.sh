@@ -760,6 +760,7 @@ EOF
   # Note: legacy names are needed for old releases
   for name in \
     oils-for-unix-$version.tar.{gz,xz} \
+    oils-ref-$version.tar.gz \
     oil-$version.tar.{gz,xz} \
     oil-native-$version.tar.xz; do
 

@@ -58,8 +58,8 @@ source devtools/common.sh  # banner
 source benchmarks/common.sh  # BENCHMARK_DATA_OILS, OSH_CPP_BENCHMARK_DATA
                              # redefines OIL_VERSION as readonly
 
-readonly OSH_RELEASE_BINARY=$REPO_ROOT/_tmp/oil-tar-test/oil-$OIL_VERSION/_bin/osh
-readonly YSH_RELEASE_BINARY=$REPO_ROOT/_tmp/oil-tar-test/oil-$OIL_VERSION/_bin/ysh
+readonly OSH_RELEASE_BINARY=$REPO_ROOT/_tmp/ref-tar-test/oil-$OIL_VERSION/_bin/osh
+readonly YSH_RELEASE_BINARY=$REPO_ROOT/_tmp/ref-tar-test/oil-$OIL_VERSION/_bin/ysh
 
 log() {
   echo "$@" 1>&2
@@ -572,7 +572,7 @@ deploy-tar() {
   mkdir -p $DOWNLOAD_DIR
 
   cp -v \
-    _release/oil-$OIL_VERSION.tar.* _release/oils-for-unix-$OIL_VERSION.tar.* \
+    _release/oils-ref-$OIL_VERSION.tar.* _release/oils-for-unix-$OIL_VERSION.tar.* \
     $DOWNLOAD_DIR
 
   ls -l $DOWNLOAD_DIR
@@ -781,7 +781,7 @@ more-release-deps() {
 
 py-tarball() {
   local in=_release/oil.tar
-  local out=_release/oil-$OIL_VERSION.tar.gz
+  local out=_release/oils-ref.$OIL_VERSION.tar.gz
 
   make $in
   time gzip -c $in > $out
