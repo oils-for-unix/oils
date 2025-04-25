@@ -55,7 +55,7 @@ ysh-ovm-tarball() {
   local version
   version=$(head -n 1 oils-version.txt)
 
-  local tar_root=$REPO_ROOT/_tmp/oil-tar-test/oil-$version
+  local tar_root=$REPO_ROOT/_tmp/oils-ref-tar-test/oils-ref-$version
 
   pushd $tar_root
   $REPO_ROOT/devtools/bin.sh make-ovm-links

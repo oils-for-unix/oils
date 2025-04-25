@@ -19,7 +19,7 @@
 #   $0 auto-machine2 ($0 dep-benchmarks first)
 #
 # In between:
-#   [switch benchmarks-data repo] commit src/oil-for-unix-* and push to flanders.
+#   [switch benchmarks-data repo] commit src/oils-for-unix-* and push to flanders.
 #   TODO: Make sure benchmark-data directory is clean!
 #
 # Resume manual work
@@ -58,8 +58,8 @@ source devtools/common.sh  # banner
 source benchmarks/common.sh  # BENCHMARK_DATA_OILS, OSH_CPP_BENCHMARK_DATA
                              # redefines OIL_VERSION as readonly
 
-readonly OSH_RELEASE_BINARY=$REPO_ROOT/_tmp/oil-tar-test/oil-$OIL_VERSION/_bin/osh
-readonly YSH_RELEASE_BINARY=$REPO_ROOT/_tmp/oil-tar-test/oil-$OIL_VERSION/_bin/ysh
+readonly OSH_RELEASE_BINARY=$REPO_ROOT/_tmp/oils-ref-tar-test/oils-ref-$OIL_VERSION/_bin/osh
+readonly YSH_RELEASE_BINARY=$REPO_ROOT/_tmp/oils-ref-tar-test/oils-ref-$OIL_VERSION/_bin/ysh
 
 log() {
   echo "$@" 1>&2
@@ -173,7 +173,7 @@ auto-machine2() {
 #         startup/
 #   download/  # What about native binaries?
 #     0.0.0/  
-#       oil-0.0.0.tar.xz 
+#       oils-ref-0.0.0.tar.xz 
 
 _test-tarball() {
   local name=${1:-hello}
@@ -202,22 +202,22 @@ _test-tarball() {
   popd
 }
 
-test-oil-tar() {
+test-oils-ref-tar() {
   local install=${1:-}  # non-empty to install
-  _test-tarball oil $(head -n 1 oils-version.txt) "$install"
+  _test-tarball oils-ref $(head -n 1 oils-version.txt) "$install"
 }
 
 _release-build() {
   # NOTE: deps/from-tar.sh {configure,build}-python is assumed
 
-  # Build the oil tar
-  $0 oil
+  # Build the oils-ref tar
+  $0 oils-ref
 
-  test-oil-tar
+  test-oils-ref-tar
 
   # For _spec-sanity-check
-  ln -s -f --no-target-directory -v oil.ovm $OSH_RELEASE_BINARY
-  ln -s -f --no-target-directory -v oil.ovm $YSH_RELEASE_BINARY
+  ln -s -f --no-target-directory -v oils-ref.ovm $OSH_RELEASE_BINARY
+  ln -s -f --no-target-directory -v oils-ref.ovm $YSH_RELEASE_BINARY
 }
 
 readonly HAVE_ROOT=1
@@ -337,8 +337,8 @@ build-and-test() {
   # etc.
   if test -n "$HAVE_ROOT"; then
     # TODO: Factor out test/alpine.sh to test/chroot.sh
-    test/alpine.sh copy-tar '' oil
-    test/alpine.sh test-tar '' oil
+    test/alpine.sh copy-tar '' oils-ref
+    test/alpine.sh test-tar '' oils-ref
   fi
 
   test/spec.sh smoke  # Initial smoke test, slightly redundant.
@@ -395,11 +395,12 @@ _compressed-tarball() {
   local in=_release/$name.tar
   local out=_release/$name-$version.tar.gz
 
-  # Overwrite it to cause rebuild of oil.tar
+  # Overwrite it to cause rebuild of oils-ref.tar
   build/stamp.sh write-release-date
 
   #make -d -r $in  # To debug
   make $in
+
   time gzip -c $in > $out
   ls -l $out
 
@@ -409,8 +410,8 @@ _compressed-tarball() {
   ls -l $out2
 }
 
-oil() {
-  _compressed-tarball oil $OIL_VERSION
+oils-ref() {
+  _compressed-tarball oils-ref $OIL_VERSION
 }
 
 hello() {
@@ -572,7 +573,7 @@ deploy-tar() {
   mkdir -p $DOWNLOAD_DIR
 
   cp -v \
-    _release/oil-$OIL_VERSION.tar.* _release/oils-for-unix-$OIL_VERSION.tar.* \
+    _release/oils-ref-$OIL_VERSION.tar.* _release/oils-for-unix-$OIL_VERSION.tar.* \
     $DOWNLOAD_DIR
 
   ls -l $DOWNLOAD_DIR
@@ -730,9 +731,9 @@ EOF
 # For quickly iterating on tarball size reductions.
 tarball-size() {
   make clean-repo
-  make _bin/oil.ovm-dbg  # faster way to build bytecode
-  oil  # make tarball
-  test-oil-tar  # Ctrl-C this, then run metrics/tarball.sh
+  make _bin/oils-ref.ovm-dbg  # faster way to build bytecode
+  oils-ref  # make tarball
+  test-oils-ref-tar  # Ctrl-C this, then run metrics/tarball.sh
 }
 
 dep-smoosh() {
@@ -780,14 +781,14 @@ more-release-deps() {
 }
 
 py-tarball() {
-  local in=_release/oil.tar
-  local out=_release/oil-$OIL_VERSION.tar.gz
+  local in=_release/oils-ref.tar
+  local out=_release/oils-ref-$OIL_VERSION.tar.gz
 
   make $in
   time gzip -c $in > $out
   ls -l $out
 
-  test-oil-tar
+  test-oils-ref-tar
 }
 
 native-tarball() {

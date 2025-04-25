@@ -93,9 +93,9 @@ compile-manifest() {
 #
 # It overlaps with the normal build.  This is like build/oil-manifest.txt, but
 # it's missing some stuff like the help.  The Makefile rule for
-# _build/oil/bytecode.zip calls actions.sh files-manifest.
+# _build/oils-ref/bytecode.zip calls actions.sh files-manifest.
 #
-# Instead of printing .pyc, modify build/dynamic_deps.py to print _tmp/oil/*.pyc !
+# Instead of printing .pyc, modify build/dynamic_deps.py to print _tmp/oils-ref/*.pyc !
 
 _fill-oil-tree() {
   local dir=${1:-_tmp/repo-with-opy}

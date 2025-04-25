@@ -406,6 +406,8 @@ configure-for-dev() {
   # _OIL_DEV does two things:
   #   -D GC_TIMING
   #   Skip expensive "OVM" tarball stuff
+  #     Note: this causes a spurious LONG_BIT error in build/ovm-compile.sh
+  #     when detecting 'python-headers' for the oils-ref tarball
   _OIL_DEV=1 ./configure
 }
 

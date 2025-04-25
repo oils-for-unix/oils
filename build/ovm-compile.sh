@@ -147,14 +147,10 @@ readonly PREPROC_FLAGS=(
   -D WITHOUT_COMPLEX
 )
 
-# NOTE: build/oil-defs is hard-coded to the oil.ovm app.  We're abandoning
-# hello.ovm and opy.ovm for now, but those can easily be added later.  We
-# haven't mangled the CPython source!
 readonly INCLUDE_PATHS=(
   -I .   # for pyconfig.h
   -I ..  # for _gen/frontend/id_kind_asdl_c.h etc.
   -I Include
-  -I ../build/oil-defs
 )
 readonly CC=${CC:-cc}  # cc should be on POSIX systems
 
@@ -302,11 +298,15 @@ _headers() {
 
   cd $PY27
 
+  # NOTE: build/py.sh configure-for-dev skips OVM tarball stuff, which may
+  # cause spurious LONG_BIT errors here.  They are harmless
+
   # -MM: no system headers
   gcc \
     "${INCLUDE_PATHS[@]}" \
     "${PREPROC_FLAGS[@]}" \
-    -MM $OVM_LIBRARY_OBJS \
+    -MM \
+    $OVM_LIBRARY_OBJS \
     Modules/ovm.c \
     $(cat $abs_c_module_srcs)
 }
@@ -321,16 +321,15 @@ python-headers() {
 
   # 1. -MM outputs Makefile fragments, so egrep turns those into proper lines.
   #
-  # 2. The user should generated detected-config.h, so remove it.
+  # 2. The user should generate detected-config.h, so remove it.
   #
   # 3. # gcc outputs paths like
   # Python-2.7.13/Python/../Objects/stringlib/stringdefs.h
   # but 'Python/..' causes problems for tar.
   #
 
-  # NOTE: need .def for build/oil-defs.
   _headers $c_module_srcs \
-    | egrep --only-matching '[^ ]+\.(h|def)' \
+    | egrep --only-matching '[^ ]+\.h' \
     | grep -v '_build/detected-config.h' \
     | sed 's|^Python/../||' \
     | sort | uniq | add-py27
@@ -343,7 +342,7 @@ make-tar() {
 
   local version_file
   case $app_name in
-    oil)
+    oils-ref)
       version_file=oils-version.txt
       ;;
     hello)
@@ -360,7 +359,7 @@ make-tar() {
 
   local c_module_srcs=_build/$app_name/c-module-srcs.txt
 
-  # Add oil-0.0.0/ to the beginning of every path.
+  # Add oils-ref-0.0.0/ to the beginning of every path.
   local sed_expr="s,^,${app_name}-${version}/,"
 
   # Differences between tarball and repo:

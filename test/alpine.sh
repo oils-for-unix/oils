@@ -44,7 +44,7 @@
 #   bash  # if you prefer, use bash inside
 #
 #   cd src/
-#   tar -x -z < oil-$VERSION.tar.gz
+#   tar -x -z < oils-ref-$VERSION.tar.gz
 #   cd oil-$VERSION/
 #   ./configure && make && sudo ./install
 #

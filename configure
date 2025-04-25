@@ -69,13 +69,13 @@ EOF
 # https://www.gnu.org/prep/standards/html_node/Configuration.html
 # https://www.gnu.org/prep/standards/html_node/Directory-Variables.html
 #
-# Default installation is /usr/local/bin/oil, but this can be changed with
+# Default installation is /usr/local/bin/oils-for-unix, but this can be changed with
 # --prefix.
 #
 # While this script only uses a handful of the standard directory variables
 # listed on the above documents, it accepts most of them in the --arg=value
 # form as noops. This helps automated build-systems passing preconfigured
-# sets of arguments to configure oil.
+# sets of arguments to configure oils.
 
 init_flags() {
   ### Used in tests

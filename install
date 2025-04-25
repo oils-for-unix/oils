@@ -7,12 +7,12 @@
 #
 #   ./install --help 
 #
-# Also shared with the old "oil.ovm" build.
+# Also shared with the old "oils-ref.ovm" build.
 
 # NOTE: 'install' is part of coreutils and busybox.
 
 # old tarball
-readonly OVM_NAME=oil.ovm
+readonly OVM_NAME=oils-ref.ovm
 readonly OVM_PATH=_bin/$OVM_NAME
 
 log() {
@@ -161,8 +161,7 @@ main() {
   fi
 
   if test -f "$OVM_PATH"; then
-    # Python tarball keeps 'oil' for compatibility
-    install_bin_and_links "$OVM_PATH" "$OVM_NAME" osh ysh oil
+    install_bin_and_links "$OVM_PATH" "$OVM_NAME" osh ysh
 
   elif test -f "$ARG_oils_binary"; then
     # 'osh' and 'ysh' point at 'oils-for-unix'

@@ -32,7 +32,7 @@ archlinux() {
 # vagrant ssh to log in.  ~/git/oil is mounted to /vagrant.  User is 'vagrant'.
 
 # sudo pacman -S gcc make
-# Then untar ~/src/oil-$VERSION.tar.
+# Then untar ~/src/oils-ref-$VERSION.tar.
 
 
 # centos/7

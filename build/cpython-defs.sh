@@ -138,7 +138,7 @@ preprocess() {
   gcc -I $PY27 -E -D OVM_MAIN -D WTERMSIG -
 }
 
-readonly TARBALL_ROOT=$(echo _tmp/oil-tar-test/oil-*)
+readonly TARBALL_ROOT=$(echo _tmp/oils-ref-tar-test/oils-spec-*)
 
 extract-all-methods() {
   echo '#include "pyconfig.h"'
