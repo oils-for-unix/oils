@@ -44,10 +44,9 @@ Summary of [Oils Packaging Guidelines]($wiki):
 
 - The `oils-for-unix` tarball is the fast shell in C++, completed in
   2024.  The distro package should be called `oils-for-unix`.
-- The `oil` tarball is the slow reference interpreter based on CPython.
-  - Don't rename old distro packages.  They can remain `oil`.
-  - It's not worth packaging `oil` in new distros.  It may be removed at some
-    point.
+- The `oils-ref` tarball is the reference implementation, that runs under CPython.
+  - It should not be used, so create new `oils-ref` packages. And don't rename
+    old packages named `oil`.
 - The project is now called **Oils**, or [Oils for
   Unix](https://www.oilshell.org/blog/2023/03/rename.html).  There is no more
   `oil`!
@@ -63,4 +62,3 @@ Summary of [Oils Packaging Guidelines]($wiki):
 
 - The **[quality page](quality.html)** shows test results, metrics, and
   benchmarks.
-
