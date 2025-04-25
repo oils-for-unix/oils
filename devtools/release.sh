@@ -58,8 +58,8 @@ source devtools/common.sh  # banner
 source benchmarks/common.sh  # BENCHMARK_DATA_OILS, OSH_CPP_BENCHMARK_DATA
                              # redefines OIL_VERSION as readonly
 
-readonly OSH_RELEASE_BINARY=$REPO_ROOT/_tmp/ref-tar-test/oils-ref-$OIL_VERSION/_bin/osh
-readonly YSH_RELEASE_BINARY=$REPO_ROOT/_tmp/ref-tar-test/oils-ref-$OIL_VERSION/_bin/ysh
+readonly OSH_RELEASE_BINARY=$REPO_ROOT/_tmp/oils-ref-tar-test/oils-ref-$OIL_VERSION/_bin/osh
+readonly YSH_RELEASE_BINARY=$REPO_ROOT/_tmp/oils-ref-tar-test/oils-ref-$OIL_VERSION/_bin/ysh
 
 log() {
   echo "$@" 1>&2
