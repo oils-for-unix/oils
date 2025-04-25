@@ -298,11 +298,15 @@ _headers() {
 
   cd $PY27
 
+  #log '*** _headers ***'
+  #set -x
+
   # -MM: no system headers
   gcc \
     "${INCLUDE_PATHS[@]}" \
     "${PREPROC_FLAGS[@]}" \
-    -MM $OVM_LIBRARY_OBJS \
+    -MM \
+    $OVM_LIBRARY_OBJS \
     Modules/ovm.c \
     $(cat $abs_c_module_srcs)
 }
@@ -317,7 +321,7 @@ python-headers() {
 
   # 1. -MM outputs Makefile fragments, so egrep turns those into proper lines.
   #
-  # 2. The user should generated detected-config.h, so remove it.
+  # 2. The user should generate detected-config.h, so remove it.
   #
   # 3. # gcc outputs paths like
   # Python-2.7.13/Python/../Objects/stringlib/stringdefs.h
