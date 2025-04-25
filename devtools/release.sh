@@ -781,7 +781,7 @@ more-release-deps() {
 
 py-tarball() {
   local in=_release/oils-ref.tar
-  local out=_release/oils-ref.$OIL_VERSION.tar.gz
+  local out=_release/oils-ref-$OIL_VERSION.tar.gz
 
   make $in
   time gzip -c $in > $out
