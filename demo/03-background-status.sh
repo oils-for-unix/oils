@@ -122,6 +122,10 @@ jobs_list() {
         sleep 0.01
       done
       ;;
+    *)
+      echo "Invalid wait style '$wait_style'" >& 2
+      wait
+      return 1
   esac
 
   case $wait_style in

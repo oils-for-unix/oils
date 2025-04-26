@@ -287,19 +287,24 @@ class Wait(vm._Builtin):
                 while self.job_list.NumRunning() > target:
                     result, w1_arg = self.waiter.WaitForOne()
                     if result == process.W1_EXITED:
-                        # TODO: job_list.PopProcess()
-                        status = self.waiter.LastStatusCode()
+                        # CLEAN UP
+                        pid = w1_arg
+                        pr = self.job_list.PopChildProcess(pid)
+                        if pr is None:
+                            print_stderr(
+                                "oils: PID %d exited, but oils didn't start it"
+                                % pid)
+                        else:
+                            status = pr.status
+
                     elif result == process.W1_NO_CHILDREN:
                         status = 127
                         break
+
                     elif result == process.W1_CALL_INTR:  # signal
                         status = 128 + w1_arg
                         break
-            # TODO:
-            # - need to remove (pid -> status) entries here, it should NOT be
-            #   done by WaitForOne()
-            #   - maybe we need PopChildStatus(pid)
-            # - WaitForOne() can return the PID too
+
             return status
 
         if len(job_ids) == 0:
@@ -311,16 +316,17 @@ class Wait(vm._Builtin):
             status = 0
             while self.job_list.NumRunning() != 0:
                 result, w1_arg = self.waiter.WaitForOne()
+                if result == process.W1_EXITED:
+                    pid = w1_arg
+                    # CLEAN UP.  Ignoring the status for now
+                    pr = self.job_list.PopChildProcess(pid)
+
                 if result == process.W1_NO_CHILDREN:
                     break  # status is 0
-                elif result == process.W1_CALL_INTR:
+
+                if result == process.W1_CALL_INTR:
                     status = 128 + w1_arg
                     break
-
-            # TODO:
-            # - need to remove (pid -> status) entries here, it should NOT be
-            # done by WaitForOne()
-            # - then we can add - wait --check can return non-zero if any process does?
 
             return status
 
@@ -336,6 +342,7 @@ class Wait(vm._Builtin):
                 job = self.job_list.GetJobWithSpec(job_id)
 
             if job is None:
+                #log('JOB %s', job_id)
                 # Does it look like a PID?
                 try:
                     pid = int(job_id)
@@ -356,14 +363,14 @@ class Wait(vm._Builtin):
 
         status = 1  # error
         for job in jobs:
+            # polymorphic call: Process, Pipeline
             wait_st = job.JobWait(self.waiter)
+
             UP_wait_st = wait_st
             with tagswitch(wait_st) as case:
                 if case(wait_status_e.Proc):
                     wait_st = cast(wait_status.Proc, UP_wait_st)
                     status = wait_st.code
-                    # TODO: remove (pid -> status) entry, maybe
-                    # PopChildStatus()
 
                 elif case(wait_status_e.Pipeline):
                     wait_st = cast(wait_status.Pipeline, UP_wait_st)

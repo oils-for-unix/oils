@@ -1138,7 +1138,7 @@ class Process(Job):
         # Keep waiting if waitpid() was interrupted with a signal (unlike the
         # 'wait' builtin)
         while self.state == job_state_e.Running:
-            result, _ = waiter.WaitForOne() 
+            result, _ = waiter.WaitForOne()
             if result == W1_NO_CHILDREN:
                 break
 
@@ -1158,6 +1158,8 @@ class Process(Job):
             if result == W1_NO_CHILDREN:
                 break
 
+        # CLEAN UP
+        self.job_list.PopChildProcess(self.pid)
         return wait_status.Proc(self.status)
 
     def WhenStopped(self, stop_sig):
@@ -1199,12 +1201,6 @@ class Process(Job):
                                  (self.job_id, self.pid))
 
                 self.job_list.RemoveJob(self.job_id)
-
-            # TODO: The wait builtin is the only thing that should remove
-            # processes.  WhenDone() is called by the Waiter::WaitForOne(),
-            # which is NOT the wait builtin.
-            # jobs -l should also not remove it.
-            self.job_list.RemoveChildProcess(self.pid)
 
             if not self.in_background:
                 self.job_control.MaybeTakeTerminal()
@@ -1402,6 +1398,8 @@ class Pipeline(Job):
             if result == W1_NO_CHILDREN:
                 break
 
+        for pid in self.pids:  # Clean up to avoid leaks
+            self.job_list.PopChildProcess(pid)
         return wait_status.Pipeline(self.pipe_status)
 
     def RunLastPart(self, waiter, fd_state):
@@ -1477,7 +1475,6 @@ class Pipeline(Job):
         if status == 141 and self.sigpipe_status_ok:
             status = 0
 
-        self.job_list.RemoveChildProcess(pid)
         self.pipe_status[i] = status
         if self.AllDone():
             if self.job_id != -1:
@@ -1686,10 +1683,13 @@ class JobList(object):
         """
         self.child_procs[pid] = proc
 
-    def RemoveChildProcess(self, pid):
-        # type: (int) -> None
+    def PopChildProcess(self, pid):
+        # type: (int) -> Optional[Process]
         """Remove the child process with the given PID."""
-        mylib.dict_erase(self.child_procs, pid)
+        pr = self.child_procs.get(pid)
+        if pr is not None:
+            mylib.dict_erase(self.child_procs, pid)
+        return pr
 
     if mylib.PYTHON:
 
@@ -1781,6 +1781,7 @@ class JobList(object):
             _, previous = self.GetCurrentAndPreviousJobs()
             return previous
 
+        #log('** SEARCHING %s', self.jobs)
         # TODO: Add support for job specs based on prefixes of process argv.
         m = util.RegexSearch(r'^%([0-9]+)$', job_spec)
         if m is not None:
@@ -1879,7 +1880,6 @@ W1_CALL_INTR = -15  # the waitpid(-1) call was interrupted
 
 W1_NO_CHILDREN = -13  # no child processes to wait for
 W1_NO_CHANGE = -14  # WNOHANG was passed and there were no state changes
-
 
 NO_ARG = -20
 
@@ -1991,9 +1991,8 @@ class Waiter(object):
         # process becomes the parent, NOT the shell.
         proc = self.job_list.child_procs.get(pid)
 
-        if proc is None:  # This may not be necessary
-            print_stderr("oils: PID %d Stopped, but oils didn't start it" %
-                         pid)
+        #if proc is None:  # This may not be necessary
+        #    print_stderr("oils: PID %d exited, but oils didn't start it" % pid)
 
         if 0:
             self.job_list.DebugPrint()
@@ -2033,11 +2032,10 @@ class Waiter(object):
         self.last_status = status  # for wait -n
         self.tracer.OnProcessEnd(pid, status)
 
-        # TODO: return PID too
         if was_stopped:
-            return W1_STOPPED, NO_ARG
+            return W1_STOPPED, pid
         else:
-            return W1_EXITED, NO_ARG
+            return W1_EXITED, pid
 
     def PollForEvents(self):
         # type: () -> None
