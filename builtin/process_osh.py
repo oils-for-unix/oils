@@ -285,14 +285,15 @@ class Wait(vm._Builtin):
                 target = n - 1
                 status = 0
                 while self.job_list.NumRunning() > target:
-                    result, _ = self.waiter.WaitForOne()
+                    result, w1_arg = self.waiter.WaitForOne()
                     if result == process.W1_EXITED:
+                        # TODO: job_list.PopProcess()
                         status = self.waiter.LastStatusCode()
                     elif result == process.W1_NO_CHILDREN:
                         status = 127
                         break
-                    elif result >= 0:  # signal
-                        status = 128 + result
+                    elif result == process.W1_CALL_INTR:  # signal
+                        status = 128 + w1_arg
                         break
             # TODO:
             # - need to remove (pid -> status) entries here, it should NOT be
@@ -309,11 +310,11 @@ class Wait(vm._Builtin):
 
             status = 0
             while self.job_list.NumRunning() != 0:
-                result, _ = self.waiter.WaitForOne()
+                result, w1_arg = self.waiter.WaitForOne()
                 if result == process.W1_NO_CHILDREN:
                     break  # status is 0
-                elif result >= 0:  # signal
-                    status = 128 + result
+                elif result == process.W1_CALL_INTR:
+                    status = 128 + w1_arg
                     break
 
             # TODO:

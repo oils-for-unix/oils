@@ -1150,10 +1150,10 @@ class Process(Job):
         """Process::JobWait, called by wait builtin"""
         # wait builtin can be interrupted
         while self.state == job_state_e.Running:
-            result, _ = waiter.WaitForOne()
+            result, w1_arg = waiter.WaitForOne()
 
-            if result >= 0:  # signal
-                return wait_status.Cancelled(result)
+            if result == W1_CALL_INTR:
+                return wait_status.Cancelled(w1_arg)
 
             if result == W1_NO_CHILDREN:
                 break
@@ -1394,10 +1394,10 @@ class Pipeline(Job):
         # wait builtin can be interrupted
         assert self.procs, "no procs for Wait()"
         while self.state == job_state_e.Running:
-            result, _ = waiter.WaitForOne()
+            result, w1_arg = waiter.WaitForOne()
 
-            if result >= 0:  # signal
-                return wait_status.Cancelled(result)
+            if result == W1_CALL_INTR:  # signal
+                return wait_status.Cancelled(w1_arg)
 
             if result == W1_NO_CHILDREN:
                 break
@@ -1873,10 +1873,13 @@ class JobList(object):
 # They don't overlap with iolib.UNTRAPPED_SIGWINCH == -10
 # which LastSignal() can return
 
-W1_EXITED = -11  # waitpid(-1) returned
-W1_STOPPED = -12
+W1_EXITED = -11  # process exited
+W1_STOPPED = -12  # process was stopped
+W1_CALL_INTR = -15  # the waitpid(-1) call was interrupted
+
 W1_NO_CHILDREN = -13  # no child processes to wait for
 W1_NO_CHANGE = -14  # WNOHANG was passed and there were no state changes
+
 
 NO_ARG = -20
 
@@ -1927,6 +1930,7 @@ class Waiter(object):
                                 main loop
             W1_EXITED           Process exited (with or without signal)
             W1_STOPPED          Process stopped
+            W1_CALL_INTR
             UNTRAPPED_SIGWINCH
           Or
             result > 0          Signal that waitpid() was interrupted with
@@ -1976,9 +1980,7 @@ class Waiter(object):
                 if last_sig == iolib.UNTRAPPED_SIGWINCH:
                     return iolib.UNTRAPPED_SIGWINCH, NO_ARG
                 else:
-                    # TODO: This should be W1_WAIT_INTERRUPT - the waitpid()
-                    # call was interrupted, no process death
-                    return last_sig, NO_ARG
+                    return W1_CALL_INTR, last_sig
 
             # No other errors?
             # Man page says waitpid(INT_MIN) == ESRCH, "no such process", an invalid PID
@@ -2050,5 +2052,5 @@ class Waiter(object):
 
             # Keep polling here
             assert result in (W1_EXITED, W1_STOPPED), result
-            # W1_WAIT_INTERRUPT and iolib.UNTRAPPED_SIGWINCH should not happen,
+            # W1_CALL_INTR and iolib.UNTRAPPED_SIGWINCH should not happen,
             # because WNOHANG is a non-blocking call
