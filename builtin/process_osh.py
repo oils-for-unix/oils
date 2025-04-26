@@ -18,7 +18,7 @@ from _devbuild.gen.runtime_asdl import (cmd_value, job_state_e, wait_status,
 from core import dev
 from core import error
 from core.error import e_usage, e_die_status
-from core import process  # W1_OK, W1_ECHILD
+from core import process  # W1_EXITED, etc.
 from core import pyos
 from core import pyutil
 from core import vm
@@ -288,8 +288,7 @@ class Wait(vm._Builtin):
                     result = self.waiter.WaitForOne()
                     if result == process.W1_EXITED:
                         status = self.waiter.LastStatusCode()
-                    elif result == process.W1_ECHILD:
-                        # nothing to wait for, or interrupted
+                    elif result == process.W1_NO_CHILDREN:
                         status = 127
                         break
                     elif result >= 0:  # signal
@@ -311,9 +310,8 @@ class Wait(vm._Builtin):
             status = 0
             while self.job_list.NumRunning() != 0:
                 result = self.waiter.WaitForOne()
-                if result == process.W1_ECHILD:
-                    # nothing to wait for, or interrupted.  status is 0
-                    break
+                if result == process.W1_NO_CHILDREN:
+                    break  # status is 0
                 elif result >= 0:  # signal
                     status = 128 + result
                     break

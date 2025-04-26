@@ -1135,10 +1135,10 @@ class Process(Job):
     def Wait(self, waiter):
         # type: (Waiter) -> int
         """Wait for this Process to finish."""
+        # Keep waiting if waitpid() was interrupted with a signal (unlike the
+        # 'wait' builtin)
         while self.state == job_state_e.Running:
-            # Only return if there's nothing to wait for.  Keep waiting if we were
-            # interrupted with a signal.
-            if waiter.WaitForOne() == W1_ECHILD:
+            if waiter.WaitForOne() == W1_NO_CHILDREN:
                 break
 
         assert self.status >= 0, self.status
@@ -1154,7 +1154,7 @@ class Process(Job):
             if result >= 0:  # signal
                 return wait_status.Cancelled(result)
 
-            if result == W1_ECHILD:
+            if result == W1_NO_CHILDREN:
                 break
 
         return wait_status.Proc(self.status)
@@ -1381,7 +1381,7 @@ class Pipeline(Job):
         # waitpid(-1) zero or more times
         while self.state == job_state_e.Running:
             # Keep waiting until there's nothing to wait for.
-            if waiter.WaitForOne() == W1_ECHILD:
+            if waiter.WaitForOne() == W1_NO_CHILDREN:
                 break
 
         return self.pipe_status
@@ -1397,7 +1397,7 @@ class Pipeline(Job):
             if result >= 0:  # signal
                 return wait_status.Cancelled(result)
 
-            if result == W1_ECHILD:
+            if result == W1_NO_CHILDREN:
                 break
 
         return wait_status.Pipeline(self.pipe_status)
@@ -1873,7 +1873,7 @@ class JobList(object):
 
 W1_EXITED = -11  # waitpid(-1) returned
 W1_STOPPED = -12
-W1_ECHILD = -13  # no processes to wait for
+W1_NO_CHILDREN = -13  # no child processes to wait for
 W1_NO_CHANGE = -14  # WNOHANG was passed and there were no state changes
 
 
@@ -1918,7 +1918,7 @@ class Waiter(object):
 
         Returns:
           One of these negative numbers:
-            W1_ECHILD           Nothing to wait for
+            W1_NO_CHILDREN      Nothing to wait for
             W1_NO_CHANGE        no state changes when WNOHANG passed - used by
                                 main loop
             W1_EXITED           Process exited (with or without signal)
@@ -1957,13 +1957,13 @@ class Waiter(object):
         | NoChange                   -- for WNOHANG - is this a different API?
         """
         pid, status = pyos.WaitPid(waitpid_options)
-        if pid == 0:  # WNOHANG passed, and no state changes
-            return W1_NO_CHANGE
+        if pid == 0:
+            return W1_NO_CHANGE  # WNOHANG passed, and no state changes
         elif pid < 0:  # error case
             err_num = status
             #log('waitpid() error => %d %s', e.errno, pyutil.strerror(e))
             if err_num == ECHILD:
-                return W1_ECHILD  # nothing to wait for caller should stop
+                return W1_NO_CHILDREN
             elif err_num == EINTR:  # Bug #858 fix
                 # e.g. 1 for SIGHUP, or also be UNTRAPPED_SIGWINCH == -1
                 last_sig = self.signal_safe.LastSignal()
@@ -2035,13 +2035,12 @@ class Waiter(object):
         while True:
             result = self.WaitForOne(waitpid_options=WNOHANG)
 
-            # W1_WAIT_INTERRUPT and iolib.UNTRAPPED_SIGWINCH should not happen,
-            # because WNOHANG means the call doesn't block
-
             if result == W1_NO_CHANGE:
                 break
-            if result == W1_ECHILD:  # no child processes
+            if result == W1_NO_CHILDREN:
                 break
 
             # Keep polling here
             assert result in (W1_EXITED, W1_STOPPED), result
+            # W1_WAIT_INTERRUPT and iolib.UNTRAPPED_SIGWINCH should not happen,
+            # because WNOHANG is a non-blocking call
