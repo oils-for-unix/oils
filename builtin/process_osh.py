@@ -286,7 +286,7 @@ class Wait(vm._Builtin):
                 status = 0
                 while self.job_list.NumRunning() > target:
                     result = self.waiter.WaitForOne()
-                    if result == process.W1_OK:
+                    if result == process.W1_EXITED:
                         status = self.waiter.LastStatusCode()
                     elif result == process.W1_ECHILD:
                         # nothing to wait for, or interrupted

@@ -1870,9 +1870,10 @@ class JobList(object):
 # They don't overlap with iolib.UNTRAPPED_SIGWINCH == -1
 # which LastSignal() can return
 
-W1_OK = -2  # waitpid(-1) returned
-W1_ECHILD = -3  # no processes to wait for
-W1_NO_CHANGE = -4  # WNOHANG was passed and there were no state changes
+W1_EXITED = -2  # waitpid(-1) returned
+W1_STOPPED = -3
+W1_ECHILD = -4  # no processes to wait for
+W1_NO_CHANGE = -5  # WNOHANG was passed and there were no state changes
 
 
 class Waiter(object):
@@ -1919,7 +1920,8 @@ class Waiter(object):
             W1_ECHILD           Nothing to wait for
             W1_NO_CHANGE        no state changes when WNOHANG passed - used by
                                 main loop
-            W1_OK               Caller should keep waiting
+            W1_EXITED           Process exited (with or without signal)
+            W1_STOPPED          Process stopped
             UNTRAPPED_SIGWINCH
           Or
             result > 0          Signal that waitpid() was interrupted with
@@ -1973,11 +1975,13 @@ class Waiter(object):
         proc = self.job_list.child_procs.get(pid)
 
         if proc is None:  # This may not be necessary
-            print_stderr("oils: PID %d Stopped, but oils didn't start it" % pid)
+            print_stderr("oils: PID %d Stopped, but oils didn't start it" %
+                         pid)
 
         if 0:
             self.job_list.DebugPrint()
 
+        was_stopped = False
         if WIFSIGNALED(status):
             term_sig = WTERMSIG(status)
             status = 128 + term_sig
@@ -1995,6 +1999,8 @@ class Waiter(object):
                 proc.WhenDone(pid, status)
 
         elif WIFSTOPPED(status):
+            was_stopped = True
+
             stop_sig = WSTOPSIG(status)
 
             print_stderr('')
@@ -2008,12 +2014,19 @@ class Waiter(object):
 
         self.last_status = status  # for wait -n
         self.tracer.OnProcessEnd(pid, status)
-        return W1_OK
+
+        # TODO: return PID too
+        if was_stopped:
+            return W1_STOPPED
+        else:
+            return W1_EXITED
 
     def PollNotifications(self):
         # type: () -> None
         """
         Process all pending state changes.
         """
-        while self.WaitForOne(waitpid_options=WNOHANG) == W1_OK:
-            continue
+        while True:
+            result = self.WaitForOne(waitpid_options=WNOHANG)
+            if result not in (W1_EXITED, W1_STOPPED):
+                break
