@@ -1,4 +1,4 @@
-## oils_failures_allowed: 3
+## oils_failures_allowed: 4
 ## compare_shells: dash bash mksh
 
 # Job control constructs:
@@ -96,16 +96,17 @@ wait $!
 echo status=$?
 ## stdout: status=99
 
-#### Wait for job doesn't support PIPESTATUS
+#### Wait for job and PIPESTATUS
 
-# foreground works
+# foreground
 { echo hi; exit 55; } | false
 echo status=$? pipestatus=${PIPESTATUS[@]}
 
+# background
 { echo hi; exit 55; } | false &
 echo status=$? pipestatus=${PIPESTATUS[@]}
 
-# Hm pipestatus doesn't work
+# wait for pipeline
 wait %+
 #wait %1
 #wait $!
@@ -117,7 +118,36 @@ status=0 pipestatus=0
 status=1 pipestatus=1
 ## END
 ## N-I dash status: 2
-## N-I dash stdout-json: ""
+## N-I dash STDOUT:
+## END
+
+#### Wait for job and PIPESTATUS - cat
+
+# foreground
+{ echo hi; exit 55; } | ( cat; exit 99 )
+echo status=$? pipestatus=${PIPESTATUS[@]}
+
+# background
+{ echo hi; exit 55; } | ( cat; exit 99 ) &
+echo status=$? pipestatus=${PIPESTATUS[@]}
+
+# wait for pipeline
+wait %+
+#wait %1
+#wait $!
+echo status=$? pipestatus=${PIPESTATUS[@]}
+
+## STDOUT:
+hi
+status=99 pipestatus=55 99
+status=0 pipestatus=0
+hi
+status=99 pipestatus=99
+## END
+## N-I dash status: 2
+## N-I dash STDOUT:
+hi
+## END
 
 #### Brace group in background, wait all
 { sleep 0.09; exit 9; } &

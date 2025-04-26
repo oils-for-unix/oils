@@ -1945,11 +1945,12 @@ class Waiter(object):
 
         wait_result =
           NoChildren                 -- ECHILD - no more
-        | Done(int pid)              -- process done - call job_list.PopStatus()  for status
-          # do we also we want DoneWithSignal() 
+        | Exited(int pid)            -- process done - call job_list.PopStatus()  for status
+          # do we also we want ExitedWithSignal() ?
+        | Stopped(int pid)           
         | Interrupted(int sig_num)   -- may or may not retry
 
-        | NoChange                   -- for WNOHANG - this can be a different API?
+        | NoChange                   -- for WNOHANG - is this a different API?
         """
         pid, status = pyos.WaitPid(waitpid_options)
         if pid == 0:  # WNOHANG passed, and no state changes
@@ -1969,13 +1970,11 @@ class Waiter(object):
         # All child processes are supposed to be in this dict.
         # Even if a grandchild outlives the child (its parent), the init
         # process becomes the parent, NOT the shell.
-        # 
-        # TODO: this doesn't need to be a special case - we just won't call proc.WhenDone()
-        if pid not in self.job_list.child_procs:
-            print_stderr("oils: PID %d Stopped, but oils didn't start it" % pid)
-            return W1_OK
+        proc = self.job_list.child_procs.get(pid)
 
-        proc = self.job_list.child_procs[pid]
+        if proc is None:  # This may not be necessary
+            print_stderr("oils: PID %d Stopped, but oils didn't start it" % pid)
+
         if 0:
             self.job_list.DebugPrint()
 
@@ -1987,12 +1986,13 @@ class Waiter(object):
             if term_sig == SIGINT:
                 print('')
 
-            proc.WhenDone(pid, status)
+            if proc:
+                proc.WhenDone(pid, status)
 
         elif WIFEXITED(status):
             status = WEXITSTATUS(status)
-            #log('exit status: %s', status)
-            proc.WhenDone(pid, status)
+            if proc:
+                proc.WhenDone(pid, status)
 
         elif WIFSTOPPED(status):
             stop_sig = WSTOPSIG(status)
@@ -2000,7 +2000,8 @@ class Waiter(object):
             print_stderr('')
             print_stderr('oils: PID %d Stopped with signal %d' %
                          (pid, stop_sig))
-            proc.WhenStopped(stop_sig)
+            if proc:
+                proc.WhenStopped(stop_sig)
 
         else:
             raise AssertionError(status)
