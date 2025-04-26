@@ -1865,15 +1865,16 @@ class JobList(object):
         return count
 
 
-# Some WaitForOne() return values
+# Some WaitForOne() return values, which are negative.  The numbers are
+# arbitrary negative numbers.
 #
-# They don't overlap with iolib.UNTRAPPED_SIGWINCH == -1
+# They don't overlap with iolib.UNTRAPPED_SIGWINCH == -10
 # which LastSignal() can return
 
-W1_EXITED = -2  # waitpid(-1) returned
-W1_STOPPED = -3
-W1_ECHILD = -4  # no processes to wait for
-W1_NO_CHANGE = -5  # WNOHANG was passed and there were no state changes
+W1_EXITED = -11  # waitpid(-1) returned
+W1_STOPPED = -12
+W1_ECHILD = -13  # no processes to wait for
+W1_NO_CHANGE = -14  # WNOHANG was passed and there were no state changes
 
 
 class Waiter(object):
@@ -1951,6 +1952,7 @@ class Waiter(object):
           # do we also we want ExitedWithSignal() ?
         | Stopped(int pid)           
         | Interrupted(int sig_num)   -- may or may not retry
+        | UntrappedSigwinch          -- ignored
 
         | NoChange                   -- for WNOHANG - is this a different API?
         """
@@ -1964,7 +1966,13 @@ class Waiter(object):
                 return W1_ECHILD  # nothing to wait for caller should stop
             elif err_num == EINTR:  # Bug #858 fix
                 # e.g. 1 for SIGHUP, or also be UNTRAPPED_SIGWINCH == -1
-                return self.signal_safe.LastSignal()
+                last_sig = self.signal_safe.LastSignal()
+                if last_sig == iolib.UNTRAPPED_SIGWINCH:
+                    return iolib.UNTRAPPED_SIGWINCH
+                else:
+                    # TODO: This should be W1_WAIT_INTERRUPT - the waitpid()
+                    # call was interrupted, no process death
+                    return last_sig
             else:
                 # The signature of waitpid() means this shouldn't happen
                 raise AssertionError()
@@ -2021,12 +2029,19 @@ class Waiter(object):
         else:
             return W1_EXITED
 
-    def PollNotifications(self):
+    def PollForEvents(self):
         # type: () -> None
-        """
-        Process all pending state changes.
-        """
+        """For the interactive shell to print when processes have exited."""
         while True:
             result = self.WaitForOne(waitpid_options=WNOHANG)
-            if result not in (W1_EXITED, W1_STOPPED):
+
+            # W1_WAIT_INTERRUPT and iolib.UNTRAPPED_SIGWINCH should not happen,
+            # because WNOHANG means the call doesn't block
+
+            if result == W1_NO_CHANGE:
                 break
+            if result == W1_ECHILD:  # no child processes
+                break
+
+            # Keep polling here
+            assert result in (W1_EXITED, W1_STOPPED), result

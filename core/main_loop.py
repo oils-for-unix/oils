@@ -225,7 +225,7 @@ def Interactive(
                         display.EraseLines()
                         # POSIX shell behavior: waitpid(-1) and show job "Done"
                         # messages
-                        waiter.PollNotifications()
+                        waiter.PollForEvents()
                         quit = True
                     elif case(parse_result_e.Eof):
                         display.EraseLines()
@@ -291,7 +291,7 @@ def Interactive(
 
             status = cmd_ev.LastStatus()
 
-            waiter.PollNotifications()
+            waiter.PollForEvents()
 
             if is_return:
                 done = True

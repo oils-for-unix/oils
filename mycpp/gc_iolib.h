@@ -19,7 +19,7 @@
 
 namespace iolib {
 
-const int UNTRAPPED_SIGWINCH = -1;
+const int UNTRAPPED_SIGWINCH = -10;
 
 // Make the signal queue slab 4096 bytes, including the GC header.  See
 // cpp/core_test.cc.

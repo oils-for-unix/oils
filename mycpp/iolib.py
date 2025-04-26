@@ -8,7 +8,7 @@ import signal
 
 from typing import List, Any
 
-UNTRAPPED_SIGWINCH = -1
+UNTRAPPED_SIGWINCH = -10
 
 
 class SignalSafe(object):
