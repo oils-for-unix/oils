@@ -308,6 +308,7 @@ class Wait(vm._Builtin):
             # Note: NumRunning() makes sure we ignore stopped processes, which
             # cause WaitForOne() to return
 
+            status = 0
             while self.job_list.NumRunning() != 0:
                 result = self.waiter.WaitForOne()
                 if result == process.W1_ECHILD:
