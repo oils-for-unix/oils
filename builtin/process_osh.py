@@ -285,7 +285,7 @@ class Wait(vm._Builtin):
                 target = n - 1
                 status = 0
                 while self.job_list.NumRunning() > target:
-                    result = self.waiter.WaitForOne()
+                    result, _ = self.waiter.WaitForOne()
                     if result == process.W1_EXITED:
                         status = self.waiter.LastStatusCode()
                     elif result == process.W1_NO_CHILDREN:
@@ -309,7 +309,7 @@ class Wait(vm._Builtin):
 
             status = 0
             while self.job_list.NumRunning() != 0:
-                result = self.waiter.WaitForOne()
+                result, _ = self.waiter.WaitForOne()
                 if result == process.W1_NO_CHILDREN:
                     break  # status is 0
                 elif result >= 0:  # signal

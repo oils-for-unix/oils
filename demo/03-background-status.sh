@@ -148,8 +148,22 @@ jobs_list() {
   jobs -l
   echo
 
-
   # the status is the last one, which is 2
+  echo status=$?
+}
+
+stopped_process() {
+  sleep 5 &
+  local pid=$!
+
+  set -x
+  sleep 0.1
+  kill -STOP $pid
+
+  #kill -TERM $pid
+
+  # wait is only for exiting
+  wait $pid
   echo status=$?
 }
 

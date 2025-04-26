@@ -475,6 +475,14 @@ class JobListTest(unittest.TestCase):
         log('status = %d', status)
         self.assertEqual(127, status)
 
+    # More tests:
+    #
+    #   wait $pipeline_pid - with pipeline leader, and other PID
+    #   wait %pipeline_job
+    #   wait -n on pipeline?  Does it return PIPESTATUS?
+    #   wait with pipeline - should be OK
+    #
+    # Stopped jobs: does it print something interactively?
 
 if __name__ == '__main__':
     unittest.main()

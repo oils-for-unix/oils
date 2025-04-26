@@ -1138,7 +1138,8 @@ class Process(Job):
         # Keep waiting if waitpid() was interrupted with a signal (unlike the
         # 'wait' builtin)
         while self.state == job_state_e.Running:
-            if waiter.WaitForOne() == W1_NO_CHILDREN:
+            result, _ = waiter.WaitForOne() 
+            if result == W1_NO_CHILDREN:
                 break
 
         assert self.status >= 0, self.status
@@ -1149,7 +1150,7 @@ class Process(Job):
         """Process::JobWait, called by wait builtin"""
         # wait builtin can be interrupted
         while self.state == job_state_e.Running:
-            result = waiter.WaitForOne()
+            result, _ = waiter.WaitForOne()
 
             if result >= 0:  # signal
                 return wait_status.Cancelled(result)
@@ -1381,7 +1382,8 @@ class Pipeline(Job):
         # waitpid(-1) zero or more times
         while self.state == job_state_e.Running:
             # Keep waiting until there's nothing to wait for.
-            if waiter.WaitForOne() == W1_NO_CHILDREN:
+            result, _ = waiter.WaitForOne()
+            if result == W1_NO_CHILDREN:
                 break
 
         return self.pipe_status
@@ -1392,7 +1394,7 @@ class Pipeline(Job):
         # wait builtin can be interrupted
         assert self.procs, "no procs for Wait()"
         while self.state == job_state_e.Running:
-            result = waiter.WaitForOne()
+            result, _ = waiter.WaitForOne()
 
             if result >= 0:  # signal
                 return wait_status.Cancelled(result)
@@ -1876,6 +1878,8 @@ W1_STOPPED = -12
 W1_NO_CHILDREN = -13  # no child processes to wait for
 W1_NO_CHANGE = -14  # WNOHANG was passed and there were no state changes
 
+NO_ARG = -20
+
 
 class Waiter(object):
     """A capability to wait for processes.
@@ -1913,7 +1917,7 @@ class Waiter(object):
         return self.last_status
 
     def WaitForOne(self, waitpid_options=0):
-        # type: (int) -> int
+        # type: (int) -> Tuple[int, int]
         """Wait until the next process returns (or maybe Ctrl-C).
 
         Returns:
@@ -1958,24 +1962,27 @@ class Waiter(object):
         """
         pid, status = pyos.WaitPid(waitpid_options)
         if pid == 0:
-            return W1_NO_CHANGE  # WNOHANG passed, and no state changes
-        elif pid < 0:  # error case
+            return W1_NO_CHANGE, NO_ARG  # WNOHANG passed, and no state changes
+
+        if pid < 0:  # error case
             err_num = status
             #log('waitpid() error => %d %s', e.errno, pyutil.strerror(e))
             if err_num == ECHILD:
-                return W1_NO_CHILDREN
-            elif err_num == EINTR:  # Bug #858 fix
+                return W1_NO_CHILDREN, NO_ARG
+
+            if err_num == EINTR:  # Bug #858 fix
                 # e.g. 1 for SIGHUP, or also be UNTRAPPED_SIGWINCH == -1
                 last_sig = self.signal_safe.LastSignal()
                 if last_sig == iolib.UNTRAPPED_SIGWINCH:
-                    return iolib.UNTRAPPED_SIGWINCH
+                    return iolib.UNTRAPPED_SIGWINCH, NO_ARG
                 else:
                     # TODO: This should be W1_WAIT_INTERRUPT - the waitpid()
                     # call was interrupted, no process death
-                    return last_sig
-            else:
-                # The signature of waitpid() means this shouldn't happen
-                raise AssertionError()
+                    return last_sig, NO_ARG
+
+            # No other errors?
+            # Man page says waitpid(INT_MIN) == ESRCH, "no such process", an invalid PID
+            raise AssertionError()
 
         # All child processes are supposed to be in this dict.
         # Even if a grandchild outlives the child (its parent), the init
@@ -2011,6 +2018,7 @@ class Waiter(object):
 
             stop_sig = WSTOPSIG(status)
 
+            # TODO: only print this interactively
             print_stderr('')
             print_stderr('oils: PID %d Stopped with signal %d' %
                          (pid, stop_sig))
@@ -2025,15 +2033,15 @@ class Waiter(object):
 
         # TODO: return PID too
         if was_stopped:
-            return W1_STOPPED
+            return W1_STOPPED, NO_ARG
         else:
-            return W1_EXITED
+            return W1_EXITED, NO_ARG
 
     def PollForEvents(self):
         # type: () -> None
         """For the interactive shell to print when processes have exited."""
         while True:
-            result = self.WaitForOne(waitpid_options=WNOHANG)
+            result, _ = self.WaitForOne(waitpid_options=WNOHANG)
 
             if result == W1_NO_CHANGE:
                 break
