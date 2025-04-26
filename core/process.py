@@ -1128,6 +1128,10 @@ class Process(Job):
             st.ApplyFromParent(self)
 
         # Program invariant: We keep track of every child process!
+        # TODO: we should NOT do this if parent_pipeline?  The only reason for
+        # this is for 'wait' to call PopChildProcess(), so it can return the
+        # right status.
+        # We can look up pipelines ONLY by the LEADER.
         self.job_list.AddChildProcess(pid, self)
 
         return pid
@@ -1150,7 +1154,7 @@ class Process(Job):
         """Process::JobWait, called by wait builtin"""
         # wait builtin can be interrupted
         while self.state == job_state_e.Running:
-            result, w1_arg = waiter.WaitForOne()
+            result, w1_arg = waiter.WaitForOne()  # mutates self.state
 
             if result == W1_CALL_INTR:
                 return wait_status.Cancelled(w1_arg)
@@ -1158,9 +1162,10 @@ class Process(Job):
             if result == W1_NO_CHILDREN:
                 break
 
-        # CLEAN UP
-        self.job_list.PopChildProcess(self.pid)
-        return wait_status.Proc(self.status)
+            # Ignore W1_EXITED, W1_STOPPED - these are OTHER processes
+
+        assert self.status >= 0, self.status
+        return wait_status.Proc(self.state, self.status)
 
     def WhenStopped(self, stop_sig):
         # type: (int) -> None
@@ -1171,7 +1176,8 @@ class Process(Job):
         self.state = job_state_e.Stopped
 
         if self.job_id == -1:
-            # This process was started in the foreground
+            # This process was started in the foreground, not with &.  So it
+            # was NOT a job, but after Ctrl-Z, it now a job.
             self.job_list.AddJob(self)
 
         if not self.in_background:
@@ -1398,9 +1404,13 @@ class Pipeline(Job):
             if result == W1_NO_CHILDREN:
                 break
 
-        for pid in self.pids:  # Clean up to avoid leaks
-            self.job_list.PopChildProcess(pid)
-        return wait_status.Pipeline(self.pipe_status)
+            # Ignore W1_EXITED, W1_STOPPED - these are OTHER processes
+
+        assert all(st >= 0 for st in self.pipe_status), self.pipe_status
+        return wait_status.Pipeline(self.state, self.pipe_status)
+
+        #for pid in self.pids:  # Clean up to avoid leaks
+        #    self.job_list.PopChildProcess(pid)
 
     def RunLastPart(self, waiter, fd_state):
         # type: (Waiter, FdState) -> List[int]
@@ -1688,6 +1698,7 @@ class JobList(object):
         """Remove the child process with the given PID."""
         pr = self.child_procs.get(pid)
         if pr is not None:
+            log('PopChildProcess removing pid %d', pid)
             mylib.dict_erase(self.child_procs, pid)
         return pr
 
@@ -1982,17 +1993,18 @@ class Waiter(object):
                 else:
                     return W1_CALL_INTR, last_sig
 
-            # No other errors?
-            # Man page says waitpid(INT_MIN) == ESRCH, "no such process", an invalid PID
+            # No other errors?  Man page says waitpid(INT_MIN) == ESRCH, "no
+            # such process", an invalid PID
             raise AssertionError()
 
-        # All child processes are supposed to be in this dict.
-        # Even if a grandchild outlives the child (its parent), the init
-        # process becomes the parent, NOT the shell.
+        # All child processes are supposed to be in this dict.  Even if a
+        # grandchild outlives the child (its parent), the shell does NOT become
+        # the parent.  The init process does.
         proc = self.job_list.child_procs.get(pid)
 
-        #if proc is None:  # This may not be necessary
-        #    print_stderr("oils: PID %d exited, but oils didn't start it" % pid)
+        # TODO: hide this behind shopt --set verbose_jobs or xtrace?
+        if proc is None:
+            print_stderr("oils: PID %d exited, but oils didn't start it" % pid)
 
         if 0:
             self.job_list.DebugPrint()

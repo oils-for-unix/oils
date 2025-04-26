@@ -81,11 +81,12 @@ class Fg(vm._Builtin):
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
 
-        job_spec = ''  # get current job by default
+        job_spec = ''  # Job spec for current job is the default
         if len(cmd_val.argv) > 1:
             job_spec = cmd_val.argv[1]
 
         job = self.job_list.GetJobWithSpec(job_spec)
+        # note: the 'wait' builtin falls back to ProcessFromPid()
         if job is None:
             print_stderr('fg: No job to put in the foreground')
             return 1
@@ -106,11 +107,14 @@ class Fg(vm._Builtin):
         posix.killpg(pgid, SIGCONT)
 
         status = -1
+
         wait_st = job.JobWait(self.waiter)
         UP_wait_st = wait_st
         with tagswitch(wait_st) as case:
             if case(wait_status_e.Proc):
                 wait_st = cast(wait_status.Proc, UP_wait_st)
+                if wait_st.state == job_state_e.Done:
+                    self.job_list.PopChildProcess(job.ProcessGroupId())
                 status = wait_st.code
 
             elif case(wait_status_e.Pipeline):
@@ -288,6 +292,7 @@ class Wait(vm._Builtin):
                     result, w1_arg = self.waiter.WaitForOne()
                     if result == process.W1_EXITED:
                         # CLEAN UP
+                        # TODO: do right cleanup for PIPELINE
                         pid = w1_arg
                         pr = self.job_list.PopChildProcess(pid)
                         if pr is None:
@@ -318,7 +323,6 @@ class Wait(vm._Builtin):
                 result, w1_arg = self.waiter.WaitForOne()
                 if result == process.W1_EXITED:
                     pid = w1_arg
-                    # CLEAN UP.  Ignoring the status for now
                     pr = self.job_list.PopChildProcess(pid)
 
                 if result == process.W1_NO_CHILDREN:
@@ -350,8 +354,9 @@ class Wait(vm._Builtin):
                     raise error.Usage(
                         'expected PID or jobspec, got %r' % job_id, location)
 
-                # TODO: does this apply to processes in the middle of a
-                # pipeline, or only the pipeline's leader?
+                # TODO:
+                # - what happens if you pass the pipeline leader PID?
+                # - what happens if you pass a non-leader PID?
                 job = self.job_list.ProcessFromPid(pid)
 
             if job is None:
@@ -370,6 +375,8 @@ class Wait(vm._Builtin):
             with tagswitch(wait_st) as case:
                 if case(wait_status_e.Proc):
                     wait_st = cast(wait_status.Proc, UP_wait_st)
+                    if wait_st.state == job_state_e.Done:
+                        self.job_list.PopChildProcess(job.ProcessGroupId())
                     status = wait_st.code
 
                 elif case(wait_status_e.Pipeline):

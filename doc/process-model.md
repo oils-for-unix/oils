@@ -145,7 +145,9 @@ Gets stdout, stderr, status all at once.  Other shells can't do this.
 - The "pipecar" process to turn process completion events into pipe events?
   - Or perhaps we need general coroutines, like async/await
 
-## Appendix: Non-Shell Tools
+## Appendix
+
+### Non-Shell Tools
 
 These Unix tools start processes:
 
@@ -191,3 +193,9 @@ Another concurrent programming problem:
   - A problem is that you can't serialize YSH closures, but that might be OK
     - or we can probably figure out a way to do it
 -->
+
+### Related 
+
+- When reading from multiple pipes with `select()`, we may have to solve the
+  [Framing Problem](framing.html)
+

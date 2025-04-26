@@ -134,9 +134,10 @@ module runtime
     List[loc]? pipe_locs,    # init to null, rarely allocated
   )
 
+  # event is W1_EXITED or W1_STOPPED
   wait_status =
-    Proc(int code)
-  | Pipeline(List[int] codes)
+    Proc(job_state state, int code)
+  | Pipeline(job_state state, List[int] codes)
     # because the 'wait' builtin is interruptible
   | Cancelled(int sig_num)
 
