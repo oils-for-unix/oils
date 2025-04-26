@@ -20,12 +20,14 @@ from core import state
 from core import test_lib
 from core import util
 from display import ui
-from frontend import flag_def  # needed for wait builtin
+from frontend import flag_def  # side effect: flags are defined, for wait builtin
 from mycpp import iolib
 from mycpp import mylib
 from mycpp.mylib import log
 
 import posix_ as posix
+
+_ = flag_def
 
 Process = process.Process
 ExternalThunk = process.ExternalThunk
@@ -452,6 +454,26 @@ class JobListTest(unittest.TestCase):
         cmd_val = test_lib.MakeBuiltinArgv(['wait', '%' + str(job_ids[0])])
         status = self.wait_builtin.Run(cmd_val)
         self.assertEqual(1, status)
+
+    def testGrandchildOutlivesChild(self):
+        """ The new parent is the init process """
+
+        # Jobs list starts out empty
+        self.assertEqual(0, len(self.job_list.child_procs))
+
+        # the sleep process should outlive the sh process
+        argv = ['sh', '-c', 'sleep 0.1 & exit 99']
+        pid, job_id = self._RunBackgroundJob(argv)
+
+        cmd_val = test_lib.MakeBuiltinArgv(['wait', '-n'])
+        status = self.wait_builtin.Run(cmd_val)
+        log('status = %d', status)
+        self.assertEqual(99, status)
+
+        cmd_val = test_lib.MakeBuiltinArgv(['wait', '-n'])
+        status = self.wait_builtin.Run(cmd_val)
+        log('status = %d', status)
+        self.assertEqual(127, status)
 
 
 if __name__ == '__main__':

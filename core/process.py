@@ -1134,7 +1134,7 @@ class Process(Job):
 
     def Wait(self, waiter):
         # type: (Waiter) -> int
-        """Wait for this process to finish."""
+        """Wait for this Process to finish."""
         while self.state == job_state_e.Running:
             # Only return if there's nothing to wait for.  Keep waiting if we were
             # interrupted with a signal.
@@ -1146,6 +1146,7 @@ class Process(Job):
 
     def JobWait(self, waiter):
         # type: (Waiter) -> wait_status_t
+        """Process::JobWait, called by wait builtin"""
         # wait builtin can be interrupted
         while self.state == job_state_e.Running:
             result = waiter.WaitForOne()
@@ -1171,6 +1172,7 @@ class Process(Job):
             self.job_list.AddJob(self)
 
         if not self.in_background:
+            # e.g. sleep 5; then Ctrl-Z
             self.job_control.MaybeTakeTerminal()
             self.SetBackground()
 
@@ -1183,13 +1185,15 @@ class Process(Job):
         self.status = status
         self.state = job_state_e.Done
         if self.parent_pipeline:
-            self.parent_pipeline.WhenDone(pid, status)
+            self.parent_pipeline.WhenPartIsDone(pid, status)
         else:
             if self.job_id != -1:
                 # Job might have been brought to the foreground after being
                 # assigned a job ID.
                 if self.in_background:
-                    # TODO: bash only prints this interactively
+                    # the main loop calls PollNotifications(), WaitForOne(),
+                    # which results in this
+                    # TODO: only print this interactively, like other shells
                     print_stderr('[%%%d] PID %d Done' %
                                  (self.job_id, self.pid))
 
@@ -1371,7 +1375,7 @@ class Pipeline(Job):
 
     def Wait(self, waiter):
         # type: (Waiter) -> List[int]
-        """Wait for this pipeline to finish."""
+        """Wait for this Pipeline to finish."""
 
         assert self.procs, "no procs for Wait()"
         # waitpid(-1) zero or more times
@@ -1384,7 +1388,7 @@ class Pipeline(Job):
 
     def JobWait(self, waiter):
         # type: (Waiter) -> wait_status_t
-        """Called by 'wait' builtin, e.g. 'wait %1'."""
+        """Pipeline::JobWait(), called by 'wait' builtin, e.g. 'wait %1'."""
         # wait builtin can be interrupted
         assert self.procs, "no procs for Wait()"
         while self.state == job_state_e.Running:
@@ -1461,7 +1465,7 @@ class Pipeline(Job):
                 return False
         return True
 
-    def WhenDone(self, pid, status):
+    def WhenPartIsDone(self, pid, status):
         # type: (int, int) -> None
         """Called by Process.WhenDone."""
         #log('Pipeline WhenDone %d %d', pid, status)
@@ -1862,9 +1866,13 @@ class JobList(object):
 
 
 # Some WaitForOne() return values
+#
+# They don't overlap with iolib.UNTRAPPED_SIGWINCH == -1
+# which LastSignal() can return
+
 W1_OK = -2  # waitpid(-1) returned
 W1_ECHILD = -3  # no processes to wait for
-W1_AGAIN = -4  # WNOHANG was passed and there were no state changes
+W1_NO_CHANGE = -4  # WNOHANG was passed and there were no state changes
 
 
 class Waiter(object):
@@ -1909,6 +1917,8 @@ class Waiter(object):
         Returns:
           One of these negative numbers:
             W1_ECHILD           Nothing to wait for
+            W1_NO_CHANGE        no state changes when WNOHANG passed - used by
+                                main loop
             W1_OK               Caller should keep waiting
             UNTRAPPED_SIGWINCH
           Or
@@ -1931,35 +1941,38 @@ class Waiter(object):
           dash: jobs.c waitproc() uses sigfillset(), sigprocmask(), etc.  Runs in a
           loop while (gotsigchld), but that might be a hack for System V!
 
-        Should we have a cleaner API like named posix::wait_for_one() ?
+        Should we have a cleaner API like posix::wait_for_one() ?
 
         wait_result =
-          ECHILD                     -- nothing to wait for
-        | Done(int pid, int status)  -- process done
-        | EINTR(bool sigint)         -- may or may not retry
+          NoChildren                 -- ECHILD - no more
+        | Done(int pid)              -- process done - call job_list.PopStatus()  for status
+          # do we also we want DoneWithSignal() 
+        | Interrupted(int sig_num)   -- may or may not retry
+
+        | NoChange                   -- for WNOHANG - this can be a different API?
         """
         pid, status = pyos.WaitPid(waitpid_options)
         if pid == 0:  # WNOHANG passed, and no state changes
-            return W1_AGAIN
+            return W1_NO_CHANGE
         elif pid < 0:  # error case
             err_num = status
             #log('waitpid() error => %d %s', e.errno, pyutil.strerror(e))
             if err_num == ECHILD:
                 return W1_ECHILD  # nothing to wait for caller should stop
             elif err_num == EINTR:  # Bug #858 fix
-                #log('WaitForOne() => %d', self.trap_state.GetLastSignal())
-                return self.signal_safe.LastSignal()  # e.g. 1 for SIGHUP
+                # e.g. 1 for SIGHUP, or also be UNTRAPPED_SIGWINCH == -1
+                return self.signal_safe.LastSignal()
             else:
                 # The signature of waitpid() means this shouldn't happen
                 raise AssertionError()
 
-        # All child processes are supposed to be in this dict.  But this may
-        # legitimately happen if a grandchild outlives the child (its parent).
-        # Then it is reparented under this process, so we might receive
-        # notification of its exit, even though we didn't start it.  We can't have
-        # any knowledge of such processes, so print a warning.
+        # All child processes are supposed to be in this dict.
+        # Even if a grandchild outlives the child (its parent), the init
+        # process becomes the parent, NOT the shell.
+        # 
+        # TODO: this doesn't need to be a special case - we just won't call proc.WhenDone()
         if pid not in self.job_list.child_procs:
-            print_stderr("oils: PID %d Stopped, but osh didn't start it" % pid)
+            print_stderr("oils: PID %d Stopped, but oils didn't start it" % pid)
             return W1_OK
 
         proc = self.job_list.child_procs[pid]
@@ -1982,7 +1995,6 @@ class Waiter(object):
             proc.WhenDone(pid, status)
 
         elif WIFSTOPPED(status):
-            #status = WEXITSTATUS(status)
             stop_sig = WSTOPSIG(status)
 
             print_stderr('')

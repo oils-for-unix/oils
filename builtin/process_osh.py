@@ -305,11 +305,9 @@ class Wait(vm._Builtin):
         if len(job_ids) == 0:
             #log('*** wait')
 
-            # BUG: If there is a STOPPED process, this will hang forever, because we
-            # don't get ECHILD.  Not sure it matters since you can now Ctrl-C it.
-            # But how to fix this?
+            # Note: NumRunning() makes sure we ignore stopped processes, which
+            # cause WaitForOne() to return
 
-            status = 0
             while self.job_list.NumRunning() != 0:
                 result = self.waiter.WaitForOne()
                 if result == process.W1_ECHILD:
