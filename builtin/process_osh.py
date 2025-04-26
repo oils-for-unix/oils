@@ -295,7 +295,11 @@ class Wait(vm._Builtin):
                     elif result >= 0:  # signal
                         status = 128 + result
                         break
-
+            # TODO:
+            # - need to remove (pid -> status) entries here, it should NOT be
+            #   done by WaitForOne()
+            #   - maybe we need PopChildStatus(pid)
+            # - WaitForOne() can return the PID too
             return status
 
         if len(job_ids) == 0:
@@ -315,8 +319,12 @@ class Wait(vm._Builtin):
                     status = 128 + result
                     break
 
+            # TODO:
+            # - need to remove (pid -> status) entries here, it should NOT be
+            # done by WaitForOne()
+            # - then we can add - wait --check can return non-zero if any process does?
+
             return status
-        # TODO: wait --check can return non-zero if any process does?
 
         # Get list of jobs.  Then we need to check if they are ALL stopped.
         # Returns the exit code of the last one on the COMMAND LINE, not the exit
@@ -337,6 +345,8 @@ class Wait(vm._Builtin):
                     raise error.Usage(
                         'expected PID or jobspec, got %r' % job_id, location)
 
+                # TODO: does this apply to processes in the middle of a
+                # pipeline, or only the pipeline's leader?
                 job = self.job_list.ProcessFromPid(pid)
 
             if job is None:
@@ -354,6 +364,8 @@ class Wait(vm._Builtin):
                 if case(wait_status_e.Proc):
                     wait_st = cast(wait_status.Proc, UP_wait_st)
                     status = wait_st.code
+                    # TODO: remove (pid -> status) entry, maybe
+                    # PopChildStatus()
 
                 elif case(wait_status_e.Pipeline):
                     wait_st = cast(wait_status.Pipeline, UP_wait_st)

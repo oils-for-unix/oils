@@ -71,8 +71,7 @@ job_control2() {
 }
 
 jobs_list() {
-  local wait_one=${1:-}
-  local in_order=${2:-}
+  local wait_style=${1:-all}
 
   # Works with: dash/ash, bash mksh yash
   # Does NOT work with zsh
@@ -98,35 +97,57 @@ jobs_list() {
   echo $pids_down
   echo $pids_up
 
-  if test -n "$wait_one"; then
-    if test -n "$in_order"; then
-       pid_list=$pids_up
-     else
+  pid_list=''
+  case $wait_style in
+    all)
+      wait $pids_down
+      ;;
+    down_one)
        pid_list=$pids_down
-    fi
+      ;;
+    up_one)
+       pid_list=$pids_up
+      ;;
+    none)
+      echo 'Not waiting'
 
-    for p in $pid_list; do
-      wait $p
-      echo "--- pid $p --> status $?"
+      # When can we remove the (pid -> status) mapping?
+      # If we don't wait, We never do.  The shell exists, and the processes
+      # keep going!
+      # So the actual 'wait' command is the thing that removes records, NOT
+      # process death.
 
-      # Hm dash/ash, and yash have a SIMILAR bug as OSH - status can be 127,
-      # but only jobs -l
-      #
-      # bash and mksh do it correctly
-      # zsh is messed up in other ways
-      #
-      # So this means that our way of handling failure only works in BASH/mksh,
-      # not in POSIX shell!  There are similar problems with xargs.  Need a
-      # blog post about this.
-      jobs -l  # problem: this can "lose" exit codes
-    done
-  else
-    wait $pid_down
-  fi
+      # Some dummy processes
+      for i in 1 2 3; do
+        sleep 0.01
+      done
+      ;;
+  esac
+
+  case $wait_style in
+    down_one|up_one)
+      for p in $pid_list; do
+        wait $p
+        echo "--- pid $p --> status $?"
+
+        # Hm dash/ash, and yash have a SIMILAR bug as OSH - status can be 127,
+        # but only jobs -l
+        #
+        # bash and mksh do it correctly
+        # zsh is messed up in other ways
+        #
+        # So this means that our way of handling failure only works in BASH/mksh,
+        # not in POSIX shell!  There are similar problems with xargs.  Need a
+        # blog post about this.
+        jobs -l  # problem: this can "lose" exit codes
+      done
+      ;;
+  esac
 
   echo '--- done'
   jobs -l
   echo
+
 
   # the status is the last one, which is 2
   echo status=$?

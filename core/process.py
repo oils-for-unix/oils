@@ -1195,10 +1195,10 @@ class Process(Job):
 
                 self.job_list.RemoveJob(self.job_id)
 
-            # TODO: we need to keep the exit status for wait $PID, which may
-            # happen after "reaping"
-            # wait builtin calls "job_list.ProcessFromPid(pid) to get a Process
-            # object, which saves the status
+            # TODO: The wait builtin is the only thing that should remove
+            # processes.  WhenDone() is called by the Waiter::WaitForOne(),
+            # which is NOT the wait builtin.
+            # jobs -l should also not remove it.
             self.job_list.RemoveChildProcess(self.pid)
 
             if not self.in_background:

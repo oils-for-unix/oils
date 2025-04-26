@@ -10,6 +10,7 @@ from _devbuild.gen.runtime_asdl import (RedirValue, redirect_arg, cmd_value,
 from _devbuild.gen.syntax_asdl import loc, redir_loc
 from asdl import runtime
 from builtin import read_osh
+from builtin import process_osh
 from builtin import trap_osh
 from core import dev
 from core import process  # module under test
@@ -19,6 +20,7 @@ from core import state
 from core import test_lib
 from core import util
 from display import ui
+from frontend import flag_def  # needed for wait builtin
 from mycpp import iolib
 from mycpp import mylib
 from mycpp.mylib import log
@@ -48,50 +50,57 @@ class FakeJobControl(object):
         return self.enabled
 
 
+def _SetupTest(self):
+    self.arena = test_lib.MakeArena('process_test.py')
+
+    self.mem = test_lib.MakeMem(self.arena)
+    parse_opts, exec_opts, mutable_opts = state.MakeOpts(self.mem, {}, None)
+    self.mem.exec_opts = exec_opts
+
+    #state.InitMem(mem, {}, '0.1')
+    sh_init.InitDefaultVars(self.mem, [])
+
+    self.job_control = process.JobControl()
+    self.job_list = process.JobList()
+
+    signal_safe = iolib.InitSignalSafe()
+    self.trap_state = trap_osh.TrapState(signal_safe)
+
+    fd_state = None
+    self.multi_trace = dev.MultiTracer(posix.getpid(), '', '', '', fd_state)
+    self.tracer = dev.Tracer(None, exec_opts, mutable_opts, self.mem,
+                             mylib.Stderr(), self.multi_trace)
+    self.waiter = process.Waiter(self.job_list, exec_opts, self.trap_state,
+                                 self.tracer)
+    self.errfmt = ui.ErrorFormatter()
+    self.fd_state = process.FdState(self.errfmt, self.job_control,
+                                    self.job_list, None, self.tracer, None,
+                                    exec_opts)
+    self.ext_prog = process.ExternalProgram('', self.fd_state, self.errfmt,
+                                            util.NullDebugFile())
+
+
+def _MakeThunk(argv, ext_prog):
+    arg_vec = cmd_value.Argv(argv, [loc.Missing] * len(argv), False, None,
+                             None)
+    argv0_path = None
+    for path_entry in ['/bin', '/usr/bin']:
+        full_path = os.path.join(path_entry, argv[0])
+        if os.path.exists(full_path):
+            argv0_path = full_path
+            break
+    if not argv0_path:
+        argv0_path = argv[0]  # fallback that tests failure case
+    return ExternalThunk(ext_prog, argv0_path, arg_vec, {})
+
+
 class ProcessTest(unittest.TestCase):
 
     def setUp(self):
-        self.arena = test_lib.MakeArena('process_test.py')
-
-        mem = test_lib.MakeMem(self.arena)
-        parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, {}, None)
-        mem.exec_opts = exec_opts
-
-        #state.InitMem(mem, {}, '0.1')
-        sh_init.InitDefaultVars(mem, [])
-
-        self.job_control = process.JobControl()
-        self.job_list = process.JobList()
-
-        signal_safe = iolib.InitSignalSafe()
-        self.trap_state = trap_osh.TrapState(signal_safe)
-
-        fd_state = None
-        self.multi_trace = dev.MultiTracer(posix.getpid(), '', '', '',
-                                           fd_state)
-        self.tracer = dev.Tracer(None, exec_opts, mutable_opts, mem,
-                                 mylib.Stderr(), self.multi_trace)
-        self.waiter = process.Waiter(self.job_list, exec_opts, self.trap_state,
-                                     self.tracer)
-        errfmt = ui.ErrorFormatter()
-        self.fd_state = process.FdState(errfmt, self.job_control,
-                                        self.job_list, None, self.tracer, None,
-                                        exec_opts)
-        self.ext_prog = process.ExternalProgram('', self.fd_state, errfmt,
-                                                util.NullDebugFile())
+        _SetupTest(self)
 
     def _ExtProc(self, argv):
-        arg_vec = cmd_value.Argv(argv, [loc.Missing] * len(argv), False, None,
-                                 None)
-        argv0_path = None
-        for path_entry in ['/bin', '/usr/bin']:
-            full_path = os.path.join(path_entry, argv[0])
-            if os.path.exists(full_path):
-                argv0_path = full_path
-                break
-        if not argv0_path:
-            argv0_path = argv[0]  # fallback that tests failure case
-        thunk = ExternalThunk(self.ext_prog, argv0_path, arg_vec, {})
+        thunk = _MakeThunk(argv, self.ext_prog)
         return Process(thunk, self.job_control, self.job_list, self.tracer)
 
     def testStdinRedirect(self):
@@ -269,6 +278,180 @@ class ProcessTest(unittest.TestCase):
         # https://stackoverflow.com/questions/29347790/difference-between-ioerror-and-oserror
         self.assertRaises(OSError, self.fd_state.Open, '_nonexistent_')
         self.assertRaises(OSError, self.fd_state.Open, 'metrics/')
+
+
+class JobListTest(unittest.TestCase):
+    """
+    TODO: Test invariant that the 'wait' builtin is the one that removes the
+    (pid -> status) mappings.
+
+    There are 4 styles of invoking it:
+
+    wait              # for all
+    wait -n           # for next
+    wait $pid1 $pid2  # for specific jobs -- problem: are pipelines included?
+    wait %j1   %j2    # job specs -- jobs are either pielines or processes
+
+    Bonus:
+
+    jobs -l can show exit status
+    """
+
+    def setUp(self):
+        _SetupTest(self)
+
+        self.wait_builtin = process_osh.Wait(self.waiter, self.job_list,
+                                             self.mem, self.tracer,
+                                             self.errfmt)
+
+    def _ExtProc(self, argv):
+        thunk = _MakeThunk(argv, self.ext_prog)
+        return Process(thunk, self.job_control, self.job_list, self.tracer)
+
+    def _RunBackgroundJob(self, argv):
+        p = self._ExtProc(argv)
+
+        # Similar to Executor::StartBackgroundJob()
+        p.SetBackground()
+        pid = p.StartProcess(trace.Fork)
+
+        #self.mem.last_bg_pid = pid  # for $!
+
+        job_id = self.job_list.AddJob(p)  # show in 'jobs' list
+        return pid, job_id
+
+    def _StartProcesses(self, n):
+        pids = []
+        job_ids = []
+        for i in xrange(1, n + 1):
+            argv = ['sh', '-c', 'sleep 0.0%d; echo i=%d; exit %d' % (i, i, i)]
+            pid, job_id = self._RunBackgroundJob(argv)
+            pids.append(pid)
+            job_ids.append(job_id)
+
+        log('pids %s', pids)
+        log('job_ids %s', job_ids)
+
+        return pids, job_ids
+
+    def testWaitAll(self):
+        """ wait """
+        # Jobs list starts out empty
+        self.assertEqual(0, len(self.job_list.child_procs))
+
+        # Fork 2 processes with &
+        pids, job_ids = self._StartProcesses(2)
+
+        # Now we have 2 jobs
+        self.assertEqual(2, len(self.job_list.child_procs))
+
+        # Invoke the 'wait' builtin
+
+        cmd_val = test_lib.MakeBuiltinArgv(['wait'])
+        status = self.wait_builtin.Run(cmd_val)
+        self.assertEqual(0, status)
+
+        # Jobs list is now empty
+        self.assertEqual(0, len(self.job_list.child_procs))
+
+    def testWaitNext(self):
+        """ wait -n """
+        # Jobs list starts out empty
+        self.assertEqual(0, len(self.job_list.child_procs))
+
+        # Fork 2 processes with &
+        pids, job_ids = self._StartProcesses(2)
+
+        # Now we have 2 jobs
+        self.assertEqual(2, len(self.job_list.child_procs))
+
+        ### 'wait -n'
+        cmd_val = test_lib.MakeBuiltinArgv(['wait', '-n'])
+        status = self.wait_builtin.Run(cmd_val)
+        self.assertEqual(1, status)
+
+        # Jobs list now has 1 fewer job
+        self.assertEqual(1, len(self.job_list.child_procs))
+
+        ### 'wait -n' again
+        cmd_val = test_lib.MakeBuiltinArgv(['wait', '-n'])
+        status = self.wait_builtin.Run(cmd_val)
+        self.assertEqual(2, status)
+
+        # Now zero
+        self.assertEqual(0, len(self.job_list.child_procs))
+
+        ### 'wait -n' again
+        cmd_val = test_lib.MakeBuiltinArgv(['wait', '-n'])
+        status = self.wait_builtin.Run(cmd_val)
+        self.assertEqual(127, status)
+
+        # Still zero
+        self.assertEqual(0, len(self.job_list.child_procs))
+
+    def testWaitPid(self):
+        """ wait $pid2 """
+        # Jobs list starts out empty
+        self.assertEqual(0, len(self.job_list.child_procs))
+
+        # Fork 3 processes with &
+        pids, job_ids = self._StartProcesses(3)
+
+        # Now we have 3 jobs
+        self.assertEqual(3, len(self.job_list.child_procs))
+
+        # wait $pid2
+        cmd_val = test_lib.MakeBuiltinArgv(['wait', str(pids[1])])
+        status = self.wait_builtin.Run(cmd_val)
+        self.assertEqual(2, status)
+
+        # Jobs list now has 1 fewer job
+        #self.assertEqual(2, len(self.job_list.child_procs))
+
+        # wait $pid3
+        cmd_val = test_lib.MakeBuiltinArgv(['wait', str(pids[2])])
+        status = self.wait_builtin.Run(cmd_val)
+        self.assertEqual(3, status)
+
+        # wait $pid1
+        cmd_val = test_lib.MakeBuiltinArgv(['wait', str(pids[0])])
+        status = self.wait_builtin.Run(cmd_val)
+        #self.assertEqual(1, status)
+
+        # Jobs list now has 1 fewer job
+        #self.assertEqual(2, len(self.job_list.child_procs))
+
+    def testWaitJob(self):
+        """ wait %j2 """
+
+        # Jobs list starts out empty
+        self.assertEqual(0, len(self.job_list.child_procs))
+
+        # Fork 3 processes with &
+        pids, job_ids = self._StartProcesses(3)
+
+        # Now we have 3 jobs
+        self.assertEqual(3, len(self.job_list.child_procs))
+
+        # wait %j2
+        cmd_val = test_lib.MakeBuiltinArgv(['wait', '%' + str(job_ids[1])])
+        status = self.wait_builtin.Run(cmd_val)
+        self.assertEqual(2, status)
+
+        #self.assertEqual(3, len(self.job_list.child_procs))
+
+        # wait %j3
+        cmd_val = test_lib.MakeBuiltinArgv(['wait', '%' + str(job_ids[2])])
+        status = self.wait_builtin.Run(cmd_val)
+        self.assertEqual(3, status)
+
+        #self.assertEqual(3, len(self.job_list.child_procs))
+
+        return
+        # wait %j1
+        cmd_val = test_lib.MakeBuiltinArgv(['wait', '%' + str(job_ids[0])])
+        status = self.wait_builtin.Run(cmd_val)
+        self.assertEqual(1, status)
 
 
 if __name__ == '__main__':

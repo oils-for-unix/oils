@@ -379,7 +379,7 @@ class ShellExecutor(vm._Executor):
         # only really matters when executing 'exit 42', because the child shell
         # inherits errexit and will be verbose.  Other notes:
         #
-        # - We might want errors to fit on a single line so they don't get #
+        # - We might want errors to fit on a single line so they don't get
         #   interleaved.
         # - We could turn the `exit` builtin into a error.FatalRuntime exception
         #   and get this check for "free".
@@ -683,8 +683,8 @@ class ShellExecutor(vm._Executor):
                     else:
                         # Like the top level IOError handler
                         e_die_status(
-                            2,
-                            'Oils I/O error (read): %s' % posix.strerror(err_num))
+                            2, 'Oils I/O error (read): %s' %
+                            posix.strerror(err_num))
                 elif n == 0:  # EOF
                     open_fds.remove(fd)
 

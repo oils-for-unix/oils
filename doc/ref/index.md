@@ -26,7 +26,7 @@ preserve_anchor_case: yes
   }
 </style>
 
-This reference has **three** tables of contents.  They link to topics within 15
+This reference has **three** tables of contents.  They link to topics within 16
 chapters.
 
 <span class="in-progress">(in progress)</span>
