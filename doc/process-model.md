@@ -39,7 +39,13 @@ missing documentation for shell!
 
 ## Shell Constructs That Start Processes
 
+### Simple Command
+
+    ls /tmp
+
 ### Pipelines `myproc | wc -l`
+
+Affected by these options:
 
 - `shopt -s lastpipe`
 - `set -o pipefail`
@@ -126,6 +132,12 @@ Oils/YSH specific:
 
 ### [trap]($help)
 
+## YSH Ideas
+
+- Rich history: this feature may fork a process for each interactive line, with
+  a PTY (rather than a pipe) connecting the processes
+- The "pipecar" process to turn process completion events into pipe events?
+  - Or perhaps we need general coroutines, like async/await
 
 ## Appendix: Non-Shell Tools
 
@@ -134,6 +146,10 @@ These Unix tools start processes:
 - `xargs`
   - `xargs -P` starts parallel processes (but doesn't buffer output)
 - `find -exec`
+  - has a mechanism for batching, e.g. with `find . -exec echo {} +` vs. `\;`
 - `make`
   - `make -j` starts parallel processes (but doesn't buffer output)
+  - there is the "job server protocol", which works across child processes,
+    e.g. grandchildren and more
 - `ninja` (buffers output)
+- `init` - the process supervisor

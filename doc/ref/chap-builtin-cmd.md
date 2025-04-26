@@ -1148,25 +1148,41 @@ Shows all jobs running in the shell and their status.
 
 ### wait
 
-    wait FLAG* ARG
+Wait for jobs to finish, in a few different ways.  (A job is a process or a
+pipeline.)
 
-Wait for processes to exit.
+    wait  # no arguments
 
-If the ARG is a PID, wait only for that job, and return its status.
+Wait for all jobs to terminate.  The exit status is 0, unless a signal occurs.
 
-If there's no ARG, wait for all child processes.
+    wait -n
+
+Wait for the next job to terminate, and return its status.
+
+    wait $pid1 $pid2 ...
+
+Wait for the jobs specified by PIDs to terminate.  Return the status of the
+last one.
+
+    wait %3 %2 ...
+
+Wait for the jobs specified by "job specs" to terminate.  Return the status of
+the last one.
+
+---
+
+Wait can be interrupted by a signal, in which case the exit code indicates the
+signal number.
 
 <!--
 The ARG can be a PID (tracked by the kernel), or a job number (tracked by the
 shell).  Specify jobs with the syntax `%jobnumber`.
+
+TODO:
+- wait --check can return non-zero if any process does?
+
+This can be documented in ysh-wait?
 -->
-
-Flags:
-
-    -n  Wait for the next process to exit, rather than a specific process.
-
-Wait can be interrupted by a signal, in which case the exit code indicates the
-signal number.
 
 ### fg
 

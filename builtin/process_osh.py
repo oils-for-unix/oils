@@ -287,7 +287,7 @@ class Wait(vm._Builtin):
                 while self.job_list.NumRunning() > target:
                     result = self.waiter.WaitForOne()
                     if result == process.W1_OK:
-                        status = self.waiter.last_status
+                        status = self.waiter.LastStatusCode()
                     elif result == process.W1_ECHILD:
                         # nothing to wait for, or interrupted
                         status = 127
@@ -316,6 +316,7 @@ class Wait(vm._Builtin):
                     break
 
             return status
+        # TODO: wait --check can return non-zero if any process does?
 
         # Get list of jobs.  Then we need to check if they are ALL stopped.
         # Returns the exit code of the last one on the COMMAND LINE, not the exit

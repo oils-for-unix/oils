@@ -1195,6 +1195,10 @@ class Process(Job):
 
                 self.job_list.RemoveJob(self.job_id)
 
+            # TODO: we need to keep the exit status for wait $PID, which may
+            # happen after "reaping"
+            # wait builtin calls "job_list.ProcessFromPid(pid) to get a Process
+            # object, which saves the status
             self.job_list.RemoveChildProcess(self.pid)
 
             if not self.in_background:
@@ -1670,6 +1674,9 @@ class JobList(object):
 
         When the Waiter gets an EXITED or STOPPED notification, we need
         to know about it so 'jobs' can work.
+
+        Note: this contains Process objects that are part of a Pipeline object.
+        Does it need to?
         """
         self.child_procs[pid] = proc
 
@@ -1689,8 +1696,10 @@ class JobList(object):
         # type: (int) -> Process
         """For wait $PID.
 
-        There's no way to wait for a pipeline with a PID.  That uses job
-        syntax, e.g. %1.  Not a great interface.
+        Note: this looks up regular processes.  Should 'wait $PID' support the
+        PID of the last pipeline, i.e. $!  That seems to work in bash
+
+        This is separate from job syntax 'wait %1'
         """
         return self.child_procs.get(pid)
 
@@ -1887,6 +1896,11 @@ class Waiter(object):
         self.signal_safe = signal_safe
         self.tracer = tracer
         self.last_status = 127  # wait -n error code
+
+    def LastStatusCode(self):
+        # type: () -> int
+        """Returns exit code for wait -n"""
+        return self.last_status
 
     def WaitForOne(self, waitpid_options=0):
         # type: (int) -> int

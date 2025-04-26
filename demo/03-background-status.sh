@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./background-status.sh <function name>
+#   demo/background-status.sh <function name>
 
 set -o nounset
 #set -o pipefail
@@ -68,6 +68,68 @@ job_control() {
 job_control2() {
   { sleep 0.1; exit 8; } &
   %1
+}
+
+jobs_list() {
+  local wait_one=${1:-}
+  local in_order=${2:-}
+
+  # Works with: dash/ash, bash mksh yash
+  # Does NOT work with zsh
+  #
+  # OSH:
+  # - jobs list looks weird
+  # - extra stuff on stderr
+  # but otherwise it works
+
+  pids_down=''
+  pids_up=''
+  for i in 3 2 1; do
+    { sleep $i; echo i=$i; exit $i; } &
+    pid=$!
+
+    pids_down="$pids_down $pid"
+    pids_up="$pid $pids_up"
+    echo "--- started $i"
+    jobs -l
+    echo
+
+  done
+  echo $pids_down
+  echo $pids_up
+
+  if test -n "$wait_one"; then
+    if test -n "$in_order"; then
+       pid_list=$pids_up
+     else
+       pid_list=$pids_down
+    fi
+
+    for p in $pid_list; do
+      wait $p
+      echo "--- pid $p --> status $?"
+
+      # Hm dash/ash, and yash have a SIMILAR bug as OSH - status can be 127,
+      # but only jobs -l
+      #
+      # bash and mksh do it correctly
+      # zsh is messed up in other ways
+      #
+      # So this means that our way of handling failure only works in BASH/mksh,
+      # not in POSIX shell!  There are similar problems with xargs.  Need a
+      # blog post about this.
+      jobs -l  # problem: this can "lose" exit codes
+    done
+  else
+    wait $pid_down
+  fi
+
+  echo '--- done'
+  jobs -l
+  echo
+
+  # the status is the last one, which is 2
+  echo status=$?
 }
 
 "$@"

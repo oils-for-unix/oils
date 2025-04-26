@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 ## compare_shells: dash bash mksh
 
 # Job control constructs:
@@ -37,6 +37,48 @@ wait zzz
 ## OK bash status: 1
 # mksh confuses a syntax error with 'command not found'!
 ## BUG mksh status: 127
+
+#### wait for N parallel jobs
+
+for i in 3 2 1; do
+  { sleep 0.0$i; exit $i; } &
+done
+wait
+
+# status is lost
+echo status=$?
+
+## STDOUT:
+status=0
+## END
+
+#### wait for N parallel jobs and check failure
+
+set -o errexit
+
+pids=''
+for i in 3 2 1; do
+  { sleep 0.0$i; echo $i; exit $i; } &
+  pids="$pids $!"
+done
+
+for pid in $pids; do
+  set +o errexit
+  wait $pid
+  status=$?
+  set -o errexit
+
+  echo status=$status
+done
+
+## STDOUT:
+1
+2
+3
+status=3
+status=2
+status=1
+## END
 
 #### Builtin in background
 echo async &
