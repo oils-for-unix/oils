@@ -162,11 +162,11 @@ status=1 pipestatus=1
 #### Wait for job and PIPESTATUS - cat
 
 # foreground
-{ echo hi; exit 55; } | ( cat; exit 99 )
+exit 55 | ( cat; exit 99 )
 echo status=$? pipestatus=${PIPESTATUS[@]}
 
 # background
-{ echo hi; exit 55; } | ( cat; exit 99 ) &
+exit 55 | ( cat; exit 99 ) &
 echo status=$? pipestatus=${PIPESTATUS[@]}
 
 # wait for pipeline
@@ -176,15 +176,12 @@ wait %+
 echo status=$? pipestatus=${PIPESTATUS[@]}
 
 ## STDOUT:
-hi
 status=99 pipestatus=55 99
 status=0 pipestatus=0
-hi
 status=99 pipestatus=99
 ## END
 ## N-I dash status: 2
 ## N-I dash STDOUT:
-hi
 ## END
 
 #### Brace group in background, wait all

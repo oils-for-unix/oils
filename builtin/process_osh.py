@@ -302,6 +302,11 @@ class Wait(vm._Builtin):
                         # CLEAN UP
                         pid = w1_arg
                         pr = self.job_list.PopChildProcess(pid)
+                        # BUG: the LAST part of the pipeline may finish first,
+                        # which means the job has not exited.
+                        # Do we need to register ALL PIDs then?
+
+                        # TODO: we can do a linear search instead?
                         self.job_list.CleanupWhenProcessExits(pid)
 
                         if pr is None:

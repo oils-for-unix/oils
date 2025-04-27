@@ -1537,7 +1537,7 @@ class Pipeline(Job):
 
 def _JobStateStr(i):
     # type: (job_state_t) -> str
-    return job_state_str(i)[10:]  # remove 'job_state.'
+    return job_state_str(i, dot=False)
 
 
 def _GetTtyFd():
@@ -1686,6 +1686,13 @@ class JobList(object):
         # CleanupWhenProcessExits().  They Dict key is job.PidForWait()
         self.pid_to_job = {}  # type: Dict[int, Job]
 
+        # TODO: consider linear search through JobList
+        # - by job ID
+        # - by PID
+        # - then you don't have to bother as much with the dicts
+        #   - you still need the child process dict to set the status and
+        #   state?
+
         self.debug_pipelines = []  # type: List[Pipeline]
 
         # Counter used to assign IDs to jobs. It is incremented every time a job
@@ -1713,6 +1720,8 @@ class JobList(object):
         self.jobs[job_id] = job
 
         # Pipelines
+        # TODO: register all PIDs?  And conversely, remove all PIDs
+        # what do other shells do?
         self.pid_to_job[job.PidForWait()] = job
 
         # Mutate the job itself
@@ -1746,6 +1755,7 @@ class JobList(object):
         if 0:
             log('*** CleanupWhenProcessExits %d', pid)
             log('job %s', job)
+            #log('STATE %s', _JobStateStr(job.state))
 
         if job and job.state == job_state_e.Exited:
             # Note: only the LAST PID in a pipeline will ever be here, but it's

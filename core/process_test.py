@@ -558,6 +558,7 @@ class PipelineJobListTest(_Common):
         for i in xrange(1, n + 1):
             j = 10 - i  # count down
             code_str = 'sleep 0.0%d | cat | (exit %d)' % (j, j)
+            #code_str = 'sleep 0.0%d | exit %d | cat' % (j, j)
             pi, job_id = self._RunBackgroundPipeline(code_str)
             pipelines.append(pi)
             job_ids.append(job_id)
