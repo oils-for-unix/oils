@@ -1292,6 +1292,11 @@ class Pipeline(Job):
 
         self.sigpipe_status_ok = sigpipe_status_ok
 
+    def __repr__(self):
+        # type: () -> str
+        return '<Pipeline pgid=%d pids=%s state=%s procs=%s>' % (
+            self.pgid, self.pids, _JobStateStr(self.state), self.procs)
+
     def ProcessGroupId(self):
         # type: () -> int
         """Returns the group ID of this pipeline.
@@ -1738,6 +1743,10 @@ class JobList(object):
         """Given a PID, remove the job if it has Exited."""
 
         job = self.pid_to_job.get(pid)
+        if 0:
+            log('*** CleanupWhenProcessExits %d', pid)
+            log('job %s', job)
+
         if job and job.state == job_state_e.Exited:
             # Note: only the LAST PID in a pipeline will ever be here, but it's
             # OK to try to delete it.

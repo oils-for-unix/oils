@@ -261,6 +261,8 @@ def InitCommandEvaluator(parse_ctx=None,
     cmd_deps = cmd_eval.Deps()
     cmd_deps.mutable_opts = mutable_opts
 
+    # Set $PATH, to make core/process_test.py more realistic
+    state.SetGlobalString(mem, 'PATH', ':'.join(executor.DEFAULT_PATH))
     search_path = executor.SearchPath(mem, exec_opts)
 
     ext_prog = \

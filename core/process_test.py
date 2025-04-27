@@ -24,6 +24,7 @@ from frontend import flag_def  # side effect: flags are defined, for wait builti
 from mycpp import iolib
 from mycpp import mylib
 from mycpp.mylib import log
+from osh import cmd_parse_test
 
 import posix_ as posix
 
@@ -31,6 +32,7 @@ _ = flag_def
 
 Process = process.Process
 ExternalThunk = process.ExternalThunk
+assertParsePipeline = cmd_parse_test.assertParsePipeline
 
 
 def Banner(msg):
@@ -59,6 +61,7 @@ def _SetupTest(self):
     self.mem = test_lib.MakeMem(self.arena)
     parse_opts, exec_opts, mutable_opts = state.MakeOpts(self.mem, {}, None)
     self.mem.exec_opts = exec_opts
+    self.exec_opts = exec_opts
 
     #state.InitMem(mem, {}, '0.1')
     sh_init.InitDefaultVars(self.mem, [])
@@ -85,6 +88,11 @@ def _SetupTest(self):
                                                 ext_prog=self.ext_prog)
 
 
+def _SetupWait(self):
+    self.wait_builtin = process_osh.Wait(self.waiter, self.job_list, self.mem,
+                                         self.tracer, self.errfmt)
+
+
 def _MakeThunk(argv, ext_prog):
     arg_vec = cmd_value.Argv(argv, [loc.Missing] * len(argv), False, None,
                              None)
@@ -107,14 +115,15 @@ def _CommandNode(code_str, arena):
 class _Common(unittest.TestCase):
     """Common functionality for tests below."""
 
-    def setUp(self):
-        _SetupTest(self)
-
     def _ExtProc(self, argv):
         thunk = _MakeThunk(argv, self.ext_prog)
         return Process(thunk, self.job_control, self.job_list, self.tracer)
 
-    def _MakePipeline(self, argv_list, last_str=''):
+    def _MakeForegroundPipeline(self, argv_list, last_str=''):
+        """
+        Foreground pipelines have self.last_thunk, from pi.AddLast().
+        Background pipelines don't
+        """
         assert len(last_str), last_str  # required
 
         pi = process.Pipeline(False, self.job_control, self.job_list,
@@ -125,8 +134,30 @@ class _Common(unittest.TestCase):
         pi.AddLast((self.cmd_ev, node))
         return pi
 
+    def _MakeProcess(self, node):
+        thunk = process.SubProgramThunk(self.cmd_ev, node, self.trap_state,
+                                        self.multi_trace, True,
+                                        self.exec_opts.errtrace())
+        p = process.Process(thunk, self.job_control, self.job_list,
+                            self.tracer)
+        return p
+
+    def _MakeBackgroundPipeline(self, code_str):
+        node = assertParsePipeline(self, code_str)
+
+        pi = process.Pipeline(self.exec_opts.sigpipe_status_ok(),
+                              self.job_control, self.job_list, self.tracer)
+        for child in node.children:
+            p = self._MakeProcess(child)
+            p.Init_ParentPipeline(pi)
+            pi.Add(p)
+        return pi
+
 
 class ProcessTest(_Common):
+
+    def setUp(self):
+        _SetupTest(self)
 
     def testStdinRedirect(self):
         PATH = '_tmp/one-two.txt'
@@ -177,7 +208,7 @@ class ProcessTest(_Common):
     def testPipeline(self):
         print('BEFORE', os.listdir('/dev/fd'))
 
-        p = self._MakePipeline(
+        p = self._MakeForegroundPipeline(
             [['ls'], ['cut', '-d', '.', '-f', '2'], ['sort']],
             last_str='uniq -c')
 
@@ -189,8 +220,8 @@ class ProcessTest(_Common):
 
     def testPipeline2(self):
         Banner('ls | cut -d . -f 1 | head')
-        p = self._MakePipeline([['ls'], ['cut', '-d', '.', '-f', '1']],
-                               last_str='head')
+        p = self._MakeForegroundPipeline(
+            [['ls'], ['cut', '-d', '.', '-f', '1']], last_str='head')
 
         p.StartPipeline(self.waiter)
         print(p.RunLastPart(self.waiter, self.fd_state))
@@ -302,10 +333,7 @@ class JobListTest(_Common):
 
     def setUp(self):
         _SetupTest(self)
-
-        self.wait_builtin = process_osh.Wait(self.waiter, self.job_list,
-                                             self.mem, self.tracer,
-                                             self.errfmt)
+        _SetupWait(self)
 
     def _RunBackgroundJob(self, argv):
         p = self._ExtProc(argv)
@@ -505,19 +533,17 @@ class JobListTest(_Common):
 
 class PipelineJobListTest(_Common):
     """
-    Like the above, but starts pipelines instead of individual processes.
+    Like the JobListTest above, but starts pipelines instead of individual
+    processes.
     """
 
     def setUp(self):
         _SetupTest(self)
+        _SetupWait(self)
 
-        self.wait_builtin = process_osh.Wait(self.waiter, self.job_list,
-                                             self.mem, self.tracer,
-                                             self.errfmt)
-
-    def _RunBackgroundPipeline(self, argv_list):
+    def _RunBackgroundPipeline(self, code_str):
         # Like Executor::RunBackgroundJob()
-        pi = self._MakePipeline(argv_list, last_str='cat')
+        pi = self._MakeBackgroundPipeline(code_str)
         pi.StartPipeline(self.waiter)
         pi.SetBackground()
         #self.mem.last_bg_pid = pid  # for $!
@@ -531,8 +557,8 @@ class PipelineJobListTest(_Common):
         assert n < 10, n
         for i in xrange(1, n + 1):
             j = 10 - i  # count down
-            argv_list = [['sleep', '0.0%d' % j], ['sh', '-c', 'exit %d' % j]]
-            pi, job_id = self._RunBackgroundPipeline(argv_list)
+            code_str = 'sleep 0.0%d | cat | (exit %d)' % (j, j)
+            pi, job_id = self._RunBackgroundPipeline(code_str)
             pipelines.append(pi)
             job_ids.append(job_id)
 
@@ -542,8 +568,8 @@ class PipelineJobListTest(_Common):
         return pipelines, job_ids
 
     def assertJobListLength(self, length):
-        # 2 processes per pipeline in this test
-        self.assertEqual(length * 2, len(self.job_list.child_procs))
+        # 3 processes per pipeline in this test
+        self.assertEqual(length * 3, len(self.job_list.child_procs))
         self.assertEqual(length, len(self.job_list.jobs))
         self.assertEqual(length, len(self.job_list.pid_to_job))
 
@@ -564,7 +590,6 @@ class PipelineJobListTest(_Common):
         status = self.wait_builtin.Run(cmd_val)
         self.assertEqual(0, status)
 
-        # TODO: fix bug
         return
         # Jobs list is now empty
         self.assertJobListLength(0)
@@ -603,6 +628,88 @@ class PipelineJobListTest(_Common):
         self.assertEqual(127, status)
 
         # Still zero
+        self.assertJobListLength(0)
+
+    def testWaitPid(self):
+        """ wait $pid2 """
+        # Jobs list starts out empty
+        self.assertJobListLength(0)
+
+        # Fork 3 processes with &
+        pids, job_ids = self._StartPipelines(3)
+
+        # Now we have 3 jobs
+        self.assertJobListLength(3)
+
+        # wait $pid2
+        cmd_val = test_lib.MakeBuiltinArgv(['wait', str(pids[1])])
+        return
+        status = self.wait_builtin.Run(cmd_val)
+        self.assertEqual(8, status)
+
+        # Jobs list now has 1 fewer job
+        self.assertJobListLength(2)
+
+        # wait $pid3
+        cmd_val = test_lib.MakeBuiltinArgv(['wait', str(pids[2])])
+        status = self.wait_builtin.Run(cmd_val)
+        self.assertEqual(7, status)
+
+        self.assertJobListLength(1)
+
+        # wait $pid1
+        cmd_val = test_lib.MakeBuiltinArgv(['wait', str(pids[0])])
+        status = self.wait_builtin.Run(cmd_val)
+        self.assertEqual(9, status)
+
+        self.assertJobListLength(0)
+
+    def testWaitJob(self):
+        """ wait %j2 """
+
+        # Jobs list starts out empty
+        self.assertJobListLength(0)
+
+        # Fork 3 processes with &
+        pids, job_ids = self._StartPipelines(3)
+
+        # Now we have 3 jobs
+        self.assertJobListLength(3)
+
+        # wait %j2
+        cmd_val = test_lib.MakeBuiltinArgv(['wait', '%' + str(job_ids[1])])
+        return
+        status = self.wait_builtin.Run(cmd_val)
+        self.assertEqual(8, status)
+
+        self.assertJobListLength(2)
+
+        # wait %j3
+        cmd_val = test_lib.MakeBuiltinArgv(['wait', '%' + str(job_ids[2])])
+
+        status = self.wait_builtin.Run(cmd_val)
+        self.assertEqual(7, status)
+
+        self.assertJobListLength(1)
+
+        # wait %j1
+        cmd_val = test_lib.MakeBuiltinArgv(['wait', '%' + str(job_ids[0])])
+        status = self.wait_builtin.Run(cmd_val)
+        self.assertEqual(9, status)
+
+        self.assertJobListLength(0)
+
+    def testForegroundPipelineCleansUpChildProcessDict(self):
+        self.assertJobListLength(0)
+
+        # TODO
+        return
+
+        argv = ['sleep', '0.01']
+        p = self._ExtProc(argv)
+        why = trace.External(argv)
+        p.RunProcess(self.waiter, why)
+
         self.assertJobListLength(0)
 
 
