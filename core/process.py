@@ -1014,6 +1014,7 @@ class Process(Job):
         self.job_control = job_control
         self.job_list = job_list
         self.tracer = tracer
+        self.exec_opts = tracer.exec_opts
 
         # For pipelines
         self.parent_pipeline = None  # type: Pipeline
@@ -1155,6 +1156,11 @@ class Process(Job):
             if result == W1_NO_CHILDREN:
                 break
 
+        # Linear search
+        # if we get a W1_EXITED event, and the pid is OUR PID, then we can
+        # return?
+        # well we need the status too
+
         # Cleanup - for background jobs this happens in the 'wait' builtin,
         # e.g. after JobWait()
         if self.state == job_state_e.Exited:
@@ -1221,13 +1227,12 @@ class Process(Job):
             self.parent_pipeline.WhenPartExited(pid, status)
             return
 
-        if self.job_id != -1:
-            # Job might have been brought to the foreground after being
-            # assigned a job ID.
-            if self.in_background:
-                # the main loop calls PollNotifications(), WaitForOne(),
-                # which results in this
-                # TODO: only print this interactively, like other shells
+        if self.job_id != -1 and self.in_background:
+            # TODO: ONE condition should determine if this was a background
+            # job, rather than a foreground process
+            # "Job might have been brought to the foreground after being
+            # assigned a job ID"
+            if self.exec_opts.interactive():
                 print_stderr('[%%%d] PID %d Done' % (self.job_id, self.pid))
 
         if not self.in_background:
@@ -1278,6 +1283,7 @@ class Pipeline(Job):
         self.job_control = job_control
         self.job_list = job_list
         self.tracer = tracer
+        self.exec_opts = tracer.exec_opts
 
         self.procs = []  # type: List[Process]
         self.pids = []  # type: List[int]  # pids in order
@@ -1520,19 +1526,23 @@ class Pipeline(Job):
             status = 0
 
         self.pipe_status[i] = status
-        if self.AllExited():
-            if self.job_id != -1:
-                # Job might have been brought to the foreground after being
-                # assigned a job ID.
-                if self.in_background:
-                    print_stderr('[%%%d] PGID %d Done' %
-                                 (self.job_id, self.pids[0]))
+        if not self.AllExited():
+            return
 
-            # status of pipeline is status of last process
-            self.status = self.pipe_status[-1]
-            self.state = job_state_e.Exited
-            if not self.in_background:
-                self.job_control.MaybeTakeTerminal()
+        if self.job_id != -1 and self.in_background:
+            # TODO: ONE condition
+            # "Job might have been brought to the foreground after being
+            # assigned a job ID"
+            if self.exec_opts.interactive():
+                print_stderr('[%%%d] PGID %d Done' %
+                             (self.job_id, self.pids[0]))
+
+        # Status of pipeline is status of last process
+        self.status = self.pipe_status[-1]
+        self.state = job_state_e.Exited
+
+        if not self.in_background:
+            self.job_control.MaybeTakeTerminal()
 
 
 def _JobStateStr(i):

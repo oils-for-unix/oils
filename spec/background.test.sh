@@ -301,3 +301,18 @@ cat tmp.txt | wc -w  # each line is a single "word"
 2
 2
 ## END
+
+
+#### No stderr spew when shell is not interactive
+
+# in interactive shell, this prints 'Process' or 'Pipeline'
+sleep 0.01 &
+sleep 0.01 | cat &
+wait
+
+## STDOUT:
+## END
+## STDERR:
+## END
+
+

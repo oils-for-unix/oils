@@ -88,10 +88,7 @@ def bug_1004(sh):
     expect_prompt(sh)
 
     sh.sendline('fg')
-    if 'osh' in sh.shell_label:
-        sh.expect(r'.*PID \d+ Continue')
-    else:
-        sh.expect('cat')
+    expect_continued(sh)
 
     # Ctrl-C to terminal
     ctrl_c(sh)
@@ -131,7 +128,7 @@ def bug_721(sh):
 
 @register()
 def bug_1005(sh):
-    'sleep 10 then Ctrl-Z then wait should not hang (issue 1005)'
+    'sleep 10; Ctrl-Z; wait; should not hang (issue 1005)'
 
     expect_prompt(sh)
 
@@ -149,7 +146,7 @@ def bug_1005(sh):
 
 @register(skip_shells=['dash'])
 def bug_1005_wait_n(sh):
-    'sleep 10 then Ctrl-Z then wait -n should not hang'
+    'sleep 10; Ctrl-Z; wait -n; should not hang'
 
     expect_prompt(sh)
 
@@ -192,7 +189,7 @@ def bug_esrch_pipeline_with_builtin(sh):
 
 @register()
 def stopped_process(sh):
-    'Resuming a stopped process'
+    """process: Ctrl-Z; continue with fg, cancel with Ctrl-C"""
     expect_prompt(sh)
 
     sh.sendline('cat')
@@ -208,10 +205,7 @@ def stopped_process(sh):
 
     sh.sendline('fg')
 
-    if 'osh' in sh.shell_label:
-        sh.expect(r'.*PID \d+ Continue')
-    else:
-        sh.expect('cat')
+    expect_continued(sh)
 
     ctrl_c(sh)
     expect_prompt(sh)
@@ -227,7 +221,7 @@ def stopped_process(sh):
 
 @register(not_impl_shells=['osh', 'osh-cpp'])
 def stopped_pipeline(sh):
-    'Suspend and resume a pipeline (issue 1087)'
+    'Pipeline: Ctrl-Z; continue with fg; cancel with Ctrl-C (issue 1087)'
 
     expect_prompt(sh)
 
@@ -244,10 +238,7 @@ def stopped_pipeline(sh):
 
     sh.sendline('fg')
 
-    if 'osh' in sh.shell_label:
-        sh.expect(r'.*PID \d+ Continue')
-    else:
-        sh.expect('cat')
+    expect_continued(sh)
 
     ctrl_c(sh)
     expect_prompt(sh)
@@ -258,7 +249,7 @@ def stopped_pipeline(sh):
 
 @register()
 def cycle_process_bg_fg(sh):
-    'Suspend and resume a process several times'
+    'Stop and continue a process several times'
     expect_prompt(sh)
 
     sh.sendline('cat')
@@ -280,8 +271,8 @@ def cycle_process_bg_fg(sh):
 
 
 @register()
-def suspend_status(sh):
-    'Ctrl-Z and then look at $?'
+def stopped_status(sh):
+    """Ctrl-Z and then look at $?"""
 
     # This test seems flaky under bash for some reason
 
@@ -328,7 +319,7 @@ def no_spurious_tty_take(sh):
 
 @register()
 def fg_current_previous(sh):
-    'Resume the special jobs: %- and %+'
+    """fg %- and %+"""
     expect_prompt(sh)
 
     # will be terminated as soon as we're done with it
@@ -404,7 +395,7 @@ def fg_current_previous(sh):
 
 @register(skip_shells=['dash'])
 def fg_job_id(sh):
-    'Resume jobs with integral job specs using `fg` builtin'
+    """Start jobs with &; continue with fg %2"""
     expect_prompt(sh)
 
     sh.sendline((PYCAT % 'foo') + ' &')  # %1
@@ -443,7 +434,7 @@ def fg_job_id(sh):
 
 @register()
 def wait_job_spec(sh):
-    'Wait using a job spec'
+    """wait %2 %- %+"""
     expect_prompt(sh)
 
     sh.sendline('(sleep 2; exit 11) &')
