@@ -1203,6 +1203,12 @@ class Process(Job):
             #return
             pass
 
+        # Now job_id is set
+        if self.exec_opts.interactive():
+            print_stderr('')  # newline after ^Z (TODO: consolidate with ^C)
+            print_stderr('[%%%d] PID %d Stopped with signal %d' %
+                         (self.job_id, self.pid, stop_sig))
+
         if self.job_id == -1:
             # This process was started in the foreground, not with &.  So it
             # was NOT a job, but after Ctrl-Z, it now a job.
@@ -2113,10 +2119,6 @@ class Waiter(object):
 
             stop_sig = WSTOPSIG(status)
 
-            # TODO: only print this interactively
-            print_stderr('')
-            print_stderr('oils: PID %d Stopped with signal %d' %
-                         (pid, stop_sig))
             if proc:
                 proc.WhenStopped(stop_sig)
 

@@ -255,11 +255,18 @@ def cycle_process_bg_fg(sh):
     sh.sendline('cat')
     time.sleep(0.1)  # seems necessary
 
-    for _ in range(3):
+    for i in range(3):
+        if 0:
+            log('  ---')
+            log('  iter %d', i)
+            log('  ---')
+
         ctrl_z(sh)
         sh.expect('.*Stopped.*')
+
         sh.sendline('')  # needed for dash for some reason
         expect_prompt(sh)
+
         sh.sendline('fg')
         expect_continued(sh)
 
