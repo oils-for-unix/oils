@@ -2104,6 +2104,7 @@ class Waiter(object):
 
         | NoChange                   -- for WNOHANG - is this a different API?
         """
+        _ = WCONTINUED
         #waitpid_options |= WCONTINUED
         pid, status = pyos.WaitPid(waitpid_options)
         if pid == 0:
