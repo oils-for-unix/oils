@@ -134,6 +134,14 @@ module runtime
     List[loc]? pipe_locs,    # init to null, rarely allocated
   )
 
+  # core/process.py
+  # A Job is a Process or Pipeline.
+  # - Processes usually go from Running to Stopped, unless unless Ctrl-Z stops
+  #   them.
+  # - Pipelines go Running to Done.  They are never stopped; only the processes
+  #   inside them are stopped.
+  job_state = Running | Done | Stopped
+
   # event is W1_EXITED or W1_STOPPED
   wait_status =
     Proc(job_state state, int code)
@@ -156,14 +164,6 @@ module runtime
   # characters.  Sentinel is the end of the string.
   char_kind = DE_White | DE_Gray | Black | Backslash | Sentinel
               generate [integers]
-
-  # core/process.py
-  # A Job is a Process or Pipeline.
-  # - Processes usually go from Running to Stopped, unless unless Ctrl-Z stops
-  #   them.
-  # - Pipelines go Running to Done.  They are never stopped; only the processes
-  #   inside them are stopped.
-  job_state = Running | Done | Stopped
 
   # core/bash_impl.py
   error_code = OK | IndexOutOfRange

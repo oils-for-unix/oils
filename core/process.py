@@ -1646,7 +1646,9 @@ class JobList(object):
         self.jobs = {}  # type: Dict[int, Job]
 
         # pid -> Process.  This is for STOP notification.
+        # TODO: I feel like these are really JOBS
         self.child_procs = {}  # type: Dict[int, Process]
+
         self.debug_pipelines = []  # type: List[Pipeline]
 
         # Counter used to assign IDs to jobs. It is incremented every time a job
