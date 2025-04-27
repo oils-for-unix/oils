@@ -339,11 +339,10 @@ class JobListTest(unittest.TestCase):
 
         return pids, job_ids
 
-    def assertJobListLength(self, length, bug=False):
+    def assertJobListLength(self, length):
         self.assertEqual(length, len(self.job_list.child_procs))
         self.assertEqual(length, len(self.job_list.jobs))
-        if not bug:
-            self.assertEqual(length, len(self.job_list.pid_to_job))
+        self.assertEqual(length, len(self.job_list.pid_to_job))
 
     def testWaitAll(self):
         """ wait """
@@ -417,21 +416,21 @@ class JobListTest(unittest.TestCase):
         self.assertEqual(8, status)
 
         # Jobs list now has 1 fewer job
-        self.assertJobListLength(2, bug=True)
+        self.assertJobListLength(2)
 
         # wait $pid3
         cmd_val = test_lib.MakeBuiltinArgv(['wait', str(pids[2])])
         status = self.wait_builtin.Run(cmd_val)
         self.assertEqual(7, status)
 
-        self.assertJobListLength(1, bug=True)
+        self.assertJobListLength(1)
 
         # wait $pid1
         cmd_val = test_lib.MakeBuiltinArgv(['wait', str(pids[0])])
         status = self.wait_builtin.Run(cmd_val)
         self.assertEqual(9, status)
 
-        self.assertJobListLength(0, bug=True)
+        self.assertJobListLength(0)
 
     def testWaitJob(self):
         """ wait %j2 """
@@ -450,7 +449,7 @@ class JobListTest(unittest.TestCase):
         status = self.wait_builtin.Run(cmd_val)
         self.assertEqual(8, status)
 
-        self.assertJobListLength(2, bug=True)
+        self.assertJobListLength(2)
 
         # wait %j3
         cmd_val = test_lib.MakeBuiltinArgv(['wait', '%' + str(job_ids[2])])
@@ -458,14 +457,14 @@ class JobListTest(unittest.TestCase):
         status = self.wait_builtin.Run(cmd_val)
         self.assertEqual(7, status)
 
-        self.assertJobListLength(1, bug=True)
+        self.assertJobListLength(1)
 
         # wait %j1
         cmd_val = test_lib.MakeBuiltinArgv(['wait', '%' + str(job_ids[0])])
         status = self.wait_builtin.Run(cmd_val)
         self.assertEqual(9, status)
 
-        self.assertJobListLength(0, bug=True)
+        self.assertJobListLength(0)
 
     def testForegroundProcessCleansUpChildProcessDict(self):
         self.assertJobListLength(0)

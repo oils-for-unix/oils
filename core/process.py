@@ -1674,14 +1674,17 @@ class JobList(object):
     def __init__(self):
         # type: () -> None
 
-        # job_id -> Job instance
+        # self.child_procs is used by WaitForOne() to call proc.WhenExited()
+        # and proc.WhenStopped().
+        self.child_procs = {}  # type: Dict[int, Process]
+
+        # self.jobs is used by 'wait %1' and 'fg %2'
+        # job_id -> Job
         self.jobs = {}  # type: Dict[int, Job]
 
+        # self.pid_to_job is used by 'wait -n' and 'wait' - to call
+        # CleanupWhenProcessExits().  They Dict key is job.PidForWait()
         self.pid_to_job = {}  # type: Dict[int, Job]
-
-        # Dict used by WaitForOne() to call proc.WhenExited() and
-        # proc.WhenStopped().
-        self.child_procs = {}  # type: Dict[int, Process]
 
         self.debug_pipelines = []  # type: List[Pipeline]
 
@@ -1717,19 +1720,23 @@ class JobList(object):
 
         return job_id
 
-    def RemoveJob(self, job_id):
-        # type: (int) -> None
-        """Called by 'wait' builtin."""
-        mylib.dict_erase(self.jobs, job_id)
-        # TODO: pid_to_job has to be erased?
-        # This is called when 'fg %2' exits and when 'wait %2' exits
-
-        if len(self.jobs) == 0:
-            self.next_job_id = 1
-
     def JobFromPid(self, pid):
         # type: (int) -> Optional[Job]
         return self.pid_to_job.get(pid)
+
+    def _MaybeResetCounter(self):
+        # type: () -> None
+        if len(self.jobs) == 0:
+            self.next_job_id = 1
+
+    def CleanupWhenJobExits(self, job):
+        # type: (Job) -> None
+        """Called when say 'fg %2' exits, and when 'wait %2' exits"""
+        mylib.dict_erase(self.jobs, job.job_id)
+
+        mylib.dict_erase(self.pid_to_job, job.PidForWait())
+
+        self._MaybeResetCounter()
 
     def CleanupWhenProcessExits(self, pid):
         # type: (int) -> None
@@ -1743,8 +1750,7 @@ class JobList(object):
 
             mylib.dict_erase(self.jobs, job.job_id)
 
-        if len(self.jobs) == 0:
-            self.next_job_id = 1
+        self._MaybeResetCounter()
 
     def AddChildProcess(self, pid, proc):
         # type: (int, Process) -> None

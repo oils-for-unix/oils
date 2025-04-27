@@ -115,7 +115,7 @@ class Fg(vm._Builtin):
                 wait_st = cast(wait_status.Proc, UP_wait_st)
                 if wait_st.state == job_state_e.Exited:
                     self.job_list.PopChildProcess(job.PidForWait())
-                    self.job_list.RemoveJob(job.job_id)
+                    self.job_list.CleanupWhenJobExits(job)
                 status = wait_st.code
 
             elif case(wait_status_e.Pipeline):
@@ -382,7 +382,7 @@ class Wait(vm._Builtin):
                     wait_st = cast(wait_status.Proc, UP_wait_st)
                     if wait_st.state == job_state_e.Exited:
                         self.job_list.PopChildProcess(job.PidForWait())
-                        self.job_list.RemoveJob(job.job_id)
+                        self.job_list.CleanupWhenJobExits(job)
                     status = wait_st.code
 
                 elif case(wait_status_e.Pipeline):

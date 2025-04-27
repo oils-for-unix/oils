@@ -1,9 +1,4 @@
-# YSH xtrace
-
-## oils_failures_allowed: 1
-
-# TEMPORARY: Fix JobList Dict deletion logic for 'wait' and 'wait -n'
-
+## oils_failures_allowed: 0
 
 #### Customize PS4
 shopt -s ysh:upgrade
