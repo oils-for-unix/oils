@@ -1177,7 +1177,7 @@ class Process(Job):
 
         if self.parent_pipeline:
             # TODO: do we need anything here?
-            # We need AllStopped() just like AllDone()?
+            # We need AllStopped() just like AllExited()?
 
             #self.parent_pipeline.WhenPartIsStopped(pid, status)
             #return
@@ -1193,18 +1193,18 @@ class Process(Job):
             self.job_control.MaybeTakeTerminal()
             self.SetBackground()
 
-    def WhenDone(self, pid, status):
+    def WhenExited(self, pid, status):
         # type: (int, int) -> None
         """Called by the Waiter when this Process exits."""
 
-        #log('Process WhenDone %d %d', pid, status)
+        #log('Process WhenExited %d %d', pid, status)
         assert pid == self.pid, 'Expected %d, got %d' % (self.pid, pid)
         self.status = status
-        self.state = job_state_e.Done
+        self.state = job_state_e.Exited
 
         if self.parent_pipeline:
             # populate pipeline status array; update Pipeline state, etc.
-            self.parent_pipeline.WhenPartIsDone(pid, status)
+            self.parent_pipeline.WhenPartExited(pid, status)
             return
 
         if self.job_id != -1:
@@ -1214,8 +1214,7 @@ class Process(Job):
                 # the main loop calls PollNotifications(), WaitForOne(),
                 # which results in this
                 # TODO: only print this interactively, like other shells
-                print_stderr('[%%%d] PID %d Done' %
-                             (self.job_id, self.pid))
+                print_stderr('[%%%d] PID %d Done' % (self.job_id, self.pid))
 
             self.job_list.RemoveJob(self.job_id)
 
@@ -1471,13 +1470,13 @@ class Pipeline(Job):
         posix.close(r)
 
         self.pipe_status[-1] = cmd_ev.LastStatus()
-        if self.AllDone():
-            self.state = job_state_e.Done
+        if self.AllExited():
+            self.state = job_state_e.Exited
 
         #log('pipestatus before all have finished = %s', self.pipe_status)
         return self.Wait(waiter)
 
-    def AllDone(self):
+    def AllExited(self):
         # type: () -> bool
 
         # mycpp rewrite: all(status != -1 for status in self.pipe_status)
@@ -1486,10 +1485,10 @@ class Pipeline(Job):
                 return False
         return True
 
-    def WhenPartIsDone(self, pid, status):
+    def WhenPartExited(self, pid, status):
         # type: (int, int) -> None
-        """Called by Process.WhenDone."""
-        #log('Pipeline WhenDone %d %d', pid, status)
+        """Called by Process::WhenExited()"""
+        #log('Pipeline WhenExited %d %d', pid, status)
         i = self.pids.index(pid)
         assert i != -1, 'Unexpected PID %d' % pid
 
@@ -1497,7 +1496,7 @@ class Pipeline(Job):
             status = 0
 
         self.pipe_status[i] = status
-        if self.AllDone():
+        if self.AllExited():
             if self.job_id != -1:
                 # Job might have been brought to the foreground after being
                 # assigned a job ID.
@@ -1509,7 +1508,7 @@ class Pipeline(Job):
 
             # status of pipeline is status of last process
             self.status = self.pipe_status[-1]
-            self.state = job_state_e.Done
+            self.state = job_state_e.Exited
             if not self.in_background:
                 self.job_control.MaybeTakeTerminal()
 
@@ -2031,12 +2030,12 @@ class Waiter(object):
                 print('')
 
             if proc:
-                proc.WhenDone(pid, status)
+                proc.WhenExited(pid, status)
 
         elif WIFEXITED(status):
             status = WEXITSTATUS(status)
             if proc:
-                proc.WhenDone(pid, status)
+                proc.WhenExited(pid, status)
 
         elif WIFSTOPPED(status):
             was_stopped = True

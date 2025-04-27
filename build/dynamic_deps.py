@@ -14,6 +14,7 @@ IMPORTANT: Run this script with -S so that system libraries aren't found.
 from __future__ import print_function
 
 import sys
+
 OLD_MODULES = dict(sys.modules)  # Make a copy
 
 import posix  # Do it afterward so we don't mess up analysis.
@@ -21,54 +22,55 @@ import posix  # Do it afterward so we don't mess up analysis.
 VERBOSE = False
 #VERBOSE = True
 
+
 def log(msg, *args):
-  if not VERBOSE:
-    return
-  if args:
-    msg = msg % args
-  print('\t', msg, file=sys.stderr)
+    if not VERBOSE:
+        return
+    if args:
+        msg = msg % args
+    print('\t', msg, file=sys.stderr)
 
 
 def ImportMain(main_module, old_modules):
-  """Yields (module name, absolute path) pairs."""
+    """Yields (module name, absolute path) pairs."""
 
-  log('Importing %r', main_module)
-  try:
-    __import__(main_module)
-  except ImportError as e:
-    log('Error importing %r with sys.path %r', main_module, sys.path)
-    # TODO: print better error.
-    raise
+    log('Importing %r', main_module)
+    try:
+        __import__(main_module)
+    except ImportError as e:
+        log('Error importing %r with sys.path %r', main_module, sys.path)
+        # TODO: print better error.
+        raise
 
-  new_modules = sys.modules
-  log('After importing: %d modules', len(new_modules))
+    new_modules = sys.modules
+    log('After importing: %d modules', len(new_modules))
 
-  for name in sorted(new_modules):
-    if name in old_modules:
-      continue  # exclude old modules
+    for name in sorted(new_modules):
+        if name in old_modules:
+            continue  # exclude old modules
 
-    module = new_modules[name]
+        module = new_modules[name]
 
+        full_path = getattr(module, '__file__', None)
+
+        # For some reason, there are entries like:
+        # 'pan.core.os': None in sys.modules.  Here's a hack to get rid of them.
+        if module is None:
+            log('module is None: %r', name)
+            continue
+        # Not sure why, but some stdlib modules don't have a __file__ attribute,
+        # e.g. "gc", "marshal", "thread".  Doesn't matter for our purposes.
+        if full_path is None:
+            # _sre has this issue, because it's built-in
+            log('full_path is None: %r', name)
+            continue
+        yield name, full_path
+
+    # Special case for __future__.  It's necessary, but doesn't get counted
+    # because we import it first!
+    module = sys.modules['__future__']
     full_path = getattr(module, '__file__', None)
-
-    # For some reason, there are entries like:
-    # 'pan.core.os': None in sys.modules.  Here's a hack to get rid of them.
-    if module is None:
-      log('module is None: %r', name)
-      continue
-    # Not sure why, but some stdlib modules don't have a __file__ attribute,
-    # e.g. "gc", "marshal", "thread".  Doesn't matter for our purposes.
-    if full_path is None:
-      # _sre has this issue, because it's built-in
-      log('full_path is None: %r', name)
-      continue
-    yield name, full_path
-
-  # Special case for __future__.  It's necessary, but doesn't get counted
-  # because we import it first!
-  module = sys.modules['__future__']
-  full_path = getattr(module, '__file__', None)
-  yield '__future__', full_path
+    yield '__future__', full_path
 
 
 PY_MODULE = 0
@@ -76,88 +78,89 @@ C_MODULE = 1
 
 
 def FilterModules(modules):
-  """Look at __file__ of each module, and classify them as Python or C."""
+    """Look at __file__ of each module, and classify them as Python or C."""
 
-  for module, full_path in modules:
-    #log('FilterModules %s %s', module, full_path)
-    num_parts = module.count('.') + 1
-    i = len(full_path)
-    # Do it once more in this case
-    if full_path.endswith('/__init__.pyc') or \
-       full_path.endswith('__init__.py'):
-      i = full_path.rfind('/', 0, i)
-    for _ in range(num_parts):  # range for Python 3
-      i = full_path.rfind('/', 0, i)
-    #print i, full_path[i+1:]
-    rel_path = full_path[i + 1:]
+    for module, full_path in modules:
+        #log('FilterModules %s %s', module, full_path)
+        num_parts = module.count('.') + 1
+        i = len(full_path)
+        # Do it once more in this case
+        if full_path.endswith('/__init__.pyc') or \
+           full_path.endswith('__init__.py'):
+            i = full_path.rfind('/', 0, i)
+        for _ in range(num_parts):  # range for Python 3
+            i = full_path.rfind('/', 0, i)
+        #print i, full_path[i+1:]
+        rel_path = full_path[i + 1:]
 
-    # Depending on whether it's cached, the __file__ attribute on the module
-    # ends with '.py' or '.pyc'.
-    if full_path.endswith('.py'):
-      yield PY_MODULE, full_path, rel_path
-    elif full_path.endswith('.pyc'):
-      yield PY_MODULE, full_path[:-1], rel_path[:-1]
-    else:
-      # .so file
-      yield C_MODULE, module, full_path
+        # Depending on whether it's cached, the __file__ attribute on the module
+        # ends with '.py' or '.pyc'.
+        if full_path.endswith('.py'):
+            yield PY_MODULE, full_path, rel_path
+        elif full_path.endswith('.pyc'):
+            yield PY_MODULE, full_path[:-1], rel_path[:-1]
+        else:
+            # .so file
+            yield C_MODULE, module, full_path
 
 
 def main(argv):
-  """Returns an exit code."""
+    """Returns an exit code."""
 
-  # Set an environment variable so dependencies in debug mode can be excluded.
-  posix.environ['_OVM_DEPS'] = '1'
+    # Set an environment variable so dependencies in debug mode can be excluded.
+    posix.environ['_OVM_DEPS'] = '1'
 
-  action = argv[1]
-  main_module = argv[2]
-  log('Before importing: %d modules', len(OLD_MODULES))
-  log('OLD %s', OLD_MODULES.keys())
+    action = argv[1]
+    main_module = argv[2]
+    log('Before importing: %d modules', len(OLD_MODULES))
+    log('OLD %s', OLD_MODULES.keys())
 
-  if action == 'both':  # Write files for both .py and .so dependencies
-    prefix = argv[3]
-    py_out_path = prefix + '-cpython.txt'
-    c_out_path = prefix + '-c.txt'
+    if action == 'both':  # Write files for both .py and .so dependencies
+        prefix = argv[3]
+        py_out_path = prefix + '-cpython.txt'
+        c_out_path = prefix + '-c.txt'
 
-    modules = ImportMain(main_module, OLD_MODULES)
-    #log('NEW %s', list(modules))
+        modules = ImportMain(main_module, OLD_MODULES)
+        #log('NEW %s', list(modules))
 
-    with open(py_out_path, 'w') as py_out, open(c_out_path, 'w') as c_out:
-      for mod_type, x, y in FilterModules(modules):
-        if mod_type == PY_MODULE:
-          print(x, y, file=py_out)
-          print(x + 'c', y + 'c', file=py_out)  # .pyc goes in bytecode.zip too
+        with open(py_out_path, 'w') as py_out, open(c_out_path, 'w') as c_out:
+            for mod_type, x, y in FilterModules(modules):
+                if mod_type == PY_MODULE:
+                    print(x, y, file=py_out)
+                    print(x + 'c', y + 'c',
+                          file=py_out)  # .pyc goes in bytecode.zip too
 
-        elif mod_type == C_MODULE:
-          print(x, y, file=c_out)  # mod_name, full_path
+                elif mod_type == C_MODULE:
+                    print(x, y, file=c_out)  # mod_name, full_path
 
-        else:
-          raise AssertionError(mod_type)
+                else:
+                    raise AssertionError(mod_type)
 
-  elif action == 'py':  # .py path -> .pyc relative path
-    modules = ImportMain(main_module, OLD_MODULES)
-    for mod_type, full_path, rel_path in FilterModules(modules):
-      if mod_type == PY_MODULE:
-        opy_input = full_path
-        opy_output = rel_path + 'c'  # output is .pyc
-        print(opy_input, opy_output)
+    elif action == 'py':  # .py path -> .pyc relative path
+        modules = ImportMain(main_module, OLD_MODULES)
+        for mod_type, full_path, rel_path in FilterModules(modules):
+            if mod_type == PY_MODULE:
+                opy_input = full_path
+                opy_output = rel_path + 'c'  # output is .pyc
+                print(opy_input, opy_output)
 
-  elif action == 'py-manifest':  # .py path -> .py relative path
-    modules = ImportMain(main_module, OLD_MODULES)
-    for mod_type, full_path, rel_path in FilterModules(modules):
-      if mod_type == PY_MODULE:
-        opy_input = full_path
-        assert rel_path.endswith('.py')
-        #mod_name = rel_path[:-3].replace('/', '.')
-        print(opy_input, rel_path)
-  else:
-    raise RuntimeError('Invalid action %r' % action)
+    elif action == 'py-manifest':  # .py path -> .py relative path
+        modules = ImportMain(main_module, OLD_MODULES)
+        for mod_type, full_path, rel_path in FilterModules(modules):
+            if mod_type == PY_MODULE:
+                opy_input = full_path
+                assert rel_path.endswith('.py')
+                #mod_name = rel_path[:-3].replace('/', '.')
+                print(opy_input, rel_path)
+    else:
+        raise RuntimeError('Invalid action %r' % action)
 
 
 if __name__ == '__main__':
-  try:
-    sys.exit(main(sys.argv))
-  except RuntimeError as e:
-    print('%s: %s' % (sys.argv[0], e.args[0]), file=sys.stderr)
-    sys.exit(1)
+    try:
+        sys.exit(main(sys.argv))
+    except RuntimeError as e:
+        print('%s: %s' % (sys.argv[0], e.args[0]), file=sys.stderr)
+        sys.exit(1)
 
 # vim: ts=2

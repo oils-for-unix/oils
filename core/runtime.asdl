@@ -140,7 +140,7 @@ module runtime
   #   them.
   # - Pipelines go Running to Done.  They are never stopped; only the processes
   #   inside them are stopped.
-  job_state = Running | Done | Stopped
+  job_state = Running | Exited | Stopped
 
   # event is W1_EXITED or W1_STOPPED
   wait_status =

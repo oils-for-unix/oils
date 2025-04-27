@@ -113,7 +113,7 @@ class Fg(vm._Builtin):
         with tagswitch(wait_st) as case:
             if case(wait_status_e.Proc):
                 wait_st = cast(wait_status.Proc, UP_wait_st)
-                if wait_st.state == job_state_e.Done:
+                if wait_st.state == job_state_e.Exited:
                     self.job_list.PopChildProcess(job.ProcessGroupId())
                 status = wait_st.code
 
@@ -375,7 +375,7 @@ class Wait(vm._Builtin):
             with tagswitch(wait_st) as case:
                 if case(wait_status_e.Proc):
                     wait_st = cast(wait_status.Proc, UP_wait_st)
-                    if wait_st.state == job_state_e.Done:
+                    if wait_st.state == job_state_e.Exited:
                         self.job_list.PopChildProcess(job.ProcessGroupId())
                     status = wait_st.code
 
