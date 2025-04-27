@@ -32,8 +32,8 @@ The deployed executable doesn't depend on Python.
 
 This README is at the root of the [git repo][git-repo].
 
-If are looking to to **use** Oils, you don't need to clone this repo.  Instead,
-visit <https://oils.pub/release/latest/>.
+If you want to **use** Oils, don't clone this repo.  Instead, visit
+<https://oils.pub/release/latest/>.
 [The Oils Repo Is Different From theTarball Releases](https://github.com/oils-for-unix/oils/wiki/The-Oils-Repo-Is-Different-From-the-Tarball-Releases).
 
 [git-repo]: https://github.com/oils-for-unix/oils

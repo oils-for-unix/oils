@@ -1703,15 +1703,14 @@ class JobList(object):
 
     def RegisterJob(self, job):
         # type: (Job) -> int
-        """Register a background job.
+        """Create a background job, which you can wait %2, fg %2, kill %2, etc.
 
-        A job is either a Process or Pipeline.  You can resume a job with 'fg',
-        kill it with 'kill', etc.
-
-        Two cases:
-
-        1. async jobs: sleep 5 | sleep 4 &
-        2. stopped jobs: sleep 5; then Ctrl-Z
+        - A job is either a Process or Pipeline.
+        - A job is registered in these 2 situations:
+          1.   async: sleep 5 &
+          2. stopped: sleep 5; then Ctrl-Z
+             That is, in the interactive shell, the foreground process can be
+             receives signals, and can be stopped
         """
         job_id = self.next_job_id
         self.next_job_id += 1
