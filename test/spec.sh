@@ -174,6 +174,10 @@ builtin-process() {
   test/spec-py.sh run-file builtin-process "$@"
 }
 
+builtin-kill() {
+  test/spec-py.sh run-file builtin-kill "$@"
+}
+
 builtin-read() {
   test/spec-py.sh run-file builtin-read "$@"
 }
