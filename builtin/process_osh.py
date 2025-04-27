@@ -85,7 +85,7 @@ class Fg(vm._Builtin):
         if len(cmd_val.argv) > 1:
             job_spec = cmd_val.argv[1]
 
-        job = self.job_list.GetJobWithSpec(job_spec)
+        job = self.job_list.JobFromSpec(job_spec)
         # note: the 'wait' builtin falls back to JobFromPid()
         if job is None:
             print_stderr('fg: No job to put in the foreground')
@@ -95,15 +95,20 @@ class Fg(vm._Builtin):
         assert pgid != process.INVALID_PGID, \
             'Processes put in the background should have a PGID'
 
-        # TODO: Print job ID rather than the PID
+        # TODO
+        # - Print job ID rather than the PID
+        # - This acknowledgement come after WaitForOne() gets WIFCONTINUED
         print_stderr('fg: PID %d Continued' % pgid)
+
         # Put the job's process group back into the foreground. GiveTerminal() must
         # be called before sending SIGCONT or else the process might immediately get
-        # suspsended again if it tries to read/write on the terminal.
+        # suspended again if it tries to read/write on the terminal.
         self.job_control.MaybeGiveTerminal(pgid)
         job.SetForeground()
         # needed for Wait() loop to work
         job.state = job_state_e.Running
+
+        # Continue
         posix.killpg(pgid, SIGCONT)
 
         status = -1
@@ -352,7 +357,7 @@ class Wait(vm._Builtin):
 
             job = None  # type: Optional[process.Job]
             if job_id == '' or job_id.startswith('%'):
-                job = self.job_list.GetJobWithSpec(job_id)
+                job = self.job_list.JobFromSpec(job_id)
 
             if job is None:
                 #log('JOB %s', job_id)
@@ -362,10 +367,6 @@ class Wait(vm._Builtin):
                 except ValueError:
                     raise error.Usage(
                         'expected PID or jobspec, got %r' % job_id, location)
-
-                # TODO:
-                # - what happens if you pass the pipeline leader PID?
-                # - what happens if you pass a non-leader PID?
 
                 job = self.job_list.JobFromPid(pid)
                 #log('WAIT JOB %r', job)

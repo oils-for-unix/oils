@@ -89,7 +89,7 @@ STYLE_DEFAULT = 0
 STYLE_LONG = 1
 STYLE_PID_ONLY = 2
 
-# To save on allocations in JobList::GetJobWithSpec()
+# To save on allocations in JobList::JobFromSpec()
 CURRENT_JOB_SPECS = ['', '%', '%%', '%+']
 
 
@@ -1830,7 +1830,7 @@ class JobList(object):
 
         return current, previous
 
-    def GetJobWithSpec(self, job_spec):
+    def JobFromSpec(self, job_spec):
         # type: (str) -> Optional[Job]
         """Parse the given job spec and return the matching job. If there is no
         matching job, this function returns None.

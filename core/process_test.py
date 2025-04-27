@@ -319,7 +319,7 @@ class JobListTest(unittest.TestCase):
 
         #self.mem.last_bg_pid = pid  # for $!
 
-        job_id = self.job_list.AddJob(p)  # show in 'jobs' list
+        job_id = self.job_list.RegisterJob(p)  # show in 'jobs' list
         return pid, job_id
 
     def _StartProcesses(self, n):
@@ -531,7 +531,7 @@ class PipelineJobListTest(unittest.TestCase):
 
         #self.mem.last_bg_pid = pid  # for $!
 
-        job_id = self.job_list.AddJob(p)  # show in 'jobs' list
+        job_id = self.job_list.RegisterJob(p)  # show in 'jobs' list
         return pid, job_id
 
     # TODO: Add all the same tests
