@@ -138,22 +138,22 @@ status=99
 
 # foreground
 { echo hi; exit 55; } | false
-echo status=$? pipestatus=${PIPESTATUS[@]}
+echo fore status=$? pipestatus=${PIPESTATUS[@]}
 
 # background
-{ echo hi; exit 55; } | false &
-echo status=$? pipestatus=${PIPESTATUS[@]}
+{ echo hi; exit 44; } | false &
+echo back status=$? pipestatus=${PIPESTATUS[@]}
 
 # wait for pipeline
 wait %+
 #wait %1
 #wait $!
-echo status=$? pipestatus=${PIPESTATUS[@]}
+echo wait status=$? pipestatus=${PIPESTATUS[@]}
 
 ## STDOUT:
-status=1 pipestatus=55 1
-status=0 pipestatus=0
-status=1 pipestatus=1
+fore status=1 pipestatus=55 1
+back status=0 pipestatus=0
+wait status=1 pipestatus=1
 ## END
 ## N-I dash status: 2
 ## N-I dash STDOUT:
@@ -163,22 +163,30 @@ status=1 pipestatus=1
 
 # foreground
 exit 55 | ( cat; exit 99 )
-echo status=$? pipestatus=${PIPESTATUS[@]}
+echo fore status=$? pipestatus=${PIPESTATUS[@]}
 
 # background
-exit 55 | ( cat; exit 99 ) &
-echo status=$? pipestatus=${PIPESTATUS[@]}
+exit 44 | ( cat; exit 88 ) &
+echo back status=$? pipestatus=${PIPESTATUS[@]}
 
 # wait for pipeline
 wait %+
 #wait %1
 #wait $!
-echo status=$? pipestatus=${PIPESTATUS[@]}
+echo wait status=$? pipestatus=${PIPESTATUS[@]}
+echo
+
+# wait for non-pipeline
+( exit 77 ) &
+wait %+
+echo wait status=$? pipestatus=${PIPESTATUS[@]}
 
 ## STDOUT:
-status=99 pipestatus=55 99
-status=0 pipestatus=0
-status=99 pipestatus=99
+fore status=99 pipestatus=55 99
+back status=0 pipestatus=0
+wait status=88 pipestatus=88
+
+wait status=77 pipestatus=77
 ## END
 ## N-I dash status: 2
 ## N-I dash STDOUT:

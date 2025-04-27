@@ -411,12 +411,24 @@ class Wait(vm._Builtin):
                     # TODO: handle PIPESTATUS?  Is this right?
                     status = wait_st.codes[-1]
 
+                    # It would be logical to set PIPESTATUS here, but it's NOT
+                    # what other shells do
+                    #   
+                    # I think PIPESTATUS is legacy, and we can design better
+                    # YSH semantics
+                    #self.mem.SetPipeStatus(wait_st.codes)
+
                 elif case(wait_status_e.Cancelled):
                     wait_st = cast(wait_status.Cancelled, UP_wait_st)
                     status = 128 + wait_st.sig_num
 
                 else:
                     raise AssertionError()
+
+        # This is an odd behavior that bash/mksh agree on - they lose the pipe
+        # status
+        # TODO: we have to clear the pipe status after every command too
+        self.mem.SetPipeStatus([status])
 
         return status
 

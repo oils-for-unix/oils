@@ -1,4 +1,4 @@
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 ## compare_shells: bash dash mksh zsh
 
 #
@@ -50,6 +50,19 @@ tr a-z A-Z     # transform
 echo a | egrep '[0-9]+'
 ## status: 1
 
+#### Initial value of PIPESTATUS is empty string
+case $SH in dash|zsh) exit ;; esac
+
+echo pipestatus ${PIPESTATUS[@]}
+## STDOUT:
+pipestatus
+## END
+## BUG mksh STDOUT:
+pipestatus 0
+## END
+## N-I dash/zsh STDOUT:
+## END
+
 #### PIPESTATUS
 return3() {
   return 3
@@ -64,17 +77,22 @@ echo ${PIPESTATUS[@]}
 
 ## END
 
-#### PIPESTATUS is set on simple commands, but NOT in OSH
+#### PIPESTATUS is set on simple commands
 case $SH in dash|zsh) exit ;; esac
 
 false
 echo pipestatus ${PIPESTATUS[@]}
 
+exit 55 | (exit 44)
+echo pipestatus ${PIPESTATUS[@]}
+
+true
+echo pipestatus ${PIPESTATUS[@]}
+
 ## STDOUT:
 pipestatus 1
-## END
-## OK osh STDOUT:
-pipestatus
+pipestatus 55 44
+pipestatus 0
 ## END
 ## N-I dash/zsh STDOUT:
 ## END
