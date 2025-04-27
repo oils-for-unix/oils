@@ -41,7 +41,7 @@ def bind_plain(sh):
 
     # There aren't many readline fns that will work nicely with pexpect (e.g., cursor-based fns)
     # Editing input seems like a reasonable choice
-    send_bind(sh, ''' '"\C-x\C-h": backward-delete-char' ''')
+    send_bind(sh, r''' '"\C-x\C-h": backward-delete-char' ''')
     expect_prompt(sh)
 
     sh.send("echo FOOM")
@@ -64,14 +64,14 @@ def bind_r_for_bind_x_osh_fn(sh):
     add_foo_fn(sh)
     expect_prompt(sh)
 
-    send_bind(sh, """-x '"\C-o": foo' """)
+    send_bind(sh, r"""-x '"\C-o": foo' """)
     expect_prompt(sh)
 
     sh.sendcontrol('o')
     time.sleep(0.1)
     sh.expect("FOO")
 
-    send_bind(sh, '-r "\C-o" ')
+    send_bind(sh, r'-r "\C-o" ')
 
     sh.sendcontrol('o')
     time.sleep(0.1)
@@ -87,7 +87,7 @@ def bind_x(sh):
     add_foo_fn(sh)
     expect_prompt(sh)
 
-    send_bind(sh, """-x '"\C-o": foo' """)
+    send_bind(sh, r"""-x '"\C-o": foo' """)
     expect_prompt(sh)
 
     sh.sendcontrol('o')
@@ -103,7 +103,7 @@ def bind_x_runtime_envvar_vals(sh):
 
     sh.sendline("export BIND_X_VAR=foo")
 
-    send_bind(sh, """-x '"\C-o": echo $BIND_X_VAR' """)
+    send_bind(sh, r"""-x '"\C-o": echo $BIND_X_VAR' """)
     expect_prompt(sh)
 
     sh.sendline("export BIND_X_VAR=bar")
@@ -120,7 +120,7 @@ def bind_x_readline_line(sh):
     "test bind -x for correctly setting $READLINE_LINE for the cmd"
     expect_prompt(sh)
 
-    send_bind(sh, """-x '"\C-o": echo Current line is: $READLINE_LINE' """)
+    send_bind(sh, r"""-x '"\C-o": echo Current line is: $READLINE_LINE' """)
     expect_prompt(sh)
 
     sh.send('abcdefghijklmnopqrstuvwxyz')
@@ -142,7 +142,7 @@ def bind_x_set_readline_line_to_uppercase(sh):
     """test bind -x for correctly using $READLINE_LINE changes"""
     expect_prompt(sh)
 
-    send_bind(sh, """-x '"\C-o": READLINE_LINE=${READLINE_LINE^^}' """)
+    send_bind(sh, r"""-x '"\C-o": READLINE_LINE=${READLINE_LINE^^}' """)
     expect_prompt(sh)
 
     sh.send('abcdefghijklmnopqrstuvwxyz')
@@ -164,7 +164,7 @@ def bind_x_readline_point(sh):
 
     expect_prompt(sh)
 
-    send_bind(sh, """-x '"\C-o": echo Cursor point at: $READLINE_POINT' """)
+    send_bind(sh, r"""-x '"\C-o": echo Cursor point at: $READLINE_POINT' """)
     expect_prompt(sh)
 
     sh.send(cmd_str)
@@ -247,7 +247,7 @@ def bind_u(sh):
     "test bind -u for unsetting all bindings to a fn"
     expect_prompt(sh)
 
-    send_bind(sh, "'\C-p: yank'")
+    send_bind(sh, r"'\C-p: yank'")
     expect_prompt(sh)
 
     send_bind(sh, "-u yank")
@@ -284,7 +284,7 @@ def bind_m(sh):
     send_bind(sh, "-u yank", "vi")
     expect_prompt(sh)
 
-    send_bind(sh, "'\C-p: yank'", "emacs")
+    send_bind(sh, r"'\C-p: yank'", "emacs")
     expect_prompt(sh)
 
     send_bind(sh, "-q yank", "vi")
@@ -304,7 +304,7 @@ def bind_f(sh):
     expect_prompt(sh)
 
     send_bind(sh, "-q downcase-word")
-    sh.expect('downcase-word can be invoked via.*"\\\C-o\\\C-s\\\C-h"')
+    sh.expect(r'downcase-word can be invoked via.*"\\C-o\\C-s\\C-h"')
 
 
 if __name__ == '__main__':
