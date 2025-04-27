@@ -105,7 +105,7 @@ class Fg(vm._Builtin):
         # suspended again if it tries to read/write on the terminal.
         self.job_control.MaybeGiveTerminal(pgid)
 
-        # TODO: send signal, then wait until the job is in the running state 
+        # TODO: send signal, then wait until the job is in the running state
         # Maybe we do
         # job.JobWait(waiter, job_state_e.Running):
         # job.JobWait(waiter, job_state_e.Exited):
@@ -413,7 +413,7 @@ class Wait(vm._Builtin):
 
                     # It would be logical to set PIPESTATUS here, but it's NOT
                     # what other shells do
-                    #   
+                    #
                     # I think PIPESTATUS is legacy, and we can design better
                     # YSH semantics
                     #self.mem.SetPipeStatus(wait_st.codes)
@@ -424,11 +424,6 @@ class Wait(vm._Builtin):
 
                 else:
                     raise AssertionError()
-
-        # This is an odd behavior that bash/mksh agree on - they lose the pipe
-        # status
-        # TODO: we have to clear the pipe status after every command too
-        self.mem.SetPipeStatus([status])
 
         return status
 

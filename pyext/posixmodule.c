@@ -2604,6 +2604,7 @@ static PyMethodDef posix_methods[] = {
   {"WTERMSIG", posix_WTERMSIG, METH_VARARGS},
   {"WIFSTOPPED", posix_WIFSTOPPED, METH_VARARGS},
   {"WSTOPSIG", posix_WSTOPSIG, METH_VARARGS},
+  {"WIFCONTINUED",posix_WIFCONTINUED, METH_VARARGS},
   {0},
 };
 

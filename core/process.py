@@ -49,10 +49,12 @@ from posix_ import (
     WIFSIGNALED,
     WIFEXITED,
     WIFSTOPPED,
+    WIFCONTINUED,
     WEXITSTATUS,
     WSTOPSIG,
     WTERMSIG,
     WNOHANG,
+    WCONTINUED,
     O_APPEND,
     O_CREAT,
     O_EXCL,
@@ -981,6 +983,25 @@ class Job(object):
         """Wait for this process/pipeline to be stopped or finished."""
         raise NotImplementedError()
 
+    def JobWaitUntil(self, waiter, until_state):
+        # type: (Waiter, job_state_t) -> wait_status_t
+        """Used by fg - wait until Running"""
+        while self.state != until_state:
+            log('WaitFOrOne')
+            result, w1_arg = waiter.WaitForOne()
+            log('result %d %d', result, w1_arg)
+
+            if result == W1_CALL_INTR:  # signal
+                return wait_status.Cancelled(w1_arg)
+
+            if result == W1_NO_CHILDREN:
+                break
+
+            # Ignore W1_EXITED, W1_STOPPED - these are OTHER processes
+
+        # this is a dummy
+        return wait_status.Proc(self.state, 0)
+
     def SetBackground(self):
         # type: () -> None
         """Record that this job is running in the background."""
@@ -1186,6 +1207,26 @@ class Process(Job):
 
         assert self.status >= 0, self.status
         return wait_status.Proc(self.state, self.status)
+
+    def WhenContinued(self):
+        # type: () -> None
+        self.state = job_state_e.Running
+
+        if self.parent_pipeline:
+            # TODO: do we need anything here?
+            pass
+
+        # TODO: Should we remove it as a job?
+
+        # Now job_id is set
+        if self.exec_opts.interactive():
+            #if 0:
+            print_stderr('[%%%d] PID %d Continued' % (self.job_id, self.pid))
+
+        #if self.in_background:
+        if 1:
+            self.job_control.MaybeTakeTerminal()
+            self.SetForeground()
 
     def WhenStopped(self, stop_sig):
         # type: (int) -> None
@@ -2063,6 +2104,7 @@ class Waiter(object):
 
         | NoChange                   -- for WNOHANG - is this a different API?
         """
+        #waitpid_options |= WCONTINUED
         pid, status = pyos.WaitPid(waitpid_options)
         if pid == 0:
             return W1_NO_CHANGE, NO_ARG  # WNOHANG passed, and no state changes
@@ -2121,6 +2163,11 @@ class Waiter(object):
 
             if proc:
                 proc.WhenStopped(stop_sig)
+
+        elif WIFCONTINUED(status):
+            #log('WIFCONT')
+            if proc:
+                proc.WhenContinued()
 
         else:
             raise AssertionError(status)
