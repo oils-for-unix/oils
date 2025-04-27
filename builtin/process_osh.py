@@ -104,6 +104,15 @@ class Fg(vm._Builtin):
         # be called before sending SIGCONT or else the process might immediately get
         # suspended again if it tries to read/write on the terminal.
         self.job_control.MaybeGiveTerminal(pgid)
+
+        # TODO: send signal, then wait until the job is in the running state 
+        # Maybe we do
+        # job.JobWait(waiter, job_state_e.Running):
+        # job.JobWait(waiter, job_state_e.Exited):
+        #
+        # Then we do self.SetForeground() in WhenContinued, just like we did
+        # self.SetBackground() in WhenStopped()
+
         job.SetForeground()
         # needed for Wait() loop to work
         job.state = job_state_e.Running
