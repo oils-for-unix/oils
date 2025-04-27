@@ -9,12 +9,13 @@ To invoke this file, run the shell wrapper:
 from __future__ import print_function
 
 import sys
+import os
 import time
 import pexpect
 import pyte
 
 import harness
-from harness import expect_prompt, register, TTY_DIMENSIONS
+from harness import expect_prompt, register
 
 from test.spec_lib import log
 
@@ -151,7 +152,7 @@ def bind_x_set_readline_line_to_uppercase(sh):
     time.sleep(0.1)
 
     sh.sendline('')
-    
+
     # Expect the uppercase command to be executed (and likely fail as 'command not found')
     sh.expect("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
@@ -178,22 +179,28 @@ def bind_x_readline_point(sh):
         '[[ -v READLINE_POINT ]] && echo "READLINE_POINT is set" || echo "READLINE_POINT is unset"'
     )
     sh.expect("READLINE_POINT is unset")
-    
-        
+
+
 @register(not_impl_shells=['dash', 'mksh'])
 def bind_x_set_readline_point_to_insert(sh):
     "test bind -x for correctly using $READLINE_POINT to overwrite the cmd"
-    
+
     failing = "failing"
     echo_cmd = 'echo "this test is %s"' % failing
     expected_cmd = 'echo "this test is no longer %s"' % failing
     new_rl_point = len(echo_cmd) - len(failing) - 1
-    
+
     bind_cmd = r"""bind -x '"\C-y": READLINE_POINT=%d' """ % new_rl_point
-    
-    screen = pyte.Screen(TTY_DIMENSIONS[1], TTY_DIMENSIONS[0])
+
+    try:
+        num_lines = int(os.environ['LINES'])
+        num_columns = int(os.environ['COLUMNS'])
+    except KeyError:
+        raise RuntimeError("LINES and COLUMNS must be set")
+
+    screen = pyte.Screen(num_columns, num_lines)
     stream = pyte.Stream(screen)
-    
+
     # Need to echo, because we don't want just output
     sh.setecho(True)
 
@@ -204,28 +211,29 @@ def bind_x_set_readline_point_to_insert(sh):
         screen.reset()
 
         return '\n'.join(lines)
-    
 
     # sh.sendline('stty -icanon')
     # time.sleep(0.1)
 
-    sh.sendline(bind_cmd) 
+    sh.sendline(bind_cmd)
     time.sleep(0.1)
-        
-    sh.send(echo_cmd) 
+
+    sh.send(echo_cmd)
     time.sleep(0.1)
-            
+
     sh.sendcontrol('y')
     time.sleep(0.2)
 
-    sh.send("no longer ") 
+    sh.send("no longer ")
     time.sleep(0.1)
-    
+
     sh.expect(pexpect.TIMEOUT, timeout=2)
-    
+
     screen_contents = _emulate_ansi_terminal(sh.before)
     if expected_cmd not in screen_contents:
-        raise Exception(f"Expected command '{expected_cmd}' not found in screen contents:\n{screen_contents}")
+        raise Exception(
+            f"Expected command '{expected_cmd}' not found in screen contents:\n{screen_contents}"
+        )
 
 
 @register(not_impl_shells=['dash', 'mksh'])

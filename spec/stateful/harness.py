@@ -19,9 +19,6 @@ from test import spec_lib  # Using this for a common interface
 
 log = spec_lib.log
 
-# pexpect/ptyprocess default; NB: it's the opposite order of os.terminal_size
-TTY_DIMENSIONS = (24, 80) 
-
 
 def expect_prompt(sh):
     sh.expect(r'.*\$')
@@ -72,10 +69,13 @@ class Result(object):
 
 class TestRunner(object):
 
-    def __init__(self, num_retries, pexpect_timeout, verbose):
+    def __init__(self, num_retries, pexpect_timeout, verbose, num_lines,
+                 num_columns):
         self.num_retries = num_retries
         self.pexpect_timeout = pexpect_timeout
         self.verbose = verbose
+        self.num_lines = num_lines
+        self.num_columns = num_columns
 
     def RunOnce(self, shell_path, shell_label, func):
         sh_argv = []
@@ -87,24 +87,24 @@ class TestRunner(object):
             sh_argv.append('--norc')
         #print(sh_argv)
 
-        # Set LINES and COLUMNS in case a program needs them
-        # Setting the dimensions kw param is not enough
+        # Set LINES and COLUMNS in case a program needs them (like pyte tests)
+        # Setting the dimensions kw param to spawn() is not sufficient
         original_lines = os.environ.get('LINES')
         original_columns = os.environ.get('COLUMNS')
-        os.environ['LINES'] = str(TTY_DIMENSIONS[0])
-        os.environ['COLUMNS'] = str(TTY_DIMENSIONS[1])
-        
+        os.environ['LINES'] = str(self.num_lines)
+        os.environ['COLUMNS'] = str(self.num_columns)
+
         try:
             # Python 3: encoding required
             sh = pexpect.spawn(
                 shell_path,
                 sh_argv,
                 encoding="utf-8",
-                dimensions=TTY_DIMENSIONS,
-                echo=False,  # Generally don't want local echo of input, it gets confusing fast.
+                dimensions=(self.num_lines, self.num_columns),
+                # Generally don't want local echo of input, it gets confusing fast.
+                echo=False,
                 timeout=self.pexpect_timeout,
             )
-            
 
             sh.shell_label = shell_label  # for tests to use
 
@@ -125,16 +125,16 @@ class TestRunner(object):
 
             if ok:
                 return Result.OK
+
         finally:
             if original_lines is None:
                 del os.environ['LINES']
             else:
                 os.environ['LINES'] = original_lines
-            if original_columns is None :
+            if original_columns is None:
                 del os.environ['COLUMNS']
             else:
                 os.environ['COLUMNS'] = original_columns
-                
 
     def RunCase(self, shell_path, shell_label, func):
         result = self.RunOnce(shell_path, shell_label, func)
@@ -386,7 +386,8 @@ def main(argv):
     result_table = []  # each row is a list
     flaky = {}  # (case_num, shell) -> (succeeded, attempted)
 
-    r = TestRunner(opts.num_retries, opts.pexpect_timeout, opts.verbose)
+    r = TestRunner(opts.num_retries, opts.pexpect_timeout, opts.verbose,
+                   opts.num_lines, opts.num_columns)
     r.RunCases(CASES, case_predicate, shell_pairs, result_table, flaky)
 
     if opts.results_file:
