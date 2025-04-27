@@ -971,6 +971,11 @@ class Job(object):
         """Return the process group ID associated with this job."""
         raise NotImplementedError()
 
+    def PidForWait(self):
+        # type: () -> int
+        """Return the pid we can wait on."""
+        raise NotImplementedError()
+
     def JobWait(self, waiter):
         # type: (Waiter) -> wait_status_t
         """Wait for this process/pipeline to be stopped or finished."""
@@ -1030,7 +1035,8 @@ class Process(Job):
         # note: be wary of infinite mutual recursion
         #s = ' %s' % self.parent_pipeline if self.parent_pipeline else ''
         #return '<Process %s%s>' % (self.thunk, s)
-        return '<Process pid=%d state=%s %s>' % (self.pid, _JobStateStr(self.state), self.thunk)
+        return '<Process pid=%d state=%s %s>' % (
+            self.pid, _JobStateStr(self.state), self.thunk)
 
     def ProcessGroupId(self):
         # type: () -> int
@@ -1042,6 +1048,12 @@ class Process(Job):
             # should even be reachable with the current builtins.
             return self.parent_pipeline.ProcessGroupId()
 
+        return self.pid
+
+    def PidForWait(self):
+        # type: () -> int
+        """Return the pid we can wait on."""
+        assert self.pid != -1
         return self.pid
 
     def DisplayJob(self, job_id, f, style):
@@ -1218,8 +1230,6 @@ class Process(Job):
                 # TODO: only print this interactively, like other shells
                 print_stderr('[%%%d] PID %d Done' % (self.job_id, self.pid))
 
-            #self.job_list.RemoveJob(self.job_id)
-
         if not self.in_background:
             self.job_control.MaybeTakeTerminal()
 
@@ -1284,8 +1294,26 @@ class Pipeline(Job):
 
     def ProcessGroupId(self):
         # type: () -> int
-        """Returns the group ID of this pipeline."""
+        """Returns the group ID of this pipeline.
+
+        In an interactive shell, it's often the FIRST.
+        """
         return self.pgid
+
+    def PidForWait(self):
+        # type: () -> int
+        """Return the pid we can wait on."""
+        return self.LastPid()
+
+    def LastPid(self):
+        # type: () -> int
+        """The $! variable is the PID of the LAST pipeline part.
+
+        But in an interactive shell, the PGID is the PID of the FIRST pipeline part.
+
+        It would be nicer if these were consistent!
+        """
+        return self.pids[-1]
 
     def DisplayJob(self, job_id, f, style):
         # type: (int, mylib.Writer, int) -> None
@@ -1381,16 +1409,6 @@ class Pipeline(Job):
             self.pipe_status.append(-1)  # for self.last_thunk
 
         #log('Started pipeline PIDS=%s, pgid=%d', self.pids, self.pgid)
-
-    def LastPid(self):
-        # type: () -> int
-        """The $! variable is the PID of the LAST pipeline part.
-
-        But in an interactive shell, the PGID is the PID of the FIRST pipeline part.
-
-        It would be nicer if these were consistent!
-        """
-        return self.pids[-1]
 
     def Wait(self, waiter):
         # type: (Waiter) -> List[int]
@@ -1509,8 +1527,6 @@ class Pipeline(Job):
                 if self.in_background:
                     print_stderr('[%%%d] PGID %d Done' %
                                  (self.job_id, self.pids[0]))
-
-                #self.job_list.RemoveJob(self.job_id)
 
             # status of pipeline is status of last process
             self.status = self.pipe_status[-1]
@@ -1661,6 +1677,8 @@ class JobList(object):
         # job_id -> Job instance
         self.jobs = {}  # type: Dict[int, Job]
 
+        self.pid_to_job = {}  # type: Dict[int, Job]
+
         # Dict used by WaitForOne() to call proc.WhenExited() and
         # proc.WhenStopped().
         self.child_procs = {}  # type: Dict[int, Process]
@@ -1675,7 +1693,7 @@ class JobList(object):
 
     def AddJob(self, job):
         # type: (Job) -> int
-        """Add a background job to the list.
+        """Register a background job.
 
         A job is either a Process or Pipeline.  You can resume a job with 'fg',
         kill it with 'kill', etc.
@@ -1686,15 +1704,44 @@ class JobList(object):
         2. stopped jobs: sleep 5; then Ctrl-Z
         """
         job_id = self.next_job_id
-        self.jobs[job_id] = job
-        job.job_id = job_id
         self.next_job_id += 1
+
+        # Look up the job by job ID, for wait %1, kill %1, etc.
+        self.jobs[job_id] = job
+
+        # Pipelines
+        self.pid_to_job[job.PidForWait()] = job
+
+        # Mutate the job itself
+        job.job_id = job_id
+
         return job_id
 
     def RemoveJob(self, job_id):
         # type: (int) -> None
-        """Process and Pipeline can call this."""
+        """Called by 'wait' builtin."""
         mylib.dict_erase(self.jobs, job_id)
+        # TODO: pid_to_job has to be erased?
+        # This is called when 'fg %2' exits and when 'wait %2' exits
+
+        if len(self.jobs) == 0:
+            self.next_job_id = 1
+
+    def JobFromPid(self, pid):
+        # type: (int) -> Optional[Job]
+        return self.pid_to_job.get(pid)
+
+    def CleanupWhenProcessExits(self, pid):
+        # type: (int) -> None
+        """Given a PID, remove the job if it has Exited."""
+
+        job = self.pid_to_job.get(pid)
+        if job and job.state == job_state_e.Exited:
+            # Note: only the LAST PID in a pipeline will ever be here, but it's
+            # OK to try to delete it.
+            mylib.dict_erase(self.pid_to_job, pid)
+
+            mylib.dict_erase(self.jobs, job.job_id)
 
         if len(self.jobs) == 0:
             self.next_job_id = 1
@@ -1725,17 +1772,6 @@ class JobList(object):
             # type: (Pipeline) -> None
             """For debugging only."""
             self.debug_pipelines.append(pi)
-
-    def ProcessFromPid(self, pid):
-        # type: (int) -> Process
-        """For wait $PID.
-
-        Note: this looks up regular processes.  Should 'wait $PID' support the
-        PID of the last pipeline, i.e. $!  That seems to work in bash
-
-        This is separate from job syntax 'wait %1'
-        """
-        return self.child_procs.get(pid)
 
     def GetCurrentAndPreviousJobs(self):
         # type: () -> Tuple[Optional[Job], Optional[Job]]

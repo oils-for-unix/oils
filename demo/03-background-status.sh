@@ -112,10 +112,10 @@ jobs_list() {
 
   pid_list=''
   case $wait_style in
-    all)
+    pass_all)
       wait $pids_down
       ;;
-    bare)
+    all)
       wait
       ;;
     next)

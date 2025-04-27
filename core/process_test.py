@@ -284,8 +284,8 @@ class ProcessTest(unittest.TestCase):
 
 class JobListTest(unittest.TestCase):
     """
-    TODO: Test invariant that the 'wait' builtin is the one that removes the
-    (pid -> status) mappings.
+    Test invariant that the 'wait' builtin removes the (pid -> status)
+    mappings (NOT the Waiter)
 
     There are 4 styles of invoking it:
 
@@ -339,9 +339,11 @@ class JobListTest(unittest.TestCase):
 
         return pids, job_ids
 
-    def assertJobListLength(self, length):
+    def assertJobListLength(self, length, bug=False):
         self.assertEqual(length, len(self.job_list.child_procs))
         self.assertEqual(length, len(self.job_list.jobs))
+        if not bug:
+            self.assertEqual(length, len(self.job_list.pid_to_job))
 
     def testWaitAll(self):
         """ wait """
@@ -361,9 +363,7 @@ class JobListTest(unittest.TestCase):
         self.assertEqual(0, status)
 
         # Jobs list is now empty
-        #self.assertJobListLength(0)
-        # TODO: fix bug
-        self.assertEqual(0, len(self.job_list.child_procs))
+        self.assertJobListLength(0)
 
     def testWaitNext(self):
         """ wait -n """
@@ -382,9 +382,7 @@ class JobListTest(unittest.TestCase):
         self.assertEqual(8, status)
 
         # Jobs list now has 1 fewer job
-        # TODO: Fix
-        self.assertEqual(1, len(self.job_list.child_procs))
-        #self.assertJobListLength(1)
+        self.assertJobListLength(1)
 
         ### 'wait -n' again
         cmd_val = test_lib.MakeBuiltinArgv(['wait', '-n'])
@@ -392,7 +390,7 @@ class JobListTest(unittest.TestCase):
         self.assertEqual(9, status)
 
         # Now zero
-        self.assertEqual(0, len(self.job_list.child_procs))
+        self.assertJobListLength(0)
 
         ### 'wait -n' again
         cmd_val = test_lib.MakeBuiltinArgv(['wait', '-n'])
@@ -400,7 +398,7 @@ class JobListTest(unittest.TestCase):
         self.assertEqual(127, status)
 
         # Still zero
-        self.assertEqual(0, len(self.job_list.child_procs))
+        self.assertJobListLength(0)
 
     def testWaitPid(self):
         """ wait $pid2 """
@@ -419,21 +417,21 @@ class JobListTest(unittest.TestCase):
         self.assertEqual(8, status)
 
         # Jobs list now has 1 fewer job
-        self.assertJobListLength(2)
+        self.assertJobListLength(2, bug=True)
 
         # wait $pid3
         cmd_val = test_lib.MakeBuiltinArgv(['wait', str(pids[2])])
         status = self.wait_builtin.Run(cmd_val)
         self.assertEqual(7, status)
 
-        self.assertJobListLength(1)
+        self.assertJobListLength(1, bug=True)
 
         # wait $pid1
         cmd_val = test_lib.MakeBuiltinArgv(['wait', str(pids[0])])
         status = self.wait_builtin.Run(cmd_val)
         self.assertEqual(9, status)
 
-        self.assertJobListLength(0)
+        self.assertJobListLength(0, bug=True)
 
     def testWaitJob(self):
         """ wait %j2 """
@@ -452,7 +450,7 @@ class JobListTest(unittest.TestCase):
         status = self.wait_builtin.Run(cmd_val)
         self.assertEqual(8, status)
 
-        self.assertJobListLength(2)
+        self.assertJobListLength(2, bug=True)
 
         # wait %j3
         cmd_val = test_lib.MakeBuiltinArgv(['wait', '%' + str(job_ids[2])])
@@ -460,14 +458,14 @@ class JobListTest(unittest.TestCase):
         status = self.wait_builtin.Run(cmd_val)
         self.assertEqual(7, status)
 
-        self.assertJobListLength(1)
+        self.assertJobListLength(1, bug=True)
 
         # wait %j1
         cmd_val = test_lib.MakeBuiltinArgv(['wait', '%' + str(job_ids[0])])
         status = self.wait_builtin.Run(cmd_val)
         self.assertEqual(9, status)
 
-        self.assertJobListLength(0)
+        self.assertJobListLength(0, bug=True)
 
     def testForegroundProcessCleansUpChildProcessDict(self):
         self.assertJobListLength(0)
@@ -507,6 +505,37 @@ class JobListTest(unittest.TestCase):
     #   wait with pipeline - should be OK
     #
     # Stopped jobs: does it print something interactively?
+
+
+class PipelineJobListTest(unittest.TestCase):
+    """
+    Like the above, but starts pipelines instead of individual processes.
+    """
+
+    def setUp(self):
+        _SetupTest(self)
+
+        self.wait_builtin = process_osh.Wait(self.waiter, self.job_list,
+                                             self.mem, self.tracer,
+                                             self.errfmt)
+
+    def _ExtProc(self, argv):
+        thunk = _MakeThunk(argv, self.ext_prog)
+        return Process(thunk, self.job_control, self.job_list, self.tracer)
+
+    def _RunBackgroundJob(self, argv):
+        p = self._ExtProc(argv)
+
+        # Similar to Executor::StartBackgroundJob()
+        p.SetBackground()
+        pid = p.StartProcess(trace.Fork)
+
+        #self.mem.last_bg_pid = pid  # for $!
+
+        job_id = self.job_list.AddJob(p)  # show in 'jobs' list
+        return pid, job_id
+
+    # TODO: Add all the same tests
 
 
 if __name__ == '__main__':

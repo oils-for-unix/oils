@@ -86,7 +86,7 @@ class Fg(vm._Builtin):
             job_spec = cmd_val.argv[1]
 
         job = self.job_list.GetJobWithSpec(job_spec)
-        # note: the 'wait' builtin falls back to ProcessFromPid()
+        # note: the 'wait' builtin falls back to JobFromPid()
         if job is None:
             print_stderr('fg: No job to put in the foreground')
             return 1
@@ -114,7 +114,7 @@ class Fg(vm._Builtin):
             if case(wait_status_e.Proc):
                 wait_st = cast(wait_status.Proc, UP_wait_st)
                 if wait_st.state == job_state_e.Exited:
-                    self.job_list.PopChildProcess(job.ProcessGroupId())
+                    self.job_list.PopChildProcess(job.PidForWait())
                     self.job_list.RemoveJob(job.job_id)
                 status = wait_st.code
 
@@ -293,12 +293,9 @@ class Wait(vm._Builtin):
                     result, w1_arg = self.waiter.WaitForOne()
                     if result == process.W1_EXITED:
                         # CLEAN UP
-                        # TODO: do right cleanup for PIPELINE
                         pid = w1_arg
                         pr = self.job_list.PopChildProcess(pid)
-
-                        # TODO: how do we figure out which job finished?
-                        #self.job_list.RemoveJob(job.job_id)
+                        self.job_list.CleanupWhenProcessExits(pid)
 
                         if pr is None:
                             print_stderr(
@@ -329,8 +326,7 @@ class Wait(vm._Builtin):
                 if result == process.W1_EXITED:
                     pid = w1_arg
                     self.job_list.PopChildProcess(pid)
-                    # TODO: how do we figure out which job, if any, finished?
-                    #self.job_list.RemoveJob(job.job_id)
+                    self.job_list.CleanupWhenProcessExits(pid)
 
                 if result == process.W1_NO_CHILDREN:
                     break  # status is 0
@@ -365,11 +361,11 @@ class Wait(vm._Builtin):
                 # - what happens if you pass the pipeline leader PID?
                 # - what happens if you pass a non-leader PID?
 
-                job = self.job_list.ProcessFromPid(pid)
+                job = self.job_list.JobFromPid(pid)
                 #log('WAIT JOB %r', job)
 
             if job is None:
-                self.errfmt.Print_("%s isn't a child of this shell" % job_id,
+                self.errfmt.Print_("Job %s was't found" % job_id,
                                    blame_loc=location)
                 return 127
 
@@ -385,7 +381,7 @@ class Wait(vm._Builtin):
                 if case(wait_status_e.Proc):
                     wait_st = cast(wait_status.Proc, UP_wait_st)
                     if wait_st.state == job_state_e.Exited:
-                        self.job_list.PopChildProcess(job.ProcessGroupId())
+                        self.job_list.PopChildProcess(job.PidForWait())
                         self.job_list.RemoveJob(job.job_id)
                     status = wait_st.code
 
