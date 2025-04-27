@@ -1169,11 +1169,19 @@ class Process(Job):
 
     def WhenStopped(self, stop_sig):
         # type: (int) -> None
-
+        """Called by the Waiter when this Process is stopped."""
         # 128 is a shell thing
         # https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
         self.status = 128 + stop_sig
         self.state = job_state_e.Stopped
+
+        if self.parent_pipeline:
+            # TODO: do we need anything here?
+            # We need AllStopped() just like AllDone()?
+
+            #self.parent_pipeline.WhenPartIsStopped(pid, status)
+            #return
+            pass
 
         if self.job_id == -1:
             # This process was started in the foreground, not with &.  So it
@@ -1187,29 +1195,32 @@ class Process(Job):
 
     def WhenDone(self, pid, status):
         # type: (int, int) -> None
-        """Called by the Waiter when this Process finishes."""
+        """Called by the Waiter when this Process exits."""
 
         #log('Process WhenDone %d %d', pid, status)
         assert pid == self.pid, 'Expected %d, got %d' % (self.pid, pid)
         self.status = status
         self.state = job_state_e.Done
+
         if self.parent_pipeline:
+            # populate pipeline status array; update Pipeline state, etc.
             self.parent_pipeline.WhenPartIsDone(pid, status)
-        else:
-            if self.job_id != -1:
-                # Job might have been brought to the foreground after being
-                # assigned a job ID.
-                if self.in_background:
-                    # the main loop calls PollNotifications(), WaitForOne(),
-                    # which results in this
-                    # TODO: only print this interactively, like other shells
-                    print_stderr('[%%%d] PID %d Done' %
-                                 (self.job_id, self.pid))
+            return
 
-                self.job_list.RemoveJob(self.job_id)
+        if self.job_id != -1:
+            # Job might have been brought to the foreground after being
+            # assigned a job ID.
+            if self.in_background:
+                # the main loop calls PollNotifications(), WaitForOne(),
+                # which results in this
+                # TODO: only print this interactively, like other shells
+                print_stderr('[%%%d] PID %d Done' %
+                             (self.job_id, self.pid))
 
-            if not self.in_background:
-                self.job_control.MaybeTakeTerminal()
+            self.job_list.RemoveJob(self.job_id)
+
+        if not self.in_background:
+            self.job_control.MaybeTakeTerminal()
 
     def RunProcess(self, waiter, why):
         # type: (Waiter, trace_t) -> int
@@ -1700,7 +1711,6 @@ class JobList(object):
         """Remove the child process with the given PID."""
         pr = self.child_procs.get(pid)
         if pr is not None:
-            log('PopChildProcess removing pid %d', pid)
             mylib.dict_erase(self.child_procs, pid)
         return pr
 
