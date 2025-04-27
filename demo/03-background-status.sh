@@ -71,7 +71,8 @@ job_control2() {
 }
 
 jobs_list() {
-  local wait_style=${1:-all}
+  local start_what=${1:-process}  # or pipeline
+  local wait_style=${2:-all}
 
   # Works with: dash/ash, bash mksh yash
   # Does NOT work with zsh
@@ -84,8 +85,20 @@ jobs_list() {
   pids_down=''
   pids_up=''
   for i in 3 2 1; do
-    { sleep $i; echo i=$i; exit $i; } &
-    pid=$!
+    case $start_what in 
+      process)
+        { sleep $i; echo i=$i; exit $i; } &
+        pid=$!
+        ;;
+      pipeline)
+        sleep $i | echo i=$i | ( exit $i ) &
+        pid=$!
+        ;;
+      *)
+        echo "Invalid arg '$start_what'" >&2
+        return 1
+        ;;
+    esac
 
     pids_down="$pids_down $pid"
     pids_up="$pid $pids_up"
@@ -184,6 +197,31 @@ stopped_process() {
   # wait is only for exiting
   wait $pid
   echo status=$?
+}
+
+# from test/process-table-portable.sh
+readonly PS_COLS='pid,ppid,pgid,sid,tpgid,comm'
+
+last_id() {
+  sleep 1 | cat &
+
+  # But what's the progress group leader?
+  #
+  # In non-interactive shell, it's the shell itself
+  # In an interactive shell, it's the FIRST part of the pipeline.
+  #
+  # This is super confusing.
+  # So when you do wait $! on the LAST part of the pipeline, are you waiting on
+  # an individual process, or a JOB that's the pipeline.  Gah
+  ps -o $PS_COLS
+
+  # 6277 is the last part of the pipeline!  You can 'wait' on it?
+  pid=$!
+  jobs -l
+  echo pid=$pid
+  set -x
+  wait $pid
+
 }
 
 "$@"

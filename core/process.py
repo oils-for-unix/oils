@@ -1030,7 +1030,7 @@ class Process(Job):
         # note: be wary of infinite mutual recursion
         #s = ' %s' % self.parent_pipeline if self.parent_pipeline else ''
         #return '<Process %s%s>' % (self.thunk, s)
-        return '<Process %s %s>' % (_JobStateStr(self.state), self.thunk)
+        return '<Process pid=%d state=%s %s>' % (self.pid, _JobStateStr(self.state), self.thunk)
 
     def ProcessGroupId(self):
         # type: () -> int
@@ -1365,8 +1365,8 @@ class Pipeline(Job):
             # Figure out the pid
             pid = proc.StartProcess(trace.PipelinePart)
             if i == 0 and self.pgid != INVALID_PGID:
-                # Mimic bash and use the PID of the FIRST process as the group for the
-                # whole pipeline.
+                # Mimic bash and use the PID of the FIRST process as the group
+                # for the whole pipeline.
                 self.pgid = pid
 
             self.pids.append(pid)
@@ -1380,11 +1380,15 @@ class Pipeline(Job):
         if self.last_thunk:
             self.pipe_status.append(-1)  # for self.last_thunk
 
+        #log('Started pipeline PIDS=%s, pgid=%d', self.pids, self.pgid)
+
     def LastPid(self):
         # type: () -> int
-        """For the odd $! variable.
+        """The $! variable is the PID of the LAST pipeline part.
 
-        It would be better if job IDs or PGIDs were used consistently.
+        But in an interactive shell, the PGID is the PID of the FIRST pipeline part.
+
+        It would be nicer if these were consistent!
         """
         return self.pids[-1]
 

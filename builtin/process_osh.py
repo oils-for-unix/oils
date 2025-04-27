@@ -364,7 +364,9 @@ class Wait(vm._Builtin):
                 # TODO:
                 # - what happens if you pass the pipeline leader PID?
                 # - what happens if you pass a non-leader PID?
+
                 job = self.job_list.ProcessFromPid(pid)
+                #log('WAIT JOB %r', job)
 
             if job is None:
                 self.errfmt.Print_("%s isn't a child of this shell" % job_id,
