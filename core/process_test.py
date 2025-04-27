@@ -339,16 +339,20 @@ class JobListTest(unittest.TestCase):
 
         return pids, job_ids
 
+    def assertJobListLength(self, length):
+        self.assertEqual(length, len(self.job_list.child_procs))
+        self.assertEqual(length, len(self.job_list.jobs))
+
     def testWaitAll(self):
         """ wait """
         # Jobs list starts out empty
-        self.assertEqual(0, len(self.job_list.child_procs))
+        self.assertJobListLength(0)
 
         # Fork 2 processes with &
         pids, job_ids = self._StartProcesses(2)
 
         # Now we have 2 jobs
-        self.assertEqual(2, len(self.job_list.child_procs))
+        self.assertJobListLength(2)
 
         # Invoke the 'wait' builtin
 
@@ -357,18 +361,20 @@ class JobListTest(unittest.TestCase):
         self.assertEqual(0, status)
 
         # Jobs list is now empty
+        #self.assertJobListLength(0)
+        # TODO: fix bug
         self.assertEqual(0, len(self.job_list.child_procs))
 
     def testWaitNext(self):
         """ wait -n """
         # Jobs list starts out empty
-        self.assertEqual(0, len(self.job_list.child_procs))
+        self.assertJobListLength(0)
 
         # Fork 2 processes with &
         pids, job_ids = self._StartProcesses(2)
 
         # Now we have 2 jobs
-        self.assertEqual(2, len(self.job_list.child_procs))
+        self.assertJobListLength(2)
 
         ### 'wait -n'
         cmd_val = test_lib.MakeBuiltinArgv(['wait', '-n'])
@@ -376,7 +382,9 @@ class JobListTest(unittest.TestCase):
         self.assertEqual(8, status)
 
         # Jobs list now has 1 fewer job
+        # TODO: Fix
         self.assertEqual(1, len(self.job_list.child_procs))
+        #self.assertJobListLength(1)
 
         ### 'wait -n' again
         cmd_val = test_lib.MakeBuiltinArgv(['wait', '-n'])
@@ -397,13 +405,13 @@ class JobListTest(unittest.TestCase):
     def testWaitPid(self):
         """ wait $pid2 """
         # Jobs list starts out empty
-        self.assertEqual(0, len(self.job_list.child_procs))
+        self.assertJobListLength(0)
 
         # Fork 3 processes with &
         pids, job_ids = self._StartProcesses(3)
 
         # Now we have 3 jobs
-        self.assertEqual(3, len(self.job_list.child_procs))
+        self.assertJobListLength(3)
 
         # wait $pid2
         cmd_val = test_lib.MakeBuiltinArgv(['wait', str(pids[1])])
@@ -411,59 +419,65 @@ class JobListTest(unittest.TestCase):
         self.assertEqual(8, status)
 
         # Jobs list now has 1 fewer job
-        self.assertEqual(2, len(self.job_list.child_procs))
+        self.assertJobListLength(2)
 
         # wait $pid3
         cmd_val = test_lib.MakeBuiltinArgv(['wait', str(pids[2])])
         status = self.wait_builtin.Run(cmd_val)
         self.assertEqual(7, status)
 
-        self.assertEqual(1, len(self.job_list.child_procs))
+        self.assertJobListLength(1)
 
         # wait $pid1
         cmd_val = test_lib.MakeBuiltinArgv(['wait', str(pids[0])])
         status = self.wait_builtin.Run(cmd_val)
         self.assertEqual(9, status)
 
-        self.assertEqual(0, len(self.job_list.child_procs))
+        self.assertJobListLength(0)
 
     def testWaitJob(self):
         """ wait %j2 """
 
         # Jobs list starts out empty
-        self.assertEqual(0, len(self.job_list.child_procs))
+        self.assertJobListLength(0)
 
         # Fork 3 processes with &
         pids, job_ids = self._StartProcesses(3)
 
         # Now we have 3 jobs
-        self.assertEqual(3, len(self.job_list.child_procs))
+        self.assertJobListLength(3)
 
         # wait %j2
         cmd_val = test_lib.MakeBuiltinArgv(['wait', '%' + str(job_ids[1])])
         status = self.wait_builtin.Run(cmd_val)
         self.assertEqual(8, status)
 
-        self.assertEqual(2, len(self.job_list.child_procs))
+        self.assertJobListLength(2)
 
         # wait %j3
         cmd_val = test_lib.MakeBuiltinArgv(['wait', '%' + str(job_ids[2])])
 
-        # TODO: fix RemoveJob(), just like we did with PopChildProcess()
-        return
         status = self.wait_builtin.Run(cmd_val)
         self.assertEqual(7, status)
 
-        self.assertEqual(1, len(self.job_list.child_procs))
-
-        return
+        self.assertJobListLength(1)
 
         # wait %j1
         cmd_val = test_lib.MakeBuiltinArgv(['wait', '%' + str(job_ids[0])])
         status = self.wait_builtin.Run(cmd_val)
-        self.assertEqual(1, status)
+        self.assertEqual(9, status)
 
-        self.assertEqual(0, len(self.job_list.child_procs))
+        self.assertJobListLength(0)
+
+    def testForegroundProcessCleansUpChildProcessDict(self):
+        self.assertJobListLength(0)
+
+        argv = ['sleep', '0.01']
+        p = self._ExtProc(argv)
+        why = trace.External(argv)
+        p.RunProcess(self.waiter, why)
+
+        self.assertJobListLength(0)
 
     def testGrandchildOutlivesChild(self):
         """ The new parent is the init process """
@@ -484,16 +498,6 @@ class JobListTest(unittest.TestCase):
         status = self.wait_builtin.Run(cmd_val)
         log('status = %d', status)
         self.assertEqual(127, status)
-
-    def testForegroundProcessCleansUpChildProcessDict(self):
-        self.assertEqual(0, len(self.job_list.child_procs))
-
-        argv = ['sleep', '0.01']
-        p = self._ExtProc(argv)
-        why = trace.External(argv)
-        p.RunProcess(self.waiter, why)
-
-        self.assertEqual(0, len(self.job_list.child_procs))
 
     # More tests:
     #

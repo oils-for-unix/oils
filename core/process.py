@@ -1218,7 +1218,7 @@ class Process(Job):
                 # TODO: only print this interactively, like other shells
                 print_stderr('[%%%d] PID %d Done' % (self.job_id, self.pid))
 
-            self.job_list.RemoveJob(self.job_id)
+            #self.job_list.RemoveJob(self.job_id)
 
         if not self.in_background:
             self.job_control.MaybeTakeTerminal()
@@ -1506,7 +1506,7 @@ class Pipeline(Job):
                     print_stderr('[%%%d] PGID %d Done' %
                                  (self.job_id, self.pids[0]))
 
-                self.job_list.RemoveJob(self.job_id)
+                #self.job_list.RemoveJob(self.job_id)
 
             # status of pipeline is status of last process
             self.status = self.pipe_status[-1]
@@ -1667,7 +1667,7 @@ class JobList(object):
         # is created. Once all active jobs are done it is reset to 1. I'm not
         # sure if this reset behavior is mandated by POSIX, but other shells do
         # it, so we mimic for the sake of compatibility.
-        self.job_id = 1
+        self.next_job_id = 1
 
     def AddJob(self, job):
         # type: (Job) -> int
@@ -1681,10 +1681,10 @@ class JobList(object):
         1. async jobs: sleep 5 | sleep 4 &
         2. stopped jobs: sleep 5; then Ctrl-Z
         """
-        job_id = self.job_id
+        job_id = self.next_job_id
         self.jobs[job_id] = job
         job.job_id = job_id
-        self.job_id += 1
+        self.next_job_id += 1
         return job_id
 
     def RemoveJob(self, job_id):
@@ -1693,7 +1693,7 @@ class JobList(object):
         mylib.dict_erase(self.jobs, job_id)
 
         if len(self.jobs) == 0:
-            self.job_id = 1
+            self.next_job_id = 1
 
     def AddChildProcess(self, pid, proc):
         # type: (int, Process) -> None
@@ -1753,7 +1753,7 @@ class JobList(object):
         # ID to approximate newness.
         stopped_jobs = []  # type: List[Job]
         running_jobs = []  # type: List[Job]
-        for i in xrange(0, self.job_id):
+        for i in xrange(0, self.next_job_id):
             job = self.jobs.get(i, None)
             if not job:
                 continue

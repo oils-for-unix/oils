@@ -115,6 +115,7 @@ class Fg(vm._Builtin):
                 wait_st = cast(wait_status.Proc, UP_wait_st)
                 if wait_st.state == job_state_e.Exited:
                     self.job_list.PopChildProcess(job.ProcessGroupId())
+                    self.job_list.RemoveJob(job.job_id)
                 status = wait_st.code
 
             elif case(wait_status_e.Pipeline):
@@ -295,6 +296,10 @@ class Wait(vm._Builtin):
                         # TODO: do right cleanup for PIPELINE
                         pid = w1_arg
                         pr = self.job_list.PopChildProcess(pid)
+
+                        # TODO: how do we figure out which job finished?
+                        #self.job_list.RemoveJob(job.job_id)
+
                         if pr is None:
                             print_stderr(
                                 "oils: PID %d exited, but oils didn't start it"
@@ -324,6 +329,8 @@ class Wait(vm._Builtin):
                 if result == process.W1_EXITED:
                     pid = w1_arg
                     self.job_list.PopChildProcess(pid)
+                    # TODO: how do we figure out which job, if any, finished?
+                    #self.job_list.RemoveJob(job.job_id)
 
                 if result == process.W1_NO_CHILDREN:
                     break  # status is 0
@@ -377,6 +384,7 @@ class Wait(vm._Builtin):
                     wait_st = cast(wait_status.Proc, UP_wait_st)
                     if wait_st.state == job_state_e.Exited:
                         self.job_list.PopChildProcess(job.ProcessGroupId())
+                        self.job_list.RemoveJob(job.job_id)
                     status = wait_st.code
 
                 elif case(wait_status_e.Pipeline):

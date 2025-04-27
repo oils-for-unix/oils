@@ -102,11 +102,26 @@ jobs_list() {
     all)
       wait $pids_down
       ;;
+    bare)
+      wait
+      ;;
+    next)
+      for i in $pids_down; do
+        wait -n
+        echo "--- wait -n --> status=$?"
+      done
+      ;;
     down_one)
        pid_list=$pids_down
       ;;
     up_one)
        pid_list=$pids_up
+      ;;
+    down_jobs)
+       pid_list='%3 %2 %1'
+      ;;
+    up_jobs)
+       pid_list='%1 %2 %3'
       ;;
     none)
       echo 'Not waiting'
@@ -129,7 +144,7 @@ jobs_list() {
   esac
 
   case $wait_style in
-    down_one|up_one)
+    down_*|up_*)
       for p in $pid_list; do
         wait $p
         echo "--- pid $p --> status $?"
@@ -148,9 +163,9 @@ jobs_list() {
       ;;
   esac
 
-  echo '--- done'
+  echo '--- Jobs after waiting'
   jobs -l
-  echo
+  echo '---'
 
   # the status is the last one, which is 2
   echo status=$?
