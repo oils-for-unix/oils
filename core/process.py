@@ -1145,7 +1145,8 @@ class Process(Job):
 
         # Cleanup - for background jobs this happens in the 'wait' builtin,
         # e.g. after JobWait()
-        self.job_list.PopChildProcess(self.pid)
+        if self.state == job_state_e.Exited:
+            self.job_list.PopChildProcess(self.pid)
 
         assert self.status >= 0, self.status
         return self.status
