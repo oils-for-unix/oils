@@ -280,6 +280,8 @@ class Wait(vm._Builtin):
 
         job_ids, arg_locs = arg_r.Rest2()
 
+        # TODO: what does wait -n $pid do?
+
         if arg.n:
             # Loop until there is one fewer process running, there's nothing to wait
             # for, or there's a signal
@@ -314,12 +316,16 @@ class Wait(vm._Builtin):
 
             return status
 
-        if len(job_ids) == 0:
-            #log('*** wait')
+        if arg.all:
+            # Same as 'wait', except we exit 1 if anything failed
+            print('all')
+            if arg.verbose:
+                print('verbose')
+            return 0
 
+        if len(job_ids) == 0:  # 'wait'
             # Note: NumRunning() makes sure we ignore stopped processes, which
             # cause WaitForOne() to return
-
             status = 0
             while self.job_list.NumRunning() != 0:
                 result, w1_arg = self.waiter.WaitForOne()

@@ -187,6 +187,8 @@ EXEC_SPEC = FlagSpec('exec')
 
 WAIT_SPEC = FlagSpec('wait')
 WAIT_SPEC.ShortFlag('-n')
+WAIT_SPEC.LongFlag('--all')
+WAIT_SPEC.LongFlag('--verbose')
 
 TRAP_SPEC = FlagSpec('trap')
 TRAP_SPEC.ShortFlag('-p')

@@ -533,10 +533,8 @@ class ShellExecutor(vm._Executor):
 
             pi.StartPipeline(self.waiter)
             pi.SetBackground()
-            last_pid = pi.LastPid()
-            self.mem.last_bg_pid = last_pid  # for $!
-
-            job_id = self.job_list.AddJob(pi)  # show in 'jobs' list
+            self.mem.last_bg_pid = pi.PidForWait()  # for $!
+            job_id = self.job_list.RegisterJob(pi)  # show in 'jobs' list
 
         else:
             # Problem: to get the 'set -b' behavior of immediate notifications, we
@@ -550,8 +548,8 @@ class ShellExecutor(vm._Executor):
 
             p.SetBackground()
             pid = p.StartProcess(trace.Fork)
-            self.mem.last_bg_pid = pid  # for $!
-            job_id = self.job_list.AddJob(p)  # show in 'jobs' list
+            self.mem.last_bg_pid = p.PidForWait()  # for $!
+            job_id = self.job_list.RegisterJob(p)  # show in 'jobs' list
 
         if self.exec_opts.interactive():
             # Print it like %1 to show it's a job

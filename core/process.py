@@ -1200,7 +1200,7 @@ class Process(Job):
         if self.job_id == -1:
             # This process was started in the foreground, not with &.  So it
             # was NOT a job, but after Ctrl-Z, it now a job.
-            self.job_list.AddJob(self)
+            self.job_list.RegisterJob(self)
 
         if not self.in_background:
             # e.g. sleep 5; then Ctrl-Z
@@ -1302,16 +1302,14 @@ class Pipeline(Job):
 
     def PidForWait(self):
         # type: () -> int
-        """Return the pid we can wait on."""
-        return self.LastPid()
+        """Return the PID we can wait on.
 
-    def LastPid(self):
-        # type: () -> int
-        """The $! variable is the PID of the LAST pipeline part.
+        This is the same as the PID for $!
 
-        But in an interactive shell, the PGID is the PID of the FIRST pipeline part.
-
-        It would be nicer if these were consistent!
+        Shell WART:
+          The $! variable is the PID of the LAST pipeline part.
+          But in an interactive shell, the PGID is the PID of the FIRST pipeline part.
+          It would be nicer if these were consistent!
         """
         return self.pids[-1]
 
@@ -1442,9 +1440,6 @@ class Pipeline(Job):
 
         assert all(st >= 0 for st in self.pipe_status), self.pipe_status
         return wait_status.Pipeline(self.state, self.pipe_status)
-
-        #for pid in self.pids:  # Clean up to avoid leaks
-        #    self.job_list.PopChildProcess(pid)
 
     def RunLastPart(self, waiter, fd_state):
         # type: (Waiter, FdState) -> List[int]
@@ -1694,7 +1689,7 @@ class JobList(object):
         # it, so we mimic for the sake of compatibility.
         self.next_job_id = 1
 
-    def AddJob(self, job):
+    def RegisterJob(self, job):
         # type: (Job) -> int
         """Register a background job.
 
