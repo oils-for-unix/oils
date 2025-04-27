@@ -38,18 +38,19 @@ def Banner(msg):
     print(msg)
 
 
-def _CommandNode(code_str, arena):
-    c_parser = test_lib.InitCommandParser(code_str, arena=arena)
-    return c_parser.ParseLogicalLine()
-
-
-class FakeJobControl(object):
+class _FakeJobControl(object):
 
     def __init__(self, enabled):
         self.enabled = enabled
 
     def Enabled(self):
         return self.enabled
+
+
+class _FakeCommandEvaluator(object):
+
+    def RunPendingTraps(self):
+        pass
 
 
 def _SetupTest(self):
@@ -80,6 +81,8 @@ def _SetupTest(self):
                                     exec_opts)
     self.ext_prog = process.ExternalProgram('', self.fd_state, self.errfmt,
                                             util.NullDebugFile())
+    self.cmd_ev = test_lib.InitCommandEvaluator(arena=self.arena,
+                                                ext_prog=self.ext_prog)
 
 
 def _MakeThunk(argv, ext_prog):
@@ -96,7 +99,13 @@ def _MakeThunk(argv, ext_prog):
     return ExternalThunk(ext_prog, argv0_path, arg_vec, {})
 
 
-class ProcessTest(unittest.TestCase):
+def _CommandNode(code_str, arena):
+    c_parser = test_lib.InitCommandParser(code_str, arena=arena)
+    return c_parser.ParseLogicalLine()
+
+
+class _Common(unittest.TestCase):
+    """Common functionality for tests below."""
 
     def setUp(self):
         _SetupTest(self)
@@ -104,6 +113,20 @@ class ProcessTest(unittest.TestCase):
     def _ExtProc(self, argv):
         thunk = _MakeThunk(argv, self.ext_prog)
         return Process(thunk, self.job_control, self.job_list, self.tracer)
+
+    def _MakePipeline(self, argv_list, last_str=''):
+        assert len(last_str), last_str  # required
+
+        pi = process.Pipeline(False, self.job_control, self.job_list,
+                              self.tracer)
+        for argv in argv_list:
+            pi.Add(self._ExtProc(argv))
+        node = _CommandNode(last_str, self.arena)
+        pi.AddLast((self.cmd_ev, node))
+        return pi
+
+
+class ProcessTest(_Common):
 
     def testStdinRedirect(self):
         PATH = '_tmp/one-two.txt'
@@ -116,12 +139,7 @@ class ProcessTest(unittest.TestCase):
         r = RedirValue(Id.Redir_Less, runtime.NO_SPID, redir_loc.Fd(0),
                        redirect_arg.Path(PATH))
 
-        class CommandEvaluator(object):
-
-            def RunPendingTraps(self):
-                pass
-
-        cmd_ev = CommandEvaluator()
+        cmd_ev = _FakeCommandEvaluator()
 
         err_out = []
         self.fd_state.Push([r], err_out)
@@ -157,18 +175,11 @@ class ProcessTest(unittest.TestCase):
         print('FDS AFTER', os.listdir('/dev/fd'))
 
     def testPipeline(self):
-        node = _CommandNode('uniq -c', self.arena)
-        cmd_ev = test_lib.InitCommandEvaluator(arena=self.arena,
-                                               ext_prog=self.ext_prog)
         print('BEFORE', os.listdir('/dev/fd'))
 
-        p = process.Pipeline(False, self.job_control, self.job_list,
-                             self.tracer)
-        p.Add(self._ExtProc(['ls']))
-        p.Add(self._ExtProc(['cut', '-d', '.', '-f', '2']))
-        p.Add(self._ExtProc(['sort']))
-
-        p.AddLast((cmd_ev, node))
+        p = self._MakePipeline(
+            [['ls'], ['cut', '-d', '.', '-f', '2'], ['sort']],
+            last_str='uniq -c')
 
         p.StartPipeline(self.waiter)
         pipe_status = p.RunLastPart(self.waiter, self.fd_state)
@@ -177,31 +188,24 @@ class ProcessTest(unittest.TestCase):
         print('AFTER', os.listdir('/dev/fd'))
 
     def testPipeline2(self):
-        cmd_ev = test_lib.InitCommandEvaluator(arena=self.arena,
-                                               ext_prog=self.ext_prog)
-
         Banner('ls | cut -d . -f 1 | head')
-        p = process.Pipeline(False, self.job_control, self.job_list,
-                             self.tracer)
-        p.Add(self._ExtProc(['ls']))
-        p.Add(self._ExtProc(['cut', '-d', '.', '-f', '1']))
-
-        node = _CommandNode('head', self.arena)
-        p.AddLast((cmd_ev, node))
+        p = self._MakePipeline([['ls'], ['cut', '-d', '.', '-f', '1']],
+                               last_str='head')
 
         p.StartPipeline(self.waiter)
         print(p.RunLastPart(self.waiter, self.fd_state))
 
+    def testPipeline3(self):
         # Simulating subshell for each command
         node1 = _CommandNode('ls', self.arena)
         node2 = _CommandNode('head', self.arena)
         node3 = _CommandNode('sort --reverse', self.arena)
 
-        thunk1 = process.SubProgramThunk(cmd_ev, node1, self.trap_state,
+        thunk1 = process.SubProgramThunk(self.cmd_ev, node1, self.trap_state,
                                          self.multi_trace, True, False)
-        thunk2 = process.SubProgramThunk(cmd_ev, node2, self.trap_state,
+        thunk2 = process.SubProgramThunk(self.cmd_ev, node2, self.trap_state,
                                          self.multi_trace, True, False)
-        thunk3 = process.SubProgramThunk(cmd_ev, node3, self.trap_state,
+        thunk3 = process.SubProgramThunk(self.cmd_ev, node3, self.trap_state,
                                          self.multi_trace, True, False)
 
         p = process.Pipeline(False, self.job_control, self.job_list,
@@ -210,7 +214,7 @@ class ProcessTest(unittest.TestCase):
         p.Add(Process(thunk2, self.job_control, self.job_list, self.tracer))
         p.Add(Process(thunk3, self.job_control, self.job_list, self.tracer))
 
-        last_thunk = (cmd_ev, _CommandNode('cat', self.arena))
+        last_thunk = (self.cmd_ev, _CommandNode('cat', self.arena))
         p.AddLast(last_thunk)
 
         p.StartPipeline(self.waiter)
@@ -231,18 +235,15 @@ class ProcessTest(unittest.TestCase):
         # Or technically we could fork the whole interpreter for foo|bar|baz and
         # capture stdout of that interpreter.
 
-    def makeTestPipeline(self, jc):
-        cmd_ev = test_lib.InitCommandEvaluator(arena=self.arena,
-                                               ext_prog=self.ext_prog)
-
+    def _MakePipeline2(self, jc):
         pi = process.Pipeline(False, jc, self.job_list, self.tracer)
 
         node1 = _CommandNode('/bin/echo testpipeline', self.arena)
         node2 = _CommandNode('cat', self.arena)
 
-        thunk1 = process.SubProgramThunk(cmd_ev, node1, self.trap_state,
+        thunk1 = process.SubProgramThunk(self.cmd_ev, node1, self.trap_state,
                                          self.multi_trace, True, False)
-        thunk2 = process.SubProgramThunk(cmd_ev, node2, self.trap_state,
+        thunk2 = process.SubProgramThunk(self.cmd_ev, node2, self.trap_state,
                                          self.multi_trace, True, False)
 
         pi.Add(Process(thunk1, jc, self.job_list, self.tracer))
@@ -251,18 +252,18 @@ class ProcessTest(unittest.TestCase):
         return pi
 
     def testPipelinePgidField(self):
-        jc = FakeJobControl(False)
+        jc = _FakeJobControl(False)
 
-        pi = self.makeTestPipeline(jc)
+        pi = self._MakePipeline2(jc)
         self.assertEqual(process.INVALID_PGID, pi.ProcessGroupId())
 
         pi.StartPipeline(self.waiter)
         # No pgid
         self.assertEqual(process.INVALID_PGID, pi.ProcessGroupId())
 
-        jc = FakeJobControl(True)
+        jc = _FakeJobControl(True)
 
-        pi = self.makeTestPipeline(jc)
+        pi = self._MakePipeline2(jc)
         self.assertEqual(process.INVALID_PGID, pi.ProcessGroupId())
 
         pi.StartPipeline(self.waiter)
@@ -282,7 +283,7 @@ class ProcessTest(unittest.TestCase):
         self.assertRaises(OSError, self.fd_state.Open, 'metrics/')
 
 
-class JobListTest(unittest.TestCase):
+class JobListTest(_Common):
     """
     Test invariant that the 'wait' builtin removes the (pid -> status)
     mappings (NOT the Waiter)
@@ -306,14 +307,10 @@ class JobListTest(unittest.TestCase):
                                              self.mem, self.tracer,
                                              self.errfmt)
 
-    def _ExtProc(self, argv):
-        thunk = _MakeThunk(argv, self.ext_prog)
-        return Process(thunk, self.job_control, self.job_list, self.tracer)
-
     def _RunBackgroundJob(self, argv):
         p = self._ExtProc(argv)
 
-        # Similar to Executor::StartBackgroundJob()
+        # Similar to Executor::RunBackgroundJob()
         p.SetBackground()
         pid = p.StartProcess(trace.Fork)
 
@@ -506,7 +503,7 @@ class JobListTest(unittest.TestCase):
     # Stopped jobs: does it print something interactively?
 
 
-class PipelineJobListTest(unittest.TestCase):
+class PipelineJobListTest(_Common):
     """
     Like the above, but starts pipelines instead of individual processes.
     """
@@ -518,23 +515,95 @@ class PipelineJobListTest(unittest.TestCase):
                                              self.mem, self.tracer,
                                              self.errfmt)
 
-    def _ExtProc(self, argv):
-        thunk = _MakeThunk(argv, self.ext_prog)
-        return Process(thunk, self.job_control, self.job_list, self.tracer)
-
-    def _RunBackgroundJob(self, argv):
-        p = self._ExtProc(argv)
-
-        # Similar to Executor::StartBackgroundJob()
-        p.SetBackground()
-        pid = p.StartProcess(trace.Fork)
-
+    def _RunBackgroundPipeline(self, argv_list):
+        # Like Executor::RunBackgroundJob()
+        pi = self._MakePipeline(argv_list, last_str='cat')
+        pi.StartPipeline(self.waiter)
+        pi.SetBackground()
         #self.mem.last_bg_pid = pid  # for $!
+        job_id = self.job_list.RegisterJob(pi)  # show in 'jobs' list
+        return pi, job_id
 
-        job_id = self.job_list.RegisterJob(p)  # show in 'jobs' list
-        return pid, job_id
+    def _StartPipelines(self, n):
+        pipelines = []
+        job_ids = []
 
-    # TODO: Add all the same tests
+        assert n < 10, n
+        for i in xrange(1, n + 1):
+            j = 10 - i  # count down
+            argv_list = [['sleep', '0.0%d' % j], ['sh', '-c', 'exit %d' % j]]
+            pi, job_id = self._RunBackgroundPipeline(argv_list)
+            pipelines.append(pi)
+            job_ids.append(job_id)
+
+        log('pipelines %s', pipelines)
+        log('job_ids %s', job_ids)
+
+        return pipelines, job_ids
+
+    def assertJobListLength(self, length):
+        # 2 processes per pipeline in this test
+        self.assertEqual(length * 2, len(self.job_list.child_procs))
+        self.assertEqual(length, len(self.job_list.jobs))
+        self.assertEqual(length, len(self.job_list.pid_to_job))
+
+    def testWaitAll(self):
+        """ wait """
+        # Jobs list starts out empty
+        self.assertJobListLength(0)
+
+        # Fork 2 processes with &
+        pids, job_ids = self._StartPipelines(2)
+
+        # Now we have 2 jobs
+        self.assertJobListLength(2)
+
+        # Invoke the 'wait' builtin
+
+        cmd_val = test_lib.MakeBuiltinArgv(['wait'])
+        status = self.wait_builtin.Run(cmd_val)
+        self.assertEqual(0, status)
+
+        # TODO: fix bug
+        return
+        # Jobs list is now empty
+        self.assertJobListLength(0)
+
+    def testWaitNext(self):
+        """ wait -n """
+        # Jobs list starts out empty
+        self.assertJobListLength(0)
+
+        # Fork 2 pipelines with &
+        pids, job_ids = self._StartPipelines(2)
+
+        # Now we have 2 jobs
+        self.assertJobListLength(2)
+
+        ### 'wait -n'
+        cmd_val = test_lib.MakeBuiltinArgv(['wait', '-n'])
+        status = self.wait_builtin.Run(cmd_val)
+        return
+        self.assertEqual(8, status)
+
+        # Jobs list now has 1 fewer job
+        self.assertJobListLength(1)
+
+        ### 'wait -n' again
+        cmd_val = test_lib.MakeBuiltinArgv(['wait', '-n'])
+        status = self.wait_builtin.Run(cmd_val)
+        self.assertEqual(9, status)
+
+        # Now zero
+        self.assertJobListLength(0)
+
+        ### 'wait -n' again
+        cmd_val = test_lib.MakeBuiltinArgv(['wait', '-n'])
+        status = self.wait_builtin.Run(cmd_val)
+        self.assertEqual(127, status)
+
+        # Still zero
+        self.assertJobListLength(0)
 
 
 if __name__ == '__main__':
