@@ -485,6 +485,16 @@ class JobListTest(unittest.TestCase):
         log('status = %d', status)
         self.assertEqual(127, status)
 
+    def testForegroundProcessCleansUpChildProcessDict(self):
+        self.assertEqual(0, len(self.job_list.child_procs))
+
+        argv = ['sleep', '0.01']
+        p = self._ExtProc(argv)
+        why = trace.External(argv)
+        p.RunProcess(self.waiter, why)
+
+        self.assertEqual(0, len(self.job_list.child_procs))
+
     # More tests:
     #
     #   wait $pipeline_pid - with pipeline leader, and other PID

@@ -1128,10 +1128,7 @@ class Process(Job):
             st.ApplyFromParent(self)
 
         # Program invariant: We keep track of every child process!
-        # TODO: we should NOT do this if parent_pipeline?  The only reason for
-        # this is for 'wait' to call PopChildProcess(), so it can return the
-        # right status.
-        # We can look up pipelines ONLY by the LEADER.
+        # Waiter::WaitForOne() needs it to update state
         self.job_list.AddChildProcess(pid, self)
 
         return pid
@@ -1145,6 +1142,10 @@ class Process(Job):
             result, _ = waiter.WaitForOne()
             if result == W1_NO_CHILDREN:
                 break
+
+        # Cleanup - for background jobs this happens in the 'wait' builtin,
+        # e.g. after JobWait()
+        self.job_list.PopChildProcess(self.pid)
 
         assert self.status >= 0, self.status
         return self.status
@@ -1655,8 +1656,8 @@ class JobList(object):
         # job_id -> Job instance
         self.jobs = {}  # type: Dict[int, Job]
 
-        # pid -> Process.  This is for STOP notification.
-        # TODO: I feel like these are really JOBS
+        # Dict used by WaitForOne() to call proc.WhenExited() and
+        # proc.WhenStopped().
         self.child_procs = {}  # type: Dict[int, Process]
 
         self.debug_pipelines = []  # type: List[Pipeline]

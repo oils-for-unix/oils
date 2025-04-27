@@ -323,7 +323,7 @@ class Wait(vm._Builtin):
                 result, w1_arg = self.waiter.WaitForOne()
                 if result == process.W1_EXITED:
                     pid = w1_arg
-                    pr = self.job_list.PopChildProcess(pid)
+                    self.job_list.PopChildProcess(pid)
 
                 if result == process.W1_NO_CHILDREN:
                     break  # status is 0
