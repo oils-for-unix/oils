@@ -49,12 +49,10 @@ from posix_ import (
     WIFSIGNALED,
     WIFEXITED,
     WIFSTOPPED,
-    WIFCONTINUED,
     WEXITSTATUS,
     WSTOPSIG,
     WTERMSIG,
     WNOHANG,
-    WCONTINUED,
     O_APPEND,
     O_CREAT,
     O_EXCL,
@@ -983,25 +981,6 @@ class Job(object):
         """Wait for this process/pipeline to be stopped or finished."""
         raise NotImplementedError()
 
-    def JobWaitUntil(self, waiter, until_state):
-        # type: (Waiter, job_state_t) -> wait_status_t
-        """Used by fg - wait until Running"""
-        while self.state != until_state:
-            log('WaitFOrOne')
-            result, w1_arg = waiter.WaitForOne()
-            log('result %d %d', result, w1_arg)
-
-            if result == W1_CALL_INTR:  # signal
-                return wait_status.Cancelled(w1_arg)
-
-            if result == W1_NO_CHILDREN:
-                break
-
-            # Ignore W1_EXITED, W1_STOPPED - these are OTHER processes
-
-        # this is a dummy
-        return wait_status.Proc(self.state, 0)
-
     def SetBackground(self):
         # type: () -> None
         """Record that this job is running in the background."""
@@ -1244,16 +1223,16 @@ class Process(Job):
             #return
             pass
 
-        # Now job_id is set
+        if self.job_id == -1:
+            # This process was started in the foreground, not with &.  So it
+            # was NOT a job, but after Ctrl-Z, it's a job.
+            self.job_list.RegisterJob(self)
+
+        # Now self.job_id is set
         if self.exec_opts.interactive():
             print_stderr('')  # newline after ^Z (TODO: consolidate with ^C)
             print_stderr('[%%%d] PID %d Stopped with signal %d' %
                          (self.job_id, self.pid, stop_sig))
-
-        if self.job_id == -1:
-            # This process was started in the foreground, not with &.  So it
-            # was NOT a job, but after Ctrl-Z, it now a job.
-            self.job_list.RegisterJob(self)
 
         if not self.in_background:
             # e.g. sleep 5; then Ctrl-Z
@@ -2104,7 +2083,6 @@ class Waiter(object):
 
         | NoChange                   -- for WNOHANG - is this a different API?
         """
-        _ = WCONTINUED
         #waitpid_options |= WCONTINUED
         pid, status = pyos.WaitPid(waitpid_options)
         if pid == 0:
@@ -2165,10 +2143,10 @@ class Waiter(object):
             if proc:
                 proc.WhenStopped(stop_sig)
 
-        elif WIFCONTINUED(status):
-            #log('WIFCONT')
-            if proc:
-                proc.WhenContinued()
+        # This would be more consistent, but it's an extension to POSIX
+        #elif WIFCONTINUED(status):
+        #    if proc:
+        #        proc.WhenContinued()
 
         else:
             raise AssertionError(status)

@@ -95,30 +95,19 @@ class Fg(vm._Builtin):
         assert pgid != process.INVALID_PGID, \
             'Processes put in the background should have a PGID'
 
-        # TODO
-        # - Print job ID rather than the PID
-        # - This acknowledgement come after WaitForOne() gets WIFCONTINUED
-        print_stderr('fg: PID %d Continued' % pgid)
-
         # Put the job's process group back into the foreground. GiveTerminal() must
         # be called before sending SIGCONT or else the process might immediately get
         # suspended again if it tries to read/write on the terminal.
         self.job_control.MaybeGiveTerminal(pgid)
+        posix.killpg(pgid, SIGCONT)  # Send signal
 
-        # TODO: send signal, then wait until the job is in the running state
-        # Maybe we do
-        # job.JobWait(waiter, job_state_e.Running):
-        # job.JobWait(waiter, job_state_e.Exited):
-        #
-        # Then we do self.SetForeground() in WhenContinued, just like we did
-        # self.SetBackground() in WhenStopped()
+        # TODO: Print job ID as well
+        print_stderr('fg: PID %d Continued' % pgid)
 
+        # We are not using waitpid(WCONTINUE) and WIFCONTINUED() in
+        # WaitForOne() -- it's an extension to POSIX that isn't necessary for 'fg'
         job.SetForeground()
-        # needed for Wait() loop to work
         job.state = job_state_e.Running
-
-        # Continue
-        posix.killpg(pgid, SIGCONT)
 
         status = -1
 
