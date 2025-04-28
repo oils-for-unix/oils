@@ -251,7 +251,26 @@ Or we could make it [1, 2] insetad
 
 ## POSIX Special
 
-`$@  $*  $#     $?  $-     $$  $!   $0  $9`
+     $@  $*            all arguments
+     $0 ... $9 ${10}   each argument
+     $#                the number of arguments
+     $?                last exit status
+     $-
+     $$                PID of shell (does not change when shell forks)
+     $!                ID of last job started, with & or bg
+
+Details on `$!`:
+
+- It's either
+  - the PID of a process
+  - the PID of the *last* part of the pipeline.  (In contrast, the PGID of the
+    pipeline is the PID of the first part.)
+- The [`wait`](chap-builtin-cmd.html#wait) builtin knows how to find a
+  background pipeline job, given this ID.
+- It's set by:
+  - [`ampersand &`](chap-cmd-lang.html#ampersand)
+  - [`bg`](chap-builtin-cmd.html#bg)
+  - In particular, it's not set after Ctrl-Z, only after `bg`.
 
 ## Shell Vars
 

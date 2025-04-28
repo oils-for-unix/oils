@@ -123,6 +123,16 @@ OSH:
 [compadjust]: chap-builtin-cmd.html#compadjust
 [compexport]: chap-builtin-cmd.html#compexport
 
+### Job Control
+
+- [`ampersand &`](chap-cmd-lang.html#ampersand)
+  - YSH has [`fork`](chap-builtin-cmd.html#fork)
+- [`wait`](chap-builtin-cmd.html#wait)
+  - YSH adds `--all --verbose`: [`ysh-wait`](chap-builtin-cmd.html#ysh-wait)
+- [`fg`](chap-builtin-cmd.html#fg)
+- [`bg`](chap-builtin-cmd.html#bg)
+- [`$!`](chap-special-var.html#POSIX-Special)
+
 ### Tracing Execution
 
 - `set -x` aka `set -o xtrace`
@@ -213,6 +223,8 @@ Also see [the Unicode doc](../unicode.html).
 - [`func`](chap-ysh-cmd.html#func) - functions are pure
 - [`io`](chap-type-method.html#io) and [`vm`](chap-type-method.html#vm) - impure
   behavior is attached to these objects
+
+## OSH Features
 
 <!--
 

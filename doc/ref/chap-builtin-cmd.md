@@ -1198,24 +1198,27 @@ YSH extends the `wait` builtin with 2 flags:
 
     fg JOB?
 
-Returns a job running in the background to the foreground.  If no JOB is
-specified, use the latest job.
+Continues a stopped job in the foreground.  This means it can receive signals
+from the keyboard, like Ctrl-C and Ctrl-Z.
 
-<!--<h4 id="bg">bg</h4>
+If no JOB is specified, use the latest job.
 
-The bg builtin resumes suspend job, while keeping it in the background.
+### bg
 
-bg JOB?
+UNIMPLEMENTED
 
-JOB:
-  Job ID to be resumed in the background. If none is specified, the latest job
-  is chosen. -->
+    bg JOB?
+
+Continues a stopped job, while keeping it in the background.  This means it
+**can't** receive signals from the keyboard, like Ctrl-C and Ctrl-Z.
+
+If no JOB is specified, use the latest job.
 
 ### kill
 
-Unimplemented.
+UNIMPLEMENTED
 
-<!-- Note: 'kill' accepts job control syntax -->
+<!-- Note: 'kill' accepts job specs like %2 -->
 
 ## External
 
