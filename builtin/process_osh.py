@@ -344,6 +344,7 @@ class Wait(vm._Builtin):
                 else:
                     raise AssertionError()
 
+        # Return the last status
         return status
 
     def _WaitNext(self):
@@ -360,14 +361,11 @@ class Wait(vm._Builtin):
             while self.job_list.NumRunning() > target:
                 result, w1_arg = self.waiter.WaitForOne()
                 if result == process.W1_EXITED:
-                    # CLEAN UP
                     pid = w1_arg
                     pr = self.job_list.PopChildProcess(pid)
-                    # BUG: the LAST part of the pipeline may finish first,
-                    # which means the job has not exited.
-                    # Do we need to register ALL PIDs then?
-
-                    # TODO: we can do a linear search instead?
+                    # TODO: background pipelines don't clean up properly,
+                    # because only the last PID is registered in
+                    # job_list.pid_to_job
                     self.job_list.CleanupWhenProcessExits(pid)
 
                     if pr is None:
@@ -395,29 +393,37 @@ class Wait(vm._Builtin):
         job_ids, arg_locs = arg_r.Rest2()
 
         if len(job_ids):
-            # TODO: strict
+            # Note: -n and --all ignored in this case, like bash
             return self._WaitForJobs(job_ids, arg_locs)
 
         if arg.n:
             return self._WaitNext()
 
-        if arg.all:
-            # Same as 'wait', except we exit 1 if anything failed
-            print('all')
-            if arg.verbose:
-                print('verbose')
-            return 0
-
         # 'wait' or wait --all
+
+        status = 0
+
         # Note: NumRunning() makes sure we ignore stopped processes, which
         # cause WaitForOne() to return
-        status = 0
         while self.job_list.NumRunning() != 0:
             result, w1_arg = self.waiter.WaitForOne()
             if result == process.W1_EXITED:
                 pid = w1_arg
-                self.job_list.PopChildProcess(pid)
+                pr = self.job_list.PopChildProcess(pid)
+                # TODO: background pipelines don't clean up properly, because
+                # only the last PID is registered in job_list.pid_to_job
                 self.job_list.CleanupWhenProcessExits(pid)
+
+                if arg.verbose:
+                    self.errfmt.PrintMessage(
+                        '(wait) PID %d exited with status %d' %
+                        (pid, pr.status), cmd_val.arg_locs[0])
+
+                if pr.status != 0 and arg.all:  # YSH extension: respect failure
+                    if arg.verbose:
+                        self.errfmt.PrintMessage(
+                            'wait --all: will fail with status 1')
+                    status = 1  # set status, but keep waiting
 
             if result == process.W1_NO_CHILDREN:
                 break  # status is 0

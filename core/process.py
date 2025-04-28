@@ -1788,6 +1788,13 @@ class JobList(object):
 
         job = self.pid_to_job.get(pid)
         if 0:
+            # TODO: background pipelines don't clean up properly, because only
+            # the last PID is registered in job_list.pid_to_job
+
+            # Should we switch to a linear search of a background job array?
+            # Foreground jobs are stored in self.child_procs, and we migrate
+            # between them?
+
             log('*** CleanupWhenProcessExits %d', pid)
             log('job %s', job)
             #log('STATE %s', _JobStateStr(job.state))

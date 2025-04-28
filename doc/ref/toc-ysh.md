@@ -146,6 +146,7 @@ X [Wok]           _field()
   [I/O]           ysh-read               flags --all, -0
                   ysh-echo               no -e -n with simple_echo
                   ysh-test               --file --true etc.
+                  ysh-wait               wait --all --verbose
                   write                  Like echo, with --, --sep, --end
                   fork         forkwait  Replace & and (), and takes a block
                   fopen                  Open multiple streams, takes a block

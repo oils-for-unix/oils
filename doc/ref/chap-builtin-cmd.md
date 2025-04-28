@@ -1171,18 +1171,28 @@ the last one.
 
 ---
 
-Wait can be interrupted by a signal, in which case the exit code indicates the
-signal number.
+If wait is interrupted by a signal, the exit status is the signal number + 128.
+
+---
+
+When using `set -e` aka `errexit`, `wait --all` is useful.  See topic
+[ysh-wait](#ysh-wait).
 
 <!--
 The ARG can be a PID (tracked by the kernel), or a job number (tracked by the
 shell).  Specify jobs with the syntax `%jobnumber`.
-
-TODO:
-- wait --check can return non-zero if any process does?
-
-This can be documented in ysh-wait?
 -->
+
+### ysh-wait
+
+YSH extends the `wait` builtin with 2 flags:
+
+    wait --all      # wait for all jobs, like 'wait'
+                    # but exit 1 if any job exits non-zero
+
+    wait --verbose  # show a message on each job completion
+
+    wait --all --verbose  # show a message, and also respect failure
 
 ### fg
 

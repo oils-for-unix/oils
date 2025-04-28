@@ -352,4 +352,47 @@ wait
 ## STDERR:
 ## END
 
+ 
+#### YSH wait --all
+case $SH in dash|bash|mksh) exit ;; esac
 
+sleep 0.01 &
+(exit 55) &
+true &
+wait
+echo wait $?
+
+sleep 0.01 &
+(exit 44) &
+true &
+wait --all
+echo wait --all $?
+
+## STDOUT:
+wait 0
+wait --all 1
+## END
+
+## N-I dash/bash/mksh STDOUT:
+## END
+
+#### YSH wait --verbose
+case $SH in dash|bash|mksh) exit ;; esac
+
+sleep 0.01 &
+(exit 55) &
+wait --verbose
+echo wait $?
+
+(exit 44) &
+sleep 0.01 &
+wait --all --verbose
+echo wait --all $?
+
+## STDOUT:
+wait 0
+wait --all 1
+## END
+
+## N-I dash/bash/mksh STDOUT:
+## END
