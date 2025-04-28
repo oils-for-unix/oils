@@ -12,7 +12,7 @@ from resource import (RLIM_INFINITY, RLIMIT_CORE, RLIMIT_CPU, RLIMIT_DATA,
 from signal import SIGCONT
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.syntax_asdl import loc
+from _devbuild.gen.syntax_asdl import loc, CompoundWord
 from _devbuild.gen.runtime_asdl import (cmd_value, job_state_e, wait_status,
                                         wait_status_e)
 from core import dev
@@ -77,6 +77,7 @@ class Fg(vm._Builtin):
         self.job_control = job_control
         self.job_list = job_list
         self.waiter = waiter
+        self.exec_opts = waiter.exec_opts
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -101,8 +102,8 @@ class Fg(vm._Builtin):
         self.job_control.MaybeGiveTerminal(pgid)
         posix.killpg(pgid, SIGCONT)  # Send signal
 
-        # TODO: Print job ID as well
-        print_stderr('fg: PID %d Continued' % pgid)
+        if self.exec_opts.interactive():
+            print_stderr('[%%%d] PID %d Continued' % (job.job_id, pgid))
 
         # We are not using waitpid(WCONTINUE) and WIFCONTINUED() in
         # WaitForOne() -- it's an extension to POSIX that isn't necessary for 'fg'
@@ -276,84 +277,13 @@ class Wait(vm._Builtin):
         with dev.ctx_Tracer(self.tracer, 'wait', cmd_val.argv):
             return self._Run(cmd_val)
 
-    def _Run(self, cmd_val):
-        # type: (cmd_value.Argv) -> int
-        attrs, arg_r = flag_util.ParseCmdVal('wait', cmd_val)
-        arg = arg_types.wait(attrs.attrs)
-
-        job_ids, arg_locs = arg_r.Rest2()
-
-        # TODO: what does wait -n $pid do?
-
-        if arg.n:
-            # Loop until there is one fewer process running, there's nothing to wait
-            # for, or there's a signal
-            n = self.job_list.NumRunning()
-            if n == 0:
-                status = 127
-            else:
-                target = n - 1
-                status = 0
-                while self.job_list.NumRunning() > target:
-                    result, w1_arg = self.waiter.WaitForOne()
-                    if result == process.W1_EXITED:
-                        # CLEAN UP
-                        pid = w1_arg
-                        pr = self.job_list.PopChildProcess(pid)
-                        # BUG: the LAST part of the pipeline may finish first,
-                        # which means the job has not exited.
-                        # Do we need to register ALL PIDs then?
-
-                        # TODO: we can do a linear search instead?
-                        self.job_list.CleanupWhenProcessExits(pid)
-
-                        if pr is None:
-                            print_stderr(
-                                "oils: PID %d exited, but oils didn't start it"
-                                % pid)
-                        else:
-                            status = pr.status
-
-                    elif result == process.W1_NO_CHILDREN:
-                        status = 127
-                        break
-
-                    elif result == process.W1_CALL_INTR:  # signal
-                        status = 128 + w1_arg
-                        break
-
-            return status
-
-        if arg.all:
-            # Same as 'wait', except we exit 1 if anything failed
-            print('all')
-            if arg.verbose:
-                print('verbose')
-            return 0
-
-        if len(job_ids) == 0:  # 'wait'
-            # Note: NumRunning() makes sure we ignore stopped processes, which
-            # cause WaitForOne() to return
-            status = 0
-            while self.job_list.NumRunning() != 0:
-                result, w1_arg = self.waiter.WaitForOne()
-                if result == process.W1_EXITED:
-                    pid = w1_arg
-                    self.job_list.PopChildProcess(pid)
-                    self.job_list.CleanupWhenProcessExits(pid)
-
-                if result == process.W1_NO_CHILDREN:
-                    break  # status is 0
-
-                if result == process.W1_CALL_INTR:
-                    status = 128 + w1_arg
-                    break
-
-            return status
+    def _WaitForJobs(self, job_ids, arg_locs):
+        # type: (List[str], List[CompoundWord]) -> int
 
         # Get list of jobs.  Then we need to check if they are ALL stopped.
-        # Returns the exit code of the last one on the COMMAND LINE, not the exit
-        # code of last one to FINISH.
+        # Returns the exit code of the last one on the COMMAND LINE, not the
+        # exit code of last one to FINISH.
+
         jobs = []  # type: List[process.Job]
         for i, job_id in enumerate(job_ids):
             location = arg_locs[i]
@@ -413,6 +343,88 @@ class Wait(vm._Builtin):
 
                 else:
                     raise AssertionError()
+
+        return status
+
+    def _WaitNext(self):
+        # type: () -> int
+
+        # Loop until there is one fewer process running, there's nothing to wait
+        # for, or there's a signal
+        n = self.job_list.NumRunning()
+        if n == 0:
+            status = 127
+        else:
+            target = n - 1
+            status = 0
+            while self.job_list.NumRunning() > target:
+                result, w1_arg = self.waiter.WaitForOne()
+                if result == process.W1_EXITED:
+                    # CLEAN UP
+                    pid = w1_arg
+                    pr = self.job_list.PopChildProcess(pid)
+                    # BUG: the LAST part of the pipeline may finish first,
+                    # which means the job has not exited.
+                    # Do we need to register ALL PIDs then?
+
+                    # TODO: we can do a linear search instead?
+                    self.job_list.CleanupWhenProcessExits(pid)
+
+                    if pr is None:
+                        print_stderr(
+                            "oils: PID %d exited, but oils didn't start it" %
+                            pid)
+                    else:
+                        status = pr.status
+
+                elif result == process.W1_NO_CHILDREN:
+                    status = 127
+                    break
+
+                elif result == process.W1_CALL_INTR:  # signal
+                    status = 128 + w1_arg
+                    break
+
+        return status
+
+    def _Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        attrs, arg_r = flag_util.ParseCmdVal('wait', cmd_val)
+        arg = arg_types.wait(attrs.attrs)
+
+        job_ids, arg_locs = arg_r.Rest2()
+
+        if len(job_ids):
+            # TODO: strict
+            return self._WaitForJobs(job_ids, arg_locs)
+
+        if arg.n:
+            return self._WaitNext()
+
+        if arg.all:
+            # Same as 'wait', except we exit 1 if anything failed
+            print('all')
+            if arg.verbose:
+                print('verbose')
+            return 0
+
+        # 'wait' or wait --all
+        # Note: NumRunning() makes sure we ignore stopped processes, which
+        # cause WaitForOne() to return
+        status = 0
+        while self.job_list.NumRunning() != 0:
+            result, w1_arg = self.waiter.WaitForOne()
+            if result == process.W1_EXITED:
+                pid = w1_arg
+                self.job_list.PopChildProcess(pid)
+                self.job_list.CleanupWhenProcessExits(pid)
+
+            if result == process.W1_NO_CHILDREN:
+                break  # status is 0
+
+            if result == process.W1_CALL_INTR:
+                status = 128 + w1_arg
+                break
 
         return status
 

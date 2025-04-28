@@ -15,6 +15,35 @@
 wait
 ## status: 0
 
+#### wait -n with arguments - arguments are respected
+case $SH in dash|mksh) exit ;; esac
+
+echo x &
+
+# here, you can't tell if it's -n or the other
+wait -n $!
+echo status=$?
+
+# by the bash error, you can tell which is preferred
+wait -n $! bad 2>err.txt
+echo status=$?
+echo
+
+n=$(wc -l < err.txt)
+if test "$n" -gt 0; then
+  echo 'got error lines'
+fi
+
+## STDOUT:
+x
+status=0
+status=127
+
+got error lines
+## END
+## N-I dash/mksh STDOUT:
+## END
+
 #### wait -n with nothing to wait for
 # The 127 is STILL overloaded.  Copying bash for now.
 wait -n
