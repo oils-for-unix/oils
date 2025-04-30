@@ -9,6 +9,7 @@ source $LIB_OSH/no-quotes.sh
 source $LIB_OSH/task-five.sh
 
 source benchmarks/id.sh
+source build/dev-shell.sh  # python2
 
 test-shell-prov() {
   shell-provenance-2 no-host 2022-12-29 _tmp/ \

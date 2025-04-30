@@ -5,26 +5,37 @@
 # Usage:
 #   deps/images.sh <function name>
 #
-# Example: Rebuild an image:
+# Dirs maybe to clear:
+#
+#   $0 clean-all  # Start from scratch
+#
+# Example:
 #
 # (1) Update LATEST_TAG
 #
-# (2) Rebuild
+# (2) Bootstrapping Wedges
 #
-#     deps/images.sh build soil-common  # populates apt cache.  WHY DO I NEED THIS?
-#     deps/images.sh build soil-debian-12
-#     deps/images.sh build soil-pea T   # reuse package cache from apt-get
-#     deps/images.sh smoke soil-pea
+#    $0 build wedge-bootstrap-debian-12
 #
-# (3) Push image and common, including latest
+# (3) Building wedges:
 #
-#     deps/images.sh push soil-cpp-small v-2024-06-08
+#    build/deps.sh fetch
+#    build/deps.sh boxed-wedges
+#    build/deps.sh boxed-spec-bin
 #
-#     deps/images.sh push soil-common v-2024-06-08
-#     sudo docker tag oilshell/soil-common:{v-2024-06-08,latest}
-#     deps/images.sh push soil-common latest
+# (4) Rebuild an image
 #
-# (4) Update live version in 'soil/host-shim.sh live-image-tag'
+#     $0 build soil-debian-12      # populates apt cache.  WHY DO I NEED THIS?
+#     $0 build soil-test-image T   # reuse package cache from apt-get
+#     $0 smoke soil-test-image     # smoke test
+#
+# (5) Update live version in 'soil/host-shim.sh live-image-tag'
+#
+# (6) Push Everything you Built
+#
+#     $0 push wedge-bootstrap-debian-12  v-2025-04-30
+#     $0 push soil-debian-12  v-2025-04-30
+#     $0 push soil-test-image  v-2025-04-30
 #
 # Our images:
 #
@@ -32,15 +43,6 @@
 #
 #    deps/images.sh list-tagged
 #
-# Bootstrapping Wedges
-# --------------------
-#
-#    deps/images.sh build wedge-bootstrap-debian-10 T
-#    deps/images.sh push wedge-bootstrap-debian-10  v-2024-06-08
-#
-# Building wedges:
-#
-#    deps/wedge.sh boxed-spec-bin
 
 set -o nounset
 set -o pipefail
@@ -51,7 +53,13 @@ source deps/podman.sh
 DOCKER=${DOCKER:-docker}
 
 # Build with this tag
-readonly LATEST_TAG='v-2024-12-20'
+readonly LATEST_TAG='v-2025-04-30b'
+
+clean-all() {
+  dirs='_build/wedge/tmp _build/wedge/binary _build/deps-source'
+  #rm -r -f $dirs
+  sudo rm -r -f $dirs
+}
 
 # BUGS in Docker.
 #
@@ -77,9 +85,12 @@ show-cachemount() {
   done
 }
 
-tag-common() {
-  local hash=$1  # get hash from $0 list-tagged
-  sudo $DOCKER tag $hash oilshell/soil-common:latest
+tag-latest() {
+  local name=${1:-wedge-bootstrap-debian-12}
+  local tag_built_with=${2:-$LATEST_TAG}
+
+  set -x  # 'docker tag' is annoyingly silent
+  sudo $DOCKER tag oilshell/$name:{$tag_built_with,latest}
 }
 
 build() {
@@ -109,6 +120,9 @@ build() {
     $DOCKER build "${flags[@]}" \
     --tag "oilshell/$name:$LATEST_TAG" \
     --file deps/Dockerfile.$name .
+
+  # Avoid hassle by also tagging it
+  tag-latest $name
 }
 
 list-images() {
@@ -157,9 +171,14 @@ push() {
 
   local image="oilshell/$name:$tag"
 
+  set -x
+
   # -E for export-podman vars
   sudo -E $DOCKER push $image
   #sudo -E $DOCKER --log-level=debug push $image
+
+  # Also push the 'latest' tag, to avoid getting out of sync
+  sudo -E $DOCKER push oilshell/$name:latest
 }
 
 smoke-test-script() {
@@ -192,7 +211,32 @@ done
 
 echo PATH=$PATH
 
-curl https://ci.oilshell.org/
+#curl https://op.oilshell.org/
+
+if true; then
+  python3 -c "import ssl; print(ssl)"
+  find /usr/lib | grep -i libssl
+  echo
+
+  dpkg -S /usr/lib/x86_64-linux-gnu/libssl.so.3
+  echo
+
+  #ls -l /usr/lib/x86_64-linux-gnu/libssl.so.1.1
+
+  apt-cache show libssl-dev
+
+  # find /lib | grep -i libssl
+  # echo
+  # find /usr/local | grep -i libssl
+  # echo
+  # python3-config --libs
+
+  # Useful command
+  # ldconfig -v #| grep ssl
+  # echo
+
+  #find / -name 'libssl.so*'
+fi
 '
 }
 

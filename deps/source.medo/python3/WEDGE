@@ -59,4 +59,7 @@ wedge-smoke-test() {
   local install_dir=$1
 
   $install_dir/bin/python3 -c 'print("hi from python 3")'
+
+  echo 'Testing SSL'
+  $install_dir/bin/python3 -c 'import ssl; print(ssl)'
 }

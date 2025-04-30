@@ -1,12 +1,44 @@
 # This image is only for TESTING
 
-FROM oilshell/soil-common
+FROM oilshell/soil-debian-12
 
-RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,id=var-lib-apt,target=/var/lib/apt,sharing=locked \
+# Copy again to prevent unsound caching
+COPY deps/from-apt.sh /home/uke/tmp/deps/from-apt.sh
+
+RUN --mount=type=cache,id=var-cache-apt-debian-12,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=var-lib-apt-debian-12,target=/var/lib/apt,sharing=locked \
     du --si -s /var/cache/apt /var/lib/apt && \
     deps/from-apt.sh test-image
 
 USER uke
+
+# 2025-04-30 - TESTING Python with SSL - COPIED from soil-benchmarks image
+
+COPY --chown=uke \
+  _build/wedge/binary/oils-for-unix.org/pkg/python3/3.10.4 \
+  /wedge/oils-for-unix.org/pkg/python3/3.10.4
+
+# Copy _build/deps-source -> /home/uke/wedge for now.
+COPY --chown=uke \
+  _build/deps-source/mypy/mypy-0.780/ \
+  /home/uke/wedge/oils-for-unix.org/pkg/mypy/0.780/
+
+# 2025-04 update: we should automate copying the OSH stdlib to the container
+COPY stdlib/osh/bash-strict.sh /home/uke/tmp/stdlib/osh/bash-strict.sh
+COPY stdlib/osh/task-five.sh /home/uke/tmp/stdlib/osh/task-five.sh
+COPY stdlib/osh/byo-server.sh /home/uke/tmp/stdlib/osh/byo-server.sh
+COPY stdlib/osh/two.sh /home/uke/tmp/stdlib/osh/two.sh
+
+# build/deps.sh install-py3-libs depends on this - need tree shaking
+COPY test/tsv-lib.sh /home/uke/tmp/test/tsv-lib.sh
+COPY web/table/html.sh /home/uke/tmp/web/table/html.sh
+
+COPY build/deps.sh /home/uke/tmp/build/deps.sh
+COPY build/dev-shell.sh /home/uke/tmp/build/dev-shell.sh
+
+# Hack for now: pass a different MyPy dir
+# Ideally py3-libs would be created a BUILD TIME with wedge-builder, not at
+# RUNTIME with uke!
+RUN build/deps.sh install-py3-libs /home/uke/wedge/oils-for-unix.org/pkg/mypy/0.780/
 
 CMD ["sh", "-c", "echo 'hello from oilshell/soil-test-image'"]

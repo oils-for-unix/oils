@@ -27,4 +27,4 @@ COPY --chown=uke \
   _build/wedge/relative/oils-for-unix.org/pkg/R-libs/2023-04-18 \
   /home/uke/wedge/oils-for-unix.org/pkg/R-libs/2023-04-18
 
-CMD ["sh", "-c", "echo 'hello from oilshell/soil-benchmarks2'"]
+CMD ["sh", "-c", "echo 'hello from oilshell/soil-debian-12'"]

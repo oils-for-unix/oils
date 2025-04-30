@@ -35,8 +35,8 @@ live-image-tag() {
       echo 'v-2024-08-26'
       ;;
     benchmarks)
-      # freshen up
-      echo 'v-2023-07-15'
+      # Add 'pyte' terminal emulator library to py3-libs, for testing
+      echo 'v-2025-04-30b'
       ;;
     benchmarks2)
       # debian 12, python3, new R-libs, cmark

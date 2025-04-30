@@ -599,7 +599,7 @@ download-py3-libs() {
   #python3 -m pip download -d $py_package_dir wheel
 
   python3 -m pip download -d $py_package_dir -r $mypy_dir/test-requirements.txt
-  python3 -m pip download -d $py_package_dir pexpect
+  python3 -m pip download -d $py_package_dir pexpect pyte
 }
 
 install-py3-libs-in-venv() {
@@ -625,7 +625,7 @@ install-py3-libs-in-venv() {
   time python3 -m pip install --find-links $package_dir -r $mypy_dir/test-requirements.txt
 
   # pexpect: for spec/stateful/*.py
-  time python3 -m pip install --find-links $package_dir pexpect
+  time python3 -m pip install --find-links $package_dir pexpect pyte
 }
 
 upgrade-typed-ast() {
@@ -1074,25 +1074,26 @@ boxed-wedges() {
   # fi
 
   if false; then
-    deps/wedge.sh boxed deps/source.medo/time-helper
-    deps/wedge.sh boxed deps/source.medo/cmark/
-    deps/wedge.sh boxed deps/source.medo/re2c/
-    deps/wedge.sh boxed deps/source.medo/python3/
-  fi
-
-  if false; then
-    deps/wedge.sh boxed deps/source.medo/bloaty/
+    deps/wedge.sh boxed deps/source.medo/python3/ '' debian-12
+    deps/wedge.sh boxed deps/source.medo/time-helper '' debian-12
+    deps/wedge.sh boxed deps/source.medo/python2/ '' debian-12
   fi
 
   if true; then
-    # build with debian-12, because soil-benchmarks2 is, because it has R
+    # soil-benchmarks
     deps/wedge.sh boxed deps/source.medo/uftrace/ '' debian-12
-    # python2 needed everywhere
-    #deps/wedge.sh boxed deps/source.medo/python2/ '' debian-12
 
-    # TODO: build with debian-12
+    deps/wedge.sh boxed deps/source.medo/cmark/ '' debian-12
+    deps/wedge.sh boxed deps/source.medo/re2c/ '' debian-12
+  fi
+
+  if false; then
+    deps/wedge.sh boxed deps/source.medo/bloaty/ '' debian-12
+  fi
+
+  if true; then
     # Used in {benchmarks,benchmarks2,other-tests}
-    #deps/wedge.sh boxed deps/source.medo/R-libs/ '' debian-12
+    deps/wedge.sh boxed deps/source.medo/R-libs/ '' debian-12
   fi
 }
 
@@ -1218,6 +1219,21 @@ print("Total bytes by file type")
 for ext, total_bytes in bytes.most_common()[:n]:
   print("%10d  %s" % (total_bytes, ext))
 ' | commas
+}
+
+libssl-bug() {
+  set -x
+  file=_build/wedge/binary/oils-for-unix.org/pkg/python3/3.10.4/lib/python3.10/lib-dynload/_ssl.cpython-310-x86_64-linux-gnu.so
+
+  # TODO: figure out how to get this to find libssl.so.3, not .so.1.1
+  ldd $file
+  echo
+  ls -l $file
+ 
+}
+
+libssl-smoke() {
+  deps/wedge.sh smoke-test deps/source.medo/python3/ '' '' debian-12
 }
 
 task-five "$@"

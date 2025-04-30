@@ -13,6 +13,7 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source benchmarks/common.sh  # tsv-concat
 source benchmarks/id.sh  # print-job-id
+source build/dev-shell.sh  # python2
 source test/common.sh
 source test/tsv-lib.sh  # tsv-row
 

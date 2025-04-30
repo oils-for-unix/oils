@@ -134,12 +134,6 @@ layer-locales() {
   locale-gen --purge en_US.UTF-8
 }
 
-test-image() {
-  ### For testing builds, not run on CI
-
-  apt-install build-essential "${PY3_BUILD_DEPS[@]}"
-}
-
 wild() {
   # for build/py.sh all
   local -a packages=(
@@ -238,13 +232,20 @@ cpp-small() {
   apt-install "${packages[@]}"
 }
 
+test-image() {
+  ### For testing builds, not run on CI
+
+  # We don't really need build deps?
+  apt-install build-essential "${PY3_BUILD_DEPS[@]}" 
+}
+
 benchmarks() {
   ### For benchmarks
 
   local -a packages=(
     # for build/py.sh all
     libreadline-dev
-    python2-dev
+    #python2-dev
 
     # To build Oils
     g++

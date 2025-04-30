@@ -18,6 +18,7 @@ readonly REPO_ROOT
 
 source benchmarks/common.sh  # die
 source benchmarks/cachegrind.sh  # with-cachgrind
+source build/dev-shell.sh  # python2
 source test/tsv-lib.sh  # tsv2html
 source test/common.sh  # die
 
