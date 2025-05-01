@@ -27,8 +27,8 @@ live-image-tag() {
       echo 'v-2023-10-05'
       ;;
     wild)
-      # rebuild with ca-certificates
-      echo 'v-2024-08-26'
+      # update to Debian 12
+      echo 'v-2025-04-30b'
       ;;
     bloaty)
       # rebuild with ca-certificates
@@ -48,8 +48,8 @@ live-image-tag() {
       echo 'v-2023-07-17'
       ;;
     pea)
-      # install our version of MyPy
-      echo 'v-2024-12-05'
+      # update to Debian 12
+      echo 'v-2025-04-30b'
       ;;
     cpp-small)
       # Rebuild with Docker, remove dead code
@@ -60,8 +60,8 @@ live-image-tag() {
       echo 'v-2023-08-09'
       ;;
     ovm-tarball)
-      # Lib/collections.py patch for OVM tarball
-      echo 'v-2024-12-20'
+      # update to Debian 12
+      echo 'v-2025-04-30b'
       ;;
     other-tests)
       # freshen up

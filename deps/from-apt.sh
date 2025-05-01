@@ -82,8 +82,10 @@ readonly -a BUILD_PACKAGES=(
 layer-wedge-bootstrap-debian() {
   apt-get update
 
-  # Pass aditional deps
-  apt-install "${BUILD_PACKAGES[@]}" "$@"
+  # Pass additional deps
+  apt-install \
+    "${BUILD_PACKAGES[@]}" \
+    "$@"
 }
 
 layer-wedge-bootstrap-debian-10() {
@@ -106,8 +108,15 @@ layer-wedge-bootstrap-debian-12() {
 }
 
 layer-python-symlink() {
-  ### A special layer for building CPython; done as root
-  ln -s -f -v /usr/bin/python2 /usr/bin/python
+  ### make /usr/bin/python and /usr/bin/python2
+  
+  local py2=/wedge/oils-for-unix.org/pkg/python2/2.7.18/bin/python
+
+  # For building CPython in soil-ovm-tarball; done as root
+  ln -s -f -v $py2 /usr/bin/python
+
+  # For other dev tools
+  ln -s -f -v $py2 /usr/bin/python2
 }
 
 layer-debian-10() {
@@ -128,7 +137,12 @@ layer-debian-12() {
 }
 
 layer-locales() {
+  set -x
   apt-install locales
+
+  # doesn't work either
+  # apt-install locales-all
+
   # uncomment in a file
   sed -i 's/# en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
   locale-gen --purge en_US.UTF-8
@@ -140,7 +154,7 @@ wild() {
     gcc  # 'cc' for compiling Python extensions
     g++  # for C++ tarball
 
-    python2-dev
+    #python2-dev
     libreadline-dev
     curl  # wait for cpp-tarball
     ca-certificates  # curl https - could do this outside container
@@ -362,7 +376,7 @@ ovm-tarball() {
   local -a packages=(
     # build/py.sh all
     libreadline-dev
-    python2-dev
+    #python2-dev
 
     # retrieving spec-bin -- TODO: move to build time
     wget

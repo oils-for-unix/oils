@@ -65,6 +65,9 @@ build-python() {
 layer-cpython() {
   ### For bootstrapping OVM build
 
+  # Make sure we have 'layer-python-symlink' before build
+  which python
+
   # TODO: can we do this with a wedge?
   # $PREPARE_DIR is ../oil_DEPS/cpython-full, which we want to get rid of
   configure-python

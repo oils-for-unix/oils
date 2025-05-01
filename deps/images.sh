@@ -15,7 +15,7 @@
 #
 # (2) Bootstrapping Wedges
 #
-#    $0 build wedge-bootstrap-debian-12
+#    $0 build wedge-bootstrap-debian-12  # runs init-deb-cache
 #
 # (3) Building wedges:
 #
@@ -25,7 +25,7 @@
 #
 # (4) Rebuild an image
 #
-#     $0 build soil-debian-12      # populates apt cache.  WHY DO I NEED THIS?
+#     $0 build soil-debian-12      # runs init-deb-cache and populate the cache
 #     $0 build soil-test-image T   # reuse package cache from apt-get
 #     $0 smoke soil-test-image     # smoke test
 #
@@ -33,16 +33,20 @@
 #
 # (6) Push Everything you Built
 #
-#     $0 push wedge-bootstrap-debian-12  v-2025-04-30
-#     $0 push soil-debian-12  v-2025-04-30
-#     $0 push soil-test-image  v-2025-04-30
+#     $0 push wedge-bootstrap-debian-12  # pushes both $LATEST_TAG and latest
+#     $0 push soil-debian-12             # ditto
+#     $0 push soil-test-image            # ditto
 #
-# Our images:
+# More
+# ----
 #
-#    https://hub.docker.com/u/oilshell
+# Images: https://hub.docker.com/u/oilshell
 #
-#    deps/images.sh list-tagged
+#    $0 list-tagged      # Show versions of images
 #
+#    $0 show-cachemount  # show files in apt cache
+#
+#    $0 prune            # seems to clear the cache
 
 set -o nounset
 set -o pipefail
@@ -135,27 +139,10 @@ list-images() {
   done
 }
 
-tag-all-latest() {
-  list-images | egrep -v 'wedge-builder|bootstrap' | while read image; do
-    local tag
-    tag=$(soil/host-shim.sh live-image-tag $image)
-
-    echo "$tag $image"
-
-    # syntax: source -> target
-    sudo $DOCKER tag oilshell/soil-$image:$tag oilshell/soil-$image:latest
-  done
-}
-
-push-all-latest() {
-  ### 'latest' can lag behind the tagged version, so push to catch up
-
-  # because our 'my-sizes' script fetches the latest manifest
-
-  list-images | grep -v 'wedge-builder|bootstrap' | while read image_id; do
-    echo "___ $image_id"
-    push $image_id latest
-  done
+build-all() {
+  # Should rebuild all these
+  # Except I also want to change the Dockerfile to use Debian 12
+  list-images | egrep -v 'test-image|ovm-tarball|benchmarks|wedge-bootstrap|debian-12'
 }
 
 list-tagged() {

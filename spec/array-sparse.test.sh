@@ -793,6 +793,10 @@ case $SH in mksh) exit ;; esac
 
 case $SH in
   bash)
+    # disabled with soil-ovm-tarball image 2025-04-30b - the CI runs on Debian 12
+    # now
+    exit
+
     # Work around bash integer overflow bug that only happens on say Debian 10,
     # but NOT Debian 12.  The bug exists in bash 5.2.  It's unclear why it
     # depends on the OS version.
@@ -833,6 +837,9 @@ echo "[${a[@]: -4}][${a[*]: -4}]"
 ## END
 
 ## N-I mksh STDOUT:
+## END
+
+## BUG bash STDOUT:
 ## END
 
 

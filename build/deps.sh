@@ -1079,7 +1079,7 @@ boxed-wedges() {
     deps/wedge.sh boxed deps/source.medo/python2/ '' debian-12
   fi
 
-  if true; then
+  if false; then
     # soil-benchmarks
     deps/wedge.sh boxed deps/source.medo/uftrace/ '' debian-12
 
@@ -1087,18 +1087,19 @@ boxed-wedges() {
     deps/wedge.sh boxed deps/source.medo/re2c/ '' debian-12
   fi
 
-  if false; then
-    deps/wedge.sh boxed deps/source.medo/bloaty/ '' debian-12
+  if true; then
+    # debian 10 for now
+    deps/wedge.sh boxed deps/source.medo/bloaty/ '' # debian-12
   fi
 
-  if true; then
+  if false; then
     # Used in {benchmarks,benchmarks2,other-tests}
     deps/wedge.sh boxed deps/source.medo/R-libs/ '' debian-12
   fi
 }
 
 boxed-spec-bin() {
-  if false; then
+  if true; then
     deps/wedge.sh boxed deps/source.medo/bash '4.4'
   fi
 
