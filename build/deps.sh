@@ -1075,10 +1075,13 @@ boxed-wedges() {
   #  return
   # fi
 
+  if true; then
+    deps/wedge.sh boxed deps/source.medo/python2/ '' debian-12
+  fi
+
   if false; then
     deps/wedge.sh boxed deps/source.medo/python3/ '' debian-12
     deps/wedge.sh boxed deps/source.medo/time-helper '' debian-12
-    deps/wedge.sh boxed deps/source.medo/python2/ '' debian-12
   fi
 
   if false; then
@@ -1094,7 +1097,7 @@ boxed-wedges() {
     deps/wedge.sh boxed deps/source.medo/bloaty/ '' # debian-12
   fi
 
-  if true; then
+  if false; then
     # Used in {benchmarks,benchmarks2,other-tests}
     deps/wedge.sh boxed deps/source.medo/R-libs/ '' debian-12
   fi

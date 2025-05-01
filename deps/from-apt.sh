@@ -16,6 +16,9 @@ set -o errexit
 #   zlib1g-dev: needed for 'import zlib'
 declare -a PY3_BUILD_DEPS=(libssl-dev libffi-dev zlib1g-dev)
 
+# Needed to run unit tests, e.g. 'import readline'
+declare -a PY2_BUILD_DEPS=(libreadline-dev)
+
 # for deps/from-R.sh
 declare -a R_BUILD_DEPS=(
     r-base-core  # R interpreter
@@ -69,6 +72,8 @@ readonly -a BUILD_PACKAGES=(
 
   # for USDT probes
   systemtap-sdt-dev
+
+  "${PY2_BUILD_DEPS[@]}"
 
   # Dependencies for building our own Python3 wedge.  Otherwise 'pip install'
   # won't work.
@@ -144,9 +149,6 @@ layer-locales() {
   set -x
   apt-install locales
 
-  # doesn't work either
-  # apt-install locales-all
-
   # uncomment in a file
   sed -i 's/# en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
   locale-gen --purge en_US.UTF-8
@@ -169,9 +171,9 @@ wild() {
 dev-minimal() {
   local -a packages=(
     # TODO: remove
-    python2-dev  # for building Python extensions
-    python-setuptools  # Python 2, for flake8
-    python-pip  # flake8 typing
+    #python2-dev  # for building Python extensions
+    #python-setuptools  # Python 2, for flake8
+    #python-pip  # flake8 typing
 
     gcc  # for building Python extensions
     libreadline-dev
@@ -358,7 +360,7 @@ clang() {
   local -a packages=(
     # For build/py.sh minimal
     libreadline-dev
-    python2-dev
+    #python2-dev
 
     # Compile Oils
     g++

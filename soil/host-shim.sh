@@ -56,8 +56,8 @@ live-image-tag() {
       echo 'v-2023-07-15'
       ;;
     clang)
-      # Rebuild with wedges
-      echo 'v-2023-08-09'
+      # update to Debian 12
+      echo 'v-2025-05-01'
       ;;
     ovm-tarball)
       # update to Debian 12
@@ -68,12 +68,12 @@ live-image-tag() {
       echo 'v-2025-04-30b'
       ;;
     dummy)
-      # freshen up
-      echo 'v-2024-06-08'
+      # update to Debian 12
+      echo 'v-2025-04-30b'
       ;;
     dev-minimal)
-      # Use python3 wedge and mypy-0.780 repo
-      echo 'v-2023-07-15'
+      # rebuild python 2 wedge with libreadline-dev in wedge-bootstrap-debian-12
+      echo 'v-2025-05-01'
       ;;
 
     # Not run directly

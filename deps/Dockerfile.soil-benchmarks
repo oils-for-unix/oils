@@ -42,13 +42,11 @@ COPY --chown=uke \
   _build/deps-source/mypy/mypy-0.780/ \
   /home/uke/wedge/oils-for-unix.org/pkg/mypy/0.780/
 
-# 2025-04 update: we should automate copying the OSH stdlib to the container
+# 2025-04: build/deps.sh install-py3-libs depends on this - need tree shaking
 COPY stdlib/osh/bash-strict.sh /home/uke/tmp/stdlib/osh/bash-strict.sh
 COPY stdlib/osh/task-five.sh /home/uke/tmp/stdlib/osh/task-five.sh
 COPY stdlib/osh/byo-server.sh /home/uke/tmp/stdlib/osh/byo-server.sh
 COPY stdlib/osh/two.sh /home/uke/tmp/stdlib/osh/two.sh
-
-# build/deps.sh install-py3-libs depends on this - need tree shaking
 COPY test/tsv-lib.sh /home/uke/tmp/test/tsv-lib.sh
 COPY web/table/html.sh /home/uke/tmp/web/table/html.sh
 

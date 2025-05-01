@@ -56,8 +56,7 @@ source deps/podman.sh
 
 DOCKER=${DOCKER:-docker}
 
-# Build with this tag
-readonly LATEST_TAG='v-2025-04-30b'
+readonly LATEST_TAG='v-2025-05-01'  # add libreadline-dev to wedge-bootstrap-debian-12
 
 clean-all() {
   dirs='_build/wedge/tmp _build/wedge/binary _build/deps-source'
@@ -228,9 +227,22 @@ echo PATH=$PATH
 #curl https://op.oilshell.org/
 
 if true; then
-  python3 -c "import ssl; print(ssl)"
-  find /usr/lib | grep -i libssl
+  python2 -c "import readline; print(readline)"
   echo
+
+  python3 -c "import ssl; print(ssl)"
+  echo
+
+  find /usr/lib | grep -i readline
+  echo
+
+  ls /wedge/oils-for-unix.org/pkg/python2/
+  ls /wedge/oils-for-unix.org/pkg/python2/2.7.18/lib/python2.7/lib-dynload
+
+  ldd /wedge/oils-for-unix.org/pkg/python2/2.7.18/lib/python2.7/lib-dynload/readline.so
+  echo
+
+  exit
 
   dpkg -S /usr/lib/x86_64-linux-gnu/libssl.so.3
   echo
