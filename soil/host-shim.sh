@@ -64,8 +64,8 @@ live-image-tag() {
       echo 'v-2025-04-30b'
       ;;
     other-tests)
-      # freshen up
-      echo 'v-2023-07-15'
+      # update to Debian 12
+      echo 'v-2025-04-30b'
       ;;
     dummy)
       # freshen up

@@ -1064,6 +1064,8 @@ boxed-wedges() {
   # - Use the same manifest as install-wedges
   #   - so then you can delete the _build/wedge dir to re-run it
   #   - use xargs -n 1 so it's done serially
+  #
+  # Pass --network none to docker when possible
 
   # - Do these lazily like we do in install-wedges
 
@@ -1087,12 +1089,12 @@ boxed-wedges() {
     deps/wedge.sh boxed deps/source.medo/re2c/ '' debian-12
   fi
 
-  if true; then
+  if false; then
     # debian 10 for now
     deps/wedge.sh boxed deps/source.medo/bloaty/ '' # debian-12
   fi
 
-  if false; then
+  if true; then
     # Used in {benchmarks,benchmarks2,other-tests}
     deps/wedge.sh boxed deps/source.medo/R-libs/ '' debian-12
   fi

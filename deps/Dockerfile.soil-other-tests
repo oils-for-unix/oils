@@ -1,12 +1,15 @@
-FROM oilshell/soil-common
+FROM oilshell/soil-debian-12
 
 # Copy again to prevent unsound caching
 COPY deps/from-apt.sh /home/uke/tmp/deps/from-apt.sh
 
-RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,id=var-lib-apt,target=/var/lib/apt,sharing=locked \
+RUN --mount=type=cache,id=var-cache-apt-debian-12,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=var-lib-apt-debian-12,target=/var/lib/apt,sharing=locked \
     du --si -s /var/cache/apt /var/lib/apt && \
     deps/from-apt.sh other-tests
+
+# use this instead of 'source build/dev-shell.sh' for now
+RUN deps/from-apt.sh layer-python2-symlink
 
 USER uke
 

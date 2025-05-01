@@ -7,6 +7,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source build/dev-shell.sh  # python2
+
 # Fails because of NoSingletonAction?
 find-test() {
   pushd tools/find

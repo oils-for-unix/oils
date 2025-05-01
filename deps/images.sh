@@ -65,6 +65,35 @@ clean-all() {
   sudo rm -r -f $dirs
 }
 
+list-images() {
+  for name in deps/Dockerfile.*; do
+    local image_id=${name//'deps/Dockerfile.'/}
+    if test "$image_id" = 'test-image'; then
+      continue
+    fi
+    echo $image_id
+  done
+}
+
+list-tagged() {
+  sudo $DOCKER images 'oilshell/*' #:v-*'
+}
+
+_latest-one() {
+  local name=$1
+  $DOCKER images "oilshell/$name" | head -n 3
+}
+
+_list-latest() {
+  # Should rebuild all these
+  # Except I also want to change the Dockerfile to use Debian 12
+  list-images | xargs -n 1 -- $0 _latest-one
+}
+
+list-latest() {
+  sudo $0 _list-latest
+}
+
 # BUGS in Docker.
 #
 # https://stackoverflow.com/questions/69173822/docker-build-uses-wrong-dockerfile-content-bug
@@ -99,7 +128,9 @@ tag-latest() {
 
 build() {
   local name=${1:-soil-dummy}
-  local use_cache=${2:-}  # OFF by default
+
+  # OFF by default.  TODO: use_cache setting should be automatic
+  local use_cache=${2:-}
 
   # set -x
   local -a flags
@@ -129,33 +160,8 @@ build() {
   tag-latest $name
 }
 
-list-images() {
-  for name in deps/Dockerfile.*; do
-    local image_id=${name//'deps/Dockerfile.'/}
-    if test "$image_id" = 'test-image'; then
-      continue
-    fi
-    echo $image_id
-  done
-}
-
-list-tagged() {
-  sudo $DOCKER images 'oilshell/*' #:v-*'
-}
-
-_latest-one() {
-  local name=$1
-  $DOCKER images "oilshell/$name" | head -n 3
-}
-
-_list-latest() {
-  # Should rebuild all these
-  # Except I also want to change the Dockerfile to use Debian 12
-  list-images | xargs -n 1 -- $0 _latest-one
-}
-
-list-latest() {
-  sudo $0 _list-latest
+build-many() {
+  echo 'TODO: use_cache should be automatic - all but 2 images use it'
 }
 
 build-all() {
@@ -163,7 +169,6 @@ build-all() {
   # Except I also want to change the Dockerfile to use Debian 12
   list-images | egrep -v 'test-image|ovm-tarball|benchmarks|wedge-bootstrap|debian-12'
 }
-
 
 push() {
   local name=${1:-soil-dummy}
@@ -182,6 +187,12 @@ push() {
 
   # Also push the 'latest' tag, to avoid getting out of sync
   sudo -E $DOCKER push oilshell/$name:latest
+}
+
+push-many() {
+  for name in "$@"; do
+    push $name
+  done
 }
 
 smoke-test-script() {
@@ -361,4 +372,35 @@ layers() {
     | commas
 }
 
+todo-debian-12() {
+  # 7 images
+  grep soil-common deps/Dockerfile.*
+}
+
+todo-purity() {
+  # TODO: we should pass --network none in $0 build
+  #
+  # Hm 7 images need pip download, should reduce them
+  #
+  # There are other sources of impurity, like:
+  # building the R-libs wedge
+  # soil-wild - we can't download the testdata, etc.
+ 
+  grep -l install-py3-libs deps/Dockerfile.*
+}
+
+todo-tree-shake() {
+  # We should invoke OSH to generate parts of the dockerfile?  Or use podman
+  # probably?
+  #
+  # Or maybe it's a default layer in soil-debian-12?
+
+  grep task-five deps/Dockerfile.*
+}
+
+todo-relative() {
+  grep TODO # _build/wedge/relative, not _build/wedge/binary
+}
+
 "$@"
+

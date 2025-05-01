@@ -107,17 +107,20 @@ layer-wedge-bootstrap-debian-12() {
   layer-wedge-bootstrap-debian "${uftrace_packages[@]}"
 }
 
+readonly PY2=/wedge/oils-for-unix.org/pkg/python2/2.7.18/bin/python
+
 layer-python-symlink() {
-  ### make /usr/bin/python and /usr/bin/python2
-  
-  local py2=/wedge/oils-for-unix.org/pkg/python2/2.7.18/bin/python
+  ### make /usr/bin/python 
 
   # For building CPython in soil-ovm-tarball; done as root
-  ln -s -f -v $py2 /usr/bin/python
+  ln -s -f -v $PY2 /usr/bin/python
+}
 
-  # For other dev tools
-  # Note: it's probably better to do 'source build/dev-shell.sh' instead ...
-  ln -s -f -v $py2 /usr/bin/python2
+layer-python2-symlink() {
+  # make /usr/bin/python2
+
+  # It's usually better do 'source build/dev-shell.sh' instead ...
+  ln -s -f -v $PY2 /usr/bin/python2
 }
 
 layer-debian-10() {
@@ -155,7 +158,6 @@ wild() {
     gcc  # 'cc' for compiling Python extensions
     g++  # for C++ tarball
 
-    #python2-dev
     libreadline-dev
     curl  # wait for cpp-tarball
     ca-certificates  # curl https - could do this outside container
@@ -204,7 +206,6 @@ pea() {
 other-tests() {
   local -a packages=(
     libreadline-dev
-    python2-dev  # osh2oil needs build/py.sh minimal
 
     # Compilers for R.  TODO: try removing after wedge
     gcc g++
@@ -260,7 +261,6 @@ benchmarks() {
   local -a packages=(
     # for build/py.sh all
     libreadline-dev
-    #python2-dev
 
     # To build Oils
     g++
@@ -377,7 +377,6 @@ ovm-tarball() {
   local -a packages=(
     # build/py.sh all
     libreadline-dev
-    #python2-dev
 
     # retrieving spec-bin -- TODO: move to build time
     wget
@@ -413,7 +412,6 @@ app-tests() {
   local -a packages=(
     # build/py.sh all
     libreadline-dev
-    #python2-dev
 
     # retrieving spec-bin -- TODO: move to build time
     wget
