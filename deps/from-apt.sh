@@ -116,6 +116,7 @@ layer-python-symlink() {
   ln -s -f -v $py2 /usr/bin/python
 
   # For other dev tools
+  # Note: it's probably better to do 'source build/dev-shell.sh' instead ...
   ln -s -f -v $py2 /usr/bin/python2
 }
 
@@ -412,7 +413,7 @@ app-tests() {
   local -a packages=(
     # build/py.sh all
     libreadline-dev
-    python2-dev
+    #python2-dev
 
     # retrieving spec-bin -- TODO: move to build time
     wget

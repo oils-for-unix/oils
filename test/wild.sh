@@ -17,6 +17,7 @@ set -o pipefail
 set -o errexit
 shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
+source build/dev-shell.sh  # python2
 source test/common.sh  # export-osh-cpp
 
 # This persists across build/clean.sh

@@ -9,6 +9,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source build/dev-shell.sh  # python2
 source test/common.sh
 
 readonly BASE_DIR=_clone/ble.sh

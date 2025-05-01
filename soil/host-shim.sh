@@ -23,8 +23,8 @@ live-image-tag() {
 
   case $image_id in
     app-tests)
-      # rebuild with curl
-      echo 'v-2023-10-05'
+      # update to Debian 12
+      echo 'v-2025-04-30b'
       ;;
     wild)
       # update to Debian 12

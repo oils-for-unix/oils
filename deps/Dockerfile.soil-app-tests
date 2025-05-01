@@ -1,14 +1,18 @@
-FROM oilshell/soil-common
+FROM oilshell/soil-debian-12
 
 # Copy again to prevent unsound caching
 COPY deps/from-apt.sh /home/uke/tmp/deps/from-apt.sh
 
 # layer-locales also has to install packages
-RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,id=var-lib-apt,target=/var/lib/apt,sharing=locked \
+RUN --mount=type=cache,id=var-cache-apt-debian-12,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=var-lib-apt-debian-12,target=/var/lib/apt,sharing=locked \
     du --si -s /var/cache/apt /var/lib/apt && \
     deps/from-apt.sh layer-locales && \
     deps/from-apt.sh app-tests
+
+# 2025-04-30b: this COULD be in the layer soil-debian-12
+# or we can also add 'source build/dev-shell.sh'
+#RUN deps/from-apt.sh layer-python-symlink
 
 USER uke
 

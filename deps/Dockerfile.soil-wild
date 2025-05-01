@@ -14,7 +14,7 @@ RUN --mount=type=cache,id=var-cache-apt-debian-12,target=/var/cache/apt,sharing=
     du --si -s /var/cache/apt /var/lib/apt && \
     deps/from-apt.sh wild
 
-RUN deps/from-apt.sh layer-python-symlink
+#RUN deps/from-apt.sh layer-python-symlink
 
 USER uke
 

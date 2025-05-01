@@ -139,15 +139,31 @@ list-images() {
   done
 }
 
+list-tagged() {
+  sudo $DOCKER images 'oilshell/*' #:v-*'
+}
+
+_latest-one() {
+  local name=$1
+  $DOCKER images "oilshell/$name" | head -n 3
+}
+
+_list-latest() {
+  # Should rebuild all these
+  # Except I also want to change the Dockerfile to use Debian 12
+  list-images | xargs -n 1 -- $0 _latest-one
+}
+
+list-latest() {
+  sudo $0 _list-latest
+}
+
 build-all() {
   # Should rebuild all these
   # Except I also want to change the Dockerfile to use Debian 12
   list-images | egrep -v 'test-image|ovm-tarball|benchmarks|wedge-bootstrap|debian-12'
 }
 
-list-tagged() {
-  sudo $DOCKER images 'oilshell/*' #:v-*'
-}
 
 push() {
   local name=${1:-soil-dummy}
