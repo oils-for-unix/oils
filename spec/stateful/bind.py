@@ -15,7 +15,7 @@ import pexpect
 import pyte
 
 import harness
-from harness import expect_prompt, register
+from harness import expect_prompt, register, TerminalDimensionEnvVars
 
 from test.spec_lib import log
 
@@ -181,8 +181,8 @@ def bind_x_readline_point(sh):
     sh.expect("READLINE_POINT is unset")
 
 
-@register(not_impl_shells=['dash', 'mksh'])
-def bind_x_set_readline_point_to_insert(sh):
+@register(not_impl_shells=['dash', 'mksh'], needs_dimensions=True)
+def bind_x_set_readline_point_to_insert(sh, test_params):
     "test bind -x for correctly using $READLINE_POINT to overwrite the cmd"
 
     failing = "failing"
@@ -193,47 +193,48 @@ def bind_x_set_readline_point_to_insert(sh):
     bind_cmd = r"""bind -x '"\C-y": READLINE_POINT=%d' """ % new_rl_point
 
     try:
-        num_lines = int(os.environ['LINES'])
-        num_columns = int(os.environ['COLUMNS'])
+        num_lines = test_params['num_lines']
+        num_columns = test_params['num_columns']
     except KeyError:
-        raise RuntimeError("LINES and COLUMNS must be set")
+        raise RuntimeError("num_lines and num_columns must be passed in")
 
-    screen = pyte.Screen(num_columns, num_lines)
-    stream = pyte.Stream(screen)
+    with TerminalDimensionEnvVars(num_lines, num_columns):
+        screen = pyte.Screen(num_columns, num_lines)
+        stream = pyte.Stream(screen)
 
-    # Need to echo, because we don't want just output
-    sh.setecho(True)
+        # Need to echo, because we don't want just output
+        sh.setecho(True)
 
-    def _emulate_ansi_terminal(raw_output):
-        stream.feed(raw_output)
+        def _emulate_ansi_terminal(raw_output):
+            stream.feed(raw_output)
 
-        lines = screen.display
-        screen.reset()
+            lines = screen.display
+            screen.reset()
 
-        return '\n'.join(lines)
+            return '\n'.join(lines)
 
-    # sh.sendline('stty -icanon')
-    # time.sleep(0.1)
+        # sh.sendline('stty -icanon')
+        # time.sleep(0.1)
 
-    sh.sendline(bind_cmd)
-    time.sleep(0.1)
+        sh.sendline(bind_cmd)
+        time.sleep(0.1)
 
-    sh.send(echo_cmd)
-    time.sleep(0.1)
+        sh.send(echo_cmd)
+        time.sleep(0.1)
 
-    sh.sendcontrol('y')
-    time.sleep(0.2)
+        sh.sendcontrol('y')
+        time.sleep(0.2)
 
-    sh.send("no longer ")
-    time.sleep(0.1)
+        sh.send("no longer ")
+        time.sleep(0.1)
 
-    sh.expect(pexpect.TIMEOUT, timeout=2)
+        sh.expect(pexpect.TIMEOUT, timeout=2)
 
-    screen_contents = _emulate_ansi_terminal(sh.before)
-    if expected_cmd not in screen_contents:
-        raise Exception(
-            f"Expected command '{expected_cmd}' not found in screen contents:\n{screen_contents}"
-        )
+        screen_contents = _emulate_ansi_terminal(sh.before)
+        if expected_cmd not in screen_contents:
+            raise Exception(
+                f"Expected command '{expected_cmd}' not found in screen contents:\n{screen_contents}"
+            )
 
 
 @register(not_impl_shells=['dash', 'mksh'])
