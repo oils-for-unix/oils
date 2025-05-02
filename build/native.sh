@@ -11,6 +11,7 @@ set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)  # tsv-lib.sh uses this
 source build/common.sh  # log
+source build/dev-shell.sh  # python2
 
 # Demo for the oils-for-unix tarball.
 # Notes:

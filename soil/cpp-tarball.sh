@@ -55,7 +55,7 @@ build-like-ninja() {
     popd
     popd
 
-    # Hack: copy to NInja location.  So the interface is the same.
+    # Hack: copy to Ninja location.  So the interface is the same.
     for variant in "$@"; do
       local out_bin_dir
       local tar_bin_dir

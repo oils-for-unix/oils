@@ -224,7 +224,6 @@ cpp-small() {
   local -a packages=(
     # for build/py.sh all
     libreadline-dev
-    python2-dev
 
     # To compile Oil
     g++
@@ -334,7 +333,6 @@ cpp-spec() {
   local -a packages=(
     # for build/py.sh all
     libreadline-dev
-    python2-dev
 
     # To build Oil
     g++

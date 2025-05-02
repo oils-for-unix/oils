@@ -44,16 +44,16 @@ live-image-tag() {
       echo 'v-2024-06-09'
       ;;
     cpp-spec)
-      # Rebuild with jq, procps
-      echo 'v-2023-07-17'
+      # update to Debian 12
+      echo 'v-2025-05-01'
       ;;
     pea)
       # update to Debian 12
       echo 'v-2025-04-30b'
       ;;
     cpp-small)
-      # Rebuild with Docker, remove dead code
-      echo 'v-2023-07-15'
+      # update to Debian 12
+      echo 'v-2025-05-01'
       ;;
     clang)
       # update to Debian 12
