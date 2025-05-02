@@ -401,14 +401,11 @@ _compressed-tarball() {
 
   time gzip -c $in > $out
   ls -l $out
-
-  # xz version is considerably smaller.  1.15 MB  vs. 1.59 MB.
-  local out2=_release/$name-$version.tar.xz
-  time xz -c $in > $out2
-  ls -l $out2
 }
 
 oils-ref() {
+  # Note: this is redundant with py-tarball, which we probably don't need
+  # anymore.  It was for the obsolete build/cpython-defs.
   _compressed-tarball oils-ref $OIL_VERSION
 }
 

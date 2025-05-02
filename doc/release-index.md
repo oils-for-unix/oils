@@ -36,7 +36,7 @@ up-to-date.
 - [Published Docs](doc/published.html) - these are ready to read
 - [All Docs](doc/index.html) (in progress)
   - The [**Oils Reference**](doc/ref/index.html)
-- [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
+- [Github Wiki for oils-for-unix/oils](https://github.com/oils-for-unix/oils/wiki)
 
 ## Packaging
 
@@ -45,8 +45,7 @@ Summary of [Oils Packaging Guidelines]($wiki):
 - The `oils-for-unix` tarball is the fast shell in C++, completed in
   2024.  The distro package should be called `oils-for-unix`.
 - The `oils-ref` tarball is the reference implementation, that runs under CPython.
-  - It should not be used, so create new `oils-ref` packages. And don't rename
-    old packages named `oil`.
+  - It should not be used, so there's no need to create `oils-ref` packages.
 - The project is now called **Oils**, or [Oils for
   Unix](https://www.oilshell.org/blog/2023/03/rename.html).  There is no more
   `oil`!
