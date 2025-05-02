@@ -11,8 +11,8 @@ Quick Start
 
 If you haven't already done so, extract the tarball:
  
-    tar -x --gz < oils-for-unix-0.28.0.tar.gz
-    cd oils-for-unix-0.28.0
+    tar -x --gz < oils-for-unix-0.29.0.tar.gz
+    cd oils-for-unix-0.29.0
 
 This is the traditional way to install it:
 
@@ -56,7 +56,7 @@ More Documentation
 
 Every release has a home page with links:
 
-- <https://oils.pub/release/0.28.0/>
+- <https://oils.pub/release/0.29.0/>
 
 System Requirements
 -------------------
@@ -107,7 +107,7 @@ This doesn't require root access, but it requires:
   $MANPATH.)
 
 NOTE: Out-of-tree builds are NOT currently supported, so you have to be in the
-oils-for-unix-0.28.0 directory.
+oils-for-unix-0.29.0 directory.
 
 Build Options
 -------------
@@ -130,6 +130,6 @@ Links
 -----
 
 - Mirror of the help text:
-  <https://oils.pub/release/0.28.0/doc/help-mirror.html>
+  <https://oils.pub/release/0.29.0/doc/help-mirror.html>
 - Notes on portability:
-  <https://oils.pub/release/0.28.0/doc/portability.html>
+  <https://oils.pub/release/0.29.0/doc/portability.html>
