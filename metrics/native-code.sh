@@ -113,9 +113,8 @@ oils-for-unix() {
 
   # Use DWARF 4 for bloaty, as we do in
   #   devtools/release.sh _build-oils-benchmark-data
-  # CXXFLAGS=-gdwarf-4 soil/cpp-tarball.sh build-like-ninja dbg opt
-
-  soil/cpp-tarball.sh build-like-ninja dbg opt
+  CXXFLAGS=-gdwarf-4 soil/cpp-tarball.sh build-like-ninja dbg opt
+  #soil/cpp-tarball.sh build-like-ninja dbg opt
 
   collect-and-report $OIL_BASE_DIR _bin/cxx-{dbg,opt}/oils-for-unix
 

@@ -31,8 +31,8 @@ live-image-tag() {
       echo 'v-2025-04-30b'
       ;;
     bloaty)
-      # rebuild with ca-certificates
-      echo 'v-2024-08-26'
+      # update to Debian 12
+      echo 'v-2025-05-01'
       ;;
     benchmarks)
       # Add 'pyte' terminal emulator library to py3-libs, for testing
