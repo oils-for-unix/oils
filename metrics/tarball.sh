@@ -26,7 +26,7 @@ _wc-header() {
 }
 
 _native-deps() {
-  local app_name=${1:-oil}
+  local app_name=${1:-oils-ref}
   find _tmp/${app_name}-tar-test -type f -a -name '*.[ch]'
 }
 
@@ -42,7 +42,7 @@ linecount-nativedeps() {
 readonly BYTECODE='bytecode-opy'
 
 _py-deps() {
-  local app_name=${1:-oil}
+  local app_name=${1:-oils-ref}
   awk '/\.py$/ { print $1 }' _build/$app_name/${BYTECODE}-manifest.txt
 }
 
@@ -117,14 +117,14 @@ linecount-pydeps-src-only() {
   wc -l "${ASDL_FILES[@]}"
 }
 
-# hello: 1.41 MB native + 145 KB = 1.56 MB bundle
-# oil:   1.65 MB native + 642 KB = 2.30 MB bundle
+# hello:     1.41 MB native + 145 KB = 1.56 MB bundle
+# oils-ref:  1.65 MB native + 642 KB = 2.30 MB bundle
 bundle-size() {
   ls -l _build/*/bytecode-*.zip _build/*/ovm _bin/*.ovm
 }
 
 pyc-files() {
-  local app_name=${1:-oil}
+  local app_name=${1:-oils-ref}
   awk '/\.pyc$/ { print $1 }' _build/$app_name/${BYTECODE}-manifest.txt
 }
 
@@ -147,8 +147,8 @@ hello-tar-lines() {
 
 # 165.8 K lines of C (biggest: posixmodule.c, unicodeobject.c)
 # 30.8 K lines Python (biggest:
-oil-tar-lines() {
-  _tar-lines oil
+oils-ref-tar-lines() {
+  _tar-lines oils-ref
 }
 
 "$@"

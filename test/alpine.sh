@@ -198,7 +198,7 @@ copy-tar() {
 
 _test-tar() {
   local chroot_dir=${1:-$CHROOT_OIL_TAR}
-  local name=${2:-oil}
+  local name=${2:-oils-ref}
   local version=${3:-$OIL_VERSION}
 
   local target=_bin/${name}.ovm
@@ -212,7 +212,7 @@ tar --extract -z < $name-$version.tar.gz
 cd $name-$version
 ./configure
 
-if test $name = oil; then
+if test $name = oils-ref; then
   time make $target
 else
   time _build/oils.sh
@@ -221,7 +221,7 @@ fi
 echo
 echo "*** Running $target"
 
-if test $name = oil; then
+if test $name = oils-ref; then
   $target --version
 else
   _bin/cxx-opt-sh/osh --version

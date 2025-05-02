@@ -51,10 +51,10 @@ print-symbols() {
 
 compileunits() {
   # Hm there doesn't seem to be a way to do this without
-  local file=${1:-_build/oil/ovm-dbg}
+  local file=${1:-_build/oils-ref/ovm-dbg}
 
-  #local file=_build/oil/ovm-opt
-  #local sym=_build/oil/ovm-opt.symbols
+  #local file=_build/oils-ref/ovm-opt
+  #local sym=_build/oils-ref/ovm-opt.symbols
 
   bloaty --tsv -n 0 -d compileunits $file 
 }
@@ -62,7 +62,7 @@ compileunits() {
 symbols() {
   # NOTE: This is different than the release binary!
   # ovm-opt.stripped doesn't show a report.
-  local file=${1:-_build/oil/ovm-opt}
+  local file=${1:-_build/oils-ref/ovm-opt}
 
   # Full output
   # 3,588 lines!
@@ -75,13 +75,13 @@ R-report() {
 
 build-ovm() {
   # 2022-12: hack for ./configure, because line_input failed to compile without
-  # HAVE_READLINE See _build/oil/module_init.c
+  # HAVE_READLINE See _build/oils-ref/module_init.c
   # TODO: This metric should either be DELETED, or automated in the CI, so it
   # doesn't break
 
   ./configure
 
-  make _build/oil/ovm-{dbg,opt}
+  make _build/oils-ref/ovm-{dbg,opt}
 }
 
 collect-and-report() {
@@ -144,8 +144,8 @@ run-for-release() {
   if false; then
     build-ovm
 
-    local dbg=_build/oil/ovm-dbg
-    local opt=_build/oil/ovm-opt
+    local dbg=_build/oils-ref/ovm-dbg
+    local opt=_build/oils-ref/ovm-opt
 
     collect-and-report $OVM_BASE_DIR $dbg $opt
   fi

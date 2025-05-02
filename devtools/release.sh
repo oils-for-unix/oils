@@ -11,8 +11,6 @@
 #   $0 make-release-branch
 #   $0 two-tarballs          # CPython, then oils-for-unix, which is INSTALLED
 #   demo/osh-debug.sh osh-for-release: Start a shell to dogfood
-#   build/cpython-defs.sh {oil-py-names,filter-methods}
-#     (regenerate C source)
 #
 # Run on each machine:
 #   $0 auto-machine1

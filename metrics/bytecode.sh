@@ -43,8 +43,8 @@ opy-dis-tables() {
 
   # Pass the .pyc files in the bytecode-opy.zip file to 'opyc dis'
 
-  # The .pyc files look like _build/oil/bytecode-opy/os.pyc
-  time cat _build/oil/opy-app-deps.txt \
+  # The .pyc files look like _build/oils-ref/bytecode-opy/os.pyc
+  time cat _build/oils-ref/opy-app-deps.txt \
     | awk ' $1 ~ /\.pyc$/ { print $1 }' \
     | xargs -- bin/opyc dis-tables $out_dir
 
@@ -56,7 +56,7 @@ cpython-dis-tables() {
   local out_dir=$BASE_DIR/cpython-dis-tables
   mkdir -p $out_dir
   # The .py files look like /home/andy/git/oilshell/oil/Python-2.7.13/Lib/os.py
-  time cat _build/oil/opy-app-deps.txt \
+  time cat _build/oils-ref/opy-app-deps.txt \
     | awk ' $1 ~ /\.py$/ { print $1 "c" }' \
     | xargs -- bin/opyc dis-tables $out_dir
 
@@ -101,7 +101,7 @@ compare() {
 # sizes.
 src-bin-ratio() {
   # Pass the manifest and the base directory of .pyc files.
-  report src-bin-ratio _build/oil/all-deps-py.txt _build/oil/bytecode-opy
+  report src-bin-ratio _build/oils-ref/all-deps-py.txt _build/oils-ref/bytecode-opy
 }
 
 run-for-release() {
