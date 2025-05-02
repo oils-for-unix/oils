@@ -39,9 +39,8 @@ live-image-tag() {
       echo 'v-2025-04-30b'
       ;;
     benchmarks2)
-      # debian 12, python3, new R-libs, cmark
-      # new uftrace version
-      echo 'v-2024-06-09'
+      # refresh
+      echo 'v-2025-05-01'
       ;;
     cpp-spec)
       # update to Debian 12
