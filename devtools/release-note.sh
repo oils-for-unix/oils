@@ -57,9 +57,11 @@ contrib-commit-table() {
 }
 
 fetch-issues() {
-  local url='https://api.github.com/repos/oils-for-unix/oils/issues?labels=pending-release'
-  # For Oils 0.24.0
-  #local url='https://api.github.com/repos/oils-for-unix/oils/issues?labels=pending-release-2'
+  # Oils 0.24.0 - pending-release-2
+  # Oils 0.29.0 - pending-release-3
+
+  local label=${1:-pending-release-3}
+  local url="https://api.github.com/repos/oils-for-unix/oils/issues?labels=$label"
   curl "$url" > _tmp/issues.json
 }
 
@@ -111,8 +113,8 @@ title: Oils $OILS_VERSION - Foo Foo
 date: $(date +%Y/%m/%d)
 css_file: blog-bundle-v6.css
 body_css_class: width35
-default_highlighter: oil-sh
-tags: oil-release
+default_highlighter: oils-sh
+tags: oils-release
 comments_url: TODO
 published: no
 ---
