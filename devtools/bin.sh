@@ -9,11 +9,9 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-# New name is ysh!
 # TODO:
-# - remove the 'oil' everywhere
 # - translation should be 'ysh-translate'.  Later 'ysh-format'
-readonly OIL_OVM_NAMES=(oil ysh osh sh true false readlink)
+readonly OIL_OVM_NAMES=(ysh osh sh true false readlink)
 
 # TODO: probably delete this
 # For osh-dbg.
@@ -93,7 +91,7 @@ make-ovm-links() {
 
   for link in "${OIL_OVM_NAMES[@]}"; do
     # _bin/ symlink
-    ln -s -f --verbose oil.ovm _bin/$link
+    ln -s -f --verbose oils-ref.ovm _bin/$link
   done
 }
 

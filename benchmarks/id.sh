@@ -414,6 +414,16 @@ shell-provenance-2() {
   log "Wrote $out_txt and $out_tsv"
 }
 
+provenance-for-testing() { 
+  ### For running benchmarks locally
+
+  local out_dir=_tmp/local-benchmarks
+  mkdir -v -p $out_dir
+  shell-provenance-2 \
+    $(hostname) 2025__test-job $out_dir \
+    "${SHELLS[@]}" $OSH_CPP_BENCHMARK_DATA python2
+}
+
 compiler-provenance-2() {
   # Write to _tmp/compiler-provenance.txt and $out_dir/{compiler-id,host-id}
 

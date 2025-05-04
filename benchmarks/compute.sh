@@ -70,6 +70,8 @@ export LC_ALL=C
 
 TIMEFORMAT='%U'
 
+readonly OSH_YSH_OPT_REGEX='_bin/cxx-opt(-sh)?/(osh|ysh)'
+
 # task_name,iter,args
 hello-tasks() {
   local provenance=$1
@@ -85,10 +87,8 @@ hello-tasks() {
 fib-tasks() {
   local provenance=$1
 
-  local runtime_regex='_bin/cxx-opt/(osh|ysh)'
-
   # Add 1 field for each of 5 fields.
-  cat $provenance | filter-provenance python2 awk bash dash "$runtime_regex" |
+  cat $provenance | filter-provenance python2 awk bash dash "$OSH_YSH_OPT_REGEX" |
   while read fields; do
     echo 'fib 200 44' | xargs -n 3 -- echo "$fields"
   done
@@ -99,9 +99,7 @@ for_loop-tasks() {
   local provenance=$1
 
   # bumpleak segfaults on for_loop!  Probably because it runs out of memory
-  local runtime_regex='_bin/cxx-opt/(osh|ysh)'
-
-  cat $provenance | filter-provenance python2 awk bash dash "$runtime_regex" |
+  cat $provenance | filter-provenance python2 awk bash dash "$OSH_YSH_OPT_REGEX" |
   while read fields; do
     echo 'for_loop 50000 _' | xargs -n 3 -- echo "$fields"
   done
@@ -111,7 +109,7 @@ for_loop-tasks() {
 control_flow-tasks() {
   local provenance=$1
 
-  local runtime_regex='_bin/cxx-opt/osh'
+  local runtime_regex='_bin/cxx-opt(-sh)?/osh'
 
   cat $provenance | filter-provenance bash dash "$runtime_regex" |
   while read fields; do
@@ -349,27 +347,22 @@ task-all() {
   while read _ host host_hash runtime runtime_hash _ arg1 arg2; do
     local file
     case $runtime in 
-      (python2)
+      python2)
         file='py'
         ;;
-      (*sh | *osh*)
+      *sh | *osh*)
         file=$(basename $runtime)
         ;;
     esac
 
-    #log "runtime=$runtime args=$args"
-
     local stdout_filename="stdout-$file-$arg1-$(basename $arg2).txt"
-
-    # Measurement BUG!  This makes dash have the memory usage of bash!
-    # It's better to get argv into the shell.
 
     local -a cmd
     case $task_name in
       hello|fib|for_loop|control_flow)
         # Run it DIRECTLY, do not run $0.  Because we do NOT want to fork bash
         # then dash, because bash uses more memory.
-        args=(benchmarks/compute/$task_name.$(ext $runtime) "$arg1" "$arg2")
+        args=( benchmarks/compute/$task_name.$(ext $runtime) "$arg1" "$arg2" )
 
         case $runtime in
           # add -f flag
@@ -454,6 +447,8 @@ measure() {
 
   for_loop-all $provenance $host_job_id $out_dir
   control_flow-all $provenance $host_job_id $out_dir
+
+  #return
 
   # TODO: doesn't work because we would need duplicate logic in stage1
   #if test -n "${QUICKLY:-}"; then
@@ -682,6 +677,10 @@ EOF
 EOF
 }
 
+#
+# Run by hand
+#
+
 run-control-flow() {
   ### Reproduce OSH perf bug because of C++ exceptions
 
@@ -707,13 +706,10 @@ run-control-flow() {
   done
 }
 
+# TODO: could make this a proper benchmark
 word-split() {
-  ### Test word splitting perf
+  ### Test word splitting perf 
   export OILS_GC_STATS=${1:-}
-
-  # do_neither:  0.288 dash, 0.872 bash, 0.865 OSH
-  # do_continue: 0.310 dash, 1.065 bash, 2.313 OSH
-  # do_break:    0.222 dash, 0.712 bash, 1.430 OSH
 
   local osh=_bin/cxx-opt/osh
   #set -x
