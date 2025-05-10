@@ -9,10 +9,13 @@ To invoke this file, run the shell wrapper:
 from __future__ import print_function
 
 import sys
+import os
 import time
+import pexpect
+import pyte
 
 import harness
-from harness import expect_prompt, register
+from harness import expect_prompt, register, TerminalDimensionEnvVars
 
 from test.spec_lib import log
 
@@ -39,7 +42,7 @@ def bind_plain(sh):
 
     # There aren't many readline fns that will work nicely with pexpect (e.g., cursor-based fns)
     # Editing input seems like a reasonable choice
-    send_bind(sh, ''' '"\C-x\C-h": backward-delete-char' ''')
+    send_bind(sh, r''' '"\C-x\C-h": backward-delete-char' ''')
     expect_prompt(sh)
 
     sh.send("echo FOOM")
@@ -62,18 +65,16 @@ def bind_r_for_bind_x_osh_fn(sh):
     add_foo_fn(sh)
     expect_prompt(sh)
 
-    send_bind(sh, """-x '"\C-x\C-f": foo' """)
+    send_bind(sh, r"""-x '"\C-o": foo' """)
     expect_prompt(sh)
 
-    sh.sendcontrol('x')
-    sh.sendcontrol('f')
+    sh.sendcontrol('o')
     time.sleep(0.1)
     sh.expect("FOO")
 
-    send_bind(sh, '-r "\C-x\C-f" ')
+    send_bind(sh, r'-r "\C-o" ')
 
-    sh.sendcontrol('x')
-    sh.sendcontrol('f')
+    sh.sendcontrol('o')
     time.sleep(0.1)
 
     expect_prompt(sh)
@@ -87,11 +88,10 @@ def bind_x(sh):
     add_foo_fn(sh)
     expect_prompt(sh)
 
-    send_bind(sh, """-x '"\C-x\C-f": foo' """)
+    send_bind(sh, r"""-x '"\C-o": foo' """)
     expect_prompt(sh)
 
-    sh.sendcontrol('x')
-    sh.sendcontrol('f')
+    sh.sendcontrol('o')
     time.sleep(0.1)
 
     sh.expect("FOO")
@@ -104,14 +104,13 @@ def bind_x_runtime_envvar_vals(sh):
 
     sh.sendline("export BIND_X_VAR=foo")
 
-    send_bind(sh, """-x '"\C-x\C-f": echo $BIND_X_VAR' """)
+    send_bind(sh, r"""-x '"\C-o": echo $BIND_X_VAR' """)
     expect_prompt(sh)
 
     sh.sendline("export BIND_X_VAR=bar")
     expect_prompt(sh)
 
-    sh.sendcontrol('x')
-    sh.sendcontrol('f')
+    sh.sendcontrol('o')
     time.sleep(0.1)
 
     sh.expect("bar")
@@ -122,13 +121,12 @@ def bind_x_readline_line(sh):
     "test bind -x for correctly setting $READLINE_LINE for the cmd"
     expect_prompt(sh)
 
-    send_bind(sh, """-x '"\C-x\C-f": echo Current line is: $READLINE_LINE' """)
+    send_bind(sh, r"""-x '"\C-o": echo Current line is: $READLINE_LINE' """)
     expect_prompt(sh)
 
     sh.send('abcdefghijklmnopqrstuvwxyz')
 
-    sh.sendcontrol('x')
-    sh.sendcontrol('f')
+    sh.sendcontrol('o')
     time.sleep(0.1)
 
     # must not match any other output (like debug output or shell names)
@@ -141,6 +139,25 @@ def bind_x_readline_line(sh):
 
 
 @register(not_impl_shells=['dash', 'mksh'])
+def bind_x_set_readline_line_to_uppercase(sh):
+    """test bind -x for correctly using $READLINE_LINE changes"""
+    expect_prompt(sh)
+
+    send_bind(sh, r"""-x '"\C-o": READLINE_LINE=${READLINE_LINE^^}' """)
+    expect_prompt(sh)
+
+    sh.send('abcdefghijklmnopqrstuvwxyz')
+
+    sh.sendcontrol('o')
+    time.sleep(0.1)
+
+    sh.sendline('')
+
+    # Expect the uppercase command to be executed (and likely fail as 'command not found')
+    sh.expect("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+
+@register(not_impl_shells=['dash', 'mksh'])
 def bind_x_readline_point(sh):
     "test bind -x for correctly setting $READLINE_POINT for the cmd"
     cmd_str = 'abcdefghijklmnop'
@@ -148,14 +165,12 @@ def bind_x_readline_point(sh):
 
     expect_prompt(sh)
 
-    send_bind(sh,
-              """-x '"\C-x\C-f": echo Cursor point at: $READLINE_POINT' """)
+    send_bind(sh, r"""-x '"\C-o": echo Cursor point at: $READLINE_POINT' """)
     expect_prompt(sh)
 
     sh.send(cmd_str)
 
-    sh.sendcontrol('x')
-    sh.sendcontrol('f')
+    sh.sendcontrol('o')
     time.sleep(0.1)
 
     sh.expect("Cursor point at: " + str(expected_rl_point))
@@ -166,16 +181,71 @@ def bind_x_readline_point(sh):
     sh.expect("READLINE_POINT is unset")
 
 
+@register(not_impl_shells=['dash', 'mksh'], needs_dimensions=True)
+def bind_x_set_readline_point_to_insert(sh, test_params):
+    "test bind -x for correctly using $READLINE_POINT to overwrite the cmd"
+
+    failing = "failing"
+    echo_cmd = 'echo "this test is %s"' % failing
+    expected_cmd = 'echo "this test is no longer %s"' % failing
+    new_rl_point = len(echo_cmd) - len(failing) - 1
+
+    bind_cmd = r"""bind -x '"\C-y": READLINE_POINT=%d' """ % new_rl_point
+
+    try:
+        num_lines = test_params['num_lines']
+        num_columns = test_params['num_columns']
+    except KeyError:
+        raise RuntimeError("num_lines and num_columns must be passed in")
+
+    with TerminalDimensionEnvVars(num_lines, num_columns):
+        screen = pyte.Screen(num_columns, num_lines)
+        stream = pyte.Stream(screen)
+
+        # Need to echo, because we don't want just output
+        sh.setecho(True)
+
+        def _emulate_ansi_terminal(raw_output):
+            stream.feed(raw_output)
+
+            lines = screen.display
+            screen.reset()
+
+            return '\n'.join(lines)
+
+        # sh.sendline('stty -icanon')
+        # time.sleep(0.1)
+
+        sh.sendline(bind_cmd)
+        time.sleep(0.1)
+
+        sh.send(echo_cmd)
+        time.sleep(0.1)
+
+        sh.sendcontrol('y')
+        time.sleep(0.2)
+
+        sh.send("no longer ")
+        time.sleep(0.1)
+
+        sh.expect(pexpect.TIMEOUT, timeout=2)
+
+        screen_contents = _emulate_ansi_terminal(sh.before)
+        if expected_cmd not in screen_contents:
+            raise Exception(
+                f"Expected command '{expected_cmd}' not found in screen contents:\n{screen_contents}"
+            )
+
+
 @register(not_impl_shells=['dash', 'mksh'])
 def bind_x_unicode(sh):
     "test bind -x code for handling unicode"
     expect_prompt(sh)
 
-    send_bind(sh, """-x '"\C-x\C-f": echo 🅾️' """)
+    send_bind(sh, r"""-x '"\C-o": echo 🅾️' """)
     expect_prompt(sh)
 
-    sh.sendcontrol('x')
-    sh.sendcontrol('f')
+    sh.sendcontrol('o')
     time.sleep(0.1)
 
     sh.expect("🅾️")
@@ -186,7 +256,7 @@ def bind_u(sh):
     "test bind -u for unsetting all bindings to a fn"
     expect_prompt(sh)
 
-    send_bind(sh, "'\C-p: yank'")
+    send_bind(sh, r"'\C-p: yank'")
     expect_prompt(sh)
 
     send_bind(sh, "-u yank")
@@ -223,7 +293,7 @@ def bind_m(sh):
     send_bind(sh, "-u yank", "vi")
     expect_prompt(sh)
 
-    send_bind(sh, "'\C-p: yank'", "emacs")
+    send_bind(sh, r"'\C-p: yank'", "emacs")
     expect_prompt(sh)
 
     send_bind(sh, "-q yank", "vi")
@@ -243,7 +313,7 @@ def bind_f(sh):
     expect_prompt(sh)
 
     send_bind(sh, "-q downcase-word")
-    sh.expect('downcase-word can be invoked via.*"\\\C-o\\\C-s\\\C-h"')
+    sh.expect(r'downcase-word can be invoked via.*"\\C-o\\C-s\\C-h"')
 
 
 if __name__ == '__main__':

@@ -179,6 +179,17 @@ def DefineStateful(p):
         dest='results_file',
         default=None,
         help='Write table of results to this file.  Default is stdout.')
+    # 24x80 (lines X columns) is the pexpect/ptyprocess default
+    p.add_option('--num-lines',
+                 dest='num_lines',
+                 type='int',
+                 default=24,
+                 help='Number of lines to emulate in terminal')
+    p.add_option('--num-columns',
+                 dest='num_columns',
+                 type='int',
+                 default=80,
+                 help='Number of columns to emulate in terminal')
 
 
 def DefineShSpec(p):

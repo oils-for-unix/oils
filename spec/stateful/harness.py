@@ -11,6 +11,7 @@ from __future__ import print_function
 import optparse
 import os
 import pexpect
+import re
 import signal
 import sys
 
@@ -49,12 +50,13 @@ def stop_process__hack(name, sig_num=signal.SIGSTOP):
 CASES = []
 
 
-def register(skip_shells=None, not_impl_shells=None):
+def register(skip_shells=None, not_impl_shells=None, needs_dimensions=False):
     skip_shells = skip_shells or []
     not_impl_shells = not_impl_shells or []
 
     def decorator(func):
-        CASES.append((func.__doc__, func, skip_shells, not_impl_shells))
+        CASES.append((func.__doc__, func, skip_shells, not_impl_shells,
+                      needs_dimensions))
         return func
 
     return decorator
@@ -67,14 +69,51 @@ class Result(object):
     FAIL = 4
 
 
+class TerminalDimensionEnvVars:
+    """
+    Context manager for setting and unsetting LINES and COLUMNS environment variables.
+    """
+
+    def __init__(self, lines: int, columns: int):
+        self.lines = lines
+        self.columns = columns
+        self.original_lines = None
+        self.original_columns = None
+
+    def __enter__(self):
+        # Save original values
+        self.original_lines = os.environ.get('LINES')
+        self.original_columns = os.environ.get('COLUMNS')
+
+        # Set new values
+        os.environ['LINES'] = str(self.lines)
+        os.environ['COLUMNS'] = str(self.columns)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # Restore original values
+        if self.original_lines is None:
+            del os.environ['LINES']
+        else:
+            os.environ['LINES'] = self.original_lines
+
+        if self.original_columns is None:
+            del os.environ['COLUMNS']
+        else:
+            os.environ['COLUMNS'] = self.original_columns
+
+
 class TestRunner(object):
 
-    def __init__(self, num_retries, pexpect_timeout, verbose):
+    def __init__(self, num_retries, pexpect_timeout, verbose, num_lines,
+                 num_columns):
         self.num_retries = num_retries
         self.pexpect_timeout = pexpect_timeout
         self.verbose = verbose
+        self.num_lines = num_lines
+        self.num_columns = num_columns
 
-    def RunOnce(self, shell_path, shell_label, func):
+    def RunOnce(self, shell_path, shell_label, func, test_params={}):
         sh_argv = []
         if shell_label in ('bash', 'osh'):
             sh_argv.extend(['--rcfile', '/dev/null'])
@@ -85,23 +124,30 @@ class TestRunner(object):
         #print(sh_argv)
 
         # Python 3: encoding required
-        sh = pexpect.spawn(shell_path,
-                           sh_argv,
-                           encoding='utf-8',
-                           timeout=self.pexpect_timeout)
+        sh = pexpect.spawn(
+            shell_path,
+            sh_argv,
+            encoding="utf-8",
+            dimensions=(self.num_lines, self.num_columns),
+            # Generally don't want local echo of input, it gets confusing fast.
+            echo=False,
+            timeout=self.pexpect_timeout,
+        )
 
         sh.shell_label = shell_label  # for tests to use
-
-        # Generally don't want local echo, it gets confusing fast.
-        sh.setecho(False)
 
         if self.verbose:
             sh.logfile = sys.stdout
 
         ok = True
         try:
-            func(sh)
-        except Exception as e:
+            # Support tests that need extra params (like dimensions), without
+            # impacting existing tests
+            if len(test_params) > 0:
+                func(sh, test_params)
+            else:
+                func(sh)
+        except Exception:
             import traceback
             traceback.print_exc(file=sys.stderr)
             return Result.FAIL
@@ -113,8 +159,8 @@ class TestRunner(object):
         if ok:
             return Result.OK
 
-    def RunCase(self, shell_path, shell_label, func):
-        result = self.RunOnce(shell_path, shell_label, func)
+    def RunCase(self, shell_path, shell_label, func, test_params={}):
+        result = self.RunOnce(shell_path, shell_label, func, test_params)
 
         if result == Result.OK:
             return result, -1  # short circuit for speed
@@ -125,7 +171,8 @@ class TestRunner(object):
                 log('\tFAILED first time: Retrying 4 times')
                 for i in range(self.num_retries):
                     log('\tRetry %d of %d', i + 1, self.num_retries)
-                    result = self.RunOnce(shell_path, shell_label, func)
+                    result = self.RunOnce(shell_path, shell_label, func,
+                                          test_params)
                     if result == Result.OK:
                         num_success += 1
             else:
@@ -141,12 +188,17 @@ class TestRunner(object):
 
     def RunCases(self, cases, case_predicate, shell_pairs, result_table,
                  flaky):
-        for case_num, (desc, func, skip_shells,
-                       not_impl_shells) in enumerate(cases):
+        for case_num, (desc, func, skip_shells, not_impl_shells,
+                       needs_dimensions) in enumerate(cases):
             if not case_predicate(case_num, desc):
                 continue
 
             result_row = [case_num]
+
+            test_params = {}
+            if needs_dimensions:
+                test_params['num_lines'] = self.num_lines
+                test_params['num_columns'] = self.num_columns
 
             for shell_label, shell_path in shell_pairs:
                 skip_str = ''
@@ -172,7 +224,8 @@ class TestRunner(object):
                     flaky[case_num, shell_label] = -1
                     continue
 
-                result, retries = self.RunCase(shell_path, shell_label, func)
+                result, retries = self.RunCase(shell_path, shell_label, func,
+                                               test_params)
                 flaky[case_num, shell_label] = retries
 
                 result_row.append(result)
@@ -337,7 +390,7 @@ def main(argv):
 
     # List test cases and return
     if opts.do_list:
-        for i, (desc, _, _, _) in enumerate(CASES):
+        for i, (desc, *_) in enumerate(CASES):
             print('%d\t%s' % (i, desc))
         return
 
@@ -363,7 +416,8 @@ def main(argv):
     result_table = []  # each row is a list
     flaky = {}  # (case_num, shell) -> (succeeded, attempted)
 
-    r = TestRunner(opts.num_retries, opts.pexpect_timeout, opts.verbose)
+    r = TestRunner(opts.num_retries, opts.pexpect_timeout, opts.verbose,
+                   opts.num_lines, opts.num_columns)
     r.RunCases(CASES, case_predicate, shell_pairs, result_table, flaky)
 
     if opts.results_file:
