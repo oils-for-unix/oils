@@ -87,7 +87,4 @@ download-mingw() {
     https://sourceforge.net/projects/mingw/files/Installer/mingw-get-setup.exe/download -O mingw-get-setup.exe
 }
 
-# May be easier
-# https://jmeubank.github.io/tdm-gcc/download/
-
 "$@"
