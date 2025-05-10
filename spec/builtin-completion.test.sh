@@ -489,21 +489,21 @@ foo'bar
 cd $REPO_ROOT
 compgen -W 'one two three'
 echo --
-compgen -W 'w1 w2 three' -A directory w
+compgen -W 'v1 v2 three' -A directory v
 echo --
-compgen -A directory -W 'w1 w2 three' w  # order doesn't matter
+compgen -A directory -W 'v1 v2 three' v  # order doesn't matter
 ## STDOUT:
 one
 two
 three
 --
-web
-w1
-w2
+vendor
+v1
+v2
 --
-web
-w1
-w2
+vendor
+v1
+v2
 ## END
 
 #### compgen -W evaluates code in $()
