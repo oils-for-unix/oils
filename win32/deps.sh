@@ -85,4 +85,28 @@ run-create-process() {
   wine $DIR/create-process.exe
 }
 
+test-powershell() {
+  # this doesn't work?  It's a stub?
+  wine cmd /c 'powershell.exe -Command "Write-Host hello from powershell"'
+}
+
+test-pipelines() {
+  #wine cmd /c 'dir win32/demo_asyncio.py'
+
+  echo 'UNIX SUBPROCESS'
+  win32/demo_subprocess.py
+  echo
+
+  echo 'UNIX ASYNCIO'
+  win32/demo_asyncio.py
+  echo
+
+  echo 'WIN32 SUBPROCESS'
+  wine cmd /c 'python.exe win32/demo_subprocess.py'
+  echo
+
+  echo 'WIN32 ASYNCIO'
+  wine cmd /c 'python.exe win32/demo_asyncio.py'
+}
+
 "$@"
