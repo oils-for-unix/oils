@@ -401,7 +401,7 @@ oil-python-symbols     metrics/source-code.sh oil-python-symbols  -
 opyc                   test/opyc.sh soil-run                      -
 opy-count-lines        opy/soil.sh count-lines                    -
 test-gold              opy/soil.sh test-gold                      -
-build-oil-repo         opy/soil.sh build-oil-repo                 -
+build-oils-repo        opy/soil.sh build-oils-repo                 -
 regtest-compile        opy/soil.sh regtest-compile                -
 EOF
 

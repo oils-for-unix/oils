@@ -50,6 +50,7 @@ oil-python-sources() {
     -name Python-2.7.13 -a -prune -o \
     -name py-yajl -a -prune -o \
     -name spec -a -prune -o \
+    -name win32 -a -prune -o \
     -name '*.py' -a -printf "$fmt"
 
   # TODO: move type-annotated files to pea/, and get rid of py3_parse.py hack

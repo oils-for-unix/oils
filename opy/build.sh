@@ -131,7 +131,7 @@ EOF
 # TODO:
 # - What about the standard library?  The whole app bundle should be compiled
 # with OPy.
-oil-repo() {
+oils-repo() {
   local files=( $(oil-python-sources $REPO_ROOT) )  # array
 
   _compile-tree $REPO_ROOT _tmp/repo-with-cpython/ ccompile "${files[@]}"

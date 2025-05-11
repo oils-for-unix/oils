@@ -17,9 +17,9 @@ test-gold() {
   popd
 }
 
-build-oil-repo() {
+build-oils-repo() {
   pushd opy
-  ./build.sh oil-repo 
+  ./build.sh oils-repo 
   popd
 }
 
