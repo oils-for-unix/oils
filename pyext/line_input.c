@@ -979,25 +979,38 @@ Print all bindings for shell commands in the current keymap.");
 
 static void 
 debug_print(const char *fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-    printf("[osh_execute] ");
-    vprintf(fmt, args);
-    printf("\n");
-    va_end(args);
+    // va_list args;
+    // va_start(args, fmt);
+    // printf("[osh_execute] ");
+    // vprintf(fmt, args);
+    // printf("\n");
+    // va_end(args);
 }
 
 static void 
-make_line_if_needed(char *new_line)
+update_line_if_needed(char *possible_new_line)
 {
-    if (strcmp(new_line, rl_line_buffer) != 0) {
+    if (strcmp(possible_new_line, rl_line_buffer) != 0) {
         rl_point = rl_end;
 
         rl_add_undo(UNDO_BEGIN, 0, 0, 0);
         rl_delete_text(0, rl_point);
-        rl_point = rl_end = rl_mark = 0;
-        rl_insert_text(new_line);
+        rl_point = 0;
+        rl_end = 0;
+        rl_mark = 0;
+        rl_insert_text(possible_new_line);
         rl_add_undo(UNDO_END, 0, 0, 0);
+    }
+}
+
+static void
+update_cursor_if_needed(int post_point) {
+    if (post_point != rl_point) {
+        rl_point = post_point;
+        if (rl_point > rl_end)
+            rl_point = rl_end;
+        else if (rl_point < 0)
+            rl_point = 0;
     }
 }
 
@@ -1127,11 +1140,11 @@ on_bind_shell_command_hook(int count /* unused */, int key /* unused */) {
         PyGILState_STATE gilstate;
     #endif
     int cmd_return_code;
-    char *line_buffer;
-    char *point;
+    char *post_line_buffer;
+    int post_point;
     int result;
 
-    debug_print("Starting shell command execution");
+    debug_print("\nStarting shell command execution");
 
 #ifdef WITH_THREAD
     gilstate = PyGILState_Ensure();
@@ -1155,8 +1168,8 @@ on_bind_shell_command_hook(int count /* unused */, int key /* unused */) {
     clear_current_line(use_ce);
 
     // debug_print("Preparing to execute shell command: '%s'", cmd);
-    // debug_print("rl_line_buffer: '%s'", rl_line_buffer);
-    // debug_print("rl_point: '%i'", rl_point);
+    // debug_print("Pre line buffer: '%s'", rl_line_buffer);
+    // debug_print("Pre point: '%i'", rl_point);
 
     r = PyObject_CallFunction(bind_shell_command_hook,
                             "ssi", cmd, rl_line_buffer, rl_point);
@@ -1165,21 +1178,18 @@ on_bind_shell_command_hook(int count /* unused */, int key /* unused */) {
         result = 1;
         goto cleanup;
     }
-    if (!PyArg_ParseTuple(r, "iss", &cmd_return_code, &line_buffer, &point)) {
-        PyErr_SetString(PyExc_ValueError, "Expected (int, str, str) tuple from bind_shell_command_hook");
+    if (!PyArg_ParseTuple(r, "isi", &cmd_return_code, &post_line_buffer, &post_point)) {
+        PyErr_SetString(PyExc_ValueError, "Expected (int, str, int) tuple from bind_shell_command_hook");
         result = 1;
         goto cleanup;
     }
 
     // debug_print("Command return code: %d", cmd_return_code);
-    // debug_print("New line buffer: '%s'", line_buffer);
-    // debug_print("New point: '%s'", point);
+    // debug_print("Post line buffer: '%s'", post_line_buffer);
+    // debug_print("Post point: %d", post_point);
 
-    // if (save_readline_state() != 1 || restore_readline_state() != 1) {
-    //     PyErr_SetString(PyExc_RuntimeError, "Failed to update readline state");
-    //     result = 1;
-    //     goto cleanup;
-    // }
+    update_line_if_needed(post_line_buffer);
+    update_cursor_if_needed(post_point);
 
 
     /* Redraw the prompt */

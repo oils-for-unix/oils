@@ -153,7 +153,6 @@ def bind_x_set_readline_line_to_uppercase(sh):
 
     sh.sendline('')
 
-    # Expect the uppercase command to be executed (and likely fail as 'command not found')
     sh.expect("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 

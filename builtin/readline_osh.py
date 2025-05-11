@@ -5,19 +5,18 @@ readline_osh.py - Builtins that are dependent on GNU readline.
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.runtime_asdl import cmd_value
+from _devbuild.gen.runtime_asdl import cmd_value, scope_e
 from _devbuild.gen.syntax_asdl import loc
-from _devbuild.gen.value_asdl import value_e
-from core import pyutil
-from core import vm
+from _devbuild.gen.value_asdl import value, value_e, value_str
+from core import error, pyutil, state, vm
 from core.error import e_usage
-from frontend import flag_util
+from frontend import flag_util, location
 from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log
 from osh import cmd_eval
 
-from typing import Optional, Tuple, Any, TYPE_CHECKING
+from typing import Optional, Tuple, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from builtin.meta_oils import Eval
     from frontend.py_readline import Readline
@@ -49,12 +48,14 @@ class ctx_Keymap(object):
 class BindXCallback(object):
     """A callable we pass to readline for executing shell commands."""
 
-    def __init__(self, eval):
-        # type: (Eval) -> None
+    def __init__(self, eval, mem, errfmt):
+        # type: (Eval, Mem, ui.ErrorFormatter) -> None
         self.eval = eval
+        self.mem = mem
+        self.errfmt = errfmt
 
     def __call__(self, cmd, line_buffer, point):
-        # type: (str, str, int) -> Tuple[int, str, str]
+        # type: (str, str, int) -> Tuple[int, str, int]
         """Execute a shell command through the evaluator.
 
         Args:
@@ -62,33 +63,61 @@ class BindXCallback(object):
           line_buffer: The current line buffer
           point: The current cursor position
         """
-        print("Setting READLINE_LINE to: %s" % line_buffer)
-        print("Setting READLINE_POINT to: %s" % point)
-        print("Executing cmd: %s" % cmd)
+        # print("Initializing READLINE_LINE to: '%s'" % line_buffer)
+        # print("Initializing READLINE_POINT to: %s" % point)
+        # print("Executing cmd: %s" % cmd)
 
-        # TODO: add READLINE_* env vars later
-        # assert isinstance(line_buffer, str)
-        # self.mem.SetNamed(location.LName("READLINE_LINE"),
-        #                  value.Str(line_buffer),
-        #                  scope_e.GlobalOnly,
-        #                  flags=SetExport)
+        # Set READLINE_* env vars so they're available to the command being executed
+
+        state.ExportGlobalString(self.mem, "READLINE_LINE", line_buffer)
+        state.ExportGlobalString(self.mem, "READLINE_POINT", str(point))
 
         # TODO: refactor out shared code from Eval, cache parse tree?
 
         cmd_val = cmd_eval.MakeBuiltinArgv([cmd])
         status = self.eval.Run(cmd_val)
+        
+        # Retrieve READLINE_* env vars for comparison w/ before
+        readline_line = self._get_rl_env_var('READLINE_LINE')
+        # print("New %s: %s" % ('READLINE_LINE', readline_line))
+        readline_point = self._get_rl_env_var('READLINE_POINT')
+        # print("New %s: %s" % ('READLINE_POINT', readline_point))
 
-        return (status, line_buffer, str(point))
+        post_line_buffer = readline_line if readline_line is not None else line_buffer
+        post_point = int(readline_point) if readline_point is not None else point
+
+        # print("%s: %s" % ('post_line_buffer', post_line_buffer))
+        # print("%s: %d" % ('post_point', post_point))
+        
+        # Unset the READLINE_LINE and READLINE_POINT environment variables before returning
+        self.mem.Unset(location.LName('READLINE_LINE'), scope_e.GlobalOnly)
+        self.mem.Unset(location.LName('READLINE_POINT'), scope_e.GlobalOnly)
+
+        return (status, post_line_buffer, post_point)
+    
+    def _get_rl_env_var(self, envvar_name):
+        # type: (str) -> Optional[str]
+        
+        envvar_val = self.mem.GetValue(envvar_name, scope_e.GlobalOnly)
+        if envvar_val.tag() == value_e.Str:
+            return cast(value.Str, envvar_val).s
+        elif envvar_val.tag() == value_e.Undef:
+            return None
+        else:
+            # bash has silent weird failures if you set the readline env vars
+            # to something besides a string, but I think an exception is better
+            error_msg = 'expected Str, got %s' % value_str(envvar_val.tag())
+            self.errfmt.Print_(error_msg, loc.Missing)
+            raise error.TypeErr(envvar_val, error_msg, loc.Missing)
 
 
 class Bind(vm._Builtin):
     """Interactive interface to readline bindings"""
 
-    def __init__(self, readline, errfmt, mem, bindx_cb):
-        # type: (Optional[Readline], ui.ErrorFormatter, Mem, BindXCallback) -> None
+    def __init__(self, readline, errfmt, bindx_cb):
+        # type: (Optional[Readline], ui.ErrorFormatter, BindXCallback) -> None
         self.readline = readline
         self.errfmt = errfmt
-        self.mem = mem
         self.exclusive_flags = ["q", "u", "r", "x", "f"]
         self.bindx_cb = bindx_cb
         if self.readline:
