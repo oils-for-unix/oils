@@ -1,6 +1,6 @@
 ## compare_shells: dash bash mksh zsh
-## oils_failures_allowed: 2
-## oils_cpp_failures_allowed: 3
+## oils_failures_allowed: 3
+## oils_cpp_failures_allowed: 5
 
 #### cd and $PWD
 cd /
@@ -320,7 +320,6 @@ OK
 OK
 ## END
 
-
 #### unset PWD; cd /tmp is allowed (regression)
 
 unset PWD; cd /tmp
@@ -329,6 +328,29 @@ pwd
 ## STDOUT:
 /tmp
 ## END
+
+#### CDPATH is respected
+
+mkdir -p /tmp/spam/foo /tmp/eggs/foo
+
+CDPATH='/tmp/spam:/tmp/eggs'
+
+cd foo
+echo status=$?
+pwd
+
+## STDOUT:
+/tmp/spam/foo
+status=0
+/tmp/spam/foo
+## END
+
+# doesn't print the dir
+## BUG zsh STDOUT:
+status=0
+/tmp/spam/foo
+## END
+
 
 #### Change directory in non-shell parent process (make or Python)
 
@@ -371,22 +393,79 @@ echo "${new_dir##$old_dir}"
 /cpan/Encode/Byte
 ## END
 
+#### What happens when inherited $PWD and current dir disagree?
+
+DIR=/tmp/osh-spec-cd
+mkdir -p $DIR
+cd $DIR
+
+old_dir=$(pwd)
+
+mkdir -p cpan/Encode/Byte
+
+# Simulate make changing the dir
+wrapped_chdir() {
+  #set -- $SH -c 'echo BEFORE; pwd; echo CD; cd Byte; echo AFTER; pwd'
+
+  # disagreement before we gert here
+  set -- $SH -c '
+echo "PWD = $PWD"; pwd
+cd Byte; echo cd=$?
+echo "PWD = $PWD"; pwd
+'
+
+  # strace comes out the same - one getcwd() and one chdir()
+  #set -- strace -e 'getcwd,chdir' "$@"
+
+  python2 -c '
+from __future__ import print_function
+import os, sys, subprocess
+
+argv = sys.argv[1:]
+print("Python argv = %r" % argv, file=sys.stderr)
+
+os.chdir("cpan/Encode")
+print("Python PWD = %r" % os.getenv("PWD"), file=sys.stdout)
+sys.stdout.flush()
+
+subprocess.check_call(argv)
+' "$@"
+}
+
+#unset PWD
+wrapped_chdir
+
+## STDOUT:
+Python PWD = '/tmp/osh-spec-cd'
+PWD = /tmp/osh-spec-cd/cpan/Encode
+/tmp/osh-spec-cd/cpan/Encode
+cd=0
+PWD = /tmp/osh-spec-cd/cpan/Encode/Byte
+/tmp/osh-spec-cd/cpan/Encode/Byte
+## END
+
+## BUG mksh STDOUT:
+Python PWD = None
+PWD = /tmp/osh-spec-cd/cpan/Encode
+/tmp/osh-spec-cd/cpan/Encode
+cd=0
+PWD = /tmp/osh-spec-cd/cpan/Encode/Byte
+/tmp/osh-spec-cd/cpan/Encode/Byte
+## END
+
 #### getcwd() syscall is not made
 
 # so C++ leak sanitizer  doesn't print to stderr
 export ASAN_OPTIONS='detect_leaks=0'
 
-strace -e getcwd -- $SH -c 'echo hi' 2> err.txt
+strace -e getcwd -- $SH -c 'echo hi; pwd; echo $PWD' 1> /dev/null 2> err.txt
 
 wc -l err.txt
-
 #cat err.txt
 
 ## STDOUT:
-hi
 1 err.txt
 ## END
 ## BUG mksh STDOUT:
-hi
 2 err.txt
 ## END
