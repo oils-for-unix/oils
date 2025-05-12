@@ -1,5 +1,6 @@
-## oils_failures_allowed: 1
 ## compare_shells: dash bash mksh zsh
+## oils_failures_allowed: 2
+## oils_cpp_failures_allowed: 3
 
 #### cd and $PWD
 cd /
@@ -329,5 +330,63 @@ pwd
 /tmp
 ## END
 
+#### Change directory in non-shell parent process (make or Python)
 
+# inspired by Perl package bug
 
+old_dir=$(pwd)
+
+mkdir -p cpan/Encode/Byte
+
+# Simulate make changing the dir
+wrapped_chdir() {
+  #set -- $SH -c 'echo BEFORE; pwd; echo CD; cd Byte; echo AFTER; pwd'
+
+  set -- $SH -c 'cd Byte; pwd'
+  # strace comes out the same - one getcwd() and one chdir()
+  #set -- strace -e 'getcwd,chdir' "$@"
+
+  python2 -c '
+from __future__ import print_function
+import os, sys, subprocess
+
+argv = sys.argv[1:]
+print("Python PWD = %r" % os.getenv("PWD"), file=sys.stderr)
+print("Python argv = %r" % argv, file=sys.stderr)
+
+os.chdir("cpan/Encode")
+subprocess.check_call(argv)
+' "$@"
+}
+
+#wrapped_chdir
+new_dir=$(wrapped_chdir)
+
+#echo $old_dir
+
+# Make the test insensitive to absolute paths
+echo "${new_dir##$old_dir}"
+
+## STDOUT:
+/cpan/Encode/Byte
+## END
+
+#### getcwd() syscall is not made
+
+# so C++ leak sanitizer  doesn't print to stderr
+export ASAN_OPTIONS='detect_leaks=0'
+
+strace -e getcwd -- $SH -c 'echo hi' 2> err.txt
+
+wc -l err.txt
+
+#cat err.txt
+
+## STDOUT:
+hi
+1 err.txt
+## END
+## BUG mksh STDOUT:
+hi
+2 err.txt
+## END

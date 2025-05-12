@@ -135,11 +135,11 @@ class Cd(vm._Builtin):
         # Save a copy
         old_pwd = self.mem.pwd
 
-        # Calculate new directory, chdir() to it, then set PWD to it.  NOTE: We
-        # can't call posix.getcwd() because it can raise OSError if the
-        # directory was removed (ENOENT.)
-        abspath = os_path.join(old_pwd,
-                               dest_dir)  # make it absolute, for cd ..
+        # Calculate absolute path, e.g. for 'cd ..'
+        # We chdir() to it, then set PWD to it.
+        # We can't call posix.getcwd() because it can raise OSError if the
+        # directory was removed (ENOENT)
+        abspath = os_path.join(old_pwd, dest_dir)
         if arg.P:
             # -P means resolve symbolic links, then process '..'
             real_dest_dir = libc.realpath(abspath)
@@ -148,6 +148,7 @@ class Cd(vm._Builtin):
             # (But realpath afterward isn't correct?)
             real_dest_dir = os_path.normpath(abspath)
 
+        #log('real_dest_dir %r', real_dest_dir)
         err_num = pyos.Chdir(real_dest_dir)
         if err_num != 0:
             self.errfmt.Print_("cd %r: %s" %
@@ -321,9 +322,9 @@ class Dirs(vm._Builtin):
 
 class Pwd(vm._Builtin):
     """
-  NOTE: pwd doesn't just call getcwd(), which returns a "physical" dir (not a
-  symlink).
-  """
+    NOTE: pwd doesn't just call getcwd(), which returns a "physical" dir (not a
+    symlink).
+    """
 
     def __init__(self, mem, errfmt):
         # type: (state.Mem, ui.ErrorFormatter) -> None

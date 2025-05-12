@@ -2002,7 +2002,13 @@ class Mem(object):
 
     def SetNamed(self, lval, val, which_scopes, flags=0):
         # type: (LeftName, Optional[value_t], scope_t, int) -> None
-        """Set the value of a named variable."""
+        """Set the value of a named variable.
+
+        TODO: Clear up semantics when 'val is None'.
+
+        This can be used to FLIP flags, while NOT changing the variable.  Or it
+        can also be used to initialize?
+        """
         if flags & SetNameref or flags & ClearNameref:
             # declare -n ref=x  # refers to the ref itself
             cell, var_frame = self._ResolveNameOnly(lval.name, which_scopes)
