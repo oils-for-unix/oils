@@ -694,15 +694,16 @@ syntaxes for such values:
 
    This is similar to `$(echo $PWD)` in shell.
 
-2. In [command mode][command-vs-expression-mode], an argument to a user-defined
-   proc is also of type `Command`:
+2. In [command mode][command-vs-expression-mode], a YSH [block-arg][] is 
+   also of type `Command`:
 
        myproc { 
          echo $PWD
        }
 
-   This is similar to `{ echo $PWD; }` in shell.  This syntax is a YSH
-   [block-arg][].
+   This is similar to `{ echo $PWD; }` in shell ([sh-block][])
+
+[brace-group]: chap-cmd-lang.html#sh-block
 
 ---
 
@@ -710,10 +711,9 @@ The `Command` value is bound to a stack frame.  This frame will be pushed as an
 "enclosed frame" when the command is evaluated.
 
 [block-expr]: chap-expr-lang.html#block-expr
+[block-arg]: chap-cmd-lang.html#block-arg
 
 [command-vs-expression-mode]: ../command-vs-expression-mode.html
-
-[block-arg]: chap-cmd-lang.html#block-arg
 
 ### sourceCode
 
@@ -768,16 +768,14 @@ syntaxes for such values:
 
    The syntax `^"-$0-"` is short for `^["-$0-"]`.  You can omit the brackets.
 
-1. In [command mode][command-vs-expression-mode], an argument to a user-defined
-   proc is also of type `Expr`:
+1. In [command mode][command-vs-expression-mode], a YSH [lazy-expr-arg][] is
+   also of type `Expr`:
 
        ls | my-where [size > 42]
 
    This is a shortcut for:
 
        ls | my-where (^[size > 42])  # same as syntax 1
-
-   This syntax is a YSH [lazy-expr-arg][].
 
 [lazy-expr-arg]: chap-cmd-lang.html#lazy-expr-arg
 

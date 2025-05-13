@@ -199,8 +199,31 @@ Also see [the Unicode doc](../unicode.html).
 
 ### Closures
 
-- [block-arg](chap-cmd-lang.html#block-arg)
-- Maybe: proc, func
+A **closure** is a way of bundling data and code.  The idea originated in Lisp,
+and is widely used in JavaScript.
+
+YSH behaves much like JavaScript.  Exception: YSH has flat function scope,
+**except** for the body of `for` loops.
+
+- Types that are closures:
+  - [Command][] and [Expr][]
+  - [Proc][] and [Func][]
+- [ysh-for][] creates new frames, which may be captured by any of the 4 closure
+  types
+  - This is enabled with `shopt --set for_loop_frames`, part of option group
+    `ysh:all`
+- [var][] and [setvar][] determine if you're creating a new variable, or
+  modifying one that's "closed over"
+
+[Command]: chap-type-method.html#Command
+[Expr]: chap-type-method.html#Expr
+[Proc]: chap-type-method.html#Proc
+[Func]: chap-type-method.html#Func
+
+[ysh-for]: chap-cmd-lang.html#ysh-for
+
+[var]: chap-ysh-cmd.html#var
+[setvar]: chap-ysh-cmd.html#setvar
 
 ### Funcs
 
