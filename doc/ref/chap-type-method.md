@@ -974,7 +974,7 @@ Run a Command, and return its `stdout` string, `stderr` string, and integer
 `status`.
 
     var c = ^(echo out; echo err >&2)
-    var r = io.captureAll(c)  # => { stdout: "out", stderr: "err", status: 0 }
+    var r = io.captureAll(c)  # => {stdout: b'out\n', stderr: b'err\n', status: 0}
 
 It's similar to `io.captureStdout`, but returns more info.
 
