@@ -459,7 +459,7 @@ update-src-versions() {
   # Update tarball names, etc.
   _sed-ext \
     "s/[0-9]+\.[0-9]+\.[a-z0-9]+/$OIL_VERSION/g" \
-    doc/release-*.md INSTALL.txt INSTALL-old.txt
+    doc/release-*.md INSTALL.txt INSTALL-old.txt README-native.txt
 
   # Update /release/0.8.4/ URL, etc.
   _sed-ext \
