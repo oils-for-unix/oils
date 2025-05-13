@@ -248,22 +248,28 @@ def InitVarsAfterEnv(mem, mutable_opts):
 
         # NOTE: bash also has BASHOPTS
 
+        our_pwd = None  # type: Optional[str]
         val = mem.GetValue('PWD')
-        if val.tag() == value_e.Undef:
-            state.SetGlobalString(mem, 'PWD', GetWorkingDir())
+        if val.tag() == value_e.Str:
+            env_pwd = cast(value.Str, val).s
+            # POSIX rule: PWD is inherited if it's an absolute path that corresponds to '.'
+            if env_pwd.startswith('/') and pyos.IsSameFile(env_pwd, '.'):
+                our_pwd = env_pwd
+
+        # POSIX: Otherwise, recalculate it
+        if our_pwd is None:
+            our_pwd = GetWorkingDir()
+
         # It's EXPORTED, even if it's not set.  bash and dash both do this:
         #     env -i -- dash -c env
         mem.SetNamed(location.LName('PWD'),
-                     None,
+                     value.Str(our_pwd),
                      scope_e.GlobalOnly,
                      flags=state.SetExport)
 
         # Set a MUTABLE GLOBAL that's SEPARATE from $PWD.  It's used by the 'pwd'
         # builtin, and it can't be modified by users.
-        val = mem.GetValue('PWD')
-        assert val.tag() == value_e.Str, val
-        pwd = cast(value.Str, val).s
-        mem.SetPwd(pwd)
+        mem.SetPwd(our_pwd)
 
 
 def InitInteractive(mem, sh_files, lang):

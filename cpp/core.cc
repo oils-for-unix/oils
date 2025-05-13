@@ -274,7 +274,6 @@ List<int>* WaitForReading(List<int>* fd_list) {
   return ret;
 }
 
-
 IOError_OSError* FlushStdout() {
   // Flush libc buffers
   if (::fflush(stdout) != 0) {
@@ -290,6 +289,23 @@ Tuple2<BigStr*, int>* MakeDirCacheKey(BigStr* path) {
   }
 
   return Alloc<Tuple2<BigStr*, int>>(path, st.st_mtime);
+}
+
+bool IsSameFile(BigStr* path1, BigStr* path2) {
+  struct stat st1, st2;
+  if (::stat(path1->data(), &st1)) {
+    return false;
+  }
+  if (::stat(path2->data(), &st2)) {
+    return false;
+  }
+  if (st1.st_dev != st2.st_dev) {
+    return false;
+  }
+  if (st1.st_ino != st2.st_ino) {
+    return false;
+  }
+  return true;
 }
 
 Tuple2<int, void*> PushTermAttrs(int fd, int mask) {

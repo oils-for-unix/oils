@@ -89,6 +89,8 @@ void PopTermAttrs(int fd, int orig_local_modes, void* term_attrs);
 
 Tuple2<BigStr*, int>* MakeDirCacheKey(BigStr* path);
 
+bool IsSameFile(BigStr* path1, BigStr* path2);
+
 }  // namespace pyos
 
 namespace pyutil {

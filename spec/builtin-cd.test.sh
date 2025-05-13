@@ -1,6 +1,6 @@
 ## compare_shells: dash bash mksh zsh
 ## oils_failures_allowed: 3
-## oils_cpp_failures_allowed: 5
+## oils_cpp_failures_allowed: 3
 
 #### cd and $PWD
 cd /
@@ -453,7 +453,11 @@ PWD = /tmp/osh-spec-cd/cpan/Encode/Byte
 /tmp/osh-spec-cd/cpan/Encode/Byte
 ## END
 
-#### getcwd() syscall is not made
+#### Survey of getcwd() syscall
+
+# This is not that important -- see core/sh_init.py
+# Instead of verifying that stat('.') == stat(PWD), which is two sycalls,
+# OSH just calls getcwd() unconditionally.
 
 # so C++ leak sanitizer  doesn't print to stderr
 export ASAN_OPTIONS='detect_leaks=0'

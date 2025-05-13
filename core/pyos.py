@@ -294,3 +294,24 @@ def MakeDirCacheKey(path):
     directory accesses."""
     st = posix.stat(path)
     return (path, int(st.st_mtime))
+
+
+def IsSameFile(path1, path2):
+    # type: (str, str) -> bool
+
+    try:
+        st1 = posix.stat(path1)
+    except OSError:
+        return False
+
+    try:
+        st2 = posix.stat(path2)
+    except OSError:
+        return False
+
+    if st1.st_dev != st2.st_dev:
+        return False
+    if st1.st_ino != st2.st_ino:
+        return False
+
+    return True
