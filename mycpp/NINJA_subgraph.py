@@ -8,7 +8,7 @@ import os
 import sys
 
 from build.ninja_lib import (log, mycpp_binary, COMPILERS_VARIANTS,
-                             OTHER_VARIANTS)
+                             OTHER_VARIANTS, SHWRAP)
 
 _ = log
 
@@ -161,13 +161,46 @@ EXAMPLES_PY = {
     'parse': [],
 }
 
+EXAMPLES_DEPS = {
+    'parse': [
+        '//mycpp/runtime',
+        '//mycpp/examples/expr.asdl',
+        '//cpp/data_lang',
+    ],
+}
 
-def TranslatorSubgraph(ru, translator, ex):
+# mycpp-souffle only has three variants for now
+SOUFFLE_MATRIX = [
+    ('cxx', 'opt'),  # for benchmarks
+    #('cxx', 'opt-sh'),  # for benchmarks
+    ('cxx', 'asan'),  # need this for running the examples in CI
+    ('cxx', 'asan+gcalways'),
+]
+MYPY_PATH = '$NINJA_REPO_ROOT/mycpp:$NINJA_REPO_ROOT/pyext'
+
+# TODO Next:
+# - name/ex -> py_module
+#   - preamble should be a param
+# - TRANSLATE_FILES should be py_sources
+# - clean up translator arg to wrap-cc, which includes yaks_main!
+
+
+def TranslatorSubgraph(ru,
+                       translator,
+                       ex,
+                       mypy_path,
+                       phony_prefix=None,
+                       matrix=None,
+                       deps=None):
     """Create rules for a single example."""
+    matrix = matrix or COMPILERS_VARIANTS
+    deps = deps or ['//mycpp/runtime']
 
     n = ru.n
 
+    # Two steps
     raw = '_gen/_tmp/mycpp/examples/%s.%s-raw.cc' % (ex, translator)
+    main_cc_src = '_gen/mycpp/examples/%s.%s.cc' % (ex, translator)
 
     # Translate to C++
     if ex in TRANSLATE_FILES:
@@ -175,41 +208,21 @@ def TranslatorSubgraph(ru, translator, ex):
     else:
         to_translate = ['mycpp/examples/%s.py' % ex]
 
-    # Implicit dependency: if the translator changes, regenerate source code.
-    # But don't pass it on the command line.
-    if translator == 'pea':
-        # Note: build/ninja-rules-py.sh writes this 'shwrap'
-        # It depends on MYPY_WEDGE and PY3_LIBS_WEDGE
-        translator_wrapper = '_bin/shwrap/pea_main'
-        translate_rule = 'translate-pea'
-    elif translator == 'mycpp':
-        translate_rule = 'translate-mycpp'
-        translator_wrapper = '_bin/shwrap/mycpp_main'
-    elif translator == 'mycpp-souffle':
-        translate_rule = 'translate-mycpp-souffle'
-        translator_wrapper = '_bin/shwrap/mycpp_main_souffle'
-    else:
-        raise AssertionError('translator = %r' % translator)
-
-    translator_vars = [
-        ('mypypath', '$NINJA_REPO_ROOT/mycpp:$NINJA_REPO_ROOT/pyext'),
-    ]
-    #if translator == 'mycpp-souffle':
-    #    translator_vars.append(('extra_mycpp_opts', '--minimize-stack-roots'))
+    translator_shwrap = SHWRAP[translator]
 
     n.build(
         raw,
-        translate_rule,
-        to_translate,
-        implicit=[translator_wrapper],
+        'translate-%s' % translator,
+        to_translate,  # inputs
+        # Implicit dependency: if the translator changes, regenerate source
+        # code.  But don't pass it on the command line.
+        implicit=[translator_shwrap],
         # examples/parse uses pyext/fastfunc.pyi
-        variables=translator_vars)
+        variables=[('mypypath', mypy_path)])
 
     p = 'mycpp/examples/%s_preamble.h' % ex
     # Ninja empty string!
     preamble_path = p if os.path.exists(p) else "''"
-
-    main_cc_src = '_gen/mycpp/examples/%s.%s.cc' % (ex, translator)
 
     # Make a translation unit
     n.build(
@@ -221,50 +234,17 @@ def TranslatorSubgraph(ru, translator, ex):
             ('name', ex),
             ('preamble_path', preamble_path),
             # translator is used to determine wrap-cc
-            ('translator', os.path.basename(translator_wrapper))
+            ('translator', os.path.basename(translator_shwrap))
         ])
 
     n.newline()
 
-    if translator == 'pea':
-        ru.phony['pea-translate'].append(main_cc_src)
-
-    if translator == 'mycpp':
-        example_matrix = COMPILERS_VARIANTS
-    elif translator == 'mycpp-souffle':
-        # mycpp-souffle only has three variants for now
-        example_matrix = [
-            ('cxx', 'opt'),  # for benchmarks
-            ('cxx', 'opt-sh'),  # for benchmarks
-            ('cxx', 'asan'),  # need this for running the examples in CI
-            ('cxx', 'asan+gcalways'),
-        ]
-    elif translator == 'pea':
-        example_matrix = [
-            ('cxx', 'asan'),
-            ('cxx', 'opt'),
-        ]
-    else:
-        raise AssertionError()
-
-    if translator == 'mycpp':
-        phony_prefix = 'mycpp-examples'
-    else:
-        phony_prefix = ''
-
-    deps = ['//mycpp/runtime']
-    if ex == 'parse':
-        deps = deps + ['//mycpp/examples/expr.asdl', '//cpp/data_lang']
-
     ru.cc_binary(
         main_cc_src,
         deps=deps,
-        matrix=example_matrix,
+        matrix=matrix,
         phony_prefix=phony_prefix,
     )
-
-    # TODO:
-    # - restore lost 'pea-compile' tag?
 
 
 def NinjaGraph(ru):
@@ -371,6 +351,10 @@ def NinjaGraph(ru):
             mycpp_binary(ru,
                          'mycpp.examples.%s' % ex,
                          translator='pea',
+                         matrix=[
+                             ('cxx', 'asan'),
+                             ('cxx', 'opt'),
+                         ],
                          deps=['//mycpp/runtime'])
 
     to_compare = []
@@ -432,16 +416,26 @@ def NinjaGraph(ru):
         ## Translate the example 2 ways, and benchmark and test it
 
         for translator in ['mycpp', 'mycpp-souffle']:
-            TranslatorSubgraph(ru, translator, ex)
+
+            matrix = SOUFFLE_MATRIX if translator == 'mycpp-souffle' else None
+            phony_prefix = 'mycpp-examples' if translator == 'mycpp' else None
+
+            TranslatorSubgraph(ru,
+                               translator,
+                               ex,
+                               MYPY_PATH,
+                               phony_prefix=phony_prefix,
+                               matrix=matrix,
+                               deps=EXAMPLES_DEPS.get(ex))
 
             # minimal
-            MATRIX = [
+            TEST_MATRIX = [
                 ('test', 'asan'),  # TODO: asan+gcalways is better!
                 ('benchmark', 'opt'),
             ]
 
             # Run the binary in two ways
-            for mode, variant in MATRIX:
+            for mode, variant in TEST_MATRIX:
                 task_out = '_test/tasks/%s/%s.%s.%s.task.txt' % (
                     mode, ex, translator, variant)
 

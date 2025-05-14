@@ -25,16 +25,18 @@ PY_TOOL=(
   cpp.embedded_file_gen
 )
 
-BIN=(
-  # translated
-  bin.hello
-  bin.hello_mylib
+# Translated
+TRANSLATED=(
+  # These only have one file, so we don't need deps
+  #bin.hello
+  #bin.hello_mylib
+
   bin.oils_for_unix
   mycpp.examples.parse
 )
 
 # These special cases should go away
-SPECIAL_BIN=(
+TRANSLATED_2=(
   yaks.yaks_main  # Experimental IR to C++ translator
   bin.osh_parse
   bin.osh_eval
@@ -85,12 +87,12 @@ main() {
   done
 
   # Use filters next to the binary, or the defaults
-  for mod in "${BIN[@]}"; do
+  for mod in "${TRANSLATED[@]}"; do
     typecheck-translate $mod
   done
 
   # Legacy: use Oils
-  for mod in "${SPECIAL_BIN[@]}"; do
+  for mod in "${TRANSLATED_2[@]}"; do
     typecheck-translate $mod \
       bin/oils_for_unix.typecheck-filter.txt \
       bin/oils_for_unix.translate-filter.txt

@@ -568,7 +568,7 @@ class Rules(object):
         self.n.newline()
 
 
-_SHWRAP = {
+SHWRAP = {
     'mycpp': '_bin/shwrap/mycpp_main',
     'mycpp-souffle': '_bin/shwrap/mycpp_main_souffle',
     'pea': '_bin/shwrap/pea_main',
@@ -592,8 +592,8 @@ def mycpp_binary(ru,
     py_rel_path = py_module.replace('.', '/')
 
     symlinks = symlinks or []
-    deps = deps or []
     matrix = matrix or COMPILERS_VARIANTS
+    deps = deps or []
     if preamble is None:
         custom = py_rel_path + '_preamble.h'
         if os.path.exists(custom):
@@ -606,13 +606,13 @@ def mycpp_binary(ru,
     deps_file = '_build/NINJA/%s/translate.txt' % py_module
     if os.path.exists(deps_file):
         with open(deps_file) as f:
-            deps1 = [line.strip() for line in f]
+            py_inputs = [line.strip() for line in f]
     else:
         # Just the main file
-        deps1 = [py_rel_path + '.py']
+        py_inputs = [py_rel_path + '.py']
 
     prefix = '_gen/%s.%s' % (py_rel_path, translator)
-    shwrap_path = _SHWRAP[translator]
+    shwrap_path = SHWRAP[translator]
 
     variables = [
         ('py_module', py_module),
@@ -628,7 +628,7 @@ def mycpp_binary(ru,
 
     n.build(outputs,
             'mycpp-gen',
-            deps1,
+            py_inputs,
             implicit=[shwrap_path, RULES_PY],
             variables=variables)
 
