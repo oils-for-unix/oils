@@ -42,14 +42,14 @@ write-filters() {
   # This style lets us add comments.
 
   # For asdl.asdl_main and other tools
-  make-egrep >$FILTER_DIR/filter-py-tool.txt <<'EOF'
+  make-egrep >build/default.deps-filter.txt <<'EOF'
 __init__.py
 typing.py  # vendor/typing.py isn't imported normally
 EOF
 
   # Don't typecheck these files.
 
-  make-egrep >$FILTER_DIR/filter-typecheck.txt <<'EOF'
+  make-egrep >bin/oils_for_unix.typecheck-filter.txt <<'EOF'
 __init__.py
 typing.py
 
@@ -67,7 +67,7 @@ EOF
   # On top of the typecheck filter, exclude these from translation.  They are
   # not inputs to mycpp.
 
-  make-egrep >$FILTER_DIR/filter-translate.txt <<'EOF'
+  make-egrep >bin/oils_for_unix.translate-filter.txt <<'EOF'
 # generated code shouldn't be translated
 _devbuild/
 _gen/
@@ -112,12 +112,17 @@ repo-filter() {
   grep -F -v "$REPO_ROOT/_cache" | grep -F "$REPO_ROOT" | awk '{ print $2 }' 
 }
 
-exclude-filter() {
+OLD_exclude-filter() {
   ### Exclude repo-relative paths
 
   local filter_name=$1
 
   grep -E -v -f $FILTER_DIR/filter-$filter_name.txt
+}
+
+exclude-files() {
+  local filter_file=$1
+  grep -E -v -f $filter_file
 }
 
 mysort() {
@@ -134,7 +139,8 @@ list-gen() {
 #
 
 py2-manifest() {
-  local dir=$1
+  local py_module=$1
+  local dir=$2
   PYTHONPATH=$PY_PATH /usr/bin/env python2 \
     build/dynamic_deps.py py-manifest $py_module \
     > $dir/all-pairs.txt
@@ -151,9 +157,9 @@ py-tool() {
   local dir=$DIR/$py_module
   mkdir -p $dir
 
-  py2-manifest $dir
+  py2-manifest $py_module $dir
 
-  cat $dir/all-pairs.txt | repo-filter | exclude-filter py-tool | mysort \
+  cat $dir/all-pairs.txt | repo-filter | exclude-files build/default.deps-filter.txt | mysort \
     > $dir/deps.txt
 
   echo "DEPS $dir/deps.txt"
@@ -166,13 +172,13 @@ typecheck-translate() {
 
   mkdir -p $dir
 
-  py2-manifest $dir
+  py2-manifest $py_module $dir
 
   set +o errexit
-  cat $dir/all-pairs.txt | repo-filter | exclude-filter typecheck | mysort \
+  cat $dir/all-pairs.txt | repo-filter | exclude-files bin/oils_for_unix.typecheck-filter.txt | mysort \
     > $dir/typecheck.txt
 
-  cat $dir/typecheck.txt | exclude-filter translate | mysort \
+  cat $dir/typecheck.txt | exclude-files bin/oils_for_unix.translate-filter.txt | mysort \
     > $dir/translate.txt
 
   echo DEPS $dir/*
@@ -219,7 +225,7 @@ write-mycpp() {
   cat $dir/all-pairs.txt \
     | grep -v oilshell/oil_DEPS \
     | repo-filter \
-    | exclude-filter py-tool \
+    | exclude-files build/default.deps-filter.txt \
     | mysort \
     | tee $deps
 
@@ -233,16 +239,16 @@ mycpp-example-parse() {
   local dir=$DIR/parse
   mkdir -p $dir
 
-  PYTHONPATH=$PY_PATH /usr/bin/env python2 \
-    build/dynamic_deps.py py-manifest mycpp.examples.parse \
-  > $dir/all-pairs.txt
+  py2-manifest mycpp.examples.parse $dir
 
   local ty=mycpp/examples/parse.typecheck.txt
   local tr=mycpp/examples/parse.translate.txt
 
-  cat $dir/all-pairs.txt | repo-filter | exclude-filter typecheck | mysort > $ty
+  # TODO: remove oils-for-unix
+  cat $dir/all-pairs.txt | repo-filter |
+    exclude-files bin/oils_for_unix.typecheck-filter.txt | mysort > $ty
 
-  cat $ty | exclude-filter translate > $tr
+  cat $ty | exclude-files bin/oils_for_unix.translate-filter.txt > $tr
 
   wc -l $ty $tr
 
