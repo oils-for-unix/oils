@@ -101,9 +101,16 @@ mycpp-gen() {
 
   local mypypath="$REPO_ROOT:$REPO_ROOT/pyext"
 
+  local extra_args=''
+  case $shwrap_path in
+    *mycpp*)
+      extra_args=${EXTRA_MYCPP_ARGS:-}
+      ;;
+  esac
+
   $shwrap_path $mypypath $raw_cc \
     --header-out $raw_header \
-    ${EXTRA_MYCPP_ARGS:-} \
+    $extra_args \
     "$@"
 
   #if test -f "$raw_header"; then
@@ -142,11 +149,11 @@ mycpp-gen() {
 
 print-wrap-cc() {
   local translator=$1
-  local main_module=$2
+  local main_namespace=$2
   local in=$3
   local preamble_path=$4
 
-   echo "// examples/$main_module translated by $translator"
+   echo "// examples/$main_namespace translated by $translator"
    echo
 
    if test -f "$preamble_path"; then
@@ -158,13 +165,13 @@ print-wrap-cc() {
    # main() function
    case $translator in
      mycpp_main|mycpp_main_souffle)
-       example-main-wrapper $main_module
+       example-main-wrapper $main_namespace
        ;;
      yaks_main)
-       main-wrapper $main_module
+       main-wrapper $main_namespace
        ;;
      pea_main)
-       main-wrapper $main_module
+       main-wrapper $main_namespace
        #echo '#include <stdio.h>'
        #echo 'int main() { printf("stub\n"); return 1; }'
        ;;
@@ -178,7 +185,7 @@ wrap-cc() {
   local out=$1
   shift
 
-  # $translator $main_module $in $preamble_path
+  # $translator $main_namespace $in $preamble_path
   print-wrap-cc "$@" > $out
 }
 
