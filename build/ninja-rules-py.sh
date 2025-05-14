@@ -6,7 +6,8 @@
 #   build/ninja-rules-py.sh <function name>
 #
 # Env variables:
-#   EXTRA_MYCPP_ARGS - passed to mycpp_main, for --stack-roots-warn 16
+#   _bin/shwrap/mycpp_main respects EXTRA_MYCPP_ARGS
+#    for --stack-roots-warn 16 in CI
 
 set -o nounset
 set -o pipefail
@@ -101,16 +102,8 @@ mycpp-gen() {
 
   local mypypath="$REPO_ROOT:$REPO_ROOT/pyext"
 
-  local extra_args=''
-  case $shwrap_path in
-    *mycpp*)
-      extra_args=${EXTRA_MYCPP_ARGS:-}
-      ;;
-  esac
-
   $shwrap_path $mypypath $raw_cc \
     --header-out $raw_header \
-    $extra_args \
     "$@"
 
   #if test -f "$raw_header"; then
@@ -315,7 +308,8 @@ shift 2
 tmp=$out.tmp  # avoid creating partial files
 
 # The command we want to run
-set -- python3 mycpp/mycpp_main.py --cc-out $tmp "$@"
+# EXTRA_MYCPP_ARGS is for --stack-root-warn 16, in Soil CI
+set -- python3 mycpp/mycpp_main.py --cc-out $tmp ${EXTRA_MYCPP_ARGS:-} "$@"
 
 # If 'time' is on the system, add timing info.  (It's not present on some
 # Debian CI images)

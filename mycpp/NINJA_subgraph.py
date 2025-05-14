@@ -167,7 +167,7 @@ def TranslatorSubgraph(ru, translator, ex):
 
     n = ru.n
 
-    raw = '_gen/mycpp/examples/%s_raw.%s.cc' % (ex, translator)
+    raw = '_gen/_tmp/mycpp/examples/%s.%s-raw.cc' % (ex, translator)
 
     # Translate to C++
     if ex in TRANSLATE_FILES:

@@ -69,6 +69,15 @@ def NinjaGraph(ru):
         deps=['//mycpp/runtime'],
     )
 
+    # Try out souffle
+    mycpp_binary(
+        ru,
+        'bin.hello',
+        translator='mycpp-souffle',
+        deps=['//mycpp/runtime'],
+    )
+
+    # Use the stdlib
     mycpp_binary(
         ru,
         'bin.hello_mylib',
