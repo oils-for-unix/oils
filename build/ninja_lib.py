@@ -57,11 +57,11 @@ GC_PERF_VARIANTS = [
     ('cxx', 'opt+bumpleak'),
     ('cxx', 'opt+bumproot'),
     ('cxx', 'opt+bumpsmall'),
-    ('cxx', 'asan+bumpsmall'),
+    #('cxx', 'asan+bumpsmall'),
     ('cxx', 'opt+nopool'),
 
     # TODO: should be binary with different files
-    ('cxx', 'opt+tcmalloc'),
+    #('cxx', 'opt+tcmalloc'),
 
     # For tracing allocations, or debugging
     ('cxx', 'uftrace'),
@@ -72,8 +72,8 @@ GC_PERF_VARIANTS = [
 ]
 
 OTHER_VARIANTS = [
+    # Affects mycpp/gc_mops.cc - we can do overflow checking
     ('cxx', 'opt+bigint'),
-    ('cxx', 'opt+souffle'),
     ('cxx', 'asan+bigint'),
 ]
 
@@ -601,14 +601,7 @@ def mycpp_binary(ru,
 
     n = ru.n
 
-    d1 = '_build/NINJA/%s/deps.txt' % py_module
-    d2 = '_build/NINJA/%s/translate.txt' % py_module
-    if os.path.exists(d1):
-        deps_file = d1
-    elif os.path.exists(d2):
-        deps_file = d2
-    else:
-        raise AssertionError()
+    deps_file = '_build/NINJA/%s/translate.txt' % py_module
 
     with open(deps_file) as f:
         deps1 = [line.strip() for line in f]

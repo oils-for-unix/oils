@@ -321,7 +321,7 @@ def NinjaGraph(ru):
 
     # For simplicity, this is committed to the repo.  We could also have
     # build/dev.sh minimal generate it?
-    with open('mycpp/examples/parse.translate.txt') as f:
+    with open('_build/NINJA/mycpp.examples.parse/translate.txt') as f:
         for line in f:
             path = line.strip()
             TRANSLATE_FILES['parse'].append(path)
@@ -359,10 +359,21 @@ def NinjaGraph(ru):
     # Build and run examples/
     #
 
+    ## Pea Examples
+    for ex in examples:
+        # Special case: mycpp/examples/pea_* are only translated with pea.
+        # TODO: pea examples don't have the same main()
+
+        if ex.startswith('pea_'):
+            TranslatorSubgraph(ru, 'pea', ex)
+
     to_compare = []
     benchmark_tasks = []
 
     for ex in examples:
+        if ex.startswith('pea_'):  # Only non-pea examples
+            continue
+
         ru.comment('- mycpp/examples/%s' % ex)
 
         # TODO: make a phony target for these, since they're not strictly necessary.
@@ -374,6 +385,8 @@ def NinjaGraph(ru):
         # expr.asdl needs to import pylib.collections_, which doesn't type check
         skip_imports = 'T' if (ex == 'parse') else "''"
 
+        ## Type check the example
+
         n.build(
             [t],
             'typecheck',
@@ -383,7 +396,8 @@ def NinjaGraph(ru):
         n.newline()
         ru.phony['mycpp-typecheck'].append(t)
 
-        # Run Python.
+        ## Run example as Python
+
         for mode in ['test', 'benchmark']:
             prefix = '_test/tasks/%s/%s.py' % (mode, ex)
             task_out = '%s.task.txt' % prefix
@@ -409,17 +423,9 @@ def NinjaGraph(ru):
 
             n.newline()
 
-        # Special case: mycpp/examples/pea_* are only translated with pea.
-        # For now, the main() wrapper is different.
-        if ex.startswith('pea_'):
-            TranslatorSubgraph(ru, 'pea', ex)
-            continue
+        ## Translate the example 2 ways, and benchmark and test it
 
         for translator in ['mycpp', 'mycpp-souffle']:
-            # TODO: pea examples don't have the same main()
-            if ex.startswith('pea_'):
-                continue
-
             TranslatorSubgraph(ru, translator, ex)
 
             # minimal
