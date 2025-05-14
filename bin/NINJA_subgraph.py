@@ -63,6 +63,12 @@ def NinjaGraph(ru):
     # Programs
     #
 
+    mycpp_binary(
+        ru,
+        'bin.hello',
+        deps=['//mycpp/runtime'],
+    )
+
     oils_deps = [
         '//bin/text_files',
         '//cpp/core',
@@ -97,12 +103,6 @@ def NinjaGraph(ru):
     # TODO: other files should get their own
     oils_preamble = 'bin/oils_for_unix_preamble.h'
 
-    # Demos
-    mycpp_binary(
-        ru,
-        'bin.hello',
-        deps=['//mycpp/runtime'],
-    )
     mycpp_binary(ru, 'bin.osh_eval', preamble=oils_preamble, deps=oils_deps)
     mycpp_binary(ru, 'bin.osh_parse', preamble=oils_preamble, deps=oils_deps)
 

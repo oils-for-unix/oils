@@ -35,8 +35,20 @@ check-binary() {
   # TODO: remove --no-warn-unused-ignores and type: ignore in
   # osh/builtin_comp.py after help_.py import isn't conditional
 
-  cat _build/NINJA/$py_module/typecheck.txt \
-    | xargs -- $0 typecheck-files --no-warn-unused-ignores 
+  local manifest
+
+  local m1=_build/NINJA/$py_module/deps.txt
+  local m2=_build/NINJA/$py_module/typecheck.txt
+
+  if test -f $m1; then
+    manifest=$m1
+  elif test -f $m2; then
+    manifest=$m2
+  else
+    die "Couldn't find manifest for $py_module ($m1 or $m2)"
+  fi
+
+  cat $manifest | xargs -- $0 typecheck-files --no-warn-unused-ignores 
 }
 
 check-oils() {

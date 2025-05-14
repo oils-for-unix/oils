@@ -89,6 +89,7 @@ pyrun-parse() {
 }
 
 # classes and ASDL
+# TODO: it needs deps.txt?
 translate-parse() {
   # Need this otherwise we get type errors
   codegen-parse

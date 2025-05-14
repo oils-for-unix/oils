@@ -124,9 +124,26 @@ mysort() {
   LC_ALL=C sort
 }
 
+# Code generators
+list-gen() {
+  ls */*_gen.py
+}
+
 #
-# Programs
+# Invocations of dynamic_deps
 #
+
+py2-manifest() {
+  local dir=$1
+  PYTHONPATH=$PY_PATH /usr/bin/env python2 \
+    build/dynamic_deps.py py-manifest $py_module \
+    > $dir/all-pairs.txt
+}
+
+py3-manifest() {
+  local dir=$1
+  python3 build/dynamic_deps.py py-manifest $module > $dir/all-pairs.txt
+}
 
 py-tool() {
   local py_module=$1
@@ -134,9 +151,7 @@ py-tool() {
   local dir=$DIR/$py_module
   mkdir -p $dir
 
-  PYTHONPATH=$PY_PATH /usr/bin/env python2 \
-    build/dynamic_deps.py py-manifest $py_module \
-    > $dir/all-pairs.txt
+  py2-manifest $dir
 
   cat $dir/all-pairs.txt | repo-filter | exclude-filter py-tool | mysort \
     > $dir/deps.txt
@@ -144,9 +159,23 @@ py-tool() {
   echo "DEPS $dir/deps.txt"
 }
 
-# Code generators
-list-gen() {
-  ls */*_gen.py
+typecheck-translate() {
+  local py_module=$1
+
+  local dir=$DIR/$py_module
+
+  mkdir -p $dir
+
+  py2-manifest $dir
+
+  set +o errexit
+  cat $dir/all-pairs.txt | repo-filter | exclude-filter typecheck | mysort \
+    > $dir/typecheck.txt
+
+  cat $dir/typecheck.txt | exclude-filter translate | mysort \
+    > $dir/translate.txt
+
+  echo DEPS $dir/*
 }
 
 # mycpp and pea deps are committed to git instead of in _build/NINJA/ because
@@ -160,9 +189,7 @@ write-pea() {
   source build/dev-shell.sh  # python3
 
   # Can't use vendor/typing.py
-  python3 \
-    build/dynamic_deps.py py-manifest $module \
-  > $dir/all-pairs.txt
+  py3-manifest $dir
 
   cat $dir/all-pairs.txt | repo-filter | mysort | tee $dir/deps.txt
 
@@ -186,7 +213,7 @@ write-mycpp() {
   # READONLY errors.
   source build/dev-shell.sh
 
-  python3 build/dynamic_deps.py py-manifest $module > $dir/all-pairs.txt
+  py3-manifest $dir
 
   local deps=$dir/deps.txt
   cat $dir/all-pairs.txt \

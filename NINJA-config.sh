@@ -12,27 +12,6 @@ set -o errexit
 source build/dev-shell.sh  # python2 in $PATH
 source build/dynamic-deps.sh  # py-tool, etc
 
-typecheck-translate() {
-  local py_module=$1
-
-  local dir=$DIR/$py_module
-
-  mkdir -p $dir
-
-  PYTHONPATH=$PY_PATH /usr/bin/env python2 \
-    build/dynamic_deps.py py-manifest "$py_module" \
-  > $dir/all.txt
-
-  set +o errexit
-  cat $dir/all.txt | repo-filter | exclude-filter typecheck | mysort \
-    > $dir/typecheck.txt
-
-  cat $dir/typecheck.txt | exclude-filter translate | mysort \
-    > $dir/translate.txt
-
-  echo DEPS $dir/*
-}
-
 PY_TOOL=(
   asdl.asdl_main
   core.optview_gen
@@ -44,25 +23,61 @@ PY_TOOL=(
   osh.arith_parse_gen
   frontend.signal_gen
   cpp.embedded_file_gen
+
+  # translated
+  bin.hello
 )
 
 BIN=(
-  bin.hello
+  yaks.yaks_main  # Experimental IR to C++ translator
   bin.osh_parse
   bin.osh_eval
   bin.oils_for_unix
-  yaks.yaks_main  # Experimental IR to C++ translator
 )
 
-main() {
-  # _build/NINJA/  # Part of the Ninja graph
-  #   asdl.asdl_main/
-  #     all-pairs.txt
-  #     deps.txt
-  #   osh_eval/
-  #     typecheck.txt
-  #     translate.txt
+# Create a dir structure htat looks like this:
 
+# _build/NINJA/  # Part of the Ninja graph
+#   asdl.asdl_main/
+#     all-pairs.txt
+#     deps.txt
+#   bin.hello/
+#     all-pairs.txt
+#     deps.txt
+#   bin.oils_for_unix/
+#     all-pairs.txt
+#     typecheck.txt  # special case
+#     deps.txt
+#
+# Related:
+#   prebuilt/
+#     ninja/
+#       mycpp.mycpp_main/
+#     dynamic-deps/
+#       filter-py-tool
+#   mycpp/
+#     examples/
+#       parse.translate.txt
+#       parse.typecheck.txt
+#
+# Should be parse.typecheck.txt and parse.deps.txt
+#
+# New structure
+#   bin/
+#     oils_for_unix.py
+#     oils_for_unix_preamble.h
+#     oils_for_unix.typecheck-filter.txt
+#     oils_for_unix.deps-filter.txt
+#   mycpp/
+#     examples/
+#       parse.py
+#       parse_preamble.h
+#       parse.deps-filter.txt
+#
+# All of these are optional, except deps-filter?
+# The default deps-filter can be in prebuilt/ perhaps
+
+main() {
   mkdir -p _build/NINJA
 
   # Implicit dependencies for tools

@@ -597,7 +597,16 @@ def mycpp_binary(ru,
 
     n = ru.n
 
-    with open('_build/NINJA/%s/translate.txt' % py_module) as f:
+    d1 = '_build/NINJA/%s/deps.txt' % py_module
+    d2 = '_build/NINJA/%s/translate.txt' % py_module
+    if os.path.exists(d1):
+        deps_file = d1
+    elif os.path.exists(d2):
+        deps_file = d2
+    else:
+        raise AssertionError()
+
+    with open(deps_file) as f:
         deps1 = [line.strip() for line in f]
 
     prefix = '_gen/%s.%s' % (py_rel_path, translator)
