@@ -32,14 +32,13 @@ def NinjaGraph(ru):
     outputs = [prefix + '.cc', prefix + '.h']
     shwrap_path = '_bin/shwrap/mycpp_main'
 
-    # TODO: remove gen-oils-for-unix - it shouldn't be special?
+    preamble = 'yaks/yaks_main_preamble.h'
     n.build(outputs,
             'gen-oils-for-unix',
             deps,
             implicit=[shwrap_path, RULES_PY],
             variables=[('out_prefix', prefix), ('main_name', main_name),
-                       ('shwrap_path', shwrap_path),
-                       ('preamble', 'yaks/preamble.h')])
+                       ('shwrap_path', shwrap_path), ('preamble', preamble)])
 
     ru.cc_binary(
         '_gen/yaks/%s.mycpp.cc' % main_name,

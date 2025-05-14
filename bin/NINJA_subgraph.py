@@ -66,11 +66,50 @@ def NinjaGraph(ru):
     # Programs
     #
 
-    preamble = 'cpp/preamble.h'  # TODO: change this
+    oils_deps = [
+        '//bin/text_files',
+        '//cpp/core',
+        '//cpp/data_lang',
+        '//cpp/fanos',
+        '//cpp/libc',
+        '//cpp/osh',
+        '//cpp/pgen2',
+        '//cpp/pylib',
+        '//cpp/stdlib',
+        '//cpp/frontend_flag_spec',
+        '//cpp/frontend_match',
+        '//cpp/frontend_pyreadline',
+        '//data_lang/nil8.asdl',
+        '//display/pretty.asdl',
+        '//frontend/arg_types',
+        '//frontend/consts',
+        '//frontend/help_meta',
+        '//frontend/id_kind.asdl',
+        '//frontend/option.asdl',
+        '//frontend/signal',
+        '//frontend/syntax.asdl',
+        '//frontend/types.asdl',
+        '//core/optview',
+        '//core/runtime.asdl',
+        '//core/value.asdl',
+        '//osh/arith_parse',
+        '//ysh/grammar',
+        '//mycpp/runtime',
+    ]
+
+    # TODO: other files should get their own
+    preamble = 'bin/oils_for_unix_preamble.h'
 
     # Demos
-    for main_name in ('osh_eval', 'osh_parse'):
-        MainBinary(ru, main_name, 'mycpp', preamble)
+    MainBinary(
+        ru,
+        'hello',
+        'mycpp',
+        preamble,
+        deps=['//mycpp/runtime'],
+    )
+    MainBinary(ru, 'osh_eval', 'mycpp', preamble, deps=oils_deps)
+    MainBinary(ru, 'osh_parse', 'mycpp', preamble, deps=oils_deps)
 
     oils_symlinks = ['osh', 'ysh']
 
@@ -83,6 +122,7 @@ def NinjaGraph(ru):
         # _bin/cxx-opt/oils-for-unix, NOT _bin/cxx-opt/bin/oils-for-unix
         bin_path='oils-for-unix',
         symlinks=oils_symlinks,
+        deps=oils_deps,
     )
     # Faster variant
     # this could have been _bin/cxx-opt/oils-for-unix.mycpp-souffle?
@@ -93,6 +133,7 @@ def NinjaGraph(ru):
         preamble,
         bin_path='mycpp-souffle/oils-for-unix',
         symlinks=oils_symlinks,
+        deps=oils_deps,
     )
 
 
@@ -107,13 +148,15 @@ def MainBinary(ru,
                translator,
                preamble,
                bin_path=None,
-               symlinks=None):
+               symlinks=None,
+               deps=None):
     symlinks = symlinks or []
+    deps = deps or []
 
     n = ru.n
 
     with open('_build/NINJA/bin.%s/translate.txt' % main_name) as f:
-        deps = [line.strip() for line in f]
+        deps1 = [line.strip() for line in f]
 
     prefix = '_gen/bin/%s.%s' % (main_name, translator)
     shwrap_path = _SHWRAP[translator]
@@ -128,7 +171,7 @@ def MainBinary(ru,
     outputs = [prefix + '.cc', prefix + '.h']
     n.build(outputs,
             'gen-oils-for-unix',
-            deps,
+            deps1,
             implicit=[shwrap_path, RULES_PY],
             variables=variables)
 
@@ -139,33 +182,4 @@ def MainBinary(ru,
         preprocessed=True,
         matrix=(ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS +
                 ninja_lib.OTHER_VARIANTS),
-        deps=[
-            '//bin/text_files',
-            '//cpp/core',
-            '//cpp/data_lang',
-            '//cpp/fanos',
-            '//cpp/libc',
-            '//cpp/osh',
-            '//cpp/pgen2',
-            '//cpp/pylib',
-            '//cpp/stdlib',
-            '//cpp/frontend_flag_spec',
-            '//cpp/frontend_match',
-            '//cpp/frontend_pyreadline',
-            '//data_lang/nil8.asdl',
-            '//display/pretty.asdl',
-            '//frontend/arg_types',
-            '//frontend/consts',
-            '//frontend/help_meta',
-            '//frontend/id_kind.asdl',
-            '//frontend/option.asdl',
-            '//frontend/signal',
-            '//frontend/syntax.asdl',
-            '//frontend/types.asdl',
-            '//core/optview',
-            '//core/runtime.asdl',
-            '//core/value.asdl',
-            '//osh/arith_parse',
-            '//ysh/grammar',
-            '//mycpp/runtime',
-        ])
+        deps=deps)
