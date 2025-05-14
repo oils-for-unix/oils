@@ -63,84 +63,109 @@ def NinjaGraph(ru):
     ru.cc_library('//bin/text_files', srcs=['_gen/bin/text_files.cc'])
 
     #
-    # Main Programs
+    # Programs
     #
 
-    for main_name in ('osh_eval', 'osh_parse', 'oils_for_unix'):
-        for translator in ('mycpp', 'mycpp-souffle'):
-            with open('_build/NINJA/bin.%s/translate.txt' % main_name) as f:
-                deps = [line.strip() for line in f]
+    preamble = 'cpp/preamble.h'  # TODO: change this
 
-            prefix = '_gen/bin/%s.%s' % (main_name, translator)
-            outputs = [prefix + '.cc', prefix + '.h']
+    # Demos
+    for main_name in ('osh_eval', 'osh_parse'):
+        MainBinary(ru, main_name, 'mycpp', preamble)
 
-            if translator == 'mycpp':
-                shwrap_path = '_bin/shwrap/mycpp_main'
-            elif translator == 'mycpp-souffle':
-                shwrap_path = '_bin/shwrap/mycpp_main_souffle'
-            else:
-                raise AssertionError()
+    oils_symlinks = ['osh', 'ysh']
 
-            variables = [
-                ('main_name', main_name),
-                ('shwrap_path', shwrap_path),
-                ('out_prefix', prefix),
-                ('preamble', 'cpp/preamble.h'),
-            ]
+    # Main oils-for-unix binary
+    MainBinary(
+        ru,
+        'oils_for_unix',
+        'mycpp',
+        preamble,
+        # _bin/cxx-opt/oils-for-unix, NOT _bin/cxx-opt/bin/oils-for-unix
+        bin_path='oils-for-unix',
+        symlinks=oils_symlinks,
+    )
+    # Faster variant
+    # this could have been _bin/cxx-opt/oils-for-unix.mycpp-souffle?
+    MainBinary(
+        ru,
+        'oils_for_unix',
+        'mycpp-souffle',
+        preamble,
+        bin_path='mycpp-souffle/oils-for-unix',
+        symlinks=oils_symlinks,
+    )
 
-            n.build(outputs,
-                    'gen-oils-for-unix',
-                    deps,
-                    implicit=[shwrap_path, RULES_PY],
-                    variables=variables)
 
-            if main_name == 'oils_for_unix':
-                # The main program!
-                if translator == 'mycpp-souffle':
-                    bin_path = '%s/oils-for-unix' % translator
-                else:
-                    # Keep the default mycpp build at the original location to
-                    # avoid breaking benchmarks and tests.
-                    bin_path = 'oils-for-unix'
-                symlinks = ['osh', 'ysh']
-            else:
-                symlinks = []
-                bin_path = None  # use default
+_SHWRAP = {
+    'mycpp': '_bin/shwrap/mycpp_main',
+    'mycpp-souffle': '_bin/shwrap/mycpp_main_souffle',
+}
 
-            ru.cc_binary(
-                '_gen/bin/%s.%s.cc' % (main_name, translator),
-                bin_path=bin_path,
-                symlinks=symlinks,
-                preprocessed=True,
-                matrix=(ninja_lib.COMPILERS_VARIANTS +
-                        ninja_lib.GC_PERF_VARIANTS + ninja_lib.OTHER_VARIANTS),
-                deps=[
-                    '//bin/text_files',
-                    '//cpp/core',
-                    '//cpp/data_lang',
-                    '//cpp/fanos',
-                    '//cpp/libc',
-                    '//cpp/osh',
-                    '//cpp/pgen2',
-                    '//cpp/pylib',
-                    '//cpp/stdlib',
-                    '//cpp/frontend_flag_spec',
-                    '//cpp/frontend_match',
-                    '//cpp/frontend_pyreadline',
-                    '//data_lang/nil8.asdl',
-                    '//display/pretty.asdl',
-                    '//frontend/arg_types',
-                    '//frontend/consts',
-                    '//frontend/help_meta',
-                    '//frontend/id_kind.asdl',
-                    '//frontend/option.asdl',
-                    '//frontend/signal',
-                    '//frontend/syntax.asdl',
-                    '//frontend/types.asdl',
-                    '//core/optview',
-                    '//core/runtime.asdl',
-                    '//core/value.asdl',
-                    '//osh/arith_parse',
-                    '//ysh/grammar',
-                    '//mycpp/runtime',
-                ])
+
+def MainBinary(ru,
+               main_name,
+               translator,
+               preamble,
+               bin_path=None,
+               symlinks=None):
+    symlinks = symlinks or []
+
+    n = ru.n
+
+    with open('_build/NINJA/bin.%s/translate.txt' % main_name) as f:
+        deps = [line.strip() for line in f]
+
+    prefix = '_gen/bin/%s.%s' % (main_name, translator)
+    shwrap_path = _SHWRAP[translator]
+
+    variables = [
+        ('main_name', main_name),
+        ('shwrap_path', shwrap_path),
+        ('out_prefix', prefix),
+        ('preamble', preamble),
+    ]
+
+    outputs = [prefix + '.cc', prefix + '.h']
+    n.build(outputs,
+            'gen-oils-for-unix',
+            deps,
+            implicit=[shwrap_path, RULES_PY],
+            variables=variables)
+
+    ru.cc_binary(
+        '_gen/bin/%s.%s.cc' % (main_name, translator),
+        bin_path=bin_path,
+        symlinks=symlinks,
+        preprocessed=True,
+        matrix=(ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS +
+                ninja_lib.OTHER_VARIANTS),
+        deps=[
+            '//bin/text_files',
+            '//cpp/core',
+            '//cpp/data_lang',
+            '//cpp/fanos',
+            '//cpp/libc',
+            '//cpp/osh',
+            '//cpp/pgen2',
+            '//cpp/pylib',
+            '//cpp/stdlib',
+            '//cpp/frontend_flag_spec',
+            '//cpp/frontend_match',
+            '//cpp/frontend_pyreadline',
+            '//data_lang/nil8.asdl',
+            '//display/pretty.asdl',
+            '//frontend/arg_types',
+            '//frontend/consts',
+            '//frontend/help_meta',
+            '//frontend/id_kind.asdl',
+            '//frontend/option.asdl',
+            '//frontend/signal',
+            '//frontend/syntax.asdl',
+            '//frontend/types.asdl',
+            '//core/optview',
+            '//core/runtime.asdl',
+            '//core/value.asdl',
+            '//osh/arith_parse',
+            '//ysh/grammar',
+            '//mycpp/runtime',
+        ])

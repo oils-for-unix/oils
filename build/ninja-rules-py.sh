@@ -25,8 +25,7 @@ die() {
 
 example-main-wrapper() {
   ### Used by mycpp/examples
-
-  local main_module=${1:-fib_iter}
+  local name_namespace=${1:-fib_iter}
 
   cat <<EOF
 int main(int argc, char **argv) {
@@ -35,9 +34,9 @@ int main(int argc, char **argv) {
   char* b = getenv("BENCHMARK");
   if (b && strlen(b)) {  // match Python's logic
     fprintf(stderr, "Benchmarking...\\n");
-    $main_module::run_benchmarks();
+    $name_namespace::run_benchmarks();
   } else {
-    $main_module::run_tests();
+    $name_namespace::run_tests();
   }
 
   gHeap.CleanProcessExit();
@@ -68,10 +67,11 @@ EOF
 }
 
 gen-oils-for-unix() {
-  local main_name=$1
-  local shwrap_path=$2
-  local out_prefix=$3
-  local preamble=$4
+  ### Generate a .cc file and a .header
+  local main_name=$1    # e.g. oils_for_unix
+  local shwrap_path=$2  # e.g. _bin/shwrap/mycpp_main
+  local out_prefix=$3   # e.g. _gen/bin/oils_for_unix.mycpp
+  local preamble=$4     # e.g. cpp/preamble.h
   shift 4  # rest are inputs
 
   # Put temporary output in _build/tmp so it's not in the tarball
