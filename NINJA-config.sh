@@ -24,14 +24,15 @@ arith-parse-gen() { py-tool osh.arith_parse_gen; }
 signal-gen() { py-tool frontend.signal_gen; }
 embedded-file-gen() { py-tool cpp.embedded_file_gen; }
 
-osh-eval() {
-  ### Old binary
+typecheck-translate() {
+  local py_module=$1
 
-  local dir=$DIR/bin.osh_eval
+  local dir=$DIR/$py_module
+
   mkdir -p $dir
 
   PYTHONPATH=$PY_PATH /usr/bin/env python2 \
-    build/dynamic_deps.py py-manifest bin.osh_eval \
+    build/dynamic_deps.py py-manifest "$py_module" \
   > $dir/all.txt
 
   set +o errexit
@@ -44,24 +45,19 @@ osh-eval() {
   echo DEPS $dir/*
 }
 
+osh-parse() {
+  ### Test binary
+  typecheck-translate bin.osh_parse
+}
+
+osh-eval() {
+  ### Test binary
+  typecheck-translate bin.osh_eval
+}
+
 oils-for-unix() {
   ### The main binary
-
-  local dir=$DIR/bin.oils_for_unix
-  mkdir -p $dir
-
-  PYTHONPATH=$PY_PATH /usr/bin/env python2 \
-    build/dynamic_deps.py py-manifest bin.oils_for_unix \
-  > $dir/all.txt
-
-  set +o errexit
-  cat $dir/all.txt | repo-filter | exclude-filter typecheck | mysort \
-    > $dir/typecheck.txt
-
-  cat $dir/typecheck.txt | exclude-filter translate | mysort \
-    > $dir/translate.txt
-
-  echo DEPS $dir/*
+  typecheck-translate bin.oils_for_unix
 }
 
 # TODO: Prune deps
@@ -76,22 +72,7 @@ oils-for-unix() {
 
 yaks() {
   ### Experimental IR to C++ translator
-
-  local dir=$DIR/yaks.yaks_main
-  mkdir -p $dir
-
-  PYTHONPATH=$PY_PATH /usr/bin/env python2 \
-    build/dynamic_deps.py py-manifest yaks.yaks_main \
-  > $dir/all.txt
-
-  set +o errexit
-  cat $dir/all.txt | repo-filter | exclude-filter typecheck | mysort \
-    > $dir/typecheck.txt
-
-  cat $dir/typecheck.txt | exclude-filter translate | mysort \
-    > $dir/translate.txt
-
-  echo DEPS $dir/*
+  typecheck-translate yaks.yaks_main
 }
 
 main() {
@@ -120,6 +101,7 @@ main() {
 
   # Explicit dependencies for translating and type checking
   # Baked into mycpp/NINJA.
+  osh-parse
   osh-eval
   oils-for-unix
   yaks

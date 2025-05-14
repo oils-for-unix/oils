@@ -66,7 +66,7 @@ def NinjaGraph(ru):
     # Main Programs
     #
 
-    for main_name in ('osh_eval', 'oils_for_unix'):
+    for main_name in ('osh_eval', 'osh_parse', 'oils_for_unix'):
         for translator in ('mycpp', 'mycpp-souffle'):
             with open('_build/NINJA/bin.%s/translate.txt' % main_name) as f:
                 deps = [line.strip() for line in f]

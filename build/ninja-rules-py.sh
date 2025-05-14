@@ -74,7 +74,7 @@ gen-oils-for-unix() {
   local preamble=$4
   shift 4  # rest are inputs
 
-  # Put it in _build/tmp so it's not in the tarball
+  # Put temporary output in _build/tmp so it's not in the tarball
   local tmp=_build/tmp/$(basename $shwrap_path)
   mkdir -p $tmp
 

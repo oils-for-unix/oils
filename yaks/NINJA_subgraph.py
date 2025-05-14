@@ -31,6 +31,8 @@ def NinjaGraph(ru):
     prefix = '_gen/yaks/%s.mycpp' % main_name
     outputs = [prefix + '.cc', prefix + '.h']
     shwrap_path = '_bin/shwrap/mycpp_main'
+
+    # TODO: remove gen-oils-for-unix - it shouldn't be special?
     n.build(outputs,
             'gen-oils-for-unix',
             deps,
