@@ -69,6 +69,12 @@ def NinjaGraph(ru):
         deps=['//mycpp/runtime'],
     )
 
+    mycpp_binary(
+        ru,
+        'bin.hello_mylib',
+        deps=['//mycpp/runtime'],
+    )
+
     oils_deps = [
         '//bin/text_files',
         '//cpp/core',

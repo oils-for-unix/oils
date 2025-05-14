@@ -108,13 +108,13 @@ mycpp-gen() {
 
   } > $header_out
 
-  { cat <<EOF
-// $cc_out: translated from Python by mycpp
+  { echo "// $cc_out: translated from Python by mycpp"
 
-// #include "$header_out"
+    #echo '#include "'$header_out'"'
 
-#include "$preamble"
-EOF
+    if test -n "$preamble"; then
+      echo '#include "'$preamble'"'
+    fi
 
     cat $raw_cc
 

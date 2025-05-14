@@ -20,9 +20,6 @@ readonly PY_PATH='.:vendor/'
 # Temporary
 readonly DIR=_build/NINJA
 
-# In git
-readonly FILTER_DIR='prebuilt/dynamic-deps'
-
 make-egrep() {
   # match chars until # or space, and line must be non-empty
   gawk '
@@ -47,8 +44,34 @@ __init__.py
 typing.py  # vendor/typing.py isn't imported normally
 EOF
 
-  # Don't typecheck these files.
+  #
+  # DEFAULT typecheck and translate filter
+  #
+  make-egrep >build/default.typecheck-filter.txt <<'EOF'
+__init__.py
+typing.py
 
+# OrderedDict is polymorphic
+pylib/collections_.py
+
+# lots of polymorphic stuff etc.
+mycpp/mylib.py
+EOF
+
+  make-egrep >build/default.translate-filter.txt <<'EOF'
+# generated code shouldn't be translated
+_devbuild/
+_gen/
+
+asdl/py.*           # pybase.py ported by hand to C++
+
+mycpp/iolib.py      # Implemented in gc_iolib.{h,cC}
+mycpp/mops.py       # Implemented in gc_mops.{h,cC}
+EOF
+
+  #
+  # OILS typecheck and translate filter
+  #
   make-egrep >bin/oils_for_unix.typecheck-filter.txt <<'EOF'
 __init__.py
 typing.py
@@ -87,7 +110,7 @@ frontend/py.*\.py   # py_readline.py ported by hand to C++
 frontend/consts.py  # frontend/consts_gen.py
 frontend/match.py   # frontend/lexer_gen.py
 
-mycpp/iolib.py       # Implemented in gc_iolib.{h,cC}
+mycpp/iolib.py      # Implemented in gc_iolib.{h,cC}
 mycpp/mops.py       # Implemented in gc_mops.{h,cC}
 
 pgen2/grammar.py    # These files are re-done in C++
@@ -101,7 +124,7 @@ pylib/path_stat.py
 osh/bool_stat.py
 EOF
 
-  wc -l $FILTER_DIR/filter-*
+  wc -l */*.*-filter.txt
 }
 
 repo-filter() {
@@ -110,14 +133,6 @@ repo-filter() {
   # select what's in the repo; eliminating stdlib stuff
   # eliminate _cache for mycpp running under Python-3.10
   grep -F -v "$REPO_ROOT/_cache" | grep -F "$REPO_ROOT" | awk '{ print $2 }' 
-}
-
-OLD_exclude-filter() {
-  ### Exclude repo-relative paths
-
-  local filter_name=$1
-
-  grep -E -v -f $FILTER_DIR/filter-$filter_name.txt
 }
 
 exclude-files() {
@@ -167,6 +182,33 @@ py-tool() {
 
 typecheck-translate() {
   local py_module=$1
+  local typecheck_filter=${2:-}
+  local translate_filter=${3:-}
+
+  local py_rel_path=${py_module//'.'/'/'}
+  if test -z "$typecheck_filter"; then
+    local custom="$py_rel_path.typecheck-filter.txt"
+    if test -f "$custom"; then
+      typecheck_filter=$custom
+    else
+      typecheck_filter=build/default.typecheck-filter.txt
+    fi
+  fi
+
+  if test -z "$translate_filter"; then
+    local custom="$py_rel_path.translate-filter.txt"
+    if test -f "$custom"; then
+      translate_filter=$custom
+    else
+      translate_filter=build/default.translate-filter.txt
+    fi
+  fi
+
+  if false; then
+    echo "  | PY        $py_module"
+    echo "  | TYPECHECK $typecheck_filter"
+    echo "  | TRANSLATE $translate_filter"
+  fi
 
   local dir=$DIR/$py_module
 
@@ -175,10 +217,10 @@ typecheck-translate() {
   py2-manifest $py_module $dir
 
   set +o errexit
-  cat $dir/all-pairs.txt | repo-filter | exclude-files bin/oils_for_unix.typecheck-filter.txt | mysort \
+  cat $dir/all-pairs.txt | repo-filter | exclude-files $typecheck_filter | mysort \
     > $dir/typecheck.txt
 
-  cat $dir/typecheck.txt | exclude-files bin/oils_for_unix.translate-filter.txt | mysort \
+  cat $dir/typecheck.txt | exclude-files $translate_filter | mysort \
     > $dir/translate.txt
 
   echo DEPS $dir/*
@@ -246,9 +288,9 @@ mycpp-example-parse() {
 
   # TODO: remove oils-for-unix
   cat $dir/all-pairs.txt | repo-filter |
-    exclude-files bin/oils_for_unix.typecheck-filter.txt | mysort > $ty
+    exclude-files build/default.typecheck-filter.txt | mysort > $ty
 
-  cat $ty | exclude-files bin/oils_for_unix.translate-filter.txt > $tr
+  cat $ty | exclude-files build/default.translate-filter.txt > $tr
 
   wc -l $ty $tr
 

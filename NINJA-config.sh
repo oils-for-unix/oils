@@ -23,16 +23,20 @@ PY_TOOL=(
   osh.arith_parse_gen
   frontend.signal_gen
   cpp.embedded_file_gen
-
-  # translated
-  bin.hello
 )
 
 BIN=(
+  # translated
+  bin.hello
+  bin.hello_mylib
+  bin.oils_for_unix
+)
+
+# These special cases should go away
+SPECIAL_BIN=(
   yaks.yaks_main  # Experimental IR to C++ translator
   bin.osh_parse
   bin.osh_eval
-  bin.oils_for_unix
 )
 
 # Create a dir structure htat looks like this:
@@ -85,10 +89,16 @@ main() {
     py-tool $mod
   done
 
-  # Explicit dependencies for translating and type checking
-  # Baked into mycpp/NINJA.
+  # These use
   for mod in "${BIN[@]}"; do
     typecheck-translate $mod
+  done
+
+  # These override it
+  for mod in "${SPECIAL_BIN[@]}"; do
+    typecheck-translate $mod \
+      bin/oils_for_unix.typecheck-filter.txt \
+      bin/oils_for_unix.translate-filter.txt
   done
 
   echo DEPS prebuilt/ninja/*/deps.txt

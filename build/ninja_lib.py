@@ -593,7 +593,11 @@ def mycpp_binary(ru,
     deps = deps or []
     matrix = matrix or COMPILERS_VARIANTS
     if preamble is None:
-        preamble = py_rel_path + '_preamble.h'
+        custom = py_rel_path + '_preamble.h'
+        if os.path.exists(custom):
+            preamble = custom
+        else:
+            preamble = '""'
 
     n = ru.n
 
