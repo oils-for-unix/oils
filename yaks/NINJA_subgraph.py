@@ -25,7 +25,7 @@ def NinjaGraph(ru):
 
     mycpp_binary(
         ru,
-        'yaks.yaks_main',
+        'yaks/yaks_main.py',
         matrix=ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS,
         deps=[
             '//core/optview',  # TODO: remove this dep
@@ -40,9 +40,9 @@ def NinjaGraph(ru):
             '//yaks/yaks.asdl',
         ])
 
-    ### Custom yaks translation
     n.newline()
 
+    ### CUSTOM translation with the COMPILED yaks binary.
     n.rule('yaks',
            command='_bin/cxx-opt/yaks/yaks_main.mycpp cpp $in > $out',
            description='yaks cpp $in > $out')
@@ -62,8 +62,8 @@ def NinjaGraph(ru):
     n.build([example_cc],
             'wrap-cc', [raw_cc],
             implicit=[RULES_PY],
-            variables=[('name', 'hello'), ('preamble_path', '""'),
-                       ('translator', 'yaks_main')])
+            variables=[('main_namespace', 'hello'), ('preamble', '""'),
+                       ('main_func', 'main-wrapper')])
     n.newline()
 
     ru.cc_binary(

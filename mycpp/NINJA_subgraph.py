@@ -133,7 +133,12 @@ def ExamplesToBuild():
 
     to_test = [name for name in py if not ShouldSkipBuild(name)]
 
-    return to_test
+    result = []
+    for ex in to_test:
+        py_main = 'mycpp/examples/%s.py' % ex
+        result.append((ex, py_main))
+
+    return result
 
 
 def ShouldSkipTest(name):
@@ -179,63 +184,62 @@ SOUFFLE_MATRIX = [
 MYPY_PATH = '$NINJA_REPO_ROOT/mycpp:$NINJA_REPO_ROOT/pyext'
 
 # TODO Next:
-# - name/ex -> py_module
-#   - preamble should be a param
-# - TRANSLATE_FILES should be py_sources
-# - clean up translator arg to wrap-cc, which includes yaks_main!
+# - separate parse.main.cc files, instead of _gen/_tmp
 
 
-def TranslatorSubgraph(ru,
-                       translator,
-                       ex,
-                       mypy_path,
-                       phony_prefix=None,
-                       matrix=None,
-                       deps=None):
+def TranslatorSubgraph(
+        ru,
+        translator,
+        py_main,
+        mypy_path,
+        py_inputs=None,  # list of source files, including main
+        phony_prefix=None,
+        matrix=None,
+        deps=None):
     """Create rules for a single example."""
+    py_inputs = py_inputs or [py_main]  # if not specified, it's a single file
     matrix = matrix or COMPILERS_VARIANTS
     deps = deps or ['//mycpp/runtime']
 
     n = ru.n
 
-    # Two steps
-    raw = '_gen/_tmp/mycpp/examples/%s.%s-raw.cc' % (ex, translator)
-    main_cc_src = '_gen/mycpp/examples/%s.%s.cc' % (ex, translator)
+    # e.g. mycpp/examples/parse
+    py_rel_path, _ = os.path.splitext(py_main)
 
-    # Translate to C++
-    if ex in TRANSLATE_FILES:
-        to_translate = TRANSLATE_FILES[ex]
-    else:
-        to_translate = ['mycpp/examples/%s.py' % ex]
+    # e.g. mycpp.examples.parse
+    py_module = py_rel_path.replace('/', '.')
+
+    ex = os.path.basename(py_rel_path)
+
+    # Two steps
+    raw = '_gen/_tmp/%s.%s-raw.cc' % (py_rel_path, translator)
+    main_cc_src = '_gen/%s.%s.cc' % (py_rel_path, translator)
 
     translator_shwrap = SHWRAP[translator]
 
     n.build(
         raw,
         'translate-%s' % translator,
-        to_translate,  # inputs
+        py_inputs,  # files to translate
         # Implicit dependency: if the translator changes, regenerate source
         # code.  But don't pass it on the command line.
         implicit=[translator_shwrap],
         # examples/parse uses pyext/fastfunc.pyi
         variables=[('mypypath', mypy_path)])
 
-    p = 'mycpp/examples/%s_preamble.h' % ex
-    # Ninja empty string!
-    preamble_path = p if os.path.exists(p) else "''"
+    p = '%s_preamble.h' % py_rel_path
+    preamble = p if os.path.exists(p) else "''"  # Ninja empty string!
 
     # Make a translation unit
-    n.build(
-        main_cc_src,
-        'wrap-cc',
-        raw,
-        implicit=[RULES_PY],
-        variables=[
-            ('name', ex),
-            ('preamble_path', preamble_path),
-            # translator is used to determine wrap-cc
-            ('translator', os.path.basename(translator_shwrap))
-        ])
+    n.build(main_cc_src,
+            'wrap-cc',
+            raw,
+            implicit=[RULES_PY],
+            variables=[
+                ('main_namespace', ex),
+                ('main_func', 'example-main-wrapper'),
+                ('preamble', preamble),
+            ])
 
     n.newline()
 
@@ -277,8 +281,8 @@ def NinjaGraph(ru):
     n.rule(
         'wrap-cc',
         command=
-        'build/ninja-rules-py.sh wrap-cc $out $translator $name $in $preamble_path',
-        description='wrap-cc $out $translator $name $in $preamble_path $out')
+        'build/ninja-rules-py.sh wrap-cc $out $main_func $main_namespace $in $preamble',
+        description='wrap-cc $out $main_func $main_namespace $in $preamble')
     n.newline()
     n.rule(
         'example-task',
@@ -341,13 +345,11 @@ def NinjaGraph(ru):
     #
 
     ## Pea Examples
-    for ex in examples:
+    for ex, py_main in examples:
         # Special case: mycpp/examples/pea_* are only translated with pea.
         # TODO: pea examples don't have the same main()
 
         if ex.startswith('pea_'):
-            #TranslatorSubgraph(ru, 'pea', ex)
-
             mycpp_binary(ru,
                          'mycpp.examples.%s' % ex,
                          translator='pea',
@@ -360,7 +362,7 @@ def NinjaGraph(ru):
     to_compare = []
     benchmark_tasks = []
 
-    for ex in examples:
+    for ex, py_main in examples:
         if ex.startswith('pea_'):  # Only non-pea examples
             continue
 
@@ -419,11 +421,13 @@ def NinjaGraph(ru):
 
             matrix = SOUFFLE_MATRIX if translator == 'mycpp-souffle' else None
             phony_prefix = 'mycpp-examples' if translator == 'mycpp' else None
+            py_inputs = TRANSLATE_FILES.get(ex)
 
             TranslatorSubgraph(ru,
                                translator,
-                               ex,
+                               py_main,
                                MYPY_PATH,
+                               py_inputs=py_inputs,
                                phony_prefix=phony_prefix,
                                matrix=matrix,
                                deps=EXAMPLES_DEPS.get(ex))

@@ -579,7 +579,7 @@ RULES_PY = 'build/ninja-rules-py.sh'
 
 
 def mycpp_binary(ru,
-                 py_module,
+                 py_main,
                  preamble=None,
                  translator='mycpp',
                  matrix=None,
@@ -588,8 +588,11 @@ def mycpp_binary(ru,
                  deps=None):
     #assert py_module.count('.') == 1, py_module
 
-    # e.g. bin/oils_for_unix
-    py_rel_path = py_module.replace('.', '/')
+    # bin/oils_for_unix
+    py_rel_path, _ = os.path.splitext(py_main)
+
+    # bin.oils_for_unix
+    py_module = py_rel_path.replace('/', '.')
 
     symlinks = symlinks or []
     matrix = matrix or COMPILERS_VARIANTS
@@ -599,17 +602,18 @@ def mycpp_binary(ru,
         if os.path.exists(custom):
             preamble = custom
         else:
-            preamble = '""'
+            preamble = "''"
 
     n = ru.n
 
+    # TODO: move this out, since it may read the files multiple times
     deps_file = '_build/NINJA/%s/translate.txt' % py_module
     if os.path.exists(deps_file):
         with open(deps_file) as f:
             py_inputs = [line.strip() for line in f]
     else:
         # Just the main file
-        py_inputs = [py_rel_path + '.py']
+        py_inputs = [py_main]
 
     prefix = '_gen/%s.%s' % (py_rel_path, translator)
     shwrap_path = SHWRAP[translator]

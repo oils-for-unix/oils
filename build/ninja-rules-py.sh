@@ -141,42 +141,27 @@ mycpp-gen() {
 }
 
 print-wrap-cc() {
-  local translator=$1
-  local main_namespace=$2
-  local in=$3
-  local preamble_path=$4
+  local out=$1
+  local main_func=$2
+  local main_namespace=$3
+  local in=$4
+  local preamble_path=$5
 
-   echo "// examples/$main_namespace translated by $translator"
-   echo
+  echo "// $out - generated from Python source code"
+  echo
 
-   if test -f "$preamble_path"; then
-     echo "#include \"$preamble_path\""
-   fi
+  if test -f "$preamble_path"; then
+    echo "#include \"$preamble_path\""
+  fi
 
-   cat $in
+  cat $in
 
-   # main() function
-   case $translator in
-     mycpp_main|mycpp_main_souffle)
-       example-main-wrapper $main_namespace
-       ;;
-     yaks_main)
-       main-wrapper $main_namespace
-       ;;
-     pea_main)
-       main-wrapper $main_namespace
-       #echo '#include <stdio.h>'
-       #echo 'int main() { printf("stub\n"); return 1; }'
-       ;;
-     *)
-       die "Invalid translator $translator"
-       ;;
-   esac
+  # example-main-wrapper, main-wrapper, etc.
+  $main_func $main_namespace
 }
 
 wrap-cc() {
   local out=$1
-  shift
 
   # $translator $main_namespace $in $preamble_path
   print-wrap-cc "$@" > $out
