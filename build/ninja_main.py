@@ -22,12 +22,12 @@ from cpp import NINJA_subgraph as cpp_subgraph
 from data_lang import NINJA_subgraph as data_lang_subgraph
 from display import NINJA_subgraph as display_subgraph
 from frontend import NINJA_subgraph as frontend_subgraph
-from ysh import NINJA_subgraph as ysh_subgraph
 from osh import NINJA_subgraph as osh_subgraph
 from mycpp import NINJA_subgraph as mycpp_subgraph
 from pea import NINJA_subgraph as pea_subgraph
 from prebuilt import NINJA_subgraph as prebuilt_subgraph
 from yaks import NINJA_subgraph as yaks_subgraph
+from ysh import NINJA_subgraph as ysh_subgraph
 
 from vendor import ninja_syntax
 
@@ -335,11 +335,11 @@ def InitSteps(n):
     n.newline()
 
     n.rule(
-        'gen-oils-for-unix',
+        'mycpp-gen',
         command=
-        'build/ninja-rules-py.sh gen-oils-for-unix $main_name $shwrap_path $out_prefix $preamble $in',
+        'build/ninja-rules-py.sh mycpp-gen $py_module $shwrap_path $out_prefix $preamble $in',
         description=
-        'gen-oils-for-unix $main_name $shwarp_path $out_prefix $preamble $in')
+        'mycpp-gen $py_module $shwrap_path $out_prefix $preamble $in')
     n.newline()
 
 

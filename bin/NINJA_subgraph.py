@@ -7,12 +7,9 @@ from glob import glob
 from fnmatch import fnmatch
 
 from build import ninja_lib
-from build.ninja_lib import log
+from build.ninja_lib import mycpp_binary, log
 
 _ = log
-
-# TODO: should have dependencies with sh_binary
-RULES_PY = 'build/ninja-rules-py.sh'
 
 
 def NinjaGraph(ru):
@@ -98,25 +95,26 @@ def NinjaGraph(ru):
     ]
 
     # TODO: other files should get their own
-    preamble = 'bin/oils_for_unix_preamble.h'
+    oils_preamble = 'bin/oils_for_unix_preamble.h'
 
     # Demos
-    MainBinary(
+    mycpp_binary(
         ru,
-        'hello',
-        preamble,
+        'bin.hello',
         deps=['//mycpp/runtime'],
     )
-    MainBinary(ru, 'osh_eval', preamble, deps=oils_deps)
-    MainBinary(ru, 'osh_parse', preamble, deps=oils_deps)
+    mycpp_binary(ru, 'bin.osh_eval', preamble=oils_preamble, deps=oils_deps)
+    mycpp_binary(ru, 'bin.osh_parse', preamble=oils_preamble, deps=oils_deps)
 
     oils_symlinks = ['osh', 'ysh']
+    matrix = (ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS +
+              ninja_lib.OTHER_VARIANTS)
 
     # Main oils-for-unix binary
-    MainBinary(
+    mycpp_binary(
         ru,
-        'oils_for_unix',
-        preamble,
+        'bin.oils_for_unix',
+        matrix=matrix,
         # _bin/cxx-opt/oils-for-unix, NOT _bin/cxx-opt/bin/oils-for-unix
         bin_path='oils-for-unix',
         symlinks=oils_symlinks,
@@ -124,60 +122,11 @@ def NinjaGraph(ru):
     )
     # Faster variant
     # this could have been _bin/cxx-opt/oils-for-unix.mycpp-souffle?
-    MainBinary(
+    mycpp_binary(
         ru,
-        'oils_for_unix',
-        preamble,
+        'bin.oils_for_unix',
         translator='mycpp-souffle',
         bin_path='mycpp-souffle/oils-for-unix',
         symlinks=oils_symlinks,
         deps=oils_deps,
     )
-
-
-_SHWRAP = {
-    'mycpp': '_bin/shwrap/mycpp_main',
-    'mycpp-souffle': '_bin/shwrap/mycpp_main_souffle',
-}
-
-
-def MainBinary(ru,
-               main_name,
-               preamble,
-               translator='mycpp',
-               bin_path=None,
-               symlinks=None,
-               deps=None):
-    symlinks = symlinks or []
-    deps = deps or []
-
-    n = ru.n
-
-    with open('_build/NINJA/bin.%s/translate.txt' % main_name) as f:
-        deps1 = [line.strip() for line in f]
-
-    prefix = '_gen/bin/%s.%s' % (main_name, translator)
-    shwrap_path = _SHWRAP[translator]
-
-    variables = [
-        ('main_name', main_name),
-        ('shwrap_path', shwrap_path),
-        ('out_prefix', prefix),
-        ('preamble', preamble),
-    ]
-
-    outputs = [prefix + '.cc', prefix + '.h']
-    n.build(outputs,
-            'gen-oils-for-unix',
-            deps1,
-            implicit=[shwrap_path, RULES_PY],
-            variables=variables)
-
-    ru.cc_binary(
-        '_gen/bin/%s.%s.cc' % (main_name, translator),
-        bin_path=bin_path,
-        symlinks=symlinks,
-        preprocessed=True,
-        matrix=(ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS +
-                ninja_lib.OTHER_VARIANTS),
-        deps=deps)

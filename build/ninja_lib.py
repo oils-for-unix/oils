@@ -566,3 +566,60 @@ class Rules(object):
                                 ('more_link_flags', "'-lstdc++fs'")])
 
         self.n.newline()
+
+
+_SHWRAP = {
+    'mycpp': '_bin/shwrap/mycpp_main',
+    'mycpp-souffle': '_bin/shwrap/mycpp_main_souffle',
+}
+
+# TODO: should have dependencies with sh_binary
+RULES_PY = 'build/ninja-rules-py.sh'
+
+
+def mycpp_binary(ru,
+                 py_module,
+                 preamble=None,
+                 translator='mycpp',
+                 matrix=None,
+                 bin_path=None,
+                 symlinks=None,
+                 deps=None):
+    assert py_module.count('.') == 1, py_module
+    # e.g. bin/oils_for_unix
+    py_rel_path = py_module.replace('.', '/')
+
+    symlinks = symlinks or []
+    deps = deps or []
+    matrix = matrix or COMPILERS_VARIANTS
+    if preamble is None:
+        preamble = py_rel_path + '_preamble.h'
+
+    n = ru.n
+
+    with open('_build/NINJA/%s/translate.txt' % py_module) as f:
+        deps1 = [line.strip() for line in f]
+
+    prefix = '_gen/%s.%s' % (py_rel_path, translator)
+    shwrap_path = _SHWRAP[translator]
+
+    variables = [
+        ('py_module', py_module),
+        ('shwrap_path', shwrap_path),
+        ('out_prefix', prefix),
+        ('preamble', preamble),
+    ]
+
+    outputs = [prefix + '.cc', prefix + '.h']
+    n.build(outputs,
+            'mycpp-gen',
+            deps1,
+            implicit=[shwrap_path, RULES_PY],
+            variables=variables)
+
+    ru.cc_binary('_gen/%s.%s.cc' % (py_rel_path, translator),
+                 bin_path=bin_path,
+                 symlinks=symlinks,
+                 preprocessed=True,
+                 matrix=matrix,
+                 deps=deps)

@@ -4,7 +4,7 @@ yaks/NINJA_subgraph.py
 from __future__ import print_function
 
 from build import ninja_lib
-from build.ninja_lib import log, COMPILERS_VARIANTS
+from build.ninja_lib import log, mycpp_binary
 
 _ = log
 
@@ -21,32 +21,11 @@ def NinjaGraph(ru):
 
     ru.cc_binary('yaks/yaks_runtime_test.cc',
                  deps=['//mycpp/runtime'],
-                 matrix=COMPILERS_VARIANTS)
+                 matrix=ninja_lib.COMPILERS_VARIANTS)
 
-    # yaks compiler
-    main_name = 'yaks_main'
-    with open('_build/NINJA/yaks.%s/translate.txt' % main_name) as f:
-        deps = [line.strip() for line in f]
-
-    prefix = '_gen/yaks/%s.mycpp' % main_name
-    outputs = [prefix + '.cc', prefix + '.h']
-    shwrap_path = '_bin/shwrap/mycpp_main'
-
-    preamble = 'yaks/yaks_main_preamble.h'
-    n.build(outputs,
-            'gen-oils-for-unix',
-            deps,
-            implicit=[shwrap_path, RULES_PY],
-            variables=[('out_prefix', prefix), ('main_name', main_name),
-                       ('shwrap_path', shwrap_path), ('preamble', preamble)])
-
-    ru.cc_binary(
-        '_gen/yaks/%s.mycpp.cc' % main_name,
-        # Note: yaks/yaks.py is bad for Python imports, so it's called
-        # yaks_main.py
-        # yaks overlaps with the directory _bin/cxx-opt/yaks/examples
-        #bin_path='yaks_main',
-        preprocessed=True,
+    mycpp_binary(
+        ru,
+        'yaks.yaks_main',
         matrix=ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS,
         deps=[
             '//core/optview',  # TODO: remove this dep

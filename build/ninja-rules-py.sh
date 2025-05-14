@@ -66,9 +66,9 @@ int main(int argc, char **argv) {
 EOF
 }
 
-gen-oils-for-unix() {
-  ### Generate a .cc file and a .header
-  local main_name=$1    # e.g. oils_for_unix
+mycpp-gen() {
+  ### Generate a .cc file and a .header with mycpp
+  local py_module=$1    # e.g. bin.oils_for_unix
   local shwrap_path=$2  # e.g. _bin/shwrap/mycpp_main
   local out_prefix=$3   # e.g. _gen/bin/oils_for_unix.mycpp
   local preamble=$4     # e.g. cpp/preamble.h
@@ -78,10 +78,13 @@ gen-oils-for-unix() {
   local tmp=_build/tmp/$(basename $shwrap_path)
   mkdir -p $tmp
 
-  local raw_cc=$tmp/${main_name}_raw.cc
+  # e.g. bin_hello, bin_oils_for_unix
+  local py_id=${py_module//'.'/'_'}
+
+  local raw_cc=$tmp/${py_id}_raw.cc
   local cc_out=${out_prefix}.cc
 
-  local raw_header=$tmp/${main_name}_raw.h
+  local raw_header=$tmp/${py_id}_raw.h
   local header_out=${out_prefix}.h
 
   local mypypath="$REPO_ROOT:$REPO_ROOT/pyext"
@@ -91,10 +94,10 @@ gen-oils-for-unix() {
     ${EXTRA_MYCPP_ARGS:-} \
     "$@"
 
-  # oils_for_unix -> OILS_FOR_UNIX_MYCPP_H'
-  local guard=${main_name^^}_MYCPP_H
+  # bin_oils_for_unix -> BIN_OILS_FOR_UNIX_MYCPP_H'
+  local guard=${py_id^^}_MYCPP_H
 
-  { echo "// $main_name.h: translated from Python by mycpp"
+  { echo "// $header_out: translated from Python by mycpp"
     echo
     echo "#ifndef $guard"
     echo "#define $guard"
@@ -106,7 +109,7 @@ gen-oils-for-unix() {
   } > $header_out
 
   { cat <<EOF
-// $main_name.cc: translated from Python by mycpp
+// $cc_out: translated from Python by mycpp
 
 // #include "$header_out"
 
@@ -115,7 +118,9 @@ EOF
 
     cat $raw_cc
 
-    main-wrapper $main_name
+    # bin.oils_for_unix -> oils_for_unix
+    local main_namespace=${py_module#*.}
+    main-wrapper $main_namespace
   } > $cc_out
 }
 
