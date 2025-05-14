@@ -571,6 +571,7 @@ class Rules(object):
 _SHWRAP = {
     'mycpp': '_bin/shwrap/mycpp_main',
     'mycpp-souffle': '_bin/shwrap/mycpp_main_souffle',
+    'pea': '_bin/shwrap/pea_main',
 }
 
 # TODO: should have dependencies with sh_binary
@@ -585,7 +586,8 @@ def mycpp_binary(ru,
                  bin_path=None,
                  symlinks=None,
                  deps=None):
-    assert py_module.count('.') == 1, py_module
+    #assert py_module.count('.') == 1, py_module
+
     # e.g. bin/oils_for_unix
     py_rel_path = py_module.replace('.', '/')
 
@@ -602,9 +604,12 @@ def mycpp_binary(ru,
     n = ru.n
 
     deps_file = '_build/NINJA/%s/translate.txt' % py_module
-
-    with open(deps_file) as f:
-        deps1 = [line.strip() for line in f]
+    if os.path.exists(deps_file):
+        with open(deps_file) as f:
+            deps1 = [line.strip() for line in f]
+    else:
+        # Just the main file
+        deps1 = [py_rel_path + '.py']
 
     prefix = '_gen/%s.%s' % (py_rel_path, translator)
     shwrap_path = _SHWRAP[translator]
@@ -616,7 +621,11 @@ def mycpp_binary(ru,
         ('preamble', preamble),
     ]
 
-    outputs = [prefix + '.cc', prefix + '.h']
+    # Header is unused?
+    #outputs = [prefix + '.cc', prefix + '.h']
+
+    outputs = [prefix + '.cc']
+
     n.build(outputs,
             'mycpp-gen',
             deps1,

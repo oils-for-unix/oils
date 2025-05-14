@@ -6,7 +6,7 @@
 #   build/ninja-rules-py.sh <function name>
 #
 # Env variables:
-#   EXTRA_MYCPP_ARGS - passed to mycpp_main
+#   EXTRA_MYCPP_ARGS - passed to mycpp_main, for --stack-roots-warn 16
 
 set -o nounset
 set -o pipefail
@@ -66,15 +66,27 @@ int main(int argc, char **argv) {
 EOF
 }
 
+# Differences between bin/* and mycpp/examples/*
+#
+# - raw files
+#   - bin/* does NOT use a Ninja rule; it uses _build/tmp 
+#   - mycpp/examples/* uses _gen/mycpp/example/foo{,_raw}.mycpp.cc
+# - MYPYPATH
+#   - bin/* uses "$REPO_ROOT:$REPO_ROOT/pyext"
+#   - mycpp/examples/* uses $NINJA_REPO_ROOT ...
+# - wrapper
+#   - main-wrapper vs. example-main-wrapper
+
 mycpp-gen() {
-  ### Generate a .cc file and a .header with mycpp
+  ### Run mycpp, and then wrap the _raw.cc file, and maybe the _raw.h file
+
   local py_module=$1    # e.g. bin.oils_for_unix
   local shwrap_path=$2  # e.g. _bin/shwrap/mycpp_main
   local out_prefix=$3   # e.g. _gen/bin/oils_for_unix.mycpp
   local preamble=$4     # e.g. cpp/preamble.h
   shift 4  # rest are inputs
 
-  # Put temporary output in _build/tmp so it's not in the tarball
+  # Put raw files in _build/tmp so they're not in the tarball
   local tmp=_build/tmp/$(basename $shwrap_path)
   mkdir -p $tmp
 
@@ -94,19 +106,22 @@ mycpp-gen() {
     ${EXTRA_MYCPP_ARGS:-} \
     "$@"
 
-  # bin_oils_for_unix -> BIN_OILS_FOR_UNIX_MYCPP_H'
-  local guard=${py_id^^}_MYCPP_H
+  #if test -f "$raw_header"; then
+  if false; then
+    # bin_oils_for_unix -> BIN_OILS_FOR_UNIX_MYCPP_H
+    local guard=${py_id^^}_MYCPP_H
 
-  { echo "// $header_out: translated from Python by mycpp"
-    echo
-    echo "#ifndef $guard"
-    echo "#define $guard"
+    { echo "// $header_out: translated from Python by mycpp"
+      echo
+      echo "#ifndef $guard"
+      echo "#define $guard"
 
-    cat $raw_header
+      cat $raw_header
 
-    echo "#endif  // $guard"
+      echo "#endif  // $guard"
 
-  } > $header_out
+    } > $header_out
+  fi
 
   { echo "// $cc_out: translated from Python by mycpp"
 
@@ -119,7 +134,8 @@ mycpp-gen() {
     cat $raw_cc
 
     # bin.oils_for_unix -> oils_for_unix
-    local main_namespace=${py_module#*.}
+    # mycpp.examples.pea_hello -> pea_hello
+    local main_namespace=${py_module##*.}
     main-wrapper $main_namespace
   } > $cc_out
 }

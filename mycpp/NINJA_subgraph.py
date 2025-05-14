@@ -7,7 +7,8 @@ from __future__ import print_function
 import os
 import sys
 
-from build.ninja_lib import log, COMPILERS_VARIANTS, OTHER_VARIANTS
+from build.ninja_lib import (log, mycpp_binary, COMPILERS_VARIANTS,
+                             OTHER_VARIANTS)
 
 _ = log
 
@@ -365,7 +366,12 @@ def NinjaGraph(ru):
         # TODO: pea examples don't have the same main()
 
         if ex.startswith('pea_'):
-            TranslatorSubgraph(ru, 'pea', ex)
+            #TranslatorSubgraph(ru, 'pea', ex)
+
+            mycpp_binary(ru,
+                         'mycpp.examples.%s' % ex,
+                         translator='pea',
+                         deps=['//mycpp/runtime'])
 
     to_compare = []
     benchmark_tasks = []
