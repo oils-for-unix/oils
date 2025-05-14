@@ -104,12 +104,11 @@ def NinjaGraph(ru):
     MainBinary(
         ru,
         'hello',
-        'mycpp',
         preamble,
         deps=['//mycpp/runtime'],
     )
-    MainBinary(ru, 'osh_eval', 'mycpp', preamble, deps=oils_deps)
-    MainBinary(ru, 'osh_parse', 'mycpp', preamble, deps=oils_deps)
+    MainBinary(ru, 'osh_eval', preamble, deps=oils_deps)
+    MainBinary(ru, 'osh_parse', preamble, deps=oils_deps)
 
     oils_symlinks = ['osh', 'ysh']
 
@@ -117,7 +116,6 @@ def NinjaGraph(ru):
     MainBinary(
         ru,
         'oils_for_unix',
-        'mycpp',
         preamble,
         # _bin/cxx-opt/oils-for-unix, NOT _bin/cxx-opt/bin/oils-for-unix
         bin_path='oils-for-unix',
@@ -129,8 +127,8 @@ def NinjaGraph(ru):
     MainBinary(
         ru,
         'oils_for_unix',
-        'mycpp-souffle',
         preamble,
+        translator='mycpp-souffle',
         bin_path='mycpp-souffle/oils-for-unix',
         symlinks=oils_symlinks,
         deps=oils_deps,
@@ -145,8 +143,8 @@ _SHWRAP = {
 
 def MainBinary(ru,
                main_name,
-               translator,
                preamble,
+               translator='mycpp',
                bin_path=None,
                symlinks=None,
                deps=None):
