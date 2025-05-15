@@ -118,7 +118,7 @@ That allowed YSH to fix
     echo $x $y          # YES: single-line print "unmolested" in YSH
 
 So `echo` is technically superfluous in YSH, but it's also short, familiar, and
-correct.
+always correct.
 
 YSH isn't intended to be compatible with POSIX shell; only OSH is.
 
