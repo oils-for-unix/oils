@@ -26,6 +26,7 @@ def NinjaGraph(ru):
     mycpp_binary(
         ru,
         'yaks/yaks_main.py',
+        py_inputs=ninja_lib.TryDynamicDeps('yaks/yaks_main.py'),
         matrix=ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS,
         deps=[
             '//core/optview',  # TODO: remove this dep

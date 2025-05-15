@@ -334,14 +334,6 @@ def InitSteps(n):
     n.rule('cp', command='cp $in $out', description='cp $in $out')
     n.newline()
 
-    n.rule(
-        'mycpp-gen',
-        command=
-        'build/ninja-rules-py.sh mycpp-gen $py_module $shwrap_path $out_prefix $preamble $in',
-        description=
-        'mycpp-gen $py_module $shwrap_path $out_prefix $preamble $in')
-    n.newline()
-
 
 def main(argv):
     try:

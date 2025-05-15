@@ -63,9 +63,12 @@ def NinjaGraph(ru):
     # Programs
     #
 
+    hello_py_inputs = ninja_lib.TryDynamicDeps('bin/hello.py')
+
     mycpp_binary(
         ru,
         'bin/hello.py',
+        py_inputs=hello_py_inputs,
         deps=['//mycpp/runtime'],
     )
 
@@ -73,6 +76,7 @@ def NinjaGraph(ru):
     mycpp_binary(
         ru,
         'bin/hello.py',
+        py_inputs=hello_py_inputs,
         translator='mycpp-souffle',
         deps=['//mycpp/runtime'],
     )
@@ -118,9 +122,14 @@ def NinjaGraph(ru):
     # TODO: other files should get their own
     oils_preamble = 'bin/oils_for_unix_preamble.h'
 
-    mycpp_binary(ru, 'bin/osh_eval.py', preamble=oils_preamble, deps=oils_deps)
+    mycpp_binary(ru,
+                 'bin/osh_eval.py',
+                 py_inputs=ninja_lib.TryDynamicDeps('bin/osh_eval.py'),
+                 preamble=oils_preamble,
+                 deps=oils_deps)
     mycpp_binary(ru,
                  'bin/osh_parse.py',
+                 py_inputs=ninja_lib.TryDynamicDeps('bin/osh_parse.py'),
                  preamble=oils_preamble,
                  deps=oils_deps)
 
@@ -128,10 +137,13 @@ def NinjaGraph(ru):
     matrix = (ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS +
               ninja_lib.OTHER_VARIANTS)
 
+    oils_py_inputs = ninja_lib.TryDynamicDeps('bin/oils_for_unix.py')
+
     # Main oils-for-unix binary
     mycpp_binary(
         ru,
         'bin/oils_for_unix.py',
+        py_inputs=oils_py_inputs,
         matrix=matrix,
         # _bin/cxx-opt/oils-for-unix, NOT _bin/cxx-opt/bin/oils-for-unix
         bin_path='oils-for-unix',
@@ -144,6 +156,7 @@ def NinjaGraph(ru):
     mycpp_binary(
         ru,
         'bin/oils_for_unix.py',
+        py_inputs=oils_py_inputs,
         translator='mycpp-souffle',
         bin_path='mycpp-souffle/oils-for-unix',
         symlinks=oils_symlinks,

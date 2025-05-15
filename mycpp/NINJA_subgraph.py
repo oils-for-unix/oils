@@ -356,10 +356,9 @@ def NinjaGraph(ru):
         # TODO: pea examples don't have the same main()
 
         if ex.startswith('pea_'):
-            #mycpp_binary(ru,
-            TranslatorSubgraph(ru,
+            mycpp_binary(ru,
                          py_main,
-                         MYPY_PATH,
+                         mypy_path=MYPY_PATH,
                          main_style='main-wrapper',
                          translator='pea',
                          matrix=[
@@ -432,14 +431,16 @@ def NinjaGraph(ru):
             phony_prefix = 'mycpp-examples' if translator == 'mycpp' else None
             py_inputs = TRANSLATE_FILES.get(ex)
 
-            TranslatorSubgraph(ru,
-                               py_main,
-                               MYPY_PATH,
-                               translator=translator,
-                               py_inputs=py_inputs,
-                               phony_prefix=phony_prefix,
-                               matrix=matrix,
-                               deps=EXAMPLES_DEPS.get(ex))
+            deps = EXAMPLES_DEPS.get(ex, ['//mycpp/runtime'])
+            mycpp_binary(ru,
+                         py_main,
+                         mypy_path=MYPY_PATH,
+                         translator=translator,
+                         main_style='example-main-wrapper',
+                         py_inputs=py_inputs,
+                         phony_prefix=phony_prefix,
+                         matrix=matrix,
+                         deps=deps)
 
             # minimal
             TEST_MATRIX = [

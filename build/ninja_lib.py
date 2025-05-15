@@ -578,39 +578,39 @@ SHWRAP = {
 RULES_PY = 'build/ninja-rules-py.sh'
 
 # Copied from build/ninja-rules-py.sh mycpp-gen
-MYPY_PATH = '$NINJA_REPO_ROOT:$NINJA_REPO_ROOT/pyext'
+DEFAULT_MYPY_PATH = '$NINJA_REPO_ROOT:$NINJA_REPO_ROOT/pyext'
 
 
-def mycpp_binary(ru, py_main, **kwargs):
+def TryDynamicDeps(py_main):
+    """
+    Read dynamic deps files built in ./NINJA-config.sh
+    """
     # bin/oils_for_unix
     py_rel_path, _ = os.path.splitext(py_main)
     # bin.oils_for_unix
     py_module = py_rel_path.replace('/', '.')
 
-    # TODO: move this out, since it may read the files multiple times
-    py_inputs = None
     deps_file = '_build/NINJA/%s/translate.txt' % py_module
     if os.path.exists(deps_file):
         with open(deps_file) as f:
-            py_inputs = [line.strip() for line in f]
+            return [line.strip() for line in f]
 
-    kwargs['py_inputs'] = py_inputs
-    mycpp_binary2(ru, py_main, MYPY_PATH, **kwargs)
+    return None
 
 
-def mycpp_binary2(ru,
-                  py_main,
-                  mypy_path,
-                  bin_path=None,
-                  symlinks=None,
-                  preprocessed=False,
-                  preamble=None,
-                  translator='mycpp',
-                  main_style='main-wrapper',
-                  py_inputs=None,
-                  phony_prefix=None,
-                  matrix=None,
-                  deps=None):
+def mycpp_binary(ru,
+                 py_main,
+                 mypy_path=DEFAULT_MYPY_PATH,
+                 bin_path=None,
+                 symlinks=None,
+                 preprocessed=False,
+                 preamble=None,
+                 translator='mycpp',
+                 main_style='main-wrapper',
+                 py_inputs=None,
+                 phony_prefix=None,
+                 matrix=None,
+                 deps=None):
     # e.g. bin/oils_for_unix
     py_rel_path, _ = os.path.splitext(py_main)
     # e.g. bin.oils_for_unix
@@ -625,36 +625,6 @@ def mycpp_binary2(ru,
         preamble = p if os.path.exists(p) else "''"  # Ninja empty string!
 
     n = ru.n
-
-    if False:
-        prefix = '_gen/%s.%s' % (py_rel_path, translator)
-        shwrap_path = SHWRAP[translator]
-
-        variables = [
-            ('py_module', py_module),
-            ('shwrap_path', shwrap_path),
-            ('out_prefix', prefix),
-            ('preamble', preamble),
-        ]
-
-        # Header is unused?
-        #outputs = [prefix + '.cc', prefix + '.h']
-
-        outputs = [prefix + '.cc']
-
-        n.build(outputs,
-                'mycpp-gen',
-                py_inputs,
-                implicit=[shwrap_path, RULES_PY],
-                variables=variables)
-
-        ru.cc_binary('_gen/%s.%s.cc' % (py_rel_path, translator),
-                     bin_path=bin_path,
-                     symlinks=symlinks,
-                     preprocessed=True,
-                     matrix=matrix,
-                     deps=deps)
-        return
 
     # Two steps
     raw = '_gen/_tmp/%s.%s-raw.cc' % (py_rel_path, translator)
