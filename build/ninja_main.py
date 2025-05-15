@@ -95,11 +95,14 @@ def TarballManifest(cc_h_files):
         print(name)
 
 
-def ShellFunctions(cc_sources, f, argv0):
+def ShellFunctions(app_name, cc_sources, f, argv0):
     """
     Generate a shell fragment that invokes the same function that build.ninja
     does
     """
+    # oils_for_unix -> oils-for-unix
+    app_name_hyphens = app_name.replace('_', '-')
+
     print('''\
 main() {
   ### Compile oils-for-unix into _bin/$compiler-$variant-sh/ (not with ninja)
@@ -112,6 +115,8 @@ main() {
   local translator=$FLAG_translator
   local skip_rebuild=$FLAG_skip_rebuild
 
+  local out_name=%s
+
   local out_dir
   case $translator in
     mycpp)
@@ -121,10 +126,10 @@ main() {
       out_dir=_bin/$compiler-$variant-sh/$translator
       ;;
   esac
-  local out=$out_dir/oils-for-unix
+  local out=$out_dir/$out_name
 
   echo
-  echo "$0: Building oils-for-unix: $out"
+  echo "$0: Building $out_name: $out"
   echo "    PWD = $PWD"
   echo "    cxx = $compiler"
   echo "    variant = $variant"
@@ -141,20 +146,25 @@ main() {
   fi
 
   echo
-''',
+''' % app_name_hyphens,
           file=f)
 
     objects = []
 
+    # Special case for souffle
     in_out = [
-        ('_gen/bin/oils_for_unix.$translator.cc',
-         '_build/obj/$compiler-$variant-sh/_gen/bin/oils_for_unix.o'),
+        ('_gen/bin/%s.$translator.cc' % app_name,
+         '_build/obj/$compiler-$variant-sh/_gen/bin/%s.$translator.o' %
+         app_name),
     ]
     for src in sorted(cc_sources):
         # e.g. _build/obj/cxx-dbg-sh/posix.o
         prefix, _ = os.path.splitext(src)
-        if prefix.startswith('_gen/bin/oils_for_unix'):
+
+        # Skip the one we started with
+        if prefix.startswith('_gen/bin/%s' % app_name):
             continue
+
         obj = '_build/obj/$compiler-$variant-sh/%s.o' % prefix
         in_out.append((src, obj))
 
@@ -218,7 +228,6 @@ main() {
     # TODO: provide a way for the user to get symbols?
 
     print('''\
-  local out_name=oils-for-unix
   if test "$variant" = opt; then
     strip -o "$out.stripped" "$out"
 
@@ -341,6 +350,11 @@ def main(argv):
     except IndexError:
         action = 'ninja'
 
+    try:
+        app_name = argv[2]
+    except IndexError:
+        app_name = 'oils_for_unix'
+
     if action == 'ninja':
         f = open(BUILD_NINJA, 'w')
     else:
@@ -400,7 +414,7 @@ def main(argv):
     ru.WriteRules()
 
     # Collect sources for metrics, tarball, shell script
-    cc_sources = ru.SourcesForBinary('_gen/bin/oils_for_unix.mycpp.cc')
+    cc_sources = ru.SourcesForBinary('_gen/bin/%s.mycpp.cc' % app_name)
 
     if 0:
         from pprint import pprint
@@ -418,12 +432,12 @@ def main(argv):
             n.num_build_targets())
 
     elif action == 'shell':
-        ShellFunctions(cc_sources, sys.stdout, argv[0])
+        ShellFunctions(app_name, cc_sources, sys.stdout, argv[0])
 
     elif action == 'tarball-manifest':
-        h = ru.HeadersForBinary('_gen/bin/oils_for_unix.mycpp.cc')
+        h = ru.HeadersForBinary('_gen/bin/%s.mycpp.cc' % app_name)
         tar_cc_sources = cc_sources + [
-            '_gen/bin/oils_for_unix.mycpp-souffle.cc'
+            '_gen/bin/%s.mycpp-souffle.cc' % app_name
         ]
         TarballManifest(tar_cc_sources + h)
 
