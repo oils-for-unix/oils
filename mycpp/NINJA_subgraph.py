@@ -11,6 +11,7 @@ from build.ninja_lib import (log, mycpp_binary, COMPILERS_VARIANTS,
                              OTHER_VARIANTS, SHWRAP)
 
 _ = log
+_ = mycpp_binary
 
 
 def DefineTargets(ru):
