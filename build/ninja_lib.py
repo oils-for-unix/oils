@@ -626,7 +626,7 @@ def mycpp_binary2(ru,
 
     n = ru.n
 
-    if True:
+    if False:
         prefix = '_gen/%s.%s' % (py_rel_path, translator)
         shwrap_path = SHWRAP[translator]
 
