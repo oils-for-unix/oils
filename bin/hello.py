@@ -8,8 +8,6 @@ from typing import List
 
 def main(argv):
     # type: (List[str]) -> int
-    print('hi')
-    if len(argv):
-        return 1
-    else:
-        return 0
+
+    #print('hi')
+    return len(argv)

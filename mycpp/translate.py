@@ -74,9 +74,6 @@ def Run(timer: Timer,
 
     f.write("""\
 // BEGIN mycpp output
-
-#include "mycpp/runtime.h"
-
 """)
 
     # Which functions are C++ 'virtual'?

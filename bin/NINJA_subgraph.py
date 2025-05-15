@@ -68,6 +68,7 @@ def NinjaGraph(ru):
     mycpp_binary(
         ru,
         'bin/hello.py',
+        main_style='windows-main',
         py_inputs=hello_py_inputs,
         deps=['//mycpp/runtime'],
     )
@@ -76,6 +77,7 @@ def NinjaGraph(ru):
     mycpp_binary(
         ru,
         'bin/hello.py',
+        main_style='windows-main',
         py_inputs=hello_py_inputs,
         translator='mycpp-souffle',
         deps=['//mycpp/runtime'],

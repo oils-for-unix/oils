@@ -75,6 +75,10 @@ def TarballManifest(cc_h_files):
     # TODO: crawl headers
     # We can now use the headers=[] attribute
     names.extend(glob('bin/oils_for_unix_preamble.h'))
+
+    # TODO: Parameterize by app
+    names.extend(glob('bin/hello_preamble.h'))
+
     names.extend(glob('cpp/*.h'))
     names.extend(glob('mycpp/*.h'))
     names.extend(glob('asdl/*.h'))

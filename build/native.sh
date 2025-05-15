@@ -71,7 +71,7 @@ measure-build-times() {
 # Ninja Wrappers
 #
 
-oil-slice-demo() {
+oils-demo() {
   export PYTHONPATH='.:vendor/'
 
   echo 'echo hi' | bin/osh_parse.py
@@ -97,7 +97,7 @@ oil-slice-demo() {
   $osh -c 'for x in 1 2 3; do echo $x; done'
 }
 
-soil-run() {
+test-oils() {
   if test "${container:-}" = podman; then
 
     # Work around for ASAN not working in podman
@@ -114,13 +114,25 @@ soil-run() {
   ninja $bin
   echo
 
-  echo "Built $bin"
-  echo
-
   $bin --version
   echo
 
-  oil-slice-demo $bin
+  oils-demo $bin
+}
+
+test-hello() {
+  local hello=_bin/cxx-asan/bin/hello.mycpp
+
+  ninja $hello
+  set +o errexit
+  $hello a b c
+  echo status=$?
+  set -o errexit
+}
+
+soil-run() {
+  test-oils
+  test-hello
 }
 
 "$@"

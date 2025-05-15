@@ -67,6 +67,27 @@ int main(int argc, char **argv) {
 EOF
 }
 
+windows-main() {
+  local main_namespace=$1
+
+  cat <<EOF
+int main(int argc, char **argv) {
+  gHeap.Init();
+
+  auto* args = Alloc<List<BigStr*>>();
+  for (int i = 0; i < argc; ++i) {
+    args->append(StrFromC(argv[i]));
+  }
+
+  int status = $main_namespace::main(args);
+
+  gHeap.ProcessExit();
+
+  return status;
+}
+EOF
+}
+
 print-wrap-cc() {
   local out=$1
   local main_func=$2
@@ -79,7 +100,11 @@ print-wrap-cc() {
 
   if test -f "$preamble_path"; then
     echo "#include \"$preamble_path\""
+  else
+    # the default preamble, for mycpp/examples
+    echo '#include "mycpp/runtime.h"'
   fi
+  echo
 
   cat $in
 
