@@ -577,68 +577,119 @@ SHWRAP = {
 # TODO: should have dependencies with sh_binary
 RULES_PY = 'build/ninja-rules-py.sh'
 
+# Copied from build/ninja-rules-py.sh mycpp-gen
+MYPY_PATH = '$NINJA_REPO_ROOT:$NINJA_REPO_ROOT/pyext'
 
-def mycpp_binary(ru,
-                 py_main,
-                 preamble=None,
-                 translator='mycpp',
-                 matrix=None,
-                 bin_path=None,
-                 symlinks=None,
-                 deps=None):
-    #assert py_module.count('.') == 1, py_module
 
+def mycpp_binary(ru, py_main, **kwargs):
     # bin/oils_for_unix
     py_rel_path, _ = os.path.splitext(py_main)
-
     # bin.oils_for_unix
     py_module = py_rel_path.replace('/', '.')
 
-    symlinks = symlinks or []
-    matrix = matrix or COMPILERS_VARIANTS
-    deps = deps or []
-    if preamble is None:
-        custom = py_rel_path + '_preamble.h'
-        if os.path.exists(custom):
-            preamble = custom
-        else:
-            preamble = "''"
-
-    n = ru.n
-
     # TODO: move this out, since it may read the files multiple times
+    py_inputs = None
     deps_file = '_build/NINJA/%s/translate.txt' % py_module
     if os.path.exists(deps_file):
         with open(deps_file) as f:
             py_inputs = [line.strip() for line in f]
-    else:
-        # Just the main file
-        py_inputs = [py_main]
 
-    prefix = '_gen/%s.%s' % (py_rel_path, translator)
-    shwrap_path = SHWRAP[translator]
+    kwargs['py_inputs'] = py_inputs
+    mycpp_binary2(ru, py_main, MYPY_PATH, **kwargs)
 
-    variables = [
-        ('py_module', py_module),
-        ('shwrap_path', shwrap_path),
-        ('out_prefix', prefix),
-        ('preamble', preamble),
-    ]
 
-    # Header is unused?
-    #outputs = [prefix + '.cc', prefix + '.h']
+def mycpp_binary2(ru,
+                  py_main,
+                  mypy_path,
+                  bin_path=None,
+                  symlinks=None,
+                  preamble=None,
+                  translator='mycpp',
+                  main_style='main-wrapper',
+                  py_inputs=None,
+                  phony_prefix=None,
+                  matrix=None,
+                  deps=None):
+    # e.g. bin/oils_for_unix
+    py_rel_path, _ = os.path.splitext(py_main)
+    # e.g. bin.oils_for_unix
+    py_module = py_rel_path.replace('/', '.')
 
-    outputs = [prefix + '.cc']
+    py_inputs = py_inputs or [py_main]  # if not specified, it's a single file
+    symlinks = symlinks or []
+    matrix = matrix or COMPILERS_VARIANTS
+    deps = deps or []
+    if preamble is None:
+        p = py_rel_path + '_preamble.h'
+        preamble = p if os.path.exists(p) else "''"  # Ninja empty string!
 
-    n.build(outputs,
-            'mycpp-gen',
-            py_inputs,
-            implicit=[shwrap_path, RULES_PY],
-            variables=variables)
+    n = ru.n
 
-    ru.cc_binary('_gen/%s.%s.cc' % (py_rel_path, translator),
-                 bin_path=bin_path,
-                 symlinks=symlinks,
-                 preprocessed=True,
-                 matrix=matrix,
-                 deps=deps)
+    if True:
+        prefix = '_gen/%s.%s' % (py_rel_path, translator)
+        shwrap_path = SHWRAP[translator]
+
+        variables = [
+            ('py_module', py_module),
+            ('shwrap_path', shwrap_path),
+            ('out_prefix', prefix),
+            ('preamble', preamble),
+        ]
+
+        # Header is unused?
+        #outputs = [prefix + '.cc', prefix + '.h']
+
+        outputs = [prefix + '.cc']
+
+        n.build(outputs,
+                'mycpp-gen',
+                py_inputs,
+                implicit=[shwrap_path, RULES_PY],
+                variables=variables)
+
+        ru.cc_binary('_gen/%s.%s.cc' % (py_rel_path, translator),
+                     bin_path=bin_path,
+                     symlinks=symlinks,
+                     preprocessed=True,
+                     matrix=matrix,
+                     deps=deps)
+        return
+
+    # Two steps
+    raw = '_gen/_tmp/%s.%s-raw.cc' % (py_rel_path, translator)
+    main_cc_src = '_gen/%s.%s.cc' % (py_rel_path, translator)
+
+    translator_shwrap = SHWRAP[translator]
+
+    n.build(
+        raw,
+        'translate-%s' % translator,
+        py_inputs,  # files to translate
+        # Implicit dependency: if the translator changes, regenerate source
+        # code.  But don't pass it on the command line.
+        implicit=[translator_shwrap],
+        # examples/parse uses pyext/fastfunc.pyi
+        variables=[('mypypath', mypy_path)])
+
+    # Make a translation unit
+    n.build(main_cc_src,
+            'wrap-cc',
+            raw,
+            implicit=[RULES_PY],
+            variables=[
+                ('main_namespace', os.path.basename(py_rel_path)),
+                ('main_style', main_style),
+                ('preamble', preamble),
+            ])
+
+    n.newline()
+
+    ru.cc_binary(
+        main_cc_src,
+        bin_path=bin_path,
+        symlinks=symlinks,
+        preprocessed=True,
+        deps=deps,
+        matrix=matrix,
+        phony_prefix=phony_prefix,
+    )

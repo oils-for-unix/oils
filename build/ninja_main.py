@@ -367,6 +367,10 @@ def main(argv):
     asdl_subgraph.NinjaGraph(ru)
     ru.comment('')
 
+    # translate-mycpp rule
+    mycpp_subgraph.NinjaGraph(ru)
+    ru.comment('')
+
     bin_subgraph.NinjaGraph(ru)
     ru.comment('')
 
@@ -383,9 +387,6 @@ def main(argv):
     ru.comment('')
 
     frontend_subgraph.NinjaGraph(ru)
-    ru.comment('')
-
-    mycpp_subgraph.NinjaGraph(ru)
     ru.comment('')
 
     ysh_subgraph.NinjaGraph(ru)

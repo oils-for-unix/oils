@@ -189,27 +189,31 @@ MYPY_PATH = '$NINJA_REPO_ROOT/mycpp:$NINJA_REPO_ROOT/pyext'
 
 def TranslatorSubgraph(
         ru,
-        translator,
         py_main,
         mypy_path,
+        bin_path=None,
+        symlinks=None,
+        preamble=None,
+        translator='mycpp',
+        main_style='example-main-wrapper',
         py_inputs=None,  # list of source files, including main
         phony_prefix=None,
         matrix=None,
         deps=None):
     """Create rules for a single example."""
-    py_inputs = py_inputs or [py_main]  # if not specified, it's a single file
-    matrix = matrix or COMPILERS_VARIANTS
-    deps = deps or ['//mycpp/runtime']
-
-    n = ru.n
-
     # e.g. mycpp/examples/parse
     py_rel_path, _ = os.path.splitext(py_main)
-
     # e.g. mycpp.examples.parse
     py_module = py_rel_path.replace('/', '.')
 
-    ex = os.path.basename(py_rel_path)
+    py_inputs = py_inputs or [py_main]  # if not specified, it's a single file
+    matrix = matrix or COMPILERS_VARIANTS
+    deps = deps or ['//mycpp/runtime']
+    if preamble is None:
+        p = '%s_preamble.h' % py_rel_path
+        preamble = p if os.path.exists(p) else "''"  # Ninja empty string!
+
+    n = ru.n
 
     # Two steps
     raw = '_gen/_tmp/%s.%s-raw.cc' % (py_rel_path, translator)
@@ -227,17 +231,14 @@ def TranslatorSubgraph(
         # examples/parse uses pyext/fastfunc.pyi
         variables=[('mypypath', mypy_path)])
 
-    p = '%s_preamble.h' % py_rel_path
-    preamble = p if os.path.exists(p) else "''"  # Ninja empty string!
-
     # Make a translation unit
     n.build(main_cc_src,
             'wrap-cc',
             raw,
             implicit=[RULES_PY],
             variables=[
-                ('main_namespace', ex),
-                ('main_func', 'example-main-wrapper'),
+                ('main_namespace', os.path.basename(py_rel_path)),
+                ('main_style', main_style),
                 ('preamble', preamble),
             ])
 
@@ -245,6 +246,9 @@ def TranslatorSubgraph(
 
     ru.cc_binary(
         main_cc_src,
+        bin_path=bin_path,
+        symlinks=symlinks,
+        preprocessed=True,
         deps=deps,
         matrix=matrix,
         phony_prefix=phony_prefix,
@@ -281,8 +285,8 @@ def NinjaGraph(ru):
     n.rule(
         'wrap-cc',
         command=
-        'build/ninja-rules-py.sh wrap-cc $out $main_func $main_namespace $in $preamble',
-        description='wrap-cc $out $main_func $main_namespace $in $preamble')
+        'build/ninja-rules-py.sh wrap-cc $out $main_style $main_namespace $in $preamble',
+        description='wrap-cc $out $main_style $main_namespace $in $preamble')
     n.newline()
     n.rule(
         'example-task',
@@ -424,9 +428,9 @@ def NinjaGraph(ru):
             py_inputs = TRANSLATE_FILES.get(ex)
 
             TranslatorSubgraph(ru,
-                               translator,
                                py_main,
                                MYPY_PATH,
+                               translator=translator,
                                py_inputs=py_inputs,
                                phony_prefix=phony_prefix,
                                matrix=matrix,

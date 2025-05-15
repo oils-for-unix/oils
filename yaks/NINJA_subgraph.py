@@ -63,7 +63,7 @@ def NinjaGraph(ru):
             'wrap-cc', [raw_cc],
             implicit=[RULES_PY],
             variables=[('main_namespace', 'hello'), ('preamble', '""'),
-                       ('main_func', 'main-wrapper')])
+                       ('main_style', 'main-wrapper')])
     n.newline()
 
     ru.cc_binary(
