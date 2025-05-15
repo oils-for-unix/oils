@@ -109,4 +109,33 @@ test-pipelines() {
   wine cmd /c 'python.exe win32/demo_asyncio.py'
 }
 
+test-mycpp-hello() {
+  #wine cmd /c 'cd _tmp/hello-tar-test/hello-0.29.0; bash.exe -c "echo bash"'
+
+  time wine "$BASH" -c '
+echo "hi from bash"
+
+set -o errexit
+
+# mkdir works!
+mkdir -p _tmp/hi-from-wine
+
+cd _tmp/hello-tar-test/hello-0.29.0
+pwd
+ls -l 
+
+set -x
+for dir in _bin/cxx-opt-sh/mycpp _build/obj/cxx-opt-sh/_gen/bin _build/obj/cxx-opt-sh/mycpp; do
+  ls -l $dir
+done
+
+# cross-shell tracing works!
+export SHELLOPTS
+
+set +o errexit
+_build/oils.sh
+echo status=$?
+'
+}
+
 "$@"

@@ -70,7 +70,7 @@ def NinjaGraph(ru):
         'bin/hello.py',
         main_style='windows-main',
         py_inputs=hello_py_inputs,
-        deps=['//mycpp/runtime'],
+        deps=['//mycpp/runtime_pure'],
     )
 
     # Try out souffle
@@ -80,7 +80,7 @@ def NinjaGraph(ru):
         main_style='windows-main',
         py_inputs=hello_py_inputs,
         translator='mycpp-souffle',
-        deps=['//mycpp/runtime'],
+        deps=['//mycpp/runtime_pure'],
     )
 
     # Use the stdlib

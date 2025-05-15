@@ -1,17 +1,15 @@
 """
 mycpp/NINJA_subgraph.py
 """
-
 from __future__ import print_function
 
 import os
 import sys
 
 from build.ninja_lib import (log, mycpp_binary, COMPILERS_VARIANTS,
-                             OTHER_VARIANTS, SHWRAP)
+                             OTHER_VARIANTS)
 
 _ = log
-_ = mycpp_binary
 
 
 def DefineTargets(ru):
@@ -35,14 +33,20 @@ def DefineTargets(ru):
         # Could separate into //mycpp/runtime_{marksweep,bumpleak}
         srcs=[
             'mycpp/bump_leak_heap.cc',
-            'mycpp/gc_builtins.cc',
             'mycpp/gc_iolib.cc',
-            'mycpp/gc_mops.cc',
             'mycpp/gc_mylib.cc',
-            'mycpp/gc_str.cc',
-            'mycpp/hash.cc',
-            'mycpp/mark_sweep_heap.cc',
-        ])
+        ],
+        deps=['//mycpp/runtime_pure'],
+    )
+
+    ru.cc_library('//mycpp/runtime_pure',
+                  srcs=[
+                      'mycpp/gc_builtins.cc',
+                      'mycpp/gc_mops.cc',
+                      'mycpp/gc_str.cc',
+                      'mycpp/hash.cc',
+                      'mycpp/mark_sweep_heap.cc',
+                  ])
 
     # Special test with -D
     ru.cc_binary('mycpp/bump_leak_heap_test.cc',
@@ -115,8 +119,8 @@ def ShouldSkipBuild(name):
         return True
 
     if name in [
-            # these use Oil code, and don't type check or compile.  Maybe give up on
-            # them?  pgen2_demo might be useful later.
+            # these use Oils code, and don't type check or compile.  Maybe give
+            # up on them?  pgen2_demo might be useful later.
             'lexer_main',
             'pgen2_demo',
     ]:
@@ -151,7 +155,7 @@ def ShouldSkipBenchmark(name):
 
 
 TRANSLATE_FILES = {
-    # TODO: We could also use app_deps.py here
+    # TODO: Use build/dynamic_deps.py here
     # BUG: modules.py must be listed last.  Order matters with inheritance
     # across modules!
     'modules': [
@@ -162,7 +166,7 @@ TRANSLATE_FILES = {
     'parse': [],  # added dynamically from mycpp/examples/parse.translate.txt
 }
 
-# Unused.  Could use mycpp/examples/parse.typecheck.txt
+# Unused.  Could use _build/NINJA/mycpp.examples.parse/typecheck.txt
 EXAMPLES_PY = {
     'parse': [],
 }
@@ -178,83 +182,10 @@ EXAMPLES_DEPS = {
 # mycpp-souffle only has three variants for now
 SOUFFLE_MATRIX = [
     ('cxx', 'opt'),  # for benchmarks
-    #('cxx', 'opt-sh'),  # for benchmarks
     ('cxx', 'asan'),  # need this for running the examples in CI
     ('cxx', 'asan+gcalways'),
 ]
 MYPY_PATH = '$NINJA_REPO_ROOT/mycpp:$NINJA_REPO_ROOT/pyext'
-
-# TODO Next:
-# - separate parse.main.cc files, instead of _gen/_tmp
-
-
-def TranslatorSubgraph(
-        ru,
-        py_main,
-        mypy_path,
-        bin_path=None,
-        symlinks=None,
-        preprocessed=False,
-        preamble=None,
-        translator='mycpp',
-        main_style='example-main-wrapper',
-        py_inputs=None,  # list of source files, including main
-        phony_prefix=None,
-        matrix=None,
-        deps=None):
-    """Create rules for a single example."""
-    # e.g. mycpp/examples/parse
-    py_rel_path, _ = os.path.splitext(py_main)
-    # e.g. mycpp.examples.parse
-    py_module = py_rel_path.replace('/', '.')
-
-    py_inputs = py_inputs or [py_main]  # if not specified, it's a single file
-    matrix = matrix or COMPILERS_VARIANTS
-    deps = deps or ['//mycpp/runtime']
-    if preamble is None:
-        p = '%s_preamble.h' % py_rel_path
-        preamble = p if os.path.exists(p) else "''"  # Ninja empty string!
-
-    n = ru.n
-
-    # Two steps
-    raw = '_gen/_tmp/%s.%s-raw.cc' % (py_rel_path, translator)
-    main_cc_src = '_gen/%s.%s.cc' % (py_rel_path, translator)
-
-    translator_shwrap = SHWRAP[translator]
-
-    n.build(
-        raw,
-        'translate-%s' % translator,
-        py_inputs,  # files to translate
-        # Implicit dependency: if the translator changes, regenerate source
-        # code.  But don't pass it on the command line.
-        implicit=[translator_shwrap],
-        # examples/parse uses pyext/fastfunc.pyi
-        variables=[('mypypath', mypy_path)])
-
-    # Make a translation unit
-    n.build(main_cc_src,
-            'wrap-cc',
-            raw,
-            implicit=[RULES_PY],
-            variables=[
-                ('main_namespace', os.path.basename(py_rel_path)),
-                ('main_style', main_style),
-                ('preamble', preamble),
-            ])
-
-    n.newline()
-
-    ru.cc_binary(
-        main_cc_src,
-        bin_path=bin_path,
-        symlinks=symlinks,
-        preprocessed=preprocessed,
-        deps=deps,
-        matrix=matrix,
-        phony_prefix=phony_prefix,
-    )
 
 
 def NinjaGraph(ru):
@@ -310,16 +241,6 @@ def NinjaGraph(ru):
            description='benchmark-table $out $in')
     n.newline()
 
-    # For simplicity, this is committed to the repo.  We could also have
-    # build/dev.sh minimal generate it?
-    with open('_build/NINJA/mycpp.examples.parse/translate.txt') as f:
-        for line in f:
-            path = line.strip()
-            TRANSLATE_FILES['parse'].append(path)
-
-    examples = ExamplesToBuild()
-    #examples = ['cgi', 'containers', 'fib_iter']
-
     # Groups of targets.  Not all of these are run by default.
     ph = {
         'mycpp-typecheck':
@@ -349,6 +270,30 @@ def NinjaGraph(ru):
     #
     # Build and run examples/
     #
+
+    MycppExamples(ru, ph)
+
+    #
+    # Prebuilt
+    #
+
+    ru.souffle_binary('prebuilt/datalog/call-graph.cc')
+    ru.souffle_binary('prebuilt/datalog/dataflow.cc')
+    ru.souffle_binary('prebuilt/datalog/smoke-test.cc')
+
+
+def MycppExamples(ru, ph):
+    n = ru.n
+
+    # For simplicity, this is committed to the repo.  We could also have
+    # build/dev.sh minimal generate it?
+    with open('_build/NINJA/mycpp.examples.parse/translate.txt') as f:
+        for line in f:
+            path = line.strip()
+            TRANSLATE_FILES['parse'].append(path)
+
+    examples = ExamplesToBuild()
+    #examples = ['cgi', 'containers', 'fib_iter']
 
     ## Pea Examples
     for ex, py_main in examples:
@@ -496,7 +441,3 @@ def NinjaGraph(ru):
     out = '_test/benchmark-table.tsv'
     n.build([out], 'benchmark-table', benchmark_tasks)
     n.newline()
-
-    ru.souffle_binary('prebuilt/datalog/call-graph.cc')
-    ru.souffle_binary('prebuilt/datalog/dataflow.cc')
-    ru.souffle_binary('prebuilt/datalog/smoke-test.cc')
