@@ -5,9 +5,9 @@
 # Usage:
 #   build/native.sh <function name>
 
-: ${LIB_OSH=stdlib/osh}
-source $LIB_OSH/task-five.sh
-source $LIB_OSH/no-quotes.sh
+set -o nounset
+set -o pipefail
+set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)  # tsv-lib.sh uses this
 source build/common.sh  # log
@@ -97,7 +97,7 @@ oils-demo() {
   $osh -c 'for x in 1 2 3; do echo $x; done'
 }
 
-test-oils() {
+soil-run() {
   if test "${container:-}" = podman; then
 
     # Work around for ASAN not working in podman
@@ -120,23 +120,4 @@ test-oils() {
   oils-demo $bin
 }
 
-test-hello() {
-  local hello=_bin/cxx-asan/bin/hello.mycpp
-
-  ninja $hello
-
-  echo "*** Testing $hello"
-
-  local status stdout
-  nq-capture status stdout \
-    $hello a b c d
-  nq-assert 5 = $status
-}
-
-soil-run() {
-  ### soil/worker.sh call this
-
-  devtools/byo.sh test $0
-}
-
-task-five "$@"
+"$@"

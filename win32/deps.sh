@@ -147,4 +147,32 @@ echo status=$?
 '
 }
 
+test-mkdir() {
+  #wine cmd /c 'cd _tmp/hello-tar-test/hello-0.29.0; bash.exe -c "echo bash"'
+
+  chmod +x _tmp/hello-tar-test/hello-0.29.0/_build/mkdir-test.sh
+
+  time wine "$BASH" -c '
+echo "hi from bash"
+
+set -o errexit
+
+# cross-shell tracing works!
+set -x
+
+# mkdir works!
+mkdir -p _tmp/hi-from-wine
+
+cd _tmp/hello-tar-test/hello-0.29.0
+pwd
+ls -l 
+
+set +e
+mkdir -p _bin/cxx-opt-sh/mycpp _build/obj/cxx-opt-sh/_gen/bin _build/obj/cxx-opt-sh/mycpp
+echo mkdir=$?
+
+_build/mkdir-test.sh
+'
+}
+
 "$@"
