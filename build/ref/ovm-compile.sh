@@ -381,8 +381,8 @@ make-tar() {
     uninstall \
     Makefile \
     doc/osh.1 \
-    build/ovm-compile.sh \
-    build/ovm-actions.sh \
+    build/ref/ovm-compile.sh \
+    build/ref/ovm-actions.sh \
     build/clean.sh \
     build/common.sh \
     build/detect-*.c \

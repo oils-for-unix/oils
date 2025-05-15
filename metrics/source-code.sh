@@ -400,9 +400,13 @@ _overview() {
 
   # Leaving off gen-cpp-counts since that requires a C++ build
 
-  ls build/*.{sh,py,c} build/ref/*.{mk,sh,py} Makefile configure install \
+  ls build/*.{sh,py,c} configure install \
     | filter-py | egrep -v 'NINJA|TEST' | $count \
     'Build Automation' '' "$@"
+
+  ls build/ref/*.{mk,sh,py} Makefile \
+    | filter-py | $count \
+    'Build of oils-ref Tarball' '' "$@"
 
   ls devtools/release*.sh | $count \
     'Release Automation' '' "$@"
