@@ -342,7 +342,7 @@ Keep these differences in mind:
 
 ```'
 
-  devtools/release-native.sh gen-oils-sh
+  devtools/release-native.sh gen-shell-build
   _build/oils.sh --help
 
   echo '```
