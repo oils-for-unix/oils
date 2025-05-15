@@ -124,9 +124,9 @@ print-%:
 # included in the release tarball.  Portable rules can be run on the developer
 # machine rather than on the end-user machine.
 
--include build/portable-rules.mk  # Must come first
--include build/hello.mk
--include build/oils-ref.mk
+-include build/ref/portable-rules.mk  # Must come first
+-include build/ref/hello.mk
+-include build/ref/oils-ref.mk
 
 #
 # Native Builds

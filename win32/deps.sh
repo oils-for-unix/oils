@@ -20,6 +20,11 @@
 #
 # - do automated installation of everything?
 
+set -o nounset
+set -o pipefail
+set -o errexit
+
+
 readonly DIR=_tmp/win32
 
 my-curl() {
@@ -109,8 +114,59 @@ test-pipelines() {
   wine cmd /c 'python.exe win32/demo_asyncio.py'
 }
 
+readonly WIN32_TAR_DIR=_tmp/hello-tar-win32
+
+extract-tar() {
+  local tmp=$WIN32_TAR_DIR
+
+  rm -r -f $tmp
+  mkdir -p $tmp
+  pushd $tmp
+
+  tar -x < ../../_release/hello.tar
+
+  popd
+}
+
 test-mycpp-hello() {
   #wine cmd /c 'cd _tmp/hello-tar-test/hello-0.29.0; bash.exe -c "echo bash"'
+
+  extract-tar
+
+  local my_mkdir="$WIN32_TAR_DIR/hello-0.29.0/_build/my-mkdir.sh"
+  pwd
+  set -x
+  ls -l $(dirname $my_mkdir)
+
+  cat >$my_mkdir <<'EOF'
+#!/bin/sh
+
+. build/ninja-rules-cpp.sh
+
+set -x
+echo 'my-mkdir'
+main() {
+  local compiler=g++
+  local variant=opt
+  local translator=mycpp
+
+  which mkdir
+  type mkdir
+  command -v mkdir
+  ls -l /usr/bin/mkdir
+  file /usr/bin/mkdir
+
+  mkdir -p \
+    "_bin/$compiler-$variant-sh/$translator" \
+    "_build/obj/$compiler-$variant-sh/_gen/bin" \
+    "_build/obj/$compiler-$variant-sh/mycpp"
+  echo mkdir=$?
+}
+main "$@"
+
+EOF
+  chmod +x $my_mkdir
+  ls -l $my_mkdir
 
   time wine "$BASH" -c '
 echo "hi from bash"
@@ -119,30 +175,31 @@ set -o errexit
 
 # cross-shell tracing works!
 set -x
+pwd
 
 # mkdir works!
-mkdir -p _tmp/hi-from-wine
+mkdir -p _tmp/hi-from-wine _tmp/hi2
+echo mkdir hi=$?
 
-cd _tmp/hello-tar-test/hello-0.29.0
+cd _tmp/hello-tar-win32/hello-0.29.0
 pwd
 ls -l 
 
-set +e
-mkdir -p _bin/cxx-opt-sh/mycpp _build/obj/cxx-opt-sh/_gen/bin _build/obj/cxx-opt-sh/mycpp
-echo mkdir=$?
+#export SHELLOPTS
 
-if false; then
-for dir in _bin/cxx-opt-sh/mycpp _build/obj/cxx-opt-sh/_gen/bin _build/obj/cxx-opt-sh/mycpp; do
-  echo "   ---"
-  echo "   $dir"
-  ls -l $dir
-done
-fi
+# g++ to /dev/null fails here
+# ./configure --cxx-for-configure g++
 
-export SHELLOPTS
+# fake it
+touch _build/detected-config.sh
+
+# git-bash bug: This causes a segmentation fault when there is no shebang!
+_build/my-mkdir.sh
 
 set +o errexit
-_build/oils.sh
+
+_build/oils.sh --cxx g++
+
 echo status=$?
 '
 }

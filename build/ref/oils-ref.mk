@@ -23,10 +23,10 @@ _build/oils-ref/py-to-compile.txt: _build/detected-config.sh build/dynamic_deps.
 	test -d _build/oils-ref && \
 		$(ACTIONS_SH) py-to-compile $(OIL_PYPATH) bin.oil > $@
 
-# NOTE: I should really depend on every file in build/oil-manifest.txt!
+# NOTE: I should really depend on every file in build/ref/oils-manifest.txt!
 OIL_BYTECODE_DEPS := \
 	_build/release-date.txt \
-	build/oil-manifest.txt \
+	build/ref/oils-manifest.txt \
 	_devbuild/gen/help_meta.py
 
 # NOTES:
@@ -40,7 +40,7 @@ OIL_BYTECODE_DEPS := \
 _build/oils-ref/bytecode-cpython-manifest.txt: $(OIL_BYTECODE_DEPS) \
                          _build/oils-ref/app-deps-cpython.txt
 	{ echo '_build/release-date.txt release-date.txt'; \
-	  cat build/oil-manifest.txt \
+	  cat build/ref/oils-manifest.txt \
 	      _build/oils-ref/app-deps-cpython.txt \
 	  $(ACTIONS_SH) help-manifest _devbuild/help; \
 	  $(ACTIONS_SH) pyc-version-manifest $@; \
@@ -49,7 +49,7 @@ _build/oils-ref/bytecode-cpython-manifest.txt: $(OIL_BYTECODE_DEPS) \
 _build/oils-ref/bytecode-opy-manifest.txt: $(OIL_BYTECODE_DEPS) \
                          _build/oils-ref/opy-app-deps.txt
 	{ echo '_build/release-date.txt release-date.txt'; \
-	  cat build/oil-manifest.txt \
+	  cat build/ref/oils-manifest.txt \
 	      _build/oils-ref/opy-app-deps.txt; \
 	  $(ACTIONS_SH) help-manifest _devbuild/help; \
 	  $(ACTIONS_SH) ysh-stdlib-manifest; \
