@@ -117,6 +117,9 @@ echo "hi from bash"
 
 set -o errexit
 
+# cross-shell tracing works!
+set -x
+
 # mkdir works!
 mkdir -p _tmp/hi-from-wine
 
@@ -124,12 +127,18 @@ cd _tmp/hello-tar-test/hello-0.29.0
 pwd
 ls -l 
 
-set -x
+set +e
+mkdir -p _bin/cxx-opt-sh/mycpp _build/obj/cxx-opt-sh/_gen/bin _build/obj/cxx-opt-sh/mycpp
+echo mkdir=$?
+
+if false; then
 for dir in _bin/cxx-opt-sh/mycpp _build/obj/cxx-opt-sh/_gen/bin _build/obj/cxx-opt-sh/mycpp; do
+  echo "   ---"
+  echo "   $dir"
   ls -l $dir
 done
+fi
 
-# cross-shell tracing works!
 export SHELLOPTS
 
 set +o errexit

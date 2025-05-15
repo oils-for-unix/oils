@@ -5,9 +5,9 @@
 # Usage:
 #   build/native.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/task-five.sh
+source $LIB_OSH/no-quotes.sh
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)  # tsv-lib.sh uses this
 source build/common.sh  # log
@@ -124,15 +124,19 @@ test-hello() {
   local hello=_bin/cxx-asan/bin/hello.mycpp
 
   ninja $hello
-  set +o errexit
-  $hello a b c
-  echo status=$?
-  set -o errexit
+
+  echo "*** Testing $hello"
+
+  local status stdout
+  nq-capture status stdout \
+    $hello a b c d
+  nq-assert 5 = $status
 }
 
 soil-run() {
-  test-oils
-  test-hello
+  ### soil/worker.sh call this
+
+  devtools/byo.sh test $0
 }
 
-"$@"
+task-five "$@"

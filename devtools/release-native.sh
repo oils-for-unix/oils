@@ -130,6 +130,11 @@ test-hello-tar() {
   ./configure
   _build/oils.sh
 
+  set +o errexit
+  _bin/cxx-opt-sh/hello a b c
+  echo "hello status=$?"
+  set -o errexit
+
   popd
 }
 
