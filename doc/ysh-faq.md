@@ -107,15 +107,15 @@ That is, `echo "$flag"` always has a few bugs: when `$flag` is `-e`, `-n`,
 
 So portable shell scripts use:
 
-    printf '%s\n' "$x"   # print $x "unmolested" in POSIX shell
+    printf '%s\n' "$x"  # print $x "unmolested" in POSIX shell
 
 We could have chosen to respect `echo -- $x`, but as YSH already has:
 
-    write -- $x          # print $x "unmolested" in YSH
+    write -- $x         # print $x "unmolested" in YSH
 
-That allowed YSH to have a most efficient:
+That allowed YSH to fix
 
-    echo $x $y           # YES: print vars "unmolested" to single line
+    echo $x $y          # YES: single-line print "unmolested" in YSH
 
 So `echo` is technically superfluous in YSH, but it's also short, familiar, and
 correct.
