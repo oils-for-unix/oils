@@ -400,7 +400,7 @@ _overview() {
 
   # Leaving off gen-cpp-counts since that requires a C++ build
 
-  ls build/*.{mk,sh,py,c} Makefile configure install \
+  ls build/*.{sh,py,c} build/ref/*.{mk,sh,py} Makefile configure install \
     | filter-py | egrep -v 'NINJA|TEST' | $count \
     'Build Automation' '' "$@"
 

@@ -72,8 +72,8 @@
 $(shell mkdir -p _bin _release _tmp _build/hello _build/oils-ref _build/opy)
 
 STAMP_SH := build/stamp.sh
-ACTIONS_SH := build/ovm-actions.sh
-COMPILE_SH := build/ovm-compile.sh
+ACTIONS_SH := build/ref/ovm-actions.sh
+COMPILE_SH := build/ref/ovm-compile.sh
 CLEAN_SH := build/clean.sh
 
 # Change the bytecode compiler here.

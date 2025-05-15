@@ -36,7 +36,7 @@ _build/detected-config.h:
 # What files correspond to each C module.
 # TODO:
 # - Where to put -l z?  (Done in Modules/Setup.dist)
-_build/c-module-toc.txt: build/c_module_toc.py
+_build/c-module-toc.txt: build/ref/c_module_toc.py
 	$(ACTIONS_SH) c-module-toc > $@
 
 #
@@ -51,10 +51,10 @@ _build/%/ovm.d: _build/%/app-deps-c.txt
 # A trick: remove the first dep to form the lists.  You can't just use $^
 # because './c_module_srcs.py' is rewritten to 'c_module_srcs.py'.
 _build/%/c-module-srcs.txt: \
-	build/c_module_srcs.py _build/c-module-toc.txt _build/%/app-deps-c.txt
-	build/c_module_srcs.py $(filter-out $<,$^) > $@
+	build/ref/c_module_srcs.py _build/c-module-toc.txt _build/%/app-deps-c.txt
+	build/ref/c_module_srcs.py $(filter-out $<,$^) > $@
 
-_build/%/all-deps-c.txt: build/static-c-modules.txt _build/%/app-deps-c.txt
+_build/%/all-deps-c.txt: build/ref/static-c-modules.txt _build/%/app-deps-c.txt
 	$(ACTIONS_SH) join-modules $^ > $@
 
 _build/%/all-deps-py.txt: _build/%/py-to-compile.txt 

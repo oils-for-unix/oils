@@ -10,7 +10,7 @@ set -o pipefail
 set -o errexit
 shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
-REPO_ROOT=$(cd $(dirname $0)/..; pwd)
+REPO_ROOT=$(cd $(dirname $0)/../..; pwd)
 readonly REPO_ROOT
 
 source build/common.sh
@@ -254,7 +254,7 @@ build() {
   # -l readline -l termcap -- for Python readline.  Hm it builds without -l
   # termcap.
   # -l z WOULD be needed for zlibmodule.c, but we don't need it because our zip
-  # file has no compression -- see build/make_zip.py with ZIP_STORED.
+  # file has no compression -- see build/ref/make_zip.py with ZIP_STORED.
   # zipimport works fine without this.
 }
 

@@ -57,5 +57,5 @@ _build/oils-ref/bytecode-opy-manifest.txt: $(OIL_BYTECODE_DEPS) \
 	} > $@
 
 _build/oils-ref/bytecode-%.zip: _build/oils-ref/bytecode-%-manifest.txt
-	build/make_zip.py $@ < $^
+	build/ref/make_zip.py $@ < $^
 

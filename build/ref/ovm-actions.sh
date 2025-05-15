@@ -10,7 +10,7 @@ set -o pipefail
 set -o errexit
 shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
-REPO_ROOT=$(cd $(dirname $0)/..; pwd)
+REPO_ROOT=$(cd $(dirname $0)/../..; pwd)
 readonly REPO_ROOT
 
 source build/common.sh
@@ -31,7 +31,7 @@ EOF
 
 c-module-toc() {
   cd $PY27
-  ../build/c_module_toc.py
+  ../build/ref/c_module_toc.py
 }
 
 # Modules needed to 'import runpy'.

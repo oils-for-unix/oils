@@ -40,7 +40,7 @@ _build/hello/bytecode-cpython.zip: $(HELLO_SRCS) $(HELLO_BYTECODE_DEPS) \
 	  echo '_build/release-date.txt release-date.txt'; \
 	  cat build/testdata/hello-manifest.txt \
 	      _build/hello/app-deps-cpython.txt \
-	} | build/make_zip.py $@
+	} | build/ref/make_zip.py $@
 
 _build/hello/bytecode-opy.zip: $(HELLO_SRCS) $(HELLO_BYTECODE_DEPS) \
                            _build/hello/opy-app-deps.txt
@@ -48,4 +48,4 @@ _build/hello/bytecode-opy.zip: $(HELLO_SRCS) $(HELLO_BYTECODE_DEPS) \
 	  echo '_build/release-date.txt release-date.txt'; \
 	  cat build/testdata/hello-manifest.txt \
 	      _build/hello/opy-app-deps.txt; \
-	} | build/make_zip.py $@
+	} | build/ref/make_zip.py $@
