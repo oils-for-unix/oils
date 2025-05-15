@@ -193,6 +193,7 @@ def TranslatorSubgraph(
         mypy_path,
         bin_path=None,
         symlinks=None,
+        preprocessed=False,
         preamble=None,
         translator='mycpp',
         main_style='example-main-wrapper',
@@ -248,7 +249,7 @@ def TranslatorSubgraph(
         main_cc_src,
         bin_path=bin_path,
         symlinks=symlinks,
-        preprocessed=True,
+        preprocessed=preprocessed,
         deps=deps,
         matrix=matrix,
         phony_prefix=phony_prefix,
@@ -354,8 +355,11 @@ def NinjaGraph(ru):
         # TODO: pea examples don't have the same main()
 
         if ex.startswith('pea_'):
-            mycpp_binary(ru,
-                         'mycpp.examples.%s' % ex,
+            #mycpp_binary(ru,
+            TranslatorSubgraph(ru,
+                         py_main,
+                         MYPY_PATH,
+                         main_style='main-wrapper',
                          translator='pea',
                          matrix=[
                              ('cxx', 'asan'),

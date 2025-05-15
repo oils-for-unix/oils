@@ -137,6 +137,7 @@ def NinjaGraph(ru):
         bin_path='oils-for-unix',
         symlinks=oils_symlinks,
         deps=oils_deps,
+        preprocessed=True,
     )
     # Faster variant
     # this could have been _bin/cxx-opt/oils-for-unix.mycpp-souffle?
