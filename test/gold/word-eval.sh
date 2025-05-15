@@ -3,9 +3,13 @@
 # Demo of word evaluation.
 #
 # Usage:
-#   ./hard.sh <function name>
+#   test/gold/word-eval.sh <function name>
 #
 # Bug with the current algorithm: IFS=\\
+#
+# 2025-05: There is also a sorting issue, dependent on locale:
+# 
+# bin/hello_preamble.sh vs. bin/hello-test.sh - which comes first?
 
 set -- 'a*b' 'c d'
 typeset -a myarray
