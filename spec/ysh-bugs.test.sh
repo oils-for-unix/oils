@@ -346,3 +346,15 @@ write --json=Talse hi
 ## STDOUT:
 ## END
 
+#### Bug: rooting of pgen2::PNode
+
+# manifests with _bin/cxx-asan+gcalways/ysh, after turning on VALIDATE_ROOTS
+
+var x = 42
+echo $x
+
+#var y = 'foo-' ++ $(var y = 42; echo $y)
+
+## STDOUT:
+42
+## END

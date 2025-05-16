@@ -20,7 +20,11 @@ extern BumpLeakHeap gHeap;
 extern MarkSweepHeap gHeap;
 #endif
 
-#define VALIDATE_ROOTS 0
+#if GC_ALWAYS
+  #define VALIDATE_ROOTS 1
+#else
+  #define VALIDATE_ROOTS 0  // flip this manually to diagnose bugs
+#endif
 
 #if VALIDATE_ROOTS
 static void ValidateRoot(const RawObject* obj) {

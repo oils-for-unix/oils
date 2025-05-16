@@ -61,10 +61,15 @@ run-file() {
   mkdir -v -p $base_dir
 
   # Compare Python and C++ shells by passing --oils-cpp-bin-dir
+
+  local variant='cxx-asan'
+  # TODO: it's better to turn on gcalways
+  #local variant='cxx-asan+gcalways'
+
   sh-spec $spec_file \
     --timeout 10 \
     --oils-bin-dir $PWD/bin \
-    --oils-cpp-bin-dir $REPO_ROOT/_bin/cxx-asan \
+    --oils-cpp-bin-dir $REPO_ROOT/_bin/$variant \
     --tsv-output $base_dir/${spec_name}.tsv \
     "$@"
 }

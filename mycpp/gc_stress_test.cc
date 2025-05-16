@@ -12,7 +12,7 @@
 
 int count(int n) {
   int dummy = 42;
-  StackRoots _roots({&dummy});
+  // StackRoots _roots({&dummy});
   // log("d %p", &dummy);
 
   if (n == 0) {
