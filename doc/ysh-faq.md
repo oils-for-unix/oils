@@ -113,7 +113,7 @@ We could have chosen to respect `echo -- $x`, but as YSH already has:
 
     write -- $x         # print $x "unmolested" in YSH
 
-That, and the static string literals, allowed YSH to fix
+That, and having static string literals, allowed YSH to fix
 
     echo $x $y ...      # YES: print a single-line "unmolested" in YSH
 
