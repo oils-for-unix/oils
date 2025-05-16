@@ -250,8 +250,12 @@ List<T>* List<T>::slice(int begin, int end) {
   DCHECK(0 <= new_len && new_len <= len_);
 
   List<T>* result = NewList<T>();
-  result->reserve(new_len);
+  if (new_len == 0) {  // empty slice
+    return result;
+  }
 
+  result->reserve(new_len);
+  DCHECK(result->slab_);
   // Faster than append() in a loop
   memcpy(result->slab_->items_, slab_->items_ + begin, new_len * sizeof(T));
   result->len_ = new_len;
@@ -415,7 +419,9 @@ inline bool CompareBigStr(BigStr* a, BigStr* b) {
 
 template <>
 inline void List<BigStr*>::sort() {
-  std::sort(slab_->items_, slab_->items_ + len_, CompareBigStr);
+  if (slab_) {
+    std::sort(slab_->items_, slab_->items_ + len_, CompareBigStr);
+  }
 }
 
 inline bool CompareBigInt(mops::BigInt a, mops::BigInt b) {

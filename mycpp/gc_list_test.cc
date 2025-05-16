@@ -536,6 +536,29 @@ TEST test_constructors() {
   PASS();
 }
 
+TEST test_empty_list_bugs() {
+  auto* li = Alloc<List<BigStr*>>();
+  // Gave UBSAN error before bug fix, which is NOT fatal!
+  li->sort();
+  ASSERT_EQ(0, len(li));
+
+  // Ditto
+  auto* slice = li->slice(0, 0);
+  ASSERT_EQ(0, len(slice));
+
+  // Boundary conditions for other functions
+
+  // extend empty list with empty list
+  li->extend(li);
+  ASSERT_EQ(0, len(li));
+
+  li->append(kEmptyString);
+  auto last = li->pop(0);
+  ASSERT_EQ(kEmptyString, last);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -561,6 +584,7 @@ int main(int argc, char** argv) {
 
   RUN_TEST(test_index_out_of_bounds);
   RUN_TEST(test_constructors);
+  RUN_TEST(test_empty_list_bugs);
 
   gHeap.CleanProcessExit();
 
