@@ -430,6 +430,7 @@ class _Shared(visitor.TypedVisitor):
         types: Dict[Expression, Type],
         global_strings: 'const_pass.GlobalStrings',
         yield_out_params: Dict[FuncDef, Tuple[str, str]],  # input
+        dunder_exit_special: Dict[ClassDef, bool],  # input
         # all_member_vars:
         # - Decl for declaring members in class { }
         # - Impl for rooting context managers
@@ -438,6 +439,7 @@ class _Shared(visitor.TypedVisitor):
         visitor.TypedVisitor.__init__(self, types)
         self.global_strings = global_strings
         self.yield_out_params = yield_out_params
+        self.dunder_exit_special = dunder_exit_special
         self.all_member_vars = all_member_vars  # for class def, and rooting
 
     # Primitives shared for default values
@@ -547,6 +549,7 @@ class Decl(_Shared):
         types: Dict[Expression, Type],
         global_strings: 'const_pass.GlobalStrings',
         yield_out_params: Dict[FuncDef, Tuple[str, str]],  # input
+        dunder_exit_special: Dict[ClassDef, bool],
         virtual: pass_state.Virtual = None,
         all_member_vars: Optional[AllMemberVars] = None,
     ) -> None:
@@ -555,6 +558,7 @@ class Decl(_Shared):
             types,
             global_strings,
             yield_out_params,
+            dunder_exit_special,
             all_member_vars=all_member_vars,
         )
         self.virtual = virtual
@@ -618,6 +622,11 @@ class Decl(_Shared):
         self.indent += 1
         # Turn it into a destructor with NO ARGS
         self.write_ind('~%s();\n', o.name)
+
+        # special method
+        if o in self.dunder_exit_special:
+            self.write_ind('void ctx_EXIT();\n')
+
         self.indent -= 1
 
     def oils_visit_method(self, o: ClassDef, stmt: FuncDef,
@@ -761,6 +770,7 @@ class Impl(_Shared):
             types: Dict[Expression, Type],
             global_strings: 'const_pass.GlobalStrings',
             yield_out_params: Dict[FuncDef, Tuple[str, str]],  # input
+            dunder_exit_special: Dict[ClassDef, bool],
             all_member_vars: Optional[AllMemberVars] = None,
             local_vars: Optional[AllLocalVars] = None,
             dot_exprs: Optional['conversion_pass.DotExprs'] = None,
@@ -770,6 +780,7 @@ class Impl(_Shared):
                          types,
                          global_strings,
                          yield_out_params,
+                         dunder_exit_special,
                          all_member_vars=all_member_vars)
         self.local_vars = local_vars
 
@@ -784,9 +795,6 @@ class Impl(_Shared):
 
         self.yield_assign_node: Optional[AssignmentStmt] = None
         self.yield_for_node: Optional[ForStmt] = None
-
-        # for __exit__ checks
-        self.inside_dunder_exit = False
 
         # More Traversal state
         self.current_func_node: Optional[FuncDef] = None
@@ -2467,40 +2475,54 @@ class Impl(_Shared):
         self.indent -= 1
         self.write('}\n')
 
+    def _WritePopRoots(self, member_vars):
+        # gHeap.PopRoot() for all the pointer members
+
+        for name in sorted(member_vars):
+            _, c_type, is_managed = member_vars[name]
+            if is_managed:
+                self.write_ind('gHeap.PopRoot();\n')
+
     def oils_visit_dunder_exit(self, o: ClassDef, stmt: FuncDef,
                                base_class_sym: util.SymbolPath) -> None:
-        self.write('\n')
-        self.write_ind('%s::~%s()', o.name, o.name)
-
-        self.write(' {\n')
-        self.indent += 1
-
-        # TODO:
-        # - Can't throw exception in destructor.
-        # - Check that you don't return early from destructor.  If so, we skip
-        #   PopRoot(), which messes up the invariant!
-
-        self.inside_dunder_exit = True
-        for node in stmt.body.body:
-            self.accept(node)
-        self.inside_dunder_exit = False
-
-        # For ctx_* classes only , gHeap.PopRoot() for all the pointer members
-        if _IsContextManager(self.current_class_name):
-            member_vars = self.all_member_vars[o]
-            for name in sorted(member_vars):
-                _, c_type, is_managed = member_vars[name]
-                if is_managed:
-                    self.write_ind('gHeap.PopRoot();\n')
-        else:
+        if not _IsContextManager(self.current_class_name):
             self.report_error(
                 o, 'Any class with __exit__ should be named ctx_Foo (%s)' %
                 (self.current_class_name, ))
             return
 
-        self.indent -= 1
+        self.write('\n')
 
-        self.write('}\n')
+        member_vars = self.all_member_vars[o]
+
+        if o in self.dunder_exit_special:  # EARLY RETURN from destructor
+            # Write ctx_exit()
+            self.write_ind('void %s::ctx_EXIT() {\n', o.name)
+            self.indent += 1
+            for node in stmt.body.body:
+                self.accept(node)
+            self.indent -= 1
+            self.write('}\n')
+            self.write('\n')
+
+            # Write the actual destructor, which calls ctx_exit()
+            self.write_ind('%s::~%s() {\n', o.name, o.name)
+            self.indent += 1
+            self.write_ind('ctx_EXIT();\n')
+            self._WritePopRoots(member_vars)
+            self.indent -= 1
+            self.write('}\n')
+        else:
+            # Write as one function
+            self.write_ind('%s::~%s() {\n', o.name, o.name)
+
+            self.indent += 1
+            for node in stmt.body.body:
+                self.accept(node)
+            self._WritePopRoots(member_vars)
+            self.indent -= 1
+
+            self.write('}\n')
 
     def oils_visit_method(self, o: ClassDef, stmt: FuncDef,
                           base_class_sym: util.SymbolPath) -> None:
@@ -2677,13 +2699,6 @@ class Impl(_Shared):
         self.accept(o.body)
 
     def visit_return_stmt(self, o: 'mypy.nodes.ReturnStmt') -> None:
-        if self.inside_dunder_exit:
-            self.report_error(
-                o,
-                "return not allowed within __exit__ (C++ doesn't allow it; restructure with if)"
-            )
-            return
-
         # Examples:
         # return
         # return None
@@ -2771,13 +2786,6 @@ class Impl(_Shared):
         self.write_ind(';  // pass\n')
 
     def visit_raise_stmt(self, o: 'mypy.nodes.RaiseStmt') -> None:
-        if self.inside_dunder_exit:
-            # Note: this doesn't check function calls that raise, but it's
-            # better than nothing
-            self.report_error(
-                o, "raise not allowed within __exit__ (C++ doesn't allow it)")
-            return
-
         to_raise = o.expr
 
         if to_raise:

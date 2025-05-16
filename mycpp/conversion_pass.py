@@ -4,7 +4,7 @@ conversion_pass.py - forward declarations, and virtuals
 import mypy
 
 from mypy.nodes import (Expression, NameExpr, MemberExpr, TupleExpr, CallExpr,
-                        FuncDef, Argument)
+                        ClassDef, FuncDef, Argument)
 from mypy.types import Type, Instance, TupleType, NoneType
 
 from mycpp import util
@@ -44,14 +44,15 @@ MYCPP_INT = Primitive('builtins.int')
 class Pass(visitor.SimpleVisitor):
 
     def __init__(
-            self,
-            types: Dict[Expression, Type],
-            virtual: pass_state.Virtual,
-            forward_decls: List[str],
-            all_member_vars: 'cppgen_pass.AllMemberVars',
-            all_local_vars: 'cppgen_pass.AllLocalVars',
-            module_dot_exprs: DotExprs,
-            yield_out_params: Dict[FuncDef, Tuple[str, str]],  # output
+        self,
+        types: Dict[Expression, Type],
+        virtual: pass_state.Virtual,
+        forward_decls: List[str],
+        all_member_vars: 'cppgen_pass.AllMemberVars',
+        all_local_vars: 'cppgen_pass.AllLocalVars',
+        module_dot_exprs: DotExprs,
+        yield_out_params: Dict[FuncDef, Tuple[str, str]],  # output
+        dunder_exit_special: Dict[FuncDef, bool],
     ) -> None:
         visitor.SimpleVisitor.__init__(self)
 
@@ -67,8 +68,10 @@ class Pass(visitor.SimpleVisitor):
         # Used to add another param to definition, and
         #     yield x --> YIELD->append(x)
         self.yield_out_params = yield_out_params
+        self.dunder_exit_special = dunder_exit_special
 
         # Internal state
+        self.inside_dunder_exit = None
         self.current_member_vars: Dict[str, 'cppgen_pass.MemberVar'] = {}
         self.current_local_vars: List[Tuple[str, Type]] = []
 
@@ -252,6 +255,27 @@ class Pass(visitor.SimpleVisitor):
         _, _, c_iter_list_type = cppgen_pass.GetCReturnType(o.type.ret_type)
         if c_iter_list_type is not None:
             self.yield_out_params[o] = ('YIELD', c_iter_list_type)
+
+    def oils_visit_dunder_exit(self, o: ClassDef, stmt: FuncDef,
+                               base_class_sym: util.SymbolPath) -> None:
+        self.inside_dunder_exit = o
+        super().oils_visit_dunder_exit(o, stmt, base_class_sym)
+        self.inside_dunder_exit = None
+
+    def visit_return_stmt(self, o: 'mypy.nodes.ReturnStmt') -> None:
+        # Mark special destructors
+        if self.inside_dunder_exit:
+            self.dunder_exit_special[self.inside_dunder_exit] = True
+        super().visit_return_stmt(o)
+
+    def visit_raise_stmt(self, o: 'mypy.nodes.RaiseStmt') -> None:
+        if self.inside_dunder_exit:
+            # Note: this doesn't check function calls that raise, but it's
+            # better than nothing
+            self.report_error(
+                o, "raise not allowed within __exit__ (C++ doesn't allow it)")
+            return
+        super().visit_raise_stmt(o)
 
     def oils_visit_assign_to_listcomp(self, lval: NameExpr,
                                       left_expr: Expression,

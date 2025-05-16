@@ -213,11 +213,8 @@ class ctx_MaybePure(object):
         # type: (Any, Any, Any) -> None
 
         if self.member is not None:
-            # return is not allowed
-            #return
-            pass
-            # this is also invalid
-            #raise ValueError()
+            # BUG FIX: early return used to cause GC rooting error
+            return
 
 
 def TestReturn():

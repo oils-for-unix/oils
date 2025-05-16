@@ -83,6 +83,7 @@ def Run(timer: Timer,
     all_local_vars: cppgen_pass.AllLocalVars = {}
     dot_exprs: Dict[str, conversion_pass.DotExprs] = {}
     yield_out_params: Dict[FuncDef, Tuple[str, str]] = {}
+    dunder_exit_special: Dict[FuncDef, bool] = {}
 
     # [PASS] namespace foo { class Spam; class Eggs; }
     timer.Section('mycpp pass: CONVERT')
@@ -98,6 +99,7 @@ def Run(timer: Timer,
             all_local_vars,  # output
             module_dot_exprs,  # output
             yield_out_params,  # output
+            dunder_exit_special,  # output
         )
         # forward declarations may go to header
         p_convert.SetOutputFile(header_f if name in to_header else f)
@@ -105,6 +107,10 @@ def Run(timer: Timer,
         MaybeExitWithErrors(p_convert)
 
         dot_exprs[module.path] = module_dot_exprs
+
+    if 0:
+        for node in dunder_exit_special:
+            log('  *** ctx_EXIT %s', node.name)
 
     # After seeing class and method names in the first pass, figure out which
     # ones are virtual.  We use this info in the second pass.
@@ -166,6 +172,7 @@ def Run(timer: Timer,
             types,
             global_strings,  # input
             yield_out_params,
+            dunder_exit_special,
             virtual=virtual,  # input
             all_member_vars=all_member_vars,  # input
         )
@@ -189,6 +196,7 @@ def Run(timer: Timer,
             types,
             global_strings,
             yield_out_params,
+            dunder_exit_special,
             local_vars=all_local_vars,
             all_member_vars=all_member_vars,
             dot_exprs=dot_exprs[module.path],
