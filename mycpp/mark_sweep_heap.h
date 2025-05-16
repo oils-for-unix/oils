@@ -8,6 +8,50 @@
 #include "mycpp/common.h"
 #include "mycpp/gc_obj.h"
 
+#if GC_ALWAYS
+  #define VALIDATE_ROOTS 1
+#else
+  #define VALIDATE_ROOTS 0  // flip this manually to diagnose bugs
+#endif
+
+#if VALIDATE_ROOTS
+static void ValidateRoot(const RawObject* obj) {
+  if (obj == nullptr) {
+    return;
+  }
+
+  // Assuming 64-bit == 8 byte alignment
+  if (reinterpret_cast<uintptr_t>(obj) & 0x3) {
+    log("Misaligned object %p", obj);
+    FAIL(kShouldNotGetHere);
+    return;
+  }
+
+  ObjHeader* header = ObjHeader::FromObject(obj);
+  // log("obj %p header %p", obj, header);
+
+  if (reinterpret_cast<uintptr_t>(header) & 0x3) {
+    log("Misaligned header %p", header);
+    FAIL(kShouldNotGetHere);
+    return;
+  }
+
+  switch (header->heap_tag) {
+  case HeapTag::Global:
+  case HeapTag::Opaque:
+  case HeapTag::Scanned:
+  case HeapTag::FixedSize:
+    break;
+
+  default:
+    log("root %p heap %d type %d mask %d len %d", obj, header->heap_tag,
+        header->type_tag, header->u_mask_npointers);
+    FAIL(kShouldNotGetHere);
+    break;
+  }
+}
+#endif
+
 class MarkSet {
  public:
   MarkSet() : bits_() {
@@ -206,6 +250,9 @@ class MarkSweepHeap {
   void Init(int gc_threshold);
 
   void PushRoot(RawObject** p) {
+#if VALIDATE_ROOTS
+    ValidateRoot(*p);
+#endif
     roots_.push_back(p);
   }
 

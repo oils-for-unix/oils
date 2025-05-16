@@ -20,45 +20,11 @@ extern BumpLeakHeap gHeap;
 extern MarkSweepHeap gHeap;
 #endif
 
-#if GC_ALWAYS
-  #define VALIDATE_ROOTS 1
-#else
-  #define VALIDATE_ROOTS 0  // flip this manually to diagnose bugs
-#endif
-
-#if VALIDATE_ROOTS
-static void ValidateRoot(const RawObject* obj) {
-  if (obj == nullptr) {
-    return;
-  }
-
-  ObjHeader* header = ObjHeader::FromObject(obj);
-  // log("obj %p header %p", obj, header);
-
-  switch (header->heap_tag) {
-  case HeapTag::Global:
-  case HeapTag::Opaque:
-  case HeapTag::Scanned:
-  case HeapTag::FixedSize:
-    break;
-
-  default:
-    log("root %p heap %d type %d mask %d len %d", obj, header->heap_tag,
-        header->type_tag, header->u_mask_npointers);
-    FAIL(kShouldNotGetHere);
-    break;
-  }
-}
-#endif
-
 // mycpp generates code that keeps track of the root set
 class StackRoot {
  public:
   StackRoot(void* root) {
     RawObject** obj = reinterpret_cast<RawObject**>(root);
-#if VALIDATE_ROOTS
-    ValidateRoot(*obj);
-#endif
     gHeap.PushRoot(obj);
   }
 
