@@ -1150,30 +1150,31 @@ class ctx_ModuleEval(object):
         cell = self.new_frame.get('__provide__')
         if cell is None:
             self.out_errors.append("Module is missing __provide__ List")
-            return
+        else:  # TODO: early return would be nicer?
+            provide_val = cell.val
+            with tagswitch(provide_val) as case:
+                if case(value_e.List):
+                    for val in cast(value.List, provide_val).items:
+                        if val.tag() == value_e.Str:
+                            name = cast(value.Str, val).s
 
-        provide_val = cell.val
-        with tagswitch(provide_val) as case:
-            if case(value_e.List):
-                for val in cast(value.List, provide_val).items:
-                    if val.tag() == value_e.Str:
-                        name = cast(value.Str, val).s
+                            cell = self.new_frame.get(name)
+                            if cell is None:
+                                self.out_errors.append(
+                                    "Name %r was provided, but not defined" %
+                                    name)
+                                continue
 
-                        cell = self.new_frame.get(name)
-                        if cell is None:
+                            self.out_dict[name] = cell.val
+                        else:
                             self.out_errors.append(
-                                "Name %r was provided, but not defined" % name)
-                            continue
+                                "Expected Str in __provide__ List, got %s" %
+                                ui.ValType(val))
 
-                        self.out_dict[name] = cell.val
-                    else:
-                        self.out_errors.append(
-                            "Expected Str in __provide__ List, got %s" %
-                            ui.ValType(val))
-
-            else:
-                self.out_errors.append("__provide__ should be a List, got %s" %
-                                       ui.ValType(provide_val))
+                else:
+                    self.out_errors.append(
+                        "__provide__ should be a List, got %s" %
+                        ui.ValType(provide_val))
 
 
 class ctx_Eval(object):

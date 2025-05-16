@@ -785,6 +785,9 @@ class Impl(_Shared):
         self.yield_assign_node: Optional[AssignmentStmt] = None
         self.yield_for_node: Optional[ForStmt] = None
 
+        # for __exit__ checks
+        self.inside_dunder_exit = False
+
         # More Traversal state
         self.current_func_node: Optional[FuncDef] = None
 
@@ -2477,8 +2480,10 @@ class Impl(_Shared):
         # - Check that you don't return early from destructor.  If so, we skip
         #   PopRoot(), which messes up the invariant!
 
+        self.inside_dunder_exit = True
         for node in stmt.body.body:
             self.accept(node)
+        self.inside_dunder_exit = False
 
         # For ctx_* classes only , gHeap.PopRoot() for all the pointer members
         if _IsContextManager(self.current_class_name):
@@ -2494,6 +2499,7 @@ class Impl(_Shared):
             return
 
         self.indent -= 1
+
         self.write('}\n')
 
     def oils_visit_method(self, o: ClassDef, stmt: FuncDef,
@@ -2671,6 +2677,13 @@ class Impl(_Shared):
         self.accept(o.body)
 
     def visit_return_stmt(self, o: 'mypy.nodes.ReturnStmt') -> None:
+        if self.inside_dunder_exit:
+            self.report_error(
+                o,
+                "return not allowed within __exit__ (C++ doesn't allow it; restructure with if)"
+            )
+            return
+
         # Examples:
         # return
         # return None
@@ -2758,6 +2771,13 @@ class Impl(_Shared):
         self.write_ind(';  // pass\n')
 
     def visit_raise_stmt(self, o: 'mypy.nodes.RaiseStmt') -> None:
+        if self.inside_dunder_exit:
+            # Note: this doesn't check function calls that raise, but it's
+            # better than nothing
+            self.report_error(
+                o, "raise not allowed within __exit__ (C++ doesn't allow it)")
+            return
+
         to_raise = o.expr
 
         if to_raise:

@@ -449,13 +449,13 @@ class ctx_MaybePure(object):
 
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
-        if not self.pure_ex:
-            return  # do nothing
 
-        # Unpatch the evaluators
-        self.cmd_ev.shell_ex = self.saved
-        self.cmd_ev.word_ev.shell_ex = self.saved
-        self.cmd_ev.expr_ev.shell_ex = self.saved
+        # __exit__ can't have early return, so use if
+        if self.pure_ex:
+            # Unpatch the evaluators
+            self.cmd_ev.shell_ex = self.saved
+            self.cmd_ev.word_ev.shell_ex = self.saved
+            self.cmd_ev.expr_ev.shell_ex = self.saved
 
 
 class ctx_Redirect(object):
