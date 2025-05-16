@@ -102,7 +102,7 @@ The idioms with `u''` and `write` are more powerful and consistent.
 Moreover, shell's `echo` is the *only* builtin that doesn't accept `--` to stop
 flag processing.
 
-That is, `echo "$x"` always has a few bugs when `$x` starts with `-e`, `-n`,
+That is, `echo "$x"` always has a few bugs when `$x` is `-e`, `-n`,
 `-en`, or `-ne`. There's **no** way to fix this bug in POSIX shell.
 
 So portable shell scripts use:
