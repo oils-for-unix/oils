@@ -63,7 +63,7 @@ run-file() {
   # Compare Python and C++ shells by passing --oils-cpp-bin-dir
 
   local variant='cxx-asan'
-  # TODO: it's better to turn on gcalways
+  # TODO: turning on gcalways will find more bugs
   #local variant='cxx-asan+gcalways'
 
   sh-spec $spec_file \

@@ -463,6 +463,13 @@ undefined variables.
 
 ## More Translation Notes
 
+### Special case: `pnode::PNode*` are not GC objects
+
+Instead, they use the arena `ctx_PNodeAllocator`.
+
+There is a special case in mycpp for this.  (And regression test in
+build/native.sh)
+
 ### Hacky Heuristics
 
 - `callable(arg)` to either:

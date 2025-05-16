@@ -2582,9 +2582,11 @@ class Impl(_Shared):
     # Statements
 
     def _WriteLocals(self, local_var_list: List[LocalVar]) -> None:
-        # TODO: put the pointers first, and then register a single
-        # StackRoots record.
-        done = set()
+        # TODO: put the pointers first, and then register a single StackRoots
+        # record.
+
+        # Initialize local vars, e.g. to nullptr
+        done = set()  # track duplicates?  why?
         for lval_name, lval_type, is_param in local_var_list:
             c_type = GetCType(lval_type)
             if not is_param and lval_name not in done:
@@ -2603,18 +2605,29 @@ class Impl(_Shared):
                 done.add(lval_name)
 
         # Figure out if we have any roots to write with StackRoots
-        roots = []  # keep it sorted
         full_func_name = None
         if self.current_func_node:
             full_func_name = SplitPyName(self.current_func_node.fullname)
 
+        roots = []  # keep it sorted
         for lval_name, lval_type, is_param in local_var_list:
-            c_type = GetCType(lval_type)
+            if lval_name in roots:  # skip duplicates
+                continue
+
             #self.log('%s %s %s', lval_name, c_type, is_param)
-            if lval_name not in roots and CTypeIsManaged(c_type):
-                if (not self.stack_roots or self.stack_roots.needs_root(
-                        full_func_name, SplitPyName(lval_name))):
-                    roots.append(lval_name)
+            c_type = GetCType(lval_type)
+            if not CTypeIsManaged(c_type):
+                continue
+
+            # COUPLING to Oils - PNode are never GC objects.  Instead we use
+            # PNodeAllocator in cpp/pgen2.h.
+            if c_type == 'pnode::PNode*':
+                #self.log('Not rooting PNode %s', lval_name)
+                continue
+
+            if (not self.stack_roots or self.stack_roots.needs_root(
+                    full_func_name, SplitPyName(lval_name))):
+                roots.append(lval_name)
 
         #self.log('roots %s', roots)
 

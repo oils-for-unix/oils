@@ -72,12 +72,12 @@ measure-build-times() {
 #
 
 oils-demo() {
+  local osh=${1:-bin/osh}
+
   export PYTHONPATH='.:vendor/'
 
   echo 'echo hi' | bin/osh_parse.py
   bin/osh_parse.py -c 'ls -l'
-
-  local osh=${1:-bin/osh}
 
   # Same functionality in bin/oils-for-unix
   echo 'echo hi' | $osh
@@ -98,26 +98,20 @@ oils-demo() {
 }
 
 soil-run() {
-  if test "${container:-}" = podman; then
+  local osh=_bin/cxx-asan+gcalways/osh
+  local ysh=_bin/cxx-asan+gcalways/ysh
 
-    # Work around for ASAN not working in podman
-
-    local bin=_bin/cxx-dbg/osh
-
-    log "Using $bin for podman"
-    log ''
-
-  else
-    local bin=_bin/cxx-asan/osh
-  fi
-
-  ninja $bin
+  ninja $osh $ysh
   echo
 
-  $bin --version
+  $osh --version
   echo
 
-  oils-demo $bin
+  oils-demo $osh
+
+  # Regression for pnode::PNode* rooting bug in spec/ysh-bugs, which only
+  # manifests with _bin/cxx-asan+gcalways/ysh
+  $ysh -c 'var x = 42; echo $x'
 }
 
 "$@"

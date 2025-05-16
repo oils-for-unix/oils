@@ -35516,9 +35516,8 @@ Tuple2<syntax_asdl::VarDecl*, syntax_asdl::Token*> ParseContext::ParseVarDecl(sy
   StackRoot _root0(&kw_token);
   StackRoot _root1(&lexer);
   StackRoot _root2(&e_parser);
-  StackRoot _root3(&pnode);
-  StackRoot _root4(&last_token);
-  StackRoot _root5(&ast_node);
+  StackRoot _root3(&last_token);
+  StackRoot _root4(&ast_node);
 
   e_parser = this->_YshParser();
   {  // with
@@ -35541,9 +35540,8 @@ Tuple2<syntax_asdl::Mutation*, syntax_asdl::Token*> ParseContext::ParseMutation(
   StackRoot _root0(&kw_token);
   StackRoot _root1(&lexer);
   StackRoot _root2(&e_parser);
-  StackRoot _root3(&pnode);
-  StackRoot _root4(&last_token);
-  StackRoot _root5(&ast_node);
+  StackRoot _root3(&last_token);
+  StackRoot _root4(&ast_node);
 
   e_parser = this->_YshParser();
   {  // with
@@ -35565,8 +35563,7 @@ void ParseContext::ParseProcCallArgs(lexer::Lexer* lx, syntax_asdl::ArgList* out
   StackRoot _root0(&lx);
   StackRoot _root1(&out);
   StackRoot _root2(&e_parser);
-  StackRoot _root3(&pnode);
-  StackRoot _root4(&last_token);
+  StackRoot _root3(&last_token);
 
   e_parser = this->_YshParser();
   {  // with
@@ -35587,9 +35584,8 @@ Tuple2<syntax_asdl::expr_t*, syntax_asdl::Token*> ParseContext::ParseYshExpr(lex
   syntax_asdl::expr_t* ast_node = nullptr;
   StackRoot _root0(&lx);
   StackRoot _root1(&e_parser);
-  StackRoot _root2(&pnode);
-  StackRoot _root3(&last_token);
-  StackRoot _root4(&ast_node);
+  StackRoot _root2(&last_token);
+  StackRoot _root3(&ast_node);
 
   e_parser = this->_YshParser();
   {  // with
@@ -35611,10 +35607,9 @@ Tuple3<syntax_asdl::pat_t*, syntax_asdl::Token*, syntax_asdl::Token*> ParseConte
   syntax_asdl::pat_t* pattern = nullptr;
   StackRoot _root0(&lexer);
   StackRoot _root1(&e_parser);
-  StackRoot _root2(&pnode);
-  StackRoot _root3(&last_token);
-  StackRoot _root4(&left_tok);
-  StackRoot _root5(&pattern);
+  StackRoot _root2(&last_token);
+  StackRoot _root3(&left_tok);
+  StackRoot _root4(&pattern);
 
   e_parser = this->_YshParser();
   {  // with
@@ -35636,8 +35631,7 @@ syntax_asdl::Token* ParseContext::ParseProc(lexer::Lexer* lexer, syntax_asdl::Pr
   StackRoot _root0(&lexer);
   StackRoot _root1(&out);
   StackRoot _root2(&e_parser);
-  StackRoot _root3(&pnode);
-  StackRoot _root4(&last_token);
+  StackRoot _root3(&last_token);
 
   e_parser = this->_YshParser();
   {  // with
@@ -35658,8 +35652,7 @@ syntax_asdl::Token* ParseContext::ParseFunc(lexer::Lexer* lexer, syntax_asdl::Fu
   StackRoot _root0(&lexer);
   StackRoot _root1(&out);
   StackRoot _root2(&e_parser);
-  StackRoot _root3(&pnode);
-  StackRoot _root4(&last_token);
+  StackRoot _root3(&last_token);
 
   e_parser = this->_YshParser();
   {  // with
@@ -52176,7 +52169,6 @@ Parser::Parser(grammar::Grammar* grammar) {
 void Parser::setup(int start, pnode::PNodeAllocator* pnode_alloc) {
   pnode::PNode* newnode = nullptr;
   StackRoot _root0(&pnode_alloc);
-  StackRoot _root1(&newnode);
 
   this->pnode_alloc = pnode_alloc;
   newnode = this->pnode_alloc->NewPNode(start, nullptr);
@@ -52278,7 +52270,6 @@ void Parser::shift(int typ, syntax_asdl::Token* opaque, int newstate) {
   pnode::PNode* newnode = nullptr;
   StackRoot _root0(&opaque);
   StackRoot _root1(&top);
-  StackRoot _root2(&newnode);
 
   top = this->stack->at(-1);
   newnode = this->pnode_alloc->NewPNode(typ, opaque);
@@ -52292,7 +52283,6 @@ void Parser::push(int typ, syntax_asdl::Token* opaque, Tuple2<List<List<Tuple2<i
   StackRoot _root0(&opaque);
   StackRoot _root1(&newdfa);
   StackRoot _root2(&top);
-  StackRoot _root3(&newnode);
 
   top = this->stack->at(-1);
   newnode = this->pnode_alloc->NewPNode(typ, opaque);
@@ -52305,8 +52295,7 @@ void Parser::pop() {
   pnode::PNode* newnode = nullptr;
   parse::_StackItem* top2 = nullptr;
   StackRoot _root0(&top);
-  StackRoot _root1(&newnode);
-  StackRoot _root2(&top2);
+  StackRoot _root1(&top2);
 
   top = this->stack->pop();
   newnode = top->node;
@@ -56086,10 +56075,8 @@ syntax_asdl::expr_t* Transformer::_LeftAssoc(pnode::PNode* p_node) {
   syntax_asdl::expr_t* left = nullptr;
   pnode::PNode* op = nullptr;
   syntax_asdl::expr_t* right = nullptr;
-  StackRoot _root0(&p_node);
-  StackRoot _root1(&left);
-  StackRoot _root2(&op);
-  StackRoot _root3(&right);
+  StackRoot _root0(&left);
+  StackRoot _root1(&right);
 
   i = 1;
   n = p_node->NumChildren();
@@ -56117,17 +56104,14 @@ syntax_asdl::expr_t* Transformer::_Trailer(syntax_asdl::expr_t* base, pnode::PNo
   syntax_asdl::Token* comma_tok = nullptr;
   syntax_asdl::Token* attr = nullptr;
   StackRoot _root0(&base);
-  StackRoot _root1(&p_trailer);
-  StackRoot _root2(&tok0);
-  StackRoot _root3(&lparen);
-  StackRoot _root4(&rparen);
-  StackRoot _root5(&arglist);
-  StackRoot _root6(&p);
-  StackRoot _root7(&p_args);
-  StackRoot _root8(&subscript);
-  StackRoot _root9(&slices);
-  StackRoot _root10(&comma_tok);
-  StackRoot _root11(&attr);
+  StackRoot _root1(&tok0);
+  StackRoot _root2(&lparen);
+  StackRoot _root3(&rparen);
+  StackRoot _root4(&arglist);
+  StackRoot _root5(&subscript);
+  StackRoot _root6(&slices);
+  StackRoot _root7(&comma_tok);
+  StackRoot _root8(&attr);
 
   tok0 = p_trailer->GetChild(0)->tok;
   typ0 = p_trailer->GetChild(0)->typ;
@@ -56172,11 +56156,10 @@ Tuple2<syntax_asdl::expr_t*, syntax_asdl::expr_t*> Transformer::_DictPair(pnode:
   syntax_asdl::Token* tok0 = nullptr;
   int id_;
   value::Str* key_str = nullptr;
-  StackRoot _root0(&p_node);
-  StackRoot _root1(&key);
-  StackRoot _root2(&val);
-  StackRoot _root3(&tok0);
-  StackRoot _root4(&key_str);
+  StackRoot _root0(&key);
+  StackRoot _root1(&val);
+  StackRoot _root2(&tok0);
+  StackRoot _root3(&key_str);
 
   typ = p_node->GetChild(0)->typ;
   if ((typ == grammar_nt::sq_string || typ == grammar_nt::dq_string)) {
@@ -56210,12 +56193,10 @@ expr::Dict* Transformer::_Dict(pnode::PNode* parent, pnode::PNode* p_node) {
   int n;
   syntax_asdl::expr_t* key = nullptr;
   syntax_asdl::expr_t* val = nullptr;
-  StackRoot _root0(&parent);
-  StackRoot _root1(&p_node);
-  StackRoot _root2(&keys);
-  StackRoot _root3(&values);
-  StackRoot _root4(&key);
-  StackRoot _root5(&val);
+  StackRoot _root0(&keys);
+  StackRoot _root1(&values);
+  StackRoot _root2(&key);
+  StackRoot _root3(&val);
 
   if (p_node->typ == Id::Op_RBrace) {
     return Alloc<expr::Dict>(parent->tok, Alloc<List<syntax_asdl::expr_t*>>(), Alloc<List<syntax_asdl::expr_t*>>());
@@ -56237,9 +56218,7 @@ syntax_asdl::expr_t* Transformer::_Tuple(pnode::PNode* parent) {
   int n;
   List<syntax_asdl::expr_t*>* elts = nullptr;
   pnode::PNode* p_node = nullptr;
-  StackRoot _root0(&parent);
-  StackRoot _root1(&elts);
-  StackRoot _root2(&p_node);
+  StackRoot _root0(&elts);
 
   n = parent->NumChildren();
   if (n == 1) {
@@ -56263,13 +56242,9 @@ syntax_asdl::expr_t* Transformer::_TestlistComp(pnode::PNode* parent, pnode::PNo
   syntax_asdl::Comprehension* comp = nullptr;
   List<syntax_asdl::expr_t*>* elts = nullptr;
   pnode::PNode* child = nullptr;
-  StackRoot _root0(&parent);
-  StackRoot _root1(&p_node);
-  StackRoot _root2(&child0);
-  StackRoot _root3(&elt);
-  StackRoot _root4(&comp);
-  StackRoot _root5(&elts);
-  StackRoot _root6(&child);
+  StackRoot _root0(&elt);
+  StackRoot _root1(&comp);
+  StackRoot _root2(&elts);
 
   n = p_node->NumChildren();
   if ((n > 1 and p_node->GetChild(1)->typ == grammar_nt::comp_for)) {
@@ -56317,10 +56292,9 @@ syntax_asdl::expr_t* Transformer::_Atom(pnode::PNode* parent) {
   syntax_asdl::expr_t* child = nullptr;
   int i;
   syntax_asdl::Token* name_tok = nullptr;
-  StackRoot _root0(&parent);
-  StackRoot _root1(&tok);
-  StackRoot _root2(&child);
-  StackRoot _root3(&name_tok);
+  StackRoot _root0(&tok);
+  StackRoot _root1(&child);
+  StackRoot _root2(&name_tok);
 
   tok = parent->GetChild(0)->tok;
   id_ = tok->id;
@@ -56372,9 +56346,8 @@ syntax_asdl::NameType* Transformer::_NameType(pnode::PNode* p_node) {
   syntax_asdl::Token* name_tok = nullptr;
   syntax_asdl::TypeExpr* typ = nullptr;
   int n;
-  StackRoot _root0(&p_node);
-  StackRoot _root1(&name_tok);
-  StackRoot _root2(&typ);
+  StackRoot _root0(&name_tok);
+  StackRoot _root1(&typ);
 
   name_tok = p_node->GetChild(0)->tok;
   typ = nullptr;
@@ -56391,8 +56364,7 @@ syntax_asdl::NameType* Transformer::_NameType(pnode::PNode* p_node) {
 List<syntax_asdl::NameType*>* Transformer::_NameTypeList(pnode::PNode* p_node) {
   List<syntax_asdl::NameType*>* results = nullptr;
   int n;
-  StackRoot _root0(&p_node);
-  StackRoot _root1(&results);
+  StackRoot _root0(&results);
 
   results = Alloc<List<syntax_asdl::NameType*>>();
   n = p_node->NumChildren();
@@ -56406,10 +56378,9 @@ syntax_asdl::Comprehension* Transformer::_CompFor(pnode::PNode* p_node) {
   List<syntax_asdl::NameType*>* lhs = nullptr;
   syntax_asdl::expr_t* iterable = nullptr;
   syntax_asdl::expr_t* cond = nullptr;
-  StackRoot _root0(&p_node);
-  StackRoot _root1(&lhs);
-  StackRoot _root2(&iterable);
-  StackRoot _root3(&cond);
+  StackRoot _root0(&lhs);
+  StackRoot _root1(&iterable);
+  StackRoot _root2(&cond);
 
   lhs = this->_NameTypeList(p_node->GetChild(1));
   iterable = this->Expr(p_node->GetChild(3));
@@ -56430,12 +56401,10 @@ syntax_asdl::expr_t* Transformer::_CompareChain(pnode::PNode* parent) {
   int n;
   pnode::PNode* p = nullptr;
   syntax_asdl::Token* op = nullptr;
-  StackRoot _root0(&parent);
-  StackRoot _root1(&cmp_ops);
-  StackRoot _root2(&comparators);
-  StackRoot _root3(&left);
-  StackRoot _root4(&p);
-  StackRoot _root5(&op);
+  StackRoot _root0(&cmp_ops);
+  StackRoot _root1(&comparators);
+  StackRoot _root2(&left);
+  StackRoot _root3(&op);
 
   cmp_ops = Alloc<List<syntax_asdl::Token*>>();
   comparators = Alloc<List<syntax_asdl::expr_t*>>();
@@ -56475,10 +56444,9 @@ syntax_asdl::expr_t* Transformer::_Subscript(pnode::PNode* parent) {
   syntax_asdl::expr_t* lower = nullptr;
   syntax_asdl::Token* op_tok = nullptr;
   syntax_asdl::expr_t* upper = nullptr;
-  StackRoot _root0(&parent);
-  StackRoot _root1(&lower);
-  StackRoot _root2(&op_tok);
-  StackRoot _root3(&upper);
+  StackRoot _root0(&lower);
+  StackRoot _root1(&op_tok);
+  StackRoot _root2(&upper);
 
   typ0 = parent->GetChild(0)->typ;
   n = parent->NumChildren();
@@ -56537,24 +56505,21 @@ syntax_asdl::expr_t* Transformer::Expr(pnode::PNode* pnode) {
   BigStr* s = nullptr;
   BigStr* hex_str = nullptr;
   int code_point;
-  StackRoot _root0(&pnode);
-  StackRoot _root1(&test);
-  StackRoot _root2(&body);
-  StackRoot _root3(&orelse);
-  StackRoot _root4(&params);
-  StackRoot _root5(&op_tok);
-  StackRoot _root6(&op);
-  StackRoot _root7(&e);
-  StackRoot _root8(&node);
-  StackRoot _root9(&factor);
-  StackRoot _root10(&dq);
-  StackRoot _root11(&tok);
-  StackRoot _root12(&bare);
-  StackRoot _root13(&tok_str);
-  StackRoot _root14(&c_under);
-  StackRoot _root15(&cval);
-  StackRoot _root16(&s);
-  StackRoot _root17(&hex_str);
+  StackRoot _root0(&test);
+  StackRoot _root1(&body);
+  StackRoot _root2(&orelse);
+  StackRoot _root3(&params);
+  StackRoot _root4(&op_tok);
+  StackRoot _root5(&node);
+  StackRoot _root6(&factor);
+  StackRoot _root7(&dq);
+  StackRoot _root8(&tok);
+  StackRoot _root9(&bare);
+  StackRoot _root10(&tok_str);
+  StackRoot _root11(&c_under);
+  StackRoot _root12(&cval);
+  StackRoot _root13(&s);
+  StackRoot _root14(&hex_str);
 
   typ = pnode->typ;
   if (typ == grammar_nt::ysh_expr) {
@@ -56864,12 +56829,10 @@ List<syntax_asdl::y_lhs_t*>* Transformer::_LhsExprList(pnode::PNode* p_node) {
   syntax_asdl::expr_t* e = nullptr;
   syntax_asdl::expr_t* UP_e = nullptr;
   syntax_asdl::loc_t* blame = nullptr;
-  StackRoot _root0(&p_node);
-  StackRoot _root1(&lhs_list);
-  StackRoot _root2(&p);
-  StackRoot _root3(&e);
-  StackRoot _root4(&UP_e);
-  StackRoot _root5(&blame);
+  StackRoot _root0(&lhs_list);
+  StackRoot _root1(&e);
+  StackRoot _root2(&UP_e);
+  StackRoot _root3(&blame);
 
   lhs_list = Alloc<List<syntax_asdl::y_lhs_t*>>();
   n = p_node->NumChildren();
@@ -56917,9 +56880,8 @@ syntax_asdl::VarDecl* Transformer::MakeVarDecl(pnode::PNode* p_node) {
   List<syntax_asdl::NameType*>* lhs = nullptr;
   int n;
   syntax_asdl::expr_t* rhs = nullptr;
-  StackRoot _root0(&p_node);
-  StackRoot _root1(&lhs);
-  StackRoot _root2(&rhs);
+  StackRoot _root0(&lhs);
+  StackRoot _root1(&rhs);
 
   lhs = this->_NameTypeList(p_node->GetChild(0));
   n = p_node->NumChildren();
@@ -56936,10 +56898,9 @@ syntax_asdl::Mutation* Transformer::MakeMutation(pnode::PNode* p_node) {
   List<syntax_asdl::y_lhs_t*>* lhs_list = nullptr;
   syntax_asdl::Token* op_tok = nullptr;
   syntax_asdl::expr_t* rhs = nullptr;
-  StackRoot _root0(&p_node);
-  StackRoot _root1(&lhs_list);
-  StackRoot _root2(&op_tok);
-  StackRoot _root3(&rhs);
+  StackRoot _root0(&lhs_list);
+  StackRoot _root1(&op_tok);
+  StackRoot _root2(&rhs);
 
   lhs_list = this->_LhsExprList(p_node->GetChild(0));
   op_tok = p_node->GetChild(1)->tok;
@@ -56952,8 +56913,6 @@ syntax_asdl::Mutation* Transformer::MakeMutation(pnode::PNode* p_node) {
 
 syntax_asdl::EggexFlag* Transformer::_EggexFlag(pnode::PNode* p_node) {
   int n;
-  StackRoot _root0(&p_node);
-
   n = p_node->NumChildren();
   if (n == 1) {
     return Alloc<EggexFlag>(false, p_node->GetChild(0)->tok);
@@ -56976,13 +56935,11 @@ syntax_asdl::Eggex* Transformer::_Eggex(pnode::PNode* p_node) {
   int i;
   pnode::PNode* current = nullptr;
   BigStr* canonical_flags = nullptr;
-  StackRoot _root0(&p_node);
-  StackRoot _root1(&left);
-  StackRoot _root2(&regex);
-  StackRoot _root3(&flags);
-  StackRoot _root4(&trans_pref);
-  StackRoot _root5(&current);
-  StackRoot _root6(&canonical_flags);
+  StackRoot _root0(&left);
+  StackRoot _root1(&regex);
+  StackRoot _root2(&flags);
+  StackRoot _root3(&trans_pref);
+  StackRoot _root4(&canonical_flags);
 
   left = p_node->GetChild(0)->tok;
   regex = this->_Regex(p_node->GetChild(1));
@@ -57020,11 +56977,8 @@ syntax_asdl::pat_t* Transformer::YshCasePattern(pnode::PNode* pnode) {
   List<syntax_asdl::expr_t*>* exprs = nullptr;
   pnode::PNode* child = nullptr;
   syntax_asdl::expr_t* expr = nullptr;
-  StackRoot _root0(&pnode);
-  StackRoot _root1(&pattern);
-  StackRoot _root2(&exprs);
-  StackRoot _root3(&child);
-  StackRoot _root4(&expr);
+  StackRoot _root0(&exprs);
+  StackRoot _root1(&expr);
 
   pattern = pnode->GetChild(0);
   typ = pattern->typ;
@@ -57055,9 +57009,6 @@ syntax_asdl::pat_t* Transformer::YshCasePattern(pnode::PNode* pnode) {
 syntax_asdl::expr_t* Transformer::_BlockArg(pnode::PNode* p_node) {
   int n;
   pnode::PNode* child = nullptr;
-  StackRoot _root0(&p_node);
-  StackRoot _root1(&child);
-
   n = p_node->NumChildren();
   if (n == 1) {
     child = p_node->GetChild(0);
@@ -57077,17 +57028,15 @@ void Transformer::_Argument(pnode::PNode* p_node, bool after_semi, syntax_asdl::
   syntax_asdl::expr_t* elt = nullptr;
   syntax_asdl::Comprehension* comp = nullptr;
   syntax_asdl::NamedArg* n1 = nullptr;
-  StackRoot _root0(&p_node);
-  StackRoot _root1(&arglist);
-  StackRoot _root2(&pos_args);
-  StackRoot _root3(&named_args);
-  StackRoot _root4(&child);
-  StackRoot _root5(&arg);
-  StackRoot _root6(&tok0);
-  StackRoot _root7(&spread_expr);
-  StackRoot _root8(&elt);
-  StackRoot _root9(&comp);
-  StackRoot _root10(&n1);
+  StackRoot _root0(&arglist);
+  StackRoot _root1(&pos_args);
+  StackRoot _root2(&named_args);
+  StackRoot _root3(&arg);
+  StackRoot _root4(&tok0);
+  StackRoot _root5(&spread_expr);
+  StackRoot _root6(&elt);
+  StackRoot _root7(&comp);
+  StackRoot _root8(&n1);
 
   pos_args = arglist->pos_args;
   named_args = arglist->named_args;
@@ -57136,9 +57085,7 @@ void Transformer::_Argument(pnode::PNode* p_node, bool after_semi, syntax_asdl::
 
 void Transformer::_ArgGroup(pnode::PNode* p_node, bool after_semi, syntax_asdl::ArgList* arglist) {
   pnode::PNode* p_child = nullptr;
-  StackRoot _root0(&p_node);
-  StackRoot _root1(&arglist);
-  StackRoot _root2(&p_child);
+  StackRoot _root0(&arglist);
 
   for (int i = 0; i < p_node->NumChildren(); ++i) {
     p_child = p_node->GetChild(i);
@@ -57152,9 +57099,7 @@ void Transformer::_ArgList(pnode::PNode* p_node, syntax_asdl::ArgList* arglist) 
   int n;
   int i;
   pnode::PNode* child = nullptr;
-  StackRoot _root0(&p_node);
-  StackRoot _root1(&arglist);
-  StackRoot _root2(&child);
+  StackRoot _root0(&arglist);
 
   n = p_node->NumChildren();
   if (n == 0) {
@@ -57206,9 +57151,7 @@ void Transformer::_ArgList(pnode::PNode* p_node, syntax_asdl::ArgList* arglist) 
 void Transformer::ProcCallArgs(pnode::PNode* pnode, syntax_asdl::ArgList* arglist) {
   int n;
   pnode::PNode* child1 = nullptr;
-  StackRoot _root0(&pnode);
-  StackRoot _root1(&arglist);
-  StackRoot _root2(&child1);
+  StackRoot _root0(&arglist);
 
   n = pnode->NumChildren();
   if (n == 2) {
@@ -57227,9 +57170,8 @@ syntax_asdl::TypeExpr* Transformer::_TypeExpr(pnode::PNode* pnode) {
   int n;
   int i;
   syntax_asdl::TypeExpr* p = nullptr;
-  StackRoot _root0(&pnode);
-  StackRoot _root1(&ty);
-  StackRoot _root2(&p);
+  StackRoot _root0(&ty);
+  StackRoot _root1(&p);
 
   ty = TypeExpr::CreateNull();
   ty->tok = pnode->GetChild(0)->tok;
@@ -57253,10 +57195,9 @@ syntax_asdl::Param* Transformer::_Param(pnode::PNode* pnode) {
   int n;
   syntax_asdl::expr_t* default_val = nullptr;
   syntax_asdl::TypeExpr* type_ = nullptr;
-  StackRoot _root0(&pnode);
-  StackRoot _root1(&name_tok);
-  StackRoot _root2(&default_val);
-  StackRoot _root3(&type_);
+  StackRoot _root0(&name_tok);
+  StackRoot _root1(&default_val);
+  StackRoot _root2(&type_);
 
   name_tok = pnode->GetChild(0)->tok;
   n = pnode->NumChildren();
@@ -57291,11 +57232,9 @@ syntax_asdl::ParamGroup* Transformer::_ParamGroup(pnode::PNode* p_node) {
   int i;
   pnode::PNode* child = nullptr;
   syntax_asdl::Token* tok = nullptr;
-  StackRoot _root0(&p_node);
-  StackRoot _root1(&params);
-  StackRoot _root2(&rest_of);
-  StackRoot _root3(&child);
-  StackRoot _root4(&tok);
+  StackRoot _root0(&params);
+  StackRoot _root1(&rest_of);
+  StackRoot _root2(&tok);
 
   params = Alloc<List<syntax_asdl::Param*>>();
   rest_of = nullptr;
@@ -57324,11 +57263,9 @@ syntax_asdl::proc_sig_t* Transformer::Proc(pnode::PNode* p_node) {
   pnode::PNode* child = nullptr;
   syntax_asdl::ParamGroup* group = nullptr;
   List<syntax_asdl::Param*>* params = nullptr;
-  StackRoot _root0(&p_node);
-  StackRoot _root1(&sig);
-  StackRoot _root2(&child);
-  StackRoot _root3(&group);
-  StackRoot _root4(&params);
+  StackRoot _root0(&sig);
+  StackRoot _root1(&group);
+  StackRoot _root2(&params);
 
   n = p_node->NumChildren();
   if (n == 1) {
@@ -57413,9 +57350,7 @@ void Transformer::YshFunc(pnode::PNode* p_node, syntax_asdl::Func* out) {
   int n;
   int i;
   pnode::PNode* child = nullptr;
-  StackRoot _root0(&p_node);
-  StackRoot _root1(&out);
-  StackRoot _root2(&child);
+  StackRoot _root0(&out);
 
   out->name = p_node->GetChild(0)->tok;
   n = p_node->NumChildren();
@@ -57441,9 +57376,7 @@ syntax_asdl::CharCode* Transformer::_RangeCharSingleQuoted(pnode::PNode* p_node)
   pnode::PNode* child0 = nullptr;
   syntax_asdl::SingleQuoted* sq_part = nullptr;
   int n;
-  StackRoot _root0(&p_node);
-  StackRoot _root1(&child0);
-  StackRoot _root2(&sq_part);
+  StackRoot _root0(&sq_part);
 
   child0 = p_node->GetChild(0);
   if (child0->typ == grammar_nt::sq_string) {
@@ -57467,9 +57400,7 @@ syntax_asdl::CharCode* Transformer::_RangeCharSingleQuoted(pnode::PNode* p_node)
 syntax_asdl::Token* Transformer::_OtherRangeToken(pnode::PNode* p_node) {
   pnode::PNode* child0 = nullptr;
   syntax_asdl::Token* tok = nullptr;
-  StackRoot _root0(&p_node);
-  StackRoot _root1(&child0);
-  StackRoot _root2(&tok);
+  StackRoot _root0(&tok);
 
   child0 = p_node->GetChild(0);
   if (child0->typ == grammar_nt::char_literal) {
@@ -57486,9 +57417,6 @@ syntax_asdl::Token* Transformer::_OtherRangeToken(pnode::PNode* p_node) {
 syntax_asdl::class_literal_term_t* Transformer::_NonRangeChars(pnode::PNode* p_node) {
   pnode::PNode* child0 = nullptr;
   int typ0;
-  StackRoot _root0(&p_node);
-  StackRoot _root1(&child0);
-
   child0 = p_node->GetChild(0);
   typ0 = p_node->GetChild(0)->typ;
   if (typ0 == grammar_nt::sq_string) {
@@ -57512,13 +57440,10 @@ syntax_asdl::class_literal_term_t* Transformer::_ClassLiteralTerm(pnode::PNode* 
   syntax_asdl::Token* tok1 = nullptr;
   syntax_asdl::CharCode* code2 = nullptr;
   syntax_asdl::Token* tok2 = nullptr;
-  StackRoot _root0(&p_node);
-  StackRoot _root1(&left);
-  StackRoot _root2(&right);
-  StackRoot _root3(&code1);
-  StackRoot _root4(&tok1);
-  StackRoot _root5(&code2);
-  StackRoot _root6(&tok2);
+  StackRoot _root0(&code1);
+  StackRoot _root1(&tok1);
+  StackRoot _root2(&code2);
+  StackRoot _root3(&tok2);
 
   typ0 = p_node->GetChild(0)->typ;
   if (typ0 == grammar_nt::range_char) {
@@ -57555,8 +57480,7 @@ syntax_asdl::class_literal_term_t* Transformer::_ClassLiteralTerm(pnode::PNode* 
 
 List<syntax_asdl::class_literal_term_t*>* Transformer::_ClassLiteral(pnode::PNode* p_node) {
   List<syntax_asdl::class_literal_term_t*>* terms = nullptr;
-  StackRoot _root0(&p_node);
-  StackRoot _root1(&terms);
+  StackRoot _root0(&terms);
 
   terms = Alloc<List<syntax_asdl::class_literal_term_t*>>();
   for (int i = 1; i < (p_node->NumChildren() - 1); ++i) {
@@ -57632,16 +57556,13 @@ syntax_asdl::re_t* Transformer::_ReAtom(pnode::PNode* p_atom) {
   syntax_asdl::Token* func_name = nullptr;
   int i;
   int typ;
-  StackRoot _root0(&p_atom);
-  StackRoot _root1(&child0);
-  StackRoot _root2(&tok0);
-  StackRoot _root3(&s);
-  StackRoot _root4(&tok_str);
-  StackRoot _root5(&tok1);
-  StackRoot _root6(&child1);
-  StackRoot _root7(&regex);
-  StackRoot _root8(&as_name);
-  StackRoot _root9(&func_name);
+  StackRoot _root0(&tok0);
+  StackRoot _root1(&s);
+  StackRoot _root2(&tok_str);
+  StackRoot _root3(&tok1);
+  StackRoot _root4(&regex);
+  StackRoot _root5(&as_name);
+  StackRoot _root6(&func_name);
 
   child0 = p_atom->GetChild(0);
   typ0 = p_atom->GetChild(0)->typ;
@@ -57727,11 +57648,9 @@ syntax_asdl::re_repeat_t* Transformer::_RepeatOp(pnode::PNode* p_repeat) {
   int n;
   syntax_asdl::Token* left = nullptr;
   syntax_asdl::Token* right = nullptr;
-  StackRoot _root0(&p_repeat);
-  StackRoot _root1(&tok);
-  StackRoot _root2(&child1);
-  StackRoot _root3(&left);
-  StackRoot _root4(&right);
+  StackRoot _root0(&tok);
+  StackRoot _root1(&left);
+  StackRoot _root2(&right);
 
   tok = p_repeat->GetChild(0)->tok;
   id_ = tok->id;
@@ -57774,10 +57693,9 @@ syntax_asdl::re_t* Transformer::_ReAlt(pnode::PNode* p_node) {
   List<syntax_asdl::re_t*>* seq = nullptr;
   syntax_asdl::re_t* r = nullptr;
   syntax_asdl::re_repeat_t* repeat_op = nullptr;
-  StackRoot _root0(&p_node);
-  StackRoot _root1(&seq);
-  StackRoot _root2(&r);
-  StackRoot _root3(&repeat_op);
+  StackRoot _root0(&seq);
+  StackRoot _root1(&r);
+  StackRoot _root2(&repeat_op);
 
   i = 0;
   n = p_node->NumChildren();
@@ -57804,9 +57722,7 @@ syntax_asdl::re_t* Transformer::_Regex(pnode::PNode* p_node) {
   int n;
   List<syntax_asdl::re_t*>* alts = nullptr;
   pnode::PNode* c = nullptr;
-  StackRoot _root0(&p_node);
-  StackRoot _root1(&alts);
-  StackRoot _root2(&c);
+  StackRoot _root0(&alts);
 
   n = p_node->NumChildren();
   alts = Alloc<List<syntax_asdl::re_t*>>();
