@@ -115,7 +115,7 @@ We could have chosen to respect `echo -- $x`, but as YSH already has:
 
 That, and having static string literals, allowed YSH to fix
 
-    echo $x $y ...      # YES: print a single-line "unmolested" in YSH
+    echo $x $y ...      # YES: print single-lines "unmolested" in YSH
 
 So `echo` is technically superfluous in YSH, but it's also short, familiar, and
 always correct.
