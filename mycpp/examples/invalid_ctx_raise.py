@@ -9,6 +9,13 @@ from typing import Any
 from mycpp import mylib
 
 
+class ShouldStartWithCtx(object):
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        pass
+
+
 class ctx_MaybePure(object):
     """Regression for early return."""
 

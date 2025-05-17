@@ -2485,12 +2485,6 @@ class Impl(_Shared):
 
     def oils_visit_dunder_exit(self, o: ClassDef, stmt: FuncDef,
                                base_class_sym: util.SymbolPath) -> None:
-        if not _IsContextManager(self.current_class_name):
-            self.report_error(
-                o, 'Any class with __exit__ should be named ctx_Foo (%s)' %
-                (self.current_class_name, ))
-            return
-
         self.write('\n')
 
         member_vars = self.all_member_vars[o]

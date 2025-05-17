@@ -243,6 +243,9 @@ test-invalid-examples() {
       */invalid_switch.py)
         expected_status=5
         ;;
+      */invalid_ctx_raise.py)
+        expected_status=2
+        ;;
     esac
 
     if test $status -ne $expected_status; then

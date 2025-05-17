@@ -246,6 +246,12 @@ class SimpleVisitor(ExpressionVisitor[None], StatementVisitor[None]):
                     continue
 
                 if method_name == '__exit__':  # Don't translate
+                    if not o.name.startswith('ctx_'):
+                        self.report_error(
+                            o,
+                            'Class with __exit__ should be named ctx_Foo: %s' %
+                            (self.current_class_name, ))
+
                     self.current_method_name = stmt.name
                     self.oils_visit_dunder_exit(o, stmt, base_class_sym)
                     self.current_method_name = None
