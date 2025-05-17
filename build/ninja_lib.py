@@ -340,15 +340,26 @@ class Rules(object):
 
     def cc_binary(
             self,
-            main_cc,
-            symlinks=None,
+            main_cc,  # e.g. cpp/core_test.cc
+            symlinks=None,  # make these symlinks - separate rules?
             implicit=None,  # for COMPILE action, not link action
-            deps=None,
-            matrix=None,  # $compiler $variant
-            phony_prefix=None,
-            preprocessed=False,
+            deps=None,  # libraries to depend on, transitive closure
+            matrix=None,  # $compiler $variant +bumpleak
+            phony_prefix=None,  # group
+            preprocessed=False,  # generate report
             bin_path=None,  # default is _bin/$compiler-$variant/rel/path
     ):
+        """
+        A cc_binary() depends on a list of cc_library() rules specified by
+        //package/label
+
+        It accepts a config matrix of (compiler, variant, +other)
+
+        The transitive closure is computed.  
+
+        Then we write Ninja rules corresponding to each dependent library, with
+        respect to the config.
+        """
         symlinks = symlinks or []
         implicit = implicit or []
         deps = deps or []
@@ -367,7 +378,7 @@ class Rules(object):
         self._TransitiveClosure(c.main_cc, c.deps, out_deps)
         unique_deps = sorted(out_deps)
 
-        # save for SourcesForBinary()
+        # to compute tarball manifest, with SourcesForBinary()
         self.cc_binary_deps[c.main_cc] = unique_deps
 
         compile_imp = list(c.implicit)
@@ -402,11 +413,13 @@ class Rules(object):
                              maybe_preprocess=True)
 
             config_dir = ConfigDir(config)
-            bin_dir = '_bin/%s' % config_dir
+            bin_dir = '_bin/%s' % config_dir  # e.g. _bin/cxx-asan
 
             if c.bin_path:
                 # e.g. _bin/cxx-dbg/oils_for_unix
-                bin_ = '%s/%s' % (bin_dir, c.bin_path)
+                bin_to_link = '%s/%s' % (bin_dir, c.bin_path)
+
+                # For _bin/cxx-asan/mycpp-souffle/oils-for-unix
                 bin_subdir, _, bin_name = c.bin_path.rpartition('/')
                 if bin_subdir:
                     bin_dir = '%s/%s' % (bin_dir, bin_subdir)
@@ -421,17 +434,17 @@ class Rules(object):
                 if rel_path.startswith('_gen/'):
                     rel_path = rel_path[len('_gen/'):]
 
-                bin_ = '%s/%s' % (bin_dir, rel_path)
+                bin_to_link = '%s/%s' % (bin_dir, rel_path)
 
             # Link with OBJECT deps
-            self.link(bin_, main_obj, unique_deps, config)
+            self.link(bin_to_link, main_obj, unique_deps, config)
 
             # Make symlinks
             for symlink in c.symlinks:
                 # Must explicitly specify bin_path to have a symlink, for now
                 assert c.bin_path is not None
                 self.n.build(['%s/%s' % (bin_dir, symlink)],
-                             'symlink', [bin_],
+                             'symlink', [bin_to_link],
                              variables=[('dir', bin_dir), ('target', bin_name),
                                         ('new', symlink)])
                 self.n.newline()
@@ -440,7 +453,7 @@ class Rules(object):
                 key = '%s-%s' % (c.phony_prefix, config_dir)
                 if key not in self.phony:
                     self.phony[key] = []
-                self.phony[key].append(bin_)
+                self.phony[key].append(bin_to_link)
 
     def SourcesForBinary(self, main_cc):
         """
@@ -596,6 +609,118 @@ def TryDynamicDeps(py_main):
             return [line.strip() for line in f]
 
     return None
+
+
+# TODO:
+#
+# //bin/oils_for_unix.mycpp
+# //bin/oils_for_unix.mycpp-souffle
+#
+# mycpp_library('bin/oils_for_unix.py',
+#               mypy_path=''
+#               preamble=''
+#               souffle=True,
+#               pea=True,   # another option
+# )
+#
+# //bin/oils_for_unix.main
+#
+# gen_cpp_main(namespace='oils_for_unix',
+#              style='example')
+#
+# mycpp_binary(
+#   '//bin/oils_for_unix.main',  # cc_library() for main
+#   bin_path='bin/oils_for_unix.mycpp-souffle',
+#   deps=['//bin/oils_for_unix.mycpp-souffle'],
+# )
+#
+# mycpp_binary(
+#   '//bin/oils_for_unix.main',
+#   deps=['//bin/oils_for_unix.mycpp'],
+#   bin_path='bin/oils_for_unix.mycpp',
+#   symlinks=[],
+#   preprocessed=True,
+#   phony_prefix=''
+# )
+
+
+def mycpp_library(ru,
+                  py_main,
+                  mypy_path=DEFAULT_MYPY_PATH,
+                  preamble=None,
+                  translator='mycpp',
+                  py_inputs=None,
+                  deps=None):
+    """
+    Generate a .cc file with mycpp, and a cc_library() for it
+    """
+
+    # e.g. bin/oils_for_unix
+    py_rel_path, _ = os.path.splitext(py_main)
+    # e.g. bin.oils_for_unix
+    #py_module = py_rel_path.replace('/', '.')
+
+    py_inputs = py_inputs or [py_main]  # if not specified, it's a single file
+    #matrix = matrix or COMPILERS_VARIANTS
+    deps = deps or []
+
+    # TODO: preamble should go in mycpp?
+    if preamble is None:
+        p = py_rel_path + '_preamble.h'
+        preamble = p if os.path.exists(p) else "''"  # Ninja empty string!
+
+    n = ru.n
+
+    # Two steps
+    raw = '_gen/%s.%s-lib.cc' % (py_rel_path, translator)
+
+    translator_shwrap = SHWRAP[translator]
+
+    n.build(
+        raw,
+        'translate-%s' % translator,
+        py_inputs,  # files to translate
+        # Implicit dependency: if the translator changes, regenerate source
+        # code.  But don't pass it on the command line.
+        implicit=[translator_shwrap],
+        # examples/parse uses pyext/fastfunc.pyi
+        variables=[('mypypath', mypy_path)])
+
+    ru.cc_library(
+        # e.g. //bin/oils_for_unix.mycpp-souffle
+        '//%s.%s' % (py_rel_path, translator),
+        srcs=[raw],
+        deps=deps,
+        #matrix=matrix,
+    )
+
+
+def main_library(ru, py_main, template='unix'):
+    """
+    Generate a .main.cc file, and a cc_library() for it
+    """
+    n = ru.n
+
+    py_rel_path, _ = os.path.splitext(py_main)
+    main_cc = '_gen/%s.main.cc' % py_rel_path
+    n.build(
+        [main_cc],
+        'write-main',
+        [],
+        variables=[
+            ('template', template),
+            # e.g. 'hello'
+            ('main_namespace', os.path.basename(py_rel_path))
+        ])
+
+    ru.cc_library(
+        # e.g. //bin/hello.main
+        '//%s.main' % py_rel_path,
+        srcs=[main_cc],
+        # no link deps
+        deps=[],
+        #matrix=matrix,
+    )
 
 
 def mycpp_binary(ru,

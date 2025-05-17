@@ -339,7 +339,13 @@ def InitSteps(n):
         'write-shwrap',
         # $in must start with main program
         command='build/ninja-rules-py.sh write-shwrap $template $out $in',
-        description='make-pystub $out $in')
+        description='make-shwrap $template $out $in')
+    n.newline()
+
+    n.rule('write-main',
+           command=
+           'build/ninja-rules-py.sh write-main $template $out $main_namespace',
+           description='write-main $out $main_namespace')
     n.newline()
 
     # Trivial build rule, for bin/mycpp_main -> _bin/shwrap/mycpp_souffle

@@ -26,7 +26,15 @@ die() {
 
 example-main-wrapper() {
   ### Used by mycpp/examples
-  local name_namespace=${1:-fib_iter}
+  local main_namespace=${1:-fib_iter}
+  local declare=${2:-}
+
+  if test -n "$declare"; then
+    echo "namespace $main_namespace {"
+    echo 'void run_tests();'
+    echo 'void run_benchmarks();'
+    echo '}'
+  fi
 
   cat <<EOF
 int main(int argc, char **argv) {
@@ -35,9 +43,9 @@ int main(int argc, char **argv) {
   char* b = getenv("BENCHMARK");
   if (b && strlen(b)) {  // match Python's logic
     fprintf(stderr, "Benchmarking...\\n");
-    $name_namespace::run_benchmarks();
+    $main_namespace::run_benchmarks();
   } else {
-    $name_namespace::run_tests();
+    $main_namespace::run_tests();
   }
 
   gHeap.CleanProcessExit();
@@ -48,6 +56,15 @@ EOF
 main-wrapper() {
   ### Used by oils-for-unix and yaks
   local main_namespace=$1
+  local declare=${2:-}
+
+  if test -n "$declare"; then
+    # forward declaration
+    echo '#include "mycpp/gc_list.h"'
+    echo "namespace $main_namespace {"
+    echo 'int main(List<BigStr*> argv);'
+    echo '}'
+  fi
 
   cat <<EOF
 int main(int argc, char **argv) {
@@ -69,6 +86,15 @@ EOF
 
 windows-main() {
   local main_namespace=$1
+  local declare=${2:-}
+
+  if test -n "$declare"; then
+    # forward declaration
+    echo '#include "mycpp/gc_list.h"'
+    echo "namespace $main_namespace {"
+    echo 'int main(List<BigStr*> argv);'
+    echo '}'
+  fi
 
   cat <<EOF
 int main(int argc, char **argv) {
@@ -86,6 +112,28 @@ int main(int argc, char **argv) {
   return status;
 }
 EOF
+}
+
+write-main() {
+  ### Write a C++ main file, for mycpp
+  local template=$1
+  local out=$2
+  local main_namespace=$3
+
+  case $template in
+    unix)
+      main-wrapper $main_namespace T
+      ;;
+    win32) 
+      windows-main $main_namespace T
+      ;;
+    example-unix)
+      example-main-wrapper $main_namespace T
+      ;;
+    *)
+      die "Invalid template '$template'"
+      ;;
+  esac > $out
 }
 
 print-wrap-cc() {

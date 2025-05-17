@@ -7,7 +7,7 @@ from glob import glob
 from fnmatch import fnmatch
 
 from build import ninja_lib
-from build.ninja_lib import mycpp_binary, log
+from build.ninja_lib import mycpp_binary, mycpp_library, main_library, log
 
 _ = log
 
@@ -64,6 +64,26 @@ def NinjaGraph(ru):
     #
 
     hello_py_inputs = ninja_lib.TryDynamicDeps('bin/hello.py')
+
+    # library //bin/hello.mycpp
+    mycpp_library(
+        ru,
+        'bin/hello.py',
+        py_inputs=hello_py_inputs,
+        deps=['//mycpp/runtime_pure'],
+    )
+
+    # library //bin/hello.mycpp-souffle
+    mycpp_library(
+        ru,
+        'bin/hello.py',
+        py_inputs=hello_py_inputs,
+        translator='mycpp-souffle',
+        deps=['//mycpp/runtime_pure'],
+    )
+
+    # library //bin/hello.main
+    main_library(ru, 'bin/hello.py')
 
     mycpp_binary(
         ru,
