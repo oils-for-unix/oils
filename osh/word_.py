@@ -42,6 +42,19 @@ def LiteralId(p):
         return Id.Undefined_Tok  # unequal to any other Id
 
 
+def CheckLiteralId(part, tok_id):
+    # type: (word_part_t, Id_t) -> Optional[Token]
+    """If the WordPart is a Token of a given Id, return the Token."""
+    if part.tag() != word_part_e.Literal:
+        return None
+
+    tok = cast(Token, part)
+    if tok.id == tok_id:
+        return tok
+
+    return None
+
+
 def _EvalWordPart(part):
     # type: (word_part_t) -> Tuple[bool, str, bool]
     """Evaluate a WordPart at PARSE TIME.
@@ -451,13 +464,7 @@ def LooksLikeArithVar(UP_w):
     if len(w.parts) != 1:
         return None
 
-    part0 = w.parts[0]
-    if part0.tag() == word_part_e.Literal:
-        tok = cast(Token, part0)
-        if tok.id == Id.Lit_ArithVarLike:
-            return tok
-
-    return None
+    return CheckLiteralId(w.parts[0], Id.Lit_ArithVarLike)
 
 
 def CheckLeadingEquals(w):
@@ -469,13 +476,7 @@ def CheckLeadingEquals(w):
     if len(w.parts) == 0:
         return None
 
-    part0 = w.parts[0]
-    if part0.tag() == word_part_e.Literal:
-        tok = cast(Token, part0)
-        if tok.id == Id.Lit_Equals:
-            return tok
-
-    return None
+    return CheckLiteralId(w.parts[0], Id.Lit_Equals)
 
 
 def DetectShAssignment(w):
@@ -507,21 +508,23 @@ def DetectShAssignment(w):
     if n == 0:
         return no_token, no_token, 0
 
-    UP_part0 = w.parts[0]
-    id0 = LiteralId(UP_part0)
-    if id0 == Id.Lit_VarLike:
-        tok = cast(Token, UP_part0)
-        return tok, no_token, 1  # everything after first token is the value
+    part0 = w.parts[0]
+    if part0.tag() != word_part_e.Literal:
+        return no_token, no_token, 0
 
-    if id0 == Id.Lit_ArrayLhsOpen:
-        tok0 = cast(Token, UP_part0)
+    tok0 = cast(Token, part0)
+
+    if tok0.id == Id.Lit_VarLike:
+        return tok0, no_token, 1  # everything after first token is the value
+
+    if tok0.id == Id.Lit_ArrayLhsOpen:
         # NOTE that a[]=x should be an error.  We don't want to silently decay.
         if n < 2:
             return no_token, no_token, 0
         for i in xrange(1, n):
-            UP_part = w.parts[i]
-            if LiteralId(UP_part) == Id.Lit_ArrayLhsClose:
-                tok_close = cast(Token, UP_part)
+            part = w.parts[i]
+            tok_close = CheckLiteralId(part, Id.Lit_ArrayLhsClose)
+            if tok_close:
                 return tok0, tok_close, i + 1
 
     # Nothing detected.  Could be 'foobar' or a[x+1+2/' without the closing ].
@@ -623,8 +626,10 @@ def BraceToken(UP_w):
 
 def AsKeywordToken(UP_w):
     # type: (word_t) -> Token
-    """Given a word that IS A CompoundWord containing just a keyword, return
-    the single token at the start."""
+    """
+    Given a word that IS A CompoundWord containing just a keyword, return the
+    single token at the start.
+    """
     assert UP_w.tag() == word_e.Compound, UP_w
     w = cast(CompoundWord, UP_w)
 
@@ -765,7 +770,7 @@ def CommandKind(w):
 
 
 # Stubs for converting RHS of assignment to expression mode.
-# For osh2oil.py
+# For ysh_ify.py
 def IsVarSub(w):
     # type: (word_t) -> bool
     """Return whether it's any var sub, or a double quoted one."""
