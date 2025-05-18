@@ -168,6 +168,7 @@ resulting script will still run in another shell.
 
 Parsing options:
 
+      strict_parse_equals     # Disallow '=x' to avoid confusion with '= x'
       strict_parse_slice      # No implicit length for ${a[@]::}
     X strict_parse_utf8       # Source code must be valid UTF-8
 

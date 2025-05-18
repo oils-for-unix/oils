@@ -76,6 +76,8 @@ _OTHER_SET_OPTIONS = [
 ]
 
 _STRICT_OPTS = [
+    # disallow '=x' in first word, to avoid confusion with '= x'
+    'strict_parse_equals',
     # $a{[@]::} is not allowed, you need ${a[@]::0} or ${a[@]::n}
     'strict_parse_slice',
 

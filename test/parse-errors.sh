@@ -497,13 +497,16 @@ test-simple-command() {
   #_osh-parse-error 'echo foo FOO=(1 2)'
 
   _osh-parse-error 'PYTHONPATH+=1 python'
+}
 
-  # Space sensitivity: disallow =
-  _osh-parse-error '=var'
-  _osh-parse-error '=f(x)'
+test-leading-equals() {
+  # allowed in OSH for compatibility
+  _osh-should-parse '=var'
+  _osh-should-parse '=a[i]'
 
+  # In YSH, avoid confusion with = var and = f(x)
   _ysh-parse-error '=var'
-  _ysh-parse-error '=f(x)'
+  _ysh-parse-error '=a[i]'
 }
 
 # Old code?  All these pass
