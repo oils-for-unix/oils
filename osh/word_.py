@@ -29,17 +29,16 @@ if TYPE_CHECKING:
 _ = log
 
 
-def LiteralId(p):
+def LiteralId(part):
     # type: (word_part_t) -> Id_t
     """If the WordPart consists of a single literal token, return its Id.
 
     Used for Id.KW_For, or Id.RBrace, etc.
     """
-    UP_part = p
-    if p.tag() == word_part_e.Literal:
-        return cast(Token, UP_part).id
-    else:
+    if part.tag() != word_part_e.Literal:
         return Id.Undefined_Tok  # unequal to any other Id
+
+    return cast(Token, part).id
 
 
 def CheckLiteralId(part, tok_id):
@@ -53,6 +52,27 @@ def CheckLiteralId(part, tok_id):
         return tok
 
     return None
+
+
+def LiteralToken(UP_w):
+    # type: (word_t) -> Optional[Token]
+    """If a word consists of a literal token, return it.
+
+    Otherwise return None.
+    """
+    # We're casting here because this function is called by the CommandParser for
+    # var, setvar, '...', etc.  It's easier to cast in one place.
+    assert UP_w.tag() == word_e.Compound, UP_w
+    w = cast(CompoundWord, UP_w)
+
+    if len(w.parts) != 1:
+        return None
+
+    part0 = w.parts[0]
+    if part0.tag() != word_part_e.Literal:
+        return None
+
+    return cast(Token, part0)
 
 
 def _EvalWordPart(part):
@@ -256,12 +276,9 @@ def TildeDetect2(w):
     if len(w.parts) == 0:  # ${a-} has no parts
         return None
 
-    part0 = w.parts[0]
-    id0 = LiteralId(part0)
-    if id0 != Id.Lit_Tilde:
-        return None  # $x is not TildeSub
-
-    tok0 = cast(Token, part0)
+    tok0 = CheckLiteralId(w.parts[0], Id.Lit_Tilde)
+    if tok0 is None:
+        return None
 
     new_parts = []  # type: List[word_part_t]
 
@@ -578,27 +595,6 @@ def IsControlFlow(w):
         return token_kind, cast(Token, UP_part0)
 
     return Kind.Undefined, no_token
-
-
-def LiteralToken(UP_w):
-    # type: (word_t) -> Optional[Token]
-    """If a word consists of a literal token, return it.
-
-    Otherwise return None.
-    """
-    # We're casting here because this function is called by the CommandParser for
-    # var, setvar, '...', etc.  It's easier to cast in one place.
-    assert UP_w.tag() == word_e.Compound, UP_w
-    w = cast(CompoundWord, UP_w)
-
-    if len(w.parts) != 1:
-        return None
-
-    part0 = w.parts[0]
-    if part0.tag() == word_part_e.Literal:
-        return cast(Token, part0)
-
-    return None
 
 
 def BraceToken(UP_w):
