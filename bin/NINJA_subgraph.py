@@ -101,6 +101,7 @@ def NinjaGraph(ru):
         py_inputs=hello_py_inputs,
         translator='mycpp-souffle',
         deps=['//mycpp/runtime_pure'],
+        symlinks=['hello'],  # souffle is the 'hello', for now
     )
 
     # Use the stdlib

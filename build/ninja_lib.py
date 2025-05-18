@@ -418,14 +418,6 @@ class Rules(object):
             if c.bin_path:
                 # e.g. _bin/cxx-dbg/oils_for_unix
                 bin_to_link = '%s/%s' % (bin_dir, c.bin_path)
-
-                # For _bin/cxx-asan/mycpp-souffle/oils-for-unix
-                bin_subdir, _, bin_name = c.bin_path.rpartition('/')
-                if bin_subdir:
-                    bin_dir = '%s/%s' % (bin_dir, bin_subdir)
-                else:
-                    bin_name = c.bin_path
-
             else:
                 # e.g. _gen/mycpp/examples/classes.mycpp
                 rel_path, _ = os.path.splitext(c.main_cc)
@@ -440,12 +432,13 @@ class Rules(object):
             self.link(bin_to_link, main_obj, unique_deps, config)
 
             # Make symlinks
+            symlink_dir = os.path.dirname(bin_to_link)
+            bin_name = os.path.basename(bin_to_link)
             for symlink in c.symlinks:
-                # Must explicitly specify bin_path to have a symlink, for now
-                assert c.bin_path is not None
-                self.n.build(['%s/%s' % (bin_dir, symlink)],
+                self.n.build(['%s/%s' % (symlink_dir, symlink)],
                              'symlink', [bin_to_link],
-                             variables=[('dir', bin_dir), ('target', bin_name),
+                             variables=[('dir', symlink_dir),
+                                        ('target', bin_name),
                                         ('new', symlink)])
                 self.n.newline()
 
