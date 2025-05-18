@@ -924,13 +924,11 @@ class CommandParser(object):
                 if i == 0:
                     # Disallow leading =a because it's confusing
                     if self.parse_opts.strict_parse_equals():
-                        part0 = w.parts[0]
-                        if part0.tag() == word_part_e.Literal:
-                            tok = cast(Token, part0)
-                            if tok.id == Id.Lit_Equals:
-                                p_die(
-                                    "=word isn't allowed.  Hint: add a space after =, or quote it",
-                                    tok)
+                        bad_tok = word_.CheckLeadingEquals(w)
+                        if bad_tok:
+                            p_die(
+                                "=word isn't allowed.  Hint: add a space after =, or quote it",
+                                bad_tok)
 
                     # Is the first word a Hay Attr word?
                     #

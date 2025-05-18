@@ -421,6 +421,21 @@ def ShFunctionName(w):
     return s
 
 
+def IsVarLike(w):
+    # type: (CompoundWord) -> bool
+    """Tests whether a word looks like FOO=bar.
+
+    This is a quick test for the command parser to distinguish:
+
+    func() { echo hi; }
+    func=(1 2 3)
+    """
+    if len(w.parts) == 0:
+        return False
+
+    return LiteralId(w.parts[0]) == Id.Lit_VarLike
+
+
 def LooksLikeArithVar(UP_w):
     # type: (word_t) -> Optional[Token]
     """Return a token if this word looks like an arith var.
@@ -436,26 +451,31 @@ def LooksLikeArithVar(UP_w):
     if len(w.parts) != 1:
         return None
 
-    UP_part0 = w.parts[0]
-    if LiteralId(UP_part0) != Id.Lit_ArithVarLike:
-        return None
+    part0 = w.parts[0]
+    if part0.tag() == word_part_e.Literal:
+        tok = cast(Token, part0)
+        if tok.id == Id.Lit_ArithVarLike:
+            return tok
 
-    return cast(Token, UP_part0)
+    return None
 
 
-def IsVarLike(w):
-    # type: (CompoundWord) -> bool
-    """Tests whether a word looks like FOO=bar.
+def CheckLeadingEquals(w):
+    # type: (CompoundWord) -> Optional[Token]
+    """Test whether a word looks like =word
 
-    This is a quick test for the command parser to distinguish:
-
-    func() { echo hi; }
-    func=(1 2 3)
+    For shopt --set strict_parse_equals
     """
     if len(w.parts) == 0:
-        return False
+        return None
 
-    return LiteralId(w.parts[0]) == Id.Lit_VarLike
+    part0 = w.parts[0]
+    if part0.tag() == word_part_e.Literal:
+        tok = cast(Token, part0)
+        if tok.id == Id.Lit_Equals:
+            return tok
+
+    return None
 
 
 def DetectShAssignment(w):
