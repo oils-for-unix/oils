@@ -63,12 +63,8 @@ class BindXCallback(object):
           line_buffer: The current line buffer
           point: The current cursor position
         """
-        # print("Initializing READLINE_LINE to: '%s'" % line_buffer)
-        # print("Initializing READLINE_POINT to: %s" % point)
-        # print("Executing cmd: %s" % cmd)
 
-        # Set READLINE_* env vars so they're available to the command being executed
-
+        # Set READLINE_* env vars so they're available in case the command uses them
         state.ExportGlobalString(self.mem, "READLINE_LINE", line_buffer)
         state.ExportGlobalString(self.mem, "READLINE_POINT", str(point))
 
@@ -76,28 +72,23 @@ class BindXCallback(object):
 
         cmd_val = cmd_eval.MakeBuiltinArgv([cmd])
         status = self.eval.Run(cmd_val)
-        
-        # Retrieve READLINE_* env vars for comparison w/ before
+
+        # Retrieve READLINE_* env vars and compare for changes
         readline_line = self._get_rl_env_var('READLINE_LINE')
-        # print("New %s: %s" % ('READLINE_LINE', readline_line))
         readline_point = self._get_rl_env_var('READLINE_POINT')
-        # print("New %s: %s" % ('READLINE_POINT', readline_point))
-
         post_line_buffer = readline_line if readline_line is not None else line_buffer
-        post_point = int(readline_point) if readline_point is not None else point
+        post_point = int(
+            readline_point) if readline_point is not None else point
 
-        # print("%s: %s" % ('post_line_buffer', post_line_buffer))
-        # print("%s: %d" % ('post_point', post_point))
-        
-        # Unset the READLINE_LINE and READLINE_POINT environment variables before returning
         self.mem.Unset(location.LName('READLINE_LINE'), scope_e.GlobalOnly)
         self.mem.Unset(location.LName('READLINE_POINT'), scope_e.GlobalOnly)
 
         return (status, post_line_buffer, post_point)
-    
+
     def _get_rl_env_var(self, envvar_name):
         # type: (str) -> Optional[str]
-        
+        """Retrieve the value of an env var, return None if undefined"""
+
         envvar_val = self.mem.GetValue(envvar_name, scope_e.GlobalOnly)
         if envvar_val.tag() == value_e.Str:
             return cast(value.Str, envvar_val).s
@@ -133,22 +124,14 @@ class Bind(vm._Builtin):
 
         attrs, arg_r = flag_util.ParseCmdVal('bind', cmd_val)
 
-        # print("attrs:\n", attrs)
-        # print("attrs.attrs:\n", attrs.attrs)
-        # print("attrs.attrs[m]:\n", attrs.attrs["m"])
-        # print("type(attrs.attrs[m]):\n", type(attrs.attrs["m"]))
-        # print("type(attrs.attrs[m]):\n", type(attrs.attrs["m"]))
-        # print("attrs.attrs[m].tag() :\n", attrs.attrs["m"].tag())
-        # print("attrs.attrs[m].tag() == value_e.Undef:\n", attrs.attrs["m"].tag() == value_e.Undef)
-        # print(arg_r)
-        # print("Reader argv=%s locs=%s n=%i i=%i" % (arg_r.argv, str(arg_r.locs), arg_r.n, arg_r.i))
-
         # Check mutually-exclusive flags and non-flag args
+        # Bash allows you to mix args all over, but unfortunately, the execution
+        # order is unrelated to the command line order. OSH makes many of the
+        # options mutually-exclusive.
         found = False
         for flag in self.exclusive_flags:
             if (flag in attrs.attrs and
                     attrs.attrs[flag].tag() != value_e.Undef):
-                # print("\tFound flag: {0} with tag: {1}".format(flag, attrs.attrs[flag].tag()))
                 if found:
                     self.errfmt.Print_(
                         "error: Can only use one of the following flags at a time: -"
@@ -165,13 +148,6 @@ class Bind(vm._Builtin):
             return 1
 
         arg = arg_types.bind(attrs.attrs)
-        # print("arg:\n", arg)
-        # print("dir(arg):\n", dir(arg))
-        # for prop in dir(arg):
-        #     if not prop.startswith('__'):
-        #         value = getattr(arg, prop)
-        #         print("Property: {0}, Value: {1}".format(prop, value))
-        # print("arg.m:\n", arg.m)
 
         try:
             with ctx_Keymap(readline, arg.m):  # Replicates bind's -m behavior
@@ -201,31 +177,35 @@ class Bind(vm._Builtin):
                 if arg.V:
                     readline.variable_dumper(False)
 
+                # Read bindings from a file
                 if arg.f is not None:
                     readline.read_init_file(arg.f)
 
+                # Query which keys are bound to a readline fn
                 if arg.q is not None:
                     readline.query_bindings(arg.q)
 
+                # Unbind all keys bound to a readline fn
                 if arg.u is not None:
                     readline.unbind_rl_function(arg.u)
 
+                # Remove all bindings to a key sequence
                 if arg.r is not None:
                     readline.unbind_keyseq(arg.r)
 
+                # Bind custom shell commands to a key sequence
                 if arg.x is not None:
                     self._BindShellCmd(arg.x)
 
+                # Print custom shell bindings
                 if arg.X:
                     readline.print_shell_cmd_map()
 
                 bindings, arg_locs = arg_r.Rest2()
-                #log('bindings %d locs %d', len(arg_r.argv), len(arg_r.locs))
 
+                # Bind keyseqs to readline fns
                 for i, binding in enumerate(bindings):
                     try:
-                        #log("Binding %s (%d)", binding, i)
-                        #log("Arg loc %s (%d)", arg_locs[i], i)
                         readline.parse_and_bind(binding)
                     except ValueError as e:
                         msg = e.message  # type: str
@@ -246,10 +226,6 @@ class Bind(vm._Builtin):
     def _BindShellCmd(self, bindseq):
         # type: (str) -> None
 
-        # print("bind -x '%s'" % bindseq)
-
-        # print("hex bindseq: %s" % bindseq.join('%02x' % ord(c) for c in s))
-        # print("stripped bindseq: %s" % bindseq.strip())
         cmdseq_split = bindseq.strip().split(":", 1)
         if len(cmdseq_split) != 2:
             raise ValueError("%s: missing colon separator" % bindseq)

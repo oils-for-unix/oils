@@ -56,10 +56,10 @@ def bind_plain(sh):
 
 @register(not_impl_shells=['dash', 'mksh'])
 def bind_r_for_bind_x_osh_fn(sh):
-    """
-    test bind -r for removing bindings to arbitrary cmds made with bind -x
-    (regular readline fn bind removal is tested in noninteractive builtin-bind.test.sh)
-    """
+    """test bind -r for removing bindings made with bind -x"""
+
+    # (regular readline fn bind removal is tested in noninteractive builtin-bind.test.sh)
+
     expect_prompt(sh)
 
     add_foo_fn(sh)
