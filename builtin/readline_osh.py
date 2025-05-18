@@ -8,15 +8,15 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value, scope_e
 from _devbuild.gen.syntax_asdl import loc
 from _devbuild.gen.value_asdl import value, value_e, value_str
-from core import error, pyutil, state, vm
+from core import pyutil, state, vm
 from core.error import e_usage
 from frontend import flag_util, location
 from mycpp import mops
 from mycpp import mylib
-from mycpp.mylib import log
+from mycpp.mylib import log, tagswitch
 from osh import cmd_eval
 
-from typing import Optional, Tuple, Any, cast, TYPE_CHECKING
+from typing import Optional, Tuple, Any, Dict, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from builtin.meta_oils import Eval
     from frontend.py_readline import Readline
@@ -45,6 +45,30 @@ class ctx_Keymap(object):
             self.readline.restore_orig_keymap()
 
 
+class ctx_EnvVars(object):
+    """
+    Context manager for temporarily setting environment variables.
+    
+    Ignores any pre-existing values for the env vars.
+    """
+
+    def __init__(self, mem, env_vars):
+        # type: (Mem, Dict[str, str]) -> None
+        self.mem = mem
+        self.env_vars = env_vars
+
+    def __enter__(self):
+        # type: () -> None
+        for name, val in self.env_vars.items():
+            state.ExportGlobalString(self.mem, name, val)
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        # Clean up env vars after command execution
+        for name in self.env_vars:
+            self.mem.Unset(location.LName(name), scope_e.GlobalOnly)
+
+
 class BindXCallback(object):
     """A callable we pass to readline for executing shell commands."""
 
@@ -64,42 +88,45 @@ class BindXCallback(object):
           point: The current cursor position
         """
 
-        # Set READLINE_* env vars so they're available in case the command uses them
-        state.ExportGlobalString(self.mem, "READLINE_LINE", line_buffer)
-        state.ExportGlobalString(self.mem, "READLINE_POINT", str(point))
+        with ctx_EnvVars(self.mem, {
+                'READLINE_LINE': line_buffer,
+                'READLINE_POINT': str(point)
+        }):
+            # TODO: refactor out shared code from Eval, cache parse tree?
 
-        # TODO: refactor out shared code from Eval, cache parse tree?
+            cmd_val = cmd_eval.MakeBuiltinArgv([cmd])
+            status = self.eval.Run(cmd_val)
 
-        cmd_val = cmd_eval.MakeBuiltinArgv([cmd])
-        status = self.eval.Run(cmd_val)
+            # Retrieve READLINE_* env vars to check for changes
+            readline_line = self._get_rl_env_var('READLINE_LINE')
+            readline_point = self._get_rl_env_var('READLINE_POINT')
 
-        # Retrieve READLINE_* env vars and compare for changes
-        readline_line = self._get_rl_env_var('READLINE_LINE')
-        readline_point = self._get_rl_env_var('READLINE_POINT')
-        post_line_buffer = readline_line if readline_line is not None else line_buffer
-        post_point = int(
-            readline_point) if readline_point is not None else point
+            post_line_buffer = readline_line if readline_line is not None else line_buffer
+            post_point = int(
+                readline_point) if readline_point is not None else point
 
-        self.mem.Unset(location.LName('READLINE_LINE'), scope_e.GlobalOnly)
-        self.mem.Unset(location.LName('READLINE_POINT'), scope_e.GlobalOnly)
-
-        return (status, post_line_buffer, post_point)
+            return (status, post_line_buffer, post_point)
 
     def _get_rl_env_var(self, envvar_name):
         # type: (str) -> Optional[str]
         """Retrieve the value of an env var, return None if undefined"""
 
         envvar_val = self.mem.GetValue(envvar_name, scope_e.GlobalOnly)
-        if envvar_val.tag() == value_e.Str:
-            return cast(value.Str, envvar_val).s
-        elif envvar_val.tag() == value_e.Undef:
-            return None
-        else:
-            # bash has silent weird failures if you set the readline env vars
-            # to something besides a string, but I think an exception is better
-            error_msg = 'expected Str, got %s' % value_str(envvar_val.tag())
-            self.errfmt.Print_(error_msg, loc.Missing)
-            raise error.TypeErr(envvar_val, error_msg, loc.Missing)
+        with tagswitch(envvar_val) as case:
+            if case(value_e.Str):
+                return cast(value.Str, envvar_val).s
+            elif case(value_e.Undef):
+                return None
+            else:
+                # bash has silent weird failures if you set the readline env vars
+                # to something besides a string. Unfortunately, we can't easily
+                # raise an exception, since we have to thread in/out of readline,
+                # and we can't return a meaningful error code from the bound
+                # commands either, because bash doesn't. So, we print an error.
+                self.errfmt.Print_(
+                    'expected Str for %s, got %s' %
+                    (envvar_name, value_str(envvar_val.tag())), loc.Missing)
+                return None
 
 
 class Bind(vm._Builtin):

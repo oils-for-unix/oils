@@ -977,10 +977,16 @@ Print all bindings for shell commands in the current keymap.");
 
 /* Support fns for bind -x */
 
+/* 
+Checks to see if a bind -x command altered $READLINE_LINE. Compares the post-command
+$READLINE_LINE (passed as post_line) with the current readline buffer 
+contents. If they differ, it replaces the buffer with the new version, and adds the old
+version to the undo stack.
+*/
 static void 
-update_line_if_needed(char *possible_new_line)
+update_line_if_needed(char *post_line)
 {
-    if (strcmp(possible_new_line, rl_line_buffer) != 0) {
+    if (strcmp(post_line, rl_line_buffer) != 0) {
         rl_point = rl_end;
 
         rl_add_undo(UNDO_BEGIN, 0, 0, 0);
@@ -988,11 +994,17 @@ update_line_if_needed(char *possible_new_line)
         rl_point = 0;
         rl_end = 0;
         rl_mark = 0;
-        rl_insert_text(possible_new_line);
+        rl_insert_text(post_line);
         rl_add_undo(UNDO_END, 0, 0, 0);
     }
 }
 
+
+/* 
+Checks to see if a bind -x command altered $READLINE_POINT. Compares the post-command
+$READLINE_POINT (passed as post_point) with the current readline cursor point. 
+If they differ, it updates the cursor point to the new value.
+*/
 static void
 update_cursor_if_needed(int post_point) {
     if (post_point != rl_point) {
@@ -1004,6 +1016,7 @@ update_cursor_if_needed(int post_point) {
     }
 }
 
+/* Returns the shell command(s) associated with the current key sequence */
 static char*
 get_bound_command(Keymap cmd_map) {
     int type;
@@ -1029,7 +1042,14 @@ clear_current_line(int use_ce) {
 }
 
 
-/* Main entry point for executing shell commands. Based on bash_execute_unix_command */
+/* 
+Main entry point for executing shell commands. Based on bash_execute_unix_command 
+
+This function is called when a bind -x command is executed. It retrieves the 
+shell command(s) associated with the current key sequence, handles the 
+actual execution of the command, and updates the line and cursor position as 
+necessary.
+*/
 
 static int
 on_bind_shell_command_hook(int count /* unused */, int key /* unused */) {
@@ -1084,10 +1104,11 @@ on_bind_shell_command_hook(int count /* unused */, int key /* unused */) {
 
 
     /* Redraw the prompt */
-    if (use_ce) // need to handle a  `&& return code != 124` somehow
+    if (use_ce && cmd_return_code != 124) {
         rl_redraw_prompt_last_line();
-    else
+    } else {
         rl_forced_update_display();
+    }
 
     result = 0; 
 
@@ -1102,7 +1123,7 @@ done:
 }
 
 
-/* Binds a key sequence to arbitrary shell code, not readline fns */
+/* Maps a key sequence to arbitrary shell code (not built-in readline fns) */
 static PyObject*
 bind_shell_command(PyObject *self, PyObject *args) {
     const char *kseq;
