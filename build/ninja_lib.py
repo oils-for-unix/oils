@@ -728,7 +728,14 @@ def main_cc(ru, main_cc, template='unix'):
         ])
 
 
-def mycpp_bin(ru, cc_lib, template='unix', matrix=None):
+def mycpp_bin(ru,
+              cc_lib,
+              template='unix',
+              matrix=None,
+              bin_path=None,
+              symlinks=None,
+              preprocessed=False,
+              phony_prefix=None):
     matrix = matrix or []
 
     assert cc_lib.startswith('//')
@@ -739,7 +746,13 @@ def mycpp_bin(ru, cc_lib, template='unix', matrix=None):
     main_cc(ru, main_cc_path, template=template)
 
     # Then compile and link it
-    ru.cc_binary(main_cc_path, deps=[cc_lib], matrix=matrix)
+    ru.cc_binary(main_cc_path,
+                 deps=[cc_lib],
+                 matrix=matrix,
+                 bin_path=bin_path,
+                 symlinks=symlinks,
+                 preprocessed=preprocessed,
+                 phony_prefix=phony_prefix)
 
 
 def mycpp_binary(ru,
