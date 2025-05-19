@@ -165,8 +165,8 @@ main() {
         # e.g. _build/obj/cxx-dbg-sh/posix.o
         prefix, _ = os.path.splitext(src)
 
-        # Skip the one we started with
-        if prefix.startswith('_gen/bin/%s' % app_name):
+        # HACK to skip the special one above
+        if src.endswith('.mycpp.cc') or src.endswith('.mycpp-souffle.cc'):
             continue
 
         obj = '_build/obj/$compiler-$variant-sh/%s.o' % prefix
@@ -426,6 +426,7 @@ def main(argv):
 
     # Collect sources for metrics, tarball, shell script
     cc_sources = deps.SourcesForBinary('_gen/bin/%s.mycpp-main.cc' % app_name)
+    log('cc_sources = %s', cc_sources)
 
     if 0:
         from pprint import pprint
