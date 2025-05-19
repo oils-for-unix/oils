@@ -36,7 +36,7 @@ oils-part() {
 
   ninja $mycpp
   $mycpp \
-    $mypypath $raw \
+    $mypypath '' $raw \
     --header-out $raw_header \
     "$@"
 

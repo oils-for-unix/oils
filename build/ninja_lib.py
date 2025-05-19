@@ -561,6 +561,12 @@ class Deps(object):
                 # e.g. _gen/mycpp/examples/classes.mycpp
                 rel_path, _ = os.path.splitext(c.main_cc)
 
+                # Special rule for
+                #   sources = hello.mycpp.cc and hello.mycpp-main.cc
+                #   binary = _bin/hello.mycpp
+                if rel_path.endswith('-main'):
+                    rel_path = rel_path[:-len('-main')]
+
                 # Put binary in _bin/cxx-dbg/mycpp/examples, not _bin/cxx-dbg/_gen/mycpp/examples
                 if rel_path.startswith('_gen/'):
                     rel_path = rel_path[len('_gen/'):]
@@ -671,7 +677,6 @@ def mycpp_library(ru,
     #matrix = matrix or COMPILERS_VARIANTS
     deps = deps or []
 
-    # TODO: preamble should go in mycpp?
     if preamble is None:
         p = py_rel_path + '_preamble.h'
         preamble = p if os.path.exists(p) else "''"  # Ninja empty string!
@@ -679,7 +684,7 @@ def mycpp_library(ru,
     n = ru.n
 
     # Two steps
-    raw = '_gen/%s.%s-lib.cc' % (py_rel_path, translator)
+    raw = '_gen/%s.%s.cc' % (py_rel_path, translator)
 
     translator_shwrap = SHWRAP[translator]
 

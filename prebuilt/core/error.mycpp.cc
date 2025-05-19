@@ -2,9 +2,6 @@
 
 #include "prebuilt/core/error.mycpp.h"
 // BEGIN mycpp output
-
-#include "mycpp/runtime.h"
-
 namespace runtime {  // forward declare
   class TraversalState;
 }

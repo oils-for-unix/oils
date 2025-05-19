@@ -83,16 +83,16 @@ def NinjaGraph(ru):
     )
 
     # library //bin/hello.main
-    main_cc(ru, '_gen/bin/hello.mycpp.cc', template='win32')
-    main_cc(ru, '_gen/bin/hello.mycpp-souffle.cc', template='win32')
+    main_cc(ru, '_gen/bin/hello.mycpp-main.cc', template='win32')
+    main_cc(ru, '_gen/bin/hello.mycpp-souffle-main.cc', template='win32')
 
-    ru.cc_binary('_gen/bin/hello.mycpp.cc',
+    ru.cc_binary('_gen/bin/hello.mycpp-main.cc',
                  deps=[
                      '//bin/hello.mycpp',
                  ],
                  matrix=ninja_lib.COMPILERS_VARIANTS)
 
-    ru.cc_binary('_gen/bin/hello.mycpp-souffle.cc',
+    ru.cc_binary('_gen/bin/hello.mycpp-souffle-main.cc',
                  deps=[
                      '//bin/hello.mycpp-souffle',
                  ],

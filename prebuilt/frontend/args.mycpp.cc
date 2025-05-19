@@ -2,9 +2,6 @@
 
 #include "prebuilt/frontend/args.mycpp.h"
 // BEGIN mycpp output
-
-#include "mycpp/runtime.h"
-
 namespace ansi {  // forward declare
 }
 

@@ -201,7 +201,7 @@ translate-example() {
   local ex=$1
 
   local mycpp=_bin/shwrap/mycpp_main
-  $mycpp '.:pyext' _tmp/mycpp-invalid $ex
+  $mycpp '.:pyext' '' _tmp/mycpp-invalid $ex
 }
 
 test-invalid-examples() {
