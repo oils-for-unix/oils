@@ -141,37 +141,6 @@ write-main() {
   esac > $out
 }
 
-print-wrap-cc() {
-  local out=$1
-  local main_func=$2
-  local main_namespace=$3
-  local in=$4
-  local preamble_path=$5
-
-  echo "// $out - generated from Python source code"
-  echo
-
-  if test -f "$preamble_path"; then
-    echo "#include \"$preamble_path\""
-  else
-    # the default preamble, for mycpp/examples
-    echo '#include "mycpp/runtime.h"'
-  fi
-  echo
-
-  cat $in
-
-  # example-main-wrapper, main-wrapper, etc.
-  $main_func $main_namespace
-}
-
-wrap-cc() {
-  local out=$1
-
-  # $translator $main_namespace $in $preamble_path
-  print-wrap-cc "$@" > $out
-}
-
 # TODO: Move mycpp/example tasks out of Ninja since timing is not a VALUE.  It
 # depends on the machine, can be done more than once, etc.
 

@@ -6,8 +6,8 @@ from __future__ import print_function
 import os
 import sys
 
-from build.ninja_lib import (log, mycpp_library, mycpp_bin, COMPILERS_VARIANTS,
-                             OTHER_VARIANTS)
+from build.ninja_lib import (log, mycpp_library, mycpp_binary,
+                             COMPILERS_VARIANTS, OTHER_VARIANTS)
 
 _ = log
 
@@ -217,12 +217,6 @@ def NinjaGraph(ru):
     n.newline()
 
     n.rule(
-        'wrap-cc',
-        command=
-        'build/ninja-rules-py.sh wrap-cc $out $main_style $main_namespace $in $preamble',
-        description='wrap-cc $out $main_style $main_namespace $in $preamble')
-    n.newline()
-    n.rule(
         'example-task',
         # note: $out can be MULTIPLE FILES, shell-quoted
         command='build/ninja-rules-py.sh example-task $name $impl $bin $out',
@@ -308,12 +302,12 @@ def MycppExamples(ru, ph):
                           mypy_path=MYPY_PATH,
                           translator='pea',
                           deps=['//mycpp/runtime'])
-            mycpp_bin(ru,
-                      '//%s.pea' % py_rel_path,
-                      matrix=[
-                          ('cxx', 'asan'),
-                          ('cxx', 'opt'),
-                      ])
+            mycpp_binary(ru,
+                         '//%s.pea' % py_rel_path,
+                         matrix=[
+                             ('cxx', 'asan'),
+                             ('cxx', 'opt'),
+                         ])
 
     to_compare = []
     benchmark_tasks = []
@@ -388,11 +382,11 @@ def MycppExamples(ru, ph):
                           py_inputs=py_inputs,
                           deps=deps)
 
-            mycpp_bin(ru,
-                      '//%s.%s' % (py_rel_path, translator),
-                      template='example-unix',
-                      phony_prefix=phony_prefix,
-                      matrix=matrix)
+            mycpp_binary(ru,
+                         '//%s.%s' % (py_rel_path, translator),
+                         template='example-unix',
+                         phony_prefix=phony_prefix,
+                         matrix=matrix)
 
             # minimal
             TEST_MATRIX = [

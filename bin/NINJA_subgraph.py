@@ -7,7 +7,7 @@ from glob import glob
 from fnmatch import fnmatch
 
 from build import ninja_lib
-from build.ninja_lib import mycpp_bin, mycpp_library, main_cc, log
+from build.ninja_lib import mycpp_binary, mycpp_library, main_cc, log
 
 _ = log
 
@@ -72,6 +72,10 @@ def NinjaGraph(ru):
         py_inputs=hello_py_inputs,
         deps=['//mycpp/runtime_pure'],
     )
+    mycpp_binary(ru,
+                 '//bin/hello.mycpp',
+                 template='win32',
+                 matrix=ninja_lib.COMPILERS_VARIANTS)
 
     # library //bin/hello.mycpp-souffle
     mycpp_library(
@@ -81,15 +85,10 @@ def NinjaGraph(ru):
         translator='mycpp-souffle',
         deps=['//mycpp/runtime_pure'],
     )
-
-    mycpp_bin(ru,
-              '//bin/hello.mycpp',
-              template='win32',
-              matrix=ninja_lib.COMPILERS_VARIANTS)
-    mycpp_bin(ru,
-              '//bin/hello.mycpp-souffle',
-              template='win32',
-              matrix=ninja_lib.COMPILERS_VARIANTS)
+    mycpp_binary(ru,
+                 '//bin/hello.mycpp-souffle',
+                 template='win32',
+                 matrix=ninja_lib.COMPILERS_VARIANTS)
 
     # Use the stdlib
     mycpp_library(
@@ -97,9 +96,9 @@ def NinjaGraph(ru):
         'bin/hello_mylib.py',
         deps=['//mycpp/runtime'],
     )
-    mycpp_bin(ru,
-              '//bin/hello_mylib.mycpp',
-              matrix=ninja_lib.COMPILERS_VARIANTS)
+    mycpp_binary(ru,
+                 '//bin/hello_mylib.mycpp',
+                 matrix=ninja_lib.COMPILERS_VARIANTS)
 
     oils_deps = [
         '//bin/text_files',
@@ -132,28 +131,35 @@ def NinjaGraph(ru):
         '//mycpp/runtime',
     ]
 
-    # TODO: other files should get their own
     oils_preamble = 'bin/oils_for_unix_preamble.h'
 
-    mycpp_library(ru,
-                  'bin/osh_eval.py',
-                  py_inputs=ninja_lib.TryDynamicDeps('bin/osh_eval.py'),
-                  preamble=oils_preamble,
-                  deps=oils_deps)
+    mycpp_library(
+        ru,
+        'bin/osh_eval.py',
+        py_inputs=ninja_lib.TryDynamicDeps('bin/osh_eval.py'),
+        # TODO: use different preamble and deps
+        preamble=oils_preamble,
+        deps=oils_deps)
 
-    mycpp_bin(ru, '//bin/osh_eval.mycpp', matrix=ninja_lib.COMPILERS_VARIANTS)
+    mycpp_binary(ru,
+                 '//bin/osh_eval.mycpp',
+                 matrix=ninja_lib.COMPILERS_VARIANTS)
 
-    mycpp_library(ru,
-                  'bin/osh_parse.py',
-                  py_inputs=ninja_lib.TryDynamicDeps('bin/osh_parse.py'),
-                  preamble=oils_preamble,
-                  deps=oils_deps)
+    mycpp_library(
+        ru,
+        'bin/osh_parse.py',
+        py_inputs=ninja_lib.TryDynamicDeps('bin/osh_parse.py'),
+        # TODO: use different preamble and deps
+        preamble=oils_preamble,
+        deps=oils_deps)
 
-    mycpp_bin(ru, '//bin/osh_parse.mycpp', matrix=ninja_lib.COMPILERS_VARIANTS)
+    mycpp_binary(ru,
+                 '//bin/osh_parse.mycpp',
+                 matrix=ninja_lib.COMPILERS_VARIANTS)
 
     oils_symlinks = ['osh', 'ysh']
-    matrix = (ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS +
-              ninja_lib.OTHER_VARIANTS)
+    oils_matrix = (ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS +
+                   ninja_lib.OTHER_VARIANTS)
 
     oils_py_inputs = ninja_lib.TryDynamicDeps('bin/oils_for_unix.py')
 
@@ -164,6 +170,16 @@ def NinjaGraph(ru):
         py_inputs=oils_py_inputs,
         deps=oils_deps,
     )
+    mycpp_binary(
+        ru,
+        '//bin/oils_for_unix.mycpp',
+        matrix=oils_matrix,
+        # _bin/cxx-opt/oils-for-unix, NOT _bin/cxx-opt/bin/oils-for-unix
+        bin_path='oils-for-unix',
+        symlinks=oils_symlinks,
+        preprocessed=True,
+    )
+
     # Faster variant
     mycpp_library(
         ru,
@@ -172,20 +188,10 @@ def NinjaGraph(ru):
         translator='mycpp-souffle',
         deps=oils_deps,
     )
-
-    mycpp_bin(
-        ru,
-        '//bin/oils_for_unix.mycpp',
-        matrix=matrix,
-        # _bin/cxx-opt/oils-for-unix, NOT _bin/cxx-opt/bin/oils-for-unix
-        bin_path='oils-for-unix',
-        symlinks=oils_symlinks,
-        preprocessed=True,
-    )
-    mycpp_bin(
+    mycpp_binary(
         ru,
         '//bin/oils_for_unix.mycpp-souffle',
-        matrix=matrix,
+        matrix=oils_matrix,
         bin_path='mycpp-souffle/oils-for-unix',
         symlinks=oils_symlinks,
     )

@@ -692,14 +692,14 @@ def main_cc(ru, main_cc, template='unix'):
         ])
 
 
-def mycpp_bin(ru,
-              cc_lib,
-              template='unix',
-              matrix=None,
-              bin_path=None,
-              symlinks=None,
-              preprocessed=False,
-              phony_prefix=None):
+def mycpp_binary(ru,
+                 cc_lib,
+                 template='unix',
+                 matrix=None,
+                 bin_path=None,
+                 symlinks=None,
+                 preprocessed=False,
+                 phony_prefix=None):
     """
     Generate a $name.mycpp-main.cc file, and a cc_binary() for it
     """

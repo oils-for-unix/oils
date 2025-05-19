@@ -4,7 +4,7 @@ yaks/NINJA_subgraph.py
 from __future__ import print_function
 
 from build import ninja_lib
-from build.ninja_lib import log, mycpp_library, mycpp_bin
+from build.ninja_lib import log, mycpp_library, mycpp_binary, main_cc
 
 _ = log
 
@@ -40,9 +40,10 @@ def NinjaGraph(ru):
             '//yaks/yaks.asdl',
         ])
 
-    mycpp_bin(ru,
-              '//yaks/yaks_main.mycpp',
-              matrix=ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS)
+    mycpp_binary(ru,
+                 '//yaks/yaks_main.mycpp',
+                 matrix=ninja_lib.COMPILERS_VARIANTS +
+                 ninja_lib.GC_PERF_VARIANTS)
 
     n.newline()
 
@@ -52,28 +53,29 @@ def NinjaGraph(ru):
            description='yaks cpp $in > $out')
     n.newline()
 
-    raw_cc = '_gen/yaks/examples/hello_raw.yaks.cc'
-    example_cc = '_gen/yaks/examples/hello.yaks.cc'
-
+    # Similar to mycpp_library()
+    bundle_cc = '_gen/yaks/examples/hello.yaks.cc'
     n.build(
-        [raw_cc],
+        [bundle_cc],
         'yaks',
         ['yaks/examples/hello.yaks'],
         implicit=['_bin/cxx-opt/yaks/yaks_main.mycpp'],
     )
     n.newline()
 
-    n.build([example_cc],
-            'wrap-cc', [raw_cc],
-            implicit=[RULES_PY],
-            variables=[('main_namespace', 'hello'), ('preamble', '""'),
-                       ('main_style', 'main-wrapper')])
-    n.newline()
+    ru.cc_library(
+        '//yaks/examples/hello.yaks',
+        srcs=[bundle_cc],
+        deps=['//mycpp/runtime'],
+    )
+
+    # Similar to mycpp_binaryary()
+    main_cc(ru, '_gen/yaks/examples/hello.yaks-main.cc')
 
     ru.cc_binary(
-        example_cc,
+        '_gen/yaks/examples/hello.yaks-main.cc',
         matrix=ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS,
-        deps=['//mycpp/runtime'],
+        deps=['//yaks/examples/hello.yaks'],
     )
 
 
