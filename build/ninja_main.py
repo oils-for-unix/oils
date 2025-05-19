@@ -190,7 +190,7 @@ main() {
         objects.append(obj_quoted)
 
         # Only fork one translation unit that we know to be slow
-        if re.match('.*oils_for_unix\..*\.cc', src):
+        if re.match('.*oils_for_unix\.mycpp(-souffle)?\.cc', src):
             # There should only be one forked translation unit
             # It can be turned off with OILS_PARALLEL_BUILD= _build/oils
             assert do_fork == ''
@@ -425,7 +425,7 @@ def main(argv):
     deps.WriteRules()
 
     # Collect sources for metrics, tarball, shell script
-    cc_sources = deps.SourcesForBinary('_gen/bin/%s.mycpp.cc' % app_name)
+    cc_sources = deps.SourcesForBinary('_gen/bin/%s.mycpp-main.cc' % app_name)
 
     if 0:
         from pprint import pprint
@@ -446,8 +446,11 @@ def main(argv):
         ShellFunctions(app_name, cc_sources, sys.stdout, argv[0])
 
     elif action == 'tarball-manifest':
-        h = deps.HeadersForBinary('_gen/bin/%s.mycpp.cc' % app_name)
-        souffle = ['_gen/bin/%s.mycpp-souffle.cc' % app_name]
+        h = deps.HeadersForBinary('_gen/bin/%s.mycpp-main.cc' % app_name)
+        souffle = [
+                '_gen/bin/%s.mycpp-souffle.cc' % app_name,
+                '_gen/bin/%s.mycpp-souffle-main.cc' % app_name,
+                ]
         TarballManifest(souffle + cc_sources + h)
 
     else:
