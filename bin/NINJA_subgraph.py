@@ -7,7 +7,7 @@ from glob import glob
 from fnmatch import fnmatch
 
 from build import ninja_lib
-from build.ninja_lib import mycpp_binary, mycpp_library, main_library, log
+from build.ninja_lib import mycpp_binary, mycpp_library, main_cc, log
 
 _ = log
 
@@ -83,44 +83,20 @@ def NinjaGraph(ru):
     )
 
     # library //bin/hello.main
-    main_library(ru, 'bin/hello.py')
+    main_cc(ru, '_gen/bin/hello.mycpp.cc', template='win32')
+    main_cc(ru, '_gen/bin/hello.mycpp-souffle.cc', template='win32')
 
-    if False:
-        # how to specify the output binary?
-        # _bin/*/bin/hello.mycpp
-        # _bin/*/bin/hello.mycpp-souffle
-        ru.cc_binary(None,
-                     deps=[
-                         '//bin/hello.main',
-                         '//bin/hello.mycpp',
-                     ],
-                     matrix=ninja_lib.COMPILERS_VARIANTS)
+    ru.cc_binary('_gen/bin/hello.mycpp.cc',
+                 deps=[
+                     '//bin/hello.mycpp',
+                 ],
+                 matrix=ninja_lib.COMPILERS_VARIANTS)
 
-        ru.cc_binary(None,
-                     deps=[
-                         '//bin/hello.main',
-                         '//bin/hello.mycpp-souffle',
-                     ],
-                     matrix=ninja_lib.COMPILERS_VARIANTS)
-
-    mycpp_binary(
-        ru,
-        'bin/hello.py',
-        main_style='windows-main',
-        py_inputs=hello_py_inputs,
-        deps=['//mycpp/runtime_pure'],
-    )
-
-    # Try out souffle
-    mycpp_binary(
-        ru,
-        'bin/hello.py',
-        main_style='windows-main',
-        py_inputs=hello_py_inputs,
-        translator='mycpp-souffle',
-        deps=['//mycpp/runtime_pure'],
-        symlinks=['hello'],  # souffle is the 'hello', for now
-    )
+    ru.cc_binary('_gen/bin/hello.mycpp-souffle.cc',
+                 deps=[
+                     '//bin/hello.mycpp-souffle',
+                 ],
+                 matrix=ninja_lib.COMPILERS_VARIANTS)
 
     # Use the stdlib
     mycpp_binary(

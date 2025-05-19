@@ -157,13 +157,6 @@ class Rules(object):
                 self.n.build([name], 'phony', targets)
                 self.n.newline()
 
-    def WriteRules(self):
-        """Write cc_binary() rules, which DEMANDS cc_library() rules
-
-        All with respect to a given configuration.
-        """
-        _WriteRules(self)
-
     def compile(self,
                 out_obj,
                 in_cc,
@@ -698,7 +691,7 @@ def mycpp_library(ru,
         # code.  But don't pass it on the command line.
         implicit=[translator_shwrap],
         # examples/parse uses pyext/fastfunc.pyi
-        variables=[('mypypath', mypy_path)])
+        variables=[('mypypath', mypy_path), ('preamble_path', preamble)])
 
     ru.cc_library(
         # e.g. //bin/oils_for_unix.mycpp-souffle
@@ -709,14 +702,16 @@ def mycpp_library(ru,
     )
 
 
-def main_library(ru, py_main, template='unix'):
+def main_cc(ru, main_cc, template='unix'):
     """
     Generate a .main.cc file, and a cc_library() for it
     """
     n = ru.n
 
-    py_rel_path, _ = os.path.splitext(py_main)
-    main_cc = '_gen/%s.main.cc' % py_rel_path
+    # '_gen/bin/hello.mycpp-souffle.cc' -> hello
+    basename = os.path.basename(main_cc)
+    main_namespace = basename.split('.')[0]
+
     n.build(
         [main_cc],
         'write-main',
@@ -724,17 +719,8 @@ def main_library(ru, py_main, template='unix'):
         variables=[
             ('template', template),
             # e.g. 'hello'
-            ('main_namespace', os.path.basename(py_rel_path))
+            ('main_namespace', main_namespace)
         ])
-
-    ru.cc_library(
-        # e.g. //bin/hello.main
-        '//%s.main' % py_rel_path,
-        srcs=[main_cc],
-        # no link deps
-        deps=[],
-        #matrix=matrix,
-    )
 
 
 def mycpp_binary(ru,
@@ -779,7 +765,7 @@ def mycpp_binary(ru,
         # code.  But don't pass it on the command line.
         implicit=[translator_shwrap],
         # examples/parse uses pyext/fastfunc.pyi
-        variables=[('mypypath', mypy_path)])
+        variables=[('mypypath', mypy_path), ('preamble_path', preamble)])
 
     # Make a translation unit
     n.build(main_cc_src,
@@ -789,7 +775,7 @@ def mycpp_binary(ru,
             variables=[
                 ('main_namespace', os.path.basename(py_rel_path)),
                 ('main_style', main_style),
-                ('preamble', preamble),
+                ('preamble', "''"),
             ])
 
     n.newline()

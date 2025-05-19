@@ -53,6 +53,11 @@ def Options() -> optparse.OptionParser:
                  default=None,
                  help='Write this header')
 
+    p.add_option('--preamble-path',
+                 dest='preamble_path',
+                 default='',
+                 help='#include this path in the generated .cc file')
+
     p.add_option(
         '--stack-roots-warn',
         dest='stack_roots_warn',
@@ -249,6 +254,7 @@ def main(argv: List[str]) -> int:
                          result.types,
                          to_header,
                          to_compile,
+                         preamble_path=opts.preamble_path,
                          stack_roots_warn=opts.stack_roots_warn,
                          minimize_stack_roots=opts.minimize_stack_roots)
 

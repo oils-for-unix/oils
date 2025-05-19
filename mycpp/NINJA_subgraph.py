@@ -201,18 +201,19 @@ def NinjaGraph(ru):
 
     # mycpp and pea have the same interface
     n.rule('translate-mycpp',
-           command='_bin/shwrap/mycpp_main $mypypath $out $in',
-           description='mycpp $mypypath $out $in')
+           command='_bin/shwrap/mycpp_main $mypypath $preamble_path $out $in',
+           description='mycpp $mypypath $preamble_path $out $in')
     n.newline()
 
     n.rule('translate-mycpp-souffle',
-           command='_bin/shwrap/mycpp_main_souffle $mypypath $out $in',
-           description='mycpp-souffle $mypypath $out $in')
+           command=
+           '_bin/shwrap/mycpp_main_souffle $mypypath $preamble_path $out $in',
+           description='mycpp-souffle $mypypath $preamble_path $out $in')
     n.newline()
 
     n.rule('translate-pea',
-           command='_bin/shwrap/pea_main $mypypath $out $in',
-           description='pea $mypypath $out $in')
+           command='_bin/shwrap/pea_main $mypypath $preamble_path $out $in',
+           description='pea $mypypath $preamble_path $out $in')
     n.newline()
 
     n.rule(

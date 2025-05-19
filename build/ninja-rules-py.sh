@@ -92,7 +92,7 @@ windows-main() {
     # forward declaration
     echo '#include "mycpp/gc_list.h"'
     echo "namespace $main_namespace {"
-    echo 'int main(List<BigStr*> argv);'
+    echo 'int main(List<BigStr*>* argv);'
     echo '}'
   fi
 
@@ -284,8 +284,9 @@ shwrap-mycpp() {
 
   cat <<'EOF'
 MYPYPATH=$1    # e.g. $REPO_ROOT/mycpp
-out=$2
-shift 2
+preamble_path=$2
+out=$3
+shift 3
 
 # Modifies $PATH; do not combine
 . build/dev-shell.sh
@@ -294,7 +295,11 @@ tmp=$out.tmp  # avoid creating partial files
 
 # The command we want to run
 # EXTRA_MYCPP_ARGS is for --stack-root-warn 16, in Soil CI
-set -- python3 mycpp/mycpp_main.py --cc-out $tmp ${EXTRA_MYCPP_ARGS:-} "$@"
+set -- python3 mycpp/mycpp_main.py \
+  --preamble-path "$preamble_path" \
+  --cc-out $tmp \
+  ${EXTRA_MYCPP_ARGS:-} \
+  "$@"
 
 # If 'time' is on the system, add timing info.  (It's not present on some
 # Debian CI images)
@@ -318,8 +323,9 @@ shwrap-pea() {
 
   cat <<'EOF'
 MYPYPATH=$1    # e.g. $REPO_ROOT/mycpp
-out=$2
-shift 2
+preamble_path=$2
+out=$3
+shift 3
 
 tmp=$out.tmp  # avoid creating partial files
 

@@ -64,6 +64,7 @@ def Run(timer: Timer,
         types: Dict['Expression', 'Type'],
         to_header: List[str],
         to_compile: List[Tuple[str, 'MypyFile']],
+        preamble_path: str = '',
         stack_roots_warn: bool = False,
         minimize_stack_roots: bool = False) -> int:
 
@@ -75,6 +76,8 @@ def Run(timer: Timer,
     f.write("""\
 // BEGIN mycpp output
 """)
+    if preamble_path:
+        f.write('#include "%s"\n' % preamble_path)
 
     # Which functions are C++ 'virtual'?
     virtual = pass_state.Virtual()
