@@ -105,93 +105,6 @@ CcBinary = collections.namedtuple(
     'main_cc symlinks implicit deps matrix phony_prefix preprocessed bin_path')
 
 
-def _TransitiveClosure(cc_libs, name, deps, unique_out):
-    """
-    Args:
-      name: for error messages
-    """
-    for label in deps:
-        if label in unique_out:
-            continue
-        unique_out.add(label)
-
-        try:
-            cc_lib = cc_libs[label]
-        except KeyError:
-            raise RuntimeError('Undefined label %s in %r' % (label, name))
-
-        _TransitiveClosure(cc_libs, cc_lib.label, cc_lib.deps, unique_out)
-
-
-def _CalculateDeps(cc_libs, cc_rule, debug_name=''):
-    """ Compile actions for cc_library() also need implicit deps on generated headers"""
-    out_deps = set()
-    _TransitiveClosure(cc_libs, debug_name, cc_rule.deps, out_deps)
-    unique_deps = sorted(out_deps)
-
-    implicit = list(cc_rule.implicit)  # copy
-    for label in unique_deps:
-        cc_lib = cc_libs[label]
-        implicit.extend(cc_lib.generated_headers)
-    return unique_deps, implicit
-
-
-class CcLibrary(object):
-    """
-    Life cycle:
-    
-    1. A cc_library is first created
-    2. A cc_binary can depend on it
-       - maybe writing rules, and ensuring uniques per configuration
-    3. The link step needs the list of objects
-    4. The tarball needs the list of sources for binary
-    """
-
-    def __init__(self, label, srcs, implicit, deps, headers,
-                 generated_headers):
-        self.label = label
-        self.srcs = srcs  # queried by SourcesForBinary
-        self.implicit = implicit
-        self.deps = deps
-        self.headers = headers
-        # TODO: asdl() rule should add to this.
-        # Generated headers are different than regular headers.  The former need an
-        # implicit dep in Ninja, while the latter can rely on the .d mechanism.
-        self.generated_headers = generated_headers
-
-        self.obj_lookup = {}  # config -> list of objects
-        self.preprocessed_lookup = {}  # config -> boolean
-
-    def MaybeWrite(self, ru, config, preprocessed):
-        if config not in self.obj_lookup:  # already written by some other cc_binary()
-            _, implicit = _CalculateDeps(ru.cc_libs,
-                                         self,
-                                         debug_name=self.label)
-
-            objects = []
-            for src in self.srcs:
-                obj = ObjPath(src, config)
-                ru.compile(obj, src, self.deps, config, implicit=implicit)
-                objects.append(obj)
-
-            self.obj_lookup[config] = objects
-
-        if preprocessed and config not in self.preprocessed_lookup:
-            _, implicit = _CalculateDeps(ru.cc_libs,
-                                         self,
-                                         debug_name=self.label)
-
-            for src in self.srcs:
-                # no output needed
-                ru.compile('',
-                           src,
-                           self.deps,
-                           config,
-                           implicit=implicit,
-                           maybe_preprocess=True)
-            self.preprocessed_lookup[config] = True
-
-
 class Rules(object):
     """High-level wrapper for NinjaWriter
 
@@ -231,7 +144,7 @@ class Rules(object):
 
         self.cc_bins = []  # list of CcBinary() objects to write
         self.cc_libs = {}  # label -> CcLibrary object
-        self.cc_binary_deps = {}  # main_cc -> list of LABELS
+
         self.phony = {}  # list of phony targets
 
     def AddPhony(self, phony_to_add):
@@ -249,8 +162,7 @@ class Rules(object):
 
         All with respect to a given configuration.
         """
-        for cc_bin in self.cc_bins:
-            self.WriteCcBinary(cc_bin)
+        _WriteRules(self)
 
     def compile(self,
                 out_obj,
@@ -380,98 +292,6 @@ class Rules(object):
 
         self.cc_bins.append(cc_bin)
 
-    def WriteCcBinary(self, cc_bin):
-        c = cc_bin
-
-        unique_deps, compile_imp = _CalculateDeps(self.cc_libs,
-                                                  cc_bin,
-                                                  debug_name=cc_bin.main_cc)
-        # compile actions of binaries that have ASDL label deps need the
-        # generated header as implicit dep
-
-        # to compute tarball manifest, with SourcesForBinary()
-        self.cc_binary_deps[c.main_cc] = unique_deps
-
-        for config in c.matrix:
-            if len(config) == 2:
-                config = (config[0], config[1], None)
-
-            # Write cc_library() rules LAZILY
-            for label in unique_deps:
-                cc_lib = self.cc_libs[label]  # should exit
-                cc_lib.MaybeWrite(self, config, c.preprocessed)
-
-            # Compile main object, maybe with IMPLICIT headers deps
-            main_obj = ObjPath(c.main_cc, config)
-            self.compile(main_obj,
-                         c.main_cc,
-                         c.deps,
-                         config,
-                         implicit=compile_imp)
-            if c.preprocessed:
-                self.compile('',
-                             c.main_cc,
-                             c.deps,
-                             config,
-                             implicit=compile_imp,
-                             maybe_preprocess=True)
-
-            config_dir = ConfigDir(config)
-            bin_dir = '_bin/%s' % config_dir  # e.g. _bin/cxx-asan
-
-            # Allow user to override bin_path
-            if c.bin_path:
-                # e.g. _bin/cxx-dbg/oils_for_unix
-                bin_to_link = '%s/%s' % (bin_dir, c.bin_path)
-            else:
-                # e.g. _gen/mycpp/examples/classes.mycpp
-                rel_path, _ = os.path.splitext(c.main_cc)
-
-                # Put binary in _bin/cxx-dbg/mycpp/examples, not _bin/cxx-dbg/_gen/mycpp/examples
-                if rel_path.startswith('_gen/'):
-                    rel_path = rel_path[len('_gen/'):]
-
-                bin_to_link = '%s/%s' % (bin_dir, rel_path)
-
-            # Link with OBJECT deps
-            self.link(bin_to_link, main_obj, unique_deps, config)
-
-            # Make symlinks
-            symlink_dir = os.path.dirname(bin_to_link)
-            bin_name = os.path.basename(bin_to_link)
-            for symlink in c.symlinks:
-                self.n.build(['%s/%s' % (symlink_dir, symlink)],
-                             'symlink', [bin_to_link],
-                             variables=[('dir', symlink_dir),
-                                        ('target', bin_name),
-                                        ('new', symlink)])
-                self.n.newline()
-
-            # Maybe add this cc_binary to a group
-            if c.phony_prefix:
-                key = '%s-%s' % (c.phony_prefix, config_dir)
-                if key not in self.phony:
-                    self.phony[key] = []
-                self.phony[key].append(bin_to_link)
-
-    def SourcesForBinary(self, main_cc):
-        """
-        Used for preprocessed metrics, release tarball, _build/oils.sh, etc.
-        """
-        deps = self.cc_binary_deps[main_cc]
-        sources = [main_cc]
-        for label in deps:
-            sources.extend(self.cc_libs[label].srcs)
-        return sources
-
-    def HeadersForBinary(self, main_cc):
-        deps = self.cc_binary_deps[main_cc]
-        headers = []
-        for label in deps:
-            headers.extend(self.cc_libs[label].headers)
-            headers.extend(self.cc_libs[label].generated_headers)
-        return headers
-
     def asdl_library(self,
                      asdl_path,
                      deps=None,
@@ -578,6 +398,201 @@ class Rules(object):
                                 ('more_link_flags', "'-lstdc++fs'")])
 
         self.n.newline()
+
+
+def _TransitiveClosure(cc_libs, name, deps, unique_out):
+    """
+    Args:
+      name: for error messages
+    """
+    for label in deps:
+        if label in unique_out:
+            continue
+        unique_out.add(label)
+
+        try:
+            cc_lib = cc_libs[label]
+        except KeyError:
+            raise RuntimeError('Undefined label %s in %r' % (label, name))
+
+        _TransitiveClosure(cc_libs, cc_lib.label, cc_lib.deps, unique_out)
+
+
+def _CalculateDeps(cc_libs, cc_rule, debug_name=''):
+    """ Compile actions for cc_library() also need implicit deps on generated headers"""
+    out_deps = set()
+    _TransitiveClosure(cc_libs, debug_name, cc_rule.deps, out_deps)
+    unique_deps = sorted(out_deps)
+
+    implicit = list(cc_rule.implicit)  # copy
+    for label in unique_deps:
+        cc_lib = cc_libs[label]
+        implicit.extend(cc_lib.generated_headers)
+    return unique_deps, implicit
+
+
+class CcLibrary(object):
+    """
+    Life cycle:
+    
+    1. A cc_library is first created
+    2. A cc_binary can depend on it
+       - maybe writing rules, and ensuring uniques per configuration
+    3. The link step needs the list of objects
+    4. The tarball needs the list of sources for binary
+    """
+
+    def __init__(self, label, srcs, implicit, deps, headers,
+                 generated_headers):
+        self.label = label
+        self.srcs = srcs  # queried by SourcesForBinary
+        self.implicit = implicit
+        self.deps = deps
+        self.headers = headers
+        # TODO: asdl() rule should add to this.
+        # Generated headers are different than regular headers.  The former need an
+        # implicit dep in Ninja, while the latter can rely on the .d mechanism.
+        self.generated_headers = generated_headers
+
+        self.obj_lookup = {}  # config -> list of objects
+        self.preprocessed_lookup = {}  # config -> boolean
+
+    def MaybeWrite(self, ru, config, preprocessed):
+        """
+        Args:
+          preprocessed: Did the cc_binary() request preprocessing?
+        """
+        if config not in self.obj_lookup:  # already written by some other cc_binary()
+            _, implicit = _CalculateDeps(ru.cc_libs,
+                                         self,
+                                         debug_name=self.label)
+
+            objects = []
+            for src in self.srcs:
+                obj = ObjPath(src, config)
+                ru.compile(obj, src, self.deps, config, implicit=implicit)
+                objects.append(obj)
+
+            self.obj_lookup[config] = objects
+
+        if preprocessed and (config not in self.preprocessed_lookup):
+            _, implicit = _CalculateDeps(ru.cc_libs,
+                                         self,
+                                         debug_name=self.label)
+
+            for src in self.srcs:
+                # no output needed
+                ru.compile('',
+                           src,
+                           self.deps,
+                           config,
+                           implicit=implicit,
+                           maybe_preprocess=True)
+            self.preprocessed_lookup[config] = True
+
+
+class Deps(object):
+
+    def __init__(self, ru):
+        self.ru = ru
+        # main_cc -> list of LABELS, for tarball manifest
+        self.cc_binary_deps = {}
+
+    def SourcesForBinary(self, main_cc):
+        """
+        Used for preprocessed metrics, release tarball, _build/oils.sh, etc.
+        """
+        deps = self.cc_binary_deps[main_cc]
+        sources = [main_cc]
+        for label in deps:
+            sources.extend(self.ru.cc_libs[label].srcs)
+        return sources
+
+    def HeadersForBinary(self, main_cc):
+        deps = self.cc_binary_deps[main_cc]
+        headers = []
+        for label in deps:
+            headers.extend(self.ru.cc_libs[label].headers)
+            headers.extend(self.ru.cc_libs[label].generated_headers)
+        return headers
+
+    def WriteRules(self):
+        for cc_bin in self.ru.cc_bins:
+            self.WriteCcBinary(cc_bin)
+
+    def WriteCcBinary(self, cc_bin):
+        ru = self.ru
+        c = cc_bin
+
+        unique_deps, compile_imp = _CalculateDeps(ru.cc_libs,
+                                                  cc_bin,
+                                                  debug_name=cc_bin.main_cc)
+        # compile actions of binaries that have ASDL label deps need the
+        # generated header as implicit dep
+
+        # to compute tarball manifest, with SourcesForBinary()
+        self.cc_binary_deps[c.main_cc] = unique_deps
+
+        for config in c.matrix:
+            if len(config) == 2:
+                config = (config[0], config[1], None)
+
+            # Write cc_library() rules LAZILY
+            for label in unique_deps:
+                cc_lib = ru.cc_libs[label]  # should exit
+                cc_lib.MaybeWrite(ru, config, c.preprocessed)
+
+            # Compile main object, maybe with IMPLICIT headers deps
+            main_obj = ObjPath(c.main_cc, config)
+            ru.compile(main_obj,
+                       c.main_cc,
+                       c.deps,
+                       config,
+                       implicit=compile_imp)
+            if c.preprocessed:
+                ru.compile('',
+                           c.main_cc,
+                           c.deps,
+                           config,
+                           implicit=compile_imp,
+                           maybe_preprocess=True)
+
+            config_dir = ConfigDir(config)
+            bin_dir = '_bin/%s' % config_dir  # e.g. _bin/cxx-asan
+
+            # Allow user to override bin_path
+            if c.bin_path:
+                # e.g. _bin/cxx-dbg/oils_for_unix
+                bin_to_link = '%s/%s' % (bin_dir, c.bin_path)
+            else:
+                # e.g. _gen/mycpp/examples/classes.mycpp
+                rel_path, _ = os.path.splitext(c.main_cc)
+
+                # Put binary in _bin/cxx-dbg/mycpp/examples, not _bin/cxx-dbg/_gen/mycpp/examples
+                if rel_path.startswith('_gen/'):
+                    rel_path = rel_path[len('_gen/'):]
+
+                bin_to_link = '%s/%s' % (bin_dir, rel_path)
+
+            # Link with OBJECT deps
+            ru.link(bin_to_link, main_obj, unique_deps, config)
+
+            # Make symlinks
+            symlink_dir = os.path.dirname(bin_to_link)
+            bin_name = os.path.basename(bin_to_link)
+            for symlink in c.symlinks:
+                ru.n.build(['%s/%s' % (symlink_dir, symlink)],
+                           'symlink', [bin_to_link],
+                           variables=[('dir', symlink_dir),
+                                      ('target', bin_name), ('new', symlink)])
+                ru.n.newline()
+
+            # Maybe add this cc_binary to a group
+            if c.phony_prefix:
+                key = '%s-%s' % (c.phony_prefix, config_dir)
+                if key not in ru.phony:
+                    ru.phony[key] = []
+                ru.phony[key].append(bin_to_link)
 
 
 SHWRAP = {

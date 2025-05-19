@@ -252,7 +252,7 @@ main "$@"
           file=f)
 
 
-def Preprocessed(n, cc_sources):
+def WritePreprocessed(n, cc_sources):
     # See how much input we're feeding to the compiler.  Test C++ template
     # explosion, e.g. <unordered_map>
     #
@@ -420,18 +420,19 @@ def main(argv):
     yaks_subgraph.NinjaGraph(ru)
     ru.comment('')
 
+    deps = ninja_lib.Deps(ru)
     # Materialize all the cc_binary() rules
-    ru.WriteRules()
+    deps.WriteRules()
 
     # Collect sources for metrics, tarball, shell script
-    cc_sources = ru.SourcesForBinary('_gen/bin/%s.mycpp.cc' % app_name)
+    cc_sources = deps.SourcesForBinary('_gen/bin/%s.mycpp.cc' % app_name)
 
     if 0:
         from pprint import pprint
         pprint(cc_sources)
 
     # TODO: could thin these out, not generate for unit tests, etc.
-    Preprocessed(n, cc_sources)
+    WritePreprocessed(n, cc_sources)
 
     ru.WritePhony()
 
@@ -445,11 +446,9 @@ def main(argv):
         ShellFunctions(app_name, cc_sources, sys.stdout, argv[0])
 
     elif action == 'tarball-manifest':
-        h = ru.HeadersForBinary('_gen/bin/%s.mycpp.cc' % app_name)
-        tar_cc_sources = cc_sources + [
-            '_gen/bin/%s.mycpp-souffle.cc' % app_name
-        ]
-        TarballManifest(tar_cc_sources + h)
+        h = deps.HeadersForBinary('_gen/bin/%s.mycpp.cc' % app_name)
+        souffle = ['_gen/bin/%s.mycpp-souffle.cc' % app_name]
+        TarballManifest(souffle + cc_sources + h)
 
     else:
         raise RuntimeError('Invalid action %r' % action)
