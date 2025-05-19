@@ -190,7 +190,7 @@ main() {
         objects.append(obj_quoted)
 
         # Only fork one translation unit that we know to be slow
-        if re.match('.*oils_for_unix\.mycpp(-souffle)?\.cc', src):
+        if src.endswith('.$translator.cc'):
             # There should only be one forked translation unit
             # It can be turned off with OILS_PARALLEL_BUILD= _build/oils
             assert do_fork == ''

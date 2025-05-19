@@ -63,10 +63,10 @@ make-tar() {
   gen-shell-build $source_name $sh_name
 
   # Build source code
-  ninja _gen/bin/$source_name.mycpp.cc
+  ninja _gen/bin/$source_name.mycpp{,-main}.cc
 
   if test -n "$do_souffle"; then
-    ninja _gen/bin/$source_name.mycpp-souffle.cc
+    ninja _gen/bin/$source_name.mycpp-souffle{,-main}.cc
   fi
 
   local sed_expr="s,^,${app_name}-${OILS_VERSION}/,"
