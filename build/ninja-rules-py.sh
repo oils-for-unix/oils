@@ -24,24 +24,21 @@ die() {
   exit 1
 }
 
-example-main-wrapper() {
+main-example-unix() {
   ### Used by mycpp/examples
   local main_namespace=${1:-fib_iter}
-  local declare=${2:-}
-
-  if test -n "$declare"; then
-    echo '#include <stdio.h>'
-    echo '#include <stdlib.h>'
-    echo '#include <string.h>'
-    echo '#include "mycpp/runtime.h"'
-    echo ''
-    echo "namespace $main_namespace {"
-    echo 'void run_tests();'
-    echo 'void run_benchmarks();'
-    echo '}'
-  fi
 
   cat <<EOF
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "mycpp/runtime.h"
+
+namespace $main_namespace {
+void run_tests();
+void run_benchmarks();
+}
+
 int main(int argc, char **argv) {
   gHeap.Init();
 
@@ -58,20 +55,17 @@ int main(int argc, char **argv) {
 EOF
 }
 
-main-wrapper() {
+main-unix() {
   ### Used by oils-for-unix and yaks
   local main_namespace=$1
-  local declare=${2:-}
-
-  if test -n "$declare"; then
-    # forward declaration
-    echo '#include "mycpp/runtime.h"'
-    echo "namespace $main_namespace {"
-    echo 'int main(List<BigStr*>* argv);'
-    echo '}'
-  fi
 
   cat <<EOF
+#include "mycpp/runtime.h"
+
+namespace $main_namespace {
+int main(List<BigStr*>* argv);
+}
+
 int main(int argc, char **argv) {
   mylib::InitCppOnly();  // Initializes gHeap
 
@@ -89,19 +83,17 @@ int main(int argc, char **argv) {
 EOF
 }
 
-windows-main() {
+main-win32() {
+  ### Used by bin/hello
   local main_namespace=$1
-  local declare=${2:-}
-
-  if test -n "$declare"; then
-    # forward declaration
-    echo '#include "mycpp/gc_list.h"'
-    echo "namespace $main_namespace {"
-    echo 'int main(List<BigStr*>* argv);'
-    echo '}'
-  fi
 
   cat <<EOF
+#include "mycpp/gc_list.h"
+
+namespace $main_namespace {
+int main(List<BigStr*>* argv);
+}
+
 int main(int argc, char **argv) {
   gHeap.Init();
 
@@ -127,13 +119,13 @@ write-main() {
 
   case $template in
     unix)
-      main-wrapper $main_namespace T
+      main-unix $main_namespace T
       ;;
     win32) 
-      windows-main $main_namespace T
+      main-32 $main_namespace T
       ;;
     example-unix)
-      example-main-wrapper $main_namespace T
+      main-example-unix $main_namespace T
       ;;
     *)
       die "Invalid template '$template'"

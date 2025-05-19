@@ -73,13 +73,10 @@ def Run(timer: Timer,
     #    log('m %r' % mtype)
     #    log('m %r' % mtype.Callable)
 
-    f.write("""\
-// BEGIN mycpp output
-""")
-
     # default value
     preamble_path = preamble_path or 'mycpp/runtime.h'
     f.write('#include "%s"\n' % preamble_path)
+    f.write('\n')
 
     # Which functions are C++ 'virtual'?
     virtual = pass_state.Virtual()
