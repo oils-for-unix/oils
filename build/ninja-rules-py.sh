@@ -30,6 +30,11 @@ example-main-wrapper() {
   local declare=${2:-}
 
   if test -n "$declare"; then
+    echo '#include <stdio.h>'
+    echo '#include <stdlib.h>'
+    echo '#include <string.h>'
+    echo '#include "mycpp/runtime.h"'
+    echo ''
     echo "namespace $main_namespace {"
     echo 'void run_tests();'
     echo 'void run_benchmarks();'

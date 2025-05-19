@@ -6,7 +6,7 @@ from __future__ import print_function
 import os
 import sys
 
-from build.ninja_lib import (log, mycpp_binary, COMPILERS_VARIANTS,
+from build.ninja_lib import (log, mycpp_library, mycpp_bin, COMPILERS_VARIANTS,
                              OTHER_VARIANTS)
 
 _ = log
@@ -300,18 +300,20 @@ def MycppExamples(ru, ph):
     for ex, py_main in examples:
         # Special case: mycpp/examples/pea_* are only translated with pea.
         # TODO: pea examples don't have the same main()
+        py_rel_path, _ = os.path.splitext(py_main)
 
         if ex.startswith('pea_'):
-            mycpp_binary(ru,
-                         py_main,
-                         mypy_path=MYPY_PATH,
-                         main_style='main-wrapper',
-                         translator='pea',
-                         matrix=[
-                             ('cxx', 'asan'),
-                             ('cxx', 'opt'),
-                         ],
-                         deps=['//mycpp/runtime'])
+            mycpp_library(ru,
+                          py_main,
+                          mypy_path=MYPY_PATH,
+                          translator='pea',
+                          deps=['//mycpp/runtime'])
+            mycpp_bin(ru,
+                      '//%s.pea' % py_rel_path,
+                      matrix=[
+                          ('cxx', 'asan'),
+                          ('cxx', 'opt'),
+                      ])
 
     to_compare = []
     benchmark_tasks = []
@@ -319,6 +321,7 @@ def MycppExamples(ru, ph):
     for ex, py_main in examples:
         if ex.startswith('pea_'):  # Only non-pea examples
             continue
+        py_rel_path, _ = os.path.splitext(py_main)
 
         ru.comment('- mycpp/examples/%s' % ex)
 
@@ -373,20 +376,23 @@ def MycppExamples(ru, ph):
 
         for translator in ['mycpp', 'mycpp-souffle']:
 
-            matrix = SOUFFLE_MATRIX if translator == 'mycpp-souffle' else None
+            matrix = SOUFFLE_MATRIX if translator == 'mycpp-souffle' else COMPILERS_VARIANTS
             phony_prefix = 'mycpp-examples' if translator == 'mycpp' else None
             py_inputs = TRANSLATE_FILES.get(ex)
 
             deps = EXAMPLES_DEPS.get(ex, ['//mycpp/runtime'])
-            mycpp_binary(ru,
-                         py_main,
-                         mypy_path=MYPY_PATH,
-                         translator=translator,
-                         main_style='example-main-wrapper',
-                         py_inputs=py_inputs,
-                         phony_prefix=phony_prefix,
-                         matrix=matrix,
-                         deps=deps)
+            mycpp_library(ru,
+                          py_main,
+                          mypy_path=MYPY_PATH,
+                          translator=translator,
+                          py_inputs=py_inputs,
+                          deps=deps)
+
+            mycpp_bin(ru,
+                      '//%s.%s' % (py_rel_path, translator),
+                      template='example-unix',
+                      phony_prefix=phony_prefix,
+                      matrix=matrix)
 
             # minimal
             TEST_MATRIX = [

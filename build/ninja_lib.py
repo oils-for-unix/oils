@@ -624,39 +624,6 @@ def TryDynamicDeps(py_main):
     return None
 
 
-# TODO:
-#
-# //bin/oils_for_unix.mycpp
-# //bin/oils_for_unix.mycpp-souffle
-#
-# mycpp_library('bin/oils_for_unix.py',
-#               mypy_path=''
-#               preamble=''
-#               souffle=True,
-#               pea=True,   # another option
-# )
-#
-# //bin/oils_for_unix.main
-#
-# gen_cpp_main(namespace='oils_for_unix',
-#              style='example')
-#
-# mycpp_binary(
-#   '//bin/oils_for_unix.main',  # cc_library() for main
-#   bin_path='bin/oils_for_unix.mycpp-souffle',
-#   deps=['//bin/oils_for_unix.mycpp-souffle'],
-# )
-#
-# mycpp_binary(
-#   '//bin/oils_for_unix.main',
-#   deps=['//bin/oils_for_unix.mycpp'],
-#   bin_path='bin/oils_for_unix.mycpp',
-#   symlinks=[],
-#   preprocessed=True,
-#   phony_prefix=''
-# )
-
-
 def mycpp_library(ru,
                   py_main,
                   mypy_path=DEFAULT_MYPY_PATH,
@@ -667,14 +634,10 @@ def mycpp_library(ru,
     """
     Generate a .cc file with mycpp, and a cc_library() for it
     """
-
     # e.g. bin/oils_for_unix
     py_rel_path, _ = os.path.splitext(py_main)
-    # e.g. bin.oils_for_unix
-    #py_module = py_rel_path.replace('/', '.')
 
     py_inputs = py_inputs or [py_main]  # if not specified, it's a single file
-    #matrix = matrix or COMPILERS_VARIANTS
     deps = deps or []
 
     if preamble is None:
@@ -684,12 +647,12 @@ def mycpp_library(ru,
     n = ru.n
 
     # Two steps
-    raw = '_gen/%s.%s.cc' % (py_rel_path, translator)
+    bundle_cc = '_gen/%s.%s.cc' % (py_rel_path, translator)
 
     translator_shwrap = SHWRAP[translator]
 
     n.build(
-        raw,
+        bundle_cc,
         'translate-%s' % translator,
         py_inputs,  # files to translate
         # Implicit dependency: if the translator changes, regenerate source
@@ -701,15 +664,14 @@ def mycpp_library(ru,
     ru.cc_library(
         # e.g. //bin/oils_for_unix.mycpp-souffle
         '//%s.%s' % (py_rel_path, translator),
-        srcs=[raw],
+        srcs=[bundle_cc],
         deps=deps,
-        #matrix=matrix,
     )
 
 
 def main_cc(ru, main_cc, template='unix'):
     """
-    Generate a .main.cc file, and a cc_library() for it
+    Generate a $name.mycpp-main.cc file
     """
     n = ru.n
 
@@ -721,6 +683,8 @@ def main_cc(ru, main_cc, template='unix'):
         [main_cc],
         'write-main',
         [],
+        # in case any templates change
+        implicit='build/ninja-rules-py.sh',
         variables=[
             ('template', template),
             # e.g. 'hello'
@@ -736,6 +700,9 @@ def mycpp_bin(ru,
               symlinks=None,
               preprocessed=False,
               phony_prefix=None):
+    """
+    Generate a $name.mycpp-main.cc file, and a cc_binary() for it
+    """
     matrix = matrix or []
 
     assert cc_lib.startswith('//')
@@ -753,71 +720,3 @@ def mycpp_bin(ru,
                  symlinks=symlinks,
                  preprocessed=preprocessed,
                  phony_prefix=phony_prefix)
-
-
-def mycpp_binary(ru,
-                 py_main,
-                 mypy_path=DEFAULT_MYPY_PATH,
-                 bin_path=None,
-                 symlinks=None,
-                 preprocessed=False,
-                 preamble=None,
-                 translator='mycpp',
-                 main_style='main-wrapper',
-                 py_inputs=None,
-                 phony_prefix=None,
-                 matrix=None,
-                 deps=None):
-    # e.g. bin/oils_for_unix
-    py_rel_path, _ = os.path.splitext(py_main)
-    # e.g. bin.oils_for_unix
-    py_module = py_rel_path.replace('/', '.')
-
-    py_inputs = py_inputs or [py_main]  # if not specified, it's a single file
-    symlinks = symlinks or []
-    matrix = matrix or COMPILERS_VARIANTS
-    deps = deps or []
-    if preamble is None:
-        p = py_rel_path + '_preamble.h'
-        preamble = p if os.path.exists(p) else "''"  # Ninja empty string!
-
-    n = ru.n
-
-    # Two steps
-    raw = '_gen/_tmp/%s.%s-raw.cc' % (py_rel_path, translator)
-    main_cc_src = '_gen/%s.%s.cc' % (py_rel_path, translator)
-
-    translator_shwrap = SHWRAP[translator]
-
-    n.build(
-        raw,
-        'translate-%s' % translator,
-        py_inputs,  # files to translate
-        # Implicit dependency: if the translator changes, regenerate source
-        # code.  But don't pass it on the command line.
-        implicit=[translator_shwrap],
-        # examples/parse uses pyext/fastfunc.pyi
-        variables=[('mypypath', mypy_path), ('preamble_path', preamble)])
-
-    # Make a translation unit
-    n.build(main_cc_src,
-            'wrap-cc',
-            raw,
-            implicit=[RULES_PY],
-            variables=[
-                ('main_namespace', os.path.basename(py_rel_path)),
-                ('main_style', main_style),
-                ('preamble', "''"),
-            ])
-
-    n.newline()
-
-    ru.cc_binary(
-        main_cc_src,
-        bin_path=bin_path,
-        symlinks=symlinks,
-        preprocessed=preprocessed,
-        deps=deps,
-        matrix=matrix,
-        phony_prefix=phony_prefix,
-    )

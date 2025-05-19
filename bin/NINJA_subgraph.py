@@ -7,7 +7,7 @@ from glob import glob
 from fnmatch import fnmatch
 
 from build import ninja_lib
-from build.ninja_lib import mycpp_bin, mycpp_binary, mycpp_library, main_cc, log
+from build.ninja_lib import mycpp_bin, mycpp_library, main_cc, log
 
 _ = log
 
@@ -92,11 +92,14 @@ def NinjaGraph(ru):
               matrix=ninja_lib.COMPILERS_VARIANTS)
 
     # Use the stdlib
-    mycpp_binary(
+    mycpp_library(
         ru,
         'bin/hello_mylib.py',
         deps=['//mycpp/runtime'],
     )
+    mycpp_bin(ru,
+              '//bin/hello_mylib.mycpp',
+              matrix=ninja_lib.COMPILERS_VARIANTS)
 
     oils_deps = [
         '//bin/text_files',
