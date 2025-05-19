@@ -155,18 +155,21 @@ main() {
 
     objects = []
 
-    # Special case for souffle
+    # Filenames that depend on the translator
     in_out = [
         ('_gen/bin/%s.$translator.cc' % app_name,
          '_build/obj/$compiler-$variant-sh/_gen/bin/%s.$translator.o' %
+         app_name),
+        ('_gen/bin/%s.$translator-main.cc' % app_name,
+         '_build/obj/$compiler-$variant-sh/_gen/bin/%s.$translator-main.o' %
          app_name),
     ]
     for src in sorted(cc_sources):
         # e.g. _build/obj/cxx-dbg-sh/posix.o
         prefix, _ = os.path.splitext(src)
 
-        # HACK to skip the special one above
-        if src.endswith('.mycpp.cc') or src.endswith('.mycpp-souffle.cc'):
+        # HACK to skip the special ones above
+        if re.match(src, r'.mycpp.*\.cc$'):
             continue
 
         obj = '_build/obj/$compiler-$variant-sh/%s.o' % prefix
