@@ -6,4 +6,4 @@ out=$3
 shift 3
 
 # Add an extra flag, and also depends on _bin/datalog
-exec _bin/shwrap/mycpp_main $MYPYPATH $preamble_path $out --minimize-stack-roots "$@"
+exec _bin/shwrap/mycpp_main "$MYPYPATH" "$preamble_path" "$out" --minimize-stack-roots "$@"
