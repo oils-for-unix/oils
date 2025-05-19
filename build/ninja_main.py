@@ -169,11 +169,17 @@ main() {
         prefix, _ = os.path.splitext(src)
 
         # HACK to skip the special ones above
-        if re.match(src, r'.mycpp.*\.cc$'):
+        #if re.match(src, r'.*\.mycpp.*\.cc$'):
+        if re.match(r'.*\.mycpp.*\.cc$', src):
             continue
 
         obj = '_build/obj/$compiler-$variant-sh/%s.o' % prefix
         in_out.append((src, obj))
+
+    if 0:
+        from pprint import pformat
+        log('cc_sources = %s', pformat(cc_sources))
+        log('in_out = %s', pformat(in_out))
 
     bin_dir = '_bin/$compiler-$variant-sh/$translator'
     obj_dirs = sorted(set(os.path.dirname(obj) for _, obj in in_out))
@@ -429,7 +435,7 @@ def main(argv):
 
     # Collect sources for metrics, tarball, shell script
     cc_sources = deps.SourcesForBinary('_gen/bin/%s.mycpp-main.cc' % app_name)
-    log('cc_sources = %s', cc_sources)
+    #log('cc_sources = %s', cc_sources)
 
     if 0:
         from pprint import pprint
