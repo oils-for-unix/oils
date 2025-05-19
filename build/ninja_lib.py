@@ -728,6 +728,20 @@ def main_cc(ru, main_cc, template='unix'):
         ])
 
 
+def mycpp_bin(ru, cc_lib, template='unix', matrix=None):
+    matrix = matrix or []
+
+    assert cc_lib.startswith('//')
+    rel_path = cc_lib[2:]
+    main_cc_path = '_gen/%s-main.cc' % rel_path
+
+    # Generate a main.cc file
+    main_cc(ru, main_cc_path, template=template)
+
+    # Then compile and link it
+    ru.cc_binary(main_cc_path, deps=[cc_lib], matrix=matrix)
+
+
 def mycpp_binary(ru,
                  py_main,
                  mypy_path=DEFAULT_MYPY_PATH,

@@ -7,7 +7,7 @@ from glob import glob
 from fnmatch import fnmatch
 
 from build import ninja_lib
-from build.ninja_lib import mycpp_binary, mycpp_library, main_cc, log
+from build.ninja_lib import mycpp_bin, mycpp_binary, mycpp_library, main_cc, log
 
 _ = log
 
@@ -82,21 +82,14 @@ def NinjaGraph(ru):
         deps=['//mycpp/runtime_pure'],
     )
 
-    # library //bin/hello.main
-    main_cc(ru, '_gen/bin/hello.mycpp-main.cc', template='win32')
-    main_cc(ru, '_gen/bin/hello.mycpp-souffle-main.cc', template='win32')
-
-    ru.cc_binary('_gen/bin/hello.mycpp-main.cc',
-                 deps=[
-                     '//bin/hello.mycpp',
-                 ],
-                 matrix=ninja_lib.COMPILERS_VARIANTS)
-
-    ru.cc_binary('_gen/bin/hello.mycpp-souffle-main.cc',
-                 deps=[
-                     '//bin/hello.mycpp-souffle',
-                 ],
-                 matrix=ninja_lib.COMPILERS_VARIANTS)
+    mycpp_bin(ru,
+              '//bin/hello.mycpp',
+              template='win32',
+              matrix=ninja_lib.COMPILERS_VARIANTS)
+    mycpp_bin(ru,
+              '//bin/hello.mycpp-souffle',
+              template='win32',
+              matrix=ninja_lib.COMPILERS_VARIANTS)
 
     # Use the stdlib
     mycpp_binary(
@@ -139,16 +132,21 @@ def NinjaGraph(ru):
     # TODO: other files should get their own
     oils_preamble = 'bin/oils_for_unix_preamble.h'
 
-    mycpp_binary(ru,
-                 'bin/osh_eval.py',
-                 py_inputs=ninja_lib.TryDynamicDeps('bin/osh_eval.py'),
-                 preamble=oils_preamble,
-                 deps=oils_deps)
-    mycpp_binary(ru,
-                 'bin/osh_parse.py',
-                 py_inputs=ninja_lib.TryDynamicDeps('bin/osh_parse.py'),
-                 preamble=oils_preamble,
-                 deps=oils_deps)
+    mycpp_library(ru,
+                  'bin/osh_eval.py',
+                  py_inputs=ninja_lib.TryDynamicDeps('bin/osh_eval.py'),
+                  preamble=oils_preamble,
+                  deps=oils_deps)
+
+    mycpp_bin(ru, '//bin/osh_eval.mycpp', matrix=ninja_lib.COMPILERS_VARIANTS)
+
+    mycpp_library(ru,
+                  'bin/osh_parse.py',
+                  py_inputs=ninja_lib.TryDynamicDeps('bin/osh_parse.py'),
+                  preamble=oils_preamble,
+                  deps=oils_deps)
+
+    mycpp_bin(ru, '//bin/osh_parse.mycpp', matrix=ninja_lib.COMPILERS_VARIANTS)
 
     oils_symlinks = ['osh', 'ysh']
     matrix = (ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS +

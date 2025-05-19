@@ -4,7 +4,7 @@ yaks/NINJA_subgraph.py
 from __future__ import print_function
 
 from build import ninja_lib
-from build.ninja_lib import log, mycpp_binary
+from build.ninja_lib import log, mycpp_library, mycpp_bin
 
 _ = log
 
@@ -23,11 +23,10 @@ def NinjaGraph(ru):
                  deps=['//mycpp/runtime'],
                  matrix=ninja_lib.COMPILERS_VARIANTS)
 
-    mycpp_binary(
+    mycpp_library(
         ru,
         'yaks/yaks_main.py',
         py_inputs=ninja_lib.TryDynamicDeps('yaks/yaks_main.py'),
-        matrix=ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS,
         deps=[
             '//core/optview',  # TODO: remove this dep
             '//core/runtime.asdl',
@@ -40,6 +39,10 @@ def NinjaGraph(ru):
             '//mycpp/runtime',
             '//yaks/yaks.asdl',
         ])
+
+    mycpp_bin(ru,
+              '//yaks/yaks_main.mycpp',
+              matrix=ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS)
 
     n.newline()
 

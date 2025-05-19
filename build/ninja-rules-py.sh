@@ -60,9 +60,9 @@ main-wrapper() {
 
   if test -n "$declare"; then
     # forward declaration
-    echo '#include "mycpp/gc_list.h"'
+    echo '#include "mycpp/runtime.h"'
     echo "namespace $main_namespace {"
-    echo 'int main(List<BigStr*> argv);'
+    echo 'int main(List<BigStr*>* argv);'
     echo '}'
   fi
 
