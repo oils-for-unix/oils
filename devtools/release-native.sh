@@ -52,7 +52,6 @@ tarball-manifest() {
 make-tar() {
   local app_name=${1:-'oils-for-unix'}
   local sh_name=${2:-'_build/oils.sh'}
-  local do_souffle=${3:-T}
 
   local tar=_release/${app_name}.tar
 
@@ -62,12 +61,14 @@ make-tar() {
   local source_name=${app_name//'-'/'_'}  # oils_for_unix
   gen-shell-build $source_name $sh_name
 
-  # Build source code
-  ninja _gen/bin/$source_name.mycpp.cc
-
-  if test -n "$do_souffle"; then
-    ninja _gen/bin/$source_name.mycpp-souffle.cc
-  fi
+  case $app_name in
+    oils-for-unix)
+      ninja _bin/cxx-asan/oils-for-unix _bin/cxx-asan/mycpp-souffle/oils-for-unix
+      ;;
+    *)
+      ninja _bin/cxx-asan/bin/$app_name.{mycpp,mycpp-souffle}
+      ;;
+  esac
 
   local sed_expr="s,^,${app_name}-${OILS_VERSION}/,"
   tarball-manifest $source_name \

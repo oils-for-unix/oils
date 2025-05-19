@@ -155,25 +155,34 @@ def NinjaGraph(ru):
     oils_py_inputs = ninja_lib.TryDynamicDeps('bin/oils_for_unix.py')
 
     # Main oils-for-unix binary
-    mycpp_binary(
+    mycpp_library(
         ru,
         'bin/oils_for_unix.py',
         py_inputs=oils_py_inputs,
-        matrix=matrix,
-        # _bin/cxx-opt/oils-for-unix, NOT _bin/cxx-opt/bin/oils-for-unix
-        bin_path='oils-for-unix',
-        symlinks=oils_symlinks,
         deps=oils_deps,
-        preprocessed=True,
     )
     # Faster variant
-    # this could have been _bin/cxx-opt/oils-for-unix.mycpp-souffle?
-    mycpp_binary(
+    mycpp_library(
         ru,
         'bin/oils_for_unix.py',
         py_inputs=oils_py_inputs,
         translator='mycpp-souffle',
+        deps=oils_deps,
+    )
+
+    mycpp_bin(
+        ru,
+        '//bin/oils_for_unix.mycpp',
+        matrix=matrix,
+        # _bin/cxx-opt/oils-for-unix, NOT _bin/cxx-opt/bin/oils-for-unix
+        bin_path='oils-for-unix',
+        symlinks=oils_symlinks,
+        preprocessed=True,
+    )
+    mycpp_bin(
+        ru,
+        '//bin/oils_for_unix.mycpp-souffle',
+        matrix=matrix,
         bin_path='mycpp-souffle/oils-for-unix',
         symlinks=oils_symlinks,
-        deps=oils_deps,
     )

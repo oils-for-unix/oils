@@ -155,22 +155,30 @@ main() {
 
     objects = []
 
-    # Special case for souffle
+    # Filenames that depend on the translator
     in_out = [
         ('_gen/bin/%s.$translator.cc' % app_name,
          '_build/obj/$compiler-$variant-sh/_gen/bin/%s.$translator.o' %
+         app_name),
+        ('_gen/bin/%s.$translator-main.cc' % app_name,
+         '_build/obj/$compiler-$variant-sh/_gen/bin/%s.$translator-main.o' %
          app_name),
     ]
     for src in sorted(cc_sources):
         # e.g. _build/obj/cxx-dbg-sh/posix.o
         prefix, _ = os.path.splitext(src)
 
-        # Skip the one we started with
-        if prefix.startswith('_gen/bin/%s' % app_name):
+        # HACK to skip the special ones above
+        if re.match(r'.*\.mycpp.*\.cc$', src):
             continue
 
         obj = '_build/obj/$compiler-$variant-sh/%s.o' % prefix
         in_out.append((src, obj))
+
+    if 0:
+        from pprint import pformat
+        log('cc_sources = %s', pformat(cc_sources))
+        log('in_out = %s', pformat(in_out))
 
     bin_dir = '_bin/$compiler-$variant-sh/$translator'
     obj_dirs = sorted(set(os.path.dirname(obj) for _, obj in in_out))
@@ -190,7 +198,7 @@ main() {
         objects.append(obj_quoted)
 
         # Only fork one translation unit that we know to be slow
-        if re.match('.*oils_for_unix\..*\.cc', src):
+        if src.endswith('.$translator.cc'):
             # There should only be one forked translation unit
             # It can be turned off with OILS_PARALLEL_BUILD= _build/oils
             assert do_fork == ''
@@ -425,7 +433,8 @@ def main(argv):
     deps.WriteRules()
 
     # Collect sources for metrics, tarball, shell script
-    cc_sources = deps.SourcesForBinary('_gen/bin/%s.mycpp.cc' % app_name)
+    cc_sources = deps.SourcesForBinary('_gen/bin/%s.mycpp-main.cc' % app_name)
+    #log('cc_sources = %s', cc_sources)
 
     if 0:
         from pprint import pprint
@@ -446,8 +455,11 @@ def main(argv):
         ShellFunctions(app_name, cc_sources, sys.stdout, argv[0])
 
     elif action == 'tarball-manifest':
-        h = deps.HeadersForBinary('_gen/bin/%s.mycpp.cc' % app_name)
-        souffle = ['_gen/bin/%s.mycpp-souffle.cc' % app_name]
+        h = deps.HeadersForBinary('_gen/bin/%s.mycpp-main.cc' % app_name)
+        souffle = [
+            '_gen/bin/%s.mycpp-souffle.cc' % app_name,
+            '_gen/bin/%s.mycpp-souffle-main.cc' % app_name,
+        ]
         TarballManifest(souffle + cc_sources + h)
 
     else:
