@@ -85,6 +85,24 @@ def NinjaGraph(ru):
     # library //bin/hello.main
     main_library(ru, 'bin/hello.py')
 
+    if False:
+        # how to specify the output binary?
+        # _bin/*/bin/hello.mycpp
+        # _bin/*/bin/hello.mycpp-souffle
+        ru.cc_binary(None,
+                     deps=[
+                         '//bin/hello.main',
+                         '//bin/hello.mycpp',
+                     ],
+                     matrix=ninja_lib.COMPILERS_VARIANTS)
+
+        ru.cc_binary(None,
+                     deps=[
+                         '//bin/hello.main',
+                         '//bin/hello.mycpp-souffle',
+                     ],
+                     matrix=ninja_lib.COMPILERS_VARIANTS)
+
     mycpp_binary(
         ru,
         'bin/hello.py',

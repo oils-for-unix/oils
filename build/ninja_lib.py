@@ -105,6 +105,37 @@ CcBinary = collections.namedtuple(
     'main_cc symlinks implicit deps matrix phony_prefix preprocessed bin_path')
 
 
+def _TransitiveClosure(cc_libs, name, deps, unique_out):
+    """
+    Args:
+      name: for error messages
+    """
+    for label in deps:
+        if label in unique_out:
+            continue
+        unique_out.add(label)
+
+        try:
+            cc_lib = cc_libs[label]
+        except KeyError:
+            raise RuntimeError('Undefined label %s in %r' % (label, name))
+
+        _TransitiveClosure(cc_libs, cc_lib.label, cc_lib.deps, unique_out)
+
+
+def _CalculateDeps(cc_libs, cc_rule, debug_name=''):
+    """ Compile actions for cc_library() also need implicit deps on generated headers"""
+    out_deps = set()
+    _TransitiveClosure(cc_libs, debug_name, cc_rule.deps, out_deps)
+    unique_deps = sorted(out_deps)
+
+    implicit = list(cc_rule.implicit)  # copy
+    for label in unique_deps:
+        cc_lib = cc_libs[label]
+        implicit.extend(cc_lib.generated_headers)
+    return unique_deps, implicit
+
+
 class CcLibrary(object):
     """
     Life cycle:
@@ -131,22 +162,11 @@ class CcLibrary(object):
         self.obj_lookup = {}  # config -> list of objects
         self.preprocessed_lookup = {}  # config -> boolean
 
-    def _CalculateImplicit(self, ru):
-        """ Compile actions for cc_library() also need implicit deps on generated headers"""
-
-        out_deps = set()
-        ru._TransitiveClosure(self.label, self.deps, out_deps)
-        unique_deps = sorted(out_deps)
-
-        implicit = list(self.implicit)  # copy
-        for label in unique_deps:
-            cc_lib = ru.cc_libs[label]
-            implicit.extend(cc_lib.generated_headers)
-        return implicit
-
     def MaybeWrite(self, ru, config, preprocessed):
         if config not in self.obj_lookup:  # already written by some other cc_binary()
-            implicit = self._CalculateImplicit(ru)
+            _, implicit = _CalculateDeps(ru.cc_libs,
+                                         self,
+                                         debug_name=self.label)
 
             objects = []
             for src in self.srcs:
@@ -157,7 +177,9 @@ class CcLibrary(object):
             self.obj_lookup[config] = objects
 
         if preprocessed and config not in self.preprocessed_lookup:
-            implicit = self._CalculateImplicit(ru)
+            _, implicit = _CalculateDeps(ru.cc_libs,
+                                         self,
+                                         debug_name=self.label)
 
             for src in self.srcs:
                 # no output needed
@@ -223,6 +245,10 @@ class Rules(object):
                 self.n.newline()
 
     def WriteRules(self):
+        """Write cc_binary() rules, which DEMANDS cc_library() rules
+
+        All with respect to a given configuration.
+        """
         for cc_bin in self.cc_bins:
             self.WriteCcBinary(cc_bin)
 
@@ -321,23 +347,6 @@ class Rules(object):
         self.cc_libs[label] = CcLibrary(label, srcs, implicit, deps, headers,
                                         generated_headers)
 
-    def _TransitiveClosure(self, name, deps, unique_out):
-        """
-        Args:
-          name: for error messages
-        """
-        for label in deps:
-            if label in unique_out:
-                continue
-            unique_out.add(label)
-
-            try:
-                cc_lib = self.cc_libs[label]
-            except KeyError:
-                raise RuntimeError('Undefined label %s in %s' % (label, name))
-
-            self._TransitiveClosure(cc_lib.label, cc_lib.deps, unique_out)
-
     def cc_binary(
             self,
             main_cc,  # e.g. cpp/core_test.cc
@@ -374,27 +383,22 @@ class Rules(object):
     def WriteCcBinary(self, cc_bin):
         c = cc_bin
 
-        out_deps = set()
-        self._TransitiveClosure(c.main_cc, c.deps, out_deps)
-        unique_deps = sorted(out_deps)
+        unique_deps, compile_imp = _CalculateDeps(self.cc_libs,
+                                                  cc_bin,
+                                                  debug_name=cc_bin.main_cc)
+        # compile actions of binaries that have ASDL label deps need the
+        # generated header as implicit dep
 
         # to compute tarball manifest, with SourcesForBinary()
         self.cc_binary_deps[c.main_cc] = unique_deps
-
-        compile_imp = list(c.implicit)
-        for label in unique_deps:
-            cc_lib = self.cc_libs[label]  # should exit
-            # compile actions of binaries that have ASDL label deps need the
-            # generated header as implicit dep
-            compile_imp.extend(cc_lib.generated_headers)
 
         for config in c.matrix:
             if len(config) == 2:
                 config = (config[0], config[1], None)
 
+            # Write cc_library() rules LAZILY
             for label in unique_deps:
                 cc_lib = self.cc_libs[label]  # should exit
-
                 cc_lib.MaybeWrite(self, config, c.preprocessed)
 
             # Compile main object, maybe with IMPLICIT headers deps
@@ -415,6 +419,7 @@ class Rules(object):
             config_dir = ConfigDir(config)
             bin_dir = '_bin/%s' % config_dir  # e.g. _bin/cxx-asan
 
+            # Allow user to override bin_path
             if c.bin_path:
                 # e.g. _bin/cxx-dbg/oils_for_unix
                 bin_to_link = '%s/%s' % (bin_dir, c.bin_path)
@@ -442,6 +447,7 @@ class Rules(object):
                                         ('new', symlink)])
                 self.n.newline()
 
+            # Maybe add this cc_binary to a group
             if c.phony_prefix:
                 key = '%s-%s' % (c.phony_prefix, config_dir)
                 if key not in self.phony:
