@@ -452,9 +452,9 @@ def main(argv):
     elif action == 'tarball-manifest':
         h = deps.HeadersForBinary('_gen/bin/%s.mycpp-main.cc' % app_name)
         souffle = [
-                '_gen/bin/%s.mycpp-souffle.cc' % app_name,
-                '_gen/bin/%s.mycpp-souffle-main.cc' % app_name,
-                ]
+            '_gen/bin/%s.mycpp-souffle.cc' % app_name,
+            '_gen/bin/%s.mycpp-souffle-main.cc' % app_name,
+        ]
         TarballManifest(souffle + cc_sources + h)
 
     else:

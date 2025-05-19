@@ -170,15 +170,19 @@ def NinjaGraph(ru):
         deps=oils_deps,
     )
 
-    mycpp_bin(ru, '//bin/oils_for_unix.mycpp',
+    mycpp_bin(
+        ru,
+        '//bin/oils_for_unix.mycpp',
         matrix=matrix,
         # _bin/cxx-opt/oils-for-unix, NOT _bin/cxx-opt/bin/oils-for-unix
         bin_path='oils-for-unix',
         symlinks=oils_symlinks,
         preprocessed=True,
-              )
-    mycpp_bin(ru, '//bin/oils_for_unix.mycpp-souffle',
+    )
+    mycpp_bin(
+        ru,
+        '//bin/oils_for_unix.mycpp-souffle',
         matrix=matrix,
         bin_path='mycpp-souffle/oils-for-unix',
         symlinks=oils_symlinks,
-        )
+    )
