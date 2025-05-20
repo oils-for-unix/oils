@@ -1,6 +1,7 @@
 #include "mycpp/mark_sweep_heap.h"
 
 #include <inttypes.h>  // PRId64
+#include <stdio.h>     // dprintf()
 #include <stdlib.h>    // getenv()
 #include <string.h>    // strlen()
 #include <sys/time.h>  // gettimeofday()
@@ -328,39 +329,44 @@ int MarkSweepHeap::Collect() {
 }
 
 void MarkSweepHeap::PrintShortStats() {
-  #ifndef NO_POOL_ALLOC
+  // TODO: should use feature detection of dprintf
+  #ifndef OILS_WIN32
+    #ifndef NO_POOL_ALLOC
   int fd = 2;
   dprintf(fd, "  num allocated    = %10d\n",
           num_allocated_ + pool1_.num_allocated() + pool2_.num_allocated());
   dprintf(
       fd, "bytes allocated    = %10" PRId64 "\n",
       bytes_allocated_ + pool1_.bytes_allocated() + pool2_.bytes_allocated());
+    #endif
   #endif
 }
 
 void MarkSweepHeap::PrintStats(int fd) {
+  // TODO: should use feature detection of dprintf
+  #ifndef OILS_WIN32
   dprintf(fd, "  num live         = %10d\n", num_live());
   // max survived_ can be less than num_live(), because leave off the last GC
   dprintf(fd, "  max survived     = %10d\n", max_survived_);
   dprintf(fd, "\n");
 
-  #ifndef NO_POOL_ALLOC
+    #ifndef NO_POOL_ALLOC
   dprintf(fd, "  num allocated    = %10d\n",
           num_allocated_ + pool1_.num_allocated() + pool2_.num_allocated());
   dprintf(fd, "  num in heap      = %10d\n", num_allocated_);
-  #else
+    #else
   dprintf(fd, "  num allocated    = %10d\n", num_allocated_);
-  #endif
+    #endif
 
-  #ifndef NO_POOL_ALLOC
+    #ifndef NO_POOL_ALLOC
   dprintf(fd, "  num in pool 1    = %10d\n", pool1_.num_allocated());
   dprintf(fd, "  num in pool 2    = %10d\n", pool2_.num_allocated());
   dprintf(
       fd, "bytes allocated    = %10" PRId64 "\n",
       bytes_allocated_ + pool1_.bytes_allocated() + pool2_.bytes_allocated());
-  #else
+    #else
   dprintf(fd, "bytes allocated    = %10" PRId64 "\n", bytes_allocated_);
-  #endif
+    #endif
 
   dprintf(fd, "\n");
   dprintf(fd, "  num gc points    = %10d\n", num_gc_points_);
@@ -376,6 +382,7 @@ void MarkSweepHeap::PrintStats(int fd) {
           static_cast<int>(roots_.capacity()));
   dprintf(fd, " objs capacity     = %10d\n",
           static_cast<int>(live_objs_.capacity()));
+  #endif
 }
 
 // Cleanup at the end of main() to remain ASAN-safe

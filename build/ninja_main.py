@@ -89,6 +89,52 @@ def TarballManifest(some_files):
         print(name)
 
 
+def _WinPath(s):
+    return s.replace('/', '\\')
+
+
+def BatchFunctions(app_name, cc_sources, f, argv0):
+    objects = []
+    in_out = []
+    for src in sorted(cc_sources):
+        # e.g. _build/obj/cxx-dbg-sh/posix.o
+        prefix, _ = os.path.splitext(src)
+
+        #obj = '_build/obj/$compiler-$variant-sh/%s.o' % prefix
+        obj = '_build/obj/cxx-dbg/%s.o' % prefix
+        in_out.append((src, obj))
+
+    obj_dirs = sorted(set(os.path.dirname(obj) for _, obj in in_out))
+    for d in obj_dirs:
+        print('mkdir %s' % _WinPath(d), file=f)
+
+    print('', file=f)
+
+    for i, (src, obj) in enumerate(in_out):
+        #obj_quoted = '"%s"' % obj
+        objects.append(_WinPath(obj))
+
+        # TODO: OILS_WIN32 is a hack, should have ./configure for dprintf()
+        print('g++ -I . -D OILS_WIN32 -D MARK_SWEEP -c -o %s %s' %
+              (_WinPath(obj), _WinPath(src)),
+              file=f)
+        print('if %ERRORLEVEL% neq 0 goto :error', file=f)
+
+    print('', file=f)
+
+    # Link
+
+    out_dir = '_bin/cxx-dbg'
+    out = '%s/%s' % (out_dir, app_name)
+    print('mkdir %s' % _WinPath(out_dir), file=f)
+    print('g++ -o %s %s' % (_WinPath(out), ' '.join(objects)), file=f)
+
+    print('', file=f)
+    print(':error', file=f)
+    print('   echo ERROR %ERRORLEVEL%', file=f)
+    print('   exit /b %ERRORLEVEL%', file=f)
+
+
 def ShellFunctions(app_name, cc_sources, f, argv0):
     """
     Generate a shell fragment that invokes the same function that build.ninja
@@ -422,9 +468,10 @@ def main(argv):
     # Materialize all the cc_binary() rules
     deps.WriteRules()
 
+    main_cc = '_gen/bin/%s.mycpp-main.cc' % app_name
+
     # Collect sources for metrics, tarball, shell script
-    cc_sources = deps.SourcesForBinary('_gen/bin/%s.mycpp-main.cc' % app_name)
-    #log('cc_sources = %s', cc_sources)
+    cc_sources = deps.SourcesForBinary(main_cc)
 
     if 0:
         from pprint import pprint
@@ -444,18 +491,27 @@ def main(argv):
     elif action == 'shell':
         ShellFunctions(app_name, cc_sources, sys.stdout, argv[0])
 
+    elif action == 'batch':
+        # TODO: write batch file
+        BatchFunctions(app_name, cc_sources, sys.stdout, argv[0])
+
     elif action == 'tarball-manifest':
-        names = list(cc_sources)
-        names.extend(
-            deps.HeadersForBinary('_gen/bin/%s.mycpp-main.cc' % app_name))
-        names.extend([
-            '_gen/bin/%s.mycpp-souffle.cc' % app_name,
-            '_gen/bin/%s.mycpp-souffle-main.cc' % app_name,
-        ])
+        names = list(cc_sources)  # copy
+
+        h = deps.HeadersForBinary(main_cc)
+        names.extend(h)
+
         if app_name == 'oils_for_unix':
+            # TODO: SourcesForBinary() and HeadersForBinary can take MULTIPLE
+            # -main.cc
+            names.extend([
+                '_gen/bin/%s.mycpp-souffle.cc' % app_name,
+                '_gen/bin/%s.mycpp-souffle-main.cc' % app_name,
+            ])
             names.append('_build/oils.sh')
         else:
             names.append('_build/%s.sh' % app_name)
+            names.append('_build/%s.bat' % app_name)
 
         TarballManifest(names)
 
@@ -463,8 +519,7 @@ def main(argv):
         for name in cc_sources:
             print(name)
         print('---')
-        h_sources = deps.HeadersForBinary('_gen/bin/%s.mycpp-main.cc' %
-                                          app_name)
+        h_sources = deps.HeadersForBinary(main_cc)
         for name in h_sources:
             print(name)
 

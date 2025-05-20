@@ -4,7 +4,8 @@
 #include <stdio.h>  // required for readline/readline.h (man readline)
 
 #include "_build/detected-cpp-config.h"
-#include "mycpp/runtime.h"
+#include "mycpp/gc_list.h"
+#include "mycpp/gc_str.h"
 #ifdef HAVE_READLINE
   #include "cpp/frontend_pyreadline.h"
 #endif

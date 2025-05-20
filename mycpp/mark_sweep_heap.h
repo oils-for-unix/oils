@@ -87,6 +87,8 @@ class MarkSet {
   }
 
   void Debug() {
+    // TODO: should use feature detection of dprintf
+#ifndef OILS_WIN32
     int n = bits_.size();
     dprintf(2, "[ ");
     for (int i = 0; i < n; ++i) {
@@ -103,6 +105,7 @@ class MarkSet {
       }
     }
     dprintf(2, " ] (%d bits set)\n", num_bits);
+#endif
   }
 
   std::vector<uint8_t> bits_;  // bit vector indexed by obj_id

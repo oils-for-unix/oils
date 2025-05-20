@@ -82,7 +82,13 @@ int main() {
 
 }
 
+test-mkdir() {
+  # need to use \ separators
+  wine cmd /c "mkdir $DIR\\win\\32\\test"
+}
+
 build-create-process() {
+  mkdir -p $DIR
   wine cmd /c "g++ win32/create-process.c -o $DIR/create-process.exe"
 }
 
@@ -129,6 +135,41 @@ extract-tar() {
 }
 
 test-mycpp-hello() {
+  extract-tar
+
+  # Uh why are error messages missing filenames?
+
+  time wine "$BASH" -c '
+echo "hi from bash"
+
+tar_dir=$1
+
+cd $tar_dir/hello-0.29.0
+
+ls 
+
+touch _build/detected-cpp-config.h
+
+_build/hello.bat
+
+' dummy $WIN32_TAR_DIR
+
+  run-hello
+}
+
+run-hello() {
+  local hello=$WIN32_TAR_DIR/hello-0.29.0/_bin/cxx-dbg/hello.exe
+
+  set +o errexit
+
+  time wine $hello
+  echo status=$?
+
+  time wine $hello a b c
+  echo status=$?
+}
+
+OLD-test-mycpp-hello() {
   #wine cmd /c 'cd _tmp/hello-tar-test/hello-0.29.0; bash.exe -c "echo bash"'
 
   extract-tar
@@ -204,7 +245,7 @@ echo status=$?
 '
 }
 
-test-mkdir() {
+OLD-test-mkdir() {
   #wine cmd /c 'cd _tmp/hello-tar-test/hello-0.29.0; bash.exe -c "echo bash"'
 
   chmod +x _tmp/hello-tar-test/hello-0.29.0/_build/mkdir-test.sh

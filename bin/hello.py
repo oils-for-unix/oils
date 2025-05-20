@@ -10,4 +10,7 @@ def main(argv):
     # type: (List[str]) -> int
 
     #print('hi')
-    return len(argv)
+    if len(argv) == 1:
+        return 0  # no args, success
+    else:
+        return 42
