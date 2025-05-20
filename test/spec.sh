@@ -154,6 +154,10 @@ builtin-history() {
   test/spec-py.sh run-file builtin-history "$@"
 }
 
+builtin-kill() {
+  test/spec-py.sh run-file builtin-kill "$@"
+}
+
 builtin-meta-assign() {
   test/spec-py.sh run-file builtin-meta-assign "$@"
 }
@@ -172,10 +176,6 @@ builtin-printf() {
 
 builtin-process() {
   test/spec-py.sh run-file builtin-process "$@"
-}
-
-builtin-kill() {
-  test/spec-py.sh run-file builtin-kill "$@"
 }
 
 builtin-read() {
@@ -392,6 +392,10 @@ redirect-multi() {
 
 redirect() {
   test/spec-py.sh run-file redirect "$@"
+}
+
+redir-order() {
+  test/spec-py.sh run-file redir-order "$@"
 }
 
 regex() {
