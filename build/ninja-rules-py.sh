@@ -122,7 +122,7 @@ write-main() {
       main-unix $main_namespace T
       ;;
     win32) 
-      main-32 $main_namespace T
+      main-win32 $main_namespace T
       ;;
     example-unix)
       main-example-unix $main_namespace T

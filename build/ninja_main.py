@@ -35,11 +35,11 @@ from vendor import ninja_syntax
 BUILD_NINJA = 'build.ninja'
 
 
-def TarballManifest(cc_h_files):
+def TarballManifest(some_files):
     names = []
 
     # Code we know about
-    names.extend(cc_h_files)
+    names.extend(some_files)
 
     names.extend([
         # Text
@@ -59,9 +59,6 @@ def TarballManifest(cc_h_files):
         'build/dev-shell.sh',
         'build/ninja-rules-cpp.sh',
 
-        # Generated
-        '_build/oils.sh',
-
         # These are in build/py.sh, not Ninja.  Should probably put them in Ninja.
         #'_gen/frontend/help_meta.h',
         '_gen/frontend/match.re2c.h',
@@ -71,13 +68,6 @@ def TarballManifest(cc_h_files):
 
     # For configure
     names.extend(glob('build/detect-*.c'))
-
-    # TODO: crawl headers
-    # We can now use the headers=[] attribute
-    names.extend(glob('bin/oils_for_unix_preamble.h'))
-
-    # TODO: Parameterize by app
-    names.extend(glob('bin/hello_preamble.h'))
 
     names.extend(glob('cpp/*.h'))
     names.extend(glob('mycpp/*.h'))
@@ -455,12 +445,28 @@ def main(argv):
         ShellFunctions(app_name, cc_sources, sys.stdout, argv[0])
 
     elif action == 'tarball-manifest':
-        h = deps.HeadersForBinary('_gen/bin/%s.mycpp-main.cc' % app_name)
-        souffle = [
+        names = list(cc_sources)
+        names.extend(
+            deps.HeadersForBinary('_gen/bin/%s.mycpp-main.cc' % app_name))
+        names.extend([
             '_gen/bin/%s.mycpp-souffle.cc' % app_name,
             '_gen/bin/%s.mycpp-souffle-main.cc' % app_name,
-        ]
-        TarballManifest(souffle + cc_sources + h)
+        ])
+        if app_name == 'oils_for_unix':
+            names.append('_build/oils.sh')
+        else:
+            names.append('_build/%s.sh' % app_name)
+
+        TarballManifest(names)
+
+    elif action == 'app-deps':
+        for name in cc_sources:
+            print(name)
+        print('---')
+        h_sources = deps.HeadersForBinary('_gen/bin/%s.mycpp-main.cc' %
+                                          app_name)
+        for name in h_sources:
+            print(name)
 
     else:
         raise RuntimeError('Invalid action %r' % action)

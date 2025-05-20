@@ -640,9 +640,13 @@ def mycpp_library(ru,
     py_inputs = py_inputs or [py_main]  # if not specified, it's a single file
     deps = deps or []
 
+    headers = []
     if preamble is None:
         p = py_rel_path + '_preamble.h'
-        preamble = p if os.path.exists(p) else "''"  # Ninja empty string!
+        if os.path.exists(p):
+            preamble = p
+    if preamble:
+        headers.append(preamble)
 
     n = ru.n
 
@@ -659,12 +663,14 @@ def mycpp_library(ru,
         # code.  But don't pass it on the command line.
         implicit=[translator_shwrap],
         # examples/parse uses pyext/fastfunc.pyi
-        variables=[('mypypath', mypy_path), ('preamble_path', preamble)])
+        variables=[('mypypath', mypy_path), ('preamble_path', preamble or
+                                             "''")])
 
     ru.cc_library(
         # e.g. //bin/oils_for_unix.mycpp-souffle
         '//%s.%s' % (py_rel_path, translator),
         srcs=[bundle_cc],
+        headers=headers,
         deps=deps,
     )
 
