@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 ## compare_shells: dash bash mksh zsh
 
 #### exec builtin 
@@ -588,4 +588,25 @@ hard OK
 ## END
 
 ## BUG dash/mksh STDOUT:
+## END
+
+#### ulimit -n limits file descriptors
+
+# OSH bug
+# https://oilshell.zulipchat.com/#narrow/channel/502349-osh/topic/alpine.20build.20failures.20-.20make.20-.20ulimit.20-n.2064/with/519691301
+
+$SH -c 'ulimit -n 64; echo hi >out'
+echo status=$?
+
+$SH -c 'ulimit -n 0; echo hi >out'
+echo status=$?
+
+## STDOUT:
+status=0
+status=1
+## END
+
+## OK dash STDOUT:
+status=0
+status=2
 ## END

@@ -242,6 +242,10 @@ dbracket() {
   test/spec-py.sh run-file dbracket "$@"
 }
 
+divergence() {
+  test/spec-py.sh run-file divergence "$@"
+}
+
 dparen() {
   test/spec-py.sh run-file dparen "$@"
 }
