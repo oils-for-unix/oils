@@ -1,0 +1,135 @@
+const __provide__ = :| sh shell |
+
+# Issues for quoting:
+#
+# 1. What is the alphabet we're quoting to?
+#    - Output can be "all bytes", "all unicode strings", or "ASCII"
+# 2. Start with a simple algorithm to quote everything
+#    - POSIX shell may take ' to ''\'''
+# 3. Heuristic that may avoid quotes, to make it more readable
+#    - But really it should be \'
+#   - If the ' appears at the beginning or the end, we could have a different
+#     algorithm.  Or we could strip leading and trailing ''
+# 4. Are there any byte strings / unicode strings that can't be quoted?
+#    - e.g. NUL bytes?
+#    - for JSON/JS, binary strings?  Only Unicode strings can be encoded.
+#
+# Builtins:
+#   toJson() toJson8() 
+#   toJ8Line() - does the "maybe unquoted" logic
+#
+# Related functions:
+#   encode.base{16,32,64} - Crockford has a base32
+#   decode.base{16,32,64}
+#   Also base85, and maybe base58 base36
+#
+# In Python: bin() oct() hex() int(i, 9) and %o %x (there is no %b)
+
+func sh(s) {
+  ### Quote POSIX sh string
+
+  # replace ' with sequence ' \' '
+  # Note: the \\ is hard to read - '' doesn't help
+  return ("'" ++ s.replace("'", "'\\''") ++ "'")
+}
+
+func shell(s) {
+  ### Quote shell string, where bash and zsh style $'\n' is allowed
+
+  # Binding for j8_lite.MaybeShellEncode / ShellEncode
+  return (toJson(s))
+}
+
+#
+# Build Tools
+#
+
+func make(s) {
+  # double up $
+  return (s)
+}
+
+func ninja(s) {
+  # double up $
+  return (s)
+}
+
+# I don't know the rule here - uses \?
+func cmake(s) {
+  return (s)
+}
+
+#
+# Tables, Objects, Documents
+#
+
+func csv(s) {
+  # double up " etc.
+  return (s)
+}
+
+func sql(s) {
+  # double up ' etc.
+  return (s)
+}
+
+# quote.json is just toJson()
+
+func html(s) {
+  ### Quote shell string, where bash and zsh style $'\n' is allowed
+
+  # Binding for j8_lite.MaybeShellEncode / ShellEncode
+  return (toJson(s))
+}
+
+#
+# Web
+#
+
+func urlParam(s) {
+  # urllib.quote
+  # 'foo bar %' -> 'foo+bar %AB'
+  return (toJson(s))
+}
+
+#
+# Programming Languages
+#
+
+# Python 2 or 3
+func py(s) {
+  return (s)
+}
+
+# C or C++
+# Can it be Unicode?
+func c(s) {
+  return (s)
+}
+
+# quote.js is just toJson() ?
+# But it can't handle binary strings?
+# We can make a table?
+
+
+#
+# Windows
+#
+
+# We want something that works everywhere -- it should never DOUBLE-ESCAPE, but
+# it can "unnecessarily" ESCAPE certain characters.
+
+# C runtime
+func win32_crt(s) {
+  return (s)
+}
+
+# win32 cmd.exe batch files?
+func win32_cmd(s) {
+  return (s)
+}
+
+# batch different than cmd.exe?
+func win32_batch(s) {
+  return (s)
+}

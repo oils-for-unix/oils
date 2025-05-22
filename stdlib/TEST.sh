@@ -38,16 +38,18 @@ test-byo-protocol() {
   # TODO: test file with no tests
 }
 
+ysh-test() {
+  local name=$1
+  devtools/byo.sh test $YSH stdlib/ysh/$name-test.ysh
+}
+
 soil-run() {
   test-byo-protocol
 
-  devtools/byo.sh test $YSH stdlib/ysh/def-test.ysh
-  #return
-  devtools/byo.sh test $YSH stdlib/ysh/args-test.ysh
-  devtools/byo.sh test $YSH stdlib/ysh/list-test.ysh
-  devtools/byo.sh test $YSH stdlib/ysh/math-test.ysh
+  for name in def args list math quote yblocks; do
+    ysh-test $name
+  done
 
-  devtools/byo.sh test $YSH stdlib/ysh/yblocks-test.ysh 
   devtools/byo.sh test $YSH stdlib/ysh/stream.ysh 
   devtools/byo.sh test $YSH stdlib/ysh/table.ysh 
 
