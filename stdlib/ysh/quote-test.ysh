@@ -18,11 +18,21 @@ proc test-shell {
   # Note: the \\ is hard to read - '' doesn't help
   #assert [sq_expected === quote.shell("'")]
   #assert ["" === quote.shell(b'\n')]
-
 }
 
+proc test-ninja {
+  assert ['dir/my-file.txt' === quote.ninja('dir/my-file.txt')]
 
-const REAL_CASES = [
+  assert ['$$' === quote.ninja('$')]
+  assert ['$ ' === quote.ninja(' ')]
+  assert ['$:' === quote.ninja(':')]
+  try {
+    call quote.ninja(u'\n')
+  }
+  assert [10 === _error.code]
+}
+
+var REAL_CASES = [
   'Z',            # ASCII
   '',             # empty string
   # TODO: This should be explicitly disallowed
@@ -30,15 +40,27 @@ const REAL_CASES = [
   b'\y07',        # low unprintable byte
   b'\yff',        # high unprintable byte
 
+  # whitespace
+  ' ',   
+  u'\t',
+  # Ninja doesn't allow newlines in filenames
+  #u'\r',
+  #u'\n',
+
+  # JSON stuff
+  u'\b',
+  u'\f',
+  # Note: JSON has no \v
+
   # Common metacharacters
-  ' ',   # space
   '"',
   "'",
-  r'\',  # C-style, JSON
-  '$',   # make/ninja
-  '&',   # HTML
-  '%',   # URL
-  '^',   # line continuation for Windows batch
+  r'\',   # C-style, JSON
+  '$',    # make/ninja
+  '&',    # HTML
+  '%',    # URL
+  '^',    # line continuation for Windows batch
+  ':',    # ninja character
 
   u'\u{3bc}',     # UTF-8 2 bytes - mu 
   u'\u{4e09}',    # UTF-8 3 bytes - Chinese 3
@@ -46,6 +68,9 @@ const REAL_CASES = [
 
   # surrogate range?  May be round tripped as byte strings
 ]
+
+#var REAL_CASES = [ 'a', u'\n', 'b' ]
+
 
 const REAL_JOINED = join(REAL_CASES, '') ++ u'\n'
 const REAL_JOINED_SPACE = join(REAL_CASES, ' ') ++ u'\n'  # for shell
@@ -107,6 +132,100 @@ proc test-round-trip-js {
   = r.stdout
   assert [REAL_JOINED_SPACE === r.stdout]
 }
+
+proc test-round-trip-ninja-shell {
+  # TODO: our test framework needs a temp dir
+  var dir = '_tmp/quote-test'
+  mkdir -p $dir
+  cd $dir
+
+  var parts = []
+  for s in (REAL_CASES) {
+    var s2 = quote.ninja(s)
+    # now quote it again
+    var s3 = quote.sh(s2)
+    call parts->append(s3)
+  }
+
+  # Here we are testing the shell + Ninja context.
+  # Can we test just the Ninja context?  By generating a file with a weird
+  # name?
+
+  echo """
+  rule testrule
+    command = echo $[join(parts, ' ')] > \$out
+  build my-out: testrule my-in
+  """ > build.ninja
+
+  touch my-in
+
+  # We can see the shell invocation
+  # It doesn't preserve newlines
+  # execve("/bin/sh", ["/bin/sh", "-c", "echo 'a' '' 'b' > my-out"]
+
+  #strace -ff ninja my-out
+  ninja my-out
+
+  yb-capture (&r) {
+    # Hm bash says: cannot execute binary file!
+
+    # The \0 byte is not round trippable in /bin/sh
+    # So we should not allow it
+    # We should exclude it
+
+    cat my-out
+  }
+  = r.stdout
+  assert [REAL_JOINED_SPACE === r.stdout]
+}
+
+proc test-round-trip-ninja-only {
+  # TODO: our test framework needs a temp dir
+  var dir = '_tmp/quote-test'
+  mkdir -p $dir
+  cd $dir
+
+  var parts = []
+  for s in (REAL_CASES) {
+    var s2 = quote.ninja(s)
+    call parts->append(s2)
+  }
+
+  # Here we are testing the shell + Ninja context.
+  # Can we test just the Ninja context?  By generating a file with a weird
+  # name?
+
+  rm --verbose *
+
+  var filename = join(parts, '')
+  echo """
+  rule cp
+    command = cp \$in \$out
+  build $filename: cp my-in
+  default $filename
+  """ > weird-file.ninja
+
+  touch my-in
+
+  # We can see the shell invocation
+  # It doesn't preserve newlines
+  # execve("/bin/sh", ["/bin/sh", "-c", "echo 'a' '' 'b' > my-out"]
+
+  #strace -ff ninja my-out
+  ninja -f weird-file.ninja
+
+  yb-capture (&r) {
+    python -c '
+import os
+files = [n for n in os.listdir(".") if n not in ["weird-file.ninja", "my-in"]]
+print(files[0])
+    '
+  }
+  = r.stdout
+  assert [REAL_JOINED === r.stdout]
+}
+
+
 
 # Note: the \\ is hard to read - '' doesn't help
 const sq_expected = "''\\'''" 
