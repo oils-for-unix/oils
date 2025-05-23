@@ -215,7 +215,8 @@ proc test-round-trip-ninja-only {
   ninja -f weird-file.ninja
 
   yb-capture (&r) {
-    python -c '
+    # python2 doesn't mangle filenames
+    python2 -c '
 import os
 files = [n for n in os.listdir(".") if n not in ["weird-file.ninja", "my-in"]]
 print(files[0])
