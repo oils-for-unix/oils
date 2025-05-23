@@ -157,6 +157,8 @@ run-tests() {
     die "Expected argv to run"
   fi
 
+  #echo "*** ARGS $@"
+
   # Set FLAG_* and ARGV
   parse-flags-for-test "$@"
 
@@ -192,7 +194,13 @@ run-tests() {
   local i=0
   local status
 
+  #echo "*** FLAG_test_filter=$FLAG_test_filter"
+
   while read -r test_name; do
+    if test -n "$FLAG_test_filter" && ! [[ $test_name =~ "$FLAG_test_filter" ]]; then
+      #echo "Skipping $test_name"
+      continue
+    fi
 
     echo "${TAB}${test_name}"
 

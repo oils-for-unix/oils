@@ -38,9 +38,15 @@ test-byo-protocol() {
   # TODO: test file with no tests
 }
 
+test-quote() {
+  local name=quote
+  devtools/byo.sh test --test-filter 'make' $YSH stdlib/ysh/$name-test.ysh
+}
+
 ysh-test() {
   local name=$1
-  devtools/byo.sh test $YSH stdlib/ysh/$name-test.ysh
+  shift
+  devtools/byo.sh test $YSH stdlib/ysh/$name-test.ysh "$@"
 }
 
 soil-run() {

@@ -32,6 +32,29 @@ proc test-ninja {
   assert [10 === _error.code]
 }
 
+proc test-make {
+  assert ['dir/my-file.txt' === quote.make('dir/my-file.txt')]
+
+  # https://www.cmcrossroads.com/article/gnu-make-escaping-walk-wild-side
+
+  # weird special case
+  assert ['$$' === quote.make('$')]
+
+  # % appears in 3 places, esacped by \
+  assert [r'\%' === quote.make('%')]
+  assert [r'\\' === quote.make(r'\')]
+
+  assert [r'\[' === quote.make('[')]
+  assert [r'\]' === quote.make(']')]
+  assert [r'\*' === quote.make('*')]
+  assert [r'\?' === quote.make('?')]
+
+  try {
+    call quote.make(u'\n')
+  }
+  assert [10 === _error.code]
+}
+
 var REAL_CASES = [
   'Z',            # ASCII
   '',             # empty string
@@ -61,6 +84,7 @@ var REAL_CASES = [
   '%',    # URL
   '^',    # line continuation for Windows batch
   ':',    # ninja character
+  #'#',    # comment character - Ninja has no way to escape!
 
   u'\u{3bc}',     # UTF-8 2 bytes - mu 
   u'\u{4e09}',    # UTF-8 3 bytes - Chinese 3

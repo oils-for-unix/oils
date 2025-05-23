@@ -1,4 +1,4 @@
-const __provide__ = :| sh shell ninja |
+const __provide__ = :| sh shell ninja make |
 
 # Issues for quoting:
 #
@@ -44,7 +44,14 @@ func sh(s) {
 func shell(s) {
   ### Quote shell string, where bash and zsh style $'\n' is allowed
 
-  # Binding for j8_lite.MaybeShellEncode / ShellEncode
+  # TODO: Binding for j8_lite.MaybeShellEncode / ShellEncode
+  return (toJson(s))
+}
+
+func ysh(s) {
+  ### Quote YSH string as b'\n'
+
+  # TODO: Binding for j8_lite.YshEncode(unquoted_ok)
   return (toJson(s))
 }
 
@@ -53,16 +60,41 @@ func shell(s) {
 #
 
 func make(s) {
-  # double up $
-  return (s)
+  var out = []
+  var n = len(s)
+  for i in (0 ..< n) {
+    var ch = s[i]
+
+    case (ch) {
+      (\r) |
+      (\n) {
+        error "Can't quote newlines for Make?"
+      }
+      ('$') {
+        call out->append('$')
+        call out->append('$')
+      }
+      ('%') |
+      (r'\') |
+      # glob characters
+      ('[') | (']') | ('*') | ('?') {
+        call out->append(r'\')
+        call out->append(ch)
+      }
+      (else) {
+        call out->append(ch)
+      }
+    }
+  }
+  return (join(out, ''))
 }
 
 # https://ninja-build.org/manual.html#ref_lexer
 # $ escapes newline, space, : and $
 # and then the rest is interpreted by /bin/sh
 func ninja(s) {
-  var n = len(s)
   var out = []
+  var n = len(s)
   for i in (0 ..< n) {
     var ch = s[i]
 
@@ -78,6 +110,7 @@ func ninja(s) {
       }
       ('$') |
       (' ') |
+      #('#') |  # Ninja has no way to escape comments!
       (':') {
         call out->append('$')
         call out->append(ch)
