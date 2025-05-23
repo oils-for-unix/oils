@@ -195,7 +195,7 @@ proc test-round-trip-ninja-only {
   # Can we test just the Ninja context?  By generating a file with a weird
   # name?
 
-  rm --verbose *
+  rm -f --verbose *
 
   var filename = join(parts, '')
   echo """
