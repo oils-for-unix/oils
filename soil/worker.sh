@@ -156,7 +156,6 @@ error-catalog       doc/error-catalog.sh soil-run-py             -
 link-busybox-ash    test/spec-bin.sh link-busybox-ash            -
 osh-minimal         test/spec-py.sh osh-minimal                  _tmp/spec/osh-minimal/index.html
 headless            client/run.sh soil-run-py                    -
-stdlib-test         stdlib/TEST.sh soil-run                      -
 EOF
 }
 
@@ -280,11 +279,14 @@ EOF
 cpp-small-tasks() {
 
   # yaks could be moved to pea/ image once it has python2-dev
+  # Note: stdlib-test depends on 'ninja', so it's in cpp-small (formerly dev-minimal)
+
   cat <<EOF
 os-info          soil/diagnose.sh os-info    -
 dump-env         soil/diagnose.sh dump-env   -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
 py-unit          test/unit.sh all                      _test/py-unit/
+stdlib-test      stdlib/TEST.sh soil-run               -
 yaks             yaks/TEST.sh soil-run                 -
 pea              pea/TEST.sh run-tests                 -
 oils-cpp-smoke   build/native.sh soil-run              -

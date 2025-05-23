@@ -72,8 +72,8 @@ func ninja(s) {
       # - A file itself should not have a newline.
       # - It strips literal newlines out of shell commands.
       # So disallow it
-      (u'\r') |
-      (u'\n') {
+      (\r) |
+      (\n) {
         error "Can't quote newlines for Ninja"
       }
       ('$') |
@@ -146,7 +146,6 @@ func c(s) {
 # quote.js is just toJson() ?
 # But it can't handle binary strings?
 # We can make a table?
-
 
 #
 # Windows
