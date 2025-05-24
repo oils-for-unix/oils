@@ -5,19 +5,18 @@ readline_osh.py - Builtins that are dependent on GNU readline.
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.runtime_asdl import cmd_value
+from _devbuild.gen.runtime_asdl import cmd_value, scope_e
 from _devbuild.gen.syntax_asdl import loc
-from _devbuild.gen.value_asdl import value_e
-from core import pyutil
-from core import vm
+from _devbuild.gen.value_asdl import value, value_e, value_str
+from core import error, pyutil, state, vm
 from core.error import e_usage
-from frontend import flag_util
+from frontend import flag_util, location
 from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log
 from osh import cmd_eval
 
-from typing import Optional, Tuple, Any, TYPE_CHECKING
+from typing import Optional, Tuple, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from builtin.meta_oils import Eval
     from frontend.py_readline import Readline
@@ -49,12 +48,14 @@ class ctx_Keymap(object):
 class BindXCallback(object):
     """A callable we pass to readline for executing shell commands."""
 
-    def __init__(self, eval):
-        # type: (Eval) -> None
+    def __init__(self, eval, mem, errfmt):
+        # type: (Eval, Mem, ui.ErrorFormatter) -> None
         self.eval = eval
+        self.mem = mem
+        self.errfmt = errfmt
 
     def __call__(self, cmd, line_buffer, point):
-        # type: (str, str, int) -> Tuple[int, str, str]
+        # type: (str, str, int) -> Tuple[int, str, int]
         """Execute a shell command through the evaluator.
 
         Args:
@@ -62,33 +63,52 @@ class BindXCallback(object):
           line_buffer: The current line buffer
           point: The current cursor position
         """
-        print("Setting READLINE_LINE to: %s" % line_buffer)
-        print("Setting READLINE_POINT to: %s" % point)
-        print("Executing cmd: %s" % cmd)
 
-        # TODO: add READLINE_* env vars later
-        # assert isinstance(line_buffer, str)
-        # self.mem.SetNamed(location.LName("READLINE_LINE"),
-        #                  value.Str(line_buffer),
-        #                  scope_e.GlobalOnly,
-        #                  flags=SetExport)
+        # Set READLINE_* env vars so they're available in case the command uses them
+        state.ExportGlobalString(self.mem, "READLINE_LINE", line_buffer)
+        state.ExportGlobalString(self.mem, "READLINE_POINT", str(point))
 
         # TODO: refactor out shared code from Eval, cache parse tree?
 
         cmd_val = cmd_eval.MakeBuiltinArgv([cmd])
         status = self.eval.Run(cmd_val)
 
-        return (status, line_buffer, str(point))
+        # Retrieve READLINE_* env vars and compare for changes
+        readline_line = self._get_rl_env_var('READLINE_LINE')
+        readline_point = self._get_rl_env_var('READLINE_POINT')
+        post_line_buffer = readline_line if readline_line is not None else line_buffer
+        post_point = int(
+            readline_point) if readline_point is not None else point
+
+        self.mem.Unset(location.LName('READLINE_LINE'), scope_e.GlobalOnly)
+        self.mem.Unset(location.LName('READLINE_POINT'), scope_e.GlobalOnly)
+
+        return (status, post_line_buffer, post_point)
+
+    def _get_rl_env_var(self, envvar_name):
+        # type: (str) -> Optional[str]
+        """Retrieve the value of an env var, return None if undefined"""
+
+        envvar_val = self.mem.GetValue(envvar_name, scope_e.GlobalOnly)
+        if envvar_val.tag() == value_e.Str:
+            return cast(value.Str, envvar_val).s
+        elif envvar_val.tag() == value_e.Undef:
+            return None
+        else:
+            # bash has silent weird failures if you set the readline env vars
+            # to something besides a string, but I think an exception is better
+            error_msg = 'expected Str, got %s' % value_str(envvar_val.tag())
+            self.errfmt.Print_(error_msg, loc.Missing)
+            raise error.TypeErr(envvar_val, error_msg, loc.Missing)
 
 
 class Bind(vm._Builtin):
     """Interactive interface to readline bindings"""
 
-    def __init__(self, readline, errfmt, mem, bindx_cb):
-        # type: (Optional[Readline], ui.ErrorFormatter, Mem, BindXCallback) -> None
+    def __init__(self, readline, errfmt, bindx_cb):
+        # type: (Optional[Readline], ui.ErrorFormatter, BindXCallback) -> None
         self.readline = readline
         self.errfmt = errfmt
-        self.mem = mem
         self.exclusive_flags = ["q", "u", "r", "x", "f"]
         self.bindx_cb = bindx_cb
         if self.readline:
@@ -104,22 +124,14 @@ class Bind(vm._Builtin):
 
         attrs, arg_r = flag_util.ParseCmdVal('bind', cmd_val)
 
-        # print("attrs:\n", attrs)
-        # print("attrs.attrs:\n", attrs.attrs)
-        # print("attrs.attrs[m]:\n", attrs.attrs["m"])
-        # print("type(attrs.attrs[m]):\n", type(attrs.attrs["m"]))
-        # print("type(attrs.attrs[m]):\n", type(attrs.attrs["m"]))
-        # print("attrs.attrs[m].tag() :\n", attrs.attrs["m"].tag())
-        # print("attrs.attrs[m].tag() == value_e.Undef:\n", attrs.attrs["m"].tag() == value_e.Undef)
-        # print(arg_r)
-        # print("Reader argv=%s locs=%s n=%i i=%i" % (arg_r.argv, str(arg_r.locs), arg_r.n, arg_r.i))
-
         # Check mutually-exclusive flags and non-flag args
+        # Bash allows you to mix args all over, but unfortunately, the execution
+        # order is unrelated to the command line order. OSH makes many of the
+        # options mutually-exclusive.
         found = False
         for flag in self.exclusive_flags:
             if (flag in attrs.attrs and
                     attrs.attrs[flag].tag() != value_e.Undef):
-                # print("\tFound flag: {0} with tag: {1}".format(flag, attrs.attrs[flag].tag()))
                 if found:
                     self.errfmt.Print_(
                         "error: Can only use one of the following flags at a time: -"
@@ -136,13 +148,6 @@ class Bind(vm._Builtin):
             return 1
 
         arg = arg_types.bind(attrs.attrs)
-        # print("arg:\n", arg)
-        # print("dir(arg):\n", dir(arg))
-        # for prop in dir(arg):
-        #     if not prop.startswith('__'):
-        #         value = getattr(arg, prop)
-        #         print("Property: {0}, Value: {1}".format(prop, value))
-        # print("arg.m:\n", arg.m)
 
         try:
             with ctx_Keymap(readline, arg.m):  # Replicates bind's -m behavior
@@ -172,31 +177,35 @@ class Bind(vm._Builtin):
                 if arg.V:
                     readline.variable_dumper(False)
 
+                # Read bindings from a file
                 if arg.f is not None:
                     readline.read_init_file(arg.f)
 
+                # Query which keys are bound to a readline fn
                 if arg.q is not None:
                     readline.query_bindings(arg.q)
 
+                # Unbind all keys bound to a readline fn
                 if arg.u is not None:
                     readline.unbind_rl_function(arg.u)
 
+                # Remove all bindings to a key sequence
                 if arg.r is not None:
                     readline.unbind_keyseq(arg.r)
 
+                # Bind custom shell commands to a key sequence
                 if arg.x is not None:
                     self._BindShellCmd(arg.x)
 
+                # Print custom shell bindings
                 if arg.X:
                     readline.print_shell_cmd_map()
 
                 bindings, arg_locs = arg_r.Rest2()
-                #log('bindings %d locs %d', len(arg_r.argv), len(arg_r.locs))
 
+                # Bind keyseqs to readline fns
                 for i, binding in enumerate(bindings):
                     try:
-                        #log("Binding %s (%d)", binding, i)
-                        #log("Arg loc %s (%d)", arg_locs[i], i)
                         readline.parse_and_bind(binding)
                     except ValueError as e:
                         msg = e.message  # type: str
@@ -217,10 +226,6 @@ class Bind(vm._Builtin):
     def _BindShellCmd(self, bindseq):
         # type: (str) -> None
 
-        # print("bind -x '%s'" % bindseq)
-
-        # print("hex bindseq: %s" % bindseq.join('%02x' % ord(c) for c in s))
-        # print("stripped bindseq: %s" % bindseq.strip())
         cmdseq_split = bindseq.strip().split(":", 1)
         if len(cmdseq_split) != 2:
             raise ValueError("%s: missing colon separator" % bindseq)

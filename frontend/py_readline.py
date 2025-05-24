@@ -147,12 +147,10 @@ class Readline(object):
 
     def bind_shell_command(self, keyseq, cmd):
         # type: (str, str) -> None
-
-        # print("bind_shell_command: setting '%s' to '%s'" % (keyseq, cmd))
         line_input.bind_shell_command(keyseq, cmd)
 
     def set_bind_shell_command_hook(self, hook):
-        # type: (Callable[[str, str, int], Tuple[int, str, str]]) -> None
+        # type: (Callable[[str, str, int], Tuple[int, str, int]]) -> None
         assert hook is not None
 
         line_input.set_bind_shell_command_hook(hook)
