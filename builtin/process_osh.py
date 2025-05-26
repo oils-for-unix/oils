@@ -271,6 +271,7 @@ class Wait(vm._Builtin):
         self.mem = mem
         self.tracer = tracer
         self.errfmt = errfmt
+        self.exec_opts = waiter.exec_opts
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -368,12 +369,12 @@ class Wait(vm._Builtin):
                     # job_list.pid_to_job
                     self.job_list.CleanupWhenProcessExits(pid)
 
-                    if pr is None:
+                    if pr is not None:
+                        status = pr.status
+                    elif self.exec_opts.xtrace():
                         print_stderr(
                             "oils: PID %d exited, but oils didn't start it" %
                             pid)
-                    else:
-                        status = pr.status
 
                 elif result == process.W1_NO_CHILDREN:
                     status = 127
