@@ -194,7 +194,7 @@ class Rules(object):
 
         self.n.newline()
 
-    def link(self, out_bin, main_obj, deps, config, symlinks):
+    def link(self, out_bin, main_obj, deps, config):
         """ list of .o -> linker -> executable, along with stripped version """
         compiler, variant, _ = config
 
@@ -574,7 +574,7 @@ class Deps(object):
                 bin_to_link = '%s/%s' % (bin_dir, rel_path)
 
             # Link with OBJECT deps
-            ru.link(bin_to_link, main_obj, unique_deps, config, c.symlinks)
+            ru.link(bin_to_link, main_obj, unique_deps, config)
 
             # Make symlinks
             symlink_dir = os.path.dirname(bin_to_link)
@@ -585,8 +585,7 @@ class Deps(object):
                 symlink_dir = os.path.dirname(symlink_path)
 
                 # Compute relative path.
-                symlink_val = os.path.relpath(bin_to_link,
-                                              symlink_dir)
+                symlink_val = os.path.relpath(bin_to_link, symlink_dir)
 
                 if 0:
                     log('---')
@@ -605,14 +604,13 @@ class Deps(object):
 
                 variant = config[1]
                 if os.path.basename(symlink) == 'oils-for-unix' and (
-                    variant.startswith('opt') or variant.startswith('opt32')):
+                        variant.startswith('opt') or
+                        variant.startswith('opt32')):
                     stripped_bin = bin_to_link + '.stripped'
                     symlink_val = os.path.relpath(stripped_bin, symlink_dir)
-                    ru.n.build(
-                        [symlink_path + '.stripped'],
-                        'symlink',
-                        [stripped_bin],
-                        variables=[('symlink_val', symlink_val)])
+                    ru.n.build([symlink_path + '.stripped'],
+                               'symlink', [stripped_bin],
+                               variables=[('symlink_val', symlink_val)])
                     ru.n.newline()
 
             # Maybe add this cc_binary to a group
