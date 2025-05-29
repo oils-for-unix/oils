@@ -125,11 +125,11 @@ compare-gcc-clang() {
   ### Run by Soil 'cpp-coverage' task, because it has clang
 
   local -a targets=(
-    _bin/{clang,cxx}-dbg/oils-for-unix
-    _bin/{clang,cxx}-opt/oils-for-unix.stripped
-    _bin/cxx-{opt+bumpleak,opt+bumproot,opt+bigint}/oils-for-unix.stripped
+    _bin/{clang,cxx}-opt/bin/oils_for_unix.mycpp.stripped
+    _bin/{clang,cxx}-opt/bin/oils_for_unix.mycpp-souffle.stripped
+    _bin/cxx-{opt+bumpleak,opt+bumproot,opt+bigint}/bin/oils_for_unix.mycpp.stripped
     _bin/{clang,cxx}-opt/yaks/yaks_main.mycpp.stripped
-    _bin/cxx-{opt+bumpleak,opt+bumproot}/yaks/yaks_main.mycpp.stripped
+    #_bin/cxx-{opt+bumpleak,opt+bumproot}/yaks/yaks_main.mycpp.stripped
     )
   ninja "${targets[@]}"
 
@@ -187,7 +187,7 @@ for s, count in d.most_common()[:50]:
 # Found StrFromC() and len() duplication
 
 oil-dupe-strings() {
-  local bin=_bin/cxx-opt/oils-for-unix.stripped
+  local bin=_bin/cxx-opt/bin/oils_for_unix.mycpp.stripped
   #local bin=_bin/clang-opt/oils-for-unix.stripped
   ninja $bin
 
