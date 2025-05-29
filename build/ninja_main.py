@@ -371,8 +371,8 @@ def InitSteps(n):
 
     # cc_binary can have symliks
     n.rule('symlink',
-           command='build/ninja-rules-cpp.sh symlink $dir $target $new',
-           description='SYMLINK $dir $target $new')
+           command='build/ninja-rules-cpp.sh symlink $out $symlink_val',
+           description='SYMLINK $out $symlink_val')
     n.newline()
 
     #
