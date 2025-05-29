@@ -580,11 +580,40 @@ class Deps(object):
             symlink_dir = os.path.dirname(bin_to_link)
             bin_name = os.path.basename(bin_to_link)
             for symlink in c.symlinks:
-                ru.n.build(['%s/%s' % (symlink_dir, symlink)],
-                           'symlink', [bin_to_link],
-                           variables=[('dir', symlink_dir),
-                                      ('target', bin_name), ('new', symlink)])
+                # e.g. _bin/cxx-dbg/mycpp-souffle/osh
+                symlink_path = '%s/%s' % (bin_dir, symlink)
+                symlink_dir = os.path.dirname(symlink_path)
+
+                # Compute relative path.
+                symlink_val = os.path.relpath(bin_to_link, symlink_dir)
+
+                if 0:
+                    log('---')
+                    log('bin %s', bin_to_link)
+                    log('symlink_path %s', symlink_path)
+                    log('symlink_val %s', symlink_val)
+
+                ru.n.build(
+                    [symlink_path],
+                    'symlink',
+                    # if we build _bin/cxx-opt/osh, then the binary
+                    # should be built too
+                    [bin_to_link],
+                    variables=[('symlink_val', symlink_val)])
                 ru.n.newline()
+
+                if 0:  # disabled oils-for-unix.stripped symlink
+                    variant = config[1]
+                    if os.path.basename(symlink) == 'oils-for-unix' and (
+                            variant.startswith('opt') or
+                            variant.startswith('opt32')):
+                        stripped_bin = bin_to_link + '.stripped'
+                        symlink_val = os.path.relpath(stripped_bin,
+                                                      symlink_dir)
+                        ru.n.build([symlink_path + '.stripped'],
+                                   'symlink', [stripped_bin],
+                                   variables=[('symlink_val', symlink_val)])
+                        ru.n.newline()
 
             # Maybe add this cc_binary to a group
             if c.phony_prefix:

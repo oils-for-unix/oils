@@ -157,7 +157,6 @@ def NinjaGraph(ru):
                  '//bin/osh_parse.mycpp',
                  matrix=ninja_lib.COMPILERS_VARIANTS)
 
-    oils_symlinks = ['osh', 'ysh']
     oils_matrix = (ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS +
                    ninja_lib.OTHER_VARIANTS)
 
@@ -174,9 +173,7 @@ def NinjaGraph(ru):
         ru,
         '//bin/oils_for_unix.mycpp',
         matrix=oils_matrix,
-        # _bin/cxx-opt/oils-for-unix, NOT _bin/cxx-opt/bin/oils-for-unix
-        bin_path='oils-for-unix',
-        symlinks=oils_symlinks,
+        symlinks=['oils-for-unix', 'osh', 'ysh'],
         preprocessed=True,
     )
 
@@ -192,6 +189,8 @@ def NinjaGraph(ru):
         ru,
         '//bin/oils_for_unix.mycpp-souffle',
         matrix=oils_matrix,
-        bin_path='mycpp-souffle/oils-for-unix',
-        symlinks=oils_symlinks,
+        symlinks=[
+            'mycpp-souffle/oils-for-unix', 'mycpp-souffle/osh',
+            'mycpp-souffle/ysh'
+        ],
     )
