@@ -608,7 +608,8 @@ class Deps(object):
                             variant.startswith('opt') or
                             variant.startswith('opt32')):
                         stripped_bin = bin_to_link + '.stripped'
-                        symlink_val = os.path.relpath(stripped_bin, symlink_dir)
+                        symlink_val = os.path.relpath(stripped_bin,
+                                                      symlink_dir)
                         ru.n.build([symlink_path + '.stripped'],
                                    'symlink', [stripped_bin],
                                    variables=[('symlink_val', symlink_val)])
