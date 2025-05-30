@@ -264,6 +264,7 @@ def _Init(opt_def):
     # Hm is this subsumed by simple_word_eval?
     opt_def.Add('nullglob', groups=['ysh:upgrade', 'ysh:all'])
     opt_def.Add('verbose_errexit', groups=['ysh:upgrade', 'ysh:all'])
+    opt_def.Add('verbose_warn', groups=['ysh:upgrade', 'ysh:all'])
 
     # set -o noclobber, etc.
     for short_flag, name in _OTHER_SET_OPTIONS:

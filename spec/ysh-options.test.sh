@@ -192,12 +192,13 @@ shopt -s process_sub_fail
 shopt -s sigpipe_status_ok
 shopt -s simple_word_eval
 shopt -s verbose_errexit
+shopt -s verbose_warn
 shopt -u xtrace_details
 shopt -s xtrace_rich
 ## END
 
-#### osh -O oil:upgrade 
-$SH -O oil:upgrade -c 'var x = %(one two three); write @x'
+#### osh -O ysh:upgrade 
+$SH -O ysh:upgrade -c 'var x = :|one two three|; write @x'
 ## STDOUT:
 one
 two
