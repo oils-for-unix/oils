@@ -2118,7 +2118,7 @@ class Waiter(object):
         # the parent.  The init process does.
         proc = self.job_list.child_procs.get(pid)
 
-        if proc is None and self.exec_opts.xtrace():
+        if proc is None and self.exec_opts.verbose_warn():
             print_stderr("oils: PID %d exited, but oils didn't start it" % pid)
 
         if 0:

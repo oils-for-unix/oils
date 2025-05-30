@@ -216,6 +216,8 @@ Details on each option:
                               child processes
       init_ysh_globals        Init ARGV List at startup
       for_loop_frames         YSH can create closures from loop vars
+      verbose_errexit         Whether to print detailed errors
+      verbose_warn            Print various warnings to stderr
 
 <h3 id="ysh:all">ysh:all</h3>
 
@@ -247,7 +249,6 @@ Details on options that are not in `ysh:upgrade` and `strict:all`:
       simple_eval_builtin     eval takes exactly 1 argument
       simple_test_builtin     3 args or fewer; use test not [
     X simple_trap             Function name only
-      verbose_errexit         Whether to print detailed errors
 
 **Caveat**: Some options only affect shell startup.  For example:
 

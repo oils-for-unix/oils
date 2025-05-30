@@ -369,12 +369,13 @@ class Wait(vm._Builtin):
                     # job_list.pid_to_job
                     self.job_list.CleanupWhenProcessExits(pid)
 
-                    if pr is not None:
+                    if pr is None:
+                        if self.exec_opts.verbose_warn():
+                            print_stderr(
+                                "oils wait: PID %d exited, but oils didn't start it" %
+                                pid)
+                    else:
                         status = pr.status
-                    elif self.exec_opts.xtrace():
-                        print_stderr(
-                            "oils: PID %d exited, but oils didn't start it" %
-                            pid)
 
                 elif result == process.W1_NO_CHILDREN:
                     status = 127
