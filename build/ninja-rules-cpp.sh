@@ -435,12 +435,10 @@ strip_() {
 }
 
 symlink() {
-  local dir=$1
-  local in=$2
-  local out=$3
+  local out=$1
+  local symlink_val=$2
 
-  cd $dir
-  ln -s -f -v $in $out
+  ln -s -f -v "$symlink_val" "$out"
 }
 
 # test/cpp-unit.sh sources this

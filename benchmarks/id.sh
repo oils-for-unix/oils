@@ -126,8 +126,6 @@ dump-shell-id() {
       $sh_path --version > $out_dir/awk-version.txt
       ;;
 
-    # oils-for-unix|oils-for-unix.stripped)
-    #  ;;
     dash|mksh)
       # These don't have version strings!
       dpkg -s $sh_name > $out_dir/dpkg-version.txt
