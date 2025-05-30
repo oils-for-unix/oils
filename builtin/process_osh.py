@@ -372,8 +372,8 @@ class Wait(vm._Builtin):
                     if pr is None:
                         if self.exec_opts.verbose_warn():
                             print_stderr(
-                                "oils wait: PID %d exited, but oils didn't start it" %
-                                pid)
+                                "oils wait: PID %d exited, but oils didn't start it"
+                                % pid)
                     else:
                         status = pr.status
 
