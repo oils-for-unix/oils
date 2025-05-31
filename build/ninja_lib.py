@@ -102,7 +102,7 @@ def ObjPath(src_path, config):
 # Used namedtuple since it doesn't have any state
 CcBinary = collections.namedtuple(
     'CcBinary',
-    'main_cc symlinks implicit deps matrix phony_prefix preprocessed bin_path')
+    'main_cc symlinks implicit deps matrix phony_prefix preprocessed')
 
 
 class Rules(object):
@@ -261,7 +261,6 @@ class Rules(object):
             matrix=None,  # $compiler $variant +bumpleak
             phony_prefix=None,  # group
             preprocessed=False,  # generate report
-            bin_path=None,  # default is _bin/$compiler-$variant/rel/path
     ):
         """
         A cc_binary() depends on a list of cc_library() rules specified by
@@ -281,7 +280,7 @@ class Rules(object):
             raise RuntimeError("Config matrix required")
 
         cc_bin = CcBinary(main_cc, symlinks, implicit, deps, matrix,
-                          phony_prefix, preprocessed, bin_path)
+                          phony_prefix, preprocessed)
 
         self.cc_bins.append(cc_bin)
 
@@ -553,25 +552,20 @@ class Deps(object):
             config_dir = ConfigDir(config)
             bin_dir = '_bin/%s' % config_dir  # e.g. _bin/cxx-asan
 
-            # Allow user to override bin_path
-            if c.bin_path:
-                # e.g. _bin/cxx-dbg/oils_for_unix
-                bin_to_link = '%s/%s' % (bin_dir, c.bin_path)
-            else:
-                # e.g. _gen/mycpp/examples/classes.mycpp
-                rel_path, _ = os.path.splitext(c.main_cc)
+            # e.g. _gen/mycpp/examples/classes.mycpp
+            rel_path, _ = os.path.splitext(c.main_cc)
 
-                # Special rule for
-                #   sources = hello.mycpp.cc and hello.mycpp-main.cc
-                #   binary = _bin/hello.mycpp
-                if rel_path.endswith('-main'):
-                    rel_path = rel_path[:-len('-main')]
+            # Special rule for
+            #   sources = hello.mycpp.cc and hello.mycpp-main.cc
+            #   binary = _bin/hello.mycpp
+            if rel_path.endswith('-main'):
+                rel_path = rel_path[:-len('-main')]
 
-                # Put binary in _bin/cxx-dbg/mycpp/examples, not _bin/cxx-dbg/_gen/mycpp/examples
-                if rel_path.startswith('_gen/'):
-                    rel_path = rel_path[len('_gen/'):]
+            # Put binary in _bin/cxx-dbg/mycpp/examples, not _bin/cxx-dbg/_gen/mycpp/examples
+            if rel_path.startswith('_gen/'):
+                rel_path = rel_path[len('_gen/'):]
 
-                bin_to_link = '%s/%s' % (bin_dir, rel_path)
+            bin_to_link = '%s/%s' % (bin_dir, rel_path)
 
             # Link with OBJECT deps
             ru.link(bin_to_link, main_obj, unique_deps, config)
@@ -731,7 +725,6 @@ def mycpp_binary(ru,
                  cc_lib,
                  template='unix',
                  matrix=None,
-                 bin_path=None,
                  symlinks=None,
                  preprocessed=False,
                  phony_prefix=None):
@@ -751,7 +744,6 @@ def mycpp_binary(ru,
     ru.cc_binary(main_cc_path,
                  deps=[cc_lib],
                  matrix=matrix,
-                 bin_path=bin_path,
                  symlinks=symlinks,
                  preprocessed=preprocessed,
                  phony_prefix=phony_prefix)
