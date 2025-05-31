@@ -1405,8 +1405,7 @@ def main(argv):
             print('\t%-20s: %s' % (k, v), file=sys.stderr)
         print('', file=sys.stderr)
 
-    if opts.oils_bin_dir:
-
+    if opts.oils_bin_dir:  # to find OSH and YSH
         shells = []
 
         if opts.compare_shells:
@@ -1433,7 +1432,7 @@ def main(argv):
             int(file_metadata.get('oils_failures_allowed', 0))
 
     else:
-        # TODO: remove this mode?
+        # To compare arbitrary shells
         shells = argv[2:]
 
     shell_pairs = spec_lib.MakeShellPairs(shells)
