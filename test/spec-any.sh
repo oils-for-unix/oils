@@ -6,7 +6,10 @@
 #   test/spec-any.sh <function name>
 
 : ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
 source $LIB_OSH/task-five.sh
+
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source test/common.sh
 source test/spec-common.sh
@@ -24,9 +27,12 @@ OSH=$PWD/$OSH
 # Metrics
 # - binary size - stripped
 # - lines of source code - I think we get this from DWARF debug info
-#   - which means we need an unstripped binary
+#   - https://claude.ai/chat/40597e2e-4d1e-42b4-a756-7a265f01cc5a shows options
+#   - llvm-dwarfdump
+#   - Python lib https://github.com/eliben/pyelftools/
+#   - right now this isn't worth it - spec tests are more important
 # - unsafe functions / methods?
-#   - cargo geiger has this a bit
+#   - cargo geiger is also hard to parse
 
 readonly BRUSH_DIR=~/install/brush
 
@@ -41,17 +47,18 @@ download-brush-binary() {
 
 #BRUSH=$BRUSH_DIR/brush
 
-# these are all roughly ksh compatible
-readonly -a SHELLS=(bash mksh ksh $TOYBOX_DIR/sh $OSH)
+readonly TOYBOX_DIR=~/src/toybox-0.8.12
 
+readonly SUSH_DIR=../../shells/rusty_bash
+
+# these are all roughly ksh compatible
+readonly -a SHELLS=(bash mksh ksh $TOYBOX_DIR/sh $PWD/$SUSH_DIR/target/release/sush $OSH)
 
 download-toybox() {
   #mkdir -p ~/src
   wget --directory ~/src --no-clobber \
     https://landley.net/toybox/downloads/toybox-0.8.12.tar.gz
 }
-
-readonly TOYBOX_DIR=~/src/toybox-0.8.12
 
 build-toybox() {
   pushd $TOYBOX_DIR
@@ -112,16 +119,21 @@ build-sush() {
 }
 
 binary-sizes() {
+  local oils=_bin/cxx-opt/bin/oils_for_unix.mycpp.stripped
+  ninja $oils
+  # stripped: 2.4 MB
+  ls -l --si $oils
+
   pushd ../../shells/brush
   strip -o target/release/brush.stripped target/release/brush
-  # stripped: 6.8 MB
-  ls -l -h target/release
+  # stripped: 7.1 MB
+  ls -l --si target/release
   popd
 
   pushd ../../shells/rusty_bash
   strip -o target/release/sush.stripped target/release/sush
-  # stripped: 3.7 MB
-  ls -l -h target/release
+  # stripped: 3.9 MB
+  ls -l --si target/release
   echo
   popd
 }
@@ -169,24 +181,39 @@ install-geiger() {
   cargo install --locked cargo-geiger
 }
 
+# This is DESTRUCTIVE
 geiger-report() {
-  pushd ../../shells/rusty_bash
+  if true; then
+    pushd ../../shells/brush
 
-  . ~/.cargo/env
+    . ~/.cargo/env
 
-  # this cleans the build
-  #
-  # Functions  Expressions  Impls   Traits  Methods
-  # 181/1056   9377/45040   114/158 30/32   463/2887
-  #
-  # x/y
-  # x = unsafe used by build
-  # y = unsafe in crate
+    # doesn't work
+    #time cargo geiger --workspace
+    #time cargo geiger --package brush-core --package brush-parser
 
-  # ~7 seconds
-  time cargo geiger 
+    popd
+  fi
 
-  popd
+  if false; then
+    pushd ../../shells/rusty_bash
+
+    . ~/.cargo/env
+
+    # this cleans the build
+    #
+    # Functions  Expressions  Impls   Traits  Methods
+    # 181/1056   9377/45040   114/158 30/32   463/2887
+    #
+    # x/y
+    # x = unsafe used by build
+    # y = unsafe in crate
+
+    # ~7 seconds
+    time cargo geiger 
+
+    popd
+  fi
 }
 
 #
@@ -197,12 +224,27 @@ run-file() {
   local spec_name=$1
   shift  # Pass list of shells
   
-  sh-spec spec/$spec_name.test.sh "$@"
+  # spec/tilde hangs under toysh - need timeout
+  sh-spec spec/$spec_name.test.sh \
+    --timeout 1 \
+    "$@"
 }
 
 compare() {
   local spec_name=${1:-smoke}
   run-file $spec_name "${SHELLS[@]}"
+}
+
+list() {
+  mkdir -p _tmp/spec  # _all-parallel also does this
+  test/spec-runner.sh write-suite-manifests
+  wc -l _tmp/spec/SUITE-*
+
+  # TODO:
+  # - Remove zsh test files?
+  # - What about *-bash test cases?  These aren't clearly organized
+
+  cat _tmp/spec/SUITE-osh.txt
 }
 
 task-five "$@"
