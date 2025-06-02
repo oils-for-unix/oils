@@ -16,6 +16,7 @@
 
 #### ./configure idiom
 set -o errexit
+
 if command time -f '%e %M' true; then
   echo 'supports -f'
   # BUG: this was wrong
@@ -24,6 +25,12 @@ if command time -f '%e %M' true; then
   # Need 'command time'
   command time -f '%e %M' true
 fi
+
+if env time -f '%e %M' true; then
+  echo 'env'
+  env time -f '%e %M' true
+fi
 ## STDOUT:
 supports -f
+env
 ## END

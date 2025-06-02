@@ -338,9 +338,10 @@ compile_one() {
             # tarball build script). Don't bother timing in this case.
             ;;
           *)
-            if command time -f '%e %M' true 2>/dev/null; then
+            # Workaround for mksh bug on issue #2310 - use 'env' instead of 'time'
+            if env time -f '%e %M' true 2>/dev/null; then
               set -- \
-                command time -f "$out { elapsed: %e, max_RSS: %M }" -- \
+                env time -f "$out { elapsed: %e, max_RSS: %M }" -- \
                 "$@"
             fi
             ;;
