@@ -410,6 +410,10 @@ serialize() {
   test/spec-py.sh run-file serialize "$@"
 }
 
+shell-bugs() {
+  test/spec-py.sh run-file shell-bugs "$@"
+}
+
 shell-grammar() {
   test/spec-py.sh run-file shell-grammar "$@"
 }
