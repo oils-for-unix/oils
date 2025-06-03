@@ -296,10 +296,13 @@ Shell arithmetic is also discouraged in favor of YSH arithmetic:
     ! ?   suffixes (not implemented)
 -->
 
-## Related Docs
+## Related Docs / Links
 
 - [Syntactic Concepts in the YSH Language](syntactic-concepts.html)
 - [Language Influences](language-influences.html)
+- [YSH Syntax Highlighting
+  Checklist](https://github.com/oils-for-unix/oils.vim/blob/main/checklist.md)
+  in the `oils.vim` repo
 
 ## Appendix: Table of Sigil Pairs
 
@@ -309,7 +312,7 @@ Reference](ref/index.html) is more complete.
 
     Example      Description        What's Inside  Where Valid  Notes
 
-    $(hostname)  Command Sub        Command        cmd,expr
+    $(hostname)  Command Sub        Command        cmd,expr,dq
     @(seq 3)     Split Command Sub  Command        cmd,expr     should decode J8
                                                                 strings
 
@@ -321,19 +324,16 @@ Reference](ref/index.html) is more complete.
 
     :|foo $bar|  Array Literal      Words          expr
 
-    $[42 + a[i]] Stringify Expr     Expression     cmd,expr
+    $[42 + a[i]] Stringify Expr     Expression     cmd,expr,dq
     @[glob(x)]   Array-ify Expr     Expression     cmd,expr
     ^[42 + a[i]] Unevaluated Expr   Expression     expr
 
     ^"$1 $2"     value.Expr         DQ String      expr 
 
-    ${x %2d}     Var Sub            Formatting     cmd,expr     not implemented
-    ${x|html}    Var Sub            Formatting     cmd,expr     not implemented
-
     pp (x)       Typed Arg List     Argument       cmd
                                     Expressions
 
-    pp [x]       Lazy Arrg list     Argument       cmd
+    pp [x]       Lazy Arg list      Argument       cmd
                                     Expressions
 
     $/d+/        Inline Eggex       Eggex Expr     cmd          not implemented
@@ -341,7 +341,9 @@ Reference](ref/index.html) is more complete.
     $"x is $x"   Interpolated       DQ string      cmd,expr     usually "x is $x"
                  string                                         $ is optional
 
-    r'foo\bar'   Raw String         String         expr         cmd when shopt
+Non-recursive constructs:
+
+    r'foo\bar'   Raw String         String         cmd,expr     shopt -s
                  Literal                                        parse_raw_string
 
     u''   b''    J8 Literals        String         cmd,expr,data
@@ -349,7 +351,13 @@ Reference](ref/index.html) is more complete.
     j""          JSON8 String       String         data
                  Literal
 
+    ${x %2d}     Var Sub            Formatting     cmd,expr,dq  not implemented
+    ${x|html}    Var Sub            Formatting     cmd,expr,dq  not implemented
+
+
 Discouraged / Deprecated
+
+    `echo x`     Shell Backticks    Command        cmd,dq       deprecated
 
     ${x%%pre}    Shell Var Sub      Shell          cmd,expr     mostly deprecated
     $((1+2))     Shell Arith Sub    Shell Arith    cmd          deprecated
@@ -363,7 +371,6 @@ Discouraged / Deprecated
     ,(*.py|*.sh) Extended Glob      Glob Words     cmd          break conflict
                                                                 with split command
                                                                 sub
-
 Key to "where valid" column:
 
 - `cmd` means `lex_mode_e.ShCommand`
