@@ -495,7 +495,6 @@ _U4_CHAR_LOOSE = R(r'\\u[0-9a-fA-F]{1,4}', Id.Char_Unicode4)  # bash
 
 _U4_CHAR_STRICT = R(r'\\u[0-9a-fA-F]{4}', Id.Char_Unicode4)  # JSON-only
 
-#_JSON_ONE_CHAR = R(r'\\[\\"/bfnrt]', Id.Char_OneChar)
 EXPR_CHARS = [
     # Allow same backslash escapes as J8 strings, except;
     # - legacy \b \f
@@ -633,7 +632,7 @@ J8_LINES_DEF = _J8_LEFT + [
     R(r'''[^ \t\r\n'"\x00-\x1F]+''', Id.Lit_Chars),
 ]
 
-# https://json.org list of chars, plus '
+# https://json.org list of chars
 _JSON_ONE_CHAR = R(r'\\[\\"/bfnrt]', Id.Char_OneChar)
 
 # b'' u'' strings - what's common between code and data.
