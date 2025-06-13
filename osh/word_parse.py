@@ -148,8 +148,10 @@ def _CheckYshWord(w):
     # But NOT
     #   --flag=r'val'   NAME=r'val'
     if not ok:
-        if (n == 3 and word_.LiteralId(parts[0]) == Id.Lit_Chars and
-                word_.LiteralId(parts[1]) == Id.Lit_Equals):
+        if (n == 2 and word_.LiteralId(parts[0]) == Id.Lit_VarLike):
+            ok = True
+        elif (n == 3 and word_.LiteralId(parts[0]) == Id.Lit_Chars and
+              word_.LiteralId(parts[1]) == Id.Lit_Equals):
             ok = True
 
     return ok

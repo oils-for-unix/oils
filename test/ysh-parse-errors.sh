@@ -1731,6 +1731,10 @@ test-string-sigil-pair() {
 
   _ysh-should-run "echo --flag='single'"
   _ysh-should-run 'echo --flag="double"'
+
+  _ysh-should-run "echo NAME='single'"
+  _ysh-should-run 'echo NAME="double"'
+
   _ysh-should-run "var x = u'foo'; echo --flag=\$x"
 
   # TODO: Is this our tagged string syntax?
