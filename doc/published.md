@@ -8,6 +8,7 @@ See [All Docs](index.html) for links to drafts.
 ## Good Places to Start
 
 - [Getting Started](getting-started.html)
+  - [YSH Editor Support]($wiki) on the wiki.
 - [A Tour of YSH](ysh-tour.html)
 - [YSH vs. Shell Idioms](idioms.html) 
 - [**Oils Reference**](ref/index.html) - underlies the [help][] builtin

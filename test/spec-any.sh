@@ -34,25 +34,16 @@ OSH=$PWD/$OSH
 # - unsafe functions / methods?
 #   - cargo geiger is also hard to parse
 
-readonly BRUSH_DIR=~/install/brush
-
-# Note: we have the repo too
-download-brush-binary() {
-  # The musl libc build works on my old Ubuntu VM, because it's statically linked
-  # The GNU one doesn't work
-  wget --directory $BRUSH_DIR --no-clobber \
-    https://github.com/reubeno/brush/releases/download/brush-shell-v0.2.18/brush-x86_64-unknown-linux-musl.tar.gz
-    #https://github.com/reubeno/brush/releases/download/brush-shell-v0.2.18/brush-x86_64-unknown-linux-gnu.tar.gz
-}
-
-#BRUSH=$BRUSH_DIR/brush
-
 readonly TOYBOX_DIR=~/src/toybox-0.8.12
 
 readonly SUSH_DIR=../../shells/rusty_bash
+readonly BRUSH_DIR=../../shells/brush
+
+readonly SUSH=$PWD/$SUSH_DIR/target/release/sush 
+readonly BRUSH=$PWD/$BRUSH_DIR/target/release/brush
 
 # these are all roughly ksh compatible
-readonly -a SHELLS=(bash mksh ksh $TOYBOX_DIR/sh $PWD/$SUSH_DIR/target/release/sush $OSH)
+readonly -a SHELLS=(bash mksh ksh $TOYBOX_DIR/sh $SUSH $BRUSH $OSH)
 
 download-toybox() {
   #mkdir -p ~/src
@@ -126,13 +117,13 @@ binary-sizes() {
 
   pushd ../../shells/brush
   strip -o target/release/brush.stripped target/release/brush
-  # stripped: 7.1 MB
+  # stripped: 7.3 MB
   ls -l --si target/release
   popd
 
   pushd ../../shells/rusty_bash
   strip -o target/release/sush.stripped target/release/sush
-  # stripped: 3.9 MB
+  # stripped: 3.4 MB
   ls -l --si target/release
   echo
   popd

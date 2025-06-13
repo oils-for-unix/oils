@@ -88,6 +88,10 @@ Example:
 [renderPrompt]: ref/chap-plugin.html#renderPrompt
 [promptVal]: ref/chap-type-method.html#promptVal
 
+### Editor Support
+
+See [YSH Editor Support]($wiki) on the wiki.
+
 ## Getting Help
 
 Type `help` in `osh` or `ysh`, which links to URLs in the [Oils
