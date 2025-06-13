@@ -5,7 +5,7 @@ shopt -s ysh:upgrade
 set -x
 
 # Reuse the default
-PS4='$LINENO '"$PS4"
+PS4=$['$LINENO ' ++ PS4]
 echo 1; echo 2
 echo 3
 ## STDOUT:

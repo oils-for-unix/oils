@@ -138,6 +138,7 @@ X [Unsupported]   enable
 <!-- linkify_stop_col is 33 -->
 
 ```chapter-links-word-lang_33
+  [Joining]       osh-word-join 'single'\'$myvar"double $x"
   [Quotes]        osh-string    'abc'  $'line\n'  "$var"
   [Substitutions] command-sub   $(date)   `date`
                   var-sub       ${var}   $0   $9   

@@ -82,7 +82,44 @@ Not done.
 
     echo ${x|html}
 
+## Joining
+
+### osh-word-join
+
+OSH joins arbitrary word parts:
+
+    $ myvar=/
+    $ echo 'single'\'$myvar"double $myvar"
+    single'/double /
+
+That is, the argument to `echo` is a word that has 4 word parts:
+
+    'single'
+    \'
+    $myvar
+    "double $myvar"
+
+When the word is evaluated, the result of each part is evaluated and
+concatenated.
+
+### ysh-word-join
+
+In YSH, single- and double-quoted word parts can't be joined, except in these
+special cases:
+
+    --flag='value'
+    NAME="value"
+
+The purpose of this rule is to eliminate ambiguous words like:
+
+    --flag=u'value\n'   # does u indicate a J8 string, or is it a literal?
+
+See [OILS-ERR-17][] for details.
+
+[OILS-ERR-17]: ../error-catalog.html#oils-err-17
+
 ## Quotes
+
 
 ### osh-string
 

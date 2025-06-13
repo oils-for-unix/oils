@@ -1408,8 +1408,7 @@ test-string-literals() {
   _ysh-parse-error "echo b'hi'#notcomment"
 
   # This is valid shell, but not a comment
-  _ysh-should-parse "echo 'hi'#notcomment"
-
+  _ysh-should-parse 'echo hi#notcomment'
 }
 
 test-multiline-string() {
@@ -1708,6 +1707,44 @@ test-splat-expr() {
   _ysh-parse-error '= [42, ...y]'
   _ysh-parse-error '= (...x for x in [1,2,3])'
   _ysh-parse-error '= [...x for x in [1,2,3]]'
+}
+
+test-string-sigil-pair() {
+  # sigil pairs mean nothing in OSH
+  _osh-should-run "echo --foo=r'bar'"
+  _osh-should-run "echo --foo=u'bar'"
+
+  # disallowed with YSH
+  _ysh-parse-error "echo --foo=r'bar'"
+  _ysh-parse-error "echo --foo=u'bar'"
+  _ysh-parse-error "echo --foo=b'bar'"
+
+  _ysh-parse-error "echo --foo#b'bar'"
+  _ysh-parse-error "echo --foo#'bar'"
+
+  # ditto for multi-line
+  _ysh-parse-error "echo --foo=r'''bar'''"
+
+  # inner word
+  _ysh-parse-error "echo \${undef:-r'ok'}"
+
+  _ysh-should-run "echo --flag='single'"
+  _ysh-should-run 'echo --flag="double"'
+
+  _ysh-should-run "echo NAME='single'"
+  _ysh-should-run 'echo NAME="double"'
+
+  _ysh-should-run "var x = u'foo'; echo --flag=\$x"
+
+  # TODO: Allow one of these as our tag syntax.
+  # An expression like html.'bar' would not look the same in command mode, so
+  # the prefix makes sense.  It's also more similar to JavaScript.
+  _ysh-parse-error 'echo html"double"'
+  _ysh-parse-error 'echo "double"html'
+
+  _ysh-parse-error "echo html'single'"
+  _ysh-parse-error "echo 'single'html"
+
 }
 
 #

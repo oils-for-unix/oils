@@ -254,12 +254,6 @@ echo r'\'
 # space
 write r '' end
 
-# These use shell rules!
-echo ra'\'
-echo raw'\'
-
-echo r"\\"
-
 # Now it's a regular r
 shopt --unset parse_ysh_string
 write unset r'\'
@@ -269,9 +263,6 @@ write unset r'\'
 r
 
 end
-ra\
-raw\
-r\
 unset
 r\
 ## END
@@ -330,10 +321,8 @@ echo $'''
   foo
   '''
 
+## status: 2
 ## STDOUT:
-
-  foo
-  
 ## END
 
 
@@ -430,8 +419,6 @@ three = $three ''
 var two=2
 var three=3
 
-echo ""a  # test lookahead
-
 echo --
 echo """
   one "
@@ -454,18 +441,7 @@ tac <<< """
   three = $three
   """
 
-shopt --unset parse_triple_quote
-
-echo --
-echo """
-  one
-  two = $two
-  three = $three
-  """
-
-
 ## STDOUT:
-a
 --
 one "
 two = 2 ""
@@ -480,18 +456,10 @@ three = 3
 three = 3
 two = 2 ""
 one "
---
-
-  one
-  two = 2
-  three = 3
-  
 ## END
 
 
 #### ''' in Command Mode
-
-echo ''a  # make sure lookahead doesn't mess up
 
 echo --
 echo '''
@@ -501,7 +469,6 @@ echo '''
   \u{61}
   '''
 ## STDOUT:
-a
 --
 two = $two
 '
@@ -553,11 +520,8 @@ echo '''
   \u{61}
   '''
 
+## status: 2
 ## STDOUT:
-
-  two = $two
-  \u{61}
-  
 ## END
 
 #### here doc with quotes

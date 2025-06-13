@@ -90,6 +90,7 @@ from _devbuild.gen.syntax_asdl import (
     arith_expr,
     VarDecl,
     Mutation,
+    word_part_e,
 )
 from core import alloc
 from core.error import p_die
@@ -120,6 +121,41 @@ unused1 = log
 unused2 = Id_str
 
 KINDS_THAT_END_WORDS = [Kind.Eof, Kind.WS, Kind.Op, Kind.Right]
+
+
+def _CheckYshWord(w):
+    # type: (CompoundWord) -> bool
+    """YSH word restriction
+
+    Allowed:
+       'foo'          r'foo'   --flag r'foo'
+       --flag='foo'
+       --flag="foo"
+    Not allowed:
+       --flag=r'bar'           NAME=u'value'   # ambiguous
+       --flag=b''' multi '''
+    """
+    parts = w.parts
+    n = len(parts)
+    ok = True
+    if n >= 2:
+        for part in parts:
+            if part.tag() in (word_part_e.SingleQuoted,
+                              word_part_e.DoubleQuoted):
+                ok = False
+
+    # Allow special cases:
+    #   --flag='val'    NAME='bar'
+    # But NOT
+    #   --flag=r'val'   NAME=r'val'
+    if not ok:
+        if (n == 2 and word_.LiteralId(parts[0]) == Id.Lit_VarLike):
+            ok = True
+        elif (n == 3 and word_.LiteralId(parts[0]) == Id.Lit_Chars and
+              word_.LiteralId(parts[1]) == Id.Lit_Equals):
+            ok = True
+
+    return ok
 
 
 class WordEmitter(object):
@@ -1939,6 +1975,13 @@ class WordParser(WordEmitter):
             from _devbuild.gen.syntax_asdl import word_part_str
             word_key = ' '.join(word_part_str(p.tag()) for p in w.parts)
             WORD_HIST[word_key] += 1
+
+        # YSH word restriction
+        # (r'' u'' b'' are stripped on shopt -s parse_ysh_string)
+        if self.parse_opts.parse_ysh_string() and not _CheckYshWord(w):
+            p_die("Invalid quoted word part in YSH (OILS-ERR-17)",
+                  loc.WordPart(part))
+
         return w
 
     def _ReadArithWord(self):
@@ -2064,12 +2107,12 @@ class WordParser(WordEmitter):
                 return None  # tell ReadWord() to try again after comment
 
             else:
-                # r'' u'' b''
+                # r'' u'' b'' at the beginning of a word
                 if (self.token_type == Id.Lit_Chars and
                         self.lexer.LookAheadOne(
                             lex_mode_e.ShCommand) == Id.Left_SingleQuote):
 
-                    # When shopt -s parse_raw_string:
+                    # When shopt -s parse_ysh_string:
                     #     echo r'hi' is like echo 'hi'
                     #
                     #     echo u'\u{3bc}' b'\yff' works
