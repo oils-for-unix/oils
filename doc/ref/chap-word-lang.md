@@ -104,11 +104,19 @@ concatenated.
 
 ### ysh-word-join
 
-In YSH, single- and double-quoted word parts can't be joined, except in these
-special cases:
+In general, YSH doesn't allow single- and double-quoted parts to be joined.
+They most often form an entire word:
 
-    --flag='value'
-    NAME="value"
+    echo 'single-quoted word'
+    echo "double-quoted word"
+
+YSH allows word joining in these special cases:
+
+    echo --flag='value'
+    echo NAME="value"
+
+    echo ~/'dir with spaces'
+    echo ~root/src/"dir with spaces"
 
 The purpose of this rule is to eliminate ambiguous words like:
 

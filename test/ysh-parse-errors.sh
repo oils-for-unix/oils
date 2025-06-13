@@ -1734,6 +1734,9 @@ test-string-sigil-pair() {
   _ysh-should-run "echo NAME='single'"
   _ysh-should-run 'echo NAME="double"'
 
+  _ysh-should-run 'echo ~/"double" ~root/src/"doubl"'
+  _ysh-should-run "echo ~/'double' ~root/src/'single'"
+
   _ysh-should-run "var x = u'foo'; echo --flag=\$x"
 
   # TODO: Allow one of these as our tag syntax.

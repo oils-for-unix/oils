@@ -137,6 +137,12 @@ def _CheckYshWord(w):
     """
     parts = w.parts
     n = len(parts)
+
+    if n != 0 and word_.LiteralId(parts[0]) == Id.Lit_Tilde:
+        # ~bob/src/'dir with spaces' is allowed
+        # ~bob/src/u'dir with spaces' is ambiguous, but allowed for simplicity
+        return True  # early return
+
     ok = True
     if n >= 2:
         for part in parts:
