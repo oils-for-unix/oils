@@ -254,10 +254,6 @@ echo r'\'
 # space
 write r '' end
 
-# These use shell rules!
-echo ra'\'
-echo raw'\'
-
 echo r"\\"
 
 # Now it's a regular r
@@ -269,8 +265,6 @@ write unset r'\'
 r
 
 end
-ra\
-raw\
 r\
 unset
 r\
@@ -330,10 +324,8 @@ echo $'''
   foo
   '''
 
+## status: 2
 ## STDOUT:
-
-  foo
-  
 ## END
 
 
@@ -491,8 +483,6 @@ one "
 
 #### ''' in Command Mode
 
-echo ''a  # make sure lookahead doesn't mess up
-
 echo --
 echo '''
   two = $two
@@ -501,7 +491,6 @@ echo '''
   \u{61}
   '''
 ## STDOUT:
-a
 --
 two = $two
 '
@@ -553,11 +542,8 @@ echo '''
   \u{61}
   '''
 
+## status: 2
 ## STDOUT:
-
-  two = $two
-  \u{61}
-  
 ## END
 
 #### here doc with quotes
