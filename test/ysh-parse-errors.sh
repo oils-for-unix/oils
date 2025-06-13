@@ -1408,7 +1408,7 @@ test-string-literals() {
   _ysh-parse-error "echo b'hi'#notcomment"
 
   # This is valid shell, but not a comment
-  _ysh-should-parse 'echo "hi"#notcomment'
+  _ysh-should-parse 'echo hi#notcomment'
 }
 
 test-multiline-string() {
