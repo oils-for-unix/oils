@@ -264,9 +264,13 @@ case, it's not clear if the `u` is literal.
 
 Try one of these alternatives:
 
-    --flag u'foo\n'   # space instead of =
+    echo u'--flag=foo\n'        # quote the whole thing
 
-    --flag=$myvar     # assign to variable first
+    echo --flag u'foo\n'        # space instead of =
+
+    echo --flag=$myvar          # assign to variable first
+
+    echo $['--flag=' ++ myvar]  # expression sub
 
 ## Runtime Errors - Traditional Shell
 
