@@ -148,7 +148,7 @@ if (_status !== 0) {
 ### general
 
 ### use command substitution to assign the result of a command to a variable
-var year = $(date -u +"%Y")
+var year = $(date -u '+%Y')
 echo $year
 
 # a failure will exit immediately
@@ -232,7 +232,7 @@ if (s ~ /digit+/) {
 
 #### extract a submatch with < >
 ####   if ($(date -u +"%Y-%m-%d") ~ /< digit{4} :year> '-' <digit{2} :month>!word<digit{2} :day>/) {
-if ($(date -u +"%Y-%m-%d") ~ /<capture digit{4} as year> '-' <capture digit{2} as month> '-' <capture digit{2} as day>/) {
+if ($(date -u "+%Y-%m-%d") ~ /<capture digit{4} as year> '-' <capture digit{2} as month> '-' <capture digit{2} as day>/) {
   # extract a match by number
   const complete_match = _match(0)
   const group_match = _match(1)

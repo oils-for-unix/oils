@@ -11,7 +11,7 @@ argv.py @a
 #### Assoc array can't be spliced directly
 
 shopt -s ysh:upgrade
-declare -A A=(['foo']=bar ['spam']=eggs)
+declare -A A=([foo]=bar [spam]=eggs)
 
 # Bash behavior is to splice values
 write -- "${A[@]}"
