@@ -1034,8 +1034,8 @@ You can use either `[]` or `.` to retrieve a value, given a key:
 
 You can change Dict values with the same 2 syntaxes:
 
-    set d['name'] = 'other'
-    set d.name = 'fun'
+    setvar d['name'] = 'other'
+    setvar d.name = 'fun'
 
 ---
 
