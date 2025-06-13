@@ -1710,6 +1710,34 @@ test-splat-expr() {
   _ysh-parse-error '= [...x for x in [1,2,3]]'
 }
 
+test-string-sigil-pair() {
+  # sigil pairs mean nothing in OSH
+  _osh-should-run "echo --foo=r'bar'"
+  _osh-should-run "echo --foo=u'bar'"
+
+  # disallowed with YSH
+  _ysh-parse-error "echo --foo=r'bar'"
+  _ysh-parse-error "echo --foo=u'bar'"
+  _ysh-parse-error "echo --foo=b'bar'"
+
+  _ysh-parse-error "echo --foo#b'bar'"
+  _ysh-parse-error "echo --foo#'bar'"
+
+  # ditto for multi-line
+  _ysh-parse-error "echo --foo=r'''bar'''"
+
+  # inner word
+  _ysh-parse-error "echo \${undef:-r'ok'}"
+
+  _ysh-should-run "echo --flag='single'"
+  _ysh-should-run 'echo --flag="double"'
+  _ysh-should-run "var x = u'foo'; echo --flag=\$x"
+
+  # TODO: Is this our tagged string syntax?
+  # It's better than html.'bar', because that would be weird in command mode.
+  _ysh-parse-error "echo html'bar'"
+}
+
 #
 # Entry Points
 #

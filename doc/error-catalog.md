@@ -247,6 +247,27 @@ operator is for half-open ranges and the `..=` operator is for closed ranges:
     => 2
     => 3
 
+### OILS-ERR-17
+
+```
+  echo --flag=u'foo'
+               ^
+[ -c flag ]:1: Invalid quoted word part in YSH (OILS-ERR-17)
+```
+
+<!-- 
+test/ysh-parse-errors.sh test-string-sigil-pair
+-->
+
+In YSH, `--flag='foo'` is allowed, but `--flag=u'foo\n'` is not.  In the latter
+case, it's not clear if the `u` is literal.
+
+Try one of these alternatives:
+
+    --flag u'foo\n'   # space instead of =
+
+    --flag=$myvar     # assign to variable first
+
 ## Runtime Errors - Traditional Shell
 
 These errors may occur in shells like [bash]($xref) and [zsh]($xref).
