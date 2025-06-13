@@ -140,7 +140,8 @@ def _CheckYshWord(w):
     ok = True
     if n >= 2:
         for part in parts:
-            if part.tag() == word_part_e.SingleQuoted:
+            if part.tag() in (word_part_e.SingleQuoted,
+                              word_part_e.DoubleQuoted):
                 ok = False
 
     # Allow special cases:

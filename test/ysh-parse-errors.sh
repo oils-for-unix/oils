@@ -1736,9 +1736,15 @@ test-string-sigil-pair() {
 
   _ysh-should-run "var x = u'foo'; echo --flag=\$x"
 
-  # TODO: Is this our tagged string syntax?
-  # It's better than html.'bar', because that would be weird in command mode.
-  _ysh-parse-error "echo html'bar'"
+  # TODO: Allow one of these as our tag syntax.
+  # An expression like html.'bar' would not look the same in command mode, so
+  # the prefix makes sense.  It's also more similar to JavaScript.
+  _ysh-parse-error 'echo html"double"'
+  _ysh-parse-error 'echo "double"html'
+
+  _ysh-parse-error "echo html'single'"
+  _ysh-parse-error "echo 'single'html"
+
 }
 
 #
