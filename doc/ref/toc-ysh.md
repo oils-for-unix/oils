@@ -326,6 +326,7 @@ X [External Lang] BEGIN   END   when (awk)
 <!-- linkify_stop_col is 34 -->
 
 ```chapter-links-word-lang_34
+  [Joining]       ysh-word-join    --flag='value'  PATH="value"
   [Quotes]        ysh-string       "x is $x"  $"x is $x"  r'[a-z]\n'
                                    u'line\n'  b'byte \yff'
                   triple-quoted    """  $"""  r'''  u'''  b'''
