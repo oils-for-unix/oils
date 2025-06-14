@@ -144,7 +144,7 @@ status=0
 #### builtin sleep usage errors
 case $SH in bash) exit ;; esac
 
-builtin sleep 5s
+builtin sleep 0.5s
 echo status=$?
 
 builtin sleep 0.1 extra

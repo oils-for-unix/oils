@@ -250,10 +250,11 @@ double to_float(int i) {
 
 double to_float(BigStr* s) {
   char* begin = s->data_;
-  char* end = begin + len(s);
+  char* end_pos = begin + len(s);
+  char* orig_end = end_pos;
 
   errno = 0;
-  double result = strtod(begin, &end);
+  double result = strtod(begin, &end_pos);
 
   if (errno == ERANGE) {  // error: overflow or underflow
     if (result >= HUGE_VAL) {
@@ -266,8 +267,16 @@ double to_float(BigStr* s) {
       FAIL("Invalid value after ERANGE");
     }
   }
-  if (end == begin) {  // error: not a floating point number
+  if (end_pos == begin) {  // error: not a floating point number
     throw Alloc<ValueError>();
+  }
+  if (end_pos != orig_end) {  // trailing data like '5s' not alowed
+    while (end_pos < orig_end) {
+      if (!IsAsciiWhitespace(*end_pos)) {
+        throw Alloc<ValueError>();  // Trailing non-space
+      }
+      end_pos++;
+    }
   }
 
   return result;

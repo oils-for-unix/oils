@@ -242,7 +242,7 @@ BigStr* strftime(BigStr* s, time_t ts) {
   if (n == 0) {
     // bash silently truncates on large format string like
     //   printf '%(%Y)T'
-    // Oil doesn't mask errors
+    // Oils doesn't mask errors
     // Leaving out location info points to 'printf' builtin
 
     e_die(StrFromC("strftime() result exceeds 1024 bytes"));
@@ -258,13 +258,17 @@ void sleep(double seconds) {
 
   // Note: Python 2.7 floatsleep() uses select()
   while (nanosleep(&req, &rem) == -1) {
+    // log("nano errno %d", errno);
     if (errno == EINTR) {
-      req = rem;  // Continue with remaining time
+      // e.g. on Ctrl-C, keep sleeping?
+      req = rem;
     } else {
       // Ignore other errors
+      // log("nano break");
       break;
     }
   }
+  // log("nano done");
 }
 
 }  // namespace time_

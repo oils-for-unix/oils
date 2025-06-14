@@ -68,4 +68,22 @@ no-home-dir() {
   ' dummy0 $sh
 }
 
+# MANUAL TEST
+# - external sleep can be killed with TERM, but it's unaffacted
+
+start-sleep() {
+  local osh_builtin=${1:-}
+
+  local code='sleep 100 & echo "pid $!"; wait; echo "sleep done"'
+
+  if test -n "$osh_builtin"; then
+    local osh=_bin/cxx-asan/osh
+    ninja $osh
+    set -x
+    $osh -c "builtin $code"
+  else
+    sh -c "$code"
+  fi
+}
+
 task-five "$@"

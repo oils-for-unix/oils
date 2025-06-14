@@ -73,6 +73,10 @@ TEST float_test() {
   ASSERT_EQ(-0.5f, to_float(StrFromC("-0.5")));
   ASSERT_EQ(-99.0f, to_float(StrFromC("-99")));
 
+  // Now with spaces
+  ASSERT_EQ(-99.0f, to_float(StrFromC("-99 ")));
+  ASSERT_EQ(-99.0f, to_float(StrFromC(" -99")));
+
   // Note: strtod supports hexadecimal and NaN
 
   bool caught;
@@ -88,6 +92,15 @@ TEST float_test() {
   caught = false;
   try {
     (void)to_float(StrFromC("x"));
+  } catch (ValueError* e) {
+    caught = true;
+  }
+  ASSERT(caught);
+
+  // Bug fixed in sleep 5s - trailing 's' is not allowed
+  caught = false;
+  try {
+    (void)to_float(StrFromC("5s"));
   } catch (ValueError* e) {
     caught = true;
   }
