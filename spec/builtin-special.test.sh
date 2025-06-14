@@ -1,4 +1,4 @@
-## oils_failures_allowed: 3
+## oils_failures_allowed: 0
 ## compare_shells: bash dash mksh zsh ash yash
 
 #### true is not special; prefix assignments don't persist, it can be redefined
@@ -83,27 +83,27 @@ eval() {
 }
 eval 'echo hi'
 
-## status: 2
+# we allow redefinition, but the definition is NOT used!
+## status: 0
 ## STDOUT:
+hi
 ## END
 
+# we PREVENT redefinition
+## OK dash/ash status: 2
+## OK dash/ash STDOUT:
+## END
+
+# should not allow redefinition
 ## BUG bash/zsh status: 0
 ## BUG bash/zsh STDOUT:
 eval func echo hi
 ## END
 
-# these shells allow redefinition, but the definition is NOT used!
-
-## BUG-2 mksh/yash/osh status: 0
-## BUG-2 mksh/yash/osh STDOUT:
-hi
-## END
 
 #### Special builtins can't be redefined as shell functions (set -o posix)
 case $SH in
-  bash)
-    set -o posix
-    ;;
+  bash) set -o posix ;;
 esac
 
 eval 'echo hi'
@@ -114,14 +114,14 @@ eval() {
 
 eval 'echo hi'
 
-## status: 2
+## status: 0
 ## STDOUT:
+hi
 hi
 ## END
 
-## BUG-2 mksh/yash status: 0
-## BUG-2 mksh/yash STDOUT:
-hi
+## OK bash/dash/ash status: 2
+## OK bash/dash/ash STDOUT:
 hi
 ## END
 
@@ -144,6 +144,15 @@ status=0
 ## END
 
 #### Shift is special and fails whole script
+
+# https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_14
+#
+# 2.8.1 - Consequences of shell errors
+#
+# Special built-ins should exit a non-interactive shell
+# bash and busybox dont't implement this even with set -o posix, so it seems risky
+# dash and mksh do it; so does AT&T ksh
+
 $SH -c '
 if test -n "$BASH_VERSION"; then
   set -o posix
@@ -160,8 +169,8 @@ fi
 non-zero status
 ## END
 
-## BUG bash/zsh/ash/yash status: 0
-## BUG bash/zsh/ash/yash STDOUT:
+## N-I bash/zsh/ash/yash/osh status: 0
+## N-I bash/zsh/ash/yash/osh STDOUT:
 status=1
 ## END
 
@@ -185,8 +194,8 @@ ok
 non-zero status
 ## END
 
-## BUG bash/ash/yash status: 0
-## BUG bash/ash/yash STDOUT:
+## N-I bash/ash/yash/osh status: 0
+## N-I bash/ash/yash/osh STDOUT:
 ok
 should not get here
 ## END
@@ -221,7 +230,7 @@ type -t eval
 # it finds the function and the special builtin
 #type -a eval
 
-## OK bash STDOUT:
+## BUG bash STDOUT:
 TRUE
 builtin
 function
