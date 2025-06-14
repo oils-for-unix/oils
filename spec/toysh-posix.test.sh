@@ -106,8 +106,6 @@ _tmp
 ## END
 
 #### no shebang
-rm *
-
 cat > snork << 'EOF'
 echo hello $BLAH
 EOF

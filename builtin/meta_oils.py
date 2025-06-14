@@ -691,6 +691,7 @@ class RunProc(vm._Builtin):
 
 class Invoke(vm._Builtin):
     """Invoke a command, controlling the resolution of the first word."""
+
     def __init__(
             self,
             shell_ex,  # type: vm._Executor

@@ -291,7 +291,7 @@ def PlusEquals(old_val, val):
     return val
 
 
-def _IsSpecialBuiltin(cmd_val, posix_mode):
+def _IsSpecialBuiltin(cmd_val):
     # type: (cmd_value_t, bool) -> bool
     """
     Note: I tried calculating this in EvalWordSequence2() and
@@ -301,9 +301,6 @@ def _IsSpecialBuiltin(cmd_val, posix_mode):
     But the hint_str doesn't respect word splitting, so it's better done here.
     And it's annoying to have duplication in SimpleEvalWordSequence2().
     """
-    # set eval : etc. are always special builtins.  TODO: remove this param
-    posix_mode = True
-
     UP_cmd_val = cmd_val
     with tagswitch(cmd_val) as case:
         if case(cmd_value_e.Assign):
@@ -311,8 +308,10 @@ def _IsSpecialBuiltin(cmd_val, posix_mode):
             return True
         elif case(cmd_value_e.Argv):
             cmd_val = cast(cmd_value.Argv, UP_cmd_val)
-            if (posix_mode and consts.LookupSpecialBuiltin(cmd_val.argv[0])
-                    != consts.NO_INDEX):
+            arg0 = cmd_val.argv[0]
+            if arg0 == 'exec':  # WHY THIS SPECIAL CASE?
+                return False
+            if consts.LookupSpecialBuiltin(arg0) != consts.NO_INDEX:
                 return True
     return False
 
@@ -1103,9 +1102,11 @@ class CommandEvaluator(object):
                     status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
 
             else:  # OSH
-                if _IsSpecialBuiltin(cmd_val, self.exec_opts.posix()):
+                # WHY?
+                if _IsSpecialBuiltin(cmd_val):
                     # Special builtins have their temp env persisted.
                     # But it's NOT exported, unlike in bash.
+                    #self._EvalTempEnv(node.more_env, state.SetExport)
                     self._EvalTempEnv(node.more_env, 0)
                     status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
                 else:
