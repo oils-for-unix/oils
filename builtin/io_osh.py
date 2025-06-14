@@ -188,5 +188,6 @@ class Sleep(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
+        _, arg_r = flag_util.ParseCmdVal('sleep', cmd_val)
         print('sleep')
         return 0

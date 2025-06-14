@@ -195,7 +195,6 @@ class _Executor(object):
             procs,  # type: state.Procs
             hay_state,  # type: hay_ysh.HayState
             builtins,  # type: Dict[int, _Builtin]
-            internals,  # type: Dict[int, _Builtin]
             tracer,  # type: dev.Tracer
             errfmt  # type: ui.ErrorFormatter
     ):
@@ -205,7 +204,6 @@ class _Executor(object):
         self.procs = procs
         self.hay_state = hay_state
         self.builtins = builtins
-        self.internals = internals
         self.tracer = tracer
         self.errfmt = errfmt
 
@@ -247,14 +245,6 @@ class _Executor(object):
         """
         self.tracer.OnBuiltin(builtin_id, cmd_val.argv)
         builtin_proc = self.builtins[builtin_id]
-        return self._RunBuiltinProc(builtin_proc, cmd_val)
-
-    def RunInternal(self, builtin_id, cmd_val):
-        # type: (int, cmd_value.Argv) -> int
-        """Run an internal command like 'sleep'
-        """
-        self.tracer.OnBuiltin(builtin_id, cmd_val.argv)
-        builtin_proc = self.internals[builtin_id]
         return self._RunBuiltinProc(builtin_proc, cmd_val)
 
     def _RunBuiltinProc(self, builtin_proc, cmd_val):

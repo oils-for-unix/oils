@@ -508,6 +508,8 @@ INVOKE_SPEC.LongFlag('--show')  # like type -a with private builtins
 
 EXTERN_SPEC = FlagSpec('extern')
 
+SLEEP_SPEC = FlagSpec('sleep')
+
 WRITE_SPEC = FlagSpec('write')
 WRITE_SPEC.LongFlag('--sep',
                     args.String,

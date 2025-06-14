@@ -256,7 +256,6 @@ def InitCommandEvaluator(parse_ctx=None,
         builtin_i.alias: pure_osh.Alias(aliases, errfmt),
         builtin_i.unalias: pure_osh.UnAlias(aliases, errfmt),
     }
-    internals = {}
 
     debug_f = util.DebugFile(sys.stderr)
     cmd_deps = cmd_eval.Deps()
@@ -298,13 +297,12 @@ def InitCommandEvaluator(parse_ctx=None,
 
     hay_state = hay_ysh.HayState()
     shell_ex = executor.ShellExecutor(mem, exec_opts, mutable_opts, procs,
-                                      hay_state, builtins, internals, tracer,
-                                      errfmt, search_path, ext_prog, waiter,
+                                      hay_state, builtins, tracer, errfmt,
+                                      search_path, ext_prog, waiter,
                                       job_control, job_list, fd_state,
                                       trap_state)
     pure_ex = executor.PureExecutor(mem, exec_opts, mutable_opts, procs,
-                                    hay_state, builtins, internals, tracer,
-                                    errfmt)
+                                    hay_state, builtins, tracer, errfmt)
 
     assert cmd_ev.mutable_opts is not None, cmd_ev
     prompt_ev = prompt.Evaluator('osh', '0.0.0', parse_ctx, mem)

@@ -492,7 +492,6 @@ def Main(
     procs = state.Procs(mem)  # type: state.Procs
 
     builtins = {}  # type: Dict[int, vm._Builtin]
-    internals = {}  # type: Dict[int, vm._Builtin]
 
     # e.g. s.startswith()
     methods = {}  # type: Dict[int, Dict[str, vm._Callable]]
@@ -500,14 +499,13 @@ def Main(
     hay_state = hay_ysh.HayState()
 
     shell_ex = executor.ShellExecutor(mem, exec_opts, mutable_opts, procs,
-                                      hay_state, builtins, internals, tracer,
-                                      errfmt, search_path, ext_prog, waiter,
+                                      hay_state, builtins, tracer, errfmt,
+                                      search_path, ext_prog, waiter,
                                       job_control, job_list, fd_state,
                                       trap_state)
 
     pure_ex = executor.PureExecutor(mem, exec_opts, mutable_opts, procs,
-                                    hay_state, builtins, internals, tracer,
-                                    errfmt)
+                                    hay_state, builtins, tracer, errfmt)
 
     arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, mutable_opts,
                                            parse_ctx, errfmt)
@@ -736,8 +734,8 @@ def Main(
     b[builtin_i.cat] = cat
     b[builtin_i.read] = read_osh.Read(splitter, mem, parse_ctx, cmd_ev, errfmt)
 
-    internals[builtin_i.cat] = cat
-    internals[builtin_i.sleep] = io_osh.Sleep()
+    # PRIVATE builtin
+    b[builtin_i.sleep] = io_osh.Sleep()
 
     mapfile = io_osh.MapFile(mem, errfmt, cmd_ev)
     b[builtin_i.mapfile] = mapfile

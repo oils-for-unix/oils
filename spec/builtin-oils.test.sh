@@ -92,6 +92,9 @@ case $SH in bash) exit ;; esac
 # or maybe we don't need that?
 # do we need invoke --type sleep?
 
+builtin sleep a
+echo status=$?
+
 builtin sleep 0
 echo status=$?
 
@@ -99,6 +102,22 @@ echo status=$?
 status=0
 ## END
 ## N-I bash STDOUT:
+## END
+
+#### sleep is still external
+
+# should not work
+builtin sleep --version
+if test "$?" != '0'; then
+  echo ok
+fi
+
+sleep --version | head -n 1 >& 2
+echo status=$?
+
+## STDOUT:
+ok
+status=0
 ## END
 
 #### cat

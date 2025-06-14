@@ -522,6 +522,7 @@ def _PrintFreeForm(row):
 
 def _PrintEntry(arg, row):
     # type: (arg_types.type, Tuple[str, str, Optional[str]]) -> None
+    """For type builtin"""
 
     _, kind, detail = row
     assert kind is not None
@@ -631,11 +632,16 @@ class Builtin(vm._Builtin):
 
         name = argv[0]
 
-        # Run regular builtin or special builtin
-        to_run = consts.LookupNormalBuiltin(name)
-        if to_run == consts.NO_INDEX:
+        to_run = consts.LookupNormalBuiltin(name)  # builtin true
+
+        if to_run == consts.NO_INDEX:  # builtin eval
             to_run = consts.LookupSpecialBuiltin(name)
-        if to_run == consts.NO_INDEX:
+
+        if to_run == consts.NO_INDEX:  # builtin sleep
+            # Note that plain 'sleep' doesn't work
+            to_run = consts.LookupPrivateBuiltin(name)
+
+        if to_run == consts.NO_INDEX:  # error
             location = locs[0]
             if consts.LookupAssignBuiltin(name) != consts.NO_INDEX:
                 # NOTE: core/executor.py has a similar restriction for 'command'
@@ -763,15 +769,11 @@ class Invoke(vm._Builtin):
                                  True,
                                  do_private=True)
                 for row in r:
+                    # TODO: _PrintRow instead
+                    # Should it print shell keywords and aliases?  Even if they
+                    # can't be invoked?
+                    # Yes because 'time' is a keyword, and external
                     _PrintFreeForm(row)
-                    if 0:
-                        name, kind, detail = row
-                        if kind == 'file':
-                            print('%s\t%s' % name, detail)
-                        else:
-                            print('%s\t%s' % name, detail)
-                            print(detail)
-                        print(row)
             return 0
 
         cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.is_last_cmd,
@@ -786,7 +788,7 @@ class Invoke(vm._Builtin):
             return 1
 
         if arg.private_:
-            return self.shell_ex.RunInternal(to_run, cmd_val2)
+            return self.shell_ex.RunBuiltin(to_run, cmd_val2)
 
         # TODO:
         if arg.builtin:
