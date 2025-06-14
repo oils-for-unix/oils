@@ -709,6 +709,31 @@ invokable is a YSH invokable
 ---
 ## END
 
+#### type / type -a agrees on ordering of shell functions and procs
+shopt --set ysh:upgrade
+
+#type -t p
+
+p() {
+   echo 'sh-func'
+}
+p
+type -t p
+echo
+
+proc p {
+  echo 'YSH proc'
+}
+p
+type -t p
+## STDOUT:
+sh-func
+function
+
+YSH proc
+proc
+## END
+
 #### invokable Obj that doesn't declare self
 shopt --set ysh:upgrade
 

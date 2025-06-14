@@ -825,13 +825,13 @@ def _ResolveName(
         results.append((name, 'builtin', 's'))
 
     if procs:
-        if procs.IsShellFunc(name):
-            results.append((name, 'function', no_str))
-
         if procs.IsProc(name):
             results.append((name, 'proc', no_str))
         elif procs.IsInvokableObj(name):  # can't be both proc and obj
             results.append((name, 'invokable', no_str))
+
+        if procs.IsShellFunc(name):
+            results.append((name, 'function', no_str))
 
     if name in aliases:
         results.append((name, 'alias', aliases[name]))
