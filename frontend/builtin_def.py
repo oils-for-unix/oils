@@ -151,7 +151,7 @@ def _Init(b):
     # TODO: change to 'internal cat' (issue 1013)
     b.Add('__cat', enum_name='cat')
 
-    b.Add('sleep', kind='intern')
+    b.Add('sleep', kind='private')
 
 
 _BUILTIN_DEF = _BuiltinDef()

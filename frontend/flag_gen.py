@@ -36,6 +36,8 @@ def _CleanFieldName(name):
     # Avoid C++ keyword for invoke --extern
     if name == 'extern':
         return 'extern_'
+    if name == 'private':
+        return 'private_'
 
     return name.replace('-', '_')
 

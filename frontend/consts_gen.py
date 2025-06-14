@@ -374,6 +374,7 @@ option_asdl::option_t UnimplOptionNum(BigStr* s);
 option_asdl::builtin_t LookupNormalBuiltin(BigStr* s);
 option_asdl::builtin_t LookupAssignBuiltin(BigStr* s);
 option_asdl::builtin_t LookupSpecialBuiltin(BigStr* s);
+option_asdl::builtin_t LookupPrivateBuiltin(BigStr* s);
 bool IsControlFlow(BigStr* s);
 BigStr* ControlFlowName(int i);
 bool IsKeyword(BigStr* s);
@@ -505,6 +506,7 @@ Kind GetKind(id_kind_asdl::Id_t id) {
             GenBuiltinLookup('LookupNormalBuiltin', 'normal', f)
             GenBuiltinLookup('LookupAssignBuiltin', 'assign', f)
             GenBuiltinLookup('LookupSpecialBuiltin', 'special', f)
+            GenBuiltinLookup('LookupPrivateBuiltin', 'private', f)
 
             GenStringMembership('IsControlFlow', consts._CONTROL_FLOW_NAMES, f)
             GenIntStrLookup('ControlFlowName', consts._CONTROL_FLOW_LOOKUP, f)

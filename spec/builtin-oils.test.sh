@@ -10,17 +10,44 @@ echo status=$?
 invoke --
 echo status=$?
 
+echo
+
 invoke sleep 0
 echo status=$?
 
 invoke -- sleep 0
 echo status=$?
 
+invoke --private -- sleep 0
+echo status=$?
+
 ## STDOUT:
 status=2
 status=2
+
 status=0
 status=0
+status=0
+## END
+## N-I bash STDOUT:
+## END
+
+#### invoke nonexistent name
+case $SH in bash) exit ;; esac
+
+invoke zz
+echo status=$?
+
+invoke --private zz
+echo status=$?
+
+invoke --private -- zz
+echo status=$?
+
+## STDOUT:
+status=1
+status=1
+status=1
 ## END
 ## N-I bash STDOUT:
 ## END

@@ -741,13 +741,13 @@ class Invoke(vm._Builtin):
 
         name = argv[0]
         location = locs[0]
-        to_run = consts.LookupInternal(name)
+        to_run = consts.LookupPrivateBuiltin(name)
         if to_run == consts.NO_INDEX:
-            self.errfmt.Print_("%r isn't an internal command" % name,
+            self.errfmt.Print_("%r isn't a private builtin" % name,
                                blame_loc=location)
             return 1
 
-        if arg.intern:
+        if arg.private_:
             return self.shell_ex.RunInternal(to_run, cmd_val2)
 
         # TODO:

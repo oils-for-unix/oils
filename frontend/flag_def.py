@@ -503,7 +503,7 @@ INVOKE_SPEC = FlagSpec('invoke')
 INVOKE_SPEC.LongFlag('--builtin')  # like 'builtin'
 INVOKE_SPEC.LongFlag('--proc')  # like 'runproc'
 INVOKE_SPEC.LongFlag('--extern')
-INVOKE_SPEC.LongFlag('--intern')  # cat, sleep
+INVOKE_SPEC.LongFlag('--private')  # cat, sleep
 
 EXTERN_SPEC = FlagSpec('extern')
 
