@@ -744,13 +744,12 @@ class Invoke(vm._Builtin):
                                blame_loc=location)
             return 1
 
-        if arg.private_:
-            return self.shell_ex.RunBuiltin(to_run, cmd_val2)
-
         # TODO:
         if arg.builtin:
+            return self.shell_ex.RunBuiltin(to_run, cmd_val2)
+        if arg.proc:
             pass
-        if arg.proc_like:
+        if arg.sh_func:
             pass
 
         # Special considerations:

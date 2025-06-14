@@ -18,7 +18,7 @@ echo status=$?
 invoke -- sleep 0
 echo status=$?
 
-invoke --private -- sleep 0
+invoke --builtin -- sleep 0
 echo status=$?
 
 ## STDOUT:
