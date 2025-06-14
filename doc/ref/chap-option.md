@@ -238,6 +238,7 @@ Details on options that are not in `ysh:upgrade` and `strict:all`:
       parse_dparen (-u)       Is (( legacy arithmetic allowed?
       parse_ignored (-u)      Parse, but ignore, certain redirects
       parse_sh_arith (-u)     Allow legacy shell arithmetic
+      parse_word_join(-u)     Is pitfall --flag=r'value' allowed?
       expand_aliases (-u)     Whether aliases are expanded
     X old_builtins (-u)       local/declare/etc.  pushd/popd/dirs
                               ... source  unset  printf  [un]alias

@@ -123,7 +123,7 @@ unused2 = Id_str
 KINDS_THAT_END_WORDS = [Kind.Eof, Kind.WS, Kind.Op, Kind.Right]
 
 
-def _CheckYshWord(w):
+def _IsValidYshWord(w):
     # type: (CompoundWord) -> bool
     """YSH word restriction
 
@@ -1984,7 +1984,7 @@ class WordParser(WordEmitter):
 
         # YSH word restriction
         # (r'' u'' b'' are stripped on shopt -s parse_ysh_string)
-        if self.parse_opts.parse_ysh_string() and not _CheckYshWord(w):
+        if not self.parse_opts.parse_word_join() and not _IsValidYshWord(w):
             p_die("Invalid quoted word part in YSH (OILS-ERR-17)",
                   loc.WordPart(part))
 

@@ -172,7 +172,9 @@ _UPGRADE_PARSE_OPTS = [
     'parse_triple_quote',  # for ''' and """
 ]
 
-# Extra stuff that breaks too many programs.
+# Extra stuff that breaks programs.
+# TODO: parse_at_all should be TRUE by default?
+#    or invert to no_parse_at, no_parse_backslash
 _YSH_PARSE_OPTS = [
     ('parse_at_all', False),  # @ starting any word, e.g. @[] @{} @@ @_ @-
 
@@ -187,6 +189,7 @@ _YSH_PARSE_OPTS = [
     ('parse_dparen', True),  # disallow bash's ((
     ('parse_dbracket', True),  # disallow bash's [[
     ('parse_bare_word', True),  # 'case bare' and 'for x in bare'
+    ('parse_word_join', True),  # --flag=r'value' pitfall allowed
 ]
 
 # No-ops for bash compatibility

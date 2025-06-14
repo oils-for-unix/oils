@@ -772,3 +772,19 @@ echo status=$?
 status=0
 status=0
 ## END
+
+#### ysh:upgrade allows assoc arrays, with parse_ysh_string
+
+shopt --set ysh:upgrade
+
+# parse_ysh_string disallows it
+# do we need another option?  strict_parse_string or strict_parse_word?
+
+declare -A assoc=(['key']=value ["dq"]=dq)
+
+#declare -A assoc=([key]=value [dq]=dq)
+echo ${#assoc[@]}
+
+## STDOUT:
+2
+## END
