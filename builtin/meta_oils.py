@@ -690,50 +690,7 @@ class RunProc(vm._Builtin):
 
 
 class Invoke(vm._Builtin):
-    """Invoke a command, controlling the resolution of the first word
-
-    Why does this exist?
-
-      invoke --extern X    # missing from shell, some users want it
-      invoke --private X   # make 'sleep' visible (without 'enable')
-                           # builtin sleep does this, so maybe you only need
-                           # invoke --builtin sleep?
-
-      invoke --show X Y Z  # like type -a, and include private builtins?
-
-    It can subsume these:
-      invoke --builtin X                # builtin X
-      invoke --builtin --extern X       # command X
-      invoke --builtin --extern --default-path X  # command -p X
-
-      invoke --proc X                   # runproc X - deprecate ours?
-
-    Extra functionality
-      invoke --extern --path /usr/bin:/bin
-
-    - invoke --proc
-      - myproc (42)
-      - sh-func
-      - invokable-obj
-    Note: If you don't distinguish between proc, sh-func, and invokable-obj,
-    then 'runproc' suffices.
-
-    Can we negate?
-      invoke --no-proc-like --no-builtin --no-extern
-
-    With no args, print a table of what's available
-
-       invoke --builtin
-       invoke --builtin true
-
-    Introspection:
-
-    invoke     - YSH introspection on first word
-    type --all - introspection on variables too?
-               - different than = type(x)
-    type -t also has 'keyword' and 'special builtin', but no 'assign builtin'
-    """
-
+    """Invoke a command, controlling the resolution of the first word."""
     def __init__(
             self,
             shell_ex,  # type: vm._Executor

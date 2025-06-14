@@ -136,9 +136,9 @@ X [Wok]           _field()
                   shvar                  Temporary modify global settings
                   ctx                    Share and update a temporary "context"
                   push-registers         Save registers like $?, PIPESTATUS
-  [Introspection] runproc                Run a proc; use as main entry point
+  [Word Lookup]   invoke                 Run a command, and control name lookup
+                  runproc                Run a proc; use as main entry point
                 X extern                 Run an external command, with an ENV
-                X invoke                 Control which "invokables" are run
   [Modules]       
                   source-guard           guard against duplicate 'source'
                   is-main                false when sourcing a file
@@ -150,6 +150,7 @@ X [Wok]           _field()
                   write                  Like echo, with --, --sep, --end
                   fork         forkwait  Replace & and (), and takes a block
                   fopen                  Open multiple streams, takes a block
+  [Private]       sleep                  Put the shell process to sleep
   [Hay Config]    hay          haynode   For DSLs and config files
   [Completion]    compadjust   compexport
   [Data Formats]  json                   read write

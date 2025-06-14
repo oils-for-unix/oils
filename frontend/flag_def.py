@@ -501,7 +501,8 @@ RUNPROC_SPEC.ShortFlag('-h', args.Bool, help='Show all procs')
 
 INVOKE_SPEC = FlagSpec('invoke')
 INVOKE_SPEC.LongFlag('--builtin')  # like 'builtin'
-INVOKE_SPEC.LongFlag('--proc-like')  # like 'runproc'
+INVOKE_SPEC.LongFlag('--proc')
+INVOKE_SPEC.LongFlag('--sh-func')
 INVOKE_SPEC.LongFlag('--extern')  # new functionality
 INVOKE_SPEC.LongFlag('--private')  # cat, sleep
 INVOKE_SPEC.LongFlag('--show')  # like type -a with private builtins

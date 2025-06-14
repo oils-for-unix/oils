@@ -336,18 +336,6 @@ Current list of registers:
 
 ## Modules
 
-### runproc
-
-Runs a named proc with the given arguments.  It's often useful as the only top
-level statement in a "task file":
-
-    proc p {
-      echo hi
-    }
-    runproc @ARGV
-    
-Like 'builtin' and 'command', it affects the lookup of the first word.
-
 ### source-guard
 
 Registers a name in the global "module" dict.  Returns 0 if it doesn't exist,
@@ -653,6 +641,30 @@ Rather than shell style:
     } >out.txt
 
 When a block is long, the former is more readable.
+
+## Private
+
+Private builtins are not enabled by default:
+
+    sleep 0.1          # runs external process; private builtin not found
+    builtin sleep 0.1  # runs private builtin
+
+### sleep
+
+`sleep` is a *private* builtin that puts the shell process to sleep for the
+given number of seconds.
+
+Example:
+
+    builtin sleep 0.1  # wait 100 milliseconds
+
+It's compatible with the POSIX `sleep` utility:
+
+    sleep 2            # wait 2 seconds
+
+<!--
+TODO: Run pending traps?
+-->
 
 ## Hay Config
 
@@ -1406,7 +1418,9 @@ Flags:
     -a  Show all possible candidates, not just the first one
     -f  Don't search for shell functions
     -P  Only search for executable files
-    -t  Print a single word: alias, builtin, file, function, or keyword
+    -t  Print a single word: alias, builtin, file, function, proc, keyword
+
+Note: [`invoke --show`][invoke] is more general than `type`.
 
 Similar names: [type][]
 
@@ -1423,27 +1437,94 @@ builtin](https://www.gnu.org/software/bash/manual/bash.html#index-type).
  
 ## Word Lookup
 
+### invoke
+
+The `invoke` builtin controls name lookup for [simple
+commands][simple-command].
+
+[simple-command]: chap-cmd-lang.html#simple-command
+
+Usage:
+
+    invoke --show NAME*       # Show info about EACH name
+    invoke LOOKUP_FLAG* ARG*  # Run a single command with this arg array
+
+Category lookup flags:
+
+    --proc      Run YSH procs and invokable objects
+    --sh-func   Run shell functions
+    --builtin   Run builtin commands (of any kind)
+                eval: POSIX special
+                true: normal
+                sleep: private (Oils)
+    --extern    Run external commands, like /bin/ls
+
+Multiple categories may be passed.  They are searched in that order: proc-like,
+shell functions, builtins, then extern.  The first one wins.
+
+Run `invoke --show NAME` to see all categories a name is found in.  (Shell
+keywords and aliases are shown, but `invoke` doesn't run them.)
+
+If the name is not found, then `invoke` returns status 127.
+
+Examples:
+
+    invoke --show true sleep ls          # similar to type -a true sleep ls
+
+    invoke --builtin echo hi             # like builtin echo hi
+    invoke --builtin --extern ls /tmp    # like command ls /tmp
+    invoke --builtin echo hi             # like builtin echo hi
+
+    invoke foo                           # no lookup flags, so it always fails
+
+
+Related:
+
+- [builtin][] - like `--builtin`
+- [command][] - like `--builtin --extern`
+- [runproc][] - like `--proc --sh-func`
+- [type][cmd/type] - like `--show`
+
+[builtin]: chap-builtin-cmd.html#builtin
+[command]: chap-builtin-cmd.html#command
+[runproc]: chap-builtin-cmd.html#runproc
+[cmd/type]: chap-builtin-cmd.html#cmd/type
+
+### runproc
+
+Runs a named proc with the given arguments.  It's often useful as the only top
+level statement in a "task file":
+
+    proc p {
+      echo hi
+    }
+    runproc @ARGV
+    
+Like 'builtin' and 'command', it affects the lookup of the first word.
+
 ### command
 
     command FLAG* CMD ARG*
 
 Look up CMD as a shell builtin or executable file, and execute it with the
-given ARGs.  That is, the lookup ignores shell functions named CMD.
+given ARGs.
 
 Flags:
 
     -v  Instead of executing CMD, print a description of it.
-        Similar to the 'type' builtin.
 <!--    -p  Use a default value for PATH that is guaranteed to find all of the
         standard utilities.
     -V  Print a more verbose description of CMD.-->
+
+Note: [`invoke --show`][invoke] is more general than `command -v`.
+
+[invoke]: chap-builtin-cmd.html#invoke
 
 ### builtin
 
     builtin CMD ARG*
 
-Look up CMD as a shell builtin, and execute it with the given ARGs.  That is,
-the lookup ignores shell functions and executables named CMD.
+Look up CMD as a shell builtin, and execute it with the given ARGs.
 
 ## Interactive
 
