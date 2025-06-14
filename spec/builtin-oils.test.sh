@@ -72,6 +72,18 @@ sleep is sleep
 sleep
 ## END
 
+#### but invoke --show finds the private builtin (alternative to type, command)
+case $SH in bash) exit ;; esac
+
+invoke --show sleep | grep private
+
+## STDOUT:
+sleep is a private shell builtin
+## END
+
+## N-I bash STDOUT:
+## END
+
 #### builtin sleep finds the private builtin
 case $SH in bash) exit ;; esac
 
@@ -85,6 +97,8 @@ echo status=$?
 
 ## STDOUT:
 status=0
+## END
+## N-I bash STDOUT:
 ## END
 
 #### cat

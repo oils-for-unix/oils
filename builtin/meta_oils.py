@@ -504,8 +504,11 @@ def _PrintFreeForm(row):
             prefix = ''
         elif detail == 's':
             prefix = 'special '
+        elif detail == 'p':
+            # printed in invoke --show, but not type, because it's not the
+            # first word
+            prefix = 'private '
         else:
-            # 'p' for private is not printed
             raise AssertionError()
         what = 'a %sshell %s' % (prefix, kind)
     else:  # function, keyword
@@ -685,13 +688,17 @@ class Invoke(vm._Builtin):
 
     Why does this exist?
 
-      invoke --extern X  # missing from shell, some users want it
-      invoke --intern X  # make 'sleep' visible (without 'enable')
+      invoke --extern X    # missing from shell, some users want it
+      invoke --private X   # make 'sleep' visible (without 'enable')
+                           # builtin sleep does this, so maybe you only need
+                           # invoke --builtin sleep?
+
+      invoke --show X Y Z  # like type -a, and include private builtins?
 
     It can subsume these:
       invoke --builtin X                # builtin X
-      invoke --proc --extern X          # command X
-      invoke --extern --default-path X  # command -p X
+      invoke --builtin --extern X       # command X
+      invoke --builtin --extern --default-path X  # command -p X
 
       invoke --proc X                   # runproc X - deprecate ours?
 
@@ -706,8 +713,7 @@ class Invoke(vm._Builtin):
     then 'runproc' suffices.
 
     Can we negate?
-
-        invoke --no-proc-like --no-builtin --no-extern
+      invoke --no-proc-like --no-builtin --no-extern
 
     With no args, print a table of what's available
 
@@ -722,10 +728,19 @@ class Invoke(vm._Builtin):
     type -t also has 'keyword' and 'special builtin', but no 'assign builtin'
     """
 
-    def __init__(self, shell_ex, procs, errfmt):
-        # type: (vm._Executor, state.Procs, ui.ErrorFormatter) -> None
+    def __init__(
+            self,
+            shell_ex,  # type: vm._Executor
+            procs,  # type: state.Procs
+            aliases,  # type: Dict[str, str]
+            search_path,  # type: executor.SearchPath
+            errfmt,  # type: ui.ErrorFormatter
+    ):
+        # type: (...) -> None
         self.shell_ex = shell_ex
         self.procs = procs
+        self.aliases = aliases
+        self.search_path = search_path
         self.errfmt = errfmt
 
     def Run(self, cmd_val):
@@ -738,6 +753,26 @@ class Invoke(vm._Builtin):
 
         if len(argv) == 0:
             raise error.Usage('expected arguments', cmd_val.arg_locs[0])
+
+        if arg.show:
+            for name in argv:
+                r = _ResolveName(name,
+                                 self.procs,
+                                 self.aliases,
+                                 self.search_path,
+                                 True,
+                                 do_private=True)
+                for row in r:
+                    _PrintFreeForm(row)
+                    if 0:
+                        name, kind, detail = row
+                        if kind == 'file':
+                            print('%s\t%s' % name, detail)
+                        else:
+                            print('%s\t%s' % name, detail)
+                            print(detail)
+                        print(row)
+            return 0
 
         cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.is_last_cmd,
                                   cmd_val.self_obj, cmd_val.proc_args)
@@ -756,8 +791,15 @@ class Invoke(vm._Builtin):
         # TODO:
         if arg.builtin:
             pass
-        if arg.proc:
+        if arg.proc_like:
             pass
+
+        # Special considerations:
+        # - set PATH for lookup
+        # - set ENV for external process with a DICT
+        #   - that's similar to ENV, but it's a YSH thing
+        #   - ambiguity:
+        #   - invoke --extern ls (ENV)  # i
         if arg.extern_:
             pass
 
