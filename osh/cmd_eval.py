@@ -1105,7 +1105,8 @@ class CommandEvaluator(object):
             else:  # OSH
                 if _IsSpecialBuiltin(cmd_val, self.exec_opts.posix()):
                     # Special builtins have their temp env persisted.
-                    self._EvalTempEnv(node.more_env, state.SetExport)
+                    # But it's NOT exported, unlike in bash.
+                    self._EvalTempEnv(node.more_env, 0)
                     status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
                 else:
                     with state.ctx_Temp(self.mem):

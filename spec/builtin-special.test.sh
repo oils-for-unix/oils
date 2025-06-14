@@ -29,9 +29,7 @@ foo=bar
 
 #### Prefix assignments persist after special builtins, like : (set -o posix)
 case $SH in
-  bash)
-    set -o posix
-    ;;
+  bash) set -o posix ;;
 esac
 
 foo=bar :
@@ -51,14 +49,11 @@ foo=
 z=
 ## END
 
-#### readonly is special and prefix assignments persist (set -o posix)
+#### Prefix assignments persist after readonly, but NOT exported (set -o posix)
 
 # Bash only implements it behind the posix option
 case $SH in
-  bash)
-    # for bash
-    set -o posix
-    ;;
+  bash) set -o posix ;;
 esac
 foo=bar readonly spam=eggs
 echo foo=$foo
@@ -75,7 +70,7 @@ None
 None
 ## END
 
-## OK bash/yash/osh STDOUT:
+## BUG bash/yash STDOUT:
 foo=bar
 spam=eggs
 bar
