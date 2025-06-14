@@ -72,6 +72,28 @@ sleep is sleep
 sleep
 ## END
 
+#### type -a does not find private builtins, but invoke --show does
+case $SH in bash) exit ;; esac
+
+remove-path() { sed 's;/.*/;;'; }
+
+# this is meant to find the "first word"
+type -a sleep | remove-path | uniq
+echo ---
+
+# this also shows private builtins, which are not the first word
+invoke --show sleep | remove-path | uniq
+
+## STDOUT:
+sleep is sleep
+---
+sleep is sleep
+sleep is a private shell builtin
+## END
+
+## N-I bash STDOUT:
+## END
+
 #### but invoke --show finds the private builtin (alternative to type, command)
 case $SH in bash) exit ;; esac
 

@@ -820,6 +820,27 @@ def _ResolveName(
 
     results = []  # type: List[Tuple[str, str, Optional[str]]]
 
+    # Aliases can redefine keywords
+    if name in aliases:
+        results.append((name, 'alias', aliases[name]))
+
+    # Keywords come before simple commands
+    if consts.IsControlFlow(name):  # continue, etc.
+        results.append((name, 'keyword', no_str))
+    elif consts.IsKeyword(name):
+        results.append((name, 'keyword', no_str))
+
+    # Simple commands are looked up in this order by ShellExecutor:
+    #
+    #   1. special builtins
+    #   2. procs
+    #   3. shell functions - see state.Procs, shell functions come second
+    #   4. normal builtins
+    #   5. external commands
+    #
+    # These require the 'builtin' prefix:
+    #   6. private builtins
+
     # Special builtins are looked up FIRST
     if consts.LookupSpecialBuiltin(name) != 0:
         results.append((name, 'builtin', 's'))
@@ -830,30 +851,23 @@ def _ResolveName(
         elif procs.IsInvokableObj(name):  # can't be both proc and obj
             results.append((name, 'invokable', no_str))
 
-        if procs.IsShellFunc(name):
+        if procs.IsShellFunc(name):  # shell functions AFTER procs
             results.append((name, 'function', no_str))
-
-    if name in aliases:
-        results.append((name, 'alias', aliases[name]))
 
     # See if it's a builtin
     if consts.LookupNormalBuiltin(name) != 0:
         results.append((name, 'builtin', no_str))
     elif consts.LookupAssignBuiltin(name) != 0:
         results.append((name, 'builtin', 's'))
-    elif do_private and consts.LookupPrivateBuiltin(name) != 0:
-        results.append((name, 'builtin', 'p'))
-
-    # See if it's a keyword
-    if consts.IsControlFlow(name):  # continue, etc.
-        results.append((name, 'keyword', no_str))
-    elif consts.IsKeyword(name):
-        results.append((name, 'keyword', no_str))
 
     # See if it's external
     for path in search_path.LookupReflect(name, do_all):
         if posix.access(path, X_OK):
             results.append((name, 'file', path))
+
+    # Private builtins after externals
+    if do_private and consts.LookupPrivateBuiltin(name) != 0:
+        results.append((name, 'builtin', 'p'))
 
     return results
 
