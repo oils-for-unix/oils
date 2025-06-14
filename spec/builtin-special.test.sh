@@ -77,58 +77,7 @@ bar
 None
 ## END
 
-#### Prefix binding to exec - adapted from toysh
-cat > snork << 'EOF'
-#!/bin/sh
-echo hello $BLAH
-EOF
-chmod +x snork
-
-$SH -c 'BLAH=123; ./snork'
-$SH -c 'BLAH=123 ./snork'
-echo
-
-$SH -c 'BLAH=123; exec ./snork'
-$SH -c 'BLAH=123 exec ./snork'
-echo
-
-# WHY different?
-$SH -c 'BLAH=123; readonly foo; exec ./snork'
-$SH -c 'BLAH=123 readonly foo; ./snork'
-echo
-
-$SH -c 'BLAH=123; : foo; exec ./snork'
-$SH -c 'BLAH=123 : foo; ./snork'
-
-## STDOUT:
-hello
-hello 123
-
-hello
-hello 123
-
-hello
-hello
-
-hello
-hello
-## END
-
-## BUG yash STDOUT:
-hello
-hello 123
-
-hello
-hello 123
-
-hello
-hello 123
-
-hello
-hello 123
-## END
-
-#### Prefix binding for readonly vs. exec
+#### Prefix binding for exec is a special case (versus e.g. readonly)
 
 pre1=pre1 readonly x=x
 pre2=pre2 exec sh -c 'echo pre1=$pre1 x=$x pre2=$pre2'
@@ -138,6 +87,20 @@ pre1= x= pre2=pre2
 ## END
 ## BUG yash STDOUT:
 pre1=pre1 x= pre2=pre2
+## END
+
+#### exec without args is a special case of the special case in some shells
+
+FOO=bar exec >& 2
+echo FOO=$FOO
+#declare -p | grep FOO
+
+## STDERR:
+FOO=
+## END
+
+## OK dash/mksh/ash/yash STDERR:
+FOO=bar
 ## END
 
 #### Which shells allow special builtins to be redefined?
