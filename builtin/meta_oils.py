@@ -502,8 +502,11 @@ def _PrintFreeForm(row):
     elif kind == 'builtin':
         if detail is None:
             prefix = ''
-        else:
+        elif detail == 's':
             prefix = 'special '
+        else:
+            # 'p' for private is not printed
+            raise AssertionError()
         what = 'a %sshell %s' % (prefix, kind)
     else:  # function, keyword
         what = 'a shell %s' % kind
@@ -538,13 +541,13 @@ class Command(vm._Builtin):
     def __init__(
             self,
             shell_ex,  # type: vm._Executor
-            funcs,  # type: state.Procs
+            procs,  # type: state.Procs
             aliases,  # type: Dict[str, str]
             search_path,  # type: executor.SearchPath
     ):
         # type: (...) -> None
         self.shell_ex = shell_ex
-        self.funcs = funcs
+        self.procs = procs
         self.aliases = aliases
         self.search_path = search_path
 
@@ -562,15 +565,15 @@ class Command(vm._Builtin):
         if arg.v or arg.V:
             status = 0
             for argument in argv:
-                r = _ResolveName(argument, self.funcs, self.aliases,
+                r = _ResolveName(argument, self.procs, self.aliases,
                                  self.search_path, False)
                 if len(r):
                     # Print only the first occurrence
                     row = r[0]
                     if arg.v:
-                        name, _, path = row
-                        if path is not None:
-                            print(path)  # /usr/bin/awk
+                        name, kind, detail = row
+                        if kind == 'file':
+                            print(detail)  # /usr/bin/awk
                         else:
                             print(name)  # myfunc
                     else:
@@ -787,6 +790,7 @@ def _ResolveName(
         aliases,  # type: Dict[str, str]
         search_path,  # type: executor.SearchPath
         do_all,  # type: bool
+        do_private=False,  # type: bool
 ):
     # type: (...) -> List[Tuple[str, str, Optional[str]]]
     """
@@ -827,6 +831,8 @@ def _ResolveName(
         results.append((name, 'builtin', 's'))
     elif consts.LookupAssignBuiltin(name) != 0:
         results.append((name, 'builtin', 's'))
+    elif do_private and consts.LookupPrivateBuiltin(name) != 0:
+        results.append((name, 'builtin', 'p'))
 
     # See if it's a keyword
     if consts.IsControlFlow(name):  # continue, etc.
@@ -846,13 +852,13 @@ class Type(vm._Builtin):
 
     def __init__(
             self,
-            funcs,  # type: state.Procs
+            procs,  # type: state.Procs
             aliases,  # type: Dict[str, str]
             search_path,  # type: executor.SearchPath
             errfmt,  # type: ui.ErrorFormatter
     ):
         # type: (...) -> None
-        self.funcs = funcs
+        self.procs = procs
         self.aliases = aliases
         self.search_path = search_path
         self.errfmt = errfmt
@@ -863,9 +869,9 @@ class Type(vm._Builtin):
         arg = arg_types.type(attrs.attrs)
 
         if arg.f:  # suppress function lookup
-            funcs = None  # type: state.Procs
+            procs = None  # type: state.Procs
         else:
-            funcs = self.funcs
+            procs = self.procs
 
         status = 0
         names = arg_r.Rest()
@@ -881,7 +887,7 @@ class Type(vm._Builtin):
             return status
 
         for argument in names:
-            r = _ResolveName(argument, funcs, self.aliases, self.search_path,
+            r = _ResolveName(argument, procs, self.aliases, self.search_path,
                              arg.a)
             if arg.a:
                 for row in r:

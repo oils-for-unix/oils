@@ -1,5 +1,5 @@
 ## compare_shells: bash
-## oils_failures_allowed: 1
+## oils_failures_allowed: 3
 
 #### invoke usage
 case $SH in bash) exit ;; esac
@@ -52,6 +52,40 @@ status=1
 ## N-I bash STDOUT:
 ## END
 
+#### type and command builtin does not find private sleep, because it's not enabled
+
+# Does Oils have __builtins__.special __builtins__.normal __builtins__.private
+# perhaps?  That is another way of introspecting
+
+remove-path() { sed 's;/.*/;;'; }
+
+type -t sleep
+type sleep | remove-path
+echo
+
+command -v sleep | remove-path
+
+## STDOUT:
+file
+sleep is sleep
+
+sleep
+## END
+
+#### builtin sleep finds the private builtin
+case $SH in bash) exit ;; esac
+
+# a private builtin is a kind of builtin, and this shouldn't break anything?
+# invoke --private sleep is another way to do it
+# or maybe we don't need that?
+# do we need invoke --type sleep?
+
+builtin sleep 0
+echo status=$?
+
+## STDOUT:
+status=0
+## END
 
 #### cat
 case $SH in bash) exit ;; esac

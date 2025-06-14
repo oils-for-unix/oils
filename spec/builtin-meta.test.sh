@@ -37,16 +37,23 @@ for
 0
 ## END
 
-#### command -v executable
+#### command -v executable, builtin
 
 #command -v grep ls
 
 command -v grep | egrep -o '/[^/]+$'
 command -v ls | egrep -o '/[^/]+$'
+echo
+
+command -v true
+command -v eval
 
 ## STDOUT:
 /grep
 /ls
+
+true
+eval
 ## END
 
 
@@ -355,4 +362,3 @@ builtin command echo hi
 ## stdout: hi
 ## N-I dash/ash status: 127
 ## N-I dash/ash stdout-json: ""
-

@@ -117,6 +117,8 @@ class _Attributes(object):
         # similar hack to avoid C++ keyword in frontend/flag_gen.py
         if name == 'extern':
             name = 'extern_'
+        elif name == 'private':
+            name = 'private_'
 
         self.attrs[name] = val
 
