@@ -615,18 +615,22 @@ class Builtin(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
+        attrs, arg_r = flag_util.ParseCmdVal('builtin',
+                                             cmd_val,
+                                             accept_typed_args=True)
+        argv, locs = arg_r.Rest2()
 
-        if len(cmd_val.argv) == 1:
+        if len(argv) == 0:
             return 0  # this could be an error in strict mode?
 
-        name = cmd_val.argv[1]
+        name = argv[0]
 
         # Run regular builtin or special builtin
         to_run = consts.LookupNormalBuiltin(name)
         if to_run == consts.NO_INDEX:
             to_run = consts.LookupSpecialBuiltin(name)
         if to_run == consts.NO_INDEX:
-            location = cmd_val.arg_locs[1]
+            location = locs[0]
             if consts.LookupAssignBuiltin(name) != consts.NO_INDEX:
                 # NOTE: core/executor.py has a similar restriction for 'command'
                 self.errfmt.Print_("'builtin' can't run assignment builtin",
@@ -717,13 +721,31 @@ class Invoke(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        _, arg_r = flag_util.ParseCmdVal('invoke',
-                                         cmd_val,
-                                         accept_typed_args=True)
-        #argv, locs = arg_r.Rest2()
+        attrs, arg_r = flag_util.ParseCmdVal('invoke',
+                                             cmd_val,
+                                             accept_typed_args=True)
+        arg = arg_types.invoke(attrs.attrs)
+        argv, locs = arg_r.Rest2()
 
-        print('TODO: invoke')
-        # TODO
+        if len(argv) == 0:
+            raise error.Usage('expected arguments', cmd_val.arg_locs[0])
+
+        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.is_last_cmd,
+                                  cmd_val.self_obj, cmd_val.proc_args)
+
+        name = argv[0]
+        location = locs[0]
+        # TODO: LookupInternal()
+        to_run = consts.LookupNormalBuiltin(name)
+        if to_run == consts.NO_INDEX:
+            self.errfmt.Print_("%r isn't an internal command" % name,
+                               blame_loc=location)
+            return 1
+
+        if arg.internal:
+            # TODO: RunInternal()
+            return self.shell_ex.RunBuiltin(to_run, cmd_val2)
+
         return 0
 
 

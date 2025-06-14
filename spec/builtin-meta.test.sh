@@ -320,10 +320,34 @@ builtin ls
 ## status: 1
 ## N-I dash/ash status: 127
 
-#### builtin no args
+#### builtin usage
+ 
 builtin
-## status: 0
-## N-I dash/ash status: 127
+echo status=$?
+
+builtin --
+echo status=$?
+
+builtin -- false
+echo status=$?
+
+## STDOUT:
+status=0
+status=0
+status=1
+## END
+
+## BUG zsh STDOUT:
+status=0
+status=1
+status=1
+## END
+
+## N-I dash/ash STDOUT:
+status=127
+status=127
+status=127
+## END
 
 #### builtin command echo hi
 builtin command echo hi

@@ -58,6 +58,8 @@ EVAL_SPEC = FlagSpec('eval')
 SOURCE_SPEC = FlagSpec('source')
 SOURCE_SPEC.LongFlag('--builtin')
 
+BUILTIN_SPEC = FlagSpec('builtin')
+
 COMMAND_SPEC = FlagSpec('command')
 COMMAND_SPEC.ShortFlag('-v')
 COMMAND_SPEC.ShortFlag('-V')
@@ -500,7 +502,8 @@ RUNPROC_SPEC.ShortFlag('-h', args.Bool, help='Show all procs')
 INVOKE_SPEC = FlagSpec('invoke')
 INVOKE_SPEC.LongFlag('--builtin')  # like 'builtin'
 INVOKE_SPEC.LongFlag('--proc-like')  # like 'runproc'
-INVOKE_SPEC.LongFlag('--extern')  # like 'extern'
+INVOKE_SPEC.LongFlag('--external')
+INVOKE_SPEC.LongFlag('--internal')  # cat, sleep
 
 EXTERN_SPEC = FlagSpec('extern')
 
