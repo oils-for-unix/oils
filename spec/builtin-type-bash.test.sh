@@ -37,13 +37,22 @@ keyword
 #### type -t control flow
 type -t break continue return exit
 
-# Note: we also have static keywords for now
-
 ## STDOUT:
 builtin
 builtin
 builtin
 builtin
+## END
+
+# In OSH, tye are now keywords AND dynamic builtins
+#
+# We MAY make them builtins in OSH, and keywords in YSH
+
+## OK osh STDOUT:
+keyword
+keyword
+keyword
+keyword
 ## END
 
 
