@@ -251,8 +251,20 @@ BigStr* strftime(BigStr* s, time_t ts) {
   return result;
 }
 
-void sleep(int seconds) {
-  ::sleep(seconds);
+void sleep(double seconds) {
+  struct timespec req, rem;
+  req.tv_sec = (time_t)seconds;
+  req.tv_nsec = (long)((seconds - req.tv_sec) * 1000000000);
+
+  // Note: Python 2.7 floatsleep() uses select()
+  while (nanosleep(&req, &rem) == -1) {
+    if (errno == EINTR) {
+      req = rem;  // Continue with remaining time
+    } else {
+      // Ignore other errors
+      break;
+    }
+  }
 }
 
 }  // namespace time_

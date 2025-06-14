@@ -1,19 +1,21 @@
 from __future__ import print_function
 
 from errno import EINTR
+import time as time_
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.value_asdl import (value, value_t)
 from builtin import read_osh
+from core import error
 from core.error import e_die_status
-from frontend import flag_util
-from frontend import match
-from frontend import typed_args
 from core import optview
 from core import pyos
 from core import state
 from core import vm
+from frontend import flag_util
+from frontend import match
+from frontend import typed_args
 from mycpp import mylib
 from mycpp.mylib import log
 from osh import word_compile
@@ -189,5 +191,25 @@ class Sleep(vm._Builtin):
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
         _, arg_r = flag_util.ParseCmdVal('sleep', cmd_val)
-        print('sleep')
+
+        # Only supports integral seconds
+        # https://pubs.opengroup.org/onlinepubs/9699919799/utilities/sleep.html
+
+        duration, duration_loc = arg_r.Peek2()
+        if duration is None:
+            raise error.Usage('expected a number of seconds',
+                              cmd_val.arg_locs[0])
+        arg_r.Next()
+        arg_r.Done()
+
+        msg = 'got invalid number of seconds %r' % duration
+        try:
+            seconds = float(duration)
+        except ValueError:
+            raise error.Usage(msg, duration_loc)
+
+        if seconds < 0:
+            raise error.Usage(msg, duration_loc)
+
+        time_.sleep(seconds)
         return 0

@@ -1,5 +1,5 @@
 ## compare_shells: bash
-## oils_failures_allowed: 3
+## oils_failures_allowed: 1
 
 #### invoke usage
 case $SH in bash) exit ;; esac
@@ -38,10 +38,10 @@ case $SH in bash) exit ;; esac
 invoke zz
 echo status=$?
 
-invoke --private zz
+invoke --builtin zz
 echo status=$?
 
-invoke --private -- zz
+invoke --builtin -- zz
 echo status=$?
 
 ## STDOUT:
@@ -84,22 +84,75 @@ sleep is a private shell builtin
 ## N-I bash STDOUT:
 ## END
 
-#### builtin sleep finds the private builtin
-case $SH in bash) exit ;; esac
+#### builtin sleep behaves like external sleep
+case $SH in
+  *osh) prefix='builtin' ;;
+  *) prefix='' ;;
+esac
 
-# a private builtin is a kind of builtin, and this shouldn't break anything?
-# invoke --private sleep is another way to do it
-# or maybe we don't need that?
-# do we need invoke --type sleep?
+$prefix sleep
+if test "$?" != 0; then
+  echo ok
+fi
 
-builtin sleep a
+# This is different!  OSH is stricter
+if false; then
+$prefix sleep --
+if test "$?" != 0; then
+  echo ok
+fi
+fi
+
+$prefix sleep -2
+if test "$?" != 0; then
+  echo ok
+fi
+
+$prefix sleep -- -2
+if test "$?" != 0; then
+  echo ok
+fi
+
+$prefix sleep zz
+if test "$?" != 0; then
+  echo ok
+fi
+
+$prefix sleep 0
 echo status=$?
 
-builtin sleep 0
+$prefix sleep -- 0
+echo status=$?
+
+$prefix sleep '0.0005'
+echo status=$?
+
+$prefix sleep '+0.0005'
 echo status=$?
 
 ## STDOUT:
+ok
+ok
+ok
+ok
 status=0
+status=0
+status=0
+status=0
+## END
+
+#### builtin sleep usage errors
+case $SH in bash) exit ;; esac
+
+builtin sleep 5s
+echo status=$?
+
+builtin sleep 0.1 extra
+echo status=$?
+
+## STDOUT:
+status=2
+status=2
 ## END
 ## N-I bash STDOUT:
 ## END
@@ -138,40 +191,6 @@ seq 3 | __cat
 ## N-I bash STDOUT:
 ## END
 
-#### sleep
-
-enable --internal sleep
-
-sleep -1
-echo status=$?
-
-sleep -- -1
-echo status=$?
-
-sleep 0
-echo status=$?
-
-sleep -- 0
-echo status=$?
-
-sleep 0.005
-echo status=$?
-
-sleep '+0.005'
-echo status=$?
-
-sleep '+0.005s'
-echo status=$?
-
-## STDOUT:
-status=1
-status=1
-status=0
-status=0
-status=0
-status=0
-status=0
-## END
 
 #### readlink
 case $SH in bash) exit ;; esac
