@@ -291,8 +291,8 @@ def PlusEquals(old_val, val):
     return val
 
 
-def _IsSpecialBuiltin(cmd_val):
-    # type: (cmd_value_t, bool) -> bool
+def _PrefixBindingsPersist(cmd_val):
+    # type: (cmd_value_t) -> bool
     """
     Note: I tried calculating this in EvalWordSequence2() and
     SimpleEvalWordSequence2().  They have special hint_str logic for assignment
@@ -309,7 +309,12 @@ def _IsSpecialBuiltin(cmd_val):
         elif case(cmd_value_e.Argv):
             cmd_val = cast(cmd_value.Argv, UP_cmd_val)
             arg0 = cmd_val.argv[0]
-            if arg0 == 'exec':  # WHY THIS SPECIAL CASE?
+
+            # exec is an EXCEPTION to the SPECIAL builtin rule.
+            # FOO=bar exec sh -c 'echo $FOO' must work
+            #
+            # busybox ash does this too: it has a cmd_is_exec boolean.
+            if arg0 == 'exec':
                 return False
             if consts.LookupSpecialBuiltin(arg0) != consts.NO_INDEX:
                 return True
@@ -1102,11 +1107,10 @@ class CommandEvaluator(object):
                     status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
 
             else:  # OSH
-                # WHY?
-                if _IsSpecialBuiltin(cmd_val):
-                    # Special builtins have their temp env persisted.
-                    # But it's NOT exported, unlike in bash.
-                    #self._EvalTempEnv(node.more_env, state.SetExport)
+                if _PrefixBindingsPersist(cmd_val):
+                    # Special builtins (except exec) have their temp env persisted.
+                    # TODO: Disallow this in YSH?  It should just be a
+                    # top-level assignment.
                     self._EvalTempEnv(node.more_env, 0)
                     status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
                 else:
