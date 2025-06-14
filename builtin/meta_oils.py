@@ -795,22 +795,34 @@ def _ResolveName(
     # type: (...) -> List[Tuple[str, str, Optional[str]]]
     """
     Returns:
-      A list of (name, type, optional arg arg)
+      A list of (name, type, optional arg)
 
     When type == 'file', arg is the path
-    When type == 'builtin', arg is 's' for special, or None otherwise
+    When type == 'builtin', arg is 's' for special, 'p' for private, or None
 
-    TODO: All of these could be in YSH:
+    POSIX has these rules:
+      https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_09_01_01
 
-    type, type -t, type -a
-    pp proc
+      a. special builtins (eval :)
+      b. undefined builtins (complete whence)
+      c. shell function
+      d. list of builtins (alias command) - could include th undefined ones
+      e. external
 
-    We could builtin functions like isShellFunc() and isInvokableObj()
+    Our ShellExecutor uses this order, wich is compatible:
+      1. special builtins
+      2. shell functions
+      3. normal builtins
+      4. external
     """
     # MyPy tuple type
     no_str = None  # type: Optional[str]
 
     results = []  # type: List[Tuple[str, str, Optional[str]]]
+
+    # Special builtins are looked up FIRST
+    if consts.LookupSpecialBuiltin(name) != 0:
+        results.append((name, 'builtin', 's'))
 
     if procs:
         if procs.IsShellFunc(name):
@@ -827,8 +839,6 @@ def _ResolveName(
     # See if it's a builtin
     if consts.LookupNormalBuiltin(name) != 0:
         results.append((name, 'builtin', no_str))
-    elif consts.LookupSpecialBuiltin(name) != 0:
-        results.append((name, 'builtin', 's'))
     elif consts.LookupAssignBuiltin(name) != 0:
         results.append((name, 'builtin', 's'))
     elif do_private and consts.LookupPrivateBuiltin(name) != 0:

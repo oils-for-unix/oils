@@ -97,6 +97,8 @@ eval 'echo hi'
 eval func echo hi
 ## END
 
+# these shells allow redefinition, but the definition is NOT used!
+
 ## BUG-2 mksh/yash/osh status: 0
 ## BUG-2 mksh/yash/osh STDOUT:
 hi
@@ -207,7 +209,7 @@ echo EVAL
 
 type -t eval  # builtin
 # define function before set -o posix
-eval() { echo "$1"; }
+eval() { echo "shell function: $1"; }
 # bash runs the FUNCTION, but OSH finds the special builtin
 # OSH doesn't need set -o posix
 eval 'echo before posix'
@@ -218,7 +220,7 @@ if test -n "$BASH_VERSION"; then
 fi
 
 eval 'echo after posix'  # this is the builtin eval
-# it claims it's a function, but it's a builtin
+# bash claims it's a function, but it's a builtin
 type -t eval
 
 # it finds the function and the special builtin
@@ -231,12 +233,12 @@ function
 ---
 EVAL
 builtin
-echo before posix
+shell function: echo before posix
 after posix
 function
 ## END
 
-## OK osh STDOUT:
+## STDOUT:
 TRUE
 builtin
 function
@@ -245,7 +247,7 @@ EVAL
 builtin
 before posix
 after posix
-function
+builtin
 ## END
 
 ## N-I dash/mksh/zsh/ash/yash STDOUT:
