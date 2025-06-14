@@ -147,6 +147,16 @@ def LookupAssignBuiltin(argv0):
         return NO_INDEX
 
 
+def LookupInternal(argv0):
+    # type: (str) -> builtin_t
+    """Is it an internal builtin?"""
+    b = _BUILTIN_DICT.get(argv0)
+    if b and b.kind == 'intern':
+        return b.index
+    else:
+        return NO_INDEX
+
+
 def LookupNormalBuiltin(argv0):
     # type: (str) -> builtin_t
     """Is it any other builtin?"""

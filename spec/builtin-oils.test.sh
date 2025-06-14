@@ -19,8 +19,8 @@ echo status=$?
 ## STDOUT:
 status=2
 status=2
-status=1
-status=1
+status=0
+status=0
 ## END
 ## N-I bash STDOUT:
 ## END

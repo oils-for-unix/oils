@@ -501,9 +501,9 @@ RUNPROC_SPEC.ShortFlag('-h', args.Bool, help='Show all procs')
 
 INVOKE_SPEC = FlagSpec('invoke')
 INVOKE_SPEC.LongFlag('--builtin')  # like 'builtin'
-INVOKE_SPEC.LongFlag('--proc-like')  # like 'runproc'
-INVOKE_SPEC.LongFlag('--external')
-INVOKE_SPEC.LongFlag('--internal')  # cat, sleep
+INVOKE_SPEC.LongFlag('--proc')  # like 'runproc'
+INVOKE_SPEC.LongFlag('--extern')
+INVOKE_SPEC.LongFlag('--intern')  # cat, sleep
 
 EXTERN_SPEC = FlagSpec('extern')
 

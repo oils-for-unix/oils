@@ -678,39 +678,45 @@ class RunProc(vm._Builtin):
 
 
 class Invoke(vm._Builtin):
-    """
-    Introspection:
+    """Invoke a command, controlling the resolution of the first word
 
-    invoke     - YSH introspection on first word
-    type --all - introspection on variables too?
-               - different than = type(x)
+    Why does this exist?
 
-    3 Coarsed-grained categories
-    - invoke --builtin     aka builtin
-      - including special builtins
-    - invoke --proc-like   aka runproc
+      invoke --extern X  # missing from shell, some users want it
+      invoke --intern X  # make 'sleep' visible (without 'enable')
+
+    It can subsume these:
+      invoke --builtin X                # builtin X
+      invoke --proc --extern X          # command X
+      invoke --extern --default-path X  # command -p X
+
+      invoke --proc X                   # runproc X - deprecate ours?
+
+    Extra functionality
+      invoke --extern --path /usr/bin:/bin
+
+    - invoke --proc
       - myproc (42)
       - sh-func
       - invokable-obj
-    - invoke --extern      aka extern
-
     Note: If you don't distinguish between proc, sh-func, and invokable-obj,
     then 'runproc' suffices.
 
-    invoke --proc-like reads more nicely though, and it also combines.
-
-        invoke --builtin --extern  # this is like 'command'
-
-    You can also negate:
+    Can we negate?
 
         invoke --no-proc-like --no-builtin --no-extern
-
-    - type -t also has 'keyword' and 'assign builtin'
 
     With no args, print a table of what's available
 
        invoke --builtin
        invoke --builtin true
+
+    Introspection:
+
+    invoke     - YSH introspection on first word
+    type --all - introspection on variables too?
+               - different than = type(x)
+    type -t also has 'keyword' and 'special builtin', but no 'assign builtin'
     """
 
     def __init__(self, shell_ex, procs, errfmt):
@@ -735,16 +741,22 @@ class Invoke(vm._Builtin):
 
         name = argv[0]
         location = locs[0]
-        # TODO: LookupInternal()
-        to_run = consts.LookupNormalBuiltin(name)
+        to_run = consts.LookupInternal(name)
         if to_run == consts.NO_INDEX:
             self.errfmt.Print_("%r isn't an internal command" % name,
                                blame_loc=location)
             return 1
 
-        if arg.internal:
-            # TODO: RunInternal()
-            return self.shell_ex.RunBuiltin(to_run, cmd_val2)
+        if arg.intern:
+            return self.shell_ex.RunInternal(to_run, cmd_val2)
+
+        # TODO:
+        if arg.builtin:
+            pass
+        if arg.proc:
+            pass
+        if arg.extern_:
+            pass
 
         return 0
 

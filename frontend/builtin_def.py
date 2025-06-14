@@ -71,7 +71,7 @@ class _Builtin(object):
     def __init__(self, index, name, enum_name=None, kind='normal'):
         # type: (int, str, Optional[str], str) -> None
         """
-        kind: normal, special, assign
+        kind: normal, special, assign, intern
         """
         self.index = index
         self.name = name  # e.g. : or [
@@ -150,6 +150,8 @@ def _Init(b):
     # Implementation detail of $(<file)
     # TODO: change to 'internal cat' (issue 1013)
     b.Add('__cat', enum_name='cat')
+
+    b.Add('sleep', kind='intern')
 
 
 _BUILTIN_DEF = _BuiltinDef()

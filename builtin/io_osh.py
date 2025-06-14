@@ -146,10 +146,7 @@ class MapFile(vm._Builtin):
 
 
 class Cat(vm._Builtin):
-    """Internal implementation detail for $(< file).
-
-    Maybe expose this as 'builtin cat' ?
-    """
+    """Internal implementation detail for $(< file)."""
 
     def __init__(self):
         # type: () -> None
@@ -179,4 +176,17 @@ class Cat(vm._Builtin):
                 mylib.Stdout().write(chunks[0])
                 chunks.pop()
 
+        return 0
+
+
+class Sleep(vm._Builtin):
+    """Mimics some of the external sleep."""
+
+    def __init__(self):
+        # type: () -> None
+        vm._Builtin.__init__(self)
+
+    def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        print('sleep')
         return 0

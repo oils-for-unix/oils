@@ -195,7 +195,7 @@ class _ProcessSubFrame(object):
         status_array.locs = locs
 
 
-# Big flags for RunSimpleCommand
+# Big flags for _RunSimpleCommand
 IS_LAST_CMD = 1 << 1
 NO_CALL_PROCS = 1 << 2  # command ls suppresses function lookup
 USE_DEFAULT_PATH = 1 << 3  # for command -p ls changes the path
@@ -220,11 +220,12 @@ class PureExecutor(vm._Executor):
             procs,  # type: state.Procs
             hay_state,  # type: hay_ysh.HayState
             builtins,  # type: Dict[int, vm._Builtin]
+            internals,  # type: Dict[int, vm._Builtin]
             tracer,  # type: dev.Tracer
             errfmt  # type: ui.ErrorFormatter
     ):
         vm._Executor.__init__(self, mem, exec_opts, mutable_opts, procs,
-                              hay_state, builtins, tracer, errfmt)
+                              hay_state, builtins, internals, tracer, errfmt)
 
     def _RunSimpleCommand(self, arg0, arg0_loc, cmd_val, cmd_st, run_flags):
         # type: (str, loc_t, cmd_value.Argv, CommandStatus, int) -> int
@@ -322,6 +323,7 @@ class ShellExecutor(vm._Executor):
             procs,  # type: state.Procs
             hay_state,  # type: hay_ysh.HayState
             builtins,  # type: Dict[int, vm._Builtin]
+            internals,  # type: Dict[int, vm._Builtin]
             tracer,  # type: dev.Tracer
             errfmt,  # type: ui.ErrorFormatter
             search_path,  # type: SearchPath
@@ -334,7 +336,7 @@ class ShellExecutor(vm._Executor):
     ):
         # type: (...) -> None
         vm._Executor.__init__(self, mem, exec_opts, mutable_opts, procs,
-                              hay_state, builtins, tracer, errfmt)
+                              hay_state, builtins, internals, tracer, errfmt)
         self.search_path = search_path
         self.ext_prog = ext_prog
         self.waiter = waiter
