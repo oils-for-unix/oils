@@ -1,4 +1,3 @@
-
 ## compare_shells: bash dash mksh ash
 
 # OSH mechanisms:

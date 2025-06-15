@@ -3,7 +3,7 @@
 # Test OSH against any shell
 #
 # Usage:
-#   test/spec-any.sh <function name>
+#   test/spec-compat.sh <function name>
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
@@ -214,7 +214,7 @@ run-file() {
   local spec_name=${1:-smoke}
   shift  # Pass list of shells
 
-  local spec_subdir='spec-any'
+  local spec_subdir='spec-compat'
   local base_dir=_tmp/spec/$spec_subdir
   mkdir -v -p $base_dir
   
@@ -236,44 +236,25 @@ osh-all() {
 
   test/spec-runner.sh shell-sanity-check "${SHELLS[@]}"
 
-  local spec_subdir=spec-any
+  local spec_subdir=spec-compat
 
   local status
   set +o errexit
   # $suite $compare_mode
   test/spec-runner.sh all-parallel \
-    osh spec-any $spec_subdir "$@"
+    osh spec-compat $spec_subdir "$@"
   status=$?
   set -o errexit
 
   # Write comparison even if we failed
-  test/spec-any-html.sh write-compare-html $spec_subdir
+  test/spec-compat-html.sh write-compare-html $spec_subdir
 
   return $status
 }
 
-# Metrics to put in summary.csv
 #
-# - for each shell, total passing (possibly biased by what we mark PASS)
-# - for each shell, the number of tests it passes that bash (4 or 5) also passes (unbiased)
-#   - this avoids being biased by spec/errexit-osh, spec/strict-options
+# Misc
 #
-# Columns: bash mksh ksh toysh sush brush
-# Other columns:
-# - bash minus $SH, for each
-# - osh minus $SH, for each
-#
-# compatibility.html   "Which new shell is the most compatible?"
-#                       With totals of every spec test file, and percentage summaries
-#   passing.html       # per file, sortable -
-#   delta-bash.html    # ...
-#   delta-osh.html
-# Later:
-#   majority.html      # if non-zero status, does STDOUT match majority?
-#                      # this is a more NEUTRAL metric, but requires a TSV file
-#                      from sh_spec.py with stdout
-#
-# Maybe produce versus-bash.csv, versus-osh.csv
 
 list() {
   mkdir -p _tmp/spec  # _all-parallel also does this

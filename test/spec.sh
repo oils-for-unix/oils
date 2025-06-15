@@ -170,10 +170,6 @@ builtin-misc() {
   test/spec-py.sh run-file builtin-misc "$@"
 }
 
-builtin-oils() {
-  test/spec-py.sh run-file builtin-oils "$@"
-}
-
 builtin-printf() {
   test/spec-py.sh run-file builtin-printf "$@"
 }
@@ -584,6 +580,10 @@ ysh-builtin-meta() {
 
 ysh-builtin-module() {
   test/spec-py.sh run-file ysh-builtin-module "$@"
+}
+
+ysh-builtin-private() {
+  test/spec-py.sh run-file ysh-builtin-private "$@"
 }
 
 ysh-builtin-process() {

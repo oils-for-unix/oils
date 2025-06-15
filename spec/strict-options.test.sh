@@ -1,6 +1,5 @@
 ## compare_shells: dash bash-4.4 mksh
 
-
 # In this file:
 #
 # - strict_control-flow: break/continue at the top level should be fatal!

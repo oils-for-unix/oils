@@ -127,7 +127,7 @@ dispatch-one() {
     compare-py)     prefix=(test/spec-py.sh run-file) ;;
 
     compare-cpp)    prefix=(test/spec-cpp.sh run-file) ;;
-    spec-any)       prefix=(test/spec-any.sh run-file) ;;
+    spec-compat)    prefix=(test/spec-compat.sh run-file) ;;
 
     # For interactive comparison
     osh-only)       prefix=(test/spec-util.sh run-file-with-osh) ;;
