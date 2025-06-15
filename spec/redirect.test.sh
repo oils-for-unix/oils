@@ -15,13 +15,13 @@ two
 
 #### <&
 # Is there a simpler test case for this?
-echo foo > $TMP/lessamp.txt
+echo foo51 > $TMP/lessamp.txt
 
 exec 6< $TMP/lessamp.txt
 read line <&6
 
 echo "[$line]"
-## stdout: [foo]
+## stdout: [foo51]
 
 #### 2>&1 with no command
 ( exit 42 )  # status is reset after this
@@ -90,9 +90,9 @@ echo "status=$?"
 ## OK dash status: 2
 
 #### Redirect echo to stderr, and then redirect all of stdout somewhere.
-{ echo foo 1>&2; echo 012345789; } > $TMP/block-stdout.txt
+{ echo foo52 1>&2; echo 012345789; } > $TMP/block-stdout.txt
 cat $TMP/block-stdout.txt |  wc -c 
-## stderr: foo
+## stderr: foo52
 ## stdout: 10
 
 #### Named file descriptor
@@ -457,7 +457,7 @@ echo hello
 #### echo foo >&100 (OSH regression: does not fail with invalid fd 100)
 # oil 0.8.pre4 does not fail with non-existent fd 100.
 fd=100
-echo foo >&$fd
+echo foo53 >&$fd
 ## stdout-json: ""
 ## status: 1
 ## OK dash status: 2
@@ -472,18 +472,18 @@ esac
 
 # 2. prepare first unused fd
 fd=$minfd
-is-fd-open() { : >&$1; }
-while is-fd-open "$fd"; do
+is_fd_open() { : >&$1; }
+while is_fd_open "$fd"; do
   : $((fd+=1))
 
-  # prevent infinite loop for broken oils-for-unix
-  if test $fd -gt 1000; then
-    break
-  fi
+  # OLD: prevent infinite loop for broken oils-for-unix
+  #if test $fd -gt 1000; then
+  #  break
+  #fi
 done
 
 # 3. test
-echo foo >&$fd
+echo foo54 >&$fd
 ## stdout-json: ""
 ## status: 1
 ## OK dash status: 2
@@ -493,10 +493,10 @@ echo foo >&$fd
 case $SH in (mksh|dash) exit 1 ;; esac
 # oil 0.8.pre4 fails to close fd by {fd}&-.
 exec {fd}>file1
-echo foo >&$fd
+echo foo55 >&$fd
 exec {fd}>&-
 echo bar >&$fd
 cat file1
-## stdout: foo
+## stdout: foo55
 ## N-I mksh/dash stdout-json: ""
 ## N-I mksh/dash status: 1

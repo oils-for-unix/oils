@@ -346,6 +346,23 @@ html-summary() {
   return $all_passed
 }
 
+assert-FOO() {
+  # there's a stray 'foo' at the end
+  #
+  # I bet this is file descriptor leak from a redirect!
+  # Maybe a shell is doing something in correct?
+  # But the manifest shouldn't be open for write?  I guess there could be some
+  # swapping
+  #
+  # Happens with NUM_SPEC_TASKS=100, but not NUM_SPEC_TASKS=50
+  # Gah
+
+  if grep foo _tmp/spec/SUITE-osh.txt; then
+    echo "BAD FOO"
+    exit
+  fi
+}
+
 _all-parallel() {
   local suite=${1:-osh}
   local compare_mode=${2:-compare-py}
@@ -360,12 +377,16 @@ _all-parallel() {
 
   write-suite-manifests
 
+  assert-FOO
+
   # The exit codes are recorded in files for html-summary to aggregate.
   set +o errexit
   head -n $NUM_SPEC_TASKS $manifest \
     | xargs -I {} -P $MAX_PROCS -- \
       $0 dispatch-one $compare_mode $spec_subdir {} "$@"
   set -o errexit
+
+  assert-FOO
 
   all-tests-to-html $manifest $output_base_dir
 
