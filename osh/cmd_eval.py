@@ -1108,6 +1108,13 @@ class CommandEvaluator(object):
 
             else:  # OSH
                 if _PrefixBindingsPersist(cmd_val):
+                    if self.exec_opts.strict_env_binding():
+                        # Disallow pitfall in YSH
+                        first_pair = node.more_env[0]
+                        e_die(
+                            "Special builtins can't have prefix bindings (OILS-ERR-302)",
+                            first_pair.left)
+
                     # Special builtins (except exec) have their temp env persisted.
                     # TODO: Disallow this in YSH?  It should just be a
                     # top-level assignment.

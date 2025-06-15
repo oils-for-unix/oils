@@ -93,6 +93,7 @@ _STRICT_OPTS = [
     # default:    do not allow
     'strict_array',
     'strict_control_flow',  # break/continue at top level is fatal
+    'strict_env_binding',  # FOO=bar cmd is always an env binding
     # 'return $empty' and return "" are NOT accepted
     'strict_errexit',  # errexit can't be disabled in compound commands
     'strict_nameref',  # trap invalid variable names

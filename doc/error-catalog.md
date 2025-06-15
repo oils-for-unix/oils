@@ -542,6 +542,31 @@ In YSH, use the [try][] builtin instead of `if`.
 - [Guide to YSH Error Handling](ysh-error.html)
 - Technical details: [YSH Fixes Shell's Error Handling (`errexit`)](error-handling.html)
 
+### OILS-ERR-302
+
+<!--
+Generated with test/spec.sh strict-options -r 16
+-->
+
+```
+  FOO=bar eval 'echo FOO=$FOO'
+  ^~~~
+[ stdin ]:3: fatal: Special builtins can't have prefix bindings (OILS-ERR-302)
+```
+
+In POSIX shell, prefix bindings have two behaviors:
+
+1. Usually, they set the environment temporarily.
+1. When applied to "special builtins", the bindings persist, and are not
+   exported.
+
+This is invisible and confusing, so YSH has `shopt --set strict_env_binding` to
+make the first meaning the only one.
+
+Try this instead:
+
+    var FOO = 'bar'
+    eval 'echo FOO=$FOO'
 
 ## Appendix
 

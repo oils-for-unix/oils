@@ -326,3 +326,15 @@ code=1
 
 ## N-I bash/dash/mksh STDOUT:
 ## END
+
+#### shopt -s strict_binding: Persistent prefix bindings not allowed on special builtins
+
+shopt --set strict:all
+
+# This differs from what it means in a process
+FOO=bar eval 'echo FOO=$FOO'
+echo FOO=$FOO
+
+## STDOUT:
+## END
+

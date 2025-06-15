@@ -178,6 +178,7 @@ Runtime options:
       strict_arith            # Fatal parse errors (on by default)
       strict_array            # Arrays and strings aren't confused
       strict_control_flow     # Disallow misplaced keyword, empty arg
+      strict_env_binding      # Prefix bindings must always be env bindings
       strict_errexit          # Disallow code that ignores failure
       strict_nameref          # Trap invalid variable names
       strict_word_eval        # Expose unicode and slicing errors

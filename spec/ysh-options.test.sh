@@ -151,6 +151,7 @@ shopt -s strict_argv
 shopt -s strict_arith
 shopt -s strict_array
 shopt -s strict_control_flow
+shopt -s strict_env_binding
 shopt -s strict_errexit
 shopt -s strict_glob
 shopt -s strict_nameref
