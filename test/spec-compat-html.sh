@@ -1,16 +1,19 @@
 #!/usr/bin/env bash
 #
+# Create reports, published at https://pages.oils.pub/
+#
 # Usage:
 #   ./spec-compat-html.sh <function name>
 #
 # TODO:
 # - Deploy HTML
 #   - add tree html
-#   - improve pages.oils.pub top HTML
+#   - improve pages.oils.pub/ index.html
 #   - Epoch or Build timestamp on page
 # - Improve
 #   - summary/percentages in TOP.html?
-#   - Might as well include ash, dash, ysh
+#   - More shells: might as well include ash, dash, ysh
+#   - Make a container with `buildah`, so others can collaborate?
 # - Refactor
 #   - maybe clean up test/spec-runner.sh arguments
 
@@ -256,6 +259,7 @@ Here are some summary tables.  **Click** on the column headers to sort:
   - But I left `spec/errexit-osh` in because I think new shells should provide 
     alternatives to the **bugs** in POSIX:
     [YSH Fixes Shell's Error Handling (`errexit`)](https://oils.pub/release/latest/doc/error-handling.html)
+  - I also think shells should adopt [Simple Word Evaluation in Unix Shell](https://oils.pub/release/latest/doc/simple-word-eval.html) (i.e. deprecate `$IFS`, more so than `zsh`)
 - Other ideas
   - We could add a  "majority agreement" metric, for a more neutral report.
   - We could add the Smoosh test suite.  Results are published on our [quality
@@ -267,7 +271,7 @@ page](https://oils.pub/release/latest/quality.html).
   - <https://www.gnu.org/software/bash/>
   - running fixed version built for Oils
 - `mksh` - shell on Android, derivative of `pdksh`
-  - <https://www.mirbsd.org/mksh.htm>
+  - <http://www.mirbsd.org/mksh.htm>
   - running fixed version built for Oils
 - AT&T `ksh`
   - <https://github.com/ksh93/ksh>
@@ -281,7 +285,8 @@ page](https://oils.pub/release/latest/quality.html).
 - `brush`
    - <https://github.com/reubeno/brush>
   - running git HEAD
-- `osh` - <https://github.com/oils-for-unix/oils>
+- `osh`
+  - <https://github.com/oils-for-unix/oils>
   - running git HEAD
 
 TODO: Add other shells, and be more specific about versions.
@@ -295,6 +300,9 @@ Possibly TODO
 - Lines of code?
   - [Oils has a "compressed" implementation](https://www.oilshell.org/blog/2024/09/line-counts.html)
 - Memory safety
+- Oils has many other:
+  - test suites - `test/gold`, `test/wild`, ...
+  - benchmarks - parse time, runtime, ...
 
 ### Links
 
@@ -351,21 +359,18 @@ multi() { ~/git/tree-tools/bin/multi "$@"; }
 deploy() {
   local epoch=${1:-2025-06-15}
 
-  local dest=../pages/spec-compat/$epoch
+  local dest=$PWD/../pages/spec-compat/$epoch
 
   local web_dir=$dest/web
-  rm -r -f $web_dir
+  #rm -r -f $web_dir
 
   #mkdir -p $web_dir
 
   find web/ -name '*.js' -o -name '*.css' | multi cp $dest
 
-  local new_dir=renamed-tmp/spec
-  rm -r -f $new_dir
-  mkdir -p $new_dir
-  mv -v _tmp/spec/compat $new_dir || true
-
-  find renamed-tmp/spec/compat -name '*.html' -o -name '*.tsv' | multi cp $dest
+  pushd _tmp
+  find spec/compat -name '*.html' -o -name '*.tsv' | multi cp $dest/renamed-tmp
+  popd
 
   # Work around Jekyll rule for Github pages
   #mv -v $dest/_tmp $dest/renamed-tmp
