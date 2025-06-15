@@ -14,9 +14,8 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source test/common.sh
 source test/spec-common.sh
 
-OSH=_bin/cxx-asan/osh
-ninja $OSH
-OSH=$PWD/$OSH
+OSH_TARGET=_bin/cxx-asan/osh
+OSH=$PWD/$OSH_TARGET
 
 # To compare against:
 # - toysh
@@ -243,7 +242,7 @@ osh-all() {
   # For debugging hangs
   #export MAX_PROCS=1
 
-  ninja _bin/cxx-asan/{osh,ysh}
+  ninja $OSH_TARGET
 
   test/spec-runner.sh shell-sanity-check "${SHELLS[@]}"
 

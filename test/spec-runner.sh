@@ -19,12 +19,6 @@ source test/tsv-lib.sh  # $TAB
 
 NUM_SPEC_TASKS=${NUM_SPEC_TASKS:-400}
 
-# Option to use our xargs implementation.
-#xargs() {
-#  echo "Using ~/git/oilshell/xargs.py/xargs.py"
-#  ~/git/oilshell/xargs.py/xargs.py "$@"
-#}
-
 #
 # Test Runner
 #
@@ -49,6 +43,15 @@ write-suite-manifests() {
 
   test/sh_spec.py --print-tagged dev-minimal \
     spec/*.test.sh > _tmp/spec/SUITE-osh-minimal.txt
+}
+
+print-manifest() {
+  local manifest=$1
+  if test -n "${SPEC_EGREP:-}"; then
+    egrep "$SPEC_EGREP" $manifest 
+  else
+    head -n $NUM_SPEC_TASKS $manifest 
+  fi
 }
 
 _print-task-file() {
@@ -192,7 +195,7 @@ EOF
   # specify variable names.  You have to destructure it yourself.
   # - Lack of string interpolation is very annoying
 
-  head -n $NUM_SPEC_TASKS $manifest | sort | awk -v totals=$totals -v base_dir=$base_dir '
+  print-manifest $manifest | sort | awk -v totals=$totals -v base_dir=$base_dir '
   # Awk problem: getline errors are ignored by default!
   function error(path) {
     print "Error reading line from file: " path > "/dev/stderr"
@@ -381,7 +384,7 @@ _all-parallel() {
 
   # The exit codes are recorded in files for html-summary to aggregate.
   set +o errexit
-  head -n $NUM_SPEC_TASKS $manifest \
+  print-manifest $manifest \
     | xargs -I {} -P $MAX_PROCS -- \
       $0 dispatch-one $compare_mode $spec_subdir {} "$@"
   set -o errexit
@@ -397,10 +400,9 @@ _all-parallel() {
 all-parallel() {
   ### Run spec tests in parallel.
 
-  # Note that this function doesn't fail because 'run-file' saves the status
-  # to a file.
-
-  time $0 _all-parallel "$@"
+  # Note: this function doesn't fail because 'run-file' saves the status to a
+  # file.
+  time _all-parallel "$@"
 }
 
 src-tree-py() {
@@ -411,7 +413,7 @@ all-tests-to-html() {
   local manifest=$1
   local output_base_dir=$2
   # ignore attrs output
-  head -n $NUM_SPEC_TASKS $manifest \
+  print-manifest $manifest \
     | xargs --verbose -- $0 src-tree-py spec-files $output_base_dir >/dev/null
 
     #| xargs -n 1 -P $MAX_PROCS -- $0 test-to-html $output_base_dir
