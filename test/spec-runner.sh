@@ -22,7 +22,13 @@ source test/tsv-lib.sh  # $TAB
 #
 
 write-suite-manifests() {
+  # This takes ~160 ms, it would be nice not to do it 3 times!
+  # I guess we can print (suite, name, tag) with duplicates, and then use 'uniq'
+  #
   #test/sh_spec.py --print-table spec/*.test.sh
+
+  local dir=_tmp/spec
+
   { test/sh_spec.py --print-table spec/*.test.sh | while read suite name; do
       case $suite in
         osh) echo $name >& $osh ;;
@@ -31,16 +37,25 @@ write-suite-manifests() {
         *)   die "Invalid suite $suite" ;;
       esac
     done 
-  } {osh}>_tmp/spec/SUITE-osh.txt \
-    {ysh}>_tmp/spec/SUITE-ysh.txt \
-    {needs_terminal}>_tmp/spec/SUITE-needs-terminal.txt
+  } {osh}>$dir/SUITE-osh.txt \
+    {ysh}>$dir/SUITE-ysh.txt \
+    {needs_terminal}>$dir/SUITE-needs-terminal.txt
 
   # These are kind of pseudo-suites, not the main 3
   test/sh_spec.py --print-tagged interactive \
-    spec/*.test.sh > _tmp/spec/SUITE-interactive.txt
+    spec/*.test.sh > $dir/SUITE-interactive.txt
 
   test/sh_spec.py --print-tagged dev-minimal \
-    spec/*.test.sh > _tmp/spec/SUITE-osh-minimal.txt
+    spec/*.test.sh > $dir/SUITE-osh-minimal.txt
+
+  # For spec-compat, remove files that other shells aren't expected to run.
+  # Keep SUITE-osh the same for historical comparison.
+
+  # I want errexit-osh to be adopted by other shells, so I'm keeping it
+  local remove='strict-options' 
+  #local remove='errexit-osh|strict-options' 
+
+  egrep -v "$remove" $dir/SUITE-osh.txt > $dir/SUITE-compat.txt
 }
 
 print-manifest() {

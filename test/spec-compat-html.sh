@@ -2,6 +2,17 @@
 #
 # Usage:
 #   ./spec-compat-html.sh <function name>
+#
+# TODO:
+# - Deploy HTML
+#   - add tree html
+#   - improve pages.oils.pub top HTML
+#   - Epoch or Build timestamp on page
+# - Improve
+#   - summary/percentages in TOP.html?
+#   - Might as well include ash, dash, ysh
+# - Refactor
+#   - maybe clean up test/spec-runner.sh arguments
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
@@ -9,13 +20,13 @@ source $LIB_OSH/task-five.sh
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
-source benchmarks/common.sh  # cmark function.  TODO: could use executable
+source benchmarks/common.sh  # cmark function
 source test/common.sh
 source test/spec-common.sh
 source test/tsv-lib.sh  # tsv-row
 source web/table/html.sh  # table-sort-begin
 
-# Matches SHELLS
+# Matches SHELLS in test/spec-compat.sh
 readonly -a SH_LABELS=(bash mksh ksh toysh sush brush osh)
 
 summary-tsv-row() {
@@ -117,7 +128,7 @@ summary-tsv() {
   local report=$1
   local spec_subdir=$2
 
-  local manifest=_tmp/spec/SUITE-osh.txt
+  local manifest=_tmp/spec/SUITE-compat.txt
 
   # Can't go at the top level because files might not exist!
   tsv-row \
@@ -142,9 +153,8 @@ html-summary-header() {
 
   cat <<EOF
 <p id="home-link">
-  <!-- The release index is two dirs up -->
-  <a href="../..">Up</a> |
-  <a href="/">oils.pub</a>
+  <a href="/">Root</a> |
+  <a href="https://oils.pub/">oils.pub</a>
 </p>
 
 <h1>$report - Shell Compatibility</h1>
@@ -209,44 +219,99 @@ top-html() {
 
   echo '
   <body class="width35">
+    <style>
+      code { color: green; }
+    </style>
+
     <p id="home-link">
-      <a href="/">oils.pub</a>
+      <a href="/">Root</a> |
+      <a href="https://oils.pub/">oils.pub</a>
     </p>
   '
 
   cmark <<'EOF'
 ## Shell Compatibility Reports
 
-Based on the Oils test suite.
+These reports are based on [spec tests written for Oils][spec-tests].
 
-Here are 3 different summary tables.  **Click** on the column headers to sort:
+Here are some summary tables.  **Click** on the column headers to sort:
 
 - [Total Passing](PASSING.html)
-  - Each shell gets 1 point for each case we marked passing.  Our assertions
-    are based on a **survey** of `bash`, `dash`, `mksh`, `zsh`, and other shells.
+  - Each shell gets 1 point for each case we marked passing.
+  - Our assertions are usually based on a **survey** of `bash`, `dash`, `mksh`,
+    `zsh`, and other shells.  Assertions from 2016-2018 may favor OSH, but
+    there shouldn't be many of them.
 - [Delta bash](DELTA-bash.html)
-  - Compare each shell's passing number vs. bash
+  - Compare each shell's passing count vs. bash
 - [Delta OSH](DELTA-osh.html)
-  - Compare each shell's passing number vs. OSH
+  - Compare each shell's passing count vs. OSH
 
-### Notes
+### Notes and Caveats
 
-- There's some bias toward OSH, because OSH has some features that bash doesn't
-  have.
-  - e.g. `spec/strict-options` and `spec/errexit-osh`
-  - We could make a pretty neutral report by using a "majority agreement"
-    metric.  We would need to enhance `test/sh_spec.py`.
-- We could also add the Smoosh test suite, which is published on our [quality
-page](https://oils.pub/release/latest/quality.html).
-- There may be tests that fail for trivial reasons
+- Some tests may fail for innocuous reasons, e.g. printing `'$'` versus `\$`
   - Shell authors are welcome to use our test suite, and add assertions.
+- OSH has some features that bash doesn't have.
+  - e.g. I removed `spec/strict-options` so shells aren't penalized for not
+    having these features.
+  - But I left `spec/errexit-osh` in because I think new shells should provide 
+    alternatives to the **bugs** in POSIX:
+    [YSH Fixes Shell's Error Handling (`errexit`)](https://oils.pub/release/latest/doc/error-handling.html)
+- Other ideas
+  - We could add a  "majority agreement" metric, for a more neutral report.
+  - We could add the Smoosh test suite.  Results are published on our [quality
+page](https://oils.pub/release/latest/quality.html).
+
+### Shells Compared
+
+- GNU `bash`
+  - <https://www.gnu.org/software/bash/>
+  - running fixed version built for Oils
+- `mksh` - shell on Android, derivative of `pdksh`
+  - <https://www.mirbsd.org/mksh.htm>
+  - running fixed version built for Oils
+- AT&T `ksh`
+  - <https://github.com/ksh93/ksh>
+  - running distro package
+- `toysh`
+  - <https://landley.net/toybox/>
+  - running tarball release
+- `sush`
+  - <https://github.com/shellgei/rusty_bash>
+  - running git HEAD
+- `brush`
+   - <https://github.com/reubeno/brush>
+  - running git HEAD
+- `osh` - <https://github.com/oils-for-unix/oils>
+  - running git HEAD
+
+TODO: Add other shells, and be more specific about versions.
+
+### More Comparisons
+
+Possibly TODO
+
+- Binary size
+- Build times
+- Lines of code?
+  - [Oils has a "compressed" implementation](https://www.oilshell.org/blog/2024/09/line-counts.html)
+- Memory safety
 
 ### Links
 
 - Wiki:
+  - [Spec Tests][spec-tests]
   - [Contributing](https://github.com/oils-for-unix/oils/wiki/Contributing)
-  - [Spec Tests](https://github.com/oils-for-unix/oils/wiki/Spec-Tests)
-- <https://oilshell.zulipchat.com/>
+- Zulip:  <https://oilshell.zulipchat.com/>
+  - Feel free to send feedback, and ask questions!
+
+[spec-tests]: https://github.com/oils-for-unix/oils/wiki/Spec-Tests
+
+### Features Not Yet Implemented in OSH
+
+We know about these gaps:
+
+- `kill` builtin, `let` keyword - we do have some spec tests for them
+- `coproc` keyword
 
 EOF
 
@@ -264,7 +329,8 @@ EOF
 }
 
 write-compare-html() {
-  local dir=_tmp/spec/spec-compat
+  local spec_subdir='compat'
+  local dir=_tmp/spec/$spec_subdir
 
   local out=$dir/TOP.html 
   top-html >$out
@@ -277,7 +343,34 @@ write-compare-html() {
   write-summary-html PASSING "$@"
   write-summary-html DELTA-osh "$@"
   write-summary-html DELTA-bash "$@"
+}
 
+# TODO: Publish this script
+multi() { ~/git/tree-tools/bin/multi "$@"; }
+
+deploy() {
+  local epoch=${1:-2025-06-15}
+
+  local dest=../pages/spec-compat/$epoch
+
+  local web_dir=$dest/web
+  rm -r -f $web_dir
+
+  #mkdir -p $web_dir
+
+  find web/ -name '*.js' -o -name '*.css' | multi cp $dest
+
+  local new_dir=renamed-tmp/spec
+  rm -r -f $new_dir
+  mkdir -p $new_dir
+  mv -v _tmp/spec/compat $new_dir || true
+
+  find renamed-tmp/spec/compat -name '*.html' -o -name '*.tsv' | multi cp $dest
+
+  # Work around Jekyll rule for Github pages
+  #mv -v $dest/_tmp $dest/renamed-tmp
+
+  tree $dest/
 }
 
 task-five "$@"

@@ -435,7 +435,7 @@ write-manifest() {
 }
 
 # TODO: Publish this script
-multi() { ~/hg/tree-tools/bin/multi "$@"; }
+multi() { ~/git/tree-tools/bin/multi "$@"; }
 
 make-archive() {
   # Format of manifest:
@@ -690,7 +690,7 @@ golden-subset() {
 copy-golden-ast() {
   local dest=${1:-_tmp/wild-gold}
   find _tmp/wild-www/esoteric/ -name '*__ast.html' -a -printf '%p %P\n' \
-    | ~/git/tree-tools/bin/multi cp $dest
+    | multi cp $dest
 }
 
 # Find shell scripts on the root file system.

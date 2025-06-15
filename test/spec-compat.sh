@@ -11,6 +11,7 @@ source $LIB_OSH/task-five.sh
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
+source build/dev-shell.sh  # put mksh etc. in $PATH
 source test/common.sh
 source test/spec-common.sh
 
@@ -111,21 +112,25 @@ build-sush() {
 binary-sizes() {
   local oils=_bin/cxx-opt/bin/oils_for_unix.mycpp.stripped
   ninja $oils
-  # stripped: 2.4 MB
-  ls -l --si $oils
 
-  pushd ../../shells/brush
-  strip -o target/release/brush.stripped target/release/brush
-  # stripped: 7.3 MB
-  ls -l --si target/release
+  pushd $BRUSH_DIR
+  local out=target/release/brush.stripped 
+  strip -o $out target/release/brush
+  local brush=$BRUSH_DIR/$out
   popd
 
-  pushd ../../shells/rusty_bash
-  strip -o target/release/sush.stripped target/release/sush
-  # stripped: 3.4 MB
-  ls -l --si target/release
+  pushd $SUSH_DIR
+  local out=target/release/sush.stripped 
+  strip -o $out target/release/sush
+  local sush=$SUSH_DIR/$out
+  popd
+
   echo
-  popd
+  ls -l --si $oils $brush $sush $TOYBOX_DIR/sh
+
+  # These aren't dynamically linked to GNU readline, or libstdc++
+  echo
+  ldd $oils $brush $sush $TOYBOX_DIR/sh
 }
 
 symbols() {
@@ -133,7 +138,7 @@ symbols() {
   #file target/release/brush
 
   echo 'BRUSH'
-  # 6140
+  # 6272
   nm target/release/brush | wc -l
   popd
 
@@ -142,7 +147,7 @@ symbols() {
   #file target/release/sush
 
   echo 'SUSH'
-  # 10380
+  # 4413
   nm target/release/sush | wc -l
   # More symbols
   # nm target/debug/sush | wc -l
@@ -154,7 +159,7 @@ symbols() {
   ninja $osh 
 
   echo 'OSH'
-  # 9810 - lots of string literals?
+  # 9857 - lots of string literals?
   nm $osh | wc -l
   #nm $osh | less
 
@@ -214,7 +219,7 @@ run-file() {
   local spec_name=${1:-smoke}
   shift  # Pass list of shells
 
-  local spec_subdir='spec-compat'
+  local spec_subdir='compat'
   local base_dir=_tmp/spec/$spec_subdir
   mkdir -v -p $base_dir
   
@@ -227,22 +232,20 @@ run-file() {
 }
 
 osh-all() {
-  # Like test/spec.sh {osh,ysh}-all, but it compares against different binaries
-
-  # For debugging hangs
-  #export MAX_PROCS=1
+  # Since we're publishing these, make sure we start with a clean slate
+  rm -r -f -v _tmp/spec
 
   ninja $OSH_TARGET
 
   test/spec-runner.sh shell-sanity-check "${SHELLS[@]}"
 
-  local spec_subdir=spec-compat
+  local spec_subdir=compat
 
   local status
   set +o errexit
   # $suite $compare_mode
   test/spec-runner.sh all-parallel \
-    osh spec-compat $spec_subdir "$@"
+    compat spec-compat $spec_subdir "$@"
   status=$?
   set -o errexit
 
