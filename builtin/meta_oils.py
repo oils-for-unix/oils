@@ -516,8 +516,35 @@ def _PrintFreeForm(row):
 
     print('%s is %s' % (name, what))
 
-    # if kind == 'function':
-    #   bash is the only shell that prints the function
+
+def _PrintTsvRow(row):
+    # type: (Tuple[str, str, Optional[str]]) -> None
+    name, kind, detail = row
+
+    # Ideas for printing
+    #
+    # I guess the path always s
+    #
+    # time alias
+    # time 'special builtin'
+    # time /usr/bin/time
+    # time '/home/dir with spaces/time'
+    #
+    # TODO: Might want to create an enum:
+    # first_word =
+    #   Alias(str body)
+    # | Keyword
+    # | Extern(str path)
+    # | Builtin(kind k)
+    # | ShellFunction
+    # | Proc
+    # | Invokable
+
+    name_row = j8_lite.EncodeString(name, unquoted_ok=True)
+    # Match --sh-func
+    kind_row = 'sh-func' if kind == 'function' else kind
+    detail_row = j8_lite.EncodeString(detail, unquoted_ok=True) if detail else '-'
+    print('%s\t%s\t%s' % (name_row, kind_row, detail_row))
 
 
 def _PrintEntry(arg, row):
@@ -572,7 +599,8 @@ class Command(vm._Builtin):
                 r = _ResolveName(argument, self.procs, self.aliases,
                                  self.search_path, False)
                 if len(r):
-                    # Print only the first occurrence
+                    # Print only the first occurrence.
+                    # TODO: it would be nice to short-circuit the lookups
                     row = r[0]
                     if arg.v:
                         name, kind, detail = row
@@ -727,11 +755,7 @@ class Invoke(vm._Builtin):
                                  True,
                                  do_private=True)
                 for row in r:
-                    # TODO: _PrintRow instead
-                    # Should it print shell keywords and aliases?  Even if they
-                    # can't be invoked?
-                    # Yes because 'time' is a keyword, and external
-                    _PrintFreeForm(row)
+                    _PrintTsvRow(row)
             return 0
 
         cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.is_last_cmd,
@@ -918,7 +942,10 @@ class Type(vm._Builtin):
                 for row in r:
                     _PrintEntry(arg, row)
             else:
-                if len(r):  # Just print the first one
+                # Just print the first one.
+                # TODO: it would be nice to short-circuit the lookups.
+                # It would be nice if 'yield' worked.
+                if len(r):
                     _PrintEntry(arg, r[0])
 
             # Error case

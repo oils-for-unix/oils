@@ -1,5 +1,5 @@
 ## compare_shells: bash
-## oils_failures_allowed: 1
+## oils_failures_allowed: 3
 
 #### invoke usage
 case $SH in bash) exit ;; esac
@@ -72,35 +72,76 @@ sleep is sleep
 sleep
 ## END
 
-#### type -a does not find private builtins, but invoke --show does
-case $SH in bash) exit ;; esac
+#### type -a does not find private builtins
 
 remove-path() { sed 's;/.*/;;'; }
 
 # this is meant to find the "first word"
 type -a sleep | remove-path | uniq
-echo ---
-
-# this also shows private builtins, which are not the first word
-invoke --show sleep | remove-path | uniq
 
 ## STDOUT:
 sleep is sleep
----
-sleep is sleep
-sleep is a private shell builtin
-## END
-
-## N-I bash STDOUT:
 ## END
 
 #### but invoke --show finds the private builtin (alternative to type, command)
 case $SH in bash) exit ;; esac
 
-invoke --show sleep | grep private
+invoke --show sleep | grep builtin
+
+## stdout-json: "sleep\tbuiltin\tp\n"
+
+## N-I bash STDOUT:
+## END
+
+#### invoke --show with many types
+case $SH in bash) exit ;; esac
+
+my-name() { echo sh-func; }
+
+alias my-name='echo my-alias'
+
+# Why isn't this showing up?
+# manual bug: I get 2 argv?
+
+mkdir -p dir
+echo 'echo hi' > dir/my-name
+chmod +x dir/my-name
+PATH=$PWD/dir:$PATH
+#echo $PATH
+
+command -v my-name
+type -a my-name
+
+shopt --set ysh:all
+
+proc my-name { echo proc }
+
+invoke --show my-name eval cd
 
 ## STDOUT:
-sleep is a private shell builtin
+## END
+
+## N-I bash STDOUT:
+## END
+
+
+#### invoke --show does proper quoting
+case $SH in bash) exit ;; esac
+
+alias $'bad-alias=echo \xff\necho z'
+
+bad-alias | od -A n -t x1
+
+# The tabs are a bit annoying to work with ...
+# Maybe #.ssv8 instead of #.tsv8 ?
+invoke --show bad-alias
+
+#alias $'bad=hi\xffname=echo hi'
+#$'bad\xffname'
+
+## STDOUT:
+ ff 0a 7a 0a
+bad-alias	alias	b'echo \yff\necho z'
 ## END
 
 ## N-I bash STDOUT:
@@ -179,7 +220,7 @@ status=2
 ## N-I bash STDOUT:
 ## END
 
-#### sleep is still external
+#### sleep without prefix is still external
 
 # should not work
 builtin sleep --version
@@ -195,15 +236,10 @@ ok
 status=0
 ## END
 
-#### cat
+#### builtin cat
 case $SH in bash) exit ;; esac
 
-enable --internal cat
-
-# invoke --internal cat
-# invoke -i cat
-
-seq 3 | __cat
+seq 3 | builtin cat
 
 ## STDOUT:
 1
@@ -214,7 +250,7 @@ seq 3 | __cat
 ## END
 
 
-#### readlink
+#### builtin readlink
 case $SH in bash) exit ;; esac
 
 echo TODO
