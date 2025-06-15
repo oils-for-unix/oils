@@ -651,6 +651,16 @@ class Stats(object):
 PIPE = subprocess.PIPE
 
 
+def _TimedOut(status):
+    # timeout 1s sleep 5         ==> status 124
+    # timeout -s KILL 1s sleep 5 ==> status 137
+    #   the latter is more robust
+    #
+    # SIGKILL == -9
+    #return status in (124, 137)
+    return status == -9
+
+
 def RunCases(cases, case_predicate, shells, env, out, opts):
     """Run a list of test 'cases' for all 'shells' and write output to
     'out'."""
@@ -739,10 +749,10 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
                 else:
                     # This kills hanging tests properly, but somehow they fail with code
                     # -9?
-                    #argv = ['timeout', '-s', 'KILL', opts.timeout]
+                    argv = ['timeout', '-s', 'KILL', opts.timeout + 's']
 
                     # s suffix for seconds
-                    argv = ['timeout', opts.timeout + 's']
+                    #argv = ['timeout', opts.timeout + 's']
             else:
                 argv = []
             argv.append(sh_path)
@@ -802,7 +812,7 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
 
             if opts.timeout_bin and os.path.exists(timeout_file):
                 cell_result = Result.TIMEOUT
-            elif not opts.timeout_bin and actual['status'] == 124:
+            elif not opts.timeout_bin and _TimedOut(actual['status']):
                 cell_result = Result.TIMEOUT
             else:
                 messages = []

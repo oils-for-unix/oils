@@ -45,6 +45,16 @@ readonly BRUSH=$PWD/$BRUSH_DIR/target/release/brush
 # these are all roughly ksh compatible
 readonly -a SHELLS=(bash mksh ksh $TOYBOX_DIR/sh $SUSH $BRUSH $OSH)
 
+# mksh is causing problems.  It hangs even with 'timeout 1s'
+# Should we use the other timeout tool?
+# timeout --signal should do kill -9!
+#
+# ksh also has problems, on 'var-num'
+#
+# - The tests send both mksh and ksh into infinite loops!
+
+#readonly -a SHELLS=(bash ksh $TOYBOX_DIR/sh $SUSH $BRUSH $OSH)
+
 download-toybox() {
   #mkdir -p ~/src
   wget --directory ~/src --no-clobber \
@@ -212,18 +222,45 @@ geiger-report() {
 #
 
 run-file() {
-  local spec_name=$1
+  local spec_name=${1:-smoke}
   shift  # Pass list of shells
+
+  local spec_subdir='spec-any'
+  local base_dir=_tmp/spec/$spec_subdir
+  mkdir -v -p $base_dir
   
   # spec/tilde hangs under toysh - need timeout
   sh-spec spec/$spec_name.test.sh \
+    --tsv-output $base_dir/${spec_name}.tsv \
     --timeout 1 \
-    "$@"
+    "$@" \
+    "${SHELLS[@]}"
 }
 
-compare() {
-  local spec_name=${1:-smoke}
-  run-file $spec_name "${SHELLS[@]}"
+osh-all() {
+  # Like test/spec.sh {osh,ysh}-all, but it compares against different binaries
+
+  # For debugging hangs
+  #export MAX_PROCS=1
+
+  ninja _bin/cxx-asan/{osh,ysh}
+
+  test/spec-runner.sh shell-sanity-check "${SHELLS[@]}"
+
+  local spec_subdir=spec-any
+
+  local status
+  set +o errexit
+  # $suite $compare_mode
+  test/spec-runner.sh all-parallel \
+    osh spec-any $spec_subdir "$@"
+  status=$?
+  set -o errexit
+
+  # Write comparison even if we failed
+  #write-compare-html $spec_subdir
+
+  return $status
 }
 
 list() {
