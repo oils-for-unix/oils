@@ -30,9 +30,6 @@ YSH_PY=$REPO_ROOT/bin/ysh
 OSH_CC=${OSH_CC:-$REPO_ROOT/_bin/cxx-asan/osh}
 YSH_CC=${YSH_CC:-$REPO_ROOT/_bin/cxx-asan/ysh}
 
-# Same variable in test/spec-runner.sh
-NUM_SPEC_TASKS=${NUM_SPEC_TASKS:-400}
-
 # So we can pass ASAN.  Note that test/spec-common.sh has to pass this to
 # sh_spec.py.
 export OILS_GC_ON_EXIT=1
@@ -275,12 +272,8 @@ summary-tsv() {
 
 html-summary-header() {
   local prefix=../../..
-  html-head --title 'Passing Spec Tests in C++' \
-    $prefix/web/ajax.js \
-    $prefix/web/table/table-sort.js $prefix/web/table/table-sort.css \
-    $prefix/web/base.css \
-    $prefix/web/spec-cpp.css
 
+  spec-html-head $prefix 'Passing Spec Tests in C++'
   table-sort-begin "width50"
 
   echo '
@@ -354,6 +347,10 @@ EOF
 
   log "Comparison: file://$REPO_ROOT/$out"
 }
+
+#
+# Misc
+#
 
 tsv-demo() {
   sh-spec spec/arith.test.sh --tsv-output _tmp/arith.tsv dash bash "$@"

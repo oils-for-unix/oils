@@ -45,6 +45,10 @@ def MakeShellPairs(shells):
             first, _ = os.path.splitext(path)
             label = os.path.basename(first)
 
+        # Hack for 'toysh': it's the only shell we call as 'sh'
+        if label == 'sh':
+            label = 'toysh'
+
         if label == 'osh':
             # change the second 'osh' to 'osh_ALT' so it's distinct
             if saw_osh:

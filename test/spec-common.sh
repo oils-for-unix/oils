@@ -7,6 +7,20 @@ readonly BUSYBOX_NAME='busybox-1.35.0'
 readonly DASH_NAME='dash-0.5.10.2'
 readonly YASH_NAME='yash-2.49'
 
+# for test/spec-{runner,cpp,any}.sh
+NUM_SPEC_TASKS=${NUM_SPEC_TASKS:-400}
+
+spec-html-head() {
+  local prefix=$1
+  local title=$2
+
+  html-head --title "$title" \
+    $prefix/web/ajax.js \
+    $prefix/web/table/table-sort.js $prefix/web/table/table-sort.css \
+    $prefix/web/base.css \
+    $prefix/web/spec-cpp.css
+}
+
 sh-spec() {
   local test_file=$1
   shift

@@ -17,8 +17,6 @@ source test/common.sh
 source test/spec-common.sh
 source test/tsv-lib.sh  # $TAB
 
-NUM_SPEC_TASKS=${NUM_SPEC_TASKS:-400}
-
 #
 # Test Runner
 #
