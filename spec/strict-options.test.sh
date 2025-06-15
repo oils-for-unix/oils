@@ -335,6 +335,18 @@ shopt --set strict:all
 FOO=bar eval 'echo FOO=$FOO'
 echo FOO=$FOO
 
+## status: 1
 ## STDOUT:
 ## END
 
+## BUG bash status: 0
+## BUG bash STDOUT:
+FOO=bar
+FOO=
+## END
+
+## N-I dash/mksh status: 0
+## N-I dash/mksh STDOUT:
+FOO=bar
+FOO=bar
+## END
