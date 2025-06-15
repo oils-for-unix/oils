@@ -262,6 +262,29 @@ osh-all() {
   return $status
 }
 
+# Metrics to put in summary.csv
+#
+# - for each shell, total passing (possibly biased by what we mark PASS)
+# - for each shell, the number of tests it passes that bash (4 or 5) also passes (unbiased)
+#   - this avoids being biased by spec/errexit-osh, spec/strict-options
+#
+# Columns: bash mksh ksh toysh sush brush
+# Other columns:
+# - bash minus $SH, for each
+# - osh minus $SH, for each
+#
+# compatibility.html   "Which new shell is the most compatible?"
+#                       With totals of every spec test file, and percentage summaries
+#   passing.html       # per file, sortable -
+#   delta-bash.html    # ...
+#   delta-osh.html
+# Later:
+#   majority.html      # if non-zero status, does STDOUT match majority?
+#                      # this is a more NEUTRAL metric, but requires a TSV file
+#                      from sh_spec.py with stdout
+#
+# Maybe produce versus-bash.csv, versus-osh.csv
+
 list() {
   mkdir -p _tmp/spec  # _all-parallel also does this
   test/spec-runner.sh write-suite-manifests
@@ -272,6 +295,23 @@ list() {
   # - What about *-bash test cases?  These aren't clearly organized
 
   cat _tmp/spec/SUITE-osh.txt
+}
+
+readonly ERRORS=(
+  'echo )'  # parse error
+  'cd -z'   # usage error
+  'cd /zzz'   # runtime error
+)
+
+survey-errors() {
+  set +o errexit
+  for sh in "${SHELLS[@]}"; do
+    echo
+    echo " === $sh"
+    for code in "${ERRORS[@]}"; do
+      $sh -c "$code"
+    done
+  done
 }
 
 task-five "$@"
