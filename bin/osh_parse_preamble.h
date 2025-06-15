@@ -1,4 +1,4 @@
-// bin/oils_for_unix_preamble.h: declarations to run oils_for_unix.mycpp
+// bin/osh_parse_preamble.h: declarations to run osh_parse.mycpp
 
 #include <errno.h>
 #include <fcntl.h>         // e.g. F_DUPFD used directly
@@ -64,3 +64,29 @@ using types_asdl::lex_mode_e;
 
 using value_asdl::sh_lvalue;  // for builtin_assign.py and builtin_misc.py
 using value_asdl::value;
+
+// Added for osh_parse
+
+// TODO: we need to export headers somehow?
+
+namespace cmd_eval {
+  class CommandEvaluator;
+};
+
+namespace expr_eval {
+  class ExprEvaluator;
+};
+
+namespace sh_expr_eval {
+  class EnvConfig;
+};
+
+namespace sh_expr_eval {
+  class ArithEvaluator;
+  class BoolEvaluator;
+  class UnsafeArith;
+};
+
+namespace word_eval {
+  class NormalWordEvaluator;
+};

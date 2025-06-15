@@ -102,6 +102,9 @@ def NinjaGraph(ru):
 
     oils_deps = [
         '//bin/text_files',
+        '//core/optview',
+        '//core/runtime.asdl',
+        '//core/value.asdl',
         '//cpp/core',
         '//cpp/data_lang',
         '//cpp/fanos',
@@ -123,9 +126,6 @@ def NinjaGraph(ru):
         '//frontend/signal',
         '//frontend/syntax.asdl',
         '//frontend/types.asdl',
-        '//core/optview',
-        '//core/runtime.asdl',
-        '//core/value.asdl',
         '//osh/arith_parse',
         '//ysh/grammar',
         '//mycpp/runtime',
@@ -150,7 +150,7 @@ def NinjaGraph(ru):
         'bin/osh_parse.py',
         py_inputs=ninja_lib.TryDynamicDeps('bin/osh_parse.py'),
         # TODO: use different preamble and deps
-        preamble=oils_preamble,
+        preamble='bin/osh_parse_preamble.h',
         deps=oils_deps)
 
     mycpp_binary(ru,

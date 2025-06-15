@@ -1,5 +1,4 @@
 #!/usr/bin/env python2
-"""Osh_parse.py."""
 from __future__ import print_function
 
 import sys

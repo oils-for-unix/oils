@@ -114,4 +114,29 @@ soil-run() {
   $ysh -c 'var x = 42; echo $x'
 }
 
+#
+# Slices
+#
+
+slices() {
+  # Prepare for Windows / Rust?
+
+  # This works, but it imports all of core/shell.py
+  local osh_eval=_bin/cxx-asan/bin/osh_eval.mycpp
+  ninja $osh_eval
+
+  $osh_eval -c 'echo 1; echo 2'
+
+  # ~400 lines of C++ compile errors - circular dependencies
+  #
+  # I think we need something like mycpp --to-header?
+  # So we can export all the forward declarations ... But maybe we won't use
+  # them?  Can we built from the bottom up
+  #
+  # core/vm.py InitUnsafeArith might be an issue
+
+  local osh_parse=_bin/cxx-asan/bin/osh_parse.mycpp
+  ninja $osh_parse
+}
+
 "$@"
