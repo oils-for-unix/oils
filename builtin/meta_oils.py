@@ -543,7 +543,8 @@ def _PrintTsvRow(row):
     name_row = j8_lite.EncodeString(name, unquoted_ok=True)
     # Match --sh-func
     kind_row = 'sh-func' if kind == 'function' else kind
-    detail_row = j8_lite.EncodeString(detail, unquoted_ok=True) if detail else '-'
+    detail_row = (j8_lite.EncodeString(detail, unquoted_ok=True)
+                  if detail is not None else '-')
     print('%s\t%s\t%s' % (name_row, kind_row, detail_row))
 
 
