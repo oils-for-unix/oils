@@ -68,6 +68,7 @@ using value_asdl::value;
 // Added for osh_parse
 
 // TODO: we need to export headers somehow?
+// core/vm.py imports many types
 
 namespace cmd_eval {
   class CommandEvaluator;

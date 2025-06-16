@@ -1,5 +1,5 @@
 ## compare_shells: dash bash zsh mksh ash yash
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 # forked from spec/ble-idioms
 # the IFS= eval 'local x' bug
@@ -67,14 +67,14 @@ f() {
 
 f
 
-## STDOUT:
+## BUG bash/zsh STDOUT:
 x=x
 tx=tx
 y=y
 ty=ty
 ## END
 
-## BUG mksh/ash/dash/yash STDOUT:
+## STDOUT:
 x=
 tx=
 y=

@@ -139,4 +139,36 @@ slices() {
   ninja $osh_parse
 }
 
+count-slice() {
+  # osh_parse.py: 35 files
+  # 22K lines of output
+  #
+  # others: 89 files
+  wc -l \
+    _build/NINJA/bin.osh_parse/translate.txt \
+    _build/NINJA/bin.osh_eval/translate.txt \
+    _build/NINJA/bin.oils_for_unix/translate.txt 
+}
+
+check-slice() {
+  # This type checks
+  #
+  # And we pass a list of files on the mycpp command line.
+  #
+  # I think we need to generate header files though
+  #
+  # core/vm.py if TYPE_CHECKING are an issue - they are not bound by
+  # dynamic_deps.py
+  #
+  # But we should understand them
+  #
+  # Maybe we need to have a pass which computes imports and types:
+  #
+  # cppgen_pass::Decl::visit_import_from() ?
+  #
+  # Or just do the same hack as prebuilt/ for all those headers ... hm OK!
+
+  devtools/types.sh check-binary bin.osh_parse
+}
+
 "$@"
