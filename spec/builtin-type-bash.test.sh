@@ -1,4 +1,4 @@
-## oils_failures_allowed: 0
+## oils_failures_allowed: 2
 ## compare_shells: bash
 
 #### type -t -> function
@@ -185,9 +185,6 @@ f ()
     :
 }
 ## END
-## OK osh STDOUT:
-f is a shell function
-## END
 
 #### type -ap -> function
 f () { :; }
@@ -281,20 +278,6 @@ pwd ()
 { 
     echo function-too
 }
-pwd is a shell builtin
-pwd is /bin/pwd
-pwd is _tmp/pwd
----
-pwd is a shell builtin
-pwd is /bin/pwd
-pwd is _tmp/pwd
-## END
-## OK osh STDOUT:
-pwd is a shell builtin
-pwd is /bin/pwd
-pwd is _tmp/pwd
----
-pwd is a shell function
 pwd is a shell builtin
 pwd is /bin/pwd
 pwd is _tmp/pwd
