@@ -1,4 +1,7 @@
 ## compare_shells: bash mksh
+## oils_failures_allowed: 3
+
+# TODO: can also run against ksh, brush, sush
 
 # Test extended glob matching with [[, case, etc.
 
@@ -47,9 +50,6 @@ FALSE
 FALSE
 FALSE
 FALSE
-## END
-## OK osh status: 1
-## OK osh STDOUT:
 ## END
 
 #### Matching literal '@(cc)'
@@ -294,15 +294,10 @@ FALSE
 TRUE
 TRUE
 ## END
-## OK mksh STDOUT:
+## N-I mksh/ksh STDOUT:
 TRUE
 TRUE
 TRUE
-## END
-
-#  osh fails with runtime error
-## OK osh status: 1
-## OK osh STDOUT:
 ## END
 
 #### With extglob on, !($str) on the left or right of == has different meanings
@@ -316,21 +311,17 @@ TRUE
 
 #### extglob inside arg word
 shopt -s extglob
-[[ foo == @(foo|bar) ]] && echo TRUE
-[[ foo == ${unset:-@(foo|bar)} ]] && echo TRUE
-[[ fo == ${unset:-@(foo|bar)} ]] || echo FALSE
+[[ foo == @(foo|bar) ]] && echo rhs
+[[ foo == ${unset:-@(foo|bar)} ]] && echo 'rhs arg'
+[[ fo == ${unset:-@(foo|bar)} ]] || echo nope
 ## STDOUT:
-TRUE
-TRUE
-FALSE
+rhs
+rhs arg
+nope
 ## END
-## BUG mksh STDOUT:
-TRUE
-FALSE
-## END
-## OK osh status: 1
-## OK osh STDOUT:
-TRUE
+## BUG mksh/ksh STDOUT:
+rhs
+nope
 ## END
 
 #### extglob is not detected in regex!
@@ -339,9 +330,8 @@ shopt -s extglob
 ## STDOUT:
 FALSE
 ## END
-## N-I mksh stdout-json: ""
-## N-I mksh status: 1
-
+## N-I mksh/ksh stdout-json: ""
+## N-I mksh/ksh status: 1
 
 #### regular glob of single unicode char
 shopt -s extglob
