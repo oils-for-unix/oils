@@ -511,7 +511,7 @@ def _PrintFreeForm(row):
     print('%s is %s' % (name, what))
 
 
-def _PrintTsvRow(row):
+def _PrintTableRow(row):
     # type: (Tuple[str, str, Optional[str]]) -> None
     name, kind, detail = row
 
@@ -548,7 +548,8 @@ def _PrintTsvRow(row):
     detail_row = (j8_lite.EncodeString(detail, unquoted_ok=True)
                   if detail is not None else '-')
 
-    print('%s\t%s\t%s' % (name_row, kind_row, detail_row))
+    # 20 cols for "private builtin"
+    print('%-15s%-20s%s' % (name_row, kind_row, detail_row))
 
 
 def _PrintEntry(arg, row):
@@ -758,8 +759,12 @@ class Invoke(vm._Builtin):
                                  self.search_path,
                                  True,
                                  do_private=True)
-                for row in r:
-                    _PrintTsvRow(row)
+                if len(r):
+                    for row in r:
+                        _PrintTableRow(row)
+                else:
+                    # - for not found?
+                    _PrintTableRow((name, '-', '-'))
             return 0
 
         cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.is_last_cmd,

@@ -88,7 +88,9 @@ case $SH in bash) exit ;; esac
 
 invoke --show sleep | grep builtin
 
-## stdout-json: "sleep\tbuiltin\tp\n"
+## STDOUT:
+sleep          "private builtin"   -
+## END
 
 ## N-I bash STDOUT:
 ## END

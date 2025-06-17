@@ -14,6 +14,8 @@ def EncodeString(s, unquoted_ok=False):
 
     If you have to create many strings, it may generate less garbage to use
     that method, then call BufWriter.clear() in between.
+
+    Note: true false null are quoted, even when unquoted_ok=True
     """
     if unquoted_ok and fastfunc.CanOmitQuotes(s):
         return s
