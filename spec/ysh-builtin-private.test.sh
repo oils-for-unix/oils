@@ -230,7 +230,7 @@ invoke --show my-name myobj eval cd zzz | sed 's/#.qtt8/%.qtt8/'
         my-name     alias       b'echo my μ \yff alias'
         my-name     proc        -
         my-name     sh-func     -
-        myobj       invokable   -
+        myobj       proc        invokable
         eval        builtin     special
         cd          builtin     -
         zzz         -           -

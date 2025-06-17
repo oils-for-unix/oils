@@ -695,7 +695,7 @@ if false {  # can't redefine right now
 ## STDOUT:
 function
 proc
-invokable
+proc
 1
 ---
 my-shell-func is a shell function

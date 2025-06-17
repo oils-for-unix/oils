@@ -273,7 +273,7 @@ if ! type -t o4 {
 ## STDOUT:
 (List)   ["a",{"x":5,"y":6}]
 
-invokable
+proc
 
 no prototype
 no __invoke__ method in prototype

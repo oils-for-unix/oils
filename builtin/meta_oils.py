@@ -498,9 +498,10 @@ def _PrintFreeForm(row):
     elif kind == 'alias':
         what = ('an alias for %s' %
                 j8_lite.EncodeString(detail, unquoted_ok=True))
-    elif kind in ('proc', 'invokable'):
-        # Note: haynode should be an invokable
-        what = 'a YSH %s' % kind
+    elif kind == 'proc':
+        # "a YSH proc" - for regular procs
+        # "a YSH invokable" (object)
+        what = 'a YSH %s' % (detail if detail is not None else kind)
     elif kind == 'builtin':
         if detail is None:
             prefix = ''
@@ -515,7 +516,7 @@ def _PrintFreeForm(row):
 
 #  8 space gutter column
 # 12 spaces for name
-# 12 for 'kind' - 'invokable'
+# 12 for 'kind' - builtin proc extern
 _TABLE_ROW_FMT = '%-8s%-12s%-12s%s'
 
 
@@ -895,12 +896,10 @@ def _ResolveName(
     Returns:
       A list of (name, type, optional arg)
 
-    When type == 'alias', arg is the expansion text
-    When type == 'file', arg is the path
+    When type == 'alias',   arg is the expansion text
+    When type == 'file',    arg is the path
     When type == 'builtin', arg is 'special', 'private', or None
-
-    IDEA: When type == 'proc', arg can be 'obj' if it's invokable ?  That is
-    consistent with invoke --proc
+    When type == 'proc',    arg is 'invokable' or None
 
     POSIX has these rules:
       https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_09_01_01
@@ -951,7 +950,7 @@ def _ResolveName(
         if procs.IsProc(name):
             results.append((name, 'proc', no_str))
         elif procs.IsInvokableObj(name):  # can't be both proc and obj
-            results.append((name, 'invokable', no_str))
+            results.append((name, 'proc', 'invokable'))
 
         if procs.IsShellFunc(name):  # shell functions AFTER procs
             results.append((name, 'function', no_str))
