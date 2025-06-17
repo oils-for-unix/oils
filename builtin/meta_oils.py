@@ -489,6 +489,8 @@ class ShellFile(vm._Builtin):
 
 def _PrintFreeForm(row):
     # type: (Tuple[str, str, Optional[str]]) -> None
+    """For type builtin and command builtin"""
+
     name, kind, detail = row
 
     if kind == 'file':
@@ -770,7 +772,7 @@ class Invoke(vm._Builtin):
                     for row in r:
                         _PrintTableRow(row)
                 else:
-                    # - for not found?
+                    # - means not found
                     _PrintTableRow((name, '-', '-'))
             return 0
 
@@ -779,30 +781,85 @@ class Invoke(vm._Builtin):
 
         name = argv[0]
         location = locs[0]
-        to_run = consts.LookupPrivateBuiltin(name)
-        if to_run == consts.NO_INDEX:
-            self.errfmt.Print_("%r isn't a private builtin" % name,
-                               blame_loc=location)
-            return 1
 
-        # TODO:
-        if arg.builtin:
-            return self.shell_ex.RunBuiltin(to_run, cmd_val2)
+        if 0:
+            # Use the same order?
+            # Documented in command-lookup-order
+            #
+            # Problem: this looks on the file system too
+            #
+            # Does it solve any problems?  We could use a simpler lookup order, I think.
+            #
+            # so invoke --builtin --extern eval will
+            # command -v eval?
+            #
+            # The point of invoke is to be SPECIFIC
+            #
+            # command -v ls - as long as it runs builtins before externs, it's fine
+            # And we can easily do that
+
+            r = _ResolveName(name,
+                             self.procs,
+                             self.aliases,
+                             self.search_path,
+                             True,
+                             do_private=True)
+            if len(r):
+                for row in r:
+                    name, kind, _ = row
+                    if kind == 'builtin' and arg.builtin:
+                        # NOTE: need builtin index?
+                        print('builtin')
+                        pass
+                    elif kind == 'function' and arg.sh_func:
+                        print('sh-func')
+                        pass
+                    # TODO: proc should have 'detail' for invokable?
+                    elif kind in ('proc', 'invokable') and arg.proc:
+                        pass
+                    elif kind in 'file' and arg.extern_:
+                        pass
+
+        # Look it up
         if arg.proc:
-            pass
+            proc_val, self_obj = self.procs.GetProc(name)
+            if proc_val is not None:
+                return self.shell_ex._RunInvokable(proc_val, self_obj,
+                                                   location, cmd_val2)
+
         if arg.sh_func:
-            pass
+            sh_func = self.procs.GetShellFunc(name)
+            if sh_func:
+                return self.shell_ex._RunInvokable(sh_func, None, location,
+                                                   cmd_val2)
+
+        if arg.builtin:
+            # Look up any builtin
+
+            to_run = consts.LookupNormalBuiltin(name)  # builtin true
+
+            if to_run == consts.NO_INDEX:  # builtin eval
+                to_run = consts.LookupSpecialBuiltin(name)
+
+            if to_run == consts.NO_INDEX:  # builtin sleep
+                # Note that plain 'sleep' doesn't work
+                to_run = consts.LookupPrivateBuiltin(name)
+
+            if to_run != consts.NO_INDEX:
+                # early return
+                return self.shell_ex.RunBuiltin(to_run, cmd_val2)
 
         # Special considerations:
         # - set PATH for lookup
         # - set ENV for external process with a DICT
-        #   - that's similar to ENV, but it's a YSH thing
-        #   - ambiguity:
-        #   - invoke --extern ls (ENV)  # i
+        #   - I think these are better for the 'extern' builtin
         if arg.extern_:
             pass
 
-        return 0
+        # Command not found
+        self.errfmt.Print_("'invoke' couldn't find command %r" % name,
+                           blame_loc=location)
+        return 127
 
 
 class Extern(vm._Builtin):
@@ -841,6 +898,9 @@ def _ResolveName(
     When type == 'alias', arg is the expansion text
     When type == 'file', arg is the path
     When type == 'builtin', arg is 'special', 'private', or None
+
+    IDEA: When type == 'proc', arg can be 'obj' if it's invokable ?  That is
+    consistent with invoke --proc
 
     POSIX has these rules:
       https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_09_01_01

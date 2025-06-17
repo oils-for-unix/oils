@@ -1,5 +1,5 @@
 ## compare_shells: bash
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 
 #### invoke usage
 case $SH in bash) exit ;; esac
@@ -25,8 +25,8 @@ echo status=$?
 status=2
 status=2
 
-status=0
-status=0
+status=127
+status=127
 status=0
 ## END
 ## N-I bash STDOUT:
@@ -45,22 +45,117 @@ invoke --builtin -- zz
 echo status=$?
 
 ## STDOUT:
-status=1
-status=1
-status=1
+status=127
+status=127
+status=127
 ## END
 ## N-I bash STDOUT:
 ## END
 
-#### type and command builtin does not find private sleep, because it's not enabled
+#### invoke fails to find tools
+case $SH in bash) exit ;; esac
 
-# Does Oils have __builtins__.special __builtins__.normal __builtins__.private
-# perhaps?  That is another way of introspecting
+invoke --builtin ls
+echo status=$?
+
+invoke --sh-func ls
+echo status=$?
+
+invoke --proc ls
+echo status=$?
+
+invoke --extern zzz
+echo status=$?
+
+## STDOUT:
+status=127
+status=127
+status=127
+status=127
+## END
+## N-I bash STDOUT:
+## END
+
+#### invoke --proc --sh-func --builtin --extern
+case $SH in bash) exit ;; esac
+
+true() {
+  echo 'sh-func true'
+}
+
+shopt --set ysh:all
+
+proc true {
+  echo 'proc true'
+}
+
+# Now INVOKE each one
+
+echo --sh-func
+invoke --sh-func true
+echo status=$?
+echo
+
+echo --proc
+invoke --proc true
+echo status=$?
+echo
+
+echo --builtin
+invoke --builtin true --help || true
+echo status=$?
+echo
+
+echo --extern
+invoke --extern true --help
+echo status=$?
+echo
+
+## STDOUT:
+--sh-func
+sh-func true
+status=0
+
+--proc
+proc true
+status=0
+
+--builtin
+status=0
+
+--extern
+status=0
+
+## END
+## N-I bash STDOUT:
+## END
+
+#### invoke --proc doesn't run shell functions
+case $SH in bash) exit ;; esac
+
+true() {
+  echo sh-func true
+}
+
+invoke --proc true
+echo status=$?
+
+## STDOUT:
+status=127
+## END
+## N-I bash STDOUT:
+## END
+
+#### type and command builtin don't find private sleep
 
 remove-path() { sed 's;/.*/;;'; }
 
 type -t sleep
 type sleep | remove-path
+echo
+
+# this is meant to find the "first word"
+type -a sleep | remove-path | uniq
 echo
 
 command -v sleep | remove-path
@@ -69,21 +164,12 @@ command -v sleep | remove-path
 file
 sleep is sleep
 
+sleep is sleep
+
 sleep
 ## END
 
-#### type -a does not find private builtins
-
-remove-path() { sed 's;/.*/;;'; }
-
-# this is meant to find the "first word"
-type -a sleep | remove-path | uniq
-
-## STDOUT:
-sleep is sleep
-## END
-
-#### but invoke --show finds the private builtin (alternative to type, command)
+#### but invoke --show finds the private builtin
 case $SH in bash) exit ;; esac
 
 invoke --show sleep | grep builtin
@@ -137,7 +223,7 @@ if false {
   echo
 }
 
-invoke --show my-name myobj eval cd | sed 's/#.qtt8/%.qtt8/'
+invoke --show my-name myobj eval cd zzz | sed 's/#.qtt8/%.qtt8/'
 
 ## STDOUT:
 %.qtt8  name        kind        detail
@@ -147,6 +233,7 @@ invoke --show my-name myobj eval cd | sed 's/#.qtt8/%.qtt8/'
         myobj       invokable   -
         eval        builtin     special
         cd          builtin     -
+        zzz         -           -
 ## END
 
 ## N-I bash STDOUT:

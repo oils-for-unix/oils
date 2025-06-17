@@ -2826,6 +2826,21 @@ class Procs(object):
 
         return names
 
+    def GetProc(self, name):
+        # type: (str) -> Tuple[Optional[value_t], Optional[Obj]]
+        """Get YSH procs/invokables only, for invoke --proc
+        """
+        val = self.mem.GetValue(name)
+
+        if val.tag() == value_e.Proc:
+            return cast(value.Proc, val), None
+
+        proc, self_val = ValueIsInvokableObj(val)
+        if proc:
+            return proc, self_val
+
+        return None, None
+
     def GetInvokable(self, name):
         # type: (str) -> Tuple[Optional[value_t], Optional[Obj]]
         """Find a proc, invokable Obj, or sh-func, in that order
@@ -2835,12 +2850,7 @@ class Procs(object):
           meta_oils.py runproc lookup - this is not 'invoke', because it is
              INTERIOR shell functions, procs, invokable Obj
         """
-        val = self.mem.GetValue(name)
-
-        if val.tag() == value_e.Proc:
-            return cast(value.Proc, val), None
-
-        proc, self_val = ValueIsInvokableObj(val)
+        proc, self_val = self.GetProc(name)
         if proc:
             return proc, self_val
 
