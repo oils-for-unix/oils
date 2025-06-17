@@ -673,14 +673,7 @@ class Builtin(vm._Builtin):
 
         name = argv[0]
 
-        to_run = consts.LookupNormalBuiltin(name)  # builtin true
-
-        if to_run == consts.NO_INDEX:  # builtin eval
-            to_run = consts.LookupSpecialBuiltin(name)
-
-        if to_run == consts.NO_INDEX:  # builtin sleep
-            # Note that plain 'sleep' doesn't work
-            to_run = consts.LookupPrivateBuiltin(name)
+        to_run = _LookupAnyBuiltin(name)
 
         if to_run == consts.NO_INDEX:  # error
             location = locs[0]
@@ -725,9 +718,24 @@ class RunProc(vm._Builtin):
         cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.is_last_cmd,
                                   cmd_val.self_obj, cmd_val.proc_args)
 
+        # NOTE: Don't need cmd_st?
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
         run_flags = executor.IS_LAST_CMD if cmd_val.is_last_cmd else 0
         return self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, run_flags)
+
+
+def _LookupAnyBuiltin(name):
+    # type: (str) -> int
+    to_run = consts.LookupNormalBuiltin(name)  # builtin true
+
+    if to_run == consts.NO_INDEX:  # builtin eval
+        to_run = consts.LookupSpecialBuiltin(name)
+
+    if to_run == consts.NO_INDEX:  # builtin sleep
+        # Note that plain 'sleep' doesn't work
+        to_run = consts.LookupPrivateBuiltin(name)
+
+    return to_run
 
 
 class Invoke(vm._Builtin):
@@ -783,69 +791,28 @@ class Invoke(vm._Builtin):
         name = argv[0]
         location = locs[0]
 
-        if 0:
-            # Use the same order?
-            # Documented in command-lookup-order
-            #
-            # Problem: this looks on the file system too
-            #
-            # Does it solve any problems?  We could use a simpler lookup order, I think.
-            #
-            # so invoke --builtin --extern eval will
-            # command -v eval?
-            #
-            # The point of invoke is to be SPECIFIC
-            #
-            # command -v ls - as long as it runs builtins before externs, it's fine
-            # And we can easily do that
-
-            r = _ResolveName(name,
-                             self.procs,
-                             self.aliases,
-                             self.search_path,
-                             True,
-                             do_private=True)
-            if len(r):
-                for row in r:
-                    name, kind, _ = row
-                    if kind == 'builtin' and arg.builtin:
-                        # NOTE: need builtin index?
-                        print('builtin')
-                        pass
-                    elif kind == 'function' and arg.sh_func:
-                        print('sh-func')
-                        pass
-                    # TODO: proc should have 'detail' for invokable?
-                    elif kind in ('proc', 'invokable') and arg.proc:
-                        pass
-                    elif kind in 'file' and arg.extern_:
-                        pass
+        tried = []  # type: List[str]
 
         # Look it up
         if arg.proc:
+            tried.append('--proc')
             proc_val, self_obj = self.procs.GetProc(name)
             if proc_val is not None:
                 return self.shell_ex._RunInvokable(proc_val, self_obj,
                                                    location, cmd_val2)
 
         if arg.sh_func:
+            tried.append('--sh-func')
             sh_func = self.procs.GetShellFunc(name)
             if sh_func:
                 return self.shell_ex._RunInvokable(sh_func, None, location,
                                                    cmd_val2)
 
         if arg.builtin:
+            tried.append('--builtin')
             # Look up any builtin
 
-            to_run = consts.LookupNormalBuiltin(name)  # builtin true
-
-            if to_run == consts.NO_INDEX:  # builtin eval
-                to_run = consts.LookupSpecialBuiltin(name)
-
-            if to_run == consts.NO_INDEX:  # builtin sleep
-                # Note that plain 'sleep' doesn't work
-                to_run = consts.LookupPrivateBuiltin(name)
-
+            to_run = _LookupAnyBuiltin(name)
             if to_run != consts.NO_INDEX:
                 # early return
                 return self.shell_ex.RunBuiltin(to_run, cmd_val2)
@@ -855,15 +822,28 @@ class Invoke(vm._Builtin):
         # - set ENV for external process with a DICT
         #   - I think these are better for the 'extern' builtin
         if arg.extern_:
-            pass
+            tried.append('--extern')
+            # cmd_st is None - should we get rid of it?  See 'runproc' too
+            return self.shell_ex.RunExternal(name, location, cmd_val2, None, 0)
+
+        if len(tried) == 0:
+            raise error.Usage(
+                'expected one or more flags like --proc --sh-func --builtin --extern',
+                cmd_val.arg_locs[0])
 
         # Command not found
-        self.errfmt.Print_("'invoke' couldn't find command %r" % name,
+        self.errfmt.Print_("'invoke' couldn't find command %r (tried %s)" %
+                           (name, ' '.join(tried)),
                            blame_loc=location)
         return 127
 
 
 class Extern(vm._Builtin):
+    """
+    Why does this exist?  
+    - Run with ENV in a dict, similar to env -i, but possibly easier
+    - Run with $PATH
+    """
 
     def __init__(self, shell_ex, procs, errfmt):
         # type: (vm._Executor, state.Procs, ui.ErrorFormatter) -> None

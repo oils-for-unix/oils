@@ -1,5 +1,5 @@
 ## compare_shells: bash
-## oils_failures_allowed: 3
+## oils_failures_allowed: 2
 
 #### invoke usage
 case $SH in bash) exit ;; esac
@@ -25,8 +25,8 @@ echo status=$?
 status=2
 status=2
 
-status=127
-status=127
+status=2
+status=2
 status=0
 ## END
 ## N-I bash STDOUT:
@@ -45,7 +45,7 @@ invoke --builtin -- zz
 echo status=$?
 
 ## STDOUT:
-status=127
+status=2
 status=127
 status=127
 ## END
@@ -107,7 +107,7 @@ echo status=$?
 echo
 
 echo --extern
-invoke --extern true --help
+invoke --extern true
 echo status=$?
 echo
 

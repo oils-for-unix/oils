@@ -660,10 +660,11 @@ def Main(
     # Part of YSH, but similar to builtin/command
     b[builtin_i.invoke] = meta_oils.Invoke(shell_ex, procs, aliases,
                                            search_path, errfmt)
-    # allows setting ENV and PATH
-    b[builtin_i.extern_] = meta_oils.Extern(shell_ex, procs, errfmt)
-    # TODO: deprecate runproc for invoke --proc-like?
+    # Note: runproc is like invoke --proc, could be deprecated?
     b[builtin_i.runproc] = meta_oils.RunProc(shell_ex, procs, errfmt)
+
+    # allows setting ENV and PATH
+    #b[builtin_i.extern_] = meta_oils.Extern(shell_ex, procs, errfmt)
 
     # Meta builtins
     module_invoke = module_ysh.ModuleInvoke(cmd_ev, tracer, errfmt)

@@ -1148,6 +1148,17 @@ p 1 2 3
 '
 }
 
+test-invoke-errors() {
+  # Usage error, because it will never find anything
+  _ysh-error-X 2 'invoke true'
+
+  # should say "tried builtin"
+  _ysh-error-X 127 'invoke --builtin zz'
+
+  # typed arg not accepted
+  _ysh-error-X 1 'invoke --extern true (42)'
+}
+
 test-purity() {
   echo 'x=$(date)' > _tmp/impure.sh
   _assert-sh-status 5 $YSH 'Should fail' --eval-pure _tmp/impure.sh -c 'echo hi'

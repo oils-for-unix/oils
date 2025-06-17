@@ -452,6 +452,10 @@ class ShellExecutor(vm._Executor):
             cmd_st.show_code = True  # this is a "leaf" for errors
             return self.RunBuiltin(builtin_id, cmd_val)
 
+        return self.RunExternal(arg0, arg0_loc, cmd_val, cmd_st, run_flags)
+
+    def RunExternal(self, arg0, arg0_loc, cmd_val, cmd_st, run_flags):
+        # type: (str, loc_t, cmd_value.Argv, Optional[CommandStatus], int) -> int
         environ = self.mem.GetEnv()  # Include temporary variables
 
         if cmd_val.proc_args:
@@ -498,7 +502,8 @@ class ShellExecutor(vm._Executor):
             # this is close to a "leaf" for errors
             # problem: permission denied EACCESS prints duplicate messages
             # TODO: add message command 'ls' failed
-            cmd_st.show_code = True
+            if cmd_st is not None:
+                cmd_st.show_code = True
 
             return status
 

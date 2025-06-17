@@ -237,6 +237,10 @@ class _Executor(object):
         # type: (str, loc_t, cmd_value.Argv, CommandStatus, int) -> int
         raise NotImplementedError()
 
+    def RunExternal(self, arg0, arg0_loc, cmd_val, cmd_st, run_flags):
+        # type: (str, loc_t, cmd_value.Argv, CommandStatus, int) -> int
+        raise NotImplementedError()
+
     def RunBuiltin(self, builtin_id, cmd_val):
         # type: (int, cmd_value.Argv) -> int
         """Run a builtin.

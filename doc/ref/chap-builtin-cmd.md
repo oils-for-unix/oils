@@ -1439,19 +1439,20 @@ builtin](https://www.gnu.org/software/bash/manual/bash.html#index-type).
 
 ### invoke
 
-The `invoke` builtin controls name lookup for [simple
+The `invoke` builtin allows more control over name lookup than [simple
 commands][simple-command].
 
 [simple-command]: chap-cmd-lang.html#simple-command
 
 Usage:
 
-    invoke --show NAME*       # Show info about EACH name
-    invoke LOOKUP_FLAG* ARG*  # Run a single command with this arg array
+    invoke --show NAME*          # Show info about EACH name
+    invoke NAMESPACE_FLAG+ ARG*  # Run a single command with this arg array
 
-Category lookup flags:
+Namespace flags:
 
-    --proc      Run YSH procs and invokable objects
+    --proc      Run YSH procs 
+                including invokable obj
     --sh-func   Run shell functions
     --builtin   Run builtin commands (of any kind)
                 eval : POSIX special
@@ -1459,24 +1460,31 @@ Category lookup flags:
                 sleep: private (Oils)
     --extern    Run external commands, like /bin/ls
 
-Multiple categories may be passed.  They are searched in that order: proc-like,
-shell functions, builtins, then extern.  The first one wins.
+Multiple namespace flags may be passed.  They are searched in that order:
+procs, shell functions, builtins, then extern.  The first one wins.  (This is
+different than [command-lookup-order][].)
 
-Run `invoke --show NAME` to see all categories a name is found in.  (Shell
-keywords and aliases are shown, but `invoke` doesn't run them.)
+[command-lookup-order]: chap-cmd-lang.html#command-lookup-order
 
-If the name is not found, then `invoke` returns status 127.
+If the name isn't found, then `invoke` returns status 127.
+
+---
+
+Run `invoke --show NAME` to see all categories a name is found in.
+
+- The `--show` flag respects the [command-lookup-order][]
+- Shell keywords and aliases are shown, but `invoke` doesn't run them.
+
+---
 
 Examples:
 
-    invoke --show true sleep ls          # similar to type -a true sleep ls
+    invoke ls                          # usage error: no namespace flags
 
-    invoke --builtin echo hi             # like builtin echo hi
-    invoke --builtin --extern ls /tmp    # like command ls /tmp
-    invoke --builtin echo hi             # like builtin echo hi
+    invoke --builtin          echo hi  # like builtin echo hi
+    invoke --builtin --extern ls /tmp  # like command ls /tmp (no function lookup)
 
-    invoke foo                           # no lookup flags, so it always fails
-
+    invoke --show true sleep ls        # similar to type -a true sleep ls
 
 Related:
 
@@ -1484,7 +1492,6 @@ Related:
 - [command][] - like `--builtin --extern`
 - [runproc][] - like `--proc --sh-func`
 - [type][cmd/type] - like `--show`
-- `invoke --show` respects the [command-lookup-order][]
 
 [builtin]: chap-builtin-cmd.html#builtin
 [command]: chap-builtin-cmd.html#command
