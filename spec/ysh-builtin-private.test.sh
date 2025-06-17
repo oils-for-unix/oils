@@ -145,7 +145,7 @@ invoke --show bad-alias
 
 ## STDOUT:
  ff 0a 7a 0a
-bad-alias	alias	b'echo \yff\necho z'
+bad-alias      alias               b'echo \yff\necho z'
 ## END
 
 ## N-I bash STDOUT:
