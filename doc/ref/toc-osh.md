@@ -102,8 +102,8 @@ X [Unsupported]   enable
 </h2>
 
 ```chapter-links-cmd-lang
-  [Commands]      simple-command               prefix-binding
-                  semicolon ;    
+  [Commands]      simple-command               command-lookup-order
+                  prefix-binding               semicolon ;    
   [Conditional]   case           if            dbracket [[
                   bang !         and &&        or ||
   [Iteration]     while          until         for            for-expr-sh ((

@@ -1454,8 +1454,8 @@ Category lookup flags:
     --proc      Run YSH procs and invokable objects
     --sh-func   Run shell functions
     --builtin   Run builtin commands (of any kind)
-                eval: POSIX special
-                true: normal
+                eval : POSIX special
+                cd   : normal
                 sleep: private (Oils)
     --extern    Run external commands, like /bin/ls
 
@@ -1484,11 +1484,13 @@ Related:
 - [command][] - like `--builtin --extern`
 - [runproc][] - like `--proc --sh-func`
 - [type][cmd/type] - like `--show`
+- `invoke --show` respects the [command-lookup-order][]
 
 [builtin]: chap-builtin-cmd.html#builtin
 [command]: chap-builtin-cmd.html#command
 [runproc]: chap-builtin-cmd.html#runproc
 [cmd/type]: chap-builtin-cmd.html#cmd/type
+[command-lookup-order]: chap-cmd-lang.html#command-lookup-order
 
 ### runproc
 

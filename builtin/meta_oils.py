@@ -502,14 +502,8 @@ def _PrintFreeForm(row):
     elif kind == 'builtin':
         if detail is None:
             prefix = ''
-        elif detail == 's':
-            prefix = 'special '
-        elif detail == 'p':
-            # printed in invoke --show, but not type, because it's not the
-            # first word
-            prefix = 'private '
         else:
-            raise AssertionError()
+            prefix = detail + ' '
         what = 'a %sshell %s' % (prefix, kind)
     else:  # function, keyword
         what = 'a shell %s' % kind
@@ -541,10 +535,19 @@ def _PrintTsvRow(row):
     # | Invokable
 
     name_row = j8_lite.EncodeString(name, unquoted_ok=True)
-    # Match --sh-func
-    kind_row = 'sh-func' if kind == 'function' else kind
+
+    kind_row = kind
+    if kind == 'function':
+        # Consistent with --sh-func
+        kind_row = 'sh-func'
+    elif kind == 'builtin' and detail is not None:
+        kind_row = '%s %s' % (detail, kind)
+        kind_row = j8_lite.EncodeString(kind_row, unquoted_ok=True)
+        detail = None  # don't show it detail row
+
     detail_row = (j8_lite.EncodeString(detail, unquoted_ok=True)
                   if detail is not None else '-')
+
     print('%s\t%s\t%s' % (name_row, kind_row, detail_row))
 
 
@@ -823,8 +826,9 @@ def _ResolveName(
     Returns:
       A list of (name, type, optional arg)
 
+    When type == 'alias', arg is the expansion text
     When type == 'file', arg is the path
-    When type == 'builtin', arg is 's' for special, 'p' for private, or None
+    When type == 'builtin', arg is 'special', 'private', or None
 
     POSIX has these rules:
       https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_09_01_01
@@ -869,7 +873,7 @@ def _ResolveName(
 
     # Special builtins are looked up FIRST
     if consts.LookupSpecialBuiltin(name) != 0:
-        results.append((name, 'builtin', 's'))
+        results.append((name, 'builtin', 'special'))
 
     if procs:
         if procs.IsProc(name):
@@ -884,7 +888,7 @@ def _ResolveName(
     if consts.LookupNormalBuiltin(name) != 0:
         results.append((name, 'builtin', no_str))
     elif consts.LookupAssignBuiltin(name) != 0:
-        results.append((name, 'builtin', 's'))
+        results.append((name, 'builtin', 'special'))
 
     # See if it's external
     for path in search_path.LookupReflect(name, do_all):
@@ -893,7 +897,7 @@ def _ResolveName(
 
     # Private builtins after externals
     if do_private and consts.LookupPrivateBuiltin(name) != 0:
-        results.append((name, 'builtin', 'p'))
+        results.append((name, 'builtin', 'private'))
 
     return results
 

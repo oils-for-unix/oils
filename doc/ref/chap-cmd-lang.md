@@ -49,11 +49,11 @@ YSH:
 
 Commands are composed of words.  The first word may be the name of
 
-1. A builtin shell command
-1. A YSH `proc` or shell "function"
-1. A Hay node declared with `hay define`
-1. An external command
 1. An alias
+1. A builtin command
+1. A YSH `proc` 
+1. A shell "function"
+1. An external command
 
 Examples:
 
@@ -71,6 +71,70 @@ Redirects are also allowed in any part of the command:
 
     echo 'to file' > out.txt
     echo > out.txt 'to file'
+
+### command-lookup-order
+
+The first word in a command can mean many things.
+
+(1) An [alias][] may expand into shell code at **parse** time.  This includes
+keywords!
+
+Aliases are **disabled** in YSH (`shopt --unset expand_aliases`).
+
+(2) Shell keywords like `if` have their own **parsing** rules:
+
+    if test -d /; then  # OSH style
+      echo yes
+    fi
+
+    if test --dir / {   # YSH style
+      echo yes
+    }
+
+(3) The first word of a [simple command][simple-command] is looked up in this
+order:
+
+1. Special builtins like `eval`
+1. YSH Procs or Shell Functions
+1. Normal Builtins like `cd`
+1. External Processes like `/bin/ls`
+
+So special builtins can't be redefined as functions, but normal builtins can.
+
+YSH also adds the concept of a **private** builtin.  Private
+builtins like [sleep][] are **not** consulted as the first word:
+
+    sleep 1          # run external command
+    builtin sleep 1  # run private builtin with explicit prefix
+
+[alias]: chap-builtin-cmd.html#alias
+[simple-command]: chap-cmd-lang.html#simple-command
+[sleep]: chap-builtin-cmd.html#sleep
+
+To summarize, OSH commands are looked up in this order:
+
+1. alias
+1. keyword
+1. special builtin
+1. shell function
+1. normal builtin
+1. external
+
+YSH commands are looked up in this order:
+
+1. keyword
+1. special builtin
+1. YSH proc
+1. normal builtin
+1. external
+
+Logically separate:
+
+6. private builtin (not the first word)
+
+Use [invoke --show][invoke] to see different meanings for a given name.
+
+[invoke]: chap-builtin-cmd.html#invoke
 
 ### prefix-binding
 
@@ -97,8 +161,8 @@ done by adding a new `Dict` to the prototype chain of the `Obj`.
 The new `ENV` then becomes the environment of the child processes for the
 command.
 
-(In YSH, prefix bindings only mean one thing.  They are temporary; they don't
-persist depending on whether the command is a special builtin.)
+In YSH, prefix bindings are always temporary ENV bindings, and they don't
+persist.  This is enforced by `shopt --set strict_env_binding`.
 
 - Related: [ENV](chap-special-var.html#ENV), [prefix-binding](chap-cmd-lang.html#prefix-binding)
 

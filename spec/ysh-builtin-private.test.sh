@@ -110,13 +110,15 @@ PATH=$PWD/dir:$PATH
 #echo $PATH
 
 command -v my-name
+echo
 type -a my-name
+echo
 
 shopt --set ysh:all
 
 proc my-name { echo proc }
 
-invoke --show my-name eval cd
+invoke --show my-name eval cd sleep
 
 ## STDOUT:
 ## END

@@ -236,6 +236,7 @@ X [External Lang] BEGIN   END   when (awk)
 
 ```chapter-links-cmd-lang_33
   [Commands]      simple-command
+                  command-lookup-order
                   ysh-prefix-binding
                   semicolon ;
   [Redirects]     ysh-here-str    read <<< '''
