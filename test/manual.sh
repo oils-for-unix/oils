@@ -72,18 +72,50 @@ no-home-dir() {
 # - external sleep can be killed with TERM, but it's unaffacted
 
 start-sleep() {
-  local osh_builtin=${1:-}
+  local osh=${1:-}  # start with bin/osh or _bin/cxx-asan/osh
+  local do_trap=${2:-}
 
-  local code='sleep 100 & echo "pid $!"; wait; echo "sleep done"'
+  local traps='
+    trap "echo GOT-INT" INT
+    trap "echo GOT-WINCH" WINCH
+    trap "sleep 0.3" USR1
+  '
 
-  if test -n "$osh_builtin"; then
-    local osh=_bin/cxx-asan/osh
-    ninja $osh
+  local code='sleep 100 & last_pid=$!; echo "pid $last_pid"; test/signal-state.sh report $last_pid; wait; echo "sleep done"'
+
+  if test -n "$osh"; then
+    code="builtin $code"
+    if test -n "$do_trap"; then
+      code="$traps $code"
+    fi
     set -x
-    $osh -c "builtin $code"
+    $osh -c "$code"
   else
     sh -c "$code"
   fi
+}
+
+read-t-sleep() {
+  echo "PID = $$"
+
+  local do_trap=${1:-}
+
+  if test -n "$do_trap"; then
+    # bash does run signal handlers immediately
+    # I can see int multiple times
+    set -x
+    trap 'echo GOT-INT' INT
+    trap 'echo GOT-WINCH' WINCH
+
+    # Test out remaining time logic.  It still sleeps for 5 seconds total.
+    trap 'sleep 0.3' USR1
+  fi
+  # note:
+  # - untrapped SIGINT/Ctrl-C interrupts it
+  # - trapped SIGINT does not!
+
+  # sleep
+  read -t 5.0
 }
 
 task-five "$@"

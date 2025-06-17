@@ -208,12 +208,14 @@ void tzset() {
   ::tzset();
 }
 
-time_t time() {
-  time_t result = ::time(nullptr);
-  if (result < 0) {
+double time() {
+  struct timespec spec;
+  // Get current time
+  if (clock_gettime(CLOCK_REALTIME, &spec) == -1) {
     throw Alloc<IOError>(errno);
   }
-  return result;
+  return static_cast<double>(spec.tv_sec) +
+         static_cast<double>(spec.tv_nsec) / 1e9;
 }
 
 // NOTE(Jesse): time_t is specified to be an arithmetic type by C++. On most
@@ -251,6 +253,7 @@ BigStr* strftime(BigStr* s, time_t ts) {
   return result;
 }
 
+// Used by TestAction in core/completion.py - not really necessary
 void sleep(double seconds) {
   struct timespec req, rem;
   req.tv_sec = (time_t)seconds;
@@ -260,11 +263,10 @@ void sleep(double seconds) {
   while (nanosleep(&req, &rem) == -1) {
     // log("nano errno %d", errno);
     if (errno == EINTR) {
-      // e.g. on Ctrl-C, keep sleeping?
-      req = rem;
+      req = rem;  // keep sleeping
     } else {
       // Ignore other errors
-      // log("nano break");
+      // log("nano other break");
       break;
     }
   }

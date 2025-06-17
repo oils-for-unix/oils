@@ -360,6 +360,25 @@ func_cpython_reset_locale(PyObject *self, PyObject *unused)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+func_sleep_until_error(PyObject *self, PyObject *args) {
+  double seconds;
+  if (!PyArg_ParseTuple(args, "d", &seconds)) {
+    return NULL;
+  }
+
+  struct timespec req;
+  req.tv_sec = (time_t)seconds;
+  req.tv_nsec = (long)((seconds - req.tv_sec) * 1000000000);
+
+  // Return 0 or errno
+  int result = 0;
+  if (nanosleep(&req, NULL) < 0) {
+    result = errno;
+  }
+  return PyInt_FromLong(result);
+}
+
 static PyMethodDef methods[] = {
   // Return the canonical version of a path with symlinks, or None if there is
   // an error.
@@ -395,6 +414,8 @@ static PyMethodDef methods[] = {
   // Workaround for CPython's calling setlocale() in pythonrun.c.  ONLY used
   // by tests and bin/oil.py.
   {"cpython_reset_locale", func_cpython_reset_locale, METH_NOARGS, ""},
+
+  {"sleep_until_error", func_sleep_until_error, METH_VARARGS, ""},
   {NULL, NULL},
 };
 

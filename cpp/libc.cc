@@ -8,6 +8,7 @@
 #include <locale.h>
 #include <regex.h>
 #include <sys/ioctl.h>
+#include <time.h>    // nanosleep()
 #include <unistd.h>  // gethostname()
 #include <wchar.h>
 
@@ -234,6 +235,19 @@ int get_terminal_width() {
     throw Alloc<IOError>(errno);
   }
   return w.ws_col;
+}
+
+int sleep_until_error(double seconds) {
+  struct timespec req;
+  req.tv_sec = static_cast<time_t>(seconds);
+  req.tv_nsec = static_cast<time_t>((seconds - req.tv_sec) * 1e9);
+
+  // Return 0 or errno
+  int result = 0;
+  if (nanosleep(&req, NULL) < 0) {
+    result = errno;
+  }
+  return result;
 }
 
 }  // namespace libc

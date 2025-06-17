@@ -36,7 +36,7 @@ report() {
   done
 }
 
-do-child() {
+do_child() {
   echo
   echo 'BACKGROUND CHILD'
   $sh -c 'script=$1; sleep 0.5 & { sleep 0.2; $script report $!; }' -- $0
@@ -65,7 +65,7 @@ compare-shells() {
     $sh -c 'script=$1; $script report $$' -- $0
 
     if test -n "$do_child"; then
-      do-child $sh
+      do_child $sh
     fi
   done
 

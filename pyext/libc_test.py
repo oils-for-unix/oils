@@ -308,8 +308,23 @@ class LibcTest(unittest.TestCase):
 
     self.assertRaises(UnicodeError, libc.wcswidth, "\xfe")
 
+  def testSleepUntilError(self):
+    try:
+      bad = libc.sleep_until_error(None)
+    except TypeError:
+      print('ok')
+    else:
+      self.fail('Expected TypeError')
+
+    result = libc.sleep_until_error(0.001)
+    self.assertEqual(0, result)
+
+    # Not testing errno case
+
 
 if __name__ == '__main__':
   # To simulate the OVM_MAIN patch in pythonrun.c
   libc.cpython_reset_locale()
   unittest.main()
+
+# vim: ts=2 sw=2

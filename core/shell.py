@@ -736,7 +736,7 @@ def Main(
     b[builtin_i.read] = read_osh.Read(splitter, mem, parse_ctx, cmd_ev, errfmt)
 
     # PRIVATE builtin
-    b[builtin_i.sleep] = io_osh.Sleep()
+    b[builtin_i.sleep] = io_osh.Sleep(cmd_ev, signal_safe)
 
     mapfile = io_osh.MapFile(mem, errfmt, cmd_ev)
     b[builtin_i.mapfile] = mapfile

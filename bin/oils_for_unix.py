@@ -136,8 +136,8 @@ def AppBundleMain(argv):
     if applet.startswith('ysh'):
         return shell.Main('ysh', arg_r, environ, login_shell, loader, readline)
 
-    elif applet.startswith('osh') or applet.endswith(
-            'sh'):  # sh, osh, bash imply OSH
+    # sh, osh, bash imply OSH
+    elif applet.startswith('osh') or applet.endswith('sh'):
         return shell.Main('osh', arg_r, environ, login_shell, loader, readline)
 
     # For testing latency
@@ -145,6 +145,12 @@ def AppBundleMain(argv):
         return 0
     elif applet == 'false':
         return 1
+
+    # TODO:
+    # - Invoke builtins like sleep, cat
+    # - readlink should be a builtin
+    #
+    # So then arg_locs - loc_t.Argument?
     elif applet == 'readlink':
         if mylib.PYTHON:
             # TODO: Move this to 'internal readlink' (issue #1013)

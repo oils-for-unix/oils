@@ -1791,17 +1791,9 @@ class CommandEvaluator(object):
 
         We may run traps, check for Ctrl-C, or garbage collect.
         """
-        # TODO: Do this in "leaf" nodes?  SimpleCommand, DBracket, DParen should
-        # call self.DoTick()?  That will RunPendingTraps and check the Ctrl-C flag,
-        # and maybe throw an exception.
         self.RunPendingTraps()
         if self.signal_safe.PollUntrappedSigInt():
             raise KeyboardInterrupt()
-
-        # TODO: Does this mess up control flow analysis?  If so, we can move it
-        # back to the top of _Execute(), so there are fewer conditionals
-        # involved.  This function gets called in SOME branches of
-        # self._Dispatch().
 
         # Manual GC point before every statement
         mylib.MaybeCollect()

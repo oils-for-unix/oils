@@ -32,6 +32,7 @@ List<int>* regex_search(BigStr* pattern, int cflags, BigStr* str, int eflags,
 
 int wcswidth(BigStr* str);
 int get_terminal_width();
+int sleep_until_error(double seconds);
 
 }  // namespace libc
 

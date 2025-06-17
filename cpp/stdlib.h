@@ -165,7 +165,7 @@ List<BigStr*>* listdir(BigStr* path);
 namespace time_ {
 
 void tzset();
-time_t time();
+double time();
 // Note: This is translated in a weird way, unlike Python's API.  Might want to
 // factor out our own API with better types.
 time_t localtime(time_t ts);

@@ -16,10 +16,12 @@ from core import vm
 from frontend import flag_util
 from frontend import match
 from frontend import typed_args
+from mycpp import iolib
 from mycpp import mylib
 from mycpp.mylib import log
 from osh import word_compile
 
+import libc
 import posix_ as posix
 
 from typing import List, Dict, TYPE_CHECKING
@@ -182,11 +184,26 @@ class Cat(vm._Builtin):
 
 
 class Sleep(vm._Builtin):
-    """Mimics some of the external sleep."""
+    """Similar to external sleep, but runs pending traps.
 
-    def __init__(self):
-        # type: () -> None
+    It's related to bash 'read -t 5', which also runs pending traps.
+
+    There is a LARGE test matrix, see test/manual.sh
+
+    Untrapped SIGWINCH, SIGUSR1, ... - Ignore, but run PENDING TRAPS
+    Trapped   SIGWINCH, SIGUSR1, ... - Run trap handler
+
+    Untrapped SIGINT / Ctrl-C
+      Interactive: back to prompt
+      Non-interactive: abort shell interpreter
+    Trapped SIGINT - Run trap handler
+    """
+
+    def __init__(self, cmd_ev, signal_safe):
+        # type: (cmd_eval.CommandEvaluator, iolib.SignalSafe) -> None
         vm._Builtin.__init__(self)
+        self.cmd_ev = cmd_ev
+        self.signal_safe = signal_safe
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -204,12 +221,39 @@ class Sleep(vm._Builtin):
 
         msg = 'got invalid number of seconds %r' % duration
         try:
-            seconds = float(duration)
+            total_seconds = float(duration)
         except ValueError:
             raise error.Usage(msg, duration_loc)
 
-        if seconds < 0:
+        if total_seconds < 0:
             raise error.Usage(msg, duration_loc)
 
-        time_.sleep(seconds)
+        # time_.time() is inaccurate!
+        deadline = time_.time() + total_seconds
+        secs = total_seconds  # initial value is the total
+        while True:
+            err_num = libc.sleep_until_error(secs)
+            if err_num == 0:
+                # log('finished sleeping')
+                break
+            elif err_num == EINTR:
+                # log('EINTR')
+
+                # e.g. Run traps on SIGWINCH, and keep going
+                self.cmd_ev.RunPendingTraps()
+
+                if self.signal_safe.PollUntrappedSigInt():
+                    # Ctrl-C aborts in non-interactive mode
+                    # log('KeyboardInterrupt')
+                    raise KeyboardInterrupt()
+            else:
+                # Abort sleep on other errors (should be rare)
+                break
+
+            # how much time is left?
+            secs = deadline - time_.time()
+            # log('continue sleeping %s', str(secs))
+            if secs <= 0:  # only pass positive values to sleep_until_error()
+                break
+
         return 0
