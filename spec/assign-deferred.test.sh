@@ -1,5 +1,6 @@
 ## compare_shells: bash mksh
-## our_shell: -
+## our_shell: osh
+## oils_failures_allowed: 5
 
 # Corner cases for assignment that we're not handling now.
 
@@ -91,17 +92,24 @@ r1=R1
 r2=
 ## END
 
-#### 'builtin' prefix and array is a parse error
+#### is 'builtin' prefix and array allowed?  OSH is smarter
 builtin typeset a=(1 2 3)
 echo len=${#a[@]}
-## stdout-json: ""
-## status: 2
-## OK mksh status: 1
+## STDOUT:
+len=3
+## END
+## OK bash status: 2
+## OK bash stdout-json: ""
+## OK-2 mksh status: 1
+## OK-2 mksh stdout-json: ""
 
-#### 'command' prefix and array is a parse error
+#### is 'command' prefix and array allowed?  OSH is smarter
 command typeset a=(1 2 3)
 echo len=${#a[@]}
-## stdout-json: ""
-## status: 2
-## OK mksh status: 1
-
+## STDOUT:
+len=3
+## END
+## OK bash status: 2
+## OK bash stdout-json: ""
+## OK-2 mksh status: 1
+## OK-2 mksh stdout-json: ""
