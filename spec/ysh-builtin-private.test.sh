@@ -1,5 +1,5 @@
 ## compare_shells: bash
-## oils_failures_allowed: 3
+## oils_failures_allowed: 2
 
 #### invoke usage
 case $SH in bash) exit ;; esac
@@ -89,7 +89,7 @@ case $SH in bash) exit ;; esac
 invoke --show sleep | grep builtin
 
 ## STDOUT:
-sleep          "private builtin"   -
+        sleep       builtin     private
 ## END
 
 ## N-I bash STDOUT:
@@ -98,31 +98,55 @@ sleep          "private builtin"   -
 #### invoke --show with many types
 case $SH in bash) exit ;; esac
 
+# TODO: CRASH bug!
+# use ///osh/bash-strict.sh
+
 my-name() { echo sh-func; }
 
-alias my-name='echo my-alias'
-
-# Why isn't this showing up?
-# manual bug: I get 2 argv?
+alias my-name=$'echo my \u03bc \xff alias'
 
 mkdir -p dir
 echo 'echo hi' > dir/my-name
 chmod +x dir/my-name
+
+# BUG:
+# 1. we start with OSH, and initialize $PATH
+# 2. then we mutate $PATH
+# 3. shopt --set ysh:all
+# 4. now we look at ENV.PATH, which isn't changed
 PATH=$PWD/dir:$PATH
 #echo $PATH
 
-command -v my-name
-echo
-type -a my-name
-echo
+if false; then
+  command -v my-name
+  echo
+  type -a my-name  #bash-strict
+  echo
+fi
 
 shopt --set ysh:all
 
 proc my-name { echo proc }
 
-invoke --show my-name eval cd sleep
+proc myInvoke { echo hi }
+var methods = Obj.new({__invoke__: myInvoke})
+var myobj = Obj.new({}, methods)
+
+if false {
+  type -a my-name  #bash-strict
+  echo
+}
+
+invoke --show my-name myobj eval cd | sed 's/#.qtt8/%.qtt8/'
 
 ## STDOUT:
+%.qtt8  name        kind        detail
+        my-name     alias       b'echo my μ \yff alias'
+        my-name     proc        -
+        my-name     sh-func     -
+        myobj       invokable   -
+        eval        builtin     special
+        cd          builtin     -
 ## END
 
 ## N-I bash STDOUT:
@@ -136,16 +160,16 @@ alias $'bad-alias=echo \xff\necho z'
 
 bad-alias | od -A n -t x1
 
-# The tabs are a bit annoying to work with ...
-# Maybe #.ssv8 instead of #.tsv8 ?
-invoke --show bad-alias
+# sed hack for test framework bug
+invoke --show bad-alias | sed 's/#.qtt8/%.qtt8/'
 
 #alias $'bad=hi\xffname=echo hi'
 #$'bad\xffname'
 
 ## STDOUT:
  ff 0a 7a 0a
-bad-alias      alias               b'echo \yff\necho z'
+%.qtt8  name        kind        detail
+        bad-alias   alias       b'echo \yff\necho z'
 ## END
 
 ## N-I bash STDOUT:

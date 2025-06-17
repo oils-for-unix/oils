@@ -511,6 +511,12 @@ def _PrintFreeForm(row):
     print('%s is %s' % (name, what))
 
 
+#  8 space gutter column
+# 12 spaces for name
+# 12 for 'kind' - 'invokable'
+_TABLE_ROW_FMT = '%-8s%-12s%-12s%s'
+
+
 def _PrintTableRow(row):
     # type: (Tuple[str, str, Optional[str]]) -> None
     name, kind, detail = row
@@ -540,16 +546,15 @@ def _PrintTableRow(row):
     if kind == 'function':
         # Consistent with --sh-func
         kind_row = 'sh-func'
-    elif kind == 'builtin' and detail is not None:
-        kind_row = '%s %s' % (detail, kind)
-        kind_row = j8_lite.EncodeString(kind_row, unquoted_ok=True)
-        detail = None  # don't show it detail row
+    elif kind == 'file':
+        # Consistent with --extern
+        kind_row = 'extern'
 
     detail_row = (j8_lite.EncodeString(detail, unquoted_ok=True)
                   if detail is not None else '-')
 
     # 20 cols for "private builtin"
-    print('%-15s%-20s%s' % (name_row, kind_row, detail_row))
+    print(_TABLE_ROW_FMT % ('', name_row, kind_row, detail_row))
 
 
 def _PrintEntry(arg, row):
@@ -752,6 +757,8 @@ class Invoke(vm._Builtin):
             raise error.Usage('expected arguments', cmd_val.arg_locs[0])
 
         if arg.show:
+            # she-dot of .qtt8
+            print(_TABLE_ROW_FMT % ('#.qtt8', 'name', 'kind', 'detail'))
             for name in argv:
                 r = _ResolveName(name,
                                  self.procs,
