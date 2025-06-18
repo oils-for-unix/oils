@@ -658,13 +658,17 @@ Example:
 
     builtin sleep 0.1  # wait 100 milliseconds
 
+It respects signals:
+
+- `SIGINT` / Ctrl-C cancels the command, with the standard behavior:
+  - in an interactive shell, you return to the prompt
+  - a non-interactive shell is cancelled
+- Upon receiving other signals, Oils run pending traps, and then continues to
+  sleep.
+
 It's compatible with the POSIX `sleep` utility:
 
     sleep 2            # wait 2 seconds
-
-<!--
-TODO: Run pending traps?
--->
 
 ## Hay Config
 
