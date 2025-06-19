@@ -1,5 +1,5 @@
 ## compare_shells: bash-4.4 mksh
-## oils_failures_allowed: 3
+## oils_failures_allowed: 1
 
 # note: some of these pass with AT&T ksh
 
@@ -46,48 +46,6 @@ echo $?
 127
 127
 127
-## END
-
-#### typeset -f prints function source code
-myfunc() { echo myfunc; }
-
-typeset -f myfunc
-
-## STDOUT:
-myfunc () 
-{ 
-    echo myfunc
-}
-## END
-
-## OK mksh STDOUT:
-myfunc() {
-	echo myfunc 
-} 
-## END
-
-#### typeset -f prints function source code - nested functions
-outer() {
-  inner() {
-    echo inner
-  }
-}
-
-outer
-
-typeset -f inner
-
-## STDOUT:
-inner () 
-{ 
-    echo inner
-}
-## END
-
-## OK mksh STDOUT:
-inner() {
-	echo inner 
-} 
 ## END
 
 #### declare -F prints function names

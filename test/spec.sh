@@ -374,6 +374,10 @@ posix() {
   test/spec-py.sh run-file posix "$@"
 }
 
+print-source-code() {
+  test/spec-py.sh run-file print-source-code "$@"
+}
+
 process-sub() {
   test/spec-py.sh run-file process-sub "$@"
 }

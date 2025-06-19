@@ -1004,6 +1004,7 @@ class CommandParser(object):
             brace_group = self.ParseBraceGroup()
 
             # So we can get the source code back later
+            # TODO: This doesn't respect NESTING of blocks p { p { echo hi } }
             lines = self.arena.SaveLinesAndDiscard(brace_group.left,
                                                    brace_group.right)
 
