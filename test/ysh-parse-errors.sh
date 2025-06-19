@@ -1747,7 +1747,6 @@ test-string-sigil-pair() {
 
   _ysh-parse-error "echo html'single'"
   _ysh-parse-error "echo 'single'html"
-
 }
 
 #

@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 #### Command.sourceCode() on literal block: p { echo hi }
 
@@ -85,7 +85,7 @@ proc p ( ; ; ; block) {
 
 shopt --set parse_backticks
 
-p { 
+p {
   echo "greeting `echo backticks`"
 }
 
@@ -112,4 +112,8 @@ p {
 }
 
 ## STDOUT:
+(Str)   "   \n  echo \"greeting `echo backticks`\"\n"
+(Str)   "   \n  array_lhs[i++]=y\n"
+(Str)   "   \n  e foo\n"
+(Str)   "   \n  e2 zzz\n"
 ## END

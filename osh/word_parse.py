@@ -1253,6 +1253,7 @@ class WordParser(WordEmitter):
             # osh/cmd_parse.py.  It won't have the same location info as
             # MakeParserForCommandSub(), because the reader is different.
             arena = alloc.Arena()
+            # TODO: arena.PushSource()?
 
             line_reader = reader.StringLineReader(code_str, arena)
             c_parser = self.parse_ctx.MakeOshParser(line_reader)

@@ -259,7 +259,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
         else:
             raise NotImplementedError('%s != %s' %
                                       (left_token.line, close_token.line))
-        a_parser = parse_ctx.MakeArithParser(code_str)
+        a_parser = parse_ctx.MakeArithParser(code_str, blame_loc=left_token)
 
         # a[i+1]= is a LHS
         src = source.Reparsed('array LHS', left_token, close_token)
@@ -1132,6 +1132,7 @@ class CommandParser(object):
         # Save lines into a temporary arena, so we don't break
         # SaveLinesAndDiscard().  Similar to backticks.
         arena = alloc.Arena()
+        # TODO: arena.PushSource()?
 
         line_reader = reader.StringLineReader(code_str, arena)
         cp = self.parse_ctx.MakeOshParser(line_reader)

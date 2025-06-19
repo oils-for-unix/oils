@@ -5,7 +5,7 @@ parse_lib.py - Consolidate various parser instantiations here.
 from _devbuild.gen.id_kind_asdl import Id_t
 from _devbuild.gen.syntax_asdl import (Token, CompoundWord, expr_t, Redir,
                                        ArgList, Proc, Func, pat_t, VarDecl,
-                                       Mutation)
+                                       Mutation, source, loc, loc_t)
 from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen import grammar_nt
 
@@ -264,13 +264,13 @@ class ParseContext(object):
         # type: (Lexer, _Reader) -> WordParser
         return word_parse.WordParser(self, lx, line_reader)
 
-    def MakeArithParser(self, code_str):
-        # type: (str) -> TdopParser
+    def MakeArithParser(self, code_str, blame_loc=loc.Missing):
+        # type: (str, loc_t) -> TdopParser
         """Used for a[x+1]=foo in the CommandParser, unset, printf -v"""
-
-        # TODO: use different arena.  It breaks test/lossless?
-        #arena = alloc.Arena()
-        line_reader = reader.StringLineReader(code_str, self.arena)
+        # Save lines into temp arena, for dynamic parsing
+        arena = alloc.Arena()
+        arena.PushSource(source.Dynamic('sh arith expr', blame_loc))
+        line_reader = reader.StringLineReader(code_str, arena)
         lx = self.MakeLexer(line_reader)
         w_parser = word_parse.WordParser(self, lx, line_reader)
         w_parser.Init(lex_mode_e.Arith)  # Special initialization

@@ -186,11 +186,10 @@ test-arith-context() {
     _osh-parse-error 'echo $['
   fi
 
-  # Should be an error
+  # this is currently dynamic arithmetic
   _osh-parse-error 'a[x+]=1'
 
-  # Check what happens when you wrap
-  # This could use more detail - it needs the eval location
+  # Wrap it in eval too
   _osh-error-2 'eval a[x+]=1'
 
   _osh-parse-error 'a[]=1'
