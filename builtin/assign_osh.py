@@ -450,8 +450,8 @@ class NewVar(vm._AssignBuiltin):
         self.arith_ev = arith_ev
         self.errfmt = errfmt
 
-    def _PrintFuncs(self, names):
-        # type: (List[str]) -> int
+    def _PrintFuncs(self, names, print_source):
+        # type: (List[str], bool) -> int
         status = 0
         for name in names:
             proc_val = self.procs.GetShellFunc(name)
@@ -465,23 +465,22 @@ class NewVar(vm._AssignBuiltin):
                     # be a single line.  But meh, this is a bash feature.
                     line = '%s %d %s' % (name, tok.line.line_num, filename_str)
                     print(line)
-                else:
-                    # print function body if we can
-                    if (proc_val.parsed_sh_func and
-                            proc_val.parsed_sh_func.lines is not None):
-                        sh_func = proc_val.parsed_sh_func
-                        left_tok = (sh_func.keyword
-                                    if sh_func.keyword else sh_func.name_tok)
-                        code_str = alloc.SnipCodeBlock(left_tok,
-                                                       sh_func.right_tok,
-                                                       sh_func.lines,
-                                                       inclusive=True)
-                        print(code_str)
+                # print function body if we can
+                elif (print_source and proc_val.parsed_sh_func and
+                      proc_val.parsed_sh_func.lines is not None):
+                    sh_func = proc_val.parsed_sh_func
+                    left_tok = (sh_func.keyword
+                                if sh_func.keyword else sh_func.name_tok)
+                    code_str = alloc.SnipCodeBlock(left_tok,
+                                                   sh_func.right_tok,
+                                                   sh_func.lines,
+                                                   inclusive=True)
+                    print(code_str)
 
-                    # Fall back to name only, e.g. for rare non-Bracegroup functions like
-                    # f() ( echo hi )
-                    else:
-                        print(name)
+                # Fall back to name only, e.g. for rare non-Bracegroup functions like
+                # f() ( echo hi )
+                else:
+                    print(name)
             else:
                 status = 1
         return status
@@ -500,7 +499,7 @@ class NewVar(vm._AssignBuiltin):
             if len(names):
                 # This is only used for a STATUS QUERY now.  We only show the name,
                 # not the body.
-                status = self._PrintFuncs(names)
+                status = self._PrintFuncs(names, True)
             else:
                 # Disallow this since it would be incompatible.
                 e_usage('with -f expects function names', loc.Missing)
@@ -509,7 +508,7 @@ class NewVar(vm._AssignBuiltin):
         if arg.F:
             names = arg_r.Rest()
             if len(names):
-                status = self._PrintFuncs(names)
+                status = self._PrintFuncs(names, False)
             else:
                 # bash quirk: with no names, they're printed in a different format!
                 for func_name in self.procs.ShellFuncNames():

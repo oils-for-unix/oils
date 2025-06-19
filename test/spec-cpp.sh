@@ -302,7 +302,7 @@ html-summary-footer() {
 <p><a href="SUMMARY.tsv">Raw TSV</a>
 </p>
 '
-  table-sort-end 'summary'  # The table name
+  table-sort-end 'SUMMARY'  # The table name
 }
 
 write-compare-html() {

@@ -1,9 +1,8 @@
 from __future__ import print_function
-"""Deps.py."""
 
 import sys
 
-from _devbuild.gen.syntax_asdl import command, command_t
+from _devbuild.gen.syntax_asdl import command, command_t, ShFunction
 from asdl import pybase
 from mycpp.mylib import log
 from frontend import consts
@@ -119,7 +118,7 @@ class DepsVisitor(Visitor):
                 # Should we mark them behind 'sudo'?  e.g. "sudo apt install"?
                 self.progs_used[argv1] = True
 
-        elif cls is command.ShFunction:
+        elif cls is ShFunction:
             self.funcs_defined[node.name] = True
 
     def Visit(self, node):
