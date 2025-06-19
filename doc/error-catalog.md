@@ -124,16 +124,16 @@ test/ysh-parse-errors.sh ysh_dq_strings (this may move)
 [ -c flag ]:1: Invalid char escape in double quoted string (OILS-ERR-12)
 ```
 (Options: parse_backslash, no verbatims)
-* Only valid escapes: \", \$, or \\ to denote ", $, or \
+* The only valid escapes are: `\"`, `\$`, and `\\` to denote `"`, `$`, and `\`
 * Backslashes must be escaped.
 
 Do you want to?:
 - Denote a single `\` with `\\`?  
-- Denote a valid escape like `"\$"`?
-- Use single quotes instead, like `u'\n'` rather than `u"\n"`?
+- Denote a valid escape: `"\$"` or "\""`?
+- Instead, use C-style `$'`-, `u'`-, or `b'`-single quotes, rather than `u"\n"`?
 - 'chain'"different"$'literals' ?
-- (ysh expression) Concat "double" ++ u'single \t literals' ?
-- (ysh string sub) Use "string with inserted $[\t] expression" ?
+- (ysh) Use concatenated expression: "double" ++ u'single \t literal' ?
+- (ysh) Use: "expression substitution $[\t] within string" ?
 
 Related help topics:
 
