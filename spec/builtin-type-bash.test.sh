@@ -175,14 +175,24 @@ tar is /tmp/tar
 grep is /tmp/grep
 ## END
 
-#### type -a -> function; prints shell source code
-f () { :; }
+#### type prints function source code
+f () { echo; }
 type -a f
+echo
+
+type f
+
 ## STDOUT:
 f is a function
 f () 
 { 
-    :
+    echo
+}
+
+f is a function
+f () 
+{ 
+    echo
 }
 ## END
 

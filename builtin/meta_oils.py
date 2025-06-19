@@ -14,7 +14,7 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
-from _devbuild.gen.syntax_asdl import source, loc, loc_t, CompoundWord
+from _devbuild.gen.syntax_asdl import source, loc, loc_t, CompoundWord, command_e
 from _devbuild.gen.value_asdl import Obj, value, value_t
 from core import alloc
 from core import dev
@@ -30,7 +30,7 @@ from data_lang import j8_lite
 from frontend import consts
 from frontend import flag_util
 from frontend import reader
-from mycpp.mylib import log, print_stderr, NewDict
+from mycpp.mylib import log, print_stderr, NewDict, tagswitch
 from pylib import os_path
 from osh import cmd_eval
 
@@ -560,25 +560,6 @@ def _PrintTableRow(row):
     print(_TABLE_ROW_FMT % ('', name_row, kind_row, detail_row))
 
 
-def _PrintEntry(arg, row):
-    # type: (arg_types.type, Tuple[str, str, Optional[str]]) -> None
-    """For type builtin"""
-
-    _, kind, detail = row
-    assert kind is not None
-
-    if arg.t:  # short string
-        print(kind)
-
-    elif arg.p:
-        #log('%s %s %s', name, kind, resolved)
-        if kind == 'file':
-            print(detail)  # print the file path
-
-    else:  # free-form text
-        _PrintFreeForm(row)
-
-
 class Command(vm._Builtin):
     """'command ls' suppresses function lookup."""
 
@@ -968,6 +949,42 @@ class Type(vm._Builtin):
         self.search_path = search_path
         self.errfmt = errfmt
 
+    def _PrintEntry(self, arg, row):
+        # type: (arg_types.type, Tuple[str, str, Optional[str]]) -> None
+        """For type builtin"""
+
+        name, kind, detail = row
+        assert kind is not None
+
+        if arg.t:  # short string
+            print(kind)
+
+        elif arg.p:
+            #log('%s %s %s', name, kind, resolved)
+            if kind == 'file':
+                print(detail)  # print the file path
+
+        else:  # free-form text
+            _PrintFreeForm(row)
+            if kind == 'function':
+                #self._PrintShellFuncSource(name)
+                sh_func = self.procs.GetShellFunc(name)
+                assert sh_func is not None  # we already looked it up
+
+                # TODO: print function source code
+                #
+                # Note: Command.sourceCode() in builtin/method_other uses
+                # cmd_frag_e.LiteralBlock.lines
+
+                #print(sh_func)
+
+                with tagswitch(sh_func.body) as case:
+                    if case(command_e.BraceGroup):
+                        pass
+                        #body = sh_func.body
+                        #s = alloc.SnipCodeBlock(body.left, body.right, body.lines)
+                        #print(s)
+
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
         attrs, arg_r = flag_util.ParseCmdVal('type', cmd_val)
@@ -994,15 +1011,16 @@ class Type(vm._Builtin):
         for argument in names:
             r = _ResolveName(argument, procs, self.aliases, self.search_path,
                              arg.a)
+
             if arg.a:
                 for row in r:
-                    _PrintEntry(arg, row)
+                    self._PrintEntry(arg, row)
             else:
                 # Just print the first one.
                 # TODO: it would be nice to short-circuit the lookups.
                 # It would be nice if 'yield' worked.
                 if len(r):
-                    _PrintEntry(arg, r[0])
+                    self._PrintEntry(arg, r[0])
 
             # Error case
             if len(r) == 0:

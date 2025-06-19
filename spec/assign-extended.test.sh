@@ -1,5 +1,7 @@
 ## compare_shells: bash-4.4 mksh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
+
+# note: some of these pass with AT&T ksh
 
 # Extended assignment language, e.g. typeset, declare, arrays, etc.
 # Things that dash doesn't support.
@@ -45,6 +47,24 @@ echo $?
 127
 127
 127
+## END
+
+#### typeset -f prints function source code
+myfunc() { echo myfunc; }
+
+typeset -f myfunc
+
+## STDOUT:
+myfunc () 
+{ 
+    echo myfunc
+}
+## END
+
+## OK mksh STDOUT:
+myfunc() {
+	echo myfunc 
+} 
 ## END
 
 #### declare -F prints function names
