@@ -21,14 +21,6 @@ def SnipCodeBlock(left, right, lines, inclusive=False):
 
     Used for Command.sourceCode() and Hay evaluation. Similar to SnipCodeString().
     """
-    pieces = []  # type: List[str]
-
-    #assert left.length == 1, "{ expected"
-    #assert right.length == 1, "} expected"
-
-    # Pad with spaces so column numbers aren't off
-    pieces.append(' ' * (left.col + 1))
-
     if inclusive:
         ileft = left.col
         iright = right.col + right.length
@@ -42,6 +34,11 @@ def SnipCodeBlock(left, right, lines, inclusive=False):
                 piece = li.content[ileft:iright]
                 pieces.append(piece)
         return ''.join(pieces)
+
+    pieces = []  # type: List[str]
+
+    # Pad with spaces so column numbers aren't off
+    pieces.append(' ' * ileft)
 
     saving = False
     found_left = False

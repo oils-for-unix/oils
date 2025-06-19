@@ -466,18 +466,21 @@ class NewVar(vm._AssignBuiltin):
                     line = '%s %d %s' % (name, tok.line.line_num, filename_str)
                     print(line)
                 else:
-                    if proc_val.parsed_sh_func and proc_val.parsed_sh_func.lines:
+                    # print function body if we can
+                    if (proc_val.parsed_sh_func and
+                            proc_val.parsed_sh_func.lines is not None):
                         sh_func = proc_val.parsed_sh_func
-                        #log('sh_func. right %s', sh_func.right_tok)
-                        left_tok = sh_func.keyword if sh_func.keyword else sh_func.name_tok
-                        #log('left %s', left_tok)
+                        left_tok = (sh_func.keyword
+                                    if sh_func.keyword else sh_func.name_tok)
                         code_str = alloc.SnipCodeBlock(left_tok,
                                                        sh_func.right_tok,
                                                        sh_func.lines,
                                                        inclusive=True)
                         print(code_str)
+
+                    # Fall back to name only, e.g. for rare non-Bracegroup functions like
+                    # f() ( echo hi )
                     else:
-                        # fall back to name only
                         print(name)
             else:
                 status = 1
