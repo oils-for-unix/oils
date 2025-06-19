@@ -30,7 +30,7 @@ source test/tsv-lib.sh  # tsv-row
 source web/table/html.sh  # table-sort-begin
 
 # Matches SHELLS in test/spec-compat.sh
-readonly -a SH_LABELS=(bash mksh ksh toysh sush brush osh)
+readonly -a SH_LABELS=(bash dash ash zsh mksh ksh toysh sush brush osh)
 
 summary-tsv-row() {
   ### Print one row or the last total row
@@ -56,6 +56,12 @@ FNR != 1 {
 
   if (sh == "bash") {
     bash[result] += 1
+  } else if (sh == "dash") {
+    dash[result] += 1
+  } else if (sh == "ash") {
+    ash[result] += 1
+  } else if (sh == "zsh") {
+    zsh[result] += 1
   } else if (sh == "mksh") {
     mksh[result] += 1
   } else if (sh == "ksh") {
@@ -80,6 +86,9 @@ END {
 
   if (report == "PASSING") {
     bash_total = ("pass" in bash) ? bash["pass"] : 0
+    dash_total = ("pass" in dash) ? dash["pass"] : 0
+    ash_total = ("pass" in ash) ? ash["pass"] : 0
+    zsh_total = ("pass" in zsh) ? zsh["pass"] : 0
     mksh_total = ("pass" in mksh) ? mksh["pass"] : 0
     ksh_total = ("pass" in ksh) ? ksh["pass"] : 0
     toysh_total = ("pass" in toysh) ? toysh["pass"] : 0
@@ -89,6 +98,9 @@ END {
 
   } else if (report == "DELTA-osh") {
     bash_total = bash["pass"] - osh["pass"]
+    dash_total = dash["pass"] - osh["pass"]
+    ash_total = ash["pass"] - osh["pass"]
+    zsh_total = zsh["pass"] - osh["pass"]
     mksh_total = mksh["pass"] - osh["pass"]
     ksh_total = ksh["pass"] - osh["pass"]
     toysh_total = toysh["pass"] - osh["pass"]
@@ -98,6 +110,9 @@ END {
 
   } else if (report == "DELTA-bash") {
     bash_total = bash["pass"] - bash["pass"]
+    dash_total = dash["pass"] - bash["pass"]
+    ash_total = ash["pass"] - bash["pass"]
+    zsh_total = zsh["pass"] - bash["pass"]
     mksh_total = mksh["pass"] - bash["pass"]
     ksh_total = ksh["pass"] - bash["pass"]
     toysh_total = toysh["pass"] - bash["pass"]
@@ -109,10 +124,13 @@ END {
   # TODO: change this color
   row_css_class = "cpp-good"  # green
 
-  row = sprintf("%s %s %s %d %d %d %d %d %d %d",
+  row = sprintf("%s %s %s %d %d %d %d %d %d %d %d %d %d",
          row_css_class,
          spec_name, href,
          bash_total,
+         dash_total,
+         ash_total,
+         zsh_total,
          mksh_total,
          ksh_total,
          toysh_total,
@@ -198,6 +216,9 @@ ROW_CSS_CLASS   string
 name            string
 name_HREF       string
 bash            integer
+dash            integer
+ash             integer
+zsh             integer
 mksh            integer
 ksh             integer
 toysh           integer
@@ -357,7 +378,7 @@ write-compare-html() {
 multi() { ~/git/tree-tools/bin/multi "$@"; }
 
 deploy() {
-  local epoch=${1:-2025-06-15}
+  local epoch=${1:-2025-06-19}
 
   local dest=$PWD/../pages/spec-compat/$epoch
 

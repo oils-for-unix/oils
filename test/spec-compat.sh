@@ -43,7 +43,7 @@ readonly SUSH=$PWD/$SUSH_DIR/target/release/sush
 readonly BRUSH=$PWD/$BRUSH_DIR/target/release/brush
 
 # these are all roughly ksh compatible
-readonly -a SHELLS=(bash mksh ksh $TOYBOX_DIR/sh $SUSH $BRUSH $OSH)
+readonly -a SHELLS=(bash dash ash zsh mksh ksh $TOYBOX_DIR/sh $SUSH $BRUSH $OSH)
 
 download-toybox() {
   #mkdir -p ~/src
