@@ -103,8 +103,8 @@ test/ysh-parse-errors.sh ysh_c_strings (this may move)
 - Backslashes must be escaped.
 
 Do you want to?:
-    - Denote a single `\` with `\\`?
-    - Denote a valid escape like `$'\n'`?
+- Denote a single `\` with `\\`?
+- Denote a valid escape like `$'\n'`?
 
 Related help topics:
 
@@ -128,12 +128,12 @@ test/ysh-parse-errors.sh ysh_dq_strings (this may move)
 * Backslashes must be escaped.
 
 Do you want to?:
-    - Denote a single `\` with `\\`?  
-    - Denote a valid escape like `"\$"`?
-    - Use single quotes instead, like `u'\n'` rather than `u"\n"`?
-    - 'chain'"different"$'literals' ?
-    - (ysh expression) Concat "double" ++ u'single \t literals' ?
-    - (ysh string sub) Use "string with inserted $[\t] expression" ?
+- Denote a single `\` with `\\`?  
+- Denote a valid escape like `"\$"`?
+- Use single quotes instead, like `u'\n'` rather than `u"\n"`?
+- 'chain'"different"$'literals' ?
+- (ysh expression) Concat "double" ++ u'single \t literals' ?
+- (ysh string sub) Use "string with inserted $[\t] expression" ?
 
 Related help topics:
 
@@ -157,13 +157,13 @@ test/ysh-parse-errors.sh ysh_bare_words (this may move)
 - Backslashes must be escaped.
 
 Do you want to?:
-    - Escape something like `\$`?
-    - Remove an unecessary `\` ?
-    - Denote a single `\` with `\\`?
-    - Use a "raw" '-string-literal ?
-    - Use an "interpreted" $'-string-literal ?
-    - (ysh) Use a "raw" r'-string-literal ?
-    - (ysh) Use an "interpreted" u'- or b'-string-literal ?
+- Escape something like `\$`?
+- Remove an unecessary `\` ?
+- Denote a single `\` with `\\`?
+- Use a "raw" '-string-literal ?
+- Use an "interpreted" $'-string-literal ?
+- (ysh) Use a "raw" r'-string-literal ?
+- (ysh) Use an "interpreted" u'- or b'-string-literal ?
  
 ### OILS-ERR-14
 
