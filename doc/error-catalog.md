@@ -160,8 +160,8 @@ Do you want to?:
 - Escape something like `\$`?
 - Remove an unecessary `\` ?
 - Denote a single `\` with `\\`?
-- Use a "raw" '-string-literal ?
-- Use an "interpreted" $'-string-literal ?
+- (osh) Use a "raw" '-string-literal ?
+- (osh) Use an "interpreted" $'-string-literal ?
 - (ysh) Use a "raw" r'-string-literal ?
 - (ysh) Use an "interpreted" u'- or b'-string-literal ?
  
