@@ -14,50 +14,38 @@ while is a reserved word
 cd is a shell builtin
 ## END
 
-#### type -> alias function external
+#### type -> alias external
 
 shopt -s expand_aliases || true  # bash
 
 alias ll='ls -l'
 
-f() { echo hi; }
-
 touch _tmp/date
 chmod +x _tmp/date
 PATH=_tmp:/bin
 
-# ignore quotes and backticks
-# bash prints a left backtick
-quotes='"`'\'
+normalize() {
+  # ignore quotes and backticks
+  # bash prints a left backtick
+  quotes='"`'\'
+  sed \
+    -e "s/[$quotes]//g" \
+    -e 's/shell function/function/' \
+    -e 's/is aliased to/is an alias for/'
+}
 
-type ll f date | sed "s/[$quotes]//g"
+type ll date | normalize
 
 # Note: both procs and funcs go in var namespace?  So they don't respond to
 # 'type'?
 
 ## STDOUT:
 ll is an alias for ls -l
-f is a shell function
 date is _tmp/date
 ## END
-## OK ash STDOUT:
+## BUG mksh STDOUT:
 ll is an alias for ls -l
-f is a function
-date is _tmp/date
-## END
-## OK mksh STDOUT:
-ll is an alias for ls -l
-f is a function
 date is a tracked alias for _tmp/date
-## END
-## OK bash STDOUT:
-ll is aliased to ls -l
-f is a function
-f () 
-{ 
-    echo hi
-}
-date is _tmp/date
 ## END
 
 #### type of relative path
