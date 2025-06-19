@@ -466,7 +466,7 @@ class NewVar(vm._AssignBuiltin):
                     line = '%s %d %s' % (name, tok.line.line_num, filename_str)
                     print(line)
                 # print function body if we can
-                elif (print_source and proc_val.parsed_sh_func and
+                elif (print_source and proc_val.parsed_sh_func is not None and
                       proc_val.parsed_sh_func.lines is not None):
                     sh_func = proc_val.parsed_sh_func
                     left_tok = (sh_func.keyword
