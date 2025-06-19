@@ -1248,11 +1248,12 @@ class WordParser(WordEmitter):
             code_str = ''.join(parts)
             #log('code %r', code_str)
 
-            # NOTE: This is similar to how we parse aliases in osh/cmd_parse.py.  It
-            # won't have the same location info as MakeParserForCommandSub(), because
-            # the lexer is different.
-            arena = self.parse_ctx.arena
-            #arena = alloc.Arena()
+            # Save lines into a new, temporary arena, so SnipCodeBlock() isn't
+            # messed up.  Note: This is similar to how we parse aliases in
+            # osh/cmd_parse.py.  It won't have the same location info as
+            # MakeParserForCommandSub(), because the reader is different.
+            arena = alloc.Arena()
+
             line_reader = reader.StringLineReader(code_str, arena)
             c_parser = self.parse_ctx.MakeOshParser(line_reader)
             src = source.Reparsed('backticks', left_token, right_token)

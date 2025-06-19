@@ -76,32 +76,39 @@ p ( ; ; cmd)
 proc p ( ; ; ; block) {
   var src = block.sourceCode()
 
-  #pp test_ (src.code_str)
+  pp test_ (src.code_str)
 
   # Re-parsing messes this up
-  echo $[src.code_str]
-  echo
+  #echo $[src.code_str]
+  #echo
 }
 
 shopt --set parse_backticks
 
 p { 
-  echo "greeting `echo hi`"
-}
-
-shopt --set expand_aliases
-
-
-alias e='echo hi'
-
-p {
-  e foo
+  echo "greeting `echo backticks`"
 }
 
 shopt --set parse_sh_arith
 
 p {
-  a[i++]=y
+  array_lhs[i++]=y
+}
+
+shopt --set expand_aliases
+
+alias e='echo alias'
+
+p {
+  e foo
+}
+
+# alias that combines the problematic features
+alias e2='a[0+2+3]=x; echo `echo bacticks`'
+
+p {
+  e2 zzz
+  #e2 e2 zzz
 }
 
 ## STDOUT:

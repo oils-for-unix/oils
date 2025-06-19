@@ -10,6 +10,7 @@ from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen import grammar_nt
 
 from asdl import format as fmt
+from core import alloc
 from core import state
 from frontend import lexer
 from frontend import reader
@@ -27,7 +28,6 @@ _ = log
 
 from typing import Any, List, Tuple, Dict, TYPE_CHECKING
 if TYPE_CHECKING:
-    from core.alloc import Arena
     from core.util import _DebugFile
     from core import optview
     from frontend.lexer import Lexer
@@ -198,7 +198,7 @@ class ParseContext(object):
                  aliases,
                  ysh_grammar,
                  do_lossless=False):
-        # type: (Arena, optview.Parse, Dict[str, str], Grammar, bool) -> None
+        # type: (alloc.Arena, optview.Parse, Dict[str, str], Grammar, bool) -> None
         self.arena = arena
         self.parse_opts = parse_opts
         self.aliases = aliases
@@ -266,7 +266,10 @@ class ParseContext(object):
 
     def MakeArithParser(self, code_str):
         # type: (str) -> TdopParser
-        """Used for a[x+1]=foo in the CommandParser."""
+        """Used for a[x+1]=foo in the CommandParser, unset, printf -v"""
+
+        # TODO: use different arena.  It breaks test/lossless?
+        #arena = alloc.Arena()
         line_reader = reader.StringLineReader(code_str, self.arena)
         lx = self.MakeLexer(line_reader)
         w_parser = word_parse.WordParser(self, lx, line_reader)

@@ -1129,11 +1129,9 @@ class CommandParser(object):
 
         code_str = ''.join(expanded)
 
-        # TODO:
-        # Aliases break static parsing (like backticks), so use our own Arena.
-        # This matters for Hay, which calls SaveLinesAndDiscard().
-        # arena = alloc.Arena()
-        arena = self.arena
+        # Save lines into a temporary arena, so we don't break
+        # SaveLinesAndDiscard().  Similar to backticks.
+        arena = alloc.Arena()
 
         line_reader = reader.StringLineReader(code_str, arena)
         cp = self.parse_ctx.MakeOshParser(line_reader)
