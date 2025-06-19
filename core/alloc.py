@@ -28,17 +28,17 @@ def SnipCodeBlock(left, right, lines, inclusive=False):
         ileft = left.col + left.length
         iright = right.col
 
+    pieces = []  # type: List[str]
+
+    # Pad with spaces so column numbers aren't off
+    pieces.append(' ' * ileft)
+
     if left.line == right.line:
         for li in lines:
             if li == left.line:
                 piece = li.content[ileft:iright]
                 pieces.append(piece)
         return ''.join(pieces)
-
-    pieces = []  # type: List[str]
-
-    # Pad with spaces so column numbers aren't off
-    pieces.append(' ' * ileft)
 
     saving = False
     found_left = False
