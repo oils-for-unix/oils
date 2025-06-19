@@ -12,7 +12,6 @@ from _devbuild.gen.runtime_asdl import (
 from _devbuild.gen.value_asdl import (value, value_e, value_t, LeftName)
 from _devbuild.gen.syntax_asdl import loc, loc_t
 
-from core import alloc
 from core import bash_impl
 from core import error
 from core.error import e_usage, e_die
@@ -455,6 +454,7 @@ class NewVar(vm._AssignBuiltin):
         status = 0
         for name in names:
             proc_val = self.procs.GetShellFunc(name)
+            was_printed = False
             if proc_val:
                 if self.exec_opts.extdebug():
                     tok = proc_val.name_tok
@@ -465,17 +465,10 @@ class NewVar(vm._AssignBuiltin):
                     # be a single line.  But meh, this is a bash feature.
                     line = '%s %d %s' % (name, tok.line.line_num, filename_str)
                     print(line)
+
                 # print function body if we can
-                elif (print_source and proc_val.parsed_sh_func is not None and
-                      proc_val.parsed_sh_func.lines is not None):
-                    sh_func = proc_val.parsed_sh_func
-                    left_tok = (sh_func.keyword
-                                if sh_func.keyword else sh_func.name_tok)
-                    code_str = alloc.SnipCodeBlock(left_tok,
-                                                   sh_func.right_tok,
-                                                   sh_func.lines,
-                                                   inclusive=True)
-                    print(code_str)
+                elif print_source:
+                    ui.PrintShFunction(proc_val)
 
                 # Fall back to name only, e.g. for rare non-Bracegroup functions like
                 # f() ( echo hi )

@@ -195,6 +195,13 @@ f ()
     echo
 }
 ## END
+## OK osh STDOUT:
+f is a shell function
+f () { echo; }
+
+f is a shell function
+f () { echo; }
+## END
 
 #### type -ap -> function
 f () { :; }
@@ -272,11 +279,19 @@ PATH=/bin:_tmp  # control output
 type -a pwd
 echo ---
 
-pwd() { echo function-too; }
-type -a pwd
+pwd () 
+{ 
+    echo function-too
+}
+
+osh-normalize() {
+  sed 's/shell function/function/'
+}
+
+type -a pwd | osh-normalize
 echo ---
 
-type -a -f pwd
+type -a -f pwd | osh-normalize
 
 ## STDOUT:
 pwd is a shell builtin

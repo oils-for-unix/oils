@@ -14,7 +14,7 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
-from _devbuild.gen.syntax_asdl import source, loc, loc_t, CompoundWord, command_e
+from _devbuild.gen.syntax_asdl import source, loc, loc_t, CompoundWord
 from _devbuild.gen.value_asdl import Obj, value, value_t
 from core import alloc
 from core import dev
@@ -27,10 +27,11 @@ from core import pyutil  # strerror
 from core import state
 from core import vm
 from data_lang import j8_lite
+from display import ui
 from frontend import consts
 from frontend import flag_util
 from frontend import reader
-from mycpp.mylib import log, print_stderr, NewDict, tagswitch
+from mycpp.mylib import log, print_stderr, NewDict
 from pylib import os_path
 from osh import cmd_eval
 
@@ -508,8 +509,12 @@ def _PrintFreeForm(row):
         else:
             prefix = detail + ' '
         what = 'a %sshell %s' % (prefix, kind)
-    else:  # function, keyword
+    elif kind in ('keyword', 'function'):
+        # OSH prints 'shell function' instead of 'function', to distinguish
+        # from YSH func
         what = 'a shell %s' % kind
+    else:
+        raise AssertionError()
 
     print('%s is %s' % (name, what))
 
@@ -970,20 +975,7 @@ class Type(vm._Builtin):
                 #self._PrintShellFuncSource(name)
                 sh_func = self.procs.GetShellFunc(name)
                 assert sh_func is not None  # we already looked it up
-
-                # TODO: print function source code
-                #
-                # Note: Command.sourceCode() in builtin/method_other uses
-                # cmd_frag_e.LiteralBlock.lines
-
-                #print(sh_func)
-
-                with tagswitch(sh_func.body) as case:
-                    if case(command_e.BraceGroup):
-                        pass
-                        #body = sh_func.body
-                        #s = alloc.SnipCodeBlock(body.left, body.right, body.lines)
-                        #print(s)
+                ui.PrintShFunction(sh_func)
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int

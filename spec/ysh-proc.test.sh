@@ -699,11 +699,17 @@ proc
 1
 ---
 my-shell-func is a shell function
+my-shell-func() {
+   echo hi
+}
 myproc is a YSH proc
 invokable is a YSH invokable
 1
 ---
 my-shell-func is a shell function
+my-shell-func() {
+   echo hi
+}
 myproc is a YSH proc
 invokable is a YSH invokable
 ---

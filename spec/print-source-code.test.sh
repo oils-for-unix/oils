@@ -1,5 +1,5 @@
 ## compare_shells: bash-4.4 mksh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 
 #### typeset -f prints function source code
 : prefix; myfunc() { echo serialized; }
@@ -35,9 +35,37 @@ outer() {
 
 code=$(typeset -f outer)
 
+if false; then
+  echo ---
+  echo $code
+  echo ---
+fi
+
 $SH -c "$code; outer; inner"
 
 ## STDOUT:
 outer
 inner
+## END
+
+#### OSH doesn't print non { } function bodies (rare)
+
+f() ( echo 'subshell body' )
+
+code=$(typeset -f f)
+
+#$SH -c "$code; f"
+
+echo "$code"
+
+
+## STDOUT:
+f () 
+{ 
+    ( echo 'subshell body' )
+}
+## END
+
+## OK mksh STDOUT:
+f() ( echo "subshell body" ) 
 ## END
