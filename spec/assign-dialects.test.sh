@@ -1,5 +1,7 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 3
 ## compare_shells: bash mksh
+
+# TODO: compare with AT&T ksh - it has this feature
 
 #### K and V are variables in (( array[K] = V ))
 K=5
@@ -16,46 +18,132 @@ keys = 5
 values = 42
 ## END
 
-#### when are variables set with 'test -v'
-test -v unset
-echo unset=$?
+#### test -v with strings
+test -v str
+echo str=$?
 
-typeset -a a
-test -v a
-echo a=$?
+str=x
 
-typeset -A A
-test -v A
-echo A=$?
-
-a[0]=1
-A['x']=x
-
-test -v a
-echo a=$?
-
-# NOTE: This is a BUG!  A is set
-test -v A
-echo A=$?
+test -v str
+echo str=$?
 
 ## STDOUT:
-unset=1
+str=1
+str=0
+## END
+## BUG mksh STDOUT:
+str=2
+str=2
+## END
+
+#### test -v with arrays
+
+typeset -a a
+
+test -v a
+echo a=$?
+test -v 'a[0]'
+echo "a[0]=$?"
+echo
+
+a[0]=1
+
+test -v a
+echo a=$?
+test -v 'a[0]'
+echo "a[0]=$?"
+echo
+
+test -v 'a[1]'
+echo "a[1]=$?"
+
+# stupid rule about undefined 'x'
+test -v 'a[x]'
+echo "a[x]=$?"
+echo
+
+## STDOUT:
 a=1
-A=1
+a[0]=1
+
 a=0
+a[0]=0
+
+a[1]=1
+a[x]=0
+
+## END
+
+## BUG mksh STDOUT:
+a=2
+a[0]=2
+
+a=2
+a[0]=2
+
+a[1]=2
+a[x]=2
+
+## END
+
+#### test -v with assoc arrays
+
+typeset -A A
+
+test -v A
+echo A=$?
+test -v 'A[0]'
+echo "A[0]=$?"
+echo
+
+A['0']=x
+
+test -v A
+echo A=$?
+test -v 'A[0]'
+echo "A[0]=$?"
+echo
+
+test -v 'A[1]'
+echo "A[1]=$?"
+
+# stupid rule about undefined 'x'
+test -v 'A[x]'
+echo "A[x]=$?"
+echo
+
+## STDOUT:
+A=1
+A[0]=1
+
 A=0
+A[0]=0
+
+A[1]=1
+A[x]=1
+
 ## END
-## BUG bash STDOUT:
-unset=1
-a=1
+
+## N-I ksh STDOUT:
 A=1
-a=0
+A[0]=1
+
 A=1
+A[0]=1
+
+A[1]=1
+A[x]=1
+
 ## END
-## N-I mksh STDOUT:
-unset=2
-a=2
+
+## BUG mksh STDOUT:
 A=2
-a=2
+A[0]=2
+
 A=2
+A[0]=2
+
+A[1]=2
+A[x]=2
+
 ## END
