@@ -67,7 +67,13 @@ update-rust() {
 }
 
 build-brush() {
+  local pull=${1:-}
+
   pushd ../../shells/brush
+
+  if test -n "$pull"; then
+    git pull
+  fi
 
   . ~/.cargo/env
 
@@ -89,7 +95,13 @@ build-brush() {
 }
 
 build-sush() {
+  local pull=${1:-}
+
   pushd ../../shells/rusty_bash
+
+  if test -n "$pull"; then
+    git pull
+  fi
 
   . ~/.cargo/env
 
