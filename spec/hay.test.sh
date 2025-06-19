@@ -1,4 +1,4 @@
-## oils_failures_allowed: 4
+## oils_failures_allowed: 3
 
 # Hay: Hay Ain't YAML
 
@@ -709,8 +709,6 @@ when NAME [x > 0] {
 #### OSH and hay (dynamic parsing)
 
 source $REPO_ROOT/spec/testdata/config/osh-hay.osh
-
-# TODO: code not serialized correctly - Samuel brought this up
 
 ## STDOUT:
 backticks
