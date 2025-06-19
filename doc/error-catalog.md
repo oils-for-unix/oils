@@ -131,7 +131,7 @@ Do you want to?:
 - Denote a single `\` with `\\`?  
 - Denote a valid escape: `"\$"` or "\""`?
 - Instead, use C-style `$'`-, `u'`-, or `b'`-single quotes, rather than `u"\n"`?
-- 'chain'"different"$'literals' ?
+- (osh) Use'different'"chained"$'string \t literals' ?
 - (ysh) Use concatenated expression: "double" ++ u'single \t literal' ?
 - (ysh) Use: "expression substitution $[\t] within string" ?
 
