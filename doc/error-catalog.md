@@ -98,10 +98,13 @@ test/ysh-parse-errors.sh ysh_c_strings (this may move)
          ^
 [ -c flag ]:1: Invalid char escape in C-style string literal (OILS-ERR-11)
 ```
+(Options: parse_backslash, no verbatims)
+- Only valid escapes like `\n` (newline) are accepted in `$''` and `u''` and `b''` strings.
+- Backslashes must be escaped.
 
-- Did you mean `$'\\z'`?  Backslashes must be escaped in `$''` and `u''` and
-  `b''` strings.
-- Did you mean something like `$'\n'`?  Only valid escapes are accepted in YSH.
+Do you want to?:
+  - Denote a single `\` with `\\`?
+  - Denote a valid escape like `$'\n'`?
 
 Related help topics:
 
@@ -120,10 +123,17 @@ test/ysh-parse-errors.sh ysh_dq_strings (this may move)
         ^
 [ -c flag ]:1: Invalid char escape in double quoted string (OILS-ERR-12)
 ```
+(Options: parse_backslash, no verbatims)
+* Only valid escapes: \", \$, or \\ to denote ", $, or \
+* Backslashes must be escaped.
 
-- Did you mean `"\\z"`?  Backslashes must be escaped in double-quoted strings.
-- Did you mean something like `"\$"`?  Only valid escapes are accepted in YSH.
-- Did you to use single quotes, like `u'\n'` rather than `u"\n"`?
+Do you want to?:
+  - Denote a single `\` with `\\`?  
+  - Denote a valid escape like `"\$"`?
+  - Use single quotes instead, like `u'\n'` rather than `u"\n"`?
+  - 'chain'"different"$'literals' ?
+  - (ysh expression) Concat "double" ++ u'single \t literals' ?
+  - (ysh string sub) Use "string with inserted $[\t] expression" ?
 
 Related help topics:
 
@@ -142,10 +152,19 @@ test/ysh-parse-errors.sh ysh_bare_words (this may move)
        ^~
 [ -c flag ]:1: Invalid char escape in unquoted word (OILS-ERR-13)
 ```
+(Options: parse_backslash, no verbatims, no quotings)
+- Only escaping valid syntax is accepted.
+- Backslashes must be escaped.
 
-- Did you mean `\\z`?  Backslashes must be escaped in unquoted words.
-- Did you mean something like `\$`?  Only valid escapes are accepted in YSH.
-
+Do you want to?:
+  - Escape something like `\$`?
+  - Remove an unecessary `\` ?
+  - Denote a single `\` with `\\`?
+  - Use a "raw" '-string-literal ?
+  - Use an "interpreted" $'-string-literal ?
+  - (ysh) Use a "raw" r'-string-literal ?
+  - (ysh) Use an "interpreted" u'- or b'-string-literal ?
+ 
 ### OILS-ERR-14
 
 <!--
