@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 
 #### Command.sourceCode() on literal block: p { echo hi }
 
@@ -116,4 +116,36 @@ p {
 (Str)   "   \n  array_lhs[i++]=y\n"
 (Str)   "   \n  e foo\n"
 (Str)   "   \n  e2 zzz\n"
+## END
+
+
+#### Command.sourceCode() works in nested blocks
+
+proc p ( ; ; ; block) {
+  var src = block.sourceCode()
+
+  pp test_ (src.code_str)
+
+  call io->eval(block)
+}
+
+
+shopt --set parse_backticks
+shopt --set parse_sh_arith
+shopt --set expand_aliases
+
+p { 
+  echo foo
+}
+
+p { 
+  #a[0]=`echo foo`
+  echo foo
+  p { 
+    #a[inner]=`echo foo`
+    echo inner
+  }
+}
+
+## STDOUT:
 ## END
