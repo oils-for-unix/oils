@@ -77,6 +77,7 @@ from _devbuild.gen.syntax_asdl import (
     redir_param_e,
     Redir,
     List_of_command,
+    ShFunction,
 )
 from asdl import runtime
 from core.error import p_die
@@ -337,7 +338,7 @@ class Finder(object):
                 self.DoCommand(node.child)
 
             elif case(command_e.ShFunction):
-                node = cast(command.ShFunction, UP_node)
+                node = cast(ShFunction, UP_node)
                 self.DoCommand(node.body)
 
             elif case(command_e.DoGroup):
@@ -818,7 +819,7 @@ class YshPrinter(object):
                 self.f.write('}')
 
             elif case(command_e.ShFunction):
-                node = cast(command.ShFunction, UP_node)
+                node = cast(ShFunction, UP_node)
 
                 # TODO: skip name
                 #self.f.write('proc %s' % node.name)

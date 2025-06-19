@@ -13,6 +13,7 @@ module value
     EggexFlag
     BraceGroup SourceLine
     debug_frame
+    ShFunction
   }
 
   use core runtime {
@@ -187,7 +188,8 @@ module value
          ProcDefaults? defaults, bool sh_compat,
          Dict[str, Cell] captured_frame,
          # module is where "global" lookups happen
-         Dict[str, Cell] module_frame)
+         Dict[str, Cell] module_frame,
+         ShFunction? parsed_sh_func)
 
   #
   # Unevaluated CODE types: ExprFrag, Expr, CommandFrag, Command

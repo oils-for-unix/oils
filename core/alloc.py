@@ -12,28 +12,34 @@ from typing import List, Dict, Any
 _ = log
 
 
-def SnipCodeBlock(left, right, lines):
-    # type: (Token, Token, List[SourceLine]) -> str
-    """Return the code string between left and right tokens, EXCLUSIVE.
+def SnipCodeBlock(left, right, lines, inclusive=False):
+    # type: (Token, Token, List[SourceLine], bool) -> str
+    """Return the code string between left and right tokens
 
-    Meaning { } are not included.
+    exclusive (default):   { } are not included.
+    inclusive:             f() { echo hi; }
 
     Used for Command.sourceCode() and Hay evaluation. Similar to SnipCodeString().
-
-    TODO: This algorithm is wrong when re-parsing occurs, e.g. bacticks, aliases, a[i++]=1.
     """
     pieces = []  # type: List[str]
 
-    assert left.length == 1, "{ expected"
-    assert right.length == 1, "} expected"
+    #assert left.length == 1, "{ expected"
+    #assert right.length == 1, "} expected"
 
     # Pad with spaces so column numbers aren't off
     pieces.append(' ' * (left.col + 1))
 
+    if inclusive:
+        ileft = left.col
+        iright = right.col + right.length
+    else:
+        ileft = left.col + left.length
+        iright = right.col
+
     if left.line == right.line:
         for li in lines:
             if li == left.line:
-                piece = li.content[left.col + left.length:right.col]
+                piece = li.content[ileft:iright]
                 pieces.append(piece)
         return ''.join(pieces)
 
@@ -46,7 +52,7 @@ def SnipCodeBlock(left, right, lines):
             saving = True
 
             # Save everything after the left token
-            piece = li.content[left.col + left.length:]
+            piece = li.content[ileft:]
             pieces.append(piece)
             #log('   %r', piece)
             continue
@@ -54,7 +60,7 @@ def SnipCodeBlock(left, right, lines):
         if li == right.line:
             found_right = True
 
-            piece = li.content[:right.col]
+            piece = li.content[:iright]
             pieces.append(piece)
             #log('   %r', piece)
 

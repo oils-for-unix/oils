@@ -19,6 +19,7 @@ from _devbuild.gen.syntax_asdl import (
     parse_result,
     parse_result_t,
     command,
+    command_e,
     command_t,
     condition,
     condition_t,
@@ -58,6 +59,7 @@ from _devbuild.gen.syntax_asdl import (
     List_of_command,
     VarDecl,
     ExprCommand,
+    ShFunction,
 )
 from _devbuild.gen.value_asdl import LiteralBlock
 from core import alloc
@@ -2134,7 +2136,7 @@ class CommandParser(object):
         assert False  # for MyPy
 
     def ParseFunctionDef(self):
-        # type: () -> command.ShFunction
+        # type: () -> ShFunction
         """
         function_header : fname '(' ')'
         function_def    : function_header newline_ok function_body ;
@@ -2175,19 +2177,29 @@ class CommandParser(object):
 
             self._NewlineOk()
 
-            func = command.ShFunction.CreateNull()
+            func = ShFunction.CreateNull()
             func.name = name
             with ctx_VarChecker(self.var_checker, blame_tok):
                 func.body = self.ParseCompoundCommand()
 
             func.name_tok = location.LeftTokenForCompoundWord(word0)
+
+            # Save lines for 'f() { true; }'
+            # Note: we don't handle 'f() if true; then echo hi; fi
+            with tagswitch(func.body) as case:
+                if case(command_e.BraceGroup):
+                    brace_group = cast(BraceGroup, func.body)
+                    func.lines = self.arena.SaveLinesAndDiscard(
+                        func.name_tok, brace_group.right)
+                    func.right_tok = brace_group.right
+
             return func
         else:
             p_die('Expected ) in function definition', loc.Word(self.cur_word))
             return None
 
     def ParseKshFunctionDef(self):
-        # type: () -> command.ShFunction
+        # type: () -> ShFunction
         """
         ksh_function_def : 'function' fname ( '(' ')' )? newline_ok function_body
         """
@@ -2212,13 +2224,23 @@ class CommandParser(object):
 
         self._NewlineOk()
 
-        func = command.ShFunction.CreateNull()
+        func = ShFunction.CreateNull()
         func.name = name
         with ctx_VarChecker(self.var_checker, keyword_tok):
             func.body = self.ParseCompoundCommand()
 
         func.keyword = keyword_tok
         func.name_tok = location.LeftTokenForWord(name_word)
+
+        # Save lines for 'function f { true; }'
+        # Note: we don't handle 'function f if true; then echo hi; fi
+        with tagswitch(func.body) as case:
+            if case(command_e.BraceGroup):
+                brace_group = cast(BraceGroup, func.body)
+                func.lines = self.arena.SaveLinesAndDiscard(
+                    keyword_tok, brace_group.right)
+                func.right_tok = brace_group.right
+
         return func
 
     def ParseYshProc(self):

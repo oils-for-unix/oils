@@ -1,8 +1,8 @@
 ## compare_shells: bash-4.4 mksh
-## oils_failures_allowed: 3
+## oils_failures_allowed: 1
 
 #### typeset -f prints function source code
-myfunc() { echo serialized; }
+: prefix; myfunc() { echo serialized; }
 
 code=$(typeset -f myfunc)
 
@@ -13,7 +13,7 @@ serialized
 ## END
 
 #### typeset -f with function keyword (ksh style)
-function myfunc {
+: prefix; function myfunc {
 	echo serialized
 }
 
@@ -27,17 +27,17 @@ serialized
 
 #### typeset -f prints function source code - nested functions
 outer() {
-  inner() {
+  echo outer
+  : prefix; inner() {
     echo inner
   }
 }
 
-outer
+code=$(typeset -f outer)
 
-code=$(typeset -f inner)
-
-$SH -c "$code; inner"
+$SH -c "$code; outer; inner"
 
 ## STDOUT:
+outer
 inner
 ## END

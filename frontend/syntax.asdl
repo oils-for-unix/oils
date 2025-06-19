@@ -406,6 +406,11 @@ module syntax
   # call f(x)   = 42
   ExprCommand = (Token keyword, expr e)
 
+  ShFunction = (
+      Token? keyword, Token name_tok, str name, command body,
+      List[SourceLine]? lines, Token? right_tok
+  )
+
   command =
     NoOp
 
@@ -460,7 +465,7 @@ module syntax
 
     # The keyword is optional in the case of bash-style functions
     # (ie. "foo() { ... }") which do not have one.
-  | ShFunction(Token? keyword, Token name_tok, str name, command body)
+  | ShFunction %ShFunction
 
   | TimeBlock(Token keyword, command pipeline)
     # Some nodes optimize it out as List[command], but we use CommandList for

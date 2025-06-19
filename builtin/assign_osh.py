@@ -12,6 +12,7 @@ from _devbuild.gen.runtime_asdl import (
 from _devbuild.gen.value_asdl import (value, value_e, value_t, LeftName)
 from _devbuild.gen.syntax_asdl import loc, loc_t
 
+from core import alloc
 from core import bash_impl
 from core import error
 from core.error import e_usage, e_die
@@ -465,9 +466,19 @@ class NewVar(vm._AssignBuiltin):
                     line = '%s %d %s' % (name, tok.line.line_num, filename_str)
                     print(line)
                 else:
-                    print(name)
-                # TODO: Could print LST for -f, or render LST.  Bash does this.  'trap'
-                # could use that too.
+                    if proc_val.parsed_sh_func and proc_val.parsed_sh_func.lines:
+                        sh_func = proc_val.parsed_sh_func
+                        #log('sh_func. right %s', sh_func.right_tok)
+                        left_tok = sh_func.keyword if sh_func.keyword else sh_func.name_tok
+                        #log('left %s', left_tok)
+                        code_str = alloc.SnipCodeBlock(left_tok,
+                                                       sh_func.right_tok,
+                                                       sh_func.lines,
+                                                       inclusive=True)
+                        print(code_str)
+                    else:
+                        # fall back to name only
+                        print(name)
             else:
                 status = 1
         return status

@@ -56,6 +56,7 @@ from _devbuild.gen.syntax_asdl import (
     VarDecl,
     Mutation,
     ExprCommand,
+    ShFunction,
 )
 from _devbuild.gen.runtime_asdl import (
     cmd_value,
@@ -1565,7 +1566,7 @@ class CommandEvaluator(object):
         return status
 
     def _DoShFunction(self, node):
-        # type: (command.ShFunction) -> None
+        # type: (ShFunction) -> None
 
         # Note: shell functions don't have a captured frame.  TODO: Get rid of
         # GlobalFrame as well.  I think shell functions will be disallowed in
@@ -1573,7 +1574,7 @@ class CommandEvaluator(object):
 
         sh_func = value.Proc(node.name, node.name_tok,
                              proc_sig.Open, node.body, None, True, None,
-                             self.mem.GlobalFrame())
+                             self.mem.GlobalFrame(), node)
         self.procs.DefineShellFunc(node.name, sh_func)
 
     def _DoProc(self, node):
@@ -1589,7 +1590,7 @@ class CommandEvaluator(object):
         # no dynamic scope
         proc = value.Proc(proc_name, node.name, node.sig, node.body,
                           proc_defaults, False, self.mem.CurrentFrame(),
-                          self.mem.GlobalFrame())
+                          self.mem.GlobalFrame(), None)
         self.procs.DefineProc(proc_name, proc)
 
     def _DoFunc(self, node):
@@ -2047,7 +2048,7 @@ class CommandEvaluator(object):
                     status = self.shell_ex.RunSubshell(node.child)
 
             elif case(command_e.ShFunction):
-                node = cast(command.ShFunction, UP_node)
+                node = cast(ShFunction, UP_node)
                 self._DoShFunction(node)
                 status = 0
 
