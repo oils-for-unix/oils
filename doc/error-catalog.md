@@ -264,13 +264,13 @@ case, it's not clear if the `u` is literal.
 
 Try one of these alternatives:
 
-    echo u'--flag=foo\n'        # quote the whole thing
+    ysh$ echo u'--flag=foo\n'        # quote the whole thing
 
-    echo --flag u'foo\n'        # space instead of =
+    ysh$ echo --flag u'foo\n'        # space instead of =
 
-    echo --flag=$myvar          # assign to variable first
+    ysh$ echo --flag=$myvar          # assign to variable first
 
-    echo $['--flag=' ++ myvar]  # expression sub
+    ysh$ echo $['--flag=' ++ myvar]  # expression sub
 
 ## Runtime Errors - Traditional Shell
 
