@@ -99,7 +99,7 @@ test/ysh-parse-errors.sh ysh_c_strings (this may move)
 [ -c flag ]:1: Invalid char escape in C-style string literal (OILS-ERR-11)
 ```
 (Options: parse_backslash, no verbatims)
-- Only valid escapes like `\n` (newline) are accepted in `$''` and `u''` and `b''` strings.
+- Only valid escapes like `\n` (newline) are allowed in `$''`-, `u''`- and `b''`-strings.
 - Backslashes must be escaped.
 
 Do you want to?:
@@ -133,7 +133,7 @@ Do you want to?:
 - Instead, use C-style `$'`-, `u'`-, or `b'`-single quotes, rather than `u"\n"`?
 - (osh) Use'different'"chained"$'string \t literals' ?
 - (ysh) Use concatenated expression: "double" ++ u'single \t literal' ?
-- (ysh) Use: "expression substitution $[\t] within string" ?
+- (ysh) Use "expression substitution $[\t] within string" ?
 
 Related help topics:
 
@@ -153,7 +153,7 @@ test/ysh-parse-errors.sh ysh_bare_words (this may move)
 [ -c flag ]:1: Invalid char escape in unquoted word (OILS-ERR-13)
 ```
 (Options: parse_backslash, no verbatims, no quotings)
-- Only escaping valid syntax is accepted.
+- Only escaping of valid syntax operators like `$` is allowed.
 - Backslashes must be escaped.
 
 Do you want to?:
