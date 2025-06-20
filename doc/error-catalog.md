@@ -99,7 +99,7 @@ test/ysh-parse-errors.sh ysh_c_strings (this may move)
 [ -c flag ]:1: Invalid char escape in C-style string literal (OILS-ERR-11)
 ```
 (Options: parse_backslash, no verbatims)
-- Only valid escapes like `\n` (newline) are allowed in `$''`-, `u''`- and `b''`-strings.
+- Only valid escapes (e.g. `\n` newline, ´\t` tab) are allowed in `$''`-, `u''`- and `b''`-strings.
 - Backslashes must be escaped.
 
 Do you want to?:
