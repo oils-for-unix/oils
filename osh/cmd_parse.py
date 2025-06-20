@@ -2189,9 +2189,9 @@ class CommandParser(object):
             with tagswitch(func.body) as case:
                 if case(command_e.BraceGroup):
                     brace_group = cast(BraceGroup, func.body)
-                    func.lines = self.arena.SaveLinesAndDiscard(
-                        func.name_tok, brace_group.right)
-                    func.right_tok = brace_group.right
+                    #func.lines = self.arena.SaveLinesAndDiscard(
+                    #    func.name_tok, brace_group.right)
+                    #func.right_tok = brace_group.right
 
             return func
         else:
@@ -2237,9 +2237,9 @@ class CommandParser(object):
         with tagswitch(func.body) as case:
             if case(command_e.BraceGroup):
                 brace_group = cast(BraceGroup, func.body)
-                func.lines = self.arena.SaveLinesAndDiscard(
-                    keyword_tok, brace_group.right)
-                func.right_tok = brace_group.right
+                #func.lines = self.arena.SaveLinesAndDiscard(
+                #    keyword_tok, brace_group.right)
+                #func.right_tok = brace_group.right
 
         return func
 

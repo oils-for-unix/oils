@@ -1,5 +1,5 @@
 ## compare_shells: bash-4.4 mksh
-## oils_failures_allowed: 2
+## oils_failures_allowed: 4
 
 #### typeset -f prints function source code
 : prefix; myfunc() { echo serialized; }

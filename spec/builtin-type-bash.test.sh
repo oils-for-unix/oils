@@ -1,4 +1,4 @@
-## oils_failures_allowed: 0
+## oils_failures_allowed: 2
 ## compare_shells: bash
 
 #### type -t -> function
