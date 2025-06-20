@@ -193,12 +193,19 @@ _YSH_PARSE_OPTS = [
     ('parse_word_join', True),  # --flag=r'value' pitfall allowed
 ]
 
-# No-ops for bash compatibility
-_NO_OPS = [
-    # Handled one by one
+_BASH_STUBS = [
+     # It's OK to stub progcomp - similar to shopt -s lastpipe, it's on by default in OSH
     'progcomp',
+
+    # Complete host names with '@'.
+    # Not implemented, but stubbed out for bash-completion.
+    'hostcomplete',
+]
+
+# No-ops for bash compatibility
+_BASH_UNIMPLEMENTED = [
+    # Handled one by one
     'histappend',  # stubbed out for issue #218
-    'hostcomplete',  # complete words with '@' ?
     'cmdhist',  # multi-line commands in history
 
     # Copied from https://www.gnu.org/software/bash/manual/bash.txt
@@ -348,12 +355,13 @@ def _Init(opt_def):
     for name, default in _YSH_RUNTIME_OPTS:
         opt_def.Add(name, default=default, groups=['ysh:all'])
 
+    for name in _BASH_STUBS:
+        opt_def.Add(name)
+
     opt_def.DoneWithImplementedOptions()
 
-    # NO_OPS
-
     # Stubs for shopt -s xpg_echo, etc.
-    for name in _NO_OPS:
+    for name in _BASH_UNIMPLEMENTED:
         opt_def.Add(name, implemented=False)
 
 

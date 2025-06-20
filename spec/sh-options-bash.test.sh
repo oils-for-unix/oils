@@ -139,3 +139,15 @@ SHELLOPTS=
 ## N-I bash STDOUT:
 ## END
 
+#### shopt -s progcomp hostcomplete are stubs (bash-completion)
+
+shopt -s progcomp hostcomplete
+echo status=$?
+
+shopt -u progcomp hostcomplete
+echo status=$?
+
+## STDOUT:
+status=0
+status=0
+## END
