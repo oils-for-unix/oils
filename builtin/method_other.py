@@ -89,7 +89,7 @@ class SourceCode(vm._Callable):
 def GetDocComment(body):
     # type: (command_t) -> Optional[str]
 
-    doc = None
+    doc = None  # type: Optional[str]
     if body.tag() == command_e.BraceGroup:
         bgroup = cast(BraceGroup, body)
         if bgroup.doc_token:

@@ -280,8 +280,12 @@ class GetShFunction(vm._Callable):
         # type: (typed_args.Reader) -> value_t
         name = rd.PosStr()
         rd.Done()
+
         proc_val = self.procs.GetShellFunc(name)
-        return proc_val if proc_val else value.Null
+        if proc_val is not None:
+            return proc_val
+        else:
+            return value.Null
 
 
 class ParseCommand(vm._Callable):
