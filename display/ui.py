@@ -642,25 +642,9 @@ def PrettyPrintValue(prefix, val, f, max_width=-1):
     f.write('\n')
 
 
-def _MaybePrintShFunction(proc_val):
-    # type: (value.Proc) -> bool
-    if proc_val.parsed_sh_func is None:
-        return False
-    sh_func = proc_val.parsed_sh_func
-    if sh_func.lines is None:
-        return False
-
-    left_tok = (sh_func.keyword if sh_func.keyword else sh_func.name_tok)
-    code_str = alloc.SnipCodeBlock(left_tok,
-                                   sh_func.right_tok,
-                                   sh_func.lines,
-                                   inclusive=True)
-    print(code_str)
-    return True
-
-
 def PrintShFunction(proc_val):
     # type: (value.Proc) -> None
-    if not _MaybePrintShFunction(proc_val):
-        # print a stub
+    if proc_val.code_str is not None:
+        print(proc_val.code_str)
+    else:
         print('%s() { : "function body not available"; }' % proc_val.name)
