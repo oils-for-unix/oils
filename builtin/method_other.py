@@ -5,7 +5,6 @@ from __future__ import print_function
 from _devbuild.gen.value_asdl import (value, value_t, LiteralBlock, cmd_frag,
                                       cmd_frag_e)
 
-from core import alloc
 from core import num
 from core import state
 from core import vm
@@ -79,9 +78,9 @@ class SourceCode(vm._Callable):
 
         #log('LINES %s', lit_block.lines)
         # Between { and }
-        code_str = alloc.SnipCodeBlock(brace_group.left, brace_group.right,
-                                       lit_block.lines)
+        #code_str = alloc.SnipCodeBlock(brace_group.left, brace_group.right,
+        #                               lit_block.lines)
 
-        result['code_str'] = value.Str(code_str)
+        result['code_str'] = value.Str(lit_block.code_str)
 
         return value.Dict(result)

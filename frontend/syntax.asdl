@@ -408,7 +408,7 @@ module syntax
 
   ShFunction = (
       Token? keyword, Token name_tok, str name, command body,
-      List[SourceLine]? lines, Token? right_tok
+      str? code_str
   )
 
   command =

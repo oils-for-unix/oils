@@ -7,7 +7,6 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, LiteralBlock,
                                       cmd_frag, cmd_frag_e)
 
 from asdl import format as fmt
-from core import alloc
 from core.error import e_usage, e_die
 from core import num
 from core import state
@@ -404,10 +403,10 @@ class HayNode_(vm._Builtin):
 
             #log('LINES %s', lit_block.lines)
             # Between { and }
-            code_str = alloc.SnipCodeBlock(brace_group.left, brace_group.right,
-                                           lit_block.lines)
+            #code_str = alloc.SnipCodeBlock(brace_group.left, brace_group.right,
+            #                               lit_block.lines)
 
-            result['code_str'] = value.Str(code_str)
+            result['code_str'] = value.Str(lit_block.code_str)
 
             # Append after validation
             self.hay_state.AppendResult(result)
