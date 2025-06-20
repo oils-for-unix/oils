@@ -215,15 +215,15 @@ class Arena(object):
             ileft = left.col + left.length
             iright = right.col
 
-        if left.line == right.line:
-            for li in self.lines_list:
-                if li == left.line:
-                    piece = li.content[ileft:iright]
-                    return piece
-
         pieces = []  # type: List[str]
         if not inclusive:
             pieces.append(' ' * ileft)
+
+        if left.line == right.line:
+            for li in self.lines_list:
+                if li == left.line:
+                    pieces.append(li.content[ileft:iright])
+                    return ''.join(pieces)
 
         saving = False
         found_left = False
