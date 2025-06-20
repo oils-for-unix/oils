@@ -25,7 +25,7 @@
 
 # Check if we're in the right directory
 if [[ ! -d "stdlib/osh" ]]; then
-    echo "Error: This script must be run from the root of the Oil project directory"
+    echo "Error: This script must be run from the root of the Oils project directory"
     echo "Please cd to the root directory and try again"
     exit 1
 fi
