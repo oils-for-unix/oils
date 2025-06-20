@@ -7,7 +7,6 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, LiteralBlock,
                                       cmd_frag, cmd_frag_e)
 
 from asdl import format as fmt
-from core import alloc
 from core.error import e_usage, e_die
 from core import num
 from core import state
