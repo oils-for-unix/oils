@@ -194,7 +194,7 @@ _YSH_PARSE_OPTS = [
 ]
 
 _BASH_STUBS = [
-     # It's OK to stub progcomp - similar to shopt -s lastpipe, it's on by default in OSH
+    # It's OK to stub progcomp - similar to shopt -s lastpipe, it's on by default in OSH
     'progcomp',
 
     # Complete host names with '@'.

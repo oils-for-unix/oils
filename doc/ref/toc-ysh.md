@@ -61,8 +61,11 @@ error handling, and more.
                    Dict        erase()        X Dict/clear()    X accum()
                              X update()
                    Place       setValue()
-  [Code Types]     Func        BuiltinFunc      BoundFunc
-                   Proc        BuiltinProc
+  [Code Types]     Func        
+                   BuiltinFunc
+                   BoundFunc
+                   Proc        docComment()   
+                   BuiltinProc
   [Objects]        Obj         __invoke__       new
                              X __call__         __index__       X __str__
   [Reflection]     Command     sourceCode()
@@ -81,24 +84,24 @@ error handling, and more.
 
 ```chapter-links-builtin-func
   [Values]        len()             func/type()
-  [Conversions]   bool()            int()            float()
-                  str()             list()           dict()
+  [Conversions]   bool()            int()              float()
+                  str()             list()             dict()
                 X runes()         X encodeRunes()
                 X bytes()         X encodeBytes()
   [Str]         X strcmp()          shSplit()
   [List]          join()       
-  [Dict]          keys()            values()         get()       
-  [Float]         floatsEqual()   X isinf()        X isnan()
-  [Obj]           first()           rest()           get()
+  [Dict]          keys()            values()           get()       
+  [Float]         floatsEqual()   X isinf()          X isnan()
+  [Obj]           first()           rest()             get()
   [Word]          glob()            maybe()
   [Serialize]     toJson()          fromJson()
                   toJson8()         fromJson8()
                 X toJ8Line()      X fromJ8Line()
-X [Quoting]       quoteJ8()         quoteSh()        quoteHtml()
-  [Pattern]       _group()          _start()         _end()
-  [Reflection]    func/eval()       func/evalExpr()
-  [Introspect]    shvarGet()        getVar()         setVar()  
-                  parseCommand()  X parseExpr()    X bindFrame()
+  [Pattern]       _group()          _start()           _end()
+  [Reflection]    func/eval()       func/evalExpr()  
+  [Introspect]    shvarGet()        getVar()           setVar()  
+                  getShFunction()   parseCommand()   X parseExpr()
+                X bindFrame()
   [Hay Config]    parseHay()        evalHay()
 X [Hashing]       sha1dc()          sha256()
 ```

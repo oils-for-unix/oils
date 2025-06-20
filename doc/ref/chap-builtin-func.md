@@ -468,6 +468,13 @@ which is like
 
     setglobal myname = 42
 
+### `getShFunction`
+
+Given the name of a shell function, return the corresponding [Proc][] value, or
+`null` if it's not found.
+
+[Proc]: chap-type-method.html#Proc
+
 ### `parseCommand()`
 
 Given a code string, parse it as a command (with the current parse options).

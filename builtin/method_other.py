@@ -2,6 +2,7 @@
 
 from __future__ import print_function
 
+from _devbuild.gen.syntax_asdl import command_e, BraceGroup, command_t
 from _devbuild.gen.value_asdl import (value, value_t, LiteralBlock, cmd_frag,
                                       cmd_frag_e)
 
@@ -46,7 +47,6 @@ class SourceCode(vm._Callable):
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        # This is guaranteed
         cmd = rd.PosCommand()
         rd.Done()
 
@@ -84,3 +84,37 @@ class SourceCode(vm._Callable):
         result['code_str'] = value.Str(lit_block.code_str)
 
         return value.Dict(result)
+
+
+def GetDocComment(body):
+    # type: (command_t) -> Optional[str]
+
+    doc = None
+    if body.tag() == command_e.BraceGroup:
+        bgroup = cast(BraceGroup, body)
+        if bgroup.doc_token:
+            token = bgroup.doc_token
+            # 1 to remove leading space
+            doc = token.line.content[token.col + 1:token.col + token.length]
+    return doc
+
+
+class DocComment(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        proc_val = rd.PosProc()
+        rd.Done()
+        # TODO: __invoke__ method could have a doc string too
+
+        doc = GetDocComment(proc_val.body)
+
+        if doc is not None:
+            return value.Str(doc)
+        else:
+            return value.Null

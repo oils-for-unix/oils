@@ -6,9 +6,9 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value
-from _devbuild.gen.syntax_asdl import command_e, BraceGroup
 from _devbuild.gen.value_asdl import value, value_e
 from asdl import format as fmt
+from builtin import method_other
 from core import error
 from core.error import e_usage
 from core import state
@@ -198,6 +198,7 @@ class Pp(_Builtin):
                 names = self.procs.InvokableNames()
 
             # TSV8 header
+            # TODO: should be #.qtt8
             print('proc_name\tdoc_comment')
             for name in names:
                 proc_val, _ = self.procs.GetInvokable(name)  # must exist
@@ -205,17 +206,9 @@ class Pp(_Builtin):
                     continue  # can't be value.BuiltinProc
                 user_proc = cast(value.Proc, proc_val)
 
-                body = user_proc.body
-
-                # TODO: not just command.ShFunction, but command.Proc!
-                doc = ''
-                if body.tag() == command_e.BraceGroup:
-                    bgroup = cast(BraceGroup, body)
-                    if bgroup.doc_token:
-                        token = bgroup.doc_token
-                        # 1 to remove leading space
-                        doc = token.line.content[token.col + 1:token.col +
-                                                 token.length]
+                doc = method_other.GetDocComment(user_proc.body)
+                if doc is None:
+                    doc = ''
 
                 # Note: these should be attributes on value.Proc
                 buf = mylib.BufWriter()

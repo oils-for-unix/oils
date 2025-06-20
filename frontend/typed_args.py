@@ -397,6 +397,13 @@ class Reader(object):
                             'Arg %d should be a Command' % self.pos_consumed,
                             self.BlamePos())
 
+    def _ToProc(self, val):
+        # type: (value_t) -> value.Proc
+        if val.tag() == value_e.Proc:
+            return cast(value.Proc, val)
+        raise error.TypeErr(val, 'Arg %d should be a Proc' % self.pos_consumed,
+                            self.BlamePos())
+
     def PosStr(self):
         # type: () -> str
         val = self.PosValue()
@@ -490,6 +497,11 @@ class Reader(object):
         # type: () -> value.Command
         val = self.PosValue()
         return self._ToCommand(val)
+
+    def PosProc(self):
+        # type: () -> value.Proc
+        val = self.PosValue()
+        return self._ToProc(val)
 
     def PosExpr(self):
         # type: () -> value.Expr

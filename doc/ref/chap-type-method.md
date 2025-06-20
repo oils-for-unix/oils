@@ -619,6 +619,15 @@ The type of a user-defined proc &mdash; i.e. a "procedure" or "process".
 A Proc captures the stack frame it was defined in, making it a closure.  It
 also captures the frame of the module it was defined in.
 
+### docComment()
+
+Returns the [doc comment][doc-comment] associated with this proc or shell
+function.
+
+If there's no comment, it returns `null`.
+
+[doc-comment]: chap-front-end.html#doc-comment
+
 ### BuiltinProc
 
 A builtin proc, aka builtin command, like `module-invoke`.

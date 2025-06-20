@@ -2,6 +2,28 @@
 
 # dynamically generate procs
 
+#### myproc.docString()
+
+source $[ENV.REPO_ROOT]/spec/testdata/doc-comments.sh
+
+pp test_ (myproc.docComment())
+pp test_ (getVar('proc-none').docComment())
+
+var f = getShFunction('f')
+pp test_ (f.docComment())
+
+var g = getShFunction('g')
+pp test_ (g.docComment())
+
+#pp proc
+
+## STDOUT:
+(Str)   "YSH-style proc"
+(Null)   null
+(Str)   "doc ' comment with \" quotes"
+(Null)   null
+## END
+
 #### with eval builtin command, in global scope
 
 for param in a b {

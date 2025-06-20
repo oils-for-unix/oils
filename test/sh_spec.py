@@ -159,9 +159,10 @@ class Tokenizer(object):
             return self.line_num, END_MULTILINE, None
 
         # If it starts with ##, it should be metadata.  This finds some typos.
-        if line.lstrip().startswith('##'):
+        if line.startswith('##'):
             raise RuntimeError('Invalid ## line %r' % line)
 
+        # TODO: comments should not be ignored in code or STDOUT blocks!
         if line.lstrip().startswith('#'):  # Ignore comments
             return None  # try again
 

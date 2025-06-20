@@ -20,3 +20,10 @@ proc true {
   echo hi
 }
 
+shfunc-none() { 
+  echo hi
+}
+
+proc proc-none { 
+  echo hi
+}

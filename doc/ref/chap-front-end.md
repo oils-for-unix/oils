@@ -289,10 +289,15 @@ Note about `NUL` aka `0x00`:
 
 <h3 id="doc-comment" class="ysh-topic">doc-comment</h3>
 
-Doc comments look like this:
+Doc comments can be attached to procs or shell functions:
 
     proc deploy {   
       ### Deploy the app
+      echo hi
+    }
+
+    my_sh_function() {
+      ### This also works
       echo hi
     }
 
