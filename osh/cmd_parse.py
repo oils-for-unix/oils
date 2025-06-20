@@ -1005,10 +1005,7 @@ class CommandParser(object):
             self.hay_attrs_stack.append(first_word_caps)
             brace_group = self.ParseBraceGroup()
 
-            # So we can get the source code back later
-            # TODO: This doesn't respect NESTING of blocks p { p { echo hi } }
-            #lines = self.arena.SaveLinesAndDiscard(brace_group.left,
-            #                                       brace_group.right)
+            # Save the source code for reflection
             code_str = self.arena.SnipCodeString(brace_group.left,
                                                  brace_group.right)
             block = LiteralBlock(brace_group, code_str)
