@@ -1574,8 +1574,7 @@ class CommandEvaluator(object):
 
         sh_func = value.Proc(node.name, node.name_tok,
                              proc_sig.Open, node.body, None, True, None,
-                             #self.mem.GlobalFrame(), node)
-                             self.mem.GlobalFrame(), None)
+                             self.mem.GlobalFrame(), node.code_str)
         self.procs.DefineShellFunc(node.name, sh_func)
 
     def _DoProc(self, node):

@@ -70,7 +70,7 @@ module value
   | Yes %RegexMatch
 
   # Retain references to lines
-  LiteralBlock = (BraceGroup brace_group, List[SourceLine] lines)
+  LiteralBlock = (BraceGroup brace_group, str? code_str)
 
   cmd_frag =
     LiteralBlock %LiteralBlock  # p { echo hi } has backing lines
@@ -189,7 +189,7 @@ module value
          Dict[str, Cell] captured_frame,
          # module is where "global" lookups happen
          Dict[str, Cell] module_frame,
-         ShFunction? parsed_sh_func)
+         str? code_str)
 
   #
   # Unevaluated CODE types: ExprFrag, Expr, CommandFrag, Command

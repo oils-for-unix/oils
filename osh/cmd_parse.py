@@ -1005,15 +1005,11 @@ class CommandParser(object):
             self.hay_attrs_stack.append(first_word_caps)
             brace_group = self.ParseBraceGroup()
 
-            # So we can get the source code back later
-            # TODO: This doesn't respect NESTING of blocks p { p { echo hi } }
-            lines = self.arena.SaveLinesAndDiscard(brace_group.left,
-                                                   brace_group.right)
-
-            # BUG: this is wrong because we don't take into account re-parsing, e.g. of backticks
-            #log('lines %s', lines)
-
-            block = LiteralBlock(brace_group, lines)
+            # Save the source code for reflection
+            code_str = self.arena.SnipCodeString(brace_group.left,
+                                                 brace_group.right,
+                                                 inclusive=False)
+            block = LiteralBlock(brace_group, code_str)
 
             self.hay_attrs_stack.pop()
 
@@ -2189,9 +2185,9 @@ class CommandParser(object):
             with tagswitch(func.body) as case:
                 if case(command_e.BraceGroup):
                     brace_group = cast(BraceGroup, func.body)
-                    #func.lines = self.arena.SaveLinesAndDiscard(
-                    #    func.name_tok, brace_group.right)
-                    #func.right_tok = brace_group.right
+                    # Could be location.RightTokenForCommand
+                    func.code_str = self.arena.SnipCodeString(
+                        func.name_tok, brace_group.right)
 
             return func
         else:
@@ -2237,9 +2233,8 @@ class CommandParser(object):
         with tagswitch(func.body) as case:
             if case(command_e.BraceGroup):
                 brace_group = cast(BraceGroup, func.body)
-                #func.lines = self.arena.SaveLinesAndDiscard(
-                #    keyword_tok, brace_group.right)
-                #func.right_tok = brace_group.right
+                func.code_str = self.arena.SnipCodeString(
+                    keyword_tok, brace_group.right)
 
         return func
 

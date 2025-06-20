@@ -12,7 +12,7 @@ from typing import List, Dict, Any
 _ = log
 
 
-def SnipCodeBlock(left, right, lines, inclusive=False):
+def zz_SnipCodeBlock(left, right, lines, inclusive=False):
     # type: (Token, Token, List[SourceLine], bool) -> str
     """Return the code string between left and right tokens
 
@@ -146,7 +146,7 @@ class Arena(object):
         #log("discarding %d lines", len(self.lines_list))
         del self.lines_list[:]
 
-    def SaveLinesAndDiscard(self, left, right):
+    def zz_SaveLinesAndDiscard(self, left, right):
         # type: (Token, Token) -> List[SourceLine]
         """Save the lines between two tokens, e.g. for { and }
 
@@ -198,8 +198,8 @@ class Arena(object):
 
         #log('SAVED = %s', [line.val for line in self.saved_lines])
 
-    def SnipCodeString(self, left, right):
-        # type: (Token, Token) -> str
+    def SnipCodeString(self, left, right, inclusive=True):
+        # type: (Token, Token, bool) -> str
         """Return the code string between left and right tokens, INCLUSIVE.
 
         Used for ALIAS expansion, which happens in the PARSER.
@@ -208,13 +208,23 @@ class Arena(object):
 
         $ myalias '1     2     3'
         """
+        if inclusive:
+            ileft = left.col
+            iright = right.col + right.length
+        else:
+            ileft = left.col + left.length
+            iright = right.col
+
+        pieces = []  # type: List[str]
+        if not inclusive:
+            pieces.append(' ' * ileft)
+
         if left.line == right.line:
             for li in self.lines_list:
                 if li == left.line:
-                    piece = li.content[left.col:right.col + right.length]
-                    return piece
+                    pieces.append(li.content[ileft:iright])
+                    return ''.join(pieces)
 
-        pieces = []  # type: List[str]
         saving = False
         found_left = False
         found_right = False
@@ -224,7 +234,7 @@ class Arena(object):
                 saving = True
 
                 # Save everything after the left token
-                piece = li.content[left.col:]
+                piece = li.content[ileft:]
                 pieces.append(piece)
                 #log('   %r', piece)
                 continue
@@ -232,7 +242,7 @@ class Arena(object):
             if li == right.line:
                 found_right = True
 
-                piece = li.content[:right.col + right.length]
+                piece = li.content[:iright]
                 pieces.append(piece)
                 #log('   %r', piece)
 
