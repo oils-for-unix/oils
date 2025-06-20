@@ -1007,13 +1007,11 @@ class CommandParser(object):
 
             # So we can get the source code back later
             # TODO: This doesn't respect NESTING of blocks p { p { echo hi } }
-            lines = self.arena.SaveLinesAndDiscard(brace_group.left,
-                                                   brace_group.right)
-
-            # BUG: this is wrong because we don't take into account re-parsing, e.g. of backticks
-            #log('lines %s', lines)
-
-            block = LiteralBlock(brace_group, lines)
+            #lines = self.arena.SaveLinesAndDiscard(brace_group.left,
+            #                                       brace_group.right)
+            code_str = self.arena.SnipCodeString(brace_group.left,
+                                                 brace_group.right)
+            block = LiteralBlock(brace_group, code_str)
 
             self.hay_attrs_stack.pop()
 

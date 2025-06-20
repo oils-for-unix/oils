@@ -23,7 +23,6 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen.value_asdl import value, value_e, value_t
 from asdl import format as fmt
-from core import alloc
 from data_lang import j8_lite
 from display import pp_value
 from display import pretty

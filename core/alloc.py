@@ -146,7 +146,7 @@ class Arena(object):
         #log("discarding %d lines", len(self.lines_list))
         del self.lines_list[:]
 
-    def SaveLinesAndDiscard(self, left, right):
+    def zz_SaveLinesAndDiscard(self, left, right):
         # type: (Token, Token) -> List[SourceLine]
         """Save the lines between two tokens, e.g. for { and }
 
