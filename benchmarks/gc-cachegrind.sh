@@ -32,7 +32,7 @@ EOF
   cmark << 'EOF'
 ## Memory Management (stable measurements)
 
-Source code: [oil/benchmarks/gc-cachegrind.sh](https://github.com/oilshell/oil/tree/master/benchmarks/gc-cachegrind.sh)
+Source code: [oils/benchmarks/gc-cachegrind.sh](https://github.com/oils-for-unix/oils/tree/master/benchmarks/gc-cachegrind.sh)
 EOF
 
   cmark <<'EOF'

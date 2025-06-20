@@ -199,7 +199,7 @@ class Arena(object):
         #log('SAVED = %s', [line.val for line in self.saved_lines])
 
     def SnipCodeString(self, left, right, inclusive=True):
-        # type: (Token, Token) -> str
+        # type: (Token, Token, bool) -> str
         """Return the code string between left and right tokens, INCLUSIVE.
 
         Used for ALIAS expansion, which happens in the PARSER.
