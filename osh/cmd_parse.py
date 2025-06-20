@@ -1007,7 +1007,7 @@ class CommandParser(object):
 
             # Save the source code for reflection
             code_str = self.arena.SnipCodeString(brace_group.left,
-                                                 brace_group.right)
+                                                 brace_group.right, inclusive=False)
             block = LiteralBlock(brace_group, code_str)
 
             self.hay_attrs_stack.pop()

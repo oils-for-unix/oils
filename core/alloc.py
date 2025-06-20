@@ -198,7 +198,7 @@ class Arena(object):
 
         #log('SAVED = %s', [line.val for line in self.saved_lines])
 
-    def SnipCodeString(self, left, right):
+    def SnipCodeString(self, left, right, inclusive=True):
         # type: (Token, Token) -> str
         """Return the code string between left and right tokens, INCLUSIVE.
 
@@ -208,13 +208,23 @@ class Arena(object):
 
         $ myalias '1     2     3'
         """
+        if inclusive:
+            ileft = left.col
+            iright = right.col + right.length
+        else:
+            ileft = left.col + left.length
+            iright = right.col
+
         if left.line == right.line:
             for li in self.lines_list:
                 if li == left.line:
-                    piece = li.content[left.col:right.col + right.length]
+                    piece = li.content[ileft:iright]
                     return piece
 
         pieces = []  # type: List[str]
+        if not inclusive:
+            pieces.append(' ' * ileft)
+
         saving = False
         found_left = False
         found_right = False
@@ -224,7 +234,7 @@ class Arena(object):
                 saving = True
 
                 # Save everything after the left token
-                piece = li.content[left.col:]
+                piece = li.content[ileft:]
                 pieces.append(piece)
                 #log('   %r', piece)
                 continue
@@ -232,7 +242,7 @@ class Arena(object):
             if li == right.line:
                 found_right = True
 
-                piece = li.content[:right.col + right.length]
+                piece = li.content[:iright]
                 pieces.append(piece)
                 #log('   %r', piece)
 
