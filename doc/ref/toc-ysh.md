@@ -370,7 +370,7 @@ X [External Lang] BEGIN   END   when (awk)
 
 ```chapter-links-special-var
   [YSH Vars]      ARGV                ENV
-                  __defaults__        __builtins__          __sh_function__
+                  __defaults__        __builtins__        X __sh_function__
                   _this_dir
   [YSH Status]    _error
                   _pipeline_status    _process_sub_status

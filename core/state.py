@@ -2693,6 +2693,15 @@ class Mem(object):
         return self.ctx_stack.pop()
 
 
+def ObjIsReadOnly(obj):
+    # type: (Obj) -> bool
+    if not obj.prototype:
+        return False
+
+    # Any value makes the object read-only, but value.Bool(True) is conventional
+    return '__readonly__' in obj.prototype.d
+
+
 def ValueIsInvokableObj(val):
     # type: (value_t) -> Tuple[Optional[value_t], Optional[Obj]]
     """
@@ -2734,7 +2743,7 @@ class Procs(object):
     Terminology:
 
     - invokable - these are INTERIOR
-      - value.Proc - which can be shell function in __sh_funcs__ namespace, or
+      - value.Proc - which can be shell function in __sh_function__ namespace, or
                      YSH proc
       - value.Obj with __invoke__
     - exterior - external commands, extern builtin
@@ -2749,7 +2758,7 @@ class Procs(object):
         self.sh_funcs = NewDict()  # type: Dict[str, value_t]
 
         # Reflection
-        mem.AddBuiltin('__sh_function__', value.Dict(self.sh_funcs))
+        #mem.AddBuiltin('__sh_function__', value.Dict(self.sh_funcs))
 
     def DefineShellFunc(self, name, proc):
         # type: (str, value.Proc) -> None

@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 
 #### New Obj API
 shopt --set ysh:upgrade
@@ -293,4 +293,45 @@ pp value (instance)
 ## STDOUT:
 (Obj)   ("foo":1,"bar":2,"x":3) --> ("foo":42,"bar":[1,2]) --> ("foo":"zz")
 (Obj)   (foo: 1, bar: 2, x: 3) --> (foo: 42, bar: [1, 2]) --> (foo: 'zz')
+## END
+
+#### __readonly__ in prototype makes objects readonly
+
+# __readonly__ in first() does not mean anything
+var methods = Obj.new({__readonly__: 3}, null)
+setvar methods.__readonly__ = true
+
+= methods
+
+var attrs = {x: 42}
+var obj = Obj.new(attrs, methods)
+= vm.id(attrs)
+= vm.id(obj)
+
+# should FAIL
+setvar obj.x = 99
+
+# should also fail
+setvar obj.x += 99
+
+= obj
+
+# TODO: this should not be a value.Dict() that aliases the obj.d
+var alias = first(obj)
+= vm.id(alias)
+
+= get(obj, 'x')
+
+# TODO: make these work
+= keys(obj)
+= values(obj)
+
+# Another case: we can MUTATE the methods, and REMOVE __readonly__?
+#
+# Or maybe we define some kind of magic freeze()
+#
+# where there's a special __readonly__?
+
+
+## STDOUT:
 ## END
