@@ -269,25 +269,6 @@ class SetVar(vm._Callable):
         return value.Null
 
 
-class GetShFunction(vm._Callable):
-
-    def __init__(self, procs):
-        # type: (state.Procs) -> None
-        vm._Callable.__init__(self)
-        self.procs = procs
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-        name = rd.PosStr()
-        rd.Done()
-
-        proc_val = self.procs.GetShellFunc(name)
-        if proc_val is not None:
-            return proc_val
-        else:
-            return value.Null
-
-
 class ParseCommand(vm._Callable):
 
     def __init__(self, parse_ctx, mem, errfmt):

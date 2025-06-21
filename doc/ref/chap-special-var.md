@@ -108,6 +108,23 @@ An object that contains names visible in every module.
 If a name is not visible in the local scope, or module global scope, then it's
 looked up in `__builtins__`.
 
+### `__sh_function__`
+
+A Dict that reflects the shell functions defined in the Oils interpreter.
+
+    = keys(__sh_function__)        # enumerate all shell functions
+
+    = get(__sh_function__, 'f')    # get a value of type Proc
+
+    = __sh_function__ => get('f')  # synonym for the above
+
+You can reflect on [doc comments][doc-comment] by calling the [docComment][]
+method on a value of type [Proc][].
+
+[doc-comment]: chap-front-end.html#doc-comment
+[docComment]: chap-type-method.html#docComment
+[Proc]: chap-type-method.html#Proc
+
 ### `_this_dir`
 
 The directory the current script resides in.  This knows about 3 situations:

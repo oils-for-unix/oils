@@ -934,7 +934,6 @@ def Main(
     _AddBuiltinFunc(mem, 'shvarGet', func_reflect.Shvar_get(mem))
     _AddBuiltinFunc(mem, 'getVar', func_reflect.GetVar(mem))
     _AddBuiltinFunc(mem, 'setVar', func_reflect.SetVar(mem))
-    _AddBuiltinFunc(mem, 'getShFunction', func_reflect.GetShFunction(procs))
 
     # TODO: implement bindFrame() to turn CommandFrag -> Command
     # Then parseCommand() and parseHay() will not depend on mem; they will not

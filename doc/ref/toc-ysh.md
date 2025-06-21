@@ -100,8 +100,7 @@ error handling, and more.
   [Pattern]       _group()          _start()           _end()
   [Reflection]    func/eval()       func/evalExpr()  
   [Introspect]    shvarGet()        getVar()           setVar()  
-                  getShFunction()   parseCommand()   X parseExpr()
-                X bindFrame()
+                  parseCommand()  X parseExpr()      X bindFrame()
   [Hay Config]    parseHay()        evalHay()
 X [Hashing]       sha1dc()          sha256()
 ```
@@ -371,7 +370,7 @@ X [External Lang] BEGIN   END   when (awk)
 
 ```chapter-links-special-var
   [YSH Vars]      ARGV                ENV
-                  __defaults__        __builtins__
+                  __defaults__        __builtins__          __sh_function__
                   _this_dir
   [YSH Status]    _error
                   _pipeline_status    _process_sub_status
@@ -384,7 +383,7 @@ X [External Lang] BEGIN   END   when (awk)
                   OILS_GC_STATS       OILS_GC_STATS_FD
                   LIB_YSH
   [Float]         NAN                 INFINITY
-  [Module]        __provide__
+  [Module]        __provide__ 
   [Other Env]     HOME                PATH
 ```
 

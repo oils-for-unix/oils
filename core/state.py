@@ -2746,7 +2746,10 @@ class Procs(object):
     def __init__(self, mem):
         # type: (Mem) -> None
         self.mem = mem
-        self.sh_funcs = NewDict()  # type: Dict[str, value.Proc]
+        self.sh_funcs = NewDict()  # type: Dict[str, value_t]
+
+        # Reflection
+        mem.AddBuiltin('__sh_function__', value.Dict(self.sh_funcs))
 
     def DefineShellFunc(self, name, proc):
         # type: (str, value.Proc) -> None
@@ -2758,7 +2761,19 @@ class Procs(object):
 
     def GetShellFunc(self, name):
         # type: (str) -> Optional[value.Proc]
-        return self.sh_funcs.get(name)
+        val = self.sh_funcs.get(name)
+        if val is None:
+            return None
+
+        # Note: this runtime check became necessary when exposing
+        # __sh_function__ as a YSH Dict.
+        # It would be nicer if that dict were not MUTABLE!  This should not
+        # work:
+        #     setvar __sh_function__.foo = 42
+        if val.tag() != value_e.Proc:
+            return None
+
+        return cast(value.Proc, val)
 
     def EraseShellFunc(self, to_del):
         # type: (str) -> None

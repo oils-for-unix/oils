@@ -1,4 +1,5 @@
 ## our_shell: ysh
+## oils_failures_allowed: 1
 
 # dynamically generate procs
 
@@ -9,10 +10,10 @@ source $[ENV.REPO_ROOT]/spec/testdata/doc-comments.sh
 pp test_ (myproc.docComment())
 pp test_ (getVar('proc-none').docComment())
 
-var f = getShFunction('f')
+var f = get(__sh_function__, 'f')
 pp test_ (f.docComment())
 
-var g = getShFunction('g')
+var g = get(__sh_function__, 'g')
 pp test_ (g.docComment())
 
 #pp proc
@@ -23,6 +24,20 @@ pp test_ (g.docComment())
 (Str)   "doc ' comment with \" quotes"
 (Null)   null
 ## END
+
+#### Mutate __sh_function__
+
+f() { echo sh-func; }
+f
+
+setvar __sh_function__.f = 42
+
+f
+
+## STDOUT:
+sh-func
+## END
+
 
 #### with eval builtin command, in global scope
 
