@@ -383,12 +383,15 @@ measure-times() {
     )
     "${time_argv[@]}"
 
+    # Try to make it more stable by running on CPU 1
+    local -a argv=( taskset -c 1 $sh_path $config_script )
+
     time_argv=(
       time-tsv --append
       "${flags[@]}"
       --field "$sh_label"
       --field "$config_script"
-      -- $sh_path $config_script
+      -- "${argv[@]}"
     )
 
     #echo "${time_argv[@]}"
