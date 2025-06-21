@@ -32,6 +32,18 @@ readonly BASE_DIR_RELATIVE=_tmp/autoconf
 readonly BASE_DIR=$REPO_ROOT/$BASE_DIR_RELATIVE
 readonly PY_CONF=$REPO_ROOT/Python-2.7.13/configure
 
+download() {
+  wget --no-clobber --directory $BASE_DIR \
+    'https://www.oilshell.org/blob/testdata/util-linux-2.40.tar.xz'
+  cd $BASE_DIR
+  tar --verbose -x --xz < util-linux-*.xz
+}
+
+deps() {
+  # gah, for util-linux
+  sudo apt-get install libsqlite3-dev
+}
+
 #
 # Trying to measure allocation/GC overhead 
 #
@@ -40,15 +52,20 @@ readonly PY_CONF=$REPO_ROOT/Python-2.7.13/configure
 #
 
 cpython-configure-tasks() {
+  local do_souffle=${1:-}
+
   local -a variants=( opt+bumpleak opt+bumproot opt )
   for v in ${variants[@]}; do
     echo "${v}${TAB}_bin/cxx-$v/osh"
   done
-  echo "opt${TAB}_bin/cxx-opt/mycpp-souffle/osh"
+
+  if test -n "$do_souffle"; then
+    echo "opt${TAB}_bin/cxx-opt/mycpp-souffle/osh"
+  fi
 }
 
 cpython-setup() {
-  cpython-configure-tasks | while read -r _ osh; do
+  cpython-configure-tasks "$@" | while read -r _ osh; do
     ninja $osh
   done
 }
@@ -102,7 +119,7 @@ measure-rusage() {
   local base_dir=$BASE_DIR/rusage
   rm -r -f -v $base_dir
 
-  shell-tasks | while read -r sh_label sh_path; do
+  measure-times-tasks | while read -r sh_label sh_path config_script; do
 
     local task_dir=$base_dir/$sh_label
 
@@ -127,7 +144,7 @@ measure-rusage() {
       time-tsv --append
       "${flags[@]}"
       --field "$sh_label"
-      -- $sh_path $PY_CONF
+      -- $sh_path $config_script
     )
 
     #echo "${time_argv[@]}"
@@ -142,11 +159,19 @@ measure-rusage() {
 # Now try strace
 #
 
-shell-tasks() {
-  echo "bash${TAB}bash"
-  echo "dash${TAB}dash"
-  echo "osh${TAB}$REPO_ROOT/_bin/cxx-opt/osh"
-  echo "osh${TAB}$REPO_ROOT/_bin/cxx-opt/mycpp-souffle/osh"
+measure-times-tasks() {
+  local do_souffle=${1:-}
+
+  for script in $PY_CONF $BASE_DIR/util-linux-2.40/configure; do
+  #for script in $BASE_DIR/util-linux-2.40/configure; do
+    echo "bash${TAB}bash${TAB}$script"
+    echo "dash${TAB}dash${TAB}$script"
+    echo "osh${TAB}$REPO_ROOT/_bin/cxx-opt/osh${TAB}$script"
+
+    if test -n "$do_souffle"; then
+      echo "osh-souffle${TAB}$REPO_ROOT/_bin/cxx-opt/mycpp-souffle/osh${TAB}$script"
+    fi
+  done
 }
 
 measure-syscalls() {
@@ -159,7 +184,7 @@ measure-syscalls() {
 
   rm -r -f -v $base_dir
 
-  shell-tasks | while read -r sh_label sh_path; do
+  measure-times-tasks | while read -r sh_label sh_path config_script; do
     local dir=$base_dir/$sh_label
     mkdir -p $dir
 
@@ -170,7 +195,7 @@ measure-syscalls() {
     #strace -o $counts -c $sh_path $PY_CONF
     # See how many external processes are started?
     #strace -o $counts -ff -e execve $sh_path $PY_CONF
-    strace -o $counts_dir/syscalls -ff $sh_path $PY_CONF
+    strace -o $counts_dir/syscalls -ff $sh_path $config_script
     popd
   done
 }
@@ -322,6 +347,9 @@ patch-pyconf() {
 }
 
 measure-times() {
+  local do_souffle=${1:-}
+  local gc_stats=${2:-}
+
   local osh=_bin/cxx-opt/osh
   ninja $osh
 
@@ -331,16 +359,17 @@ measure-times() {
   local trace_dir=$base_dir/oils-trace
   mkdir -p $trace_dir
 
-  shell-tasks | while read -r sh_label sh_path; do
+  local task_id=0
+  measure-times-tasks "$do_souffle" | while read -r sh_label sh_path config_script; do
     #case $sh_label in bash|dash) continue ;; esac
 
-    local dir=$base_dir/$sh_label
+    local dir=$base_dir/$task_id
     mkdir -p $dir
 
     pushd $dir
 
     local -a flags=(
-        --output "$base_dir/$sh_label.tsv" 
+        --output "$dir/times.tsv" 
         --rusage
     )
 
@@ -350,6 +379,7 @@ measure-times() {
       time-tsv --print-header
       "${flags[@]}"
       --field sh_label
+      --field config_script
     )
     "${time_argv[@]}"
 
@@ -357,7 +387,8 @@ measure-times() {
       time-tsv --append
       "${flags[@]}"
       --field "$sh_label"
-      -- $sh_path $PY_CONF
+      --field "$config_script"
+      -- $sh_path $config_script
     )
 
     #echo "${time_argv[@]}"
@@ -366,12 +397,19 @@ measure-times() {
     # we can miss some via NOLASTFORK optimization
       #OILS_TRACE_DIR=$trace_dir \
 
-    _OILS_GC_VERBOSE=1 OILS_GC_STATS_FD=99 \
-      SH_BENCHMARK_TIMES=$base_dir/$sh_label.times.txt \
-      "${time_argv[@]}" \
-      99>$base_dir/$sh_label.gc-stats.txt
+    if test -n "$gc_stats"; then
+      _OILS_GC_VERBOSE=1 OILS_GC_STATS_FD=99 \
+        SH_BENCHMARK_TIMES=$base_dir/$sh_label.times.txt \
+        "${time_argv[@]}" \
+        99>$base_dir/$sh_label.gc-stats.txt
+    else
+      # Not patched
+      "${time_argv[@]}"
+    fi
 
     popd
+
+    task_id=$(( task_id + 1 ))
   done
 }
 
@@ -500,19 +538,27 @@ outer-long-tsv() {
 }
 
 report-times() {
+  head $BASE_DIR/times/*/times.tsv
+  echo
+}
+
+report-times-patched() {
   head $BASE_DIR/times/*.tsv
   echo
+
+  # 2025-06: this requires patch-pyconf
   head $BASE_DIR/times/*.times.txt
   echo
 
   inner-long-tsv  | tee $BASE_DIR/inner-long.tsv
   echo
 
-  tsv-concat $BASE_DIR/times/*.tsv | tee $BASE_DIR/outer-wide.tsv
-  outer-long-tsv | tee $BASE_DIR/outer-long.tsv
-  echo
-
-  tsv-concat $BASE_DIR/{inner,outer}-long.tsv | tee $BASE_DIR/times-long.tsv
+  if false; then
+    tsv-concat $BASE_DIR/times/*.tsv | tee $BASE_DIR/outer-wide.tsv
+    outer-long-tsv | tee $BASE_DIR/outer-long.tsv
+    echo
+    tsv-concat $BASE_DIR/{inner,outer}-long.tsv | tee $BASE_DIR/times-long.tsv
+  fi
 
   compare-times
 }
