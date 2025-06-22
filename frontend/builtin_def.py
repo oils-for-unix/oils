@@ -159,7 +159,7 @@ _BUILTIN_DEF = _BuiltinDef()
 _Init(_BUILTIN_DEF)
 
 # Exposed in consts.py for completion
-BUILTIN_NAMES = [b.name for b in _BUILTIN_DEF.builtins]
+BUILTIN_NAMES = [b.name for b in _BUILTIN_DEF.builtins if b.kind != 'private']
 
 
 def All():

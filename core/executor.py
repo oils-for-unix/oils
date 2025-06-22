@@ -719,7 +719,13 @@ class ShellExecutor(vm._Executor):
 
         node = cs_part.child
 
-        # Hack for weird $(<file) construct
+        # Hack for weird $(<file) construct.
+        # TODO: This should be detected at PARSE time, and turned into
+        # word_part.Slurp.
+        # - All shells that implement it do it as a special # case.
+        # - Then document it under chap-word-lang.md
+        # - In YSH, it could be $[io.slurp('myfile')]
+
         if node.tag() == command_e.Redirect:
             redir_node = cast(command.Redirect, node)
             # Detect '< file'
@@ -728,7 +734,6 @@ class ShellExecutor(vm._Executor):
                     redir_node.child.tag() == command_e.NoOp):
 
                 # Change it to __cat < file.
-                # TODO: could be 'internal cat' (issue #1013)
                 tok = lexer.DummyToken(Id.Lit_Chars, '__cat')
                 cat_word = CompoundWord([tok])
 

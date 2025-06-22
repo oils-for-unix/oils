@@ -40,7 +40,23 @@ argv.py "$foo"
 ['']
 ## END
 
-#### $(< file) with more statements
+#### `< $file` behaves like $(< file)
+
+seq 7 8 > myfile
+
+x=`< myfile`
+
+echo "[$x]"
+
+## STDOUT:
+[7
+8]
+## END
+## N-I dash/ash/yash STDOUT:
+[]
+## END
+
+#### $(< file; end) is not a special case
 
 seq 5 6 > myfile
 
@@ -83,7 +99,6 @@ end
 6
 ---
 ## END
-
 
 #### < file in pipeline and subshell doesn't work
 echo FOO > file2

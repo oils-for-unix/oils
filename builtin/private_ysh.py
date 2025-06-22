@@ -10,6 +10,7 @@ from core import vm
 from frontend import flag_util
 from mycpp import iolib
 from mycpp import mylib
+from mycpp.mylib import STDIN_FILENO
 
 import libc
 import posix_ as posix
@@ -31,15 +32,22 @@ class Cat(vm._Builtin):
         # type: (cmd_value.Argv) -> int
         chunks = []  # type: List[str]
         while True:
-            n, err_num = pyos.Read(0, 4096, chunks)
+            n, err_num = pyos.Read(STDIN_FILENO, 4096, chunks)
 
             if n < 0:
                 if err_num == EINTR:
+                    # Note: When running external cat, shells don't run traps
+                    # until after cat is done.  It seems like they could?  In
+                    # any case, we don't do it here, which makes it
+                    # inconsistent with 'builtin sleep'.  'sleep' was modelled
+                    # after 'read -t N'.  Could have shopt for this?  Maybe fix
+                    # it in YSH?
+
                     pass  # retry
                 else:
                     # Like the top level IOError handler
-                    e_die_status(2,
-                                 'osh I/O error: %s' % posix.strerror(err_num))
+                    e_die_status(
+                        2, 'oils I/O error: %s' % posix.strerror(err_num))
                     # TODO: Maybe just return 1?
 
             elif n == 0:  # EOF

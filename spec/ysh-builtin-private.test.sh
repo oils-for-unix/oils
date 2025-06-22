@@ -380,3 +380,12 @@ echo TODO
 
 ## N-I bash STDOUT:
 ## END
+
+#### compgen -A builtin doesn't find private builtins
+
+compgen -A builtin slee
+echo status=$?
+
+## STDOUT:
+status=1
+## END

@@ -127,8 +127,7 @@ def _ReadN(num_bytes, cmd_ev):
     chunks = []  # type: List[str]
     bytes_left = num_bytes
     while bytes_left > 0:
-        n, err_num = pyos.Read(STDIN_FILENO, bytes_left,
-                               chunks)  # read up to n bytes
+        n, err_num = pyos.Read(STDIN_FILENO, bytes_left, chunks)
 
         if n < 0:
             if err_num == EINTR:

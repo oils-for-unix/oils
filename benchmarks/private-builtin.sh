@@ -117,6 +117,20 @@ cat_demo_all() {
   done
 }
 
+num_procs() {
+  local dir=_tmp/priv
+
+  # OSH should not fork!  Bad!
+  rm -r -f $dir
+
+  for sh in bash mksh ksh zsh osh; do
+    local sh_dir=$dir/$sh
+    mkdir -p $sh_dir
+    strace -ff -o $sh_dir/trace -- $sh -c 's=$(<configure); echo ${#s}'
+  done
+  tree $dir
+}
+
 # TODO:
 # - enable --private cat
 # - and then maybe shopt --set optimize_extern
