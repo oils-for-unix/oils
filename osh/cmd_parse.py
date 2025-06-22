@@ -19,7 +19,6 @@ from _devbuild.gen.syntax_asdl import (
     parse_result,
     parse_result_t,
     command,
-    command_e,
     command_t,
     condition,
     condition_t,

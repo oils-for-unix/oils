@@ -827,7 +827,6 @@ def RunCases(cases,
 
             actual = {}
             actual['stdout'], actual['stderr'] = p.communicate()
-
             actual['status'] = p.wait()
 
             if opts.timeout_bin and os.path.exists(timeout_file):
