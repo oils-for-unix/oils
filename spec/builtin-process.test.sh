@@ -68,7 +68,7 @@ echo status=$?
 
 #### time with brace group argument
 
-err=_tmp/time-$(basename $SH).txt
+err=time-$(basename $SH).txt
 {
   time {
     sleep 0.01

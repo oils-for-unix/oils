@@ -68,7 +68,6 @@ abc=
 
 #### Evaluation order of redirect and ${undef?error}
 # http://landley.net/notes.html#12-06-2020
-rm *
 
 rm -f walrus
 $SH -c 'X=${x?bc} > walrus'
@@ -93,11 +92,11 @@ ha
 ## END
 
 #### dynamic glob - http://landley.net/notes.html#08-05-2020
-rm *  # setup
+touch foo
 X='*'; echo $X
 echo "*"*".?z"
 ## STDOUT:
-_tmp
+foo
 **.?z
 ## END
 ## BUG zsh status: 1

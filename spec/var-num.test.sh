@@ -29,14 +29,14 @@ echo 'echo $0' | $SH -i | grep -o 'sh$'
 ## stdout: sh
 
 #### $0 with filename
-s=_tmp/dollar0
+s=dollar0
 echo 'echo $0' > $s
 chmod +x $s
 $SH $s
-## stdout: _tmp/dollar0
+## stdout: dollar0
 
 #### $@ with filename
-s=_tmp/dollar0
+s=dollar0
 echo 'echo $@' > $s
 chmod +x $s
 $SH $s a b c

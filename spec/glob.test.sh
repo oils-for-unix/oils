@@ -1,5 +1,6 @@
 ## oils_failures_allowed: 2
 ## compare_shells: bash dash mksh ash
+## legacy_tmp_dir: yes
 
 #### glob double quote escape
 echo "*.sh"

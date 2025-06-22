@@ -1,4 +1,5 @@
 ## compare_shells: dash bash mksh
+## legacy_tmp_dir: yes
 
 # Some nonsensical combinations which can all be detected at PARSE TIME.
 # All shells allow these, but right now OSH disallowed.

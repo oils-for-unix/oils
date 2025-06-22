@@ -51,12 +51,14 @@ argv.py ${undef:-hi} ${undef:-'a b'} "${undef:-c d}" "${un:-"e f"}" "${un:-'g h'
 ## stdout: ['hi', 'a b', 'c d', 'e f', "'g h'"]
 
 #### Globbing after splitting
+mkdir -p _tmp
 touch _tmp/foo.gg _tmp/bar.gg _tmp/foo.hh
 pat='_tmp/*.hh _tmp/*.gg'
 argv.py $pat
 ## stdout: ['_tmp/foo.hh', '_tmp/bar.gg', '_tmp/foo.gg']
 
 #### Globbing escaping
+mkdir -p _tmp
 touch '_tmp/[bc]ar.mm' # file that looks like a glob pattern
 touch _tmp/bar.mm _tmp/car.mm
 argv.py '_tmp/[bc]'*.mm - _tmp/?ar.mm

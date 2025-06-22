@@ -1,6 +1,6 @@
-
 ## oils_failures_allowed: 14
 ## compare_shells: bash
+## legacy_tmp_dir: true
 
 #### Don't glob flags on file system with GLOBIGNORE
 # This is a bash-specific extension.

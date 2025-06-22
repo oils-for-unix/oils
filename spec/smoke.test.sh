@@ -70,17 +70,17 @@ cat $TMP/expr3.txt
 ## stderr-json: ""
 
 #### Redirect with builtin
-echo hi > _tmp/hi.txt
-cat _tmp/hi.txt
+echo hi > hi.txt
+cat hi.txt
 ## stdout: hi
 
 #### Here doc with redirect
-cat <<EOF >_tmp/smoke1.txt
+cat <<EOF >smoke1.txt
 one
 two
 EOF
-wc -c _tmp/smoke1.txt
-## stdout: 8 _tmp/smoke1.txt
+wc -c smoke1.txt
+## stdout: 8 smoke1.txt
 
 #### "$@" "$*"
 fun () {

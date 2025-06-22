@@ -89,6 +89,7 @@ status=1
 #### command -v doesn't find non-executable file
 # PATH resolution is different
 
+mkdir -p _tmp
 PATH="_tmp:$PATH"
 touch _tmp/non-executable _tmp/executable
 chmod +x _tmp/executable

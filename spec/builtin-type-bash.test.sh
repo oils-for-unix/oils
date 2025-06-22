@@ -1,5 +1,6 @@
 ## oils_failures_allowed: 0
 ## compare_shells: bash
+## legacy_tmp_dir: yes
 
 #### type -t -> function
 f() { echo hi; }

@@ -379,10 +379,10 @@ done
 ## END
 
 #### glob within array yields separate elements
-touch _tmp/y.Y _tmp/yy.Y
-a=(_tmp/*.Y)
+touch y.Y yy.Y
+a=(*.Y)
 argv.py "${a[@]}"
-## stdout: ['_tmp/y.Y', '_tmp/yy.Y']
+## stdout: ['y.Y', 'yy.Y']
 
 #### declare array and then append
 declare -a array

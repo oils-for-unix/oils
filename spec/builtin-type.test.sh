@@ -16,6 +16,7 @@ cd is a shell builtin
 
 #### type -> alias external
 
+mkdir -p _tmp
 shopt -s expand_aliases || true  # bash
 
 alias ll='ls -l'
@@ -50,6 +51,7 @@ date is a tracked alias for _tmp/date
 
 #### type of relative path
 
+mkdir -p _tmp
 touch _tmp/file _tmp/ex
 chmod +x _tmp/ex
 

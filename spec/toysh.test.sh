@@ -22,7 +22,6 @@ a b c d
 ## N-I dash/mksh/zsh stdout-json: ""
 
 #### extglob $IFS 1
-rm *  # setup
 # http://landley.net/notes.html#12-06-2020
 shopt -s extglob
 
@@ -38,12 +37,12 @@ echo $ABC
 ## STDOUT:
 abc)d
 ab+( ?d)
-_tmp abc)d
+abc)d
 ## END
 ## OK mksh STDOUT:
 abc)d
 ab+(  ?d)
-_tmp abc)d
+abc)d
 ## END
 
 #### extglob $IFS 2
@@ -60,8 +59,6 @@ IFS=x; ABC=cxd; for i in +($ABC); do echo =$i=; done
 #### char class / extglob
 # http://landley.net/notes.html#14-05-2020
 shopt -s extglob
-
-rm *
 
 touch l; echo [hello"]"
 

@@ -99,9 +99,9 @@ arith: 3
 #### Here doc in middle.  And redirects in the middle.
 # This isn't specified by the POSIX grammar, but it's accepted by both dash and
 # bash!
-echo foo > _tmp/foo.txt
-echo bar > _tmp/bar.txt
-cat <<EOF 1>&2 _tmp/foo.txt - _tmp/bar.txt
+echo foo > foo.txt
+echo bar > bar.txt
+cat <<EOF 1>&2 foo.txt - bar.txt
 here
 EOF
 ## STDERR:

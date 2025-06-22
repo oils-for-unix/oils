@@ -343,6 +343,7 @@ _META_FIELDS = [
     'tags',
     'oils_failures_allowed',
     'oils_cpp_failures_allowed',
+    'legacy_tmp_dir',
 ]
 
 
@@ -662,7 +663,7 @@ def _TimedOut(status):
     return status == -9
 
 
-def _PrepareCaseTempDir(case_tmp_dir):
+def _PrepareCaseTempDir(case_tmp_dir, legacy_tmp_dir=False):
     # Clean up after the previous run.  (The previous run doesn't clean
     # up after itself, because it's useful to manually inspect the
     # state.)
@@ -679,16 +680,21 @@ def _PrepareCaseTempDir(case_tmp_dir):
             raise
 
     # Some tests assume _tmp exists
-    # TODO: get rid of this in the common case, to save inodes!  I guess have
-    # an opt-in setting per FILE, like make_underscore_tmp: true.
-    try:
-        os.mkdir(os.path.join(case_tmp_dir, '_tmp'))
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
+    if legacy_tmp_dir:
+        try:
+            os.mkdir(os.path.join(case_tmp_dir, '_tmp'))
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
 
 
-def RunCases(cases, case_predicate, shells, env, out, opts):
+def RunCases(cases,
+             case_predicate,
+             shells,
+             env,
+             out,
+             opts,
+             legacy_tmp_dir=False):
     """Run a list of test 'cases' for all 'shells' and write output to
     'out'."""
     if opts.trace:
@@ -797,7 +803,7 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
             tmp_base = os.path.normpath(opts.tmp_env)  # no . or ..
             case_tmp_dir = os.path.join(tmp_base, '%02d-%s' % (i, sh_label))
 
-            _PrepareCaseTempDir(case_tmp_dir)
+            _PrepareCaseTempDir(case_tmp_dir, legacy_tmp_dir=legacy_tmp_dir)
 
             case_env['TMP'] = case_tmp_dir
 
@@ -1490,7 +1496,13 @@ def main(argv):
     out.BeginCases(os.path.basename(test_file))
 
     env = MakeTestEnv(opts)
-    stats = RunCases(cases, case_predicate, shell_pairs, env, out, opts)
+    stats = RunCases(cases,
+                     case_predicate,
+                     shell_pairs,
+                     env,
+                     out,
+                     opts,
+                     legacy_tmp_dir=bool(file_metadata.get('legacy_tmp_dir')))
 
     out.EndCases([sh_label for sh_label, _ in shell_pairs], stats)
 
