@@ -662,6 +662,32 @@ def _TimedOut(status):
     return status == -9
 
 
+def _PrepareCaseTempDir(case_tmp_dir):
+    # Clean up after the previous run.  (The previous run doesn't clean
+    # up after itself, because it's useful to manually inspect the
+    # state.)
+    try:
+        shutil.rmtree(case_tmp_dir)
+    except OSError as e:
+        #log('Error cleaning up %r: %s', case_tmp_dir, e)
+        pass
+
+    try:
+        os.makedirs(case_tmp_dir)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+
+    # Some tests assume _tmp exists
+    # TODO: get rid of this in the common case, to save inodes!  I guess have
+    # an opt-in setting per FILE, like make_underscore_tmp: true.
+    try:
+        os.mkdir(os.path.join(case_tmp_dir, '_tmp'))
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+
+
 def RunCases(cases, case_predicate, shells, env, out, opts):
     """Run a list of test 'cases' for all 'shells' and write output to
     'out'."""
@@ -771,20 +797,7 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
             tmp_base = os.path.normpath(opts.tmp_env)  # no . or ..
             case_tmp_dir = os.path.join(tmp_base, '%02d-%s' % (i, sh_label))
 
-            try:
-                os.makedirs(case_tmp_dir)
-            except OSError as e:
-                if e.errno != errno.EEXIST:
-                    raise
-
-            # Some tests assume _tmp exists
-            # TODO: get rid of this in the common case, to save inodes!  I guess have
-            # an opt-in setting per FILE, like make_underscore_tmp: true.
-            try:
-                os.mkdir(os.path.join(case_tmp_dir, '_tmp'))
-            except OSError as e:
-                if e.errno != errno.EEXIST:
-                    raise
+            _PrepareCaseTempDir(case_tmp_dir)
 
             case_env['TMP'] = case_tmp_dir
 
