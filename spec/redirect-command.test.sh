@@ -1,5 +1,5 @@
 ## oils_failures_allowed: 0
-## compare_shells: bash dash mksh
+## compare_shells: bash dash mksh zsh
 
 # Notes:
 # - ash is just like dash, so don't bother testing
@@ -19,27 +19,34 @@ status=1
 status=0
 ## END
 
+## BUG zsh STDOUT:
+status=1
+## END
+
 # regression for OSH
 ## stderr-json: ""
 
 #### $(< $file) yields the contents of the file
 
-echo FOO > myfile
+seq 2 3 > myfile
 foo=$(< myfile)
-echo $foo
+argv.py "$foo"
 
 ## STDOUT:
-FOO
+['2\n3']
 ## END
 
 ## N-I dash/ash/yash STDOUT:
-
+['']
 ## END
 
 #### $(< file) with more statements
 
-# note that it doesn't do this without a command sub!
-# It's apparently a special case in bash, mksh, and zsh?
+seq 5 6 > myfile
+
+# zsh prints the file each time!
+# other shells do nothing?
+
 foo=$(echo begin; < myfile)
 echo $foo
 echo ---
@@ -60,16 +67,20 @@ end
 
 ---
 ## END
-# weird, zsh behaves differently
-## OK zsh STDOUT:
+
+## BUG zsh STDOUT:
 begin
-FOO
+5
+6
 ---
-FOO
+5
+6
 end
 ---
-FOO
-FOO
+5
+6
+5
+6
 ---
 ## END
 
@@ -84,7 +95,11 @@ echo end
 ## STDOUT:
 end
 ## END
-
+## BUG zsh STDOUT:
+foo
+FOO
+end
+## END
 
 #### Leading redirect in a simple command
 echo hello >$TMP/hello.txt  # temporary fix
@@ -117,6 +132,8 @@ tac $TMP/out.txt
 ## STDOUT:
 bar
 foo
+## END
+## BUG zsh STDOUT:
 ## END
 
 #### Redirect in assignment
@@ -265,6 +282,12 @@ done
 cat $TMP/redirect2.txt
 ## status: 2
 ## OK mksh status: 1
+## BUG zsh status: 0
+## BUG zsh STDOUT:
+1
+2
+3
+## END
 
 #### Brace group redirect
 # Suffix works, but prefix does NOT work.
