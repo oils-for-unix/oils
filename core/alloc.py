@@ -12,67 +12,6 @@ from typing import List, Dict, Any
 _ = log
 
 
-def zz_SnipCodeBlock(left, right, lines, inclusive=False):
-    # type: (Token, Token, List[SourceLine], bool) -> str
-    """Return the code string between left and right tokens
-
-    exclusive (default):   { } are not included.
-    inclusive:             f() { echo hi; }
-
-    Used for Command.sourceCode() and Hay evaluation. Similar to SnipCodeString().
-    """
-    if inclusive:
-        ileft = left.col
-        iright = right.col + right.length
-    else:
-        ileft = left.col + left.length
-        iright = right.col
-
-    pieces = []  # type: List[str]
-
-    # Pad with spaces so column numbers aren't off
-    pieces.append(' ' * ileft)
-
-    if left.line == right.line:
-        for li in lines:
-            if li == left.line:
-                piece = li.content[ileft:iright]
-                pieces.append(piece)
-        return ''.join(pieces)
-
-    saving = False
-    found_left = False
-    found_right = False
-    for li in lines:
-        if li == left.line:
-            found_left = True
-            saving = True
-
-            # Save everything after the left token
-            piece = li.content[ileft:]
-            pieces.append(piece)
-            #log('   %r', piece)
-            continue
-
-        if li == right.line:
-            found_right = True
-
-            piece = li.content[:iright]
-            pieces.append(piece)
-            #log('   %r', piece)
-
-            saving = False
-            break
-
-        if saving:
-            pieces.append(li.content)
-            #log('   %r', li.content)
-
-    assert found_left, "Couldn't find left token"
-    assert found_right, "Couldn't find right token"
-    return ''.join(pieces)
-
-
 class ctx_SourceCode(object):
 
     def __init__(self, arena, src):
@@ -145,58 +84,6 @@ class Arena(object):
         """
         #log("discarding %d lines", len(self.lines_list))
         del self.lines_list[:]
-
-    def zz_SaveLinesAndDiscard(self, left, right):
-        # type: (Token, Token) -> List[SourceLine]
-        """Save the lines between two tokens, e.g. for { and }
-
-        Why?
-        - In between { }, we want to preserve lines not pointed to by a token, e.g.
-          comment lines.
-        - But we don't want to save all lines in an interactive shell:
-          echo 1
-          echo 2
-          ...
-          echo 500000
-          echo 500001
-
-        The lines should be freed after execution takes place.
-        """
-        #log('*** Saving lines between %r and %r', left, right)
-
-        saved = []  # type: List[SourceLine]
-        saving = False
-        for li in self.lines_list:
-            if li == left.line:
-                saving = True
-
-            # These lines are PERMANENT, and never deleted.  What if you overwrite a
-            # function name?  You might want to save those in a the function record
-            # ITSELF.
-            #
-            # This is for INLINE hay blocks that can be evaluated at any point.  In
-            # contrast, parse_hay(other_file) uses ParseWholeFile, and we could save
-            # all lines.
-
-            # TODO: consider creating a new Arena for each CommandParser?  Or rename itj
-            # to 'BackingLines' or something.
-
-            # TODO: We should mutate li.line_id here so it's the index into
-            # saved_lines?
-            if saving:
-                saved.append(li)
-                #log('   %r', li.val)
-
-            if li == right.line:
-                saving = False
-                break
-
-        #log('*** SAVED %d lines', len(saved))
-
-        self.DiscardLines()
-        return saved
-
-        #log('SAVED = %s', [line.val for line in self.saved_lines])
 
     def SnipCodeString(self, left, right, inclusive=True):
         # type: (Token, Token, bool) -> str

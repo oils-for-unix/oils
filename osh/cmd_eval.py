@@ -1799,37 +1799,38 @@ class CommandEvaluator(object):
         # Manual GC point before every statement
         mylib.MaybeCollect()
 
-    def _DispatchFast(self, node, cmd_st):
-        # type: (command_t, CommandStatus) -> int
-        """
-        TODO: protoype YSH fast_cmd_t
+    if 0:
+        def _DispatchFast(self, node, cmd_st):
+            # type: (command_t, CommandStatus) -> int
+            """
+            TODO: protoype YSH fast_cmd_t
 
-        var x = 5
-        while (x > 0) {
-          echo "x = $x"
-          if (x === 3) {
-            break
-          }
-          setvar x -= 1
-        }
+            var x = 5
+            while (x > 0) {
+              echo "x = $x"
+              if (x === 3) {
+                break
+              }
+              setvar x -= 1
+            }
 
-        Nodes to compile:
-            While, If, ControlFlow
-            While has BraceGroup body though
-        New nodes:
-            Jump(int index)   # index into what?
-            JumpIfFalse( ? )  # this usually takes the top of stack?
+            Nodes to compile:
+                While, If, ControlFlow
+                While has BraceGroup body though
+            New nodes:
+                Jump(int index)   # index into what?
+                JumpIfFalse( ? )  # this usually takes the top of stack?
 
-        Nodes that stay the same:
-            VarDecl, Mutation, Simple
+            Nodes that stay the same:
+                VarDecl, Mutation, Simple
 
-        Do a very simple interpretation, ignoring ctx_*
+            Do a very simple interpretation, ignoring ctx_*
 
-        And then introduce mem.exec_stack ?  These are like the Python VMs frame.
+            And then introduce mem.exec_stack ?  These are like the Python VMs frame.
 
-        - Second option: return an enum
-        """
-        pass
+            - Second option: return an enum
+            """
+            pass
 
     def _Dispatch(self, node, cmd_st):
         # type: (command_t, CommandStatus) -> int
