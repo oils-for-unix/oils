@@ -731,8 +731,7 @@ def Main(
     # (pp output format isn't stable)
     b[builtin_i.pp] = io_ysh.Pp(expr_ev, mem, errfmt, procs, arena)
 
-    # Input
-    cat = private_ysh.Cat()  # for $(<file)
+    cat = private_ysh.Cat(errfmt)
     b[builtin_i.cat] = cat
     b[builtin_i.read] = read_osh.Read(splitter, mem, parse_ctx, cmd_ev, errfmt)
 

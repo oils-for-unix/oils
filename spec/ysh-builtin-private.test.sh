@@ -1,5 +1,5 @@
 ## compare_shells: bash
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 
 #### invoke usage
 case $SH in bash) exit ;; esac
@@ -371,6 +371,50 @@ echo ---
 ---
 ## END
 
+#### builtin cat usage
+case $SH in
+  *osh) prefix='builtin' ;;
+  *) prefix='' ;;
+esac
+
+$prefix cat --bad >/dev/null
+if test "$?" != 0; then
+  echo ok
+fi
+
+$prefix cat -z
+if test "$?" != 0; then
+  echo ok
+fi
+
+seq 3 4 | $prefix cat --
+echo status=$?
+
+## STDOUT:
+ok
+ok
+3
+4
+status=0
+## END
+
+#### builtin cat non nonexistent file
+case $SH in
+  *osh) prefix='builtin' ;;
+  *) prefix='' ;;
+esac
+
+echo FOO > foo
+
+$prefix cat foo nonexistent foo
+echo status=$?
+
+## STDOUT:
+FOO
+FOO
+status=1
+## END
+
 #### builtin cat accept - for stdin
 case $SH in
   *osh) prefix='builtin' ;;
@@ -385,14 +429,6 @@ echo ---
 # second - is a no-op
 seq 5 6 | $prefix cat - -
 
-echo ---
-
-$prefix cat --help >/dev/null
-echo status=$?
-
-$prefix cat -z
-echo status=$?
-
 ## STDOUT:
 FOO
 3
@@ -402,9 +438,6 @@ FOO
 ---
 5
 6
----
-status=0
-status=1
 ## END
 
 #### builtin readlink

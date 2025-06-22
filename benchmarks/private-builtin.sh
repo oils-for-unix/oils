@@ -26,10 +26,6 @@ true_builtin() {
 
 true_extern() {
   repeat_it 1000 /bin/true
-  return
-  for i in {1..1000}; do
-    /bin/true
-  done
 }
 
 my_time() {
@@ -90,7 +86,10 @@ cat_builtin() {
 }
 
 cat_extern() {
-  repeat_it 1000 cat _tmp/tiny
+  local prefix=${1:-}
+
+  # unquoted $prefix
+  repeat_it 1000 $prefix cat _tmp/tiny
 }
 
 cat_demo() {
@@ -98,8 +97,15 @@ cat_demo() {
 
   echo 'tiny file' > _tmp/tiny
 
+  local prefix
+  case $sh in 
+    *osh) prefix=builtin ;;
+    *) prefix='' ;;
+  esac
+
   echo extern
-  my_time $sh $0 cat_extern > /dev/null
+
+  my_time $sh $0 cat_extern "$prefix" > /dev/null
 
   # This is really fast in bash zsh mksh ksh, and gives correct answer of 9000
   # as fast as builtin
@@ -110,7 +116,10 @@ cat_demo() {
 }
 
 cat_demo_all() {
-  for sh in bash mksh ksh zsh osh; do
+  local osh=_bin/cxx-opt/osh
+  ninja $osh
+
+  for sh in bash mksh ksh zsh $osh; do
     echo "=== $sh"
     cat_demo $sh
     echo

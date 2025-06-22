@@ -6,14 +6,19 @@ import time as time_
 from core import error
 from core.error import e_die_status
 from core import pyos
+from core import pyutil
 from core import vm
+from display import ui
 from frontend import flag_util
 from mycpp import iolib
 from mycpp import mylib
-from mycpp.mylib import STDIN_FILENO
+from mycpp.mylib import STDIN_FILENO, log
 
 import libc
 import posix_ as posix
+from posix_ import O_RDONLY
+
+_ = log
 
 from typing import List, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -24,15 +29,18 @@ if TYPE_CHECKING:
 class Cat(vm._Builtin):
     """Internal implementation detail for $(< file)."""
 
-    def __init__(self):
-        # type: () -> None
+    def __init__(self, errfmt):
+        # type: (ui.ErrorFormatter) -> None
         vm._Builtin.__init__(self)
+        self.errfmt = errfmt
+        self.stdout_ = mylib.Stdout()
 
-    def Run(self, cmd_val):
-        # type: (cmd_value.Argv) -> int
+    def _CatFile(self, fd):
+        # type: (int) -> int
+
         chunks = []  # type: List[str]
         while True:
-            n, err_num = pyos.Read(STDIN_FILENO, 4096, chunks)
+            n, err_num = pyos.Read(fd, 4096, chunks)
 
             if n < 0:
                 if err_num == EINTR:
@@ -56,10 +64,47 @@ class Cat(vm._Builtin):
             else:
                 # Stream it to stdout
                 assert len(chunks) == 1
-                mylib.Stdout().write(chunks[0])
+                self.stdout_.write(chunks[0])
                 chunks.pop()
 
         return 0
+
+    def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        _, arg_r = flag_util.ParseCmdVal('cat', cmd_val)
+
+        argv, locs = arg_r.Rest2()
+        #log('argv %r', argv)
+
+        if len(argv) == 0:
+            return self._CatFile(STDIN_FILENO)
+
+        status = 0
+        for i, path in enumerate(argv):
+            if path == '-':
+                st = self._CatFile(STDIN_FILENO)
+                if st != 0:
+                    status = st
+                continue
+
+            # 0o666 is affected by umask, all shells use it.
+            opened = False
+            try:
+                my_fd = posix.open(path, O_RDONLY, 0)
+                opened = True
+            except (IOError, OSError) as e:
+                self.errfmt.Print_("Can't open %r: %s" %
+                                   (path, pyutil.strerror(e)),
+                                   blame_loc=locs[i])
+                status = 1
+
+            if opened:
+                st = self._CatFile(my_fd)
+                posix.close(my_fd)
+                if st != 0:
+                    status = st
+
+        return status
 
 
 class Sleep(vm._Builtin):

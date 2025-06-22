@@ -510,6 +510,8 @@ EXTERN_SPEC = FlagSpec('extern')
 
 SLEEP_SPEC = FlagSpec('sleep')
 
+CAT_SPEC = FlagSpec('cat')
+
 WRITE_SPEC = FlagSpec('write')
 WRITE_SPEC.LongFlag('--sep',
                     args.String,
