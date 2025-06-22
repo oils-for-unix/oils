@@ -107,7 +107,10 @@ strip-op-char-class() { _compare $GOLD_DIR/strip-op-char-class.sh; }
 FAIL-test-echo-e() { _compare $GOLD_DIR/echo-e.sh; }
 
 test-dollar-sq() { _compare $GOLD_DIR/dollar-sq.sh; }
-# 2025-06: fix sort order issue that doesn't show up in CI (related to locale)
+
+# 2025-06: This is a sort order issue that doesn't show up in CI (related to
+#          LC_COLLATE)
+#          I reproduced this issue in spec/glob case #39
 TODO-test-word-eval() { _compare $GOLD_DIR/word-eval.sh; }
 
 test-abuild() {

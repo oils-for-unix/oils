@@ -17,7 +17,10 @@ myarray=('w x' 'y*z', 'bin')
 space=' '
 glob='*h b*'  # anything that ends with h, then anything that begins with b
 
-spec/bin/argv.py -"$@"-$space-"$space-${myarray[@]}"/$glob
+#spec/bin/argv.py -"$@"-$space-"$space-${myarray[@]}"/$glob
+for item in -"$@"-$space-"$space-${myarray[@]}"/$glob; do
+  echo "$item"
+done
 
 # ['-a b', 'c d-', '- -w x', 'y z,', 'bin/opypy-osh', 'bin/osh', 'bin/sh', 'benchmarks', 'bin', 'build']
 

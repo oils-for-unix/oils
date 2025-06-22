@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 ## compare_shells: bash dash mksh ash
 ## legacy_tmp_dir: yes
 
@@ -395,4 +395,41 @@ other
 ## N-I dash/mksh/ash STDOUT:
 other
 other
+## END
+
+#### Glob ordering respects LC_COLLATE
+
+# bug from test/gold
+# mksh ksh osh - hello-test.sh comes first
+# bash - hello_preamble.h comes first
+#
+# But ord('_') == 95 
+#     ord('-') == 45
+
+# https://serverfault.com/questions/122737/in-bash-are-wildcard-expansions-guaranteed-to-be-in-order
+
+touch hello hello.py hello_preamble.sh hello-test.sh
+echo h*
+
+# Spec tests set LC_ALL=C.UTF_8
+unset LC_ALL
+
+# the en_US does it
+LC_COLLATE=en_US.UTF-8
+#LC_COLLATE=C.UTF-8
+
+echo h*
+
+# Doesn't work, probably because
+#LC_COLLATE=en_US.UTF-8
+#export LC_COLLATE=en_US.UTF-8
+
+## STDOUT:
+hello hello-test.sh hello.py hello_preamble.sh
+hello hello_preamble.sh hello.py hello-test.sh
+## END
+
+## N-I dash/mksh/ash STDOUT:
+hello hello-test.sh hello.py hello_preamble.sh
+hello hello-test.sh hello.py hello_preamble.sh
 ## END
