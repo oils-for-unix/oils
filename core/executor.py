@@ -13,6 +13,7 @@ from _devbuild.gen.syntax_asdl import (
     CompoundWord,
     loc,
     loc_t,
+    word_t,
 )
 from builtin import hay_ysh
 from core import dev
@@ -355,6 +356,11 @@ class ShellExecutor(vm._Executor):
         # any pipelines started within subshells run in their parent's process
         # group, we only need one pointer here, not some collection.
         self.fg_pipeline = None  # type: Optional[process.Pipeline]
+
+        tok1 = lexer.DummyToken(Id.Lit_Chars, 'builtin')
+        tok2 = lexer.DummyToken(Id.Lit_Chars, 'cat')
+        self.builtin_cat_words = [CompoundWord([tok1]),
+                                  CompoundWord([tok2])]  # type: List[word_t]
 
     def _MakeProcess(self, node, inherit_errexit, inherit_errtrace):
         # type: (command_t, bool, bool) -> process.Process
@@ -733,14 +739,11 @@ class ShellExecutor(vm._Executor):
                     redir_node.redirects[0].op.id == Id.Redir_Less and
                     redir_node.child.tag() == command_e.NoOp):
 
-                # Change it to __cat < file.
-                tok = lexer.DummyToken(Id.Lit_Chars, '__cat')
-                cat_word = CompoundWord([tok])
-
-                # Blame < because __cat has no location
+                # Change it to builtin cat < file.
+                # Blame < because 'builtin cat' has no location
                 blame_tok = redir_node.redirects[0].op
-                simple = command.Simple(blame_tok, [], [cat_word], None, None,
-                                        False)
+                simple = command.Simple(blame_tok, [], self.builtin_cat_words,
+                                        None, None, False)
 
                 # MUTATE redir node so it's like $(<file _cat)
                 redir_node.child = simple

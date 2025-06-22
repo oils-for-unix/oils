@@ -147,9 +147,7 @@ def _Init(b):
     b.Add('source-guard', enum_name='source_guard')
     b.Add('is-main', enum_name='is_main')
 
-    # Implementation detail of $(<file)
-    # TODO: change to 'internal cat' (issue 1013)
-    b.Add('__cat', enum_name='cat')
+    b.Add('cat', enum_name='cat', kind='private')
 
     b.Add('sleep', kind='private')
 

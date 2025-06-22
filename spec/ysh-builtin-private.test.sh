@@ -351,19 +351,61 @@ ok
 status=0
 ## END
 
-#### builtin cat
-case $SH in bash) exit ;; esac
+#### builtin cat 
 
-seq 3 | builtin cat
+case $SH in
+  *osh) prefix='builtin' ;;
+  *) prefix='' ;;
+esac
+
+seq 2 3 | $prefix cat
+echo ---
+
+# from file
+#echo FOO > foo
+#$prefix cat foo foo
 
 ## STDOUT:
-1
 2
 3
-## END
-## N-I bash STDOUT:
+---
 ## END
 
+#### builtin cat accept - for stdin
+case $SH in
+  *osh) prefix='builtin' ;;
+  *) prefix='' ;;
+esac
+
+echo FOO > foo
+seq 3 4 | $prefix cat foo - foo foo
+
+echo ---
+
+# second - is a no-op
+seq 5 6 | $prefix cat - -
+
+echo ---
+
+$prefix cat --help >/dev/null
+echo status=$?
+
+$prefix cat -z
+echo status=$?
+
+## STDOUT:
+FOO
+3
+4
+FOO
+FOO
+---
+5
+6
+---
+status=0
+status=1
+## END
 
 #### builtin readlink
 case $SH in bash) exit ;; esac
