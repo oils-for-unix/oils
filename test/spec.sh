@@ -290,6 +290,10 @@ func-parsing() {
   test/spec-py.sh run-file func-parsing "$@"
 }
 
+glob-bash() {
+  test/spec-py.sh run-file glob-bash "$@"
+}
+
 globignore() {
   test/spec-py.sh run-file globignore "$@"
 }

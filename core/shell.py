@@ -49,6 +49,7 @@ from builtin import meta_oils
 from builtin import misc_osh
 from builtin import module_ysh
 from builtin import printf_osh
+from builtin import private_ysh
 from builtin import process_osh
 from builtin import pure_osh
 from builtin import pure_ysh
@@ -731,12 +732,12 @@ def Main(
     b[builtin_i.pp] = io_ysh.Pp(expr_ev, mem, errfmt, procs, arena)
 
     # Input
-    cat = io_osh.Cat()  # for $(<file)
+    cat = private_ysh.Cat()  # for $(<file)
     b[builtin_i.cat] = cat
     b[builtin_i.read] = read_osh.Read(splitter, mem, parse_ctx, cmd_ev, errfmt)
 
     # PRIVATE builtin
-    b[builtin_i.sleep] = io_osh.Sleep(cmd_ev, signal_safe)
+    b[builtin_i.sleep] = private_ysh.Sleep(cmd_ev, signal_safe)
 
     mapfile = io_osh.MapFile(mem, errfmt, cmd_ev)
     b[builtin_i.mapfile] = mapfile
