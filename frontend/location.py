@@ -182,6 +182,23 @@ def TokenForCommand(node):
     return None
 
 
+def RightTokenForCommand(node):
+    # type: (command_t) -> Optional[Token]
+    """Used for extracting function bodies - SnipCodeString()"""
+    UP_node = node  # type: command_t
+
+    with tagswitch(node) as case:
+        if case(command_e.BraceGroup):
+            node = cast(BraceGroup, UP_node)
+            return node.right  # } token
+        elif case(command_e.Subshell):
+            node = cast(command.Subshell, UP_node)
+            return node.right  # ( token
+        # TODO: could add more
+
+    return None
+
+
 def TokenForArith(node):
     # type: (arith_expr_t) -> Optional[Token]
     UP_node = node

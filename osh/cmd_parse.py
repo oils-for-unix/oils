@@ -253,7 +253,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
         else:
             op = assign_op_e.Equal
 
-        # Similar to SnipCodeString / SnipCodeBlock
+        # Similar to SnipCodeString
         if left_token.line == close_token.line:
             # extract what's between brackets
             s = left_token.col + left_token.length
@@ -1120,16 +1120,13 @@ class CommandParser(object):
             left_tok = location.LeftTokenForWord(words[i])
             right_tok = location.RightTokenForWord(words[-1])
 
-            # OLD CONSTRAINT
-            #assert left_tok.line_id == right_tok.line_id
-
             words_str = self.arena.SnipCodeString(left_tok, right_tok)
             expanded.append(words_str)
 
         code_str = ''.join(expanded)
 
         # Save lines into a temporary arena, so we don't break
-        # SaveLinesAndDiscard().  Similar to backticks.
+        # SnipCodeString().  Similar to backticks.
         arena = alloc.Arena()
         # TODO: arena.PushSource()?
 
@@ -2182,12 +2179,10 @@ class CommandParser(object):
 
             # Save lines for 'f() { true; }'
             # Note: we don't handle 'f() if true; then echo hi; fi
-            with tagswitch(func.body) as case:
-                if case(command_e.BraceGroup):
-                    brace_group = cast(BraceGroup, func.body)
-                    # Could be location.RightTokenForCommand
-                    func.code_str = self.arena.SnipCodeString(
-                        func.name_tok, brace_group.right)
+            right_tok = location.RightTokenForCommand(func.body)
+            if right_tok:
+                func.code_str = self.arena.SnipCodeString(
+                    func.name_tok, right_tok)
 
             return func
         else:
@@ -2230,11 +2225,9 @@ class CommandParser(object):
 
         # Save lines for 'function f { true; }'
         # Note: we don't handle 'function f if true; then echo hi; fi
-        with tagswitch(func.body) as case:
-            if case(command_e.BraceGroup):
-                brace_group = cast(BraceGroup, func.body)
-                func.code_str = self.arena.SnipCodeString(
-                    keyword_tok, brace_group.right)
+        right_tok = location.RightTokenForCommand(func.body)
+        if right_tok:
+            func.code_str = self.arena.SnipCodeString(keyword_tok, right_tok)
 
         return func
 

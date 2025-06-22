@@ -7,11 +7,6 @@
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
 cmd_eval.py -- Interpreter for the command language.
-
-Problems:
-$ < Makefile cat | < NOTES.txt head
-
-This just does head?  Last one wins.
 """
 from __future__ import print_function
 
@@ -1800,6 +1795,7 @@ class CommandEvaluator(object):
         mylib.MaybeCollect()
 
     if 0:
+
         def _DispatchFast(self, node, cmd_st):
             # type: (command_t, CommandStatus) -> int
             """

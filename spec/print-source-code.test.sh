@@ -1,5 +1,5 @@
-## compare_shells: bash-4.4 mksh
-## oils_failures_allowed: 1
+## compare_shells: bash-4.4 mksh zsh
+## oils_failures_allowed: 0
 
 #### typeset -f prints function source code
 : prefix; myfunc() { echo serialized; }
@@ -48,24 +48,16 @@ outer
 inner
 ## END
 
-#### OSH doesn't print non { } function bodies (rare)
+#### non-{ } function bodies can be serialized (rare)
+
+# TODO: we can add more of these
 
 f() ( echo 'subshell body' )
 
 code=$(typeset -f f)
 
-#$SH -c "$code; f"
-
-echo "$code"
-
+$SH -c "$code; f"
 
 ## STDOUT:
-f () 
-{ 
-    ( echo 'subshell body' )
-}
-## END
-
-## OK mksh STDOUT:
-f() ( echo "subshell body" ) 
+subshell body
 ## END
