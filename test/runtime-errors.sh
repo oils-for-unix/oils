@@ -1138,8 +1138,9 @@ test-var-op-qmark() {
   _osh-error-1 'echo ${zz:?Required}'
 }
 
-test-external_cmd_typed_args() {
-  _ysh-error-X 1 'cat ("myfile")'
+test-external-cmd-typed-args() {
+  # Note: this was exit code 1 before shopt --set rewrite_extern
+  _ysh-error-X 2 'cat ("myfile")'
 }
 
 test-arith-ops-str() {

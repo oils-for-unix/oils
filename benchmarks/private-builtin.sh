@@ -97,9 +97,10 @@ cat_demo() {
 
   echo 'tiny file' > _tmp/tiny
 
+  # shopt --set rewrite_extern means we no longer need the prefix
   local prefix
   case $sh in 
-    *osh) prefix=builtin ;;
+    #*osh) prefix=builtin ;;
     *) prefix='' ;;
   esac
 

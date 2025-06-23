@@ -4,7 +4,7 @@ from __future__ import print_function
 from errno import EINTR
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.option_asdl import builtin_i
+from _devbuild.gen.option_asdl import builtin_i, builtin_t
 from _devbuild.gen.runtime_asdl import RedirValue, trace
 from _devbuild.gen.syntax_asdl import (
     command,
@@ -27,7 +27,7 @@ from display import ui
 from frontend import consts
 from frontend import lexer
 from mycpp import mylib
-from mycpp.mylib import log, print_stderr
+from mycpp.mylib import str_switch, log, print_stderr
 from pylib import os_path
 from pylib import path_stat
 
@@ -72,13 +72,72 @@ def LookupExecutable(name, path_dirs, exec_required=True):
     return None
 
 
+def _RewriteExternToBuiltin(argv):
+    # type: (List[str]) -> builtin_t
+    """
+    This function can have false negatives, but NOT false positives.
+
+    False negative: we could have used the builtin, but didn't
+
+    False positive: 'cat -v': we tried to use the builtin for a feature it
+      doesn't support!  This is a bug
+    """
+    assert len(argv) >= 1, argv  # enforced in the executor
+
+    arg0 = argv[0]
+    i = 1
+    n = len(argv)
+    with str_switch(arg0) as case:
+        if case('cat'):
+            while i < n:
+                arg = argv[i]
+
+                # allowed: cat -
+                # allowed: cat -- foo
+                if arg in ('-', '--'):
+                    pass
+
+                # commands with flags aren't rewritten
+                elif arg.startswith('-'):
+                    return consts.NO_INDEX
+
+                i += 1
+
+            # Every arg was OK
+            return builtin_i.cat
+
+        elif case('rm'):
+            while i < n:
+                arg = argv[i]
+
+                # allowed: rm -- foo
+                # allowed: rm -f foo
+                if arg in ('--', '-f'):
+                    pass
+
+                # commands with flags aren't rewritten
+                elif arg.startswith('-'):
+                    return consts.NO_INDEX
+
+                i += 1
+
+            # enable this
+            #return builtin_i.rm
+            return consts.NO_INDEX
+
+        elif case('mv'):
+            return consts.NO_INDEX
+
+        else:
+            return consts.NO_INDEX
+
+
 class SearchPath(object):
     """For looking up files in $PATH or ENV.PATH"""
 
     def __init__(self, mem, exec_opts):
         # type: (state.Mem, optview.Exec) -> None
         self.mem = mem
-        # TODO: remove exec_opts
         self.cache = {}  # type: Dict[str, str]
 
     def _GetPath(self):
@@ -457,6 +516,14 @@ class ShellExecutor(vm._Executor):
         if builtin_id != consts.NO_INDEX:
             cmd_st.show_code = True  # this is a "leaf" for errors
             return self.RunBuiltin(builtin_id, cmd_val)
+
+        # Maybe rewrite 'cat' as 'builtin cat' !
+        # Don't do it interactively, since that can mess up job control.
+        if (self.exec_opts.rewrite_extern() and
+                not self.exec_opts.interactive()):
+            builtin_id = _RewriteExternToBuiltin(cmd_val.argv)
+            if builtin_id != consts.NO_INDEX:
+                return self.RunBuiltin(builtin_id, cmd_val)
 
         return self.RunExternal(arg0, arg0_loc, cmd_val, cmd_st, run_flags)
 

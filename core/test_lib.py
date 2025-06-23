@@ -21,6 +21,7 @@ from builtin import assign_osh
 from builtin import completion_osh
 from builtin import hay_ysh
 from builtin import io_osh
+from builtin import private_ysh
 from builtin import pure_osh
 from builtin import readline_osh
 from builtin import trap_osh
@@ -240,6 +241,7 @@ def InitCommandEvaluator(parse_ctx=None,
         builtin_i.readonly: assign_osh.Readonly(mem, arith_ev, errfmt),
     }
     builtins = {  # Lookup
+        builtin_i.cat: private_ysh.Cat(errfmt),
         builtin_i.echo: io_osh.Echo(exec_opts),
         builtin_i.shift: assign_osh.Shift(mem),
 

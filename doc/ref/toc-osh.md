@@ -195,6 +195,7 @@ X [Unsupported]   enable
   [Interactive]    emacs           vi
   [Compat]         eval_unsafe_arith            ignore_flags_not_impl
                    ignore_shopt_not_impl
+  [Optimize]       rewrite_extern
 ```
 
 <h2 id="special-var">

@@ -649,6 +649,18 @@ Private builtins are not enabled by default:
     sleep 0.1          # runs external process; private builtin not found
     builtin sleep 0.1  # runs private builtin
 
+### cat
+
+`cat` is a *private* builtin that reads from files and writes to stdout.
+
+    cat FILE+  # Read from each file, and write to stdout
+               # If the file is -, read from stdin (not the file called -)
+    cat        # equivalent to cat -
+
+Related:
+
+- [rewrite_extern](chap-option.html#rewrite_extern)
+
 ### sleep
 
 `sleep` is a *private* builtin that puts the shell process to sleep for the

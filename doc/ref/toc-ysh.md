@@ -360,6 +360,7 @@ X [External Lang] BEGIN   END   when (awk)
 </h2>
 
 ```chapter-links-option
+  [Optimize]     rewrite_extern
   [Groups]       strict:all      ysh:upgrade     ysh:all
   [YSH Details]  opts-redefine   opts-internal
 ```

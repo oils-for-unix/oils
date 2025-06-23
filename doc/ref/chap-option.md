@@ -152,6 +152,25 @@ Suppress failures from unimplemented shell options.  Example:
 
 This option can be useful for "getting past" errors while testing.
 
+## Optimize
+
+### rewrite_extern
+
+This option is on by default in OSH and YSH, and enables transparent
+optimization of external commands to builtins.
+
+For example, in Oils, [cat][] is a **private builtin**, which can be invoked by
+`builtin cat`.
+
+In certain cases, the external `cat` can be rewritten as `builtin cat`.
+
+---
+
+In interactive shells, optimizations as **never** enabled, regardless of this
+setting.
+
+[cat]: chap-builtin-cmd.html#cat
+
 ## Groups
 
 To turn OSH into YSH, we use three option groups.  Some of them allow new

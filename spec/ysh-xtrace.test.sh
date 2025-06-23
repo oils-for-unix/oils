@@ -212,7 +212,7 @@ set -x
 
 {
   : begin
-  cat <(seq 2) <(echo 1)
+  tac <(seq 3 4) <(echo 1)
   set +x
 } 2>err.txt
 
@@ -222,20 +222,20 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g; s|/fd/.|/fd/N|g' err.txt |
 #cat err.txt >&2
 
 ## STDOUT:
-1
-2
+4
+3
 1
 ## END
 
 ## STDERR:
   . 12345 builtin echo 1
-  . 12345 exec seq 2
+  . 12345 exec seq 3 4
 . builtin ':' begin
 . builtin set '+x'
 ; process 12345: status 0
 ; process 12345: status 0
 ; process 12345: status 0
-| command 12345: cat /dev/fd/N /dev/fd/N
+| command 12345: tac /dev/fd/N /dev/fd/N
 | proc sub 12345
 | proc sub 12345
 ## END
@@ -427,7 +427,7 @@ shopt --unset errexit
 set -x
 
 {
-  cat - /dev/fd/3 <<EOF 3<<EOF2
+  tac - /dev/fd/3 <<EOF 3<<EOF2
 xx
 yy
 EOF
@@ -440,12 +440,12 @@ EOF2
 sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
 
 ## STDOUT:
-xx
 yy
+xx
 zz
 ## END
 ## STDERR:
-| command 12345: cat - /dev/fd/3
+| command 12345: tac - /dev/fd/3
 ; process 12345: status 0
 . builtin set '+x'
 ## END

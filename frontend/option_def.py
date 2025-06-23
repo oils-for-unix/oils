@@ -153,7 +153,7 @@ _YSH_RUNTIME_OPTS = [
     # TODO: simple_trap
 
     # Turn aliases off so we can statically parse.  bash has it off
-    # non-interactively, sothis shouldn't break much.
+    # non-interactively, so this shouldn't break much.
     ('expand_aliases', True),
 ]
 
@@ -309,6 +309,9 @@ def _Init(opt_def):
     opt_def.Add('ignore_flags_not_impl')
     opt_def.Add('ignore_shopt_not_impl')
 
+    # Optimizations
+    opt_def.Add('rewrite_extern', default=True)
+
     # For implementing strict_errexit
     # TODO: could be _no_command_sub / _no_process_sub, if we had to discourage
     # "default True" options
@@ -316,6 +319,7 @@ def _Init(opt_def):
     opt_def.Add('_allow_process_sub', default=True)
 
     # For implementing 'proc'
+    # TODO: _dynamic_scope
     opt_def.Add('dynamic_scope', default=True)
 
     # On in interactive shell
