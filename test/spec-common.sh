@@ -36,10 +36,6 @@ sh-spec() {
   local tmp_env
   tmp_env=$repo_root/_tmp/spec-tmp/$(basename $test_file)
 
-  # In the rare case that the PID dir exists, blow it away
-  if test -d $tmp_env; then
-    rm -r -f $tmp_env
-  fi
   # In general we leave the tmp dir around so you can inspect it.  It's always
   # safe to get rid of the cruft like this:
   #

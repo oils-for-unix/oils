@@ -1,5 +1,5 @@
 ## compare_shells: bash
-## oils_failures_allowed: 1
+## oils_failures_allowed: 4
 
 #### invoke usage
 case $SH in bash) exit ;; esac
@@ -438,6 +438,108 @@ FOO
 ---
 5
 6
+## END
+
+#### builtin rm: usage, removing files
+case $SH in
+  *osh) prefix='builtin' ;;
+  *) prefix='' ;;
+esac
+
+$prefix rm 
+echo status=$?
+
+$prefix rm --
+echo status=$?
+
+$prefix rm -- nonexistent
+echo status=$?
+
+touch foo bar
+$prefix rm -- foo bar
+echo status=$?
+
+if test -f foo; then echo fail; fi
+if test -f bar; then echo fail; fi
+
+## STDOUT:
+status=1
+status=1
+status=1
+status=0
+## END
+
+#### builtin rm -f - ignores arguments that don't exist
+case $SH in
+  *osh) prefix='builtin' ;;
+  *) prefix='' ;;
+esac
+
+touch foo bar
+$prefix rm -- foo OOPS bar
+echo status=$?
+
+if test -f foo; then echo fail; fi
+if test -f bar; then echo fail; fi
+
+touch foo bar
+$prefix rm -f -- foo OOPS bar
+echo status=$?
+
+if test -f foo; then echo fail; fi
+if test -f bar; then echo fail; fi
+
+# NOTE: rm -f does not do anything with read-only files!  I thought it did.
+exit
+
+mkdir read-only
+touch read-only/stuck
+chmod -w read-only
+ls -l stuck
+
+touch foo bar
+$prefix rm -- read-only/stuck foo bar
+echo status=$?
+
+if test -f foo; then echo fail; fi
+if test -f bar; then echo fail; fi
+
+ls read-only/stuck
+
+touch foo bar
+$prefix rm -- read-only/stuck foo bar
+echo status=$?
+
+## STDOUT:
+status=1
+status=0
+## END
+
+#### builtin rm always fails on directories (regardless of -f)
+case $SH in
+  *osh) prefix='builtin' ;;
+  *) prefix='' ;;
+esac
+
+touch foo bar
+mkdir -p tmp
+$prefix rm -- foo tmp bar
+echo status=$?
+
+if test -f foo; then echo fail; fi
+if test -f bar; then echo fail; fi
+
+touch foo bar
+mkdir -p tmp
+$prefix rm -f -- foo tmp bar
+echo status=$?
+
+if test -f foo; then echo fail; fi
+if test -f bar; then echo fail; fi
+
+## STDOUT:
+status=1
+status=1
 ## END
 
 #### builtin readlink
