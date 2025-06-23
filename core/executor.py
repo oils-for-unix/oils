@@ -121,9 +121,7 @@ def _RewriteExternToBuiltin(argv):
 
                 i += 1
 
-            # enable this
-            #return builtin_i.rm
-            return consts.NO_INDEX
+            return builtin_i.rm
 
         elif case('mv'):
             return consts.NO_INDEX

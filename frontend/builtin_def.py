@@ -124,7 +124,7 @@ def _Init(b):
         b.Add(name, kind='assign')
     b.Add('export', enum_name='export_', kind='assign')  # C++ keyword conflict
 
-    b.Add('extern', enum_name='extern_')
+    #b.Add('extern', enum_name='extern_')
     b.Add('true', enum_name='true_')  # C++ Keywords
     b.Add('false', enum_name='false_')
     b.Add('try', enum_name='try_')
@@ -147,9 +147,9 @@ def _Init(b):
     b.Add('source-guard', enum_name='source_guard')
     b.Add('is-main', enum_name='is_main')
 
-    b.Add('cat', enum_name='cat', kind='private')
-
-    b.Add('sleep', kind='private')
+    # Private builtins
+    for name in ['cat', 'rm', 'sleep']:
+        b.Add(name, kind='private')
 
 
 _BUILTIN_DEF = _BuiltinDef()

@@ -91,6 +91,8 @@ Tuple2<BigStr*, int>* MakeDirCacheKey(BigStr* path);
 
 bool IsSameFile(BigStr* path1, BigStr* path2);
 
+int Unlink(BigStr* path);
+
 }  // namespace pyos
 
 namespace pyutil {

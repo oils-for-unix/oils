@@ -1,5 +1,5 @@
 ## compare_shells: bash
-## oils_failures_allowed: 4
+## oils_failures_allowed: 1
 
 #### invoke usage
 case $SH in bash) exit ;; esac
@@ -447,10 +447,10 @@ case $SH in
 esac
 
 $prefix rm 
-echo status=$?
+if test "$?" != 0; then echo ok; fi
 
 $prefix rm --
-echo status=$?
+if test "$?" != 0; then echo ok; fi
 
 $prefix rm -- nonexistent
 echo status=$?
@@ -463,8 +463,8 @@ if test -f foo; then echo fail; fi
 if test -f bar; then echo fail; fi
 
 ## STDOUT:
-status=1
-status=1
+ok
+ok
 status=1
 status=0
 ## END
@@ -489,8 +489,12 @@ echo status=$?
 if test -f foo; then echo fail; fi
 if test -f bar; then echo fail; fi
 
-# NOTE: rm -f does not do anything with read-only files!  I thought it did.
-exit
+## STDOUT:
+status=1
+status=0
+## END
+
+#### builtin rm -f - still fails when file can't be removed
 
 mkdir read-only
 touch read-only/stuck
@@ -510,8 +514,30 @@ touch foo bar
 $prefix rm -- read-only/stuck foo bar
 echo status=$?
 
+# Clean up for real
+chmod +w read-only
+$prefix rm -- read-only/stuck
+echo status=$?
+
+if test -f read-only/stuck; then echo fail; fi
+
 ## STDOUT:
 status=1
+read-only/stuck
+status=1
+status=0
+## END
+
+#### builtin rm -f allows empty arg list
+case $SH in
+  *osh) prefix='builtin' ;;
+  *) prefix='' ;;
+esac
+
+$prefix rm -f
+echo status=$?
+
+## STDOUT:
 status=0
 ## END
 

@@ -322,7 +322,6 @@ class Export(vm._AssignBuiltin):
         arg_r.Next()
         attrs = flag_util.Parse('export_', arg_r)
         arg = arg_types.export_(attrs.attrs)
-        #arg = attrs
 
         if arg.f:
             e_usage(

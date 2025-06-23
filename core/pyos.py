@@ -315,3 +315,12 @@ def IsSameFile(path1, path2):
         return False
 
     return True
+
+
+def Unlink(path):
+    # type: (str) -> int
+    try:
+        posix.unlink(path)
+    except (IOError, OSError) as e:
+        return e.errno
+    return 0

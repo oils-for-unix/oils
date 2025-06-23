@@ -512,6 +512,9 @@ SLEEP_SPEC = FlagSpec('sleep')
 
 CAT_SPEC = FlagSpec('cat')
 
+RM_SPEC = FlagSpec('rm')
+RM_SPEC.ShortFlag('-f', args.Bool, help="Don't fail when a file doesn't exist")
+
 WRITE_SPEC = FlagSpec('write')
 WRITE_SPEC.LongFlag('--sep',
                     args.String,

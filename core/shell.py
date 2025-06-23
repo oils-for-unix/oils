@@ -735,8 +735,9 @@ def Main(
     b[builtin_i.cat] = cat
     b[builtin_i.read] = read_osh.Read(splitter, mem, parse_ctx, cmd_ev, errfmt)
 
-    # PRIVATE builtin
+    # PRIVATE builtins
     b[builtin_i.sleep] = private_ysh.Sleep(cmd_ev, signal_safe)
+    b[builtin_i.rm] = private_ysh.Rm(errfmt)
 
     mapfile = io_osh.MapFile(mem, errfmt, cmd_ev)
     b[builtin_i.mapfile] = mapfile

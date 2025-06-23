@@ -2559,6 +2559,7 @@ static PyMethodDef posix_methods[] = {
   {"lstat", posix_lstat, METH_VARARGS},
   {"readlink", posix_readlink, METH_VARARGS},
   {"stat", posix_stat, METH_VARARGS},
+  {"unlink", posix_unlink, METH_VARARGS},
   {"umask", posix_umask, METH_VARARGS},
   {"uname", posix_uname, METH_NOARGS},
   {"times", posix_times, METH_NOARGS},

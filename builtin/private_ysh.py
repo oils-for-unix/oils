@@ -1,8 +1,9 @@
 from __future__ import print_function
 
-from errno import EINTR
+from errno import EINTR, ENOENT
 import time as time_
 
+from _devbuild.gen import arg_types
 from core import error
 from core.error import e_die_status
 from core import pyos
@@ -103,6 +104,42 @@ class Cat(vm._Builtin):
                 posix.close(my_fd)
                 if st != 0:
                     status = st
+
+        return status
+
+
+class Rm(vm._Builtin):
+
+    def __init__(self, errfmt):
+        # type: (ui.ErrorFormatter) -> None
+        vm._Builtin.__init__(self)
+        self.errfmt = errfmt
+
+    def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        attrs, arg_r = flag_util.ParseCmdVal('rm', cmd_val)
+        arg = arg_types.rm(attrs.attrs)
+
+        argv, locs = arg_r.Rest2()
+        #log('argv %r', argv)
+
+        if not arg.f and len(argv) == 0:
+            raise error.Usage('expected one or more files',
+                              cmd_val.arg_locs[0])
+
+        status = 0
+        for i, path in enumerate(argv):
+            err_num = pyos.Unlink(path)
+
+            # -f ignores nonexistent files
+            if arg.f and err_num == ENOENT:
+                continue
+
+            if err_num != 0:
+                self.errfmt.Print_("Can't remove %r: %s" %
+                                   (path, posix.strerror(err_num)),
+                                   blame_loc=locs[i])
+                status = 1
 
         return status
 

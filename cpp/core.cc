@@ -308,6 +308,13 @@ bool IsSameFile(BigStr* path1, BigStr* path2) {
   return true;
 }
 
+int Unlink(BigStr* path) {
+  if (::unlink(path->data()) < 0) {
+    return errno;
+  }
+  return 0;
+}
+
 Tuple2<int, void*> PushTermAttrs(int fd, int mask) {
   struct termios* term_attrs =
       static_cast<struct termios*>(malloc(sizeof(struct termios)));
