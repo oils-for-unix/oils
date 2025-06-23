@@ -84,6 +84,9 @@ osh_opt_suffix2 = '_bin/cxx-opt-sh/osh'
 osh_souffle_suffix1 = '_bin/cxx-opt/mycpp-souffle/osh'
 osh_souffle_suffix2 = '_bin/cxx-opt-sh/mycpp-souffle/osh'
 
+ysh_souffle_suffix1 = '_bin/cxx-opt/mycpp-souffle/ysh'
+ysh_souffle_suffix2 = '_bin/cxx-opt-sh/mycpp-souffle/ysh'
+
 ysh_opt_suffix1 = '_bin/cxx-opt/ysh'
 ysh_opt_suffix2 = '_bin/cxx-opt-sh/ysh'
 
@@ -117,6 +120,9 @@ ShellLabels = function(shell_name, shell_hash, num_hosts) {
 
     } else if (endsWith(sh, osh_souffle_suffix1) || endsWith(sh, osh_souffle_suffix2)) {
       label = 'opt/osh-souffle'
+
+    } else if (endsWith(sh, ysh_souffle_suffix1) || endsWith(sh, ysh_souffle_suffix2)) {
+      label = 'opt/ysh-souffle'
 
     } else if (endsWith(sh, '_bin/cxx-opt+bumpleak/osh')) {
       label = 'bumpleak/osh'

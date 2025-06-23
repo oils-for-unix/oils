@@ -70,7 +70,7 @@ export LC_ALL=C
 
 TIMEFORMAT='%U'
 
-readonly OSH_YSH_OPT_REGEX='_bin/cxx-opt(-sh)?/(osh|ysh)'
+readonly OSH_YSH_OPT_REGEX='_bin/cxx-opt(-sh)?/(mycpp-souffle/)?(osh|ysh)'
 
 # task_name,iter,args
 hello-tasks() {
@@ -109,9 +109,7 @@ for_loop-tasks() {
 control_flow-tasks() {
   local provenance=$1
 
-  local runtime_regex='_bin/cxx-opt(-sh)?/osh'
-
-  cat $provenance | filter-provenance bash dash "$runtime_regex" |
+  cat $provenance | filter-provenance bash dash "$OSH_CPP_REGEX" |
   while read fields; do
     echo 'control_flow do_return 200' | xargs -n 3 -- echo "$fields"
   done
