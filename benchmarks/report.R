@@ -901,6 +901,7 @@ SHELL_ORDER = c('dash',
                 '_bin/cxx-opt+bumproot/osh',
                 '_bin/cxx-opt+bumpsmall/osh',
                 '_bin/cxx-opt/osh',
+                '_bin/cxx-opt/mycpp-souffle/osh',
                 '_bin/cxx-opt+nopool/osh')
 
 GcReport = function(in_dir, out_dir) {

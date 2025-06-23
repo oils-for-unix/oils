@@ -184,7 +184,7 @@ print-cachegrind-tasks() {
     "_bin/cxx-opt+bumproot/osh${TAB}mut"
 
     "_bin/cxx-opt+bumpsmall/osh${TAB}mut+alloc"
-    "_bin/cxx-opt+nopool/osh${TAB}mut+alloc"
+
     "_bin/cxx-opt+nopool/osh${TAB}mut+alloc+free+gc"
 
     "_bin/cxx-opt/osh${TAB}mut+alloc"
@@ -195,10 +195,7 @@ print-cachegrind-tasks() {
 
   if test -n "$mycpp_souffle"; then
     shells+=(
-      "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc"
-      "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc+free"
       "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc+free+gc"
-      "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc+free+gc+exit"
     )
   fi
 
@@ -401,24 +398,10 @@ more-variants() {
 }
 
 build-binaries() {
-  if true; then
+  soil/cpp-tarball.sh build-like-ninja \
+    opt{,+bumpleak,+bumproot,+bumpsmall,+nopool}
 
-    soil/cpp-tarball.sh build-like-ninja \
-      opt{,+bumpleak,+bumproot,+bumpsmall,+nopool}
-
-    OILS_TRANSLATOR=mycpp-souffle soil/cpp-tarball.sh build-like-ninja opt
-
-  else
-
-    # Old Ninja build
-    local -a bin=( _bin/cxx-opt{,+bumpleak,+bumproot,+bumpsmall,+nopool}/osh )
-    bin+=( _bin/cxx-opt/mycpp-souffle/osh )
-
-    if test -n "${TCMALLOC:-}"; then
-      bin+=( _bin/cxx-opt+tcmalloc/osh )
-    fi
-    ninja "${bin[@]}"
-  fi
+  OILS_TRANSLATOR=mycpp-souffle soil/cpp-tarball.sh build-like-ninja opt
 }
 
 measure-all() {
@@ -443,7 +426,7 @@ measure-all() {
 
 measure-cachegrind() {
   local tsv_out=${1:-$BASE_DIR_CACHEGRIND/raw/times.tsv}
-  local mycpp_souffle=${2:-}
+  local mycpp_souffle=${2:-T}
 
   build-binaries
 

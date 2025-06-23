@@ -22,9 +22,22 @@ build-like-ninja() {
     # Just use Ninja
 
     local -a targets=()
+
     for variant in "$@"; do
-      targets+=( _bin/cxx-$variant/{oils-for-unix,osh,ysh} )
+      # TODO: clean this code up!
+      case "$OILS_TRANSLATOR" in
+        mycpp)
+          targets+=( _bin/cxx-$variant/{osh,ysh} )
+          ;;
+        mycpp-souffle)
+          targets+=( _bin/cxx-$variant/mycpp-souffle/{osh,ysh} )
+          ;;
+        *)
+          echo "Invalid translator: $OILS_TRANSLATOR" >&2
+          exit 1
+      esac
     done
+
     ninja "${targets[@]}"
 
   elif test -f $tar; then
