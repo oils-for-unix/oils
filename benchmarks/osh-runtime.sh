@@ -372,7 +372,7 @@ EOF
   cmark <<'EOF'
 ## OSH Runtime Performance
 
-Source code: [benchmarks/osh-runtime.sh](https://github.com/oilshell/oil/tree/master/benchmarks/osh-runtime.sh)
+Source code: [benchmarks/osh-runtime.sh](https://github.com/oils-for-unix/oils/tree/master/benchmarks/osh-runtime.sh)
 
 - [Elapsed Time](#elapsed-time)
 - [Minor Page Faults](#page-faults)
@@ -486,6 +486,7 @@ test-oils-run() {
 
 soil-run() {
   ### Run it on just this machine, and make a report
+  # DEPS: soil/cpp-tarball.sh benchmark-build
 
   rm -r -f $BASE_DIR
   mkdir -p $BASE_DIR
@@ -493,14 +494,6 @@ soil-run() {
   # TODO: This testdata should be baked into Docker image, or mounted
   download
   extract
-
-  devtools/release-native.sh gen-shell-build  # _build/oils.sh
-
-  # Build 3 binaries
-  # TODO: It would be nice to do this faster
-  _build/oils.sh --skip-rebuild
-  _build/oils.sh --translator mycpp-souffle --skip-rebuild
-  build/static-oils.sh
 
   # The three things built
   local -a osh_native=(

@@ -420,7 +420,7 @@ EOF
   cmark << 'EOF'
 ## OVM Build Performance
 
-Source code: [oil/benchmarks/osh-parser.sh](https://github.com/oilshell/oil/tree/master/benchmarks/osh-parser.sh)
+Source code: [oils/benchmarks/osh-parser.sh](https://github.com/oils-for-unix/oils/tree/master/benchmarks/osh-parser.sh)
 
 ### Time in Seconds by Host and Compiler
 

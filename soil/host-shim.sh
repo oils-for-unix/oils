@@ -264,7 +264,13 @@ run-job-uke() {
       ;;
     benchmarks3)
       # for test/syscall
-      image_id='ovm-tarball'
+      #image_id='ovm-tarball'
+
+      # TODO: use wait-for-tarball
+      #image_id='benchmarks2'
+
+      # Ninja build
+      image_id='benchmarks'
       ;;
     interactive)
       # to run 'interactive-osh' with job control enabled

@@ -460,7 +460,7 @@ EOF
   cmark << 'EOF'
 ## Memory Management Overhead
 
-Source code: [oil/benchmarks/gc.sh](https://github.com/oilshell/oil/tree/master/benchmarks/gc.sh)
+Source code: [oils/benchmarks/gc.sh](https://github.com/oils-for-unix/oils/tree/master/benchmarks/gc.sh)
 EOF
 
   cmark << 'EOF'
@@ -562,6 +562,7 @@ soil-run() {
 }
 
 run-for-release() {
+  # TODO: turn on Souffle
   measure-all ''
 
   make-report

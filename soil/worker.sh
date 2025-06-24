@@ -207,13 +207,11 @@ os-info          soil/diagnose.sh os-info              -
 dump-env         soil/diagnose.sh dump-env             -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
 dev-shell-test   build/dev-shell-test.sh soil-run      -
-id-test          benchmarks/id-test.sh soil-run        -
-osh-parser       benchmarks/osh-parser.sh soil-run     _tmp/osh-parser/index.html
-osh-runtime      benchmarks/osh-runtime.sh soil-run    _tmp/osh-runtime/index.html
 vm-baseline      benchmarks/vm-baseline.sh soil-run    _tmp/vm-baseline/index.html
 compute          benchmarks/compute.sh soil-run        _tmp/compute/index.html
 gc               benchmarks/gc.sh soil-run             _tmp/gc/index.html
 mycpp-benchmarks benchmarks/mycpp.sh soil-run          _tmp/mycpp-examples/index.html
+id-test          benchmarks/id-test.sh soil-run        -
 EOF
 }
 
@@ -245,17 +243,34 @@ EOF
 # Reuses ovm-tarball container - to compare shells
 
 # TODO:
-# - test/syscall - against static build
-# - benchmarks/osh-runtime - against static build
+# - test/syscall - run with osh-cpp or osh-static
+#   - put it back in soil-benchmarks
+#   - this builds it in place, with Ninja
+#
+# - benchmarks3 can use soil-benchmarks2 image
+#   - and then run wait-for-tarball; osh-parser; osh-runtime
 
 benchmarks3-tasks() {
   # (task_name, script, action, result_html)
+  # (task_name, script, action, result_html)
+  cat <<EOF
+os-info          soil/diagnose.sh os-info              -
+dump-env         soil/diagnose.sh dump-env             -
+py-all-and-ninja soil/worker.sh py-all-and-ninja       -
+benchmark-build  soil/cpp-tarball.sh benchmark-build   -
+osh-parser       benchmarks/osh-parser.sh soil-run     _tmp/osh-parser/index.html
+osh-runtime      benchmarks/osh-runtime.sh soil-run    _tmp/osh-runtime/index.html
+EOF
+# TODO: download tarball, like soil-benchmarks2?
+# wait-for-tarball soil/wait.sh for-cpp-tarball          -
+
+  return
   cat <<EOF
 os-info           soil/diagnose.sh os-info    -
 dump-env          soil/diagnose.sh dump-env   -
 py-all            build/py.sh all                        -
-syscall           test/syscall.sh soil-run               _tmp/syscall/-wwz-index
 EOF
+
 
 # missing curl !
 # wait-for-tarball  soil/wait.sh for-cpp-tarball           -
@@ -369,6 +384,7 @@ dump-env          soil/diagnose.sh dump-env   -
 py-all            build/py.sh all                           -
 configure         devtools/release.sh configure-for-release -
 make-tarball      devtools/release.sh py-tarball         _release/oils-ref.tar
+syscall           test/syscall.sh soil-run               _tmp/syscall/-wwz-index
 osh-spec          test/spec-py.sh osh-all-serial         _tmp/spec/osh-py/index.html
 gold              test/gold.sh soil-run                  -
 osh-usage         test/osh-usage.sh soil-run             -

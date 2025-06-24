@@ -118,7 +118,7 @@ EOF
   cmark << 'EOF'
 ## Virtual Memory Baseline
 
-Source code: [oil/benchmarks/vm-baseline.sh](https://github.com/oilshell/oil/tree/master/benchmarks/vm-baseline.sh)
+Source code: [oils/benchmarks/vm-baseline.sh](https://github.com/oils-for-unix/oils/tree/master/benchmarks/vm-baseline.sh)
 
 ### Memory Used at Startup (MB)
 

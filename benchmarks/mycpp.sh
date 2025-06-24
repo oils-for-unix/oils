@@ -33,7 +33,7 @@ EOF
 
 Measure the speedup from mycpp, and the resource usage.
 
-Source code: [oil/mycpp/examples](https://github.com/oilshell/oil/tree/master/mycpp/examples)
+Source code: [oils/mycpp/examples](https://github.com/oils-for-unix/oils/tree/master/mycpp/examples)
 
 EOF
 

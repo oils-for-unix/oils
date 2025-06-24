@@ -394,7 +394,7 @@ EOF
 We time `$sh -n $file` for various files under various shells, and repeat then
 run under cachegrind for stable metrics.
 
-Source code: [oil/benchmarks/osh-parser.sh](https://github.com/oilshell/oil/tree/master/benchmarks/osh-parser.sh)
+Source code: [oils/benchmarks/osh-parser.sh](https://github.com/oils-for-unix/oils/tree/master/benchmarks/osh-parser.sh)
 
 [Raw files](-wwz-index)
 
@@ -491,8 +491,11 @@ soil-run() {
   rm -r -f $BASE_DIR
   mkdir -p $BASE_DIR
 
-  local -a osh_bin=( $OSH_CPP_NINJA $OSH_SOUFFLE_CPP_NINJA )
-  ninja "${osh_bin[@]}"
+  # The three things built
+  local -a osh_bin=(
+    $OSH_CPP_SOIL
+    $OSH_SOUFFLE_CPP_SOIL
+  )
 
   local single_machine='no-host'
 
@@ -507,9 +510,9 @@ soil-run() {
   local provenance=_tmp/provenance.txt
   local host_job_id="$single_machine.$job_id"
 
-  measure $provenance $host_job_id '' $OSH_CPP_NINJA $OSH_SOUFFLE_CPP_NINJA
+  measure $provenance $host_job_id '' "${osh_bin[@]}"
 
-  measure-cachegrind $provenance $host_job_id '' $OSH_CPP_NINJA $OSH_SOUFFLE_CPP_NINJA
+  measure-cachegrind $provenance $host_job_id '' "${osh_bin[@]}"
 
   # TODO: R can use this TSV file
   cp -v _tmp/provenance.tsv $BASE_DIR/stage1/provenance.tsv

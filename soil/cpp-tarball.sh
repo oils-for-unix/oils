@@ -1,13 +1,26 @@
 #!/usr/bin/env bash
 #
-# Build
+# Build the tarball
 #
 # Usage:
-#   soil/cpp-build.sh
+#   soil/cpp-tarball.sh
+
+
+# Notes:
+#   soil-benchmarks/    # uses ninja in $REPO_ROOT
+#   soil-benchmarks2/   # uses build-like-ninja, which copies
+#                       #  _tmp/native-tar-test/ to $REPO_ROOT
+#     uftrace
+#     gc-cachegrind
+#   soil-benchmarks3/   # TODO: use same scheme as benchmarks2
+#     osh-parser
+#     osh-runtime
 
 set -o nounset
 set -o pipefail
 set -o errexit
+
+source build/dev-shell.sh  # python2 for gen-shell-build
 
 #REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 #source soil/common.sh
@@ -98,6 +111,23 @@ build-like-ninja() {
     echo "Expected either build.ninja or $tar"
     exit 1
   fi
+}
+
+benchmark-build() {
+  ### Binaries tested by osh-runtime, osh-parser, ...
+
+  #devtools/release-native.sh gen-shell-build  # _build/oils.sh
+
+  # generate C++ and _build/oils.sh
+  devtools/release-native.sh make-tar
+
+  # Now build 3 binaries - with that same code
+  # TODO: It would be nice to do this faster. The tarball should check
+  # timestamps
+
+  _build/oils.sh --skip-rebuild
+  _build/oils.sh --translator mycpp-souffle --skip-rebuild
+  build/static-oils.sh
 }
 
 "$@"

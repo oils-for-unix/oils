@@ -573,7 +573,7 @@ to I/O).
 
 Memory usage is measured in MB (powers of 10), not MiB (powers of 2).
 
-Source code: [oil/benchmarks/compute](https://github.com/oilshell/oil/tree/master/benchmarks/compute)
+Source code: [oils/benchmarks/compute](https://github.com/oils-for-unix/oils/tree/master/benchmarks/compute)
 
 EOF
 

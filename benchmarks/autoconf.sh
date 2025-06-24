@@ -217,7 +217,7 @@ grep-exec() {
   egrep --no-filename --max-count 1 -o 'execve\("[^"]+' "$@"
 }
 
-# andy@hoover:~/git/oilshell/oil$ benchmarks/autoconf.sh report-syscalls
+# andy@hoover:~/git/oils-for-unix/oils$ benchmarks/autoconf.sh report-syscalls
 # --- _tmp/autoconf/syscalls/bash
 #      2592 _tmp/autoconf/syscalls/bash/syscalls.903220
 #      2608 _tmp/autoconf/syscalls/bash/syscalls.898727

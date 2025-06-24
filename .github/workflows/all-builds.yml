@@ -254,7 +254,9 @@ jobs:
           soil/github-actions.sh publish-and-exit benchmarks2 T
 
   benchmarks3:
-    needs: ['cpp-tarball']
+    # Note: add this back if we completely switch from Ninja to the tarball
+    # build
+    #needs: ['cpp-tarball']
     runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}

@@ -330,7 +330,8 @@ compile_one() {
   else
     # Show timing info on the most expensive translation unit
     case $in in
-      */oils_for_unix.mycpp.*)
+      # exclude *.mycpp-main.cc
+      */oils_for_unix.mycpp.*|*/oils_for_unix.mycpp-souffle.*)
         # Must have external 'time', and it must have -f
         # Notes: OS X has no time -f
         #        busybox time supports -f but not --format.
