@@ -278,7 +278,7 @@ compile_one() {
 
 	 # DISABLE spew for mycpp-generated code.  mycpp/pea could flag this at the
    # PYTHON level, rather than doing it at the C++ level.
-   _build/obj/*/_gen/bin/oils_for_unix.mycpp.o)
+   _build/obj/*/_gen/bin/oils_for_unix.mycpp*.o)
      flags="$flags -Wno-unused-variable -Wno-unused-but-set-variable"
      ;;
   esac
@@ -325,7 +325,7 @@ compile_one() {
   else
     # Show timing info on the most expensive translation unit
     case $in in
-      */oils_for_unix.*)
+      */oils_for_unix.mycpp.*)
         # Must have external 'time', and it must have -f
         # Notes: OS X has no time -f
         #        busybox time supports -f but not --format.

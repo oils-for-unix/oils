@@ -28,11 +28,11 @@ Flags:
   --translator ARG [default 'mycpp']
     Which bundle of translated source code to compile: mycpp, mycpp-souffle
 
+  --suffix ARG [default '']
+    Append a string like '-static' to oils-for-unix, and symlinks like osh, ysh
+
   --skip-rebuild
     If the output exists, skip the build
-
-  --static
-    Also produce a statically linked version, oils-for-unix.static
 
 Env vars respected:
 
@@ -77,7 +77,7 @@ FLAG_variant=opt       # default is optimized build
 FLAG_translator=mycpp  # or mycpp-souffle
 FLAG_skip_rebuild=''   # false
 
-FLAG_static=''   # false
+FLAG_suffix=''   # false
 
 parse_flags() {
   # Note: not supporting --cxx=foo like ./configure, only --cxx foo
@@ -118,12 +118,16 @@ parse_flags() {
         FLAG_translator=$1
         ;;
 
-      --skip-rebuild)
-        FLAG_skip_rebuild=true
+      --suffix)
+        if test $# -eq 1; then
+          die "--suffix requires an argument"
+        fi
+        shift
+        FLAG_suffix=$1
         ;;
 
-      --static)
-        FLAG_static=true
+      --skip-rebuild)
+        FLAG_skip_rebuild=true
         ;;
 
       *)

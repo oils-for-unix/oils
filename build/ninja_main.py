@@ -166,24 +166,22 @@ main() {
       out_dir=_bin/$compiler-$variant-sh/$translator
       ;;
   esac
-  local out=$out_dir/$out_name
+  local out_path=$out_dir/$out_name$FLAG_suffix
 
   echo
-  echo "$0: Building $out_name: $out"
+  echo "$0: Building $out_name: $out_path"
   echo "    PWD = $PWD"
   echo "    cxx = $compiler"
   echo "    variant = $variant"
   echo "    translator = $translator"
+  echo "    suffix = $FLAG_suffix"
   if test -n "$skip_rebuild"; then
     echo "    skip_rebuild = $skip_rebuild"
   fi
-  if test -n "$FLAG_static"; then
-    echo "    static = $FLAG_static"
-  fi
 
-  if test -n "$skip_rebuild" && test -f "$out"; then
+  if test -n "$skip_rebuild" && test -f "$out_path"; then
     echo
-    echo "$0: SKIPPING build because $out exists"
+    echo "$0: SKIPPING build because $out_path exists"
     echo
     return
   fi
@@ -268,7 +266,7 @@ main() {
     print('  wait', file=f)
     print('', file=f)
 
-    print('  echo "LINK $out"', file=f)
+    print('  echo "LINK $out_path"', file=f)
     # put each object on its own line, and indent by 4
     # note: can't have spaces in filenames
     print('  set -- \\', file=f)
@@ -280,25 +278,18 @@ main() {
 
     print('''\
 
-  link "$compiler" "$variant" "" "$out" "$@"
+  link "$compiler" "$variant" "" "$out_path" "$@"
 
   if test "$variant" = opt; then
-    strip -o "$out.stripped" "$out"
-  fi
-
-  if test -n "$FLAG_static"; then
-    link "$compiler" "$variant" "-static" "$out.static" "$@"
-      if test "$variant" = opt; then
-        strip -o "$out.static.stripped" "$out.static"
-      fi
+    strip -o "$out_path.stripped" "$out_path"
   fi
 
   # Symlink to unstripped binary for benchmarking
   cd "$out_dir"  # dir may have spaces
-  for symlink in osh ysh; do
+  for symlink in "osh$FLAG_suffix" "ysh$FLAG_suffix"; do
     # like ln -v, which we can't use portably
-    echo "    $symlink -> $out_name"
-    ln -s -f $out_name $symlink
+    echo "    $symlink -> $out_name$FLAG_suffix"
+    ln -s -f "$out_name$FLAG_suffix" $symlink
   done
 }
 

@@ -239,6 +239,30 @@ EOF
   # htm8_asdl to ExpandLinks() and so forth
 }
 
+# Reuses ovm-tarball container - to compare shells
+
+# TODO:
+# - test/syscall - against static build
+# - benchmarks/osh-runtime - against static build
+
+benchmarks3-tasks() {
+  # (task_name, script, action, result_html)
+  cat <<EOF
+os-info           soil/diagnose.sh os-info    -
+dump-env          soil/diagnose.sh dump-env   -
+py-all            build/py.sh all                        -
+syscall           test/syscall.sh soil-run               _tmp/syscall/-wwz-index
+EOF
+
+# missing curl !
+# wait-for-tarball  soil/wait.sh for-cpp-tarball           -
+
+# missing ninja !
+# osh-runtime       benchmarks/osh-runtime.sh soil-run     _tmp/osh-runtime/index.html
+
+# Gah we really need better dependencies
+}
+
 cpp-spec-tasks() {
   # (task_name, script, action, result_html)
 
@@ -254,7 +278,6 @@ EOF
 }
 
 cpp-tarball-tasks() {
-
   # Note: build-times task requires _build/oils.sh
   # It's a bit redundant with test-tar
 
@@ -359,17 +382,6 @@ EOF
 #   release, which creates metrics.
 }
 
-benchmarks3-tasks() {
-  # (task_name, script, action, result_html)
-  cat <<EOF
-os-info           soil/diagnose.sh os-info    -
-dump-env          soil/diagnose.sh dump-env   -
-py-all            build/py.sh all                           -
-syscall           test/syscall.sh soil-run               _tmp/syscall/-wwz-index
-EOF
-}
-
-# Reuse ovm-tarball container
 app-tests-tasks() {
 
   cat <<EOF

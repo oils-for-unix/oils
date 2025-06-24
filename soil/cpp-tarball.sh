@@ -16,6 +16,11 @@ OILS_VERSION=$(head -n 1 oils-version.txt)
 OILS_TRANSLATOR=${OILS_TRANSLATOR:-mycpp}
 
 build-like-ninja() {
+  ### Build a list of variants with either Ninja or the tarball
+  # The tarball build copies from _bin/cxx-$variant-sh/ -> _bin/cxx-$variant,
+  # to be consistent
+  # And it passes --skip-rebuild
+
   local tar=_release/oils-for-unix.tar
 
   if test -f build.ninja; then
@@ -82,6 +87,7 @@ build-like-ninja() {
           tar_bin_dir=_bin/cxx-$variant-sh/$OILS_TRANSLATOR
           ;;
       esac
+
       mkdir -v -p $out_bin_dir
       cp -v \
         $tmp/oils-for-unix-$OILS_VERSION/$tar_bin_dir/{oils-for-unix,osh,ysh} \
@@ -92,6 +98,15 @@ build-like-ninja() {
     echo "Expected either build.ninja or $tar"
     exit 1
   fi
+}
+
+build-static() {
+  # TODO:
+  # - _build/oils.sh --without-readline should override configure option
+  # - do an incremental build, so you don't have to build everything twice?
+  #   - that requires _build/obj/*/cpp/frontend_pyreadline{,+noreadline}.o
+  ./configure --without-readline
+  LDFLAGS='-static' _build/oils.sh --suffix '-static'
 }
 
 "$@"
