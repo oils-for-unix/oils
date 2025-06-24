@@ -31,6 +31,9 @@ Flags:
   --skip-rebuild
     If the output exists, skip the build
 
+  --static
+    Also produce a statically linked version, oils-for-unix.static
+
 Env vars respected:
 
   OILS_PARALLEL_BUILD= [default 1]
@@ -74,6 +77,8 @@ FLAG_variant=opt       # default is optimized build
 FLAG_translator=mycpp  # or mycpp-souffle
 FLAG_skip_rebuild=''   # false
 
+FLAG_static=''   # false
+
 parse_flags() {
   # Note: not supporting --cxx=foo like ./configure, only --cxx foo
 
@@ -115,6 +120,10 @@ parse_flags() {
 
       --skip-rebuild)
         FLAG_skip_rebuild=true
+        ;;
+
+      --static)
+        FLAG_static=true
         ;;
 
       *)

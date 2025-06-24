@@ -177,6 +177,9 @@ main() {
   if test -n "$skip_rebuild"; then
     echo "    skip_rebuild = $skip_rebuild"
   fi
+  if test -n "$FLAG_static"; then
+    echo "    static = $FLAG_static"
+  fi
 
   if test -n "$skip_rebuild" && test -f "$out"; then
     echo
@@ -266,9 +269,9 @@ main() {
     print('', file=f)
 
     print('  echo "LINK $out"', file=f)
-    # note: can't have spaces in filenames
-    print('  link "$compiler" "$variant" "" "$out" \\', file=f)
     # put each object on its own line, and indent by 4
+    # note: can't have spaces in filenames
+    print('  set -- \\', file=f)
     print('    %s' % (' \\\n    '.join(objects)), file=f)
     print('', file=f)
 
@@ -276,13 +279,21 @@ main() {
     # TODO: provide a way for the user to get symbols?
 
     print('''\
+
+  link "$compiler" "$variant" "" "$out" "$@"
+
   if test "$variant" = opt; then
     strip -o "$out.stripped" "$out"
-
-    # Symlink to unstripped binary for benchmarking
-    # out_name=$out_name.stripped
   fi
 
+  if test -n "$FLAG_static"; then
+    link "$compiler" "$variant" "-static" "$out.static" "$@"
+      if test "$variant" = opt; then
+        strip -o "$out.static.stripped" "$out.static"
+      fi
+  fi
+
+  # Symlink to unstripped binary for benchmarking
   cd "$out_dir"  # dir may have spaces
   for symlink in osh ysh; do
     # like ln -v, which we can't use portably

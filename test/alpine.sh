@@ -1,27 +1,27 @@
 #!/usr/bin/env bash
 #
-# Make an Alpine Linux chroot and run Oil within it.
+# Make an Alpine Linux chroot and run Oils within it.
 #
 # Usage:
 #   test/alpine.sh <function name>
 #
 # Use Cases:
-# - _chroot/alpine-oil-tar
+# - _chroot/alpine-oils-tar
 #   Test if the oil tarball can be configured/compiled/installed inside a
 #   minimal Linux distro.  This is tested with EACH RELEASE.
-# - _chroot/alpine-oil-spec
+# - _chroot/alpine-oils-spec
 #   Test how the spec tests run (gawk and zip deps)
 # - _chroot/alpine-distro-build
 #   Test if Oil can run Alpine's own package manager and scripts (not done yet)
 #
 # Examples:
 #
-# 1. To make oil-tar env:
+# 1. To make oils-tar env:
 #
 #   $0 download
-#   $0 extract-oil-tar
-#   $0 setup-dns _chroot/alpine-oil-tar
-#   $0 add-oil-tar-deps
+#   $0 extract-oils-tar
+#   $0 setup-dns
+#   $0 add-oils-tar-deps
 #
 # One of:
 #   devtools/release-native.sh make-tar
@@ -33,19 +33,19 @@
 # 1. To make a spec test env:
 #
 #   $0 download
-#   $0 extract-oil-spec
-#   $0 setup-dns _chroot/alpine-oil-spec
-#   $0 add-oil-spec-deps
+#   $0 extract-oils-spec
+#   $0 setup-dns
+#   $0 add-oils-spec-deps
 #
-#   $0 copy-tar _chroot/alpine-oil-spec  # TODO: copy arbitrary tarball
+#   $0 copy-tar _chroot/alpine-oils-spec  # TODO: copy arbitrary tarball
 #   TODO: set up non-root user
 #
-#   $0 make-oil-spec
-#   $0 copy-oil-spec
+#   $0 make-oils-spec
+#   $0 copy-oils-spec
 #
 # Now enter the chroot:
 #
-#   test/alpine.sh interactive _chroot/alpine-oil-spec
+#   test/alpine.sh interactive _chroot/alpine-oils-spec
 #   bash  # if you prefer, use bash inside
 #
 #   cd src/
@@ -53,8 +53,8 @@
 #   cd oil-$VERSION/
 #   ./configure && make && sudo ./install
 #
-#   cd ~/src/oil-spec
-#   tar -x < oil-spec.tar
+#   cd ~/src/oils-spec
+#   tar -x < oils-spec.tar
 #
 #   test/spec-alpine.sh all
 #   test/spec-alpine.sh archive-results
@@ -72,8 +72,8 @@ set -o errexit
 
 readonly ROOTFS_URL='http://dl-cdn.alpinelinux.org/alpine/v3.11/releases/x86_64/alpine-minirootfs-3.11.3-x86_64.tar.gz'
 
-readonly CHROOT_OIL_TAR=_chroot/alpine-oil-tar
-readonly CHROOT_OIL_SPEC=_chroot/alpine-oil-spec
+readonly CHROOT_OILS_TAR=_chroot/alpine-oils-tar
+readonly CHROOT_OILS_SPEC=_chroot/alpine-oils-spec
 readonly CHROOT_DISTRO_BUILD=_chroot/alpine-distro-build
 
 download() {
@@ -91,20 +91,20 @@ _extract() {
 
   du --si -s $dest
 }
-extract-oil-tar() { sudo $0 _extract $CHROOT_OIL_TAR; }
-extract-oil-spec() { sudo $0 _extract $CHROOT_OIL_SPEC; }
+extract-oils-tar() { sudo $0 _extract $CHROOT_OILS_TAR; }
+extract-oils-spec() { sudo $0 _extract $CHROOT_OILS_SPEC; }
 extract-distro-build() { sudo $0 _extract $CHROOT_DISTRO_BUILD; }
 
 # Without this, you can't 'su myusername'.  It won't be able to execute bash.
 chmod-chroot() {
-  local dest=${1:-$CHROOT_OIL_TAR}
+  local dest=${1:-$CHROOT_OILS_TAR}
   sudo chmod 755 $dest
 }
 
 # add DNS -- for package manager
 
 _setup-dns() {
-  local chroot_dir=$1
+  local chroot_dir=${1:-$CHROOT_OILS_TAR}
   cat >$chroot_dir/etc/resolv.conf <<EOF
 nameserver 8.8.8.8
 nameserver 8.8.4.4
@@ -117,8 +117,8 @@ setup-dns() { sudo $0 _setup-dns "$@"; }
 #
 
 # 106 MiB as of 7/7/2017.
-add-oil-tar-deps() {
-  local chroot_dir=${1:-$CHROOT_OIL_TAR}
+add-oils-tar-deps() {
+  local chroot_dir=${1:-$CHROOT_OILS_TAR}
   sudo chroot $chroot_dir /bin/sh <<EOF
 apk update
 apk add bash make gcc g++ musl-dev 
@@ -130,8 +130,8 @@ EOF
 #   zip: for publishing it
 
 # 3/6/2020: 154 MiB
-add-oil-spec-deps() {
-  local chroot_dir=${1:-$CHROOT_OIL_SPEC}
+add-oils-spec-deps() {
+  local chroot_dir=${1:-$CHROOT_OILS_SPEC}
   sudo chroot $chroot_dir /bin/sh <<EOF
 apk update
 apk add bash make gcc musl-dev python2 gawk zip
@@ -164,30 +164,30 @@ list-packages() {
 }
 
 destroy-chroot() {
-  local chroot_dir=${1:-$CHROOT_OIL_TAR}
+  local chroot_dir=${1:-$CHROOT_OILS_TAR}
   sudo rm -r -rf $chroot_dir
 }
 
 # Interactive /bin/sh.
 enter-chroot() {
-  local chroot_dir=${1:-$CHROOT_OIL_TAR}
+  local chroot_dir=${1:-$CHROOT_OILS_TAR}
   shift
   sudo chroot $chroot_dir "$@"
 }
 
 interactive() {
-  local chroot_dir=${1:-$CHROOT_OIL_TAR}
+  local chroot_dir=${1:-$CHROOT_OILS_TAR}
   enter-chroot $chroot_dir /bin/sh
 }
 
 #
-# oil-tar functions
+# oils-tar functions
 #
 
 readonly OIL_VERSION=$(head -n 1 oils-version.txt)
 
 _copy-tar() {
-  local chroot_dir=${1:-$CHROOT_OIL_TAR}
+  local chroot_dir=${1:-$CHROOT_OILS_TAR}
   local name=${2:-oils-for-unix}
   local version=${3:-$OIL_VERSION}
 
@@ -202,48 +202,73 @@ copy-tar() {
 }
 
 _test-tar() {
-  local chroot_dir=${1:-$CHROOT_OIL_TAR}
+  local chroot_dir=${1:-$CHROOT_OILS_TAR}
   local name=${2:-oils-for-unix}
   local version=${3:-$OIL_VERSION}
-
   local target=_bin/${name}.ovm
 
-  #local target=_bin/${name}.ovm-dbg
+  # LDFLAGS=-static _build/oils.sh works!
+  # It's 2.8 MB!  OK that's not much more.
 
-  enter-chroot "$chroot_dir" /bin/sh <<EOF
+  # TODO: request a -static build
+  # oils-for-unix.musl
+  # oils-for-unix.musl.stripped
+  #
+  # oils-for-unix.static
+  # oils-for-unix.static.stripped
+
+  enter-chroot "$chroot_dir" /bin/sh -c '
 set -e
+
+name=$1
+version=$2
+target=$3
+
 cd src
 tar --extract -z < $name-$version.tar.gz
 cd $name-$version
 ./configure
 
+# Build the tar
 if test $name = oils-ref; then
   time make $target
-else
-  time _build/oils.sh
-fi
-
-echo
-echo "*** Running $target"
-
-if test $name = oils-ref; then
   $target --version
 else
+  # Also build statically linked version
+  _build/oils.sh --static
   _bin/cxx-opt-sh/osh --version
 fi
 
 ./install
 echo
 echo "*** Running osh"
+
 osh --version
 echo status=$?
+echo
+
+ldd $(which osh)
+echo
+ldd _bin/cxx-opt-sh/oils-for-unix.static
+echo
+
 echo DONE
-EOF
+' dummy "$name" "$version" "$target"
 }
 
 test-tar() {
   sudo $0 _test-tar "$@"
 }
+
+copy-static() {
+  local chroot_dir=${1:-$CHROOT_OILS_TAR}
+  local dir=_tmp/musl
+  mkdir -p $dir
+  cp -v \
+    $CHROOT_OILS_TAR/src/oils-for-unix-$OIL_VERSION/_bin/cxx-opt-sh/oils-for-unix.static* \
+    $dir
+}
+
 
 #
 # cpp tarball
@@ -258,11 +283,11 @@ test-cpp-tar() {
 }
 
 #
-# oil-spec functions
+# oils-spec functions
 #
 
 # Spec tests
-make-oil-spec() {
+make-oils-spec() {
   # TODO: maybe get rid of doctools
   # test/spec.sh is just for reference
   # web/*.css dir because we want the end user to be able to see it
@@ -273,15 +298,15 @@ make-oil-spec() {
     spec/ \
     web/*.css \
     -type f \
-    | xargs tar --create > _tmp/oil-spec.tar
+    | xargs tar --create > _tmp/oils-spec.tar
 }
 
-_copy-oil-spec() {
-  local dest=$CHROOT_OIL_SPEC/src/oil-spec
+_copy-oils-spec() {
+  local dest=$CHROOT_OILS_SPEC/src/oils-spec
   mkdir -p $dest
-  cp -v _tmp/oil-spec.tar $dest
+  cp -v _tmp/oils-spec.tar $dest
 }
-copy-oil-spec() { sudo $0 _copy-oil-spec "$@"; }
+copy-oils-spec() { sudo $0 _copy-oils-spec "$@"; }
 
 
 copy-wwz() {
@@ -289,7 +314,7 @@ copy-wwz() {
 
   local out=_tmp/spec-results
   mkdir -p $out
-  cp -v _chroot/alpine-oil-spec/src/oil-spec/*.wwz $out
+  cp -v _chroot/alpine-oils-spec/src/oils-spec/*.wwz $out
   ls -l $out
 }
 

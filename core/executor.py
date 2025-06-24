@@ -94,6 +94,7 @@ def _RewriteExternToBuiltin(argv):
       - rename() only
       - if the files live on different devices, then fall back to extern
         (requires different logic)
+      ln -s -f -v - no reason to shell out
 
     # Path operations
     - readlink -f - yeah actually we should do this, it's a transparent

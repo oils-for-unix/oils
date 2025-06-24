@@ -402,7 +402,17 @@ by-code() {
   summarize $suite 3 0
 }
 
+# TODO:
+#
+# - Run with C++ in CI!
+# - Assert failures in summarize !
+# - also fix YSH metrics - some code doesn't parse
+# - compare static build
+#   - built with test/alpine.sh
+
 by-code-cpp() {
+  ./configure --without-readline
+
   ninja _bin/cxx-dbg/{osh,ysh}
   OSH=osh-cpp YSH=ysh-cpp $0 by-code "$@"
 }
@@ -410,6 +420,28 @@ by-code-cpp() {
 by-input-cpp() {
   ninja _bin/cxx-dbg/{osh,ysh}
   OSH=osh-cpp YSH=ysh-cpp $0 by-input "$@"
+}
+
+strace-echo-hi() {
+  # mmap is top
+  # newfstatat - is this because of dynamic linking?
+
+  # Only 63 calls for the static build!  
+  # And most are 'brk' for memory allocation.  Ah so musl uses brk rather than
+  # mmap!
+
+  pushd _tmp/musl
+  ln -s -f oils-for-unix.static.stripped osh
+  ln -s -f oils-for-unix.static.stripped ysh
+  popd
+
+  set -- bash dash _bin/cxx-dbg/osh _tmp/musl/osh
+  for sh in "$@"; do
+    echo ===
+    echo $sh
+    echo
+    strace -S count -c -- $sh -c 'echo hi'
+  done
 }
 
 syscall-py() {
@@ -440,11 +472,6 @@ summarize() {
       $BASE_DIR
   local status=$?
   set -o errexit
-
-  # TODO:
-  # - Assert these failures!
-  # - also fix YSH metrics
-  # - compare oils-for-unix.musl
 
   if test $status -eq 0; then
     echo 'OK'
