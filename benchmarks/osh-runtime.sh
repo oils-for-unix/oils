@@ -494,23 +494,20 @@ soil-run() {
   download
   extract
 
-  # could add _bin/cxx-bumpleak/oils-for-unix, although sometimes it's slower
-  local -a osh_bin=( $OSH_CPP_NINJA $OSH_SOUFFLE_CPP_NINJA )
-
-  # TODO: build these from the tarball too.  Then we can fetch the tarball
-  # And it's the same for releases and CI
-  ninja "${osh_bin[@]}"
-
-  local -a osh_native=(
-    "${osh_bin[@]}" $OSH_STATIC_SOIL
-  )
-  # TODO: This seems to invalidate subsequent builds because of ./configure
-  # We want _build/oils.sh --without-readline, and remove HAVE_READLINE from
-  # detected-cpp-config.sh
-  # It should be -D OILS_HAVE_READLINE
-
   devtools/release-native.sh gen-shell-build  # _build/oils.sh
+
+  # Build 3 binaries
+  # TODO: It would be nice to do this faster
+  _build/oils.sh --skip-rebuild
+  _build/oils.sh --translator mycpp-souffle --skip-rebuild
   build/static-oils.sh
+
+  # The three things built
+  local -a osh_native=(
+    $OSH_CPP_SOIL
+    $OSH_SOUFFLE_CPP_SOIL
+    $OSH_STATIC_SOIL
+  )
 
   local single_machine='no-host'
 

@@ -365,6 +365,8 @@ _build-oils-benchmark-data() {
   # Build like benchmarks/osh-runtime.sh soil-run, but NOT in the repo
   build/static-oils.sh
 
+  # TODO: Build souffle here too
+
   popd
 }
 

@@ -16,7 +16,6 @@ readonly MACHINE2=lenny
 OILS_VERSION=$(head -n 1 oils-version.txt)
 
 readonly _NINJA_BUILD=_bin/cxx-opt
-
 readonly OSH_CPP_NINJA=$_NINJA_BUILD/osh
 readonly OSH_SOUFFLE_CPP_NINJA=$_NINJA_BUILD/mycpp-souffle/osh
 
@@ -24,14 +23,19 @@ readonly OSH_SOUFFLE_CPP_NINJA=$_NINJA_BUILD/mycpp-souffle/osh
 readonly BENCHMARK_DATA_OILS=$PWD/../benchmark-data/src/oils-for-unix-$OILS_VERSION
 readonly _SH_BUILD=_bin/cxx-opt-sh
 
-readonly OSH_CPP_TWO=$BENCHMARK_DATA_OILS/$_SH_BUILD/osh
-readonly OSH_SOUFFLE_CPP_TWO=$BENCHMARK_DATA_OILS/$_SH_BUILD/mycpp-souffle/osh
+readonly OSH_CPP_SOIL=$_SH_BUILD/osh
+readonly OSH_SOUFFLE_CPP_SOIL=$_SH_BUILD/mycpp-souffle/osh
 
-readonly YSH_CPP_TWO=$BENCHMARK_DATA_OILS/$_SH_BUILD/ysh
+readonly OSH_CPP_TWO=$BENCHMARK_DATA_OILS/$OSH_CPP_SOIL
+readonly OSH_SOUFFLE_CPP_TWO=$BENCHMARK_DATA_OILS/$OSH_SOUFFLE_CPP_SOIL
+
+readonly YSH_CPP_SOIL=$_SH_BUILD/ysh
+readonly YSH_CPP_TWO=$BENCHMARK_DATA_OILS/$YSH_CPP_SOIL
 
 # We always build from the tarball
 readonly OSH_STATIC_SOIL=$_SH_BUILD/osh-static
 readonly OSH_STATIC_TWO=$BENCHMARK_DATA_OILS/$OSH_STATIC_SOIL
+
 
 #
 # Binaries we want to test, which can be overridden
