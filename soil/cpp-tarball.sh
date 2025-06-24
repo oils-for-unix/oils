@@ -106,6 +106,10 @@ build-static() {
   # - do an incremental build, so you don't have to build everything twice?
   #   - that requires _build/obj/*/cpp/frontend_pyreadline{,+noreadline}.o
   ./configure --without-readline
+
+  # create _build/oils.sh
+  devtools/release-native.sh gen-shell-build
+
   LDFLAGS='-static' _build/oils.sh --suffix '-static' --skip-rebuild
 }
 

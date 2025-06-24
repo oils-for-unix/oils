@@ -228,7 +228,7 @@ print-tasks() {
     workloads=( "${ALL_WORKLOADS[@]}" )
   fi
 
-  for sh_path in bash dash bin/osh "${osh_native[@]}"; do
+  for sh_path in bash dash "${osh_native[@]}"; do
     for workload in "${workloads[@]}"; do
       tsv-row $host_name $sh_path $workload
     done
@@ -498,6 +498,16 @@ soil-run() {
   local -a osh_bin=( $OSH_CPP_NINJA_BUILD $OSH_SOUFFLE_CPP_NINJA_BUILD )
   ninja "${osh_bin[@]}"
 
+  local -a osh_native=(
+    "${osh_bin[@]}" $REPO_ROOT/_bin/cxx-opt-sh/osh-static
+  )
+  # TODO: This seems to invalidate subsequent builds because of ./configure
+  # We want _build/oils.sh --without-readline, and remove HAVE_READLINE from
+  # detected-cpp-config.sh
+  # It should be -D OILS_HAVE_READLINE
+
+  soil/cpp-tarball.sh build-static
+
   local single_machine='no-host'
 
   local job_id
@@ -506,13 +516,13 @@ soil-run() {
   # Write _tmp/provenance.* and _tmp/{host,shell}-id
   shell-provenance-2 \
     $single_machine $job_id _tmp \
-    bash dash bin/osh "${osh_bin[@]}"
+    bash dash "${osh_native[@]}"
 
   local host_job_id="$single_machine.$job_id"
   local raw_out_dir="$BASE_DIR/raw.$host_job_id"
   mkdir -p $raw_out_dir $BASE_DIR/stage1
 
-  measure $single_machine $raw_out_dir $OSH_CPP_NINJA_BUILD $OSH_SOUFFLE_CPP_NINJA_BUILD
+  measure $single_machine $raw_out_dir "${osh_native[@]}"
 
   # Trivial concatenation for 1 machine
   stage1 '' $single_machine

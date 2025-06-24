@@ -196,6 +196,9 @@ wild             test/wild.sh soil-run                 _tmp/wild-www/index.html
 EOF
 }
 
+# TODO:
+# - osh-parser and osh-runtime can build with the tarball, not Ninja?
+# - and then move to benchmarks2 task
 benchmarks-tasks() {
   # (task_name, script, action, result_html)
 

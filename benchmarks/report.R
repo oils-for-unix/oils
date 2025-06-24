@@ -112,15 +112,18 @@ ShellLabels = function(shell_name, shell_hash, num_hosts) {
     if (sh == 'osh') {
       label = GetOshLabel(shell_hash[i], prov_dir)
 
+    } else if (endsWith(sh, 'osh-static')) {
+      label = 'osh-static'
+    } else if (endsWith(sh, 'ysh-static')) {
+      label = 'ysh-static'
+
     } else if (endsWith(sh, osh_opt_suffix1) || endsWith(sh, osh_opt_suffix2)) {
       label = 'opt/osh'
-
     } else if (endsWith(sh, ysh_opt_suffix1) || endsWith(sh, ysh_opt_suffix2)) {
       label = 'opt/ysh'
 
     } else if (endsWith(sh, osh_souffle_suffix1) || endsWith(sh, osh_souffle_suffix2)) {
       label = 'opt/osh-souffle'
-
     } else if (endsWith(sh, ysh_souffle_suffix1) || endsWith(sh, ysh_souffle_suffix2)) {
       label = 'opt/ysh-souffle'
 
@@ -150,6 +153,11 @@ ShellLabelFromPath = function(sh_path) {
 
     } else if (endsWith(sh, ysh_opt_suffix1) || endsWith(sh, ysh_opt_suffix2)) {
       label = 'opt/ysh'
+
+    } else if (endsWith(sh, 'osh-static')) {
+      label = 'osh-static'
+    } else if (endsWith(sh, 'ysh-static')) {
+      label = 'ysh-static'
 
 	  } else if (endsWith(sh, osh_souffle_suffix1) || endsWith(sh, osh_souffle_suffix2)) {
       label = 'osh-native-souffle'
@@ -573,15 +581,15 @@ RuntimeReport = function(in_dir, out_dir) {
   }
 
   cols2 = c('workload', 'host_name',
-            'bash', 'dash', 'osh-cpython', 'osh-native', souffle_col,
-            'py_bash_ratio', 'native_bash_ratio')
+            'bash', 'dash', 'osh-native', souffle_col, 'osh-static',
+            'osh_bash_ratio', 'static_bash_ratio')
 
   # Elapsed time comparison
   details %>%
     select(-c(task_id, user_ms, sys_ms, max_rss_MB)) %>%
     spread(key = shell_label, value = elapsed_ms) %>%
-    mutate(py_bash_ratio = `osh-cpython` / bash) %>%
-    mutate(native_bash_ratio = `osh-native` / bash) %>%
+    mutate(osh_bash_ratio = `osh-native` / bash) %>%
+    mutate(static_bash_ratio = `osh-static` / bash) %>%
     arrange(workload, host_name) %>%
     select(all_of(cols2)) ->
     elapsed
@@ -593,8 +601,8 @@ RuntimeReport = function(in_dir, out_dir) {
   details_io %>%
     select(c(host_name, shell_label, workload, minor_faults)) %>%
     spread(key = shell_label, value = minor_faults) %>%
-    mutate(py_bash_ratio = `osh-cpython` / bash) %>%
-    mutate(native_bash_ratio = `osh-native` / bash) %>%
+    mutate(osh_bash_ratio = `osh-native` / bash) %>%
+    mutate(static_bash_ratio = `osh-static` / bash) %>%
     arrange(workload, host_name) %>%
     select(all_of(cols2)) ->
     page_faults
@@ -606,8 +614,8 @@ RuntimeReport = function(in_dir, out_dir) {
   details %>%
     select(c(host_name, shell_label, workload, max_rss_MB)) %>%
     spread(key = shell_label, value = max_rss_MB) %>%
-    mutate(py_bash_ratio = `osh-cpython` / bash) %>%
-    mutate(native_bash_ratio = `osh-native` / bash) %>%
+    mutate(osh_bash_ratio = `osh-native` / bash) %>%
+    mutate(static_bash_ratio = `osh-static` / bash) %>%
     arrange(workload, host_name) %>%
     select(all_of(cols2)) ->
     max_rss
@@ -650,12 +658,13 @@ RuntimeReport = function(in_dir, out_dir) {
 
   # milliseconds don't need decimal digit
   precision = ColumnPrecision(list(bash = 0, dash = 0, `osh-cpython` = 0,
-                                   `osh-native` = 0, `osh-native-souffle` = 0, py_bash_ratio = 2,
-                                   native_bash_ratio = 2))
+                                   `osh-native` = 0, `osh-native-souffle` = 0, `osh-static` = 0,
+                                   osh_bash_ratio = 2,
+                                   static_bash_ratio = 2))
   writeTsv(elapsed, file.path(out_dir, 'elapsed'), precision)
   writeTsv(page_faults, file.path(out_dir, 'page_faults'), precision)
 
-  precision2 = ColumnPrecision(list(py_bash_ratio = 2, native_bash_ratio = 2))
+  precision2 = ColumnPrecision(list(osh_bash_ratio = 2, static_bash_ratio = 2))
   writeTsv(max_rss, file.path(out_dir, 'max_rss'), precision2)
 
   precision3 = ColumnPrecision(list(max_rss_MB = 1, allocated_MB = 1),

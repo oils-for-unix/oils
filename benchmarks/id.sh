@@ -109,7 +109,7 @@ dump-shell-id() {
     bash|zsh|yash)
       $sh_path --version > $out_dir/version.txt
       ;;
-    osh)
+    osh*)
       case $sh_path in
         *_bin/*/osh)  # Is this branch dead?
           # Doesn't support --version yet
@@ -119,7 +119,7 @@ dump-shell-id() {
           ;;
       esac
       ;;
-    ysh)
+    ysh*)
       $sh_path --version > $out_dir/ysh-version.txt
       ;;
     awk)
