@@ -330,8 +330,15 @@ ParserReport = function(in_dir, out_dir) {
     times_flat = NULL
     cachegrind_flat = NULL
 
+    # Hack for release.  TODO: unify with SoilAdd commentMore actions
+    if (Sys.getenv("OILS_NO_SOUFFLE") == "") {
+      souffle_col = c('osh-native-souffle')
+    } else {
+      souffle_col = c()
+    }
+
     cols1 = c('host_label', 'bash', 'dash', 'mksh', 'zsh',
-              'osh-ovm', 'osh-cpython', 'osh-native', 'osh-native-souffle',
+              'osh-ovm', 'osh-cpython', 'osh-native', souffle_col,
               'osh_to_bash_ratio', 'num_lines', 'filename', 'filename_HREF')
 
     # Elapsed seconds for each shell by platform and file
@@ -348,7 +355,7 @@ ParserReport = function(in_dir, out_dir) {
     print(elapsed)
 
     cols2 = c('host_label', 'bash', 'dash', 'mksh', 'zsh',
-               'osh-ovm', 'osh-cpython', 'osh-native', 'osh-native-souffle',
+               'osh-ovm', 'osh-cpython', 'osh-native', souffle_col,
                'num_lines', 'filename', 'filename_HREF')
     # Rates by file and shell
     joined_times %>%
@@ -379,7 +386,7 @@ ParserReport = function(in_dir, out_dir) {
     print(joined_cachegrind)
     #print(joined_cachegrind %>% filter(path == 'benchmarks/testdata/configure-helper.sh'))
 
-    cols3 = c('bash', 'dash', 'mksh', 'osh-native', 'osh-native-souffle',
+    cols3 = c('bash', 'dash', 'mksh', 'osh-native', souffle_col,
               'num_lines', 'filename', 'filename_HREF')
 
     # Cachegrind instructions by file
