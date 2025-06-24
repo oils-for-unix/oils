@@ -167,10 +167,10 @@ returns true).
 
 If the list is empty, return true.
 
-    = any([])  # => true
-    = any([true, true])  # => true
-    = any([false, true])  # => false
-    = any(["foo", true, true])  # => true
+    = all([])  # => true (all of zero)
+    = all([true, true])  # => true
+    = all([false, true])  # => false
+    = all(["foo", true, true])  # => true
 
 Note, you will need to `source $LIB_YSH/list.ysh` to use this function.
 
