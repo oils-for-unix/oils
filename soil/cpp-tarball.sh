@@ -106,7 +106,7 @@ build-static() {
   # - do an incremental build, so you don't have to build everything twice?
   #   - that requires _build/obj/*/cpp/frontend_pyreadline{,+noreadline}.o
   ./configure --without-readline
-  LDFLAGS='-static' _build/oils.sh --suffix '-static'
+  LDFLAGS='-static' _build/oils.sh --suffix '-static' --skip-rebuild
 }
 
 "$@"

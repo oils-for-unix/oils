@@ -42,12 +42,12 @@ count-procs() {
     ysh-py)
       sh="env PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor $REPO_ROOT/bin/oils_for_unix.py ysh"
       ;;
-    osh-cpp)
-      sh=_bin/cxx-dbg/osh
-      ;;
-    ysh-cpp)
-      sh=_bin/cxx-dbg/ysh
-      ;;
+    osh-cpp) sh=_bin/cxx-dbg/osh ;;
+    ysh-cpp) sh=_bin/cxx-dbg/ysh ;;
+
+    # from soil/cpp-tarball.sh build-static
+    osh-st) sh=_bin/cxx-opt-sh/osh-static ;;
+    ysh-st) sh=_bin/cxx-opt-sh/ysh-static ;;
   esac
 
   # Ignore failure, because we are just counting
@@ -252,7 +252,6 @@ EOF
 
 # pipeline with redirect first
 #date 2>&1 | wc -l
-
 }
 
 number-cases() {
@@ -402,48 +401,6 @@ by-code() {
   summarize $suite 3 0
 }
 
-# TODO:
-#
-# - Run with C++ in CI!
-# - Assert failures in summarize !
-# - also fix YSH metrics - some code doesn't parse
-# - compare static build
-#   - built with test/alpine.sh
-
-by-code-cpp() {
-  #./configure --without-readline
-
-  ninja _bin/cxx-dbg/{osh,ysh}
-  OSH=osh-cpp YSH=ysh-cpp $0 by-code "$@"
-}
-
-by-input-cpp() {
-  ninja _bin/cxx-dbg/{osh,ysh}
-  OSH=osh-cpp YSH=ysh-cpp $0 by-input "$@"
-}
-
-strace-echo-hi() {
-  # mmap is top
-  # newfstatat - is this because of dynamic linking?
-
-  # Only 63 calls for the static build!  
-  # And most are 'brk' for memory allocation.  Ah so musl uses brk rather than
-  # mmap!
-
-  pushd _tmp/musl
-  ln -s -f oils-for-unix.static.stripped osh
-  ln -s -f oils-for-unix.static.stripped ysh
-  popd
-
-  set -- bash dash _bin/cxx-dbg/osh _tmp/musl/osh
-  for sh in "$@"; do
-    echo ===
-    echo $sh
-    echo
-    strace -S count -c -- $sh -c 'echo hi'
-  done
-}
-
 syscall-py() {
   PYTHONPATH=. test/syscall.py "$@"
 }
@@ -481,16 +438,6 @@ summarize() {
 }
 
 soil-run() {
-  if false; then
-    local osh=_bin/cxx-opt/osh
-    local ysh=_bin/cxx-opt/ysh
-
-    ninja $osh $ysh
-
-    # TODO: pass explicit params
-    export OSH=$osh YSH=$ysh
-  fi
-
   # Invoked as one of the "other" tests.  Soil runs by-code and by-input
   # separately.
 
@@ -510,6 +457,33 @@ run-for-release() {
 
   soil-run
 }
+
+# 
+# Entry points for C++
+#
+# TODO:
+# - Run with C++ in CI!
+#   - ovm-tarball image does not have curl!  to get tarball
+#   - and it does not have Ninja
+# - Assert failures in summarize !
+# - also fix YSH metrics - some code doesn't parse
+
+suite-cpp() {
+  ### Compare with dynamically linked C++ build
+  local suite=${1:-by-code}
+
+  ninja _bin/cxx-dbg/{osh,ysh}
+  OSH=osh-cpp YSH=ysh-cpp $0 $suite "$@"
+}
+
+suite-static() {
+  ### Compare with statically linked C++ build
+  local suite=${1:-by-code}
+
+  soil/cpp-tarball.sh build-static
+  OSH=osh-st YSH=ysh-st $0 $suite "$@"
+}
+
 
 #
 # Real World
