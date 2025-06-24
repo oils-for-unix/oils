@@ -410,8 +410,37 @@ by-code() {
 # - compare static build
 #   - built with test/alpine.sh
 
-by-code-cpp() {
+test-static() {
+  # Doesn't work with GNU readline
+  #  /usr/bin/ld: /usr/lib/gcc/x86_64-linux-gnu/12/../../../x86_64-linux-gnu/libreadline.a(terminal.o): in function `_rl_standout_off':
+  #./configure
+
+  # works without GNU readline!
   ./configure --without-readline
+
+  local osh=_bin/cxx-dbg/osh
+  LDFLAGS=-static ninja $osh
+
+  # TODO: either
+  #
+  # ninja _bin/cxx-opt/{osh,osh-static}
+
+  # _build/oils.sh --static 
+  #   links BOTH
+  #     _bin/cxx-opt-sh/oils-for-unix         # dynamic, GNU readline respected
+  #     _bin/cxx-opt-sh/oils-for-unix-static  # no GNU readline
+  #     only different is cpp/frontend_pyreadline
+  #   Automatically creates osh-static and ysh-static symlinks?
+
+  file $(readlink -f $osh)
+  echo
+
+  ls -l -h $(readlink -f $osh)
+  echo
+}
+
+by-code-cpp() {
+  #./configure --without-readline
 
   ninja _bin/cxx-dbg/{osh,ysh}
   OSH=osh-cpp YSH=ysh-cpp $0 by-code "$@"

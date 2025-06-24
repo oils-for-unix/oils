@@ -46,10 +46,56 @@ COMPILERS_VARIANTS = [
     ('cxx', 'asan32+gcalways'),
     ('cxx', 'ubsan'),
 
-    # statically linked binaries
-    # Doesn't work?  One option is to use Alpine
-    #('musl', 'opt'),
-    #('musl', 'asan'),
+    # _bin/cxx-opt/
+    #   oils-for-unix  # respects HAVE_READLINE
+    #   oils-for-unix.stripped
+    #   osh
+    #   ysh
+    #   oils-for-unix-static  # NEVER READLINE
+    #   oils-for-unix-static.stripped
+    #   osh-static
+    #   ysh-static
+    # _bin/cxx-opt-sh/
+    #   ...  # same as above
+    #
+    # benchmarks/osh-runtime compares both
+    # test/syscall compares both
+
+    # _build/detected-readline.h ?
+    # And then only frontend_pyreadline.h objet changes
+
+    # shell gets HAVE_READLINE
+    # remove #ifdef HAVE_READLINE
+    # - build/ninja-rules.cpp passes OILS_HAVE_READLINE
+    # - cpp/frontend_pyreadline.h
+
+    # opt+norl is the only variant that gets -static!  Because the others respect
+    # HAVE_READLINE in on _build/detected-cpp-config.h
+
+    # _bin/cxx-opt+norl/
+    #    bin/
+    #      oils_for_unix.mycpp
+    #      oils_for_unix.mycpp.stripped
+    #      oils_for_unix.mycpp-static  # static option
+    #      oils_for_unix.mycpp-static.stripped
+    #    oils-for-unix -> bin/
+    #    oils-for-unix-static -> bin/  # startswith
+    #    osh ->
+    #    ysh ->
+    #    ysh-static ->
+    #    ysh ->
+    #    ysh-static ->
+    # _bin/cxx-opt-sh/   # with --static option?
+    #    oils-for-unix  # actually binary
+    #    osh ->
+    #    ysh ->
+    #    oils-for-unix-static
+    #    osh-static ->
+    #    ysh-static ->
+    #
+    # _bin/cxx-opt+norl/bin/oils_for_unix.mycpp
+
+    ('cxx', 'opt+norl'),
 
     #('clang', 'asan'),
     ('clang', 'dbg'),  # compile-quickly
