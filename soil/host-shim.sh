@@ -262,6 +262,10 @@ run-job-uke() {
     cpp-tarball)
       image_id='cpp-small'
       ;;
+    benchmarks3)
+      # for test/syscall
+      image_id='ovm-tarball'
+      ;;
     interactive)
       # to run 'interactive-osh' with job control enabled
       flags=( -t )

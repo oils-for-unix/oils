@@ -11,8 +11,9 @@ source $LIB_OSH/task-five.sh
 
 source build/dev-shell.sh
 
-OSH=${OSH:-osh}
-YSH=${YSH:-ysh}
+# These are labels for count-procs
+OSH=${OSH:-osh-py}
+YSH=${YSH:-ysh-py}
 
 # Compare bash 4 vs. bash 5
 SHELLS=(dash bash-4.4 bash-5.2.21 mksh zsh ash $OSH $YSH)
@@ -24,7 +25,6 @@ SHELLS_MORE=( ${SHELLS[@]} yash )
 readonly BASE_DIR='_tmp/syscall'  # What we'll publish
 readonly RAW_DIR='_tmp/syscall-raw'  # Raw data
 
-# Run it against the dev version of OSH
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 count-procs() {
@@ -36,10 +36,10 @@ count-procs() {
     # avoid the extra processes that bin/osh starts!
     # relies on word splitting
     #(X)  # to compare against osh 0.8.pre3 installed
-    osh)
+    osh-py)
       sh="env PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor $REPO_ROOT/bin/oils_for_unix.py osh"
       ;;
-    ysh)
+    ysh-py)
       sh="env PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor $REPO_ROOT/bin/oils_for_unix.py ysh"
       ;;
     osh-cpp)

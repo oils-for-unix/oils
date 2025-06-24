@@ -343,8 +343,6 @@ dump-env          soil/diagnose.sh dump-env   -
 py-all            build/py.sh all                           -
 configure         devtools/release.sh configure-for-release -
 make-tarball      devtools/release.sh py-tarball         _release/oils-ref.tar
-ysh-ovm-tarball   test/spec-py.sh ysh-ovm-tarball        _tmp/spec/ysh-py/index.html
-syscall           test/syscall.sh soil-run               _tmp/syscall/-wwz-index
 osh-spec          test/spec-py.sh osh-all-serial         _tmp/spec/osh-py/index.html
 gold              test/gold.sh soil-run                  -
 osh-usage         test/osh-usage.sh soil-run             -
@@ -359,6 +357,16 @@ EOF
 #   _build/oils.sh.  Maybe all the docs need to be in Ninja
 # - doc-metrics is a no-op, just for the link.  Because soil-run just runs the
 #   release, which creates metrics.
+}
+
+benchmarks3-tasks() {
+  # (task_name, script, action, result_html)
+  cat <<EOF
+os-info           soil/diagnose.sh os-info    -
+dump-env          soil/diagnose.sh dump-env   -
+py-all            build/py.sh all                           -
+syscall           test/syscall.sh soil-run               _tmp/syscall/-wwz-index
+EOF
 }
 
 # Reuse ovm-tarball container
@@ -649,6 +657,7 @@ JOB-cpp-spec() { job-main 'cpp-spec'; }
 JOB-bloaty() { job-main 'bloaty'; }
 JOB-benchmarks() { job-main 'benchmarks'; }
 JOB-benchmarks2() { job-main 'benchmarks2'; }
+JOB-benchmarks3() { job-main 'benchmarks3'; }
 
 JOB-wild() { job-main 'wild'; }
 
