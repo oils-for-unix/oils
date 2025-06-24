@@ -14,16 +14,12 @@ source build/dev-shell.sh
 OSH=${OSH:-osh}
 YSH=${YSH:-ysh}
 
-#readonly -a SHELLS=(dash bash-4.4 bash $OSH)
-
 # Compare bash 4 vs. bash 5
 SHELLS=(dash bash-4.4 bash-5.2.21 mksh zsh ash $OSH $YSH)
 
-SHELLS_MORE=( ${SHELLS[@]} yash )
-
 # yash does something fundamentally different in by-code.wrapped - it
 # understands functions
-#SHELLS+=(yash)
+SHELLS_MORE=( ${SHELLS[@]} yash )
 
 readonly BASE_DIR='_tmp/syscall'  # What we'll publish
 readonly RAW_DIR='_tmp/syscall-raw'  # Raw data
@@ -445,6 +441,11 @@ summarize() {
   local status=$?
   set -o errexit
 
+  # TODO:
+  # - Assert these failures!
+  # - also fix YSH metrics
+  # - compare oils-for-unix.musl
+
   if test $status -eq 0; then
     echo 'OK'
   else
@@ -453,6 +454,16 @@ summarize() {
 }
 
 soil-run() {
+  if false; then
+    local osh=_bin/cxx-opt/osh
+    local ysh=_bin/cxx-opt/ysh
+
+    ninja $osh $ysh
+
+    # TODO: pass explicit params
+    export OSH=$osh YSH=$ysh
+  fi
+
   # Invoked as one of the "other" tests.  Soil runs by-code and by-input
   # separately.
 

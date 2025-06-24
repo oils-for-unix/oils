@@ -22,6 +22,11 @@
 #   $0 extract-oil-tar
 #   $0 setup-dns _chroot/alpine-oil-tar
 #   $0 add-oil-tar-deps
+#
+# One of:
+#   devtools/release-native.sh make-tar
+#   devtools/release.sh py-tarball
+#
 #   $0 copy-tar
 #   $0 test-tar
 #
@@ -183,7 +188,7 @@ readonly OIL_VERSION=$(head -n 1 oils-version.txt)
 
 _copy-tar() {
   local chroot_dir=${1:-$CHROOT_OIL_TAR}
-  local name=${2:-oil}
+  local name=${2:-oils-for-unix}
   local version=${3:-$OIL_VERSION}
 
   local dest=$chroot_dir/src
@@ -198,7 +203,7 @@ copy-tar() {
 
 _test-tar() {
   local chroot_dir=${1:-$CHROOT_OIL_TAR}
-  local name=${2:-oils-ref}
+  local name=${2:-oils-for-unix}
   local version=${3:-$OIL_VERSION}
 
   local target=_bin/${name}.ovm

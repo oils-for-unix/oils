@@ -46,6 +46,11 @@ COMPILERS_VARIANTS = [
     ('cxx', 'asan32+gcalways'),
     ('cxx', 'ubsan'),
 
+    # statically linked binaries
+    # Doesn't work?  One option is to use Alpine
+    #('musl', 'opt'),
+    #('musl', 'asan'),
+
     #('clang', 'asan'),
     ('clang', 'dbg'),  # compile-quickly
     ('clang', 'opt'),  # for comparisons

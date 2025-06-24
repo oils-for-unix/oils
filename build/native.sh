@@ -171,4 +171,38 @@ check-slice() {
   devtools/types.sh check-binary bin.osh_parse
 }
 
+install-musl() {
+  sudo apt-get install musl-tools musl-dev
+}
+
+musl-demo() {
+  mkdir -p _tmp/musl
+  pushd _tmp/musl
+
+  echo 'int main() { return 42; }' > foo.c
+
+  echo '
+#include <iostream>
+int main() {
+ std::cout << "Hi";
+  return 42;
+}
+' > cpp.cpp
+
+  musl-gcc -o foo foo.c
+
+  # Doesn't work!
+  # https://www.musl-libc.org/faq.html
+  musl-gcc -std=c++11 -o cpp cpp.cpp
+
+  set +o errexit
+  ./foo
+  echo status=$?
+
+  ./cpp
+  echo status=$?
+
+  popd
+}
+
 "$@"

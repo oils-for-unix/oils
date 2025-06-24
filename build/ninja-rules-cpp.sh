@@ -53,18 +53,17 @@ setglobal_cxx() {
   local compiler=$1
 
   case $compiler in
-    (clang) cxx=$CLANGXX  ;;
+    clang) cxx=$CLANGXX  ;;
     # Note: we could get rid of this "alias", and use 'c++' everywhere
-    (cxx)   cxx='c++'     ;;
+    cxx)   cxx='c++'     ;;
 
     # e.g. could be cosmoc++
-    (*)     cxx=$compiler ;;
+    *)     cxx=$compiler ;;
   esac
 }
 
 setglobal_compile_flags() {
   ### Set flags based on $variant $more_cxx_flags and $dotd
-
   local variant=$1
   local more_cxx_flags=$2  # e.g. NINJA_subgraph.py sets -D CPP_UNIT_TEST
   local dotd=${3:-}
@@ -396,28 +395,6 @@ link() {
 
   # Run the command
   "$@"
-}
-
-compile_and_link() {
-  ### This function is no longer used; use 'compile_one' and 'link'
-
-  local compiler=$1
-  local variant=$2
-  local more_cxx_flags=$3
-  local out=$4
-  shift 4
-
-  setglobal_compile_flags "$variant" "$more_cxx_flags" ""  # no dotd
-
-  setglobal_link_flags $variant
-
-  setglobal_cxx $compiler
-
-  if test -n "${OILS_CXX_VERBOSE:-}"; then
-    echo "__ $cxx -o $out $flags $@ $link_flags" >&2
-  fi
-
-  "$cxx" -o "$out" $flags "$@" $link_flags
 }
 
 strip_() {
