@@ -80,8 +80,8 @@ extract-other() {
 extract-oils() {
   # To run on multiple machines, use the one in the benchmarks-data repo.
   cp --recursive --no-target-directory \
-    ../benchmark-data/src/oils-for-unix-$OIL_VERSION/ \
-    $TAR_DIR/oils-for-unix-$OIL_VERSION/
+    ../benchmark-data/src/oils-for-unix-$OILS_VERSION/ \
+    $TAR_DIR/oils-for-unix-$OILS_VERSION/
 }
 
 #
@@ -267,7 +267,7 @@ build-task() {
 oils-tasks() {
   local provenance=$1
 
-  local ofu_dir="$TAR_DIR/oils-for-unix-$OIL_VERSION"
+  local ofu_dir="$TAR_DIR/oils-for-unix-$OILS_VERSION"
 
   # Add 1 field for each of 5 fields.
   cat $provenance | while read line; do

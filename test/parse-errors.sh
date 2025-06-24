@@ -832,8 +832,8 @@ soil-run-cpp() {
 }
 
 release-oils-for-unix() {
-  readonly OIL_VERSION=$(head -n 1 oils-version.txt)
-  local dir="../benchmark-data/src/oils-for-unix-$OIL_VERSION"
+  readonly OILS_VERSION=$(head -n 1 oils-version.txt)
+  local dir="../benchmark-data/src/oils-for-unix-$OILS_VERSION"
 
   # Maybe rebuild it
   pushd $dir

@@ -244,8 +244,8 @@ export-osh-cpp() {
   if test -n "$tar_root" && test -d "$tar_root"; then
     log "Using binary in $tar_root"
 
-    OIL_VERSION=$(head -n 1 oils-version.txt)
-    local repo_like=$tar_root/oils-for-unix-$OIL_VERSION
+    OILS_VERSION=$(head -n 1 oils-version.txt)
+    local repo_like=$tar_root/oils-for-unix-$OILS_VERSION
 
     pushd $repo_like
     _build/oils.sh --variant "$variant" --skip-rebuild

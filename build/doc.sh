@@ -13,8 +13,8 @@ set -o errexit
 #    INSTALL.html
 #    INSTALL-old.html
 
-readonly OIL_VERSION=$(head -n 1 oils-version.txt)
-export OIL_VERSION  # for quick_ref.py
+readonly OILS_VERSION=$(head -n 1 oils-version.txt)
+export OILS_VERSION  # for quick_ref.py
 
 THIS_DIR=$(readlink -f $(dirname $0))
 readonly THIS_DIR
@@ -207,7 +207,7 @@ split-and-render() {
 
   PYTHONPATH='.:vendor' doctools/split_doc.py \
     -v build_timestamp="$DOC_TIMESTAMP" \
-    -v oil_version="$OIL_VERSION" \
+    -v oil_version="$OILS_VERSION" \
     -v css_files="$css_files" \
     -v all_docs_url='.' \
     -v repo_url="$src" \
@@ -283,7 +283,7 @@ render-only() {
   "all_docs_url": ".",
 
   "build_timestamp": "$DOC_TIMESTAMP",
-  "oil_version": "$OIL_VERSION"
+  "oil_version": "$OILS_VERSION"
 }
 EOF
 
@@ -458,12 +458,12 @@ _sed-ext() {
 update-src-versions() {
   # Update tarball names, etc.
   _sed-ext \
-    "s/[0-9]+\.[0-9]+\.[a-z0-9]+/$OIL_VERSION/g" \
+    "s/[0-9]+\.[0-9]+\.[a-z0-9]+/$OILS_VERSION/g" \
     doc/release-*.md INSTALL.txt INSTALL-old.txt README-native.txt
 
   # Update /release/0.8.4/ URL, etc.
   _sed-ext \
-    "s;/release/[0-9]+\.[0-9]+\.[a-z0-9]+/;/release/$OIL_VERSION/;g" \
+    "s;/release/[0-9]+\.[0-9]+\.[a-z0-9]+/;/release/$OILS_VERSION/;g" \
     doc/osh.1
 }
 
@@ -804,7 +804,7 @@ EOF
 this-release-links() {
   echo '<div class="file-table">'
   echo '<table>'
-  tarball-links-row-html "$OIL_VERSION"
+  tarball-links-row-html "$OILS_VERSION"
   echo '</table>'
   echo '</div>'
 }

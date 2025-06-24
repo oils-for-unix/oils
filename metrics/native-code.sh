@@ -137,7 +137,7 @@ compare-gcc-clang() {
   ls -l --sort=none "${targets[@]}" | tee _tmp/metrics/compare-gcc-clang.txt
 }
 
-readonly OIL_VERSION=$(head -n 1 oils-version.txt)
+readonly OILS_VERSION=$(head -n 1 oils-version.txt)
 
 run-for-release() {
   # 2024-08: Not building with DWARF 4
@@ -152,7 +152,7 @@ run-for-release() {
 
   # TODO: consolidate with benchmarks/common.sh, OSH_CPP_TWO
   # For some reason _bin/cxx-opt/ and _bin/cxx-opt-sh can differ by a few bytes
-  local bin_dir="../benchmark-data/src/oils-for-unix-$OIL_VERSION"
+  local bin_dir="../benchmark-data/src/oils-for-unix-$OILS_VERSION"
   collect-and-report $OIL_BASE_DIR $bin_dir/_bin/cxx-{dbg,opt}-sh/oils-for-unix
 }
 

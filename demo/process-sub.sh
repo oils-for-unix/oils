@@ -54,13 +54,13 @@ stdin-shell-2() {
 both() {
   diff -u <(seq 2) <(seq 3) > >(tac) || true
 
-  if test -n "${OIL_VERSION:-}"; then
+  if test -n "${OILS_VERSION:-}"; then
     echo status=${_process_sub_status[@]}
   fi
 
   diff -u <(seq 2; exit 2) <(seq 3; exit 3) > >(tac; exit 5) || true
 
-  if test -n "${OIL_VERSION:-}"; then
+  if test -n "${OILS_VERSION:-}"; then
     echo status=${_process_sub_status[@]}
   fi
 }

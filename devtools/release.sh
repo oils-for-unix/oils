@@ -50,14 +50,14 @@ set -o errexit
 shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
 REPO_ROOT=$(cd $(dirname $0)/.. ; pwd)
-OIL_VERSION=$(head -n 1 oils-version.txt)
+OILS_VERSION=$(head -n 1 oils-version.txt)
 
 source devtools/common.sh  # banner
 source benchmarks/common.sh  # BENCHMARK_DATA_OILS, OSH_CPP_TWO
-                             # redefines OIL_VERSION as readonly
+                             # redefines OILS_VERSION as readonly
 
-readonly OSH_RELEASE_BINARY=$REPO_ROOT/_tmp/oils-ref-tar-test/oils-ref-$OIL_VERSION/_bin/osh
-readonly YSH_RELEASE_BINARY=$REPO_ROOT/_tmp/oils-ref-tar-test/oils-ref-$OIL_VERSION/_bin/ysh
+readonly OSH_RELEASE_BINARY=$REPO_ROOT/_tmp/oils-ref-tar-test/oils-ref-$OILS_VERSION/_bin/osh
+readonly YSH_RELEASE_BINARY=$REPO_ROOT/_tmp/oils-ref-tar-test/oils-ref-$OILS_VERSION/_bin/ysh
 
 log() {
   echo "$@" 1>&2
@@ -65,7 +65,7 @@ log() {
 
 make-release-branch() {
   git checkout master
-  local name=release/$OIL_VERSION
+  local name=release/$OILS_VERSION
   git checkout -b $name
   git push -u origin $name
 }
@@ -412,7 +412,7 @@ _compressed-tarball() {
 oils-ref() {
   # Note: this is redundant with py-tarball, which we probably don't need
   # anymore.  It was for the obsolete build/cpython-defs.
-  _compressed-tarball oils-ref $OIL_VERSION
+  _compressed-tarball oils-ref $OILS_VERSION
 }
 
 hello() {
@@ -543,7 +543,7 @@ metrics() {
 deploy-doc() {
   local deploy_repo='../oils.pub__deploy'
   local release_root_dir="$deploy_repo/release"
-  local release_dir="$release_root_dir/$OIL_VERSION"
+  local release_dir="$release_root_dir/$OILS_VERSION"
 
   mkdir -p $release_dir
   cp -v -r --force --no-target-directory \
@@ -574,7 +574,7 @@ deploy-tar() {
   mkdir -p $DOWNLOAD_DIR
 
   cp -v \
-    _release/oils-ref-$OIL_VERSION.tar.* _release/oils-for-unix-$OIL_VERSION.tar.* \
+    _release/oils-ref-$OILS_VERSION.tar.* _release/oils-for-unix-$OILS_VERSION.tar.* \
     $DOWNLOAD_DIR
 
   ls -l $DOWNLOAD_DIR
@@ -783,7 +783,7 @@ more-release-deps() {
 
 py-tarball() {
   local in=_release/oils-ref.tar
-  local out=_release/oils-ref-$OIL_VERSION.tar.gz
+  local out=_release/oils-ref-$OILS_VERSION.tar.gz
 
   make $in
   time gzip -c $in > $out
