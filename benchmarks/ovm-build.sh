@@ -461,7 +461,7 @@ soil-run() {
   # Copied from benchmarks/osh-runtime.sh soil-run
 
   # could add _bin/cxx-bumpleak/oils-for-unix, although sometimes it's slower
-  local -a osh_bin=( $OSH_CPP_NINJA_BUILD )
+  local -a osh_bin=( $OSH_CPP_NINJA )
   ninja "${osh_bin[@]}"
 
   local single_machine='no-host'

@@ -314,7 +314,7 @@ measure() {
   local host_name=$1  # 'no-host' or 'lenny'
   local raw_out_dir=$2  # _tmp/osh-runtime/$X or ../../benchmark-data/osh-runtime/$X
   shift 2
-  local -a osh_native=( "$@" )  # $OSH_CPP_NINJA_BUILD or $OSH_CPP_BENCHMARK_DATA, etc...
+  local -a osh_native=( "$@" )  # $OSH_CPP_NINJA or $OSH_CPP_TWO, etc...
 
   print-tasks "$host_name" "${osh_native[@]}" \
     | run-tasks-wrapper "$host_name" "$raw_out_dir"
@@ -495,11 +495,14 @@ soil-run() {
   extract
 
   # could add _bin/cxx-bumpleak/oils-for-unix, although sometimes it's slower
-  local -a osh_bin=( $OSH_CPP_NINJA_BUILD $OSH_SOUFFLE_CPP_NINJA_BUILD )
+  local -a osh_bin=( $OSH_CPP_NINJA $OSH_SOUFFLE_CPP_NINJA )
+
+  # TODO: build these from the tarball too.  Then we can fetch the tarball
+  # And it's the same for releases and CI
   ninja "${osh_bin[@]}"
 
   local -a osh_native=(
-    "${osh_bin[@]}" $REPO_ROOT/_bin/cxx-opt-sh/osh-static
+    "${osh_bin[@]}" $OSH_STATIC_SOIL
   )
   # TODO: This seems to invalidate subsequent builds because of ./configure
   # We want _build/oils.sh --without-readline, and remove HAVE_READLINE from

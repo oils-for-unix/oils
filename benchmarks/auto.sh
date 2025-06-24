@@ -38,7 +38,7 @@ measure-shells() {
 
   raw_out_dir="$out_dir/osh-runtime/raw.$host_job_id"
   benchmarks/osh-runtime.sh measure \
-    $host_name $raw_out_dir $OSH_CPP_BENCHMARK_DATA
+    $host_name $raw_out_dir $OSH_CPP_TWO
 
   # Old style uses provenance.txt.  TODO: use raw_out_dir everywhere
   local provenance=_tmp/provenance.txt
@@ -74,7 +74,7 @@ all() {
 
   benchmarks/id.sh shell-provenance-2 \
     $host_name $job_id $out_dir \
-    "${SHELLS[@]}" $OSH_CPP_BENCHMARK_DATA python2
+    "${SHELLS[@]}" $OSH_CPP_TWO python2
 
   # Notes:
   # - During release, this happens on machine1, but not machine2
@@ -86,7 +86,7 @@ all() {
     benchmarks/gc-cachegrind.sh run-for-release
 
     benchmarks/osh-parser.sh measure-cachegrind \
-      _tmp/provenance.txt $host_job_id $out_dir/osh-parser $OSH_CPP_BENCHMARK_DATA
+      _tmp/provenance.txt $host_job_id $out_dir/osh-parser $OSH_CPP_TWO
   fi
 
   if test -z "${resume1:-}"; then

@@ -218,7 +218,7 @@ measure() {
   local host_job_id=$2
   local out_dir=${3:-$BASE_DIR/raw}
   shift 3
-  local -a osh_cpp=( "${@:-$OSH_CPP_BENCHMARK_DATA}" )
+  local -a osh_cpp=( "${@:-$OSH_CPP_TWO}" )
 
   local times_out="$out_dir/$host_job_id.times.csv"
   local lines_out="$out_dir/$host_job_id.lines.csv"
@@ -249,7 +249,7 @@ measure-cachegrind() {
   local host_job_id=$2
   local out_dir=${3:-$BASE_DIR/raw}
   shift 3
-  local -a osh_cpp=( "${@:-$OSH_CPP_BENCHMARK_DATA}" )
+  local -a osh_cpp=( "${@:-$OSH_CPP_TWO}" )
 
   local cachegrind_tsv="$out_dir/$host_job_id.cachegrind.tsv"
   local lines_out="$out_dir/$host_job_id.lines.tsv"
@@ -491,7 +491,7 @@ soil-run() {
   rm -r -f $BASE_DIR
   mkdir -p $BASE_DIR
 
-  local -a osh_bin=( $OSH_CPP_NINJA_BUILD $OSH_SOUFFLE_CPP_NINJA_BUILD )
+  local -a osh_bin=( $OSH_CPP_NINJA $OSH_SOUFFLE_CPP_NINJA )
   ninja "${osh_bin[@]}"
 
   local single_machine='no-host'
@@ -507,9 +507,9 @@ soil-run() {
   local provenance=_tmp/provenance.txt
   local host_job_id="$single_machine.$job_id"
 
-  measure $provenance $host_job_id '' $OSH_CPP_NINJA_BUILD $OSH_SOUFFLE_CPP_NINJA_BUILD
+  measure $provenance $host_job_id '' $OSH_CPP_NINJA $OSH_SOUFFLE_CPP_NINJA
 
-  measure-cachegrind $provenance $host_job_id '' $OSH_CPP_NINJA_BUILD $OSH_SOUFFLE_CPP_NINJA_BUILD
+  measure-cachegrind $provenance $host_job_id '' $OSH_CPP_NINJA $OSH_SOUFFLE_CPP_NINJA
 
   # TODO: R can use this TSV file
   cp -v _tmp/provenance.tsv $BASE_DIR/stage1/provenance.tsv

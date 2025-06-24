@@ -184,12 +184,12 @@ interactive() {
 # oils-tar functions
 #
 
-readonly OIL_VERSION=$(head -n 1 oils-version.txt)
+readonly OILS_VERSION=$(head -n 1 oils-version.txt)
 
 _copy-tar() {
   local chroot_dir=${1:-$CHROOT_OILS_TAR}
   local name=${2:-oils-for-unix}
-  local version=${3:-$OIL_VERSION}
+  local version=${3:-$OILS_VERSION}
 
   local dest=$chroot_dir/src
   rm -r -f $dest  # make sure it's empty
@@ -204,18 +204,12 @@ copy-tar() {
 _test-tar() {
   local chroot_dir=${1:-$CHROOT_OILS_TAR}
   local name=${2:-oils-for-unix}
-  local version=${3:-$OIL_VERSION}
+  local version=${3:-$OILS_VERSION}
   local target=_bin/${name}.ovm
 
-  # LDFLAGS=-static _build/oils.sh works!
-  # It's 2.8 MB!  OK that's not much more.
-
-  # TODO: request a -static build
-  # oils-for-unix.musl
-  # oils-for-unix.musl.stripped
-  #
-  # oils-for-unix.static
-  # oils-for-unix.static.stripped
+  # TODO:
+  # - Run soil/cpp-tarball.sh build-static
+  # - Then publish this musl build!
 
   enter-chroot "$chroot_dir" /bin/sh -c '
 set -e
@@ -234,8 +228,7 @@ if test $name = oils-ref; then
   time make $target
   $target --version
 else
-  # Also build statically linked version
-  _build/oils.sh --static
+  _build/oils.sh
   _bin/cxx-opt-sh/osh --version
 fi
 
@@ -248,9 +241,6 @@ echo status=$?
 echo
 
 ldd $(which osh)
-echo
-ldd _bin/cxx-opt-sh/oils-for-unix.static
-echo
 
 echo DONE
 ' dummy "$name" "$version" "$target"
@@ -265,7 +255,7 @@ copy-static() {
   local dir=_tmp/musl
   mkdir -p $dir
   cp -v \
-    $CHROOT_OILS_TAR/src/oils-for-unix-$OIL_VERSION/_bin/cxx-opt-sh/oils-for-unix.static* \
+    $CHROOT_OILS_TAR/src/oils-for-unix-$OILS_VERSION/_bin/cxx-opt-sh/oils-for-unix.static* \
     $dir
 }
 

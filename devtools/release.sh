@@ -53,7 +53,7 @@ REPO_ROOT=$(cd $(dirname $0)/.. ; pwd)
 OIL_VERSION=$(head -n 1 oils-version.txt)
 
 source devtools/common.sh  # banner
-source benchmarks/common.sh  # BENCHMARK_DATA_OILS, OSH_CPP_BENCHMARK_DATA
+source benchmarks/common.sh  # BENCHMARK_DATA_OILS, OSH_CPP_TWO
                              # redefines OIL_VERSION as readonly
 
 readonly OSH_RELEASE_BINARY=$REPO_ROOT/_tmp/oils-ref-tar-test/oils-ref-$OIL_VERSION/_bin/osh
@@ -289,13 +289,13 @@ spec-all() {
   export YSH_LIST="$REPO_ROOT/bin/ysh $YSH_RELEASE_BINARY"
   test/spec-py.sh all-and-smoosh
 
-  # Build $OSH_CPP_BENCHMARK_DATA
+  # Build $OSH_CPP_TWO
   _build-oils-benchmark-data
 
   # TODO: Use --oils-cpp-bin-dir
   # Collect and publish stats about the C++ translation.
-  OSH_CC="$OSH_CPP_BENCHMARK_DATA" test/spec-cpp.sh osh-all
-  YSH_CC="$YSH_CPP_BENCHMARK_DATA" test/spec-cpp.sh ysh-all
+  OSH_CC="$OSH_CPP_TWO" test/spec-cpp.sh osh-all
+  YSH_CC="$YSH_CPP_TWO" test/spec-cpp.sh ysh-all
 }
 
 spec-cpp() {
@@ -304,8 +304,8 @@ spec-cpp() {
   # TODO: Use --oils-cpp-bin-dir
 
   # Quick
-  # NUM_SPEC_TASKS=2 OSH_CC="$OSH_CPP_BENCHMARK_DATA" test/spec-cpp.sh all
-  OSH_CC="$OSH_CPP_BENCHMARK_DATA" test/spec-cpp.sh all
+  # NUM_SPEC_TASKS=2 OSH_CC="$OSH_CPP_TWO" test/spec-cpp.sh all
+  OSH_CC="$OSH_CPP_TWO" test/spec-cpp.sh all
 }
 
 # For quickly debugging failures that don't happen in dev mode.
@@ -361,6 +361,12 @@ _build-oils-benchmark-data() {
     # The Soil CI runs without this flag.
     CXXFLAGS=-gdwarf-4 _build/oils.sh --variant "$variant" --skip-rebuild
   done
+
+  # Build like benchmarks/osh-runtime.sh soil-run, but NOT in the repo
+  # Note: this runs ./configure --without-readline
+  # I don't want that to mess up other stuff
+  soil/cpp-tarball.sh build-static
+
   popd
 }
 

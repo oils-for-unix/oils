@@ -153,7 +153,7 @@ soil-run() {
   rm -r -f $BASE_DIR
   mkdir -p $BASE_DIR
 
-  local -a osh_bin=( $OSH_CPP_NINJA_BUILD )
+  local -a osh_bin=( $OSH_CPP_NINJA )
   ninja "${osh_bin[@]}"
 
   local single_machine='no-host'

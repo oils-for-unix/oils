@@ -419,7 +419,7 @@ provenance-for-testing() {
   mkdir -v -p $out_dir
   shell-provenance-2 \
     $(hostname) 2025__test-job $out_dir \
-    "${SHELLS[@]}" $OSH_CPP_BENCHMARK_DATA python2
+    "${SHELLS[@]}" $OSH_CPP_TWO python2
 }
 
 compiler-provenance-2() {

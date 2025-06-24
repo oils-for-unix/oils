@@ -150,7 +150,7 @@ run-for-release() {
     collect-and-report $OVM_BASE_DIR $dbg $opt
   fi
 
-  # TODO: consolidate with benchmarks/common.sh, OSH_CPP_BENCHMARK_DATA
+  # TODO: consolidate with benchmarks/common.sh, OSH_CPP_TWO
   # For some reason _bin/cxx-opt/ and _bin/cxx-opt-sh can differ by a few bytes
   local bin_dir="../benchmark-data/src/oils-for-unix-$OIL_VERSION"
   collect-and-report $OIL_BASE_DIR $bin_dir/_bin/cxx-{dbg,opt}-sh/oils-for-unix
