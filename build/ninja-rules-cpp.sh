@@ -133,7 +133,7 @@ setglobal_compile_flags() {
       flags="$flags $opt -g -pg"
       ;;
 
-    (*)
+    *)
       die "Invalid variant $variant"
       ;;
   esac
@@ -173,7 +173,11 @@ setglobal_compile_flags() {
       ;;
   esac
 
-  # Detected by ./configure
+  # HAVE_READLINE is from ./configure
+  # $FLAG_without_readline is from _build/oils.sh - this uses DYNAMIC SCOPE!
+  if test -n "$HAVE_READLINE" && test -z "${FLAG_without_readline:-}"; then
+    flags="$flags -D HAVE_READLINE"
+  fi
   if test -n "$READLINE_DIR"; then
     flags="$flags -I${READLINE_DIR}/include"
   fi
@@ -238,7 +242,8 @@ setglobal_link_flags() {
       ;;
 
     *)
-      if test "$HAVE_READLINE" = 1; then
+      # $FLAG_without_readline is from _build/oils.sh - this uses DYNAMIC SCOPE!
+      if test -n "$HAVE_READLINE" && test -z "${FLAG_without_readline:-}"; then
         link_flags="$link_flags -lreadline"
       fi
       if test -n "$READLINE_DIR"; then

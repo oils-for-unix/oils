@@ -363,9 +363,7 @@ _build-oils-benchmark-data() {
   done
 
   # Build like benchmarks/osh-runtime.sh soil-run, but NOT in the repo
-  # Note: this runs ./configure --without-readline
-  # I don't want that to mess up other stuff
-  soil/cpp-tarball.sh build-static
+  build/static-oils.sh
 
   popd
 }

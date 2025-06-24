@@ -53,6 +53,7 @@ def TarballManifest(some_files):
         # Build Scripts
         'build/common.sh',
         'build/native.sh',
+        'build/static-oils.sh',
 
         # These 2 are used by build/ninja-rules-cpp.sh
         'build/py2.sh',
@@ -175,6 +176,9 @@ main() {
   echo "    variant = $variant"
   echo "    translator = $translator"
   echo "    suffix = $FLAG_suffix"
+  if test -n "$FLAG_without_readline"; then
+    echo "    without_readline = $FLAG_without_readline"
+  fi
   if test -n "$skip_rebuild"; then
     echo "    skip_rebuild = $skip_rebuild"
   fi

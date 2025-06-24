@@ -31,6 +31,9 @@ Flags:
   --suffix ARG [default '']
     Append a string like '-static' to oils-for-unix, and symlinks like osh, ysh
 
+  --without-readline
+    Don't link with GNU readline.  This overrides ./configure --without-readline
+
   --skip-rebuild
     If the output exists, skip the build
 
@@ -75,9 +78,10 @@ FLAG_cxx=cxx           # default is system compiler
 FLAG_variant=opt       # default is optimized build
 
 FLAG_translator=mycpp  # or mycpp-souffle
-FLAG_skip_rebuild=''   # false
-
 FLAG_suffix=''   # false
+
+FLAG_without_readline=''
+FLAG_skip_rebuild='' 
 
 parse_flags() {
   # Note: not supporting --cxx=foo like ./configure, only --cxx foo
@@ -124,6 +128,10 @@ parse_flags() {
         fi
         shift
         FLAG_suffix=$1
+        ;;
+
+      --without-readline)
+        FLAG_without_readline=true
         ;;
 
       --skip-rebuild)

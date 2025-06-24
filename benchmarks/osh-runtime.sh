@@ -509,7 +509,8 @@ soil-run() {
   # detected-cpp-config.sh
   # It should be -D OILS_HAVE_READLINE
 
-  soil/cpp-tarball.sh build-static
+  devtools/release-native.sh gen-shell-build  # _build/oils.sh
+  build/static-oils.sh
 
   local single_machine='no-host'
 

@@ -503,11 +503,9 @@ echo_cpp() {
     log 'Turned on -D GC_TIMING because $_OIL_DEV is set'
   fi
 
-  if test "$have_readline" = 1; then
-    echo '#define HAVE_READLINE 1'
-  else
-    echo '/* #undef HAVE_READLINE */'
-  fi
+  # Important: HAVE_READLINE is only a SHELL variable, not a preprocessor
+  # variable.  This is so _build/oils.sh --without-readline works, not just
+  # ./configure --without-readline.
 
   # Used by mycpp/probes.h
   if test "$have_systemtap_sdt" = 1; then
