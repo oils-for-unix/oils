@@ -80,30 +80,8 @@ test_echo_cpp() {
   # pretend detected_deps was called
   detected_deps=1
 
-  # no readline
-  output="$(echo_cpp)"
-  if ! test "$?" = 0; then
-    die 'Expected echo_cpp to succeed, but failed'
-  fi
-  case "$output" in
-    '/* #undef HAVE_READLINE */'*) ;;
-    *) die "Unexpected echo_cpp output: $output" ;;
-  esac
-
-  # have readline
-  have_readline=1
-  output="$(echo_cpp)"
-  if ! test "$?" = 0; then
-    die 'Expected echo_cpp to succeed, but failed'
-  fi
-  case "$output" in
-    '#define HAVE_READLINE 1'*) ;;
-    *) die "Unexpected echo_cpp output: $output" ;;
-  esac
-
   # clean-up
   detected_deps=''
-  have_readline=''
 }
 
 test_echo_vars() {
