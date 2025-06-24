@@ -44,7 +44,7 @@ nq-run() {
 
   # Tricky: turn errexit off to capture it, but on in subshell, then restore
   local __restore_ee
-  case "$-" in (*e*) __restore_ee='set -e';; (*) __restore_ee=':';; esac
+  case "$-" in (*e*) __restore_ee='set -o errexit';; (*) __restore_ee=':';; esac
   set +o errexit
   ( set -o errexit; "$@" )
   __status=$?
@@ -65,7 +65,7 @@ nq-capture() {
 
   # Tricky: turn errexit off to capture it, but on in subshell, then restore
   local __restore_ee
-  case "$-" in (*e*) __restore_ee='set -e';; (*) __restore_ee=':';; esac
+  case "$-" in (*e*) __restore_ee='set -o errexit';; (*) __restore_ee=':';; esac
   set +o errexit
   __stdout=$(set -o errexit; "$@")
   __status=$?
@@ -89,7 +89,7 @@ nq-capture-2() {
 
   # Tricky: turn errexit off to capture it, but on in subshell, then restore
   local __restore_ee
-  case "$-" in (*e*) __restore_ee='set -e';; (*) __restore_ee=':';; esac
+  case "$-" in (*e*) __restore_ee='set -o errexit';; (*) __restore_ee=':';; esac
   set +o errexit
   __stderr=$(set -o errexit; "$@" 2>&1)
   __status=$?
@@ -114,7 +114,7 @@ nq-redir() {
 
   # Tricky: turn errexit off to capture it, but on in subshell, then restore
   local __restore_ee
-  case "$-" in (*e*) __restore_ee='set -e';; (*) __restore_ee=':';; esac
+  case "$-" in (*e*) __restore_ee='set -o errexit';; (*) __restore_ee=':';; esac
   set +o errexit
   ( set -o errexit; "$@" ) > $__stdout_file
   __status=$?
@@ -136,7 +136,7 @@ nq-redir-2() {
 
   # Tricky: turn errexit off to capture it, but on in subshell, then restore
   local __restore_ee
-  case "$-" in (*e*) __restore_ee='set -e';; (*) __restore_ee=':';; esac
+  case "$-" in (*e*) __restore_ee='set -o errexit';; (*) __restore_ee=':';; esac
   set +o errexit
   ( set -o errexit; "$@" ) 2> $__stderr_file
   __status=$?
