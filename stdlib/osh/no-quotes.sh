@@ -42,13 +42,13 @@ nq-run() {
 
   local __status
 
-  # Tricky: turn errexit off so we can capture it, but turn it on against
-  local oldstate
-  oldstate="$(set +o)"
+  # Tricky: turn errexit off to capture it, but on in subshell, then restore
+  local restore_ee
+  case "$-" in (*e*) restore_ee='set -e';; (*) restore_ee=':';; esac
   set +o errexit
   ( set -o errexit; "$@" )
   __status=$?
-  set +vx; eval "$oldstate"
+  $restore_ee
 
   out_status=$__status
 }
@@ -63,13 +63,13 @@ nq-capture() {
   local __status
   local __stdout
 
-  # Tricky: turn errexit off so we can capture it, but turn it on against
-  local oldstate
-  oldstate="$(set +o)"
+  # Tricky: turn errexit off to capture it, but on in subshell, then restore
+  local restore_ee
+  case "$-" in (*e*) restore_ee='set -e';; (*) restore_ee=':';; esac
   set +o errexit
   __stdout=$(set -o errexit; "$@")
   __status=$?
-  set +vx; eval "$oldstate"
+  $restore_ee
 
   out_status=$__status
   out_stdout=$__stdout
@@ -87,13 +87,13 @@ nq-capture-2() {
   local __status
   local __stderr
 
-  # Tricky: turn errexit off so we can capture it, but turn it on against
-  local oldstate
-  oldstate="$(set +o)"
+  # Tricky: turn errexit off to capture it, but on in subshell, then restore
+  local restore_ee
+  case "$-" in (*e*) restore_ee='set -e';; (*) restore_ee=':';; esac
   set +o errexit
   __stderr=$(set -o errexit; "$@" 2>&1)
   __status=$?
-  set +vx; eval "$oldstate"
+  $restore_ee
 
   out_status=$__status
   out_stderr=$__stderr
@@ -112,13 +112,13 @@ nq-redir() {
   local __status
   local __stdout_file=$NQ_TEST_TEMP/nq-redir-$$.txt
 
-  # Tricky: turn errexit off so we can capture it, but turn it on against
-  local oldstate
-  oldstate="$(set +o)"
+  # Tricky: turn errexit off to capture it, but on in subshell, then restore
+  local restore_ee
+  case "$-" in (*e*) restore_ee='set -e';; (*) restore_ee=':';; esac
   set +o errexit
   ( set -o errexit; "$@" ) > $__stdout_file
   __status=$?
-  set +vx; eval "$oldstate"
+  $restore_ee
 
   out_status=$__status
   out_stdout_file=$__stdout_file
@@ -134,13 +134,13 @@ nq-redir-2() {
   local __status
   local __stderr_file=$NQ_TEST_TEMP/nq-redir-$$.txt
 
-  # Tricky: turn errexit off so we can capture it, but turn it on against
-  local oldstate
-  oldstate="$(set +o)"
+  # Tricky: turn errexit off to capture it, but on in subshell, then restore
+  local restore_ee
+  case "$-" in (*e*) restore_ee='set -e';; (*) restore_ee=':';; esac
   set +o errexit
   ( set -o errexit; "$@" ) 2> $__stderr_file
   __status=$?
-  set +vx; eval "$oldstate"
+  $restore_ee
 
   out_status=$__status
   out_stderr_file=$__stderr_file
