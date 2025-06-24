@@ -657,9 +657,24 @@ Private builtins are not enabled by default:
                # If the file is -, read from stdin (not the file called -)
     cat        # equivalent to cat -
 
-Related:
+- Related: [rewrite_extern][]
 
-- [rewrite_extern](chap-option.html#rewrite_extern)
+[rewrite_extern]: chap-option.html#rewrite_extern
+
+### rm
+
+`rm` is a *private* builtin that removes files.
+
+    rm FLAG* FILE*
+
+Flags:
+
+    -f   Don't fail if the file exist, and don't fail if no arguments are
+         passed.
+
+Return 0 on success, and non-zero otherwise.
+
+- Related: [rewrite_extern][]
 
 ### sleep
 

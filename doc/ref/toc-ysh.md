@@ -152,7 +152,8 @@ X [Wok]           _field()
                   write                  Like echo, with --, --sep, --end
                   fork         forkwait  Replace & and (), and takes a block
                   fopen                  Open multiple streams, takes a block
-  [Private]       sleep                  Put the shell process to sleep
+  [Private]       cat          rm        POSIX-compatible
+                  sleep
   [Hay Config]    hay          haynode   For DSLs and config files
   [Completion]    compadjust   compexport
   [Data Formats]  json                   read write

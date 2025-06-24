@@ -147,13 +147,17 @@ def AppBundleMain(argv):
         return 1
 
     # TODO:
-    # - Invoke builtins like sleep, cat
+    # - private builtins:
+    #   - sleep, rm, cat
+    # - Others
+    #   - printf, test
+    #   - time keyword can change to something that outputs JSON / QTT8
     # - readlink should be a builtin
     #
     # So then arg_locs - loc_t.Argument?
     elif applet == 'readlink':
         if mylib.PYTHON:
-            # TODO: Move this to 'internal readlink' (issue #1013)
+            # TODO: Make this 'builtin readlink'
             main_argv = arg_r.Rest()
             return readlink.main(main_argv)
         else:

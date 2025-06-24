@@ -157,7 +157,7 @@ category-html() {
 #
 
 # Note this style is OVERLY ABSTRACT, but it's hard to do better in shell.  We
-# want to parameterize over text and HTML.  In Oils I think we would use this:
+# want to parameterize over text and HTML.  In YSH I think we would use this:
 #
 # proc p1 {
 #   category 'OSH (and common libraries)' {
@@ -493,11 +493,6 @@ num_files\tinteger' >$tmp_dir/INDEX.schema.tsv
 
   echo '<hr/>'
 
-  echo '<h2>Related Documents</h2>
-        <p>The <a href="https://www.oilshell.org/release/latest/doc/README.html">README for oilshell/oil</a>
-           has another overview of the repository.
-        </p>'
-
   # All the parts
   cat $tmp_dir/*.html
 
@@ -600,6 +595,31 @@ py-ext() {
   # for the py-source build
   # 35 imports
   osh-files | xargs -- egrep 'import (fanos|libc|line_input|posix_|yajl)'
+}
+
+shell-commands() {
+  # first word on a line
+    xargs egrep --no-filename --only-matching '^[ ]*[a-z]+' |
+    sed 's/ //g' | sort | uniq -c | sort -n
+}
+
+oils-shell-commands() {
+  # common externs:
+  # 289 cat
+  # 241 mkdir
+  # 174 git
+  # 142 ls
+  #  92 sudo
+  #  86 rm
+  #  84 find
+  #  67 grep
+  #  50 wc
+  ls */*.sh | grep -v 'spec/' | shell-commands
+}
+
+other-shell-commands() {
+  # 978 rm
+  ls benchmarks/testdata/* | shell-commands
 }
 
 if test $(basename $0) = 'source-code.sh'; then

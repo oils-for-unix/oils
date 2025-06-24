@@ -156,20 +156,25 @@ This option can be useful for "getting past" errors while testing.
 
 ### rewrite_extern
 
-This option is on by default in OSH and YSH, and enables transparent
-optimization of external commands to builtins.
+This options enables a transparent rewriting of external commands to
+**builtins**.
 
-For example, in Oils, [cat][] is a **private builtin**, which can be invoked by
-`builtin cat`.
+Currently, these commands **may** be rewritten, depending on their `argv`:
 
-In certain cases, the external `cat` can be rewritten as `builtin cat`.
+- [cat][]
+- [rm][]
+
+These optimizations are *sound* - they should not affect the behavior of
+programs on POSIX system.
 
 ---
 
-In interactive shells, optimizations as **never** enabled, regardless of this
-setting.
+This option is on by default in OSH and YSH, but it applies only in
+non-interactive shells.  That is, in interactive shells, commands are **never**
+rewritten, regardless of the value of `rewrite_extern`.
 
 [cat]: chap-builtin-cmd.html#cat
+[rm]: chap-builtin-cmd.html#rm
 
 ## Groups
 

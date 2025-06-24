@@ -74,13 +74,71 @@ def LookupExecutable(name, path_dirs, exec_required=True):
 
 def _RewriteExternToBuiltin(argv):
     # type: (List[str]) -> builtin_t
-    """
+    """Decide whether to rewrite a command as a builtin.
+
     This function can have false negatives, but NOT false positives.
 
-    False negative: we could have used the builtin, but didn't
+    False negative:
+      We could have used the builtin, but used the extern instead
+    False positive like 'cat -v'
+      We tried to use the builtin for a feature it doesn't support!  This is a
+      BUG
 
-    False positive: 'cat -v': we tried to use the builtin for a feature it
-      doesn't support!  This is a bug
+    SOUND optimizations:
+      cat
+      rm
+
+    TODO sound:
+      mkdir - common in Oils
+      mv - used in autoconf
+      - rename() only
+      - if the files live on different devices, then fall back to extern
+        (requires different logic)
+
+    # Path operations
+    - readlink -f - yeah actually we should do this, it's a transparent
+      optimization
+      - it just calls realpath
+    - dirname
+    - basename
+
+    Quoting: shopt --set rewrite_name_regex
+    - ls - without args?
+      - Is quoting compatible?  May not matter
+    - find
+      - Also need a better quoting mode
+    - wc displays filenames
+
+    YSH: fs can be a new design to take the place of ls and find
+
+    - Starting processes
+      - xargs -P
+
+    Regex:
+      grep egrep fgrep -v -o '^ *+'
+        builtin grep *.py (/d+/)  # eggex pattern
+      sed ?  Because --regexp-extended is GNU?  Maybe implement that
+        builtin sed s (/<capture d+ as month>/, ^"$month")
+
+    Why hidden in OSH?  Because regex engines can have MINOR syntax
+    differences, like []] for char classes.  But it could be ON in YSH,
+    specifically so you can AVOID those differences!  
+
+    Meh: explicit builtin grep / builtin sed is better.  Make a note about
+    performance in doc/ref.
+
+    Field selection:
+      awk / cut
+
+    Though be careful of being slower than awk to execute.
+
+    Maybe an alias:
+      b grep
+      b sed
+      b wc
+      b ls
+
+    For anything with possible unsoundness.  cat, rm,
     """
     assert len(argv) >= 1, argv  # enforced in the executor
 
@@ -122,9 +180,6 @@ def _RewriteExternToBuiltin(argv):
                 i += 1
 
             return builtin_i.rm
-
-        elif case('mv'):
-            return consts.NO_INDEX
 
         else:
             return consts.NO_INDEX
