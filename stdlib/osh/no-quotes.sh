@@ -43,12 +43,12 @@ nq-run() {
   local __status
 
   # Tricky: turn errexit off to capture it, but on in subshell, then restore
-  local restore_ee
-  case "$-" in (*e*) restore_ee='set -e';; (*) restore_ee=':';; esac
+  local __restore_ee
+  case "$-" in (*e*) __restore_ee='set -e';; (*) __restore_ee=':';; esac
   set +o errexit
   ( set -o errexit; "$@" )
   __status=$?
-  $restore_ee
+  $__restore_ee
 
   out_status=$__status
 }
@@ -64,12 +64,12 @@ nq-capture() {
   local __stdout
 
   # Tricky: turn errexit off to capture it, but on in subshell, then restore
-  local restore_ee
-  case "$-" in (*e*) restore_ee='set -e';; (*) restore_ee=':';; esac
+  local __restore_ee
+  case "$-" in (*e*) __restore_ee='set -e';; (*) __restore_ee=':';; esac
   set +o errexit
   __stdout=$(set -o errexit; "$@")
   __status=$?
-  $restore_ee
+  $__restore_ee
 
   out_status=$__status
   out_stdout=$__stdout
@@ -88,12 +88,12 @@ nq-capture-2() {
   local __stderr
 
   # Tricky: turn errexit off to capture it, but on in subshell, then restore
-  local restore_ee
-  case "$-" in (*e*) restore_ee='set -e';; (*) restore_ee=':';; esac
+  local __restore_ee
+  case "$-" in (*e*) __restore_ee='set -e';; (*) __restore_ee=':';; esac
   set +o errexit
   __stderr=$(set -o errexit; "$@" 2>&1)
   __status=$?
-  $restore_ee
+  $__restore_ee
 
   out_status=$__status
   out_stderr=$__stderr
@@ -113,12 +113,12 @@ nq-redir() {
   local __stdout_file=$NQ_TEST_TEMP/nq-redir-$$.txt
 
   # Tricky: turn errexit off to capture it, but on in subshell, then restore
-  local restore_ee
-  case "$-" in (*e*) restore_ee='set -e';; (*) restore_ee=':';; esac
+  local __restore_ee
+  case "$-" in (*e*) __restore_ee='set -e';; (*) __restore_ee=':';; esac
   set +o errexit
   ( set -o errexit; "$@" ) > $__stdout_file
   __status=$?
-  $restore_ee
+  $__restore_ee
 
   out_status=$__status
   out_stdout_file=$__stdout_file
@@ -135,12 +135,12 @@ nq-redir-2() {
   local __stderr_file=$NQ_TEST_TEMP/nq-redir-$$.txt
 
   # Tricky: turn errexit off to capture it, but on in subshell, then restore
-  local restore_ee
-  case "$-" in (*e*) restore_ee='set -e';; (*) restore_ee=':';; esac
+  local __restore_ee
+  case "$-" in (*e*) __restore_ee='set -e';; (*) __restore_ee=':';; esac
   set +o errexit
   ( set -o errexit; "$@" ) 2> $__stderr_file
   __status=$?
-  $restore_ee
+  $__restore_ee
 
   out_status=$__status
   out_stderr_file=$__stderr_file
