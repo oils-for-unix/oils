@@ -38,7 +38,7 @@ measure-shells() {
 
   raw_out_dir="$out_dir/osh-runtime/raw.$host_job_id"
   benchmarks/osh-runtime.sh measure \
-    $host_name $raw_out_dir $OSH_CPP_TWO
+    $host_name $raw_out_dir $OSH_CPP_TWO $OSH_SOUFFLE_CPP_TWO $OSH_STATIC_TWO
 
   # Old style uses provenance.txt.  TODO: use raw_out_dir everywhere
   local provenance=_tmp/provenance.txt
@@ -74,7 +74,8 @@ all() {
 
   benchmarks/id.sh shell-provenance-2 \
     $host_name $job_id $out_dir \
-    "${SHELLS[@]}" $OSH_CPP_TWO python2
+    "${SHELLS[@]}" $OSH_CPP_TWO $OSH_SOUFFLE_CPP_TWO $OSH_STATIC_TWO \
+    python2
 
   # Notes:
   # - During release, this happens on machine1, but not machine2

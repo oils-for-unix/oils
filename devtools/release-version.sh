@@ -682,7 +682,7 @@ no-announcement() {
   cat <<EOF
   <body>
     <p>No announcement for this release.  Previous announcements are tagged
-    with #<a href="/blog/tags.html?tag=oil-release#oil-release">oil-release</a>.
+    with #<a href="/blog/tags.html?tag=oils-release#oils-release">oils-release</a>.
     </p>
   </body>
 </html>  
