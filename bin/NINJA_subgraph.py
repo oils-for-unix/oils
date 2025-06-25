@@ -173,7 +173,10 @@ def NinjaGraph(ru):
         ru,
         '//bin/oils_for_unix.mycpp',
         matrix=oils_matrix,
-        symlinks=['oils-for-unix', 'osh', 'ysh'],
+        symlinks=[
+            'mycpp-souffle/oils-for-unix', 'mycpp-souffle/osh',
+            'mycpp-souffle/ysh'
+        ],
         preprocessed=True,
     )
 
@@ -189,8 +192,5 @@ def NinjaGraph(ru):
         ru,
         '//bin/oils_for_unix.mycpp-souffle',
         matrix=oils_matrix,
-        symlinks=[
-            'mycpp-souffle/oils-for-unix', 'mycpp-souffle/osh',
-            'mycpp-souffle/ysh'
-        ],
+        symlinks=['oils-for-unix', 'osh', 'ysh'],
     )
