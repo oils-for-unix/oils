@@ -262,7 +262,7 @@ gen-cpp-counts() {
   shift
 
   # NOTE: this excludes .re2c.h file
-  ls _gen/*/*.{cc,h} | $count \
+  ls _gen/*/*.{cc,h} | egrep -v -- '-souffle|-nosouffle' | $count \
     'Generated C++ Code' \
     'mycpp generates the big file _gen/bin/oils-for-unix.mycpp.cc.  Other programs like Zephyr ASDL and re2c generate other files.' \
     "$@"

@@ -259,8 +259,8 @@ def main(argv: List[str]) -> int:
 
 """)
 
-    # Awkwardness for Python optparse
-    minimize_stack_roots = False
+    # This logic works around the Python optparse API
+    minimize_stack_roots = True
     if opts.minimize_stack_roots:
         minimize_stack_roots = True
     if opts.no_minimize_stack_roots:
