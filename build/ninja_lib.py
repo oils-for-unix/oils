@@ -94,7 +94,6 @@ COMPILERS_VARIANTS = [
     #    ysh-static ->
     #
     # _bin/cxx-opt+norl/bin/oils_for_unix.mycpp
-
     ('cxx', 'opt+norl'),
 
     #('clang', 'asan'),
@@ -392,7 +391,11 @@ class Rules(object):
             generated_headers=[out_header],
         )
 
-    def py_binary(self, main_py, deps_base_dir='_build/NINJA', template='py'):
+    def py_binary(self,
+                  main_py,
+                  deps_base_dir='_build/NINJA',
+                  template='py',
+                  implicit=None):
         """Wrapper for Python script with dynamically discovered deps
 
         Args:
@@ -403,6 +406,8 @@ class Rules(object):
             - using dependencies from prebuilt/ninja/mycpp.mycpp_main/deps.txt
             - with the 'shwrap-mycpp' template defined in build/ninja-lib.sh
         """
+        implicit = implicit or []
+
         rel_path, _ = os.path.splitext(main_py)
         # asdl/asdl_main.py -> asdl.asdl_main
         py_module = rel_path.replace('/', '.')
@@ -416,6 +421,7 @@ class Rules(object):
         shwrap_name = os.path.basename(rel_path)
         self.n.build('_bin/shwrap/%s' % shwrap_name,
                      'write-shwrap', [main_py] + deps,
+                     implicit=implicit,
                      variables=[('template', template)])
         self.n.newline()
 

@@ -15,9 +15,12 @@ _ = log
 def DefineTargets(ru):
 
     # Creates _bin/shwrap/mycpp_main
-    ru.py_binary('mycpp/mycpp_main.py',
-                 deps_base_dir='prebuilt/ninja',
-                 template='mycpp')
+    ru.py_binary(
+        'mycpp/mycpp_main.py',
+        deps_base_dir='prebuilt/ninja',
+        template='mycpp',
+        implicit=['_bin/datalog/dataflow'],
+    )
 
     # mycpp wrapper that depends on _bin/datalog/dataflow, a binary created
     # from Souffle datalog!
@@ -218,10 +221,11 @@ def NinjaGraph(ru):
            description='mycpp-souffle $mypypath $preamble_path $out $in')
     n.newline()
 
-    n.rule('translate-mycpp-nosouffle',
-           command=
-           '_bin/shwrap/mycpp_main_nosouffle $mypypath $preamble_path $out $in',
-           description='mycpp-nosouffle $mypypath $preamble_path $out $in')
+    n.rule(
+        'translate-mycpp-nosouffle',
+        command=
+        '_bin/shwrap/mycpp_main_nosouffle $mypypath $preamble_path $out $in',
+        description='mycpp-nosouffle $mypypath $preamble_path $out $in')
     n.newline()
 
     n.rule('translate-pea',
