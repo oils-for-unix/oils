@@ -70,7 +70,7 @@ export LC_ALL=C
 
 TIMEFORMAT='%U'
 
-readonly OSH_YSH_OPT_REGEX='_bin/cxx-opt(-sh)?/(mycpp-souffle/)?(osh|ysh)'
+readonly OSH_YSH_OPT_REGEX='_bin/cxx-opt(-sh)?/(mycpp-nosouffle/)?(osh|ysh)'
 
 # task_name,iter,args
 hello-tasks() {
@@ -479,8 +479,8 @@ soil-run() {
 
   # Test the one that's IN TREE, NOT in ../benchmark-data
   local -a oils_bin=(
-    _bin/cxx-opt/osh _bin/cxx-opt+bumpleak/osh _bin/cxx-opt/mycpp-souffle/osh 
-    _bin/cxx-opt/ysh _bin/cxx-opt+bumpleak/ysh _bin/cxx-opt/mycpp-souffle/ysh 
+    _bin/cxx-opt/osh _bin/cxx-opt+bumpleak/osh _bin/cxx-opt/mycpp-nosouffle/osh 
+    _bin/cxx-opt/ysh _bin/cxx-opt+bumpleak/ysh _bin/cxx-opt/mycpp-nosouffle/ysh 
   )
   ninja "${oils_bin[@]}"
 

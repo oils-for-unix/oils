@@ -18,9 +18,9 @@ TestShellLabels = function() {
   label = ShellLabels(shell_name, shell_hash, 1)
   checkEquals('opt/osh', label)
 
-  shell_name = 'yy/zz/_bin/cxx-opt/mycpp-souffle/osh'
+  shell_name = 'yy/zz/_bin/cxx-opt/mycpp-nosouffle/osh'
   label = ShellLabels(shell_name, shell_hash, 1)
-  checkEquals('opt/osh-souffle', label)
+  checkEquals('opt/osh-nosouffle', label)
 
   shell_name = 'yy/zz/_bin/cxx-opt+bumpleak/osh'
   label = ShellLabels(shell_name, shell_hash, 1)

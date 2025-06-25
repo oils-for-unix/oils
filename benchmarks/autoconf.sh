@@ -52,15 +52,15 @@ deps() {
 #
 
 cpython-configure-tasks() {
-  local do_souffle=${1:-}
+  local do_nosouffle=${1:-}
 
   local -a variants=( opt+bumpleak opt+bumproot opt )
   for v in ${variants[@]}; do
     echo "${v}${TAB}_bin/cxx-$v/osh"
   done
 
-  if test -n "$do_souffle"; then
-    echo "opt${TAB}_bin/cxx-opt/mycpp-souffle/osh"
+  if test -n "$do_nosouffle"; then
+    echo "opt${TAB}_bin/cxx-opt/mycpp-nosouffle/osh"
   fi
 }
 
@@ -160,7 +160,7 @@ measure-rusage() {
 #
 
 measure-times-tasks() {
-  local do_souffle=${1:-}
+  local do_nosouffle=${1:-}
 
   for script in $PY_CONF $BASE_DIR/util-linux-2.40/configure; do
   #for script in $BASE_DIR/util-linux-2.40/configure; do
@@ -168,8 +168,8 @@ measure-times-tasks() {
     echo "dash${TAB}dash${TAB}$script"
     echo "osh${TAB}$REPO_ROOT/_bin/cxx-opt/osh${TAB}$script"
 
-    if test -n "$do_souffle"; then
-      echo "osh-souffle${TAB}$REPO_ROOT/_bin/cxx-opt/mycpp-souffle/osh${TAB}$script"
+    if test -n "$do_nosouffle"; then
+      echo "osh-nosouffle${TAB}$REPO_ROOT/_bin/cxx-opt/mycpp-nosouffle/osh${TAB}$script"
     fi
   done
 }
@@ -347,7 +347,7 @@ patch-pyconf() {
 }
 
 measure-times() {
-  local do_souffle=${1:-}
+  local do_nosouffle=${1:-}
   local gc_stats=${2:-}
 
   local osh=_bin/cxx-opt/osh
@@ -360,7 +360,7 @@ measure-times() {
   mkdir -p $trace_dir
 
   local task_id=0
-  measure-times-tasks "$do_souffle" | while read -r sh_label sh_path config_script; do
+  measure-times-tasks "$do_nosouffle" | while read -r sh_label sh_path config_script; do
     #case $sh_label in bash|dash) continue ;; esac
 
     local dir=$base_dir/$task_id
@@ -575,8 +575,8 @@ fork-tasks() {
   # Hm this is noisy, but cxx-opt-sh does seem slower
   echo "osh${TAB}$REPO_ROOT/_bin/cxx-opt/osh"
   echo "osh${TAB}$REPO_ROOT/_bin/cxx-opt-sh/osh"
-  echo "osh${TAB}$REPO_ROOT/_bin/cxx-opt/mycpp-souffle/osh"
-  echo "osh${TAB}$REPO_ROOT/_bin/cxx-opt-sh/mycpp-souffle/osh"
+  echo "osh${TAB}$REPO_ROOT/_bin/cxx-opt/mycpp-nosouffle/osh"
+  echo "osh${TAB}$REPO_ROOT/_bin/cxx-opt-sh/mycpp-nosouffle/osh"
 }
 
 measure-fork() {
