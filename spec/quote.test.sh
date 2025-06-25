@@ -198,6 +198,11 @@ echo $'\1 \11 \11 \111' | od -A n -c | sed 's/ \+/ /g'
  $ 001 \t \t I \n
 ## END
 
+#### $'' ctrl sequence escapes
+echo $'\cZ' | od -A n -c | sed 's/ \+/ /g'
+## STDOUT:
+  032 \n
+## END
 
 #### OSH allows invalid backslashes
 case $SH in (dash|mksh) exit ;; esac
