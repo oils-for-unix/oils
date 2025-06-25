@@ -100,7 +100,7 @@ make-tar() {
 
   case $app_name in
     oils-for-unix)
-      ninja _bin/cxx-dbg/oils-for-unix _bin/cxx-dbg/mycpp-souffle/oils-for-unix
+      ninja _bin/cxx-dbg/oils-for-unix _bin/cxx-dbg/mycpp-{souffle,nosouffle}/oils-for-unix
       ;;
     *)
       # Also generate windows

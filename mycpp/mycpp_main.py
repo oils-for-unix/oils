@@ -71,6 +71,12 @@ def Options() -> optparse.OptionParser:
                  default=False,
                  help='Try to minimize the number of GC stack roots.')
 
+    p.add_option('--no-minimize-stack-roots',
+                 dest='no_minimize_stack_roots',
+                 action='store_true',
+                 default=False,
+                 help='Do NOT minimize the number of GC stack roots.')
+
     return p
 
 
@@ -253,6 +259,13 @@ def main(argv: List[str]) -> int:
 
 """)
 
+    # Awkwardness for Python optparse
+    minimize_stack_roots = False
+    if opts.minimize_stack_roots:
+        minimize_stack_roots = True
+    if opts.no_minimize_stack_roots:
+        minimize_stack_roots = False
+
     return translate.Run(timer,
                          f,
                          header_f,
@@ -261,7 +274,7 @@ def main(argv: List[str]) -> int:
                          to_compile,
                          preamble_path=opts.preamble_path,
                          stack_roots_warn=opts.stack_roots_warn,
-                         minimize_stack_roots=opts.minimize_stack_roots)
+                         minimize_stack_roots=minimize_stack_roots)
 
 
 if __name__ == '__main__':

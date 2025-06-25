@@ -194,3 +194,21 @@ def NinjaGraph(ru):
             'mycpp-souffle/ysh'
         ],
     )
+
+    # Opposite
+    mycpp_library(
+        ru,
+        'bin/oils_for_unix.py',
+        py_inputs=oils_py_inputs,
+        translator='mycpp-nosouffle',
+        deps=oils_deps,
+    )
+    mycpp_binary(
+        ru,
+        '//bin/oils_for_unix.mycpp-nosouffle',
+        matrix=oils_matrix,
+        symlinks=[
+            'mycpp-nosouffle/oils-for-unix', 'mycpp-nosouffle/osh',
+            'mycpp-nosouffle/ysh'
+        ],
+    )

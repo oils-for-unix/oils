@@ -28,6 +28,13 @@ def DefineTargets(ru):
         implicit=['_bin/shwrap/mycpp_main', '_bin/datalog/dataflow'],
     )
 
+    ru.n.build(
+        '_bin/shwrap/mycpp_main_nosouffle',
+        'cp',
+        ['bin/mycpp_main_nosouffle.sh'],
+        implicit=['_bin/shwrap/mycpp_main'],
+    )
+
     ru.cc_library(
         '//mycpp/runtime',
         # Could separate into //mycpp/runtime_{marksweep,bumpleak}
@@ -209,6 +216,12 @@ def NinjaGraph(ru):
            command=
            '_bin/shwrap/mycpp_main_souffle $mypypath $preamble_path $out $in',
            description='mycpp-souffle $mypypath $preamble_path $out $in')
+    n.newline()
+
+    n.rule('translate-mycpp-nosouffle',
+           command=
+           '_bin/shwrap/mycpp_main_nosouffle $mypypath $preamble_path $out $in',
+           description='mycpp-nosouffle $mypypath $preamble_path $out $in')
     n.newline()
 
     n.rule('translate-pea',
