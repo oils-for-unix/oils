@@ -58,15 +58,18 @@ class Timer:
         log('\t%s', msg)
 
 
-def Run(timer: Timer,
-        f: TextIO,
-        header_f: TextIO,
-        types: Dict['Expression', 'Type'],
-        to_header: List[str],
-        to_compile: List[Tuple[str, 'MypyFile']],
-        preamble_path: str = '',
-        stack_roots_warn: bool = False,
-        minimize_stack_roots: bool = False) -> int:
+def Run(
+    timer: Timer,
+    f: TextIO,
+    header_f: TextIO,
+    types: Dict['Expression', 'Type'],
+    to_header: List[str],
+    to_compile: List[Tuple[str, 'MypyFile']],
+    preamble_path: str = '',
+    stack_roots_warn: bool = False,
+    minimize_stack_roots: bool = False,
+    facts_out_dir: bool = None,
+) -> int:
 
     #_ = mtype
     #if 0:
@@ -145,11 +148,12 @@ def Run(timer: Timer,
             tmp_dir = tempfile.TemporaryDirectory()
             souffle_dir = tmp_dir.name
         stack_roots = pass_state.ComputeMinimalStackRoots(
-            cflow_graphs, souffle_dir=souffle_dir)
-    else:
-        timer.Section('mycpp: dumping control flow graph to _tmp/mycpp-facts')
+            cflow_graphs, souffle_dir)
 
-        pass_state.DumpControlFlowGraphs(cflow_graphs)
+    if facts_out_dir:
+        timer.Section('mycpp: dumping control flow graph to %s' %
+                      facts_out_dir)
+        pass_state.DumpControlFlowGraphs(cflow_graphs, facts_out_dir)
 
     # [PASS]
     timer.Section('mycpp pass: CONST')

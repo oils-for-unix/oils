@@ -199,9 +199,10 @@ run-unit-tests() {
 
 translate-example() {
   local ex=$1
+  shift
 
   local mycpp=_bin/shwrap/mycpp_main
-  $mycpp '.:pyext' '' _tmp/mycpp-invalid $ex
+  $mycpp '.:pyext' '' _tmp/mycpp-invalid $ex "$@"
 }
 
 test-invalid-examples() {
@@ -261,14 +262,28 @@ test-control-flow-graph() {
   for ex in mycpp/examples/*.py; do
     local data_dir=testdata/control-flow-graph/$(basename -s .py $ex)
     if ! test -d $data_dir; then
+      # Only test some examples
       continue
     fi
-    banner "$ex"
 
-    translate-example $ex
+    banner "$ex"
+    local facts_dir=_tmp/mycpp-facts
+    mkdir -p $facts_dir
+    translate-example $ex --facts-out-dir $facts_dir
+
     for fact_path in $data_dir/*.facts; do
       local fact_file=$(basename $fact_path)
-      diff -u $data_dir/$fact_file _tmp/mycpp-facts/$fact_file
+
+      set +o errexit
+      diff -u $data_dir/$fact_file $facts_dir/$fact_file
+      local status=$?
+      set -o errexit
+
+      if test "$status" != 0; then
+        echo "FAIL $ex $fact_path"
+        return 1
+      fi
+
     done
   done
 }

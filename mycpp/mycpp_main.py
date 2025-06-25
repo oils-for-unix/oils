@@ -53,6 +53,11 @@ def Options() -> optparse.OptionParser:
                  default=None,
                  help='Write this header')
 
+    p.add_option('--facts-out-dir',
+                 dest='facts_out_dir',
+                 default=None,
+                 help='Dump control flow graphs for testing')
+
     p.add_option('--preamble-path',
                  dest='preamble_path',
                  default='',
@@ -274,7 +279,8 @@ def main(argv: List[str]) -> int:
                          to_compile,
                          preamble_path=opts.preamble_path,
                          stack_roots_warn=opts.stack_roots_warn,
-                         minimize_stack_roots=minimize_stack_roots)
+                         minimize_stack_roots=minimize_stack_roots,
+                         facts_out_dir=opts.facts_out_dir)
 
 
 if __name__ == '__main__':

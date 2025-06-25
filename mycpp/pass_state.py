@@ -540,20 +540,19 @@ class StackRoots(object):
 
 
 def DumpControlFlowGraphs(cfgs: Dict[SymbolPath, ControlFlowGraph],
-                          facts_dir: str = '_tmp/mycpp-facts') -> None:
+                          out_dir: str) -> None:
     """
     Dump the given control flow graphs and associated facts into the given
     directory as text files that can be consumed by datalog.
     """
-    edge_facts = '{}/cf_edge.facts'.format(facts_dir)
+    edge_facts = '{}/cf_edge.facts'.format(out_dir)
 
-    os.makedirs(facts_dir, exist_ok=True)
     # Open files for all facts that we might emit even if we don't end up having
     # anything to write to them. Souffle will complain if it can't find the file
     # for anything marked as an input.
     fact_files = {
         fact_type.name():
-        open('{}/{}.facts'.format(facts_dir, fact_type.name()), 'w')
+        open('{}/{}.facts'.format(out_dir, fact_type.name()), 'w')
         for fact_type in Fact.__subclasses__()
     }
     with open(edge_facts, 'w') as cfg_f:
@@ -572,7 +571,7 @@ def DumpControlFlowGraphs(cfgs: Dict[SymbolPath, ControlFlowGraph],
 
 
 def ComputeMinimalStackRoots(cfgs: Dict[SymbolPath, ControlFlowGraph],
-                             souffle_dir: str = '_tmp') -> StackRoots:
+                             souffle_dir) -> StackRoots:
     """
     Run the the souffle stack roots solver and translate its output in a format
     that can be queried by cppgen_pass.
@@ -581,7 +580,7 @@ def ComputeMinimalStackRoots(cfgs: Dict[SymbolPath, ControlFlowGraph],
     os.makedirs(facts_dir)
     output_dir = '{}/outputs'.format(souffle_dir)
     os.makedirs(output_dir)
-    DumpControlFlowGraphs(cfgs, facts_dir=facts_dir)
+    DumpControlFlowGraphs(cfgs, facts_dir)
 
     subprocess.check_call([
         '_bin/datalog/dataflow',
