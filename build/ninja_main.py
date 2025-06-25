@@ -513,10 +513,6 @@ def main(argv):
             names.extend([
                 '_gen/bin/%s.mycpp-nosouffle.cc' % app_name,
                 '_gen/bin/%s.mycpp-nosouffle-main.cc' % app_name,
-
-                # TODO: remove
-                '_gen/bin/%s.mycpp-souffle.cc' % app_name,
-                '_gen/bin/%s.mycpp-souffle-main.cc' % app_name,
             ])
             names.append('_build/oils.sh')
         else:

@@ -100,12 +100,12 @@ make-tar() {
 
   case $app_name in
     oils-for-unix)
-      ninja _bin/cxx-dbg/oils-for-unix _bin/cxx-dbg/mycpp-{souffle,nosouffle}/oils-for-unix
+      ninja _bin/cxx-dbg/oils-for-unix _bin/cxx-dbg/mycpp-nosouffle/oils-for-unix
       ;;
     *)
       # Also generate windows
       gen-win32-build $source_name
-      ninja _bin/cxx-asan/bin/$app_name.{mycpp,mycpp-souffle}
+      ninja _bin/cxx-asan/bin/$app_name.{mycpp,mycpp-nosouffle}
       ;;
   esac
 
