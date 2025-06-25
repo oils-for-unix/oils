@@ -189,8 +189,8 @@ EXAMPLES_DEPS = {
     ],
 }
 
-# mycpp-souffle only has three variants for now
-SOUFFLE_MATRIX = [
+# mycpp-nosouffle only has three variants for now
+NOSOUFFLE_MATRIX = [
     ('cxx', 'opt'),  # for benchmarks
     ('cxx', 'asan'),  # need this for running the examples in CI
     ('cxx', 'asan+gcalways'),
@@ -385,9 +385,10 @@ def MycppExamples(ru, ph):
 
         ## Translate the example 2 ways, and benchmark and test it
 
-        for translator in ['mycpp', 'mycpp-souffle']:
+        for translator in ['mycpp', 'mycpp-nosouffle']:
 
-            matrix = SOUFFLE_MATRIX if translator == 'mycpp-souffle' else COMPILERS_VARIANTS
+            matrix = (NOSOUFFLE_MATRIX if translator == 'mycpp-nosouffle' else
+                      COMPILERS_VARIANTS)
             phony_prefix = 'mycpp-examples' if translator == 'mycpp' else None
             py_inputs = TRANSLATE_FILES.get(ex)
 
@@ -438,8 +439,8 @@ def MycppExamples(ru, ph):
                 b_example = '_bin/cxx-%s/mycpp/examples/%s.%s' % (variant, ex,
                                                                   translator)
                 impl = 'C++'
-                if translator == 'mycpp-souffle':
-                    impl = 'C++-Souffle'
+                if translator == 'mycpp-nosouffle':
+                    impl = 'C++-NoSouffle'
 
                 n.build([task_out, cc_log_out],
                         'example-task', [b_example],
