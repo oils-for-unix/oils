@@ -313,6 +313,8 @@ This doc mirrors the `--help` for the 3 shell tools in the build sytsem:
 1. `_build/oils.sh` - Compile `oils-for-unix` source into an executable
 1. `install` - Install the executable, and symlinks to it
 
+We also provide a tiny script to statically link the `oils-for-unix` binary.
+
 <div id="toc">
 </div>
 
@@ -351,6 +353,12 @@ Keep these differences in mind:
 
 ```'
   ./install --help
+  echo '```
+
+## build/static-oils.sh
+
+```'
+  build/static-oils.sh --help
   echo '```
 
 ## Links
