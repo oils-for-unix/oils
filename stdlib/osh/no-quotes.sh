@@ -55,7 +55,7 @@ nq-run() {
   esac
   ( set -o errexit; "$@" )
   __status=$?
-  $__restore_ee
+  eval "$__restore_ee"
 
   out_status=$__status
 }
@@ -83,7 +83,7 @@ nq-capture() {
   esac
   __stdout=$(set -o errexit; "$@")
   __status=$?
-  $__restore_ee
+  eval "$__restore_ee"
 
   out_status=$__status
   out_stdout=$__stdout
@@ -114,7 +114,7 @@ nq-capture-2() {
   esac
   __stderr=$(set -o errexit; "$@" 2>&1)
   __status=$?
-  $__restore_ee
+  eval "$__restore_ee"
 
   out_status=$__status
   out_stderr=$__stderr
@@ -146,7 +146,7 @@ nq-redir() {
   esac
   ( set -o errexit; "$@" ) > $__stdout_file
   __status=$?
-  $__restore_ee
+  eval "$__restore_ee"
 
   out_status=$__status
   out_stdout_file=$__stdout_file
@@ -175,7 +175,7 @@ nq-redir-2() {
   esac
   ( set -o errexit; "$@" ) 2> $__stderr_file
   __status=$?
-  $__restore_ee
+  eval "$__restore_ee"
 
   out_status=$__status
   out_stderr_file=$__stderr_file
