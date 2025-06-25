@@ -65,8 +65,8 @@ GetOshLabel = function(shell_hash, prov_dir) {
       label = 'osh-ovm'
     } else if (length(grep('bin/osh', lines)) > 0) {
       label = 'osh-cpython'
-    } else if (length(grep('_bin/.*/mycpp-souffle/osh', lines)) > 0) {
-      label = 'osh-souffle'
+    } else if (length(grep('_bin/.*/mycpp-nosouffle/osh', lines)) > 0) {
+      label = 'osh-nosouffle'
     } else if (length(grep('_bin/.*/osh', lines)) > 0) {
       label = 'osh-native'
     } else {
@@ -81,11 +81,11 @@ GetOshLabel = function(shell_hash, prov_dir) {
 osh_opt_suffix1 = '_bin/cxx-opt/osh'
 osh_opt_suffix2 = '_bin/cxx-opt-sh/osh'
 
-osh_souffle_suffix1 = '_bin/cxx-opt/mycpp-souffle/osh'
-osh_souffle_suffix2 = '_bin/cxx-opt-sh/mycpp-souffle/osh'
+osh_nosouffle_suffix1 = '_bin/cxx-opt/mycpp-nosouffle/osh'
+osh_nosouffle_suffix2 = '_bin/cxx-opt-sh/mycpp-nosouffle/osh'
 
-ysh_souffle_suffix1 = '_bin/cxx-opt/mycpp-souffle/ysh'
-ysh_souffle_suffix2 = '_bin/cxx-opt-sh/mycpp-souffle/ysh'
+ysh_nosouffle_suffix1 = '_bin/cxx-opt/mycpp-nosouffle/ysh'
+ysh_nosouffle_suffix2 = '_bin/cxx-opt-sh/mycpp-nosouffle/ysh'
 
 ysh_opt_suffix1 = '_bin/cxx-opt/ysh'
 ysh_opt_suffix2 = '_bin/cxx-opt-sh/ysh'
@@ -122,10 +122,10 @@ ShellLabels = function(shell_name, shell_hash, num_hosts) {
     } else if (endsWith(sh, ysh_opt_suffix1) || endsWith(sh, ysh_opt_suffix2)) {
       label = 'opt/ysh'
 
-    } else if (endsWith(sh, osh_souffle_suffix1) || endsWith(sh, osh_souffle_suffix2)) {
-      label = 'opt/osh-souffle'
-    } else if (endsWith(sh, ysh_souffle_suffix1) || endsWith(sh, ysh_souffle_suffix2)) {
-      label = 'opt/ysh-souffle'
+    } else if (endsWith(sh, osh_nosouffle_suffix1) || endsWith(sh, osh_nosouffle_suffix2)) {
+      label = 'opt/osh-nosouffle'
+    } else if (endsWith(sh, ysh_nosouffle_suffix1) || endsWith(sh, ysh_nosouffle_suffix2)) {
+      label = 'opt/ysh-nosouffle'
 
     } else if (endsWith(sh, '_bin/cxx-opt+bumpleak/osh')) {
       label = 'bumpleak/osh'
@@ -159,8 +159,8 @@ ShellLabelFromPath = function(sh_path) {
     } else if (endsWith(sh, 'ysh-static')) {
       label = 'ysh-static'
 
-	  } else if (endsWith(sh, osh_souffle_suffix1) || endsWith(sh, osh_souffle_suffix2)) {
-      label = 'osh-souffle'
+	  } else if (endsWith(sh, osh_nosouffle_suffix1) || endsWith(sh, osh_nosouffle_suffix2)) {
+      label = 'osh-nosouffle'
 
     } else if (endsWith(sh, '_bin/cxx-opt+bumpleak/osh')) {
       label = 'bumpleak/osh'
@@ -332,13 +332,13 @@ ParserReport = function(in_dir, out_dir) {
 
     # Hack for release.  TODO: unify with SoilAdd commentMore actions
     if (Sys.getenv("OILS_NO_SOUFFLE") == "") {
-      souffle_col = c('osh-souffle')
+      nosouffle_col = c('osh-nosouffle')
     } else {
-      souffle_col = c()
+      nosouffle_col = c()
     }
 
     cols1 = c('host_label', 'bash', 'dash', 'mksh', 'zsh',
-              'osh-ovm', 'osh-cpython', 'osh-native', souffle_col,
+              'osh-ovm', 'osh-cpython', 'osh-native', nosouffle_col,
               'osh_to_bash_ratio', 'num_lines', 'filename', 'filename_HREF')
 
     # Elapsed seconds for each shell by platform and file
@@ -355,7 +355,7 @@ ParserReport = function(in_dir, out_dir) {
     print(elapsed)
 
     cols2 = c('host_label', 'bash', 'dash', 'mksh', 'zsh',
-               'osh-ovm', 'osh-cpython', 'osh-native', souffle_col,
+               'osh-ovm', 'osh-cpython', 'osh-native', nosouffle_col,
                'num_lines', 'filename', 'filename_HREF')
     # Rates by file and shell
     joined_times %>%
@@ -386,7 +386,7 @@ ParserReport = function(in_dir, out_dir) {
     print(joined_cachegrind)
     #print(joined_cachegrind %>% filter(path == 'benchmarks/testdata/configure-helper.sh'))
 
-    cols3 = c('bash', 'dash', 'mksh', 'osh-native', souffle_col,
+    cols3 = c('bash', 'dash', 'mksh', 'osh-native', nosouffle_col,
               'num_lines', 'filename', 'filename_HREF')
 
     # Cachegrind instructions by file
@@ -574,7 +574,7 @@ RuntimeReport = function(in_dir, out_dir) {
   print(details)
 
   cols2 = c('workload', 'host_name',
-            'bash', 'dash', 'osh-native', 'osh-souffle', 'osh-static',
+            'bash', 'dash', 'osh-native', 'osh-nosouffle', 'osh-static',
             'osh_bash_ratio', 'static_bash_ratio')
 
   # Elapsed time comparison
@@ -651,7 +651,7 @@ RuntimeReport = function(in_dir, out_dir) {
 
   # milliseconds don't need decimal digit
   precision = ColumnPrecision(list(bash = 0, dash = 0, `osh-cpython` = 0,
-                                   `osh-native` = 0, `osh-souffle` = 0, `osh-static` = 0,
+                                   `osh-native` = 0, `osh-nosouffle` = 0, `osh-static` = 0,
                                    osh_bash_ratio = 2,
                                    static_bash_ratio = 2))
   writeTsv(elapsed, file.path(out_dir, 'elapsed'), precision)
@@ -903,7 +903,7 @@ SHELL_ORDER = c('dash',
                 '_bin/cxx-opt+bumproot/osh',
                 '_bin/cxx-opt+bumpsmall/osh',
                 '_bin/cxx-opt/osh',
-                '_bin/cxx-opt/mycpp-souffle/osh',
+                '_bin/cxx-opt/mycpp-nosouffle/osh',
                 '_bin/cxx-opt+nopool/osh')
 
 GcReport = function(in_dir, out_dir) {

@@ -17,14 +17,14 @@ OILS_VERSION=$(head -n 1 oils-version.txt)
 
 readonly _NINJA_BUILD=_bin/cxx-opt
 readonly OSH_CPP_NINJA=$_NINJA_BUILD/osh
-readonly OSH_SOUFFLE_CPP_NINJA=$_NINJA_BUILD/mycpp-souffle/osh
+readonly OSH_SOUFFLE_CPP_NINJA=$_NINJA_BUILD/mycpp-nosouffle/osh
 
 # Used by devtools/release.sh
 readonly BENCHMARK_DATA_OILS=$PWD/../benchmark-data/src/oils-for-unix-$OILS_VERSION
 readonly _SH_BUILD=_bin/cxx-opt-sh
 
 readonly OSH_CPP_SOIL=$_SH_BUILD/osh
-readonly OSH_SOUFFLE_CPP_SOIL=$_SH_BUILD/mycpp-souffle/osh
+readonly OSH_SOUFFLE_CPP_SOIL=$_SH_BUILD/mycpp-nosouffle/osh
 
 readonly OSH_CPP_TWO=$BENCHMARK_DATA_OILS/$OSH_CPP_SOIL
 readonly OSH_SOUFFLE_CPP_TWO=$BENCHMARK_DATA_OILS/$OSH_SOUFFLE_CPP_SOIL

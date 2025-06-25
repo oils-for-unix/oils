@@ -85,7 +85,7 @@ compare-m32() {
 }
 
 print-tasks() {
-  local mycpp_souffle=${1:-}
+  local mycpp_nosouffle=${1:-}
 
   local -a workloads=(
     parse.configure-coreutils
@@ -116,12 +116,12 @@ print-tasks() {
     "_bin/cxx-opt/osh${TAB}mut+alloc+free+gc+exit"
   )
 
-  if test -n "$mycpp_souffle"; then
+  if test -n "$mycpp_nosouffle"; then
     shells+=(
-      "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc"
-      "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc+free"
-      "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc+free+gc"
-      "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc+free+gc+exit"
+      "_bin/cxx-opt/mycpp-nosouffle/osh${TAB}mut+alloc"
+      "_bin/cxx-opt/mycpp-nosouffle/osh${TAB}mut+alloc+free"
+      "_bin/cxx-opt/mycpp-nosouffle/osh${TAB}mut+alloc+free+gc"
+      "_bin/cxx-opt/mycpp-nosouffle/osh${TAB}mut+alloc+free+gc+exit"
     )
   fi
 
@@ -165,7 +165,7 @@ print-tasks() {
 }
 
 print-cachegrind-tasks() {
-  local mycpp_souffle=${1:-}
+  local mycpp_nosouffle=${1:-}
 
   local -a workloads=(
     # coreutils is on osh-parser
@@ -193,9 +193,9 @@ print-cachegrind-tasks() {
     "_bin/cxx-opt/osh${TAB}mut+alloc+free+gc+exit"
   )
 
-  if test -n "$mycpp_souffle"; then
+  if test -n "$mycpp_nosouffle"; then
     shells+=(
-      "_bin/cxx-opt/mycpp-souffle/osh${TAB}mut+alloc+free+gc"
+      "_bin/cxx-opt/mycpp-nosouffle/osh${TAB}mut+alloc+free+gc"
     )
   fi
 
@@ -401,12 +401,12 @@ build-binaries() {
   soil/cpp-tarball.sh build-like-ninja \
     opt{,+bumpleak,+bumproot,+bumpsmall,+nopool}
 
-  OILS_TRANSLATOR=mycpp-souffle soil/cpp-tarball.sh build-like-ninja opt
+  OILS_TRANSLATOR=mycpp-nosouffle soil/cpp-tarball.sh build-like-ninja opt
 }
 
 measure-all() {
   local tsv_out=${1:-$BASE_DIR/raw/times.tsv}
-  local mycpp_souffle=${2:-}
+  local mycpp_nosouffle=${2:-}
 
   build-binaries
 
@@ -416,8 +416,8 @@ measure-all() {
   time-tsv -o $tsv_out --print-header \
     --rusage --field join_id --field task --field sh_path --field shell_runtime_opts
 
-  # Pass through args, which may include mycpp-souffle
-  time print-tasks "$mycpp_souffle" | run-tasks $tsv_out
+  # Pass through args, which may include mycpp-nosouffle
+  time print-tasks "$mycpp_nosouffle" | run-tasks $tsv_out
 
   if command -v pretty-tsv; then
     pretty-tsv $tsv_out
@@ -426,7 +426,7 @@ measure-all() {
 
 measure-cachegrind() {
   local tsv_out=${1:-$BASE_DIR_CACHEGRIND/raw/times.tsv}
-  local mycpp_souffle=${2:-T}
+  local mycpp_nosouffle=${2:-T}
 
   build-binaries
 
@@ -436,7 +436,7 @@ measure-cachegrind() {
   time-tsv -o $tsv_out --print-header \
     --rusage --field join_id --field task --field sh_path --field shell_runtime_opts
 
-  print-cachegrind-tasks "$mycpp_souffle" | run-tasks $tsv_out cachegrind
+  print-cachegrind-tasks "$mycpp_nosouffle" | run-tasks $tsv_out cachegrind
 
   # TODO: join cachegrind columns
 
@@ -556,13 +556,13 @@ make-report() {
 soil-run() {
   ### Run in soil/benchmarks
 
-  measure-all '' mycpp-souffle
+  measure-all '' mycpp-nosouffle
 
   make-report
 }
 
 run-for-release() {
-  # TODO: turn on Souffle
+  # TODO: turn on nosouffle?
   measure-all ''
 
   make-report

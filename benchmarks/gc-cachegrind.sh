@@ -78,7 +78,7 @@ make-report() {
 soil-run() {
   ### Run in soil/benchmarks2 (stable timings)
 
-  benchmarks/gc.sh measure-cachegrind '' mycpp-souffle
+  benchmarks/gc.sh measure-cachegrind '' mycpp-nosouffle
 
   make-report
 }

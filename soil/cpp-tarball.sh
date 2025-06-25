@@ -47,12 +47,10 @@ build-like-ninja() {
         mycpp)
           targets+=( _bin/cxx-$variant/{osh,ysh} )
           ;;
-        mycpp-souffle)
-          targets+=( _bin/cxx-$variant/mycpp-souffle/{osh,ysh} )
-          ;;
         *)
-          echo "Invalid translator: $OILS_TRANSLATOR" >&2
-          exit 1
+          # mycpp-souffle, mycpp-nosouffle
+          targets+=( _bin/cxx-$variant/$OILS_TRANSLATOR/{osh,ysh} )
+          ;;
       esac
     done
 
@@ -126,7 +124,7 @@ benchmark-build() {
   # timestamps
 
   _build/oils.sh --skip-rebuild
-  _build/oils.sh --translator mycpp-souffle --skip-rebuild
+  _build/oils.sh --translator mycpp-nosouffle --skip-rebuild
   build/static-oils.sh
 }
 
