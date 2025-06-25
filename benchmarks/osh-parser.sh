@@ -63,7 +63,7 @@ parser-task() {
   local shell_name
   case $sh_path in
     _bin/*/mycpp-souffle/*)
-      shell_name=osh-native-souffle
+      shell_name=osh-souffle
       ;;
     *)
       shell_name=$(basename $sh_path)
@@ -116,7 +116,7 @@ cachegrind-task() {
   local shell_name
   case $sh_path in
     _bin/*/mycpp-souffle/*)
-      shell_name=osh-native-souffle
+      shell_name=osh-souffle
       ;;
     *)
       shell_name=$(basename $sh_path)

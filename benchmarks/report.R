@@ -66,7 +66,7 @@ GetOshLabel = function(shell_hash, prov_dir) {
     } else if (length(grep('bin/osh', lines)) > 0) {
       label = 'osh-cpython'
     } else if (length(grep('_bin/.*/mycpp-souffle/osh', lines)) > 0) {
-      label = 'osh-native-souffle'
+      label = 'osh-souffle'
     } else if (length(grep('_bin/.*/osh', lines)) > 0) {
       label = 'osh-native'
     } else {
@@ -160,7 +160,7 @@ ShellLabelFromPath = function(sh_path) {
       label = 'ysh-static'
 
 	  } else if (endsWith(sh, osh_souffle_suffix1) || endsWith(sh, osh_souffle_suffix2)) {
-      label = 'osh-native-souffle'
+      label = 'osh-souffle'
 
     } else if (endsWith(sh, '_bin/cxx-opt+bumpleak/osh')) {
       label = 'bumpleak/osh'
@@ -332,7 +332,7 @@ ParserReport = function(in_dir, out_dir) {
 
     # Hack for release.  TODO: unify with SoilAdd commentMore actions
     if (Sys.getenv("OILS_NO_SOUFFLE") == "") {
-      souffle_col = c('osh-native-souffle')
+      souffle_col = c('osh-souffle')
     } else {
       souffle_col = c()
     }
@@ -574,7 +574,7 @@ RuntimeReport = function(in_dir, out_dir) {
   print(details)
 
   cols2 = c('workload', 'host_name',
-            'bash', 'dash', 'osh-native', 'osh-native-souffle', 'osh-static',
+            'bash', 'dash', 'osh-native', 'osh-souffle', 'osh-static',
             'osh_bash_ratio', 'static_bash_ratio')
 
   # Elapsed time comparison
@@ -651,7 +651,7 @@ RuntimeReport = function(in_dir, out_dir) {
 
   # milliseconds don't need decimal digit
   precision = ColumnPrecision(list(bash = 0, dash = 0, `osh-cpython` = 0,
-                                   `osh-native` = 0, `osh-native-souffle` = 0, `osh-static` = 0,
+                                   `osh-native` = 0, `osh-souffle` = 0, `osh-static` = 0,
                                    osh_bash_ratio = 2,
                                    static_bash_ratio = 2))
   writeTsv(elapsed, file.path(out_dir, 'elapsed'), precision)
