@@ -433,8 +433,9 @@ Warnings:
 
 ### ysh-read
 
-YSH adds long flags to shell's (unbuffered) `read` that do always
-return verbatim bytes:
+YSH adds to shell's slow (unbuffered) `read`:
+
+Long flags that do always return the bytes verbatim.
 
     read --all               # whole file including trailing \n, fills $_reply
     read --all (&x)          # fills $x
@@ -764,7 +765,7 @@ These builtins take input and output.  They're often used with redirects.
 
     read FLAG* VAR*
 
-Read input from `stdin` -- byte-wise (unbuffered) and echoing input to stdout if
+Read input from `stdin` -- byte-wise, slow (unbuffered) and echoing input to stdout if
 running in interactive terminal.
 
 Without flags, it does the following:
