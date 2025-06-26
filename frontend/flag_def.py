@@ -181,6 +181,12 @@ HISTORY_SPEC.ShortFlag('-r')
 HISTORY_SPEC.ShortFlag('-c')
 HISTORY_SPEC.ShortFlag('-d', args.Int)
 
+FC_SPEC = FlagSpec('fc')
+FC_SPEC.ShortFlag('-e', args.String)
+FC_SPEC.ShortFlag('-l')
+FC_SPEC.ShortFlag('-n')
+FC_SPEC.ShortFlag('-r')
+
 #
 # osh/builtin_process.py
 #

@@ -376,3 +376,84 @@ class History(vm._Builtin):
             item = readline.get_history_item(i)
             self.f.write('%5d  %s\n' % (i, item))
         return 0
+
+class Fc(vm._Builtin):
+    """Show or execute commands from interactive command history."""
+
+    def __init__(
+            self,
+            readline,  # type: Optional[Readline]
+            f,  # type: mylib.Writer
+    ):
+        # type: (...) -> None
+        self.readline = readline
+        self.f = f  # this hook is for unit testing only
+
+    def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        readline = self.readline
+        if not readline:
+            e_usage("is disabled because Oils wasn't compiled with 'readline'",
+                    loc.Missing)
+
+        attrs, arg_r = flag_util.ParseCmdVal('fc', cmd_val)
+        arg = arg_types.fc(attrs.attrs)
+
+        # Returns 0 items in non-interactive mode?
+        num_items = readline.get_current_history_length()
+
+        first_arg, first_arg_loc = arg_r.Peek2()
+        if first_arg is None:
+            if num_items > 16:
+                first_index = -16
+            else:
+                first_index = 1
+        else:
+            try:
+                # TODO: Support string arg
+                first_index = int(first_arg)
+            except ValueError:
+                e_usage('got invalid argument %r' % first_arg, first_arg_loc)
+        if first_index < 0:
+            first_index = num_items + first_index
+        arg_r.Next()
+
+        last_arg, last_arg_loc = arg_r.Peek2()
+        if last_arg is None:
+            last_index = num_items - 1
+        else:
+            try:
+                # TODO: Support string arg
+                last_index = int(last_arg)
+            except ValueError:
+                e_usage('got invalid argument %r' % last_arg, last_arg_loc)
+        if last_index < 0:
+            last_index = num_items + last_index
+        arg_r.Next()
+
+        should_reverse = False
+        if first_index > last_index:
+            first_index, last_index = last_index, first_index
+            should_reverse = True
+
+        if not arg_r.AtEnd():
+            e_usage('got too many arguments', loc.Missing)
+
+        if arg.l:
+            if arg.r or should_reverse:
+                items = reversed(xrange(first_index, last_index + 1))
+            else:
+                items = iter(xrange(first_index, last_index + 1))
+
+            for i in items:
+                item = readline.get_history_item(i)
+                if arg.n:
+                    self.f.write('\t %s\n' % (item))
+                else:
+                    self.f.write('%d\t %s\n' % (i, item))
+            return 0
+
+        # TODO:
+        if arg.e:
+            pass
+        e_usage('edit not implemented', loc.Missing)

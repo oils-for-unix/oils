@@ -38,7 +38,7 @@ _NORMAL_BUILTINS = [
     'getopts',
 
     # introspection / meta
-    'builtin', 'command', 'type', 'hash', 'help', 'history',
+    'builtin', 'command', 'type', 'hash', 'help', 'history', 'fc',
 
     'alias', 'unalias',
     'bind',
