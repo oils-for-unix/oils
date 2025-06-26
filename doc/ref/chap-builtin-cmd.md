@@ -433,7 +433,8 @@ Warnings:
 
 ### ysh-read
 
-YSH adds long flags to shell's `read`:
+YSH adds long flags to shell's (unbuffered) `read` that do always
+return verbatim bytes:
 
     read --all               # whole file including trailing \n, fills $_reply
     read --all (&x)          # fills $x
@@ -454,6 +455,7 @@ You may want to use `fromJson8()` or `fromJson()` after reading a line.
 
 (Unlike OSH [read](#read), none of these features remove NUL bytes.)
 
+NOTE: For fast, non-interctive, buffered reading use [io.stdin]: chap-type-method.html#stdin
 
 <!--
 
@@ -762,10 +764,13 @@ These builtins take input and output.  They're often used with redirects.
 
     read FLAG* VAR*
 
-Read input from `stdin`.  Without flags, it does the following:
+Read input from `stdin`, byte-wise (unbuffered) and echoing input to stdout if
+running in interactive terminal.
 
-1. Read a line from stdin, respecting `\` escapes and line continuations
-   - Any NUL bytes are removed from the input.
+Without flags, it does the following:
+
+1. Read characters from stdin until the end of a line ("RETURN"), respecting `\`
+   escapes and line continuations - Any NUL bytes are removed from the input.
 1. Use the `$IFS` algorithm to split the line into N pieces, where `N` is the
    number of `VAR` specified.  Each piece is assigned to the corresponding
    variable.
