@@ -12,6 +12,7 @@ except ImportError:
     cStringIO = None
     import io
 
+import math
 import sys
 
 from pylib import collections_
@@ -33,6 +34,17 @@ PYTHON = True
 
 # Use POSIX name directly
 STDIN_FILENO = 0
+
+
+# Avoid name conflicts with C Macros
+def isinf_(x):
+    # type: (float) -> bool
+    return math.isinf(x)
+
+
+def isnan_(x):
+    # type: (float) -> bool
+    return math.isnan(x)
 
 
 def MaybeCollect():

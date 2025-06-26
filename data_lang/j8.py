@@ -23,8 +23,6 @@ Later:
     - NIL8 at least has no commas for [1 2 "hi"]
 """
 
-import math
-
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.nil8_asdl import (nvalue, nvalue_t)
 from _devbuild.gen.runtime_asdl import error_code_e
@@ -38,7 +36,7 @@ from frontend import consts
 from frontend import match
 from mycpp import mops
 from mycpp import mylib
-from mycpp.mylib import tagswitch, iteritems, NewDict, log
+from mycpp.mylib import tagswitch, iteritems, NewDict, log, isinf_, isnan_
 
 import fastfunc
 
@@ -500,14 +498,14 @@ class InstancePrinter(object):
                 val = cast(value.Float, UP_val)
 
                 fl = val.f
-                if math.isinf(fl):
+                if isinf_(fl):
                     if self.options & INF_NAN_ARE_NULL:
                         s = 'null'  # negative infinity is null too
                     else:
                         s = 'INFINITY'
                         if fl < 0:
                             s = '-' + s
-                elif math.isnan(fl):
+                elif isnan_(fl):
                     if self.options & INF_NAN_ARE_NULL:
                         # JavaScript JSON lib behavior: Inf and NaN are null
                         # Python has a bug in the encoder by default, and then

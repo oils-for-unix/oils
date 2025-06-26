@@ -20,18 +20,6 @@
 
 using error::e_die;
 
-namespace math {
-
-bool isinf(double f) {
-  return ::isinf(f);
-}
-
-bool isnan(double f) {
-  return ::isnan(f);
-}
-
-}  // namespace math
-
 namespace fcntl_ {
 
 int fcntl(int fd, int cmd) {

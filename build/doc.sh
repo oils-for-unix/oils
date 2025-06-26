@@ -307,7 +307,7 @@ code:not(pre code) {
 }
 </style>
 
-This doc mirrors the `--help` for the 3 shell tools in the build sytsem:
+This doc mirrors the `--help` for the 3 shell tools in the build system:
 
 1. `configure` - Detect system features
 1. `_build/oils.sh` - Compile `oils-for-unix` source into an executable

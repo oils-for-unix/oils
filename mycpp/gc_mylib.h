@@ -13,6 +13,9 @@ class Dict;
 
 namespace mylib {
 
+bool isinf_(double f);
+bool isnan_(double f);
+
 void InitCppOnly();
 
 // Wrappers around our C++ APIs

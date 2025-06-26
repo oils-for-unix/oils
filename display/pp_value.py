@@ -4,8 +4,6 @@ from __future__ import print_function
 Render Oils value_t -> doc_t, so it can be pretty printed
 """
 
-import math
-
 from _devbuild.gen.pretty_asdl import (doc, Measure, MeasuredDoc)
 from _devbuild.gen.runtime_asdl import error_code_e
 from _devbuild.gen.value_asdl import Obj, value, value_e, value_t, value_str
@@ -17,7 +15,7 @@ from display import pp_hnode
 from display.pretty import _Break, _Concat, AsciiText
 from frontend import match
 from mycpp import mops
-from mycpp.mylib import log, tagswitch, iteritems
+from mycpp.mylib import log, tagswitch, iteritems, isinf_, isnan_
 from typing import cast, List, Dict
 
 import libc
@@ -35,11 +33,11 @@ def FloatString(fl):
     # type: (float) -> str
 
     # Print in YSH syntax, similar to data_lang/j8.py
-    if math.isinf(fl):
+    if isinf_(fl):
         s = 'INFINITY'
         if fl < 0:
             s = '-' + s
-    elif math.isnan(fl):
+    elif isnan_(fl):
         s = 'NAN'
     else:
         s = str(fl)

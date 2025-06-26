@@ -126,7 +126,7 @@ compare-gcc-clang() {
 
   local -a targets=(
     _bin/{clang,cxx}-opt/bin/oils_for_unix.mycpp.stripped
-    _bin/{clang,cxx}-opt/bin/oils_for_unix.mycpp-souffle.stripped
+    _bin/{clang,cxx}-opt/bin/oils_for_unix.mycpp-nosouffle.stripped
     _bin/cxx-{opt+bumpleak,opt+bumproot,opt+bigint}/bin/oils_for_unix.mycpp.stripped
     _bin/{clang,cxx}-opt/yaks/yaks_main.mycpp.stripped
     #_bin/cxx-{opt+bumpleak,opt+bumproot}/yaks/yaks_main.mycpp.stripped

@@ -1,12 +1,21 @@
 #include "mycpp/gc_mylib.h"
 
 #include <errno.h>
+#include <math.h>
 #include <stdio.h>
 #include <unistd.h>  // isatty
 
 #include "mycpp/gc_iolib.h"
 
 namespace mylib {
+
+bool isinf_(double f) {
+  return ::isinf(f);
+}
+
+bool isnan_(double f) {
+  return ::isnan(f);
+}
 
 void InitCppOnly() {
   // We don't seem need this now that we have ctx_FlushStdout().
