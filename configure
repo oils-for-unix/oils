@@ -79,7 +79,13 @@ EOF
 
 init_flags() {
   ### Used in tests
-  FLAG_cxx_for_configure=cc  # use a C compiler by default
+
+  # Quirk: we use a C compiler by default, which seems consistent.  We are not
+  # detecting anything about C++.
+  # This is because OLD oils-ref tarball only depends on C.  In contrast,
+  # oils-for-unix depends on C++.
+  FLAG_cxx_for_configure=cc
+
   FLAG_prefix='/usr/local'
   FLAG_datarootdir=''  # default initialized after processing flags
   FLAG_with_readline=''  # Fail if it's not available.
@@ -218,13 +224,15 @@ parse_flags() {
 # No output file, no logging, no stderr.
 # TODO: Maybe send stdout/stderr to config.log?
 cc_quiet() {
-  $FLAG_cxx_for_configure "$@" -o /dev/null >/dev/null 2>&1
+  "$FLAG_cxx_for_configure" "$@" -o /dev/null >/dev/null 2>&1
 }
 
 cc_or_die() {
-  if ! cc "$@" >$TMP/cc.log 2>&1; then
+  # Used to detect
+  local log_path=$TMP/cc_or_die.log 
+  if ! "$FLAG_cxx_for_configure" "$@" >"$log_path" 2>&1; then
     log "Error running 'cc $@':"
-    cat $TMP/cc.log
+    cat "$log_path"
     die "Fatal compile error running feature test"
   fi
 }
@@ -415,6 +423,7 @@ echo_libc() {
   fi
 }
 
+# Note: this is only for the OLD oils-ref tarball
 detect_c_language() {
   echo_libc
   echo
