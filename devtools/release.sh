@@ -362,7 +362,7 @@ _build-oils-benchmark-data() {
     CXXFLAGS=-gdwarf-4 _build/oils.sh --variant "$variant" --skip-rebuild
   done
   # Build like benchmarks/osh-runtime.sh
-  _build/oils.sh --translator mycpp-souffle --skip-rebuild
+  _build/oils.sh --translator mycpp-nosouffle --skip-rebuild
 
   # Build like benchmarks/osh-runtime.sh soil-run, but NOT in the repo
   build/static-oils.sh
