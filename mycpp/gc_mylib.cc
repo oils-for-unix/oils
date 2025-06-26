@@ -9,12 +9,15 @@
 
 namespace mylib {
 
+// Note: isinf() and isnan() MAY be macros, because we included <math.h> rather
+// than <cmath>.  The latter defines std::isinf()
+
 bool isinf_(double f) {
-  return ::isinf(f);
+  return isinf(f);
 }
 
 bool isnan_(double f) {
-  return ::isnan(f);
+  return isnan(f);
 }
 
 void InitCppOnly() {
