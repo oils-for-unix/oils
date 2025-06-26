@@ -421,6 +421,13 @@ echo_libc() {
     echo '#define HAVE_GLOB_PERIOD 0'
     echo '#define GLOB_PERIOD 0  /* define bit flag to have no effect */'
   fi
+
+  # Used by cpp/core.cc
+  if test "$have_pwent" = 1; then
+    echo '#define HAVE_PWENT 1'
+  else
+    echo '/* #undef HAVE_PWENT */'
+  fi
 }
 
 # Note: this is only for the OLD oils-ref tarball
@@ -525,25 +532,8 @@ echo_cpp() {
 
   echo
 
-  if test "$have_fnm_extmatch" = 1; then
-    echo '#define HAVE_FNM_EXTMATCH 1'
-  else
-    echo '#define HAVE_FNM_EXTMATCH 0'
-  fi
-
-  if test "$have_glob_period" = 1; then
-    echo '#define HAVE_GLOB_PERIOD 1'
-  else
-    echo '#define HAVE_GLOB_PERIOD 0'
-    echo '#define GLOB_PERIOD 0  /* define bit flag to have no effect */'
-  fi
-
-  # Used by cpp/core.cc
-  if test "$have_pwent" = 1; then
-    echo '#define HAVE_PWENT 1'
-  else
-    echo '/* #undef HAVE_PWENT */'
-  fi
+  # Shared with detect_c_language
+  echo_libc
 }
 
 # Another way of working: set detected-config.mk ?
