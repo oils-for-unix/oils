@@ -770,7 +770,8 @@ running in interactive terminal.
 Without flags, it does the following:
 
 1. Read characters from stdin until the end of a line ("RETURN"), respecting `\`
-   escapes and line continuations - Any NUL bytes are removed from the input.
+   escapes and line continuations
+   - Any NUL bytes are removed from the input.
 1. Use the `$IFS` algorithm to split the line into N pieces, where `N` is the
    number of `VAR` specified.  Each piece is assigned to the corresponding
    variable.
