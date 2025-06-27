@@ -116,7 +116,7 @@ make-tar() {
   local tar_gz=_release/${app_name}-${OILS_VERSION}.tar.gz
   gzip -c $tar > $tar_gz
 
-  ls -l _release
+  ls -l --si _release
 }
 
 test-tar() {

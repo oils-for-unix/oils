@@ -228,8 +228,11 @@ if test $name = oils-ref; then
   time make $target
   $target --version
 else
-  _build/oils.sh
+  _build/oils.sh --skip-rebuild
   _bin/cxx-opt-sh/osh --version
+
+  build/static-oils.sh
+  _bin/cxx-opt-sh/osh-static --version
 fi
 
 ./install
@@ -252,13 +255,19 @@ test-tar() {
 
 copy-static() {
   local chroot_dir=${1:-$CHROOT_OILS_TAR}
-  local dir=_tmp/musl
+  local dir=_tmp/musl-libc
   mkdir -p $dir
   cp -v \
-    $CHROOT_OILS_TAR/src/oils-for-unix-$OILS_VERSION/_bin/cxx-opt-sh/oils-for-unix.static* \
+    $CHROOT_OILS_TAR/src/oils-for-unix-$OILS_VERSION/_bin/cxx-opt-sh/oils-for-unix-static* \
     $dir
+  ls -l --si $dir
 }
 
+build-static-musl() {
+  copy-tar
+  test-tar
+  copy-static
+}
 
 #
 # cpp tarball

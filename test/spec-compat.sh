@@ -4,6 +4,13 @@
 #
 # Usage:
 #   test/spec-compat.sh <function name>
+#
+# Examples:
+#   $0 build-static-oils  # Build Oils binaries
+#   $0 build-brush T      # Pull and build
+#   $0 build-sush T       # Pull and build
+#   $0 osh-all            # Run spec tests, and make report
+#                         # Includes binary size report
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
@@ -17,12 +24,6 @@ source test/spec-common.sh
 
 OSH_TARGET=_bin/cxx-asan/osh
 OSH=$PWD/$OSH_TARGET
-
-# To compare against:
-# - toysh
-# - brush
-# - rusty_bash
-# - ksh93 - Debian package
 
 # Metrics
 # - binary size - stripped
@@ -121,28 +122,58 @@ build-sush() {
   popd
 }
 
-binary-sizes() {
-  local oils=_bin/cxx-opt/bin/oils_for_unix.mycpp.stripped
-  ninja $oils
+build-static-oils() {
+  devtools/release-native.sh make-tar
 
-  pushd $BRUSH_DIR
+  # Static binary with glibc
+  build/static-oils.sh 
+
+  # Static binary with musl libc
+  test/alpine.sh build-static-musl
+}
+
+binary-sizes() {
+  local oils_dynamic=_bin/cxx-opt/bin/oils_for_unix.mycpp.stripped
+  ninja $oils_dynamic
+
+  pushd $BRUSH_DIR >/dev/null
   local out=target/release/brush.stripped 
   strip -o $out target/release/brush
   local brush=$BRUSH_DIR/$out
-  popd
+  popd >/dev/null
 
-  pushd $SUSH_DIR
+  pushd $SUSH_DIR >/dev/null
   local out=target/release/sush.stripped 
   strip -o $out target/release/sush
   local sush=$SUSH_DIR/$out
-  popd
+  popd >/dev/null
+
+  local -a oils=(
+    $oils_dynamic
+
+    # 2.4 M musl libc
+    _tmp/musl-libc/oils-for-unix-static.stripped
+
+    # 3.4 MB with glibc
+    _bin/cxx-opt-sh/oils-for-unix-static.stripped
+  )
+  local -a other=(
+
+    $brush $sush $TOYBOX_DIR/sh
+    # our bash isn't stripped
+    # $(which bash) $(which dash) $(which mksh) $(which ksh)
+  )
 
   echo
-  ls -l --si $oils $brush $sush $TOYBOX_DIR/sh
-
-  # These aren't dynamically linked to GNU readline, or libstdc++
+  ls -l --si --sort=none "${oils[@]}"
   echo
-  ldd $oils $brush $sush $TOYBOX_DIR/sh
+  ls -l --si --sort=none "${other[@]}"
+
+  # Rust binaries aren't dynamically linked to GNU readline, or libstdc++
+  echo
+  ldd "${oils[@]}" || true  # fails if not dynamic
+  echo
+  ldd "${other[@]}"
 }
 
 symbols() {
@@ -188,39 +219,56 @@ install-geiger() {
   cargo install --locked cargo-geiger
 }
 
-# This is DESTRUCTIVE
-geiger-report() {
-  if true; then
-    pushd ../../shells/brush
+# This is DESTRUCTIVE for some reason.
+# It cleans the build and rebuilds every time.
+geiger-brush() {
+  . ~/.cargo/env
 
-    . ~/.cargo/env
+  pushd ../../shells/brush
 
-    # doesn't work
-    #time cargo geiger --workspace
-    #time cargo geiger --package brush-core --package brush-parser
+  pushd brush-core
+  cargo geiger 
+  popd
 
-    popd
-  fi
+  pushd brush-interactive
+  cargo geiger 
+  popd
 
-  if false; then
-    pushd ../../shells/rusty_bash
+  pushd brush-parser
+  cargo geiger 
+  popd
 
-    . ~/.cargo/env
+  pushd brush-shell
+  cargo geiger 
+  popd
 
-    # this cleans the build
-    #
-    # Functions  Expressions  Impls   Traits  Methods
-    # 181/1056   9377/45040   114/158 30/32   463/2887
-    #
-    # x/y
-    # x = unsafe used by build
-    # y = unsafe in crate
+  # doesn't work
+  #time cargo geiger --workspace
+  #time cargo geiger --package brush-core --package brush-parser
 
-    # ~7 seconds
-    time cargo geiger 
+  #time cargo geiger --workspace
 
-    popd
-  fi
+  popd
+}
+
+geiger-sush() {
+  . ~/.cargo/env
+
+  pushd ../../shells/rusty_bash
+
+  # this cleans the build
+  #
+  # Functions  Expressions  Impls   Traits  Methods
+  # 181/1056   9377/45040   114/158 30/32   463/2887
+  #
+  # x/y
+  # x = unsafe used by build
+  # y = unsafe in crate
+
+  # ~7 seconds
+  time cargo geiger 
+
+  popd
 }
 
 #

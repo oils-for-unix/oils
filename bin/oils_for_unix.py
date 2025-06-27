@@ -101,8 +101,9 @@ def AppBundleMain(argv):
     else:
         bundle = 'oils-for-unix'  # _bin/cxx-dbg/oils-for-unix
 
-    # for legacy oils-ref.ovm
-    if main_name == bundle or (main_name == 'oils-ref' and len(ext)):
+    # oils-for-unix-static is allowed
+    # oils-ref.ovm
+    if main_name.startswith(bundle) or (main_name == 'oils-ref' and len(ext)):
         arg_r.Next()
         first_arg = arg_r.Peek()
         if first_arg is None:

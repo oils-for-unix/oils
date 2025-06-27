@@ -3,13 +3,14 @@
 # Create reports, published at https://pages.oils.pub/
 #
 # Usage:
-#   ./spec-compat-html.sh <function name>
+#   test/spec-compat-html.sh <function name>
+#
+# Examples:
+#   $0 deploy
 #
 # TODO:
-# - Deploy HTML
-#   - add tree html
 #   - improve pages.oils.pub/ index.html
-#   - Epoch or Build timestamp on page
+#   - Add epoch or Build timestamp on page - that's at the top
 # - Improve
 #   - summary/percentages in TOP.html?
 #   - More shells: might as well include ash, dash, ysh
@@ -180,7 +181,7 @@ html-summary-header() {
 
 <h1>$report - Shell Compatibility</h1>
 
-<p>Back to <a href="TOP.html">TOP.html</a>.
+<p>Back to <a href="TOP.html">TOP.html</a>
 </p>
 EOF
 }
@@ -270,6 +271,8 @@ Here are some summary tables.  **Click** on the column headers to sort:
 - [Delta OSH](DELTA-osh.html)
   - Compare each shell's passing count vs. OSH
 
+[tree.html](tree.html)
+
 ### Notes and Caveats
 
 - Some tests may fail for innocuous reasons, e.g. printing `'$'` versus `\$`
@@ -314,9 +317,10 @@ TODO: Add other shells, and be more specific about versions.
 
 ### More Comparisons
 
+- [Binary Sizes](binary-sizes.txt)
+
 Possibly TODO
 
-- Binary size
 - Build times
 - Lines of code?
   - [Oils has a "compressed" implementation](https://www.oilshell.org/blog/2024/09/line-counts.html)
@@ -358,7 +362,7 @@ EOF
 }
 
 write-compare-html() {
-  local spec_subdir='compat'
+  local spec_subdir=${1:-'compat'}
   local dir=_tmp/spec/$spec_subdir
 
   local out=$dir/TOP.html 
@@ -369,16 +373,25 @@ write-compare-html() {
     return
   fi
 
-  write-summary-html PASSING "$@"
-  write-summary-html DELTA-osh "$@"
-  write-summary-html DELTA-bash "$@"
+  write-summary-html PASSING "$spec_subdir"
+  write-summary-html DELTA-osh "$spec_subdir"
+  write-summary-html DELTA-bash "$spec_subdir"
+
+  echo
+  test/spec-compat.sh binary-sizes | tee $dir/binary-sizes.txt
+}
+
+write-tree-html() {
+  local dir=${1:-_tmp/spec/compat}
+  tree -H './' -T 'Files in spec-compat Report' --charset=ascii $dir \
+    > $dir/tree.html
 }
 
 # TODO: Publish this script
 multi() { ~/git/tree-tools/bin/multi "$@"; }
 
 deploy() {
-  local epoch=${1:-2025-06-19}
+  local epoch=${1:-2025-06-26}
 
   local dest=$PWD/../pages/spec-compat/$epoch
 
@@ -392,6 +405,8 @@ deploy() {
   pushd _tmp
   find spec/compat -name '*.html' -o -name '*.tsv' | multi cp $dest/renamed-tmp
   popd
+
+  write-tree-html $dest/renamed-tmp/spec/compat
 
   # Work around Jekyll rule for Github pages
   #mv -v $dest/_tmp $dest/renamed-tmp
