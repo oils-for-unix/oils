@@ -765,8 +765,8 @@ These builtins take input and output.  They're often used with redirects.
 
     read FLAG* VAR*
 
-Read input from `stdin` -- byte-wise, slow (unbuffered) and echoing input to stdout if
-running in interactive terminal.
+Read input from `stdin` -- byte-wise waiting, slow (unbuffered), with terminal echoing input to stdout if
+running interactively.
 
 Without flags, it does the following:
 
