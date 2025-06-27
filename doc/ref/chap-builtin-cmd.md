@@ -456,7 +456,7 @@ You may want to use `fromJson8()` or `fromJson()` after reading a line.
 
 (Unlike OSH [read](#read), none of these features remove NUL bytes.)
 
-NOTE: For fast, non-interctive, buffered reading use [io.stdin]: chap-type-method.html#stdin
+NOTE: For fast, non-interctive, buffered reading use [io.stdin](chap-type-method.html#stdin).
 
 <!--
 
