@@ -774,13 +774,14 @@ Without flags, it does the following:
    - Respecting `\` escapes and line continuations.
    - Removing any NUL bytes from the input.
 1. Use the `$IFS` algorithm to split the line into N pieces, where `N` is the
-   number of `VAR` specified.  Each piece is assigned to the corresponding
-   variable.
+   number of `VAR`s specified.  Each piece is assigned to the corresponding
+   variable. Last VAR receives all remainig words.
+   - Leading and trailing whitespace is trimmed from each VAR.
    - If no VARs are given, assign to the `$REPLY` var.
 
-Note: When writing YSH, prefer the `--long-flag` modes documented in
-[ysh-read](#ysh-read).  The algorithm above can be confusing, e.g. because `-r`
-is not the default.
+Note: This default "parsing" algorithm can be confusing and cumbersome to
+tame with `-r`, `IFS=` and more options. When writing YSH, prefer the verbatim
+`--long-flag` modes documented in [ysh-read](#ysh-read).  
 
 Flags:
 
