@@ -515,6 +515,10 @@ two = $two
 
 #### ''' without parse_triple_quote
 
+# 2025-06: re-allowed after hack for case (x) ''/foo/
+#          See spec/ysh-TODO-deprecate
+# This is a corner case that can change
+
 shopt --unset parse_triple_quote
 
 echo '''
@@ -522,8 +526,11 @@ echo '''
   \u{61}
   '''
 
-## status: 2
 ## STDOUT:
+
+  two = $two
+  \u{61}
+  
 ## END
 
 #### here doc with quotes

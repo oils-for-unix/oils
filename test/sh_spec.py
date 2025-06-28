@@ -530,11 +530,7 @@ class EqualAssertion(object):
     def Check(self, shell, record):
         actual = record[self.key]
         if actual != self.expected:
-            if len(str(self.expected)) < 40:
-                msg = '[%s %s] Expected %r, got %r' % (shell, self.key,
-                                                       self.expected, actual)
-            else:
-                msg = '''
+            msg = '''
 [%s %s]
 Expected %r
 Got      %r
@@ -1353,8 +1349,12 @@ def ParseTestList(test_files):
 
         # Don't need compare_shells, etc. to decide what to run
 
-        row = {'spec_name': spec_name, 'suite': suite, 'tags': tags, 'cases':
-               cases}
+        row = {
+            'spec_name': spec_name,
+            'suite': suite,
+            'tags': tags,
+            'cases': cases
+        }
         #print(row)
         yield row
 

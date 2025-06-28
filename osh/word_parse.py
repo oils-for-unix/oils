@@ -150,7 +150,8 @@ def _IsValidYshWord(w):
         part0 = parts[0]
         if part0.tag() == word_part_e.SingleQuoted:
             sq = cast(SingleQuoted, part0)
-            if len(sq.sval) == 0:
+            # Make sure $''' is still disallowed
+            if (sq.left.id == Id.Left_SingleQuote and len(sq.sval) == 0):
                 return True
 
         for part in parts:
