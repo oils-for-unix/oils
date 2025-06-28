@@ -773,15 +773,14 @@ Without flags, it does the following:
 1. Read characters from stdin until the end of a line ("RETURN").
    - Respecting `\` escapes and line continuations.
    - Removing any NUL bytes from the input.
-1. Use the `$IFS` algorithm to split the line into N pieces, where `N` is the
-   number of `VAR`s specified.  Each piece is assigned to the corresponding
-   variable. Last VAR receives all remainig words.
-   - Leading and trailing whitespace is trimmed from each VAR.
+1. Use the `$IFS` algorithm to split and trim the line into N pieces, where
+   `N` is the number of `VAR`s specified. Each piece is assigned to
+   the corresponding variable. The last VAR also receives any remainig pieces.
    - If no VARs are given, assign to the `$REPLY` var.
 
 Note: This default "parsing" algorithm can be confusing and cumbersome to
 tame with `-r`, `IFS=` and more options. When writing YSH, prefer the verbatim
-`--long-flag` modes documented in [ysh-read](#ysh-read).  
+`--long-flag` modes documented in [ysh-read](#ysh-read).
 
 Flags:
 
