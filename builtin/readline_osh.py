@@ -433,7 +433,11 @@ class Fc(vm._Builtin):
 
         should_reverse = False
         if first_index > last_index:
-            first_index, last_index = last_index, first_index
+            # mycpp requires this swap idiom
+            tmp = first_index
+            first_index = last_index
+            last_index = tmp
+
             should_reverse = True
 
         if not arg_r.AtEnd():
@@ -454,6 +458,6 @@ class Fc(vm._Builtin):
             return 0
 
         # TODO:
-        if arg.e:
+        if arg.e is not None:
             pass
         e_usage('edit not implemented', loc.Missing)
