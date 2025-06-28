@@ -145,6 +145,14 @@ def _IsValidYshWord(w):
 
     ok = True
     if n >= 2:
+        # spec/ysh-TODO-deprecate - allow ''/usr/* workaround!
+        # note: ""/usr/* not allowed
+        part0 = parts[0]
+        if part0.tag() == word_part_e.SingleQuoted:
+            sq = cast(SingleQuoted, part0)
+            if len(sq.sval) == 0:
+                return True
+
         for part in parts:
             if part.tag() in (word_part_e.SingleQuoted,
                               word_part_e.DoubleQuoted):

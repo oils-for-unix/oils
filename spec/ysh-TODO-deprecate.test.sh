@@ -157,3 +157,15 @@ hi
 hi
 (Dict)   {}
 ## END
+
+#### YSH case requires ''/dir/*.py  workaround
+
+shopt --set ysh:all
+
+case ('/usr/bin/') {
+  ''/usr/* { echo yes }
+  (else) { echo no }
+}
+## STDOUT:
+yes
+## END
