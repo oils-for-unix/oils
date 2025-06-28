@@ -71,7 +71,7 @@ case $SH in bash) echo '^D' ;; esac
 ^D
 ## END
 
-#### fc -ln
+#### fc -lnr
 rm -f tmp
 
 echo '

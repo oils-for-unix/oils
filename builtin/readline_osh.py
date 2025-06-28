@@ -431,30 +431,36 @@ class Fc(vm._Builtin):
             last_index = num_items + last_index
         arg_r.Next()
 
-        should_reverse = False
-        if first_index > last_index:
-            # mycpp requires this swap idiom
-            tmp = first_index
-            first_index = last_index
-            last_index = tmp
-
-            should_reverse = True
-
         if not arg_r.AtEnd():
             e_usage('got too many arguments', loc.Missing)
 
         if arg.l:
-            if arg.r or should_reverse:
-                items = reversed(xrange(first_index, last_index + 1))
-            else:
-                items = iter(xrange(first_index, last_index + 1))
+            is_reversed = first_index > last_index
 
-            for i in items:
+            if arg.r and not is_reversed:
+                is_reversed = True
+
+                # mycpp requires this swap idiom
+                tmp = first_index
+                first_index = last_index
+                last_index = tmp
+
+            if is_reversed:
+                limit = last_index - 1
+                step = -1
+            else:
+                limit = last_index + 1
+                step = 1
+
+            i = first_index
+            while i != limit:
                 item = readline.get_history_item(i)
                 if arg.n:
                     self.f.write('\t %s\n' % (item))
                 else:
                     self.f.write('%d\t %s\n' % (i, item))
+                i += step
+
             return 0
 
         # TODO:
