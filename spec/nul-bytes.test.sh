@@ -3,44 +3,113 @@
 ## oils_cpp_failures_allowed: 1
 
 #### NUL bytes with echo -e
-case $SH in (dash) exit ;; esac
+case $SH in dash) exit ;; esac
 
-echo -e '\0-'
+show_hex() { od -A n -t c -t x1; }
+
+echo -e '\0-' | show_hex
 #echo -e '\x00-'
 #echo -e '\000-'
 
-## stdout-repr: "\x00-\n"
-## BUG zsh stdout-repr: "\x00\n"
-## N-I dash stdout-json: ""
+## STDOUT:
+  \0   -  \n
+  00  2d  0a
+## END
 
-#### NUL bytes in printf format
-printf '\0\n'
-## stdout-repr: "\x00\n"
+## BUG zsh STDOUT:
+  \0  \n
+  00  0a
+## END
 
-#### NUL bytes in printf value (OSH and zsh agree)
-case $SH in (dash) exit ;; esac
+## N-I dash STDOUT:
+## END
+
+#### printf - literal NUL in format string
+case $SH in dash|ash) return ;; esac
+
+# Show both printable and hex
+show_hex() { od -A n -t c -t x1; }
+
+printf $'x\U0z' | show_hex
+echo ---
+
+printf $'x\U00z' | show_hex
+echo ---
+
+printf $'\U0z' | show_hex
+
+## STDOUT:
+   x
+  78
+---
+   x
+  78
+---
+## END
+## BUG zsh STDOUT:
+   x  \0   z
+  78  00  7a
+---
+   x  \0   z
+  78  00  7a
+---
+  \0   z
+  00  7a
+## END
+## N-I dash/ash STDOUT:
+## END
+
+#### printf - \0 escape shows NUL byte
+show_hex() { od -A n -t c -t x1; }
+
+printf '\0\n' | show_hex
+## STDOUT:
+  \0  \n
+  00  0a
+## END
+
+#### printf - NUL byte in value (OSH and zsh agree)
+case $SH in dash) exit ;; esac
+show_hex() { od -A n -t c -t x1; }
 
 nul=$'\0'
-echo "$nul"
-printf '%s\n' "$nul"
+echo "$nul" | show_hex
+printf '%s\n' "$nul" | show_hex
 
-## stdout-repr: "\n\n"
-## OK osh/zsh stdout-repr: "\x00\n\x00\n"
+## STDOUT:
+  \n
+  0a
+  \n
+  0a
+## END
+
+## OK osh/zsh STDOUT:
+  \0  \n
+  00  0a
+  \0  \n
+  00  0a
+## END
 ## N-I dash stdout-json: ""
 
-
-
 #### NUL bytes with echo $'\0' (OSH and zsh agree)
-
-case $SH in (dash) exit ;; esac
+case $SH in dash) exit ;; esac
+show_hex() { od -A n -t c -t x1; }
 
 # OSH agrees with ZSH -- so you have the ability to print NUL bytes without
 # legacy echo -e
 
-echo $'\0'
+echo $'\0' | show_hex
 
-## stdout-repr: "\n"
-## OK osh/zsh stdout-repr: "\0\n"
+## STDOUT:
+  \n
+  0a
+## END
+## OK osh/zsh STDOUT:
+  \0  \n
+  00  0a
+## END
+
+
 ## N-I dash stdout-json: ""
 
 

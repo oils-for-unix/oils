@@ -60,20 +60,60 @@ echo ${v%[[:alpha:]]}
 ## N-I mksh stdout: abc
 
 #### Strip unicode prefix
+
+show_hex() { od -A n -t c -t x1; }
+
 # NOTE: LANG is set to utf-8.
+# ? is a glob that stands for one character
+
 v='μ-'
-echo ${v#?}  # ? is a glob that stands for one character
-echo ${v##?}
+echo ${v#?} | show_hex
+echo
+echo ${v##?} | show_hex
+echo
+
 v='-μ'
-echo ${v%?}  # ? is a glob that stands for one character
-echo ${v%%?}
+echo ${v%?} | show_hex
+echo
+echo ${v%%?} | show_hex
 ## STDOUT:
--
--
--
--
-## BUG dash/mksh/ash stdout-repr: '\xbc-\n\xbc-\n-\xce\n-\xce\n'
-## BUG zsh stdout-repr: '\n\n\n\n'
+   -  \n
+  2d  0a
+
+   -  \n
+  2d  0a
+
+   -  \n
+  2d  0a
+
+   -  \n
+  2d  0a
+## BUG dash/mksh/ash STDOUT:
+ 274   -  \n
+  bc  2d  0a
+
+ 274   -  \n
+  bc  2d  0a
+
+   - 316  \n
+  2d  ce  0a
+
+   - 316  \n
+  2d  ce  0a
+## END
+## BUG-2 zsh STDOUT:
+  \n
+  0a
+
+  \n
+  0a
+
+  \n
+  0a
+
+  \n
+  0a
+## END
 
 #### Bug fix: Test that you can remove everything with glob
 s='--x--'

@@ -47,23 +47,52 @@ echo $(echo $y)
 ## END
 
 #### xtrace with unprintable chars
-case $SH in (dash) exit ;; esac
+case $SH in dash) exit ;; esac
+
+$SH >stdout 2>stderr <<'EOF'
 
 s=$'a\x03b\004c\x00d'
 set -o xtrace
 echo "$s"
-## stdout-repr: 'a\x03b\x04c\x00d\n'
-## STDERR:
+EOF
+
+show_hex() { od -A n -t c -t x1; }
+
+echo STDOUT
+cat stdout | show_hex
+echo
+
+echo STDERR
+grep 'echo' stderr 
+
+## STDOUT:
+STDOUT
+   a 003   b 004   c  \0   d  \n
+  61  03  62  04  63  00  64  0a
+
+STDERR
 + echo $'a\u0003b\u0004c\u0000d'
 ## END
-## OK bash stdout-repr: 'a\x03b\x04c\n'
-## OK bash stderr-repr: "+ echo $'a\\003b\\004c'\n"
 
-# nonsensical output?
-## BUG mksh stdout-repr: 'a;\x04c\r\n'
-## BUG mksh stderr-repr: "+ echo $'a;\\004c\\r'\n"
+## OK bash STDOUT:
+STDOUT
+   a 003   b 004   c  \n
+  61  03  62  04  63  0a
+
+STDERR
++ echo $'a\003b\004c'
+## END
+
+## BUG mksh STDOUT:
+STDOUT
+   a   ; 004   c  \r  \n
+  61  3b  04  63  0d  0a
+
+STDERR
++ echo $'a;\004c\r'
+## END
+
 ## N-I dash stdout-json: ""
-## N-I dash stderr-json: ""
 
 #### xtrace with unicode chars
 case $SH in (dash) exit ;; esac

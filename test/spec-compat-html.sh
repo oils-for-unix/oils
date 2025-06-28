@@ -317,7 +317,7 @@ TODO: Add other shells, and be more specific about versions.
 
 ### More Comparisons
 
-- [Binary Sizes](binary-sizes.txt)
+- [Binary Sizes](../../binary-sizes.txt)
 
 Possibly TODO
 
@@ -378,7 +378,7 @@ write-compare-html() {
   write-summary-html DELTA-bash "$spec_subdir"
 
   echo
-  test/spec-compat.sh binary-sizes | tee $dir/binary-sizes.txt
+  test/spec-compat.sh binary-sizes | tee _tmp/binary-sizes.txt
 }
 
 write-tree-html() {
@@ -404,6 +404,7 @@ deploy() {
 
   pushd _tmp
   find spec/compat -name '*.html' -o -name '*.tsv' | multi cp $dest/renamed-tmp
+  cp -v binary-sizes.txt $dest/renamed-tmp/
   popd
 
   write-tree-html $dest/renamed-tmp/spec/compat

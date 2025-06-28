@@ -195,10 +195,9 @@ def AddMetadataToCase(case, qualifier, shells, name, value, line_num):
             case[shell] = {}
 
         # Check a duplicate specification
-        name_without_type = re.sub(r'-(json|repr)$', '', name)
+        name_without_type = re.sub(r'-json$', '', name)
         if (name_without_type in case[shell] or
-                name_without_type + '-json' in case[shell] or
-                name_without_type + '-repr' in case[shell]):
+                name_without_type + '-json' in case[shell]):
             raise ParseError('Line %d: duplicate spec %r for %r' %
                              (line_num, name, shell))
 
@@ -401,14 +400,6 @@ def CreateStringAssertion(d, key, assertions, qualifier=False):
     exp_json = d.get(key + '-json')
     if exp_json is not None:
         exp = json.loads(exp_json, encoding='utf-8')
-        a = EqualAssertion(key, exp, qualifier=qualifier)
-        assertions.append(a)
-        found = True
-
-    # For testing invalid unicode
-    exp_repr = d.get(key + '-repr')
-    if exp_repr is not None:
-        exp = eval(exp_repr)
         a = EqualAssertion(key, exp, qualifier=qualifier)
         assertions.append(a)
         found = True
@@ -1362,7 +1353,8 @@ def ParseTestList(test_files):
 
         # Don't need compare_shells, etc. to decide what to run
 
-        row = {'spec_name': spec_name, 'suite': suite, 'tags': tags}
+        row = {'spec_name': spec_name, 'suite': suite, 'tags': tags, 'cases':
+               cases}
         #print(row)
         yield row
 
@@ -1395,6 +1387,12 @@ def main(argv):
         for row in ParseTestList(argv[1:]):
             print('%(suite)s\t%(spec_name)s' % row)
             #print(row)
+        return 0
+
+    if opts.export_json:
+        for row in ParseTestList(argv[1:]):
+            #print('%(suite)s\t%(spec_name)s' % row)
+            print(json.dumps(row, indent=2))
         return 0
 
     #

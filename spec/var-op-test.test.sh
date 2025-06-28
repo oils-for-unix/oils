@@ -622,7 +622,7 @@ echo "${undef-\e}"
 ## STDOUT:
 \e
 ## END
-## BUG zsh/mksh stdout-repr: '\x1b\n'
+## BUG zsh/mksh stdout-json: "\u001b\n"
 ## BUG yash stdout: e
 
 

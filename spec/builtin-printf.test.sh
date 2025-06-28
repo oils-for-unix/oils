@@ -1114,18 +1114,6 @@ esac
 ## N-I ash/dash/mksh/zsh STDOUT:
 ## END
 
-
-#### printf with explicit NUL byte
-case $SH in (dash|ash) return ;; esac
-
-printf $'x\U0z'
-
-printf $'\U0z'
-
-## stdout-json: "x"
-## OK zsh stdout-repr: "x\0z\0z"
-## N-I dash/ash stdout-json: ""
-
 #### printf positive integer overflow
 
 # %i seems like a synonym for %d
