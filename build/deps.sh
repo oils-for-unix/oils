@@ -161,6 +161,8 @@ readonly -a WEDGE_DEPS_DEBIAN=(
 )
 
 readonly -a WEDGE_DEPS_ALPINE=(
+  coreutils findutils
+
   bzip2
   xz
 
