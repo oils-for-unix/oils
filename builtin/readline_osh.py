@@ -465,7 +465,9 @@ class Fc(vm._Builtin):
 
             return 0
 
-        # TODO:
+        # TODO: -e
         if arg.e is not None:
             pass
-        e_usage('edit not implemented', loc.Missing)
+
+        # We currently require -l
+        e_usage("command editing isn't yet implemented", loc.Missing)

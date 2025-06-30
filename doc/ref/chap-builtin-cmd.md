@@ -1634,21 +1634,28 @@ Flags:
 
     fc FLAG* FIRST? LAST?
 
-Display or execute commands from the shell's history entries.
+"Fix a command" from the shell's history.
 
-FIRST and LAST are numbers. A positive number refers to the index of the
-history entry. A negative number refers to an offset from the current command.
-When displaying history entries, if FIRST is not specified `-16` is the
-default value.
+`fc -l` displays commands.  FIRST and LAST specify a range of command numbers,
+where:
+
+- A positive number is an index into the history list.
+- A negative number is an offset from the current command.
+- If FIRST is omitted, the value `-16` is used.
+- If LAST is omitted, the current command is used.
 
 Flags:
 
-    -l  Displays the history entries.
-    -n  Excludes the line numbers when displaying history entries.
-    -r  Reverses the order of the displayed history entries.
-<!--    -e EDITOR
-    -s -->
+    -l  List commands (rather than editing)
+    -n  Omit line numbers
+    -r  Use reverse order (newest first)
 
+<!-- 
+Not implemented
+
+-e EDITOR
+-s
+-->
 
 ## Unsupported
 
