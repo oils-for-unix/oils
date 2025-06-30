@@ -433,7 +433,9 @@ Warnings:
 
 ### ysh-read
 
-YSH adds long flags to shell's `read`:
+YSH adds to shell's slow (unbuffered) `read`:
+
+Long flags that do always return the bytes verbatim.
 
     read --all               # whole file including trailing \n, fills $_reply
     read --all (&x)          # fills $x
@@ -454,6 +456,7 @@ You may want to use `fromJson8()` or `fromJson()` after reading a line.
 
 (Unlike OSH [read](#read), none of these features remove NUL bytes.)
 
+NOTE: For fast, non-interctive, buffered reading use [io.stdin](chap-type-method.html#stdin).
 
 <!--
 
@@ -762,18 +765,22 @@ These builtins take input and output.  They're often used with redirects.
 
     read FLAG* VAR*
 
-Read input from `stdin`.  Without flags, it does the following:
+Read input from `stdin` -- byte-wise waiting, slow (unbuffered), with terminal
+echoing input to stdout if running interactively.
 
-1. Read a line from stdin, respecting `\` escapes and line continuations
-   - Any NUL bytes are removed from the input.
-1. Use the `$IFS` algorithm to split the line into N pieces, where `N` is the
-   number of `VAR` specified.  Each piece is assigned to the corresponding
-   variable.
+Without flags, it does the following:
+
+1. Read characters from stdin until the end of a line ("RETURN").
+   - Respecting `\` escapes and line continuations.
+   - Removing any NUL bytes from the input.
+1. Use the `$IFS` algorithm to split and trim the line into N pieces, where
+   `N` is the number of `VAR`s specified. Each piece is assigned to
+   the corresponding variable. The last VAR also receives any remainig pieces.
    - If no VARs are given, assign to the `$REPLY` var.
 
-Note: When writing YSH, prefer the `--long-flag` modes documented in
-[ysh-read](#ysh-read).  The algorithm above can be confusing, e.g. because `-r`
-is not the default.
+Note: This default "parsing" algorithm can be confusing and cumbersome to
+tame with `-r`, `IFS=` and more options. When writing YSH, prefer the verbatim
+`--long-flag` modes documented in [ysh-read](#ysh-read).
 
 Flags:
 
