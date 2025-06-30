@@ -422,6 +422,12 @@ specification. For example, if it's missing a required positional argument:
     var args = parseArgs(spec, [])
     # => raises an error about the missing 'path' (status = 2)
 
+The special argument `--` can be used to bypass flag processing for all
+remaining arguments - effectively escaping flags that might be shared between
+the parser `spec` and a wrapped command. This is a commonly used technique to
+pass arguments through to a command. All arguments after `--` will be captured
+in `rest`. It is an error to use `--` when `rest` is not defined in `spec`.
+
 <!--
 TODO: Document chaining parsers / sub-commands
       - Either will allow parser nesting

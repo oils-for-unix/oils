@@ -347,6 +347,41 @@ proc test-multi-value-flags {
   assert [2 === _error.code]
 }
 
+proc test-escaped-args {
+  parser (&spec) {
+    flag -f --float (Float)
+    flag -i --int (Int)
+    arg pos
+    rest rest
+  }
+
+  var args = parseArgs(spec, :|-f 1.0 pos_arg -- -i foo bar|)
+
+  assert [type(args.float) === 'Float']
+  assert [floatsEqual(args.float, 1.0)]
+  assert [args.int === null]
+  assert [args.pos === 'pos_arg']
+  assert [type(args.rest) === 'List']
+  assert [len(args.rest) === 3]
+  assert [args.rest[0] === '-i']
+  assert [args.rest[1] === 'foo']
+  assert [args.rest[2] === 'bar']
+
+  # positional args are still required
+  try { call parseArgs(spec, :|-f 1.0 -- -i foo bar|) }
+  assert [2 === _error.code]
+
+  # it's an error to provide `--` without `rest`
+  parser (&spec) {
+    flag -f --float (Float)
+    flag -i --int (Int)
+    arg pos
+  }
+
+  try { call parseArgs(spec, :|-f 1.0 pos_arg -- -i foo bar|) }
+  assert [2 === _error.code]
+}
+
 if is-main {
   byo-maybe-run
 }

@@ -165,9 +165,19 @@ func parseArgs(spec, argv) {
 
   var value
   var found
+  var escape_remaining = false
   while (i < argc) {
     var arg = argv[i]
-    if (arg.startsWith('-')) {
+
+    if (escape_remaining) {
+      if (not spec.rest) {
+        error "Too many arguments, unexpected '$arg'" (code=2)
+      }
+
+      call rest->append(arg)
+    } elif (arg === '--') {
+      setvar escape_remaining = true
+    } elif (arg.startsWith('-')) {
       setvar found = false
 
       for flag in (spec.flags) {
