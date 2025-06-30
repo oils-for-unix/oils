@@ -69,7 +69,7 @@ preserve_anchor_case: yes
   [Conditional]   cmd/true    cmd/false               colon :
   [Introspection] help        hash       cmd/type    X caller
   [Word Lookup]   command     builtin
-  [Interactive]   alias       unalias    history     X fc     X bind
+  [Interactive]   alias       unalias    history     fc     X bind
 X [Unsupported]   enable
 ```
 

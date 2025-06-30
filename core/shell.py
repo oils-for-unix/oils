@@ -776,6 +776,7 @@ def Main(
     b[builtin_i.bind] = readline_osh.Bind(readline, errfmt, bindx_cb)
     b[builtin_i.history] = readline_osh.History(readline, sh_files, errfmt,
                                                 mylib.Stdout())
+    b[builtin_i.fc] = readline_osh.Fc(readline, mylib.Stdout())
 
     # Completion
     spec_builder = completion_osh.SpecBuilder(cmd_ev, parse_ctx, word_ev,

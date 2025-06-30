@@ -94,16 +94,16 @@ ble-unset() {
   test/spec-py.sh run-file ble-unset "$@"
 }
 
+blog-other1() {
+  test/spec-py.sh run-file blog-other1 "$@"
+}
+
 blog1() {
   test/spec-py.sh run-file blog1 "$@"
 }
 
 blog2() {
   test/spec-py.sh run-file blog2 "$@"
-}
-
-blog-other1() {
-  test/spec-py.sh run-file blog-other1 "$@"
 }
 
 brace-expansion() {
@@ -144,6 +144,10 @@ builtin-echo() {
 
 builtin-eval-source() {
   test/spec-py.sh run-file builtin-eval-source "$@"
+}
+
+builtin-fc() {
+  test/spec-py.sh run-file builtin-fc "$@"
 }
 
 builtin-getopts() {
@@ -294,16 +298,16 @@ glob-bash() {
   test/spec-py.sh run-file glob-bash "$@"
 }
 
+glob() {
+  test/spec-py.sh run-file glob "$@"
+}
+
 globignore() {
   test/spec-py.sh run-file globignore "$@"
 }
 
 globstar() {
   test/spec-py.sh run-file globstar "$@"
-}
-
-glob() {
-  test/spec-py.sh run-file glob "$@"
 }
 
 hay-isolation() {
@@ -394,6 +398,10 @@ quote() {
   test/spec-py.sh run-file quote "$@"
 }
 
+redir-order() {
+  test/spec-py.sh run-file redir-order "$@"
+}
+
 redirect-command() {
   test/spec-py.sh run-file redirect-command "$@"
 }
@@ -406,24 +414,12 @@ redirect() {
   test/spec-py.sh run-file redirect "$@"
 }
 
-redir-order() {
-  test/spec-py.sh run-file redir-order "$@"
-}
-
 regex() {
   test/spec-py.sh run-file regex "$@"
 }
 
 serialize() {
   test/spec-py.sh run-file serialize "$@"
-}
-
-shell-bugs() {
-  test/spec-py.sh run-file shell-bugs "$@"
-}
-
-shell-grammar() {
-  test/spec-py.sh run-file shell-grammar "$@"
 }
 
 sh-func() {
@@ -440,6 +436,14 @@ sh-options() {
 
 sh-usage() {
   test/spec-py.sh run-file sh-usage "$@"
+}
+
+shell-bugs() {
+  test/spec-py.sh run-file shell-bugs "$@"
+}
+
+shell-grammar() {
+  test/spec-py.sh run-file shell-grammar "$@"
 }
 
 smoke() {
@@ -514,20 +518,20 @@ var-ref() {
   test/spec-py.sh run-file var-ref "$@"
 }
 
-vars-bash() {
-  test/spec-py.sh run-file vars-bash "$@"
-}
-
-vars-special() {
-  test/spec-py.sh run-file vars-special "$@"
-}
-
 var-sub-quote() {
   test/spec-py.sh run-file var-sub-quote "$@"
 }
 
 var-sub() {
   test/spec-py.sh run-file var-sub "$@"
+}
+
+vars-bash() {
+  test/spec-py.sh run-file vars-bash "$@"
+}
+
+vars-special() {
+  test/spec-py.sh run-file vars-special "$@"
 }
 
 whitespace() {
@@ -544,6 +548,10 @@ word-split() {
 
 xtrace() {
   test/spec-py.sh run-file xtrace "$@"
+}
+
+ysh-TODO-deprecate() {
+  test/spec-py.sh run-file ysh-TODO-deprecate "$@"
 }
 
 ysh-assign() {
@@ -682,20 +690,20 @@ ysh-func-builtin() {
   test/spec-py.sh run-file ysh-func-builtin "$@"
 }
 
-ysh-funcs-external() {
-  test/spec-py.sh run-file ysh-funcs-external "$@"
-}
-
 ysh-func() {
   test/spec-py.sh run-file ysh-func "$@"
 }
 
-ysh-interactive() {
-  test/spec-py.sh run-file ysh-interactive "$@"
+ysh-funcs-external() {
+  test/spec-py.sh run-file ysh-funcs-external "$@"
 }
 
 ysh-int-float() {
   test/spec-py.sh run-file ysh-int-float "$@"
+}
+
+ysh-interactive() {
+  test/spec-py.sh run-file ysh-interactive "$@"
 }
 
 ysh-introspect() {
@@ -812,10 +820,6 @@ ysh-stdlib() {
 
 ysh-string() {
   test/spec-py.sh run-file ysh-string "$@"
-}
-
-ysh-TODO-deprecate() {
-  test/spec-py.sh run-file ysh-TODO-deprecate "$@"
 }
 
 ysh-tuple() {
