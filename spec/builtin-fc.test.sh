@@ -2,7 +2,7 @@
 ## compare_shells: bash
 ## oils_failures_allowed: 2
 
-#### fc -l
+#### fc -l lists history commands
 rm -f tmp
 
 echo '
@@ -25,7 +25,7 @@ case $SH in bash) echo '^D' ;; esac
 ^D
 ## END
 
-#### fc -ln
+#### fc -ln lists history commands without numbers
 rm -f tmp
 
 echo '
@@ -48,7 +48,7 @@ case $SH in bash) echo '^D' ;; esac
 ^D
 ## END
 
-#### fc -lr
+#### fc -lr lists history commands in reverse order
 rm -f tmp
 
 echo '
@@ -71,7 +71,7 @@ case $SH in bash) echo '^D' ;; esac
 ^D
 ## END
 
-#### fc -lnr
+#### fc -lnr lists history commands without numbers in reverse order
 rm -f tmp
 
 echo '
@@ -94,7 +94,7 @@ case $SH in bash) echo '^D' ;; esac
 ^D
 ## END
 
-#### fc -l with default offset
+#### fc -l lists history commands with default page size
 rm -f tmp
 
 echo '
@@ -129,7 +129,7 @@ case $SH in bash) echo '^D' ;; esac
 ^D
 ## END
 
-#### fc -l with first as index
+#### fc -l [first] where first is an index
 rm -f tmp
 
 echo '
@@ -151,7 +151,7 @@ case $SH in bash) echo '^D' ;; esac
 ^D
 ## END
 
-#### fc -l with first as offset
+#### fc -l [first] where first is an offset from current command
 rm -f tmp
 
 echo '
@@ -173,7 +173,7 @@ case $SH in bash) echo '^D' ;; esac
 ^D
 ## END
 
-#### fc -l with first and last as indexes
+#### fc -l [first] [last] where first and last are indexes
 rm -f tmp
 
 echo '
@@ -194,7 +194,7 @@ case $SH in bash) echo '^D' ;; esac
 ^D
 ## END
 
-#### fc -l with first and last as offsets
+#### fc -l [first] [last] where first and last are offsets from current command
 rm -f tmp
 
 echo '
@@ -215,7 +215,7 @@ case $SH in bash) echo '^D' ;; esac
 ^D
 ## END
 
-#### fc -l with first and last as reversed indexes
+#### fc -l [first] [last] where first and last are reversed indexes
 rm -f tmp
 
 echo '
@@ -236,7 +236,7 @@ case $SH in bash) echo '^D' ;; esac
 ^D
 ## END
 
-#### fc -lr with first and last as reversed indexes does not undo reverse
+#### fc -lr [first] [last] where first and last are reversed indexes does not undo reverse
 rm -f tmp
 
 echo '

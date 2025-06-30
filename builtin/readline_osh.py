@@ -377,6 +377,7 @@ class History(vm._Builtin):
             self.f.write('%5d  %s\n' % (i, item))
         return 0
 
+
 class Fc(vm._Builtin):
     """Show or execute commands from interactive command history."""
 
@@ -404,6 +405,7 @@ class Fc(vm._Builtin):
 
         first_arg, first_arg_loc = arg_r.Peek2()
         if first_arg is None:
+            # Default page size in Bash
             if num_items > 16:
                 first_index = -16
             else:
@@ -415,7 +417,7 @@ class Fc(vm._Builtin):
             except ValueError:
                 e_usage('got invalid argument %r' % first_arg, first_arg_loc)
         if first_index < 0:
-            first_index = num_items + first_index
+            first_index += num_items
         arg_r.Next()
 
         last_arg, last_arg_loc = arg_r.Peek2()
@@ -428,7 +430,7 @@ class Fc(vm._Builtin):
             except ValueError:
                 e_usage('got invalid argument %r' % last_arg, last_arg_loc)
         if last_index < 0:
-            last_index = num_items + last_index
+            last_index += num_items
         arg_r.Next()
 
         if not arg_r.AtEnd():
