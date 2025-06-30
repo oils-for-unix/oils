@@ -1630,6 +1630,32 @@ Flags:
     -p
     -s -->
 
+### fc
+
+    fc FLAG* FIRST? LAST?
+
+"Fix a command" from the shell's history.
+
+`fc -l` displays commands.  FIRST and LAST specify a range of command numbers,
+where:
+
+- A positive number is an index into the history list.
+- A negative number is an offset from the current command.
+- If FIRST is omitted, the value `-16` is used.
+- If LAST is omitted, the current command is used.
+
+Flags:
+
+    -l  List commands (rather than editing)
+    -n  Omit line numbers
+    -r  Use reverse order (newest first)
+
+<!-- 
+Not implemented
+
+-e EDITOR
+-s
+-->
 
 ## Unsupported
 

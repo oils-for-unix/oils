@@ -66,10 +66,10 @@ preserve_anchor_case: yes
   [Child Process] jobs        wait
                   fg        X bg       X kill        X disown 
   [External]      test [      getopts
-  [Conditional]   cmd/true    cmd/false               colon :
+  [Conditional]   cmd/true    cmd/false                colon :
   [Introspection] help        hash       cmd/type    X caller
   [Word Lookup]   command     builtin
-  [Interactive]   alias       unalias    history     X fc     X bind
+  [Interactive]   alias       unalias    history       fc     X bind
 X [Unsupported]   enable
 ```
 
