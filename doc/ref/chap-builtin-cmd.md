@@ -1630,6 +1630,25 @@ Flags:
     -p
     -s -->
 
+### fc
+
+    fc FLAG* FIRST? LAST?
+
+Display or execute commands from the shell's history entries.
+
+FIRST and LAST are numbers. A positive number refers to the index of the
+history entry. A negative number refers to an offset from the current command.
+When displaying history entries, if FIRST is not specified `-16` is the
+default value.
+
+Flags:
+
+    -l  Displays the history entries.
+    -n  Excludes the line numbers when displaying history entries.
+    -r  Reverses the order of the displayed history entries.
+<!--    -e EDITOR
+    -s -->
+
 
 ## Unsupported
 
