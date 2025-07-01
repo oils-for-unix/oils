@@ -134,7 +134,9 @@ class ShSpecTest(unittest.TestCase):
         else:
             out_f = cStringIO.StringIO()
         out = AnsiOutput(out_f, False)
-        RunCases([self.CASE1], lambda i, case: True, shells, env, out, opts)
+        actual_out = sh_spec.ActualOutput('')
+        RunCases([self.CASE1], lambda i, case: True, shells, env, out,
+                 actual_out, opts)
         print(repr(out.f.getvalue()))
 
     def testMakeShellPairs(self):

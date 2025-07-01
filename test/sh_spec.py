@@ -699,6 +699,9 @@ class ActualOutput(object):
             # Don't count stdout for features not implemented
             if a['cell_result'] == Result.NI:
                 continue
+            # look for existing shells
+            if a['sh_label'] == 'osh':
+                continue
 
             stdout = a['stdout']
             if stdout not in unique:
@@ -706,17 +709,22 @@ class ActualOutput(object):
             unique[stdout].append(a['sh_label'])
 
         if len(unique) >= 3:
-            self._Write('')
+            self._Write('---')
             self._Write('TEST CASE %d' % record['case_num'])
             self._Write('DESC %s' % record['desc'])
             self._Write('LINE %d' % record['line_num'])
             self._Write('NUM UNIQUE %d' % len(unique))
             self._Write('')
-            for i, stdout in enumerate(unique):
+            i = 0
+            for stdout, shells in unique.iteritems():
                 self._Write('UNIQUE STDOUT %d', (i + 1))
+                self._Write('SHELLS: %s', ' '.join(shells))
+                shells = unique[stdout]
+
                 self._Write('')
                 self._Write(stdout)
                 self._Write('')
+                i += 1
 
         #json.dump(record, sys.stderr, indent=2)
 

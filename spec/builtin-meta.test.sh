@@ -77,7 +77,7 @@ echo
 myfunc
 for
 status=0
-## BUG dash/ash STDOUT: 
+## BUG-2 dash/ash STDOUT: 
 echo
 status=0
 ## OK mksh STDOUT: 

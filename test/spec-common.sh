@@ -32,9 +32,12 @@ sh-spec() {
   local repo_root
   repo_root=$(cd "$(dirname $0)/.."; pwd)
 
-  # Create under PID dir
-  local tmp_env
-  tmp_env=$repo_root/_tmp/spec-tmp/$(basename $test_file)
+  local test_id
+  test_id=$(basename $test_file)
+  local tmp_env=$repo_root/_tmp/spec-tmp/$test_id
+
+  # for the 'yahtzee' experiment
+  # mkdir -p _tmp/spec-actual
 
   # In general we leave the tmp dir around so you can inspect it.  It's always
   # safe to get rid of the cruft like this:
@@ -61,6 +64,9 @@ sh-spec() {
       --env-pair "REPO_ROOT=$repo_root" \
       "$test_file" \
       "$@"
+
+  # for 'yahtzee experiment'
+  # --actual-json "_tmp/spec-actual/$test_id" \
 
   # Don't need this now that we have OILS_GC_ON_EXIT
   #    --env-pair "ASAN_OPTIONS=${ASAN_OPTIONS:-}" \
