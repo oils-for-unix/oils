@@ -306,7 +306,7 @@ def DefineShSpec(p):
                  action='store_true',
                  help='Export Test Files as JSON')
 
-    p.add_option('--actual-json',
-                 dest='actual_json',
+    p.add_option('--yahtzee-out-file',
+                 dest='yahtzee_out_file',
                  default='',
-                 help='Export Results as JSON')
+                 help='Report on disagreement')

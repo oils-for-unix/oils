@@ -708,7 +708,8 @@ class ActualOutput(object):
                 unique[stdout] = []
             unique[stdout].append(a['sh_label'])
 
-        if len(unique) >= 3:
+        # 4 is more interesting than 3
+        if len(unique) >= 4:
             self._Write('---')
             self._Write('TEST CASE %d' % record['case_num'])
             self._Write('DESC %s' % record['desc'])
@@ -1557,8 +1558,8 @@ def main(argv):
     else:
         raise AssertionError()
 
-    if opts.actual_json:
-        actual_f = open(opts.actual_json, 'w')
+    if opts.yahtzee_out_file:
+        actual_f = open(opts.yahtzee_out_file, 'w')
     else:
         actual_f = None
 

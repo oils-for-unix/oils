@@ -10,6 +10,9 @@ readonly YASH_NAME='yash-2.49'
 # for test/spec-{runner,cpp,any}.sh
 NUM_SPEC_TASKS=${NUM_SPEC_TASKS:-400}
 
+# additional output
+YAHTZEE_DIR=${YAHTZEE_DIR:-}
+
 spec-html-head() {
   local prefix=$1
   local title=$2
@@ -36,8 +39,11 @@ sh-spec() {
   test_id=$(basename $test_file)
   local tmp_env=$repo_root/_tmp/spec-tmp/$test_id
 
-  # for the 'yahtzee' experiment
-  # mkdir -p _tmp/spec-actual
+  local -a more_flags
+  if test -n "${YAHTZEE_DIR:-}"; then
+    mkdir -p "$YAHTZEE_DIR"
+    more_flags=( --yahtzee-out-file "$YAHTZEE_DIR/$test_id" )
+  fi
 
   # In general we leave the tmp dir around so you can inspect it.  It's always
   # safe to get rid of the cruft like this:
@@ -62,11 +68,9 @@ sh-spec() {
       --env-pair "LOCALE_ARCHIVE=${LOCALE_ARCHIVE:-}" \
       --env-pair "OILS_GC_ON_EXIT=${OILS_GC_ON_EXIT:-}" \
       --env-pair "REPO_ROOT=$repo_root" \
+      "${more_flags[@]}" \
       "$test_file" \
       "$@"
-
-  # for 'yahtzee experiment'
-  # --actual-json "_tmp/spec-actual/$test_id" \
 
   # Don't need this now that we have OILS_GC_ON_EXIT
   #    --env-pair "ASAN_OPTIONS=${ASAN_OPTIONS:-}" \

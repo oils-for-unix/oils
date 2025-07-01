@@ -39,4 +39,13 @@ export-demo() {
   done
 }
 
+yahtzee-all() {
+  # doesn't actually take into acount OSH
+  YAHTZEE_DIR=_tmp/yahtzee test/spec-py.sh osh-all
+}
+
+yahtzee-report() {
+  wc -l _tmp/yahtzee/* | sort -n
+}
+
 "$@"

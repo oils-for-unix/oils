@@ -794,7 +794,7 @@ argv.py $*
 []
 ## END
 
-## OK mksh STDOUT:
+## OK-2 mksh STDOUT:
 ['', '', '']
 ['']
 []
