@@ -35,7 +35,7 @@ yq-demo() {
 # TODO: massage this format more
 export-demo() {
   for name in spec/as*.test.sh; do
-    test/sh_spec.py --export-json $name | yq eval -P
+    test/sh_spec.py --test-case-json $name | yq eval -P
   done
 }
 

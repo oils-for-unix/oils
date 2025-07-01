@@ -675,15 +675,63 @@ def _PrepareCaseTempDir(case_tmp_dir, legacy_tmp_dir=False):
                 raise
 
 
+class ActualOutput(object):
+
+    def __init__(self, f):
+        self.f = f
+
+    def _Write(self, msg, *args):
+        if not self.f:
+            return
+
+        if args:
+            msg = msg % args
+
+        self.f.write(msg)
+        self.f.write('\n')
+
+    def WriteActualRow(self, record):
+        """
+        """
+        # Check for different stdout:
+        unique = {}
+        for a in record['actual']:
+            # Don't count stdout for features not implemented
+            if a['cell_result'] == Result.NI:
+                continue
+
+            stdout = a['stdout']
+            if stdout not in unique:
+                unique[stdout] = []
+            unique[stdout].append(a['sh_label'])
+
+        if len(unique) >= 3:
+            self._Write('')
+            self._Write('TEST CASE %d' % record['case_num'])
+            self._Write('DESC %s' % record['desc'])
+            self._Write('LINE %d' % record['line_num'])
+            self._Write('NUM UNIQUE %d' % len(unique))
+            self._Write('')
+            for i, stdout in enumerate(unique):
+                self._Write('UNIQUE STDOUT %d', (i + 1))
+                self._Write('')
+                self._Write(stdout)
+                self._Write('')
+
+        #json.dump(record, sys.stderr, indent=2)
+
+
 def RunCases(cases,
              case_predicate,
              shells,
              env,
              out,
+             actual_out,
              opts,
              legacy_tmp_dir=False):
-    """Run a list of test 'cases' for all 'shells' and write output to
-    'out'."""
+    """
+    Run a list of test 'cases' for all 'shells' and write output to 'out'.
+    """
     if opts.trace:
         for _, sh in shells:
             log('\tshell: %s', sh)
@@ -728,6 +776,8 @@ def RunCases(cases,
 
     # Now run each case, and print a table.
     for i, case in enumerate(cases):
+        case['case_num'] = i  # for reporting
+
         line_num = case['line_num']
         desc = case['desc']
         code = case['code']
@@ -748,6 +798,9 @@ def RunCases(cases,
         stats.Inc('num_cases_run')
 
         result_row = []
+
+        case_actual = dict(case)
+        case_actual['actual'] = []
 
         for shell_index, (sh_label, sh_path) in enumerate(shells):
             timeout_file = os.path.join(timeout_dir, '%02d-%s' % (i, sh_label))
@@ -812,9 +865,11 @@ def RunCases(cases,
 
             p.stdin.write(code)
 
-            actual = {}
+            actual = {'sh_label': sh_label}
             actual['stdout'], actual['stderr'] = p.communicate()
             actual['status'] = p.wait()
+
+            case_actual['actual'].append(actual)
 
             if opts.timeout_bin and os.path.exists(timeout_file):
                 cell_result = Result.TIMEOUT
@@ -843,6 +898,8 @@ def RunCases(cases,
 
             result_row.append(cell_result)
 
+            actual['cell_result'] = cell_result
+
             stats.ReportCell(i, cell_result, sh_label)
 
             if sh_label in OTHER_OSH:
@@ -857,6 +914,7 @@ def RunCases(cases,
                     stats.Inc('oils_ALT_delta')
 
         out.WriteRow(i, line_num, result_row, desc)
+        actual_out.WriteActualRow(case_actual)
 
     return stats
 
@@ -1389,7 +1447,7 @@ def main(argv):
             #print(row)
         return 0
 
-    if opts.export_json:
+    if opts.test_case_json:
         for row in ParseTestList(argv[1:]):
             #print('%(suite)s\t%(spec_name)s' % row)
             print(json.dumps(row, indent=2))
@@ -1477,7 +1535,7 @@ def main(argv):
 
     # Set up output style.  Also see asdl/format.py
     if opts.format == 'ansi':
-        out = AnsiOutput(out_f, opts.verbose)
+        table_out = AnsiOutput(out_f, opts.verbose)
 
     elif opts.format == 'html':
         spec_name = os.path.basename(test_file)
@@ -1485,23 +1543,32 @@ def main(argv):
 
         sh_labels = [label for label, _ in shell_pairs]
 
-        out = HtmlOutput(out_f, opts.verbose, spec_name, sh_labels, cases)
+        table_out = HtmlOutput(out_f, opts.verbose, spec_name, sh_labels,
+                               cases)
 
     else:
         raise AssertionError()
 
-    out.BeginCases(os.path.basename(test_file))
+    if opts.actual_json:
+        actual_f = open(opts.actual_json, 'w')
+    else:
+        actual_f = None
+
+    actual_out = ActualOutput(actual_f)
+
+    table_out.BeginCases(os.path.basename(test_file))
 
     env = MakeTestEnv(opts)
     stats = RunCases(cases,
                      case_predicate,
                      shell_pairs,
                      env,
-                     out,
+                     table_out,
+                     actual_out,
                      opts,
                      legacy_tmp_dir=bool(file_metadata.get('legacy_tmp_dir')))
 
-    out.EndCases([sh_label for sh_label, _ in shell_pairs], stats)
+    table_out.EndCases([sh_label for sh_label, _ in shell_pairs], stats)
 
     if opts.tsv_output:
         with open(opts.tsv_output, 'w') as f:

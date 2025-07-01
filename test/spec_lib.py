@@ -300,8 +300,13 @@ def DefineShSpec(p):
                  default=None,
                  help='Run OSH with PYANN_OUT=$dir/$case_num.json')
 
-    p.add_option('--export-json',
-                 dest='export_json',
+    p.add_option('--test-case-json',
+                 dest='test_case_json',
                  default=False,
                  action='store_true',
                  help='Export Test Files as JSON')
+
+    p.add_option('--actual-json',
+                 dest='actual_json',
+                 default='',
+                 help='Export Results as JSON')

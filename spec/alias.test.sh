@@ -149,10 +149,12 @@ status=0
 
 #### unalias without args is a usage error
 unalias
-echo status=$?
-## stdout: status=2
-## BUG mksh/dash stdout: status=0
-## BUG zsh stdout: status=1
+if test "$?" != 0; then echo usage-error; fi
+## STDOUT:
+usage-error
+## END
+## BUG mksh/dash STDOUT: 
+## END
 
 #### alias with trailing space causes alias expansion on second word
 shopt -s expand_aliases  # bash requires this
