@@ -357,15 +357,15 @@ proc test-escaped-args {
 
   var args = parseArgs(spec, :|-f 1.0 pos_arg -- -i foo bar|)
 
-  assert [type(args.float) === 'Float']
+  assert ['Float' === type(args.float)]
   assert [floatsEqual(args.float, 1.0)]
-  assert [args.int === null]
-  assert [args.pos === 'pos_arg']
-  assert [type(args.rest) === 'List']
-  assert [len(args.rest) === 3]
-  assert [args.rest[0] === '-i']
-  assert [args.rest[1] === 'foo']
-  assert [args.rest[2] === 'bar']
+  assert [null === args.int]
+  assert ['pos_arg' === args.pos]
+  assert ['List' === type(args.rest)]
+  assert [3 === len(args.rest)]
+  assert ['-i' === args.rest[0]]
+  assert ['foo' === args.rest[1]]
+  assert ['bar' === args.rest[2]]
 
   # positional args are still required
   try { call parseArgs(spec, :|-f 1.0 -- -i foo bar|) }
