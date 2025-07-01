@@ -353,6 +353,10 @@ Another way to think about it: we could have removed procs from the core YSH
 language, and implemented them in terms of command blocks and `io->eval()`.
 But that seems too low-level!
 
+## Why are byte escapes spelled `\yff`, and not `\xff` as in C?
+
+The [J8 Notation FAQ](j8-notation.html#faq) answers this question.
+
 ## Related
 
 - [YSH FAQ]($wiki) on the wiki has more answers.  We may be migrate some of

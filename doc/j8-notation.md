@@ -551,15 +551,22 @@ We could have an SEXP8 format for:
 
 ### Why are byte escapes spelled `\yff`, and not `\xff` as in C?
 
-Because in JavaScript and Python, `\xff` is a **code point**, not a byte.  That
-is, it's a synonym for `\u00ff`, which is encoded in UTF-8 as the 2 bytes `0xc3
-0xbf`.
+We explicitly avoid confusion between **bytes** and **code points**:
 
-This is **exactly** the confusion we want to avoid, so `\yff` is explicitly
-different.
+- In JavaScript and Python, `\xff` is a synonym for the **code point** `U+00FF`
+  (sometimes spelled `\u00ff`).
+  - This code point is encoded in UTF-8 with the **two** bytes `0xc3 0xbf`.
+- On the other hand, `\yff` is always **one** byte, `0xff`.
+  - It is invalid UTF-8.
 
-One of Chrome's JSON encoders [also has this
-confusion](https://source.chromium.org/chromium/chromium/src/+/main:base/json/json_reader.h;l=27;drc=d0919138b7951c1a154cf802a68aad7904b6f4c9).
+So it's not clear if `\xff` means `U+00FF` or `0xff`.  So we chose the new
+notation that `\yff` to unambiguously mean `0xff`.
+
+This confusion is common.  For example, even though `"\xff"` is invalid JSON,
+one of Chrome's JSON encoders [mistakes it for a code
+point][chrome-json-mistake], which is the exactly what we want to avoid.
+
+[chrome-json-mistake]: https://source.chromium.org/chromium/chromium/src/+/main:base/json/json_reader.h;l=27;drc=d0919138b7951c1a154cf802a68aad7904b6f4c9
 
 ### Why have both `u''` and `b''` strings, if only `b''` is technically needed?
 
