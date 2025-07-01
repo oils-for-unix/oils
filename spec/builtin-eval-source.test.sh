@@ -27,11 +27,11 @@ echo $?
 127
 127
 ## END
-## OK mksh status: 1
-## OK mksh STDOUT:
+## OK-2 mksh status: 1
+## OK-2 mksh STDOUT:
 127
 ## END
-## OK zsh STDOUT:
+## OK-3 zsh STDOUT:
 0
 127
 ## END

@@ -802,7 +802,7 @@ argv.py $*
 []
 ## END
 
-## BUG zsh/yash STDOUT:
+## OK-3 zsh/yash STDOUT:
 ['', '', '', '', '']
 ['', '', '', '', '']
 ['', '', '', '', '']

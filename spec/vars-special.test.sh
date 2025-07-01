@@ -16,13 +16,17 @@
 
 #### $PWD is set
 # Just test that it has a slash for now.
-echo $PWD | grep /
-## status: 0
+echo $PWD | grep -q /
+echo status=$?
+## STDOUT:
+status=0
+## END
 
 #### $PWD is not only set, but exported
-env | grep PWD
-## status: 0
-## BUG mksh status: 1
+env | grep -q PWD
+echo status=$?
+## stdout: status=0
+## BUG mksh stdout: status=1
 
 #### $PATH is set if unset at startup
 
@@ -267,9 +271,11 @@ echo $#
 ## status: 0
 
 #### $$ looks like a PID
-# Just test that it has decimal digits
-echo $$ | egrep '[0-9]+'
-## status: 0
+echo $$ | egrep -q '[0-9]+'  # Test that it has decimal digits
+echo status=$?
+## STDOUT:
+status=0
+## END
 
 #### $$ doesn't change with subshell or command sub
 # Just test that it has decimal digits
