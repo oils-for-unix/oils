@@ -380,6 +380,9 @@ proc test-escaped-args {
 
   try { call parseArgs(spec, :|-f 1.0 pos_arg -- -i foo bar|) }
   assert [2 === _error.code]
+  # still an error when no args follow `--`
+  try { call parseArgs(spec, :|-i --|) }
+  assert [2 === _error.code]
 }
 
 if is-main {
