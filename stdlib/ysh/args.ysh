@@ -165,9 +165,19 @@ func parseArgs(spec, argv) {
 
   var value
   var found
+  var escape_remaining = false
   while (i < argc) {
     var arg = argv[i]
-    if (arg.startsWith('-')) {
+
+    if (escape_remaining) {
+      call rest->append(arg)
+    } elif (arg === '--') {
+      if (not spec.rest) {
+        error "Unexpected '--' argument - extraneous positional arguments are prohibited" (code=2)
+      }
+
+      setvar escape_remaining = true
+    } elif (arg.startsWith('-')) {
       setvar found = false
 
       for flag in (spec.flags) {
