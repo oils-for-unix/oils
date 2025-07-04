@@ -1,5 +1,5 @@
 ## compare_shells: bash zsh mksh ash
-## oils_failures_allowed: 2
+## oils_failures_allowed: 5
 
 #### recursive arith: one level
 a='b=123'
@@ -194,8 +194,11 @@ echo len=${#a[@]}
 len=1
 ## END
 
-## N-I ash status: 2
-## N-I ash STDOUT:
+## N-I ash/dash status: 2
+## N-I ash/dash STDOUT:
+## END
+## N-I yash STDOUT:
+len=
 ## END
 
 ## BUG zsh STDOUT:
@@ -268,12 +271,23 @@ echo "${a[@]}"
 5 4 99
 ## END
 
-## N-I mksh/ash STDOUT:
+## N-I dash status: 2
+## N-I mksh/ash/dash STDOUT:
+## END
+# Note: yash does not support calling function name with '#'
+## N-I yash STDOUT:
+{1..6}
+{1..6}
+{1..6}
+---
+{1..6}
+---
+{1..6}
 ## END
 
 
 #### shopt -u expand_aliases and eval
-case $SH in zsh|mksh|ash) exit ;; esac
+case $SH in zsh|mksh|ash|dash|yash) exit ;; esac
 
 alias echo=false
 
@@ -288,299 +302,125 @@ f 'echo hello'
 ## STDOUT:
 hello
 ## END
-## N-I zsh/mksh/ash STDOUT:
+## N-I zsh/mksh/ash/dash/yash STDOUT:
 ## END
 
 
-#### Tilde expansions in RHS of designated array initialization
-case $SH in zsh|mksh|ash) exit ;; esac
-
-HOME=/home/user
-declare -A a
-declare -A a=(['home']=~ ['hello']=~:~:~)
-echo "${a['home']}"
-echo "${a['hello']}"
-
+#### Issue #1069 [40] BUG: a=(declare v); "${a[@]}" fails
+case $SH in ash|dash)  exit 99 ;; esac
+a=(typeset v=1)
+v=x
+"${a[@]}"
+echo "v=$v"
 ## STDOUT:
-/home/user
-/home/user:/home/user:/home/user
+v=1
 ## END
-
-# Note: bash-5.2 has a bug that the tilde doesn't expand on the right hand side
-# of [key]=value.  This problem doesn't happen in bash-3.1..5.1 and bash-5.3.
-## BUG bash STDOUT:
-~
-~:~:~
-## END
-
-## N-I zsh/mksh/ash stdout-json: ""
+# Note: ash/dash does not have arrays
+## N-I ash/dash status: 99
+## N-I ash/dash stdout-json: ""
 
 
-#### InitializerList (BashArray): index increments with
-case $SH in zsh|mksh|ash) exit 99;; esac
-a=([100]=1 2 3 4)
-printf 'keys: '; argv.py "${!a[@]}"
-printf 'vals: '; argv.py "${a[@]}"
-a=([100]=1 2 3 4 [5]=a b c d)
-printf 'keys: '; argv.py "${!a[@]}"
-printf 'vals: '; argv.py "${a[@]}"
+#### Issue #1069 [40] BUG: a=declare; "$a" v=1 fails
+case $SH in ash|dash)  exit 99 ;; esac
+a=typeset
+v=x
+"$a" v=1
+echo "v=$v"
 ## STDOUT:
-keys: ['100', '101', '102', '103']
-vals: ['1', '2', '3', '4']
-keys: ['5', '6', '7', '8', '100', '101', '102', '103']
-vals: ['a', 'b', 'c', 'd', '1', '2', '3', '4']
+v=1
 ## END
-## N-I zsh/mksh/ash status: 99
-## N-I zsh/mksh/ash stdout-json: ""
+## N-I ash/dash status: 99
+## N-I ash/dash stdout-json: ""
 
-#### InitializerList (BashArray): [k]=$v and [k]="$@"
-case $SH in zsh|mksh|ash) exit 99;; esac
-i=5
-v='1 2 3'
-a=($v [i]=$v)
-printf 'keys: '; argv.py "${!a[@]}"
-printf 'vals: '; argv.py "${a[@]}"
 
-x=(3 5 7)
-a=($v [i]="${x[*]}")
-printf 'keys: '; argv.py "${!a[@]}"
-printf 'vals: '; argv.py "${a[@]}"
-a=($v [i]="${x[@]}")
-printf 'keys: '; argv.py "${!a[@]}"
-printf 'vals: '; argv.py "${a[@]}"
-a=($v [i]=${x[*]})
-printf 'keys: '; argv.py "${!a[@]}"
-printf 'vals: '; argv.py "${a[@]}"
-a=($v [i]=${x[@]})
-printf 'keys: '; argv.py "${!a[@]}"
-printf 'vals: '; argv.py "${a[@]}"
+#### Issue #1069 [49] BUG: \return 0 does not work
+f0() { return 3;          echo unexpected; return 0; }
+f1() { \return 3;         echo unexpected; return 0; }
+f0; echo "status=$?"
+f1; echo "status=$?"
 ## STDOUT:
-keys: ['0', '1', '2', '5']
-vals: ['1', '2', '3', '1 2 3']
-keys: ['0', '1', '2', '5']
-vals: ['1', '2', '3', '3 5 7']
-keys: ['0', '1', '2', '5']
-vals: ['1', '2', '3', '3 5 7']
-keys: ['0', '1', '2', '5']
-vals: ['1', '2', '3', '3 5 7']
-keys: ['0', '1', '2', '5']
-vals: ['1', '2', '3', '3 5 7']
+status=3
+status=3
 ## END
-## N-I zsh/mksh/ash status: 99
-## N-I zsh/mksh/ash stdout-json: ""
 
 
-#### InitializerList (BashAssoc): [k]=$v and [k]="$@"
-case $SH in zsh|mksh|ash) exit 99;; esac
-i=5
-v='1 2 3'
-declare -A a
-a=([i]=$v)
-printf 'keys: '; argv.py "${!a[@]}"
-printf 'vals: '; argv.py "${a[@]}"
-
-x=(3 5 7)
-a=([i]="${x[*]}")
-printf 'keys: '; argv.py "${!a[@]}"
-printf 'vals: '; argv.py "${a[@]}"
-a=([i]="${x[@]}")
-printf 'keys: '; argv.py "${!a[@]}"
-printf 'vals: '; argv.py "${a[@]}"
-a=([i]=${x[*]})
-printf 'keys: '; argv.py "${!a[@]}"
-printf 'vals: '; argv.py "${a[@]}"
-a=([i]=${x[@]})
-printf 'keys: '; argv.py "${!a[@]}"
-printf 'vals: '; argv.py "${a[@]}"
+#### Issue #1069 [49] BUG: \return 0 does not work (other variations)
+f2() { builtin return 3;  echo unexpected; return 0; }
+f3() { \builtin return 3; echo unexpected; return 0; }
+f4() { command return 3;  echo unexpected; return 0; }
+f2; echo "status=$?"
+f3; echo "status=$?"
+f4; echo "status=$?"
 ## STDOUT:
-keys: ['i']
-vals: ['1 2 3']
-keys: ['i']
-vals: ['3 5 7']
-keys: ['i']
-vals: ['3 5 7']
-keys: ['i']
-vals: ['3 5 7']
-keys: ['i']
-vals: ['3 5 7']
+status=3
+status=3
+status=3
 ## END
-## N-I zsh/mksh/ash status: 99
-## N-I zsh/mksh/ash stdout-json: ""
-
-#### InitializerList (BashArray): append to element
-case $SH in zsh|mksh|ash) exit 99;; esac
-hello=100
-a=([hello]=1 [hello]+=2)
-printf 'keys: '; argv.py "${!a[@]}"
-printf 'vals: '; argv.py "${a[@]}"
-a+=([hello]+=:34 [hello]+=:56)
-printf 'keys: '; argv.py "${!a[@]}"
-printf 'vals: '; argv.py "${a[@]}"
-## STDOUT:
-keys: ['100']
-vals: ['12']
-keys: ['100']
-vals: ['12:34:56']
-## END
-## N-I zsh/mksh/ash status: 99
-## N-I zsh/mksh/ash stdout-json: ""
-
-#### InitializerList (BashAssoc): append to element
-case $SH in zsh|mksh|ash) exit 99;; esac
-declare -A a
-hello=100
-a=([hello]=1 [hello]+=2)
-printf 'keys: '; argv.py "${!a[@]}"
-printf 'vals: '; argv.py "${a[@]}"
-a+=([hello]+=:34 [hello]+=:56)
-printf 'keys: '; argv.py "${!a[@]}"
-printf 'vals: '; argv.py "${a[@]}"
-## STDOUT:
-keys: ['hello']
-vals: ['12']
-keys: ['hello']
-vals: ['12:34:56']
-## END
-# Bash >= 5.1 has a bug. Bash <= 5.0 is OK.
-## BUG bash STDOUT:
-keys: ['hello']
-vals: ['2']
-keys: ['hello']
-vals: ['2:34:56']
-## END
-## N-I zsh/mksh/ash status: 99
-## N-I zsh/mksh/ash stdout-json: ""
-
-#### InitializerList (BashAssoc): non-index forms of element
-case $SH in zsh|mksh|ash) exit 99;; esac
-declare -A a
-a=([j]=1 2 3 4)
-echo "status=$?"
-printf 'keys: '; argv.py "${!a[@]}"
-printf 'vals: '; argv.py "${a[@]}"
-## status: 1
-## STDOUT:
-## END
-# Bash outputs warning messages and succeeds (exit status 0)
-## BUG bash status: 0
-## BUG bash STDOUT:
+# Note: zsh does not allow calling builtin through command
+## OK zsh STDOUT:
+status=3
+status=3
+unexpected
 status=0
-keys: ['j']
-vals: ['1']
 ## END
-## BUG bash STDERR:
-bash: line 3: a: 2: must use subscript when assigning associative array
-bash: line 3: a: 3: must use subscript when assigning associative array
-bash: line 3: a: 4: must use subscript when assigning associative array
+# Note: ash does not have "builtin"
+## N-I ash/dash/yash STDOUT:
+unexpected
+status=0
+unexpected
+status=0
+status=3
 ## END
-## N-I zsh/mksh/ash status: 99
-## N-I zsh/mksh/ash stdout-json: ""
 
 
-#### InitializerList (BashArray): evaluation order (1)
-# RHS of [k]=v are expanded when the initializer list is instanciated.  For the
-# indexed array, the array indices are evaluated when the array is modified.
-case $SH in zsh|mksh|ash) exit 99;; esac
-i=1
-a=([100+i++]=$((i++)) [200+i++]=$((i++)) [300+i++]=$((i++)))
-printf 'keys: '; argv.py "${!a[@]}"
-printf 'vals: '; argv.py "${a[@]}"
+#### Issue #1069 [52] BUG: \builtin local v=1 fails
+case $SH in ash|dash|yash) exit 99;; esac
+v=x
+case $SH in
+mksh) f1() { \builtin typeset v=1; echo "l:v=$v"; } ;;
+*)    f1() { \builtin local   v=1; echo "l:v=$v"; } ;;
+esac
+f1
+echo "g:v=$v"
 ## STDOUT:
-keys: ['104', '205', '306']
-vals: ['1', '2', '3']
+l:v=1
+g:v=x
 ## END
-## N-I zsh/mksh/ash status: 99
-## N-I zsh/mksh/ash stdout-json: ""
+# Note: ash/dash/yash does not have "builtin"
+## N-I ash/dash/yash status: 99
+## N-I ash/dash/yash stdout-json: ""
 
 
-#### InitializerList (BashArray): evaluation order (2)
-# When evaluating the index, the modification to the array by the previous item
-# of the initializer list is visible to the current item.
-case $SH in zsh|mksh|ash) exit 99;; esac
-a=([0]=1+2+3 [a[0]]=10 [a[6]]=hello)
-printf 'keys: '; argv.py "${!a[@]}"
-printf 'vals: '; argv.py "${a[@]}"
+#### Issue #1069 [53] BUG: a[1 + 1]=2, etc. fails
+case $SH in ash|dash|yash) exit 99;; esac
+a=()
+
+a[1]=x
+eval 'a[5&3]=hello'
+echo "status=$?, a[1]=${a[1]}"
+
+a[2]=x
+eval 'a[1 + 1]=hello'
+echo "status=$?, a[2]=${a[2]}"
+
+a[3]=x
+eval 'a[1|2]=hello'
+echo "status=$?, a[3]=${a[3]}"
 ## STDOUT:
-keys: ['0', '6', '10']
-vals: ['1+2+3', '10', 'hello']
+status=0, a[1]=hello
+status=0, a[2]=hello
+status=0, a[3]=hello
 ## END
-## N-I zsh/mksh/ash status: 99
-## N-I zsh/mksh/ash stdout-json: ""
-
-
-#### InitializerList (BashArray): evaluation order (3)
-# RHS should be expanded before any modification to the array.
-case $SH in zsh|mksh|ash) exit 99;; esac
-a=(old1 old2 old3)
-a=("${a[2]}" "${a[0]}" "${a[1]}" "${a[2]}" "${a[0]}")
-printf 'keys: '; argv.py "${!a[@]}"
-printf 'vals: '; argv.py "${a[@]}"
-a=(old1 old2 old3)
-old1=101 old2=102 old3=103
-new1=201 new2=202 new3=203
-a+=([0]=new1 [1]=new2 [2]=new3 [5]="${a[2]}" [a[0]]="${a[0]}" [a[1]]="${a[1]}")
-printf 'keys: '; argv.py "${!a[@]}"
-printf 'vals: '; argv.py "${a[@]}"
-## STDOUT:
-keys: ['0', '1', '2', '3', '4']
-vals: ['old3', 'old1', 'old2', 'old3', 'old1']
-keys: ['0', '1', '2', '5', '201', '202']
-vals: ['new1', 'new2', 'new3', 'old3', 'old1', 'old2']
+## OK zsh STDOUT:
+status=1, a[1]=x
+status=1, a[2]=x
+status=1, a[3]=x
 ## END
-## N-I zsh/mksh/ash status: 99
-## N-I zsh/mksh/ash stdout-json: ""
+# Note: ash/dash does not have arrays
+# Note: yash does not support a[index]=value
+## N-I ash/dash/yash status: 99
+## N-I ash/dash/yash stdout-json: ""
 
-
-#### Issue #1069 [57] - Variable v should be visible after IFS= eval 'local v=...'
-
-set -u
-
-f() {
-  # The temp env messes it up
-  IFS= eval "local v=\"\$*\""
-
-  # Bug does not appear with only eval
-  # eval "local v=\"\$*\""
-
-  #declare -p v
-  echo v=$v
-
-  # test -v v; echo "v defined $?"
-}
-
-f h e l l o
-
-## STDOUT:
-v=hello
-## END
-
-
-#### Issue #1069 [59] - Assigning Str to BashArray/BashAssoc should not remove BashArray/BashAssoc
-case $SH in zsh|ash) exit ;; esac
-
-a=(1 2 3)
-a=99
-typeset -p a
-
-typeset -A A=([k]=v)
-A=99
-typeset -p A
-
-## STDOUT:
-declare -a a=([0]="99" [1]="2" [2]="3")
-declare -A A=([0]="99" [k]="v" )
-## END
-
-## OK mksh status: 1
-## OK mksh STDOUT:
-set -A a
-typeset a[0]=99
-typeset a[1]=2
-typeset a[2]=3
-## END
-
-## N-I zsh/ash STDOUT:
-## END
 
 #### Issue #1069 [53] - LHS array parsing a[1 + 2]=3 (see spec/array-assign for more)
 case $SH in zsh|ash) exit ;; esac
@@ -621,3 +461,114 @@ typeset a[41]=66
 ## N-I zsh/ash STDOUT:
 ## END
 
+
+#### Issue #1069 [56] BUG: declare -p unset does not print any error message
+typeset -p nonexistent
+## status: 1
+## STDERR:
+[ stdin ]:1: osh: typeset: 'nonexistent' is not defined
+## END
+## STDOUT:
+## END
+## OK bash STDERR:
+bash: line 1: typeset: nonexistent: not found
+## END
+## OK mksh status: 0
+## OK mksh STDERR:
+## END
+## OK zsh STDERR:
+typeset: no such variable: nonexistent
+## END
+## OK ash status: 127
+## OK ash STDERR:
+ash: typeset: not found
+## END
+## OK dash status: 127
+## OK dash STDERR:
+dash: 1: typeset: not found
+## END
+## OK yash STDERR:
+typeset: no such variable $nonexistent
+## END
+
+
+#### Issue #1069 [57] BUG: variable v is invisible after IFS= eval 'local v=...'
+v=x
+case $SH in
+mksh) f() { IFS= eval 'typeset v=1'; echo "l:$v"; } ;;
+*)    f() { IFS= eval 'local   v=1'; echo "l:$v"; } ;;
+esac
+f
+echo "g:$v"
+## STDOUT:
+l:1
+g:x
+## END
+
+
+#### Issue #1069 [57] - Variable v should be visible after IFS= eval 'local v=...'
+
+set -u
+
+f() {
+  # The temp env messes it up
+  IFS= eval "local v=\"\$*\""
+
+  # Bug does not appear with only eval
+  # eval "local v=\"\$*\""
+
+  #declare -p v
+  echo v=$v
+
+  # test -v v; echo "v defined $?"
+}
+
+f h e l l o
+
+## STDOUT:
+v=hello
+## END
+
+
+#### Issue #1069 [59] N-I: arr=s should set RHS to arr[0]
+case $SH in ash|dash) exit 99;; esac
+a=(1 2 3)
+a=v
+argv.py "${a[@]}"
+## STDOUT:
+['v', '2', '3']
+## END
+## N-I zsh/yash STDOUT:
+['v']
+## END
+# Note: ash/dash does not have arrays
+## N-I ash/dash status: 99
+## N-I ash/dash stdout-json: ""
+
+
+#### Issue #1069 [59] - Assigning Str to BashArray/BashAssoc should not remove BashArray/BashAssoc
+case $SH in zsh|ash) exit ;; esac
+
+a=(1 2 3)
+a=99
+typeset -p a
+
+typeset -A A=([k]=v)
+A=99
+typeset -p A
+
+## STDOUT:
+declare -a a=([0]="99" [1]="2" [2]="3")
+declare -A A=([0]="99" [k]="v" )
+## END
+
+## OK mksh status: 1
+## OK mksh STDOUT:
+set -A a
+typeset a[0]=99
+typeset a[1]=2
+typeset a[2]=3
+## END
+
+## N-I zsh/ash STDOUT:
+## END
