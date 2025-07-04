@@ -391,6 +391,77 @@ g:v=x
 ## N-I ash/dash/yash stdout-json: ""
 
 
+#### Issue #1069 [53] BUG: a[1 + 1]=2, etc. fails
+case $SH in ash|dash|yash) exit 99;; esac
+a=()
+
+a[1]=x
+eval 'a[5&3]=hello'
+echo "status=$?, a[1]=${a[1]}"
+
+a[2]=x
+eval 'a[1 + 1]=hello'
+echo "status=$?, a[2]=${a[2]}"
+
+a[3]=x
+eval 'a[1|2]=hello'
+echo "status=$?, a[3]=${a[3]}"
+## STDOUT:
+status=0, a[1]=hello
+status=0, a[2]=hello
+status=0, a[3]=hello
+## END
+## OK zsh STDOUT:
+status=1, a[1]=x
+status=1, a[2]=x
+status=1, a[3]=x
+## END
+# Note: ash/dash does not have arrays
+# Note: yash does not support a[index]=value
+## N-I ash/dash/yash status: 99
+## N-I ash/dash/yash stdout-json: ""
+
+
+#### Issue #1069 [53] - LHS array parsing a[1 + 2]=3 (see spec/array-assign for more)
+case $SH in zsh|ash) exit ;; esac
+
+a[1 + 2]=7
+a[3|4]=8
+a[(1+2)*3]=9
+
+typeset -p a
+
+# Dynamic parsing
+expr='1 + 2'
+a[expr]=55
+
+b=(42)
+expr='b[0]'
+a[3 + $expr - 4]=66
+
+typeset -p a
+
+## STDOUT:
+declare -a a=([3]="7" [7]="8" [9]="9")
+declare -a a=([3]="55" [7]="8" [9]="9" [41]="66")
+## END
+
+## OK mksh STDOUT:
+set -A a
+typeset a[3]=7
+typeset a[7]=8
+typeset a[9]=9
+set -A a
+typeset a[3]=55
+typeset a[7]=8
+typeset a[9]=9
+typeset a[41]=66
+## END
+
+## N-I zsh/ash STDOUT:
+## END
+
+
 #### Issue #1069 [56] BUG: declare -p unset does not print any error message
 typeset -p nonexistent
 ## status: 1
@@ -497,77 +568,6 @@ set -A a
 typeset a[0]=99
 typeset a[1]=2
 typeset a[2]=3
-## END
-
-## N-I zsh/ash STDOUT:
-## END
-
-
-#### Issue #1069 [53] BUG: a[1 + 1]=2, etc. fails
-case $SH in ash|dash|yash) exit 99;; esac
-a=()
-
-a[1]=x
-eval 'a[5&3]=hello'
-echo "status=$?, a[1]=${a[1]}"
-
-a[2]=x
-eval 'a[1 + 1]=hello'
-echo "status=$?, a[2]=${a[2]}"
-
-a[3]=x
-eval 'a[1|2]=hello'
-echo "status=$?, a[3]=${a[3]}"
-## STDOUT:
-status=0, a[1]=hello
-status=0, a[2]=hello
-status=0, a[3]=hello
-## END
-## OK zsh STDOUT:
-status=1, a[1]=x
-status=1, a[2]=x
-status=1, a[3]=x
-## END
-# Note: ash/dash does not have arrays
-# Note: yash does not support a[index]=value
-## N-I ash/dash/yash status: 99
-## N-I ash/dash/yash stdout-json: ""
-
-
-#### Issue #1069 [53] - LHS array parsing a[1 + 2]=3 (see spec/array-assign for more)
-case $SH in zsh|ash) exit ;; esac
-
-a[1 + 2]=7
-a[3|4]=8
-a[(1+2)*3]=9
-
-typeset -p a
-
-# Dynamic parsing
-expr='1 + 2'
-a[expr]=55
-
-b=(42)
-expr='b[0]'
-a[3 + $expr - 4]=66
-
-typeset -p a
-
-## STDOUT:
-declare -a a=([3]="7" [7]="8" [9]="9")
-declare -a a=([3]="55" [7]="8" [9]="9" [41]="66")
-## END
-
-## OK mksh STDOUT:
-set -A a
-typeset a[3]=7
-typeset a[7]=8
-typeset a[9]=9
-set -A a
-typeset a[3]=55
-typeset a[7]=8
-typeset a[9]=9
-typeset a[41]=66
 ## END
 
 ## N-I zsh/ash STDOUT:
