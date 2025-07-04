@@ -511,21 +511,26 @@ OK
 OK
 ## END
 
-#### set without args and array variables (not in OSH)
+#### set without args and array variables
 declare -a __array
 __array=(1 2 '3 4')
 set | grep '^__'
 ## STDOUT:
+__array=(1 2 '3 4')
+## END
+## OK bash STDOUT:
 __array=([0]="1" [1]="2" [2]="3 4")
 ## END
 ## OK mksh STDOUT:
 __array[0]=1
 __array[1]=2
 __array[2]='3 4'
+## END
+## OK zsh STDOUT:
+a=( 1 2 3 )
+## END
 ## N-I dash stdout-json: ""
 ## N-I dash status: 2
-## N-I osh stdout-json: ""
-## N-I osh status: 1
 
 #### set without args and assoc array variables (not in OSH)
 typeset -A __assoc
