@@ -19,41 +19,34 @@ from core import state
 from core import vm
 from data_lang import j8_lite
 from display import ui
-from frontend import flag_util
-from frontend import args
+from frontend import args, consts, flag_util
 from mycpp.mylib import log, tagswitch
 from osh import cmd_eval
 from osh import sh_expr_eval
 
-from typing import cast, List, Optional, TYPE_CHECKING
+from typing import cast, Dict, List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from core import optview
-    from frontend.args import _Attributes
 
 _ = log
 
-_OTHER = 0
-_READONLY = 1
-_EXPORT = 2
 
-
-def _PrintVariables(
+def PrintVariables(
         mem,  # type: state.Mem
-        errfmt,  # type: ui.ErrorFormatter
-        cmd_val,  # type: cmd_value.Assign
-        attrs,  # type: _Attributes
+        errfmt,  # type: Optional[ui.ErrorFormatter]
+        cmd_val,  # type: Optional[cmd_value.Assign]
+        flag,  # type: Dict[str, value_t]
         print_flags,  # type: bool
-        builtin=_OTHER,  # type: int
+        builtin=consts.NO_INDEX,  # type: int
 ):
     # type: (...) -> int
     """
     Args:
-      attrs: flag attributes
+      errfmt: Required when "pairs" is specified.
+      flag: flag attributes
       print_flags: whether to print flags
-      builtin: is it the readonly or export builtin?
+      builtin: specify the builtin_i number
     """
-    flag = attrs.attrs
-
     # Turn dynamic vars to static.
     tmp_g = flag.get('g')
     tmp_a = flag.get('a')
@@ -82,7 +75,7 @@ def _PrintVariables(
     flag_x = (cast(value.Str, tmp_x).s if tmp_x and tmp_x.tag() == value_e.Str
               else None)  # type: Optional[str]
 
-    if cmd_val.builtin_id == builtin_i.local:
+    if builtin == builtin_i.local:
         if flag_g and not mem.IsGlobalScope():
             return 1
         which_scopes = scope_e.LocalOnly
@@ -91,7 +84,7 @@ def _PrintVariables(
     else:
         which_scopes = mem.ScopesForReading()  # reading
 
-    if len(cmd_val.pairs) == 0:
+    if cmd_val is None or len(cmd_val.pairs) == 0:
         print_all = True
         cells = mem.GetAllCells(which_scopes)
         names = sorted(cells)  # type: List[str]
@@ -129,9 +122,9 @@ def _PrintVariables(
         if val.tag() == value_e.Undef:
             continue
 
-        if builtin == _READONLY and not cell.readonly:
+        if builtin == builtin_i.readonly and not cell.readonly:
             continue
-        if builtin == _EXPORT and not cell.exported:
+        if builtin == builtin_i.export_ and not cell.exported:
             continue
 
         if flag_n == '-' and not cell.nameref:
@@ -330,12 +323,8 @@ class Export(vm._AssignBuiltin):
                 loc.Missing)
 
         if arg.p or len(cmd_val.pairs) == 0:
-            return _PrintVariables(self.mem,
-                                   self.errfmt,
-                                   cmd_val,
-                                   attrs,
-                                   True,
-                                   builtin=_EXPORT)
+            return PrintVariables(self.mem, self.errfmt, cmd_val, attrs.attrs,
+                                  True, cmd_val.builtin_id)
 
         if arg.n:
             for pair in cmd_val.pairs:
@@ -409,12 +398,8 @@ class Readonly(vm._AssignBuiltin):
         arg = arg_types.readonly(attrs.attrs)
 
         if arg.p or len(cmd_val.pairs) == 0:
-            return _PrintVariables(self.mem,
-                                   self.errfmt,
-                                   cmd_val,
-                                   attrs,
-                                   True,
-                                   builtin=_READONLY)
+            return PrintVariables(self.mem, self.errfmt, cmd_val, attrs.attrs,
+                                  True, cmd_val.builtin_id)
 
         which_scopes = self.mem.ScopesForWriting()
         for pair in cmd_val.pairs:
@@ -508,10 +493,11 @@ class NewVar(vm._AssignBuiltin):
             return status
 
         if arg.p:  # Lookup and print variables.
-            return _PrintVariables(self.mem, self.errfmt, cmd_val, attrs, True)
+            return PrintVariables(self.mem, self.errfmt, cmd_val, attrs.attrs,
+                                  True, cmd_val.builtin_id)
         elif len(cmd_val.pairs) == 0:
-            return _PrintVariables(self.mem, self.errfmt, cmd_val, attrs,
-                                   False)
+            return PrintVariables(self.mem, self.errfmt, cmd_val, attrs.attrs,
+                                  False, cmd_val.builtin_id)
 
         if not self.exec_opts.ignore_flags_not_impl():
             if arg.i:

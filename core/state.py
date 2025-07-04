@@ -2635,19 +2635,6 @@ class Mem(object):
                     names.append(name)
         return names
 
-    def GetAllVars(self):
-        # type: () -> Dict[str, str]
-        """Get all variables and their values, for 'set' builtin."""
-        result = NewDict()  # type: Dict[str, str]
-        for scope in self.var_stack:
-            for name, cell in iteritems(scope):
-                # TODO: Show other types?
-                val = cell.val
-                if val.tag() == value_e.Str:
-                    str_val = cast(value.Str, val)
-                    result[name] = str_val.s
-        return result
-
     def GetAllCells(self, which_scopes):
         # type: (scope_t) -> Dict[str, Cell]
         """Get all variables and their values, for 'set' builtin."""

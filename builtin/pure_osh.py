@@ -10,9 +10,11 @@ NOTE: There can be spew on stdout, e.g. for shopt -p and so forth.
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
+from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.syntax_asdl import loc
 from _devbuild.gen.types_asdl import opt_group_i
 
+from builtin import assign_osh
 from core import error
 from core.error import e_usage
 from core import state
@@ -194,11 +196,8 @@ class Set(vm._Builtin):
             # Also:
             # - autoconf also wants them to fit on ONE LINE.
             # http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#set
-            mapping = self.mem.GetAllVars()
-            for name in sorted(mapping):
-                str_val = mapping[name]
-                code_str = '%s=%s' % (name, j8_lite.MaybeShellEncode(str_val))
-                print(code_str)
+            assign_osh.PrintVariables(self.mem, None, None, {}, False,
+                                      builtin_i.set)
             return 0
 
         arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
