@@ -773,3 +773,78 @@ status=1
 status=0
 ## END
 ## N-I dash/ash/mksh/zsh stdout-json: ""
+
+#### read -n 0
+case $SH in (zsh) exit 99;; esac  # read -n not implemented
+
+echo 'a\b\c\d\e\f' | (read -n 0; argv.py "$REPLY")
+
+## STDOUT:
+['']
+## END
+# ash appears to treat 0 as unspecified
+## OK ash STDOUT:
+['abcdef']
+## END
+## N-I zsh status: 99
+## N-I zsh STDOUT:
+## END
+
+#### read -n and backslash escape
+case $SH in (zsh) exit 99;; esac  # read -n not implemented
+
+echo 'a\b\c\d\e\f' | (read -n 5; argv.py "$REPLY")
+echo 'a\ \ \ \ \ ' | (read -n 5; argv.py "$REPLY")
+
+## STDOUT:
+['abcde']
+['a    ']
+## END
+## OK mksh STDOUT:
+['a\x08d\x1b']
+['a ']
+## END
+## OK ash STDOUT:
+['abc']
+['a  ']
+## END
+## N-I zsh status: 99
+## N-I zsh STDOUT:
+## END
+
+#### read -n 4 with incomplete backslash
+case $SH in (zsh) exit 99;; esac  # read -n not implemented
+
+echo 'abc\def\ghijklmn' | (read -n 4; argv.py "$REPLY")
+echo '   \xxx\xxxxxxxx' | (read -n 4; argv.py "$REPLY")
+
+## STDOUT:
+['abcd']
+['   x']
+## END
+## OK mksh STDOUT:
+['abc']
+['']
+## END
+## OK ash STDOUT:
+['abc']
+['   ']
+## END
+## N-I zsh status: 99
+## N-I zsh STDOUT:
+## END
+
+#### read -n 4 with backslash + delim
+case $SH in (zsh) exit 99;; esac  # read -n not implemented
+
+echo $'abc\\\ndefg' | (read -n 4; argv.py "$REPLY")
+
+## STDOUT:
+['abcd']
+## END
+## OK mksh/ash STDOUT:
+['abc']
+## END
+## N-I zsh status: 99
+## N-I zsh STDOUT:
+## END
