@@ -30,7 +30,7 @@ from _devbuild.gen.runtime_asdl import (scope_e, span_e, emit_i, char_kind_i,
                                         state_i)
 from _devbuild.gen.value_asdl import (value, value_e, value_t)
 from mycpp.mylib import log
-from core import pyutil
+from core import pyutil, pyos
 from frontend import consts
 from mycpp import mylib
 from mycpp.mylib import tagswitch
@@ -185,16 +185,10 @@ class SplitContext(object):
         # type: (str, Optional[str]) -> List[str]
         """Split used by the explicit shSplit() function.
         """
-        sp = self._GetSplitter(ifs=ifs)
-        spans = sp.Split(s, True)
-
-        # Note: pass allow_escape=False so \ isn't special
-        #spans = sp.Split(s, False)
-
-        if 0:
-            for span in spans:
-                log('SPAN %s', span)
-        return _SpansToParts(s, spans)
+        sp = self.CreateSplitterState(ifs=ifs)
+        sp.SetAllowEscape(True)
+        sp.PushFragment(s)
+        return sp.PushTerminator()
 
     def SplitForRead(self, line, allow_escape, do_split):
         # type: (str, bool, bool) -> List[Span]
@@ -330,6 +324,7 @@ class IfsSplitterState(object):
         self.ifs_space = ifs_space
         self.ifs_other = ifs_other
         self.glob_escape = False
+        self.allow_escape = False
 
         self.state = state_i.Start
         self.args = []  # type: List[str]  # generated words
@@ -339,6 +334,10 @@ class IfsSplitterState(object):
     def SetGlobEscape(self, glob_escape):
         # type: (bool) -> None
         self.glob_escape = glob_escape
+
+    def SetAllowEscape(self, allow_escape):
+        # type: (bool) -> None
+        self.allow_escape = allow_escape
 
     def _FlushCharBuff(self):
         # type: () -> None
@@ -377,12 +376,18 @@ class IfsSplitterState(object):
 
         ifs_space = self.ifs_space
         ifs_other = self.ifs_other
+        allow_escape = self.allow_escape
         n = len(s)
 
         for i in xrange(n):
             byte = mylib.ByteAt(s, i)
 
-            if mylib.ByteInSet(byte, ifs_space):
+            if self.state == state_i.Backslash:
+                pass
+            elif allow_escape and byte == pyos.BACKSLASH_CH:
+                self.state = state_i.Backslash
+                continue
+            elif mylib.ByteInSet(byte, ifs_space):
                 if self.state != state_i.Start:
                     self.state = state_i.DE_White1
                 continue
