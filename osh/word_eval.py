@@ -2231,57 +2231,17 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 log('(%d) %s', i, piece)
             log('')
 
-        # BUG:
-        #   A=' abc def '; argv.py ""$A""
-        #
-        # In all shells, we get ['', 'abc', 'def', '']
-        # In OSH, we get ['', '']
-        #
-        # What happens to these pieces?  What should happen?
-        #   (Piece s:"" quoted:T do_split:F)
-        # Problem: osh/split.py Split() has ad hoc rule to ignore the leading
-        # whitespace: "it can't really be handled by the state machine."
-
-        # Array of strings, some of which are BOTH IFS-escaped and GLOB escaped!
-        frags = []  # type: List[str]
+        sp = self.splitter.CreateSplitterState()
+        sp.glob_escape = True
         for piece in frame:
-            # Note: if we have a literal \, we may turn it into \\\\.
-            # Splitting takes \\\\ -> \\
-            # Globbing takes \\ to \ if it doesn't match
-
-            if will_glob and piece.quoted:
-                # Ensure this quoted piece is not globbed, by escaping
-                frag = glob_.GlobEscape(piece.s)
-            else:
-                # We escape the result of unquoted substitutions for the case
-                # where glob expansion does not happen.
-                frag = glob_.GlobEscapeUnquotedSubstitution(piece.s)
-
             if piece.do_split:
-                frag = _BackslashEscape(frag)
+                assert not piece.quoted
+                sp.PushFragment(piece.s)
+            elif will_glob and piece.quoted:
+                sp.PushLiteral(glob_.GlobEscape(piece.s))
             else:
-                # Ensure this piece is not split, by escaping
-                frag = self.splitter.Escape(frag)
-
-            frags.append(frag)
-
-        if 0:
-            log('---')
-            log('FRAGS')
-            for i, frag in enumerate(frags):
-                log('(%d) %s', i, frag)
-            log('')
-
-        flat = ''.join(frags)
-        #log('flat: %r', flat)
-
-        args = self.splitter.SplitForWordEval(flat)
-
-        # space=' '; argv $space"".  We have a quoted part, but we CANNOT elide.
-        # Add it back and don't bother globbing.
-        if len(args) == 0 and any_quoted:
-            argv.append('')
-            return
+                sp.PushLiteral(glob_.GlobEscapeUnquotedSubstitution(piece.s))
+        args = sp.PushTerminator()
 
         #log('split args: %r', args)
         for a in args:
