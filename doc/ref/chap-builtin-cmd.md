@@ -766,7 +766,7 @@ These builtins take input and output.  They're often used with redirects.
     read FLAG* VAR*
 
 Read input from `stdin`.
-Does slow (unbuffered) byte-wise waiting with the input echoed to stdout if
+Does slow (unbuffered) byte-wise processing with the input echoed to stdout if
 running in interactive terminal.
 
 Without flags, it works like this:
@@ -779,8 +779,8 @@ Without flags, it works like this:
    the corresponding variable. The last VAR also receives any remainig pieces.
    - If no VARs are given, assign to the variable `$REPLY`.
 
-Note: This default "parsing" algorithm can be confusing and cumbersome to
-tame with `-r`, `IFS=` and more options. When writing YSH, the `--long-flags`
+Note: This slow character "parsing" algorithm can be confusing and cumbersome
+to tame with `-r`, `IFS=` and more options. When writing YSH, the `--long-flags`
 provide cleaner verbatim modes documented in [ysh-read](#ysh-read).
 
 Flags:
