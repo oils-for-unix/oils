@@ -21,6 +21,7 @@ const int TERM_ICANON = ICANON;
 const int TERM_ECHO = ECHO;
 const int EOF_SENTINEL = 256;
 const int NEWLINE_CH = 10;
+const int BACKSLASH_CH = 92;
 
 Tuple2<int, int> WaitPid(int waitpid_options);
 Tuple2<int, int> Read(int fd, int n, List<BigStr*>* chunks);
