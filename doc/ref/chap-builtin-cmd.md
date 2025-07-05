@@ -433,9 +433,9 @@ Warnings:
 
 ### ysh-read
 
-YSH adds to shell's slow (unbuffered) `read`:
+YSH adds verbatim options to shell's slow (unbuffered) `read`:
 
-Long flags that do always return the bytes verbatim.
+* Long flags that do always return the bytes verbatim.
 
     read --all               # whole file including trailing \n, fills $_reply
     read --all (&x)          # fills $x
@@ -448,7 +448,7 @@ Long flags that do always return the bytes verbatim.
 
     read --raw-line --with-eol  # include the trailing \n
 
-And a convenience:
+* And a convenience:
 
     read -0                 # read until NUL, synonym for read -r -d ''
 
@@ -765,10 +765,11 @@ These builtins take input and output.  They're often used with redirects.
 
     read FLAG* VAR*
 
-Read input from `stdin` -- byte-wise waiting, slow (unbuffered), with terminal
-echoing input to stdout if running interactively.
+Read input from `stdin`.
+Does slow (unbuffered) byte-wise waiting with the input echoed to stdout if
+running in interactive terminal.
 
-Without flags, it does the following:
+Without flags, it works like this:
 
 1. Read characters from stdin until the end of a line ("RETURN").
    - Respecting `\` escapes and line continuations.
@@ -776,11 +777,11 @@ Without flags, it does the following:
 1. Use the `$IFS` algorithm to split and trim the line into N pieces, where
    `N` is the number of `VAR`s specified. Each piece is assigned to
    the corresponding variable. The last VAR also receives any remainig pieces.
-   - If no VARs are given, assign to the `$REPLY` var.
+   - If no VARs are given, assign to the variable `$REPLY`.
 
 Note: This default "parsing" algorithm can be confusing and cumbersome to
-tame with `-r`, `IFS=` and more options. When writing YSH, prefer the verbatim
-`--long-flag` modes documented in [ysh-read](#ysh-read).
+tame with `-r`, `IFS=` and more options. When writing YSH, the `--long-flags`
+provide cleaner verbatim modes documented in [ysh-read](#ysh-read).
 
 Flags:
 
