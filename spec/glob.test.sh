@@ -293,3 +293,95 @@ hello hello_preamble.sh hello.py hello-test.sh
 hello hello-test.sh hello.py hello_preamble.sh
 hello hello-test.sh hello.py hello_preamble.sh
 ## END
+
+
+#### \ in unquoted substitutions should not match a backslash
+mkdir x
+touch x/test.ifs.{\\,\',a,\\b}.txt
+v="*\*.txt"
+argv.py x/$v
+v="*\'.txt"
+argv.py x/$v
+v="*\a.txt"
+argv.py x/$v
+v="*\b.txt"
+argv.py x/$v
+## STDOUT:
+['x/*\\*.txt']
+["x/test.ifs.'.txt"]
+['x/test.ifs.a.txt']
+['x/test.ifs.\\b.txt']
+## END
+# \ in unquoted substitutions never matches in ash/dash???
+## BUG ash/dash STDOUT:
+['x/*\\*.txt']
+["x/*\\'.txt"]
+['x/*\\a.txt']
+['x/*\\b.txt']
+## END
+# mksh treats \ in unquoted substitutions as literal \
+## N-I mksh STDOUT:
+['x/test.ifs.\\.txt', 'x/test.ifs.\\b.txt']
+["x/*\\'.txt"]
+['x/*\\a.txt']
+['x/test.ifs.\\b.txt']
+## END
+
+
+#### \ in unquoted substitutions should be preserved without glob chars
+mkdir x
+v="\*\*.txt"
+argv.py x/$v
+## STDOUT:
+['x/\\*\\*.txt']
+## END
+
+
+#### \ in unquoted substitutions should be preserved with noglob
+mkdir x
+set -f
+v="*\*.txt"
+argv.py x/$v
+## STDOUT:
+['x/*\\*.txt']
+## END
+
+
+#### \ in unquoted substitutions should be preserved without glob matching
+mkdir x
+touch x/test.ifs.{'\','*'}.txt
+v="*\*.txt"
+argv.py x/unmatching.$v
+## STDOUT:
+['x/unmatching.*\\*.txt']
+## END
+
+
+#### \ in unquoted substitutions should escape globchars
+mkdir x
+touch x/test.ifs.{'\','*'}.txt
+
+v="*\*.txt"
+argv.py x/$v
+
+v="\\" u="*.txt"
+argv.py x/*$v$u
+
+v="\\" u="*.txt"
+argv.py x/*$v*.txt
+
+## STDOUT:
+['x/test.ifs.*.txt']
+['x/test.ifs.*.txt']
+['x/test.ifs.*.txt']
+## END
+## BUG dash/ash STDOUT:
+['x/*\\*.txt']
+['x/*\\*.txt']
+['x/*\\*.txt']
+## END
+## N-I mksh STDOUT:
+['x/test.ifs.\\.txt']
+['x/test.ifs.\\.txt']
+['x/test.ifs.\\.txt']
+## END

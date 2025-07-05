@@ -145,8 +145,8 @@ def _ReadN(num_bytes, cmd_ev):
     return ''.join(chunks)
 
 
-def _ReadPortion(delim_byte, max_chars, cmd_ev):
-    # type: (int, int, CommandEvaluator) -> Tuple[str, bool]
+def _ReadPortion(delim_byte, max_chars, allow_escape, cmd_ev):
+    # type: (int, int, bool, CommandEvaluator) -> Tuple[str, bool]
     """Read a portion of stdin.
 
     Reads until delimiter or max_chars, which ever comes first. Will ignore
@@ -157,9 +157,10 @@ def _ReadPortion(delim_byte, max_chars, cmd_ev):
     ch_array = []  # type: List[int]
     eof = False
 
-    bytes_read = 0
+    chars_read = 0
+    backslash = False
     while True:
-        if max_chars >= 0 and bytes_read >= max_chars:
+        if max_chars >= 0 and chars_read >= max_chars:
             break
 
         ch, err_num = pyos.ReadByte(0)
@@ -174,6 +175,16 @@ def _ReadPortion(delim_byte, max_chars, cmd_ev):
             eof = True
             break
 
+        elif backslash:
+            backslash = False
+            if ch == pyos.NEWLINE_CH:
+                continue
+            ch_array.append(pyos.BACKSLASH_CH)
+            ch_array.append(ch)
+        elif allow_escape and ch == pyos.BACKSLASH_CH:
+            backslash = True
+            continue
+
         elif ch == delim_byte:
             break
 
@@ -184,7 +195,7 @@ def _ReadPortion(delim_byte, max_chars, cmd_ev):
         else:
             ch_array.append(ch)
 
-        bytes_read += 1
+        chars_read += 1
 
     return pyutil.ChArrayToString(ch_array), eof
 
@@ -499,7 +510,7 @@ class Read(vm._Builtin):
         join_next = False
         status = 0
         while True:
-            chunk, eof = _ReadPortion(delim_byte, mops.BigTruncate(arg.n),
+            chunk, eof = _ReadPortion(delim_byte, mops.BigTruncate(arg.n), not raw,
                                       self.cmd_ev)
 
             if eof:
@@ -516,8 +527,8 @@ class Read(vm._Builtin):
                                            join_next, parts)
 
             #log('PARTS %s continued %s', parts, continued)
-            if done:
-                break
+            assert done
+            break
 
         entries = [buf.getvalue() for buf in parts]
         num_parts = len(entries)
