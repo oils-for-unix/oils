@@ -190,15 +190,21 @@ class SplitContext(object):
         sp.PushFragment(s)
         return sp.PushTerminator()
 
-    def SplitForRead(self, line, allow_escape, do_split):
-        # type: (str, bool, bool) -> List[Span]
+    def SplitForRead(self, line, allow_escape, do_split, max_parts):
+        # type: (str, bool, bool, int) -> List[str]
+
+        if len(line) == 0:
+            return []
 
         # None: use the default splitter, consulting $IFS
         # ''  : forces IFS='' behavior
         ifs = None if do_split else ''
 
-        sp = self._GetSplitter(ifs=ifs)
-        return sp.Split(line, allow_escape)
+        sp = self.CreateSplitterState(ifs=ifs)
+        sp.allow_escape = allow_escape
+        sp.max_split = max_parts - 1
+        sp.PushFragment(line)
+        return sp.PushTerminator()
 
 
 class _BaseSplitter(object):
@@ -325,15 +331,20 @@ class IfsSplitterState(object):
         self.ifs_other = ifs_other
         self.glob_escape = False
         self.allow_escape = False
+        self.max_split = -1
 
         self.state = state_i.Start
         self.args = []  # type: List[str]  # generated words
         self.frags = []  # type: List[str]  # str fragments of the current word
         self.char_buff = []  # type: List[int]  # chars in the current fragment
+        self.max_split_trim = 0  # Number of IFS chars to trim from right
 
     def _FlushCharBuff(self):
         # type: () -> None
         if len(self.char_buff) >= 1:
+            if self.max_split_trim > 0:
+                self.char_buff = self.char_buff[0:-self.max_split_trim]
+                self.max_split_trim = 0
             frag = mylib.JoinBytes(self.char_buff)
             if self.glob_escape:
                 frag = glob_.GlobEscapeUnquotedSubstitution(frag)
@@ -352,6 +363,7 @@ class IfsSplitterState(object):
         Args:
           s: word fragment that should be literally added
         """
+        self.max_split_trim = 0
         if self.state == state_i.DE_White1:
             self._GenerateWord()
         else:
@@ -369,6 +381,7 @@ class IfsSplitterState(object):
         ifs_space = self.ifs_space
         ifs_other = self.ifs_other
         allow_escape = self.allow_escape
+        max_split = self.max_split
         n = len(s)
 
         for i in xrange(n):
@@ -376,7 +389,22 @@ class IfsSplitterState(object):
 
             if self.state == state_i.Backslash:
                 pass
+
+            elif (max_split >= 0 and self.state != state_i.Start and
+                  len(self.args) >= max_split):
+                # When max_split is reached, the processing is modified.
+                if allow_escape and byte == pyos.BACKSLASH_CH:
+                    self.max_split_trim = 0
+                    self.state = state_i.Backslash
+                    continue
+                elif mylib.ByteInSet(byte, ifs_space):
+                    self.max_split_trim += 1
+                else:
+                    self.max_split_trim = 0
+
             elif allow_escape and byte == pyos.BACKSLASH_CH:
+                if self.state == state_i.DE_White1:
+                    self._GenerateWord()
                 self.state = state_i.Backslash
                 continue
             elif mylib.ByteInSet(byte, ifs_space):

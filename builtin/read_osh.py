@@ -505,32 +505,17 @@ class Read(vm._Builtin):
             else:
                 delim_byte = pyos.NEWLINE_CH  # read a line
 
-        # Read MORE THAN ONE line for \ line continuation (and not read -r)
-        parts = []  # type: List[mylib.BufWriter]
-        join_next = False
-        status = 0
-        while True:
-            chunk, eof = _ReadPortion(delim_byte, mops.BigTruncate(arg.n), not raw,
-                                      self.cmd_ev)
+        chunk, eof = _ReadPortion(delim_byte, mops.BigTruncate(arg.n), not raw,
+                                  self.cmd_ev)
 
-            if eof:
-                # status 1 to terminate loop.  (This is true even though we set
-                # variables).
-                status = 1
+        # status 1 to terminate loop.  (This is true even though we set
+        # variables).
+        status = 1 if eof else 0
 
-            #log('LINE %r', chunk)
-            if len(chunk) == 0:
-                break
+        #log('LINE %r', chunk)
+        entries = self.splitter.SplitForRead(chunk, not raw, do_split,
+                                             max_results)
 
-            spans = self.splitter.SplitForRead(chunk, not raw, do_split)
-            done, join_next = _AppendParts(chunk, spans, max_results,
-                                           join_next, parts)
-
-            #log('PARTS %s continued %s', parts, continued)
-            assert done
-            break
-
-        entries = [buf.getvalue() for buf in parts]
         num_parts = len(entries)
         if arg.a is not None:
             state.BuiltinSetArray(self.mem, arg.a, entries)
