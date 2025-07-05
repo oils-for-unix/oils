@@ -154,16 +154,8 @@ module runtime
   # For word splitting (in frontend/consts.py and osh/split.py)
   span = Black | Delim | Backslash
 
-  emit = Part | Delim | Empty | Escape | Nothing
-         generate [integers]
-  state = Invalid | Start | DE_White1 | DE_Gray | DE_White2 | Black | Backslash | Done
+  state = Start | White | Black | Backslash
           generate [integers]
-
-  # Edges are characters.  DE_ is the delimiter prefix.  DE_White is for
-  # whitespace; DE_Gray is for other IFS chars; Black is for significant
-  # characters.  Sentinel is the end of the string.
-  char_kind = DE_White | DE_Gray | Black | Backslash | Sentinel
-              generate [integers]
 
   # core/bash_impl.py
   error_code = OK | IndexOutOfRange

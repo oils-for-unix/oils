@@ -3,7 +3,7 @@ from __future__ import print_function
 from errno import EINTR
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.runtime_asdl import (span_e, cmd_value)
+from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import source, loc_t
 from _devbuild.gen.value_asdl import value, LeftName
 from core import alloc
@@ -25,7 +25,6 @@ import posix_ as posix
 
 from typing import Tuple, List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
-    from _devbuild.gen.runtime_asdl import span_t
     from frontend.parse_lib import ParseContext
     from frontend import args
     from osh.cmd_eval import CommandEvaluator
@@ -49,72 +48,6 @@ _ = log
 # above in Word Splitting).
 # - The backslash character '\' may be used to remove any special meaning for
 #   the next character read and for line continuation.
-
-
-def _AppendParts(
-        s,  # type: str
-        spans,  # type: List[Tuple[span_t, int]]
-        max_results,  # type: int
-        join_next,  # type: bool
-        parts,  # type: List[mylib.BufWriter]
-):
-    # type: (...) -> Tuple[bool, bool]
-    """Append to 'parts', for the 'read' builtin.
-
-    Similar to _SpansToParts in osh/split.py
-
-    Args:
-      s: The original string
-      spans: List of (span, end_index)
-      max_results: the maximum number of parts we want
-      join_next: Whether to join the next span to the previous part.  This
-      happens in two cases:
-        - when we have '\ '
-        - and when we have more spans # than max_results.
-    """
-    start_index = 0
-    # If the last span was black, and we get a backslash, set join_next to merge
-    # two black spans.
-    last_span_was_black = False
-
-    for span_type, end_index in spans:
-        if span_type == span_e.Black:
-            if join_next and len(parts):
-                parts[-1].write(s[start_index:end_index])
-                join_next = False
-            else:
-                buf = mylib.BufWriter()
-                buf.write(s[start_index:end_index])
-                parts.append(buf)
-            last_span_was_black = True
-
-        elif span_type == span_e.Delim:
-            if join_next:
-                parts[-1].write(s[start_index:end_index])
-                join_next = False
-            last_span_was_black = False
-
-        elif span_type == span_e.Backslash:
-            if last_span_was_black:
-                join_next = True
-            last_span_was_black = False
-
-        if max_results and len(parts) >= max_results:
-            join_next = True
-
-        start_index = end_index
-
-    done = True
-    if len(spans):
-        #log('%s %s', s, spans)
-        #log('%s', spans[-1])
-        last_span_type, _ = spans[-1]
-        if last_span_type == span_e.Backslash:
-            done = False
-
-    #log('PARTS %s', parts)
-    return done, join_next
-
 
 #
 # Three read() wrappers for 'read' builtin that RunPendingTraps: _ReadN,

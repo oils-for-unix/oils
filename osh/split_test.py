@@ -11,16 +11,10 @@ from osh import split  # module under test
 
 def _RunSplitCases(test, sp, cases):
     for expected_parts, s, allow_escape in cases:
-        spans = sp.Split(s, allow_escape)
-        if 0:
-            print('%r: %s' % (s, spans))
-        else:
-            # Verbose for debugging
-            print(repr(s))
-            for span in spans:
-                print('  %s %s' % span)
-
-        parts = split._SpansToParts(s, spans)
+        sp.Reset()
+        sp.allow_escape = allow_escape
+        sp.PushFragment(s)
+        parts = sp.PushTerminator()
         print('PARTS %s' % parts)
 
         test.assertEqual(expected_parts, parts,
@@ -30,28 +24,35 @@ def _RunSplitCases(test, sp, cases):
 class SplitTest(unittest.TestCase):
 
     def testSpansToParts(self):
-        sp = split.IfsSplitter(split.DEFAULT_IFS, '')
-
+        sp = split.IfsSplitterState(split.DEFAULT_IFS, '')
         s = 'one\\ two'
-        spans = sp.Split(s, False)
-        print(spans)
 
-        parts = split._SpansToParts(s, spans)
+        sp.allow_escape = False
+        sp.PushFragment(s)
+        parts = sp.PushTerminator()
         self.assertEqual(['one\\', 'two'], parts)
 
-        spans = sp.Split(s, True)  # allow_escape
-        parts = split._SpansToParts(s, spans)
+        sp.Reset()
+        sp.allow_escape = True
+        sp.PushFragment(s)
+        parts = sp.PushTerminator()
         self.assertEqual(['one two'], parts)
 
         # NOTE: Only read builtin supports max_results
         return
 
-        parts = split._SpansToParts(s, spans, max_results=1)
+        sp.Reset()
+        sp.allow_escape = False
+        sp.max_split = 0
+        sp.PushFragment(s)
+        parts = sp.PushTerminator()
         self.assertEqual(['one\\ two'], parts)
 
-        print(spans)
-
-        parts = split._SpansToParts(s, spans, max_results=1)
+        sp.Reset()
+        sp.allow_escape = True
+        sp.max_split = 0
+        sp.PushFragment(s)
+        parts = sp.PushTerminator()
         self.assertEqual(['one two'], parts)
 
     def testTrailingWhitespaceBug(self):
@@ -61,7 +62,7 @@ class SplitTest(unittest.TestCase):
             (['ab '], r' ab\ ', True),
             (['ab '], r' ab\  ', True),
         ]
-        sp = split.IfsSplitter(split.DEFAULT_IFS, '')
+        sp = split.IfsSplitterState(split.DEFAULT_IFS, '')
         _RunSplitCases(self, sp, CASES)
 
     def testDefaultIfs(self):
@@ -75,12 +76,11 @@ class SplitTest(unittest.TestCase):
             (['a\\', 'b'], r'a\ b', False),
             ([r'\*.sh'], r'\\*.sh', True),
             (['Aa', 'b', ' a b'], 'Aa b \\ a\\ b', True),
+            (['a _b'], r'a\ _b', True),
         ]
 
-        sp = split.IfsSplitter(split.DEFAULT_IFS, '')
+        sp = split.IfsSplitterState(split.DEFAULT_IFS, '')
         _RunSplitCases(self, sp, CASES)
-
-        self.assertEqual(r'a\ _b', sp.Escape('a _b'))
 
     def testMixedIfs(self):
         CASES = [
@@ -104,19 +104,19 @@ class SplitTest(unittest.TestCase):
             # Backslash escape
             (['a b'], r'a\ b', True),
             (['a\\', 'b'], r'a\ b', False),
+            (['a _b'], r'a\ \_b', True),
         ]
 
         # IFS='_ '
-        sp = split.IfsSplitter(' ', '_')
+        sp = split.IfsSplitterState(' ', '_')
         _RunSplitCases(self, sp, CASES)
-
-        self.assertEqual('a\ \_b', sp.Escape('a _b'))
 
     def testWhitespaceOnly(self):
         CASES = [
             ([], '', True),
             ([], '\t', True),
             (['a'], 'a\t', True),
+            (['a b'], 'a b', True),
             (['a', 'b'], '\t\ta\tb\t', True),
 
             # Backslash escape
@@ -125,11 +125,8 @@ class SplitTest(unittest.TestCase):
         ]
 
         # IFS='_ '
-        sp = split.IfsSplitter('\t', '')
+        sp = split.IfsSplitterState('\t', '')
         _RunSplitCases(self, sp, CASES)
-
-        self.assertEqual('a b', sp.Escape('a b'))
-        self.assertEqual('a\\\tb', sp.Escape('a\tb'))
 
     def testOtherOnly(self):
         CASES = [
@@ -144,7 +141,7 @@ class SplitTest(unittest.TestCase):
         ]
 
         # IFS='_ '
-        sp = split.IfsSplitter('', '_')
+        sp = split.IfsSplitterState('', '_')
         _RunSplitCases(self, sp, CASES)
 
     def testTwoOther(self):
@@ -157,7 +154,7 @@ class SplitTest(unittest.TestCase):
         ]
 
         # IFS='_ '
-        sp = split.IfsSplitter('', '_-')
+        sp = split.IfsSplitterState('', '_-')
         _RunSplitCases(self, sp, CASES)
 
 

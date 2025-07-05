@@ -17,15 +17,11 @@ class BuiltinTest(unittest.TestCase):
         ]
 
         for expected_parts, max_results, line in CASES:
-            sp = split.IfsSplitter(split.DEFAULT_IFS, '')
-            spans = sp.Split(line, True)
-            print('--- %r' % line)
-            for span in spans:
-                print('  %s %s' % span)
-
-            parts = []
-            read_osh._AppendParts(line, spans, max_results, False, parts)
-            strs = [buf.getvalue() for buf in parts]
+            sp = split.IfsSplitterState(split.DEFAULT_IFS, '')
+            sp.allow_escape = True
+            sp.max_split = max_results - 1
+            sp.PushFragment(line)
+            strs = sp.PushTerminator()
             self.assertEqual(expected_parts, strs)
 
             print('---')
