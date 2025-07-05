@@ -848,3 +848,24 @@ echo $'abc\\\ndefg' | (read -n 4; argv.py "$REPLY")
 ## N-I zsh status: 99
 ## N-I zsh STDOUT:
 ## END
+
+#### "backslash + newline" should be swallowed regardless of "-d <delim>"
+
+printf '%s\n' 'a b\' 'c d' | (read; argv.py "$REPLY")
+printf '%s\n' 'a b\,c d'   | (read; argv.py "$REPLY")
+printf '%s\n' 'a b\' 'c d' | (read -d ,; argv.py "$REPLY")
+printf '%s\n' 'a b\,c d'   | (read -d ,; argv.py "$REPLY")
+
+## STDOUT:
+['a bc d']
+['a b,c d']
+['a bc d\n']
+['a b,c d\n']
+## END
+# mksh/zsh swallows "backslash + delim" instead.
+## OK mksh/zsh STDOUT:
+['a bc d']
+['a b,c d']
+['a b\nc d']
+['a bc d']
+## END
