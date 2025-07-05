@@ -1,4 +1,4 @@
-## oils_failures_allowed: 5
+## oils_failures_allowed: 3
 ## compare_shells: bash dash mksh zsh ash yash
 
 #### Fatal error
