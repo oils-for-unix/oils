@@ -159,6 +159,7 @@ def _ReadPortion(delim_byte, max_chars, allow_escape, cmd_ev):
 
     chars_read = 0
     ch_backslash = mylib.ByteAt('\\', 0)
+    ch_newline = mylib.ByteAt('\n', 0)
     backslash = False
     while True:
         if max_chars >= 0 and chars_read >= max_chars:
@@ -178,7 +179,7 @@ def _ReadPortion(delim_byte, max_chars, allow_escape, cmd_ev):
 
         elif backslash:
             backslash = False
-            if ch == delim_byte:
+            if ch == ch_newline:
                 continue
             ch_array.append(ch_backslash)
             ch_array.append(ch)
