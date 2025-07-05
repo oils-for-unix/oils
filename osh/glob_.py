@@ -102,9 +102,6 @@ def GlobEscapeUnquotedSubstitution(s):
     # means that a backslash inside unquoted substitutions is treated
     # differently from quoted backslash, so we need a distinct representaton.
     # We choose \@ here.
-    #
-    # XXX--This representation is affected by the known IFS='\' bug, but the
-    # bug will be fixed in the coming PR.
     return s.replace('\\', r'\@')
 
 

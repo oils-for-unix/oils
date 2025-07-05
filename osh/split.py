@@ -34,6 +34,7 @@ from core import pyutil
 from frontend import consts
 from mycpp import mylib
 from mycpp.mylib import tagswitch
+from osh import glob_
 
 from typing import List, Tuple, Dict, Optional, TYPE_CHECKING, cast
 if TYPE_CHECKING:
@@ -175,11 +176,14 @@ class SplitContext(object):
         sp = self._GetSplitter()
         return sp.Escape(s)
 
+    def CreateSplitterState(self, ifs=None):
+        # type: (Optional[str]) -> IfsSplitterState
+        sp = self._GetSplitter(ifs=ifs)
+        return IfsSplitterState(sp.ifs_whitespace, sp.ifs_other)
+
     def SplitForWordEval(self, s, ifs=None):
         # type: (str, Optional[str]) -> List[str]
-        """Split used by word evaluation.
-
-        Also used by the explicit shSplit() function.
+        """Split used by the explicit shSplit() function.
         """
         sp = self._GetSplitter(ifs=ifs)
         spans = sp.Split(s, True)
@@ -317,3 +321,80 @@ class IfsSplitter(_BaseSplitter):
             i += 1
 
         return spans
+
+
+class IfsSplitterState(object):
+
+    def __init__(self, ifs_space, ifs_other):
+        # type: (str, str) -> None
+        self.ifs_space = ifs_space
+        self.ifs_other = ifs_other
+        self.glob_escape = False
+
+        self.state = state_i.Start
+        self.args = []  # type: List[str]  # generated words
+        self.frags = []  # type: List[str]  # str fragments of the current word
+        self.char_buff = []  # type: List[int]  # chars in the current fragment
+
+    def _FlushCharBuff(self):
+        # type: () -> None
+        if len(self.char_buff) >= 1:
+            frag = mylib.JoinBytes(self.char_buff)
+            if self.glob_escape:
+                frag = glob_.GlobEscapeUnquotedSubstitution(frag)
+            self.frags.append(frag)
+            self.char_buff = []
+
+    def _GenerateWord(self):
+        # type: () -> None
+        self._FlushCharBuff()
+        self.args.append(''.join(self.frags))
+        self.frags = []
+
+    def PushLiteral(self, s):
+        # type: (str) -> None
+        """
+        Args:
+          s: word fragment that should be literally added
+        """
+        if self.state == state_i.DE_White1:
+            self._GenerateWord()
+        else:
+            self._FlushCharBuff()
+        self.frags.append(s)
+        self.state = state_i.Black
+
+    def PushFragment(self, s):
+        # type: (str) -> None
+        """
+        Args:
+          s: word fragment to split
+        """
+
+        ifs_space = self.ifs_space
+        ifs_other = self.ifs_other
+        n = len(s)
+
+        for i in xrange(n):
+            byte = mylib.ByteAt(s, i)
+
+            if mylib.ByteInSet(byte, ifs_space):
+                if self.state != state_i.Start:
+                    self.state = state_i.DE_White1
+                continue
+            elif mylib.ByteInSet(byte, ifs_other):
+                self._GenerateWord()
+                self.state = state_i.Start
+                continue
+
+            if self.state == state_i.DE_White1:
+                self._GenerateWord()
+            self.char_buff.append(byte)
+            self.state = state_i.Black
+
+    def PushTerminator(self):
+        # type: () -> List[str]
+        if self.state in (state_i.DE_White1, state_i.Black):
+            self._GenerateWord()
+            self.state = state_i.Start
+        return self.args
