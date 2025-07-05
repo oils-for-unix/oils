@@ -3,7 +3,7 @@ from __future__ import print_function
 from errno import EINTR
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.runtime_asdl import (span_e, cmd_value)
+from _devbuild.gen.runtime_asdl import (cmd_value, span_e, state_i)
 from _devbuild.gen.syntax_asdl import source, loc_t
 from _devbuild.gen.value_asdl import value, LeftName
 from core import alloc
@@ -145,8 +145,8 @@ def _ReadN(num_bytes, cmd_ev):
     return ''.join(chunks)
 
 
-def _ReadPortion(delim_byte, max_chars, cmd_ev):
-    # type: (int, int, CommandEvaluator) -> Tuple[str, bool]
+def _ReadPortion(delim_byte, max_chars, allow_escape, cmd_ev):
+    # type: (int, int, bool, CommandEvaluator) -> Tuple[str, bool]
     """Read a portion of stdin.
 
     Reads until delimiter or max_chars, which ever comes first. Will ignore
@@ -157,9 +157,11 @@ def _ReadPortion(delim_byte, max_chars, cmd_ev):
     ch_array = []  # type: List[int]
     eof = False
 
-    bytes_read = 0
+    chars_read = 0
+    ch_backslash = mylib.ByteAt('\\', 0)
+    backslash = False
     while True:
-        if max_chars >= 0 and bytes_read >= max_chars:
+        if max_chars >= 0 and chars_read >= max_chars:
             break
 
         ch, err_num = pyos.ReadByte(0)
@@ -174,6 +176,16 @@ def _ReadPortion(delim_byte, max_chars, cmd_ev):
             eof = True
             break
 
+        elif backslash:
+            backslash = False
+            if ch == delim_byte:
+                continue
+            ch_array.append(ch_backslash)
+            ch_array.append(ch)
+        elif allow_escape and ch == ch_backslash:
+            backslash = True
+            continue
+
         elif ch == delim_byte:
             break
 
@@ -184,7 +196,7 @@ def _ReadPortion(delim_byte, max_chars, cmd_ev):
         else:
             ch_array.append(ch)
 
-        bytes_read += 1
+        chars_read += 1
 
     return pyutil.ChArrayToString(ch_array), eof
 
@@ -494,12 +506,14 @@ class Read(vm._Builtin):
             else:
                 delim_byte = pyos.NEWLINE_CH  # read a line
 
+        sp = self.splitter.CreateSplitterState(ifs=None if do_split else '')
+        sp.allow_escape = not raw
+        sp.max_split = max_results - 1
+
         # Read MORE THAN ONE line for \ line continuation (and not read -r)
-        parts = []  # type: List[mylib.BufWriter]
-        join_next = False
         status = 0
         while True:
-            chunk, eof = _ReadPortion(delim_byte, mops.BigTruncate(arg.n),
+            chunk, eof = _ReadPortion(delim_byte, mops.BigTruncate(arg.n), not raw,
                                       self.cmd_ev)
 
             if eof:
@@ -511,15 +525,13 @@ class Read(vm._Builtin):
             if len(chunk) == 0:
                 break
 
-            spans = self.splitter.SplitForRead(chunk, not raw, do_split)
-            done, join_next = _AppendParts(chunk, spans, max_results,
-                                           join_next, parts)
+            sp.PushFragment(chunk)
 
             #log('PARTS %s continued %s', parts, continued)
-            if done:
-                break
+            assert sp.state != state_i.Backslash
+            break
 
-        entries = [buf.getvalue() for buf in parts]
+        entries = sp.PushTerminator()
         num_parts = len(entries)
         if arg.a is not None:
             state.BuiltinSetArray(self.mem, arg.a, entries)

@@ -2232,66 +2232,30 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 log('(%d) %s', i, piece)
             log('')
 
-        # BUG:
-        #   A=' abc def '; argv.py ""$A""
-        #
-        # In all shells, we get ['', 'abc', 'def', '']
-        # In OSH, we get ['', '']
-        #
-        # What happens to these pieces?  What should happen?
-        #   (Piece s:"" quoted:T do_split:F)
-        # Problem: osh/split.py Split() has ad hoc rule to ignore the leading
-        # whitespace: "it can't really be handled by the state machine."
-
-        # Array of strings, some of which are BOTH IFS-escaped and GLOB escaped!
-        frags = []  # type: List[str]
+        sp = self.splitter.CreateSplitterState()
+        sp.glob_escape = True
         for piece in frame:
-            # Note: if we have a literal \, we may turn it into \\\\.
-            # Splitting takes \\\\ -> \\
-            # Globbing takes \\ to \ if it doesn't match
-
-            if will_glob and piece.quoted:
-                # Ensure this quoted piece is not globbed, by escaping
-                frag = glob_.GlobEscape(piece.s)
-            else:
-                # we're globbing an unquoted substitution, or not globbing at
-                # all?
-                frag = _BackslashEscape(piece.s)
-
             if piece.do_split:
-                frag = _BackslashEscape(frag)
+                assert not piece.quoted
+                sp.PushFragment(piece.s)
+            elif will_glob and piece.quoted:
+                sp.PushLiteral(glob_.GlobEscape(piece.s))
             else:
-                # Ensure this piece is not split, by escaping
-                frag = self.splitter.Escape(frag)
-
-            frags.append(frag)
-
-        if 0:
-            log('---')
-            log('FRAGS')
-            for i, frag in enumerate(frags):
-                log('(%d) %s', i, frag)
-            log('')
-
-        flat = ''.join(frags)
-        #log('flat: %r', flat)
-
-        args = self.splitter.SplitForWordEval(flat)
-
-        # space=' '; argv $space"".  We have a quoted part, but we CANNOT elide.
-        # Add it back and don't bother globbing.
-        if len(args) == 0 and any_quoted:
-            argv.append('')
-            return
+                sp.PushLiteral(glob_.GlobEscapeUnquotedSubstitution(piece.s))
+        args = sp.PushTerminator()
 
         #log('split args: %r', args)
         for a in args:
-            if glob_.LooksLikeGlob(a):
-                n = self.globber.Expand(a, argv)
+            if not will_glob:
+                argv.append(glob_.GlobUnescape(a))
+                continue
+
+            glob_pat = glob_.GlobUnescapeUnquotedSubstitution(a)
+            if glob_.LooksLikeGlob(glob_pat):
+                # TODO: location info, with span IDs carried through the frame
+                n = self.globber.Expand(glob_pat, argv, loc.Missing)
                 if n < 0:
-                    # TODO: location info, with span IDs carried through the frame
-                    raise error.FailGlob('Pattern %r matched no files' % a,
-                                         loc.Missing)
+                    argv.append(glob_.GlobUnescape(a))
             else:
                 argv.append(glob_.GlobUnescape(a))
 
@@ -2436,10 +2400,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             if glob_.LooksLikeStaticGlob(w):
                 val = self.EvalWordToString(w)  # respects strict-array
-                num_appended = self.globber.Expand(val.s, strs)
+                num_appended = self.globber.Expand(val.s, strs, w)
                 if num_appended < 0:
-                    raise error.FailGlob('Pattern %r matched no files' % val.s,
-                                         w)
+                    strs.append(glob_.GlobUnescape(val.s))
+                    locs.append(w)
+                    continue
                 for _ in xrange(num_appended):
                     locs.append(w)
                 continue

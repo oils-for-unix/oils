@@ -34,6 +34,7 @@ from core import pyutil
 from frontend import consts
 from mycpp import mylib
 from mycpp.mylib import tagswitch
+from osh import glob_
 
 from typing import List, Tuple, Dict, Optional, TYPE_CHECKING, cast
 if TYPE_CHECKING:
@@ -175,22 +176,19 @@ class SplitContext(object):
         sp = self._GetSplitter()
         return sp.Escape(s)
 
+    def CreateSplitterState(self, ifs=None):
+        # type: (Optional[str]) -> IfsSplitterState
+        sp = self._GetSplitter(ifs=ifs)
+        return IfsSplitterState(sp.ifs_whitespace, sp.ifs_other)
+
     def SplitForWordEval(self, s, ifs=None):
         # type: (str, Optional[str]) -> List[str]
-        """Split used by word evaluation.
-
-        Also used by the explicit shSplit() function.
+        """Split used by the explicit shSplit() function.
         """
-        sp = self._GetSplitter(ifs=ifs)
-        spans = sp.Split(s, True)
-
-        # Note: pass allow_escape=False so \ isn't special
-        #spans = sp.Split(s, False)
-
-        if 0:
-            for span in spans:
-                log('SPAN %s', span)
-        return _SpansToParts(s, spans)
+        sp = self.CreateSplitterState(ifs=ifs)
+        sp.allow_escape = True
+        sp.PushFragment(s)
+        return sp.PushTerminator()
 
     def SplitForRead(self, line, allow_escape, do_split):
         # type: (str, bool, bool) -> List[Span]
@@ -317,3 +315,112 @@ class IfsSplitter(_BaseSplitter):
             i += 1
 
         return spans
+
+
+class IfsSplitterState(object):
+
+    def __init__(self, ifs_space, ifs_other):
+        # type: (str, str) -> None
+        self.ifs_space = ifs_space
+        self.ifs_other = ifs_other
+        self.glob_escape = False
+        self.allow_escape = False
+        self.max_split = -1
+        self.max_split_trim = 0
+
+        self.state = state_i.Start
+        self.args = []  # type: List[str]
+        self.frags = []  # type: List[str]
+        self.char_buff = []  # type: List[int]
+
+    def _FlushCharBuff(self):
+        # type: () -> None
+        if len(self.char_buff) >= 1:
+            if self.max_split_trim > 0:
+                self.char_buff = self.char_buff[0:-self.max_split_trim]
+                self.max_split_trim = 0
+            frag = mylib.JoinBytes(self.char_buff)
+            if self.glob_escape:
+                frag = glob_.GlobEscapeUnquotedSubstitution(frag)
+            self.frags.append(frag)
+            self.char_buff = []
+
+    def _GenerateWord(self):
+        # type: () -> None
+        self._FlushCharBuff()
+        self.args.append(''.join(self.frags))
+        self.frags = []
+
+    def PushLiteral(self, s):
+        # type: (str) -> None
+        """
+        Args:
+          s: word fragment that should be literally added
+        """
+        self.max_split_trim = 0
+        if self.state == state_i.DE_White1:
+            self._GenerateWord()
+        else:
+            self._FlushCharBuff()
+        self.frags.append(s)
+        self.state = state_i.Black
+
+    def PushFragment(self, s):
+        # type: (str) -> None
+        """
+        Args:
+          s: word fragment to split
+          glob_escape: treat \@ as backslash
+        """
+
+        ifs_space = self.ifs_space
+        ifs_other = self.ifs_other
+        allow_escape = self.allow_escape
+        max_split = self.max_split
+        n = len(s)
+
+        for i in xrange(n):
+            byte = mylib.ByteAt(s, i)
+
+            if self.state == state_i.Backslash:
+                pass
+
+            elif (max_split >= 0 and self.state != state_i.Start and
+                  len(self.args) >= max_split):
+                # When max_split is reached, the processing is modified.
+                if allow_escape and mylib.ByteEquals(byte, '\\'):
+                    self.max_split_trim = 0
+                    prev_state = self.state
+                    self.state = state_i.Backslash
+                    continue
+                elif mylib.ByteInSet(byte, ifs_space):
+                    self.max_split_trim += 1
+                else:
+                    self.max_split_trim = 0
+
+            elif allow_escape and mylib.ByteEquals(byte, '\\'):
+                if self.state == state_i.DE_White1:
+                    self._GenerateWord()
+                prev_state = self.state
+                self.state = state_i.Backslash
+                continue
+            elif mylib.ByteInSet(byte, ifs_space):
+                if self.state != state_i.Start:
+                    self.state = state_i.DE_White1
+                continue
+            elif mylib.ByteInSet(byte, ifs_other):
+                self._GenerateWord()
+                self.state = state_i.Start
+                continue
+
+            if self.state == state_i.DE_White1:
+                self._GenerateWord()
+            self.char_buff.append(byte)
+            self.state = state_i.Black
+
+    def PushTerminator(self):
+        # type: () -> List[str]
+        if self.state in (state_i.DE_White1, state_i.Black):
+            self._GenerateWord()
+            self.state = state_i.Start
+        return self.args
