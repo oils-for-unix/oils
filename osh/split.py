@@ -185,16 +185,10 @@ class SplitContext(object):
         # type: (str, Optional[str]) -> List[str]
         """Split used by the explicit shSplit() function.
         """
-        sp = self._GetSplitter(ifs=ifs)
-        spans = sp.Split(s, True)
-
-        # Note: pass allow_escape=False so \ isn't special
-        #spans = sp.Split(s, False)
-
-        if 0:
-            for span in spans:
-                log('SPAN %s', span)
-        return _SpansToParts(s, spans)
+        sp = self.CreateSplitterState(ifs=ifs)
+        sp.allow_escape = True
+        sp.PushFragment(s)
+        return sp.PushTerminator()
 
     def SplitForRead(self, line, allow_escape, do_split):
         # type: (str, bool, bool) -> List[Span]
@@ -330,6 +324,7 @@ class IfsSplitterState(object):
         self.ifs_space = ifs_space
         self.ifs_other = ifs_other
         self.glob_escape = False
+        self.allow_escape = False
 
         self.state = state_i.Start
         self.args = []  # type: List[str]
@@ -374,12 +369,19 @@ class IfsSplitterState(object):
 
         ifs_space = self.ifs_space
         ifs_other = self.ifs_other
+        allow_escape = self.allow_escape
         n = len(s)
 
         for i in xrange(n):
             byte = mylib.ByteAt(s, i)
 
-            if mylib.ByteInSet(byte, ifs_space):
+            if self.state == state_i.Backslash:
+                pass
+            elif allow_escape and mylib.ByteEquals(byte, '\\'):
+                prev_state = self.state
+                self.state = state_i.Backslash
+                continue
+            elif mylib.ByteInSet(byte, ifs_space):
                 if self.state != state_i.Start:
                     self.state = state_i.DE_White1
                 continue
