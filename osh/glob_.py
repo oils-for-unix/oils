@@ -3,15 +3,10 @@
 import libc
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
-from _devbuild.gen.syntax_asdl import (
-    CompoundWord,
-    Token,
-    word_part_e,
-    glob_part,
-    glob_part_e,
-    glob_part_t,
-)
-from core import pyutil
+from _devbuild.gen.syntax_asdl import (CompoundWord, Token, word_part_e,
+                                       glob_part, glob_part_e, glob_part_t,
+                                       loc_t)
+from core import pyutil, error
 from frontend import match
 from mycpp import mylib
 from mycpp.mylib import log, print_stderr
@@ -96,6 +91,23 @@ def GlobEscape(s):
     return pyutil.BackslashEscape(s, GLOB_META_CHARS)
 
 
+def GlobEscapeUnquotedSubstitution(s):
+    # type: (str) -> str
+    """For the substitution results such as $v with v='a\*b.txt'."""
+
+    # When glob expansion is not performed, unquoted substitutions need to be
+    # literally preserved in the final result.  A backslash inside unquoted
+    # substitutions should be treated as escaping in glob expansion, yet it
+    # needs to be preserved in the final result without glob expansion.  This
+    # means that a backslash inside unquoted substitutions is treated
+    # differently from quoted backslash, so we need a distinct representaton.
+    # We choose \@ here.
+    #
+    # XXX--This representation is affected by the known IFS='\' bug, but the
+    # bug will be fixed in the coming PR.
+    return s.replace('\\', r'\@')
+
+
 # Bug fix: add [] so [[:space:]] is not special, etc.
 ERE_META_CHARS = r'\?*+{}^$.()|[]'
 
@@ -124,6 +136,7 @@ def GlobUnescape(s):
     unescaped = []  # type: List[int]
     i = 0
     n = len(s)
+    c_backslash = mylib.ByteAt('\\', 0)
     while i < n:
         c = mylib.ByteAt(s, i)
 
@@ -135,6 +148,39 @@ def GlobUnescape(s):
 
             if mylib.ByteInSet(c2, GLOB_META_CHARS):
                 unescaped.append(c2)
+            elif mylib.ByteEquals(c2, '@'):
+                unescaped.append(c_backslash)
+            else:
+                raise AssertionError("Unexpected escaped character %r" % c2)
+        else:
+            unescaped.append(c)
+        i += 1
+    return mylib.JoinBytes(unescaped)
+
+
+def GlobUnescapeUnquotedSubstitution(s):
+    # type: (str) -> str
+    """Remove escaping of backslashes in unquoted substitutions to obtain a
+    glob pattern.  Used when glob expansion is performed.
+    """
+    unescaped = []  # type: List[int]
+    i = 0
+    n = len(s)
+    c_backslash = mylib.ByteAt('\\', 0)
+    while i < n:
+        c = mylib.ByteAt(s, i)
+
+        if mylib.ByteEquals(c, '\\') and i != n - 1:
+            # Suppressed this to fix bug #698, #628 is still there.
+            assert i != n - 1, 'Trailing backslash: %r' % s
+            i += 1
+            c2 = mylib.ByteAt(s, i)
+
+            if mylib.ByteInSet(c2, GLOB_META_CHARS):
+                unescaped.append(c_backslash)
+                unescaped.append(c2)
+            elif mylib.ByteEquals(c2, '@'):
+                unescaped.append(c_backslash)
             else:
                 raise AssertionError("Unexpected escaped character %r" % c2)
         else:
@@ -455,18 +501,22 @@ class Globber(object):
 
         return 0
 
-    def Expand(self, arg, out):
-        # type: (str, List[str]) -> int
+    def Expand(self, arg, out, blame_loc):
+        # type: (str, List[str], loc_t) -> int
         """Given a string that could be a glob, append a list of strings to
-        'out'.
+        'out' when glob expansion happens.
 
         Returns:
-          Number of items appended, or -1 for fatal failglob error.
+          Number of items appended, or -1 when glob expansion did not happen.
+        Raises:
+          error.FailGlob for fatal failglob error.
         """
+
         if self.exec_opts.noglob():
-            # we didn't glob escape it in osh/word_eval.py
-            out.append(arg)
-            return 1
+            # We cannot reconstruct the original string from the glob pattern,
+            # so let the caller (who knows the original string) process the
+            # case where glob expansion does not happen.
+            return -1
 
         n = self._Glob(arg, out)
         if n:
@@ -474,14 +524,14 @@ class Globber(object):
 
         # Nothing matched
         if self.exec_opts.failglob():
-            return -1
+            raise error.FailGlob('Pattern %r matched no files' % arg,
+                                 blame_loc)
 
         if self.exec_opts.nullglob():
             return 0
         else:
-            # Return the original string
-            out.append(GlobUnescape(arg))
-            return 1
+            # We cannot reconstruct the original string from the glob pattern.
+            return -1
 
     def ExpandExtended(self, glob_pat, fnmatch_pat, out):
         # type: (str, str, List[str]) -> int

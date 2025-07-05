@@ -2253,9 +2253,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 # Ensure this quoted piece is not globbed, by escaping
                 frag = glob_.GlobEscape(piece.s)
             else:
-                # we're globbing an unquoted substitution, or not globbing at
-                # all?
-                frag = _BackslashEscape(piece.s)
+                # We escape the result of unquoted substitutions for the case
+                # where glob expansion does not happen.
+                frag = glob_.GlobEscapeUnquotedSubstitution(piece.s)
 
             if piece.do_split:
                 frag = _BackslashEscape(frag)
@@ -2285,12 +2285,16 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         #log('split args: %r', args)
         for a in args:
-            if glob_.LooksLikeGlob(a):
-                n = self.globber.Expand(a, argv)
+            if not will_glob:
+                argv.append(glob_.GlobUnescape(a))
+                continue
+
+            glob_pat = glob_.GlobUnescapeUnquotedSubstitution(a)
+            if glob_.LooksLikeGlob(glob_pat):
+                # TODO: location info, with span IDs carried through the frame
+                n = self.globber.Expand(glob_pat, argv, loc.Missing)
                 if n < 0:
-                    # TODO: location info, with span IDs carried through the frame
-                    raise error.FailGlob('Pattern %r matched no files' % a,
-                                         loc.Missing)
+                    argv.append(glob_.GlobUnescape(a))
             else:
                 argv.append(glob_.GlobUnescape(a))
 
@@ -2435,10 +2439,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             if glob_.LooksLikeStaticGlob(w):
                 val = self.EvalWordToString(w)  # respects strict-array
-                num_appended = self.globber.Expand(val.s, strs)
+                num_appended = self.globber.Expand(val.s, strs, w)
                 if num_appended < 0:
-                    raise error.FailGlob('Pattern %r matched no files' % val.s,
-                                         w)
+                    strs.append(glob_.GlobUnescape(val.s))
+                    locs.append(w)
+                    continue
                 for _ in xrange(num_appended):
                     locs.append(w)
                 continue
