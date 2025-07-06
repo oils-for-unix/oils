@@ -380,7 +380,7 @@ declare -a test_arr7=([3]="foo")
 ## N-I mksh status: 1
 
 #### declare -p foo=bar doesn't make sense
-case $SH in mksh) exit 0;; esac
+case $SH in mksh) exit 0 ;; esac
 
 declare -p foo=bar
 echo status=$?

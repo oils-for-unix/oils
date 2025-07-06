@@ -374,7 +374,7 @@ status=3
 
 
 #### Issue #1069 [52] BUG: \builtin local v=1 fails
-case $SH in ash|dash|yash) exit 99;; esac
+case $SH in ash|dash|yash) exit 99 ;; esac
 v=x
 case $SH in
 mksh) f1() { \builtin typeset v=1; echo "l:v=$v"; } ;;
@@ -392,7 +392,7 @@ g:v=x
 
 
 #### Issue #1069 [53] BUG: a[1 + 1]=2, etc. fails
-case $SH in ash|dash|yash) exit 99;; esac
+case $SH in ash|dash|yash) exit 99 ;; esac
 a=()
 
 a[1]=x
@@ -531,7 +531,7 @@ v=hello
 
 
 #### Issue #1069 [59] N-I: arr=s should set RHS to arr[0]
-case $SH in ash|dash) exit 99;; esac
+case $SH in ash|dash) exit 99 ;; esac
 a=(1 2 3)
 a=v
 argv.py "${a[@]}"

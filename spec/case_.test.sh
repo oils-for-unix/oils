@@ -215,7 +215,7 @@ case $s in
   *\(\)) echo 'match'
 esac
 
-case $SH in dash) exit;; esac  # not implemented
+case $SH in dash) exit ;; esac  # not implemented
 
 shopt -s extglob
 

@@ -645,7 +645,7 @@ declare -- foo=bar
 ## stdout-json: ""
 
 #### declare -a arr does not remove existing arrays (OSH regression)
-case $SH in dash) exit 99;; esac # dash does not support arrays
+case $SH in dash) exit 99 ;; esac # dash does not support arrays
 
 declare -a arr
 arr=(foo bar baz)
@@ -658,7 +658,7 @@ arr:3
 ## N-I dash stdout-json: ""
 
 #### declare -A dict does not remove existing arrays (OSH regression)
-case $SH in dash|mksh) exit 99;; esac # dash/mksh does not support associative arrays
+case $SH in dash|mksh) exit 99 ;; esac # dash/mksh does not support associative arrays
 
 declare -A dict
 dict['foo']=hello
@@ -675,7 +675,7 @@ dict:3
 #### "readonly -a arr" and "readonly -A dict" should not not remove existing arrays
 # mksh's readonly does not support the -a option.
 # dash/mksh does not support associative arrays.
-case $SH in dash|mksh) exit 99;; esac
+case $SH in dash|mksh) exit 99 ;; esac
 
 declare -a arr
 arr=(foo bar baz)
@@ -696,7 +696,7 @@ dict:3
 ## N-I dash/mksh stdout-json: ""
 
 #### "declare -a arr" and "readonly -a a" creates an empty array (OSH)
-case $SH in dash|mksh) exit 99;; esac # dash/mksh does not support associative arrays
+case $SH in dash|mksh) exit 99 ;; esac # dash/mksh does not support associative arrays
 
 declare -a arr1
 readonly -a arr2
@@ -732,7 +732,7 @@ typeset -Ar dict2
 ## N-I dash/mksh stdout-json: ""
 
 #### "var d = {}; declare -p d" does not print anything (OSH)
-case $SH in bash-4.4|dash|mksh|zsh) exit 99;; esac
+case $SH in bash-4.4|dash|mksh|zsh) exit 99 ;; esac
 
 # We pretend that the variable does not exist when the variable is not
 # representable with the "declare -p" format.
@@ -745,7 +745,7 @@ declare -p d
 ## N-I bash/dash/mksh/zsh status: 99
 
 #### readonly array should not be modified by a+=(1)
-case $SH in dash) exit 99;; esac # dash/mksh does not support associative arrays
+case $SH in dash) exit 99 ;; esac # dash/mksh does not support associative arrays
 
 a=(1 2 3)
 readonly -a a
