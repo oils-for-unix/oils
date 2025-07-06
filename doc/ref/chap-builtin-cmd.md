@@ -779,7 +779,11 @@ Flags:
 
     -a ARRAY  assign the tokens to elements of this array
     -d CHAR   use DELIM as delimiter, instead of newline
-    -n NUM    read up to NUM characters, respecting delimiters
+    -n NUM    read up to NUM characters, respecting delimiters. When -r is not
+              specified, backslash escape of the form "\?" is counted as one
+              character. This is the Bash behavior, but other shells such as
+              ash and mksh count the number of bytes with "-n" without
+              considering backslash escaping.
     -p STR    print the string PROMPT before reading input
     -r        raw mode: don't let backslashes escape characters
     -s        silent: do not echo input coming from a terminal

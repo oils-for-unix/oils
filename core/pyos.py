@@ -28,6 +28,7 @@ _ = log
 
 EOF_SENTINEL = 256  # bigger than any byte
 NEWLINE_CH = 10  # ord('\n')
+BACKSLASH_CH = 92  # \
 
 
 def FlushStdout():

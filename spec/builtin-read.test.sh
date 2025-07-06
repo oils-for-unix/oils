@@ -773,3 +773,104 @@ status=1
 status=0
 ## END
 ## N-I dash/ash/mksh/zsh stdout-json: ""
+
+#### read -n 0
+case $SH in zsh) exit 99;; esac  # read -n not implemented
+
+echo 'a\b\c\d\e\f' | (read -n 0; argv.py "$REPLY")
+
+## STDOUT:
+['']
+## END
+# ash appears to treat 0 as unspecified
+## OK ash STDOUT:
+['abcdef']
+## END
+## N-I zsh status: 99
+## N-I zsh STDOUT:
+## END
+
+#### read -n and backslash escape
+case $SH in zsh) exit 99;; esac  # read -n not implemented
+
+echo 'a\b\c\d\e\f' | (read -n 5; argv.py "$REPLY")
+echo 'a\ \ \ \ \ ' | (read -n 5; argv.py "$REPLY")
+
+## STDOUT:
+['abcde']
+['a    ']
+## END
+## OK mksh STDOUT:
+['a\x08d\x1b']
+['a ']
+## END
+## OK ash STDOUT:
+['abc']
+['a  ']
+## END
+## N-I zsh status: 99
+## N-I zsh STDOUT:
+## END
+
+#### read -n 4 with incomplete backslash
+case $SH in zsh) exit 99;; esac  # read -n not implemented
+
+echo 'abc\def\ghijklmn' | (read -n 4; argv.py "$REPLY")
+echo '   \xxx\xxxxxxxx' | (read -n 4; argv.py "$REPLY")
+
+# bash implements "-n NUM" as number of characters
+## STDOUT:
+['abcd']
+['   x']
+## END
+# ash implements "-n NUM" as number of bytes
+## OK-2 ash STDOUT:
+['abc']
+['   ']
+## END
+# mksh implements "-n NUM" as number of bytes, and also "read" (without
+# variable names) in mksh is equivalent to "read REPLY, i.e., consideres IFS.
+## OK-3 mksh STDOUT:
+['abc']
+['']
+## END
+## N-I zsh status: 99
+## N-I zsh STDOUT:
+## END
+
+#### read -n 4 with backslash + delim
+case $SH in zsh) exit 99;; esac  # read -n not implemented
+
+echo $'abc\\\ndefg' | (read -n 4; argv.py "$REPLY")
+
+## STDOUT:
+['abcd']
+## END
+# mksh and ash implements "-n NUM" as number of bytes.
+## OK-2 mksh/ash STDOUT:
+['abc']
+## END
+## N-I zsh status: 99
+## N-I zsh STDOUT:
+## END
+
+#### "backslash + newline" should be swallowed regardless of "-d <delim>"
+
+printf '%s\n' 'a b\' 'c d' | (read; argv.py "$REPLY")
+printf '%s\n' 'a b\,c d'   | (read; argv.py "$REPLY")
+printf '%s\n' 'a b\' 'c d' | (read -d ,; argv.py "$REPLY")
+printf '%s\n' 'a b\,c d'   | (read -d ,; argv.py "$REPLY")
+
+## STDOUT:
+['a bc d']
+['a b,c d']
+['a bc d\n']
+['a b,c d\n']
+## END
+# mksh/zsh swallows "backslash + delim" instead.
+## OK-2 mksh/zsh STDOUT:
+['a bc d']
+['a b,c d']
+['a b\nc d']
+['a bc d']
+## END
