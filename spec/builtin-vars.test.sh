@@ -539,7 +539,7 @@ assoc 0
 
 #### unset -v assoc (related to issue #661)
 
-case $SH in dash|mksh|zsh) return; esac
+case $SH in dash|mksh|zsh) return;; esac
 
 declare -A dict=()
 key=1],a[1
@@ -564,7 +564,7 @@ vals=
 
 #### unset assoc errors
 
-case $SH in dash|mksh) return; esac
+case $SH in dash|mksh) return;; esac
 
 declare -A assoc=(['key']=value)
 unset 'assoc["nonexistent"]'

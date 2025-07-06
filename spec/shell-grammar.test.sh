@@ -182,7 +182,7 @@ esac
 case word_a in word_b) echo ;; word_c) echo ;; esac
 
 #### Case all on one line without trailing ;;
-case word_a in word_b) echo word_b;; word_c) echo word_c; esac
+case word_a in word_b) echo word_b;; word_c) echo word_c;; esac
 
 #### Case all on one line without trailing ;; or ;
 # My ANTLR parsers don't fail here and they should.
