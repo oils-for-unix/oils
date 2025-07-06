@@ -103,7 +103,7 @@ foo:~
 ## END
 
 #### a[x]=foo:~ has tilde expansion
-case $SH in (dash|zsh) exit ;; esac
+case $SH in dash|zsh) exit ;; esac
 
 HOME=/home/bar
 declare -a a

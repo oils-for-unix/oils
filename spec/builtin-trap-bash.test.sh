@@ -164,7 +164,7 @@ echo status=$?
 
 
 #### trap DEBUG with non-compound commands
-case $SH in (dash|mksh) exit ;; esac
+case $SH in dash|mksh) exit ;; esac
 
 debuglog() {
   echo "  [$@]"
@@ -229,7 +229,7 @@ hello
 ## END
 
 #### trap DEBUG and command sub / subshell
-case $SH in (dash|mksh) exit ;; esac
+case $SH in dash|mksh) exit ;; esac
 
 debuglog() {
   echo "  [$@]"

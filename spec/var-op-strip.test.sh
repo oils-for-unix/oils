@@ -380,7 +380,7 @@ echo 4 ${x##*\(\)}
 ## END
 
 #### extglob in pattern
-case $SH in (dash|zsh|ash) exit ;; esac
+case $SH in dash|zsh|ash) exit ;; esac
 
 shopt -s extglob
 

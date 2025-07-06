@@ -122,7 +122,7 @@ cat "$TMP/fd.txt"
 
 # mksh started being flaky on the continuous build and during release.  We
 # don't care!  Related to issue #330.
-case $SH in (mksh) exit ;; esac
+case $SH in mksh) exit ;; esac
 
 : 3>&3
 echo hello
@@ -280,7 +280,7 @@ STDERR
 #### >&word redirects stdout and stderr when word is not a number or -
 
 # dash, mksh don't implement this bash behaviour.
-case $SH in (dash|mksh) exit 1 ;; esac
+case $SH in dash|mksh) exit 1 ;; esac
 
 tmp="$(basename $SH)-$$.txt"  # unique name for shell and test case
 
@@ -490,7 +490,7 @@ echo foo54 >&$fd
 
 #### exec {fd}>&- (OSH regression: fails to close fd)
 # mksh, dash do not implement {fd} redirections.
-case $SH in (mksh|dash) exit 1 ;; esac
+case $SH in mksh|dash) exit 1 ;; esac
 # oil 0.8.pre4 fails to close fd by {fd}&-.
 exec {fd}>file1
 echo foo55 >&$fd

@@ -1059,7 +1059,7 @@ xz
 
 #### bash truncates long strftime string at 128
 
-case $SH in (ash|dash|mksh|zsh) exit ;; esac
+case $SH in ash|dash|mksh|zsh) exit ;; esac
 
 strftime-format() {
   local n=$1

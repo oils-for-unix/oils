@@ -149,7 +149,7 @@ c_x=7 c_y=24
 ## END
 
 #### is-array with ${var@a}
-case $SH in (mksh|ash|dash|yash) exit 1 ;; esac
+case $SH in mksh|ash|dash|yash) exit 1 ;; esac
 
 function ble/is-array { [[ ${!1@a} == *a* ]]; }
 

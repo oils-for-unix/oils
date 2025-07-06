@@ -485,7 +485,7 @@ status=0
 ## END
 
 #### Unset wrong type
-case $SH in (mksh) exit ;; esac
+case $SH in mksh) exit ;; esac
 
 declare undef
 unset -v 'undef[1]'
@@ -539,7 +539,7 @@ assoc 0
 
 #### unset -v assoc (related to issue #661)
 
-case $SH in (dash|mksh|zsh) return; esac
+case $SH in dash|mksh|zsh) return; esac
 
 declare -A dict=()
 key=1],a[1
@@ -564,7 +564,7 @@ vals=
 
 #### unset assoc errors
 
-case $SH in (dash|mksh) return; esac
+case $SH in dash|mksh) return; esac
 
 declare -A assoc=(['key']=value)
 unset 'assoc["nonexistent"]'
@@ -645,7 +645,7 @@ y=
 ## END
 
 #### unset a[-1] (bf.bash regression)
-case $SH in (dash|zsh) exit ;; esac
+case $SH in dash|zsh) exit ;; esac
 
 a=(1 2 3)
 unset a[-1]
@@ -674,7 +674,7 @@ last=0
 
 
 #### unset a[-1] in sparse array (bf.bash regression)
-case $SH in (dash|zsh) exit ;; esac
+case $SH in dash|zsh) exit ;; esac
 
 a=(0 1 2 3 4)
 unset a[1]

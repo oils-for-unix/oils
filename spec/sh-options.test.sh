@@ -126,8 +126,8 @@ ___
 ## END
 
 #### interactive shell starts with emacs mode on
-case $SH in (dash) exit ;; esac
-case $SH in (bash|*osh) flag='--rcfile /dev/null' ;; esac
+case $SH in dash) exit ;; esac
+case $SH in bash|*osh) flag='--rcfile /dev/null' ;; esac
 
 code='test -o emacs; echo $?; test -o vi; echo $?'
 

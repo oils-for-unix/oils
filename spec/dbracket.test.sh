@@ -396,7 +396,7 @@ fnmatch=0
 ## END
 
 #### tilde expansion with =~ (confusing)
-case $SH in (mksh) exit ;; esac
+case $SH in mksh) exit ;; esac
 
 HOME=foo
 [[ ~ =~ $HOME ]]
