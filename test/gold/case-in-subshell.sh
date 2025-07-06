@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 foo=a
-case $foo in [0-9]) echo number;; [a-z]) echo letter;; esac
+case $foo in [0-9]) echo number;; [a-z]) echo letter ;; esac
 
 # This works in bash, but syntax highlighting gets confused
-out=$(case $foo in [0-9]) echo number;; [a-z]) echo letter;; esac)
+out=$(case $foo in [0-9]) echo number;; [a-z]) echo letter ;; esac)
 echo $out
 
 # OK multiline works
