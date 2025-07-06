@@ -200,7 +200,7 @@ echo $'\1 \11 \11 \111' | od -A n -c | sed 's/ \+/ /g'
 
 
 #### OSH allows invalid backslashes
-case $SH in (dash|mksh) exit ;; esac
+case $SH in dash|mksh) exit ;; esac
 
 w=$'\uZ'
 x=$'\u{03bc'
@@ -212,7 +212,7 @@ echo $w $x $y
 ## N-I dash/mksh stdout-json: ""
 
 #### YSH parse errors with parse_backslash
-case $SH in (*osh) ;; (*) exit  ;; esac
+case $SH in *osh) ;; (*) exit  ;; esac
 shopt -s oil:all
 
 const w = c'\uZ'

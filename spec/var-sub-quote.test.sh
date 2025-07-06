@@ -194,7 +194,7 @@ echo ---
 foo='a b c d'
 argv.py "${foo%'c d'}" "${foo%'c  d'}"
 
-case $SH in (dash) exit ;; esac
+case $SH in dash) exit ;; esac
 
 argv.py "${foo//'c d'/zzz}" "${foo//'c  d'/zzz}"
 argv.py "${foo//'c d'/'zzz'}" "${foo//'c  d'/'zzz'}"

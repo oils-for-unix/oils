@@ -10,7 +10,7 @@
 # TODO: Also see spec/xtrace for another use case.
 
 #### printf %q newline
-case $SH in (ash) return ;; esac  # yash and ash don't implement this
+case $SH in ash) return ;; esac  # yash and ash don't implement this
 
 newline=$'one\ntwo'
 printf '%q\n' "$newline"
@@ -34,7 +34,7 @@ roundtrip-ok
 ## N-I ash stdout-json: ""
 
 #### printf %q spaces
-case $SH in (ash) return ;; esac  # yash and ash don't implement this
+case $SH in ash) return ;; esac  # yash and ash don't implement this
 
 # bash does a weird thing and uses \
 
@@ -50,7 +50,7 @@ one\ two
 ## N-I ash stdout-json: ""
 
 #### printf %q quotes
-case $SH in (ash) return ;; esac  # yash and ash don't implement %q
+case $SH in ash) return ;; esac  # yash and ash don't implement %q
 
 quotes=\'\"
 printf '%q\n' "$quotes"
@@ -74,7 +74,7 @@ roundtrip-ok
 ## N-I ash stdout-json: ""
 
 #### printf %q unprintable
-case $SH in (ash) return ;; esac  # yash and ash don't implement this
+case $SH in ash) return ;; esac  # yash and ash don't implement this
 
 unprintable=$'\xff'
 printf '%q\n' "$unprintable"
@@ -92,7 +92,7 @@ $'\xff'
 ## N-I ash stdout-json: ""
 
 #### printf %q unicode
-case $SH in (ash) return ;; esac  # yash and ash don't implement this
+case $SH in ash) return ;; esac  # yash and ash don't implement this
 
 unicode=$'\u03bc'
 unicode=$'\xce\xbc'  # does the same thing
@@ -109,7 +109,7 @@ printf '%q\n' "$unicode"
 ## N-I ash stdout-json: ""
 
 #### printf %q invalid unicode
-case $SH in (ash) return ;; esac
+case $SH in ash) return ;; esac
 
 # Hm bash/mksh/zsh understand these.  They are doing decoding and error
 # recovery!  inspecting the bash source seems to confirm this.
@@ -122,7 +122,7 @@ printf '%q\n' "$unicode"
 unicode=$'\xce\xbc\xce'
 printf '%q\n' "$unicode"
 
-case $SH in (mksh) return ;; esac  # it prints unprintable chars here!
+case $SH in mksh) return ;; esac  # it prints unprintable chars here!
 
 unicode=$'\xcea'
 printf '%q\n' "$unicode"
@@ -157,7 +157,7 @@ a$'\316'
 ## N-I ash stdout-json: ""
 
 #### set
-case $SH in (zsh) return ;; esac  # zsh doesn't make much sense
+case $SH in zsh) return ;; esac  # zsh doesn't make much sense
 
 zz=$'one\ntwo'
 
@@ -172,7 +172,7 @@ zz='one
 
 
 #### declare
-case $SH in (ash|zsh) return ;; esac  # zsh doesn't make much sense
+case $SH in ash|zsh) return ;; esac  # zsh doesn't make much sense
 
 zz=$'one\ntwo'
 
@@ -191,7 +191,7 @@ typeset zz=$'one\ntwo'
 ## N-I ash stdout-json: ""
 
 #### ${var@Q}
-case $SH in (zsh|ash) exit ;; esac
+case $SH in zsh|ash) exit ;; esac
 
 zz=$'one\ntwo \u03bc'
 

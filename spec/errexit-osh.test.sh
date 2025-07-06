@@ -74,7 +74,7 @@ x=hi
 ## END
 
 #### strict_errexit and command sub in export / readonly
-case $SH in (dash|bash|mksh|ash) exit ;; esac
+case $SH in dash|bash|mksh|ash) exit ;; esac
 
 $SH -o errexit -O strict_errexit -c 'echo a; export x=$(might-fail); echo b'
 echo status=$?
@@ -229,7 +229,7 @@ ok
 ## END
 
 #### strict_errexit and errexit disabled
-case $SH in (dash|bash|mksh|ash) exit ;; esac
+case $SH in dash|bash|mksh|ash) exit ;; esac
 
 shopt -s parse_brace strict_errexit || true
 
@@ -273,7 +273,7 @@ parent status=0
 ## END
 
 #### command_sub_errexit stops at first error
-case $SH in (dash|bash|mksh|ash) exit ;; esac
+case $SH in dash|bash|mksh|ash) exit ;; esac
 
 set -o errexit
 shopt --set parse_brace command_sub_errexit verbose_errexit || true
@@ -673,7 +673,7 @@ hi
 ## END
 
 #### command_sub_errexit and command sub in array
-case $SH in (dash|ash|mksh) exit ;; esac
+case $SH in dash|ash|mksh) exit ;; esac
 
 set -o errexit
 shopt -s inherit_errexit || true
@@ -726,7 +726,7 @@ tmp_contents
 ## END
 
 #### Regression
-case $SH in (bash|dash|ash|mksh) exit ;; esac
+case $SH in bash|dash|ash|mksh) exit ;; esac
 
 shopt --set oil:upgrade
 

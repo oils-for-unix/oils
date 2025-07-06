@@ -188,7 +188,7 @@ end
 ## END
 
 #### for loop (issue #1446)
-case $SH in (dash|mksh|ash) exit ;; esac
+case $SH in dash|mksh|ash) exit ;; esac
 
 for (( n=0; n<(3-(1)); n++ )) ; do echo $n; done
 
@@ -202,7 +202,7 @@ for (( n=0; n<(3-(1)); n++ )) ; do echo $n; done
 
 
 #### for loop 2 (issue #1446)
-case $SH in (dash|mksh|ash) exit ;; esac
+case $SH in dash|mksh|ash) exit ;; esac
 
 
 for (( n=0; n<(3- (1)); n++ )) ; do echo $n; done

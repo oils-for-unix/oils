@@ -1,7 +1,7 @@
 ## compare_shells: dash bash mksh
 
 #### case
-foo=a; case $foo in [0-9]) echo number;; [a-z]) echo letter;; esac
+foo=a; case $foo in [0-9]) echo number;; [a-z]) echo letter ;; esac
 ## stdout: letter
 
 #### case in subshell
@@ -9,7 +9,7 @@ foo=a; case $foo in [0-9]) echo number;; [a-z]) echo letter;; esac
 # case_clause is a compound_command, which is a command.  And a subshell
 # takes a compound_list, which is a list of terms, which has and_ors in them
 # ... which eventually boils down to a command.
-echo $(foo=a; case $foo in [0-9]) echo number;; [a-z]) echo letter;; esac)
+echo $(foo=a; case $foo in [0-9]) echo number;; [a-z]) echo letter ;; esac)
 ## stdout: letter
 
 #### Command sub word part

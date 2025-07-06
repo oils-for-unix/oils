@@ -189,7 +189,7 @@ argv.py ${@:2}
 
 
 #### ${@:offset} and ${*:offset}
-case $SH in (zsh) return ;; esac  # zsh is very different
+case $SH in zsh) return ;; esac  # zsh is very different
 
 argv.shell-name-checked () {
   argv.py "${@//$0/SHELL}"
@@ -244,7 +244,7 @@ fun "a 1" "b 2" "c 3"
 ## BUG zsh stdout-json: ""
 
 #### ${@:offset:length} and ${*:offset:length}
-case $SH in (zsh) return ;; esac  # zsh is very different
+case $SH in zsh) return ;; esac  # zsh is very different
 
 argv.shell-name-checked () {
   argv.py "${@//$0/SHELL}"

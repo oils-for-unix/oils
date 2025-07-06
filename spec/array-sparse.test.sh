@@ -1192,7 +1192,7 @@ json write (crash_dump.var_stack[0].a)
 
 
 #### Regression: a[-1]=1
-case $SH in mksh) exit 99;; esac
+case $SH in mksh) exit 99 ;; esac
 
 a[-1]=1
 
@@ -1212,7 +1212,7 @@ bash: line 3: a[-1]: bad array subscript
 
 
 #### Initializing indexed array with ([index]=value)
-case $SH in mksh) exit 99;; esac
+case $SH in mksh) exit 99 ;; esac
 declare -a a=([xx]=1 [yy]=2 [zz]=3)
 echo status=$?
 argv.py "${a[@]}"

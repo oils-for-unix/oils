@@ -254,7 +254,7 @@ echo "status=$?"  # third job I think
 ## stdout: status=7
 
 #### wait -n
-case $SH in (dash|mksh) return ;; esac
+case $SH in dash|mksh) return ;; esac
 
 { sleep 0.09; exit 9; } &
 { sleep 0.03; exit 3; } &

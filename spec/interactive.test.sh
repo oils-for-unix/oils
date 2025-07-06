@@ -149,7 +149,7 @@ EOF
 esac
 
 # Paper over difference with OSH
-case $SH in *bash) echo '^D';; esac
+case $SH in *bash) echo '^D' ;; esac
 
 ## STDOUT:
 PROMPT
@@ -175,7 +175,7 @@ EOF
 esac
 
 # Paper over difference with OSH
-case $SH in *bash) echo '^D';; esac
+case $SH in *bash) echo '^D' ;; esac
 
 ## STDOUT:
 one
@@ -197,7 +197,7 @@ EOF
 esac
 
 # Paper over difference with OSH
-case $SH in *bash) echo '^D';; esac
+case $SH in *bash) echo '^D' ;; esac
 
 ## STDOUT:
 one
@@ -241,7 +241,7 @@ EOF
 esac
 
 # Paper over difference with OSH
-case $SH in *bash) echo '^D';; esac
+case $SH in *bash) echo '^D' ;; esac
 ## STDOUT:
 last_status=0
 last_status=42
@@ -266,7 +266,7 @@ EOF
 esac
 
 # Paper over difference with OSH
-case $SH in *bash) echo '^D';; esac
+case $SH in *bash) echo '^D' ;; esac
 
 ## STDOUT:
 ---

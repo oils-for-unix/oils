@@ -1024,14 +1024,14 @@ class NestedParensTest(unittest.TestCase):
 
     def testCaseWithinComSub(self):
         node = assert_ParseCommandList(
-            self, 'echo $( case foo in one) echo comsub;; esac)')
+            self, 'echo $( case foo in one) echo comsub ;; esac)')
         self.assertEqual(2, len(node.words))
 
         node = assert_ParseCommandList(
             self, """\
 echo $(
-case foo in one) echo comsub1;; esac
-case bar in two) echo comsub2;; esac
+case foo in one) echo comsub1 ;; esac
+case bar in two) echo comsub2 ;; esac
 )
 """)
         self.assertEqual(2, len(node.words))
@@ -1040,7 +1040,7 @@ case bar in two) echo comsub2;; esac
         # Comsub within case within comsub
         node = assert_ParseCommandList(
             self,
-            'echo one; echo $( case one in $(echo one)) echo $(comsub);; esac ); echo two'
+            'echo one; echo $( case one in $(echo one)) echo $(comsub) ;; esac ); echo two'
         )
         self.assertEqual(command_e.CommandList, node.tag())
         # Top level should have 3 echo statements

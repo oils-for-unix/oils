@@ -557,7 +557,7 @@ hi world
 ## END
 
 #### $_ and ${_}
-case $SH in (dash|mksh) exit ;; esac
+case $SH in dash|mksh) exit ;; esac
 
 _var=value
 
@@ -574,7 +574,7 @@ foobar
 ## N-I dash/mksh stdout-json: ""
 
 #### $_ with word splitting
-case $SH in (dash|mksh) exit ;; esac
+case $SH in dash|mksh) exit ;; esac
 
 setopt shwordsplit  # for ZSH
 
@@ -588,7 +588,7 @@ spaces
 ## N-I dash/mksh stdout-json: ""
 
 #### $_ with pipeline and subshell
-case $SH in (dash|mksh) exit ;; esac
+case $SH in dash|mksh) exit ;; esac
 
 shopt -s lastpipe
 
@@ -618,7 +618,7 @@ done=
 
 
 #### $_ with && and ||
-case $SH in (dash|mksh) exit ;; esac
+case $SH in dash|mksh) exit ;; esac
 
 echo hi && echo last=$_
 echo and=$_
@@ -641,7 +641,7 @@ or=hi
 # bash is inconsistent because it does it for pipelines and assignments, but
 # not (( and [[
 
-case $SH in (dash|mksh) exit ;; esac
+case $SH in dash|mksh) exit ;; esac
 
 echo simple
 (( a = 2 + 3 ))
@@ -660,7 +660,7 @@ simple
 
 
 #### $_ with assignments, arrays, etc.
-case $SH in (dash|mksh) exit ;; esac
+case $SH in dash|mksh) exit ;; esac
 
 : foo
 echo "colon [$_]"
@@ -714,7 +714,7 @@ declare flag [declare array [array [declare [bare assign [colon [foo]]]]]]
 
 #### $_ with loop
 
-case $SH in (dash|mksh) exit ;; esac
+case $SH in dash|mksh) exit ;; esac
 
 # zsh resets it when in a loop
 
