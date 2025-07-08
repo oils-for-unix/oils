@@ -864,7 +864,7 @@ class ShellExecutor(vm._Executor):
                 # Blame < because 'builtin cat' has no location
                 blame_tok = redir_node.redirects[0].op
                 simple = command.Simple(blame_tok, [], self.builtin_cat_words,
-                                        None, None, False)
+                                        None, None, False, None)  # TODO: Is this correct? Or do we need to make the entire `node` a `command.Simple` too?
 
                 # MUTATE redir node so it's like $(<file _cat)
                 redir_node.child = simple

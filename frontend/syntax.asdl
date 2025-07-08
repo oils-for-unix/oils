@@ -422,7 +422,10 @@ module syntax
            List[word] words,
            ArgList? typed_args, LiteralBlock? block,
            # is_last_cmd is used for fork() optimizations
-           bool is_last_cmd)
+           bool is_last_cmd,
+           # (#2307) Simple command redirects, unlike all others, are evaluated
+           # *after* the argv word list
+           List[Redir] redirects)
 
     # This doesn't technically belong in the LST, but it's convenient for
     # execution
