@@ -1090,39 +1090,53 @@ class CommandEvaluator(object):
 
         run_flags = executor.IS_LAST_CMD if node.is_last_cmd else 0
 
-        # NOTE: RunSimpleCommand may never return
-        if len(node.more_env):  # I think this guard is necessary?
-            if self.exec_opts.env_obj():  # YSH
-                bindings = NewDict()  # type: Dict[str, value_t]
-                with state.ctx_EnclosedFrame(self.mem, self.mem.CurrentFrame(),
-                                             self.mem.GlobalFrame(), bindings):
-                    self._EvalTempEnv(node.more_env, 0)
+        #print('n', node.redirects)
+        status, redirects, io_errors = self._DoRedirects(node.redirects or [])
+        #print(status, redirects, io_errors)
+        if status != 0:
+            return status
 
-                # Push this on the prototype chain
-                with state.ctx_EnvObj(self.mem, bindings):
-                    status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
+        #print(redirects)
+        with vm.ctx_Redirect(self.shell_ex, len(redirects), io_errors):
+            # NOTE: RunSimpleCommand may never return
+            if len(node.more_env):  # I think this guard is necessary?
+                if self.exec_opts.env_obj():  # YSH
+                    bindings = NewDict()  # type: Dict[str, value_t]
+                    with state.ctx_EnclosedFrame(self.mem, self.mem.CurrentFrame(),
+                                                 self.mem.GlobalFrame(), bindings):
+                        self._EvalTempEnv(node.more_env, 0)
 
-            else:  # OSH
-                if _PrefixBindingsPersist(cmd_val):
-                    if self.exec_opts.strict_env_binding():
-                        # Disallow pitfall in YSH
-                        first_pair = node.more_env[0]
-                        e_die(
-                            "Special builtins can't have prefix bindings (OILS-ERR-302)",
-                            first_pair.left)
+                    # Push this on the prototype chain
+                    with state.ctx_EnvObj(self.mem, bindings):
+                        status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
 
-                    # Special builtins (except exec) have their temp env persisted.
-                    # TODO: Disallow this in YSH?  It should just be a
-                    # top-level assignment.
-                    self._EvalTempEnv(node.more_env, 0)
-                    status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
-                else:
-                    with state.ctx_Temp(self.mem):
-                        self._EvalTempEnv(node.more_env, state.SetExport)
-                        status = self._RunSimpleCommand(
-                            cmd_val, cmd_st, run_flags)
-        else:
-            status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
+                else:  # OSH
+                    if _PrefixBindingsPersist(cmd_val):
+                        if self.exec_opts.strict_env_binding():
+                            # Disallow pitfall in YSH
+                            first_pair = node.more_env[0]
+                            e_die(
+                                "Special builtins can't have prefix bindings (OILS-ERR-302)",
+                                first_pair.left)
+
+                        # Special builtins (except exec) have their temp env persisted.
+                        # TODO: Disallow this in YSH?  It should just be a
+                        # top-level assignment.
+                        self._EvalTempEnv(node.more_env, 0)
+                        status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
+                    else:
+                        with state.ctx_Temp(self.mem):
+                            self._EvalTempEnv(node.more_env, state.SetExport)
+                            status = self._RunSimpleCommand(
+                                cmd_val, cmd_st, run_flags)
+            else:
+                status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
+
+        if len(io_errors):
+            # It would be better to point to the right redirect
+            # operator, but we don't track it specifically
+            e_die("Fatal error popping redirect: %s" %
+                  pyutil.strerror(io_errors[0]))
 
         probe('cmd_eval', '_DoSimple_exit', status)
         return status
@@ -1724,14 +1738,14 @@ class CommandEvaluator(object):
 
         return status
 
-    def _DoRedirect(self, node, cmd_st):
-        # type: (command.Redirect, CommandStatus) -> int
+    def _DoRedirects(self, redirects_):
+        # type: (List[Redir]) -> int
 
         status = 0
         redirects = []  # type: List[RedirValue]
 
         try:
-            for redir in node.redirects:
+            for redir in redirects_:
                 redirects.append(self._EvalRedirect(redir))
         except error.RedirectEval as e:
             self.errfmt.PrettyPrintError(e)
@@ -1767,6 +1781,14 @@ class CommandEvaluator(object):
                     pyutil.strerror(io_errors[0]),
                     self.mem.GetFallbackLocation())
                 status = 1
+
+        return status, redirects, io_errors
+
+
+    def _DoRedirect(self, node, cmd_st):
+        # type: (command.Redirect, CommandStatus) -> int
+
+        status, redirects, io_errors = self._DoRedirects(node.redirects)
 
         # If we applied redirects successfully, run the command_t, and pop
         # them.
