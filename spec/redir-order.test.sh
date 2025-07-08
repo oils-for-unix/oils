@@ -2,6 +2,8 @@
 
 #### echo `cat OSCFLAGS` "world" > OSCFLAGS (from Alpine imap)
 
+# strace --follow-forks --trace=openat $0 --ast-format text -nc 'echo hello > OSCFLAGS'
+# strace --follow-forks --trace=openat $0 -c 'echo hello > OSCFLAGS'
 echo hello > OSCFLAGS
 #strace --follow-forks --trace=openat $0 -c 'echo `cat OSCFLAGS` "world" > OSCFLAGS'
 echo `cat OSCFLAGS` "world" > OSCFLAGS
