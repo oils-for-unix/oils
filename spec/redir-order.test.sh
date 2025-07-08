@@ -3,12 +3,30 @@
 #### echo `cat OSCFLAGS` "world" > OSCFLAGS (from Alpine imap)
 
 echo hello > OSCFLAGS
+#strace --follow-forks --trace=openat $0 -c 'echo `cat OSCFLAGS` "world" > OSCFLAGS'
 echo `cat OSCFLAGS` "world" > OSCFLAGS
 #echo $(cat OSCFLAGS) "world" > OSCFLAGS
 cat OSCFLAGS
 
 ## STDOUT:
 hello world
+## END
+
+#### 2 echo `cat OSCFLAGS` "world" > OSCFLAGS (from Alpine imap)
+
+echo hello > OSCFLAGS
+(echo `cat OSCFLAGS` "world") > OSCFLAGS
+cat OSCFLAGS
+
+echo hello > OSCFLAGS
+for x in 1 2 3; do echo `cat OSCFLAGS` "world"; done > OSCFLAGS
+cat OSCFLAGS
+
+## STDOUT:
+world
+world
+world world
+world world world world
 ## END
 
 #### for word + redirect order
