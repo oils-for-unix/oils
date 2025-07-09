@@ -1090,7 +1090,7 @@ class CommandEvaluator(object):
 
         run_flags = executor.IS_LAST_CMD if node.is_last_cmd else 0
 
-        status, redirects, io_errors = self._DoRedirects(node.redirects or [])
+        status, redirects, io_errors = self._DoRedirects(node.redirects if node.redirects is not None else [])
         if status != 0:
             return status
 
@@ -1736,7 +1736,7 @@ class CommandEvaluator(object):
         return status
 
     def _DoRedirects(self, redirects_):
-        # type: (List[Redir]) -> int
+        # type: (List[Redir]) -> Tuple[int, List[RedirValue], List[error.IOError_OSError]]
 
         status = 0
         redirects = []  # type: List[RedirValue]
