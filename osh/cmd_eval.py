@@ -1090,13 +1090,10 @@ class CommandEvaluator(object):
 
         run_flags = executor.IS_LAST_CMD if node.is_last_cmd else 0
 
-        #print('n', node.redirects)
         status, redirects, io_errors = self._DoRedirects(node.redirects or [])
-        #print(status, redirects, io_errors)
         if status != 0:
             return status
 
-        #print(redirects)
         with vm.ctx_Redirect(self.shell_ex, len(redirects), io_errors):
             # NOTE: RunSimpleCommand may never return
             if len(node.more_env):  # I think this guard is necessary?
