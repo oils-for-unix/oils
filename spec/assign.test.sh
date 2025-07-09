@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 0
 ## compare_shells: dash bash-4.4 mksh zsh
 
 #### Env value doesn't persist
@@ -594,6 +594,9 @@ global
 ## END
 
 #### redirect after assignment builtin (what's going on with dash/bash/mksh here?)
+
+# TODO: update title -- this is related to redirect evaluation order!
+
 readonly x=$(stdout_stderr.py) 2>/dev/null
 echo done
 ## STDOUT:
