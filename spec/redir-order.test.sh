@@ -1,11 +1,8 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 #### echo `cat OSCFLAGS` "world" > OSCFLAGS (from Alpine imap)
 
-# strace --follow-forks --trace=openat $0 --ast-format text -nc 'echo hello > OSCFLAGS'
-# strace --follow-forks --trace=openat $0 -c 'echo hello > OSCFLAGS'
 echo hello > OSCFLAGS
-#strace --follow-forks --trace=openat $0 -c 'echo `cat OSCFLAGS` "world" > OSCFLAGS'
 echo `cat OSCFLAGS` "world" > OSCFLAGS
 #echo $(cat OSCFLAGS) "world" > OSCFLAGS
 cat OSCFLAGS
@@ -14,21 +11,14 @@ cat OSCFLAGS
 hello world
 ## END
 
-#### 2 echo `cat OSCFLAGS` "world" > OSCFLAGS (from Alpine imap)
+#### subshell + redirect order
 
 echo hello > OSCFLAGS
 (echo `cat OSCFLAGS` "world") > OSCFLAGS
 cat OSCFLAGS
 
-echo hello > OSCFLAGS
-for x in 1 2 3; do echo `cat OSCFLAGS` "world"; done > OSCFLAGS
-cat OSCFLAGS
-
 ## STDOUT:
 world
-world
-world world
-world world world world
 ## END
 
 #### for word + redirect order
