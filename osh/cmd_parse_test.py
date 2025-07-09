@@ -125,16 +125,14 @@ class SimpleCommandTest(unittest.TestCase):
         node = assertParseSimpleCommand(
             self, 'FOO=bar >output.txt SPAM=eggs ls foo')
         self.assertEqual(1, len(node.redirects))
-
-        self.assertEqual(2, len(node.child.words))
-        self.assertEqual(2, len(node.child.more_env))
+        self.assertEqual(2, len(node.words))
+        self.assertEqual(2, len(node.more_env))
 
         node = assertParseSimpleCommand(
             self, 'FOO=bar >output.txt SPAM=eggs ls foo >output2.txt')
         self.assertEqual(2, len(node.redirects))
-
-        self.assertEqual(2, len(node.child.words))
-        self.assertEqual(2, len(node.child.more_env))
+        self.assertEqual(2, len(node.words))
+        self.assertEqual(2, len(node.more_env))
 
     def testMultipleGlobalShAssignments(self):
         node = assert_ParseCommandList(self, 'ONE=1 TWO=2')
@@ -151,21 +149,17 @@ class SimpleCommandTest(unittest.TestCase):
 
     def testParseRedirectInTheMiddle(self):
         node = assert_ParseCommandList(self, 'echo >out.txt 1 2 3')
-        self.assertEqual(command_e.Redirect, node.tag())
+        self.assertEqual(command_e.Simple, node.tag())
         self.assertEqual(1, len(node.redirects))
-
-        self.assertEqual(command_e.Simple, node.child.tag())
-        self.assertEqual(4, len(node.child.words))
+        self.assertEqual(4, len(node.words))
 
     def testParseRedirectBeforeShAssignment(self):
         # Write ENV to a file
         node = assert_ParseCommandList(self, '>out.txt PYTHONPATH=. env')
-        self.assertEqual(command_e.Redirect, node.tag())
+        self.assertEqual(command_e.Simple, node.tag())
         self.assertEqual(1, len(node.redirects))
-
-        self.assertEqual(command_e.Simple, node.child.tag())
-        self.assertEqual(1, len(node.child.words))
-        self.assertEqual(1, len(node.child.more_env))
+        self.assertEqual(1, len(node.words))
+        self.assertEqual(1, len(node.more_env))
 
     def testParseAdjacentDoubleQuotedWords(self):
         node = assertParseSimpleCommand(self,
@@ -268,7 +262,7 @@ EOF
 \tEOF
 echo hi
 """)
-        self.assertEqual(node.tag(), command_e.Redirect)
+        self.assertEqual(node.tag(), command_e.Simple)
         assertHereDocToken(self, 'one tab then foo: ', node)
 
     def testHereDocInPipeline(self):
@@ -390,7 +384,7 @@ echo 3) 4
 EOF
 """)
         self.assertEqual(1, len(node.redirects))
-        self.assertEqual(1, len(node.child.words))
+        self.assertEqual(1, len(node.words))
 
 
 class ArrayTest(unittest.TestCase):
@@ -428,11 +422,11 @@ class RedirectTest(unittest.TestCase):
     def testParseRedirects1(self):
         node = assertParseSimpleCommand(self, '>out.txt cat 1>&2')
         self.assertEqual(2, len(node.redirects))
-        self.assertEqual(1, len(node.child.words))
+        self.assertEqual(1, len(node.words))
 
         node = assertParseSimpleCommand(self, ' cat <&3')
         self.assertEqual(1, len(node.redirects))
-        self.assertEqual(1, len(node.child.words))
+        self.assertEqual(1, len(node.words))
 
     def testParseFilenameRedirect(self):
         node = assertParseRedirect(self, '>out.txt cat')
@@ -468,7 +462,7 @@ hi
 EOF
 """)
         self.assertEqual(2, len(node.redirects))
-        self.assertEqual(1, len(node.child.words))
+        self.assertEqual(1, len(node.words))
 
     def testClobberRedirect(self):
         node = assertParseSimpleCommand(self, 'echo hi >| clobbered.txt')
@@ -546,7 +540,7 @@ class CommandParserTest(unittest.TestCase):
 
     def test_ParseCommandLine(self):
         node = assert_ParseCommandLine(self, 'ls foo 2>/dev/null')
-        self.assertEqual(2, len(node.child.words))
+        self.assertEqual(2, len(node.words))
 
         node = assert_ParseCommandLine(self, 'ls foo|wc -l')
         self.assertEqual(command_e.Pipeline, node.tag())
