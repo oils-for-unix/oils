@@ -442,7 +442,7 @@ YSH adds reduced options to shell's slow "text-processing" `read`:
 
     read --raw-line --with-eol  # include the trailing \n
 
-* Known-size reads are done block-wise and fast:
+* Known-size reads are done block-wise (not character-wise) and fast:
 
     read --all               # whole file including trailing \n, fills $_reply
     read --all (&x)          # fills $x
@@ -458,7 +458,7 @@ You may want to use `fromJson8()` or `fromJson()` after reading a line.
 
 (Unlike OSH [read](#read), none of these features remove NUL bytes.)
 
-NOTE: For fast, non-interctive, buffered reading use [io.stdin](chap-type-method.html#stdin).
+NOTE: For fast, non-interactive, buffered reading use [io.stdin](chap-type-method.html#stdin).
 
 <!--
 
@@ -767,12 +767,12 @@ These builtins take input and output.  They're often used with redirects.
 
     read FLAG* VAR*
 
-Read input from `stdin`.
-Does slow, byte-wise and unbuffered input processing.
+Read input from `stdin`, with support for interactive terminal input.
+Does slow, character-wise, and unbuffered input processing.
 
 Without flags, the input is "text processed" like this:
 
-1. Read characters from stdin until the end of a line ("RETURN").
+1. Read single characters from stdin until the end of a line (<RETURN>).
    - Decode (consume) `\` escapes and line continuations.
    - Remove any NUL bytes from the input.
 1. Use the `$IFS` algorithm to split and trim the line into N pieces, where
@@ -780,10 +780,9 @@ Without flags, the input is "text processed" like this:
    the corresponding variable. The last VAR also receives any remainig pieces.
    - If no VARs are given, assign to the variable `$REPLY`.
 
-Note: This slow, character "parsing" algorithm can also be confusing and
-cumbersome to tame with `-r`, `IFS=` and further options.
-Therefore, YSH provides `--long` flags for clean verbatim, and fast modes
-documented in [ysh-read](#ysh-read).
+Note: This slow, "parsing" algorithm can also be confusing and cumbersome to
+tame with `-r`, `IFS=` and further options. Therefore, YSH provides `--long`
+flags for clean verbatim, and fast modes documented in [ysh-read](#ysh-read).
 
 Flags:
 
