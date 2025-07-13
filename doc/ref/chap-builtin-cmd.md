@@ -780,8 +780,8 @@ Without flags, the input is "text processed" like this:
    the corresponding variable. The last VAR also receives any remainig pieces.
    - If no VARs are given, assign to the variable `$REPLY`.
 
-Note: This slow, "parsing" algorithm can also be confusing and cumbersome to
-tame with `-r`, `IFS=` and further options. Therefore, YSH provides `--long`
+Note: This slow "parsing" algorithm can also be confusing and cumbersome to
+tame with `-r`, `IFS=`, and further options. Therefore, YSH provides `--long`
 flags for clean verbatim, and fast modes documented in [ysh-read](#ysh-read).
 
 Flags:
