@@ -433,9 +433,16 @@ Warnings:
 
 ### ysh-read
 
-YSH adds verbatim options to shell's slow (unbuffered) `read`:
+YSH adds reduced options to shell's slow "text-processing" `read`:
 
-* Long flags that do always return the bytes verbatim.
+* All long flags return all characters verbatim, no "text-processing".
+
+    read --raw-line             # unbuffered read of line, omitting trailing \n
+    read --raw-line (&x)        # fills $x
+
+    read --raw-line --with-eol  # include the trailing \n
+
+* Known-size reads are done block-wise and fast:
 
     read --all               # whole file including trailing \n, fills $_reply
     read --all (&x)          # fills $x
@@ -443,12 +450,7 @@ YSH adds verbatim options to shell's slow (unbuffered) `read`:
     read --num-bytes 3       # read N bytes, fills _reply
     read --num-bytes 3 (&x)  # fills $x
 
-    read --raw-line             # unbuffered read of line, omitting trailing \n
-    read --raw-line (&x)        # fills $x
-
-    read --raw-line --with-eol  # include the trailing \n
-
-* And a convenience:
+* And a convenience option:
 
     read -0                 # read until NUL, synonym for read -r -d ''
 
@@ -766,22 +768,22 @@ These builtins take input and output.  They're often used with redirects.
     read FLAG* VAR*
 
 Read input from `stdin`.
-Does slow (unbuffered) byte-wise processing with the input echoed to stdout if
-running in interactive terminal.
+Does slow, byte-wise and unbuffered input processing.
 
-Without flags, it works like this:
+Without flags, the input is "text processed" like this:
 
 1. Read characters from stdin until the end of a line ("RETURN").
-   - Respecting `\` escapes and line continuations.
-   - Removing any NUL bytes from the input.
+   - Decode (consume) `\` escapes and line continuations.
+   - Remove any NUL bytes from the input.
 1. Use the `$IFS` algorithm to split and trim the line into N pieces, where
    `N` is the number of `VAR`s specified. Each piece is assigned to
    the corresponding variable. The last VAR also receives any remainig pieces.
    - If no VARs are given, assign to the variable `$REPLY`.
 
-Note: This slow character "parsing" algorithm can be confusing and cumbersome
-to tame with `-r`, `IFS=` and more options. When writing YSH, the `--long-flags`
-provide cleaner verbatim modes documented in [ysh-read](#ysh-read).
+Note: This slow, character "parsing" algorithm can also be confusing and
+cumbersome to tame with `-r`, `IFS=` and further options.
+Therefore, YSH provides `--long` flags for clean verbatim, and fast modes
+documented in [ysh-read](#ysh-read).
 
 Flags:
 
