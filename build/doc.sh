@@ -552,7 +552,13 @@ write-metrics() {
   echo "Wrote $out"
 }
 
-tour() {
+maybe-tree() {
+  if command -v tree >/dev/null; then
+    tree $work_dir
+  fi
+}
+
+ysh-tour() {
   ### Build the Tour of YSH, and execute code as validation
   local name=${1:-ysh-tour}
 
@@ -626,7 +632,7 @@ EOF
   $REPO_ROOT/bin/ysh tour.ysh < /dev/null
   popd
 
-  tree $work_dir
+  maybe-tree $work_dir
 
   # My own dev tools
   # if test -d ~/vm-shared; then
@@ -651,7 +657,7 @@ ysh-io() {
 
   $REPO_ROOT/bin/ysh ysh-io.ysh
 
-  tree $work_dir
+  maybe-tree $work_dir
 
   popd
 }
@@ -885,7 +891,8 @@ run-for-release() {
   local root=_release/VERSION
   mkdir -p $root/{doc,test,pub}
 
-  tour
+  ysh-tour
+  ysh-io
 
   # Metadata
   cp -v _build/release-date.txt oils-version.txt $root
