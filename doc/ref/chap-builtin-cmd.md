@@ -433,7 +433,8 @@ Warnings:
 
 ### ysh-read
 
-YSH adds long flags to shell's `read`:
+YSH adds long flags to shell's `read`.  These two flags are recommended and
+efficient:
 
     read --all               # whole file including trailing \n, fills $_reply
     read --all (&x)          # fills $x
@@ -441,48 +442,44 @@ YSH adds long flags to shell's `read`:
     read --num-bytes 3       # read N bytes, fills _reply
     read --num-bytes 3 (&x)  # fills $x
 
+---
+
+This flag replaces shell's `IFS= read -r` idiom, reading one byte a time in an
+unbuffered fashion:
+
     read --raw-line             # unbuffered read of line, omitting trailing \n
     read --raw-line (&x)        # fills $x
 
     read --raw-line --with-eol  # include the trailing \n
 
-And a convenience:
+A loop over [io.stdin][] allows buffered reading of lines, which is faster.
 
-    read -0                 # read until NUL, synonym for read -r -d ''
+[io.stdin]: chap-type-method.html#stdin
 
 You may want to use `fromJson8()` or `fromJson()` after reading a line.
 
-(Unlike OSH [read](#read), none of these features remove NUL bytes.)
+---
 
+The `-0` flag also reads one byte at a time:
+
+    read -0                 # read until NUL, synonym for read -r -d ''
+
+(Unlike OSH [read](#read), none of these features remove NUL bytes.)
 
 <!--
 
 TODO:
 
 - read --netstr
-- fromJ8Line() is different than from Json8!  It's like @()
+- io.stdin0 coudl be a buffered version of read -0 ?
+- JSON
+  - @() is related - it reads J8 lines
+  - JSON lines support?
+  - fromJ8Line() is different than from fromJson8() ?  It's like @()
 
 -->
 
 <!--
-
-Problem with read --json -- there's also https://jsonlines.org, which allows
-
-    {"my": "line"}
-
-That can be done with
-
-    while read --line {
-      var record = fromJson(_reply)
-    }
-
-This is distinct from:
-
-    while read --line --j8 {
-      echo $_reply
-    }
-
-This allows unquoted.  Maybe it should be read --j8-line
 
 What about write?  These would be the same:
 
@@ -743,15 +740,6 @@ Related: [err-json8-encode]() and [err-json8-decode]()
 [err-json8-encode]: chap-errors.html#err-json8-encode
 [err-json8-decode]: chap-errors.html#err-json8-decode
 
-## Testing
-
-TODO: describe
-
-## External Lang
-
-TODO: when
-
-
 ## I/O
 
 These builtins take input and output.  They're often used with redirects.
@@ -760,18 +748,22 @@ These builtins take input and output.  They're often used with redirects.
 
     read FLAG* VAR*
 
-Read input from `stdin`.  Without flags, it does the following:
+Read input from `stdin`, and assign pieces of input to variables.  Without
+flags, `read` uses this algorithm:
 
-1. Read a line from stdin, respecting `\` escapes and line continuations
+1. Read bytes from `stdin`, one at a time, until a newline `\n`.
+   - Respect `\` escapes and line continuations.
    - Any NUL bytes are removed from the input.
 1. Use the `$IFS` algorithm to split the line into N pieces, where `N` is the
    number of `VAR` specified.  Each piece is assigned to the corresponding
    variable.
    - If no VARs are given, assign to the `$REPLY` var.
 
-Note: When writing YSH, prefer the `--long-flag` modes documented in
-[ysh-read](#ysh-read).  The algorithm above can be confusing, e.g. because `-r`
-is not the default.
+The `-r` flag is useful to disable backslash escapes.
+
+POSIX mandates the slow behavior of reading one byte at a time.  In YSH, you
+can avoid this by using [io.stdin][], or a `--long-flag` documented in
+[ysh-read](#ysh-read).
 
 Flags:
 

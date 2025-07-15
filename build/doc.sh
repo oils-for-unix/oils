@@ -632,6 +632,25 @@ EOF
   fi
 }
 
+ysh-io() {
+  local work_dir=$REPO_ROOT/_tmp/code-blocks/doc
+
+  local name='io-builtins'
+  split-and-render doc/$name.md
+
+  local work_dir=$REPO_ROOT/_tmp/code-blocks/doc
+
+  pushd $work_dir
+
+  seq 5 8 > input.txt
+
+  cat >io-builtins.ysh $name.txt
+
+  $REPO_ROOT/bin/ysh io-builtins.ysh
+
+  popd
+}
+
 one() {
   ### Iterate on one doc quickly
 
