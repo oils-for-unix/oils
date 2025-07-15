@@ -624,23 +624,21 @@ The preferred alternative to shell's `()`.  Prefer `cd` with a block if possible
     }
     echo $not_mutated
 
-### fopen
+### redir
 
-Runs a block passed to it.  It's designed so redirects have a **prefix**
-syntax:
+Runs a block passed to it.  It's designed to enable a **prefix** syntax when
+redirecting:
 
-    fopen >out.txt {
+    redir >out.txt {
       echo 1
       echo 2
     }
 
-Rather than shell style:
+When a block is long, it's more readable than shell's postfix style:
 
     { echo 1
       echo 2
     } >out.txt
-
-When a block is long, the former is more readable.
 
 ## Private
 

@@ -118,8 +118,15 @@ Constructs like `. ^ $ \< \>` are deprecated because they break these rules.
 
 ### `.` Is Now `dot`
 
-But `.` is still accepted.  It usually matches any character except a newline,
-although this changes based on flags (e.g. `dotall`, `unicode`).
+The `dot` primitive usually matches any character, although its exact meaning
+depends on the underlying regex library.
+
+- YSH uses `libc`, which accepts POSIX ERE syntax.  So `dot` aka `.` matches
+  any character, unless the `reg_newline` flag is true.
+- If Eggex were compiled to Python, `dot` aka `.` matches any character
+  *except* a newline, unless the `re.DOTALL` flag is true.
+
+Note: Eggex accepts `.` as a synonym for `dot`, even though `dot` is preferred.
 
 ### Classes Are Unadorned: `word`, `w`, `alnum`
 

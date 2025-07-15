@@ -151,7 +151,7 @@ X [Wok]           _field()
                   ysh-wait               wait --all --verbose
                   write                  Like echo, with --, --sep, --end
                   fork         forkwait  Replace & and (), and takes a block
-                  fopen                  Open multiple streams, takes a block
+                  redir                  Run a block, with redirects
   [Private]       cat          rm        POSIX-compatible
                   sleep
   [Hay Config]    hay          haynode   For DSLs and config files
