@@ -257,22 +257,34 @@ td {
   - Shell Constructs
 - tr
   - Buffered, and therefore **fast**
-  - &bull;&nbsp; [io.stdin][] - loop over lines
+  - <div>
+
+    - [io.stdin][] - loop over lines
+
+    </div>
 - tr
   - Unbuffered and **fast** <br/>
     (large chunks)
-  - &bull;&nbsp; [ysh-read][]: `read --all` and `--num-bytes` <br/>
-    &bull;&nbsp; Shell `$(command sub)` <br/>
-    &bull;&nbsp; YSH `@(command splice)` <br/>
+  - <div>
+
+    - [ysh-read][]: `read --all` and `--num-bytes`
+    - Shell `$(command sub)`
+    - YSH `@(command splice)`
+
+    </div>
 - tr
   - Unbuffered and **slow** <br/>
     (one byte at a time)
-  - &bull;&nbsp; The POSIX shell [read][] builtin: either without flags, or
-    with short flags like `-r -d` <br/>
-    &bull;&nbsp; The bash shell [mapfile][] builtin <br/>
-    &bull;&nbsp; [ysh-read][]: YSH `read --raw-line` (replaces the idiom `IFS=
-    read -r`) <br/>
-    &bull;&nbsp; [ysh-read][]: YSH `read -0` (replaces the idiom `read -r -d ''`) <br/>
+  - <div>
+
+    - The POSIX shell [read][] builtin: either without flags, or with short
+      flags like `-r -d`
+    - The bash [mapfile][] builtin
+    - [ysh-read][]:
+      - YSH `read --raw-line` (replaces the idiom `IFS= read -r`)
+      - YSH `read -0` (replaces the idiom `read -r -d ''`)
+
+    </div>
 
 </table>
 
