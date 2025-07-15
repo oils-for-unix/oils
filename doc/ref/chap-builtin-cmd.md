@@ -433,8 +433,8 @@ Warnings:
 
 ### ysh-read
 
-YSH adds long flags to shell's `read`.  These two flags are recommended and
-efficient:
+YSH adds long flags to shell's `read`.  These two flags are fast and
+recommended:
 
     read --all               # whole file including trailing \n, fills $_reply
     read --all (&x)          # fills $x
@@ -464,7 +464,12 @@ The `-0` flag also reads one byte at a time:
 
     read -0                 # read until NUL, synonym for read -r -d ''
 
-(Unlike OSH [read](#read), none of these features remove NUL bytes.)
+Notes:
+
+- Unlike OSH [read](#read), none of these features remove NUL bytes.
+- Performance summary: [YSH Input/Output > Three Types of I/O][ysh-io-three]
+
+[ysh-io-three]: ../ysh-io.html#three-types-of-io
 
 <!--
 
@@ -784,6 +789,8 @@ Flags:
   <!--  -N NUM    read up to NUM characters, ignoring delimiters -->
   <!--  -e        use readline to obtain the line
         -i STR    use STR as the initial text for readline -->
+
+Performance summary: [YSH Input/Output > Three Types of I/O][ysh-io-three]
 
 ### echo
 

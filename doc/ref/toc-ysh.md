@@ -340,7 +340,7 @@ X [External Lang] BEGIN   END   when (awk)
                   expr-splice      echo @[split(x)]
                   var-splice       @myarray @ARGV
                   command-sub      $(date)
-                  ysh-command-sub  @(cat my-j8-lines.txt)
+                  command-splice   @(cat my-j8-lines.txt)
   [Formatting]  X ysh-printf       ${x %.3f}
                 X ysh-format       ${x|html}
 ```
