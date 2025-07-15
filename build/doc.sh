@@ -88,6 +88,7 @@ readonly MARKDOWN_DOCS=(
   ysh-regex-api
   upgrade-breakage
   ysh-tour
+  ysh-io
 
   style-guide
   novelties
@@ -151,7 +152,6 @@ readonly MARKDOWN_DOCS=(
   old/errors
   old/ysh-builtins
 
-  io-builtins
   unicode
   framing
   xtrace
@@ -633,20 +633,20 @@ EOF
 }
 
 ysh-io() {
-  local work_dir=$REPO_ROOT/_tmp/code-blocks/doc
-
-  local name='io-builtins'
+  local name='ysh-io'
   split-and-render doc/$name.md
 
-  local work_dir=$REPO_ROOT/_tmp/code-blocks/doc
+  local work_dir=$REPO_ROOT/_tmp/ysh-io
+  mkdir -p $work_dir
 
   pushd $work_dir
 
   seq 5 8 > input.txt
 
-  cat >io-builtins.ysh $name.txt
+  local code_dir=$REPO_ROOT/_tmp/code-blocks/doc
+  cp $code_dir/$name.txt ysh-io.ysh
 
-  $REPO_ROOT/bin/ysh io-builtins.ysh
+  $REPO_ROOT/bin/ysh ysh-io.ysh
 
   popd
 }

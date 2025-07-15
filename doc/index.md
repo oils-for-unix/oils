@@ -110,7 +110,7 @@ Crosscutting design issues:
 - [Variable Declaration, Mutation, and Scope](variables.html)
 - [Strings: Quotes, Interpolation, Escaping, and Buffers](strings.html) &dagger;
   - [Unicode](unicode.html) &dagger;.  Oils supports and prefers UTF-8.
-- [YSH I/O Builtins](io-builtins.html) &dagger;
+- [YSH Input/Output](ysh-io.html)
 
 ## Data Languages Avoid Ad-Hoc Parsing
 

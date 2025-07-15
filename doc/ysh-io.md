@@ -1,9 +1,8 @@
 ---
-in_progress: true
 default_highlighter: oils-sh
 ---
 
-YSH I/O Builtins
+YSH Input/Output
 ================
 
 This doc describes how YSH I/O improves upon shell I/O:
@@ -104,6 +103,8 @@ to "round trip" data between the OS and YSH data structures.
 
     cat input.txt | read --all
 
+    = _reply  # (Str)
+
     # suppress the newline
     write --end '' -- $_reply > output.txt
 
@@ -116,6 +117,8 @@ to "round trip" data between the OS and YSH data structures.
     cat input.txt | for line in (io.stdin) {
       call lines->append(line)
     }
+
+    = lines  # (List)
 
     # newlines added
     write -- @lines > output.txt
