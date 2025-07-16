@@ -134,7 +134,13 @@ def InitInteractiveShell(signal_safe):
 
 def SaveFd(fd):
     # type: (int) -> int
+
+    # Note: may raise IOError_OSError
     saved = fcntl_.fcntl(fd, F_DUPFD, _SHELL_MIN_FD)  # type: int
+
+    # Bug fix: make sure we never leak the saved descriptor to child processes
+    fcntl_.fcntl(saved, F_SETFD, FD_CLOEXEC)
+
     return saved
 
 
@@ -273,7 +279,6 @@ class FdState(object):
                 raise
         if ok:
             posix.close(fd)
-            fcntl_.fcntl(new_fd, F_SETFD, FD_CLOEXEC)
             self.cur_frame.saved.append(_RedirFrame(new_fd, fd, True))
         else:
             # if we got EBADF, we still need to close the original on Pop()
