@@ -70,7 +70,11 @@ compare-shells() {
     # Hm I'm not seeing descriptor 100 open here?
 
     #$sh -c '_tmp/self-fd >/dev/null 1>&2; echo done'
-    $sh -c 'echo "shell pid $$"; _tmp/self-fd; echo done'
+    $sh -c '
+    echo "shell pid $$"
+    _tmp/self-fd
+    echo done
+    '
   done
 }
 
