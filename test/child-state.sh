@@ -68,6 +68,11 @@ compare-shells() {
     echo
 
     # Hm I'm not seeing descriptor 100 open here?
+    #
+    # Note: Bug #2068, the descriptor leak in fd_state::_Open() was not
+    # reproduced here
+    #
+    # See test/bug-2068.sh instead
 
     #$sh -c '_tmp/self-fd >/dev/null 1>&2; echo done'
     $sh -c '
