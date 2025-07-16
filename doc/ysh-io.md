@@ -62,18 +62,57 @@ These YSH constructs make string processing more orthogonal to I/O:
   - These `\` escapes create a mini-language that isn't understood by other
     line-based tools like `grep` and `awk`.  The set of escapes isn't
     consistent between shells.
-- There's no way to tell if `$()` strips the trailing newline,.
-  - YSH has `read --all`, and `echo hi | read --all` works because `shopt -s
-    lastpipe` is the default.
+- There's no way to tell if `$()` removes the trailing newline
+  - YSH has `read --all`, which preserves the data exactly.
+- `echo hi | read; echo $REPLY` doesn't work in bash because the last part of a
+  pipeline (`read`) runs in a child process.  That is, the data is indeed read,
+  but it's **lost** to the rest of the program.
+  - In OSH and YSH, `echo hi | read` works because the last part of a pipeline
+    runs in the shell process.  (This is what bash calls `shopt -s lastpipe`,
+    mentioned in [Known Differences][lastpipe].)
+
+[lastpipe]: known-differences.html#last-pipeline-part-may-run-in-shell-process-zsh-bash-shopt-s-lastpipe
+
 
 Examples:
 
     hostname | read --all (&x)
     write -- $x
+    echo $x
 
 [json]: ref/chap-builtin-cmd.html#json
 [write]: ref/chap-builtin-cmd.html#write
 [ysh-read]: ref/chap-builtin-cmd.html#ysh-read
+
+### Shell Pitfall: the Exit Code of `read`
+
+Suppose you have lines without a trailing `\n`:
+
+<!-- Note: these code blocks aren't executed by build/doc.sh
+     Because they have class="language-*"
+-->
+
+```oils-sh
+$ printf 'a\nb'
+a
+b  # no trailing newline
+```
+
+Then this loop doesn't print the last line, because `read` fails if it doesn't
+see the newline delimiter.
+
+```oils-sh
+$ printf 'a\nb' | while read -r; do echo $REPLY done
+a
+```
+
+In contrast, a loop with YSH `read --raw-line` prints all lines:
+
+```oils-sh
+$ printf 'a\nb' | while read --raw-line { echo $_reply  }
+a
+b
+```
 
 ## Tested Invariants
 
@@ -99,7 +138,7 @@ And let's list these files in 3 different formats:
     # J8 lines
     redir >j8-lines.txt {
       for path in mydir/* {
-        write -- $[toJson(path)]
+        write -- $[toJson8(path)]
       }
     }
 
