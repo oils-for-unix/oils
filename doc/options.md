@@ -189,7 +189,7 @@ Specifically, it does three things:
    - This is so that the syntax errors are better when you forget a space.
 
 <!--
-Test cases start here: <https://github.com/oilshell/oil/blob/master/spec/oil-options.test.sh#L257>
+Test cases start here: <https://github.com/oils-for-unix/oils/blob/master/spec/oil-options.test.sh#L257>
 -->
 
 Here's idiomatic YSH syntax after `parse_brace`:

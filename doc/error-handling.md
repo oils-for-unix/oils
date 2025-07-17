@@ -35,7 +35,7 @@ YSH code, and look under the hood at the underlying mechanisms.
 (If you just want to **use** YSH, see [YSH Error Handling: A Quick
 Guide](ysh-error.html).)
 
-[file a bug]: https://github.com/oilshell/oil/issues
+[file a bug]: https://github.com/oils-for-unix/oils/issues
 
 <div id="toc">
 </div>
@@ -573,8 +573,8 @@ Good articles on `errexit`:
 
 Spec Test Suites:
 
-- <https://www.oilshell.org/release/latest/test/spec.wwz/survey/errexit.html>
-- <https://www.oilshell.org/release/latest/test/spec.wwz/survey/errexit-oil.html>
+- <https://oils.pub/release/latest/test/spec.wwz/survey/errexit.html>
+- <https://oils.pub/release/latest/test/spec.wwz/survey/errexit-osh.html>
 
 These docs aren't about error handling, but they're also painstaking
 backward-compatible overhauls of shell!

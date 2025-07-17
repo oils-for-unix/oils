@@ -702,7 +702,7 @@ The YSH style gives you *static parsing*, which catches some errors earlier.
 - More location info, including the source file.
 
 [Please send
-feedback](https://github.com/oilshell/oil/wiki/Where-To-Send-Feedback) about
+feedback](https://github.com/oils-for-unix/oils/wiki/Where-To-Send-Feedback) about
 Hay.  It will inform and prioritize this work!  
 
 ## Links
@@ -711,4 +711,4 @@ Hay.  It will inform and prioritize this work!
   useful to explain it with concrete examples.
 - [Data Definition and Code Generation in Tcl](https://trs.jpl.nasa.gov/bitstream/handle/2014/7660/03-1728.pdf) (2003, PDF) 
   - Like Hay, it has the (Type, Name, Attributes) data model.
-- <https://github.com/oilshell/oil/wiki/Config-Dialect>.  Design notes and related links on the wiki.
+- <https://github.com/oils-for-unix/oils/wiki/Config-Dialect>.  Design notes and related links on the wiki.

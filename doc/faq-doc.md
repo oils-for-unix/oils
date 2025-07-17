@@ -22,9 +22,9 @@ in progress.
 
 Outside of the release tree:
 
-- [The blog](https://www.oilshell.org/blog/) has useful background info.  Older
+- [The blog](/blog/) has useful background info.  Older
   posts are more likely to have incorrect information.
-- [The home page](https://www.oilshell.org/) has links to docs for new users.
+- [The home page](/) has links to docs for new users.
 
 ## Where do I find ...
 
@@ -48,4 +48,4 @@ They are split between the "sublanguages" of OSH and YSH:
 ## I still can't find what I'm looking for.
 
 Please send feedback on Github or Zulip: [Where To Send
-Feedback](https://github.com/oilshell/oil/wiki/Where-To-Send-Feedback).
+Feedback](https://github.com/oils-for-unix/oils/wiki/Where-To-Send-Feedback).

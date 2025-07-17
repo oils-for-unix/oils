@@ -157,7 +157,7 @@ f() {
 
 Comments appreciated!
 
-[1] https://github.com/oilshell/oil/commit/54754f3e8298bc3c272416eb0fc96946c8fa0694
+[1] https://github.com/oils-for-unix/oils/commit/54754f3e8298bc3c272416eb0fc96946c8fa0694
 
 
 Note that `shopt -s all:oil` turns on all the `parse_*` options.

@@ -7,7 +7,7 @@ How We Build Oils Documentation
 
 1. Write Markdown by hand, with optional "front matter".
 2. Render Markdown to HTML, and run the result through our own HTML filters.
-3. Publish static HTML to <https://www.oilshell.org/>.
+3. Publish static HTML to <https://oils.pub/>.
 
 The code is in the [doctools/]($oils-src) directory, which uses the
 [lazylex/]($oils-src)  library.

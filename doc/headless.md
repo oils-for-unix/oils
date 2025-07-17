@@ -89,6 +89,6 @@ Feel free to edit these pages:
 - [Interactive Shell][] on the wiki.  Be inspired by these nice projects, many
   of which have screenshots! 
 
-[Headless Mode]: https://github.com/oilshell/oil/wiki/Headless-Mode
+[Headless Mode]: https://github.com/oils-for-unix/oils/wiki/Headless-Mode
 
-[Interactive Shell]: https://github.com/oilshell/oil/wiki/Interactive-Shell
+[Interactive Shell]: https://github.com/oils-for-unix/oils/wiki/Interactive-Shell

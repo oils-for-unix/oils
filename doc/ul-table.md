@@ -598,7 +598,7 @@ position?
 <!--
 TODO:
 
-- change back to oilshell.org/ for publishing
+- change back to oils.pub/ for publishing
 - Compare to wikipedia
   - https://en.wikipedia.org/wiki/Help:Table
   - table caption  - this is just <caption>

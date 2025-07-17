@@ -27,7 +27,7 @@ These steps take 30 to 60 seconds on most machines.  After installation, see
 
 <!-- REPLACE_WITH_DOWNLOAD_LINKS -->
 
-The [Oils Deployments](https://github.com/oilshell/oil/wiki/Oils-Deployments)
+The [Oils Deployments](https://github.com/oils-for-unix/oils/wiki/Oils-Deployments)
 wiki page has other ways of getting Oils.  These versions may not be
 up-to-date.
 

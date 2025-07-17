@@ -22,8 +22,8 @@ These internal details are subject to change.
   word evaluation.  Oils uses [Simple Word Evaluation](simple-word-eval.html)
   instead.
 
-[Contributing]: https://github.com/oilshell/oil/wiki/Contributing
-[word-eval]: https://github.com/oilshell/oil/wiki/OSH-Word-Evaluation-Algorithm
+[Contributing]: https://github.com/oils-for-unix/oils/wiki/Contributing
+[word-eval]: https://github.com/oils-for-unix/oils/wiki/OSH-Word-Evaluation-Algorithm
 
 ## Source Code
 

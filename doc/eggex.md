@@ -600,7 +600,7 @@ closer to **lexing**.  Related:
 
 - [When Are Lexer Modes Useful?](https://www.oilshell.org/blog/2017/12/17.html)
 - [Why Lexing and Parsing Should Be
-  Separate](https://github.com/oilshell/oil/wiki/Why-Lexing-and-Parsing-Should-Be-Separate) (wiki)
+  Separate](https://github.com/oils-for-unix/oils/wiki/Why-Lexing-and-Parsing-Should-Be-Separate) (wiki)
 
 The PEG model is more resource intensive, but it can recognize more languages,
 and it can recognize recursive structure (trees).
