@@ -16,19 +16,68 @@ clone-aports() {
   time git clone \
     git@gitlab.alpinelinux.org:alpine/aports.git || true
 
-  # WARNING: THIS SCRIPT FUCKED UP MY 
+  popd
+}
+
+clone-aci() {
+  # I FORKED this
   #
-  # /dev
-  # current directory!
+  # Because this script FUCKED UP my
+  #
+  # /dev dir and current directory!
   #
   # Because I did rm -rf /alpine
   #
-  # Should patch upstream, or DO NOT use it.
+  # TODO: send patches upstream
+  # - docs
+  # - code
+
+  pushd ..
 
   time git clone \
-    https://github.com/alpinelinux/alpine-chroot-install || true
+    git@github.com:oils-for-unix/alpine-chroot-install || true
+
+  pushd alpine-chroot-install
+  git checkout dev-andy
+  popd
 
   popd
+}
+
+make-chroot() {
+  local aci='../alpine-chroot-install/alpine-chroot-install'
+
+  $aci --help
+
+  set -x
+
+  # -n: do not mount host dirs (a feature I added)
+
+  # WTF, it creates _chroot/aports-build/_chroot/aports-build
+  # SIGH
+
+  # Requires ABSOLUTE path
+
+  time sudo $aci -n -d $PWD/_chroot/aports-build
+
+  # TODO: when you run it twice, it should abort if the directory is full
+}
+
+make-user() {
+  _chroot/aports-build/enter-chroot adduser -D builder
+}
+
+install-packages() {
+  #_chroot/aports-build/enter-chroot -u builder sh -c 'sudo apk update; sudo apk add bash'
+
+  #_chroot/aports-build/enter-chroot -u builder bash -c 'echo "hi from bash"'
+  #return
+
+  # Must be done as root; there is no 'sudo'
+  _chroot/aports-build/enter-chroot sh -c 'apk update; apk add bash'
+  _chroot/aports-build/enter-chroot -u builder bash -c 'echo "hi from bash"'
+
+  #_chroot/aports-build/enter-chroot -u builder sh -c 'apk update; apk add bash'
 }
 
 # TODO:
