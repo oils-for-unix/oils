@@ -1,19 +1,31 @@
 #!/usr/bin/env bash
 #
+# Build Alpine Linux packages: baseline, OSH as /bin/sh, OSH as /bin/bash
+#
 # Usage:
 #   test/aports.sh <function name>
 #
-# Examples:
+# Setup:
 #   $0 clone-aports
-#   $0 clone-ci
-#   $0 make-chroot
+#   $0 clone-aci
+#
+# Build package in chroot:
+#
+#   $0 make-chroot - 267 MB, 247 K files
 #   $0 make-user
 #   $0 setup-doas
-#   $0 add-build-deps  # packages to build packages
-#   $0 copy-aports
+#   $0 add-build-deps  # add packages that build packages
+#                      # 281 MB, 248 K files
+#   $0 copy-aports     # 307 MB, 251 K files
 #   $0 keys
-#   $0 build-packages
+#   $0 build-packages  # 310 MB, 251 K files - hm did it clean up after itself?
 #   $0 remove-chroot
+
+# TODO:
+# - build mpfr4 with oils-for-unix as /bin/sh or /bin/bash, reproduce bug
+#   - copy the latest tar
+# - abuild: Separate fetch builddeps (network) and build (computation)
+# - build many packages at once - make a list
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
@@ -47,21 +59,28 @@ clone-aci() {
   popd
 }
 
+download-oils() {
+  local job_id=${1:-9886}  # 2025-07
+  local url="https://op.oilshell.org/uuu/github-jobs/$job_id/cpp-tarball.wwz/_release/oils-for-unix.tar"
+  wget --no-clobber --directory _tmp "$url"
+}
+
 make-chroot() {
   local aci='../alpine-chroot-install/alpine-chroot-install'
 
   $aci --help
 
-  set -x
+  # Notes:
+  # - $aci -d requires an ABSOLUTE path.  With a relative path, it creates
+  # _chroot/aports-build/_chroot/aports-build Filed bug upstream.
+  # - The -n flag is a feature I added: do not mount host dirs
+  # - TODO: when you run it twice, it should abort if the directory is full
+  # - Takes ~8 seconds
 
-  # -n: do not mount host dirs (a feature I added)
+  # default packages: build-base ca-certificates ssl_client
+  #
+  # This is already 267 MB, 247 K files
 
-  # Note: Requires ABSOLUTE path.
-  # With relative path, it creates _chroot/aports-build/_chroot/aports-build
-  # Filed bug upstream.
-  # More TODO: when you run it twice, it should abort if the directory is full
-
-  # Takes ~8 seconds
   time sudo $aci -n -d $PWD/_chroot/aports-build
 }
 
@@ -90,12 +109,20 @@ setup-doas() {
 add-build-deps() {
   # Must be done as root; there is no 'sudo'
   # doas: for abuild-keygen?
-  _chroot/aports-build/enter-chroot sh -c 'apk update; apk add bash abuild alpine-sdk doas'
-  _chroot/aports-build/enter-chroot -u builder bash -c 'echo "hi from bash"'
+
+  #_chroot/aports-build/enter-chroot sh -c 'apk update; apk add bash abuild alpine-sdk doas'
+
+  # alpine-sdk: abuild, etc.
+  _chroot/aports-build/enter-chroot sh -c 'apk update; apk add alpine-sdk doas'
+
+  #_chroot/aports-build/enter-chroot -u builder bash -c 'echo "hi from bash"'
 }
 
+readonly CHROOT_DIR=_chroot/aports-build/
+readonly CHROOT_HOME_DIR=$CHROOT_DIR/home/builder
+
 copy-aports() {
-  local dest=_chroot/aports-build/home/builder/aports/main/
+  local dest=$CHROOT_HOME_DIR/aports/main/
 
   sudo mkdir -p $dest
   sudo rsync --archive --verbose \
@@ -103,36 +130,67 @@ copy-aports() {
 
   # get uid from /home/builder
   local uid
-  uid=$(stat -c '%u' _chroot/aports-build/home/builder/)
+  uid=$(stat -c '%u' $CHROOT_HOME_DIR)
   sudo chown --verbose --recursive $uid $dest
 }
 
+copy-oils() {
+  local dest=$CHROOT_HOME_DIR
+
+  local tar=$PWD/_tmp/oils-for-unix.tar
+  pushd $dest
+  sudo tar -x < $tar
+  popd
+
+  local uid
+  uid=$(stat -c '%u' $CHROOT_HOME_DIR)
+  sudo chown --verbose --recursive $uid $dest/oils-for-unix-*
+}
+
 keys() {
-  _chroot/aports-build/enter-chroot -u builder bash -c '
+  $CHROOT_DIR/enter-chroot -u builder sh -c '
   #abuild-keygen -h
   abuild-keygen --append --install
   '
 }
 
-build-packages() {
-  # Hm says abuild -r
-  # https://wiki.alpinelinux.org/wiki/Abuild_and_Helpers#Basic_usage
-  #
-  # But Claude gave me abuild -F deps unpack
+apk-manifest() {
+  # 1643 files - find a subset to build
+  find _chroot/aports-build/home/builder/aports -name 'APKBUILD' | LANG=C sort
+}
 
-  _chroot/aports-build/enter-chroot -u builder bash -c '
-  # Try building lua
-  #dir=aports/main/lua5.2
-  dir=aports/main/mpfr4
-
-  ls -l $dir
-
-  pushd $dir
-  abuild -r
-  popd
-
-  exit
+build-oils() {
+  $CHROOT_DIR/enter-chroot -u builder sh -c '
+  cd oils-for-unix-*
+  ./configure
+  _build/oils.sh --skip-rebuild
+  doas ./install
   '
+}
+
+set-oils-bin-sh() {
+  $CHROOT_DIR/enter-chroot sh -c '
+  set -x
+  mv /bin/sh /bin/sh.OLD
+  mv /usr/local/bin/oils-for-unix /bin/sh
+  /bin/sh --version
+  '
+}
+
+build-packages() {
+  # https://wiki.alpinelinux.org/wiki/Abuild_and_Helpers#Basic_usage
+
+  local -a dirs=( aports/main/lua5.2 aports/main/mpfr4 )
+
+  _chroot/aports-build/enter-chroot -u builder sh -c '
+  for dir in "$@"; do
+    abuild -r -C $dir
+
+    # -f force
+    #abuild -r -f -C $dir
+  done
+  ' dummy0 "${dirs[@]}"
+
   return
 
   # Other commands
@@ -155,6 +213,16 @@ build-packages() {
 remove-chroot() {
   # This unmounts /dev /proc /sys/ properly!
   _chroot/aports-build/destroy --remove
+}
+
+sizes() {
+  # 312 MB
+  sudo du --si -s _chroot/aports-build
+}
+
+chroot-manifest() {
+  # 251,904 files after a build of mpfr
+  sudo find _chroot/aports-build -type f -a -printf '%s %P\n'
 }
 
 # Notes:
