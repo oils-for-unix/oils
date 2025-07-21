@@ -70,11 +70,13 @@ source $LIB_OSH/task-five.sh
 clone-aports() {
   local dir=../../alpinelinux
 
+  mkdir -p $dir
   pushd $dir
 
   # Took 1m 13s, at 27 MiB /ssec
   time git clone \
-    git@gitlab.alpinelinux.org:alpine/aports.git || true
+    https://gitlab.alpinelinux.org/alpine/aports.git
+    #git@gitlab.alpinelinux.org:alpine/aports.git || true
 
   popd
 }
@@ -89,7 +91,8 @@ clone-aci() {
     git@github.com:oils-for-unix/alpine-chroot-install || true
 
   pushd alpine-chroot-install
-  git checkout dev-andy
+  # this branch has fixes!  TODO: merge to main branch
+  git checkout dev-andy-2
   popd
 
   popd
@@ -193,6 +196,7 @@ keys() {
 apk-manifest() {
   # 1643 files - find a subset to build
   local out=$PWD/_tmp/apk-manifest.txt
+  mkdir -p _tmp
 
   pushd $CHROOT_HOME_DIR >/dev/null
   find aports -name 'APKBUILD' | LANG=C sort | tee $out
