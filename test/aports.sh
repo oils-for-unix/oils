@@ -12,6 +12,7 @@
 # Build package in chroot:
 #
 #   $0 make-chroot - 267 MB, 247 K files
+#                    ncdu shows gcc is big, e.g. cc1plus, cc1, lto1 are each 35-40 MB
 #   $0 make-user
 #   $0 setup-doas
 #   $0 add-build-deps  # add packages that build packages
@@ -21,11 +22,46 @@
 #   $0 build-packages  # 310 MB, 251 K files - hm did it clean up after itself?
 #   $0 remove-chroot
 
+# SHARDING of sources
+#
+# fetch sizes:
+#   20 packages - 403 MB after
+#   40 packages - 404 MB after
+#   60 packages - 408 MB after
+#   80 packages - 422 MB after
+#
+# OK so these packages aren't that big
+# They should be baked in once though.  Not built on every run.
+# - Should I manually shard /var/cache then?  Hm
+
+# builddeps sizes
+#   10 packages - 588 MB
+#   20 packages - 646 MB
+#
+#   Oof that is a lot!  May be tougher to get on Github Actions
+#   Well we don't have to pre-bake it, I guess we can download it the CDN
+
+# Error
+# ERROR: unable to select packages:
+#   apk-tools-2.14.9-r2:
+#     breaks: .makedepends-abuild-20250721.005129[apk-tools>=3.0.0_rc4]
+#     satisfies: world[apk-tools] abuild-3.15.0-r0[apk-tools>=2.0.7-r1] .makedepends-acf-apk-tools-20250721.004934[apk-tools]
+#   .makedepends-abuild-20250721.005129:
+#     masked in: cache
+#     satisfies: world[.makedepends-abuild=20250721.005129]
+
 # TODO:
-# - build mpfr4 with oils-for-unix as /bin/sh or /bin/bash, reproduce bug
-#   - copy the latest tar
-# - abuild: Separate fetch builddeps (network) and build (computation)
 # - build many packages at once - make a list
+
+# CI Job
+#
+# - Inputs
+#   - Shell config: baseline, osh-as-sh, osh-as-bash
+#   - Shard Number - this affects the container?
+# - Outputs
+#   - TSV file, log files, and HTML, like build/deps.sh (dev-setup-*)
+#   - Performance info
+#   - Do we want to expose the actual packages?
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
@@ -118,7 +154,7 @@ add-build-deps() {
   #_chroot/aports-build/enter-chroot -u builder bash -c 'echo "hi from bash"'
 }
 
-readonly CHROOT_DIR=_chroot/aports-build/
+readonly CHROOT_DIR=_chroot/aports-build
 readonly CHROOT_HOME_DIR=$CHROOT_DIR/home/builder
 
 copy-aports() {
@@ -156,7 +192,11 @@ keys() {
 
 apk-manifest() {
   # 1643 files - find a subset to build
-  find _chroot/aports-build/home/builder/aports -name 'APKBUILD' | LANG=C sort
+  local out=$PWD/_tmp/apk-manifest.txt
+
+  pushd $CHROOT_HOME_DIR >/dev/null
+  find aports -name 'APKBUILD' | LANG=C sort | tee $out
+  popd >/dev/null
 }
 
 build-oils() {
@@ -177,12 +217,47 @@ set-oils-bin-sh() {
   '
 }
 
+do-packages() {
+  ### Download sources - abuild puts it in /var/cahe/distfiles
+  local action=${1:-fetch}
+  local n=${2:-10}
+
+  # 6 seconds for 10 packages
+  # There are ~1600 packages
+  # So if there are 20 shards, each shard could have 10?
+
+  local dirs
+  dirs=( $(head -n $n _tmp/apk-manifest.txt) )
+  echo len "${#dirs[@]}"
+
+  if test "${#dirs[@]}" = 0; then
+    echo FAIL
+    return
+  fi
+
+  # strip off APKBUILD
+  dirs=( "${dirs[@]%'/APKBUILD'}" )
+
+  echo "${dirs[@]}"
+  #return
+
+  time $CHROOT_DIR/enter-chroot -u builder sh -c '
+  set -e
+
+  action=$1
+  shift
+  for dir in "$@"; do
+    time abuild -r -C $dir "$action"
+  done
+  ' dummy0 "$action" "${dirs[@]}"
+}
+
 build-packages() {
   # https://wiki.alpinelinux.org/wiki/Abuild_and_Helpers#Basic_usage
 
   local -a dirs=( aports/main/lua5.2 aports/main/mpfr4 )
 
-  _chroot/aports-build/enter-chroot -u builder sh -c '
+  $CHROOT_DIR/enter-chroot -u builder sh -c '
   for dir in "$@"; do
     abuild -r -C $dir
 
@@ -216,13 +291,40 @@ remove-chroot() {
 }
 
 sizes() {
+  set +o errexit
+
   # 312 MB
-  sudo du --si -s _chroot/aports-build
+  sudo du --si -s $CHROOT_DIR 
+
+  # 29 MB after 80 source packages, that's not so much
+
+  # getting up to 373 M though - worth sharding
+  sudo du --si -s $CHROOT_DIR/var/cache
+
+  sudo du --si -s $CHROOT_DIR/var/cache/distfiles
 }
 
 chroot-manifest() {
   # 251,904 files after a build of mpfr
   sudo find _chroot/aports-build -type f -a -printf '%s %P\n'
+}
+
+# Note:
+# - /var/cache is 5.8 GB after fetching all sources for Alpine main
+# - All APKG packages are 6.9 GB, according to APKINDEX
+
+download-apk-index() {
+  wget --no-clobber --directory _tmp \
+    http://dl-cdn.alpinelinux.org/alpine/v3.22/main/x86_64/APKINDEX.tar.gz
+}
+
+apk-stats() {
+  #tar --list -z < _tmp/APKINDEX.tar.gz
+
+  # 5650 packages
+  grep 'S:' _tmp/APKINDEX | wc -l
+
+  gawk -f test/aports.awk < _tmp/APKINDEX
 }
 
 # Notes:
