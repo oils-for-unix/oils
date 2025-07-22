@@ -225,6 +225,8 @@ do-packages() {
   ### Download sources - abuild puts it in /var/cahe/distfiles
   local action=${1:-fetch}
   local n=${2:-10}
+  # flags to pass to the inner shell
+  local sh_flags=${3:-'-e -u'}
 
   # 6 seconds for 10 packages
   # There are ~1600 packages
@@ -245,8 +247,7 @@ do-packages() {
   echo "${dirs[@]}"
   #return
 
-  time $CHROOT_DIR/enter-chroot -u builder sh -c '
-  set -e
+  time $CHROOT_DIR/enter-chroot -u builder sh $sh_flags -c '
 
   action=$1
   shift
@@ -262,6 +263,8 @@ build-packages() {
   local -a dirs=( aports/main/lua5.2 aports/main/mpfr4 )
 
   $CHROOT_DIR/enter-chroot -u builder sh -c '
+  # TODO: record exit status, etc.
+
   for dir in "$@"; do
     abuild -r -C $dir
 
