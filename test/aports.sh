@@ -147,14 +147,22 @@ setup-doas() {
 
 add-build-deps() {
   # Must be done as root; there is no 'sudo'
-  # doas: for abuild-keygen?
-
-  #_chroot/aports-build/enter-chroot sh -c 'apk update; apk add bash abuild alpine-sdk doas'
 
   # alpine-sdk: abuild, etc.
-  _chroot/aports-build/enter-chroot sh -c 'apk update; apk add alpine-sdk doas'
+  # doas: for abuild-keygen
+  # bash python3: for time-tsv
+  _chroot/aports-build/enter-chroot sh -c 'apk update; apk add alpine-sdk doas bash python3'
 
   #_chroot/aports-build/enter-chroot -u builder bash -c 'echo "hi from bash"'
+}
+
+change-perms() {
+  # pass any number of args
+
+  # get uid from /home/builder
+  local uid
+  uid=$(stat -c '%u' $CHROOT_HOME_DIR)
+  sudo chown --verbose --recursive $uid "$@"
 }
 
 readonly CHROOT_DIR=_chroot/aports-build
@@ -167,10 +175,74 @@ copy-aports() {
   sudo rsync --archive --verbose \
     ../../alpinelinux/aports/main/ $dest
 
-  # get uid from /home/builder
-  local uid
-  uid=$(stat -c '%u' $CHROOT_HOME_DIR)
-  sudo chown --verbose --recursive $uid $dest
+  change-perms $dest
+}
+
+time-tsv-manifest() {
+  # TODO: test/aports-guest.sh should be executable
+  # I guess you have to set -m
+
+  # TODO: need per-file tree shaking of build/py.sh
+  local -a build_py=(
+    build/py.sh  # to compile time-helper
+
+    build/common.sh
+    build/dev-shell.sh
+    stdlib/osh/bash-strict.sh
+    stdlib/osh/byo-server.sh
+    stdlib/osh/task-five.sh
+    stdlib/osh/two.sh
+  )
+  for path in \
+    benchmarks/time_.py \
+    benchmarks/time-helper.c \
+    test/aports-guest.sh \
+    "${build_py[@]}"
+  do
+    echo "$PWD/$path" "$path"
+  done
+}
+
+multi() {
+  ### gah this requires python2
+
+  #~/git/tree-tools/bin/multi "$@";
+  local git_dir='../..'
+  $git_dir/tree-tools/bin/multi "$@";
+}
+
+multi-cp() {
+  ### like multi cp, but works without python2
+
+  local dest=$1
+  while read -r abs_path rel_path; do
+    # -D to make dirs
+    install -m 755 -v -D --no-target-directory "$abs_path" "$dest/$rel_path"
+
+    # cp -v --parents doesn't work, because it requires a directory arg
+  done
+}
+
+copy-time-tsv() {
+  local dest=$CHROOT_HOME_DIR/oils-for-unix/oils
+  sudo mkdir -v -p $dest
+
+  # gah this requires python2
+  time-tsv-manifest | sudo $0 multi-cp $dest
+
+  change-perms $dest
+}
+
+test-time-tsv() {
+  $CHROOT_DIR/enter-chroot -u builder sh -c '
+  cd oils-for-unix/oils
+  pwd
+  whoami
+  echo ---
+
+  build/py.sh time-helper
+  test/aports-guest.sh my-time-tsv-test
+  '
 }
 
 copy-oils() {
@@ -181,9 +253,7 @@ copy-oils() {
   sudo tar -x < $tar
   popd
 
-  local uid
-  uid=$(stat -c '%u' $CHROOT_HOME_DIR)
-  sudo chown --verbose --recursive $uid $dest/oils-for-unix-*
+  change-perms $dest/oils-for-unix-*
 }
 
 keys() {
@@ -221,10 +291,24 @@ set-oils-bin-sh() {
   '
 }
 
+package-dirs() {
+  # lz gives 5 packages
+  local package_filter=${1:-lz}
+
+  local -a prefix
+  if [[ $package_filter =~ [0-9]+ ]]; then
+    prefix=( head -n $package_filter )
+  else
+    prefix=( grep "$package_filter" )
+  fi
+   
+  "${prefix[@]}" _tmp/apk-manifest.txt | sed 's,/APKBUILD$,,g'
+}
+
 do-packages() {
   ### Download sources - abuild puts it in /var/cahe/distfiles
   local action=${1:-fetch}
-  local n=${2:-10}
+  local package_filter=${2:-}
   # flags to pass to the inner shell
   local sh_flags=${3:-'-e -u'}
 
@@ -232,17 +316,7 @@ do-packages() {
   # There are ~1600 packages
   # So if there are 20 shards, each shard could have 10?
 
-  local dirs
-  dirs=( $(head -n $n _tmp/apk-manifest.txt) )
-  echo len "${#dirs[@]}"
-
-  if test "${#dirs[@]}" = 0; then
-    echo FAIL
-    return
-  fi
-
-  # strip off APKBUILD
-  dirs=( "${dirs[@]%'/APKBUILD'}" )
+  local -a package_dirs=( $(package-dirs "$package_filter") )
 
   echo "${dirs[@]}"
   #return
@@ -254,24 +328,31 @@ do-packages() {
   for dir in "$@"; do
     time abuild -r -C $dir "$action"
   done
-  ' dummy0 "$action" "${dirs[@]}"
+  ' dummy0 "$action" "${package_dirs[@]}"
 }
 
 build-packages() {
   # https://wiki.alpinelinux.org/wiki/Abuild_and_Helpers#Basic_usage
+  local package_filter=${1:-}
 
-  local -a dirs=( aports/main/lua5.2 aports/main/mpfr4 )
+  local -a package_dirs=( $(package-dirs "$package_filter") )
 
   $CHROOT_DIR/enter-chroot -u builder sh -c '
   # TODO: record exit status, etc.
 
   for dir in "$@"; do
+    # Note: should we try not to fetch here?  I think the caching of "abuilt
+    # fetch" might make this OK
+
+    # TODO: avoid running tests and building the APK itself/
+    # Only "abuild builddeps,build" is enough to start?
+
     abuild -r -C $dir
 
-    # -f force
+    # -f force even if it already happened
     #abuild -r -f -C $dir
   done
-  ' dummy0 "${dirs[@]}"
+  ' dummy0 "${package_dirs[@]}"
 
   return
 
@@ -295,6 +376,23 @@ build-packages() {
 remove-chroot() {
   # This unmounts /dev /proc /sys/ properly!
   _chroot/aports-build/destroy --remove
+}
+
+test-unshare() {
+  # These work (at least on Debian, but it may not work on Red Hat)
+  unshare --map-root-user whoami
+  unshare --map-root-user /usr/sbin/chroot $CHROOT_DIR ls
+
+  # Hm multiple problems with enter-chroot
+
+  # su: can't set groups: Operation not permitted
+  # mv: cannot move '/tmp/tmp.6FHJHwbdMd' to 'env.sh': Permission denied
+
+  unshare --map-root-user \
+    sh -x $CHROOT_DIR/enter-chroot sh -c 'echo hi; whoami'
+
+  unshare --map-root-user \
+    $CHROOT_DIR/enter-chroot -u builder sh -c 'echo hi; whoami'
 }
 
 sizes() {
