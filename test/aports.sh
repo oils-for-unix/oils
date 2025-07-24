@@ -151,7 +151,8 @@ add-build-deps() {
   # alpine-sdk: abuild, etc.
   # doas: for abuild-keygen
   # bash python3: for time-tsv
-  _chroot/aports-build/enter-chroot sh -c 'apk update; apk add alpine-sdk doas bash python3'
+  # findutils: for xargs --process-slot-var
+  _chroot/aports-build/enter-chroot sh -c 'apk update; apk add alpine-sdk doas bash python3 findutils'
 
   #_chroot/aports-build/enter-chroot -u builder bash -c 'echo "hi from bash"'
 }
@@ -178,7 +179,7 @@ copy-aports() {
   change-perms $dest
 }
 
-time-tsv-manifest() {
+code-manifest() {
   # TODO: test/aports-guest.sh should be executable
   # I guess you have to set -m
 
@@ -223,12 +224,11 @@ multi-cp() {
   done
 }
 
-copy-time-tsv() {
+copy-code() {
   local dest=$CHROOT_HOME_DIR/oils-for-unix/oils
   sudo mkdir -v -p $dest
 
-  # gah this requires python2
-  time-tsv-manifest | sudo $0 multi-cp $dest
+  code-manifest | sudo $0 multi-cp $dest
 
   change-perms $dest
 }
@@ -268,8 +268,8 @@ apk-manifest() {
   local out=$PWD/_tmp/apk-manifest.txt
   mkdir -p _tmp
 
-  pushd $CHROOT_HOME_DIR >/dev/null
-  find aports -name 'APKBUILD' | LANG=C sort | tee $out
+  pushd $CHROOT_HOME_DIR/aports >/dev/null
+  find main -name 'APKBUILD' | LANG=C sort | tee $out
   popd >/dev/null
 }
 
@@ -326,7 +326,7 @@ do-packages() {
   action=$1
   shift
   for dir in "$@"; do
-    time abuild -r -C $dir "$action"
+    time abuild -r -C aports/$dir "$action"
   done
   ' dummy0 "$action" "${package_dirs[@]}"
 }
@@ -338,20 +338,8 @@ build-packages() {
   local -a package_dirs=( $(package-dirs "$package_filter") )
 
   $CHROOT_DIR/enter-chroot -u builder sh -c '
-  # TODO: record exit status, etc.
-
-  for dir in "$@"; do
-    # Note: should we try not to fetch here?  I think the caching of "abuilt
-    # fetch" might make this OK
-
-    # TODO: avoid running tests and building the APK itself/
-    # Only "abuild builddeps,build" is enough to start?
-
-    abuild -r -C $dir
-
-    # -f force even if it already happened
-    #abuild -r -f -C $dir
-  done
+  cd oils-for-unix/oils
+  test/aports-guest.sh build-packages "$@"
   ' dummy0 "${package_dirs[@]}"
 
   return
@@ -371,6 +359,80 @@ build-packages() {
   newapkbuild -h
   #apkbuild-pypi -h
   buildrepo -h
+}
+
+show-logs() {
+  #sudo head $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp/aports-guest/main/*.log.txt
+  sudo head $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp/aports-guest/main/*.task.tsv
+}
+
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+source test/tsv-lib.sh  # tsv2html3
+source web/table/html.sh  # table-sort-{begin,end}
+
+html-head() {
+  # python3 because we're outside containers
+  PYTHONPATH=. python3 doctools/html_head.py "$@"
+}
+
+index-html()  {
+  local tasks_tsv=$1
+
+  local base_url='../../web'
+  html-head --title 'Alpine aports Builds' \
+    "$base_url/ajax.js" \
+    "$base_url/table/table-sort.js" \
+    "$base_url/table/table-sort.css" \
+    "$base_url/base.css"\
+
+  table-sort-begin 'width60'
+
+  cat <<EOF
+    <p id="home-link">
+      <a href="/">oils.pub</a>
+    </p>
+
+  <h1>Alpine aports Builds</h1>
+EOF
+
+  tsv2html3 $tasks_tsv
+
+  cat <<EOF
+  <p>
+    <a href="tasks.tsv">tasks.tsv</a>
+  </p>
+EOF
+
+  table-sort-end 'tasks'  # ID for sorting
+}
+
+
+readonly BASE_DIR=_tmp/aports-build
+
+write-report() {
+  local tasks_tsv=$BASE_DIR/tasks.tsv
+  mkdir -p $BASE_DIR
+
+  sudo python3 devtools/tsv_concat.py \
+    $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp/aports-guest/main/*.task.tsv > $tasks_tsv
+  log "Wrote $tasks_tsv"
+
+  here-schema-tsv-4col >$BASE_DIR/tasks.schema.tsv <<EOF
+column_name   type      precision strftime
+status        integer   0         -
+elapsed_secs  float     1         -
+user_secs     float     1         -
+start_time    float     1         %H:%M:%S
+end_time      float     1         %H:%M:%S
+sys_secs      float     1         -
+max_rss_KiB   integer   0         -
+xargs_slot    integer   0         -
+pkg           string    0         -
+pkge_HREF     string    0         -
+EOF
+
+  index-html $tasks_tsv > $BASE_DIR/index.html
+  log "Wrote $BASE_DIR/index.html"
 }
 
 remove-chroot() {
