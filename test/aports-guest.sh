@@ -38,10 +38,11 @@ timestamp() {
 build-package() {
   # Copied from build/deps.sh maybe-install-wedge
 
-  local pkg=${1:-main/lua5.4}
+  local config=${1:-baseline}
+  local pkg=${2:-lua5.4}
 
-  local task_file=$LOG_DIR/$pkg.task.tsv
-  local log_file=$LOG_DIR/$pkg.log.txt
+  local task_file=$LOG_DIR/$config/$pkg.task.tsv
+  local log_file=$LOG_DIR/$config/$pkg.log.txt
 
   mkdir -p $(dirname $task_file)
 
@@ -51,9 +52,8 @@ build-package() {
     --field pkg_HREF \
     --output $task_file
 
-  # packages live in /home/builder/aports
-  # current dir in ~/oils-for-unix/oils ?
-  local -a cmd=( abuild -r -C ~/aports/$pkg )
+  # Packages live in /home/builder/aports/main
+  local -a cmd=( abuild -r -C ~/aports/main/$pkg )
 
   #set -x
   set +o errexit
@@ -86,7 +86,8 @@ readonly NPROC=$(( $(nproc) - 1 ))
 
 build-package-list() {
   ### Reads task rows from stdin
-  local parallel=${1:-}
+  local config=${1:-baseline}
+  local parallel=${2:-}
 
   mkdir -p $LOG_DIR
 
@@ -106,15 +107,18 @@ build-package-list() {
   # Note: --process-slot-var requires GNU xargs!  busybox args doesn't have it.
   #
   # $name $version $wedge_dir
-  xargs "${flags[@]}" -n 1 --process-slot-var=XARGS_SLOT -- $0 build-package
+  xargs "${flags[@]}" -n 1 --process-slot-var=XARGS_SLOT -- $0 build-package "$config"
 
   #xargs "${flags[@]}" -n 3 --process-slot-var=XARGS_SLOT -- $0 dummy-task-wrapper
 }
 
 build-packages() {
+  local config=$1  # e.g. baseline
+  shift
+
   for pkg in "$@"; do
     echo "$pkg"
-  done | build-package-list
+  done | build-package-list "$config"
 }
 
 

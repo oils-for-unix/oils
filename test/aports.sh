@@ -180,9 +180,6 @@ copy-aports() {
 }
 
 code-manifest() {
-  # TODO: test/aports-guest.sh should be executable
-  # I guess you have to set -m
-
   # TODO: need per-file tree shaking of build/py.sh
   local -a build_py=(
     build/py.sh  # to compile time-helper
@@ -218,6 +215,10 @@ multi-cp() {
   local dest=$1
   while read -r abs_path rel_path; do
     # -D to make dirs
+
+    # Hack: make everything executable for now
+    # I feel like this should be in 'multi cp'
+
     install -m 755 -v -D --no-target-directory "$abs_path" "$dest/$rel_path"
 
     # cp -v --parents doesn't work, because it requires a directory arg
@@ -268,8 +269,8 @@ apk-manifest() {
   local out=$PWD/_tmp/apk-manifest.txt
   mkdir -p _tmp
 
-  pushd $CHROOT_HOME_DIR/aports >/dev/null
-  find main -name 'APKBUILD' | LANG=C sort | tee $out
+  pushd $CHROOT_HOME_DIR/aports/main >/dev/null
+  find . -name 'APKBUILD' -a -printf '%P\n' | LANG=C sort | tee $out
   popd >/dev/null
 }
 
@@ -281,6 +282,33 @@ build-oils() {
   doas ./install
   '
 }
+
+# TODO: how to cleanly flip between states?
+#
+# Make copies like this:
+# /bin/sh -> /bin/busybox    or /usr/local/bin/oils-for-unix
+# /bin/ash -> /bin/busybox
+# /bin/bash.ORIG
+#
+# And then copy to three states
+
+set-baseline() {
+  echo todo
+}
+
+set-osh-as-sh() {
+  echo todo
+}
+
+set-osh-as-bash() {
+  echo todo
+}
+
+set-osh-as-ash() {
+  # abuild has a /bin/ash command line!
+  echo todo
+}
+
 
 set-oils-bin-sh() {
   $CHROOT_DIR/enter-chroot sh -c '
@@ -326,7 +354,7 @@ do-packages() {
   action=$1
   shift
   for dir in "$@"; do
-    time abuild -r -C aports/$dir "$action"
+    time abuild -r -C aports/main/$dir "$action"
   done
   ' dummy0 "$action" "${package_dirs[@]}"
 }
@@ -334,13 +362,17 @@ do-packages() {
 build-packages() {
   # https://wiki.alpinelinux.org/wiki/Abuild_and_Helpers#Basic_usage
   local package_filter=${1:-}
+  local config=${2:-baseline}
 
   local -a package_dirs=( $(package-dirs "$package_filter") )
 
   $CHROOT_DIR/enter-chroot -u builder sh -c '
+  config=$1
+  shift
+
   cd oils-for-unix/oils
-  test/aports-guest.sh build-packages "$@"
-  ' dummy0 "${package_dirs[@]}"
+  test/aports-guest.sh build-packages "$config" "$@"
+  ' dummy0 "$config" "${package_dirs[@]}"
 
   return
 
@@ -363,7 +395,7 @@ build-packages() {
 
 show-logs() {
   #sudo head $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp/aports-guest/main/*.log.txt
-  sudo head $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp/aports-guest/main/*.task.tsv
+  sudo head $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp/aports-guest/*.task.tsv
 }
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
@@ -378,7 +410,7 @@ html-head() {
 index-html()  {
   local tasks_tsv=$1
 
-  local base_url='../../web'
+  local base_url='../../../web'
   html-head --title 'Alpine aports Builds' \
     "$base_url/ajax.js" \
     "$base_url/table/table-sort.js" \
@@ -410,14 +442,21 @@ EOF
 readonly BASE_DIR=_tmp/aports-build
 
 write-report() {
-  local tasks_tsv=$BASE_DIR/tasks.tsv
-  mkdir -p $BASE_DIR
+  local config=${1:-baseline}
 
-  sudo python3 devtools/tsv_concat.py \
-    $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp/aports-guest/main/*.task.tsv > $tasks_tsv
+  local tasks_tsv=$BASE_DIR/$config/tasks.tsv
+  mkdir -p $BASE_DIR/$config
+
+  python3 devtools/tsv_concat.py \
+    $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp/aports-guest/$config/*.task.tsv > $tasks_tsv
+
+  cp -v \
+    $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp/aports-guest/$config/*.log.txt \
+    $BASE_DIR/$config
+
   log "Wrote $tasks_tsv"
 
-  here-schema-tsv-4col >$BASE_DIR/tasks.schema.tsv <<EOF
+  here-schema-tsv-4col >$BASE_DIR/$config/tasks.schema.tsv <<EOF
 column_name   type      precision strftime
 status        integer   0         -
 elapsed_secs  float     1         -
@@ -428,10 +467,10 @@ sys_secs      float     1         -
 max_rss_KiB   integer   0         -
 xargs_slot    integer   0         -
 pkg           string    0         -
-pkge_HREF     string    0         -
+pkg_HREF      string    0         -
 EOF
 
-  index-html $tasks_tsv > $BASE_DIR/index.html
+  index-html $tasks_tsv > $BASE_DIR/$config/index.html
   log "Wrote $BASE_DIR/index.html"
 }
 
