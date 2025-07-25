@@ -19,6 +19,10 @@
 #                      # 281 MB, 248 K files
 #   $0 copy-aports     # 307 MB, 251 K files
 #   $0 keys
+#   $0 apk-manifest
+#   $0 copy-oils
+#   $0 build-oils
+#   $0 save-default-config
 #   $0 build-packages  # 310 MB, 251 K files - hm did it clean up after itself?
 #   $0 remove-chroot
 
@@ -283,40 +287,57 @@ build-oils() {
   '
 }
 
-# TODO: how to cleanly flip between states?
-#
-# Make copies like this:
-# /bin/sh -> /bin/busybox    or /usr/local/bin/oils-for-unix
-# /bin/ash -> /bin/busybox
-# /bin/bash.ORIG
-#
-# And then copy to three states
+show-config() {
+  $CHROOT_DIR/enter-chroot sh -c '
+  ls -l /bin/sh /bin/ash /bin/bash
+  '
+}
+
+save-default-config() {
+  $CHROOT_DIR/enter-chroot sh -c '
+  set -x
+  dest=/bin/bash.ORIG
+  cp /bin/bash $dest
+  '
+  show-config
+}
 
 set-baseline() {
-  echo todo
+  # ensure we have the default config
+  $CHROOT_DIR/enter-chroot sh -c '
+  set -x
+  ln -s -f /bin/busybox /bin/sh
+  ln -s -f /bin/busybox /bin/ash
+  cp /bin/bash.ORIG /bin/bash
+  '
+  show-config
+}
+
+set-osh-as-X() {
+  local x=$1
+
+  $CHROOT_DIR/enter-chroot sh -c '
+  x=$1
+  set -x
+  if ! test -f /usr/local/bin/oils-for-unix; then
+    echo "Build Oils first"
+    exit
+  fi
+  ln -s -f /usr/local/bin/oils-for-unix /bin/$x
+  ' dummy0 "$x"
+  show-config
 }
 
 set-osh-as-sh() {
-  echo todo
-}
-
-set-osh-as-bash() {
-  echo todo
+  set-osh-as-X sh
 }
 
 set-osh-as-ash() {
-  # abuild has a /bin/ash command line!
-  echo todo
+  set-osh-as-X ash
 }
 
-
-set-oils-bin-sh() {
-  $CHROOT_DIR/enter-chroot sh -c '
-  set -x
-  mv /bin/sh /bin/sh.OLD
-  mv /usr/local/bin/oils-for-unix /bin/sh
-  /bin/sh --version
-  '
+set-osh-as-bash() {
+  set-osh-as-X bash
 }
 
 package-dirs() {
@@ -327,7 +348,7 @@ package-dirs() {
   if [[ $package_filter =~ [0-9]+ ]]; then
     prefix=( head -n $package_filter )
   else
-    prefix=( grep "$package_filter" )
+    prefix=( egrep "$package_filter" )
   fi
    
   "${prefix[@]}" _tmp/apk-manifest.txt | sed 's,/APKBUILD$,,g'
@@ -373,24 +394,22 @@ build-packages() {
   cd oils-for-unix/oils
   test/aports-guest.sh build-packages "$config" "$@"
   ' dummy0 "$config" "${package_dirs[@]}"
+}
 
-  return
+build-all-configs() {
+  index-html > $BASE_DIR/index.html
 
-  # Other commands
-  abuild --help
+  save-default-config
 
-  ls -l /var/cache
-  ls -l /var/cache/distfiles
+  #local package_filter='mpfr'
+  local package_filter='lz'
+  for config in baseline osh-as-sh; do
+    set-$config
 
-  #abuild fetch #verify
-  #abuild unpack
-  #abuild build -r
+    build-packages "$package_filter" "$config"
+    write-report "$config"
+  done
 
-  #abuild -F deps unpack prepare build install package
-  abuild-keygen -h
-  newapkbuild -h
-  #apkbuild-pypi -h
-  buildrepo -h
 }
 
 show-logs() {
@@ -401,43 +420,68 @@ show-logs() {
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source test/tsv-lib.sh  # tsv2html3
 source web/table/html.sh  # table-sort-{begin,end}
+source benchmarks/common.sh  # cmark
 
 html-head() {
   # python3 because we're outside containers
   PYTHONPATH=. python3 doctools/html_head.py "$@"
 }
 
-index-html()  {
+index-html() {
+  local base_url='../../web'
+  html-head --title "aports Build" \
+    "$base_url/base.css"
+
+  # TODO: Generate a table of stats for each configuration
+  cmark <<'EOF'
+<body class="width35">
+
+<p id="home-link">
+  <a href="/">oils.pub</a>
+</p>
+
+# aports Build
+
+Configurations:
+
+- [baseline](baseline/index.html)
+- [osh-as-sh](osh-as-sh/index.html)
+
+</body>
+EOF
+}
+
+config-index-html()  {
   local tasks_tsv=$1
+  local config=$2
 
   local base_url='../../../web'
-  html-head --title 'Alpine aports Builds' \
+  html-head --title "aports Build: $config" \
     "$base_url/ajax.js" \
     "$base_url/table/table-sort.js" \
     "$base_url/table/table-sort.css" \
-    "$base_url/base.css"\
+    "$base_url/base.css"
 
   table-sort-begin 'width60'
 
-  cat <<EOF
-    <p id="home-link">
-      <a href="/">oils.pub</a>
-    </p>
+  cmark <<EOF
+<p id="home-link">
+  <a href="../index.html">Up</a> |
+  <a href="/">Home</a>
+</p>
 
-  <h1>Alpine aports Builds</h1>
+# aports Build: $config
 EOF
 
   tsv2html3 $tasks_tsv
 
-  cat <<EOF
-  <p>
-    <a href="tasks.tsv">tasks.tsv</a>
-  </p>
+  cmark <<EOF
+
+[tasks.tsv](tasks.tsv)
 EOF
 
   table-sort-end 'tasks'  # ID for sorting
 }
-
 
 readonly BASE_DIR=_tmp/aports-build
 
@@ -470,7 +514,7 @@ pkg           string    0         -
 pkg_HREF      string    0         -
 EOF
 
-  index-html $tasks_tsv > $BASE_DIR/$config/index.html
+  config-index-html $tasks_tsv $config > $BASE_DIR/$config/index.html
   log "Wrote $BASE_DIR/index.html"
 }
 

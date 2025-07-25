@@ -889,7 +889,7 @@ index-html()  {
     "$base_url/ajax.js" \
     "$base_url/table/table-sort.js" \
     "$base_url/table/table-sort.css" \
-    "$base_url/base.css"\
+    "$base_url/base.css"
 
   table-sort-begin 'width60'
 

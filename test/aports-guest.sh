@@ -53,7 +53,8 @@ build-package() {
     --output $task_file
 
   # Packages live in /home/builder/aports/main
-  local -a cmd=( abuild -r -C ~/aports/main/$pkg )
+  # -f forces rebuild: needed for different configs
+  local -a cmd=( abuild -f -r -C ~/aports/main/$pkg )
 
   #set -x
   set +o errexit
@@ -108,8 +109,6 @@ build-package-list() {
   #
   # $name $version $wedge_dir
   xargs "${flags[@]}" -n 1 --process-slot-var=XARGS_SLOT -- $0 build-package "$config"
-
-  #xargs "${flags[@]}" -n 3 --process-slot-var=XARGS_SLOT -- $0 dummy-task-wrapper
 }
 
 build-packages() {
