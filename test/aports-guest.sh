@@ -83,6 +83,11 @@ build-package() {
 }
 
 # leave 1 CPU for other stuff
+# Note:
+# - Some packages builds use multiple CPUs though ... this is where the GNU
+#   make job server protocol would come in handy.
+# - We can also compute parallelism LATER from tasks.tsv, with the heuristic
+#   USER TIME / ELAPSED  TIME
 readonly NPROC=$(( $(nproc) - 1 ))
 
 build-package-list() {
