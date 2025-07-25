@@ -18,14 +18,15 @@
 #   $0 add-build-deps  # add packages that build packages
 #                      # 281 MB, 248 K files
 #   $0 config-chroot   # user/groups, keygen
-#
-#   $0 oils-in-chroot  # copy-aports is 307 MB, 251 K files
+#   $0 oils-in-chroot  # copy-aports: 307 MB, 251 K files
 #
 #   $0 save-default-config
 #   $0 apk-manifest
 #
+#   $0 do-packages fetch '.*'  # fetch all packages
+#
 # Build a config
-#   $0 set-osh-as-sh
+#   $0 set-osh-as-sh    # or set-baseline
 #   $0 build-packages '.*' osh-as-sh    # 310 MB, 251 K files
 #
 # Later:
@@ -494,6 +495,10 @@ sizes() {
   sudo du --si -s $CHROOT_DIR/var/cache
 
   sudo du --si -s $CHROOT_DIR/var/cache/distfiles
+
+  # 110 MB just of logs
+  # need to thin these out
+  sudo du --si -s $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp/
 }
 
 chroot-manifest() {
