@@ -8,32 +8,28 @@
 # Setup:
 #   $0 clone-aports
 #   $0 clone-aci
+#   $0 checkout-stable
+#   $0 download-oils
 #
 # Build package in chroot:
 #
-#   $0 make-chroot - 267 MB, 247 K files
-#                    ncdu shows gcc is big, e.g. cc1plus, cc1, lto1 are each 35-40 MB
-#   $0 make-user
-#   $0 setup-doas
+#   $0 make-chroot     # 267 MB, 247 K files
+#                      # ncdu shows gcc is big, e.g. cc1plus, cc1, lto1 are each 35-40 MB
 #   $0 add-build-deps  # add packages that build packages
 #                      # 281 MB, 248 K files
-#   $0 keys
-#   $0 apk-manifest
+#   $0 config-chroot   # user/groups, keygen
 #
-#   $0 copy-aports     # 307 MB, 251 K files
-#   $0 copy-code       # copy test/aports-guest.sh
-#   $0 test-time-tsv
-#
-#   $0 download-oils
-#   $0 copy-oils
-#   $0 build-oils
+#   $0 oils-in-chroot  # copy-aports is 307 MB, 251 K files
 #
 #   $0 save-default-config
+#   $0 apk-manifest
 #
-# One of these:
-#   $0 build-packages  # 310 MB, 251 K files - hm did it clean up after itself?
-#   $0 build-all-configs
+# Build a config
+#   $0 set-osh-as-sh
+#   $0 build-packages '.*' osh-as-sh    # 310 MB, 251 K files
 #
+# Later:
+#   TODO: sync task files and logs from different machines
 #   test/aports-html.sh write-all-reports
 #
 #   $0 remove-chroot
@@ -66,9 +62,6 @@
 #     masked in: cache
 #     satisfies: world[.makedepends-abuild=20250721.005129]
 
-# TODO:
-# - build many packages at once - make a list
-
 # CI Job
 #
 # - Inputs
@@ -99,6 +92,26 @@ clone-aports() {
   popd
 }
 
+checkout-stable() {
+  # 2025-07-25: commit that matches he.oils.pub
+  # TODO: update this to a commit from a stable release branch like 3.22-stable
+  # https://alpinelinux.org/releases/
+  # But note that there is no branch for 3.22.1?
+  pushd ../../alpinelinux/aports
+  git checkout 7b59d0c9365e4230e0527ba9de3abd28ee58875d
+  git log -n 1
+  popd > /dev/null
+
+  echo
+  echo
+
+  pushd ../alpine-chroot-install
+  # this branch has fixes!  TODO: merge to main branch
+  git checkout dev-andy-2
+  git log -n 1
+  popd > /dev/null
+}
+
 clone-aci() {
   # I FORKED this, because this script FUCKED UP my /dev dir and current directory!
   # Sent patches upstream
@@ -108,11 +121,6 @@ clone-aci() {
   time git clone \
     git@github.com:oils-for-unix/alpine-chroot-install || true
 
-  pushd alpine-chroot-install
-  # this branch has fixes!  TODO: merge to main branch
-  git checkout dev-andy-2
-  popd
-
   popd
 }
 
@@ -120,6 +128,10 @@ download-oils() {
   local job_id=${1:-9886}  # 2025-07
   local url="https://op.oilshell.org/uuu/github-jobs/$job_id/cpp-tarball.wwz/_release/oils-for-unix.tar"
   wget --no-clobber --directory _tmp "$url"
+}
+
+user-chroot() {
+  $CHROOT_DIR/enter-chroot -u builder "$@"
 }
 
 make-chroot() {
@@ -138,29 +150,35 @@ make-chroot() {
   #
   # This is already 267 MB, 247 K files
 
-  time sudo $aci -n -d $PWD/_chroot/aports-build
+  time sudo $aci -n -d $PWD/$CHROOT_DIR
 }
 
 make-user() {
-  _chroot/aports-build/enter-chroot adduser -D builder || true
+  $CHROOT_DIR/enter-chroot adduser -D builder || true
 
   # put it in abuild group
-  _chroot/aports-build/enter-chroot addgroup builder abuild || true
+  $CHROOT_DIR/enter-chroot addgroup builder abuild || true
   # 'wheel' is for 'sudo'
-  _chroot/aports-build/enter-chroot addgroup builder wheel || true
+  $CHROOT_DIR/enter-chroot addgroup builder wheel || true
 
   # CHeck the state
-  _chroot/aports-build/enter-chroot -u builder sh -c 'whoami; echo GROUPS; groups'
+  user-chroot sh -c 'whoami; echo GROUPS; groups'
 }
 
 setup-doas() {
   # Manual configuration for abuild-keygen
 
   #sudo cat _chroot/aports-build/etc/doas.conf
-  sudo rm -f _chroot/aports-build/etc/doas.conf
+  sudo rm -f $CHROOT_DIR/etc/doas.conf
 
   # no password
-  _chroot/aports-build/enter-chroot sh -c 'echo "permit nopass :wheel" >> /etc/doas.conf'
+  $CHROOT_DIR/enter-chroot sh -c 'echo "permit nopass :wheel" >> /etc/doas.conf'
+}
+
+config-chroot() {
+  make-user
+  setup-doas
+  keygen
 }
 
 add-build-deps() {
@@ -170,9 +188,9 @@ add-build-deps() {
   # doas: for abuild-keygen
   # bash python3: for time-tsv
   # findutils: for xargs --process-slot-var
-  _chroot/aports-build/enter-chroot sh -c 'apk update; apk add alpine-sdk doas bash python3 findutils'
+  $CHROOT_DIR/enter-chroot sh -c 'apk update; apk add alpine-sdk doas bash python3 findutils'
 
-  #_chroot/aports-build/enter-chroot -u builder bash -c 'echo "hi from bash"'
+  # $CHROOT_DIR/enter-chroot -u builder bash -c 'echo "hi from bash"'
 }
 
 change-perms() {
@@ -250,7 +268,7 @@ copy-code() {
 }
 
 test-time-tsv() {
-  $CHROOT_DIR/enter-chroot -u builder sh -c '
+  user-chroot sh -c '
   cd oils-for-unix/oils
   pwd
   whoami
@@ -259,6 +277,15 @@ test-time-tsv() {
   build/py.sh time-helper
   test/aports-guest.sh my-time-tsv-test
   '
+}
+
+oils-in-chroot() {
+  copy-aports
+  copy-code
+  test-time-tsv
+
+  copy-oils
+  build-oils
 }
 
 copy-oils() {
@@ -272,8 +299,8 @@ copy-oils() {
   change-perms $dest/oils-for-unix-*
 }
 
-keys() {
-  $CHROOT_DIR/enter-chroot -u builder sh -c '
+keygen() {
+  user-chroot sh -c '
   #abuild-keygen -h
   abuild-keygen --append --install
   '
@@ -290,7 +317,7 @@ apk-manifest() {
 }
 
 build-oils() {
-  $CHROOT_DIR/enter-chroot -u builder sh -c '
+  user-chroot sh -c '
   cd oils-for-unix-*
   ./configure
   _build/oils.sh --skip-rebuild
@@ -381,7 +408,7 @@ do-packages() {
   echo "${dirs[@]}"
   #return
 
-  time $CHROOT_DIR/enter-chroot -u builder sh $sh_flags -c '
+  time user-chroot sh $sh_flags -c '
 
   action=$1
   shift
@@ -406,7 +433,7 @@ build-packages() {
 
   banner "Building ${#package_dirs[@]} packages (filter $package_filter)"
 
-  $CHROOT_DIR/enter-chroot -u builder sh -c '
+  user-chroot sh -c '
   config=$1
   shift
 
@@ -429,7 +456,7 @@ build-all-configs() {
 
 remove-chroot() {
   # This unmounts /dev /proc /sys/ properly!
-  _chroot/aports-build/destroy --remove
+  $CHROOT_DIR/destroy --remove
 }
 
 test-unshare() {
@@ -449,6 +476,12 @@ test-unshare() {
     $CHROOT_DIR/enter-chroot -u builder sh -c 'echo hi; whoami'
 }
 
+clean-chroot() {
+  sudo tree $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp
+
+  sudo rm -r -f $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp
+}
+
 sizes() {
   set +o errexit
 
@@ -465,7 +498,7 @@ sizes() {
 
 chroot-manifest() {
   # 251,904 files after a build of mpfr
-  sudo find _chroot/aports-build -type f -a -printf '%s %P\n'
+  sudo find $CHROOT_DIR -type f -a -printf '%s %P\n'
 }
 
 # Note:
@@ -486,16 +519,47 @@ apk-stats() {
   gawk -f test/aports.awk < _tmp/APKINDEX
 }
 
+test-timeout() {
+  # doesn't accept --
+  # lame!
+
+  # give 10 second grace period
+
+  # TODO: osh doesn't properly fix this
+
+  local -a cmd=( sh -c 'trap "echo TERM" TERM; sleep 5' )
+
+  # Give it 1 second to respond to SIGTERM, then SIGKILL
+  local -a timeout_cmd=( timeout -k 1 0.5 "${cmd[@]}" )
+
+  set +o errexit
+
+  "${timeout_cmd[@]}"
+
+  #return
+
+  # Hm this one doesn't return for 5 seconds?  With either busybox or OSH.  Is
+  # that a busybox issue?
+  # It falls back on KILL?
+  # Could be something in enter-chroot
+  # - chroot
+  # - env
+  # - su
+  # - sh -c
+
+  echo
+  echo 'CHROOT'
+
+  # alpine uses busybox
+  # my version doesn't have -k, but the one in the chroot should
+  user-chroot "${timeout_cmd[@]}"
+}
+
 # Notes:
 # - buildrepo.lua is a lua script in lua-aports
 # - abuild rootbld uses a fresh bubblewrap container for each package?  I want
 # to avoid it for now
 #
-# Then 
-# - install OSH as /bin/sh
-# - install OSH as /bin/bash
-#   - install the bash package first
-
 # More ideas
 #
 # - Create an OCI image with podman
@@ -505,15 +569,6 @@ apk-stats() {
 # - Separate downloading and building, network and computation
 #   - add to 'enter-chroot' a --network none flag
 #   - so you can reason about resource usage and time
-#
-# - add time-tsv
-#    - Measure CPU, memory, etc. of each package individually
-#   - like build/deps.sh - make a huge table of the times, and failure
-#   - highlight failing tasks in RED
-#     - and then link to LOGS
-#
-# - publish logs where?
-#   - as .wwz files?
 #
 # Github Actions
 #

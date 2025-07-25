@@ -56,6 +56,10 @@ build-package() {
   # -f forces rebuild: needed for different configs
   local -a cmd=( abuild -f -r -C ~/aports/main/$pkg )
 
+  # Give it 1 second to respond to SIGTERM, then SIGKILL
+  local seconds=$(( 5 * 60 ))  # 5 minutes max for now, save time!
+  local -a timeout_cmd=( timeout -k 1 $seconds "${cmd[@]}" )
+
   #set -x
   set +o errexit
   my-time-tsv \
@@ -65,7 +69,7 @@ build-package() {
     --append \
     --output $task_file \
     -- \
-    "${cmd[@]}" >$log_file 2>&1
+    "${timeout_cmd[@]}" >$log_file 2>&1
   local status=$?
   set -o errexit
 
