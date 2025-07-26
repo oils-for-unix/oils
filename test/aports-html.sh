@@ -203,7 +203,7 @@ my-rsync() {
   rsync --archive --verbose "$@"
 }
 
-readonly EPOCH='2025-07-26-mismatch'
+readonly EPOCH='2025-07-26-small'
 
 sync-results() {
   local dest=$REPORT_DIR/$EPOCH

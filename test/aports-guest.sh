@@ -61,11 +61,12 @@ build-package() {
   local -a timeout_cmd=( timeout -k 1 $seconds "${cmd[@]}" )
 
   #set -x
+  # NOTE: log/foo.log.txt is the relative path after copy-results; sync-results
   set +o errexit
   my-time-tsv \
     --field "${XARGS_SLOT:-99}" \
     --field "$pkg" \
-    --field "$pkg.log.txt" \
+    --field "log/$pkg.log.txt" \
     --append \
     --output $task_file \
     -- \
