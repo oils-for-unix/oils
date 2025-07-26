@@ -26,7 +26,8 @@
 #   $0 do-packages fetch '.*'  # fetch all packages
 #
 # Build a config
-#   $0 set-osh-as-sh    # or set-baseline
+#   $0 clean                            # remove files from previous run
+#   $0 set-osh-as-sh                    # or set-baseline
 #   $0 build-packages '.*' osh-as-sh    # 310 MB, 251 K files
 #
 #   $0 copy-results osh-as-sh           # copy TSV and abridged logs out of chroot
@@ -584,10 +585,16 @@ test-unshare() {
     $CHROOT_DIR/enter-chroot -u builder sh -c 'echo hi; whoami'
 }
 
-clean-chroot() {
+show-chroot() {
   sudo tree $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp
+}
 
-  sudo rm -r -f $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp
+clean() {
+  # clean chroot
+  sudo rm -r -f -v $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp
+
+  # results
+  rm -r -f -v $BASE_DIR
 }
 
 sizes() {
