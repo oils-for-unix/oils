@@ -203,7 +203,9 @@ my-rsync() {
   rsync --archive --verbose "$@"
 }
 
-readonly EPOCH='2025-07-26-small'
+readonly EPOCH=${EPOCH:-'2025-07-26-small'}
+readonly HOST_BASELINE=he.oils.pub
+readonly HOST_SH=lenny.local
 
 sync-results() {
   local dest=$REPORT_DIR/$EPOCH
@@ -211,11 +213,11 @@ sync-results() {
   mkdir -p $dest
 
   my-rsync \
-    he.oils.pub:~/git/oils-for-unix/oils/_tmp/aports-build/baseline/ \
+    $HOST_BASELINE:~/git/oils-for-unix/oils/_tmp/aports-build/baseline/ \
     $dest/baseline/
 
   my-rsync \
-    lenny.local:~/git/oils-for-unix/oils/_tmp/aports-build/osh-as-sh/ \
+    $HOST_SH:~/git/oils-for-unix/oils/_tmp/aports-build/osh-as-sh/ \
     $dest/osh-as-sh/
 }
 
