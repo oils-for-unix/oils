@@ -953,9 +953,9 @@ write-task-report() {
 column_name   type      precision strftime
 status        integer   0         -
 elapsed_secs  float     1         -
-user_secs     float     1         -
 start_time    float     1         %H:%M:%S
 end_time      float     1         %H:%M:%S
+user_secs     float     1         -
 sys_secs      float     1         -
 max_rss_KiB   integer   0         -
 xargs_slot    integer   0         -

@@ -29,11 +29,58 @@
 #   $0 set-osh-as-sh    # or set-baseline
 #   $0 build-packages '.*' osh-as-sh    # 310 MB, 251 K files
 #
-# Later:
+#   $0 copy-results     # copy TSV and abridged logs out of chroot
+#
+# On localhost:
 #   TODO: sync task files and logs from different machines
 #   test/aports-html.sh write-all-reports
+
+# Other commands:
 #
 #   $0 remove-chroot
+
+# DIR STRUCTURE
+#
+# he.oils.pub/
+#   ~/git/oils-for-unix/oils/
+#     _chroot/aports-build/
+#       home/builder/   # TODO: change to uke
+#        oils-for-unix/oils/  # guest tools
+#          build/
+#            py.sh
+#          _tmp/
+#            aports-guest/
+#              baseline/
+#                7zip.log.txt
+#                7zip.task.tsv
+#              osh-as-sh/
+#              osh-as-bash/
+#     _tmp/aports-build/    # HOST
+#       baseline/
+#         tasks.tsv         # concatenated .task.tsv
+#         log/     
+#           7zip.log.txt
+#         abridged-log/     # tail -n 1000 ont he log
+#           gcc.log.txt
+# localhost/
+#   ~/git/oils-for-unix/oils/
+#     _tmp/aports-build/    # HOST
+#       baseline/
+#         index.html        # from tasks.tsv
+#         tasks.tsv 
+#         log/     
+#           7zip.log.txt
+#         abridged-log/     # tail -n 1000 ont he log
+#           gcc.log.txt
+#       osh-as-sh/          # from tasks.tsv
+#         tasks.tsv
+#         log/
+#         abridged-log/
+#     index.html
+#
+# Another option: don't bother with abridged-log
+# - it makes the diff harder - what if one is abridged, and the other isn't?
+# - just make a copy
 
 # SHARDING of sources
 #
@@ -380,8 +427,10 @@ set-osh-as-bash() {
 }
 
 package-dirs() {
-  # lz gives 5 packages
-  local package_filter=${1:-lz}
+  # lz gives 5 packages: some fail at baseline
+  # mpfr4: OSH bug, and big log
+  # yash: make sure it doesn't hang
+  local package_filter=${1:-'lz|mpfr|yash'}
 
   local -a prefix
   if [[ $package_filter =~ [0-9]+ ]]; then
@@ -455,6 +504,64 @@ build-all-configs() {
   done
 }
 
+copy-logs() {
+  local config=${1:-baseline}
+  local dest=$BASE_DIR/$config/log
+
+  mkdir -v -p $dest
+
+  # TODO: abridge some of them
+  cp -v \
+    $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp/aports-guest/$config/*.log.txt \
+    $dest
+}
+
+abridge-logs() {
+  local config=${1:-baseline}
+  local dest=$BASE_DIR/$config/log
+
+  # local threshold=$(( 1 * 1000 * 1000 ))  # 1 MB
+  local threshold=$(( 500 * 1000 ))  # 500 KB
+
+  local guest_dir=$CHROOT_HOME_DIR/oils-for-unix/oils/_tmp/aports-guest/$config 
+  local dest_dir=$BASE_DIR/$config/log
+
+  mkdir -v -p $dest_dir
+
+  find $guest_dir -name '*.log.txt' -a -printf '%s\t%P\n' |
+  while read -r size path; do
+    local src=$guest_dir/$path
+    local dest=$dest_dir/$path
+
+    if test "$size" -lt "$threshold"; then
+      cp -v $src $dest
+    else
+      { echo "*** This log is abridged to its last 1000 lines:"; echo; } > $dest
+      tail -n 1000 $src >> $dest
+    fi
+  done
+
+  # From 200 MB -> 96 MB uncompressed
+  #
+  # Down to 10 MB compressed.  So if we have 4 configs, that's 40 MB of logs,
+  # which is reasonable.
+
+  # 500K threshold: 76 MB
+  du --si -s $dest_dir
+}
+
+copy-results() {
+  local config=${1:-baseline}
+
+  #copy-logs "$config"
+
+  abrdige-logs "$config"
+
+  local dest=_tmp/aports-build/$config/tasks.tsv
+  mkdir -p $(dirname $dest)
+  concat-task-tsv "$config" > $dest
+}
+
 remove-chroot() {
   # This unmounts /dev /proc /sys/ properly!
   $CHROOT_DIR/destroy --remove
@@ -499,6 +606,8 @@ sizes() {
   # 110 MB just of logs
   # need to thin these out
   sudo du --si -s $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp/
+
+  sudo du --si -s $BASE_DIR/
 }
 
 chroot-manifest() {

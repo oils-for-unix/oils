@@ -93,14 +93,6 @@ EOF
   table-sort-end 'tasks'  # ID for sorting
 }
 
-readonly BASE_DIR=_tmp/aports-build
-
-concat-task-tsv() {
-  local config=${1:-baseline}
-  python3 devtools/tsv_concat.py \
-    $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp/aports-guest/$config/*.task.tsv
-}
-
 log-sizes() {
   local config=${1:-baseline}
 
@@ -156,6 +148,7 @@ big-logs() {
     if true; then
     echo 'select * from tasks order by elapsed_secs limit 10;'
     echo 'select * from log_sizes order by num_bytes limit 10;'
+    echo 'select elapsed, start_time, end_time from tasks order by elapsed_secs limit 10;'
 
     echo '
 create table big_logs as
@@ -170,6 +163,9 @@ select sum(num_bytes) / 1e6 from big_logs;
 
 select * from big_logs;
 
+-- 22 hours, but there was a big pause in the middle
+select ( max(end_time)-min(start_time) ) / 60 / 60 from tasks;
+
 -- SELECT status, pkg FROM tasks WHERE status != 0;
 
 -- SELECT * from tasks limit 10;
@@ -183,9 +179,9 @@ tasks-schema() {
 column_name   type      precision strftime
 status        integer   0         -
 elapsed_secs  float     1         -
-user_secs     float     1         -
 start_time    float     1         %H:%M:%S
 end_time      float     1         %H:%M:%S
+user_secs     float     1         -
 sys_secs      float     1         -
 max_rss_KiB   integer   0         -
 xargs_slot    integer   0         -
@@ -210,10 +206,7 @@ write-report() {
 
   concat-task-tsv "$config" > $tasks_tsv
 
-  cp -v \
-    $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp/aports-guest/$config/*.log.txt \
-    $BASE_DIR/$config
-
+  #copy-logs "$config"
   log "Wrote $tasks_tsv"
 
   # TODO: compute these columns
