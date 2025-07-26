@@ -46,8 +46,8 @@ index-html() {
 
 Configurations:
 
-- [baseline](baseline/index.html)
-- [osh-as-sh](osh-as-sh/index.html)
+- [baseline](baseline/packages.html)
+- [osh-as-sh](osh-as-sh/packages.html)
 
 ## Baseline versus osh-as-sh
 
@@ -62,7 +62,7 @@ EOF
 }
 
 config-index-html()  {
-  local tasks_tsv=$1
+  local tsv=$1
   local config=$2
 
   local base_url='../../../../web'
@@ -83,14 +83,15 @@ config-index-html()  {
 # aports Build: $config
 EOF
 
-  tsv2html3 $tasks_tsv
+  tsv2html3 $tsv
 
+  local id=$(basename $tsv .tsv)
   cmark <<EOF
 
-[tasks.tsv](tasks.tsv)
+[$id.tsv]($id.tsv)
 EOF
 
-  table-sort-end 'tasks'  # ID for sorting
+  table-sort-end "$id"  # ID for sorting
 }
 
 log-sizes() {
@@ -103,9 +104,8 @@ log-sizes() {
 
 load-sql() {
   local tsv=${1:-$BASE_DIR/big/tasks.tsv}
-
   local name
-  name=$(basename $tsv .tsv)
+  name=${2:-$(basename $tsv .tsv)}
 
   local schema="${tsv%'.tsv'}.schema.tsv"
   #echo $name $schema
@@ -125,8 +125,56 @@ load-sql() {
 insert into $name select * from temp_import;
 drop table temp_import;
 
-select * from $name limit 5;
+-- select * from $name limit 5;
   "
+}
+
+config-report() {
+  local dir=$REPORT_DIR/$EPOCH
+  { load-sql $dir/baseline/tasks.tsv baseline
+    echo '
+
+-- sqlite table schema -> foo.schema.tsv
+CREATE TABLE schema_info AS
+SELECT 
+    name AS column_name,
+    CASE 
+        WHEN UPPER(type) = "INTEGER" THEN "integer"
+        WHEN UPPER(type) = "REAL" THEN "float"
+        WHEN UPPER(type) = "TEXT" THEN "string"
+        ELSE LOWER(type)
+    END AS type
+FROM PRAGMA_TABLE_INFO("baseline");
+
+-- select "--";
+
+-- .mode columns
+.headers on
+.mode tabs
+select * from schema_info;
+
+    '
+  } | sqlite3 :memory:
+}
+
+diff-report() {
+  local dir=$REPORT_DIR/$EPOCH
+
+  { load-sql $dir/baseline/tasks.tsv baseline
+    load-sql $dir/osh-as-sh/tasks.tsv osh_as_sh
+    echo '
+.mode column
+select count(*) from baseline;
+select count(*) from osh_as_sh;
+select * from pragma_table_info("baseline");
+select * from pragma_table_info("osh_as_sh");
+
+-- 22 hours, but there was a big pause in the middle
+select ( max(end_time)-min(start_time) ) / 60 / 60 from baseline;
+
+SELECT status, pkg FROM baseline WHERE status != 0;
+'
+  }  | sqlite3 :memory:
 }
 
 big-logs() {
@@ -205,7 +253,7 @@ my-rsync() {
 
 readonly EPOCH=${EPOCH:-'2025-07-26-small'}
 readonly HOST_BASELINE=he.oils.pub
-readonly HOST_SH=lenny.local
+readonly HOST_SH=he.oils.pub
 
 sync-results() {
   local dest=$REPORT_DIR/$EPOCH
@@ -221,26 +269,125 @@ sync-results() {
     $dest/osh-as-sh/
 }
 
-write-report() {
+# workaround for old VM
+# old sqlite doesn't have 'drop column'!
+#if sqlite3 --version | grep -q '2018-'; then
+if false; then
+	sqlite3() {
+		~/src/sqlite-autoconf-3500300/sqlite3 "$@"
+	}
+fi
+
+package-table() {
+  local base_dir=${1:-$REPORT_DIR/$EPOCH}
+  local config=${2:-baseline}
+
+  local db=$base_dir/$config/packages.db
+  rm -f $db
+
+  { load-sql $base_dir/$config/tasks.tsv
+   echo '
+.mode columns
+
+-- select * from tasks limit 5;
+
+-- annoying: you have to cast(x as real) for pragma_info to have type info
+create table packages as
+select status, 
+       elapsed_secs,
+       cast( user_secs / elapsed_secs as real) as user_elapsed_ratio,
+       sys_secs,
+       cast(max_rss_KiB * 1024 / 1e6 as real) as max_rss_MB,
+       pkg, 
+       pkg_HREF
+from tasks;
+
+-- sqlite table schema -> foo.schema.tsv
+CREATE TABLE packages_schema AS
+SELECT 
+    name AS column_name,
+    CASE 
+        WHEN UPPER(type) = "INTEGER" THEN "integer"
+        WHEN UPPER(type) = "REAL" THEN "float"
+        WHEN UPPER(type) = "TEXT" THEN "string"
+        ELSE LOWER(type)
+    END AS type
+FROM PRAGMA_TABLE_INFO("packages");
+
+select * from packages_schema;
+
+alter table packages_schema add column precision;
+
+update packages_schema SET precision = 1 where column_name = "elapsed_secs";
+update packages_schema SET precision = 1 where column_name = "user_elapsed_ratio";
+update packages_schema SET precision = 1 where column_name = "sys_secs";
+update packages_schema SET precision = 1 where column_name = "max_rss_MB";
+'
+  } | sqlite3 $db
+
+  sqlite3 $db >$base_dir/$config/packages.tsv <<EOF
+.mode tabs
+.headers on
+select * from packages;
+EOF
+
+  sqlite3 $db >$base_dir/$config/packages.schema.tsv <<EOF
+.mode tabs
+.headers on
+select * from packages_schema;
+EOF
+
+  cat $base_dir/$config/packages.schema.tsv 
+}
+
+alter-sql() {
+  ### unused
+    if false; then
+      echo '
+.mode columns
+
+-- not using this now
+ALTER TABLE tasks DROP COLUMN xargs_slot;
+
+-- elapsed is enough; this was for graphing
+alter table tasks DROP COLUMN start_time;
+alter table tasks DROP COLUMN end_time;
+
+alter table tasks ADD COLUMN user_elapsed_ratio;
+update tasks set user_elapsed_ratio = user_secs / elapsed_secs;
+alter table tasks DROP COLUMN user_secs;
+
+alter table tasks ADD COLUMN max_rss_MB;
+update tasks set max_rss_MB = max_rss_KiB * 1024 / 1e6;
+alter table tasks DROP COLUMN max_rss_KiB;
+'
+  fi
+}
+
+write-tables-for-config() {
   local base_dir=${1:-$REPORT_DIR/$EPOCH}
   local config=${2:-baseline}
 
   local tasks_tsv=$base_dir/$config/tasks.tsv
   mkdir -p $base_dir/$config
 
-  #concat-task-tsv "$config" > $tasks_tsv
-
-  #copy-logs "$config"
-  log "Wrote $tasks_tsv"
-
-  # TODO: compute these columns
-  # - user_secs / elapsed secs - to see how parallel each build is
-  # - max_rss_KiB -> max_rss_MB
-
   tasks-schema >$base_dir/$config/tasks.schema.tsv
 
-  config-index-html $tasks_tsv $config > $base_dir/$config/index.html
-  log "Wrote $base_dir/index.html"
+  local out=$base_dir/$config/tasks.html
+  config-index-html $tasks_tsv $config > $out
+  log "Wrote $out"
+
+  local out=$base_dir/$config/tasks.html
+  config-index-html $tasks_tsv $config > $out
+  log "Wrote $out"
+
+  package-table "$base_dir" "$config"
+
+  local packages_tsv=$base_dir/$config/packages.tsv
+
+  local out=$base_dir/$config/packages.html
+  config-index-html $packages_tsv $config > $out
+  log "Wrote $out"
 }
 
 write-all-reports() {
@@ -249,7 +396,7 @@ write-all-reports() {
   index-html > $base_dir/index.html
 
   for config in baseline osh-as-sh; do
-    write-report "$base_dir" "$config"
+    write-tables-for-config "$base_dir" "$config"
   done
 }
 
@@ -265,8 +412,27 @@ deploy-wwz() {
   #ssh $host ls op.oilshell.org/
 
   local dest_dir=op.oilshell.org/aports-build
-  ssh op.oilshell.org mkdir -p $dest_dir
+  ssh $host mkdir -p $dest_dir
   scp $REPORT_DIR/$EPOCH.wwz $host:$dest_dir
+}
+
+deploy-wwz-2() {
+  local host=oils.pub
+
+  #ssh $host ls op.oilshell.org/
+
+  local dest_dir=www/$host/aports-build
+  ssh $host mkdir -p $dest_dir
+  scp $REPORT_DIR/$EPOCH.wwz $host:$dest_dir
+}
+
+out-of-vm() {
+  local dest=~/vm-shared/$EPOCH
+  mkdir -p $dest
+  cp $REPORT_DIR/$EPOCH.wwz $dest
+  pushd ~/vm-shared/$EPOCH
+  unzip $EPOCH.wwz
+  popd
 }
 
 show-logs() {
