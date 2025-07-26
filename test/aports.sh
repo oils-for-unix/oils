@@ -29,7 +29,7 @@
 #   $0 set-osh-as-sh    # or set-baseline
 #   $0 build-packages '.*' osh-as-sh    # 310 MB, 251 K files
 #
-#   $0 copy-results     # copy TSV and abridged logs out of chroot
+#   $0 copy-results osh-as-sh           # copy TSV and abridged logs out of chroot
 #
 # On localhost:
 #   TODO: sync task files and logs from different machines
@@ -555,7 +555,7 @@ copy-results() {
 
   #copy-logs "$config"
 
-  abrdige-logs "$config"
+  abridge-logs "$config"
 
   local dest=_tmp/aports-build/$config/tasks.tsv
   mkdir -p $(dirname $dest)

@@ -22,7 +22,7 @@ html-head() {
 }
 
 index-html() {
-  local base_url='../../web'
+  local base_url='../../../web'
   html-head --title "aports Build" \
     "$base_url/base.css"
 
@@ -65,7 +65,7 @@ config-index-html()  {
   local tasks_tsv=$1
   local config=$2
 
-  local base_url='../../../web'
+  local base_url='../../../../web'
   html-head --title "aports Build: $config" \
     "$base_url/ajax.js" \
     "$base_url/table/table-sort.js" \
@@ -198,13 +198,35 @@ path          string
 EOF
 }
 
+my-rsync() {
+  #rsync --archive --verbose --dry-run "$@"
+  rsync --archive --verbose "$@"
+}
+
+readonly EPOCH='2025-07-26-mismatch'
+
+sync-results() {
+  local dest=$REPORT_DIR/$EPOCH
+
+  mkdir -p $dest
+
+  my-rsync \
+    he.oils.pub:~/git/oils-for-unix/oils/_tmp/aports-build/baseline/ \
+    $dest/baseline/
+
+  my-rsync \
+    lenny.local:~/git/oils-for-unix/oils/_tmp/aports-build/osh-as-sh/ \
+    $dest/osh-as-sh/
+}
+
 write-report() {
-  local config=${1:-baseline}
+  local base_dir=${1:-$REPORT_DIR/$EPOCH}
+  local config=${2:-baseline}
 
-  local tasks_tsv=$BASE_DIR/$config/tasks.tsv
-  mkdir -p $BASE_DIR/$config
+  local tasks_tsv=$base_dir/$config/tasks.tsv
+  mkdir -p $base_dir/$config
 
-  concat-task-tsv "$config" > $tasks_tsv
+  #concat-task-tsv "$config" > $tasks_tsv
 
   #copy-logs "$config"
   log "Wrote $tasks_tsv"
@@ -213,18 +235,36 @@ write-report() {
   # - user_secs / elapsed secs - to see how parallel each build is
   # - max_rss_KiB -> max_rss_MB
 
-  tasks-schema >$BASE_DIR/$config/tasks.schema.tsv
+  tasks-schema >$base_dir/$config/tasks.schema.tsv
 
-  config-index-html $tasks_tsv $config > $BASE_DIR/$config/index.html
-  log "Wrote $BASE_DIR/index.html"
+  config-index-html $tasks_tsv $config > $base_dir/$config/index.html
+  log "Wrote $base_dir/index.html"
 }
 
 write-all-reports() {
-  index-html > $BASE_DIR/index.html
+  local base_dir=${1:-$REPORT_DIR/$EPOCH}
+
+  index-html > $base_dir/index.html
 
   for config in baseline osh-as-sh; do
-    write-report "$config"
+    write-report "$base_dir" "$config"
   done
+}
+
+make-wwz() {
+  local base_dir=${1:-$REPORT_DIR/$EPOCH}
+  local wwz=$REPORT_DIR/$EPOCH.wwz 
+  zip -r $wwz $base_dir web/
+}
+
+deploy-wwz() {
+  local host=op.oilshell.org 
+
+  #ssh $host ls op.oilshell.org/
+
+  local dest_dir=op.oilshell.org/aports-build
+  ssh op.oilshell.org mkdir -p $dest_dir
+  scp $REPORT_DIR/$EPOCH.wwz $host:$dest_dir
 }
 
 show-logs() {
