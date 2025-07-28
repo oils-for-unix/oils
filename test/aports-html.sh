@@ -61,6 +61,38 @@ TODO
 EOF
 }
 
+diff-html() {
+  local base_dir=${1:-$REPORT_DIR/$EPOCH}
+
+  local base_url='../../../web'
+  html-head --title "aports Build: $config" \
+    "$base_url/ajax.js" \
+    "$base_url/table/table-sort.js" \
+    "$base_url/table/table-sort.css" \
+    "$base_url/base.css"
+
+  table-sort-begin 'width60'
+
+  cmark <<EOF
+<p id="home-link">
+  <a href="../index.html">Up</a> |
+  <a href="/">Home</a>
+</p>
+
+# Differences
+EOF
+
+  tsv2html3 $base_dir/diff.tsv
+
+  local id=diff
+  cmark <<EOF
+
+[$id.tsv]($id.tsv)
+EOF
+
+  table-sort-end "$id"  # ID for sorting
+}
+
 config-index-html()  {
   local tsv=$1
   local config=$2
@@ -314,7 +346,7 @@ SELECT
     END AS type
 FROM PRAGMA_TABLE_INFO("packages");
 
-select * from packages_schema;
+-- select * from packages_schema;
 
 alter table packages_schema add column precision;
 
@@ -390,6 +422,79 @@ write-tables-for-config() {
   log "Wrote $out"
 }
 
+make-diff-db() {
+  local base_dir=${1:-$REPORT_DIR/$EPOCH}
+
+  local db=diff.db
+
+  pushd $base_dir
+  rm -f $db
+  sqlite3 $db <<EOF
+-- Attach the source databases
+ATTACH DATABASE 'baseline/packages.db' AS baseline;
+ATTACH DATABASE 'osh-as-sh/packages.db' AS osh_as_sh;
+
+-- Create the new table by copying the structure and adding config column
+-- interesting trick from Claude: where 1 = 0;
+-- CREATE TABLE packages AS SELECT 'baseline' AS config, * FROM baseline.packages WHERE 1=0;
+
+-- Insert data from baseline database
+-- INSERT INTO packages SELECT 'baseline', * FROM baseline.packages;
+
+-- Insert data from osh-as-sh database
+-- INSERT INTO packages SELECT 'osh-as-sh', * FROM osh_as_sh.packages;
+
+.mode columns
+-- select * from packages;
+
+create table diff as
+select
+  b.pkg,
+  cast(b.status as integer) as status1,
+  "baseline" as baseline,
+  "baseline/" || b.pkg_HREF as baseline_HREF,
+  o.status as status2,
+  "osh-as-sh" as osh_as_sh,
+  "osh-as-sh/" || o.pkg_HREF as osh_as_sh_HREF
+from baseline.packages b
+join osh_as_sh.packages o on b.pkg = o.pkg
+where b.status != o.status
+order by b.pkg;
+
+-- Copied from above
+CREATE TABLE diff_schema AS
+SELECT 
+    name AS column_name,
+    CASE 
+        WHEN UPPER(type) = "INTEGER" THEN "integer"
+        WHEN UPPER(type) = "REAL" THEN "float"
+        WHEN UPPER(type) = "TEXT" THEN "string"
+        ELSE LOWER(type)
+    END AS type
+FROM PRAGMA_TABLE_INFO("diff");
+
+-- Detach databases
+DETACH DATABASE baseline;
+DETACH DATABASE osh_as_sh;
+EOF
+
+  sqlite3 $db >diff.tsv <<EOF
+.mode tabs
+.headers on
+select * from diff;
+EOF
+
+  sqlite3 $db >diff.schema.tsv <<EOF
+.mode tabs
+.headers on
+select * from diff_schema;
+EOF
+
+  cat diff.schema.tsv 
+
+  popd
+}
+
 write-all-reports() {
   local base_dir=${1:-$REPORT_DIR/$EPOCH}
 
@@ -398,6 +503,11 @@ write-all-reports() {
   for config in baseline osh-as-sh; do
     write-tables-for-config "$base_dir" "$config"
   done
+
+  make-diff-db
+  diff-html $base_dir > $base_dir/diff.html
+  echo "Wrote $base_dir/diff.html"
+
 }
 
 make-wwz() {
@@ -414,6 +524,8 @@ deploy-wwz() {
   local dest_dir=op.oilshell.org/aports-build
   ssh $host mkdir -p $dest_dir
   scp $REPORT_DIR/$EPOCH.wwz $host:$dest_dir
+
+  echo "Visit https://$dest_dir/$EPOCH.wwz/"
 }
 
 deploy-wwz-2() {
