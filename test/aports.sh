@@ -35,11 +35,17 @@
 #   $0 copy-results osh-as-sh             # copy TSV and abridged logs out of chroot
 #
 # On localhost:
-#   TODO: sync task files and logs from different machines
-#   test/aports-html.sh write-all-reports
+#   export EPOCH=2025-07-28-100to300
+#   test/aports.sh sync-results
+#
+#   Now see test/aports-html.sh
+
+# TODO:
+# - epoch could be set on build machine, with $0 copy-results
+# - $CHROOT_DIR/oils-aports-config could be 'baseline' 'osh-as-sh'?  For the
+#   different machines
 
 # Other commands:
-#
 #   $0 remove-chroot
 
 # DIR STRUCTURE
@@ -84,44 +90,6 @@
 # Another option: don't bother with abridged-log
 # - it makes the diff harder - what if one is abridged, and the other isn't?
 # - just make a copy
-
-# SHARDING of sources
-#
-# fetch sizes:
-#   20 packages - 403 MB after
-#   40 packages - 404 MB after
-#   60 packages - 408 MB after
-#   80 packages - 422 MB after
-#
-# OK so these packages aren't that big
-# They should be baked in once though.  Not built on every run.
-# - Should I manually shard /var/cache then?  Hm
-
-# builddeps sizes
-#   10 packages - 588 MB
-#   20 packages - 646 MB
-#
-#   Oof that is a lot!  May be tougher to get on Github Actions
-#   Well we don't have to pre-bake it, I guess we can download it the CDN
-
-# Error
-# ERROR: unable to select packages:
-#   apk-tools-2.14.9-r2:
-#     breaks: .makedepends-abuild-20250721.005129[apk-tools>=3.0.0_rc4]
-#     satisfies: world[apk-tools] abuild-3.15.0-r0[apk-tools>=2.0.7-r1] .makedepends-acf-apk-tools-20250721.004934[apk-tools]
-#   .makedepends-abuild-20250721.005129:
-#     masked in: cache
-#     satisfies: world[.makedepends-abuild=20250721.005129]
-
-# CI Job
-#
-# - Inputs
-#   - Shell config: baseline, osh-as-sh, osh-as-bash
-#   - Shard Number - this affects the container?
-# - Outputs
-#   - TSV file, log files, and HTML, like build/deps.sh (dev-setup-*)
-#   - Performance info
-#   - Do we want to expose the actual packages?
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
@@ -510,30 +478,6 @@ build-packages() {
   ' dummy0 "$config" "${package_dirs[@]}"
 }
 
-build-all-configs() {
-  save-default-config
-
-  #local package_filter='mpfr'
-  local package_filter='snap'
-  for config in baseline osh-as-sh; do
-    set-$config
-
-    build-packages "$package_filter" "$config"
-  done
-}
-
-copy-logs() {
-  local config=${1:-baseline}
-  local dest=$BASE_DIR/$config/log
-
-  mkdir -v -p $dest
-
-  # TODO: abridge some of them
-  cp -v \
-    $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp/aports-guest/$config/*.log.txt \
-    $dest
-}
-
 abridge-logs() {
   local config=${1:-baseline}
   local dest=$BASE_DIR/$config/log
@@ -585,6 +529,13 @@ remove-chroot() {
   $CHROOT_DIR/destroy --remove
 }
 
+chroot-manifest() {
+  # TODO: use this to help plan OCI layers
+  # 251,904 files after a build of mpfr
+
+  sudo find $CHROOT_DIR -type f -a -printf '%s %P\n'
+}
+
 show-chroot() {
   sudo tree $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp
 }
@@ -616,53 +567,5 @@ sizes() {
 
   sudo du --si -s $BASE_DIR/
 }
-
-chroot-manifest() {
-  # 251,904 files after a build of mpfr
-  sudo find $CHROOT_DIR -type f -a -printf '%s %P\n'
-}
-
-# Notes:
-# - buildrepo.lua is a lua script in lua-aports
-# - abuild rootbld uses a fresh bubblewrap container for each package?  I want
-# to avoid it for now
-#
-# More ideas
-#
-# - Create an OCI image with podman
-#   - can you "shard" the aports/main directory into 3?
-#   - well it's 27 MB, so it's not that bad
-#
-# - Separate downloading and building, network and computation
-#   - add to 'enter-chroot' a --network none flag
-#   - so you can reason about resource usage and time
-#
-# Github Actions
-#
-# - can we make a separate github actions repo?
-#   - oils-for-unix/aports-build
-#   - 20 concurrent jobs per USER who started the repo
-# - Just Use Github web hook
-#   - And optionally run self-hosted RUNNER on he.oils.pub!
-#   - he.oils.pub - has 20 CPUs, while Github Actions runners have 4 CPUs
-#
-# https://docs.github.com/en/actions/reference/actions-limits#job-concurrency-limits-for-github-hosted-runners
-# - hm 20 concurrent jobs
-#
-# 24 hours to build alpine/main
-# - does that mean just 1 hour to build on 20 machines?  Could try that
-# - and it would be cool if it can show progress in the meantime
-
-# Alpine mirror?
-# - https://claude.ai/chat/9ede43a4-1cb1-4e81-be5a-159cd0f9c64e
-# - this answer says dl-cdn.alpinelinux.org uses Fastly CDN with GeoDNS, so we
-# don't need to change it
-
-# - different providers
-#   - gitlab, circle CI
-#   - https://depot.dev/pricing - $20/month ulimited concurrency
-#   - but 2000 minutes?  That's only 33 hours
-# - Burstiness
-#   - AWS Fargate Containers - hm doesn't seem to cheap, could be $2.37 per run for 24 hours
 
 task-five "$@"

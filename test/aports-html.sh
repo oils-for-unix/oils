@@ -4,6 +4,13 @@
 #
 # Usage:
 #   test/aports-html.sh <function name>
+#
+# Examples:
+#   export EPOCH=2025-07-28-100to300
+#   $0 write-all-reports
+#   $0 make-wwz
+#   $0 deploy-wwz
+#   test/aports-html.sh write-all-reports
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
