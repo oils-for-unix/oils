@@ -434,10 +434,18 @@ package-dirs() {
   local package_filter=${1:-'lz|mpfr|yash'}
 
   local -a prefix
-  if [[ $package_filter =~ [0-9]+ ]]; then
+
+  # 100 means 0 to 100
+  if [[ $package_filter =~ ^[0-9]+$ ]]; then
     prefix=( head -n $package_filter )
+
+  # 100,300p means lines 100 to 300
+  elif [[ $package_filter =~ ^[0-9]+,[0-9]+p$ ]]; then
+    prefix=( sed -n $package_filter )
+
   else
     prefix=( egrep "$package_filter" )
+
   fi
    
   "${prefix[@]}" _tmp/apk-manifest.txt | sed 's,/APKBUILD$,,g'
