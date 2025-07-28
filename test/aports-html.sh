@@ -51,7 +51,7 @@ Configurations:
 
 ## Baseline versus osh-as-sh
 
-TODO
+- [diff-baseline](diff-baseline.html)
 
 ## osh-as-sh versus osh-as-bash
 
@@ -63,9 +63,10 @@ EOF
 
 diff-html() {
   local base_dir=${1:-$REPORT_DIR/$EPOCH}
+  local name=${2:-diff-baseline}
 
   local base_url='../../../web'
-  html-head --title "aports Build: $config" \
+  html-head --title "Differences" \
     "$base_url/ajax.js" \
     "$base_url/table/table-sort.js" \
     "$base_url/table/table-sort.css" \
@@ -82,15 +83,14 @@ diff-html() {
 # Differences
 EOF
 
-  tsv2html3 $base_dir/diff.tsv
+  tsv2html3 $base_dir/$name.tsv
 
-  local id=diff
   cmark <<EOF
 
-[$id.tsv]($id.tsv)
+[$name.tsv]($name.tsv)
 EOF
 
-  table-sort-end "$id"  # ID for sorting
+  table-sort-end "$name"  # ID for sorting
 }
 
 config-index-html()  {
@@ -283,9 +283,10 @@ my-rsync() {
   rsync --archive --verbose "$@"
 }
 
-readonly EPOCH=${EPOCH:-'2025-07-26-small'}
+readonly EPOCH=${EPOCH:-'2025-07-28-all'}
 readonly HOST_BASELINE=he.oils.pub
-readonly HOST_SH=he.oils.pub
+#readonly HOST_SH=he.oils.pub
+readonly HOST_SH=lenny.local
 
 sync-results() {
   local dest=$REPORT_DIR/$EPOCH
@@ -424,8 +425,9 @@ write-tables-for-config() {
 
 make-diff-db() {
   local base_dir=${1:-$REPORT_DIR/$EPOCH}
+  local name=${2:-diff-baseline}
 
-  local db=diff.db
+  local db=$name.db
 
   pushd $base_dir
   rm -f $db
@@ -478,19 +480,19 @@ DETACH DATABASE baseline;
 DETACH DATABASE osh_as_sh;
 EOF
 
-  sqlite3 $db >diff.tsv <<EOF
+  sqlite3 $db >$name.tsv <<EOF
 .mode tabs
 .headers on
 select * from diff;
 EOF
 
-  sqlite3 $db >diff.schema.tsv <<EOF
+  sqlite3 $db >$name.schema.tsv <<EOF
 .mode tabs
 .headers on
 select * from diff_schema;
 EOF
 
-  cat diff.schema.tsv 
+  cat $name.schema.tsv 
 
   popd
 }
@@ -504,10 +506,10 @@ write-all-reports() {
     write-tables-for-config "$base_dir" "$config"
   done
 
+  local name=diff-baseline
   make-diff-db
-  diff-html $base_dir > $base_dir/diff.html
-  echo "Wrote $base_dir/diff.html"
-
+  diff-html $base_dir > $base_dir/$name.html
+  echo "Wrote $base_dir/$name.html"
 }
 
 make-wwz() {
