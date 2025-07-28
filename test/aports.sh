@@ -23,14 +23,16 @@
 #   $0 save-default-config
 #   $0 apk-manifest
 #
-#   $0 do-packages fetch '.*'  # fetch all packages
+#   $0 fetch-packages fetch 100,300p  # packages 100-300
+#   $0 fetch-packages fetch .*        # all packages
 #
 # Build a config
-#   $0 clean                            # remove files from previous run
-#   $0 set-osh-as-sh                    # or set-baseline
-#   $0 build-packages '.*' osh-as-sh    # 310 MB, 251 K files
+#   $0 clean                              # remove files from previous run
+#   $0 set-osh-as-sh                      # or set-baseline
+#   $0 build-packages 100,300p osh-as-sh
+#   $0 build-packages '.*'     osh-as-sh  # 310 MB, 251 K files
 #
-#   $0 copy-results osh-as-sh           # copy TSV and abridged logs out of chroot
+#   $0 copy-results osh-as-sh             # copy TSV and abridged logs out of chroot
 #
 # On localhost:
 #   TODO: sync task files and logs from different machines
@@ -434,10 +436,18 @@ package-dirs() {
   local package_filter=${1:-'lz|mpfr|yash'}
 
   local -a prefix
-  if [[ $package_filter =~ [0-9]+ ]]; then
+
+  # 100 means 0 to 100
+  if [[ $package_filter =~ ^[0-9]+$ ]]; then
     prefix=( head -n $package_filter )
+
+  # 100,300p means lines 100 to 300
+  elif [[ $package_filter =~ ^[0-9]+,[0-9]+p$ ]]; then
+    prefix=( sed -n $package_filter )
+
   else
     prefix=( egrep "$package_filter" )
+
   fi
    
   "${prefix[@]}" _tmp/apk-manifest.txt | sed 's,/APKBUILD$,,g'
@@ -448,7 +458,7 @@ do-packages() {
   local action=${1:-fetch}
   local package_filter=${2:-}
   # flags to pass to the inner shell
-  local sh_flags=${3:-'-e -u'}
+  local sh_flags=${3:-'-e -u'}  # -u to disable -e
 
   # 6 seconds for 10 packages
   # There are ~1600 packages
@@ -467,6 +477,13 @@ do-packages() {
     time abuild -r -C aports/main/$dir "$action"
   done
   ' dummy0 "$action" "${package_dirs[@]}"
+}
+
+fetch-packages() {
+  local package_filter=${1:-}
+
+  # -u means we don't pass -e (and it's non-empty)
+  do-packages fetch "$package_filter" '-u'
 }
 
 banner() {
