@@ -324,6 +324,47 @@ seq 5 | where2 [_line ~== 2 or _line ~== 4]
 (Str)   "5"
 ## END
 
+#### Nested io.stdin
+
+proc bug {
+  echo '''
+    proc inner {
+      printf 'a\nb\n' | for x in (io.stdin) {
+	echo x=$x
+      }
+    }
+
+    printf 'x\ny\n' | for _ in (io.stdin) {
+      inner
+    }
+    '''
+}
+
+# Changes with invocation style
+
+$[ENV.SH] <(bug)
+echo ---
+$[ENV.SH] -c $(bug)
+echo ---
+bug | $[ENV.SH]
+
+## STDOUT:
+x=a
+x=b
+x=a
+x=b
+---
+x=a
+x=b
+x=a
+x=b
+---
+x=a
+x=b
+x=a
+x=b
+## END
+
 #### Long boolean flags can't have attached values
 
 # This currently works, but I think --json and --j8 are enough?
