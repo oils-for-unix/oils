@@ -9,8 +9,16 @@
 #   export EPOCH=2025-07-28-100to300
 #   $0 write-all-reports
 #   $0 make-wwz
-#   $0 deploy-wwz
-#   test/aports-html.sh write-all-reports
+#   $0 deploy-wwz-op    # op.oilshell.org - could be op.oils.pub
+#   $0 deploy-wwz-mb    # oils.pub, on Mythic Beasts
+#
+# TODO:
+# - report on start time and end time - on $config/packages.html
+#   - lenny machine is a lot slower
+# - report on total packages, total failures
+# - maybe report the machine name
+# - generate a DIFF of the logs!  Make that a new SQL column
+#   - start with diff -u
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
@@ -36,11 +44,6 @@ index-html() {
   # TODO:
   # - Stats for each config:
   #   - number of non-zero exit codes, total packages
-  #   - and then links to all the packages that are different
-  # And also link to the differences
-
-  # Try sqlite queries
-  # Do you add the "config" to each package build?
 
   cmark <<'EOF'
 <body class="width35">
@@ -290,7 +293,7 @@ my-rsync() {
   rsync --archive --verbose "$@"
 }
 
-readonly EPOCH=${EPOCH:-'2025-07-28-all'}
+readonly EPOCH=${EPOCH:-'2025-07-28-100'}
 readonly HOST_BASELINE=he.oils.pub
 #readonly HOST_SH=he.oils.pub
 readonly HOST_SH=lenny.local
@@ -313,9 +316,9 @@ sync-results() {
 # old sqlite doesn't have 'drop column'!
 #if sqlite3 --version | grep -q '2018-'; then
 if false; then
-	sqlite3() {
-		~/src/sqlite-autoconf-3500300/sqlite3 "$@"
-	}
+  sqlite3() {
+    ~/src/sqlite-autoconf-3500300/sqlite3 "$@"
+  }
 fi
 
 package-table() {
@@ -525,19 +528,20 @@ make-wwz() {
   zip -r $wwz $base_dir web/
 }
 
-deploy-wwz() {
-  local host=op.oilshell.org 
+deploy-wwz-op() {
+  #local host=op.oilshell.org 
+  local host=op.oils.pub
 
   #ssh $host ls op.oilshell.org/
 
-  local dest_dir=op.oilshell.org/aports-build
+  local dest_dir=$host/aports-build
   ssh $host mkdir -p $dest_dir
   scp $REPORT_DIR/$EPOCH.wwz $host:$dest_dir
 
   echo "Visit https://$dest_dir/$EPOCH.wwz/"
 }
 
-deploy-wwz-2() {
+deploy-wwz-mb() {
   local host=oils.pub
 
   #ssh $host ls op.oilshell.org/

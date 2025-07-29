@@ -31,6 +31,8 @@
 #   $0 set-osh-as-sh                      # or set-baseline
 #   $0 build-packages 100,300p osh-as-sh
 #   $0 build-packages '.*'     osh-as-sh  # 310 MB, 251 K files
+
+#   $0 build-many-configs 'shard3'        # build packages 301 to 400
 #
 #   $0 copy-results osh-as-sh             # copy TSV and abridged logs out of chroot
 #
@@ -39,6 +41,20 @@
 #   test/aports.sh sync-results
 #
 #   Now see test/aports-html.sh
+#
+# WARNING: THIS IS ESSENTIAL for RUNNING build-many-configs (but not
+# build-packages):
+#
+# The /etc/sudoers.d needs to be modified so that sudo doesn't EVER
+# timeout Otherwise running the second config will prompt for the root password
+#
+# This is how I did it manually
+# $ sudo visudo -f /etc/sudoers.d/no-timeout
+#
+# $ sudo cat /etc/sudoers.d/no-timeout
+# Defaults:andy timestamp_timeout=-1
+#
+# -1 means it's cached forever
 
 # TODO:
 # - epoch could be set on build machine, with $0 copy-results
@@ -204,10 +220,15 @@ add-build-deps() {
   # Must be done as root; there is no 'sudo'
 
   # alpine-sdk: abuild, etc.
+  # pigz: seems like it's optionally used by abuild - should probably speed
+  # things up
   # doas: for abuild-keygen
   # bash python3: for time-tsv
   # findutils: for xargs --process-slot-var
-  $CHROOT_DIR/enter-chroot sh -c 'apk update; apk add alpine-sdk doas bash python3 findutils'
+  $CHROOT_DIR/enter-chroot sh -c '
+  apk update
+  apk add alpine-sdk pigz doas bash python3 findutils
+  '
 
   # $CHROOT_DIR/enter-chroot -u builder bash -c 'echo "hi from bash"'
 }
@@ -413,6 +434,24 @@ package-dirs() {
   elif [[ $package_filter =~ ^[0-9]+,[0-9]+p$ ]]; then
     prefix=( sed -n $package_filter )
 
+  elif [[ $package_filter =~ ^shard([0-9]+)$ ]]; then
+    # shards of 100 packages
+
+    local shard_num=${BASH_REMATCH[1]}
+    #echo shard=$shard_num
+
+    local range
+    # shard 0 is 0-99
+    # shard 9 is 900 to 999
+    # shard 10 is 1000 to 1099
+    case $shard_num in
+      # sed doesn't like 000,099
+      0) range='1,100p' ;;
+      *) range="${shard_num}01,$(( shard_num + 1))00p" ;;
+    esac
+
+    prefix=( sed -n "$range" )
+
   else
     prefix=( egrep "$package_filter" )
 
@@ -476,6 +515,25 @@ build-packages() {
   cd oils-for-unix/oils
   test/aports-guest.sh build-packages "$config" "$@"
   ' dummy0 "$config" "${package_dirs[@]}"
+}
+
+build-many-configs() {
+  local package_filter=${1:-}
+
+  # clear credentials first
+  sudo -k
+
+  # See note about /etc/sudoers.d at top of file
+
+  for config in baseline osh-as-sh; do
+
+    # this uses enter-chroot to modify the chroot
+    # should we have a separate one?  But then fetching packages is different
+    set-$config
+
+    # this uses enter-chroot -u
+    build-packages "$package_filter" "$config"
+  done
 }
 
 abridge-logs() {
