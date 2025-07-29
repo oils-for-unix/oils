@@ -82,7 +82,7 @@ apk-stats() {
 }
 
 count-lines() {
-  wc -l test/aport*
+  ls test/aport* | egrep -v 'aports-old|aports-notes' | xargs wc -l
 }
 
 task-five "$@"

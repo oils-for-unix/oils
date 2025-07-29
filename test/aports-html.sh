@@ -56,8 +56,8 @@ index-html() {
 
 Configurations:
 
-- [baseline](baseline/packages.html)
-- [osh-as-sh](osh-as-sh/packages.html)
+- [baseline](baseline/packages.html) - [raw tasks](baseline/tasks.html)
+- [osh-as-sh](osh-as-sh/packages.html) - [raw tasks](osh-as-sh/tasks.html)
 
 ## Baseline versus osh-as-sh
 
@@ -91,6 +91,9 @@ diff-html() {
 </p>
 
 # Differences
+
+Note: Right now, the diff column is hard to read in many cases.
+
 EOF
 
   tsv2html3 $base_dir/$name.tsv
@@ -103,12 +106,14 @@ EOF
   table-sort-end "$name"  # ID for sorting
 }
 
-config-index-html()  {
+tasks-html()  {
   local tsv=$1
-  local config=$2
+  # note: escaping problems with title
+  # it gets interpolated into markdown and html
+  local title=$2
 
   local base_url='../../../../web'
-  html-head --title "aports Build: $config" \
+  html-head --title "$title" \
     "$base_url/ajax.js" \
     "$base_url/table/table-sort.js" \
     "$base_url/table/table-sort.css" \
@@ -122,7 +127,7 @@ config-index-html()  {
   <a href="/">Home</a>
 </p>
 
-# aports Build: $config
+# $title
 EOF
 
   tsv2html3 $tsv
@@ -136,15 +141,7 @@ EOF
   table-sort-end "$id"  # ID for sorting
 }
 
-log-sizes() {
-  local config=${1:-baseline}
-
-  tsv-row 'num_bytes' 'path'
-  find $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp/aports-guest/$config \
-    -name '*.log.txt' -a -printf '%s\t%P\n'
-}
-
-load-sql() {
+typed-tsv-to-sql() {
   local tsv=${1:-$BASE_DIR/big/tasks.tsv}
   local name
   name=${2:-$(basename $tsv .tsv)}
@@ -174,8 +171,8 @@ drop table temp_import;
 diff-report() {
   local dir=$REPORT_DIR/$EPOCH
 
-  { load-sql $dir/baseline/tasks.tsv baseline
-    load-sql $dir/osh-as-sh/tasks.tsv osh_as_sh
+  { typed-tsv-to-sql $dir/baseline/tasks.tsv baseline
+    typed-tsv-to-sql $dir/osh-as-sh/tasks.tsv osh_as_sh
     echo '
 .mode column
 select count(*) from baseline;
@@ -191,75 +188,6 @@ SELECT status, pkg FROM baseline WHERE status != 0;
   }  | sqlite3 :memory:
 }
 
-big-logs() {
-  local config=${1:-baseline}
-
-  local dir=$BASE_DIR/big
-
-  mkdir -p $dir
-
-  concat-task-tsv > $dir/tasks.tsv
-  tasks-schema > $dir/tasks.schema.tsv
-
-  log-sizes > $dir/log_sizes.tsv
-  log-sizes-schema > $dir/log_sizes.schema.tsv
-
-  { load-sql $dir/tasks.tsv
-    load-sql $dir/log_sizes.tsv
-    echo '.mode table'
-    if true; then
-    echo 'select * from tasks order by elapsed_secs limit 10;'
-    echo 'select * from log_sizes order by num_bytes limit 10;'
-    echo 'select elapsed, start_time, end_time from tasks order by elapsed_secs limit 10;'
-
-    echo '
-create table big_logs as
-select * from log_sizes where num_bytes > 1e6 order by num_bytes;
-
-SELECT "--";
-
-select sum(num_bytes) / 1e6 from log_sizes;
-
--- this is more than half the logs
-select sum(num_bytes) / 1e6 from big_logs;
-
-select * from big_logs;
-
--- 22 hours, but there was a big pause in the middle
-select ( max(end_time)-min(start_time) ) / 60 / 60 from tasks;
-
--- SELECT status, pkg FROM tasks WHERE status != 0;
-
--- SELECT * from tasks limit 10;
-'
-    fi
-  } | sqlite3 :memory: 
-}
-
-tasks-schema() {
-  here-schema-tsv-4col <<EOF
-column_name   type      precision strftime
-status        integer   0         -
-elapsed_secs  float     1         -
-start_time    float     1         %H:%M:%S
-end_time      float     1         %H:%M:%S
-user_secs     float     1         -
-sys_secs      float     1         -
-max_rss_KiB   integer   0         -
-xargs_slot    integer   0         -
-pkg           string    0         -
-pkg_HREF      string    0         -
-EOF
-}
-
-log-sizes-schema() {
-  here-schema-tsv <<EOF
-column_name   type   
-num_bytes     integer
-path          string
-EOF
-}
-
 my-rsync() {
   #rsync --archive --verbose --dry-run "$@"
   rsync --archive --verbose "$@"
@@ -267,8 +195,8 @@ my-rsync() {
 
 readonly EPOCH=${EPOCH:-'2025-07-28-100'}
 readonly HOST_BASELINE=he.oils.pub
-#readonly HOST_SH=he.oils.pub
-readonly HOST_SH=lenny.local
+readonly HOST_SH=he.oils.pub
+#readonly HOST_SH=lenny.local
 
 sync-results() {
   local dest=$REPORT_DIR/$EPOCH
@@ -284,23 +212,14 @@ sync-results() {
     $dest/osh-as-sh/
 }
 
-# workaround for old VM
-# old sqlite doesn't have 'drop column'!
-#if sqlite3 --version | grep -q '2018-'; then
-if false; then
-  sqlite3() {
-    ~/src/sqlite-autoconf-3500300/sqlite3 "$@"
-  }
-fi
-
-package-table() {
+make-package-table() {
   local base_dir=${1:-$REPORT_DIR/$EPOCH}
   local config=${2:-baseline}
 
   local db=$base_dir/$config/packages.db
   rm -f $db
 
-  { load-sql $base_dir/$config/tasks.tsv
+  { typed-tsv-to-sql $base_dir/$config/tasks.tsv
    echo '
 .mode columns
 
@@ -311,7 +230,7 @@ create table packages as
 select status, 
        elapsed_secs,
        cast( user_secs / elapsed_secs as real) as user_elapsed_ratio,
-       sys_secs,
+       cast( user_secs / sys_secs as real) as user_sys_ratio,
        cast(max_rss_KiB * 1024 / 1e6 as real) as max_rss_MB,
        pkg, 
        pkg_HREF
@@ -335,7 +254,7 @@ alter table packages_schema add column precision;
 
 update packages_schema SET precision = 1 where column_name = "elapsed_secs";
 update packages_schema SET precision = 1 where column_name = "user_elapsed_ratio";
-update packages_schema SET precision = 1 where column_name = "sys_secs";
+update packages_schema SET precision = 1 where column_name = "user_sys_ratio";
 update packages_schema SET precision = 1 where column_name = "max_rss_MB";
 '
   } | sqlite3 $db
@@ -355,28 +274,20 @@ EOF
   #cat $base_dir/$config/packages.schema.tsv 
 }
 
-alter-sql() {
-  ### unused
-    if false; then
-      echo '
-.mode columns
-
--- not using this now
-ALTER TABLE tasks DROP COLUMN xargs_slot;
-
--- elapsed is enough; this was for graphing
-alter table tasks DROP COLUMN start_time;
-alter table tasks DROP COLUMN end_time;
-
-alter table tasks ADD COLUMN user_elapsed_ratio;
-update tasks set user_elapsed_ratio = user_secs / elapsed_secs;
-alter table tasks DROP COLUMN user_secs;
-
-alter table tasks ADD COLUMN max_rss_MB;
-update tasks set max_rss_MB = max_rss_KiB * 1024 / 1e6;
-alter table tasks DROP COLUMN max_rss_KiB;
-'
-  fi
+tasks-schema() {
+  here-schema-tsv-4col <<EOF
+column_name   type      precision strftime
+status        integer   0         -
+elapsed_secs  float     1         -
+start_time    float     1         %H:%M:%S
+end_time      float     1         %H:%M:%S
+user_secs     float     1         -
+sys_secs      float     1         -
+max_rss_KiB   integer   0         -
+xargs_slot    integer   0         -
+pkg           string    0         -
+pkg_HREF      string    0         -
+EOF
 }
 
 write-tables-for-config() {
@@ -389,19 +300,15 @@ write-tables-for-config() {
   tasks-schema >$base_dir/$config/tasks.schema.tsv
 
   local out=$base_dir/$config/tasks.html
-  config-index-html $tasks_tsv $config > $out
+  tasks-html $tasks_tsv "tasks: $config" > $out
   log "Wrote $out"
 
-  local out=$base_dir/$config/tasks.html
-  config-index-html $tasks_tsv $config > $out
-  log "Wrote $out"
-
-  package-table "$base_dir" "$config"
+  make-package-table "$base_dir" "$config"
 
   local packages_tsv=$base_dir/$config/packages.tsv
 
   local out=$base_dir/$config/packages.html
-  config-index-html $packages_tsv $config > $out
+  tasks-html $packages_tsv "packages: $config" > $out
   log "Wrote $out"
 }
 
@@ -418,16 +325,6 @@ make-diff-db() {
 ATTACH DATABASE 'baseline/packages.db' AS baseline;
 ATTACH DATABASE 'osh-as-sh/packages.db' AS osh_as_sh;
 
--- Create the new table by copying the structure and adding config column
--- interesting trick from Claude: where 1 = 0;
--- CREATE TABLE packages AS SELECT 'baseline' AS config, * FROM baseline.packages WHERE 1=0;
-
--- Insert data from baseline database
--- INSERT INTO packages SELECT 'baseline', * FROM baseline.packages;
-
--- Insert data from osh-as-sh database
--- INSERT INTO packages SELECT 'osh-as-sh', * FROM osh_as_sh.packages;
-
 .mode columns
 -- select * from packages;
 
@@ -439,7 +336,11 @@ select
   "baseline/" || b.pkg_HREF as baseline_HREF,
   o.status as status2,
   "osh-as-sh" as osh_as_sh,
-  "osh-as-sh/" || o.pkg_HREF as osh_as_sh_HREF
+  "osh-as-sh/" || o.pkg_HREF as osh_as_sh_HREF,
+  "diff" as diff,
+  printf("error/%s.txt", b.pkg) as diff_HREF,
+  "error" as error_grep,
+  printf("error/%s.txt", b.pkg) as error_grep_HREF
 from baseline.packages b
 join osh_as_sh.packages o on b.pkg = o.pkg
 where b.status != o.status
@@ -473,6 +374,25 @@ EOF
 .headers on
 select * from diff_schema;
 EOF
+
+  #
+  # Now make diffs
+  #
+
+  sqlite3 $db >packages-to-diff.txt <<EOF
+.mode tabs
+.headers off
+select pkg from diff;
+EOF
+
+  mkdir -p diff error
+  cat packages-to-diff.txt | while read -r pkg; do
+    local left=baseline/log/$pkg.log.txt 
+    local right=osh-as-sh/log/$pkg.log.txt 
+    diff -u $left $right > diff/$pkg.txt || true
+    egrep -i 'error' $right > error/$pkg.txt || true
+  done
+
 
   #cat $name.schema.tsv 
 
@@ -530,13 +450,6 @@ out-of-vm() {
   pushd ~/vm-shared/$EPOCH
   unzip $EPOCH.wwz
   popd
-}
-
-show-logs() {
-  local config=${1:-baseline}
-
-  #sudo head $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp/aports-guest/main/*.log.txt
-  sudo head $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp/aports-guest/$config/*.task.tsv
 }
 
 task-five "$@"
