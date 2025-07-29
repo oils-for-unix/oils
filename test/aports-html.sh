@@ -171,34 +171,6 @@ drop table temp_import;
   "
 }
 
-config-report() {
-  local dir=$REPORT_DIR/$EPOCH
-  { load-sql $dir/baseline/tasks.tsv baseline
-    echo '
-
--- sqlite table schema -> foo.schema.tsv
-CREATE TABLE schema_info AS
-SELECT 
-    name AS column_name,
-    CASE 
-        WHEN UPPER(type) = "INTEGER" THEN "integer"
-        WHEN UPPER(type) = "REAL" THEN "float"
-        WHEN UPPER(type) = "TEXT" THEN "string"
-        ELSE LOWER(type)
-    END AS type
-FROM PRAGMA_TABLE_INFO("baseline");
-
--- select "--";
-
--- .mode columns
-.headers on
-.mode tabs
-select * from schema_info;
-
-    '
-  } | sqlite3 :memory:
-}
-
 diff-report() {
   local dir=$REPORT_DIR/$EPOCH
 
