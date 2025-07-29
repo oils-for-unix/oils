@@ -380,7 +380,7 @@ EOF
 select * from packages_schema;
 EOF
 
-  cat $base_dir/$config/packages.schema.tsv 
+  #cat $base_dir/$config/packages.schema.tsv 
 }
 
 alter-sql() {
@@ -502,7 +502,7 @@ EOF
 select * from diff_schema;
 EOF
 
-  cat $name.schema.tsv 
+  #cat $name.schema.tsv 
 
   popd
 }
