@@ -56,8 +56,8 @@ index-html() {
 
 Configurations:
 
-- [baseline](baseline/packages.html) - [raw tasks](baseline/tasks.html)
-- [osh-as-sh](osh-as-sh/packages.html) - [raw tasks](osh-as-sh/tasks.html)
+- [baseline](baseline/packages.html) - [raw tasks](baseline/tasks.html) - [metrics](baseline/metrics.txt)
+- [osh-as-sh](osh-as-sh/packages.html) - [raw tasks](osh-as-sh/tasks.html) - [metrics](osh-as-sh/metrics.txt)
 
 ## Baseline versus osh-as-sh
 
@@ -216,7 +216,7 @@ make-package-table() {
   local base_dir=${1:-$REPORT_DIR/$EPOCH}
   local config=${2:-baseline}
 
-  local db=$base_dir/$config/packages.db
+  local db=$base_dir/$config/tables.db
   rm -f $db
 
   { typed-tsv-to-sql $base_dir/$config/tasks.tsv
@@ -256,6 +256,33 @@ update packages_schema SET precision = 1 where column_name = "elapsed_secs";
 update packages_schema SET precision = 1 where column_name = "user_elapsed_ratio";
 update packages_schema SET precision = 1 where column_name = "user_sys_ratio";
 update packages_schema SET precision = 1 where column_name = "max_rss_MB";
+
+-- Compute stats
+
+CREATE TABLE metrics (
+  id integer primary key check (id = 1),  -- ensure only one row
+  elapsed_minutes REAL NOT NULL,
+  num_failures integer NOT NULL,
+  num_tasks integer NOT NULL
+);
+
+# dummy row
+insert into metrics values (1, -1.0, -1, -1);
+
+update metrics 
+set elapsed_minutes = 
+(select ( max(end_time)-min(start_time) ) / 60 from tasks)
+where id = 1;
+
+update metrics 
+set num_failures = 
+(select count(*) from tasks where status != 0)
+where id = 1;
+
+update metrics 
+set num_tasks = 
+(select count(*) from tasks)
+where id = 1;
 '
   } | sqlite3 $db
 
@@ -269,6 +296,11 @@ EOF
 .mode tabs
 .headers on
 select * from packages_schema;
+EOF
+
+  sqlite3 $db >$base_dir/$config/metrics.txt <<EOF
+.mode column
+select * from metrics;
 EOF
 
   #cat $base_dir/$config/packages.schema.tsv 
@@ -322,8 +354,8 @@ make-diff-db() {
   rm -f $db
   sqlite3 $db <<EOF
 -- Attach the source databases
-ATTACH DATABASE 'baseline/packages.db' AS baseline;
-ATTACH DATABASE 'osh-as-sh/packages.db' AS osh_as_sh;
+ATTACH DATABASE 'baseline/tables.db' AS baseline;
+ATTACH DATABASE 'osh-as-sh/tables.db' AS osh_as_sh;
 
 .mode columns
 -- select * from packages;
@@ -392,7 +424,6 @@ EOF
     diff -u $left $right > diff/$pkg.txt || true
     egrep -i 'error' $right > error/$pkg.txt || true
   done
-
 
   #cat $name.schema.tsv 
 
