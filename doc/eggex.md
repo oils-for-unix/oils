@@ -148,7 +148,7 @@ We accept both Perl and POSIX classes.
   - `s` or `space`
   - `w` or `word`
 - POSIX
-  - `alnum`, `blank`, `alpha` ...
+  - `alpha`, `blank`, `alnum` ...
 
 ### Zero-width Assertions Look Like `%this`
 
