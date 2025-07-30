@@ -344,6 +344,8 @@ and `List` objects:
     ysh$ = M
     (List)   ["one", "two", "three", "4"]
 
+String concatenation is slow, list appending is faster for looping.
+
 String interpolation can be nicer than `++`:
 
     var t2 = "${s} world"  # same as t
