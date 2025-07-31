@@ -47,7 +47,7 @@ Right now I use this command:
 
 Then paste this into your browser:
 
-    file:///home/andy/git/oilshell/oil/_release/VERSION/doc/error-catalog.html
+    file:///home/andy/git/oils-for-unix/oils/_release/VERSION/doc/error-catalog.html
 
 (Replace with your home dir)
 

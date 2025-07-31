@@ -11,9 +11,9 @@ regular expressions.  You can use *Eggex* with both:
 - A convenient Perl-like operator: `'mystr' ~ / [a-z]+/ `
   - access submatches with global `_group()` &nbsp; `_start()` &nbsp; `_end()`
 
-- A powerful Python-like API: `'mystr' => search(/ [a-z]+ /)` and `leftMatch()`
-  - access submatches with `Match` object methods `m => group()` &nbsp; `m =>
-    start()` &nbsp; `m => end()`
+- A powerful Python-like API: `'mystr'.search(/ [a-z]+ /)` and `leftMatch()`
+  - access submatches with `Match` object methods `m.group()` &nbsp;
+    `m.start()` &nbsp; `m.end()`
 
 You can also use plain POSIX regular expressions ([ERE]($xref)) instead of
 Eggex.
@@ -25,9 +25,9 @@ Eggex.
 TODO: need $help-topic shortcut
 
 - [`_group()`]($help-topic:_group)
-- [`Match => group()`]($help-topic:group)
-- [`Str => search()`]($help-topic:search)
-- [`Str => leftMatch()`]($help-topic:leftMatch)
+- [`Match.group()`]($help-topic:group)
+- [`Str.search()`]($help-topic:search)
+- [`Str.leftMatch()`]($help-topic:leftMatch)
 -->
 
 ## Perl-Like `~` operator
@@ -85,30 +85,30 @@ a `Match` object.
 
 `Match` objects have `group()`, `start()`, and `end()` methods.
 
-    var m = 's' => search(eggex)
+    var m = 's'.search(eggex)
     if (m) {  # test if it  matched
-      = m => group('month')  # => '04'
-      = m => group('day')    # => '01'
+      = m.group('month')  # => '04'
+      = m.group('day')    # => '01'
     }
 
 You can search from a given starting position:
 
-    var m = 's' => search(eggex, pos=12)
+    var m = 's'.search(eggex, pos=12)
     if (m) {
-      = m => group('month')  # => '10', first month after pos 12
-      = m => group('day')    # => '31', first day after pos 12
+      = m.group('month')  # => '10', first month after pos 12
+      = m.group('day')    # => '31', first day after pos 12
     }
 
-The `search()` method is a bit like `Str => find()`, which searches for a
+The `search()` method is a bit like `Str.find()`, which searches for a
 substring rather than a pattern.
 
 Help topics:
 
-- [search()](ref/chap-type-method.html#search) for a pattern
-  - [Match => group()](ref/chap-type-method.html#group)
-  - [Match => start()](ref/chap-type-method.html#start)
-  - [Match => end()](ref/chap-type-method.html#end)
-- [find()](ref/chap-type-method.html#find) a substring
+- [Str.search()](ref/chap-type-method.html#search) for a pattern
+  - [Match.group()](ref/chap-type-method.html#group)
+  - [Match.start()](ref/chap-type-method.html#start)
+  - [Match.end()](ref/chap-type-method.html#end)
+- [Str.find()](ref/chap-type-method.html#find) a substring
 
 ### `leftMatch()` for Iterative matching / Lexers
 
@@ -129,21 +129,21 @@ It's useful for writing iterative lexers.
 
     var pos = 0  # start at position 0
     while (true) {
-      var m = s => leftMatch(lexer, pos=pos)
+      var m = s.leftMatch(lexer, pos=pos)
       if (not m) {
         break
       }
       # Test which subgroup matched
       var id = null
-      if (m => group('name') !== null) {
+      if (m.group('name') !== null) {
         setvar id = 'name'
-      } elif (m => group('num') !== null) {
+      } elif (m.group('num') !== null) {
         setvar id = 'num'
-      } elif (m => group('space') !== null) {
+      } elif (m.group('space') !== null) {
         setvar id = 'space'
       }
       # Calculate the token value
-      var end_pos = m => end(0)
+      var end_pos = m.end(0)
       var val = s[pos:end_pos]
 
       echo "Token $id $val"
@@ -164,7 +164,7 @@ As noted above, you can name a capture group with say `<capture d+ as month>`,
 and access it with either
 
 - `_group('month')` for the global match
-- `m => group('month')` when using `Str` methods
+- `m.group('month')` when using `Str` methods
 
 ### Type Conversion Funcs - A Better `scanf()`
 
@@ -182,14 +182,14 @@ Conversion funcs also work with positional captures: `/<capture d+ : int>/`.
 
 - Help topic: [re-capture](ref/chap-expr-lang.html#re-capture)
 
-### Replacement / Substitution (TODO)
+### Replacement / Substitution
 
 We plan to use unevaluated string literals like `^"hello $1"` ("quotations") as
 the replacement object.
 
 This is instead of custom Python's custom language like `'hello \g<1>`.
 
-    # var new = s => replace(/<capture d+ as month>/, ^"month is $month")
+    # var new = s.replace(/<capture d+ as month>/, ^"month is $month")
 
 - Help topic: [replace()](ref/chap-type-method.html#replace)
 
@@ -223,12 +223,12 @@ similar to the lexer example above:
       var pos = 0
       var result = []
       while (true) {
-        var m = s => search(pat, pos=pos)
+        var m = s.search(pat, pos=pos)
         if (not m) {
           break
         }
-        var left = m => start(0)
-        var right = m => end(0)
+        var left = m.start(0)
+        var right = m.end(0)
         call result->append(s[left:right])
         setvar pos = right
       }

@@ -88,6 +88,7 @@ readonly MARKDOWN_DOCS=(
   ysh-regex-api
   upgrade-breakage
   ysh-tour
+  ysh-io
 
   style-guide
   novelties
@@ -151,7 +152,6 @@ readonly MARKDOWN_DOCS=(
   old/errors
   old/ysh-builtins
 
-  io-builtins
   unicode
   framing
   xtrace
@@ -552,26 +552,34 @@ write-metrics() {
   echo "Wrote $out"
 }
 
-tour() {
+maybe-tree() {
+  if command -v tree >/dev/null; then
+    tree $work_dir
+  fi
+}
+
+ysh-tour() {
   ### Build the Tour of YSH, and execute code as validation
   local name=${1:-ysh-tour}
 
   split-and-render doc/$name.md
 
-  local work_dir=$REPO_ROOT/_tmp/code-blocks/doc
+  local work_dir=$REPO_ROOT/_tmp/ysh-tour
+  mkdir -p $work_dir
+  pushd $work_dir
 
-  mkdir -p $work_dir/lib
+  mkdir -p lib
 
   # Files used by module example
-  touch $work_dir/{build,test}.sh
+  touch {build,test}.sh
 
-  cat >$work_dir/lines.txt <<'EOF'
+  cat >lines.txt <<'EOF'
   doc/hello.md
  "doc/with spaces.md"
 b'doc/with byte \yff.md'
 EOF
   
-  cat >$work_dir/myargs.ysh <<EOF
+  cat >myargs.ysh <<EOF
 const __provide__ = :| proc1 p2 p3 |
 
 proc proc1 {
@@ -587,14 +595,14 @@ proc p3 {
 }
 EOF
 
-  cat >$work_dir/demo.py <<EOF
+  cat >demo.py <<EOF
 #!/usr/bin/env python
 
 print("hi")
 EOF
-  chmod +x $work_dir/demo.py
+  chmod +x demo.py
 
-  cat >$work_dir/lib/util.ysh <<EOF
+  cat >lib/util.ysh <<EOF
 const __provide__ = :| log |
 
 proc log {
@@ -602,10 +610,10 @@ proc log {
 }
 EOF
 
-  pushd $work_dir
+  local code_dir=$REPO_ROOT/_tmp/code-blocks/doc
 
   # Prepend extra code
-  cat >tour.ysh - $name.txt <<EOF
+  cat >tour.ysh - $code_dir/$name.txt <<EOF
 func myMethod(self) {
   echo 'myMethod'
 }
@@ -624,12 +632,34 @@ EOF
   $REPO_ROOT/bin/ysh tour.ysh < /dev/null
   popd
 
+  maybe-tree $work_dir
+
   # My own dev tools
   # if test -d ~/vm-shared; then
   if false; then
     local path=_release/VERSION/doc/$name.html
     cp -v $path ~/vm-shared/$path
   fi
+}
+
+ysh-io() {
+  local name='ysh-io'
+  split-and-render doc/$name.md
+
+  local work_dir=$REPO_ROOT/_tmp/ysh-io
+  rm -r -f "$work_dir"
+  mkdir -p $work_dir
+
+  pushd $work_dir
+
+  local code_dir=$REPO_ROOT/_tmp/code-blocks/doc
+  cp $code_dir/$name.txt ysh-io.ysh
+
+  $REPO_ROOT/bin/ysh ysh-io.ysh
+
+  maybe-tree $work_dir
+
+  popd
 }
 
 one() {
@@ -861,7 +891,8 @@ run-for-release() {
   local root=_release/VERSION
   mkdir -p $root/{doc,test,pub}
 
-  tour
+  ysh-tour
+  ysh-io
 
   # Metadata
   cp -v _build/release-date.txt oils-version.txt $root

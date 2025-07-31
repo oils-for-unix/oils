@@ -420,7 +420,7 @@ test-strict-errexit-old() {
   _strict-errexit-case '! if true; then false; fi; echo "should not get here"'
 
   # command.Case
-  _strict-errexit-case '! case x in x) echo x;; esac; echo "should not get here"'
+  _strict-errexit-case '! case x in x) echo x ;; esac; echo "should not get here"'
 
   # command.TimeBlock
   _strict-errexit-case '! time echo hi; echo "should not get here"'

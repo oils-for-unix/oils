@@ -110,7 +110,7 @@ Crosscutting design issues:
 - [Variable Declaration, Mutation, and Scope](variables.html)
 - [Strings: Quotes, Interpolation, Escaping, and Buffers](strings.html) &dagger;
   - [Unicode](unicode.html) &dagger;.  Oils supports and prefers UTF-8.
-- [YSH I/O Builtins](io-builtins.html) &dagger;
+- [YSH Input/Output](ysh-io.html)
 
 ## Data Languages Avoid Ad-Hoc Parsing
 
@@ -147,7 +147,7 @@ Internal details:
 - [Oils Repo Overview](repo-overview.html)
 - [Doc Toolchain](doc-toolchain.html) and [Doc Plugins](doc-plugins.html).
   - [ul-table: Markdown Tables Without New Syntax](ul-table.html)
-- [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
+- [Github Wiki for oils-for-unix/oils](https://github.com/oils-for-unix/oils/wiki)
 - [Old Docs](old/index.html).  Drafts that may be deleted.
 
 Internal Architecture:
@@ -160,10 +160,10 @@ Internal Architecture:
 
 ## More
 
-- [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki).
-- [The blog](https://www.oilshell.org/blog/) has useful background information,
+- [Github Wiki for oils-for-unix/oils](https://github.com/oils-for-unix/oils/wiki).
+- [The blog](/blog/) has useful background information,
   although older posts are more likely to have incorrect information.
-- [The home page](https://www.oilshell.org/) has links to docs for new users.
+- [The home page](/) has links to docs for new users.
 
 Old:
 

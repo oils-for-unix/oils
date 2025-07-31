@@ -113,6 +113,8 @@ readonly UFTRACE_URL='https://github.com/namhyung/uftrace/archive/refs/tags/v0.1
 readonly SOUFFLE_VERSION=2.4.1
 readonly SOUFFLE_URL=https://github.com/souffle-lang/souffle/archive/refs/tags/2.4.1.tar.gz
 
+readonly WEDGE_LOG_DIR=_build/wedge/logs
+
 log() {
   echo "$@" >& 2
 }
@@ -805,6 +807,7 @@ maybe-install-wedge() {
     --field "$version" \
     --append \
     --output $task_file \
+    -- \
     "${cmd[@]}" "$@" >$log_file 2>&1
   local status=$?
   set -o errexit
@@ -840,8 +843,6 @@ dummy-task() {
     exit 2
   fi
 }
-
-readonly WEDGE_LOG_DIR=_build/wedge/logs
 
 dummy-task-wrapper() {
   # Similar to test/common.sh run-task-with-status, used by
@@ -888,7 +889,7 @@ index-html()  {
     "$base_url/ajax.js" \
     "$base_url/table/table-sort.js" \
     "$base_url/table/table-sort.css" \
-    "$base_url/base.css"\
+    "$base_url/base.css"
 
   table-sort-begin 'width60'
 
@@ -918,7 +919,7 @@ install-wedge-list() {
   ### Reads task rows from stdin
   local parallel=${1:-}
 
-  mkdir -p _build/wedge/logs
+  mkdir -p $WEDGE_LOG_DIR
 
   local -a flags
   if test -n "$parallel"; then
@@ -942,19 +943,19 @@ install-wedge-list() {
 }
 
 write-task-report() {
-  local tasks_tsv=_build/wedge/logs/tasks.tsv
+  local tasks_tsv=$WEDGE_LOG_DIR/tasks.tsv
 
   python3 devtools/tsv_concat.py $WEDGE_LOG_DIR/*.task.tsv > $tasks_tsv
   log "Wrote $tasks_tsv"
 
   # TODO: version can be right-justified?
-  here-schema-tsv-4col >_build/wedge/logs/tasks.schema.tsv <<EOF
+  here-schema-tsv-4col >$WEDGE_LOG_DIR/tasks.schema.tsv <<EOF
 column_name   type      precision strftime
 status        integer   0         -
 elapsed_secs  float     1         -
-user_secs     float     1         -
 start_time    float     1         %H:%M:%S
 end_time      float     1         %H:%M:%S
+user_secs     float     1         -
 sys_secs      float     1         -
 max_rss_KiB   integer   0         -
 xargs_slot    integer   0         -
@@ -994,6 +995,7 @@ fake-py3-libs-wedge() {
     --field "$version" \
     --append \
     --output $task_file \
+    -- \
     $0 install-py3-libs >$log_file 2>&1 || true
 
   echo "  FAKE  $(timestamp)  $name $version"

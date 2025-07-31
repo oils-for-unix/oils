@@ -14,7 +14,7 @@ nice language like Python has surprising cases like `42,` and `f(x),` being a
 The goal of YSH is to remove the many warts of shell, documented at [Shell
 WTFs][wtfs].  Nonetheless it has some of its own.
 
-[wtfs]: https://github.com/oilshell/oil/wiki/Shell-WTFs
+[wtfs]: https://github.com/oils-for-unix/oils/wiki/Shell-WTFs
 
 <div id="toc">
 </div>

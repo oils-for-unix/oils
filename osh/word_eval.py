@@ -1570,7 +1570,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
                     if quoted and nullary_op.id == Id.VOp3_Star:
                         sep = self.splitter.GetJoinChar()
-                        part_vals.append(Piece(sep.join(names), quoted, True))
+                        part_vals.append(
+                            Piece(sep.join(names), quoted, not quoted))
                     else:
                         part_vals.append(part_value.Array(names, quoted))
                     return  # EARLY RETURN
@@ -1601,7 +1602,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 val = self._ProcessUndef(val, part.name_tok, vsub_state)
 
                 n = self._Count(val, part.name_tok)
-                part_vals.append(Piece(str(n), quoted, False))
+                part_vals.append(Piece(str(n), quoted, not quoted))
                 return  # EARLY EXIT: nothing else can come after length
 
             elif part.prefix_op.id == Id.VSub_Bang:
@@ -1849,7 +1850,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 part = cast(Token, UP_part)
                 # Split if it's in a substitution.
                 # That is: echo is not split, but ${foo:-echo} is split
-                v = Piece(lexer.LazyStr(part), quoted, is_subst)
+                v = Piece(lexer.LazyStr(part), quoted, not quoted and is_subst)
                 part_vals.append(v)
 
             elif case(word_part_e.BracedRangeDigit):

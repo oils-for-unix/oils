@@ -218,7 +218,7 @@ echo status=$?
 ## N-I zsh stdout-json: ""
 
 #### read -n from pipe
-case $SH in (dash|ash|zsh) exit ;; esac
+case $SH in dash|ash|zsh) exit ;; esac
 
 echo abcxyz | { read -n 3; echo reply=$REPLY; }
 ## status: 0
@@ -274,7 +274,7 @@ echo '  a b  \
 #### read -n vs. -N
 # dash, ash and zsh do not implement read -N
 # mksh treats -N exactly the same as -n
-case $SH in (dash|ash|zsh) exit ;; esac
+case $SH in dash|ash|zsh) exit ;; esac
 
 # bash docs: https://www.gnu.org/software/bash/manual/html_node/Bash-Builtins.html
 
@@ -309,7 +309,7 @@ read -N
 ## END
 
 #### read -N ignores delimiters
-case $SH in (dash|ash|zsh) exit ;; esac
+case $SH in dash|ash|zsh) exit ;; esac
 
 echo $'a\nb\nc' > $TMP/read-lines.txt
 
@@ -329,7 +329,7 @@ c='some value'
 read a b c < $TMP/read-few.txt
 echo "'$a' '$b' '$c'"
 
-case $SH in (dash) exit ;; esac # dash does not implement -n
+case $SH in dash) exit ;; esac # dash does not implement -n
 
 c='some value'
 read -n 3 a b c < $TMP/read-few.txt
@@ -393,7 +393,7 @@ argv.py "$escaped" "$raw"
 ## BUG dash/mksh/zsh stdout: ['', '']
 
 #### read -s from pipe, not a terminal
-case $SH in (dash|zsh) exit ;; esac
+case $SH in dash|zsh) exit ;; esac
 
 # It's hard to really test this because it requires a terminal.  We hit a
 # different code path when reading through a pipe.  There can be bugs there
@@ -580,7 +580,7 @@ bar 1
 ## END
 
 #### read -t 0 tests if input is available
-case $SH in (dash|zsh|mksh) exit ;; esac
+case $SH in dash|zsh|mksh) exit ;; esac
 
 # is there input available?
 read -t 0 < /dev/null
@@ -603,7 +603,7 @@ reply=
 ## N-I dash/zsh/mksh stdout-json: ""
 
 #### read -t 0.5
-case $SH in (dash) exit ;; esac
+case $SH in dash) exit ;; esac
 
 read -t 0.5 < /dev/null
 echo $?
@@ -632,7 +632,7 @@ echo $?
 ## BUG zsh status: 1
 
 #### read -u
-case $SH in (dash|mksh) exit ;; esac
+case $SH in dash|mksh) exit ;; esac
 
 # file descriptor
 read -u 3 3<<EOF
@@ -655,7 +655,7 @@ status=1
 ## END
 
 #### read -N doesn't respect delimiter, while read -n does
-case $SH in (dash|zsh|ash) exit ;; esac
+case $SH in dash|zsh|ash) exit ;; esac
 
 echo foobar | { read -n 5 -d b; echo $REPLY; }
 echo foobar | { read -N 5 -d b; echo $REPLY; }
@@ -674,7 +674,7 @@ fooba
 # hm DISABLED if we're not going to the terminal
 # so we're only testing that it accepts the flag here
 
-case $SH in (dash|mksh|zsh) exit ;; esac
+case $SH in dash|mksh|zsh) exit ;; esac
 
 echo hi | { read -p 'P'; echo $REPLY; }
 echo hi | { read -p 'P' -n 1; echo $REPLY; }
@@ -709,7 +709,7 @@ var=
 #### read -r -d '' for NUL strings, e.g. find -print0
 
 
-case $SH in (dash|zsh|mksh) exit ;; esac  # NOT IMPLEMENTED
+case $SH in dash|zsh|mksh) exit ;; esac  # NOT IMPLEMENTED
 
 mkdir -p read0
 cd read0
@@ -730,7 +730,7 @@ find . -type f -a -print0 | { read -r -d ''; echo "[$REPLY]"; }
 
 # This tickles an infinite loop bug in our version of mksh!  TODO: upgrade the
 # version and enable this
-case $SH in (mksh) return ;; esac
+case $SH in mksh) return ;; esac
 
 cd $TMP
 mkdir -p dir
@@ -745,10 +745,10 @@ status=1
 
 #### read -n from directory
 
-case $SH in (dash|ash) return ;; esac  # not implemented
+case $SH in dash|ash) return ;; esac  # not implemented
 
 # same hanging bug
-case $SH in (mksh) return ;; esac
+case $SH in mksh) return ;; esac
 
 mkdir -p dir
 read -n 3 x < ./dir
@@ -760,7 +760,7 @@ status=1
 ## N-I dash/ash stdout-json: ""
 
 #### mapfile from directory (bash doesn't handle errors)
-case $SH in (dash|ash|mksh|zsh) return ;; esac  # not implemented
+case $SH in dash|ash|mksh|zsh) return ;; esac  # not implemented
 
 mkdir -p dir
 mapfile $x < ./dir
@@ -773,3 +773,104 @@ status=1
 status=0
 ## END
 ## N-I dash/ash/mksh/zsh stdout-json: ""
+
+#### read -n 0
+case $SH in zsh) exit 99;; esac  # read -n not implemented
+
+echo 'a\b\c\d\e\f' | (read -n 0; argv.py "$REPLY")
+
+## STDOUT:
+['']
+## END
+# ash appears to treat 0 as unspecified
+## OK ash STDOUT:
+['abcdef']
+## END
+## N-I zsh status: 99
+## N-I zsh STDOUT:
+## END
+
+#### read -n and backslash escape
+case $SH in zsh) exit 99;; esac  # read -n not implemented
+
+echo 'a\b\c\d\e\f' | (read -n 5; argv.py "$REPLY")
+echo 'a\ \ \ \ \ ' | (read -n 5; argv.py "$REPLY")
+
+## STDOUT:
+['abcde']
+['a    ']
+## END
+## OK mksh STDOUT:
+['a\x08d\x1b']
+['a ']
+## END
+## OK ash STDOUT:
+['abc']
+['a  ']
+## END
+## N-I zsh status: 99
+## N-I zsh STDOUT:
+## END
+
+#### read -n 4 with incomplete backslash
+case $SH in zsh) exit 99;; esac  # read -n not implemented
+
+echo 'abc\def\ghijklmn' | (read -n 4; argv.py "$REPLY")
+echo '   \xxx\xxxxxxxx' | (read -n 4; argv.py "$REPLY")
+
+# bash implements "-n NUM" as number of characters
+## STDOUT:
+['abcd']
+['   x']
+## END
+# ash implements "-n NUM" as number of bytes
+## OK-2 ash STDOUT:
+['abc']
+['   ']
+## END
+# mksh implements "-n NUM" as number of bytes, and also "read" (without
+# variable names) in mksh is equivalent to "read REPLY, i.e., consideres IFS.
+## OK-3 mksh STDOUT:
+['abc']
+['']
+## END
+## N-I zsh status: 99
+## N-I zsh STDOUT:
+## END
+
+#### read -n 4 with backslash + delim
+case $SH in zsh) exit 99;; esac  # read -n not implemented
+
+echo $'abc\\\ndefg' | (read -n 4; argv.py "$REPLY")
+
+## STDOUT:
+['abcd']
+## END
+# mksh and ash implements "-n NUM" as number of bytes.
+## OK-2 mksh/ash STDOUT:
+['abc']
+## END
+## N-I zsh status: 99
+## N-I zsh STDOUT:
+## END
+
+#### "backslash + newline" should be swallowed regardless of "-d <delim>"
+
+printf '%s\n' 'a b\' 'c d' | (read; argv.py "$REPLY")
+printf '%s\n' 'a b\,c d'   | (read; argv.py "$REPLY")
+printf '%s\n' 'a b\' 'c d' | (read -d ,; argv.py "$REPLY")
+printf '%s\n' 'a b\,c d'   | (read -d ,; argv.py "$REPLY")
+
+## STDOUT:
+['a bc d']
+['a b,c d']
+['a bc d\n']
+['a b,c d\n']
+## END
+# mksh/zsh swallows "backslash + delim" instead.
+## OK-2 mksh/zsh STDOUT:
+['a bc d']
+['a b,c d']
+['a b\nc d']
+['a bc d']
+## END

@@ -171,7 +171,7 @@ If stdout has any NUL bytes, they are removed (regardless of position).
 
 Related: [captureStdout()](chap-type-method.html#captureStdout)
 
-### ysh-command-sub
+### command-splice
 
 YSH also has spliced command subs, enabled by `shopt --set parse_at`.  The
 result is a **List** of strings, rather than a single string.

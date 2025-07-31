@@ -49,6 +49,7 @@ YSH:
   | [Simple Word Evaluation](simple-word-eval.html)
   | [Variable Declaration, Mutation, and Scope](variables.html)
   | [Hay - Custom Languages for Unix Systems](hay.html)
+  | [YSH Input/Output](ysh-io.html)
 
 Data Languages:
 

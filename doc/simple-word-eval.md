@@ -305,7 +305,7 @@ POSIX.
     otherwise I'd have made more noise about it.
   - Also described by the Fedora Security team: [Defensive Coding: Shell Double Expansion](https://docs.fedoraproject.org/en-US/Fedora_Security_Team/1/html/Defensive_Coding/sect-Defensive_Coding-Shell-Double_Expansion.html)
 
-[wiki-word-eval]: https://github.com/oilshell/oil/wiki/OSH-Word-Evaluation-Algorithm
+[wiki-word-eval]: https://github.com/oils-for-unix/oils/wiki/OSH-Word-Evaluation-Algorithm
 
 ### Tip: View the Syntax Tree With `-n`
 

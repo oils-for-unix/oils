@@ -551,7 +551,7 @@ alias a=
 # this is because of our cleaner evaluation model
 
 a (( var = 0 ))
-#a case x in x) true;; esac
+#a case x in x) true ;; esac
 
 echo done
 ## stdout: done

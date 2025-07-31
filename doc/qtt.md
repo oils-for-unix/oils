@@ -9,7 +9,7 @@ An Extension to TSV
 
 TODO: Write this doc.
 
-Notes: <https://github.com/oilshell/oil/wiki/TSV2-Proposal>
+Notes: <https://github.com/oils-for-unix/oils/wiki/TSV2-Proposal>
 
 ## Rough Idea
 

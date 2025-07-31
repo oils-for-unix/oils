@@ -861,3 +861,52 @@ for i in ""$A""; do echo =$i=; done
 =def=
 ==
 ## END
+
+
+#### Regression: "${!v*}"x should not be split
+case $SH in dash|mksh|ash|yash) exit 99;; esac
+IFS=x
+axb=1
+echo "${!axb*}"
+echo "${!axb*}"x
+## STDOUT:
+axb
+axbx
+## END
+## N-I dash/mksh/ash/yash status: 99
+## N-I dash/mksh/ash/yash STDOUT:
+## END
+
+
+#### Regression: ${!v} should be split
+v=hello
+IFS=5
+echo ${#v}
+echo "${#v}"
+## STDOUT:
+
+5
+## END
+
+
+#### Regression: "${v:-AxBxC}"x should not be split
+IFS=x
+v=
+echo "${v:-AxBxC}"
+echo "${v:-AxBxC}"x  # <-- osh failed this
+echo ${v:-AxBxC}
+echo ${v:-AxBxC}x
+echo ${v:-"AxBxC"}
+echo ${v:-"AxBxC"}x
+echo "${v:-"AxBxC"}"
+echo "${v:-"AxBxC"}"x
+## STDOUT:
+AxBxC
+AxBxCx
+A B C
+A B Cx
+AxBxC
+AxBxCx
+AxBxC
+AxBxCx
+## END

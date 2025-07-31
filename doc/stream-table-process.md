@@ -181,7 +181,7 @@ What's not in the streams / awk example above:
 
 Old wiki pages:
 
-- <https://github.com/oilshell/oil/wiki/Structured-Data-in-Oil>
+- <https://github.com/oils-for-unix/oils/wiki/Structured-Data-in-Oil>
   - uxy - closest I think - <https://github.com/sustrik/uxy>
     - relies on to-json and jq for querying
   - miller - I don't like their language - https://github.com/johnkerl/miller -

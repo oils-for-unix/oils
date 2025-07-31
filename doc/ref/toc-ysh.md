@@ -151,7 +151,7 @@ X [Wok]           _field()
                   ysh-wait               wait --all --verbose
                   write                  Like echo, with --, --sep, --end
                   fork         forkwait  Replace & and (), and takes a block
-                  fopen                  Open multiple streams, takes a block
+                  redir                  Run a block, with redirects
   [Private]       cat          rm        POSIX-compatible
                   sleep
   [Hay Config]    hay          haynode   For DSLs and config files
@@ -340,7 +340,7 @@ X [External Lang] BEGIN   END   when (awk)
                   expr-splice      echo @[split(x)]
                   var-splice       @myarray @ARGV
                   command-sub      $(date)
-                  ysh-command-sub  @(cat my-j8-lines.txt)
+                  command-splice   @(cat my-j8-lines.txt)
   [Formatting]  X ysh-printf       ${x %.3f}
                 X ysh-format       ${x|html}
 ```

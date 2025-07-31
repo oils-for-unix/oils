@@ -101,7 +101,7 @@ respect C escapes.
     Python regex.
 
 Those last two caveats about floats are TODOs:
-<https://github.com/oilshell/oil/issues/483>
+<https://github.com/oils-for-unix/oils/issues/483>
 
 ### List Type: Both "Array" and List Literals
 

@@ -855,8 +855,10 @@ Returns the singleton `stdin` value, which you can iterate over:
        echo $line
     }
 
-This is buffered line-based I/O, as opposed to the unbuffered I/O of the `read`
+This is buffered line-based I/O, as opposed to the unbuffered I/O of the [read][]
 builtin.
+
+[read]: chap-builtin-cmd.html#read
 
 ### io/eval()
 

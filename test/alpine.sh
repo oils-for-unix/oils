@@ -66,11 +66,12 @@
 #  test/alpine.sh copy-wwz
 #  test/alpine.sh publish
 
-set -o nounset
-set -o pipefail
-set -o errexit
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
-readonly ROOTFS_URL='http://dl-cdn.alpinelinux.org/alpine/v3.11/releases/x86_64/alpine-minirootfs-3.11.3-x86_64.tar.gz'
+#readonly ROOTFS_URL='http://dl-cdn.alpinelinux.org/alpine/v3.11/releases/x86_64/alpine-minirootfs-3.11.3-x86_64.tar.gz'
+readonly ROOTFS_URL='https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/x86_64/alpine-minirootfs-3.22.1-x86_64.tar.gz'
 
 readonly CHROOT_OILS_TAR=_chroot/alpine-oils-tar
 readonly CHROOT_OILS_SPEC=_chroot/alpine-oils-spec
@@ -333,4 +334,7 @@ publish() {
   echo "Visit http://$dest/$(basename $path)/"
 }
 
-"$@"
+name=$(basename $0)
+if test "$name" = 'alpine.sh'; then
+  task-five "$@"
+fi

@@ -114,7 +114,7 @@ echo $'\0' | show_hex
 
 
 #### NUL bytes and IFS splitting
-case $SH in (dash) exit ;; esac
+case $SH in dash) exit ;; esac
 
 argv.py $(echo -e '\0')
 argv.py "$(echo -e '\0')"
@@ -139,7 +139,7 @@ argv.py "$(echo -e 'a\0b')"
 
 #### NUL bytes with test -n
 
-case $SH in (dash) exit ;; esac
+case $SH in dash) exit ;; esac
 
 # zsh is buggy here, weird
 test -n $''
@@ -168,7 +168,7 @@ status=0
 
 #### NUL bytes with test -f
 
-case $SH in (dash) exit ;; esac
+case $SH in dash) exit ;; esac
 
 
 test -f $'\0'
@@ -205,7 +205,7 @@ status=1
 
 #### NUL bytes with ${#s} (OSH and zsh agree)
 
-case $SH in (dash) exit ;; esac
+case $SH in dash) exit ;; esac
 
 empty=$''
 nul=$'\0'

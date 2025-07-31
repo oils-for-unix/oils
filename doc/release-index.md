@@ -4,7 +4,7 @@ all_docs_url: -
 version_url: -
 ---
 
-Oils 0.33.0
+Oils 0.34.0
 ===========
 
 <!-- NOTE: This file is published to /release/$VERSION/index.html -->
@@ -13,7 +13,7 @@ Oils 0.33.0
 <!-- REPLACE_WITH_DATE -->
 </span>
 
-This is the home page for version 0.33.0 of Oils, a Unix shell.  To use it,
+This is the home page for version 0.34.0 of Oils, a Unix shell.  To use it,
 
 1. Download a source tarball.
 2. Build it and do a "smoke test", as described in [INSTALL][].
@@ -27,7 +27,7 @@ These steps take 30 to 60 seconds on most machines.  After installation, see
 
 <!-- REPLACE_WITH_DOWNLOAD_LINKS -->
 
-The [Oils Deployments](https://github.com/oilshell/oil/wiki/Oils-Deployments)
+The [Oils Deployments](https://github.com/oils-for-unix/oils/wiki/Oils-Deployments)
 wiki page has other ways of getting Oils.  These versions may not be
 up-to-date.
 

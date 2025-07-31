@@ -80,6 +80,16 @@ INTEGER_TYPES = ('integer',)
 NUMERIC_TYPES = ('double', 'float', 'number') + INTEGER_TYPES
 
 
+# schema.tsv -> sqlite
+SQL_TYPES = {
+    'integer': 'INTEGER',
+    'double': 'REAL',
+    'float': 'REAL',
+    'number': 'REAL',
+    'string': 'TEXT',
+}
+
+
 class Schema:
   def __init__(self, rows):
     schema_col_names = rows[0]
@@ -117,6 +127,20 @@ class Schema:
     self.col_names = None
     self.col_has_href = None
 
+    self.s_cols = s_cols # for ToSqlite()
+
+  def ToSqlite(self):
+    #print(self.s_cols)
+
+    column_name = self.s_cols['column_name']
+    typ = self.s_cols['type']
+
+    cols = []
+    for n, t in zip(column_name, typ):
+      sqlite_type = SQL_TYPES[t.lower()]
+      cols.append('  %s %s' % (n, sqlite_type))
+    return ',\n'.join(cols)
+
   def VerifyColumnNames(self, col_names):
     """Assert that the column names we got are all in the schema."""
     if 0:
@@ -126,7 +150,7 @@ class Schema:
     n = len(col_names)
     self.col_has_href = [False] * n
     for i in range(n-1):
-      this_name, next_name= col_names[i], col_names[i+1]
+      this_name, next_name = col_names[i], col_names[i+1]
       if this_name + '_HREF' == next_name:
         self.col_has_href[i] = True
 

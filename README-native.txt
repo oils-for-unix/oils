@@ -13,15 +13,15 @@ It's our upgrade path from bash to a better language and runtime!
 
 The home page for this release is:
 
-    https://oils.pub/release/0.33.0/
+    https://oils.pub/release/0.34.0/
 
 How to install Oils:
 
-    https://oils.pub/release/0.33.0/doc/INSTALL.html
+    https://oils.pub/release/0.34.0/doc/INSTALL.html
 
 This doc may help packagers:
 
-    https://oils.pub/release/0.33.0/doc/help-mirror.html
+    https://oils.pub/release/0.34.0/doc/help-mirror.html
 
 Feedback:
 

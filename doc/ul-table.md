@@ -400,7 +400,7 @@ Another table:
 </table>
 
 
-## Markdown Quirks
+## Quirks and Tips
 
 Here are some quirks I ran into when using `ul-table`.
 
@@ -427,6 +427,19 @@ front of it:
     - tr
       - <!-- hyphen --> -
       - &nbsp; -
+
+(3) If you want to put an unordered list directly in `ul-table` cell, without
+any paragraphs, wrap the list in a `<div>`:
+
+    - tr
+      - Cell One
+      - <div>
+        
+        - bullet A
+        - bullet B
+
+        </div>
+      - Cell Three
 
 ## Conclusion
 
@@ -585,7 +598,7 @@ position?
 <!--
 TODO:
 
-- change back to oilshell.org/ for publishing
+- change back to oils.pub/ for publishing
 - Compare to wikipedia
   - https://en.wikipedia.org/wiki/Help:Table
   - table caption  - this is just <caption>

@@ -144,7 +144,7 @@ I created the equivalent of the opening example:
 |-
 | [https://www.gnu.org/software/bash/ Bash] || 5.2
 |-
-| [https://www.oilshell.org/ OSH] || 0.25.0
+| [https://oils.pub/ OSH] || 0.25.0
 |}
 ```
 

@@ -95,7 +95,7 @@ STDERR
 ## N-I dash stdout-json: ""
 
 #### xtrace with unicode chars
-case $SH in (dash) exit ;; esac
+case $SH in dash) exit ;; esac
 
 mu1='[μ]'
 mu2=$'[\u03bc]'
@@ -123,7 +123,7 @@ my-dir/my_file.cc
 ## END
 
 #### xtrace with tabs
-case $SH in (dash) exit ;; esac
+case $SH in dash) exit ;; esac
 
 set -o xtrace
 echo $'[\t]'
@@ -231,7 +231,7 @@ x=1 x=2; echo $x; readonly x=3
 ## END
 
 #### [[ ]]
-case $SH in (dash|mksh) exit ;; esac
+case $SH in dash|mksh) exit ;; esac
 
 set -x
 

@@ -317,7 +317,7 @@ v=foo
 ## END
 
 #### array and - and +
-case $SH in (dash) exit ;; esac
+case $SH in dash) exit ;; esac
 
 shopt -s compat_array  # to refer to array as scalar
 
@@ -482,7 +482,7 @@ argv=
 ## END
 
 #### assoc array and - and +
-case $SH in (dash|mksh) exit ;; esac
+case $SH in dash|mksh) exit ;; esac
 
 declare -A empty=()
 declare -A assoc=(['k']=v)

@@ -177,7 +177,17 @@ age,double,3
 EOF
 
   write-html css2
+}
 
+test-schema2sqlite() {
+  sed 's/,/\t/g' >_tmp/foo.schema.tsv <<EOF
+column_name,type,precision
+ROW_CSS_CLASS,string,0
+name,string,1
+age,double,3
+EOF
+
+  ./schema2sqlite.py _tmp/foo.schema.tsv
 }
 
 all() {

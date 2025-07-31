@@ -86,7 +86,7 @@ compare-shells() {
 
     local more_flags=''
     case $sh in
-      (bash|bin/osh)
+      bash|bin/osh)
         more_flags='--rcfile /dev/null'
         ;;
     esac

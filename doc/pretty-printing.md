@@ -413,7 +413,7 @@ also want to export the [ASDL][] **schema** as NIL8!
 Links:
 
 - [#data-languages > NIL8 Infix Rule](https://oilshell.zulipchat.com/#narrow/stream/403584-data-languages/topic/NIL8.20Infix.20Rule)
-- [Commit describing infix rule](https://github.com/oilshell/oil/commit/b9cecf88838d4c89ce1dbd8f4bcdd8e92e10d442)
+- [Commit describing infix rule](https://github.com/oils-for-unix/oils/commit/b9cecf88838d4c89ce1dbd8f4bcdd8e92e10d442)
 
 At a high level, we're trying to nudge users toward a **small** set of syntaxes
 for shell-like programming, rather than inventing ad hoc syntax every time.

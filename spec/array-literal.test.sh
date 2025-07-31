@@ -269,7 +269,7 @@ status=1
 ## END
 
 #### (strict_array) s+=()
-case $SH in bash) ;; *) shopt --set strict_array;; esac
+case $SH in bash) ;; *) shopt --set strict_array ;; esac
 
 s1=hello
 s2=world
@@ -296,7 +296,7 @@ declare -a s2=([0]="world" [1]="1" [2]="2" [3]="3" [4]="4")
 ## END
 
 #### (strict_array) declare -A s+=()
-case $SH in bash) ;; *) shopt --set strict_array;; esac
+case $SH in bash) ;; *) shopt --set strict_array ;; esac
 
 s1=hello
 s2=world
@@ -323,7 +323,7 @@ declare -A s2=([0]="world" [b]="y" [a]="x" )
 ## END
 
 #### (strict_array) assoc=(key value ...) is not allowed
-case $SH in bash) ;; *) shopt --set strict_array;; esac
+case $SH in bash) ;; *) shopt --set strict_array ;; esac
 
 declare -A a=([a]=b)
 eval "a=(1 2 3 4)"

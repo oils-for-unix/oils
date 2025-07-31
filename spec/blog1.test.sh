@@ -62,7 +62,7 @@ echo ${#1#'###'}
 
 #### Julia example from spec/oil-user-feedback
 
-case $SH in (dash|mksh|zsh) exit ;; esac
+case $SH in dash|mksh|zsh) exit ;; esac
 
 git-branch-merged() {
   cat <<EOF
