@@ -118,22 +118,22 @@ Constructs like `. ^ $ \< \>` are deprecated because they break these rules.
 
 ### `.` Is Now `dot`
 
-The dot primitive matches "any" character in whatever way the underlying
-regex library interprets it.
+The `dot` (wildcard) primitive matches "any" single character in whatever way
+the underlying regex library interprets this.
 Differences usually only concern special characters:
 
 **NUL-character:** `\0` (c-string), `\x00` (c-string/eggex) or `\y00` (j8)
-**Newline-terminator:** `\n`
+**line-breaks/terminators:** `\n` (newline)
 
 YSH can be compiled with GNU libc, or musl.
 
- - **libc** supports POSIX ERE syntax. The `dot` aka `.` matches any character,
-   except NUL ([most of the time](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html#tag_09_03_06)).
+ - **libc** supports POSIX ERE syntax. By default, the `dot` aka `.` matches
+   any character, except NUL ([most of the time](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html#tag_09_03_06)).
    
-   However, when setting the `reg_newline` flag (i.e. to search *within* lines)
+   However, when the `reg_newline` flag is set (i.e. to search *within* lines)
    the newline characters will practically be considered *before* applying the
-   expression to each line, so there will be no newline characters left to
-   match the dot in this mode.
+   expression to each line, so there will never be any newline characters left
+   to match the dot in this mode.
    
  - **musl** (todo)
 
