@@ -132,21 +132,36 @@ $[ENV.SH] --eval e.ysh -c 'echo hi'
 hi
 ## END
 
-#### ysh --eval respects _this_dir
+#### ysh --eval respects _this_dir and $0
 
 #echo tmp=$[ENV.TMP]
 
 var dir = "$[ENV.TMP]/code"
 mkdir -p $dir
 
-echo 'echo one; source $_this_dir/two.ysh' > $dir/one.ysh
+echo '
+  echo one
+  source $_this_dir/two.ysh
+  ' > $dir/one.ysh
 echo 'echo two' > $dir/two.ysh
 
-$[ENV.SH] --eval $dir/one.ysh -c 'echo flag -c'
+echo '
+  proc p {
+    echo three @ARGV
+  }
+  p AA
+  var x = $0
+  echo "dollar0 = $(basename $x)"
+  ' > $dir/three.ysh
+chmod +x $dir/three.ysh
+
+$[ENV.SH] --eval $dir/one.ysh --eval $dir/three.ysh -c 'echo flag -c'
 
 ## STDOUT:
 one
 two
+three AA
+dollar0 = three.ysh
 flag -c
 ## END
 

@@ -105,9 +105,10 @@ They also accept these flags:
 
     --eval FILE
         Evaluate the given file, similar to the 'source' builtin.  Specify it
-        multiple times to run multiple files.  If the errexit option is on
-        (e.g. in YSH), then the shell stops when $? is non-zero after
-        evaluating a file.
+        multiple times to run multiple files.
+
+        If the errexit option is on (e.g. in YSH), then the shell stops when $?
+        is non-zero after evaluating a file.  The $0 value is set to FILE.
 
     --eval-pure FILE
         Like --eval, but disallow I/O (known as "pure mode").
