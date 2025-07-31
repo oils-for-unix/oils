@@ -227,10 +227,9 @@ class Test(vm._Builtin):
         bool_node = None  # type: bool_expr_t
         n = len(cmd_val.argv) - 1
 
-        if self.exec_opts.simple_test_builtin() and n > 3:
-            e_usage(
-                "should only have 3 arguments or fewer (simple_test_builtin)",
-                loc.Missing)
+        if self.exec_opts.simple_test_builtin() and n not in (2, 3):
+            e_usage("may only have 2 or 3 arguments (simple_test_builtin)",
+                    loc.Missing)
 
         try:
             if n == 0:
