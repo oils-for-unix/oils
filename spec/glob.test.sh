@@ -295,76 +295,85 @@ hello hello-test.sh hello.py hello_preamble.sh
 ## END
 
 
-#### \ in unquoted substitutions should not match a backslash
+#### \ in unquoted substitutions does not match a backslash
 mkdir x
-touch x/test.ifs.{\\,\',a,\\b}.txt
-v="*\*.txt"
+touch \
+  x/test.ifs.\\.txt \
+  x/test.ifs.\'.txt \
+  x/test.ifs.a.txt \
+  x/test.ifs.\\b.txt
+
+v="*\\*.txt"
 argv.py x/$v
+
 v="*\'.txt"
 argv.py x/$v
-v="*\a.txt"
+
+v='*\a.txt'
 argv.py x/$v
-v="*\b.txt"
+
+v='*\b.txt'
 argv.py x/$v
+
 ## STDOUT:
 ['x/*\\*.txt']
 ["x/test.ifs.'.txt"]
 ['x/test.ifs.a.txt']
 ['x/test.ifs.\\b.txt']
 ## END
-# \ in unquoted substitutions never matches in ash/dash???
-## BUG ash/dash STDOUT:
-['x/*\\*.txt']
-["x/*\\'.txt"]
-['x/*\\a.txt']
-['x/*\\b.txt']
-## END
-# mksh treats \ in unquoted substitutions as literal \
-## N-I mksh STDOUT:
+
+# 3 shells treat \ in unquoted substitution $v as literal \
+## BUG mksh/ksh/yash STDOUT:
 ['x/test.ifs.\\.txt', 'x/test.ifs.\\b.txt']
 ["x/*\\'.txt"]
 ['x/*\\a.txt']
 ['x/test.ifs.\\b.txt']
 ## END
 
+#### \ in unquoted substitutions is preserved
+v='\*\*.txt'
+echo $v
+echo "$v"
 
-#### \ in unquoted substitutions should be preserved without glob chars
-mkdir x
-v="\*\*.txt"
-argv.py x/$v
 ## STDOUT:
-['x/\\*\\*.txt']
+\*\*.txt
+\*\*.txt
 ## END
 
 
-#### \ in unquoted substitutions should be preserved with noglob
-mkdir x
+#### \ in unquoted substitutions is preserved with set -o noglob
 set -f
-v="*\*.txt"
-argv.py x/$v
+v='*\*.txt'
+echo $v
+
 ## STDOUT:
-['x/*\\*.txt']
+*\*.txt
 ## END
 
 
-#### \ in unquoted substitutions should be preserved without glob matching
+#### \ in unquoted substitutions is preserved without glob matching
 mkdir x
-touch x/test.ifs.{'\','*'}.txt
-v="*\*.txt"
+touch \
+  'x/test.ifs.\.txt' \
+  'x/test.ifs.*.txt'
+v='*\*.txt'
 argv.py x/unmatching.$v
+
 ## STDOUT:
 ['x/unmatching.*\\*.txt']
 ## END
 
 
-#### \ in unquoted substitutions should escape globchars
+#### \ in unquoted substitutions escapes globchars
 mkdir x
-touch x/test.ifs.{'\','*'}.txt
+touch \
+  'x/test.ifs.\.txt' \
+  'x/test.ifs.*.txt'
 
-v="*\*.txt"
+v='*\*.txt'
 argv.py x/$v
 
-v="\\" u="*.txt"
+v="\\" u='*.txt'
 argv.py x/*$v$u
 
 v="\\" u="*.txt"
@@ -375,12 +384,7 @@ argv.py x/*$v*.txt
 ['x/test.ifs.*.txt']
 ['x/test.ifs.*.txt']
 ## END
-## BUG dash/ash STDOUT:
-['x/*\\*.txt']
-['x/*\\*.txt']
-['x/*\\*.txt']
-## END
-## N-I mksh STDOUT:
+## BUG mksh/ksh/yash STDOUT:
 ['x/test.ifs.\\.txt']
 ['x/test.ifs.\\.txt']
 ['x/test.ifs.\\.txt']

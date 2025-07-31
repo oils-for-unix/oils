@@ -84,6 +84,9 @@ def LooksLikeStaticGlob(w):
 #       we don't need to escape the @ in @(cc), because escaping ( is enough
 GLOB_META_CHARS = r'\*?[]-:!()|'
 
+# Check invariant needed to escape literal \ as \@
+assert '@' not in GLOB_META_CHARS, '\@ is used to escape backslash'
+
 
 def GlobEscape(s):
     # type: (str) -> str
@@ -93,16 +96,20 @@ def GlobEscape(s):
 
 def GlobEscapeUnquotedSubstitution(s):
     # type: (str) -> str
-    """For the substitution results such as $v with v='a\*b.txt'."""
+    """Glob escape a string for an unquoted var sub.
 
-    # When glob expansion is not performed, unquoted substitutions need to be
-    # literally preserved in the final result.  A backslash inside unquoted
-    # substitutions should be treated as escaping in glob expansion, yet it
-    # needs to be preserved in the final result without glob expansion.  This
-    # means that a backslash inside unquoted substitutions is treated
-    # differently from quoted backslash, so we need a distinct representaton.
-    # We choose \@ here.
-    #
+    Used to evaluate something like *$v with v='a\*b.txt'
+
+    We escape \ as \@, which is OK because @ is not in GLOB_META_CHARS.
+
+    See test cases in spec/glob.test.sh
+
+    - If globbing is performed, then \* evaluates to literal '*'
+      - that is, \ is an escape for the *
+    - If globbing is NOT performed (set -o noglob or no matching files), then
+      \* evaluates to '\*'
+      - that is, the \ is preserved literally
+    """
     # XXX--This representation is affected by the known IFS='\' bug, but the
     # bug will be fixed in the coming PR.
     return s.replace('\\', r'\@')

@@ -2255,7 +2255,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 frag = glob_.GlobEscape(piece.s)
             else:
                 # We escape the result of unquoted substitutions for the case
-                # where glob expansion does not happen.
+                # when there's no glob expansion ('set -o noglob' or no
+                # matches)
                 frag = glob_.GlobEscapeUnquotedSubstitution(piece.s)
 
             if piece.do_split:
