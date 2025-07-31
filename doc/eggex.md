@@ -120,7 +120,7 @@ Constructs like `. ^ $ \< \>` are deprecated because they break these rules.
 
 The dot primitive matches "any" character in whatever way the underlying
 regex library interprets it.
-Differences usually are with these special characters:
+Differences usually only concern special characters:
 
 **NUL-character:** `\0` (c-string), `\x00` (c-string/eggex) or `\y00` (j8)
 **Newline-terminator:** `\n`
@@ -129,8 +129,11 @@ YSH can be compiled with GNU libc, or musl.
 
  - **libc** supports POSIX ERE syntax. The `dot` aka `.` matches any character,
    except NUL ([most of the time](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html#tag_09_03_06)).
-   If setting the `reg_newline` flag (to search within lines) newline characters
-   will be considered before applying the expression (none left to match).
+   
+   Only if setting the `reg_newline` flag (i.e. to search *within* lines) the
+   newline characters will practically be considered *before* applying the
+   expression to each line, so there will be no newline characters left to
+   match the dot in this mode.
    
  - **musl** (todo)
 
