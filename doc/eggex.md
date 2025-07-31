@@ -130,8 +130,8 @@ YSH can be compiled with GNU libc, or musl.
  - **libc** supports POSIX ERE syntax. The `dot` aka `.` matches any character,
    except NUL ([most of the time](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html#tag_09_03_06)).
    
-   Only if setting the `reg_newline` flag (i.e. to search *within* lines) the
-   newline characters will practically be considered *before* applying the
+   However, when setting the `reg_newline` flag (i.e. to search *within* lines)
+   the newline characters will practically be considered *before* applying the
    expression to each line, so there will be no newline characters left to
    match the dot in this mode.
    
