@@ -396,6 +396,8 @@ echo status=$?
 [ -n foo ]
 echo status=$?
 
+echo ---
+
 shopt --set ysh:all
 shopt --unset errexit
 
@@ -408,13 +410,28 @@ echo status=$?
 test -z foo
 echo status=$?
 
+
+echo ---
+
+# The one arg form is disallowed because it's confusing that test -n test -n -n
+# are the same thing.  In YSH, things that look like flags should be flags.
+test z
+echo status=$?
+
+test -z
+echo status=$?
+
 ## STDOUT:
 status=0
 status=0
 status=0
+---
 status=2
 status=2
 status=1
+---
+status=2
+status=2
 ## END
 
 #### long flags to test

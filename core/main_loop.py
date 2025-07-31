@@ -473,12 +473,15 @@ def EvalFile(
     # - parse error should be fatal
 
     with process.ctx_FileCloser(f):
-        with state.ctx_ThisDir(cmd_ev.mem, fs_path):
-            src = source.MainFile(fs_path)
-            with alloc.ctx_SourceCode(cmd_ev.arena, src):
-                # May raise util.UserExit
-                was_parsed, status = Batch2(cmd_ev, c_parser, cmd_ev.errfmt)
-                if not was_parsed:
-                    return False, -1
+        with state.ctx_Eval(cmd_ev.mem, fs_path, None,
+                            None):  # set $0 to fs_path
+            with state.ctx_ThisDir(cmd_ev.mem, fs_path):
+                src = source.MainFile(fs_path)
+                with alloc.ctx_SourceCode(cmd_ev.arena, src):
+                    # May raise util.UserExit
+                    was_parsed, status = Batch2(cmd_ev, c_parser,
+                                                cmd_ev.errfmt)
+                    if not was_parsed:
+                        return False, -1
 
     return True, status
