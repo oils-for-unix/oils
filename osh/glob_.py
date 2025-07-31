@@ -510,19 +510,18 @@ class Globber(object):
 
     def Expand(self, arg, out, blame_loc):
         # type: (str, List[str], loc_t) -> int
-        """Given a string that could be a glob, append a list of strings to
-        'out' when glob expansion happens.
+        """Given a string that MAY be a glob, perform glob expansion
+
+        If files on disk match the glob pattern, we append to the list 'out',
+        and return the number of items.
 
         Returns:
           Number of items appended, or -1 when glob expansion did not happen.
         Raises:
-          error.FailGlob for fatal failglob error.
+          error.FailGlob when nothing matched, and shopt -s failglob
         """
-
         if self.exec_opts.noglob():
-            # We cannot reconstruct the original string from the glob pattern,
-            # so let the caller (who knows the original string) process the
-            # case where glob expansion does not happen.
+            # The caller should use the original string
             return -1
 
         n = self._Glob(arg, out)
@@ -536,9 +535,9 @@ class Globber(object):
 
         if self.exec_opts.nullglob():
             return 0
-        else:
-            # We cannot reconstruct the original string from the glob pattern.
-            return -1
+
+        # The caller should use the original string
+        return -1
 
     def ExpandExtended(self, glob_pat, fnmatch_pat, out):
         # type: (str, str, List[str]) -> int
