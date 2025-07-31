@@ -2294,8 +2294,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
             glob_pat = glob_.GlobUnescapeUnquotedSubstitution(a)
             if glob_.LooksLikeGlob(glob_pat):
                 # TODO: location info, with span IDs carried through the frame
-                n = self.globber.Expand(glob_pat, argv, loc.Missing)
-                if n < 0:
+                num_appended = self.globber.Expand(glob_pat, argv, loc.Missing)
+                if num_appended < 0:
                     argv.append(glob_.GlobUnescape(a))
             else:
                 argv.append(glob_.GlobUnescape(a))
@@ -2440,7 +2440,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 continue
 
             if glob_.LooksLikeStaticGlob(w):
-                val = self.EvalWordToString(w)  # respects strict-array
+                val = self.EvalWordToString(w)  # respects strict_array
                 num_appended = self.globber.Expand(val.s, strs, w)
                 if num_appended < 0:
                     strs.append(glob_.GlobUnescape(val.s))
