@@ -523,7 +523,7 @@ However, cases like this are a fatal runtime error:
 
 With egg expressions, each construct has a **distinct syntax**.
 Even if not all constructs are supported by every library.
-For example, there there is no non-greedy/lazy match in POSIX ERE.
+For example, non-greedy/lazy matching is not supported in POSIX ERE.
 
 ### YSH is Shorter Than Bash
 
