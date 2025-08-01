@@ -118,13 +118,27 @@ Constructs like `. ^ $ \< \>` are deprecated because they break these rules.
 
 ### `.` Is Now `dot`
 
-The `dot` primitive usually matches any character, although its exact meaning
-depends on the underlying regex library.
+The `dot` (wildcard) primitive matches "any" single character in whatever way
+the underlying regex library interprets this.
+Differences usually only concern special characters:
 
-- YSH uses `libc`, which accepts POSIX ERE syntax.  So `dot` aka `.` matches
-  any character, unless the `reg_newline` flag is true.
-- If Eggex were compiled to Python, `dot` aka `.` matches any character
-  *except* a newline, unless the `re.DOTALL` flag is true.
+**NUL-character:** `\0` (c-string), `\x00` (c-string/eggex) or `\y00` (j8)
+**line-breaks/terminators:** `\n` (newline)
+
+YSH can be compiled with GNU libc, or musl.
+
+ - **libc** supports POSIX ERE syntax. By default, the `dot` aka `.` matches
+   any character, except NUL ([most of the time](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html#tag_09_03_06)).
+   
+   However, when the `reg_newline` flag is set (i.e. to search *within* lines)
+   the newline characters will practically be considered *before* applying the
+   expression to each line, so there will never be any newline characters left
+   to match the dot in this mode.
+   
+ - **musl** (todo)
+
+If Eggex were compiled to Python, `dot` aka `.` matches any character *except*
+a newline, unless the `re.DOTALL` flag is true.
 
 Note: Eggex accepts `.` as a synonym for `dot`, even though `dot` is preferred.
 
@@ -137,7 +151,7 @@ We accept both Perl and POSIX classes.
   - `s` or `space`
   - `w` or `word`
 - POSIX
-  - `alpha`, `alnum`, ...
+  - `alpha`, `blank`, `alnum` ...
 
 ### Zero-width Assertions Look Like `%this`
 
@@ -508,6 +522,8 @@ However, cases like this are a fatal runtime error:
   - `(?:noncapturing)`
 
 With egg expressions, each construct has a **distinct syntax**.
+Even if not all constructs are supported by every library.
+For example, non-greedy/lazy matching is not supported in POSIX ERE.
 
 ### YSH is Shorter Than Bash
 
