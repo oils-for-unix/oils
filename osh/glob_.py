@@ -6,7 +6,7 @@ from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (CompoundWord, Token, word_part_e,
                                        glob_part, glob_part_e, glob_part_t,
                                        loc_t)
-from core import pyutil, error
+from core import pyos, pyutil, error
 from frontend import match
 from mycpp import mylib
 from mycpp.mylib import log, print_stderr
@@ -94,7 +94,7 @@ def GlobEscape(s):
     return pyutil.BackslashEscape(s, GLOB_META_CHARS)
 
 
-def GlobEscapeUnquotedSubstitution(s):
+def GlobEscapeBackslash(s):
     # type: (str) -> str
     """Glob escape a string for an unquoted var sub.
 
@@ -143,20 +143,23 @@ def GlobUnescape(s):
     unescaped = []  # type: List[int]
     i = 0
     n = len(s)
-    c_backslash = mylib.ByteAt('\\', 0)
     while i < n:
         c = mylib.ByteAt(s, i)
 
         if mylib.ByteEquals(c, '\\') and i != n - 1:
-            # Suppressed this to fix bug #698, #628 is still there.
+            # TODO: GlobEscape() turns \ into \\, so a string should never end
+            # with a single backslash.
+            # Suppressed this assert to fix bug #698, #628 is still there.
+            # Check them again.
             assert i != n - 1, 'Trailing backslash: %r' % s
+
             i += 1
             c2 = mylib.ByteAt(s, i)
 
             if mylib.ByteInSet(c2, GLOB_META_CHARS):
                 unescaped.append(c2)
             elif mylib.ByteEquals(c2, '@'):
-                unescaped.append(c_backslash)
+                unescaped.append(pyos.BACKSLASH_CH)
             else:
                 raise AssertionError("Unexpected escaped character %r" % c2)
         else:
@@ -165,31 +168,28 @@ def GlobUnescape(s):
     return mylib.JoinBytes(unescaped)
 
 
-def GlobUnescapeUnquotedSubstitution(s):
+def GlobUnescapeBackslash(s):
     # type: (str) -> str
-    """Remove escaping of backslashes in unquoted substitutions to obtain a
-    glob pattern.  Used when glob expansion is performed.
-    """
+    """Inverse of GlobEscapeBackslash - turns \@ into \ """
     unescaped = []  # type: List[int]
     i = 0
     n = len(s)
-    c_backslash = mylib.ByteAt('\\', 0)
     while i < n:
         c = mylib.ByteAt(s, i)
 
         if mylib.ByteEquals(c, '\\') and i != n - 1:
-            # Suppressed this to fix bug #698, #628 is still there.
+            # Note: GlobEscapeBackslash() doesn't turn \ into \\, so a string
+            # could end with a single backslash?
             assert i != n - 1, 'Trailing backslash: %r' % s
+
             i += 1
             c2 = mylib.ByteAt(s, i)
 
-            if mylib.ByteInSet(c2, GLOB_META_CHARS):
-                unescaped.append(c_backslash)
-                unescaped.append(c2)
-            elif mylib.ByteEquals(c2, '@'):
-                unescaped.append(c_backslash)
+            if mylib.ByteEquals(c2, '@'):
+                unescaped.append(pyos.BACKSLASH_CH)
             else:
-                raise AssertionError("Unexpected escaped character %r" % c2)
+                unescaped.append(pyos.BACKSLASH_CH)
+                unescaped.append(c2)
         else:
             unescaped.append(c)
         i += 1

@@ -27,6 +27,15 @@ class GlobEscapeTest(unittest.TestCase):
             self.assertEqual(e, esc(u))
             self.assertEqual(u, unesc(e))
 
+    def testGlobEscapingWithBackslash(self):
+        # This function doubles it
+        self.assertEqual('\\\\', glob_.GlobEscape('\\'))
+        self.assertEqual('\\', glob_.GlobUnescape('\\\\'))
+
+        # This function chooses \@
+        self.assertEqual('\\@', glob_.GlobEscapeBackslash('\\'))
+        self.assertEqual('\\', glob_.GlobUnescapeBackslash('\\@'))
+
     def testLooksLikeGlob(self):
         # The way to test bash behavior is:
         #   $ shopt -s nullglob; argv [    # not a glob

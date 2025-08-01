@@ -2257,7 +2257,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 # We escape the result of unquoted substitutions for the case
                 # when there's no glob expansion ('set -o noglob' or no
                 # matches)
-                frag = glob_.GlobEscapeUnquotedSubstitution(piece.s)
+                frag = glob_.GlobEscapeBackslash(piece.s)
 
             if piece.do_split:
                 frag = _BackslashEscape(frag)
@@ -2291,7 +2291,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 argv.append(glob_.GlobUnescape(a))
                 continue
 
-            glob_pat = glob_.GlobUnescapeUnquotedSubstitution(a)
+            glob_pat = glob_.GlobUnescapeBackslash(a)
             if glob_.LooksLikeGlob(glob_pat):
                 # TODO: location info, with span IDs carried through the frame
                 num_appended = self.globber.Expand(glob_pat, argv, loc.Missing)
