@@ -359,7 +359,7 @@ class IfsSplitterState(object):
         if len(self.char_buff) >= 1:
             frag = mylib.JoinBytes(self.char_buff)
             if self.glob_escape:
-                frag = glob_.GlobEscapeUnquotedSubstitution(frag)
+                frag = glob_.GlobEscapeBackslash(frag)
             self.frags.append(frag)
             del self.char_buff[:]
 
@@ -392,7 +392,6 @@ class IfsSplitterState(object):
         Args:
           s: word fragment to split
         """
-
         ifs_space = self.ifs_space
         ifs_other = self.ifs_other
         allow_escape = self.allow_escape
