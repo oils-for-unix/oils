@@ -2243,7 +2243,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             else:
                 # when there's no glob expansion ('set -o noglob' or no
                 # matches)
-                sp.PushLiteral(glob_.GlobEscapeUnquotedSubstitution(piece.s))
+                sp.PushLiteral(glob_.GlobEscapeBackslash(piece.s))
         args = sp.PushTerminator()
 
         #log('split args: %r', args)
@@ -2252,7 +2252,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 argv.append(glob_.GlobUnescape(a))
                 continue
 
-            glob_pat = glob_.GlobUnescapeUnquotedSubstitution(a)
+            glob_pat = glob_.GlobUnescapeBackslash(a)
             if glob_.LooksLikeGlob(glob_pat):
                 # TODO: location info, with span IDs carried through the frame
                 num_appended = self.globber.Expand(glob_pat, argv, loc.Missing)
