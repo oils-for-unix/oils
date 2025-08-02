@@ -146,4 +146,18 @@ test-asdl-format() {
   diff -u $file $tmp
 }
 
+install-npm() {
+  # ridiculous number of deps
+  sudo apt-get install npm
+}
+
+install-sql-cst-plugin() {
+  # from https://github.com/nene/prettier-plugin-sql-cst/
+  npm install --save-dev prettier prettier-plugin-sql-cst
+}
+
+all-sql() {
+  npx prettier --plugin prettier-plugin-sql-cst --parser sqlite --write */*.sql
+}
+
 task-five "$@"
