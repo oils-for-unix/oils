@@ -14,3 +14,8 @@ concat-task-tsv() {
   python3 devtools/tsv_concat.py \
     $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp/aports-guest/$config/*.task.tsv
 }
+
+user-chroot() {
+  $CHROOT_DIR/enter-chroot -u builder "$@"
+}
+
