@@ -168,26 +168,6 @@ drop table temp_import;
   "
 }
 
-diff-report() {
-  local dir=$REPORT_DIR/$EPOCH
-
-  { typed-tsv-to-sql $dir/baseline/tasks.tsv baseline
-    typed-tsv-to-sql $dir/osh-as-sh/tasks.tsv osh_as_sh
-    echo '
-.mode column
-select count(*) from baseline;
-select count(*) from osh_as_sh;
-select * from pragma_table_info("baseline");
-select * from pragma_table_info("osh_as_sh");
-
--- 22 hours, but there was a big pause in the middle
-select ( max(end_time)-min(start_time) ) / 60 / 60 from baseline;
-
-SELECT status, pkg FROM baseline WHERE status != 0;
-'
-  }  | sqlite3 :memory:
-}
-
 my-rsync() {
   #rsync --archive --verbose --dry-run "$@"
   rsync --archive --verbose "$@"
@@ -219,80 +199,17 @@ make-package-table() {
   local db=$base_dir/$config/tables.db
   rm -f $db
 
-  { typed-tsv-to-sql $base_dir/$config/tasks.tsv
-   echo '
-.mode columns
+  typed-tsv-to-sql $base_dir/$config/tasks.tsv | sqlite3 $db
 
--- select * from tasks limit 5;
+  sqlite3 -cmd '.mode columns' $db < test/aports-tasks.sql
 
--- annoying: you have to cast(x as real) for pragma_info to have type info
-create table packages as
-select status, 
-       elapsed_secs,
-       cast( user_secs / elapsed_secs as real) as user_elapsed_ratio,
-       cast( user_secs / sys_secs as real) as user_sys_ratio,
-       cast(max_rss_KiB * 1024 / 1e6 as real) as max_rss_MB,
-       pkg, 
-       pkg_HREF
-from tasks;
-
--- sqlite table schema -> foo.schema.tsv
-CREATE TABLE packages_schema AS
-SELECT 
-    name AS column_name,
-    CASE 
-        WHEN UPPER(type) = "INTEGER" THEN "integer"
-        WHEN UPPER(type) = "REAL" THEN "float"
-        WHEN UPPER(type) = "TEXT" THEN "string"
-        ELSE LOWER(type)
-    END AS type
-FROM PRAGMA_TABLE_INFO("packages");
-
--- select * from packages_schema;
-
-alter table packages_schema add column precision;
-
-update packages_schema SET precision = 1 where column_name = "elapsed_secs";
-update packages_schema SET precision = 1 where column_name = "user_elapsed_ratio";
-update packages_schema SET precision = 1 where column_name = "user_sys_ratio";
-update packages_schema SET precision = 1 where column_name = "max_rss_MB";
-
--- Compute stats
-
-CREATE TABLE metrics (
-  id integer primary key check (id = 1),  -- ensure only one row
-  elapsed_minutes REAL NOT NULL,
-  num_failures integer NOT NULL,
-  num_tasks integer NOT NULL
-);
-
-# dummy row
-insert into metrics values (1, -1.0, -1, -1);
-
-update metrics 
-set elapsed_minutes = 
-(select ( max(end_time)-min(start_time) ) / 60 from tasks)
-where id = 1;
-
-update metrics 
-set num_failures = 
-(select count(*) from tasks where status != 0)
-where id = 1;
-
-update metrics 
-set num_tasks = 
-(select count(*) from tasks)
-where id = 1;
-'
-  } | sqlite3 $db
-
-  sqlite3 $db >$base_dir/$config/packages.tsv <<EOF
+  sqlite3 $db >$base_dir/$config/packages.tsv <<'EOF'
 .mode tabs
 .headers on
 select * from packages;
 EOF
 
-  sqlite3 $db >$base_dir/$config/packages.schema.tsv <<EOF
+  sqlite3 $db >$base_dir/$config/packages.schema.tsv <<'EOF'
 .mode tabs
 .headers on
 select * from packages_schema;
@@ -350,50 +267,11 @@ make-diff-db() {
 
   local db=$name.db
 
+  local sql=$PWD/test/aports-diff.sql
+
   pushd $base_dir
   rm -f $db
-  sqlite3 $db <<EOF
--- Attach the source databases
-ATTACH DATABASE 'baseline/tables.db' AS baseline;
-ATTACH DATABASE 'osh-as-sh/tables.db' AS osh_as_sh;
-
-.mode columns
--- select * from packages;
-
-create table diff as
-select
-  b.pkg,
-  cast(b.status as integer) as status1,
-  "baseline" as baseline,
-  "baseline/" || b.pkg_HREF as baseline_HREF,
-  o.status as status2,
-  "osh-as-sh" as osh_as_sh,
-  "osh-as-sh/" || o.pkg_HREF as osh_as_sh_HREF,
-  "diff" as diff,
-  printf("error/%s.txt", b.pkg) as diff_HREF,
-  "error" as error_grep,
-  printf("error/%s.txt", b.pkg) as error_grep_HREF
-from baseline.packages b
-join osh_as_sh.packages o on b.pkg = o.pkg
-where b.status != o.status
-order by b.pkg;
-
--- Copied from above
-CREATE TABLE diff_schema AS
-SELECT 
-    name AS column_name,
-    CASE 
-        WHEN UPPER(type) = "INTEGER" THEN "integer"
-        WHEN UPPER(type) = "REAL" THEN "float"
-        WHEN UPPER(type) = "TEXT" THEN "string"
-        ELSE LOWER(type)
-    END AS type
-FROM PRAGMA_TABLE_INFO("diff");
-
--- Detach databases
-DETACH DATABASE baseline;
-DETACH DATABASE osh_as_sh;
-EOF
+  sqlite3 $db < $sql
 
   sqlite3 $db >$name.tsv <<EOF
 .mode tabs
