@@ -70,11 +70,21 @@ TODO
 EOF
 }
 
+diff-metrics-html() {
+  local db=${1:-_tmp/aports-report/2025-08-03/diff-joined.db}
+
+  # TODO: we also want to show IFS bugs
+  sqlite3 $db <<EOF
+select printf("<p>Number of differences: %s</p>", count(*)) from diff_joined;
+select printf("<p>Number of shards: %s</p>", count(distinct shard)) from diff_joined;
+EOF
+}
+
 diff-html() {
   local base_dir=${1:-$REPORT_DIR/$EPOCH}
   local name=${2:-diff-baseline}
+  local base_url=${3:-'../../../../web'}
 
-  local base_url='../../../../web'
   html-head --title "Differences" \
     "$base_url/ajax.js" \
     "$base_url/table/table-sort.js" \
@@ -94,6 +104,10 @@ diff-html() {
 Note: Right now, the diff column is hard to read in many cases.
 
 EOF
+
+  if test "$name" = 'diff-joined'; then
+    diff-metrics-html $base_dir/$name.db
+  fi
 
   tsv2html3 $base_dir/$name.tsv
 
@@ -319,7 +333,108 @@ EOF
   popd
 }
 
-write-all-reports() {
+join-diffs-sql() {
+  local -a SHARDS=( "$@" )
+
+  echo '-- Attach all shard databases'
+  for shard_db in "${SHARDS[@]}"; do
+    local shard_name
+    shard_name=$(basename $shard_db)
+
+    echo "ATTACH DATABASE '$shard_db/diff-baseline.db' AS $shard_name;"
+  done
+
+  # Get schema from first shard and create table with shard column
+  echo '
+
+  -- Create combined table with shard column
+  CREATE TABLE diff_joined AS
+  SELECT
+    *,
+    CAST("" AS TEXT) as shard
+  FROM shard1.diff
+  WHERE 1=0; -- Create empty table with correct schema
+  '
+  
+  # Generate the INSERT with UNION ALL
+  echo '
+  -- Insert all data with shard identifiers
+  INSERT INTO diff_joined
+  '
+  
+  local first=T
+  for shard_db in "${SHARDS[@]}"; do
+    # _tmp/foo/2025-08-03/shard0 -> shard0
+    local shard_name
+    shard_name=$(basename $shard_db)
+  
+    if test -z "$first";then
+      echo "UNION ALL"
+    fi
+    echo "SELECT *, '$shard_name' as shard FROM $shard_name.diff"
+    first=''
+  done
+  echo ';
+
+UPDATE diff_joined SET
+   baseline_HREF = printf("%s/%s", shard, baseline_HREF),
+   osh_as_sh_HREF = printf("%s/%s", shard, osh_as_sh_HREF),
+   diff_HREF = printf("%s/%s", shard, diff_HREF),
+   error_grep_HREF = printf("%s/%s", shard, error_grep_HREF)
+   ;
+  
+-- Useful queries to verify the result:
+-- SELECT COUNT(*) as total_rows FROM diff_joined;
+-- SELECT shard, COUNT(*) as row_count FROM diff_joined GROUP BY shard ORDER BY shard;
+-- .schema diff_joined
+
+-- copied
+
+create table diff_joined_schema as
+  select
+    name as column_name,
+    case
+      when UPPER(type) = "INTEGER" then "integer"
+      when UPPER(type) = "REAL" then "float"
+      when UPPER(type) = "TEXT" then "string"
+      else LOWER(type)
+    end as type
+  from PRAGMA_TABLE_INFO("diff_joined");
+'
+
+}
+
+join-diffs() {
+  local epoch_dir=${1:-_tmp/aports-report/2025-08-03}
+  local db=$PWD/$epoch_dir/diff-joined.db
+  rm -f $db
+  join-diffs-sql $epoch_dir/shard* | sqlite3 $db
+  echo $db
+
+  local name=diff-joined
+
+  # copied from above
+  pushd $epoch_dir
+
+  sqlite3 $db >$name.tsv <<EOF
+.mode tabs
+.headers on
+select * from diff_joined;
+EOF
+
+  sqlite3 $db >$name.schema.tsv <<EOF
+.mode tabs
+.headers on
+select * from diff_joined_schema;
+EOF
+  popd
+
+  local out=$epoch_dir/$name.html
+  diff-html $epoch_dir $name '../../../web' > $out
+  echo "Wrote $out"
+}
+
+write-shard-reports() {
   local base_dir=$1  # e.g. _tmp/aports-report/2025-08-02/shard3
 
   index-html > $base_dir/index.html
@@ -332,6 +447,15 @@ write-all-reports() {
   make-diff-db $base_dir
   diff-html $base_dir > $base_dir/$name.html
   echo "Wrote $base_dir/$name.html"
+}
+
+write-all-reports() {
+  local epoch_dir=${1:-_tmp/aports-report/2025-08-03}
+  for shard_dir in $epoch_dir/shard*; do
+    write-shard-reports "$shard_dir"
+  done
+
+  join-diffs "$epoch_dir"
 }
 
 make-wwz() {
