@@ -15,7 +15,7 @@ create table diff as
     "osh-as-sh" as osh_as_sh,
     "osh-as-sh/" || o.pkg_HREF as osh_as_sh_HREF,
     "diff" as diff,
-    printf("error/%s.txt", b.pkg) as diff_HREF,
+    printf("diff/%s.txt", b.pkg) as diff_HREF,
     "error" as error_grep,
     printf("error/%s.txt", b.pkg) as error_grep_HREF
   from

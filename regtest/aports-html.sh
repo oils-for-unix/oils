@@ -173,16 +173,15 @@ my-rsync() {
 }
 
 readonly EPOCH=${EPOCH:-'2025-07-28-100'}
-readonly BUILD_HOST=he.oils.pub
-#readonly HOST_BASELINE=he.oils.pub
-#readonly HOST_SH=he.oils.pub
-#readonly HOST_SH=lenny.local
+#readonly BUILD_HOST=he.oils.pub
+readonly BUILD_HOST=lenny.local
 
 sync-results() {
+  local host=${1:-$BUILD_HOST}
   mkdir -p $REPORT_DIR
 
   my-rsync \
-    $BUILD_HOST:~/git/oils-for-unix/oils/_tmp/aports-build/ \
+    $host:~/git/oils-for-unix/oils/_tmp/aports-build/ \
     $REPORT_DIR/
 
   return
