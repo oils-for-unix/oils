@@ -187,8 +187,8 @@ my-rsync() {
 }
 
 readonly EPOCH=${EPOCH:-'2025-07-28-100'}
-#readonly BUILD_HOST=he.oils.pub
-readonly BUILD_HOST=lenny.local
+readonly BUILD_HOST=he.oils.pub
+#readonly BUILD_HOST=lenny.local
 
 sync-results() {
   local host=${1:-$BUILD_HOST}
@@ -336,46 +336,34 @@ EOF
 join-diffs-sql() {
   local -a SHARDS=( "$@" )
 
-  echo '-- Attach all shard databases'
-  for shard_db in "${SHARDS[@]}"; do
-    local shard_name
-    shard_name=$(basename $shard_db)
+  local first_shard="${SHARDS[0]}"
 
-    echo "ATTACH DATABASE '$shard_db/diff-baseline.db' AS $shard_name;"
-  done
+  local shard_name
+  shard_name=$(basename $first_shard)
 
-  # Get schema from first shard and create table with shard column
-  echo '
-
-  -- Create combined table with shard column
+  # Create table from first shard
+  echo "
+  ATTACH DATABASE '$first_shard/diff-baseline.db' AS temp_shard;
   CREATE TABLE diff_joined AS
-  SELECT
-    *,
-    CAST("" AS TEXT) as shard
-  FROM shard1.diff
-  WHERE 1=0; -- Create empty table with correct schema
-  '
-  
-  # Generate the INSERT with UNION ALL
-  echo '
-  -- Insert all data with shard identifiers
-  INSERT INTO diff_joined
-  '
-  
-  local first=T
-  for shard_db in "${SHARDS[@]}"; do
-    # _tmp/foo/2025-08-03/shard0 -> shard0
-    local shard_name
-    shard_name=$(basename $shard_db)
-  
-    if test -z "$first";then
-      echo "UNION ALL"
-    fi
-    echo "SELECT *, '$shard_name' as shard FROM $shard_name.diff"
-    first=''
-  done
-  echo ';
+  SELECT *, CAST('' as TEXT) as shard FROM temp_shard.diff where 1=0;
+  DETACH DATABASE temp_shard;
+  "
 
+  # Now insert data from all the shards
+  for ((i=0; i<${#SHARDS[@]}; i++)); do
+    local shard_db="${SHARDS[i]}"
+    shard_name=$(basename $shard_db)
+      
+    echo "
+    -- $i: Add data from $shard_db
+    ATTACH DATABASE '$shard_db/diff-baseline.db' AS temp_shard;
+    INSERT INTO diff_joined
+    SELECT *, '$shard_name' as shard FROM temp_shard.diff;
+    DETACH DATABASE temp_shard;
+    "
+  done
+
+  echo '
 UPDATE diff_joined SET
    baseline_HREF = printf("%s/%s", shard, baseline_HREF),
    osh_as_sh_HREF = printf("%s/%s", shard, osh_as_sh_HREF),
@@ -401,7 +389,6 @@ create table diff_joined_schema as
     end as type
   from PRAGMA_TABLE_INFO("diff_joined");
 '
-
 }
 
 join-diffs() {
@@ -419,7 +406,7 @@ join-diffs() {
   sqlite3 $db >$name.tsv <<EOF
 .mode tabs
 .headers on
-select * from diff_joined;
+select * from diff_joined order by pkg;
 EOF
 
   sqlite3 $db >$name.schema.tsv <<EOF
@@ -459,22 +446,26 @@ write-all-reports() {
 }
 
 make-wwz() {
-  local base_dir=${1:-$REPORT_DIR/$EPOCH}
-  local wwz=$REPORT_DIR/$EPOCH.wwz 
+  local base_dir=${1:-$REPORT_DIR/2025-08-03}
+
+  # must not end with slash
+  local wwz=$base_dir.wwz
+
   zip -r $wwz $base_dir web/
 }
 
 deploy-wwz-op() {
-  #local host=op.oilshell.org 
+  local wwz=${1:-$REPORT_DIR/2025-08-03.wwz}
+
   local host=op.oils.pub
 
-  #ssh $host ls op.oilshell.org/
+  #local host=op.oilshell.org 
 
   local dest_dir=$host/aports-build
   ssh $host mkdir -p $dest_dir
-  scp $REPORT_DIR/$EPOCH.wwz $host:$dest_dir
+  scp $wwz $host:$dest_dir
 
-  echo "Visit https://$dest_dir/$EPOCH.wwz/"
+  echo "Visit https://$dest_dir/$(basename $wwz)/"
 }
 
 deploy-wwz-mb() {
