@@ -253,14 +253,6 @@ code-manifest() {
   done
 }
 
-multi() {
-  ### gah this requires python2
-
-  #~/git/tree-tools/bin/multi "$@";
-  local git_dir='../..'
-  $git_dir/tree-tools/bin/multi "$@";
-}
-
 multi-cp() {
   ### like multi cp, but works without python2
 

@@ -10,43 +10,38 @@
 #   $0 fetch-packages fetch 100,300p  # packages 100-300
 #   $0 fetch-packages fetch .*        # all packages
 #
-# Build a config
-#   $0 clean                                # remove files from previous run
-#   $0 set-osh-as-sh                        # or set-baseline
-#   $0 build-packages PKG_FILTER osh-as-sh
-#   $0 build-packages '.*'       osh-as-sh  # 310 MB, 251 K files
-
+# Config vars for building:
+#   export APORTS_EPOCH=2025-07-28
+#   export APORTS_FILTER=shard3       # package filter
+#
+# Build a shard:
 #   $0 build-many-configs PKG_FILTER        # build packages 301 to 400
 #
 #   $0 copy-results osh-as-sh               # copy TSV and abridged logs out of chroot
+#
+# Build a config:
+#   $0 set-osh-as-sh                        # or set-baseline
+#   $0 build-packages PKG_FILTER osh-as-sh
+#   $0 build-packages '.*'       osh-as-sh  # 310 MB, 251 K files
 #
 # PKG_FILTER
 #   shard[0-9]+      - shard3 is packages 301 to 400
 #   [0-9]+           - 42 means build the first 42 packages
 #   [0-9]+,[0-9]+p   - 100,300p packages 100 to 300 (sed syntax)
+#   ALL              - all packages
 #   .*               - egrep pattern matching all packages
 #   curl             - egrep pattern matching 'curl'
 #
-#
 # On localhost:
-#   export EPOCH=2025-07-28-100to300
-#   regtest/aports.sh sync-results
-#
 #   Now see regtest/aports-html.sh
+#
+#   regtest/aports-html.sh sync-results
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
 source $LIB_OSH/task-five.sh
 
 source regtest/aports-common.sh
-
-clean() {
-  # clean chroot
-  sudo rm -r -f -v $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp
-
-  # results
-  rm -r -f -v $BASE_DIR
-}
 
 #
 # Config
@@ -118,8 +113,11 @@ package-dirs() {
 
   local -a prefix
 
+  if [[ $package_filter = 'ALL' ]]; then
+    prefix=( cat )
+
   # 100 means 0 to 100
-  if [[ $package_filter =~ ^[0-9]+$ ]]; then
+  elif [[ $package_filter =~ ^[0-9]+$ ]]; then
     prefix=( head -n $package_filter )
 
   # 100,300p means lines 100 to 300
@@ -209,24 +207,15 @@ build-packages() {
   ' dummy0 "$config" "${package_dirs[@]}"
 }
 
-build-many-configs() {
-  local package_filter=${1:-}
+clean-host-and-guest() {
+  # host dir _tmp/aports-build
+  rm -r -f -v $BASE_DIR
 
-  # clear credentials first
-  sudo -k
-
-  # See note about /etc/sudoers.d at top of file
-
-  for config in baseline osh-as-sh; do
-
-    # this uses enter-chroot to modify the chroot
-    # should we have a separate one?  But then fetching packages is different
-    set-$config
-
-    # this uses enter-chroot -u
-    build-packages "$package_filter" "$config"
-  done
+  # clean guest chroot
+  sudo rm -r -f -v $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp
 }
+
+readonly -a CONFIGS=( baseline osh-as-sh ) 
 
 abridge-logs() {
   local config=${1:-baseline}
@@ -269,9 +258,34 @@ copy-results() {
 
   abridge-logs "$config"
 
-  local dest=_tmp/aports-build/$config/tasks.tsv
+  local dest=$BASE_DIR/$config/tasks.tsv
   mkdir -p $(dirname $dest)
   concat-task-tsv "$config" > $dest
+}
+
+build-many-configs() {
+  local package_filter=${1:-}
+
+  # clear credentials first
+  sudo -k
+
+  clean-host-and-guest
+
+  # See note about /etc/sudoers.d at top of file
+
+  for config in "${CONFIGS[@]}"; do
+    # this uses enter-chroot to modify the chroot
+    # should we have a separate one?  But then fetching packages is different
+    banner "Set config to $config"
+    set-$config
+
+    # this uses enter-chroot -u
+    build-packages "$package_filter" "$config"
+  done
+
+  for config in "${CONFIGS[@]}"; do
+    copy-results "$config"
+  done
 }
 
 task-five "$@"
