@@ -80,6 +80,7 @@ publish-html-assuming-ssh-key() {
 load-secret-key() {
   local privkey=/tmp/rsa_github_actions
 
+  # This env var is set in .github/workflows/all-builds.yml
   if test -n "${OILS_GITHUB_SSH_KEY:-}"; then
     echo "$OILS_GITHUB_SSH_KEY" > $privkey
   else
