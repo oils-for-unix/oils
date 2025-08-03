@@ -179,7 +179,7 @@ readonly BUILD_HOST=he.oils.pub
 #readonly HOST_SH=lenny.local
 
 sync-results() {
-  mkdir -p _tmp/aports-build/
+  mkdir -p $REPORT_DIR
 
   my-rsync \
     $BUILD_HOST:~/git/oils-for-unix/oils/_tmp/aports-build/ \
@@ -195,6 +195,13 @@ sync-results() {
   my-rsync \
     $HOST_SH:~/git/oils-for-unix/oils/_tmp/aports-build/osh-as-sh/ \
     $dest/osh-as-sh/
+}
+
+local-sync() {
+  mkdir -p $REPORT_DIR
+
+  #my-rsync --dry-run $BASE_DIR/ $REPORT_DIR/
+  my-rsync $BASE_DIR/ $REPORT_DIR/
 }
 
 make-package-table() {

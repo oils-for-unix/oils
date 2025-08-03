@@ -222,12 +222,13 @@ abridge-logs() {
 
   local guest_dir=$CHROOT_HOME_DIR/oils-for-unix/oils/_tmp/aports-guest/$config 
 
-  mkdir -v -p $dest_dir/$config
+  local log_dir="$dest_dir/$config/log"
+  mkdir -v -p $log_dir
 
   find $guest_dir -name '*.log.txt' -a -printf '%s\t%P\n' |
   while read -r size path; do
     local src=$guest_dir/$path
-    local dest=$dest_dir/$config/$path
+    local dest=$log_dir/$path
 
     if test "$size" -lt "$threshold"; then
       cp -v $src $dest
@@ -259,7 +260,7 @@ copy-results() {
   concat-task-tsv "$config" > $dest
 }
 
-build-many-configs() {
+_build-many-configs() {
   local package_filter=${1:-}
   local epoch=${2:-}
 
@@ -271,9 +272,6 @@ build-many-configs() {
   if test -z "$epoch"; then
     epoch=$(date '+%Y-%m-%d')
   fi
-
-  # clear credentials first
-  sudo -k
 
   clean-guest
 
@@ -294,5 +292,20 @@ build-many-configs() {
     copy-results "$config" "$dest_dir"
   done
 }
+
+build-many-configs() {
+  # clear credentials first
+  sudo -k
+
+  _build-many-configs "$@"
+}
+
+build-many-shards() {
+  sudo -k
+  for package_filter in "$@"; do
+    _build-many-configs "$package_filter"
+  done
+}
+
 
 task-five "$@"
