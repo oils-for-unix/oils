@@ -3,7 +3,7 @@
 # Old code that might be useful for analysis.
 #
 # Usage:
-#   test/aports-old.sh <function name>
+#   regtest/aports-old.sh <function name>
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh

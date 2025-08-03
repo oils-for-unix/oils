@@ -3,7 +3,7 @@
 # Code that runs inside Alpine chroot.
 #
 # Usage:
-#   test/aports-guest.sh <function name>
+#   regtest/aports-guest.sh <function name>
 
 set -o nounset
 set -o pipefail

@@ -3,7 +3,7 @@
 # Set up Alpine Linux chroot
 #
 # Usage:
-#   test/aports-setup.sh <function name>
+#   regtest/aports-setup.sh <function name>
 #
 # Setup:
 #   $0 clone-aports
@@ -23,7 +23,7 @@
 #   $0 save-default-config
 #   $0 apk-manifest
 #
-# Now see test/aports-run.sh
+# Now see regtest/aports-run.sh
 #
 # WARNING: THIS IS ESSENTIAL for RUNNING build-many-configs (but not
 # build-packages):
@@ -94,7 +94,7 @@
 source $LIB_OSH/bash-strict.sh
 source $LIB_OSH/task-five.sh
 
-source test/aports-common.sh
+source regtest/aports-common.sh
 
 clone-aports() {
   local dir=../../alpinelinux
@@ -246,7 +246,7 @@ code-manifest() {
   for path in \
     benchmarks/time_.py \
     benchmarks/time-helper.c \
-    test/aports-guest.sh \
+    regtest/aports-guest.sh \
     "${build_py[@]}"
   do
     echo "$PWD/$path" "$path"
@@ -294,7 +294,7 @@ test-time-tsv() {
   echo ---
 
   build/py.sh time-helper
-  test/aports-guest.sh my-time-tsv-test
+  regtest/aports-guest.sh my-time-tsv-test
   '
 }
 
@@ -345,7 +345,7 @@ build-oils() {
 }
 
 save-default-config() {
-  test/aports-run.sh save-default-config
+  regtest/aports-run.sh save-default-config
 }
 
 remove-chroot() {

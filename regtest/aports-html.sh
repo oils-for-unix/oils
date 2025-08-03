@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# Make reports and HTML for test/aports.sh
+# Make reports and HTML for regtest/aports.sh
 #
 # Usage:
-#   test/aports-html.sh <function name>
+#   regtest/aports-html.sh <function name>
 #
 # Examples:
 #   export EPOCH=2025-07-28-100to300
@@ -24,7 +24,7 @@
 source $LIB_OSH/bash-strict.sh
 source $LIB_OSH/task-five.sh
 
-source test/aports-common.sh
+source regtest/aports-common.sh
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source test/tsv-lib.sh  # tsv2html3
@@ -201,7 +201,7 @@ make-package-table() {
 
   typed-tsv-to-sql $base_dir/$config/tasks.tsv | sqlite3 $db
 
-  sqlite3 -cmd '.mode columns' $db < test/aports-tasks.sql
+  sqlite3 -cmd '.mode columns' $db < regtest/aports-tasks.sql
 
   sqlite3 $db >$base_dir/$config/packages.tsv <<'EOF'
 .mode tabs
@@ -267,7 +267,7 @@ make-diff-db() {
 
   local db=$name.db
 
-  local sql=$PWD/test/aports-diff.sql
+  local sql=$PWD/regtest/aports-diff.sql
 
   pushd $base_dir
   rm -f $db

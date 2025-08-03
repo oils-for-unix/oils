@@ -3,7 +3,7 @@
 # Build Alpine Linux packages: baseline, OSH as /bin/sh, OSH as /bin/bash
 #
 # Usage:
-#   test/aports-run.sh <function name>
+#   regtest/aports-run.sh <function name>
 #
 # Examples:
 #
@@ -30,15 +30,15 @@
 #
 # On localhost:
 #   export EPOCH=2025-07-28-100to300
-#   test/aports.sh sync-results
+#   regtest/aports.sh sync-results
 #
-#   Now see test/aports-html.sh
+#   Now see regtest/aports-html.sh
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
 source $LIB_OSH/task-five.sh
 
-source test/aports-common.sh
+source regtest/aports-common.sh
 
 clean() {
   # clean chroot
@@ -205,7 +205,7 @@ build-packages() {
   shift
 
   cd oils-for-unix/oils
-  test/aports-guest.sh build-packages "$config" "$@"
+  regtest/aports-guest.sh build-packages "$config" "$@"
   ' dummy0 "$config" "${package_dirs[@]}"
 }
 

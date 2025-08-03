@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   test/aports-test.sh <function name>
+#   regtest/aports-test.sh <function name>
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
@@ -78,11 +78,11 @@ apk-stats() {
   # 5650 packages
   grep 'S:' _tmp/APKINDEX | wc -l
 
-  gawk -f test/aports.awk < _tmp/APKINDEX
+  gawk -f regtest/aports.awk < _tmp/APKINDEX
 }
 
 count-lines() {
-  ls test/aport* | egrep -v 'aports-old|aports-notes' | xargs wc -l
+  ls regtest/aports* | egrep -v 'aports-old|aports-notes' | xargs wc -l
 }
 
 task-five "$@"
