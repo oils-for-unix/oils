@@ -6,7 +6,6 @@
 #   regtest/aports-html.sh <function name>
 #
 # Examples:
-#   export EPOCH=2025-07-28-100to300
 #   $0 write-all-reports
 #   $0 make-wwz
 #   $0 deploy-wwz-op    # op.oilshell.org - could be op.oils.pub
@@ -37,7 +36,7 @@ html-head() {
 }
 
 index-html() {
-  local base_url='../../../web'
+  local base_url='../../../../web'
   html-head --title "aports Build" \
     "$base_url/base.css"
 
@@ -75,7 +74,7 @@ diff-html() {
   local base_dir=${1:-$REPORT_DIR/$EPOCH}
   local name=${2:-diff-baseline}
 
-  local base_url='../../../web'
+  local base_url='../../../../web'
   html-head --title "Differences" \
     "$base_url/ajax.js" \
     "$base_url/table/table-sort.js" \
@@ -112,7 +111,7 @@ tasks-html()  {
   # it gets interpolated into markdown and html
   local title=$2
 
-  local base_url='../../../../web'
+  local base_url='../../../../../web'
   html-head --title "$title" \
     "$base_url/ajax.js" \
     "$base_url/table/table-sort.js" \
@@ -174,15 +173,21 @@ my-rsync() {
 }
 
 readonly EPOCH=${EPOCH:-'2025-07-28-100'}
-readonly HOST_BASELINE=he.oils.pub
-readonly HOST_SH=he.oils.pub
+readonly BUILD_HOST=he.oils.pub
+#readonly HOST_BASELINE=he.oils.pub
+#readonly HOST_SH=he.oils.pub
 #readonly HOST_SH=lenny.local
 
 sync-results() {
-  local dest=$REPORT_DIR/$EPOCH
+  mkdir -p _tmp/aports-build/
 
-  mkdir -p $dest
+  my-rsync \
+    $BUILD_HOST:~/git/oils-for-unix/oils/_tmp/aports-build/ \
+    $REPORT_DIR/
 
+  return
+
+  # OLD
   my-rsync \
     $HOST_BASELINE:~/git/oils-for-unix/oils/_tmp/aports-build/baseline/ \
     $dest/baseline/
@@ -262,7 +267,7 @@ write-tables-for-config() {
 }
 
 make-diff-db() {
-  local base_dir=${1:-$REPORT_DIR/$EPOCH}
+  local base_dir=$1
   local name=${2:-diff-baseline}
 
   local db=$name.db
@@ -309,7 +314,7 @@ EOF
 }
 
 write-all-reports() {
-  local base_dir=${1:-$REPORT_DIR/$EPOCH}
+  local base_dir=$1  # e.g. _tmp/aports-report/2025-08-02/shard3
 
   index-html > $base_dir/index.html
 
@@ -318,7 +323,7 @@ write-all-reports() {
   done
 
   local name=diff-baseline
-  make-diff-db
+  make-diff-db $base_dir
   diff-html $base_dir > $base_dir/$name.html
   echo "Wrote $base_dir/$name.html"
 }

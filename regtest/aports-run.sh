@@ -10,19 +10,14 @@
 #   $0 fetch-packages fetch 100,300p  # packages 100-300
 #   $0 fetch-packages fetch .*        # all packages
 #
-# Config vars for building:
-#   export APORTS_EPOCH=2025-07-28
-#   export APORTS_FILTER=shard3       # package filter
+# Common usage:
+#   $0 build-many-configs PKG_FILTER EPOCH?   # e.g. 'shard3': build packages 301 to 400
+#                                             # results in host dir _tmp/aports-build/
 #
-# Build a shard:
-#   $0 build-many-configs PKG_FILTER        # build packages 301 to 400
-#
-#   $0 copy-results osh-as-sh               # copy TSV and abridged logs out of chroot
-#
-# Build a config:
-#   $0 set-osh-as-sh                        # or set-baseline
+# Build an individual config:
+#   $0 set-osh-as-sh                          # or set-baseline
 #   $0 build-packages PKG_FILTER osh-as-sh
-#   $0 build-packages '.*'       osh-as-sh  # 310 MB, 251 K files
+#   $0 build-packages '.*'       osh-as-sh    # 310 MB, 251 K files
 #
 # PKG_FILTER
 #   shard[0-9]+      - shard3 is packages 301 to 400
@@ -32,8 +27,7 @@
 #   .*               - egrep pattern matching all packages
 #   curl             - egrep pattern matching 'curl'
 #
-# On localhost:
-#   Now see regtest/aports-html.sh
+# Now run regtest/aports-html.sh on localhost, e.g.
 #
 #   regtest/aports-html.sh sync-results
 
@@ -210,7 +204,9 @@ build-packages() {
 clean-host-and-guest() {
   # host dir _tmp/aports-build
   rm -r -f -v $BASE_DIR
+}
 
+clean-guest() {
   # clean guest chroot
   sudo rm -r -f -v $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp
 }
@@ -219,20 +215,19 @@ readonly -a CONFIGS=( baseline osh-as-sh )
 
 abridge-logs() {
   local config=${1:-baseline}
-  local dest=$BASE_DIR/$config/log
+  local dest_dir=$2
 
   # local threshold=$(( 1 * 1000 * 1000 ))  # 1 MB
   local threshold=$(( 500 * 1000 ))  # 500 KB
 
   local guest_dir=$CHROOT_HOME_DIR/oils-for-unix/oils/_tmp/aports-guest/$config 
-  local dest_dir=$BASE_DIR/$config/log
 
-  mkdir -v -p $dest_dir
+  mkdir -v -p $dest_dir/$config
 
   find $guest_dir -name '*.log.txt' -a -printf '%s\t%P\n' |
   while read -r size path; do
     local src=$guest_dir/$path
-    local dest=$dest_dir/$path
+    local dest=$dest_dir/$config/$path
 
     if test "$size" -lt "$threshold"; then
       cp -v $src $dest
@@ -252,24 +247,35 @@ abridge-logs() {
 }
 
 copy-results() {
-  local config=${1:-baseline}
+  local config=$1
+  local dest_dir=$2
 
   #copy-logs "$config"
 
-  abridge-logs "$config"
+  abridge-logs "$config" "$dest_dir"
 
-  local dest=$BASE_DIR/$config/tasks.tsv
+  local dest=$dest_dir/$config/tasks.tsv
   mkdir -p $(dirname $dest)
   concat-task-tsv "$config" > $dest
 }
 
 build-many-configs() {
   local package_filter=${1:-}
+  local epoch=${2:-}
+
+  if test -z "$package_filter"; then
+    die "Package filter is required (e.g. shard3, ALL)"
+  fi
+
+  # default epoch
+  if test -z "$epoch"; then
+    epoch=$(date '+%Y-%m-%d')
+  fi
 
   # clear credentials first
   sudo -k
 
-  clean-host-and-guest
+  clean-guest
 
   # See note about /etc/sudoers.d at top of file
 
@@ -283,8 +289,9 @@ build-many-configs() {
     build-packages "$package_filter" "$config"
   done
 
+  local dest_dir="$BASE_DIR/$epoch/$package_filter"
   for config in "${CONFIGS[@]}"; do
-    copy-results "$config"
+    copy-results "$config" "$dest_dir"
   done
 }
 

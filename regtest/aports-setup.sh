@@ -5,44 +5,40 @@
 # Usage:
 #   regtest/aports-setup.sh <function name>
 #
-# Setup:
+# Download:
 #   $0 clone-aports
 #   $0 clone-aci
 #   $0 checkout-stable
 #   $0 download-oils
 #
-# Build package in chroot:
+# Prepare chroot:
 #
 #   $0 make-chroot     # 267 MB, 247 K files
-#                      # ncdu shows gcc is big, e.g. cc1plus, cc1, lto1 are each 35-40 MB
+#                      # ncdu shows gcc is big, e.g. cc1plus, cc1, lto1 are
+#                      # each 35-40 MB
 #   $0 add-build-deps  # add packages that build packages
 #                      # 281 MB, 248 K files
 #   $0 config-chroot   # user/groups, keygen
 #   $0 oils-in-chroot  # copy-aports: 307 MB, 251 K files
 #
 #   $0 save-default-config
-#   $0 apk-manifest
+#   $0 apk-manifest    # prepare host file
 #
-# Now see regtest/aports-run.sh
+# Now go to regtest/aports-run.sh
 #
 # WARNING: THIS IS ESSENTIAL for RUNNING build-many-configs (but not
 # build-packages):
 #
-# The /etc/sudoers.d needs to be modified so that sudo doesn't EVER
-# timeout Otherwise running the second config will prompt for the root password
+#   The /etc/sudoers.d needs to be modified so that sudo doesn't EVER
+#   timeout Otherwise running the second config will prompt for the root password
 #
-# This is how I did it manually
-# $ sudo visudo -f /etc/sudoers.d/no-timeout
+#   This is how I did it manually
+#   $ sudo visudo -f /etc/sudoers.d/no-timeout
 #
-# $ sudo cat /etc/sudoers.d/no-timeout
-# Defaults:andy timestamp_timeout=-1
+#   $ sudo cat /etc/sudoers.d/no-timeout
+#   Defaults:andy timestamp_timeout=-1
 #
-# -1 means it's cached forever
-
-# TODO:
-# - epoch could be set on build machine, with $0 copy-results
-# - $CHROOT_DIR/oils-aports-config could be 'baseline' 'osh-as-sh'?  For the
-#   different machines
+#   -1 means it's cached forever
 
 # Other commands:
 #   $0 remove-chroot
