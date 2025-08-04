@@ -8,9 +8,11 @@
 BEGIN {
   # three backslashes is \\\-D
   patterns[0] = "\\\\\\-D"
+  patterns[50] = "\\@-D"  # variant after attempted glob fix
 
   # \\\(cd
   patterns[1] = "\\\\\\(cd"
+  patterns[51] = "\\@(cd"  # variant after attempted glob fix
 
   patterns[2] = "cannot create executable"
 

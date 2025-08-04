@@ -349,59 +349,6 @@ remove-chroot() {
   $CHROOT_DIR/destroy --remove
 }
 
-chroot-manifest() {
-  local name=${1:-foo}
-
-  # TODO: use this to help plan OCI layers
-  # 251,904 files after a build of mpfr
-
-  local out=_tmp/$name.manifest.txt
-
-  # pipefail may fail
-  set +o errexit
-  sudo find $CHROOT_DIR \
-    -name proc -a -prune -o \
-    -type f -a -printf '%P %s\n' |
-    sort | tee $out
-
-  echo
-  echo "Wrote $out"
-}
-
-show-chroot() {
-  sudo tree $CHROOT_HOME_DIR/oils/_tmp
-}
-
-sizes() {
-  set +o errexit
-
-  # 312 MB
-  sudo du --si -s $CHROOT_DIR 
-
-  # 29 MB after 80 source packages, that's not so much
-
-  # getting up to 373 M though - worth sharding
-  sudo du --si -s $CHROOT_DIR/var/cache
-
-  sudo du --si -s $CHROOT_DIR/var/cache/distfiles
-
-  # 110 MB just of logs
-  # need to thin these out
-  sudo du --si -s $CHROOT_HOME_DIR/oils/_tmp/
-
-  sudo du --si -s $BASE_DIR/
-}
-
-archived-fetched() {
-  local tar=_chroot/distfiles.tar
-  tar --create --file $tar --directory $CHROOT_DIR/var/cache/distfiles .
-
-  tar --list < $tar
-  echo
-  ls -l --si $tar
-  echo
-}
-
 fetch-all() {
   clone-aports
   clone-aci
