@@ -1,5 +1,5 @@
 # grep through a log file, and print an integer cause to stdout
-# -1 means that no cause is assigned
+# -200 means that no cause is assigned
 
 # TODO:
 # - allow regex patterns?
@@ -78,6 +78,6 @@ BEGIN {
 
 END {
   if (!found) {
-    print "-1"  # no cause assigned
+    print "-200"  # no cause assigned
   }
 }

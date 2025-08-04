@@ -17,7 +17,7 @@ create table packages_schema as
   select
     name as column_name,
     case
-      when UPPER(type) = "INTEGER" then "integer"
+      when UPPER(type) LIKE "%INT%" then "integer"
       when UPPER(type) = "REAL" then "float"
       when UPPER(type) = "TEXT" then "string"
       else LOWER(type)

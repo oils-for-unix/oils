@@ -9,15 +9,15 @@ create table diff as
   select
     b.pkg,
     cast(b.status as integer) as status1,
-    "baseline" as baseline,
-    "baseline/" || b.pkg_HREF as baseline_HREF,
-    o.status as status2,
-    "osh-as-sh" as osh_as_sh,
-    "osh-as-sh/" || o.pkg_HREF as osh_as_sh_HREF,
-    "diff" as diff,
-    printf("diff/%s.txt", b.pkg) as diff_HREF,
-    "error" as error_grep,
-    printf("error/%s.txt", b.pkg) as error_grep_HREF
+    cast("baseline" as text) as baseline,
+    cast("baseline/" || b.pkg_HREF as text) as baseline_HREF,
+    cast(o.status as integer) as status2,
+    cast("osh-as-sh" as text) as osh_as_sh,
+    cast("osh-as-sh/" || o.pkg_HREF as text) as osh_as_sh_HREF,
+    cast("diff" as text) as diff,
+    cast(printf("diff/%s.txt", b.pkg) as text) as diff_HREF,
+    cast("error" as text) as error_grep,
+    cast(printf("error/%s.txt", b.pkg) as text) as error_grep_HREF
   from
     baseline.packages as b
     join osh_as_sh.packages as o on b.pkg = o.pkg

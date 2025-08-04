@@ -78,7 +78,7 @@ diff-metrics-html() {
   sqlite3 $db <<EOF
 select printf("<li>Number of differences: %s</li>", count(*)) from diff_joined;
 select printf("<li>Number of shards: %s</li>", count(distinct shard)) from diff_joined;
-select printf("<li>Packages without a cause assigned (-1): %s</li>", count(*)) from diff_joined where cause = "-1";
+select printf("<li>Packages without a cause assigned (-200): %s</li>", count(*)) from diff_joined where cause = "-1";
 select printf("<li>Packages where timeout interfered (-124): %s</li>", count(*)) from diff_joined where cause = "-124";
 EOF
   echo '</ul>'
@@ -339,7 +339,7 @@ EOF
 .headers on
 .import causes.tsv causes
 
-ALTER TABLE diff ADD COLUMN cause INTEGER;
+ALTER TABLE diff ADD COLUMN cause INT;
 
 -- Update with values from causes table
 UPDATE diff
@@ -368,7 +368,7 @@ create table diff_schema as
   select
     name as column_name,
     case
-      when UPPER(type) = "INTEGER" then "integer"
+      when UPPER(type) LIKE "%INT%" then "integer"
       when UPPER(type) = "REAL" then "float"
       when UPPER(type) = "TEXT" then "string"
       else LOWER(type)
@@ -431,7 +431,7 @@ create table diff_joined_schema as
   select
     name as column_name,
     case
-      when UPPER(type) = "INTEGER" then "integer"
+      when UPPER(type) LIKE "%INT%" then "integer"
       when UPPER(type) = "REAL" then "float"
       when UPPER(type) = "TEXT" then "string"
       else LOWER(type)
