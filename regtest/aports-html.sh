@@ -77,6 +77,7 @@ diff-metrics-html() {
   sqlite3 $db <<EOF
 select printf("<p>Number of differences: %s</p>", count(*)) from diff_joined;
 select printf("<p>Number of shards: %s</p>", count(distinct shard)) from diff_joined;
+select printf("<p>Packages with cause -1: %s</p>", count(*)) from diff_joined where cause = "-1";
 EOF
 }
 
@@ -286,6 +287,60 @@ write-tables-for-config() {
   log "Wrote $out"
 }
 
+find-causes() {
+  local log_file=$1
+  awk '
+  BEGIN {
+    # three backslashes is \\\-D
+    patterns[0] = "\\\\\\-D"
+
+    # \\\(cd
+    patterns[1] = "\\\\\\(cd"
+
+    patterns[2] = "cannot create executable"
+
+    patterns[3] = "cannot compile programs"
+
+    patterns[4] = "test case names with"
+
+    patterns[5] = "PHR segment not covered"
+
+    # OSH string
+    patterns[6] = "error applying redirect:"
+
+    # parsing error
+    patterns[7] = "(((grep"
+
+    # kea package: suspicious
+    patterns[7] = "find a separator character in"
+
+    found = 0
+  }
+  { 
+    for (i in patterns) {
+      # search for the line
+      if (index($0, patterns[i]) > 0) {
+        # TODO: print package
+        print i
+        #printf("%s\t%s\n", FILENAME, i)
+        found = 1
+
+        # just print the first one, not every occurrence
+        nextfile
+      }
+    }
+  }
+  #ENDFILE {
+  END {
+    # no pattern matched
+    if (!found) {
+      print "-1"
+      #printf("%s\t%s\n", FILENAME, -1)
+    }
+  }
+  ' "$log_file"
+}
+
 make-diff-db() {
   local base_dir=$1
   local name=${2:-diff-baseline}
@@ -298,6 +353,49 @@ make-diff-db() {
   rm -f $db
   sqlite3 $db < $sql
 
+  #
+  # Now make diffs
+  #
+
+  sqlite3 $db >failed-packages.txt <<EOF
+.mode tabs
+.headers off
+select pkg from diff;
+EOF
+
+  mkdir -p diff error
+  cat failed-packages.txt | while read -r pkg; do
+    local left=baseline/log/$pkg.log.txt 
+    local right=osh-as-sh/log/$pkg.log.txt 
+
+    diff -u $left $right > diff/$pkg.txt || true
+
+    egrep -i 'error|fail' $right > error/$pkg.txt || true
+  done
+
+  { echo "pkg${TAB}cause"
+    cat failed-packages.txt | while read -r pkg; do
+      local right=osh-as-sh/log/$pkg.log.txt 
+      echo "$pkg${TAB}$(find-causes $right)"
+    done 
+  } > causes.tsv
+
+  sqlite3 $db <<EOF
+.mode tabs
+.headers on
+.import causes.tsv causes
+
+ALTER TABLE diff ADD COLUMN cause INTEGER;
+
+-- Update with values from causes table
+UPDATE diff
+SET cause = (
+    SELECT causes.cause
+    FROM causes
+    WHERE causes.pkg = diff.pkg
+);
+EOF
+
   sqlite3 $db >$name.tsv <<EOF
 .mode tabs
 .headers on
@@ -305,30 +403,22 @@ select * from diff;
 EOF
 
   sqlite3 $db >$name.schema.tsv <<EOF
+-- This snippet copied
+create table diff_schema as
+  select
+    name as column_name,
+    case
+      when UPPER(type) = "INTEGER" then "integer"
+      when UPPER(type) = "REAL" then "float"
+      when UPPER(type) = "TEXT" then "string"
+      else LOWER(type)
+    end as type
+  from PRAGMA_TABLE_INFO("diff");
+
 .mode tabs
 .headers on
 select * from diff_schema;
 EOF
-
-  #
-  # Now make diffs
-  #
-
-  sqlite3 $db >packages-to-diff.txt <<EOF
-.mode tabs
-.headers off
-select pkg from diff;
-EOF
-
-  mkdir -p diff error
-  cat packages-to-diff.txt | while read -r pkg; do
-    local left=baseline/log/$pkg.log.txt 
-    local right=osh-as-sh/log/$pkg.log.txt 
-    diff -u $left $right > diff/$pkg.txt || true
-    egrep -i 'error' $right > error/$pkg.txt || true
-  done
-
-  #cat $name.schema.tsv 
 
   popd
 }
@@ -368,8 +458,7 @@ UPDATE diff_joined SET
    baseline_HREF = printf("%s/%s", shard, baseline_HREF),
    osh_as_sh_HREF = printf("%s/%s", shard, osh_as_sh_HREF),
    diff_HREF = printf("%s/%s", shard, diff_HREF),
-   error_grep_HREF = printf("%s/%s", shard, error_grep_HREF)
-   ;
+   error_grep_HREF = printf("%s/%s", shard, error_grep_HREF);
   
 -- Useful queries to verify the result:
 -- SELECT COUNT(*) as total_rows FROM diff_joined;

@@ -24,18 +24,6 @@ create table diff as
   where b.status != o.status
   order by b.pkg;
 
--- Copied from above
-create table diff_schema as
-  select
-    name as column_name,
-    case
-      when UPPER(type) = "INTEGER" then "integer"
-      when UPPER(type) = "REAL" then "float"
-      when UPPER(type) = "TEXT" then "string"
-      else LOWER(type)
-    end as type
-  from PRAGMA_TABLE_INFO("diff");
-
 -- Detach databases
 detach database baseline;
 detach database osh_as_sh;
