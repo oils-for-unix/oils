@@ -53,6 +53,7 @@ BEGIN {
 
   # screen
   patterns[15] = "mkdir: invalid option --"
+  patterns[65] = "mkdir: unrecognized option: /"  # changed 2025-08-04-rootbld
 
   # postfix
   patterns[16] = "Unexpected token after arithmetic expression"
@@ -62,6 +63,9 @@ BEGIN {
 
   # imap
   patterns[18] = "[ backticks in [ -c flag ] ]"
+
+  # sqsh
+  patterns[19] = "(test) Unexpected trailing word"
 
   found = 0
 }

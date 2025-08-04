@@ -71,15 +71,18 @@ EOF
 }
 
 diff-metrics-html() {
-  local db=${1:-_tmp/aports-report/2025-08-03/diff-joined.db}
+  local db=${1:-_tmp/aports-report/2025-08-03/diff-merged.db}
 
   echo '<ul>'
   sqlite3 $db <<EOF
--- select printf("<li>Shards: %s</li>", count(distinct shard)) from diff_joined;
-select printf("<li>Differences: %s</li>", count(*)) from diff_joined;
-select printf("<li>Unique causes: %s</li>", count(distinct cause)) from diff_joined where cause >= 0;
-select printf("<li>Packages without a cause assigned (-200): %s</li>", count(*)) from diff_joined where cause = "-200";
-select printf("<li>Inconclusive result because of timeout (-124): %s</li>", count(*)) from diff_joined where cause = "-124";
+-- select printf("<li>Shards: %s</li>", count(distinct shard)) from diff_merged;
+select printf("<li>Tasks: %s</li>", sum(num_tasks)) from metrics;
+select printf("<li>Baseline failures: %s</li>", sum(num_failures)) from metrics where config = "baseline";
+select printf("<li>osh-as-sh failures: %s</li>", sum(num_failures)) from metrics where config = "osh-as-sh";
+select printf("<li>Disagreements: %s</li>", count(*)) from diff_merged;
+select printf("<li>Unique causes: %s</li>", count(distinct cause)) from diff_merged where cause >= 0;
+select printf("<li>Packages without a cause assigned (-200): %s</li>", count(*)) from diff_merged where cause = "-200";
+select printf("<li>Inconclusive result because of timeout (-124, -143): %s</li>", count(*)) from diff_merged where cause = "-124" or cause = "-143";
 EOF
   echo '</ul>'
 }
@@ -109,7 +112,7 @@ diff-html() {
 
 EOF
 
-  if test "$name" = 'diff-joined'; then
+  if test "$name" = 'diff-merged'; then
     diff-metrics-html $base_dir/$name.db
   fi
 
@@ -341,6 +344,10 @@ UPDATE diff
 SET cause = -124
 WHERE status1 = 124 OR status2 = 124;
 
+UPDATE diff
+SET cause = -143
+WHERE status1 = 143 OR status2 = 143;
+
 EOF
 
   sqlite3 $db >$name.tsv <<EOF
@@ -370,7 +377,7 @@ EOF
   popd
 }
 
-join-diffs-sql() {
+merge-diffs-sql() {
   local -a SHARDS=( "$@" )
 
   local first_shard="${SHARDS[0]}"
@@ -381,8 +388,13 @@ join-diffs-sql() {
   # Create table from first shard
   echo "
   ATTACH DATABASE '$first_shard/diff-baseline.db' AS temp_shard;
-  CREATE TABLE diff_joined AS
+
+  CREATE TABLE diff_merged AS
   SELECT *, CAST('' as TEXT) as shard FROM temp_shard.diff where 1=0;
+
+  CREATE TABLE metrics AS
+  SELECT *, CAST('' as TEXT) as shard FROM temp_shard.metrics where 1=0;
+
   DETACH DATABASE temp_shard;
   "
 
@@ -394,22 +406,27 @@ join-diffs-sql() {
     echo "
     -- $i: Add data from $shard_db
     ATTACH DATABASE '$shard_db/diff-baseline.db' AS temp_shard;
-    INSERT INTO diff_joined
+
+    INSERT INTO diff_merged
     SELECT *, '$shard_name' as shard FROM temp_shard.diff;
+
+    INSERT INTO metrics
+    SELECT *, '$shard_name' as shard FROM temp_shard.metrics;
+
     DETACH DATABASE temp_shard;
     "
   done
 
   echo '
-UPDATE diff_joined SET
+UPDATE diff_merged SET
    baseline_HREF = printf("%s/%s", shard, baseline_HREF),
    osh_as_sh_HREF = printf("%s/%s", shard, osh_as_sh_HREF),
    error_grep_HREF = printf("%s/%s", shard, error_grep_HREF);
   
 -- Useful queries to verify the result:
--- SELECT COUNT(*) as total_rows FROM diff_joined;
--- SELECT shard, COUNT(*) as row_count FROM diff_joined GROUP BY shard ORDER BY shard;
--- .schema diff_joined
+-- SELECT COUNT(*) as total_rows FROM diff_merged;
+-- SELECT shard, COUNT(*) as row_count FROM diff_merged GROUP BY shard ORDER BY shard;
+-- .schema diff_merged
 
 -- copied
 
@@ -422,37 +439,65 @@ create table diff_joined_schema as
       when UPPER(type) = "TEXT" then "string"
       else LOWER(type)
     end as type
-  from PRAGMA_TABLE_INFO("diff_joined");
+  from PRAGMA_TABLE_INFO("diff_merged");
+
+create table metrics_schema as
+  select
+    name as column_name,
+    case
+      when UPPER(type) LIKE "%INT%" then "integer"
+      when UPPER(type) = "REAL" then "float"
+      when UPPER(type) = "TEXT" then "string"
+      else LOWER(type)
+    end as type
+  from PRAGMA_TABLE_INFO("metrics");
 '
 }
 
-join-diffs() {
+merge-diffs() {
   local epoch_dir=${1:-_tmp/aports-report/2025-08-03}
-  local db=$PWD/$epoch_dir/diff-joined.db
+  local db=$PWD/$epoch_dir/diff-merged.db
   rm -f $db
-  join-diffs-sql $epoch_dir/shard* | sqlite3 $db
+  merge-diffs-sql $epoch_dir/shard* | sqlite3 $db
   echo $db
 
-  local name=diff-joined
+  local name1=diff-merged
+  local name2=metrics
 
   # copied from above
   pushd $epoch_dir
 
-  sqlite3 $db >$name.tsv <<EOF
+  sqlite3 $db >$name1.tsv <<EOF
 .mode tabs
 .headers on
-select * from diff_joined order by pkg;
+select * from diff_merged order by pkg;
 EOF
 
-  sqlite3 $db >$name.schema.tsv <<EOF
+  sqlite3 $db >$name1.schema.tsv <<EOF
 .mode tabs
 .headers on
 select * from diff_joined_schema;
 EOF
+
+  sqlite3 $db >$name2.tsv <<EOF
+.mode tabs
+.headers on
+select * from metrics;
+EOF
+
+  sqlite3 $db >$name2.schema.tsv <<EOF
+.mode tabs
+.headers on
+select * from metrics_schema;
+EOF
   popd
 
-  local out=$epoch_dir/$name.html
-  diff-html $epoch_dir $name '../../../web' > $out
+  local out=$epoch_dir/$name1.html
+  diff-html $epoch_dir $name1 '../../../web' > $out
+  echo "Wrote $out"
+
+  local out=$epoch_dir/$name2.html
+  diff-html $epoch_dir $name2 '../../../web' > $out
   echo "Wrote $out"
 }
 
@@ -477,7 +522,7 @@ write-all-reports() {
     write-shard-reports "$shard_dir"
   done
 
-  join-diffs "$epoch_dir"
+  merge-diffs "$epoch_dir"
 }
 
 make-wwz() {

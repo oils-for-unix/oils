@@ -22,6 +22,20 @@ create table diff as
   where b.status != o.status
   order by b.pkg;
 
+-- Create a table of the right shape
+-- 1 row for baseline, 1 row for osh-as-sh
+create table metrics as
+  select
+    cast("baseline" as text) as config,
+    *
+  from baseline.metrics;
+
+insert into metrics
+select
+  cast("osh-as-sh" as text) as config,
+  *
+from osh_as_sh.metrics;
+
 -- Detach databases
 detach database baseline;
 detach database osh_as_sh;
