@@ -73,13 +73,13 @@ EOF
 diff-metrics-html() {
   local db=${1:-_tmp/aports-report/2025-08-03/diff-joined.db}
 
-  # TODO: we also want to show IFS bugs
   echo '<ul>'
   sqlite3 $db <<EOF
-select printf("<li>Number of differences: %s</li>", count(*)) from diff_joined;
-select printf("<li>Number of shards: %s</li>", count(distinct shard)) from diff_joined;
-select printf("<li>Packages without a cause assigned (-200): %s</li>", count(*)) from diff_joined where cause = "-1";
-select printf("<li>Packages where timeout interfered (-124): %s</li>", count(*)) from diff_joined where cause = "-124";
+-- select printf("<li>Shards: %s</li>", count(distinct shard)) from diff_joined;
+select printf("<li>Differences: %s</li>", count(*)) from diff_joined;
+select printf("<li>Unique causes: %s</li>", count(distinct cause)) from diff_joined where cause >= 0;
+select printf("<li>Packages without a cause assigned (-200): %s</li>", count(*)) from diff_joined where cause = "-200";
+select printf("<li>Inconclusive result because of timeout (-124): %s</li>", count(*)) from diff_joined where cause = "-124";
 EOF
   echo '</ul>'
 }
@@ -89,7 +89,9 @@ diff-html() {
   local name=${2:-diff-baseline}
   local base_url=${3:-'../../../../web'}
 
-  html-head --title "Differences" \
+  local title='Differences - OSH'
+
+  html-head --title "$title" \
     "$base_url/ajax.js" \
     "$base_url/table/table-sort.js" \
     "$base_url/table/table-sort.css" \
@@ -103,9 +105,7 @@ diff-html() {
   <a href="/">Home</a>
 </p>
 
-# Differences
-
-Note: Right now, the diff column is hard to read in many cases.
+# $title
 
 EOF
 
@@ -313,12 +313,10 @@ make-diff-db() {
 select pkg from diff;
 EOF
 
-  mkdir -p diff error
+  mkdir -p error
   cat failed-packages.txt | while read -r pkg; do
     local left=baseline/log/$pkg.log.txt 
     local right=osh-as-sh/log/$pkg.log.txt 
-
-    diff -u $left $right > diff/$pkg.txt || true
 
     egrep -i 'error|fail' $right > error/$pkg.txt || true
   done
@@ -417,7 +415,6 @@ join-diffs-sql() {
 UPDATE diff_joined SET
    baseline_HREF = printf("%s/%s", shard, baseline_HREF),
    osh_as_sh_HREF = printf("%s/%s", shard, osh_as_sh_HREF),
-   diff_HREF = printf("%s/%s", shard, diff_HREF),
    error_grep_HREF = printf("%s/%s", shard, error_grep_HREF);
   
 -- Useful queries to verify the result:

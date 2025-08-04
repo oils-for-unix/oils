@@ -14,8 +14,6 @@ create table diff as
     cast(o.status as integer) as status2,
     cast("osh-as-sh" as text) as osh_as_sh,
     cast("osh-as-sh/" || o.pkg_HREF as text) as osh_as_sh_HREF,
-    cast("diff" as text) as diff,
-    cast(printf("diff/%s.txt", b.pkg) as text) as diff_HREF,
     cast("error" as text) as error_grep,
     cast(printf("error/%s.txt", b.pkg) as text) as error_grep_HREF
   from
