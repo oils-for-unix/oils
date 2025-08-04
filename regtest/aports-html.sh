@@ -74,11 +74,14 @@ diff-metrics-html() {
   local db=${1:-_tmp/aports-report/2025-08-03/diff-joined.db}
 
   # TODO: we also want to show IFS bugs
+  echo '<ul>'
   sqlite3 $db <<EOF
-select printf("<p>Number of differences: %s</p>", count(*)) from diff_joined;
-select printf("<p>Number of shards: %s</p>", count(distinct shard)) from diff_joined;
-select printf("<p>Packages with cause -1: %s</p>", count(*)) from diff_joined where cause = "-1";
+select printf("<li>Number of differences: %s</li>", count(*)) from diff_joined;
+select printf("<li>Number of shards: %s</li>", count(distinct shard)) from diff_joined;
+select printf("<li>Packages without a cause assigned (-1): %s</li>", count(*)) from diff_joined where cause = "-1";
+select printf("<li>Packages where timeout interfered (-124): %s</li>", count(*)) from diff_joined where cause = "-124";
 EOF
+  echo '</ul>'
 }
 
 diff-html() {
@@ -287,103 +290,18 @@ write-tables-for-config() {
   log "Wrote $out"
 }
 
-find-causes() {
-  local log_file=$1
-  awk '
-  BEGIN {
-    # three backslashes is \\\-D
-    patterns[0] = "\\\\\\-D"
-
-    # \\\(cd
-    patterns[1] = "\\\\\\(cd"
-
-    patterns[2] = "cannot create executable"
-
-    patterns[3] = "cannot compile programs"
-
-    patterns[4] = "test case names with"
-
-    patterns[5] = "PHDR segment not covered"
-
-    # OSH string
-    patterns[6] = "error applying redirect:"
-
-    # parsing error
-    patterns[7] = "(((grep"
-
-    # kea package: suspicious
-    # oh this also fails with 124 though
-    patterns[8] = "find a separator character in"
-
-    # esh package: OSH string
-    patterns[9] = "fatal: Undefined variable"
-
-    # mawk: trap 0
-    patterns[10] = "requires a signal or hook name"
-
-    # pkgconf 
-    patterns[11] = " with multiple files"
-
-    # xz
-    # musl libc error - with glibc, we get a parsing error
-    patterns[12] = "Extended glob won"
-
-    # sqlite
-    patterns[13] = "No working C compiler"
-
-    # sfic
-    patterns[14] = "terminate called after throwing an instance of"
-
-    # screen
-    patterns[15] = "mkdir: invalid option --"
-
-    # postfix
-    patterns[16] = "Unexpected token after arithmetic expression"
-
-    # make
-    patterns[17] = "oils I/O error"
-
-    # imap
-    patterns[18] = "[ backticks in [ -c flag ] ]"
-
-    found = 0
-  }
-  { 
-    for (i in patterns) {
-      # search for the line
-      if (index($0, patterns[i]) > 0) {
-        # TODO: print package
-        print i
-        #printf("%s\t%s\n", FILENAME, i)
-        found = 1
-
-        # just print the first one, not every occurrence
-        nextfile
-      }
-    }
-  }
-  #ENDFILE {
-  END {
-    # no pattern matched
-    if (!found) {
-      print "-1"
-      #printf("%s\t%s\n", FILENAME, -1)
-    }
-  }
-  ' "$log_file"
-}
-
 make-diff-db() {
   local base_dir=$1
   local name=${2:-diff-baseline}
 
   local db=$name.db
 
-  local sql=$PWD/regtest/aports-diff.sql
+  local diff_sql=$PWD/regtest/aports-diff.sql
+  local cause_awk=$PWD/regtest/aports-cause.awk
 
   pushd $base_dir
   rm -f $db
-  sqlite3 $db < $sql
+  sqlite3 $db < $diff_sql
 
   #
   # Now make diffs
@@ -408,7 +326,11 @@ EOF
   { echo "pkg${TAB}cause"
     cat failed-packages.txt | while read -r pkg; do
       local right=osh-as-sh/log/$pkg.log.txt 
-      echo "$pkg${TAB}$(find-causes $right)"
+
+      local cause
+      cause=$(awk -f $cause_awk $right)
+
+      echo "${pkg}${TAB}${cause}"
     done 
   } > causes.tsv
 
@@ -429,7 +351,7 @@ SET cause = (
 
 -- Now set for timeouts
 UPDATE diff
-SET cause = 124
+SET cause = -124
 WHERE status1 = 124 OR status2 = 124;
 
 EOF
