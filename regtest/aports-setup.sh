@@ -139,9 +139,14 @@ clone-aci() {
 }
 
 download-oils() {
-  local job_id=${1:-9886}  # 2025-07
+  local job_id=${1:-9951}  # 2025-08
+
   local url="https://op.oilshell.org/uuu/github-jobs/$job_id/cpp-tarball.wwz/_release/oils-for-unix.tar"
-  wget --no-clobber --directory _tmp "$url"
+
+  rm -f -v _tmp/oils-for-unix.tar
+
+  #wget --no-clobber --directory _tmp "$url"
+  wget --directory _tmp "$url"
 }
 
 make-chroot() {

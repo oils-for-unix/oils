@@ -533,4 +533,31 @@ out-of-vm() {
   popd
 }
 
+update-build-server() {
+  ssh -A he.oils.pub 'set -x; cd git/oils-for-unix/oils; git fetch; git status'
+}
+
+filter-basename() {
+  sed 's|.*/||g'
+}
+
+grep-bad() {
+  local epoch_dir=${1:-$REPORT_DIR/2025-08-04-he}
+
+  local bad='cannot create executable|cannot compile programs|No working C compiler'
+
+  local flag='-c'
+
+  echo 'baseline'
+  egrep -l "$bad" $epoch_dir/*/baseline/log/* | wc -l
+  echo
+  echo 'osh-as-sh'
+  egrep -l "$bad" $epoch_dir/*/osh-as-sh/log/* | wc -l
+
+  egrep -l "$bad" $epoch_dir/*/baseline/log/* | filter-basename > _tmp/b.txt
+  egrep -l "$bad" $epoch_dir/*/osh-as-sh/log/* | filter-basename > _tmp/o.txt
+
+  diff -u _tmp/{b,o}.txt
+}
+
 task-five "$@"

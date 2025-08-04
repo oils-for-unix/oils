@@ -11,8 +11,14 @@
 #   $0 fetch-packages fetch .*        # all packages
 #
 # Common usage:
-#   $0 build-many-configs PKG_FILTER EPOCH?   # e.g. 'shard3': build packages 301 to 400
-#                                             # results in host dir _tmp/aports-build/
+#
+#   export APORTS_EPOCH=2025-08-04-foo        # optional override
+#   $0 build-many-shards shard{0..16}         # build all 17 shards in 2 configs
+#
+#   $0 build-many-configs PKG_FILTER          # build a single shard
+#                                             # e.g. 'shard3': build packages 301 to 400
+#
+# Look for results in _tmp/aports-build/
 #
 # Build an individual config:
 #   $0 set-osh-as-sh                          # or set-baseline
@@ -260,17 +266,18 @@ copy-results() {
   concat-task-tsv "$config" > $dest
 }
 
+APORTS_EPOCH="${APORTS_EPOCH:-}"
+# default epoch
+if test -z "$APORTS_EPOCH"; then
+  APORTS_EPOCH=$(date '+%Y-%m-%d')
+fi
+
 _build-many-configs() {
   local package_filter=${1:-}
-  local epoch=${2:-}
+  local epoch=${2:-$APORTS_EPOCH}
 
   if test -z "$package_filter"; then
     die "Package filter is required (e.g. shard3, ALL)"
-  fi
-
-  # default epoch
-  if test -z "$epoch"; then
-    epoch=$(date '+%Y-%m-%d')
   fi
 
   clean-guest
@@ -280,7 +287,7 @@ _build-many-configs() {
   for config in "${CONFIGS[@]}"; do
     # this uses enter-chroot to modify the chroot
     # should we have a separate one?  But then fetching packages is different
-    banner "Set config to $config"
+    banner "$epoch: Set config to $config"
     set-$config
 
     # this uses enter-chroot -u
@@ -302,10 +309,12 @@ build-many-configs() {
 
 build-many-shards() {
   sudo -k
+
+  banner "$APORTS_EPOCH: building shards: $@"
+
   for package_filter in "$@"; do
-    _build-many-configs "$package_filter"
+    _build-many-configs "$package_filter" "$APORTS_EPOCH"
   done
 }
-
 
 task-five "$@"
