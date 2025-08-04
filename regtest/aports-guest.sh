@@ -52,7 +52,7 @@ build-package() {
     --field pkg_HREF \
     --output $task_file
 
-  # Packages live in /home/builder/aports/main
+  # Packages live in /home/udu/aports/main
   # -f forces rebuild: needed for different configs
   local -a cmd=( abuild -f -r -C ~/aports/main/$pkg )
 

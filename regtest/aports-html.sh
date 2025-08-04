@@ -6,10 +6,10 @@
 #   regtest/aports-html.sh <function name>
 #
 # Examples:
+#   $0 sync-results he.oils.pub
 #   $0 write-all-reports
-#   $0 make-wwz
-#   $0 deploy-wwz-op    # op.oilshell.org - could be op.oils.pub
-#   $0 deploy-wwz-mb    # oils.pub, on Mythic Beasts
+#   $0 make-wwz _tmp/aports-report/2025-08-03
+#   $0 deploy-wwz-op _tmp/aports-report/2025-08-03   # deploy to op.oils.pub
 #
 # TODO:
 # - report on start time and end time - on $config/packages.html
@@ -201,17 +201,6 @@ sync-results() {
   my-rsync \
     $host:~/git/oils-for-unix/oils/_tmp/aports-build/ \
     $REPORT_DIR/
-
-  return
-
-  # OLD
-  my-rsync \
-    $HOST_BASELINE:~/git/oils-for-unix/oils/_tmp/aports-build/baseline/ \
-    $dest/baseline/
-
-  my-rsync \
-    $HOST_SH:~/git/oils-for-unix/oils/_tmp/aports-build/osh-as-sh/ \
-    $dest/osh-as-sh/
 }
 
 local-sync() {

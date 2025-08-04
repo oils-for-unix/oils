@@ -21,7 +21,7 @@ test-unshare() {
     sh -x $CHROOT_DIR/enter-chroot sh -c 'echo hi; whoami'
 
   unshare --map-root-user \
-    $CHROOT_DIR/enter-chroot -u builder sh -c 'echo hi; whoami'
+    $CHROOT_DIR/enter-chroot -u udu sh -c 'echo hi; whoami'
 }
 
 test-timeout() {

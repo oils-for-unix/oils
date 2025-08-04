@@ -46,7 +46,7 @@ log-sizes() {
   local config=${1:-baseline}
 
   tsv-row 'num_bytes' 'path'
-  find $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp/aports-guest/$config \
+  find $CHROOT_HOME_DIR/oils/_tmp/aports-guest/$config \
     -name '*.log.txt' -a -printf '%s\t%P\n'
 }
 

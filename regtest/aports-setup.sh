@@ -48,8 +48,8 @@
 # he.oils.pub/
 #   ~/git/oils-for-unix/oils/
 #     _chroot/aports-build/
-#       home/builder/   # TODO: change to uke
-#        oils-for-unix/oils/  # guest tools
+#       home/udu/   # TODO: change to uke
+#        oils/  # guest tools
 #          build/
 #            py.sh
 #          _tmp/
@@ -69,18 +69,20 @@
 # localhost/
 #   ~/git/oils-for-unix/oils/
 #     _tmp/aports-build/    # HOST
-#       baseline/
-#         index.html        # from tasks.tsv
-#         tasks.tsv 
-#         log/     
-#           7zip.log.txt
-#         abridged-log/     # tail -n 1000 ont he log
-#           gcc.log.txt
-#       osh-as-sh/          # from tasks.tsv
-#         tasks.tsv
-#         log/
-#         abridged-log/
-#     index.html
+#       2025-08-04/   # epohc
+#         shard0/
+#           baseline/
+#             index.html        # from tasks.tsv
+#             tasks.tsv 
+#             log/     
+#               7zip.log.txt
+#             abridged-log/     # tail -n 1000 ont he log
+#               gcc.log.txt
+#           osh-as-sh/          # from tasks.tsv
+#             tasks.tsv
+#             log/
+#             abridged-log/
+#         index.html
 #
 # Another option: don't bother with abridged-log
 # - it makes the diff harder - what if one is abridged, and the other isn't?
@@ -100,8 +102,20 @@ clone-aports() {
 
   # Took 1m 13s, at 27 MiB /ssec
   time git clone \
-    https://gitlab.alpinelinux.org/alpine/aports.git
+    https://gitlab.alpinelinux.org/alpine/aports.git || true
     #git@gitlab.alpinelinux.org:alpine/aports.git || true
+
+  popd
+}
+
+clone-aci() {
+  # I FORKED this, because this script FUCKED UP my /dev dir and current directory!
+  # Sent patches upstream
+
+  pushd ..
+
+  time git clone \
+    git@github.com:oils-for-unix/alpine-chroot-install || true
 
   popd
 }
@@ -124,18 +138,6 @@ checkout-stable() {
   git checkout dev-andy-2
   git log -n 1
   popd > /dev/null
-}
-
-clone-aci() {
-  # I FORKED this, because this script FUCKED UP my /dev dir and current directory!
-  # Sent patches upstream
-
-  pushd ..
-
-  time git clone \
-    git@github.com:oils-for-unix/alpine-chroot-install || true
-
-  popd
 }
 
 download-oils() {
@@ -165,16 +167,17 @@ make-chroot() {
   #
   # This is already 267 MB, 247 K files
 
+  mkdir -p $CHROOT_DIR  # make it with normal permissions first
   time sudo $aci -n -d $PWD/$CHROOT_DIR
 }
 
 make-user() {
-  $CHROOT_DIR/enter-chroot adduser -D builder || true
+  $CHROOT_DIR/enter-chroot adduser -D udu || true
 
   # put it in abuild group
-  $CHROOT_DIR/enter-chroot addgroup builder abuild || true
+  $CHROOT_DIR/enter-chroot addgroup udu abuild || true
   # 'wheel' is for 'sudo'
-  $CHROOT_DIR/enter-chroot addgroup builder wheel || true
+  $CHROOT_DIR/enter-chroot addgroup udu wheel || true
 
   # CHeck the state
   user-chroot sh -c 'whoami; echo GROUPS; groups'
@@ -210,13 +213,13 @@ add-build-deps() {
   apk add alpine-sdk pigz doas bash python3 findutils
   '
 
-  # $CHROOT_DIR/enter-chroot -u builder bash -c 'echo "hi from bash"'
+  # $CHROOT_DIR/enter-chroot -u udu bash -c 'echo "hi from bash"'
 }
 
 change-perms() {
   # pass any number of args
 
-  # get uid from /home/builder
+  # get uid from /home/udu
   local uid
   uid=$(stat -c '%u' $CHROOT_HOME_DIR)
   sudo chown --verbose --recursive $uid "$@"
@@ -271,7 +274,7 @@ multi-cp() {
 }
 
 copy-code() {
-  local dest=$CHROOT_HOME_DIR/oils-for-unix/oils
+  local dest=$CHROOT_HOME_DIR/oils
   sudo mkdir -v -p $dest
 
   code-manifest | sudo $0 multi-cp $dest
@@ -281,7 +284,7 @@ copy-code() {
 
 test-time-tsv() {
   user-chroot sh -c '
-  cd oils-for-unix/oils
+  cd oils
   pwd
   whoami
   echo ---
@@ -347,14 +350,26 @@ remove-chroot() {
 }
 
 chroot-manifest() {
+  local name=${1:-foo}
+
   # TODO: use this to help plan OCI layers
   # 251,904 files after a build of mpfr
 
-  sudo find $CHROOT_DIR -type f -a -printf '%s %P\n'
+  local out=_tmp/$name.manifest.txt
+
+  # pipefail may fail
+  set +o errexit
+  sudo find $CHROOT_DIR \
+    -name proc -a -prune -o \
+    -type f -a -printf '%P %s\n' |
+    sort | tee $out
+
+  echo
+  echo "Wrote $out"
 }
 
 show-chroot() {
-  sudo tree $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp
+  sudo tree $CHROOT_HOME_DIR/oils/_tmp
 }
 
 sizes() {
@@ -372,9 +387,36 @@ sizes() {
 
   # 110 MB just of logs
   # need to thin these out
-  sudo du --si -s $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp/
+  sudo du --si -s $CHROOT_HOME_DIR/oils/_tmp/
 
   sudo du --si -s $BASE_DIR/
+}
+
+archived-fetched() {
+  local tar=_chroot/distfiles.tar
+  tar --create --file $tar --directory $CHROOT_DIR/var/cache/distfiles .
+
+  tar --list < $tar
+  echo
+  ls -l --si $tar
+  echo
+}
+
+fetch-all() {
+  clone-aports
+  clone-aci
+  checkout-stable
+  download-oils
+}
+
+prepare-all() {
+  # same as comments at top of file
+  make-chroot   
+  add-build-deps
+  config-chroot   
+  oils-in-chroot  
+  save-default-config
+  apk-manifest
 }
 
 task-five "$@"

@@ -7,18 +7,22 @@
 #
 # Examples:
 #
-#   $0 fetch-packages fetch 100,300p  # packages 100-300
-#   $0 fetch-packages fetch .*        # all packages
+#   $0 fetch-packages fetch PKG_FILTER
+#
+#   $0 fetch-packages fetch 100,300p   # packages 100-300
+#   $0 fetch-packages fetch '.*'       # all packages
 #
 # Common usage:
 #
 #   export APORTS_EPOCH=2025-08-04-foo        # optional override
 #   $0 build-many-shards shard{0..16}         # build all 17 shards in 2 configs
 #
+# Look for results in _tmp/aports-build/
+#
+# More fine-grained builds
+#
 #   $0 build-many-configs PKG_FILTER          # build a single shard
 #                                             # e.g. 'shard3': build packages 301 to 400
-#
-# Look for results in _tmp/aports-build/
 #
 # Build an individual config:
 #   $0 set-osh-as-sh                          # or set-baseline
@@ -202,7 +206,7 @@ build-packages() {
   config=$1
   shift
 
-  cd oils-for-unix/oils
+  cd oils
   regtest/aports-guest.sh build-packages "$config" "$@"
   ' dummy0 "$config" "${package_dirs[@]}"
 }
@@ -214,7 +218,7 @@ clean-host-and-guest() {
 
 clean-guest() {
   # clean guest chroot
-  sudo rm -r -f -v $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp
+  sudo rm -r -f -v $CHROOT_HOME_DIR/oils/_tmp
 }
 
 readonly -a CONFIGS=( baseline osh-as-sh ) 
@@ -226,7 +230,7 @@ abridge-logs() {
   # local threshold=$(( 1 * 1000 * 1000 ))  # 1 MB
   local threshold=$(( 500 * 1000 ))  # 500 KB
 
-  local guest_dir=$CHROOT_HOME_DIR/oils-for-unix/oils/_tmp/aports-guest/$config 
+  local guest_dir=$CHROOT_HOME_DIR/oils/_tmp/aports-guest/$config 
 
   local log_dir="$dest_dir/$config/log"
   mkdir -v -p $log_dir
