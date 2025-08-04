@@ -189,7 +189,7 @@ fetch-packages() {
 
 banner() {
   echo
-  echo "=== $1"
+  echo "=== $@"
   echo
 }
 
@@ -314,7 +314,7 @@ build-many-configs() {
 build-many-shards() {
   sudo -k
 
-  banner "$APORTS_EPOCH: building shards: $@"
+  banner "$APORTS_EPOCH: building shards: $*"
 
   for package_filter in "$@"; do
     _build-many-configs "$package_filter" "$APORTS_EPOCH"

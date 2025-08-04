@@ -54,7 +54,8 @@ build-package() {
 
   # Packages live in /home/udu/aports/main
   # -f forces rebuild: needed for different configs
-  local -a cmd=( abuild -f -r -C ~/aports/main/$pkg )
+  # -r: install missing deps from system repository?
+  local -a cmd=( abuild -f -r -C ~/aports/main/$pkg rootbld )
 
   # Give it 1 second to respond to SIGTERM, then SIGKILL
   local seconds=$(( 5 * 60 ))  # 5 minutes max for now, save time!

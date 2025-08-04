@@ -66,13 +66,19 @@ filter-basename() {
   sed 's|.*/||g'
 }
 
+readonly C_BUG='cannot create executable|cannot compile programs|No working C compiler'
+
+grep-bug-c-shard() {
+  local shard_dir=${1:-$REPORT_DIR/2025-08-04-rootbld/shard13}
+
+  egrep "$C_BUG" $shard_dir/baseline/log/* | filter-basename 
+}
+
 grep-bug-c() {
   local epoch_dir=${1:-$REPORT_DIR/2025-08-04-he}
 
-  local bad='cannot create executable|cannot compile programs|No working C compiler'
-
-  egrep -l "$bad" $epoch_dir/*/baseline/log/* | filter-basename > _tmp/b.txt
-  egrep -l "$bad" $epoch_dir/*/osh-as-sh/log/* | filter-basename > _tmp/o.txt
+  egrep -l "$C_BUG" $epoch_dir/*/baseline/log/* | filter-basename > _tmp/b.txt
+  egrep -l "$C_BUG" $epoch_dir/*/osh-as-sh/log/* | filter-basename > _tmp/o.txt
 
   wc -l _tmp/{b,o}.txt
   diff -u _tmp/{b,o}.txt || true
@@ -81,7 +87,7 @@ grep-bug-c() {
 }
 
 grep-builddeps() {
-  local epoch_dir=${1:-$REPORT_DIR/2025-08-04-he}
+  local epoch_dir=${1:-$REPORT_DIR/2025-08-04-rootbld}
 
   local bad='builddeps failed'
   egrep "$bad" $epoch_dir/*/baseline/log/* 
