@@ -55,7 +55,11 @@ build-package() {
   # Packages live in /home/udu/aports/main
   # -f forces rebuild: needed for different configs
   # -r: install missing deps from system repository?
-  local -a cmd=( abuild -f -r -C ~/aports/main/$pkg rootbld )
+  #local -a cmd=( abuild -f -r -C ~/aports/main/$pkg rootbld )
+
+  # DISABLE rootbld for now - bwrap doesn't work inside chroot, because user
+  # namespaces don't compose with chroots
+  local -a cmd=( abuild -f -r -C ~/aports/main/$pkg )
 
   # Give it 1 second to respond to SIGTERM, then SIGKILL
   local seconds=$(( 5 * 60 ))  # 5 minutes max for now, save time!
