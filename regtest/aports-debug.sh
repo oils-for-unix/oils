@@ -105,4 +105,17 @@ update-build-server() {
   ssh -A he.oils.pub 'set -x; cd git/oils-for-unix/oils; git fetch; git status'
 }
 
+bwrap-demo() {
+  # chroot only
+  user-chroot sh -c '
+  whoami; pwd; ls -l /
+  set -x
+  cat /proc/sys/kernel/unprivileged_userns_clone
+  cat /proc/sys/user/max_user_namespaces
+  unshare --user echo "Namespaces work"
+  '
+
+  user-chroot sh -c 'bwrap ls -l /'
+}
+
 task-five "$@"
