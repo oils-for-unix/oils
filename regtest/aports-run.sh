@@ -313,6 +313,8 @@ build-baseline() {
   set-baseline
 
   for package_filter in "$@"; do
+    clean-guest  # prevent logs from accumulating
+
     build-packages "$package_filter" baseline
     local dest_dir="$BASE_DIR/$epoch/$package_filter"
     copy-results baseline "$dest_dir"

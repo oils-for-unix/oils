@@ -67,14 +67,21 @@ filter-basename() {
 }
 
 readonly C_BUG='cannot create executable|cannot compile programs|No working C compiler'
+readonly B_BUG='builddeps failed'
 
-grep-bug-c-shard() {
-  local shard_dir=${1:-$REPORT_DIR/2025-08-04-rootbld/shard13}
+grep-c-bug-2() {
+  local epoch_dir=${1:-$REPORT_DIR/2025-08-05-baseline}
 
-  egrep "$C_BUG" $shard_dir/baseline/log/* | filter-basename 
+  egrep "$C_BUG" $epoch_dir/*/baseline/log/* #| filter-basename 
 }
 
-grep-bug-c() {
+grep-b-bug-2() {
+  local epoch_dir=${1:-$REPORT_DIR/2025-08-05-baseline}
+
+  egrep "$B_BUG" $epoch_dir/*/baseline/log/* #| filter-basename 
+}
+
+grep-c-bug() {
   local epoch_dir=${1:-$REPORT_DIR/2025-08-04-rootbld}
 
   egrep -l "$C_BUG" $epoch_dir/*/baseline/log/* | filter-basename > _tmp/b.txt
@@ -86,14 +93,13 @@ grep-bug-c() {
   echo done
 }
 
-grep-builddeps() {
+grep-b-bug() {
   local epoch_dir=${1:-$REPORT_DIR/2025-08-04-rootbld}
 
-  local bad='builddeps failed'
-  egrep "$bad" $epoch_dir/*/baseline/log/* 
+  egrep "$B_BUG" $epoch_dir/*/baseline/log/* 
 
-  egrep -l "$bad" $epoch_dir/*/baseline/log/* | filter-basename > _tmp/b-b.txt
-  egrep -l "$bad" $epoch_dir/*/osh-as-sh/log/* | filter-basename > _tmp/b-o.txt
+  egrep -l "$B_BUG" $epoch_dir/*/baseline/log/* | filter-basename > _tmp/b-b.txt
+  egrep -l "$B_BUG" $epoch_dir/*/osh-as-sh/log/* | filter-basename > _tmp/b-o.txt
 
   wc -l _tmp/b-{b,o}.txt
   diff -u _tmp/b-{b,o}.txt || true
@@ -103,6 +109,19 @@ grep-builddeps() {
 
 update-build-server() {
   ssh -A he.oils.pub 'set -x; cd git/oils-for-unix/oils; git fetch; git status'
+}
+
+bwrap-demo() {
+  # chroot only
+  user-chroot sh -c '
+  whoami; pwd; ls -l /
+  set -x
+  cat /proc/sys/kernel/unprivileged_userns_clone
+  cat /proc/sys/user/max_user_namespaces
+  unshare --user echo "Namespaces work"
+  '
+
+  user-chroot sh -c 'bwrap ls -l /'
 }
 
 task-five "$@"
