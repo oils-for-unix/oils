@@ -75,7 +75,7 @@ grep-bug-c-shard() {
 }
 
 grep-bug-c() {
-  local epoch_dir=${1:-$REPORT_DIR/2025-08-04-he}
+  local epoch_dir=${1:-$REPORT_DIR/2025-08-04-rootbld}
 
   egrep -l "$C_BUG" $epoch_dir/*/baseline/log/* | filter-basename > _tmp/b.txt
   egrep -l "$C_BUG" $epoch_dir/*/osh-as-sh/log/* | filter-basename > _tmp/o.txt

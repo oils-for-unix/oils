@@ -77,6 +77,7 @@ diff-metrics-html() {
   sqlite3 $db <<EOF
 -- select printf("<li>Shards: %s</li>", count(distinct shard)) from diff_merged;
 select printf("<li>Tasks: %s</li>", sum(num_tasks)) from metrics;
+select printf("<li>Elapsed Hours: %.1f</li>", sum(elapsed_minutes) / 60) from metrics;
 select printf("<li>Baseline failures: %s</li>", sum(num_failures)) from metrics where config = "baseline";
 select printf("<li>osh-as-sh failures: %s</li>", sum(num_failures)) from metrics where config = "osh-as-sh";
 select printf("<li>Disagreements: %s</li>", count(*)) from diff_merged;

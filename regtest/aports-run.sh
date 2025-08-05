@@ -304,6 +304,21 @@ _build-many-configs() {
   done
 }
 
+build-baseline() {
+  local epoch=${1:-$APORTS_EPOCH}
+  shift
+
+  sudo -k
+
+  set-baseline
+
+  for package_filter in "$@"; do
+    build-packages "$package_filter" baseline
+    local dest_dir="$BASE_DIR/$epoch/$package_filter"
+    copy-results baseline "$dest_dir"
+  done
+}
+
 build-many-configs() {
   # clear credentials first
   sudo -k
