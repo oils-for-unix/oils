@@ -203,6 +203,7 @@ add-build-deps() {
   # Must be done as root; there is no 'sudo'
 
   # alpine-sdk: abuild, etc.
+  # abuild-rootbld: package required for 'abuild rootbld'
   # pigz: seems like it's optionally used by abuild - should probably speed
   # things up
   # doas: for abuild-keygen
@@ -210,7 +211,7 @@ add-build-deps() {
   # findutils: for xargs --process-slot-var
   $CHROOT_DIR/enter-chroot sh -c '
   apk update
-  apk add alpine-sdk pigz doas bash python3 findutils
+  apk add alpine-sdk abuild-rootbld pigz doas bash python3 findutils
   '
 
   # $CHROOT_DIR/enter-chroot -u udu bash -c 'echo "hi from bash"'
