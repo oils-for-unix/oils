@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 4
+## oils_failures_allowed: 6
 
 #### fastlex: NUL byte not allowed inside char literal #' '
 
@@ -363,6 +363,17 @@ x=a
 x=b
 x=a
 x=b
+## END
+
+#### Iterating over io.stdin multiple times (#2356)
+
+echo u'a\nb' | for i, line in (io.stdin) { echo $i: $line; break }
+echo u'c\nd' | for i, line in (io.stdin) { echo $i: $line }
+
+## STDOUT:
+0: a
+0: c
+1: d
 ## END
 
 #### Long boolean flags can't have attached values
