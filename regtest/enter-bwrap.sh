@@ -2,33 +2,27 @@
 #
 # Enter an Alpine rootfs with bwrap, not chroot.
 #
-# This is an alternative to 'enter-chroot'.  It's not a "hook", like
+# This is an ALTERNATIVE to 'enter-chroot'.  It's not a "hook", like
 # regtest/enter-hook-{bwrap,chroot}
 
 set -e
 
-# TODO: do we need an ENV argument?  
-# enter-chroot uses that for TRAVIS_* variables and such.
- 
 rootfs_dir=${1:-}
 if test -z "$rootfs_dir"; then
   # $this_dir idiom
   rootfs_dir=$(cd $(dirname "$0"); pwd)
 fi
-#echo rootfs_dir=$rootfs_dir
 
 user=${2:-root}
 
-# abuild rootbld has --unshare-ipc, etc. but has OPTION for --unshare-net
-# It doesn't use --unshare-all - don't use that; specify everything explicitly
+# abuild rootbld has --unshare-ipc, etc. but has OPTION for --unshare-net.
+# It doesn't use --unshare-all.  Don't use that; specify everything explicitly
 bwrap_flags=${3:-}
 
 shift 3
 
-# this prints the line, but it's hard to parse in shell
-#  getent passwd "$user"
-
-# this seems like the most reliable way to get
+# Awk script that is nicer than:
+# getent passwd "$user"
 
 temp_prefix="/tmp/$$"
 
@@ -79,7 +73,26 @@ if false; then
 fi
 
 if true; then
-# rootless method
+
+# This is a ROOTLESS alternative to the method in:
+# https://github.com/oils-for-unix/alpine-chroot-install/blob/master/alpine-chroot-install#L192
+#
+# $_sudo chroot . /usr/bin/env -i su -l "$user" \
+#   sh -c ". /etc/profile; . /env.sh; cd '$oldpwd' 2>/dev/null; \"\$@\"" \
+#   -- "${@:-sh}"
+#
+# - No sudo; bwrap is rootless
+# - No chroot; bwrap has --bind $rootfs_dir /
+# - No env -i; bwrap has --clearenv
+# - No su -l; we run sh -l
+#   - this is not POSIX, but I think all shells we acre about support it (dash,
+#     busybox ash, bash)
+# - No su $user, we get the uid with awk, and pass --uid $uid to bwrap
+# - No . /etc/profile - sh -l does that
+# - No env.sh, because we need a clean environment
+# - No cd, I think $sh -l reads that from $HOME
+#
+# Note that we set $USER $LOGNAME $SHELL $HOME
 
 bwrap \
   $bwrap_flags \
@@ -97,7 +110,7 @@ bwrap \
   --bind /proc/sys/kernel/overflowgid /proc/sys/kernel/overflowgid \
   --dev /dev \
   -- \
-  $user_shell -c '. /etc/profile; "$@"' dummy0 "${@:-sh}"
+  $user_shell -l -c ' "$@" ' dummy0 "${@:-sh}"
 
 else
   # this requires root, because su requires root

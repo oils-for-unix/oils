@@ -172,15 +172,15 @@ make-chroot() {
 }
 
 make-user() {
-  $CHROOT_DIR/enter-chroot adduser -D udu || true
+  enter-rootfs adduser -D udu || true
 
   # put it in abuild group
-  $CHROOT_DIR/enter-chroot addgroup udu abuild || true
+  enter-rootfs addgroup udu abuild || true
   # 'wheel' is for 'sudo'
-  $CHROOT_DIR/enter-chroot addgroup udu wheel || true
+  enter-rootfs addgroup udu wheel || true
 
   # CHeck the state
-  user-chroot sh -c 'whoami; echo GROUPS; groups'
+  enter-rootfs-user sh -c 'whoami; echo GROUPS; groups'
 }
 
 setup-doas() {
@@ -190,7 +190,7 @@ setup-doas() {
   sudo rm -f $CHROOT_DIR/etc/doas.conf
 
   # no password
-  $CHROOT_DIR/enter-chroot sh -c 'echo "permit nopass :wheel" >> /etc/doas.conf'
+  enter-rootfs sh -c 'echo "permit nopass :wheel" >> /etc/doas.conf'
 }
 
 config-chroot() {
@@ -209,12 +209,12 @@ add-build-deps() {
   # doas: for abuild-keygen
   # bash python3: for time-tsv
   # findutils: for xargs --process-slot-var
-  $CHROOT_DIR/enter-chroot sh -c '
+  enter-rootfs sh -c '
   apk update
   apk add alpine-sdk abuild-rootbld pigz doas bash python3 findutils
   '
 
-  # $CHROOT_DIR/enter-chroot -u udu bash -c 'echo "hi from bash"'
+  # enter-rootfs -u udu bash -c 'echo "hi from bash"'
 }
 
 change-perms() {
@@ -284,7 +284,7 @@ copy-code() {
 }
 
 test-time-tsv() {
-  user-chroot sh -c '
+  enter-rootfs-user sh -c '
   cd oils
   pwd
   whoami
@@ -316,7 +316,7 @@ copy-oils() {
 }
 
 keygen() {
-  user-chroot sh -c '
+  enter-rootfs-user sh -c '
   #abuild-keygen -h
   abuild-keygen --append --install
   '
@@ -333,7 +333,7 @@ apk-manifest() {
 }
 
 build-oils() {
-  user-chroot sh -c '
+  enter-rootfs-user sh -c '
   cd oils-for-unix-*
   ./configure
   _build/oils.sh --skip-rebuild
@@ -348,7 +348,7 @@ save-default-config() {
 _install-hook() {
   local bwrap=${1:-}
 
-  local out=$CHROOT_DIR/enter-chroot
+  local out=enter-rootfs
   ../alpine-chroot-install/alpine-chroot-install -g > $out
   chmod +x $out
   echo "Wrote $out"

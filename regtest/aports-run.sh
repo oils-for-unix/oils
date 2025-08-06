@@ -52,13 +52,13 @@ source regtest/aports-common.sh
 #
 
 show-config() {
-  $CHROOT_DIR/enter-chroot sh -c '
+  enter-rootfs sh -c '
   ls -l /bin/sh /bin/ash /bin/bash
   '
 }
 
 save-default-config() {
-  $CHROOT_DIR/enter-chroot sh -c '
+  enter-rootfs sh -c '
   set -x
   dest=/bin/bash.ORIG
   cp /bin/bash $dest
@@ -69,7 +69,7 @@ save-default-config() {
 
 set-baseline() {
   # ensure we have the default config
-  $CHROOT_DIR/enter-chroot sh -c '
+  enter-rootfs sh -c '
   set -x
   ln -s -f /bin/busybox /bin/sh
   ln -s -f /bin/busybox /bin/ash
@@ -81,7 +81,7 @@ set-baseline() {
 set-osh-as-X() {
   local x=$1
 
-  $CHROOT_DIR/enter-chroot sh -c '
+  enter-rootfs sh -c '
   x=$1
   set -x
   if ! test -f /usr/local/bin/oils-for-unix; then
@@ -170,7 +170,7 @@ do-packages() {
   echo "${dirs[@]}"
   #return
 
-  time user-chroot sh $sh_flags -c '
+  time enter-rootfs-user sh $sh_flags -c '
 
   action=$1
   shift
@@ -202,7 +202,7 @@ build-packages() {
 
   banner "Building ${#package_dirs[@]} packages (filter $package_filter)"
 
-  user-chroot sh -c '
+  enter-rootfs-user sh -c '
   config=$1
   shift
 

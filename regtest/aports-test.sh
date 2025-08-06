@@ -18,10 +18,10 @@ test-unshare() {
   # mv: cannot move '/tmp/tmp.6FHJHwbdMd' to 'env.sh': Permission denied
 
   unshare --map-root-user \
-    sh -x $CHROOT_DIR/enter-chroot sh -c 'echo hi; whoami'
+    sh -x enter-rootfs sh -c 'echo hi; whoami'
 
   unshare --map-root-user \
-    $CHROOT_DIR/enter-chroot -u udu sh -c 'echo hi; whoami'
+    enter-rootfs -u udu sh -c 'echo hi; whoami'
 }
 
 test-timeout() {
@@ -60,7 +60,7 @@ test-timeout() {
 
   # alpine uses busybox
   # my version doesn't have -k, but the one in the chroot should
-  user-chroot "${timeout_cmd[@]}"
+  enter-rootfs-user "${timeout_cmd[@]}"
 }
 
 # Note:

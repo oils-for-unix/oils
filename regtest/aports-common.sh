@@ -15,7 +15,10 @@ concat-task-tsv() {
     $CHROOT_HOME_DIR/oils/_tmp/aports-guest/$config/*.task.tsv
 }
 
-user-chroot() {
-  $CHROOT_DIR/enter-chroot -u udu "$@"
+enter-rootfs() {
+  $CHROOT_DIR/enter-chroot "$@"
 }
 
+enter-rootfs-user() {
+  enter-rootfs -u udu "$@"
+}

@@ -113,7 +113,7 @@ update-build-server() {
 
 bwrap-demo() {
   # chroot only
-  user-chroot sh -c '
+  enter-rootfs-user sh -c '
   whoami; pwd; ls -l /
   set -x
   cat /proc/sys/kernel/unprivileged_userns_clone
@@ -121,7 +121,7 @@ bwrap-demo() {
   unshare --user echo "Namespaces work"
   '
 
-  user-chroot sh -c 'bwrap ls -l /'
+  enter-rootfs-user sh -c 'bwrap ls -l /'
 }
 
 bwrap-debian-demo() {
