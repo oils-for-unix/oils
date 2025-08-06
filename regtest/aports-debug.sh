@@ -124,4 +124,16 @@ bwrap-demo() {
   user-chroot sh -c 'bwrap ls -l /'
 }
 
+bwrap-debian-demo() {
+  bwrap \
+    --bind $CHROOT_DIR / \
+    --proc /proc \
+    --bind /proc/sys/kernel/overflowuid /proc/sys/kernel/overflowuid \
+    --bind /proc/sys/kernel/overflowgid /proc/sys/kernel/overflowgid \
+    --dev /dev \
+    -- \
+    sh 
+      #-c 'ls /; bwrap --proc /proc --dev /dev -- sh -c "nested bwrap"'
+}
+
 task-five "$@"

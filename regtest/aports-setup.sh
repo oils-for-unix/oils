@@ -345,6 +345,28 @@ save-default-config() {
   regtest/aports-run.sh save-default-config
 }
 
+_install-hook() {
+  local bwrap=${1:-}
+
+  local out=$CHROOT_DIR/enter-chroot
+  ../alpine-chroot-install/alpine-chroot-install -g > $out
+  chmod +x $out
+  echo "Wrote $out"
+
+  local src
+  if test -n "$bwrap"; then
+    hook=regtest/enter-hook-bwrap.sh
+  else
+    hook=../alpine-chroot-install/enter-hook-chroot 
+  fi
+
+  cp -v $hook $CHROOT_DIR/enter-hook
+}
+
+install-hook() {
+  sudo $0 _install-hook "$@"
+}
+
 remove-chroot() {
   # This unmounts /dev /proc /sys/ properly!
   $CHROOT_DIR/destroy --remove
