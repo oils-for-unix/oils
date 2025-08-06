@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 4
+## oils_failures_allowed: 6
 
 #### fastlex: NUL byte not allowed inside char literal #' '
 
@@ -322,6 +322,58 @@ seq 5 | where2 [_line ~== 2 or _line ~== 4]
 (Str)   "3"
 (Str)   "4"
 (Str)   "5"
+## END
+
+#### Nested io.stdin
+
+proc bug {
+  echo '''
+    proc inner {
+      printf 'a\nb\n' | for x in (io.stdin) {
+	echo x=$x
+      }
+    }
+
+    printf 'x\ny\n' | for _ in (io.stdin) {
+      inner
+    }
+    '''
+}
+
+# Changes with invocation style
+
+$[ENV.SH] <(bug)
+echo ---
+$[ENV.SH] -c $(bug)
+echo ---
+bug | $[ENV.SH]
+
+## STDOUT:
+x=a
+x=b
+x=a
+x=b
+---
+x=a
+x=b
+x=a
+x=b
+---
+x=a
+x=b
+x=a
+x=b
+## END
+
+#### Iterating over io.stdin multiple times (#2356)
+
+echo u'a\nb' | for i, line in (io.stdin) { echo $i: $line; break }
+echo u'c\nd' | for i, line in (io.stdin) { echo $i: $line }
+
+## STDOUT:
+0: a
+0: c
+1: d
 ## END
 
 #### Long boolean flags can't have attached values
