@@ -761,6 +761,10 @@ class YshPrinter(object):
 
                 self._DoSimple(node, local_symbols)
 
+                if node.redirects is not None:
+                    for r in node.redirects:
+                        self.DoRedirect(r, local_symbols)
+
             elif case(command_e.ShAssignment):
                 node = cast(command.ShAssignment, UP_node)
 
