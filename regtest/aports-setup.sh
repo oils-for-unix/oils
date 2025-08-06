@@ -367,6 +367,17 @@ install-hook() {
   sudo $0 _install-hook "$@"
 }
 
+_install-enter-bwrap() {
+  # don't need this other bwrap script
+  rm -f -v $CHROOT_DIR/enter-hook
+
+  cp -v regtest/enter-bwrap.sh $CHROOT_DIR
+}
+
+install-enter-bwrap() {
+  sudo $0 _install-enter-bwrap "$@"
+}
+
 remove-chroot() {
   # This unmounts /dev /proc /sys/ properly!
   $CHROOT_DIR/destroy --remove

@@ -136,4 +136,144 @@ bwrap-debian-demo() {
       #-c 'ls /; bwrap --proc /proc --dev /dev -- sh -c "nested bwrap"'
 }
 
+login-shell-demo() {
+  # shopt -p login_shell is a bash extension
+  # so is exec -a
+  local sh=${1:-bash}
+
+  local detect='echo dollar0=$0; shopt -p login_shell; true'
+
+  echo EXEC
+  ( exec -- $sh -c "$detect" )
+  # invoke with different argv[0]
+  ( exec -a "-$sh" -- $sh -c "$detect" )
+  echo
+
+  echo 'sh -l'
+  $sh -c "$detect"
+  # Hm it doesn't set dollar0 to -, but it still turns on the login shell.
+  # Gah.
+  $sh -l -c "$detect"
+  echo
+
+  echo 'sudo'
+  sudo -- $sh -c "$detect"
+  sudo --login $sh -c "$detect"  # wait it's not set here?
+  echo
+
+  return
+
+  # requires entering password - requires root
+
+  echo 'su'
+  su andy $sh -c "$detect"
+  su -l andy $sh -c "$detect"  # wait it's not set here?
+  echo
+
+  # Conclusion:
+  #
+  # There are FOUR ways to set a login shell
+  #
+  # - exec -a "-$sh" -- $sh
+  #   - this is a bash builtin, so external tools can't invoke it
+  #   - exec -a is also not POSIX; it's a bash thing
+  # - sudo --login (aka sudo -i, which is confusing!)
+  # - su -l
+  #   - requires  password?
+  # - bash -l
+  #   - not POSIX
+  #
+  # TODO: bubblewrap should have control over argv[0]?
+  # We can also use the symlink trick: create /bin/-bash next to /bin/bash!
+
+  # Debian also has: https://wiki.debian.org/Schroot
+}
+
+# CONJECTURE: login shell is for ONE TIME initialization of state that's INHERITED
+# - umask is inherited
+# - env vars are inherited
+#
+# Claude AI has a good argument against it:
+# - PS1 is not inherited
+# - shopt -s histappend is not inherited
+#
+# Examples of login shells
+# - ssh
+# - sudo -i and su -l
+# - but NOT tmux?
+
+# Good chat:
+# https://claude.ai/share/497778f4-fd11-4daf-9be6-9fe195e19df9
+#
+# "So then for /etc/profile for login shells, isn't it true that you should
+# ONLY add inherited state like $PATH and $LANG and umask?       And then
+# everything else should be initialized every time you start a new shell,
+# whether it's login or not, like shopt -s histappend"
+#
+# Violating this principle causes:
+#
+# Problem 1: Missing features in non-login shells
+#   tmux                       # No histappend - history gets clobbered
+#   gnome-terminal             # No aliases - productivity lost
+# Problem 2: Redundant work in login shells  
+#   ssh user@host              # Sets PATH 5 times (once per sourced file)
+# Problem 3: Shell compatibility issues
+#  /etc/profile with bashisms  # Breaks when user uses dash, zsh, etc.
+
+# "Your understanding is exactly right: /etc/profile should be the "set it
+# once, inherit everywhere" file for process state, while interactive features
+# get set fresh in each shell instance."
+#
+# TODO:
+# - this should go in doc/interpreter-state.md
+#
+# POSIX rule:
+# - the file $ENV is sourced for non-interactive shells?
+# - bash only
+#
+# TODO: what are OSH rules?  just ~/.config/oils/oshrc ?  For interactive shells
+#
+# And then that sources /etc/profile?
+
+show-login-files() {
+  # sets $PATH, $PAGER
+  # sets umask - for file creation
+  # set prompt
+  # source .d files
+  cat $CHROOT_DIR/etc/profile 
+  echo
+
+  ls -l $CHROOT_DIR/etc/profile.d
+  echo
+
+  # 00-bashrc - source bashrc
+  # locale - CHARSET LANG LC_COLLATE
+
+  head $CHROOT_DIR/etc/profile.d/*
+  echo
+
+  # - ONLY for interactive shells
+  echo '=== bashrc'
+  cat $CHROOT_DIR/etc/bash/bashrc
+
+  # more files
+  #ls -l $CHROOT_DIR/etc/bash/*.sh
+
+  #cat $CHROOT_DIR/home/udu/.profile
+}
+
+su-demo() {
+  sh -c 'echo 1; "$@"' dummy0 printf '%s\n' 'a b' 'c d'
+  # same
+  sh -c 'echo 1; "$@"' -- printf '%s\n' 'a b' 'c d'
+
+  # wtf man - su takes this over?  this is right
+  #su andy sh -c 'echo 1; "$@"' dummy0 printf '%s\n' 'a b' 'c d'
+
+  # AH this is the right way to do it!  Not with sh?
+  su andy -- -c 'echo 1; "$@"' dummy0 printf '%s\n' 'a b' 'c d'
+
+  #su andy sh -c 'echo 1; "$@"' -- printf '%s\n' 'a b' 'c d'
+}
+
 task-five "$@"
