@@ -344,6 +344,14 @@ save-default-config() {
   regtest/aports-run.sh save-default-config
 }
 
+unpack-distfiles() {
+  sudo tar --verbose -x --directory $CHROOT_DIR/var/cache/distfiles < _chroot/distfiles.tar
+}
+
+show-distfiles() {
+  ls -l $CHROOT_DIR/var/cache/distfiles
+}
+
 _install-hook() {
   local bwrap=${1:-}
 
