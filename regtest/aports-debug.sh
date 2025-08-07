@@ -70,13 +70,21 @@ readonly C_BUG='cannot create executable|cannot compile programs|No working C co
 readonly B_BUG='builddeps failed'
 
 grep-c-bug-2() {
-  local epoch_dir=${1:-$REPORT_DIR/2025-08-05-baseline}
+  local epoch_dir=${1:-$REPORT_DIR/2025-08-04-rootbld}
+  # 2025-08-07: shard{6,7,8,9} have errors.  TODO: re-run them
 
   egrep "$C_BUG" $epoch_dir/*/baseline/log/* #| filter-basename 
 }
 
+grep-phdr-bug-2() {
+  local epoch_dir=${1:-$REPORT_DIR/2025-08-04-rootbld}
+  # 2025-08-07: also shard{6,7,8,9} !
+
+  egrep 'PHDR' $epoch_dir/*/baseline/log/* #| filter-basename 
+}
+
 grep-b-bug-2() {
-  local epoch_dir=${1:-$REPORT_DIR/2025-08-05-baseline}
+  local epoch_dir=${1:-$REPORT_DIR/2025-08-04-rootbld}
 
   egrep "$B_BUG" $epoch_dir/*/baseline/log/* #| filter-basename 
 }

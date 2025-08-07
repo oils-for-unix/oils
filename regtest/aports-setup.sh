@@ -134,8 +134,7 @@ checkout-stable() {
   echo
 
   pushd ../alpine-chroot-install
-  # this branch has fixes!  TODO: merge to main branch
-  git checkout dev-andy-2
+  git checkout master
   git log -n 1
   popd > /dev/null
 }

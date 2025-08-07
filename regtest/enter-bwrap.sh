@@ -93,6 +93,12 @@ if true; then
 # - No cd, I think $sh -l reads that from $HOME
 #
 # Note that we set $USER $LOGNAME $SHELL $HOME
+#
+# This s simpler, but the problem is when we have TWO UIDs - root uid=0 and udu
+# uid=1000.  TODO: Experiment with chown everything as a user.
+
+# Note: overflow{uid,gid} are necessary for nested bwrap?  They are just a file
+# containing 65534 (nobody)
 
 bwrap \
   $bwrap_flags \

@@ -22,3 +22,23 @@ enter-rootfs() {
 enter-rootfs-user() {
   enter-rootfs -u udu "$@"
 }
+
+# Note: these functions aren't used.  bwrap is problematic when the container
+# has multiple UIDs.
+#
+# We wanted to replace chroot with bwrap, because 'abuild rootbld' uses bwrap,
+# and bwrap can't be run inside a chroot.
+#
+# But bwrap uses mount(), which requires a new user namespace, which creates a
+# host/guest UID mapping problem.
+# 
+# See Zulip for details
+
+enter-rootfs() {
+  $CHROOT_DIR/enter-bwrap.sh '' root '' "$@"
+}
+
+enter-rootfs-user() {
+  enter-rootfs -u udu "$@"
+  $CHROOT_DIR/enter-bwrap.sh '' udu '' "$@"
+}
