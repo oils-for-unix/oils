@@ -34,11 +34,13 @@ enter-rootfs-user() {
 # 
 # See Zulip for details
 
-enter-rootfs() {
-  $CHROOT_DIR/enter-bwrap.sh '' root '' "$@"
-}
+if false; then
+  enter-rootfs() {
+    $CHROOT_DIR/enter-bwrap.sh '' root '' "$@"
+  }
 
-enter-rootfs-user() {
-  enter-rootfs -u udu "$@"
-  $CHROOT_DIR/enter-bwrap.sh '' udu '' "$@"
-}
+  enter-rootfs-user() {
+    enter-rootfs -u udu "$@"
+    $CHROOT_DIR/enter-bwrap.sh '' udu '' "$@"
+  }
+fi

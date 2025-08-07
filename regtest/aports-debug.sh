@@ -116,7 +116,16 @@ grep-b-bug() {
 }
 
 update-build-server() {
-  ssh -A he.oils.pub 'set -x; cd git/oils-for-unix/oils; git fetch; git status'
+  ssh -A he.oils.pub '
+  set -x
+  cd ~/git/oils-for-unix/oils
+  git fetch
+  git status
+
+  cd ~/git/oils-for-unix/alpine-chroot-install
+  git fetch
+  git status
+  '
 }
 
 bwrap-demo() {
