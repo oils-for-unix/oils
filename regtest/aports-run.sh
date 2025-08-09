@@ -1,30 +1,32 @@
 #!/usr/bin/env bash
 #
 # Build Alpine Linux packages: baseline, OSH as /bin/sh, OSH as /bin/bash
+# See regtest/aports.md
 #
 # Usage:
 #   regtest/aports-run.sh <function name>
-#
-# Examples:
-#
-#   $0 fetch-packages fetch PKG_FILTER
-#
-#   $0 fetch-packages fetch 100,300p   # packages 100-300
-#   $0 fetch-packages fetch '.*'       # all packages
 #
 # Common usage:
 #
 #   export APORTS_EPOCH=2025-08-04-foo        # optional override
 #   $0 build-many-shards shard{0..16}         # build all 17 shards in 2 configs
 #
+# Also useful:
+#
+#   $0 fetch-packages fetch PKG_FILTER
+#
+#   $0 fetch-packages fetch 100,300p   # packages 100-300
+#   $0 fetch-packages fetch '.*'       # all packages
+#
 # Look for results in _tmp/aports-build/
 #
-# More fine-grained builds
+# Build both baseline/ and osh-as-sh/
 #
 #   $0 build-many-configs PKG_FILTER          # build a single shard
 #                                             # e.g. 'shard3': build packages 301 to 400
 #
-# Build an individual config:
+# Build an individual config like baseline:
+#
 #   $0 set-osh-as-sh                          # or set-baseline
 #   $0 build-packages PKG_FILTER osh-as-sh
 #   $0 build-packages '.*'       osh-as-sh    # 310 MB, 251 K files
@@ -36,10 +38,6 @@
 #   ALL              - all packages
 #   .*               - egrep pattern matching all packages
 #   curl             - egrep pattern matching 'curl'
-#
-# Now run regtest/aports-html.sh on localhost, e.g.
-#
-#   regtest/aports-html.sh sync-results
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh

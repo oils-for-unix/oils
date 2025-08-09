@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 #
+# Junk drawer of debugging funcitons
+#
 # Usage:
-#   ./aports-debug.sh <function name>
+#   regtest/aports-debug.sh <function name>
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh

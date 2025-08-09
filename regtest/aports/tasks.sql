@@ -1,4 +1,4 @@
--- select * from tasks limit 5;
+-- SQL invoked from regtest/aports-html.sh
 
 -- annoying: you have to cast(x as real) for pragma_info to have type info
 create table packages as

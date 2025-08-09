@@ -1,3 +1,5 @@
+-- SQL invoked from regtest/aports-html.sh
+
 -- Attach the source databases
 attach database 'baseline/tables.db' as baseline;
 attach database 'osh-as-sh/tables.db' as osh_as_sh;

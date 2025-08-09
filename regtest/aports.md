@@ -8,6 +8,22 @@ organized as a series of "task files", which you can see with:
 
 As usual, there are notes at the top of each task file.  Here is an overview.
 
+## Set Up Machine to avoid `sudo` prompts
+
+Add a file to `/etc/sudoers.d` so that `sudo` doesn't ask for a password after
+a given time period.  Otherwise building the second shard may get "stuck".
+
+This is how I did it manually:
+
+    $ sudo visudo -f /etc/sudoers.d/no-timeout
+
+The result shoudl be:
+
+    $ sudo cat /etc/sudoers.d/no-timeout
+    Defaults:andy timestamp_timeout=-1
+
+The -1 value means it's cached forever.
+
 ## Set up Alpine chroot - `he.oils.pub`
 
 The first step is is in `regtest/aports-setup.sh`:
@@ -90,7 +106,54 @@ Faster way to test it:
 
 ## TODO
 
-- Update the top of each task file
-- Add bug numbers to the report
 - Running under podman could be more reliable
   - that also means we do a bind mount?
+
+## Appendix: Dir Structure
+
+```
+he.oils.pub/
+  ~/git/oils-for-unix/oils/
+    _chroot/aports-build/
+      home/udu/    # user name is 'udu'
+       oils/       # a subset of the Oils repo
+         build/
+           py.sh
+         _tmp/
+           aports-guest/
+             baseline/
+               7zip.log.txt
+               7zip.task.tsv
+             osh-as-sh/
+             osh-as-bash/
+    _tmp/aports-build/ 
+      2025-08-07-fix/         # $APORTS_EPOCH
+        shard0/
+          baseline/
+            tasks.tsv         # concatenated .task.tsv
+            log/     
+              7zip.log.txt
+            abridged-log/     # tail -n 1000 ont he log
+              gcc.log.txt
+        shard1/
+          ...
+
+localhost/
+  ~/git/oils-for-unix/oils/
+    _tmp/aports-report/         # destination for sync-results
+        2025-08-07-fix/         # $APORTS_EPOCH
+          diff-merged.html
+          shard0/
+            baseline/
+              index.html        # from tasks.tsv
+              tasks.tsv 
+              log/     
+                7zip.log.txt
+              abridged-log/     # tail -n 1000 ont he log
+                gcc.log.txt
+            osh-as-sh/          # from tasks.tsv
+              tasks.tsv
+              log/
+              abridged-log/
+          index.html
+```

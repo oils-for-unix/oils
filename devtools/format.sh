@@ -158,7 +158,7 @@ install-sql-cst-plugin() {
 
 all-sql() {
   #npx prettier --plugin prettier-plugin-sql-cst --parser sqlite --write */*.sql
-  npx prettier --write */*.sql
+  npx prettier --write */*/*.sql
 }
 
 task-five "$@"

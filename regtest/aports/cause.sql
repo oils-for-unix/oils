@@ -1,3 +1,5 @@
+-- SQL invoked from regtest/aports-html.sh
+
 alter table diff add column cause text;
 
 -- Update diff table with values from causes table

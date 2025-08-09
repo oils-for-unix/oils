@@ -1,92 +1,17 @@
 #!/usr/bin/env bash
 #
-# Set up Alpine Linux chroot
+# Set up Alpine Linux chroot.  See regtest/aports.md
 #
 # Usage:
 #   regtest/aports-setup.sh <function name>
 #
-# Download:
-#   $0 clone-aports
-#   $0 clone-aci
-#   $0 checkout-stable
-#   $0 download-oils
+# Examples:
 #
-# Prepare chroot:
+#   $0 fetch-all
+#   $0 prepare-all
 #
-#   $0 make-chroot     # 267 MB, 247 K files
-#                      # ncdu shows gcc is big, e.g. cc1plus, cc1, lto1 are
-#                      # each 35-40 MB
-#   $0 add-build-deps  # add packages that build packages
-#                      # 281 MB, 248 K files
-#   $0 config-chroot   # user/groups, keygen
-#   $0 oils-in-chroot  # copy-aports: 307 MB, 251 K files
-#
-#   $0 save-default-config
-#   $0 apk-manifest    # prepare host file
-#
-# Now go to regtest/aports-run.sh
-#
-# WARNING: THIS IS ESSENTIAL for RUNNING build-many-configs (but not
-# build-packages):
-#
-#   The /etc/sudoers.d needs to be modified so that sudo doesn't EVER
-#   timeout Otherwise running the second config will prompt for the root password
-#
-#   This is how I did it manually
-#   $ sudo visudo -f /etc/sudoers.d/no-timeout
-#
-#   $ sudo cat /etc/sudoers.d/no-timeout
-#   Defaults:andy timestamp_timeout=-1
-#
-#   -1 means it's cached forever
-
 # Other commands:
 #   $0 remove-chroot
-
-# DIR STRUCTURE
-#
-# he.oils.pub/
-#   ~/git/oils-for-unix/oils/
-#     _chroot/aports-build/
-#       home/udu/   # TODO: change to uke
-#        oils/  # guest tools
-#          build/
-#            py.sh
-#          _tmp/
-#            aports-guest/
-#              baseline/
-#                7zip.log.txt
-#                7zip.task.tsv
-#              osh-as-sh/
-#              osh-as-bash/
-#     _tmp/aports-build/    # HOST
-#       baseline/
-#         tasks.tsv         # concatenated .task.tsv
-#         log/     
-#           7zip.log.txt
-#         abridged-log/     # tail -n 1000 ont he log
-#           gcc.log.txt
-# localhost/
-#   ~/git/oils-for-unix/oils/
-#     _tmp/aports-build/    # HOST
-#       2025-08-04/   # epohc
-#         shard0/
-#           baseline/
-#             index.html        # from tasks.tsv
-#             tasks.tsv 
-#             log/     
-#               7zip.log.txt
-#             abridged-log/     # tail -n 1000 ont he log
-#               gcc.log.txt
-#           osh-as-sh/          # from tasks.tsv
-#             tasks.tsv
-#             log/
-#             abridged-log/
-#         index.html
-#
-# Another option: don't bother with abridged-log
-# - it makes the diff harder - what if one is abridged, and the other isn't?
-# - just make a copy
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
@@ -398,12 +323,24 @@ fetch-all() {
 }
 
 prepare-all() {
-  # same as comments at top of file
+  # $0 make-chroot     # 267 MB, 247 K files
+  #                    # ncdu shows gcc is big, e.g. cc1plus, cc1, lto1 are
+  #                    # each 35-40 MB
+  # $0 add-build-deps  # add packages that build packages
+  #                    # 281 MB, 248 K files
+  # $0 config-chroot   # user/groups, keygen
+  # $0 oils-in-chroot  # copy-aports: 307 MB, 251 K files
+
   make-chroot   
   add-build-deps
+
   config-chroot   
+
   oils-in-chroot  
+
   save-default-config
+
+  # makes a host file
   apk-manifest
 }
 

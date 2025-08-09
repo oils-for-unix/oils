@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 #
+# Misc tests
+#
 # Usage:
 #   regtest/aports-test.sh <function name>
 

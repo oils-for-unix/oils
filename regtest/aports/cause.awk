@@ -1,4 +1,6 @@
-# grep through a log file, and print an integer cause to stdout
+# "grep" through a log file, and print a cause string to stdout
+#
+# Invoked from aports/regtest-html.sh
 
 BEGIN {
   # we can add the bug number like #2338

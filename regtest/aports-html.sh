@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Make reports and HTML for regtest/aports.sh
+# Make HTML reports
 #
 # Usage:
 #   regtest/aports-html.sh <function name>

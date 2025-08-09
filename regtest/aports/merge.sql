@@ -1,3 +1,5 @@
+-- SQL invoked from regtest/aports-html.sh
+
 update diff_merged
 set
   baseline_HREF = printf("%s/%s", shard, baseline_HREF),
