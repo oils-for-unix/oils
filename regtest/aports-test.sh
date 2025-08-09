@@ -78,11 +78,13 @@ apk-stats() {
   # 5650 packages
   grep 'S:' _tmp/APKINDEX | wc -l
 
-  gawk -f regtest/aports.awk < _tmp/APKINDEX
+  gawk -f regtest/aports/stats.awk < _tmp/APKINDEX
 }
 
 count-lines() {
-  ls regtest/aports* | egrep -v 'aports-old|aports-notes' | xargs wc -l | sort -n
+  for f in regtest/aports-* regtest/aports/*; do
+    echo $f
+  done | egrep -v 'old|notes' | xargs wc -l | sort -n
 }
 
 task-five "$@"

@@ -223,7 +223,7 @@ make-package-table() {
 
   typed-tsv-to-sql $base_dir/$config/tasks.tsv | sqlite3 $db
 
-  sqlite3 -cmd '.mode columns' $db < regtest/aports-tasks.sql
+  sqlite3 -cmd '.mode columns' $db < regtest/aports/tasks.sql
 
   sqlite3 $db >$base_dir/$config/packages.tsv <<'EOF'
 .mode tabs
@@ -289,9 +289,9 @@ make-diff-db() {
 
   local db=$name.db
 
-  local diff_sql=$PWD/regtest/aports-diff.sql
-  local cause_awk=$PWD/regtest/aports-cause.awk
-  local cause_sql=$PWD/regtest/aports-cause.sql
+  local diff_sql=$PWD/regtest/aports/diff.sql
+  local cause_awk=$PWD/regtest/aports/cause.awk
+  local cause_sql=$PWD/regtest/aports/cause.sql
 
   pushd $base_dir
   rm -f $db
@@ -389,7 +389,7 @@ merge-diffs-sql() {
   done
 
   # Does not involve metaprogramming
-  cat regtest/aports-merge.sql
+  cat regtest/aports/merge.sql
 }
 
 merge-diffs() {
