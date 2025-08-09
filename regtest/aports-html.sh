@@ -82,8 +82,8 @@ select printf("<li>Baseline failures: %s</li>", sum(num_failures)) from metrics 
 select printf("<li>osh-as-sh failures: %s</li>", sum(num_failures)) from metrics where config = "osh-as-sh";
 select printf("<li>Disagreements: %s</li>", count(*)) from diff_merged;
 select printf("<li>Unique causes: %s</li>", count(distinct cause)) from diff_merged where cause >= 0;
-select printf("<li>Packages without a cause assigned (-200): %s</li>", count(*)) from diff_merged where cause = "-200";
-select printf("<li>Inconclusive result because of timeout (-124, -143): %s</li>", count(*)) from diff_merged where cause = "-124" or cause = "-143";
+select printf("<li>Packages without a cause assigned (unknown): %s</li>", count(*)) from diff_merged where cause = "unknown";
+select printf("<li>Inconclusive result because of timeout (-124, -143): %s</li>", count(*)) from diff_merged where cause like "timeout-%";
 EOF
   echo '</ul>'
 }
@@ -330,7 +330,7 @@ EOF
 .headers on
 .import causes.tsv causes
 
-ALTER TABLE diff ADD COLUMN cause INT;
+ALTER TABLE diff ADD COLUMN cause TEXT;
 
 -- Update with values from causes table
 UPDATE diff
@@ -340,14 +340,25 @@ SET cause = (
     WHERE causes.pkg = diff.pkg
 );
 
+
 -- Now set for timeouts
 UPDATE diff
-SET cause = -124
+SET cause = "signal-124"
 WHERE status1 = 124 OR status2 = 124;
 
 UPDATE diff
-SET cause = -143
+SET cause = "signal-143"
 WHERE status1 = 143 OR status2 = 143;
+
+-- Do this after accounting for signals
+ALTER TABLE diff ADD COLUMN cause_HREF TEXT;
+
+UPDATE diff
+SET cause_HREF = CASE
+    WHEN cause regexp '#[0-9]+'
+    THEN printf('https://github.com/oils-for-unix/oils/issues/%s', ltrim(cause, '#'))
+    ELSE ''
+END;
 
 EOF
 
@@ -530,9 +541,13 @@ make-wwz() {
   local base_dir=${1:-$REPORT_DIR/2025-08-03}
 
   # must not end with slash
+  base_dir=${base_dir%'/'}
+
   local wwz=$base_dir.wwz
 
   zip -r $wwz $base_dir web/
+
+  echo "Wrote $wwz"
 }
 
 deploy-wwz-op() {

@@ -1,18 +1,16 @@
 # grep through a log file, and print an integer cause to stdout
-# -200 means that no cause is assigned
-
-# TODO:
-# - allow regex patterns?
-# - the integer index could be a github bug number, and then we display it
 
 BEGIN {
+  # we can add the bug number like #2338
+  patterns["#2338"] = "\\@-D"  # variant after attempted glob fix
   # three backslashes is \\\-D
-  patterns[0] = "\\\\\\-D"
-  patterns[50] = "\\@-D"  # variant after attempted glob fix
+  patterns[50] = "\\\\\\-D"
 
+  # This is a different pattern, so we use cause "##2338" to distinguish it
+  # from "#2338".  It links to the same bug.
+  patterns["##2338"] = "\\@(cd"  # variant after attempted glob fix
   # \\\(cd
-  patterns[1] = "\\\\\\(cd"
-  patterns[51] = "\\@(cd"  # variant after attempted glob fix
+  patterns[51] = "\\\\\\(cd"
 
   patterns[2] = "cannot create executable"
 
@@ -52,8 +50,8 @@ BEGIN {
   patterns[14] = "terminate called after throwing an instance of"
 
   # screen
-  patterns[15] = "mkdir: invalid option --"
-  patterns[65] = "mkdir: unrecognized option: /"  # changed 2025-08-04-rootbld
+  patterns[65] = "mkdir: invalid option --"
+  patterns[15] = "mkdir: unrecognized option: /"  # changed 2025-08-04-rootbld
 
   # postfix
   patterns[16] = "Unexpected token after arithmetic expression"
@@ -84,6 +82,6 @@ BEGIN {
 
 END {
   if (!found) {
-    print "-200"  # no cause assigned
+    print "unknown"  # no cause assigned
   }
 }
