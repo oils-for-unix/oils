@@ -24,8 +24,7 @@ create table packages_schema as
     end as type
   from PRAGMA_TABLE_INFO("packages");
 
--- select * from packages_schema;
-
+-- set precision
 alter table packages_schema add column precision;
 
 update packages_schema set precision = 1 where column_name = "elapsed_secs";

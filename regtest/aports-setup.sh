@@ -287,7 +287,7 @@ _install-hook() {
 
   local src
   if test -n "$bwrap"; then
-    hook=regtest/enter-hook-bwrap.sh
+    hook=regtest/aports/enter-hook-bwrap.sh
   else
     hook=../alpine-chroot-install/enter-hook-chroot 
   fi
@@ -303,7 +303,7 @@ _install-enter-bwrap() {
   # don't need this other bwrap script
   rm -f -v $CHROOT_DIR/enter-hook
 
-  cp -v regtest/enter-bwrap.sh $CHROOT_DIR
+  cp -v regtest/aports/enter-bwrap.sh $CHROOT_DIR
 }
 
 install-enter-bwrap() {

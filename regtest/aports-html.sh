@@ -30,6 +30,13 @@ source test/tsv-lib.sh  # tsv2html3
 source web/table/html.sh  # table-sort-{begin,end}
 source benchmarks/common.sh  # cmark
 
+sqlite-tabs-headers() {
+  sqlite3 \
+    -cmd '.mode tabs' \
+    -cmd '.headers on' \
+    "$@"
+}
+
 html-head() {
   # python3 because we're outside containers
   PYTHONPATH=. python3 doctools/html_head.py "$@"
@@ -175,10 +182,7 @@ typed-tsv-to-sql() {
   echo ');'
 
   echo "
-.headers on
-.mode tabs
-
--- have to use this temp import because we already created the table, and 
+-- use this temp import because we already created the table, and 
 -- '.headers on' is not expected in that case
 
 .import $tsv temp_import
@@ -218,29 +222,22 @@ make-package-table() {
   local base_dir=${1:-$REPORT_DIR/$EPOCH}
   local config=${2:-baseline}
 
-  local db=$base_dir/$config/tables.db
+  local db=$PWD/$base_dir/$config/tables.db
   rm -f $db
 
-  typed-tsv-to-sql $base_dir/$config/tasks.tsv | sqlite3 $db
+  typed-tsv-to-sql $base_dir/$config/tasks.tsv | sqlite-tabs-headers $db
 
   sqlite3 -cmd '.mode columns' $db < regtest/aports/tasks.sql
 
-  sqlite3 $db >$base_dir/$config/packages.tsv <<'EOF'
-.mode tabs
-.headers on
-select * from packages;
-EOF
+  pushd $base_dir/$config
 
-  sqlite3 $db >$base_dir/$config/packages.schema.tsv <<'EOF'
-.mode tabs
-.headers on
-select * from packages_schema;
-EOF
+  db-to-tsv $db packages
 
-  sqlite3 $db >$base_dir/$config/metrics.txt <<EOF
+  sqlite3 $db >metrics.txt <<EOF
 .mode column
 select * from metrics;
 EOF
+  popd
 
   #cat $base_dir/$config/packages.schema.tsv 
 }
@@ -303,7 +300,9 @@ make-diff-db() {
 
   sqlite3 $db >failed-packages.txt <<EOF
 .mode tabs
+-- this is a text file, so headers are OFF
 .headers off
+
 select pkg from diff;
 EOF
 
@@ -327,25 +326,24 @@ EOF
   } > causes.tsv
 
   # Import causes.tsv and add columns
-  sqlite3 \
-    -cmd '.mode tabs' \
-    -cmd '.headers on' \
+  sqlite-tabs-headers \
     -cmd '.import causes.tsv causes' \
     $db < $cause_sql
 
-  sqlite3 $db >$name.tsv <<EOF
-.mode tabs
-.headers on
-select * from diff;
-EOF
-
-  sqlite3 $db >$name.schema.tsv <<EOF
-.mode tabs
-.headers on
-select * from diff_schema;
-EOF
+  db-to-tsv $db diff
 
   popd
+}
+
+db-to-tsv() {
+  local db=$1
+  local table_name=$2
+
+  echo "select * from ${table_name};" |
+    sqlite-tabs-headers $db >$table_name.tsv
+
+  echo "select * from ${table_name}_schema;" |
+    sqlite-tabs-headers $db >$table_name.schema.tsv
 }
 
 merge-diffs-sql() {
@@ -405,29 +403,17 @@ merge-diffs() {
   # copied from above
   pushd $epoch_dir
 
-  sqlite3 $db >$name1.tsv <<EOF
-.mode tabs
-.headers on
+  # like db-to-tsv2, but oder by package
+  sqlite-tabs-headers $db >$name1.tsv <<EOF
 select * from diff_merged order by pkg;
 EOF
 
-  sqlite3 $db >$name1.schema.tsv <<EOF
-.mode tabs
-.headers on
+  sqlite-tabs-headers $db >$name1.schema.tsv <<EOF
 select * from diff_merged_schema;
 EOF
 
-  sqlite3 $db >$name2.tsv <<EOF
-.mode tabs
-.headers on
-select * from metrics;
-EOF
+  db-to-tsv $db metrics
 
-  sqlite3 $db >$name2.schema.tsv <<EOF
-.mode tabs
-.headers on
-select * from metrics_schema;
-EOF
   popd
 
   local out=$epoch_dir/$name1.html
