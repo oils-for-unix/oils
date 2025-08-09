@@ -291,6 +291,7 @@ make-diff-db() {
 
   local diff_sql=$PWD/regtest/aports-diff.sql
   local cause_awk=$PWD/regtest/aports-cause.awk
+  local cause_sql=$PWD/regtest/aports-cause.sql
 
   pushd $base_dir
   rm -f $db
@@ -325,42 +326,12 @@ EOF
     done 
   } > causes.tsv
 
-  sqlite3 $db <<EOF
-.mode tabs
-.headers on
-.import causes.tsv causes
-
-ALTER TABLE diff ADD COLUMN cause TEXT;
-
--- Update with values from causes table
-UPDATE diff
-SET cause = (
-    SELECT causes.cause
-    FROM causes
-    WHERE causes.pkg = diff.pkg
-);
-
-
--- Now set for timeouts
-UPDATE diff
-SET cause = "signal-124"
-WHERE status1 = 124 OR status2 = 124;
-
-UPDATE diff
-SET cause = "signal-143"
-WHERE status1 = 143 OR status2 = 143;
-
--- Do this after accounting for signals
-ALTER TABLE diff ADD COLUMN cause_HREF TEXT;
-
-UPDATE diff
-SET cause_HREF = CASE
-    WHEN cause regexp '#[0-9]+'
-    THEN printf('https://github.com/oils-for-unix/oils/issues/%s', ltrim(cause, '#'))
-    ELSE ''
-END;
-
-EOF
+  # Import causes.tsv and add columns
+  sqlite3 \
+    -cmd '.mode tabs' \
+    -cmd '.headers on' \
+    -cmd '.import causes.tsv causes' \
+    $db < $cause_sql
 
   sqlite3 $db >$name.tsv <<EOF
 .mode tabs
@@ -369,18 +340,6 @@ select * from diff;
 EOF
 
   sqlite3 $db >$name.schema.tsv <<EOF
--- This snippet copied
-create table diff_schema as
-  select
-    name as column_name,
-    case
-      when UPPER(type) LIKE "%INT%" then "integer"
-      when UPPER(type) = "REAL" then "float"
-      when UPPER(type) = "TEXT" then "string"
-      else LOWER(type)
-    end as type
-  from PRAGMA_TABLE_INFO("diff");
-
 .mode tabs
 .headers on
 select * from diff_schema;
@@ -429,41 +388,8 @@ merge-diffs-sql() {
     "
   done
 
-  echo '
-UPDATE diff_merged SET
-   baseline_HREF = printf("%s/%s", shard, baseline_HREF),
-   osh_as_sh_HREF = printf("%s/%s", shard, osh_as_sh_HREF),
-   error_grep_HREF = printf("%s/%s", shard, error_grep_HREF);
-  
--- Useful queries to verify the result:
--- SELECT COUNT(*) as total_rows FROM diff_merged;
--- SELECT shard, COUNT(*) as row_count FROM diff_merged GROUP BY shard ORDER BY shard;
--- .schema diff_merged
-
--- copied
-
-create table diff_joined_schema as
-  select
-    name as column_name,
-    case
-      when UPPER(type) LIKE "%INT%" then "integer"
-      when UPPER(type) = "REAL" then "float"
-      when UPPER(type) = "TEXT" then "string"
-      else LOWER(type)
-    end as type
-  from PRAGMA_TABLE_INFO("diff_merged");
-
-create table metrics_schema as
-  select
-    name as column_name,
-    case
-      when UPPER(type) LIKE "%INT%" then "integer"
-      when UPPER(type) = "REAL" then "float"
-      when UPPER(type) = "TEXT" then "string"
-      else LOWER(type)
-    end as type
-  from PRAGMA_TABLE_INFO("metrics");
-'
+  # Does not involve metaprogramming
+  cat regtest/aports-merge.sql
 }
 
 merge-diffs() {
@@ -488,7 +414,7 @@ EOF
   sqlite3 $db >$name1.schema.tsv <<EOF
 .mode tabs
 .headers on
-select * from diff_joined_schema;
+select * from diff_merged_schema;
 EOF
 
   sqlite3 $db >$name2.tsv <<EOF
