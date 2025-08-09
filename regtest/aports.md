@@ -60,6 +60,15 @@ To run all 17 shards, you can use bash brace expansion:
 
 ## Reports
 
+TODO: credentials necessary;
+
+- `he.oils.pub` server
+  - I think each person has their own account?
+- `op.oils.pub` web server (for `.wwz` files)
+  - ask for SSH key
+- Github pages repo
+  - sent github invite
+
 ### Make HTML reports - local machine
 
     $ regtest/aports-html.sh sync-results  # rsync to _tmp/aports-report

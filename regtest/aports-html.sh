@@ -9,15 +9,7 @@
 #   $0 sync-results he.oils.pub
 #   $0 write-all-reports
 #   $0 make-wwz _tmp/aports-report/2025-08-03
-#   $0 deploy-wwz-op _tmp/aports-report/2025-08-03   # deploy to op.oils.pub
-#
-# TODO:
-# - report on start time and end time - on $config/packages.html
-#   - lenny machine is a lot slower
-# - report on total packages, total failures
-# - maybe report the machine name
-# - generate a DIFF of the logs!  Make that a new SQL column
-#   - start with diff -u
+#   $0 deploy-wwz-op _tmp/aports-report/2025-08-03.wwz   # deploy to op.oils.pub
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
@@ -55,7 +47,7 @@ index-html() {
 <body class="width35">
 
 <p id="home-link">
-  <a href="/">oils.pub</a>
+  <a href="/">Home</a>
 </p>
 
 # aports Build
@@ -100,7 +92,7 @@ diff-html() {
   local name=${2:-diff-baseline}
   local base_url=${3:-'../../../../web'}
 
-  local title='Differences - OSH'
+  local title='OSH Disagreements - regtest/aports'
 
   html-head --title "$title" \
     "$base_url/ajax.js" \
@@ -122,6 +114,7 @@ EOF
 
   if test "$name" = 'diff-merged'; then
     diff-metrics-html $base_dir/$name.db
+    cmark <<< '[tree](tree.html)'
   fi
 
   tsv2html3 $base_dir/$name.tsv
@@ -167,6 +160,39 @@ EOF
 EOF
 
   table-sort-end "$id"  # ID for sorting
+}
+
+published-html() {
+  local base_url='../../web'
+
+  local title='regtest/aports'
+
+  html-head --title "$title" \
+    "$base_url/base.css"
+
+  echo '
+  <body class="width35">
+    <style>
+      code { color: green; }
+    </style>
+
+    <p id="home-link">
+      <a href="/">Home</a> |
+      <a href="https://oils.pub/">oils.pub</a>
+    </p>
+  '
+
+  cmark <<EOF
+## $title
+
+- [2025-08-07-fix](2025-08-07-fix.wwz/_tmp/aports-report/2025-08-07-fix/diff-merged.html)
+
+EOF
+
+  echo '
+  </body>
+</html>
+'
 }
 
 typed-tsv-to-sql() {
@@ -447,6 +473,33 @@ write-all-reports() {
   done
 
   merge-diffs "$epoch_dir"
+
+  html-tree "$epoch_dir"
+}
+
+html-tree() {
+  local epoch_dir=${1:-_tmp/aports-report/2025-08-07-fix}
+
+  local epoch
+  epoch=$(basename $epoch_dir)
+
+  pushd $epoch_dir
+  # -L 3 goes 3 levels deeps, omitting logs
+  tree \
+    -H './' \
+    -T "regtest/aports - $epoch" \
+    -L 3 \
+    --charset=ascii \
+    > tree.html
+  popd
+
+  echo "Wrote $epoch_dir/tree.html"
+}
+
+update-published() {
+  local out=$REPORT_DIR/published.html
+  published-html > $out
+  echo "Wrote $out"
 }
 
 make-wwz() {
@@ -470,20 +523,14 @@ deploy-wwz-op() {
   #local host=op.oilshell.org 
 
   local dest_dir=$host/aports-build
+
   ssh $host mkdir -p $dest_dir
-  scp $wwz $host:$dest_dir
 
-  echo "Visit https://$dest_dir/$(basename $wwz)/"
-}
+  scp $wwz $REPORT_DIR/published.html \
+    $host:$dest_dir/
 
-deploy-wwz-mb() {
-  local host=oils.pub
-
-  #ssh $host ls op.oilshell.org/
-
-  local dest_dir=www/$host/aports-build
-  ssh $host mkdir -p $dest_dir
-  scp $REPORT_DIR/$EPOCH.wwz $host:$dest_dir
+  echo "Visit https://$dest_dir/published.html"
+  echo "      https://$dest_dir/$(basename $wwz)/"
 }
 
 out-of-vm() {
