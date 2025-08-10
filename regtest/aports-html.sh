@@ -70,7 +70,7 @@ EOF
 }
 
 diff-metrics-html() {
-  local db=${1:-_tmp/aports-report/2025-08-03/diff-merged.db}
+  local db=${1:-_tmp/aports-report/2025-08-03/diff_merged.db}
 
   echo '<ul>'
   sqlite3 $db <<EOF
@@ -112,9 +112,9 @@ diff-html() {
 
 EOF
 
-  if test "$name" = 'diff-merged'; then
+  if test "$name" = 'diff_merged'; then
     diff-metrics-html $base_dir/$name.db
-    cmark <<< '[tree](tree.html)'
+    cmark <<< '[tree](tree.html) &nbsp;&nbsp; [metrics](metrics.html)'
   fi
 
   tsv2html3 $base_dir/$name.tsv
@@ -185,7 +185,7 @@ published-html() {
   cmark <<EOF
 ## $title
 
-- [2025-08-07-fix](2025-08-07-fix.wwz/_tmp/aports-report/2025-08-07-fix/diff-merged.html)
+- [2025-08-07-fix](2025-08-07-fix.wwz/_tmp/aports-report/2025-08-07-fix/diff_merged.html)
 
 EOF
 
@@ -258,6 +258,16 @@ make-package-table() {
   pushd $base_dir/$config
 
   db-to-tsv $db packages
+
+  # Set precision
+  echo "
+  alter table packages_schema add column precision;
+  
+  update packages_schema set precision = 1 where column_name = 'elapsed_secs';
+  update packages_schema set precision = 1 where column_name = 'user_elapsed_ratio';
+  update packages_schema set precision = 1 where column_name = 'user_sys_ratio';
+  update packages_schema set precision = 1 where column_name = 'max_rss_MB';
+  " | sqlite3 $db
 
   sqlite3 $db >metrics.txt <<EOF
 .mode column
@@ -364,12 +374,26 @@ EOF
 db-to-tsv() {
   local db=$1
   local table_name=$2
+  local order_by=${3:-}
 
-  echo "select * from ${table_name};" |
-    sqlite-tabs-headers $db >$table_name.tsv
+  echo "
+  select * from ${table_name} ${order_by};
+  " | sqlite-tabs-headers $db >$table_name.tsv
 
-  echo "select * from ${table_name}_schema;" |
-    sqlite-tabs-headers $db >$table_name.schema.tsv
+  echo "
+  create table ${table_name}_schema as
+    select
+      name as column_name,
+      case
+        when UPPER(type) like '%INT%' then 'integer'
+        when UPPER(type) = 'REAL' then 'float'
+        when UPPER(type) = 'TEXT' then 'string'
+        else LOWER(type)
+      end as type
+    from PRAGMA_TABLE_INFO('${table_name}');
+
+  select * from ${table_name}_schema;
+  " | sqlite-tabs-headers $db >$table_name.schema.tsv
 }
 
 merge-diffs-sql() {
@@ -418,26 +442,18 @@ merge-diffs-sql() {
 
 merge-diffs() {
   local epoch_dir=${1:-_tmp/aports-report/2025-08-03}
-  local db=$PWD/$epoch_dir/diff-merged.db
+  local db=$PWD/$epoch_dir/diff_merged.db
   rm -f $db
   merge-diffs-sql $epoch_dir/shard* | sqlite3 $db
   echo $db
 
-  local name1=diff-merged
+  local name1=diff_merged
   local name2=metrics
 
   # copied from above
   pushd $epoch_dir
 
-  # like db-to-tsv2, but oder by package
-  sqlite-tabs-headers $db >$name1.tsv <<EOF
-select * from diff_merged order by pkg;
-EOF
-
-  sqlite-tabs-headers $db >$name1.schema.tsv <<EOF
-select * from diff_merged_schema;
-EOF
-
+  db-to-tsv $db diff_merged 'order by pkg'
   db-to-tsv $db metrics
 
   popd
@@ -449,6 +465,12 @@ EOF
   local out=$epoch_dir/$name2.html
   diff-html $epoch_dir $name2 '../../../web' > $out
   echo "Wrote $out"
+
+  # After merging, regenerate other stuff too
+
+  html-tree "$epoch_dir"
+
+  update-published
 }
 
 write-shard-reports() {
@@ -473,8 +495,6 @@ write-all-reports() {
   done
 
   merge-diffs "$epoch_dir"
-
-  html-tree "$epoch_dir"
 }
 
 html-tree() {
@@ -509,6 +529,7 @@ make-wwz() {
   base_dir=${base_dir%'/'}
 
   local wwz=$base_dir.wwz
+  rm -f -v $wwz
 
   zip -r $wwz $base_dir web/
 

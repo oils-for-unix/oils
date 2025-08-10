@@ -12,28 +12,6 @@ create table packages as
     pkg_HREF
   from tasks;
 
--- sqlite table schema -> foo.schema.tsv
-create table packages_schema as
-  select
-    name as column_name,
-    case
-      when UPPER(type) like "%INT%" then "integer"
-      when UPPER(type) = "REAL" then "float"
-      when UPPER(type) = "TEXT" then "string"
-      else LOWER(type)
-    end as type
-  from PRAGMA_TABLE_INFO("packages");
-
--- set precision
-alter table packages_schema add column precision;
-
-update packages_schema set precision = 1 where column_name = "elapsed_secs";
-update packages_schema
-set precision = 1
-where column_name = "user_elapsed_ratio";
-update packages_schema set precision = 1 where column_name = "user_sys_ratio";
-update packages_schema set precision = 1 where column_name = "max_rss_MB";
-
 -- Compute stats
 
 create table metrics (

@@ -30,15 +30,3 @@ set cause_HREF = case
   )
   else ''
 end;
-
--- For diff.schema.tsv - this snippet copied
-create table diff_schema as
-  select
-    name as column_name,
-    case
-      when UPPER(type) like "%INT%" then "integer"
-      when UPPER(type) = "REAL" then "float"
-      when UPPER(type) = "TEXT" then "string"
-      else LOWER(type)
-    end as type
-  from PRAGMA_TABLE_INFO("diff");
