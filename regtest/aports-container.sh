@@ -14,13 +14,28 @@ setup() {
   podman system migrate
 }
 
-make-rootfs() {
-  local branch='v3.22' 
+readonly branch='v3.22' 
+readonly ROOTFS_TAR=_chroot/alpine-$branch.tar.gz
 
+make-rootfs() {
+  rm -f -v $ROOTFS_TAR
+
+  # apk-tools needed to bootstrap?  otherwise we can't apk add later
   sudo ../../alpinelinux/alpine-make-rootfs/alpine-make-rootfs \
     --branch $branch \
-    _chroot/alpine-$branch.tar.gz
+    --packages 'apk-tools' \
+    $ROOTFS_TAR
 }
+
+list-tar() {
+  tar --list -z < $ROOTFS_TAR
+  echo
+
+  ls -l --si $ROOTFS_TAR
+}
+
+# copied from /etc/profile in the chroot
+readonly GUEST_PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 make-oci() {
   ### make OCI image with buildah 
@@ -38,7 +53,8 @@ make-oci() {
   buildah add $CONTAINER _chroot/alpine-v3.22.tar.gz /
 
   # Optional: Set environment variables
-  # buildah config --env PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin $CONTAINER
+  # TODO: check this path, where does it come from?
+  buildah config --env PATH=$GUEST_PATH $CONTAINER
 
   # Set some basic container metadata (optional but recommended)
   buildah config --workingdir /home/oils $CONTAINER
@@ -52,6 +68,11 @@ make-oci() {
   echo "Committing container to image: $IMAGE_NAME"
   buildah commit $CONTAINER $IMAGE_NAME
 
+  # Defaults from alpine-chroot-install
+  # Can't find 'apk'?
+  # What's the difference in doing this with podman run?
+  buildah run $CONTAINER apk add build-base ca-certificates ssl_client alpine-sdk abuild-rootbld pigz doas
+
   # Clean up the working container
   buildah rm $CONTAINER
 
@@ -60,6 +81,13 @@ make-oci() {
 
 list() {
   podman images | grep aports-build
+}
+
+remove-all() {
+  # It's silly that podman/docker have a separate set of commands
+  # this should just be removing files!
+
+  podman rmi -a -f
 }
 
 run() {
@@ -77,10 +105,38 @@ run() {
   #
   # takes ~213 to ~275 ms to run
 
+  # -v accepts :ro or :rw for mount options
+  # also :z :Z selinux stuff
+
   time podman run --rm -it \
-    -v "$PWD/_tmp/mnt/data:/app/data:Z" \
+    -v "$PWD/_tmp/mnt/data:/app/data:ro" \
     aports-build:latest \
-    sh -c 'echo hi; whoami; pwd; ls -l /; ls -l /app/data'
+    sh -c '
+      echo hi
+      whoami
+      pwd
+      ls -l /
+      echo
+      ls -l /app/data
+      echo
+      apk list
+
+      #ping www.google.com
+      nslookup google.com
+      echo
+
+      ip addr show
+      echo
+
+      #ping host.containers.internal
+      #echo
+
+      #ping www.google.com
+
+      nc google.com 80 <<"EOF"
+GET /
+EOF
+      '
 }
 
 task-five "$@"
