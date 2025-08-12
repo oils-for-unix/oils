@@ -9,6 +9,8 @@
 source $LIB_OSH/bash-strict.sh
 source $LIB_OSH/task-five.sh
 
+source regtest/aports-common.sh
+
 test-unshare() {
   # These work (at least on Debian, but it may not work on Red Hat)
   unshare --map-root-user whoami
@@ -87,6 +89,24 @@ count-lines() {
   for f in regtest/aports-* regtest/aports/*; do
     echo $f
   done | egrep -v 'old|notes' | xargs wc -l | sort -n
+}
+
+test-bind-mount() {
+  local host_dir=_tmp/bind-test
+  mkdir -p $host_dir
+  touch $host_dir/foo.txt
+
+  local chroot_dir=$PWD/$CHROOT_DIR
+  local guest_dir=$chroot_dir/home/oils/bind-test
+
+  # OK this works; it's a bit awkward
+
+  sudo mkdir -p $guest_dir
+  sudo mount --bind $PWD/$host_dir $guest_dir
+  sudo chroot $chroot_dir sh -c 'ls /home/oils/bind-test'
+  sudo umount $guest_dir
+
+  #mount
 }
 
 task-five "$@"

@@ -242,7 +242,9 @@ copy-oils() {
 keygen() {
   enter-rootfs-user sh -c '
   #abuild-keygen -h
-  abuild-keygen --append --install
+
+  # -n non-interactive
+  abuild-keygen --append --install -n
   '
 }
 

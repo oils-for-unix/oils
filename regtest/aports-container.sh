@@ -9,6 +9,30 @@ source $LIB_OSH/task-five.sh
 
 source regtest/aports-common.sh
 
+# Flow
+#
+# - make-chroot
+# - add-build-deps - extra packages
+# - config-chroot - users/groups, keygen
+# - oils-in-chroot - can this be bind mount?
+# - save-default-config
+#   - hm maybe we can use LAYERS here - baseline and osh
+#
+# - fetch-packages
+#   - this can be another layer
+# - build-packages, which yields TSV and logs
+#   - do we use podman cp?
+#   - or do we set up a bind mount, and aports-guest.sh  knows how to write
+#   there?
+#     - /home/udu/oils/_tmp/aports-guest could be the bind mount
+#     - back to _tmp/aports-guest
+#
+# - and then we can push to a central registry?
+#   - packages are 6 GB, so I guess we can take advantage of that
+#
+# TODO:
+# - test abuild rootbld
+
 setup() {
   # for rootless?
   podman system migrate
@@ -60,6 +84,15 @@ make-oci() {
   buildah config --workingdir /home/oils $CONTAINER
   buildah config --cmd /bin/sh $CONTAINER
 
+  # copied from regtest/aports-setup.sh
+  buildah run $CONTAINER -- adduser -D udu
+  buildah run $CONTAINER -- addgroup udu abuild
+  buildah run $CONTAINER -- addgroup udu wheel
+  buildah run $CONTAINER -- sh -c \
+    'echo "permit nopass :wheel" >> /etc/doas.conf'
+
+  buildah config --user udu $CONTAINER
+
   # Create the /app/data directory in the container
   #buildah run $CONTAINER -- mkdir -p /home/oils
 
@@ -69,15 +102,24 @@ make-oci() {
   buildah commit $CONTAINER $IMAGE_NAME
 
   # Defaults from alpine-chroot-install
-  # Can't find 'apk'?
-  # What's the difference in doing this with podman run?
-  buildah run $CONTAINER apk add build-base ca-certificates ssl_client alpine-sdk abuild-rootbld pigz doas
+  buildah run --user root $CONTAINER -- \
+    apk add build-base ca-certificates ssl_client alpine-sdk abuild-rootbld pigz doas
+
+  # Run as udu
+  buildah run $CONTAINER -- \
+    abuild-keygen --append --install -n
+
+  buildah commit $CONTAINER $IMAGE_NAME
 
   # Clean up the working container
   buildah rm $CONTAINER
 
   echo "Image built successfully: $IMAGE_NAME"
 }
+
+# TODO: generate keys, and then run 'abuild rootbld'
+#
+# abuild-keygen --append --install
 
 list() {
   podman images | grep aports-build
@@ -108,10 +150,7 @@ run() {
   # -v accepts :ro or :rw for mount options
   # also :z :Z selinux stuff
 
-  time podman run --rm -it \
-    -v "$PWD/_tmp/mnt/data:/app/data:ro" \
-    aports-build:latest \
-    sh -c '
+  local script='
       echo hi
       whoami
       pwd
@@ -137,6 +176,24 @@ run() {
 GET /
 EOF
       '
+
+  local script='
+  #ls -l /home/udu/aports/main
+
+  whoami
+  pwd
+
+  abuild -f -r -C ~/aports/main/lua5.4 rootbld
+  '
+  # --userns=keep-id for mounts
+  time podman run --rm -it \
+    --privileged \
+    --userns=keep-id \
+    -v "$PWD/_tmp/mnt/data:/app/data:ro" \
+    -v "$PWD/../../alpinelinux/aports/main:/home/udu/aports/main:rw" \
+    aports-build:latest \
+    sh -c "$script"
+
 }
 
 task-five "$@"
