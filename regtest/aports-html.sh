@@ -59,7 +59,7 @@ Configurations:
 
 ## Baseline versus osh-as-sh
 
-- [diff-baseline](diff-baseline.html)
+- [diff_baseline](diff_baseline.html)
 
 ## osh-as-sh versus osh-as-bash
 
@@ -89,7 +89,7 @@ EOF
 
 diff-html() {
   local base_dir=${1:-$REPORT_DIR/$EPOCH}
-  local name=${2:-diff-baseline}
+  local name=${2:-diff_baseline}
   local base_url=${3:-'../../../../web'}
 
   local title='OSH Disagreements - regtest/aports'
@@ -318,7 +318,7 @@ write-tables-for-config() {
 
 make-diff-db() {
   local base_dir=$1
-  local name=${2:-diff-baseline}
+  local name=${2:-diff_baseline}
 
   local db=$name.db
 
@@ -339,7 +339,7 @@ make-diff-db() {
 -- this is a text file, so headers are OFF
 .headers off
 
-select pkg from diff;
+select pkg from diff_baseline;
 EOF
 
   mkdir -p error
@@ -366,7 +366,8 @@ EOF
     -cmd '.import causes.tsv causes' \
     $db < $cause_sql
 
-  db-to-tsv $db diff
+  # The DB is diff_baseline.db, with table diff_baseline
+  db-to-tsv $db diff_baseline
 
   popd
 }
@@ -406,10 +407,10 @@ merge-diffs-sql() {
 
   # Create table from first shard
   echo "
-  ATTACH DATABASE '$first_shard/diff-baseline.db' AS temp_shard;
+  ATTACH DATABASE '$first_shard/diff_baseline.db' AS temp_shard;
 
   CREATE TABLE diff_merged AS
-  SELECT *, CAST('' as TEXT) as shard FROM temp_shard.diff where 1=0;
+  SELECT *, CAST('' as TEXT) as shard FROM temp_shard.diff_baseline where 1=0;
 
   CREATE TABLE metrics AS
   SELECT *, CAST('' as TEXT) as shard FROM temp_shard.metrics where 1=0;
@@ -424,10 +425,10 @@ merge-diffs-sql() {
       
     echo "
     -- $i: Add data from $shard_db
-    ATTACH DATABASE '$shard_db/diff-baseline.db' AS temp_shard;
+    ATTACH DATABASE '$shard_db/diff_baseline.db' AS temp_shard;
 
     INSERT INTO diff_merged
-    SELECT *, '$shard_name' as shard FROM temp_shard.diff;
+    SELECT *, '$shard_name' as shard FROM temp_shard.diff_baseline;
 
     INSERT INTO metrics
     SELECT *, '$shard_name' as shard FROM temp_shard.metrics;
@@ -482,7 +483,7 @@ write-shard-reports() {
     write-tables-for-config "$base_dir" "$config"
   done
 
-  local name=diff-baseline
+  local name=diff_baseline
   make-diff-db $base_dir
   diff-html $base_dir > $base_dir/$name.html
   echo "Wrote $base_dir/$name.html"
@@ -536,22 +537,29 @@ make-wwz() {
   echo "Wrote $wwz"
 }
 
+readonly WEB_HOST=op.oils.pub
+
 deploy-wwz-op() {
   local wwz=${1:-$REPORT_DIR/2025-08-03.wwz}
 
-  local host=op.oils.pub
+  local dest_dir=$WEB_HOST/aports-build
 
-  #local host=op.oilshell.org 
-
-  local dest_dir=$host/aports-build
-
-  ssh $host mkdir -p $dest_dir
+  ssh $WEB_HOST mkdir -p $dest_dir
 
   scp $wwz $REPORT_DIR/published.html \
-    $host:$dest_dir/
+    $WEB_HOST:$dest_dir/
 
   echo "Visit https://$dest_dir/published.html"
   echo "      https://$dest_dir/$(basename $wwz)/"
+}
+
+deploy-published() {
+  local dest_dir=$WEB_HOST/aports-build
+
+  scp $REPORT_DIR/published.html \
+    $WEB_HOST:$dest_dir/
+
+  echo "Visit https://$dest_dir/published.html"
 }
 
 out-of-vm() {

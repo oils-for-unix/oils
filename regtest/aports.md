@@ -26,7 +26,9 @@ The -1 value means it's cached forever.
 
 ## Set up Alpine chroot - `he.oils.pub`
 
-The first step is is in `regtest/aports-setup.sh`:
+The first step is in `regtest/aports-setup.sh`:
+
+    $ regtest/aports-setup.sh remove-chroot     # optional; for a CLEAN build
 
     $ regtest/aports-setup.sh fetch-all         # git clone, download Oils from CI
     $ regtest/aports-setup.sh prepare-all       # make a chroot
@@ -58,6 +60,7 @@ To run all 17 shards, you can use bash brace expansion:
 
     $ regtest/aports-run.sh build-many-shards shard{0..16}
 
+
 ## Reports
 
 TODO: credentials necessary;
@@ -66,18 +69,54 @@ TODO: credentials necessary;
   - I think each person has their own account?
 - `op.oils.pub` web server (for `.wwz` files)
   - ask for SSH key
-- Github pages repo
-  - sent github invite
 
 ### Make HTML reports - local machine
 
-    $ regtest/aports-html.sh sync-results  # rsync to _tmp/aports-report
+You can sync results while the build is running:
+
+    $ regtest/aports-html.sh sync-results  # rsync from he.oils.pub to _tmp/aports-report
+
+This creates a structure like:
+
+    _tmp/aports-report/
+      2025-08-07-fix/
+        shard10/
+        shard11/
+
+And then make a partial report:
 
     $ regtest/aports-html.sh write-all-reports _tmp/aports-report/2025-08-07-fix
 
 Now look at this file in your browser:
 
     _tmp/aports-report/2025-08-07-fix/diff-merged.html  # 17 shards merged
+
+
+### Checking for Flakiness
+
+The `aports` build can be flaky for a couple reasons:
+
+1. The `abuild builddeps` step fails for some reason.  
+1. Unexplained "cannot create executable" or "cannot compile programs" error.
+   - Associated with "PHDR segment not covered".
+
+Both of these errors happen with the baseline build, not just OSH.
+
+---
+
+So right now, I periodically sync the results to my local machine, and check
+the results with:
+
+    $ regtest/aports-debug.sh grep-c-bug-2
+    $ regtest/aports-debug.sh grep-phdr-bug-2
+    $ regtest/aports-debug.sh grep-b-bug-2
+
+If there are too many results, the chroot may have "crapped out".
+
+TODO: we can fix this by:
+
+- running under `podman`
+- running under a VM
 
 ### Publish Reports - `op.oils.pub`
 
@@ -95,15 +134,16 @@ And then navigate to
 
 - <https://op.oils.pub/aports-build/2025-08-07-fix.wwz/_tmp/aports-report/2025-08-07-fix/diff-merged.html>
 
-### Official link from `pages.oils.pub`
+### Official link from `published.html`
 
-If the results are good, then add a link to:
+If the results look good, add a line to the markdown in `regtest/aports-html.sh
+published-html`, and then run:
 
-- <https://pages.oils.pub/>
-  - via the repo <https://github.com/oils-for-unix/oils-for-unix.github.io>
+    $ regtest/aports-html.sh deploy-published
 
-TODO: it could be better to keep it consistent and use `op.oils.pub`.  But I
-guess I like to have a version-controlled record of all the "good" runs.
+And then visit:
+
+- <https://op.oils.pub/aports-build/published.html>
 
 ## Updating Causes
 
@@ -113,10 +153,15 @@ Faster way to test it:
 
     $ regtest/aports-html.sh merge-diffs _tmp/aports-report/2025-08-07-fix/
 
+## Reproducing a single package build failure
+
+TODO
+
 ## TODO
 
 - Running under podman could be more reliable
-  - that also means we do a bind mount?
+  - `regtest/aports-container.sh` shows that podman is able to run `abuild
+    rootbld` -> `bwrap`, if it's passed the `--privileged` flag
 
 ## Appendix: Dir Structure
 
