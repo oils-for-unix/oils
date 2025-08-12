@@ -60,17 +60,18 @@ To run all 17 shards, you can use bash brace expansion:
 
     $ regtest/aports-run.sh build-many-shards shard{0..16}
 
+## Make Reports with Tables
 
-## Reports
+### Credentials
 
-TODO: credentials necessary;
+You will need these credentials:
 
-- `he.oils.pub` server
-  - I think each person has their own account?
-- `op.oils.pub` web server (for `.wwz` files)
-  - ask for SSH key
+- to rsync from the `he.oils.pub` server
+  - I think each person should have their own account
+- to `scp` to `.wwz` and `.html` to the `op.oils.pub` server
+  - ask for SSH key; give user name
 
-### Make HTML reports - local machine
+### Sync and Preview - local machine
 
 You can sync results while the build is running:
 
@@ -94,13 +95,14 @@ Now look at this file in your browser:
 
 ### Checking for Flakiness
 
-The `aports` build can be flaky for a couple reasons:
+The `aports` build can be flaky for a couple reasons, which are currently
+unexplained:
 
-1. The `abuild builddeps` step fails for some reason.  
-1. Unexplained "cannot create executable" or "cannot compile programs" error.
+1. The `abuild builddeps` step fails
+1. "cannot create executable" or "cannot compile programs" errors.
    - Associated with "PHDR segment not covered".
 
-Both of these errors happen with the baseline build, not just OSH.
+Both of these errors happen with the baseline build, not only with OSH.
 
 ---
 
@@ -115,12 +117,12 @@ If there are too many results, the chroot may have "crapped out".
 
 TODO: we can fix this by:
 
-- running under `podman`
+- running under `podman` (`aports-container.sh`)
 - running under a VM
 
 ### Publish Reports - `op.oils.pub`
 
-Share the results:
+After `write-all-reports`, you can share the results:
 
     $ regtest/aports-html.sh make-wwz _tmp/aports-report/2025-08-07-fix
 
@@ -134,7 +136,7 @@ And then navigate to
 
 - <https://op.oils.pub/aports-build/2025-08-07-fix.wwz/_tmp/aports-report/2025-08-07-fix/diff-merged.html>
 
-### Official link from `published.html`
+### Add reports to `published.html`
 
 If the results look good, add a line to the markdown in `regtest/aports-html.sh
 published-html`, and then run:
@@ -155,7 +157,30 @@ Faster way to test it:
 
 ## Reproducing a single package build failure
 
-TODO
+You can reproduce build failures on your own machine.  Do the same steps you did on `he.oils.pub`:
+
+    $ regtest/aports-setup.sh fetch-all
+    $ regtest/aports-setup.sh prepare-all
+
+    $ regtest/aports-setup.sh unpack-distfiles  # optional
+
+And then ONE of these commands:
+
+    $ regtest/aports-run.sh set-baseline    # normal Alpine config
+    $ regtest/aports-run.sh set-osh-as-sh   # replace /bin/sh with OSH
+
+And then
+
+    # 7zip is the PKG_FILTER
+    # $config is either 'baseline' or 'osh-as-sh'
+    $ regtest/aports-run.sh build-packages '7zip' $config
+
+Then look at the logs in
+
+    _chroot/aports-build/
+      /home/udu/oils/
+        _tmp/aports-guest/baseline/
+          7zip.log.txt
 
 ## TODO
 
