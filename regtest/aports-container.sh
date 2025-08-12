@@ -69,52 +69,56 @@ make-oci() {
 
   # Create a new container from scratch
   echo "Creating container from rootfs..."
-  CONTAINER=$(buildah from scratch)
-  echo "Container ID: $CONTAINER"
+  c1=$(buildah from scratch)
+  echo "Container ID: $c1"
 
   # Add the rootfs directory contents to the container
   echo "Adding rootfs contents..."
-  buildah add $CONTAINER _chroot/alpine-v3.22.tar.gz /
+  buildah add $c1 _chroot/alpine-v3.22.tar.gz /
 
   # Optional: Set environment variables
   # TODO: check this path, where does it come from?
-  buildah config --env PATH=$GUEST_PATH $CONTAINER
+  buildah config --env PATH=$GUEST_PATH $c1
 
   # Set some basic container metadata (optional but recommended)
-  buildah config --workingdir /home/oils $CONTAINER
-  buildah config --cmd /bin/sh $CONTAINER
+  buildah config --workingdir /home/oils $c1
+  buildah config --cmd /bin/sh $c1
 
   # copied from regtest/aports-setup.sh
-  buildah run $CONTAINER -- adduser -D udu
-  buildah run $CONTAINER -- addgroup udu abuild
-  buildah run $CONTAINER -- addgroup udu wheel
-  buildah run $CONTAINER -- sh -c \
+  buildah run $c1 -- adduser -D udu
+  buildah run $c1 -- addgroup udu abuild
+  buildah run $c1 -- addgroup udu wheel
+  buildah run $c1 -- sh -c \
     'echo "permit nopass :wheel" >> /etc/doas.conf'
 
-  buildah config --user udu $CONTAINER
+  buildah config --user udu $c1
 
   # Create the /app/data directory in the container
-  #buildah run $CONTAINER -- mkdir -p /home/oils
+  #buildah run $c1 -- mkdir -p /home/oils
 
   # Commit the container to create an image
   IMAGE_NAME='aports-build:latest'
   echo "Committing container to image: $IMAGE_NAME"
-  buildah commit $CONTAINER $IMAGE_NAME
+  buildah commit $c1 $IMAGE_NAME
+
+  # necessary for 2 layers
+  local c2
+  c2=$(buildah from $IMAGE_NAME)
 
   # Defaults from alpine-chroot-install
-  buildah run --user root $CONTAINER -- \
+  buildah run --user root $c2 -- \
     apk add build-base ca-certificates ssl_client alpine-sdk abuild-rootbld pigz doas
 
   # Run as udu
-  buildah run $CONTAINER -- \
+  buildah run $c2 -- \
     abuild-keygen --append --install -n
 
-  buildah commit $CONTAINER $IMAGE_NAME
+  buildah commit $c2 $IMAGE_NAME
 
   # Clean up the working container
-  buildah rm $CONTAINER
+  #buildah rm $c1
 
-  echo "Image built successfully: $IMAGE_NAME"
+  echo "Image built successfully: $IMAGE_NAME c1=$c1 c2=$c2"
 }
 
 # TODO: generate keys, and then run 'abuild rootbld'
@@ -194,6 +198,32 @@ EOF
     aports-build:latest \
     sh -c "$script"
 
+}
+
+save() {
+  local tar=_tmp/aports-oci.tar 
+  rm -f -v $tar
+  podman save -o $tar aports-build:latest
+}
+
+extract-saved() { 
+  local tar=_tmp/aports-oci.tar 
+
+  tar --list < _tmp/aports-oci.tar 
+  echo
+
+  ls -l --si $tar
+
+  local tmp=_tmp/aports-oci
+  rm -r -f $tmp
+  mkdir -p $tmp
+  pushd $tmp
+  tar -x < ../aports-oci.tar
+  popd
+}
+
+show-saved() {
+  tree -h _tmp/aports-oci
 }
 
 task-five "$@"
