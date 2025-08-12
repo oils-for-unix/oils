@@ -1,4 +1,4 @@
-## oils_failures_allowed: 5
+## oils_failures_allowed: 4
 ## compare_shells: bash dash mksh zsh ash yash
 
 #### Fatal error
@@ -10,7 +10,7 @@ abc=${a?bc} echo hello; echo blah
 ## stdout-json: ""
 
 #### setting readonly var (bash is only one where it's non-fatal)
-# http://landley.net/notes.html#20-06-2020
+# https://landley.net/notes-2020.html#12-06-2020
 
 readonly abc=123
 abc=def
