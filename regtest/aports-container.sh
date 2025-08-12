@@ -33,8 +33,55 @@ source regtest/aports-common.sh
 # TODO:
 # - test abuild rootbld
 
-setup() {
-  # for rootless?
+
+deps() {
+  # https://blog.abysm.org/2023/06/switching-system-wide-default-storage-driver-from-vfs-to-overlayfs-for-podman-on-debian-bookworm/
+
+  # containers-storage needed on Debian bookworm for overlayfs
+
+  sudo apt-get install podman containers-storage
+}
+
+system-reset() {
+  # this removes everything
+  podman system reset
+}
+
+system-prune() {
+  # this is GC - it sorta works
+  podman system prune -a
+}
+
+show-work-area() {
+  # 16K files, each layer is already materialized
+
+  # Hm the container is 277 M
+  # But this work dir is 580 M , after podman system reset?
+  # It's doubling the storage?
+  # Because it's the VFS driver?  Geez
+  # for rootless operation
+
+  local work_dir=~/.local/share/containers/storage/ 
+
+  set +o errexit
+  find $work_dir | wc -l
+
+  du --si -s $work_dir
+}
+
+remove-all() {
+  # It's silly that podman/docker have a separate set of commands
+  # this should just be removing files!
+
+  podman rmi -a -f
+}
+
+check-kernel-module() {
+  lsmod | grep overlay
+}
+
+migrate() {
+  # not sure if we need this
   podman system migrate
 }
 
@@ -115,26 +162,16 @@ make-oci() {
 
   buildah commit $c2 $IMAGE_NAME
 
-  # Clean up the working container
-  #buildah rm $c1
+  # Hm this seems necessary to clean up the work area?  Why?
+  # system-prune also works, but it's a bad interface!
+  #
+  # I don't see why buildah does this extra copying ...
+
+  #buildah rm $c2
 
   echo "Image built successfully: $IMAGE_NAME c1=$c1 c2=$c2"
 }
 
-# TODO: generate keys, and then run 'abuild rootbld'
-#
-# abuild-keygen --append --install
-
-list() {
-  podman images | grep aports-build
-}
-
-remove-all() {
-  # It's silly that podman/docker have a separate set of commands
-  # this should just be removing files!
-
-  podman rmi -a -f
-}
 
 run() {
   # Run the container with podman (rootless) and bind mount a dir
@@ -224,6 +261,10 @@ extract-saved() {
 
 show-saved() {
   tree -h _tmp/aports-oci
+}
+
+list() {
+  podman images | grep aports-build
 }
 
 task-five "$@"

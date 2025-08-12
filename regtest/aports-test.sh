@@ -109,4 +109,25 @@ test-bind-mount() {
   #mount
 }
 
+test-rootless-overlay() {
+  # AH, this works with --mount!  Cool!
+
+  unshare --user --map-root-user --mount -- sh -c '
+  mkdir -p _tmp/overlay-test/{lower,upper,work,merged}
+  echo "foo" > _tmp/overlay-test/lower/foo
+
+  # Try to mount as regular user
+  #
+  # permission denied
+  # how does podman do it?  Test it out
+
+  mount -t overlay overlay \
+    -o lowerdir=_tmp/overlay-test/lower,upperdir=_tmp/overlay-test/upper,workdir=_tmp/overlay-test/work \
+    _tmp/overlay-test/merged
+
+  ls -l _tmp/overlay-test/merged
+  cat _tmp/overlay-test/merged/foo
+  '
+}
+
 task-five "$@"
