@@ -244,10 +244,10 @@ that pattern is removed if it matches the start or end.
     = b'   YSH   ' => trim('xxx')   # => "   YSH   "
     = b'123YSH456' => trim(/ d+ /)  # => "YSH"
 
-#### A note on whitespace
+#### Notes on whitespace
 
-When `trim()`ing whitespace, e.g. the using default `/space*/` pattern which
-includes newlines, Oils decodes the bytes in string as utf-8 characters, and
+When `trim()`ing whitespace, e.g. using its default pattern `/space*/` which
+includes newlines, Oils decodes the bytes of strings as utf-8 characters, and
 considers only the following Unicode codepoints as whitespace:
 
  - U+0009 -- Horizontal tab (`\t`)
@@ -263,10 +263,11 @@ considers only the following Unicode codepoints as whitespace:
 limits itself to just these codepoints so that its specification is stable, and
 doesn't depend on an external standard that may reclassify characters.
 
-**If using `/blank*/`** as a custom trim pattern, the newlines `\n` are not be considered.
+**If using `/blank*/`** as a custom trim pattern, the newlines `\n` are not considered.
 
-**If using `search()` or `replace()`** with `/space/` or `/blank/` whitespace, the non-breaking
-characters in the list above are *not* considered as matching, obeying to their special function.
+**If using `search()` or `replace()`** with a `/space/` or `/blank/` whitespace pattern,
+the non-breaking characters in the list above are *not* considered as matching, obeying
+to their original special function.
 
 ### trimStart()
 
