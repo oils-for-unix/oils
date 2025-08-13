@@ -237,12 +237,12 @@ Dicts look like JavaScript.
 Omitting a value means that the corresponding key takes the value of a var of
 the same name:
 
-    ysh$ var x = 42
-    ysh$ var y = 43
+    var x = 42
+    var y = 43
 
-    ysh$ var d = {x, y}  # values omitted
-    ysh$ = d
-    (Dict)  {x: 42, y: 43}
+    var d = {x, y}  # values omitted
+    = d
+    #=>(Dict)  {x: 42, y: 43}
 
 - Related: [Dict][] type
 
@@ -256,19 +256,19 @@ constructs half-open ranges.
     for i in (0 ..< 3) {
       echo $i
     }
-    => 0
-    => 1
-    => 2
+    #=> 0
+    #=> 1
+    #=> 2
 
 The `..=` operator constructs closed ranges:
 
     for i in (0 ..= 3) {
       echo $i
     }
-    => 0
-    => 1
-    => 2
-    => 3
+    #=> 0
+    #=> 1
+    #=> 2
+    #=> 3
 
 - Related: [Range][] type
 
@@ -330,29 +330,31 @@ New operators:
 
 The concatenation operator works on `Str` objects:
 
-    ysh$ var s = 'hello'
-    ysh$ var t = s ++ ' world'
+    var s = 'hello'
+    var t = s ++ ' world'
 
-    ysh$ = t
-    (Str)   "hello world"
+    = t
+    #=> (Str)   "hello world"
 
 and `List` objects:
 
-    ysh$ var L = ['one', 'two']
-    ysh$ var M = L ++ ['three', '4']
+    var L = ['one', 'two']
+    var M = L ++ ['three', '4']
 
-    ysh$ = M
-    (List)   ["one", "two", "three", "4"]
+    = M
+    #=> (List)   ["one", "two", "three", "4"]
 
-String concatenation is slow, list appending is faster for looping.
+Note: Avoid repeated *string concatenation* in a loop. It's algorithmically faster to append strings to a list, and then to `join()` the elements.
 
-String interpolation can be nicer than `++`:
+Also generally, *string interpolation* can be nicer than the `++` string concatenation:
 
-    var t2 = "${s} world"  # same as t
+    var t = s ++ ' world'  # becomes long, sigil-, and formatting-loaded with more variables and literals
+    var t = "$s world"     # shorter and closer to the resulting string
 
-Likewise, splicing lists can be nicer:
+Likewise, splicing lists can be nicer than `++` concatenation:
 
-    var M2 = :| @L three 4 |  # same as M
+    var M = L ++ ['three', '4']
+    var M = :| @L three 4 |
 
 ### ysh-equals
 
@@ -382,19 +384,19 @@ compare them.
 
 Compare objects for identity with `is`:
 
-    ysh$ var d = {}    
-    ysh$ var e = d
+    var d = {}    
+    var e = d
 
-    ysh$ = d is d
-    (Bool)   true
+    = d is d
+    #=> (Bool)   true
 
-    ysh$ = d is {other: 'dict'}
-    (Bool)   false
+    = d is {other: 'dict'}
+    #=> (Bool)   false
 
 To negate `is`, use `is not` (like Python:
 
-    ysh$ d is not {other: 'dict'}
-    (Bool)   true
+    d is not {other: 'dict'}
+    #=> (Bool)   true
 
 ### ysh-in
 
@@ -494,24 +496,24 @@ The ternary operator is borrowed from Python:
 
 `Str` objects can be indexed by byte:
 
-    ysh$ var s = 'cat'
-    ysh$ = mystr[1]
-    (Str)   'a'  
+    var s = 'cat'
+    = mystr[1]
+    #=> (Str)   'a'  
 
-    ysh$ = mystr[-1]  # index from the end
-    (Str)   't'
+    = mystr[-1]  # index from the end
+    #=> (Str)   't'
 
 `List` objects:
 
-    ysh$ var mylist = [1, 2, 3]
-    ysh$ = mylist[2]
-    (Int)  3
+    var mylist = [1, 2, 3]
+    = mylist[2]
+    #=> (Int)  3
 
 `Dict` objects are indexed by string key:
 
-    ysh$ var mydict = {'key': 42}
-    ysh$ = mydict['key']
-    (Int)  42
+    var mydict = {'key': 42}
+    = mydict['key']
+    #=> (Int)  42
 
 ### ysh-attr
 
@@ -563,39 +565,39 @@ Negative indices are relative to the end.
 
 String example:
 
-    $ var s = 'spam eggs'
-    $ pp (s[1:-1])
-    (Str)   "pam egg"
+    var s = 'spam eggs'
+    pp (s[1:-1])
+    #=> (Str)   "pam egg"
 
-    $ echo "x $[s[2:]]"
-    x am eggs
+    echo "x $[s[2:]]"
+    #=> x am eggs
 
 List example:
 
-    $ var foods = ['ale', 'bean', 'corn']
-    $ pp (foods[-2:])
-    (List)   ["bean","corn"]
+    var foods = ['ale', 'bean', 'corn']
+    pp (foods[-2:])
+    #=> (List)   ["bean","corn"]
     
-    $ write -- @[foods[:2]]
-    ale
-    bean
+    write -- @[foods[:2]]
+    #=> ale
+    #=> bean
 
 ### ysh-func-call
 
 A function call expression looks like Python:
 
-    ysh$ = f('s', 't', named=42)
+    = f('s', 't', named=42)
 
 A semicolon `;` can be used after positional args and before named args, but
 isn't always required:
 
-    ysh$ = f('s', 't'; named=42)
+    = f('s', 't'; named=42)
 
 In these cases, the `;` is necessary:
 
-    ysh$ = f(...args; ...kwargs)
+    = f(...args; ...kwargs)
 
-    ysh$ = f(42, 43; ...kwargs)
+    = f(42, 43; ...kwargs)
 
 ### thin-arrow
 
