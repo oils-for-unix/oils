@@ -256,8 +256,8 @@ considers only the following Unicode codepoints as whitespace:
  - U+000C -- Form feed (`\f`)
  - U+000D -- Carriage return (`\r`)
  - U+0020 -- Normal space
- - U+00A0 -- No-break space `<NBSP>`
- - U+FEFF -- Zero-width no-break space `<ZWNBSP>`
+ - U+00A0 -- No-break space `<NBSP>` (`\xC2\xA0`)
+ - U+FEFF -- Zero-width no-break space `<ZWNBSP>` (`\xEF\xBB\xBF`)
 
 **The Unicode standard** does define more codepoints as whitespace, but Oils
 limits itself to just these codepoints so that its specification is stable, and
