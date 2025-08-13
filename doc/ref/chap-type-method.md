@@ -246,9 +246,9 @@ that pattern is removed if it matches the start or end.
 
 #### A note on whitespace
 
-When ***trimming*** whitespace (the default multi-line `/space/` or `blank`),
-Oils decodes the bytes in string as utf-8 characters, and only the following
-Unicode codepoints are considered to be whitespace.
+When `trim()`ing whitespace, e.g. the using default `/space*/` pattern which
+includes newlines, Oils decodes the bytes in string as utf-8 characters, and
+considers only the following Unicode codepoints as whitespace:
 
  - U+0009 -- Horizontal tab (`\t`)
  - U+000A -- Newline (`\n`)
@@ -259,12 +259,14 @@ Unicode codepoints are considered to be whitespace.
  - U+00A0 -- No-break space `<NBSP>`
  - U+FEFF -- Zero-width no-break space `<ZWNBSP>`
 
-While the Unicode standard defines other codepoints as being spaces, Oils
-limits itself to just these codepoints so that the specification is stable, and
-doesn't depend on an external standard that has reclassify characters.
+**The Unicode standard** does define more codepoints as whitespace, but Oils
+limits itself to just these codepoints so that its specification is stable, and
+doesn't depend on an external standard that may reclassify characters.
 
-When ***searching or replacing*** `/space/` or `/blank/`, the non-breaking
-characters are *not* matched, obeying to their special function.
+**If using `/blank*/`** as a custom trim pattern, the newlines `\n` are not be considered.
+
+**If using `search()` or `replace()`** with `/space/` or `/blank/` whitespace, the non-breaking
+characters in the list above are *not* considered as matching, obeying to their special function.
 
 ### trimStart()
 
