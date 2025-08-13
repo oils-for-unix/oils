@@ -148,16 +148,16 @@ So portable shell scripts use:
 
     printf '%s\n' "$x"  # print $x "unmolested" in POSIX shell
 
-We could have chosen to respect `echo -- $x`, but YSH already has:
+We could have chosen to respect `echo -- $x`, but as YSH already has:
 
     write -- $x         # print $x "unmolested" in YSH
 
-That means YSH has:
+That allowed YSH to fix:
 
-    echo $x             # an even shorter way
+    echo $x $y ...      # YES: print single-lines "unmolested" in YSH
 
 So `echo` is technically superfluous in YSH, but it's also short, familiar, and
-correct.
+always correct.
 
 YSH isn't intended to be compatible with POSIX shell; only OSH is.
 
