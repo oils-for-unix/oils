@@ -247,27 +247,32 @@ that pattern is removed if it matches the start or end.
 #### Notes on whitespace
 
 When `trim()`ing whitespace, e.g. using its default pattern `/space*/` which
-includes newlines, Oils decodes the bytes of strings as utf-8 characters, and
-considers only the following Unicode codepoints as whitespace:
+includes multiple lines, Oils will decode bytes of the string as utf-8
+characters, and considers only the following list of Unicode codepoints
+(U+....) as whitespace.
 
- - U+0009 -- Horizontal tab (`\t`)
- - U+000A -- Newline (`\n`)
- - U+000B -- Vertical tab (`\v`)
- - U+000C -- Form feed (`\f`)
- - U+000D -- Carriage return (`\r`)
- - U+0020 -- Normal space
- - U+00A0 -- No-break space `<NBSP>` (`\xC2\xA0`)
- - U+FEFF -- Zero-width no-break space `<ZWNBSP>` (`\xEF\xBB\xBF`)
+Encountering any non-utf-8 compliant byte will trigger a fatal error
+(`trim()` currently can't be used with arbitrary C-strings).
 
-**The Unicode standard** does define more codepoints as whitespace, but Oils
-limits itself to just these codepoints so that its specification is stable, and
-doesn't depend on an external standard that may reclassify characters.
+ - U+0009 -- Horizontal tab (`u'\t'`)
+ - U+000A -- Newline (`u'\n'`)
+ - U+000B -- Vertical tab (`u'\v'`)
+ - U+000C -- Form feed (`u'\f'`)
+ - U+000D -- Carriage return (`u'\r'`)
+ - U+0020 -- Normal space (`u' '`)
+ - U+00A0 -- No-break space `<NBSP>` (`u'\xC2\xA0'`)
+ - U+FEFF -- Zero-width no-break space `<ZWNBSP>` (`u'\xEF\xBB\xBF'`)
 
-**If using `/blank*/`** as a custom trim pattern, the newlines `\n` are not considered.
+**The Unicode standard** defines more codepoints as whitespace, but Oils limits
+itself to just these codepoints so that its specification is stable, and doesn't
+depend on an external standard that may reclassify characters.
 
-**If using `search()` or `replace()`** with a `/space/` or `/blank/` whitespace pattern,
-the non-breaking characters in the list above are *not* considered as matching, obeying
-to their original special function.
+**When using `/blank*/`** as a custom trim pattern, instead of `/space*/`, the
+line control bytes (`\n`,`\v`,`\f`,`\r`) are *not* considered.
+
+**When using `search()` or `replace()`** with a `/space/` or `/blank/` whitespace
+pattern, the non-breaking characters in the list above are *not* considered as
+matching, to obey their original special function.
 
 ### trimStart()
 
