@@ -251,8 +251,8 @@ includes multiple lines, Oils will decode bytes of the string as utf-8
 characters, and considers only the following list of Unicode codepoints
 (U+....) as whitespace.
 
-Encountering any non-utf-8 compliant byte will trigger a fatal error
-(`trim()` currently can't be used with arbitrary C-strings).
+Encountering any non-utf-8 compliant byte will trigger a fatal error.
+(Currently `trim()` can't be used on arbitrary C-string bytes.)
 
  - U+0009 -- Horizontal tab (`u'\t'`)
  - U+000A -- Newline (`u'\n'`)
