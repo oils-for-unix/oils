@@ -268,11 +268,11 @@ itself to just these codepoints so that its specification is stable, and doesn't
 depend on an external standard that may reclassify characters.
 
 **When using `/blank*/`** as a custom trim pattern, instead of `/space*/`, the
-line control bytes (`\n`,`\v`,`\f`,`\r`) are *not* considered.
+line control bytes (`\n`,`\v`,`\f`,`\r`) are *not* considered as "blankspace".
 
-**When using `search()` or `replace()`** with a `/space/` or `/blank/` whitespace
-pattern, the non-breaking characters in the list above are *not* considered as
-matching, to obey their original special function.
+**When using `search()` or `replace()`** with a `/space/` or `/blank/` pattern,
+the non-breaking characters in the list above are *not* considered as matching,
+to obey their original special function.
 
 ### trimStart()
 
