@@ -344,11 +344,13 @@ and `List` objects:
     = M
     #=> (List)   ["one", "two", "three", "4"]
 
-Note: Avoid repeated *string concatenation* in a loop. It's algorithmically faster to append strings to a list, and then to `join()` the elements.
+Note: Avoid repeated *string concatenation* in a loop. It's algorithmically
+faster to append strings to a list, and then to `join()` the elements.
 
-Also generally, *string interpolation* can be nicer than the `++` string concatenation:
+Also generally, *string interpolation* can be nicer than the `++`
+string concatenation:
 
-    var t = s ++ ' world'  # becomes long, sigil-, and formatting-loaded with more variables and literals
+    var t = s ++ ' world'  # becomes punctuation- and formatting-loaded
     var t = "$s world"     # shorter and closer to the resulting string
 
 Likewise, splicing lists can be nicer than `++` concatenation:
