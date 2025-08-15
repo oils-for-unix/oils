@@ -874,3 +874,264 @@ printf '%s\n' 'a b\,c d'   | (read -d ,; argv.py "$REPLY")
 ['a b\nc d']
 ['a bc d']
 ## END
+
+#### empty input and splitting
+case $SH in mksh|ash|dash|zsh) exit 99; esac
+echo '' | (read -a a; argv.py "${a[@]}")
+IFS=x
+echo '' | (read -a a; argv.py "${a[@]}")
+IFS=
+echo '' | (read -a a; argv.py "${a[@]}")
+## STDOUT:
+[]
+[]
+[]
+## END
+## N-I mksh/zsh/dash/ash status: 99
+## N-I mksh/zsh/dash/ash STDOUT:
+## END
+
+#### IFS='x ' read -a: trailing spaces (unlimited split)
+case $SH in mksh|ash|dash|zsh) exit 99; esac
+IFS='x '
+echo 'a b'     | (read -a a; argv.py "${a[@]}")
+echo 'a b '    | (read -a a; argv.py "${a[@]}")
+echo 'a bx'    | (read -a a; argv.py "${a[@]}")
+echo 'a bx '   | (read -a a; argv.py "${a[@]}")
+echo 'a b x'   | (read -a a; argv.py "${a[@]}")
+echo 'a b x '  | (read -a a; argv.py "${a[@]}")
+echo 'a b x x' | (read -a a; argv.py "${a[@]}")
+
+## STDOUT:
+['a', 'b']
+['a', 'b']
+['a', 'b']
+['a', 'b']
+['a', 'b']
+['a', 'b']
+['a', 'b', '']
+## END
+## N-I mksh/zsh/dash/ash status: 99
+## N-I mksh/zsh/dash/ash STDOUT:
+## END
+
+#### IFS='x ' read a b: trailing spaces (with max_split)
+echo 'hello world  test   ' | (read a b; argv.py "$a" "$b")
+echo '-- IFS=x --'
+IFS='x '
+echo 'a ax  x  '     | (read a b; argv.py "$a" "$b")
+echo 'a ax  x  x'    | (read a b; argv.py "$a" "$b")
+echo 'a ax  x  x  '  | (read a b; argv.py "$a" "$b")
+echo 'a ax  x  x  a' | (read a b; argv.py "$a" "$b")
+## STDOUT:
+['hello', 'world  test']
+-- IFS=x --
+['a', 'ax  x']
+['a', 'ax  x  x']
+['a', 'ax  x  x']
+['a', 'ax  x  x  a']
+## END
+
+#### IFS='x ' read -a: intermediate spaces (unlimited split)
+case $SH in mksh|ash|dash|zsh) exit 99; esac
+IFS='x '
+echo 'a x b'   | (read -a a; argv.py "${a[@]}")
+echo 'a xx b'  | (read -a a; argv.py "${a[@]}")
+echo 'a xxx b' | (read -a a; argv.py "${a[@]}")
+echo 'a x xb'  | (read -a a; argv.py "${a[@]}")
+echo 'a x x b' | (read -a a; argv.py "${a[@]}")
+echo 'ax b'    | (read -a a; argv.py "${a[@]}")
+echo 'ax xb'   | (read -a a; argv.py "${a[@]}")
+echo 'ax  xb'  | (read -a a; argv.py "${a[@]}")
+echo 'ax x xb' | (read -a a; argv.py "${a[@]}")
+## STDOUT:
+['a', 'b']
+['a', '', 'b']
+['a', '', '', 'b']
+['a', '', 'b']
+['a', '', 'b']
+['a', 'b']
+['a', '', 'b']
+['a', '', 'b']
+['a', '', '', 'b']
+## END
+## N-I mksh/zsh/dash/ash status: 99
+## N-I mksh/zsh/dash/ash STDOUT:
+## END
+
+#### IFS='x ' incomplete backslash
+echo ' a b \' | (read a; argv.py "$a")
+echo ' a b \' | (read a b; argv.py "$a" "$b")
+IFS='x '
+echo $'a ax  x    \\\nhello' | (read a b; argv.py "$a" "$b")
+## STDOUT:
+['a b']
+['a', 'b']
+['a', 'ax  x    hello']
+## END
+
+#### IFS='\ ' and backslash escaping
+IFS='\ '
+echo "hello\ world  test" | (read a b; argv.py "$a" "$b")
+IFS='\'
+echo "hello\ world  test" | (read a b; argv.py "$a" "$b")
+## STDOUT:
+['hello world', 'test']
+['hello world  test', '']
+## END
+# In mksh/zsh, IFS='\' is stronger than backslash escaping
+## OK mksh/zsh STDOUT:
+['hello', 'world  test']
+['hello', ' world  test']
+## END
+
+#### max_split and backslash escaping
+echo 'Aa b \ a\ b' | (read a b; argv.py "$a" "$b")
+echo 'Aa b \ a\ b' | (read a b c; argv.py "$a" "$b" "$c")
+echo 'Aa b \ a\ b' | (read a b c d; argv.py "$a" "$b" "$c" "$d")
+## STDOUT:
+['Aa', 'b  a b']
+['Aa', 'b', ' a b']
+['Aa', 'b', ' a b', '']
+## END
+
+#### IFS=x read a b <<< xxxxxx
+IFS='x '
+echo x     | (read a b; argv.py "$a" "$b")
+echo xx    | (read a b; argv.py "$a" "$b")
+echo xxx   | (read a b; argv.py "$a" "$b")
+echo xxxx  | (read a b; argv.py "$a" "$b")
+echo xxxxx | (read a b; argv.py "$a" "$b")
+echo '-- spaces --'
+echo 'x    ' | (read a b; argv.py "$a" "$b")
+echo 'xx   ' | (read a b; argv.py "$a" "$b")
+echo 'xxx  ' | (read a b; argv.py "$a" "$b")
+echo 'xxxx ' | (read a b; argv.py "$a" "$b")
+echo 'xxxxx' | (read a b; argv.py "$a" "$b")
+echo '-- with char --'
+echo 'xa    ' | (read a b; argv.py "$a" "$b")
+echo 'xax   ' | (read a b; argv.py "$a" "$b")
+echo 'xaxx  ' | (read a b; argv.py "$a" "$b")
+echo 'xaxxx ' | (read a b; argv.py "$a" "$b")
+echo 'xaxxxx' | (read a b; argv.py "$a" "$b")
+## STDOUT:
+['', '']
+['', '']
+['', 'xx']
+['', 'xxx']
+['', 'xxxx']
+-- spaces --
+['', '']
+['', '']
+['', 'xx']
+['', 'xxx']
+['', 'xxxx']
+-- with char --
+['', 'a']
+['', 'a']
+['', 'axx']
+['', 'axxx']
+['', 'axxxx']
+## END
+## OK-2 zsh STDOUT:
+['', '']
+['', 'x']
+['', 'xx']
+['', 'xxx']
+['', 'xxxx']
+-- spaces --
+['', '']
+['', 'x']
+['', 'xx']
+['', 'xxx']
+['', 'xxxx']
+-- with char --
+['', 'a']
+['', 'ax']
+['', 'axx']
+['', 'axxx']
+['', 'axxxx']
+## END
+
+#### read and "\ "
+
+IFS='x '
+check() { echo "$1" | (read a b; argv.py "$a" "$b"); }
+
+echo '-- xs... --'
+check 'x '
+check 'x \ '
+check 'x \ \ '
+check 'x \ \ \ '
+echo '-- xe... --'
+check 'x\ '
+check 'x\ \ '
+check 'x\ \ \ '
+check 'x\  '
+check 'x\  '
+check 'x\    '
+
+# check 'xx\ '
+# check 'xx\ '
+
+## STDOUT:
+-- xs... --
+['', '']
+['', ' ']
+['', '  ']
+['', '   ']
+-- xe... --
+['', ' ']
+['', '  ']
+['', '   ']
+['', ' ']
+['', ' ']
+['', ' ']
+## END
+## BUG mksh STDOUT:
+-- xs... --
+['', '']
+['', '']
+['', ' ']
+['', '  ']
+-- xe... --
+['', '']
+['', ' ']
+['', '  ']
+['', '']
+['', '']
+['', '']
+## END
+## OK-2 zsh/ash STDOUT:
+-- xs... --
+['', '']
+['', '']
+['', '']
+['', '']
+-- xe... --
+['', '']
+['', '']
+['', '']
+['', '']
+['', '']
+['', '']
+## END
+
+#### read bash bug
+IFS='x '
+echo 'x\  \ ' | (read a b; argv.py "$a" "$b")
+## STDOUT:
+['', '   ']
+## END
+## BUG bash STDOUT:
+['', '\x01']
+## END
+## BUG-2 mksh STDOUT:
+['', '  ']
+## END
+## OK-3 zsh/ash STDOUT:
+['', '']
+## END
+## OK-4 osh STDOUT:
+['', ' ']
+## END
