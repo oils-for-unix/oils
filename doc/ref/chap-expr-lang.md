@@ -343,16 +343,17 @@ and `List` objects:
 
     = M    # => (List)   ["one", "two", "three", "4"]
 
-Note: Avoid repeated *string concatenation* in a loop. It's algorithmically
+Notes:
+
+Avoid repeated `++` string concatenation in a loop. It's algorithmically
 faster to append strings to a list, and then to `join()` the elements.
 
-Also generally, *string interpolation* can be nicer than the `++`
-string concatenation:
+String *interpolation* can be nicer than the `++` string concatenation:
 
     var t = s ++ ' world'  # becomes punctuation- and formatting-loaded
     var t = "$s world"     # shorter and closer to the resulting string
 
-Likewise, splicing lists can be nicer than `++` concatenation:
+Splicing lists can likewise be nicer than `++` concatenation:
 
     var M = L ++ ['three', '4']
     var M = :| @L three 4 |
