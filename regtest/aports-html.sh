@@ -72,6 +72,7 @@ EOF
 diff-metrics-html() {
   local db=${1:-_tmp/aports-report/2025-08-03/diff_merged.db}
 
+  # TODO: count .apk for both BASELINE and osh-as-sh
   echo '<ul>'
   sqlite3 $db <<EOF
 select printf("<li>Tasks: %s</li>", sum(num_tasks)) from metrics;
@@ -188,6 +189,7 @@ published-html() {
 ## $title
 
 - [2025-08-07-fix](2025-08-07-fix.wwz/_tmp/aports-report/2025-08-07-fix/diff_merged.html)
+- [2025-08-14-fix](2025-08-14-fix.wwz/_tmp/aports-report/2025-08-14-fix/diff_merged.html)
 
 EOF
 
@@ -509,7 +511,7 @@ merge-diffs() {
 
   html-tree "$epoch_dir"
 
-  update-published
+  update-published  # also done in deploy-published
 }
 
 write-shard-reports() {
@@ -582,6 +584,8 @@ deploy-wwz-op() {
 
   local dest_dir=$WEB_HOST/aports-build
 
+  update-published  # slightly redundant
+
   ssh $WEB_HOST mkdir -p $dest_dir
 
   scp $wwz $REPORT_DIR/published.html \
@@ -593,6 +597,8 @@ deploy-wwz-op() {
 
 deploy-published() {
   local dest_dir=$WEB_HOST/aports-build
+
+  update-published  # slightly redundant
 
   scp $REPORT_DIR/published.html \
     $WEB_HOST:$dest_dir/

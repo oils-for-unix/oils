@@ -122,7 +122,10 @@ TODO: we can fix this by:
 
 ### Publish Reports - `op.oils.pub`
 
-After `write-all-reports`, you can share the results:
+After verifying the output of `write-all-reports`, add a line to the markdown
+in `aports-html.sh published-html`.
+
+Then share the results:
 
     $ regtest/aports-html.sh make-wwz _tmp/aports-report/2025-08-07-fix
 
@@ -130,9 +133,9 @@ After `write-all-reports`, you can share the results:
 
 Now visit
 
-- <https://op.oils.pub/aports-build/2025-08-07-fix.wwz/>
+- <https://op.oils.pub/aports-build/published.html>
 
-And then navigate to
+which will link to:
 
 - <https://op.oils.pub/aports-build/2025-08-07-fix.wwz/_tmp/aports-report/2025-08-07-fix/diff-merged.html>
 
