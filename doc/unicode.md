@@ -59,6 +59,7 @@ valid UTF-8.  Details:
   strict_word_eval` is on.
 
 ## List of Features That Respect Unicode
+<!--  TODO: instead list features *requiring* utf-8 (fatal errors) vs. supporting? -->
 
 ### OSH / bash
 
