@@ -260,8 +260,10 @@ Encountering any non-utf-8 compliant byte will trigger a fatal error.
  - U+000C -- Form feed (`u'\f'`)
  - U+000D -- Carriage return (`u'\r'`)
  - U+0020 -- Normal space (`u' '`)
- - U+00A0 -- No-break space `<NBSP>` (`u'\u{a0}'`,`b'\yC2\yA0'`,`$'\xC2\xA0'`,`/ \xC2\xA0 /`)
- - U+FEFF -- Zero-width no-break space `<ZWNBSP>` (`u'\u{feff}'`,`b'\yEF\yBB\yBF'`,`$'\xEF\xBB\xBF'`,`/ \xEF\xBB\xBF /`)
+ - U+00A0 -- No-break space `<NBSP>`
+            (`u'\u{a0}'`,`b'\yC2\yA0'`,`$'\xC2\xA0'`,`/ \xC2\xA0 /`)
+ - U+FEFF -- Zero-width no-break space `<ZWNBSP>`
+            (`u'\u{feff}'`,`b'\yEF\yBB\yBF'`,`$'\xEF\xBB\xBF'`,`/ \xEF\xBB\xBF /`)
 
 **The Unicode standard** defines more codepoints as whitespace, but Oils limits
 itself to just these codepoints so that its specification is stable, and doesn't
