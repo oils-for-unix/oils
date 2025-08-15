@@ -11,11 +11,18 @@ Notes on Unicode in Shell
 
 ## Philosophy
 
-Oils is UTF-8 centric, unlike `bash` and other shells.
+Oils is UTF-8 and JSON centric, unlike `bash` or other C-string and UNIX centric shells.
 
 That is, its Unicode support is like Go, Rust, Julia, and Swift, and not like
 Python or JavaScript.  The former languages internally represent strings as
 UTF-8, while the latter use arrays of code points or UTF-16 code units.
+
+However, as a unix shell, Oils still needs to be able to do basic work with arbitrary
+(legacy) non-UTF-8 C-strings. So the generic internal string representation is still
+just a finite byte sequence (`b'...'`), which may or may not be UTF-8.
+
+Nevertheless, some specific operations require valid UTF-8 input (by default) and
+return a fatal error when encountering non conforming bytes.
 
 ## A Mental Model
 
@@ -128,6 +135,8 @@ Other:
 - TODO: `s.split()` doesn't have a default "split by space", which should
   probably respect unicode space, like `trim()` does
 - TODO: `for offset, rune in (runes(mystr))` decodes UTF-8, like Go
+- TODO: Possibly let split(), trim(), replace() work with non-utf-8 bytes
+  (consider non-utf-8 as non-whitespace, not fatal error) `LC_ALL=C`?.
 
 Not unicode aware:
 
@@ -155,7 +164,7 @@ For example:
 - `[[ s =~ $pat ]]` is implemented with libc, so it is affected by the locale
   settings.  Same with Oils `(x ~ pat)`.
 
-TODO: Oils should support `LANG=C` for some operations, but not `LANG=X` for
+TODO: Oils should support `LANG=C`/`LC_ALL=C` for some operations, but not `LANG=X` for
 other `X`.
 
 ### List of Low-Level UTF-8 Operations
