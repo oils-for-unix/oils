@@ -307,9 +307,9 @@ The `%start` or `^` metacharacter will only match when `pos` is zero.
 
 ### leftMatch()
 
-`leftMatch()` is like `search()`, but it checks
+`leftMatch()` is like `search()` with an implicit `%start` constrain
 
-    var m = 'hi world' => leftMatch(/[aeiou]/)  # search for vowels
+    var m = 'hi world' => leftMatch(/[aeiou]/)  # search first-character vowels
     # doesn't match because h is not a vowel
 
     var m = 'aye' => leftMatch(/[aeiou]/)
