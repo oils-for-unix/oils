@@ -135,8 +135,8 @@ Other:
 - TODO: `s.split()` doesn't have a default "split by space", which should
   probably respect unicode space, like `trim()` does
 - TODO: `for offset, rune in (runes(mystr))` decodes UTF-8, like Go
-- TODO: Possibly let split(), trim(), replace() work with non-utf-8 bytes
-  (consider non-utf-8 as non-whitespace, not fatal error) `LC_ALL=C`?.
+- TODO: Possibly let split(), trim(), replace() fallback to work with non-utf-8
+  bytes (consider non-utf-8 as non-whitespace, not fatal error), or with `LC_ALL=C`?.
 
 Not unicode aware:
 
