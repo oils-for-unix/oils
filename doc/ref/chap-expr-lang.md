@@ -240,8 +240,8 @@ the same name:
     var x = 42
     var y = 43
 
-    var d = {x, y}  # values omitted
-    = d    # => (Dict)  {x: 42, y: 43}
+    var d = {x, y} # values omitted
+    = d            # => (Dict)  {x: 42, y: 43}
 
 - Related: [Dict][] type
 
