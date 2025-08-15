@@ -256,7 +256,7 @@ Encountering any non-utf-8 compliant byte will trigger a fatal error.
 
  - U+0009 -- Horizontal tab (`u'\t'`)
  - U+000A -- Newline (`u'\n'`)
- - U+000B -- Vertical tab (`u'\v'`)
+ - U+000B -- Vertical tab (no mnemonic in JSON `u'\u{b}'`, yet C-string `$'\v'`)
  - U+000C -- Form feed (`u'\f'`)
  - U+000D -- Carriage return (`u'\r'`)
  - U+0020 -- Normal space (`u' '`)
