@@ -241,8 +241,7 @@ the same name:
     var y = 43
 
     var d = {x, y}  # values omitted
-    = d
-    #=>(Dict)  {x: 42, y: 43}
+    = d    # => (Dict)  {x: 42, y: 43}
 
 - Related: [Dict][] type
 
@@ -256,19 +255,21 @@ constructs half-open ranges.
     for i in (0 ..< 3) {
       echo $i
     }
-    #=> 0
-    #=> 1
-    #=> 2
+    # =>
+    # 0
+    # 1
+    # 2
 
 The `..=` operator constructs closed ranges:
 
     for i in (0 ..= 3) {
       echo $i
     }
-    #=> 0
-    #=> 1
-    #=> 2
-    #=> 3
+    # =>
+    # 0
+    # 1
+    # 2
+    # 3
 
 - Related: [Range][] type
 
@@ -333,16 +334,14 @@ The concatenation operator works on `Str` objects:
     var s = 'hello'
     var t = s ++ ' world'
 
-    = t
-    #=> (Str)   "hello world"
+    = t    # => (Str)   "hello world"
 
 and `List` objects:
 
     var L = ['one', 'two']
     var M = L ++ ['three', '4']
 
-    = M
-    #=> (List)   ["one", "two", "three", "4"]
+    = M    # => (List)   ["one", "two", "three", "4"]
 
 Note: Avoid repeated *string concatenation* in a loop. It's algorithmically
 faster to append strings to a list, and then to `join()` the elements.
@@ -389,16 +388,13 @@ Compare objects for identity with `is`:
     var d = {}    
     var e = d
 
-    = d is d
-    #=> (Bool)   true
+    = d is d                 # => (Bool)   true
 
-    = d is {other: 'dict'}
-    #=> (Bool)   false
+    = d is {other: 'dict'}   # => (Bool)   false
 
 To negate `is`, use `is not` (like Python:
 
-    d is not {other: 'dict'}
-    #=> (Bool)   true
+    d is not {other: 'dict'} # => (Bool)   true
 
 ### ysh-in
 
@@ -499,23 +495,20 @@ The ternary operator is borrowed from Python:
 `Str` objects can be indexed by byte:
 
     var s = 'cat'
-    = mystr[1]
-    #=> (Str)   'a'  
+    = mystr[1]   # => (Str)   'a'  
 
     = mystr[-1]  # index from the end
-    #=> (Str)   't'
+                 # => (Str)   't'
 
 `List` objects:
 
     var mylist = [1, 2, 3]
-    = mylist[2]
-    #=> (Int)  3
+    = mylist[2]     # => (Int)  3
 
 `Dict` objects are indexed by string key:
 
     var mydict = {'key': 42}
-    = mydict['key']
-    #=> (Int)  42
+    = mydict['key'] # => (Int)  42
 
 ### ysh-attr
 
@@ -568,21 +561,19 @@ Negative indices are relative to the end.
 String example:
 
     var s = 'spam eggs'
-    pp (s[1:-1])
-    #=> (Str)   "pam egg"
+    pp (s[1:-1])       # => (Str)   "pam egg"
 
-    echo "x $[s[2:]]"
-    #=> x am eggs
+    echo "x $[s[2:]]"  # => x am eggs
 
 List example:
 
     var foods = ['ale', 'bean', 'corn']
-    pp (foods[-2:])
-    #=> (List)   ["bean","corn"]
+    pp (foods[-2:])    # => (List)   ["bean","corn"]
     
     write -- @[foods[:2]]
-    #=> ale
-    #=> bean
+    # =>
+    # ale
+    # bean
 
 ### ysh-func-call
 
