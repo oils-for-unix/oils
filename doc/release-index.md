@@ -34,8 +34,8 @@ up-to-date.
 ## Documentation
 
 - [Published Docs](doc/published.html) - these are ready to read
-- [All Docs](doc/index.html) (in progress)
   - The [**Oils Reference**](doc/ref/index.html)
+- [All Docs](doc/index.html) (in progress)
 - [Github Wiki for oils-for-unix/oils](https://github.com/oils-for-unix/oils/wiki)
 
 ## Packaging

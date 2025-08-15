@@ -357,6 +357,25 @@ But that seems too low-level!
 
 The [J8 Notation FAQ](j8-notation.html#faq) answers this question.
 
+## How do I append to a string?  Is there a `+=` or `++=` operator?
+
+You can use any of these styles:
+
+    var s = s ++ t      # like + in Python or JavaScript
+
+    var s = "$s$t"      # like Unix shell
+
+    var s = "$[s]$[t]"  # a bit easier to read
+
+However, avoid such string concatenation in a loop.  It's algorithmically
+faster to append to a `List`, and `join()` the strings at the end:
+
+    var parts = []
+    for s in @(seq 5) {
+      call parts->append(s)
+    }
+    echo $[join(parts)]  # => '12345'
+
 ## Related
 
 - [YSH FAQ]($wiki) on the wiki has more answers.  We may be migrate some of
