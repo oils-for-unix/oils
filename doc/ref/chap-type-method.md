@@ -269,10 +269,11 @@ depend on an external standard that may reclassify characters.
 
 **When using `/blank*/`** as a custom trim pattern, instead of `/space*/`, the
 line control bytes (`\n`,`\v`,`\f`,`\r`) are *not* considered as "blankspace".
+Also non-breaking spaces are not trimmed from start/end (a possible bug).
 
 **When using `search()` or `replace()`** with a `/space/` or `/blank/` pattern,
-the latter two non-breaking characters in the list above are *not* considered
-as matching, to obey their intended function.
+the latter two non-breaking spaces in the list above are *not* considered
+as matching, to obey their intended no-break function.
 
 ### trimStart()
 
