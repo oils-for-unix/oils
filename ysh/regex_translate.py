@@ -76,10 +76,18 @@ FLAG_HYPHEN = 0b1000
 
 def _CharCodeToEre(term, parts, special_char_flags):
     # type: (CharCode, List[str], List[int]) -> None
-    """special_char_flags: list of single int that is mutated."""
+    """Translate CharCode like 'a' or \\x7f or \\u{7f} to ERE
+
+    \\x7f has u_braced == false
+    \\u{7f} has u_braced == true
+
+    Are these code points?  TODO: it depends on the libc ERE semantics
+
+    special_char_flags: a List of ONE int that is mutated.
+    """
 
     char_int = term.i
-    if char_int >= 128 and term.u_braced:
+    if char_int >= 128 and term.u_braced:  # 128 is 0x80
         # \u{ff} can't be represented in ERE because we don't know the encoding
         # \xff can be represented
         e_die("ERE can't express char code %d" % char_int, term.blame_tok)
