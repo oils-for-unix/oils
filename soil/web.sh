@@ -65,12 +65,10 @@ rewrite-jobs-index() {
   #
   # https://unix.stackexchange.com/questions/116280/cannot-create-regular-file-filename-file-exists
 
-  # Limit to last 100 jobs.  Glob is in alphabetical order and jobs look like
-  # 2020-03-20__...
-
   local index_tmp=$dir/$$.index.html  # index of every job in every run
   local run_index_tmp=$dir/$$.runs.html  # only the jobs in this run/commit
 
+  # limit to $NUM_JOBS.  Bug: glob is in alphabetical order
   list-json $dir \
     | tail -n -$NUM_JOBS \
     | soil-web ${prefix}index $index_tmp $run_index_tmp $run_id

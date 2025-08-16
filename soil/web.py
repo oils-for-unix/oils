@@ -662,8 +662,6 @@ def ByCommitHash(row):
   return row.get('commit-hash', '?')
 
 def ByGithubRun(row):
-  # Written in the shell script
-  # This is in ISO 8601 format (git log %aI), so we can sort by it.
   return int(row.get('GITHUB_RUN_NUMBER', 0))
 
 
@@ -703,6 +701,9 @@ def main(argv):
     run_index_out = argv[3]
     run_id = int(argv[4])  # compared as an integer
 
+    #log('web.py github-index %s %s %d', index_out, run_index_out, run_id)
+
+    # soil/web.sh list-json gives us file system paths
     jobs = list(ParseJobs(sys.stdin))
 
     jobs.sort(key=ByGithubRun, reverse=True)  # ordered
@@ -712,7 +713,14 @@ def main(argv):
     with open(index_out, 'w') as f:
       PrintIndexHtml(title, groups, f=f)
 
-    jobs = groups[run_id]
+    try:
+        jobs = groups[run_id]
+    except KeyError:
+        # debugging list-json | tail bug
+        log('run_id %s', run_id)
+        for k in groups:
+            log('key %s', k)
+        raise
     title = 'Jobs for run %d' % run_id
 
     with open(run_index_out, 'w') as f:
