@@ -133,6 +133,13 @@ Not unicode aware:
 
 - `strcmp()` does byte-wise and UTF-8 wise comparisons?
 
+### libc functions used
+
+TODO
+
+- Note: GNU readline calls `setlocale()`, which means that the `oils-for-unix`
+  process is affected by the environment
+
 ### Data Languages
 
 - Decoding JSON/J8 validates UTF-8

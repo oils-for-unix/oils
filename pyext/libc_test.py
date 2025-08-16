@@ -203,6 +203,11 @@ class LibcTest(unittest.TestCase):
     # Literal
     self.assertEqual([0, 2], libc.regex_search('\xce\xbc', 0, '\xce\xbc', 0))
 
+    # literal mu in char class allowed?
+    self.assertEqual([0, 2], libc.regex_search('[\xce\xbc]', 0, '\xce\xbc', 0))
+    # two bytes here
+    self.assertEqual(None, libc.regex_search('[\xce\xbc]', 0, '\xce', 0))
+
     # dot doesn't match high byte?  not utf-8
     self.assertEqual(None, libc.regex_search(r'.', 0, '\xce', 0))
 
