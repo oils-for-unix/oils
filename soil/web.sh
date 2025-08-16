@@ -16,10 +16,6 @@ readonly REPO_ROOT
 
 source $REPO_ROOT/soil/common.sh
 
-# Jobs to show and keep.  This corresponds to say soil/worker.sh JOB-dummy,
-# which means each git COMMIT is more than 15 jobs.
-readonly NUM_JOBS=4000
-
 soil-web() {
   # We may be executed by a wwup.cgi on the server, which doesn't have
   # PATH=~/bin, and the shebang is /usr/bin/env python2
@@ -65,15 +61,10 @@ rewrite-jobs-index() {
   #
   # https://unix.stackexchange.com/questions/116280/cannot-create-regular-file-filename-file-exists
 
-  # Limit to last 100 jobs.  Glob is in alphabetical order and jobs look like
-  # 2020-03-20__...
-
   local index_tmp=$dir/$$.index.html  # index of every job in every run
   local run_index_tmp=$dir/$$.runs.html  # only the jobs in this run/commit
 
-  list-json $dir \
-    | tail -n -$NUM_JOBS \
-    | soil-web ${prefix}index $index_tmp $run_index_tmp $run_id
+  list-json $dir | soil-web ${prefix}index $index_tmp $run_index_tmp $run_id
 
   echo "rewrite index status = ${PIPESTATUS[@]}"
 
@@ -82,6 +73,10 @@ rewrite-jobs-index() {
   mkdir -v -p $dir/$run_id  # this could be a new commit hash, etc.
   mv -v $run_index_tmp $dir/$run_id/index.html
 }
+
+# Jobs to keep.  This relates to each of soil/worker.sh JOB-dummy, which means
+# each git COMMIT is more than 15 jobs.
+readonly MAX_JOBS=4000
 
 cleanup-jobs-index() {
   local prefix=$1
@@ -95,10 +90,10 @@ cleanup-jobs-index() {
       # Bug fix: There's a race here when 2 jobs complete at the same time.
       # Use rm -f to ignore failure if the file was already deleted.
 
-      list-json $dir | soil-web cleanup $NUM_JOBS | xargs --no-run-if-empty -- rm -f -v
+      list-json $dir | soil-web cleanup $MAX_JOBS | xargs --no-run-if-empty -- rm -f -v
       ;;
     true)
-      list-json $dir | soil-web cleanup $NUM_JOBS
+      list-json $dir | soil-web cleanup $MAX_JOBS
       ;;
     *)
       log 'Expected true or false for dry_run'

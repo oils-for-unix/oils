@@ -662,10 +662,12 @@ def ByCommitHash(row):
   return row.get('commit-hash', '?')
 
 def ByGithubRun(row):
-  # Written in the shell script
-  # This is in ISO 8601 format (git log %aI), so we can sort by it.
   return int(row.get('GITHUB_RUN_NUMBER', 0))
 
+
+# Limit what we put on the HTML page.
+# Used to be NUM_JOBS in soil/web.sh
+MAX_JOBS = 4000
 
 def main(argv):
   action = argv[1]
@@ -686,6 +688,8 @@ def main(argv):
     # - Group by commit HASH, because 'git rebase' can crate different commits
     #   with the same date.
     jobs.sort(key=ByCommitDate, reverse=True)
+    jobs = jobs[:NUM_JOBS]
+
     groups = GroupJobs(jobs, ByCommitHash)
 
     title = 'Recent Jobs (sourcehut)'
@@ -703,16 +707,29 @@ def main(argv):
     run_index_out = argv[3]
     run_id = int(argv[4])  # compared as an integer
 
+    #log('web.py github-index %s %s %d', index_out, run_index_out, run_id)
+
+    # soil/web.sh list-json gives us file system paths
     jobs = list(ParseJobs(sys.stdin))
 
-    jobs.sort(key=ByGithubRun, reverse=True)  # ordered
+    # sort and truncate
+    jobs.sort(key=ByGithubRun, reverse=True)
+    jobs = jobs[:MAX_JOBS]
+
     groups = GroupJobs(jobs, ByGithubRun)
 
     title = 'Recent Jobs (Github Actions)'
     with open(index_out, 'w') as f:
       PrintIndexHtml(title, groups, f=f)
 
-    jobs = groups[run_id]
+    try:
+        jobs = groups[run_id]
+    except KeyError:
+        # debug info that shouldn't be needed
+        log('run_id %s', run_id)
+        for k in groups:
+            log('key %s', k)
+        raise
     title = 'Jobs for run %d' % run_id
 
     with open(run_index_out, 'w') as f:
@@ -757,8 +774,11 @@ def main(argv):
     #
     # Another option is to use a real database, rather than the file system!
 
-    # Sort by 999 here
-    # op.oilshell.org/github-jobs/999/foo.json
+    # Sort by 9999 here
+    # op.oilshell.org/uuu/github-jobs/9999/foo.json
+    # 
+    # 2025-08 BUG: rolled over from 9999 to 10000, sorting is likely wrong.
+    # Are we even cleaning up jobs?
 
     prefixes.sort(key = lambda path: int(path.split('/')[-2]))
 
