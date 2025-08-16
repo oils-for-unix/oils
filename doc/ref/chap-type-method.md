@@ -308,12 +308,12 @@ The `%start` or `^` metacharacter will only match when `pos` is zero.
 ### leftMatch()
 
 `leftMatch()` is like `search()`, but the pattern must match at the beginning of
-the string. (Implicit `%start` constraint.)
+the string.  (This is not necessarily the same as including `%start` in the pattern.)
 
-    var m = 'hi world' => leftMatch(/[aeiou]/)  # match any first char vowel
+    var m = 'hi world'.leftMatch(/[aeiou]/)  # match if the first char is a vowel
     # doesn't match because h is not a vowel
 
-    var m = 'aye' => leftMatch(/[aeiou]/)
+    var m = 'aye'.leftMatch(/[aeiou]/)
     # matches 'a'
 
 `leftMatch()` Can be used to implement lexers that consume every byte of input.
