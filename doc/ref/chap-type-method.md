@@ -233,49 +233,50 @@ Like `startsWith()` but returns true if the _end_ of the string matches.
 
 ### trim()
 
-Removes characters matching a pattern from the start and end of a string.
-With no arguments, whitespace is removed. When given a string or eggex pattern,
-that pattern is removed if it matches the start or end.
+Removes text from the start and end of a `Str`.
 
-    = b' YSH\n'    => trim()        # => "YSH"
-    = b'xxxYSHxxx' => trim('xxx')   # => "YSH"
-    = b'xxxYSH   ' => trim('xxx')   # => "YSH   "
-    = b'   YSHxxx' => trim('xxx')   # => "   YSH"
-    = b'   YSH   ' => trim('xxx')   # => "   YSH   "
-    = b'123YSH456' => trim(/ d+ /)  # => "YSH"
+To specify what to remove, pass either a `Str` argument:
 
-#### Notes on whitespace
+    = 'xxxYSHxxx'.trim('xxx')      # => 'YSH'
+    = 'xxxYSH   '.trim('xxx')      # => 'YSH   '
+    = '   YSHxxx'.trim('xxx')      # => '   YSH'
+    = '   YSH   '.trim('xxx')      # => '   YSH   '
 
-When `trim()`ing whitespace, e.g. using its default pattern `/space*/` which
-includes multiple lines, Oils will decode bytes of the string as utf-8
-characters, and considers only the following list of Unicode codepoints
-(U+....) as whitespace.
+Or an `Eggex` argument:
 
-Encountering any non-utf-8 compliant byte will trigger a fatal error.
-(Currently `trim()` can't be used on arbitrary C-string bytes.)
+    = '123YSH456' => trim(/ d+ /)  # => 'YSH'
 
- - U+0009 -- Horizontal tab (`u'\t'`)
- - U+000A -- Newline (`u'\n'`)
- - U+000B -- Vertical tab (no mnemonic in JSON `u'\u{b}'`, yet C-string `$'\v'`)
- - U+000C -- Form feed (`u'\f'`)
- - U+000D -- Carriage return (`u'\r'`)
- - U+0020 -- Normal space (`u' '`)
- - U+00A0 -- No-break space `<NBSP>`
-            (`u'\u{a0}'`,`b'\yC2\yA0'`,`$'\xC2\xA0'`,`/ \xC2\xA0 /`)
- - U+FEFF -- Zero-width no-break space `<ZWNBSP>`
-            (`u'\u{feff}'`,`b'\yEF\yBB\yBF'`,`$'\xEF\xBB\xBF'`,`/ \xEF\xBB\xBF /`)
+If no arguments are passed, whitespace is removed:
 
-**The Unicode standard** defines more codepoints as whitespace, but Oils limits
-itself to just these codepoints so that its specification is stable, and doesn't
-depend on an external standard that may reclassify characters.
+    = b' YSH\n'    => trim()       # => 'YSH'
 
-**When using `/blank*/`** as a custom trim pattern, instead of `/space*/`, the
-line control bytes (`\n`,`\v`,`\f`,`\r`) are *not* considered as "blankspace".
-Also non-breaking spaces are not trimmed from start/end (a possible bug).
+These code points are considered whitespace:
 
-**When using `search()` or `replace()`** with a `/space/` or `/blank/` pattern,
-the latter two non-breaking spaces in the list above are *not* considered
-as matching, to obey their intended no-break function.
+- `U+0009` - Horizontal tab `\t`
+- `U+000A` - Newline `\n`
+- `U+000B` - Vertical tab `\u{b}`
+- `U+000C` - Form feed `\f`
+- `U+000D` - Carriage return `\r`
+- `U+0020` - Normal space `' '`
+- `U+00A0` - No-break space (NBSP) `\u{a0}`
+- `U+FEFF` - Zero-width no-break space (ZWNBSP) `\u{feff}`
+
+To obtain code points, Oils decodes the string as UTF-8.  Bytes that are not
+valid UTF-8 cause a fatal error.
+
+Other code points are considered whitespace in the Unicode standard, but we use
+only the ones above, so that these methods have a stable specification.
+
+---
+
+Note that Eggex patterns compile to POSIX extended regular expressions (ERE),
+which have a different notion of whitespace:
+
+- `/blank/` - matches `\t`, normal space
+- `/space/` - matches `\t \n`, vertical tab, `\f \r`, normal space, and
+  possibly Unicode separators `\p{Z}`
+
+<!-- TODO: link to a section on POSIX ERE and Unicode -->
 
 ### trimStart()
 
