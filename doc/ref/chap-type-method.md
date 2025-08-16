@@ -233,35 +233,50 @@ Like `startsWith()` but returns true if the _end_ of the string matches.
 
 ### trim()
 
-Removes characters matching a pattern from the start and end of a string.
-With no arguments, whitespace is removed. When given a string or eggex pattern,
-that pattern is removed if it matches the start or end.
+Removes text from the start and end of a `Str`.
 
-    = b' YSH\n'    => trim()        # => "YSH"
-    = b'xxxYSHxxx' => trim('xxx')   # => "YSH"
-    = b'xxxYSH   ' => trim('xxx')   # => "YSH   "
-    = b'   YSHxxx' => trim('xxx')   # => "   YSH"
-    = b'   YSH   ' => trim('xxx')   # => "   YSH   "
-    = b'123YSH456' => trim(/ d+ /)  # => "YSH"
+To specify what to remove, pass either a `Str` argument:
 
-#### A note on whitespace
+    = 'xxxYSHxxx'.trim('xxx')      # => 'YSH'
+    = 'xxxYSH   '.trim('xxx')      # => 'YSH   '
+    = '   YSHxxx'.trim('xxx')      # => '   YSH'
+    = '   YSH   '.trim('xxx')      # => '   YSH   '
 
-When stripping whitespace, Oils decodes the bytes in string as utf-8
-characters. Only the following Unicode codepoints are considered to be
-whitespace.
+Or an `Eggex` argument:
 
- - U+0009 -- Horizontal tab (`\t`)
- - U+000A -- Newline (`\n`)
- - U+000B -- Vertical tab (`\v`)
- - U+000C -- Form feed (`\f`)
- - U+000D -- Carriage return (`\r`)
- - U+0020 -- Normal space
- - U+00A0 -- No-break space `<NBSP>`
- - U+FEFF -- Zero-width no-break space `<ZWNBSP>`
+    = '123YSH456' => trim(/ d+ /)  # => 'YSH'
 
-While the Unicode standard defines other codepoints as being spaces, Oils
-limits itself to just these codepoints so that the specification is stable, and
-doesn't depend on an external standard that has reclassify characters.
+If no arguments are passed, whitespace is removed:
+
+    = b' YSH\n'    => trim()       # => 'YSH'
+
+These code points are considered whitespace:
+
+- `U+0009` - Horizontal tab `\t`
+- `U+000A` - Newline `\n`
+- `U+000B` - Vertical tab `\u{b}`
+- `U+000C` - Form feed `\f`
+- `U+000D` - Carriage return `\r`
+- `U+0020` - Normal space `' '`
+- `U+00A0` - No-break space (NBSP) `\u{a0}`
+- `U+FEFF` - Zero-width no-break space (ZWNBSP) `\u{feff}`
+
+To obtain code points, Oils decodes the string as UTF-8.  Bytes that are not
+valid UTF-8 cause a fatal error.
+
+Other code points are considered whitespace in the Unicode standard, but we use
+only the ones above, so that these methods have a stable specification.
+
+---
+
+Note that Eggex patterns compile to POSIX extended regular expressions (ERE),
+which have a different notion of whitespace:
+
+- `/blank/` - matches `\t`, normal space
+- `/space/` - matches `\t \n`, vertical tab, `\f \r`, normal space, and
+  possibly Unicode separators `\p{Z}`
+
+<!-- TODO: link to a section on POSIX ERE and Unicode -->
 
 ### trimStart()
 
