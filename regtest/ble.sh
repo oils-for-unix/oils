@@ -3,7 +3,7 @@
 # Run ble.sh tests.
 #
 # Usage:
-#   test/ble.sh <function name>
+#   regtest/ble.sh <function name>
 
 set -o nounset
 set -o pipefail

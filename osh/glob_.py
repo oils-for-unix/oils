@@ -3,15 +3,10 @@
 import libc
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
-from _devbuild.gen.syntax_asdl import (
-    CompoundWord,
-    Token,
-    word_part_e,
-    glob_part,
-    glob_part_e,
-    glob_part_t,
-)
-from core import pyutil
+from _devbuild.gen.syntax_asdl import (CompoundWord, Token, word_part_e,
+                                       glob_part, glob_part_e, glob_part_t,
+                                       loc_t)
+from core import pyos, pyutil, error
 from frontend import match
 from mycpp import mylib
 from mycpp.mylib import log, print_stderr
@@ -89,11 +84,35 @@ def LooksLikeStaticGlob(w):
 #       we don't need to escape the @ in @(cc), because escaping ( is enough
 GLOB_META_CHARS = r'\*?[]-:!()|'
 
+# Check invariant needed to escape literal \ as \@
+assert '@' not in GLOB_META_CHARS, '\@ is used to escape backslash'
+
 
 def GlobEscape(s):
     # type: (str) -> str
     """For SingleQuoted, DoubleQuoted, and EscapedLiteral."""
     return pyutil.BackslashEscape(s, GLOB_META_CHARS)
+
+
+def GlobEscapeBackslash(s):
+    # type: (str) -> str
+    """Glob escape a string for an unquoted var sub.
+
+    Used to evaluate something like *$v with v='a\*b.txt'
+
+    We escape \ as \@, which is OK because @ is not in GLOB_META_CHARS.
+
+    See test cases in spec/glob.test.sh
+
+    - If globbing is performed, then \* evaluates to literal '*'
+      - that is, \ is an escape for the *
+    - If globbing is NOT performed (set -o noglob or no matching files), then
+      \* evaluates to '\*'
+      - that is, the \ is preserved literally
+    """
+    # XXX--This representation is affected by the known IFS='\' bug, but the
+    # bug will be fixed in the coming PR.
+    return s.replace('\\', r'\@')
 
 
 # Bug fix: add [] so [[:space:]] is not special, etc.
@@ -128,15 +147,49 @@ def GlobUnescape(s):
         c = mylib.ByteAt(s, i)
 
         if mylib.ByteEquals(c, '\\') and i != n - 1:
-            # Suppressed this to fix bug #698, #628 is still there.
+            # TODO: GlobEscape() turns \ into \\, so a string should never end
+            # with a single backslash.
+            # Suppressed this assert to fix bug #698, #628 is still there.
+            # Check them again.
             assert i != n - 1, 'Trailing backslash: %r' % s
+
             i += 1
             c2 = mylib.ByteAt(s, i)
 
             if mylib.ByteInSet(c2, GLOB_META_CHARS):
                 unescaped.append(c2)
+            elif mylib.ByteEquals(c2, '@'):
+                unescaped.append(pyos.BACKSLASH_CH)
             else:
                 raise AssertionError("Unexpected escaped character %r" % c2)
+        else:
+            unescaped.append(c)
+        i += 1
+    return mylib.JoinBytes(unescaped)
+
+
+def GlobUnescapeBackslash(s):
+    # type: (str) -> str
+    """Inverse of GlobEscapeBackslash - turns \@ into \ """
+    unescaped = []  # type: List[int]
+    i = 0
+    n = len(s)
+    while i < n:
+        c = mylib.ByteAt(s, i)
+
+        if mylib.ByteEquals(c, '\\') and i != n - 1:
+            # Note: GlobEscapeBackslash() doesn't turn \ into \\, so a string
+            # could end with a single backslash?
+            assert i != n - 1, 'Trailing backslash: %r' % s
+
+            i += 1
+            c2 = mylib.ByteAt(s, i)
+
+            if mylib.ByteEquals(c2, '@'):
+                unescaped.append(pyos.BACKSLASH_CH)
+            else:
+                unescaped.append(pyos.BACKSLASH_CH)
+                unescaped.append(c2)
         else:
             unescaped.append(c)
         i += 1
@@ -455,18 +508,21 @@ class Globber(object):
 
         return 0
 
-    def Expand(self, arg, out):
-        # type: (str, List[str]) -> int
-        """Given a string that could be a glob, append a list of strings to
-        'out'.
+    def Expand(self, arg, out, blame_loc):
+        # type: (str, List[str], loc_t) -> int
+        """Given a string that MAY be a glob, perform glob expansion
+
+        If files on disk match the glob pattern, we append to the list 'out',
+        and return the number of items.
 
         Returns:
-          Number of items appended, or -1 for fatal failglob error.
+          Number of items appended, or -1 when glob expansion did not happen.
+        Raises:
+          error.FailGlob when nothing matched, and shopt -s failglob
         """
         if self.exec_opts.noglob():
-            # we didn't glob escape it in osh/word_eval.py
-            out.append(arg)
-            return 1
+            # The caller should use the original string
+            return -1
 
         n = self._Glob(arg, out)
         if n:
@@ -474,14 +530,14 @@ class Globber(object):
 
         # Nothing matched
         if self.exec_opts.failglob():
-            return -1
+            raise error.FailGlob('Pattern %r matched no files' % arg,
+                                 blame_loc)
 
         if self.exec_opts.nullglob():
             return 0
-        else:
-            # Return the original string
-            out.append(GlobUnescape(arg))
-            return 1
+
+        # The caller should use the original string
+        return -1
 
     def ExpandExtended(self, glob_pat, fnmatch_pat, out):
         # type: (str, str, List[str]) -> int

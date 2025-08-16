@@ -293,3 +293,99 @@ hello hello_preamble.sh hello.py hello-test.sh
 hello hello-test.sh hello.py hello_preamble.sh
 hello hello-test.sh hello.py hello_preamble.sh
 ## END
+
+
+#### \ in unquoted substitutions does not match a backslash
+mkdir x
+touch \
+  x/test.ifs.\\.txt \
+  x/test.ifs.\'.txt \
+  x/test.ifs.a.txt \
+  x/test.ifs.\\b.txt
+
+v="*\\*.txt"
+argv.py x/$v
+
+v="*\'.txt"
+argv.py x/$v
+
+v='*\a.txt'
+argv.py x/$v
+
+v='*\b.txt'
+argv.py x/$v
+
+## STDOUT:
+['x/*\\*.txt']
+["x/test.ifs.'.txt"]
+['x/test.ifs.a.txt']
+['x/test.ifs.\\b.txt']
+## END
+
+# 3 shells treat \ in unquoted substitution $v as literal \
+## BUG mksh/ksh/yash STDOUT:
+['x/test.ifs.\\.txt', 'x/test.ifs.\\b.txt']
+["x/*\\'.txt"]
+['x/*\\a.txt']
+['x/test.ifs.\\b.txt']
+## END
+
+#### \ in unquoted substitutions is preserved
+v='\*\*.txt'
+echo $v
+echo "$v"
+
+## STDOUT:
+\*\*.txt
+\*\*.txt
+## END
+
+
+#### \ in unquoted substitutions is preserved with set -o noglob
+set -f
+v='*\*.txt'
+echo $v
+
+## STDOUT:
+*\*.txt
+## END
+
+
+#### \ in unquoted substitutions is preserved without glob matching
+mkdir x
+touch \
+  'x/test.ifs.\.txt' \
+  'x/test.ifs.*.txt'
+v='*\*.txt'
+argv.py x/unmatching.$v
+
+## STDOUT:
+['x/unmatching.*\\*.txt']
+## END
+
+
+#### \ in unquoted substitutions escapes globchars
+mkdir x
+touch \
+  'x/test.ifs.\.txt' \
+  'x/test.ifs.*.txt'
+
+v='*\*.txt'
+argv.py x/$v
+
+v="\\" u='*.txt'
+argv.py x/*$v$u
+
+v="\\" u="*.txt"
+argv.py x/*$v*.txt
+
+## STDOUT:
+['x/test.ifs.*.txt']
+['x/test.ifs.*.txt']
+['x/test.ifs.*.txt']
+## END
+## BUG mksh/ksh/yash STDOUT:
+['x/test.ifs.\\.txt']
+['x/test.ifs.\\.txt']
+['x/test.ifs.\\.txt']
+## END

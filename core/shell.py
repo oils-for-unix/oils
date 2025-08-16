@@ -999,8 +999,8 @@ def Main(
     mem.AddBuiltin('module-invoke', value.BuiltinProc(module_invoke))
 
     # First, process --eval flags.  In interactive mode, this comes before --rcfile.
-    # (It could be used for the headless shell.  Although terminals have a bootstrap process.)
-    # Note that --eval
+    # (It could be used for the headless shell.  Although terminals have a
+    # bootstrap process.)
 
     for path, is_pure in attrs.eval_flags:
         ex = pure_ex if is_pure else None
@@ -1014,7 +1014,7 @@ def Main(
                 #    print-stderr('oils: --eval exit')
                 return e.status
 
-        # I/O error opening file, parse error.  Message was # already printed.
+        # I/O error opening file, parse error.  Message was already printed.
         if not ok:
             return 1
 

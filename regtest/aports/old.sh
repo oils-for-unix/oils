@@ -3,7 +3,7 @@
 # Old code that might be useful for analysis.
 #
 # Usage:
-#   test/aports-old.sh <function name>
+#   regtest/aports-old.sh <function name>
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
@@ -46,7 +46,7 @@ log-sizes() {
   local config=${1:-baseline}
 
   tsv-row 'num_bytes' 'path'
-  find $CHROOT_HOME_DIR/oils-for-unix/oils/_tmp/aports-guest/$config \
+  find $CHROOT_HOME_DIR/oils/_tmp/aports-guest/$config \
     -name '*.log.txt' -a -printf '%s\t%P\n'
 }
 
@@ -120,5 +120,26 @@ ATTACH DATABASE 'osh-as-sh/packages.db' AS osh_as_sh;
 -- INSERT INTO packages SELECT 'osh-as-sh', * FROM osh_as_sh.packages;
 EOF
 }
+
+diff-report() {
+  local dir=$REPORT_DIR/$EPOCH
+
+  { typed-tsv-to-sql $dir/baseline/tasks.tsv baseline
+    typed-tsv-to-sql $dir/osh-as-sh/tasks.tsv osh_as_sh
+    echo '
+.mode column
+select count(*) from baseline;
+select count(*) from osh_as_sh;
+select * from pragma_table_info("baseline");
+select * from pragma_table_info("osh_as_sh");
+
+-- 22 hours, but there was a big pause in the middle
+select ( max(end_time)-min(start_time) ) / 60 / 60 from baseline;
+
+SELECT status, pkg FROM baseline WHERE status != 0;
+'
+  }  | sqlite3 :memory:
+}
+
 
 task-five "$@"

@@ -1,0 +1,9 @@
+{
+  "plugins": ["prettier-plugin-sql-cst"],
+  "overrides": [
+    {
+      "files": ["*.sql"],
+      "options": { "parser": "sqlite", "sqlKeywordCase": "lower" }
+    }
+  ]
+}
