@@ -194,6 +194,40 @@ Not sure:
 
 - The GNU `iconv` program converts text from one encoding to another.
 
+## Appendix
+
+### setlocale() calls made by bash, Python, ...
+
+bash:
+
+    $ ltrace -e setlocale bash -c 'echo'
+    bash->setlocale(LC_ALL, "")                    = "en_US.UTF-8"
+    ...
+    bash->setlocale(LC_CTYPE, "")                  = "en_US.UTF-8"
+    bash->setlocale(LC_COLLATE, "")                = "en_US.UTF-8"
+    bash->setlocale(LC_MESSAGES, "")               = "en_US.UTF-8"
+    bash->setlocale(LC_NUMERIC, "")                = "en_US.UTF-8"
+    bash->setlocale(LC_TIME, "")                   = "en_US.UTF-8"
+    ...
+
+Notes:
+
+- both bash and GNU readline call `setlocale()`.
+- I think `LC_ALL` is sufficient?
+- I think `LC_COLLATE` affects `glob()` order, which makes bash scripts
+  non-deterministic.
+  - We ran into this with `spec/task-runner.sh gen-task-file`, which does a
+    glob of `*/*.test.sh`.  James Chen-Smith ran it with the equivalent of
+    LANG=C, which scrambled the order.
+
+Python 2 and 3 mostly agree:
+
+    $ ltrace -e setlocale python3 -c 'print()'
+    python3->setlocale(LC_CTYPE, nil)              = "C"
+    python3->setlocale(LC_CTYPE, "")               = "en_US.UTF-8"
+
+It only calls it for `LC_CTYPE`, not `LC_ALL`.
+
 <!--
 ## Spec Tests
 

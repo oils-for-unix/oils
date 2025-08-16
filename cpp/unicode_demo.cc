@@ -1,10 +1,38 @@
 #include <locale.h>
 #include <regex.h>
+#include <wctype.h>  // towupper()
 
 #include "mycpp/common.h"
 #include "vendor/greatest.h"
 
-TEST libc_demo() {
+TEST casefold_demo() {
+#if 0
+  // Turkish
+  if (setlocale(LC_CTYPE, "tr_TR.utf8") == NULL) {
+    log("Couldn't set locale to tr_TR.utf8");
+    FAIL();
+  }
+#endif
+
+  // LC_CTYPE_MASK instead of LC_CTYPE
+  locale_t turkish = newlocale(LC_CTYPE_MASK, "tr_TR.utf8", NULL);
+
+  int u = toupper('i');
+  int wu = towupper('i');
+  int wul = towupper_l('i', turkish);
+
+  // Regular: upper case i is I, 73
+  // Turkish: upper case is 304
+  log("upper = %d", u);
+  log("wide upper = %d", wu);
+  log("wide upper locale = %d", wul);
+
+  freelocale(turkish);
+
+  PASS();
+}
+
+TEST upper_lower_demo() {
   int x = strcmp("a", "b");
   log("strcmp = %d", x);
   x = strcmp("a", "a");
@@ -31,54 +59,6 @@ TEST libc_demo() {
 
   c = tolower((unsigned char)c);
   log("tolower %c", c);
-}
-
-// Note: libc_trest.cc regex_unicode() also tests this
-TEST regex_demo() {
-  // From Claude: Set locale to handle UTF-8
-  // Oh does GNU readline set this ?!?  Yes that's what's going on!  Geez
-  // Then do we have a bug without GNU readline?
-  // TODO: test  it
-  setlocale(LC_ALL, "");
-
-#if 1
-  const char* regex = ".";
-  // mu character
-  const char* s = "\xce\xbc";
-#endif
-#if 0
-  const char* regex = "[\xce\xbc]";
-  const char* s = "\xce\xbc";
-#endif
-#if 0
-  const char* regex = "[b]";
-  const char* s = "abc";
-#endif
-
-  regex_t pat;
-  int status = regcomp(&pat, regex, REG_EXTENDED);
-  if (status != 0) {
-    FAIL();
-  }
-
-  int num_groups = pat.re_nsub + 1;  // number of captures
-
-  regmatch_t* pmatch =
-      static_cast<regmatch_t*>(malloc(sizeof(regmatch_t) * num_groups));
-  int eflags = 0;
-  bool match = regexec(&pat, s, num_groups, pmatch, eflags) == 0;
-  if (match) {
-    printf("match\n");
-    for (int i = 0; i < num_groups; i++) {
-      int start = pmatch[i].rm_so;
-      int end = pmatch[i].rm_eo;
-      printf("start %d - %d\n", start, end);
-    }
-  }
-  free(pmatch);
-  regfree(&pat);
-
-  PASS();
 }
 
 TEST isspace_demo() {
@@ -112,9 +92,11 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
 
-  RUN_TEST(libc_demo);
+  RUN_TEST(upper_lower_demo);
   RUN_TEST(isspace_demo);
-  RUN_TEST(regex_demo);
+
+  // Crashes in CI?  Because of Turkish locale?
+  // RUN_TEST(casefold_test);
 
   // gHeap.CleanProcessExit();
 

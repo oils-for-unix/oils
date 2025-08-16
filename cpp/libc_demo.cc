@@ -1,36 +1,8 @@
 #include <locale.h>  // setlocale()
 #include <regex.h>   // regcomp()
-#include <wctype.h>  // towupper()
 
 #include "mycpp/runtime.h"
 #include "vendor/greatest.h"
-
-TEST casefold_test() {
-#if 0
-  // Turkish
-  if (setlocale(LC_CTYPE, "tr_TR.utf8") == NULL) {
-    log("Couldn't set locale to tr_TR.utf8");
-    FAIL();
-  }
-#endif
-
-  // LC_CTYPE_MASK instead of LC_CTYPE
-  locale_t turkish = newlocale(LC_CTYPE_MASK, "tr_TR.utf8", NULL);
-
-  int u = toupper('i');
-  int wu = towupper('i');
-  int wul = towupper_l('i', turkish);
-
-  // Regular: upper case i is I, 73
-  // Turkish: upper case is 304
-  log("upper = %d", u);
-  log("wide upper = %d", wu);
-  log("wide upper locale = %d", wul);
-
-  freelocale(turkish);
-
-  PASS();
-}
 
 void FindAll(const char* p, const char* s) {
   regex_t pat;
@@ -135,74 +107,90 @@ TEST regex_alt_with_capture() {
   PASS();
 }
 
+bool RegexMatch(const char* s, const char* regex_str) {
+  regex_t pat;
+  int status = regcomp(&pat, regex_str, REG_EXTENDED);
+  if (status != 0) {
+    assert(false);
+  }
+  log("*** Matching string %s against regex %s", s, regex_str);
+
+  int num_groups = pat.re_nsub + 1;  // number of captures
+
+  regmatch_t* pmatch =
+      static_cast<regmatch_t*>(malloc(sizeof(regmatch_t) * num_groups));
+  int eflags = 0;
+  bool match = regexec(&pat, s, num_groups, pmatch, eflags) == 0;
+  if (match) {
+    printf("match\n");
+    for (int i = 0; i < num_groups; i++) {
+      int start = pmatch[i].rm_so;
+      int end = pmatch[i].rm_eo;
+      printf("start %d - %d\n", start, end);
+    }
+  }
+  free(pmatch);
+  regfree(&pat);
+
+  return match;
+}
+
 TEST regex_unicode() {
   regex_t pat;
 
-  // 1 or 2 bytes
-  // const char* p = "_..?_";
-  // const char* p = "_[^a]_";
   const char* p = "_._";  // 1 byte, not code point?
 
-  if (regcomp(&pat, p, REG_EXTENDED) != 0) {
+  bool matched;
+
+  matched = RegexMatch("_xyz_", p);
+  ASSERT(not matched);
+
+  matched = RegexMatch("_x_", p);
+  ASSERT(matched);
+
+  matched = RegexMatch("_\x01_", p);
+  ASSERT(matched);
+
+  const char* u1 = "_μ_";
+  const char* u2 = "_\u03bc_";
+  const char* u3 = "_\xce\xbc_";  // utf-8 encoding
+
+  // Doesn't match without UTF-8 setting
+  matched = RegexMatch(u1, p);
+  // log("u1 %d", matched);
+  ASSERT(not matched);
+
+  matched = RegexMatch(u2, p);
+  // log("u2 %d", matched);
+  ASSERT(not matched);
+
+  matched = RegexMatch(u3, p);
+  // log("u3 %d", matched);
+  ASSERT(not matched);
+
+  // SETS GLOBAL
+  char* saved_locale = setlocale(LC_ALL, "");
+  log("saved_locale %s", saved_locale);
+  if (saved_locale == nullptr) {
     FAIL();
   }
-  int outlen = pat.re_nsub + 1;  // number of captures
-  regmatch_t* pmatch =
-      static_cast<regmatch_t*>(malloc(sizeof(regmatch_t) * outlen));
 
-  int result;
+  // Now it matches
+  matched = RegexMatch(u1, p);
+  ASSERT(matched);
+  matched = RegexMatch(u2, p);
+  ASSERT(matched);
+  matched = RegexMatch(u3, p);
+  ASSERT(matched);
 
-  const char* bad = "_xyz_";
-  result = regexec(&pat, bad, outlen, pmatch, 0);
-  ASSERT_EQ_FMT(1, result, "%d");  // does not match
+  // [^a] can match a code point
+  matched = RegexMatch(u3, "_[^a]_");
+  ASSERT(matched);
 
-  const char* a = "_x_";
-  result = regexec(&pat, a, outlen, pmatch, 0);
-  ASSERT_EQ_FMT(0, result, "%d");
-
-  // Doesn't change anything
-  // int lc_what = LC_ALL;
-  int lc_what = LC_CTYPE;
-
-  // char* saved_locale = setlocale(LC_ALL, "");
-  // char* saved_locale = setlocale(LC_ALL, NULL);
-
-  // char* saved_locale = setlocale(lc_what, NULL);
-
-#if 0
-  // Doesn't change anything?
-  //if (setlocale(LC_CTYPE, "C.utf8") == NULL) {
-  if (setlocale(LC_CTYPE, "en_US.UTF-8") == NULL) {
-    log("Couldn't set locale to C.utf8");
-    FAIL();
-  }
-#endif
-
-  // const char* u = "_μ_";
-  // const char* u = "_\u03bc_";
-
-  // utf-8 encoding
-  const char* u = "_\xce\xbc_";
-
-  log("a = %d bytes", strlen(a));
-  log("u = %d bytes", strlen(u));
-  result = regexec(&pat, u, outlen, pmatch, 0);
-
-  // This doesn't match because of setlocale()
-  // ASSERT_EQ_FMT(0, result, "%d");
-
-#if 0
-  if (setlocale(lc_what, saved_locale) == NULL) {
-    log("Couldn't restore locale");
-    FAIL();
-  }
-#endif
-
-  free(pmatch);  // Clean up before test failures
-  regfree(&pat);
-
-  // TODO(unicode)
-  // ASSERT_EQ_FMT(0, result, "%d");
+  const char* unicode_char_class = "[a\xce\xbc]";
+  const char* s = "\xce\xbc";
+  matched = RegexMatch(s, unicode_char_class);
+  ASSERT(matched);
 
   PASS();
 }
@@ -214,8 +202,6 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
 
-  // TODO: move to cpp/regex_demo.cc
-  // and consolidate unicode too
   RUN_TEST(regex_unanchored);
   RUN_TEST(regex_caret);
   RUN_TEST(regex_lexer);
@@ -223,9 +209,6 @@ int main(int argc, char** argv) {
   RUN_TEST(regex_alt_with_capture);
   RUN_TEST(regex_nested_capture);
   RUN_TEST(regex_unicode);
-
-  // Crashes in CI?  Because of Turkish locale?
-  // RUN_TEST(casefold_test);
 
   gHeap.CleanProcessExit();
 

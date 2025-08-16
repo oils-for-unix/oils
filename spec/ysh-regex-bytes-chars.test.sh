@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 
 #### Match tab character with [\t]
 shopt -s ysh:all
@@ -180,4 +180,21 @@ pp test_ (b'\yff' ~ / [\xff] /)
 = str( / [\x80]/ )
 
 ## STDOUT:
+## END
+
+#### Bytes are denoted \y01 in Eggex char classes
+
+# That is, eggex does have MODES like re.UNICODE
+#
+# We UNAMBIGUOUSLY accept
+# - \y01 or \u{1} - these are the same
+# - \yff or \u{ff} - these are DIFFERENT
+
+var pat = / [\y01] /
+pp test_ (b'\y01' ~ pat)
+pp test_ ('a' ~ pat)
+
+## STDOUT:
+(Bool)   true
+(Bool)   false
 ## END
