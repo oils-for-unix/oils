@@ -1,6 +1,55 @@
 ## oils_failures_allowed: 2
 
-#### 'dot' matches code point represented with multiple bytes (mu = 0xce 0xbe)
+#### Match tab character with [\t]
+shopt -s ysh:all
+
+var pat = / ('a' [\t] 'b') /
+pp test_ (str(pat))
+
+var lines = :| b'aa\tbb' b'cc\tdd' |
+write @lines | egrep $pat | od -A n -t c 
+
+## STDOUT:
+(Str)   "(a[\t]b)"
+   a   a  \t   b   b  \n
+## END
+
+#### Match newline with [\n]
+shopt -s ysh:all
+
+var pat = / [\n] /
+
+pp test_ (str(pat))
+
+pp test_ ('z' ~ pat)
+
+# this matches
+pp test_ (b'\n' ~ pat)
+
+# but then what happens with grep?
+# invalid regular expression
+
+# write 1 2 3 | egrep "$pat"
+
+## STDOUT:
+(Str)   "[\n]"
+(Bool)   false
+(Bool)   true
+## END
+
+#### ERE: 'dot' matches newline
+
+= 'z' ~ /dot/
+= b'\n' ~ /dot/
+= '' ~ /dot/
+
+## STDOUT:
+(Bool)  true
+(Bool)  true
+(Bool)  false
+## END
+
+#### ERE: 'dot' matches code point represented with multiple bytes (mu = 0xce 0xbe)
 
 var pat = / 'a' dot 'b' /
 

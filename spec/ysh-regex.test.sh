@@ -1,5 +1,3 @@
-## oils_failures_allowed: 1
-
 #### /^.$/
 shopt -s ysh:all
 var pat = ''
@@ -251,17 +249,6 @@ if ('0.0.0' ~ ip) { echo yes } else { echo no }
 yes
 no
 ## END
-
-#### Match tab character with [\t]
-shopt -s ysh:all
-
-var lines = :| b'aa\tbb' b'cc\tdd' |
-
-var pat = / ('a' [\t] 'b') /
-write pat=$pat
-write @lines | egrep $pat 
-
-## stdout-json: "pat=(a[\t]b)\naa\tbb\n"
 
 #### Repeated String Literal With Single Char
 shopt -s ysh:all
