@@ -68,7 +68,9 @@ rewrite-jobs-index() {
   local index_tmp=$dir/$$.index.html  # index of every job in every run
   local run_index_tmp=$dir/$$.runs.html  # only the jobs in this run/commit
 
-  # limit to $NUM_JOBS.  Bug: glob is in alphabetical order
+  # Limit stdin of soil-web github-index to $NUM_JOBS.
+  # 2025-08 BUG: list-json glob implies alphabetical order, and
+  # GITHUB_RUN_NUMBER rolled over from 9999 to 10000.
   list-json $dir \
     | tail -n -$NUM_JOBS \
     | soil-web ${prefix}index $index_tmp $run_index_tmp $run_id
