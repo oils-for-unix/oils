@@ -56,9 +56,25 @@ into 17 *shards*.  You can run two shards like this:
 
     $ regtest/aports-run.sh build-many-shards shard5 shard6
 
-To run all 17 shards, you can use bash brace expansion:
+This is the normal way to run all 17 shards (using bash brace expansion):
 
     $ regtest/aports-run.sh build-many-shards shard{0..16}
+
+But this is how I run it right now, due to flakiness:
+
+      # weird order!
+    $ regtest/aports-run.sh build-many-shards shard{10..16} shard{0..5}
+
+      # Now BLOW AWAY CHROOT, to work around errors
+    $ regtest/aports-setup.sh remove-chroot
+    $ regtest/aports-setup.sh prepare-chroot
+    $ regtest/aports-setup.sh unpack-distfiles
+
+      # Run remaining shards
+    $ regtest/aports-run.sh build-many-shards shard{6..9}
+
+(This was discovered empirically; we should remove this workaround eventually.)
+
 
 ## Make Reports with Tables
 
@@ -90,7 +106,7 @@ And then make a partial report:
 
 Now look at this file in your browser:
 
-    _tmp/aports-report/2025-08-07-fix/diff-merged.html  # 17 shards merged
+    _tmp/aports-report/2025-08-07-fix/diff_merged.html  # 17 shards merged
 
 
 ### Checking for Flakiness
@@ -158,7 +174,9 @@ Faster way to test it:
 
     $ regtest/aports-html.sh merge-diffs _tmp/aports-report/2025-08-07-fix/
 
-## Reproducing a single package build failure
+## Other Instructions
+
+### Reproducing a single package build failure
 
 You can reproduce build failures on your own machine.  Do the same steps you did on `he.oils.pub`:
 
@@ -184,6 +202,12 @@ Then look at the logs in
       /home/udu/oils/
         _tmp/aports-guest/baseline/
           7zip.log.txt
+
+### Get a Shell in the Chroot
+
+    $ regtest/aports-run.sh enter-rootfs-user  # as unprivileged 'udu' user
+
+    $ regtest/aports-run.sh enter-rootfs       # as root user
 
 ## TODO
 
