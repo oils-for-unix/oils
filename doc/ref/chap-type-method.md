@@ -311,38 +311,49 @@ Respects unicode.
 
 ### search()
 
-Search for the first occurrence of a regex in the string.
+Search for the first occurrence of a regex in the string.  Returns a
+[Match](#Match) value if it matches, or `null`.
 
     var m = 'hi world'.search(/[a e i o u]/)  # search for vowels
-    # matches at position 1 for 'i'
+    = m.start(0)  # => index 1, matching 'i'
 
-Returns a `value.Match()` if it matches, otherwise `null`.
+    var m = 'hi world'.search(/[z]/)
+    = m  # => null
 
-You can start searching in the middle of the string:
+---
 
-    var m = 'hi world'.search(/dot 'orld'/, pos=3)
-    # also matches at position 4 for 'o'
+The `pos` parameter lets you start searching in the middle of the string:
 
-The `%start` or `^` metacharacter will only match when `pos` is zero.
+    var m = 'hi world'.search(/[a e i o u]/, pos=3)
+    = m.start(0)  # => index 4, matching 'o'
+
+Note: the `%start` aka `^` metacharacter will only match when `pos === 0`.
 
 (Similar to Python's `re.search()`.)
 
 ### leftMatch()
 
-`leftMatch()` is like `search()`, but the pattern must match at the beginning of
-the string.  (This is not necessarily the same as including `%start` in the pattern.)
+`leftMatch()` is like `search()`, but the pattern must match at the beginning
+of the string.
 
-    # match if the first char is a vowel
-    var m = 'hi world'.leftMatch(/[a e i o u]/)  # => Null, 'h' is not a vowel
+    var m = 'hi world'.leftMatch(/[a e i o u]/)
+    = m           # => Null because 'h' is not a vowel
 
-    var m = 'aye'.leftMatch(/[a e i o u]/)
-    # matches 'a'
+    var m = 'ale'.leftMatch(/[a e i o u]/)
+    = m.start(0)  # => index 0 for a
+
+(Unlike `search()`, the `%start` aka `^` metcharacter may match when `pos !==
+0`.)
+
+---
 
 `leftMatch()` Can be used to implement lexers that consume every byte of input.
 
     var lexer = / <capture digit+> | <capture space+> /
 
-(Similar to Python's `re.match()`.)
+See [YSH Regex API](../ysh-regex-api.html).
+
+(`leftMatch()` is similar to Python's `re.match()`.)
 
 ### split()
 

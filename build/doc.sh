@@ -1,17 +1,29 @@
 #!/usr/bin/env bash
 #
+# Build docs
+#
 # Usage:
 #   build/doc.sh <function name>
+#
+# Examples:
+#
+#   make HTML:
+#     $0 split-and-render doc/json.md
+#     $0 split-and-render doc/ref/chap-type-method.md '' ../../web  # need relative URL
+#
+#   check code in a doc:
+#     $0 run-code-in-doc ysh-io 
+#     $0 run-code-in-doc ref/chap-type-method
+#
+#     $0 run-code-all  # check all code
+#
+#   build docs:
+#     $0 all-ref
+#     $0 all-markdown
 
-set -o nounset
-set -o pipefail
-set -o errexit
-
-# https://oilshell.org/release/$VERSION/
-#  doc/
-#    index.html
-#    INSTALL.html
-#    INSTALL-old.html
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
 readonly OILS_VERSION=$(head -n 1 oils-version.txt)
 export OILS_VERSION  # for quick_ref.py
@@ -999,5 +1011,5 @@ compare-golden() {
   diff -r -u _release/VERSION_gold _release/VERSION/ 
 }
 
-"$@"
+task-five "$@"
 
