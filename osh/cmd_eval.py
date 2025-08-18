@@ -1090,11 +1090,16 @@ class CommandEvaluator(object):
 
         run_flags = executor.IS_LAST_CMD if node.is_last_cmd else 0
 
-        status, redirects, io_errors = self._DoRedirects(node.redirects if node.redirects is not None else [])
+        status = self._DoRedirects(node.redirects)
         if status != 0:
             return status
 
-        with vm.ctx_Redirect(self.shell_ex, len(redirects), io_errors):
+        num_redirects = 0
+        if node.redirects is not None:
+            num_redirects = len(node.redirects)
+
+        io_errors = []  # type: List[error.IOError_OSError]
+        with vm.ctx_Redirect(self.shell_ex, num_redirects, io_errors):
             # NOTE: RunSimpleCommand may never return
             if len(node.more_env):  # I think this guard is necessary?
                 if self.exec_opts.env_obj():  # YSH
@@ -1735,18 +1740,20 @@ class CommandEvaluator(object):
 
         return status
 
-    def _DoRedirects(self, redirects_):
-        # type: (List[Redir]) -> Tuple[int, List[RedirValue], List[error.IOError_OSError]]
+    def _DoRedirects(self, redirects):
+        # type: (List[Redir]) -> int
+        if redirects is None:
+            return 0
 
         status = 0
-        redirects = []  # type: List[RedirValue]
+        redir_vals = []  # type: List[RedirValue]
 
         try:
-            for redir in redirects_:
-                redirects.append(self._EvalRedirect(redir))
+            for redir in redirects:
+                redir_vals.append(self._EvalRedirect(redir))
         except error.RedirectEval as e:
             self.errfmt.PrettyPrintError(e)
-            redirects = None
+            redir_vals = None
         except error.WordFailure as e:
             # This happens e.g. with the following cases:
             #
@@ -1756,20 +1763,16 @@ class CommandEvaluator(object):
             if not e.HasLocation():
                 e.location = self.mem.GetFallbackLocation()
             self.errfmt.PrettyPrintError(e)
-            redirects = None
+            redir_vals = None
 
-        if redirects is None:
+        if redir_vals is None:
             # Error evaluating redirect words
             status = 1
 
-        # Translation fix: redirect I/O errors may happen in a C++
-        # destructor ~vm::ctx_Redirect, which means they must be signaled
-        # by out params, not exceptions.
-        io_errors = []  # type: List[error.IOError_OSError]
-
-        # If we evaluated redirects, apply/push them
+        # If we evaluated redir_vals, apply/push them
         if status == 0:
-            self.shell_ex.PushRedirects(redirects, io_errors)
+            io_errors = []  # type: List[error.IOError_OSError]
+            self.shell_ex.PushRedirects(redir_vals, io_errors)
             if len(io_errors):
                 # core/process.py prints cryptic errors, so we repeat them
                 # here.  e.g. Bad File Descriptor
@@ -1779,24 +1782,29 @@ class CommandEvaluator(object):
                     self.mem.GetFallbackLocation())
                 status = 1
 
-        return status, redirects, io_errors
+        return status
 
 
     def _DoRedirect(self, node, cmd_st):
         # type: (command.Redirect, CommandStatus) -> int
-
-        status, redirects, io_errors = self._DoRedirects(node.redirects)
+        status = self._DoRedirects(node.redirects)
+        if status != 0:
+            return status
 
         # If we applied redirects successfully, run the command_t, and pop
         # them.
-        if status == 0:
-            with vm.ctx_Redirect(self.shell_ex, len(redirects), io_errors):
-                status = self._Execute(node.child)
-            if len(io_errors):
-                # It would be better to point to the right redirect
-                # operator, but we don't track it specifically
-                e_die("Fatal error popping redirect: %s" %
-                      pyutil.strerror(io_errors[0]))
+
+        # Translation fix: redirect I/O errors may happen in a C++
+        # destructor ~vm::ctx_Redirect, which means they must be signaled
+        # by out params, not exceptions.
+        io_errors = []  # type: List[error.IOError_OSError]
+        with vm.ctx_Redirect(self.shell_ex, len(node.redirects), io_errors):
+            status = self._Execute(node.child)
+        if len(io_errors):
+            # It would be better to point to the right redirect
+            # operator, but we don't track it specifically
+            e_die("Fatal error popping redirect: %s" %
+                  pyutil.strerror(io_errors[0]))
 
         return status
 
