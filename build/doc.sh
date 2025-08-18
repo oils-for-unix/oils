@@ -642,24 +642,46 @@ EOF
   fi
 }
 
-ysh-io() {
-  local name='ysh-io'
-  split-and-render doc/$name.md
+run-code-in-doc() {
+  local name=${1:-'ysh-io'}
 
-  local work_dir=$REPO_ROOT/_tmp/ysh-io
+  local web_url
+  case $name in 
+    ref/*)
+      web_url='../../web'
+      ;;
+    *)
+      web_url='../web'
+      ;;
+  esac
+
+  set -x
+  split-and-render doc/$name.md '' $web_url
+
+  local work_dir=$REPO_ROOT/_tmp/$name
   rm -r -f "$work_dir"
   mkdir -p $work_dir
 
   pushd $work_dir
 
   local code_dir=$REPO_ROOT/_tmp/code-blocks/doc
-  cp $code_dir/$name.txt ysh-io.ysh
 
-  $REPO_ROOT/bin/ysh ysh-io.ysh
+  mkdir -p ref
+  cp $code_dir/$name.txt $name.ysh
+
+  #$REPO_ROOT/bin/ysh $name.ysh
+  $REPO_ROOT/bin/ysh -x $name.ysh
 
   maybe-tree $work_dir
 
   popd
+}
+
+run-code-all() {
+  run-code-in-doc 'ysh-io'
+  run-code-in-doc 'ref/chap-type-method'
+
+  # TODO: add more docs here
 }
 
 one() {
@@ -892,7 +914,7 @@ run-for-release() {
   mkdir -p $root/{doc,test,pub}
 
   ysh-tour
-  ysh-io
+  run-code-all
 
   # Metadata
   cp -v _build/release-date.txt oils-version.txt $root
