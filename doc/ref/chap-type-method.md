@@ -157,33 +157,33 @@ Also similar to `mystr.search(eggex)`.
 
 Replace substrings with a given string.
 
-    = mystr => replace("OSH", "YSH")
+    = mystr.replace("OSH", "YSH")
 
 Or match with an Eggex.
 
-    = mystr => replace(/ d+ /, "<redacted>")  # => "code is <redacted>"
+    = mystr.replace(/ d+ /, "<redacted>")  # => "code is <redacted>"
 
 Refer to Eggex captures with replacement expressions. Captured values can be
 referenced with `$1`, `$2`, etc.
 
     var mystr = "1989-06-08"
     var pat = / <capture d{4}> '-' <capture d{2}> '-' <capture d{2}> /
-    = mystr => replace(pat, ^"Year: $1, Month: $2, Day: $3")
+    = mystr.replace(pat, ^"Year: $1, Month: $2, Day: $3")
 
 Captures can also be named.
 
-    = mystr2 => replace(/ <capture digit{4} as year : int> /, ^"$[year + 1]")
+    = mystr2.replace(/ <capture digit{4} as year : int> /, ^"$[year + 1]")
 
 `$0` refers to the entire capture itself in a substitution string.
 
-    var mystr = "replace with mystr => replace()"
-    = mystr => replace(/ alpha+ '=>' alpha+ '()' /, ^"<code>$0</code>")
-    # => "replace with <code>mystr => replace()</code>"
+    var mystr = "replace with mystr.replace()"
+    = mystr.replace(/ alpha+ '.alpha+ '()' /, ^"<code>$0</code>")
+    # => "replace with <code>mystr.replace()</code>"
 
 In addition to captures, other variables can be referenced within a replacement
 expression.
 
-    = mystr => replace(/ <capture alpha+> /, ^"$1 and $anotherVar")
+    = mystr.replace(/ <capture alpha+> /, ^"$1 and $anotherVar")
 
 To limit the number of replacements, pass in a named count argument. By default
 the count is `-1`. For any count in [0, MAX_INT], there will be at most count
@@ -191,15 +191,15 @@ replacements. Any negative count means "replace all" (ie. `count=-2` behaves
 exactly like `count=-1`).
 
     var mystr = "bob has a friend named bob"
-    = mystr => replace("bob", "Bob", count=1)   # => "Bob has a friend named bob"
-    = mystr => replace("bob", "Bob", count=-1)  # => "Bob has a friend named Bob"
+    = mystr.replace("bob", "Bob", count=1)   # => "Bob has a friend named bob"
+    = mystr.replace("bob", "Bob", count=-1)  # => "Bob has a friend named Bob"
 
 The following matrix of signatures are supported by `replace()`:
 
-    s => replace(string_val, subst_str)
-    s => replace(string_val, subst_expr)
-    s => replace(eggex_val, subst_str)
-    s => replace(eggex_val, subst_expr)
+    s.replace(string_val, subst_str)
+    s.replace(string_val, subst_expr)
+    s.replace(eggex_val, subst_str)
+    s.replace(eggex_val, subst_expr)
 
 Replacing by an `Eggex` has some limitations:
 
@@ -213,23 +213,23 @@ Replacing by an `Eggex` has some limitations:
 Checks if a string starts with a pattern, returning true if it does or false if
 it does not.
 
-    = b'YSH123' => startsWith(b'YSH')  # => true
-    = b'123YSH' => startsWith(b'YSH')  # => false
-    = b'123YSH' => startsWith(/ d+ /)  # => true
-    = b'YSH123' => startsWith(/ d+ /)  # => false
+    = b'YSH123'.startsWith(b'YSH')  # => true
+    = b'123YSH'.startsWith(b'YSH')  # => false
+    = b'123YSH'.startsWith(/ d+ /)  # => true
+    = b'YSH123'.startsWith(/ d+ /)  # => false
 
 Matching is done based on bytes, not runes.
 
     = b'\yce\ya3'                 # => (Str)   "Σ"
-    = 'Σ' => startsWith(b'\yce')  # => true
-    = 'Σ' => endsWith(b'\ya3')    # => true
+    = 'Σ'.startsWith(b'\yce')     # => true
+    = 'Σ'.endsWith(b'\ya3')       # => true
 
 ### endsWith()
 
 Like `startsWith()` but returns true if the _end_ of the string matches.
 
-    = b'123YSH' => endsWith("YSH")   # => true
-    = b'YSH123' => endsWith(/ d+ /)  # => true
+    = b'123YSH'.endsWith("YSH")   # => true
+    = b'YSH123'.endsWith(/ d+ /)  # => true
 
 ### trim()
 
@@ -244,11 +244,11 @@ To specify what to remove, pass either a `Str` argument:
 
 Or an `Eggex` argument:
 
-    = '123YSH456' => trim(/ d+ /)  # => 'YSH'
+    = '123YSH456'.trim(/ d+ /)     # => 'YSH'
 
 If no arguments are passed, whitespace is removed:
 
-    = b' YSH\n'    => trim()       # => 'YSH'
+    = b' YSH\n'.trim()             # => 'YSH'
 
 These code points are considered whitespace:
 
@@ -282,17 +282,17 @@ which have a different notion of whitespace:
 
 Like `trim()` but only removes characters from the _start_ of the string.
 
-    = b' YSH\n'    => trimStart()        # => "YSH\n"
-    = b'xxxYSHxxx' => trimStart(b'xxx')  # => "YSHxxx"
-    = b'123YSH456' => trimStart(/ d+ /)  # => "YSH456"
+    = b' YSH\n'   .trimStart()        # => b'YSH\n'
+    = b'xxxYSHxxx'.trimStart('xxx')   # =>  'YSHxxx'
+    = b'123YSH456'.trimStart(/ d+ /)  # =>  'YSH456'
 
 ### trimEnd()
 
 Like `trim()` but only removes characters from the _end_ of the string.
 
-    = b' YSH\n'    => trimEnd()        # => " YSH"
-    = b'xxxYSHxxx' => trimEnd(b'xxx')  # => "YxxxSH"
-    = b'123YSH456' => trimEnd(/ d+ /)  # => "123YSH"
+    = b' YSH\n'   .trimEnd()          # => ' YSH'
+    = b'xxxYSHxxx'.trimEnd('xxx')     # => 'xxxYSH'
+    = b'123YSH456'.trimEnd(/ d+ /)    # => '123YSH'
 
 ### upper()
 
@@ -306,14 +306,14 @@ Respects unicode.
 
 Search for the first occurrence of a regex in the string.
 
-    var m = 'hi world' => search(/[aeiou]/)  # search for vowels
+    var m = 'hi world'.search(/[aeiou]/)  # search for vowels
     # matches at position 1 for 'i'
 
 Returns a `value.Match()` if it matches, otherwise `null`.
 
 You can start searching in the middle of the string:
 
-    var m = 'hi world' => search(/dot 'orld'/, pos=3)
+    var m = 'hi world'.search(/dot 'orld'/, pos=3)
     # also matches at position 4 for 'o'
 
 The `%start` or `^` metacharacter will only match when `pos` is zero.
@@ -326,7 +326,7 @@ The `%start` or `^` metacharacter will only match when `pos` is zero.
 the string.  (This is not necessarily the same as including `%start` in the pattern.)
 
     var m = 'hi world'.leftMatch(/[aeiou]/)  # match if the first char is a vowel
-    # doesn't match because h is not a vowel
+                                             # but h is not a vowel
 
     var m = 'aye'.leftMatch(/[aeiou]/)
     # matches 'a'
@@ -411,43 +411,39 @@ A `Match` is the result searching for an `Eggex` within a `Str`.
 Returns the string that matched a regex capture group.  Group 0 is the entire
 match.
 
-    var m = '10:59' => search(/ ':' <capture d+> /)
-    echo $[m => group(0)]  # => ':59'
-    echo $[m => group(1)]  # => '59'
+    var m = '10:59'.search(/ ':' <capture d+> /)
+    echo $[m.group(0)]  # => ':59'
+    echo $[m.group(1)]  # => '59'
 
 Matches can be named with `as NAME`:
 
-    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
+    var m = '10:59'.search(/ ':' <capture d+ as minute> /)
 
 And then accessed by the same name:
 
-    echo $[m => group('minute')]  # => '59'
-
-<!--
-    var m = '10:59' => search(/ ':' <capture d+ as minutes: int> /)
--->
+    echo $[m.group('minute')]  # => '59'
 
 ### start()
 
 Like `group()`, but returns the **start** position of a regex capture group,
 rather than its value.
 
-    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
-    echo $[m => start(0)]         # => position 2 for ':59'
-    echo $[m => start(1)]         # => position 3 for '59'
+    var m = '10:59'.search(/ ':' <capture d+ as minute> /)
+    echo $[m.start(0)]         # => position 2 for ':59'
+    echo $[m.start(1)]         # => position 3 for '59'
 
-    echo $[m => start('minute')]  # => position 3 for '59'
+    echo $[m.start('minute')]  # => position 3 for '59'
 
 ### end()
 
 Like `group()`, but returns the **end** position of a regex capture group,
 rather than its value.
 
-    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
-    echo $[m => end(0)]         # => position 5 for ':59'
-    echo $[m => end(1)]         # => position 5 for '59'
+    var m = '10:59'.search(/ ':' <capture d+ as minute> /)
+    echo $[m.end(0)]         # => position 5 for ':59'
+    echo $[m.end(1)]         # => position 5 for '59'
 
-    echo $[m => end('minute')]  # => 5 for '59'
+    echo $[m.end('minute')]  # => 5 for '59'
 
 
 ## Containers
@@ -493,8 +489,8 @@ Extend an existing list with the elements of another list.
 Returns the first index of the element in the list, or -1 if it's not present.
 
     var names = :| Jane Peter Joana Sam |
-    echo $[names => indexOf("Sam")]    # => 3
-    echo $[names => indexOf("Simon")]  # => -1
+    echo $[names.indexOf("Sam")]    # => 3
+    echo $[names.indexOf("Simon")]  # => -1
 
 ### insert()
 
@@ -517,8 +513,8 @@ Returns the index of the last occurring instance of the specified
 element in the list, or -1 if it's not present.
 
     var names = :| Sam Alice Sam Sam |
-    echo $[names => lastIndexOf("Sam")]    # => 3
-    echo $[names => lastIndexOf("Simon")]  # => -1
+    echo $[names.lastIndexOf("Sam")]    # => 3
+    echo $[names.lastIndexOf("Simon")]  # => -1
 
 ### remove()
 
@@ -620,9 +616,8 @@ A func that's part of Oils, like `len()`.
 
 ### BoundFunc
 
-The [thin-arrow][] and [fat-arrow][] create bound funcs:
+The [thin-arrow][] creates a bound func:
 
-    var bound = '' => upper
     var bound2 = [] -> append
 
 [thin-arrow]: chap-expr-lang.html#thin-arrow
