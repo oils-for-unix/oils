@@ -40,6 +40,11 @@ int sleep_until_error(double seconds);
 
 // pylib/locale_.py
 namespace pylocale {
+  const int CODESET = ::CODESET;
+constexpr int lc_ctype = LC_CTYPE;
+#undef LC_CTYPE
+  const int LC_CTYPE = lc_ctype;
+
 class Error {
  public:
   static constexpr ObjHeader obj_header() {
