@@ -311,49 +311,58 @@ Respects unicode.
 
 ### search()
 
-Search for the first occurrence of a regex in the string.  Returns a
-[Match](#Match) value if it matches, or `null`.
+Search for a regex in the string.  Return a [Match](#Match) value for the first
+occurrence, or `null` if no match is found.
 
     var m = 'hi world'.search(/[a e i o u]/)  # search for vowels
     = m.start(0)  # => index 1, matching 'i'
 
-    var m = 'hi world'.search(/[z]/)
-    = m  # => null
-
----
+    var m = 'hi world'.search(/'foo'/)
+    = m           # => null
 
 The `pos` parameter lets you start searching in the middle of the string:
 
     var m = 'hi world'.search(/[a e i o u]/, pos=3)
     = m.start(0)  # => index 4, matching 'o'
 
-Note: the `%start` aka `^` metacharacter will only match when `pos === 0`.
+    var m = 'hi world'.search(/[a e i o u]/, pos=5)
+    = m           # => null, no more matches
 
-(Similar to Python's `re.search()`.)
+Notes:
+
+- `%start` aka `^` will match only when `pos === 0`.
+- This method behaves like Python's `re.search()`.
 
 ### leftMatch()
 
-`leftMatch()` is like `search()`, but the pattern must match at the beginning
-of the string.
-
-    var m = 'hi world'.leftMatch(/[a e i o u]/)
-    = m           # => Null because 'h' is not a vowel
+Test whether the regex matches the string at the given `pos`, which is `0` by
+default.  Returns a [Match](#Match) value, or `null` if it doesn't match.
 
     var m = 'ale'.leftMatch(/[a e i o u]/)
-    = m.start(0)  # => index 0 for a
+    = m.start(0)  # => index 0 for 'a'
 
-(Unlike `search()`, the `%start` aka `^` metcharacter may match when `pos !==
-0`.)
+    var m = 'hi world'.leftMatch(/[a e i o u]/)
+    = m           # => null, because 'h' is not a vowel
 
----
+The `pos` parameter lets you match in the middle of the string:
 
-`leftMatch()` Can be used to implement lexers that consume every byte of input.
+    var m = 'hi world'.leftMatch(/[a e i o u]/, pos=1)
+    = m.start(0)  # => index 1, matching 'i'
 
-    var lexer = / <capture digit+> | <capture space+> /
+    var m = 'hi world'.leftMatch(/[a e i o u]/, pos=3)
+    = m           # null, because 'w' is not a vowel
 
-See [YSH Regex API](../ysh-regex-api.html).
+`leftMatch()` and `pos` can be used to implement iterative lexers.  See [YSH
+Regex API](../ysh-regex-api.html).
 
-(`leftMatch()` is similar to Python's `re.match()`.)
+Notes:
+
+- The difference between `leftMatch()` and `search()` is like Python's
+  `re.match()` versus `re.search()`.  Both perform regex matching, but
+  `leftMatch()` doesn't look ahead.
+- Unlike `search()`, `%start` aka `^` may match when `pos !== 0`.
+  - This is a quirk compared to Python: under the hood, `leftMatch()` is
+    implemented with `^`.
 
 ### split()
 
