@@ -40,10 +40,10 @@ int sleep_until_error(double seconds);
 
 // pylib/locale_.py
 namespace pylocale {
-  const int CODESET = ::CODESET;
+const int CODESET = ::CODESET;
 constexpr int lc_ctype = LC_CTYPE;
 #undef LC_CTYPE
-  const int LC_CTYPE = lc_ctype;
+const int LC_CTYPE = lc_ctype;
 
 class Error {
  public:
@@ -53,6 +53,6 @@ class Error {
 };
 BigStr* setlocale(int category, BigStr* locale);
 BigStr* nl_langinfo(int item);
-}  // namespace locale
+}  // namespace pylocale
 
 #endif  // LIBC_H

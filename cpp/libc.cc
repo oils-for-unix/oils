@@ -263,4 +263,4 @@ BigStr* setlocale(int category, BigStr* locale) {
 BigStr* nl_langinfo(int item) {
   return StrFromC(::nl_langinfo(item));
 }
-}  // namespace locale
+}  // namespace pylocale
