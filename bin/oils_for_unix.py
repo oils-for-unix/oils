@@ -109,6 +109,7 @@ def InitLocale(environ):
             #print_stderr('Warning: not UTF-8')
             pass
 
+
 # TODO: Hook up valid applets (including these) to completion
 # APPLETS = ['osh', 'ysh', 'oil', 'readlink', 'true', 'false']
 
