@@ -39,7 +39,7 @@ int sleep_until_error(double seconds);
 }  // namespace libc
 
 // pylib/locale_.py
-namespace locale_ {
+namespace pylocale {
 class Error {
  public:
   static constexpr ObjHeader obj_header() {
