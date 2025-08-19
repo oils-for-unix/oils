@@ -252,8 +252,7 @@ int sleep_until_error(double seconds) {
 
 }  // namespace libc
 
-// Python's locale module
-namespace locale {
+namespace locale_ {
 BigStr* setlocale(int category, BigStr* locale) {
   char* locale_name = ::setlocale(category, locale->data_);
   if (locale_name == nullptr) {

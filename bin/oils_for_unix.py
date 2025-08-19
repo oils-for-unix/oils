@@ -20,8 +20,8 @@ from __future__ import print_function
 # We only use the low-level _locale.{setlocale,nl_langinfo} functions
 # Lib/locale.py has string wrappers that we don't need, and it imports
 # 'encodings', which is not in the oils-ref tarball
-from pylib import locale_
-from pylib.locale_ import LC_CTYPE, CODESET
+from pylib import pylocale
+from pylib.pylocale import LC_CTYPE, CODESET
 import sys
 
 from _devbuild.gen.syntax_asdl import loc, CompoundWord
@@ -91,18 +91,18 @@ def InitLocale(environ):
     https://unix.stackexchange.com/questions/576701/what-is-the-difference-between-lang-c-and-lc-all-c
     """
     try:
-        locale_name = locale_.setlocale(LC_CTYPE, '')
+        locale_name = pylocale.setlocale(LC_CTYPE, '')
 
         # passing None queries it
         #lo = locale.setlocale(locale.LC_CTYPE, None)
-    except locale_.Error:
+    except pylocale.Error:
         #print('INVALID')
         locale_name = ''  # unknown value
     #log('LOC %s', locale_name)
 
     if locale_name not in ('', 'C'):
         # Check that it's utf-8
-        codeset = locale_.nl_langinfo(CODESET)
+        codeset = pylocale.nl_langinfo(CODESET)
         #log('codeset %s', codeset)
 
         if not match.IsUtf8Codeset(codeset):

@@ -11,13 +11,17 @@ import _locale  # type: ignore
 CODESET = _locale.CODESET  # type: int
 LC_CTYPE = _locale.LC_CTYPE  # type: int
 
+
 class Error(Exception):
     pass
 
 
 def setlocale(category, locale):
     # type: (int, str) -> str
-    return _locale.setlocale(category, locale)  # type: ignore
+    try:
+        return _locale.setlocale(category, locale)  # type: ignore
+    except _locale.Error:
+        raise Error()
 
 
 def nl_langinfo(item):
