@@ -169,6 +169,7 @@ if fastlex:
     MatchJsonStrToken = _MatchJsonStrToken_Fast
     MatchShNumberToken = _MatchShNumberToken_Fast
 
+    IsUtf8Codeset = fastlex.IsUtf8Codeset
     IsValidVarName = fastlex.IsValidVarName
     ShouldHijack = fastlex.ShouldHijack
     LooksLikeInteger = fastlex.LooksLikeInteger
@@ -191,6 +192,13 @@ else:
     # Used by osh/cmd_parse.py to validate for loop name.  Note it must be
     # anchored on the right.
     _VAR_NAME_RE = re.compile(lexer_def.VAR_NAME_RE + '$')  # type: ignore
+
+    # yapf: disable
+    _IS_UTF8_CODESET_RE = re.compile(lexer_def.IS_UTF8_CODESET_RE + '$')  # type: ignore
+
+    def IsUtf8Codeset(s):
+        # type: (str) -> bool
+        return bool(_IS_UTF8_CODESET_RE.match(s))
 
     def IsValidVarName(s):
         # type: (str) -> bool

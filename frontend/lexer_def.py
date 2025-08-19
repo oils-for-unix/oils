@@ -56,6 +56,9 @@ def R(pat, tok_type):
     return (True, pat, tok_type)
 
 
+# utf8, utf-8, UTF8, UTF-8, etc.
+IS_UTF8_CODESET_RE = r'[uU][tT][fF]-?8'
+
 # See unit tests in frontend/match_test.py.
 # We need the [^\0]* because the re2c translation assumes it's anchored like $.
 SHOULD_HIJACK_RE = r'#![^\0]*sh[ \t\r\n][^\0]*'

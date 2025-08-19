@@ -17,7 +17,8 @@ We could could also expose some other binaries for a smaller POSIX system:
 """
 from __future__ import print_function
 
-import posix_ as posix
+import locale
+from locale import LC_CTYPE, CODESET
 import sys
 
 from _devbuild.gen.syntax_asdl import loc, CompoundWord
@@ -27,6 +28,7 @@ from core import pyos
 from core import pyutil
 from core import util
 from frontend import args
+from frontend import match
 from frontend import py_readline
 from mycpp import mylib
 from mycpp.mylib import print_stderr, log
@@ -36,8 +38,9 @@ if mylib.PYTHON:
     from tools import readlink
 
 import fanos
+import posix_ as posix
 
-from typing import List
+from typing import List, Dict
 
 
 def CaperDispatch():
@@ -74,6 +77,35 @@ def CaperDispatch():
         # fanos.send(1, reply)
 
     return 0  # Does this fail?
+
+
+def InitLocale(environ):
+    # type: (Dict[str, str]) -> None
+    """Set GLOBAL libc locale from environment, and CHECK that it's valid.
+
+    Note: LC_COLLATE/LC_ALL might be necessary for glob
+    LANG= is the default, LC_ALL= sets all of them
+    https://unix.stackexchange.com/questions/576701/what-is-the-difference-between-lang-c-and-lc-all-c
+    """
+    try:
+        locale_name = locale.setlocale(LC_CTYPE, '')
+
+        # passing None queries it
+        #lo = locale.setlocale(locale.LC_CTYPE, None)
+    except locale.Error:
+        #print('INVALID')
+        locale_name = ''  # unknown value
+    #log('LOC %s', locale_name)
+
+    if locale_name not in ('', 'C'):
+        # Check that it's utf-8
+        codeset = locale.nl_langinfo(CODESET)
+        #log('codeset %s', codeset)
+
+        if not match.IsUtf8Codeset(codeset):
+            # TODO: enable this if not OILS_LOCALE_OK=1
+            #print_stderr('Warning: not UTF-8')
+            pass
 
 
 # TODO: Hook up valid applets (including these) to completion
@@ -134,6 +166,8 @@ def AppBundleMain(argv):
 
     environ = pyos.Environ()
 
+    InitLocale(environ)
+
     if applet.startswith('ysh'):
         return shell.Main('ysh', arg_r, environ, login_shell, loader, readline)
 
@@ -171,12 +205,6 @@ def AppBundleMain(argv):
 
 def main(argv):
     # type: (List[str]) -> int
-
-    if mylib.PYTHON:
-        if not pyutil.IsAppBundle():
-            # For unmodified Python interpreters to simulate the OVM_MAIN patch
-            import libc
-            libc.cpython_reset_locale()
 
     try:
         return AppBundleMain(argv)
