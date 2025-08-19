@@ -3,6 +3,8 @@
 #ifndef LIBC_H
 #define LIBC_H
 
+#include <langinfo.h>  // using CODESET
+#include <locale.h>    // using LC_CTYPE
 #include <stdlib.h>
 
 #include "mycpp/runtime.h"
@@ -35,5 +37,22 @@ int get_terminal_width();
 int sleep_until_error(double seconds);
 
 }  // namespace libc
+
+// pylib/locale_.py
+namespace pylocale {
+const int CODESET = ::CODESET;
+constexpr int lc_ctype = LC_CTYPE;
+#undef LC_CTYPE
+const int LC_CTYPE = lc_ctype;
+
+class Error {
+ public:
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(kZeroMask, sizeof(Error));
+  }
+};
+BigStr* setlocale(int category, BigStr* locale);
+BigStr* nl_langinfo(int item);
+}  // namespace pylocale
 
 #endif  // LIBC_H

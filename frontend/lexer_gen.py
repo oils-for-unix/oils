@@ -441,6 +441,8 @@ def main(argv):
         TranslateSimpleLexer('MatchJsonStrToken', lexer_def.JSON_STR_DEF)
         TranslateSimpleLexer('MatchShNumberToken', lexer_def.SH_NUMBER_DEF)
 
+        TranslateRegexToPredicate(lexer_def.IS_UTF8_CODESET_RE,
+                                  'IsUtf8Codeset')
         TranslateRegexToPredicate(lexer_def.VAR_NAME_RE, 'IsValidVarName')
         TranslateRegexToPredicate(lexer_def.SHOULD_HIJACK_RE, 'ShouldHijack')
         TranslateRegexToPredicate(lexer_def.LOOKS_LIKE_INTEGER,

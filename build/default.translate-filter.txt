@@ -1,5 +1,6 @@
 _devbuild/
 _gen/
 asdl/py.*
+pylib/py.*
 mycpp/iolib.py
 mycpp/mops.py

@@ -141,10 +141,11 @@ def _Walk(obj, cls, ref, syms):
   #  pass
 
   # Oh is the namedtuple_ crap because of the Block class byterun/pyobj?
+  # 2025-08: added local module, not sure why
 
   if module_name is None or module_name in (
       'namedtuple_Arguments', 'namedtuple_ArgSpec',
-      'namedtuple_Block'):
+      'namedtuple_Block', 'locale'):
     syms.Add(obj, None, ref, None, None, None)
     return  # Can't walk anything
 

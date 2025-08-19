@@ -51,8 +51,10 @@ test-osh() {
   echo status=$?
 
   # --without-readline should not affect Unicode matching!
-  # TODO: make this a hard assertion
-  # Run it in CI
+  # Fixed 2025-08 with InitLocale()
+  # TODO: make this a hard assertion, and run it in CI.  It would be nice to
+  # have some kind of Ninja variants, so we don't have to keep rebuilding Oils.
+
   $osh <<'EOF'
 var pat = / '_' <capture dot> '_' /
 
