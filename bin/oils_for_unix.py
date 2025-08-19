@@ -17,7 +17,10 @@ We could could also expose some other binaries for a smaller POSIX system:
 """
 from __future__ import print_function
 
-import locale
+# We only use the low-level _locale.{setlocale,nl_langinfo} functions
+# Lib/locale.py has string wrappers that we don't need, and it imports
+# 'encodings', which is not in the oils-ref tarball
+import _locale as locale
 from locale import LC_CTYPE, CODESET
 import sys
 
@@ -45,7 +48,7 @@ from typing import List, Dict
 
 def CaperDispatch():
     # type: () -> int
-    log('Running Oil in ---caper mode')
+    log('Running Oils in ---caper mode')
     fd_out = []  # type: List[int]
     while True:
         try:
@@ -106,7 +109,6 @@ def InitLocale(environ):
             # TODO: enable this if not OILS_LOCALE_OK=1
             #print_stderr('Warning: not UTF-8')
             pass
-
 
 # TODO: Hook up valid applets (including these) to completion
 # APPLETS = ['osh', 'ysh', 'oil', 'readlink', 'true', 'false']
