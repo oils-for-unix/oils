@@ -21,7 +21,7 @@ from __future__ import print_function
 # Lib/locale.py has string wrappers that we don't need, and it imports
 # 'encodings', which is not in the oils-ref tarball
 import _locale as locale
-from locale import LC_CTYPE, CODESET
+from _locale import LC_CTYPE, CODESET
 import sys
 
 from _devbuild.gen.syntax_asdl import loc, CompoundWord
