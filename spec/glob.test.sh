@@ -259,26 +259,24 @@ __a__
 
 #### Glob ordering respects LC_COLLATE (zsh respects this too)
 
-# bug from test/gold
-# mksh ksh osh - hello-test.sh comes first
+# test/spec-common.sh sets LC_ALL=C.UTF_8
+unset LC_ALL
+
+touch hello hello.py hello_preamble.sh hello-test.sh
+echo h*
+
 # bash - hello_preamble.h comes first
-#
 # But ord('_') == 95 
 #     ord('-') == 45
 
 # https://serverfault.com/questions/122737/in-bash-are-wildcard-expansions-guaranteed-to-be-in-order
 
-touch hello hello.py hello_preamble.sh hello-test.sh
-echo h*
-
-# Spec tests set LC_ALL=C.UTF_8
-unset LC_ALL
-
-# the en_US does it
-LC_COLLATE=en_US.UTF-8
 #LC_COLLATE=C.UTF-8
-
+LC_COLLATE=en_US.UTF-8  # en_US is necessary
 echo h*
+
+LC_COLLATE=en_US.UTF-8 $SH -c 'echo h*'
+
 
 # Doesn't work, probably because
 #LC_COLLATE=en_US.UTF-8
@@ -287,9 +285,11 @@ echo h*
 ## STDOUT:
 hello hello-test.sh hello.py hello_preamble.sh
 hello hello_preamble.sh hello.py hello-test.sh
+hello hello_preamble.sh hello.py hello-test.sh
 ## END
 
 ## N-I dash/mksh/ash STDOUT:
+hello hello-test.sh hello.py hello_preamble.sh
 hello hello-test.sh hello.py hello_preamble.sh
 hello hello-test.sh hello.py hello_preamble.sh
 ## END

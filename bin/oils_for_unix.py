@@ -83,14 +83,13 @@ def CaperDispatch():
 
 def InitLocale(environ):
     # type: (Dict[str, str]) -> None
-    """Set GLOBAL libc locale from environment, and CHECK that it's valid.
-
-    Note: LC_COLLATE/LC_ALL might be necessary for glob
-    LANG= is the default, LC_ALL= sets all of them
-    https://unix.stackexchange.com/questions/576701/what-is-the-difference-between-lang-c-and-lc-all-c
-    """
+    """Set the GLOBAL libc locale from the env, and CHECK that it's valid."""
     try:
-        locale_name = pylocale.setlocale(pylocale.LC_CTYPE, '')
+        # Note: LC_ALL (rather than LC_CTYPE) makes glob order match bash
+        #
+        # https://unix.stackexchange.com/questions/576701/what-is-the-difference-between-lang-c-and-lc-all-c
+        # LANG= is the default, LC_ALL= sets all of them
+        locale_name = pylocale.setlocale(pylocale.LC_ALL, '')
 
         # passing None queries it
         #lo = locale.setlocale(locale.LC_CTYPE, None)
@@ -109,8 +108,9 @@ def InitLocale(environ):
         #log('codeset %s', codeset)
 
         if not match.IsUtf8Codeset(codeset):
-            print_stderr("oils warning: codeset %r doesn't look like UTF-8" % codeset)
-            print_stderr('              Set OILS_LOCALE_OK=1 to remove this message')
+            print_stderr("oils warning: codeset %r doesn't look like UTF-8" %
+                         codeset)
+            print_stderr('              OILS_LOCALE_OK=1 removes this message')
 
 
 # TODO: Hook up valid applets (including these) to completion

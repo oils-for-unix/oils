@@ -9,6 +9,7 @@ from __future__ import print_function
 import _locale  # type: ignore
 
 CODESET = _locale.CODESET  # type: int
+LC_ALL = _locale.LC_ALL  # type: int
 LC_CTYPE = _locale.LC_CTYPE  # type: int
 
 
