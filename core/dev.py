@@ -1,6 +1,4 @@
-"""
-dev.py - Devtools / introspection.
-"""
+"""dev.py - Devtools / introspection."""
 from __future__ import print_function
 
 from _devbuild.gen.option_asdl import option_i, builtin_i, builtin_t

@@ -1,7 +1,4 @@
-"""pyutil.py: Code that's only needed in Python.
-
-C++ will use other mechanisms.
-"""
+"""pyutil.py: Code that's only needed in Python."""
 from __future__ import print_function
 
 import sys

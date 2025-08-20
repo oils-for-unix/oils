@@ -1,4 +1,4 @@
-"""executor.py."""
+"""executor.py - used by the shell evaluator"""
 from __future__ import print_function
 
 from errno import EINTR

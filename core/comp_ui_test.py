@@ -1,5 +1,4 @@
 #!/usr/bin/env python2
-"""display_test.py: Tests for display.py."""
 from __future__ import print_function
 
 import cStringIO

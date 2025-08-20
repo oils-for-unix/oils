@@ -1,5 +1,4 @@
-"""
-pyos.py -- Wrappers for the operating system.
+"""pyos.py -- Wrappers for the operating system.
 
 Like py{error,util}.py, it won't be translated to C++.
 """

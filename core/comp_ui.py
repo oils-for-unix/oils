@@ -1,4 +1,3 @@
-"""comp_ui.py."""
 from __future__ import print_function
 
 from core import completion
@@ -249,8 +248,8 @@ def _PrintPacked(matches, max_match_len, term_width, max_lines, f):
 
     if too_many:
         # TODO: Save this in the Display class
-        fmt2 = ansi.BOLD + ansi.BLUE + '%' + str(term_width -
-                                                 2) + 's' + ansi.RESET
+        fmt2 = (ansi.BOLD + ansi.BLUE + '%' + str(term_width -
+                                                 2) + 's' + ansi.RESET)
         num_left = len(matches) - i
         if num_left:
             f.write(fmt2 % '... and %d more\n' % num_left)

@@ -5,7 +5,6 @@
 # You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
-"""completion_test.py: Tests for completion.py."""
 from __future__ import print_function
 
 import os
@@ -133,8 +132,8 @@ class CompletionTest(unittest.TestCase):
         comp = self._CompApi([], 0, 'f')
         print(list(a.Matches(comp)))
 
-        # TODO: This should set up the file system and $PATH and assert that only
-        # executable files are accessed!
+        # TODO: This should set up the file system and $PATH and assert that
+        # only executable files are accessed!
 
     def testFileSystemAction(self):
         CASES = [
