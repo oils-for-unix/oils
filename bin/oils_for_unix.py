@@ -95,19 +95,22 @@ def InitLocale(environ):
         # passing None queries it
         #lo = locale.setlocale(locale.LC_CTYPE, None)
     except pylocale.Error:
-        #print('INVALID')
+        # we could make this nicer
+        print_stderr('oils: setlocale() failed')
         locale_name = ''  # unknown value
     #log('LOC %s', locale_name)
 
     if locale_name not in ('', 'C'):
-        # Check that it's utf-8
+        # Check if the codeset is UTF-8, unless OILS_LOCALE_OK=1 is set
+        if environ.get('OILS_LOCALE_OK') == '1':
+            return
+
         codeset = pylocale.nl_langinfo(pylocale.CODESET)
         #log('codeset %s', codeset)
 
         if not match.IsUtf8Codeset(codeset):
-            # TODO: enable this if not OILS_LOCALE_OK=1
-            #print_stderr('Warning: not UTF-8')
-            pass
+            print_stderr("oils warning: codeset %r doesn't look like UTF-8" % codeset)
+            print_stderr('              Set OILS_LOCALE_OK=1 to remove this message')
 
 
 # TODO: Hook up valid applets (including these) to completion

@@ -239,6 +239,10 @@ When the shell process exists, print GC stats to stderr.
 
 When the shell process exists, print GC stats to this file descriptor.
 
+### `OILS_LOCALE_OK`
+
+Suppress the warning about `libc` locales that are not UTF-8.
+
 ## Float
 
 ### NAN
