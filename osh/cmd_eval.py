@@ -1090,7 +1090,7 @@ class CommandEvaluator(object):
 
         run_flags = executor.IS_LAST_CMD if node.is_last_cmd else 0
 
-        status = self._DoRedirects(node.redirects)
+        status = self._EvalAndPushRedirects(node.redirects)
         if status != 0:
             return status
 
@@ -1740,7 +1740,7 @@ class CommandEvaluator(object):
 
         return status
 
-    def _DoRedirects(self, redirects):
+    def _EvalAndPushRedirects(self, redirects):
         # type: (List[Redir]) -> int
         if redirects is None:
             return 0
@@ -1787,7 +1787,7 @@ class CommandEvaluator(object):
 
     def _DoRedirect(self, node, cmd_st):
         # type: (command.Redirect, CommandStatus) -> int
-        status = self._DoRedirects(node.redirects)
+        status = self._EvalAndPushRedirects(node.redirects)
         if status != 0:
             return status
 

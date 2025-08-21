@@ -10,7 +10,7 @@ abc=${a?bc} echo hello; echo blah
 ## stdout-json: ""
 
 #### setting readonly var (bash is only one where it's non-fatal)
-# https://landley.net/notes-2020.html#12-06-2020
+# https://landley.net/notes-2020.html#20-06-2020
 
 readonly abc=123
 abc=def

@@ -386,7 +386,7 @@ def _MakeSimpleCommand(
     more_env = []  # type: List[EnvPair]
     _AppendMoreEnv(preparsed_list, more_env)
 
-    if not len(redirects):
+    if len(redirects) == 0:
         redirects = None
 
     # is_last_cmd is False by default
