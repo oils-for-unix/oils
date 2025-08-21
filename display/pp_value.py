@@ -1,8 +1,6 @@
 #!/usr/bin/env python2
 from __future__ import print_function
-"""
-Render Oils value_t -> doc_t, so it can be pretty printed
-"""
+"""pp_value.py - Render Oils value_t -> doc_t, so it can be pretty printed"""
 
 from _devbuild.gen.pretty_asdl import (doc, Measure, MeasuredDoc)
 from _devbuild.gen.runtime_asdl import error_code_e

@@ -1,8 +1,6 @@
 #!/usr/bin/env python2
 from __future__ import print_function
-"""
-Base class for pretty printing, and HNodeEncoder
-"""
+"""pp_hnode.py - Base class for pretty printing, and HNodeEncoder"""
 
 from _devbuild.gen.hnode_asdl import hnode, hnode_e, hnode_t, Field, color_e
 from _devbuild.gen.pretty_asdl import (doc, MeasuredDoc, Measure)

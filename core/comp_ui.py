@@ -98,7 +98,8 @@ class State(object):
 class _IDisplay(object):
     """Interface for completion displays."""
 
-    def __init__(self, comp_state, prompt_state, num_lines_cap, f, debug_f, signal_safe):
+    def __init__(self, comp_state, prompt_state, num_lines_cap, f, debug_f,
+                 signal_safe):
         # type: (State, PromptState, int, mylib.Writer, _DebugFile, iolib.SignalSafe) -> None
         self.comp_state = comp_state
         self.prompt_state = prompt_state
@@ -170,9 +171,9 @@ class MinimalDisplay(_IDisplay):
 
     def __init__(self, comp_state, prompt_state, debug_f, signal_safe):
         # type: (State, PromptState, _DebugFile, iolib.SignalSafe) -> None
-        _IDisplay.__init__(self, comp_state, prompt_state,
-                           DEFAULT_MATCH_LINE_LIMIT, mylib.Stdout(), debug_f,
-                           signal_safe)
+        _IDisplay.__init__(self, comp_state,
+                           prompt_state, DEFAULT_MATCH_LINE_LIMIT,
+                           mylib.Stdout(), debug_f, signal_safe)
 
     def _RedrawPrompt(self):
         # type: () -> None
@@ -192,7 +193,8 @@ class MinimalDisplay(_IDisplay):
         lens = [len(m) for m in to_display]
         max_match_len = max(lens)
         term_width = self._GetTermWidth()
-        _PrintPacked(to_display, max_match_len, term_width, self.num_lines_cap, self.f)
+        _PrintPacked(to_display, max_match_len, term_width, self.num_lines_cap,
+                     self.f)
 
         self._RedrawPrompt()
 
@@ -248,8 +250,8 @@ def _PrintPacked(matches, max_match_len, term_width, max_lines, f):
 
     if too_many:
         # TODO: Save this in the Display class
-        fmt2 = (ansi.BOLD + ansi.BLUE + '%' + str(term_width -
-                                                 2) + 's' + ansi.RESET)
+        fmt2 = (ansi.BOLD + ansi.BLUE + '%' + str(term_width - 2) + 's' +
+                ansi.RESET)
         num_left = len(matches) - i
         if num_left:
             f.write(fmt2 % '... and %d more\n' % num_left)
@@ -336,9 +338,9 @@ class NiceDisplay(_IDisplay):
     Args:
       bold_line: Should user's entry be bold?
     """
-        _IDisplay.__init__(self, comp_state, prompt_state,
-                           DEFAULT_MATCH_LINE_LIMIT, mylib.Stdout(), debug_f,
-                           signal_safe)
+        _IDisplay.__init__(self, comp_state,
+                           prompt_state, DEFAULT_MATCH_LINE_LIMIT,
+                           mylib.Stdout(), debug_f, signal_safe)
 
         self.readline = readline
 

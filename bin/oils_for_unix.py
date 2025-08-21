@@ -1,6 +1,5 @@
 #!/usr/bin/env python2
-"""
-oils_for_unix.py - A busybox-like binary for OSH and YSH (formerly Oil).
+"""oils_for_unix.py - A busybox-like binary for OSH and YSH
 
 This is the main program that is translated to C++ by mycpp.
 
