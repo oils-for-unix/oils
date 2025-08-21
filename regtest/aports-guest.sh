@@ -3,7 +3,7 @@
 # Code that runs inside Alpine chroot.
 #
 # Usage:
-#   test/aports-guest.sh <function name>
+#   regtest/aports-guest.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -52,8 +52,13 @@ build-package() {
     --field pkg_HREF \
     --output $task_file
 
-  # Packages live in /home/builder/aports/main
+  # Packages live in /home/udu/aports/main
   # -f forces rebuild: needed for different configs
+  # -r: install missing deps from system repository?
+  #local -a cmd=( abuild -f -r -C ~/aports/main/$pkg rootbld )
+
+  # DISABLE rootbld for now - bwrap doesn't work inside chroot, because user
+  # namespaces don't compose with chroots
   local -a cmd=( abuild -f -r -C ~/aports/main/$pkg )
 
   # Give it 1 second to respond to SIGTERM, then SIGKILL

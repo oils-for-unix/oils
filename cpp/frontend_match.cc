@@ -127,6 +127,11 @@ Tuple2<Id_t, int> MatchShNumberToken(BigStr* s, int pos) {
   return Tuple2<Id_t, int>(static_cast<Id_t>(id), end_pos);
 }
 
+bool IsUtf8Codeset(BigStr* s) {
+  return ::IsUtf8Codeset(reinterpret_cast<const unsigned char*>(s->data_),
+                         len(s));
+}
+
 bool IsValidVarName(BigStr* s) {
   return ::IsValidVarName(reinterpret_cast<const unsigned char*>(s->data_),
                           len(s));

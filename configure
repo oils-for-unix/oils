@@ -15,7 +15,7 @@
 # - Other settings: LTO, PGO?  Consider moving prefix, LTO, PGO to build and
 #   install steps.
 
-TMP=${TMPDIR:-/tmp}  # Assume that any system has $TMPDIR set or /tmp exists
+TMP="$(mktemp -d || echo "${TMPDIR:-/tmp}")"  # note: mktemp consults $TMPDIR first too
 readonly TMP  # POSIX sh supports 'readonly'
 
 log() {

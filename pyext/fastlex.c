@@ -293,6 +293,17 @@ fastlex_MatchShNumberToken(PyObject *self, PyObject *args) {
 }
 
 static PyObject *
+fastlex_IsUtf8Codeset(PyObject *self, PyObject *args) {
+  unsigned  char *name;
+  int len;
+
+  if (!PyArg_ParseTuple(args, "s#", &name, &len)) {
+    return NULL;
+  }
+  return PyBool_FromLong(IsUtf8Codeset(name, len));
+}
+
+static PyObject *
 fastlex_IsValidVarName(PyObject *self, PyObject *args) {
   unsigned  char *name;
   int len;
@@ -370,8 +381,8 @@ static PyMethodDef methods[] = {
    "(line, start_pos) -> (id, end_pos)."},
   {"MatchShNumberToken", fastlex_MatchShNumberToken, METH_VARARGS,
    "(line, start_pos) -> (id, end_pos)."},
-  {"IsValidVarName", fastlex_IsValidVarName, METH_VARARGS,
-   "Is it a valid var name?"},
+  {"IsUtf8Codeset", fastlex_IsUtf8Codeset, METH_VARARGS, ""},
+  {"IsValidVarName", fastlex_IsValidVarName, METH_VARARGS, ""},
   // Should we hijack this shebang line?
   {"ShouldHijack", fastlex_ShouldHijack, METH_VARARGS, ""},
   {"LooksLikeInteger", fastlex_LooksLikeInteger, METH_VARARGS, ""},

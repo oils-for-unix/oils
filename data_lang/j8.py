@@ -1,6 +1,5 @@
 #!/usr/bin/env python2
-"""
-j8.py: J8 Notation, a superset of JSON
+"""j8.py - J8 Notation, a superset of JSON
 
 Later:
 

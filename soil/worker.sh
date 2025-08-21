@@ -407,19 +407,19 @@ app-tests-tasks() {
 os-info           soil/diagnose.sh os-info             -
 dump-env          soil/diagnose.sh dump-env            -
 py-all            build/py.sh all                      -
-ble-clone         test/ble.sh clone                    -
-ble-build         test/ble.sh build                    -
-ble-test-osh-py   test/ble.sh run-tests-osh-py         -
+ble-clone         regtest/ble.sh clone                 -
+ble-build         regtest/ble.sh build                 -
+ble-test-osh-py   regtest/ble.sh run-tests-osh-py      -
 wait-for-tarball  soil/wait.sh for-cpp-tarball         -
 test-tar          devtools/release-native.sh test-tar  -
-ble-test-osh-cpp  test/ble.sh run-tests-osh-cpp        -
+ble-test-osh-cpp  regtest/ble.sh run-tests-osh-cpp     -
 EOF
 
 # 2025-02 - times out after 15 minutes?  This is just bash, not OSH?
-# ble-bash-suite    test/ble.sh bash-suite               -
+# ble-bash-suite    regtest/ble.sh bash-suite               -
 
 # This doesn't work
-# ble-test-osh-bash test/ble.sh run-tests-osh-bash       -
+# ble-test-osh-bash regtest/ble.sh run-tests-osh-bash       -
 }
 
 # TODO: Most of these should be Ninja tasks.

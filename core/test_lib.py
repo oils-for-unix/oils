@@ -5,9 +5,7 @@
 # You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
-"""
-test_lib.py - Functions for testing.
-"""
+"""test_lib.py - Helper functions for testing"""
 
 import string
 import sys

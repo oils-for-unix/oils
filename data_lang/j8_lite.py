@@ -1,5 +1,6 @@
-"""
-j8_lite.py: Low dependency library for ASDL circular dep in prebuilt/
+"""j8_lite.py: Low dependency library
+
+For ASDL circular dep involving prebuilt/
 """
 
 import fastfunc  # Skip pyj8 and fastlex

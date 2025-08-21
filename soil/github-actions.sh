@@ -8,9 +8,12 @@ set -o pipefail
 set -o errexit
 
 keygen() {
-  # rsa_github_actions is private, and sent to Github to log into the server
-  # rsa_github_actions.pub is public, and put in authorized_keys on the server
-  ssh-keygen -t rsa -b 4096 -C "oilshell github-actions" -f rsa_github_actions
+  # rsa_github_actions is private, and entered in the Github UI, to log into the server
+  #
+  # rsa_github_actions.pub is public, and put in authorized_keys on the CI
+  # server, e.g. op.oilshell.org
+
+  ssh-keygen -t rsa -b 4096 -C 'oils-for-unix github-actions' -f rsa_github_actions
 }
 
 #
@@ -77,10 +80,11 @@ publish-html-assuming-ssh-key() {
 load-secret-key() {
   local privkey=/tmp/rsa_github_actions
 
-  if test -n "${OILS_GITHUB_KEY:-}"; then
-    echo "$OILS_GITHUB_KEY" > $privkey
+  # This env var is set in .github/workflows/all-builds.yml
+  if test -n "${OILS_GITHUB_SSH_KEY:-}"; then
+    echo "$OILS_GITHUB_SSH_KEY" > $privkey
   else
-    echo '$OILS_GITHUB_KEY not set'
+    echo '$OILS_GITHUB_SSH_KEY not set'
     exit 1
   fi
 

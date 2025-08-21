@@ -316,7 +316,7 @@ jobs:
       - name: publish-cpp-tarball
         env:
           # auth for web server
-          OILS_GITHUB_KEY: ${{ secrets.OILS_GITHUB_KEY }}
+          OILS_GITHUB_SSH_KEY: ${{ secrets.OILS_GITHUB_SSH_KEY }}
         run: |
           soil/github-actions.sh publish-cpp-tarball
 

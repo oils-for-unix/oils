@@ -1,17 +1,29 @@
 #!/usr/bin/env bash
 #
+# Build docs
+#
 # Usage:
 #   build/doc.sh <function name>
+#
+# Examples:
+#
+#   make HTML:
+#     $0 split-and-render doc/json.md
+#     $0 split-and-render doc/ref/chap-type-method.md '' ../../web  # need relative URL
+#
+#   check code in a doc:
+#     $0 run-code-in-doc ysh-io 
+#     $0 run-code-in-doc ref/chap-type-method
+#
+#     $0 run-code-all  # check all code
+#
+#   build docs:
+#     $0 all-ref
+#     $0 all-markdown
 
-set -o nounset
-set -o pipefail
-set -o errexit
-
-# https://oilshell.org/release/$VERSION/
-#  doc/
-#    index.html
-#    INSTALL.html
-#    INSTALL-old.html
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
 readonly OILS_VERSION=$(head -n 1 oils-version.txt)
 export OILS_VERSION  # for quick_ref.py
@@ -642,24 +654,46 @@ EOF
   fi
 }
 
-ysh-io() {
-  local name='ysh-io'
-  split-and-render doc/$name.md
+run-code-in-doc() {
+  local name=${1:-'ysh-io'}
 
-  local work_dir=$REPO_ROOT/_tmp/ysh-io
+  local web_url
+  case $name in 
+    ref/*)
+      web_url='../../web'
+      ;;
+    *)
+      web_url='../web'
+      ;;
+  esac
+
+  set -x
+  split-and-render doc/$name.md '' $web_url
+
+  local work_dir=$REPO_ROOT/_tmp/$name
   rm -r -f "$work_dir"
   mkdir -p $work_dir
 
   pushd $work_dir
 
   local code_dir=$REPO_ROOT/_tmp/code-blocks/doc
-  cp $code_dir/$name.txt ysh-io.ysh
 
-  $REPO_ROOT/bin/ysh ysh-io.ysh
+  mkdir -p ref
+  cp $code_dir/$name.txt $name.ysh
+
+  #$REPO_ROOT/bin/ysh $name.ysh
+  $REPO_ROOT/bin/ysh -x $name.ysh
 
   maybe-tree $work_dir
 
   popd
+}
+
+run-code-all() {
+  run-code-in-doc 'ysh-io'
+  run-code-in-doc 'ref/chap-type-method'
+
+  # TODO: add more docs here
 }
 
 one() {
@@ -892,7 +926,7 @@ run-for-release() {
   mkdir -p $root/{doc,test,pub}
 
   ysh-tour
-  ysh-io
+  run-code-all
 
   # Metadata
   cp -v _build/release-date.txt oils-version.txt $root
@@ -977,5 +1011,5 @@ compare-golden() {
   diff -r -u _release/VERSION_gold _release/VERSION/ 
 }
 
-"$@"
+task-five "$@"
 

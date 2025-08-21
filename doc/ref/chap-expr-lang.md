@@ -623,16 +623,12 @@ It does **not** look in the properties of an object.
 
 ### fat-arrow
 
-The fat arrow is for transforming methods:
-
-    if (s => startsWith('prefix')) {
-      echo 'yes'
-    }
-
-If the method lookup on `s` fails, it looks for free functions.  This means it
-can be used for "chaining" transformations:
+The fat arrow is for function chaining:
 
     var x = myFunc() => list() => join()
+
+(Note: it also does method lookup like `s => startswith('y')`, but the `.`
+operator is usually preferred.)
 
 ### match-ops
 
@@ -832,12 +828,12 @@ group" like `<capture ...>`.
 Here's an eggex with a **positional** capture:
 
     var pat = / 'hi ' <capture d+> /  # access with _group(1)
-                                      # or Match => _group(1)
+                                      # or Match.group(1)
 
 Captures can be **named**:
 
     <capture d+ as month>       # access with _group('month')
-                                # or Match => group('month')
+                                # or Match.group('month')
 
 Captures can also have a type **conversion func**:
 
@@ -849,7 +845,7 @@ Related docs and help topics:
 
 - [YSH Regex API](../ysh-regex-api.html)
 - [`_group()`](chap-builtin-func.html#_group)
-- [`Match => group()`](chap-type-method.html#group)
+- [`Match.group()`](chap-type-method.html#group)
 
 ### re-splice
 

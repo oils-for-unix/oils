@@ -380,10 +380,10 @@ X [External Lang] BEGIN   END   when (awk)
   [YSH read]      _reply
   [History]       YSH_HISTFILE
   [Interactive]   OILS_COMP_UI
-  [Oils VM]       OILS_VERSION
+  [Oils VM]       OILS_VERSION        LIB_YSH
                   OILS_GC_THRESHOLD   OILS_GC_ON_EXIT
                   OILS_GC_STATS       OILS_GC_STATS_FD
-                  LIB_YSH
+                  OILS_LOCALE_OK
   [Float]         NAN                 INFINITY
   [Module]        __provide__ 
   [Other Env]     HOME                PATH

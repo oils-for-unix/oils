@@ -38,7 +38,10 @@ class WebTest(unittest.TestCase):
         'run_wwz_path': 'wwz',
         }
 
-    jobs = [job]
+    job2 = dict(job)
+    job2['GITHUB_RUN_NUMBER'] = '10000'
+
+    jobs = [job, job2]
 
     jobs.sort(key=web.ByGithubRun, reverse=True)
     groups = web.GroupJobs(jobs, web.ByGithubRun)

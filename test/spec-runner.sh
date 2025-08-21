@@ -98,6 +98,8 @@ $spec_name() {
 }
 
 gen-task-file() {
+  # make sorting stable across machines
+  LANG=C
   test/sh_spec.py --print-table spec/*.test.sh | while read suite name; do
     echo $name
   done | _print-task-file > test/spec.sh

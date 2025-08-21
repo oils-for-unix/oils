@@ -79,6 +79,11 @@ data-race-test() {
   run-one-test cpp/data_race_test '' tsan
 }
 
+run-demo() {
+  run-one-test cpp/libc_demo '' dbg
+  run-one-test cpp/unicode_demo '' dbg
+}
+
 coverage() {
   ### Run coverage for this dir
 
