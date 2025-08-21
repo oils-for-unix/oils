@@ -362,7 +362,7 @@ module syntax
 
   for_iter =
     Args                          # for x; do echo $x; done # implicit "$@"
-  | Words(List[word] words)       # for x in 'foo' *.py { echo $x }
+  | Words(List[word] words)       # for x in 'foo' *.py { echo $x }S
                                   # like YshArrayLiteral, but no location for %(
   | YshExpr(expr e, Token blame)  # for x in (mylist) { echo $x }
   #| Files(Token left, List[word] words)
@@ -423,9 +423,10 @@ module syntax
            ArgList? typed_args, LiteralBlock? block,
            # is_last_cmd is used for fork() optimizations
            bool is_last_cmd,
-           # (#2307) Simple command redirects, unlike all others, are evaluated
-           # *after* the argv word list
-           List[Redir] redirects)
+           # (#2307) Redirects on simple commands are evaluated
+           # AFTER the argv word list, unlike all other commands.
+           # This field is null if there are no redirects
+           List[Redir]? redirects)
 
     # This doesn't technically belong in the LST, but it's convenient for
     # execution
