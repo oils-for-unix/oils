@@ -314,7 +314,28 @@ TEST test_str_strip() {
     ASSERT(str_equals(result, StrFromC("hi")));
   }
 
+  ASSERT(str_equals0(" abc", StrFromC(" abc ")->rstrip()));
+  ASSERT(str_equals0(" def", StrFromC(" def")->rstrip()));
+
+  ASSERT(str_equals0("", kEmptyString->rstrip()));
+  ASSERT(str_equals0("", kEmptyString->strip()));
+
+  ASSERT(str_equals0("123", StrFromC(" 123 ")->strip()));
+  ASSERT(str_equals0("123", StrFromC(" 123")->strip()));
+  ASSERT(str_equals0("123", StrFromC("123 ")->strip()));
+
   printf("---------- Done ----------\n");
+
+  PASS();
+}
+
+TEST test_rstrip() {
+  // rstrip() with multiple characters
+
+  ASSERT(str_equals0(" a", StrFromC(" axx")->rstrip(StrFromC("x"))));
+
+  ASSERT(str_equals0(" a", StrFromC(" a  ")->rstrip(StrFromC(" \t"))));
+  ASSERT(str_equals0(" a", StrFromC(" a\t\t")->rstrip(StrFromC(" \t"))));
 
   PASS();
 }
@@ -1338,17 +1359,6 @@ TEST str_methods_test() {
   ASSERT(str_equals0("o", kStrFood->slice(-3, -2)));
   ASSERT(str_equals0("fo", kStrFood->slice(-4, -2)));
 
-  log("strip()");
-  ASSERT(str_equals0(" abc", StrFromC(" abc ")->rstrip()));
-  ASSERT(str_equals0(" def", StrFromC(" def")->rstrip()));
-
-  ASSERT(str_equals0("", kEmptyString->rstrip()));
-  ASSERT(str_equals0("", kEmptyString->strip()));
-
-  ASSERT(str_equals0("123", StrFromC(" 123 ")->strip()));
-  ASSERT(str_equals0("123", StrFromC(" 123")->strip()));
-  ASSERT(str_equals0("123", StrFromC("123 ")->strip()));
-
   BigStr* input = nullptr;
   BigStr* arg = nullptr;
   BigStr* expected = nullptr;
@@ -1522,6 +1532,7 @@ int main(int argc, char** argv) {
   // Members
   RUN_TEST(test_str_find);
   RUN_TEST(test_str_strip);
+  RUN_TEST(test_rstrip);
   RUN_TEST(test_str_upper_lower);
   RUN_TEST(test_str_replace);
   RUN_TEST(test_str_just);
