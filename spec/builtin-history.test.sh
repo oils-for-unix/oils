@@ -1,6 +1,6 @@
 ## tags: interactive
 ## compare_shells: bash
-## oils_failures_allowed: 8
+## oils_failures_allowed: 9
 ## oils_cpp_failures_allowed: 7
 
 #### history -a
@@ -35,23 +35,26 @@ history -a
 ## END
 
 
-#### history -w
+#### history -w writes out the in-memory history to the history file
 
 cd $TMP
-echo 'cmd orig' > tmp
+
+# Populate a history file with a command to be overwritten
+echo 'cmd old' > tmp
 HISTFILE=tmp
 history -c
 echo 'cmd new' > /dev/null
-history -w
-grep 'orig' tmp > /dev/null
+history -w # Overwrite history file
+
+# Verify that old command is gone
+grep 'old' tmp > /dev/null
 echo "found=$?"
 ## STDOUT:
 found=1
 ## END
 
 
-#### history -r 
-# Reads from the history file, and appends it to the current history
+#### history -r reads from the history file, and appends it to the current history
 
 cd $TMP
 printf "cmd orig%s\n" {1..10} > tmp
@@ -69,9 +72,8 @@ history | grep orig | wc -l
 ## END
 
 
-#### history -n
-# Reads new commands from the history file, and appends them to the current history
-# Based on line ranges, not contents
+#### history -n reads *new* commands from the history file, and appends them to the current history
+# NB: Based on line ranges, not contents
 
 cd $TMP
 
@@ -91,6 +93,92 @@ history | grep new | wc -l
 10
 ## END
 
+
+#### history -c clears in-memory history
+
+$SH --norc -i <<'EOF'
+echo 'foo' > /dev/null
+echo 'bar' > /dev/null
+history -c 
+history | wc -l
+EOF
+
+case $SH in bash) echo '^D' ;; esac
+
+## STDOUT:
+1
+^D
+## END
+
+
+#### history -d to delete 1 item
+
+cd $TMP
+HISTFILE=tmp
+printf "cmd orig%s\n" {1..3} > tmp
+history -c
+history -r
+history -d 1
+history | grep orig1 > /dev/null
+echo "status=$?"
+
+## STDOUT:
+status=1
+## END
+
+
+#### history -d to delete history from end
+# bash 4 doesn't support negative indices or ranges
+
+rm -f myhist
+export HISTFILE=myhist
+
+$SH --norc -i <<'EOF'
+
+echo 42
+echo 43
+echo 44
+
+history -a
+
+history -d 1
+echo status=$?
+
+# Invalid integers
+history -d -1
+echo status=$?
+history -d -2
+echo status=$?
+history -d 99
+echo status=$?
+
+case $SH in bash*) echo '^D' ;; esac
+
+EOF
+
+## STDOUT:
+42
+43
+44
+status=0
+status=2
+status=2
+status=2
+^D
+## END
+
+# bash-4.4 used to give more errors like OSH?  Weird
+
+## STDOUT:
+42
+43
+44
+status=0
+status=0
+status=0
+status=1
+^D
+## END
 
 
 #### HISTFILE is defined initially
@@ -162,58 +250,6 @@ status=1
 ## END
 
 
-#### history -d to delete history item
-
-rm -f myhist
-export HISTFILE=myhist
-
-$SH --norc -i <<'EOF'
-
-echo 42
-echo 43
-echo 44
-
-history -a
-
-history -d 1
-echo status=$?
-
-# Invalid integers
-history -d -1
-echo status=$?
-history -d -2
-echo status=$?
-history -d 99
-echo status=$?
-
-case $SH in bash*) echo '^D' ;; esac
-
-EOF
-
-## STDOUT:
-42
-43
-44
-status=0
-status=2
-status=2
-status=2
-^D
-## END
-
-# bash-4.4 used to give more errors like OSH?  Weird
-
-## BUG bash STDOUT:
-42
-43
-44
-status=0
-status=0
-status=0
-status=1
-^D
-## END
-
 #### history usage
 
 history not-a-number
@@ -233,7 +269,7 @@ status=1
 ## END
 
 
-#### HISTSIZE shrinks the history when changed
+#### HISTSIZE shrinks the in-memory history when changed
 
 cd $TMP
 printf "cmd %s\n" {1..10} > tmp
@@ -263,7 +299,7 @@ cat tmp | wc -l
 ## END
 
 
-#### set -o history / set +o history
+#### recording history can be toggled with set -o/+o history
 
 cd $TMP
 printf "echo %s\n" {1..3} > tmp
@@ -309,10 +345,11 @@ shopt -u histappend
 ## END
 
 
-#### shopt histappend 
+#### shopt histappend - osh ignores shopt and appends, bash sometimes overwrites
 # When set, bash always appends when exiting, no matter what. 
 # When unset, bash will append anyway as long the # of new commands < the hist length
 # Either way, the file is truncated to HISTFILESIZE afterwards.
+# osh always appends
 
 cd $TMP 
 
@@ -344,20 +381,23 @@ EOF
 
 # If we force histappend, bash won't overwrite the history file
 histappend_test true
-grep -q "orig" tmp
+grep "orig" tmp > /dev/null
 echo status=$?
 
 # If we don't force histappend, bash will overwrite the history file when the number of cmds exceeds HISTSIZE
 histappend_test false
-grep -q "orig" tmp
+grep "orig" tmp > /dev/null
 echo status=$?
-
-
 
 ## STDOUT:
 ^D
 status=0
 ^D
 status=1
+## OK osh STDOUT:
+^D
+status=0
+^D
+status=0
 ## END
 
