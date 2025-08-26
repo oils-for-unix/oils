@@ -41,14 +41,15 @@ int sleep_until_error(double seconds);
 // pylib/locale_.py
 namespace pylocale {
 
-const int CODESET = ::CODESET;
-
+constexpr int codeset = CODESET;
 constexpr int lc_all = LC_ALL;
 constexpr int lc_ctype = LC_CTYPE;
+#undef CODESET
 #undef LC_ALL
 #undef LC_CTYPE
-const int LC_ALL = lc_all;
-const int LC_CTYPE = lc_ctype;
+constexpr int CODESET = codeset;
+constexpr int LC_ALL = lc_all;
+constexpr int LC_CTYPE = lc_ctype;
 
 class Error {
  public:
