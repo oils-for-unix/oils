@@ -341,6 +341,17 @@ bool OmitChar(int ch, int what) {
   }
 }
 
+bool OmitChar2(int ch, BigStr* chars) {
+  log("ch %c len %d", ch, len(chars));
+  for (int i = 0; i < len(chars); ++i) {
+    log("testing [%c] == [%c]", ch, chars->data_[i]);
+    if (ch == chars->data_[i]) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // StripAny is modeled after CPython's do_strip() in stringobject.c, and can
 // implement 6 functions:
 //
@@ -391,7 +402,23 @@ BigStr* BigStr::strip() {
 
 // Used for CommandSub in osh/cmd_exec.py
 BigStr* BigStr::rstrip(BigStr* chars) {
-  DCHECK(len(chars) == 1);
+  DCHECK(len(chars) != 0);
+
+  // multiple chars, for word splitting
+  if (len(chars) > 1) {
+    const char* char_data = data_;
+    int j = len(this);
+    do {
+      j--;
+    } while (j >= 0 && OmitChar2(data_[j], chars));
+    j++;
+
+    int new_len = j;
+    BigStr* result = NewStr(new_len);
+    memcpy(result->data(), data_, new_len);
+    return result;
+  }
+
   int c = chars->data_[0];
   return StripAny(this, StripWhere::Right, c);
 }

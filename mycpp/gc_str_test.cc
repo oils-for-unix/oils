@@ -332,10 +332,19 @@ TEST test_str_strip() {
 TEST test_rstrip() {
   // rstrip() with multiple characters
 
-  ASSERT(str_equals0(" a", StrFromC(" axx")->rstrip(StrFromC("x"))));
+  BigStr* s;
 
-  ASSERT(str_equals0(" a", StrFromC(" a  ")->rstrip(StrFromC(" \t"))));
-  ASSERT(str_equals0(" a", StrFromC(" a\t\t")->rstrip(StrFromC(" \t"))));
+  s = StrFromC(" axx")->rstrip(StrFromC("x"));
+  ASSERT(str_equals0(" a", s));
+
+  s = StrFromC(" a  ")->rstrip(StrFromC(" \t"));
+  ASSERT(str_equals0(" a", s));
+
+  s = StrFromC(" axx")->rstrip(StrFromC(" x"));
+  ASSERT(str_equals0(" a", s));
+
+  s = StrFromC(" a\t\t")->rstrip(StrFromC(" \t"));
+  ASSERT(str_equals0(" a", s));
 
   PASS();
 }
