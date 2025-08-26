@@ -346,6 +346,10 @@ TEST test_rstrip() {
   s = StrFromC(" a\t\t")->rstrip(StrFromC(" \t"));
   ASSERT(str_equals0(" a", s));
 
+  // Empty string allowed too
+  s = StrFromC(" a\t\t")->rstrip(kEmptyString);
+  ASSERT(str_equals0(" a\t\t", s));
+
   PASS();
 }
 

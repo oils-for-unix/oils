@@ -402,10 +402,13 @@ BigStr* BigStr::strip() {
 
 // Used for CommandSub in osh/cmd_exec.py
 BigStr* BigStr::rstrip(BigStr* chars) {
-  DCHECK(len(chars) != 0);
+  int num_chars = len(chars);
+  if (num_chars == 0) {
+    return this;
+  }
 
   // multiple chars, for word splitting
-  if (len(chars) > 1) {
+  if (num_chars > 1) {
     const char* char_data = data_;
     int j = len(this);
     do {
@@ -419,6 +422,7 @@ BigStr* BigStr::rstrip(BigStr* chars) {
     return result;
   }
 
+  // exactly 1 char
   int c = chars->data_[0];
   return StripAny(this, StripWhere::Right, c);
 }
