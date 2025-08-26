@@ -349,6 +349,7 @@ def _MakeSimpleCommand(
         suffix_words,  # type: List[CompoundWord]
         typed_args,  # type: Optional[ArgList]
         block,  # type: Optional[LiteralBlock]
+        redirects,  # type: List[Redir]
 ):
     # type: (...) -> command.Simple
     """Create a command.Simple"""
@@ -385,9 +386,12 @@ def _MakeSimpleCommand(
     more_env = []  # type: List[EnvPair]
     _AppendMoreEnv(preparsed_list, more_env)
 
+    if len(redirects) == 0:
+        redirects = None
+
     # is_last_cmd is False by default
     return command.Simple(blame_tok, more_env, words3, typed_args, block,
-                          False)
+                          False, redirects)
 
 
 class VarChecker(object):
@@ -1336,12 +1340,8 @@ class CommandParser(object):
         # TODO: check that we don't have env1=x x[1]=y env2=z here.
 
         # FOO=bar printenv.py FOO
-        node = _MakeSimpleCommand(preparsed_list, suffix_words, typed_args,
-                                  block)
-        if len(redirects):
-            return command.Redirect(node, redirects)
-        else:
-            return node
+        return _MakeSimpleCommand(preparsed_list, suffix_words, typed_args,
+                                  block, redirects)
 
     def ParseBraceGroup(self):
         # type: () -> BraceGroup
