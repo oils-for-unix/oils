@@ -1095,7 +1095,7 @@ class WordParser(WordEmitter):
 
             elif self.token_kind == Kind.Left:
                 if self.token_type == Id.Left_Backtick and is_ysh_expr:
-                    p_die("In YSH use $(cmd) instead of backticks, or compatibly denote one with \\` (parse_backticks)",
+                    p_die("Invalid backtick: use $(cmd) or compatible \\` in YSH strings (parse_backticks)",
                           self.cur_token)
 
                 part = self._ReadDoubleQuotedLeftParts()
@@ -1210,7 +1210,7 @@ class WordParser(WordEmitter):
 
         elif left_id == Id.Left_Backtick:
             if not self.parse_opts.parse_backticks():
-                p_die('In YSH use $(cmd) instead of backticks, or compatibly denote one with \\` (parse_backticks)',
+                p_die('Invalid backtick: use $(cmd) or compatible \\` in YSH strings (parse_backticks)',
                       left_token)
 
             self._SetNext(lex_mode_e.Backtick)  # advance past `
