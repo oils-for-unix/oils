@@ -185,14 +185,15 @@ separator is the empty string.
     $ echo $[join(x, ' ')]  # optional separator
     a b c
 
-
-It's also often called with the `=>` chaining operator:
+As a reminder, you can call it with the [fat-arrow][] operator `=>` for function chaining:
 
     var items = [1, 2, 3]
 
     json write (items => join())      # => "123"
     json write (items => join(' '))   # => "1 2 3"
     json write (items => join(', '))  # => "1, 2, 3"
+
+[fat-arrow]: chap-expr-lang.html#fat-arrow
 
 ## Dict
 
@@ -351,7 +352,7 @@ See [err-json8-decode][] for errors.
 
 ### `_group()`
 
-Like `Match => group()`, but accesses the global match created by `~`:
+Like `Match.group()`, but accesses the global match created by `~`:
 
     if ('foo42' ~ / d+ /) {
       echo $[_group(0)]  # => 42
@@ -359,7 +360,7 @@ Like `Match => group()`, but accesses the global match created by `~`:
 
 ### `_start()`
 
-Like `Match => start()`, but accesses the global match created by `~`:
+Like `Match.start()`, but accesses the global match created by `~`:
 
     if ('foo42' ~ / d+ /) {
       echo $[_start(0)]  # => 3
@@ -367,7 +368,7 @@ Like `Match => start()`, but accesses the global match created by `~`:
 
 ### `_end()`
 
-Like `Match => end()`, but accesses the global match created by `~`:
+Like `Match.end()`, but accesses the global match created by `~`:
 
     if ('foo42' ~ / d+ /) {
       echo $[_end(0)]  # => 5

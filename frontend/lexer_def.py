@@ -56,6 +56,9 @@ def R(pat, tok_type):
     return (True, pat, tok_type)
 
 
+# utf8, utf-8, UTF8, UTF-8, etc.
+IS_UTF8_CODESET_RE = r'[uU][tT][fF]-?8'
+
 # See unit tests in frontend/match_test.py.
 # We need the [^\0]* because the re2c translation assumes it's anchored like $.
 SHOULD_HIJACK_RE = r'#![^\0]*sh[ \t\r\n][^\0]*'
@@ -133,7 +136,7 @@ _LEFT_PROCSUB = [
 # - Character classes [] with simple ranges and negation
 # - Escapes like \n \0
 
-LEXER_DEF = {}  # TODO: Should be a list so we enforce order.
+LEXER_DEF = {}
 
 # Anything until the end of the line is a comment.  Does not match the newline
 # itself.  We want to switch modes and possibly process Op_Newline for here
@@ -177,7 +180,7 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _LEFT_PROCSUB + _VARS + [
     R(r'[^\0]', Id.Lit_Other),  # any other single char is a literal
 ]
 
-# In ShCommand and DBracket states.
+# In lex_mode_e.{ShCommand,DBracket}
 _EXTGLOB_BEGIN = [
     C(',(', Id.ExtGlob_Comma),  # YSH synonym for @(...)
     C('@(', Id.ExtGlob_At),
@@ -262,7 +265,7 @@ FD_VAR_NAME = r'\{' + VAR_NAME_RE + r'\}'
 # dash/zsh/etc. can have one
 FD_NUM = r'[0-9]?[0-9]?'
 
-# These two can must be recognized in the ShCommand state, but can't nested
+# These two can must be recognized in the ShCommand mode, but can't nested
 # within [[.
 # Keywords have to be checked before _UNQUOTED so we get <KW_If "if"> instead
 # of <Lit_Chars "if">.
@@ -334,7 +337,7 @@ LEXER_DEF[lex_mode_e.Backtick] = [
     R(r'[^\0]', Id.Backtick_Other),  # anything else
 ]
 
-# DBRACKET: can be like ShCommand, except:
+# DBracket: can be like ShCommand, except:
 # - Don't really need redirects either... Redir_Less could be Op_Less
 # - Id.Op_DLeftParen can't be nested inside.
 LEXER_DEF[lex_mode_e.DBracket] = [
@@ -374,9 +377,6 @@ LEXER_DEF[lex_mode_e.ExtGlob] = \
 #
 # Is there a re.escape function?  It's just like EscapeGlob and UnescapeGlob.
 #
-# TODO: For testing, write a script to extract and save regexes... and compile
-# them with regcomp.  I've only seen constant regexes.
-#
 # bash code: ( | ) are special
 
 LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
@@ -394,7 +394,7 @@ LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
     # Analogous to Id.ExtGlob_* - we need to change lexer modes when we hit this
     C('(', Id.BashRegex_LParen),
 
-    # Not special, this is like lex_mode_e.Outer
+    # Not special, this is like lex_mode_e.ShCommand
     C(')', Id.Op_RParen),
 
     # Copied and adapted from _UNQUOTED
@@ -901,7 +901,7 @@ BRACE_RANGE_DEF = [
 YSH_LEFT_SUBS = [
     C('$(', Id.Left_DollarParen),
     C('${', Id.Left_DollarBrace),
-    C('$[', Id.Left_DollarBracket),  # TODO: Implement $[x]
+    C('$[', Id.Left_DollarBracket),
 ]
 
 # Valid in lex_mode_e.Expr, but not valid in DQ
@@ -931,15 +931,9 @@ YSH_LEFT_UNQUOTED = [
     C('^[', Id.Left_CaretBracket),  # Expr literals
     C('^{', Id.Left_CaretBrace),  # Unused
     C(':|', Id.Left_ColonPipe),  # shell-like word arrays.
-    C('%(', Id.Left_PercentParen),  # old syntax for shell-like word arrays.
-    C('%[', Id.Expr_Reserved),  # Maybe: like %() without unquoted [], {}
-    C('%{', Id.Expr_Reserved),  # Table literals
-    # t = %{
-    #    name:Str  age:Int
-    #    'andy c'  10
-    # }
-    # Significant newlines.  No unquoted [], {}
-
+    C('%(', Id.Left_PercentParen),  # DEPRECATED syntax for :| sh array |
+    C('%[', Id.Expr_Reserved),
+    C('%{', Id.Expr_Reserved),  # Table literals?  Vertical dict?
     # Not sure if we'll use these
     C('@{', Id.Expr_Reserved),
     C('@[', Id.Expr_Reserved),
@@ -953,7 +947,7 @@ EXPR_OPS = [
     C(';', Id.Op_Semi),
     C('(', Id.Op_LParen),
     C(')', Id.Op_RParen),
-    # NOTE: type expressions are expressions, e.g. Dict[Str, Int]
+    # Note: type expressions are expressions, e.g. Dict[Str, Int]
     C('[', Id.Op_LBracket),
     C(']', Id.Op_RBracket),
     C('{', Id.Op_LBrace),

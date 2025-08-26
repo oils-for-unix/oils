@@ -251,3 +251,16 @@ int sleep_until_error(double seconds) {
 }
 
 }  // namespace libc
+
+namespace pylocale {
+BigStr* setlocale(int category, BigStr* locale) {
+  char* locale_name = ::setlocale(category, locale->data_);
+  if (locale_name == nullptr) {
+    throw Alloc<Error>();
+  }
+  return StrFromC(locale_name);
+}
+BigStr* nl_langinfo(int item) {
+  return StrFromC(::nl_langinfo(item));
+}
+}  // namespace pylocale

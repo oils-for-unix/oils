@@ -1,4 +1,3 @@
-"""optview.py."""
 from __future__ import print_function
 
 from frontend import consts

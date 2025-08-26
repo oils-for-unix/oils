@@ -135,71 +135,78 @@ NUL-terminated strings.
 
 ### Str
 
-An `Obj` instance representing the string type.
+An `Obj` instance representing the string type.  Let's use this definition:
+
+    var mystr = 'mystr'
 
 ### find()
 
 TODO:
 
-    var i = mystr.find('foo')
+```raw
+var i = mystr.find('y')
+```
 
-Similar to
+This is similar to
 
-    = 'foo' in mystr
+```raw
+= mystr.contains('y')
+```
 
-Both of them do substring search.
+Both of them do substring search.  Also similar to `mystr.search(/ 'y' /)`.
 
-Also similar to `mystr.search(eggex)`.
-
-<!-- Python also has start, end indices, to reduce allocations -->
+<!-- Note: Python also has start, end indices, to reduce allocations -->
 
 ### replace()
 
 Replace substrings with a given string.
 
-    = mystr => replace("OSH", "YSH")
+    = mystr.replace('OSH', 'YSH')
 
-Or match with an Eggex.
+Or replace an Eggex with a string or function.
 
-    = mystr => replace(/ d+ /, "<redacted>")  # => "code is <redacted>"
+    = mystr.replace(/ d+ /, "<redacted>")  # => "code is <redacted>"
 
 Refer to Eggex captures with replacement expressions. Captured values can be
 referenced with `$1`, `$2`, etc.
 
-    var mystr = "1989-06-08"
+    var mystr = '1989-06-08'
     var pat = / <capture d{4}> '-' <capture d{2}> '-' <capture d{2}> /
-    = mystr => replace(pat, ^"Year: $1, Month: $2, Day: $3")
+    = mystr.replace(pat, ^"Year: $1, Month: $2, Day: $3")
 
 Captures can also be named.
 
-    = mystr2 => replace(/ <capture digit{4} as year : int> /, ^"$[year + 1]")
+    = mystr.replace(/ <capture digit{4} as year : int> /, ^"$[year + 1]")
 
 `$0` refers to the entire capture itself in a substitution string.
 
-    var mystr = "replace with mystr => replace()"
-    = mystr => replace(/ alpha+ '=>' alpha+ '()' /, ^"<code>$0</code>")
-    # => "replace with <code>mystr => replace()</code>"
+    var mystr = "replace with mystr.replace()"
+    = mystr.replace(/ alpha+ '.' alpha+ '()' /, ^"<code>$0</code>")
+    # => "replace with <code>mystr.replace()</code>"
 
 In addition to captures, other variables can be referenced within a replacement
 expression.
 
-    = mystr => replace(/ <capture alpha+> /, ^"$1 and $anotherVar")
+    var myvar = 'zz'
+    = mystr.replace(/ <capture alpha+> /, ^"$1 and $myvar")
 
 To limit the number of replacements, pass in a named count argument. By default
-the count is `-1`. For any count in [0, MAX_INT], there will be at most count
-replacements. Any negative count means "replace all" (ie. `count=-2` behaves
+the count is `-1`. For any count in [0, `MAX_INT`], there will be at most count
+replacements. Any negative count means "replace all" (i.e. `count=-2` behaves
 exactly like `count=-1`).
 
     var mystr = "bob has a friend named bob"
-    = mystr => replace("bob", "Bob", count=1)   # => "Bob has a friend named bob"
-    = mystr => replace("bob", "Bob", count=-1)  # => "Bob has a friend named Bob"
+    = mystr.replace("bob", "Bob", count=1)   # => "Bob has a friend named bob"
+    = mystr.replace("bob", "Bob", count=-1)  # => "Bob has a friend named Bob"
 
 The following matrix of signatures are supported by `replace()`:
 
-    s => replace(string_val, subst_str)
-    s => replace(string_val, subst_expr)
-    s => replace(eggex_val, subst_str)
-    s => replace(eggex_val, subst_expr)
+```raw
+= mystr.replace(string_val, subst_str)
+= mystr.replace(string_val, subst_expr)
+= mystr.replace(eggex_val, subst_str)
+= mystr.replace(eggex_val, subst_expr)
+```
 
 Replacing by an `Eggex` has some limitations:
 
@@ -213,71 +220,86 @@ Replacing by an `Eggex` has some limitations:
 Checks if a string starts with a pattern, returning true if it does or false if
 it does not.
 
-    = b'YSH123' => startsWith(b'YSH')  # => true
-    = b'123YSH' => startsWith(b'YSH')  # => false
-    = b'123YSH' => startsWith(/ d+ /)  # => true
-    = b'YSH123' => startsWith(/ d+ /)  # => false
+    = b'YSH123'.startsWith(b'YSH')  # => true
+    = b'123YSH'.startsWith(b'YSH')  # => false
+    = b'123YSH'.startsWith(/ d+ /)  # => true
+    = b'YSH123'.startsWith(/ d+ /)  # => false
 
 Matching is done based on bytes, not runes.
 
     = b'\yce\ya3'                 # => (Str)   "Σ"
-    = 'Σ' => startsWith(b'\yce')  # => true
-    = 'Σ' => endsWith(b'\ya3')    # => true
+    = 'Σ'.startsWith(b'\yce')     # => true
+    = 'Σ'.endsWith(b'\ya3')       # => true
 
 ### endsWith()
 
 Like `startsWith()` but returns true if the _end_ of the string matches.
 
-    = b'123YSH' => endsWith("YSH")   # => true
-    = b'YSH123' => endsWith(/ d+ /)  # => true
+    = b'123YSH'.endsWith('YSH')   # => true
+    = b'YSH123'.endsWith(/ d+ /)  # => true
 
 ### trim()
 
-Removes characters matching a pattern from the start and end of a string.
-With no arguments, whitespace is removed. When given a string or eggex pattern,
-that pattern is removed if it matches the start or end.
+Removes text from the start and end of a `Str`.
 
-    = b' YSH\n'    => trim()        # => "YSH"
-    = b'xxxYSHxxx' => trim('xxx')   # => "YSH"
-    = b'xxxYSH   ' => trim('xxx')   # => "YSH   "
-    = b'   YSHxxx' => trim('xxx')   # => "   YSH"
-    = b'   YSH   ' => trim('xxx')   # => "   YSH   "
-    = b'123YSH456' => trim(/ d+ /)  # => "YSH"
+To specify what to remove, pass either a `Str` argument:
 
-#### A note on whitespace
+    = 'xxxYSHxxx'.trim('xxx')      # => 'YSH'
+    = 'xxxYSH   '.trim('xxx')      # => 'YSH   '
+    = '   YSHxxx'.trim('xxx')      # => '   YSH'
+    = '   YSH   '.trim('xxx')      # => '   YSH   '
 
-When stripping whitespace, Oils decodes the bytes in string as utf-8
-characters. Only the following Unicode codepoints are considered to be
-whitespace.
+Or an `Eggex` argument:
 
- - U+0009 -- Horizontal tab (`\t`)
- - U+000A -- Newline (`\n`)
- - U+000B -- Vertical tab (`\v`)
- - U+000C -- Form feed (`\f`)
- - U+000D -- Carriage return (`\r`)
- - U+0020 -- Normal space
- - U+00A0 -- No-break space `<NBSP>`
- - U+FEFF -- Zero-width no-break space `<ZWNBSP>`
+    = '123YSH456'.trim(/ d+ /)     # => 'YSH'
 
-While the Unicode standard defines other codepoints as being spaces, Oils
-limits itself to just these codepoints so that the specification is stable, and
-doesn't depend on an external standard that has reclassify characters.
+If no arguments are passed, whitespace is removed:
+
+    = b' YSH\n'.trim()             # => 'YSH'
+
+These code points are considered whitespace:
+
+- `U+0009` - Horizontal tab `\t`
+- `U+000A` - Newline `\n`
+- `U+000B` - Vertical tab `\u{b}`
+- `U+000C` - Form feed `\f`
+- `U+000D` - Carriage return `\r`
+- `U+0020` - Normal space `' '`
+- `U+00A0` - No-break space (NBSP) `\u{a0}`
+- `U+FEFF` - Zero-width no-break space (ZWNBSP) `\u{feff}`
+
+To obtain code points, Oils decodes the string as UTF-8.  Bytes that are not
+valid UTF-8 cause a fatal error.
+
+Other code points are considered whitespace in the Unicode standard, but we use
+only the ones above, so that these methods have a stable specification.
+
+---
+
+Note that Eggex patterns compile to POSIX extended regular expressions (ERE),
+which have a different notion of whitespace:
+
+- `/blank/` - matches `\t`, normal space
+- `/space/` - matches `\t \n`, vertical tab, `\f \r`, normal space, and
+  possibly Unicode separators `\p{Z}`
+
+<!-- TODO: link to a section on POSIX ERE and Unicode -->
 
 ### trimStart()
 
 Like `trim()` but only removes characters from the _start_ of the string.
 
-    = b' YSH\n'    => trimStart()        # => "YSH\n"
-    = b'xxxYSHxxx' => trimStart(b'xxx')  # => "YSHxxx"
-    = b'123YSH456' => trimStart(/ d+ /)  # => "YSH456"
+    = b' YSH\n'   .trimStart()        # => b'YSH\n'
+    = b'xxxYSHxxx'.trimStart('xxx')   # =>  'YSHxxx'
+    = b'123YSH456'.trimStart(/ d+ /)  # =>  'YSH456'
 
 ### trimEnd()
 
 Like `trim()` but only removes characters from the _end_ of the string.
 
-    = b' YSH\n'    => trimEnd()        # => " YSH"
-    = b'xxxYSHxxx' => trimEnd(b'xxx')  # => "YxxxSH"
-    = b'123YSH456' => trimEnd(/ d+ /)  # => "123YSH"
+    = b' YSH\n'   .trimEnd()          # => ' YSH'
+    = b'xxxYSHxxx'.trimEnd('xxx')     # => 'xxxYSH'
+    = b'123YSH456'.trimEnd(/ d+ /)    # => '123YSH'
 
 ### upper()
 
@@ -289,37 +311,49 @@ Respects unicode.
 
 ### search()
 
-Search for the first occurrence of a regex in the string.
+Search for the first occurrence of a regex in the string.  Returns a
+[Match](#Match) value if it matches, or `null`.
 
-    var m = 'hi world' => search(/[aeiou]/)  # search for vowels
-    # matches at position 1 for 'i'
+    var m = 'hi world'.search(/[a e i o u]/)  # search for vowels
+    = m.start(0)  # => index 1, matching 'i'
 
-Returns a `value.Match()` if it matches, otherwise `null`.
+    var m = 'hi world'.search(/[z]/)
+    = m  # => null
 
-You can start searching in the middle of the string:
+---
 
-    var m = 'hi world' => search(/dot 'orld'/, pos=3)
-    # also matches at position 4 for 'o'
+The `pos` parameter lets you start searching in the middle of the string:
 
-The `%start` or `^` metacharacter will only match when `pos` is zero.
+    var m = 'hi world'.search(/[a e i o u]/, pos=3)
+    = m.start(0)  # => index 4, matching 'o'
+
+Note: the `%start` aka `^` metacharacter will only match when `pos === 0`.
 
 (Similar to Python's `re.search()`.)
 
 ### leftMatch()
 
-`leftMatch()` is like `search()`, but it checks
+`leftMatch()` is like `search()`, but the pattern must match at the beginning
+of the string.
 
-    var m = 'hi world' => leftMatch(/[aeiou]/)  # search for vowels
-    # doesn't match because h is not a vowel
+    var m = 'hi world'.leftMatch(/[a e i o u]/)
+    = m           # => Null because 'h' is not a vowel
 
-    var m = 'aye' => leftMatch(/[aeiou]/)
-    # matches 'a'
+    var m = 'ale'.leftMatch(/[a e i o u]/)
+    = m.start(0)  # => index 0 for a
+
+(Unlike `search()`, the `%start` aka `^` metcharacter may match when `pos !==
+0`.)
+
+---
 
 `leftMatch()` Can be used to implement lexers that consume every byte of input.
 
     var lexer = / <capture digit+> | <capture space+> /
 
-(Similar to Python's `re.match()`.)
+See [YSH Regex API](../ysh-regex-api.html).
+
+(`leftMatch()` is similar to Python's `re.match()`.)
 
 ### split()
 
@@ -342,7 +376,9 @@ negative `count` will split on all occurrences of `sep`.
 
 Passing an empty `sep` will result in an error.
 
-    pp ('abc'.split(''))  # => Error: Sep cannot be ""
+```raw
+pp ('abc'.split(''))  # => Error: Sep cannot be ""
+```
 
 Splitting by an `Eggex` has some limitations:
 
@@ -395,43 +431,39 @@ A `Match` is the result searching for an `Eggex` within a `Str`.
 Returns the string that matched a regex capture group.  Group 0 is the entire
 match.
 
-    var m = '10:59' => search(/ ':' <capture d+> /)
-    echo $[m => group(0)]  # => ':59'
-    echo $[m => group(1)]  # => '59'
+    var m = '10:59'.search(/ ':' <capture d+> /)
+    echo $[m.group(0)]  # => ':59'
+    echo $[m.group(1)]  # => '59'
 
 Matches can be named with `as NAME`:
 
-    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
+    var m = '10:59'.search(/ ':' <capture d+ as minute> /)
 
 And then accessed by the same name:
 
-    echo $[m => group('minute')]  # => '59'
-
-<!--
-    var m = '10:59' => search(/ ':' <capture d+ as minutes: int> /)
--->
+    echo $[m.group('minute')]  # => '59'
 
 ### start()
 
 Like `group()`, but returns the **start** position of a regex capture group,
 rather than its value.
 
-    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
-    echo $[m => start(0)]         # => position 2 for ':59'
-    echo $[m => start(1)]         # => position 3 for '59'
+    var m = '10:59'.search(/ ':' <capture d+ as minute> /)
+    echo $[m.start(0)]         # => position 2 for ':59'
+    echo $[m.start(1)]         # => position 3 for '59'
 
-    echo $[m => start('minute')]  # => position 3 for '59'
+    echo $[m.start('minute')]  # => position 3 for '59'
 
 ### end()
 
 Like `group()`, but returns the **end** position of a regex capture group,
 rather than its value.
 
-    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
-    echo $[m => end(0)]         # => position 5 for ':59'
-    echo $[m => end(1)]         # => position 5 for '59'
+    var m = '10:59'.search(/ ':' <capture d+ as minute> /)
+    echo $[m.end(0)]         # => position 5 for ':59'
+    echo $[m.end(1)]         # => position 5 for '59'
 
-    echo $[m => end('minute')]  # => 5 for '59'
+    echo $[m.end('minute')]  # => 5 for '59'
 
 
 ## Containers
@@ -447,7 +479,7 @@ A List contains an ordered sequence of values.
 Add an element to a list.
 
     var fruits = :|apple banana pear|
-    call fruits->append("orange")
+    call fruits->append('orange')
     echo @fruits  # => apple banana pear orange
 
 Similar names: [append][]
@@ -459,7 +491,7 @@ Similar names: [append][]
 remove an element from a list and return it.
 
     var fruits = :|apple banana pear orange|
-    var last = fruits->pop()  # "orange" is removed AND returned
+    var last = fruits->pop()  # 'orange' is removed AND returned
     echo $last                # => orange
     echo @fruits              # => apple banana pear
 
@@ -477,15 +509,15 @@ Extend an existing list with the elements of another list.
 Returns the first index of the element in the list, or -1 if it's not present.
 
     var names = :| Jane Peter Joana Sam |
-    echo $[names => indexOf("Sam")]    # => 3
-    echo $[names => indexOf("Simon")]  # => -1
+    echo $[names.indexOf('Sam')]    # => 3
+    echo $[names.indexOf('Simon')]  # => -1
 
 ### insert()
 
 Insert an element into the list at the given index.
 
     var hills = :| pillar glaramara helvellyn |
-    call hills->insert(1, "raise")
+    call hills->insert(1, 'raise')
     echo @hills  # => pillar raise glaramara helvellyn
 
 - If you pass an index greater than the list length, the item will be inserted
@@ -501,8 +533,8 @@ Returns the index of the last occurring instance of the specified
 element in the list, or -1 if it's not present.
 
     var names = :| Sam Alice Sam Sam |
-    echo $[names => lastIndexOf("Sam")]    # => 3
-    echo $[names => lastIndexOf("Simon")]  # => -1
+    echo $[names.lastIndexOf('Sam')]    # => 3
+    echo $[names.lastIndexOf('Simon')]  # => -1
 
 ### remove()
 
@@ -510,7 +542,7 @@ Remove the first instance of the specified element from the list, if it exists.
 Returns `null`, even if the element did not exist.
 
     var lakes = :| coniston derwent wast |
-    call lakes->remove("wast")
+    call lakes->remove('wast')
     echo @lakes  # => coniston derwent
 
 ### reverse()
@@ -526,8 +558,8 @@ Reverses a list in place.
 Remove all entries from the List:
 
     var fruits = :|apple banana pear|
-    call mylist->clear()
-    echo @fruits # =>
+    call fruits->clear()
+    echo $[len(fruits)]  # => 0
 
 ### Dict
 
@@ -536,36 +568,43 @@ An `Obj` instance representing the `Dict` type.
 A Dict contains an ordered sequence of key-value pairs.  Given the key, the
 value can be retrieved efficiently.
 
+Let's use this definition:
+
+    var mydict = {}
+
 ### erase()
 
 Ensures that the given key does not exist in the dictionary.
 
     var book = {
-      title: "The Histories",
-      author: "Herodotus",
+      title: 'The Histories',
+      author: 'Herodotus',
     }
     = book
-    # => (Dict)   {title: "The Histories", author: "Herodotus"}
+    # => (Dict)   {title: 'The Histories', author: 'Herodotus'}
 
-    call book->erase("author")
+    call book->erase('author')
     = book
-    # => (Dict)   {title: "The Histories"}
+    # => (Dict)   {title: 'The Histories'}
 
     # repeating the erase call does not cause an error
-    call book->erase("author")
+    call book->erase('author')
     = book
-    # => (Dict)   {title: "The Histories"}
+    # => (Dict)   {title: 'The Histories'}
 
 ### accum()
 
 TODO:
 
-    call mydict->accum('key', 'string to append')
+```raw
+call mydict->accum('key', 'string to append')
+```
 
 Similar:
 
-    setvar mydict['k'] += 3  # TODO: default value of 0
-
+```raw
+setvar mydict['k'] += 3  # TODO: default value of 0
+```
 
 ### Dict/clear()
 
@@ -573,7 +612,9 @@ TODO:
 
 Remove all entries from the Dict:
 
-    call mydict->clear()
+```raw
+call mydict->clear()
+```
 
 ### Place
 
@@ -581,7 +622,7 @@ Remove all entries from the Dict:
 
 A Place is used as an "out param" by calling setValue():
 
-    proc p (out) {
+    proc p (; out) {
       call out->setValue('hi')
     }
 
@@ -604,9 +645,8 @@ A func that's part of Oils, like `len()`.
 
 ### BoundFunc
 
-The [thin-arrow][] and [fat-arrow][] create bound funcs:
+The [thin-arrow][] creates a bound func:
 
-    var bound = '' => upper
     var bound2 = [] -> append
 
 [thin-arrow]: chap-expr-lang.html#thin-arrow
@@ -666,7 +706,10 @@ Then invoke it like a proc:
 
 Create an object:
 
-    var methods = Obj.new({mymethod: foo}, null)
+    func mymethod(self) { 
+      return (42)
+    }
+    var methods = Obj.new({methodName: mymethod}, null)
     var instance = Obj.new({x: 3, y: 4}, methods)
 
 TODO: This will become `Obj.__call__`, which means it's written `Obj`.
@@ -688,8 +731,21 @@ It's currently used for type objects:
 
 TODO
 
-
 ## Reflection
+
+Definitions used below:
+
+    proc my-cd (dest; ; ; block) {
+      pushd $dest
+      call io->eval(block, in_captured_frame=true)
+      popd
+    }
+    proc my-where (; predicate) {
+      for line in (io.stdin) {
+        # dummy implementation that doesn't use predicate
+        write -- $line
+      }
+    }
 
 ### Command
 
@@ -706,7 +762,7 @@ syntaxes for such values:
 2. In [command mode][command-vs-expression-mode], a YSH [block-arg][] is 
    also of type `Command`:
 
-       myproc { 
+       my-cd /tmp { 
          echo $PWD
        }
 
@@ -743,11 +799,13 @@ The `location_str` and `location_start_line` fields can be passed back into the
 YSH interpreter, so that error messages blame the original location, not new
 locations from `code_str`:
 
-    ... ysh 
-        --location-str        $[src.location_str]
-        --location-start-line $[src.location_start_line]
-        file_with_code_str.ysh
-        ;
+```raw 
+... ysh 
+    --location-str        $[src.location_str]
+    --location-start-line $[src.location_start_line]
+    file_with_code_str.ysh
+    ;
+```
 
 Currently, you can't extract the source code of an `Command` expression.  The
 method returns `null`:
@@ -851,9 +909,13 @@ Then the output will look like:
 
 Returns the singleton `stdin` value, which you can iterate over:
 
-    for line in (io.stdin) {
-       echo $line
+    seq 3 | for line in (io.stdin) {
+       echo "+$line"
     }
+    # =>
+    # +1
+    # +2
+    # +3
 
 This is buffered line-based I/O, as opposed to the unbuffered I/O of the [read][]
 builtin.
@@ -893,7 +955,7 @@ Scoping rules:
 
 The `in_captured_frame` argument changes this behavior:
 
-    call io->eval(cmd, in_captured_frame=true)
+    call io->eval(cmd, pos_args=['one'], in_captured_frame=true)
 
 In this case, the captured frame becomes the local frame.  It's useful for
 creating procs that behave like builtins:
@@ -911,7 +973,7 @@ corresponding to the stack frame that the `Command` is evaluated in.
 Example:
 
     var x = 10  # captured
-    var cmd = ^(var a = 42; var hidden_ = 'h'; var b = x + 1)
+    var cmd = ^(var a = 42; var hidden_ = 'h'; var b = x + 1; )
 
     var d = io->evalToDict(cmd)
 
@@ -1036,11 +1098,15 @@ An object with functions for introspecting the Oils VM.
 
 Given an index, get a handle to a call stack frame.
 
-    var frame = vm.getFrame(0)   # global frame
-    var frame = vm.getFrame(1)   # first frame pushed on the global frame
+    proc p {
+      var frame
+      setvar frame = vm.getFrame(0)   # global frame
+      setvar frame = vm.getFrame(1)   # first frame pushed on the global frame
 
-    var frame = vm.getFrame(-1)  # the current frame, aka local frame
-    var frame = vm.getFrame(-2)  # the calling frame
+      setvar frame = vm.getFrame(-1)  # the current frame, aka local frame
+      setvar frame = vm.getFrame(-2)  # the calling frame
+    }
+    p
 
 If the index is out of range, an error is raised.
 
@@ -1054,8 +1120,7 @@ Returns a list of [DebugFrame][] values, representing the current call stack.
 
 Returns an integer ID for mutable values like List, Dict, and Obj.
 
-    = vm.id({})
-    (Int)  123
+    = vm.id({})  # => (Int)  123
 
 You can use it to test if two names refer to the same instance.
 

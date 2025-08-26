@@ -59,7 +59,7 @@ Configurations:
 
 ## Baseline versus osh-as-sh
 
-- [diff-baseline](diff-baseline.html)
+- [diff_baseline](diff_baseline.html)
 
 ## osh-as-sh versus osh-as-bash
 
@@ -72,10 +72,13 @@ EOF
 diff-metrics-html() {
   local db=${1:-_tmp/aports-report/2025-08-03/diff_merged.db}
 
+  # TODO: count .apk for both BASELINE and osh-as-sh
   echo '<ul>'
   sqlite3 $db <<EOF
--- select printf("<li>Shards: %s</li>", count(distinct shard)) from diff_merged;
 select printf("<li>Tasks: %s</li>", sum(num_tasks)) from metrics;
+-- this is only shards with disagreements; we want total shards
+-- select printf("<li>Shards: %s</li>", count(distinct shard)) from diff_merged;
+select printf("<li><code>.apk</code> packages produced: %s</li>", count(distinct apk_name)) from apk_merged;
 select printf("<li>Elapsed Hours: %.1f</li>", sum(elapsed_minutes) / 60) from metrics;
 select printf("<li>Baseline failures: %s</li>", sum(num_failures)) from metrics where config = "baseline";
 select printf("<li>osh-as-sh failures: %s</li>", sum(num_failures)) from metrics where config = "osh-as-sh";
@@ -89,7 +92,7 @@ EOF
 
 diff-html() {
   local base_dir=${1:-$REPORT_DIR/$EPOCH}
-  local name=${2:-diff-baseline}
+  local name=${2:-diff_baseline}
   local base_url=${3:-'../../../../web'}
 
   local title='OSH Disagreements - regtest/aports'
@@ -186,6 +189,7 @@ published-html() {
 ## $title
 
 - [2025-08-07-fix](2025-08-07-fix.wwz/_tmp/aports-report/2025-08-07-fix/diff_merged.html)
+- [2025-08-14-fix](2025-08-14-fix.wwz/_tmp/aports-report/2025-08-14-fix/diff_merged.html)
 
 EOF
 
@@ -318,7 +322,7 @@ write-tables-for-config() {
 
 make-diff-db() {
   local base_dir=$1
-  local name=${2:-diff-baseline}
+  local name=${2:-diff_baseline}
 
   local db=$name.db
 
@@ -339,7 +343,7 @@ make-diff-db() {
 -- this is a text file, so headers are OFF
 .headers off
 
-select pkg from diff;
+select pkg from diff_baseline;
 EOF
 
   mkdir -p error
@@ -366,7 +370,8 @@ EOF
     -cmd '.import causes.tsv causes' \
     $db < $cause_sql
 
-  db-to-tsv $db diff
+  # The DB is diff_baseline.db, with table diff_baseline
+  db-to-tsv $db diff_baseline
 
   popd
 }
@@ -406,10 +411,10 @@ merge-diffs-sql() {
 
   # Create table from first shard
   echo "
-  ATTACH DATABASE '$first_shard/diff-baseline.db' AS temp_shard;
+  ATTACH DATABASE '$first_shard/diff_baseline.db' AS temp_shard;
 
   CREATE TABLE diff_merged AS
-  SELECT *, CAST('' as TEXT) as shard FROM temp_shard.diff where 1=0;
+  SELECT *, CAST('' as TEXT) as shard FROM temp_shard.diff_baseline where 1=0;
 
   CREATE TABLE metrics AS
   SELECT *, CAST('' as TEXT) as shard FROM temp_shard.metrics where 1=0;
@@ -424,10 +429,10 @@ merge-diffs-sql() {
       
     echo "
     -- $i: Add data from $shard_db
-    ATTACH DATABASE '$shard_db/diff-baseline.db' AS temp_shard;
+    ATTACH DATABASE '$shard_db/diff_baseline.db' AS temp_shard;
 
     INSERT INTO diff_merged
-    SELECT *, '$shard_name' as shard FROM temp_shard.diff;
+    SELECT *, '$shard_name' as shard FROM temp_shard.diff_baseline;
 
     INSERT INTO metrics
     SELECT *, '$shard_name' as shard FROM temp_shard.metrics;
@@ -439,6 +444,40 @@ merge-diffs-sql() {
   # Does not involve metaprogramming
   cat regtest/aports/merge.sql
 }
+
+make-apk-merged() {
+  local epoch_dir=${1:-_tmp/aports-report/2025-08-12-ten}
+  local db=${2:-$epoch_dir/diff_merged.db}
+
+  # this is a TSV file with no header
+  cat $epoch_dir/*/apk-list.txt > apk-merged.txt
+
+  sqlite3 $db << 'EOF'
+.mode tabs
+.headers off
+
+drop table if exists apk_merged;
+
+create table apk_merged (
+  num_bytes integer,
+  apk_name
+);
+
+.import apk-merged.txt apk_merged
+
+-- queries for later
+-- select count(*) from apk_merged;
+-- select count(distinct apk_name) from apk_merged;
+
+-- select * from PRAGMA_TABLE_INFO("apk_merged");
+
+.mode columns
+.headers on
+-- select * from apk_merged limit 10;
+
+EOF
+}
+
 
 merge-diffs() {
   local epoch_dir=${1:-_tmp/aports-report/2025-08-03}
@@ -458,6 +497,8 @@ merge-diffs() {
 
   popd
 
+  make-apk-merged $epoch_dir $db
+
   local out=$epoch_dir/$name1.html
   diff-html $epoch_dir $name1 '../../../web' > $out
   echo "Wrote $out"
@@ -470,7 +511,7 @@ merge-diffs() {
 
   html-tree "$epoch_dir"
 
-  update-published
+  update-published  # also done in deploy-published
 }
 
 write-shard-reports() {
@@ -482,7 +523,7 @@ write-shard-reports() {
     write-tables-for-config "$base_dir" "$config"
   done
 
-  local name=diff-baseline
+  local name=diff_baseline
   make-diff-db $base_dir
   diff-html $base_dir > $base_dir/$name.html
   echo "Wrote $base_dir/$name.html"
@@ -536,22 +577,33 @@ make-wwz() {
   echo "Wrote $wwz"
 }
 
+readonly WEB_HOST=op.oils.pub
+
 deploy-wwz-op() {
   local wwz=${1:-$REPORT_DIR/2025-08-03.wwz}
 
-  local host=op.oils.pub
+  local dest_dir=$WEB_HOST/aports-build
 
-  #local host=op.oilshell.org 
+  update-published  # slightly redundant
 
-  local dest_dir=$host/aports-build
-
-  ssh $host mkdir -p $dest_dir
+  ssh $WEB_HOST mkdir -p $dest_dir
 
   scp $wwz $REPORT_DIR/published.html \
-    $host:$dest_dir/
+    $WEB_HOST:$dest_dir/
 
   echo "Visit https://$dest_dir/published.html"
   echo "      https://$dest_dir/$(basename $wwz)/"
+}
+
+deploy-published() {
+  local dest_dir=$WEB_HOST/aports-build
+
+  update-published  # slightly redundant
+
+  scp $REPORT_DIR/published.html \
+    $WEB_HOST:$dest_dir/
+
+  echo "Visit https://$dest_dir/published.html"
 }
 
 out-of-vm() {

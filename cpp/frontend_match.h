@@ -76,6 +76,7 @@ Tuple2<Id_t, int> MatchShNumberToken(BigStr* s, int pos);
 // Other Matching Functions
 //
 
+bool IsUtf8Codeset(BigStr* s);
 bool IsValidVarName(BigStr* s);
 bool ShouldHijack(BigStr* s);
 bool CanOmitQuotes(BigStr* s);

@@ -64,6 +64,7 @@ _devbuild/
 _gen/
 
 asdl/py.*           # pybase.py ported by hand to C++
+pylib/py.*
 
 mycpp/iolib.py      # Implemented in gc_iolib.{h,cC}
 mycpp/mops.py       # Implemented in gc_mops.{h,cC}

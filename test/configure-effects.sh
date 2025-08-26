@@ -49,6 +49,18 @@ test-osh() {
   # FNM_EXTMATCH in fnmatch()
   $osh -x -c 'case foo.py in @(*.asdl|*.py)) echo py ;; esac'
   echo status=$?
+
+  # --without-readline should not affect Unicode matching!
+  # Fixed 2025-08 with InitLocale()
+  # TODO: make this a hard assertion, and run it in CI.  It would be nice to
+  # have some kind of Ninja variants, so we don't have to keep rebuilding Oils.
+
+  $osh <<'EOF'
+var pat = / '_' <capture dot> '_' /
+
+= b'_a_'.leftMatch(pat)
+= b'_\yce\ybc_'.leftMatch(pat)
+EOF
 }
 
 cpp() {

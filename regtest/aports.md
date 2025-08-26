@@ -26,7 +26,9 @@ The -1 value means it's cached forever.
 
 ## Set up Alpine chroot - `he.oils.pub`
 
-The first step is is in `regtest/aports-setup.sh`:
+The first step is in `regtest/aports-setup.sh`:
+
+    $ regtest/aports-setup.sh remove-chroot     # optional; for a CLEAN build
 
     $ regtest/aports-setup.sh fetch-all         # git clone, download Oils from CI
     $ regtest/aports-setup.sh prepare-all       # make a chroot
@@ -54,34 +56,92 @@ into 17 *shards*.  You can run two shards like this:
 
     $ regtest/aports-run.sh build-many-shards shard5 shard6
 
-To run all 17 shards, you can use bash brace expansion:
+This is the normal way to run all 17 shards (using bash brace expansion):
 
     $ regtest/aports-run.sh build-many-shards shard{0..16}
 
-## Reports
+But this is how I run it right now, due to flakiness:
 
-TODO: credentials necessary;
+      # weird order!
+    $ regtest/aports-run.sh build-many-shards shard{10..16} shard{0..5}
 
-- `he.oils.pub` server
-  - I think each person has their own account?
-- `op.oils.pub` web server (for `.wwz` files)
-  - ask for SSH key
-- Github pages repo
-  - sent github invite
+      # Now BLOW AWAY CHROOT, to work around errors
+    $ regtest/aports-setup.sh remove-chroot
+    $ regtest/aports-setup.sh prepare-chroot
+    $ regtest/aports-setup.sh unpack-distfiles
 
-### Make HTML reports - local machine
+      # Run remaining shards
+    $ regtest/aports-run.sh build-many-shards shard{6..9}
 
-    $ regtest/aports-html.sh sync-results  # rsync to _tmp/aports-report
+(This was discovered empirically; we should remove this workaround eventually.)
+
+
+## Make Reports with Tables
+
+### Credentials
+
+You will need these credentials:
+
+- to rsync from the `he.oils.pub` server
+  - I think each person should have their own account
+- to `scp` to `.wwz` and `.html` to the `op.oils.pub` server
+  - ask for SSH key; give user name
+
+### Sync and Preview - local machine
+
+You can sync results while the build is running:
+
+    $ regtest/aports-html.sh sync-results  # rsync from he.oils.pub to _tmp/aports-report
+
+This creates a structure like:
+
+    _tmp/aports-report/
+      2025-08-07-fix/
+        shard10/
+        shard11/
+
+And then make a partial report:
 
     $ regtest/aports-html.sh write-all-reports _tmp/aports-report/2025-08-07-fix
 
 Now look at this file in your browser:
 
-    _tmp/aports-report/2025-08-07-fix/diff-merged.html  # 17 shards merged
+    _tmp/aports-report/2025-08-07-fix/diff_merged.html  # 17 shards merged
+
+
+### Checking for Flakiness
+
+The `aports` build can be flaky for a couple reasons, which are currently
+unexplained:
+
+1. The `abuild builddeps` step fails
+1. "cannot create executable" or "cannot compile programs" errors.
+   - Associated with "PHDR segment not covered".
+
+Both of these errors happen with the baseline build, not only with OSH.
+
+---
+
+So right now, I periodically sync the results to my local machine, and check
+the results with:
+
+    $ regtest/aports-debug.sh grep-c-bug-2
+    $ regtest/aports-debug.sh grep-phdr-bug-2
+    $ regtest/aports-debug.sh grep-b-bug-2
+
+If there are too many results, the chroot may have "crapped out".
+
+TODO: we can fix this by:
+
+- running under `podman` (`aports-container.sh`)
+- running under a VM
 
 ### Publish Reports - `op.oils.pub`
 
-Share the results:
+After verifying the output of `write-all-reports`, add a line to the markdown
+in `aports-html.sh published-html`.
+
+Then share the results:
 
     $ regtest/aports-html.sh make-wwz _tmp/aports-report/2025-08-07-fix
 
@@ -89,21 +149,22 @@ Share the results:
 
 Now visit
 
-- <https://op.oils.pub/aports-build/2025-08-07-fix.wwz/>
+- <https://op.oils.pub/aports-build/published.html>
 
-And then navigate to
+which will link to:
 
 - <https://op.oils.pub/aports-build/2025-08-07-fix.wwz/_tmp/aports-report/2025-08-07-fix/diff-merged.html>
 
-### Official link from `pages.oils.pub`
+### Add reports to `published.html`
 
-If the results are good, then add a link to:
+If the results look good, add a line to the markdown in `regtest/aports-html.sh
+published-html`, and then run:
 
-- <https://pages.oils.pub/>
-  - via the repo <https://github.com/oils-for-unix/oils-for-unix.github.io>
+    $ regtest/aports-html.sh deploy-published
 
-TODO: it could be better to keep it consistent and use `op.oils.pub`.  But I
-guess I like to have a version-controlled record of all the "good" runs.
+And then visit:
+
+- <https://op.oils.pub/aports-build/published.html>
 
 ## Updating Causes
 
@@ -113,10 +174,46 @@ Faster way to test it:
 
     $ regtest/aports-html.sh merge-diffs _tmp/aports-report/2025-08-07-fix/
 
+## Other Instructions
+
+### Reproducing a single package build failure
+
+You can reproduce build failures on your own machine.  Do the same steps you did on `he.oils.pub`:
+
+    $ regtest/aports-setup.sh fetch-all
+    $ regtest/aports-setup.sh prepare-all
+
+    $ regtest/aports-setup.sh unpack-distfiles  # optional
+
+And then ONE of these commands:
+
+    $ regtest/aports-run.sh set-baseline    # normal Alpine config
+    $ regtest/aports-run.sh set-osh-as-sh   # replace /bin/sh with OSH
+
+And then
+
+    # 7zip is the PKG_FILTER
+    # $config is either 'baseline' or 'osh-as-sh'
+    $ regtest/aports-run.sh build-packages '7zip' $config
+
+Then look at the logs in
+
+    _chroot/aports-build/
+      /home/udu/oils/
+        _tmp/aports-guest/baseline/
+          7zip.log.txt
+
+### Get a Shell in the Chroot
+
+    $ regtest/aports-run.sh enter-rootfs-user  # as unprivileged 'udu' user
+
+    $ regtest/aports-run.sh enter-rootfs       # as root user
+
 ## TODO
 
 - Running under podman could be more reliable
-  - that also means we do a bind mount?
+  - `regtest/aports-container.sh` shows that podman is able to run `abuild
+    rootbld` -> `bwrap`, if it's passed the `--privileged` flag
 
 ## Appendix: Dir Structure
 

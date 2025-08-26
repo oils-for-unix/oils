@@ -104,4 +104,40 @@ osh-literal() {
   bin/osh -c 'echo [μ]'
 }
 
+# TODO
+# - ltrace of bash, python, osh, ysh
+# - LANG vs LC_ALL - LANG is the default
+# - C or UTF-8 is accepted
+
+libc-vars() {
+  local sh=${1:-bin/osh}  # also _bin/cxx-asan/osh
+
+  case $sh in
+    _bin/*/osh)
+      ninja $sh
+      ;;
+  esac
+
+  $sh -c 'echo hi'
+  echo
+
+  LC_ALL=C $sh -c 'echo hi'
+  echo
+
+  LANG=C $sh -c 'echo hi'
+  echo
+
+  LC_COLLATE=C $sh -c 'echo hi'
+  echo
+
+  # this turns it into "C"
+  LC_ALL=POSIX $sh -c 'echo hi'
+  echo
+
+  LC_ALL=zz $sh -c 'echo hi'
+  echo
+
+  # TODO: non-utf8
+}
+
 "$@"

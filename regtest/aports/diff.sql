@@ -7,7 +7,7 @@ attach database 'osh-as-sh/tables.db' as osh_as_sh;
 -- .mode columns
 -- select * from packages;
 
-create table diff as
+create table diff_baseline as
   select
     b.pkg,
     cast(b.status as integer) as status1,

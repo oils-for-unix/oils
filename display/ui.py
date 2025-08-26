@@ -4,9 +4,7 @@
 # You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
-"""
-ui.py - User interface constructs.
-"""
+"""ui.py - User interface constructs"""
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str

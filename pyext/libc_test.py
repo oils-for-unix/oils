@@ -184,7 +184,7 @@ class LibcTest(unittest.TestCase):
     print(libc.glob('\\\\', 0))
     print(libc.glob('[[:punct:]]', 0))
 
-  def testRegexMatchError(self):
+  def testRegexSearchError(self):
     # See core/util_test.py for more tests
     try:
       libc.regex_search(r'*', 0, 'abcd', 0)
@@ -192,6 +192,37 @@ class LibcTest(unittest.TestCase):
       print(e)
     else:
       self.fail('Expected ValueError')
+
+  def testRegexSearchUnicode(self):
+    self.assertEqual([0, 1], libc.regex_search(r'.', 0, 'a', 0))
+    self.assertEqual([0, 1], libc.regex_search(r'.', 0, '\x7f', 0))
+
+    # dot matches both bytes of utf-8 encoded MU char - appears independent of LANG=C LC_ALL=C
+    self.assertEqual([0, 2], libc.regex_search(r'.', 0, '\xce\xbc', 0))
+
+    # Literal
+    self.assertEqual([0, 2], libc.regex_search('\xce\xbc', 0, '\xce\xbc', 0))
+
+    # literal mu in char class allowed?
+    self.assertEqual([0, 2], libc.regex_search('[\xce\xbc]', 0, '\xce\xbc', 0))
+    # two bytes here
+    self.assertEqual(None, libc.regex_search('[\xce\xbc]', 0, '\xce', 0))
+
+    # dot doesn't match high byte?  not utf-8
+    self.assertEqual(None, libc.regex_search(r'.', 0, '\xce', 0))
+
+    # [a] matches a
+    self.assertEqual([0, 1], libc.regex_search(r'[a]', 0, 'a', 0))
+
+    # \x01 isn't valid syntax
+    self.assertEqual(None, libc.regex_search(r'[\x01]', 0, '\x01', 0))
+
+    # literal low byte matches
+    self.assertEqual([0, 1], libc.regex_search('[\x01]', 0, '\x01', 0))
+
+    # literal high byte does NOT match?  Why?
+    if 0:
+      self.assertEqual([0, 1], libc.regex_search('[\xff]', 0, '\xff', 0))
 
   def testRegexFirstGroupMatch(self):
     s='oXooXoooXoX'

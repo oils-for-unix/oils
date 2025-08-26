@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 0
 ## compare_shells: dash bash-4.4 mksh zsh
 
 #### Env value doesn't persist
@@ -593,7 +593,11 @@ global
 ['loc', 'global', 'loc']
 ## END
 
-#### redirect after assignment builtin (what's going on with dash/bash/mksh here?)
+#### redirect after assignment builtin (eval redirects after evaluating arguments)
+
+# See also: spec/redir-order.test.sh (#2307)
+# The $(stdout_stderr.py) is evaluated *before* the 2>/dev/null redirection
+
 readonly x=$(stdout_stderr.py) 2>/dev/null
 echo done
 ## STDOUT:

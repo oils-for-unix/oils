@@ -786,6 +786,10 @@ ysh-regex-api() {
   test/spec-py.sh run-file ysh-regex-api "$@"
 }
 
+ysh-regex-bytes-chars() {
+  test/spec-py.sh run-file ysh-regex-bytes-chars "$@"
+}
+
 ysh-regex() {
   test/spec-py.sh run-file ysh-regex "$@"
 }

@@ -185,4 +185,41 @@ pp test_ (''.split(/ dot /))
 EOF
 }
 
+regex-match-vs-search() {
+  echo 'REGEX PYTHON'
+  echo
+
+  # This is a float
+  python3 -c '
+import re
+
+vowels = re.compile("[aeiou]")
+print(vowels.match("hi"))
+print(vowels.search("hi"))
+
+vowelsLeft = re.compile("^[aeiou]")
+
+print(vowelsLeft.match("hi", pos=1))
+print(vowelsLeft.search("hi", pos=1))
+'
+
+  echo
+  echo 'REGEX YSH'
+  echo
+
+  bin/ysh -c '
+var vowels = / [a e i o u] /
+echo $vowels
+
+= "hi".leftMatch(vowels)
+= "hi".search(vowels)
+
+var vowelsLeft = / %start [a e i o u] /
+= "hi".leftMatch(vowelsLeft, pos=1)
+= "hi".search(vowelsLeft, pos=1)
+'
+
+  # does JS have match vs. search?  I think it might use  ^
+}
+
 "$@"

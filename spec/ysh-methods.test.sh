@@ -1,7 +1,6 @@
 # spec/ysh-methods
 
 ## our_shell: ysh
-## oils_failures_allowed: 2
 
 #### => operator for pure computation is allowed (may be mandatory later)
 
@@ -112,19 +111,19 @@ false true
 false false
 ## END
 
-#### Str => startsWith(Str) and endsWith(Str), eggex matches bytes not runes
-func test(s, p) { echo $[s => startsWith(p)] $[s => endsWith(p)] }
+#### Str => startsWith(Str) and endsWith(Str), eggex matches runes
+func test(s, p) { echo $[s.startsWith(p)] $[s.endsWith(p)] }
 
 call test(u'\u{03a3}', / dot /)
 call test(u'\u{03a3}', / ![z] /)
-call test(b'\yce', / dot /)   # Fails: eggex does not match bytes
-call test(b'\yce', / ![z] /)  # Fails: eggex does not match bytes
+call test(b'\yce', / dot /)
+call test(b'\yce', / ![z] /)
 ## status: 0
 ## STDOUT:
 true true
 true true
-true true
-true true
+false false
+false false
 ## END
 
 #### Str => startsWith(), no args
@@ -228,18 +227,18 @@ call test('123abc123', / d+ /)
 ## END
 
 #### Str => trim*() with an eggex pattern trims bytes not runes
-func test(s, p) { write --sep ', ' --j8 $[s => trimStart(p)] $[s => trimEnd(p)] $[s => trim(p)] }
+func test(s, p) { write --sep ', ' --j8 $[s.trimStart(p)] $[s.trimEnd(p)] $[s.trim(p)] }
 
-call test(u'\u{03a3}', / dot /)   # Fails: eggex does not match bytes, so entire rune is trimmed.
-call test(u'\u{03a3}', / ![z] /)  # Fails: eggex does not match bytes, so entire rune is trimmed.
-call test(b'\yce', / dot /)       # Fails: eggex does not match bytes, so nothing is trimmed.
-call test(b'\yce', / ![z] /)      # Fails: eggex does not match bytes, so nothing is trimmed.
+call test(u'\u{03a3}', / dot /)
+call test(u'\u{03a3}', / ![z] /)
+call test(b'\yce', / dot /)
+call test(b'\yce', / ![z] /)
 ## status: 0
 ## STDOUT:
-b'\ya3', b'\yce', ""
-b'\ya3', b'\yce', ""
 "", "", ""
 "", "", ""
+b'\yce', b'\yce', b'\yce'
+b'\yce', b'\yce', b'\yce'
 ## END
 
 #### Str => trim(), too many args

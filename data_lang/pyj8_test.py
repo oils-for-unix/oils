@@ -1,7 +1,4 @@
 #!/usr/bin/env python2
-"""
-pyj8_test.py: Tests for pyj8.py
-"""
 from __future__ import print_function
 
 import unittest

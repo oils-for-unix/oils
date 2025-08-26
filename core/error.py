@@ -1,4 +1,4 @@
-""" core/error.py """
+"""error.py - error types"""
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import loc_e, loc_t, loc
