@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh zsh ash
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 
 # This file relates to:
 #
@@ -54,4 +54,12 @@ good
 bad
 
 ## STDOUT:
+## END
+
+#### Nested subshell (#2398)
+
+# found on line 137 of the zdiff util from gzip
+((echo foo) | tr o 0)
+## STDOUT:
+f00
 ## END
