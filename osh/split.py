@@ -442,7 +442,8 @@ class IfsSplitterState(object):
         if self.state in (state_i.DE_White1, state_i.Black):
             self._GenerateWord()
             if self.max_split >= 0 and len(self.args) == self.max_split + 2:
-                self.args[-2] = self.args[-2] + self.args[-1].rstrip(self.ifs_space)
-                self.args = self.args[:-1]
+                # TODO: is there an algorithm without this "fix up"?
+                last = self.args.pop()
+                self.args[-1] = self.args[-1] + last.rstrip(self.ifs_space)
             self.state = state_i.Start
         return self.args

@@ -341,10 +341,8 @@ bool OmitChar(int ch, int what) {
   }
 }
 
-bool OmitChar2(int ch, BigStr* chars) {
-  log("ch %c len %d", ch, len(chars));
+bool OmitCharMany(int ch, BigStr* chars) {
   for (int i = 0; i < len(chars); ++i) {
-    log("testing [%c] == [%c]", ch, chars->data_[i]);
     if (ch == chars->data_[i]) {
       return true;
     }
@@ -413,7 +411,7 @@ BigStr* BigStr::rstrip(BigStr* chars) {
     int j = len(this);
     do {
       j--;
-    } while (j >= 0 && OmitChar2(data_[j], chars));
+    } while (j >= 0 && OmitCharMany(data_[j], chars));
     j++;
 
     int new_len = j;
