@@ -169,29 +169,7 @@ def GlobUnescape(s):
 def GlobUnescapeBackslash(s):
     # type: (str) -> str
     """Inverse of GlobEscapeBackslash - turns \@ into \ """
-    unescaped = []  # type: List[int]
-    i = 0
-    n = len(s)
-    while i < n:
-        c = mylib.ByteAt(s, i)
-
-        if mylib.ByteEquals(c, '\\') and i != n - 1:
-            # Note: GlobEscapeBackslash() doesn't turn \ into \\, so a string
-            # could end with a single backslash?
-            assert i != n - 1, 'Trailing backslash: %r' % s
-
-            i += 1
-            c2 = mylib.ByteAt(s, i)
-
-            if mylib.ByteEquals(c2, '@'):
-                unescaped.append(pyos.BACKSLASH_CH)
-            else:
-                unescaped.append(pyos.BACKSLASH_CH)
-                unescaped.append(c2)
-        else:
-            unescaped.append(c)
-        i += 1
-    return mylib.JoinBytes(unescaped)
+    return s.replace('\\@', '\\')
 
 
 # For ${x//foo*/y}, we need to glob patterns, but fnmatch doesn't give you the
