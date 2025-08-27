@@ -431,6 +431,7 @@ def main(argv):
         TranslateOshLexer(lexer_def.LEXER_DEF)
 
         TranslateSimpleLexer('MatchEchoToken', lexer_def.ECHO_E_DEF)
+        TranslateSimpleLexer('MatchPrintfBToken', lexer_def.PRINTF_B_DEF)
         TranslateSimpleLexer('MatchGlobToken', lexer_def.GLOB_DEF)
         TranslateSimpleLexer('MatchPS1Token', lexer_def.PS1_DEF)
         TranslateSimpleLexer('MatchHistoryToken', lexer_def.HISTORY_DEF)

@@ -16,8 +16,7 @@ except ImportError:
     fastlex = None
 
 if fastlex:
-    #re = None  # re module isn't in CPython slice
-    import re  # type: ignore
+    re = None  # re module isn't in CPython slice
 else:
     import re  # type: ignore
 
@@ -102,6 +101,12 @@ def _MatchEchoToken_Fast(line, start_pos):
     return tok_type, end_pos
 
 
+def _MatchPrintfBToken_Fast(line, start_pos):
+    # type: (str, int) -> Tuple[Id_t, int]
+    tok_type, end_pos = fastlex.MatchPrintfBToken(line, start_pos)
+    return tok_type, end_pos
+
+
 def _MatchGlobToken_Fast(line, start_pos):
     # type: (str, int) -> Tuple[Id_t, int]
     tok_type, end_pos = fastlex.MatchGlobToken(line, start_pos)
@@ -159,7 +164,7 @@ def _MatchShNumberToken_Fast(line, start_pos):
 if fastlex:
     OneToken = _MatchOshToken_Fast
     ECHO_MATCHER = _MatchEchoToken_Fast
-    PRINTF_B_MATCHER = _MatchTokenSlow(lexer_def.PRINTF_B_DEF)
+    PRINTF_B_MATCHER = _MatchPrintfBToken_Fast
     GLOB_MATCHER = _MatchGlobToken_Fast
     PS1_MATCHER = _MatchPS1Token_Fast
     HISTORY_MATCHER = _MatchHistoryToken_Fast
