@@ -285,7 +285,7 @@ class Printf(vm._Builtin):
             # Process just like echo -e, except \c handling is simpler.
 
             c_parts = []  # type: List[str]
-            lex = match.EchoLexer(s)
+            lex = match.PrintfBLexer(s)
             while True:
                 id_, tok_val = lex.Next()
                 if id_ == Id.Eol_Tok:  # Note: This is really a NUL terminator

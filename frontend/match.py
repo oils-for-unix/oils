@@ -16,7 +16,8 @@ except ImportError:
     fastlex = None
 
 if fastlex:
-    re = None  # re module isn't in CPython slice
+    #re = None  # re module isn't in CPython slice
+    import re  # type: ignore
 else:
     import re  # type: ignore
 
@@ -158,6 +159,7 @@ def _MatchShNumberToken_Fast(line, start_pos):
 if fastlex:
     OneToken = _MatchOshToken_Fast
     ECHO_MATCHER = _MatchEchoToken_Fast
+    PRINTF_B_MATCHER = _MatchTokenSlow(lexer_def.PRINTF_B_DEF)
     GLOB_MATCHER = _MatchGlobToken_Fast
     PS1_MATCHER = _MatchPS1Token_Fast
     HISTORY_MATCHER = _MatchHistoryToken_Fast
@@ -178,6 +180,7 @@ if fastlex:
 else:
     OneToken = _MatchOshToken_Slow(lexer_def.LEXER_DEF)
     ECHO_MATCHER = _MatchTokenSlow(lexer_def.ECHO_E_DEF)
+    PRINTF_B_MATCHER = _MatchTokenSlow(lexer_def.PRINTF_B_DEF)
     GLOB_MATCHER = _MatchTokenSlow(lexer_def.GLOB_DEF)
     PS1_MATCHER = _MatchTokenSlow(lexer_def.PS1_DEF)
     HISTORY_MATCHER = _MatchTokenSlow(lexer_def.HISTORY_DEF)
@@ -268,6 +271,11 @@ class SimpleLexer(object):
 def EchoLexer(s):
     # type: (str) -> SimpleLexer
     return SimpleLexer(ECHO_MATCHER, s)
+
+
+def PrintfBLexer(s):
+    # type: (str) -> SimpleLexer
+    return SimpleLexer(PRINTF_B_MATCHER, s)
 
 
 def BraceRangeLexer(s):
