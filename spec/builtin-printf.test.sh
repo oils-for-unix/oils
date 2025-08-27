@@ -1272,3 +1272,14 @@ status=1
 status=1
 
 ## END
+
+#### printf %b \123 octal escapes
+printf '%b\n' "\141"
+## STDOUT:
+a
+## END
+
+## N-I zsh status: 0
+## N-I zsh STDOUT:
+\141
+## END
