@@ -672,10 +672,6 @@ def ByGithubRun(row):
   return int(row.get('GITHUB_RUN_NUMBER', 0))
 
 
-# Limit what we put on the HTML page.
-# Used to be NUM_JOBS in soil/web.sh
-MAX_JOBS = 4000
-
 def main(argv):
   action = argv[1]
 
@@ -713,6 +709,7 @@ def main(argv):
     index_out = argv[2]
     run_index_out = argv[3]
     run_id = int(argv[4])  # compared as an integer
+    num_to_show = int(argv[5])
 
     #log('web.py github-index %s %s %d', index_out, run_index_out, run_id)
 
@@ -721,7 +718,7 @@ def main(argv):
 
     # sort and truncate
     jobs.sort(key=ByGithubRun, reverse=True)
-    jobs = jobs[:MAX_JOBS]
+    jobs = jobs[:num_to_show]
 
     groups = GroupJobs(jobs, ByGithubRun)
 
@@ -743,10 +740,7 @@ def main(argv):
       PrintRunHtml(title, jobs, f=f)
 
   elif action == 'cleanup':
-    try:
-      num_to_keep = int(argv[2])
-    except IndexError:
-      num_to_keep = 200
+    num_to_keep = int(argv[2])
 
     jobs = list(ParseJobs(sys.stdin))
     log('%s cleanup: got %d jobs', sys.argv[0], len(jobs))
