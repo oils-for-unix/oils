@@ -21,7 +21,6 @@ class WebTest(unittest.TestCase):
         'job_num': '123',
         'job_url': 'https://yo',
         'git-branch': 'soil-staging',
-        'run_wwz_path': 'dev-minimal.wwz',
         'index_run_url': '123/',
 
         'job-name': 'dev-minimal',
@@ -33,9 +32,9 @@ class WebTest(unittest.TestCase):
 
         'GITHUB_RUN_NUMBER': '1234',
 
-        'run_tsv_path': 'tsv',
-        'run_json_path': 'json',
-        'run_wwz_path': 'wwz',
+        'run_tsv_href': 'tsv',
+        'run_json_href': 'json',
+        'run_wwz_href': 'wwz',
         }
 
     job2 = dict(job)
