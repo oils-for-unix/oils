@@ -160,6 +160,25 @@ copy-aports() {
   change-perms $dest
 }
 
+_patch-yash-to-disable-tests() {
+  ### disable tests that use job control, causing SIGTTOU bug
+
+  local apkbuild=$CHROOT_HOME_DIR/aports/main/yash/APKBUILD
+
+  # make it idempotent
+  if ! grep 'FOR OILS' "$apkbuild"; then
+    echo '
+    check() {
+      echo "=== yash tests DISABLED FOR OILS ==="
+    }
+    ' >> $apkbuild
+  fi
+}
+
+patch-yash-to-disable-tests() {
+  sudo $0 _patch-yash-to-disable-tests
+}
+
 code-manifest() {
   # TODO: need per-file tree shaking of build/py.sh
   local -a build_py=(
@@ -221,6 +240,9 @@ test-time-tsv() {
 
 oils-in-chroot() {
   copy-aports
+
+  patch-yash-to-disable-tests
+
   copy-code
   test-time-tsv
 
