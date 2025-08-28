@@ -741,24 +741,6 @@ printf '[%%]\n'
 [%]
 ## END
 
-#### printf %b backslash escaping
-printf '[%s]\n' '\044'  # escapes not evaluated
-printf '[%b]\n' '\044'  # YES, escapes evaluated
-echo status=$?
-## STDOUT:
-[\044]
-[$]
-status=0
-## END
-
-#### printf %b with \c early return
-printf '[%b]\n' 'ab\ncd\cxy'
-echo $?
-## STDOUT:
-[ab
-cd0
-## END
-
 #### printf %c -- doesn't respect UTF-8!  Bad.
 twomu=$'\u03bc\u03bc'
 printf '[%s]\n' "$twomu"
@@ -1272,6 +1254,66 @@ status=1
 status=1
 
 ## END
+
+#### printf %b does backslash escaping
+
+printf '[%s]\n' '\044'  # escapes not evaluated
+printf '[%b]\n' '\044'  # YES, escapes evaluated
+echo
+
+printf '[%s]\n' '\x7e'  # escapes not evaluated
+printf '[%b]\n' '\x7e'  # YES, escapes evaluated
+echo
+
+# not a valid escape
+printf '[%s]\n' '\A'
+printf '[%b]\n' '\A'
+
+## STDOUT:
+[\044]
+[$]
+
+[\x7e]
+[~]
+
+[\A]
+[\A]
+## END
+
+## N-I dash STDOUT:
+[\044]
+[$]
+
+[\x7e]
+[\x7e]
+
+[\A]
+[\A]
+## END
+
+#### printf %b unicode escapes
+
+printf '[%s]\n' '\u03bc'  # escapes not evaluated
+printf '[%b]\n' '\u03bc'  # YES, escapes evaluated
+
+## STDOUT:
+[\u03bc]
+[μ]
+## END
+
+## N-I dash/ash STDOUT:
+[\u03bc]
+[\u03bc]
+## END
+
+#### printf %b respects \c early return
+printf '[%b]\n' 'ab\ncd\cxy'
+echo $?
+## STDOUT:
+[ab
+cd0
+## END
+
 
 #### printf %b supports octal escapes, both \141 and \0141
 
