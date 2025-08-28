@@ -58,6 +58,7 @@ class SimpleLexer {
 SimpleLexer* BraceRangeLexer(BigStr* s);
 SimpleLexer* GlobLexer(BigStr* s);
 SimpleLexer* EchoLexer(BigStr* s);
+SimpleLexer* PrintfBLexer(BigStr* s);
 
 List<Tuple2<Id_t, BigStr*>*>* HistoryTokens(BigStr* s);
 List<Tuple2<Id_t, BigStr*>*>* Ps1Tokens(BigStr* s);

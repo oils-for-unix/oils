@@ -101,6 +101,12 @@ def _MatchEchoToken_Fast(line, start_pos):
     return tok_type, end_pos
 
 
+def _MatchPrintfBToken_Fast(line, start_pos):
+    # type: (str, int) -> Tuple[Id_t, int]
+    tok_type, end_pos = fastlex.MatchPrintfBToken(line, start_pos)
+    return tok_type, end_pos
+
+
 def _MatchGlobToken_Fast(line, start_pos):
     # type: (str, int) -> Tuple[Id_t, int]
     tok_type, end_pos = fastlex.MatchGlobToken(line, start_pos)
@@ -158,6 +164,7 @@ def _MatchShNumberToken_Fast(line, start_pos):
 if fastlex:
     OneToken = _MatchOshToken_Fast
     ECHO_MATCHER = _MatchEchoToken_Fast
+    PRINTF_B_MATCHER = _MatchPrintfBToken_Fast
     GLOB_MATCHER = _MatchGlobToken_Fast
     PS1_MATCHER = _MatchPS1Token_Fast
     HISTORY_MATCHER = _MatchHistoryToken_Fast
@@ -178,6 +185,7 @@ if fastlex:
 else:
     OneToken = _MatchOshToken_Slow(lexer_def.LEXER_DEF)
     ECHO_MATCHER = _MatchTokenSlow(lexer_def.ECHO_E_DEF)
+    PRINTF_B_MATCHER = _MatchTokenSlow(lexer_def.PRINTF_B_DEF)
     GLOB_MATCHER = _MatchTokenSlow(lexer_def.GLOB_DEF)
     PS1_MATCHER = _MatchTokenSlow(lexer_def.PS1_DEF)
     HISTORY_MATCHER = _MatchTokenSlow(lexer_def.HISTORY_DEF)
@@ -268,6 +276,11 @@ class SimpleLexer(object):
 def EchoLexer(s):
     # type: (str) -> SimpleLexer
     return SimpleLexer(ECHO_MATCHER, s)
+
+
+def PrintfBLexer(s):
+    # type: (str) -> SimpleLexer
+    return SimpleLexer(PRINTF_B_MATCHER, s)
 
 
 def BraceRangeLexer(s):

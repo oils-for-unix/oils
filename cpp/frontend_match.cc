@@ -64,6 +64,10 @@ SimpleLexer* EchoLexer(BigStr* s) {
   return Alloc<SimpleLexer>(&MatchEchoToken, s);
 }
 
+SimpleLexer* PrintfBLexer(BigStr* s) {
+  return Alloc<SimpleLexer>(&MatchPrintfBToken, s);
+}
+
 List<Tuple2<Id_t, BigStr*>*>* HistoryTokens(BigStr* s) {
   SimpleLexer lexer(&MatchHistoryToken, s);
   return lexer.Tokens();
