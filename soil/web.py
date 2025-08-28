@@ -585,7 +585,7 @@ TASK_TABLE_T = jsontemplate.Template('''\
   {.repeated section tasks}
   <tr>
     <td>
-      <a href="{run_wwz_ref}/_tmp/soil/logs/{name}.txt">{name}</a> <br/>
+      <a href="{run_wwz_href}/_tmp/soil/logs/{name}.txt">{name}</a> <br/>
        <code>{script_name} {func}</code>
     </td>
 
