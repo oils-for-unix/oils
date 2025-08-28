@@ -1273,13 +1273,79 @@ status=1
 
 ## END
 
-#### printf %b \123 octal escapes
-printf '%b\n' "\141"
+#### printf %b supports octal escapes, both \141 and \0141
+
+printf 'three %b\n' '\141'  # di
+printf 'four  %b\n' '\0141'
+echo
+
+# trailing 9
+printf '%b\n' '\1419'
+printf '%b\n' '\01419'
+
+# Notes:
+#
+# - echo -e: 
+#   - NO  3 digit octal  - echo -e '\141' does not work
+#   - YES 4 digit octal
+# - printf %b
+#   - YES 3 digit octal
+#   - YES 4 digit octal
+# - printf string (outer)
+#   - YES 3 digit octal
+#   - NO  4 digit octal
+# - $'' and $PS1
+#   - YES 3 digit octal
+#   - NO  4 digit octal
+
 ## STDOUT:
-a
+three a
+four  a
+
+a9
+a9
 ## END
 
-## N-I zsh status: 0
 ## N-I zsh STDOUT:
-\141
+three \141
+four  a
+
+\1419
+a9
+## END
+
+#### printf %b with truncated octal escapes
+
+# 8 is not a valid octal digit
+
+printf '%b\n' '\558'
+printf '%b\n' '\0558'
+echo
+
+show_bytes() {
+  od -A n -t x1
+}
+printf '%b' '\7' | show_bytes
+printf '%b' '\07' | show_bytes
+printf '%b' '\007' | show_bytes
+printf '%b' '\0007' | show_bytes
+
+## STDOUT:
+-8
+-8
+
+ 07
+ 07
+ 07
+ 07
+## END
+
+## N-I zsh STDOUT:
+\558
+-8
+
+ 5c 37
+ 07
+ 07
+ 07
 ## END
