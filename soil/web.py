@@ -211,8 +211,13 @@ def ParseJobs(stdin):
     #if i % 20 == 0:
     #  log('job %d = %s', i, json_path)
 
-    with open(json_path) as f:
-      meta = json.load(f)
+    try:
+      with open(json_path) as f:
+        meta = json.load(f)
+    except IOError as e:
+      # We do concurrent deletions, and we can't rely on sorting beforehand
+      log('Ignoring file that was probably deleted %s: %s', json_path, e)
+      continue
     #print(meta)
 
     tsv_path = json_path[:-5] + '.tsv'

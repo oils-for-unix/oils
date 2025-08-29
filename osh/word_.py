@@ -36,7 +36,20 @@ def PieceQuoted(s):
     For 'hi' "$x" 
     and $[myexpr] in YSH
     """
+    # quoted=True, do_split=False
     return Piece(s, True, False)
+
+
+def PieceOperator(s):
+    # type: (str) -> Piece
+    """
+    For Extended glob  @(--verbose|help)
+    And BashRegexGroup [[ foo =~ x(a b)y ]
+
+    We don't want ( to become \(, so quoted=False
+    """
+    # quoted=False, do_split=False
+    return Piece(s, False, False)
 
 
 def LiteralId(part):

@@ -1016,7 +1016,7 @@ class WordParser(WordEmitter):
         # type: () -> word_part.BashRegexGroup
         """
         Grammar:
-        BashRegexGroup = '(' WORD? ')
+          BashRegexGroup = '(' WORD? ')
         """
         left_token = self.cur_token
         assert left_token.id == Id.BashRegex_LParen, left_token

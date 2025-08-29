@@ -1781,16 +1781,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
             op_str = '@('
         else:
             op_str = lexer.LazyStr(op)
-        # Do NOT split these.
-        # TODO: should be PieceQuoted
-        part_vals.append(Piece(op_str, False, False))
+        part_vals.append(word_.PieceOperator(op_str))
 
         for i, w in enumerate(part.arms):
             if i != 0:
-                part_vals.append(Piece('|', False, False))  # separator
+                part_vals.append(word_.PieceOperator('|'))  # separator
             # FLATTEN the tree of extglob "arms".
             self._EvalWordToParts(w, part_vals, EXTGLOB_NESTED)
-        part_vals.append(Piece(')', False, False))  # closing )
+        part_vals.append(word_.PieceOperator(')'))  # closing )
 
     def _TranslateExtGlob(self, part_vals, w, glob_parts, fnmatch_parts):
         # type: (List[part_value_t], CompoundWord, List[str], List[str]) -> None
@@ -1857,9 +1855,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             elif case(word_part_e.BracedRangeDigit):
                 part = cast(word_part.BracedRangeDigit, UP_part)
-                # This is the '5' in {1..10} - whether it's quoted should not
-                # matter - it doesn't look like a glob
-                v = Piece(part.s, False, False)
+                # This is the '5' in {1..10}
+                v = word_.PieceQuoted(part.s)
                 part_vals.append(v)
 
             elif case(word_part_e.EscapedLiteral):
@@ -1928,10 +1925,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
             elif case(word_part_e.BashRegexGroup):
                 part = cast(word_part.BashRegexGroup, UP_part)
 
-                part_vals.append(Piece('(', False, False))  # not quoted
+                part_vals.append(word_.PieceOperator('('))
                 if part.child:
                     self._EvalWordToParts(part.child, part_vals, 0)
-                part_vals.append(Piece(')', False, False))
+                part_vals.append(word_.PieceOperator(')'))
 
             elif case(word_part_e.Splice):
                 part = cast(word_part.Splice, UP_part)
