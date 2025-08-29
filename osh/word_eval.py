@@ -214,11 +214,11 @@ def _ValueToPartValue(val, quoted, part_loc):
         if case(value_e.Undef):
             # This happens in the case of ${undef+foo}.  We skipped _ProcessUndef,
             # but we have to append to the empty string.
-            return Piece('', quoted, not quoted)
+            return word_.MakePiece('', quoted)
 
         elif case(value_e.Str):
             val = cast(value.Str, UP_val)
-            return Piece(val.s, quoted, not quoted)
+            return word_.MakePiece(val.s, quoted)
 
         elif case(value_e.InternalStringArray):
             val = cast(value.InternalStringArray, UP_val)
@@ -239,7 +239,7 @@ def _ValueToPartValue(val, quoted, part_loc):
         elif case(value_e.Null, value_e.Bool, value_e.Int, value_e.Float,
                   value_e.Eggex, value_e.List):
             s = val_ops.Stringify(val, loc.WordPart(part_loc), 'Word eval ')
-            return Piece(s, quoted, not quoted)
+            return word_.MakePiece(s, quoted)
 
         else:
             raise error.TypeErr(val, "Can't substitute into word",
@@ -302,7 +302,7 @@ def _MakeWordFrames(part_vals):
                         continue  # ignore undefined array entries
 
                     # Arrays parts are not quoted for $* and $@
-                    piece = Piece(s, p.quoted, not p.quoted)
+                    piece = word_.MakePiece(s, p.quoted)
                     if is_first:
                         current.append(piece)
                         is_first = False
@@ -1571,7 +1571,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     if quoted and nullary_op.id == Id.VOp3_Star:
                         sep = self.splitter.GetJoinChar()
                         part_vals.append(
-                            Piece(sep.join(names), quoted, not quoted))
+                            word_.MakePiece(sep.join(names), quoted))
                     else:
                         part_vals.append(part_value.Array(names, quoted))
                     return  # EARLY RETURN
@@ -1602,7 +1602,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 val = self._ProcessUndef(val, part.name_tok, vsub_state)
 
                 n = self._Count(val, part.name_tok)
-                part_vals.append(Piece(str(n), quoted, not quoted))
+                part_vals.append(word_.MakePiece(str(n), quoted))
                 return  # EARLY EXIT: nothing else can come after length
 
             elif part.prefix_op.id == Id.VSub_Bang:
@@ -1908,7 +1908,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             elif case(word_part_e.ArithSub):
                 part = cast(word_part.ArithSub, UP_part)
                 num = self.arith_ev.EvalToBigInt(part.anode)
-                v = Piece(mops.ToStr(num), quoted, not quoted)
+                v = word_.MakePiece(mops.ToStr(num), quoted)
                 part_vals.append(v)
 
             elif case(word_part_e.ExtGlob):
@@ -1957,7 +1957,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         UP_w = w
         with tagswitch(w) as case:
             if case(rhs_word_e.Empty):
-                part_vals.append(Piece('', quoted, not quoted))
+                part_vals.append(word_.MakePiece('', quoted))
 
             elif case(rhs_word_e.Compound):
                 w = cast(CompoundWord, UP_w)
@@ -2607,7 +2607,7 @@ class NormalWordEvaluator(AbstractWordEvaluator):
             #strs = self.splitter.SplitForWordEval(stdout_str)
             return part_value.Array(strs, True)
         else:
-            return Piece(stdout_str, quoted, not quoted)
+            return word_.MakePiece(stdout_str, quoted)
 
     def _EvalProcessSub(self, cs_part):
         # type: (CommandSub) -> Piece
@@ -2652,7 +2652,7 @@ class CompletionWordEvaluator(AbstractWordEvaluator):
         if cs_part.left_token.id == Id.Left_AtParen:
             return part_value.Array([_DUMMY], quoted)
         else:
-            return Piece(_DUMMY, quoted, not quoted)
+            return word_.MakePiece(_DUMMY, quoted)
 
     def _EvalProcessSub(self, cs_part):
         # type: (CommandSub) -> Piece

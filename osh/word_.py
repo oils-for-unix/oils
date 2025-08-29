@@ -30,6 +30,14 @@ if TYPE_CHECKING:
 _ = log
 
 
+def MakePiece(s, quoted):
+    # type: (str, bool) -> Piece
+    """
+    For $x versus "$x", etc.
+    """
+    return Piece(s, quoted, not quoted)
+
+
 def PieceQuoted(s):
     # type: (str) -> Piece
     """
