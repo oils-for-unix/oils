@@ -1,4 +1,4 @@
-## oils_failures_allowed: 0
+## oils_failures_allowed: 2
 ## compare_shells: dash bash mksh ash
 
 #### Unquoted words
@@ -226,20 +226,98 @@ const y = c'\z'
 ## status: 2
 ## N-I dash/bash/mksh/ash status: 0
 
-#### Oil allows unquoted foo\ bar
-shopt -s oil:all
+#### YSH allows unquoted foo\ bar too
+shopt -s ysh:all
 touch foo\ bar
 ls foo\ bar
 ## STDOUT:
 foo bar
 ## END
 
-#### $""
+#### $"" is a synonym for ""
 echo $"foo"
-## stdout: foo
-## N-I dash/ash stdout: $foo
+x=x
+echo $"foo $x"
+## STDOUT:
+foo
+foo x
+## END
+## N-I dash/ash STDOUT:
+$foo
+$foo x
+## END
 
-#### printf
+#### printf supports tabs
 # This accepts \t by itself, hm.
 printf "c1\tc2\nc3\tc4\n"
 ## stdout-json: "c1\tc2\nc3\tc4\n"
+
+#### $'' supports \cA escape for Ctrl-A - mask with 0x1f
+
+# note: AT&T ksh supports this too
+
+case $SH in dash|ash) exit ;; esac
+
+show_bytes() {
+  # -A n - no file offset
+  od -A n -t c -t x1
+}
+
+# this isn't special
+# mksh doesn't like it
+#echo -n $'\c' | show_bytes
+
+echo -n $'\c0\c9-' | show_bytes
+echo
+
+# control chars are case insensitive
+echo -n $'\ca\cz' | show_bytes
+echo
+
+echo -n $'\cA\cZ' | show_bytes
+echo
+
+echo -n $'\c-\c+\c"' | show_bytes
+
+## STDOUT:
+ 020 031   -
+  10  19  2d
+
+ 001 032
+  01  1a
+
+ 001 032
+  01  1a
+
+  \r  \v 002
+  0d  0b  02
+## END
+## N-I dash/ash STDOUT:
+## END
+
+#### \c' is an escape, unlike bash
+
+# mksh and ksh agree this is an esacpe
+
+case $SH in dash|ash) exit ;; esac
+
+show_bytes() {
+  # -A n - no file offset
+  od -A n -t c -t x1
+}
+
+# this isn't special
+# mksh doesn't like it
+echo -n $'\c'' | show_bytes
+
+## STDOUT:
+  \a
+  07
+## END
+
+## BUG bash status: 2
+## BUG bash STDOUT:
+## END
+
+## N-I dash/ash STDOUT:
+## END

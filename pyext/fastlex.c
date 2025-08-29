@@ -76,6 +76,30 @@ fastlex_MatchEchoToken(PyObject *self, PyObject *args) {
 }
 
 static PyObject *
+fastlex_MatchPrintfBToken(PyObject *self, PyObject *args) {
+  unsigned char* line;
+  int line_len;
+
+  int start_pos;
+  if (!PyArg_ParseTuple(args, "s#i", &line, &line_len, &start_pos)) {
+    return NULL;
+  }
+
+  // Bounds checking.
+  if (start_pos > line_len) {
+    PyErr_Format(PyExc_ValueError,
+                 "Invalid MatchPrintfBToken call (start_pos = %d, line_len = %d)",
+                 start_pos, line_len);
+    return NULL;
+  }
+
+  int id;
+  int end_pos;
+  MatchPrintfBToken(line, line_len, start_pos, &id, &end_pos);
+  return Py_BuildValue("(ii)", id, end_pos);
+}
+
+static PyObject *
 fastlex_MatchGlobToken(PyObject *self, PyObject *args) {
   unsigned char* line;
   int line_len;
@@ -362,6 +386,8 @@ static PyMethodDef methods[] = {
   {"MatchOshToken", fastlex_MatchOshToken, METH_VARARGS,
    "(lexer mode, line, start_pos) -> (id, end_pos)."},
   {"MatchEchoToken", fastlex_MatchEchoToken, METH_VARARGS,
+   "(line, start_pos) -> (id, end_pos)."},
+  {"MatchPrintfBToken", fastlex_MatchPrintfBToken, METH_VARARGS,
    "(line, start_pos) -> (id, end_pos)."},
   {"MatchGlobToken", fastlex_MatchGlobToken, METH_VARARGS,
    "(line, start_pos) -> (id, end_pos)."},

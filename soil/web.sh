@@ -16,6 +16,13 @@ readonly REPO_ROOT
 
 source $REPO_ROOT/soil/common.sh
 
+# Jobs to keep.  This relates to each of soil/worker.sh JOB-dummy, which means
+# each git COMMIT is more than 15 jobs.
+readonly JOBS_TO_SHOW=4000
+
+# Fudge factor of 100 for concurrent deleting and listing
+readonly JOBS_TO_KEEP=$(( $JOBS_TO_SHOW + 100 ))
+
 soil-web() {
   # We may be executed by a wwup.cgi on the server, which doesn't have
   # PATH=~/bin, and the shebang is /usr/bin/env python2
@@ -33,11 +40,15 @@ soil-web() {
   PYTHONPATH=$REPO_ROOT $prefix $REPO_ROOT/soil/web.py "$@"
 }
 
-# Bug fix for another race:
-# ls *.json has a race: the shell expands files that may no longer exist, and
-# then 'ls' fails!
 list-json() {
   local dir=$1  # e.g. travis-ci.oilshell.org/github-jobs
+
+  # Bug fix for another race:
+  # ls *.json has a race: the shell expands files that may no longer exist, and
+  # then 'ls' fails!
+  #
+  # Also note that 1000/foo.json will alphabetically sort before 999/foo.json,
+  # which is not numeric sorting.
 
   for name in $dir/*/*.json; do
     echo $name
@@ -64,7 +75,7 @@ rewrite-jobs-index() {
   local index_tmp=$dir/$$.index.html  # index of every job in every run
   local run_index_tmp=$dir/$$.runs.html  # only the jobs in this run/commit
 
-  list-json $dir | soil-web ${prefix}index $index_tmp $run_index_tmp $run_id
+  list-json $dir | soil-web ${prefix}index $index_tmp $run_index_tmp $run_id $JOBS_TO_SHOW
 
   echo "rewrite index status = ${PIPESTATUS[@]}"
 
@@ -74,13 +85,10 @@ rewrite-jobs-index() {
   mv -v $run_index_tmp $dir/$run_id/index.html
 }
 
-# Jobs to keep.  This relates to each of soil/worker.sh JOB-dummy, which means
-# each git COMMIT is more than 15 jobs.
-readonly MAX_JOBS=4000
-
 cleanup-jobs-index() {
   local prefix=$1
   local dry_run=${2:-true}
+  local max_jobs=${3:-$JOBS_TO_KEEP}
 
   local dir=$SOIL_HOST_DIR/uuu/${prefix}jobs
 
@@ -90,10 +98,10 @@ cleanup-jobs-index() {
       # Bug fix: There's a race here when 2 jobs complete at the same time.
       # Use rm -f to ignore failure if the file was already deleted.
 
-      list-json $dir | soil-web cleanup $MAX_JOBS | xargs --no-run-if-empty -- rm -f -v
+      list-json $dir | soil-web cleanup $max_jobs | xargs --no-run-if-empty -- rm -f -v
       ;;
     true)
-      list-json $dir | soil-web cleanup $MAX_JOBS
+      list-json $dir | soil-web cleanup $max_jobs
       ;;
     *)
       log 'Expected true or false for dry_run'
@@ -204,7 +212,7 @@ local-test() {
   local run_id=3722
   local run_index=$dir/$run_id/index.html
 
-  list-json $dir | soil-web github-index $index $run_index $run_id
+  list-json $dir | soil-web github-index $index $run_index $run_id $JOBS_TO_SHOW
 
   echo "Wrote $index and $run_index"
 }

@@ -166,7 +166,7 @@ DETAILS_TABLE_T = jsontemplate.Template('''\
       <td><a href="{job_url}">{start_time_str}</a></td>
       <td>
         {.section pull_time_str}
-          <a href="{run_wwz_path}/_tmp/soil/image.html">{@}</a>
+          <a href="{run_wwz_href}/_tmp/soil/image.html">{@}</a>
         {.or}
           -
         {.end}
@@ -211,11 +211,23 @@ def ParseJobs(stdin):
     #if i % 20 == 0:
     #  log('job %d = %s', i, json_path)
 
-    with open(json_path) as f:
-      meta = json.load(f)
+    try:
+      with open(json_path) as f:
+        meta = json.load(f)
+    except IOError as e:
+      # We do concurrent deletions, and we can't rely on sorting beforehand
+      log('Ignoring file that was probably deleted %s: %s', json_path, e)
+      continue
     #print(meta)
 
     tsv_path = json_path[:-5] + '.tsv'
+    wwz_path = json_path[:-5] + '.wwz'
+
+    # For 'cleanup' tasks - delete these three
+    meta['json_path'] = json_path
+    meta['tsv_path'] = tsv_path
+    meta['wwz_path'] = wwz_path
+
     #log('%s', tsv_path)
 
     all_tasks = []
@@ -357,9 +369,9 @@ def ParseJobs(stdin):
     parts = prefix.split('/')
 
     # Paths relative to github-jobs/1234/
-    meta['run_wwz_path'] = run_url_prefix + parts[-1] + '.wwz'  # myjob.wwz
-    meta['run_tsv_path'] = run_url_prefix + parts[-1] + '.tsv'  # myjob.tsv
-    meta['run_json_path'] = run_url_prefix + parts[-1] + '.json'  # myjob.json
+    meta['run_wwz_href'] = run_url_prefix + parts[-1] + '.wwz'  # myjob.wwz
+    meta['run_tsv_href'] = run_url_prefix + parts[-1] + '.tsv'  # myjob.tsv
+    meta['run_json_href'] = run_url_prefix + parts[-1] + '.json'  # myjob.json
 
     # Relative to github-jobs/
     last_two_parts = parts[-2:]  # ['123', 'myjob']
@@ -554,11 +566,11 @@ TASK_TABLE_T = jsontemplate.Template('''\
     &nbsp;
     &nbsp;
     &nbsp;
-    <a href="{run_wwz_path}/">wwz</a>
+    <a href="{run_wwz_href}/">wwz</a>
     &nbsp;
-    <a href="{run_tsv_path}">TSV</a>
+    <a href="{run_tsv_href}">TSV</a>
     &nbsp;
-    <a href="{run_json_path}">JSON</a>
+    <a href="{run_json_href}">JSON</a>
   <td>
     <a href="">Up</a>
   </td>
@@ -578,13 +590,13 @@ TASK_TABLE_T = jsontemplate.Template('''\
   {.repeated section tasks}
   <tr>
     <td>
-      <a href="{run_wwz_path}/_tmp/soil/logs/{name}.txt">{name}</a> <br/>
+      <a href="{run_wwz_href}/_tmp/soil/logs/{name}.txt">{name}</a> <br/>
        <code>{script_name} {func}</code>
     </td>
 
     <td>
       {.section results_url}
-      <a href="{run_wwz_path}/{@}">Results</a>
+      <a href="{run_wwz_href}/{@}">Results</a>
       {.or}
       {.end}
     </td>
@@ -665,10 +677,6 @@ def ByGithubRun(row):
   return int(row.get('GITHUB_RUN_NUMBER', 0))
 
 
-# Limit what we put on the HTML page.
-# Used to be NUM_JOBS in soil/web.sh
-MAX_JOBS = 4000
-
 def main(argv):
   action = argv[1]
 
@@ -706,6 +714,7 @@ def main(argv):
     index_out = argv[2]
     run_index_out = argv[3]
     run_id = int(argv[4])  # compared as an integer
+    num_to_show = int(argv[5])
 
     #log('web.py github-index %s %s %d', index_out, run_index_out, run_id)
 
@@ -714,7 +723,7 @@ def main(argv):
 
     # sort and truncate
     jobs.sort(key=ByGithubRun, reverse=True)
-    jobs = jobs[:MAX_JOBS]
+    jobs = jobs[:num_to_show]
 
     groups = GroupJobs(jobs, ByGithubRun)
 
@@ -736,20 +745,22 @@ def main(argv):
       PrintRunHtml(title, jobs, f=f)
 
   elif action == 'cleanup':
-    try:
-      num_to_keep = int(argv[2])
-    except IndexError:
-      num_to_keep = 200
+    num_to_keep = int(argv[2])
 
-    prefixes = []
-    for line in sys.stdin:
-      json_path = line.strip()
+    jobs = list(ParseJobs(sys.stdin))
+    log('%s cleanup: got %d jobs', sys.argv[0], len(jobs))
 
-      #log('%s', json_path)
-      prefixes.append(json_path[:-5])
+    # sort and truncate
+    jobs.sort(key=ByGithubRun, reverse=True)
+    to_delete = jobs[num_to_keep:]  # everything but the most recent
 
-    log('%s cleanup: keep %d', sys.argv[0], num_to_keep)
-    log('%s cleanup: got %d JSON paths', sys.argv[0], len(prefixes))
+    log('%s cleanup: keeping %d, deleting %d', sys.argv[0], num_to_keep,
+        len(to_delete))
+
+    for job in to_delete:
+      print(job['json_path'])
+      print(job['tsv_path'])
+      print(job['wwz_path'])
 
     # TODO: clean up git-$hash dirs
     #
@@ -773,22 +784,6 @@ def main(argv):
     # and print that dir.
     #
     # Another option is to use a real database, rather than the file system!
-
-    # Sort by 9999 here
-    # op.oilshell.org/uuu/github-jobs/9999/foo.json
-    # 
-    # 2025-08 BUG: rolled over from 9999 to 10000, sorting is likely wrong.
-    # Are we even cleaning up jobs?
-
-    prefixes.sort(key = lambda path: int(path.split('/')[-2]))
-
-    prefixes = prefixes[:-num_to_keep]
-
-    # Show what to delete.  Then the user can pipe to xargs rm to remove it.
-    for prefix in prefixes:
-      print(prefix + '.json')
-      print(prefix + '.tsv')
-      print(prefix + '.wwz')
 
   else:
     raise RuntimeError('Invalid action %r' % action)
