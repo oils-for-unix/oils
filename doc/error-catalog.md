@@ -278,7 +278,7 @@ Try one of these alternatives:
 ```
   echo "date = `date`"
                ^
-[ -c flag ]:1: Backtick should be $(cmd) or \` (OILS-ERR-18)
+[ -c flag ]:1: Backtick should be $(cmd) or \` (parse_backticks, OILS-ERR-18)
 ```
 
 - Did you mean to use `$(date)` instead?
