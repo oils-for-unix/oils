@@ -184,8 +184,23 @@ class LibcTest(unittest.TestCase):
     print(libc.glob('\\\\', 0))
     print(libc.glob('[[:punct:]]', 0))
 
+  # core/util_test.py has more tests like this, for util.RegexSearch()
+
+  def testRegexSearch(self):
+    # Oh it's a PRECEDENCE problem?
+    # leftMatch() is not implemented correctly
+    #pat = '^([0-9])|([a-z])'
+
+    pat = '^([0-9])|^([a-z])'
+
+    lines = 'one\n2\nthree\n'
+
+    pos = 3
+    indices = libc.regex_search(pat, 0, lines, 0, pos)
+
+    self.assertEqual(None, indices)
+
   def testRegexSearchError(self):
-    # See core/util_test.py for more tests
     try:
       libc.regex_search(r'*', 0, 'abcd', 0)
     except ValueError as e:

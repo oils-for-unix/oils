@@ -122,6 +122,67 @@ yes
 yes
 ## END
 
+#### leftMatch() combined with REG_NEWLINE - interaction with ^
+shopt --set ysh:upgrade
+
+# REG_NEWLINE
+# .    does NOT match newline
+# [^a] does NOT match newline
+# ^    matches the empty string after a newline (regardless of REG_NOTBOL)
+# $    matches the empty string before a newline (regardless of REG_NOTBOL)
+#
+# note: REG_NOTBOL is not used in leftMatch()
+
+var lines = '''
+  one
+  2
+  three
+  '''
+
+if (0) {
+  = lines
+  = ${p}
+  echo ---
+}
+
+proc show-matches(; pattern) {
+  var pos = 0
+  while (true) {
+    var m = lines.leftMatch(pattern, pos=pos)
+    #var m = lines.search(pattern, pos=pos)
+
+    if (m is null) {
+      return
+    }
+
+    #pp test_ ([m.group(0), m.group(1), m.group(2)])
+    pp test_ ([pos, m.group(0)])
+
+    setvar pos = m.end(0)
+  }
+}
+
+# BUG: leftMatch() has a problem with ^
+var p1 = / <capture [a-z] as letter> /
+var p2 = / <capture [a-z] as letter> ; ; reg_newline /
+
+# var p3 = / <capture [0-9] as number> | <capture [a-z] as letter> /
+# var p4 = / <capture [0-9] as number> | <capture [a-z] as letter> ; ; reg_newline /
+
+show-matches (p1)
+echo
+show-matches (p2)
+
+## STDOUT:
+(List)   [0,"o"]
+(List)   [1,"n"]
+(List)   [2,"e"]
+
+(List)   [0,"o"]
+(List)   [1,"n"]
+(List)   [2,"e"]
+## END
+
 #### Positional captures with _group
 shopt -s ysh:upgrade
 
