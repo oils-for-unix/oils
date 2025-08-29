@@ -3,6 +3,7 @@ word.py - Utility functions for words, e.g. treating them as "tokens".
 """
 
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t, Kind_t
+from _devbuild.gen.runtime_asdl import Piece
 from _devbuild.gen.syntax_asdl import (
     Token,
     CompoundWord,
@@ -27,6 +28,15 @@ if TYPE_CHECKING:
     from osh.word_parse import WordParser
 
 _ = log
+
+
+def PieceQuoted(s):
+    # type: (str) -> Piece
+    """
+    For 'hi' "$x" 
+    and $[myexpr] in YSH
+    """
+    return Piece(s, True, False)
 
 
 def LiteralId(part):

@@ -1380,7 +1380,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         # of (DoubleQuoted [Literal '']).  This is better but it means we
         # have to check for it.
         if len(parts) == 0:
-            v = Piece('', True, False)
+            v = word_.PieceQuoted('')
             part_vals.append(v)
             return
 
@@ -1782,6 +1782,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         else:
             op_str = lexer.LazyStr(op)
         # Do NOT split these.
+        # TODO: should be PieceQuoted
         part_vals.append(Piece(op_str, False, False))
 
         for i, w in enumerate(part.arms):
@@ -1857,18 +1858,18 @@ class AbstractWordEvaluator(StringWordEvaluator):
             elif case(word_part_e.BracedRangeDigit):
                 part = cast(word_part.BracedRangeDigit, UP_part)
                 # This is the '5' in {1..10} - whether it's quoted should not
-                # matter
+                # matter - it doesn't look like a glob
                 v = Piece(part.s, False, False)
                 part_vals.append(v)
 
             elif case(word_part_e.EscapedLiteral):
                 part = cast(word_part.EscapedLiteral, UP_part)
-                v = Piece(part.ch, True, False)
+                v = word_.PieceQuoted(part.ch)
                 part_vals.append(v)
 
             elif case(word_part_e.SingleQuoted):
                 part = cast(SingleQuoted, UP_part)
-                v = Piece(part.sval, True, False)
+                v = word_.PieceQuoted(part.sval)
                 part_vals.append(v)
 
             elif case(word_part_e.DoubleQuoted):
@@ -1904,7 +1905,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 # We never parse a quoted string into a TildeSub.
                 assert not quoted
                 s = self.tilde_ev.Eval(part)
-                v = Piece(s, True, False)  # NOT split even when unquoted!
+                v = word_.PieceQuoted(s)
                 part_vals.append(v)
 
             elif case(word_part_e.ArithSub):
@@ -2615,7 +2616,7 @@ class NormalWordEvaluator(AbstractWordEvaluator):
         # type: (CommandSub) -> Piece
         dev_path = self.shell_ex.RunProcessSub(cs_part)
         # pretend it's quoted; no split or glob
-        return Piece(dev_path, True, False)
+        return word_.PieceQuoted(dev_path)
 
 
 _DUMMY = '__NO_COMMAND_SUB__'
@@ -2659,7 +2660,7 @@ class CompletionWordEvaluator(AbstractWordEvaluator):
     def _EvalProcessSub(self, cs_part):
         # type: (CommandSub) -> Piece
         # pretend it's quoted; no split or glob
-        return Piece('__NO_PROCESS_SUB__', True, False)
+        return word_.PieceQuoted('__NO_PROCESS_SUB__')
 
 
 # vim: sw=4

@@ -29,3 +29,13 @@ pp test_ (x)
 ## STDOUT:
 ## END
 
+
+#### YSH $[expr_sub] in OSH should not do dynamic globbing
+
+touch {foo,bar}.txt
+
+echo $["*.txt"]
+
+## STDOUT:
+*.txt
+## END

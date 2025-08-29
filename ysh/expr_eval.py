@@ -52,13 +52,14 @@ from core.error import e_die, e_die_status
 from core import num
 from core import pyutil
 from core import state
-from display import ui
 from core import vm
+from display import ui
 from data_lang import j8
 from frontend import lexer
 from frontend import match
 from frontend import typed_args
 from osh import braces
+from osh import word_
 from mycpp import mops
 from mycpp.mylib import log, NewDict, switch, tagswitch, print_stderr
 from ysh import func_proc
@@ -412,7 +413,7 @@ class ExprEvaluator(object):
         with switch(part.left.id) as case:
             if case(Id.Left_DollarBracket):  # $[join(x)]
                 s = val_ops.Stringify(val, loc.WordPart(part), 'Expr sub ')
-                return Piece(s, False, False)
+                return word_.PieceQuoted(s)
 
             elif case(Id.Lit_AtLBracket):  # @[split(x)]
                 strs = val_ops.ToShellArray(val, loc.WordPart(part),
