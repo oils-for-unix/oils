@@ -1798,12 +1798,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
         We need both glob and fnmatch patterns.  _EvalExtGlob does the
         flattening.
         """
+        will_glob = not self.exec_opts.noglob()
         for i, part_val in enumerate(part_vals):
             UP_part_val = part_val
             with tagswitch(part_val) as case:
                 if case(part_value_e.String):
                     part_val = cast(Piece, UP_part_val)
-                    if part_val.quoted and not self.exec_opts.noglob():
+                    if will_glob and part_val.quoted:
                         s = glob_.GlobEscape(part_val.s)
                     else:
                         # e.g. the @( and | in @(foo|bar) aren't quoted
