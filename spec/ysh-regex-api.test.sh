@@ -122,6 +122,47 @@ yes
 yes
 ## END
 
+#### leftMatch() is implemented with ^, which is affected by REG_NEWLINE
+shopt --set ysh:upgrade
+
+var lines = '''
+  one
+  2
+  three
+  '''
+
+# BUG: leftMatch() has a problem with ^
+var p = / <capture [0-9] as number> | <capture [a-z] as letter> /
+
+# var p_line = / <capture [0-9] as number> | <capture [a-z] as letter> ; ; reg_newline/
+
+= lines
+= ${p}
+echo ---
+
+proc show-matches(; pattern) {
+  var pos = 0
+  while (true) {
+    pp test_ (pos)
+    #var m = lines.leftMatch(pattern, pos=pos)
+    var m = lines.search(pattern, pos=pos)
+    if (m is null) {
+      return
+    }
+    pp test_ ([m.group(0), m.group(1), m.group(2)])
+
+    setvar pos = m.end(0)
+  }
+}
+
+show-matches (p)
+#echo ---
+#show-matches (p_line)
+
+
+## STDOUT:
+## END
+
 #### Positional captures with _group
 shopt -s ysh:upgrade
 

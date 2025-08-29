@@ -338,6 +338,8 @@ Notes:
 Test whether the regex matches the string at the given `pos`, which is `0` by
 default.  Returns a [Match](#Match) value, or `null` if it doesn't match.
 
+In contrast to `search()`, it doesn't look ahead for matches.
+
     var m = 'ale'.leftMatch(/[a e i o u]/)
     = m.start(0)  # => index 0 for 'a'
 
@@ -358,8 +360,7 @@ Regex API](../ysh-regex-api.html).
 Notes:
 
 - The difference between `leftMatch()` and `search()` is like Python's
-  `re.match()` versus `re.search()`.  Both perform regex matching, but
-  `leftMatch()` doesn't look ahead.
+  `re.match()` versus `re.search()`.
 - Unlike `search()`, `%start` aka `^` may match when `pos !== 0`.
   - This is a quirk compared to Python: under the hood, `leftMatch()` is
     implemented with `^`.
