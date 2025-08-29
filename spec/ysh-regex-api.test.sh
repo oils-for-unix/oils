@@ -162,18 +162,75 @@ proc show-matches(; pattern) {
   }
 }
 
-# BUG: leftMatch() has a problem with ^
 var p1 = / <capture [a-z] as letter> /
 var p2 = / <capture [a-z] as letter> ; ; reg_newline /
-
-# var p3 = / <capture [0-9] as number> | <capture [a-z] as letter> /
-# var p4 = / <capture [0-9] as number> | <capture [a-z] as letter> ; ; reg_newline /
 
 show-matches (p1)
 echo
 show-matches (p2)
 
 ## STDOUT:
+(List)   [0,"o"]
+(List)   [1,"n"]
+(List)   [2,"e"]
+
+(List)   [0,"o"]
+(List)   [1,"n"]
+(List)   [2,"e"]
+## END
+
+#### Bug fix: leftMatch() can be used with a|b (ERE precedence is respected)
+shopt --set ysh:upgrade
+
+var lines = '''
+  one
+  2
+  three
+  '''
+
+proc show-matches(; pattern) {
+  var pos = 0
+  while (true) {
+    var m = lines.leftMatch(pattern, pos=pos)
+    #var m = lines.search(pattern, pos=pos)
+
+    if (m is null) {
+      return
+    }
+
+    #pp test_ ([m.group(0), m.group(1), m.group(2)])
+    pp test_ ([pos, m.group(0)])
+
+    setvar pos = m.end(0)
+  }
+}
+
+# Alternation requires special logic
+var p3 = / <capture [0-9] as number> | <capture [a-z] as letter> /
+var p4 = / <capture [0-9] as number> | <capture [a-z] as letter> ; ; reg_newline /
+
+var m = lines.leftMatch(p3, pos=3)
+assert [m is null]
+
+var m = lines.leftMatch(p3, pos=4)
+pp test_ ([m.group(0), m.group(1), m.group(2)])
+
+var m = lines.leftMatch(p3, pos=5)
+assert [m is null]
+
+var m = lines.leftMatch(p3, pos=6)
+pp test_ ([m.group(0), m.group(1), m.group(2)])
+
+echo
+show-matches (p3)
+
+echo
+show-matches (p4)
+
+## STDOUT:
+(List)   ["2","2",null]
+(List)   ["t",null,"t"]
+
 (List)   [0,"o"]
 (List)   [1,"n"]
 (List)   [2,"e"]

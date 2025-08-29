@@ -303,8 +303,8 @@ class SearchMatch(vm._Callable):
         rd.Done()
 
         # Make it anchored
-        if self.which_method == LEFT_MATCH and not ere.startswith('^'):
-            ere = '^' + ere
+        if self.which_method == LEFT_MATCH:
+            ere = '^(%s)' % ere
 
         if self.which_method == LEFT_MATCH:
             eflags = 0  # ^ matches beginning even if pos=5
@@ -315,6 +315,10 @@ class SearchMatch(vm._Callable):
 
         if indices is None:
             return value.Null
+
+        if self.which_method == LEFT_MATCH:
+            # undo the ^() transformation
+            indices = indices[2:]
 
         return RegexMatch(string, indices, capture)
 
