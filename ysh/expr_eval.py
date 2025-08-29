@@ -42,7 +42,6 @@ from _devbuild.gen.runtime_asdl import (
     scope_t,
     part_value,
     part_value_t,
-    Piece,
 )
 from _devbuild.gen.value_asdl import (value, value_e, value_t, y_lvalue,
                                       y_lvalue_e, y_lvalue_t, IntBox, LeftName,
