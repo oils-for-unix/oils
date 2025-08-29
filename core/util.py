@@ -5,9 +5,7 @@
 # You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
-"""
-util.py - Common infrastructure.
-"""
+"""util.py - Common infrastructure."""
 from __future__ import print_function
 
 from display import ansi

@@ -110,8 +110,6 @@ def GlobEscapeBackslash(s):
       \* evaluates to '\*'
       - that is, the \ is preserved literally
     """
-    # XXX--This representation is affected by the known IFS='\' bug, but the
-    # bug will be fixed in the coming PR.
     return s.replace('\\', r'\@')
 
 

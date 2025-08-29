@@ -65,7 +65,7 @@ checkout-stable() {
 }
 
 download-oils() {
-  local job_id=${1:-9951}  # 2025-08
+  local job_id=${1:-10054}  # 2025-08 - IFS fix and musl libc fix
 
   local url="https://op.oilshell.org/uuu/github-jobs/$job_id/cpp-tarball.wwz/_release/oils-for-unix.tar"
 
@@ -160,6 +160,25 @@ copy-aports() {
   change-perms $dest
 }
 
+_patch-yash-to-disable-tests() {
+  ### disable tests that use job control, causing SIGTTOU bug
+
+  local apkbuild=$CHROOT_HOME_DIR/aports/main/yash/APKBUILD
+
+  # make it idempotent
+  if ! grep 'FOR OILS' "$apkbuild"; then
+    echo '
+    check() {
+      echo "=== yash tests DISABLED FOR OILS ==="
+    }
+    ' >> $apkbuild
+  fi
+}
+
+patch-yash-to-disable-tests() {
+  sudo $0 _patch-yash-to-disable-tests
+}
+
 code-manifest() {
   # TODO: need per-file tree shaking of build/py.sh
   local -a build_py=(
@@ -221,6 +240,9 @@ test-time-tsv() {
 
 oils-in-chroot() {
   copy-aports
+
+  patch-yash-to-disable-tests
+
   copy-code
   test-time-tsv
 

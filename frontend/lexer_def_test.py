@@ -449,6 +449,14 @@ class OtherLexerTest(unittest.TestCase):
             lex = match.BraceRangeLexer(s)
             print(lex.Tokens())
 
+    def testIsUtf8Codeset(self):
+        for s in ['utf8', 'utf-8', 'UTF8', 'UTF-8']:
+            self.assertEqual(True, match.IsUtf8Codeset(s))
+
+        # extra space not valid now
+        for s in ['utf8 ', '']:
+            self.assertEqual(False, match.IsUtf8Codeset(s))
+
 
 if __name__ == '__main__':
     unittest.main()

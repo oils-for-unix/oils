@@ -133,37 +133,31 @@ Not unicode aware:
 
 - `strcmp()` does byte-wise and UTF-8 wise comparisons?
 
-### libc functions used
-
-TODO
-
-- Note: GNU readline calls `setlocale()`, which means that the `oils-for-unix`
-  process is affected by the environment
-
 ### Data Languages
 
 - Decoding JSON/J8 validates UTF-8
 - Encoding JSON/J8 decodes and validates UTF-8
   - So we can distinguish valid UTF-8 and invalid bytes like `\yff`
 
-## Implementation Notes
+## libc locale
 
-Unlike bash and CPython, Oils doesn't call `setlocale()`.  (Although GNU
-readline may call it.)
+At startup, Oils calls `setlocale()`, which initializes the global libc locale
+from the environment.  (GNU readline also calls `setlocale()`, but Oils may or
+may not link against GNU readline.)
 
-It's expected that your locale will respect UTF-8.  This is true on most
-distros.  If not, then some string operations will support UTF-8 and some
-won't.
+The locale affects the behavior of say `?` in globs, and `.` in libc regexes.
+
+Oils only supports UTF-8.  If the locale is not UTF-8, Oils prints a warning to
+stderr.  You can silence it with `OILS_LOCALE_OK=1`.
+
+### Some string operations use libc, and some don'
 
 For example:
 
 - String length like `${#s}` is implemented in Oils code, not libc, so it will
   always respect UTF-8.
 - `[[ s =~ $pat ]]` is implemented with libc, so it is affected by the locale
-  settings.  Same with Oils `(x ~ pat)`.
-
-TODO: Oils should support `LANG=C` for some operations, but not `LANG=X` for
-other `X`.
+  settings.  This is also true of YSH `(x ~ pat)`.
 
 ### List of Low-Level UTF-8 Operations
 

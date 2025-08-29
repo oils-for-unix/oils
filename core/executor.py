@@ -1,4 +1,4 @@
-"""executor.py."""
+"""executor.py - used by the shell evaluator"""
 from __future__ import print_function
 
 from errno import EINTR
@@ -863,11 +863,8 @@ class ShellExecutor(vm._Executor):
                 # Change it to builtin cat < file.
                 # Blame < because 'builtin cat' has no location
                 blame_tok = redir_node.redirects[0].op
-                simple = command.Simple(blame_tok, [], self.builtin_cat_words,
-                                        None, None, False)
-
-                # MUTATE redir node so it's like $(<file _cat)
-                redir_node.child = simple
+                node = command.Simple(blame_tok, [], self.builtin_cat_words,
+                                        None, None, False, redir_node.redirects)
 
         status, stdout_str = self.CaptureStdout(node)
 

@@ -1016,7 +1016,7 @@ class WordParser(WordEmitter):
         # type: () -> word_part.BashRegexGroup
         """
         Grammar:
-        BashRegexGroup = '(' WORD? ')
+          BashRegexGroup = '(' WORD? ')
         """
         left_token = self.cur_token
         assert left_token.id == Id.BashRegex_LParen, left_token
@@ -1095,8 +1095,7 @@ class WordParser(WordEmitter):
 
             elif self.token_kind == Kind.Left:
                 if self.token_type == Id.Left_Backtick and is_ysh_expr:
-                    p_die("Invalid backtick: use $(cmd) or \\` in YSH strings",
-                          self.cur_token)
+                    p_die("Backtick should be $(cmd) or \\` (OILS-ERR-18)", self.cur_token)
 
                 part = self._ReadDoubleQuotedLeftParts()
                 out_parts.append(part)
@@ -1210,7 +1209,7 @@ class WordParser(WordEmitter):
 
         elif left_id == Id.Left_Backtick:
             if not self.parse_opts.parse_backticks():
-                p_die('Use $(cmd) instead of backticks (parse_backticks)',
+                p_die('Backtick should be $(cmd) or \\` (parse_backticks, OILS-ERR-18)',
                       left_token)
 
             self._SetNext(lex_mode_e.Backtick)  # advance past `

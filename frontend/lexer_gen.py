@@ -431,6 +431,7 @@ def main(argv):
         TranslateOshLexer(lexer_def.LEXER_DEF)
 
         TranslateSimpleLexer('MatchEchoToken', lexer_def.ECHO_E_DEF)
+        TranslateSimpleLexer('MatchPrintfBToken', lexer_def.PRINTF_B_DEF)
         TranslateSimpleLexer('MatchGlobToken', lexer_def.GLOB_DEF)
         TranslateSimpleLexer('MatchPS1Token', lexer_def.PS1_DEF)
         TranslateSimpleLexer('MatchHistoryToken', lexer_def.HISTORY_DEF)
@@ -441,6 +442,8 @@ def main(argv):
         TranslateSimpleLexer('MatchJsonStrToken', lexer_def.JSON_STR_DEF)
         TranslateSimpleLexer('MatchShNumberToken', lexer_def.SH_NUMBER_DEF)
 
+        TranslateRegexToPredicate(lexer_def.IS_UTF8_CODESET_RE,
+                                  'IsUtf8Codeset')
         TranslateRegexToPredicate(lexer_def.VAR_NAME_RE, 'IsValidVarName')
         TranslateRegexToPredicate(lexer_def.SHOULD_HIJACK_RE, 'ShouldHijack')
         TranslateRegexToPredicate(lexer_def.LOOKS_LIKE_INTEGER,

@@ -4,9 +4,7 @@
 # You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
-"""
-process.py - Launch processes and manipulate file descriptors.
-"""
+"""process.py - Launch processes and manipulate file descriptors."""
 from __future__ import print_function
 
 from errno import EACCES, EBADF, ECHILD, EINTR, ENOENT, ENOEXEC, EEXIST

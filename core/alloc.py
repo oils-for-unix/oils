@@ -1,7 +1,3 @@
-"""
-alloc.py - Arena manages SourceLine and Token instances (could rename)
-"""
-
 from _devbuild.gen.syntax_asdl import source_t, Token, SourceLine, loc
 from asdl import runtime
 from core import error

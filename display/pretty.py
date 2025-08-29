@@ -1,6 +1,5 @@
 #!/usr/bin/env python2
-"""
-Pretty printing library.
+"""pretty.py - Pretty printing library.
 
 Pretty printing means intelligently choosing whitespace including indentation
 and newline placement, to attempt to display data nicely while staying within a

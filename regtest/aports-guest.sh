@@ -135,5 +135,4 @@ build-packages() {
   done | build-package-list "$config"
 }
 
-
 "$@"

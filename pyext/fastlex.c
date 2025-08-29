@@ -76,6 +76,30 @@ fastlex_MatchEchoToken(PyObject *self, PyObject *args) {
 }
 
 static PyObject *
+fastlex_MatchPrintfBToken(PyObject *self, PyObject *args) {
+  unsigned char* line;
+  int line_len;
+
+  int start_pos;
+  if (!PyArg_ParseTuple(args, "s#i", &line, &line_len, &start_pos)) {
+    return NULL;
+  }
+
+  // Bounds checking.
+  if (start_pos > line_len) {
+    PyErr_Format(PyExc_ValueError,
+                 "Invalid MatchPrintfBToken call (start_pos = %d, line_len = %d)",
+                 start_pos, line_len);
+    return NULL;
+  }
+
+  int id;
+  int end_pos;
+  MatchPrintfBToken(line, line_len, start_pos, &id, &end_pos);
+  return Py_BuildValue("(ii)", id, end_pos);
+}
+
+static PyObject *
 fastlex_MatchGlobToken(PyObject *self, PyObject *args) {
   unsigned char* line;
   int line_len;
@@ -293,6 +317,17 @@ fastlex_MatchShNumberToken(PyObject *self, PyObject *args) {
 }
 
 static PyObject *
+fastlex_IsUtf8Codeset(PyObject *self, PyObject *args) {
+  unsigned  char *name;
+  int len;
+
+  if (!PyArg_ParseTuple(args, "s#", &name, &len)) {
+    return NULL;
+  }
+  return PyBool_FromLong(IsUtf8Codeset(name, len));
+}
+
+static PyObject *
 fastlex_IsValidVarName(PyObject *self, PyObject *args) {
   unsigned  char *name;
   int len;
@@ -352,6 +387,8 @@ static PyMethodDef methods[] = {
    "(lexer mode, line, start_pos) -> (id, end_pos)."},
   {"MatchEchoToken", fastlex_MatchEchoToken, METH_VARARGS,
    "(line, start_pos) -> (id, end_pos)."},
+  {"MatchPrintfBToken", fastlex_MatchPrintfBToken, METH_VARARGS,
+   "(line, start_pos) -> (id, end_pos)."},
   {"MatchGlobToken", fastlex_MatchGlobToken, METH_VARARGS,
    "(line, start_pos) -> (id, end_pos)."},
   {"MatchPS1Token", fastlex_MatchPS1Token, METH_VARARGS,
@@ -370,8 +407,8 @@ static PyMethodDef methods[] = {
    "(line, start_pos) -> (id, end_pos)."},
   {"MatchShNumberToken", fastlex_MatchShNumberToken, METH_VARARGS,
    "(line, start_pos) -> (id, end_pos)."},
-  {"IsValidVarName", fastlex_IsValidVarName, METH_VARARGS,
-   "Is it a valid var name?"},
+  {"IsUtf8Codeset", fastlex_IsUtf8Codeset, METH_VARARGS, ""},
+  {"IsValidVarName", fastlex_IsValidVarName, METH_VARARGS, ""},
   // Should we hijack this shebang line?
   {"ShouldHijack", fastlex_ShouldHijack, METH_VARARGS, ""},
   {"LooksLikeInteger", fastlex_LooksLikeInteger, METH_VARARGS, ""},

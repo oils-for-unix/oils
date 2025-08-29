@@ -58,6 +58,7 @@ class SimpleLexer {
 SimpleLexer* BraceRangeLexer(BigStr* s);
 SimpleLexer* GlobLexer(BigStr* s);
 SimpleLexer* EchoLexer(BigStr* s);
+SimpleLexer* PrintfBLexer(BigStr* s);
 
 List<Tuple2<Id_t, BigStr*>*>* HistoryTokens(BigStr* s);
 List<Tuple2<Id_t, BigStr*>*>* Ps1Tokens(BigStr* s);
@@ -76,6 +77,7 @@ Tuple2<Id_t, int> MatchShNumberToken(BigStr* s, int pos);
 // Other Matching Functions
 //
 
+bool IsUtf8Codeset(BigStr* s);
 bool IsValidVarName(BigStr* s);
 bool ShouldHijack(BigStr* s);
 bool CanOmitQuotes(BigStr* s);

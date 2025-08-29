@@ -40,9 +40,12 @@ module runtime
            List[str] argv, List[CompoundWord] arg_locs,
            List[AssignArg] pairs)
 
-  # - Single or double quoted parts get neither split or globbed.
-  # - Bare words like echo or *.py are globbed, but NOT split with IFS.
-  # - Unquoted Substitutions are split and globbed.
+  # A Piece is a part of a word that's been evaluated
+  #   Bare word      | echo *.py   | quoted=False  do_split=False
+  #   Unquoted subst | $x   ${x}   | quoted=False  do_split=True
+  #   Quoted string  | 'sq' "$x"   | quoted=True   do_split=False
+  # The 'quoted' flag is used to determine whether globbing will occur, as well
+  # as empty elision like x=''; $x$x versus "$x"$x
   Piece = (str s, bool quoted, bool do_split)
 
   # A parse-time word_part from syntax.asdl is evaluated to a runtime

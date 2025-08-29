@@ -56,6 +56,9 @@ def R(pat, tok_type):
     return (True, pat, tok_type)
 
 
+# utf8, utf-8, UTF8, UTF-8, etc.
+IS_UTF8_CODESET_RE = r'[uU][tT][fF]-?8'
+
 # See unit tests in frontend/match_test.py.
 # We need the [^\0]* because the re2c translation assumes it's anchored like $.
 SHOULD_HIJACK_RE = r'#![^\0]*sh[ \t\r\n][^\0]*'
@@ -531,6 +534,13 @@ ECHO_E_DEF = _C_STRING_COMMON + [
     R(r'[^\\\0]+', Id.Lit_Chars),
 ]
 
+OCTAL3_RE = r'\\[0-7]{1,3}'
+
+PRINTF_B_DEF = ECHO_E_DEF + [
+    # \123 octal form is accepted as an extension
+    R(OCTAL3_RE, Id.Char_Octal3),
+]
+
 # https://json.org/
 
 # Note that [0-9] has to come second, because Python chooses the first match.
@@ -690,8 +700,6 @@ SH_NUMBER_DEF = [
     R(r'[1-9][0-9]*#[0-9a-zA-Z@_]+', Id.ShNumber_BaseN),
     R(r'[^\0]', Id.Unknown_Tok),  # any other char
 ]
-
-OCTAL3_RE = r'\\[0-7]{1,3}'
 
 # https://www.gnu.org/software/bash/manual/html_node/Controlling-the-PromptEvaluator.html#Controlling-the-PromptEvaluator
 PS1_DEF = [

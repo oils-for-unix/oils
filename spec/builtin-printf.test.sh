@@ -741,24 +741,6 @@ printf '[%%]\n'
 [%]
 ## END
 
-#### printf %b backslash escaping
-printf '[%s]\n' '\044'  # escapes not evaluated
-printf '[%b]\n' '\044'  # YES, escapes evaluated
-echo status=$?
-## STDOUT:
-[\044]
-[$]
-status=0
-## END
-
-#### printf %b with \c early return
-printf '[%b]\n' 'ab\ncd\cxy'
-echo $?
-## STDOUT:
-[ab
-cd0
-## END
-
 #### printf %c -- doesn't respect UTF-8!  Bad.
 twomu=$'\u03bc\u03bc'
 printf '[%s]\n' "$twomu"
@@ -1271,4 +1253,141 @@ status=1
 0
 status=1
 
+## END
+
+#### printf %b does backslash escaping
+
+printf '[%s]\n' '\044'  # escapes not evaluated
+printf '[%b]\n' '\044'  # YES, escapes evaluated
+echo
+
+printf '[%s]\n' '\x7e'  # escapes not evaluated
+printf '[%b]\n' '\x7e'  # YES, escapes evaluated
+echo
+
+# not a valid escape
+printf '[%s]\n' '\A'
+printf '[%b]\n' '\A'
+
+## STDOUT:
+[\044]
+[$]
+
+[\x7e]
+[~]
+
+[\A]
+[\A]
+## END
+
+## N-I dash STDOUT:
+[\044]
+[$]
+
+[\x7e]
+[\x7e]
+
+[\A]
+[\A]
+## END
+
+#### printf %b unicode escapes
+
+printf '[%s]\n' '\u03bc'  # escapes not evaluated
+printf '[%b]\n' '\u03bc'  # YES, escapes evaluated
+
+## STDOUT:
+[\u03bc]
+[μ]
+## END
+
+## N-I dash/ash STDOUT:
+[\u03bc]
+[\u03bc]
+## END
+
+#### printf %b respects \c early return
+printf '[%b]\n' 'ab\ncd\cxy'
+echo $?
+## STDOUT:
+[ab
+cd0
+## END
+
+
+#### printf %b supports octal escapes, both \141 and \0141
+
+printf 'three %b\n' '\141'  # di
+printf 'four  %b\n' '\0141'
+echo
+
+# trailing 9
+printf '%b\n' '\1419'
+printf '%b\n' '\01419'
+
+# Notes:
+#
+# - echo -e: 
+#   - NO  3 digit octal  - echo -e '\141' does not work
+#   - YES 4 digit octal
+# - printf %b
+#   - YES 3 digit octal
+#   - YES 4 digit octal
+# - printf string (outer)
+#   - YES 3 digit octal
+#   - NO  4 digit octal
+# - $'' and $PS1
+#   - YES 3 digit octal
+#   - NO  4 digit octal
+
+## STDOUT:
+three a
+four  a
+
+a9
+a9
+## END
+
+## N-I zsh STDOUT:
+three \141
+four  a
+
+\1419
+a9
+## END
+
+#### printf %b with truncated octal escapes
+
+# 8 is not a valid octal digit
+
+printf '%b\n' '\558'
+printf '%b\n' '\0558'
+echo
+
+show_bytes() {
+  od -A n -t x1
+}
+printf '%b' '\7' | show_bytes
+printf '%b' '\07' | show_bytes
+printf '%b' '\007' | show_bytes
+printf '%b' '\0007' | show_bytes
+
+## STDOUT:
+-8
+-8
+
+ 07
+ 07
+ 07
+ 07
+## END
+
+## N-I zsh STDOUT:
+\558
+-8
+
+ 5c 37
+ 07
+ 07
+ 07
 ## END

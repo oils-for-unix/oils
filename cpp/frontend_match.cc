@@ -64,6 +64,10 @@ SimpleLexer* EchoLexer(BigStr* s) {
   return Alloc<SimpleLexer>(&MatchEchoToken, s);
 }
 
+SimpleLexer* PrintfBLexer(BigStr* s) {
+  return Alloc<SimpleLexer>(&MatchPrintfBToken, s);
+}
+
 List<Tuple2<Id_t, BigStr*>*>* HistoryTokens(BigStr* s) {
   SimpleLexer lexer(&MatchHistoryToken, s);
   return lexer.Tokens();
@@ -125,6 +129,11 @@ Tuple2<Id_t, int> MatchShNumberToken(BigStr* s, int pos) {
   ::MatchShNumberToken(reinterpret_cast<const unsigned char*>(s->data_), len(s),
                        pos, &id, &end_pos);
   return Tuple2<Id_t, int>(static_cast<Id_t>(id), end_pos);
+}
+
+bool IsUtf8Codeset(BigStr* s) {
+  return ::IsUtf8Codeset(reinterpret_cast<const unsigned char*>(s->data_),
+                         len(s));
 }
 
 bool IsValidVarName(BigStr* s) {

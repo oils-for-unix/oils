@@ -1,5 +1,4 @@
 #!/usr/bin/env python2
-"""pyutil_test.py: Tests for pyutil.py."""
 from __future__ import print_function
 
 import unittest

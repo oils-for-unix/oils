@@ -1,5 +1,4 @@
 #!/usr/bin/env python2
-"""optview_gen.py."""
 from __future__ import print_function
 
 import sys

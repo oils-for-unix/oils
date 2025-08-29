@@ -1,6 +1,4 @@
-"""
-core/shell.py -- Entry point for the shell interpreter.
-"""
+"""shell.py -- assemble the shell interpreter"""
 from __future__ import print_function
 
 from errno import ENOENT

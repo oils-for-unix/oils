@@ -1,4 +1,4 @@
-"""vm.py: Library for executing shell."""
+"""vm.py - interfaces for executing shell."""
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
