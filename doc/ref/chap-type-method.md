@@ -336,9 +336,11 @@ Notes:
 ### leftMatch()
 
 Test whether the regex matches the string at the given `pos`, which is `0` by
-default.  Returns a [Match](#Match) value, or `null` if it doesn't match.
+default.  That is, it does **not** look ahead for matches, unlike the
+`search()` method.
 
-In contrast to `search()`, it doesn't look ahead for matches.
+Returns a [Match](#Match) value, or `null` if it doesn't match.
+
 
     var m = 'ale'.leftMatch(/[a e i o u]/)
     = m.start(0)  # => index 0 for 'a'
@@ -364,6 +366,9 @@ Notes:
 - Unlike `search()`, `%start` aka `^` may match when `pos !== 0`.
   - This is a quirk compared to Python: under the hood, `leftMatch()` is
     implemented with `^`.
+- The eggex flag `reg_newline` (libc `REG_NEWLINE`) affects the meaning of `^`.
+  Generally speaking, avoid using `leftMatch()` with patterns with
+  `reg_newline` set.
 
 ### split()
 
