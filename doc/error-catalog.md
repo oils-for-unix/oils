@@ -272,6 +272,22 @@ Try one of these alternatives:
 
     ysh$ echo $['--flag=' ++ myvar]  # expression sub
 
+
+### OILS-ERR-18
+
+```
+  echo "date = `date`"
+               ^
+[ -c flag ]:1: Backtick should be $(cmd) or \` (parse_backticks, OILS-ERR-18)
+```
+
+- Did you mean to use `$(date)` instead?
+  - This is the only syntax for command substitution in YSH, because it nests
+    cleanly.
+- Did you mean to escape the backtick with `` \` ``?
+  - (OSH and YSH have the same string literal syntax, including the
+    backslash-quoted backtick `` \` ``.)
+
 ## Runtime Errors - Traditional Shell
 
 These errors may occur in shells like [bash]($xref) and [zsh]($xref).
