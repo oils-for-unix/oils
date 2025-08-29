@@ -276,15 +276,17 @@ Try one of these alternatives:
 ### OILS-ERR-18
 
 ```
-  echo "`echo hi`"
-        ^
-[ -c flag ]:1: Use $(cmd) or write compatible \` (parse_backticks, OILS-ERR-18)
+  echo "date = `date`"
+               ^
+[ -c flag ]:1: Invalid backtick (parse_backticks, OILS-ERR-18)
 ```
 
-In YSH, the legacy backticks syntax for command substitution is disallowed.
-The newer `$(cmd)` syntax avoids quoting and nesting problems.
-The old syntax is not re-used, to ensure that all valid YSH strings remain
-compatible, and there is no change in what they mean.
+- Did you mean to use `$(date)` instead?
+  - This is the only syntax for command substitution in YSH, because it nests
+    cleanly.
+- Did you mean to escape the backtick with `` \` ``?
+  - (OSH and YSH have the same string literal syntax, including the
+    backslash-quoted backtick `` \` ``.)
 
 ## Runtime Errors - Traditional Shell
 
