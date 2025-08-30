@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 
 #### Match tab character with [\t]
 shopt -s ysh:all
@@ -128,26 +128,6 @@ yes
 no
 ## END
 
-#### Can't match code points \u{ff} because they don't translate to valid ERE
-shopt -s ysh:all
-
-var pat2 = /[ \u{1} - \u{3bc} ]/;
-
-# This causes an error
-echo $pat2
-
-# This just prints it
-= pat2
-
-var pat1 = /[ \u{ff} ]/;
-
-echo $pat1 | od -A n -t x1
-if (b'\y7f' ~ pat1) { echo yes } else { echo no }
-if (b'\y7e' ~ pat1) { echo yes } else { echo no }
-
-## status: 1
-## stdout-json: ""
-
 #### non-ASCII bytes must be singleton terms, e.g. b'\y7f\yff' is disallowed
 var bytes = b'\y7f\yff'
 var pat = / [ @bytes ] /
@@ -262,6 +242,28 @@ pp test_ (b'\u{10ffff}' ~ pat)
 (Bool)   false
 (Bool)   true
 ## END
+
+#### Code point ranges work in limited cases
+shopt -s ysh:all
+
+var range1 = /[ \u{1} - \u{7e} ]/;
+
+pp test_ (u'\u{7f}' ~ range1)
+pp test_ (u'\u{7e}' ~ range1)
+
+exit
+
+# Invalid collation character?  Unicode ranges don't work I guess
+var range2 = /[ \u{1} - \u{3bc} ]/;
+
+pp test_ (b'\y7f' ~ range2)
+pp test_ (b'\y7e' ~ range2)
+
+## STDOUT:
+(Bool)   false
+(Bool)   true
+## END
+
 
 #### Max code point is disallowed at parse time
 
