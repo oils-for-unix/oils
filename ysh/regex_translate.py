@@ -19,6 +19,7 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.value_asdl import value
 from core.error import e_die, p_die
+from data_lang import j8
 from frontend import lexer
 from mycpp.mylib import log, tagswitch, switch
 from osh import glob_  # for ExtendedRegexEscape
@@ -90,10 +91,14 @@ def _CharCodeToEre(term, parts, special_char_flags):
     if char_int == 0:
         e_die("ERE can't express char code %d" % char_int, term.blame_tok)
 
-    if char_int >= 128 and term.u_braced:  # 128 is 0x80
-        # \u{ff} can't be represented in ERE because we don't know the encoding
-        # \xff can be represented
-        e_die("ERE can't express char code %d" % char_int, term.blame_tok)
+    if term.u_braced:  # \u{3bc} 
+        # max is \u{10ffff} is checked at PARSE time
+        pass
+    else:
+        if char_int >= 128:  # 128 is 0x80
+            # \yff can't be represented in ERE if LC_ALL=utf-8
+            # It should be \u{ff} instead
+            e_die("ERE can't express high bytes %d" % char_int, term.blame_tok)
 
     # note: mycpp doesn't handle
     # special_char_flags[0] |= FLAG_HYPHEN
@@ -108,7 +113,8 @@ def _CharCodeToEre(term, parts, special_char_flags):
     elif char_int == CH_BACKSLASH:
         mask |= FLAG_BACKSLASH
     else:
-        parts.append(chr(char_int))
+        s = j8.Utf8Encode(char_int)
+        parts.append(s)
 
     special_char_flags[0] = mask
 

@@ -130,7 +130,8 @@ no
 
 #### Can't match code points \u{ff} because they don't translate to valid ERE
 shopt -s ysh:all
-var pat2 = /[ \u{00} - \u{ff} ]/;
+
+var pat2 = /[ \u{1} - \u{3bc} ]/;
 
 # This causes an error
 echo $pat2
@@ -141,8 +142,8 @@ echo $pat2
 var pat1 = /[ \u{ff} ]/;
 
 echo $pat1 | od -A n -t x1
-if (b'\x7f' ~ pat) { echo yes } else { echo no }
-if (b'\x7e' ~ pat) { echo yes } else { echo no }
+if (b'\y7f' ~ pat1) { echo yes } else { echo no }
+if (b'\y7e' ~ pat1) { echo yes } else { echo no }
 
 ## status: 1
 ## stdout-json: ""
@@ -209,21 +210,16 @@ shopt -s ysh:all
 # ascii works
 pp test_ (b'\y7f' ~ / [\x7f] /)
 pp test_ (b'\y7e' ~ / [\x7f] /)
-echo
 
-# BUG before disabling: high byte doesn't work?    Because of utf-8 locale
-#
-# We translate \x80 to a the byte b'\y80', but it still doesn't work
-#
-# We COULD allow this with LANG=C, but for now don't bother.  I think using an
-# ERE string is probably better.
+= str( / [\y80]/ )
 
-pp test_ (b'\y80' ~ / [\x80] /)
-pp test_ (b'\yff' ~ / [\xff] /)
+#pp test_ (b'\y80' ~ / [\y80] /)
+#pp test_ (b'\yff' ~ / [\yff] /)
 
-= str( / [\x80]/ )
-
+## status: 1
 ## STDOUT:
+(Bool)   true
+(Bool)   false
 ## END
 
 #### High bytes 0x80 0xff can be matched with plain ERE and LC_ALL=C
@@ -245,3 +241,39 @@ EOF
 (Bool)   true
 (Bool)   false
 ## END
+
+#### Code points like \u{3bc} can be matched
+
+var pat = / [\u{3bc}] /
+pp test_ (b'a' ~ pat)
+pp test_ (b'\u{3bc}' ~ / [\u{3bc}] /)
+echo
+
+var pat = / [\u{10ffff}] /
+pp test_ (b'a' ~ pat)
+pp test_ (b'\u{10ffff}' ~ pat)
+
+#echo "-$pat-"
+
+## STDOUT:
+(Bool)   false
+(Bool)   true
+
+(Bool)   false
+(Bool)   true
+## END
+
+#### Max code point is disallowed at parse time
+
+pp test_ (/ [\u{10ffff}] /)
+pp test_ (/ [\u{110000}] /)
+
+## STDOUT:
+(Bool)   false
+(Bool)   true
+
+(Bool)   false
+(Bool)   true
+## END
+
+
