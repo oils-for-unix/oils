@@ -153,11 +153,11 @@ shopt -s ysh:all
 
 var pat = null
 
-setvar pat = / [ \x00 - \x0f ] /
+setvar pat = / [ \x01 - \x0f ] /
 echo $pat | od -A n -t x1
 
 ## STDOUT:
- 5b 00 2d 0f 5d 0a
+ 5b 01 2d 0f 5d 0a
 ## END
 
 

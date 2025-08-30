@@ -331,8 +331,8 @@ EOF
   _ysh-should-run ' = / [ \u{0}-\u{1} ] /'
 
   # Too high
-  _ysh-error-1 'var x =/ [ \u{80} ] /; echo $x'
-  _ysh-error-1 'var x = / [ \u{7f}-\u{80} ] /; echo $x'
+  _ysh-error-1 'var x =/ [ \y80 ] /; echo $x'
+  _ysh-error-1 'var x = / [ \y7f-\y80 ] /; echo $x'
 
   # Now test special characters
   _ysh-should-run "$(cat <<'EOF'
