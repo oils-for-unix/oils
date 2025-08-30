@@ -1,4 +1,5 @@
 ## compare_shells: dash bash mksh zsh
+## oils_failures_allowed: 1
 
 # Test the length oeprator, which dash supports.  Dash doesn't support most
 # other ops.
@@ -219,3 +220,50 @@ echo ${#x-default}
 3
 ## END
 
+#### ${#s} respects LC_ALL - length in bytes or code points
+case $SH in dash) exit ;; esac
+
+# This test case is sorta "infected" because spec-common.sh sets LC_ALL=C.UTF-8
+#
+# For some reason mksh behaves differently
+#
+# See demo/04-unicode.sh
+
+#echo $LC_ALL
+unset LC_ALL 
+
+# note: this may depend on the CI machine config
+LANG=en_US.UTF-8
+
+#LC_ALL=en_US.UTF-8
+
+for s in $'\u03bc' $'\U00010000'; do
+  LC_ALL=
+  echo "len=${#s}"
+
+  LC_ALL=C
+  echo "len=${#s}"
+
+  echo
+done
+
+## STDOUT:
+len=1
+len=2
+
+len=1
+len=4
+
+## END
+
+## N-I dash STDOUT:
+## END
+
+## BUG mksh STDOUT:
+len=2
+len=2
+
+len=3
+len=3
+
+## END

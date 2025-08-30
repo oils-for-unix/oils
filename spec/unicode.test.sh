@@ -194,3 +194,4 @@ status=0
 
 ## BUG mksh STDOUT:
 ## END
+

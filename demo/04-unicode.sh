@@ -140,4 +140,60 @@ libc-vars() {
   # TODO: non-utf8
 }
 
+# Copied into spec/unicode.test.sh; mksh behaves differently
+length-op() {
+  for s in $'\u03bc' $'\U00010000'; do
+    LC_ALL=
+    echo "len=${#s}"
+
+    LC_ALL=C
+    echo "len=${#s}"
+  done
+}
+
+compare-shells() {
+  # hm they all support unicode
+  for sh in bash zsh mksh; do
+    echo "=== $sh"
+    $sh $0 length-op
+    echo
+  done
+}
+
+len-1() {
+  s=$'\U00010000'
+  echo ${#s}
+}
+
+len-2() {
+  s=$'\U00010000'
+  s2=$'\u03bc'  # different string, so length isn't cached
+
+  #s3=$'\uffff'  # different string, so length isn't cached
+  #s2=$'\U0001000f'  # different string, so length isn't cached
+
+  #echo ${#s} ${#s2}
+  # I see more of these
+  #  __ctype_get_mb_cur_max()     = 6
+  # mbrtowc(0, 0xHEX, 3, 0xHEX)   = 2
+
+  echo ${#s} ${#s2}
+}
+
+norm-ltrace() {
+  grep mb $1 | sed --regexp-extended 's/0x[0-9a-f]+/0xHEX/g'
+}
+
+ltrace-diff() {
+  ### Shows that bash calls decoding mbrtowc() when calculating string length!
+
+  ltrace bash $0 len-1 2>_tmp/1.txt
+  ltrace bash $0 len-2 2>_tmp/2.txt
+
+  wc -l _tmp/{1,2}.txt
+
+  diff -u <(norm-ltrace _tmp/1.txt) <(norm-ltrace _tmp/2.txt )
+}
+ 
+
 "$@"

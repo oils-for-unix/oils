@@ -1,55 +1,108 @@
 ---
 default_highlighter: oils-sh
-in_progress: yes
 ---
 
-Notes on Unicode in Shell
-=========================
+Unicode in Oils
+===============
+
+With respect to their Unicode string model, you can put programming
+languages roughly in these 3 categories:
+
+1. **UTF-8** - Go, Rust, Julia, ..., Oils
+1. **UTF-16** - Java, JavaScript, ...
+1. **UTF-32** aka Unicode code points - Python 2 and 3, ...
+
+So Oils is in the **first** category: it's UTF-8 centric.
+
+Let's see what this means &mdash; in terms of the mental model to use when
+writing OSH and YSH, and the implementation of Oils.
 
 <div id="toc">
 </div>
 
-## Philosophy
+## Example: The Length of a String
 
-Oils is UTF-8 centric, unlike `bash` and other shells.
+The Oils runtime has a single `Str` [data type](types.html), which is used by
+both OSH and YSH.
 
-That is, its Unicode support is like Go, Rust, Julia, and Swift, and not like
-Python or JavaScript.  The former languages internally represent strings as
-UTF-8, while the latter use arrays of code points or UTF-16 code units.
+A `Str` is an array of bytes, which **may or may not be** UTF-8 encoded.  For
+example:
 
-## A Mental Model
+    s=$'\u03bc'      # 1 code point, which is UTF-8 encoded as 2 bytes
 
-### Program Encoding - OSH vs. YSH
+    echo ${#s}       # => 1 code point (regardless of locale, right now)
 
-- The source files of OSH programs may have arbitrary bytes, for backward
-  compatibility.
-- The source files of YSH programs should be should be encoded in UTF-8 (or its
-  ASCII subset).  TODO: Enforce this with `shopt --set utf8_source`
+    echo $[len(s)]   # => 2 bytes
 
-Unicode characters can be encoded directly in the source:
+That is, the YSH operation `len(mystr)` returns the length in **bytes**.
 
-<pre>
-echo '&#x03bc;'
-</pre>
+But the shell operation `${#mystr}` **decodes** the string as UTF-8, and return
+the length in **code points**.
 
-or denoted in ASCII with C-escaped strings:
+Again, this model is used by languages like Go, Rust, Julia, and Swift.
+
+### Versus bash
+
+`bash` supports multiple lengths, but in a different way:
+
+    s=$'\u03bc'  # one code point
+
+    echo ${#s}   # => 1, when say LANG=C.UTF-8
+
+    LC_ALL=C     # libc setlocale() called under the hood
+    echo ${#s}   # => 2 bytes, now that LC_ALL=C
+
+So bash doesn't seem to fall cleanly in one of the 3 categories above.  We
+might have to test with non-UTF-8 libc locales like Shift JIS (Japanese), but
+these are rare.
+
+In practice, the locale almost always C or UTF-8, so bash and Oils are
+similar.But Oils is more strict about UTF-8, and YSH discourages global
+variables like `LC_ALL`.
+
+(TODO: For compatibility, OSH should call `setlocale()` when assigning
+`LC_ALL=C`.)
+
+<!--
+- Python: like bash, strings are logically an array of code points.
+- JavaScript: a string is an array of 16-bit code units (UTF-16).
+
+So, unlike those 3 languages, Oils is UTF-8 centric.
+-->
+
+## Encoding of Code and Data
+
+### OSH vs. YSH
+
+For backward compatibility, OSH source files may have **arbitrary bytes**.  For
+example, `echo [the literal byte 0xFF]` is a valid source file.
+
+In contrast, YSH source files must be encoded in UTF-8, including its ASCII
+subset.  (TODO: Enforce this with `shopt --set utf8_source`)
+
+If you use C-escaped strings, then your source file can be ASCII:
 
     echo $'\u03bc'   # bash style
 
     echo u'\u{3bc}'  # YSH style
 
-(Such strings are preferred over `echo -e` because they're statically parsed.)
+If you write UTF-8 characters, then your source is UTF-8:
+
+<pre>
+echo '&#x03bc;'
+</pre>
 
 ### Data Encoding
 
-Strings in OSH are arbitrary sequences of **bytes**, which may or may not be
-valid UTF-8.  Details:
+As mentioned, strings in OSH and YSH are arbitrary sequences of **bytes**,
+which may or may not be valid UTF-8.
 
-- When passed to external programs, strings are truncated at the first `NUL`
-  (`'\0'`) byte.  This is a consequence of how Unix and C work.
-- Some operations like length `${#s}` and slicing `${s:1:3}` require the string
-  to be **valid UTF-8**.  Decoding errors are fatal if `shopt -s
-  strict_word_eval` is on.
+Some operations like length `${#s}` and slicing `${s:1:3}` require the string
+to be **valid UTF-8**.  Decoding errors are fatal if `shopt -s
+strict_word_eval` is on.
+
+**Note**: when passed to external programs, strings are truncated at the first
+`NUL` (`'\0'`) byte.  This is a consequence of how Unix and C work.
 
 ## List of Features That Respect Unicode
 
