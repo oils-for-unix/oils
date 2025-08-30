@@ -5,17 +5,17 @@ default_highlighter: oils-sh
 Unicode in Oils
 ===============
 
-With respect to their Unicode string model, you can put programming
-languages roughly in these 3 categories:
+Roughly speaking, you can divide programming languages into 3 categories with
+respect to Unicode strings:
 
 1. **UTF-8** - Go, Rust, Julia, ..., Oils
 1. **UTF-16** - Java, JavaScript, ...
-1. **UTF-32** aka Unicode code points - Python 2 and 3, ...
+1. **UTF-32** aka Unicode code points - Python 2 and 3, C and C++, ...
 
 So Oils is in the **first** category: it's UTF-8 centric.
 
-Let's see what this means &mdash; in terms of the mental model to use when
-writing OSH and YSH, and the implementation of Oils.
+Let's see what this means &mdash; in terms your mental model when writing OSH
+and YSH, and in terms of the Oils implementation.
 
 <div id="toc">
 </div>
@@ -34,16 +34,17 @@ example:
 
     echo $[len(s)]   # => 2 bytes
 
-That is, the YSH operation `len(mystr)` returns the length in **bytes**.
+That is, the YSH feature `len(mystr)` returns the length in **bytes**.  But the
+shell feature `${#s}` *decodes* the string as UTF-8, and returns the length in
+**code points**.
 
-But the shell operation `${#mystr}` **decodes** the string as UTF-8, and return
-the length in **code points**.
+Again, this string storage model is like Go and Julia, but different than
+JavaScript (UTF-16) and Python (code points).
 
-Again, this model is used by languages like Go, Rust, Julia, and Swift.
+### Note on bash
 
-### Versus bash
-
-`bash` supports multiple lengths, but in a different way:
+`bash` does support multiple lengths, but in a way that depends on global
+variables:
 
     s=$'\u03bc'  # one code point
 
@@ -52,13 +53,14 @@ Again, this model is used by languages like Go, Rust, Julia, and Swift.
     LC_ALL=C     # libc setlocale() called under the hood
     echo ${#s}   # => 2 bytes, now that LC_ALL=C
 
-So bash doesn't seem to fall cleanly in one of the 3 categories above.  We
-might have to test with non-UTF-8 libc locales like Shift JIS (Japanese), but
-these are rare.
+So bash doesn't seem to fall cleanly in one of the 3 categories above.
 
-In practice, the locale almost always C or UTF-8, so bash and Oils are
-similar.But Oils is more strict about UTF-8, and YSH discourages global
-variables like `LC_ALL`.
+It would be interesting to test bash with non-UTF-8 libc locales like Shift JIS
+(Japanese), but they are rare.  In practice, the locale almost always C or
+UTF-8, so bash and Oils are similar.
+
+But Oils is more strict about UTF-8, and YSH discourages global variables like
+`LC_ALL`.
 
 (TODO: For compatibility, OSH should call `setlocale()` when assigning
 `LC_ALL=C`.)
@@ -70,7 +72,7 @@ variables like `LC_ALL`.
 So, unlike those 3 languages, Oils is UTF-8 centric.
 -->
 
-## Encoding of Code and Data
+## Code Strings and Data Strings
 
 ### OSH vs. YSH
 
@@ -80,7 +82,7 @@ example, `echo [the literal byte 0xFF]` is a valid source file.
 In contrast, YSH source files must be encoded in UTF-8, including its ASCII
 subset.  (TODO: Enforce this with `shopt --set utf8_source`)
 
-If you use C-escaped strings, then your source file can be ASCII:
+If you write C-escaped strings, then your source file can be ASCII:
 
     echo $'\u03bc'   # bash style
 
@@ -101,10 +103,63 @@ Some operations like length `${#s}` and slicing `${s:1:3}` require the string
 to be **valid UTF-8**.  Decoding errors are fatal if `shopt -s
 strict_word_eval` is on.
 
-**Note**: when passed to external programs, strings are truncated at the first
-`NUL` (`'\0'`) byte.  This is a consequence of how Unix and C work.
+### Passing Data to libc / the Kernel
 
-## List of Features That Respect Unicode
+When passed to external programs, strings are truncated at the first `NUL`
+(`'\0'`) byte.  This is a consequence of how Unix and C work.
+
+## Your System Locale Should Be UTF-8
+
+At startup, Oils calls the `libc` function `setlocale()`, which initializes the
+global variables from environment variables like `LC_ALL` and `LC_COLLATE`.
+
+These global variables determine how `libc` string operations like `tolower()`
+`glob()`, and `regexec()` behave.
+
+For example:
+
+- In `glob()` syntax, does `?` match a byte or a code point?
+- In `regcomp()` syntax, does `.` match a byte or a code point?
+
+Oils only supports UTF-8 locales.  If the locale is not UTF-8, Oils prints a
+warning to `stderr` at startup.  You can silence it with `OILS_LOCALE_OK=1`.
+
+(Note: GNU readline also calls `setlocale()`, but Oils may or may not link
+against GNU readline.)
+
+### Note: Some string operations use libc, and some don't
+
+For example:
+
+- String length like `${#s}` is implemented in Oils code, not `libc`.  It
+  currently assumes UTF-8.
+  - The YSH `trim()` method is also implemented in Oils, not `libc`.  It
+    decodes UTF-8 to detect Unicode spaces.
+- On the other hand, `[[ s =~ $pat ]]` is implemented with `libc`, so it's
+  affected by the locale settings.
+  - This is also true of `(s ~ pat)` in YSH.
+
+## Tips
+
+- The GNU `iconv` program converts text from one encoding to another.
+
+## Summary
+
+Oils is more UTF-8 centric than bash:
+
+- Your system locale should be UTF-8
+- Some OSH string operations **assume** UTF-8, because they are implemented
+  inside Oils.  They don't use `libc` string functions that potentially support
+  multiple locales.
+
+<!--
+(TODO: Oils should support `LANG=C LC_ALL=C` in more cases, like for string
+length.)
+-->
+
+## Appendix: Languages Operations That Involve Unicode
+
+Here are some details.
 
 ### OSH / bash
 
@@ -112,58 +167,60 @@ These operations are implemented in Python.
 
 In `osh/string_ops.py`:
 
-- `${#s}` -- length in code points (buggy in bash)
-  - Note: YSH `len(s)` returns a number of bytes, not code points.
-- `${s:1:2}` -- index and length are a number of code points
-- `${x#glob?}` and `${x##glob?}` (see below)
+- `${#s}` - length in code points
+  - OSH gives proper decoding errors; bash returns nonsense
+- `${s:1:2}` - index and length are in code points
+  - Again, OSH may give decoding errors
+- `${x#glob?}` and `${x##glob?}` - see section on glob below
 
 In `builtin/`:
 
 - `printf '%d' \'c` where `c` is an arbitrary character.  This is an obscure
   syntax for `ord()`, i.e. getting an integer from an encoded character.
 
-More:
+#### Operations That Use Glob Syntax
 
-- `$IFS` word splitting.  Affects `shSplit()` builtin
-  - Doesn't respect unicode in dash, ash, mksh.  But it does in bash, yash, and
-    zsh with `setopt SH_WORD_SPLIT`.
-  - TODO: Oils should probably respect it
-- `${foo,}` and `${foo^}` for lowercase / uppercase
-  - TODO: doesn't respect unicode
-- `[[ a < b ]]` and `[ a '<' b ]` for sorting
-  - these can use libc `strcoll()`?
+The libc functions `glob()` and `fnmatch()` accept a pattern, which may have
+the `?` wildcard.  It stands for a single **code point** (in UTF-8 locales),
+not a byte.
 
-#### Globs
+Word evaluation uses a `glob()` call:
 
-Globs have character classes `[^a]` and `?`.
+    echo ?.c  # which files match?
 
-This pattern results in a `glob()` call:
+These language constructs result in `fnmatch()` calls:
 
-    echo my?glob
-
-These patterns result in `fnmatch()` calls:
+    ${s#?}  # remove one character suffix, quadratic loop for globs
 
     case $x in ?) echo 'one char' ;; esac
 
     [[ $x == ? ]]
 
-    ${s#?}  # remove one character suffix, quadratic loop for globs
+#### Operations That Involve Regexes (ERE)
 
-This uses our glob to ERE translator for *position* info:
+Regexes have the wildcard `.`.  Like `?` in globs, it stands for a **code
+point**.  They also have `[^a]`, which stands for a code point.
+
+    pat='.'  # single code point
+    [[ $x =~ $pat ]]
+
+This construct our **glob to ERE translator** for position info:
 
     echo ${s/?/x}
 
-#### Regexes (ERE)
+#### More Locale-aware operations
 
-Regexes have character classes `[^a]` and `.`:
-
-    pat='.'  # single "character"
-    [[ $x =~ $pat ]]
-
-#### Locale-aware operations
-
-- Prompt string has time, which is locale-specific.
-- In bash, `printf` also has time.
+- `$IFS` word splitting, which also affects the `shSplit()` builtin
+  - Doesn't respect unicode in dash, ash, mksh.  But it does in bash, yash, and
+    zsh with `setopt SH_WORD_SPLIT`.  (TODO: Oils could support Unicode in
+    `$IFS`.)
+- `${foo,}` and `${foo^}` for lowercase / uppercase
+  - TODO: For bash compatibility, use `libc` functions?
+- `[[ a < b ]]` and `[ a '<' b ]` for sorting
+  - TODO: For bash compatibility, use libc `strcoll()`?
+- The `$PS1` prompt language has various time `%` codes, which are
+  locale-specific.
+- In bash, `printf` also has a libc time calls with `%()T`.
 
 Other:
 
@@ -174,10 +231,11 @@ Other:
 ### YSH
 
 - Eggex matching depends on ERE semantics.
-  - `mystr ~ / [ \xff ] /` 
+  - `mystr ~ / [ \y01 ] /` 
   - `case (x) { / dot / }`
 - `Str.{trim,trimLeft,trimRight}` respect unicode space, like JavaScript does
 - TODO: `Str.{upper,lower}` also need unicode case folding
+  - are they different than the bash operations?
 - TODO: `s.split()` doesn't have a default "split by space", which should
   probably respect unicode space, like `trim()` does
 - TODO: `for offset, rune in (runes(mystr))` decodes UTF-8, like Go
@@ -192,25 +250,7 @@ Not unicode aware:
 - Encoding JSON/J8 decodes and validates UTF-8
   - So we can distinguish valid UTF-8 and invalid bytes like `\yff`
 
-## libc locale
-
-At startup, Oils calls `setlocale()`, which initializes the global libc locale
-from the environment.  (GNU readline also calls `setlocale()`, but Oils may or
-may not link against GNU readline.)
-
-The locale affects the behavior of say `?` in globs, and `.` in libc regexes.
-
-Oils only supports UTF-8.  If the locale is not UTF-8, Oils prints a warning to
-stderr.  You can silence it with `OILS_LOCALE_OK=1`.
-
-### Some string operations use libc, and some don'
-
-For example:
-
-- String length like `${#s}` is implemented in Oils code, not libc, so it will
-  always respect UTF-8.
-- `[[ s =~ $pat ]]` is implemented with libc, so it is affected by the locale
-  settings.  This is also true of YSH `(x ~ pat)`.
+## More Notes
 
 ### List of Low-Level UTF-8 Operations
 
@@ -219,8 +259,9 @@ libc:
 - `glob()` and `fnmatch()`
 - `regexec()`
 - `strcoll()` respects `LC_COLLATE`, which bash probably does
+- `tolower() toupper()` - will we use these?
 
-Our own:
+In Python:
 
 - Decode next rune from a position, or previous rune
   - `trimLeft()` and `${s#prefix}` need this
@@ -236,12 +277,6 @@ Not sure:
 
 - Case folding
   - both OSH and YSH have uppercase and lowercase
-
-## Tips
-
-- The GNU `iconv` program converts text from one encoding to another.
-
-## Appendix
 
 ### setlocale() calls made by bash, Python, ...
 

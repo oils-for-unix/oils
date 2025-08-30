@@ -50,6 +50,7 @@ YSH:
   | [Variable Declaration, Mutation, and Scope](variables.html)
   | [Hay - Custom Languages for Unix Systems](hay.html)
   | [YSH Input/Output](ysh-io.html)
+  | [Unicode in Oils](unicode.html)
 
 Data Languages:
 

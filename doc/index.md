@@ -108,8 +108,8 @@ Designs for "Maximalist YSH":
 Crosscutting design issues:
 
 - [Variable Declaration, Mutation, and Scope](variables.html)
+- [Unicode in Oils](unicode.html) - Oils supports and prefers UTF-8.
 - [Strings: Quotes, Interpolation, Escaping, and Buffers](strings.html) &dagger;
-  - [Unicode](unicode.html) &dagger;.  Oils supports and prefers UTF-8.
 - [YSH Input/Output](ysh-io.html)
 
 ## Data Languages Avoid Ad-Hoc Parsing
