@@ -154,16 +154,56 @@ echo $pat
 ## status: 1
 ## stdout-json: ""
 
-#### Match NUL byte - failing because of CPython API right now
-shopt -s ysh:all
+#### Bytes are denoted \y01 in Eggex char classes (not \x01)
 
-# BUG in osh-cpython, literal NUL is not accepted by regex API
-pp test_ (b'\y00' ~ / [\x00] /)
+# That is, eggex does have MODES like re.UNICODE
+#
+# We UNAMBIGUOUSLY accept
+# - \y01 or \u{1} - these are the same
+# - \yff or \u{ff} - these are DIFFERENT
+
+var pat = / [\y01] /
+pp test_ (b'\y01' ~ pat)
+pp test_ ('a' ~ pat)
 
 ## STDOUT:
+(Bool)   true
+(Bool)   false
 ## END
 
-#### BUG: Can you match high bytes 0x80 0xff, which are not UTF-8?
+#### NUL byte can be expressed in Eggex, but not in ERE
+
+$SH <<'EOF'
+pp test_ (b'\y01' ~ / [\y01] /)
+pp test_ (b'\y00' ~ / [\y00] /)
+EOF
+echo status=$?
+
+$SH <<'EOF'
+pp test_ (b'\y01' ~ / [\u{1}] /)
+pp test_ (b'\y00' ~ / [\u{0}] /)
+EOF
+echo status=$?
+
+
+# legacy synonym
+
+$SH <<'EOF'
+pp test_ (b'\y01' ~ / [\x01] /)
+pp test_ (b'\y00' ~ / [\x00] /)
+EOF
+echo status=$?
+
+## STDOUT:
+(Bool)   true
+status=1
+(Bool)   true
+status=1
+(Bool)   true
+status=1
+## END
+
+#### High bytes 0x80 0xff usually can't be matched - Eggex is UTF-8
 shopt -s ysh:all
 
 # ascii works
@@ -186,17 +226,20 @@ pp test_ (b'\yff' ~ / [\xff] /)
 ## STDOUT:
 ## END
 
-#### Bytes are denoted \y01 in Eggex char classes (not \x01)
+#### High bytes 0x80 0xff can be matched with plain ERE and LC_ALL=C
 
-# That is, eggex does have MODES like re.UNICODE
-#
-# We UNAMBIGUOUSLY accept
-# - \y01 or \u{1} - these are the same
-# - \yff or \u{ff} - these are DIFFERENT
+export LC_ALL=C
 
-var pat = / [\y01] /
-pp test_ (b'\y01' ~ pat)
-pp test_ ('a' ~ pat)
+$SH <<'EOF'
+var yes = b'foo \yff'
+var no = b'foo'
+
+# POSIX ERE string
+var ere = b'[\yff]'
+
+pp test_ (yes ~ ere)
+pp test_ (no ~ ere)
+EOF
 
 ## STDOUT:
 (Bool)   true

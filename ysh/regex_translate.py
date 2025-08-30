@@ -87,6 +87,9 @@ def _CharCodeToEre(term, parts, special_char_flags):
     """
 
     char_int = term.i
+    if char_int == 0:
+        e_die("ERE can't express char code %d" % char_int, term.blame_tok)
+
     if char_int >= 128 and term.u_braced:  # 128 is 0x80
         # \u{ff} can't be represented in ERE because we don't know the encoding
         # \xff can be represented
