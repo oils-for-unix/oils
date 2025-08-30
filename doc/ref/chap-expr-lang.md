@@ -735,35 +735,65 @@ splicing of strings:
     var dq = "hi $name"    
     var eggex = / @dq /
 
+
 ### class-literal
 
-An eggex character class literal specifies a set.  It can have individual
-characters and ranges:
+An eggex *character class literal* specifies a **set** of code points.  It's
+enclosed in brackets:
 
-    [ 'x' 'y' 'z' a-f A-F 0-9 ]  # 3 chars, 3 ranges
+    var vowels = / [a e i o u] /  # A set of 5 vowels
 
-Omit quotes on ASCII characters:
+A class literal can have individual code points:
 
-    [ x y z ]  # avoid typing 'x' 'y' 'z'
+    [ a e i o u '?' '*' '+' ]
 
-Sets of characters can be written as strings
+It can also have ranges of code points, denoted with a hyphen:
 
-    [ 'xyz' ]  # any of 3 chars, not a sequence of 3 chars
+    [ a-f A-F 0-9 ]
 
-Backslash escapes are respected:
+To reduce the number of quotes, you can write a set of characters as a string:
+
+    [ 'xyz' ]  # any of 3 chars, NOT a sequence of 3 chars
+
+You can also use backslash escapes:
 
     [ \\ \' \" \0 ]
-    [ \xFF \u{3bc} ]
+    [ \y7F \u{3bc} ]     # a byte and a code point
 
-(Note that we don't use `\yFF`, as in J8 strings.)
+    [ \y01 - \y7F ]      # range of bytes
+    [ \u{1} - \u{7F} ]   # range of code points
 
-Splicing:
+The `@` operator lets you refer to string variables:
 
+    var str_var = 'xyz'
     [ @str_var ]
 
 Negation always uses `!`
 
     ![ a-f A-F 'xyz' @str_var ]
+
+### re-chars
+
+Oils usually invokes `libc` in UTF-8 mode.  In this mode, the regex engine
+can't match bytes like `0xFF`; it can only match code points.
+
+    var x = / [ \y7F \u{3bc} ] /     # a byte and a code point
+
+Oils translates Eggex to POSIX extended regex (ERE) syntax.  Here are some
+restrictions when translating bytes and code points to ERE:
+
+- The `NUL` byte `\y00` isn't allowed.
+  - Its synonym, code point zero `\u{0}`, also isn't allowed.
+- Bytes `\y80` to `\yFF` aren't allowed, because they're outside the ASCII
+  range.
+
+Reminders:
+
+- In the ASCII range, bytes and code points are the same
+  - That is, `\y01` to `\y7F` are synonyms for `\u{1}` to `\u{7F}`.
+- Outside of the ASCII range, they are different, so Eggex disallows them.
+  - For example, `\u{FF}` is a code point, and `\yFF` is a byte, but they are
+    not the same.
 
 ### named-class
 

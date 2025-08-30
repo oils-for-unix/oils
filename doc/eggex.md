@@ -182,6 +182,9 @@ We've reserved syntactic space for PCRE and Python variants:
 - lazy/non-greedy: `x{L +}`, `x{L 3,4}`
 - possessive: `x{P +}`, `x{P 3,4}`
 
+(Oils doesn't have these features, because Oils translates Eggex to POSIX ERE
+syntax.)
+
 ### Negation Consistently Uses !
 
 You can negate named char classes:
@@ -258,13 +261,12 @@ You can also add type conversion functions:
 
 Example:
 
-    [ a-f 'A'-'F' \yFF \u{03bc} \n \\ \' \" \0 ]
-
-Terms:
-
-- Ranges: `a-f` or `'A' - 'F'`
-- Literals: `\n`, `\y01`, `\u{3bc}`, etc.
-- Sets specified as strings: `'abc'`
+    [ a b c ]                     # individual characters / code points
+    [ '?' '*' '+' ]               # quoted characters
+    [ 'a' 'bc' '?*+' ]            # reduce the number of quotes
+    [ a-f 'A'-'F' x y ]           # ranges of code points
+    [ \n \\ \' \" ]               # backslash escapes
+    [ \yFF \u{03bc} ]             # a byte and a code point
 
 Only letters, numbers, and the underscore may be unquoted:
 
@@ -409,6 +411,17 @@ Yes:
 
 ## POSIX ERE Limitations
 
+In theory, Eggex can be translated to many different synatxes, like Perl or
+Python.
+
+In practice, Oils translates Eggex to POSIX Extended Regular Expressions (ERE)
+syntax.  This syntax is understood by `libc`, e.g. GNU libc or musl libc.
+
+But not all of Eggex can be translated to ERE syntax.  And the translation is
+straightforward and "dumb", rather than smart.
+
+Here are some limitations.
+
 ### Repetition of Strings Requires Grouping
 
 Repetitions like `* + ?` apply only to the last character, so literal strings
@@ -425,41 +438,15 @@ Yes:
 
 Also OK:
 
-    ('foo')+  # this is a CAPTURING group in ERE
+    ('foo')+  # but note this is a CAPTURING group in ERE
 
 This is necessary because ERE doesn't have non-capturing groups like Perl's
 `(?:...)`, and Eggex only does "dumb" translations.  It doesn't silently insert
 constructs that change the meaning of the pattern.
 
-### Unicode char literals are limited in range
+### Bytes and Code Points are Limited in Range
 
-ERE can't represent this set of 1 character reliably:
-
-    / [ \u{0100} ] /      # This char is 2 bytes encoded in UTF-8
-
-These sets are accepted:
-
-    / [ \u{1} \u{2} ] /   # set of 2 chars
-    / [ \y01 \y02 ] ] /   # set of 2 bytes
-
-They happen to be identical when translated to ERE, but may not be when
-translated to PCRE.
-
-### Don't put non-ASCII bytes in string sets in char classes
-
-<!-- TODO: $'' will be disallowed in YSH -->
-
-This is a sequence of characters:
-
-    / $'\xfe\xff' /
-
-This is a **set** of characters that is illegal:
-
-    / [ $'\xfe\xff' ] /  # set or sequence?  It's confusing
-
-This is a better way to write it:
-
-    / [ \yfe \yff ] /  # set of 2 chars
+See [re-chars](ref/chap-expr-lang.html#re-chars) in the Oils Reference.
 
 ### Char class literals: `^ - ] \`
 
