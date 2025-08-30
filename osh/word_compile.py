@@ -43,7 +43,7 @@ def EvalCharLiteralForRegex(tok):
             one_char_str = consts.LookupCharC(value[1])
             return CharCode(tok, ord(one_char_str), False)
 
-        elif case(Id.Char_Hex):
+        elif case(Id.Char_YHex, Id.Char_Hex):  # \yff, \xff is legacy
             s = lexer.TokenSliceLeft(tok, 2)
             i = int(s, 16)
             return CharCode(tok, i, False)

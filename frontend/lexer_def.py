@@ -504,8 +504,8 @@ EXPR_CHARS = [
     R(r'''\\[\\"'nrt]''', Id.Char_OneChar),
     _CHAR_YHEX,
 
-    # Eggex.  This is a LITERAL translation to \xff in ERE?  So it's not \yff
-    # It doesn't have semantics; it's just syntax.
+    # LEGACY Eggex.  This is a LITERAL translation to 0xff in ERE?
+    # This is a syntax error in a YSH expression - it doesn't handle the token
     R(r'\\x[0-9a-fA-F]{2}', Id.Char_Hex),
     _U_BRACED_CHAR,
 ]

@@ -169,3 +169,14 @@ case ('/usr/bin/') {
 ## STDOUT:
 yes
 ## END
+
+#### \x7e was the legacy syntax for \y7e
+
+pp test_ ('~' ~ / [\x7e] /)  # should be INVALID
+
+pp test_ ('~' ~ / [\y7e] /)
+
+## STDOUT:
+(Bool)   true
+(Bool)   true
+## END

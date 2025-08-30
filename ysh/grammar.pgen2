@@ -392,7 +392,10 @@ param_group: (
 # Regex Sublanguage
 #
 
-char_literal: Char_OneChar | Char_Hex | Char_UBraced
+char_literal: (
+  Char_OneChar | Char_UBraced | Char_YHex
+| Char_Hex  # LEGACY \x01; the right thing is \u{1} or \y00
+)
 
 # we allow a-z A-Z 0-9 as ranges, but otherwise they have to be quoted
 # The parser enforces that they are single strings

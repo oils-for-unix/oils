@@ -258,12 +258,12 @@ You can also add type conversion functions:
 
 Example:
 
-    [ a-f 'A'-'F' \xFF \u{03bc} \n \\ \' \" \0 ]
+    [ a-f 'A'-'F' \yFF \u{03bc} \n \\ \' \" \0 ]
 
 Terms:
 
 - Ranges: `a-f` or `'A' - 'F'`
-- Literals: `\n`, `\x01`, `\u{3bc}`, etc.
+- Literals: `\n`, `\y01`, `\u{3bc}`, etc.
 - Sets specified as strings: `'abc'`
 
 Only letters, numbers, and the underscore may be unquoted:
@@ -440,12 +440,14 @@ ERE can't represent this set of 1 character reliably:
 These sets are accepted:
 
     / [ \u{1} \u{2} ] /   # set of 2 chars
-    / [ \x01 \x02 ] ] /   # set of 2 bytes
+    / [ \y01 \y02 ] ] /   # set of 2 bytes
 
 They happen to be identical when translated to ERE, but may not be when
 translated to PCRE.
 
 ### Don't put non-ASCII bytes in string sets in char classes
+
+<!-- TODO: $'' will be disallowed in YSH -->
 
 This is a sequence of characters:
 
@@ -457,7 +459,7 @@ This is a **set** of characters that is illegal:
 
 This is a better way to write it:
 
-    / [ \xfe \xff ] /  # set of 2 chars
+    / [ \yfe \yff ] /  # set of 2 chars
 
 ### Char class literals: `^ - ] \`
 

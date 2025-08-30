@@ -796,6 +796,11 @@ esac'
   done
 }
 
+test-ysh-interaction() {
+  # remove special parsing
+  _osh-parse-error '= \xff'
+}
+
 all() {
   section-banner 'Cases in Files'
 

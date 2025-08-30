@@ -1,4 +1,4 @@
-## oils_failures_allowed: 3
+## oils_failures_allowed: 2
 
 #### Match tab character with [\t]
 shopt -s ysh:all
@@ -163,7 +163,7 @@ pp test_ (b'\y00' ~ / [\x00] /)
 ## STDOUT:
 ## END
 
-#### Match high bytes 0x80 0xff, which are not UTF-8
+#### BUG: Can you match high bytes 0x80 0xff, which are not UTF-8?
 shopt -s ysh:all
 
 # ascii works
@@ -171,8 +171,12 @@ pp test_ (b'\y7f' ~ / [\x7f] /)
 pp test_ (b'\y7e' ~ / [\x7f] /)
 echo
 
-# BUG before disabling: high byte doesn't work?  
+# BUG before disabling: high byte doesn't work?    Because of utf-8 locale
+#
 # We translate \x80 to a the byte b'\y80', but it still doesn't work
+#
+# We COULD allow this with LANG=C, but for now don't bother.  I think using an
+# ERE string is probably better.
 
 pp test_ (b'\y80' ~ / [\x80] /)
 pp test_ (b'\yff' ~ / [\xff] /)
@@ -182,7 +186,7 @@ pp test_ (b'\yff' ~ / [\xff] /)
 ## STDOUT:
 ## END
 
-#### Bytes are denoted \y01 in Eggex char classes
+#### Bytes are denoted \y01 in Eggex char classes (not \x01)
 
 # That is, eggex does have MODES like re.UNICODE
 #
