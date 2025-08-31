@@ -774,28 +774,30 @@ Negation always uses `!`
 
 ### re-chars
 
-Oils usually invokes `libc` in UTF-8 mode (backwards compatible only with
-7-bit ASCII character byte codes 1-127).
-In this mode, the regex engine can't match bytes like `0xFF`; it can only
-match code points.
+Oils usually invokes the `libc` POSIX extended regex (ERE) engine in UTF-8 mode,
+which generally matches by "code points".
+
+This mode is backwards compatible only with the 7-bit ASCII character byte
+codes 1-127:
+
+- The `NUL` byte `\y00` isn't allowed in ERE.
+  - Its synonym, code point zero `\u{0}`, also isn't allowed.
+- Bytes `\y80` to `\yFF` aren't allowed, because they're used to encode
+  the UTF-8 code points.
+  
+The dissallowed byte range allows to match the vast amount of characters
+defined by the variable-width UTF-8 "code points".
 
     var x = / [ \y7F \u{3bc} ] /     # a byte and a code point
 
-Oils translates Eggex to POSIX extended regex (ERE) syntax.  Here are some
-restrictions when translating bytes and code points to ERE:
-
-- The `NUL` byte `\y00` isn't allowed.
-  - Its synonym, code point zero `\u{0}`, also isn't allowed.
-- Bytes `\y80` to `\yFF` aren't allowed, because they're outside the ASCII
-  range.
 
 Reminders:
 
-- Within the standardized "low-byte" ASCII range 0-127, UTF code points could
-  re-use its globally valid character byte encoding, so they are the same.
+- UTF-8 code points could re-use the globally valid character byte encodings of
+  the standardized "low-byte" ASCII range 0-127, so they are the same.
   - That is, `\y01` to `\y7F` are synonyms for `\u{1}` to `\u{7F}`.
-- Outside that range, there exist different encodings, so Eggex disallows
-  those bytes in favor of globally unique UTF-8 code points.
+- Outside that range, there exist(ed) different encodings, so UTF-8
+  disallowed those bytes in favor of globally unique UTF-8 code points.
   - For example, `\u{FF}` is a code point, and `\yFF` is a byte, but they are
     not the same.
 
