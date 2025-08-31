@@ -793,8 +793,8 @@ defined by the variable-width UTF-8 "code points".
 
 Reminders:
 
-- UTF code points could re-use the globally valid character byte encodings of
-  the standardized "low-byte" ASCII range 0-127, so they are the same.
+- UTF code points could re-use the character byte encodings of the globally
+  standardized "low-byte" ASCII range 0-127, so they are the same.
   - That is, `\y01` to `\y7F` are synonyms for `\u{1}` to `\u{7F}`.
 - Outside that range, there exist(ed) different encodings, so UTF-8
   disallowed those bytes in favor of globally unique UTF-8 code points.
