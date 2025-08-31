@@ -774,8 +774,10 @@ Negation always uses `!`
 
 ### re-chars
 
-Oils usually invokes `libc` in UTF-8 mode.  In this mode, the regex engine
-can't match bytes like `0xFF`; it can only match code points.
+Oils usually invokes `libc` in UTF-8 mode (backwards compatible only with
+7-bit ASCII character byte codes 1-127).
+In this mode, the regex engine can't match bytes like `0xFF`; it can only
+match code points.
 
     var x = / [ \y7F \u{3bc} ] /     # a byte and a code point
 
@@ -789,9 +791,11 @@ restrictions when translating bytes and code points to ERE:
 
 Reminders:
 
-- In the ASCII range, bytes and code points are the same
+- Within the standardized "low-byte" ASCII range 0-127, UTF code points could
+  re-use its globally valid character byte encoding, so they are the same.
   - That is, `\y01` to `\y7F` are synonyms for `\u{1}` to `\u{7F}`.
-- Outside of the ASCII range, they are different, so Eggex disallows them.
+- Outside that range, there exist different encodings, so Eggex disallows
+  those bytes in favor of globally unique UTF-8 code points.
   - For example, `\u{FF}` is a code point, and `\yFF` is a byte, but they are
     not the same.
 
