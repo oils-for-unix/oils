@@ -25,7 +25,8 @@
 source $LIB_OSH/bash-strict.sh
 source $LIB_OSH/task-five.sh
 
-readonly OILS_VERSION=$(head -n 1 oils-version.txt)
+OILS_VERSION=$(head -n 1 oils-version.txt)
+readonly OILS_VERSION
 export OILS_VERSION  # for quick_ref.py
 
 THIS_DIR=$(readlink -f $(dirname $0))
@@ -667,7 +668,6 @@ run-code-in-doc() {
       ;;
   esac
 
-  set -x
   split-and-render doc/$name.md '' $web_url
 
   local work_dir=$REPO_ROOT/_tmp/$name

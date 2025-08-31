@@ -45,7 +45,7 @@ extract-clang() {
   # TODO: retire ../oil_DEPS dir in favor of wedge
   mkdir -p $DEPS_DIR
   pushd $DEPS_DIR
-  time tar -x --xz < ../oil/_cache/clang+llvm-$LLVM_VERSION*.tar.xz
+  time tar -x --xz < ../oils/_cache/clang+llvm-$LLVM_VERSION*.tar.xz
   popd
 }
 

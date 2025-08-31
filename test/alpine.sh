@@ -70,8 +70,8 @@
 source $LIB_OSH/bash-strict.sh
 source $LIB_OSH/task-five.sh
 
-#readonly ROOTFS_URL='http://dl-cdn.alpinelinux.org/alpine/v3.11/releases/x86_64/alpine-minirootfs-3.11.3-x86_64.tar.gz'
-readonly ROOTFS_URL='https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/x86_64/alpine-minirootfs-3.22.1-x86_64.tar.gz'
+readonly ROOTFS_URL='http://dl-cdn.alpinelinux.org/alpine/v3.11/releases/x86_64/alpine-minirootfs-3.11.3-x86_64.tar.gz'
+#readonly ROOTFS_URL='https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/x86_64/alpine-minirootfs-3.22.1-x86_64.tar.gz'
 
 readonly CHROOT_OILS_TAR=_chroot/alpine-oils-tar
 readonly CHROOT_OILS_SPEC=_chroot/alpine-oils-spec
@@ -92,9 +92,16 @@ _extract() {
 
   du --si -s $dest
 }
-extract-oils-tar() { sudo $0 _extract $CHROOT_OILS_TAR; }
-extract-oils-spec() { sudo $0 _extract $CHROOT_OILS_SPEC; }
-extract-distro-build() { sudo $0 _extract $CHROOT_DISTRO_BUILD; }
+
+extract-oils-tar() {
+  mkdir -p _chroot  # should not be owned by root
+  sudo $0 _extract $CHROOT_OILS_TAR
+}
+
+extract-oils-spec() {
+  mkdir -p _chroot  # should not be owned by root
+  sudo $0 _extract $CHROOT_OILS_SPEC;
+}
 
 # Without this, you can't 'su myusername'.  It won't be able to execute bash.
 chmod-chroot() {
