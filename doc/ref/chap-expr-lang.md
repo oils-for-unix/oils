@@ -774,8 +774,8 @@ Negation always uses `!`
 
 ### re-chars
 
-Oils usually invokes the `libc` POSIX extended regex (ERE) engine in UTF-8 mode,
-which generally matches by "code points".
+Oils usually invokes the `libc` POSIX extended regex (ERE) engine in the UTF-8
+unicode mode, which generally matches by "code points".
 
 This mode is backwards compatible only with the 7-bit ASCII character byte
 codes 1-127:
@@ -783,7 +783,7 @@ codes 1-127:
 - The `NUL` byte `\y00` isn't allowed in ERE.
   - Its synonym, code point zero `\u{0}`, also isn't allowed.
 - Bytes `\y80` to `\yFF` aren't allowed, because they're used to encode
-  the UTF-8 code points.
+  code points in UTF-8.
   
 The dissallowed byte range allows to match the vast amount of characters
 defined by the variable-width UTF-8 "code points".
@@ -793,7 +793,7 @@ defined by the variable-width UTF-8 "code points".
 
 Reminders:
 
-- UTF-8 code points could re-use the globally valid character byte encodings of
+- UTF code points could re-use the globally valid character byte encodings of
   the standardized "low-byte" ASCII range 0-127, so they are the same.
   - That is, `\y01` to `\y7F` are synonyms for `\u{1}` to `\u{7F}`.
 - Outside that range, there exist(ed) different encodings, so UTF-8
