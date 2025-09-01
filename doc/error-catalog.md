@@ -105,7 +105,10 @@ test/ysh-parse-errors.sh ysh_c_strings (this may move)
 Do you want to?:
 - Denote a single `\` with `\\`?
 - Denote a valid escape like `$'\n'`?
-
+- (osh) 'Chain'"different"$'string types \t together' ?
+- (ysh) Concatenate quotes: "double" ++ u'single with \t escape' ?
+- (ysh) Use: "expression substitution $[\t] within double quotes" ?
+- 
 Related help topics:
 
 - [osh-string](ref/chap-word-lang.html#osh-string) (word language)
@@ -132,8 +135,8 @@ Do you want to?:
 - Denote a valid escape: `"\$"` or `"\""`?
 - Instead, use C-style `$'`-, `u'`-, or `b'`-single quotes, rather than `u"\n"`?
 - (osh) 'Chain'"different"$'string types \t together' ?
-- (ysh) Use concatenated expression: "double" ++ u'single \t literal' ?
-- (ysh) Use "expression substitution $[\t] within string" ?
+- (ysh) Concatenate quotes: "double" ++ u'single with \t escape' ?
+- (ysh) Use: "expression substitution $[\t] within double quotes" ?
 
 Related help topics:
 
@@ -160,10 +163,10 @@ Do you want to?:
 - Escape something like `\$`?
 - Remove an unecessary `\` ?
 - Denote a single `\` with `\\`?
-- (osh) Use a "raw" '-string-literal ?
-- (osh) Use an "interpreted" $'-string-literal ?
-- (ysh) Use a "raw" r'-string-literal ?
-- (ysh) Use an "interpreted" u'- or b'-string-literal ?
+- (osh) Use a *raw* '-string-literal ?
+- (osh) Use an *interpreted* $'-string-literal ?
+- (ysh) Use a *raw* r'-string-literal ?
+- (ysh) Use an *interpreted* u'- or b'-string-literal ?
  
 ### OILS-ERR-14
 
