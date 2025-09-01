@@ -99,7 +99,7 @@ test/ysh-parse-errors.sh ysh_c_strings (this may move)
 [ -c flag ]:1: Invalid char escape in C-style string literal (OILS-ERR-11)
 ```
 (Option parse_backslash: no verbatim `\`)
-- The `$''`-, `u''`- and `b''`-strings can only contain valid escapes (e.g. `\n` newline, ´\t` tab).
+- The `$''`-, `u''`- and `b''`-strings can only contain valid escapes (e.g. `\n` newline, `\t` tab).
 - Backslashes must be escaped.
 
 Do you want to?:
@@ -129,7 +129,7 @@ test/ysh-parse-errors.sh ysh_dq_strings (this may move)
 
 Do you want to?:
 - Denote a single `\` with `\\`?  
-- Denote a valid escape: `"\$"` or "\""`?
+- Denote a valid escape: `"\$"` or `"\""`?
 - Instead, use C-style `$'`-, `u'`-, or `b'`-single quotes, rather than `u"\n"`?
 - (osh) 'Chain'"different"$'string types \t together' ?
 - (ysh) Use concatenated expression: "double" ++ u'single \t literal' ?
