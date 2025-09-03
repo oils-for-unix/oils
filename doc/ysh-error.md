@@ -97,10 +97,85 @@ The `error` builtin is more informative:
     echo "$[_error.code] $[_error.message] foo=$[_error.foo]"
     # => 99 Custom message foo=zz"
 
+## Tips
+
+### Proc Return Status Should Be Either OK-Fail, or True-False-Fail
+
+<style>
+table {
+  margin-left: 2em;
+  background-color: #eee;
+}
+thead {
+  background-color: white;
+}
+</style>
+
+That is, use **one** of these styles:
+
+<div style="display: flex; gap: 20px;">
+<table cellpadding="10" cellspacing="5">
+
+- thead
+  - Return Status
+  - Meaning
+- tr
+  - 0
+  - OK
+- tr
+  - 1 or more
+  - Fail
+
+</table>
+
+<table cellpadding="10" cellspacing="5">
+
+- thead
+  - Return Status
+  - Meaning
+- tr
+  - 0
+  - True
+- tr
+  - 1
+  - False
+- tr
+  - 2 or more
+  - Fail
+
+</table>
+</div>
+
+For example, here's a proc that does is **not** follow the style:
+
+    proc is-different (left, right) {
+      mkdir /tmp/dest            # may return 1 on failure
+
+      cp $left $right /tmp/dest  # may return 1 on failure
+
+      diff -u $left $right       # 0-true, 1-false, 2-failure
+    }
+
+The exit code isn't well-defined, because `mkdir` and `cp` use the OK-fail
+paradigm, while `diff` uses the **boolean** paradigm:
+
+Explicitly checking for failure fixes it:
+
+    proc different (left, right) {
+      if ! mkdir /tmp/dest {
+        return 2                 # 2-failure
+      }
+      if ! cp $left $right /tmp/dest {
+        return 2                 # 2-failure
+      }
+
+      diff -u $left $right       # 0-true, 1-false, 2-failure
+    }
+
 ## Related
 
 - [YSH vs. Shell Idioms > Error Handling](idioms.html#error-handling)
-- [YSH Fixes Shell's Error Handling (`errexit`)](error-handling.html) - Long
-  design doc.
+- [YSH Fixes Shell's Error Handling (`errexit`)](error-handling.html) - A
+  detailed design doc
 
 

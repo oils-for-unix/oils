@@ -233,16 +233,15 @@ Other:
 - Eggex matching depends on ERE semantics.
   - `mystr ~ / [ \y01 ] /` 
   - `case (x) { / dot / }`
-- `Str.{trim,trimLeft,trimRight}` respect unicode space, like JavaScript does
-- TODO: `Str.{upper,lower}` also need unicode case folding
-  - are they different than the bash operations?
-- TODO: `s.split()` doesn't have a default "split by space", which should
-  probably respect unicode space, like `trim()` does
-- TODO: `for offset, rune in (runes(mystr))` decodes UTF-8, like Go
-
-Not unicode aware:
-
-- `strcmp()` does byte-wise and UTF-8 wise comparisons?
+- [String methods](ref/chap-type-method.html)
+  - `Str.{trim,trimStart,trimEnd}` respect unicode space, like JavaScript does
+  - TODO: `Str.{upper,lower}` also need unicode case folding
+    - are they different than the bash operations?
+  - TODO: `s.split()` doesn't have a default "split by space", which should
+    probably respect unicode space, like `trim()` does
+- [Builtin functions](ref/chap-builtin-func.html)
+  - TODO: `for offset, rune in (runes(mystr))` should decode UTF-8, like Go
+  - `strcmp()` should do byte-wise and UTF-8 wise comparisons?
 
 ### Data Languages
 
