@@ -254,7 +254,7 @@ Or an `Eggex` argument:
     = '123YSH456'.trim(/ d+ /)     # => 'YSH'
 
 If no arguments are passed, `trim()` uses a very special but useful
-default whitespace definition.
+default definition to remove whitespace:
 
     = b' YSH\n'.trim()             # => 'YSH'
 
