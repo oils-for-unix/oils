@@ -35,8 +35,8 @@ BEGIN {
   # esh package: OSH string
   patterns[9] = "fatal: Undefined variable"
 
-  # mawk: trap 0
-  patterns[10] = "requires a signal or hook name"
+  # mawk, openvpn: trap 0
+  patterns["#2339"] = "requires a signal or hook name"
 
   # pkgconf 
   patterns[11] = " with multiple files"
@@ -52,11 +52,12 @@ BEGIN {
   patterns[14] = "terminate called after throwing an instance of"
 
   # screen
-  patterns[65] = "mkdir: invalid option --"
-  patterns[15] = "mkdir: unrecognized option: /"  # changed 2025-08-04-rootbld
+  patterns["#2364"] = "mkdir: unrecognized option: /"  # changed 2025-08-04-rootbld
+  patterns["##2364"] = "mkdir: invalid option --"
 
   # postfix
-  patterns[16] = "Unexpected token after arithmetic expression"
+  # gzip
+  patterns["#2337"] = "Unexpected token after arithmetic expression"
 
   # make
   patterns[17] = "oils I/O error"
@@ -65,7 +66,7 @@ BEGIN {
   patterns[18] = "[ backticks in [ -c flag ] ]"
 
   # sqsh
-  patterns[19] = "(test) Unexpected trailing word"
+  patterns["#2409"] = "(test) Unexpected trailing word"
 
   found = 0
 }

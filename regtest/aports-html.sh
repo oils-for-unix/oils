@@ -191,6 +191,7 @@ published-html() {
 - [2025-08-07-fix](2025-08-07-fix.wwz/_tmp/aports-report/2025-08-07-fix/diff_merged.html)
 - [2025-08-14-fix](2025-08-14-fix.wwz/_tmp/aports-report/2025-08-14-fix/diff_merged.html)
 - [2025-08-26-ifs](2025-08-26-ifs.wwz/_tmp/aports-report/2025-08-26-ifs/diff_merged.html)
+  - new causes: [2025-09-06-edit](2025-09-06-edit.wwz/_tmp/aports-report/2025-09-06-edit/diff_merged.html)
 
 EOF
 
@@ -260,7 +261,7 @@ make-package-table() {
 
   sqlite3 -cmd '.mode columns' $db < regtest/aports/tasks.sql
 
-  pushd $base_dir/$config
+  pushd $base_dir/$config > /dev/null
 
   db-to-tsv $db packages
 
@@ -278,7 +279,8 @@ make-package-table() {
 .mode column
 select * from metrics;
 EOF
-  popd
+
+  popd > /dev/null
 
   #cat $base_dir/$config/packages.schema.tsv 
 }
@@ -331,7 +333,8 @@ make-diff-db() {
   local cause_awk=$PWD/regtest/aports/cause.awk
   local cause_sql=$PWD/regtest/aports/cause.sql
 
-  pushd $base_dir
+  pushd $base_dir > /dev/null
+
   rm -f $db
   sqlite3 $db < $diff_sql
 
@@ -374,7 +377,7 @@ EOF
   # The DB is diff_baseline.db, with table diff_baseline
   db-to-tsv $db diff_baseline
 
-  popd
+  popd > /dev/null
 }
 
 db-to-tsv() {
@@ -491,12 +494,12 @@ merge-diffs() {
   local name2=metrics
 
   # copied from above
-  pushd $epoch_dir
+  pushd $epoch_dir > /dev/null
 
   db-to-tsv $db diff_merged 'order by pkg'
   db-to-tsv $db metrics
 
-  popd
+  popd > /dev/null
 
   make-apk-merged $epoch_dir $db
 
@@ -606,6 +609,52 @@ deploy-published() {
 
   echo "Visit https://$dest_dir/published.html"
 }
+
+#
+# For editing
+#
+
+readonly EDIT_DIR=_tmp/aports-edit
+
+sync-wwz() {
+  local wwz=${1:-2025-08-26-ifs.wwz}
+
+  mkdir -p $EDIT_DIR
+
+  rsync --archive --verbose \
+    $WEB_HOST:$WEB_HOST/aports-build/$wwz  \
+    $EDIT_DIR/$wwz
+
+  ls -l $EDIT_DIR
+  #echo "Wrote $wwz"
+}
+
+extract() {
+  local wwz=${1:-2025-08-26-ifs.wwz}
+  local new_epoch=${2:-2025-09-06-edit}
+
+  # Extract the whole thing into a temp dir
+  local tmp_dir=$EDIT_DIR/$new_epoch
+  rm -r -f $tmp_dir
+  mkdir -p $tmp_dir
+
+  pushd $tmp_dir
+  unzip ../$wwz
+  popd
+
+  # Now re-create the old structure under _tmp/aports-report/2025-09-06-edit
+
+  local dest_dir=$REPORT_DIR/$new_epoch
+  mkdir -p $dest_dir
+
+  local old_epoch
+  old_epoch=$(basename $wwz .wwz)
+  mv -v --no-target-directory $tmp_dir/_tmp/aports-report/$old_epoch $dest_dir
+}
+
+#
+# Dev tools
+#
 
 out-of-vm() {
   local dest=~/vm-shared/$EPOCH

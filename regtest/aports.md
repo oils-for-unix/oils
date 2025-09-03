@@ -209,6 +209,32 @@ Then look at the logs in
 
     $ regtest/aports-run.sh enter-rootfs       # as root user
 
+### Update `cause.awk`, re-generate HTML, and re-deploy
+
+Suppose you want to edit `regtest/aports/cause.awk` to add new causes.  For
+example, you can link to bug `#2339` with a line like:
+
+    patterns["#2339"] = "requires a signal or hook name"
+
+First sync the latest report from the `op.oils.pub` web server:
+
+    regtest/aports-html sync-wwz 2025-08-26-ifs.wwz
+
+Then extract it to a new "epoch":
+
+    regtest/aports-html extract 2025-08-26-ifs.wwz 2025-09-06-edit
+
+Then re-generate HTML:
+
+    $ regtest/aports-html.sh write-all-reports _tmp/aports-report/2025-09-06-edit
+
+You can iterate on `cause.awk`, generating new HTML.
+
+And then upload a new report as before.  You can similarly edit the function
+`regtest/aports-html.sh published-html` to include a link.
+
+- <https://op.oils.pub/aports-build/published.html>
+
 ## TODO
 
 - Running under podman could be more reliable
