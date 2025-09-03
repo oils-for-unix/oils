@@ -253,7 +253,8 @@ Or an `Eggex` argument:
 
     = '123YSH456'.trim(/ d+ /)     # => 'YSH'
 
-If no arguments are passed, whitespace is removed:
+If no arguments are passed, `trim()` uses a very special but useful
+default whitespace definition.
 
     = b' YSH\n'.trim()             # => 'YSH'
 
@@ -264,14 +265,14 @@ These code points are considered whitespace:
 - `U+000B` - Vertical tab `\u{b}`
 - `U+000C` - Form feed `\f`
 - `U+000D` - Carriage return `\r`
-- `U+0020` - Normal space `' '`
+- `U+0020` - Normal blank space `' '`
 - `U+00A0` - No-break space (NBSP) `\u{a0}`
 - `U+FEFF` - Zero-width no-break space (ZWNBSP) `\u{feff}`
 
 To obtain code points, Oils decodes the string as UTF-8.  Bytes that are not
 valid UTF-8 cause a fatal error.
 
-Other code points are considered whitespace in the Unicode standard, but we use
+The Unicode standard considers further code points as whitespace, but we use
 only the ones above, so that these methods have a stable specification.
 
 ---
@@ -279,7 +280,7 @@ only the ones above, so that these methods have a stable specification.
 Note that Eggex patterns compile to POSIX extended regular expressions (ERE),
 which have a different notion of whitespace:
 
-- `/blank/` - matches `\t`, normal space
+- `/blank/` - matches `\t`, and normal blank space `' '`
 - `/space/` - matches `\t \n`, vertical tab, `\f \r`, normal space, and
   possibly Unicode separators `\p{Z}`
 
