@@ -282,7 +282,7 @@ which have a different notion of whitespace:
 
 - `/blank/` matches: `\t`, or a normal blank space `' '`
 - `/space/` matches: `\t \n`, vertical tab, `\f \r`, or a normal blank space `' '`,
-  possibly Unicode separators `\p{Z}`
+  possibly Unicode separators `\p{Z}`, i.e. two-dimensional whitespace (horiz./vert.)
 
 <!-- TODO: link to a section on POSIX ERE and Unicode -->
 
