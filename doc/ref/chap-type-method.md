@@ -280,8 +280,8 @@ only the ones above, so that these methods have a stable specification.
 Note that Eggex patterns compile to POSIX extended regular expressions (ERE),
 which have a different notion of whitespace:
 
-- `/blank/` - matches `\t`, and normal blank space `' '`
-- `/space/` - matches `\t \n`, vertical tab, `\f \r`, normal space, and
+- `/blank/` - matches `\t`, or a normal blank space `' '`
+- `/space/` - matches `\t \n`, vertical tab, `\f \r`, or normal blank space `' '`,
   possibly Unicode separators `\p{Z}`
 
 <!-- TODO: link to a section on POSIX ERE and Unicode -->
