@@ -238,7 +238,7 @@ Other:
   - TODO: `Str.{upper,lower}` also need unicode case folding
     - are they different than the bash operations?
   - TODO: `s.split()` doesn't have a default "split by space", which should
-    probably respect unicode space, like `trim()` does
+    probably respect unicode space, like `trim()` does (except for non-breaking whitespace)
 - [Builtin functions](ref/chap-builtin-func.html)
   - TODO: `for offset, rune in (runes(mystr))` should decode UTF-8, like Go
   - `strcmp()` should do byte-wise and UTF-8 wise comparisons?
