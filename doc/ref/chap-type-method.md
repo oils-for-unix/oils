@@ -735,7 +735,7 @@ TODO
 
 ### `__index__`
 
-The `__index__` meta-method controls what happens when `obj[x]` is uated.
+The `__index__` meta-method controls what happens when `obj[x]` is evaluated.
 
 It's currently used for type objects:
 
