@@ -280,9 +280,9 @@ only the ones above, so that these methods have a stable specification.
 Note that Eggex patterns compile to POSIX extended regular expressions (ERE),
 which have a different notion of whitespace:
 
-- `/blank/` matches: `\t`, or a normal blank space `' '`, i.e. blank line-elements
+- `/blank/` matches: `\t`, or a normal blank space `' '`     (blank line-elements)
 - `/space/` matches: `\t \n`, vertical tab, `\f \r`, or a normal blank space `' '`,
-  possibly Unicode separators `\p{Z}`, i.e. two-dimensional whitespace (horiz./vert.)
+  possibly Unicode separators `\p{Z}`   (two-dimensional, horiz./vert. whitespace)
 
 <!-- TODO: link to a section on POSIX ERE and Unicode -->
 
