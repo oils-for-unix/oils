@@ -740,7 +740,7 @@ The `__index__` meta-method controls what happens when `obj[x]` is evaluated.
 It's currently used for type objects:
 
     var t = Dict[Str, Int]
-    assert [t is Dict[Str, Int]]  # always uates to the same instance
+    assert [t is Dict[Str, Int]]  # always evaluates to the same instance
 
 ### `__str__`
 
