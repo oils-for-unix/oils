@@ -735,12 +735,12 @@ TODO
 
 ### `__index__`
 
-The `__index__` meta-method controls what happens when `obj[x]` is evaluated.
+The `__index__` meta-method controls what happens when `obj[x]` is uated.
 
 It's currently used for type objects:
 
     var t = Dict[Str, Int]
-    assert [t is Dict[Str, Int]]  # always evaluates to the same instance
+    assert [t is Dict[Str, Int]]  # always uates to the same instance
 
 ### `__str__`
 
@@ -982,26 +982,27 @@ creating procs that behave like builtins:
 
 ---
 
-When the `eval()` method is passed `to_dict=true`, it returns a `Dict`
-corresponding to the stack frame that the `Command` is evaluated in.
-
-Example:
-
-    var x = 10  # captured
-    var cmd = ^(var a = 42; var hidden_ = 'h'; var b = x + 1; )
-
-    var d = io->evalToDict(cmd)
-
-    pp (d)  # => {a: 42, b: 11}
-
-Names that end with an underscore `_` are not copied, so `hidden_` is not in
-the `Dict`.
-
----
-
 To evaluate "purely", use the [`eval()`][func/eval] function.
 
 [func/eval]: chap-builtin-func.html#func/eval
+
+### io/evalToDict()
+
+Returns a `Dict` corresponding to the stack frame that the `Command` is
+evaluated in.
+
+Example:
+
+    # unevaluated command
+    var cmd = ^(var a = 42; var hidden_ = 'h'; var b = x + 1; )
+
+    var x = 10  # to be captured
+    var d = io->evalToDict(cmd)
+
+    = d  # => (Dict)  {a: 42, b: 11}
+
+Names that end with an underscore `_` are not copied, so `hidden_` is not in
+the `Dict`.
 
 ### io/evalExpr()
 
