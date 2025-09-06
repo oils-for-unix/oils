@@ -186,6 +186,10 @@ builtin-read() {
   test/spec-py.sh run-file builtin-read "$@"
 }
 
+builtin-set() {
+  test/spec-py.sh run-file builtin-set "$@"
+}
+
 builtin-special() {
   test/spec-py.sh run-file builtin-special "$@"
 }
