@@ -503,6 +503,8 @@ def _GetDollarHyphen(exec_opts):
     if exec_opts.nounset():
         chars.append('u')
     # NO letter for pipefail?
+    if exec_opts.verbose():
+        chars.append('v')
     if exec_opts.xtrace():
         chars.append('x')
     if exec_opts.noclobber():

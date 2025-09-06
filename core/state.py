@@ -468,6 +468,12 @@ class MutableOpts(object):
         # type: () -> None
         self._Set(option_i.emacs, True)
 
+    def DoSingleDash(self):
+        # type: () -> None
+        """For weird 'set -' special case"""
+        self._Set(option_i.verbose, False)
+        self._Set(option_i.xtrace, False)
+
     def _SetArrayByNum(self, opt_num, b):
         # type: (int, bool) -> None
         """

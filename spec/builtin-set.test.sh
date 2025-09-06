@@ -1,5 +1,5 @@
-## compare_shells: bash dash mksh zsh
-## oils_failures_allowed: 1
+## compare_shells: bash dash mksh zsh 
+## oils_failures_allowed: 0
 
 #### can continue after unknown option 
 #
@@ -112,20 +112,20 @@ OK
 ## BUG zsh STDOUT:
 [ ]
 ## END
-#
-#### set - -
+
+#### set - - and so forth
 set a b
 echo "$@"
+
 set - a b
 echo "$@"
+
 set -- a b
 echo "$@"
+
 set - -
 echo "$@"
-set - +
-echo "$@"
-set + -
-echo "$@"
+
 set -- --
 echo "$@"
 
@@ -135,34 +135,19 @@ a b
 a b
 a b
 -
-+
-+
 --
 ## END
-## OK osh/yash STDOUT:
+## N-I yash STDOUT:
 a b
 - a b
 a b
 - -
-- +
-+ -
---
-## END
-## BUG mksh STDOUT:
-a b
-a b
-a b
--
-+
--
 --
 ## END
 ## BUG zsh STDOUT:
 a b
 a b
 a b
-
-+
 
 --
 ## END
@@ -209,4 +194,85 @@ verbose-on
 xtrace-on
 
 x - y z
+## END
+
+#### set - stops option processing like set --
+case $SH in zsh) exit ;; esac
+
+show_options() {
+  case $- in
+    *v*) echo verbose-on ;;
+  esac
+  case $- in
+    *x*) echo xtrace-on ;;
+  esac
+}
+
+set -x - -v
+
+show_options
+echo argv "$@"
+
+## STDOUT:
+argv -v
+## END
+
+## N-I zsh STDOUT:
+## END
+
+#### A single + is an ignored flag; not an argument
+case $SH in zsh) exit ;; esac
+
+show_options() {
+  case $- in
+    *v*) echo verbose-on ;;
+  esac
+  case $- in
+    *x*) echo xtrace-on ;;
+  esac
+}
+
+set +
+echo plus "$@"
+
+set -x + -v x y
+show_options
+echo plus "$@"
+
+## STDOUT:
+plus
+verbose-on
+xtrace-on
+plus x y
+## END
+
+## BUG mksh STDOUT:
+plus
+xtrace-on
+plus -v x y
+## END
+
+## N-I zsh STDOUT:
+## END
+
+#### set - + and + -
+set - +
+echo "$@"
+
+set + -
+echo "$@"
+
+## STDOUT:
++
++
+## END
+
+## BUG mksh STDOUT:
++
+-
+## END
+
+## OK zsh/osh STDOUT:
++
+
 ## END

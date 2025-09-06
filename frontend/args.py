@@ -101,6 +101,7 @@ class _Attributes(object):
         self.show_options = False  # 'set -o' without an argument
         self.actions = []  # type: List[str]  # for compgen -A
         self.saw_double_dash = False  # for set --
+        self.saw_single_dash = False  # for set -
         for name, v in iteritems(defaults):
             self.Set(name, v)
 
@@ -658,6 +659,15 @@ def ParseMore(spec, arg_r):
             out.saw_double_dash = True
             arg_r.Next()
             break
+
+        if arg == '-':  # weird special behavior for 'set -'
+            out.saw_single_dash = True
+            arg_r.Next()
+            break
+
+        if arg == '+':  # a single + is an ignored flag
+            arg_r.Next()
+            continue
 
         if arg.startswith('--'):
             action = spec.actions_long.get(arg[2:])

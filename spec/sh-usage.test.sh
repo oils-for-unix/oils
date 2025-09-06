@@ -1,5 +1,6 @@
 ## tags: interactive
 ## compare_shells: bash dash mksh zsh
+## oils_failures_allowed: 0
 
 #### sh -c
 $SH -c 'echo hi'
@@ -24,6 +25,50 @@ $SH +c 'echo hi'
 echo -n '' | $SH
 ## stdout-json: ""
 ## status: 0
+
+#### sh - and sh -- stop flag processing
+case $SH in zsh) exit ;; esac
+
+echo 'echo foo' > foo.sh
+
+$SH -x -v -- foo.sh
+
+echo -  
+echo - >& 2
+
+$SH -x -v - foo.sh
+
+## STDOUT:
+foo
+-
+foo
+## END
+## STDERR:
+echo foo
++ echo foo
+-
+echo foo
++ echo foo
+## END
+
+# I think it turns off -x -v with -
+## BUG-2 mksh STDERR:
+echo foo
++ echo foo
+-
+## END
+
+# set -o verbose not implemented for now
+## OK osh STDERR:
++ echo foo
+-
++ echo foo
+## END
+
+## BUG zsh STDOUT:
+## END
+## BUG zsh STDERR:
+## END
 
 #### shell obeys --help (regression for OSH)
 n=$($SH --help | wc -l)

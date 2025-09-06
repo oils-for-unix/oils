@@ -218,8 +218,10 @@ class Set(vm._Builtin):
         for opt_name, b in arg.shopt_changes:
             self.exec_opts.SetAnyOption(opt_name, b)
 
-        # Hm do we need saw_double_dash?
-        if arg.saw_double_dash or not arg_r.AtEnd():
+        if arg.saw_single_dash:
+            self.exec_opts.DoSingleDash()
+
+        if arg.saw_double_dash or arg.saw_single_dash or not arg_r.AtEnd():
             self.mem.SetArgv(arg_r.Rest())
         return 0
 
