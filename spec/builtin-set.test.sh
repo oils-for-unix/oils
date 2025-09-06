@@ -1,4 +1,5 @@
 ## compare_shells: bash dash mksh zsh
+## oils_failures_allowed: 1
 
 #### can continue after unknown option 
 #
@@ -21,7 +22,6 @@ false
 echo done
 ## stdout: a b c
 ## status: 1
-
 
 #### nounset with "$@"
 set a b c
@@ -63,6 +63,56 @@ echo status=$?
 ## status: 1
 ## OK dash status: 2
 
+#### set -o lists options
+# NOTE: osh doesn't use the same format yet.
+set -o | grep -o noexec
+## STDOUT:
+noexec
+## END
+
+#### 'set' and 'eval' round trip
+
+# NOTE: not testing arrays and associative arrays!
+_space='[ ]'
+_whitespace=$'[\t\r\n]'
+_sq="'single quotes'"
+_backslash_dq="\\ \""
+_unicode=$'[\u03bc]'
+
+# Save the variables
+varfile=$TMP/vars-$(basename $SH).txt
+
+set | grep '^_' > "$varfile"
+
+# Unset variables
+unset _space _whitespace _sq _backslash_dq _unicode
+echo [ $_space $_whitespace $_sq $_backslash_dq $_unicode ]
+
+# Restore them
+
+. $varfile
+echo "Code saved to $varfile" 1>&2  # for debugging
+
+test "$_space" = '[ ]' && echo OK
+test "$_whitespace" = $'[\t\r\n]' && echo OK
+test "$_sq" = "'single quotes'" && echo OK
+test "$_backslash_dq" = "\\ \"" && echo OK
+test "$_unicode" = $'[\u03bc]' && echo OK
+
+## STDOUT:
+[ ]
+OK
+OK
+OK
+OK
+OK
+## END
+
+## BUG zsh status: 1
+## BUG zsh STDOUT:
+[ ]
+## END
+#
 #### set - -
 set a b
 echo "$@"
@@ -117,52 +167,46 @@ a b
 --
 ## END
 
-#### set -o lists options
-# NOTE: osh doesn't use the same format yet.
-set -o | grep -o noexec
-## STDOUT:
-noexec
-## END
+#### set - leading single dash is ignored, turns off xtrace verbose (#2364)
 
-#### 'set' and 'eval' round trip
+show_options() {
+  case $- in
+    *v*) echo verbose-on ;;
+  esac
+  case $- in
+    *x*) echo xtrace-on ;;
+  esac
+}
 
-# NOTE: not testing arrays and associative arrays!
-_space='[ ]'
-_whitespace=$'[\t\r\n]'
-_sq="'single quotes'"
-_backslash_dq="\\ \""
-_unicode=$'[\u03bc]'
+set -x -v
+show_options
+echo
 
-# Save the variables
-varfile=$TMP/vars-$(basename $SH).txt
+set - a b c
+echo "$@"
+show_options
+echo
 
-set | grep '^_' > "$varfile"
-
-# Unset variables
-unset _space _whitespace _sq _backslash_dq _unicode
-echo [ $_space $_whitespace $_sq $_backslash_dq $_unicode ]
-
-# Restore them
-
-. $varfile
-echo "Code saved to $varfile" 1>&2  # for debugging
-
-test "$_space" = '[ ]' && echo OK
-test "$_whitespace" = $'[\t\r\n]' && echo OK
-test "$_sq" = "'single quotes'" && echo OK
-test "$_backslash_dq" = "\\ \"" && echo OK
-test "$_unicode" = $'[\u03bc]' && echo OK
+# dash that's not leading is not special
+set x - y z
+echo "$@"
 
 ## STDOUT:
-[ ]
-OK
-OK
-OK
-OK
-OK
+verbose-on
+xtrace-on
+
+a b c
+
+x - y z
 ## END
 
-## BUG zsh status: 1
 ## BUG zsh STDOUT:
-[ ]
+verbose-on
+xtrace-on
+
+a b c
+verbose-on
+xtrace-on
+
+x - y z
 ## END
