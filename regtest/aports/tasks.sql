@@ -16,13 +16,16 @@ create table packages as
 
 create table metrics (
   id integer primary key check (id = 1), -- ensure only one row
+
   elapsed_minutes real not null,
   num_failures integer not null,
-  num_tasks integer not null
+  num_tasks integer not null,
+  -- filled in later
+  num_apk integer not null
 );
 
 -- dummy row
-insert into metrics values (1, -1.0, -1, -1);
+insert into metrics values (1, -1.0, -1, -1, -1);
 
 update metrics
 set elapsed_minutes = (select (max(end_time) - min(start_time)) / 60 from tasks)

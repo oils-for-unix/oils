@@ -68,6 +68,10 @@ BEGIN {
   # sqsh
   patterns["#2409"] = "(test) Unexpected trailing word"
 
+  # xz
+  # note: with glibc, a different string will appear
+  patterns["#2336"] = "Extended glob won't work without FNM_EXTMATCH support in libc"
+
   found = 0
 }
 { 

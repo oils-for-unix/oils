@@ -109,6 +109,7 @@ set-osh-as-bash() {
 
 package-dirs() {
   # lz gives 5 packages: some fail at baseline
+  # lzip: a single fast package
   # mpfr4: OSH bug, and big log
   # yash: make sure it doesn't hang
   local package_filter=${1:-'lz|mpfr|yash'}
@@ -143,6 +144,17 @@ package-dirs() {
     esac
 
     prefix=( sed -n "$range" )
+
+  # shardA, shardB For testing the combined report
+  elif [[ $package_filter =~ ^shard([A-Z]+)$ ]]; then
+    local shard_name=${BASH_REMATCH[1]}
+    case $shard_name in
+      A) package_filter='^gzip' ;;    # failure
+      B) package_filter='^xz' ;;      # failure
+      *) package_filter='^lz' ;;      # 3 packages
+    esac
+
+    prefix=( egrep "$package_filter" )
 
   else
     prefix=( egrep "$package_filter" )
@@ -255,6 +267,21 @@ abridge-logs() {
   du --si -s $dest_dir
 }
 
+_move-apk() {
+  local config=${1:-baseline}
+  local dest_dir=$2
+
+  local guest_dir=$CHROOT_HOME_DIR/packages/main/x86_64
+
+  local apk_dir="$dest_dir/$config/apk"
+  mkdir -v -p $apk_dir
+
+  # Maintain consistent state by removing the index too
+  mv -v \
+    $guest_dir/*.apk $guest_dir/APKINDEX.tar.gz \
+    $apk_dir
+}
+
 copy-results() {
   local config=$1
   local dest_dir=$2
@@ -268,6 +295,7 @@ copy-results() {
   concat-task-tsv "$config" > $dest
 }
 
+# OLD
 # list apk CUMULATIVELY, for each shard, in case of errors.  We will de-dupe
 # them when reporting.
 _list-apk() {
@@ -298,6 +326,8 @@ _build-many-configs() {
 
   # See note about /etc/sudoers.d at top of file
 
+  local dest_dir="$BASE_DIR/$epoch/$package_filter"
+
   for config in "${CONFIGS[@]}"; do
     # this uses enter-chroot to modify the chroot
     # should we have a separate one?  But then fetching packages is different
@@ -306,14 +336,17 @@ _build-many-configs() {
 
     # this uses enter-chroot -u
     build-packages "$package_filter" "$config"
-  done
 
-  local dest_dir="$BASE_DIR/$epoch/$package_filter"
-  for config in "${CONFIGS[@]}"; do
     copy-results "$config" "$dest_dir"
+
+    # This is allowed to fail: we count .apk packages build, and we recorded the
+    # 'abuild' exit status
+    sudo $0 _move-apk "$config" "$dest_dir" || true
+
   done
 
-  _list-apk $dest_dir
+  # OLD
+  #_list-apk $dest_dir
 }
 
 build-baseline() {

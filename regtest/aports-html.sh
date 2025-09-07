@@ -72,22 +72,30 @@ EOF
 diff-metrics-html() {
   local db=${1:-_tmp/aports-report/2025-08-03/diff_merged.db}
 
-  # TODO: count .apk for both BASELINE and osh-as-sh
-  echo '<ul>'
   sqlite3 $db <<EOF
-select printf("<li>Tasks: %s</li>", sum(num_tasks)) from metrics;
 -- this is only shards with disagreements; we want total shards
 -- select printf("<li>Shards: %s</li>", count(distinct shard)) from diff_merged;
-select printf("<li><code>.apk</code> packages produced: %s</li>", count(distinct apk_name)) from apk_merged;
+-- select printf("<li><code>.apk</code> packages produced: %s</li>", count(distinct apk_name)) from apk_merged;
+
+select "<ul>";
+select printf("<li>Tasks: %s</li>", sum(num_tasks)) from metrics;
 select printf("<li>Elapsed Hours: %.1f</li>", sum(elapsed_minutes) / 60) from metrics;
+select "</ul>";
+
+select "<ul>";
+select printf("<li>Baseline <code>.apk</code> built: %s</li>", sum(num_apk)) from metrics where config = "baseline";
+select printf("<li>osh-as-sh <code>.apk</code> built: %s</li>", sum(num_apk)) from metrics where config = "osh-as-sh";
 select printf("<li>Baseline failures: %s</li>", sum(num_failures)) from metrics where config = "baseline";
 select printf("<li>osh-as-sh failures: %s</li>", sum(num_failures)) from metrics where config = "osh-as-sh";
+select "</ul>";
+
+select "<ul>";
 select printf("<li>Disagreements: %s</li>", count(*)) from diff_merged;
 select printf("<li>Unique causes: %s</li>", count(distinct cause)) from diff_merged where cause >= 0;
 select printf("<li>Packages without a cause assigned (unknown): %s</li>", count(*)) from diff_merged where cause = "unknown";
 select printf("<li>Inconclusive result because of timeout (-124, -143): %s</li>", count(*)) from diff_merged where cause like "timeout-%";
+select "</ul>";
 EOF
-  echo '</ul>'
 }
 
 diff-html() {
@@ -250,6 +258,18 @@ local-sync() {
   my-rsync $BASE_DIR/ $REPORT_DIR/
 }
 
+count-apk() {
+  ### count *.apk, taking care to correctl print 0 if ther are none
+
+  shopt -s nullglob
+  local i=0
+  # assume we're relative to the $config dir
+  for name in apk/*.apk; do
+    i=$((i + 1))
+  done
+  echo $i
+}
+
 make-package-table() {
   local base_dir=${1:-$REPORT_DIR/$EPOCH}
   local config=${2:-baseline}
@@ -275,7 +295,17 @@ make-package-table() {
   update packages_schema set precision = 1 where column_name = 'max_rss_MB';
   " | sqlite3 $db
 
+  # Count .apk for this config
+  # Note: we could also create an 'apk' table, in addition to 'packages', and diff
+  # But that's a bunch of overhead
+  local num_apk
+  num_apk=$(count-apk)
+
   sqlite3 $db >metrics.txt <<EOF
+update metrics
+set num_apk = $num_apk
+where id = 1;
+
 .mode column
 select * from metrics;
 EOF
@@ -501,7 +531,7 @@ merge-diffs() {
 
   popd > /dev/null
 
-  make-apk-merged $epoch_dir $db
+  #make-apk-merged $epoch_dir $db
 
   local out=$epoch_dir/$name1.html
   diff-html $epoch_dir $name1 '../../../web' > $out
