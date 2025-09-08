@@ -28,8 +28,6 @@ test-legacy-osh-ysh() {
   echo "foo \\ \" '
 ---"
 
-  echo $'fo\x6f \\ \" \'
----'
 EOF
   done
 }
@@ -44,11 +42,6 @@ test-legacy-expr() {
 
   var x = "foo \\ \" '
 ---"
-  echo $x
-
-  # I guess this is useful for refactoring
-  var x = $'f\u006f\x6f \\ \" \'
----'
   echo $x
 
 EOF

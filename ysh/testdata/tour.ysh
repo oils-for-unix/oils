@@ -57,8 +57,8 @@ echo ${some_string/another/some} # => I am another string
 # echo "\n" => Invalid char escape in double quoted string
 # this prints the characters
 echo '\n'
-# use $ to print a new line
-echo $'\n'
+# use J8-style strings to print a new line
+echo b'\n'
 
 # unicode works like this
 # var unicode = j"mu = \u{3bc}"
@@ -79,7 +79,7 @@ echo "Hello world!" # => Hello world!
 var i_am_a_string = "I'm just a string"
 write -- $i_am_a_string
 # if you have a string with a newline in it
-var i_have_a_newline = $'it\'s true I really do \n'
+var i_have_a_newline = b'it\'s true I really do \n'
 # write works well with it, unlike bash's printf
 write -- $i_have_a_newline
 # you can print the content without the newline with -n

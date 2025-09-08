@@ -59,7 +59,7 @@ proc test-yb-redir-not-needed {
 EOF
 
   try 2>$tmp {
-    log $'hi\nthere'
+    log b'hi\nthere'
   }
   assert [0 === _error.code]
 

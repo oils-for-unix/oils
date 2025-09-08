@@ -86,7 +86,7 @@ echo $'\x02' | json read
 EOF
   # JSON
   _ysh-error-here-X 1 << 'EOF'
-echo $'"foo \x01 "' | json read
+echo b'"foo \y01 "' | json read
 pp test_ (_reply)
 EOF
   # J8
@@ -124,7 +124,7 @@ test-str-invalid-utf8() {
   # JSON
   _ysh-error-here-X 1 << 'EOF'
 # part of mu = \u03bc
-echo $' "\xce" ' | json read
+echo b' "\yce" ' | json read
 EOF
   # J8
   _ysh-error-here-X 1 << 'EOF'
@@ -186,12 +186,12 @@ EOF
 
   # unquoted line must be valid UTF-8
   _ysh-error-here-X 4 <<'EOF'
-write @(echo $'foo \xff-bar spam')
+write @(echo b'foo \yff-bar spam')
 EOF
 
   # unquoted line can't have ASCII control chars
   _ysh-error-here-X 4 <<'EOF'
-write @(echo $'foo \x01-bar spam')
+write @(echo b'foo \y01-bar spam')
 EOF
 }
 
