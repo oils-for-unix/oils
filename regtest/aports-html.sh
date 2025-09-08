@@ -200,6 +200,7 @@ published-html() {
 - [2025-08-14-fix](2025-08-14-fix.wwz/_tmp/aports-report/2025-08-14-fix/diff_merged.html)
 - [2025-08-26-ifs](2025-08-26-ifs.wwz/_tmp/aports-report/2025-08-26-ifs/diff_merged.html)
   - new causes: [2025-09-06-edit](2025-09-06-edit.wwz/_tmp/aports-report/2025-09-06-edit/diff_merged.html)
+- [2025-09-07](2025-09-07.wwz/_tmp/aports-report/2025-09-07/diff_merged.html)
 
 EOF
 
@@ -288,13 +289,6 @@ make-package-table() {
   # Count .apk for this config
   # Note: we could also create an 'apk' table, in addition to 'packages', and diff
   # But that's a bunch of overhead
-
-  # TODO: disable this
-  if true; then  # backfill for 2025-09-07 run, can delete afterward
-    for name in apk/*.apk; do
-      echo $name
-    done > apk.txt
-  fi
 
   local num_apk
   num_apk=$(cat apk.txt | wc -l)
@@ -567,6 +561,13 @@ update-published() {
   local out=$REPORT_DIR/published.html
   published-html > $out
   echo "Wrote $out"
+}
+
+remove-apk() {
+  local base_dir=${1:-$REPORT_DIR/2025-09-07}
+  # temporary
+
+  find $base_dir -name '*.apk' -o -name 'APKINDEX*' | xargs -d $'\n' --verbose -- rm -v
 }
 
 make-wwz() {
