@@ -2104,8 +2104,8 @@ class CommandParser(object):
             return self._MaybeParseRedirectList(n5)
 
         if self.c_id == Id.KW_DLeftBracket:
-            if not self.parse_opts.parse_dbracket():
-                p_die('Bash [[ not allowed in YSH (parse_dbracket)',
+            if self.parse_opts.no_parse_dbracket():
+                p_die('Bash [[ not allowed in YSH (no_parse_dbracket)',
                       loc.Word(self.cur_word))
             n6 = self.ParseDBracket()
             return self._MaybeParseRedirectList(n6)
