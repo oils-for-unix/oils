@@ -430,23 +430,7 @@ db-to-tsv() {
 merge-diffs-sql() {
   local -a SHARDS=( "$@" )
 
-  local first_shard="${SHARDS[0]}"
-
-  local shard_name
-  shard_name=$(basename $first_shard)
-
-  # Create table from first shard
-  echo "
-  ATTACH DATABASE '$first_shard/diff_baseline.db' AS temp_shard;
-
-  CREATE TABLE diff_merged AS
-  SELECT *, CAST('' as TEXT) as shard FROM temp_shard.diff_baseline where 1=0;
-
-  CREATE TABLE metrics AS
-  SELECT *, CAST('' as TEXT) as shard FROM temp_shard.metrics where 1=0;
-
-  DETACH DATABASE temp_shard;
-  "
+  local is_first_shard=T 
 
   # Now insert data from all the shards
   for ((i=0; i<${#SHARDS[@]}; i++)); do
@@ -457,11 +441,23 @@ merge-diffs-sql() {
     if ! test -d $shard_dir/baseline || ! test -d $shard_dir/osh-as-sh; then
       continue
     fi
-      
-    echo "
-    -- $i: Add data from $shard_dir
-    ATTACH DATABASE '$shard_dir/diff_baseline.db' AS temp_shard;
 
+    echo "ATTACH DATABASE '$shard_dir/diff_baseline.db' AS temp_shard;"
+
+    if test -n "$is_first_shard"; then
+      # Create table from first shard
+      echo "
+      CREATE TABLE diff_merged AS
+      SELECT *, CAST('' as TEXT) as shard FROM temp_shard.diff_baseline where 1=0;
+
+      CREATE TABLE metrics AS
+      SELECT *, CAST('' as TEXT) as shard FROM temp_shard.metrics where 1=0;
+      "
+      is_first_shard=''  # don't create table next time
+    fi
+
+    # Now insert data
+    echo "
     INSERT INTO diff_merged
     SELECT *, '$shard_name' as shard FROM temp_shard.diff_baseline;
 
