@@ -1622,8 +1622,8 @@ class CommandParser(object):
 
         self._GetWord()
         if self.c_id == Id.Op_DLeftParen:
-            if not self.parse_opts.parse_dparen():
-                p_die("Bash for loops aren't allowed (parse_dparen)",
+            if self.parse_opts.no_parse_dparen():
+                p_die("Bash for loops aren't allowed (no_parse_dparen)",
                       loc.Word(self.cur_word))
 
             # for (( i = 0; i < 10; i++)
@@ -2110,9 +2110,9 @@ class CommandParser(object):
             n6 = self.ParseDBracket()
             return self._MaybeParseRedirectList(n6)
         if self.c_id == Id.Op_DLeftParen:
-            if not self.parse_opts.parse_dparen():
+            if self.parse_opts.no_parse_dparen():
                 p_die(
-                    'Bash (( not allowed in YSH (parse_dparen, see OILS-ERR-14 for wart)',
+                    'Bash (( not allowed in YSH (no_parse_dparen, see OILS-ERR-14 for wart)',
                     loc.Word(self.cur_word))
             n7 = self.ParseDParen()
             return self._MaybeParseRedirectList(n7)

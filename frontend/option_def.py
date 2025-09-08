@@ -187,7 +187,7 @@ _YSH_PARSE_OPTS = [
     ('parse_dollar', True),
     ('parse_ignored', True),
     ('parse_sh_arith', True),  # disallow all shell arithmetic, $(( )) etc.
-    ('parse_dparen', True),  # disallow bash's ((
+    ('no_parse_dparen', False),  # disallow bash's ((
     ('parse_dbracket', True),  # disallow bash's [[
     ('parse_bare_word', True),  # 'case bare' and 'for x in bare'
     ('parse_word_join', True),  # --flag=r'value' pitfall allowed

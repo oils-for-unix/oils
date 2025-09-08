@@ -311,9 +311,18 @@ no-opt() {
   # rename to no_xtrace_osh (with xtrace, xtrace_rich)
   # or xtrace_no_osh
 
-  grep -n xtrace_details spec/*.test.sh */*.py doc/*.md doc/ref/*.md > _tmp/x
+  local do_sed=${1:-}
 
-  sed -i 's/xtrace_details/no_xtrace_osh/g' spec/*.test.sh */*.py doc/*.md doc/ref/*.md
+  local -a files=( spec/*.test.sh test/*.sh */*.py doc/*.md doc/ref/*.md )
+
+  local name=parse_dparen
+  grep -n "$name" "${files[@]}" | tee _tmp/x
+
+  echo
+
+  if test -n "$do_sed"; then
+    sed -i "s/$name/no_${name}/g" "${files[@]}"
+  fi
 
   #echo
   #grep -n xtrace_details */*.sh

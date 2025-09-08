@@ -333,8 +333,8 @@ class TdopParser(object):
             #
             #    a[i+1]=             # parse_sh_assign
             #
-            #    (( a = 1 ))         # parse_dparen
-            #    for (( i = 0; ...   # parse_dparen
+            #    (( a = 1 ))         # no_parse_dparen
+            #    for (( i = 0; ...   # no_parse_dparen
 
             p_die("POSIX shell arithmetic isn't allowed (parse_sh_arith)",
                   loc.Word(self.cur_word))
