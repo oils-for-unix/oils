@@ -329,7 +329,7 @@ cd opts
 touch -- foo bar -dash
 echo @(*)
 
-shopt -u no_dash_glob
+shopt --set no_dash_glob
 echo @(*)
 
 
