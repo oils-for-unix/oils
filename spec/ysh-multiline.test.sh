@@ -153,7 +153,8 @@ comment is OK
 
 
 #### Combine multi-line command and strings
-shopt -s oil:all
+shopt --set ysh:all
+shopt --unset no_parse_osh  # allow $'' for this test
 
 var x = 'one'
 

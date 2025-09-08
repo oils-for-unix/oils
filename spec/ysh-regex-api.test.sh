@@ -942,7 +942,7 @@ status=3
 #### Str.replace(Eggex, *), eflags
 shopt --set ysh:all
 
-var mystr = $'1-2-3\n4-5'
+var mystr = b'1-2-3\n4-5'
 write $[mystr.replace(/ d+ /, ^"[$0]")]
 write $[mystr.replace(/ ^ d+ /, ^"[$0]")]
 write $[mystr.replace(/ ^ d+ ; reg_newline /, ^"[$0]")]

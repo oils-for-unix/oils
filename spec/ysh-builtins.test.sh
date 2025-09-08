@@ -54,10 +54,7 @@ write --sep '' --end '' @a; write
 write .
 
 write --sep '_' -- @a
-write --sep '_' --end $' END\n' -- @a
-
-# with =
-write --sep='_' --end=$' END\n' -- @a
+write --sep '_' --end b' END\n' -- @a
 
 write -n x
 write -n y
@@ -73,7 +70,6 @@ c d
 a bc d
 .
 a b_c d
-a b_c d END
 a b_c d END
 xy
 ## END

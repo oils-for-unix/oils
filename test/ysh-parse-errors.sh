@@ -1535,6 +1535,9 @@ echo $'trailing\
 '
 EOF
 
+  return
+  # Disallowed in YSH
+
   # Double backslash is right in YSH
   _ysh-should-parse-here <<'EOF'
 echo $'trailing\\
@@ -1707,6 +1710,11 @@ test-splat-expr() {
   _ysh-parse-error '= [42, ...y]'
   _ysh-parse-error '= (...x for x in [1,2,3])'
   _ysh-parse-error '= [...x for x in [1,2,3]]'
+}
+
+test-no-parse-osh() {
+  _ysh-parse-error "echo \$'hi'"
+  _ysh-parse-error "var x = \$'hi'"
 }
 
 test-string-sigil-pair() {

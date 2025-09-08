@@ -721,8 +721,10 @@ class WordParser(WordEmitter):
 
         Used by expr_parse.py
         """
-        # TODO: Remove and use out_tokens
-        tokens = []  # type: List[Token]
+        if (left_token.id == Id.Left_DollarSingleQuote and
+                self.parse_opts.no_parse_osh()):
+            p_die("Instead of $'', use J8 strings like b'' (no_parse_osh)",
+                  left_token)
 
         # echo '\' is allowed, but x = '\' is invalid, in favor of x = r'\'
         no_backslashes = is_ysh_expr and left_token.id == Id.Left_SingleQuote
@@ -732,6 +734,8 @@ class WordParser(WordEmitter):
             Id.Left_BTSingleQuote) else 1
         num_end_tokens = 0
 
+        # TODO: could we directly append to out_tokens?
+        tokens = []  # type: List[Token]
         while num_end_tokens < expected_end_tokens:
             self._SetNext(lex_mode)
             self._GetToken()
@@ -1095,7 +1099,8 @@ class WordParser(WordEmitter):
 
             elif self.token_kind == Kind.Left:
                 if self.token_type == Id.Left_Backtick and is_ysh_expr:
-                    p_die("Backtick should be $(cmd) or \\` (OILS-ERR-18)", self.cur_token)
+                    p_die("Backtick should be $(cmd) or \\` (OILS-ERR-18)",
+                          self.cur_token)
 
                 part = self._ReadDoubleQuotedLeftParts()
                 out_parts.append(part)
@@ -1209,8 +1214,9 @@ class WordParser(WordEmitter):
 
         elif left_id == Id.Left_Backtick:
             if not self.parse_opts.parse_backticks():
-                p_die('Backtick should be $(cmd) or \\` (parse_backticks, OILS-ERR-18)',
-                      left_token)
+                p_die(
+                    'Backtick should be $(cmd) or \\` (parse_backticks, OILS-ERR-18)',
+                    left_token)
 
             self._SetNext(lex_mode_e.Backtick)  # advance past `
 

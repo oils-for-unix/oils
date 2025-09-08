@@ -211,13 +211,13 @@ grep 'Oils started with' $TMP/debug.txt >/dev/null && echo yes
 
 echo '(BAD' > no-quoting
 echo '(BAD' > 'with spaces.sh'
-echo '(BAD' > $'bad \xff'
+echo '(BAD' > b'bad \yff'
 
 write -n '' > err.txt
 
 $[ENV.SH] no-quoting 2>>err.txt || true
 $[ENV.SH] 'with spaces.sh' 2>>err.txt || true
-$[ENV.SH] $'bad \xff' 2>>err.txt || true
+$[ENV.SH] b'bad \yff' 2>>err.txt || true
 
 egrep --only-matching '^.*:1' err.txt
 

@@ -95,23 +95,6 @@ foo bar
 equal
 ## END
 
-#### single quoted C strings: $'foo\n'
-
-# expression mode
-var x = $'foo\nbar'
-echo "$x"
-
-# command mode
-if test "$x" = $'foo\nbar'; then
-  echo equal
-fi
-
-## STDOUT:
-foo
-bar
-equal
-## END
-
 #### raw strings and J8 strings don't work in OSH
 shopt --unset ysh:all
 
@@ -233,17 +216,6 @@ echo $double
 
   double 42
 
-## END
-
-#### C strings in :| | array literals
-shopt -s ysh:upgrade
-
-var lines=:| $'aa\tbb' $'cc\tdd' |
-write @lines
-
-## STDOUT:
-aa	bb
-cc	dd
 ## END
 
 #### shopt parse_ysh_string

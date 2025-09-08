@@ -32,6 +32,7 @@ class Option(object):
 
         # for optview
         self.is_parse = (name.startswith('parse_') or
+                         name.startswith('no_parse_') or
                          name.startswith('strict_parse_') or
                          name == 'expand_aliases')
         # interactive() is an accessor
@@ -175,10 +176,8 @@ _UPGRADE_PARSE_OPTS = [
 ]
 
 # Extra stuff that breaks programs.
-# TODO: parse_at_all should be TRUE by default?
-#    or invert to no_parse_at, no_parse_backslash
 _YSH_PARSE_OPTS = [
-    ('parse_at_all', False),  # @ starting any word, e.g. @[] @{} @@ @_ @-
+    ('parse_at_all', False),  # @ is always an operator, e.g. @[] @{} @@ @_ @-
 
     # Legacy syntax that is removed.  These options are distinct from strict_*
     # because they don't help you avoid bugs in bash programs.  They just makes
@@ -192,6 +191,7 @@ _YSH_PARSE_OPTS = [
     ('parse_dbracket', True),  # disallow bash's [[
     ('parse_bare_word', True),  # 'case bare' and 'for x in bare'
     ('parse_word_join', True),  # --flag=r'value' pitfall allowed
+    ('no_parse_osh', False),  # $'' disallowed, etc.
 ]
 
 _BASH_STUBS = [

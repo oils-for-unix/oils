@@ -77,7 +77,7 @@ pp test_ ('aZZb' ~ pat )
 shopt -s ysh:all
 =  /[ $'\xff' ]/;
 
-## status: 1
+## status: 2
 ## STDOUT:
 ## END
 

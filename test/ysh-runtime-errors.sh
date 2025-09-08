@@ -316,13 +316,13 @@ hay eval :result {
 
 test-eggex() {
    # forgot parse_brace
-  _ysh-should-run ' = / [ \x00 \xff ] /'
-  _ysh-should-run ' = / [ \x00-\xff ] /'
+  _ysh-should-run ' = / [ \y00 \yff ] /'
+  _ysh-should-run ' = / [ \y00-\yff ] /'
 
   # Shouldn't be in strings
 
   cat >_tmp/test-eggex.txt <<'EOF'
-= / [ $'\x00 \xff' ] /
+= / [ b'\y00 \yff' ] /
 EOF
 
   _ysh-error-1 "$(cat _tmp/test-eggex.txt)"
