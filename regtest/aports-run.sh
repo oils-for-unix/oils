@@ -343,6 +343,9 @@ _build-many-configs() {
     # 'abuild' exit status
     sudo $0 _move-apk "$config" "$dest_dir" || true
 
+    # Put .apk in a text file, which is easier to rsync than the whole list
+    md5sum $dest_dir/$config/apk/*.apk > $dest_dir/$config/apk.txt
+
   done
 
   # OLD

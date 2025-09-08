@@ -246,7 +246,9 @@ sync-results() {
   local host=${1:-$BUILD_HOST}
   mkdir -p $REPORT_DIR
 
+  # Exclude .apk files, because they are large.  We only need the metadata
   my-rsync \
+    --exclude '*.apk' \
     $host:~/git/oils-for-unix/oils/_tmp/aports-build/ \
     $REPORT_DIR/
 }
@@ -256,18 +258,6 @@ local-sync() {
 
   #my-rsync --dry-run $BASE_DIR/ $REPORT_DIR/
   my-rsync $BASE_DIR/ $REPORT_DIR/
-}
-
-count-apk() {
-  ### count *.apk, taking care to correctl print 0 if ther are none
-
-  shopt -s nullglob
-  local i=0
-  # assume we're relative to the $config dir
-  for name in apk/*.apk; do
-    i=$((i + 1))
-  done
-  echo $i
 }
 
 make-package-table() {
@@ -298,8 +288,15 @@ make-package-table() {
   # Count .apk for this config
   # Note: we could also create an 'apk' table, in addition to 'packages', and diff
   # But that's a bunch of overhead
+
+  if true; then  # backfill for 2025-09-07 run, can delete afterward
+    for name in apk/*.apk; do
+      echo $name
+    done > apk.txt
+  fi
+
   local num_apk
-  num_apk=$(count-apk)
+  num_apk=$(cat apk.txt | wc -l)
 
   sqlite3 $db >metrics.txt <<EOF
 update metrics
@@ -458,12 +455,17 @@ merge-diffs-sql() {
 
   # Now insert data from all the shards
   for ((i=0; i<${#SHARDS[@]}; i++)); do
-    local shard_db="${SHARDS[i]}"
-    shard_name=$(basename $shard_db)
+    local shard_dir="${SHARDS[i]}"
+    shard_name=$(basename $shard_dir)
+
+    # Handle incomplete shard
+    if ! test -d $shard_dir/baseline || ! test -d $shard_dir/osh-as-sh; then
+      continue
+    fi
       
     echo "
-    -- $i: Add data from $shard_db
-    ATTACH DATABASE '$shard_db/diff_baseline.db' AS temp_shard;
+    -- $i: Add data from $shard_dir
+    ATTACH DATABASE '$shard_dir/diff_baseline.db' AS temp_shard;
 
     INSERT INTO diff_merged
     SELECT *, '$shard_name' as shard FROM temp_shard.diff_baseline;
@@ -517,6 +519,7 @@ merge-diffs() {
   local epoch_dir=${1:-_tmp/aports-report/2025-08-03}
   local db=$PWD/$epoch_dir/diff_merged.db
   rm -f $db
+  # TODO: may fail on incomplete shard
   merge-diffs-sql $epoch_dir/shard* | sqlite3 $db
   echo $db
 
@@ -554,6 +557,10 @@ write-shard-reports() {
   index-html > $base_dir/index.html
 
   for config in baseline osh-as-sh; do
+    # Incomplete shard
+    if ! test -d "$base_dir/$config"; then
+      return
+    fi
     write-tables-for-config "$base_dir" "$config"
   done
 
