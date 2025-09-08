@@ -177,6 +177,7 @@ shopt -s for_loop_frames
 shopt -s inherit_errexit
 shopt -s init_ysh_globals
 shopt -s no_dash_glob
+shopt -s no_xtrace_osh
 shopt -s nounset
 shopt -s nullglob
 shopt -s parse_at
@@ -194,7 +195,6 @@ shopt -s sigpipe_status_ok
 shopt -s simple_word_eval
 shopt -s verbose_errexit
 shopt -s verbose_warn
-shopt -u xtrace_details
 shopt -s xtrace_rich
 ## END
 

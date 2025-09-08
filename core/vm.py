@@ -251,8 +251,8 @@ class _Executor(object):
         # TODO: We could move this check to LookupSpecialBuiltin, etc.
         # The error message would be better
         # This also relates to __builtin__ reflection and so forth
-        if (self.exec_opts.no_osh_builtins() and builtin_id
-                in (builtin_i.alias, builtin_i.unalias)):
+        if (self.exec_opts.no_osh_builtins() and
+                builtin_id in (builtin_i.alias, builtin_i.unalias)):
             e_die("This builtin command isn't part of YSH (no_osh_builtins)",
                   cmd_val.arg_locs[0])
 

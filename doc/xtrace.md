@@ -80,13 +80,12 @@ then another builtin:
 This functionality is enabled by the
 [xtrace_rich][] option, but you should
 generally use the `ysh:upgrade` option group.  This group turns on
-[xtrace_rich][] and turns off [xtrace_details][], which  is equivalent to:
+[xtrace_rich][] and [no_xtrace_osh][], which  is equivalent to:
 
-    $ shopt --set xtrace_rich
-    $ shopt --unset xtrace_details
+    $ shopt --set xtrace_rich no_xtrace_osh
 
 [xtrace_rich]: ref/chap-option.html#ysh:upgrade
-[xtrace_details]: ref/chap-option.html#ysh:upgrade
+[no_xtrace_osh]: ref/chap-option.html#ysh:upgrade
 
 ### Variables for the Trace Line
 
@@ -101,7 +100,7 @@ In YSH, the default trace line prefix is:
 
 `SHX_punct` is one of the following:
 
-- `+` for legacy shell tracing ([xtrace_details][])
+- `+` for legacy shell tracing ([no_xtrace_osh][])
 - `.` for `builtin` and `exec`
 - `>` and `<` for internal, stack-based, **synchronous** constructs
   - `proc`, `eval`, and `source`, an entire pipeline, and the `wait` builtin

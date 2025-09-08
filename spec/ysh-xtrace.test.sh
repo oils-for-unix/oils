@@ -20,7 +20,7 @@ echo 3
 ## END
 
 
-#### xtrace_details doesn't show [[ ]] etc.
+#### no_xtrace_osh doesn't show [[ ]] etc.
 shopt -s ysh:upgrade
 set -x
 
@@ -35,8 +35,9 @@ cd /
 . builtin cd /
 ## END
 
-#### xtrace_details AND xtrace_rich on
-shopt -s ysh:upgrade xtrace_details
+#### no_xtrace_osh UNSET, and xtrace_rich set
+shopt --set ysh:upgrade 
+shopt --unset no_xtrace_osh
 shopt --unset errexit
 set -x
 

@@ -124,7 +124,7 @@ _UPGRADE_RUNTIME_OPTS = [
     ('command_sub_errexit', False),  # check after command sub
     ('process_sub_fail', False),  # like pipefail, but for <(sort foo.txt)
     ('xtrace_rich', False),  # Hierarchical trace with PIDs
-    ('xtrace_details', True),  # Legacy set -x stuff
+    ('no_xtrace_osh', False),  # Legacy set -x stuff
 
     # Whether status 141 in pipelines is turned into 0
     ('sigpipe_status_ok', False),

@@ -491,7 +491,7 @@ class Tracer(object):
 
     def _ShTraceBegin(self):
         # type: () -> Optional[mylib.BufWriter]
-        if not self.exec_opts.xtrace() or not self.exec_opts.xtrace_details():
+        if not self.exec_opts.xtrace() or self.exec_opts.no_xtrace_osh():
             return None
 
         # Note: bash repeats the + for command sub, eval, source.  Other shells
@@ -723,7 +723,7 @@ class Tracer(object):
     def OnControlFlow(self, keyword, arg):
         # type: (str, int) -> None
 
-        # This is NOT affected by xtrace_rich or xtrace_details.  Works in both.
+        # This is NOT affected by xtrace_rich or no_xtrace_osh.  Works in both.
         if not self.exec_opts.xtrace():
             return
 

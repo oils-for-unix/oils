@@ -235,7 +235,7 @@ Details on each option:
       sigpipe_status_ok       status 141 -> 0 in pipelines
       simple_word_eval        No splitting, static globbing
       xtrace_rich             Hierarchical and process tracing
-      xtrace_details (-u)     Disable most tracing with +
+      no_xtrace_osh           Disable OSH tracing with +
       no_dash_glob            Avoid globbing files like -rf
       env_obj                 Init ENV Obj at startup; use it when starting
                               child processes

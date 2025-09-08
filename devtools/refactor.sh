@@ -307,4 +307,16 @@ htm8() {
 done
 }
 
+no-opt() {
+  # rename to no_xtrace_osh (with xtrace, xtrace_rich)
+  # or xtrace_no_osh
+
+  grep -n xtrace_details spec/*.test.sh */*.py doc/*.md doc/ref/*.md > _tmp/x
+
+  sed -i 's/xtrace_details/no_xtrace_osh/g' spec/*.test.sh */*.py doc/*.md doc/ref/*.md
+
+  #echo
+  #grep -n xtrace_details */*.sh
+}
+
 task-five "$@"
