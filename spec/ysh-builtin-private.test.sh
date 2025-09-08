@@ -184,6 +184,8 @@ invoke --show sleep | grep builtin
 #### invoke --show with many types
 case $SH in bash) exit ;; esac
 
+shopt --unset no_osh_builtins  # for alias
+
 # TODO: CRASH bug!
 # use ///osh/bash-strict.sh
 

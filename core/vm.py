@@ -2,6 +2,7 @@
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
+from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import (CommandStatus, StatusArray, flow_e,
                                         flow_t)
 from _devbuild.gen.syntax_asdl import Token, loc, loc_t
@@ -247,6 +248,14 @@ class _Executor(object):
 
         Also called by the 'builtin' builtin, in builtin/meta_oils.py
         """
+        # TODO: We could move this check to LookupSpecialBuiltin, etc.
+        # The error message would be better
+        # This also relates to __builtin__ reflection and so forth
+        if (self.exec_opts.no_osh_builtins() and builtin_id
+                in (builtin_i.alias, builtin_i.unalias)):
+            e_die("This builtin command isn't part of YSH (no_osh_builtins)",
+                  cmd_val.arg_locs[0])
+
         self.tracer.OnBuiltin(builtin_id, cmd_val.argv)
         builtin_proc = self.builtins[builtin_id]
         return self._RunBuiltinProc(builtin_proc, cmd_val)

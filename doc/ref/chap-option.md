@@ -271,6 +271,7 @@ Details on options that are not in `ysh:upgrade` and `strict:all`:
     X old_syntax (-u)         ( )   ${x%prefix}  ${a[@]}   $$
       no_exported             Environ doesn't correspond to exported (-x) vars
       no_init_globals         At startup, don't set vars like PWD, SHELLOPTS
+      no_osh_builtins         Disable OSH builtins like alias, unalias, etc.
       simple_echo             echo doesn't accept flags -e -n
       simple_eval_builtin     eval takes exactly 1 argument
       simple_test_builtin     3 args or fewer; use test not [

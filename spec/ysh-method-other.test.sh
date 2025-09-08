@@ -71,6 +71,8 @@ p ( ; ; cmd)
 
 #### Command.sourceCode() works with reparsing, e.g. backticks
 
+shopt --unset no_osh_builtins  # allow alias builtin
+
 # TODO: fix this bug - same as Hay bug
 
 proc p ( ; ; ; block) {
@@ -120,6 +122,8 @@ p {
 
 
 #### Command.sourceCode() works in nested blocks
+
+shopt --unset no_osh_builtins  # allow alias builtin
 
 proc p ( ; ; ; block) {
   var src = block.sourceCode()

@@ -1164,6 +1164,16 @@ test-purity() {
   _assert-sh-status 5 $YSH 'Should fail' --eval-pure _tmp/impure.sh -c 'echo hi'
 }
 
+test-no-osh-builtins() {
+  # Some builtins are disabled in YSH
+
+  #_ysh-error-1 'echo hi; set'
+
+  _ysh-error-1 'alias foo'
+  _ysh-error-1 'unalias foo'
+}
+
+
 soil-run-py() {
   run-test-funcs
 }

@@ -295,19 +295,6 @@ copy-results() {
   concat-task-tsv "$config" > $dest
 }
 
-# OLD
-# list apk CUMULATIVELY, for each shard, in case of errors.  We will de-dupe
-# them when reporting.
-_list-apk() {
-  local dest_dir=${1:-$BASE_DIR/2025-08-12-ten/shard10}
-
-  # this is a TSV file with no header
-  find $CHROOT_HOME_DIR/packages/main/x86_64/ -name '*.apk' -a -printf '%s\t%P\n' |
-    tee $dest_dir/apk-list.txt
-
-  echo "Wrote $dest_dir/apk-list.txt"
-}
-
 APORTS_EPOCH="${APORTS_EPOCH:-}"
 # default epoch
 if test -z "$APORTS_EPOCH"; then
@@ -347,9 +334,6 @@ _build-many-configs() {
     md5sum $dest_dir/$config/apk/*.apk > $dest_dir/$config/apk.txt
 
   done
-
-  # OLD
-  #_list-apk $dest_dir
 }
 
 build-baseline() {

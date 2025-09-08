@@ -289,6 +289,7 @@ make-package-table() {
   # Note: we could also create an 'apk' table, in addition to 'packages', and diff
   # But that's a bunch of overhead
 
+  # TODO: disable this
   if true; then  # backfill for 2025-09-07 run, can delete afterward
     for name in apk/*.apk; do
       echo $name
@@ -481,40 +482,6 @@ merge-diffs-sql() {
   cat regtest/aports/merge.sql
 }
 
-make-apk-merged() {
-  local epoch_dir=${1:-_tmp/aports-report/2025-08-12-ten}
-  local db=${2:-$epoch_dir/diff_merged.db}
-
-  # this is a TSV file with no header
-  cat $epoch_dir/*/apk-list.txt > apk-merged.txt
-
-  sqlite3 $db << 'EOF'
-.mode tabs
-.headers off
-
-drop table if exists apk_merged;
-
-create table apk_merged (
-  num_bytes integer,
-  apk_name
-);
-
-.import apk-merged.txt apk_merged
-
--- queries for later
--- select count(*) from apk_merged;
--- select count(distinct apk_name) from apk_merged;
-
--- select * from PRAGMA_TABLE_INFO("apk_merged");
-
-.mode columns
-.headers on
--- select * from apk_merged limit 10;
-
-EOF
-}
-
-
 merge-diffs() {
   local epoch_dir=${1:-_tmp/aports-report/2025-08-03}
   local db=$PWD/$epoch_dir/diff_merged.db
@@ -533,8 +500,6 @@ merge-diffs() {
   db-to-tsv $db metrics
 
   popd > /dev/null
-
-  #make-apk-merged $epoch_dir $db
 
   local out=$epoch_dir/$name1.html
   diff-html $epoch_dir $name1 '../../../web' > $out

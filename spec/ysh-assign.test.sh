@@ -358,7 +358,7 @@ run() {
   # $[ENV.SH] +O ysh:all -O parse_proc -c "$@"
 }
 
-set +o errexit
+shopt --unset errexit
 
 run '
 var x = $(false)
@@ -396,7 +396,7 @@ outside4=1
 
 #### setvar obj[INVALID TYPE] =
 
-set +o errexit
+shopt --unset errexit
 
 $[ENV.SH] -c '
 var d = {}
