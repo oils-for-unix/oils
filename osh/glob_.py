@@ -485,8 +485,8 @@ class Globber(object):
         n = len(results)
         if n:  # Something matched
             # Omit files starting with -
-            # dashglob turned OFF with shopt -s oil:upgrade.
-            if not self.exec_opts.dashglob():
+            # no_dash_glob is part of shopt --set ysh:upgrade
+            if self.exec_opts.no_dash_glob():
                 tmp = [s for s in results if not s.startswith('-')]
                 results = tmp  # idiom to work around mycpp limitation
                 n = len(results)

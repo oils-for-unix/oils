@@ -321,7 +321,7 @@ echo ,(osh|style)
 @(__nope__*|__nope__?|*|?|[:alpha:]||)
 ## END
 
-#### dashglob
+#### no_dash_glob
 shopt -s extglob
 mkdir -p opts
 cd opts
@@ -329,7 +329,7 @@ cd opts
 touch -- foo bar -dash
 echo @(*)
 
-shopt -u dashglob
+shopt -u no_dash_glob
 echo @(*)
 
 

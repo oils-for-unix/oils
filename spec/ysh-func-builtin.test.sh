@@ -66,7 +66,7 @@ write -- @[glob('?.z')]
 echo ___
 
 # add it back
-shopt -s dashglob
+shopt --unset no_dash_glob
 write -- @[glob('?.z')]
 
 ## STDOUT:

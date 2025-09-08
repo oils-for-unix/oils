@@ -115,7 +115,7 @@ _STRICT_OPTS = [
 _UPGRADE_RUNTIME_OPTS = [
     ('simple_word_eval', False),  # No splitting; arity isn't data-dependent
     # Don't reparse program data as globs
-    ('dashglob', True),  # do globs return files starting with - ?
+    ('no_dash_glob', False),  # do globs return files starting with - ?
 
     # TODO: Should these be in strict mode?
     # The logic was that strict_errexit improves your bash programs, but these

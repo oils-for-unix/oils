@@ -236,7 +236,7 @@ Details on each option:
       simple_word_eval        No splitting, static globbing
       xtrace_rich             Hierarchical and process tracing
       xtrace_details (-u)     Disable most tracing with +
-      dashglob (-u)           Disabled to avoid files like -rf
+      no_dash_glob            Avoid globbing files like -rf
       env_obj                 Init ENV Obj at startup; use it when starting
                               child processes
       init_ysh_globals        Init ARGV List at startup
@@ -265,9 +265,6 @@ Details on options that are not in `ysh:upgrade` and `strict:all`:
       parse_sh_arith (-u)     Allow legacy shell arithmetic
       parse_word_join(-u)     Is pitfall --flag=r'value' allowed?
       expand_aliases (-u)     Whether aliases are expanded
-    X old_builtins (-u)       local/declare/etc.  pushd/popd/dirs
-                              ... source  unset  printf  [un]alias
-                              ... getopts
     X old_syntax (-u)         ( )   ${x%prefix}  ${a[@]}   $$
       no_exported             Environ doesn't correspond to exported (-x) vars
       no_init_globals         At startup, don't set vars like PWD, SHELLOPTS

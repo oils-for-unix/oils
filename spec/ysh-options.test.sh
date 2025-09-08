@@ -171,12 +171,12 @@ set -o errexit
 set -o nounset
 set -o pipefail
 shopt -s command_sub_errexit
-shopt -u dashglob
 shopt -s env_obj
 shopt -s errexit
 shopt -s for_loop_frames
 shopt -s inherit_errexit
 shopt -s init_ysh_globals
+shopt -s no_dash_glob
 shopt -s nounset
 shopt -s nullglob
 shopt -s parse_at
@@ -543,7 +543,7 @@ one two
 -n one   two
 ## END
 
-#### shopt -s dashglob
+#### shopt -s no_dash_glob
 mkdir globdir
 cd globdir
 
@@ -551,49 +551,16 @@ touch -- file -v
 
 argv.py *
 
-shopt -s oil:upgrade  # turns OFF dashglob
+shopt -s ysh:upgrade  # turns OFF no_dash_glob
 argv.py *
 
-shopt -s dashglob  # turn it ON
+shopt -u no_dash_glob  # turn it ON
 argv.py *
 
 ## STDOUT:
 ['-v', 'file']
 ['file']
 ['-v', 'file']
-## END
-
-#### shopt -s oil:upgrade turns some options on and others off
-show() {
-  shopt -p | egrep 'dashglob|simple_word_eval'
-}
-
-show
-echo ---
-
-shopt -s simple_word_eval
-show
-echo ---
-
-shopt -s oil:upgrade  # strict_arith should still be on after this!
-show
-echo ---
-
-shopt -u oil:upgrade  # strict_arith should still be on after this!
-show
-
-## STDOUT:
-shopt -s dashglob
-shopt -u simple_word_eval
----
-shopt -s dashglob
-shopt -s simple_word_eval
----
-shopt -u dashglob
-shopt -s simple_word_eval
----
-shopt -s dashglob
-shopt -u simple_word_eval
 ## END
 
 #### sigpipe_status_ok

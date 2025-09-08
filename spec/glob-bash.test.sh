@@ -125,7 +125,7 @@ status=0
 status=0
 ## END
 
-#### dotglob (bash option that dashglob is roughly consistent with)
+#### dotglob (bash option that no_dash_glob is roughly consistent with)
 mkdir -p $TMP/dotglob
 cd $TMP/dotglob
 touch .foorc other
