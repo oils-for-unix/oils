@@ -256,13 +256,13 @@ Details on options that are not in `ysh:upgrade` and `strict:all`:
 
       expand_aliases (-u)     Whether aliases are expanded
       parse_at_all            @ starting any word is an operator
-      parse_backslash (-u)    Allow bad backslashes in "" and $''
-      parse_backticks (-u)    Allow legacy syntax `echo hi`
-      parse_bare_word (-u)    'case unquoted' and 'for x in unquoted'
-      parse_dollar (-u)       Allow bare $ to mean \$  (maybe $/d+/)
+      no_parse_bare_word      'case unquoted' and 'for x in unquoted'
       no_parse_dbracket       Is legacy [[ allowed?
       no_parse_dparen         Is (( legacy arithmetic allowed?
       no_parse_osh            Disallow $'' - TODO ( )  ${x%prefix}  ${a[@]}  $$
+      parse_backslash (-u)    Allow bad backslashes in "" and $''
+      parse_backticks (-u)    Allow legacy syntax `echo hi`
+      parse_dollar (-u)       Allow bare $ to mean \$  (maybe $/d+/)
       parse_ignored (-u)      Parse, but ignore, certain redirects
       parse_sh_arith (-u)     Allow legacy shell arithmetic
       parse_word_join(-u)     Is pitfall --flag=r'value' allowed?

@@ -113,9 +113,9 @@ for i, item in a b c {
 2 c f
 ## END
 
-#### parse_bare_word eliminates confusion
+#### no_parse_bare_word eliminates confusion
 
-shopt --unset parse_bare_word
+shopt --set no_parse_bare_word
 
 for x in mylist {  # THIS FAILS
   echo "BAD $x"

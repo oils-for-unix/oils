@@ -1573,12 +1573,12 @@ class CommandParser(object):
                 iter_words, semi_tok = self.ParseForWords()
                 node.semi_tok = semi_tok
 
-                if not self.parse_opts.parse_bare_word() and len(
-                        iter_words) == 1:
+                if (self.parse_opts.no_parse_bare_word() and
+                        len(iter_words) == 1):
                     ok, s, quoted = word_.StaticEval(iter_words[0])
                     if ok and match.IsValidVarName(s) and not quoted:
                         p_die(
-                            'Surround this word with either parens or quotes (parse_bare_word)',
+                            'Surround this word with either parens or quotes (no_parse_bare_word)',
                             loc.Word(iter_words[0]))
 
                 words2 = braces.BraceDetectAll(iter_words)
@@ -1839,11 +1839,11 @@ class CommandParser(object):
         """
         self._GetWord()
         w = self.cur_word
-        if not self.parse_opts.parse_bare_word():
+        if self.parse_opts.no_parse_bare_word():
             ok, s, quoted = word_.StaticEval(w)
             if ok and not quoted:
                 p_die(
-                    "This is a constant string.  You may want a variable like $x (parse_bare_word)",
+                    "This is a constant string.  You may want a variable like $x (no_parse_bare_word)",
                     loc.Word(w))
 
         if w.tag() != word_e.Compound:
