@@ -204,41 +204,28 @@ banner() {
 }
 
 build-packages() {
-  # https://wiki.alpinelinux.org/wiki/Abuild_and_Helpers#Basic_usage
   local package_filter=${1:-}
   local config=${2:-baseline}
+  local overlay_dir=${3:-}
 
   local -a package_dirs=( $(package-dirs "$package_filter") )
 
   banner "Building ${#package_dirs[@]} packages (filter $package_filter)"
 
-  enter-rootfs-user sh -c '
+  local -a prefix
+  if test -n "$overlay_dir"; then
+    prefix=( enter-rootfs-user-overlayfs "$overlay_dir" )
+  else
+    prefix=( enter-rootfs-user )
+  fi
+
+  "${prefix[@]}" sh -c '
   config=$1
   shift
 
   cd oils
   regtest/aports-guest.sh build-packages "$config" "$@"
   ' dummy0 "$config" "${package_dirs[@]}"
-}
-
-build-packages-overlayfs() {
-  # https://wiki.alpinelinux.org/wiki/Abuild_and_Helpers#Basic_usage
-  local package_filter=${1:-}
-  local config=${2:-baseline}
-
-  local -a package_dirs=( $(package-dirs "$package_filter") )
-
-  banner "Building ${#package_dirs[@]} packages (filter $package_filter)"
-  for package in "${package_dirs[@]}"; do
-    echo "Building $package"
-    enter-rootfs-user-overlayfs "$config" "$package" sh -c '
-    config=$1
-    shift
-
-    cd oils
-    regtest/aports-guest.sh build-package "$config" "$@"
-    ' dummy0 "$config" "$package"
-  done
 }
 
 clean-host-and-guest() {

@@ -2,7 +2,7 @@
 
 readonly CHROOT_DIR=_chroot/aports-build
 readonly CHROOT_HOME_DIR=$CHROOT_DIR/home/udu
-readonly OVERLAY_BASE_DIR=$(pwd)/_chroot/overlay
+readonly OVERLAY_BASE_DIR=$PWD/_chroot/overlay
 
 # For he.oils.pub
 readonly BASE_DIR=_tmp/aports-build
@@ -25,30 +25,43 @@ enter-rootfs-user() {
 }
 
 enter-rootfs-user-overlayfs() {
-  local artifacts="$1"
-  local name="$2"
-  shift 2
-  if [[ -z "$1" ]]; then
-    echo "need a name for overlayfs"
-    exit 1
-  fi
-  # Where everything lands
+  local name=$1
+  shift
+
+  # output ends up in the upperdir
   local upper="$OVERLAY_BASE_DIR/$name"
-  # Just for the temporary representation of everything
-  local merged="$OVERLAY_BASE_DIR/${name}_merged"
-  # Temporary folder for underneath work of overlayfs
+
+  # workdir is scratch space
   local work="$OVERLAY_BASE_DIR/${name}_work"
+
+  # the unified view we chroot into
+  local merged="$OVERLAY_BASE_DIR/${name}_merged"
+
+  # TODO:
+  # - avoid removing files - choose a unique name for every package then?
+  # - this is also why we want to a local repository at /etc/apk/repositories
+  #   - bind mount?
 
   mkdir -p "$OVERLAY_BASE_DIR"
   for d in "$upper" "$merged" "$work"; do
-    sudo rm -rf "$d"
+    sudo rm -r -f "$d"
     mkdir -p "$d"
   done
-  sudo mount -t overlay overlay "-olowerdir=$CHROOT_DIR,upperdir=$upper,workdir=$work" "$merged"
+
+  # myoverlay is the 'source'
+  sudo mount \
+    -t overlay \
+    myoverlay \
+    -o "lowerdir=$CHROOT_DIR,upperdir=$upper,workdir=$work" \
+    "$merged"
+
   $merged/enter-chroot -u udu "$@"
+
+  # lazy umount?
   sudo umount -l "$merged"
 
-  rsync -avu "$upper/home/udu/oils/_tmp/aports-guest" "$REPORT_DIR/"
+  #rsync -avu "$upper/home/udu/oils/_tmp/aports-guest" "$REPORT_DIR/"
+
   if false; then
     # TODO: This path is a bit much hardcoded..
     # Delete, because they require a lot of storage!
