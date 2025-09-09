@@ -214,7 +214,7 @@ build-packages() {
 
   local -a prefix
   if test -n "$overlay_dir"; then
-    prefix=( enter-rootfs-user-overlayfs "$overlay_dir" )
+    prefix=( enter-overlayfs-user "$overlay_dir" )
   else
     prefix=( enter-rootfs-user )
   fi
@@ -226,6 +226,66 @@ build-packages() {
   cd oils
   regtest/aports-guest.sh build-packages "$config" "$@"
   ' dummy0 "$config" "${package_dirs[@]}"
+}
+
+build-package-overlayfs() {
+  local config=${1:-baseline}
+  local pkg=${2:-lua5.4}
+
+  # baseline stack:
+  #   _chroot/aports-build
+  #   _chroot/package-upper/baseline/gzip    # upper dir / layer dir
+  #
+  # osh-as-sh stack:
+  #   _chroot/aports-build
+  #   _chroot/osh-as-sh.overlay/layer        # this has the symlink
+  #   _chroot/package-upper/osh-as-sh/gzip   # upper dir / layer dir
+
+  local merged=_chroot/package.overlay/merged
+  local work=_chroot/package.overlay/work
+
+  local layer_dir=_chroot/package-layers/$config/$pkg
+  mkdir -v -p $layer_dir
+
+  local overlay_opts
+  case $config in 
+    baseline)
+      overlay_opts="lowerdir=$CHROOT_DIR,upperdir=$layer_dir,workdir=$work"
+      ;;
+    osh-as-sh)
+      local osh_as_sh=_chroot/osh-as-sh.overlay/layer
+      overlay_opts="lowerdir=$CHROOT_DIR:$osh_as_sh,upperdir=$layer_dir,workdir=$work"
+      ;;
+    *)
+      die "Invalid config $config"
+      ;;
+  esac
+
+  sudo mount \
+    -t overlay \
+    aports-package \
+    -o "$overlay_opts" \
+    $merged
+
+  $merged/enter-chroot -u udu sh -c '
+  cd oils
+  regtest/aports-guest.sh build-package "$@"
+  ' dummy0 "$config" "$pkg"
+
+  unmount-loop $merged
+}
+
+build-packages2() {
+  local package_filter=${1:-}
+  local config=${2:-baseline}
+
+  local -a package_dirs=( $(package-dirs "$package_filter") )
+
+  banner "Building ${#package_dirs[@]} packages (filter $package_filter)"
+
+  for pkg in "${package_dirs[@]}"; do
+    build-package-overlayfs "$config" "$pkg"
+  done 
 }
 
 clean-host-and-guest() {
@@ -343,6 +403,40 @@ _build-many-configs() {
   done
 }
 
+_build-many-configs2() {
+  local package_filter=${1:-}
+  local epoch=${2:-$APORTS_EPOCH}
+
+  if test -z "$package_filter"; then
+    die "Package filter is required (e.g. shard3, ALL)"
+  fi
+
+  clean-guest
+
+  # See note about /etc/sudoers.d at top of file
+
+  local dest_dir="$BASE_DIR/$epoch/$package_filter"
+
+  for config in "${CONFIGS[@]}"; do
+    # this uses enter-chroot to modify the chroot
+    # should we have a separate one?  But then fetching packages is different
+    banner "$epoch: Using config $config"
+
+    # this uses enter-chroot -u
+    build-packages2 "$package_filter" "$config"
+
+    #copy-results "$config" "$dest_dir"
+
+    # This is allowed to fail: we count .apk packages build, and we recorded the
+    # 'abuild' exit status
+    #sudo $0 _move-apk "$config" "$dest_dir" || true
+
+    # Put .apk in a text file, which is easier to rsync than the whole list
+    #md5sum $dest_dir/$config/apk/*.apk > $dest_dir/$config/apk.txt
+  done
+}
+
+
 build-baseline() {
   local epoch=${1:-$APORTS_EPOCH}
   shift
@@ -376,5 +470,16 @@ build-many-shards() {
     _build-many-configs "$package_filter" "$APORTS_EPOCH"
   done
 }
+
+build-many-shards2() {
+  sudo -k
+
+  banner "$APORTS_EPOCH: building shards: $*"
+
+  for package_filter in "$@"; do
+    _build-many-configs2 "$package_filter" "$APORTS_EPOCH"
+  done
+}
+
 
 task-five "$@"

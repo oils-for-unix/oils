@@ -293,6 +293,58 @@ save-default-config() {
   regtest/aports-run.sh save-default-config
 }
 
+create-osh-overlay() {
+  # _chroot/
+  #   aports-build/  # chroot image
+  #   osh-as-sh.overlay/     # overlay
+  #     merged/      # permanently mounted
+  #     work/
+  #     layer/       # has the OSH symlink
+
+  local osh_overlay=_chroot/osh-as-sh.overlay
+
+  mkdir -v -p $osh_overlay/{merged,work,layer}
+
+  sudo mount \
+    -t overlay \
+    osh-as-sh \
+    -o "lowerdir=$CHROOT_DIR,upperdir=$osh_overlay/layer,workdir=$osh_overlay/work" \
+    $osh_overlay/merged
+
+  local x=sh
+  $osh_overlay/merged/enter-chroot sh -c '
+  x=$1
+  set -x
+  if ! test -f /usr/local/bin/oils-for-unix; then
+    echo "Build Oils first"
+    exit
+  fi
+  ln -s -f /usr/local/bin/oils-for-unix /bin/$x
+  ' dummy0 "$x"
+}
+
+remove-overlay() {
+  sudo umount -l _chroot/osh-as-sh.overlay/merged
+}
+
+create-layer-dirs() {
+  # _chroot/
+  #   package.overlay/
+  #     merged/      # mounted and unmounted each time
+  #     work/
+  #   package-layers/
+  #     baseline/
+  #       gzip/
+  #       xz/
+  #     osh-as-sh/
+  #       gzip/
+  #       xz/
+
+  mkdir -v -p \
+    _chroot/package.overlay/{merged,work} \
+    _chroot/package-layers/{baseline,osh-as-sh}
+}
+
 unpack-distfiles() {
   sudo tar --verbose -x --directory $CHROOT_DIR/var/cache/distfiles < _chroot/distfiles.tar
 }

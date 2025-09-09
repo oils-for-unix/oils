@@ -2,7 +2,6 @@
 
 readonly CHROOT_DIR=_chroot/aports-build
 readonly CHROOT_HOME_DIR=$CHROOT_DIR/home/udu
-readonly OVERLAY_BASE_DIR=$PWD/_chroot/overlay
 
 # For he.oils.pub
 readonly BASE_DIR=_tmp/aports-build
@@ -24,29 +23,23 @@ enter-rootfs-user() {
   enter-rootfs -u udu "$@"
 }
 
-enter-rootfs-user-overlayfs() {
+enter-overlayfs-user() {
   local name=$1
   shift
 
   # output ends up in the upperdir
-  local upper="$OVERLAY_BASE_DIR/$name"
+  #local upper="$OVERLAY_BASE_DIR/$name"
+  local upper=_chroot/overlay/upper/$name
 
   # workdir is scratch space
-  local work="$OVERLAY_BASE_DIR/${name}_work"
+  local work=_chroot/overlay/work
+ # "$OVERLAY_BASE_DIR/${name}_work"
 
   # the unified view we chroot into
-  local merged="$OVERLAY_BASE_DIR/${name}_merged"
+  #local merged="$OVERLAY_BASE_DIR/${name}_merged"
+  local merged=_chroot/overlay/merged
 
-  # TODO:
-  # - avoid removing files - choose a unique name for every package then?
-  # - this is also why we want to a local repository at /etc/apk/repositories
-  #   - bind mount?
-
-  mkdir -p "$OVERLAY_BASE_DIR"
-  for d in "$upper" "$merged" "$work"; do
-    sudo rm -r -f "$d"
-    mkdir -p "$d"
-  done
+  mkdir -p $upper $work $merged
 
   # myoverlay is the 'source'
   sudo mount \
@@ -57,19 +50,24 @@ enter-rootfs-user-overlayfs() {
 
   $merged/enter-chroot -u udu "$@"
 
-  # lazy umount?
-  sudo umount -l "$merged"
+  unmount-loop $merged
 
-  #rsync -avu "$upper/home/udu/oils/_tmp/aports-guest" "$REPORT_DIR/"
+}
 
-  if false; then
-    # TODO: This path is a bit much hardcoded..
-    # Delete, because they require a lot of storage!
-    for d in "$upper" "$merged" "$work"; do
-      sudo rm -rf "$d" || true
-    done
-  fi
+unmount-loop() {
+  local merged=$1
 
+  # unmount it in a loop, to ensure that we can re-mount it later
+  while true; do
+    # Lazy umount seems necessary?  Otherwise we get 'target is busy'
+    # I suppose processes started inside the chroot may still be running
+    sudo umount -l "$merged"
+    if ! mountpoint --quiet "$merged"; then
+      break
+    fi
+    echo "Waiting to unmount: $merged"
+    sleep 0.1
+  done
 }
 
 # Note: these functions aren't used.  bwrap is problematic when the container
