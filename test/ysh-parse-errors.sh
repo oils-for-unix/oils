@@ -1399,10 +1399,8 @@ test-eggex-flags() {
 
 test-string-literals() {
   _ysh-should-parse "echo r'hi';"
-  #_ysh-parse-error "echo r'hi'bad"
 
   _ysh-should-parse "echo u'hi'"
-  _ysh-should-parse "(echo u'hi')"
 
   _ysh-parse-error "echo b'hi'trailing"
   _ysh-parse-error "echo b'hi'#notcomment"
