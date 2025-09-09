@@ -229,7 +229,7 @@ test-sh-assign() {
 
   # Only proc and func disallow it
   _ysh-should-parse '{ x=y; }'
-  _ysh-should-parse '( x=y; )'
+  _ysh-should-parse 'forkwait { x=y; }'
 
   _assert-sh-status 0 $YSH 'Expected it to parse' \
     -o ysh:upgrade -n -c 'x=y'

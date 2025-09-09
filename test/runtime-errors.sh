@@ -241,13 +241,13 @@ test-errexit-multiple-processes() {
   _sep
 
   # note: need trailing echo to prevent pipeline optimization
-  _ysh-error-X 42 'ls | { echo hi; ( exit 42 ); } | wc -l; echo'
+  _ysh-error-X 42 'ls | { echo hi; forkwait { exit 42 }; } | wc -l; echo'
 
   _sep
 
   # Showing errors for THREE PIDs here!  That is technically correct, but
   # noisy.
-  _ysh-error-1 '{ echo one; ( exit 42 ); } |\
+  _ysh-error-1 '{ echo one; forkwait { exit 42 }; } |\
 { false; wc -l; }'
 
   _sep
@@ -260,7 +260,7 @@ test-errexit-multiple-processes() {
   _sep
 
   # Three errors!
-  _ysh-error-1 '{ ls; ( false; true ); } | wc -l; echo hi'
+  _ysh-error-1 '{ ls; forkwait { false; true }; } | wc -l; echo hi'
 
   _sep
 
