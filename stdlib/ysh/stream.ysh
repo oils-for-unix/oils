@@ -5,6 +5,8 @@
 #
 # For reading lines, decoding, extracting, splitting
 
+shopt --unset no_osh_builtins  # allow OSH 'local' for now
+
 # make this file a test server
 source $LIB_OSH/byo-server.sh
 

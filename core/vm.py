@@ -253,8 +253,9 @@ class _Executor(object):
         # This also relates to __builtin__ reflection and so forth
         if (self.exec_opts.no_osh_builtins() and
                 builtin_id in (builtin_i.alias, builtin_i.unalias)):
-            e_die("This builtin command isn't part of YSH (no_osh_builtins)",
-                  cmd_val.arg_locs[0])
+            e_die(
+                "The %r builtin isn't part of YSH (no_osh_builtins)" %
+                cmd_val.argv[0], cmd_val.arg_locs[0])
 
         self.tracer.OnBuiltin(builtin_id, cmd_val.argv)
         builtin_proc = self.builtins[builtin_id]

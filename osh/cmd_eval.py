@@ -13,7 +13,7 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
-from _devbuild.gen.option_asdl import option_i
+from _devbuild.gen.option_asdl import option_i, builtin_i
 from _devbuild.gen.syntax_asdl import (
     IntParamBox,
     loc,
@@ -525,7 +525,15 @@ class CommandEvaluator(object):
 
         Except blocks copied from RunBuiltin.
         """
-        builtin_func = self.assign_builtins.get(cmd_val.builtin_id)
+        builtin_id = cmd_val.builtin_id
+        # export has a different error that we don't mask
+        if (self.exec_opts.no_osh_builtins() and
+                builtin_id != builtin_i.export_):
+            e_die(
+                "The %s builtin isn't part of YSH (no_osh_builtins)" %
+                cmd_val.argv[0], cmd_val.arg_locs[0])
+
+        builtin_func = self.assign_builtins.get(builtin_id)
         if builtin_func is None:
             # This only happens with alternative Oils interpreters.
             e_die("Assignment builtin %r not configured" % cmd_val.argv[0],
@@ -1104,13 +1112,16 @@ class CommandEvaluator(object):
             if len(node.more_env):  # I think this guard is necessary?
                 if self.exec_opts.env_obj():  # YSH
                     bindings = NewDict()  # type: Dict[str, value_t]
-                    with state.ctx_EnclosedFrame(self.mem, self.mem.CurrentFrame(),
-                                                 self.mem.GlobalFrame(), bindings):
+                    with state.ctx_EnclosedFrame(self.mem,
+                                                 self.mem.CurrentFrame(),
+                                                 self.mem.GlobalFrame(),
+                                                 bindings):
                         self._EvalTempEnv(node.more_env, 0)
 
                     # Push this on the prototype chain
                     with state.ctx_EnvObj(self.mem, bindings):
-                        status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
+                        status = self._RunSimpleCommand(
+                            cmd_val, cmd_st, run_flags)
 
                 else:  # OSH
                     if _PrefixBindingsPersist(cmd_val):
@@ -1125,7 +1136,8 @@ class CommandEvaluator(object):
                         # TODO: Disallow this in YSH?  It should just be a
                         # top-level assignment.
                         self._EvalTempEnv(node.more_env, 0)
-                        status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
+                        status = self._RunSimpleCommand(
+                            cmd_val, cmd_st, run_flags)
                     else:
                         with state.ctx_Temp(self.mem):
                             self._EvalTempEnv(node.more_env, state.SetExport)
@@ -1783,7 +1795,6 @@ class CommandEvaluator(object):
                 status = 1
 
         return status
-
 
     def _DoRedirect(self, node, cmd_st):
         # type: (command.Redirect, CommandStatus) -> int

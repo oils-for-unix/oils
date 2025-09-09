@@ -19,7 +19,11 @@ for key in (mydict) {
   echo "key $key"
 }
 
+# We can declare this
+shopt --unset no_osh_builtins
 declare -A A=([name]=bob)
+
+# But there is no iteration
 for key in (A) {
   echo "key $key"
 }

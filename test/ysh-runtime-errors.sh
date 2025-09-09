@@ -1171,6 +1171,15 @@ test-no-osh-builtins() {
 
   _ysh-error-1 'alias foo'
   _ysh-error-1 'unalias foo'
+
+  _ysh-error-1 'declare x=y'
+  _ysh-error-1 'declare -p'
+  _ysh-error-1 'typeset'
+  _ysh-error-1 'readonly -p'
+  _ysh-error-1 'f() { local x; }; f'
+
+  # different error
+  _ysh-error-1 'export -p'
 }
 
 

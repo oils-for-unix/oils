@@ -503,6 +503,7 @@ unset-proc-dynamic-scope x=
 
 #### unset composes when you turn on dynamic scope
 shopt -s ysh:all
+shopt --unset no_osh_builtins
 
 proc unset-two (v, w) {
   shopt --set dynamic_scope {

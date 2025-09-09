@@ -733,6 +733,7 @@ j = 43
 
 #shopt --unset ysh:all
 shopt --set ysh:upgrade
+shopt --unset no_osh_builtins  # for local
 
 sh-eval() {
   local do_not_leak=42  # this is visible

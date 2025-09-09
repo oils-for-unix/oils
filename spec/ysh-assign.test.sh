@@ -288,7 +288,8 @@ write --sep ' ' @mylist
 ## END
 
 #### mixing assignment builtins and YSH assignment
-shopt -s ysh:all parse_equals
+shopt --set ysh:all parse_equals
+shopt --unset no_osh_builtins
 
 proc local-var {
   local x=1

@@ -4,7 +4,7 @@
 #### shell array :| a 'b c' |
 shopt -s parse_at
 var x = :| a 'b c' |
-var empty = %()
+var empty = :||
 argv.py / @x @empty /
 
 ## STDOUT:
@@ -20,15 +20,6 @@ argv.py / @empty /
 ## STDOUT:
 len=0
 ['/', '/']
-## END
-
-#### Empty array and assignment builtin (regression)
-# Bug happens with shell arrays too
-empty=()
-declare z=1 "${empty[@]}"
-echo z=$z
-## STDOUT:
-z=1
 ## END
 
 #### Shell arrays support tilde detection, static globbing, brace detection
@@ -123,8 +114,8 @@ pp test_ (empty)
 ## END
 
 #### splice and stringify array
-
-shopt -s parse_at
+shopt --set parse_at
+shopt --unset no_osh_builtins
 
 var x = :| 'a b' c |
 

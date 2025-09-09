@@ -754,6 +754,10 @@ ysh-object() {
   test/spec-py.sh run-file ysh-object "$@"
 }
 
+ysh-old() {
+  test/spec-py.sh run-file ysh-old "$@"
+}
+
 ysh-options-assign() {
   test/spec-py.sh run-file ysh-options-assign "$@"
 }

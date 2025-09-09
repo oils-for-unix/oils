@@ -66,8 +66,9 @@ baz
 ## END
 
 #### readonly in loop: explains why const doesn't work
+shopt --unset no_osh_builtins
 
-# TODO: Might want to change const in Oil...
+# TODO: Might want to change const in YSH
 # bash actually prevents assignment and prints a warning, DOH.
 
 seq 3 | while read -r line; do
