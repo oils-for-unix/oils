@@ -471,7 +471,7 @@ test-cmd-parse() {
 
   _osh-parse-error 'foo()'
 
-  # parse_ignored
+  # no_parse_ignored
   _osh-should-parse 'break >out'
   _ysh-parse-error 'break >out'
 

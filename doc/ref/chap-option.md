@@ -260,10 +260,10 @@ Details on options that are not in `ysh:upgrade` and `strict:all`:
       no_parse_backticks      No `echo hi`
       no_parse_bare_word      No 'case unquoted' and 'for x in unquoted'
       no_parse_dbracket       No legacy [[ booleans
+      no_parse_dollar         Disallow bare $ for \$  (maybe $/d+/)
       no_parse_dparen         No (( legacy arithmetic
+      no_parse_ignored        Don't parse redirects that are ignored
       no_parse_osh            No $'' - TODO ( )  ${x%prefix}  ${a[@]}  $$
-      parse_dollar (-u)       Allow bare $ to mean \$  (maybe $/d+/)
-      parse_ignored (-u)      Parse, but ignore, certain redirects
       parse_sh_arith (-u)     Allow legacy shell arithmetic
       parse_word_join(-u)     Is pitfall --flag=r'value' allowed?
       no_exported             Environ doesn't correspond to exported (-x) vars
@@ -333,9 +333,9 @@ References that don't contain variables also produce hard errors:
     echo $ref  # fatal
     ref=x      # fatal
 
-### parse_ignored
+### no_parse_ignored
 
-For compatibility, YSH will parse some constructs it doesn't execute, like:
+For compatibility, OSH will parse some constructs it doesn't execute, like:
 
     return 0 2>&1  # redirect on control flow
 

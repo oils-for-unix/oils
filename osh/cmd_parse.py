@@ -1281,7 +1281,7 @@ class CommandParser(object):
         kind, kw_token = word_.IsControlFlow(suffix_words[0])
 
         if kind == Kind.ControlFlow:
-            if not self.parse_opts.parse_ignored() and len(redirects):
+            if self.parse_opts.no_parse_ignored() and len(redirects):
                 p_die("Control flow shouldn't have redirects", kw_token)
             if len(preparsed_list):  # FOO=bar local spam=eggs not allowed
                 p_die("Control flow shouldn't have environment bindings",

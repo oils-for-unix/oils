@@ -1090,7 +1090,7 @@ class WordParser(WordEmitter):
                                 "Invalid char escape in double quoted string (OILS-ERR-12)",
                                 self.cur_token)
                     elif self.token_type == Id.Lit_Dollar:
-                        if is_ysh_expr or not self.parse_opts.parse_dollar():
+                        if is_ysh_expr or self.parse_opts.no_parse_dollar():
                             p_die("Literal $ should be quoted like \$",
                                   self.cur_token)
 
@@ -1871,7 +1871,7 @@ class WordParser(WordEmitter):
                 elif self.token_type == Id.Lit_RBrace:
                     brace_count -= 1
                 elif self.token_type == Id.Lit_Dollar:
-                    if not self.parse_opts.parse_dollar():
+                    if self.parse_opts.no_parse_dollar():
                         if num_parts == 0 and lex_mode == lex_mode_e.ShCommand:
                             next_byte = self.lexer.ByteLookAhead()
                             # TODO: switch lexer modes and parse $/d+/.  But not ${a:-$/d+/}
@@ -1879,7 +1879,7 @@ class WordParser(WordEmitter):
                                 #log('next_byte %r', next_byte)
                                 pass
 
-                        p_die('Literal $ should be quoted like \$',
+                        p_die('Literal $ should be quoted like \$ (no_parse_dollar)',
                               self.cur_token)
 
                 done = self._MaybeReadWordPart(num_parts == 0, lex_mode,

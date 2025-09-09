@@ -136,7 +136,7 @@ is an informal list of *kinds* of options, which are different categorization:
 - `parse_*`: Change parsing.
   - enable new features: `parse_at`, `parse_equals`.
   - turn off to reject bad or old code: `no_parse_backticks`, `no_parse_backslash`,
-    `parse_dollar`.
+    `no_parse_dollar`.
 - `strict_*`: Fail at runtime instead of ignoring the bug like bash.
   - `${#s}` on invalid unicode is a runtime error.
   - `~typo` is a runtime error.

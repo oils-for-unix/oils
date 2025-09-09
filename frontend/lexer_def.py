@@ -161,7 +161,7 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _LEFT_PROCSUB + _VARS + [
     C('~', Id.Lit_Tilde),  # for tilde sub
     C('/', Id.Lit_Slash),  # also for tilde sub
     C(':', Id.Lit_Colon),  # for special PATH=a:~foo tilde detection
-    C('$', Id.Lit_Dollar),  # shopt -u parse_dollar
+    C('$', Id.Lit_Dollar),  # shopt --set no_parse_dollar
     C('#', Id.Lit_Pound),  # For comments
     _SIGNIFICANT_SPACE,
     C('\n', Id.Op_Newline),

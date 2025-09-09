@@ -1557,13 +1557,13 @@ setvar x = $'trailing\
 EOF
 }
 
-test-ysh_dq_strings() {
+test-ysh-dq-strings() {
   # Double quoted is an error
   _osh-should-parse 'echo "\z"'
 
   # status, sh, message
   _assert-sh-status 2 "$OSH" $0 \
-    +O no_parse_backslash -n -c 'echo test-no_parse_backslash "\z"'
+    -o no_parse_backslash -n -c 'echo test-no_parse_backslash "\z"'
 
   _ysh-parse-error 'echo "\z"'  # not in Oil
   _ysh-parse-error 'const bad = "\z"'  # not in expression mode
@@ -1585,7 +1585,7 @@ test-ysh_bare_words() {
   _ysh-parse-error 'echo \z'
 }
 
-test-parse_dollar() {
+test-no-parse-dollar() {
   # The right way:
   #   echo \$
   #   echo \$:
@@ -1609,7 +1609,7 @@ test-parse_dollar() {
 
     # status, sh, message
     _assert-sh-status 2 "$OSH" $0 \
-      +O test-parse_dollar -n -c "$c"
+      -o no_parse_dollar -n -c "$c"
 
     _ysh-parse-error "$c"
   done

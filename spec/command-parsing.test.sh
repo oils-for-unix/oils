@@ -52,8 +52,8 @@ fi
 ## stdout: REDIRECTED
 ## OK osh stdout: NO
 
-#### Redirect on control flow with oil:all (parse_ignored)
-shopt -s oil:all
+#### Redirect on control flow with ysh:all (no_parse_ignored)
+shopt -s ysh:all
 rm -f _tmp/r.txt
 for x in a b c; do
   break > _tmp/r.txt
