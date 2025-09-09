@@ -256,22 +256,22 @@ Details on options that are not in `ysh:upgrade` and `strict:all`:
 
       expand_aliases (-u)     Whether aliases are expanded
       parse_at_all            @ starting any word is an operator
-      no_parse_backslash      No bad backslashes in "" and $''
-      no_parse_backticks      No `echo hi`
-      no_parse_bare_word      No 'case unquoted' and 'for x in unquoted'
-      no_parse_dbracket       No legacy [[ booleans
+      no_parse_backslash      Disallow bad backslashes in "" and $''
+      no_parse_backticks      Disallow `echo hi`
+      no_parse_bare_word      Disallow 'case unquoted' 'for x in unquoted'
+      no_parse_dbracket       Disallow legacy booleans [[
       no_parse_dollar         Disallow bare $ for \$  (maybe $/d+/)
-      no_parse_dparen         No (( legacy arithmetic
+      no_parse_dparen         Disallow legacy arithmetic ((
       no_parse_ignored        Don't parse redirects that are ignored
       no_parse_osh            No $'' - TODO ( )  ${x%prefix}  ${a[@]}  $$
-      parse_sh_arith (-u)     Allow legacy shell arithmetic
-      parse_word_join(-u)     Is pitfall --flag=r'value' allowed?
+      no_parse_sh_arith       Disallow legacy shell arithmetic
+      no_parse_word_join      Disallow pitfall --flag=r'value'
       no_exported             Environ doesn't correspond to exported (-x) vars
       no_init_globals         At startup, don't set vars like PWD, SHELLOPTS
-      no_osh_builtins         Disable OSH builtins like alias, unalias, etc.
-      simple_echo             echo doesn't accept flags -e -n
+      no_osh_builtins         Disallow OSH builtins like alias, unalias, etc.
+      simple_echo             echo doesn't accept -e -n
       simple_eval_builtin     eval takes exactly 1 argument
-      simple_test_builtin     3 args or fewer; use test not [
+      simple_test_builtin     test takes 2 or 3 args; use test not [
     X simple_trap             Function name only
 
 **Caveat**: Some options only affect shell startup.  For example:

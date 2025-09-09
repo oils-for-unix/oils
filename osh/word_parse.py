@@ -1879,8 +1879,9 @@ class WordParser(WordEmitter):
                                 #log('next_byte %r', next_byte)
                                 pass
 
-                        p_die('Literal $ should be quoted like \$ (no_parse_dollar)',
-                              self.cur_token)
+                        p_die(
+                            'Literal $ should be quoted like \$ (no_parse_dollar)',
+                            self.cur_token)
 
                 done = self._MaybeReadWordPart(num_parts == 0, lex_mode,
                                                w.parts)
@@ -2000,7 +2001,7 @@ class WordParser(WordEmitter):
 
         # YSH word restriction
         # (r'' u'' b'' are stripped on shopt -s parse_ysh_string)
-        if not self.parse_opts.parse_word_join() and not _IsValidYshWord(w):
+        if self.parse_opts.no_parse_word_join() and not _IsValidYshWord(w):
             p_die("Invalid quoted word part in YSH (OILS-ERR-17)",
                   loc.WordPart(part))
 

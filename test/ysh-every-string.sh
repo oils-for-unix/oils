@@ -12,8 +12,6 @@ set -o errexit
 OSH=${OSH:-bin/osh}
 YSH=${YSH:-bin/ysh}
 
-# Disable for YSH
-#shopt -s parse_sh_arith
 source test/common.sh  # run-test-funcs
 
 # OSH and YSH

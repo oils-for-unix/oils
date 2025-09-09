@@ -315,7 +315,7 @@ no-opt() {
 
   local -a files=( spec/*.test.sh test/*.sh */*.py doc/*.md doc/ref/*.md )
 
-  local name=parse_ignored
+  local name=parse_sh_arith
   grep -n "$name" "${files[@]}" | tee _tmp/x
 
   echo

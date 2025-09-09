@@ -236,10 +236,10 @@ class UnsafeArith(object):
 
         It uses the arith parser, so it behaves like the LHS of (( a[i] = x ))
         """
-        if not self.parse_ctx.parse_opts.parse_sh_arith():
+        if self.parse_ctx.parse_opts.no_parse_sh_arith():
             # Do something simpler for YSH
             if not match.IsValidVarName(s):
-                e_die('Invalid variable name %r (parse_sh_arith is off)' % s,
+                e_die('Invalid variable name %r (no_parse_sh_arith)' % s,
                       location)
             return LeftName(s, location)
 

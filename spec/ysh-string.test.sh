@@ -228,7 +228,7 @@ write r '' end
 
 # Now it's a regular r
 shopt --unset parse_ysh_string
-shopt --set parse_word_join
+shopt --unset no_parse_word_join
 write unset r'\'
 
 ## STDOUT:
@@ -458,7 +458,7 @@ var x = r'''\'''
 echo $x
 
 shopt --unset parse_ysh_string
-shopt --set parse_word_join
+shopt --unset no_parse_word_join
 
 echo r'''\'''
 

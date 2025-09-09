@@ -91,7 +91,7 @@ p {
   echo "greeting `echo backticks`"
 }
 
-shopt --set parse_sh_arith
+shopt --unset no_parse_sh_arith
 
 p {
   array_lhs[i++]=y
@@ -135,7 +135,7 @@ proc p ( ; ; ; block) {
 
 
 shopt --unset no_parse_backticks
-shopt --set parse_sh_arith
+shopt --unset no_parse_sh_arith
 shopt --set expand_aliases
 
 p { 

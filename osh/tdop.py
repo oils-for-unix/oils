@@ -318,7 +318,7 @@ class TdopParser(object):
 
         self.Next()  # may raise ParseError
 
-        if not self.parse_opts.parse_sh_arith():
+        if self.parse_opts.no_parse_sh_arith():
             # Affects:
             #    echo $(( x ))
             #    ${a[i]} which should be $[a[i]] -- could have better error
@@ -336,7 +336,7 @@ class TdopParser(object):
             #    (( a = 1 ))         # no_parse_dparen
             #    for (( i = 0; ...   # no_parse_dparen
 
-            p_die("POSIX shell arithmetic isn't allowed (parse_sh_arith)",
+            p_die("POSIX shell arithmetic isn't allowed (no_parse_sh_arith)",
                   loc.Word(self.cur_word))
 
         return self.ParseUntil(0)

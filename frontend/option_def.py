@@ -184,14 +184,14 @@ _YSH_PARSE_OPTS = [
     # the language more consistent.
     ('no_parse_backslash', False),
     ('no_parse_backticks', False),
-    ('no_parse_dollar', False),
-    ('no_parse_ignored', False),
-    ('parse_sh_arith', True),  # disallow all shell arithmetic, $(( )) etc.
-    ('no_parse_dparen', False),  # disallow bash's ((
+    ('no_parse_bare_word', False),  # disallow 'case bare' and 'for x in bare'
     ('no_parse_dbracket', False),  # disallow bash's [[
-    ('no_parse_bare_word', False),  # 'case bare' and 'for x in bare'
-    ('parse_word_join', True),  # --flag=r'value' pitfall allowed
-    ('no_parse_osh', False),  # $'' disallowed, etc.
+    ('no_parse_dollar', False),
+    ('no_parse_dparen', False),  # disallow bash's ((
+    ('no_parse_ignored', False),
+    ('no_parse_osh', False),  # disallow $'', etc.
+    ('no_parse_sh_arith', False),  # disallow all shell arithmetic, $(( )) etc.
+    ('no_parse_word_join', False),  # disallow --flag=r'value' pitfall
 ]
 
 _BASH_STUBS = [
