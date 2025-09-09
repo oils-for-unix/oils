@@ -1715,6 +1715,13 @@ test-splat-expr() {
 test-no-parse-osh() {
   _ysh-parse-error "echo \$'hi'"
   _ysh-parse-error "var x = \$'hi'"
+
+  _ysh-parse-error 'sleep 2 &'
+  _ysh-parse-error 'sleep 2 & wait'
+  _ysh-parse-error '{ sleep 2 & }'
+
+  _ysh-parse-error '( cd /tmp && ls )'
+  _ysh-parse-error '{ ( cd /tmp && ls ) }'
 }
 
 test-string-sigil-pair() {

@@ -89,6 +89,8 @@ _ = Kind_str  # for debug prints
 TAB_CH = 9  # ord('\t')
 SPACE_CH = 32  # ord(' ')
 
+_AMPERSAND_ERROR = "Use the 'fork' builtin instead of &"
+
 
 def _ReadHereLines(
         line_reader,  # type: _Reader
@@ -2342,6 +2344,8 @@ class CommandParser(object):
         Looking at Op_LParen
         """
         left = word_.AsOperatorToken(self.cur_word)
+        if self.parse_opts.no_parse_osh():
+            p_die("Subshell syntax ( ) isn't allowed in YSH (OILS-ERR-19)", left)
         self._SetNext()  # skip past (
 
         # Ensure that something $( (cd / && pwd) ) works.  If ) is already on the
@@ -2689,7 +2693,10 @@ class CommandParser(object):
 
             self._GetWord()
             if self.c_id in (Id.Op_Semi, Id.Op_Amp):
-                tok = cast(Token, self.cur_word)  # for MyPy
+                tok = cast(Token, self.cur_word)
+                if tok.id == Id.Op_Amp and self.parse_opts.no_parse_osh():
+                    p_die(_AMPERSAND_ERROR, tok)
+
                 child = command.Sentence(child, tok)
                 self._SetNext()
 
@@ -2725,9 +2732,6 @@ class CommandParser(object):
         This is handled in imperative style, like _ParseCommandLine.
         Called by _ParseCommandList for all blocks, and also for ParseCaseArm,
         which is slightly different.  (HOW?  Is it the DSEMI?)
-
-        Returns:
-          syntax_asdl.command
         """
         # Token types that will end the command term.
         END_LIST = [
@@ -2761,7 +2765,10 @@ class CommandParser(object):
                     done = True
 
             elif self.c_id in (Id.Op_Semi, Id.Op_Amp):
-                tok = cast(Token, self.cur_word)  # for MyPy
+                tok = cast(Token, self.cur_word)
+                if tok.id == Id.Op_Amp and self.parse_opts.no_parse_osh():
+                    p_die(_AMPERSAND_ERROR, tok)
+
                 child = command.Sentence(child, tok)
                 self._SetNext()
 

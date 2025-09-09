@@ -263,7 +263,7 @@ Details on options that are not in `ysh:upgrade` and `strict:all`:
       no_parse_dollar         Disallow bare $ for \$  (maybe $/d+/)
       no_parse_dparen         Disallow legacy arithmetic ((
       no_parse_ignored        Don't parse redirects that are ignored
-      no_parse_osh            No $'' - TODO ( )  ${x%prefix}  ${a[@]}  $$
+      no_parse_osh            No $''  ( )  &   TODO  ${x%prefix}  ${a[@]}  $$
       no_parse_sh_arith       Disallow legacy shell arithmetic
       no_parse_word_join      Disallow pitfall --flag=r'value'
       no_exported             Environ doesn't correspond to exported (-x) vars

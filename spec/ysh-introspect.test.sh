@@ -344,7 +344,7 @@ proc f {
 }
 
 proc g {
-  ( exit 42 )
+  forkwait { exit 42 }
   #return 42
 }
 

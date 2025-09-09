@@ -8,8 +8,8 @@ source --builtin osh/two.sh
 
 log 'hi'
 
-set +o errexit
-( die "bad" )
+shopt --unset errexit
+forkwait { die "bad" }
 echo status=$?
 
 ## STDOUT:

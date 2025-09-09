@@ -288,6 +288,24 @@ Try one of these alternatives:
   - (OSH and YSH have the same string literal syntax, including the
     backslash-quoted backtick `` \` ``.)
 
+### OILS-ERR-19
+
+```
+  ( cd /tmp && ls )
+  ^
+[ -c flag ]:1: Subshell syntax ( ) isn't allowed in YSH (OILS-ERR-19)
+```
+
+- In YSH, you can use `forkwait { echo hi }` to create a subshell.
+- You may not need a subshell; you may use idioms like `cd /tmp { ls }` to save
+  and restore state.
+
+Note that, in shell, the `( )` syntax does **not** simply group commands.  The
+`{ }` syntax is for grouping commands.
+
+This is a common mistake because parentheses are for grouping in other
+programming languages.
+
 ## Runtime Errors - Traditional Shell
 
 These errors may occur in shells like [bash]($xref) and [zsh]($xref).
