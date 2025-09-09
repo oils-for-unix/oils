@@ -17,7 +17,7 @@ This is how I did it manually:
 
     $ sudo visudo -f /etc/sudoers.d/no-timeout
 
-The result shoudl be:
+The result should be:
 
     $ sudo cat /etc/sudoers.d/no-timeout
     Defaults:andy timestamp_timeout=-1

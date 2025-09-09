@@ -221,6 +221,26 @@ build-packages() {
   ' dummy0 "$config" "${package_dirs[@]}"
 }
 
+build-packages-overlayfs() {
+  # https://wiki.alpinelinux.org/wiki/Abuild_and_Helpers#Basic_usage
+  local package_filter=${1:-}
+  local config=${2:-baseline}
+
+  local -a package_dirs=( $(package-dirs "$package_filter") )
+
+  banner "Building ${#package_dirs[@]} packages (filter $package_filter)"
+  for package in "${package_dirs[@]}"; do
+    echo "Building $package"
+    enter-rootfs-user-overlayfs "$config" "$package" sh -c '
+    config=$1
+    shift
+
+    cd oils
+    regtest/aports-guest.sh build-package "$config" "$@"
+    ' dummy0 "$config" "$package"
+  done
+}
+
 clean-host-and-guest() {
   # host dir _tmp/aports-build
   rm -r -f -v $BASE_DIR
