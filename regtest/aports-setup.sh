@@ -12,8 +12,6 @@
 #
 # Other commands:
 #   $0 remove-chroot
-#
-set -e
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
