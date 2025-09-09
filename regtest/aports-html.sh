@@ -201,6 +201,8 @@ published-html() {
 - [2025-08-26-ifs](2025-08-26-ifs.wwz/_tmp/aports-report/2025-08-26-ifs/diff_merged.html)
   - new causes: [2025-09-06-edit](2025-09-06-edit.wwz/_tmp/aports-report/2025-09-06-edit/diff_merged.html)
 - [2025-09-07](2025-09-07.wwz/_tmp/aports-report/2025-09-07/diff_merged.html)
+- [2025-09-08](2025-09-08.wwz/_tmp/aports-report/2025-09-08/diff_merged.html)
+  - [2025-09-08-edit](2025-09-08-edit.wwz/_tmp/aports-report/2025-09-08-edit/diff_merged.html)
 
 EOF
 

@@ -49,7 +49,7 @@ BEGIN {
   patterns[13] = "No working C compiler"
 
   # sfic
-  patterns[14] = "terminate called after throwing an instance of"
+  patterns["#2411"] = "terminate called after throwing an instance of"
 
   # screen
   patterns["#2364"] = "mkdir: unrecognized option: /"  # changed 2025-08-04-rootbld
