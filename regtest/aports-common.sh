@@ -48,12 +48,14 @@ enter-rootfs-user-overlayfs() {
   $merged/enter-chroot -u udu "$@"
   sudo umount -l "$merged"
 
-  # TODO: This path is a bit much hardcoded..
   rsync -avu "$upper/home/udu/oils/_tmp/aports-guest" "$REPORT_DIR/"
-  # Delete, because they require a lot of storage!
-  for d in "$upper" "$merged" "$work"; do
-    sudo rm -rf "$d" || true
-  done
+  if false; then
+    # TODO: This path is a bit much hardcoded..
+    # Delete, because they require a lot of storage!
+    for d in "$upper" "$merged" "$work"; do
+      sudo rm -rf "$d" || true
+    done
+  fi
 
 }
 
