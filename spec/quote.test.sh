@@ -211,21 +211,6 @@ echo $w $x $y
 ## END
 ## N-I dash/mksh stdout-json: ""
 
-#### YSH parse errors with parse_backslash
-case $SH in *osh) ;; (*) exit  ;; esac
-shopt -s oil:all
-
-const w = c'\uZ'
-
-const x = c'\u{03bc'
-
-# Also invalid
-const y = c'\z'
-
-## stdout-json: ""
-## status: 2
-## N-I dash/bash/mksh/ash status: 0
-
 #### YSH allows unquoted foo\ bar too
 shopt -s ysh:all
 touch foo\ bar

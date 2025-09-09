@@ -85,7 +85,7 @@ proc p ( ; ; ; block) {
   #echo
 }
 
-shopt --set parse_backticks
+shopt --unset no_parse_backticks
 
 p {
   echo "greeting `echo backticks`"
@@ -134,7 +134,7 @@ proc p ( ; ; ; block) {
 }
 
 
-shopt --set parse_backticks
+shopt --unset no_parse_backticks
 shopt --set parse_sh_arith
 shopt --set expand_aliases
 

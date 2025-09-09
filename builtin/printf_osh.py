@@ -135,8 +135,8 @@ class _FormatStringParser(object):
                     in (Id.Format_EscapedPercent, Id.Unknown_Backslash)):
 
                 # Note: like in echo -e, we don't fail with Unknown_Backslash here
-                # when shopt -u parse_backslash because it's at runtime rather than
-                # parse time.
+                # when shopt --set no_parse_backslash because it's at runtime
+                # rather than parse time.
                 # Users should use $'' or the future static printf ${x %.3f}.
 
                 parts.append(self.cur_token)

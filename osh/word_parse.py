@@ -770,8 +770,8 @@ class WordParser(WordEmitter):
                 tok = self.cur_token
                 assert tok.id == Id.Unknown_Backslash, tok
 
-                # x = $'\z' is disallowed; ditto for echo $'\z' if shopt -u parse_backslash
-                if is_ysh_expr or not self.parse_opts.parse_backslash():
+                # x = $'\z' is disallowed; ditto for echo $'\z' if shopt --set no_parse_backslash
+                if is_ysh_expr or self.parse_opts.no_parse_backslash():
                     p_die(
                         "Invalid char escape in C-style string literal (OILS-ERR-11)",
                         tok)
@@ -1083,9 +1083,9 @@ class WordParser(WordEmitter):
                         # echo "\z" is OK in shell, but 'x = "\z" is a syntax error in
                         # YSH.
                         # Slight hole: We don't catch 'x = ${undef:-"\z"} because of the
-                        # recursion (unless parse_backslash)
+                        # recursion (unless no_parse_backslash)
                         if (is_ysh_expr or
-                                not self.parse_opts.parse_backslash()):
+                                self.parse_opts.no_parse_backslash()):
                             p_die(
                                 "Invalid char escape in double quoted string (OILS-ERR-12)",
                                 self.cur_token)
@@ -1213,9 +1213,9 @@ class WordParser(WordEmitter):
             right_token = c_parser.w_parser.cur_token
 
         elif left_id == Id.Left_Backtick:
-            if not self.parse_opts.parse_backticks():
+            if self.parse_opts.no_parse_backticks():
                 p_die(
-                    'Backtick should be $(cmd) or \\` (parse_backticks, OILS-ERR-18)',
+                    'Backtick should be $(cmd) or \\` (no_parse_backticks, OILS-ERR-18)',
                     left_token)
 
             self._SetNext(lex_mode_e.Backtick)  # advance past `
@@ -1754,7 +1754,7 @@ class WordParser(WordEmitter):
             tok = self.cur_token
             assert tok.length == 2
             ch = lexer.TokenSliceLeft(tok, 1)
-            if not self.parse_opts.parse_backslash():
+            if self.parse_opts.no_parse_backslash():
                 if not pyutil.IsValidCharEscape(ch):
                     p_die('Invalid char escape in unquoted word (OILS-ERR-13)',
                           self.cur_token)

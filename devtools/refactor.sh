@@ -315,7 +315,7 @@ no-opt() {
 
   local -a files=( spec/*.test.sh test/*.sh */*.py doc/*.md doc/ref/*.md )
 
-  local name=parse_bare_word
+  local name=parse_backticks
   grep -n "$name" "${files[@]}" | tee _tmp/x
 
   echo

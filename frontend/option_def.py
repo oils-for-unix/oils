@@ -182,8 +182,8 @@ _YSH_PARSE_OPTS = [
     # Legacy syntax that is removed.  These options are distinct from strict_*
     # because they don't help you avoid bugs in bash programs.  They just makes
     # the language more consistent.
-    ('parse_backslash', True),
-    ('parse_backticks', True),
+    ('no_parse_backslash', False),
+    ('no_parse_backticks', False),
     ('parse_dollar', True),
     ('parse_ignored', True),
     ('parse_sh_arith', True),  # disallow all shell arithmetic, $(( )) etc.

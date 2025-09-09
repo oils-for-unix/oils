@@ -20,7 +20,7 @@ YSH=${YSH:-bin/ysh}
 # More detailed assertions - TODO: remove these?
 
 _assert-status-2() {
-  ### An interface where you can pass flags like -O test-parse_backslash
+  ### An interface where you can pass flags like -O test-no_parse_backslash
 
   local message=$0
   _assert-sh-status 2 $OSH $message "$@"
@@ -675,14 +675,14 @@ test-extra-newlines() {
   '
 }
 
-test-parse_backticks() {
+test-no-parse-backticks() {
 
   # These are allowed
   _osh-should-parse 'echo `echo hi`'
   _osh-should-parse 'echo "foo = `echo hi`"'
 
-  _assert-status-2 +O test-parse_backticks -n -c 'echo `echo hi`'
-  _assert-status-2 +O test-parse_backticks -n -c 'echo "foo = `echo hi`"'
+  _assert-status-2 -o no_parse_backticks -n -c 'echo `echo hi`'
+  _assert-status-2 -o no_parse_backticks -n -c 'echo "foo = `echo hi`"'
 }
 
 test-shell_for() {

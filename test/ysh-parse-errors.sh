@@ -720,7 +720,7 @@ test-make-these-nicer() {
   _ysh-parse-error 'call'
 
   # What about \u{123} parse errors
-  # I get a warning now, but parse_backslash should give a syntax error
+  # I get a warning now, but no_parse_backslash should give a syntax error
   # _ysh-parse-error "x = c'\\uz'"
 
   # Dict pair split
@@ -1563,7 +1563,7 @@ test-ysh_dq_strings() {
 
   # status, sh, message
   _assert-sh-status 2 "$OSH" $0 \
-    +O parse_backslash -n -c 'echo test-parse_backslash "\z"'
+    +O no_parse_backslash -n -c 'echo test-no_parse_backslash "\z"'
 
   _ysh-parse-error 'echo "\z"'  # not in Oil
   _ysh-parse-error 'const bad = "\z"'  # not in expression mode

@@ -71,7 +71,8 @@ def EvalCStringToken(id_, value):
     code_point = -1
 
     if id_ in (Id.Lit_Chars, Id.Lit_CharsWithoutPrefix, Id.Unknown_Backslash):
-        # shopt -u parse_backslash detects Unknown_Backslash at PARSE time in YSH.
+        # shopt --set no_parse_backslash detects Unknown_Backslash at PARSE
+        # time in YSH.
         return value
 
     # single quotes in the middle of a triple quoted string
