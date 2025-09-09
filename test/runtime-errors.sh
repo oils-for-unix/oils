@@ -181,7 +181,7 @@ test-errexit-one-process() {
 
   _sep
 
-  _ysh-error-2 'declare cmd=ls; $cmd /x; echo $?'
+  _ysh-error-2 'var cmd = "ls"; $cmd /x; echo $?'
 
   _sep
 

@@ -53,8 +53,8 @@ Logic:
 
 '''
 
-# make this file a test server
-source $LIB_OSH/task-five.sh
+shopt --unset no_osh_builtins
+source $LIB_OSH/task-five.sh  # make this file a test server
 
 proc server {
   ### Accept FANOS messages

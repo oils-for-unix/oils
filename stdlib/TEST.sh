@@ -12,7 +12,7 @@ source $LIB_OSH/bash-strict.sh
 # I guess we need a YSH version then?  We could hack it with
 # $(sh -c 'echo $BYO_COMMAND')
 
-YSH='bin/ysh +o no_exported'
+YSH='bin/ysh +o no_exported +o no_osh_builtins'
 
 test-byo-protocol() {
   return

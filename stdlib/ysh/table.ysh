@@ -3,8 +3,8 @@
 # Usage:
 #   source --builtin table.ysh
 
-# make this file a test server
-source $LIB_OSH/byo-server.sh
+shopt --unset no_osh_builtins  # allow OSH 'local' for now
+source $LIB_OSH/byo-server.sh  # make this file a test server
 
 proc table (...words; place; ; block) {
   var n = len(words)
