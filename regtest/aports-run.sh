@@ -245,7 +245,7 @@ build-package-overlayfs() {
   local work=_chroot/package.overlay/work
 
   local layer_dir=_chroot/package-layers/$config/$pkg
-  mkdir -v -p $layer_dir
+  mkdir -p $layer_dir
 
   local overlay_opts
   case $config in 
@@ -254,7 +254,7 @@ build-package-overlayfs() {
       ;;
     osh-as-sh)
       local osh_as_sh=_chroot/osh-as-sh.overlay/layer
-      overlay_opts="lowerdir=$CHROOT_DIR:$osh_as_sh,upperdir=$layer_dir,workdir=$work"
+      overlay_opts="lowerdir=$osh_as_sh:$CHROOT_DIR,upperdir=$layer_dir,workdir=$work"
       ;;
     *)
       die "Invalid config $config"
@@ -269,8 +269,12 @@ build-package-overlayfs() {
 
   $merged/enter-chroot -u udu sh -c '
   cd oils
-  regtest/aports-guest.sh build-package "$@"
-  ' dummy0 "$config" "$pkg"
+
+  # show the effect of the overlay
+  #ls -l /bin/sh
+
+  regtest/aports-guest.sh build-package2 "$@"
+  ' dummy0 "$pkg"
 
   unmount-loop $merged
 }
@@ -415,7 +419,7 @@ _build-many-configs2() {
 
   # See note about /etc/sudoers.d at top of file
 
-  local dest_dir="$BASE_DIR/$epoch/$package_filter"
+  local dest_dir="$BASE_DIR/$epoch/$package_filter"  # e.g. shard10
 
   for config in "${CONFIGS[@]}"; do
     # this uses enter-chroot to modify the chroot
@@ -424,6 +428,24 @@ _build-many-configs2() {
 
     # this uses enter-chroot -u
     build-packages2 "$package_filter" "$config"
+
+    # TODO:
+    # Add shard dir?
+    #   _chroot/package-layers/shard0/
+    #     baseline/
+    #       gzip/
+    #     osh-as-sh/
+    #       gzip/
+    #
+    # I think makes it easier to copy into 
+    #   _tmp/aports-build/
+    # ?
+    # which is sync'd to _tmp/aports-report/
+    #
+    # Then
+    #   concat-tsv
+    #   abridge-logs
+    #   list apk - we don't need to move them
 
     #copy-results "$config" "$dest_dir"
 
@@ -478,6 +500,9 @@ build-many-shards2() {
 
   for package_filter in "$@"; do
     _build-many-configs2 "$package_filter" "$APORTS_EPOCH"
+
+    # Move to _chroot/shard10, etc.
+    mv -v --no-target-directory _chroot/package-layers _chroot/$package_filter
   done
 }
 

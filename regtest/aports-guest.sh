@@ -92,6 +92,65 @@ build-package() {
   # Only "abuild builddeps,build" is enough to start?
 }
 
+build-package2() {
+  # Copied from build/deps.sh maybe-install-wedge
+  #
+  # Difference vs. build-package: do not need $config here
+
+  local pkg=${1:-lua5.4}
+
+  local task_file=$LOG_DIR/$pkg.task.tsv
+  local log_file=$LOG_DIR/$pkg.log.txt
+
+  mkdir -p $(dirname $task_file)
+
+  my-time-tsv --print-header \
+    --field xargs_slot \
+    --field pkg \
+    --field pkg_HREF \
+    --output $task_file
+
+  # Packages live in /home/udu/aports/main
+  # -f forces rebuild: needed for different configs
+  # -r: install missing deps from system repository?
+  #local -a cmd=( abuild -f -r -C ~/aports/main/$pkg rootbld )
+
+  # DISABLE rootbld for now - bwrap doesn't work inside chroot, because user
+  # namespaces don't compose with chroots
+  local -a cmd=( abuild -f -r -C ~/aports/main/$pkg )
+
+  # Give it 1 second to respond to SIGTERM, then SIGKILL
+  local seconds=$(( 5 * 60 ))  # 5 minutes max for now, save time!
+  local -a timeout_cmd=( timeout -k 1 $seconds "${cmd[@]}" )
+
+  #set -x
+  # NOTE: log/foo.log.txt is the relative path after copy-results; sync-results
+  set +o errexit
+  my-time-tsv \
+    --field "${XARGS_SLOT:-99}" \
+    --field "$pkg" \
+    --field "log/$pkg.log.txt" \
+    --append \
+    --output $task_file \
+    -- \
+    "${timeout_cmd[@]}" >$log_file 2>&1
+  local status=$?
+  set -o errexit
+
+  if test "$status" -eq 0; then
+    echo "    OK  $(timestamp)  $pkg"
+  else
+    echo "  FAIL  $(timestamp)  $pkg"
+  fi
+
+  # Note: should we try not to fetch here?  I think the caching of "abuilt
+  # fetch" might make this OK
+
+  # TODO: avoid running tests and building the APK itself/
+  # Only "abuild builddeps,build" is enough to start?
+}
+
+
 # leave 1 CPU for other stuff
 # Note:
 # - Some packages builds use multiple CPUs though ... this is where the GNU

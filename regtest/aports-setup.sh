@@ -323,11 +323,15 @@ create-osh-overlay() {
   ' dummy0 "$x"
 }
 
-remove-overlay() {
+remove-osh-overlay() {
   sudo umount -l _chroot/osh-as-sh.overlay/merged
 }
 
-create-layer-dirs() {
+remove-shard-layers() {
+  sudo rm -r -f _chroot/shard*
+}
+
+create-package-dirs() {
   # _chroot/
   #   package.overlay/
   #     merged/      # mounted and unmounted each time
@@ -340,9 +344,7 @@ create-layer-dirs() {
   #       gzip/
   #       xz/
 
-  mkdir -v -p \
-    _chroot/package.overlay/{merged,work} \
-    _chroot/package-layers/{baseline,osh-as-sh}
+  mkdir -v -p _chroot/package.overlay/{merged,work}
 }
 
 unpack-distfiles() {
@@ -391,6 +393,13 @@ remove-chroot() {
   $CHROOT_DIR/destroy --remove
 }
 
+remove-all() {
+  set -x
+  remove-chroot || true
+  remove-osh-overlay || true
+  remove-shard-layers || true
+}
+
 fetch-all() {
   clone-aports
   clone-aci
@@ -414,7 +423,11 @@ prepare-all() {
 
   oils-in-chroot  
 
+  # TODO: Don't need this for overlayfs
   save-default-config
+
+  create-osh-overlay
+  create-package-dirs
 
   # makes a host file
   apk-manifest
