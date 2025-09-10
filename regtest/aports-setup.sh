@@ -46,12 +46,16 @@ clone-aci() {
 }
 
 checkout-stable() {
-  # 2025-07-25: commit that matches he.oils.pub
-  # TODO: update this to a commit from a stable release branch like 3.22-stable
-  # https://alpinelinux.org/releases/
-  # But note that there is no branch for 3.22.1?
+
   pushd ../../alpinelinux/aports
-  git checkout 7b59d0c9365e4230e0527ba9de3abd28ee58875d
+
+  # Stable release branch like 3.22-stable
+  # The branch is frqeuently patched, but I guess it just needs to match the
+  # dl-cdn.alpinelinux.org URL
+  # https://alpinelinux.org/releases/
+
+  local branch='3.22-stable'
+  git checkout $branch
   git log -n 1
   popd > /dev/null
 
@@ -92,7 +96,11 @@ make-chroot() {
   # This is already 267 MB, 247 K files
 
   mkdir -p $CHROOT_DIR  # make it with normal permissions first
-  time sudo $aci -n -d $PWD/$CHROOT_DIR
+
+  # "branch" is one of these: https://dl-cdn.alpinelinux.org/
+  # it's not the aports branch
+  local branch='v3.22'
+  time sudo $aci -n -d $PWD/$CHROOT_DIR -b $branch
 }
 
 make-user() {

@@ -422,42 +422,11 @@ _build-many-configs2() {
   local dest_dir="$BASE_DIR/$epoch/$package_filter"  # e.g. shard10
 
   for config in "${CONFIGS[@]}"; do
-    # this uses enter-chroot to modify the chroot
-    # should we have a separate one?  But then fetching packages is different
     banner "$epoch: Using config $config"
 
-    # this uses enter-chroot -u
     build-packages2 "$package_filter" "$config"
-
-    # TODO:
-    # Add shard dir?
-    #   _chroot/package-layers/shard0/
-    #     baseline/
-    #       gzip/
-    #     osh-as-sh/
-    #       gzip/
-    #
-    # I think makes it easier to copy into 
-    #   _tmp/aports-build/
-    # ?
-    # which is sync'd to _tmp/aports-report/
-    #
-    # Then
-    #   concat-tsv
-    #   abridge-logs
-    #   list apk - we don't need to move them
-
-    #copy-results "$config" "$dest_dir"
-
-    # This is allowed to fail: we count .apk packages build, and we recorded the
-    # 'abuild' exit status
-    #sudo $0 _move-apk "$config" "$dest_dir" || true
-
-    # Put .apk in a text file, which is easier to rsync than the whole list
-    #md5sum $dest_dir/$config/apk/*.apk > $dest_dir/$config/apk.txt
   done
 }
-
 
 build-baseline() {
   local epoch=${1:-$APORTS_EPOCH}
@@ -488,7 +457,7 @@ build-many-shards() {
 
   banner "$APORTS_EPOCH: building shards: $*"
 
-  for package_filter in "$@"; do
+  time for package_filter in "$@"; do
     _build-many-configs "$package_filter" "$APORTS_EPOCH"
   done
 }
@@ -498,11 +467,67 @@ build-many-shards2() {
 
   banner "$APORTS_EPOCH: building shards: $*"
 
-  for package_filter in "$@"; do
+  time for package_filter in "$@"; do
     _build-many-configs2 "$package_filter" "$APORTS_EPOCH"
 
     # Move to _chroot/shard10, etc.
     mv -v --no-target-directory _chroot/package-layers _chroot/$package_filter
+
+    make-shard-tree $package_filter
+  done
+}
+
+make-shard-tree() {
+  ### Put outputs in rsync-able format, for a SINGLE shard
+
+  # The dire structure is like this:
+  #
+  # _tmp/aports-build/
+  #   2025-09-10-overlayfs/
+  #     shard0/
+  #       baseline/
+  #         apk.txt
+  #         tasks.tsv
+  #         log/
+  #           gzip.log.txt
+  #           xz.log.txt
+  #       osh-as-sh/
+  #         apk.txt
+  #         tasks.tsv
+  #         log/
+  #           gzip.log.txt
+  #           xz.log.txt
+  #     shard1/
+  #       ...
+  #     shard16/
+  #       ...
+
+  local shard_name=$1
+  local epoch=${2:-$APORTS_EPOCH}
+
+  local shard_dir=_chroot/$shard_name
+
+  for config in baseline osh-as-sh; do
+    local dest_dir=$BASE_DIR/$epoch/$shard_name/$config
+    local log_dest_dir=$dest_dir/log
+    mkdir -v -p $log_dest_dir
+    #ls -l $shard_dir/$config
+
+    time python3 devtools/tsv_concat.py \
+      $shard_dir/$config/*/home/udu/oils/_tmp/aports-guest/*.task.tsv > $dest_dir/tasks.tsv
+
+    # Allowed to fail if zero .apk are built
+    time md5sum $shard_dir/$config/*/home/udu/packages/main/x86_64/*.apk > $dest_dir/apk.txt \
+      || true
+
+    for layer_dir in $shard_dir/$config/*; do
+      # TODO: should be abridge-logs!
+      # Without it, the logs are 115 MB for less than half the shards
+      cp -v \
+        $layer_dir/home/udu/oils/_tmp/aports-guest/*.log.txt \
+        $log_dest_dir
+    done
+
   done
 }
 
@@ -543,61 +568,14 @@ abridge-logs2() {
   du --si -s $dest_dir
 }
 
-make-shard-tree() {
-  ### Given _chroot/shard* dirs, make a tree we can rsync
+compare-speed() {
+  ### reusing the chroot reuses is a LITTLE faster, but not a lot
 
-  # It should look like:
-  #
-  # _tmp/aports-build/
-  #   2025-09-10-overlayfs/
-  #     shard0/
-  #       baseline/
-  #         apk.txt
-  #         tasks.tsv
-  #         log/
-  #           gzip.log.txt
-  #           xz.log.txt
-  #       osh-as-sh/
-  #         apk.txt
-  #         tasks.tsv
-  #         log/
-  #           gzip.log.txt
-  #           xz.log.txt
-  #     shard1/
-  #       ...
-  #     shard16/
-  #       ...
+  # single chroot
+  build-many-shards shardC
 
-  local epoch=${1:-2025-09-10-overlayfs}
-
-  for shard_dir in _chroot/shard*; do
-    local shard_name
-    shard_name=$(basename $shard_dir)
-
-    echo $shard_name
-    #tree -L 2 $shard
-
-    for config in baseline osh-as-sh; do
-      local dest_dir=$BASE_DIR/$epoch/$shard_name/$config
-      local log_dest_dir=$dest_dir/log
-      mkdir -v -p $log_dest_dir
-      #ls -l $shard_dir/$config
-
-      time python3 devtools/tsv_concat.py \
-        $shard_dir/$config/*/home/udu/oils/_tmp/aports-guest/*.task.tsv > $dest_dir/tasks.tsv
-
-      time md5sum $shard_dir/$config/*/home/udu/packages/main/x86_64/*.apk > $dest_dir/apk.txt
-
-      for layer_dir in $shard_dir/$config/*; do
-        # TODO: should be abridge-logs!
-        # Without it, the logs are 115 MB for less than half the shards
-        cp -v \
-          $layer_dir/home/udu/oils/_tmp/aports-guest/*.log.txt \
-          $log_dest_dir
-      done
-
-    done
-  done
+  # 3 chroots + overlayfs mounts
+  build-many-shards2 shardC
 }
 
 task-five "$@"
