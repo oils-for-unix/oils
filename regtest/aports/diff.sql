@@ -4,9 +4,7 @@
 attach database 'baseline/tables.db' as baseline;
 attach database 'osh-as-sh/tables.db' as osh_as_sh;
 
--- .mode columns
--- select * from packages;
-
+-- TODO: rename diff_baseline -> failures
 create table diff_baseline as
   select
     b.pkg,
@@ -17,11 +15,19 @@ create table diff_baseline as
     cast("osh-as-sh" as text) as osh_as_sh,
     cast("osh-as-sh/" || o.pkg_HREF as text) as osh_as_sh_HREF,
     cast("error" as text) as error_grep,
-    cast(printf("error/%s.txt", b.pkg) as text) as error_grep_HREF
+    cast(printf("error/%s.txt", b.pkg) as text) as error_grep_HREF,
+    (
+      case
+        when b.status != o.status
+        and b.status not in (124, 143)
+        and o.status not in (124, 143) then 1
+        else 0
+      end
+    ) as notable
   from
     baseline.packages as b
     join osh_as_sh.packages as o on b.pkg = o.pkg
-  where b.status != o.status
+  where b.status != 0 or o.status != 0
   order by b.pkg;
 
 -- Create a table of the right shape

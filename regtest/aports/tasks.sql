@@ -16,7 +16,6 @@ create table packages as
 
 create table metrics (
   id integer primary key check (id = 1), -- ensure only one row
-
   elapsed_minutes real not null,
   num_failures integer not null,
   num_tasks integer not null,

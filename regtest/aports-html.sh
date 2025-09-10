@@ -90,10 +90,14 @@ select printf("<li>osh-as-sh failures: %s</li>", sum(num_failures)) from metrics
 select "</ul>";
 
 select "<ul>";
-select printf("<li>Disagreements: %s</li>", count(*)) from diff_merged;
-select printf("<li>Unique causes: %s</li>", count(distinct cause)) from diff_merged where cause >= 0;
-select printf("<li>Packages without a cause assigned (unknown): %s</li>", count(*)) from diff_merged where cause = "unknown";
-select printf("<li>Inconclusive result because of timeout (-124, -143): %s</li>", count(*)) from diff_merged where cause like "timeout-%";
+select printf("<li>Notable Disagreements: %s</li>", count(*)) from notable_disagree;
+select printf("<li>Unique causes: %s</li>", count(distinct cause)) from notable_disagree where cause != "unknown";
+select printf("<li>Packages without a cause assigned (unknown): %s</li>", count(*)) from notable_disagree where cause = "unknown";
+select "</ul>";
+
+select "<ul>";
+select printf("<li>Other Failures: %s</li>", count(*)) from other_fail;
+select printf("<li>Inconclusive result because of timeout (-124, -143): %s</li>", count(*)) from other_fail where cause like "signal-%";
 select "</ul>";
 EOF
 }
@@ -122,11 +126,6 @@ table-page-html() {
 
 EOF
 
-  if test "$name" = 'diff_merged'; then
-    diff-metrics-html $base_dir/$name.db
-    cmark <<< '[tree](tree.html) &nbsp;&nbsp; [metrics](metrics.html)'
-  fi
-
   tsv2html3 $base_dir/$name.tsv
 
   cmark <<EOF
@@ -135,6 +134,62 @@ EOF
 EOF
 
   table-sort-end "$name"  # ID for sorting
+}
+
+merge-diff-html() {
+  local base_dir=${1:-$REPORT_DIR/$EPOCH}
+  local base_url=${2:-'../../../../web'}
+  local title=${3:-'OSH Disagreements - regtest/aports'}
+
+  html-head --title "$title" \
+    "$base_url/ajax.js" \
+    "$base_url/table/table-sort.js" \
+    "$base_url/table/table-sort.css" \
+    "$base_url/base.css"
+
+  table-sort-begin 'width60'  # <body> <p>
+
+  cmark <<EOF
+<p id="home-link">
+  <a href="../index.html">Up</a> |
+  <a href="/">Home</a>
+</p>
+
+# $title
+
+EOF
+
+  diff-metrics-html $base_dir/diff_merged.db
+
+  cmark << 'EOF'
+[tree](tree.html) &nbsp;&nbsp; [metrics](metrics.html)
+
+## Notable Disagreements
+
+EOF
+
+  local name=notable_disagree
+  tsv2html3 $base_dir/$name.tsv
+
+  cmark <<EOF
+
+[$name.tsv]($name.tsv)
+
+## Other Failures
+EOF
+
+  name=other_fail
+  table-sort-begin 'width60'
+  tsv2html3 $base_dir/$name.tsv
+
+  cmark <<EOF
+
+[$name.tsv]($name.tsv)
+EOF
+
+  # ID for sorting
+  # TODO: shoudln't both tables be sortable?  web/table/html.sh is limited
+  table-sort-end 'notable_disagree'
 }
 
 tasks-html()  {
@@ -487,12 +542,14 @@ merge-diffs() {
   db-to-tsv $db diff_merged 'order by pkg'
   db-to-tsv $db metrics
 
+  db-to-tsv $db notable_disagree 'order by pkg'
+  db-to-tsv $db other_fail 'order by pkg'
+
   popd > /dev/null
 
-  local name1=diff_merged
   local title1='OSH Disagreements - regtest/aports'
-  local out=$epoch_dir/$name1.html
-  table-page-html $epoch_dir $name1 '../../../web' "$title1" > $out
+  local out=$epoch_dir/diff_merged.html
+  merge-diff-html $epoch_dir '../../../web' "$title1" > $out
   echo "Wrote $out"
 
   local name2=metrics
