@@ -465,6 +465,9 @@ build-many-shards() {
 build-many-shards2() {
   sudo -k
 
+  # Clean up old runs
+  sudo rm -r -f _chroot/shard*
+
   banner "$APORTS_EPOCH: building shards: $*"
 
   time for package_filter in "$@"; do
@@ -520,52 +523,49 @@ make-shard-tree() {
     time md5sum $shard_dir/$config/*/home/udu/packages/main/x86_64/*.apk > $dest_dir/apk.txt \
       || true
 
-    for layer_dir in $shard_dir/$config/*; do
-      # TODO: should be abridge-logs!
-      # Without it, the logs are 115 MB for less than half the shards
-      cp -v \
-        $layer_dir/home/udu/oils/_tmp/aports-guest/*.log.txt \
-        $log_dest_dir
-    done
+    abridge-logs2 $shard_dir/$config $log_dest_dir
 
   done
 }
 
 abridge-logs2() {
-  local config_src_dir=${1:-_chroot/shard0/baseline}
-  local log_dest_dir=${2:-$BASE_DIR/shard0/baseline/log}
+  local config_src_dir=${1:-_chroot/shardB/baseline}
+  local log_dest_dir=${2:-$BASE_DIR/shardB/baseline/log}
+  mkdir -p $log_dest_dir
 
-  find $config_src_dir -name '*.log.txt'
-  return
-
-  # local threshold=$(( 1 * 1000 * 1000 ))  # 1 MB
   local threshold=$(( 500 * 1000 ))  # 500 KB
 
-  local guest_dir=$CHROOT_HOME_DIR/oils/_tmp/aports-guest/$config 
-
-  local log_dir="$dest_dir/$config/log"
-  mkdir -v -p $log_dir
-
-  find $guest_dir -name '*.log.txt' -a -printf '%s\t%P\n' |
+  # this assumes the build process doesn't create *.log.txt
+  # ignore permission errors with || true
+  { find $config_src_dir -name '*.log.txt' -a -printf '%s\t%P\n' || true; } |
   while read -r size path; do
-    local src=$guest_dir/$path
-    local dest=$log_dir/$path
+    local src=$config_src_dir/$path
+    local filename=${src##*/}  # pure bash basename, since we're in a loop
+    local dest=$log_dest_dir/$filename
 
     if test "$size" -lt "$threshold"; then
       cp -v $src $dest
     else
-      { echo "*** This log is abridged to its last 1000 lines:"; echo; } > $dest
-      tail -n 1000 $src >> $dest
+      { echo "*** This log is abridged to its last 1000 lines:"
+        echo
+        tail -n 1000 $src
+      } > $dest
     fi
   done
 
-  # From 200 MB -> 96 MB uncompressed
-  #
-  # Down to 10 MB compressed.  So if we have 4 configs, that's 40 MB of logs,
-  # which is reasonable.
-
   # 500K threshold: 76 MB
-  du --si -s $dest_dir
+  du --si -s $log_dest_dir
+
+  return
+
+  for layer_dir in $shard_dir/$config/*; do
+    # TODO: should be abridge-logs!
+    # Without it, the logs are 115 MB for less than half the shards
+    cp -v \
+      $layer_dir/home/udu/oils/_tmp/aports-guest/*.log.txt \
+      $log_dest_dir
+  done
+
 }
 
 compare-speed() {

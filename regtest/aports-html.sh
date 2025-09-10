@@ -98,12 +98,11 @@ select "</ul>";
 EOF
 }
 
-diff-html() {
+table-page-html() {
   local base_dir=${1:-$REPORT_DIR/$EPOCH}
   local name=${2:-diff_baseline}
   local base_url=${3:-'../../../../web'}
-
-  local title='OSH Disagreements - regtest/aports'
+  local title=${4:-'OSH Disagreements - regtest/aports'}
 
   html-head --title "$title" \
     "$base_url/ajax.js" \
@@ -482,9 +481,6 @@ merge-diffs() {
   merge-diffs-sql $epoch_dir/shard* | sqlite3 $db
   echo $db
 
-  local name1=diff_merged
-  local name2=metrics
-
   # copied from above
   pushd $epoch_dir > /dev/null
 
@@ -493,12 +489,16 @@ merge-diffs() {
 
   popd > /dev/null
 
+  local name1=diff_merged
+  local title1='OSH Disagreements - regtest/aports'
   local out=$epoch_dir/$name1.html
-  diff-html $epoch_dir $name1 '../../../web' > $out
+  table-page-html $epoch_dir $name1 '../../../web' "$title1" > $out
   echo "Wrote $out"
 
+  local name2=metrics
+  local title2='Metrics - regtest/aports'
   local out=$epoch_dir/$name2.html
-  diff-html $epoch_dir $name2 '../../../web' > $out
+  table-page-html $epoch_dir $name2 '../../../web' "$title2" > $out
   echo "Wrote $out"
 
   # After merging, regenerate other stuff too
@@ -522,8 +522,9 @@ write-shard-reports() {
   done
 
   local name=diff_baseline
+  local title="$base_dir differences"
   make-diff-db $base_dir
-  diff-html $base_dir > $base_dir/$name.html
+  table-page-html $base_dir $name '' "$title" > $base_dir/$name.html
   echo "Wrote $base_dir/$name.html"
 }
 
