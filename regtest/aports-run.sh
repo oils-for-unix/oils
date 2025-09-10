@@ -506,5 +506,98 @@ build-many-shards2() {
   done
 }
 
+abridge-logs2() {
+  local config_src_dir=${1:-_chroot/shard0/baseline}
+  local log_dest_dir=${2:-$BASE_DIR/shard0/baseline/log}
+
+  find $config_src_dir -name '*.log.txt'
+  return
+
+  # local threshold=$(( 1 * 1000 * 1000 ))  # 1 MB
+  local threshold=$(( 500 * 1000 ))  # 500 KB
+
+  local guest_dir=$CHROOT_HOME_DIR/oils/_tmp/aports-guest/$config 
+
+  local log_dir="$dest_dir/$config/log"
+  mkdir -v -p $log_dir
+
+  find $guest_dir -name '*.log.txt' -a -printf '%s\t%P\n' |
+  while read -r size path; do
+    local src=$guest_dir/$path
+    local dest=$log_dir/$path
+
+    if test "$size" -lt "$threshold"; then
+      cp -v $src $dest
+    else
+      { echo "*** This log is abridged to its last 1000 lines:"; echo; } > $dest
+      tail -n 1000 $src >> $dest
+    fi
+  done
+
+  # From 200 MB -> 96 MB uncompressed
+  #
+  # Down to 10 MB compressed.  So if we have 4 configs, that's 40 MB of logs,
+  # which is reasonable.
+
+  # 500K threshold: 76 MB
+  du --si -s $dest_dir
+}
+
+make-shard-tree() {
+  ### Given _chroot/shard* dirs, make a tree we can rsync
+
+  # It should look like:
+  #
+  # _tmp/aports-build/
+  #   2025-09-10-overlayfs/
+  #     shard0/
+  #       baseline/
+  #         apk.txt
+  #         tasks.tsv
+  #         log/
+  #           gzip.log.txt
+  #           xz.log.txt
+  #       osh-as-sh/
+  #         apk.txt
+  #         tasks.tsv
+  #         log/
+  #           gzip.log.txt
+  #           xz.log.txt
+  #     shard1/
+  #       ...
+  #     shard16/
+  #       ...
+
+  local epoch=${1:-2025-09-10-overlayfs}
+
+  for shard_dir in _chroot/shard*; do
+    local shard_name
+    shard_name=$(basename $shard_dir)
+
+    echo $shard_name
+    #tree -L 2 $shard
+
+    for config in baseline osh-as-sh; do
+      local dest_dir=$BASE_DIR/$epoch/$shard_name/$config
+      local log_dest_dir=$dest_dir/log
+      mkdir -v -p $log_dest_dir
+      #ls -l $shard_dir/$config
+
+      time python3 devtools/tsv_concat.py \
+        $shard_dir/$config/*/home/udu/oils/_tmp/aports-guest/*.task.tsv > $dest_dir/tasks.tsv
+
+      time md5sum $shard_dir/$config/*/home/udu/packages/main/x86_64/*.apk > $dest_dir/apk.txt
+
+      for layer_dir in $shard_dir/$config/*; do
+        # TODO: should be abridge-logs!
+        # Without it, the logs are 115 MB for less than half the shards
+        cp -v \
+          $layer_dir/home/udu/oils/_tmp/aports-guest/*.log.txt \
+          $log_dest_dir
+      done
+
+    done
+  done
+}
 
 task-five "$@"
