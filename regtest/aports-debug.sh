@@ -295,8 +295,8 @@ su-demo() {
   #su andy sh -c 'echo 1; "$@"' -- printf '%s\n' 'a b' 'c d'
 }
 
-big-logs() {
-  local dir=_tmp/aports-report/2025-09-10-overlayfs
+big-logs-1() {
+  local dir=${1:-_tmp/aports-report/2025-09-10-overlayfs}
 
   find $dir -type f -size +1M
   return
@@ -304,5 +304,20 @@ big-logs() {
   # one-off patch
   find $dir -type f -size +1M -a -exec bash -c 'file=$1; echo "truncated 2025-09-10" > $file' unused0 {} ';'
 }
+
+big-logs-2() {
+  local truncate=${1:-}
+
+  # one-off patch
+  local -a prefix=( find _chroot/shard* -type f -a -name '*.log.txt' -a -size +1M )
+
+  if test -z "$truncate"; then
+    "${prefix[@]}"
+  else
+    sudo "${prefix[@]}" -a -print -exec bash -x -e -c 'file=$1; cp -v truncated.txt $file; stat -c "%s" $file' unused0 {} ';'
+  fi
+}
+
+task-five "$@"
 
 task-five "$@"
