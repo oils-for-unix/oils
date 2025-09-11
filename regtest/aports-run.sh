@@ -462,6 +462,16 @@ build-many-shards() {
   done
 }
 
+remove-shard-files() {
+  local shard_dir=${1:-_chroot/shardC}
+
+  log "Removing big files in shard $shard_dir"
+
+  # For all packages packages, for baseline and osh-as-sh, clean up the aports source dir
+  # For linux, clang, etc. it becomes MANY GIGABYTES
+  sudo rm -r -f $shard_dir/*/*/home/udu/aports/main/
+}
+
 build-many-shards2() {
   sudo -k
 
@@ -470,13 +480,15 @@ build-many-shards2() {
 
   banner "$APORTS_EPOCH: building shards: $*"
 
-  time for package_filter in "$@"; do
-    _build-many-configs2 "$package_filter" "$APORTS_EPOCH"
+  time for shard_name in "$@"; do
+    _build-many-configs2 "$shard_name" "$APORTS_EPOCH"
 
     # Move to _chroot/shard10, etc.
-    mv -v --no-target-directory _chroot/package-layers _chroot/$package_filter
+    mv -v --no-target-directory _chroot/package-layers _chroot/$shard_name
 
-    make-shard-tree $package_filter
+    make-shard-tree $shard_name
+
+    remove-shard-files _chroot/$shard_name
   done
 }
 
