@@ -46,3 +46,35 @@ table-sort-end() {
 </html>
 EOF
 }
+
+table-sort-end-many() {
+  cat <<EOF
+
+    <!-- page globals -->
+    <script type="text/javascript">
+      var gUrlHash = new UrlHash(location.hash);
+      var gTableStates = {};
+      var kStatusElem = document.getElementById('status');
+
+      function initPage(urlHash, tableStates, statusElem) {
+        var elements = [];
+EOF
+  # arguments are table IDs
+  for element_id in "$@"; do
+    echo "elements.push(document.getElementById('$element_id'));"  # note: quoting assumption
+  done
+
+  cat <<EOF
+        makeTablesSortable(urlHash, elements, tableStates);
+        updateTables(urlHash, tableStates, statusElem);
+      }
+
+      function onHashChange(urlHash, tableStates, statusElem) {
+        updateTables(urlHash, tableStates, statusElem);
+      }
+    </script>
+
+  </body>
+</html>
+EOF
+}

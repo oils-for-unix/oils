@@ -3,6 +3,8 @@
 # Invoked from aports/regtest-html.sh
 
 BEGIN {
+  patterns["makedepends"] = "ERROR: No such package: .makedepends"
+
   # we can add the bug number like #2338
   patterns["#2338"] = "\\@-D"  # variant after attempted glob fix
   # three backslashes is \\\-D

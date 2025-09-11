@@ -187,9 +187,8 @@ EOF
 [$name.tsv]($name.tsv)
 EOF
 
-  # ID for sorting
-  # TODO: shoudln't both tables be sortable?  web/table/html.sh is limited
-  table-sort-end 'notable_disagree'
+  # Sort these two tables
+  table-sort-end-many 'notable_disagree' 'other_fail'
 }
 
 tasks-html()  {
@@ -258,6 +257,7 @@ published-html() {
 - [2025-09-08](2025-09-08.wwz/_tmp/aports-report/2025-09-08/diff_merged.html)
   - [2025-09-08-edit](2025-09-08-edit.wwz/_tmp/aports-report/2025-09-08-edit/diff_merged.html)
   - [2025-09-08-notable](2025-09-08-notable.wwz/_tmp/aports-report/2025-09-08-notable/diff_merged.html)
+- [2025-09-10-overlayfs](2025-09-10-overlayfs.wwz/_tmp/aports-report/2025-09-10-overlayfs/diff_merged.html)
 
 EOF
 
