@@ -295,4 +295,14 @@ su-demo() {
   #su andy sh -c 'echo 1; "$@"' -- printf '%s\n' 'a b' 'c d'
 }
 
+big-logs() {
+  local dir=_tmp/aports-report/2025-09-10-overlayfs
+
+  find $dir -type f -size +1M
+  return
+
+  # one-off patch
+  find $dir -type f -size +1M -a -exec bash -c 'file=$1; echo "truncated 2025-09-10" > $file' unused0 {} ';'
+}
+
 task-five "$@"
