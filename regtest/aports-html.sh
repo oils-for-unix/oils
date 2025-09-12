@@ -83,6 +83,7 @@ select printf("<li>Elapsed Hours: %.1f</li>", sum(elapsed_minutes) / 60) from me
 select "</ul>";
 
 select "<ul>";
+select printf("<li><code>APKBUILD</code> files: %s</li>", sum(num_tasks)) from metrics where config = "baseline";
 select printf("<li>Baseline <code>.apk</code> built: %s</li>", sum(num_apk)) from metrics where config = "baseline";
 select printf("<li>osh-as-sh <code>.apk</code> built: %s</li>", sum(num_apk)) from metrics where config = "osh-as-sh";
 select printf("<li>Baseline failures: %s</li>", sum(num_failures)) from metrics where config = "baseline";

@@ -20,7 +20,10 @@ BEGIN {
 
   patterns[3] = "cannot compile programs"
 
-  patterns[4] = "test case names with"
+  patterns["#2416"] = "test case names with"
+
+  # e2fsprogs - not sure how to narrow this down more?
+  patterns["#2413"] = "382 tests succeeded	1 tests failed"
 
   patterns[5] = "PHDR segment not covered"
 
@@ -28,13 +31,15 @@ BEGIN {
   patterns[6] = "error applying redirect:"
 
   # parsing error
-  patterns[7] = "(((grep"
+  patterns["#2337"] = "(((grep"
 
   # kea package: suspicious
   # oh this also fails with 124 though
   patterns[8] = "find a separator character in"
 
   # esh package: OSH string
+  # I am not sure these are real bugs: it might be that esh expects and exact
+  # code string?
   patterns[9] = "fatal: Undefined variable"
 
   # mawk, openvpn: trap 0
@@ -45,7 +50,7 @@ BEGIN {
 
   # xz
   # musl libc error - with glibc, we get a parsing error
-  patterns[12] = "Extended glob won"
+  patterns["#2336"] = "Extended glob won"
 
   # sqlite
   patterns[13] = "No working C compiler"
