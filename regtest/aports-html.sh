@@ -259,6 +259,7 @@ published-html() {
   - [2025-09-08-edit](2025-09-08-edit.wwz/_tmp/aports-report/2025-09-08-edit/diff_merged.html)
   - [2025-09-08-notable](2025-09-08-notable.wwz/_tmp/aports-report/2025-09-08-notable/diff_merged.html)
 - [2025-09-10-overlayfs](2025-09-10-overlayfs.wwz/_tmp/aports-report/2025-09-10-overlayfs/diff_merged.html)
+- [2025-09-11-match](2025-09-11-match.wwz/_tmp/aports-report/2025-09-11-match/diff_merged.html)
 
 EOF
 

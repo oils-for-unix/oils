@@ -4,6 +4,8 @@
 
 BEGIN {
   patterns["makedepends"] = "ERROR: No such package: .makedepends"
+  # e.g. xkeyboard-config flakiness
+  patterns["fetch-failed"] = ": fetch failed"
 
   # we can add the bug number like #2338
   patterns["#2338"] = "\\@-D"  # variant after attempted glob fix
@@ -32,6 +34,11 @@ BEGIN {
 
   # parsing error
   patterns["#2337"] = "(((grep"
+  #patterns["##2337"] = "Parser expected Id.Arith_RParen, got Id.Word_Compound"
+
+  # postfix
+  # gzip
+  patterns["##2337"] = "Unexpected token after arithmetic expression"
 
   # kea package: suspicious
   # oh this also fails with 124 though
@@ -61,10 +68,6 @@ BEGIN {
   # screen
   patterns["#2364"] = "mkdir: unrecognized option: /"  # changed 2025-08-04-rootbld
   patterns["##2364"] = "mkdir: invalid option --"
-
-  # postfix
-  # gzip
-  patterns["#2337"] = "Unexpected token after arithmetic expression"
 
   # make
   patterns[17] = "oils I/O error"
