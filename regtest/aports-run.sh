@@ -469,7 +469,14 @@ remove-shard-files() {
 
   # For all packages packages, for baseline and osh-as-sh, clean up the aports source dir
   # For linux, clang, etc. it becomes MANY GIGABYTES
-  sudo rm -r -f $shard_dir/*/*/home/udu/aports/main/
+  # 
+  # 2025-09-12: ignore errors from rm; I think there was a race condition -
+  # processes could still be running and creating files
+  #
+  # rm: cannot remove '_chroot/shard6/baseline/llvm19/home/udu/aports/main/llvm19/src/llvm-project-19.1.7.src/build/lib': Directory not empty
+  # real    1041m46.464s
+
+  sudo rm -r -f $shard_dir/*/*/home/udu/aports/main/ || true
 }
 
 build-many-shards2() {
