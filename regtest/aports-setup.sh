@@ -143,7 +143,7 @@ add-build-deps() {
   # findutils: for xargs --process-slot-var
   enter-rootfs sh -c '
   apk update
-  apk add alpine-sdk abuild-rootbld pigz doas bash python3 findutils
+  apk add alpine-sdk abuild-rootbld pigz doas bash python3 findutils readline-dev
   '
 
   # enter-rootfs -u udu bash -c 'echo "hi from bash"'
