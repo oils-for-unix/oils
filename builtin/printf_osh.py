@@ -113,10 +113,10 @@ class _FormatStringParser(object):
             type_val = lexer.TokenVal(part.type)  # allocation will be cached
             if type_val in 'eEfFgG':
                 p_die("osh printf doesn't support floating point", part.type)
-            # These two could be implemented.  %c needs utf-8 decoding.
-            if type_val == 'c':
-                p_die("osh printf doesn't support single characters (bytes)",
-                      part.type)
+
+            #if type_val == 'c':
+            # TODO: printf %c should not be a YSH operation, since it doesn't
+            # support Unicode
 
         elif self.token_type == Id.Unknown_Tok:
             p_die('Invalid printf format character', self.cur_token)
@@ -300,6 +300,10 @@ class Printf(vm._Builtin):
 
                 c_parts.append(p)
             s = ''.join(c_parts)
+
+        elif typ == 'c':
+            # printf %c simply prints the first BYTE.  It doesn't decode UTF-8.
+            s = s[0]
 
         elif part.type.id == Id.Format_Time or typ in 'diouxX':
             # %(...)T and %d share this complex integer conversion logic

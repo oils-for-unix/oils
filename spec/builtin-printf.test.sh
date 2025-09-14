@@ -741,25 +741,31 @@ printf '[%%]\n'
 [%]
 ## END
 
-#### printf %c -- doesn't respect UTF-8!  Bad.
+#### printf %c prints the first BYTE of a string - it does not respect UTF-8
+
+# TODO: in YSH, this should be deprecated
+
+case $SH in dash|ash) exit ;; esac
+
+show_bytes() {
+  od -A n -t x1
+}
 twomu=$'\u03bc\u03bc'
 printf '[%s]\n' "$twomu"
-printf '%c' "$twomu" | wc --bytes
+
+printf '%c\n' a
+printf '%c\n' aZ
+
+# Hm this cuts off a UTF-8 character?
+printf '%c' "$twomu" | show_bytes
+
 ## STDOUT:
 [μμ]
-1
+a
+a
+ ce
 ## END
-## N-I dash STDOUT:
-[$\u03bc\u03bc]
-1
-## END
-## N-I ash STDOUT:
-[\u03bc\u03bc]
-1
-## END
-## N-I osh STDOUT:
-[μμ]
-0
+## N-I dash/ash STDOUT:
 ## END
 
 #### printf invalid format
