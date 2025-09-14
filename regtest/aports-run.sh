@@ -276,6 +276,17 @@ build-package-overlayfs() {
   regtest/aports-guest.sh build-package2 "$@"
   ' dummy0 "$pkg"
 
+  if test ! -z "$INTERACTIVE"; then
+    echo "Running interactively. Starting shell in package overlay."
+    echo "Rebuild with: abuild -f -r -C ~/aports/main/$pkg builddeps build"
+    # If the last command in the child shell exited non-zero then ctrl-d/exit
+    # will report that error code to the parent. If we don't ignore that error
+    # we will exit early and leave the package overlay mounted.
+    set +o errexit
+    $merged/enter-chroot -u udu
+    set -o errexit
+  fi
+
   unmount-loop $merged
 }
 
