@@ -9,6 +9,8 @@ readonly BASE_DIR=_tmp/aports-build
 # For localhost
 readonly REPORT_DIR=_tmp/aports-report
 
+readonly INTERACTIVE="${INTERACTIVE:-}"
+
 concat-task-tsv() {
   local config=${1:-baseline}
   python3 devtools/tsv_concat.py \
