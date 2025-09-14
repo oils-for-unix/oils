@@ -1,5 +1,5 @@
 ## compare_shells: dash bash zsh mksh ash yash
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 
 # forked from spec/ble-idioms
 # the IFS= eval 'local x' bug
@@ -151,4 +151,11 @@ x=
 ---
 x=
 x=
+## END
+
+#### FOO=bar $unset - temp binding, then empty argv from unquoted unset var (#2411)
+foo=alive! $unset
+echo $foo
+## STDOUT:
+alive!
 ## END
