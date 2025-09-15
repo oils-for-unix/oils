@@ -69,7 +69,7 @@ checkout-stable() {
 }
 
 download-oils() {
-  local job_id=${1:-10126}  # 2025-09-08
+  local job_id=${1:-10165}  # 2025-09-15, after printf %c fix
 
   local url="https://op.oilshell.org/uuu/github-jobs/$job_id/cpp-tarball.wwz/_release/oils-for-unix.tar"
 

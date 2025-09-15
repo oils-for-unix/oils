@@ -276,8 +276,8 @@ build-package-overlayfs() {
   regtest/aports-guest.sh build-package2 "$@"
   ' dummy0 "$pkg"
 
-  if test ! -z "$INTERACTIVE"; then
-    echo "Running interactively. Starting shell in package overlay."
+  if test -n "$INTERACTIVE"; then
+    echo "Starting interactive shell in overlayfs environment for package $pkg"
     echo "Rebuild with: abuild -f -r -C ~/aports/main/$pkg builddeps build"
     # If the last command in the child shell exited non-zero then ctrl-d/exit
     # will report that error code to the parent. If we don't ignore that error
