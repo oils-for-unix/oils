@@ -28,11 +28,11 @@ These options are from POSIX shell:
 
     nounset -u  
     errexit -e
+    pipefail
 
 These are from bash:
 
-    inherit_errexit:
-    pipefail
+    inherit_errexit
 
 ## Globbing
 
