@@ -741,10 +741,21 @@ printf '[%%]\n'
 [%]
 ## END
 
-#### printf %c prints the first BYTE of a string - it does not respect UTF-8
+#### printf %c ASCII
+
+printf '%c\n' a
+printf '%c\n' ABC
+printf '%cZ\n' ABC
+
+## STDOUT:
+a
+A
+AZ
+## END
+
+#### printf %c unicode - prints the first BYTE of a string - it does not respect UTF-8
 
 # TODO: in YSH, this should be deprecated
-
 case $SH in dash|ash) exit ;; esac
 
 show_bytes() {
@@ -753,16 +764,11 @@ show_bytes() {
 twomu=$'\u03bc\u03bc'
 printf '[%s]\n' "$twomu"
 
-printf '%c\n' a
-printf '%c\n' aZ
-
 # Hm this cuts off a UTF-8 character?
 printf '%c' "$twomu" | show_bytes
 
 ## STDOUT:
 [μμ]
-a
-a
  ce
 ## END
 ## N-I dash/ash STDOUT:

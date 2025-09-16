@@ -33,7 +33,7 @@ messages-in-stream() {
     -d 'anchor=newest' \
     -d 'num_before=3000' \
     -d 'num_after=0' \
-    -d 'apply_markdown=false' \
+    -d 'apply_markdown=true' \
     --data-urlencode narrow="$narrow" \
     https://oilshell.zulipchat.com/api/v1/messages 
 
