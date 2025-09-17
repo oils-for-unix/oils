@@ -1,6 +1,6 @@
 ## compare_shells: dash bash mksh zsh ash
-## oils_failures_allowed: 4
-## oils_cpp_failures_allowed: 4
+## oils_failures_allowed: 3
+## oils_cpp_failures_allowed: 3
 
 #### cd and $PWD
 cd /
