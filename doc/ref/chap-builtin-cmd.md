@@ -1012,6 +1012,11 @@ Flags:
         (default).
     -P  Don't follow symbolic links.
 
+### chdir
+
+`chdir` is a synonym for `cd`.  Shells like `busybox ash` support it, so OSH
+does too.
+
 ### pwd
 
     pwd FLAG*

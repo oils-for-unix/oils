@@ -26,7 +26,7 @@ from typing import Dict, List, Optional, Any
 _NORMAL_BUILTINS = [
     'read', 'echo', 'printf', 'mapfile', 'readarray',
 
-    'cd', 'pushd', 'popd', 'dirs', 'pwd',
+    'cd', 'chdir', 'pushd', 'popd', 'dirs', 'pwd',
 
     'source',  # note that . alias is special
 

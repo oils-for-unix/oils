@@ -59,7 +59,8 @@ preserve_anchor_case: yes
                   readarray   mapfile
   [Run Code]      source .    cmd/eval   trap
   [Set Options]   set         shopt
-  [Working Dir]   cd          pwd        pushd     popd         dirs
+  [Working Dir]   cd          chdir      pwd       
+                  pushd       popd       dirs
   [Completion]    complete    compgen    compopt   compadjust   compexport
   [Shell Process] exec      X logout 
                   umask       ulimit     times

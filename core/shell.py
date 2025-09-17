@@ -743,7 +743,9 @@ def Main(
 
     # Dirs
     dir_stack = dirs_osh.DirStack()
-    b[builtin_i.cd] = dirs_osh.Cd(mem, dir_stack, cmd_ev, errfmt)
+    cd_builtin = dirs_osh.Cd(mem, dir_stack, cmd_ev, errfmt)
+    b[builtin_i.cd] = cd_builtin
+    b[builtin_i.chdir] = cd_builtin  # alias that dash, mksh, zsh have
     b[builtin_i.pushd] = dirs_osh.Pushd(mem, dir_stack, errfmt)
     b[builtin_i.popd] = dirs_osh.Popd(mem, dir_stack, errfmt)
     b[builtin_i.dirs] = dirs_osh.Dirs(mem, dir_stack, errfmt)
