@@ -319,20 +319,30 @@ create-osh-overlay() {
     -o "lowerdir=$CHROOT_DIR,upperdir=$osh_overlay/layer,workdir=$osh_overlay/work" \
     $osh_overlay/merged
 
-  local x=sh
   $osh_overlay/merged/enter-chroot sh -c '
-  x=$1
   set -x
   if ! test -f /usr/local/bin/oils-for-unix; then
     echo "Build Oils first"
     exit
   fi
-  ln -s -f /usr/local/bin/oils-for-unix /bin/$x
-  ' dummy0 "$x"
+  ln -s -f /usr/local/bin/oils-for-unix /bin/sh
+  ln -s -f /usr/local/bin/oils-for-unix /bin/ash
+  ' dummy0
+}
+
+# Works?
+patch-overlay-with-ash() {
+  local dir=_chroot/osh-as-sh.overlay
+  pushd $dir/layer/bin
+  sudo ln -s -f -v /usr/local/bin/oils-for-unix ash
+  popd
+  ls -l $dir/layer/bin
 }
 
 remove-osh-overlay() {
-  sudo umount -l _chroot/osh-as-sh.overlay/merged
+  local dir=_chroot/osh-as-sh.overlay
+  sudo umount -l $dir/merged
+  sudo rm -r -f $dir
 }
 
 remove-shard-layers() {

@@ -1,6 +1,6 @@
-## compare_shells: dash bash mksh zsh
-## oils_failures_allowed: 3
-## oils_cpp_failures_allowed: 3
+## compare_shells: dash bash mksh zsh ash
+## oils_failures_allowed: 4
+## oils_cpp_failures_allowed: 4
 
 #### cd and $PWD
 cd /
@@ -19,7 +19,7 @@ echo status=$?
 ## STDOUT:
 status=1
 ## END
-## BUG dash/mksh STDOUT:
+## BUG dash/ash/mksh STDOUT:
 status=0
 ## END
 
@@ -44,7 +44,7 @@ status=0
 failed with multiple args
 ## END
 
-## BUG dash STDOUT:
+## BUG dash/ash STDOUT:
 status=0
 status=0
 ## END
@@ -63,7 +63,7 @@ status=1
 status=2
 ## END
 
-## BUG dash/zsh STDOUT:
+## BUG dash/ash/zsh STDOUT:
 status=0
 ## END
 
@@ -250,7 +250,7 @@ test $(pwd) = "$HOME" && echo OK
 cd /nonexistent/dir
 echo status=$?
 ## stdout: status=1
-## OK dash/mksh stdout: status=2
+## OK dash/ash/mksh stdout: status=2
 
 #### cd away from dir that was deleted
 dir=$TMP/cd-nonexistent
@@ -472,4 +472,27 @@ wc -l err.txt
 ## END
 ## BUG mksh STDOUT:
 2 err.txt
+## END
+
+#### chdir is a synonym for cd - busybox ash
+
+chdir /tmp
+
+if test $? -ne 0; then
+  echo fail
+  exit
+fi
+
+pwd
+
+# It's the same with no args, but mksh fails because of $HOME
+#chdir
+#echo status=$?
+
+## STDOUT:
+/tmp
+## END
+
+## N-I bash STDOUT:
+fail
 ## END

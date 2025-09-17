@@ -151,7 +151,8 @@ package-dirs() {
     case $shard_name in
       A) package_filter='^gzip' ;;    # failure
       B) package_filter='^xz' ;;      # failure
-      *) package_filter='^lz' ;;      # 3 packages
+      C) package_filter='^lz' ;;      # 3 packages
+      *) package_filter='^perl-http-daemon' ;;   # test out perl
     esac
 
     prefix=( egrep "$package_filter" )
