@@ -16,14 +16,8 @@ create table diff_baseline as
     cast("osh-as-sh/" || o.pkg_HREF as text) as osh_as_sh_HREF,
     cast("error" as text) as error_grep,
     cast(printf("error/%s.txt", b.pkg) as text) as error_grep_HREF,
-    (
-      case
-        when b.status != o.status
-        and b.status not in (124, 143)
-        and o.status not in (124, 143) then 1
-        else 0
-      end
-    ) as notable
+    (b.status != o.status) as disagree,
+    (b.status in (124, 143) or o.status in (124, 143)) as timeout
   from
     baseline.packages as b
     join osh_as_sh.packages as o on b.pkg = o.pkg

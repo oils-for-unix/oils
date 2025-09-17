@@ -79,7 +79,7 @@ diff-metrics-html() {
 
 select "<ul>";
 select printf("<li>Tasks: %s</li>", sum(num_tasks)) from metrics;
-select printf("<li>Elapsed Hours: %.1f</li>", sum(elapsed_minutes) / 60) from metrics;
+select printf("<li><b>Elapsed Hours: %.1f</b></li>", sum(elapsed_minutes) / 60) from metrics;
 select "</ul>";
 
 select "<ul>";
@@ -91,14 +91,14 @@ select printf("<li>osh-as-sh failures: %s</li>", sum(num_failures)) from metrics
 select "</ul>";
 
 select "<ul>";
-select printf("<li>Notable Disagreements: %s</li>", count(*)) from notable_disagree;
+select printf("<li><b>Notable Disagreements: %s</b></li>", count(*)) from notable_disagree;
 select printf("<li>Unique causes: %s</li>", count(distinct cause)) from notable_disagree where cause != "unknown";
 select printf("<li>Packages without a cause assigned (unknown): %s</li>", count(*)) from notable_disagree where cause = "unknown";
 select "</ul>";
 
 select "<ul>";
 select printf("<li>Other Failures: %s</li>", count(*)) from other_fail;
-select printf("<li>Inconclusive result because of timeout (-124, -143): %s</li>", count(*)) from other_fail where cause like "signal-%";
+select printf("<li>Inconclusive result because of timeout (-124, -143): %s</li>", count(*)) from timeout where cause like "signal-%";
 select "</ul>";
 EOF
 }
@@ -176,6 +176,16 @@ EOF
 
 [$name.tsv]($name.tsv)
 
+## Baseline-Only Failures
+EOF
+
+  name=baseline_only
+  table-sort-begin 'width60'
+  tsv2html3 $base_dir/$name.tsv
+
+  cmark <<EOF
+[$name.tsv]($name.tsv)
+
 ## Other Failures
 EOF
 
@@ -186,10 +196,21 @@ EOF
   cmark <<EOF
 
 [$name.tsv]($name.tsv)
+
+## Timeouts
 EOF
 
-  # Sort these two tables
-  table-sort-end-many 'notable_disagree' 'other_fail'
+  name=timeout
+  table-sort-begin 'width60'
+  tsv2html3 $base_dir/$name.tsv
+
+  cmark <<EOF
+
+[$name.tsv]($name.tsv)
+EOF
+
+  # Sort these 3 tables
+  table-sort-end-many notable_disagree baseline_only other_fail timeout
 }
 
 tasks-html()  {
@@ -260,6 +281,7 @@ published-html() {
   - [2025-09-08-notable](2025-09-08-notable.wwz/_tmp/aports-report/2025-09-08-notable/diff_merged.html)
 - [2025-09-10-overlayfs](2025-09-10-overlayfs.wwz/_tmp/aports-report/2025-09-10-overlayfs/diff_merged.html)
 - [2025-09-11-match](2025-09-11-match.wwz/_tmp/aports-report/2025-09-11-match/diff_merged.html)
+- [2025-09-15-order](2025-09-15-order.wwz/_tmp/aports-report/2025-09-15-order/diff_merged.html)
 
 EOF
 
@@ -546,7 +568,9 @@ merge-diffs() {
   db-to-tsv $db metrics
 
   db-to-tsv $db notable_disagree 'order by pkg'
+  db-to-tsv $db baseline_only 'order by pkg'
   db-to-tsv $db other_fail 'order by pkg'
+  db-to-tsv $db timeout 'order by pkg'
 
   popd > /dev/null
 

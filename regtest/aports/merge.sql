@@ -14,15 +14,41 @@ set
 create table notable_disagree as
   select *
   from diff_merged
-  where notable == 1;
+  where disagree == 1 and status1 == 0 and timeout == 0;
+
+create table baseline_only as
+  select *
+  from diff_merged
+  where disagree == 1 and status2 == 0 and timeout == 0;
 
 create table other_fail as
   select *
   from diff_merged
-  where notable == 0;
+  where disagree == 0 and timeout == 0;
+
+create table timeout as
+  select *
+  from diff_merged
+  where timeout == 1;
+
+-- drop 2 columns from each of 3 tables (sqlite is verbose)
 
 alter table notable_disagree
-drop column notable;
+drop column disagree;
+alter table notable_disagree
+drop column timeout;
+
+alter table baseline_only
+drop column disagree;
+alter table baseline_only
+drop column timeout;
 
 alter table other_fail
-drop column notable;
+drop column disagree;
+alter table other_fail
+drop column timeout;
+
+alter table timeout
+drop column disagree;
+alter table timeout
+drop column timeout;
