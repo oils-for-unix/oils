@@ -327,6 +327,7 @@ create-osh-overlay() {
   fi
   ln -s -f /usr/local/bin/oils-for-unix /bin/sh
   ln -s -f /usr/local/bin/oils-for-unix /bin/ash
+  ln -s -f /usr/local/bin/oils-for-unix /bin/bash
   ' dummy0
 }
 
