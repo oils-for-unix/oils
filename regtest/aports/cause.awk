@@ -82,6 +82,26 @@ BEGIN {
   # note: with glibc, a different string will appear
   patterns["#2336"] = "Extended glob won't work without FNM_EXTMATCH support in libc"
 
+  #
+  # BUGS that only occur with OSH as BUSYBOX ASH
+  #
+
+  # heimdal, perl
+  patterns["#2424"] = "Found uncompressed man pages:"
+
+  # nginx
+  patterns["#2425"] = "'cd' got too many arguments"
+
+  #
+  # BUGS that only occur with OSH as BASH
+  #
+
+  # chrony
+  patterns["#2426"] = "In expressions, remove $ and use `OPTIND`"
+
+  # shorewall - BAD version detection
+  patterns["#2427"] = "ERROR: This program requires Bash 4.0 or later"
+
   found = 0
 }
 { 
