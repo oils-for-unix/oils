@@ -1,0 +1,5 @@
+#!/usr/bin/env -S osh -o ysh:upgrade
+set -e
+echo 1
+use ./module.ysh
+echo 2
