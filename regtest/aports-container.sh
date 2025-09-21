@@ -267,4 +267,38 @@ list() {
   podman images | grep aports-build
 }
 
+test-rootless-overlay() {
+  # AH, this works with --mount!  Cool!
+
+  unshare --user --map-root-user --mount -- bash -c '
+  dir=_tmp/overlay-test
+  mkdir -p $dir/{lower,upper,work,merged}
+  echo "lower" > $dir/lower/foo
+
+  # Try to mount as regular user
+  #
+  # permission denied
+  # how does podman do it?  Test it out
+
+  mount -t overlay overlay \
+    -o lowerdir=$dir/lower,upperdir=$dir/upper,workdir=$dir/work \
+    $dir/merged
+
+  echo MERGED
+  ls -l $dir/merged
+  echo "modify" > $dir/merged/foo
+  cat $dir/merged/foo
+
+  tree $dir
+
+  echo LOWER
+  cat $dir/lower/foo
+  echo
+
+  echo UPPER
+  cat $dir/upper/foo
+  echo
+  '
+}
+
 task-five "$@"
