@@ -219,24 +219,25 @@ LANG _x_
 ## END
 
 
-#### LC_ALL=invalid
+#### LC_CTYPE=invalid
 
 # note: test/spec-common.sh sets LC_ALL
 unset LC_ALL
 
 touch _x_ _μ_
 
-LC_ALL=invalid $SH -c 'echo LC_ALL _?_' 2> err.txt
+{ LC_CTYPE=invalid $SH -c 'echo LC_CTYPE _?_' 
+} 2> err.txt
 
 #cat err.txt
 wc -l err.txt
 
 ## STDOUT:
-LC_ALL _x_
+LC_CTYPE _x_
 1 err.txt
 ## END
 
 ## N-I dash/mksh/zsh STDOUT:
-LC_ALL _x_
+LC_CTYPE _x_
 0 err.txt
 ## END
