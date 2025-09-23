@@ -111,7 +111,11 @@ When passed to external programs, strings are truncated at the first `NUL`
 ## Your System Locale Should Be UTF-8
 
 At startup, Oils calls the `libc` function `setlocale()`, which initializes the
-global variables from environment variables like `LC_ALL` and `LC_COLLATE`.
+global variables from environment variables like `LC_CTYPE` and `LC_COLLATE`.
+(For details, see [osh-locale][] and [ysh-locale][].)
+
+[osh-locale]: ref/chap-special-var.html#osh-locale
+[ysh-locale]: ref/chap-special-var.html#ysh-locale
 
 These global variables determine how `libc` string operations like `tolower()`
 `glob()`, and `regexec()` behave.
