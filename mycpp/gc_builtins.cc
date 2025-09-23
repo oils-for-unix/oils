@@ -33,24 +33,24 @@ BigStr* str(double d) {
 
   // So use 1 less digit, which happens to match Python 3 and node.js (but not
   // Python 2)
+  // Note: snprintf() %g depends on LC_NUMERIC env var!
   int length = snprintf(buf, n, "%.16g", d);
-
-  // TODO: This may depend on LC_NUMERIC locale!
-
-  // We may return the strings:
-  //    inf  -inf   nan
-  // But this shouldn't come up much, because Python code changes it to:
-  //    INFINITY   -INFINITY   NAN
-  if (strchr(buf, 'i') || strchr(buf, 'n')) {
-    return StrFromC(buf);  // don't add .0
-  }
 
   // Problem:
   // %f prints 3.0000000 and 3.500000
   // %g prints 3 and 3.5
   //
   // We want 3.0 and 3.5, so add '.0' in some cases
-  if (!strchr(buf, '.')) {  // 12345 -> 12345.0
+  bool all_digits = true;
+  for (int i = 0; i < length; ++i) {
+    int ch = buf[i];
+    if (ch < '0' || ch > '9') {
+      all_digits = false;
+      break;
+    }
+  }
+
+  if (all_digits) {  // 12345 -> 12345.0
     buf[length] = '.';
     buf[length + 1] = '0';
     buf[length + 2] = '\0';

@@ -220,4 +220,12 @@ bug-2108() {
   # _bin/cxx-asan/osh
 }
 
+bug-2430() {
+  LC_ALL=de_DE.utf8 _bin/cxx-asan/ysh -c '= 3,5.0'
+}
+
+bug-2431() {
+  LC_ALL=de_DE.utf8 _bin/cxx-asan/ysh -c 'echo $[7/2]'
+}
+
 "$@"
