@@ -332,6 +332,7 @@ X [External Lang] BEGIN   END   when (awk)
 <!-- linkify_stop_col is 34 -->
 
 ```chapter-links-word-lang_34
+  [Glob]          ysh-glob         *.py
   [Joining]       ysh-word-join    --flag='value'  PATH="value"
   [Quotes]        ysh-string       "x is $x"  $"x is $x"  r'[a-z]\n'
                                    u'line\n'  b'byte \yff'
@@ -379,12 +380,12 @@ X [External Lang] BEGIN   END   when (awk)
                   _pipeline_status    _process_sub_status
   [YSH Tracing]   SHX_indent          SHX_punct             SHX_pid_str
   [YSH read]      _reply
-  [History]       YSH_HISTFILE
-  [Interactive]   OILS_COMP_UI
   [Oils VM]       OILS_VERSION        LIB_YSH
                   OILS_GC_THRESHOLD   OILS_GC_ON_EXIT
                   OILS_GC_STATS       OILS_GC_STATS_FD
                   OILS_LOCALE_OK
+  [libc locale]   ysh-locale
+  [Interactive]   OILS_COMP_UI        YSH_HISTFILE
   [Float]         NAN                 INFINITY
   [Module]        __provide__ 
   [Other Env]     HOME                PATH

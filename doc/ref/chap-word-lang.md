@@ -21,6 +21,30 @@ strings, or arrays of strings.
 <div id="dense-toc">
 </div>
 
+## Glob
+
+### osh-glob
+
+Glob expansion in OSH respects `LC_COLLATE` (like bash and zsh):
+
+    $ touch foo-bar foo_bar
+    $ echo foo*   # foo_bar MAY come first
+
+Related: [osh-locale][]
+
+[osh-locale]: chap-special-var.html#osh-locale
+
+### ysh-glob
+
+Glob expansion in YSH is always done with the default libc collation:
+
+    ysh$ touch foo-bar foo_bar
+    ysh$ echo foo*   # foo-bar always comes first
+
+Related: [ysh-locale][]
+
+[ysh-locale]: chap-special-var.html#ysh-locale
+
 <h2 id="expression">Expressions to Words</h2>
 
 ### expr-sub
