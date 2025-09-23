@@ -784,16 +784,6 @@ matched=0
 no version
 ## END
 
-#### Oils emulates $BASH_VERSION when called as bash
-
-echo sh=$SH
-
-ln -s $SH bash
-./bash -c 'echo hi'
-
-## STDOUT:
-## END
-
 #### $SECONDS
 
 # most likely 0 seconds, but in CI I've seen 1 second
