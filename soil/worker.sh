@@ -332,6 +332,7 @@ yaks             yaks/TEST.sh soil-run                 -
 pea              pea/TEST.sh run-tests                 -
 oils-cpp-smoke   build/native.sh soil-run              -
 cpp-unit         test/cpp-unit.sh soil-run             _test/-wwz-index
+osh-usage        test/osh-usage.sh soil-run            -
 headless         client/run.sh soil-run-cpp            -
 asan             test/asan.sh soil-run                 -
 ltrace           test/ltrace.sh soil-run               -
@@ -387,7 +388,6 @@ make-tarball      devtools/release.sh py-tarball         _release/oils-ref.tar
 syscall           test/syscall.sh soil-run               _tmp/syscall/-wwz-index
 osh-spec          test/spec-py.sh osh-all-serial         _tmp/spec/osh-py/index.html
 gold              test/gold.sh soil-run                  -
-osh-usage         test/osh-usage.sh soil-run             -
 tools-deps        test/tools-deps.sh soil-run            -
 ninja-config      soil/worker.sh ninja-config            -
 docs              build/doc.sh soil-run                  _release/VERSION/index.html

@@ -177,7 +177,13 @@ def AppBundleMain(argv):
 
     # sh, osh, bash imply OSH
     elif applet.startswith('osh') or applet.endswith('sh'):
-        return shell.Main('osh', arg_r, environ, login_shell, loader, readline)
+        return shell.Main('osh',
+                          arg_r,
+                          environ,
+                          login_shell,
+                          loader,
+                          readline,
+                          bash_compat=(applet == 'bash'))
 
     # For testing latency
     elif applet == 'true':

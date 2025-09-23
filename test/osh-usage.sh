@@ -186,6 +186,39 @@ test-version() {
   nq-assert $? -eq 0
 }
 
+test-bash-version-emulation() {
+  local dir=_tmp/bash-version
+
+  local target=_bin/cxx-asan/osh
+  ninja $target
+
+  local osh=$PWD/$target
+
+  mkdir -p $dir
+  pushd $dir
+
+  ln -s -f $osh bash
+  ln -s -f $osh osh
+
+  local code='echo BASH_VERSION=$BASH_VERSION'
+  local status stdout
+
+  # Unset when called as osh
+  nq-capture status stdout \
+    ./osh -c "$code"
+  nq-assert 0 -eq $status
+  nq-assert 'BASH_VERSION=' = "$stdout"
+
+  # Set when called as bash
+  nq-capture status stdout \
+    ./bash -c "$code"
+  nq-assert 0 -eq $status
+  nq-assert 'BASH_VERSION=5.3' = "$stdout"
+
+  popd
+}
+
+
 DISABLED-test-symlink() {
   local tmp=_tmp/osh-usage
   mkdir -p $tmp

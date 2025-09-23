@@ -236,6 +236,7 @@ def Main(
         login_shell,  # type: bool
         loader,  # type: pyutil._ResourceLoader
         readline,  # type: Optional[Readline]
+        bash_compat=True,  # type: bool
 ):
     # type: (...) -> int
     """The full shell lifecycle.  Used by bin/osh and bin/ysh.
@@ -327,6 +328,10 @@ def Main(
     version_str = pyutil.GetVersion(loader)
     sh_init.InitBuiltins(mem, version_str, defaults)
     sh_init.InitDefaultVars(mem, argv)
+    if bash_compat:
+        # 2025-09: bash 5.3 is the latest version; can increase this with
+        # future Oils releases
+        state.SetGlobalString(mem, 'BASH_VERSION', '5.3')
 
     sh_init.CopyVarsFromEnv(exec_opts, environ, mem)
 

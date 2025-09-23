@@ -279,7 +279,8 @@ build-package-overlayfs() {
 
   if test -n "$INTERACTIVE"; then
     echo "Starting interactive shell in overlayfs environment for package $pkg"
-    echo "Rebuild with: abuild -f -r -C ~/aports/main/$pkg builddeps build"
+    echo "Rebuild: abuild -f -r -C ~/aports/main/$pkg"
+    echo "   Help: abuild -h"
     # If the last command in the child shell exited non-zero then ctrl-d/exit
     # will report that error code to the parent. If we don't ignore that error
     # we will exit early and leave the package overlay mounted.
