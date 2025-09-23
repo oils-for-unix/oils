@@ -11,8 +11,8 @@ We could could also expose some other binaries for a smaller POSIX system:
 
 - test / '['
 - printf, echo
-- cat
 - 'time' -- different usage
+- private builtin cat, rm
 """
 from __future__ import print_function
 
@@ -80,21 +80,20 @@ def CaperDispatch():
     return 0  # Does this fail?
 
 
-def InitLocale(environ):
-    # type: (Dict[str, str]) -> None
+def InitLocale(environ, lang):
+    # type: (Dict[str, str], str) -> None
     """Set the GLOBAL libc locale from the env, and CHECK that it's valid."""
     try:
-        # Note: LC_ALL (rather than LC_CTYPE) makes glob order match bash
-        #
-        # https://unix.stackexchange.com/questions/576701/what-is-the-difference-between-lang-c-and-lc-all-c
-        # LANG= is the default, LC_ALL= sets all of them
-        locale_name = pylocale.setlocale(pylocale.LC_ALL, '')
+        # NOTE: We don't pass LC_ALL because that implies LC_NUMERIC.  This
+        # messes up mycpp functions to_float() and str(double d).
+        # So unlike bash, numbers aren't localized.
 
-        # passing None queries it
-        #lo = locale.setlocale(locale.LC_CTYPE, None)
+        # We need LC_CTYPE in YSH for so libc functions respect UTF-8.
+        locale_name = pylocale.setlocale(pylocale.LC_CTYPE, '')
+
     except pylocale.Error:
         # we could make this nicer
-        print_stderr('oils: setlocale() failed')
+        print_stderr('oils: setlocale(LC_CTYPE) failed')
         locale_name = ''  # unknown value
     #log('LOC %s', locale_name)
 
@@ -110,6 +109,17 @@ def InitLocale(environ):
             print_stderr("oils warning: codeset %r doesn't look like UTF-8" %
                          codeset)
             print_stderr('              OILS_LOCALE_OK=1 removes this message')
+
+    assert lang in ('osh', 'ysh'), lang
+
+    if lang == 'osh':
+        try:
+            # On the other hand, we respect LC_COLLATE in OSH, so the glob sort
+            # order matches bash and zsh.
+            pylocale.setlocale(pylocale.LC_COLLATE, '')
+        except pylocale.Error:
+            # we could make this nicer
+            print_stderr('oils: setlocale(LC_COLLATE) failed')
 
 
 # TODO: Hook up valid applets (including these) to completion
@@ -170,14 +180,16 @@ def AppBundleMain(argv):
 
     environ = pyos.Environ()
 
-    InitLocale(environ)
-
     if applet.startswith('ysh'):
-        return shell.Main('ysh', arg_r, environ, login_shell, loader, readline)
+        lang = 'ysh'
+        InitLocale(environ, lang)
+        return shell.Main(lang, arg_r, environ, login_shell, loader, readline)
 
     # sh, osh, bash imply OSH
     elif applet.startswith('osh') or applet.endswith('sh'):
-        return shell.Main('osh',
+        lang = 'osh'
+        InitLocale(environ, lang)
+        return shell.Main(lang,
                           arg_r,
                           environ,
                           login_shell,

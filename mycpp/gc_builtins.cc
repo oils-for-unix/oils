@@ -44,13 +44,14 @@ BigStr* str(double d) {
   bool all_digits = true;
   for (int i = 0; i < length; ++i) {
     int ch = buf[i];
-    if (ch < '0' || ch > '9') {
+    // allow -12345 ; disallow 3,5
+    if (!(('0' <= ch && ch <= '9') || ch == '-')) {
       all_digits = false;
       break;
     }
   }
 
-  if (all_digits) {  // 12345 -> 12345.0
+  if (all_digits) {  // -12345 -> -12345.0
     buf[length] = '.';
     buf[length + 1] = '0';
     buf[length + 2] = '\0';

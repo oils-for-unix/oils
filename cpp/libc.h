@@ -43,12 +43,15 @@ namespace pylocale {
 
 constexpr int codeset = CODESET;
 constexpr int lc_all = LC_ALL;
+constexpr int lc_collate = LC_COLLATE;
 constexpr int lc_ctype = LC_CTYPE;
 #undef CODESET
 #undef LC_ALL
+#undef LC_COLLATE
 #undef LC_CTYPE
 constexpr int CODESET = codeset;
 constexpr int LC_ALL = lc_all;
+constexpr int LC_COLLATE = lc_collate;
 constexpr int LC_CTYPE = lc_ctype;
 
 class Error {

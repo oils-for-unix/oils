@@ -277,11 +277,6 @@ echo h*
 
 LC_COLLATE=en_US.UTF-8 $SH -c 'echo h*'
 
-
-# Doesn't work, probably because
-#LC_COLLATE=en_US.UTF-8
-#export LC_COLLATE=en_US.UTF-8
-
 ## STDOUT:
 hello hello-test.sh hello.py hello_preamble.sh
 hello hello_preamble.sh hello.py hello-test.sh

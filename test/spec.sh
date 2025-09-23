@@ -706,6 +706,10 @@ ysh-funcs-external() {
   test/spec-py.sh run-file ysh-funcs-external "$@"
 }
 
+ysh-glob() {
+  test/spec-py.sh run-file ysh-glob "$@"
+}
+
 ysh-int-float() {
   test/spec-py.sh run-file ysh-int-float "$@"
 }
