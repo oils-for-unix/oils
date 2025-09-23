@@ -13,15 +13,15 @@
 #
 # (1) Update LATEST_TAG
 #
-# (2) Bootstrapping Wedges
+# (2) Bootstrap Wedges
 #
 #    $0 build wedge-bootstrap-debian-12  # runs init-deb-cache
 #
-# (3) Building wedges:
+# (3) Build wedges
 #
-#    build/deps.sh fetch
-#    build/deps.sh boxed-wedges
-#    build/deps.sh boxed-spec-bin
+#     build/deps.sh fetch
+#     build/deps.sh boxed-wedges
+#     build/deps.sh boxed-spec-bin
 #
 # (4) Rebuild an image
 #
@@ -56,7 +56,7 @@ source deps/podman.sh
 
 DOCKER=${DOCKER:-docker}
 
-readonly LATEST_TAG='v-2025-05-01'  # add libreadline-dev to wedge-bootstrap-debian-12
+readonly LATEST_TAG='v-2025-09-23'  # add libreadline-dev to wedge-bootstrap-debian-12
 
 clean-all() {
   dirs='_build/wedge/tmp _build/wedge/binary _build/deps-source'
