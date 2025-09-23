@@ -22,6 +22,10 @@ append() {
   test/spec-py.sh run-file append "$@"
 }
 
+arg-parse() {
+  test/spec-py.sh run-file arg-parse "$@"
+}
+
 arith-context() {
   test/spec-py.sh run-file arith-context "$@"
 }

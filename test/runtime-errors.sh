@@ -506,22 +506,6 @@ unquoted-pipefail_multiple() {
   { echo 'six'; sh -c 'exit 6'; }
 }
 
-test-control_flow() {
-  # This prints a WARNING in bash.  Not fatal in any shell except zsh.
-  _osh-error-X 0 '
-break
-continue
-echo UNREACHABLE
-'
-
-  _osh-error-X 1 '
-shopt -s strict_control_flow
-break
-continue
-echo UNREACHABLE
-'
-}
-
 # Errors from core/process.py
 test-core_process() {
   _osh-error-1 '
@@ -1029,7 +1013,6 @@ builtin_printf() {
   echo status=$?
 }
 
-
 unquoted-builtin_wait() {
   wait 1234578
 }
@@ -1040,7 +1023,7 @@ unquoted-builtin_exec() {
 }
 
 #
-# Strict options (see spec/strict_options.sh)
+# Strict options (see spec/strict-options.test.sh)
 #
 
 unquoted-strict_word_eval_warnings() {
@@ -1078,7 +1061,23 @@ unquoted-strict_arith_warnings() {
   echo 'done'
 }
 
-test-control_flow_subshell() {
+test-strict-control-flow() {
+  # This prints a WARNING in bash.  Not fatal in any shell except zsh.
+  _osh-error-X 0 '
+break
+continue
+echo UNREACHABLE
+'
+
+  _osh-error-X 1 '
+shopt -s strict_control_flow
+break
+continue
+echo UNREACHABLE
+'
+}
+
+test-control-flow-subshell() {
   _osh-error-1 '
   set -o errexit
   for i in $(seq 2); do
@@ -1087,6 +1086,10 @@ test-control_flow_subshell() {
   done
   '
 }
+
+#
+# Locations
+#
 
 test-fallback-locations() {
   # Redirect

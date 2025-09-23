@@ -1183,6 +1183,12 @@ test-no-osh-builtins() {
 
   # chdir alias is for busybox ash compat only
   _ysh-error-1 'chdir /tmp'
+
+  # : disallowed because it's odd punctuation
+  _ysh-error-1 ':'
+  _ysh-error-1 ': foo'
+
+  # TODO: disallow . too
 }
 
 
