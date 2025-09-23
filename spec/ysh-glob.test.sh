@@ -1,7 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 1
-
-# TODO: rebuild Dockerfile.soil-cpp-spec and make this pass
+## oils_failures_allowed: 0
 
 #### YSH doesn't respect LC_COLLATE for bash/zsh glob sort order
 

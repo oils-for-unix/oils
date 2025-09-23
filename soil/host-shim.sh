@@ -43,8 +43,8 @@ live-image-tag() {
       echo 'v-2025-05-01'
       ;;
     cpp-spec)
-      # update to Debian 12
-      echo 'v-2025-05-01'
+      # rebuild with layer-locales
+      echo 'v-2025-09-23'
       ;;
     pea)
       # update to Debian 12
