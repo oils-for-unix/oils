@@ -1180,6 +1180,9 @@ test-no-osh-builtins() {
 
   # different error
   _ysh-error-1 'export -p'
+
+  # chdir alias is for busybox ash compat only
+  _ysh-error-1 'chdir /tmp'
 }
 
 

@@ -251,11 +251,14 @@ class _Executor(object):
         # TODO: We could move this check to LookupSpecialBuiltin, etc.
         # The error message would be better
         # This also relates to __builtin__ reflection and so forth
-        if (self.exec_opts.no_osh_builtins() and
-                builtin_id in (builtin_i.alias, builtin_i.unalias)):
-            e_die(
-                "The %r builtin isn't part of YSH (no_osh_builtins)" %
-                cmd_val.argv[0], cmd_val.arg_locs[0])
+        if (self.exec_opts.no_osh_builtins() and builtin_id
+                in (builtin_i.alias, builtin_i.unalias, builtin_i.chdir)):
+            if builtin_id == builtin_i.chdir:
+                msg = "Use 'cd' instead of 'chdir' in YSH (no_osh_builtins)"
+            else:
+                msg = ("The %r builtin isn't part of YSH (no_osh_builtins)" %
+                       cmd_val.argv[0])
+            e_die(msg, cmd_val.arg_locs[0])
 
         self.tracer.OnBuiltin(builtin_id, cmd_val.argv)
         builtin_proc = self.builtins[builtin_id]
