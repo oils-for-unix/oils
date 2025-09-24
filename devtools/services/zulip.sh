@@ -8,10 +8,12 @@
 # To get a thread, you have to get the messages in the stream, and the filter
 # it with JQ.
 
-
 set -o nounset
 set -o pipefail
 set -o errexit
+
+# private AUTH
+. zulip-env.sh
 
 my-curl() {
   # --get affects -d
@@ -21,8 +23,8 @@ my-curl() {
 }
 
 messages-in-stream() {
-  local bot_email=$1
-  local bot_api_key=$2
+  local bot_email=${1:-$ZULIP_EMAIL}
+  local bot_api_key=${2:-$ZULIP_KEY}
   local stream=${3:-'blog-ideas'}
   local apply_markdown=${4:-false}  # or 'true'
 
@@ -65,7 +67,6 @@ print-thread() {
 }
 
 print-both() {
-  . zulip-env.sh
   local prefix=${1:-_tmp/zulip/sept}
   mkdir -p "$(dirname $prefix)"
 
@@ -83,6 +84,37 @@ to-html() {
 
   doctools/cmark.sh cmark-py < $prefix.md > $prefix.cmark.html
   ls -l $prefix*
+}
+
+common-mark-prefix() {
+  local date_str=$(date +'%Y/%m/%d')
+  
+  echo "\
+---
+title: Post created on $date_str
+date: $date_str
+css_file: blog-bundle-v7.css
+body_css_class: width35
+default_highlighter: oils-sh
+comments_url: TODO
+published: no
+---
+
+<div id="toc">
+</div>
+
+## Heading
+"
+}
+
+to-common-mark() {
+  local prefix=${1:-_tmp/zulip/sept}
+
+  local dest=../oils.pub/blog/2025/09/_sept.md
+  { common-mark-prefix
+    cat $prefix.md | devtools/services/zulip.py 
+  } > $dest
+  echo "Wrote $dest"
 }
 
 #
