@@ -36,6 +36,7 @@ oil-python-sources() {
   local fmt=${2:-'%P\n'}
 
   # mycpp: exclude Python 3 sources
+  # devtools/services: also exclude Python 3
   find $repo_root \
     -name _tmp -a -prune -o \
     -name _cache -a -prune -o \
@@ -48,9 +49,9 @@ oil-python-sources() {
     -name yaks -a -prune -o \
     -name testdata -a -prune -o \
     -name Python-2.7.13 -a -prune -o \
-    -name py-yajl -a -prune -o \
     -name spec -a -prune -o \
     -name win32 -a -prune -o \
+    -name services -a -prune -o \
     -name '*.py' -a -printf "$fmt"
 
   # TODO: move type-annotated files to pea/, and get rid of py3_parse.py hack
