@@ -24,6 +24,7 @@ messages-in-stream() {
   local bot_email=$1
   local bot_api_key=$2
   local stream=${3:-'blog-ideas'}
+  local apply_markdown=${4:-false}  # or 'true'
 
   local narrow='[{"operand": "'$stream'", "operator": "stream"}]'
 
@@ -33,7 +34,7 @@ messages-in-stream() {
     -d 'anchor=newest' \
     -d 'num_before=3000' \
     -d 'num_after=0' \
-    -d 'apply_markdown=true' \
+    -d "apply_markdown=$apply_markdown" \
     --data-urlencode narrow="$narrow" \
     https://oilshell.zulipchat.com/api/v1/messages 
 
@@ -47,6 +48,7 @@ print-thread() {
   local bot_api_key=$2
   local stream=${3:-'oil-dev'}
   local subject=${4:-'Test thread'}
+  local apply_markdown=${5:-false}  # or 'true'
 
   # https://stackoverflow.com/questions/28164849/using-jq-to-parse-and-display-multiple-fields-in-a-json-serially/31791436
 
@@ -56,10 +58,31 @@ print-thread() {
   # - select records where subject is "needle" var
   # - print the content.  -r prints it raw.
 
-  messages-in-stream "$bot_email" "$bot_api_key" "$stream" | \
+  messages-in-stream "$bot_email" "$bot_api_key" "$stream" "$apply_markdown" | \
     jq --arg subject "$subject" -r \
     '.messages[] | { content: .content, subject: .subject } |
       select( .subject == $subject ) | (.content + "\n\n")'
+}
+
+print-both() {
+  . zulip-env.sh
+  local prefix=${1:-_tmp/zulip/sept}
+  mkdir -p "$(dirname $prefix)"
+
+  local stream='blog-ideas'
+  local subject='Oils September Status Update'
+
+  print-thread $ZULIP_EMAIL $ZULIP_KEY "$stream" "$subject" false | tee $prefix.md
+  print-thread $ZULIP_EMAIL $ZULIP_KEY "$stream" "$subject" true | tee $prefix.html
+
+  ls -l $prefix*
+}
+
+to-html() {
+  local prefix=${1:-_tmp/zulip/sept}
+
+  doctools/cmark.sh cmark-py < $prefix.md > $prefix.cmark.html
+  ls -l $prefix*
 }
 
 #
