@@ -64,7 +64,7 @@ bad
 f00
 ## END
 
-#### Command substitution exit codes (#2435)
+#### Exit code when command sub evaluates to empty str, e.g. `false` (#2435)
 
 # OSH exits with 0 while others exit with 1
 `true`; echo $?
