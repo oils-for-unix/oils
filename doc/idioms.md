@@ -283,7 +283,7 @@ Idiomatic:
 (As always, `set` can be used when you care about compatibility with other
 shells.)
 
-### Use `:` When Mentioning Variable Names
+### Use `&` When Mentioning Variable Names
 
 YSH accepts this optional "pseudo-sigil" to make code more explicit.
 
@@ -297,6 +297,22 @@ Yes:
     read -0 (&myvar) < file.bin
     echo $record
 
+### Use multiline here string instead of here doc
+
+Ysh has multiline strings with `'''` and `"""` which are cleaner than heredocs, as they can be properly indented.
+
+No:
+    cat <<EOF
+    hello world
+    EOF
+
+Yes:
+
+    cat <<< """
+      hello world
+      """
+
+the indent is removed, based on the indentation of the end quotes.
 
 ### Consider Using `--long-flags`
 
