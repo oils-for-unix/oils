@@ -299,9 +299,10 @@ Yes:
 
 ### Use multiline here string instead of here doc
 
-Ysh has multiline strings with `'''` and `"""` which are cleaner than heredocs, as they can be properly indented.
+Ysh has multiline here strings with `'''` and `"""` which are cleaner than heredocs, as they can be properly indented.
 
 No:
+
     cat <<EOF
     hello world
     EOF
