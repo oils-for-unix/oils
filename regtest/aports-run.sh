@@ -156,9 +156,11 @@ package-dirs() {
   elif [[ $package_filter =~ ^shard([A-Z]+)$ ]]; then
     local shard_name=${BASH_REMATCH[1]}
     case $shard_name in
-      A) package_filter='^gzip' ;;    # failure
-      B) package_filter='^xz' ;;      # failure
-      C) package_filter='^lz' ;;      # 3 packages
+      A) package_filter='^gzip' ;;          # failure
+      B) package_filter='^xz' ;;            # failure
+      C) package_filter='^lz' ;;            # 3 packages
+      D) package_filter='^jq/' ;;   # produces autotools test-suite.log
+                                            # hacky: / matches /APKBUILD
       *) package_filter='^perl-http-daemon' ;;   # test out perl
     esac
 
@@ -533,12 +535,18 @@ make-shard-tree() {
   #         log/
   #           gzip.log.txt
   #           xz.log.txt
+  #         test-suite/  # autotools dir
+  #           gzip/
+  #             test-suite.log.txt
   #       osh-as-sh/
   #         apk.txt
   #         tasks.tsv
   #         log/
   #           gzip.log.txt
   #           xz.log.txt
+  #         test-suite/
+  #           gzip/
+  #             test-suite.log.txt
   #     shard1/
   #       ...
   #     shard16/
@@ -551,8 +559,7 @@ make-shard-tree() {
 
   for config in baseline osh-as-sh; do
     local dest_dir=$BASE_DIR/$epoch/$shard_name/$config
-    local log_dest_dir=$dest_dir/log
-    mkdir -v -p $log_dest_dir
+    mkdir -p $dest_dir
     #ls -l $shard_dir/$config
 
     time python3 devtools/tsv_concat.py \
@@ -562,24 +569,30 @@ make-shard-tree() {
     time md5sum $shard_dir/$config/*/home/udu/packages/main/x86_64/*.apk > $dest_dir/apk.txt \
       || true
 
-    abridge-logs2 $shard_dir/$config $log_dest_dir
+    abridge-logs2 $shard_dir/$config $dest_dir
 
   done
 }
 
 abridge-logs2() {
-  local config_src_dir=${1:-_chroot/shardB/baseline}
-  local log_dest_dir=${2:-$BASE_DIR/shardB/baseline/log}
-  mkdir -p $log_dest_dir
+  local config_src_dir=${1:-_chroot/shardD/osh-as-sh}
+  local dest_dir=${2:-$BASE_DIR/shardD/osh-as-sh}
+
+  local log_dest_dir=$dest_dir/log
+  local test_suite_dest_dir=$dest_dir/test-suite
+  mkdir -p $log_dest_dir $test_suite_dest_dir
 
   local threshold=$(( 500 * 1000 ))  # 500 KB
 
   # this assumes the build process doesn't create *.log.txt
+  # test-suite.log is the name used by the autotools test runner - we want to save those too
   # ignore permission errors with || true
   { find $config_src_dir -name '*.log.txt' -a -printf '%s\t%P\n' || true; } |
   while read -r size path; do
     local src=$config_src_dir/$path
-    local filename=${src##*/}  # pure bash basename, since we're in a loop
+    # Remove text until last slash (shortest match)
+    # like $(basename $path) but in bash, for speed
+    local filename=${path##*/}
     local dest=$log_dest_dir/$filename
 
     if test "$size" -lt "$threshold"; then
@@ -592,19 +605,20 @@ abridge-logs2() {
     fi
   done
 
-  # 500K threshold: 76 MB
-  du --si -s $log_dest_dir
+  { find $config_src_dir -name 'test-suite.log' -a -printf '%P\n' || true; } |
+  while read -r path; do
+    local src=$config_src_dir/$path
 
-  return
+    # Remove text after the first slash (shortest match)
+    local package_name=${path%%/*}
+    local dest=$test_suite_dest_dir/$package_name/test-suite.log.txt
 
-  for layer_dir in $shard_dir/$config/*; do
-    # TODO: should be abridge-logs!
-    # Without it, the logs are 115 MB for less than half the shards
-    cp -v \
-      $layer_dir/home/udu/oils/_tmp/aports-guest/*.log.txt \
-      $log_dest_dir
+    mkdir -p "$(dirname $dest)"
+    cp -v --no-target-directory $src $dest
   done
 
+  # 500K threshold: 76 MB
+  du --si -s $log_dest_dir
 }
 
 compare-speed() {
