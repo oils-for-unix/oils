@@ -156,22 +156,38 @@ package-dirs() {
   elif [[ $package_filter =~ ^shard([A-Z]+)$ ]]; then
     local shard_name=${BASH_REMATCH[1]}
     case $shard_name in
-      A) package_filter='^gzip' ;;          # failure
-      B) package_filter='^xz' ;;            # failure
-      C) package_filter='^lz' ;;            # 3 packages
-      D) package_filter='^jq/' ;;   # produces autotools test-suite.log
-                                            # hacky: / matches /APKBUILD
+      A) package_filter='^gzip' ;;  # failure
+      B) package_filter='^xz' ;;    # failure
+      C) package_filter='^lz' ;;    # 3 packages
+      D) package_filter='^jq$' ;;   # produces autotools test-suite.log
       *) package_filter='^perl-http-daemon' ;;   # test out perl
     esac
 
     prefix=( egrep "$package_filter" )
+
+  elif [[ $package_filter =~ ^disagree-(.*)+$ ]]; then
+    local filename=${BASH_REMATCH[1]}
+    # A file of EXACT package names, not patterns
+    # See copy-disagree
+    local package_file="_tmp/$package_filter.txt"
+    comm -1 -2 <(sort $package_file) <(sort _tmp/apk-manifest.txt)
+    return
 
   else
     prefix=( egrep "$package_filter" )
 
   fi
    
-  "${prefix[@]}" _tmp/apk-manifest.txt | sed 's,/APKBUILD$,,g'
+  "${prefix[@]}" _tmp/apk-manifest.txt
+}
+
+copy-disagree() {
+  ### Determine what to run
+
+  local epoch=${1:-2025-09-18-bash}
+  cp -v \
+    _tmp/aports-report/$epoch/disagree-packages.txt \
+    _tmp/disagree-$epoch.txt
 }
 
 do-packages() {
@@ -185,7 +201,8 @@ do-packages() {
   # There are ~1600 packages
   # So if there are 20 shards, each shard could have 10?
 
-  local -a package_dirs=( $(package-dirs "$package_filter") )
+  local -a package_dirs
+  package_dirs=( $(package-dirs "$package_filter") )
 
   echo "${dirs[@]}"
   #return
@@ -218,7 +235,8 @@ build-packages() {
   local config=${2:-baseline}
   local overlay_dir=${3:-}
 
-  local -a package_dirs=( $(package-dirs "$package_filter") )
+  local -a package_dirs
+  package_dirs=( $(package-dirs "$package_filter") )
 
   banner "Building ${#package_dirs[@]} packages (filter $package_filter)"
 
@@ -305,7 +323,8 @@ build-packages2() {
   local package_filter=${1:-}
   local config=${2:-baseline}
 
-  local -a package_dirs=( $(package-dirs "$package_filter") )
+  local -a package_dirs
+  package_dirs=( $(package-dirs "$package_filter") )
 
   banner "Building ${#package_dirs[@]} packages (filter $package_filter)"
 
@@ -505,7 +524,7 @@ build-many-shards2() {
   sudo -k
 
   # Clean up old runs
-  sudo rm -r -f _chroot/shard*
+  sudo rm -r -f _chroot/shard* _chroot/disagree*
 
   banner "$APORTS_EPOCH: building shards: $*"
 

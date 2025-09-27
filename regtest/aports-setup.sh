@@ -69,7 +69,7 @@ checkout-stable() {
 }
 
 download-oils() {
-  local job_id=${1:-10172}  # 2025-09-16, after adding 'chdir'
+  local job_id=${1:-10198}  # 2025-09-27, for disagree-packages.txt
 
   local url="https://op.oilshell.org/uuu/github-jobs/$job_id/cpp-tarball.wwz/_release/oils-for-unix.tar"
 
@@ -284,7 +284,7 @@ apk-manifest() {
   mkdir -p _tmp
 
   pushd $CHROOT_HOME_DIR/aports/main >/dev/null
-  find . -name 'APKBUILD' -a -printf '%P\n' | LANG=C sort | tee $out
+  find . -name 'APKBUILD' -a -printf '%P\n' | sed 's,/APKBUILD$,,g' | LANG=C sort | tee $out
   popd >/dev/null
 }
 

@@ -163,7 +163,7 @@ EOF
   diff-metrics-html $base_dir/diff_merged.db
 
   cmark << 'EOF'
-[tree](tree.html) &nbsp;&nbsp; [metrics](metrics.html)
+[tree](tree.html) &nbsp;&nbsp; [metrics](metrics.html) &nbsp;&nbsp; [disagree-packages.txt](disagree-packages.txt)
 
 ## Notable Disagreements
 
@@ -575,6 +575,13 @@ merge-diffs() {
   db-to-tsv $db other_fail 'order by pkg'
   db-to-tsv $db timeout 'order by pkg'
 
+  # For re-running failures
+  sqlite3 diff_merged.db >disagree-packages.txt <<EOF
+.headers off
+select pkg from diff_merged where disagree = 1 and timeout = 0;
+EOF
+  #wc -l disagree-packages.txt
+
   popd > /dev/null
 
   local title1='OSH Disagreements - regtest/aports'
@@ -617,11 +624,19 @@ write-shard-reports() {
 
 write-all-reports() {
   local epoch_dir=${1:-_tmp/aports-report/2025-08-03}
+  shopt -s nullglob
   for shard_dir in $epoch_dir/shard*; do
     write-shard-reports "$shard_dir"
   done
 
   merge-diffs "$epoch_dir"
+}
+
+write-disagree-reports() {
+  local epoch_dir=${1:-_tmp/aports-build/2025-09-27}
+  for shard_dir in $epoch_dir/disagree*; do
+    write-shard-reports "$shard_dir"
+  done
 }
 
 html-tree() {
