@@ -31,6 +31,13 @@
 #   $0 build-packages PKG_FILTER osh-as-sh
 #   $0 build-packages '.*'       osh-as-sh    # 310 MB, 251 K files
 #
+# Build package with overlayfs:
+#
+#   $0 build-package-overlayfs osh-as-sh userspace-rcu
+#
+# Drop into a shell:
+#   INTERACTIVE=1 $0 build-package-overlayfs osh-as-sh userspace-rcu
+#
 # PKG_FILTER
 #   shard[0-9]+      - shard3 is packages 301 to 400
 #   [0-9]+           - 42 means build the first 42 packages

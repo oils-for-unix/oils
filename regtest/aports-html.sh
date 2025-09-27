@@ -460,7 +460,8 @@ EOF
     local left=baseline/log/$pkg.log.txt 
     local right=osh-as-sh/log/$pkg.log.txt 
 
-    egrep -i 'error|fail' $right > error/$pkg.txt || true
+    # lower case 'error fail' are more noisy, e.g. command line flags
+    egrep 'Error|ERROR|Fail|FAIL|test-suite.log' $right > error/$pkg.txt || true
   done
 
   { echo "pkg${TAB}cause"

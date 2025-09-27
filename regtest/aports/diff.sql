@@ -9,10 +9,10 @@ create table diff_baseline as
   select
     b.pkg,
     cast(b.status as integer) as status1,
-    cast("baseline" as text) as baseline,
+    b.elapsed_secs as baseline,
     cast("baseline/" || b.pkg_HREF as text) as baseline_HREF,
     cast(o.status as integer) as status2,
-    cast("osh-as-sh" as text) as osh_as_sh,
+    o.elapsed_secs as osh_as_sh,
     cast("osh-as-sh/" || o.pkg_HREF as text) as osh_as_sh_HREF,
     cast("error" as text) as error_grep,
     cast(printf("error/%s.txt", b.pkg) as text) as error_grep_HREF,
