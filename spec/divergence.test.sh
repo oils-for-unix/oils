@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh zsh ash
-## oils_failures_allowed: 3
+## oils_failures_allowed: 4
 
 # This file relates to:
 #
@@ -62,4 +62,28 @@ bad
 ((echo foo) | tr o 0)
 ## STDOUT:
 f00
+## END
+
+#### Command substitution exit codes (#2435)
+
+# OSH exits with 0 while others exit with 1
+`true`; echo $?
+`false`; echo $?
+$(true); echo $?
+$(false); echo $?
+
+# OSH and others agree on these
+eval true; echo $?
+eval false; echo $?
+`echo true`; echo $?
+`echo false`; echo $?
+## STDOUT:
+0
+1
+0
+1
+0
+1
+0
+1
 ## END
