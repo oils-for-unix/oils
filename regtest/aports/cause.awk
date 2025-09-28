@@ -99,8 +99,14 @@ BEGIN {
   # chrony
   patterns["#2426"] = "In expressions, remove $ and use `OPTIND`"
 
-  # shorewall - BAD version detection
-  patterns["#2427"] = "ERROR: This program requires Bash 4.0 or later"
+  # shorewall - BAD version detection - fixed
+  #patterns["#2427"] = "ERROR: This program requires Bash 4.0 or later"
+
+  # gdbm
+  patterns["#2429"] = "ERROR: gdbm: check failed"
+
+  # shorewall
+  patterns["#2438"] = "Assoc array keys must be strings"
 
   found = 0
 }
