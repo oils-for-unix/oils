@@ -8,11 +8,12 @@ alter table diff_baseline add column suite_HREF text;
 
 -- Update diff table with values from causes table
 update diff_baseline
-set cause = causes.cause,
-    suite = causes.suite,
-    suite_HREF = causes.suite_HREF
-  from causes
-  where causes.pkg = diff_baseline.pkg;
+set
+  cause = causes.cause,
+  suite = causes.suite,
+  suite_HREF = causes.suite_HREF
+from causes
+where causes.pkg = diff_baseline.pkg;
 
 -- Set causes for signals/timeouts
 update diff_baseline
@@ -22,7 +23,6 @@ where status1 = 124 or status2 = 124;
 update diff_baseline
 set cause = "signal-143"
 where status1 = 143 or status2 = 143;
-
 
 update diff_baseline
 set cause_HREF = case

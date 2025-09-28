@@ -167,6 +167,12 @@ EOF
 
 ## Notable Disagreements
 
+<div style="color: #666;">
+
+(Hint: **click** on the cause column header to sort)
+
+</div>
+
 EOF
 
   local name=notable_disagree
@@ -285,6 +291,7 @@ published-html() {
 - [2025-09-17-ash2](2025-09-17-ash2.wwz/_tmp/aports-report/2025-09-17-ash2/diff_merged.html)
 - [2025-09-18-bash](2025-09-18-bash.wwz/_tmp/aports-report/2025-09-18-bash/diff_merged.html)
   - only run on packages that disagree: [2025-09-27-disagree](2025-09-27-disagree.wwz/_tmp/aports-report/2025-09-27-disagree/diff_merged.html)
+  - new causes: [2025-10-03-causes](2025-10-03-causes.wwz/_tmp/aports-report/2025-10-03-causes/diff_merged.html)
 
 EOF
 
@@ -746,7 +753,7 @@ deploy-published() {
 readonly EDIT_DIR=_tmp/aports-edit
 
 sync-wwz() {
-  local wwz=${1:-2025-08-26-ifs.wwz}
+  local wwz=${1:-2025-09-27-disagree.wwz}
 
   mkdir -p $EDIT_DIR
 
@@ -759,8 +766,8 @@ sync-wwz() {
 }
 
 extract() {
-  local wwz=${1:-2025-08-26-ifs.wwz}
-  local new_epoch=${2:-2025-09-06-edit}
+  local wwz=${1:-2025-09-27-disagree.wwz}
+  local new_epoch=${2:-2025-10-03-causes}
 
   # Extract the whole thing into a temp dir
   local tmp_dir=$EDIT_DIR/$new_epoch
