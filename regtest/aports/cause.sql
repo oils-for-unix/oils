@@ -1,14 +1,18 @@
 -- SQL invoked from regtest/aports-html.sh
 
 alter table diff_baseline add column cause text;
+-- Add Github links (AFTER accounting for signals)
+alter table diff_baseline add column cause_HREF text;
+alter table diff_baseline add column suite text;
+alter table diff_baseline add column suite_HREF text;
 
 -- Update diff table with values from causes table
 update diff_baseline
-set cause = (
-  select causes.cause
+set cause = causes.cause,
+    suite = causes.suite,
+    suite_HREF = causes.suite_HREF
   from causes
-  where causes.pkg = diff_baseline.pkg
-);
+  where causes.pkg = diff_baseline.pkg;
 
 -- Set causes for signals/timeouts
 update diff_baseline
@@ -19,8 +23,6 @@ update diff_baseline
 set cause = "signal-143"
 where status1 = 143 or status2 = 143;
 
--- Add Github links (AFTER accounting for signals)
-alter table diff_baseline add column cause_HREF text;
 
 update diff_baseline
 set cause_HREF = case

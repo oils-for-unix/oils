@@ -284,6 +284,7 @@ published-html() {
 - [2025-09-15-order](2025-09-15-order.wwz/_tmp/aports-report/2025-09-15-order/diff_merged.html)
 - [2025-09-17-ash2](2025-09-17-ash2.wwz/_tmp/aports-report/2025-09-17-ash2/diff_merged.html)
 - [2025-09-18-bash](2025-09-18-bash.wwz/_tmp/aports-report/2025-09-18-bash/diff_merged.html)
+  - only run on packages that disagree: [2025-09-27-disagree](2025-09-27-disagree.wwz/_tmp/aports-report/2025-09-27-disagree/diff_merged.html)
 
 EOF
 
@@ -457,21 +458,29 @@ EOF
 
   mkdir -p error
   cat failed-packages.txt | while read -r pkg; do
-    local left=baseline/log/$pkg.log.txt 
+    #local left=baseline/log/$pkg.log.txt 
     local right=osh-as-sh/log/$pkg.log.txt 
 
     # lower case 'error fail' are more noisy, e.g. command line flags
     egrep 'Error|ERROR|Fail|FAIL|test-suite.log' $right > error/$pkg.txt || true
   done
 
-  { echo "pkg${TAB}cause"
+  { echo "pkg${TAB}cause${TAB}suite${TAB}suite_HREF"
     cat failed-packages.txt | while read -r pkg; do
       local right=osh-as-sh/log/$pkg.log.txt 
 
       local cause
       cause=$(awk -f $cause_awk $right)
 
-      echo "${pkg}${TAB}${cause}"
+      local suite=''
+      local suite_HREF=''
+      local suite_path="osh-as-sh/test-suite/$pkg/test-suite.log.txt"
+      if test -f "$suite_path"; then
+        suite='suite'
+        suite_HREF=$suite_path  # shard added in regtest/aports/merge.sql
+      fi
+
+      echo "${pkg}${TAB}${cause}${TAB}${suite}${TAB}${suite_HREF}"
     done 
   } > causes.tsv
 
@@ -558,11 +567,23 @@ merge-diffs-sql() {
 
 merge-diffs() {
   local epoch_dir=${1:-_tmp/aports-report/2025-08-03}
+  local do_disagree=${2:-}
+
   local db=$PWD/$epoch_dir/diff_merged.db
   rm -f $db
-  # TODO: may fail on incomplete shard
-  merge-diffs-sql $epoch_dir/shard* | sqlite3 $db
-  echo $db
+
+  local -a shards
+  if test -n "$do_disagree"; then
+    # Hack: distinguish disagree-2025 from disagree-packages.txt
+    shards=( $epoch_dir/disagree-2* )  # Usually 1 shard
+  else
+    shards=( $epoch_dir/shard* )
+  fi
+
+  echo SHARDS "${shards[@]}"
+
+  merge-diffs-sql "${shards[@]}" | sqlite3 $db
+  #echo $db
 
   # copied from above
   pushd $epoch_dir > /dev/null
@@ -624,7 +645,7 @@ write-shard-reports() {
 
 write-all-reports() {
   local epoch_dir=${1:-_tmp/aports-report/2025-08-03}
-  shopt -s nullglob
+
   for shard_dir in $epoch_dir/shard*; do
     write-shard-reports "$shard_dir"
   done
@@ -634,9 +655,13 @@ write-all-reports() {
 
 write-disagree-reports() {
   local epoch_dir=${1:-_tmp/aports-build/2025-09-27}
-  for shard_dir in $epoch_dir/disagree*; do
+
+  # Hack: distinguish disagree-2025 from disagree-packages.txt
+  for shard_dir in $epoch_dir/disagree-2*; do
     write-shard-reports "$shard_dir"
   done
+
+  merge-diffs "$epoch_dir" T
 }
 
 html-tree() {
