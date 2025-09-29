@@ -998,7 +998,7 @@ Example:
 
     var d = io->evalToDict(cmd)
 
-    = d  # => (Dict)  {a: 42, b: 11}
+    pp (d)  # => (Dict)  {a: 42, b: 11}
 
 Names that end with an underscore `_` are not copied, so `hidden_` is not in
 the `Dict`.
