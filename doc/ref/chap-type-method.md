@@ -993,9 +993,9 @@ evaluated in.
 
 Example:
 
+    var x = 10  # captured
     var cmd = ^(var a = 42; var hidden_ = 'h'; var b = x + 1; )
 
-    var x = 10  # captured
     var d = io->evalToDict(cmd)
 
     = d  # => (Dict)  {a: 42, b: 11}
