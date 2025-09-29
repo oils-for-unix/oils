@@ -304,6 +304,9 @@ def _PrefixBindingsPersist(cmd_val):
             return True
         elif case(cmd_value_e.Argv):
             cmd_val = cast(cmd_value.Argv, UP_cmd_val)
+            if len(cmd_val.argv) == 0:
+                return True
+
             arg0 = cmd_val.argv[0]
 
             # exec is an EXCEPTION to the SPECIAL builtin rule.
