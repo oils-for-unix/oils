@@ -62,7 +62,7 @@ from posix_ import (
     O_TRUNC,
 )
 
-from typing import IO, List, Tuple, Dict, Optional, Any, cast, TYPE_CHECKING
+from typing import IO, List, Tuple, Dict, Optional, Any, cast, Callable, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value
@@ -80,7 +80,7 @@ NO_FD = -1
 # Oils uses 100 because users are allowed TWO digits in frontend/lexer_def.py.
 # This is a compromise between bash (unlimited, but requires crazy
 # bookkeeping), and dash/zsh (10) and mksh (24)
-_SHELL_MIN_FD = 100
+_SHELL_MIN_FD = 25
 
 # Style for 'jobs' builtin
 STYLE_DEFAULT = 0
@@ -205,9 +205,12 @@ class FdState(object):
         self.tracer = tracer
         self.waiter = waiter
         self.exec_opts = exec_opts
+        self.persistent = {}  # type: Dict[int, bool]
+        self.callbacks = {
+        }  # type: Dict[int, Callable[[mylib.LineReader], None]]
 
-    def Open(self, path):
-        # type: (str) -> mylib.LineReader
+    def Open(self, path, persistent=False):
+        # type: (str, bool) -> mylib.LineReader
         """Opens a path for read, but moves it out of the reserved 3-9 fd
         range.
 
@@ -218,31 +221,42 @@ class FdState(object):
           IOError or OSError if the path can't be found.  (This is Python-induced wart)
         """
         fd_mode = O_RDONLY
-        f = self._Open(path, 'r', fd_mode)
+        self.c_mode = 'r'
+        f = self._Open(path, fd_mode, persistent)
 
         # Hacky downcast
         return cast('mylib.LineReader', f)
 
     # used for util.DebugFile
-    def OpenForWrite(self, path):
-        # type: (str) -> mylib.Writer
+    def OpenForWrite(self, path, persistent=False):
+        # type: (str, bool) -> mylib.Writer
         fd_mode = O_CREAT | O_RDWR
-        f = self._Open(path, 'w', fd_mode)
+        self.c_mode = 'w'
+        f = self._Open(path, fd_mode, persistent)
 
         # Hacky downcast
         return cast('mylib.Writer', f)
 
-    def _Open(self, path, c_mode, fd_mode):
-        # type: (str, str, int) -> IO[str]
+    def _Open(self, path, fd_mode, persistent):
+        # type: (str, int, bool) -> IO[str]
         fd = posix.open(path, fd_mode, 0o666)  # may raise OSError
 
         # Immediately move it to a new location
         new_fd = SaveFd(fd)
         posix.close(fd)
+        self.persistent[new_fd] = persistent
 
         # Return a Python file handle
-        f = posix.fdopen(new_fd, c_mode)  # may raise IOError
+        f = posix.fdopen(new_fd, self.c_mode)  # may raise IOError
         return f
+
+    def _IsPersistent(self, fd):
+        # type: (int) -> bool
+        return fd in self.persistent and self.persistent[fd]
+
+    def SetCallback(self, f, callback):
+        # type: (mylib.LineReader, Callable[[mylib.LineReader], None]) -> None
+        self.callbacks[f.fileno()] = callback
 
     def _WriteFdToMem(self, fd_name, fd):
         # type: (str, int) -> None
@@ -276,13 +290,26 @@ class FdState(object):
             if e.errno != EBADF:
                 raise
         if ok:
+            if self._IsPersistent(fd):
+                # Invoke the callback with the new Python file descriptor
+                f = cast('mylib.LineReader', posix.fdopen(new_fd, self.c_mode))
+                self.callbacks[fd](f)
+
+                # Move persistent status and callback to the new fd
+                del self.persistent[fd]
+                self.persistent[new_fd] = True
+                self.callbacks[new_fd] = self.callbacks[fd]
+                del self.callbacks[fd]
+                # No need to push the _RedirFrame - we are not restoring this
+                # fd to its previous value
+            else:
+                self.cur_frame.saved.append(_RedirFrame(new_fd, fd, True))
             posix.close(fd)
-            self.cur_frame.saved.append(_RedirFrame(new_fd, fd, True))
         else:
             # if we got EBADF, we still need to close the original on Pop()
             self._PushClose(fd)
 
-        return ok
+        return (ok and not self._IsPersistent(new_fd))
 
     def _PushDup(self, fd1, blame_loc):
         # type: (int, redir_loc_t) -> int
@@ -2087,7 +2114,7 @@ class Waiter(object):
           NoChildren                 -- ECHILD - no more
         | Exited(int pid)            -- process done - call job_list.PopStatus()  for status
           # do we also we want ExitedWithSignal() ?
-        | Stopped(int pid)           
+        | Stopped(int pid)
         | Interrupted(int sig_num)   -- may or may not retry
         | UntrappedSigwinch          -- ignored
 
