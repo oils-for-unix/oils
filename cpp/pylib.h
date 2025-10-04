@@ -17,6 +17,8 @@ bool exists(BigStr* path);
 
 bool isdir(BigStr* path);
 
+bool isfile(BigStr* path);
+
 }  // namespace path_stat
 
 #endif  // LEAKY_PYLIB_H
