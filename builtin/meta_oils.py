@@ -194,8 +194,9 @@ class ShellFile(vm._Builtin):
     def _LoadDiskFile(self, fs_path, blame_loc):
         # type: (str, loc_t) -> Tuple[mylib.LineReader, cmd_parse.CommandParser]
         try:
-            # Shell can't use descriptors 3-9
-            f, _ = self.fd_state.Open(fs_path)
+            # The file being sourced needs to be open across several commands
+            # that can potentially move its fd, so open it persistently
+            f, fd = self.fd_state.Open(fs_path, persistent=True)
         except (IOError, OSError) as e:
             self.errfmt.Print_(
                 '%s %r failed: %s' %
@@ -203,7 +204,9 @@ class ShellFile(vm._Builtin):
                 blame_loc=blame_loc)
             return None, None
 
-        line_reader = reader.FileLineReader(f, self.arena)
+        file_line_reader = reader.FileLineReader(f, self.arena)
+        line_reader = file_line_reader
+        self.fd_state.SetCallback(fd, file_line_reader)
         c_parser = self.parse_ctx.MakeOshParser(line_reader)
         return f, c_parser
 
