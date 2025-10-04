@@ -1067,12 +1067,13 @@ def Main(
         else:
             src = source.MainFile(script_name)
             try:
-                f = fd_state.Open(script_name)
+                f = fd_state.Open(script_name, persistent=True)
             except (IOError, OSError) as e:
                 print_stderr("%s: Couldn't open %r: %s" %
                              (lang, script_name, posix.strerror(e.errno)))
                 return 1
             line_reader = reader.FileLineReader(f, arena)
+            fd_state.SetCallback(f, line_reader.ReplaceFd)
 
     # Pretend it came from somewhere else
     if flag.location_str is not None:
