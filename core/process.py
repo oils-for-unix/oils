@@ -62,7 +62,7 @@ from posix_ import (
     O_TRUNC,
 )
 
-from typing import IO, List, Tuple, Dict, Optional, Any, cast, TYPE_CHECKING
+from typing import IO, List, Tuple, Dict, Optional, Any, cast, Callable, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value
@@ -205,11 +205,12 @@ class FdState(object):
         self.tracer = tracer
         self.waiter = waiter
         self.exec_opts = exec_opts
-        self.persistent = {}
-        self.callbacks = {}
+        self.persistent = {}  # type: Dict[int, bool]
+        self.callbacks = {
+        }  # type: Dict[int, Callable[[mylib.LineReader], None]]
 
     def Open(self, path, persistent=False):
-        # type: (str) -> mylib.LineReader
+        # type: (str, bool) -> mylib.LineReader
         """Opens a path for read, but moves it out of the reserved 3-9 fd
         range.
 
@@ -228,7 +229,7 @@ class FdState(object):
 
     # used for util.DebugFile
     def OpenForWrite(self, path, persistent=False):
-        # type: (str) -> mylib.Writer
+        # type: (str, bool) -> mylib.Writer
         fd_mode = O_CREAT | O_RDWR
         self.c_mode = 'w'
         f = self._Open(path, fd_mode, persistent)
@@ -237,7 +238,7 @@ class FdState(object):
         return cast('mylib.Writer', f)
 
     def _Open(self, path, fd_mode, persistent):
-        # type: (str, str, int) -> IO[str]
+        # type: (str, int, bool) -> IO[str]
         fd = posix.open(path, fd_mode, 0o666)  # may raise OSError
 
         # Immediately move it to a new location
@@ -250,9 +251,11 @@ class FdState(object):
         return f
 
     def _IsPersistent(self, fd):
+        # type: (int) -> bool
         return fd in self.persistent and self.persistent[fd]
 
     def SetCallback(self, f, callback):
+        # type: (mylib.LineReader, Callable[[mylib.LineReader], None]) -> None
         self.callbacks[f.fileno()] = callback
 
     def _WriteFdToMem(self, fd_name, fd):
@@ -289,7 +292,7 @@ class FdState(object):
         if ok:
             if self._IsPersistent(fd):
                 # Invoke the callback with the new Python file descriptor
-                f = posix.fdopen(new_fd, self.c_mode)  # may raise IOError
+                f = cast('mylib.LineReader', posix.fdopen(new_fd, self.c_mode))
                 self.callbacks[fd](f)
 
                 # Move persistent status and callback to the new fd

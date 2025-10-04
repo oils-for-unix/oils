@@ -97,6 +97,7 @@ class FileLineReader(_Reader):
         self.last_line_hint = False
 
     def ReplaceFd(self, fd):
+        # type: (mylib.LineReader) -> None
         tell = self.f.tell()
         fd.seek(tell)
         self.f = fd
