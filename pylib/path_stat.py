@@ -34,4 +34,4 @@ def isfile(path):
         st = posix.stat(path)
     except posix.error:
         return False
-    return not stat.S_ISDIR(st.st_mode)
+    return stat.S_ISREG(st.st_mode)

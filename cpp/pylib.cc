@@ -60,7 +60,7 @@ bool isfile(BigStr* path) {
   if (::stat(path->data_, &st) < 0) {
     return false;
   }
-  return !S_ISDIR(st.st_mode);
+  return S_ISREG(st.st_mode);
 }
 
 }  // namespace path_stat
