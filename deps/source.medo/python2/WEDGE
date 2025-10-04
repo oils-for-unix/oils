@@ -24,7 +24,7 @@ wedge-make() {
   # install'
   # And then Dockerfile.* may need the corresponding runtime deps
 
-  time $src_dir/configure --prefix=$install_dir
+  time $src_dir/configure --prefix=$install_dir CFLAGS="-std=gnu99"
 
   time make
 
