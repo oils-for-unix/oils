@@ -305,6 +305,9 @@ def _PrefixBindingsPersist(cmd_val):
         elif case(cmd_value_e.Argv):
             cmd_val = cast(cmd_value.Argv, UP_cmd_val)
             if len(cmd_val.argv) == 0:
+                # This is counter-intuitive, but bash appears to preserve
+                # bindings in this case. Try the following snippet:
+                # bash -c 'A=a $B; echo $A' (prints "a")
                 return True
 
             arg0 = cmd_val.argv[0]
