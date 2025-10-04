@@ -47,7 +47,7 @@ class ParseHay(vm._Callable):
 
         # TODO: need to close the file!
         try:
-            f = self.fd_state.Open(path)
+            f, _ = self.fd_state.Open(path)
         except (IOError, OSError) as e:
             msg = posix.strerror(e.errno)
             raise error.Expr("Couldn't open %r: %s" % (path, msg), call_loc)

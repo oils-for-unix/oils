@@ -195,7 +195,7 @@ class ShellFile(vm._Builtin):
         # type: (str, loc_t) -> Tuple[mylib.LineReader, cmd_parse.CommandParser]
         try:
             # Shell can't use descriptors 3-9
-            f = self.fd_state.Open(fs_path)
+            f, _ = self.fd_state.Open(fs_path)
         except (IOError, OSError) as e:
             self.errfmt.Print_(
                 '%s %r failed: %s' %

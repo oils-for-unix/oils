@@ -459,7 +459,7 @@ def EvalFile(
       ok: whether processing should continue
     """
     try:
-        f = fd_state.Open(fs_path)
+        f, _ = fd_state.Open(fs_path)
     except (IOError, OSError) as e:
         print_stderr("%s: Couldn't open %r for --eval: %s" %
                      (lang, fs_path, posix.strerror(e.errno)))
