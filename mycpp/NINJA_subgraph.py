@@ -19,6 +19,7 @@ def DefineTargets(ru):
         'mycpp/mycpp_main.py',
         deps_base_dir='prebuilt/ninja',
         template='mycpp',
+        implicit=['_bin/datalog/dataflow'],
     )
 
     # Note: could move bin/mycpp_main_{souffle,nosouffle}.sh to mycpp/ dir, so
