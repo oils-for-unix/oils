@@ -62,9 +62,9 @@ def LookupExecutable(name, path_dirs, exec_required=True):
     for path_dir in path_dirs:
         full_path = os_path.join(path_dir, name)
         if exec_required:
-            found = posix.access(full_path, X_OK)
-        else:
-            found = path_stat.exists(full_path)
+            found = posix.access(full_path, X_OK) and path_stat.isfile(full_path)
+        else:  # Used by source
+            found = path_stat.isfile(full_path)
 
         if found:
             return full_path
