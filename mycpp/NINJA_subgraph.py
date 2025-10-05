@@ -443,6 +443,8 @@ def MycppExamples(ru, ph):
                 impl = 'C++'
                 if translator == 'mycpp-nosouffle':
                     impl = 'C++-NoSouffle'
+                elif translator == 'mycpp-souffle':
+                    impl = 'C++-Souffle'
 
                 n.build([task_out, cc_log_out],
                         'example-task', [b_example],
