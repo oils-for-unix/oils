@@ -35,9 +35,6 @@ from mycpp.mylib import log, print_stderr, NewDict
 from pylib import os_path
 from osh import cmd_eval
 
-import posix_ as posix
-from posix_ import X_OK  # translated directly to C macro
-
 import libc
 
 _ = log
