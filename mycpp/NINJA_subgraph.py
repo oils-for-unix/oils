@@ -389,7 +389,7 @@ def MycppExamples(ru, ph):
 
         for translator in ['mycpp', 'mycpp-souffle', 'mycpp-nosouffle']:
 
-            matrix = (NOSOUFFLE_MATRIX if translator == 'mycpp-nosouffle' else
+            matrix = (NOSOUFFLE_MATRIX if 'souffle' in translator else
                       COMPILERS_VARIANTS)
             phony_prefix = 'mycpp-examples' if translator == 'mycpp' else None
             py_inputs = TRANSLATE_FILES.get(ex)
