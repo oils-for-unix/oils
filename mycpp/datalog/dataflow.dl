@@ -59,6 +59,10 @@ live_vars_out(f, s1, r) :- cf_edge(f, s1, s2), live_vars_in(f, s2, r).
 // invokes the GC must be rooted.
 stack_root_vars(f, r) :- call(f, s, g), might_collect(g, _), !bind(f, s, r, g, _), live_vars_out(f, s, r).
 
+// If a reference is used in the same statement as an expression that might
+// trigger a collection, it must be rooted.
+stack_root_vars(f, r) :- use(f, s, r), might_collect(f, s).
+
 // If a function invokes the GC, directly or indirectly, all of its heap-managed
 // arguments must be rooted.
 stack_root_vars(f, $LocalVariable(f, v)) :- might_collect(f, _), assign(f, 0, $LocalVariable(f, v), $Empty()).
