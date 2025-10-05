@@ -929,8 +929,7 @@ def _ResolveName(
 
     # See if it's external
     for path in search_path.LookupReflect(name, do_all):
-        if posix.access(path, X_OK):
-            results.append((name, 'file', path))
+        results.append((name, 'file', path))
 
     # Private builtins after externals
     if do_private and consts.LookupPrivateBuiltin(name) != 0:

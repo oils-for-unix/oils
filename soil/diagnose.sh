@@ -37,6 +37,9 @@ dump-versions() {
 
   which python3
   python3 -V
+
+  which gcc
+  gcc --version
   set +x
 }
 

@@ -45,6 +45,11 @@ if TYPE_CHECKING:
 _ = log
 
 
+def _IsPathExecutable(full_path):
+    # type: (str) -> bool
+    return posix.access(full_path, X_OK) and path_stat.isfile(full_path)
+
+
 def LookupExecutable(name, path_dirs, exec_required=True):
     # type: (str, List[str], bool) -> Optional[str]
     """
@@ -62,8 +67,8 @@ def LookupExecutable(name, path_dirs, exec_required=True):
     for path_dir in path_dirs:
         full_path = os_path.join(path_dir, name)
         if exec_required:
-            found = posix.access(full_path, X_OK) and path_stat.isfile(full_path)
-        else:  # Used by source
+            found = _IsPathExecutable(full_path)
+        else:  # Used by 'source' builtin
             found = path_stat.isfile(full_path)
 
         if found:
@@ -223,7 +228,7 @@ class SearchPath(object):
             return []
 
         if '/' in name:
-            if path_stat.exists(name):
+            if _IsPathExecutable(name):
                 return [name]
             else:
                 return []
@@ -231,7 +236,7 @@ class SearchPath(object):
         results = []  # type: List[str]
         for path_dir in self._GetPath():
             full_path = os_path.join(path_dir, name)
-            if path_stat.exists(full_path):
+            if _IsPathExecutable(full_path):
                 results.append(full_path)
                 if not do_all:
                     return results

@@ -337,3 +337,33 @@ touch _tmp/executable
 chmod +x _tmp/executable
 type -a executable
 ## status: 1
+
+#### type -P does not find directories (regression)
+
+mkdir -p _tmp
+PATH="_tmp:$PATH"
+mkdir _tmp/cat
+
+type -P _tmp/cat
+echo status=$?
+type -P cat
+echo status=$?
+
+## STDOUT:
+status=1
+/usr/bin/cat
+status=0
+## END
+
+## BUG mksh STDOUT:
+status=1
+cat
+status=0
+## END
+
+## BUG ash/dash STDOUT:
+_tmp/cat
+status=0
+/usr/bin/cat
+status=0
+## END
