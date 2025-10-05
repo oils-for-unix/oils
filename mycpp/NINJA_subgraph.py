@@ -387,7 +387,7 @@ def MycppExamples(ru, ph):
 
         ## Translate the example 2 ways, and benchmark and test it
 
-        for translator in ['mycpp', 'mycpp-nosouffle']:
+        for translator in ['mycpp', 'mycpp-souffle', 'mycpp-nosouffle']:
 
             matrix = (NOSOUFFLE_MATRIX if translator == 'mycpp-nosouffle' else
                       COMPILERS_VARIANTS)
