@@ -20,7 +20,7 @@ wedge-make() {
 
   # --without-bash-malloc for Alpine only -- musl libc incompatibility?
   # https://patchwork.ozlabs.org/project/buildroot/patch/20170523171931.18744-1-dsabogalcc@gmail.com/
-  time $src_dir/configure --without-bash-malloc --prefix=$install_dir CFLAGS="-std=gnu99"
+  time $src_dir/configure --without-bash-malloc --prefix=$install_dir CFLAGS="-std=gnu99 -Wno-error=implicit-function-declaration"
 
   time make
 }
