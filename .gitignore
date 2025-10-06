@@ -61,3 +61,8 @@ local.sh
 NOTES*.txt
 TODO*.txt
 zulip-env.sh
+
+# node.js for SQL formatter
+package-lock.json
+package.json
+node_modules/
