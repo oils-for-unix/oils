@@ -162,6 +162,24 @@ def collect_in_comprehension():
         print(s)
 
 
+def print_things(a, b):
+    # type: (str, str) -> None
+    s = '%d' % 999
+    print(s)
+    print(a)
+    print(b)
+
+
+def use_and_collect():
+    # type: () -> None
+    """
+    We should generate roots for variables that are used in the same statement
+    as a collection.
+    """
+    s = '%d' % 1
+    print_things(s, collect_and_slice('pizza'))
+
+
 def run_tests():
     # type: () -> None
     no_collect()
@@ -170,6 +188,7 @@ def run_tests():
     arg_roots()
     alias()
     collect_scoped_resource()
+    use_and_collect()
     # TODO: maybe move these two to invalid examples if we decide to disallow.
     #collect_in_loop()
     #collect_in_comprehension()

@@ -1097,7 +1097,7 @@ rel_bind_c9210fdc63280a40(&rel_bind_c9210fdc63280a40){
 
 void Stratum_bind_8b0da46e2379b6cd::run([[maybe_unused]] const std::vector<RamDomain>& args,[[maybe_unused]] std::vector<RamDomain>& ret){
 if (performIO) {
-try {std::map<std::string, std::string> directiveMap({{"IO","file"},{"attributeNames","caller\ts\tr\tcallee\tparam"},{"auxArity","0"},{"fact-dir","."},{"name","bind"},{"operation","input"},{"params","{\"records\": {}, \"relation\": {\"arity\": 5, \"params\": [\"caller\", \"s\", \"r\", \"callee\", \"param\"]}}"},{"types","{\"ADTs\": {\"+:Reference\": {\"arity\": 2, \"branches\": [{\"name\": \"LocalVariable\", \"types\": [\"s:Function\", \"s:symbol\"]}, {\"name\": \"ObjectMember\", \"types\": [\"s:symbol\", \"s:symbol\"]}], \"enum\": false}, \"+:Value\": {\"arity\": 3, \"branches\": [{\"name\": \"Empty\", \"types\": []}, {\"name\": \"HeapObject\", \"types\": [\"s:symbol\"]}, {\"name\": \"Ref\", \"types\": [\"+:Reference\"]}], \"enum\": false}}, \"records\": {}, \"relation\": {\"arity\": 5, \"types\": [\"s:Function\", \"i:Statement\", \"+:Reference\", \"s:Function\", \"s:symbol\"]}}"}});
+try {std::map<std::string, std::string> directiveMap({{"IO","file"},{"attributeNames","caller\ts\tr\tcallee\targ_pos"},{"auxArity","0"},{"fact-dir","."},{"name","bind"},{"operation","input"},{"params","{\"records\": {}, \"relation\": {\"arity\": 5, \"params\": [\"caller\", \"s\", \"r\", \"callee\", \"arg_pos\"]}}"},{"types","{\"ADTs\": {\"+:Reference\": {\"arity\": 2, \"branches\": [{\"name\": \"LocalVariable\", \"types\": [\"s:Function\", \"s:symbol\"]}, {\"name\": \"ObjectMember\", \"types\": [\"s:symbol\", \"s:symbol\"]}], \"enum\": false}, \"+:Value\": {\"arity\": 3, \"branches\": [{\"name\": \"Empty\", \"types\": []}, {\"name\": \"HeapObject\", \"types\": [\"s:symbol\"]}, {\"name\": \"Ref\", \"types\": [\"+:Reference\"]}], \"enum\": false}}, \"records\": {}, \"relation\": {\"arity\": 5, \"types\": [\"s:Function\", \"i:Statement\", \"+:Reference\", \"s:Function\", \"i:number\"]}}"}});
 if (!inputDirectory.empty()) {directiveMap["fact-dir"] = inputDirectory;}
 IOSystem::getInstance().getReader(directiveMap, symTable, recordTable)->readAll(*rel_bind_c9210fdc63280a40);
 } catch (std::exception& e) {std::cerr << "Error loading bind data: " << e.what() << '\n';
@@ -1361,7 +1361,6 @@ rel_delta_live_vars_out_acc66913cea62d16->purge();
 rel_new_live_vars_out_2d78073638bb3740->purge();
 if (pruneImdtRels) rel_cf_edge_4931a04c8c74bb72->purge();
 if (pruneImdtRels) rel_live_vars_in_0b002b95687eda95->purge();
-if (pruneImdtRels) rel_use_e955e932f22dad4d->purge();
 }
 
 } // namespace  souffle
@@ -1491,7 +1490,7 @@ namespace  souffle {
 using namespace souffle;
 class Stratum_stack_root_vars_4df5b9c3cd2e7586 {
 public:
- Stratum_stack_root_vars_4df5b9c3cd2e7586(SymbolTable& symTable,RecordTable& recordTable,ConcurrentCache<std::string,std::regex>& regexCache,bool& pruneImdtRels,bool& performIO,SignalHandler*& signalHandler,std::atomic<std::size_t>& iter,std::atomic<RamDomain>& ctr,std::string& inputDirectory,std::string& outputDirectory,t_btree_iiii__0_1_2_3__1110__1111__1100::Type& rel_assign_e4bb6e0824a16a37,t_btree_iiiii__0_1_2_3_4__11111__11110::Type& rel_bind_c9210fdc63280a40,t_btree_iii__2_0_1__001__111::Type& rel_call_ee1d8972d66cc25f,t_btree_iii__0_1_2__110__111::Type& rel_live_vars_out_f94306e028b67aa4,t_btree_ii__0_1__11__10::Type& rel_might_collect_ef1d0b06d36e4ddc,t_btree_ii__0_1__11::Type& rel_stack_root_vars_a138611bd47fd3ff);
+ Stratum_stack_root_vars_4df5b9c3cd2e7586(SymbolTable& symTable,RecordTable& recordTable,ConcurrentCache<std::string,std::regex>& regexCache,bool& pruneImdtRels,bool& performIO,SignalHandler*& signalHandler,std::atomic<std::size_t>& iter,std::atomic<RamDomain>& ctr,std::string& inputDirectory,std::string& outputDirectory,t_btree_iiii__0_1_2_3__1110__1111__1100::Type& rel_assign_e4bb6e0824a16a37,t_btree_iiiii__0_1_2_3_4__11111__11110::Type& rel_bind_c9210fdc63280a40,t_btree_iii__2_0_1__001__111::Type& rel_call_ee1d8972d66cc25f,t_btree_iii__0_1_2__110__111::Type& rel_live_vars_out_f94306e028b67aa4,t_btree_ii__0_1__11__10::Type& rel_might_collect_ef1d0b06d36e4ddc,t_btree_ii__0_1__11::Type& rel_stack_root_vars_a138611bd47fd3ff,t_btree_iii__0_1_2__111::Type& rel_use_e955e932f22dad4d);
 void run([[maybe_unused]] const std::vector<RamDomain>& args,[[maybe_unused]] std::vector<RamDomain>& ret);
 private:
 SymbolTable& symTable;
@@ -1510,12 +1509,13 @@ t_btree_iii__2_0_1__001__111::Type* rel_call_ee1d8972d66cc25f;
 t_btree_iii__0_1_2__110__111::Type* rel_live_vars_out_f94306e028b67aa4;
 t_btree_ii__0_1__11__10::Type* rel_might_collect_ef1d0b06d36e4ddc;
 t_btree_ii__0_1__11::Type* rel_stack_root_vars_a138611bd47fd3ff;
+t_btree_iii__0_1_2__111::Type* rel_use_e955e932f22dad4d;
 std::vector<std::regex> regexes;
 };
 } // namespace  souffle
 namespace  souffle {
 using namespace souffle;
- Stratum_stack_root_vars_4df5b9c3cd2e7586::Stratum_stack_root_vars_4df5b9c3cd2e7586(SymbolTable& symTable,RecordTable& recordTable,ConcurrentCache<std::string,std::regex>& regexCache,bool& pruneImdtRels,bool& performIO,SignalHandler*& signalHandler,std::atomic<std::size_t>& iter,std::atomic<RamDomain>& ctr,std::string& inputDirectory,std::string& outputDirectory,t_btree_iiii__0_1_2_3__1110__1111__1100::Type& rel_assign_e4bb6e0824a16a37,t_btree_iiiii__0_1_2_3_4__11111__11110::Type& rel_bind_c9210fdc63280a40,t_btree_iii__2_0_1__001__111::Type& rel_call_ee1d8972d66cc25f,t_btree_iii__0_1_2__110__111::Type& rel_live_vars_out_f94306e028b67aa4,t_btree_ii__0_1__11__10::Type& rel_might_collect_ef1d0b06d36e4ddc,t_btree_ii__0_1__11::Type& rel_stack_root_vars_a138611bd47fd3ff):
+ Stratum_stack_root_vars_4df5b9c3cd2e7586::Stratum_stack_root_vars_4df5b9c3cd2e7586(SymbolTable& symTable,RecordTable& recordTable,ConcurrentCache<std::string,std::regex>& regexCache,bool& pruneImdtRels,bool& performIO,SignalHandler*& signalHandler,std::atomic<std::size_t>& iter,std::atomic<RamDomain>& ctr,std::string& inputDirectory,std::string& outputDirectory,t_btree_iiii__0_1_2_3__1110__1111__1100::Type& rel_assign_e4bb6e0824a16a37,t_btree_iiiii__0_1_2_3_4__11111__11110::Type& rel_bind_c9210fdc63280a40,t_btree_iii__2_0_1__001__111::Type& rel_call_ee1d8972d66cc25f,t_btree_iii__0_1_2__110__111::Type& rel_live_vars_out_f94306e028b67aa4,t_btree_ii__0_1__11__10::Type& rel_might_collect_ef1d0b06d36e4ddc,t_btree_ii__0_1__11::Type& rel_stack_root_vars_a138611bd47fd3ff,t_btree_iii__0_1_2__111::Type& rel_use_e955e932f22dad4d):
 symTable(symTable),
 recordTable(recordTable),
 regexCache(regexCache),
@@ -1532,6 +1532,7 @@ rel_call_ee1d8972d66cc25f(&rel_call_ee1d8972d66cc25f),
 rel_live_vars_out_f94306e028b67aa4(&rel_live_vars_out_f94306e028b67aa4),
 rel_might_collect_ef1d0b06d36e4ddc(&rel_might_collect_ef1d0b06d36e4ddc),
 rel_stack_root_vars_a138611bd47fd3ff(&rel_stack_root_vars_a138611bd47fd3ff),
+rel_use_e955e932f22dad4d(&rel_use_e955e932f22dad4d),
 regexes({
 	std::regex(".*ctx_.*__init__"),
 }){
@@ -1564,10 +1565,27 @@ rel_stack_root_vars_a138611bd47fd3ff->insert(tuple,READ_OP_CONTEXT(rel_stack_roo
 }
 }
 ();}
+signalHandler->setMsg(R"_(stack_root_vars(f,r) :- 
+   use(f,s,r),
+   might_collect(f,s).
+in file dataflow.dl [64:1-64:60])_");
+if(!(rel_use_e955e932f22dad4d->empty()) && !(rel_might_collect_ef1d0b06d36e4ddc->empty())) {
+[&](){
+CREATE_OP_CONTEXT(rel_might_collect_ef1d0b06d36e4ddc_op_ctxt,rel_might_collect_ef1d0b06d36e4ddc->createContext());
+CREATE_OP_CONTEXT(rel_stack_root_vars_a138611bd47fd3ff_op_ctxt,rel_stack_root_vars_a138611bd47fd3ff->createContext());
+CREATE_OP_CONTEXT(rel_use_e955e932f22dad4d_op_ctxt,rel_use_e955e932f22dad4d->createContext());
+for(const auto& env0 : *rel_use_e955e932f22dad4d) {
+if( rel_might_collect_ef1d0b06d36e4ddc->contains(Tuple<RamDomain,2>{{ramBitCast(env0[0]),ramBitCast(env0[1])}},READ_OP_CONTEXT(rel_might_collect_ef1d0b06d36e4ddc_op_ctxt))) {
+Tuple<RamDomain,2> tuple{{ramBitCast(env0[0]),ramBitCast(env0[2])}};
+rel_stack_root_vars_a138611bd47fd3ff->insert(tuple,READ_OP_CONTEXT(rel_stack_root_vars_a138611bd47fd3ff_op_ctxt));
+}
+}
+}
+();}
 signalHandler->setMsg(R"_(stack_root_vars(f,$LocalVariable(f, v)) :- 
    might_collect(f,_),
    assign(f,0,$LocalVariable(f, v),$Empty()).
-in file dataflow.dl [64:1-64:111])_");
+in file dataflow.dl [68:1-68:111])_");
 if(!(rel_might_collect_ef1d0b06d36e4ddc->empty()) && !(rel_assign_e4bb6e0824a16a37->empty())) {
 [&](){
 CREATE_OP_CONTEXT(rel_assign_e4bb6e0824a16a37_op_ctxt,rel_assign_e4bb6e0824a16a37->createContext());
@@ -1608,7 +1626,7 @@ rel_stack_root_vars_a138611bd47fd3ff->insert(tuple,READ_OP_CONTEXT(rel_stack_roo
 signalHandler->setMsg(R"_(stack_root_vars(f,$ObjectMember("self", m)) :- 
    match(".*ctx_.*__init__", f),
    assign(f,_,$ObjectMember("self", m),_).
-in file dataflow.dl [67:1-67:121])_");
+in file dataflow.dl [71:1-71:121])_");
 if(!(rel_assign_e4bb6e0824a16a37->empty())) {
 [&](){
 CREATE_OP_CONTEXT(rel_assign_e4bb6e0824a16a37_op_ctxt,rel_assign_e4bb6e0824a16a37->createContext());
@@ -1648,6 +1666,7 @@ if (pruneImdtRels) rel_assign_e4bb6e0824a16a37->purge();
 if (pruneImdtRels) rel_bind_c9210fdc63280a40->purge();
 if (pruneImdtRels) rel_call_ee1d8972d66cc25f->purge();
 if (pruneImdtRels) rel_live_vars_out_f94306e028b67aa4->purge();
+if (pruneImdtRels) rel_use_e955e932f22dad4d->purge();
 }
 
 } // namespace  souffle
@@ -1774,7 +1793,7 @@ regexCache(),
 rel_assign_e4bb6e0824a16a37(mk<t_btree_iiii__0_1_2_3__1110__1111__1100::Type>()),
 wrapper_rel_assign_e4bb6e0824a16a37(0, *rel_assign_e4bb6e0824a16a37, *this, "assign", std::array<const char *,4>{{"s:Function","i:Statement","+:Reference","+:Value"}}, std::array<const char *,4>{{"f","s","r","v"}}, 0),
 rel_bind_c9210fdc63280a40(mk<t_btree_iiiii__0_1_2_3_4__11111__11110::Type>()),
-wrapper_rel_bind_c9210fdc63280a40(1, *rel_bind_c9210fdc63280a40, *this, "bind", std::array<const char *,5>{{"s:Function","i:Statement","+:Reference","s:Function","s:symbol"}}, std::array<const char *,5>{{"caller","s","r","callee","param"}}, 0),
+wrapper_rel_bind_c9210fdc63280a40(1, *rel_bind_c9210fdc63280a40, *this, "bind", std::array<const char *,5>{{"s:Function","i:Statement","+:Reference","s:Function","i:number"}}, std::array<const char *,5>{{"caller","s","r","callee","arg_pos"}}, 0),
 rel_call_ee1d8972d66cc25f(mk<t_btree_iii__2_0_1__001__111::Type>()),
 wrapper_rel_call_ee1d8972d66cc25f(2, *rel_call_ee1d8972d66cc25f, *this, "call", std::array<const char *,3>{{"s:Function","i:Statement","s:Function"}}, std::array<const char *,3>{{"caller","s","callee"}}, 0),
 rel_might_collect_ef1d0b06d36e4ddc(mk<t_btree_ii__0_1__11__10::Type>()),
@@ -1801,7 +1820,7 @@ stratum_call_587d2d7effb5d130(symTable,recordTable,regexCache,pruneImdtRels,perf
 stratum_cf_edge_4017fef287699967(symTable,recordTable,regexCache,pruneImdtRels,performIO,signalHandler,iter,ctr,inputDirectory,outputDirectory,*rel_cf_edge_4931a04c8c74bb72),
 stratum_live_vars_in_c3dc49a4823a7f1e(symTable,recordTable,regexCache,pruneImdtRels,performIO,signalHandler,iter,ctr,inputDirectory,outputDirectory,*rel_delta_live_vars_in_fccc4ee6df066f63,*rel_delta_live_vars_out_acc66913cea62d16,*rel_new_live_vars_in_0b01be53183b2351,*rel_new_live_vars_out_2d78073638bb3740,*rel_assign_e4bb6e0824a16a37,*rel_cf_edge_4931a04c8c74bb72,*rel_live_vars_in_0b002b95687eda95,*rel_live_vars_out_f94306e028b67aa4,*rel_use_e955e932f22dad4d),
 stratum_might_collect_cc50af26f53a71ac(symTable,recordTable,regexCache,pruneImdtRels,performIO,signalHandler,iter,ctr,inputDirectory,outputDirectory,*rel_delta_might_collect_d651f71586aafe59,*rel_new_might_collect_5d48ef45a97e4618,*rel_call_ee1d8972d66cc25f,*rel_might_collect_ef1d0b06d36e4ddc),
-stratum_stack_root_vars_49e4f510c537163e(symTable,recordTable,regexCache,pruneImdtRels,performIO,signalHandler,iter,ctr,inputDirectory,outputDirectory,*rel_assign_e4bb6e0824a16a37,*rel_bind_c9210fdc63280a40,*rel_call_ee1d8972d66cc25f,*rel_live_vars_out_f94306e028b67aa4,*rel_might_collect_ef1d0b06d36e4ddc,*rel_stack_root_vars_a138611bd47fd3ff),
+stratum_stack_root_vars_49e4f510c537163e(symTable,recordTable,regexCache,pruneImdtRels,performIO,signalHandler,iter,ctr,inputDirectory,outputDirectory,*rel_assign_e4bb6e0824a16a37,*rel_bind_c9210fdc63280a40,*rel_call_ee1d8972d66cc25f,*rel_live_vars_out_f94306e028b67aa4,*rel_might_collect_ef1d0b06d36e4ddc,*rel_stack_root_vars_a138611bd47fd3ff,*rel_use_e955e932f22dad4d),
 stratum_use_2e20cb5441769259(symTable,recordTable,regexCache,pruneImdtRels,performIO,signalHandler,iter,ctr,inputDirectory,outputDirectory,*rel_use_e955e932f22dad4d){
 addRelation("assign", wrapper_rel_assign_e4bb6e0824a16a37, true, false);
 addRelation("bind", wrapper_rel_bind_c9210fdc63280a40, true, false);
@@ -1889,16 +1908,16 @@ IOSystem::getInstance().getWriter(directiveMap, symTable, recordTable)->writeAll
 }
 
 void Sf__::loadAll([[maybe_unused]] std::string inputDirectoryArg){
+try {std::map<std::string, std::string> directiveMap({{"IO","file"},{"attributeNames","caller\ts\tr\tcallee\targ_pos"},{"auxArity","0"},{"fact-dir","."},{"name","bind"},{"operation","input"},{"params","{\"records\": {}, \"relation\": {\"arity\": 5, \"params\": [\"caller\", \"s\", \"r\", \"callee\", \"arg_pos\"]}}"},{"types","{\"ADTs\": {\"+:Reference\": {\"arity\": 2, \"branches\": [{\"name\": \"LocalVariable\", \"types\": [\"s:Function\", \"s:symbol\"]}, {\"name\": \"ObjectMember\", \"types\": [\"s:symbol\", \"s:symbol\"]}], \"enum\": false}, \"+:Value\": {\"arity\": 3, \"branches\": [{\"name\": \"Empty\", \"types\": []}, {\"name\": \"HeapObject\", \"types\": [\"s:symbol\"]}, {\"name\": \"Ref\", \"types\": [\"+:Reference\"]}], \"enum\": false}}, \"records\": {}, \"relation\": {\"arity\": 5, \"types\": [\"s:Function\", \"i:Statement\", \"+:Reference\", \"s:Function\", \"i:number\"]}}"}});
+if (!inputDirectoryArg.empty()) {directiveMap["fact-dir"] = inputDirectoryArg;}
+IOSystem::getInstance().getReader(directiveMap, symTable, recordTable)->readAll(*rel_bind_c9210fdc63280a40);
+} catch (std::exception& e) {std::cerr << "Error loading bind data: " << e.what() << '\n';
+exit(1);
+}
 try {std::map<std::string, std::string> directiveMap({{"IO","file"},{"attributeNames","f\ts\tr\tv"},{"auxArity","0"},{"fact-dir","."},{"name","assign"},{"operation","input"},{"params","{\"records\": {}, \"relation\": {\"arity\": 4, \"params\": [\"f\", \"s\", \"r\", \"v\"]}}"},{"types","{\"ADTs\": {\"+:Reference\": {\"arity\": 2, \"branches\": [{\"name\": \"LocalVariable\", \"types\": [\"s:Function\", \"s:symbol\"]}, {\"name\": \"ObjectMember\", \"types\": [\"s:symbol\", \"s:symbol\"]}], \"enum\": false}, \"+:Value\": {\"arity\": 3, \"branches\": [{\"name\": \"Empty\", \"types\": []}, {\"name\": \"HeapObject\", \"types\": [\"s:symbol\"]}, {\"name\": \"Ref\", \"types\": [\"+:Reference\"]}], \"enum\": false}}, \"records\": {}, \"relation\": {\"arity\": 4, \"types\": [\"s:Function\", \"i:Statement\", \"+:Reference\", \"+:Value\"]}}"}});
 if (!inputDirectoryArg.empty()) {directiveMap["fact-dir"] = inputDirectoryArg;}
 IOSystem::getInstance().getReader(directiveMap, symTable, recordTable)->readAll(*rel_assign_e4bb6e0824a16a37);
 } catch (std::exception& e) {std::cerr << "Error loading assign data: " << e.what() << '\n';
-exit(1);
-}
-try {std::map<std::string, std::string> directiveMap({{"IO","file"},{"attributeNames","caller\ts\tr\tcallee\tparam"},{"auxArity","0"},{"fact-dir","."},{"name","bind"},{"operation","input"},{"params","{\"records\": {}, \"relation\": {\"arity\": 5, \"params\": [\"caller\", \"s\", \"r\", \"callee\", \"param\"]}}"},{"types","{\"ADTs\": {\"+:Reference\": {\"arity\": 2, \"branches\": [{\"name\": \"LocalVariable\", \"types\": [\"s:Function\", \"s:symbol\"]}, {\"name\": \"ObjectMember\", \"types\": [\"s:symbol\", \"s:symbol\"]}], \"enum\": false}, \"+:Value\": {\"arity\": 3, \"branches\": [{\"name\": \"Empty\", \"types\": []}, {\"name\": \"HeapObject\", \"types\": [\"s:symbol\"]}, {\"name\": \"Ref\", \"types\": [\"+:Reference\"]}], \"enum\": false}}, \"records\": {}, \"relation\": {\"arity\": 5, \"types\": [\"s:Function\", \"i:Statement\", \"+:Reference\", \"s:Function\", \"s:symbol\"]}}"}});
-if (!inputDirectoryArg.empty()) {directiveMap["fact-dir"] = inputDirectoryArg;}
-IOSystem::getInstance().getReader(directiveMap, symTable, recordTable)->readAll(*rel_bind_c9210fdc63280a40);
-} catch (std::exception& e) {std::cerr << "Error loading bind data: " << e.what() << '\n';
 exit(1);
 }
 try {std::map<std::string, std::string> directiveMap({{"IO","file"},{"attributeNames","caller\ts\tcallee"},{"auxArity","0"},{"fact-dir","."},{"name","call"},{"operation","input"},{"params","{\"records\": {}, \"relation\": {\"arity\": 3, \"params\": [\"caller\", \"s\", \"callee\"]}}"},{"types","{\"ADTs\": {\"+:Reference\": {\"arity\": 2, \"branches\": [{\"name\": \"LocalVariable\", \"types\": [\"s:Function\", \"s:symbol\"]}, {\"name\": \"ObjectMember\", \"types\": [\"s:symbol\", \"s:symbol\"]}], \"enum\": false}, \"+:Value\": {\"arity\": 3, \"branches\": [{\"name\": \"Empty\", \"types\": []}, {\"name\": \"HeapObject\", \"types\": [\"s:symbol\"]}, {\"name\": \"Ref\", \"types\": [\"+:Reference\"]}], \"enum\": false}}, \"records\": {}, \"relation\": {\"arity\": 3, \"types\": [\"s:Function\", \"i:Statement\", \"s:Function\"]}}"}});
@@ -1924,15 +1943,15 @@ exit(1);
 void Sf__::dumpInputs(){
 try {std::map<std::string, std::string> rwOperation;
 rwOperation["IO"] = "stdout";
-rwOperation["name"] = "assign";
-rwOperation["types"] = "{\"relation\": {\"arity\": 4, \"auxArity\": 0, \"types\": [\"s:Function\", \"i:Statement\", \"+:Reference\", \"+:Value\"]}}";
-IOSystem::getInstance().getWriter(rwOperation, symTable, recordTable)->writeAll(*rel_assign_e4bb6e0824a16a37);
+rwOperation["name"] = "bind";
+rwOperation["types"] = "{\"relation\": {\"arity\": 5, \"auxArity\": 0, \"types\": [\"s:Function\", \"i:Statement\", \"+:Reference\", \"s:Function\", \"i:number\"]}}";
+IOSystem::getInstance().getWriter(rwOperation, symTable, recordTable)->writeAll(*rel_bind_c9210fdc63280a40);
 } catch (std::exception& e) {std::cerr << e.what();exit(1);}
 try {std::map<std::string, std::string> rwOperation;
 rwOperation["IO"] = "stdout";
-rwOperation["name"] = "bind";
-rwOperation["types"] = "{\"relation\": {\"arity\": 5, \"auxArity\": 0, \"types\": [\"s:Function\", \"i:Statement\", \"+:Reference\", \"s:Function\", \"s:symbol\"]}}";
-IOSystem::getInstance().getWriter(rwOperation, symTable, recordTable)->writeAll(*rel_bind_c9210fdc63280a40);
+rwOperation["name"] = "assign";
+rwOperation["types"] = "{\"relation\": {\"arity\": 4, \"auxArity\": 0, \"types\": [\"s:Function\", \"i:Statement\", \"+:Reference\", \"+:Value\"]}}";
+IOSystem::getInstance().getWriter(rwOperation, symTable, recordTable)->writeAll(*rel_assign_e4bb6e0824a16a37);
 } catch (std::exception& e) {std::cerr << e.what();exit(1);}
 try {std::map<std::string, std::string> rwOperation;
 rwOperation["IO"] = "stdout";
