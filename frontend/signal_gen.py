@@ -23,6 +23,29 @@ void PrintSignals() {
     f.write("}\n")
 
 
+def CppGetName(f):
+    for abbrev, _ in signal_def._BY_NUMBER:
+        name = "SIG%s" % (abbrev, )
+        f.write('GLOBAL_STR(k%s, "%s");\n' % (name, name))
+
+    f.write("""\
+BigStr* GetName(int sig_num) {
+  switch (sig_num) {
+""")
+    for abbrev, num in signal_def._BY_NUMBER:
+        name = "SIG%s" % (abbrev, )
+        f.write('  case %d:\n' % num)
+        f.write('    return k%s;\n' % (name))
+        f.write('    break;\n')
+    f.write("""\
+  default:
+    FAIL(kShouldNotGetHere);
+  }
+}
+
+""")
+
+
 def CppGetNumber(f):
     f.write("""\
 int GetNumber(BigStr* sig_spec) {
@@ -72,6 +95,8 @@ void PrintSignals();
 
 int GetNumber(BigStr* sig_spec);
 
+BigStr* GetName(int sig_num);
+
 }  // namespace signal_def
 
 #endif  // FRONTEND_SIGNAL_H
@@ -90,6 +115,8 @@ namespace signal_def {
             CppPrintSignals(f)
             f.write("\n")
             CppGetNumber(f)
+            f.write("\n")
+            CppGetName(f)
 
             f.write("""\
 

@@ -5,7 +5,7 @@ from signal import SIG_DFL, SIGINT, SIGKILL, SIGSTOP, SIGWINCH
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value
-from _devbuild.gen.syntax_asdl import loc, loc_t, source
+from _devbuild.gen.syntax_asdl import loc, loc_t, source, command_e, command
 from core import alloc
 from core import dev
 from core import error
@@ -15,12 +15,13 @@ from frontend import flag_util
 from frontend import match
 from frontend import reader
 from frontend import signal_def
+from data_lang import j8_lite
 from mycpp import iolib
 from mycpp import mylib
 from mycpp.mylib import iteritems, print_stderr, log
 from mycpp import mops
 
-from typing import Dict, List, Optional, TYPE_CHECKING
+from typing import Dict, List, Optional, TYPE_CHECKING, cast
 if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import command_t
     from display import ui
@@ -212,9 +213,9 @@ class Trap(vm._Builtin):
     def _ParseTrapCode(self, code_str):
         # type: (str) -> command_t
         """
-    Returns:
-      A node, or None if the code is invalid.
-    """
+        Returns:
+          A node, or None if the code is invalid.
+        """
         line_reader = reader.StringLineReader(code_str, self.arena)
         c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
@@ -229,6 +230,16 @@ class Trap(vm._Builtin):
 
         return node
 
+    def _GetCommandSourceCode(self, body):
+        # type: (command_t) -> str
+        handler_string = 'TrapState'  # type: str
+        if body.tag() == command_e.Simple:
+            simple_cmd = cast(command.Simple, body)
+            if simple_cmd.blame_tok:
+                handler_string = simple_cmd.blame_tok.line.content
+        return j8_lite.ShellEncode(handler_string)
+
+
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
         attrs, arg_r = flag_util.ParseCmdVal('trap', cmd_val)
@@ -236,13 +247,14 @@ class Trap(vm._Builtin):
 
         # 'trap' with no arguments is equivalent to 'trap -p'
         if arg.p or arg_r.n == 1:  # Print registered handlers
-            # The unit tests rely on this being one line.
-            # bash prints a line that can be re-parsed.
-            for name, _ in iteritems(self.trap_state.hooks):
-                print('%s TrapState' % (name, ))
+            for name, handler in iteritems(self.trap_state.hooks):
+                print("trap -- %s %s" %
+                      (self._GetCommandSourceCode(handler), name))
 
-            for sig_num, _ in iteritems(self.trap_state.traps):
-                print('%d TrapState' % (sig_num, ))
+            for sig_num, handler in iteritems(self.trap_state.traps):
+                sig_name = signal_def.GetName(sig_num)
+                print("trap -- %s %s" %
+                      (self._GetCommandSourceCode(handler), sig_name))
 
             return 0
 

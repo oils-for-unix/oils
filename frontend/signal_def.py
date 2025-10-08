@@ -4,7 +4,7 @@ from __future__ import print_function
 
 import signal
 
-from typing import Dict
+from typing import Dict, Tuple
 
 
 def _MakeSignalsOld():
@@ -60,18 +60,20 @@ _PORTABLE_SIGNALS = [
 
 
 def _MakeSignals():
-    # type: () -> Dict[str, int]
+    # type: () -> Tuple[Dict[str, int], Dict[int, str]]
     """Piggy-back on CPython signal module.
 
     This causes portability problems
     """
     names = {}  # type: Dict[str, int]
+    numbers = {}  # type: Dict[int, str]
     for name in _PORTABLE_SIGNALS:
         int_val = getattr(signal, name)
         assert name.startswith('SIG'), name
         abbrev = name[3:]
         names[abbrev] = int_val
-    return names
+        numbers[int_val] = name
+    return names, numbers
 
 
 NO_SIGNAL = -1
@@ -82,7 +84,12 @@ def GetNumber(sig_spec):
     return _SIGNAL_NAMES.get(sig_spec, NO_SIGNAL)
 
 
-_SIGNAL_NAMES = _MakeSignals()
+def GetName(sig_num):
+    # type: (int) -> str
+    return _SIGNAL_NUMBERS.get(sig_num)
+
+
+_SIGNAL_NAMES, _SIGNAL_NUMBERS = _MakeSignals()
 
 _BY_NUMBER = _SIGNAL_NAMES.items()
 _BY_NUMBER.sort(key=lambda x: x[1])
