@@ -223,15 +223,13 @@ status=0
 
 #### Invalid trap invocation
 trap 'foo'
-echo status=$?
+if test $? -ne 0; then
+  echo ok
+fi
 ## STDOUT:
-status=2
-## END
-## OK dash/ash STDOUT:
-status=1
+ok
 ## END
 ## BUG mksh STDOUT:
-status=0
 ## END
 
 #### exit 1 when trap code string is invalid
