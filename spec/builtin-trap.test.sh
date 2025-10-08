@@ -33,6 +33,28 @@ echo $?
 0
 ## END
 
+#### trap -p should print the handlers and full signal names
+case $SH in dash) exit ;; esac
+trap "echo INT" INT
+trap "echo EXIT" EXIT
+# osh's trap mishandles pipes, a separate test verifies them
+# bash installs several default handlers, so grep filters them out for easier testing
+case $SH in bash) trap -p | grep echo ;;
+               *) trap -p;;
+esac
+## STDOUT:
+trap -- 'echo EXIT' EXIT
+trap -- 'echo INT' SIGINT
+EXIT
+## END
+## N-I mksh status: 1
+## N-I ash status: 2
+## N-I mksh/ash STDOUT:
+EXIT
+## END
+## N-I dash STDOUT:
+## END
+
 #### trap without args prints traps, like trap -p
 case $SH in dash | mksh) exit ;; esac
 
