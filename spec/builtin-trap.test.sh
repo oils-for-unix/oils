@@ -34,6 +34,34 @@ echo $?
 ## END
 
 #### trap without args prints traps, like trap -p
+case $SH in dash | mksh) exit ;; esac
+
+if false; then
+  # bash breaks the display across lines
+  trap "true
+false" EXIT
+fi
+
+$SH -c '
+
+trap "true" EXIT
+
+echo status=$?
+case $SH in bash) trap | grep true ;;
+               *) trap ;;
+esac
+echo status=$?
+'
+
+## STDOUT:
+status=0
+trap -- 'true' EXIT
+status=0
+## END
+## N-I mksh/dash STDOUT:
+## END
+
+#### trap -p should write into a pipe
 case $SH in dash) exit ;; esac
 
 if false; then
@@ -47,7 +75,7 @@ $SH -c '
 trap "true" EXIT
 
 echo status=$?
-trap | grep EXIT
+trap | grep true
 echo status=$?
 '
 
@@ -64,7 +92,6 @@ status=1
 
 ## N-I dash STDOUT:
 ## END
-
 
 #### trap 'echo hi' KILL (regression test, caught by smoosh suite)
 trap 'echo hi' 9
