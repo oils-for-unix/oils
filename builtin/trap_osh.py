@@ -234,7 +234,8 @@ class Trap(vm._Builtin):
         attrs, arg_r = flag_util.ParseCmdVal('trap', cmd_val)
         arg = arg_types.trap(attrs.attrs)
 
-        if arg.p:  # Print registered handlers
+        # 'trap' with no arguments is equivalent to 'trap -p'
+        if arg.p or arg_r.n == 1:  # Print registered handlers
             # The unit tests rely on this being one line.
             # bash prints a line that can be re-parsed.
             for name, _ in iteritems(self.trap_state.hooks):
