@@ -92,12 +92,13 @@ build-package() {
   # Only "abuild builddeps,build" is enough to start?
 }
 
-build-package2() {
+build-one-package() {
   # Copied from build/deps.sh maybe-install-wedge
   #
   # Difference vs. build-package: do not need $config here
 
   local pkg=${1:-lua5.4}
+  local a_repo=${2:-main}
 
   local task_file=$LOG_DIR/$pkg.task.tsv
   local log_file=$LOG_DIR/$pkg.log.txt
@@ -117,7 +118,7 @@ build-package2() {
 
   # DISABLE rootbld for now - bwrap doesn't work inside chroot, because user
   # namespaces don't compose with chroots
-  local -a cmd=( abuild -f -r -C ~/aports/main/$pkg )
+  local -a cmd=( abuild -f -r -C ~/aports/$a_repo/$pkg )
 
   # Give it 1 second to respond to SIGTERM, then SIGKILL
   local seconds=$(( 5 * 60 ))  # 5 minutes max for now, save time!
