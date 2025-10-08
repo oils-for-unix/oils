@@ -5,12 +5,13 @@ from signal import SIG_DFL, SIGINT, SIGKILL, SIGSTOP, SIGWINCH
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value
-from _devbuild.gen.syntax_asdl import loc, loc_t, source, command_e, command
+from _devbuild.gen.syntax_asdl import loc, loc_t, source, command_e, command, CompoundWord
 from core import alloc
 from core import dev
 from core import error
 from core import main_loop
 from core import vm
+from frontend import args
 from frontend import flag_util
 from frontend import match
 from frontend import reader
@@ -21,7 +22,7 @@ from mycpp import mylib
 from mycpp.mylib import iteritems, print_stderr, log
 from mycpp import mops
 
-from typing import Dict, List, Optional, TYPE_CHECKING, cast
+from typing import Dict, List, Optional, TYPE_CHECKING, cast, Tuple
 if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import command_t
     from display import ui
@@ -239,6 +240,35 @@ class Trap(vm._Builtin):
                 handler_string = simple_cmd.blame_tok.line.content
         return j8_lite.ShellEncode(handler_string)
 
+    def _GetSignalInfo(self, arg_r):
+        # type: (args.Reader) -> Tuple[str, str, int, CompoundWord]
+        sig_spec, sig_loc = arg_r.ReadRequired2(
+            'requires a signal or hook name')
+
+        # sig_key is NORMALIZED sig_spec: a signal number string or string hook
+        # name.
+        sig_key = None  # type: Optional[str]
+        sig_num = signal_def.NO_SIGNAL
+
+        if sig_spec in _HOOK_NAMES:
+            sig_key = sig_spec
+        elif sig_spec == '0':  # Special case
+            sig_key = 'EXIT'
+        else:
+            sig_num = _GetSignalNumber(sig_spec)
+            if sig_num != signal_def.NO_SIGNAL:
+                sig_key = str(sig_num)
+
+        return sig_spec, sig_key, sig_num, sig_loc
+
+    def _ResetSignal(self, sig_key, sig_num):
+        # type: (str, int) -> None
+        if sig_key in _HOOK_NAMES:
+            self.trap_state.RemoveUserHook(sig_key)
+        elif sig_num != signal_def.NO_SIGNAL:
+            self.trap_state.RemoveUserTrap(sig_num)
+        else:
+            raise AssertionError('Signal or trap')
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -267,42 +297,48 @@ class Trap(vm._Builtin):
             return 0
 
         code_str, code_loc = arg_r.ReadRequired2('requires a code string')
-        sig_spec, sig_loc = arg_r.ReadRequired2(
-            'requires a signal or hook name')
+        # Per POSIX, if the first argument to trap is an unsigned integer
+        # then reset every condition
+        # https://pubs.opengroup.org/onlinepubs/9699919799.2018edition/utilities/V3_chap02.html#tag_18_28
+        if _IsUnsignedInteger(code_str, code_loc):
+            code_num = int(code_str)
+            # 0 is the number for the EXIT pseudo-signal in bash
+            if code_num == 0:
+                self.trap_state.RemoveUserHook('EXIT')
+            else:
+                self.trap_state.RemoveUserTrap(code_num)
+            # reset every following signal, if any
+            for i in xrange(2, arg_r.n):
+                sig_spec, sig_key, sig_num, _ = self._GetSignalInfo(arg_r)
+                if sig_key is None:
+                    self.errfmt.Print_("Invalid signal or hook %r" % sig_spec,
+                                       blame_loc=cmd_val.arg_locs[2])
+                    return 1
+                self._ResetSignal(sig_key, sig_num)
+            return 0
 
-        # sig_key is NORMALIZED sig_spec: a signal number string or string hook
-        # name.
-        sig_key = None  # type: Optional[str]
-        sig_num = signal_def.NO_SIGNAL
+        # "trap SIGNAL" should reset the signal
+        if arg_r.n == 2:
+            code_num = _GetSignalNumber(code_str)
+            if code_num == signal_def.NO_SIGNAL and code_str not in _HOOK_NAMES:
+                self.errfmt.Print_("Invalid signal or hook %r" % code_str,
+                                   blame_loc=cmd_val.arg_locs[1])
+                return 2
 
-        if sig_spec in _HOOK_NAMES:
-            sig_key = sig_spec
-        elif sig_spec == '0':  # Special case
-            sig_key = 'EXIT'
-        else:
-            sig_num = _GetSignalNumber(sig_spec)
-            if sig_num != signal_def.NO_SIGNAL:
-                sig_key = str(sig_num)
+            self._ResetSignal(code_str, code_num)
+            return 0
 
+        # this command has the form of "trap COMMAND SIGNAL", so read SIGNAL
+        sig_spec, sig_key, sig_num, sig_loc = self._GetSignalInfo(arg_r)
         if sig_key is None:
             self.errfmt.Print_("Invalid signal or hook %r" % sig_spec,
                                blame_loc=cmd_val.arg_locs[2])
             return 1
 
         # NOTE: sig_spec isn't validated when removing handlers.
-        # Per POSIX, if the first argument to trap is an unsigned integer
-        # then reset every condition
-        # https://pubs.opengroup.org/onlinepubs/9699919799.2018edition/utilities/V3_chap02.html#tag_18_28
-        if code_str == '-' or _IsUnsignedInteger(code_str, code_loc):
-            if sig_key in _HOOK_NAMES:
-                self.trap_state.RemoveUserHook(sig_key)
-                return 0
-
-            if sig_num != signal_def.NO_SIGNAL:
-                self.trap_state.RemoveUserTrap(sig_num)
-                return 0
-
-            raise AssertionError('Signal or trap')
+        if code_str == '-':
+            self._ResetSignal(sig_key, sig_num)
+            return 0
 
         # Try parsing the code first.
 
