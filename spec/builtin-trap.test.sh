@@ -55,6 +55,86 @@ EXIT
 ## N-I dash STDOUT:
 ## END
 
+#### trap EXIT should clear the EXIT trap
+trap "echo INT" INT
+trap "echo EXIT" EXIT
+case $SH in bash) trap -p | grep echo ;;
+               *) trap -p;;
+esac
+echo ---
+trap EXIT
+case $SH in bash) trap -p | grep echo ;;
+               *) trap -p;;
+esac
+echo ---
+trap INT
+case $SH in bash) trap -p | grep echo ;;
+               *) trap -p;;
+esac
+# since grep doesn't match anything, bash's exit code is 1 here, while
+# osh's is 0. Add another successful echo command below to work around it
+echo ---
+## STDOUT:
+trap -- 'echo EXIT' EXIT
+trap -- 'echo INT' SIGINT
+---
+trap -- 'echo INT' SIGINT
+---
+---
+## END
+## N-I mksh status: 1
+## N-I dash/ash status: 2
+## N-I dash/mksh/ash STDOUT:
+EXIT
+## END
+
+#### trap 0 is equivalent to trap EXIT, trap 0 2 resets EXIT AND SIGINT
+trap "echo INT" INT
+trap "echo EXIT" EXIT
+case $SH in bash) trap -p | grep echo ;;
+               *) trap -p;;
+esac
+echo ---
+trap 0
+case $SH in bash) trap -p | grep echo ;;
+               *) trap -p;;
+esac
+trap "echo EXIT" EXIT
+echo ---
+case $SH in bash) trap -p | grep echo ;;
+               *) trap -p;;
+esac
+echo ---
+trap 0 2
+case $SH in bash) trap -p | grep echo ;;
+               *) trap -p;;
+esac
+echo ---
+trap "echo INT" INT
+trap "echo EXIT" EXIT
+trap 2 EXIT
+case $SH in bash) trap -p | grep echo ;;
+               *) trap -p;;
+esac
+echo ---
+## STDOUT:
+trap -- 'echo EXIT' EXIT
+trap -- 'echo INT' SIGINT
+---
+trap -- 'echo INT' SIGINT
+---
+trap -- 'echo EXIT' EXIT
+trap -- 'echo INT' SIGINT
+---
+---
+---
+## END
+## N-I mksh status: 1
+## N-I dash/ash status: 2
+## N-I dash/mksh/ash STDOUT:
+EXIT
+## END
+
 #### trap without args prints traps, like trap -p
 case $SH in dash | mksh) exit ;; esac
 
