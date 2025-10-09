@@ -176,6 +176,7 @@ def _GetSignalNumber(sig_spec):
     # http://pubs.opengroup.org/onlinepubs/9699919799/
     #
     # Added 13 for SIGPIPE because autoconf's 'configure' uses it!
+    sig_spec = sig_spec.upper()
     if sig_spec.strip() in ('1', '2', '3', '6', '9', '13', '14', '15'):
         return int(sig_spec)
 
@@ -250,6 +251,7 @@ class Trap(vm._Builtin):
         sig_key = None  # type: Optional[str]
         sig_num = signal_def.NO_SIGNAL
 
+        sig_spec = sig_spec.upper()
         if sig_spec in _HOOK_NAMES:
             sig_key = sig_spec
         elif sig_spec == '0':  # Special case
@@ -297,17 +299,22 @@ class Trap(vm._Builtin):
             return 0
 
         code_str, code_loc = arg_r.ReadRequired2('requires a code string')
-        # Per POSIX, if the first argument to trap is an unsigned integer
-        # then reset every condition
+        # Per POSIX, if the first argument to trap is '-' or an
+        # unsigned integer, then reset every condition
         # https://pubs.opengroup.org/onlinepubs/9699919799.2018edition/utilities/V3_chap02.html#tag_18_28
-        if _IsUnsignedInteger(code_str, code_loc):
-            code_num = int(code_str)
-            # 0 is the number for the EXIT pseudo-signal in bash
-            if code_num == 0:
-                self.trap_state.RemoveUserHook('EXIT')
-            else:
-                self.trap_state.RemoveUserTrap(code_num)
-            # reset every following signal, if any
+        code_is_uint = _IsUnsignedInteger(code_str, code_loc)
+        if code_str == '-' or code_is_uint:
+            # If the first argument is a uint, we need to reset this signal as well
+            if code_is_uint:
+                code_num = int(code_str)
+                # 0 is the number for the EXIT pseudo-signal in bash
+                if code_num == 0:
+                    self.trap_state.RemoveUserHook('EXIT')
+                else:
+                    self.trap_state.RemoveUserTrap(code_num)
+
+            # Reset every following signal, if any
+            # NOTE: sig_spec isn't validated when removing handlers.
             for i in xrange(2, arg_r.n):
                 sig_spec, sig_key, sig_num, _ = self._GetSignalInfo(arg_r)
                 if sig_key is None:
@@ -334,11 +341,6 @@ class Trap(vm._Builtin):
             self.errfmt.Print_("Invalid signal or hook %r" % sig_spec,
                                blame_loc=cmd_val.arg_locs[2])
             return 1
-
-        # NOTE: sig_spec isn't validated when removing handlers.
-        if code_str == '-':
-            self._ResetSignal(sig_key, sig_num)
-            return 0
 
         # Try parsing the code first.
 
