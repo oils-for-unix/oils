@@ -292,6 +292,7 @@ published-html() {
 - [2025-09-18-bash](2025-09-18-bash.wwz/_tmp/aports-report/2025-09-18-bash/diff_merged.html)
   - only run on packages that disagree: [2025-09-27-disagree](2025-09-27-disagree.wwz/_tmp/aports-report/2025-09-27-disagree/diff_merged.html)
   - new causes: [2025-10-03-causes](2025-10-03-causes.wwz/_tmp/aports-report/2025-10-03-causes/diff_merged.html)
+- first run on aports/community: [2025-10-08-comm](2025-10-08-comm.wwz/_tmp/aports-report/2025-10-08-comm/diff_merged.html)
 
 EOF
 
