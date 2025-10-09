@@ -249,32 +249,6 @@ banner() {
   echo
 }
 
-build-packages() {
-  local package_filter=${1:-}
-  local config=${2:-baseline}
-  local overlay_dir=${3:-}
-
-  local -a package_dirs
-  package_dirs=( $(package-dirs "$package_filter") )
-
-  banner "Building ${#package_dirs[@]} packages (filter $package_filter)"
-
-  local -a prefix
-  if test -n "$overlay_dir"; then
-    prefix=( enter-overlayfs-user "$overlay_dir" )
-  else
-    prefix=( enter-rootfs-user )
-  fi
-
-  "${prefix[@]}" sh -c '
-  config=$1
-  shift
-
-  cd oils
-  regtest/aports-guest.sh build-packages "$config" "$@"
-  ' dummy0 "$config" "${package_dirs[@]}"
-}
-
 build-package-overlayfs() {
   local config=${1:-baseline}
   local pkg=${2:-lua5.4}
@@ -366,115 +340,11 @@ clean-guest() {
 
 readonly -a CONFIGS=( baseline osh-as-sh ) 
 
-abridge-logs() {
-  local config=${1:-baseline}
-  local dest_dir=$2
-
-  # local threshold=$(( 1 * 1000 * 1000 ))  # 1 MB
-  local threshold=$(( 500 * 1000 ))  # 500 KB
-
-  local guest_dir=$CHROOT_HOME_DIR/oils/_tmp/aports-guest/$config 
-
-  local log_dir="$dest_dir/$config/log"
-  mkdir -v -p $log_dir
-
-  find $guest_dir -name '*.log.txt' -a -printf '%s\t%P\n' |
-  while read -r size path; do
-    local src=$guest_dir/$path
-    local dest=$log_dir/$path
-
-    if test "$size" -lt "$threshold"; then
-      cp -v $src $dest
-    else
-      { echo "*** This log is abridged to its last 1000 lines:"; echo; } > $dest
-      tail -n 1000 $src >> $dest
-    fi
-  done
-
-  # From 200 MB -> 96 MB uncompressed
-  #
-  # Down to 10 MB compressed.  So if we have 4 configs, that's 40 MB of logs,
-  # which is reasonable.
-
-  # 500K threshold: 76 MB
-  du --si -s $dest_dir
-}
-
-_move-apk() {
-  local config=${1:-baseline}
-  local dest_dir=$2
-
-  local guest_dir=$CHROOT_HOME_DIR/packages/main/x86_64
-
-  local apk_dir="$dest_dir/$config/apk"
-  mkdir -v -p $apk_dir
-
-  # Maintain consistent state by removing the index too
-  mv -v \
-    $guest_dir/*.apk $guest_dir/APKINDEX.tar.gz \
-    $apk_dir
-}
-
-copy-results() {
-  local config=$1
-  local dest_dir=$2
-
-  #copy-logs "$config"
-
-  abridge-logs "$config" "$dest_dir"
-
-  local dest=$dest_dir/$config/tasks.tsv
-  mkdir -p $(dirname $dest)
-  concat-task-tsv "$config" > $dest
-}
-
 APORTS_EPOCH="${APORTS_EPOCH:-}"
 # default epoch
 if test -z "$APORTS_EPOCH"; then
   APORTS_EPOCH=$(date '+%Y-%m-%d')
 fi
-
-_build-many-configs() {
-  local package_filter=${1:-}
-  local epoch=${2:-$APORTS_EPOCH}
-
-  if test -z "$package_filter"; then
-    die "Package filter is required (e.g. shard3, ALL)"
-  fi
-
-  clean-guest
-
-  # See note about /etc/sudoers.d at top of file
-
-  local dest_dir="$BASE_DIR/$epoch/$package_filter"
-
-  for config in "${CONFIGS[@]}"; do
-    # this uses enter-chroot to modify the chroot
-    # should we have a separate one?  But then fetching packages is different
-    banner "$epoch: Set config to $config"
-    set-$config
-
-    # this uses enter-chroot -u
-    build-packages "$package_filter" "$config"
-
-    copy-results "$config" "$dest_dir"
-
-    # This is allowed to fail: we count .apk packages build, and we recorded the
-    # 'abuild' exit status
-    sudo $0 _move-apk "$config" "$dest_dir" || true
-
-    # Put .apk in a text file, which is easier to rsync than the whole list
-    md5sum $dest_dir/$config/apk/*.apk > $dest_dir/$config/apk.txt
-
-  done
-}
-
-build-many-configs() {
-  # clear credentials first
-  sudo -k
-
-  _build-many-configs "$@"
-}
 
 _build-many-configs-overlayfs() {
   local package_filter=${1:-}
@@ -495,33 +365,6 @@ _build-many-configs-overlayfs() {
     banner "$epoch: Using config $config"
 
     build-many-packages-overlayfs "$package_filter" "$config" "$a_repo"
-  done
-}
-
-build-baseline() {
-  local epoch=${1:-$APORTS_EPOCH}
-  shift
-
-  sudo -k
-
-  set-baseline
-
-  for package_filter in "$@"; do
-    clean-guest  # prevent logs from accumulating
-
-    build-packages "$package_filter" baseline
-    local dest_dir="$BASE_DIR/$epoch/$package_filter"
-    copy-results baseline "$dest_dir"
-  done
-}
-
-build-many-shards() {
-  sudo -k
-
-  banner "$APORTS_EPOCH: building shards: $*"
-
-  time for package_filter in "$@"; do
-    _build-many-configs "$package_filter" "$APORTS_EPOCH"
   done
 }
 
