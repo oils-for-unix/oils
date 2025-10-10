@@ -24,6 +24,19 @@ The result should be:
 
 The -1 value means it's cached forever.
 
+## Note on Directory Structure
+
+The following scripts assume a directory structure like this:
+
+```
+*this can be any path*/
+    oils-for-unix/
+        oils/      # dir where this git repo is cloned
+    alpinelinux/   # created by scripts below
+```
+
+This layout mimics the GitHub URL namespace.  If the layout on your machine differs, you might run into problems.
+
 ## Set up Alpine chroot - `he.oils.pub`
 
 The first step is in `regtest/aports-setup.sh`:
@@ -54,16 +67,16 @@ into 17 *shards*.  You can run two shards like this:
 
     $ export APORTS_EPOCH=2025-08-07-fix   # directory name, and .wwz name
 
-    $ regtest/aports-run.sh build-many-shards shard5 shard6
+    $ regtest/aports-run.sh build-many-shards-overlayfs shard5 shard6
 
 This is the normal way to run all 17 shards (using bash brace expansion):
 
-    $ regtest/aports-run.sh build-many-shards shard{0..16}
+    $ regtest/aports-run.sh build-many-shards-overlayfs shard{0..16}
 
 But this is how I run it right now, due to flakiness:
 
       # weird order!
-    $ regtest/aports-run.sh build-many-shards shard{10..16} shard{0..5}
+    $ regtest/aports-run.sh build-many-shards-overlayfs shard{10..16} shard{0..5}
 
       # Now BLOW AWAY CHROOT, to work around errors
     $ regtest/aports-setup.sh remove-chroot
@@ -71,7 +84,7 @@ But this is how I run it right now, due to flakiness:
     $ regtest/aports-setup.sh unpack-distfiles
 
       # Run remaining shards
-    $ regtest/aports-run.sh build-many-shards shard{6..9}
+    $ regtest/aports-run.sh build-many-shards-overlayfs shard{6..9}
 
 (This was discovered empirically; we should remove this workaround eventually.)
 
