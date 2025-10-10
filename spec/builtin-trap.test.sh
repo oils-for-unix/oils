@@ -275,6 +275,25 @@ status=0
 ## END
 
 
+#### Register the same handler for multiple signals
+trap 'echo test' TERM 2 EXIT
+case $SH in bash) trap | grep echo | sort;;
+               *) trap ;;
+esac
+## STDOUT:
+trap -- 'echo test' EXIT
+trap -- 'echo test' SIGINT
+trap -- 'echo test' SIGTERM
+test
+## END
+## OK dash/mksh/ash STDOUT:
+trap -- 'echo test' EXIT
+trap -- 'echo test' INT
+trap -- 'echo test' TERM
+test
+## END
+
+
 #### trap EXIT calling exit
 cleanup() {
   echo "cleanup [$@]"

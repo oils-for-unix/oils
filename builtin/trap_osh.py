@@ -335,39 +335,38 @@ class Trap(vm._Builtin):
             self._ResetSignal(code_str, code_num)
             return 0
 
-        # this command has the form of "trap COMMAND SIGNAL", so read SIGNAL
-        sig_spec, sig_key, sig_num, sig_loc = self._GetSignalInfo(arg_r)
-        if sig_key is None:
-            self.errfmt.Print_("Invalid signal or hook %r" % sig_spec,
-                               blame_loc=cmd_val.arg_locs[2])
-            return 1
-
-        # Try parsing the code first.
-
         # TODO: If simple_trap is on (for ysh:upgrade), then it must be a function
         # name?  And then you wrap it in 'try'?
 
+        # Try parsing the code first.
         node = self._ParseTrapCode(code_str)
         if node is None:
             return 1  # ParseTrapCode() prints an error for us.
 
-        # Register a hook.
-        if sig_key in _HOOK_NAMES:
-            if sig_key == 'RETURN':
-                print_stderr("osh warning: The %r hook isn't implemented" %
-                             sig_spec)
-            self.trap_state.AddUserHook(sig_key, node)
-            return 0
-
-        # Register a signal.
-        if sig_num != signal_def.NO_SIGNAL:
-            # For signal handlers, the traps dictionary is used only for debugging.
-            if sig_num in (SIGKILL, SIGSTOP):
-                self.errfmt.Print_("Signal %r can't be handled" % sig_spec,
-                                   blame_loc=sig_loc)
-                # Other shells return 0, but this seems like an obvious error
+        # This command has the form of "trap COMMAND (SIGNAL)*", so read all
+        # SIGNALs and add this code as the handler to all of them
+        for i in xrange(2, arg_r.n):
+            sig_spec, sig_key, sig_num, sig_loc = self._GetSignalInfo(arg_r)
+            if sig_key is None:
+                self.errfmt.Print_("Invalid signal or hook %r" % sig_spec,
+                                   blame_loc=cmd_val.arg_locs[2])
                 return 1
-            self.trap_state.AddUserTrap(sig_num, node)
-            return 0
 
-        raise AssertionError('Signal or trap')
+            # Register a hook.
+            if sig_key in _HOOK_NAMES:
+                if sig_key == 'RETURN':
+                    print_stderr("osh warning: The %r hook isn't implemented" %
+                                 sig_spec)
+                self.trap_state.AddUserHook(sig_key, node)
+
+            # Register a signal.
+            if sig_num != signal_def.NO_SIGNAL:
+                # For signal handlers, the traps dictionary is used only for debugging.
+                if sig_num in (SIGKILL, SIGSTOP):
+                    self.errfmt.Print_("Signal %r can't be handled" % sig_spec,
+                                       blame_loc=sig_loc)
+                    # Other shells return 0, but this seems like an obvious error
+                    return 1
+                self.trap_state.AddUserTrap(sig_num, node)
+
+        return 0
