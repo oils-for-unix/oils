@@ -85,6 +85,7 @@ _STRICT_OPTS = [
     # These are RUNTIME strict options.
     'strict_argv',  # empty argv not allowed
     'strict_arith',  # string to integer conversions, e.g. x=foo; echo $(( x ))
+    'strict_arg_parse',  # disallow additional arguments, e.g. cd / /
 
     # No implicit conversions between string and array.
     # - foo="$@" not allowed because it decays.  Should be foo=( "$@" ).
