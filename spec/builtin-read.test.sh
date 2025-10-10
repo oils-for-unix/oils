@@ -680,6 +680,23 @@ reply=1234
 ## END
 ## N-I dash/mksh stdout-json: ""
 
+#### read -u 3 -d b -N 6
+# file descriptor
+read -u 3 -d b -N 4 3<<EOF
+ababababa
+EOF
+echo reply=$REPLY
+# test end on EOF
+read -u 3 -d b -N 6 3<<EOF
+ab
+EOF
+echo reply=$REPLY
+## STDOUT:
+reply=abab
+reply=ab
+## END
+## N-I dash/mksh stdout-json: ""
+
 #### read -N doesn't respect delimiter, while read -n does
 case $SH in dash|zsh|ash) exit ;; esac
 
