@@ -24,16 +24,20 @@ The result should be:
 
 The -1 value means it's cached forever.
 
-## Set up Alpine chroot - `he.oils.pub`
-**Note:** The following scripts and commands assume your directory structure looks like this:
+## Note on Directory Structure
+
+The following scripts assume a directory structure like this:
+
 ```
 *this can be any path*/
     oils-for-unix/
-        oils/ <--- folder where this git repo is cloned
+        oils/      # dir where this git repo is cloned
+    alpinelinux/   # created by scripts below
 ```
-This directory layout mimics the GitHub namespace of this project. The scripts in the `regtest` directory make use of relative paths that assume the directory layout above, so if the layout on your machine differs you might run into problems.
 
+This layout mimics the GitHub URL namespace.  If the layout on your machine differs, you might run into problems.
 
+## Set up Alpine chroot - `he.oils.pub`
 
 The first step is in `regtest/aports-setup.sh`:
 
