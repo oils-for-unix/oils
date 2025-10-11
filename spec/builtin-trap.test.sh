@@ -1,5 +1,5 @@
 ## compare_shells: dash bash mksh ash
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 
 # builtin-trap.test.sh
 
@@ -128,7 +128,6 @@ EXIT
 ## END
 
 #### trap without args prints traps, like trap -p
-
 trap 'echo exit' EXIT
 echo status=$?
 
@@ -142,23 +141,35 @@ status=0
 exit
 ## END
 
+
+#### print trap handler with multiple lines
+trap 'echo 1
+echo 2
+echo 3' INT
+
+trap
+## STDOUT:
+trap -- 'echo 1
+echo 2
+echo 3' SIGINT
+## END
+## OK dash/ash STDOUT:
+trap -- 'echo 1
+echo 2
+echo 3' INT
+## END
+## OK mksh STDOUT:
+trap -- $'echo 1\necho 2\necho 3' INT
+## END
+
 #### trap -p should write into a pipe
 case $SH in dash) exit ;; esac
-
-if false; then
-  # bash breaks the display across lines
-  trap "true
-false" EXIT
-fi
-
-$SH -c '
 
 trap "true" EXIT
 
 echo status=$?
 trap | grep true
 echo status=$?
-'
 
 ## STDOUT:
 status=0
