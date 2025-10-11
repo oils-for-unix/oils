@@ -954,23 +954,22 @@ OSH also support legacy syntax, which is not recommended:
     trap 0             # remove exit trap
     trap 0 INT         # remove both
 
-See [ysh-trap](#ysh-trap) for even nicer idioms.
-
 <!--
     trap '' EVENT*   # TODO Ignore events
 -->
 
-Tip:
+Tips:
 
-Prefer passing the name of a shell function to `trap`.
-
-See [Chapter: Plugins and Hooks > Traps](chap-plugin.html#Traps) for a list of
+- Prefer passing the name of a shell function to `trap`.
+  - See [ysh-trap](#ysh-trap) for even nicer idioms.
+- See [Chapter: Plugins and Hooks > Traps](chap-plugin.html#Traps) for a list of
 traps, like `trap '' EXIT`.
 
 ### ysh-trap
 
-The `trap` builtin lets you run shell code when events happen.  Events are
-signals or interpreter hooks.
+The `trap` builtin lets you run shell code when events happen.  
+
+YSH improves the syntax of the trap builtin, and removes legacy.
 
     trap -l          # List all events and their number
     trap -p          # Print the current trap state: events and handlers

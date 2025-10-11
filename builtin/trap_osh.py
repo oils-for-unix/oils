@@ -14,6 +14,7 @@ from core import vm
 from frontend import flag_util
 from frontend import reader
 from frontend import signal_def
+from frontend import typed_args
 from data_lang import j8_lite
 from mycpp import iolib
 from mycpp import mylib
@@ -325,11 +326,33 @@ class Trap(vm._Builtin):
 
             self._PrintTrapEntry(handler, sig_name)
 
+    def _AddTheRest(self, arg_r, node, allow_legacy=True):
+        # type: (args.Reader, command_t, bool) -> int
+        """Add a handler for all args"""
+        while not arg_r.AtEnd():
+            arg_str, arg_loc = arg_r.Peek2()
+            parsed_id = ParseSignalOrHook(arg_str,
+                                          arg_loc,
+                                          allow_legacy=allow_legacy)
+
+            if parsed_id == 'RETURN':
+                print_stderr("osh warning: The %r hook isn't implemented" %
+                             arg_str)
+            if parsed_id == 'STOP':
+                # KILL also can't be handled, but it's not part of out signal list
+                self.errfmt.Print_("Signal %r can't be handled" % arg_str,
+                                   blame_loc=arg_loc)
+                # Other shells return 0, but this seems like an obvious error
+                return 2
+
+            self.trap_state.AddItem(parsed_id, node)
+
+            arg_r.Next()
+        return 0
+
     def _RemoveTheRest(self, arg_r, allow_legacy=True):
         # type: (args.Reader, bool) -> None
-        """
-        Remove handlers
-        """
+        """Remove handlers for all args"""
         while not arg_r.AtEnd():
             arg_str, arg_loc = arg_r.Peek2()
             parsed_id = ParseSignalOrHook(arg_str,
@@ -340,12 +363,15 @@ class Trap(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        attrs, arg_r = flag_util.ParseCmdVal('trap', cmd_val)
+        attrs, arg_r = flag_util.ParseCmdVal('trap',
+                                             cmd_val,
+                                             accept_typed_args=True)
         arg = arg_types.trap(attrs.attrs)
 
         if arg.add:  # trap -p prints handlers
-            print('TODO')
-            return 0
+            cmd_frag = typed_args.RequiredBlockAsFrag(cmd_val)
+            node = cmd_frag
+            return self._AddTheRest(arg_r, node, allow_legacy=False)
 
         if arg.remove:  # trap -p prints handlers
             self._RemoveTheRest(arg_r, allow_legacy=False)
@@ -399,22 +425,4 @@ class Trap(vm._Builtin):
 
         # This command has the form of "trap COMMAND (SIGNAL)*", so read all
         # SIGNALs and add this code as the handler to all of them
-        while not arg_r.AtEnd():
-            arg_str, arg_loc = arg_r.Peek2()
-            parsed_id = ParseSignalOrHook(arg_str, arg_loc)
-
-            if parsed_id == 'RETURN':
-                print_stderr("osh warning: The %r hook isn't implemented" %
-                             arg_str)
-            if parsed_id == 'STOP':
-                # KILL also can't be handled, but it's not part of out signal list
-                self.errfmt.Print_("Signal %r can't be handled" % arg_str,
-                                   blame_loc=arg_loc)
-                # Other shells return 0, but this seems like an obvious error
-                return 2
-
-            self.trap_state.AddItem(parsed_id, node)
-
-            arg_r.Next()
-
-        return 0
+        return self._AddTheRest(arg_r, node)

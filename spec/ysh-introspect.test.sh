@@ -309,7 +309,9 @@ p
 
 source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh
 
-trap 'print-stack (prefix=false)' ERR
+trap --add ERR {
+  print-stack (prefix=false)
+}
 set -o errtrace  # enable always
 
 proc f {
@@ -324,10 +326,10 @@ f
 
 ## status: 1
 ## STDOUT:
-[ stdin ]:14
+[ stdin ]:16
     f
     ^
-[ stdin ]:7
+[ stdin ]:9
       g
       ^
 ## END
@@ -336,7 +338,9 @@ f
 
 source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh
 
-trap 'print-stack (prefix=false)' ERR
+trap --add ERR {
+  print-stack (prefix=false)
+}
 set -o errtrace  # enable always
 
 proc f {
@@ -352,10 +356,10 @@ f
 
 ## status: 42
 ## STDOUT:
-[ stdin ]:14
+[ stdin ]:16
     f
     ^
-[ stdin ]:7
+[ stdin ]:9
       g
       ^
 ## END
@@ -364,7 +368,9 @@ f
 
 source $[ENV.REPO_ROOT]/spec/testdata/debug-frame-lib.ysh
 
-trap 'print-stack (prefix=false)' ERR
+trap --add ERR {
+  print-stack (prefix=false)
+}
 set -o errtrace  # enable always
 
 proc f {
@@ -382,7 +388,7 @@ f
 # Hm we do not get the "g" call here?  Because we get an exception raised
 
 ## STDOUT:
-[ stdin ]:14
+[ stdin ]:16
     f
     ^
 ## END
