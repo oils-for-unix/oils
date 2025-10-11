@@ -486,6 +486,9 @@ $SH big.sh
 echo outer=$?
 
 ## STDOUT:
+outer=153
+## END
+## OK osh STDOUT:
 inner=1
 outer=0
 ## END
