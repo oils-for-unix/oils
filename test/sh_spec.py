@@ -58,6 +58,7 @@ import os
 import pprint
 import re
 import shutil
+import signal
 import subprocess
 import sys
 
@@ -730,6 +731,19 @@ class ActualOutput(object):
         #json.dump(record, sys.stderr, indent=2)
 
 
+def ResetSignals():
+    """
+    Added for spec/builtin-trap.sh
+
+    Python 3 doesn't have this issue, it has restore_signals=True
+        https://docs.python.org/3/library/subprocess.html
+
+    But Python 2 does
+    """
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+    signal.signal(signal.SIGXFSZ, signal.SIG_DFL)
+
+
 def RunCases(cases,
              case_predicate,
              shells,
@@ -867,7 +881,8 @@ def RunCases(cases,
                                      cwd=case_tmp_dir,
                                      stdin=PIPE,
                                      stdout=PIPE,
-                                     stderr=PIPE)
+                                     stderr=PIPE,
+                                     preexec_fn=ResetSignals)
             except OSError as e:
                 print('Error running %r: %s' % (sh_path, e), file=sys.stderr)
                 sys.exit(1)

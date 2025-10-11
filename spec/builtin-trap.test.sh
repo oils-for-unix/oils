@@ -33,24 +33,21 @@ echo $?
 0
 ## END
 
-#### Reset multiple signals with trap -
+#### Remove multiple handlers with trap -
 trap "echo int" INT
 trap "echo e" EXIT
 trap - int 0 3
-case $SH in bash) trap -p | grep echo ;;
-               *) trap -p;;
-esac
+trap
+
 echo ---
 trap "echo int" INT
 trap "echo e" EXIT
 trap - int 0 -99
-## status: 1
+echo status=$?
 ## STDOUT:
 ---
+status=1
 ## END
-## BUG mksh/dash/ash STDOUT:
-## END
-## BUG dash/ash status: 2
 
 #### trap -p should print the handlers and full signal names
 case $SH in dash) exit ;; esac
