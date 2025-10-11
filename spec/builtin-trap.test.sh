@@ -11,14 +11,18 @@ hi
 
 #### Register invalid trap, remove invalid trap
 trap 'foo' SIGINVALID
-echo status=$?
+if test $? -ne 0; then
+  echo ok
+fi
 
 trap - SIGINVALID
-echo status=$?
+if test $? -ne 0; then
+  echo ok
+fi
 
 ## STDOUT:
-status=1
-status=1
+ok
+ok
 ## END
 
 #### trap foo gives non-zero error
@@ -147,10 +151,12 @@ echo ---
 trap "echo int" INT
 trap "echo e" EXIT
 trap - int 0 -99
-echo status=$?
+if test $? -ne 0; then
+  echo ok
+fi
 ## STDOUT:
 ---
-status=1
+ok
 ## END
 
 #### trap EXIT clears the EXIT trap

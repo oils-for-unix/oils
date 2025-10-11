@@ -71,15 +71,15 @@ class TrapState(object):
         # type: (int) -> command_t
         return self.traps.get(sig_num, None)
 
-    def AddUserHook(self, hook_name, handler):
+    def _AddUserHook(self, hook_name, handler):
         # type: (str, command_t) -> None
         self.hooks[hook_name] = handler
 
-    def RemoveUserHook(self, hook_name):
+    def _RemoveUserHook(self, hook_name):
         # type: (str) -> None
         mylib.dict_erase(self.hooks, hook_name)
 
-    def AddUserTrap(self, sig_num, handler):
+    def _AddUserTrap(self, sig_num, handler):
         # type: (int, command_t) -> None
         """ e.g. SIGUSR1 """
         self.traps[sig_num] = handler
@@ -96,7 +96,7 @@ class TrapState(object):
         else:
             iolib.RegisterSignalInterest(sig_num)
 
-    def RemoveUserTrap(self, sig_num):
+    def _RemoveUserTrap(self, sig_num):
         # type: (int) -> None
 
         mylib.dict_erase(self.traps, sig_num)
@@ -116,6 +116,30 @@ class TrapState(object):
             # interactive shells, but it might be more correct.  See what other
             # shells do.
             iolib.sigaction(sig_num, SIG_DFL)
+
+    def AddItem(self, parsed_id, handler):
+        # type: (str, command_t) -> None
+        """Add trap or hook, parsed to EXIT or INT (not 0 or SIGINT)"""
+        if parsed_id in _HOOK_NAMES:
+            self._AddUserHook(parsed_id, handler)
+        else:
+            sig_num = signal_def.GetNumber(parsed_id)
+            # Should have already been validated
+            assert sig_num is not signal_def.NO_SIGNAL
+
+            self._AddUserTrap(sig_num, handler)
+
+    def RemoveItem(self, parsed_id):
+        # type: (str) -> None
+        """Remove trap or hook, parsed to EXIT or INT (not 0 or SIGINT)"""
+        if parsed_id in _HOOK_NAMES:
+            self._RemoveUserHook(parsed_id)
+        else:
+            sig_num = signal_def.GetNumber(parsed_id)
+            # Should have already been validated
+            assert sig_num is not signal_def.NO_SIGNAL
+
+            self._RemoveUserTrap(sig_num)
 
     def GetPendingTraps(self):
         # type: () -> Optional[List[command_t]]
@@ -158,21 +182,6 @@ class TrapState(object):
         return len(self.traps) != 0 or len(self.hooks) != 0
 
 
-def _IsUnsignedInteger(s, blame_loc):
-    # type: (str, loc_t) -> bool
-    if not match.LooksLikeInteger(s):
-        return False
-
-    # Note: could simplify this by making match.LooksLikeUnsigned()
-
-    ok, big_int = mops.FromStr2(s)
-    if not ok:
-        raise error.Usage('integer too big: %s' % s, blame_loc)
-
-    # not (0 > s) is (s >= 0)
-    return not mops.Greater(mops.ZERO, big_int)
-
-
 def _GetSignalNumber(sig_spec):
     # type: (str) -> int
 
@@ -191,6 +200,65 @@ def _GetSignalNumber(sig_spec):
 
 
 _HOOK_NAMES = ['EXIT', 'ERR', 'RETURN', 'DEBUG']
+
+
+def _ParseSignalOrHook(user_str, blame_loc):
+    # type: (str, loc_t) -> str
+    """Convert user string to a parsed/normalized string.
+
+    These can be passed to AddItem() and RemoveItem()
+
+    See unit tests in builtin/trap_osh_test.py
+        '0'      -> 'EXIT'
+        'EXIT'   -> 'EXIT'
+        'eXIT'   -> 'EXIT'
+
+        '2'      -> 'INT'
+        'iNT'    -> 'INT'
+        'sIGINT' -> 'INT'
+
+        'zz'     -> error
+        '-150'   -> error
+        '10000'  -> error
+    """
+    if user_str.isdigit():
+        try:
+            sig_num = int(user_str)
+        except ValueError:
+            raise error.Usage("got overflowing integer: %s" % user_str,
+                              blame_loc)
+
+        if sig_num == 0:  # Special case
+            return 'EXIT'
+
+        name = signal_def.GetName(sig_num)
+        if name is None:
+            return None
+        return name[3:]  # Remove SIG
+
+    user_str = user_str.upper()  # Ignore case
+
+    if user_str in _HOOK_NAMES:
+        return user_str
+
+    if user_str.startswith('SIG'):
+        user_str = user_str[3:]
+
+    n = signal_def.GetNumber(user_str)
+    if n == signal_def.NO_SIGNAL:
+        return None
+
+    return user_str
+
+
+def ParseSignalOrHook(user_str, blame_loc):
+    # type: (str, loc_t) -> str
+    """Convenience wrapper"""
+    parsed_id = _ParseSignalOrHook(user_str, blame_loc)
+    if parsed_id is None:
+        raise error.Usage('expected signal or hook, got %r' % user_str,
+                          blame_loc)
+    return parsed_id
 
 
 class Trap(vm._Builtin):
@@ -265,9 +333,9 @@ class Trap(vm._Builtin):
     def _RemoveHandler(self, sig_key, sig_num):
         # type: (str, int) -> None
         if sig_key in _HOOK_NAMES:
-            self.trap_state.RemoveUserHook(sig_key)
+            self.trap_state._RemoveUserHook(sig_key)
         elif sig_num != signal_def.NO_SIGNAL:
-            self.trap_state.RemoveUserTrap(sig_num)
+            self.trap_state._RemoveUserTrap(sig_num)
         else:
             raise AssertionError('Signal or trap')
 
@@ -331,28 +399,19 @@ class Trap(vm._Builtin):
         # unsigned integer, then reset every condition
         # https://pubs.opengroup.org/onlinepubs/9699919799.2018edition/utilities/V3_chap02.html#tag_18_28
         # e.g. 'trap 0 2' or 'trap 0 SIGINT'
-        looks_like_unsigned = _IsUnsignedInteger(first_arg, first_loc)
+        looks_like_unsigned = first_arg.isdigit()
         if first_arg == '-' or looks_like_unsigned:
             # If the first argument is a uint, we need to reset this signal as well
             if looks_like_unsigned:
-                # TODO: make this consistent with RemoveHandler()
-                sig_num = int(first_arg)
-                # 0 is the number for the EXIT pseudo-signal in bash
-                if sig_num == 0:
-                    self.trap_state.RemoveUserHook('EXIT')
-                else:
-                    self.trap_state.RemoveUserTrap(sig_num)
+                parsed_id = ParseSignalOrHook(first_arg, first_loc)
+                self.trap_state.RemoveItem(parsed_id)
 
-            # Reset every following signal, if any
-            # NOTE: sig_spec isn't validated when removing handlers.
+            # Remove all handlers
             while not arg_r.AtEnd():
-                sig_spec, sig_key, sig_num, sig_loc = self._GetSignalInfo(
-                    arg_r)
-                if sig_key is None:
-                    self.errfmt.Print_("Invalid signal or hook %r" % sig_spec,
-                                       blame_loc=sig_loc)
-                    return 1
-                self._RemoveHandler(sig_key, sig_num)
+                arg_str, arg_loc = arg_r.Peek2()
+                parsed_id = ParseSignalOrHook(arg_str, arg_loc)
+                self.trap_state.RemoveItem(parsed_id)
+                arg_r.Next()
             return 0
 
         # We read the first arg - "trap SIGNAL" should reset the signal
@@ -370,7 +429,7 @@ class Trap(vm._Builtin):
         # Try parsing the code first.
         node = self._ParseTrapCode(code_str)
         if node is None:
-            return 1  # ParseTrapCode() prints an error for us.
+            return 1  # _ParseTrapCode() prints an error for us.
 
         # This command has the form of "trap COMMAND (SIGNAL)*", so read all
         # SIGNALs and add this code as the handler to all of them
@@ -386,7 +445,7 @@ class Trap(vm._Builtin):
                 if sig_key == 'RETURN':
                     print_stderr("osh warning: The %r hook isn't implemented" %
                                  sig_spec)
-                self.trap_state.AddUserHook(sig_key, node)
+                self.trap_state._AddUserHook(sig_key, node)
 
             # Register a signal.
             if sig_num != signal_def.NO_SIGNAL:
@@ -396,6 +455,6 @@ class Trap(vm._Builtin):
                                        blame_loc=sig_loc)
                     # Other shells return 0, but this seems like an obvious error
                     return 1
-                self.trap_state.AddUserTrap(sig_num, node)
+                self.trap_state._AddUserTrap(sig_num, node)
 
         return 0
