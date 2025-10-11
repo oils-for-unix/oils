@@ -71,14 +71,6 @@ class TrapState(object):
         # type: (int) -> command_t
         return self.traps.get(sig_num, None)
 
-    def _AddUserHook(self, hook_name, handler):
-        # type: (str, command_t) -> None
-        self.hooks[hook_name] = handler
-
-    def _RemoveUserHook(self, hook_name):
-        # type: (str) -> None
-        mylib.dict_erase(self.hooks, hook_name)
-
     def _AddUserTrap(self, sig_num, handler):
         # type: (int, command_t) -> None
         """ e.g. SIGUSR1 """
@@ -121,7 +113,7 @@ class TrapState(object):
         # type: (str, command_t) -> None
         """Add trap or hook, parsed to EXIT or INT (not 0 or SIGINT)"""
         if parsed_id in _HOOK_NAMES:
-            self._AddUserHook(parsed_id, handler)
+            self.hooks[parsed_id] = handler
         else:
             sig_num = signal_def.GetNumber(parsed_id)
             # Should have already been validated
@@ -133,7 +125,7 @@ class TrapState(object):
         # type: (str) -> None
         """Remove trap or hook, parsed to EXIT or INT (not 0 or SIGINT)"""
         if parsed_id in _HOOK_NAMES:
-            self._RemoveUserHook(parsed_id)
+            mylib.dict_erase(self.hooks, parsed_id)
         else:
             sig_num = signal_def.GetNumber(parsed_id)
             # Should have already been validated
@@ -294,21 +286,6 @@ class Trap(vm._Builtin):
         code = self._GetCommandSourceCode(handler)
         print("trap -- %s %s" % (j8_lite.ShellEncode(code), name))
 
-    def _PrintNames(self):
-        # type: () -> None
-        for hook_name in _HOOK_NAMES:
-            # EXIT is 0, but we hide that
-            print('   %s' % hook_name)
-
-        # Iterate over signals and print them
-        n = signal_def.MaxSigNumber() + 1
-        for sig_num in xrange(n):
-
-            sig_name = signal_def.GetName(sig_num)
-            if sig_name is None:
-                continue
-            print('%2d %s' % (sig_num, sig_name))
-
     def _PrintState(self):
         # type: () -> None
         for name, handler in iteritems(self.trap_state.hooks):
@@ -325,6 +302,21 @@ class Trap(vm._Builtin):
             assert sig_name is not None
 
             self._PrintTrapEntry(handler, sig_name)
+
+    def _PrintNames(self):
+        # type: () -> None
+        for hook_name in _HOOK_NAMES:
+            # EXIT is 0, but we hide that
+            print('   %s' % hook_name)
+
+        # Iterate over signals and print them
+        n = signal_def.MaxSigNumber() + 1
+        for sig_num in xrange(n):
+
+            sig_name = signal_def.GetName(sig_num)
+            if sig_name is None:
+                continue
+            print('%2d %s' % (sig_num, sig_name))
 
     def _AddTheRest(self, arg_r, node, allow_legacy=True):
         # type: (args.Reader, command_t, bool) -> int
@@ -401,9 +393,9 @@ class Trap(vm._Builtin):
         # handlers.  For example, 'trap 0 2' or 'trap 0 SIGINT'
         #
         # https://pubs.opengroup.org/onlinepubs/9699919799.2018edition/utilities/V3_chap02.html#tag_18_28
-        looks_like_unsigned = first_arg.isdigit()
-        if first_arg == '-' or looks_like_unsigned:
-            if first_arg == '-':
+        first_is_dash = (first_arg == '-')
+        if first_is_dash or first_arg.isdigit():
+            if first_is_dash:
                 arg_r.Next()
 
             self._RemoveTheRest(arg_r)
@@ -411,17 +403,16 @@ class Trap(vm._Builtin):
 
         arg_r.Next()
 
-        # Legacy behavior for only one arg: "trap SIGNAL" removes the handler
+        # Legacy behavior for only one arg: 'trap SIGNAL' removes the handler
         if arg_r.AtEnd():
             parsed_id = ParseSignalOrHook(first_arg, first_loc)
             self.trap_state.RemoveItem(parsed_id)
             return 0
 
-        # Parsing the code first
+        # Unlike other shells, we parse the code upon registration
         node = self._ParseTrapCode(first_arg)
         if node is None:
             return 1  # _ParseTrapCode() prints an error for us.
 
-        # This command has the form of "trap COMMAND (SIGNAL)*", so read all
-        # SIGNALs and add this code as the handler to all of them
+        # trap COMMAND SIGNAL+
         return self._AddTheRest(arg_r, node)
