@@ -293,6 +293,27 @@ In ysh, you can use:
       echo 'exists'
     }  # => exists
 
+### Tokens in the conditional part of `test <cond1> <op> <cond2>` can be misinterpreted as unary operators
+
+Consider a script that takes a [POSIX-style] argument:
+
+    set -- -o
+    test $# -ne 0 -a "$1" != "--" && echo "Option passed is $1"
+    # ERROR: Unexpected trailing word '--'
+
+Here OSH would misinterpret '-o' as the logical OR operator and would throw
+an error. This doesn't happen if the argument doesn't happen to be a [bash conditional expression]:
+
+    set -- -y
+    test $# -ne 0 -a "$1" != "--" && echo "Option passed is $1"
+    # OK!
+
+Oddly enough, such misparsing never occurs in a single-condition `test`:
+
+    set -- -o
+    test "$1" != "--" && echo "Option passed is $1"
+    # OK!
+
 ## Data Structures
 
 ### Arrays aren't split inside ${}
@@ -507,5 +528,5 @@ External:
 [spec/command-sub]: ../test/spec.wwz/command-sub.html
 [spec/loop]: ../test/spec.wwz/loop.html
 [spec/alias]: ../test/spec.wwz/alias.html
-
-
+[POSIX-style]: https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap12.html
+[bash conditional expression]: https://www.gnu.org/software/bash/manual/html_node/Bash-Conditional-Expressions.html#Bash-Conditional-Expressions-1
