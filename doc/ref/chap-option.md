@@ -272,6 +272,7 @@ Details on options that are not in `ysh:upgrade` and `strict:all`:
       simple_echo             echo doesn't accept -e -n
       simple_eval_builtin     eval takes exactly 1 argument
       simple_test_builtin     test takes 2 or 3 args; use test not [
+      simple_trap_builtin     trap doesn't take a code string, etc.
     X simple_trap             Function name only
 
 **Caveat**: Some options only affect shell startup.  For example:

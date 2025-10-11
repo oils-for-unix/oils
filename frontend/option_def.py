@@ -148,9 +148,9 @@ _YSH_RUNTIME_OPTS = [
     ('no_osh_builtins', False),  # disable 'set' builtin, etc.
     ('simple_echo', False),  # echo takes 0 or 1 arguments
     ('simple_eval_builtin', False),  # eval takes exactly 1 argument
-
-    # only file tests (no strings), remove [, status 2
+    # test only does file ops (no strings ops), remove [, status 2
     ('simple_test_builtin', False),
+    ('simple_trap_builtin', False),  # trap doesn't take code strings, etc.
 
     # TODO: simple_trap
 

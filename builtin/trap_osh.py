@@ -22,6 +22,7 @@ from mycpp.mylib import iteritems, print_stderr, log
 from typing import Dict, List, Optional, TYPE_CHECKING, cast
 if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import command_t
+    from core import optview
     from display import ui
     from frontend import args
     from frontend.parse_lib import ParseContext
@@ -246,11 +247,12 @@ def ParseSignalOrHook(user_str, blame_loc, allow_legacy=True):
 
 class Trap(vm._Builtin):
 
-    def __init__(self, trap_state, parse_ctx, tracer, errfmt):
-        # type: (TrapState, ParseContext, dev.Tracer, ui.ErrorFormatter) -> None
+    def __init__(self, trap_state, parse_ctx, exec_opts, tracer, errfmt):
+        # type: (TrapState, ParseContext, optview.Exec, dev.Tracer, ui.ErrorFormatter) -> None
         self.trap_state = trap_state
         self.parse_ctx = parse_ctx
         self.arena = parse_ctx.arena
+        self.exec_opts = exec_opts
         self.tracer = tracer
         self.errfmt = errfmt
 
@@ -341,14 +343,6 @@ class Trap(vm._Builtin):
         attrs, arg_r = flag_util.ParseCmdVal('trap', cmd_val)
         arg = arg_types.trap(attrs.attrs)
 
-        if arg.p:  # trap -p prints handlers
-            self._PrintState()
-            return 0
-
-        if arg.l:  # List valid signals and hooks
-            self._PrintNames()
-            return 0
-
         if arg.add:  # trap -p prints handlers
             print('TODO')
             return 0
@@ -357,8 +351,19 @@ class Trap(vm._Builtin):
             self._RemoveTheRest(arg_r, allow_legacy=False)
             return 0
 
-        # TODO: anything other than this is not supported in YSH
-        # pass
+        if arg.p:  # trap -p prints handlers
+            self._PrintState()
+            return 0
+
+        if arg.l:  # List valid signals and hooks
+            self._PrintNames()
+            return 0
+
+        # Anything other than the above is not supported in YSH pass
+        if self.exec_opts.simple_trap_builtin():
+            raise error.Usage(
+                'expected --add, --remove, -l, or -p (simple_trap_builtin)',
+                cmd_val.arg_locs[0])
 
         # 'trap' with no arguments is equivalent to 'trap -p'
         if arg_r.AtEnd():

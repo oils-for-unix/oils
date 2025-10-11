@@ -646,7 +646,8 @@ def Main(
                                         environ)
 
     b[builtin_i.hash] = pure_osh.Hash(search_path)  # not really pure
-    b[builtin_i.trap] = trap_osh.Trap(trap_state, parse_ctx, tracer, errfmt)
+    b[builtin_i.trap] = trap_osh.Trap(trap_state, parse_ctx, exec_opts, tracer,
+                                      errfmt)
 
     b[builtin_i.shvar] = pure_ysh.Shvar(mem, search_path, cmd_ev)
     b[builtin_i.ctx] = pure_ysh.Ctx(mem, cmd_ev)

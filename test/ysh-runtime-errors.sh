@@ -1194,9 +1194,9 @@ test-no-osh-builtins() {
 test-ysh-trap() {
   _ysh-error-2 'trap --remove 0'
   _ysh-error-2 'trap --remove INT 0'
+  _ysh-should-run 'trap -p'
 
-  # TODO: disallow all these
-  return
+  _ysh-error-2 'trap'
   _ysh-error-2 'trap - 0'
   _ysh-error-2 'trap - INT 0'
 }
