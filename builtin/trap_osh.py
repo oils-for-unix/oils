@@ -188,19 +188,6 @@ def _GetSignalNumber(sig_spec):
 
 _HOOK_NAMES = ['EXIT', 'ERR', 'RETURN', 'DEBUG']
 
-# bash's default -p looks like this:
-# trap -- '' SIGTSTP
-# trap -- '' SIGTTIN
-# trap -- '' SIGTTOU
-#
-# CPython registers different default handlers.  The C++ rewrite should make
-# OVM match sh/bash more closely.
-
-# Example of trap:
-# trap -- 'echo "hi  there" | wc ' SIGINT
-#
-# Then hit Ctrl-C.
-
 
 class Trap(vm._Builtin):
 
@@ -234,12 +221,20 @@ class Trap(vm._Builtin):
 
     def _GetCommandSourceCode(self, body):
         # type: (command_t) -> str
-        handler_string = 'TrapState'  # type: str
+
+        # TODO: this shouldn't happen
+        handler_string = '<unknown>'  # type: str
+
         if body.tag() == command_e.Simple:
             simple_cmd = cast(command.Simple, body)
             if simple_cmd.blame_tok:
                 handler_string = simple_cmd.blame_tok.line.content
-        return j8_lite.ShellEncode(handler_string)
+        return handler_string
+
+    def _PrintTrapEntry(self, handler, name):
+        # type: (command_t, str) -> None
+        code = self._GetCommandSourceCode(handler)
+        print("trap -- %s %s" % (j8_lite.ShellEncode(code), name))
 
     def _GetSignalInfo(self, arg_r):
         # type: (args.Reader) -> Tuple[str, str, int, CompoundWord]
@@ -280,13 +275,12 @@ class Trap(vm._Builtin):
         # 'trap' with no arguments is equivalent to 'trap -p'
         if arg.p or arg_r.n == 1:  # Print registered handlers
             for name, handler in iteritems(self.trap_state.hooks):
-                print("trap -- %s %s" %
-                      (self._GetCommandSourceCode(handler), name))
+                self._PrintTrapEntry(handler, name)
 
+            # TODO: signal sort order
             for sig_num, handler in iteritems(self.trap_state.traps):
                 sig_name = signal_def.GetName(sig_num)
-                print("trap -- %s %s" %
-                      (self._GetCommandSourceCode(handler), sig_name))
+                self._PrintTrapEntry(handler, sig_name)
 
             return 0
 
