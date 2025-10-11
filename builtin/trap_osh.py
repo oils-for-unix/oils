@@ -67,6 +67,10 @@ class TrapState(object):
         """ e.g. EXIT hook. """
         return self.hooks.get(hook_name, None)
 
+    def GetTrap(self, sig_num):
+        # type: (int) -> command_t
+        return self.traps.get(sig_num, None)
+
     def AddUserHook(self, hook_name, handler):
         # type: (str, command_t) -> None
         self.hooks[hook_name] = handler
@@ -222,7 +226,7 @@ class Trap(vm._Builtin):
     def _GetCommandSourceCode(self, body):
         # type: (command_t) -> str
 
-        # TODO: this shouldn't happen
+        # TODO: Print ANY command_t variant
         handler_string = '<unknown>'  # type: str
 
         if body.tag() == command_e.Simple:
@@ -277,9 +281,16 @@ class Trap(vm._Builtin):
             for name, handler in iteritems(self.trap_state.hooks):
                 self._PrintTrapEntry(handler, name)
 
-            # TODO: signal sort order
-            for sig_num, handler in iteritems(self.trap_state.traps):
+            # Print in order of signal number
+            n = signal_def.MaxSigNumber() + 1
+            for sig_num in xrange(n):
+                handler = self.trap_state.GetTrap(sig_num)
+                if handler is None:
+                    continue
+
                 sig_name = signal_def.GetName(sig_num)
+                assert sig_name is not None
+
                 self._PrintTrapEntry(handler, sig_name)
 
             return 0
@@ -288,7 +299,13 @@ class Trap(vm._Builtin):
             for hook_name in _HOOK_NAMES:
                 print('   %s' % hook_name)
 
-            signal_def.PrintSignals()
+            # Iterate over signals and print them
+            n = signal_def.MaxSigNumber() + 1
+            for sig_num in xrange(n):
+                sig_name = signal_def.GetName(sig_num)
+                if sig_name is None:
+                    continue
+                print('%2d %s' % (sig_num, sig_name))
 
             return 0
 

@@ -70,6 +70,14 @@ _SIGNAL_NUMBERS = {}  # type: Dict[int, str]
 for name, int_val in _SIGNAL_LIST:
     _SIGNAL_NUMBERS[int_val] = name
 
+_MAX_SIG_NUMBER = max(int_val for _, int_val in _SIGNAL_LIST)
+
+
+def MaxSigNumber():
+    # type: () -> int
+    """Iterate over xrange(n + 1)"""
+    return _MAX_SIG_NUMBER
+
 
 def GetNumber(sig_spec):
     # type: (str) -> int
@@ -82,9 +90,3 @@ def GetName(sig_num):
     if s is None:
         return None
     return 'SIG' + s
-
-
-def PrintSignals():
-    # type: () -> None
-    for name, int_val in _SIGNAL_LIST:
-        print('%2d SIG%s' % (int_val, name))

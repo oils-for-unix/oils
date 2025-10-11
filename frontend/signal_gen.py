@@ -6,22 +6,6 @@ import sys
 import signal_def
 
 
-def CppPrintSignals(f):
-    f.write("""
-void PrintSignals() {
-""")
-
-    for abbrev, _ in signal_def._SIGNAL_LIST:
-        name = "SIG%s" % (abbrev, )
-        f.write("""\
-#ifdef %s
-  printf("%%2d %s\\n", %s);
-#endif
-""" % (name, name, name))
-
-    f.write("}\n")
-
-
 def CppGetName(f):
     for abbrev, _ in signal_def._SIGNAL_LIST:
         name = "SIG%s" % (abbrev, )
@@ -38,7 +22,7 @@ BigStr* GetName(int sig_num) {
         f.write('    break;\n')
     f.write("""\
   default:
-    FAIL(kShouldNotGetHere);
+    return nullptr;
   }
 }
 
@@ -89,7 +73,7 @@ namespace signal_def {
 
 const int NO_SIGNAL = -1;
 
-void PrintSignals();
+int MaxSigNumber();
 
 int GetNumber(BigStr* sig_spec);
 
@@ -109,12 +93,17 @@ BigStr* GetName(int sig_num);
 
 namespace signal_def {
 
-""")
-            CppPrintSignals(f)
-            f.write("\n")
+int MaxSigNumber() {
+  return %d;
+}
+
+""" % signal_def._MAX_SIG_NUMBER)
+
             CppGetNumber(f)
             f.write("\n")
+
             CppGetName(f)
+            f.write("\n")
 
             f.write("""\
 
