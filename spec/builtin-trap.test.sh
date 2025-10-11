@@ -103,42 +103,47 @@ trap -- 'echo INT' INT
 EXIT
 ## END
 
-#### trap 0 is equivalent to trap EXIT, trap 0 2 resets EXIT AND SIGINT
+#### trap 0 is equivalent to trap EXIT
 trap "echo INT" INT
 trap "echo EXIT" EXIT
-trap -p
+trap
 echo ---
 trap 0
-trap -p
-trap "echo EXIT" EXIT
-echo ---
-trap -p
-echo ---
-trap 0 2
-trap -p
-echo ---
-trap "echo INT" INT
-trap "echo EXIT" EXIT
-trap 2 EXIT
-trap -p
-echo ---
+trap
 ## STDOUT:
 trap -- 'echo EXIT' EXIT
 trap -- 'echo INT' SIGINT
 ---
 trap -- 'echo INT' SIGINT
+## END
+## OK dash/ash/mksh STDOUT:
+trap -- 'echo EXIT' EXIT
+trap -- 'echo INT' INT
+---
+trap -- 'echo INT' INT
+## END
+
+#### trap 0 2 resets EXIT AND SIGINT
+
+trap "echo EXIT" EXIT
+echo ---
+trap
+echo ---
+trap 0 2
+trap
+echo ---
+trap "echo INT" INT
+trap "echo EXIT" EXIT
+trap 2 EXIT
+trap
+
+## STDOUT:
 ---
 trap -- 'echo EXIT' EXIT
-trap -- 'echo INT' SIGINT
----
 ---
 ---
 ## END
-## N-I mksh status: 1
-## N-I dash/ash status: 2
-## N-I dash/mksh/ash STDOUT:
-EXIT
-## END
+
 
 #### trap without args prints traps, like trap -p
 trap 'echo exit' EXIT
