@@ -368,12 +368,11 @@ class Trap(vm._Builtin):
                                              accept_typed_args=True)
         arg = arg_types.trap(attrs.attrs)
 
-        if arg.add:  # trap -p prints handlers
+        if arg.add:  # trap --add
             cmd_frag = typed_args.RequiredBlockAsFrag(cmd_val)
-            node = cmd_frag
-            return self._AddTheRest(arg_r, node, allow_legacy=False)
+            return self._AddTheRest(arg_r, cmd_frag, allow_legacy=False)
 
-        if arg.remove:  # trap -p prints handlers
+        if arg.remove:  # trap --remove
             self._RemoveTheRest(arg_r, allow_legacy=False)
             return 0
 

@@ -51,7 +51,7 @@ def OptionalBlockAsFrag(cmd_val):
 
 
 def RequiredBlockAsFrag(cmd_val):
-    # type: (cmd_value.Argv) -> Optional[command_t]
+    # type: (cmd_value.Argv) -> command_t
     """Helper for try, shopt, etc."""
 
     r = ReaderForProc(cmd_val)
