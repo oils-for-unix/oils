@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh zsh ash
-## oils_failures_allowed: 10
+## oils_failures_allowed: 6
 
 # This file relates to:
 #
