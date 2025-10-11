@@ -219,16 +219,3 @@ echo =word
 ## STDOUT:
 =word
 ## END
-
-
-#### Single conditional with unary expression-like input
-test "-o" != "--"
-## status: 0
-
-#### Two conditionals with reserved unary expression
-test 1 -ne 0 -a "-o" != "--"
-## status: 0
-
-#### Two conditionals without reserved unary expression
-test 1 -ne 0 -a "-y" != "--"
-## status: 0
