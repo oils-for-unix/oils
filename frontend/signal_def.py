@@ -1,27 +1,9 @@
 #!/usr/bin/env python2
-"""Signal_def.py."""
 from __future__ import print_function
 
 import signal
 
-from typing import Dict, Tuple
-
-
-def _MakeSignalsOld():
-    # type: () -> Dict[str, int]
-    """Piggy-back on CPython signal module.
-
-    This causes portability problems
-    """
-    names = {}  # type: Dict[str, int]
-    for name in dir(signal):
-        # don't want SIG_DFL or SIG_IGN
-        if name.startswith('SIG') and not name.startswith('SIG_'):
-            int_val = getattr(signal, name)
-            abbrev = name[3:]
-            names[abbrev] = int_val
-    return names
-
+from typing import Dict, Tuple, List
 
 # POSIX 2018
 # https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html
@@ -60,23 +42,33 @@ _PORTABLE_SIGNALS = [
 
 
 def _MakeSignals():
-    # type: () -> Tuple[Dict[str, int], Dict[int, str]]
+    # type: () -> List[Tuple[str, int]]
     """Piggy-back on CPython signal module.
 
     This causes portability problems
     """
-    names = {}  # type: Dict[str, int]
-    numbers = {}  # type: Dict[int, str]
+    pairs = []  # type: List[Tuple[str, int]]
     for name in _PORTABLE_SIGNALS:
         int_val = getattr(signal, name)
         assert name.startswith('SIG'), name
         abbrev = name[3:]
-        names[abbrev] = int_val
-        numbers[int_val] = name
-    return names, numbers
+        pairs.append((abbrev, int_val))
+
+    pairs.sort(key=lambda x: x[1])
+    return pairs
 
 
 NO_SIGNAL = -1
+
+_SIGNAL_LIST = _MakeSignals()
+
+_SIGNAL_NAMES = {}  # type: Dict[str, int]
+for name, int_val in _SIGNAL_LIST:
+    _SIGNAL_NAMES[name] = int_val
+
+_SIGNAL_NUMBERS = {}  # type: Dict[int, str]
+for name, int_val in _SIGNAL_LIST:
+    _SIGNAL_NUMBERS[int_val] = name
 
 
 def GetNumber(sig_spec):
@@ -86,16 +78,13 @@ def GetNumber(sig_spec):
 
 def GetName(sig_num):
     # type: (int) -> str
-    return _SIGNAL_NUMBERS.get(sig_num)
-
-
-_SIGNAL_NAMES, _SIGNAL_NUMBERS = _MakeSignals()
-
-_BY_NUMBER = _SIGNAL_NAMES.items()
-_BY_NUMBER.sort(key=lambda x: x[1])
+    s = _SIGNAL_NUMBERS.get(sig_num)
+    if s is None:
+        return None
+    return 'SIG' + s
 
 
 def PrintSignals():
     # type: () -> None
-    for name, int_val in _BY_NUMBER:
+    for name, int_val in _SIGNAL_LIST:
         print('%2d SIG%s' % (int_val, name))

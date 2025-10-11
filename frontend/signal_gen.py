@@ -1,5 +1,4 @@
 #!/usr/bin/env python2
-"""Signal_gen.py."""
 from __future__ import print_function
 
 import sys
@@ -12,7 +11,7 @@ def CppPrintSignals(f):
 void PrintSignals() {
 """)
 
-    for abbrev, _ in signal_def._BY_NUMBER:
+    for abbrev, _ in signal_def._SIGNAL_LIST:
         name = "SIG%s" % (abbrev, )
         f.write("""\
 #ifdef %s
@@ -24,7 +23,7 @@ void PrintSignals() {
 
 
 def CppGetName(f):
-    for abbrev, _ in signal_def._BY_NUMBER:
+    for abbrev, _ in signal_def._SIGNAL_LIST:
         name = "SIG%s" % (abbrev, )
         f.write('GLOBAL_STR(k%s, "%s");\n' % (name, name))
 
@@ -32,7 +31,7 @@ def CppGetName(f):
 BigStr* GetName(int sig_num) {
   switch (sig_num) {
 """)
-    for abbrev, num in signal_def._BY_NUMBER:
+    for abbrev, num in signal_def._SIGNAL_LIST:
         name = "SIG%s" % (abbrev, )
         f.write('  case %d:\n' % num)
         f.write('    return k%s;\n' % (name))
@@ -57,14 +56,13 @@ int GetNumber(BigStr* sig_spec) {
   const char* data = sig_spec->data_;
 
 """)
-    for abbrev, _ in signal_def._BY_NUMBER:
+    for abbrev, _ in signal_def._SIGNAL_LIST:
         name = "SIG%s" % (abbrev, )
         f.write("""\
-  if ((length == %d && memcmp("%s", data, %d) == 0) ||
-      (length == %d && memcmp("%s", data, %d) == 0)) {
+  if (length == %d && memcmp("%s", data, %d) == 0) {
     return %s;
   }
-""" % (len(name), name, len(name), len(abbrev), abbrev, len(abbrev), name))
+""" % (len(abbrev), abbrev, len(abbrev), name))
     f.write("""\
   return NO_SIGNAL;
 }
