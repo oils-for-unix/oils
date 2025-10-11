@@ -1212,7 +1212,8 @@ test-int-overflow() {
   _osh-error-1 'printf %d'" $neg"
 
   _osh-error-2 "trap $pos ERR"
-  _osh-error-2 "trap -- $neg ERR"
+  # ACCEPTED - integer must be "unsigned" according to posix
+  _osh-should-run "trap -- $neg ERR"
 
   _osh-error-2 "ulimit $pos"
   _osh-error-2 "ulimit -- $neg"

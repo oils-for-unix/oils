@@ -307,9 +307,9 @@ status=0
 status=0
 ## END
 ## OK osh STDOUT:
-status=1
-status=1
-status=1
+status=2
+status=2
+status=2
 status=0
 ## END
 
