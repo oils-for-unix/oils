@@ -201,6 +201,8 @@ WAIT_SPEC.LongFlag('--verbose')
 TRAP_SPEC = FlagSpec('trap')
 TRAP_SPEC.ShortFlag('-p')
 TRAP_SPEC.ShortFlag('-l')
+TRAP_SPEC.LongFlag('--add')
+TRAP_SPEC.LongFlag('--remove')
 
 JOB_SPEC = FlagSpec('jobs')
 JOB_SPEC.ShortFlag('-l', help='long format')

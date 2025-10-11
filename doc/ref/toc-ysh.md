@@ -152,6 +152,7 @@ X [Wok]           _field()
                   write                  Like echo, with --, --sep, --end
                   fork         forkwait  Replace & and (), and takes a block
                   redir                  Run a block, with redirects
+  [Run Code]      ysh-trap
   [Private]       cat          rm        POSIX-compatible
                   sleep
   [Hay Config]    hay          haynode   For DSLs and config files

@@ -618,6 +618,10 @@ ysh-builtin-shopt() {
   test/spec-py.sh run-file ysh-builtin-shopt "$@"
 }
 
+ysh-builtin-trap() {
+  test/spec-py.sh run-file ysh-builtin-trap "$@"
+}
+
 ysh-builtins() {
   test/spec-py.sh run-file ysh-builtins "$@"
 }

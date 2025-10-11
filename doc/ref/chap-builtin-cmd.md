@@ -934,15 +934,31 @@ issues][].
 
 ### trap
 
-    trap FLAG* CMD SIGNAL*
+The `trap` builtin lets you run shell code when events happen.  Events are
+signals or interpreter hooks.
 
-Registers the shell string CMD to be run after the SIGNALs are received.  If
-the CMD is empty, then the signal is ignored.
+    trap -l          # List all events and their number
+    trap -p          # Print the current trap state: events and handlers
+    trap CMD EVENT*  # Register handlers
+    trap - EVENT*    # Remove handlers
 
-Flags:
+Examples:
 
-    -l  Lists all signals and their signal number
-    -p  Prints a list of the installed signal handlers
+    trap 'echo hi' EXIT INT   # Register
+    trap - EXIT INT           # Remove
+
+OSH also support legacy syntax, which is not recommended:
+
+    trap 'echo hi' 0   # 0 is the exit trap
+    trap INT           # remove signal handler
+    trap 0             # remove exit trap
+    trap 0 INT         # remove both
+
+See [ysh-trap](#ysh-trap) for even nicer idioms.
+
+<!--
+    trap '' EVENT*   # TODO Ignore events
+-->
 
 Tip:
 
@@ -950,6 +966,25 @@ Prefer passing the name of a shell function to `trap`.
 
 See [Chapter: Plugins and Hooks > Traps](chap-plugin.html#Traps) for a list of
 traps, like `trap '' EXIT`.
+
+### ysh-trap
+
+The `trap` builtin lets you run shell code when events happen.  Events are
+signals or interpreter hooks.
+
+    trap -l          # List all events and their number
+    trap -p          # Print the current trap state: events and handlers
+    trap --add EVENT* BLOCK  # Register handlers
+    trap --remove EVENT*     # Remove handlers
+
+Examples:
+
+    trap --add EXIT INT {
+      echo 'either exit'
+      echo 'or int'
+    }
+
+    trap --remove EXIT INT
 
 ## Set Options
 

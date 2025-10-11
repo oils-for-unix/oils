@@ -23,6 +23,7 @@ from typing import Dict, List, Optional, TYPE_CHECKING, cast
 if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import command_t
     from display import ui
+    from frontend import args
     from frontend.parse_lib import ParseContext
 
 _ = log
@@ -182,8 +183,8 @@ class TrapState(object):
 _HOOK_NAMES = ['EXIT', 'ERR', 'RETURN', 'DEBUG']
 
 
-def _ParseSignalOrHook(user_str, blame_loc):
-    # type: (str, loc_t) -> str
+def _ParseSignalOrHook(user_str, blame_loc, allow_legacy=True):
+    # type: (str, loc_t, bool) -> str
     """Convert user string to a parsed/normalized string.
 
     These can be passed to AddItem() and RemoveItem()
@@ -201,7 +202,7 @@ def _ParseSignalOrHook(user_str, blame_loc):
         '-150'   -> error
         '10000'  -> error
     """
-    if user_str.isdigit():
+    if allow_legacy and user_str.isdigit():
         try:
             sig_num = int(user_str)
         except ValueError:
@@ -231,10 +232,12 @@ def _ParseSignalOrHook(user_str, blame_loc):
     return user_str
 
 
-def ParseSignalOrHook(user_str, blame_loc):
-    # type: (str, loc_t) -> str
+def ParseSignalOrHook(user_str, blame_loc, allow_legacy=True):
+    # type: (str, loc_t, bool) -> str
     """Convenience wrapper"""
-    parsed_id = _ParseSignalOrHook(user_str, blame_loc)
+    parsed_id = _ParseSignalOrHook(user_str,
+                                   blame_loc,
+                                   allow_legacy=allow_legacy)
     if parsed_id is None:
         raise error.Usage('expected signal or hook, got %r' % user_str,
                           blame_loc)
@@ -320,6 +323,19 @@ class Trap(vm._Builtin):
 
             self._PrintTrapEntry(handler, sig_name)
 
+    def _RemoveTheRest(self, arg_r, allow_legacy=True):
+        # type: (args.Reader, bool) -> None
+        """
+        Remove handlers
+        """
+        while not arg_r.AtEnd():
+            arg_str, arg_loc = arg_r.Peek2()
+            parsed_id = ParseSignalOrHook(arg_str,
+                                          arg_loc,
+                                          allow_legacy=allow_legacy)
+            self.trap_state.RemoveItem(parsed_id)
+            arg_r.Next()
+
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
         attrs, arg_r = flag_util.ParseCmdVal('trap', cmd_val)
@@ -333,12 +349,23 @@ class Trap(vm._Builtin):
             self._PrintNames()
             return 0
 
+        if arg.add:  # trap -p prints handlers
+            print('TODO')
+            return 0
+
+        if arg.remove:  # trap -p prints handlers
+            self._RemoveTheRest(arg_r, allow_legacy=False)
+            return 0
+
+        # TODO: anything other than this is not supported in YSH
+        # pass
+
         # 'trap' with no arguments is equivalent to 'trap -p'
         if arg_r.AtEnd():
             self._PrintState()
             return 0
 
-        first_arg, first_loc = arg_r.ReadRequired2('requires a code string')
+        first_arg, first_loc = arg_r.Peek2()
 
         # If the first arg is '-' or an unsigned integer, then remove the
         # handlers.  For example, 'trap 0 2' or 'trap 0 SIGINT'
@@ -346,18 +373,13 @@ class Trap(vm._Builtin):
         # https://pubs.opengroup.org/onlinepubs/9699919799.2018edition/utilities/V3_chap02.html#tag_18_28
         looks_like_unsigned = first_arg.isdigit()
         if first_arg == '-' or looks_like_unsigned:
-            # If the first argument is a uint, we need to reset this signal as well
-            if looks_like_unsigned:
-                parsed_id = ParseSignalOrHook(first_arg, first_loc)
-                self.trap_state.RemoveItem(parsed_id)
-
-            # Remove all handlers
-            while not arg_r.AtEnd():
-                arg_str, arg_loc = arg_r.Peek2()
-                parsed_id = ParseSignalOrHook(arg_str, arg_loc)
-                self.trap_state.RemoveItem(parsed_id)
+            if first_arg == '-':
                 arg_r.Next()
+
+            self._RemoveTheRest(arg_r)
             return 0
+
+        arg_r.Next()
 
         # Legacy behavior for only one arg: "trap SIGNAL" removes the handler
         if arg_r.AtEnd():
