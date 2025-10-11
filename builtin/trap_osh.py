@@ -258,7 +258,7 @@ class Trap(vm._Builtin):
 
         return sig_spec, sig_key, sig_num, sig_loc
 
-    def _ResetSignal(self, sig_key, sig_num):
+    def _RemoveHandler(self, sig_key, sig_num):
         # type: (str, int) -> None
         if sig_key in _HOOK_NAMES:
             self.trap_state.RemoveUserHook(sig_key)
@@ -296,10 +296,12 @@ class Trap(vm._Builtin):
         # Per POSIX, if the first argument to trap is '-' or an
         # unsigned integer, then reset every condition
         # https://pubs.opengroup.org/onlinepubs/9699919799.2018edition/utilities/V3_chap02.html#tag_18_28
+        # e.g. 'trap 0 2' or 'trap 0 SIGINT'
         code_is_uint = _IsUnsignedInteger(code_str, code_loc)
         if code_str == '-' or code_is_uint:
             # If the first argument is a uint, we need to reset this signal as well
             if code_is_uint:
+                # TODO: make this consistent with RemoveHandler()
                 code_num = int(code_str)
                 # 0 is the number for the EXIT pseudo-signal in bash
                 if code_num == 0:
@@ -315,7 +317,7 @@ class Trap(vm._Builtin):
                     self.errfmt.Print_("Invalid signal or hook %r" % sig_spec,
                                        blame_loc=cmd_val.arg_locs[2])
                     return 1
-                self._ResetSignal(sig_key, sig_num)
+                self._RemoveHandler(sig_key, sig_num)
             return 0
 
         # "trap SIGNAL" should reset the signal
@@ -326,11 +328,8 @@ class Trap(vm._Builtin):
                                    blame_loc=cmd_val.arg_locs[1])
                 return 2
 
-            self._ResetSignal(code_str, code_num)
+            self._RemoveHandler(code_str, code_num)
             return 0
-
-        # TODO: If simple_trap is on (for ysh:upgrade), then it must be a function
-        # name?  And then you wrap it in 'try'?
 
         # Try parsing the code first.
         node = self._ParseTrapCode(code_str)
