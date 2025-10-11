@@ -122,12 +122,12 @@ def _AppendParts(
 #
 
 
-def _ReadN(num_bytes, cmd_ev):
-    # type: (int, CommandEvaluator) -> str
+def _ReadN(fd, num_bytes, cmd_ev):
+    # type: (int, int, CommandEvaluator) -> str
     chunks = []  # type: List[str]
     bytes_left = num_bytes
     while bytes_left > 0:
-        n, err_num = pyos.Read(STDIN_FILENO, bytes_left, chunks)
+        n, err_num = pyos.Read(fd, bytes_left, chunks)
 
         if n < 0:
             if err_num == EINTR:
@@ -145,9 +145,9 @@ def _ReadN(num_bytes, cmd_ev):
     return ''.join(chunks)
 
 
-def _ReadPortion(delim_byte, max_chars, allow_escape, cmd_ev):
-    # type: (int, int, bool, CommandEvaluator) -> Tuple[str, bool]
-    """Read a portion of stdin.
+def _ReadPortion(fd, delim_byte, max_chars, allow_escape, cmd_ev):
+    # type: (int, int, int, bool, CommandEvaluator) -> Tuple[str, bool]
+    """Read a portion of filedescriptor fd.
 
     Reads until delimiter or max_chars, which ever comes first. Will ignore
     max_chars if it's set to -1.
@@ -162,8 +162,7 @@ def _ReadPortion(delim_byte, max_chars, allow_escape, cmd_ev):
     while True:
         if max_chars >= 0 and chars_read >= max_chars:
             break
-
-        ch, err_num = pyos.ReadByte(0)
+        ch, err_num = pyos.ReadByte(fd)
         if ch < 0:
             if err_num == EINTR:
                 cmd_ev.RunPendingTraps()
@@ -389,7 +388,7 @@ class Read(vm._Builtin):
 
         num_bytes = mops.BigTruncate(arg.num_bytes)
         if num_bytes != -1:  # read --num-bytes
-            contents = _ReadN(num_bytes, self.cmd_ev)
+            contents = _ReadN(STDIN_FILENO, num_bytes, self.cmd_ev)
             status = 0
 
         elif arg.raw_line:  # read --raw-line is unbuffered
@@ -415,10 +414,9 @@ class Read(vm._Builtin):
                                              accept_typed_args=True)
         arg = arg_types.read(attrs.attrs)
         names = arg_r.Rest()
-
+        input_fd = STDIN_FILENO
         if arg.u != mops.MINUS_ONE:
-            # TODO: could implement this
-            raise error.Usage('-u flag not implemented', cmd_val.arg_locs[0])
+            input_fd = mops.BigTruncate(arg.u)
 
         if arg.raw_line or arg.all or mops.BigTruncate(arg.num_bytes) != -1:
             return self._ReadYsh(arg, arg_r, cmd_val)
@@ -435,7 +433,7 @@ class Read(vm._Builtin):
                 return 0 if pyos.InputAvailable(STDIN_FILENO) else 1
 
         bits = 0
-        if self.stdin_.isatty():
+        if posix.isatty(input_fd):
             # -d and -n should be unbuffered
             if arg.d is not None or mops.BigTruncate(arg.n) >= 0:
                 bits |= pyos.TERM_ICANON
@@ -444,22 +442,22 @@ class Read(vm._Builtin):
 
             if arg.p is not None:  # only if tty
                 mylib.Stderr().write(arg.p)
-
         if bits == 0:
-            status = self._Read(arg, names)
+            status = self._Read(arg, names, input_fd)
         else:
-            with ctx_TermAttrs(STDIN_FILENO, ~bits):
-                status = self._Read(arg, names)
+            # should we use input_fd here as well?
+            with ctx_TermAttrs(input_fd, ~bits):
+                status = self._Read(arg, names, input_fd)
         return status
 
-    def _Read(self, arg, names):
-        # type: (arg_types.read, List[str]) -> int
+    def _Read(self, arg, names, input_fd):
+        # type: (arg_types.read, List[str], int) -> int
 
         # read a certain number of bytes, NOT respecting delimiter (-1 means
         # unset)
         arg_N = mops.BigTruncate(arg.N)
         if arg_N >= 0:
-            s = _ReadN(arg_N, self.cmd_ev)
+            s = _ReadN(input_fd, arg_N, self.cmd_ev)
 
             if len(names):
                 name = names[0]  # ignore other names
@@ -505,7 +503,7 @@ class Read(vm._Builtin):
             else:
                 delim_byte = pyos.NEWLINE_CH  # read a line
 
-        chunk, eof = _ReadPortion(delim_byte, mops.BigTruncate(arg.n), not raw,
+        chunk, eof = _ReadPortion(input_fd, delim_byte, mops.BigTruncate(arg.n), not raw,
                                   self.cmd_ev)
 
         # status 1 to terminate loop.  (This is true even though we set
