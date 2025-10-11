@@ -49,15 +49,11 @@ echo status=$?
 status=1
 ## END
 
-#### trap -p should print the handlers and full signal names
+#### trap -p prints the handlers and full signal names
 case $SH in dash) exit ;; esac
 trap "echo INT" INT
 trap "echo EXIT" EXIT
-# osh's trap mishandles pipes, a separate test verifies them
-# bash installs several default handlers, so grep filters them out for easier testing
-case $SH in bash) trap -p | grep echo ;;
-               *) trap -p;;
-esac
+trap -p
 ## STDOUT:
 trap -- 'echo EXIT' EXIT
 trap -- 'echo INT' SIGINT
@@ -71,31 +67,21 @@ EXIT
 ## N-I dash STDOUT:
 ## END
 
-#### trap EXIT should clear the EXIT trap
+#### trap EXIT clears the EXIT trap
 trap "echo INT" INT
 trap "echo EXIT" EXIT
-case $SH in bash) trap -p | grep echo ;;
-               *) trap -p;;
-esac
+trap -p
 echo ---
 trap EXIT
-case $SH in bash) trap -p | grep echo ;;
-               *) trap -p;;
-esac
+trap -p
 echo ---
 trap INT
-case $SH in bash) trap -p | grep echo ;;
-               *) trap -p;;
-esac
-# since grep doesn't match anything, bash's exit code is 1 here, while
-# osh's is 0. Add another successful echo command below to work around it
-echo ---
+trap -p
 ## STDOUT:
 trap -- 'echo EXIT' EXIT
 trap -- 'echo INT' SIGINT
 ---
 trap -- 'echo INT' SIGINT
----
 ---
 ## END
 ## N-I mksh status: 1
@@ -107,31 +93,21 @@ EXIT
 #### trap 0 is equivalent to trap EXIT, trap 0 2 resets EXIT AND SIGINT
 trap "echo INT" INT
 trap "echo EXIT" EXIT
-case $SH in bash) trap -p | grep echo ;;
-               *) trap -p;;
-esac
+trap -p
 echo ---
 trap 0
-case $SH in bash) trap -p | grep echo ;;
-               *) trap -p;;
-esac
+trap -p
 trap "echo EXIT" EXIT
 echo ---
-case $SH in bash) trap -p | grep echo ;;
-               *) trap -p;;
-esac
+trap -p
 echo ---
 trap 0 2
-case $SH in bash) trap -p | grep echo ;;
-               *) trap -p;;
-esac
+trap -p
 echo ---
 trap "echo INT" INT
 trap "echo EXIT" EXIT
 trap 2 EXIT
-case $SH in bash) trap -p | grep echo ;;
-               *) trap -p;;
-esac
+trap -p
 echo ---
 ## STDOUT:
 trap -- 'echo EXIT' EXIT
@@ -152,31 +128,18 @@ EXIT
 ## END
 
 #### trap without args prints traps, like trap -p
-case $SH in dash | mksh) exit ;; esac
 
-if false; then
-  # bash breaks the display across lines
-  trap "true
-false" EXIT
-fi
-
-$SH -c '
-
-trap "true" EXIT
-
+trap 'echo exit' EXIT
 echo status=$?
-case $SH in bash) trap | grep true ;;
-               *) trap ;;
-esac
+
+trap
 echo status=$?
-'
 
 ## STDOUT:
 status=0
-trap -- 'true' EXIT
+trap -- 'echo exit' EXIT
 status=0
-## END
-## N-I mksh/dash STDOUT:
+exit
 ## END
 
 #### trap -p should write into a pipe
