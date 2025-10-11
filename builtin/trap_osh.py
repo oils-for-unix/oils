@@ -5,22 +5,24 @@ from signal import SIG_DFL, SIGINT, SIGKILL, SIGSTOP, SIGWINCH
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value
-from _devbuild.gen.syntax_asdl import loc, loc_t, source
+from _devbuild.gen.syntax_asdl import loc, loc_t, source, command_e, command, CompoundWord
 from core import alloc
 from core import dev
 from core import error
 from core import main_loop
 from core import vm
+from frontend import args
 from frontend import flag_util
 from frontend import match
 from frontend import reader
 from frontend import signal_def
+from data_lang import j8_lite
 from mycpp import iolib
 from mycpp import mylib
 from mycpp.mylib import iteritems, print_stderr, log
 from mycpp import mops
 
-from typing import Dict, List, Optional, TYPE_CHECKING
+from typing import Dict, List, Optional, TYPE_CHECKING, cast, Tuple
 if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import command_t
     from display import ui
@@ -174,6 +176,7 @@ def _GetSignalNumber(sig_spec):
     # http://pubs.opengroup.org/onlinepubs/9699919799/
     #
     # Added 13 for SIGPIPE because autoconf's 'configure' uses it!
+    sig_spec = sig_spec.upper()
     if sig_spec.strip() in ('1', '2', '3', '6', '9', '13', '14', '15'):
         return int(sig_spec)
 
@@ -184,19 +187,6 @@ def _GetSignalNumber(sig_spec):
 
 
 _HOOK_NAMES = ['EXIT', 'ERR', 'RETURN', 'DEBUG']
-
-# bash's default -p looks like this:
-# trap -- '' SIGTSTP
-# trap -- '' SIGTTIN
-# trap -- '' SIGTTOU
-#
-# CPython registers different default handlers.  The C++ rewrite should make
-# OVM match sh/bash more closely.
-
-# Example of trap:
-# trap -- 'echo "hi  there" | wc ' SIGINT
-#
-# Then hit Ctrl-C.
 
 
 class Trap(vm._Builtin):
@@ -212,9 +202,9 @@ class Trap(vm._Builtin):
     def _ParseTrapCode(self, code_str):
         # type: (str) -> command_t
         """
-    Returns:
-      A node, or None if the code is invalid.
-    """
+        Returns:
+          A node, or None if the code is invalid.
+        """
         line_reader = reader.StringLineReader(code_str, self.arena)
         c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
@@ -229,19 +219,68 @@ class Trap(vm._Builtin):
 
         return node
 
+    def _GetCommandSourceCode(self, body):
+        # type: (command_t) -> str
+
+        # TODO: this shouldn't happen
+        handler_string = '<unknown>'  # type: str
+
+        if body.tag() == command_e.Simple:
+            simple_cmd = cast(command.Simple, body)
+            if simple_cmd.blame_tok:
+                handler_string = simple_cmd.blame_tok.line.content
+        return handler_string
+
+    def _PrintTrapEntry(self, handler, name):
+        # type: (command_t, str) -> None
+        code = self._GetCommandSourceCode(handler)
+        print("trap -- %s %s" % (j8_lite.ShellEncode(code), name))
+
+    def _GetSignalInfo(self, arg_r):
+        # type: (args.Reader) -> Tuple[str, str, int, CompoundWord]
+        sig_spec, sig_loc = arg_r.ReadRequired2(
+            'requires a signal or hook name')
+
+        # sig_key is NORMALIZED sig_spec: a signal number string or string hook
+        # name.
+        sig_key = None  # type: Optional[str]
+        sig_num = signal_def.NO_SIGNAL
+
+        sig_spec = sig_spec.upper()
+        if sig_spec in _HOOK_NAMES:
+            sig_key = sig_spec
+        elif sig_spec == '0':  # Special case
+            sig_key = 'EXIT'
+        else:
+            sig_num = _GetSignalNumber(sig_spec)
+            if sig_num != signal_def.NO_SIGNAL:
+                sig_key = str(sig_num)
+
+        return sig_spec, sig_key, sig_num, sig_loc
+
+    def _ResetSignal(self, sig_key, sig_num):
+        # type: (str, int) -> None
+        if sig_key in _HOOK_NAMES:
+            self.trap_state.RemoveUserHook(sig_key)
+        elif sig_num != signal_def.NO_SIGNAL:
+            self.trap_state.RemoveUserTrap(sig_num)
+        else:
+            raise AssertionError('Signal or trap')
+
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
         attrs, arg_r = flag_util.ParseCmdVal('trap', cmd_val)
         arg = arg_types.trap(attrs.attrs)
 
-        if arg.p:  # Print registered handlers
-            # The unit tests rely on this being one line.
-            # bash prints a line that can be re-parsed.
-            for name, _ in iteritems(self.trap_state.hooks):
-                print('%s TrapState' % (name, ))
+        # 'trap' with no arguments is equivalent to 'trap -p'
+        if arg.p or arg_r.n == 1:  # Print registered handlers
+            for name, handler in iteritems(self.trap_state.hooks):
+                self._PrintTrapEntry(handler, name)
 
-            for sig_num, _ in iteritems(self.trap_state.traps):
-                print('%d TrapState' % (sig_num, ))
+            # TODO: signal sort order
+            for sig_num, handler in iteritems(self.trap_state.traps):
+                sig_name = signal_def.GetName(sig_num)
+                self._PrintTrapEntry(handler, sig_name)
 
             return 0
 
@@ -254,69 +293,74 @@ class Trap(vm._Builtin):
             return 0
 
         code_str, code_loc = arg_r.ReadRequired2('requires a code string')
-        sig_spec, sig_loc = arg_r.ReadRequired2(
-            'requires a signal or hook name')
-
-        # sig_key is NORMALIZED sig_spec: a signal number string or string hook
-        # name.
-        sig_key = None  # type: Optional[str]
-        sig_num = signal_def.NO_SIGNAL
-
-        if sig_spec in _HOOK_NAMES:
-            sig_key = sig_spec
-        elif sig_spec == '0':  # Special case
-            sig_key = 'EXIT'
-        else:
-            sig_num = _GetSignalNumber(sig_spec)
-            if sig_num != signal_def.NO_SIGNAL:
-                sig_key = str(sig_num)
-
-        if sig_key is None:
-            self.errfmt.Print_("Invalid signal or hook %r" % sig_spec,
-                               blame_loc=cmd_val.arg_locs[2])
-            return 1
-
-        # NOTE: sig_spec isn't validated when removing handlers.
-        # Per POSIX, if the first argument to trap is an unsigned integer
-        # then reset every condition
+        # Per POSIX, if the first argument to trap is '-' or an
+        # unsigned integer, then reset every condition
         # https://pubs.opengroup.org/onlinepubs/9699919799.2018edition/utilities/V3_chap02.html#tag_18_28
-        if code_str == '-' or _IsUnsignedInteger(code_str, code_loc):
-            if sig_key in _HOOK_NAMES:
-                self.trap_state.RemoveUserHook(sig_key)
-                return 0
+        code_is_uint = _IsUnsignedInteger(code_str, code_loc)
+        if code_str == '-' or code_is_uint:
+            # If the first argument is a uint, we need to reset this signal as well
+            if code_is_uint:
+                code_num = int(code_str)
+                # 0 is the number for the EXIT pseudo-signal in bash
+                if code_num == 0:
+                    self.trap_state.RemoveUserHook('EXIT')
+                else:
+                    self.trap_state.RemoveUserTrap(code_num)
 
-            if sig_num != signal_def.NO_SIGNAL:
-                self.trap_state.RemoveUserTrap(sig_num)
-                return 0
+            # Reset every following signal, if any
+            # NOTE: sig_spec isn't validated when removing handlers.
+            for i in xrange(2, arg_r.n):
+                sig_spec, sig_key, sig_num, _ = self._GetSignalInfo(arg_r)
+                if sig_key is None:
+                    self.errfmt.Print_("Invalid signal or hook %r" % sig_spec,
+                                       blame_loc=cmd_val.arg_locs[2])
+                    return 1
+                self._ResetSignal(sig_key, sig_num)
+            return 0
 
-            raise AssertionError('Signal or trap')
+        # "trap SIGNAL" should reset the signal
+        if arg_r.n == 2:
+            code_num = _GetSignalNumber(code_str)
+            if code_num == signal_def.NO_SIGNAL and code_str not in _HOOK_NAMES:
+                self.errfmt.Print_("Invalid signal or hook %r" % code_str,
+                                   blame_loc=cmd_val.arg_locs[1])
+                return 2
 
-        # Try parsing the code first.
+            self._ResetSignal(code_str, code_num)
+            return 0
 
         # TODO: If simple_trap is on (for ysh:upgrade), then it must be a function
         # name?  And then you wrap it in 'try'?
 
+        # Try parsing the code first.
         node = self._ParseTrapCode(code_str)
         if node is None:
             return 1  # ParseTrapCode() prints an error for us.
 
-        # Register a hook.
-        if sig_key in _HOOK_NAMES:
-            if sig_key == 'RETURN':
-                print_stderr("osh warning: The %r hook isn't implemented" %
-                             sig_spec)
-            self.trap_state.AddUserHook(sig_key, node)
-            return 0
-
-        # Register a signal.
-        if sig_num != signal_def.NO_SIGNAL:
-            # For signal handlers, the traps dictionary is used only for debugging.
-            if sig_num in (SIGKILL, SIGSTOP):
-                self.errfmt.Print_("Signal %r can't be handled" % sig_spec,
-                                   blame_loc=sig_loc)
-                # Other shells return 0, but this seems like an obvious error
+        # This command has the form of "trap COMMAND (SIGNAL)*", so read all
+        # SIGNALs and add this code as the handler to all of them
+        for i in xrange(2, arg_r.n):
+            sig_spec, sig_key, sig_num, sig_loc = self._GetSignalInfo(arg_r)
+            if sig_key is None:
+                self.errfmt.Print_("Invalid signal or hook %r" % sig_spec,
+                                   blame_loc=cmd_val.arg_locs[2])
                 return 1
-            self.trap_state.AddUserTrap(sig_num, node)
-            return 0
 
-        raise AssertionError('Signal or trap')
+            # Register a hook.
+            if sig_key in _HOOK_NAMES:
+                if sig_key == 'RETURN':
+                    print_stderr("osh warning: The %r hook isn't implemented" %
+                                 sig_spec)
+                self.trap_state.AddUserHook(sig_key, node)
+
+            # Register a signal.
+            if sig_num != signal_def.NO_SIGNAL:
+                # For signal handlers, the traps dictionary is used only for debugging.
+                if sig_num in (SIGKILL, SIGSTOP):
+                    self.errfmt.Print_("Signal %r can't be handled" % sig_spec,
+                                       blame_loc=sig_loc)
+                    # Other shells return 0, but this seems like an obvious error
+                    return 1
+                self.trap_state.AddUserTrap(sig_num, node)
+
+        return 0

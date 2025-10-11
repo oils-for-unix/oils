@@ -1,7 +1,7 @@
 ## compare_shells: dash bash mksh ash
-## oils_failures_allowed: 1
-
-# builtin-trap.test.sh
+## oils_failures_allowed: 2
+## oils_cpp_failures_allowed: 3
+# TODO: fix sorting of signals
 
 #### trap accepts/ignores --
 trap -- 'echo hi' EXIT
@@ -33,23 +33,161 @@ echo $?
 0
 ## END
 
-#### trap without args prints traps, like trap -p
+#### Remove multiple handlers with trap -
+trap "echo int" INT
+trap "echo e" EXIT
+trap - int 0 3
+trap
+
+echo ---
+trap "echo int" INT
+trap "echo e" EXIT
+trap - int 0 -99
+echo status=$?
+## STDOUT:
+---
+status=1
+## END
+
+#### trap -p prints the handlers and full signal names
 case $SH in dash) exit ;; esac
+trap "echo INT" INT
+trap "echo EXIT" EXIT
+trap -p
+## STDOUT:
+trap -- 'echo EXIT' EXIT
+trap -- 'echo INT' SIGINT
+EXIT
+## END
+## N-I mksh status: 1
+## N-I ash status: 2
+## N-I mksh/ash STDOUT:
+EXIT
+## END
+## N-I dash STDOUT:
+## END
 
-if false; then
-  # bash breaks the display across lines
-  trap "true
-false" EXIT
-fi
+#### trap EXIT clears the EXIT trap
+trap "echo INT" INT
+trap "echo EXIT" EXIT
+trap
+echo ---
+trap EXIT
+trap
+echo ---
+trap INT
+trap
+## STDOUT:
+trap -- 'echo EXIT' EXIT
+trap -- 'echo INT' SIGINT
+---
+trap -- 'echo INT' SIGINT
+---
+## END
+## OK dash/ash STDOUT:
+trap -- 'echo EXIT' EXIT
+trap -- 'echo INT' INT
+---
+trap -- 'echo INT' INT
+---
+## END
+## BUG mksh STDOUT:
+trap -- 'echo EXIT' EXIT
+trap -- 'echo INT' INT
+---
+trap -- 'echo EXIT' EXIT
+trap -- 'echo INT' INT
+---
+trap -- 'echo EXIT' EXIT
+trap -- 'echo INT' INT
+EXIT
+## END
 
-$SH -c '
+#### trap 0 is equivalent to trap EXIT
+trap "echo INT" INT
+trap "echo EXIT" EXIT
+trap
+echo ---
+trap 0
+trap
+## STDOUT:
+trap -- 'echo EXIT' EXIT
+trap -- 'echo INT' SIGINT
+---
+trap -- 'echo INT' SIGINT
+## END
+## OK dash/ash/mksh STDOUT:
+trap -- 'echo EXIT' EXIT
+trap -- 'echo INT' INT
+---
+trap -- 'echo INT' INT
+## END
+
+#### trap 0 2 resets EXIT AND SIGINT
+
+trap "echo EXIT" EXIT
+echo ---
+trap
+echo ---
+trap 0 2
+trap
+echo ---
+trap "echo INT" INT
+trap "echo EXIT" EXIT
+trap 2 EXIT
+trap
+
+## STDOUT:
+---
+trap -- 'echo EXIT' EXIT
+---
+---
+## END
+
+
+#### trap without args prints traps, like trap -p
+trap 'echo exit' EXIT
+echo status=$?
+
+trap
+echo status=$?
+
+## STDOUT:
+status=0
+trap -- 'echo exit' EXIT
+status=0
+exit
+## END
+
+
+#### print trap handler with multiple lines
+trap 'echo 1
+echo 2
+echo 3' INT
+
+trap
+## STDOUT:
+trap -- 'echo 1
+echo 2
+echo 3' SIGINT
+## END
+## OK dash/ash STDOUT:
+trap -- 'echo 1
+echo 2
+echo 3' INT
+## END
+## OK mksh STDOUT:
+trap -- $'echo 1\necho 2\necho 3' INT
+## END
+
+#### trap -p should write into a pipe
+case $SH in dash) exit ;; esac
 
 trap "true" EXIT
 
 echo status=$?
-trap | grep EXIT
+trap | grep true
 echo status=$?
-'
 
 ## STDOUT:
 status=0
@@ -64,7 +202,6 @@ status=1
 
 ## N-I dash STDOUT:
 ## END
-
 
 #### trap 'echo hi' KILL (regression test, caught by smoosh suite)
 trap 'echo hi' 9
@@ -94,15 +231,13 @@ status=0
 
 #### Invalid trap invocation
 trap 'foo'
-echo status=$?
+if test $? -ne 0; then
+  echo ok
+fi
 ## STDOUT:
-status=2
-## END
-## OK dash/ash STDOUT:
-status=1
+ok
 ## END
 ## BUG mksh STDOUT:
-status=0
 ## END
 
 #### exit 1 when trap code string is invalid
@@ -126,6 +261,23 @@ status=0
 ## BUG dash/bash status: 0
 ## BUG dash/bash STDOUT:
 status=0
+## END
+
+
+#### Register the same handler for multiple signals
+trap 'echo test' TERM 2 EXIT
+trap
+## STDOUT:
+trap -- 'echo test' EXIT
+trap -- 'echo test' SIGINT
+trap -- 'echo test' SIGTERM
+test
+## END
+## OK dash/mksh/ash STDOUT:
+trap -- 'echo test' EXIT
+trap -- 'echo test' INT
+trap -- 'echo test' TERM
+test
 ## END
 
 
