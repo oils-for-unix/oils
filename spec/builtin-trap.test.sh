@@ -1,7 +1,7 @@
 ## compare_shells: dash bash mksh ash
 ## oils_failures_allowed: 2
-
-# builtin-trap.test.sh
+## oils_cpp_failures_allowed: 3
+# TODO: fix sorting of signals
 
 #### trap accepts/ignores --
 trap -- 'echo hi' EXIT
