@@ -271,29 +271,33 @@ class Trap(vm._Builtin):
         else:
             raise AssertionError('Signal or trap')
 
+    def _PrintState(self):
+        # type: () -> int
+
+        for name, handler in iteritems(self.trap_state.hooks):
+            self._PrintTrapEntry(handler, name)
+
+        # Print in order of signal number
+        n = signal_def.MaxSigNumber() + 1
+        for sig_num in xrange(n):
+            handler = self.trap_state.GetTrap(sig_num)
+            if handler is None:
+                continue
+
+            sig_name = signal_def.GetName(sig_num)
+            assert sig_name is not None
+
+            self._PrintTrapEntry(handler, sig_name)
+
+        return 0
+
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
         attrs, arg_r = flag_util.ParseCmdVal('trap', cmd_val)
         arg = arg_types.trap(attrs.attrs)
 
-        # 'trap' with no arguments is equivalent to 'trap -p'
-        if arg.p or arg_r.n == 1:  # Print registered handlers
-            for name, handler in iteritems(self.trap_state.hooks):
-                self._PrintTrapEntry(handler, name)
-
-            # Print in order of signal number
-            n = signal_def.MaxSigNumber() + 1
-            for sig_num in xrange(n):
-                handler = self.trap_state.GetTrap(sig_num)
-                if handler is None:
-                    continue
-
-                sig_name = signal_def.GetName(sig_num)
-                assert sig_name is not None
-
-                self._PrintTrapEntry(handler, sig_name)
-
-            return 0
+        if arg.p:  # trap -p prints handlers
+            return self._PrintState()
 
         if arg.l:  # List valid signals and hooks
             for hook_name in _HOOK_NAMES:
@@ -302,6 +306,7 @@ class Trap(vm._Builtin):
             # Iterate over signals and print them
             n = signal_def.MaxSigNumber() + 1
             for sig_num in xrange(n):
+
                 sig_name = signal_def.GetName(sig_num)
                 if sig_name is None:
                     continue
@@ -309,26 +314,30 @@ class Trap(vm._Builtin):
 
             return 0
 
-        code_str, code_loc = arg_r.ReadRequired2('requires a code string')
+        # 'trap' with no arguments is equivalent to 'trap -p'
+        if arg_r.AtEnd():
+            return self._PrintState()
+
+        first_arg, first_loc = arg_r.ReadRequired2('requires a code string')
         # Per POSIX, if the first argument to trap is '-' or an
         # unsigned integer, then reset every condition
         # https://pubs.opengroup.org/onlinepubs/9699919799.2018edition/utilities/V3_chap02.html#tag_18_28
         # e.g. 'trap 0 2' or 'trap 0 SIGINT'
-        code_is_uint = _IsUnsignedInteger(code_str, code_loc)
-        if code_str == '-' or code_is_uint:
+        looks_like_unsigned = _IsUnsignedInteger(first_arg, first_loc)
+        if first_arg == '-' or looks_like_unsigned:
             # If the first argument is a uint, we need to reset this signal as well
-            if code_is_uint:
+            if looks_like_unsigned:
                 # TODO: make this consistent with RemoveHandler()
-                code_num = int(code_str)
+                sig_num = int(first_arg)
                 # 0 is the number for the EXIT pseudo-signal in bash
-                if code_num == 0:
+                if sig_num == 0:
                     self.trap_state.RemoveUserHook('EXIT')
                 else:
-                    self.trap_state.RemoveUserTrap(code_num)
+                    self.trap_state.RemoveUserTrap(sig_num)
 
             # Reset every following signal, if any
             # NOTE: sig_spec isn't validated when removing handlers.
-            for i in xrange(2, arg_r.n):
+            while not arg_r.AtEnd():
                 sig_spec, sig_key, sig_num, _ = self._GetSignalInfo(arg_r)
                 if sig_key is None:
                     self.errfmt.Print_("Invalid signal or hook %r" % sig_spec,
@@ -337,17 +346,18 @@ class Trap(vm._Builtin):
                 self._RemoveHandler(sig_key, sig_num)
             return 0
 
-        # "trap SIGNAL" should reset the signal
-        if arg_r.n == 2:
-            code_num = _GetSignalNumber(code_str)
-            if code_num == signal_def.NO_SIGNAL and code_str not in _HOOK_NAMES:
-                self.errfmt.Print_("Invalid signal or hook %r" % code_str,
+        # We read the first arg - "trap SIGNAL" should reset the signal
+        if arg_r.AtEnd():
+            sig_num = _GetSignalNumber(first_arg)
+            if sig_num == signal_def.NO_SIGNAL and first_arg not in _HOOK_NAMES:
+                self.errfmt.Print_("Invalid signal or hook %r" % first_arg,
                                    blame_loc=cmd_val.arg_locs[1])
                 return 2
 
-            self._RemoveHandler(code_str, code_num)
+            self._RemoveHandler(first_arg, sig_num)
             return 0
 
+        code_str = first_arg
         # Try parsing the code first.
         node = self._ParseTrapCode(code_str)
         if node is None:
@@ -355,7 +365,7 @@ class Trap(vm._Builtin):
 
         # This command has the form of "trap COMMAND (SIGNAL)*", so read all
         # SIGNALs and add this code as the handler to all of them
-        for i in xrange(2, arg_r.n):
+        while not arg_r.AtEnd():
             sig_spec, sig_key, sig_num, sig_loc = self._GetSignalInfo(arg_r)
             if sig_key is None:
                 self.errfmt.Print_("Invalid signal or hook %r" % sig_spec,
