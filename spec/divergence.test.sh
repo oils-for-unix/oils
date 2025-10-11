@@ -138,7 +138,7 @@ hey
 status=0
 ## END
 
-#### Unexpected trailing error
+#### test builtin - Unexpected trailing word '--' (#2409)
 
 # Minimal repro of sqsh build error
 set -- -o; test $# -ne 0 -a "$1" != "--"
