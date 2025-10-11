@@ -271,9 +271,23 @@ class Trap(vm._Builtin):
         else:
             raise AssertionError('Signal or trap')
 
-    def _PrintState(self):
-        # type: () -> int
+    def _PrintNames(self):
+        # type: () -> None
+        for hook_name in _HOOK_NAMES:
+            # EXIT is 0, but we hide that
+            print('   %s' % hook_name)
 
+        # Iterate over signals and print them
+        n = signal_def.MaxSigNumber() + 1
+        for sig_num in xrange(n):
+
+            sig_name = signal_def.GetName(sig_num)
+            if sig_name is None:
+                continue
+            print('%2d %s' % (sig_num, sig_name))
+
+    def _PrintState(self):
+        # type: () -> None
         for name, handler in iteritems(self.trap_state.hooks):
             self._PrintTrapEntry(handler, name)
 
@@ -289,34 +303,28 @@ class Trap(vm._Builtin):
 
             self._PrintTrapEntry(handler, sig_name)
 
-        return 0
-
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
         attrs, arg_r = flag_util.ParseCmdVal('trap', cmd_val)
         arg = arg_types.trap(attrs.attrs)
 
         if arg.p:  # trap -p prints handlers
-            return self._PrintState()
+            self._PrintState()
+            return 0
 
         if arg.l:  # List valid signals and hooks
-            for hook_name in _HOOK_NAMES:
-                print('   %s' % hook_name)
-
-            # Iterate over signals and print them
-            n = signal_def.MaxSigNumber() + 1
-            for sig_num in xrange(n):
-
-                sig_name = signal_def.GetName(sig_num)
-                if sig_name is None:
-                    continue
-                print('%2d %s' % (sig_num, sig_name))
-
+            self._PrintNames()
             return 0
 
         # 'trap' with no arguments is equivalent to 'trap -p'
         if arg_r.AtEnd():
-            return self._PrintState()
+            self._PrintState()
+            return 0
+
+        # TODO:
+        # - Parse everything at once - create a boundary
+        #   - Consolidate _GetSignalInfo and _GetSignalNumber
+        #   - Normalize hooks and traps into a single representation
 
         first_arg, first_loc = arg_r.ReadRequired2('requires a code string')
         # Per POSIX, if the first argument to trap is '-' or an
@@ -338,10 +346,11 @@ class Trap(vm._Builtin):
             # Reset every following signal, if any
             # NOTE: sig_spec isn't validated when removing handlers.
             while not arg_r.AtEnd():
-                sig_spec, sig_key, sig_num, _ = self._GetSignalInfo(arg_r)
+                sig_spec, sig_key, sig_num, sig_loc = self._GetSignalInfo(
+                    arg_r)
                 if sig_key is None:
                     self.errfmt.Print_("Invalid signal or hook %r" % sig_spec,
-                                       blame_loc=cmd_val.arg_locs[2])
+                                       blame_loc=sig_loc)
                     return 1
                 self._RemoveHandler(sig_key, sig_num)
             return 0
@@ -351,8 +360,8 @@ class Trap(vm._Builtin):
             sig_num = _GetSignalNumber(first_arg)
             if sig_num == signal_def.NO_SIGNAL and first_arg not in _HOOK_NAMES:
                 self.errfmt.Print_("Invalid signal or hook %r" % first_arg,
-                                   blame_loc=cmd_val.arg_locs[1])
-                return 2
+                                   blame_loc=first_loc)
+                return 1  # 2 would be usage error, but this matches other shells
 
             self._RemoveHandler(first_arg, sig_num)
             return 0
@@ -369,8 +378,8 @@ class Trap(vm._Builtin):
             sig_spec, sig_key, sig_num, sig_loc = self._GetSignalInfo(arg_r)
             if sig_key is None:
                 self.errfmt.Print_("Invalid signal or hook %r" % sig_spec,
-                                   blame_loc=cmd_val.arg_locs[2])
-                return 1
+                                   blame_loc=sig_loc)
+                return 1  # 2 would be usage error, but this matches other shells
 
             # Register a hook.
             if sig_key in _HOOK_NAMES:
