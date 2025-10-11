@@ -70,13 +70,13 @@ EXIT
 #### trap EXIT clears the EXIT trap
 trap "echo INT" INT
 trap "echo EXIT" EXIT
-trap -p
+trap
 echo ---
 trap EXIT
-trap -p
+trap
 echo ---
 trap INT
-trap -p
+trap
 ## STDOUT:
 trap -- 'echo EXIT' EXIT
 trap -- 'echo INT' SIGINT
@@ -84,9 +84,22 @@ trap -- 'echo INT' SIGINT
 trap -- 'echo INT' SIGINT
 ---
 ## END
-## N-I mksh status: 1
-## N-I dash/ash status: 2
-## N-I dash/mksh/ash STDOUT:
+## OK dash/ash STDOUT:
+trap -- 'echo EXIT' EXIT
+trap -- 'echo INT' INT
+---
+trap -- 'echo INT' INT
+---
+## END
+## BUG mksh STDOUT:
+trap -- 'echo EXIT' EXIT
+trap -- 'echo INT' INT
+---
+trap -- 'echo EXIT' EXIT
+trap -- 'echo INT' INT
+---
+trap -- 'echo EXIT' EXIT
+trap -- 'echo INT' INT
 EXIT
 ## END
 
@@ -248,9 +261,7 @@ status=0
 
 #### Register the same handler for multiple signals
 trap 'echo test' TERM 2 EXIT
-case $SH in bash) trap | grep echo | sort;;
-               *) trap ;;
-esac
+trap
 ## STDOUT:
 trap -- 'echo test' EXIT
 trap -- 'echo test' SIGINT
