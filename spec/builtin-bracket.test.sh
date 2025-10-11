@@ -375,6 +375,8 @@ test -b nonexistent
 echo status=$?
 test -b testdata
 echo status=$?
+test -b /
+echo status=$?
 
 echo -c
 test -c nonexistent
@@ -390,6 +392,7 @@ echo status=$?
 
 ## STDOUT:
 -b
+status=1
 status=1
 status=1
 -c

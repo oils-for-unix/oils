@@ -69,7 +69,7 @@ checkout-stable() {
 }
 
 download-oils() {
-  local job_id=${1:-10198}  # 2025-09-27, for disagree-packages.txt
+  local job_id=${1:-10255}  # 2025-10-08, for 'community' run
 
   local url="https://op.oilshell.org/uuu/github-jobs/$job_id/cpp-tarball.wwz/_release/oils-for-unix.tar"
 
@@ -159,13 +159,16 @@ change-perms() {
 }
 
 copy-aports() {
-  local dest=$CHROOT_HOME_DIR/aports/main/
+  # 'main' and 'community' are two "Alpine repos" stored the 'aports' git repo
+  for a_repo in main community; do
+    local dest=$CHROOT_HOME_DIR/aports/$a_repo/
 
-  sudo mkdir -p $dest
-  sudo rsync --archive --verbose \
-    ../../alpinelinux/aports/main/ $dest
+    sudo mkdir -p $dest
+    sudo rsync --archive --verbose \
+      ../../alpinelinux/aports/$a_repo/ $dest
 
-  change-perms $dest
+    change-perms $dest
+  done
 }
 
 _patch-yash-to-disable-tests() {
@@ -280,12 +283,16 @@ keygen() {
 
 apk-manifest() {
   # 1643 files - find a subset to build
-  local out=$PWD/_tmp/apk-manifest.txt
-  mkdir -p _tmp
 
-  pushd $CHROOT_HOME_DIR/aports/main >/dev/null
-  find . -name 'APKBUILD' -a -printf '%P\n' | sed 's,/APKBUILD$,,g' | LANG=C sort | tee $out
-  popd >/dev/null
+  for a_repo in main community; do
+    local out=$PWD/_tmp/apk-${a_repo}-manifest.txt
+    mkdir -p _tmp
+
+    pushd $CHROOT_HOME_DIR/aports/$a_repo >/dev/null
+    find . -name 'APKBUILD' -a -printf '%P\n' | sed 's,/APKBUILD$,,g' | LANG=C sort | tee $out
+    popd >/dev/null
+  done
+  wc -l _tmp/apk-*-manifest.txt
 }
 
 build-oils() {

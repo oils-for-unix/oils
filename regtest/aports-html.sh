@@ -277,6 +277,10 @@ published-html() {
   cmark <<EOF
 ## $title
 
+Testing OSH on decades worth of shell scripts.  [Source code](https://github.com/oils-for-unix/oils/tree/master/regtest).
+
+### main
+
 - [2025-08-07-fix](2025-08-07-fix.wwz/_tmp/aports-report/2025-08-07-fix/diff_merged.html)
 - [2025-08-14-fix](2025-08-14-fix.wwz/_tmp/aports-report/2025-08-14-fix/diff_merged.html)
 - [2025-08-26-ifs](2025-08-26-ifs.wwz/_tmp/aports-report/2025-08-26-ifs/diff_merged.html)
@@ -292,6 +296,10 @@ published-html() {
 - [2025-09-18-bash](2025-09-18-bash.wwz/_tmp/aports-report/2025-09-18-bash/diff_merged.html)
   - only run on packages that disagree: [2025-09-27-disagree](2025-09-27-disagree.wwz/_tmp/aports-report/2025-09-27-disagree/diff_merged.html)
   - new causes: [2025-10-03-causes](2025-10-03-causes.wwz/_tmp/aports-report/2025-10-03-causes/diff_merged.html)
+
+### community
+
+- first run on aports/community: [2025-10-08-comm](2025-10-08-comm.wwz/_tmp/aports-report/2025-10-08-comm/diff_merged.html)
 
 EOF
 
