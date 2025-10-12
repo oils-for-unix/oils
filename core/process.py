@@ -131,6 +131,8 @@ def InitInteractiveShell(signal_safe):
     iolib.RegisterSignalInterest(SIGWINCH)
 
 
+_ = F_DUPFD_CLOEXEC  # shut up lint for now
+
 def SaveFd(fd):
     # type: (int) -> int
 
