@@ -26,4 +26,6 @@ fi
 
 eval "exec $fd> _tmp/hello"
 echo "using fd $fd" >& $fd
-cat _tmp/hello
+
+# with OSH, defeat 'builtin cat' optimization
+$(which cat) _tmp/hello

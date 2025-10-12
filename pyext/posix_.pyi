@@ -56,6 +56,9 @@ WUNTRACED = ...  # type: int
 W_OK = ...  # type: int
 X_OK = ...  # type: int
 
+# OILS patch
+F_DUPFD_CLOEXEC = ... # type: int
+
 def WCOREDUMP(status: int) -> int: ...
 def WEXITSTATUS(status: int) -> int: ...
 def WIFCONTINUED(status: int) -> bool: ...

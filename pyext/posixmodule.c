@@ -2700,6 +2700,14 @@ all_ins(PyObject *d)
     if (ins(d, "O_EXLOCK", (long)O_EXLOCK)) return -1;
 #endif
 
+    /* OILS patch.  This didn't appear until Python 3.2.
+     * We don't have a fork of the fnctl module, so put it in this POSIX
+     * module.
+     */
+#ifdef F_DUPFD_CLOEXEC
+    if (ins(d, "F_DUPFD_CLOEXEC", (long)W_OK)) return -1;
+#endif
+
     return 0;
 }
 

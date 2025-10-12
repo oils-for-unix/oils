@@ -45,14 +45,18 @@ do-strace() {
 
 compare() {
   mkdir -p $BASE_DIR
-  rm -v $BASE_DIR/*
+  rm -f -v $BASE_DIR/*
+
+  local osh=_bin/cxx-dbg/osh
+
+  ninja $osh
 
   # dash can only handle descriptor 8
-  for sh in dash _tmp/shells/ash _bin/cxx-dbg/osh; do
+  for sh in dash _tmp/shells/ash $osh; do
     do-strace $sh 8
   done
 
-  for sh in _tmp/shells/ash _bin/cxx-dbg/osh; do
+  for sh in _tmp/shells/ash $osh; do
     for fd in 10 12; do
       do-strace $sh $fd
     done
@@ -63,8 +67,20 @@ compare() {
 
 side-by-side() {
   # trick from Claude
+
+  printf '%-30s ---  %s\n' $1 $2
   pr --merge --omit-header $1 $2
   #pr $1 $2
+}
+
+osh-ash() {
+  local fd=${1:-8}
+  side-by-side $BASE_DIR/$fd-{osh,ash}.txt
+}
+
+osh-dash() {
+  local fd=${1:-8}
+  side-by-side $BASE_DIR/$fd-{osh,dash}.txt
 }
 
 "$@"

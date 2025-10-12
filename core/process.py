@@ -60,6 +60,7 @@ from posix_ import (
     O_RDWR,
     O_WRONLY,
     O_TRUNC,
+    F_DUPFD_CLOEXEC,  # OSH patch - this didn't appear until Python 3.2
 )
 
 from typing import IO, List, Tuple, Dict, Optional, Any, cast, TYPE_CHECKING
@@ -138,6 +139,9 @@ def SaveFd(fd):
 
     # Bug fix: make sure we never leak the saved descriptor to child processes
     fcntl_.fcntl(saved, F_SETFD, FD_CLOEXEC)
+
+    # TODO: use this
+    #saved = fcntl_.fcntl(fd, F_DUPFD_CLOEXEC, _SHELL_MIN_FD)  # type: int
 
     return saved
 
