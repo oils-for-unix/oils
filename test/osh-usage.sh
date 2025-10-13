@@ -233,7 +233,7 @@ test-bash-version-emulation() {
   nq-capture status stdout \
     ./bash -c "$code"
   nq-assert 0 -eq $status
-  nq-assert 'BASH_VERSINFO=0 3 0 1 release x86_64-pc-linux-gnu' = "$stdout"
+  nq-assert 'BASH_VERSINFO=5 3 0 1 release x86_64-pc-linux-gnu' = "$stdout"
 
   popd
 }
