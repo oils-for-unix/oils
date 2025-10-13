@@ -205,9 +205,9 @@ TRAP_SPEC.LongFlag('--add')
 TRAP_SPEC.LongFlag('--remove')
 
 KILL_SPEC = FlagSpec('kill')
-KILL_SPEC.ShortFlag('-l')
-KILL_SPEC.ShortFlag('-n')
-KILL_SPEC.ShortFlag('-s')
+KILL_SPEC.ShortFlag('-l', args.Bool)
+KILL_SPEC.ShortFlag('-n', args.Int)
+KILL_SPEC.ShortFlag('-s', args.String)
 
 JOB_SPEC = FlagSpec('jobs')
 JOB_SPEC.ShortFlag('-l', help='long format')

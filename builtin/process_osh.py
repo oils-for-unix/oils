@@ -690,8 +690,97 @@ class Kill(vm._Builtin):
         self.job_list = job_list
         self.waiter = waiter
         self.exec_opts = waiter.exec_opts
-
+        # TODO: this may not be true for all systems,
+        # see https://man7.org/linux/man-pages/man7/signal.7.html
+        self.sigspec_to_signum = {
+            'SIGHUP': 1,
+            'SIGINT': 2,
+            'SIGQUIT': 3,
+            'SIGILL': 4,
+            'SIGTRAP': 5,
+            'SIGABRT': 6,
+            'SIGIOT': 6,
+            'SIGBUS': 7,
+            'SIGFPE': 8,
+            'SIGKILL': 9,
+            'SIGUSR1': 10,
+            'SIGSEGV': 11,
+            'SIGUSR2': 12,
+            'SIGPIPE': 13,
+            'SIGALRM': 14,
+            'SIGTERM': 15,
+            'SIGSTKFLT': 16,
+            'SIGCHLD': 17,
+            'SIGCLD': 17,  # Alias for SIGCHLD
+            'SIGCONT': 18,
+            'SIGSTOP': 19,
+            'SIGTSTP': 20,
+            'SIGTTIN': 21,
+            'SIGTTOU': 22,
+            'SIGURG': 23,
+            'SIGXCPU': 24,
+            'SIGXFSZ': 25,
+            'SIGVTALRM': 26,
+            'SIGPROF': 27,
+            'SIGWINCH': 28,
+            'SIGIO': 29,
+            'SIGPOLL': 29,  # Alias for SIGIO
+            'SIGPWR': 30,
+            'SIGSYS': 31,
+            'SIGUNUSED': 31,  # Alias for SIGSYS
+        }
+        self.signum_to_sigspec = {
+            1: 'SIGHUP',
+            2: 'SIGINT',
+            3: 'SIGQUIT',
+            4: 'SIGILL',
+            5: 'SIGTRAP',
+            6: 'SIGABRT',
+            7: 'SIGBUS',
+            8: 'SIGFPE',
+            9: 'SIGKILL',
+            10: 'SIGUSR1',
+            11: 'SIGSEGV',
+            12: 'SIGUSR2',
+            13: 'SIGPIPE',
+            14: 'SIGALRM',
+            15: 'SIGTERM',
+            16: 'SIGSTKFLT',
+            17: 'SIGCHLD',
+            18: 'SIGCONT',
+            19: 'SIGSTOP',
+            20: 'SIGTSTP',
+            21: 'SIGTTIN',
+            22: 'SIGTTOU',
+            23: 'SIGURG',
+            24: 'SIGXCPU',
+            25: 'SIGXFSZ',
+            26: 'SIGVTALRM',
+            27: 'SIGPROF',
+            28: 'SIGWINCH',
+            29: 'SIGIO',
+            30: 'SIGPWR',
+            31: 'SIGSYS',
+        }
+        self._nr_of_signals = 32
+    
     def Run(self, cmd_val):
-        print('hello')
+        attrs, arg_r = flag_util.ParseCmdVal('kill',
+                                             cmd_val,
+                                             accept_typed_args=True)
+        arg = arg_types.kill(attrs.attrs)
+        if arg.l:
+                signum_to_names = {}
+                for name, num in self.sigspec_to_signum.items():
+                    if num not in signum_to_names:
+                        signum_to_names[num] = []
+                    signum_to_names[num].append(name)
+    
+                # Print in sorted order
+                for num in sorted(signum_to_names.keys()):
+                    names = ', '.join(signum_to_names[num])
+                    print("{:2d}) {}".format(num, names))
+        else: 
+            print('hello')
         return 0
 # vim: sw=4
