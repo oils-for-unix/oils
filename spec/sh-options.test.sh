@@ -444,17 +444,17 @@ show-strict() {
 show-strict
 shopt -s strict:all
 show-strict
-shopt -u strict_arith
+shopt -u strict_argv
 show-strict
 ## STDOUT:
+shopt -u strict_arg_parse
 shopt -u strict_argv
-shopt -u strict_arith
 -
+shopt -s strict_arg_parse
 shopt -s strict_argv
-shopt -s strict_arith
 -
-shopt -s strict_argv
-shopt -u strict_arith
+shopt -s strict_arg_parse
+shopt -u strict_argv
 -
 ## END
 ## N-I dash status: 2

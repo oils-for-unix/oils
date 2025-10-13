@@ -120,10 +120,7 @@ class Cd(vm._Builtin):
         # At most 1 arg is accepted
         arg_r.Next()
         extra, extra_loc = arg_r.Peek2()
-        if (
-            extra is not None
-            and self.mem.exec_opts.strict_arg_parse()
-        ):
+        if extra is not None and self.mem.exec_opts.strict_arg_parse():
             raise error.Usage('got too many arguments', extra_loc)
 
         if dest_dir == '-':
