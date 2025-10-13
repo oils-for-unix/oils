@@ -682,4 +682,16 @@ class Ulimit(vm._Builtin):
         return 0
 
 
+class Kill(vm._Builtin):
+    """Send a signal to a process"""
+    def __init__(self, job_control, job_list, waiter):
+        # type: (process.JobControl, process.JobList, Waiter) -> None
+        self.job_control = job_control
+        self.job_list = job_list
+        self.waiter = waiter
+        self.exec_opts = waiter.exec_opts
+
+    def Run(self, cmd_val):
+        print('hello')
+        return 0
 # vim: sw=4
