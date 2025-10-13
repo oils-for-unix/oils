@@ -28,3 +28,65 @@ echo $?  # Must be 137 (128 + SIGKILL)
 137
 ## END
 ## OK dash stdout: 0
+
+#### Kill the process with -sigspec
+# Test 3: SIGTERM with sigspec variants
+case $SH in mksh|dash|zsh) echo 'skip'; exit ;; esac
+
+sleep 0.1 &
+pid=$!
+builtin kill SIGTERM $pid
+wait $pid
+echo $?  # Should be 143 (128 + SIGTERM)
+
+sleep 0.1 &
+pid=$!
+builtin kill SigTERM $pid
+wait $pid
+echo $?  # Should be 143 (128 + SIGTERM)
+
+sleep 0.1 &
+pid=$!
+builtin kill sigterm $pid
+wait $pid
+echo $?  # Should be 143 (128 + SIGTERM)
+
+sleep 0.1 &
+pid=$!
+builtin kill TERM $pid
+wait $pid
+echo $?  # Should be 143 (128 + SIGTERM)
+
+sleep 0.1 &
+pid=$!
+builtin kill term $pid
+wait $pid
+echo $?  # Should be 143 (128 + SIGTERM)
+
+sleep 0.1 &
+pid=$!
+builtin kill TErm $pid
+wait $pid
+echo $?  # Should be 143 (128 + SIGTERM)
+
+
+## STDOUT:
+143
+143
+143
+143
+143
+143
+## END
+## N-I dash/mksh/zsh STDOUT:
+skip
+#### List available signals
+# check if at least the HUP flag is reported
+# the output format of all shells is different and the
+# available flags may depend on your environment
+# TODO: check at least if all posix flags are listed?
+builtin kill -l | grep HUP > /dev/null
+echo $?
+## STDOUT:
+0
+## END
