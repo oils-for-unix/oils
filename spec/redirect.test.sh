@@ -500,3 +500,80 @@ cat file1
 ## stdout: foo55
 ## N-I mksh/dash stdout-json: ""
 ## N-I mksh/dash status: 1
+
+#### x=1> - Non-eager preceding argument parsing
+case $SH in dash) exit;; esac
+echo x=1>/dev/stdout
+echo x=1 >/dev/stdout
+echo x= 1>/dev/stdout
+
+echo +1>/dev/stdout
+echo +1 >/dev/stdout
+echo + 1>/dev/stdout
+
+echo a1>/dev/stdout
+
+echo {myvar}>/dev/stdout
+# Bash chooses fds starting with 10 here, osh with 100, and there can already
+# be some open fds, so compare further fds against this one
+starting_fd=$myvar
+
+echo x={myvar}>/dev/stdout
+echo $((myvar-starting_fd))
+echo x={myvar} >/dev/stdout
+echo $((myvar-starting_fd))
+echo x= {myvar}>/dev/stdout
+echo $((myvar-starting_fd))
+
+echo +{myvar}>/dev/stdout
+echo $((myvar-starting_fd))
+echo +{myvar} >/dev/stdout
+echo $((myvar-starting_fd))
+echo + {myvar}>/dev/stdout
+echo $((myvar-starting_fd))
+## STDOUT:
+x=1
+x=1
+x=
++1
++1
++
+a1
+
+x={myvar}
+0
+x={myvar}
+0
+x=
+1
++{myvar}
+1
++{myvar}
+1
++
+2
+## END
+## BUG dash STDOUT:
+## END
+## BUG mksh/ash STDOUT:
+x=1
+x=1
+x=
++1
++1
++
+a1
+{myvar}
+x={myvar}
+0
+x={myvar}
+0
+x= {myvar}
+0
++{myvar}
+0
++{myvar}
+0
++ {myvar}
+0
+## END
