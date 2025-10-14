@@ -147,6 +147,7 @@ shopt -s strict:all
 shopt -o -p | grep -- ' -o ' | grep -v hashall
 shopt -p strict:all
 ## STDOUT:
+shopt -s strict_arg_parse
 shopt -s strict_argv
 shopt -s strict_arith
 shopt -s strict_array

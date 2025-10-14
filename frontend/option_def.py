@@ -85,6 +85,7 @@ _STRICT_OPTS = [
     # These are RUNTIME strict options.
     'strict_argv',  # empty argv not allowed
     'strict_arith',  # string to integer conversions, e.g. x=foo; echo $(( x ))
+    'strict_arg_parse',  # disallow additional arguments, e.g. cd / /
 
     # No implicit conversions between string and array.
     # - foo="$@" not allowed because it decays.  Should be foo=( "$@" ).
@@ -137,10 +138,6 @@ _UPGRADE_RUNTIME_OPTS = [
     # Can create closures from loop variables, like JS / C# / Go
     ('for_loop_frames', False),
 ]
-
-# TODO: Add strict_arg_parse?  For example, 'trap 1 2 3' shouldn't be
-# valid, because it has an extra argument.  Builtins are inconsistent about
-# checking this.
 
 _YSH_RUNTIME_OPTS = [
     ('no_exported', False),  # don't initialize or use exported variables
