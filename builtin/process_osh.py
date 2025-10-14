@@ -31,7 +31,7 @@ from mycpp.mylib import log, tagswitch, print_stderr
 
 import posix_ as posix
 
-from typing import TYPE_CHECKING, List, Tuple, Optional, cast
+from typing import TYPE_CHECKING, List, Tuple, Optional, cast, Dict
 if TYPE_CHECKING:
     from core.process import Waiter, ExternalProgram, FdState
     from core import executor
@@ -692,7 +692,7 @@ class Kill(vm._Builtin):
         self.exec_opts = waiter.exec_opts
         # TODO: this may not be true for all systems,
         # see https://man7.org/linux/man-pages/man7/signal.7.html
-        self.sigspec_to_signum = {
+        self.sigspec_to_signame = {
             'SIGHUP': 1,
             'SIGINT': 2,
             'SIGQUIT': 3,
@@ -729,7 +729,7 @@ class Kill(vm._Builtin):
             'SIGSYS': 31,
             'SIGUNUSED': 31,  # Alias for SIGSYS
         }
-        self.signum_to_sigspec = {
+        self.signame_to_sigspec = {
             1: 'SIGHUP',
             2: 'SIGINT',
             3: 'SIGQUIT',
@@ -763,24 +763,86 @@ class Kill(vm._Builtin):
             31: 'SIGSYS',
         }
         self._nr_of_signals = 32
+
+    def _SignameToSignum(self, sigspec):
+        # type: (str) -> int
+        signal_name = sigspec.upper()
+        if not signal_name.startswith('SIG'):
+            signal_name = 'SIG' + signal_name
+        if signal_name not in self.sigspec_to_signame:
+            print_stderr("error: invalid signal name provided")
+            return -1
+        return self.sigspec_to_signame[signal_name]
+
+    def _PrintSignals(self):
+        # type: () -> None
+       signal_list = []  # type: List[Tuple[int, str]]
+       for name, num in self.sigspec_to_signame.items():
+            signal_list.append((num, name))
+
+       signal_list.sort()
+       for num, name in signal_list:
+            print("{:2d}) {}".format(num, name))
     
     def Run(self, cmd_val):
-        attrs, arg_r = flag_util.ParseCmdVal('kill',
-                                             cmd_val,
-                                             accept_typed_args=True)
-        arg = arg_types.kill(attrs.attrs)
-        if arg.l:
-                signum_to_names = {}
-                for name, num in self.sigspec_to_signum.items():
-                    if num not in signum_to_names:
-                        signum_to_names[num] = []
-                    signum_to_names[num].append(name)
-    
-                # Print in sorted order
-                for num in sorted(signum_to_names.keys()):
-                    names = ', '.join(signum_to_names[num])
-                    print("{:2d}) {}".format(num, names))
-        else: 
-            print('hello')
-        return 0
+        # type: (cmd_value.Argv) -> int
+
+        signal_to_send = None
+        target_pid = 0
+
+        if len(cmd_val.argv) == 3 and cmd_val.argv[1].startswith('-'):
+            first_arg = cmd_val.argv[1]
+            # if we land in this if or elif statement,
+            # we are dealing with the -sigspec argument, which
+            # flag-util.ParseCmdVal cant deal with so we parse it manually
+            if first_arg[1:].isdigit():
+                signal_to_send = int(first_arg[1:])
+            elif len(first_arg[1:]) > 2:
+                signal_to_send = self._SignameToSignum(first_arg[1:])
+                if(signal_to_send < 0):
+                    return 1
+
+            if signal_to_send is not None:
+                try:
+                    target_pid = int(cmd_val.argv[2])
+                except ValueError:
+                    print_stderr("error: invalid process id provided")
+                    return 1
+
+        # we didn't have to deal with a -sigspec argument, so we can parse as usual
+        if signal_to_send is None:
+            attrs, arg_r = flag_util.ParseCmdVal('kill',
+                                                 cmd_val,
+                                                 accept_typed_args=False)
+
+            arg = arg_types.kill(attrs.attrs)
+            if arg.l:
+                self._PrintSignals()
+                return 0
+            elif mops.BigTruncate(arg.n) != -1:
+                signal_to_send = mops.BigTruncate(arg.n)
+            else:
+                next_arg, next_loc = arg_r.Peek2()
+                if next_arg is not None:
+                    signal_to_send = self._SignameToSignum(next_arg)
+                    if(signal_to_send < 0):
+                        return 1
+
+            try:
+                target_pid = int(cmd_val.argv[-1])
+            except ValueError:
+                print_stderr("error: invalid process id provided")
+                return 1
+
+        if signal_to_send is None:
+            signal_to_send = 15
+        if signal_to_send not in self.signame_to_sigspec:
+            print_stderr("error: invalid signal.")
+            return 1
+
+        if(target_pid == 0):
+            print_stderr("error: no pid provided")
+            return 1
+        posix.kill(target_pid, signal_to_send)  # Send signal
+        return 128  + signal_to_send
 # vim: sw=4
