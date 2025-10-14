@@ -90,3 +90,29 @@ echo $?
 ## STDOUT:
 0
 ## END
+
+#### Kill with invalid signal
+case $SH in dash) echo 'skip'; exit ;; esac
+sleep 0.1 &
+pid=$!
+builtin kill -9999 $pid > /dev/null
+kill_status=$?
+wait $pid
+echo $kill_status
+## STDOUT:
+1
+## END
+## OK dash stdout: skip
+
+#### Kills the process with -n 9
+sleep 0.1 &
+pid=$!
+builtin kill -n 9 $pid
+kill_status=$?
+
+wait $pid
+echo $kill_status
+## STDOUT:
+137
+## END
+## OK dash stdout: 0
