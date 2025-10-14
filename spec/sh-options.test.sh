@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 ## tags: interactive
 
 # Test options to set, shopt, $SH.
@@ -318,6 +318,92 @@ f.o
 ## END
 ## N-I dash STDOUT:
 .oo
+## END
+
+#### noclobber on >>
+rm -f $TMP/no-clobber
+
+set -C
+echo foo >> $TMP/no-clobber
+echo status=$?
+
+cat $TMP/no-clobber
+## STDOUT:
+status=0
+foo
+## END
+
+#### noclobber on &> >
+set -C
+
+rm -f $TMP/no-clobber
+echo foo > $TMP/no-clobber
+echo stdout=$?
+echo bar > $TMP/no-clobber
+echo again=$?
+cat $TMP/no-clobber
+
+rm -f $TMP/no-clobber
+echo baz &> $TMP/no-clobber
+echo both=$?
+echo foo &> $TMP/no-clobber
+echo again=$?
+cat $TMP/no-clobber
+
+## STDOUT:
+stdout=0
+again=1
+foo
+both=0
+again=1
+baz
+## END
+## BUG dash STDOUT:
+stdout=0
+again=2
+foo
+both=0
+baz
+again=2
+foo
+## END
+
+#### noclobber on &>> >>
+set -C
+
+rm -f $TMP/no-clobber
+echo foo >> $TMP/no-clobber
+echo stdout=$?
+echo bar >> $TMP/no-clobber
+echo again=$?
+cat $TMP/no-clobber
+
+rm -f $TMP/no-clobber
+echo baz &>> $TMP/no-clobber
+echo both=$?
+echo foo &>> $TMP/no-clobber
+echo again=$?
+cat $TMP/no-clobber
+
+## STDOUT:
+stdout=0
+again=0
+foo
+bar
+both=0
+again=0
+baz
+foo
+## END
+## BUG dash STDOUT:
+stdout=0
+again=0
+foo
+bar
+both=0
+baz
+again=0
+foo
 ## END
 
 #### set without args lists variables
