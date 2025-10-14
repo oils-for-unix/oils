@@ -247,6 +247,8 @@ module syntax
   # At runtime: RHS of 'declare x='.
   rhs_word = Empty | Compound %CompoundWord
 
+  RedirOp = (Token? loc, Token op)
+
   word = 
     # Returns from WordParser, but not generally stored in LST
     Operator %Token
@@ -260,6 +262,7 @@ module syntax
   | BracedTree(List[word_part] parts)
     # For dynamic parsing of test aka [ - the string is already evaluated.
   | String(id id, str s, CompoundWord? blame_loc)
+  | RedirOp %RedirOp
 
   # Note: the name 'foo' is derived from token value 'foo=' or 'foo+='
   sh_lhs =

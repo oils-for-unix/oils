@@ -31,6 +31,7 @@ from _devbuild.gen.syntax_asdl import (
     pat,
     pat_t,
     Redir,
+    RedirOp,
     redir_param,
     redir_loc,
     redir_loc_t,
@@ -723,7 +724,7 @@ class CommandParser(object):
         # type: () -> Redir
         self._GetWord()
         assert self.c_kind == Kind.Redir, self.cur_word
-        op_tok = cast(Token, self.cur_word)  # for MyPy
+        cur_word = cast(RedirOp, self.cur_word)
 
         # Note: the lexer could take distinguish between
         #  >out
@@ -736,20 +737,16 @@ class CommandParser(object):
         # One way to do this is with Kind.Redir and Kind.RedirNamed, and then
         # possibly "unify" the IDs by subtracting a constant like 8 or 16?
 
-        op_val = lexer.TokenVal(op_tok)
-        if op_val[0] == '{':
-            pos = op_val.find('}')
-            assert pos != -1  # lexer ensures this
-            where = redir_loc.VarName(op_val[1:pos])  # type: redir_loc_t
-
-        elif op_val[0].isdigit():
-            pos = 1
-            if op_val[1].isdigit():
-                pos = 2
-            where = redir_loc.Fd(int(op_val[:pos]))
-
+        if cur_word.loc is not None:
+            loc_val = lexer.TokenVal(cur_word.loc)
+            if cur_word.loc.id == Id.Lit_Number:
+                where = redir_loc.Fd(int(loc_val)) # type: redir_loc_t
+            elif cur_word.loc.id == Id.Lit_RedirVarName:
+                where = redir_loc.VarName(loc_val[1:-1])
+            else:
+                assert False # shouldn't happen
         else:
-            where = redir_loc.Fd(consts.RedirDefaultFd(op_tok.id))
+            where = redir_loc.Fd(consts.RedirDefaultFd(cur_word.op.id))
 
         self._SetNext()
 
@@ -760,12 +757,12 @@ class CommandParser(object):
                   loc.Word(self.cur_word))
 
         # Here doc
-        if op_tok.id in (Id.Redir_DLess, Id.Redir_DLessDash):
+        if cur_word.op.id in (Id.Redir_DLess, Id.Redir_DLessDash):
             arg = redir_param.HereDoc.CreateNull()
             arg.here_begin = self.cur_word
             arg.stdin_parts = []
 
-            r = Redir(op_tok, where, arg)
+            r = Redir(cur_word.op, where, arg)
 
             self.pending_here_docs.append(r)  # will be filled on next newline.
 
@@ -782,7 +779,7 @@ class CommandParser(object):
         self._SetNext()
 
         # Special case for <<< 'hi' and <<< ''' multiline '''
-        if op_tok.id == Id.Redir_TLess:
+        if cur_word.op.id == Id.Redir_TLess:
             part0 = arg_word.parts[0]
 
             is_multiline = False
@@ -802,9 +799,9 @@ class CommandParser(object):
                         is_multiline = True
 
             param = redir_param.HereWord(arg_word, is_multiline)
-            return Redir(op_tok, where, param)
+            return Redir(cur_word.op, where, param)
 
-        return Redir(op_tok, where, arg_word)
+        return Redir(cur_word.op, where, arg_word)
 
     def _ParseRedirectList(self):
         # type: () -> List[Redir]

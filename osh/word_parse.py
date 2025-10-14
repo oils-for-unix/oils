@@ -54,6 +54,7 @@ from _devbuild.gen.types_asdl import (lex_mode_t, lex_mode_e)
 from _devbuild.gen.syntax_asdl import (
     BoolParamBox,
     Token,
+    RedirOp,
     SimpleVarSub,
     loc,
     source,
@@ -282,8 +283,9 @@ class WordParser(WordEmitter):
         self._SetNext(arg_lex_mode)
         self._GetToken()
 
-        w = self._ReadVarOpArg2(arg_lex_mode, Id.Undefined_Tok,
+        word = self._ReadVarOpArg2(arg_lex_mode, Id.Undefined_Tok,
                                 True)  # empty_ok
+        w = cast(CompoundWord, word)
 
         # If the Compound has no parts, and we're in a double-quoted VarSub
         # arg, and empty_ok, then return Empty.  This is so it can evaluate to
@@ -303,8 +305,8 @@ class WordParser(WordEmitter):
         return w
 
     def _ReadVarOpArg2(self, arg_lex_mode, eof_type, empty_ok):
-        # type: (lex_mode_t, Id_t, bool) -> CompoundWord
-        """Return a CompoundWord.
+        # type: (lex_mode_t, Id_t, bool) -> word_t
+        """Return a word_t.
 
         Helper function for _ReadVarOpArg and used directly by
         _ReadPatSubVarOp.
@@ -391,8 +393,9 @@ class WordParser(WordEmitter):
         # echo ${x/#/replace} has an empty pattern
         # echo ${x////replace} is non-empty; it means echo ${x//'/'/replace}
         empty_ok = replace_mode != Id.Lit_Slash
-        pat = self._ReadVarOpArg2(lex_mode_e.VSub_ArgUnquoted, Id.Lit_Slash,
+        word = self._ReadVarOpArg2(lex_mode_e.VSub_ArgUnquoted, Id.Lit_Slash,
                                   empty_ok)
+        pat = cast(CompoundWord, word)
         #log('pat 1 %r', pat)
 
         if self.token_type == Id.Lit_Slash:
@@ -561,8 +564,9 @@ class WordParser(WordEmitter):
         self._SetNext(lex_mode_e.VSub_Zsh)  # Move past ${(foo)
 
         # Can be empty
-        w = self._ReadCompoundWord3(lex_mode_e.VSub_Zsh, Id.Right_DollarBrace,
+        word = self._ReadCompoundWord3(lex_mode_e.VSub_Zsh, Id.Right_DollarBrace,
                                     True)
+        w = cast(CompoundWord, word)
         self._GetToken()
         return word_part.ZshVarSub(left_token, w, self.cur_token)
 
@@ -1003,7 +1007,8 @@ class WordParser(WordEmitter):
             # lex_mode_e.ExtGlob should only produce these 4 kinds of tokens
             elif self.token_kind in (Kind.Lit, Kind.Left, Kind.VSub,
                                      Kind.ExtGlob):
-                w = self._ReadCompoundWord(lex_mode_e.ExtGlob)
+                word = self._ReadCompoundWord(lex_mode_e.ExtGlob)
+                w = cast(CompoundWord, word)
                 arms.append(w)
                 read_word = True
 
@@ -1038,7 +1043,8 @@ class WordParser(WordEmitter):
         if self.token_kind in (Kind.Lit, Kind.Left, Kind.VSub, Kind.BashRegex):
             # Fake lexer mode that translates Id.WS_Space to Id.Lit_Chars
             # To allow bash style [[ s =~ (a b) ]]
-            w = self._ReadCompoundWord(lex_mode_e.BashRegexFakeInner)
+            word = self._ReadCompoundWord(lex_mode_e.BashRegexFakeInner)
+            w = cast(CompoundWord, word)
             arms.append(w)
 
             self._GetToken()
@@ -1834,11 +1840,11 @@ class WordParser(WordEmitter):
         return done
 
     def _ReadCompoundWord(self, lex_mode):
-        # type: (lex_mode_t) -> CompoundWord
+        # type: (lex_mode_t) -> word_t
         return self._ReadCompoundWord3(lex_mode, Id.Undefined_Tok, True)
 
     def _ReadCompoundWord3(self, lex_mode, eof_type, empty_ok):
-        # type: (lex_mode_t, Id_t, bool) -> CompoundWord
+        # type: (lex_mode_t, Id_t, bool) -> word_t
         """
         Precondition: Looking at the first token of the first word part
         Postcondition: Looking at the token after, e.g. space or operator
@@ -1852,6 +1858,7 @@ class WordParser(WordEmitter):
         brace_count = 0
         done = False
         is_triple_quoted = None  # type: Optional[BoolParamBox]
+        saw_redir_lhs_arg = False
 
         while not done:
             self._GetToken()
@@ -1882,6 +1889,8 @@ class WordParser(WordEmitter):
                         p_die(
                             'Literal $ should be quoted like \$ (no_parse_dollar)',
                             self.cur_token)
+                elif self.token_type in (Id.Lit_Number, Id.Lit_RedirVarName):
+                    saw_redir_lhs_arg = True
 
                 done = self._MaybeReadWordPart(num_parts == 0, lex_mode,
                                                w.parts)
@@ -1976,6 +1985,15 @@ class WordParser(WordEmitter):
                             # Redo translation
                             self.lexer.PushHint(Id.Op_RParen, Id.Eof_RParen)
                         self._SetNext(lex_mode)
+                elif self.token_kind == Kind.Redir:
+                    # If previous word was one of the possible left-hand side
+                    # args to a redirection, it should be part of the RedirOp,
+                    # so return it instead of the CompoundWord
+                    if saw_redir_lhs_arg and num_parts == 1:
+                        self._SetNext(lex_mode)
+                        word = cast(Token, w.parts.pop())
+                        r = RedirOp(word, self.cur_token)
+                        return r
 
                 done = True  # anything we don't recognize means we're done
 
@@ -2053,8 +2071,12 @@ class WordParser(WordEmitter):
             # No advance
             return self.cur_token
 
+        elif self.token_kind == Kind.Redir:
+            self._SetNext(lex_mode)
+            return RedirOp(None, self.cur_token)
+
         # Allow Arith for ) at end of for loop?
-        elif self.token_kind in (Kind.Op, Kind.Redir, Kind.Arith):
+        elif self.token_kind in (Kind.Op, Kind.Arith):
             self._SetNext(lex_mode)
 
             # Newlines are complicated.  See 3x2 matrix in the comment about

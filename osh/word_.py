@@ -7,6 +7,7 @@ from _devbuild.gen.runtime_asdl import Piece
 from _devbuild.gen.syntax_asdl import (
     Token,
     CompoundWord,
+    RedirOp,
     DoubleQuoted,
     SingleQuoted,
     word,
@@ -767,6 +768,10 @@ def CommandId(w):
 
             return Id.Word_Compound  # generic word
 
+        elif case(word_e.RedirOp):
+            w = cast(RedirOp, UP_w)
+            return w.op.id
+
         else:
             raise AssertionError(w.tag())
 
@@ -790,8 +795,10 @@ def CommandKind(w):
     """
     if w.tag() == word_e.Operator:
         tok = cast(Token, w)
-        # CommandParser uses Kind.Redir, Kind.Op, Kind.Eof, etc.
+        # CommandParser uses Kind.Op, Kind.Eof, etc.
         return consts.GetKind(tok.id)
+    if w.tag() == word_e.RedirOp:
+        return Kind.Redir
 
     return Kind.Word
 
