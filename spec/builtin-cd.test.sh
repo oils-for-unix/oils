@@ -23,7 +23,7 @@ status=1
 status=0
 ## END
 
-#### strict cd with 2 or more args
+#### cd with 2 or more args - with strict_arg_parse
 
 shopt -s strict_arg_parse
 
@@ -46,19 +46,17 @@ status=0
 failed with multiple args
 ## END
 
-## OK dash/ash STDOUT:
+## N-I dash/ash STDOUT:
 status=0
 status=0
 ## END
 
-#### cd with 2 or more args
-
-shopt -u strict_arg_parse
+#### cd with 2 or more args is allowed (strict_arg_parse disabled)
 
 mkdir -p foo
 cd foo bar
 
-## OK ash/dash/osh status: 0
+## status: 0
 ## OK bash/zsh status: 1
 ## OK mksh status: 2
 
