@@ -198,6 +198,7 @@ Parsing options:
 
 Runtime options:
 
+      strict_arg_parse        # Disallow additional arguments to some builtins
       strict_argv             # No empty argv
       strict_arith            # Fatal parse errors (on by default)
       strict_array            # Arrays and strings aren't confused

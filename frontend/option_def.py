@@ -139,9 +139,9 @@ _UPGRADE_RUNTIME_OPTS = [
     ('for_loop_frames', False),
 ]
 
-# TODO: Add strict_arg_parse?  For example, 'trap 1 2 3' shouldn't be
+# TODO: Add wider support for strict_arg_parse?  For example, 'trap 1 2 3' shouldn't be
 # valid, because it has an extra argument.  Builtins are inconsistent about
-# checking this.
+# checking this, and many of them don't support this argument.
 
 _YSH_RUNTIME_OPTS = [
     ('no_exported', False),  # don't initialize or use exported variables
