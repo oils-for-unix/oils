@@ -295,6 +295,8 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
     C(',', Id.Lit_Comma),
     C('=', Id.Lit_Equals),  # for = f(x) and x = 1+2*3
     C('@', Id.Lit_At),  # for detecting @[, @' etc. shopt -s parse_at_all
+    R(FD_VAR_NAME, Id.Lit_RedirVarName),
+    R(FD_NUM, Id.Lit_Number),
 
     # @array and @func(1, c)
     R('@' + VAR_NAME_RE, Id.Lit_Splice),  # for YSH splicing

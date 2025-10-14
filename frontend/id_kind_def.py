@@ -282,6 +282,8 @@ def AddKinds(spec):
             # syntax error in YSH, but NOT OSH
             'CompDummy',  # A fake Lit_* token to get partial words during
             # completion
+            'Number',
+            'RedirVarName'  # "{myvar}", as in {myvar}>out.txt (and on its own)
         ])
 
     # For recognizing \` and \" and \\ within backticks.  There's an extra layer
