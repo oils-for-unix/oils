@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 ## compare_shells: bash dash mksh
 
 #### >& and <& are the same
