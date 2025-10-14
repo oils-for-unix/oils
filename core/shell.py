@@ -332,7 +332,7 @@ def Main(
         # 2025-09: bash 5.3 is the latest version; can increase this with
         # future Oils releases
         state.SetGlobalString(mem, 'BASH_VERSION', '5.3')
-        state.SetGlobalArray(mem, 'BASH_VERSINFO', ['5', '3', '0', '1', 'release', 'x86_64-pc-linux-gnu']) # major minor patch build release-status machine-type
+        state.SetGlobalArray(mem, 'BASH_VERSINFO', ['5', '3', '0', '0', 'release', 'x86_64-pc-linux-gnu']) # major minor patch build release-status machine-type
 
     sh_init.CopyVarsFromEnv(exec_opts, environ, mem)
 
