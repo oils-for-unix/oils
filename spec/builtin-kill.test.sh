@@ -98,13 +98,13 @@ echo $?
 # the output format of all shells is different and the
 # available flags may depend on your environment
 # TODO: check at least if all posix flags are listed?
-case $SH in mksh|dash) echo 'skip'; exit ;; esac
+case $SH in mksh|dash|zsh) echo 'skip'; exit ;; esac
 builtin kill -L | grep HUP > /dev/null
 echo $?
 ## STDOUT:
 0
 ## END
-## N-I mksh/dash stdout: skip
+## N-I mksh/dash/zsh stdout: skip
 
 
 #### Kill with invalid signal
