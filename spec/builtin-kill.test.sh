@@ -88,7 +88,10 @@ skip
 case $SH in dash) echo 'skip'; exit ;; esac
 builtin kill -l | grep HUP > /dev/null
 echo $?
+builtin kill -L | grep HUP > /dev/null
+echo $?
 ## STDOUT:
+0
 0
 ## END
 ## N-I dash stdout: skip
