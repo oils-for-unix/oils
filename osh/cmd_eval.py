@@ -2458,23 +2458,25 @@ class CommandEvaluator(object):
         # type: (IntParamBox) -> None
         """If an EXIT trap handler exists, run it.
 
-        Only mutates the status if 'return' or 'exit'.  This is odd behavior, but
-        all bash/dash/mksh seem to agree on it.  See cases in
+        It only mutates the status if 'return' or 'exit'.  This is odd
+        behavior, but bash/dash/mksh seem to agree on it.  See test cases in
         builtin-trap.test.sh.
-
-        Note: if we could easily modulo -1 % 256 == 255 here, then we could get rid
-        of this awkward interface.  But that's true in Python and not C!
-
-        Could use i & (n-1) == i & 255  because we have a power of 2.
-        https://stackoverflow.com/questions/14997165/fastest-way-to-get-a-positive-modulo-in-c-c
         """
         # This does not raise, even on 'exit', etc.
         self.RunPendingTrapsAndCatch()
 
         node = self.trap_state.GetHook('EXIT')  # type: command_t
         if node:
-            # NOTE: Don't set option_i._running_trap, because that's for
+            # Note: Don't set option_i._running_trap, because that's for
             # RunPendingTraps() in the MAIN LOOP
+
+            # Note: we're not using ctx_EnclosedFrame(), so
+            # proc p {
+            #   var x = 'local'
+            #   trap --add { echo $x }
+            # }
+            # doesn't capture x.  This is documented in doc/ref/
+
             with dev.ctx_Tracer(self.tracer, 'trap EXIT', None):
                 try:
                     is_return, is_fatal = self.ExecuteAndCatch(node, 0)

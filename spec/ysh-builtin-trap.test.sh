@@ -27,3 +27,23 @@ trap -- 'echo hi' SIGHUP
 ---
 exit
 ## END
+
+#### trap block arg is a not a closure - like cd and other builtins
+
+# e.g. We're not using ctx_EnclosedFrame in RunTrapsOnExit() and in the signal
+# handlers.  It's more similar to OSH.
+
+var x = 'global'
+
+proc register {
+  var x = 'local'
+  trap --add EXIT {
+     echo "x = $x"
+  }
+}
+
+register
+
+## STDOUT:
+x = global
+## END

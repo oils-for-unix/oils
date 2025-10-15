@@ -985,6 +985,10 @@ Examples:
 
     trap --remove EXIT INT
 
+Note: the block argument to `trap --add` doesn't capture variables -- it's not
+a closure.  So YSH behaves like OSH, but the syntax doesn't encourage putting
+source code in strings.
+
 ## Set Options
 
 The `set` and `shopt` builtins set global shell options.  YSH code should use
