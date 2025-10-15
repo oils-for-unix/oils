@@ -196,10 +196,10 @@ def GetCType(t: Type) -> str:
         c_type = 'void'
 
     elif isinstance(t, PartialType):
-        # I removed the last instance of this!  It was dead code in comp_ui.py.
-        raise AssertionError()
-        #c_type = 'void'
-        #is_pointer = True
+        # Note: This can happen if you have
+        # signal_to_send = None
+        # signal_to_send = FunctionReturningInt()
+        raise AssertionError('Unexpected PartialType %s' % t)
 
     elif isinstance(t,
                     NoneTyp):  # e.g. a function that doesn't return anything
