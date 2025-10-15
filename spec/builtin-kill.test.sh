@@ -85,11 +85,13 @@ skip
 # the output format of all shells is different and the
 # available flags may depend on your environment
 # TODO: check at least if all posix flags are listed?
+case $SH in dash) echo 'skip'; exit ;; esac
 builtin kill -l | grep HUP > /dev/null
 echo $?
 ## STDOUT:
 0
 ## END
+## N-I dash stdout: skip
 
 #### Kill with invalid signal
 case $SH in dash) echo 'skip'; exit ;; esac
@@ -102,17 +104,17 @@ echo $kill_status
 ## STDOUT:
 1
 ## END
-## OK dash stdout: skip
+## N-I dash stdout: skip
 
 #### Kills the process with -n 9
+case $SH in mksh|dash) echo 'skip'; exit ;; esac
 sleep 0.1 &
 pid=$!
 builtin kill -n 9 $pid
-kill_status=$?
-
 wait $pid
-echo $kill_status
+echo $?
 ## STDOUT:
 137
 ## END
-## OK dash stdout: 0
+## N-I dash/mksh stdout: skip
+
