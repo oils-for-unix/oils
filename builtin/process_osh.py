@@ -817,7 +817,7 @@ class Kill(vm._Builtin):
                                                  accept_typed_args=False)
 
             arg = arg_types.kill(attrs.attrs)
-            if arg.l:
+            if arg.l or arg.L:
                 self._PrintSignals()
                 return 0
             elif mops.BigTruncate(arg.n) != -1:
