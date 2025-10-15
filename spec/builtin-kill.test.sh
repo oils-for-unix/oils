@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 0
 ## compare_shells: dash bash mksh zsh
 
 # Tests for builtins having to do with killing a process
