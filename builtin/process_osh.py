@@ -28,11 +28,11 @@ from frontend import signal_def
 from frontend import typed_args
 from mycpp import mops
 from mycpp import mylib
-from mycpp.mylib import log, tagswitch, print_stderr, iteritems
+from mycpp.mylib import log, tagswitch, print_stderr
 
 import posix_ as posix
 
-from typing import TYPE_CHECKING, List, Tuple, Optional, cast, Dict
+from typing import TYPE_CHECKING, List, Tuple, Optional, cast
 if TYPE_CHECKING:
     from core.process import Waiter, ExternalProgram, FdState
     from core import executor
