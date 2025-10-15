@@ -1,5 +1,52 @@
 ## compare_shells: dash bash mksh ash
-## oils_failures_allowed: 3
+## oils_failures_allowed: 2
+
+#### traps are not active inside subshells $() ()  trap | cat
+
+# TODO: should we change this?  We're not compatible with bash or busybox ash
+
+trap 'echo bye' EXIT
+
+# NOT a subshell
+trap > traps.txt
+wc -l traps.txt
+
+echo '( )'
+( trap )
+
+echo '$(trap)'
+echo $(trap)
+
+echo 'trap | cat'
+trap | cat
+
+## STDOUT:
+1 traps.txt
+( )
+$(trap)
+
+trap | cat
+bye
+## END
+## BUG bash STDOUT:
+1 traps.txt
+( )
+trap -- 'echo bye' EXIT
+$(trap)
+trap -- 'echo bye' EXIT
+trap | cat
+trap -- 'echo bye' EXIT
+bye
+## END
+## BUG-2 ash STDOUT:
+1 traps.txt
+( )
+$(trap)
+trap -- 'echo bye' EXIT
+trap | cat
+bye
+## END
+
 
 #### trap accepts/ignores --
 trap -- 'echo hi' EXIT
@@ -82,29 +129,6 @@ echo 3' INT
 ## END
 ## OK mksh STDOUT:
 trap -- $'echo 1\necho 2\necho 3' INT
-## END
-
-#### trap -p should write into a pipe
-case $SH in dash) exit ;; esac
-
-trap "true" EXIT
-
-echo status=$?
-trap | grep true
-echo status=$?
-
-## STDOUT:
-status=0
-trap -- 'true' EXIT
-status=0
-## END
-
-## BUG mksh/ash STDOUT:
-status=0
-status=1
-## END
-
-## N-I dash STDOUT:
 ## END
 
 #### trap -p is like trap: it prints the handlers and full signal names
@@ -259,7 +283,7 @@ trap -- 'echo EXIT' EXIT
 ---
 ## END
 
-#### trap '' EXIT
+#### trap '' EXIT - printing state
 
 trap 'echo exit' EXIT
 trap
