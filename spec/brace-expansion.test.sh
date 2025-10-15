@@ -18,7 +18,6 @@ echo }_{a,b}
 #### partial leading expansion 2
 echo {x}_{a,b}
 ## stdout: {x}_a {x}_b
-## OK osh stdout: {x}_{a,b}
 
 #### } in expansion
 # hm they treat this the SAME.  Leftmost { is matched by first }, and then
