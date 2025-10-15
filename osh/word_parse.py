@@ -1989,7 +1989,11 @@ class WordParser(WordEmitter):
                     # If previous word was one of the possible left-hand side
                     # args to a redirection, it should be part of the RedirOp,
                     # so return it instead of the CompoundWord
-                    if saw_redir_lhs_arg and num_parts == 1:
+
+                    # &> and &>> don't have a leading descriptor (2 is implied)
+                    if (saw_redir_lhs_arg and num_parts == 1 and
+                        self.token_type not in (Id.Redir_AndGreat, Id.Redir_AndDGreat)):
+
                         self._SetNext(lex_mode)
                         word = cast(Token, w.parts.pop())
                         r = RedirOp(word, self.cur_token)

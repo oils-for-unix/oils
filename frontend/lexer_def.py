@@ -312,8 +312,6 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
     R(r'<&', Id.Redir_LessAnd),
     R(r'<>', Id.Redir_LessGreat),
     R(r'>\|', Id.Redir_Clobber),
-
-    # No leading descriptor (2 is implied)
     C(r'&>', Id.Redir_AndGreat),
     C(r'&>>', Id.Redir_AndDGreat),
 ] + KEYWORDS + CONTROL_FLOW + _UNQUOTED + _EXTGLOB_BEGIN
