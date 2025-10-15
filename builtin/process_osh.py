@@ -24,10 +24,11 @@ from core import pyutil
 from core import vm
 from frontend import flag_util
 from frontend import match
+from frontend import signal_def
 from frontend import typed_args
 from mycpp import mops
 from mycpp import mylib
-from mycpp.mylib import log, tagswitch, print_stderr
+from mycpp.mylib import log, tagswitch, print_stderr, iteritems
 
 import posix_ as posix
 
@@ -777,17 +778,17 @@ class Kill(vm._Builtin):
     def _PrintSignals(self):
         # type: () -> None
        signal_list = []  # type: List[Tuple[int, str]]
-       for name, num in self.sigspec_to_signame.items():
+       for name, num in iteritems(self.sigspec_to_signame):
             signal_list.append((num, name))
 
        signal_list.sort()
        for num, name in signal_list:
-            print("{:2d}) {}".format(num, name))
+            print('%2d %s' % (num, name))
     
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
 
-        signal_to_send = None
+        signal_to_send = signal_def.NO_SIGNAL
         target_pid = 0
 
         if len(cmd_val.argv) == 3 and cmd_val.argv[1].startswith('-'):
@@ -802,7 +803,7 @@ class Kill(vm._Builtin):
                 if(signal_to_send < 0):
                     return 1
 
-            if signal_to_send is not None:
+            if signal_to_send != signal_def.NO_SIGNAL:
                 try:
                     target_pid = int(cmd_val.argv[2])
                 except ValueError:
@@ -810,7 +811,7 @@ class Kill(vm._Builtin):
                     return 1
 
         # we didn't have to deal with a -sigspec argument, so we can parse as usual
-        if signal_to_send is None:
+        if signal_to_send == signal_def.NO_SIGNAL:
             attrs, arg_r = flag_util.ParseCmdVal('kill',
                                                  cmd_val,
                                                  accept_typed_args=False)
@@ -834,7 +835,7 @@ class Kill(vm._Builtin):
                 print_stderr("error: invalid process id provided")
                 return 1
 
-        if signal_to_send is None:
+        if signal_to_send == signal_def.NO_SIGNAL:
             signal_to_send = 15
         if signal_to_send not in self.signame_to_sigspec:
             print_stderr("error: invalid signal.")
