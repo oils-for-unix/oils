@@ -373,8 +373,23 @@ create-package-dirs() {
   mkdir -v -p _chroot/package.overlay/{merged,work}
 }
 
+archived-distfiles() {
+  local a_repo=$1  # 'main' or 'community'
+
+  local tar=_chroot/distfiles-${a_repo}.tar
+  tar --create --file $tar --directory $CHROOT_DIR/var/cache/distfiles .
+
+  tar --list < $tar
+  echo
+  ls -l --si $tar
+  echo
+}
+
 unpack-distfiles() {
-  sudo tar --verbose -x --directory $CHROOT_DIR/var/cache/distfiles < _chroot/distfiles.tar
+  local a_repo=$1  # 'main' or 'community'
+
+  local tar=_chroot/distfiles-${a_repo}.tar
+  sudo tar --verbose -x --directory $CHROOT_DIR/var/cache/distfiles < $tar
 }
 
 show-distfiles() {
