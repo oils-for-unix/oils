@@ -88,13 +88,24 @@ skip
 case $SH in dash) echo 'skip'; exit ;; esac
 builtin kill -l | grep HUP > /dev/null
 echo $?
+## STDOUT:
+0
+## END
+## N-I dash stdout: skip
+
+#### List available signals with -L
+# check if at least the HUP flag is reported
+# the output format of all shells is different and the
+# available flags may depend on your environment
+# TODO: check at least if all posix flags are listed?
+case $SH in mksh|dash) echo 'skip'; exit ;; esac
 builtin kill -L | grep HUP > /dev/null
 echo $?
 ## STDOUT:
 0
-0
 ## END
-## N-I dash stdout: skip
+## N-I mksh/dash stdout: skip
+
 
 #### Kill with invalid signal
 case $SH in dash) echo 'skip'; exit ;; esac
