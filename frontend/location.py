@@ -27,6 +27,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part_e,
     word_part_t,
     CompoundWord,
+    RedirOp,
     Token,
     SimpleVarSub,
     YshArrayLiteral,
@@ -394,6 +395,14 @@ def LeftTokenForCompoundWord(w):
         return None
 
 
+def LeftTokenForRedirOp(w):
+    # type: (RedirOp) -> Optional[Token]
+    if w.loc is None:
+        return w.op
+    else:
+        return w.loc
+
+
 def LeftTokenForWord(w):
     # type: (word_t) -> Optional[Token]
     if w is None:
@@ -418,6 +427,10 @@ def LeftTokenForWord(w):
             w = cast(word.String, UP_w)
             # See _StringWordEmitter in osh/builtin_bracket.py
             return LeftTokenForWord(w.blame_loc)
+
+        elif case(word_e.RedirOp):
+            w = cast(RedirOp, UP_w)
+            return LeftTokenForRedirOp(w)
 
         else:
             raise AssertionError(w.tag())
@@ -455,6 +468,10 @@ def RightTokenForWord(w):
             w = cast(word.String, UP_w)
             # Note: this case may be unused
             return RightTokenForWord(w.blame_loc)
+
+        elif case(word_e.RedirOp):
+            w = cast(RedirOp, UP_w)
+            return w.op
 
         else:
             raise AssertionError(w.tag())
