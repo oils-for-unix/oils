@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh zsh ash
-## oils_failures_allowed: 6
+## oils_failures_allowed: 7
 
 # This file relates to:
 #
@@ -62,6 +62,25 @@ bad
 ((echo foo) | tr o 0)
 ## STDOUT:
 f00
+## END
+
+#### !( as negation and subshell versus extended glob - #2463
+
+have_icu_uc=false
+have_icu_i18n=false
+
+if !($have_icu_uc && $have_icu_i18n); then
+  echo one
+fi
+echo two
+
+## STDOUT:
+one
+two
+## END
+
+## BUG mksh STDOUT:
+two
 ## END
 
 #### Exit code when command sub evaluates to empty str, e.g. `false` (#2435)
