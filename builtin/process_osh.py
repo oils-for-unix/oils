@@ -777,13 +777,13 @@ class Kill(vm._Builtin):
 
     def _PrintSignals(self):
         # type: () -> None
-       signal_list = []  # type: List[Tuple[int, str]]
-       for name, num in iteritems(self.sigspec_to_signame):
-            signal_list.append((num, name))
+        n = signal_def.MaxSigNumber() + 1
+        for sig_num in xrange(n):
 
-       signal_list.sort()
-       for num, name in signal_list:
-            print('%2d %s' % (num, name))
+            sig_name = signal_def.GetName(sig_num)
+            if sig_name is None:
+                continue
+            print('%2d %s' % (sig_num, sig_name))
     
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
