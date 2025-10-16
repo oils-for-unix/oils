@@ -330,8 +330,7 @@ class Trap(vm._Builtin):
             if parsed_id == 'RETURN':
                 print_stderr("osh warning: The %r hook isn't implemented" %
                              arg_str)
-            if parsed_id == 'STOP':
-                # KILL also can't be handled, but it's not part of out signal list
+            if parsed_id == 'STOP' or parsed_id == 'KILL':
                 self.errfmt.Print_("Signal %r can't be handled" % arg_str,
                                    blame_loc=arg_loc)
                 # Other shells return 0, but this seems like an obvious error
