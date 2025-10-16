@@ -246,16 +246,19 @@ published-html() {
     </p>
   '
 
-  cmark <<EOF
-## $title
-
+  { echo "## $title"
+    echo '
 Testing OSH on decades worth of shell scripts.  [Source code](https://github.com/oils-for-unix/oils/tree/master/regtest).
+
+The `aports/main` repo has 1595 `APKBUILD` files, and `aports/community` has
+7168.  A disagreement is when the package succeeds normally, but fails when
+`osh` becomes the system shell.  Caveats: timeouts and flakiness.
 
 ### main
 
-- [2025-08-07-fix](2025-08-07-fix.wwz/_tmp/aports-report/2025-08-07-fix/diff_merged.html)
+- [2025-08-07-fix](2025-08-07-fix.wwz/_tmp/aports-report/2025-08-07-fix/diff_merged.html) - **131** disagreements
 - [2025-08-14-fix](2025-08-14-fix.wwz/_tmp/aports-report/2025-08-14-fix/diff_merged.html)
-- [2025-08-26-ifs](2025-08-26-ifs.wwz/_tmp/aports-report/2025-08-26-ifs/diff_merged.html)
+- [2025-08-26-ifs](2025-08-26-ifs.wwz/_tmp/aports-report/2025-08-26-ifs/diff_merged.html) - **62** after `IFS` fix
   - new causes: [2025-09-06-edit](2025-09-06-edit.wwz/_tmp/aports-report/2025-09-06-edit/diff_merged.html)
 - [2025-09-07](2025-09-07.wwz/_tmp/aports-report/2025-09-07/diff_merged.html)
 - [2025-09-08](2025-09-08.wwz/_tmp/aports-report/2025-09-08/diff_merged.html)
@@ -263,18 +266,23 @@ Testing OSH on decades worth of shell scripts.  [Source code](https://github.com
   - [2025-09-08-notable](2025-09-08-notable.wwz/_tmp/aports-report/2025-09-08-notable/diff_merged.html)
 - [2025-09-10-overlayfs](2025-09-10-overlayfs.wwz/_tmp/aports-report/2025-09-10-overlayfs/diff_merged.html)
 - [2025-09-11-match](2025-09-11-match.wwz/_tmp/aports-report/2025-09-11-match/diff_merged.html)
-- [2025-09-15-order](2025-09-15-order.wwz/_tmp/aports-report/2025-09-15-order/diff_merged.html)
-- [2025-09-17-ash2](2025-09-17-ash2.wwz/_tmp/aports-report/2025-09-17-ash2/diff_merged.html)
-- [2025-09-18-bash](2025-09-18-bash.wwz/_tmp/aports-report/2025-09-18-bash/diff_merged.html)
+- [2025-09-15-order](2025-09-15-order.wwz/_tmp/aports-report/2025-09-15-order/diff_merged.html) - **32** disagreements with `osh` as `/bin/sh`
+
+After this success, we expanded our testing:
+
+- [2025-09-17-ash2](2025-09-17-ash2.wwz/_tmp/aports-report/2025-09-17-ash2/diff_merged.html) - **37**, after adding `osh` as `/bin/ash`
+- [2025-09-18-bash](2025-09-18-bash.wwz/_tmp/aports-report/2025-09-18-bash/diff_merged.html) - **43**, after adding `osh` as `/bin/bash`
   - only run on packages that disagree: [2025-09-27-disagree](2025-09-27-disagree.wwz/_tmp/aports-report/2025-09-27-disagree/diff_merged.html)
   - new causes: [2025-10-03-causes](2025-10-03-causes.wwz/_tmp/aports-report/2025-10-03-causes/diff_merged.html)
-- [2025-10-15-main](2025-10-15-main.wwz/_tmp/aports-report/2025-10-15-main/diff_merged.html)
+- [2025-10-15-main](2025-10-15-main.wwz/_tmp/aports-report/2025-10-15-main/diff_merged.html) - **38** disagreements
+  - [2025-10-16](2025-10-16.wwz/_tmp/aports-report/2025-10-16/diff_merged.html) - down to **35** after `x=1>` and `cd x y` fixes
 
 ### community
 
-- first run on aports/community: [2025-10-08-comm](2025-10-08-comm.wwz/_tmp/aports-report/2025-10-08-comm/diff_merged.html)
+- [2025-10-08-comm](2025-10-08-comm.wwz/_tmp/aports-report/2025-10-08-comm/diff_merged.html) - **86** disagreements
 
-EOF
+';
+  } | cmark 
 
   echo '
   </body>
