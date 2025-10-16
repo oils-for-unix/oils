@@ -557,8 +557,8 @@ class WordParser(WordEmitter):
         self._SetNext(lex_mode_e.VSub_Zsh)  # Move past ${(foo)
 
         # Can be empty
-        w = self._ReadCompoundWord3(lex_mode_e.VSub_Zsh,
-                                       Id.Right_DollarBrace, True)
+        w = self._ReadCompoundWord3(lex_mode_e.VSub_Zsh, Id.Right_DollarBrace,
+                                    True)
         self._GetToken()
         return word_part.ZshVarSub(left_token, w, self.cur_token)
 
@@ -1831,9 +1831,8 @@ class WordParser(WordEmitter):
 
     def _ReadCompoundWord(self, lex_mode):
         # type: (lex_mode_t) -> CompoundWord
-        """Returns either word.Compound or word.Redir"""
 
-        # This lexer mode can return redirects
+        # This is the ONLY lexer mode that can return word.Redir
         assert lex_mode != lex_mode_e.ShCommand, lex_mode
 
         w = self._ReadCompoundOrRedir(lex_mode)
@@ -1843,7 +1842,7 @@ class WordParser(WordEmitter):
     def _ReadCompoundWord3(self, lex_mode, eof_type, empty_ok):
         # type: (lex_mode_t, Id_t, bool) -> CompoundWord
 
-        # This lexer mode can return redirects
+        # This is the ONLY lexer mode that can return word.Redir
         assert lex_mode != lex_mode_e.ShCommand, lex_mode
 
         w = self._ReadCompoundOrRedir3(lex_mode, eof_type, empty_ok)
