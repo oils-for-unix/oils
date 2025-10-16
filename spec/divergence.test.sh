@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh zsh ash
-## oils_failures_allowed: 7
+## oils_failures_allowed: 9
 
 # This file relates to:
 #
@@ -33,35 +33,6 @@ echo "-$dirprefix-"
 
 ## N-I mksh/zsh status: 1
 ## N-I mksh/zsh STDOUT:
-## END
-
-
-#### ((( with nested subshells
-
-# https://oilshell.zulipchat.com/#narrow/channel/502349-osh/topic/.28.28.28.20not.20parsed.20like.20bash/with/518874141
-
-# spaces help
-good() {
-  cputype=`( ( (grep cpu /proc/cpuinfo | cut -d: -f2) ; ($PRTDIAG -v |grep -i sparc) ; grep -i cpu /var/run/dmesg.boot ) | head -n 1) 2> /dev/null`
-}
-
-bad() {
-  cputype=`(((grep cpu /proc/cpuinfo | cut -d: -f2) ; ($PRTDIAG -v |grep -i sparc) ; grep -i cpu /var/run/dmesg.boot ) | head -n 1) 2> /dev/null`
-  #echo cputype=$cputype
-}
-
-good
-bad
-
-## STDOUT:
-## END
-
-#### Nested subshell (#2398)
-
-# found on line 137 of the zdiff util from gzip
-((echo foo) | tr o 0)
-## STDOUT:
-f00
 ## END
 
 #### !( as negation and subshell versus extended glob - #2463
@@ -186,3 +157,60 @@ status=0
 status=0
 status=0
 ## END
+
+#### (( closed with ) ) after multiple lines - #2337
+
+(( echo 1
+echo 2
+echo 3
+) )
+
+## STDOUT:
+1
+2
+3
+## END
+
+#### $(( closed with ) ) after multiple lines - #2337
+
+echo $(( echo 1
+echo 2
+echo 3
+) )
+
+## STDOUT:
+1 2 3
+## END
+
+## BUG dash/ash status: 2
+## BUG dash/ash STDOUT:
+## END
+
+#### Nested subshell with ((( - #2337
+
+# https://oilshell.zulipchat.com/#narrow/channel/502349-osh/topic/.28.28.28.20not.20parsed.20like.20bash/with/518874141
+
+# spaces help
+good() {
+  cputype=`( ( (grep cpu /proc/cpuinfo | cut -d: -f2) ; ($PRTDIAG -v |grep -i sparc) ; grep -i cpu /var/run/dmesg.boot ) | head -n 1) 2> /dev/null`
+}
+
+bad() {
+  cputype=`(((grep cpu /proc/cpuinfo | cut -d: -f2) ; ($PRTDIAG -v |grep -i sparc) ; grep -i cpu /var/run/dmesg.boot ) | head -n 1) 2> /dev/null`
+  #echo cputype=$cputype
+}
+
+good
+bad
+
+## STDOUT:
+## END
+
+#### Nested subshell with (( - zdiff #2337
+
+# found on line 137 of the zdiff util from gzip
+((echo foo) | tr o 0)
+## STDOUT:
+f00
+## END
+
