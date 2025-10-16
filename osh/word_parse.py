@@ -284,7 +284,7 @@ class WordParser(WordEmitter):
         self._GetToken()
 
         w = self._ReadVarOpArg2(arg_lex_mode, Id.Undefined_Tok,
-                                   True)  # empty_ok
+                                True)  # empty_ok
 
         # If the Compound has no parts, and we're in a double-quoted VarSub
         # arg, and empty_ok, then return Empty.  This is so it can evaluate to
@@ -389,7 +389,7 @@ class WordParser(WordEmitter):
         # echo ${x////replace} is non-empty; it means echo ${x//'/'/replace}
         empty_ok = replace_mode != Id.Lit_Slash
         pat = self._ReadVarOpArg2(lex_mode_e.VSub_ArgUnquoted, Id.Lit_Slash,
-                                   empty_ok)
+                                  empty_ok)
         #log('pat 1 %r', pat)
 
         if self.token_type == Id.Lit_Slash:
@@ -1004,6 +1004,8 @@ class WordParser(WordEmitter):
             elif self.token_kind in (Kind.Lit, Kind.Left, Kind.VSub,
                                      Kind.ExtGlob):
                 word = self._ReadCompoundWord(lex_mode_e.ExtGlob)
+                assert word.tag() == word_e.Compound, (
+                    "Unexpected word from lexer mode ExtGlob: %s" % word)
                 w = cast(CompoundWord, word)
                 arms.append(w)
                 read_word = True
@@ -1040,6 +1042,9 @@ class WordParser(WordEmitter):
             # Fake lexer mode that translates Id.WS_Space to Id.Lit_Chars
             # To allow bash style [[ s =~ (a b) ]]
             word = self._ReadCompoundWord(lex_mode_e.BashRegexFakeInner)
+            assert word.tag() == word_e.Compound, (
+                "Unexpected word from lexer mode BashRegexFakeInner: %s" %
+                word)
             w = cast(CompoundWord, word)
             arms.append(w)
 
@@ -1992,8 +1997,8 @@ class WordParser(WordEmitter):
                             not in (Id.Redir_AndGreat, Id.Redir_AndDGreat)):
 
                         self._SetNext(lex_mode)
-                        w2 = cast(Token, w.parts.pop())
-                        r = word.Redir(w2, self.cur_token)
+                        left_tok = cast(Token, w.parts.pop())
+                        r = word.Redir(left_tok, self.cur_token)
                         return r
 
                 done = True  # anything we don't recognize means we're done
