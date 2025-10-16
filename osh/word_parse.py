@@ -310,8 +310,7 @@ class WordParser(WordEmitter):
         tilde = word_.TildeDetect(w)
         if tilde:
             w = tilde
-        assert w.tag() == word_e.Compound
-        return cast(CompoundWord, w)
+        return w
 
     def _ReadSliceVarOp(self):
         # type: () -> suffix_op.Slice
@@ -558,11 +557,8 @@ class WordParser(WordEmitter):
         self._SetNext(lex_mode_e.VSub_Zsh)  # Move past ${(foo)
 
         # Can be empty
-        word = self._ReadCompoundWord3(lex_mode_e.VSub_Zsh,
+        w = self._ReadCompoundWord3(lex_mode_e.VSub_Zsh,
                                        Id.Right_DollarBrace, True)
-        assert word.tag() == word_e.Compound, (
-            "Unexpected word from lexer mode VSub_Zsh: %s" % word)
-        w = cast(CompoundWord, word)
         self._GetToken()
         return word_part.ZshVarSub(left_token, w, self.cur_token)
 
@@ -1003,10 +999,7 @@ class WordParser(WordEmitter):
             # lex_mode_e.ExtGlob should only produce these 4 kinds of tokens
             elif self.token_kind in (Kind.Lit, Kind.Left, Kind.VSub,
                                      Kind.ExtGlob):
-                word = self._ReadCompoundWord(lex_mode_e.ExtGlob)
-                assert word.tag() == word_e.Compound, (
-                    "Unexpected word from lexer mode ExtGlob: %s" % word)
-                w = cast(CompoundWord, word)
+                w = self._ReadCompoundWord(lex_mode_e.ExtGlob)
                 arms.append(w)
                 read_word = True
 
@@ -1041,11 +1034,7 @@ class WordParser(WordEmitter):
         if self.token_kind in (Kind.Lit, Kind.Left, Kind.VSub, Kind.BashRegex):
             # Fake lexer mode that translates Id.WS_Space to Id.Lit_Chars
             # To allow bash style [[ s =~ (a b) ]]
-            word = self._ReadCompoundWord(lex_mode_e.BashRegexFakeInner)
-            assert word.tag() == word_e.Compound, (
-                "Unexpected word from lexer mode BashRegexFakeInner: %s" %
-                word)
-            w = cast(CompoundWord, word)
+            w = self._ReadCompoundWord(lex_mode_e.BashRegexFakeInner)
             arms.append(w)
 
             self._GetToken()
@@ -1841,10 +1830,32 @@ class WordParser(WordEmitter):
         return done
 
     def _ReadCompoundWord(self, lex_mode):
-        # type: (lex_mode_t) -> word_t
-        return self._ReadCompoundWord3(lex_mode, Id.Undefined_Tok, True)
+        # type: (lex_mode_t) -> CompoundWord
+        """Returns either word.Compound or word.Redir"""
+
+        # This lexer mode can return redirects
+        assert lex_mode != lex_mode_e.ShCommand, lex_mode
+
+        w = self._ReadCompoundOrRedir(lex_mode)
+        assert w.tag() == word_e.Compound, w
+        return cast(CompoundWord, w)
 
     def _ReadCompoundWord3(self, lex_mode, eof_type, empty_ok):
+        # type: (lex_mode_t, Id_t, bool) -> CompoundWord
+
+        # This lexer mode can return redirects
+        assert lex_mode != lex_mode_e.ShCommand, lex_mode
+
+        w = self._ReadCompoundOrRedir3(lex_mode, eof_type, empty_ok)
+        assert w.tag() == word_e.Compound, w
+        return cast(CompoundWord, w)
+
+    def _ReadCompoundOrRedir(self, lex_mode):
+        # type: (lex_mode_t) -> word_t
+        """Returns either word.Compound or word.Redir"""
+        return self._ReadCompoundOrRedir3(lex_mode, Id.Undefined_Tok, True)
+
+    def _ReadCompoundOrRedir3(self, lex_mode, eof_type, empty_ok):
         # type: (lex_mode_t, Id_t, bool) -> word_t
         """
         Precondition: Looking at the first token of the first word part
@@ -1853,6 +1864,8 @@ class WordParser(WordEmitter):
         NOTE: eof_type is necessary because / is a literal, i.e. Lit_Slash, but it
         could be an operator delimiting a compound word.  Can we change lexer modes
         and remove this special case?
+
+        Returns either word.Compound or word.Redir
         """
         w = CompoundWord([])
         num_parts = 0
@@ -2192,7 +2205,7 @@ class WordParser(WordEmitter):
                             # Read the word in a different lexer mode
                             return self._ReadYshSingleQuoted(left_id)
 
-                return self._ReadCompoundWord(lex_mode)
+                return self._ReadCompoundOrRedir(lex_mode)
 
     def ParseVarRef(self):
         # type: () -> BracedVarSub
