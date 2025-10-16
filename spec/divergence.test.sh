@@ -162,6 +162,8 @@ status=0
 
 (( echo 1
 echo 2
+(( x ))
+: $(( x ))
 echo 3
 ) )
 
@@ -175,6 +177,8 @@ echo 3
 
 echo $(( echo 1
 echo 2
+(( x ))
+: $(( x ))
 echo 3
 ) )
 
@@ -191,6 +195,8 @@ echo 3
 $SH -c '
 (( echo 1
 echo 2
+(( x ))
+: $(( x ))
 echo 3
 ))
 '
@@ -212,6 +218,8 @@ ok
 $SH -c '
 echo $(( echo 1
 echo 2
+(( x ))
+: $(( x ))
 echo 3
 ))
 '
