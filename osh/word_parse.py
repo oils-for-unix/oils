@@ -1967,6 +1967,22 @@ class WordParser(WordEmitter):
                 else:
                     done = True
 
+            elif self.token_kind == Kind.Redir:
+                # Check if the previous token was a possible left_tok to a
+                # redirect operator, attach it to the word.Redir.  And return
+                # it instead of the CompoundWord.
+
+                # &> and &>> don't have a leading descriptor (2 is implied)
+                if (saw_redir_left_tok and num_parts == 1 and self.token_type
+                        not in (Id.Redir_AndGreat, Id.Redir_AndDGreat)):
+
+                    self._SetNext(lex_mode)
+                    left_tok = cast(Token, w.parts.pop())
+                    r = word.Redir(left_tok, self.cur_token)
+                    return r  # EARLY RETURN
+
+                done = True
+
             elif self.token_kind == Kind.Ignored:
                 done = True
 
@@ -1986,21 +2002,6 @@ class WordParser(WordEmitter):
                             # Redo translation
                             self.lexer.PushHint(Id.Op_RParen, Id.Eof_RParen)
                         self._SetNext(lex_mode)
-
-                elif self.token_kind == Kind.Redir:
-                    # Check if the previous token was a possible left_tok to a
-                    # redirect operator, and return it instead of the
-                    # CompoundWord
-
-                    # &> and &>> don't have a leading descriptor (2 is implied)
-                    if (saw_redir_left_tok and num_parts == 1 and
-                            self.token_type
-                            not in (Id.Redir_AndGreat, Id.Redir_AndDGreat)):
-
-                        self._SetNext(lex_mode)
-                        left_tok = cast(Token, w.parts.pop())
-                        r = word.Redir(left_tok, self.cur_token)
-                        return r  # EARLY RETURN
 
                 done = True  # anything we don't recognize means we're done
 
@@ -2080,6 +2081,7 @@ class WordParser(WordEmitter):
 
         elif self.token_kind == Kind.Redir:
             self._SetNext(lex_mode)
+            # This is >out -- 3>out is handled below
             return word.Redir(None, self.cur_token)
 
         # Allow Arith for ) at end of for loop?
