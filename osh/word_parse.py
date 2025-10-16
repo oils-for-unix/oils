@@ -283,9 +283,8 @@ class WordParser(WordEmitter):
         self._SetNext(arg_lex_mode)
         self._GetToken()
 
-        word = self._ReadVarOpArg2(arg_lex_mode, Id.Undefined_Tok,
+        w = self._ReadVarOpArg2(arg_lex_mode, Id.Undefined_Tok,
                                    True)  # empty_ok
-        w = cast(CompoundWord, word)
 
         # If the Compound has no parts, and we're in a double-quoted VarSub
         # arg, and empty_ok, then return Empty.  This is so it can evaluate to
@@ -305,18 +304,14 @@ class WordParser(WordEmitter):
         return w
 
     def _ReadVarOpArg2(self, arg_lex_mode, eof_type, empty_ok):
-        # type: (lex_mode_t, Id_t, bool) -> word_t
-        """Return a word_t.
-
-        Helper function for _ReadVarOpArg and used directly by
-        _ReadPatSubVarOp.
-        """
+        # type: (lex_mode_t, Id_t, bool) -> CompoundWord
+        """Helper function for _ReadVarOpArg and _ReadPatSubVarOp"""
         w = self._ReadCompoundWord3(arg_lex_mode, eof_type, empty_ok)
-        #log('w %s', w)
         tilde = word_.TildeDetect(w)
         if tilde:
             w = tilde
-        return w
+        assert w.tag() == word_e.Compound
+        return cast(CompoundWord, w)
 
     def _ReadSliceVarOp(self):
         # type: () -> suffix_op.Slice
@@ -393,9 +388,8 @@ class WordParser(WordEmitter):
         # echo ${x/#/replace} has an empty pattern
         # echo ${x////replace} is non-empty; it means echo ${x//'/'/replace}
         empty_ok = replace_mode != Id.Lit_Slash
-        word = self._ReadVarOpArg2(lex_mode_e.VSub_ArgUnquoted, Id.Lit_Slash,
+        pat = self._ReadVarOpArg2(lex_mode_e.VSub_ArgUnquoted, Id.Lit_Slash,
                                    empty_ok)
-        pat = cast(CompoundWord, word)
         #log('pat 1 %r', pat)
 
         if self.token_type == Id.Lit_Slash:
