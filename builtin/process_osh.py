@@ -765,25 +765,22 @@ class Kill(vm._Builtin):
         }
         self._nr_of_signals = 32
 
-    def _SignameToSignum(self, sigspec):
-        # type: (str) -> int
-        signal_name = sigspec.upper()
-        if not signal_name.startswith('SIG'):
-            signal_name = 'SIG' + signal_name
-        if signal_name not in self.sigspec_to_signame:
-            print_stderr("error: invalid signal name provided")
-            return -1
-        return self.sigspec_to_signame[signal_name]
-
     def _PrintSignals(self):
         # type: () -> None
         n = signal_def.MaxSigNumber() + 1
         for sig_num in xrange(n):
-
             sig_name = signal_def.GetName(sig_num)
             if sig_name is None:
                 continue
             print('%2d %s' % (sig_num, sig_name))
+
+    def _SignameToSignum(self, name):
+        # type: (str) -> int
+        signal_name = name.upper()
+        if signal_name.startswith('SIG'):
+            signal_name = signal_name[3:]
+        return signal_def.GetNumber(signal_name)
+
     
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -837,10 +834,6 @@ class Kill(vm._Builtin):
 
         if signal_to_send == signal_def.NO_SIGNAL:
             signal_to_send = 15
-        if signal_to_send not in self.signame_to_sigspec:
-            print_stderr("error: invalid signal.")
-            return 1
-
         if(target_pid == 0):
             print_stderr("error: no pid provided")
             return 1
