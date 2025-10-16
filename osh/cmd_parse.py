@@ -14,6 +14,7 @@ from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str, Kind, Kind_str
 from _devbuild.gen.types_asdl import lex_mode_e, cmd_mode_e, cmd_mode_t
 from _devbuild.gen.syntax_asdl import (
     loc,
+    word,
     SourceLine,
     source,
     parse_result,
@@ -31,7 +32,6 @@ from _devbuild.gen.syntax_asdl import (
     pat,
     pat_t,
     Redir,
-    RedirOp,
     redir_param,
     redir_loc,
     redir_loc_t,
@@ -724,7 +724,7 @@ class CommandParser(object):
         # type: () -> Redir
         self._GetWord()
         assert self.c_kind == Kind.Redir, self.cur_word
-        cur_word = cast(RedirOp, self.cur_word)
+        cur_word = cast(word.Redir, self.cur_word)
 
         # Redirects like   >out   3>out   {myvar}>out
         left_tok = cur_word.left_tok

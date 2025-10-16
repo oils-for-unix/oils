@@ -54,10 +54,10 @@ from _devbuild.gen.types_asdl import (lex_mode_t, lex_mode_e)
 from _devbuild.gen.syntax_asdl import (
     BoolParamBox,
     Token,
-    RedirOp,
     SimpleVarSub,
     loc,
     source,
+    word,
     DoubleQuoted,
     SingleQuoted,
     BracedVarSub,
@@ -566,6 +566,7 @@ class WordParser(WordEmitter):
         # Can be empty
         word = self._ReadCompoundWord3(lex_mode_e.VSub_Zsh,
                                        Id.Right_DollarBrace, True)
+        assert word.tag() == word_e.Compound, "Unexpected word from lexer mode VSub_Zsh: %s" % word
         w = cast(CompoundWord, word)
         self._GetToken()
         return word_part.ZshVarSub(left_token, w, self.cur_token)
@@ -1858,7 +1859,7 @@ class WordParser(WordEmitter):
         brace_count = 0
         done = False
         is_triple_quoted = None  # type: Optional[BoolParamBox]
-        saw_redir_lhs_arg = False
+        saw_redir_left_tok = False
 
         while not done:
             self._GetToken()
@@ -1890,7 +1891,7 @@ class WordParser(WordEmitter):
                             'Literal $ should be quoted like \$ (no_parse_dollar)',
                             self.cur_token)
                 elif self.token_type in (Id.Lit_Number, Id.Lit_RedirVarName):
-                    saw_redir_lhs_arg = True
+                    saw_redir_left_tok = True
 
                 done = self._MaybeReadWordPart(num_parts == 0, lex_mode,
                                                w.parts)
@@ -1987,17 +1988,17 @@ class WordParser(WordEmitter):
                         self._SetNext(lex_mode)
                 elif self.token_kind == Kind.Redir:
                     # If previous word was one of the possible left-hand side
-                    # args to a redirection, it should be part of the RedirOp,
+                    # args to a redirection, it should be part of the word.Redir,
                     # so return it instead of the CompoundWord
 
                     # &> and &>> don't have a leading descriptor (2 is implied)
-                    if (saw_redir_lhs_arg and num_parts == 1 and
+                    if (saw_redir_left_tok and num_parts == 1 and
                             self.token_type
                             not in (Id.Redir_AndGreat, Id.Redir_AndDGreat)):
 
                         self._SetNext(lex_mode)
-                        word = cast(Token, w.parts.pop())
-                        r = RedirOp(word, self.cur_token)
+                        w2 = cast(Token, w.parts.pop())
+                        r = word.Redir(w2, self.cur_token)
                         return r
 
                 done = True  # anything we don't recognize means we're done
@@ -2078,7 +2079,7 @@ class WordParser(WordEmitter):
 
         elif self.token_kind == Kind.Redir:
             self._SetNext(lex_mode)
-            return RedirOp(None, self.cur_token)
+            return word.Redir(None, self.cur_token)
 
         # Allow Arith for ) at end of for loop?
         elif self.token_kind in (Kind.Op, Kind.Arith):
