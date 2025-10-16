@@ -72,35 +72,7 @@ EOF
 diff-metrics-html() {
   local db=${1:-_tmp/aports-report/2025-08-03/diff_merged.db}
 
-  sqlite3 $db <<EOF
--- this is only shards with disagreements; we want total shards
--- select printf("<li>Shards: %s</li>", count(distinct shard)) from diff_merged;
--- select printf("<li><code>.apk</code> packages produced: %s</li>", count(distinct apk_name)) from apk_merged;
-
-select "<ul>";
-select printf("<li>Tasks: %s</li>", sum(num_tasks)) from metrics;
-select printf("<li><b>Elapsed Hours: %.1f</b></li>", sum(elapsed_minutes) / 60) from metrics;
-select "</ul>";
-
-select "<ul>";
-select printf("<li><code>APKBUILD</code> files: %s</li>", sum(num_tasks)) from metrics where config = "baseline";
-select printf("<li>Baseline <code>.apk</code> built: %s</li>", sum(num_apk)) from metrics where config = "baseline";
-select printf("<li>osh-as-sh <code>.apk</code> built: %s</li>", sum(num_apk)) from metrics where config = "osh-as-sh";
-select printf("<li>Baseline failures: %s</li>", sum(num_failures)) from metrics where config = "baseline";
-select printf("<li>osh-as-sh failures: %s</li>", sum(num_failures)) from metrics where config = "osh-as-sh";
-select "</ul>";
-
-select "<ul>";
-select printf("<li><b>Notable Disagreements: %s</b></li>", count(*)) from notable_disagree;
-select printf("<li>Unique causes: %s</li>", count(distinct cause)) from notable_disagree where cause != "unknown";
-select printf("<li>Packages without a cause assigned (unknown): %s</li>", count(*)) from notable_disagree where cause = "unknown";
-select "</ul>";
-
-select "<ul>";
-select printf("<li>Other Failures: %s</li>", count(*)) from other_fail;
-select printf("<li>Inconclusive result because of timeout (-124, -143): %s</li>", count(*)) from timeout where cause like "signal-%";
-select "</ul>";
-EOF
+  sqlite3 $db < regtest/aports/summary.sql
 }
 
 table-page-html() {
@@ -582,7 +554,7 @@ merge-diffs-sql() {
 }
 
 merge-diffs() {
-  local epoch_dir=${1:-_tmp/aports-report/2025-08-03}
+  local epoch_dir=${1:-_tmp/aports-report/2025-10-15-main}
   local do_disagree=${2:-}
 
   local db=$PWD/$epoch_dir/diff_merged.db
