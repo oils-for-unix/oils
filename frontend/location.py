@@ -396,11 +396,8 @@ def LeftTokenForCompoundWord(w):
 
 
 def LeftTokenForRedirOp(w):
-    # type: (RedirOp) -> Optional[Token]
-    if w.loc is None:
-        return w.op
-    else:
-        return w.loc
+    # type: (RedirOp) -> Token
+    return w.left_tok if w.left_tok else w.op
 
 
 def LeftTokenForWord(w):

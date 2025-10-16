@@ -726,23 +726,14 @@ class CommandParser(object):
         assert self.c_kind == Kind.Redir, self.cur_word
         cur_word = cast(RedirOp, self.cur_word)
 
-        # Note: the lexer could take distinguish between
-        #  >out
-        #  3>out
-        #  {fd}>out
-        #
-        # which would make the code below faster.  But small string optimization
-        # would also speed it up, since redirects are small.
-
-        # One way to do this is with Kind.Redir and Kind.RedirNamed, and then
-        # possibly "unify" the IDs by subtracting a constant like 8 or 16?
-
-        if cur_word.loc is not None:
-            loc_val = lexer.TokenVal(cur_word.loc)
-            if cur_word.loc.id == Id.Lit_Number:
-                where = redir_loc.Fd(int(loc_val))  # type: redir_loc_t
-            elif cur_word.loc.id == Id.Lit_RedirVarName:
-                where = redir_loc.VarName(loc_val[1:-1])
+        # Redirects like   >out   3>out   {myvar}>out
+        left_tok = cur_word.left_tok
+        if left_tok is not None:
+            left_val = lexer.TokenVal(left_tok)
+            if left_tok.id == Id.Lit_Number:
+                where = redir_loc.Fd(int(left_val))  # type: redir_loc_t
+            elif left_tok.id == Id.Lit_RedirVarName:
+                where = redir_loc.VarName(left_val[1:-1])
             else:
                 assert False  # shouldn't happen
         else:

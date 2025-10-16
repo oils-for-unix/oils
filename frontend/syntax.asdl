@@ -247,7 +247,7 @@ module syntax
   # At runtime: RHS of 'declare x='.
   rhs_word = Empty | Compound %CompoundWord
 
-  RedirOp = (Token? loc, Token op)
+  RedirOp = (Token? left_tok, Token op)
 
   word = 
     # Returns from WordParser, but not generally stored in LST
