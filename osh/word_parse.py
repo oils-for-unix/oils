@@ -1986,10 +1986,11 @@ class WordParser(WordEmitter):
                             # Redo translation
                             self.lexer.PushHint(Id.Op_RParen, Id.Eof_RParen)
                         self._SetNext(lex_mode)
+
                 elif self.token_kind == Kind.Redir:
-                    # If previous word was one of the possible left-hand side
-                    # args to a redirection, it should be part of the word.Redir,
-                    # so return it instead of the CompoundWord
+                    # Check if the previous token was a possible left_tok to a
+                    # redirect operator, and return it instead of the
+                    # CompoundWord
 
                     # &> and &>> don't have a leading descriptor (2 is implied)
                     if (saw_redir_left_tok and num_parts == 1 and
@@ -1999,7 +2000,7 @@ class WordParser(WordEmitter):
                         self._SetNext(lex_mode)
                         left_tok = cast(Token, w.parts.pop())
                         r = word.Redir(left_tok, self.cur_token)
-                        return r
+                        return r  # EARLY RETURN
 
                 done = True  # anything we don't recognize means we're done
 
