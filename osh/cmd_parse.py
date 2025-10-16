@@ -875,7 +875,7 @@ class CommandParser(object):
           '(' arglist ')'
         | '[' arglist ']'
 
-        simple_command = 
+        simple_command =
             cmd_prefix* item+ typed_args? BraceGroup? cmd_suffix*
 
         Notably, redirects shouldn't appear after typed args, or after
@@ -2046,7 +2046,7 @@ class CommandParser(object):
         """
         time_kw = word_.AsKeywordToken(self.cur_word)
         self._SetNext()  # skip time
-        pipeline = self.ParsePipeline()
+        pipeline = self.ParsePipeline(None)
         return command.TimeBlock(time_kw, pipeline)
 
     def ParseCompoundCommand(self):
@@ -2104,7 +2104,16 @@ class CommandParser(object):
                 p_die(
                     'Bash (( not allowed in YSH (no_parse_dparen, see OILS-ERR-14 for wart)',
                     loc.Word(self.cur_word))
-            n7 = self.ParseDParen()
+
+            # If the closing parens aren't separated by anything - '))' - it's
+            # an arithmetic expression, otherwise it's a subshell
+            if (self.w_parser.LookAheadDParens()):
+                n7 = self.ParseDParen()
+            else:
+                child = self.ParseSubshell() # parse the nested subshell
+                n7 = self.ParseAndOr(child) # parse the outer subshell
+                ate = self._Eat(Id.Op_RParen) # and eat the stray )
+
             return self._MaybeParseRedirectList(n7)
 
         # bash extensions: no redirects
@@ -2401,7 +2410,7 @@ class CommandParser(object):
         they can't be alone in a shell function body.
 
         Example:
-        This is valid shell   f() if true; then echo hi; fi  
+        This is valid shell   f() if true; then echo hi; fi
         This is invalid       f() var x = 1
         """
         if self._AtSecondaryKeyword():
@@ -2549,22 +2558,26 @@ class CommandParser(object):
 
         assert False  # for MyPy
 
-    def ParsePipeline(self):
+    def ParsePipeline(self, parsed_child):
         # type: () -> command_t
         """
         pipeline         : Bang? command ( '|' newline_ok command )* ;
         """
         negated = None  # type: Optional[Token]
 
-        self._GetWord()
-        if self.c_id == Id.KW_Bang:
-            negated = word_.AsKeywordToken(self.cur_word)
-            self._SetNext()
+        if parsed_child is None:
+            self._GetWord()
+            if self.c_id == Id.KW_Bang:
+                negated = word_.AsKeywordToken(self.cur_word)
+                self._SetNext()
 
-        child = self.ParseCommand()
-        assert child is not None
+            child = self.ParseCommand()
+            assert child is not None
 
-        children = [child]
+            children = [child]
+        else:
+            children = [parsed_child]
+            child = parsed_child
 
         self._GetWord()
         if self.c_id not in (Id.Op_Pipe, Id.Op_PipeAmp):
@@ -2592,19 +2605,19 @@ class CommandParser(object):
 
         return command.Pipeline(negated, children, ops)
 
-    def ParseAndOr(self):
+    def ParseAndOr(self, parsed_child=None):
         # type: () -> command_t
         self._GetWord()
         if self.c_id == Id.Lit_TDot:
             # We got '...', so parse in multiline mode
             self._SetNext()
             with word_.ctx_Multiline(self.w_parser):
-                return self._ParseAndOr()
+                return self._ParseAndOr(parsed_child)
 
         # Parse in normal mode, not multiline
-        return self._ParseAndOr()
+        return self._ParseAndOr(parsed_child)
 
-    def _ParseAndOr(self):
+    def _ParseAndOr(self, parsed_child):
         # type: () -> command_t
         """
         and_or           : and_or ( AND_IF | OR_IF ) newline_ok pipeline
@@ -2613,7 +2626,7 @@ class CommandParser(object):
         Note that it is left recursive and left associative.  We parse it
         iteratively with a token of lookahead.
         """
-        child = self.ParsePipeline()
+        child = self.ParsePipeline(parsed_child)
         assert child is not None
 
         self._GetWord()
@@ -2629,7 +2642,7 @@ class CommandParser(object):
             self._SetNext()  # skip past || &&
             self._NewlineOk()
 
-            child = self.ParsePipeline()
+            child = self.ParsePipeline(None)
             children.append(child)
 
             self._GetWord()
