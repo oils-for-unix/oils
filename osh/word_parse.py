@@ -566,7 +566,8 @@ class WordParser(WordEmitter):
         # Can be empty
         word = self._ReadCompoundWord3(lex_mode_e.VSub_Zsh,
                                        Id.Right_DollarBrace, True)
-        assert word.tag() == word_e.Compound, "Unexpected word from lexer mode VSub_Zsh: %s" % word
+        assert word.tag() == word_e.Compound, (
+            "Unexpected word from lexer mode VSub_Zsh: %s" % word)
         w = cast(CompoundWord, word)
         self._GetToken()
         return word_part.ZshVarSub(left_token, w, self.cur_token)
