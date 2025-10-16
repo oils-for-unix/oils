@@ -740,11 +740,11 @@ class CommandParser(object):
         if cur_word.loc is not None:
             loc_val = lexer.TokenVal(cur_word.loc)
             if cur_word.loc.id == Id.Lit_Number:
-                where = redir_loc.Fd(int(loc_val)) # type: redir_loc_t
+                where = redir_loc.Fd(int(loc_val))  # type: redir_loc_t
             elif cur_word.loc.id == Id.Lit_RedirVarName:
                 where = redir_loc.VarName(loc_val[1:-1])
             else:
-                assert False # shouldn't happen
+                assert False  # shouldn't happen
         else:
             where = redir_loc.Fd(consts.RedirDefaultFd(cur_word.op.id))
 
@@ -2342,7 +2342,8 @@ class CommandParser(object):
         """
         left = word_.AsOperatorToken(self.cur_word)
         if self.parse_opts.no_parse_osh():
-            p_die("Subshell syntax ( ) isn't allowed in YSH (OILS-ERR-19)", left)
+            p_die("Subshell syntax ( ) isn't allowed in YSH (OILS-ERR-19)",
+                  left)
         self._SetNext()  # skip past (
 
         # Ensure that something $( (cd / && pwd) ) works.  If ) is already on the

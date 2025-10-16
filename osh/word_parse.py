@@ -284,7 +284,7 @@ class WordParser(WordEmitter):
         self._GetToken()
 
         word = self._ReadVarOpArg2(arg_lex_mode, Id.Undefined_Tok,
-                                True)  # empty_ok
+                                   True)  # empty_ok
         w = cast(CompoundWord, word)
 
         # If the Compound has no parts, and we're in a double-quoted VarSub
@@ -394,7 +394,7 @@ class WordParser(WordEmitter):
         # echo ${x////replace} is non-empty; it means echo ${x//'/'/replace}
         empty_ok = replace_mode != Id.Lit_Slash
         word = self._ReadVarOpArg2(lex_mode_e.VSub_ArgUnquoted, Id.Lit_Slash,
-                                  empty_ok)
+                                   empty_ok)
         pat = cast(CompoundWord, word)
         #log('pat 1 %r', pat)
 
@@ -564,8 +564,8 @@ class WordParser(WordEmitter):
         self._SetNext(lex_mode_e.VSub_Zsh)  # Move past ${(foo)
 
         # Can be empty
-        word = self._ReadCompoundWord3(lex_mode_e.VSub_Zsh, Id.Right_DollarBrace,
-                                    True)
+        word = self._ReadCompoundWord3(lex_mode_e.VSub_Zsh,
+                                       Id.Right_DollarBrace, True)
         w = cast(CompoundWord, word)
         self._GetToken()
         return word_part.ZshVarSub(left_token, w, self.cur_token)
@@ -1992,7 +1992,8 @@ class WordParser(WordEmitter):
 
                     # &> and &>> don't have a leading descriptor (2 is implied)
                     if (saw_redir_lhs_arg and num_parts == 1 and
-                        self.token_type not in (Id.Redir_AndGreat, Id.Redir_AndDGreat)):
+                            self.token_type
+                            not in (Id.Redir_AndGreat, Id.Redir_AndDGreat)):
 
                         self._SetNext(lex_mode)
                         word = cast(Token, w.parts.pop())
