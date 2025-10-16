@@ -260,6 +260,8 @@ module syntax
   | BracedTree(List[word_part] parts)
     # For dynamic parsing of test aka [ - the string is already evaluated.
   | String(id id, str s, CompoundWord? blame_loc)
+    # Redirect words like   >   3>  {myvar}>
+  | Redir(Token? left_tok, Token op)
 
   # Note: the name 'foo' is derived from token value 'foo=' or 'foo+='
   sh_lhs =

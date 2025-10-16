@@ -295,33 +295,23 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
     C(',', Id.Lit_Comma),
     C('=', Id.Lit_Equals),  # for = f(x) and x = 1+2*3
     C('@', Id.Lit_At),  # for detecting @[, @' etc. shopt -s parse_at_all
+    R(FD_VAR_NAME, Id.Lit_RedirVarName),
+    R(FD_NUM, Id.Lit_Number),
 
     # @array and @func(1, c)
     R('@' + VAR_NAME_RE, Id.Lit_Splice),  # for YSH splicing
     C('@[', Id.Lit_AtLBracket),  # @[split(x)]
     C('@{.', Id.Lit_AtLBraceDot),  # for split builtin sub @{.myproc arg1}
-    R(FD_NUM + r'<', Id.Redir_Less),
-    R(FD_NUM + r'>', Id.Redir_Great),
-    R(FD_NUM + r'<<', Id.Redir_DLess),
-    R(FD_NUM + r'<<<', Id.Redir_TLess),
-    R(FD_NUM + r'>>', Id.Redir_DGreat),
-    R(FD_NUM + r'<<-', Id.Redir_DLessDash),
-    R(FD_NUM + r'>&', Id.Redir_GreatAnd),
-    R(FD_NUM + r'<&', Id.Redir_LessAnd),
-    R(FD_NUM + r'<>', Id.Redir_LessGreat),
-    R(FD_NUM + r'>\|', Id.Redir_Clobber),
-    R(FD_VAR_NAME + r'<', Id.Redir_Less),
-    R(FD_VAR_NAME + r'>', Id.Redir_Great),
-    R(FD_VAR_NAME + r'<<', Id.Redir_DLess),
-    R(FD_VAR_NAME + r'<<<', Id.Redir_TLess),
-    R(FD_VAR_NAME + r'>>', Id.Redir_DGreat),
-    R(FD_VAR_NAME + r'<<-', Id.Redir_DLessDash),
-    R(FD_VAR_NAME + r'>&', Id.Redir_GreatAnd),
-    R(FD_VAR_NAME + r'<&', Id.Redir_LessAnd),
-    R(FD_VAR_NAME + r'<>', Id.Redir_LessGreat),
-    R(FD_VAR_NAME + r'>\|', Id.Redir_Clobber),
-
-    # No leading descriptor (2 is implied)
+    R(r'<', Id.Redir_Less),
+    R(r'>', Id.Redir_Great),
+    R(r'<<', Id.Redir_DLess),
+    R(r'<<<', Id.Redir_TLess),
+    R(r'>>', Id.Redir_DGreat),
+    R(r'<<-', Id.Redir_DLessDash),
+    R(r'>&', Id.Redir_GreatAnd),
+    R(r'<&', Id.Redir_LessAnd),
+    R(r'<>', Id.Redir_LessGreat),
+    R(r'>\|', Id.Redir_Clobber),
     C(r'&>', Id.Redir_AndGreat),
     C(r'&>>', Id.Redir_AndDGreat),
 ] + KEYWORDS + CONTROL_FLOW + _UNQUOTED + _EXTGLOB_BEGIN

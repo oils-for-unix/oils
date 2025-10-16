@@ -394,6 +394,11 @@ def LeftTokenForCompoundWord(w):
         return None
 
 
+def LeftTokenForRedirWord(w):
+    # type: (word.Redir) -> Token
+    return w.left_tok if w.left_tok else w.op
+
+
 def LeftTokenForWord(w):
     # type: (word_t) -> Optional[Token]
     if w is None:
@@ -416,8 +421,12 @@ def LeftTokenForWord(w):
 
         elif case(word_e.String):
             w = cast(word.String, UP_w)
-            # See _StringWordEmitter in osh/builtin_bracket.py
+            # See _StringWordEmitter in builtin/bracket_osh.py
             return LeftTokenForWord(w.blame_loc)
+
+        elif case(word_e.Redir):
+            w = cast(word.Redir, UP_w)
+            return LeftTokenForRedirWord(w)
 
         else:
             raise AssertionError(w.tag())
@@ -455,6 +464,10 @@ def RightTokenForWord(w):
             w = cast(word.String, UP_w)
             # Note: this case may be unused
             return RightTokenForWord(w.blame_loc)
+
+        elif case(word_e.Redir):
+            w = cast(word.Redir, UP_w)
+            return w.op
 
         else:
             raise AssertionError(w.tag())
