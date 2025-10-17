@@ -164,7 +164,7 @@ def _PushYshTokens(parse_ctx, gr, p, lex):
         #  tok.id = KEYWORDS[tok.val]
         #  log('Replaced with %s', tok.id)
 
-        assert tok.id < 256, Id_str(tok.id)
+        assert tok.id < 512, Id_str(tok.id)
 
         ilabel = _Classify(gr, tok)
         #log('tok = %s, ilabel = %d', tok, ilabel)
