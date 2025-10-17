@@ -405,7 +405,7 @@ class ExprEvaluator(object):
         return lval
 
     def EvalExprSub(self, part):
-        # type: (word_part.ExprSub) -> part_value_t
+        # type: (ExprSub) -> part_value_t
 
         val = self.EvalExpr(part.child, part.left)
 
@@ -1197,6 +1197,22 @@ class ExprEvaluator(object):
                     return value.Command(cmd_frag.Expr(node.child),
                                          self.mem.CurrentFrame(),
                                          self.mem.GlobalFrame())
+                else:
+                    stdout_str = self.shell_ex.RunCommandSub(node)
+                    if id_ == Id.Left_AtParen:  # @(seq 3)
+                        # YSH splitting algorithm: does not depend on IFS
+                        try:
+                            strs = j8.SplitJ8Lines(stdout_str)
+                        except error.Decode as e:
+                            # status code 4 is special, for encode/decode errors.
+                            raise error.Structured(4, e.Message(),
+                                                   node.left_token)
+
+                        items = [value.Str(s)
+                                 for s in strs]  # type: List[value_t]
+                        return value.List(items)
+                    else:
+                        return value.Str(stdout_str)
 
             elif case(expr_e.ExprSub):
                 node = cast(ExprSub, UP_node)
