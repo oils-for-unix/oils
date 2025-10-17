@@ -226,6 +226,36 @@ class LineLexer(object):
 
         return tok_type
 
+    def LookAheadDParens(self):
+        # type: () -> bool
+        """For finding the closing arithmetic parens - ))
+        If none consecutive parens (not separated by any other token) occur,
+        returns False.
+        """
+        original_pos = self.line_pos
+        tok_type, end_pos = match.OneToken(lex_mode_e.Arith,
+                                     self.src_line.content, self.line_pos)
+        first_match = False
+        # TODO: we should limit this lookahead more reasonably
+        while (self.line_pos != end_pos):
+            self.line_pos = end_pos
+            tok_type, end_pos = match.OneToken(lex_mode_e.Arith,
+                                               self.src_line.content, self.line_pos)
+            if tok_type == Id.Arith_RParen and first_match:
+                self.line_pos = original_pos
+                return True
+            elif tok_type == Id.Arith_RParen:
+                first_match = True
+            else:
+                first_match = False
+            # We need to handle these being nested -
+            # Left_DollarParen = 211,
+            # Left_DollarDParen = 214,
+
+        # Recover after lookahead
+        self.line_pos = original_pos
+        return False
+
     def LookAheadFuncParens(self, unread):
         # type: (int) -> bool
         """For finding the () in 'f ( ) { echo hi; }'.
@@ -339,6 +369,10 @@ class Lexer(object):
     def LookPastSpace(self, lex_mode):
         # type: (lex_mode_t) -> Id_t
         return self.line_lexer.LookPastSpace(lex_mode)
+
+    def LookAheadDParens(self):
+        # type: () -> bool
+        return self.line_lexer.LookAheadDParens()
 
     def LookAheadFuncParens(self, unread):
         # type: (int) -> bool
