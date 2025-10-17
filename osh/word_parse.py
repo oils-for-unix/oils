@@ -52,6 +52,7 @@ from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str, Kind
 from _devbuild.gen.types_asdl import (lex_mode_t, lex_mode_e)
 from _devbuild.gen.syntax_asdl import (
+    ExprSub,
     BoolParamBox,
     Token,
     SimpleVarSub,
@@ -1277,7 +1278,7 @@ class WordParser(WordEmitter):
         return CommandSub(left_token, node, right_token)
 
     def _ReadExprSub(self, lex_mode):
-        # type: (lex_mode_t) -> word_part.ExprSub
+        # type: (lex_mode_t) -> ExprSub
         """$[d->key]  $[obj.method()]  etc."""
         left_token = self.cur_token
 
@@ -1286,7 +1287,7 @@ class WordParser(WordEmitter):
             self.lexer, grammar_nt.ysh_expr_sub)
 
         self._SetNext(lex_mode)  # Move past ]
-        return word_part.ExprSub(left_token, enode, right_token)
+        return ExprSub(left_token, enode, right_token)
 
     def ParseVarDecl(self, kw_token):
         # type: (Token) -> VarDecl

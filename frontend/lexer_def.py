@@ -931,7 +931,7 @@ YSH_LEFT_UNQUOTED = [
     C('%{', Id.Expr_Reserved),  # Table literals?  Vertical dict?
     # Not sure if we'll use these
     C('@{', Id.Expr_Reserved),
-    C('@[', Id.Expr_Reserved),
+    C('@[', Id.Left_AtLBracket),  # Array splice in expression mode
 
     # Idea: Set literals are #{a, b} like Clojure
 ]

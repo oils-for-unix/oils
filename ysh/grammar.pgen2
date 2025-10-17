@@ -123,6 +123,7 @@ atom: (
   | sh_command_sub | braced_var_sub
   | sh_array_literal
   | old_sh_array_literal
+  | expr_sub
 )
 
 place_trailer: (
@@ -274,6 +275,9 @@ sq_string: (
 ) Expr_CastedDummy Right_SingleQuote
 
 braced_var_sub: '${' Expr_CastedDummy Right_DollarBrace
+
+# @[expr] - array splice in expression mode
+expr_sub: '@[' Expr_CastedDummy ']'
 
 simple_var_sub: (
   # This is everything in Kind.VSub except VSub_Name, which is braced: ${foo}

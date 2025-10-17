@@ -3,7 +3,7 @@
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import (
+from _devbuild.gen.syntax_asdl import (ExprSub,
     loc,
     loc_t,
     re,
@@ -1197,25 +1197,20 @@ class ExprEvaluator(object):
                     return value.Command(cmd_frag.Expr(node.child),
                                          self.mem.CurrentFrame(),
                                          self.mem.GlobalFrame())
-                else:
-                    stdout_str = self.shell_ex.RunCommandSub(node)
-                    if id_ == Id.Left_AtParen:  # @(seq 3)
-                        # YSH splitting algorithm: does not depend on IFS
-                        try:
-                            strs = j8.SplitJ8Lines(stdout_str)
-                        except error.Decode as e:
-                            # status code 4 is special, for encode/decode errors.
-                            raise error.Structured(4, e.Message(),
-                                                   node.left_token)
 
-                        #strs = self.splitter.SplitForWordEval(stdout_str)
-
-                        items = [value.Str(s)
-                                 for s in strs]  # type: List[value_t]
-                        return value.List(items)
-                    else:
-                        return value.Str(stdout_str)
-
+            elif case(expr_e.ExprSub):
+                node = cast(ExprSub, UP_node)
+                # Evaluate the inner expression
+                val = self._EvalExpr(node.child)
+                # Convert to array of strings if @ prefix
+                if node.left.id == Id.Left_AtLBracket:  # @[expr]
+                    strs = val_ops.ToShellArray(val, node.left, 'Expr splice @')
+                    # Return a List of Str values
+                    items = [value.Str(s) for s in strs]
+                    return value.List(items)
+                else:  # $[expr] - would be Left_DollarBracket
+                    s = val_ops.Stringify(val, node.left, 'Expr sub $')
+                    return value.Str(s)
             elif case(expr_e.YshArrayLiteral):  # var x = :| foo *.py |
                 node = cast(YshArrayLiteral, UP_node)
                 words = braces.BraceExpandWords(node.words)

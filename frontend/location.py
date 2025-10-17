@@ -522,6 +522,10 @@ def TokenForExpr(node):
             node = cast(CommandSub, UP_node)
             return node.left_token
 
+        elif case(expr_e.ExprSub):
+            node = cast(ExprSub, UP_node)
+            return node.left
+
         elif case(expr_e.YshArrayLiteral):
             node = cast(YshArrayLiteral, UP_node)
             return node.left

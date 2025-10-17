@@ -2,7 +2,7 @@
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str, Kind
-from _devbuild.gen.syntax_asdl import (
+from _devbuild.gen.syntax_asdl import (ExprSub,
     Token,
     SimpleVarSub,
     loc,
@@ -700,6 +700,9 @@ class Transformer(object):
 
         elif typ == grammar_nt.braced_var_sub:
             return cast(BracedVarSub, pnode.GetChild(1).tok)
+
+        elif typ == grammar_nt.expr_sub:
+            return cast(ExprSub, pnode.GetChild(1).tok)
 
         elif typ == grammar_nt.dq_string:
             dq = cast(DoubleQuoted, pnode.GetChild(1).tok)
