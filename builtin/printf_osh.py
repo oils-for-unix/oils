@@ -310,7 +310,8 @@ class Printf(vm._Builtin):
 
             if match.LooksLikeInteger(s):
                 # Note: spaces like ' -42 ' accepted and normalized
-                ok, d = mops.FromStr2(s)
+                # Use base=0 to auto-detect hex (0x) and octal (0) like bash
+                ok, d = mops.FromStr2(s, 0)
                 if not ok:
                     self.errfmt.Print_("Integer too big: %s" % s, word_loc)
                     pr.status = 1
