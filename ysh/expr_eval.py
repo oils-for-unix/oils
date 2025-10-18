@@ -497,7 +497,17 @@ class ExprEvaluator(object):
         val = self._EvalExpr(node.child)
 
         with switch(node.op.id) as case:
-            if case(Id.Arith_Minus):
+            if case(Id.Arith_Plus):
+                # Unary plus: coerce to number but don't change the value
+                c1, i1, f1 = _ConvertToNumber(val)
+                if c1 == coerced_e.Int:
+                    return value.Int(i1)
+                if c1 == coerced_e.Float:
+                    return value.Float(f1)
+                raise error.TypeErr(val, 'Unary + expected Int or Float',
+                                    node.op)
+
+            elif case(Id.Arith_Minus):
                 c1, i1, f1 = _ConvertToNumber(val)
                 if c1 == coerced_e.Int:
                     return value.Int(mops.Negate(i1))
