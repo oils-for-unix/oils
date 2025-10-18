@@ -475,7 +475,7 @@ class Umask(vm._Builtin):
 
         if len(argv) == 1:
             first_arg = argv[0]
-            if str.isdigit(first_arg[0]):
+            if first_arg[0].isdigit():
                 try:
                     new_mask = int(first_arg, 8)
                 except ValueError:
