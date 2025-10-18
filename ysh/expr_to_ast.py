@@ -683,8 +683,14 @@ class Transformer(object):
         elif typ == grammar_nt.eggex:
             return self._Eggex(pnode)
 
-        elif typ == grammar_nt.ysh_expr_sub:
+        elif typ == grammar_nt.ysh_expr_sub:  # $[] @[] command mode
             return self.Expr(pnode.GetChild(0))
+
+        elif typ == grammar_nt.ysh_expr_sub_2:  # $[] @[] expression mode
+            left = pnode.GetChild(0).tok
+            e2 = self.Expr(pnode.GetChild(1))
+            right = pnode.GetChild(2).tok
+            return ExprSub(left, e2, right)
 
         #
         # YSH Lexer Modes
@@ -701,12 +707,6 @@ class Transformer(object):
 
         elif typ == grammar_nt.braced_var_sub:
             return cast(BracedVarSub, pnode.GetChild(1).tok)
-
-        elif typ == grammar_nt.expr_sub:
-            left = pnode.GetChild(0).tok
-            e2 = self.Expr(pnode.GetChild(1))
-            right = pnode.GetChild(2).tok
-            return ExprSub(left, e2, right)
 
         elif typ == grammar_nt.dq_string:
             dq = cast(DoubleQuoted, pnode.GetChild(1).tok)
