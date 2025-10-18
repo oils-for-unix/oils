@@ -41,7 +41,14 @@ key 42
 dq 42
 ## END
 
-#### @[expr splice]
+#### @[expr_splice] in expression mode
+
+# In addition to:
+#   write -- @[x]
+#
+# We can also do:
+#   var y = @[x]
+#   write -- @y
 
 var x = [1, 2, 3]
 
