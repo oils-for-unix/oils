@@ -1,8 +1,8 @@
 """expr_parse.py."""
 from __future__ import print_function
 
-from _devbuild.gen.syntax_asdl import (loc, Token, DoubleQuoted, SingleQuoted, ExprSub,
-                                       CommandSub, YshArrayLiteral,
+from _devbuild.gen.syntax_asdl import (loc, Token, DoubleQuoted, SingleQuoted,
+                                       ExprSub, CommandSub, YshArrayLiteral,
                                        CompoundWord, word_part_t, word_e)
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_str
 from _devbuild.gen.types_asdl import lex_mode_e
@@ -254,32 +254,6 @@ def _PushYshTokens(parse_ctx, gr, p, lex):
             assert not done  # can't end the expression
 
             # Now push the closing )
-            ilabel = _Classify(gr, right_token)
-            done = p.addtoken(right_token.id, right_token, ilabel)
-            assert not done  # can't end the expression
-
-            continue
-
-        # @[  for array splice - convert expression to list of strings
-        if 0: #tok.id == Id.Left_AtLBracket:
-            left_token = tok
-
-            # Parse the expression inside using ysh_expr_sub grammar
-            from _devbuild.gen import grammar_nt
-            enode, right_token = parse_ctx.ParseYshExpr(lex, grammar_nt.ysh_expr_sub)
-
-            # Import ExprSub from word_part
-            # ExprSub is now imported at top
-            
-            # Create an ExprSub - it's a word_part type
-            expr_sub = ExprSub(left_token, enode, right_token)
-
-            typ = Id.Expr_CastedDummy
-            opaque = cast(Token, expr_sub)  # HACK for expr_to_ast
-            done = p.addtoken(typ, opaque, gr.tokens[typ])
-            assert not done  # can't end the expression
-
-            # Now push the closing ]
             ilabel = _Classify(gr, right_token)
             done = p.addtoken(right_token.id, right_token, ilabel)
             assert not done  # can't end the expression

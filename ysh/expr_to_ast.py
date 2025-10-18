@@ -2,7 +2,8 @@
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str, Kind
-from _devbuild.gen.syntax_asdl import (ExprSub,
+from _devbuild.gen.syntax_asdl import (
+    ExprSub,
     Token,
     SimpleVarSub,
     loc,

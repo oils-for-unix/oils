@@ -3,7 +3,8 @@
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import (ExprSub,
+from _devbuild.gen.syntax_asdl import (
+    ExprSub,
     loc,
     loc_t,
     re,
@@ -1220,7 +1221,8 @@ class ExprEvaluator(object):
                 val = self._EvalExpr(node.child)
                 # Convert to array of strings if @ prefix
                 if node.left.id == Id.Left_AtBracket:  # @[expr]
-                    strs = val_ops.ToShellArray(val, node.left, 'Expr splice @')
+                    strs = val_ops.ToShellArray(val, node.left,
+                                                'Expr splice @')
                     # Return a List of Str values
                     items = [value.Str(s) for s in strs]
                     return value.List(items)
