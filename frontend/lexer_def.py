@@ -960,7 +960,7 @@ _EXPR_NEWLINE_COMMENT = [
 # Note: if you call match.LooksLikeInteger(s), mops.FromStr(s) may still
 # fail.  However you should call BOTH, because we don't rely want to rely on
 # the underlying stroll() to define the language accepted.
-LOOKS_LIKE_INTEGER = _WHITESPACE + '-?[0-9]+' + _WHITESPACE
+LOOKS_LIKE_INTEGER = _WHITESPACE + r'-?(0[xX][0-9a-fA-F]+|[0-9]+)' + _WHITESPACE
 
 # TODO: use for YSH comparison operators > >= < <=
 #
