@@ -461,6 +461,7 @@ def AddKinds(spec):
             'DollarBraceZsh',  # ${(foo)
             'DollarDParen',  # $((
             'DollarBracket',  # $[ - synonym for $(( in bash and zsh
+            'AtBracket',  # @[expr] array splice in expression mode
             'DollarDoubleQuote',  # $" for bash localized strings
             'ProcSubIn',  # <( )
             'ProcSubOut',  # >( )

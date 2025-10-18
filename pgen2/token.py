@@ -64,7 +64,7 @@ AWAIT = 56
 ASYNC = 57
 ERRORTOKEN = 58
 N_TOKENS = 59
-NT_OFFSET = 256
+NT_OFFSET = 512
 #--end constants--
 
 tok_name = {}
