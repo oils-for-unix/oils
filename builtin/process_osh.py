@@ -24,6 +24,7 @@ from core import pyutil
 from core import vm
 from frontend import flag_util
 from frontend import match
+from frontend import signal_def
 from frontend import typed_args
 from mycpp import mops
 from mycpp import mylib
@@ -682,4 +683,87 @@ class Ulimit(vm._Builtin):
         return 0
 
 
+class Kill(vm._Builtin):
+    """Send a signal to a process"""
+    def __init__(self, job_control, job_list, waiter):
+        # type: (process.JobControl, process.JobList, Waiter) -> None
+        self.job_control = job_control
+        self.job_list = job_list
+        self.waiter = waiter
+        self.exec_opts = waiter.exec_opts
+
+    def _PrintSignals(self):
+        # type: () -> None
+        n = signal_def.MaxSigNumber() + 1
+        for sig_num in xrange(n):
+            sig_name = signal_def.GetName(sig_num)
+            if sig_name is None:
+                continue
+            print('%2d %s' % (sig_num, sig_name))
+
+    def _SignameToSignum(self, name):
+        # type: (str) -> int
+        signal_name = name.upper()
+        if signal_name.startswith('SIG'):
+            signal_name = signal_name[3:]
+        return signal_def.GetNumber(signal_name)
+
+    
+    def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+
+        signal_to_send = signal_def.NO_SIGNAL
+        target_pid = 0
+
+        if len(cmd_val.argv) == 3 and cmd_val.argv[1].startswith('-'):
+            first_arg = cmd_val.argv[1]
+            # if we land in this if or elif statement,
+            # we are dealing with the -sigspec argument, which
+            # flag-util.ParseCmdVal cant deal with so we parse it manually
+            if first_arg[1:].isdigit():
+                signal_to_send = int(first_arg[1:])
+            elif len(first_arg[1:]) > 2:
+                signal_to_send = self._SignameToSignum(first_arg[1:])
+                if(signal_to_send < 0):
+                    return 1
+
+            if signal_to_send != signal_def.NO_SIGNAL:
+                try:
+                    target_pid = int(cmd_val.argv[2])
+                except ValueError:
+                    print_stderr("error: invalid process id provided")
+                    return 1
+
+        # we didn't have to deal with a -sigspec argument, so we can parse as usual
+        if signal_to_send == signal_def.NO_SIGNAL:
+            attrs, arg_r = flag_util.ParseCmdVal('kill',
+                                                 cmd_val,
+                                                 accept_typed_args=False)
+
+            arg = arg_types.kill(attrs.attrs)
+            if arg.l or arg.L:
+                self._PrintSignals()
+                return 0
+            elif mops.BigTruncate(arg.n) != -1:
+                signal_to_send = mops.BigTruncate(arg.n)
+            else:
+                next_arg, next_loc = arg_r.Peek2()
+                if next_arg is not None:
+                    signal_to_send = self._SignameToSignum(next_arg)
+                    if(signal_to_send < 0):
+                        return 1
+
+            try:
+                target_pid = int(cmd_val.argv[-1])
+            except ValueError:
+                print_stderr("error: invalid process id provided")
+                return 1
+
+        if signal_to_send == signal_def.NO_SIGNAL:
+            signal_to_send = 15
+        if(target_pid == 0):
+            print_stderr("error: no pid provided")
+            return 1
+        posix.kill(target_pid, signal_to_send)  # Send signal
+        return 128  + signal_to_send
 # vim: sw=4
