@@ -407,6 +407,7 @@ class ExprEvaluator(object):
 
     def EvalExprSub(self, part):
         # type: (ExprSub) -> part_value_t
+        """Evaluate $[] and @[] that come from commands; return part_value_t """
 
         val = self.EvalExpr(part.child, part.left)
 
@@ -419,6 +420,28 @@ class ExprEvaluator(object):
                 strs = val_ops.ToShellArray(val, loc.WordPart(part),
                                             'Expr splice ')
                 return part_value.Array(strs, True)
+
+            else:
+                raise AssertionError(part.left)
+
+    def _EvalExprSub(self, part):
+        # type: (ExprSub) -> value_t
+        """Evaluate $[] and @[] that come from INTERIOR expressions
+
+        Returns value_t
+        """
+        val = self._EvalExpr(part.child)
+
+        with switch(part.left.id) as case:
+            if case(Id.Left_DollarBracket):  # $[join(x)]
+                s = val_ops.Stringify(val, loc.WordPart(part), 'Expr sub ')
+                return value.Str(s)
+
+            elif case(Id.Left_AtBracket):  # @[split(x)]
+                strs = val_ops.ToShellArray(val, loc.WordPart(part),
+                                            'Expr splice ')
+                items = [value.Str(s) for s in strs]  # type: List[value_t]
+                return value.List(items)
 
             else:
                 raise AssertionError(part.left)
@@ -1227,18 +1250,7 @@ class ExprEvaluator(object):
 
             elif case(expr_e.ExprSub):
                 node = cast(ExprSub, UP_node)
-                # Evaluate the inner expression
-                val = self._EvalExpr(node.child)
-                # Convert to array of strings if @ prefix
-                if node.left.id == Id.Left_AtBracket:  # @[expr]
-                    strs = val_ops.ToShellArray(val, node.left,
-                                                'Expr splice @')
-                    # Return a List of Str values
-                    items = [value.Str(s) for s in strs]
-                    return value.List(items)
-                else:  # $[expr] - would be Left_DollarBracket
-                    s = val_ops.Stringify(val, node.left, 'Expr sub $')
-                    return value.Str(s)
+                return self._EvalExprSub(node)
 
             elif case(expr_e.YshArrayLiteral):  # var x = :| foo *.py |
                 node = cast(YshArrayLiteral, UP_node)
