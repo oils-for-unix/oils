@@ -2,7 +2,7 @@
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (loc, Token, DoubleQuoted, SingleQuoted,
-                                       ExprSub, CommandSub, YshArrayLiteral,
+                                       CommandSub, YshArrayLiteral,
                                        CompoundWord, word_part_t, word_e)
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_str
 from _devbuild.gen.types_asdl import lex_mode_e
