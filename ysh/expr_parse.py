@@ -261,7 +261,7 @@ def _PushYshTokens(parse_ctx, gr, p, lex):
             continue
 
         # @[  for array splice - convert expression to list of strings
-        if tok.id == Id.Left_AtLBracket:
+        if 0: #tok.id == Id.Left_AtLBracket:
             left_token = tok
 
             # Parse the expression inside using ysh_expr_sub grammar

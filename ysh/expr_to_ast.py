@@ -702,7 +702,10 @@ class Transformer(object):
             return cast(BracedVarSub, pnode.GetChild(1).tok)
 
         elif typ == grammar_nt.expr_sub:
-            return cast(ExprSub, pnode.GetChild(1).tok)
+            left = pnode.GetChild(0).tok
+            e2 = self.Expr(pnode.GetChild(1))
+            right = pnode.GetChild(2).tok
+            return ExprSub(left, e2, right)
 
         elif typ == grammar_nt.dq_string:
             dq = cast(DoubleQuoted, pnode.GetChild(1).tok)

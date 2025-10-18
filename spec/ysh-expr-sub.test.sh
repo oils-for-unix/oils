@@ -40,3 +40,26 @@ key 42
 key 42
 dq 42
 ## END
+
+#### @[expr splice]
+
+var x = [1, 2, 3]
+
+var y = @[x]
+
+#= y
+
+# note: related bug in parsing [[ in test/ysh-parse-errors.sh
+#assert [['1', '2', '3'] === y]
+
+assert [ ['1', '2', '3'] === y]
+
+pp test_ (y)
+
+var bad = [42, []]
+pp test_ (@[ bad ])  # cannot be stringified
+
+## status: 3
+## STDOUT:
+(List)   ["1","2","3"]
+## END
