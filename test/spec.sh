@@ -378,6 +378,10 @@ osh-bugs() {
   test/spec-py.sh run-file osh-bugs "$@"
 }
 
+paren-ambiguity() {
+  test/spec-py.sh run-file paren-ambiguity "$@"
+}
+
 parse-errors() {
   test/spec-py.sh run-file parse-errors "$@"
 }
