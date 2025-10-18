@@ -1219,7 +1219,7 @@ class ExprEvaluator(object):
                 # Evaluate the inner expression
                 val = self._EvalExpr(node.child)
                 # Convert to array of strings if @ prefix
-                if node.left.id == Id.Left_AtLBracket:  # @[expr]
+                if node.left.id == Id.Left_AtBracket:  # @[expr]
                     strs = val_ops.ToShellArray(val, node.left, 'Expr splice @')
                     # Return a List of Str values
                     items = [value.Str(s) for s in strs]
@@ -1227,6 +1227,7 @@ class ExprEvaluator(object):
                 else:  # $[expr] - would be Left_DollarBracket
                     s = val_ops.Stringify(val, node.left, 'Expr sub $')
                     return value.Str(s)
+
             elif case(expr_e.YshArrayLiteral):  # var x = :| foo *.py |
                 node = cast(YshArrayLiteral, UP_node)
                 words = braces.BraceExpandWords(node.words)

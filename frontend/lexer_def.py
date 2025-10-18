@@ -922,18 +922,18 @@ YSH_LEFT_UNQUOTED = [
     C("u'''", Id.Left_UTSingleQuote),
     C("b'''", Id.Left_BTSingleQuote),
     C('@(', Id.Left_AtParen),  # Split Command Sub
+    C('@[', Id.Left_AtBracket),  # Array splice in expression mode
     C('^(', Id.Left_CaretParen),  # Block literals in expression mode
     C('^[', Id.Left_CaretBracket),  # Expr literals
     C('^{', Id.Left_CaretBrace),  # Unused
     C(':|', Id.Left_ColonPipe),  # shell-like word arrays.
-    C('%(', Id.Left_PercentParen),  # DEPRECATED syntax for :| sh array |
+
+    # DEPRECATED syntax for :| sh array |
+    C('%(', Id.Left_PercentParen),
+    # May not use these
     C('%[', Id.Expr_Reserved),
     C('%{', Id.Expr_Reserved),  # Table literals?  Vertical dict?
-    # Not sure if we'll use these
     C('@{', Id.Expr_Reserved),
-    C('@[', Id.Left_AtLBracket),  # Array splice in expression mode
-
-    # Idea: Set literals are #{a, b} like Clojure
 ]
 
 # Used by ysh/grammar_gen.py
