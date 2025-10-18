@@ -211,6 +211,10 @@ umask | tail -c 4
 
 ## status: 0
 ## STDOUT:
+status=2
+111
+## END
+## OK bash/zsh STDOUT:
 status=1
 111
 ## END
