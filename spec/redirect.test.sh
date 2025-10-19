@@ -511,5 +511,9 @@ echo a &>  /dev/null  # trunc, write stdout and stderr
 echo a  >> /dev/null  # append, write stdout
 echo a &>> /dev/null  # append, write stdout and stderr
 echo a  >| /dev/null  # ignore noclobber, trunc, write stdout
+## OK dash STDOUT:
+a
+a
+## END
 ## STDOUT:
 ## END
