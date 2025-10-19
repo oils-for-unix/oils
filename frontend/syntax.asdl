@@ -184,6 +184,10 @@ module syntax
 
   CommandSub = (Token left_token, command child, Token right)
 
+  # @[expr] or $[expr] - expression substitution
+  # Used in both word_part and expr contexts
+  ExprSub = (Token left, expr child, Token right)
+
   # - can contain word.BracedTree
   # - no 'Token right' for now, doesn't appear to be used
   YshArrayLiteral = (Token left, List[word] words, Token right)
@@ -239,8 +243,8 @@ module syntax
 
     # @myarray - Id.Lit_Splice (could be optimized to %Token)
   | Splice(Token blame_tok, str var_name)
-    # $[d.key], etc.
-  | ExprSub(Token left, expr child, Token right)
+    # @[expr] $[expr] - array splice or expr sub
+  | ExprSub %ExprSub
 
   # Use cases for Empty: RHS of 'x=', the argument in "${x:-}".
   # The latter is semantically necessary.  (See osh/word_parse.py). 
@@ -260,6 +264,8 @@ module syntax
   | BracedTree(List[word_part] parts)
     # For dynamic parsing of test aka [ - the string is already evaluated.
   | String(id id, str s, CompoundWord? blame_loc)
+    # Redirect words like   >   3>  {myvar}>
+  | Redir(Token? left_tok, Token op)
 
   # Note: the name 'foo' is derived from token value 'foo=' or 'foo+='
   sh_lhs =
@@ -583,6 +589,7 @@ module syntax
   | SimpleVarSub %SimpleVarSub
   | BracedVarSub %BracedVarSub
   | CommandSub %CommandSub
+  | ExprSub %ExprSub
   | SingleQuoted %SingleQuoted
   | DoubleQuoted %DoubleQuoted
 

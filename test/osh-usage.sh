@@ -200,6 +200,9 @@ test-bash-version-emulation() {
   ln -s -f $osh bash
   ln -s -f $osh osh
 
+  #
+  # Test $BASH_VERSION
+  #
   local code='echo BASH_VERSION=$BASH_VERSION'
   local status stdout
 
@@ -214,6 +217,23 @@ test-bash-version-emulation() {
     ./bash -c "$code"
   nq-assert 0 -eq $status
   nq-assert 'BASH_VERSION=5.3' = "$stdout"
+
+  #
+  # TEST $BASH_VERSINFO
+  #
+  code='echo BASH_VERSINFO=${BASH_VERSINFO[@]}'
+
+  # Unset when called as osh
+  nq-capture status stdout \
+    ./osh -c "$code"
+  nq-assert 0 -eq $status
+  nq-assert 'BASH_VERSINFO=' = "$stdout"
+
+  # Set when called as bash
+  nq-capture status stdout \
+    ./bash -c "$code"
+  nq-assert 0 -eq $status
+  nq-assert 'BASH_VERSINFO=5 3 0 0 release unknown' = "$stdout"
 
   popd
 }

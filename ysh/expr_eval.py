@@ -4,6 +4,7 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
+    ExprSub,
     loc,
     loc_t,
     re,
@@ -405,7 +406,8 @@ class ExprEvaluator(object):
         return lval
 
     def EvalExprSub(self, part):
-        # type: (word_part.ExprSub) -> part_value_t
+        # type: (ExprSub) -> part_value_t
+        """Evaluate $[] and @[] that come from commands; return part_value_t """
 
         val = self.EvalExpr(part.child, part.left)
 
@@ -418,6 +420,28 @@ class ExprEvaluator(object):
                 strs = val_ops.ToShellArray(val, loc.WordPart(part),
                                             'Expr splice ')
                 return part_value.Array(strs, True)
+
+            else:
+                raise AssertionError(part.left)
+
+    def _EvalExprSub(self, part):
+        # type: (ExprSub) -> value_t
+        """Evaluate $[] and @[] that come from INTERIOR expressions
+
+        Returns value_t
+        """
+        val = self._EvalExpr(part.child)
+
+        with switch(part.left.id) as case:
+            if case(Id.Left_DollarBracket):  # $[join(x)]
+                s = val_ops.Stringify(val, loc.WordPart(part), 'Expr sub ')
+                return value.Str(s)
+
+            elif case(Id.Left_AtBracket):  # @[split(x)]
+                strs = val_ops.ToShellArray(val, loc.WordPart(part),
+                                            'Expr splice ')
+                items = [value.Str(s) for s in strs]  # type: List[value_t]
+                return value.List(items)
 
             else:
                 raise AssertionError(part.left)
@@ -497,7 +521,17 @@ class ExprEvaluator(object):
         val = self._EvalExpr(node.child)
 
         with switch(node.op.id) as case:
-            if case(Id.Arith_Minus):
+            if case(Id.Arith_Plus):
+                # Unary plus: coerce to number but don't change the value
+                c1, i1, f1 = _ConvertToNumber(val)
+                if c1 == coerced_e.Int:
+                    return value.Int(i1)
+                if c1 == coerced_e.Float:
+                    return value.Float(f1)
+                raise error.TypeErr(val, 'Unary + expected Int or Float',
+                                    node.op)
+
+            elif case(Id.Arith_Minus):
                 c1, i1, f1 = _ConvertToNumber(val)
                 if c1 == coerced_e.Int:
                     return value.Int(mops.Negate(i1))
@@ -1208,13 +1242,15 @@ class ExprEvaluator(object):
                             raise error.Structured(4, e.Message(),
                                                    node.left_token)
 
-                        #strs = self.splitter.SplitForWordEval(stdout_str)
-
                         items = [value.Str(s)
                                  for s in strs]  # type: List[value_t]
                         return value.List(items)
                     else:
                         return value.Str(stdout_str)
+
+            elif case(expr_e.ExprSub):
+                node = cast(ExprSub, UP_node)
+                return self._EvalExprSub(node)
 
             elif case(expr_e.YshArrayLiteral):  # var x = :| foo *.py |
                 node = cast(YshArrayLiteral, UP_node)
