@@ -8,7 +8,10 @@ set -o errexit
 
 # sourced
 WEDGE_NAME='zsh'
-WEDGE_VERSION='5.1.1'
+
+# Validate requested version against this list
+# The global variable WEDGE_VERSION gets SET after validation.
+WEDGE_VERSION_LIST='5.1.1 5.9'
 
 wedge-make() {
   local src_dir=$1
@@ -24,6 +27,11 @@ wedge-make() {
   # This doesn't happen on Debian/Ubuntu.
 
   # This creates config.modules
+
+  # 2025-10: 
+  # CFLAGS="-Wno-error=incompatible-pointer-types" added for zsh 5.1.1 on GCC 15 (Arch/Fedora)
+  # zsh 5.9 probably doesn't need it?
+
   time $src_dir/configure \
     --disable-dynamic --with-tcsetpgrp \
     --prefix=$install_dir \
