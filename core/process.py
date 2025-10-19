@@ -400,7 +400,7 @@ class FdState(object):
                     mode = O_CREAT | O_WRONLY | O_TRUNC
                 elif r.op_id in (Id.Redir_DGreat,
                                  Id.Redir_AndDGreat):  # >>   &>>
-                    mode = O_CREAT | O_WRONLY | O_APPEND | noclobber_mode
+                    mode = O_CREAT | O_WRONLY | O_APPEND
                 elif r.op_id == Id.Redir_Less:  # <
                     mode = O_RDONLY
                 elif r.op_id == Id.Redir_LessGreat:  # <>
