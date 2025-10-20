@@ -226,11 +226,14 @@ class LineLexer(object):
 
         return tok_type
 
-    def LookAheadDParens(self):
-        # type: () -> bool
+    def LookAheadDParens(self, shift_back):
+        # type: (int) -> bool
         """For finding the closing arithmetic parens - ))
         If none consecutive parens (not separated by any other token) occur,
         returns False.
+
+        shift_back is the number of characters to go back for in case the
+        expression is not arithmetic.
         """
         original_pos = self.line_pos
         tok_type, end_pos = match.OneToken(lex_mode_e.Arith,
@@ -262,7 +265,7 @@ class LineLexer(object):
             # followed by another one and there haven't been any nested
             # opening parens, then this is not an arithmetic expression
             elif first_match and parens_counter == 1:
-                self.line_pos = original_pos
+                self.line_pos = original_pos - shift_back
                 return False
 
             else:
@@ -274,7 +277,7 @@ class LineLexer(object):
                                                self.line_pos)
 
         # Recover after lookahead
-        self.line_pos = original_pos
+        self.line_pos = original_pos - shift_back
         return False
 
     def LookAheadFuncParens(self, unread):
@@ -391,9 +394,9 @@ class Lexer(object):
         # type: (lex_mode_t) -> Id_t
         return self.line_lexer.LookPastSpace(lex_mode)
 
-    def LookAheadDParens(self):
-        # type: () -> bool
-        return self.line_lexer.LookAheadDParens()
+    def LookAheadDParens(self, shift_back):
+        # type: (int) -> bool
+        return self.line_lexer.LookAheadDParens(shift_back)
 
     def LookAheadFuncParens(self, unread):
         # type: (int) -> bool
