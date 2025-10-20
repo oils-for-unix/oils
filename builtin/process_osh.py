@@ -26,6 +26,7 @@ from frontend import flag_util
 from frontend import match
 from frontend import signal_def
 from frontend import typed_args
+from frontend import args
 from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch, print_stderr
@@ -685,12 +686,10 @@ class Ulimit(vm._Builtin):
 
 class Kill(vm._Builtin):
     """Send a signal to a process"""
-    def __init__(self, job_control, job_list, waiter):
-        # type: (process.JobControl, process.JobList, Waiter) -> None
-        self.job_control = job_control
-        self.job_list = job_list
-        self.waiter = waiter
-        self.exec_opts = waiter.exec_opts
+    def __init__(self):
+        # type: () -> None
+        """Dummy constructor for mycpp."""
+        pass
 
     def _PrintSignals(self):
         # type: () -> None
@@ -715,55 +714,67 @@ class Kill(vm._Builtin):
         signal_to_send = signal_def.NO_SIGNAL
         target_pid = 0
 
-        if len(cmd_val.argv) == 3 and cmd_val.argv[1].startswith('-'):
-            first_arg = cmd_val.argv[1]
+        arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
+        arg_r.Next()
+        sigspec_arg, sigspec_arg_loc = arg_r.Peek2()
+            
+        if len(cmd_val.argv) == 3 and sigspec_arg.startswith('-'):
             # if we land in this if or elif statement,
             # we are dealing with the -sigspec argument, which
             # flag-util.ParseCmdVal cant deal with so we parse it manually
-            if first_arg[1:].isdigit():
-                signal_to_send = int(first_arg[1:])
-            elif len(first_arg[1:]) > 2:
-                signal_to_send = self._SignameToSignum(first_arg[1:])
+            if sigspec_arg[1:].isdigit():
+                signal_to_send = int(sigspec_arg[1:])
                 if(signal_to_send < 0):
-                    return 1
+                    e_usage('invalid signal specification %r', sigspec_arg, sigspec_arg_loc)
+
+            elif len(sigspec_arg[1:]) > 2:
+                signal_to_send = self._SignameToSignum(sigspec_arg[1:])
+                if(signal_to_send < 0):
+                    e_usage('invalid signal specification %r' % sigspec_arg, sigspec_arg_loc)
 
             if signal_to_send != signal_def.NO_SIGNAL:
                 try:
-                    target_pid = int(cmd_val.argv[2])
+                    arg_r.Next()
+                    pid_arg, pid_arg_loc = arg_r.Peek2()
+                    target_pid = int(pid_arg)
                 except ValueError:
-                    print_stderr("error: invalid process id provided")
-                    return 1
+                    e_usage('invalid process id specification %r' % pid_arg, pid_arg_loc)
 
         # we didn't have to deal with a -sigspec argument, so we can parse as usual
         if signal_to_send == signal_def.NO_SIGNAL:
             attrs, arg_r = flag_util.ParseCmdVal('kill',
                                                  cmd_val,
                                                  accept_typed_args=False)
-
             arg = arg_types.kill(attrs.attrs)
             if arg.l or arg.L:
                 self._PrintSignals()
                 return 0
             elif mops.BigTruncate(arg.n) != -1:
                 signal_to_send = mops.BigTruncate(arg.n)
+                try:
+                    pid_arg, pid_arg_loc = arg_r.ReadRequired2("You must provide a process id")
+                    target_pid = int(pid_arg)
+                except ValueError:
+                    e_usage('invalid process id specification %r' % pid_arg, pid_arg_loc)
             else:
-                next_arg, next_loc = arg_r.Peek2()
-                if next_arg is not None:
-                    signal_to_send = self._SignameToSignum(next_arg)
+                first_positional, first_positional_loc = arg_r.ReadRequired2("You must provide a process id")
+                second_positional, second_positional_loc = arg_r.Peek2()
+                if second_positional is not None:
+                    # 1st positional is our signal to send, 2nd is the receiving pid
+                    signal_to_send = self._SignameToSignum(first_positional)
                     if(signal_to_send < 0):
-                        return 1
-
-            try:
-                target_pid = int(cmd_val.argv[-1])
-            except ValueError:
-                print_stderr("error: invalid process id provided")
-                return 1
-
-        if signal_to_send == signal_def.NO_SIGNAL:
-            signal_to_send = 15
-        if(target_pid == 0):
-            print_stderr("error: no pid provided")
-            return 1
+                        e_usage('invalid signal specification %r' % first_positional, first_positional_loc)
+                    try:
+                        target_pid = int(second_positional)
+                    except ValueError:
+                        e_usage('invalid process id specification %r' % second_positional, second_positional_loc)
+                else:
+                    # 1st positional is the receiving pid, use default signal (15/SIGTERM)
+                    signal_to_send = 15
+                    try:
+                        target_pid = int(first_positional)
+                    except ValueError:
+                        e_usage('invalid process id specification %r' % first_positional, first_positional_loc)
         posix.kill(target_pid, signal_to_send)  # Send signal
         return 128  + signal_to_send
 # vim: sw=4
