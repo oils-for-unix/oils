@@ -90,3 +90,12 @@ def GetName(sig_num):
     if s is None:
         return None
     return 'SIG' + s
+
+def PrintSignals():
+        # type: () -> None
+        # Iterate over signals and print them
+        for sig_num in xrange(_MAX_SIG_NUMBER):
+            sig_name = GetName(sig_num)
+            if sig_name is None:
+                continue
+            print('%2d %s' % (sig_num, sig_name))
