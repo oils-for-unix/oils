@@ -2248,6 +2248,16 @@ class WordParser(WordEmitter):
             id_ = self.cur_token.id
         return id_
 
+    def LookAheadDParens(self):
+        # type: () -> bool
+        """Special lookahead for (( )), to make sure it's an arithmetic
+        expression (i.e. that the closing parens are a single token, not
+        separated by anything).
+        """
+        assert self.token_type == Id.Op_DLeftParen
+
+        return self.lexer.LookAheadDParens()
+
     def LookAheadFuncParens(self):
         # type: () -> bool
         """Special lookahead for f( ) { echo hi; } to check for ( )"""

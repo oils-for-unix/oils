@@ -226,6 +226,57 @@ class LineLexer(object):
 
         return tok_type
 
+    def LookAheadDParens(self):
+        # type: () -> bool
+        """For finding the closing arithmetic parens - ))
+        If none consecutive parens (not separated by any other token) occur,
+        returns False.
+        """
+        original_pos = self.line_pos
+        tok_type, end_pos = match.OneToken(lex_mode_e.Arith,
+                                           self.src_line.content,
+                                           self.line_pos)
+        first_match = False  # Is the previous token an ')'
+        parens_counter = 2
+        # It's not enough to just check if parens are balanced - we need to
+        # make sure that it's the starting parens that are closed at the end,
+        # and not some other parens, e.g. here, where parens are balanced
+        # but the closing pair still does not close an arithmetic expression:
+        # ((expr) || (expr))
+        # (( (expr) ) || (expr))
+        while (self.line_pos != end_pos):
+            if tok_type in (Id.Arith_LParen, Id.Left_DollarParen):
+                parens_counter += 1
+
+            if (tok_type == Id.Arith_RParen and first_match and
+                    parens_counter == 1):
+
+                self.line_pos = original_pos
+                return True
+
+            elif tok_type == Id.Arith_RParen:
+                parens_counter -= 1
+                first_match = True
+
+            # If the preceding closing parenthesis isn't immediately
+            # followed by another one and there haven't been any nested
+            # opening parens, then this is not an arithmetic expression
+            elif first_match and parens_counter == 1:
+                self.line_pos = original_pos
+                return False
+
+            else:
+                first_match = False
+
+            self.line_pos = end_pos
+            tok_type, end_pos = match.OneToken(lex_mode_e.Arith,
+                                               self.src_line.content,
+                                               self.line_pos)
+
+        # Recover after lookahead
+        self.line_pos = original_pos
+        return False
+
     def LookAheadFuncParens(self, unread):
         # type: (int) -> bool
         """For finding the () in 'f ( ) { echo hi; }'.
@@ -339,6 +390,10 @@ class Lexer(object):
     def LookPastSpace(self, lex_mode):
         # type: (lex_mode_t) -> Id_t
         return self.line_lexer.LookPastSpace(lex_mode)
+
+    def LookAheadDParens(self):
+        # type: () -> bool
+        return self.line_lexer.LookAheadDParens()
 
     def LookAheadFuncParens(self, unread):
         # type: (int) -> bool

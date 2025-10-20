@@ -875,7 +875,7 @@ class CommandParser(object):
           '(' arglist ')'
         | '[' arglist ']'
 
-        simple_command = 
+        simple_command =
             cmd_prefix* item+ typed_args? BraceGroup? cmd_suffix*
 
         Notably, redirects shouldn't appear after typed args, or after
@@ -2104,8 +2104,19 @@ class CommandParser(object):
                 p_die(
                     'Bash (( not allowed in YSH (no_parse_dparen, see OILS-ERR-14 for wart)',
                     loc.Word(self.cur_word))
-            n7 = self.ParseDParen()
-            return self._MaybeParseRedirectList(n7)
+
+            # If the closing parens aren't separated by anything - '))' - it's
+            # an arithmetic expression, otherwise it's a subshell
+            if (self.w_parser.LookAheadDParens()):
+                n7 = self.ParseDParen()
+                return self._MaybeParseRedirectList(n7)
+            else:
+                # This is a subshell - so "replace" the current token with
+                # a single LParen (we've already skipped the first of the two
+                # parens, so preskipped needs to be True)
+                self.c_id = Id.Op_LParen
+                subshell = self.ParseSubshell(preskipped=True)
+                return self._MaybeParseRedirectList(subshell)
 
         # bash extensions: no redirects
         if self.c_id == Id.KW_Time:
@@ -2324,8 +2335,8 @@ class CommandParser(object):
         """
         raise NotImplementedError()
 
-    def ParseSubshell(self):
-        # type: () -> command.Subshell
+    def ParseSubshell(self, preskipped=False):
+        # type: (bool) -> command.Subshell
         """
         subshell : '(' compound_list ')'
 
@@ -2335,7 +2346,8 @@ class CommandParser(object):
         if self.parse_opts.no_parse_osh():
             p_die("Subshell syntax ( ) isn't allowed in YSH (OILS-ERR-19)",
                   left)
-        self._SetNext()  # skip past (
+        if not preskipped:
+            self._SetNext()  # skip past (
 
         # Ensure that something $( (cd / && pwd) ) works.  If ) is already on the
         # translation stack, we want to delay it.
@@ -2401,7 +2413,7 @@ class CommandParser(object):
         they can't be alone in a shell function body.
 
         Example:
-        This is valid shell   f() if true; then echo hi; fi  
+        This is valid shell   f() if true; then echo hi; fi
         This is invalid       f() var x = 1
         """
         if self._AtSecondaryKeyword():
