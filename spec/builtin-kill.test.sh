@@ -131,3 +131,29 @@ echo $?
 ## N-I dash/mksh STDOUT:
 ## END
 
+#### Kills the process with %-
+case $SH in mksh|dash) exit ;; esac
+sleep 0.5 &
+builtin kill -n 9 %-
+wait $pid
+echo $?
+## STDOUT:
+0
+## N-I dash/mksh STDOUT:
+## END
+
+
+#### List specific processes
+case $SH in mksh|dash) exit ;; esac
+sleep 0.5 &
+builtin kill -l 10 11 12
+builtin kill -l SIGUSR1 SIGSEGV SIGUSR2
+## STDOUT:
+USR1
+SEGV
+USR2
+10
+11
+12
+## N-I dash/mksh STDOUT:
+## END
