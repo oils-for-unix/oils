@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 ## compare_shells: bash dash mksh
 
 # Test numbers bigger than 255 (2^8 - 1) and bigger than 2^31 - 1
@@ -278,3 +278,27 @@ if `true` X; then echo TRUE; else echo FALSE; fi
 if `false`; then echo TRUE; else echo FALSE; fi
 ## stdout: FALSE
 ## status: 0
+
+#### Exit code when command sub evaluates to empty str, e.g. `false` (#2416)
+
+# OSH exits with 0 while others exit with 1
+`true`; echo $?
+`false`; echo $?
+$(true); echo $?
+$(false); echo $?
+
+# OSH and others agree on these
+eval true; echo $?
+eval false; echo $?
+`echo true`; echo $?
+`echo false`; echo $?
+## STDOUT:
+0
+1
+0
+1
+0
+1
+0
+1
+## END

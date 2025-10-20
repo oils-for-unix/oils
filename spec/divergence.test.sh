@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh zsh ash
-## oils_failures_allowed: 5
+## oils_failures_allowed: 4
 
 # This file relates to:
 #
@@ -52,30 +52,6 @@ two
 
 ## BUG mksh STDOUT:
 two
-## END
-
-#### Exit code when command sub evaluates to empty str, e.g. `false` (#2435)
-
-# OSH exits with 0 while others exit with 1
-`true`; echo $?
-`false`; echo $?
-$(true); echo $?
-$(false); echo $?
-
-# OSH and others agree on these
-eval true; echo $?
-eval false; echo $?
-`echo true`; echo $?
-`echo false`; echo $?
-## STDOUT:
-0
-1
-0
-1
-0
-1
-0
-1
 ## END
 
 #### Changing PATH will invalidate PATH cache
