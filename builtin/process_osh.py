@@ -691,15 +691,6 @@ class Kill(vm._Builtin):
         """Dummy constructor for mycpp."""
         pass
 
-    def _PrintSignals(self):
-        # type: () -> None
-        n = signal_def.MaxSigNumber() + 1
-        for sig_num in xrange(n):
-            sig_name = signal_def.GetName(sig_num)
-            if sig_name is None:
-                continue
-            print('%2d %s' % (sig_num, sig_name))
-
     def _SignameToSignum(self, name):
         # type: (str) -> int
         signal_name = name.upper()
@@ -747,7 +738,7 @@ class Kill(vm._Builtin):
                                                  accept_typed_args=False)
             arg = arg_types.kill(attrs.attrs)
             if arg.l or arg.L:
-                self._PrintSignals()
+                signal_def.PrintSignals()
                 return 0
             elif mops.BigTruncate(arg.n) != -1:
                 signal_to_send = mops.BigTruncate(arg.n)

@@ -309,14 +309,7 @@ class Trap(vm._Builtin):
             # EXIT is 0, but we hide that
             print('   %s' % hook_name)
 
-        # Iterate over signals and print them
-        n = signal_def.MaxSigNumber() + 1
-        for sig_num in xrange(n):
-
-            sig_name = signal_def.GetName(sig_num)
-            if sig_name is None:
-                continue
-            print('%2d %s' % (sig_num, sig_name))
+        signal_def.PrintSignals()
 
     def _AddTheRest(self, arg_r, node, allow_legacy=True):
         # type: (args.Reader, command_t, bool) -> int
