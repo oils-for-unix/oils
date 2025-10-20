@@ -73,3 +73,38 @@ pp test_ (@[ bad ])  # cannot be stringified
 (List)   ["1","2","3","99"]
 (List)   ["4","5","6"]
 ## END
+
+
+#### $[expr_sub] in expression mode
+
+# Test that $[...] works in expression mode, not just in command/word mode
+
+# Basic integer expression
+var a = $[42]
+echo "a = $a"
+
+# Arithmetic expression
+var b = $[1 + 2]
+echo "b = $b"
+
+# Function call
+var arr = [1, 2, 3]
+var c = $[len(arr)]
+echo "c = $c"
+
+# Nested expression
+var d = $[$[5] + $[10]]
+echo "d = $d"
+
+# Combined with @[] splice
+var items = [10, 20, 30]
+var e = @[items]
+echo "len(e) = $[len(e)]"
+
+## STDOUT:
+a = 42
+b = 3
+c = 3
+d = 15
+len(e) = 3
+## END
