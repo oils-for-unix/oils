@@ -40,13 +40,60 @@ from data_lang import j8_lite
 
 import posix_ as posix
 
-from typing import Dict, List, Optional, TYPE_CHECKING, cast
+from typing import Dict, List, Optional, Tuple, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from display import ui
     from frontend import parse_lib
 
 _ = log
+
+
+def _ParsePrintfInteger(s, blame_loc):
+    # type: (str, loc_t) -> Tuple[bool, mops.BigInt]
+    """
+    Returns:
+      (True, value) when the string looks like an integer
+      (False, ...)  when it doesn't
+
+    Integer formats that are recognized:
+      0xAB    hex
+      042     octal
+      42      decimal
+    """
+    # Normalize 0X to 0x for the lexer
+    s_normalized = s
+    if len(s) >= 2 and s[0] == '0' and s[1] in 'Xx':
+        s_normalized = '0x' + s[2:]
+    
+    id_, pos = match.MatchShNumberToken(s_normalized, 0)
+    if pos != len(s_normalized):
+        return (False, mops.BigInt(0))
+
+    if id_ == Id.ShNumber_Dec:
+        ok, big_int = mops.FromStr2(s_normalized)
+        if not ok:
+            return (False, mops.BigInt(0))
+        return (True, big_int)
+
+    elif id_ == Id.ShNumber_Oct:
+        ok, big_int = mops.FromStr2(s_normalized[1:], 8)
+        if not ok:
+            return (False, mops.BigInt(0))
+        return (True, big_int)
+
+    elif id_ == Id.ShNumber_Hex:
+        ok, big_int = mops.FromStr2(s_normalized[2:], 16)
+        if not ok:
+            return (False, mops.BigInt(0))
+        return (True, big_int)
+
+    elif id_ == Id.ShNumber_BaseN:
+        # printf doesn't support this
+        return (False, mops.BigInt(0))
+
+    else:
+        return (False, mops.BigInt(0))
 
 
 class _FormatStringParser(object):
@@ -308,16 +355,10 @@ class Printf(vm._Builtin):
         elif part.type.id == Id.Format_Time or typ in 'diouxX':
             # %(...)T and %d share this complex integer conversion logic
 
-            if match.LooksLikeInteger(s):
-                # Note: spaces like ' -42 ' accepted and normalized
-                # Use base=0 to auto-detect hex (0x) and octal (0) like bash
-                ok, d = mops.FromStr2(s, 0)
-                if not ok:
-                    self.errfmt.Print_("Integer too big: %s" % s, word_loc)
-                    pr.status = 1
-                    return None
-
-            else:
+            s_stripped = s.strip()
+            ok, d = _ParsePrintfInteger(s_stripped, word_loc)
+            
+            if not ok:
                 # Check for 'a and "a
                 # These are interpreted as the numeric ASCII value of 'a'
                 num_bytes = len(s)

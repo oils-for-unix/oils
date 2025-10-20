@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 ## compare_shells: dash bash mksh zsh ash
 
 # printf
@@ -1460,4 +1460,26 @@ octal 4
 octal 5
 55
 37
+## END
+
+#### printf %d with arbitrary base
+# bash and dash print warnings but still print 64 and return status 0
+# OSH rejects it completely with status 1
+
+# Test that 64#a is rejected (unlike in shell arithmetic where it's valid)
+printf '%d\n' '64#a' 2>/dev/null
+echo "status=$?"
+
+## STDOUT:
+status=1
+## END
+
+## OK dash STDOUT:
+64
+status=0
+## END
+
+## OK bash STDOUT:
+64
+status=0
 ## END
