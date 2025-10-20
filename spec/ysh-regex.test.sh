@@ -396,7 +396,7 @@ shopt --set ysh:upgrade
 var pat = / ['-'] /
 #echo PAT=$pat
 if ('-' ~ pat) { echo hyphen }
-if ($'\\' ~ pat) { echo FAIL }
+if (b'\\' ~ pat) { echo FAIL }
 
 var pat = / [ \\ ] /
 [[ '\' =~ $pat ]] && echo backslash
@@ -550,7 +550,7 @@ if ('n' ~ backslash3) {
   echo 'match n'
 }
 
-if ($'\\' ~ backslash3) {
+if (b'\\' ~ backslash3) {
   echo 'match backslash'
 }
 
@@ -584,3 +584,31 @@ match n
 match backslash
 ## END
 
+
+#### character class with digit [\\0] should not crash (issue #2380)
+shopt -s ysh:all
+
+var pat = /[\\0]/
+echo "pattern: $pat"
+
+# Test matching  
+if ('0' ~ pat) {
+  echo 'matches 0'
+}
+
+if (b'\\' ~ pat) {
+  echo 'matches backslash'
+}
+
+# Also test other digits in character class
+var digits = /[0-9]/
+if ('5' ~ digits) {
+  echo 'matches digit'
+}
+
+## STDOUT:
+pattern: [0\\]
+matches 0
+matches backslash
+matches digit
+## END

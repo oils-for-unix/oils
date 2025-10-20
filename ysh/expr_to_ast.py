@@ -1411,8 +1411,8 @@ class Transformer(object):
         if typ0 == grammar_nt.char_literal:
             return word_compile.EvalCharLiteralForRegex(child0.tok)
 
-        if typ0 == Id.Expr_Name:
-            # Look up PerlClass and PosixClass
+        if typ0 in (Id.Expr_Name, Id.Expr_DecInt):
+            # Look up PerlClass and PosixClass, or handle single char/digit
             return self._NameInClass(None, child0.tok)
 
         raise AssertionError()
