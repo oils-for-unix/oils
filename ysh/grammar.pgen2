@@ -277,7 +277,7 @@ sq_string: (
 braced_var_sub: '${' Expr_CastedDummy Right_DollarBrace
 
 # $[expr] or @[expr_splice] inside expressions.  The 'ysh_expr_sub' rule below is for commands.
-ysh_expr_sub_2: '@[' testlist ']'
+ysh_expr_sub_2: ('$[' | '@[') testlist ']'
 
 simple_var_sub: (
   # This is everything in Kind.VSub except VSub_Name, which is braced: ${foo}
