@@ -735,31 +735,27 @@ class Kill(vm._Builtin):
         arg_r.Next()
         sigspec_arg, sigspec_arg_loc = arg_r.Peek2()
         if sigspec_arg.startswith("-"):
-            # if we land in this if or elif statement,
-            # we are dealing with the -sigspec argument, which
-            # flag-util.ParseCmdVal cant deal with so we parse it manually
-            if sigspec_arg.startswith("-"):
-                if sigspec_arg[1:].isdigit():
-                    signal_to_send = int(sigspec_arg[1:])
-                    if signal_to_send < 0:
-                        e_usage(
-                            "invalid signal specification %r" % sigspec_arg,
-                            sigspec_arg_loc,
-                        )
-                elif len(sigspec_arg[1:]) > 2:
-                    signal_to_send = self._SignameToSignum(sigspec_arg[1:])
-                    if signal_to_send < 0:
-                        e_usage(
-                            "invalid signal specification %r" % sigspec_arg,
-                            sigspec_arg_loc,
-                        )
+            if sigspec_arg[1:].isdigit():
+                signal_to_send = int(sigspec_arg[1:])
+                if signal_to_send < 0:
+                    e_usage(
+                        "invalid signal specification %r" % sigspec_arg,
+                        sigspec_arg_loc,
+                    )
+            elif len(sigspec_arg[1:]) > 2:
+                signal_to_send = self._SignameToSignum(sigspec_arg[1:])
+                if signal_to_send < 0:
+                    e_usage(
+                        "invalid signal specification %r" % sigspec_arg,
+                        sigspec_arg_loc,
+                    )
 
-            if signal_to_send != signal_def.NO_SIGNAL:
-                arg_r.Next()
-                pid_arg, pid_arg_loc = arg_r.Peek2()
-                target_pid = self._ParsePid(pid_arg, pid_arg_loc)
-                posix.kill(target_pid, signal_to_send)  # Send signal
-                return 128 + signal_to_send
+        if signal_to_send != signal_def.NO_SIGNAL:
+            arg_r.Next()
+            pid_arg, pid_arg_loc = arg_r.Peek2()
+            target_pid = self._ParsePid(pid_arg, pid_arg_loc)
+            posix.kill(target_pid, signal_to_send)  # Send signal
+            return 128 + signal_to_send
 
         attrs, arg_r = flag_util.ParseCmdVal("kill",
                                              cmd_val,
@@ -779,6 +775,7 @@ class Kill(vm._Builtin):
 
             if len(signames_to_list) == 0 and len(signums_to_list) == 0:
                 PrintSignals()
+                return 0
             else:
                 for num, loc in signums_to_list:
                     signal = signal_def.GetName(num)
