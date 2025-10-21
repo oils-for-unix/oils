@@ -43,6 +43,16 @@ if TYPE_CHECKING:
 _ = log
 
 
+def PrintSignals():
+    # type: () -> None
+    # Iterate over signals and print them
+    for sig_num in xrange(signal_def.MaxSigNumber()):
+        sig_name = signal_def.GetName(sig_num)
+        if sig_name is None:
+            continue
+        print('%2d %s' % (sig_num, sig_name))
+
+
 class Jobs(vm._Builtin):
     """List jobs."""
 

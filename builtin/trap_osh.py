@@ -15,6 +15,7 @@ from frontend import flag_util
 from frontend import reader
 from frontend import signal_def
 from frontend import typed_args
+from builtin import process_osh # for PrintSignals()
 from data_lang import j8_lite
 from mycpp import iolib
 from mycpp import mylib
@@ -309,7 +310,7 @@ class Trap(vm._Builtin):
             # EXIT is 0, but we hide that
             print('   %s' % hook_name)
 
-        signal_def.PrintSignals()
+        process_osh.PrintSignals()
 
     def _AddTheRest(self, arg_r, node, allow_legacy=True):
         # type: (args.Reader, command_t, bool) -> int
