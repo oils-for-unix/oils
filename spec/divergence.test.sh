@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh zsh ash
-## oils_failures_allowed: 4
+## oils_failures_allowed: 5
 
 # This file relates to:
 #
@@ -132,4 +132,13 @@ status=0
 status=0
 status=0
 status=0
+## END
+
+#### line continuation doesnt work with "${x-}" (#2492)
+
+value="${EMPTY_VALUE-a \
+b}"
+echo $value
+## STDOUT:
+a b
 ## END
