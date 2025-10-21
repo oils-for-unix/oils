@@ -33,6 +33,7 @@ from _devbuild.gen.syntax_asdl import (
     SingleQuoted,
     DoubleQuoted,
     CommandSub,
+    ExprSub,
     BracedVarSub,
     BraceGroup,
     Subscript,
@@ -300,8 +301,8 @@ def LeftTokenForWordPart(part):
             return part.blame_tok
 
         elif case(word_part_e.ExprSub):
-            part = cast(word_part.ExprSub, UP_part)
-            return part.left  # $[
+            part = cast(ExprSub, UP_part)
+            return part.left  # $[ or @[
 
         else:
             raise AssertionError(part.tag())
@@ -378,7 +379,7 @@ def _RightTokenForWordPart(part):
             return part.blame_tok
 
         elif case(word_part_e.ExprSub):
-            part = cast(word_part.ExprSub, UP_part)
+            part = cast(ExprSub, UP_part)
             return part.right
 
         else:
@@ -521,6 +522,10 @@ def TokenForExpr(node):
         elif case(expr_e.CommandSub):
             node = cast(CommandSub, UP_node)
             return node.left_token
+
+        elif case(expr_e.ExprSub):
+            node = cast(ExprSub, UP_node)
+            return node.left
 
         elif case(expr_e.YshArrayLiteral):
             node = cast(YshArrayLiteral, UP_node)

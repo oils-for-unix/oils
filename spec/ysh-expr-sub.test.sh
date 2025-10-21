@@ -40,3 +40,36 @@ key 42
 key 42
 dq 42
 ## END
+
+#### @[expr_splice] in expression mode
+
+# In addition to:
+#   write -- @[x]
+#
+# We can also do:
+#   var y = @[x]
+#   write -- @y
+
+var x = [1, 2, 3]
+
+var y = @[x] ++ ['99']
+
+#= y
+
+# note: related bug in parsing [[ in test/ysh-parse-errors.sh
+#assert [['1', '2', '3'] === y]
+
+assert [ ['1', '2', '3', '99'] === y]
+
+pp test_ (y)
+
+pp test_ (@[[4, 5, 6]])
+
+var bad = [42, []]
+pp test_ (@[ bad ])  # cannot be stringified
+
+## status: 3
+## STDOUT:
+(List)   ["1","2","3","99"]
+(List)   ["4","5","6"]
+## END

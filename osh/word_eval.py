@@ -4,6 +4,7 @@ word_eval.py - Evaluator for the word language.
 
 from _devbuild.gen.id_kind_asdl import Id, Kind, Kind_str
 from _devbuild.gen.syntax_asdl import (
+    ExprSub,
     Token,
     SimpleVarSub,
     loc,
@@ -1940,7 +1941,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 part_vals.append(part_value.Array(strs, True))
 
             elif case(word_part_e.ExprSub):
-                part = cast(word_part.ExprSub, UP_part)
+                part = cast(ExprSub, UP_part)
                 part_val = self.expr_ev.EvalExprSub(part)
                 part_vals.append(part_val)
 
