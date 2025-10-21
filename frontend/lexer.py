@@ -226,34 +226,49 @@ class LineLexer(object):
 
         return tok_type
 
-    def LookAheadDParens(self, shift_back):
+    def LookAheadDParens(self, num_bytes_back):
         # type: (int) -> bool
         """For finding the closing arithmetic parens - ))
-        If none consecutive parens (not separated by any other token) occur,
-        returns False.
+        If none consecutive parens closing the starting parentheses occur,
+        returns False (meaning that the expression is a command). Otherwise
+        it returns True (meaning that the expression is arithmetic).
 
-        shift_back is the number of characters to go back for in case the
+        Examples of an arithmetic expression:
+        ((expr))
+        ((expr || (expr) && expr))
+
+        Examples of nested subshells:
+        ((expr) )
+        ((command); (command))
+        (( (command) ); (command))
+
+        num_bytes_back is the number of characters to go back for in case the
         expression is not arithmetic.
         """
         original_pos = self.line_pos
-        tok_type, end_pos = match.OneToken(lex_mode_e.Arith,
-                                           self.src_line.content,
-                                           self.line_pos)
         first_match = False  # Is the previous token an ')'
         parens_counter = 2
+
         # It's not enough to just check if parens are balanced - we need to
         # make sure that it's the starting parens that are closed at the end,
         # and not some other parens, e.g. here, where parens are balanced
-        # but the closing pair still does not close an arithmetic expression:
-        # ((expr) || (expr))
-        # (( (expr) ) || (expr))
-        while (self.line_pos != end_pos):
+        # but the closing pair still does not close an arithmetic expression,
+        # meaning that these are nested subshells instead:
+        # ((command); (command))
+
+        while (True):
+            tok_type, end_pos = match.OneToken(lex_mode_e.Arith,
+                                               self.src_line.content,
+                                               self.line_pos)
+            if (self.line_pos == end_pos):
+                break
+            self.line_pos = end_pos
+
             if tok_type in (Id.Arith_LParen, Id.Left_DollarParen):
                 parens_counter += 1
 
             if (tok_type == Id.Arith_RParen and first_match and
                     parens_counter == 1):
-
                 self.line_pos = original_pos
                 return True
 
@@ -265,27 +280,22 @@ class LineLexer(object):
             # followed by another one and there haven't been any nested
             # opening parens, then this is not an arithmetic expression
             elif first_match and parens_counter == 1:
-                self.line_pos = original_pos - shift_back
+                self.line_pos = original_pos - num_bytes_back
                 return False
 
             else:
                 first_match = False
 
-            self.line_pos = end_pos
-            tok_type, end_pos = match.OneToken(lex_mode_e.Arith,
-                                               self.src_line.content,
-                                               self.line_pos)
-
         # Recover after lookahead
-        self.line_pos = original_pos - shift_back
+        self.line_pos = original_pos - num_bytes_back
         return False
 
-    def LookAheadFuncParens(self, unread):
+    def LookAheadFuncParens(self, num_bytes_back):
         # type: (int) -> bool
         """For finding the () in 'f ( ) { echo hi; }'.
 
         Args:
-          unread: either 0 or 1, for the number of characters to go back
+          num_bytes_back: either 0 or 1, for the number of characters to go back
 
         The lookahead is limited to the current line, which sacrifices a rare
         corner case.  This not recognized as a function:
@@ -298,7 +308,7 @@ class LineLexer(object):
             foo()
             {}
         """
-        pos = self.line_pos - unread
+        pos = self.line_pos - num_bytes_back
         assert pos > 0, pos
         tok_type, _ = match.OneToken(lex_mode_e.FuncParens,
                                      self.src_line.content, pos)
