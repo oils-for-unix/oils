@@ -11,7 +11,8 @@ from errno import EACCES, EBADF, ECHILD, EINTR, ENOENT, ENOEXEC, EEXIST
 import fcntl as fcntl_
 from fcntl import F_DUPFD, F_GETFD, F_SETFD, FD_CLOEXEC
 from signal import (SIG_DFL, SIG_IGN, SIGINT, SIGPIPE, SIGQUIT, SIGTSTP,
-                    SIGTTOU, SIGTTIN, SIGWINCH)
+                    SIGTTOU, SIGTTIN, SIGWINCH, SIGSEGV, SIGABRT, SIGILL,
+                    SIGFPE, SIGBUS, SIGTERM, SIGKILL)
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (job_state_e, job_state_t,
@@ -2019,6 +2020,19 @@ W1_NO_CHANGE = -14  # WNOHANG was passed and there were no state changes
 NO_ARG = -20
 
 
+# Signal number to human-readable message mapping (like bash)
+_SIGNAL_MESSAGES = {
+    SIGSEGV: 'Segmentation fault',
+    SIGABRT: 'Aborted',
+    SIGILL: 'Illegal instruction',
+    SIGFPE: 'Floating point exception',
+    SIGBUS: 'Bus error',
+    SIGQUIT: 'Quit',
+    SIGTERM: 'Terminated',
+    SIGKILL: 'Killed',
+}
+
+
 class Waiter(object):
     """A capability to wait for processes.
 
@@ -2141,6 +2155,11 @@ class Waiter(object):
             # Print newline after Ctrl-C.
             if term_sig == SIGINT:
                 print('')
+            else:
+                # Print human-readable message for other signals (like bash)
+                msg = _SIGNAL_MESSAGES.get(term_sig)
+                if msg:
+                    print_stderr(msg)
 
             if proc:
                 proc.WhenExited(pid, status)
