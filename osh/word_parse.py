@@ -826,12 +826,13 @@ class WordParser(WordEmitter):
             return self._ReadBracedVarSub(self.cur_token, d_quoted=True)
 
         if self.token_type == Id.Left_DollarDParen:
-            if (self.LookAheadDParens(shift_back=1)):
-                return self._ReadArithSub()
-            else:
-                # Mutate token - we treat this '$((' as '$( ('
-                self.cur_token.id = Id.Left_DollarParen
-                return self._ReadCommandSub(Id.Left_DollarParen, d_quoted=True)
+            # TODO: Uncomment this after another regtest/aports run
+            # if (self.LookAheadDParens(shift_back=1)):
+            return self._ReadArithSub()
+            # else:
+            # Mutate token - we treat this '$((' as '$( ('
+            # self.cur_token.id = Id.Left_DollarParen
+            # return self._ReadCommandSub(Id.Left_DollarParen, d_quoted=True)
 
         if self.token_type == Id.Left_DollarBracket:
             return self._ReadExprSub(lex_mode_e.DQ)
@@ -958,12 +959,13 @@ class WordParser(WordEmitter):
             return self._ReadBracedVarSub(self.cur_token, d_quoted=False)
 
         if self.token_type == Id.Left_DollarDParen:
-            if (self.LookAheadDParens(shift_back=1)):
-                return self._ReadArithSub()
-            else:
-                # Mutate token - we treat this '$((' as '$( ('
-                self.cur_token.id = Id.Left_DollarParen
-                return self._ReadCommandSub(Id.Left_DollarParen, d_quoted=True)
+            # TODO: Uncomment this after another regtest/aports run
+            # if (self.LookAheadDParens(shift_back=1)):
+            return self._ReadArithSub()
+            # else:
+            # Mutate token - we treat this '$((' as '$( ('
+            # self.cur_token.id = Id.Left_DollarParen
+            # return self._ReadCommandSub(Id.Left_DollarParen, d_quoted=True)
 
         if self.token_type == Id.Left_DollarBracket:
             return self._ReadExprSub(lex_mode_e.ShCommand)
