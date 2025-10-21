@@ -686,7 +686,7 @@ SH_NUMBER_DEF = [
     R('0', Id.ShNumber_Dec),
     R(r'[1-9][0-9]*', Id.ShNumber_Dec),
     R(r'0[0-7]+', Id.ShNumber_Oct),
-    R(r'0x[0-9A-Fa-f]+', Id.ShNumber_Hex),
+    R(r'0[xX][0-9A-Fa-f]+', Id.ShNumber_Hex),
     R(r'[1-9][0-9]*#[0-9a-zA-Z@_]+', Id.ShNumber_BaseN),
     R(r'[^\0]', Id.Unknown_Tok),  # any other char
 ]
@@ -960,7 +960,7 @@ _EXPR_NEWLINE_COMMENT = [
 # Note: if you call match.LooksLikeInteger(s), mops.FromStr(s) may still
 # fail.  However you should call BOTH, because we don't rely want to rely on
 # the underlying stroll() to define the language accepted.
-LOOKS_LIKE_INTEGER = _WHITESPACE + r'-?(0[xX][0-9a-fA-F]+|[0-9]+)' + _WHITESPACE
+LOOKS_LIKE_INTEGER = _WHITESPACE + '-?[0-9]+' + _WHITESPACE
 
 # TODO: use for YSH comparison operators > >= < <=
 #

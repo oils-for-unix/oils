@@ -117,28 +117,10 @@ MAX_NEG_INT = -(2**63)
 def FromStr2(s, base=10):
     # type: (str, int) -> Tuple[bool, BigInt]
     """
-    Simulate C++ strtol() behavior for base=0:
-    - Supports hex: 0x prefix
-    - Supports old-style octal: 0 prefix (bash/C style, not Python 0o)
-    - Supports decimal
+    Simulate C++
     """
     try:
-        # When base=0, handle old-style octal like bash/C (055 not 0o55)
-        if base == 0:
-            s_stripped = s.strip()
-            # Check for hex (Python handles this with base=0)
-            if s_stripped.startswith(('0x', '0X', '-0x', '-0X')):
-                big_int = BigInt(int(s, 0))
-            # Check for old-style octal (0 prefix, but not 0x/0X/0o/0O)
-            elif s_stripped.startswith('0') and len(s_stripped) > 1 and s_stripped[1].isdigit():
-                big_int = BigInt(int(s_stripped, 8))
-            elif s_stripped.startswith('-0') and len(s_stripped) > 2 and s_stripped[2].isdigit():
-                big_int = BigInt(-int(s_stripped[2:], 8))
-            else:
-                # Regular decimal or Python-style 0o octal
-                big_int = BigInt(int(s, 0))
-        else:
-            big_int = BigInt(int(s, base))
+        big_int = BigInt(int(s, base))
     except ValueError:
         return (False, MINUS_ONE)
     else:
