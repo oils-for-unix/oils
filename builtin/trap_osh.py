@@ -15,7 +15,7 @@ from frontend import flag_util
 from frontend import reader
 from frontend import signal_def
 from frontend import typed_args
-from builtin import process_osh # for PrintSignals()
+from builtin import process_osh  # for PrintSignals()
 from data_lang import j8_lite
 from mycpp import iolib
 from mycpp import mylib

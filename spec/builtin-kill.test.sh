@@ -143,7 +143,7 @@ echo $?
 ## END
 
 
-#### List specific processes
+#### List specific signals
 case $SH in mksh|dash) exit ;; esac
 sleep 0.5 &
 builtin kill -l 10 11 12
