@@ -2111,11 +2111,7 @@ class CommandParser(object):
                 n7 = self.ParseDParen()
                 return self._MaybeParseRedirectList(n7)
             else:
-                # This is a subshell - so "replace" the current token with
-                # a single LParen (we've already skipped the first of the two
-                # parens, so preskipped needs to be True)
-                self.c_id = Id.Op_LParen
-                subshell = self.ParseSubshell(preskipped=True)
+                subshell = self.ParseSubshell(dparen_hack=True)
                 return self._MaybeParseRedirectList(subshell)
 
         # bash extensions: no redirects
@@ -2335,7 +2331,7 @@ class CommandParser(object):
         """
         raise NotImplementedError()
 
-    def ParseSubshell(self, preskipped=False):
+    def ParseSubshell(self, dparen_hack=False):
         # type: (bool) -> command.Subshell
         """
         subshell : '(' compound_list ')'
@@ -2346,7 +2342,13 @@ class CommandParser(object):
         if self.parse_opts.no_parse_osh():
             p_die("Subshell syntax ( ) isn't allowed in YSH (OILS-ERR-19)",
                   left)
-        if not preskipped:
+        if dparen_hack:
+            # We've skipped the first of the two parens, so "replace" the
+            # current token with a (
+            # TODO: It would be nicer to get rid of the (( DParen token, and
+            # just have two ( ( Op_LParen tokens.
+            self.c_id = Id.Op_LParen
+        else:
             self._SetNext()  # skip past (
 
         # Ensure that something $( (cd / && pwd) ) works.  If ) is already on the
