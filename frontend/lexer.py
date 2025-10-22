@@ -256,6 +256,7 @@ class LineLexer(object):
                 break
             self.line_pos = end_pos
 
+            # ( or $(
             if tok_type in (Id.Arith_LParen, Id.Left_DollarParen):
                 parens_counter += 1
 
@@ -264,17 +265,14 @@ class LineLexer(object):
                 self.line_pos = original_pos
                 return True
 
-            elif tok_type == Id.Arith_RParen:
+            if tok_type == Id.Arith_RParen:
                 parens_counter -= 1
                 first_match = True
-
-            # If the preceding closing parenthesis isn't immediately
-            # followed by another one and there haven't been any nested
-            # opening parens, then this is not an arithmetic expression
             elif first_match and parens_counter == 1:
-                self.line_pos = original_pos - num_bytes_back
-                return False
-
+                # If the preceding closing parenthesis isn't immediately
+                # followed by another one and there haven't been any nested
+                # opening parens, then this is not an arithmetic expression
+                break
             else:
                 first_match = False
 
