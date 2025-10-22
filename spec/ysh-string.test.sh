@@ -77,6 +77,12 @@ echo $x
 ## status: 2
 ## stdout-json: ""
 
+#### Multi-line strings enforce r prefix for backslashes
+var y = ''' \u '''
+echo $y
+## status: 2
+## stdout-json: ""
+
 #### $"foo $x" to make "foo $x" explicit
 
 var x = $"bar"
@@ -350,7 +356,7 @@ two = 2 ""
 var two = 2
 var three = 2
 
-var x = ''' 
+var x = r''' 
   two = $two '
   three = $three ''
    \u{61}

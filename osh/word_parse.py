@@ -724,7 +724,9 @@ class WordParser(WordEmitter):
                   left_token)
 
         # echo '\' is allowed, but x = '\' is invalid, in favor of x = r'\'
-        no_backslashes = is_ysh_expr and left_token.id == Id.Left_SingleQuote
+        # enforce for triple-quoted strings: ''' \u ''' requires r''' \u '''
+        no_backslashes = is_ysh_expr and left_token.id in (
+            Id.Left_SingleQuote, Id.Left_TSingleQuote)
 
         expected_end_tokens = 3 if left_token.id in (
             Id.Left_TSingleQuote, Id.Left_RTSingleQuote, Id.Left_UTSingleQuote,
