@@ -248,22 +248,21 @@ class LineLexer(object):
         first_rparen = False  # Is the previous token an ')' ?
         parens_counter = 2
 
+        pos = self.line_pos
         while True:
             tok_type, end_pos = match.OneToken(lex_mode_e.Arith,
                                                self.src_line.content,
-                                               self.line_pos)
-            if self.line_pos == end_pos:
+                                               pos)
+            if end_pos == pos:  # end of line
                 break
-            self.line_pos = end_pos
+            pos = end_pos
 
-            # ( or $(
-            if tok_type in (Id.Arith_LParen, Id.Left_DollarParen):
+            if tok_type in (Id.Arith_LParen, Id.Left_DollarParen):  # ( or $(
                 parens_counter += 1
 
             if (tok_type == Id.Arith_RParen and first_rparen and
                     parens_counter == 1):
-                self.line_pos = original_pos
-                return True
+                return True  # saw closing ))
 
             if tok_type == Id.Arith_RParen:
                 parens_counter -= 1
@@ -279,8 +278,8 @@ class LineLexer(object):
             else:
                 first_rparen = False
 
-        # Recover after lookahead
-        self.line_pos = original_pos - num_bytes_back
+        # We may have to go back one byte for arithmetic
+        self.line_pos -= num_bytes_back
         return False
 
     def LookAheadFuncParens(self, num_bytes_back):
