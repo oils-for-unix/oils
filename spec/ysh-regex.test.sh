@@ -592,23 +592,44 @@ var pat = /[\\0]/
 echo "pattern: $pat"
 
 # Test matching  
-if ('0' ~ pat) {
-  echo 'matches 0'
-}
+pp test_ ('0' ~ pat)
+pp test_ ('1' ~ pat)
+pp test_ (b'\\' ~ pat)
 
-if (b'\\' ~ pat) {
-  echo 'matches backslash'
-}
+echo ---
 
 # Also test other digits in character class
 var digits = /[0-9]/
-if ('5' ~ digits) {
-  echo 'matches digit'
-}
+echo $digits
+pp test_ ('5' ~ digits)
+pp test_ ('x' ~ digits)
+
 
 ## STDOUT:
 pattern: [0\\]
-matches 0
-matches backslash
-matches digit
+(Bool)   true
+(Bool)   false
+(Bool)   true
+---
+[0-9]
+(Bool)   true
+(Bool)   false
+## END
+
+
+#### multiple digits are rejected
+
+# we only allow 0-9 like ascii
+var digits = /[25]/
+echo "$digits"
+
+## STDOUT:
+## END
+
+#### Negation of digit not allowed
+
+var digits = /[!2]/
+
+## status: 2
+## STDOUT:
 ## END
