@@ -281,11 +281,12 @@ if `false`; then echo TRUE; else echo FALSE; fi
 
 #### Exit code when command sub evaluates to empty str, e.g. `false` (#2416)
 
-# OSH exits with 0 while others exit with 1
+# OSH had a bug here
 `true`; echo $?
 `false`; echo $?
 $(true); echo $?
 $(false); echo $?
+echo ---
 
 # OSH and others agree on these
 eval true; echo $?
@@ -297,8 +298,26 @@ eval false; echo $?
 1
 0
 1
+---
 0
 1
 0
 1
+## END
+
+#### More test cases with empty argv
+
+true $(false)
+echo status=$?
+
+$(exit 42)
+echo status=$?
+
+$(exit 42) $(exit 43)
+echo status=$?
+
+## STDOUT:
+status=0
+status=42
+status=43
 ## END
