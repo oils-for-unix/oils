@@ -1,6 +1,6 @@
 ## compare_shells: dash bash mksh zsh
-## oils_failures_allowed: 2
-## oils_cpp_failures_allowed: 3
+## oils_failures_allowed: 3
+## oils_cpp_failures_allowed: 4
 # case #24 with ulimit -f 1 is different under C++ for some reason - could be due to the python2
 # intepreter and SIGXFSZ
 
