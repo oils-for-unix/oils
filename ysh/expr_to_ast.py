@@ -1410,7 +1410,7 @@ class Transformer(object):
 
         if typ0 in (Id.Expr_Name, Id.Expr_DecInt):  # /[ d 9 ]/
             # Look up PerlClass and PosixClass, or handle single char/digit
-            return self._NameInClass(None, child0.tok)
+            return self._NameOrNumberInClass(None, child0.tok)
 
         raise AssertionError()
 
@@ -1458,7 +1458,7 @@ class Transformer(object):
             return class_literal_term.Splice(tok1, lexer.TokenVal(tok1))
 
         if typ0 == Id.Expr_Bang:
-            return self._NameInClass(
+            return self._NameOrNumberInClass(
                 p_node.GetChild(0).tok,
                 p_node.GetChild(1).tok)
 
@@ -1496,7 +1496,7 @@ class Transformer(object):
 
         p_die("%r isn't a character class" % tok_str, tok)
 
-    def _NameInClass(self, negated_tok, tok):
+    def _NameOrNumberInClass(self, negated_tok, tok):
         # type: (Token, Token) -> class_literal_term_t
         """Like the above, but 'dot' and 'd' don't mean anything within []"""
         tok_str = lexer.TokenVal(tok)
@@ -1512,7 +1512,7 @@ class Transformer(object):
         # d is NOT 'digit', it's a literal 'd'!
         if len(tok_str) == 1:
             # Expr_Name matches VAR_NAME_RE, which starts with [a-zA-Z_]
-            assert tok.id in Id.Expr_Name, tok
+            assert tok.id == Id.Expr_Name, tok
 
             if negated_tok:  # [~d] is not allowed, only [~digit]
                 p_die("Can't negate this symbol", tok)
