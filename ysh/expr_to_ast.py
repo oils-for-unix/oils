@@ -1397,21 +1397,18 @@ class Transformer(object):
 
     def _NonRangeChars(self, p_node):
         # type: (PNode) -> class_literal_term_t
-        """
-        \" \u1234 '#'
-        """
         assert p_node.typ == grammar_nt.range_char, p_node
 
         child0 = p_node.GetChild(0)
         typ0 = p_node.GetChild(0).typ
 
-        if typ0 == grammar_nt.sq_string:
+        if typ0 == grammar_nt.sq_string:  # /['foo']/
             return cast(SingleQuoted, child0.GetChild(1).tok)
 
-        if typ0 == grammar_nt.char_literal:
+        if typ0 == grammar_nt.char_literal:  # /[ \n \u{3bc} \yff ]/
             return word_compile.EvalCharLiteralForRegex(child0.tok)
 
-        if typ0 in (Id.Expr_Name, Id.Expr_DecInt):
+        if typ0 in (Id.Expr_Name, Id.Expr_DecInt):  # /[ d 9 ]/
             # Look up PerlClass and PosixClass, or handle single char/digit
             return self._NameInClass(None, child0.tok)
 
@@ -1507,10 +1504,15 @@ class Transformer(object):
         # A bare, unquoted character literal.  In the grammar, this is expressed as
         # range_char without an ending.
 
+        if tok.id == Id.Expr_DecInt:
+            if len(tok_str) != 1:
+                p_die("Unquoted number in char class must be a single byte", tok)
+            return word_compile.EvalCharLiteralForRegex(tok)
+
         # d is NOT 'digit', it's a literal 'd'!
         if len(tok_str) == 1:
             # Expr_Name matches VAR_NAME_RE, which starts with [a-zA-Z_]
-            assert tok.id in (Id.Expr_Name, Id.Expr_DecInt)
+            assert tok.id in Id.Expr_Name, tok
 
             if negated_tok:  # [~d] is not allowed, only [~digit]
                 p_die("Can't negate this symbol", tok)

@@ -616,14 +616,21 @@ pattern: [0\\]
 (Bool)   false
 ## END
 
+#### Multiple digits like [25] are invalid
 
-#### multiple digits are rejected
+# synonyms
+var pat = /[2 5]/
+echo $pat
+var pat = /[2 '5']/
+echo $pat
 
-# we only allow 0-9 like ascii
-var digits = /[25]/
-echo "$digits"
+var pat = /[25]/
+echo $pat
 
+## status: 2
 ## STDOUT:
+[25]
+[25]
 ## END
 
 #### Negation of digit not allowed
