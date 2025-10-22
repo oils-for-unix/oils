@@ -1265,17 +1265,9 @@ class CommandEvaluator(object):
 
             self.tracer.OnShAssignment(lval, pair.op, rhs, flags, which_scopes)
 
-        # PATCH to be compatible with existing shells: If the assignment had a
-        # command sub like:
-        #
-        # s=$(echo one; false)
-        #
-        # then its status will be in mem.last_status, and we can check it here.
-        # If there was NOT a command sub in the assignment, then we don't want to
-        # check it.
-
-        # Only do this if there was a command sub?  How?  Look at node?
-        # Set a flag in mem?   self.mem.last_status or
+        # For the cases like
+        #   a=$(false)
+        #   $(false) $(exit 42)
         if self.check_command_sub_status:
             last_status = self.mem.LastStatus()
             self._CheckStatus(last_status, cmd_st, node, loc.Missing)
