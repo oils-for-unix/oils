@@ -84,9 +84,15 @@ if test -d $MKSH_WEDGE_DIR; then
   export PATH="$MKSH_WEDGE_DIR:$PATH"
 fi
 
-readonly ZSH_WEDGE_DIR=$USER_WEDGE_DIR/pkg/zsh/5.1.1/bin
-if test -d $ZSH_WEDGE_DIR; then
-  export PATH="$ZSH_WEDGE_DIR:$PATH"
+readonly ZSH_NEW_WEDGE_DIR=$USER_WEDGE_DIR/pkg/zsh/5.9/bin
+if test -d $ZSH_NEW_WEDGE_DIR; then
+  export PATH="$ZSH_NEW_WEDGE_DIR:$PATH"
+fi
+
+# Old version comes first
+readonly ZSH_OLD_WEDGE_DIR=$USER_WEDGE_DIR/pkg/zsh/5.1.1/bin
+if test -d $ZSH_OLD_WEDGE_DIR; then
+  export PATH="$ZSH_OLD_WEDGE_DIR:$PATH"
 fi
 
 readonly BUSYBOX_WEDGE_DIR=$USER_WEDGE_DIR/pkg/busybox/1.35.0
