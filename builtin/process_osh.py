@@ -450,7 +450,6 @@ class Wait(vm._Builtin):
 
 
 class Umask(vm._Builtin):
-    _SYMBOLIC_MODE_OPERATORS = "ugoa"
 
     def __init__(self):
         # type: () -> None
@@ -482,7 +481,7 @@ class Umask(vm._Builtin):
                                  first_arg)
                     return 1
 
-            elif first_arg[0] in Umask._SYMBOLIC_MODE_OPERATORS:
+            elif first_arg[0] in "ugoa":
                 # TODO: it's possible to avoid this extra syscall in cases where we don't care about the initial
                 # value (ex: umask u=rwx,a=rwx) although it's non-trivial to determine when, so it's
                 # probably not worth it
@@ -514,7 +513,7 @@ class Umask(vm._Builtin):
             print_stderr(
                 "oils warning: symbolic mode operator cannot be empty")
             return None
-        elif arg_component[0] not in self._SYMBOLIC_MODE_OPERATORS:
+        elif arg_component[0] not in "ugoa":
             print_stderr(
                 "oils warning: `%c` is an invalid symbolic mode operator" %
                 arg_component[0])
