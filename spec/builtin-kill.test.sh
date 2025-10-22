@@ -83,7 +83,6 @@ echo $?  # Should be 143 (128 + SIGTERM)
 # check if at least the HUP flag is reported
 # the output format of all shells is different and the
 # available flags may depend on your environment
-# TODO: check at least if all posix flags are listed?
 case $SH in dash) exit ;; esac
 builtin kill -l | grep HUP > /dev/null
 echo $?
@@ -93,10 +92,7 @@ echo $?
 ## END
 
 #### List available signals with -L
-# check if at least the HUP flag is reported
-# the output format of all shells is different and the
-# available flags may depend on your environment
-# TODO: check at least if all posix flags are listed?
+# Same functionality as -l
 case $SH in mksh|dash|zsh) exit ;; esac
 builtin kill -L | grep HUP > /dev/null
 echo $?
