@@ -68,10 +68,13 @@ checkout-stable() {
   popd > /dev/null
 }
 
-download-oils() {
-  local job_id=${1:-10368}  # 2025-10-16, after x=1> fix
+# 2025-10-22, after $(false) and (( fixes
+readonly TARBALL_ID='10439'
 
-  local url="https://op.oilshell.org/uuu/github-jobs/$job_id/cpp-tarball.wwz/_release/oils-for-unix.tar"
+download-oils() {
+  local tarball_id=${1:-$TARBALL_ID}
+
+  local url="https://op.oilshell.org/uuu/github-jobs/$tarball_id/cpp-tarball.wwz/_release/oils-for-unix.tar"
 
   rm -f -v _tmp/oils-for-unix.tar
 
@@ -442,10 +445,12 @@ remove-all() {
 }
 
 fetch-all() {
+  local tarball_id=${1:-$TARBALL_ID}
+
   clone-aports
   clone-aci
   checkout-stable
-  download-oils
+  download-oils "$tarball_id"
 }
 
 prepare-all() {
