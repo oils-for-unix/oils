@@ -80,8 +80,11 @@ readonly BASH5_URL="https://www.oilshell.org/blob/spec-bin/bash-$BASH5_VER.tar.g
 readonly DASH_VERSION=0.5.10.2
 readonly DASH_URL="https://www.oilshell.org/blob/spec-bin/dash-$DASH_VERSION.tar.gz"
 
-readonly ZSH_VERSION=5.1.1
-readonly ZSH_URL="https://www.oilshell.org/blob/spec-bin/zsh-$ZSH_VERSION.tar.xz"
+readonly ZSH_OLD_VER=5.1.1
+readonly ZSH_OLD_URL="https://www.oilshell.org/blob/spec-bin/zsh-$ZSH_OLD_VER.tar.xz"
+
+readonly ZSH_NEW_VER=5.9
+readonly ZSH_NEW_URL="https://www.oilshell.org/blob/spec-bin/zsh-$ZSH_NEW_VER.tar.xz"
 
 readonly MKSH_VERSION=R52c
 readonly MKSH_URL="https://www.oilshell.org/blob/spec-bin/mksh-$MKSH_VERSION.tgz"
@@ -461,8 +464,11 @@ fetch-spec-bin() {
   download-to $DEPS_SOURCE_DIR/dash "$DASH_URL"
   maybe-extract $DEPS_SOURCE_DIR/dash "$(basename $DASH_URL)" dash-$DASH_VERSION
 
-  download-to $DEPS_SOURCE_DIR/zsh "$ZSH_URL"
-  maybe-extract $DEPS_SOURCE_DIR/zsh "$(basename $ZSH_URL)" zsh-$ZSH_VERSION
+  download-to $DEPS_SOURCE_DIR/zsh "$ZSH_OLD_URL"
+  maybe-extract $DEPS_SOURCE_DIR/zsh "$(basename $ZSH_OLD_URL)" zsh-$ZSH_OLD_VER
+
+  download-to $DEPS_SOURCE_DIR/zsh "$ZSH_NEW_URL"
+  maybe-extract $DEPS_SOURCE_DIR/zsh "$(basename $ZSH_NEW_URL)" zsh-$ZSH_NEW_VER
 
   download-to $DEPS_SOURCE_DIR/mksh "$MKSH_URL"
   maybe-extract $DEPS_SOURCE_DIR/mksh "$(basename $MKSH_URL)" mksh-$MKSH_VERSION
@@ -556,6 +562,12 @@ mirror-python() {
 
   scp \
     $DEPS_SOURCE_DIR/python3/"$(basename $PY3_URL)" \
+    oilshell.org:oilshell.org/blob/
+}
+
+mirror-zsh() {
+  scp \
+    _tmp/zsh-5.9.tar.xz \
     oilshell.org:oilshell.org/blob/
 }
 
@@ -740,9 +752,15 @@ spec-bin-wedges() {
   echo bash $BASH_VER $USER_WEDGE_DIR
   echo bash $BASH5_VER $USER_WEDGE_DIR
   echo mksh $MKSH_VERSION $USER_WEDGE_DIR
-  echo zsh $ZSH_VERSION $USER_WEDGE_DIR
+  echo zsh $ZSH_OLD_VER $USER_WEDGE_DIR
+  echo zsh $ZSH_NEW_VER $USER_WEDGE_DIR
   echo busybox $BUSYBOX_VERSION $USER_WEDGE_DIR
   echo yash $YASH_VERSION $USER_WEDGE_DIR
+}
+
+zsh-wedges() {
+  echo zsh $ZSH_OLD_VER $USER_WEDGE_DIR
+  echo zsh $ZSH_NEW_VER $USER_WEDGE_DIR
 }
 
 contributor-wedges() {
@@ -1003,6 +1021,7 @@ fake-py3-libs-wedge() {
 
 install-wedges() {
   local extra=${1:-}
+  local do_test=${2:-}
 
   # For contributor setup: we need to use this BEFORE running build/py.sh all
   build/py.sh time-helper
@@ -1012,6 +1031,8 @@ install-wedges() {
   # Do all of them in parallel
   if test -n "$extra"; then
     { contributor-wedges; extra-wedges; } | install-wedge-list T
+  elif test -n "$do_test"; then
+    { zsh-wedges; } | install-wedge-list T
   else
     contributor-wedges | install-wedge-list T
   fi
@@ -1108,23 +1129,26 @@ boxed-wedges() {
 }
 
 boxed-spec-bin() {
-  if true; then
+  if false; then
     deps/wedge.sh boxed deps/source.medo/bash '4.4'
   fi
 
-  if true; then
+  if false; then
     deps/wedge.sh boxed deps/source.medo/bash '5.2.21'
   fi
 
-  if true; then
+  if false; then
     deps/wedge.sh boxed deps/source.medo/dash
     deps/wedge.sh boxed deps/source.medo/mksh
   fi
 
   if true; then
     # Note: zsh requires libncursesw5-dev
-    deps/wedge.sh boxed deps/source.medo/zsh
+    deps/wedge.sh boxed deps/source.medo/zsh $ZSH_OLD_VER
+    deps/wedge.sh boxed deps/source.medo/zsh $ZSH_NEW_VER
+  fi
 
+  if false; then
     deps/wedge.sh boxed deps/source.medo/busybox
 
     # Problem with out of tree build, as above.  Skipping for now
