@@ -450,6 +450,7 @@ class Wait(vm._Builtin):
 
 
 class Umask(vm._Builtin):
+    _SYMBOLIC_MODE_OPERATORS = "ugoa"
 
     def __init__(self):
         # type: () -> None
@@ -458,9 +459,6 @@ class Umask(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-
-        #print("UMASK: cmd_val={}".format(cmd_val))
-        SYMBOLIC_MODE_OPERATORS = "ugoa"
 
         argv = cmd_val.argv[1:]
         if len(argv) == 0:
@@ -480,89 +478,96 @@ class Umask(vm._Builtin):
                     new_mask = int(first_arg, 8)
                 except ValueError:
                     # NOTE: This also happens when we have '8' or '9' in the input.
-                    print_stderr(
-                        "oils warning: `{}` is not an octal number".format(
-                            first_arg[0]))
+                    print_stderr("oils warning: `%s` is not an octal number" %
+                                 first_arg)
                     return 1
 
-            elif first_arg[0] in SYMBOLIC_MODE_OPERATORS:
-                # TODO: it's possible to avoid this extra syscall if many cases (ex: umask u=rwx,a=rwx)
-                # although it's non-trivial to determine when, so it's probably not worth it
-                new_mask = posix.umask(0)
-                # TODO: avoid this extra posix call by encapsulating this into a function so we can do the error case
-                # separately
-                posix.umask(new_mask)
-                for component in first_arg.split(","):
-                    # TODO: location highlighting would be nice
-                    if len(component) == 0:
-                        print_stderr(
-                            "oils warning: symbolic mode operator cannot be empty"
-                        )
-                        return 1
-                    elif component[0] not in SYMBOLIC_MODE_OPERATORS:
-                        print_stderr(
-                            "oils warning: `{}` is an invalid symbolic mode operator"
-                            .format(component[0]))
-                        return 1
-                    elif len(component) == 1:
-                        print_stderr(
-                            "oils warning: expected `=+-` after `{}` in symbolic mode operator"
-                            .format(component[0]))
-                        return 1
-                    elif component[1] not in "=+-":
-                        print_stderr(
-                            "oils warning: `{}` is an invalid symbolic mode operator"
-                            .format(component[1]))
-                        return 1
+            elif first_arg[0] in Umask._SYMBOLIC_MODE_OPERATORS:
+                # TODO: it's possible to avoid this extra syscall in cases where we don't care about the initial
+                # value (ex: umask u=rwx,a=rwx) although it's non-trivial to determine when, so it's
+                # probably not worth it
+                initial_mask = posix.umask(0)
+                new_mask = initial_mask
 
-                    mask_digit = int("000", 2)
-                    for ch in component[2:]:
-                        if ch == 'r':
-                            mask_digit |= int("100", 2)
-                        elif ch == 'w':
-                            mask_digit |= int("010", 2)
-                        elif ch == 'x':
-                            mask_digit |= int("001", 2)
-                        else:
-                            print_stderr(
-                                "oils warning: `{}` is an invalid symbolic mode character"
-                                .format(ch))
-                            return 1
-
-                    if component[0] == "u":
-                        # a mask of the bits being modified
-                        area_mask = 0o700
-                        component_mask = area_mask - (mask_digit << 6)
-                    elif component[0] == "g":
-                        area_mask = 0o070
-                        component_mask = area_mask - (mask_digit << 3)
-                    elif component[0] == "o":
-                        area_mask = 0o007
-                        component_mask = area_mask - mask_digit
-                    elif component[0] == "a":
-                        area_mask = 0o777
-                        component_mask = area_mask - (
-                            (mask_digit << 6) + (mask_digit << 3) + mask_digit)
-
-                    if component[1] == "=":
-                        new_mask = (new_mask & ~area_mask) + component_mask
-                    elif component[1] == "+":
-                        new_mask = (new_mask & ~area_mask) + (
-                            (new_mask & area_mask) & component_mask)
-                    elif component[1] == "-":
-                        new_mask = (new_mask & ~area_mask) + (
-                            (new_mask | ~component_mask) & area_mask)
+                for arg_component in first_arg.split(","):
+                    new_mask = self._SymbolicToOctal(new_mask, arg_component)
+                    if new_mask is None:
+                        posix.umask(initial_mask)
+                        return 1
 
             else:
                 print_stderr(
-                    "oils warning: `{}` is an invalid symbolic mode operator".
-                    format(first_arg[0]))
+                    "oils warning: `%c` is an invalid symbolic mode operator" %
+                    first_arg[0])
                 return 1
 
             posix.umask(new_mask)
             return 0
 
-        e_usage('umask: unexpected number of arguments', loc.Missing)
+        e_usage("unexpected number of arguments", loc.Missing)
+
+    def _SymbolicToOctal(self, initial_mask, arg_component):
+        # type: (int, str) -> Optional[int]
+
+        # TODO: location highlighting would be nice
+        if len(arg_component) == 0:
+            print_stderr(
+                "oils warning: symbolic mode operator cannot be empty")
+            return None
+        elif arg_component[0] not in self._SYMBOLIC_MODE_OPERATORS:
+            print_stderr(
+                "oils warning: `%c` is an invalid symbolic mode operator" %
+                arg_component[0])
+            return None
+        elif len(arg_component) == 1:
+            print_stderr(
+                "oils warning: expected `=+-` after `%c` in symbolic mode operator"
+                % arg_component[0])
+            return None
+        elif arg_component[1] not in "=+-":
+            print_stderr(
+                "oils warning: `%c` is an invalid symbolic mode operator" %
+                arg_component[1])
+            return None
+
+        mask_digit = int("111", 2)
+        for ch in arg_component[2:]:
+            if ch == 'r':
+                mask_digit &= int("011", 2)
+            elif ch == 'w':
+                mask_digit &= int("101", 2)
+            elif ch == 'x':
+                mask_digit &= int("110", 2)
+            else:
+                print_stderr(
+                    "oils warning: `%c` is an invalid symbolic mode character"
+                    % ch)
+                return None
+
+        if arg_component[0] == "u":
+            area_mask = 0o700
+            modifier = mask_digit << 6
+        elif arg_component[0] == "g":
+            area_mask = 0o070
+            modifier = mask_digit << 3
+        elif arg_component[0] == "o":
+            area_mask = 0o007
+            modifier = mask_digit
+        elif arg_component[0] == "a":
+            area_mask = 0o777
+            modifier = (mask_digit << 6) | (mask_digit << 3) | mask_digit
+
+        original_mask_area = initial_mask & ~area_mask
+        if arg_component[1] == "=":
+            new_mask = original_mask_area | modifier
+        elif arg_component[1] == "+":
+            new_mask = original_mask_area | (initial_mask & area_mask
+                                             & modifier)
+        elif arg_component[1] == "-":
+            new_mask = original_mask_area | (initial_mask |
+                                             (~modifier & area_mask))
+
+        return new_mask
 
 
 def _LimitString(lim, factor):
