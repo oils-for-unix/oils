@@ -1463,8 +1463,9 @@ octal 5
 ## END
 
 #### printf %d with arbitrary base
-# bash and dash print warnings but still print 64 and return status 0
-# OSH rejects it completely with status 1
+# bash, dash, and mksh print 64 and return status 1
+# zsh and ash print 0 and return status 1
+# OSH rejects it completely (prints nothing) and returns status 1
 
 # Test that 64#a is rejected (unlike in shell arithmetic where it's valid)
 printf '%d\n' '64#a' 2>/dev/null
@@ -1474,12 +1475,12 @@ echo "status=$?"
 status=1
 ## END
 
-## OK dash STDOUT:
+## OK dash/bash/mksh STDOUT:
 64
-status=0
+status=1
 ## END
 
-## OK bash STDOUT:
-64
-status=0
+## OK zsh/ash STDOUT:
+0
+status=1
 ## END
