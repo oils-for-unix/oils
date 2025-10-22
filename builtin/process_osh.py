@@ -449,6 +449,14 @@ class Wait(vm._Builtin):
         return status
 
 
+# This is due to a mycpp quirk where Optional[int] doesn't exist
+class Int:
+
+    def __init__(self, value):
+        # type: (int) -> None
+        self.value = value
+
+
 class Umask(vm._Builtin):
 
     def __init__(self):
@@ -471,6 +479,7 @@ class Umask(vm._Builtin):
             return 0
 
         if len(argv) == 1:
+            new_mask = 0  # type: int
             first_arg = argv[0]
             if first_arg[0].isdigit():
                 try:
@@ -481,32 +490,36 @@ class Umask(vm._Builtin):
                                  first_arg)
                     return 1
 
+                posix.umask(new_mask)
+                return 0
             elif first_arg[0] in "ugoa":
-                # TODO: it's possible to avoid this extra syscall in cases where we don't care about the initial
-                # value (ex: umask u=rwx,a=rwx) although it's non-trivial to determine when, so it's
-                # probably not worth it
+                # TODO: it's possible to avoid this extra syscall in cases where we don't care about
+                # the initial value (ex: umask u=rwx,a=rwx) although it's non-trivial to determine
+                # when, so it's probably not worth it
                 initial_mask = posix.umask(0)
                 new_mask = initial_mask
 
                 for arg_component in first_arg.split(","):
-                    new_mask = self._SymbolicToOctal(new_mask, arg_component)
-                    if new_mask is None:
+                    maybe_new_mask = self._SymbolicToOctal(
+                        new_mask, arg_component)
+                    if maybe_new_mask is None:
                         posix.umask(initial_mask)
                         return 1
 
-            else:
-                print_stderr(
-                    "oils warning: `%c` is an invalid symbolic mode operator" %
-                    first_arg[0])
-                return 1
+                    new_mask = maybe_new_mask.value
 
-            posix.umask(new_mask)
-            return 0
+                posix.umask(new_mask)
+                return 0
+
+            print_stderr(
+                "oils warning: `%c` is an invalid symbolic mode operator" %
+                first_arg[0])
+            return 1
 
         e_usage("unexpected number of arguments", loc.Missing)
 
     def _SymbolicToOctal(self, initial_mask, arg_component):
-        # type: (int, str) -> Optional[int]
+        # type: (int, str) -> Optional[Int]
 
         # TODO: location highlighting would be nice
         if len(arg_component) == 0:
@@ -566,7 +579,7 @@ class Umask(vm._Builtin):
             new_mask = original_mask_area | (initial_mask |
                                              (~modifier & area_mask))
 
-        return new_mask
+        return Int(new_mask)
 
 
 def _LimitString(lim, factor):
