@@ -228,39 +228,31 @@ class LineLexer(object):
 
     def LookAheadDParens(self, num_bytes_back):
         # type: (int) -> bool
-        """For finding the closing arithmetic parens - ))
-        If none consecutive parens closing the starting parentheses occur,
-        returns False (meaning that the expression is a command). Otherwise
-        it returns True (meaning that the expression is arithmetic).
+        """Assuming we see ((, is there a matching )) for arithmetic?
 
-        Examples of an arithmetic expression:
-        ((expr))
-        ((expr || (expr) && expr))
+        Or is it two subshells with commands?
 
-        Examples of nested subshells:
-        ((expr) )
-        ((command); (command))
-        (( (command) ); (command))
+        Returns True for arithmetic like:
+          ((expr))
+          ((expr || (expr) && expr))
 
-        num_bytes_back is the number of characters to go back for in case the
-        expression is not arithmetic.
+        Returns False for commands like:
+          ((command) )
+          ((command); (command))
+          (( (command) ); (command))
+
+        Args:
+          num_bytes_back: subtract this amount from the current line position
         """
         original_pos = self.line_pos
         first_match = False  # Is the previous token an ')'
         parens_counter = 2
 
-        # It's not enough to just check if parens are balanced - we need to
-        # make sure that it's the starting parens that are closed at the end,
-        # and not some other parens, e.g. here, where parens are balanced
-        # but the closing pair still does not close an arithmetic expression,
-        # meaning that these are nested subshells instead:
-        # ((command); (command))
-
-        while (True):
+        while True:
             tok_type, end_pos = match.OneToken(lex_mode_e.Arith,
                                                self.src_line.content,
                                                self.line_pos)
-            if (self.line_pos == end_pos):
+            if self.line_pos == end_pos:
                 break
             self.line_pos = end_pos
 

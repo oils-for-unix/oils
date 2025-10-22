@@ -2107,7 +2107,7 @@ class CommandParser(object):
 
             # If the closing parens aren't separated by anything - '))' - it's
             # an arithmetic expression, otherwise it's a subshell
-            if (self.w_parser.LookAheadDParens()):
+            if self.w_parser.LookAheadDParens():
                 n7 = self.ParseDParen()
                 return self._MaybeParseRedirectList(n7)
             else:
