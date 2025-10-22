@@ -245,7 +245,7 @@ class LineLexer(object):
           num_bytes_back: subtract this amount from the current line position
         """
         original_pos = self.line_pos
-        first_match = False  # Is the previous token an ')'
+        first_rparen = False  # Is the previous token an ')' ?
         parens_counter = 2
 
         while True:
@@ -260,21 +260,24 @@ class LineLexer(object):
             if tok_type in (Id.Arith_LParen, Id.Left_DollarParen):
                 parens_counter += 1
 
-            if (tok_type == Id.Arith_RParen and first_match and
+            if (tok_type == Id.Arith_RParen and first_rparen and
                     parens_counter == 1):
                 self.line_pos = original_pos
                 return True
 
             if tok_type == Id.Arith_RParen:
                 parens_counter -= 1
-                first_match = True
-            elif first_match and parens_counter == 1:
-                # If the preceding closing parenthesis isn't immediately
-                # followed by another one and there haven't been any nested
-                # opening parens, then this is not an arithmetic expression
+                first_rparen = True
+            elif first_rparen and parens_counter == 1:
+                # We hit a case like this:
+                # ((command); (command))
+                #
+                # The preceding ) isn't immediately followed by another one,
+                # and we haven't seen the matching opening (
+                # So this is not an arithmetic expression
                 break
             else:
-                first_match = False
+                first_rparen = False
 
         # Recover after lookahead
         self.line_pos = original_pos - num_bytes_back
