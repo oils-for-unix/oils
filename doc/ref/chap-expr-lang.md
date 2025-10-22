@@ -312,6 +312,27 @@ Related topics:
 - [Str.replace](chap-type-method.html#replace)
 - [ysh-string](#ysh-string)
 
+### expr-sub
+
+Turn an expression into a string.
+
+    $ var x = $[3 * 2]
+    $ = x
+    (Str)   '6'
+
+This is the same as [Word Language > expr-sub](chap-word-lang.html#expr-sub).
+
+### expr-splice
+
+Turns each element of a List into a string.
+
+    $ var mylist = [42, 43]
+    $ var x = @[mylist]
+    $ = x
+    (List)  ['42', '43']
+
+This is the same as [Word Language > expr-splice](chap-word-lang.html#expr-splice).
+
 ## Operators
 
 ### op-precedence
@@ -471,6 +492,17 @@ an `Int`.
 
     = '1.14' + '2'  # => (Float) 3.14
     = '1.14' % '2'  # Type Error: Left operand is a Str
+
+### ysh-unary
+
+YSH has unary `+` and `-` operators:
+
+    var x = '3.14'
+    = +x  # => (Float) 3.14
+    = -x  # => (Float) -3.14
+
+Like binary `+` and `-`, these operators coerce `Str` values with decimal
+digits to either an `Int` or `Float`.
 
 ### ysh-bitwise
 

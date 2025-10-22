@@ -276,11 +276,13 @@ After this success, we expanded our testing:
   - new causes: [2025-10-03-causes](2025-10-03-causes.wwz/_tmp/aports-report/2025-10-03-causes/diff_merged.html)
 - [2025-10-15-main](2025-10-15-main.wwz/_tmp/aports-report/2025-10-15-main/diff_merged.html) - **38** disagreements
   - [2025-10-16](2025-10-16.wwz/_tmp/aports-report/2025-10-16/diff_merged.html) - down to **35** after `x=1>` and `cd x y` fixes
+  - [2025-10-22](2025-10-22.wwz/_tmp/aports-report/2025-10-22/diff_merged.html) - down to **24** after `((` and `$(false)` fixes
 
 ### community
 
 - [2025-10-08-comm](2025-10-08-comm.wwz/_tmp/aports-report/2025-10-08-comm/diff_merged.html) - **86** disagreements
   - [2025-10-16-comm-disagree](2025-10-16-comm-disagree.wwz/_tmp/aports-report/2025-10-16-comm-disagree/diff_merged.html) - **71** disagreements
+  - [2025-10-22-comm](2025-10-22-comm.wwz/_tmp/aports-report/2025-10-22-comm/diff_merged.html) - down to **65** after `((` and `$(false)` fixes
 
 ';
   } | cmark 
