@@ -1315,7 +1315,7 @@ where
 Examples:
 
     kill -s USR1 123 %%    # send SIGUSR1 to PID 123 and the current job
-    kill -s 10   123 %%    # spcify SIGUSR1 by number instead
+    kill -s 10   123 %%    # specify SIGUSR1 by number instead
     kill -n USR1 123 %%    # -n is a synonym for -s
     kill -USR1   123 %%    # shortcut syntax
     kill -10     123 %%    # shortcut using a number
