@@ -3,7 +3,7 @@
 
 # Tests for builtins having to do with killing a process
 
-#### Kills the process with SIGTERM
+#### kill -15 kills the process with SIGTERM
 # Test 1: Basic SIGTERM
 sleep 0.1 &
 pid=$!
@@ -17,13 +17,13 @@ echo $?  # Should be 143 (128 + SIGTERM)
 ## OK mksh stdout: 0
 ## OK dash stdout: 0
 
-#### Kills the process with SIGKILL
+#### kill -9 kills the process with SIGKILL
 # Test 2: Basic SIGKILL
 sleep 0.1 & 
 pid=$!
 builtin kill -9 $pid 
 wait $pid
-echo $?  # Must be 137 (128 + SIGKILL) 
+echo $?  # Should be 137 (128 + SIGKILL) 
 ## STDOUT:
 137
 ## END
