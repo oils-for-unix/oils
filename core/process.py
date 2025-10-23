@@ -383,8 +383,8 @@ class FdState(object):
         # type: (Process) -> None
         self.cur_frame.need_wait.append(proc)
 
-    def _ApplyRedirect(self, r):
-        # type: (RedirValue) -> None
+    def _ApplyRedirect(self, r, err_out):
+        # type: (RedirValue, List[int]) -> None
         arg = r.arg
         UP_arg = arg
         with tagswitch(arg) as case:
@@ -410,13 +410,9 @@ class FdState(object):
                         noclobber_mode = O_EXCL
                     elif path_stat.isfile(arg.filename):
                         # If the file exists, and is not a special file like
-                        # /dev/null, then also open in O_EXCL so we raise an
-                        # error on open(2).
-                        noclobber_mode = O_EXCL
-
-                        # TODO: This is a bit of a hack. Ideally we can
-                        # immediately raise IOError, `raise IOError(EEXISTS)`,
-                        # but that causes a runtime error.
+                        # /dev/null, then immediately return with an error.
+                        err_out.append(EEXIST)
+                        return
 
                 if r.op_id in (Id.Redir_Great, Id.Redir_AndGreat):  # >   &>
                     mode = O_CREAT | O_WRONLY | O_TRUNC
@@ -446,7 +442,7 @@ class FdState(object):
                         "Can't open %r: %s%s" %
                         (arg.filename, pyutil.strerror(e), extra),
                         blame_loc=r.op_loc)
-                    raise  # redirect failed
+                    raise
 
                 new_fd = self._PushDup(open_fd, r.loc)
                 if new_fd != NO_FD:
@@ -536,7 +532,7 @@ class FdState(object):
                     posix.close(write_fd)
 
     def Push(self, redirects, err_out):
-        # type: (List[RedirValue], List[error.IOError_OSError]) -> None
+        # type: (List[RedirValue], List[int]) -> None
         """Apply a group of redirects and remember to undo them."""
 
         #log('> fd_state.Push %s', redirects)
@@ -548,9 +544,14 @@ class FdState(object):
             #log('apply %s', r)
             with ui.ctx_Location(self.errfmt, r.op_loc):
                 try:
-                    self._ApplyRedirect(r)
+                    # _ApplyRedirect reports errors in 2 ways:
+                    #  1. Raising an IOError or OSError from posix.* calls
+                    #  2. Returning errors in err_out from checks like noclobber
+                    self._ApplyRedirect(r, err_out)
                 except (IOError, OSError) as e:
-                    err_out.append(e)
+                    err_out.append(e.errno)
+
+                if len(err_out):
                     # This can fail too
                     self.Pop(err_out)
                     return  # for bad descriptor, etc.
@@ -572,7 +573,7 @@ class FdState(object):
         return True
 
     def Pop(self, err_out):
-        # type: (List[error.IOError_OSError]) -> None
+        # type: (List[int]) -> None
         frame = self.stack.pop()
         #log('< Pop %s', frame)
         for rf in reversed(frame.saved):
@@ -581,7 +582,7 @@ class FdState(object):
                 try:
                     posix.close(rf.orig_fd)
                 except (IOError, OSError) as e:
-                    err_out.append(e)
+                    err_out.append(e.errno)
                     log('Error closing descriptor %d: %s', rf.orig_fd,
                         pyutil.strerror(e))
                     return
@@ -589,7 +590,7 @@ class FdState(object):
                 try:
                     posix.dup2(rf.saved_fd, rf.orig_fd)
                 except (IOError, OSError) as e:
-                    err_out.append(e)
+                    err_out.append(e.errno)
                     log('dup2(%d, %d) error: %s', rf.saved_fd, rf.orig_fd,
                         pyutil.strerror(e))
                     #log('fd state:')
@@ -1314,7 +1315,7 @@ class Process(Job):
 class ctx_Pipe(object):
 
     def __init__(self, fd_state, fd, err_out):
-        # type: (FdState, int, List[error.IOError_OSError]) -> None
+        # type: (FdState, int, List[int]) -> None
         fd_state.PushStdinFromPipe(fd)
         self.fd_state = fd_state
         self.err_out = err_out
@@ -1548,13 +1549,13 @@ class Pipeline(Job):
         # a pipeline.
         cmd_flags |= cmd_eval.NoErrTrap
 
-        io_errors = []  # type: List[error.IOError_OSError]
+        io_errors = []  # type: List[int]
         with ctx_Pipe(fd_state, r, io_errors):
             cmd_ev.ExecuteAndCatch(last_node, cmd_flags)
 
         if len(io_errors):
             e_die('Error setting up last part of pipeline: %s' %
-                  pyutil.strerror(io_errors[0]))
+                  posix.strerror(io_errors[0]))
 
         # We won't read anymore.  If we don't do this, then 'cat' in 'cat
         # /dev/urandom | sleep 1' will never get SIGPIPE.
