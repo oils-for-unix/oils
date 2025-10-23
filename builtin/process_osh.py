@@ -733,6 +733,7 @@ class Kill(vm._Builtin):
 
         arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
         arg_r.Next()  # skip command name
+
         sigspec_arg, sigspec_arg_loc = arg_r.Peek2()
         if sigspec_arg.startswith('-'):
             sig = sigspec_arg[1:]
@@ -750,21 +751,20 @@ class Kill(vm._Builtin):
             posix.kill(target_pid, signal_to_send)  # Send signal
             return 128 + signal_to_send
 
-        attrs, arg_r = flag_util.ParseCmdVal("kill",
+        attrs, arg_r = flag_util.ParseCmdVal('kill',
                                              cmd_val,
                                              accept_typed_args=False)
         arg = arg_types.kill(attrs.attrs)
         if arg.l or arg.L:
-            arg_l, arg_loc = arg_r.Peek2()
             signums_to_list = []  # type: List[Tuple[int, loc_t]]
             signames_to_list = []  # type: List[Tuple[str, loc_t]]
-            while arg_l is not None:
+            while not arg_r.AtEnd():
+                arg_l, arg_loc = arg_r.Peek2()
                 if arg_l.isdigit():
                     signums_to_list.append((int(arg_l), arg_loc))
                 else:
                     signames_to_list.append((arg_l, arg_loc))
                 arg_r.Next()
-                arg_l, arg_loc = arg_r.Peek2()
 
             if len(signames_to_list) == 0 and len(signums_to_list) == 0:
                 PrintSignals()
