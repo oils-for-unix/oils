@@ -445,7 +445,7 @@ LEXER_DEF[lex_mode_e.VSub_ArgUnquoted] = \
 _DQ_VSUB_ARG_BACKSLASH = [
     R(r'\\[$`"\\]', Id.Lit_EscapedChar),
     C(r'\}', Id.Lit_EscapedChar),  # For "${var-\}}"
-    R(r'\\[^\n]', Id.Lit_BadBackslash),  # syntax error in YSH, but NOT in OSH
+    R(r'\\[^\n}]', Id.Lit_BadBackslash),  # syntax error in YSH, but NOT in OSH
     C('\\\n', Id.Ignored_LineCont),
 ]
 
