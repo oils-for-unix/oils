@@ -20,10 +20,10 @@ kill=0
 wait=0
 ## END
 
-#### kill -9 kills the process with SIGKILL
+#### kill -KILL kills the process with SIGKILL
 sleep 0.1 & 
 pid=$!
-kill -9 $pid 
+kill -KILL $pid 
 echo kill=$?
 
 wait $pid
@@ -31,6 +31,10 @@ echo wait=$?  # 137 is 128 + SIGKILL
 ## STDOUT:
 kill=0
 wait=137
+## END
+## N-I zsh STDOUT:
+kill=1
+wait=0
 ## END
 
 #### kill -n 9 specifies the signal number
@@ -57,16 +61,24 @@ wait=0
 ## END
 
 #### kill -s TERM specifies the signal name
-case $SH in mksh|dash|zsh) exit ;; esac
-
 sleep 0.1 &
 pid=$!
-builtin kill -s TERM $pid
+kill -s TERM $pid
+echo kill=$?
+
 wait $pid
-echo $?
+echo wait=$?
 ## STDOUT:
-143
-## N-I dash/mksh/zsh STDOUT:
+kill=0
+wait=143
+## END
+## BUG mksh STDOUT:
+kill=0
+wait=0
+## END
+## N-I zsh STDOUT:
+kill=1
+wait=0
 ## END
 
 #### kill SIGTERM, rather than kill -SIGTERM
@@ -169,27 +181,79 @@ USR2
 ## N-I dash/mksh STDOUT:
 ## END
 
-#### Kill with invalid signal
+#### kill -9999 is an invalid signal
 case $SH in dash)  exit ;; esac
 sleep 0.1 &
 pid=$!
-builtin kill -9999 $pid > /dev/null
-kill_status=$?
+kill -9999 $pid > /dev/null
+echo kill=$?
+
 wait $pid
-echo $kill_status
+echo wait=$?
 ## STDOUT:
-1
+kill=1
+wait=0
 ## N-I dash STDOUT:
 ## END
 
-#### Kills the process with %-
-case $SH in mksh|dash) exit ;; esac
+#### kill -15 %% kills current job
+#case $SH in mksh|dash) exit ;; esac
+
 sleep 0.5 &
-builtin kill -n 9 %-
-wait $pid
-echo $?
+
+kill -15 %%
+echo kill=$?
+
+wait %%
+echo wait=$?
+
+# no such job
+wait %%
+echo wait=$?
+
 ## STDOUT:
-0
-## N-I dash/mksh STDOUT:
+kill=0
+wait=143
+wait=127
+## END
+## OK zsh STDOUT:
+kill=0
+wait=143
+wait=1
+## END
+## N-I dash STDOUT:
+kill=1
+wait=0
+wait=0
+## END
+## BUG mksh STDOUT:
+kill=0
+wait=0
+wait=127
+## END
+
+#### kill -15 %- kills previous job
+#case $SH in mksh|dash) exit ;; esac
+
+sleep 0.1 &  # previous job
+sleep 0.2 &  # current job
+
+kill -15 %-
+echo kill=$?
+
+wait %-
+echo wait=$?
+
+# what does bash define here as the previous job?  May be a bug
+#wait %-
+#echo wait=$?
+
+## STDOUT:
+kill=0
+wait=143
+## END
+## BUG mksh STDOUT:
+kill=0
+wait=0
 ## END
 
