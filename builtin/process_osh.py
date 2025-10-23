@@ -725,30 +725,38 @@ class Kill(vm._Builtin):
                 e_usage("invalid process id specification %r" % pid_arg,
                         pid_arg_loc)
 
+    # sigspec can either be in the form 15, TERM, or SIGTERM (case insensitive)
+    # returns signal_def.NO_SIGNAL if sigspec is in invalid format
+    def _SigspecToSignal(self, sigspec):
+        # type: (str, loc_t) -> int
+        signal = signal_def.NO_SIGNAL
+        if sigspec.isdigit():
+            signal = int(sigspec)
+        else:
+            signal = self._SignameToSignum(sigspec)
+        return signal
+
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-
-        signal_to_send = signal_def.NO_SIGNAL
-        target_pid = 0
-
+        signal_to_send = 15  # sigterm, the default signal to send
         arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
         arg_r.Next()  # skip command name
-
-        sigspec_arg, sigspec_arg_loc = arg_r.Peek2()
-        if sigspec_arg.startswith('-'):
-            sig = sigspec_arg[1:]
-            if sig.isdigit():  # kill -15
-                signal_to_send = int(sig)
-            elif len(sig) >= 2:  # kill -TERM
-                signal_to_send = self._SignameToSignum(sig)
-                if signal_to_send == signal_def.NO_SIGNAL:
-                    e_usage('got invalid signal %r' % sigspec_arg, sigspec_arg_loc)
-
-        if signal_to_send != signal_def.NO_SIGNAL:  # we got kill -15 or kill -TERM
-            arg_r.Next()
-            pid_arg, pid_arg_loc = arg_r.ReadRequired2('expected a PID')
-            target_pid = self._ParsePid(pid_arg, pid_arg_loc)
-            posix.kill(target_pid, signal_to_send)  # Send signal
+        first_positional, first_positional_loc = arg_r.ReadRequired2(
+            "You must provide a process id")
+        if first_positional.startswith('-') and (
+                first_positional[1:].isdigit() or len(first_positional) > 2):
+            signal_to_send = self._SigspecToSignal(first_positional[1:])
+            if signal_to_send == signal_def.NO_SIGNAL:
+                e_usage("invalid signal specification %r" % first_positional,
+                        first_positional_loc)
+            else:
+                arg_pid, arg_pid_loc = arg_r.ReadRequired2(
+                    "You must provide a process id")
+                pid = self._ParsePid(arg_pid, arg_pid_loc)
+                posix.kill(pid, signal_to_send)  # Send signal
+            while not arg_r.AtEnd():
+                arg_pid, arg_loc = arg_r.Peek2()
+                posix.kill(self._ParsePid(arg_pid, arg_loc), signal_to_send)
             return 0
 
         attrs, arg_r = flag_util.ParseCmdVal('kill',
@@ -756,64 +764,37 @@ class Kill(vm._Builtin):
                                              accept_typed_args=False)
         arg = arg_types.kill(attrs.attrs)
         if arg.l or arg.L:
-            signums_to_list = []  # type: List[Tuple[int, loc_t]]
-            signames_to_list = []  # type: List[Tuple[str, loc_t]]
+
+            done_listing = False  # type: bool
             while not arg_r.AtEnd():
                 arg_l, arg_loc = arg_r.Peek2()
                 if arg_l.isdigit():
-                    signums_to_list.append((int(arg_l), arg_loc))
+                    signal = signal_def.GetName(int(arg_l))
+                    if signal is None:
+                        e_usage("invalid signal specification %r" % arg_l,
+                                arg_loc)
+                    print(signal[3:])
                 else:
-                    signames_to_list.append((arg_l, arg_loc))
+                    num = self._SignameToSignum(arg_l)
+                    if num < 0:
+                        e_usage("invalid signal specification %r" % arg_l,
+                                arg_loc)
+                    print(num)
+                done_listing = True
                 arg_r.Next()
 
-            if len(signames_to_list) == 0 and len(signums_to_list) == 0:
+            if not done_listing:
                 PrintSignals()
-                return 0
-            else:
-                for num, loc in signums_to_list:
-                    signal = signal_def.GetName(num)
-                    if signal is None:
-                        e_usage("invalid signal specification %r" % num, loc)
-                    print(signal[3:])
-                for name, loc in signames_to_list:
-                    num = self._SignameToSignum(name)
-                    if num < 0:
-                        e_usage("invalid signal specification %r" % name, loc)
-                    print(str(num))
-                return 0
+            return 0
+        if arg.n is not None:
+            signal_to_send = self._SigspecToSignal(arg.n)
+        if arg.s is not None:
+            signal_to_send = self._SigspecToSignal(arg.s)
 
-        if mops.BigTruncate(arg.n) != -1:
-            signal_to_send = mops.BigTruncate(arg.n)
-            pid_arg, pid_arg_loc = arg_r.ReadRequired2(
-                "You must provide a process id")
-            target_pid = self._ParsePid(pid_arg, pid_arg_loc)
-
-        else:
-            first_positional, first_positional_loc = arg_r.ReadRequired2(
-                "You must provide a process id")
-            second_positional, second_positional_loc = arg_r.Peek2()
-            if second_positional is not None:
-                # 1st positional is our signal to send, 2nd is the receiving pid
-                signal_to_send = self._SignameToSignum(first_positional)
-                if signal_to_send < 0:
-                    e_usage(
-                        "invalid signal specification %r" % first_positional,
-                        first_positional_loc,
-                    )
-                try:
-                    target_pid = int(second_positional)
-                except ValueError:
-                    e_usage(
-                        "invalid process id specification %r" %
-                        second_positional,
-                        second_positional_loc,
-                    )
-            else:
-                # 1st positional is the receiving pid, use default signal (15/SIGTERM)
-                signal_to_send = 15
-                target_pid = self._ParsePid(first_positional,
-                                            first_positional_loc)
-        posix.kill(target_pid, signal_to_send)  # Send signal
+        while not arg_r.AtEnd():
+            arg_l, arg_loc = arg_r.Peek2()
+            posix.kill(self._ParsePid(arg_l, arg_loc), signal_to_send)
+            arg_r.Next()
         return 0
 
 
