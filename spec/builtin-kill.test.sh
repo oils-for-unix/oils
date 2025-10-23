@@ -6,38 +6,54 @@
 #### kill -15 kills the process with SIGTERM
 sleep 0.1 &
 pid=$!
-builtin kill -15 $pid
+kill -15 $pid
+echo kill=$?
+
 wait $pid
-echo $?  # 143 is 128 + SIGTERM
+echo wait=$?  # 143 is 128 + SIGTERM
 ## STDOUT:
-143
+kill=0
+wait=143
 ## END
-# For some reason mksh doesn't return the same as the others.
-## OK mksh stdout: 0
-## OK dash stdout: 0
+## BUG mksh STDOUT:
+kill=0
+wait=0
+## END
 
 #### kill -9 kills the process with SIGKILL
 sleep 0.1 & 
 pid=$!
-builtin kill -9 $pid 
+kill -9 $pid 
+echo kill=$?
+
 wait $pid
-echo $?  # 137 is 128 + SIGKILL
+echo wait=$?  # 137 is 128 + SIGKILL
 ## STDOUT:
-137
+kill=0
+wait=137
 ## END
-## OK dash stdout: 0
 
 #### kill -n 9 specifies the signal number
-case $SH in mksh|dash) exit ;; esac
+#case $SH in mksh|dash) exit ;; esac
 
 sleep 0.1 &
 pid=$!
-builtin kill -n 9 $pid
+kill -n 9 $pid
+echo kill=$?
+
 wait $pid
-echo $?
+echo wait=$?
 ## STDOUT:
-137
-## N-I dash/mksh STDOUT:
+kill=0
+wait=137
+## END
+## N-I dash STDOUT:
+kill=2
+wait=0
+## END
+## N-I mksh STDOUT:
+kill=1
+wait=0
 ## END
 
 #### kill -s TERM specifies the signal name
@@ -126,32 +142,7 @@ echo $?
 ## N-I mksh/dash/zsh STDOUT:
 ## END
 
-#### Kill with invalid signal
-case $SH in dash)  exit ;; esac
-sleep 0.1 &
-pid=$!
-builtin kill -9999 $pid > /dev/null
-kill_status=$?
-wait $pid
-echo $kill_status
-## STDOUT:
-1
-## N-I dash STDOUT:
-## END
-
-#### Kills the process with %-
-case $SH in mksh|dash) exit ;; esac
-sleep 0.5 &
-builtin kill -n 9 %-
-wait $pid
-echo $?
-## STDOUT:
-0
-## N-I dash/mksh STDOUT:
-## END
-
-
-#### List specific signals
+#### kill -l 10 TERM translates between names and numbers
 case $SH in mksh|dash) exit ;; esac
 
 builtin kill -l 10 11 12
@@ -177,3 +168,28 @@ USR1
 USR2
 ## N-I dash/mksh STDOUT:
 ## END
+
+#### Kill with invalid signal
+case $SH in dash)  exit ;; esac
+sleep 0.1 &
+pid=$!
+builtin kill -9999 $pid > /dev/null
+kill_status=$?
+wait $pid
+echo $kill_status
+## STDOUT:
+1
+## N-I dash STDOUT:
+## END
+
+#### Kills the process with %-
+case $SH in mksh|dash) exit ;; esac
+sleep 0.5 &
+builtin kill -n 9 %-
+wait $pid
+echo $?
+## STDOUT:
+0
+## N-I dash/mksh STDOUT:
+## END
+

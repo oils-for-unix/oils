@@ -782,7 +782,7 @@ class Kill(vm._Builtin):
                     print(str(num))
                 return 0
 
-        elif mops.BigTruncate(arg.n) != -1:
+        if mops.BigTruncate(arg.n) != -1:
             signal_to_send = mops.BigTruncate(arg.n)
             pid_arg, pid_arg_loc = arg_r.ReadRequired2(
                 "You must provide a process id")
