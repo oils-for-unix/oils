@@ -226,12 +226,68 @@ class LineLexer(object):
 
         return tok_type
 
-    def LookAheadFuncParens(self, unread):
+    def LookAheadDParens(self, num_bytes_back):
+        # type: (int) -> bool
+        """Assuming we see ((, is there a matching )) for arithmetic?
+
+        Or is it two subshells with commands?
+
+        Returns True for arithmetic like:
+          ((expr))
+          ((expr || (expr) && expr))
+
+        Returns False for commands like:
+          ((command) )
+          ((command); (command))
+          (( (command) ); (command))
+
+        Args:
+          num_bytes_back: subtract this amount from the current line position
+        """
+        original_pos = self.line_pos
+        first_rparen = False  # Is the previous token an ')' ?
+        parens_counter = 2
+
+        pos = self.line_pos
+        while True:
+            tok_type, end_pos = match.OneToken(lex_mode_e.Arith,
+                                               self.src_line.content,
+                                               pos)
+            if end_pos == pos:  # end of line
+                break
+            pos = end_pos
+
+            if tok_type in (Id.Arith_LParen, Id.Left_DollarParen):  # ( or $(
+                parens_counter += 1
+
+            if (tok_type == Id.Arith_RParen and first_rparen and
+                    parens_counter == 1):
+                return True  # saw closing ))
+
+            if tok_type == Id.Arith_RParen:
+                parens_counter -= 1
+                first_rparen = True
+            elif first_rparen and parens_counter == 1:
+                # We hit a case like this:
+                # ((command); (command))
+                #
+                # The preceding ) isn't immediately followed by another one,
+                # and we haven't seen the matching opening (
+                # So this is not an arithmetic expression
+                break
+            else:
+                first_rparen = False
+
+        # We may have to go back one byte for arithmetic
+        self.line_pos -= num_bytes_back
+        return False
+
+    def LookAheadFuncParens(self, num_bytes_back):
         # type: (int) -> bool
         """For finding the () in 'f ( ) { echo hi; }'.
 
         Args:
-          unread: either 0 or 1, for the number of characters to go back
+          num_bytes_back: either 0 or 1, for the number of characters to go back
 
         The lookahead is limited to the current line, which sacrifices a rare
         corner case.  This not recognized as a function:
@@ -244,7 +300,7 @@ class LineLexer(object):
             foo()
             {}
         """
-        pos = self.line_pos - unread
+        pos = self.line_pos - num_bytes_back
         assert pos > 0, pos
         tok_type, _ = match.OneToken(lex_mode_e.FuncParens,
                                      self.src_line.content, pos)
@@ -339,6 +395,10 @@ class Lexer(object):
     def LookPastSpace(self, lex_mode):
         # type: (lex_mode_t) -> Id_t
         return self.line_lexer.LookPastSpace(lex_mode)
+
+    def LookAheadDParens(self, shift_back):
+        # type: (int) -> bool
+        return self.line_lexer.LookAheadDParens(shift_back)
 
     def LookAheadFuncParens(self, unread):
         # type: (int) -> bool

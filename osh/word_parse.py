@@ -31,7 +31,7 @@ lex_mode_e.Arith
 lex_mode_e.VSub_ArgUnquoted
   Like ShCommand, everything is allowed (even process substitutions), but we
   stop at }, and space is SIGNIFICANT.
-  
+
   Example: ${a:-  b   }
 
   ${X:-$v}   ${X:-${v}}  ${X:-$(echo hi)}  ${X:-`echo hi`}  ${X:-$((1+2))}
@@ -826,7 +826,13 @@ class WordParser(WordEmitter):
             return self._ReadBracedVarSub(self.cur_token, d_quoted=True)
 
         if self.token_type == Id.Left_DollarDParen:
+            # TODO: Uncomment this after another regtest/aports run
+            # if (self.LookAheadDParens(shift_back=1)):
             return self._ReadArithSub()
+            # else:
+            # Mutate token - we treat this '$((' as '$( ('
+            # self.cur_token.id = Id.Left_DollarParen
+            # return self._ReadCommandSub(Id.Left_DollarParen, d_quoted=True)
 
         if self.token_type == Id.Left_DollarBracket:
             return self._ReadExprSub(lex_mode_e.DQ)
@@ -953,7 +959,13 @@ class WordParser(WordEmitter):
             return self._ReadBracedVarSub(self.cur_token, d_quoted=False)
 
         if self.token_type == Id.Left_DollarDParen:
+            # TODO: Uncomment this after another regtest/aports run
+            # if (self.LookAheadDParens(shift_back=1)):
             return self._ReadArithSub()
+            # else:
+            # Mutate token - we treat this '$((' as '$( ('
+            # self.cur_token.id = Id.Left_DollarParen
+            # return self._ReadCommandSub(Id.Left_DollarParen, d_quoted=True)
 
         if self.token_type == Id.Left_DollarBracket:
             return self._ReadExprSub(lex_mode_e.ShCommand)
@@ -1296,7 +1308,7 @@ class WordParser(WordEmitter):
 
         Note that assignments must end with \n  ;  }  or EOF.  Unlike shell
         assignments, we disallow:
-        
+
         var x = 42 | wc -l
         var x = 42 && echo hi
         """
@@ -2247,6 +2259,16 @@ class WordParser(WordEmitter):
         else:
             id_ = self.cur_token.id
         return id_
+
+    def LookAheadDParens(self, shift_back=0):
+        # type: (int) -> bool
+        """Special lookahead for (( )), to make sure it's an arithmetic
+        expression (i.e. that the closing parens are a single token, not
+        separated by anything).
+        """
+        assert self.token_type in (Id.Op_DLeftParen, Id.Left_DollarDParen)
+
+        return self.lexer.LookAheadDParens(shift_back)
 
     def LookAheadFuncParens(self):
         # type: () -> bool
