@@ -1265,17 +1265,9 @@ class CommandEvaluator(object):
 
             self.tracer.OnShAssignment(lval, pair.op, rhs, flags, which_scopes)
 
-        # PATCH to be compatible with existing shells: If the assignment had a
-        # command sub like:
-        #
-        # s=$(echo one; false)
-        #
-        # then its status will be in mem.last_status, and we can check it here.
-        # If there was NOT a command sub in the assignment, then we don't want to
-        # check it.
-
-        # Only do this if there was a command sub?  How?  Look at node?
-        # Set a flag in mem?   self.mem.last_status or
+        # For the cases like
+        #   a=$(false)
+        #   $(false) $(exit 42)
         if self.check_command_sub_status:
             last_status = self.mem.LastStatus()
             self._CheckStatus(last_status, cmd_st, node, loc.Missing)
@@ -2458,23 +2450,25 @@ class CommandEvaluator(object):
         # type: (IntParamBox) -> None
         """If an EXIT trap handler exists, run it.
 
-        Only mutates the status if 'return' or 'exit'.  This is odd behavior, but
-        all bash/dash/mksh seem to agree on it.  See cases in
+        It only mutates the status if 'return' or 'exit'.  This is odd
+        behavior, but bash/dash/mksh seem to agree on it.  See test cases in
         builtin-trap.test.sh.
-
-        Note: if we could easily modulo -1 % 256 == 255 here, then we could get rid
-        of this awkward interface.  But that's true in Python and not C!
-
-        Could use i & (n-1) == i & 255  because we have a power of 2.
-        https://stackoverflow.com/questions/14997165/fastest-way-to-get-a-positive-modulo-in-c-c
         """
         # This does not raise, even on 'exit', etc.
         self.RunPendingTrapsAndCatch()
 
         node = self.trap_state.GetHook('EXIT')  # type: command_t
         if node:
-            # NOTE: Don't set option_i._running_trap, because that's for
+            # Note: Don't set option_i._running_trap, because that's for
             # RunPendingTraps() in the MAIN LOOP
+
+            # Note: we're not using ctx_EnclosedFrame(), so
+            # proc p {
+            #   var x = 'local'
+            #   trap --add { echo $x }
+            # }
+            # doesn't capture x.  This is documented in doc/ref/
+
             with dev.ctx_Tracer(self.tracer, 'trap EXIT', None):
                 try:
                     is_return, is_fatal = self.ExecuteAndCatch(node, 0)

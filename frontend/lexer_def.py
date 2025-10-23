@@ -295,33 +295,23 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
     C(',', Id.Lit_Comma),
     C('=', Id.Lit_Equals),  # for = f(x) and x = 1+2*3
     C('@', Id.Lit_At),  # for detecting @[, @' etc. shopt -s parse_at_all
+    R(FD_VAR_NAME, Id.Lit_RedirVarName),
+    R(FD_NUM, Id.Lit_Number),
 
     # @array and @func(1, c)
     R('@' + VAR_NAME_RE, Id.Lit_Splice),  # for YSH splicing
     C('@[', Id.Lit_AtLBracket),  # @[split(x)]
     C('@{.', Id.Lit_AtLBraceDot),  # for split builtin sub @{.myproc arg1}
-    R(FD_NUM + r'<', Id.Redir_Less),
-    R(FD_NUM + r'>', Id.Redir_Great),
-    R(FD_NUM + r'<<', Id.Redir_DLess),
-    R(FD_NUM + r'<<<', Id.Redir_TLess),
-    R(FD_NUM + r'>>', Id.Redir_DGreat),
-    R(FD_NUM + r'<<-', Id.Redir_DLessDash),
-    R(FD_NUM + r'>&', Id.Redir_GreatAnd),
-    R(FD_NUM + r'<&', Id.Redir_LessAnd),
-    R(FD_NUM + r'<>', Id.Redir_LessGreat),
-    R(FD_NUM + r'>\|', Id.Redir_Clobber),
-    R(FD_VAR_NAME + r'<', Id.Redir_Less),
-    R(FD_VAR_NAME + r'>', Id.Redir_Great),
-    R(FD_VAR_NAME + r'<<', Id.Redir_DLess),
-    R(FD_VAR_NAME + r'<<<', Id.Redir_TLess),
-    R(FD_VAR_NAME + r'>>', Id.Redir_DGreat),
-    R(FD_VAR_NAME + r'<<-', Id.Redir_DLessDash),
-    R(FD_VAR_NAME + r'>&', Id.Redir_GreatAnd),
-    R(FD_VAR_NAME + r'<&', Id.Redir_LessAnd),
-    R(FD_VAR_NAME + r'<>', Id.Redir_LessGreat),
-    R(FD_VAR_NAME + r'>\|', Id.Redir_Clobber),
-
-    # No leading descriptor (2 is implied)
+    R(r'<', Id.Redir_Less),
+    R(r'>', Id.Redir_Great),
+    R(r'<<', Id.Redir_DLess),
+    R(r'<<<', Id.Redir_TLess),
+    R(r'>>', Id.Redir_DGreat),
+    R(r'<<-', Id.Redir_DLessDash),
+    R(r'>&', Id.Redir_GreatAnd),
+    R(r'<&', Id.Redir_LessAnd),
+    R(r'<>', Id.Redir_LessGreat),
+    R(r'>\|', Id.Redir_Clobber),
     C(r'&>', Id.Redir_AndGreat),
     C(r'&>>', Id.Redir_AndDGreat),
 ] + KEYWORDS + CONTROL_FLOW + _UNQUOTED + _EXTGLOB_BEGIN
@@ -932,18 +922,18 @@ YSH_LEFT_UNQUOTED = [
     C("u'''", Id.Left_UTSingleQuote),
     C("b'''", Id.Left_BTSingleQuote),
     C('@(', Id.Left_AtParen),  # Split Command Sub
+    C('@[', Id.Left_AtBracket),  # Array splice in expression mode
     C('^(', Id.Left_CaretParen),  # Block literals in expression mode
     C('^[', Id.Left_CaretBracket),  # Expr literals
     C('^{', Id.Left_CaretBrace),  # Unused
     C(':|', Id.Left_ColonPipe),  # shell-like word arrays.
-    C('%(', Id.Left_PercentParen),  # DEPRECATED syntax for :| sh array |
+
+    # DEPRECATED syntax for :| sh array |
+    C('%(', Id.Left_PercentParen),
+    # May not use these
     C('%[', Id.Expr_Reserved),
     C('%{', Id.Expr_Reserved),  # Table literals?  Vertical dict?
-    # Not sure if we'll use these
     C('@{', Id.Expr_Reserved),
-    C('@[', Id.Expr_Reserved),
-
-    # Idea: Set literals are #{a, b} like Clojure
 ]
 
 # Used by ysh/grammar_gen.py

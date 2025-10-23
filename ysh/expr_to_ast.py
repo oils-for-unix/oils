@@ -3,6 +3,7 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str, Kind
 from _devbuild.gen.syntax_asdl import (
+    ExprSub,
     Token,
     SimpleVarSub,
     loc,
@@ -682,8 +683,14 @@ class Transformer(object):
         elif typ == grammar_nt.eggex:
             return self._Eggex(pnode)
 
-        elif typ == grammar_nt.ysh_expr_sub:
+        elif typ == grammar_nt.ysh_expr_sub:  # $[] @[] command mode
             return self.Expr(pnode.GetChild(0))
+
+        elif typ == grammar_nt.ysh_expr_sub_2:  # $[] @[] expression mode
+            left = pnode.GetChild(0).tok
+            e2 = self.Expr(pnode.GetChild(1))
+            right = pnode.GetChild(2).tok
+            return ExprSub(left, e2, right)
 
         #
         # YSH Lexer Modes
@@ -1390,22 +1397,25 @@ class Transformer(object):
 
     def _NonRangeChars(self, p_node):
         # type: (PNode) -> class_literal_term_t
-        """
-        \" \u1234 '#'
-        """
         assert p_node.typ == grammar_nt.range_char, p_node
 
         child0 = p_node.GetChild(0)
         typ0 = p_node.GetChild(0).typ
 
-        if typ0 == grammar_nt.sq_string:
+        if typ0 == grammar_nt.sq_string:  # /['foo']/
             return cast(SingleQuoted, child0.GetChild(1).tok)
 
-        if typ0 == grammar_nt.char_literal:
+        if typ0 == grammar_nt.char_literal:  # /[ \n \u{3bc} \yff ]/
             return word_compile.EvalCharLiteralForRegex(child0.tok)
 
-        if typ0 == Id.Expr_Name:
-            # Look up PerlClass and PosixClass
+        if typ0 == Id.Expr_DecInt:  # /[5]/
+            tok = child0.tok
+            if tok.length != 1:
+                p_die("Unquoted number in char class must be a single byte", tok)
+            return word_compile.EvalCharLiteralForRegex(tok)
+
+        if typ0 == Id.Expr_Name:  # /[ d digit ]/
+            # Look up PerlClass and PosixClass, or handle single char/digit
             return self._NameInClass(None, child0.tok)
 
         raise AssertionError()
@@ -1495,19 +1505,19 @@ class Transformer(object):
     def _NameInClass(self, negated_tok, tok):
         # type: (Token, Token) -> class_literal_term_t
         """Like the above, but 'dot' and 'd' don't mean anything within []"""
-        tok_str = lexer.TokenVal(tok)
-
         # A bare, unquoted character literal.  In the grammar, this is expressed as
         # range_char without an ending.
+        assert tok.id == Id.Expr_Name, tok
 
         # d is NOT 'digit', it's a literal 'd'!
-        if len(tok_str) == 1:
+        if tok.length == 1:
             # Expr_Name matches VAR_NAME_RE, which starts with [a-zA-Z_]
-            assert tok.id in (Id.Expr_Name, Id.Expr_DecInt)
 
             if negated_tok:  # [~d] is not allowed, only [~digit]
                 p_die("Can't negate this symbol", tok)
             return word_compile.EvalCharLiteralForRegex(tok)
+
+        tok_str = lexer.TokenVal(tok)
 
         # digit, word, but not d, w, etc.
         if tok_str in POSIX_CLASSES:
@@ -1516,6 +1526,7 @@ class Transformer(object):
         perl = PERL_CLASSES.get(tok_str)
         if perl is not None:
             return PerlClass(negated_tok, perl)
+
         p_die("%r isn't a character class" % tok_str, tok)
 
     def _ReAtom(self, p_atom):

@@ -54,16 +54,6 @@ sizes() {
   sudo du --si -s $BASE_DIR/
 }
 
-archived-fetched() {
-  local tar=_chroot/distfiles.tar
-  tar --create --file $tar --directory $CHROOT_DIR/var/cache/distfiles .
-
-  tar --list < $tar
-  echo
-  ls -l --si $tar
-  echo
-}
-
 filter-basename() {
   sed 's|.*/||g'
 }

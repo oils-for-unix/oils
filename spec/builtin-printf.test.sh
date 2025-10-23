@@ -1,4 +1,4 @@
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 ## compare_shells: dash bash mksh zsh ash
 
 # printf
@@ -1402,4 +1402,62 @@ printf '%b' '\0007' | show_bytes
  07
  07
  07
+## END
+
+#### printf %d %X support hex 0x5 and octal 055
+
+echo hex
+printf '%d\n' 0x55
+printf '%X\n' 0x55
+
+echo hex CAPS
+printf '%d\n' 0X55
+printf '%X\n' 0X55
+
+echo octal 3
+printf '%d\n' 055
+printf '%X\n' 055
+
+echo octal 4
+printf '%d\n' 0055
+printf '%X\n' 0055
+
+echo octal 5
+printf '%d\n' 00055
+printf '%X\n' 00055
+
+## STDOUT:
+hex
+85
+55
+hex CAPS
+85
+55
+octal 3
+45
+2D
+octal 4
+45
+2D
+octal 5
+45
+2D
+## END
+
+## BUG zsh STDOUT:
+hex
+85
+55
+hex CAPS
+85
+55
+octal 3
+55
+37
+octal 4
+55
+37
+octal 5
+55
+37
 ## END

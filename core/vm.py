@@ -229,7 +229,7 @@ class _Executor(object):
             if self.exec_opts.strict_argv():
                 e_die("Command evaluated to an empty argv array", arg0_loc)
             else:
-                return 0  # do nothing
+                return self.mem.LastStatus()  # keep the previous status code
 
         return self._RunSimpleCommand(argv[0], arg0_loc, cmd_val, cmd_st,
                                       run_flags)

@@ -1,5 +1,5 @@
 ## compare_shells: bash dash mksh zsh ash
-## oils_failures_allowed: 6
+## oils_failures_allowed: 4
 
 # This file relates to:
 #
@@ -35,57 +35,23 @@ echo "-$dirprefix-"
 ## N-I mksh/zsh STDOUT:
 ## END
 
+#### !( as negation and subshell versus extended glob - #2463
 
-#### ((( with nested subshells
+have_icu_uc=false
+have_icu_i18n=false
 
-# https://oilshell.zulipchat.com/#narrow/channel/502349-osh/topic/.28.28.28.20not.20parsed.20like.20bash/with/518874141
-
-# spaces help
-good() {
-  cputype=`( ( (grep cpu /proc/cpuinfo | cut -d: -f2) ; ($PRTDIAG -v |grep -i sparc) ; grep -i cpu /var/run/dmesg.boot ) | head -n 1) 2> /dev/null`
-}
-
-bad() {
-  cputype=`(((grep cpu /proc/cpuinfo | cut -d: -f2) ; ($PRTDIAG -v |grep -i sparc) ; grep -i cpu /var/run/dmesg.boot ) | head -n 1) 2> /dev/null`
-  #echo cputype=$cputype
-}
-
-good
-bad
+if !($have_icu_uc && $have_icu_i18n); then
+  echo one
+fi
+echo two
 
 ## STDOUT:
+one
+two
 ## END
 
-#### Nested subshell (#2398)
-
-# found on line 137 of the zdiff util from gzip
-((echo foo) | tr o 0)
-## STDOUT:
-f00
-## END
-
-#### Exit code when command sub evaluates to empty str, e.g. `false` (#2435)
-
-# OSH exits with 0 while others exit with 1
-`true`; echo $?
-`false`; echo $?
-$(true); echo $?
-$(false); echo $?
-
-# OSH and others agree on these
-eval true; echo $?
-eval false; echo $?
-`echo true`; echo $?
-`echo false`; echo $?
-## STDOUT:
-0
-1
-0
-1
-0
-1
-0
-1
+## BUG mksh STDOUT:
+two
 ## END
 
 #### Changing PATH will invalidate PATH cache
@@ -167,4 +133,3 @@ status=0
 status=0
 status=0
 ## END
-

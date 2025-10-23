@@ -1479,6 +1479,21 @@ EOF
   _ysh-parse-error "$code_str"
 }
 
+test-multiline-backslashes() {
+  _ysh-parse-error-here <<'EOF'
+var x = ''' \n '''
+EOF
+
+  _ysh-should-parse-here <<'EOF'
+var x = r''' \n '''
+EOF
+
+  _ysh-should-parse-here <<'EOF'
+var x = u''' \n '''
+EOF
+
+}
+
 test-ysh_c_strings() {
   # bash syntax
   _osh-should-parse-here <<'EOF'
@@ -1760,6 +1775,16 @@ test-string-sigil-pair() {
 
   _ysh-parse-error "echo html'single'"
   _ysh-parse-error "echo 'single'html"
+}
+
+test-assert-left-brackets() {
+  _ysh-should-run 'var x = [42]; assert [ [42] === x]'
+
+  # TODO: fix this bug - space makes a difference
+  # _ysh-should-run 'var x = [42]; assert [[42] === x]'
+
+  # TODO: fix this bug too
+  #_ysh-should-run "var x = ['42']; assert [['42'] === x]"
 }
 
 #

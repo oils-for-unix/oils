@@ -35,7 +35,11 @@ install-shells-with-apt() {
 
 bash-upstream() {
   wget --directory _tmp --no-clobber \
-    https://ftp.gnu.org/gnu/bash/bash-5.2.21.tar.gz
+    'https://ftp.gnu.org/gnu/bash/bash-5.2.21.tar.gz'
 }
+
+# Upstream zsh is a dumb sourceforge link at:
+#   https://zsh.sourceforge.io/Arc/source.html
+# See build/deps.sh for mirroring
 
 task-five "$@"
