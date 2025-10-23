@@ -4,12 +4,11 @@
 # Tests for builtins having to do with killing a process
 
 #### kill -15 kills the process with SIGTERM
-# Test 1: Basic SIGTERM
 sleep 0.1 &
 pid=$!
 builtin kill -15 $pid
 wait $pid
-echo $?  # Should be 143 (128 + SIGTERM)
+echo $?  # 143 is 128 + SIGTERM
 ## STDOUT:
 143
 ## END
@@ -18,18 +17,43 @@ echo $?  # Should be 143 (128 + SIGTERM)
 ## OK dash stdout: 0
 
 #### kill -9 kills the process with SIGKILL
-# Test 2: Basic SIGKILL
 sleep 0.1 & 
 pid=$!
 builtin kill -9 $pid 
 wait $pid
-echo $?  # Should be 137 (128 + SIGKILL) 
+echo $?  # 137 is 128 + SIGKILL
 ## STDOUT:
 137
 ## END
 ## OK dash stdout: 0
 
-#### Kill the process with -sigspec
+#### kill -n 9 specifies the signal number
+case $SH in mksh|dash) exit ;; esac
+
+sleep 0.1 &
+pid=$!
+builtin kill -n 9 $pid
+wait $pid
+echo $?
+## STDOUT:
+137
+## N-I dash/mksh STDOUT:
+## END
+
+#### kill -s TERM specifies the signal name
+case $SH in mksh|dash|zsh) exit ;; esac
+
+sleep 0.1 &
+pid=$!
+builtin kill -s TERM $pid
+wait $pid
+echo $?
+## STDOUT:
+143
+## N-I dash/mksh/zsh STDOUT:
+## END
+
+#### kill SIGTERM, rather than kill -SIGTERM
 # Test 3: SIGTERM with sigspec variants
 case $SH in mksh|dash|zsh) exit ;; esac
 
@@ -69,7 +93,6 @@ builtin kill TErm $pid
 wait $pid
 echo $?  # Should be 143 (128 + SIGTERM)
 
-
 ## STDOUT:
 143
 143
@@ -79,11 +102,13 @@ echo $?  # Should be 143 (128 + SIGTERM)
 143
 ## N-I dash/mksh/zsh STDOUT:
 ## END
-#### List available signals
-# check if at least the HUP flag is reported
-# the output format of all shells is different and the
-# available flags may depend on your environment
+
+#### kill -l shows signals
 case $SH in dash) exit ;; esac
+
+# Check if at least the HUP flag is reported.  The output format of all shells
+# is different and the available signals may depend on your environment
+
 builtin kill -l | grep HUP > /dev/null
 echo $?
 ## STDOUT:
@@ -91,16 +116,15 @@ echo $?
 ## N-I dash STDOUT:
 ## END
 
-#### List available signals with -L
-# Same functionality as -l
+#### kill -L also shows signals
 case $SH in mksh|dash|zsh) exit ;; esac
+
 builtin kill -L | grep HUP > /dev/null
 echo $?
 ## STDOUT:
 0
 ## N-I mksh/dash/zsh STDOUT:
 ## END
-
 
 #### Kill with invalid signal
 case $SH in dash)  exit ;; esac
@@ -113,18 +137,6 @@ echo $kill_status
 ## STDOUT:
 1
 ## N-I dash STDOUT:
-## END
-
-#### Kills the process with -n 9
-case $SH in mksh|dash) exit ;; esac
-sleep 0.1 &
-pid=$!
-builtin kill -n 9 $pid
-wait $pid
-echo $?
-## STDOUT:
-137
-## N-I dash/mksh STDOUT:
 ## END
 
 #### Kills the process with %-
