@@ -141,15 +141,27 @@ echo $?
 
 #### List specific signals
 case $SH in mksh|dash) exit ;; esac
-sleep 0.5 &
+
 builtin kill -l 10 11 12
-builtin kill -l SIGUSR1 SIGSEGV SIGUSR2
+echo
+
+builtin kill -l SIGUSR1 SIGSEGV USR2
+echo
+
+# mixed kind
+builtin kill -l 10 SIGSEGV 12
+
 ## STDOUT:
 USR1
 SEGV
 USR2
+
 10
 11
 12
+
+USR1
+11
+USR2
 ## N-I dash/mksh STDOUT:
 ## END
