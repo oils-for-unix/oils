@@ -40,6 +40,7 @@ from frontend import match
 from mycpp import iolib
 from mycpp import mylib
 from mycpp.mylib import log, print_stderr, probe, tagswitch, iteritems
+from pylib import path_stat
 
 import posix_ as posix
 from posix_ import (
@@ -390,12 +391,35 @@ class FdState(object):
 
             if case(redirect_arg_e.Path):
                 arg = cast(redirect_arg.Path, UP_arg)
+
+                # noclobber: don't overwrite existing files (except for special
+                # files like /dev/null)
+                noclobber = self.exec_opts.noclobber()
+
+                # Only > and &> actually follow noclobber. See
+                # spec/redirect.test.sh
+                op_respects_noclobber = r.op_id in (Id.Redir_Great, Id.Redir_AndGreat)
+
                 # noclobber flag is OR'd with other flags when allowed
-                noclobber_mode = O_EXCL if self.exec_opts.noclobber() else 0
+                noclobber_mode = 0
+                if noclobber and op_respects_noclobber:
+                    if not path_stat.exists(arg.filename):
+                        # File doesn't currently exist, open with O_EXCL (open
+                        # will fail is EEXIST if arg.filename exists when we
+                        # call open(2)).
+                        noclobber_mode = O_EXCL
+                    elif path_stat.isfile(arg.filename):
+                        # If the file exists, and is not a special file like
+                        # /dev/null, then also open in O_EXCL so we raise an
+                        # error on open(2).
+                        noclobber_mode = O_EXCL
+
+                        # TODO: This is a bit of a hack. Ideally we can
+                        # immediately raise IOError, `raise IOError(EEXISTS)`,
+                        # but that causes a runtime error.
+
                 if r.op_id in (Id.Redir_Great, Id.Redir_AndGreat):  # >   &>
-                    # NOTE: This is different than >| because it respects noclobber, but
-                    # that option is almost never used.  See test/wild.sh.
-                    mode = O_CREAT | O_WRONLY | O_TRUNC | noclobber_mode
+                    mode = O_CREAT | O_WRONLY | O_TRUNC
                 elif r.op_id == Id.Redir_Clobber:  # >|
                     mode = O_CREAT | O_WRONLY | O_TRUNC
                 elif r.op_id in (Id.Redir_DGreat,
@@ -408,11 +432,13 @@ class FdState(object):
                 else:
                     raise NotImplementedError(r.op_id)
 
+                mode |= noclobber_mode
+
                 # NOTE: 0666 is affected by umask, all shells use it.
                 try:
                     open_fd = posix.open(arg.filename, mode, 0o666)
                 except (IOError, OSError) as e:
-                    if e.errno == EEXIST and self.exec_opts.noclobber():
+                    if e.errno == EEXIST and noclobber:
                         extra = ' (noclobber)'
                     else:
                         extra = ''
