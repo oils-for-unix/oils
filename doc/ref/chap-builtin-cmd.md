@@ -1305,7 +1305,7 @@ If no JOB is specified, use the latest job.
 
 The `kill` builtin sends a signal to one or more processes.  Usage:
 
-    kill (-s SIG | -SIG) WHAT+  # send SIG to the given processes
+    kill (-s SIG | -SIG)? WHAT+  # send SIG to the given processes
 
 where
 
@@ -1315,12 +1315,14 @@ where
 Examples:
 
     kill -s USR1 789       # send SIGUSR1 to PID 789
+
     kill -s USR1 789 %%    # send signal to PID 789 and the current job
     kill -s 10   789 %%    # specify SIGUSR1 by number instead
-    kill -n USR1 789 %%    # -n is a synonym for -s
 
     kill -USR1   789 %%    # shortcut syntax
     kill -10     789 %%    # shortcut using a number
+
+    kill -n USR1 789 %%    # -n is a synonym for -s
     kill         789 %%    # if not specified, the default is SIGTERM
 
 ---
