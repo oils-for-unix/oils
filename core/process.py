@@ -442,8 +442,7 @@ class FdState(object):
                         "Can't open %r: %s%s" %
                         (arg.filename, pyutil.strerror(e), extra),
                         blame_loc=r.op_loc)
-                    err_out.append(e.errno)
-                    return
+                    raise
 
                 new_fd = self._PushDup(open_fd, r.loc)
                 if new_fd != NO_FD:
@@ -545,6 +544,9 @@ class FdState(object):
             #log('apply %s', r)
             with ui.ctx_Location(self.errfmt, r.op_loc):
                 try:
+                    # _ApplyRedirect reports errors in 2 ways:
+                    #  1. Raising an IOError or OSError from posix.* calls
+                    #  2. Returning errors in err_out from checks like noclobber
                     self._ApplyRedirect(r, err_out)
                 except (IOError, OSError) as e:
                     err_out.append(e.errno)
