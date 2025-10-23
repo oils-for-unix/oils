@@ -1310,28 +1310,30 @@ The `kill` builtin sends a signal to one or more processes.  Usage:
 where
 
     SIG  = NAME | NUMBER   # e.g. USR1 or 10
-    WHAT = PID  | JOBSPEC  # e.g. 123 or %%
+    WHAT = PID  | JOBSPEC  # e.g. 789 or %%
 
 Examples:
 
-    kill -s USR1 123 %%    # send SIGUSR1 to PID 123 and the current job
-    kill -s 10   123 %%    # specify SIGUSR1 by number instead
-    kill -n USR1 123 %%    # -n is a synonym for -s
-    kill -USR1   123 %%    # shortcut syntax
-    kill -10     123 %%    # shortcut using a number
-    kill         123 %%    # if not specified, the default is SIGTERM
+    kill -s USR1 789       # send SIGUSR1 to PID 789
+    kill -s USR1 789 %%    # send signal to PID 789 and the current job
+    kill -s 10   789 %%    # specify SIGUSR1 by number instead
+    kill -n USR1 789 %%    # -n is a synonym for -s
+
+    kill -USR1   789 %%    # shortcut syntax
+    kill -10     789 %%    # shortcut using a number
+    kill         789 %%    # if not specified, the default is SIGTERM
 
 ---
 
 It can also list signals:
 
-    kill -l                # List all signals
-    kill -l SIG+           # Translate signals from name to number, and vice versa
+    kill -L                # List all signals
+    kill -L SIG+           # Translate signals from name to number, and vice versa
 
 Examples:
 
-    kill -L                # List all signals; -L is a synonym for -l
-    kill -l USR1 USR2      # prints '10 12'
+    kill -l                # List all signals; -l is a synonym for -L
+    kill -L USR1 USR2      # prints '10 12'
     kill -L USR1 15        # prints '10 TERM'
 
 ## External
