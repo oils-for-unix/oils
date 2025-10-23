@@ -84,10 +84,10 @@ module syntax
   # Note that ASDL generates:
   #    typedef uint16_t Id_t;
   # So Token is
-  #    8 bytes GC header + 2 + 2 + 4 + 8 + 8 = 32 bytes on 64-bit machines
+  #    8 bytes GC header + 2 + 4 + 4 + 8 + 8 = 34 bytes on 64-bit machines
   #
   # We transpose (id, col, length) -> (id, length, col) for C struct packing.
-  Token = (id id, uint16 length, int col, SourceLine? line, str? tval)
+  Token = (id id, int length, int col, SourceLine? line, str? tval)
 
   # I wanted to get rid of Token.tval with this separate WideToken type, but it
   # is more efficient if word_part.Literal %Token literally is the same thing

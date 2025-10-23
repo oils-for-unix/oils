@@ -143,7 +143,8 @@ class Arena(object):
     def NewToken(self, id_, col, length, src_line):
         # type: (int, int, int, SourceLine) -> Token
 
-        if length >= 65536:
+        # 2**32 - token length is stored in an int (32 bits)
+        if length >= 4294967296:
             raise error.Parse(
                 '',  # ignored message
                 loc.TokenTooLong(src_line, id_, length, col))
