@@ -1479,6 +1479,21 @@ EOF
   _ysh-parse-error "$code_str"
 }
 
+test-multiline-backslashes() {
+  _ysh-parse-error-here <<'EOF'
+var x = ''' \n '''
+EOF
+
+  _ysh-should-parse-here <<'EOF'
+var x = r''' \n '''
+EOF
+
+  _ysh-should-parse-here <<'EOF'
+var x = u''' \n '''
+EOF
+
+}
+
 test-ysh_c_strings() {
   # bash syntax
   _osh-should-parse-here <<'EOF'

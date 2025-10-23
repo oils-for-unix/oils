@@ -71,9 +71,13 @@ foo bar
 \t\n
 ## END
 
-#### Implicit raw single quote with backslash is a syntax error
-var x = '\t\n'
-echo $x
+#### Implicit raw string '\t\n' is a syntax error because backslash is ambiguous
+var x = ' \t\n '
+## status: 2
+## stdout-json: ""
+
+#### Multiline ''' \t ''' is a also syntax error because backslash is ambiguous
+var y = ''' \t '''
 ## status: 2
 ## stdout-json: ""
 
@@ -350,7 +354,7 @@ two = 2 ""
 var two = 2
 var three = 2
 
-var x = ''' 
+var x = r''' 
   two = $two '
   three = $three ''
    \u{61}
