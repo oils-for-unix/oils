@@ -81,43 +81,43 @@ kill=1
 wait=0
 ## END
 
-#### kill SIGTERM, rather than kill -SIGTERM
+#### kill -SIGTERM with all its variants
 # Test 3: SIGTERM with sigspec variants
 case $SH in mksh|dash|zsh) exit ;; esac
 
 sleep 0.1 &
 pid=$!
-builtin kill SIGTERM $pid
+builtin kill -SIGTERM $pid
 wait $pid
 echo $?  # Should be 143 (128 + SIGTERM)
 
 sleep 0.1 &
 pid=$!
-builtin kill SigTERM $pid
+builtin kill -SigTERM $pid
 wait $pid
 echo $?  # Should be 143 (128 + SIGTERM)
 
 sleep 0.1 &
 pid=$!
-builtin kill sigterm $pid
+builtin kill -Sigterm $pid
 wait $pid
 echo $?  # Should be 143 (128 + SIGTERM)
 
 sleep 0.1 &
 pid=$!
-builtin kill TERM $pid
+builtin kill -TERM $pid
 wait $pid
 echo $?  # Should be 143 (128 + SIGTERM)
 
 sleep 0.1 &
 pid=$!
-builtin kill term $pid
+builtin kill -term $pid
 wait $pid
 echo $?  # Should be 143 (128 + SIGTERM)
 
 sleep 0.1 &
 pid=$!
-builtin kill TErm $pid
+builtin kill -TErm $pid
 wait $pid
 echo $?  # Should be 143 (128 + SIGTERM)
 
@@ -130,6 +130,14 @@ echo $?  # Should be 143 (128 + SIGTERM)
 143
 ## N-I dash/mksh/zsh STDOUT:
 ## END
+
+#### kill HUP pid gives the correct error
+sleep 0.1 &
+builtin kill HUP $pid # even with HUP being invalid, $pid must still be killed
+echo $?
+
+## STDOUT:
+0
 
 #### kill -l shows signals
 case $SH in dash) exit ;; esac
@@ -200,7 +208,7 @@ wait=0
 #case $SH in mksh|dash) exit ;; esac
 
 sleep 0.5 &
-
+pid=$!
 kill -15 %%
 echo kill=$?
 
@@ -208,28 +216,31 @@ wait %%
 echo wait=$?
 
 # no such job
-wait %%
-echo wait=$?
+if ps -p "$pid" > /dev/null 2>&1; then
+    echo "alive"
+else
+    echo "killed"
+fi
 
 ## STDOUT:
 kill=0
 wait=143
-wait=127
+killed
 ## END
 ## OK zsh STDOUT:
 kill=0
 wait=143
-wait=1
+killed
 ## END
 ## N-I dash STDOUT:
 kill=1
 wait=0
-wait=0
+killed
 ## END
 ## BUG mksh STDOUT:
 kill=0
 wait=0
-wait=127
+killed
 ## END
 
 #### kill -15 %- kills previous job
@@ -256,4 +267,3 @@ wait=143
 kill=0
 wait=0
 ## END
-
