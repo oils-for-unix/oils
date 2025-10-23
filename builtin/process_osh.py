@@ -749,7 +749,7 @@ class Kill(vm._Builtin):
             pid_arg, pid_arg_loc = arg_r.ReadRequired2('expected a PID')
             target_pid = self._ParsePid(pid_arg, pid_arg_loc)
             posix.kill(target_pid, signal_to_send)  # Send signal
-            return 128 + signal_to_send
+            return 0
 
         attrs, arg_r = flag_util.ParseCmdVal('kill',
                                              cmd_val,
@@ -814,7 +814,7 @@ class Kill(vm._Builtin):
                 target_pid = self._ParsePid(first_positional,
                                             first_positional_loc)
         posix.kill(target_pid, signal_to_send)  # Send signal
-        return 128 + signal_to_send
+        return 0
 
 
 # vim: sw=4
