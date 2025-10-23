@@ -1258,6 +1258,9 @@ class CommandEvaluator(object):
             # with Undef value, but the 'array' attribute.
 
             flags = 0  # for tracing
+            # set -a: automatically mark variables for export
+            if self.exec_opts.allexport():
+                flags |= state.SetExport
             self.mem.SetValue(lval, val, which_scopes, flags=flags)
             if initializer is not None:
                 ListInitialize(val, initializer, has_plus, self.exec_opts,

@@ -276,3 +276,45 @@ echo "$@"
 +
 
 ## END
+
+#### set -a exports variables
+set -a
+FOO=bar
+BAZ=qux
+printenv.py FOO BAZ
+## STDOUT:
+bar
+qux
+## END
+
+#### set +a stops exporting
+set -a
+FOO=exported
+set +a
+BAR=not_exported
+printenv.py FOO BAR
+## STDOUT:
+exported
+None
+## END
+
+#### set -o allexport (long form)
+set -o allexport
+VAR1=value1
+set +o allexport
+VAR2=value2
+printenv.py VAR1 VAR2
+## STDOUT:
+value1
+None
+## END
+
+#### variables set before set -a are not exported
+BEFORE=before_value
+set -a
+AFTER=after_value
+printenv.py BEFORE AFTER
+## STDOUT:
+None
+after_value
+## END
