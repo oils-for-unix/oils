@@ -212,9 +212,13 @@ def InitVarsAfterEnv(mem, mutable_opts):
     # If PATH SHELLOPTS PWD are not in environ, then initialize them.
     s = mem.env_config.Get('PATH')
     if s is None:
-        # Setting PATH to these two dirs match what zsh and mksh do.  bash and
-        # dash add {,/usr/,/usr/local}/{bin,sbin}
-        mem.env_config.SetDefault('PATH', '/bin:/usr/bin')
+        # Setting PATH to these four dirs match busybox ash. zsh and mksh only
+        # do /bin:/usr/bin while bash and dash add {,/usr/,/usr/local}/{bin,sbin}
+        # The default PATH in busybox ash is defined here:
+        # busybox https://github.com/mirror/busybox/blob/371fe9f71d445d18be28c82a2a6d82115c8af19d/include/libbb.h#L2303
+        # The default PATH in bash is defined here:
+        # https://github.com/bminor/bash/blob/a8a1c2fac029404d3f42cd39f5a20f24b6e4fe4b/config-top.h#L61
+        mem.env_config.SetDefault('PATH', '/sbin:/usr/sbin:/bin:/usr/bin')
 
     if mem.exec_opts.no_init_globals():
         # YSH initialization
