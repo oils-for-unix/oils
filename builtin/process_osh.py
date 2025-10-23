@@ -732,27 +732,20 @@ class Kill(vm._Builtin):
         target_pid = 0
 
         arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
-        arg_r.Next()
+        arg_r.Next()  # skip command name
         sigspec_arg, sigspec_arg_loc = arg_r.Peek2()
-        if sigspec_arg.startswith("-"):
-            if sigspec_arg[1:].isdigit():
-                signal_to_send = int(sigspec_arg[1:])
-                if signal_to_send < 0:
-                    e_usage(
-                        "invalid signal specification %r" % sigspec_arg,
-                        sigspec_arg_loc,
-                    )
-            elif len(sigspec_arg[1:]) > 2:
-                signal_to_send = self._SignameToSignum(sigspec_arg[1:])
-                if signal_to_send < 0:
-                    e_usage(
-                        "invalid signal specification %r" % sigspec_arg,
-                        sigspec_arg_loc,
-                    )
+        if sigspec_arg.startswith('-'):
+            sig = sigspec_arg[1:]
+            if sig.isdigit():  # kill -15
+                signal_to_send = int(sig)
+            elif len(sig) >= 2:  # kill -TERM
+                signal_to_send = self._SignameToSignum(sig)
+                if signal_to_send == signal_def.NO_SIGNAL:
+                    e_usage('got invalid signal %r' % sigspec_arg, sigspec_arg_loc)
 
-        if signal_to_send != signal_def.NO_SIGNAL:
+        if signal_to_send != signal_def.NO_SIGNAL:  # we got kill -15 or kill -TERM
             arg_r.Next()
-            pid_arg, pid_arg_loc = arg_r.Peek2()
+            pid_arg, pid_arg_loc = arg_r.ReadRequired2('expected a PID')
             target_pid = self._ParsePid(pid_arg, pid_arg_loc)
             posix.kill(target_pid, signal_to_send)  # Send signal
             return 128 + signal_to_send
