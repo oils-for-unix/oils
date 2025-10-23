@@ -746,7 +746,7 @@ class WordParser(WordEmitter):
                 # r'one\two' or c'one\\two'
                 if no_backslashes and lexer.TokenContains(tok, '\\'):
                     p_die(
-                        r"Strings with backslashes should look like r'\n' or u'\n' or b'\n'",
+                        "Ambiguous backslash: add explicit r'' or u'' prefix (OILS-ERR-20)",
                         tok)
 
                 if is_ysh_expr:
