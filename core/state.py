@@ -1385,6 +1385,8 @@ class Mem(object):
         from core import sh_init
         self.env_config = sh_init.EnvConfig(self, defaults)
 
+        self.clear_path_cache = False  # a hack. Read and modified by SearchPath
+
     def __repr__(self):
         # type: () -> str
         parts = []  # type: List[str]
@@ -2023,6 +2025,12 @@ class Mem(object):
         This can be used to FLIP flags, while NOT changing the variable.  Or it
         can also be used to initialize?
         """
+
+        # Hack: let SearchPath know it needs to reset the path
+        # cache before looking up a command
+        if lval.name == 'PATH':
+            self.clear_path_cache = True
+
         if flags & SetNameref or flags & ClearNameref:
             # declare -n ref=x  # refers to the ref itself
             cell, var_frame = self._ResolveNameOnly(lval.name, which_scopes)
