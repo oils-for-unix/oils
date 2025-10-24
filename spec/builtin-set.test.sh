@@ -318,3 +318,26 @@ printenv.py BEFORE AFTER
 None
 after_value
 ## END
+
+#### set -a exports local variables
+set -a
+f() {
+  local ZZZ=zzz
+  printenv ZZZ
+}
+f
+## STDOUT:
+zzz
+## END
+## BUG mksh status: 1
+## BUG mksh stdout-json: ""
+
+#### set -a exports declare variables
+set -a
+declare ZZZ=zzz
+printenv ZZZ
+## STDOUT:
+zzz
+## END
+## N-I dash/mksh status: 1
+## N-I dash/mksh stdout-json: ""

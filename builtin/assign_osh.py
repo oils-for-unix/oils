@@ -524,6 +524,9 @@ class NewVar(vm._AssignBuiltin):
                 which_scopes = scope_e.LocalOnly
 
         flags = 0
+        # set -a: automatically mark variables for export
+        if self.exec_opts.allexport():
+            flags |= state.SetExport
         if arg.x == '-':
             flags |= state.SetExport
         if arg.r == '-':
