@@ -128,7 +128,7 @@ def _RewriteExternToBuiltin(argv):
 
     Why hidden in OSH?  Because regex engines can have MINOR syntax
     differences, like []] for char classes.  But it could be ON in YSH,
-    specifically so you can AVOID those differences!  
+    specifically so you can AVOID those differences!
 
     Meh: explicit builtin grep / builtin sed is better.  Make a note about
     performance in doc/ref.
@@ -246,6 +246,10 @@ class SearchPath(object):
     def CachedLookup(self, name):
         # type: (str) -> Optional[str]
         #log('name %r', name)
+        if self.mem.clear_path_cache:
+            self.ClearCache()
+            self.mem.clear_path_cache = False
+
         if name in self.cache:
             return self.cache[name]
 
