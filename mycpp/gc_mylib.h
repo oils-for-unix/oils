@@ -136,6 +136,8 @@ class File {
 
   // Reader
   virtual BigStr* readline() = 0;
+  virtual void seek(int offset) = 0;
+  virtual int tell() = 0;
 
   // Both
   virtual bool isatty() = 0;
@@ -161,6 +163,8 @@ class CFile : public File {
 
   // Reader
   BigStr* readline() override;
+  void seek(int offset) override;
+  int tell() override;
 
   // Both
   bool isatty() override;
@@ -213,6 +217,12 @@ class BufLineReader : public LineReader {
   }
   virtual void close() {
   }
+  void seek(int offset) {
+      pos_ = offset;
+  }
+  int tell() {
+      return pos_;
+  }
 
   BigStr* s_;
   int pos_;
@@ -246,6 +256,12 @@ class Writer : public File {
   Writer() : File() {
   }
   BigStr* readline() override {
+    CHECK(false);  // should not happen
+  }
+  void seek(int offset) override {
+    CHECK(false);  // should not happen
+  }
+  int tell() override {
     CHECK(false);  // should not happen
   }
 
