@@ -73,11 +73,12 @@ class ParsingTest(unittest.TestCase):
             ('0x0010', mops.BigInt(16)),
             (' 0x1A ', mops.BigInt(26)),
             ('\t0x1A\r\n', mops.BigInt(26)),
+            ('0X12', mops.BigInt(18)),
+            ('0XFF', mops.BigInt(255)),
             ('FF', None),
             ('0xG', None),
             ('0x1_0', None),
             ('0x1 0', None),
-            ('0X12', None),
         ]
         self.checkCases(CASES)
 

@@ -389,6 +389,10 @@ zero=0
 echo $(( ${zero}xAB ))
 ## stdout: 171
 
+#### Hex constant with capital X
+echo $(( 0XAA ))
+## stdout: 170
+
 #### Dynamic var names - result of runtime parse/eval
 foo=5
 x=oo

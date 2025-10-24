@@ -686,7 +686,7 @@ SH_NUMBER_DEF = [
     R('0', Id.ShNumber_Dec),
     R(r'[1-9][0-9]*', Id.ShNumber_Dec),
     R(r'0[0-7]+', Id.ShNumber_Oct),
-    R(r'0x[0-9A-Fa-f]+', Id.ShNumber_Hex),
+    R(r'0[xX][0-9A-Fa-f]+', Id.ShNumber_Hex),
     R(r'[1-9][0-9]*#[0-9a-zA-Z@_]+', Id.ShNumber_BaseN),
     R(r'[^\0]', Id.Unknown_Tok),  # any other char
 ]
