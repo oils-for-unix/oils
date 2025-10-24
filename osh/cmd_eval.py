@@ -1030,6 +1030,11 @@ class CommandEvaluator(object):
                             key = val_ops.ToStr(lval.index,
                                                 'Obj index should be Str',
                                                 loc.Missing)
+                            # Hack: let SearchPath know it needs to reset the path
+                            # cache before looking up a command
+                            if key == 'PATH':
+                                self.mem.clear_path_cache = True
+
                             obj.d[key] = rval
 
                         else:
