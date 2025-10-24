@@ -1993,6 +1993,11 @@ class Mem(object):
         assert flags & SetNameref == 0, flags
         assert flags & ClearNameref == 0, flags
 
+        # Hack: let SearchPath know it needs to reset the path
+        # cache before looking up a command
+        if lval.name == 'PATH':
+            self.clear_path_cache = True
+
         cell, var_frame = self._ResolveNameForYshMutation(
             lval.name, which_scopes, bool(flags & YshDecl))
 
