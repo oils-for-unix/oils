@@ -356,6 +356,13 @@ class Pass(visitor.SimpleVisitor):
         # This handles:
         #    a, b = func_that_returns_tuple()
         if isinstance(lval, TupleExpr):
+            if isinstance(rval, TupleExpr):
+                self.report_error(
+                    o, "mycpp currently does not handle code like "
+                    "'a, b = x, y'. You can move each assignment to its own line "
+                    "or return (x, y) from a function instead.")
+                return
+
             rval_type = self.types[rval]
             assert isinstance(rval_type, TupleType), rval_type
 
