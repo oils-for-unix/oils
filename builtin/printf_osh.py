@@ -61,12 +61,15 @@ def _ParsePrintfInteger(s, blame_loc):
       042     octal
       42      decimal
     """
-    # Handle negative sign separately since the shell number lexer doesn't
-    # recognize negative numbers as a single token
+    # Handle +/- sign separately since the shell number lexer doesn't
+    # recognize signed numbers as a single token
     negative = False
     s_to_parse = s
     if len(s) > 0 and s[0] == '-':
         negative = True
+        s_to_parse = s[1:]
+    elif len(s) > 0 and s[0] == '+':
+        # Positive sign is optional but allowed
         s_to_parse = s[1:]
     
     # Normalize 0X to 0x for the lexer

@@ -1462,6 +1462,42 @@ octal 5
 37
 ## END
 
+#### printf %d with + prefix (positive sign)
+
+echo decimal
+printf '%d\n' +42
+
+echo octal
+printf '%d\n' +077
+
+echo hex lowercase
+printf '%d\n' +0xab
+
+echo hex uppercase
+printf '%d\n' +0XAB
+
+## STDOUT:
+decimal
+42
+octal
+63
+hex lowercase
+171
+hex uppercase
+171
+## END
+
+## BUG zsh STDOUT:
+decimal
+42
+octal
+77
+hex lowercase
+171
+hex uppercase
+171
+## END
+
 #### printf %d with arbitrary base
 # bash, dash, and mksh print 64 and return status 1
 # zsh and ash print 0 and return status 1
