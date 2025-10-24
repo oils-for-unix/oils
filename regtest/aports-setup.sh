@@ -68,6 +68,30 @@ checkout-stable() {
   popd > /dev/null
 }
 
+patch-aports() {
+  local cur_dir=$PWD
+  pushd ../../alpinelinux/aports
+
+  # Add our patches alongside Alpine's own patches
+  # abuild's default_prepare() applies all patches inside $srcdir, but they
+  # also need to be specified in the 'source=' and 'sha512sums=' lists in APKBUILD
+  for patch_dir in $cur_dir/regtest/patches/*; do
+      local patch_dir=$(basename $patch_dir)
+      for patch in $cur_dir/regtest/patches/$patch_dir/*; do
+          cp $patch main/$patch_dir/
+          local patch_name=$(basename $patch)
+          local shasum=$(sha512sum $patch | cut -d " " -f1)
+          local apkbuild=main/$patch_dir/APKBUILD
+          git restore $apkbuild
+          sed -i "/source='*/ a $patch_name" $apkbuild
+          sed -i "/sha512sums='*/ a $shasum  $patch_name" $apkbuild
+      done
+  done
+
+  popd >/dev/null
+}
+
+
 # 2025-10-22, after $(false) and (( fixes
 readonly TARBALL_ID='10439'
 
@@ -450,6 +474,8 @@ fetch-all() {
   clone-aports
   clone-aci
   checkout-stable
+  patch-aports
+
   download-oils "$tarball_id"
 }
 
