@@ -4,9 +4,9 @@
 # Usage:
 #   source build/dev-shell.sh
 #
-# Note: assumes that $REPO_ROOT is $PWD.
-#
-# IMPORTANT: sourced by _build/oils.sh, so it must remain POSIX SHELL
+# Notes:
+# - assumes that $REPO_ROOT is $PWD.
+# - build/py2.sh is a slimmer version, for just python2
 
 ROOT_WEDGE_DIR=/wedge/oils-for-unix.org
 # Also in build/deps.sh
