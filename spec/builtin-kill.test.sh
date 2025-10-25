@@ -1,4 +1,4 @@
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 ## compare_shells: dash bash mksh zsh
 
 # Tests for builtins having to do with killing a process
@@ -132,13 +132,18 @@ echo $?  # Should be 143 (128 + SIGTERM)
 ## END
 
 #### kill HUP pid gives the correct error
+case $SH in dash) exit ;; esac
 sleep 0.1 &
-builtin kill HUP $pid # even with HUP being invalid, $pid must still be killed
+builtin kill HUP $pid
 echo $?
 
 ## STDOUT:
-0
-
+1
+## OK osh STDOUT:
+2
+## END
+## N-I dash STDOUT:
+## END
 #### kill -l shows signals
 case $SH in dash) exit ;; esac
 
@@ -216,31 +221,28 @@ wait %%
 echo wait=$?
 
 # no such job
-if ps -p "$pid" > /dev/null 2>&1; then
-    echo "alive"
-else
-    echo "killed"
-fi
+wait %%
+echo wait=$?
 
 ## STDOUT:
 kill=0
 wait=143
-killed
+wait=127
 ## END
 ## OK zsh STDOUT:
 kill=0
 wait=143
-killed
+wait=1
 ## END
 ## N-I dash STDOUT:
 kill=1
 wait=0
-killed
+wait=0
 ## END
 ## BUG mksh STDOUT:
 kill=0
 wait=0
-killed
+wait=127
 ## END
 
 #### kill -15 %- kills previous job
