@@ -323,21 +323,19 @@ after_value
 set -a
 f() {
   local ZZZ=zzz
-  printenv ZZZ
+  printenv.py ZZZ
 }
 f
 ## STDOUT:
 zzz
 ## END
-## BUG mksh status: 1
-## BUG mksh stdout-json: ""
+## BUG mksh stdout: None
 
 #### set -a exports declare variables
 set -a
 declare ZZZ=zzz
-printenv ZZZ
+printenv.py ZZZ
 ## STDOUT:
 zzz
 ## END
-## N-I dash/mksh status: 1
-## N-I dash/mksh stdout-json: ""
+## N-I dash/mksh stdout: None
