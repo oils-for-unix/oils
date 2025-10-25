@@ -208,7 +208,6 @@ umask 0111
 umask u=, g+, o-
 echo status=$?
 umask | tail -c 4
-
 ## status: 0
 ## STDOUT:
 status=2
@@ -221,6 +220,55 @@ status=1
 ## BUG dash/mksh STDOUT:
 status=0
 711
+## END
+
+#### umask bad symbolic input
+umask b=rwx
+## status: 1
+## OK dash status: 2
+
+#### umask octal number out of range
+umask 0022
+umask 1234567
+# osh currently treats 0o1234567 as 0o0567
+echo status=$?
+umask | tail -c 4
+## status: 0
+## STDOUT:
+status=1
+022
+## END
+## BUG mksh/zsh/dash/osh STDOUT:
+status=0
+567
+## END
+
+#### umask allow overwriting and duplicates
+umask 0111
+umask u=rwx,u=rw,u=r,u=,g=rwx
+umask | tail -c 4
+## status: 0
+## STDOUT:
+701
+## END
+
+#### umask a=rwx is allowed
+umask 0732
+umask a=rwx
+umask | tail -c 4
+
+umask 0124
+umask a+r
+umask | tail -c 4
+
+umask 0124
+umask a-r
+umask | tail -c 4
+## status: 0
+## STDOUT:
+000
+120
+564
 ## END
 
 
