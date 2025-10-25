@@ -18,7 +18,7 @@ _PORTABLE_SIGNALS = [
     'SIGHUP',
     'SIGILL',
     'SIGINT',
-    #SIGKILL
+    'SIGKILL',
     'SIGPIPE',
     'SIGQUIT',
     'SIGSEGV',

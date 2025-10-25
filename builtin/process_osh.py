@@ -12,7 +12,7 @@ from resource import (RLIM_INFINITY, RLIMIT_CORE, RLIMIT_CPU, RLIMIT_DATA,
 from signal import SIGCONT
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.syntax_asdl import loc, CompoundWord
+from _devbuild.gen.syntax_asdl import loc, loc_t, CompoundWord
 from _devbuild.gen.runtime_asdl import (cmd_value, job_state_e, wait_status,
                                         wait_status_e)
 from core import dev
@@ -24,7 +24,9 @@ from core import pyutil
 from core import vm
 from frontend import flag_util
 from frontend import match
+from frontend import signal_def
 from frontend import typed_args
+from frontend import args
 from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch, print_stderr
@@ -39,6 +41,16 @@ if TYPE_CHECKING:
     from display import ui
 
 _ = log
+
+
+def PrintSignals():
+    # type: () -> None
+    # Iterate over signals and print them
+    for sig_num in xrange(signal_def.MaxSigNumber()):
+        sig_name = signal_def.GetName(sig_num)
+        if sig_name is None:
+            continue
+        print('%2d %s' % (sig_num, sig_name))
 
 
 class Jobs(vm._Builtin):
@@ -679,6 +691,111 @@ class Ulimit(vm._Builtin):
                 print_stderr('oils: ulimit error: %s' % pyutil.strerror(e))
                 return 1
 
+        return 0
+
+
+class Kill(vm._Builtin):
+    """Send a signal to a process"""
+
+    def __init__(self, job_list):
+        # type: (process.JobList) -> None
+        self.job_list = job_list
+
+    def _SignameToSignum(self, name):
+        # type: (str) -> int
+        signal_name = name.upper()
+        if signal_name.startswith("SIG"):
+            signal_name = signal_name[3:]
+        return signal_def.GetNumber(signal_name)
+
+    def _ParsePid(self, pid_arg, pid_arg_loc):
+        # type: (str, loc_t) -> int
+        if pid_arg.startswith("%"):
+            job = self.job_list.JobFromSpec(pid_arg)
+            if job is None:
+                e_usage("invalid signal specification %r" % pid_arg,
+                        pid_arg_loc)
+            else:
+                return job.ProcessGroupId()
+        else:
+            try:
+                target_pid = int(pid_arg)
+                return target_pid
+            except ValueError:
+                e_usage("invalid process id specification %r" % pid_arg,
+                        pid_arg_loc)
+
+    # sigspec can either be in the form 15, TERM, or SIGTERM (case insensitive)
+    # returns signal_def.NO_SIGNAL if sigspec is in invalid format
+    def _SigspecToSignal(self, sigspec):
+        # type: (str) -> int
+        signal = signal_def.NO_SIGNAL
+        if sigspec.isdigit():
+            signal = int(sigspec)
+        else:
+            signal = self._SignameToSignum(sigspec)
+        return signal
+
+    def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        signal_to_send = 15  # sigterm, the default signal to send
+        arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
+        arg_r.Next()  # skip command name
+        first_positional, first_positional_loc = arg_r.ReadRequired2(
+            "you must provide a process id")
+        # checking for -sigspec argument
+        if first_positional.startswith('-') and (
+                first_positional[1:].isdigit() or len(first_positional) > 2):
+            signal_to_send = self._SigspecToSignal(first_positional[1:])
+            if signal_to_send == signal_def.NO_SIGNAL:
+                e_usage("invalid signal specification %r" % first_positional,
+                        first_positional_loc)
+            else:
+                arg_pid, arg_pid_loc = arg_r.ReadRequired2(
+                    "you must provide a process id")
+                pid = self._ParsePid(arg_pid, arg_pid_loc)
+                posix.kill(pid, signal_to_send)  # Send signal
+            while not arg_r.AtEnd():
+                arg_pid, arg_loc = arg_r.Peek2()
+                posix.kill(self._ParsePid(arg_pid, arg_loc), signal_to_send)
+            return 0
+
+        attrs, arg_r = flag_util.ParseCmdVal('kill',
+                                             cmd_val,
+                                             accept_typed_args=False)
+        arg = arg_types.kill(attrs.attrs)
+        if arg.l or arg.L:
+
+            done_listing = False  # type: bool
+            while not arg_r.AtEnd():
+                arg_l, arg_loc = arg_r.Peek2()
+                if arg_l.isdigit():
+                    signal = signal_def.GetName(int(arg_l))
+                    if signal is None:
+                        e_usage("invalid signal specification %r" % arg_l,
+                                arg_loc)
+                    print(signal[3:])
+                else:
+                    num = self._SignameToSignum(arg_l)
+                    if num < 0:
+                        e_usage("invalid signal specification %r" % arg_l,
+                                arg_loc)
+                    print(str(num))
+                done_listing = True
+                arg_r.Next()
+
+            if not done_listing:
+                PrintSignals()
+            return 0
+        if arg.n is not None:
+            signal_to_send = self._SigspecToSignal(arg.n)
+        if arg.s is not None:
+            signal_to_send = self._SigspecToSignal(arg.s)
+
+        while not arg_r.AtEnd():
+            arg_l, arg_loc = arg_r.Peek2()
+            posix.kill(self._ParsePid(arg_l, arg_loc), signal_to_send)
+            arg_r.Next()
         return 0
 
 
