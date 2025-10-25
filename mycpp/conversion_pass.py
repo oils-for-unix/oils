@@ -5,7 +5,7 @@ import mypy
 
 from mypy.nodes import (Expression, NameExpr, MemberExpr, TupleExpr, CallExpr,
                         ClassDef, FuncDef, Argument)
-from mypy.types import Type, Instance, TupleType, NoneType
+from mypy.types import Type, Instance, TupleType, NoneType, PartialType
 
 from mycpp import util
 from mycpp.util import log, SplitPyName
@@ -318,6 +318,19 @@ class Pass(visitor.SimpleVisitor):
         if isinstance(lval, MemberExpr):
             self._MaybeAddMember(lval)
 
+        if lval in self.types and isinstance(self.types[lval], PartialType):
+            t = self.types[lval]
+            self.report_error(
+                o,
+                "Mismatched types: trying to assign expression of type '%s' to "
+                "a PartialType variable '%s' (was likely assigned None before).\n"
+                "Tip: If your type translates to a heap-allocated type (e.g. str "
+                "or class), you can annotate it with '# type: Optional[T]'. "
+                "If your type is allocated on the stack (int), then you can use "
+                "-1 or similar as an in-band null value" %
+                (t.var.type.type.name, t.var.name))
+            return
+
         # Handle:
         #    x = y
         # These two are special cases in cppgen_pass, but not here
@@ -356,6 +369,13 @@ class Pass(visitor.SimpleVisitor):
         # This handles:
         #    a, b = func_that_returns_tuple()
         if isinstance(lval, TupleExpr):
+            if isinstance(rval, TupleExpr):
+                self.report_error(
+                    o, "mycpp currently does not handle code like "
+                    "'a, b = x, y'. You can move each assignment to its own line "
+                    "or return (x, y) from a function instead.")
+                return
+
             rval_type = self.types[rval]
             assert isinstance(rval_type, TupleType), rval_type
 
