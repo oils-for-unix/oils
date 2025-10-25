@@ -728,7 +728,7 @@ class Kill(vm._Builtin):
     # sigspec can either be in the form 15, TERM, or SIGTERM (case insensitive)
     # returns signal_def.NO_SIGNAL if sigspec is in invalid format
     def _SigspecToSignal(self, sigspec):
-        # type: (str, loc_t) -> int
+        # type: (str) -> int
         signal = signal_def.NO_SIGNAL
         if sigspec.isdigit():
             signal = int(sigspec)
@@ -742,7 +742,7 @@ class Kill(vm._Builtin):
         arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
         arg_r.Next()  # skip command name
         first_positional, first_positional_loc = arg_r.ReadRequired2(
-            "You must provide a process id")
+            "you must provide a process id")
         if first_positional.startswith('-') and (
                 first_positional[1:].isdigit() or len(first_positional) > 2):
             signal_to_send = self._SigspecToSignal(first_positional[1:])
@@ -751,7 +751,7 @@ class Kill(vm._Builtin):
                         first_positional_loc)
             else:
                 arg_pid, arg_pid_loc = arg_r.ReadRequired2(
-                    "You must provide a process id")
+                    "you must provide a process id")
                 pid = self._ParsePid(arg_pid, arg_pid_loc)
                 posix.kill(pid, signal_to_send)  # Send signal
             while not arg_r.AtEnd():
@@ -779,7 +779,7 @@ class Kill(vm._Builtin):
                     if num < 0:
                         e_usage("invalid signal specification %r" % arg_l,
                                 arg_loc)
-                    print(num)
+                    print(str(num))
                 done_listing = True
                 arg_r.Next()
 
