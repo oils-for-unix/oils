@@ -334,6 +334,8 @@ foo
 ## END
 
 #### noclobber on &> >
+case $SH in dash) exit ;; esac
+
 set -C
 
 rm -f $TMP/no-clobber
@@ -359,13 +361,6 @@ again=1
 baz
 ## END
 ## BUG dash STDOUT:
-stdout=0
-again=2
-foo
-both=0
-baz
-again=2
-foo
 ## END
 
 #### noclobber on &>> >>
