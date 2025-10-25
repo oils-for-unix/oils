@@ -76,10 +76,12 @@ _BACKSLASH = [
     C('\\\n', Id.Ignored_LineCont),
 ]
 
+_DQ_ESCAPED_CHAR = R(r'\\[$`"\\]', Id.Lit_EscapedChar)
+
 # Only 4 characters are backslash escaped inside "".
 # https://www.gnu.org/software/bash/manual/bash.html#Double-Quotes
 _DQ_BACKSLASH = [
-    R(r'\\[$`"\\]', Id.Lit_EscapedChar),
+    _DQ_ESCAPED_CHAR,
     C('\\', Id.Lit_BadBackslash),  # syntax error in YSH, but NOT in OSH
 ]
 
@@ -442,12 +444,16 @@ LEXER_DEF[lex_mode_e.VSub_ArgUnquoted] = \
     R(r'[^\0]', Id.Lit_Other),  # e.g. "$", must be last
 ]
 
+_DQ_VSUB_ARG_BACKSLASH = [
+    _DQ_ESCAPED_CHAR,
+    C(r'\}', Id.Lit_EscapedChar),  # For "${var-\}}"
+    R(r'\\[^\n}]', Id.Lit_BadBackslash),  # syntax error in YSH, but NOT in OSH
+    C('\\\n', Id.Ignored_LineCont),
+]
+
 # Kind.{Lit,Ignored,VSub,Left,Right,Eof}
 LEXER_DEF[lex_mode_e.VSub_ArgDQ] = \
-  _DQ_BACKSLASH +  _VS_ARG_COMMON + _LEFT_SUBS + _VARS + [
-
-    C(r'\}', Id.Lit_EscapedChar),  # For "${var-\}}"
-
+  _DQ_VSUB_ARG_BACKSLASH +  _VS_ARG_COMMON + _LEFT_SUBS + _VARS + [
     R(r'[^$`/}"\0\\#%]+', Id.Lit_Chars),  # matches a line at most
 
     # Weird wart: even in double quoted state, double quotes are allowed
