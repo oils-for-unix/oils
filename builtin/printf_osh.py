@@ -49,8 +49,8 @@ if TYPE_CHECKING:
 _ = log
 
 
-def _ParsePrintfInteger(s, blame_loc):
-    # type: (str, loc_t) -> Tuple[bool, mops.BigInt]
+def _ParsePrintfInteger(s):
+    # type: (str) -> Tuple[bool, mops.BigInt]
     """
     Returns:
       (True, value) when the string looks like an integer
@@ -59,7 +59,7 @@ def _ParsePrintfInteger(s, blame_loc):
     Grammar:
       Whitespace? ('-' | '+')? (Dec | Oct | Hex)
 
-    Trailing space is not allowed.
+      Note: trailing space isn't accepted.
     """
     # shells ignore space on the left, but not on the right!
     s = s.lstrip()
@@ -359,7 +359,7 @@ class Printf(vm._Builtin):
         elif part.type.id == Id.Format_Time or typ in 'diouxX':
             # %(...)T and %d share this complex integer conversion logic
 
-            ok, d = _ParsePrintfInteger(s, word_loc)
+            ok, d = _ParsePrintfInteger(s)
             if not ok:
                 # Check for 'a and "a
                 # These are interpreted as the numeric ASCII value of 'a'
