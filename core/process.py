@@ -14,6 +14,11 @@ from signal import (SIG_DFL, SIG_IGN, SIGINT, SIGPIPE, SIGQUIT, SIGTSTP,
                     SIGTTOU, SIGTTIN, SIGWINCH, SIGSEGV, SIGABRT, SIGILL,
                     SIGFPE, SIGBUS, SIGTERM, SIGKILL)
 
+try:
+    from os import WCOREDUMP
+except ImportError:
+    WCOREDUMP = None
+
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (job_state_e, job_state_t,
                                         job_state_str, wait_status,
@@ -2020,7 +2025,6 @@ W1_NO_CHANGE = -14  # WNOHANG was passed and there were no state changes
 NO_ARG = -20
 
 
-# Signal number to human-readable message mapping (like bash)
 _SIGNAL_MESSAGES = {
     SIGSEGV: 'Segmentation fault',
     SIGABRT: 'Aborted',
@@ -2156,9 +2160,10 @@ class Waiter(object):
             if term_sig == SIGINT:
                 print('')
             else:
-                # Print human-readable message for other signals (like bash)
                 msg = _SIGNAL_MESSAGES.get(term_sig)
                 if msg:
+                    if WCOREDUMP is not None and WCOREDUMP(status):
+                        msg += ' (core dumped)'
                     print_stderr(msg)
 
             if proc:
