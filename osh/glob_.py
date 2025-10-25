@@ -10,12 +10,14 @@ from core import pyos, pyutil, error
 from frontend import match
 from mycpp import mylib
 from mycpp.mylib import log, print_stderr
+from pylib import os_path
 
 from libc import GLOB_PERIOD
 
-from typing import List, Tuple, cast, TYPE_CHECKING
+from typing import List, Tuple, cast, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from core import optview
+    from core import state
     from frontend.match import SimpleLexer
 
 _ = log
@@ -446,28 +448,90 @@ def GlobToERE(pat):
 
 class Globber(object):
 
-    def __init__(self, exec_opts):
-        # type: (optview.Exec) -> None
+    def __init__(self, exec_opts, mem):
+        # type: (optview.Exec, state.Mem) -> None
         self.exec_opts = exec_opts
+        self.mem = mem
 
         # Other unimplemented bash options:
         #
-        # dotglob           dotfiles are matched
         # globstar          ** for directories
         # globasciiranges   ascii or unicode char classes (unicode by default)
         # nocaseglob
         # extglob          the @() !() syntax -- libc helps us with fnmatch(), but
         #                  not glob().
-        #
-        # NOTE: Bash also respects the GLOBIGNORE variable, but no other shells
-        # do.  Could a default GLOBIGNORE to ignore flags on the file system be
-        # part of the security solution?  It doesn't seem totally sound.
+
+    def _GetGlobIgnorePatterns(self):
+        # type: () -> Optional[List[str]]
+        """Get GLOBIGNORE patterns as a list, or None if not set."""
+        from _devbuild.gen.value_asdl import value_e
+        from _devbuild.gen.runtime_asdl import scope_e
+        
+        cell = self.mem.GetCell('GLOBIGNORE', scope_e.GlobalOnly)
+        if cell is None:
+            return None
+        
+        val = cell.val
+        if val.tag() != value_e.Str:
+            return None
+        
+        globignore = val.s  # type: str
+        if not globignore:  # Empty string
+            return None
+        
+        # Split by colon to get individual patterns, but don't split colons
+        # inside bracket expressions like [[:alnum:]]
+        patterns = []  # type: List[str]
+        current = []  # type: List[str]
+        in_bracket = False
+        
+        for i, c in enumerate(globignore):
+            if c == '[':
+                in_bracket = True
+                current.append(c)
+            elif c == ']':
+                in_bracket = False
+                current.append(c)
+            elif c == ':' and not in_bracket:
+                # Colon outside brackets is a separator
+                if current:
+                    patterns.append(''.join(current))
+                    current = []
+            else:
+                current.append(c)
+        
+        # Add the last pattern
+        if current:
+            patterns.append(''.join(current))
+        
+        return patterns
+
+    def _MatchesGlobIgnore(self, filename, patterns):
+        # type: (str, List[str]) -> bool
+        """Check if filename matches any GLOBIGNORE pattern.
+        
+        Filenames . and .. are always ignored when GLOBIGNORE is set.
+        """
+        basename = os_path.basename(filename)
+        if basename in ('.', '..'):
+            return True
+        
+        flags = 0
+        
+        for pattern in patterns:
+            if libc.fnmatch(pattern, filename, flags):
+                return True
+        
+        return False
 
     def _Glob(self, arg, out):
         # type: (str, List[str]) -> int
+        globignore_patterns = self._GetGlobIgnorePatterns()
+        
         try:
             flags = 0
-            if self.exec_opts.dotglob():
+            # GLOBIGNORE enables dotglob when set to a non-null value
+            if self.exec_opts.dotglob() or globignore_patterns is not None:
                 # If HAVE_GLOB_PERIOD is false, then ./configure stubs out
                 # GLOB_PERIOD as 0, a no-op
                 flags |= GLOB_PERIOD
@@ -491,17 +555,28 @@ class Globber(object):
                 results = tmp  # idiom to work around mycpp limitation
                 n = len(results)
 
-            # XXX: libc's glob function can return '.' and '..', which
-            # are typically not of interest. Filtering in this manner
-            # is similar (but not identical) to the default bash
-            # setting of 'setopt -s globskipdots'. Supporting that
-            # option fully would require more than simply wrapping
-            # this in an if statement.
-            n = 0
-            for s in results:
-                if s not in ('.', '..'):
-                    out.append(s)
-                    n += 1
+            if globignore_patterns is not None:
+                tmp = []  # type: List[str]
+                for s in results:
+                    if not self._MatchesGlobIgnore(s, globignore_patterns):
+                        tmp.append(s)
+                results = tmp
+                n = len(results)
+            else:
+                # XXX: libc's glob function can return '.' and '..', which
+                # are typically not of interest. Filtering in this manner
+                # is similar (but not identical) to the default bash
+                # setting of 'setopt -s globskipdots'. Supporting that
+                # option fully would require more than simply wrapping
+                # this in an if statement.
+                tmp = []  # type: List[str]
+                for s in results:
+                    if s not in ('.', '..'):
+                        tmp.append(s)
+                results = tmp
+                n = len(results)
+            
+            out.extend(results)
             return n
 
         return 0
