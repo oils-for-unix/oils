@@ -1,4 +1,4 @@
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 ## compare_shells: dash bash mksh zsh ash
 
 # printf
@@ -1498,14 +1498,89 @@ hex uppercase
 171
 ## END
 
-#### printf %d with arbitrary base
+#### leading spaces are accepted in value given to %d %X, but not trailing spaces
+
+case $SH in zsh) exit ;; esac
+
+# leading space is allowed
+printf '%d\n' ' -123'
+echo status=$?
+printf '%d\n' ' -123 '
+echo status=$?
+
+echo ---
+
+printf '%d\n' ' +077'
+echo status=$?
+
+printf '%d\n' ' +0xff'
+echo status=$?
+
+printf '%X\n' ' +0xff'
+echo status=$?
+
+printf '%x\n' ' +0xff'
+echo status=$?
+
+## STDOUT:
+-123
+status=0
+-123
+status=1
+---
+63
+status=0
+255
+status=0
+FF
+status=0
+ff
+status=0
+## END
+
+## OK osh STDOUT:
+-123
+status=0
+status=1
+---
+63
+status=0
+255
+status=0
+FF
+status=0
+ff
+status=0
+## END
+
+## BUG ash STDOUT:
+-123
+status=0
+0
+status=1
+---
+63
+status=0
+255
+status=0
+FF
+status=0
+ff
+status=0
+## END
+
+## BUG-2 zsh STDOUT:
+## END
+
+
+#### Arbitrary base 64#a is rejected (unlike in shell arithmetic)
+
+printf '%d\n' '64#a'
+echo status=$?
+
 # bash, dash, and mksh print 64 and return status 1
 # zsh and ash print 0 and return status 1
 # OSH rejects it completely (prints nothing) and returns status 1
-
-# Test that 64#a is rejected (unlike in shell arithmetic where it's valid)
-printf '%d\n' '64#a' 2>/dev/null
-echo "status=$?"
 
 ## STDOUT:
 status=1

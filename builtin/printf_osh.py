@@ -61,28 +61,25 @@ def _ParsePrintfInteger(s, blame_loc):
       042     octal
       42      decimal
     """
+    # shells ignore space on the left, but not on the right!
+    s = s.lstrip()
+
     # Handle +/- sign separately since the shell number lexer doesn't
     # recognize signed numbers as a single token
     negative = False
-    s_to_parse = s
-    if len(s) > 0 and s[0] == '-':
+    if s.startswith('-'):
         negative = True
-        s_to_parse = s[1:]
-    elif len(s) > 0 and s[0] == '+':
+        s = s[1:]
+    elif s.startswith('+'):
         # Positive sign is optional but allowed
-        s_to_parse = s[1:]
+        s = s[1:]
     
-    # Normalize 0X to 0x for the lexer
-    s_normalized = s_to_parse
-    if len(s_to_parse) >= 2 and s_to_parse[0] == '0' and s_to_parse[1] in 'Xx':
-        s_normalized = '0x' + s_to_parse[2:]
-    
-    id_, pos = match.MatchShNumberToken(s_normalized, 0)
-    if pos != len(s_normalized):
+    id_, pos = match.MatchShNumberToken(s, 0)
+    if pos != len(s):
         return (False, mops.BigInt(0))
 
     if id_ == Id.ShNumber_Dec:
-        ok, big_int = mops.FromStr2(s_normalized)
+        ok, big_int = mops.FromStr2(s)
         if not ok:
             return (False, mops.BigInt(0))
         if negative:
@@ -90,7 +87,7 @@ def _ParsePrintfInteger(s, blame_loc):
         return (True, big_int)
 
     elif id_ == Id.ShNumber_Oct:
-        ok, big_int = mops.FromStr2(s_normalized[1:], 8)
+        ok, big_int = mops.FromStr2(s[1:], 8)
         if not ok:
             return (False, mops.BigInt(0))
         if negative:
@@ -98,7 +95,7 @@ def _ParsePrintfInteger(s, blame_loc):
         return (True, big_int)
 
     elif id_ == Id.ShNumber_Hex:
-        ok, big_int = mops.FromStr2(s_normalized[2:], 16)
+        ok, big_int = mops.FromStr2(s[2:], 16)
         if not ok:
             return (False, mops.BigInt(0))
         if negative:
@@ -106,7 +103,7 @@ def _ParsePrintfInteger(s, blame_loc):
         return (True, big_int)
 
     elif id_ == Id.ShNumber_BaseN:
-        # printf doesn't support this
+        # Unlike $(( )), printf doesn't support this
         return (False, mops.BigInt(0))
 
     else:
@@ -372,8 +369,7 @@ class Printf(vm._Builtin):
         elif part.type.id == Id.Format_Time or typ in 'diouxX':
             # %(...)T and %d share this complex integer conversion logic
 
-            s_stripped = s.strip()
-            ok, d = _ParsePrintfInteger(s_stripped, word_loc)
+            ok, d = _ParsePrintfInteger(s, word_loc)
             
             if not ok:
                 # Check for 'a and "a
