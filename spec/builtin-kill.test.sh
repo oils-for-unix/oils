@@ -32,10 +32,6 @@ echo wait=$?  # 137 is 128 + SIGKILL
 kill=0
 wait=137
 ## END
-## N-I zsh STDOUT:
-kill=1
-wait=0
-## END
 
 #### kill -n 9 specifies the signal number
 #case $SH in mksh|dash) exit ;; esac
@@ -74,10 +70,6 @@ wait=143
 ## END
 ## BUG mksh STDOUT:
 kill=0
-wait=0
-## END
-## N-I zsh STDOUT:
-kill=1
 wait=0
 ## END
 
@@ -260,7 +252,6 @@ echo wait=$?
 # what does bash define here as the previous job?  May be a bug
 #wait %-
 #echo wait=$?
-
 ## STDOUT:
 kill=0
 wait=143
@@ -272,6 +263,11 @@ wait=0
 kill=1
 wait=0
 ## END
+## BUG zsh STDOUT:
+kill=0
+wait=1
+## END
+
 
 #### kill multiple pids at once
 sleep 0.1 &
