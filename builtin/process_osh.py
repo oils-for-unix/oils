@@ -743,6 +743,7 @@ class Kill(vm._Builtin):
         arg_r.Next()  # skip command name
         first_positional, first_positional_loc = arg_r.ReadRequired2(
             "you must provide a process id")
+        # checking for -sigspec argument
         if first_positional.startswith('-') and (
                 first_positional[1:].isdigit() or len(first_positional) > 2):
             signal_to_send = self._SigspecToSignal(first_positional[1:])

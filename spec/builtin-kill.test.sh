@@ -268,4 +268,33 @@ wait=143
 ## BUG mksh STDOUT:
 kill=0
 wait=0
+## BUG dash STDOUT:
+kill=1
+wait=0
+## END
+
+#### kill multiple pids at once
+sleep 0.1 &
+pid1=$!
+sleep 0.1 &
+pid2=$!
+sleep 0.1 &
+pid3=$!
+
+kill $pid1 $pid2 $pid3
+echo $?
+## STDOUT:
+0
+## END
+
+#### kill pid and job at once
+sleep 0.1 &
+pid=$!
+sleep 0.1 &
+kill %2 $pid
+echo $?
+## STDOUT:
+0
+## BUG dash STDOUT:
+1
 ## END
