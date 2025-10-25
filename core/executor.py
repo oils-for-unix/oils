@@ -413,11 +413,11 @@ class PureExecutor(vm._Executor):
             loc.WordPart(cs_part))
 
     def PushRedirects(self, redirects, err_out):
-        # type: (List[RedirValue], List[error.IOError_OSError]) -> None
+        # type: (List[RedirValue], List[int]) -> None
         pass
 
     def PopRedirects(self, num_redirects, err_out):
-        # type: (int, List[error.IOError_OSError]) -> None
+        # type: (int, List[int]) -> None
         pass
 
     def PushProcessSub(self):
@@ -1010,13 +1010,13 @@ class ShellExecutor(vm._Executor):
             raise AssertionError()
 
     def PushRedirects(self, redirects, err_out):
-        # type: (List[RedirValue], List[error.IOError_OSError]) -> None
+        # type: (List[RedirValue], List[int]) -> None
         if len(redirects) == 0:  # Optimized to avoid allocs
             return
         self.fd_state.Push(redirects, err_out)
 
     def PopRedirects(self, num_redirects, err_out):
-        # type: (int, List[error.IOError_OSError]) -> None
+        # type: (int, List[int]) -> None
         if num_redirects == 0:  # Optimized to avoid allocs
             return
         self.fd_state.Pop(err_out)
