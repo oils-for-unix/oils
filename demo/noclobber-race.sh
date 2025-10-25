@@ -1,6 +1,7 @@
 #!bin/osh
 #
 # Usage:
+#  demo/noclobber-race.sh setup-adversary-fast
 #  demo/noclobber-race.sh demo bin/osh
 #  demo/noclobber-race.sh demo _bin/cxx-opt/osh   # Will take longer, but will eventually get a race
 #                                                 # Always under ~150 times on my machine.
