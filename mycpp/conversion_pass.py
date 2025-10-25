@@ -5,7 +5,7 @@ import mypy
 
 from mypy.nodes import (Expression, NameExpr, MemberExpr, TupleExpr, CallExpr,
                         ClassDef, FuncDef, Argument)
-from mypy.types import Type, Instance, TupleType, NoneType
+from mypy.types import Type, Instance, TupleType, NoneType, PartialType
 
 from mycpp import util
 from mycpp.util import log, SplitPyName
@@ -317,6 +317,19 @@ class Pass(visitor.SimpleVisitor):
 
         if isinstance(lval, MemberExpr):
             self._MaybeAddMember(lval)
+
+        if lval in self.types and isinstance(self.types[lval], PartialType):
+            t = self.types[lval]
+            self.report_error(
+                o,
+                "Mismatched types: trying to assign expression of type '%s' to "
+                "a PartialType variable '%s' (was likely assigned None before).\n"
+                "Tip: If your type translates to a heap-allocated type (e.g. str "
+                "or class), you can annotate it with '# type: Optional[T]'. "
+                "If your type is allocated on the stack (int), then you can use "
+                "-1 or similar as an in-band null value" %
+                (t.var.type.type.name, t.var.name))
+            return
 
         # Handle:
         #    x = y

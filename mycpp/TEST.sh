@@ -247,6 +247,9 @@ test-invalid-examples() {
       */invalid_ctx_raise.py)
         expected_status=2
         ;;
+      */invalid_partialtype.py)
+        expected_status=2
+        ;;
     esac
 
     if test $status -ne $expected_status; then
