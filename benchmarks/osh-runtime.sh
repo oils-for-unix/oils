@@ -19,7 +19,6 @@ source test/tsv-lib.sh  # tsv-row
 
 readonly BASE_DIR=_tmp/osh-runtime
 
-# TODO: Move to ../oil_DEPS
 readonly TAR_DIR=$PWD/_deps/osh-runtime  # Make it absolute
 
 #

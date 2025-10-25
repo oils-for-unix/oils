@@ -51,7 +51,7 @@ if test -d $WEDGE_SOUFFLE_DIR; then
   export PATH="$WEDGE_SOUFFLE_DIR:$PATH"
 fi
 
-# test/spec-bin.sh builds binaries
+# OBSOLETE
 # This takes precedence over $ASH_SYMLINK_DIR
 readonly SPEC_DIR="$PWD/../oil_DEPS/spec-bin"
 

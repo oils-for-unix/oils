@@ -319,10 +319,6 @@ run-job-uke() {
     # https://stackoverflow.com/questions/35860527/warning-error-disabling-address-space-randomization-operation-not-permitted
     flags+=( --cap-add SYS_PTRACE --security-opt seccomp=unconfined )
 
-    # can mount other tools for debugging, like clang
-    #local clang_dir=~/git/oilshell/oil_DEPS/clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04
-    #flags+=( --mount "type=bind,source=$clang_dir,target=/home/uke/oil_DEPS/$(basename $clang_dir)" )
-    
     args=(bash)
   else
     args=(sh -c "cd /home/uke/oil; soil/worker.sh JOB-$job_name")

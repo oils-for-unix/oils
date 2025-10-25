@@ -99,8 +99,7 @@ debug-symbols() {
   #libpython2.7-dbg 
 }
 
-# TODO: Link these two tools in ../oil_DEPS/bin or something
-# Make them work on CI
+# TODO: Make these tools work in CI, by turning them into wedges?
 
 # NOTE: I used this before with python-flamegraph too.
 flamegraph() {
